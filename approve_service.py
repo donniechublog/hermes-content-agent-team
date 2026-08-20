@@ -63,18 +63,42 @@ def scout_thread_id():
 
 def keyboard(draft_id):
     return {"inline_keyboard": [[
-        {"text": "✅ Duyet & dang", "callback_data": "ok:" + draft_id},
-        {"text": "❌ Bo", "callback_data": "no:" + draft_id},
+        {"text": "✅ Duyệt & đăng", "callback_data": "ok:" + draft_id},
+        {"text": "❌ Bỏ", "callback_data": "no:" + draft_id},
     ]]}
+
+
+def _send_media_group(token, chat, media, thread_id=None):
+    """Gui album URL anh (Telegram tu tai, khong can file cuc bo). Album
+    KHONG the gan nut bam -- day la gioi han cua Telegram Bot API."""
+    items = [{"type": "photo", "media": m} for m in media]
+    data = {"chat_id": chat, "media": json.dumps(items)}
+    if thread_id:
+        data["message_thread_id"] = str(int(thread_id))
+    with httpx.Client(timeout=120) as c:
+        r = c.post(API.format(token=token, method="sendMediaGroup"), data=data)
+    return r.json()
 
 
 def draft_push(token, group, draft_id, thread_id=None):
     d = json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
-    caption = "<b>BAN NHAP</b>\n\n" + d["caption"]
+    caption = "<b>BẢN NHÁP</b>\n\n" + d["caption"]
     payload = {"chat_id": group, "caption": caption, "parse_mode": "HTML",
                "reply_markup": keyboard(draft_id)}
     if thread_id:
         payload["message_thread_id"] = int(thread_id)
+
+    images = d.get("images")
+    if images:
+        # Album truoc (khong nut), roi tin nhan chu rieng kem nut duyet --
+        # nut bam luon nam tren tin nhan NAY, khong phai anh.
+        _send_media_group(token, group, images, thread_id)
+        text_payload = {"chat_id": group, "text": caption, "parse_mode": "HTML",
+                        "reply_markup": keyboard(draft_id)}
+        if thread_id:
+            text_payload["message_thread_id"] = int(thread_id)
+        return call(token, "sendMessage", **text_payload)
+
     img = d.get("image")
     if img and Path(img).exists():
         with httpx.Client(timeout=120) as c, open(img, "rb") as fh:
@@ -89,6 +113,17 @@ def draft_push(token, group, draft_id, thread_id=None):
 
 def publish(token, channel, draft_id):
     d = json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
+
+    images = d.get("images")
+    if images:
+        items = [{"type": "photo", "media": m} for m in images]
+        items[0]["caption"] = d["caption"]
+        items[0]["parse_mode"] = "HTML"
+        with httpx.Client(timeout=120) as c:
+            r = c.post(API.format(token=token, method="sendMediaGroup"),
+                      data={"chat_id": channel, "media": json.dumps(items)})
+        return r.json()
+
     img = d.get("image")
     if img and Path(img).exists():
         with httpx.Client(timeout=120) as c, open(img, "rb") as fh:
@@ -117,27 +152,27 @@ def handle_callback(token, channel, cq):
 
     if not (DRAFTS / (draft_id + ".json")).exists():
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Khong tim thay ban nhap", show_alert=True)
+             text="Không tìm thấy bản nháp", show_alert=True)
         return
 
     if action == "ok":
         res = publish(token, channel, draft_id)
         ok = res.get("ok")
         mark_draft(draft_id, "published" if ok else "publish_failed")
-        note = ("✅ DA DANG len channel" if ok
-                else "⚠️ Dang loi: " + str(res.get("description")))
+        note = ("✅ ĐÃ ĐĂNG lên channel" if ok
+                else "⚠️ Đăng lỗi: " + str(res.get("description")))
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Da dang" if ok else "Loi khi dang")
+             text="Đã đăng" if ok else "Lỗi khi đăng")
     elif action == "no":
         mark_draft(draft_id, "rejected")
-        note = "❌ DA BO -- khong dang"
+        note = "❌ ĐÃ BỎ — không đăng"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Da bo bai")
+             text="Đã bỏ bài")
     else:
         return
 
     base = msg.get("caption") or msg.get("text") or ""
-    body = base.replace("BAN NHAP", "BAN NHAP (da xu ly)", 1)
+    body = base.replace("BẢN NHÁP", "BẢN NHÁP (đã xử lý)", 1)
     method = "editMessageCaption" if msg.get("caption") else "editMessageText"
     key = "caption" if msg.get("caption") else "text"
     call(token, method, chat_id=chat_id, message_id=msg_id,
@@ -205,8 +240,12 @@ Du kien (Finn da tom tat):
 
 YEU CAU:
 - Viet caption tieng Viet toi da 900 ky tu, dinh dang HTML Telegram (chi <b> <i> <code>), dung cau truc SOUL.
-- Ghi {out_json} gom: caption, image ({out_png}), source_url ({link}), category ({category}), via ({via}), status ("pending").
-- Chay: /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/approve_service.py push {draft_id}
+- Ghi caption ra file tam, vi du /tmp/caption_{draft_id}.txt (CHI caption, khong kem gi khac).
+- Ghep draft bang lenh sau — script tu dien source_url / category / via / duong dan anh,
+  BAN KHONG CAN go lai nhung gia tri do:
+    cd /home/donniechu/content-team && venv/bin/python draft_write.py {draft_id} --caption-file /tmp/caption_{draft_id}.txt
+- Day vao hang duyet:
+    cd /home/donniechu/content-team && venv/bin/python approve_service.py push {draft_id}
 - KHONG tu dang len channel."""
 
 
@@ -227,10 +266,31 @@ def kanban_create(title, assignee, body, parent=None):
         return None, r.stdout[-300:]
 
 
+def write_meta(draft_id, item, out_png):
+    """Ghi san metadata cho draft — writer khoi phai go lai bang tay.
+
+    Nhung gia tri nay Finn da quyet tu luc quet; bat LLM go lai chi tao co hoi
+    go sai. draft_write.py se doc file nay khi ghep draft cuoi cung.
+    """
+    meta = {
+        "source_url": item["link"],
+        "category": item.get("category", "CONG CU"),
+        "via": item.get("via", ""),
+        "image": out_png,
+        "title": item["title"],
+        "score": item.get("score"),
+        "score_reason": item.get("score_reason", ""),
+    }
+    DRAFTS.mkdir(parents=True, exist_ok=True)
+    (DRAFTS / (draft_id + ".meta.json")).write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def create_pair(item):
     draft_id = slugify(item["title"], "item-" + str(item["index"]))
     out_png = str(DRAFTS / (draft_id + ".png"))
     out_json = str(DRAFTS / (draft_id + ".json"))
+    write_meta(draft_id, item, out_png)
 
     illu_body = ILLU_BODY.format(
         source_note=item.get("source_note", ""), link=item["link"],
@@ -273,7 +333,7 @@ def handle_message(token, group, scout_thread, msg):
     manifest_path = latest_manifest()
     if not manifest_path:
         call(token, "sendMessage", chat_id=group, message_thread_id=scout_thread,
-             text="Chua co danh sach tin nao hom nay de chon.")
+             text="Chưa có danh sách tin nào hôm nay để chọn.")
         return
 
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -283,24 +343,24 @@ def handle_message(token, group, scout_thread, msg):
     for n in nums:
         it = items.get(n)
         if not it:
-            lines.append("#" + str(n) + ": khong tim thay")
+            lines.append("#" + str(n) + ": không tìm thấy")
             continue
         if it.get("picked"):
-            lines.append("#" + str(n) + ": da chon truoc do")
+            lines.append("#" + str(n) + ": đã chọn trước đó")
             continue
         ids, err = create_pair(it)
         if err:
-            lines.append("#" + str(n) + ": loi -- " + err)
+            lines.append("#" + str(n) + ": lỗi — " + err)
             continue
         it["picked"] = True
         changed = True
-        lines.append("#" + str(n) + ": da tao task anh " + ids[0] + " + viet " + ids[1])
+        lines.append("#" + str(n) + ": đã tạo task ảnh " + ids[0] + " + viết " + ids[1])
 
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
     call(token, "sendMessage", chat_id=group, message_thread_id=scout_thread,
-         text="<b>Ket qua chon:</b>\n" + "\n".join(lines), parse_mode="HTML")
+         text="<b>Kết quả chọn:</b>\n" + "\n".join(lines), parse_mode="HTML")
 
 
 # ---------- vong lap chinh ----------

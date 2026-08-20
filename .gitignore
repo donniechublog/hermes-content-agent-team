@@ -9,3 +9,6 @@ state/
 __pycache__/
 *.pyc
 *.bak-*
+
+# symlink toi hermes-agent/venv — duong dan tuyet doi, khong dua vao repo
+venv

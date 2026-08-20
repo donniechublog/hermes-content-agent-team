@@ -63,6 +63,42 @@ def send_photo(token, chat, photo: Path, caption="", parse_mode="HTML", thread=N
     return _check(r)
 
 
+def send_media_group(token, chat, media, caption="", parse_mode="HTML",
+                     thread=None):
+    """Gui album nhieu anh. `media` la danh sach URL (http...) hoac Path cuc bo.
+
+    Chu thich chi gan vao anh DAU TIEN — dung quy tac cua Telegram cho album.
+    """
+    if len(caption) > CAPTION_LIMIT:
+        sys.exit(f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
+                 f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
+    items, files = [], {}
+    for i, m in enumerate(media):
+        m = str(m)
+        entry = {"type": "photo"}
+        if i == 0 and caption:
+            entry["caption"] = caption
+            entry["parse_mode"] = parse_mode
+        if m.startswith("http://") or m.startswith("https://"):
+            entry["media"] = m
+        else:
+            key = f"file{i}"
+            entry["media"] = f"attach://{key}"
+            files[key] = open(m, "rb")
+        items.append(entry)
+    data = {"chat_id": chat, "media": __import__("json").dumps(items)}
+    if thread:
+        data["message_thread_id"] = str(int(thread))
+    try:
+        with httpx.Client(timeout=120) as c:
+            r = c.post(API.format(token=token, method="sendMediaGroup"),
+                      data=data, files=files or None)
+    finally:
+        for fh in files.values():
+            fh.close()
+    return _check(r)
+
+
 def main():
     p = argparse.ArgumentParser(description="Dang bai len Telegram channel")
     p.add_argument("--photo", type=Path, help="Duong dan anh")
@@ -71,6 +107,8 @@ def main():
     p.add_argument("--to", help="Ghi de chat_id dich")
     p.add_argument("--thread", help="message_thread_id (topic) trong group")
     p.add_argument("--file", type=Path, help="Doc noi dung tu file")
+    p.add_argument("--album", nargs="+",
+                   help="Gui nhieu anh (URL hoac duong dan cuc bo) thanh 1 album")
     a = p.parse_args()
 
     token, chat = load_secrets()
@@ -80,7 +118,10 @@ def main():
 
     body = a.file.read_text(encoding="utf-8") if a.file else None
 
-    if a.photo:
+    if a.album:
+        res = send_media_group(token, chat, a.album, body or a.caption,
+                               thread=a.thread)
+    elif a.photo:
         res = send_photo(token, chat, a.photo, body or a.caption, thread=a.thread)
     else:
         text = body or a.text
