@@ -111,28 +111,51 @@ def draft_push(token, group, draft_id, thread_id=None):
     return call(token, "sendMessage", **payload)
 
 
+CAPTION_LIMIT = 1024      # gioi han caption cua sendPhoto / sendMediaGroup
+TEXT_LIMIT = 4096         # gioi han cua sendMessage
+
+
 def publish(token, channel, draft_id):
+    """Dang draft len channel.
+
+    Caption dai (teaser thuong 3000+ ky tu) VUOT gioi han 1024 cua caption anh.
+    Truong hop do: gui anh truoc khong caption, roi gui chu rieng — thay vi de
+    Telegram tu choi ca bai.
+    """
     d = json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
+    caption = d["caption"]
+    long_caption = len(caption) > CAPTION_LIMIT
 
     images = d.get("images")
     if images:
         items = [{"type": "photo", "media": m} for m in images]
-        items[0]["caption"] = d["caption"]
-        items[0]["parse_mode"] = "HTML"
+        if not long_caption:
+            items[0]["caption"] = caption
+            items[0]["parse_mode"] = "HTML"
         with httpx.Client(timeout=120) as c:
             r = c.post(API.format(token=token, method="sendMediaGroup"),
                       data={"chat_id": channel, "media": json.dumps(items)})
-        return r.json()
+        res = r.json()
+        if long_caption and res.get("ok"):
+            return call(token, "sendMessage", chat_id=channel, text=caption,
+                        parse_mode="HTML", disable_web_page_preview=True)
+        return res
 
     img = d.get("image")
     if img and Path(img).exists():
         with httpx.Client(timeout=120) as c, open(img, "rb") as fh:
+            data = {"chat_id": channel, "parse_mode": "HTML"}
+            if not long_caption:
+                data["caption"] = caption
             r = c.post(API.format(token=token, method="sendPhoto"),
-                       data={"chat_id": channel, "caption": d["caption"],
-                             "parse_mode": "HTML"},
+                       data=data,
                        files={"photo": (Path(img).name, fh, "image/png")})
-        return r.json()
-    return call(token, "sendMessage", chat_id=channel, text=d["caption"],
+        res = r.json()
+        if long_caption and res.get("ok"):
+            return call(token, "sendMessage", chat_id=channel, text=caption,
+                        parse_mode="HTML", disable_web_page_preview=True)
+        return res
+    return call(token, "sendMessage", chat_id=channel, text=caption,
                 parse_mode="HTML", disable_web_page_preview=True)
 
 
@@ -392,13 +415,26 @@ def loop():
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "push":
         tok, _ch, grp = load_secrets()
+        draft_id = sys.argv[2]
+        # Dinh tuyen topic theo loai noi dung: teaser ve topic Jean, tin tuc
+        # ve topic Quinn. Tham so thu 3 (neu co) van ghi de duoc.
         thread = None
         tp = STATE_DIR / "topics.json"
         if tp.exists():
-            thread = json.loads(tp.read_text(encoding="utf-8")).get("writer")
+            topics = json.loads(tp.read_text(encoding="utf-8"))
+            dpath = DRAFTS / (draft_id + ".json")
+            category = ""
+            if dpath.exists():
+                try:
+                    category = json.loads(
+                        dpath.read_text(encoding="utf-8")).get("category", "")
+                except Exception:                            # noqa: BLE001
+                    pass
+            key = "teaser" if category.upper() == "TEASER" else "writer"
+            thread = topics.get(key)
         if len(sys.argv) > 3:
             thread = int(sys.argv[3])
-        res = draft_push(tok, grp, sys.argv[2], thread_id=thread)
+        res = draft_push(tok, grp, draft_id, thread_id=thread)
         print("day ban nhap -> topic " + str(thread) + " | " +
               ("OK" if res.get("ok") else str(res.get("description"))))
     else:
