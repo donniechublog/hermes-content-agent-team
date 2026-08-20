@@ -1,0 +1,11 @@
+# Khoa bi mat — tuyet doi khong dua vao repo
+.secrets.env
+
+# Du lieu chay: ban nhap, trang thai, con tro Telegram
+drafts/
+state/
+
+# Rac
+__pycache__/
+*.pyc
+*.bak-*
