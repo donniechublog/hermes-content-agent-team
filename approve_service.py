@@ -16,10 +16,14 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
 import httpx
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import chat_router                                          # noqa: E402
 
 ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
@@ -341,16 +345,51 @@ def create_pair(item):
     return (illu_id, writer_id), None
 
 
+def handle_chat(token, group, msg, thread_id, text):
+    """Chuyen tin nhan toi dung agent theo topic, giu mach hoi thoai.
+
+    Gateway cua hermes da tat Telegram (khong the cung long-poll mot token voi
+    tien trinh nay), nen day la duong duy nhat de nhan voi LLM qua Telegram.
+    Bu lai: dinh tuyen duoc theo topic, moi topic mot phien rieng.
+    """
+    topics = {}
+    tp = STATE_DIR / "topics.json"
+    if tp.exists():
+        topics = json.loads(tp.read_text(encoding="utf-8"))
+    profile, session = chat_router.route(thread_id, topics)
+
+    who = profile or "trợ lý"
+    call(token, "sendMessage", chat_id=group,
+         **({"message_thread_id": thread_id} if thread_id else {}),
+         text=f"⏳ Đang chuyển cho <b>{who}</b>…", parse_mode="HTML")
+
+    out, err = chat_router.ask(profile, session, text)
+    reply = ("⚠️ " + err) if err else chat_router.clean(out)
+    call(token, "sendMessage", chat_id=group,
+         **({"message_thread_id": thread_id} if thread_id else {}),
+         text=reply, disable_web_page_preview=True)
+
+
 def handle_message(token, group, scout_thread, msg):
     if msg.get("from", {}).get("is_bot"):
         return
     if msg.get("chat", {}).get("id") != int(group):
         return
-    if scout_thread is None or msg.get("message_thread_id") != int(scout_thread):
-        return
     text = (msg.get("text") or "").strip()
-    if not text or not re.fullmatch(r"[\d,\s]+", text):
-        return  # khong phai lenh chon so -- im lang
+    if not text:
+        return
+    thread_id = msg.get("message_thread_id")
+
+    # Chi so trong topic cua Finn = lenh chon tin. Moi thu khac la hoi thoai.
+    is_pick = (scout_thread is not None
+               and thread_id == int(scout_thread)
+               and re.fullmatch(r"[\d,\s]+", text))
+    if not is_pick:
+        # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
+        # vong lap poll (nut Duyet/Bo phai bam duoc bat cu luc nao).
+        threading.Thread(target=handle_chat, daemon=True,
+                         args=(token, group, msg, thread_id, text)).start()
+        return
 
     nums = sorted(set(int(n) for n in re.findall(r"\d+", text)))
     manifest_path = latest_manifest()
