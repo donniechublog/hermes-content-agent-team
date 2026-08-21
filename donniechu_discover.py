@@ -15,7 +15,6 @@ Hai che do:
 import argparse
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 import httpx

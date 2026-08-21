@@ -27,6 +27,8 @@ from pathlib import Path
 import httpx
 import yaml
 
+import env_load
+
 ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
 DB = Path.home() / ".9router" / "db" / "data.sqlite"
@@ -143,13 +145,7 @@ def main():
 
 
 def gui(text: str):
-    for p in (ROOT / ".secrets.env", HERMES / ".env"):
-        if p.exists():
-            for line in p.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    os.environ.setdefault(k.strip(), v.strip())
+    env_load.nap()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat = os.environ.get("TELEGRAM_GROUP_ID") or os.environ.get("TELEGRAM_CHANNEL_ID")
     if not (tok and chat):

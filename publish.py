@@ -11,19 +11,14 @@ from pathlib import Path
 
 import httpx
 
-SECRETS = Path.home() / "content-team" / ".secrets.env"
+import env_load
 API = "https://api.telegram.org/bot{token}/{method}"
 CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
 TEXT_LIMIT = 4096
 
 
 def load_secrets():
-    if SECRETS.exists():
-        for line in SECRETS.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+    env_load.nap()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat = os.environ.get("TELEGRAM_CHANNEL_ID")
     if not tok:

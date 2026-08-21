@@ -20,11 +20,12 @@ Dung:
 """
 import argparse
 import json
-import os
 import time
 from pathlib import Path
 
 import httpx
+
+import env_load
 
 ROOT = Path.home() / "content-team"
 ROUTER = "http://127.0.0.1:20128/v1/chat/completions"
@@ -72,21 +73,6 @@ def ty_le_dau(text: str) -> float:
     if not chu:
         return 0.0
     return sum(1 for c in chu if c in DAU) / len(chu)
-
-
-def nap_khoa():
-    for p in (ROOT / ".secrets.env", Path.home() / ".hermes" / ".env"):
-        if not p.exists():
-            continue
-        for line in p.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
-    key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        raise SystemExit("Thieu OPENAI_API_KEY")
-    return key
 
 
 def goi(model: str, key: str, dung_tool: bool, max_tokens: int) -> dict:
@@ -144,7 +130,7 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=2000)
     a = ap.parse_args()
 
-    key = nap_khoa()
+    key = env_load.bat_buoc("OPENAI_API_KEY")
     ket_qua = {}
     for m in (a.models or UNGVIEN):
         print(f"\n{'=' * 72}\n{m}", flush=True)

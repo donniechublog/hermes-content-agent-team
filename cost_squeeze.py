@@ -21,13 +21,13 @@ Dung:
 """
 import argparse
 import json
-import os
 import statistics as st
 import sys
-import unicodedata
 from pathlib import Path
 
 import httpx
+
+import env_load
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teaser_assemble import DAI_HONG, tim_giong_tuong_thuat  # noqa: E402
@@ -57,20 +57,6 @@ def ty_le_dau(t: str) -> float:
     return sum(1 for c in chu if c in DAU) / len(chu) if chu else 0.0
 
 
-def nap_khoa() -> str:
-    for p in (ROOT / ".secrets.env", HERMES / ".env"):
-        if p.exists():
-            for line in p.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    os.environ.setdefault(k.strip(), v.strip())
-    key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        raise SystemExit("Thieu OPENAI_API_KEY")
-    return key
-
-
 def suy_luan_cua_vai(vai: str) -> dict:
     """Doc dung cau hinh suy luan ma production dang chay cho vai nay.
 
@@ -95,11 +81,18 @@ def soul(vai: str) -> str:
 
 def viec_teaser():
     """Viec that cua Jean: tu du lieu bai goc, viet tieu de + doan van 500-800 tu."""
-    art = json.loads((ROOT / "state" / "mau_bai_goc.json").read_text(encoding="utf-8"))
+    # KHONG doc tu state/ — thu muc do bi gitignore, ban sao moi se khong co tep.
+    # Trich thang tu bai that, va noi ro cach tao lai neu thieu mang.
+    mau = ROOT / "mau_bai_goc.json"
+    if not mau.exists():
+        raise SystemExit(
+            f"Thieu {mau}. Tao bang:\n"
+            f"  venv/bin/python article_extract.py <url bai> --out {mau}")
+    art = json.loads(mau.read_text(encoding="utf-8"))
     nhac = (f"Du lieu bai goc:\n{json.dumps(art, ensure_ascii=False)[:60000]}\n\n"
             "Viet tieu de va cac doan van thuan theo dung huong dan. "
             'Tra ve JSON: {"title": str, "paragraphs": [str, ...]}')
-    return soul("teaser"), nhac, DAI_HONG, False
+    return soul("teaser"), nhac, DAI_HONG
 
 
 # Nhieu tin khac nhau, KHONG lap mot tin. Lap mot tin lam bo do mu: v4-flash
@@ -125,7 +118,7 @@ def viec_writer():
         tin = TIN_WRITER[i % len(TIN_WRITER)]
         return (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh "
                 "Telegram, 3 den 5 cau. Chi tra ve caption, khong giai thich.")
-    return soul("writer"), nhac, (15, 400), False
+    return soul("writer"), nhac, (15, 400)
 
 
 VIEC = {"teaser": viec_teaser, "writer": viec_writer}
@@ -173,8 +166,8 @@ def main():
     ap.add_argument("--models", nargs="*", help="Model can thu")
     a = ap.parse_args()
 
-    key = nap_khoa()
-    sys_prompt, nhac, (tu_min, tu_max), can_tool = VIEC[a.vai]()
+    key = env_load.bat_buoc("OPENAI_API_KEY")
+    sys_prompt, nhac, (tu_min, tu_max) = VIEC[a.vai]()
 
     them = suy_luan_cua_vai(a.vai)
     print(f"Vai: {a.vai} | {a.n} lan/model | chan do dai ngoai {tu_min}-{tu_max} tu"
@@ -213,9 +206,8 @@ def main():
 
         gia1000 = st.mean(usd) * 1000 if usd else float("nan")
         hang.append((model, truot, a.n, gia1000, ly_do, tu))
-        print(f"{model:<24s} truot {truot}/{a.n}  USD/1000 = {gia1000:7.2f}"
-              f"  tu tb {st.mean(tu):.0f}" if tu else
-              f"{model:<24s} truot {truot}/{a.n}")
+        do_dai = f"  tu tb {st.mean(tu):.0f}" if tu else ""
+        print(f"{model:<24s} truot {truot}/{a.n}  USD/1000 = {gia1000:7.2f}{do_dai}")
         if ly_do:
             print(f"{'':24s}   ly do: {', '.join(ly_do[:6])}")
 

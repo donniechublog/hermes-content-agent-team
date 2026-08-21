@@ -15,7 +15,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 from pathlib import Path
@@ -24,6 +23,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chat_router                                          # noqa: E402
+import moat_publish                                         # noqa: E402
 
 ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
@@ -33,15 +33,11 @@ API = "https://api.telegram.org/bot{token}/{method}"
 HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
 HERMES_HOME = str(Path.home() / ".hermes")
 
+import env_load                                              # noqa: E402
+
 
 def load_secrets():
-    p = ROOT / ".secrets.env"
-    if p.exists():
-        for line in p.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+    env_load.nap()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not tok:
         sys.exit("Thieu TELEGRAM_BOT_TOKEN")
@@ -188,6 +184,12 @@ def handle_callback(token, channel, cq):
         mark_draft(draft_id, "published" if ok else "publish_failed")
         note = ("✅ ĐÃ ĐĂNG lên channel" if ok
                 else "⚠️ Đăng lỗi: " + str(res.get("description")))
+        # Bai da len channel thi day tiep sang moat cho extension dang len social.
+        # Chi day khi Telegram da nhan -- khong dang duoc o day thi bai chua duyet xong.
+        # Loi ben moat chi them mot dong vao the, KHONG lam hong luong duyet.
+        if ok:
+            pushed, why = moat_publish.intake(draft_id)
+            note += ("\n\U0001f4e4 moat: " + why) if pushed else ("\n\u26a0\ufe0f moat: " + why)
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
              text="Đã đăng" if ok else "Lỗi khi đăng")
     elif action == "no":

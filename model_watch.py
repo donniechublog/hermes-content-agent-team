@@ -20,6 +20,8 @@ from pathlib import Path
 import httpx
 import yaml
 
+import env_load
+
 ROOT = Path.home() / "content-team"
 HERMES_HOME = Path.home() / ".hermes"
 STATE_FILE = ROOT / "state" / "model_health.json"
@@ -41,17 +43,6 @@ REASONS = {
     502: "backend cua nha cung cap chet",
     503: "dich vu qua tai",
 }
-
-
-def load_secrets():
-    for p in (ROOT / ".secrets.env", HERMES_HOME / ".env"):
-        if not p.exists():
-            continue
-        for line in p.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
 
 
 def models_in_use() -> dict:
@@ -127,7 +118,7 @@ def main():
     ap.add_argument("--quiet", action="store_true", help="Khong in ra man hinh")
     a = ap.parse_args()
 
-    load_secrets()
+    env_load.nap()
     key = os.environ.get("OPENAI_API_KEY")
     if not key:
         sys.exit("Thieu OPENAI_API_KEY")

@@ -1,0 +1,126 @@
+{
+  "url": "https://www.donniechu.com/posts/multi-model-orchestration-ai-stack",
+  "title": "AI Agent Stack Tối ưu Chi phí & Hiệu năng nhất Q3/2026",
+  "description": "Một team trong tổ chức của DonnieChu sử dụng kiến trúc Multi-Model Orchestration này để giảm chi phí 9.3 lần so với việc gắn với một model bằng cách gán mỗi tầng pipeline một model phù hợp. Từ kiến trúc đến con số cụ thể.",
+  "date_published": "2026-08-17T07:29:16.454Z",
+  "outline": [
+    {
+      "level": "h2",
+      "text": "Vì sao không dùng một model mạnh cho tất cả"
+    },
+    {
+      "level": "h2",
+      "text": "Chi phí và hiệu năng: con số cụ thể"
+    },
+    {
+      "level": "h2",
+      "text": "Khi nào dùng model nào"
+    },
+    {
+      "level": "h3",
+      "text": "Kimi - orchestrator"
+    },
+    {
+      "level": "h3",
+      "text": "DeepSeek V4 - tầng thực thi"
+    },
+    {
+      "level": "h3",
+      "text": "Hermes Agent - khi nào thực sự cần"
+    },
+    {
+      "level": "h2",
+      "text": "Vòng đời một request trong stack"
+    },
+    {
+      "level": "h3",
+      "text": "Error handling: escalate, đừng retry"
+    },
+    {
+      "level": "h2",
+      "text": "Những cái bẫy khi build multi-agent system"
+    },
+    {
+      "level": "h2",
+      "text": "Kết luận: khi nào pattern này đáng làm"
+    }
+  ],
+  "paragraphs": [
+    "Cách dựng agent quen thuộc nhất là cắm một model frontier vào mọi bước: đọc tài liệu, lập kế hoạch, gọi tool, viết code, tổng hợp kết quả. Nó chạy được, và với prototype thì đó là lựa chọn đúng. Vấn đề xuất hiện khi workload lên tới hàng nghìn task mỗi ngày: bạn đang trả giá reasoning cho những việc không cần reasoning.",
+    "Nhìn vào phân bố token thực tế của một agent pipeline điển hình sẽ thấy rõ. Phần lớn token không nằm ở bước \"suy nghĩ khó\" mà nằm ở tầng thực thi lặp đi lặp lại: parse output, chuẩn hoá schema, tóm tắt file, gọi tool rồi diễn giải kết quả trả về. Những tác vụ này có đặc điểm chung là input rõ ràng, output có cấu trúc, và không đòi hỏi khả năng phân rã vấn đề. Chúng chiếm khoảng 70-80% lượng token nhưng đóng góp rất ít vào chất lượng cuối cùng.",
+    "Multi-model orchestration là câu trả lời cho quan sát đó: tách pipeline thành các tầng có yêu cầu năng lực khác nhau, rồi gán mỗi tầng một model có profile chi phí phù hợp.",
+    "Kimi (Orchestrator) - điều phối chiến lược. Đọc tài liệu dài, phân rã vấn đề phức tạp thành DAG các sub-task, quyết định thứ tự và ràng buộc. Đây là tầng duy nhất cần nhìn thấy toàn cảnh.",
+    "GLM (Sub-agent) - trợ lý chuyên sâu cho từng nhánh. Chuẩn bị data, xử lý một nhánh công việc phụ với context hẹp hơn nhiều so với orchestrator.",
+    "DeepSeek V4 - tầng thực thi. Tốc độ cao, chi phí token cực thấp, chạy các tác vụ lặp có schema rõ ràng.",
+    "Codex + Hermes Agent - code generation, memory management, isolated execution. Hermes tổ chức mỗi profile thành một agent độc lập với config riêng, identity document riêng, và persistent memory store backed by SQLite kèm full-text search.",
+    "9Router + DeepSeek Harness / Cordis - tầng hạ tầng. 9Router đóng vai gateway OpenAI-compatible để đổi model mà không sửa client code. Cordis là plugin kernel của DeepSeek Harness, nơi model adapter, tool registry, session log và agent loop đều là plugin có thể hot-swap.",
+    "Một số model OpenWeight có thể chạy local mà sức mạnh ko kém gì model đóng:",
+    "Qwen 3.8 27B , đỉnh nhất và phù hợp nhất với máy tính cá nhân",
+    "DeepSeek-V4-Pro-Max - SWE-Bench Verified 80.6% , 1.6T/49B active",
+    "MiMo-V2.5-Pro - vendor SWE-Bench Verified 78.9%",
+    "Muse Glimmer 30B - vendor SWE-Bench Pro 51.2 , MCP Atlas 75.5 , runs on a 24GB GPU (cũng có thể chạy trên máy cá nhân)",
+    "Devstral 2 - LiveBench Coding 66.79 , Agentic Coding 43.33",
+    "Giá tham chiếu tại thời điểm viết, tính trên một triệu token:",
+    "Model",
+    "Input",
+    "Output",
+    "Cache hit (input)",
+    "DeepSeek V4-Flash",
+    "$0.14",
+    "$0.28",
+    "$0.0028",
+    "DeepSeek V4-Pro",
+    "$0.435",
+    "$0.87",
+    "$0.003625",
+    "Kimi K3",
+    "$0.60",
+    "$3.00",
+    "GLM-5.2",
+    "$1.40",
+    "$4.40",
+    "$0.26",
+    "Claude Opus 5 (frontier tham chiếu)",
+    "$5.00",
+    "$25.00",
+    "Lấy một task điển hình của agent đọc tài liệu rồi sinh code. Phân bố token thực đo:",
+    "Orchestrator: 120K token input (tài liệu + spec), 4K output (kế hoạch)",
+    "Sub-agent: 5 nhánh, mỗi nhánh 20K input và 2K output - tổng 100K input, 10K output",
+    "Execution: 20 lượt gọi, mỗi lượt 8K input và 1K output - tổng 160K input, 20K output",
+    "Tổng cộng 380K input và 34K output cho một task.",
+    "Phương án một model frontier: 0.38 × $5 + 0.034 × $25 = $2.75 mỗi task . Với 1.000 task một ngày, đó là $2.750/ngày.",
+    "Phương án orchestrated stack:",
+    "Orchestrator trên Kimi K2.5: 0.12 × $0.60 + 0.004 × $3.00 = $0.084",
+    "Sub-agent trên GLM-5.2: 0.10 × $1.40 + 0.010 × $4.40 = $0.184",
+    "Execution trên DeepSeek V4-Flash: 0.16 × $0.14 + 0.020 × $0.28 = $0.028",
+    "Tổng: $0.296 mỗi task , tức $296/ngày. Chênh lệch khoảng 9,3 lần .",
+    "Điểm đáng chú ý: tầng execution chiếm 42% lượng token nhưng chỉ chiếm 9,5% chi phí trong stack orchestrated. Đó chính là phần bị đánh thuế nặng nhất khi bạn chạy tất cả trên một model đắt.",
+    "Dùng khi cần đọc hiểu tài liệu dài và phân rã vấn đề. Đặc trưng nhận biết: input lớn nhưng output nhỏ, và quyết định ở bước này ảnh hưởng tới toàn bộ các bước sau. Nếu orchestrator phân rã sai, mọi thứ phía dưới đều lãng phí.",
+    "Dùng khi tác vụ có input xác định và output có schema. Dấu hiệu để nhận ra: bạn có thể viết được một JSON schema mô tả output hợp lệ. Nếu viết được schema, DeepSeek làm đủ tốt và rẻ hơn 20 lần.",
+    "Bạn cần Hermes khi agent phải nhớ kết quả của những lần chạy trước. Bạn không cần khi mỗi request là stateless.",
+    "Ingress và classification - phân loại request theo bốn chiều: độ dài context, độ sâu suy luận, mức xác định của output, ngân sách độ trễ.",
+    "Routing - 9Router chọn tier dựa trên kết quả classification.",
+    "Decomposition - orchestrator sinh DAG các sub-task, mỗi node kèm đủ context để chạy độc lập.",
+    "Fan-out - sub-agent chạy song song, mỗi nhánh có timeout riêng.",
+    "Execution - tầng DeepSeek xử lý các lượt gọi tool và biến đổi dữ liệu.",
+    "Aggregation và verification - tổng hợp, validate schema, ghi memory.",
+    "Khi một model rẻ trả về output sai schema, retry cùng model đó thường cho ra cùng loại lỗi. Chiến lược đúng là escalation : thất bại lần hai thì đẩy request lên tier cao hơn.",
+    "Mất context ở điểm handoff. Sub-agent không nhìn thấy reasoning của orchestrator. Giải pháp: mỗi task gửi xuống phải self-contained, kể cả khi điều đó nghĩa là lặp lại context.",
+    "Silent delivery failure giữa các boundary. Một nhánh trả về rỗng, orchestrator tổng hợp bình thường, kết quả thiếu phần mà không ai biết. Đối sách: correlation ID xuyên suốt.",
+    "Tokenizer khác nhau phá vỡ ngân sách. Cùng một đoạn text cho ra token khác nhau trên mỗi model. Đo lại trên từng model, đừng nhân hệ số.",
+    "Dynamic routing giết prompt cache. Cache là per-model. Nếu router đổi model giữa các turn, bạn trả cache write cho mọi turn. Giữ một conversation trên một model.",
+    "Over-decomposition. Chia một task nhỏ thành năm nhánh thường đắt hơn là làm thẳng. Đặt ngưỡng rõ ràng.",
+    "Break-even nằm ở khoảng 55 task mỗi ngày . Dưới ngưỡng đó, tiết kiệm không trả nổi chi phí vận hành thêm.",
+    "Pattern này đáng làm khi:",
+    "Workload không đồng nhất - có tầng tác vụ rõ ràng cần năng lực khác nhau",
+    "Volume đủ lớn để tiết kiệm vượt chi phí vận hành",
+    "Bạn phân loại được task một cách deterministic",
+    "Hệ thống chịu được eventual consistency và có cơ chế verification ở cuối",
+    "Lời khuyên cuối: bắt đầu bằng một model, đo phân bố token theo loại tác vụ, rồi chỉ tách ra tầng nào chiếm trên 30% token mà dưới 10% giá trị.",
+    "via @ donniechublog"
+  ],
+  "images": [
+    "https://blue-sky-ideas.mated.dev/uploads/1787017499098-dfb2fc927f90ba15.webp"
+  ],
+  "word_count": 1160
+}

@@ -11,8 +11,11 @@ Khong co emoji quoc ky nao trong bo bai (chi loai co quoc gia; co bao quat
 chung nhu cham do, la co checkered van giu vi khong dai dien quoc gia nao).
 """
 import argparse
+import fcntl
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 STATE_PATH = Path.home() / "content-team" / "state" / "emoji_deck.json"
@@ -35,6 +38,13 @@ DECK = [
     "🛥️", "🚢", "✈️", "🛩️", "🚀", "🛸", "🪂", "🎈", "🪅", "🪆",
 ]
 
+# Bo bai phai KHONG co phan tu trung, neu khong loi hua "khong lap lai cho toi
+# khi het mot vong" bi vo: hai ban sao cach nhau 40 vi tri nghia la sau khoang
+# sau bai teaser da gap lai cung mot emoji, thay vi sau ca vong 150.
+# Loc ngay tai day thay vi sua tay danh sach — them emoji moi bi trung ve sau
+# cung tu dong duoc loai.
+DECK = list(dict.fromkeys(DECK))
+
 FLAG_HINTS = ("🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮", "🇯",
               "🇰", "🇱", "🇲", "🇳", "🇴", "🇵", "🇶", "🇷", "🇸", "🇹",
               "🇺", "🇻", "🇼", "🇽", "🇾", "🇿", "🏳", "🏴", "🎌")
@@ -47,24 +57,64 @@ def _load():
 
 
 def _save(state):
+    """Ghi nguyen tu: viet ra tep tam cung thu muc roi doi ten de len.
+
+    write_text truc tiep co the de lai tep rong neu tien trinh chet giua chung,
+    va con tro bi mat thi ca bo bai quay ve dau — moi bai sau do lai bat dau
+    tu cung mot emoji.
+    """
     STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+    fd, tam = tempfile.mkstemp(dir=str(STATE_PATH.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(state, f, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tam, STATE_PATH)
+    except BaseException:
+        Path(tam).unlink(missing_ok=True)
+        raise
 
 
 def next_emoji(count: int) -> list:
-    assert all(e[0] not in FLAG_HINTS for e in DECK), "co quoc ky lot vao DECK"
-    state = _load()
-    out = []
-    pos = state["pos"]
-    for _ in range(count):
-        if pos >= len(DECK):
-            pos = 0
-            state["laps"] = state.get("laps", 0) + 1
-        out.append(DECK[pos])
-        pos += 1
-    state["pos"] = pos
-    _save(state)
-    return out
+    """Lay `count` emoji ke tiep, khong trung nhau, tiep tu lan goi truoc.
+
+    Doc-sua-ghi duoi mot khoa tep: hai tien trinh cung goi (vi du hai task
+    kanban chay song song) neu khong khoa se cung doc mot `pos`, cung lay mot
+    day emoji, roi ghi de len nhau — hai bai khac nhau ra emoji y het.
+    """
+    if not DECK:
+        raise ValueError("Bo bai rong")
+    if count < 1:
+        raise ValueError(f"Xin {count} emoji — phai it nhat 1")
+    # Chan o TRONG ham, khong chi o CLI: teaser_assemble goi thang ham nay,
+    # neu khong chan thi mot bai qua dai se lang le nhan emoji trung.
+    if count > len(DECK):
+        raise ValueError(
+            f"Xin {count} emoji nhung bo bai chi co {len(DECK)} — "
+            f"mot bai khong nen co qua {len(DECK)} doan.")
+
+    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    khoa = STATE_PATH.with_suffix(".lock")
+    with open(khoa, "w") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            state = _load()
+            out = []
+            pos = state.get("pos", 0)
+            if pos < 0 or pos > len(DECK):       # trang thai cu / bo bai da doi kich thuoc
+                pos = 0
+            for _ in range(count):
+                if pos >= len(DECK):
+                    pos = 0
+                    state["laps"] = state.get("laps", 0) + 1
+                out.append(DECK[pos])
+                pos += 1
+            state["pos"] = pos
+            _save(state)
+            return out
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
 
 
 def main():
@@ -83,11 +133,11 @@ def main():
             state["pos"], len(DECK), state.get("laps", 0)))
         return
 
-    if a.count > len(DECK):
-        print("LOI: xin {} emoji nhung bo bai chi co {} — mot bai khong nen "
-              "co qua {} doan.".format(a.count, len(DECK), len(DECK)), file=sys.stderr)
+    try:
+        print(" ".join(next_emoji(a.count)))
+    except ValueError as e:
+        print(f"LOI: {e}", file=sys.stderr)
         sys.exit(1)
-    print(" ".join(next_emoji(a.count)))
 
 
 if __name__ == "__main__":
