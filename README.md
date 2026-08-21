@@ -41,17 +41,43 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
 - `hermes-approve` — dịch vụ duyệt bài (tệp này)
 - `hermes-dashboard` — bảng điều khiển web, cổng 9119
 
+## Model từng vai
+
+| Vai | Model chính | Suy luận | Dự phòng |
+|---|---|---|---|
+| Finn (scout) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → qwen3.8-max |
+| Iris (illustrator) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → mimo-v2.5-pro |
+| Quinn (writer) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
+| Jean (teaser) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
+| Ada (analyst) | `ds/deepseek-reasoner` | **bật** | v4-pro → deepseek-chat |
+
+Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
+được chọn — đúng loại việc cần suy luận thật.
+
+Đo bằng `cost_squeeze.py`, chạy lặp trên việc thật, chấm bằng code:
+
+| Vai | Model | Trượt | USD/1000 lần |
+|---|---|---|---|
+| teaser | **deepseek-chat** | **0/5** | **0,77** |
+| teaser | mimo-v2.5-pro | 1/5 (lan man 2417 từ) | 0,83 |
+| teaser | v4-flash | 1/5 (rỗng) | 1,11 |
+| teaser | v4-pro | 2/5 (rỗng, mất dấu) | 3,83 |
+| writer | deepseek-chat | 0/6 | 0,06 |
+| writer | v4-pro | 0/6 | 0,14 |
+
+Gemini đã gỡ khỏi mọi chuỗi: trên số liệu usage thật nó tốn 1,72 USD/1M input
+còn v4-flash chỉ 0,04 — **đắt gấp 44 lần**, vì cột cached của gemini trống rỗng,
+không cache nổi một token. Kimi K3 đắt gấp 14 lần v4-pro và mọi tuyến Kimi đều
+báo `thinkingCanDisable: false` — không tắt suy luận được.
+
 ## Suy luận (reasoning)
 
-Quinn và Jean chạy `ds/deepseek-v4-pro` với `agent.reasoning_effort: none`.
+Bốn trong năm vai đặt `agent.reasoning_effort: none`.
 
-Lý do: bản mặc định đốt hết ngân sách token vào suy luận rồi trả về **rỗng** —
-đo thật 3/24 lần (2/8 ở `max_tokens=800`, 1/8 ở 1200, 0/8 ở 2000). Lỗi phụ thuộc
-ngân sách nên im lặng và ngắt quãng. Tắt suy luận: 0/24 lần rỗng, nhanh gấp 3,
-rẻ hơn 26%, chữ vẫn đủ dấu.
-
-Việc của cả hai vai không cần suy luận — Jean chỉ viết tiêu đề + đoạn văn thuần,
-phần trình bày đã do `teaser_assemble.py` lo bằng code.
+Lý do: model deepseek đốt hết ngân sách token vào suy luận rồi trả về **rỗng**.
+Đo thật trên v4-pro: 3/24 lần (2/8 ở `max_tokens=800`, 1/8 ở 1200, 0/8 ở 2000).
+Tái hiện y hệt trên v4-flash. Lỗi phụ thuộc ngân sách nên im lặng và ngắt quãng —
+loại tệ nhất. Tắt suy luận: 0/24 lần rỗng, nhanh gấp 3, rẻ hơn, chữ vẫn đủ dấu.
 
 Đã thử model rẻ hơn cho Jean (`ds/deepseek-chat`, `ds/deepseek-v4-flash`): chữ
 vẫn tốt nhưng **lệch giọng** — viết kiểu tường thuật "bài viết nói rằng..." thay

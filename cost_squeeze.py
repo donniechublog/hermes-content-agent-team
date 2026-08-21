@@ -10,7 +10,9 @@ Moi cong kiem tra deu tat dinh:
   - rong        : model tra ve khong mot chu nao
   - dau         : ty le ky tu co dau, duoi nguong la mat dau
   - giong       : cum tuong thuat ("bai viet"...) — dung chung bo chan cua teaser
-  - do dai      : so tu nam ngoai khoang yeu cau
+  - do dai      : chi tinh la truot khi HONG THAT (qua mong / lan man),
+                  khong cham theo moc mong muon — do dai khong phai thuoc do
+                  chat luong, mien dien dat dung va du
   - tool        : co goi tool that khong (chi voi vai dung tool)
 
 Dung:
@@ -28,7 +30,7 @@ from pathlib import Path
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from teaser_assemble import tim_giong_tuong_thuat           # noqa: E402
+from teaser_assemble import DAI_HONG, tim_giong_tuong_thuat  # noqa: E402
 
 ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
@@ -69,6 +71,24 @@ def nap_khoa() -> str:
     return key
 
 
+def suy_luan_cua_vai(vai: str) -> dict:
+    """Doc dung cau hinh suy luan ma production dang chay cho vai nay.
+
+    Neu khong doc theo, phep do se sai lech: Quinn chay reasoning_effort=none
+    nhung bo do lai de model suy luan thoai mai -> ra con so khong phai cai
+    that su tinh tien.
+    """
+    import yaml
+    sys.path.insert(0, str(Path.home() / "hermes-agent"))
+    try:
+        from hermes_constants import resolve_reasoning_config
+    except Exception:                                        # noqa: BLE001
+        return {}
+    cfg = yaml.safe_load((HERMES / "profiles" / vai / "config.yaml").read_text())
+    r = resolve_reasoning_config(cfg)
+    return {"reasoning_effort": "none"} if r == {"enabled": False} else {}
+
+
 def soul(vai: str) -> str:
     return (HERMES / "profiles" / vai / "SOUL.md").read_text(encoding="utf-8")
 
@@ -79,16 +99,33 @@ def viec_teaser():
     nhac = (f"Du lieu bai goc:\n{json.dumps(art, ensure_ascii=False)[:60000]}\n\n"
             "Viet tieu de va cac doan van thuan theo dung huong dan. "
             'Tra ve JSON: {"title": str, "paragraphs": [str, ...]}')
-    return soul("teaser"), nhac, (500, 800), False
+    return soul("teaser"), nhac, DAI_HONG, False
+
+
+# Nhieu tin khac nhau, KHONG lap mot tin. Lap mot tin lam bo do mu: v4-flash
+# tung sach 5/5 khi lap mot tin, nhung khi doi tin that thi rong mot bai va mat
+# sach dau mot bai. Xoay tin moi lo ra duoc nhung loi phu thuoc noi dung.
+TIN_WRITER = [
+    "Anthropic cong bo Claude co the dieu khien may tinh, nhung ty le thanh cong "
+    "tren cac tac vu van phong thuc te moi dat khoang 60 phan tram.",
+    "Mot nhom nghien cuu chi ra co the trich xuat chuoi suy luan an tu API cua "
+    "cac hang lon, da giai ma 315.320 khoi thinking va tim thay 182 credential.",
+    "OpenRouter duoc Stripe mua lai, gia tri thuong vu chua cong bo.",
+    "Google cong bo chip TPU the he moi, tuyen bo nhanh gap doi doi truoc.",
+    "Meta phat hanh mo hinh nguon mo ho tro tieng Viet, giay phep cho phep dung "
+    "thuong mai nhung gioi han so nguoi dung hoat dong hang thang.",
+    "Mot ban vá bao mat cua thu vien pho bien lam hong tuong thich nguoc, hang "
+    "nghin du an phai ghim lai phien ban cu.",
+]
 
 
 def viec_writer():
-    """Viec that cua Quinn: viet caption tieng Viet cho mot tin."""
-    tin = ("Anthropic cong bo Claude co the dieu khien may tinh, nhung ty le "
-           "thanh cong tren cac tac vu van phong thuc te moi dat khoang 60 phan tram.")
-    nhac = (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh Telegram, "
-            "3 den 5 cau. Chi tra ve caption, khong giai thich.")
-    return soul("writer"), nhac, (30, 200), False
+    """Viec that cua Quinn: viet caption tieng Viet, moi lan mot tin KHAC nhau."""
+    def nhac(i):
+        tin = TIN_WRITER[i % len(TIN_WRITER)]
+        return (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh "
+                "Telegram, 3 den 5 cau. Chi tra ve caption, khong giai thich.")
+    return soul("writer"), nhac, (15, 400), False
 
 
 VIEC = {"teaser": viec_teaser, "writer": viec_writer}
@@ -109,10 +146,11 @@ def rut_van(noi_dung: str) -> str:
     return t
 
 
-def chay(model, key, sys_prompt, nhac, max_tokens=4000):
+def chay(model, key, sys_prompt, nhac, max_tokens=4000, extra=None):
     body = {"model": model, "temperature": 0.4, "max_tokens": max_tokens,
             "messages": [{"role": "system", "content": sys_prompt},
                          {"role": "user", "content": nhac}]}
+    body.update(extra or {})
     try:
         r = httpx.post(ROUTER, timeout=300,
                        headers={"Authorization": f"Bearer {key}"}, json=body)
@@ -138,12 +176,15 @@ def main():
     key = nap_khoa()
     sys_prompt, nhac, (tu_min, tu_max), can_tool = VIEC[a.vai]()
 
-    print(f"Vai: {a.vai} | {a.n} lan/model | do dai yeu cau {tu_min}-{tu_max} tu\n")
+    them = suy_luan_cua_vai(a.vai)
+    print(f"Vai: {a.vai} | {a.n} lan/model | chan do dai ngoai {tu_min}-{tu_max} tu"
+          f"{' | suy luan TAT (theo production)' if them else ''}\n")
     hang = []
     for model in (a.models or UNG_VIEN):
         truot, ly_do, usd, tu = 0, [], [], []
         for i in range(a.n):
-            d, loi = chay(model, key, sys_prompt, nhac)
+            nhac_i = nhac(i) if callable(nhac) else nhac
+            d, loi = chay(model, key, sys_prompt, nhac_i, extra=them)
             if loi:
                 truot += 1; ly_do.append(loi); continue
             msg = (d["choices"][0].get("message") or {})
@@ -163,8 +204,10 @@ def main():
                 if tim_giong_tuong_thuat("", van.split("\n\n")):
                     sai.append("giong tuong thuat")
                 sotu = len(van.split()); tu.append(sotu)
-                if not (tu_min <= sotu <= tu_max):
-                    sai.append(f"do dai {sotu}")
+                if sotu < tu_min:
+                    sai.append(f"qua mong {sotu}")
+                elif sotu > tu_max:
+                    sai.append(f"lan man {sotu}")
             if sai:
                 truot += 1; ly_do.append("+".join(sai))
 
