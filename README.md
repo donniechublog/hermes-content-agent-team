@@ -33,6 +33,8 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số
 - `model_audition.py` — thử model: tiếng Việt đủ dấu, gọi tool thật, có prompt caching không
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
+- `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
+- `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
 - `assets/` — font (JetBrains Mono, Inter), icon SVG, mascot
 
 ## Dịch vụ systemd
@@ -69,6 +71,20 @@ Gemini đã gỡ khỏi mọi chuỗi: trên số liệu usage thật nó tốn 
 còn v4-flash chỉ 0,04 — **đắt gấp 44 lần**, vì cột cached của gemini trống rỗng,
 không cache nổi một token. Kimi K3 đắt gấp 14 lần v4-pro và mọi tuyến Kimi đều
 báo `thinkingCanDisable: false` — không tắt suy luận được.
+
+## Hai nguyên tắc bắt buộc khi dùng nhiều model
+
+**1. Bắt buộc phải có giám sát model.** Hermes fallback im lặng hoàn toàn — đặt
+model chính thành model chết, agent vẫn trả lời bình thường, không một dòng báo.
+Cần cả hai lớp: `model_watch.py` (model còn sống không) và `usage_audit.py`
+(model nào **thật sự** được gọi).
+
+**2. Ghim mỗi hội thoại vào một model. Chuyển tầng thì chuyển ở ranh giới task.**
+`try_activate_fallback` đổi model ngay giữa lượt, `restore_primary_runtime` lật
+về model chính ở lượt sau — một hội thoại có thể chạy qua 2–3 model mà không ai
+biết. Cache là per-model, mỗi lần lật là mất sạch prefix đã cache và cả ngữ cảnh
+bị tính lại giá gốc. Cột `cache%` trong `usage_audit.py` chính là thước đo
+nguyên tắc này: tụt cache nghĩa là đang lật model.
 
 ## Suy luận (reasoning)
 
