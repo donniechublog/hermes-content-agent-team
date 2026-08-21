@@ -29,6 +29,16 @@ CLOSING = ("Xem bài chi tiết ở còm, nếu không thấy còm vui lòng và
 
 # Cum tu keo nguoi doc ra ngoai bai. Viet KHONG DAU vi ta so khop tren ban da
 # bo dau — nho vay "bài viết", "bai viet", "Bài Viết" deu dinh nhu nhau.
+# Khoang do dai SOUL yeu cau. Do bang len(p.split()) — dung cach word_count
+# van dem, nen con so bao loi va con so bao cao luon khop nhau.
+# Do dai KHONG phai thuoc do chat luong. Mot teaser 300 tu dien dat dung va du
+# thi tot hon mot bai 700 tu lan man. Nen chia hai muc:
+#   - khoang mong muon: ra ngoai chi NHAC o stderr, van chay tiep
+#   - nguong hong that: duoi 200 tu thi qua mong de phu het outline, tren 2000 tu
+#     thi dang ke lai ca bai chu khong con la loi moi doc — hai cai nay moi chan
+DAI_MONG_MUON = (500, 800)
+DAI_HONG = (200, 2000)
+
 CUM_TUONG_THUAT = [
     "bai viet", "bai bao", "bai nay", "bai cung", "bai con", "bai chi ra",
     "bai nhan manh", "bai de cap", "bai phan tich", "bai liet ke",
@@ -66,11 +76,27 @@ def tim_giong_tuong_thuat(title: str, paragraphs: list) -> list:
 
 
 def assemble(title: str, paragraphs: list, images: list,
-             bo_qua_giong: bool = False) -> dict:
+             bo_qua_kiem_tra: bool = False) -> dict:
     n = len(paragraphs)
     if n == 0:
         raise ValueError("Can it nhat 1 doan van")
-    if not bo_qua_giong:
+    sotu = sum(len(p.split()) for p in paragraphs)
+    if not bo_qua_kiem_tra:
+        if sotu < DAI_HONG[0]:
+            raise ValueError(
+                f"Chi {sotu} tu — qua mong de phu het cac muc trong outline.\n"
+                "  Doc lai outline va trien khai nhung y con thieu.\n"
+                "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
+        if sotu > DAI_HONG[1]:
+            raise ValueError(
+                f"Toi {sotu} tu — dang ke lai ca bai chu khong con la loi moi doc.\n"
+                "  Cat bot dien giai, giu so lieu va y chinh.\n"
+                "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
+        if not (DAI_MONG_MUON[0] <= sotu <= DAI_MONG_MUON[1]):
+            print(f"[nhac] {sotu} tu, ngoai khoang mong muon {DAI_MONG_MUON[0]}-"
+                  f"{DAI_MONG_MUON[1]} — khong sao neu dien dat dung va du.",
+                  file=sys.stderr)
+    if not bo_qua_kiem_tra:
         loi = tim_giong_tuong_thuat(title, paragraphs)
         if loi:
             chi_tiet = "\n".join(
@@ -81,7 +107,7 @@ def assemble(title: str, paragraphs: list, images: list,
                 + "\n\nViet lai: noi thang vao noi dung, bo chu \"bai viet\"/\"tac gia\".\n"
                   "  KHONG dat:  Bai viet di sau vao con so chi phi...\n"
                   "  DAT      :  Con so chi phi gay bat ngo: 2,75 USD moi task...\n"
-                  "(Neu that su can giu, chay lai voi --cho-phep-giong-tuong-thuat)")
+                  "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
     emojis = emoji_deck.next_emoji(n)
     body = "\n\n".join(f"{e} {p}".strip() for e, p in zip(emojis, paragraphs))
     caption = f"{title.upper()}\n\n{body}\n\n{CLOSING}"
@@ -103,13 +129,13 @@ def main():
     ap.add_argument("--out", help="Ghi ket qua JSON ra file thay vi in stdout")
     ap.add_argument("--text-only", action="store_true",
                     help="Chi in phan caption (de dan thang vao chat)")
-    ap.add_argument("--cho-phep-giong-tuong-thuat", action="store_true",
-                    help="Bo qua kiem tra giong tuong thuat (mac dinh: chan)")
+    ap.add_argument("--bo-qua-kiem-tra", action="store_true",
+                    help="Bo qua ca hai phep kiem tra do dai va giong (mac dinh: chan)")
     a = ap.parse_args()
 
     data = json.loads(Path(a.infile).read_text(encoding="utf-8"))
     result = assemble(data["title"], data["paragraphs"], data.get("images", []),
-                      bo_qua_giong=a.cho_phep_giong_tuong_thuat)
+                      bo_qua_kiem_tra=a.bo_qua_kiem_tra)
 
     if a.text_only:
         print(result["caption"])
