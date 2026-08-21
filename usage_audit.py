@@ -18,6 +18,7 @@ Doc truc tiep SQLite cua 9router o che do CHI DOC, khong dung toi du lieu.
 """
 import argparse
 import collections
+import datetime as dt
 import json
 import os
 import sqlite3
@@ -62,9 +63,16 @@ def doc_usage(gio: int, api_key: str | None):
     if not DB.exists():
         sys.exit(f"Khong thay CSDL 9router: {DB}")
     con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+    # 9router luu timestamp dang ISO co 'T' va 'Z': 2026-08-21T06:28:58.728Z
+    # KHONG duoc dung datetime('now',...) lam moc — no tra ve dang co DAU CACH
+    # ("2026-08-21 05:10:31"). So sanh chuoi se dung o vi tri 10: 'T' (84) lon
+    # hon ' ' (32), nen MOI ban ghi cung ngay deu lot qua bat ke gio, va cua so
+    # "6 gio" lang le bien thanh "tu dau ngay". Dung moc cung dinh dang.
+    moc = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=gio))
+    moc = moc.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
     q = ("select model, apiKey, tokens, cost, status from usageHistory "
-         "where timestamp >= datetime('now', ?)")
-    args = [f"-{gio} hours"]
+         "where timestamp >= ?")
+    args = [moc]
     if api_key:
         q += " and apiKey = ?"
         args.append(api_key)
