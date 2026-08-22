@@ -13,6 +13,7 @@ Nguyên tắc bố cục:
 """
 import argparse
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -31,6 +32,10 @@ F_REG = str(FONTS / "Inter.ttf")                      # body: subtitle, via
 W = 1200                          # bề ngang cố định
 IMG_MIN_H = 600                   # ảnh không mỏng hơn 2:1
 IMG_MAX_H = 1200                  # ảnh không cao hơn 1:1
+# Ảnh luôn được giữ ít nhất chừng này phần chiều cao thẻ — chữ phải nhường,
+# không được lấn. Bảng số bị thu nhỏ là mất dữ liệu; phụ đề ngắn đi một dòng
+# thì không mất gì.
+TY_LE_ANH_TOI_THIEU = 0.72
 PAD = 44
 
 BG = (14, 17, 23)             # #0e1117 background
@@ -146,6 +151,22 @@ def _fit_cover(img, box_w, box_h):
     return img.crop((left, top, left + box_w, top + box_h))
 
 
+def _khoang(nen: float) -> tuple:
+    """Bon khoang cach doc cua khoi nhan dien, co gian theo he so nen.
+
+    Truoc day bon con so nay hard-code (24, 10, 34, PAD). Hau qua: khoi chu
+    chiem mot chieu cao co dinh, va khi anh can them cho thi ANH phai thu lai —
+    tuc la hy sinh noi dung de giu khoang trong trang tri. Nguoc ca uu tien.
+
+    Nay chu nhuong cho anh: nen tu 1.0 xuong 0.55, chu van doc duoc vi chi bop
+    KHOANG TRONG chu khong bop co chu.
+    """
+    return (max(10, int(24 * nen)),      # sau nhan category
+            max(4, int(10 * nen)),       # giua tieu de va phu de
+            max(14, int(34 * nen)),      # truoc dong via
+            max(22, int(PAD * nen)))     # le duoi
+
+
 def _plan_image(src_img):
     """Tính chiều cao vùng ảnh và cách đặt — không bao giờ cắt nội dung."""
     natural_h = round(W * src_img.height / src_img.width)
@@ -168,13 +189,18 @@ def _render_image_area(canvas, src_img, img_h, how):
     blur = _fit_cover(src_img, W, img_h).filter(ImageFilter.GaussianBlur(48))
     blur = ImageEnhance.Brightness(blur).enhance(0.38)
     canvas.paste(blur, (0, 0))
-    inset = 40
-    fitted = _fit_contain(src_img, W - inset * 2, img_h - inset * 2)
+    # KHONG thut le. Truoc day inset=40 moi ben, cong voi viec anh da phai ha
+    # chieu cao de chua cho chu, lam bang benchmark 1200x979 chi con hien o
+    # 1030x840 — thu hep vo co gan 15% be ngang. Uu tien la HIEN DAY DU va TO
+    # NHAT co the; vien mo hai ben chi la phan thua, khong phai bo cuc.
+    fitted = _fit_contain(src_img, W, img_h)
     x, y = (W - fitted.width) // 2, (img_h - fitted.height) // 2
     canvas.paste(fitted, (x, y))
-    ImageDraw.Draw(canvas).rectangle(
-        [x - 1, y - 1, x + fitted.width, y + fitted.height],
-        outline=(*LINE, 255), width=2)
+    # Chi ve vien khi anh KHONG cham mep — cham mep roi thi vien la thua
+    if fitted.width < W - 2 or fitted.height < img_h - 2:
+        ImageDraw.Draw(canvas).rectangle(
+            [x - 1, y - 1, x + fitted.width, y + fitted.height],
+            outline=(*LINE, 255), width=2)
     return (x, y, fitted.width, fitted.height)
 
 
@@ -320,7 +346,7 @@ def _tech_frame(d, H, split, side_col=LINE, box_col=LINE):
 
 def build(src, title, subtitle, via, out, category="AI",
           category_right="", handle="donniechublog", ratio="free",
-          tagline="daily AI update"):
+          tagline="daily AI update", khoa_ti_le=False):
     src_img = Image.open(src).convert("RGB")
     img_h, how = _plan_image(src_img)
 
@@ -338,23 +364,63 @@ def build(src, title, subtitle, via, out, category="AI",
     _, chip_h = _chip_size(probe, category.upper(), f_chip)
     via_h = f_via.getbbox("Ây")[3] - f_via.getbbox("Ây")[1]
 
-    # Chiều cao tối thiểu textbox cần để chứa hết chữ
-    box_min = (chip_h // 2 + 24
-               + _line_h(f_title, 6) * len(title_lines) + 10
-               + _line_h(f_sub, 6) * len(sub_lines)
-               + 34 + max(via_h, 34) + PAD)
+    # Chiều cao tối thiểu textbox cần để chứa hết chữ, ở một hệ số nén cho trước
+    def _box_min(nen=1.0, f_t=None, d_t=None, f_s=None, d_s=None):
+        g1, g2, g3, g4 = _khoang(nen)
+        return (chip_h // 2 + g1
+                + _line_h(f_t or f_title, 6) * len(d_t or title_lines) + g2
+                + _line_h(f_s or f_sub, 6) * len(d_s or sub_lines)
+                + g3 + max(via_h, 34) + g4)
+
+    nen = 1.0
+    # Nhan category VAT qua ranh gioi anh/textbox — khau hai vung lam mot. No co
+    # de len mep duoi cua anh, nhung Ong Chu da chot: che phan chu thich thi
+    # chap nhan duoc, khong can khat khe. Chi mascot moi phai tranh, vi no nam
+    # o giua vung anh chu khong o mep.
+    box_min = _box_min()
 
     if ratio in RATIOS:
         # Khoá tỉ lệ đầu ra: textbox phình ra bù phần ảnh thiếu.
         # Ảnh càng ngang (16:9) thì textbox càng cao — đúng ý đồ bố cục.
         H = RATIOS[ratio]
+
+        # ẢNH ĐƯỢC ƯU TIÊN. Thứ tự nhường chỗ, từ ít thiệt hại đến nhiều:
+        #   1. NÉN khoảng trắng của khối nhận diện (chữ vẫn nguyên cỡ)
+        #   2. RÚT phụ đề bớt dòng
+        #   3. NỚI tỉ lệ thẻ cho cao hơn
+        #   4. cuối cùng mới thu ảnh — và chỉ khi bị ép giữ tỉ lệ
+        while H - img_h < box_min and nen > 0.55:
+            nen = round(nen - 0.05, 2)
+            box_min = _box_min(nen)
+        while H - img_h < box_min and len(sub_lines) > 1:
+            f_sub, sub_lines = _fit_text(probe, subtitle, avail_w,
+                                         max_lines=len(sub_lines) - 1,
+                                         hi=SUB_SIZE, lo=16)
+            box_min = _box_min(nen)
+
         if H - img_h < box_min:
-            # Ảnh quá cao, phải thu lại để chừa đủ chỗ cho chữ
-            img_h, how = H - box_min, "letterbox"
+            # Khoa ti le ma van muon chua du chu thi phai THU ANH — khong chap
+            # nhan duoc, vi thu anh la mat noi dung. Thay vi vay, NOI TI LE ra
+            # cao hon cho toi khi anh vua tron ven. Chi khi moi ti le deu khong
+            # du moi danh thu, va bao ro ra man hinh.
+            for ten_ti_le, cao in sorted(RATIOS.items(), key=lambda x: x[1]):
+                if cao <= H:
+                    continue
+                if cao - img_h >= box_min:
+                    ratio, H = ten_ti_le, cao
+                    break
+            else:
+                if not khoa_ti_le:
+                    H = img_h + box_min          # tha the dai hon la thu anh
+                else:
+                    img_h, how = H - box_min, "letterbox"
+                    print(f"[canh bao] khoa ti le {ratio} nen phai thu anh xuong "
+                          f"{img_h}px — bo --ratio de hien day du.", file=sys.stderr)
         box_h = H - img_h
         # Chỗ trống chia theo thứ tự ưu tiên: khung cố định -> subtitle
         # (tối đa 3 dòng) -> phần còn lại dành cho tiêu đề nở, chặn ở 2 dòng.
-        frame_h = (chip_h // 2 + 24 + 10 + 34 + max(via_h, 34) + PAD)
+        _g1, _g2, _g3, _g4 = _khoang(nen)
+        frame_h = (chip_h // 2 + _g1 + _g2 + _g3 + max(via_h, 34) + _g4)
         sub_h = _line_h(f_sub, 6) * len(sub_lines)
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
                                            box_h - frame_h - sub_h)
@@ -379,18 +445,19 @@ def build(src, title, subtitle, via, out, category="AI",
     if category_right:
         _chip(d, 0, chip_y, category_right.upper(), f_chip,
               right_align=W - PAD, fold="up")
-    y = img_h + chip_h // 2 + 24
+    g1, g2, g3, g4 = _khoang(nen)
+    y = img_h + chip_h // 2 + g1
 
     for ln in title_lines:
         d.text((PAD, y), ln, font=f_title, fill=FG)
         y += _line_h(f_title, 6)
-    y += 10
+    y += g2
 
     for ln in sub_lines:
         d.text((PAD, y), ln, font=f_sub, fill=MUTED)
         y += _line_h(f_sub, 6)
 
-    bottom_y = H - PAD - via_h
+    bottom_y = H - g4 - via_h
     via_text = via if via.startswith("via:") else "via: " + via
     d.text((PAD, bottom_y), via_text, font=f_via, fill=ACCENT)
     _social_row(canvas, d, W - PAD, bottom_y + via_h / 2, handle,
