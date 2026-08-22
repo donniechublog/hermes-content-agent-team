@@ -26,6 +26,8 @@ TOPIC_PROFILE = {
     "writer": "writer",
     "analyst": "analyst",
     "teaser": "teaser",
+    "nova": "nova",
+    "market": "market",
 }
 
 REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
