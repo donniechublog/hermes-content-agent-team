@@ -26,7 +26,11 @@ import re
 import sys
 from pathlib import Path
 
-GIOI_HAN = 900
+# 1024 la gioi han CHU THICH ANH cua Telegram. Vua trong muc do thi anh va chu
+# di chung mot tin nhan; vuot qua la Telegram tach lam hai, anh mot noi chu mot
+# noi. Nen day vua la tran vua la muc tieu nen tan dung.
+GIOI_HAN = 1024
+NEN_DAT = 700          # duoi muc nay thi nhac: con nhieu cho ma chua dung het
 THE_CHO_PHEP = {"b", "i", "code", "strong", "em", "a"}
 
 THOI_PHONG = ("gây chấn động", "thay đổi mọi thứ", "cuộc cách mạng", "đột phá",
@@ -92,6 +96,17 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
 
     if len(caption) > GIOI_HAN:
         loi.append(f"Dài {len(caption)} ký tự, vượt giới hạn {GIOI_HAN}.")
+    elif len(caption) < NEN_DAT:
+        canh.append(f"{len(caption)} ký tự, còn {GIOI_HAN - len(caption)} ký tự "
+                    "chưa dùng trong giới hạn chú thích ảnh. Khai thác thêm số "
+                    "liệu hoặc bối cảnh từ tư liệu.")
+
+    # Em-dash: Ong Chu khong dung dau nay trong van ban dang len kenh. Bat o day
+    # de nguoi viet sua han, thay vi de publish.py am tham doi giup roi lan sau
+    # van viet nhu cu.
+    if "—" in caption or "–" in caption:
+        loi.append("Có em-dash (— hoặc –). Dùng dấu phẩy, dấu hai chấm, "
+                   "hoặc tách thành câu riêng.")
 
     if re.search(r"https?://|www\.", caption):
         loi.append("Có URL trong bài — link phải để ở còm, không đặt trong caption.")

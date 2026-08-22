@@ -325,6 +325,9 @@ Nguoi doc luot qua trong vai giay. Ho can biet: chuyen gi, con so nao dang nho,
 va co dang quan tam khong. Ho KHONG can bang thong so day du — cai do da co
 tren the anh va o link.
 
+KHONG dung em-dash (dau — hoac –) o bat cu dau. Dung dau phay, dau hai cham,
+hoac tach thanh cau rieng. Script se tu choi caption co dau nay.
+
 Bon y BAT BUOC co, moi y mot cau la du:
 - Chuyen gi vua xay ra, kem SO quan trong nhat
 - So sanh: hon hay kem cai gi, cach biet bao nhieu. Neu nguon co noi cho THUA
@@ -332,9 +335,12 @@ Bon y BAT BUOC co, moi y mot cau la du:
 - Han che hoac dieu kien kem theo, neu nguon co noi
 - Vi sao dang chu y (dung ly do Finn cham diem)
 
-Do dai nham toi 400-600 ky tu. Toi da 900 nhung dung coi do la muc tieu — dai
-qua la mat chat social. Chon 3-4 con so DANG NHO NHAT, bo phan con lai; liet ke
-moi thong so vao bai la viet tai lieu chu khong phai viet tin.
+Do dai: tan dung TOI DA 1024 ky tu, do la gioi han chu thich anh cua Telegram.
+Vua trong muc do thi anh va chu di chung MOT tin nhan, doc gia thay ca hai cung
+luc. Vuot qua la Telegram tach lam hai, anh mot noi chu mot noi.
+
+Nham 800-1000 ky tu. Ngan gon nam o CACH VIET chu khong o viec cat bot y: moi
+cau phai mang mot thong tin moi, khong cau nao lap lai cau truoc.
 
 YEU CAU KY THUAT:
 - Toi da 900 ky tu, HTML Telegram (chi <b> <i> <code>), dung cau truc SOUL.

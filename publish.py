@@ -69,7 +69,13 @@ def don_dep(text: str) -> str:
         ten = (m.group(1) or "").lower()
         return m.group(0) if ten in THE_HOP_LE else ""
     text = re.sub(r"</?([a-zA-Z][a-zA-Z0-9-]*)[^>]*>", _bo, text)
-    # 3. gop dong trong thua
+    # 3. bo em-dash. Ong Chu khong dung dau nay trong van ban dang len kenh.
+    #    " — " giua cau thanh dau phay; dinh lien chu thanh gach ngang thuong.
+    text = re.sub(r"\s+[\u2014\u2013]\s+", ", ", text)
+    text = re.sub(r"(?<=\w)[\u2014\u2013](?=\w)", "-", text)
+    text = text.replace("\u2014", ",").replace("\u2013", "-")
+    text = re.sub(r",\s*,", ",", text)
+    # 4. gop dong trong thua
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 

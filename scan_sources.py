@@ -46,6 +46,46 @@ AI_HINTS = (
 )
 
 
+# Ten to chuc theo ten mien. `via` phai ghi NGUON TIN, khong phai kenh phat hien.
+# Truoc day HN dat via="@nguoi_dang", nguoi do chi bam nut submit, con tin la cua
+# hang lam ra no. Ai dua tin ve DeepSeek cung phai lay tu DeepSeek.
+TEN_TO_CHUC = {
+    "deepseek.com": "DeepSeek", "openai.com": "OpenAI",
+    "anthropic.com": "Anthropic", "ai.meta.com": "Meta AI", "meta.com": "Meta",
+    "deepmind.google": "Google DeepMind", "blog.google": "Google",
+    "google.com": "Google", "mistral.ai": "Mistral",
+    "qwenlm.github.io": "Qwen", "qwen.ai": "Qwen", "moonshot.ai": "Moonshot",
+    "z.ai": "Z.ai", "zhipuai.cn": "Zhipu AI", "x.ai": "xAI",
+    "nvidia.com": "NVIDIA", "huggingface.co": "Hugging Face",
+    "github.com": "GitHub", "arxiv.org": "arXiv",
+    "the-decoder.com": "The Decoder", "techcrunch.com": "TechCrunch",
+    "theverge.com": "The Verge", "reuters.com": "Reuters",
+    "bloomberg.com": "Bloomberg", "nytimes.com": "NYT",
+    "techinasia.com": "Tech in Asia", "venturebeat.com": "VentureBeat",
+    "simonwillison.net": "Simon Willison",
+}
+
+
+def nguon_goc(url: str) -> str:
+    """Ten nguon tin, suy tu ten mien cua link."""
+    try:
+        from urllib.parse import urlparse
+        host = (urlparse(url).netloc or "").lower().removeprefix("www.")
+    except Exception:                                        # noqa: BLE001
+        return ""
+    if not host:
+        return ""
+    for mien, ten in TEN_TO_CHUC.items():
+        if host == mien or host.endswith("." + mien):
+            return ten
+    goc = host.split(".")
+    while len(goc) > 2 and goc[0] in ("api", "api-docs", "docs", "blog", "news",
+                                      "www", "developer", "developers", "research"):
+        goc = goc[1:]
+    ten = goc[0] if goc else host
+    return ten[:1].upper() + ten[1:]
+
+
 def _is_ai_ish(text: str) -> bool:
     low = text.lower()
     return any(h in low for h in AI_HINTS)
@@ -99,7 +139,8 @@ def fetch_hn(limit=40) -> list:
                 "discussion": f"https://news.ycombinator.com/item?id={sid}",
                 "points": it.get("score", 0),
                 "comments": it.get("descendants", 0),
-                "via": "@" + it.get("by", "hn"),
+                "via": nguon_goc(it.get("url") or "") or "HackerNews",
+                "nguoi_dang": "@" + it.get("by", "hn"),
                 "age_hours": round(age, 1),
             })
     return out
@@ -143,7 +184,8 @@ def fetch_reddit(limit_per_sub=25) -> list:
                     "discussion": "https://www.reddit.com" + d.get("permalink", ""),
                     "points": d.get("score", 0),
                     "comments": d.get("num_comments", 0),
-                    "via": "r/" + sub,
+                    "via": nguon_goc(d.get("url") or "") or ("r/" + sub),
+                    "nguoi_dang": "r/" + sub,
                     "age_hours": round(age, 1),
                 })
     return out
