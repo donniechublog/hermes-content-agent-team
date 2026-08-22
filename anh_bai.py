@@ -49,6 +49,17 @@ QUY = re.compile(
     r"(benchmark|chart|graph|table|figure|fig[-_]?\d|result|score|compar|"
     r"eval|plot|diagram|screenshot|demo|arch)", re.I)
 
+# Voi tin ve MODEL, bang so moi la noi dung chinh — anh bia dep khong noi duoc gi
+QUY_MODEL = re.compile(
+    r"(swe[-_ ]?bench|benchmark|eval|score|leaderboard|compar|chart|graph|"
+    r"table|result|pass@|accuracy|mmlu|gpqa|aime|humaneval|arena)", re.I)
+
+# Dau hieu tin ve model — de biet khi nao phai uu tien bang so
+LA_TIN_MODEL = re.compile(
+    r"\b(model|llm|gpt|claude|gemini|llama|qwen|deepseek|kimi|mistral|grok|"
+    r"opus|sonnet|haiku|flash|pro|nemotron|glm|minimax|benchmark|multimodal|"
+    r"vision|reasoning|open[-_ ]?weight)\b", re.I)
+
 DAI_TOI_DA = 6          # so bai dua tin lay them
 ANH_MOI_TRANG = 6       # so anh lay toi da moi trang
 DIEN_TICH_TOI_THIEU = 120_000     # ~350x350; nho hon thi vo khi phong len the
@@ -181,8 +192,16 @@ def do_anh(url: str) -> tuple:
     return (0, 0, 0)
 
 
-def cham(url: str, alt: str, la_og: bool, rong: int, cao: int) -> tuple:
-    """(diem, ly_do). Diem cang cao cang dang dung."""
+def cham(url: str, alt: str, la_og: bool, rong: int, cao: int,
+         tin_model: bool = False) -> tuple:
+    """(diem, ly_do). Diem cang cao cang dang dung.
+
+    Hai uu tien Ong Chu chot:
+      1. Anh RO NET nhat — do phan giai la thuoc do truc tiep, nen cho no trong
+         so lon va khong chan tran som.
+      2. Tin ve MODEL thi bang so / SWE-bench la noi dung chinh. Mot anh bia dep
+         khong noi duoc model manh yeu ra sao; bang benchmark thi noi duoc.
+    """
     if rong == 0 or cao == 0:
         return (-1, "khong doc duoc kich thuoc")
     dt = rong * cao
@@ -195,11 +214,29 @@ def cham(url: str, alt: str, la_og: bool, rong: int, cao: int) -> tuple:
         return (-1, "the thuong hieu / logo")
 
     d, ly = 0, []
-    d += min(40, int(dt / 60_000))
+    # Do net: 1MP duoc ~50d, 2MP ~70d, tran 90d. Canh nho duoi 600px bi phat
+    # vi phong len khung 1200 se vo.
+    d += min(90, int((dt / 1_000_000) ** 0.6 * 50))
     ly.append(f"{rong}x{cao}")
-    if QUY.search(url) or QUY.search(alt):
+    canh_nho = min(rong, cao)
+    if canh_nho < 600:
+        d -= 20
+        ly.append(f"cạnh ngắn chỉ {canh_nho}px")
+    elif canh_nho >= 900:
+        d += 12
+        ly.append("nét")
+
+    if tin_model:
+        if QUY_MODEL.search(url) or QUY_MODEL.search(alt):
+            d += 70
+            ly.append("BẢNG SỐ / benchmark — tin model ưu tiên")
+        else:
+            d -= 15
+            ly.append("không mang số liệu")
+    elif QUY.search(url) or QUY.search(alt):
         d += 35
         ly.append("có vẻ là biểu đồ/bảng số")
+
     if 1.0 <= ti <= 2.2:
         d += 10
         ly.append("tỉ lệ đẹp")
@@ -209,7 +246,9 @@ def cham(url: str, alt: str, la_og: bool, rong: int, cao: int) -> tuple:
     return (d, ", ".join(ly))
 
 
-def tim(tieu_de: str, link: str, sau_rong=True) -> list:
+def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None) -> list:
+    if tin_model is None:
+        tin_model = bool(LA_TIN_MODEL.search(tieu_de))
     trang = [(link, "goc")]
     if sau_rong:
         trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de) if u]
@@ -220,19 +259,27 @@ def tim(tieu_de: str, link: str, sau_rong=True) -> list:
             for src, alt, og in ds:
                 ung_vien.append({"anh": src, "alt": alt, "og": og,
                                  "tu": nguon, "trang": u})
-    # bo trung theo ten tep (cung anh nhieu kich co)
-    thay, loc = set(), []
+    # Cung mot anh thuong duoc phuc vu o nhieu co: image-46.png (2025x1652) va
+    # image-46-1024x835.png?resize=640,522. Gom theo ten goc roi GIU BAN GOC —
+    # ban co hau to kich co luon la ban da thu nho, chon no la tu bo do net.
+    theo_goc = {}
     for c in ung_vien:
         k = re.sub(r"[-_]\d{2,4}x\d{2,4}|\?.*$", "", c["anh"])
-        if k in thay:
+        cu = theo_goc.get(k)
+        if cu is None:
+            theo_goc[k] = c
             continue
-        thay.add(k)
-        loc.append(c)
+        def _da_thu_nho(u):
+            return bool(re.search(r"[-_]\d{2,4}x\d{2,4}|resize=|\bw=\d+", u))
+        if _da_thu_nho(cu["anh"]) and not _da_thu_nho(c["anh"]):
+            theo_goc[k] = c
+    loc = list(theo_goc.values())
 
     with cf.ThreadPoolExecutor(max_workers=8) as ex:
         for c, kt in zip(loc, ex.map(lambda x: do_anh(x["anh"]), loc)):
             c["rong"], c["cao"], c["byte"] = kt
-            c["diem"], c["ly_do"] = cham(c["anh"], c["alt"], c["og"], kt[0], kt[1])
+            c["diem"], c["ly_do"] = cham(c["anh"], c["alt"], c["og"],
+                                         kt[0], kt[1], tin_model)
     tot = [c for c in loc if c["diem"] > 0]
     tot.sort(key=lambda c: -c["diem"])
     return tot
@@ -245,10 +292,13 @@ def main():
     ap.add_argument("--chi-link-goc", action="store_true",
                     help="Chi soi link goc, khong tim bao khac (nhanh hon)")
     ap.add_argument("--tai", help="Tai anh tot nhat ve duong dan nay")
+    ap.add_argument("--tin-model", action="store_true",
+                    help="Ep coi day la tin ve model (uu tien manh bang so/SWE-bench)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
-    kq = tim(a.tieu_de, a.link, sau_rong=not a.chi_link_goc)
+    kq = tim(a.tieu_de, a.link, sau_rong=not a.chi_link_goc,
+             tin_model=True if a.tin_model else None)
     if a.json:
         print(json.dumps(kq[:10], ensure_ascii=False, indent=2))
     else:
