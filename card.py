@@ -32,6 +32,7 @@ F_REG = str(FONTS / "Inter.ttf")                      # body: subtitle, via
 W = 1200                          # bề ngang cố định
 IMG_MIN_H = 600                   # ảnh không mỏng hơn 2:1
 IMG_MAX_H = 1200                  # ảnh không cao hơn 1:1
+SUB_GROW_MAX = 42                 # cỡ tối đa phụ đề được nở tới khi còn chỗ
 # Ảnh luôn được giữ ít nhất chừng này phần chiều cao thẻ — chữ phải nhường,
 # không được lấn. Bảng số bị thu nhỏ là mất dữ liệu; phụ đề ngắn đi một dòng
 # thì không mất gì.
@@ -101,6 +102,24 @@ def _fit_text(d, text, max_w, max_lines, hi, lo, bold=False):
     if lines:
         lines[-1] = lines[-1].rstrip(" .,") + "…"
     return f, lines
+
+
+def _grow_sub(d, text, max_w, max_h, max_lines=2):
+    """Chon co chu lon nhat cho phu de ma van vua cho trong con lai.
+
+    Khi anh khong an het chieu cao, textbox thua ra kha nhieu — de phu de o co
+    nho nhat mot dong thi phi cho va nhin trong rong. No ra toi 2 dong.
+    """
+    best = None
+    for size in range(SUB_GROW_MAX, 17, -1):
+        f = _f(F_REG, size)
+        lines = _wrap(d, text, f, max_w)
+        if len(lines) > max_lines:
+            continue
+        if _line_h(f, 6) * len(lines) <= max_h:
+            best = (f, lines)
+            break
+    return best or (_f(F_REG, SUB_SIZE), _wrap(d, text, _f(F_REG, SUB_SIZE), max_w)[:max_lines])
 
 
 def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES):
@@ -332,9 +351,8 @@ def _tech_frame(d, H, split, side_col=LINE, box_col=LINE):
                                 (W - m, H - m, -1, -1, FG)):
         d.line([(x, y), (x + dx * brk, y)], fill=col, width=3)
         d.line([(x, y), (x, y + dy * brk)], fill=col, width=3)
-    # Hai net doc chay lien mach doc hai ben vung anh
-    for x in (m, W - m):
-        d.line([(x, m + brk + 12), (x, split - 12)], fill=side_col, width=2)
+    # Vung anh KHONG ve net doc hai ben nua: anh nay chay sat mep nen net chi
+    # cat vao noi dung, khong con vai tro khung.
     # Hai net doc trong textbox — mau nghich voi net o vung anh, tao nhip
     for x in (m, W - m):
         d.line([(x, split + 12), (x, H - m - brk - 12)], fill=box_col, width=2)
@@ -421,9 +439,15 @@ def build(src, title, subtitle, via, out, category="AI",
         # (tối đa 3 dòng) -> phần còn lại dành cho tiêu đề nở, chặn ở 2 dòng.
         _g1, _g2, _g3, _g4 = _khoang(nen)
         frame_h = (chip_h // 2 + _g1 + _g2 + _g3 + max(via_h, 34) + _g4)
+        # Chia cho trong: tieu de truoc (no toi 2 dong), phan con lai cho phu de.
+        # Neu textbox van thua thi phu de no theo — thay vi de mot dong chu nho
+        # lo lung giua khoang trong.
         sub_h = _line_h(f_sub, 6) * len(sub_lines)
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
                                            box_h - frame_h - sub_h)
+        con_lai = box_h - frame_h - _line_h(f_title, 6) * len(title_lines)
+        if con_lai > _line_h(f_sub, 6) * len(sub_lines) + 12:
+            f_sub, sub_lines = _grow_sub(probe, subtitle, avail_w, con_lai)
     else:
         box_h = box_min
         H = img_h + box_h
