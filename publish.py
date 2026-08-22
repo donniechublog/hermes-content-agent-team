@@ -6,6 +6,7 @@ Dung cho vai publisher trong pipeline noi dung.
 """
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -26,6 +27,53 @@ def load_secrets():
     return tok, chat
 
 
+# Telegram chi hieu mot tap the RAT HEP. Cac the khoi (<br>, <p>, <li>...) bi
+# TU CHOI HAN — tra ve "Bad Request: Unsupported start tag", chu khong phai lo di.
+# Da kiem chung. Nen phai tu doi chung thanh xuong dong that truoc khi gui.
+THE_HOP_LE = {"b", "strong", "i", "em", "u", "ins", "s", "strike", "del",
+              "a", "code", "pre", "blockquote", "span", "tg-spoiler"}
+
+# The khoi -> xuong dong
+_KHOI = [
+    (re.compile(r"<br\s*/?>", re.I), "\n"),
+    (re.compile(r"</(p|div|h[1-6]|tr)>", re.I), "\n\n"),
+    (re.compile(r"<li[^>]*>", re.I), "• "),
+    (re.compile(r"</li>", re.I), "\n"),
+    (re.compile(r"</?(ul|ol|table|tbody|thead)[^>]*>", re.I), "\n"),
+    (re.compile(r"<(p|div|h[1-6]|tr)[^>]*>", re.I), ""),
+]
+
+
+def don_dep(text: str) -> str:
+    """Lam sach chu truoc khi gui Telegram — sua dung ba loi thuong gap.
+
+    1. Agent viet chuoi mot dong voi \\n VAN BAN (dau gach nguoc + n) vi phai
+       nhet vao mot tham so shell. Telegram in ra nguyen chu \\n, hoac te hon
+       la ca bai dinh lien nhau. Doi thanh xuong dong that.
+    2. Agent viet HTML day du co <br>, <p>, <li>. Telegram TU CHOI ca tin nhan.
+       Doi the khoi thanh xuong dong, bo cac the con lai khong nam trong danh
+       sach hop le.
+    3. Thua qua ba dong trong lien tiep thi gop lai — khong ai muon doc khoang
+       trong dai.
+    """
+    if not text:
+        return text
+    # 1. \n van ban -> xuong dong that (chi khi KHONG co xuong dong that nao)
+    if "\\n" in text and "\n" not in text:
+        text = text.replace("\\r\\n", "\n").replace("\\n", "\n")
+    # 2. the khoi -> xuong dong
+    for pat, thay in _KHOI:
+        text = pat.sub(thay, text)
+    # bo the khong hop le, giu the hop le nguyen ven
+    def _bo(m):
+        ten = (m.group(1) or "").lower()
+        return m.group(0) if ten in THE_HOP_LE else ""
+    text = re.sub(r"</?([a-zA-Z][a-zA-Z0-9-]*)[^>]*>", _bo, text)
+    # 3. gop dong trong thua
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
 def _check(r: httpx.Response):
     data = r.json()
     if not data.get("ok"):
@@ -34,6 +82,7 @@ def _check(r: httpx.Response):
 
 
 def send_text(token, chat, text, parse_mode="HTML", thread=None):
+    text = don_dep(text)
     if len(text) > TEXT_LIMIT:
         text = text[: TEXT_LIMIT - 1] + "…"
     with httpx.Client(timeout=60) as c:
@@ -46,6 +95,7 @@ def send_text(token, chat, text, parse_mode="HTML", thread=None):
 
 
 def send_photo(token, chat, photo: Path, caption="", parse_mode="HTML", thread=None):
+    caption = don_dep(caption)
     if len(caption) > CAPTION_LIMIT:
         sys.exit(f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
                  f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
@@ -64,6 +114,7 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
 
     Chu thich chi gan vao anh DAU TIEN — dung quy tac cua Telegram cho album.
     """
+    caption = don_dep(caption)
     if len(caption) > CAPTION_LIMIT:
         sys.exit(f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
                  f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")

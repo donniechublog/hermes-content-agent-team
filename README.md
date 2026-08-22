@@ -24,13 +24,24 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
         Bản nháp + thẻ ảnh vào topic Quinn kèm nút ✅ / ❌
                                               ↓
                      ✅ → đăng lên channel      ❌ → đánh dấu bỏ
+                              ↓
+                  đẩy sang moat → extension đăng lên
+                  Facebook / Instagram / TikTok
 ```
+
+Bài đã duyệt đi tiếp sang moat (org `dcgr.tech`) làm hàng đợi publish; extension
+trình duyệt claim và đăng lên mạng xã hội. Moat không gọi ngược về máy này —
+cron `moat-publish-watch` (1 phút/lần) hỏi trạng thái rồi báo vào topic Quinn.
+Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên Telegram channel, thẻ duyệt chỉ
+ghi thêm một dòng cảnh báo.
 
 ## Tệp
 
 - `card.py` — dựng thẻ ảnh. Ảnh giữ nguyên tỉ lệ, textbox co giãn bù phần thiếu
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số
+- `moat_publish.py` — đẩy bài đã duyệt sang moat (`push <draft_id>`) và hỏi trạng thái
+  đăng social (chạy không tham số); khoá ở `.secrets.env` (`MOAT_BASE_URL`, `MOAT_PUBLISH_KEY`)
 - `model_audition.py` — thử model: tiếng Việt đủ dấu, gọi tool thật, có prompt caching không
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
@@ -42,6 +53,14 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
 - `hermes-gateway` — gateway hermes, chứa dispatcher kanban
 - `hermes-approve` — dịch vụ duyệt bài (tệp này)
 - `hermes-dashboard` — bảng điều khiển web, cổng 9119
+
+## Cron
+
+- `finn-daily-scan` — 07:00 VN, quét nguồn
+- `model-watch` — 30 phút/lần, dò sức khoẻ model
+- `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
+  không có gì mới; hỏi theo `workflow_id` (khoá chính) chứ không phải `external_id`;
+  bỏ theo dõi một bài sau 7 ngày và tự xoá file output cron cũ hơn 3 ngày
 
 ## Model từng vai
 
@@ -85,6 +104,28 @@ về model chính ở lượt sau — một hội thoại có thể chạy qua 2
 biết. Cache là per-model, mỗi lần lật là mất sạch prefix đã cache và cả ngữ cảnh
 bị tính lại giá gốc. Cột `cache%` trong `usage_audit.py` chính là thước đo
 nguyên tắc này: tụt cache nghĩa là đang lật model.
+
+## Provider
+
+Sáu vai ưu tiên `v4flash` (connection `openai-compatible-chat-ba685909…`, baseUrl
+`api.b.ai`), dự phòng là `ds/deepseek-v4-flash` rồi `ds/deepseek-chat` trên
+connection DeepSeek gốc. Ada giữ `ds/deepseek-reasoner` vì provider mới không có.
+
+Provider mới **chỉ phục vụ `deepseek-v4-flash`** và bản vision — `deepseek-v4-pro`
+trả 403, `deepseek-chat` và `deepseek-reasoner` trả 404.
+
+**Điểm mù cần nhớ: 9router KHÔNG ghi log connection này.** Đo thật: gọi thẳng 5
+lượt, số bản ghi trong `usageHistory` đứng yên. Nghĩa là `usage_audit.py` và bảng
+usage của 9router không thấy chi phí chạy qua đây. Muốn đo phải dùng
+`hermes --usage-file`.
+
+Nhưng `--usage-file` cũng có bẫy: nó ghi model được **cấu hình**, không phải model
+**thực chạy**. Đã bắt được một lần Quinn lặng lẽ tụt xuống `ds/deepseek-v4-pro`
+mà tệp usage vẫn khai là đang chạy provider mới — chỉ lộ ra khi đối chiếu với log
+9router.
+
+Token burn đo được cho một luồng trọn vẹn (Finn quét → Iris dựng thẻ → Quinn viết,
+17 lượt gọi): **~398.000 token chạm model**, cache 36%, 227 giây, ước $0,038.
 
 ## Suy luận (reasoning)
 
