@@ -76,8 +76,13 @@ BIG = 9007199254740991          # arena dung so nay lam "khong xep hang"
 
 
 def _get(url: str, timeout=45) -> httpx.Response:
+    # KHONG xin brotli. May chu cua OpenAI tra ve luong brotli ma bo giai nen cua
+    # httpx nghen giua chung ("decoder process called with data when
+    # can_accept_more_data() is False") — feed hong han, khong phai loi encoding.
+    # Bo 'br' khoi Accept-Encoding thi may chu chuyen sang gzip va doc binh thuong.
     return httpx.get(url, timeout=timeout, follow_redirects=True,
-                     headers={"User-Agent": UA})
+                     headers={"User-Agent": UA,
+                              "Accept-Encoding": "gzip, deflate"})
 
 
 def vung_cua(org: str) -> str:
@@ -239,8 +244,8 @@ def fetch_tin_hang(ngay: int) -> list:
     ra = []
     for hang, url in RSS_HANG:
         try:
-            # Dua BYTES chu khong phai .text: tep XML tu khai bao encoding o
-            # dong dau, ep sang str truoc se lam parser bao DecodingError.
+            # Dua bytes: tep XML tu khai bao encoding o dong dau nen de parser
+            # tu doc, khoi doan sai.
             root = ET.fromstring(_get(url, timeout=40).content)
         except Exception as e:                               # noqa: BLE001
             print(f"[rss {hang}] hong: {type(e).__name__}", file=sys.stderr)
