@@ -32,7 +32,7 @@ F_REG = str(FONTS / "Inter.ttf")                      # body: subtitle, via
 W = 1200                          # bề ngang cố định
 IMG_MIN_H = 600                   # ảnh không mỏng hơn 2:1
 IMG_MAX_H = 1200                  # ảnh không cao hơn 1:1
-SUB_GROW_MAX = 42                 # cỡ tối đa phụ đề được nở tới khi còn chỗ
+SUB_GROW_MAX = 63                 # cỡ tối đa phụ đề được nở tới khi còn chỗ
 # Ảnh luôn được giữ ít nhất chừng này phần chiều cao thẻ — chữ phải nhường,
 # không được lấn. Bảng số bị thu nhỏ là mất dữ liệu; phụ đề ngắn đi một dòng
 # thì không mất gì.
@@ -56,10 +56,10 @@ MASCOT_MARGIN = 44
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
 TITLE_GROW_MAX = 104              # trần khi tiêu đề nở vào chỗ trống
 TITLE_GROW_LINES = 2   # tuyet doi khong de tieu de 3 dong
-SUB_SIZE = 26
+SUB_SIZE = 39
 CHIP_SIZE = 26
-VIA_SIZE = 19
-BRAND_SIZE = 18   # ten kenh nho hon dong via mot chut
+VIA_SIZE = 29
+BRAND_SIZE = 27   # ten kenh nho hon dong via mot chut
 
 # Tỉ lệ đầu ra khoá cứng: tên → chiều cao thẻ (bề ngang luôn 1200)
 RATIOS = {"1:1": 1200, "4:5": 1500, "3:4": 1600}
@@ -111,7 +111,7 @@ def _grow_sub(d, text, max_w, max_h, max_lines=2):
     nho nhat mot dong thi phi cho va nhin trong rong. No ra toi 2 dong.
     """
     best = None
-    for size in range(SUB_GROW_MAX, 17, -1):
+    for size in range(SUB_GROW_MAX, 25, -1):
         f = _f(F_REG, size)
         lines = _wrap(d, text, f, max_w)
         if len(lines) > max_lines:
@@ -322,7 +322,7 @@ def _load_icon(name, size, color):
     return tinted
 
 
-def _social_row(canvas, d, right_x, cy, handle, font, icon_size=26, gap=10):
+def _social_row(canvas, d, right_x, cy, handle, font, icon_size=39, gap=15):
     """Hang icon + ten kenh, can sat le phai. Cung tong mau voi cum via."""
     handle_text = handle if handle.startswith("@") else "@" + handle
     b = font.getbbox("Ay")
@@ -378,7 +378,7 @@ def build(src, title, subtitle, via, out, category="AI",
                                       max_lines=2, hi=TITLE_SIZE_HI,
                                       lo=TITLE_SIZE_LO, bold=True)
     f_sub, sub_lines = _fit_text(probe, subtitle, avail_w, max_lines=3,
-                                  hi=SUB_SIZE, lo=18)
+                                  hi=SUB_SIZE, lo=27)
     _, chip_h = _chip_size(probe, category.upper(), f_chip)
     via_h = f_via.getbbox("Ây")[3] - f_via.getbbox("Ây")[1]
 
@@ -410,10 +410,17 @@ def build(src, title, subtitle, via, out, category="AI",
         while H - img_h < box_min and nen > 0.55:
             nen = round(nen - 0.05, 2)
             box_min = _box_min(nen)
+        # Rut phu de bot dong, nhung KHONG duoc rut den muc bi cat cut. Da gap:
+        # ep xuong 1 dong thi phu de dai khong vua o co nho nhat nen bi thay
+        # bang dau ba cham. Cat mat chu la mat noi dung, con nhuong them mot
+        # chut chieu cao thi khong mat gi. Nen dung o 2 dong khi 1 dong se cat.
         while H - img_h < box_min and len(sub_lines) > 1:
-            f_sub, sub_lines = _fit_text(probe, subtitle, avail_w,
+            thu_f, thu_lines = _fit_text(probe, subtitle, avail_w,
                                          max_lines=len(sub_lines) - 1,
-                                         hi=SUB_SIZE, lo=16)
+                                         hi=SUB_SIZE, lo=24)
+            if "…" in "".join(thu_lines) and len(sub_lines) <= 2:
+                break                       # rut nua la cat mat chu, dung lai
+            f_sub, sub_lines = thu_f, thu_lines
             box_min = _box_min(nen)
 
         if H - img_h < box_min:
