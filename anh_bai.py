@@ -64,6 +64,19 @@ DAI_TOI_DA = 6          # so bai dua tin lay them
 ANH_MOI_TRANG = 6       # so anh lay toi da moi trang
 DIEN_TICH_TOI_THIEU = 120_000     # ~350x350; nho hon thi vo khi phong len the
 
+# Kich thuoc CHINH XAC ma cac model sinh anh hay xuat ra. Anh chup man hinh hay
+# bang so that gan nhu khong bao gio roi dung vao mot trong nhung con so nay —
+# chung bi cat xen nen kich thuoc le. Cac trang tong hop tin hay chen anh minh
+# hoa AI sinh: chong xu, qua cau mang, bo nao phat sang. Nhin thi ra ve co thong
+# tin nhung khong mang mot so lieu that nao — te hon la khong co anh, vi doc gia
+# tuong day la du lieu. Da gap that: hai anh 1344x768 tu mot trang tong hop, mot
+# cai ve chong xu "0.01", mot cai ve qua cau ket noi.
+CO_AI_SINH = {
+    (1024, 1024), (1152, 896), (896, 1152), (1216, 832), (832, 1216),
+    (1344, 768), (768, 1344), (1536, 640), (640, 1536), (1024, 576),
+    (576, 1024), (1280, 720), (1024, 768), (1408, 704), (704, 1408),
+}
+
 
 def _tai(url: str, timeout=15):
     return httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
@@ -212,6 +225,8 @@ def cham(url: str, alt: str, la_og: bool, rong: int, cao: int,
         return (-1, f"ti le qua lech {rong}x{cao}")
     if RAC.search(url) or RAC.search(alt):
         return (-1, "the thuong hieu / logo")
+    if (rong, cao) in CO_AI_SINH:
+        return (-1, f"{rong}x{cao} — cỡ chuẩn của model sinh ảnh, gần chắc là minh hoạ AI")
 
     d, ly = 0, []
     # Do net: 1MP duoc ~50d, 2MP ~70d, tran 90d. Canh nho duoi 600px bi phat
