@@ -128,13 +128,29 @@ def publish(token, channel, draft_id):
 
     images = d.get("images")
     if images:
-        items = [{"type": "photo", "media": m} for m in images]
-        if not long_caption:
-            items[0]["caption"] = caption
-            items[0]["parse_mode"] = "HTML"
-        with httpx.Client(timeout=120) as c:
+        # Anh co the la URL (teaser lay tu bai goc) HOAC tep cuc bo (the do Iris
+        # dung + anh that tai ve). Tep cuc bo phai dinh kem multipart qua
+        # attach://, khong the truyen duong dan — Telegram khong doc duoc o may ta.
+        items, files = [], {}
+        for i, m in enumerate(images[:10]):          # Telegram cho toi da 10
+            e = {"type": "photo"}
+            if str(m).startswith("http"):
+                e["media"] = str(m)
+            else:
+                pth = Path(m)
+                if not pth.exists():
+                    continue
+                khoa = f"anh{i}"
+                e["media"] = f"attach://{khoa}"
+                files[khoa] = (pth.name, pth.read_bytes(), "image/png")
+            if not items and not long_caption:
+                e["caption"] = caption
+                e["parse_mode"] = "HTML"
+            items.append(e)
+        with httpx.Client(timeout=180) as c:
             r = c.post(API.format(token=token, method="sendMediaGroup"),
-                      data={"chat_id": channel, "media": json.dumps(items)})
+                       data={"chat_id": channel, "media": json.dumps(items)},
+                       files=files or None)
         res = r.json()
         if long_caption and res.get("ok"):
             return call(token, "sendMessage", chat_id=channel, text=caption,
@@ -226,36 +242,56 @@ Link: {link}
 Nguon anh (via): {via}
 Chu de: {title}
 Tom tat: {summary}
-image_url: {image_url}
+image_url (og:image so bo, co the la the thuong hieu): {image_url}
 
-NHIEM VU: dung the anh cho bai nay.
+NHIEM VU: dung the anh cho bai nay tu ANH THAT cua nguon.
 
-BUOC 1 — co anh nguon:
-- Neu image_url o tren khac "khong co": tai anh ve /tmp/src_{draft_id}.png
-- Neu anh co chu thich tieng Anh, doc va dich sang tieng Viet de dung cho subtitle
+NGUYEN TAC TREN HET: KHONG BAO GIO tu ve minh hoa.
+Ve ra la bia dat — the anh phai phan anh dung cai co that trong nguon. Khong tim
+duoc anh thi BAO LAI, khong duoc lap cho trong bang hinh tu nghi ra.
 
-BUOC 2 — khong co anh nguon thi tu ve SVG:
-- Viet file SVG 1200x1200 (vuong), nen xanh dem gradient #0e1117 -> #161b22,
-  net trang tri mau #00cce0, minh hoa truu tuong dung chu de
-- TUYET DOI KHONG dat chu nao trong SVG (khong the <text>)
-- Render: rsvg-convert /tmp/illu_{draft_id}.svg -o /tmp/src_{draft_id}.png
+BUOC 1 — tim anh that cua tin nay (BAT BUOC chay lenh nay):
+cd /home/donniechu/content-team && venv/bin/python anh_bai.py \\
+  --tieu-de "{title}" --link "{link}" --json
 
-BUOC 3 — dung the (BAT BUOC chay lenh nay):
-cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \
-  --image /tmp/src_{draft_id}.png \
-  --title "<tieu de ngan, TOI DA 60 KY TU>" \
-  --subtitle "<mot cau tom tat y chinh, toi da 140 ky tu>" \
-  --via "{via}" \
-  --category "{category}" \
-  --category-right "<nhan phu ngan, vd: MA NGUON MO / BENCHMARK / M&A>" \
-  --ratio 1:1 \
+Script lay anh tu chinh link goc VA tu cac bao khac dua cung tin, loc bo
+logo/favicon/the thuong hieu, do kich thuoc that roi xep hang. Anh co bang so
+hay bieu do duoc cong diem — do la thu doc gia muon nhin.
+
+BUOC 2 — chon anh:
+- Lay anh diem cao nhat lam anh chinh. Tai ve: /tmp/src_{draft_id}.png
+- Neu con anh khac tu 40 diem tro len va NOI DUNG KHAC NHAU (bang benchmark,
+  bieu do gia, so do kien truc...), tai them: /tmp/src_{draft_id}_2.png,
+  _3.png... Toi da 4 anh. Nhieu anh la TOT, khong sao ca.
+- Bo anh trung noi dung, bo anh chi la anh bia chung chung neu da co anh co so lieu.
+
+BUOC 3 — neu KHONG tim duoc anh nao:
+Dung lai. Bao dung mot cau: "Khong tim duoc anh that cho tin nay" kem link da thu.
+KHONG tao the, KHONG ve SVG, KHONG chay card.py. Ong Chu se quyet dinh bo tin
+hay tu dua anh vao.
+
+BUOC 4 — dung the cho anh CHINH (chi khi buoc 2 co anh):
+cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \\
+  --image /tmp/src_{draft_id}.png \\
+  --title "<tieu de ngan, TOI DA 60 KY TU>" \\
+  --subtitle "<mot cau tom tat y chinh, toi da 140 ky tu>" \\
+  --via "{via}" \\
+  --category "{category}" \\
+  --category-right "<nhan phu ngan, vd: MA NGUON MO / BENCHMARK / M&A>" \\
+  --ratio 1:1 \\
   --out {out_png}
 
-LUU Y QUAN TRONG:
-- Tieu de dung font don cach (JetBrains Mono) nen chiem nhieu be ngang.
-  Qua 60 ky tu se bi thu nho hoac cat bot. Viet NGAN va DAT.
+Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
+{out_png_goc}_2.png, _3.png... de buoc dang sau gui thanh album.
+
+LUU Y:
+- Anh co chu thich tieng Anh thi doc va dich sang tieng Viet de dung cho subtitle.
+- Tieu de dung font don cach (JetBrains Mono) nen chiem nhieu be ngang. Qua 60
+  ky tu se bi thu nho hoac cat bot. Viet NGAN va DAT.
 - Tieu de va subtitle deu bang TIENG VIET CO DAU.
-- Ket qua bat buoc: file {out_png} phai ton tai sau khi chay."""
+- Ket qua bat buoc: file {out_png} phai ton tai sau khi chay (tru truong hop
+  buoc 3 — khong co anh that)."""
+
 
 WRITER_BODY = """Bai goc: {title}
 Link: {link}
@@ -326,8 +362,8 @@ def create_pair(item):
         via=item.get("via", ""), title=item["title"],
         summary=item.get("summary_vi", ""),
         image_url=item.get("image_url") or "khong co",
-        out_png=out_png, category=item.get("category", "CONG CU"),
-        draft_id=draft_id)
+        out_png=out_png, out_png_goc=out_png[:-4],
+        category=item.get("category", "CONG CU"), draft_id=draft_id)
     illu_id, err = kanban_create("Anh: " + item["title"], "illustrator", illu_body)
     if err:
         return None, "Loi tao task anh: " + err

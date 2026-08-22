@@ -43,9 +43,14 @@ def main():
         sys.exit("Caption rong — khong ghi draft.")
 
     image = a.image or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png")
+    # Anh phu do Iris tai ve: <draft>_2.png, _3.png... Gom san vao draft de
+    # buoc dang gui thanh album. Nhieu anh that van hon mot anh chung chung.
+    phu = sorted(DRAFTS.glob(f"{a.draft_id}_[0-9].png"))
+    images = [image] + [str(x) for x in phu] if phu else None
     draft = {
         "caption": caption,
         "image": image,
+        **({"images": images} if images else {}),
         "source_url": a.source_url or meta.get("source_url", ""),
         "category": a.category or meta.get("category", "AI"),
         "via": a.via if a.via is not None else meta.get("via", ""),
