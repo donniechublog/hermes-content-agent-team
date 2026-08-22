@@ -28,6 +28,9 @@ def main():
     ap.add_argument("--category", help="Ghi de category tu sidecar")
     ap.add_argument("--via", help="Ghi de via tu sidecar")
     ap.add_argument("--image", help="Ghi de duong dan anh tu sidecar")
+    ap.add_argument("--tu-lieu", help="Tep tu lieu de doi chieu do day du")
+    ap.add_argument("--bo-qua-kiem", action="store_true",
+                    help="Luu du caption khong dat (chi dung khi Ong Chu yeu cau)")
     a = ap.parse_args()
 
     meta_path = DRAFTS / f"{a.draft_id}.meta.json"
@@ -41,6 +44,21 @@ def main():
     caption = Path(a.caption_file).read_text(encoding="utf-8").strip()
     if not caption:
         sys.exit("Caption rong — khong ghi draft.")
+
+    # Cong chan: caption hong thi KHONG luu draft. Bat loi co hoc o day re hon
+    # nhieu so voi de no len toi hang duyet roi Ong Chu phai doc ra.
+    import caption_check
+    tl = ""
+    if a.tu_lieu and Path(a.tu_lieu).exists():
+        tl = Path(a.tu_lieu).read_text(encoding="utf-8")
+    loi, canh, tin = caption_check.kiem(caption, tl)
+    for c in canh:
+        print(f"[nhac] {c}", file=sys.stderr)
+    if loi and not a.bo_qua_kiem:
+        for e in loi:
+            print(f"[LOI] {e}", file=sys.stderr)
+        sys.exit("Caption khong dat — sua roi chay lai. "
+                 "(that su can giu thi them --bo-qua-kiem)")
 
     image = a.image or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png")
     # Anh phu do Iris tai ve: <draft>_2.png, _3.png... Gom san vao draft de

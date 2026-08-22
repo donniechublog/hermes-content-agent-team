@@ -300,15 +300,35 @@ Via: {via}
 Diem Finn cham: {score}/100 -- ly do: {score_reason}
 (Dung ly do diem nay de viet phan "vi sao dang chu y" trong bai, dung tu y suy dien them)
 
-Du kien (Finn da tom tat):
+Du kien (Finn da tom tat — CHI la diem khoi dau, KHONG du de viet):
 {summary}
 
-YEU CAU:
-- Viet caption tieng Viet toi da 900 ky tu, dinh dang HTML Telegram (chi <b> <i> <code>), dung cau truc SOUL.
-- Ghi caption ra file tam, vi du /tmp/caption_{draft_id}.txt (CHI caption, khong kem gi khac).
+BUOC 1 — DOC TU LIEU THAT (bat buoc, lam truoc khi viet mot chu nao):
+cd /home/donniechu/content-team && venv/bin/python tu_lieu.py \\
+  --tieu-de "{title}" --link "{link}" --out /tmp/tulieu_{draft_id}.md
+
+Script boc chu tu bai goc VA tu cac bao khac dua cung tin, roi tach rieng muc
+"Cau co so lieu". Tom tat cua Finn khong co con so nao — viet chay theo no thi
+bai ra cung khong co so nao. Da gap that: tin co bang 11 dong benchmark, caption
+viet ra 0 con so.
+
+BUOC 2 — VIET. Co dong va ngan gon thi tot, nhung KHONG DUOC THIEU Y:
+- Ket qua chinh, co SO cu the
+- So sanh: hon/kem cai gi, cach biet bao nhieu — ca cho thang lan cho thua
+- Han che hoac dieu kien kem theo, neu nguon co noi
+- Vi sao dang chu y (dung ly do Finn cham diem)
+Doc lai mot luot va tu hoi: nguoi doc bang so tren the anh co thay bai viet giai
+thich duoc nhung con so do khong? Neu khong, la con thieu.
+
+YEU CAU KY THUAT:
+- Toi da 900 ky tu, HTML Telegram (chi <b> <i> <code>), dung cau truc SOUL.
+- Ghi caption ra file tam /tmp/caption_{draft_id}.txt (CHI caption, khong kem gi khac).
+- Tu kiem truoc khi ghep draft:
+    cd /home/donniechu/content-team && venv/bin/python caption_check.py \\
+      --caption-file /tmp/caption_{draft_id}.txt --tu-lieu /tmp/tulieu_{draft_id}.md
 - Ghep draft bang lenh sau — script tu dien source_url / category / via / duong dan anh,
   BAN KHONG CAN go lai nhung gia tri do:
-    cd /home/donniechu/content-team && venv/bin/python draft_write.py {draft_id} --caption-file /tmp/caption_{draft_id}.txt
+    cd /home/donniechu/content-team && venv/bin/python draft_write.py {draft_id} --caption-file /tmp/caption_{draft_id}.txt --tu-lieu /tmp/tulieu_{draft_id}.md
 - Day vao hang duyet:
     cd /home/donniechu/content-team && venv/bin/python approve_service.py push {draft_id}
 - KHONG tu dang len channel."""
