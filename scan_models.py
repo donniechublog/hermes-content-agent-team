@@ -42,6 +42,25 @@ OPENROUTER = "https://openrouter.ai/api/v1/models"
 CATALOG = "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
 ARENA = "https://lmarena.ai/leaderboard"
 
+# RSS cua hang — bat nhung su kien KHONG hien ra o so dang ky: mo ma nguon, doi
+# giay phep, cong bo benchmark. Da do song 21/08: Anthropic va Meta KHONG co RSS
+# (404 moi duong thu), model moi cua ho van hien o OpenRouter nen khong mat tin.
+# Qwen co feed hop le nhung bai moi nhat tu 9/2025 — feed chet, da bo.
+RSS_HANG = [
+    ("OpenAI", "https://openai.com/news/rss.xml"),
+    ("Google DeepMind", "https://deepmind.google/blog/rss.xml"),
+    ("HuggingFace", "https://huggingface.co/blog/feed.xml"),
+    ("Mistral", "https://mistral.ai/rss.xml"),
+]
+
+# Repo co ban phat hanh thuong bao model moi duoc ho tro TRUOC ca thong cao
+GITHUB_REPOS = ["vllm-project/vllm", "ggml-org/llama.cpp", "huggingface/transformers"]
+
+# Tu khoa loc tin: chi giu bai co ve lien quan model/ma nguon mo
+TU_KHOA_TIN = ("model", "open-source", "open source", "open-weight", "open weight",
+               "release", "launch", "introducing", "benchmark", "swe-bench",
+               "weights", "apache", "mit license", "available now")
+
 # Cac hang duoc uu tien, chia theo vung. Doi chieu bang truong `organization`
 # cua arena va tien to ID cua OpenRouter.
 HANG_MY = {"openai", "anthropic", "google", "google-deepmind", "meta", "meta-llama",
@@ -209,6 +228,80 @@ def fetch_arena() -> dict:
     return ra
 
 
+# ---------- nguon 4: tin cua hang ----------
+
+def fetch_tin_hang(ngay: int) -> list:
+    """RSS cac hang. Bat su kien so dang ky khong the hien: mo ma nguon, doi
+    giay phep, cong bo benchmark. Moi feed doc lap, mot cai chet khong keo do."""
+    import email.utils as eut
+    import xml.etree.ElementTree as ET
+    nguong = time.time() - ngay * 86400
+    ra = []
+    for hang, url in RSS_HANG:
+        try:
+            # Dua BYTES chu khong phai .text: tep XML tu khai bao encoding o
+            # dong dau, ep sang str truoc se lam parser bao DecodingError.
+            root = ET.fromstring(_get(url, timeout=40).content)
+        except Exception as e:                               # noqa: BLE001
+            print(f"[rss {hang}] hong: {type(e).__name__}", file=sys.stderr)
+            continue
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        for it in (root.findall(".//item") or root.findall(".//a:entry", ns)):
+            def _t(*ten):
+                for n in ten:
+                    e = it.find(n) if not n.startswith("a:") else it.find(n, ns)
+                    if e is not None and (e.text or e.get("href")):
+                        return e.text or e.get("href")
+                return ""
+            tieu_de = (_t("title", "a:title") or "").strip()
+            ngay_txt = _t("pubDate", "a:updated", "a:published")
+            link = _t("link", "a:link") or ""
+            if it.find("a:link", ns) is not None:
+                link = it.find("a:link", ns).get("href") or link
+            ts = 0.0
+            try:
+                ts = eut.parsedate_to_datetime(ngay_txt).timestamp()
+            except Exception:                                # noqa: BLE001
+                try:
+                    ts = datetime.fromisoformat(
+                        (ngay_txt or "").replace("Z", "+00:00")).timestamp()
+                except Exception:                            # noqa: BLE001
+                    ts = 0.0
+            if ts and ts < nguong:
+                continue
+            low = tieu_de.lower()
+            if not any(k in low for k in TU_KHOA_TIN):
+                continue
+            ra.append({"hang": hang, "tieu_de": tieu_de, "link": link,
+                       "ngay": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
+                       if ts else "?"})
+    ra.sort(key=lambda x: x["ngay"], reverse=True)
+    return ra
+
+
+def fetch_github(ngay: int) -> list:
+    """Ban phat hanh moi cua engine suy luan — thuong ho tro model moi truoc
+    ca khi hang ra thong cao."""
+    nguong = time.time() - ngay * 86400
+    ra = []
+    for repo in GITHUB_REPOS:
+        try:
+            d = _get(f"https://api.github.com/repos/{repo}/releases/latest",
+                     timeout=30).json()
+        except Exception:                                    # noqa: BLE001
+            continue
+        pub = d.get("published_at") or ""
+        try:
+            ts = datetime.fromisoformat(pub.replace("Z", "+00:00")).timestamp()
+        except Exception:                                    # noqa: BLE001
+            continue
+        if ts < nguong:
+            continue
+        ra.append({"repo": repo, "tag": d.get("tag_name"), "ngay": pub[:10],
+                   "ghi_chu": (d.get("body") or "")[:300]})
+    return ra
+
+
 # ---------- benchmark cua model la ----------
 
 # Model card cua moi hang mot kieu bang khac nhau, regex boc so ra la hong —
@@ -262,17 +355,51 @@ def trich_benchmark(hf_id: str, quanh: int = 400) -> list:
 
 # ---------- moc da thay ----------
 
-def da_thay() -> set:
+def doc_state() -> dict:
     if STATE.exists():
-        return set(json.loads(STATE.read_text(encoding="utf-8")).get("ids", []))
-    return set()
+        return json.loads(STATE.read_text(encoding="utf-8"))
+    return {}
 
 
-def ghi_moc(ids: set):
+def da_thay() -> set:
+    return set(doc_state().get("ids", []))
+
+
+def hang_cu() -> dict:
+    """{'text': {'ten model': hang}, ...} tu lan quet truoc."""
+    return doc_state().get("xep_hang", {})
+
+
+def ghi_moc(ids: set, xep_hang: dict):
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(json.dumps(
-        {"cap_nhat": datetime.now(timezone.utc).isoformat(), "ids": sorted(ids)},
+        {"cap_nhat": datetime.now(timezone.utc).isoformat(),
+         "ids": sorted(ids), "xep_hang": xep_hang},
         ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def so_hang(arena: dict, cu: dict) -> list:
+    """So thu hang lan nay voi lan truoc — bat model VUA LEO HANG.
+
+    Model moi vao bang (khong co trong lan truoc) cung tinh la dang chu y, vi
+    'vao thang top 3' la tin, khong phai chuyen thuong."""
+    ra = []
+    for mod, rows in arena.items():
+        truoc = cu.get(mod) or {}
+        for r in rows:
+            ten, h = r["ten"], r["hang"]
+            h_cu = truoc.get(ten)
+            if h_cu is None:
+                if truoc:                       # co du lieu cu ma khong co model nay
+                    ra.append({"loai": mod, "ten": ten, "hang": h, "hang_cu": None,
+                               "buoc": None, "ghi_chu": f"MOI vao bang, thang hang #{h}"})
+            elif h < h_cu:
+                ra.append({"loai": mod, "ten": ten, "hang": h, "hang_cu": h_cu,
+                           "buoc": h_cu - h,
+                           "ghi_chu": f"leo {h_cu - h} bac: #{h_cu} -> #{h}"})
+    # leo nhieu bac nhat len dau; model moi vao bang xep theo hang
+    ra.sort(key=lambda x: (-(x["buoc"] or 99), x["hang"]))
+    return ra
 
 
 def main():
@@ -291,12 +418,16 @@ def main():
     orouter = fetch_openrouter()
     catalog = fetch_catalog()
     arena = fetch_arena()
+    tin = fetch_tin_hang(a.ngay)
+    gh = fetch_github(a.ngay)
 
     tat_ca = {m["id"] for m in orouter} | {m["id"] for m in catalog}
     cu = da_thay()
 
+    hang_moi = {mod: {r["ten"]: r["hang"] for r in rows}
+                for mod, rows in arena.items()}
     if a.lan_dau:
-        ghi_moc(tat_ca)
+        ghi_moc(tat_ca, hang_moi)
         print(f"Da ghi moc {len(tat_ca)} model. Lan sau se chi bao cai moi.")
         return
 
@@ -320,10 +451,15 @@ def main():
                 continue                       # da nam trong top, khoi tra them
             m["benchmark_trich"] = trich_benchmark(m.get("hf_id") or "")
 
+    leo_hang = so_hang({m: r[:a.top] for m, r in arena.items()}, hang_cu())
+
     ket = {
         "quet_luc": datetime.now(timezone.utc).isoformat(),
         "top_moi_bang": a.top,
         "model_moi": moi,
+        "leo_hang": leo_hang,
+        "tin_hang": tin,
+        "ban_phat_hanh": gh,
         "moi_tren_router_cua_ta": moi_catalog,
         "bang_xep_hang": arena,
         "tong_theo_doi": len(tat_ca),
@@ -336,7 +472,7 @@ def main():
     else:
         _in_bao_cao(ket, a.ngay)
 
-    ghi_moc(tat_ca | cu)
+    ghi_moc(tat_ca | cu, hang_moi)
 
 
 def _in_bao_cao(k: dict, ngay: int):
@@ -369,6 +505,26 @@ def _in_bao_cao(k: dict, ngay: int):
               "— goi duoc ngay ===")
         for m in k["moi_tren_router_cua_ta"][:15]:
             print(f"  {m['id']}")
+    leo = k.get("leo_hang") or []
+    if leo:
+        print(f"\n=== VUA LEO HANG ({len(leo)}) — thay doi so voi lan quet truoc ===")
+        for r in leo[:10]:
+            nhan = {"text": "van ban", "image": "tao anh", "video": "tao video"}.get(
+                r["loai"], r["loai"])
+            print(f"  [{nhan:<9s}] {r['ten'][:36]:<37s} {r['ghi_chu']}")
+
+    tin = k.get("tin_hang") or []
+    if tin:
+        print(f"\n=== TIN TU HANG ({len(tin)}) — su kien so dang ky khong the hien ===")
+        for t in tin[:10]:
+            print(f"  {t['ngay']}  [{t['hang']:<15s}] {t['tieu_de'][:70]}")
+
+    gh = k.get("ban_phat_hanh") or []
+    if gh:
+        print(f"\n=== ENGINE SUY LUAN RA BAN MOI ({len(gh)}) ===")
+        for g in gh:
+            print(f"  {g['ngay']}  {g['repo']:<28s} {g['tag']}")
+
     bxh = k.get("bang_xep_hang") or {}
     for mod, nhan in (("text", "VAN BAN"), ("image", "TAO ANH"), ("video", "TAO VIDEO")):
         rows = bxh.get(mod) or []
