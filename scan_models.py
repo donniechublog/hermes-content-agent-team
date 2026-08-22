@@ -104,6 +104,13 @@ def fetch_openrouter() -> list:
             "gia_ra": _usd_1m(p.get("completion")),
             "context": m.get("context_length"),
             "co_reasoning": bool(m.get("reasoning")),
+            "hf_id": m.get("hugging_face_id") or "",
+            # Model la thuong KHONG co hugging_face_id (da kiem: sakana, dots-3,
+            # ox-alpha, solar-pro4 deu None). Luc do mo ta cua chinh hang la
+            # manh moi duy nhat con lai. Tim nguoc tren HuggingFace theo ten thi
+            # ra model KHAC (tim "sakana" ra TinySwallow) — dua so sai con te hon
+            # khong co so, nen khong lam.
+            "mo_ta": (m.get("description") or "")[:400],
         })
     return out
 
@@ -202,6 +209,57 @@ def fetch_arena() -> dict:
     return ra
 
 
+# ---------- benchmark cua model la ----------
+
+# Model card cua moi hang mot kieu bang khac nhau, regex boc so ra la hong —
+# da thu, no bat nham. Nen o day code chi lam phan CO HOC: tai card ve va CAT
+# doan quanh cho nhac benchmark. Doc bang va phan dinh con so co an tuong khong
+# la viec cua Nova, vi do la doc that chu khong phai so khop chuoi.
+BENCH_HINTS = ("swe-bench", "swebench", "swe bench", "aider", "livecodebench",
+               "humaneval", "mbpp", "terminal-bench")
+
+
+def _lam_sach(t: str) -> str:
+    """Bo the HTML va gop khoang trang — card cua Qwen nhung ca CSS inline."""
+    # Card cua vai hang (Qwen) nhung CSS inline. Vi ta CAT mot cua so giua chung,
+    # doan trich hay bat dau/ket thuc GIUA mot the — nen ngoai viec bo the tron
+    # con phai bo not manh the cut o hai dau, roi quet lai nhung manh CSS le.
+    t = re.sub(r"<[^>]*>", " ", t)          # the tron ven
+    t = re.sub(r"^[^<]*?>", " ", t, count=1)   # duoi the bi cat o dau doan
+    t = re.sub(r"<[^>]*$", " ", t)             # dau the bi cat o cuoi doan
+    t = re.sub(r"[a-zA-Z-]+\s*:\s*[^;\s]{1,40};", " ", t)   # khai bao CSS le
+    t = re.sub(r"\S*(?:#[0-9a-fA-F]{3,8}|rgba?\()\S*", " ", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def trich_benchmark(hf_id: str, quanh: int = 400) -> list:
+    """Tra ve vai doan van ban quanh cho model card nhac toi benchmark code."""
+    if not hf_id:
+        return []
+    url = f"https://huggingface.co/{hf_id}/raw/main/README.md"
+    try:
+        r = _get(url, timeout=30)
+        if r.status_code != 200:
+            return []
+        card = r.text
+    except Exception:                                        # noqa: BLE001
+        return []
+    doan, da_lay = [], []
+    low = card.lower()
+    for h in BENCH_HINTS:
+        i = low.find(h)
+        if i < 0:
+            continue
+        a, b = max(0, i - quanh // 2), min(len(card), i + quanh)
+        if any(abs(a - x) < quanh for x in da_lay):   # tranh cat trung cho
+            continue
+        da_lay.append(a)
+        doan.append(_lam_sach(card[a:b]))
+        if len(doan) >= 3:
+            break
+    return doan
+
+
 # ---------- moc da thay ----------
 
 def da_thay() -> set:
@@ -223,6 +281,10 @@ def main():
                     help="Chi ghi moc, khong bao gi — dung cho lan chay dau tien")
     ap.add_argument("--ngay", type=int, default=14,
                     help="Coi la moi neu ra mat trong N ngay (mac dinh 14)")
+    ap.add_argument("--top", type=int, default=10,
+                    help="Chi lay top N moi bang xep hang (mac dinh 10)")
+    ap.add_argument("--khong-benchmark", action="store_true",
+                    help="Bo qua buoc tai model card cua model la")
     ap.add_argument("--out", help="Ghi JSON ra tep thay vi in ra man hinh")
     a = ap.parse_args()
 
@@ -244,8 +306,23 @@ def main():
     moi.sort(key=lambda m: -(m["ra_mat_ts"] or 0))
     moi_catalog = [m for m in catalog if m["id"] not in cu]
 
+    for mod in list(arena):
+        arena[mod] = arena[mod][:a.top]
+
+    # Model trong top N thi da co hang de noi. Model LA — ngoai top, hang khong
+    # ten — chi dang nhac neu benchmark that su noi troi. Lay san doan benchmark
+    # de Nova phan dinh, thay vi de Nova tu di mo tung trang.
+    ten_top = {r["ten"].lower() for rows in arena.values() for r in rows}
+    if not a.khong_benchmark:
+        for m in moi:
+            goc = (m["id"].split("/")[-1] or "").lower()
+            if any(goc in t or t in goc for t in ten_top):
+                continue                       # da nam trong top, khoi tra them
+            m["benchmark_trich"] = trich_benchmark(m.get("hf_id") or "")
+
     ket = {
         "quet_luc": datetime.now(timezone.utc).isoformat(),
+        "top_moi_bang": a.top,
         "model_moi": moi,
         "moi_tren_router_cua_ta": moi_catalog,
         "bang_xep_hang": arena,
@@ -270,6 +347,23 @@ def _in_bao_cao(k: dict, ngay: int):
         gia = (f"${m['gia_vao']}/{m['gia_ra']} mot trieu"
                if m["gia_vao"] is not None else "chua co gia")
         print(f"  {m['ra_mat']}  [{vung}] {m['id'][:44]:<45s} {gia}")
+    co_bm = [m for m in moi if m.get("benchmark_trich")]
+    if co_bm:
+        print(f"\n=== MODEL LA CO CONG BO BENCHMARK ({len(co_bm)}) "
+              "— Nova doc va phan dinh co an tuong khong ===")
+        for m in co_bm:
+            print(f"  --- {m['id']}  ({m['ra_mat']})")
+            for d in m["benchmark_trich"][:2]:
+                print(f"      {d[:200].replace(chr(10), ' ')}")
+    la_khong_bm = [m for m in moi
+                   if not m.get("benchmark_trich") and m.get("mo_ta")
+                   and "benchmark_trich" in m]
+    if la_khong_bm:
+        print(f"\n=== MODEL LA KHONG CO MODEL CARD ({len(la_khong_bm)}) "
+              "— chi con mo ta cua hang ===")
+        for m in la_khong_bm[:8]:
+            print(f"  --- {m['id']}  ({m['ra_mat']})")
+            print(f"      {m['mo_ta'][:180]}")
     if k["moi_tren_router_cua_ta"]:
         print(f"\n=== MOI TREN ROUTER CUA TA ({len(k['moi_tren_router_cua_ta'])}) "
               "— goi duoc ngay ===")
