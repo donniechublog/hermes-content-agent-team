@@ -77,7 +77,13 @@ def cau_co_so(doan: list) -> list:
     return ra
 
 
-def gom(tieu_de: str, link: str, so_bai_khac=SO_BAI_KHAC) -> dict:
+def gom(tieu_de: str, link: str, so_bai_khac=SO_BAI_KHAC, tu_nguon=None) -> dict:
+    """tu_nguon: tep JSON do anh_bai.py --luu-nguon sinh ra.
+
+    Uu tien dung lai nguon cua Iris. Hai ly do: khong tra cuu hai lan, va quan
+    trong hon — bai viet giai thich dung nhung gi doc gia nhin thay tren tam anh.
+    Moi ben tu tim thi de ra hai bo bai khac nhau.
+    """
     nguon = []
     goc = boc(link)
     if goc.get("paragraphs"):
@@ -85,17 +91,27 @@ def gom(tieu_de: str, link: str, so_bai_khac=SO_BAI_KHAC) -> dict:
                       "tieu_de": goc.get("title", ""),
                       "doan": goc["paragraphs"]})
 
-    # Bai bao khac — dung lai duong vong qua RSS toa soan cua anh_bai
-    try:
-        import anh_bai
-        for u, td in anh_bai.bao_khac(tieu_de, so=so_bai_khac * 2)[:so_bai_khac]:
-            d = boc(u)
-            if d.get("paragraphs"):
-                nguon.append({"nhan": "báo đưa tin", "url": u,
-                              "tieu_de": d.get("title", td),
-                              "doan": d["paragraphs"]})
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[tu_lieu] khong lay duoc bao khac: {type(e).__name__}", file=sys.stderr)
+    dsach = []
+    if tu_nguon and Path(tu_nguon).exists():
+        try:
+            j = json.loads(Path(tu_nguon).read_text(encoding="utf-8"))
+            dsach = [(t["url"], "") for t in j.get("trang", [])
+                     if t.get("url") and t["url"] != link][:so_bai_khac]
+            print(f"[tu_lieu] dung lai {len(dsach)} nguon cua Iris", file=sys.stderr)
+        except Exception:                                    # noqa: BLE001
+            dsach = []
+    if not dsach:
+        try:
+            import anh_bai
+            dsach = anh_bai.bao_khac(tieu_de, so=so_bai_khac * 2)[:so_bai_khac]
+        except Exception as e:                               # noqa: BLE001
+            print(f"[tu_lieu] khong lay duoc bao khac: {type(e).__name__}",
+                  file=sys.stderr)
+    for u, td in dsach:
+        d = boc(u)
+        if d.get("paragraphs"):
+            nguon.append({"nhan": "báo đưa tin", "url": u,
+                          "tieu_de": d.get("title", td), "doan": d["paragraphs"]})
 
     tat_ca_doan = [p for n in nguon for p in n["doan"]]
     return {"tieu_de": tieu_de, "link": link, "nguon": nguon,
@@ -133,9 +149,10 @@ def main():
     ap.add_argument("--link", required=True)
     ap.add_argument("--out", help="Ghi ra tep thay vi in ra man hinh")
     ap.add_argument("--so-bai-khac", type=int, default=SO_BAI_KHAC)
+    ap.add_argument("--tu-nguon", help="Tep nguon do anh_bai.py --luu-nguon sinh ra")
     a = ap.parse_args()
 
-    tl = gom(a.tieu_de, a.link, a.so_bai_khac)
+    tl = gom(a.tieu_de, a.link, a.so_bai_khac, a.tu_nguon)
     trang = dung_trang(tl)
     if a.out:
         Path(a.out).write_text(trang, encoding="utf-8")

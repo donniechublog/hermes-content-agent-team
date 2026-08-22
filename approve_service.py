@@ -252,7 +252,12 @@ duoc anh thi BAO LAI, khong duoc lap cho trong bang hinh tu nghi ra.
 
 BUOC 1 — tim anh that cua tin nay (BAT BUOC chay lenh nay):
 cd /home/donniechu/content-team && venv/bin/python anh_bai.py \\
-  --tieu-de "{title}" --link "{link}" --json
+  --tieu-de "{title}" --link "{link}" --json \\
+  --tu-nguon /home/donniechu/content-team/state/nguon_{draft_id}.json
+
+Finn DA tim nguon san va ghi vao tep tren — day la ket qua research cua cau ay.
+Ban dung lai bo nguon do, khong tu di tim. Quinn cung doc chinh tep nay de viet,
+nho vay bai viet va tam anh cung noi ve mot thu.
 
 Script lay anh tu chinh link goc VA tu cac bao khac dua cung tin, loc bo
 logo/favicon/the thuong hieu, do kich thuoc that roi xep hang. Anh co bang so
@@ -305,20 +310,31 @@ Du kien (Finn da tom tat — CHI la diem khoi dau, KHONG du de viet):
 
 BUOC 1 — DOC TU LIEU THAT (bat buoc, lam truoc khi viet mot chu nao):
 cd /home/donniechu/content-team && venv/bin/python tu_lieu.py \\
-  --tieu-de "{title}" --link "{link}" --out /tmp/tulieu_{draft_id}.md
+  --tieu-de "{title}" --link "{link}" --out /tmp/tulieu_{draft_id}.md \\
+  --tu-nguon /home/donniechu/content-team/state/nguon_{draft_id}.json
 
 Script boc chu tu bai goc VA tu cac bao khac dua cung tin, roi tach rieng muc
 "Cau co so lieu". Tom tat cua Finn khong co con so nao — viet chay theo no thi
 bai ra cung khong co so nao. Da gap that: tin co bang 11 dong benchmark, caption
 viet ra 0 con so.
 
-BUOC 2 — VIET. Co dong va ngan gon thi tot, nhung KHONG DUOC THIEU Y:
-- Ket qua chinh, co SO cu the
-- So sanh: hon/kem cai gi, cach biet bao nhieu — ca cho thang lan cho thua
+BUOC 2 — VIET. Day la bai SOCIAL, khong phai trang tai lieu:
+nhanh, khach quan, ngan gon, xuc tich.
+
+Nguoi doc luot qua trong vai giay. Ho can biet: chuyen gi, con so nao dang nho,
+va co dang quan tam khong. Ho KHONG can bang thong so day du — cai do da co
+tren the anh va o link.
+
+Bon y BAT BUOC co, moi y mot cau la du:
+- Chuyen gi vua xay ra, kem SO quan trong nhat
+- So sanh: hon hay kem cai gi, cach biet bao nhieu. Neu nguon co noi cho THUA
+  thi phai noi — bo di la thien lech, khong con khach quan
 - Han che hoac dieu kien kem theo, neu nguon co noi
 - Vi sao dang chu y (dung ly do Finn cham diem)
-Doc lai mot luot va tu hoi: nguoi doc bang so tren the anh co thay bai viet giai
-thich duoc nhung con so do khong? Neu khong, la con thieu.
+
+Do dai nham toi 400-600 ky tu. Toi da 900 nhung dung coi do la muc tieu — dai
+qua la mat chat social. Chon 3-4 con so DANG NHO NHAT, bo phan con lai; liet ke
+moi thong so vao bai la viet tai lieu chu khong phai viet tin.
 
 YEU CAU KY THUAT:
 - Toi da 900 ky tu, HTML Telegram (chi <b> <i> <code>), dung cau truc SOUL.
@@ -376,6 +392,21 @@ def create_pair(item):
     out_png = str(DRAFTS / (draft_id + ".png"))
     out_json = str(DRAFTS / (draft_id + ".json"))
     write_meta(draft_id, item, out_png)
+
+    # BUOC RESEARCH — thuoc khau cua Finn, chay ngay khi Ong Chu chon tin.
+    # Tim nguon la viec research, khong phai viec cua nguoi dung anh hay nguoi
+    # viet chu. Lam mot lan o day thay vi de Iris va Quinn moi ben tu tim: khoi
+    # tra cuu hai lan, va quan trong hon la ca hai cung doc MOT bo nguon nen bai
+    # viet giai thich dung nhung gi doc gia nhin thay tren tam anh.
+    nguon_path = STATE_DIR / f"nguon_{draft_id}.json"
+    try:
+        subprocess.run(
+            [str(ROOT / "venv/bin/python"), str(ROOT / "nguon_bai.py"),
+             "--tieu-de", item["title"], "--link", item["link"],
+             "--out", str(nguon_path)],
+            capture_output=True, text=True, timeout=180, cwd=str(ROOT))
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[research] khong tim duoc nguon: {type(e).__name__}: {e}")
 
     illu_body = ILLU_BODY.format(
         source_note=item.get("source_note", ""), link=item["link"],

@@ -261,12 +261,20 @@ def cham(url: str, alt: str, la_og: bool, rong: int, cao: int,
     return (d, ", ".join(ly))
 
 
-def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None) -> list:
+def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -> list:
     if tin_model is None:
         tin_model = bool(LA_TIN_MODEL.search(tieu_de))
-    trang = [(link, "goc")]
-    if sau_rong:
-        trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de) if u]
+    # Uu tien bo nguon Finn da research. Chi tu di tim khi khong co tep do —
+    # tim nguon la viec cua Finn, khong phai viec cua nguoi dung anh.
+    if tu_nguon and Path(tu_nguon).exists():
+        j = json.loads(Path(tu_nguon).read_text(encoding="utf-8"))
+        trang = [(t["url"], "gốc" if t.get("loai") == "gốc" else "báo khác")
+                 for t in j.get("trang", []) if t.get("url")]
+        print(f"[anh_bai] dung {len(trang)} nguon Finn da research", file=sys.stderr)
+    else:
+        trang = [(link, "goc")]
+        if sau_rong:
+            trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de) if u]
 
     ung_vien = []
     with cf.ThreadPoolExecutor(max_workers=6) as ex:
@@ -307,13 +315,17 @@ def main():
     ap.add_argument("--chi-link-goc", action="store_true",
                     help="Chi soi link goc, khong tim bao khac (nhanh hon)")
     ap.add_argument("--tai", help="Tai anh tot nhat ve duong dan nay")
+    ap.add_argument("--tu-nguon", metavar="PATH",
+                    help="Tep nguon do Finn research san (nguon_bai.py). Dung "
+                         "bo nguon nay thay vi tu di tim lai.")
     ap.add_argument("--tin-model", action="store_true",
                     help="Ep coi day la tin ve model (uu tien manh bang so/SWE-bench)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
     kq = tim(a.tieu_de, a.link, sau_rong=not a.chi_link_goc,
-             tin_model=True if a.tin_model else None)
+             tin_model=True if a.tin_model else None, tu_nguon=a.tu_nguon)
+
     if a.json:
         print(json.dumps(kq[:10], ensure_ascii=False, indent=2))
     else:
