@@ -41,6 +41,12 @@ UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 OPENROUTER = "https://openrouter.ai/api/v1/models"
 CATALOG = "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
 ARENA = "https://lmarena.ai/leaderboard"
+# Trang cham diem — theo sat MOI hang, ke ca Anthropic va Meta (hai hang khong
+# co RSS). Ong Chu chot: bam vao trang cham diem thay vi bam theo tung hang.
+# Payload RSC chua 616 model voi ~80 truong: releaseDate (phu 616/616),
+# modelCreatorCountry (615/616), isOpenWeights (616/616), codingIndex,
+# agenticIndex, terminalbenchHard, cacheHitPrice, licenseName.
+AA = "https://artificialanalysis.ai/leaderboards/models"
 
 # RSS cua hang — bat nhung su kien KHONG hien ra o so dang ky: mo ma nguon, doi
 # giay phep, cong bo benchmark. Da do song 21/08: Anthropic va Meta KHONG co RSS
@@ -233,7 +239,82 @@ def fetch_arena() -> dict:
     return ra
 
 
-# ---------- nguon 4: tin cua hang ----------
+# ---------- nguon 4: trang cham diem ----------
+
+def _rsc(html: str) -> str:
+    """Giai ma payload RSC cua Next.js (self.__next_f) thanh chuoi lien tuc."""
+    manh = re.findall(r'self\.__next_f\.push\(\[1,\s*"((?:[^"\\]|\\.)*)"\]\)', html)
+    return "".join(json.loads('"' + c + '"') for c in manh)
+
+
+def fetch_aa() -> dict:
+    """{slug: ban ghi} tu artificialanalysis. Day la XUONG SONG cua Nova:
+    no cham diem moi hang nen bat duoc ca Anthropic lan Meta."""
+    try:
+        raw = _rsc(_get(AA, timeout=90).text)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[aa] hong: {type(e).__name__}: {e}", file=sys.stderr)
+        return {}
+    if not raw:
+        print("[aa] khong thay payload RSC — trang co the da doi", file=sys.stderr)
+        return {}
+    dec = json.JSONDecoder()
+    ra = {}
+    for m in re.finditer(r'\{"', raw):
+        try:
+            o, _ = dec.raw_decode(raw[m.start():])
+        except Exception:                                    # noqa: BLE001
+            continue
+        if isinstance(o, dict) and o.get("slug") and "intelligenceIndex" in o:
+            ra[o["slug"]] = o
+    return ra
+
+
+def loc_aa(aa: dict, ngay: int, top: int) -> dict:
+    """Chia du lieu cham diem thanh cac muc dang bao."""
+    moc = (datetime.now(timezone.utc) - __import__("datetime").timedelta(days=ngay)
+           ).strftime("%Y-%m-%d")
+    gan_day = [r for r in aa.values() if (r.get("releaseDate") or "") >= moc]
+
+    def gon(r):
+        return {
+            "ten": r.get("name"), "slug": r["slug"],
+            "hang_sx": r.get("modelCreatorName"),
+            # Quoc gia lay tu chinh nguon, khong con doan theo tien to ID
+            "nuoc": (r.get("modelCreatorCountry") or "?").lower(),
+            "ra_mat": r.get("releaseDate"),
+            "coding": _lam_tron(r.get("codingIndex")),
+            "agentic": _lam_tron(r.get("agenticIndex")),
+            "terminal_bench": _lam_tron(r.get("terminalbenchHard")),
+            "tri_tue": _lam_tron(r.get("intelligenceIndex")),
+            "gia_vao": r.get("price1mInputTokens"),
+            "gia_ra": r.get("price1mOutputTokens"),
+            "gia_cache": r.get("cacheHitPrice"),
+            "nguon_mo": bool(r.get("isOpenWeights")),
+            "giay_phep": r.get("licenseName"),
+            "openrouter_id": r.get("openrouterApiId"),
+        }
+
+    co_diem = [r for r in aa.values() if r.get("codingIndex") is not None]
+    co_diem.sort(key=lambda r: -r["codingIndex"])
+    return {
+        "moi_ra_mat": sorted((gon(r) for r in gan_day),
+                             key=lambda x: x["ra_mat"] or "", reverse=True),
+        "nguon_mo_moi": sorted(
+            (gon(r) for r in gan_day if r.get("isOpenWeights")),
+            key=lambda x: x["ra_mat"] or "", reverse=True),
+        "top_coding": [gon(r) for r in co_diem[:top]],
+    }
+
+
+def _lam_tron(v):
+    try:
+        return round(float(v), 1)
+    except (TypeError, ValueError):
+        return None
+
+
+# ---------- nguon 5: tin cua hang ----------
 
 def fetch_tin_hang(ngay: int) -> list:
     """RSS cac hang. Bat su kien so dang ky khong the hien: mo ma nguon, doi
@@ -423,6 +504,7 @@ def main():
     orouter = fetch_openrouter()
     catalog = fetch_catalog()
     arena = fetch_arena()
+    aa = loc_aa(fetch_aa(), a.ngay, a.top)
     tin = fetch_tin_hang(a.ngay)
     gh = fetch_github(a.ngay)
 
@@ -463,6 +545,7 @@ def main():
         "top_moi_bang": a.top,
         "model_moi": moi,
         "leo_hang": leo_hang,
+        "cham_diem": aa,
         "tin_hang": tin,
         "ban_phat_hanh": gh,
         "moi_tren_router_cua_ta": moi_catalog,
@@ -510,6 +593,21 @@ def _in_bao_cao(k: dict, ngay: int):
               "— goi duoc ngay ===")
         for m in k["moi_tren_router_cua_ta"][:15]:
             print(f"  {m['id']}")
+    aa = k.get("cham_diem") or {}
+    tc = aa.get("top_coding") or []
+    if tc:
+        print("\n=== TOP CODING (artificialanalysis) ===")
+        for r in tc[:10]:
+            ca = f"cache ${r['gia_cache']}" if r["gia_cache"] is not None else "khong cache"
+            print(f"  {str(r['coding']):>5s}  [{r['nuoc']}] {str(r['ten'])[:34]:<35s} "
+                  f"{r['ra_mat']}  vao ${r['gia_vao']}  {ca}")
+    nm = aa.get("nguon_mo_moi") or []
+    if nm:
+        print(f"\n=== VUA MO NGUON ({len(nm)}) — bat duoc ca hang khong co RSS ===")
+        for r in nm[:8]:
+            print(f"  {r['ra_mat']}  [{r['nuoc']}] {str(r['ten'])[:34]:<35s} "
+                  f"{r['giay_phep']}  coding={r['coding']}")
+
     leo = k.get("leo_hang") or []
     if leo:
         print(f"\n=== VUA LEO HANG ({len(leo)}) — thay doi so voi lan quet truoc ===")
