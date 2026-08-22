@@ -157,9 +157,14 @@ def _plan_image(src_img):
 
 
 def _render_image_area(canvas, src_img, img_h, how):
+    """Ve vung anh. Tra ve o chu nhat (x, y, rong, cao) ma ANH THAT chiem cho.
+
+    Can o nay de dat mascot: uu tien tren het la HIEN DAY DU anh nguon. Anh
+    bang so hay bieu do ma bi che mot goc la mat du lieu, khong chap nhan duoc.
+    """
     if how == "exact":
         canvas.paste(src_img.resize((W, img_h), Image.LANCZOS), (0, 0))
-        return
+        return (0, 0, W, img_h)          # anh phu kin, khong con cho trong
     blur = _fit_cover(src_img, W, img_h).filter(ImageFilter.GaussianBlur(48))
     blur = ImageEnhance.Brightness(blur).enhance(0.38)
     canvas.paste(blur, (0, 0))
@@ -170,6 +175,7 @@ def _render_image_area(canvas, src_img, img_h, how):
     ImageDraw.Draw(canvas).rectangle(
         [x - 1, y - 1, x + fitted.width, y + fitted.height],
         outline=(*LINE, 255), width=2)
+    return (x, y, fitted.width, fitted.height)
 
 
 def _chip_size(d, text, font, pad_x=18, pad_y=12):
@@ -216,15 +222,39 @@ def _chip(d, x, y, text, font, pad_x=18, pad_y=12, right_align=None,
     return bw, bh
 
 
-def _paste_mascot(canvas, img_h):
+def _de_len(a, b, ho=8) -> bool:
+    """Hai o chu nhat co cham nhau khong (cong mot khoang ho cho de tho)."""
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    return not (ax + aw + ho <= bx or bx + bw + ho <= ax
+                or ay + ah + ho <= by or by + bh + ho <= ay)
+
+
+def _paste_mascot(canvas, img_h, o_anh):
+    """Dat mascot vao goc KHONG che anh. Khong con goc nao trong thi BO HAN.
+
+    Truoc day mascot luon dan cung mot cho o goc tren-phai, nen voi anh phu kin
+    khung no che mat mot phan noi dung — da gap that: che cot Opus-4.8 cua mot
+    bang benchmark. Nhan dien thuong hieu da co goc cyan, nhan category, tieu de
+    va dai mang xa hoi; thieu mascot mot the khong mat nhan dien, con che mat so
+    lieu thi hong ca tam anh.
+    """
     if not MASCOT_PATH.exists():
         return
     mascot = Image.open(MASCOT_PATH).convert("RGBA")
-    target_h = int(img_h * MASCOT_MAX_H_RATIO)
-    target_w = int(target_h * mascot.width / mascot.height)
-    mascot = mascot.resize((target_w, target_h), Image.LANCZOS)
-    canvas.alpha_composite(mascot,
-                           (W - target_w - MASCOT_MARGIN, MASCOT_MARGIN))
+    th = int(img_h * MASCOT_MAX_H_RATIO)
+    tw = int(th * mascot.width / mascot.height)
+    m = MASCOT_MARGIN
+    # Thu bon goc cua vung anh, uu tien tren-phai nhu cu
+    goc = [(W - tw - m, m), (m, m),
+           (W - tw - m, img_h - th - m), (m, img_h - th - m)]
+    for x, y in goc:
+        if y < 0 or x < 0:
+            continue
+        if not _de_len((x, y, tw, th), o_anh):
+            canvas.alpha_composite(mascot.resize((tw, th), Image.LANCZOS), (x, y))
+            return
+    # Moi goc deu de len anh -> khong dan mascot
 
 
 def _load_icon(name, size, color):
@@ -333,8 +363,8 @@ def build(src, title, subtitle, via, out, category="AI",
         H = img_h + box_h
 
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    _render_image_area(canvas, src_img, img_h, how)
-    _paste_mascot(canvas, img_h)
+    o_anh = _render_image_area(canvas, src_img, img_h, how)
+    _paste_mascot(canvas, img_h, o_anh)
     d = ImageDraw.Draw(canvas)
     # Mot he mau co dinh, khong phu thuoc anh sang hay toi:
     #   vung anh   -> cyan, dong bo voi hai ngoac goc TREN va nhan category
