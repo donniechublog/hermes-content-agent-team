@@ -1,0 +1,268 @@
+#!/usr/bin/env python3
+"""Tim ANH TOT NHAT cho mot tin — tat dinh, khong LLM.
+
+Vi sao phai lam lai: truoc day pipeline chi nhin DUNG MOT link ma Finn nhat duoc.
+Link do thuong la trang tai lieu hoac repo, va og:image cua no la mot the thuong
+hieu chung chung — "deepseek-social-card.jpeg" cho MOI bai cua DeepSeek. Ket qua
+la anh bai nao cung giong bai nao, hoac khong co anh nen Iris phai tu ve SVG.
+
+Vi du that: tin "DeepSeek-v4-flash-vision-exp" co link
+api-docs.deepseek.com/guides/vision/ -> og:image la the thuong hieu. Trong khi
+bang benchmark that (2025x1652) nam o bai dua tin cua officechai.com.
+
+Nen cach lam moi: coi mot TIN la mot su kien, khong phai mot URL.
+  1. Lay anh tu chinh link goc (og:image + anh trong bai)
+  2. Tim cac bao KHAC dua cung tin nay qua Google News, lay anh cua ho
+  3. Loc bo the thuong hieu / logo / avatar, do kich thuoc that
+  4. Xep hang: uu tien anh LON, ti le hop ly, va ten/alt goi y bieu do — bang
+     benchmark va bieu do so sanh la thu doc gia muon thay, khong phai logo
+
+Dung:
+    venv/bin/python anh_bai.py --tieu-de "..." --link "..."
+    venv/bin/python anh_bai.py --tieu-de "..." --link "..." --tai /tmp/anh.png
+"""
+import argparse
+import concurrent.futures as cf
+import io
+import json
+import re
+import sys
+import urllib.parse as up
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+import httpx
+from PIL import Image
+
+UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
+HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
+GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
+
+# Anh khong dai dien noi dung — the thuong hieu, logo, avatar...
+RAC = re.compile(
+    r"(logo|favicon|avatar|sprite|placeholder|1x1|pixel|spacer|"
+    r"social[-_]?card|og[-_]?default|default[-_]?og|share[-_]?image|"
+    r"card[-_]?default|banner[-_]?site|gravatar|author)", re.I)
+
+# Ten tep / alt goi y day la bieu do, bang so — thu doc gia muon xem
+QUY = re.compile(
+    r"(benchmark|chart|graph|table|figure|fig[-_]?\d|result|score|compar|"
+    r"eval|plot|diagram|screenshot|demo|arch)", re.I)
+
+DAI_TOI_DA = 6          # so bai dua tin lay them
+ANH_MOI_TRANG = 6       # so anh lay toi da moi trang
+DIEN_TICH_TOI_THIEU = 120_000     # ~350x350; nho hon thi vo khi phong len the
+
+
+def _tai(url: str, timeout=15):
+    return httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
+
+
+def anh_trong_trang(url: str) -> list:
+    """Tra ve [(url_anh, alt, la_og)] — ca og:image lan anh trong than bai."""
+    try:
+        r = _tai(url, 20)
+        if r.status_code != 200 or "html" not in r.headers.get("content-type", ""):
+            return []
+        html = r.text[:400_000]
+    except Exception:                                        # noqa: BLE001
+        return []
+    ra, thay = [], set()
+
+    def them(src, alt, og):
+        if not src:
+            return
+        src = src.strip()
+        if src.startswith("//"):
+            src = "https:" + src
+        if not src.startswith("http") or src in thay:
+            return
+        thay.add(src)
+        ra.append((src, alt or "", og))
+
+    for prop in ("og:image:secure_url", "og:image", "twitter:image"):
+        for pat in (r"""<meta[^>]+(?:property|name)=["']{p}["'][^>]*content=["']([^"']+)["']""",
+                    r"""<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']{p}["']"""):
+            m = re.search(pat.replace("{p}", re.escape(prop)), html, re.I)
+            if m:
+                them(m.group(1), "", True)
+                break
+
+    for m in re.finditer(r"<img[^>]+>", html, re.I):
+        the = m.group(0)
+        src = re.search(r"""\ssrc=["']([^"']+)["']""", the, re.I)
+        alt = re.search(r"""\salt=["']([^"']*)["']""", the, re.I)
+        them(src.group(1) if src else "", alt.group(1) if alt else "", False)
+        if len(ra) > ANH_MOI_TRANG * 2:
+            break
+    return ra[: ANH_MOI_TRANG * 2]
+
+
+def _tu_dac_trung(t: str) -> set:
+    bo = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
+          "new", "ai", "model", "is", "its", "as", "at", "by", "from"}
+    return {w for w in re.sub(r"[^\w\s]", " ", t.lower()).split()
+            if w not in bo and len(w) > 2}
+
+
+def bao_khac(tieu_de: str, so=DAI_TOI_DA) -> list:
+    """Bai bao KHAC dua cung tin nay — noi thuong co bieu do va bang so that.
+
+    Google News KHONG cho URL bai. `<link>` cua no la duong chuyen huong
+    news.google.com/rss/articles/CBMi... chay bang JS, theo redirect ra trang
+    trung gian 592KB khong co link that; chuoi CBMi cung khong phai base64 cua
+    URL. Da thu ca DuckDuckGo html/lite — tra 202, chan bot.
+
+    Nhung Google News CO cho ten mien toa soan o <source url>. Nen di duong vong:
+    lay ten mien -> doc RSS cua chinh toa soan do -> tim bai theo tieu de. RSS
+    toa soan chi giu 10-40 bai gan nhat, nhung tin cua ta luon duoi 72h nen vua du.
+    """
+    try:
+        r = _tai(GNEWS.format(q=up.quote(tieu_de)), 25)
+        its = ET.fromstring(r.content).findall(".//item")
+    except Exception:                                        # noqa: BLE001
+        return []
+    mien = []
+    for it in its[:so * 2]:
+        src = it.find("source")
+        u = (src.get("url") if src is not None else "") or ""
+        td = it.findtext("title") or ""
+        if u and (u, td) not in mien:
+            mien.append((u.rstrip("/"), td))
+
+    goc = _tu_dac_trung(tieu_de)
+
+    def _tim_trong_feed(cap):
+        m, td_gg = cap
+        for duong in ("/feed/", "/rss", "/feed", "/rss.xml", "/index.xml"):
+            try:
+                rr = _tai(m + duong, 15)
+                if rr.status_code != 200 or b"<item" not in rr.content[:400_000]:
+                    continue
+                for i in ET.fromstring(rr.content).findall(".//item"):
+                    t = i.findtext("title") or ""
+                    chung = goc & _tu_dac_trung(t)
+                    if chung and len(chung) / max(len(goc), 1) >= 0.5:
+                        return (i.findtext("link") or "", t)
+                return None
+            except Exception:                                # noqa: BLE001
+                continue
+        return None
+
+    ra = []
+    with cf.ThreadPoolExecutor(max_workers=6) as ex:
+        for kq in ex.map(_tim_trong_feed, mien[:so * 2]):
+            if kq and kq[0]:
+                ra.append(kq)
+            if len(ra) >= so:
+                break
+    return ra
+
+
+def do_anh(url: str) -> tuple:
+    """(rong, cao, byte) — tai vua du de doc header anh, khong tai ca tep."""
+    try:
+        with httpx.stream("GET", url, headers=HDR, timeout=15,
+                          follow_redirects=True) as r:
+            if r.status_code != 200:
+                return (0, 0, 0)
+            buf = b""
+            for chunk in r.iter_bytes(16384):
+                buf += chunk
+                if len(buf) > 300_000:
+                    break
+                try:
+                    im = Image.open(io.BytesIO(buf))
+                    return (*im.size, len(buf))
+                except Exception:                            # noqa: BLE001
+                    continue
+    except Exception:                                        # noqa: BLE001
+        pass
+    return (0, 0, 0)
+
+
+def cham(url: str, alt: str, la_og: bool, rong: int, cao: int) -> tuple:
+    """(diem, ly_do). Diem cang cao cang dang dung."""
+    if rong == 0 or cao == 0:
+        return (-1, "khong doc duoc kich thuoc")
+    dt = rong * cao
+    if dt < DIEN_TICH_TOI_THIEU:
+        return (-1, f"qua nho {rong}x{cao}")
+    ti = max(rong, cao) / min(rong, cao)
+    if ti > 4:
+        return (-1, f"ti le qua lech {rong}x{cao}")
+    if RAC.search(url) or RAC.search(alt):
+        return (-1, "the thuong hieu / logo")
+
+    d, ly = 0, []
+    d += min(40, int(dt / 60_000))
+    ly.append(f"{rong}x{cao}")
+    if QUY.search(url) or QUY.search(alt):
+        d += 35
+        ly.append("có vẻ là biểu đồ/bảng số")
+    if 1.0 <= ti <= 2.2:
+        d += 10
+        ly.append("tỉ lệ đẹp")
+    if la_og:
+        d += 5
+        ly.append("og:image")
+    return (d, ", ".join(ly))
+
+
+def tim(tieu_de: str, link: str, sau_rong=True) -> list:
+    trang = [(link, "goc")]
+    if sau_rong:
+        trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de) if u]
+
+    ung_vien = []
+    with cf.ThreadPoolExecutor(max_workers=6) as ex:
+        for (u, nguon), ds in zip(trang, ex.map(lambda t: anh_trong_trang(t[0]), trang)):
+            for src, alt, og in ds:
+                ung_vien.append({"anh": src, "alt": alt, "og": og,
+                                 "tu": nguon, "trang": u})
+    # bo trung theo ten tep (cung anh nhieu kich co)
+    thay, loc = set(), []
+    for c in ung_vien:
+        k = re.sub(r"[-_]\d{2,4}x\d{2,4}|\?.*$", "", c["anh"])
+        if k in thay:
+            continue
+        thay.add(k)
+        loc.append(c)
+
+    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+        for c, kt in zip(loc, ex.map(lambda x: do_anh(x["anh"]), loc)):
+            c["rong"], c["cao"], c["byte"] = kt
+            c["diem"], c["ly_do"] = cham(c["anh"], c["alt"], c["og"], kt[0], kt[1])
+    tot = [c for c in loc if c["diem"] > 0]
+    tot.sort(key=lambda c: -c["diem"])
+    return tot
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Tim anh tot nhat cho mot tin")
+    ap.add_argument("--tieu-de", required=True)
+    ap.add_argument("--link", required=True)
+    ap.add_argument("--chi-link-goc", action="store_true",
+                    help="Chi soi link goc, khong tim bao khac (nhanh hon)")
+    ap.add_argument("--tai", help="Tai anh tot nhat ve duong dan nay")
+    ap.add_argument("--json", action="store_true")
+    a = ap.parse_args()
+
+    kq = tim(a.tieu_de, a.link, sau_rong=not a.chi_link_goc)
+    if a.json:
+        print(json.dumps(kq[:10], ensure_ascii=False, indent=2))
+    else:
+        if not kq:
+            print("Khong tim duoc anh nao dung duoc.", file=sys.stderr)
+        for c in kq[:8]:
+            print(f"  [{c['diem']:>3d}d] {c['ly_do']:<44s} ({c['tu']})")
+            print(f"         {c['anh'][:110]}")
+    if a.tai and kq:
+        r = _tai(kq[0]["anh"], 40)
+        Path(a.tai).write_bytes(r.content)
+        print(f"da tai -> {a.tai} ({len(r.content):,} byte)")
+    return 0 if kq else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

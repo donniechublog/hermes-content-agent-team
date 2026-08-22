@@ -13,6 +13,7 @@ Moi nguon fetch doc lap — mot nguon chet khong keo do ca lan quet (Reddit tung
 tra connection refused; luc do HN + arXiv van chay binh thuong).
 """
 import argparse
+import concurrent.futures as cf
 import json
 import re
 import statistics
@@ -213,12 +214,69 @@ def seen_keys() -> set:
     return keys
 
 
+# ---------- anh minh hoa ----------
+
+# Nhung duong khong bao gio co anh dung duoc — khoi mat mot luot tai
+KHONG_CO_ANH = re.compile(r"\.pdf($|\?)|arxiv\.org/(abs|pdf)/|news\.ycombinator\.com/item", re.I)
+
+# Anh mac dinh cua nen tang, khong dai dien noi dung bai — lay ve chi to giong nhau
+ANH_RAC = re.compile(
+    r"(logo|favicon|default[-_]?og|placeholder|avatar|sprite|1x1|pixel|"
+    r"twitter[-_]card[-_]default|social[-_]?default)", re.I)
+
+
+def _anh_cua(url: str, timeout=8) -> str:
+    """Lay og:image (hoac twitter:image) cua mot bai. Hong thi tra chuoi rong.
+
+    Vi sao can: truoc day khong co buoc nay, `image_url` LUON None, nen Iris
+    lan nao cung phai tu ve SVG — moi the anh nhin giong het nhau. Da kiem 23/23
+    tin trong ba ngay deu khong co anh.
+    """
+    if not url or KHONG_CO_ANH.search(url):
+        return ""
+    try:
+        r = httpx.get(url, timeout=timeout, follow_redirects=True,
+                      headers={"User-Agent": UA, "Accept-Encoding": "gzip, deflate"})
+        if r.status_code != 200 or "html" not in r.headers.get("content-type", ""):
+            return ""
+        # Chi doc phan dau: the og:image luon nam trong <head>
+        html = r.text[:200_000]
+    except Exception:                                        # noqa: BLE001
+        return ""
+    for prop in ("og:image:secure_url", "og:image", "twitter:image",
+                 "twitter:image:src"):
+        m = re.search(
+            r"""<meta[^>]+(?:property|name)\s*=\s*["']""" + re.escape(prop)
+            + r"""["'][^>]*\scontent\s*=\s*["']([^"']+)["']""", html, re.I)
+        if not m:
+            m = re.search(
+                r"""<meta[^>]+content\s*=\s*["']([^"']+)["'][^>]*(?:property|name)\s*=\s*["']"""
+                + re.escape(prop) + r"""["']""", html, re.I)
+        if m:
+            src = m.group(1).strip()
+            if src.startswith("//"):
+                src = "https:" + src
+            if src.startswith("http") and not ANH_RAC.search(src):
+                return src
+    return ""
+
+
+def gan_anh(items: list, workers=8) -> int:
+    """Gan image_url cho tung ung vien, tai song song. Tra ve so bai co anh."""
+    with cf.ThreadPoolExecutor(max_workers=workers) as ex:
+        for it, anh in zip(items, ex.map(lambda i: _anh_cua(i.get("link", "")), items)):
+            it["image_url"] = anh or None
+    return sum(1 for i in items if i.get("image_url"))
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Quet nguon, chong trung, tinh truoc diem co hoc cho Finn")
     ap.add_argument("--out", help="Ghi JSON ra file thay vi stdout")
     ap.add_argument("--top", type=int, default=40,
                     help="So ung vien toi da giu lai (mac dinh 40)")
+    ap.add_argument("--khong-lay-anh", action="store_true",
+                    help="Bo qua buoc tai og:image (nhanh hon, nhung Iris se phai tu ve)")
     a = ap.parse_args()
 
     print("Dang quet...", file=sys.stderr)
@@ -255,6 +313,15 @@ def main():
 
     fresh.sort(key=lambda x: x["score_partial"], reverse=True)
     fresh = fresh[: a.top]
+
+    if not a.khong_lay_anh:
+        t0 = time.time()
+        co = gan_anh(fresh)
+        print(f"  anh minh hoa: {co}/{len(fresh)} bai co og:image "
+              f"({time.time() - t0:.0f}s)", file=sys.stderr)
+    else:
+        for it in fresh:
+            it.setdefault("image_url", None)
 
     result = {
         "scanned_at": datetime.now(timezone.utc).isoformat(),
