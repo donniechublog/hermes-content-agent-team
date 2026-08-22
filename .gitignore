@@ -12,3 +12,6 @@ __pycache__/
 
 # symlink toi hermes-agent/venv — duong dan tuyet doi, khong dua vao repo
 venv
+
+# Nhat ky lam viec — du lieu chay, khong dua vao repo
+state/nhat_ky/
