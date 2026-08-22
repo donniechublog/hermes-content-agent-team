@@ -232,9 +232,34 @@ def slugify(title, fallback):
     return (s[:40].strip("-") or fallback)
 
 
-def latest_manifest():
-    files = sorted(STATE_DIR.glob("finn_candidates_*.json"))
+# Topic nao chon tin tu manifest nao. Finn, Nova va Vera deu la vai DI TIM TIN,
+# nen ca ba phai chon duoc bang cach tra loi so — truoc day chi Finn lam duoc,
+# bao cao cua Nova va Vera la van xuoi khong so nen Ong Chu khong biet rep gi.
+MANIFEST_THEO_TOPIC = {
+    "scout": "finn_candidates_*.json",
+    "nova": "nova_candidates_*.json",
+    "market": "vera_candidates_*.json",
+}
+
+
+def latest_manifest(vai="scout"):
+    files = sorted(STATE_DIR.glob(MANIFEST_THEO_TOPIC.get(vai, "finn_candidates_*.json")))
     return files[-1] if files else None
+
+
+def vai_cua_topic(thread_id):
+    """Topic id -> ten vai, doc tu state/topics.json."""
+    tp = STATE_DIR / "topics.json"
+    if thread_id is None or not tp.exists():
+        return None
+    try:
+        m = json.loads(tp.read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return None
+    for ten, tid in m.items():
+        if str(tid) == str(thread_id):
+            return ten
+    return None
 
 
 ILLU_BODY = """Nguon: {source_note}
@@ -475,9 +500,10 @@ def handle_message(token, group, scout_thread, msg):
         return
     thread_id = msg.get("message_thread_id")
 
-    # Chi so trong topic cua Finn = lenh chon tin. Moi thu khac la hoi thoai.
-    is_pick = (scout_thread is not None
-               and thread_id == int(scout_thread)
+    # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin. Moi thu khac la
+    # hoi thoai. Finn, Nova, Vera deu duoc — cung mot cach tra loi.
+    vai = vai_cua_topic(thread_id)
+    is_pick = (vai in MANIFEST_THEO_TOPIC
                and re.fullmatch(r"[\d,\s]+", text))
     if not is_pick:
         # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
@@ -487,10 +513,10 @@ def handle_message(token, group, scout_thread, msg):
         return
 
     nums = sorted(set(int(n) for n in re.findall(r"\d+", text)))
-    manifest_path = latest_manifest()
+    manifest_path = latest_manifest(vai)
     if not manifest_path:
-        call(token, "sendMessage", chat_id=group, message_thread_id=scout_thread,
-             text="Chưa có danh sách tin nào hôm nay để chọn.")
+        call(token, "sendMessage", chat_id=group, message_thread_id=thread_id,
+             text="Chưa có danh sách tin nào để chọn trong topic này.")
         return
 
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -516,7 +542,7 @@ def handle_message(token, group, scout_thread, msg):
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
-    call(token, "sendMessage", chat_id=group, message_thread_id=scout_thread,
+    call(token, "sendMessage", chat_id=group, message_thread_id=thread_id,
          text="<b>Kết quả chọn:</b>\n" + "\n".join(lines), parse_mode="HTML")
 
 
