@@ -23,11 +23,19 @@ cd /home/donniechu/content-team && venv/bin/python article_extract.py "<url>" --
 JSON trả về gồm `title`, `outline` (h2/h3, dàn ý lớn), `paragraphs` (toàn bộ đoạn văn gốc), `images`.
 
 ### Bước 2, Viết tiêu đề + các đoạn văn thuần
-- **Độ dài: 500-800 từ là khoảng mong muốn**, tính trên các đoạn văn (không
-  tính tiêu đề). Đây là hướng dẫn, **không phải luật cứng**, 300 từ diễn đạt
-  đúng và đủ thì tốt hơn 700 từ lan man. Đừng viết dài ra chỉ để chạm mốc.
-  Script chỉ chặn khi hỏng thật: dưới 200 từ (quá mỏng, chắc chắn sót ý) hoặc
-  trên 2000 từ (kể lại cả bài, không còn là lời mời).
+- **Độ dài đo bằng KÝ TỰ, không đếm từ.** Nền tảng ràng buộc theo ký tự, mà
+  tiếng Việt trung bình 5,1 ký tự mỗi từ nên đếm từ dễ lệch gấp đôi.
+
+  Caption cuối cùng, **tính cả tiêu đề và câu kết, phải dưới 2.200 ký tự**. Đây
+  là giới hạn của Instagram và TikTok, Ông Chủ chốt lấy làm trần chung cho mọi
+  nơi để một bản đăng được khắp nơi thay vì viết lại cho từng nền tảng.
+
+  Khoảng mong muốn **1.500–2.050 ký tự**, tức khoảng 300–400 từ. Ngắn hơn hẳn
+  trước kia, nên phải chọn lọc: giữ số liệu và ý chính, bỏ diễn giải và ví dụ.
+  Vẫn phải nhắc đủ các mục lớn trong outline, chỉ là nói gọn hơn.
+
+  `teaser_assemble.py` chặn cứng khi vượt và nói rõ thừa bao nhiêu ký tự, quy ra
+  bao nhiêu từ cần cắt. Dưới 130 từ cũng chặn vì quá mỏng để phủ outline.
 - **Phải nhắc đủ các mục lớn trong `outline`**, không bỏ sót ý chính nào. Đây là bản tóm lược đầy đủ hình hài bài gốc, không phải đoạn giới thiệu chung chung.
 - Giọng mời đọc, có sức hút, nhưng **không bịa thêm nội dung không có trong bài gốc**.
 - **KHÔNG viết bằng giọng tường thuật.** Teaser là lời mời đọc, không phải bản
