@@ -26,16 +26,24 @@ ICONS = ASSETS / "icons"
 # Brand guideline: JetBrains Mono cho heading/UI, Inter cho body text
 F_BOLD = str(FONTS / "JetBrainsMono-ExtraBold.ttf")   # tieu de
 F_UI = str(FONTS / "JetBrainsMono-Bold.ttf")          # nhan category, UI
-F_REG = str(FONTS / "Inter.ttf")                      # body: subtitle, via
+F_REG = str(FONTS / "Inter.ttf")                      # via, ten kenh, UI phu
+# Phu de dung serif: no la cau dan chuyen, khong phai nhan UI. Chan chu tao
+# nhip doc cham hon tieu de mono, hai tang chu tach bach han thay vi chi khac
+# co. Dung ban Text chu KHONG dung ban Display: Display tuong phan net cao,
+# net manh mong qua nen o co chu nho doc met mat.
+F_SUB = str(FONTS / "NotoSerif.ttf")                  # phu de
 
 W = 1200                          # bề ngang cố định
 IMG_MIN_H = 600                   # ảnh không mỏng hơn 2:1
 IMG_MAX_H = 1200                  # ảnh không cao hơn 1:1
-SUB_GROW_MAX = 63                 # cỡ tối đa phụ đề được nở tới khi còn chỗ
+SUB_GROW_MAX = 50                 # cỡ tối đa phụ đề được nở tới khi còn chỗ
 # Ảnh luôn được giữ ít nhất chừng này phần chiều cao thẻ — chữ phải nhường,
 # không được lấn. Bảng số bị thu nhỏ là mất dữ liệu; phụ đề ngắn đi một dòng
 # thì không mất gì.
 TY_LE_ANH_TOI_THIEU = 0.72
+# Tran chieu cao textbox khi ti le bi khoa. Anh la noi dung chinh, textbox chi
+# la phan chu thich; cho nao thua thi tra cho anh chu khong don vao textbox.
+TRAN_TEXTBOX = 0.40
 PAD = 44
 
 # ---- Thuong hieu ----------------------------------------------------------
@@ -48,6 +56,12 @@ THUONG_HIEU = {
         "mascot": "mascot.png",
         "nhan_trai": True,
         "socials": ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"],
+        # Phu de keo ve gan FG thay vi mau MUTED xam: xam qua thi cau dan
+        # chuyen bi chim, doc luot qua la mat. Giong muc dcgr dang dung.
+        "ro_phu_de": 1.0,
+        # Ten kenh ro va dung mau CYAN nhan dien; hang icon mo han xuong.
+        "ro_handle": 1.0,
+        "mo_icon": 0.34,
         "mau": {
             "BG": (14, 17, 23), "BG_CARD": (22, 27, 34),
             "FG": (230, 237, 243), "MUTED": (139, 147, 158),
@@ -68,7 +82,11 @@ THUONG_HIEU = {
         # ve sau, nhuong mat cho tieu de va phu de.
         "co_chan": 0.85,        # co chu + icon o chan the: 85% co goc
         "mo_chan": 0.55,        # do sang chu chan, 1.0 la bang FG
-        "ro_phu_de": 0.92,      # phu de sang gan bang FG thay vi mau MUTED xam
+        "ro_phu_de": 1.0,      # phu de sang gan bang FG thay vi mau MUTED xam
+        # Ten kenh la nhan dien, khong phai chu thich: no phai doc ro. Chi cum
+        # "via:" va hang icon moi lui ve sau theo mo_chan.
+        "ro_handle": 0.95,
+        "mo_icon": 0.34,
         "mau": {
             "BG": (10, 10, 10), "BG_CARD": (26, 26, 26),
             "FG": (255, 255, 255), "MUTED": (150, 150, 150),
@@ -107,7 +125,7 @@ MASCOT_MARGIN = 44
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
 TITLE_GROW_MAX = 104              # trần khi tiêu đề nở vào chỗ trống
 TITLE_GROW_LINES = 2   # tuyet doi khong de tieu de 3 dong
-SUB_SIZE = 39
+SUB_SIZE = 31
 CHIP_SIZE = 26
 VIA_SIZE = 29
 BRAND_SIZE = 27   # ten kenh nho hon dong via mot chut
@@ -142,7 +160,7 @@ def _wrap(d, text, font, max_w):
 
 
 def _fit_text(d, text, max_w, max_lines, hi, lo, bold=False):
-    path = F_BOLD if bold else F_REG
+    path = F_BOLD if bold else F_SUB
     for size in range(hi, lo - 1, -2):
         f = _f(path, size)
         lines = _wrap(d, text, f, max_w)
@@ -162,15 +180,15 @@ def _grow_sub(d, text, max_w, max_h, max_lines=2):
     nho nhat mot dong thi phi cho va nhin trong rong. No ra toi 2 dong.
     """
     best = None
-    for size in range(SUB_GROW_MAX, 25, -1):
-        f = _f(F_REG, size)
+    for size in range(SUB_GROW_MAX, 20, -1):
+        f = _f(F_SUB, size)
         lines = _wrap(d, text, f, max_w)
         if len(lines) > max_lines:
             continue
         if _line_h(f, 6) * len(lines) <= max_h:
             best = (f, lines)
             break
-    return best or (_f(F_REG, SUB_SIZE), _wrap(d, text, _f(F_REG, SUB_SIZE), max_w)[:max_lines])
+    return best or (_f(F_SUB, SUB_SIZE), _wrap(d, text, _f(F_SUB, SUB_SIZE), max_w)[:max_lines])
 
 
 def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES):
@@ -308,8 +326,13 @@ def _chip(d, x, y, text, font, pad_x=18, pad_y=12, right_align=None,
     # day the phai gap sang trai nen hai the doi dinh vao nhau, nhin nhu bi hut
     # vao giua. Cung huong thi nhip deu va mat di theo mot chieu.
     if fold == "down":
+        # HAI tam giac doi xung tren duoi, khoet mot chu V o dau phai — dung
+        # hinh duoi ruy bang. Mot tam giac don chi giong goc bi gap, hai cai
+        # moi doc ra la dai bang.
         d.polygon([(x + bw, y), (x + bw + fold_w, y), (x + bw, y + fold_w)],
                   fill=CYAN)
+        d.polygon([(x + bw, y + bh), (x + bw + fold_w, y + bh),
+                   (x + bw, y + bh - fold_w)], fill=CYAN)
     elif fold == "up":
         tri = [(x + bw, y), (x + bw, y + fold_w), (x + bw + fold_w, y + fold_w)]
         d.polygon(tri, fill=BG_CARD)
@@ -550,6 +573,9 @@ def build(src, title, subtitle, via, out, category="AI",
     f_chip = _f(F_UI, CHIP_SIZE)
     co_chan = b.get("co_chan") or 1.0
     mo_chan = b.get("mo_chan") or 1.0
+    # Hang icon social la thu it dang chu y nhat tren the: ai cung biet
+    # no la gi, no khong mang thong tin. De no mo hon ca cum via.
+    mo_icon = b.get("mo_icon") or round(mo_chan * 0.62, 2)
     f_via = _f(F_REG, max(12, round(VIA_SIZE * co_chan)), weight=500)
     avail_w = W - PAD * 2
 
@@ -557,7 +583,7 @@ def build(src, title, subtitle, via, out, category="AI",
                                       max_lines=2, hi=TITLE_SIZE_HI,
                                       lo=TITLE_SIZE_LO, bold=True)
     f_sub, sub_lines = _fit_text(probe, subtitle, avail_w, max_lines=3,
-                                  hi=SUB_SIZE, lo=27)
+                                  hi=SUB_SIZE, lo=22)
     _, chip_h = _chip_size(probe, category.upper(), f_chip)
     via_h = f_via.getbbox("Ây")[3] - f_via.getbbox("Ây")[1]
 
@@ -596,7 +622,7 @@ def build(src, title, subtitle, via, out, category="AI",
         while H - img_h < box_min and len(sub_lines) > 1:
             thu_f, thu_lines = _fit_text(probe, subtitle, avail_w,
                                          max_lines=len(sub_lines) - 1,
-                                         hi=SUB_SIZE, lo=24)
+                                         hi=SUB_SIZE, lo=19)
             if "…" in "".join(thu_lines) and len(sub_lines) <= 2:
                 break                       # rut nua la cat mat chu, dung lai
             f_sub, sub_lines = thu_f, thu_lines
@@ -620,7 +646,13 @@ def build(src, title, subtitle, via, out, category="AI",
                     img_h, how = H - box_min, "letterbox"
                     print(f"[canh bao] khoa ti le {ratio} nen phai thu anh xuong "
                           f"{img_h}px — bo --ratio de hien day du.", file=sys.stderr)
-        box_h = H - img_h
+        # ANH LA CHINH, TEXTBOX LA PHU. Truoc day toan bo cho thua bi don het
+        # vao textbox: khoa 4:5 thi chu chiem 58% chieu cao con anh 42%, nguoc
+        # vai tro. Nay textbox chi lay phan chu that su can, tran o TRAN_TEXTBOX;
+        # phan con lai tra cho vung anh, anh nam giua tren nen mo cung tong mau.
+        box_h = min(H - img_h, max(box_min, int(H * TRAN_TEXTBOX)))
+        if H - box_h != img_h:
+            img_h, how = H - box_h, "letterbox"
         # Chỗ trống chia theo thứ tự ưu tiên: khung cố định -> subtitle
         # (tối đa 3 dòng) -> phần còn lại dành cho tiêu đề nở, chặn ở 2 dòng.
         _g1, _g2, _g3, _g4 = _khoang(nen)
@@ -659,6 +691,16 @@ def build(src, title, subtitle, via, out, category="AI",
     g1, g2, g3, g4 = _khoang(nen)
     y = img_h + chip_h // 2 + g1
 
+    # Khi ti le bi khoa, tieu de va phu de da no het co cho phep ma textbox van
+    # con thua thi day khoi chu xuong giua thay vi de no dinh sat mep tren va bo
+    # lai mot mang trong o duoi.
+    if ratio != "free":
+        _cao_chu = (_line_h(f_title, 6) * len(title_lines) + g2
+                    + _line_h(f_sub, 6) * len(sub_lines))
+        _cho_trong = (H - g4 - via_h - g3) - y - _cao_chu
+        if _cho_trong > 0:
+            y += _cho_trong // 2
+
     for ln in title_lines:
         d.text((PAD, y), ln, font=f_title, fill=FG)
         y += _line_h(f_title, 6)
@@ -674,12 +716,15 @@ def build(src, title, subtitle, via, out, category="AI",
 
     bottom_y = H - g4 - via_h
     via_text = via if via.startswith("via:") else "via: " + via
-    d.text((PAD, bottom_y), via_text, font=f_via, fill=_pha(ACCENT, mo_chan))
+    # Cum via lay CYAN cua bo nhan dien, giong ten kenh. Truoc day no dung ACCENT
+    # (xanh duong) nen lech tong voi cyan o ngay ben canh.
+    d.text((PAD, bottom_y), via_text, font=f_via, fill=_pha(CYAN, mo_chan))
     _social_row(canvas, d, W - PAD, bottom_y + via_h / 2, handle,
                 _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500),
                 icon_size=max(16, round(39 * co_chan)),
                 gap=max(8, round(15 * co_chan)),
-                mau_chu=_pha(ACCENT, mo_chan), mau_icon=_pha(FG, mo_chan))
+                mau_chu=_pha(CYAN, b.get("ro_handle", mo_chan)),
+                mau_icon=_pha(FG, mo_icon))
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
