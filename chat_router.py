@@ -23,6 +23,7 @@ HERMES_HOME = str(Path.home() / ".hermes")
 TOPIC_PROFILE = {
     "scout": "scout",
     "illustrator": "illustrator",
+    "ethan": "ethan",
     "writer": "writer",
     "analyst": "analyst",
     "teaser": "teaser",

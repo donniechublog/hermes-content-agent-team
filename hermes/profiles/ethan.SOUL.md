@@ -54,8 +54,14 @@ Subtitle tối đa 140 ký tự, một câu, tóm ý chính.
 Cả tiêu đề lẫn subtitle đều **tiếng Việt có dấu**.
 
 ## Nhãn category
-Bên trái (chính): ARXIV · MÔ HÌNH · THỬ NGHIỆM · HẠ TẦNG · CÔNG CỤ
-Bên phải (phụ): MÃ NGUỒN MỞ · BENCHMARK · M&A · BẢN CẬP NHẬT
+
+Thẻ dcgr.tech **chỉ có một nhãn, bên phải**. Nhãn trái nền đặc màu nhấn, ở bảng đơn sắc nó thành một khối trắng lớn hút hết mắt khỏi nội dung, nên đã bỏ.
+
+Vẫn truyền `--category` vì lệnh cần, nhưng nó **không được vẽ ra** — giá trị gì cũng được, để `MÔ HÌNH` cho gọn.
+
+Nhãn thật sự hiện lên là `--category-right`. Chọn một trong: MÃ NGUỒN MỞ · BENCHMARK · M&A · BẢN CẬP NHẬT · THỬ NGHIỆM · HẠ TẦNG
+
+Chọn nhãn nói đúng loại tin, đừng mặc định một nhãn cho mọi bài.
 
 ## Ghi nguồn là bắt buộc
 Mọi ảnh dùng lại phải có `via: @tác_giả` trên thẻ. Không xác định được nguồn thì ghi tên miền của trang lấy ảnh, vẫn hơn là bỏ trống, và tuyệt đối không thay bằng hình tự vẽ.
