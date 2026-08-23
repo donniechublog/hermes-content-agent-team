@@ -127,6 +127,15 @@ def intake(draft_id, scheduled_at=None):
     # va chap nhan danh doi: mot ban dang duoc khap noi, thay vi phai fine-tune
     # rieng cho tung nen tang. Chan o day la lop cuoi — truoc luc di qua moat
     # thi bai phai o trang thai dang duoc ngay.
+    # Teaser CHI dang len Telegram — no moi doc sang bai goc tren donniechu.com,
+    # ma Instagram va TikTok khong cho link an duoc nen dua sang do cung vo ich.
+    # Bo qua han thay vi chan, de khong bao loi gia moi lan duyet mot teaser.
+    if (d.get("category") or "").upper() == "TEASER":
+        return False, "teaser chi dang Telegram, khong day sang moat"
+
+    # Tran chi ap cho TIN HANG NGAY. Ong Chu chot lay gioi han Instagram lam moc
+    # va chap nhan danh doi: mot ban dang duoc khap noi, thay vi fine-tune rieng
+    # tung nen tang. Chan o day la lop cuoi — toi day bai phai dang duoc ngay.
     cap = d.get("caption") or ""
     if len(cap) > TRAN_NEN_TANG:
         return False, (f"caption {len(cap)} ky tu, vuot tran {TRAN_NEN_TANG} cua "

@@ -304,15 +304,14 @@ def _chip(d, x, y, text, font, pad_x=18, pad_y=12, right_align=None,
                     width=2)
         d.text((x + pad_x, y + pad_y - b[1]), text, font=font, fill=FG)
 
-    # Tam giac gap, cung mau than the:
-    #   "down" — bam goc tren-phai, thon dan xuong (the trai, nam de len anh)
-    #   "up"   — bam goc TREN-trai, dinh nhon huong len (the phai)
-    # Ca hai deu nam o nua tren cua the, tuc phan de len anh.
+    # Tam giac gap, cung mau than the. CA HAI deu bam canh PHAI cua the — truoc
+    # day the phai gap sang trai nen hai the doi dinh vao nhau, nhin nhu bi hut
+    # vao giua. Cung huong thi nhip deu va mat di theo mot chieu.
     if fold == "down":
         d.polygon([(x + bw, y), (x + bw + fold_w, y), (x + bw, y + fold_w)],
                   fill=CYAN)
     elif fold == "up":
-        tri = [(x, y), (x, y + fold_w), (x - fold_w, y + fold_w)]
+        tri = [(x + bw, y), (x + bw, y + fold_w), (x + bw + fold_w, y + fold_w)]
         d.polygon(tri, fill=BG_CARD)
         d.line(tri + [tri[0]], fill=CYAN, width=2)
     return bw, bh
