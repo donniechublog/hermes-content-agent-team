@@ -49,6 +49,30 @@ def cap_tep():
     return ra
 
 
+# Tep plugin nam trong ban cai hermes. `hermes update` co the doi ca cau truc
+# ben trong, luc do de ban cu cua ta len la hong bang. Neu kich thuoc lech qua
+# nguong nay thi KHONG ghi de, bat phai xem lai bang tay.
+NGUONG_LECH = 0.15          # 15%
+LA_PLUGIN = "kanban "
+
+
+def canh_bao_de_len(ten: str, that: Path, repo: Path) -> str | None:
+    """Tra ve ly do KHONG nen ghi de, hoac None neu an toan."""
+    if not ten.startswith(LA_PLUGIN):
+        return None
+    try:
+        a, b = that.stat().st_size, repo.stat().st_size
+    except Exception:                                        # noqa: BLE001
+        return None
+    if a == 0 or b == 0:
+        return None
+    lech = abs(a - b) / max(a, b)
+    if lech > NGUONG_LECH:
+        return (f"ban that {a:,} byte / ban repo {b:,} byte, lech {lech:.0%} "
+                "— co the hermes da cap nhat, va rat co the doi cau truc")
+    return None
+
+
 def doc(p: Path):
     try:
         return p.read_bytes()
@@ -61,9 +85,12 @@ def main():
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--vao-repo", action="store_true", help="~/.hermes -> repo")
     g.add_argument("--ra-hermes", action="store_true", help="repo -> ~/.hermes")
+    ap.add_argument("--ep", action="store_true",
+                    help="Ghi de ke ca khi tep plugin lech nhieu (dung sau khi "
+                         "da xem bang tay va chac chan)")
     a = ap.parse_args()
 
-    khac, thieu, da_chep = [], [], 0
+    khac, thieu, bo_qua, da_chep = [], [], [], 0
     for ten, that, repo in cap_tep():
         a_b, b_b = doc(that), doc(repo)
         if a_b is None:
@@ -80,6 +107,10 @@ def main():
         elif a.ra_hermes:
             if b_b is None:
                 continue                # khong co ban repo thi khong ghi de
+            ly_do = canh_bao_de_len(ten, that, repo)
+            if ly_do and not a.ep:
+                bo_qua.append((ten, ly_do))
+                continue
             that.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(repo, that)
             da_chep += 1
@@ -93,6 +124,12 @@ def main():
     huong = "-> repo" if a.vao_repo else ("-> ~/.hermes" if a.ra_hermes else "")
     for ten, _, _, moi in khac:
         print(f"  {'MOI  ' if moi else 'KHAC '} {ten} {huong}")
+    if bo_qua:
+        print()
+        for ten, ly_do in bo_qua:
+            print(f"  [BO QUA] {ten}")
+            print(f"           {ly_do}")
+        print("  Xem lai bang tay roi va lai tu ban moi, hoac chay --ep neu chac chan.")
     if a.vao_repo or a.ra_hermes:
         print(f"\nDa chep {da_chep} tep.")
     else:

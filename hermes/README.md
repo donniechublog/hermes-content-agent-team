@@ -35,5 +35,14 @@ Script so nội dung và chỉ báo tệp thật sự khác nhau.
   nhỏ và chìm vào đám xám nên phải mở từng thẻ mới biết bot nào.
 - **Chia lane ở mọi cột**: trước chỉ cột `running` mới tách theo profile.
 
-Đây là tệp trong bản cài hermes nên **`hermes update` sẽ ghi đè**. Sau khi cập
-nhật hermes, chạy `dong_bo_hermes.py --ra-hermes` rồi khởi động lại dashboard.
+Đây là tệp trong bản cài hermes nên **`hermes update` sẽ ghi đè**. Quy trình sau
+khi cập nhật hermes:
+
+    venv/bin/python dong_bo_hermes.py              # xem lệch những gì
+    venv/bin/python dong_bo_hermes.py --ra-hermes  # khôi phục bản vá
+    systemctl --user restart hermes-dashboard
+
+Script **tự từ chối ghi đè** khi tệp plugin lệch quá 15% kích thước, vì đó là dấu
+hiệu hermes đã đổi cấu trúc bên trong chứ không chỉ đổi vài dòng. Đè bản cũ lên
+lúc đó là làm hỏng bảng. Gặp trường hợp này thì vá lại từ bản mới, đừng đè. Chỉ
+dùng `--ep` khi đã xem bằng tay và chắc chắn.
