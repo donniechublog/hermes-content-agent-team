@@ -260,42 +260,57 @@ MAC_DINH_ANH = "iris"
 def doc_lenh_chon(text: str):
     """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)] hoac None.
 
-    Chap nhan:
-        1                 -> Iris, donniechublog (nhu cu)
-        1,3               -> ca hai giao Iris
-        1 - Ethan         -> Ethan, dcgr.tech
-        1 - Iris, 2 - Ethan
-        1-ethan 2         -> khong phan biet hoa thuong, dau gach tuy chon
-    Tra None neu khong phai lenh chon, de tin nhan do di vao luong hoi thoai.
+    Quy tac: ten vai ap cho MOI SO dung truoc no, tinh tu ten vai gan nhat.
+    So nao khong co ten vai nao phia sau thi ve mac dinh (Iris).
+
+        1                    -> Iris
+        1, 2, 3              -> ca ba Iris
+        1, 2, 3 - Ethan      -> ca ba Ethan
+        1 - Iris, 2 - Ethan  -> 1 Iris, 2 Ethan
+        1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Iris
+
+    Tra None neu co phan khong hieu duoc, de tin nhan roi ve luong hoi thoai
+    thay vi bao loi — Ong Chu con dung chinh topic do de tro chuyen.
     """
     if not text or not text.strip():
         return None
-    # Tach theo dau phay/xuong dong truoc. Rieng cum chi gom SO va DAU CACH
-    # ("1 2 3") thi tach tiep theo khoang trang — do la cach go cu, phai giu.
-    tho = []
+
+    # Tach thanh cac manh: moi manh la mot SO hoac mot TEN VAI
+    manh = []
     for c in re.split(r"[,\n;]+", text.strip()):
         c = c.strip()
-        if re.fullmatch(r"[\d\s]+", c):
-            tho.extend(c.split())
-        elif c:
-            tho.append(c)
+        if not c:
+            continue
+        for phan in c.split():
+            phan = phan.strip("-\u2013\u2012:")
+            if not phan:
+                continue
+            if phan.isdigit():
+                manh.append(("so", int(phan)))
+            elif re.fullmatch(r"[A-Za-zÀ-ỹ]+", phan):
+                if phan.lower() not in VAI_ANH:
+                    return None          # ten la -> khong phai lenh chon
+                manh.append(("vai", phan.lower()))
+            else:
+                return None
+    if not any(k == "so" for k, _ in manh):
+        return None
 
-    ra, thay = [], set()
-    for phan in tho:
-        phan = phan.strip()
-        if not phan:
-            continue
-        m = re.fullmatch(r"(\d+)\s*(?:[-–:]\s*|\s+)?([A-Za-zÀ-ỹ]+)?", phan)
-        if not m:
-            return None                      # co phan khong hieu duoc -> khong phai lenh chon
-        so = int(m.group(1))
-        ten = (m.group(2) or MAC_DINH_ANH).strip().lower()
-        if ten not in VAI_ANH:
-            return None                      # ten vai la -> de hoi thoai xu ly
-        if so in thay:
-            continue
-        thay.add(so)
-        ra.append((so, *VAI_ANH[ten]))
+    ra, cho, thay = [], [], set()
+    def _xa(ten):
+        for n in cho:
+            if n in thay:
+                continue
+            thay.add(n)
+            ra.append((n, *VAI_ANH[ten]))
+        cho.clear()
+
+    for kind, v in manh:
+        if kind == "so":
+            cho.append(v)
+        else:
+            _xa(v)                        # ten vai ap cho moi so dang cho
+    _xa(MAC_DINH_ANH)                     # so con lai ve mac dinh
     return ra or None
 
 

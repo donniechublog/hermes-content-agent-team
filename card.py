@@ -46,6 +46,7 @@ THUONG_HIEU = {
     "donniechublog": {
         "handle": "donniechublog",
         "mascot": "mascot.png",
+        "nhan_trai": True,
         "socials": ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"],
         "mau": {
             "BG": (14, 17, 23), "BG_CARD": (22, 27, 34),
@@ -59,6 +60,10 @@ THUONG_HIEU = {
     "dcgr": {
         "handle": "dcgr.tech",
         "mascot": None,
+        # Chi giu nhan phai. Nhan trai nen dac mau nhan, ma o bang don sac no
+        # thanh mot khoi trang lon hut het mat khoi noi dung — bo di thi bo cuc
+        # tho hon va dung chat hero image.
+        "nhan_trai": False,
         "socials": ["telegram", "linkedin", "x-twitter", "youtube"],
         "mau": {
             "BG": (10, 10, 10), "BG_CARD": (26, 26, 26),
@@ -532,8 +537,9 @@ def build(src, title, subtitle, via, out, category="AI",
     # Nhan category vat qua ranh gioi anh/textbox — khau hai vung lam mot,
     # dong thoi tra lai chieu cao textbox cho tieu de.
     chip_y = img_h - chip_h // 2
-    _chip(d, PAD, chip_y, category.upper(), f_chip, solid=True,
-          fold="down")
+    if b.get("nhan_trai", True):
+        _chip(d, PAD, chip_y, category.upper(), f_chip, solid=True,
+              fold="down")
     if category_right:
         _chip(d, 0, chip_y, category_right.upper(), f_chip,
               right_align=W - PAD, fold="up")
