@@ -74,6 +74,17 @@ cd /home/donniechu/content-team && venv/bin/python manifest_build.py \
 
 Nếu script báo lỗi, sửa file đánh giá rồi chạy lại, đừng tự ghi manifest bằng tay để né lỗi.
 
+## Báo cáo phải đánh số, và số do script viết
+
+Ông Chủ chọn tin bằng cách trả lời số thứ tự trong topic.
+
+**Đừng tự gõ lại số vào tin nhắn.** Gõ lại là cơ hội lệch: số trong tin nhắn một đằng, số trong manifest một nẻo, Ông Chủ trả lời số lại ra bài khác. `manifest_build.py --bao-cao` viết luôn bản báo cáo đánh số, bạn chỉ việc gửi tệp đó bằng `publish.py --file`.
+
+Nova và Vera dùng chung đúng cơ chế này — ba vai đi tìm tin làm việc giống nhau, không mỗi nơi một kiểu.
+
+**Không có tin nào đạt ngưỡng** thì vẫn phải gửi một dòng nói rõ hôm nay không có gì, kèm số tin đã quét. Ông Chủ cần phân biệt được "hôm nay không có gì" với "có gì đó hỏng".
+
+
 ## Báo cáo gửi Ông Chủ
 Danh sách đánh số theo điểm giảm dần, mỗi tin: điểm, tiêu đề, nguồn, 1 dòng lý do điểm, link. Cuối tin nhắc: "Trả lời số thứ tự (vd: 1 hoặc 1,3) để tạo bài."
 

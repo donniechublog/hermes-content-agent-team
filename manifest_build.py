@@ -14,6 +14,8 @@ tong (partial + technical + relevance), tu danh so thu tu theo diem giam dan.
 """
 import argparse
 import json
+import sys as _sys
+from datetime import datetime, timezone
 import re
 import sys
 from pathlib import Path
@@ -38,6 +40,8 @@ def main():
     ap.add_argument("--picks", required=True,
                     help="File JSON danh gia cua Finn (mang cac muc)")
     ap.add_argument("--out", required=True, help="Duong dan manifest ghi ra")
+    ap.add_argument("--bao-cao", metavar="PATH",
+                    help="Ghi luon ban bao cao danh so, de gui bang publish.py --file")
     a = ap.parse_args()
 
     cands = json.loads(Path(a.candidates).read_text(encoding="utf-8"))["candidates"]
@@ -100,9 +104,20 @@ def main():
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"items": items}, ensure_ascii=False, indent=2),
-                   encoding="utf-8")
+    # Khoa goc giong het manifest cua Nova va Vera. Ba vai di tim tin phai ra
+    # cung mot dinh dang, khong moi noi mot kieu.
+    out.write_text(json.dumps(
+        {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": "scout",
+         "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"da ghi {len(items)} muc -> {out}")
+
+    # Bao cao do SCRIPT viet, khong de Finn go lai so. Dung chung ham voi Nova
+    # va Vera nen ba vai hien cung mot dinh dang.
+    if a.bao_cao:
+        import bao_cao_manifest
+        Path(a.bao_cao).write_text(
+            bao_cao_manifest.dung(items, "scout"), encoding="utf-8")
+        print(f"  bao cao -> {a.bao_cao}", file=_sys.stderr)
     for it in items:
         print(f"  #{it['index']} [{it['score']:3d}] {it['title'][:60]}")
 

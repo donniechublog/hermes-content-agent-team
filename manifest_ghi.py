@@ -82,19 +82,9 @@ def main():
     # lech: so trong tin nhan mot dang, so trong manifest mot dang, Ong Chu tra
     # loi so lai ra bai khac. Sinh o day thi hai ben khong the lech.
     if a.bao_cao:
-        ten_vai = {"nova": "Nova", "market": "Vera", "vera": "Vera"}[a.vai]
-        d = [f"<b>{ten_vai} — {ngay}</b>", ""]
-        for it in items:
-            d.append(f"<b>{it['index']}.</b> {it['title']}")
-            if it["summary_vi"]:
-                d.append(f"    {it['summary_vi']}")
-            phu = " · ".join(x for x in (it["via"], it["source_note"]) if x)
-            if phu:
-                d.append(f"    <i>{phu}</i>")
-            d.append("")
-        d.append("Trả lời số thứ tự để tạo bài. Thêm tên vai dựng ảnh nếu muốn:")
-        d.append("<code>1</code> · <code>1, 2</code> · <code>1, 2 - Ethan</code>")
-        Path(a.bao_cao).write_text("\n".join(d), encoding="utf-8")
+        import bao_cao_manifest
+        Path(a.bao_cao).write_text(
+            bao_cao_manifest.dung(items, a.vai, ngay), encoding="utf-8")
         print(f"  bao cao -> {a.bao_cao}", file=sys.stderr)
 
 

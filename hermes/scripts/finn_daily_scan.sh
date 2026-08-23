@@ -14,12 +14,23 @@ BODY="Nhiem vu quet tin sang (chay theo lich cron). Lam dung 5 buoc trong SOUL c
 
 Duong dan ghi manifest: ${MANIFEST}
 
-Sau khi ghi xong manifest, gui bao cao (danh sach danh so + dong nhac reply so) bang lenh bash:
-  cat > /tmp/finn_bao_cao_$$.txt <<'HET'
-  <danh sach danh so, moi tin mot dong, xuong dong THAT>
-  HET
+Ghi manifest KEM ban bao cao, dung mot lenh:
+
+  cd /home/donniechu/content-team && venv/bin/python manifest_build.py \\
+    --picks <tep cham diem cua ban> --out ${MANIFEST} \\
+    --bao-cao /tmp/finn_baocao.txt
+
+Script tu danh so, tu ghep du lieu tu candidates, VA tu viet luon ban bao cao.
+KHONG tu go lai so vao tin nhan: go lai la co hoi lech, so trong tin nhan mot
+dang con so trong manifest mot dang, Ong Chu tra loi so lai ra bai khac.
+
+Gui thang ban script vua viet:
   /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to -1003763882779 --thread 6 --file /tmp/finn_bao_cao_$$.txt
+    --to -1003763882779 --thread 6 --file /tmp/finn_baocao.txt
+
+KHONG co tin nao dat nguong thi van phai gui mot dong noi ro hom nay khong co gi,
+kem so tin da quet. Ong Chu can phan biet duoc \"hom nay khong co gi\" voi
+\"co gi do hong\".
 
 Chi dung <b>, <i>, <code>, <a href>. KHONG dung <br>, <p>, <li>, markdown.
 
