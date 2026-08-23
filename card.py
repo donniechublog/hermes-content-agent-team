@@ -22,7 +22,6 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 ASSETS = Path(__file__).resolve().parent / "assets"
 FONTS = ASSETS / "fonts"
 ICONS = ASSETS / "icons"
-MASCOT_PATH = ASSETS / "mascot.png"
 
 # Brand guideline: JetBrains Mono cho heading/UI, Inter cho body text
 F_BOLD = str(FONTS / "JetBrainsMono-ExtraBold.ttf")   # tieu de
@@ -39,16 +38,59 @@ SUB_GROW_MAX = 63                 # cỡ tối đa phụ đề được nở t�
 TY_LE_ANH_TOI_THIEU = 0.72
 PAD = 44
 
-BG = (14, 17, 23)             # #0e1117 background
-BG_CARD = (22, 27, 34)        # #161b22 background card
-FG = (230, 237, 243)          # #e6edf3 text primary
-MUTED = (139, 147, 158)       # #8b939e text muted
-ACCENT = (88, 166, 255)       # #58a6ff accent / CTA
-ACCENT_DIM = (31, 111, 235)   # #1f6feb accent dim — dung cho mat khoi
-CYAN = (0, 204, 224)          # #00cce0 accent highlight (mau logo)
-LINE = (48, 54, 61)           # duong vien phu, cung ho voi bg card
+# ---- Thuong hieu ----------------------------------------------------------
+# Bo cuc, font va moi rang buoc bo cuc GIU NGUYEN giua cac thuong hieu — day la
+# cung mot he thong the, chi khac lop son va danh tinh. Doi mau ma doi luon bo
+# cuc thi thanh hai san pham khac nhau, mat cai loi cua viec dung chung code.
+THUONG_HIEU = {
+    "donniechublog": {
+        "handle": "donniechublog",
+        "mascot": "mascot.png",
+        "socials": ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"],
+        "mau": {
+            "BG": (14, 17, 23), "BG_CARD": (22, 27, 34),
+            "FG": (230, 237, 243), "MUTED": (139, 147, 158),
+            "ACCENT": (88, 166, 255), "ACCENT_DIM": (31, 111, 235),
+            "CYAN": (0, 204, 224), "LINE": (48, 54, 61),
+        },
+    },
+    # dcgr.tech: chi trang va den. Khong mascot mau — mot hinh nhieu mau giua
+    # bang mau don sac se pha vo chinh cai lam nen nhan dien cua no.
+    "dcgr": {
+        "handle": "dcgr.tech",
+        "mascot": None,
+        "socials": ["telegram", "linkedin", "x-twitter", "youtube"],
+        "mau": {
+            "BG": (10, 10, 10), "BG_CARD": (26, 26, 26),
+            "FG": (255, 255, 255), "MUTED": (150, 150, 150),
+            "ACCENT": (255, 255, 255), "ACCENT_DIM": (110, 110, 110),
+            "CYAN": (255, 255, 255), "LINE": (72, 72, 72),
+        },
+    },
+}
 
-SOCIALS = ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"]
+# Gia tri mac dinh; build() ghi de theo --brand
+BG = BG_CARD = FG = MUTED = ACCENT = ACCENT_DIM = CYAN = LINE = None
+SOCIALS = []
+MASCOT_PATH = None
+
+
+def dat_thuong_hieu(ten: str):
+    """Nap bang mau, mascot va danh sach social cua mot thuong hieu."""
+    global BG, BG_CARD, FG, MUTED, ACCENT, ACCENT_DIM, CYAN, LINE
+    global SOCIALS, MASCOT_PATH
+    b = THUONG_HIEU.get(ten)
+    if b is None:
+        raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
+                         f"Co: {', '.join(sorted(THUONG_HIEU))}")
+    m = b["mau"]
+    BG, BG_CARD = m["BG"], m["BG_CARD"]
+    FG, MUTED = m["FG"], m["MUTED"]
+    ACCENT, ACCENT_DIM = m["ACCENT"], m["ACCENT_DIM"]
+    CYAN, LINE = m["CYAN"], m["LINE"]
+    SOCIALS = list(b["socials"])
+    MASCOT_PATH = (ASSETS / b["mascot"]) if b.get("mascot") else None
+    return b
 
 MASCOT_MAX_H_RATIO = 0.10
 MASCOT_MARGIN = 44
@@ -284,7 +326,7 @@ def _paste_mascot(canvas, img_h, o_anh):
     va dai mang xa hoi; thieu mascot mot the khong mat nhan dien, con che mat so
     lieu thi hong ca tam anh.
     """
-    if not MASCOT_PATH.exists():
+    if MASCOT_PATH is None or not MASCOT_PATH.exists():
         return
     mascot = Image.open(MASCOT_PATH).convert("RGBA")
     th = int(img_h * MASCOT_MAX_H_RATIO)
@@ -362,9 +404,28 @@ def _tech_frame(d, H, split, side_col=LINE, box_col=LINE):
            fill=ACCENT, width=3)
 
 
+# Em-dash bi cam trong moi van ban dang. caption_check chan o bai viet, publish
+# doi not truoc khi gui, nhung THE ANH di duong khac nen truot qua. Chan tai day.
+DAU_CAM = {"\u2014": ",", "\u2013": "-", "\u2012": "-", "\u2015": "-"}
+
+
+def bo_dau_cam(t: str) -> str:
+    if not t:
+        return t
+    for a, b in DAU_CAM.items():
+        t = t.replace(a, b)
+    import re as _re
+    return _re.sub(r"\s+,", ",", _re.sub(r"\s{2,}", " ", t)).strip()
+
+
 def build(src, title, subtitle, via, out, category="AI",
-          category_right="", handle="donniechublog", ratio="free",
-          tagline="daily AI update", khoa_ti_le=False):
+          category_right="", handle=None, ratio="free",
+          tagline="daily AI update", khoa_ti_le=False, brand="donniechublog"):
+    # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
+    # module, chua nap thi chung con la None.
+    b = dat_thuong_hieu(brand)
+    handle = handle or b["handle"]
+    title, subtitle = bo_dau_cam(title), bo_dau_cam(subtitle)
     src_img = Image.open(src).convert("RGB")
     img_h, how = _plan_image(src_img)
 
@@ -510,7 +571,11 @@ def main():
     p.add_argument("--via", required=True)
     p.add_argument("--category", default="AI")
     p.add_argument("--category-right", default="")
-    p.add_argument("--handle", default="donniechublog")
+    p.add_argument("--handle", default=None,
+                   help="Ghi de ten kenh; mac dinh lay theo --brand")
+    p.add_argument("--brand", default="donniechublog",
+                   choices=sorted(THUONG_HIEU),
+                   help="Bo nhan dien: donniechublog (xanh dem) hoac dcgr (trang den)")
     p.add_argument("--tagline", default="daily AI update",
                    help="Mo ta ngan duoi ten kenh trong khoi thuong hieu")
     p.add_argument("--ratio", default="free",
@@ -520,7 +585,8 @@ def main():
     p.add_argument("--out", required=True)
     a = p.parse_args()
     build(a.image, a.title, a.subtitle, a.via, a.out,
-          a.category, a.category_right, a.handle, a.ratio, a.tagline)
+          a.category, a.category_right, a.handle, a.ratio, a.tagline,
+          khoa_ti_le=getattr(a, "khoa_ti_le", False), brand=a.brand)
 
 
 if __name__ == "__main__":

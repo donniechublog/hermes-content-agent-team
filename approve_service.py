@@ -247,6 +247,58 @@ def latest_manifest(vai="scout"):
     return files[-1] if files else None
 
 
+# Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
+# Khong ghi ten ai thi mac dinh Iris, giu nguyen thoi quen cu.
+VAI_ANH = {
+    "iris": ("illustrator", "donniechublog"),
+    "illustrator": ("illustrator", "donniechublog"),
+    "ethan": ("ethan", "dcgr"),
+}
+MAC_DINH_ANH = "iris"
+
+
+def doc_lenh_chon(text: str):
+    """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)] hoac None.
+
+    Chap nhan:
+        1                 -> Iris, donniechublog (nhu cu)
+        1,3               -> ca hai giao Iris
+        1 - Ethan         -> Ethan, dcgr.tech
+        1 - Iris, 2 - Ethan
+        1-ethan 2         -> khong phan biet hoa thuong, dau gach tuy chon
+    Tra None neu khong phai lenh chon, de tin nhan do di vao luong hoi thoai.
+    """
+    if not text or not text.strip():
+        return None
+    # Tach theo dau phay/xuong dong truoc. Rieng cum chi gom SO va DAU CACH
+    # ("1 2 3") thi tach tiep theo khoang trang — do la cach go cu, phai giu.
+    tho = []
+    for c in re.split(r"[,\n;]+", text.strip()):
+        c = c.strip()
+        if re.fullmatch(r"[\d\s]+", c):
+            tho.extend(c.split())
+        elif c:
+            tho.append(c)
+
+    ra, thay = [], set()
+    for phan in tho:
+        phan = phan.strip()
+        if not phan:
+            continue
+        m = re.fullmatch(r"(\d+)\s*(?:[-–:]\s*|\s+)?([A-Za-zÀ-ỹ]+)?", phan)
+        if not m:
+            return None                      # co phan khong hieu duoc -> khong phai lenh chon
+        so = int(m.group(1))
+        ten = (m.group(2) or MAC_DINH_ANH).strip().lower()
+        if ten not in VAI_ANH:
+            return None                      # ten vai la -> de hoi thoai xu ly
+        if so in thay:
+            continue
+        thay.add(so)
+        ra.append((so, *VAI_ANH[ten]))
+    return ra or None
+
+
 def vai_cua_topic(thread_id):
     """Topic id -> ten vai, doc tu state/topics.json."""
     tp = STATE_DIR / "topics.json"
@@ -270,6 +322,7 @@ Tom tat: {summary}
 image_url (og:image so bo, co the la the thuong hieu): {image_url}
 
 NHIEM VU: dung the anh cho bai nay tu ANH THAT cua nguon.
+Thuong hieu: {brand}
 
 NGUYEN TAC TREN HET: KHONG BAO GIO tu ve minh hoa.
 Ve ra la bia dat — the anh phai phan anh dung cai co that trong nguon. Khong tim
@@ -308,7 +361,7 @@ cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python 
   --via "{via}" \\
   --category "{category}" \\
   --category-right "<nhan phu ngan, vd: MA NGUON MO / BENCHMARK / M&A>" \\
-  --ratio 1:1 \\
+  --ratio 1:1{co_brand} \\
   --out {out_png}
 
 Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
@@ -418,7 +471,7 @@ def write_meta(draft_id, item, out_png):
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def create_pair(item):
+def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
     draft_id = slugify(item["title"], "item-" + str(item["index"]))
     out_png = str(DRAFTS / (draft_id + ".png"))
     out_json = str(DRAFTS / (draft_id + ".json"))
@@ -445,8 +498,9 @@ def create_pair(item):
         summary=item.get("summary_vi", ""),
         image_url=item.get("image_url") or "khong co",
         out_png=out_png, out_png_goc=out_png[:-4],
-        category=item.get("category", "CONG CU"), draft_id=draft_id)
-    illu_id, err = kanban_create("Anh: " + item["title"], "illustrator", illu_body)
+        category=item.get("category", "CONG CU"), draft_id=draft_id,
+        brand=brand, co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
+    illu_id, err = kanban_create("Anh: " + item["title"], vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
 
@@ -503,8 +557,8 @@ def handle_message(token, group, scout_thread, msg):
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin. Moi thu khac la
     # hoi thoai. Finn, Nova, Vera deu duoc — cung mot cach tra loi.
     vai = vai_cua_topic(thread_id)
-    is_pick = (vai in MANIFEST_THEO_TOPIC
-               and re.fullmatch(r"[\d,\s]+", text))
+    lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
+    is_pick = lenh is not None
     if not is_pick:
         # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
         # vong lap poll (nut Duyet/Bo phai bam duoc bat cu luc nao).
@@ -512,7 +566,6 @@ def handle_message(token, group, scout_thread, msg):
                          args=(token, group, msg, thread_id, text)).start()
         return
 
-    nums = sorted(set(int(n) for n in re.findall(r"\d+", text)))
     manifest_path = latest_manifest(vai)
     if not manifest_path:
         call(token, "sendMessage", chat_id=group, message_thread_id=thread_id,
@@ -523,7 +576,7 @@ def handle_message(token, group, scout_thread, msg):
     items = {it["index"]: it for it in data.get("items", [])}
     lines = []
     changed = False
-    for n in nums:
+    for n, vai_anh, brand in lenh:
         it = items.get(n)
         if not it:
             lines.append("#" + str(n) + ": không tìm thấy")
@@ -531,13 +584,15 @@ def handle_message(token, group, scout_thread, msg):
         if it.get("picked"):
             lines.append("#" + str(n) + ": đã chọn trước đó")
             continue
-        ids, err = create_pair(it)
+        ids, err = create_pair(it, vai_anh=vai_anh, brand=brand)
         if err:
             lines.append("#" + str(n) + ": lỗi — " + err)
             continue
         it["picked"] = True
+        it["vai_anh"], it["brand"] = vai_anh, brand
         changed = True
-        lines.append("#" + str(n) + ": đã tạo task ảnh " + ids[0] + " + viết " + ids[1])
+        ten_hien = "Ethan" if vai_anh == "ethan" else "Iris"
+        lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]} + viết {ids[1]}")
 
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
