@@ -253,8 +253,18 @@ VAI_ANH = {
     "iris": ("illustrator", "donniechublog"),
     "illustrator": ("illustrator", "donniechublog"),
     "ethan": ("ethan", "dcgr"),
+    # Dax dung hero image kieu tran: anh phu kin the, chu de len, khong co dai
+    # textbox rieng. Khac hai vai kia o BO CUC chu khong o thuong hieu, nen mac
+    # dinh dung bang mau donniechublog.
+    "dax": ("designer", "donniechublog"),
+    "designer": ("designer", "donniechublog"),
 }
 MAC_DINH_ANH = "iris"
+# Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi Ethan/Iris — them vai
+# thu ba la sai ngay, nen doi thanh bang tra.
+TEN_VAI_ANH = {"illustrator": "Iris", "ethan": "Ethan", "designer": "Dax"}
+# Vai nao dung kieu tran thay vi kieu dai mac dinh.
+KIEU_ANH = {"designer": "tran"}
 
 
 def doc_lenh_chon(text: str):
@@ -376,7 +386,7 @@ cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python 
   --via "{via}" \\
   --category "{category}" \\
   --category-right "<nhan phu ngan, vd: MA NGUON MO / BENCHMARK / M&A>" \\
-  --ratio 1:1{co_brand} \\
+  --ratio 4:5{co_kieu}{co_brand} \\
   --out {out_png}
 
 Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
@@ -549,7 +559,9 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
         image_url=item.get("image_url") or "khong co",
         out_png=out_png, out_png_goc=out_png[:-4],
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
-        brand=brand, co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
+        brand=brand,
+        co_kieu=(f" --kieu {KIEU_ANH[vai_anh]}" if vai_anh in KIEU_ANH else ""),
+        co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
     illu_id, err = kanban_create("Anh: " + item["title"], vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
@@ -647,7 +659,7 @@ def handle_message(token, group, scout_thread, msg):
             lines.append("#" + str(n) + ": lỗi — " + err)
             continue
         changed = True          # create_pair da danh dau vao `it`
-        ten_hien = "Ethan" if vai_anh == "ethan" else "Iris"
+        ten_hien = TEN_VAI_ANH.get(vai_anh, "Iris")
         lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]} + viết {ids[1]}")
 
     if changed:

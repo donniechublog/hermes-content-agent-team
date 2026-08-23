@@ -41,6 +41,9 @@ SUB_GROW_MAX = 50                 # cỡ tối đa phụ đề được nở t�
 # không được lấn. Bảng số bị thu nhỏ là mất dữ liệu; phụ đề ngắn đi một dòng
 # thì không mất gì.
 TY_LE_ANH_TOI_THIEU = 0.72
+# Kieu tran chi duoc phong anh toi muc nay de phu kin the. Qua nguong thi
+# nen mo + anh sac dat len, vi vo net la mat noi dung.
+NGUONG_PHONG = 1.35
 # Tran chieu cao textbox khi ti le bi khoa. Anh la noi dung chinh, textbox chi
 # la phan chu thich; cho nao thua thi tra cho anh chu khong don vao textbox.
 TRAN_TEXTBOX = 0.40
@@ -292,6 +295,50 @@ def _render_image_area(canvas, src_img, img_h, how):
     return (x, y, fitted.width, fitted.height)
 
 
+def _tran_anh(canvas, src_img, split):
+    """Anh phu KIN the, chu dat de len tren qua mot man toi chuyen dan.
+
+    Kieu dai (mac dinh) cat the thanh hai o: anh o tren, textbox mau dac o duoi.
+    Ranh gioi thang bang do lam anh nhin nhu bi cat cut. Kieu tran bo ranh gioi:
+    anh chay het chieu cao, chu nam de len phan duoi, va cai giu cho chu doc
+    duoc la mot man toi day dan chu khong phai mot mang mau dac.
+
+    Danh doi: phu kin the thi phai CAT anh theo be ngang hoac chieu cao. Chi
+    dung kieu nay cho hero image, con the tin thi van dung kieu dai de anh
+    nguon hien tron ven.
+    """
+    H = canvas.height
+    # Phu kin the phai phong anh len. Phong qua nguong thi vo net va cat mat
+    # noi dung — da thay ro voi anh nguon 1200x630 keo len kho 4:5, phai phong
+    # 2.4 lan, chu trong anh bay mat mot nua. Qua nguong thi doi cach: nen la
+    # ban cover lam mo, con ban SAC dat tron ven len tren. Van la mot mat phang
+    # lien, khong co vach, nhung khong danh doi do net.
+    can = max(W / src_img.width, H / src_img.height)
+    if can <= NGUONG_PHONG:
+        canvas.paste(_fit_cover(src_img, W, H), (0, 0))
+    else:
+        canvas.paste(_fit_cover(src_img, W, H).filter(
+            ImageFilter.GaussianBlur(56)), (0, 0))
+        sac = _fit_contain(src_img, W, split)
+        canvas.paste(sac, ((W - sac.width) // 2, (split - sac.height) // 2))
+    # Man bat dau mo han tu tren dinh (anh van doc duoc), dam dan xuong, va
+    # dam han o vung chu. Diem uon dat tren `split` mot doan de khong co mot
+    # duong gay lo ra dung cho chu bat dau.
+    uon = max(0, split - int(H * 0.18))
+    man = Image.new("L", (1, H))
+    for y in range(H):
+        if y <= uon:
+            a = int(90 * (y / max(1, uon)) ** 2)
+        else:
+            t = (y - uon) / max(1, H - uon)
+            a = int(90 + (238 - 90) * t ** 0.85)
+        man.putpixel((0, y), min(255, a))
+    lop = Image.new("RGBA", (W, H), (*BG, 255))
+    lop.putalpha(man.resize((W, H)))
+    canvas.alpha_composite(lop)
+    return (0, 0, W, H)
+
+
 def _chip_size(d, text, font, pad_x=18, pad_y=12):
     b = font.getbbox("Ây")
     return (d.textlength(text, font=font) + pad_x * 2,
@@ -425,7 +472,7 @@ def _social_row(canvas, d, right_x, cy, handle, font, icon_size=39, gap=15,
 
 
 
-def _tech_frame(d, H, split, side_col=LINE, box_col=LINE):
+def _tech_frame(d, H, split, side_col=LINE, box_col=LINE, vach=True):
     m, brk = 18, 46
     # Hai goc tren: mau nhan. Hai goc duoi: mau trang, cung do day.
     for (x, y, dx, dy, col) in ((m, m, 1, 1, CYAN),
@@ -439,6 +486,10 @@ def _tech_frame(d, H, split, side_col=LINE, box_col=LINE):
     # Hai net doc trong textbox — mau nghich voi net o vung anh, tao nhip
     for x in (m, W - m):
         d.line([(x, split + 12), (x, H - m - brk - 12)], fill=box_col, width=2)
+    # Kieu tran khong ve vach: vach la thu bien anh va chu thanh hai o rieng,
+    # dung noi ma chinh no la cai can bo.
+    if not vach:
+        return
     d.line([(0, split), (int(W * 0.34), split)], fill=LINE, width=2)
     d.line([(int(W * 0.42), split), (W, split)], fill=LINE, width=2)
     d.line([(int(W * 0.34), split), (int(W * 0.40), split)],
@@ -543,7 +594,7 @@ def tim_mat_dau(text: str) -> list:
 def build(src, title, subtitle, via, out, category="AI",
           category_right="", handle=None, ratio="free",
           tagline="daily AI update", khoa_ti_le=False, brand="donniechublog",
-          bo_qua_dau=False):
+          bo_qua_dau=False, kieu="dai"):
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
     b = dat_thuong_hieu(brand)
@@ -671,13 +722,16 @@ def build(src, title, subtitle, via, out, category="AI",
         H = img_h + box_h
 
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    o_anh = _render_image_area(canvas, src_img, img_h, how)
-    _paste_mascot(canvas, img_h, o_anh)
+    if kieu == "tran":
+        o_anh = _tran_anh(canvas, src_img, img_h)
+    else:
+        o_anh = _render_image_area(canvas, src_img, img_h, how)
+        _paste_mascot(canvas, img_h, o_anh)
     d = ImageDraw.Draw(canvas)
     # Mot he mau co dinh, khong phu thuoc anh sang hay toi:
     #   vung anh   -> cyan, dong bo voi hai ngoac goc TREN va nhan category
     #   vung chu   -> trang, dong bo voi hai ngoac goc DUOI
-    _tech_frame(d, H, img_h, CYAN, FG)
+    _tech_frame(d, H, img_h, CYAN, FG, vach=(kieu != "tran"))
 
     # Nhan category vat qua ranh gioi anh/textbox — khau hai vung lam mot,
     # dong thoi tra lai chieu cao textbox cho tieu de.
@@ -752,6 +806,9 @@ def main():
                    help="Bo nhan dien: donniechublog (xanh dem) hoac dcgr (trang den)")
     p.add_argument("--tagline", default="daily AI update",
                    help="Mo ta ngan duoi ten kenh trong khoi thuong hieu")
+    p.add_argument("--kieu", default="dai", choices=["dai", "tran"],
+                   help="dai: anh o tren, textbox rieng o duoi (mac dinh). "
+                        "tran: anh phu kin the, chu de len qua man toi")
     p.add_argument("--ratio", default="free",
                    choices=["free"] + list(RATIOS),
                    help="free: chiều cao trôi theo ảnh. 1:1/4:5/3:4: khoá tỉ lệ, "
@@ -761,7 +818,7 @@ def main():
     build(a.image, a.title, a.subtitle, a.via, a.out,
           a.category, a.category_right, a.handle, a.ratio, a.tagline,
           khoa_ti_le=getattr(a, "khoa_ti_le", False), brand=a.brand,
-          bo_qua_dau=a.bo_qua_dau)
+          bo_qua_dau=a.bo_qua_dau, kieu=a.kieu)
 
 
 if __name__ == "__main__":
