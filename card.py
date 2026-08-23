@@ -436,14 +436,112 @@ def bo_dau_cam(t: str) -> str:
     return _re.sub(r"\s+,", ",", _re.sub(r"\s{2,}", " ", t)).strip()
 
 
+# Tieng Viet KHONG DAU tren the la loi nang: the la thu nguoi doc nhin thay dau
+# tien, va chu khong dau lam ca kenh trong nhu lam au. Da lot mot lan — nhan
+# "CONG CU" in ra tren the that.
+#
+# Cach nhan biet: tim TU TIENG VIET quen thuoc bi go mat dau. Khong the chi dua
+# vao "co dau hay khong", vi tieu de hop le van co the toan tieng Anh
+# ("OzBrain", "Audio-to-MIDI"). Nhung neu xuat hien nguyen mot tu tieng Viet
+# thieu dau thi chac chan la go sai.
+# Am tiet tieng Viet thuong gap, viet KHONG DAU. Danh sach rong vi mot tieu de
+# tieng Viet bi go mat dau se dinh nhieu tu cung luc, con tieng Anh thi hau nhu
+# khong dinh tu nao.
+AM_MAT_DAU = {
+    # tu chuc nang, xuat hien trong hau het cau tieng Viet
+    "va", "cua", "cho", "voi", "khong", "duoc", "nhung", "nguoi", "hon", "tren",
+    "duoi", "trong", "ngoai", "moi", "cung", "chung", "cac", "nhieu", "khi",
+    "neu", "nen", "phai", "the", "nay", "do", "day", "ra", "vao", "len", "xuong",
+    "sau", "truoc", "theo", "bang", "them", "boi", "tu", "den", "roi", "van",
+    "chi", "deu", "cang", "rat", "qua", "hay", "hoac", "ma", "la", "co", "khac",
+    "o", "an", "vi", "sao", "gi", "ai", "dau", "bao", "moi",
+    # dong tu thuong gap
+    "lam", "chay", "viet", "doc", "xem", "thay", "biet", "hieu", "dung", "tao",
+    "chuyen", "nhan", "gui", "mo", "dong", "tang", "giam", "vuot", "dat", "giu",
+    "bo", "them", "sua", "kiem", "tra", "chon", "tim", "ghi", "luu", "tai",
+    "phat", "hanh", "cap", "nhat", "ho", "tro", "dua", "lay", "noi", "hoi",
+    # danh tu ky thuat va thuong gap
+    "cong", "cu", "hinh", "thu", "nghiem", "ha", "tang", "nguon", "kinh",
+    "doanh", "nghe", "lieu", "nghien", "tri", "tue", "hoc", "may", "mang",
+    "diem", "so", "ty", "trieu", "nghin", "tram", "gia", "phi", "quoc", "te",
+    "chinh", "thuc", "ban", "phien", "dau", "cuoi", "giua", "giong", "tuong",
+    "bai", "tin", "anh", "chu", "am", "thanh", "khai", "han", "lan", "viec",
+    "gioi", "muc", "loai", "dang", "kien", "truc", "he", "thong", "phan",
+    "tich", "ket", "qua", "hieu", "suat", "toc", "kha", "nang", "tinh", "nang",
+    # tinh tu, so dem
+    "manh", "nhanh", "cham", "tot", "xau", "re", "dat", "mien", "moi", "cu",
+    "lon", "nho", "cao", "thap", "dai", "ngan", "day", "mong", "sau", "rong",
+    "mot", "hai", "ba", "bon", "muoi", "thang", "ngay", "gio", "phut", "nam",
+}
+
+# Cum tu chac chan la tieng Viet mat dau — dinh mot cum la du ket luan
+CUM_MAT_DAU = {
+    "cong cu", "mo hinh", "thu nghiem", "ha tang", "ma nguon mo", "ban cap nhat",
+    "kinh doanh", "cong nghe", "du lieu", "nghien cuu", "phat hanh", "cap nhat",
+    "tri tue", "may hoc", "mien phi", "quoc te", "chinh thuc",
+}
+
+
+def tim_mat_dau(text: str) -> list:
+    """Tra ve dau hieu tieng Viet bi go mat dau trong `text`.
+
+    Hai muc: dinh mot CUM quen thuoc la du, hoac dinh tu HAI am tiet tro len.
+    Nguong hai la de tieng Anh khong bi bao nham — tu nhu "the", "do", "so",
+    "ra" cung xuat hien trong tieng Anh, nhung hiem khi hai cai cung luc trong
+    mot tieu de ngan.
+    """
+    if not text:
+        return []
+    import re as _re
+
+    # Nhieu am tiet tieng Viet VON khong co dau: "cho", "chung", "cong", "ban".
+    # Neu van ban da co dau o dau do thi coi nhu go dung, va nhung tu tren la
+    # chinh ta binh thuong chu khong phai loi. Da bao nham "Bo nao dung chung
+    # cho moi agent" vi hai tu "cho" va "chung" — trong khi ca cau co dau du.
+    # Nen chi soi khi CA VAN BAN khong co lay mot dau nao.
+    if _re.search(r"[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"
+                  r"ùúủũụưừứửữựỳýỷỹỵđ]", text, _re.I):
+        return []
+
+    tu = _re.findall(r"[A-Za-zÀ-ỹ]+", text)
+    low = [t.lower() for t in tu]
+
+    cum = []
+    for i in range(len(low) - 1):
+        if f"{low[i]} {low[i+1]}" in CUM_MAT_DAU:
+            cum.append(f"{tu[i]} {tu[i+1]}")
+    if cum:
+        return sorted(set(cum))
+
+    don = sorted({tu[i] for i, t in enumerate(low) if t in AM_MAT_DAU})
+    return don if len(don) >= 2 else []
+
+
 def build(src, title, subtitle, via, out, category="AI",
           category_right="", handle=None, ratio="free",
-          tagline="daily AI update", khoa_ti_le=False, brand="donniechublog"):
+          tagline="daily AI update", khoa_ti_le=False, brand="donniechublog",
+          bo_qua_dau=False):
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
     b = dat_thuong_hieu(brand)
     handle = handle or b["handle"]
     title, subtitle = bo_dau_cam(title), bo_dau_cam(subtitle)
+
+    # Chan tieng Viet khong dau TRUOC khi ve, o moi cho chu hien len the.
+    loi = {}
+    for ten, gt in (("tieu de", title), ("phu de", subtitle),
+                    ("category", category), ("category-right", category_right),
+                    ("via", via)):
+        m = tim_mat_dau(gt or "")
+        if m:
+            loi[ten] = m
+    if loi and not bo_qua_dau:
+        chi_tiet = "; ".join(f"{k}: {', '.join(v)}" for k, v in loi.items())
+        raise SystemExit(
+            f"Tieng Viet KHONG DAU tren the — {chi_tiet}\n"
+            "  Go lai co dau day du roi chay lai. The la thu nguoi doc nhin thay\n"
+            "  dau tien, chu khong dau lam ca kenh trong nhu lam au.\n"
+            "  (Neu that su la tieng Anh, chay lai voi --bo-qua-dau)")
     src_img = Image.open(src).convert("RGB")
     img_h, how = _plan_image(src_img)
 
@@ -601,6 +699,9 @@ def main():
     p.add_argument("--category-right", default="")
     p.add_argument("--handle", default=None,
                    help="Ghi de ten kenh; mac dinh lay theo --brand")
+    p.add_argument("--bo-qua-dau", action="store_true",
+                   help="Bo qua kiem tra tieng Viet khong dau (chi dung khi chu "
+                        "that su la tieng Anh)")
     p.add_argument("--brand", default="donniechublog",
                    choices=sorted(THUONG_HIEU),
                    help="Bo nhan dien: donniechublog (xanh dem) hoac dcgr (trang den)")
@@ -614,7 +715,8 @@ def main():
     a = p.parse_args()
     build(a.image, a.title, a.subtitle, a.via, a.out,
           a.category, a.category_right, a.handle, a.ratio, a.tagline,
-          khoa_ti_le=getattr(a, "khoa_ti_le", False), brand=a.brand)
+          khoa_ti_le=getattr(a, "khoa_ti_le", False), brand=a.brand,
+          bo_qua_dau=a.bo_qua_dau)
 
 
 if __name__ == "__main__":

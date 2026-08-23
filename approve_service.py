@@ -552,6 +552,14 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
                                     writer_body, parent=illu_id)
     if err:
         return None, "Loi tao task viet: " + err
+
+    # Danh dau ngay tai day, khong de ben goi tu lam. Truoc day viec nay nam
+    # trong handle_message nen chi dung khi chon qua Telegram; goi thang
+    # create_pair tu duong khac thi manifest ghi picked=True ma vai_anh va brand
+    # deu None. Da gap that trong mot lan chay thu.
+    item["picked"] = True
+    item["vai_anh"], item["brand"] = vai_anh, brand
+    item["task_anh"], item["task_viet"] = illu_id, writer_id
     return (illu_id, writer_id), None
 
 
@@ -624,9 +632,7 @@ def handle_message(token, group, scout_thread, msg):
         if err:
             lines.append("#" + str(n) + ": lỗi — " + err)
             continue
-        it["picked"] = True
-        it["vai_anh"], it["brand"] = vai_anh, brand
-        changed = True
+        changed = True          # create_pair da danh dau vao `it`
         ten_hien = "Ethan" if vai_anh == "ethan" else "Iris"
         lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]} + viết {ids[1]}")
 
