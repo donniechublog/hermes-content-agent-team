@@ -474,7 +474,7 @@ def write_meta(draft_id, item, out_png):
     """
     meta = {
         "source_url": item["link"],
-        "category": item.get("category", "CONG CU"),
+        "category": chuan_nhan(item.get("category")),
         "via": item.get("via", ""),
         "image": out_png,
         "title": item["title"],
@@ -484,6 +484,27 @@ def write_meta(draft_id, item, out_png):
     DRAFTS.mkdir(parents=True, exist_ok=True)
     (DRAFTS / (draft_id + ".meta.json")).write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+# Nhan category phai co dau. Finn duoc dan viet "CONG CU" co dau nhung van ghi
+# thieu, va the anh in ra dung nhu vay — "CONG CU" tren the cua kenh tieng Viet.
+# Go dau la loi co hoc, chuan hoa bang code chac hon la dan model go cho dung.
+NHAN_CHUAN = {
+    "arxiv": "ARXIV", "mo hinh": "MÔ HÌNH", "thu nghiem": "THỬ NGHIỆM",
+    "ha tang": "HẠ TẦNG", "cong cu": "CÔNG CỤ", "kinh doanh": "KINH DOANH",
+    "ma nguon mo": "MÃ NGUỒN MỞ", "benchmark": "BENCHMARK", "m&a": "M&A",
+    "ban cap nhat": "BẢN CẬP NHẬT", "teaser": "TEASER",
+}
+
+
+def chuan_nhan(nhan: str, mac_dinh="CÔNG CỤ") -> str:
+    """Tra ve nhan co dau. Khong nhan ra thi giu nguyen ban goc viet hoa."""
+    if not nhan:
+        return mac_dinh
+    import unicodedata
+    kh = unicodedata.normalize("NFD", str(nhan).strip().lower())
+    kh = "".join(c for c in kh if unicodedata.category(c) != "Mn").replace("đ", "d")
+    return NHAN_CHUAN.get(kh, str(nhan).strip().upper())
 
 
 def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
@@ -513,7 +534,7 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
         summary=item.get("summary_vi", ""),
         image_url=item.get("image_url") or "khong co",
         out_png=out_png, out_png_goc=out_png[:-4],
-        category=item.get("category", "CONG CU"), draft_id=draft_id,
+        category=chuan_nhan(item.get("category")), draft_id=draft_id,
         brand=brand, co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
     illu_id, err = kanban_create("Anh: " + item["title"], vai_anh, illu_body)
     if err:
@@ -525,7 +546,7 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
         score=item.get("score", "?"),
         score_reason=item.get("score_reason", ""),
         summary=item.get("summary_vi", ""), out_png=out_png,
-        out_json=out_json, category=item.get("category", "CONG CU"),
+        out_json=out_json, category=chuan_nhan(item.get("category")),
         draft_id=draft_id)
     writer_id, err = kanban_create("Bai: " + item["title"], "writer",
                                     writer_body, parent=illu_id)
