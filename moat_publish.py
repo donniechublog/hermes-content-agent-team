@@ -36,6 +36,7 @@ SECRETS = ROOT / ".secrets.env"
 PLATFORMS = ["facebook_post", "instagram_carousel", "tiktok_slide"]
 
 TIMEOUT = 60
+TRAN_NEN_TANG = 2200        # gioi han caption cua Instagram va TikTok
 MIME_BY_SUFFIX = {".png": "image/png", ".jpg": "image/jpeg",
                   ".jpeg": "image/jpeg", ".webp": "image/webp"}
 
@@ -121,6 +122,16 @@ def intake(draft_id, scheduled_at=None):
 
     if isinstance(d.get("moat"), dict) and d["moat"].get("workflow_id"):
         return True, "da day truoc do"
+
+    # Tran chung cho moi nen tang. Ong Chu chot lay gioi han Instagram lam moc
+    # va chap nhan danh doi: mot ban dang duoc khap noi, thay vi phai fine-tune
+    # rieng cho tung nen tang. Chan o day la lop cuoi — truoc luc di qua moat
+    # thi bai phai o trang thai dang duoc ngay.
+    cap = d.get("caption") or ""
+    if len(cap) > TRAN_NEN_TANG:
+        return False, (f"caption {len(cap)} ky tu, vuot tran {TRAN_NEN_TANG} cua "
+                       f"Instagram/TikTok (thua {len(cap) - TRAN_NEN_TANG}). "
+                       "Rut ngan roi day lai.")
 
     images = images_payload(d)
     if not images:

@@ -36,8 +36,17 @@ CLOSING = ("Xem bài chi tiết ở còm, nếu không thấy còm vui lòng và
 #   - khoang mong muon: ra ngoai chi NHAC o stderr, van chay tiep
 #   - nguong hong that: duoi 200 tu thi qua mong de phu het outline, tren 2000 tu
 #     thi dang ke lai ca bai chu khong con la loi moi doc — hai cai nay moi chan
-DAI_MONG_MUON = (500, 800)
-DAI_HONG = (200, 2000)
+# Do bang KY TU chu khong dem tu, vi ky tu moi la thu nen tang rang buoc.
+# Ong Chu chot lay gioi han Instagram lam tran chung cho moi noi, chap nhan
+# danh doi de mot ban dang duoc khap noi thay vi phai fine-tune tung nen tang.
+# Tieng Viet do that la 5,1 ky tu moi tu, nen 800 tu cu ra hon 4.000 ky tu,
+# gap doi tran. Ke ca 400 tu cung vuot.
+TRAN_NEN_TANG = 2200          # gioi han caption cua Instagram va TikTok
+DAI_MONG_MUON = (1500, 2050)  # ky tu, tinh tren TOAN BO caption cuoi cung
+DAI_HONG = (700, TRAN_NEN_TANG)
+
+# Van giu chan so tu de bat bai qua mong, nhung khong con la thuoc do chinh
+TU_TOI_THIEU = 130
 
 CUM_TUONG_THUAT = [
     "bai viet", "bai bao", "bai nay", "bai cung", "bai con", "bai chi ra",
@@ -81,21 +90,34 @@ def assemble(title: str, paragraphs: list, images: list,
     if n == 0:
         raise ValueError("Can it nhat 1 doan van")
     sotu = sum(len(p.split()) for p in paragraphs)
+    # Uoc chieu dai caption cuoi truoc khi ghep, de bao loi som va bao ro
+    _emo_tam = ["x"] * n
+    _thu = f"{title.upper()}\n\n" + "\n\n".join(
+        f"{e} {p}".strip() for e, p in zip(_emo_tam, paragraphs)) + f"\n\n{CLOSING}"
+    soky = len(_thu)
     if not bo_qua_kiem_tra:
-        if sotu < DAI_HONG[0]:
+        if sotu < TU_TOI_THIEU:
             raise ValueError(
                 f"Chi {sotu} tu — qua mong de phu het cac muc trong outline.\n"
                 "  Doc lai outline va trien khai nhung y con thieu.\n"
                 "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
-        if sotu > DAI_HONG[1]:
+        if soky > TRAN_NEN_TANG:
+            thua = soky - TRAN_NEN_TANG
             raise ValueError(
-                f"Toi {sotu} tu — dang ke lai ca bai chu khong con la loi moi doc.\n"
-                "  Cat bot dien giai, giu so lieu va y chinh.\n"
+                f"Caption se dai {soky} ky tu, vuot tran {TRAN_NEN_TANG} cua "
+                f"Instagram va TikTok — thua {thua}.\n"
+                f"  Cat bot khoang {thua} ky tu (~{round(thua / 5.1)} tu). Bo dien "
+                "giai va vi du, giu so lieu va y chinh.\n"
+                "  Tieng Viet trung binh 5,1 ky tu moi tu.\n"
                 "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
-        if not (DAI_MONG_MUON[0] <= sotu <= DAI_MONG_MUON[1]):
-            print(f"[nhac] {sotu} tu, ngoai khoang mong muon {DAI_MONG_MUON[0]}-"
-                  f"{DAI_MONG_MUON[1]} — khong sao neu dien dat dung va du.",
-                  file=sys.stderr)
+        if soky < DAI_HONG[0]:
+            raise ValueError(
+                f"Caption chi {soky} ky tu — qua ngan cho mot teaser.\n"
+                "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
+        if not (DAI_MONG_MUON[0] <= soky <= DAI_MONG_MUON[1]):
+            print(f"[nhac] caption ~{soky} ky tu ({sotu} tu), ngoai khoang mong "
+                  f"muon {DAI_MONG_MUON[0]}-{DAI_MONG_MUON[1]} — khong sao neu "
+                  "dien dat dung va du.", file=sys.stderr)
     if not bo_qua_kiem_tra:
         loi = tim_giong_tuong_thuat(title, paragraphs)
         if loi:
