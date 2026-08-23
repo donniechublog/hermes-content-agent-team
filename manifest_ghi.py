@@ -36,6 +36,9 @@ def main():
     ap.add_argument("--in", dest="infile", required=True,
                     help="Tep JSON danh sach tin (title, link, summary_vi, ...)")
     ap.add_argument("--hau-to", default="", help="Them hau to vao ten tep")
+    ap.add_argument("--bao-cao", metavar="PATH",
+                    help="Ghi luon ban BAO CAO danh so ra tep nay, de gui thang "
+                         "len Telegram bang publish.py --file")
     a = ap.parse_args()
 
     ds = json.loads(Path(a.infile).read_text(encoding="utf-8"))
@@ -74,6 +77,25 @@ def main():
     print(out)
     for it in items:
         print(f"  {it['index']}. [{it['via']}] {it['title'][:66]}", file=sys.stderr)
+
+    # Bao cao do CHINH SCRIPT dung, khong de agent go lai so. Go lai la co hoi
+    # lech: so trong tin nhan mot dang, so trong manifest mot dang, Ong Chu tra
+    # loi so lai ra bai khac. Sinh o day thi hai ben khong the lech.
+    if a.bao_cao:
+        ten_vai = {"nova": "Nova", "market": "Vera", "vera": "Vera"}[a.vai]
+        d = [f"<b>{ten_vai} — {ngay}</b>", ""]
+        for it in items:
+            d.append(f"<b>{it['index']}.</b> {it['title']}")
+            if it["summary_vi"]:
+                d.append(f"    {it['summary_vi']}")
+            phu = " · ".join(x for x in (it["via"], it["source_note"]) if x)
+            if phu:
+                d.append(f"    <i>{phu}</i>")
+            d.append("")
+        d.append("Trả lời số thứ tự để tạo bài. Thêm tên vai dựng ảnh nếu muốn:")
+        d.append("<code>1</code> · <code>1, 2</code> · <code>1, 2 - Ethan</code>")
+        Path(a.bao_cao).write_text("\n".join(d), encoding="utf-8")
+        print(f"  bao cao -> {a.bao_cao}", file=sys.stderr)
 
 
 if __name__ == "__main__":

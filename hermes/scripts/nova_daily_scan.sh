@@ -17,21 +17,26 @@ cd /home/donniechu/content-team && venv/bin/python scan_models.py --ngay 7 --top
 Buoc 2, truoc khi khuyen nghi bat cu model nao, doc lai thu da bi loai:
 cat /home/donniechu/content-team/state/model_health.json
 
-Buoc 2b, GHI MANIFEST DANH SO. Bat buoc, ke ca khi chi co 1 tin dang noi.
-Khong co manifest thi Ong Chu doc bao cao xong khong biet tra loi gi.
+Buoc 2b, GHI MANIFEST + BAO CAO. Bat buoc khi CO tin dang len kenh.
 
   cat > /tmp/nova_ds.json <<HET
   [{\"title\": \"...\", \"link\": \"...\", \"summary_vi\": \"...\",
-     \"score_reason\": \"vi sao dang chu y\", \"source_note\": \"...\"}]
+     \"source_note\": \"...\"}]
   HET
   cd /home/donniechu/content-team && venv/bin/python manifest_ghi.py \\
-    --vai nova --in /tmp/nova_ds.json
+    --vai nova --in /tmp/nova_ds.json --bao-cao /tmp/nova_baocao.txt
 
-Script tu danh so, tu suy via tu ten mien. Bao cao gui len Telegram PHAI danh so
-trung voi manifest, va ket bang mot dong nhac doc gia tra loi so thu tu
-(vi du: 1 hoac 1,3) de tao bai.
+Script tu danh so, tu suy via tu ten mien, VA tu viet luon ban bao cao danh so.
+KHONG tu go lai so vao tin nhan: go lai la co hoi lech, so trong tin nhan mot
+dang con so trong manifest mot dang, Ong Chu tra loi so lai ra bai khac.
 
-Khong co tin nao dang len kenh thi bo qua buoc nay va noi ro la khong co.
+Gui thang ban script vua viet:
+  /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
+    --to -1003763882779 --thread 82 --file /tmp/nova_baocao.txt
+
+KHONG co tin nao dang len kenh thi bo qua manifest, nhung VAN phai gui mot dong
+noi ro la hom nay khong co gi, kem so tin da quet. Ong Chu can phan biet duoc
+\"hom nay khong co gi\" voi \"co gi do hong\".
 
 Buoc 3, gui bao cao vao topic cua ban. GHI RA TEP TRUOC roi dung --file
 DUNG nhet ca bao cao vao mot tham so --text: nhet mot dong thi ca bai dinh

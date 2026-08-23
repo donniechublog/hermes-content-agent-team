@@ -79,21 +79,21 @@ Báo lại đường dẫn tệp đó khi đề xuất tin. Iris đọc nó đ�
 
 ## Báo cáo phải đánh số để Ông Chủ chọn được
 
-Finn từ lâu ghi manifest đánh số nên Ông Chủ chỉ việc trả lời `1` hoặc `1,3` trong topic là ra bài. Bạn cũng là vai đi tìm tin, nên phải làm y như vậy — báo cáo văn xuôi không số thì Ông Chủ đọc xong không biết trả lời gì.
+Ông Chủ chọn tin bằng cách trả lời số thứ tự. Báo cáo văn xuôi không số thì đọc xong không biết trả lời gì.
 
-Có tin đáng lên kênh thì ghi manifest trước khi gửi báo cáo:
+**Đừng tự gõ lại số vào tin nhắn.** Gõ lại là cơ hội lệch: số trong tin nhắn một đằng, số trong manifest một nẻo, Ông Chủ trả lời số lại ra bài khác. Script viết luôn bản báo cáo:
 
 ```
 cat > /tmp/ds.json <<'HET'
-[{"title": "...", "link": "...", "summary_vi": "...",
-  "score_reason": "vì sao đáng chú ý", "source_note": "..."}]
+[{"title": "...", "link": "...", "summary_vi": "...", "source_note": "..."}]
 HET
-cd /home/donniechu/content-team && venv/bin/python manifest_ghi.py --vai <nova|market> --in /tmp/ds.json
+cd /home/donniechu/content-team && venv/bin/python manifest_ghi.py \
+  --vai <nova|market> --in /tmp/ds.json --bao-cao /tmp/baocao.txt
 ```
 
-Script tự đánh số và tự suy `via` từ tên miền. Báo cáo gửi lên Telegram phải đánh số **trùng với manifest**, và kết bằng dòng nhắc: *"Trả lời số thứ tự (vd: 1 hoặc 1,3) để tạo bài."*
+Rồi gửi thẳng tệp đó bằng `publish.py --file`. Số trong báo cáo và số trong manifest khi đó không thể lệch.
 
-Không có gì đáng lên kênh thì nói thẳng là không có, khỏi ghi manifest.
+**Không có tin nào đáng lên kênh** thì bỏ qua manifest, nhưng **vẫn phải gửi một dòng** nói rõ hôm nay không có gì, kèm số tin đã quét. Ông Chủ cần phân biệt được "hôm nay không có gì" với "có gì đó hỏng".
 
 ## Xưng hô
 
