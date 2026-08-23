@@ -61,10 +61,14 @@ THUONG_HIEU = {
         "handle": "dcgr.tech",
         "mascot": None,
         # Chi giu nhan phai. Nhan trai nen dac mau nhan, ma o bang don sac no
-        # thanh mot khoi trang lon hut het mat khoi noi dung — bo di thi bo cuc
-        # tho hon va dung chat hero image.
+        # thanh mot khoi trang lon hut het mat khoi noi dung.
         "nhan_trai": False,
-        "socials": ["telegram", "linkedin", "x-twitter", "youtube"],
+        "socials": ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"],
+        # Cum via va hang social la thong tin PHU: lam mo va thu nho de chung lui
+        # ve sau, nhuong mat cho tieu de va phu de.
+        "co_chan": 0.85,        # co chu + icon o chan the: 85% co goc
+        "mo_chan": 0.55,        # do sang chu chan, 1.0 la bang FG
+        "ro_phu_de": 0.92,      # phu de sang gan bang FG thay vi mau MUTED xam
         "mau": {
             "BG": (10, 10, 10), "BG_CARD": (26, 26, 26),
             "FG": (255, 255, 255), "MUTED": (150, 150, 150),
@@ -369,17 +373,27 @@ def _load_icon(name, size, color):
     return tinted
 
 
-def _social_row(canvas, d, right_x, cy, handle, font, icon_size=39, gap=15):
+def _pha(mau, do_sang: float, nen=None):
+    """Tron mau ve phia nen de lam mo. do_sang=1.0 giu nguyen, 0 la bang nen."""
+    nen = nen if nen is not None else BG
+    t = max(0.0, min(1.0, do_sang))
+    return tuple(int(n + (c - n) * t) for c, n in zip(mau, nen))
+
+
+def _social_row(canvas, d, right_x, cy, handle, font, icon_size=39, gap=15,
+                mau_chu=None, mau_icon=None):
     """Hang icon + ten kenh, can sat le phai. Cung tong mau voi cum via."""
+    mau_chu = mau_chu if mau_chu is not None else ACCENT
+    mau_icon = mau_icon if mau_icon is not None else FG
     handle_text = handle if handle.startswith("@") else "@" + handle
     b = font.getbbox("Ay")
     tw = d.textlength(handle_text, font=font)
     x = right_x - tw
     d.text((x, cy - (b[3] - b[1]) / 2 - b[1]), handle_text, font=font,
-           fill=ACCENT)
+           fill=mau_chu)
     x -= gap + 4
     for name in reversed(SOCIALS):
-        icon = _load_icon(name, icon_size, FG)
+        icon = _load_icon(name, icon_size, mau_icon)
         x -= icon_size
         if icon is not None:
             canvas.alpha_composite(icon, (int(x), int(cy - icon_size / 2)))
@@ -437,7 +451,9 @@ def build(src, title, subtitle, via, out, category="AI",
     # Đo trước phần chữ để biết textbox cần cao bao nhiêu
     probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
     f_chip = _f(F_UI, CHIP_SIZE)
-    f_via = _f(F_REG, VIA_SIZE, weight=500)
+    co_chan = b.get("co_chan") or 1.0
+    mo_chan = b.get("mo_chan") or 1.0
+    f_via = _f(F_REG, max(12, round(VIA_SIZE * co_chan)), weight=500)
     avail_w = W - PAD * 2
 
     f_title, title_lines = _fit_text(probe, title.upper(), avail_w,
@@ -551,15 +567,22 @@ def build(src, title, subtitle, via, out, category="AI",
         y += _line_h(f_title, 6)
     y += g2
 
+    # Phu de mac dinh dung MUTED cho lui ve sau. Thuong hieu nao muon ro hon thi
+    # keo mau ve phia FG theo `ro_phu_de` — chu van nhat hon tieu de nhung doc
+    # duoc thoai mai.
+    mau_sub = MUTED if b.get("ro_phu_de") is None else _pha(FG, b["ro_phu_de"])
     for ln in sub_lines:
-        d.text((PAD, y), ln, font=f_sub, fill=MUTED)
+        d.text((PAD, y), ln, font=f_sub, fill=mau_sub)
         y += _line_h(f_sub, 6)
 
     bottom_y = H - g4 - via_h
     via_text = via if via.startswith("via:") else "via: " + via
-    d.text((PAD, bottom_y), via_text, font=f_via, fill=ACCENT)
+    d.text((PAD, bottom_y), via_text, font=f_via, fill=_pha(ACCENT, mo_chan))
     _social_row(canvas, d, W - PAD, bottom_y + via_h / 2, handle,
-                _f(F_REG, BRAND_SIZE, weight=500))
+                _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500),
+                icon_size=max(16, round(39 * co_chan)),
+                gap=max(8, round(15 * co_chan)),
+                mau_chu=_pha(ACCENT, mo_chan), mau_icon=_pha(FG, mo_chan))
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
