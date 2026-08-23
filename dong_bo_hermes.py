@@ -25,6 +25,11 @@ HERMES = Path.home() / ".hermes"
 REPO = ROOT / "hermes"
 
 VAI = ["scout", "illustrator", "writer", "analyst", "teaser", "nova", "market"]
+# Plugin kanban nam trong ban cai hermes nen `hermes update` SE ghi de. Da sua
+# ba thu o day: thu tu cot (running/ready/blocked truoc), co chu nhan profile,
+# va chia lane theo profile o moi cot chu khong chi cot running.
+PLUGIN_KANBAN = Path.home() / "hermes-agent/plugins/kanban/dashboard"
+PLUGIN_TEP = ["plugin_api.py", "dist/index.js", "dist/style.css"]
 SCRIPT = ["finn_daily_scan", "nova_daily_scan", "vera_daily_scan",
           "model_watch", "usage_audit", "nhat_ky_daily"]
 
@@ -38,6 +43,9 @@ def cap_tep():
     for s in SCRIPT:
         ra.append((f"cron {s}", HERMES / "scripts" / f"{s}.sh",
                    REPO / "scripts" / f"{s}.sh"))
+    for f in PLUGIN_TEP:
+        ra.append((f"kanban {f}", PLUGIN_KANBAN / f,
+                   REPO / "plugins" / "kanban" / f.replace("/", ".")))
     return ra
 
 

@@ -22,3 +22,18 @@ Hoặc chiều ngược lại, khi khôi phục sau `hermes update`:
     venv/bin/python dong_bo_hermes.py --ra-hermes
 
 Script so nội dung và chỉ báo tệp thật sự khác nhau.
+
+## Plugin kanban
+
+`hermes/plugins/kanban/` giữ bản vá cho bảng kanban trong dashboard. Ba thay đổi:
+
+- **Thứ tự cột**: `running, ready, blocked, todo, done` rồi mới tới `review,
+  scheduled, triage`. Sắp theo mức độ cần nhìn, không theo vòng đời. Ba cột cuối
+  gần như luôn rỗng trong dây chuyền nội dung.
+- **Nhãn profile to lên**: lane header từ `0.65rem` lên `0.82rem` kèm viền trái
+  màu nhấn; huy hiệu `@profile` trên thẻ có nền và cỡ `0.8rem`. Trước đó chữ quá
+  nhỏ và chìm vào đám xám nên phải mở từng thẻ mới biết bot nào.
+- **Chia lane ở mọi cột**: trước chỉ cột `running` mới tách theo profile.
+
+Đây là tệp trong bản cài hermes nên **`hermes update` sẽ ghi đè**. Sau khi cập
+nhật hermes, chạy `dong_bo_hermes.py --ra-hermes` rồi khởi động lại dashboard.
