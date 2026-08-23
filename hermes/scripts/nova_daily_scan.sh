@@ -1,0 +1,66 @@
+#!/bin/bash
+# Cron: Nova quet model moi ra mat, gui bao cao vao topic nova. Khong tao task khac.
+export HERMES_HOME=/home/donniechu/.hermes
+H=/home/donniechu/hermes-agent/venv/bin/python
+# Ngay lay theo GIO VN, khong phai UTC. Cron chay 23:00 UTC = 06:00 VN hom sau,
+# nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
+# kanban tra ve task cu thay vi tao moi, va script im lang tuong da thanh cong.
+# Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
+KEY="nova-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
+DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
+
+BODY="Nhiem vu quet model sang $DAY (chay theo lich cron). Lam dung huong dan trong SOUL.
+
+Buoc 1, chay script tat dinh:
+cd /home/donniechu/content-team && venv/bin/python scan_models.py --ngay 7 --top 10
+
+Buoc 2, truoc khi khuyen nghi bat cu model nao, doc lai thu da bi loai:
+cat /home/donniechu/content-team/state/model_health.json
+
+Buoc 2b, GHI MANIFEST DANH SO. Bat buoc, ke ca khi chi co 1 tin dang noi.
+Khong co manifest thi Ong Chu doc bao cao xong khong biet tra loi gi.
+
+  cat > /tmp/nova_ds.json <<HET
+  [{\"title\": \"...\", \"link\": \"...\", \"summary_vi\": \"...\",
+     \"score_reason\": \"vi sao dang chu y\", \"source_note\": \"...\"}]
+  HET
+  cd /home/donniechu/content-team && venv/bin/python manifest_ghi.py \\
+    --vai nova --in /tmp/nova_ds.json
+
+Script tu danh so, tu suy via tu ten mien. Bao cao gui len Telegram PHAI danh so
+trung voi manifest, va ket bang mot dong nhac doc gia tra loi so thu tu
+(vi du: 1 hoac 1,3) de tao bai.
+
+Khong co tin nao dang len kenh thi bo qua buoc nay va noi ro la khong co.
+
+Buoc 3, gui bao cao vao topic cua ban. GHI RA TEP TRUOC roi dung --file
+DUNG nhet ca bao cao vao mot tham so --text: nhet mot dong thi ca bai dinh
+lien nhau, khong xuong dong duoc.
+
+  cat > /tmp/bao_cao_$$.txt <<'HET'
+  <bao cao, xuong dong that, dong trong giua cac doan>
+  HET
+  /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
+    --to -1003763882779 --thread 82 --file /tmp/bao_cao_$$.txt
+
+Dinh dang: chi dung <b>, <i>, <code>, <a href>. KHONG dung <br>, <p>, <ul>
+<li>, markdown ** hay ##. Xuong dong bang xuong dong THAT.
+
+Khong co gi dang noi thi gui mot dong bao khong co gi. KHONG tao task kanban nao."
+
+OUT=$($H -m hermes_cli.main kanban create "Quet model sang $DAY" \
+  --assignee nova --max-runtime 20m \
+  --idempotency-key "$KEY" --body "$BODY" --json 2>&1)
+# Kiem tra HAI muc, khong chi mot:
+#  1. co tao duoc task khong
+#  2. task tra ve co phai task MOI khong. Trung khoa chong trung thi kanban tra
+#     ve TASK CU voi tieu de cu, ma van co truong "id" — grep cu chi nhin "id"
+#     nen im lang, tuong da chay. Sang 23/08 ca ba vai deu khong chay vi loi nay.
+if ! echo "$OUT" | grep -q '"id"'; then
+  echo "nova_daily_scan LOI: khong tao duoc task"
+  echo "$OUT" | head -5
+elif ! echo "$OUT" | grep -qF "\"title\": \"Quet model sang $DAY\""; then
+  echo "nova_daily_scan CANH BAO: kanban tra ve task CU (trung idempotency-key)."
+  echo "  Task hom nay KHONG duoc tao. Kiem tra khoa: $KEY"
+  echo "$OUT" | grep '"title"' | head -2
+fi

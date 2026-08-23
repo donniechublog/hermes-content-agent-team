@@ -15,3 +15,6 @@ venv
 
 # Nhat ky lam viec — du lieu chay, khong dua vao repo
 state/nhat_ky/
+
+# Tep nhap tam thoi
+gif2png_tmp.py
