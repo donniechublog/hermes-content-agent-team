@@ -57,9 +57,11 @@ Cả tiêu đề lẫn subtitle đều **tiếng Việt có dấu**.
 
 Thẻ dcgr.tech **chỉ có một nhãn, bên phải**. Nhãn trái nền đặc màu nhấn, ở bảng đơn sắc nó thành một khối trắng lớn hút hết mắt khỏi nội dung, nên đã bỏ.
 
-Vẫn truyền `--category` vì lệnh cần, nhưng nó **không được vẽ ra** — giá trị gì cũng được, để `MÔ HÌNH` cho gọn.
+Vẫn truyền `--category` vì lệnh cần, nhưng nó **không được vẽ ra** — giá trị gì cũng được, để `MODEL` cho gọn.
 
-Nhãn thật sự hiện lên là `--category-right`. Chọn một trong: MÃ NGUỒN MỞ · BENCHMARK · M&A · BẢN CẬP NHẬT · THỬ NGHIỆM · HẠ TẦNG
+Nhãn thật sự hiện lên là `--category-right`, **dùng TIẾNG ANH**. Chọn một trong: OPEN SOURCE · OPEN WEIGHTS · BENCHMARK · M&A · UPDATE · LAB · INFRA
+
+Không dùng tiếng Việt ở nhãn: nhãn là từ ngắn, tiếng Anh không có dấu nên không bao giờ gõ sai.
 
 Chọn nhãn nói đúng loại tin, đừng mặc định một nhãn cho mọi bài.
 

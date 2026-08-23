@@ -57,7 +57,7 @@ Ghi file đánh giá của bạn, mảng các mục, mỗi mục chỉ gồm:
 [
   {
     "link": "URL y hệt trong candidates.json, dùng để đối chiếu"
-    "category": "một trong: ARXIV / MÔ HÌNH / THỬ NGHIỆM / HẠ TẦNG / CÔNG CỤ"
+    "category": "một trong: ARXIV / MODEL / LAB / INFRA / TOOL / ENGINEERING / BUSINESS / RESEARCH / SECURITY"  // nhãn dùng TIẾNG ANH
     "score_technical": 24
     "score_relevance": 18
     "score_reason": "1 câu: vì sao được điểm này"

@@ -486,19 +486,33 @@ def write_meta(draft_id, item, out_png):
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-# Nhan category phai co dau. Finn duoc dan viet "CONG CU" co dau nhung van ghi
-# thieu, va the anh in ra dung nhu vay — "CONG CU" tren the cua kenh tieng Viet.
-# Go dau la loi co hoc, chuan hoa bang code chac hon la dan model go cho dung.
+# Nhan category dung TIENG ANH. Ong Chu chot: bo tieng Viet o nhan de khoi phat
+# sinh loi dau. Nhan la tu ngan, doc gia ky thuat quen ca hai thu tieng, ma
+# tieng Anh thi khong co dau nen khong bao gio go sai.
+#
+# Bang tra nhan ca ban tieng Viet cu (co dau lan mat dau) de manifest cu van
+# chuan hoa dung, khong phai viet lai.
 NHAN_CHUAN = {
-    "arxiv": "ARXIV", "mo hinh": "MÔ HÌNH", "thu nghiem": "THỬ NGHIỆM",
-    "ha tang": "HẠ TẦNG", "cong cu": "CÔNG CỤ", "kinh doanh": "KINH DOANH",
-    "ma nguon mo": "MÃ NGUỒN MỞ", "benchmark": "BENCHMARK", "m&a": "M&A",
-    "ban cap nhat": "BẢN CẬP NHẬT", "teaser": "TEASER",
+    "arxiv": "ARXIV",
+    "mo hinh": "MODEL", "model": "MODEL",
+    "thu nghiem": "LAB", "lab": "LAB",
+    "ha tang": "INFRA", "infra": "INFRA", "infrastructure": "INFRA",
+    "cong cu": "TOOL", "tool": "TOOL",
+    "ky thuat": "ENGINEERING", "engineering": "ENGINEERING",
+    "kinh doanh": "BUSINESS", "business": "BUSINESS",
+    "ma nguon mo": "OPEN SOURCE", "open source": "OPEN SOURCE",
+    "open weights": "OPEN WEIGHTS",
+    "benchmark": "BENCHMARK",
+    "m&a": "M&A",
+    "ban cap nhat": "UPDATE", "update": "UPDATE",
+    "nghien cuu": "RESEARCH", "research": "RESEARCH",
+    "bao mat": "SECURITY", "security": "SECURITY",
+    "teaser": "TEASER",
 }
 
 
-def chuan_nhan(nhan: str, mac_dinh="CÔNG CỤ") -> str:
-    """Tra ve nhan co dau. Khong nhan ra thi giu nguyen ban goc viet hoa."""
+def chuan_nhan(nhan: str, mac_dinh="TOOL") -> str:
+    """Tra ve nhan tieng Anh viet hoa. Khong nhan ra thi giu nguyen viet hoa."""
     if not nhan:
         return mac_dinh
     import unicodedata

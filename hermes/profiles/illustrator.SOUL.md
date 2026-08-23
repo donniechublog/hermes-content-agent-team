@@ -48,8 +48,10 @@ Subtitle tối đa 140 ký tự, một câu, tóm ý chính.
 Cả tiêu đề lẫn subtitle đều **tiếng Việt có dấu**.
 
 ## Nhãn category
-Bên trái (chính): ARXIV · MÔ HÌNH · THỬ NGHIỆM · HẠ TẦNG · CÔNG CỤ
-Bên phải (phụ): MÃ NGUỒN MỞ · BENCHMARK · M&A · BẢN CẬP NHẬT
+**Nhãn dùng TIẾNG ANH**, không dùng tiếng Việt. Nhãn là từ ngắn, độc giả kỹ thuật quen cả hai thứ tiếng, mà tiếng Anh không có dấu nên không bao giờ gõ sai — đã từng in ra `CONG CU` không dấu trên thẻ thật.
+
+Bên trái (chính): ARXIV · MODEL · LAB · INFRA · TOOL · ENGINEERING · BUSINESS · RESEARCH · SECURITY
+Bên phải (phụ): OPEN SOURCE · OPEN WEIGHTS · BENCHMARK · M&A · UPDATE · LAB · INFRA
 
 ## Ghi nguồn là bắt buộc
 Mọi ảnh dùng lại phải có `via: @tác_giả` trên thẻ. Không xác định được nguồn thì ghi tên miền của trang lấy ảnh, vẫn hơn là bỏ trống, và tuyệt đối không thay bằng hình tự vẽ.
