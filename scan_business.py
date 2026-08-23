@@ -46,6 +46,15 @@ TRUY_VAN = [
     ("lao động & việc làm", "AI job losses OR layoffs OR humanoid robot workers when:14d"),
     ("thương hiệu & sản phẩm", "brand launches AI product OR partnership when:7d"),
     ("kiện tụng & bản quyền", "AI copyright lawsuit OR settlement when:14d"),
+    # Ba nhom them sau khi doi chieu voi mot ban tin ben ngoai va thay bo sot:
+    # Databricks goi von $5 ty va Snowflake/TrueFoundry deu la ha tang du lieu
+    # doanh nghiep, khong nhom nao trong sau nhom tren phu toi.
+    ("hạ tầng dữ liệu doanh nghiệp",
+     "data platform OR data warehouse AI funding OR valuation when:7d"),
+    ("MLOps & công cụ triển khai",
+     "MLOps OR inference platform OR model serving startup when:7d"),
+    ("chip & bán dẫn cho AI",
+     "AI chip deal OR semiconductor financing OR foundry capacity when:7d"),
 ]
 
 # Feed bao de khong phu thuoc mot minh Google News
