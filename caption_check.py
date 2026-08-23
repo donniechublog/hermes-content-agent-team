@@ -30,6 +30,12 @@ from pathlib import Path
 # di chung mot tin nhan; vuot qua la Telegram tach lam hai, anh mot noi chu mot
 # noi. Nen day vua la tran vua la muc tieu nen tan dung.
 GIOI_HAN = 1024
+# Tran cung cho moi nen tang. Ong Chu chot: viet duoi 2.200 o moi noi thi moat
+# khong phai can thiep gi, khong can caption rieng theo nen tang. Con so nay la
+# gioi han caption cua Instagram va TikTok (theo tri nho, chua xac nhan duoc tu
+# tai lieu vi trang cua ho la SPA) — de thap hon that mot chut thi an toan.
+# Caption thuong hien trung binh 962 ky tu nen tran nay khong vuong gi.
+TRAN_NEN_TANG = 2200
 NEN_DAT = 700          # duoi muc nay thi nhac: con nhieu cho ma chua dung het
 THE_CHO_PHEP = {"b", "i", "code", "strong", "em", "a"}
 
@@ -94,7 +100,10 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
         loi.append(f"MAT DAU tieng Viet — ty le dau {td:.2f}, duoi nguong "
                    f"{NGUONG_DAU}. Bai khong co dau la khong dang duoc.")
 
-    if len(caption) > GIOI_HAN:
+    if len(caption) > TRAN_NEN_TANG:
+        loi.append(f"Dài {len(caption)} ký tự, vượt trần {TRAN_NEN_TANG} của "
+                   "Instagram và TikTok. Bài sẽ bị cắt hoặc từ chối khi moat đẩy đi.")
+    elif len(caption) > GIOI_HAN:
         loi.append(f"Dài {len(caption)} ký tự, vượt giới hạn {GIOI_HAN}.")
     elif len(caption) < NEN_DAT:
         canh.append(f"{len(caption)} ký tự, còn {GIOI_HAN - len(caption)} ký tự "
