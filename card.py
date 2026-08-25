@@ -783,8 +783,17 @@ def build(src, title, subtitle, via, out, category="AI",
         if _cho_trong > 0:
             y += _cho_trong // 2
 
+    # Kieu tran can giua tieu de va phu de; kieu dai can trai.
+    #
+    # Can trai hop voi the tin vi o do chu nam trong mot textbox rieng, co mep
+    # trai lam moc, va con nhan trai vat qua ranh gioi ngay phia tren cung mot
+    # duong doc. Hero image khong con textbox, khong con moc nao: chu noi tren
+    # anh, nen truc doi xung cua tam anh la moc duy nhat con lai.
+    def _x_chu(ln, font):
+        return (W - d.textlength(ln, font=font)) / 2 if kieu == "tran" else PAD
+
     for ln in title_lines:
-        d.text((PAD, y), ln, font=f_title, fill=FG)
+        d.text((_x_chu(ln, f_title), y), ln, font=f_title, fill=FG)
         y += _line_h(f_title, 6)
     y += g2
 
@@ -793,7 +802,7 @@ def build(src, title, subtitle, via, out, category="AI",
     # duoc thoai mai.
     mau_sub = MUTED if b.get("ro_phu_de") is None else _pha(FG, b["ro_phu_de"])
     for ln in sub_lines:
-        d.text((PAD, y), ln, font=f_sub, fill=mau_sub)
+        d.text((_x_chu(ln, f_sub), y), ln, font=f_sub, fill=mau_sub)
         y += _line_h(f_sub, 6)
 
     bottom_y = H - g4 - via_h

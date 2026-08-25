@@ -34,7 +34,10 @@ tràn sinh ra để xoá.
 3. Hai chip category **nằm hẳn trong khối chữ**, thành hàng đầu tiên của nó,
    không vắt qua mốc ảnh/chữ như kiểu dài. Để chip ở cao độ đó thì chính chip
    trở thành vật đánh dấu cái đường vừa xoá.
-4. Tiêu đề, phụ đề, chân thẻ: y hệt kiểu dài.
+4. **Tiêu đề và phụ đề cân giữa**, không căn trái như kiểu dài. Kiểu dài có
+   mép trái textbox làm mốc; kiểu tràn không còn textbox nên lấy trục đối xứng
+   của tấm ảnh.
+5. Chân thẻ: y hệt kiểu dài, `via` bám mép trái, icon và handle bám mép phải.
 
 Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 

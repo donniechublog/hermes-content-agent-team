@@ -46,11 +46,18 @@ Thứ tự từ trên xuống, không có gì chen vào giữa:
               ↓
        màn tối dày dần
               ↓
-   nhãn trái ......... nhãn phải
-   TIÊU ĐỀ
-   phụ đề
-   via: @nguồn ....... icon + @handle
+ nhãn trái ............. nhãn phải
+        TIÊU ĐỀ CÂN GIỮA
+       phụ đề cân giữa
+ via: @nguồn ..... icon + @handle
 ```
+
+**Tiêu đề và phụ đề cân giữa**, khác kiểu dài. Thẻ tin căn trái vì ở đó chữ nằm
+trong một textbox riêng, có mép trái làm mốc, và nhãn trái vắt qua ranh giới
+ngay phía trên cùng một đường dọc. Hero image không còn textbox, không còn mốc
+nào: trục đối xứng của tấm ảnh là mốc duy nhất còn lại.
+
+Hai nhãn và hàng chân vẫn bám hai mép, giữ nhịp của bộ nhận diện.
 
 `card.py` lo hết phần vẽ. Việc của bạn là **chọn đúng ảnh** và **truyền đúng cờ**.
 
