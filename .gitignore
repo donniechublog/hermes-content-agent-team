@@ -3,7 +3,13 @@
 
 # Du lieu chay: ban nhap, trang thai, con tro Telegram
 drafts/
-state/
+state/*
+
+# Ngoai le: anh xa topic Telegram. No KHONG phai du lieu chay ma la CAU HINH —
+# chin con so nay khong suy ra duoc tu dau ca, va Telegram khong co API nao liet
+# ke lai topic cua mot nhom. Mat tep la mat het, phai vao app do tay tung topic.
+# Khong chua gi bi mat: chi la so thu tu topic trong nhom rieng.
+!state/topics.json
 
 # Rac
 __pycache__/
@@ -12,9 +18,6 @@ __pycache__/
 
 # symlink toi hermes-agent/venv — duong dan tuyet doi, khong dua vao repo
 venv
-
-# Nhat ky lam viec — du lieu chay, khong dua vao repo
-state/nhat_ky/
 
 # Tep nhap tam thoi
 gif2png_tmp.py
