@@ -23,9 +23,22 @@ Không dùng font đơn cách ở đây. JetBrains Mono bắt mỗi chữ cái c
 nên một câu dài ăn rất nhiều bề ngang và đọc ra "code" chứ không ra "báo".
 Oswald hẹp ngang nên chứa được câu dài ở cỡ chữ to.
 
-Tên hãng trong tiêu đề được tô màu CYAN tự động, tra theo `BRAND_TU` và
-`BRAND_CUM` trong `card.py`. Riêng `AI` đứng một mình không tô. Bảng màu dcgr
-đơn sắc nên không tô được, và đó là đúng ý đồ.
+Tên hãng trong tiêu đề được tô màu tự động, tra theo `BRAND_TU` và `BRAND_CUM`
+trong `card.py`. Riêng `AI` đứng một mình không tô.
+
+Hai thương hiệu tô khác nhau, khai báo bằng khoá `to_ten_hang`:
+
+- **donniechublog** (`"cyan"`) — dùng CYAN của bộ nhận diện.
+- **dcgr** (`"hang"`) — dùng **màu riêng của chính hãng** được nhắc tới, tra
+  `MAU_HANG` / `MAU_CUM`. Đây là màu thứ ba của bảng đơn sắc: nó không cố định,
+  mà đến từ chủ thể của tin. Màu quá đậm được `_du_sang()` kéo lên đủ đọc trên
+  nền tối. Hãng chưa biết màu thì dùng `mau_du_phong` (hổ phách).
+
+Giãn dòng và khoảng cách kicker đo bằng `_buoc_dong()`, tức là đo **chính các
+dòng sắp vẽ**, không đo bằng chuỗi mẫu `"Ây"`. Tiêu đề tiếng Việt viết hoa trải
+rộng hơn chuỗi mẫu đó: dấu sắc trên `Ắ` cao hơn dấu mũ, dấu nặng dưới `Ạ` thấp
+hơn đuôi `y`. Đo bằng chuỗi mẫu thì với giãn dòng bó sát, hai dòng liền nhau
+chồng lên nhau tới 11px.
 
 ## Bố cục kiểu `dai` — thẻ tin của Iris và Ethan (1200px ngang)
 1. Vùng ảnh nguồn trên cùng — ảnh thật, không chèn chữ đè lên (trừ mascot nếu còn góc trống).

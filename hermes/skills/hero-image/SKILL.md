@@ -216,15 +216,31 @@ META vừa phát hành mô hình...     ->  META màu cyan, phần còn lại tr
 HUGGING FACE và NVIDIA rót...     ->  cả hai tên đều được tô
 ```
 
-Nhận diện theo danh sách trong `card.py` (`BRAND_TU` cho tên một từ, `BRAND_CUM`
-cho tên nhiều từ như Hugging Face, Boston Dynamics). Gặp hãng chưa có trong danh
-sách thì **báo lại để thêm vào**, đừng tìm cách đánh dấu tay.
+Nhận diện theo danh sách trong `card.py`: `BRAND_TU` cho tên một từ, `BRAND_CUM`
+cho tên nhiều từ như Hugging Face hay Boston Dynamics, `MAU_HANG` và `MAU_CUM`
+cho màu của từng hãng. Gặp hãng chưa có trong danh sách thì **báo lại để thêm
+vào**, đừng tìm cách đánh dấu tay.
 
 Riêng `AI` đứng một mình **không** được tô: nó là từ hay gặp nhất trong mọi tiêu
 đề, tô lên thì cả câu nhấp nháy.
 
-**Bảng màu dcgr không tô được.** Nó chỉ có trắng và đen, màu nhấn chính là màu
-chữ, nên tô hay không cũng như nhau. Đó là đúng ý đồ đơn sắc, không phải lỗi.
+### Hai thương hiệu tô khác nhau
+
+**donniechublog** tô tên hãng bằng CYAN của bộ nhận diện. Bảng màu này đã có một
+màu nhấn mạnh sẵn, dùng luôn nó thì thẻ vẫn nằm trong hệ màu của kênh.
+
+**dcgr** tô bằng **màu riêng của chính hãng đó**. Nhắc Spotify thì ra xanh lá
+Spotify, nhắc Nvidia thì ra xanh lá Nvidia, nhắc Anthropic thì ra màu đất của
+Anthropic. Bảng màu dcgr chỉ có trắng và đen nên màu nhấn của nó chính là màu
+chữ; màu thứ ba phải đến từ đâu đó, và lấy từ chủ thể đang được nhắc tới là hợp
+lý nhất: bảng màu vẫn đơn sắc ở mọi chỗ khác, và chấm màu duy nhất trên thẻ luôn
+mang ý nghĩa.
+
+Màu hãng nào quá đậm để đọc trên nền tối (xanh navy Samsung, xanh TSMC) được tự
+kéo sáng vừa đủ. Vẫn ra đúng sắc đó, chỉ sáng hơn.
+
+Hãng chưa biết màu thì dcgr dùng màu hổ phách mặc định. Gặp trường hợp đó,
+**báo lại để thêm màu thật vào `MAU_HANG`** trong `card.py`.
 
 ## Ghi nguồn vẫn bắt buộc, nhưng ghi ở chỗ khác
 

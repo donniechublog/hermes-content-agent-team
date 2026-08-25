@@ -65,6 +65,10 @@ THUONG_HIEU = {
         "mascot": "mascot.png",
         "nhan_trai": True,
         "socials": ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"],
+        # Ten hang trong tieu de lay CYAN cua bo nhan dien. Bang mau nay da co
+        # mot mau nhan manh roi, muon them mau rieng cua tung hang nua thi doi
+        # "cyan" thanh "hang" o day, khong phai sua cho nao khac.
+        "to_ten_hang": "cyan",
         # Phu de keo ve gan FG thay vi mau MUTED xam: xam qua thi cau dan
         # chuyen bi chim, doc luot qua la mat. Giong muc dcgr dang dung.
         "ro_phu_de": 1.0,
@@ -83,6 +87,14 @@ THUONG_HIEU = {
     "dcgr": {
         "handle": "dcgr.tech",
         "mascot": None,
+        # Bang mau chi co trang va den, nen to ten hang bang mau nhan cua bo
+        # nhan dien la vo nghia: mau nhan o day CHINH LA mau chu. Mau thu ba
+        # cua no khong phai mot mau co dinh them vao bang, ma la mau cua chinh
+        # chu the dang duoc nhac toi — nhac Spotify thi ra xanh la Spotify.
+        # Nho vay bang mau van don sac o moi cho khac, va cham mau duy nhat tren
+        # the luon mang y nghia.
+        "to_ten_hang": "hang",
+        "mau_du_phong": (255, 176, 32),   # hang chua biet mau: ho phach
         # Chi giu nhan phai. Nhan trai nen dac mau nhan, ma o bang don sac no
         # thanh mot khoi trang lon hut het mat khoi noi dung.
         "nhan_trai": False,
@@ -145,6 +157,10 @@ TRAN_TITLE_LINES = 6
 TRAN_TITLE_MAX = 150
 KICKER_SIZE = 30
 KICKER_TRACK = 7        # gian chu cai cua kicker; chu nho ma gian rong moi ra nhan
+# Khoang ho giua kicker va tieu de. Do RIENG thay vi dung g1 cua khoi nhan dien,
+# vi kicker phai nam SAT tieu de moi doc ra la mot cum; xa qua thi no troi thanh
+# mot dong chu le loi giua khoang trong.
+KICKER_GAP = 14
 # Gian dong: chu display co to thi khoang ho mac dinh nhin ra roi rac. Bo sat
 # lai cho khoi chu doc thanh MOT mang, dung nhu cac mau tham khao.
 LEAD, TRAN_LEAD = 6, 2
@@ -221,25 +237,113 @@ BRAND_CUM = (
 _RIA = " .,:;!?\u201c\u201d\"'()[]"
 
 
+# Mau nhan dien cua tung hang. Bang mau dcgr chi co trang va den, nen ten hang
+# to len khong khac gi chu thuong. Day la MAU THU BA cua no: khong phai mot mau
+# co dinh them vao bang, ma la mau cua chinh chu the dang duoc nhac toi. Nhac
+# Spotify thi ra xanh la Spotify, nhac Nvidia thi ra xanh la Nvidia.
+MAU_HANG = {
+    "SPOTIFY": (30, 215, 96), "NVIDIA": (118, 185, 0),
+    "META": (0, 129, 251), "FACEBOOK": (24, 119, 242),
+    "OPENAI": (16, 163, 127), "CHATGPT": (16, 163, 127),
+    "ANTHROPIC": (217, 119, 87), "CLAUDE": (217, 119, 87),
+    "GOOGLE": (66, 133, 244), "GEMINI": (66, 133, 244),
+    "DEEPMIND": (66, 133, 244), "MICROSOFT": (0, 164, 239),
+    "APPLE": (210, 210, 215), "AMAZON": (255, 153, 0),
+    "NETFLIX": (229, 9, 20), "YOUTUBE": (255, 0, 0),
+    "TIKTOK": (255, 44, 85), "BYTEDANCE": (255, 44, 85),
+    "INSTAGRAM": (225, 48, 108), "LINKEDIN": (10, 102, 194),
+    "REDDIT": (255, 69, 0), "DISCORD": (88, 101, 242),
+    "GITHUB": (240, 246, 252), "FIGMA": (162, 89, 255),
+    "CANVA": (0, 196, 204), "STRIPE": (99, 91, 255),
+    "ADOBE": (255, 0, 0), "SALESFORCE": (0, 161, 224),
+    "TESLA": (227, 26, 26), "SPACEX": (210, 210, 215),
+    "INTEL": (0, 113, 197), "AMD": (237, 28, 36),
+    "QUALCOMM": (49, 54, 181), "BROADCOM": (204, 0, 0),
+    "IBM": (15, 98, 254), "ORACLE": (234, 0, 17),
+    "SAMSUNG": (20, 64, 160), "SONY": (220, 220, 220),
+    "HUAWEI": (207, 0, 24), "XIAOMI": (255, 103, 0),
+    "TENCENT": (0, 164, 255), "BAIDU": (43, 80, 255),
+    "ALIBABA": (255, 102, 0), "TSMC": (0, 89, 159),
+    "SOFTBANK": (167, 167, 167), "ARM": (0, 145, 189),
+    "DEEPSEEK": (77, 108, 247), "QWEN": (98, 84, 243),
+    "MISTRAL": (255, 143, 0), "PERPLEXITY": (32, 178, 170),
+    "COHERE": (216, 102, 255), "MIDJOURNEY": (210, 210, 215),
+    "XAI": (225, 225, 225), "GROK": (225, 225, 225),
+    "KIMI": (110, 130, 255), "MOONSHOT": (110, 130, 255),
+    "LLAMA": (0, 129, 251), "VIETTEL": (238, 0, 0),
+    "FPT": (0, 110, 181), "VNG": (0, 148, 218),
+    "VINGROUP": (176, 141, 87),
+}
+MAU_CUM = {
+    ("HUGGING", "FACE"): (255, 208, 0),
+    ("BOSTON", "DYNAMICS"): (0, 160, 220),
+    ("STABILITY", "AI"): (135, 100, 255),
+    ("SCALE", "AI"): (100, 160, 255),
+    ("MISTRAL", "AI"): (255, 143, 0),
+    ("META", "AI"): (0, 129, 251),
+    ("STABLE", "DIFFUSION"): (135, 100, 255),
+    ("BLACK", "FOREST", "LABS"): (200, 200, 210),
+    ("AMAZON", "WEB", "SERVICES"): (255, 153, 0),
+}
+
+
+def _do_sang(mau) -> float:
+    r, g, b = (c / 255 for c in mau[:3])
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _du_sang(mau, toi_thieu=0.42):
+    """Keo mau ve phia trang cho toi khi doc duoc tren nen toi.
+
+    Mau nhan dien cua nhieu hang la mau dam — xanh navy Samsung, xanh TSMC — va
+    dat nguyen xi len nen den thi khong doc noi. Keo sang KHONG lam mat nhan
+    dien: van ra dung sac do, chi la sang hon.
+    """
+    mau = tuple(mau[:3])
+    for _ in range(24):
+        if _do_sang(mau) >= toi_thieu:
+            break
+        mau = tuple(min(255, round(c + (255 - c) * 0.12)) for c in mau)
+    return mau
+
+
+def _mau_cua_hang(tu_sach: tuple):
+    """Mau cua mot ten hang (da tach dau, viet hoa). None neu chua biet."""
+    if len(tu_sach) > 1 and tuple(tu_sach) in MAU_CUM:
+        return MAU_CUM[tuple(tu_sach)]
+    if len(tu_sach) == 1 and tu_sach[0] in MAU_HANG:
+        return MAU_HANG[tu_sach[0]]
+    for cum, mau in MAU_CUM.items():
+        if tu_sach and tu_sach[0] in cum:
+            return mau
+    return None
+
+
 def _tach_nhan(dong: str):
-    """Tach mot dong thanh [(tu, co_to_mau)]. Giu nguyen tu goc de ve."""
+    """Tach mot dong thanh [(tu, khoa_hang)]. Giu nguyen tu goc de ve.
+
+    `khoa_hang` la tuple cac tu da lam sach cua ten hang khop duoc, hoac None.
+    Tra ve tuple chu khong phai True/False de ben ve con tra duoc MAU cua hang
+    do — ca cum "HUGGING FACE" phai ra cung mot mau, ke ca khi hai tu bi tach
+    ra hai lan ve.
+    """
     tu = dong.split(" ")
     sach = [t.strip(_RIA) for t in tu]
-    nhan = [False] * len(tu)
+    khoa = [None] * len(tu)
     i = 0
     while i < len(tu):
         for cum in BRAND_CUM:
             n = len(cum)
             if tuple(sach[i:i + n]) == cum:
                 for k in range(i, i + n):
-                    nhan[k] = True
+                    khoa[k] = cum
                 i += n
                 break
         else:
             if sach[i] in BRAND_TU:
-                nhan[i] = True
+                khoa[i] = (sach[i],)
             i += 1
-    return list(zip(tu, nhan))
+    return list(zip(tu, khoa))
 
 
 def _rong_dong(d, dong, font):
@@ -256,12 +360,23 @@ def _rong_dong(d, dong, font):
         + khoang * (len(dong.split(" ")) - 1)
 
 
-def _ve_dong(d, x, y, dong, font, mau, mau_nhan=None):
-    """Ve mot dong, to rieng ten thuong hieu neu co mau nhan."""
+def _ve_dong(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None):
+    """Ve mot dong, to rieng ten thuong hieu.
+
+    che_do:
+      None    — khong to gi, ca dong mot mau (the tin kieu dai)
+      "cyan"  — ten hang lay CYAN cua bo nhan dien (donniechublog)
+      "hang"  — ten hang lay MAU RIENG CUA HANG do (dcgr). Hang chua biet mau
+                thi dung `mau_du_phong`.
+    """
     khoang = d.textlength(" ", font=font)
-    for tu, co in _tach_nhan(dong):
-        d.text((x, y), tu, font=font,
-               fill=(mau_nhan if (co and mau_nhan is not None) else mau))
+    for tu, khoa in _tach_nhan(dong):
+        f_mau = mau
+        if khoa and che_do == "cyan":
+            f_mau = CYAN
+        elif khoa and che_do == "hang":
+            f_mau = _du_sang(_mau_cua_hang(khoa) or mau_du_phong or CYAN)
+        d.text((x, y), tu, font=font, fill=f_mau)
         x += d.textlength(tu, font=font) + khoang
 
 
@@ -326,7 +441,7 @@ def _grow_sub(d, text, max_w, max_h, max_lines=2):
 
 
 def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
-                path=None, weight=None, hi=None):
+                path=None, weight=None, hi=None, do_that=False):
     """Chọn cỡ chữ lớn nhất mà tiêu đề vẫn vừa cả bề ngang lẫn chiều cao trống.
 
     Chỉ dùng khi tỉ lệ thẻ bị khoá — lúc đó textbox có chiều cao cố định nên
@@ -339,7 +454,9 @@ def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
         lines = _wrap(d, text, f, max_w)
         if len(lines) > max_lines:
             continue
-        if _line_h(f, lead) * len(lines) <= max_h:
+        cao = ((_buoc_dong(f, lines, lead)[0] * len(lines)) if do_that
+               else _line_h(f, lead) * len(lines))
+        if cao <= max_h:
             best = (f, lines)
             break
     if best is None:                       # chỗ quá hẹp — về cỡ nhỏ nhất
@@ -349,6 +466,28 @@ def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
             lines[-1] = lines[-1].rstrip(" .,") + "…"
         best = (f, lines)
     return best
+
+
+def _buoc_dong(font, lines, lead):
+    """Buoc nhay giua hai dong va do nho cua dong dau, do bang CHINH cac dong se ve.
+
+    `_line_h` do bang bbox cua "Ây" — mot chuoi mau co dau mu tren va duoi chu y.
+    Cach do do du cho chu thuong, nhung KHONG du cho tieu de tieng Viet viet hoa:
+    dau sac tren "Ắ" cao hon dau mu, dau nang duoi "Ạ" thap hon duoi chu y. Do
+    that: chuoi mau cao 121px trong khi mot dong that trai tu 0 den 134. Voi gian
+    dong bo sat cua hero image, chenh lech do du de hai dong lien nhau chong len
+    nhau 11px.
+
+    Tra ve (buoc, tren): `tren` la khoang cach tu goc ve xuong dinh chu cao nhat,
+    dung de dat dong dau vao dung cho thay vi tha noi theo viec dong do co dau hay
+    khong.
+    """
+    if not lines:
+        return 0, 0
+    hop = [font.getbbox(l) for l in lines]
+    tren = min(h[1] for h in hop)
+    duoi = max(h[3] for h in hop)
+    return (duoi - tren) + lead, tren
 
 
 def _line_h(font, spacing=8):
@@ -785,7 +924,12 @@ def build(src, title, subtitle, via, out, category="AI",
     # Kicker: nhan ngan phia tren tieu de. Chi co o kieu tran.
     kicker = (kicker or "").strip().upper() if tran else ""
     f_kick = _f(F_REG, KICKER_SIZE, weight=700)
-    kick_h = _line_h(f_kick, LEAD) if kicker else 0
+    # Do CHIEU CAO CHU THAT chu khong dung _line_h. _line_h do bang bbox cua
+    # "Ây" — co ca dau mu lan duoi chu y — vi no phuc vu chu tieng Viet co dau.
+    # Kicker toan chu Latin viet hoa, khong dau, nen cach do do chua them gan 20px
+    # troi o duoi, va cong voi khoang ho nua thi kicker troi han khoi tieu de.
+    _kb = f_kick.getbbox(kicker) if kicker else (0, 0, 0, 0)
+    kick_h = (_kb[3] - _kb[1]) if kicker else 0
     # Hero image khong co phu de. Van nap font de cac nhanh phia sau con doi
     # tuong de goi, nhung danh sach dong rong nen moi phep tinh chieu cao va moi
     # vong ve deu tu dong bo qua no.
@@ -801,12 +945,19 @@ def build(src, title, subtitle, via, out, category="AI",
     #   dai  — nhan VAT qua ranh gioi, chi nua duoi cua no roi vao textbox
     #   tran — nhan nam han trong khoi chu, an tron chieu cao cong hai khoang ho
     # Quen cho vao day thi phu de bi day tut xuong de len hang chan. Da gap that.
+    def _cao_tieu_de(f=None, dong=None):
+        """Chieu cao khoi tieu de. Kieu tran do that, kieu dai giu cach cu."""
+        f, dong = f or f_title, dong if dong is not None else title_lines
+        if tran:
+            return _buoc_dong(f, dong, lead)[0] * len(dong)
+        return _line_h(f, lead) * len(dong)
+
     def _cao_dau(nen=1.0):
         g1 = _khoang(nen)[0]
         # Kieu tran khong ve nhan category; phan dau la khoang ho, cong them
         # kicker neu co (kicker cong mot khoang ho nua truoc tieu de).
         if kieu == "tran":
-            return g1 + (kick_h + g1 if kicker else 0)
+            return g1 + (kick_h + KICKER_GAP if kicker else 0)
         return chip_h // 2 + g1
 
     # Chiều cao tối thiểu textbox cần để chứa hết chữ, ở một hệ số nén cho trước
@@ -817,7 +968,7 @@ def build(src, title, subtitle, via, out, category="AI",
         cao_sub = (g2 + _line_h(f_s or f_sub, LEAD) * len(_dong_sub)
                    if _dong_sub else 0)
         return (_cao_dau(nen)
-                + _line_h(f_t or f_title, lead) * len(d_t or title_lines)
+                + _cao_tieu_de(f_t, d_t)
                 + cao_sub + g3 + max(via_h, 34) + g4)
 
     nen = 1.0
@@ -902,9 +1053,9 @@ def build(src, title, subtitle, via, out, category="AI",
                                            box_h - frame_h - sub_h,
                                            max_lines=so_dong_tieu_de,
                                            lead=lead, path=font_tieu_de,
-                                           weight=do_day,
+                                           weight=do_day, do_that=tran,
                                            hi=TRAN_TITLE_MAX if tran else None)
-        con_lai = box_h - frame_h - _line_h(f_title, lead) * len(title_lines)
+        con_lai = box_h - frame_h - _cao_tieu_de()
         if sub_lines and con_lai > sub_h + 12:
             f_sub, sub_lines = _grow_sub(probe, subtitle, avail_w, con_lai)
     else:
@@ -949,9 +1100,10 @@ def build(src, title, subtitle, via, out, category="AI",
     if kieu == "tran":
         y = img_h + g1
         if kicker:
+            # Tru _kb[1] de DINH chu roi dung vao y, khong phai goc ascender.
             _ve_tracked(d, (W - _rong_tracked(d, kicker, f_kick, KICKER_TRACK)) / 2,
-                        y, kicker, f_kick, _pha(CYAN, 1.0), KICKER_TRACK)
-            y += kick_h + g1
+                        y - _kb[1], kicker, f_kick, _pha(CYAN, 1.0), KICKER_TRACK)
+            y += kick_h + KICKER_GAP
     else:
         chip_y = img_h - chip_h // 2
         y = img_h + chip_h // 2 + g1
@@ -966,7 +1118,7 @@ def build(src, title, subtitle, via, out, category="AI",
     # con thua thi day khoi chu xuong giua thay vi de no dinh sat mep tren va bo
     # lai mot mang trong o duoi.
     if ratio != "free":
-        _cao_chu = (_line_h(f_title, lead) * len(title_lines)
+        _cao_chu = (_cao_tieu_de()
                     + (g2 + _line_h(f_sub, LEAD) * len(sub_lines)
                        if sub_lines else 0))
         _cho_trong = (H - g4 - via_h - g3) - y - _cao_chu
@@ -984,12 +1136,16 @@ def build(src, title, subtitle, via, out, category="AI",
         # do be ngang dung cach do — do ca chuoi mot lan se lech vai pixel.
         return (W - _rong_dong(d, ln, font)) / 2 if kieu == "tran" else PAD
 
-    # Mau to ten thuong hieu. Bang mau dcgr chi co trang va den nen CYAN o do
-    # CHINH LA mau chu: to len khong khac gi, va do la dung y do don sac.
-    mau_nhan = CYAN if (tran and CYAN != FG) else None
+    che_do_to = b.get("to_ten_hang") if tran else None
+    mau_du_phong = b.get("mau_du_phong")
+    # Dat dong dau bang DINH CHU chu khong bang goc ve: nho vay khoang ho toi
+    # kicker khong doi theo viec dong do co dau hay khong.
+    buoc, tren = (_buoc_dong(f_title, title_lines, lead) if tran
+                  else (_line_h(f_title, lead), 0))
     for ln in title_lines:
-        _ve_dong(d, _x_chu(ln, f_title), y, ln, f_title, FG, mau_nhan)
-        y += _line_h(f_title, lead)
+        _ve_dong(d, _x_chu(ln, f_title), y - tren, ln, f_title, FG,
+                 che_do_to, mau_du_phong)
+        y += buoc
     if sub_lines:
         y += g2
 
