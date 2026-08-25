@@ -67,6 +67,22 @@ def _mo(db: Path):
 
 # ---------- cac nguon ----------
 
+# Trang thai hermes dat cho luot da nhan nhung chua xong. Nhat ky chay 23:00 UTC
+# cung dot voi cac viec ngay khac, doc trung luc chung con dang chay - khong phai loi.
+DANG_CHAY = ("running", "claimed", "started", "pending")
+
+# Viec chay tren nguong nay trong mot ngay chi in mot dong tong, khong ke tung luot.
+THUA = 6
+
+
+def _gom_theo_viec(c: list) -> list:
+    """Gom cac luot theo ten viec, giu thu tu luot dau tien xuat hien."""
+    nhom = {}
+    for x in c:
+        nhom.setdefault(x["ten"], []).append(x)
+    return list(nhom.items())
+
+
 def phan_cron(ngay: str) -> list:
     con = _mo(HERMES / "cron" / "executions.db")
     if not con:
@@ -265,14 +281,37 @@ def dung_trang(ngay: str) -> str:
 
     c = phan_cron(ngay)
     if c:
-        loi = [x for x in c if x["trang_thai"] != "completed"]
-        L += ["## Cron", "",
-              f"- {len(c)} lượt chạy, {len(loi)} lỗi", ""]
-        for x in c:
-            gy = f" {x['giay']}s" if x["giay"] is not None else ""
-            dau = "✓" if x["trang_thai"] == "completed" else "✗"
-            L.append(f"- {dau} {x['gio']} {x['ten']}{gy}"
-                     + (f" — {x['loi']}" if x["loi"] else ""))
+        loi = [x for x in c if x["trang_thai"] not in ("completed", *DANG_CHAY)]
+        dang = [x for x in c if x["trang_thai"] in DANG_CHAY]
+        dem = f"- {len(c)} lượt chạy, {len(loi)} lỗi"
+        if dang:
+            dem += f", {len(dang)} còn đang chạy lúc dựng nhật ký"
+        L += ["## Cron", "", dem, ""]
+
+        # Gom theo việc: việc chạy dày chỉ cần một dòng tổng, việc thưa thì kể từng lượt.
+        for ten, nhom in _gom_theo_viec(c):
+            if len(nhom) > THUA:
+                gy = [x["giay"] for x in nhom if x["giay"] is not None]
+                d = f"- `{ten}` — {len(nhom)} lượt"
+                if gy:
+                    cham = max(nhom, key=lambda x: x["giay"] if x["giay"] is not None else -1)
+                    d += (f", trung bình {sum(gy) / len(gy):.1f}s"
+                          f", chậm nhất {cham['giay']}s lúc {cham['gio']}")
+                nl = sum(1 for x in nhom if x["trang_thai"] not in ("completed", *DANG_CHAY))
+                d += f", {nl} lỗi" if nl else ", không lỗi"
+                L.append(d)
+            else:
+                for x in nhom:
+                    gy = f" {x['giay']}s" if x["giay"] is not None else ""
+                    dau = ("⏳" if x["trang_thai"] in DANG_CHAY
+                           else "✓" if x["trang_thai"] == "completed" else "✗")
+                    L.append(f"- {dau} {x['gio']} {x['ten']}{gy}"
+                             + (f" — {x['loi']}" if x["loi"] else ""))
+
+        if loi:
+            L += ["", "**Lượt lỗi**", ""]
+            for x in loi:
+                L.append(f"- ✗ {x['gio']} {x['ten']} — {x['loi'] or x['trang_thai']}")
         L.append("")
 
     m = phan_model(ngay)
