@@ -32,6 +32,12 @@ F_REG = str(FONTS / "Inter.ttf")                      # via, ten kenh, UI phu
 # co. Dung ban Text chu KHONG dung ban Display: Display tuong phan net cao,
 # net manh mong qua nen o co chu nho doc met mat.
 F_SUB = str(FONTS / "NotoSerif.ttf")                  # phu de
+# Hero image dung font KHONG CHAN, khong don cach. JetBrains Mono la font don
+# cach: moi chu cai chiem dung mot o, nen mot cau dai an rat nhieu be ngang va
+# nhin ra "code" chu khong ra "bao". Oswald la sans condensed, hep ngang nen
+# chua duoc cau dai o co chu to, dung dang chu cua cac mau tham khao.
+F_HERO = str(FONTS / "Oswald.ttf")                    # tieu de hero image
+HERO_WEIGHT = 700                                     # truc Weight cua Oswald: 200-700
 
 W = 1200                          # bề ngang cố định
 IMG_MIN_H = 600                   # ảnh không mỏng hơn 2:1
@@ -134,6 +140,11 @@ TITLE_GROW_LINES = 2   # the tin: tuyet doi khong de tieu de 3 dong
 # nhieu dong tuy y mien con cho. Tran 6 dong chi de chan truong hop dan ca doan
 # van vao, khong phai de giu nhip.
 TRAN_TITLE_LINES = 6
+# Oswald hep ngang hon JetBrains Mono nhieu nen tran no cua tieu de phai cao hon,
+# khong thi cau ngan bi chan o co chu nho hon muc dang le duoc.
+TRAN_TITLE_MAX = 150
+KICKER_SIZE = 30
+KICKER_TRACK = 7        # gian chu cai cua kicker; chu nho ma gian rong moi ra nhan
 # Gian dong: chu display co to thi khoang ho mac dinh nhin ra roi rac. Bo sat
 # lai cho khoi chu doc thanh MOT mang, dung nhu cac mau tham khao.
 LEAD, TRAN_LEAD = 6, 2
@@ -147,13 +158,123 @@ RATIOS = {"1:1": 1200, "4:5": 1500, "3:4": 1600}
 
 
 def _f(path, size, weight=None):
+    """Nap font, dat do day neu font co truc bien thien.
+
+    Truoc day ham nay dat cung [size, weight] vi chi phuc vu Inter, font co dung
+    hai truc (opsz, wght) theo dung thu tu do. Oswald chi co MOT truc (Weight),
+    nen truyen hai gia tri la nem loi, bi except nuot, va font ra do day mac
+    dinh 400 — chu tieu de mong dinh ma khong bao gi. Nay doc thang danh sach
+    truc cua font roi dien tung truc mot.
+    """
     f = ImageFont.truetype(path, size)
-    if weight is not None:
-        try:                       # Inter la font bien thien (opsz, wght)
-            f.set_variation_by_axes([float(size), float(weight)])
-        except Exception:          # noqa: BLE001 — font tinh thi bo qua
-            pass
+    if weight is None:
+        return f
+    try:
+        truc = f.get_variation_axes()
+    except Exception:              # noqa: BLE001 — font tinh, khong co truc
+        return f
+    gia_tri = []
+    for t in truc:
+        ten = t.get("name")
+        ten = ten.decode("utf-8", "ignore") if isinstance(ten, bytes) else str(ten)
+        ten = ten.lower()
+        if "weight" in ten or "wght" in ten:
+            gia_tri.append(float(weight))
+        elif "optical" in ten or "opsz" in ten:
+            gia_tri.append(float(size))
+        else:
+            gia_tri.append(float(t.get("default", 0)))
+    try:
+        f.set_variation_by_axes(gia_tri)
+    except Exception:              # noqa: BLE001
+        pass
     return f
+
+
+# ---- To ten thuong hieu trong tieu de -------------------------------------
+# Cac mau tham khao deu to mot mau khac cho ten hang xuat hien trong tieu de.
+# Do la thu tao nhip manh nhat: mat bat duoc "ai lam" truoc khi doc het cau.
+#
+# Nhan dien TU DONG theo danh sach thay vi bat nguoi viet danh dau tay: danh dau
+# tay nghia la them mot cu phap vao chuoi tieu de, ma chuoi do con di qua kiem
+# tra dau, qua wrap, qua ca draft_write. Mot danh sach tra cuu khong dung toi
+# cho nao trong so do.
+BRAND_TU = {
+    "META", "OPENAI", "ANTHROPIC", "GOOGLE", "DEEPMIND", "MICROSOFT", "APPLE",
+    "AMAZON", "NVIDIA", "DEEPSEEK", "QWEN", "ALIBABA", "MISTRAL", "XAI",
+    "GROK", "CLAUDE", "CHATGPT", "GEMINI", "LLAMA", "PERPLEXITY", "TESLA",
+    "SAMSUNG", "INTEL", "AMD", "BAIDU", "BYTEDANCE", "TIKTOK", "MOONSHOT",
+    "KIMI", "ZHIPU", "MINIMAX", "MIDJOURNEY", "RUNWAY", "COHERE", "IBM",
+    "ORACLE", "QUALCOMM", "TSMC", "SOFTBANK", "TENCENT", "HUAWEI", "SPACEX",
+    "GITHUB", "REDDIT", "LINKEDIN", "INSTAGRAM", "FACEBOOK", "YOUTUBE",
+    "DISCORD", "SALESFORCE", "ADOBE", "SONY", "XIAOMI", "FIGMA", "CANVA",
+    "STRIPE", "UBER", "NETFLIX", "SPOTIFY", "ARM", "BROADCOM", "MICRON",
+    "SIEMENS", "FOXCONN", "VINGROUP", "VNG", "FPT", "VIETTEL",
+}
+# Cum nhieu tu. Xet truoc tu don, vi "AI" mot minh KHONG duoc to — no la tu
+# thuong gap nhat trong moi tieu de, to len thi ca cau nhap nhay.
+BRAND_CUM = (
+    ("HUGGING", "FACE"), ("BOSTON", "DYNAMICS"), ("STABILITY", "AI"),
+    ("SCALE", "AI"), ("MISTRAL", "AI"), ("BLACK", "FOREST", "LABS"),
+    ("STABLE", "DIFFUSION"), ("META", "AI"), ("AMAZON", "WEB", "SERVICES"),
+)
+_RIA = " .,:;!?\u201c\u201d\"'()[]"
+
+
+def _tach_nhan(dong: str):
+    """Tach mot dong thanh [(tu, co_to_mau)]. Giu nguyen tu goc de ve."""
+    tu = dong.split(" ")
+    sach = [t.strip(_RIA) for t in tu]
+    nhan = [False] * len(tu)
+    i = 0
+    while i < len(tu):
+        for cum in BRAND_CUM:
+            n = len(cum)
+            if tuple(sach[i:i + n]) == cum:
+                for k in range(i, i + n):
+                    nhan[k] = True
+                i += n
+                break
+        else:
+            if sach[i] in BRAND_TU:
+                nhan[i] = True
+            i += 1
+    return list(zip(tu, nhan))
+
+
+def _rong_dong(d, dong, font):
+    """Be ngang mot dong khi ve tung tu mot.
+
+    Phai do dung cach se ve, khong duoc do ca chuoi mot lan: ve tung tu thi be
+    ngang la tong cua tung manh, lech vai pixel so voi do ca chuoi, va cho lech
+    do du de mot dong can giua nhin ra la lech.
+    """
+    if not dong:
+        return 0
+    khoang = d.textlength(" ", font=font)
+    return sum(d.textlength(t, font=font) for t in dong.split(" ")) \
+        + khoang * (len(dong.split(" ")) - 1)
+
+
+def _ve_dong(d, x, y, dong, font, mau, mau_nhan=None):
+    """Ve mot dong, to rieng ten thuong hieu neu co mau nhan."""
+    khoang = d.textlength(" ", font=font)
+    for tu, co in _tach_nhan(dong):
+        d.text((x, y), tu, font=font,
+               fill=(mau_nhan if (co and mau_nhan is not None) else mau))
+        x += d.textlength(tu, font=font) + khoang
+
+
+def _rong_tracked(d, text, font, track):
+    return (sum(d.textlength(c, font=font) for c in text)
+            + track * max(0, len(text) - 1))
+
+
+def _ve_tracked(d, x, y, text, font, fill, track):
+    """Ve chu co gian chu cai. PIL khong co tracking nen phai ve tung ky tu."""
+    for c in text:
+        d.text((x, y), c, font=font, fill=fill)
+        x += d.textlength(c, font=font) + track
 
 
 def _wrap(d, text, font, max_w):
@@ -171,14 +292,15 @@ def _wrap(d, text, font, max_w):
     return lines
 
 
-def _fit_text(d, text, max_w, max_lines, hi, lo, bold=False):
-    path = F_BOLD if bold else F_SUB
+def _fit_text(d, text, max_w, max_lines, hi, lo, bold=False, path=None,
+              weight=None):
+    path = path or (F_BOLD if bold else F_SUB)
     for size in range(hi, lo - 1, -2):
-        f = _f(path, size)
+        f = _f(path, size, weight)
         lines = _wrap(d, text, f, max_w)
         if len(lines) <= max_lines:
             return f, lines
-    f = _f(path, lo)
+    f = _f(path, lo, weight)
     lines = _wrap(d, text, f, max_w)[:max_lines]
     if lines:
         lines[-1] = lines[-1].rstrip(" .,") + "…"
@@ -203,15 +325,17 @@ def _grow_sub(d, text, max_w, max_h, max_lines=2):
     return best or (_f(F_SUB, SUB_SIZE), _wrap(d, text, _f(F_SUB, SUB_SIZE), max_w)[:max_lines])
 
 
-def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD):
+def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
+                path=None, weight=None, hi=None):
     """Chọn cỡ chữ lớn nhất mà tiêu đề vẫn vừa cả bề ngang lẫn chiều cao trống.
 
     Chỉ dùng khi tỉ lệ thẻ bị khoá — lúc đó textbox có chiều cao cố định nên
     biết chính xác còn bao nhiêu chỗ cho tiêu đề.
     """
     best = None
-    for size in range(TITLE_GROW_MAX, TITLE_SIZE_LO - 1, -2):
-        f = _f(F_BOLD, size)
+    path = path or F_BOLD
+    for size in range(hi or TITLE_GROW_MAX, TITLE_SIZE_LO - 1, -2):
+        f = _f(path, size, weight)
         lines = _wrap(d, text, f, max_w)
         if len(lines) > max_lines:
             continue
@@ -219,7 +343,7 @@ def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD):
             best = (f, lines)
             break
     if best is None:                       # chỗ quá hẹp — về cỡ nhỏ nhất
-        f = _f(F_BOLD, TITLE_SIZE_LO)
+        f = _f(path, TITLE_SIZE_LO, weight)
         lines = _wrap(d, text, f, max_w)[:max_lines]
         if lines:
             lines[-1] = lines[-1].rstrip(" .,") + "…"
@@ -603,7 +727,7 @@ def tim_mat_dau(text: str) -> list:
 def build(src, title, subtitle, via, out, category="AI",
           category_right="", handle=None, ratio="free",
           tagline="daily AI update", khoa_ti_le=False, brand="donniechublog",
-          bo_qua_dau=False, kieu="dai"):
+          bo_qua_dau=False, kieu="dai", kicker=""):
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
     b = dat_thuong_hieu(brand)
@@ -647,11 +771,21 @@ def build(src, title, subtitle, via, out, category="AI",
     tran = kieu == "tran"
     lead = TRAN_LEAD if tran else LEAD
     so_dong_tieu_de = TRAN_TITLE_LINES if tran else 2
+    # Hero image dung Oswald (khong chan, condensed); the tin giu JetBrains Mono
+    # vi font don cach la mot phan nhan dien cua no.
+    font_tieu_de = F_HERO if tran else F_BOLD
+    do_day = HERO_WEIGHT if tran else None
 
     f_title, title_lines = _fit_text(probe, title.upper(), avail_w,
                                       max_lines=so_dong_tieu_de,
                                       hi=TITLE_SIZE_HI,
-                                      lo=TITLE_SIZE_LO, bold=True)
+                                      lo=TITLE_SIZE_LO, bold=True,
+                                      path=font_tieu_de, weight=do_day)
+
+    # Kicker: nhan ngan phia tren tieu de. Chi co o kieu tran.
+    kicker = (kicker or "").strip().upper() if tran else ""
+    f_kick = _f(F_REG, KICKER_SIZE, weight=700)
+    kick_h = _line_h(f_kick, LEAD) if kicker else 0
     # Hero image khong co phu de. Van nap font de cac nhanh phia sau con doi
     # tuong de goi, nhung danh sach dong rong nen moi phep tinh chieu cao va moi
     # vong ve deu tu dong bo qua no.
@@ -669,8 +803,11 @@ def build(src, title, subtitle, via, out, category="AI",
     # Quen cho vao day thi phu de bi day tut xuong de len hang chan. Da gap that.
     def _cao_dau(nen=1.0):
         g1 = _khoang(nen)[0]
-        # Kieu tran khong ve nhan nen phan dau chi con mot khoang ho.
-        return g1 if kieu == "tran" else (chip_h // 2 + g1)
+        # Kieu tran khong ve nhan category; phan dau la khoang ho, cong them
+        # kicker neu co (kicker cong mot khoang ho nua truoc tieu de).
+        if kieu == "tran":
+            return g1 + (kick_h + g1 if kicker else 0)
+        return chip_h // 2 + g1
 
     # Chiều cao tối thiểu textbox cần để chứa hết chữ, ở một hệ số nén cho trước
     def _box_min(nen=1.0, f_t=None, d_t=None, f_s=None, d_s=None):
@@ -764,7 +901,9 @@ def build(src, title, subtitle, via, out, category="AI",
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
                                            box_h - frame_h - sub_h,
                                            max_lines=so_dong_tieu_de,
-                                           lead=lead)
+                                           lead=lead, path=font_tieu_de,
+                                           weight=do_day,
+                                           hi=TRAN_TITLE_MAX if tran else None)
         con_lai = box_h - frame_h - _line_h(f_title, lead) * len(title_lines)
         if sub_lines and con_lai > sub_h + 12:
             f_sub, sub_lines = _grow_sub(probe, subtitle, avail_w, con_lai)
@@ -809,6 +948,10 @@ def build(src, title, subtitle, via, out, category="AI",
     # phu de, ten kenh.
     if kieu == "tran":
         y = img_h + g1
+        if kicker:
+            _ve_tracked(d, (W - _rong_tracked(d, kicker, f_kick, KICKER_TRACK)) / 2,
+                        y, kicker, f_kick, _pha(CYAN, 1.0), KICKER_TRACK)
+            y += kick_h + g1
     else:
         chip_y = img_h - chip_h // 2
         y = img_h + chip_h // 2 + g1
@@ -837,10 +980,15 @@ def build(src, title, subtitle, via, out, category="AI",
     # duong doc. Hero image khong con textbox, khong con moc nao: chu noi tren
     # anh, nen truc doi xung cua tam anh la moc duy nhat con lai.
     def _x_chu(ln, font):
-        return (W - d.textlength(ln, font=font)) / 2 if kieu == "tran" else PAD
+        # O kieu tran tieu de duoc ve TUNG TU (de to ten thuong hieu), nen phai
+        # do be ngang dung cach do — do ca chuoi mot lan se lech vai pixel.
+        return (W - _rong_dong(d, ln, font)) / 2 if kieu == "tran" else PAD
 
+    # Mau to ten thuong hieu. Bang mau dcgr chi co trang va den nen CYAN o do
+    # CHINH LA mau chu: to len khong khac gi, va do la dung y do don sac.
+    mau_nhan = CYAN if (tran and CYAN != FG) else None
     for ln in title_lines:
-        d.text((_x_chu(ln, f_title), y), ln, font=f_title, fill=FG)
+        _ve_dong(d, _x_chu(ln, f_title), y, ln, f_title, FG, mau_nhan)
         y += _line_h(f_title, lead)
     if sub_lines:
         y += g2
@@ -909,6 +1057,9 @@ def main():
                    help="Bo nhan dien: donniechublog (xanh dem) hoac dcgr (trang den)")
     p.add_argument("--tagline", default="daily AI update",
                    help="Mo ta ngan duoi ten kenh trong khoi thuong hieu")
+    p.add_argument("--kicker", default="",
+                   help="Nhan ngan phia tren tieu de, CHI co o --kieu tran. "
+                        "Vi du: BREAKING, MODEL RELEASE, AGENT, FUNDING")
     p.add_argument("--kieu", default="dai", choices=["dai", "tran"],
                    help="dai: anh o tren, textbox rieng o duoi (mac dinh). "
                         "tran: anh phu kin the, chu de len qua man toi")
@@ -921,7 +1072,7 @@ def main():
     build(a.image, a.title, a.subtitle, a.via, a.out,
           a.category, a.category_right, a.handle, a.ratio, a.tagline,
           khoa_ti_le=getattr(a, "khoa_ti_le", False), brand=a.brand,
-          bo_qua_dau=a.bo_qua_dau, kieu=a.kieu)
+          bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker)
 
 
 if __name__ == "__main__":

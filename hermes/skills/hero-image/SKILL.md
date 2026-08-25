@@ -35,13 +35,14 @@ ngang. Đó là điều kiện để thẻ đọc ra là một mặt phẳng li�
 một cái viền, và nét dọc trong vùng chữ lại tố ra đúng cái ranh giới mà kiểu
 tràn sinh ra để xoá.
 
-**Trên thẻ chỉ còn đúng ba thứ, tất cả cân giữa:**
+**Trên thẻ chỉ có bốn thứ, tất cả cân giữa:**
 
 ```
         ảnh phủ kín, không viền
               ↓
        màn tối dày dần
               ↓
+        K I C K E R
       TIÊU ĐỀ, MỘT CÂU,
      TO VÀ CHẠY MẤY DÒNG
        CŨNG ĐƯỢC, CHIẾM
@@ -51,6 +52,12 @@ tràn sinh ra để xoá.
 ```
 
 Không phụ đề, không nhãn ruy-băng, không cụm `via`, không dãy icon mạng xã hội.
+
+Chữ tiêu đề là **Oswald**, sans condensed, không chân và không đơn cách. Thẻ tin
+của Iris và Ethan vẫn dùng JetBrains Mono, font đơn cách đó là một phần nhận
+diện của chúng. Hero image thì không: font đơn cách bắt mỗi chữ cái chiếm đúng
+một ô, nên một câu dài ăn rất nhiều bề ngang và nhìn ra "code" chứ không ra
+"báo". Oswald hẹp ngang nên chứa được câu dài ở cỡ chữ to.
 
 Vì sao bỏ hết: cả ba thứ đó đều **bám mép**. Chúng hợp với thẻ tin, nơi mọi thứ
 lấy mép trái textbox làm mốc. Ở hero image thì khung đã gỡ, ranh giới đã gỡ, chữ
@@ -116,8 +123,8 @@ trang trí.
 ## Bước 3 — dựng
 
 ```bash
-cd /home/donniechu/content-team && cd /home/donniechu/content-team && venv/bin/python card.py \
-  --kieu tran --ratio 4:5 \
+cd /home/donniechu/content-team && cd /home/donniechu/content-team && cd /home/donniechu/content-team && venv/bin/python card.py \
+  --kieu tran --ratio 4:5 --kicker "<nhãn ngắn>" \
   --image <ảnh nguồn> --title "<một câu bao quát cả tin>" \
   --brand <donniechublog|dcgr> --out <đường dẫn ra>
 ```
@@ -177,6 +184,48 @@ xảy ra mà không cần đọc gì thêm.
 Câu càng dài thì chữ càng nhỏ. Đó là đánh đổi thật, không phải lỗi: một câu 4
 dòng chữ vừa vẫn hơn một nhan đề 1 dòng chữ to mà không nói được gì.
 
+## Kicker
+
+Nhãn ngắn phía trên tiêu đề, cỡ nhỏ, giãn chữ cái, màu nhấn. Không to nhưng đủ
+làm điểm nhấn và cho người đọc biết ngay đây là loại tin gì.
+
+```bash
+--kicker "MODEL RELEASE"
+```
+
+Dùng **TIẾNG ANH**, viết hoa (script tự viết hoa nếu bạn quên). Vài giá trị hay
+dùng:
+
+`BREAKING` · `MODEL RELEASE` · `AGENT` · `FUNDING` · `BENCHMARK` · `OPEN SOURCE`
+· `M&A` · `RESEARCH` · `INFRA` · `POLICY`
+
+Không phải danh sách đóng, gặp loại tin khác thì đặt tên khác, miễn ngắn: **tối
+đa hai từ**. Giãn chữ cái làm nhãn dài nở ra rất nhanh, ba từ là tràn.
+
+Bỏ trống `--kicker` thì không vẽ gì cả, thẻ vẫn đúng. Nhưng có kicker thì hơn:
+nó là thứ duy nhất còn lại nói cho người đọc biết đây là tin loại gì, sau khi
+nhãn category đã bỏ.
+
+## Tô tên thương hiệu trong tiêu đề
+
+Tên hãng xuất hiện trong tiêu đề được **tô màu nhấn tự động**. Bạn không phải
+làm gì cả: cứ viết tiêu đề bình thường, script tự nhận ra và tô.
+
+```
+META vừa phát hành mô hình...     ->  META màu cyan, phần còn lại trắng
+HUGGING FACE và NVIDIA rót...     ->  cả hai tên đều được tô
+```
+
+Nhận diện theo danh sách trong `card.py` (`BRAND_TU` cho tên một từ, `BRAND_CUM`
+cho tên nhiều từ như Hugging Face, Boston Dynamics). Gặp hãng chưa có trong danh
+sách thì **báo lại để thêm vào**, đừng tìm cách đánh dấu tay.
+
+Riêng `AI` đứng một mình **không** được tô: nó là từ hay gặp nhất trong mọi tiêu
+đề, tô lên thì cả câu nhấp nháy.
+
+**Bảng màu dcgr không tô được.** Nó chỉ có trắng và đen, màu nhấn chính là màu
+chữ, nên tô hay không cũng như nhau. Đó là đúng ý đồ đơn sắc, không phải lỗi.
+
 ## Ghi nguồn vẫn bắt buộc, nhưng ghi ở chỗ khác
 
 Kiểu tràn không in `via` lên thẻ nữa. Điều đó **không** có nghĩa là thôi ghi
@@ -193,9 +242,11 @@ tuyệt đối không thay bằng hình tự vẽ.
 Mở tệp ra xem. Ba câu hỏi:
 
 1. Có thấy đường kẻ, ngoặc góc, nhãn ruy-băng, phụ đề hay dãy icon nào không?
-   Có là sai, báo lại. Trên thẻ chỉ được có ảnh, tiêu đề, tên kênh.
-2. Chữ có nằm đè lên chi tiết dày của ảnh không? Có thì đổi ảnh.
-3. Ảnh có bị phóng vỡ nét, hoặc rơi vào phương án nền mờ không? Có thì đổi ảnh.
+   Có là sai, báo lại. Trên thẻ chỉ được có ảnh, kicker, tiêu đề, tên kênh.
+2. Tiêu đề có tên hãng nào mà **không** được tô màu không? Có nghĩa là hãng đó
+   chưa có trong danh sách, báo lại để thêm.
+3. Chữ có nằm đè lên chi tiết dày của ảnh không? Có thì đổi ảnh.
+4. Ảnh có bị phóng vỡ nét, hoặc rơi vào phương án nền mờ không? Có thì đổi ảnh.
 
 Spec đầy đủ của hệ chữ và bảng màu ở
 `/home/donniechu/content-team/STYLE_TEXT_SPEC.md`.

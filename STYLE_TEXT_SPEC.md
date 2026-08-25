@@ -2,7 +2,7 @@
 
 Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh khi có ảnh mẫu mới.
 
-## Hệ chữ
+## Hệ chữ — thẻ tin kiểu `dai` (Iris, Ethan)
 | Vai trò | Font | Cỡ | Kiểu |
 |---|---|---|---|
 | Tiêu đề | JetBrains Mono ExtraBold | 38–104px (tự nở theo chỗ trống) | IN HOA toàn bộ, đơn cách |
@@ -10,6 +10,22 @@ Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh 
 | Chip nhãn | JetBrains Mono Bold | 26px | IN HOA |
 | Via | Inter weight 500 | 29px | chữ thường |
 | Tên kênh | Inter weight 500 | 27px | chữ thường |
+
+## Hệ chữ — hero image kiểu `tran` (Chad)
+
+| Vai trò | Font | Cỡ | Kiểu |
+|---|---|---|---|
+| Tiêu đề | Oswald weight 700 | 38–150px (tự nở theo chỗ trống) | IN HOA, sans condensed |
+| Kicker | Inter weight 700 | 30px, giãn chữ cái 7px | IN HOA, tiếng Anh |
+| Tên kênh | Inter weight 500 | 27px | chữ thường |
+
+Không dùng font đơn cách ở đây. JetBrains Mono bắt mỗi chữ cái chiếm đúng một ô,
+nên một câu dài ăn rất nhiều bề ngang và đọc ra "code" chứ không ra "báo".
+Oswald hẹp ngang nên chứa được câu dài ở cỡ chữ to.
+
+Tên hãng trong tiêu đề được tô màu CYAN tự động, tra theo `BRAND_TU` và
+`BRAND_CUM` trong `card.py`. Riêng `AI` đứng một mình không tô. Bảng màu dcgr
+đơn sắc nên không tô được, và đó là đúng ý đồ.
 
 ## Bố cục kiểu `dai` — thẻ tin của Iris và Ethan (1200px ngang)
 1. Vùng ảnh nguồn trên cùng — ảnh thật, không chèn chữ đè lên (trừ mascot nếu còn góc trống).
@@ -31,22 +47,25 @@ tràn sinh ra để xoá.
    mờ cộng ảnh sắc đặt lên trên — vẫn liền mặt, nhưng là phương án đỡ.
 2. Màn tối dày dần từ trên xuống, đậm hẳn ở vùng chữ. Điểm uốn đặt cao hơn mốc
    chữ một đoạn để không lộ ra một đường gãy.
-3. **Không chip category, không cụm `via`, không dãy icon social.** Cả ba đều
+3. **Kicker** phía trên tiêu đề: nhãn ngắn tiếng Anh, cỡ nhỏ, giãn chữ cái,
+   màu nhấn. Đây là thứ duy nhất còn lại nói cho người đọc biết loại tin, sau
+   khi nhãn category đã bỏ. Tối đa hai từ, giãn chữ cái làm nhãn dài nở nhanh.
+4. **Không chip category, không cụm `via`, không dãy icon social.** Cả ba đều
    bám mép, hợp với thẻ tin nơi mọi thứ lấy mép trái textbox làm mốc. Ở đây
    khung đã gỡ và chữ đã về giữa, để lại chúng thì chỉ còn vài vết dính ở hai
    góc dưới kéo mắt ra khỏi trục.
-4. **Không phụ đề.** Tiêu đề gánh toàn bộ nội dung: một câu hoàn chỉnh bao quát
+5. **Không phụ đề.** Tiêu đề gánh toàn bộ nội dung: một câu hoàn chỉnh bao quát
    cả tin. Không giới hạn số dòng, không giới hạn ký tự; script chọn cỡ chữ lớn
    nhất còn vừa vùng chữ, câu dài thì chữ nhỏ lại và xuống thêm dòng.
-5. **Tiêu đề cân giữa**, không căn trái như kiểu dài. Kiểu dài có mép trái
+6. **Tiêu đề cân giữa**, không căn trái như kiểu dài. Kiểu dài có mép trái
    textbox làm mốc; kiểu tràn không còn textbox nên lấy trục đối xứng của ảnh.
-6. **Giãn dòng bó sát** (`TRAN_LEAD = 2` so với `LEAD = 6` ở kiểu dài). Chữ
+7. **Giãn dòng bó sát** (`TRAN_LEAD = 2` so với `LEAD = 6` ở kiểu dài). Chữ
    display cỡ lớn để khoảng hở mặc định thì đọc ra rời rạc; bó lại cho khối chữ
    thành một mảng.
-7. Vùng chữ chiếm `TRAN_TEXTBOX = 0.40` chiều cao thẻ, **không thương lượng với
+8. Vùng chữ chiếm `TRAN_TEXTBOX = 0.40` chiều cao thẻ, **không thương lượng với
    chiều cao ảnh** như kiểu dài, vì ảnh phủ kín thẻ và vùng chữ chỉ là một lớp
    đè lên.
-8. Chân thẻ rút còn **đúng tên kênh, cân giữa**.
+9. Chân thẻ rút còn **đúng tên kênh, cân giữa**.
 
 Hệ quả biên tập: nguồn ảnh không còn được in trên thẻ, nên nghĩa vụ ghi nguồn
 chuyển sang chú thích bài đăng.
