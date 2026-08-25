@@ -33,6 +33,9 @@ PLUGIN_KANBAN = Path.home() / "hermes-agent/plugins/kanban/dashboard"
 PLUGIN_TEP = ["plugin_api.py", "dist/index.js", "dist/style.css"]
 SCRIPT = ["finn_daily_scan", "nova_daily_scan", "vera_daily_scan",
           "model_watch", "usage_audit", "nhat_ky_daily"]
+# Skill KHONG nam trong danh sach dong bo: ban that cua chung da o thang trong
+# repo (hermes/skills/), va profile tro vao day qua skills.external_dirs. Nho
+# vay `hermes update` khong xoa duoc, va khong can chep qua chep lai.
 
 
 def cap_tep():

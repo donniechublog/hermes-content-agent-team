@@ -638,10 +638,18 @@ def build(src, title, subtitle, via, out, category="AI",
     _, chip_h = _chip_size(probe, category.upper(), f_chip)
     via_h = f_via.getbbox("Ây")[3] - f_via.getbbox("Ây")[1]
 
+    # Chieu cao phan DAU textbox, phan nam tren tieu de. Hai kieu an khac nhau:
+    #   dai  — nhan VAT qua ranh gioi, chi nua duoi cua no roi vao textbox
+    #   tran — nhan nam han trong khoi chu, an tron chieu cao cong hai khoang ho
+    # Quen cho vao day thi phu de bi day tut xuong de len hang chan. Da gap that.
+    def _cao_dau(nen=1.0):
+        g1 = _khoang(nen)[0]
+        return (chip_h + g1 * 2) if kieu == "tran" else (chip_h // 2 + g1)
+
     # Chiều cao tối thiểu textbox cần để chứa hết chữ, ở một hệ số nén cho trước
     def _box_min(nen=1.0, f_t=None, d_t=None, f_s=None, d_s=None):
         g1, g2, g3, g4 = _khoang(nen)
-        return (chip_h // 2 + g1
+        return (_cao_dau(nen)
                 + _line_h(f_t or f_title, 6) * len(d_t or title_lines) + g2
                 + _line_h(f_s or f_sub, 6) * len(d_s or sub_lines)
                 + g3 + max(via_h, 34) + g4)
@@ -707,7 +715,7 @@ def build(src, title, subtitle, via, out, category="AI",
         # Chỗ trống chia theo thứ tự ưu tiên: khung cố định -> subtitle
         # (tối đa 3 dòng) -> phần còn lại dành cho tiêu đề nở, chặn ở 2 dòng.
         _g1, _g2, _g3, _g4 = _khoang(nen)
-        frame_h = (chip_h // 2 + _g1 + _g2 + _g3 + max(via_h, 34) + _g4)
+        frame_h = (_cao_dau(nen) + _g2 + _g3 + max(via_h, 34) + _g4)
         # Chia cho trong: tieu de truoc (no toi 2 dong), phan con lai cho phu de.
         # Neu textbox van thua thi phu de no theo — thay vi de mot dong chu nho
         # lo lung giua khoang trong.
@@ -731,19 +739,39 @@ def build(src, title, subtitle, via, out, category="AI",
     # Mot he mau co dinh, khong phu thuoc anh sang hay toi:
     #   vung anh   -> cyan, dong bo voi hai ngoac goc TREN va nhan category
     #   vung chu   -> trang, dong bo voi hai ngoac goc DUOI
-    _tech_frame(d, H, img_h, CYAN, FG, vach=(kieu != "tran"))
+    # Kieu tran KHONG ve khung, khong mot net nao. Truoc day no van ve hai
+    # ngoac goc va hai net doc trong vung chu, chi bo moi cai vach ngang. Nhung
+    # ngoac goc chinh la mot cai vien, va net doc trong vung chu lai to ra dung
+    # cai ranh gioi ma kieu tran sinh ra de xoa. Hero image lien mot mat phang:
+    # anh, man toi, chu. Het.
+    if kieu != "tran":
+        _tech_frame(d, H, img_h, CYAN, FG, vach=True)
 
-    # Nhan category vat qua ranh gioi anh/textbox — khau hai vung lam mot,
-    # dong thoi tra lai chieu cao textbox cho tieu de.
-    chip_y = img_h - chip_h // 2
+    g1, g2, g3, g4 = _khoang(nen)
+
+    # Cho dat nhan category khac han giua hai kieu.
+    #
+    # Kieu dai co ranh gioi that giua anh va textbox, va nhan duoc dat VAT qua
+    # ranh gioi do de khau hai vung lam mot, dong thoi tra lai chieu cao textbox
+    # cho tieu de.
+    #
+    # Kieu tran khong co ranh gioi nao. De nhan o cao do thi chinh nhan tro
+    # thanh vat danh dau cai duong ma kieu tran sinh ra de xoa: nhin vao van
+    # thay the bi chia hai, chi la duong ke doi thanh hai cai nhan. Nen o kieu
+    # tran nhan tut han xuong, thanh hang dau tien cua khoi chu.
+    if kieu == "tran":
+        chip_y = img_h + g1
+        y = chip_y + chip_h + g1
+    else:
+        chip_y = img_h - chip_h // 2
+        y = img_h + chip_h // 2 + g1
+
     if b.get("nhan_trai", True):
         _chip(d, PAD, chip_y, category.upper(), f_chip, solid=True,
               fold="down")
     if category_right:
         _chip(d, 0, chip_y, category_right.upper(), f_chip,
               right_align=W - PAD, fold="up")
-    g1, g2, g3, g4 = _khoang(nen)
-    y = img_h + chip_h // 2 + g1
 
     # Khi ti le bi khoa, tieu de va phu de da no het co cho phep ma textbox van
     # con thua thi day khoi chu xuong giua thay vi de no dinh sat mep tren va bo

@@ -253,20 +253,20 @@ VAI_ANH = {
     "iris": ("illustrator", "donniechublog"),
     "illustrator": ("illustrator", "donniechublog"),
     "ethan": ("ethan", "dcgr"),
-    # Dax dung hero image kieu tran: anh phu kin the, chu de len, khong co dai
+    # Chad dung hero image kieu tran: anh phu kin the, chu de len, khong co dai
     # textbox rieng. Khac hai vai kia o BO CUC chu khong o thuong hieu, nen mac
     # dinh dung bang mau donniechublog.
-    "dax": ("designer", "donniechublog"),
+    "chad": ("designer", "donniechublog"),
     "designer": ("designer", "donniechublog"),
 }
 MAC_DINH_ANH = "iris"
 # Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi Ethan/Iris — them vai
 # thu ba la sai ngay, nen doi thanh bang tra.
-TEN_VAI_ANH = {"illustrator": "Iris", "ethan": "Ethan", "designer": "Dax"}
+TEN_VAI_ANH = {"illustrator": "Iris", "ethan": "Ethan", "designer": "Chad"}
 # Vai viet di theo THUONG HIEU, khong theo vai anh. Quinn viet cho dan ky thuat
 # (donniechublog), Miles viet cho dan kinh doanh/tai chinh/truyen thong
-# (dcgr.tech) — cung khuon caption, khac nguoi doc. Dax dung bang mau
-# donniechublog nen bai cua Dax van ve Quinn, dung nhu truoc.
+# (dcgr.tech) — cung khuon caption, khac nguoi doc. Chad dung bang mau
+# donniechublog nen bai cua Chad van ve Quinn, dung nhu truoc.
 VAI_VIET = {"donniechublog": "writer", "dcgr": "miles"}
 MAC_DINH_VIET = "writer"
 TEN_VAI_VIET = {"writer": "Quinn", "miles": "Miles"}
