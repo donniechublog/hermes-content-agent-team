@@ -25,6 +25,7 @@ TOPIC_PROFILE = {
     "illustrator": "illustrator",
     "ethan": "ethan",
     "writer": "writer",
+    "miles": "miles",
     "analyst": "analyst",
     "teaser": "teaser",
     "nova": "nova",

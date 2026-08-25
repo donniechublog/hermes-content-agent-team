@@ -8,7 +8,8 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 |---|---|---|
 | Finn | `scout` | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
 | Iris | `illustrator` | Dựng thẻ ảnh — dùng ảnh gốc hoặc tự vẽ SVG |
-| Quinn | `writer` | Viết caption tiếng Việt, đẩy vào hàng duyệt |
+| Quinn | `writer` | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
+| Miles | `miles` | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
 | Ada | `analyst` | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
 | Jean | `teaser` | Ghép teaser từ bài đã duyệt |
 
@@ -64,11 +65,12 @@ ghi thêm một dòng cảnh báo.
 
 ## Model từng vai
 
-| Vai | Model chính | Suy luận | Dự phòng |
+| Vai | Model đo được là hợp nhất | Suy luận | Dự phòng |
 |---|---|---|---|
 | Finn (scout) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → qwen3.8-max |
 | Iris (illustrator) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → mimo-v2.5-pro |
 | Quinn (writer) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
+| Miles (miles) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
 | Jean (teaser) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
 | Ada (analyst) | `ds/deepseek-reasoner` | **bật** | v4-pro → deepseek-chat |
 
@@ -107,9 +109,15 @@ nguyên tắc này: tụt cache nghĩa là đang lật model.
 
 ## Provider
 
-Sáu vai ưu tiên `v4flash` (connection `openai-compatible-chat-ba685909…`, baseUrl
-`api.b.ai`), dự phòng là `ds/deepseek-v4-flash` rồi `ds/deepseek-chat` trên
-connection DeepSeek gốc. Ada giữ `ds/deepseek-reasoner` vì provider mới không có.
+Tám vai chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek gốc, dự
+phòng là `v4flash` của provider mới (connection `openai-compatible-chat-ba685909…`,
+baseUrl `api.b.ai`) rồi `ds/deepseek-chat`. Ada giữ `ds/deepseek-reasoner` vì
+provider mới không có.
+
+**Provider mới từng là tuyến chính, đã hạ xuống dự phòng ngày 25/08** khi nó trả
+429 hết quota suốt nhiều giờ. Dây chuyền không gãy vì dự phòng gánh được, nhưng
+chạy dài ngày ở tuyến dự phòng là mất sạch cache per-model mà không ai đo được
+(xem điểm mù bên dưới), nên đảo hẳn thứ tự thay vì để nguyên.
 
 Provider mới **chỉ phục vụ `deepseek-v4-flash`** và bản vision — `deepseek-v4-pro`
 trả 403, `deepseek-chat` và `deepseek-reasoner` trả 404.

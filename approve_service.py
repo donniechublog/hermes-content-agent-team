@@ -263,6 +263,13 @@ MAC_DINH_ANH = "iris"
 # Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi Ethan/Iris — them vai
 # thu ba la sai ngay, nen doi thanh bang tra.
 TEN_VAI_ANH = {"illustrator": "Iris", "ethan": "Ethan", "designer": "Dax"}
+# Vai viet di theo THUONG HIEU, khong theo vai anh. Quinn viet cho dan ky thuat
+# (donniechublog), Miles viet cho dan kinh doanh/tai chinh/truyen thong
+# (dcgr.tech) — cung khuon caption, khac nguoi doc. Dax dung bang mau
+# donniechublog nen bai cua Dax van ve Quinn, dung nhu truoc.
+VAI_VIET = {"donniechublog": "writer", "dcgr": "miles"}
+MAC_DINH_VIET = "writer"
+TEN_VAI_VIET = {"writer": "Quinn", "miles": "Miles"}
 # Vai nao dung kieu tran thay vi kieu dai mac dinh.
 KIEU_ANH = {"designer": "tran"}
 
@@ -574,7 +581,8 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
         summary=item.get("summary_vi", ""), out_png=out_png,
         out_json=out_json, category=chuan_nhan(item.get("category")),
         draft_id=draft_id)
-    writer_id, err = kanban_create("Bai: " + item["title"], "writer",
+    vai_viet = VAI_VIET.get(brand, MAC_DINH_VIET)
+    writer_id, err = kanban_create("Bai: " + item["title"], vai_viet,
                                     writer_body, parent=illu_id)
     if err:
         return None, "Loi tao task viet: " + err
@@ -584,7 +592,7 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
     # create_pair tu duong khac thi manifest ghi picked=True ma vai_anh va brand
     # deu None. Da gap that trong mot lan chay thu.
     item["picked"] = True
-    item["vai_anh"], item["brand"] = vai_anh, brand
+    item["vai_anh"], item["brand"], item["vai_viet"] = vai_anh, brand, vai_viet
     item["task_anh"], item["task_viet"] = illu_id, writer_id
     return (illu_id, writer_id), None
 
@@ -660,7 +668,9 @@ def handle_message(token, group, scout_thread, msg):
             continue
         changed = True          # create_pair da danh dau vao `it`
         ten_hien = TEN_VAI_ANH.get(vai_anh, "Iris")
-        lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]} + viết {ids[1]}")
+        ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
+        lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]}"
+                     f" + {ten_viet} viết {ids[1]}")
 
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
