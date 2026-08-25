@@ -35,19 +35,22 @@ ngang. Đó là điều kiện để thẻ đọc ra là một mặt phẳng li�
 một cái viền, và nét dọc trong vùng chữ lại tố ra đúng cái ranh giới mà kiểu
 tràn sinh ra để xoá.
 
-**Trên thẻ chỉ còn đúng bốn thứ, tất cả cân giữa:**
+**Trên thẻ chỉ còn đúng ba thứ, tất cả cân giữa:**
 
 ```
         ảnh phủ kín, không viền
               ↓
        màn tối dày dần
               ↓
-       TIÊU ĐỀ CÂN GIỮA
-        phụ đề cân giữa
+      TIÊU ĐỀ, MỘT CÂU,
+     TO VÀ CHẠY MẤY DÒNG
+       CŨNG ĐƯỢC, CHIẾM
+      CHỪNG MỘT PHẦN BA
+              ↓
           @tên kênh
 ```
 
-Không nhãn ruy-băng, không cụm `via`, không dãy icon mạng xã hội.
+Không phụ đề, không nhãn ruy-băng, không cụm `via`, không dãy icon mạng xã hội.
 
 Vì sao bỏ hết: cả ba thứ đó đều **bám mép**. Chúng hợp với thẻ tin, nơi mọi thứ
 lấy mép trái textbox làm mốc. Ở hero image thì khung đã gỡ, ranh giới đã gỡ, chữ
@@ -57,8 +60,8 @@ mắt ra khỏi trục.
 **Tiêu đề và phụ đề cân giữa** vì mốc duy nhất còn lại là trục đối xứng của tấm
 ảnh, chứ không phải mép nào cả.
 
-`--category`, `--category-right` và `--via` **vẫn phải truyền** vì lệnh cần,
-nhưng ở kiểu tràn chúng không được vẽ ra.
+`--category`, `--category-right`, `--via` và `--subtitle` đều **không cần truyền**
+ở kiểu tràn. Lệnh vẫn nhận nếu bạn có truyền, nhưng không vẽ ra thứ nào.
 
 `card.py` lo hết phần vẽ. Việc của bạn là **chọn đúng ảnh** và **truyền đúng cờ**.
 
@@ -113,12 +116,14 @@ trang trí.
 ## Bước 3 — dựng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python card.py \
+cd /home/donniechu/content-team && cd /home/donniechu/content-team && venv/bin/python card.py \
   --kieu tran --ratio 4:5 \
-  --image <ảnh nguồn> --title "<tiêu đề>" --subtitle "<tóm tắt 1 câu>" \
-  --via "@nguồn" --category "<nhãn>" --category-right "<nhãn phụ>" \
+  --image <ảnh nguồn> --title "<một câu bao quát cả tin>" \
   --brand <donniechublog|dcgr> --out <đường dẫn ra>
 ```
+
+Chỉ chừng đó cờ. **Không `--subtitle`, không `--via`, không nhãn** — kiểu tràn
+không vẽ thứ nào trong số đó.
 
 **`--kieu tran` là lý do vai này tồn tại.** Thiếu nó là ra thẻ tin kiểu dài, tức
 là làm lại việc của Iris.
@@ -129,7 +134,7 @@ trôi theo ảnh), phải truyền tay.
 **`--brand` chọn theo kênh sẽ đăng**: `donniechublog` xanh đêm, `dcgr` trắng đen.
 
 Giá trị hợp lệ khác: `--ratio` nhận `free` `1:1` `4:5` `3:4`; `--handle` ghi đè
-tên kênh; `--tagline` là mô tả ngắn dưới tên kênh.
+tên kênh.
 
 Lưu ý về `--ratio`: nếu ảnh quá dọc so với tỉ lệ bạn khoá, script tự nâng lên tỉ
 lệ cao hơn để không phải thu ảnh. Dòng in ra cuối lệnh cho biết thẻ thật sự ra
@@ -139,31 +144,38 @@ bao nhiêu, đọc nó.
 
 Ba cái đầu làm lệnh **dừng hẳn**:
 
-1. **Tiếng Việt không dấu** ở tiêu đề, phụ đề, category, category-right hoặc
-   via. Từng in ra "CONG CU" trên thẻ thật. Gõ lại có dấu rồi chạy lại. Chỉ dùng
-   `--bo-qua-dau` khi chữ **thật sự** là tiếng Anh.
+1. **Tiếng Việt không dấu** ở tiêu đề. Từng in ra "CONG CU" trên thẻ thật. Gõ
+   lại có dấu rồi chạy lại. Chỉ dùng `--bo-qua-dau` khi chữ **thật sự** là
+   tiếng Anh.
 2. **Thương hiệu không nhận ra** ở `--brand`.
-3. **Thiếu cờ bắt buộc**: `--image --title --subtitle --via --out`.
+3. **Thiếu cờ bắt buộc**: `--image --title --out`.
 4. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
    nối. Đừng dựa vào nó, cứ gõ đúng từ đầu.
 
-## Giới hạn độ dài chữ
+## Tiêu đề: viết như thế nào
 
-- **Tiêu đề tối đa 60 ký tự.** Font tiêu đề là JetBrains Mono, đơn cách, chiếm
-  nhiều bề ngang. Quá thì bị thu nhỏ. Viết ngắn và đắt.
-- **Phụ đề tối đa 140 ký tự**, một câu, tóm ý chính.
-- Cả hai đều **tiếng Việt có dấu**.
+Đây là chỗ khác thẻ tin nhiều nhất, và là chỗ dễ làm sai nhất nếu bạn quen tay
+với Iris.
 
-Ở kiểu tràn chữ nằm đè lên ảnh, nên tiêu đề dài còn tệ hơn ở thẻ tin: nó ăn thêm
-chiều cao textbox, và textbox cao lên thì màn tối trùm lên nhiều ảnh hơn.
+Ở thẻ tin, tiêu đề chỉ là **nhan đề** còn phụ đề mới mang nội dung, nên tiêu đề
+phải ngắn dưới 60 ký tự và không được quá 2 dòng.
 
-## Nhãn category
+Ở hero image **không có phụ đề**. Tiêu đề gánh toàn bộ: nó phải là **một câu
+hoàn chỉnh bao quát được nội dung chính của tin**, đọc xong là hiểu chuyện gì
+xảy ra mà không cần đọc gì thêm.
 
-Ở kiểu tràn **không nhãn nào được vẽ ra**, nhưng lệnh vẫn cần hai cờ. Truyền
-`--category MODEL --category-right UPDATE` cho gọn là xong, đừng mất công cân
-nhắc nhãn nào đúng.
+- **Không giới hạn số dòng, không giới hạn ký tự.** Script tự chọn cỡ chữ lớn
+  nhất còn vừa chỗ, câu dài thì chữ nhỏ lại và xuống thêm dòng. Đừng cắt câu cho
+  ngắn rồi để nó thành nhan đề cụt.
+- **Một câu, không hai.** Không chấm giữa chừng, không nối bằng dấu chấm phẩy.
+  Một hơi đọc hết.
+- **Có số nếu tin có số.** Nhìn các mẫu tham khảo: con số nằm ngay trong câu
+  ("2,6 tỉ năm trong 4 phút", "400 triệu đô ở định giá 5,4 tỉ"), đó là thứ giữ
+  mắt người đọc.
+- **Tiếng Việt có dấu**, và script sẽ chặn nếu thiếu.
 
-(Luật chọn nhãn đầy đủ chỉ áp cho thẻ tin kiểu dài của Iris và Ethan.)
+Câu càng dài thì chữ càng nhỏ. Đó là đánh đổi thật, không phải lỗi: một câu 4
+dòng chữ vừa vẫn hơn một nhan đề 1 dòng chữ to mà không nói được gì.
 
 ## Ghi nguồn vẫn bắt buộc, nhưng ghi ở chỗ khác
 
@@ -180,8 +192,8 @@ tuyệt đối không thay bằng hình tự vẽ.
 
 Mở tệp ra xem. Ba câu hỏi:
 
-1. Có thấy đường kẻ, ngoặc góc, nhãn ruy-băng hay dãy icon nào không? Có là
-   sai, báo lại. Trên thẻ chỉ được có ảnh, tiêu đề, phụ đề, tên kênh.
+1. Có thấy đường kẻ, ngoặc góc, nhãn ruy-băng, phụ đề hay dãy icon nào không?
+   Có là sai, báo lại. Trên thẻ chỉ được có ảnh, tiêu đề, tên kênh.
 2. Chữ có nằm đè lên chi tiết dày của ảnh không? Có thì đổi ảnh.
 3. Ảnh có bị phóng vỡ nét, hoặc rơi vào phương án nền mờ không? Có thì đổi ảnh.
 

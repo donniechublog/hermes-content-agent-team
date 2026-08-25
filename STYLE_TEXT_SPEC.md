@@ -35,10 +35,18 @@ tràn sinh ra để xoá.
    bám mép, hợp với thẻ tin nơi mọi thứ lấy mép trái textbox làm mốc. Ở đây
    khung đã gỡ và chữ đã về giữa, để lại chúng thì chỉ còn vài vết dính ở hai
    góc dưới kéo mắt ra khỏi trục.
-4. **Tiêu đề và phụ đề cân giữa**, không căn trái như kiểu dài. Kiểu dài có
-   mép trái textbox làm mốc; kiểu tràn không còn textbox nên lấy trục đối xứng
-   của tấm ảnh.
-5. Chân thẻ rút còn **đúng tên kênh, cân giữa**.
+4. **Không phụ đề.** Tiêu đề gánh toàn bộ nội dung: một câu hoàn chỉnh bao quát
+   cả tin. Không giới hạn số dòng, không giới hạn ký tự; script chọn cỡ chữ lớn
+   nhất còn vừa vùng chữ, câu dài thì chữ nhỏ lại và xuống thêm dòng.
+5. **Tiêu đề cân giữa**, không căn trái như kiểu dài. Kiểu dài có mép trái
+   textbox làm mốc; kiểu tràn không còn textbox nên lấy trục đối xứng của ảnh.
+6. **Giãn dòng bó sát** (`TRAN_LEAD = 2` so với `LEAD = 6` ở kiểu dài). Chữ
+   display cỡ lớn để khoảng hở mặc định thì đọc ra rời rạc; bó lại cho khối chữ
+   thành một mảng.
+7. Vùng chữ chiếm `TRAN_TEXTBOX = 0.40` chiều cao thẻ, **không thương lượng với
+   chiều cao ảnh** như kiểu dài, vì ảnh phủ kín thẻ và vùng chữ chỉ là một lớp
+   đè lên.
+8. Chân thẻ rút còn **đúng tên kênh, cân giữa**.
 
 Hệ quả biên tập: nguồn ảnh không còn được in trên thẻ, nên nghĩa vụ ghi nguồn
 chuyển sang chú thích bài đăng.
@@ -57,7 +65,8 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - ACCENT/CYAN = trắng. Chip trái không dùng (nền trắng đặc hút mắt).
 
 ## Nguyên tắc
-- Tiêu đề font đơn cách → tối đa 60 ký tự, quá bị thu/cắt.
+- Tiêu đề font đơn cách → thẻ tin kiểu dài tối đa 60 ký tự, quá bị thu/cắt.
+  Hero image kiểu tràn KHÔNG có trần này: tiêu đề là một câu, chữ tự co theo.
 - Em-dash (—) bị chặn ở mọi văn bản thẻ.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
 - Ảnh là chính, textbox là phụ: text nhường chỗ cho ảnh, không ngược lại.

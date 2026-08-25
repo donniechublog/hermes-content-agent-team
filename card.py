@@ -127,7 +127,16 @@ MASCOT_MARGIN = 44
 
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
 TITLE_GROW_MAX = 104              # trần khi tiêu đề nở vào chỗ trống
-TITLE_GROW_LINES = 2   # tuyet doi khong de tieu de 3 dong
+TITLE_GROW_LINES = 2   # the tin: tuyet doi khong de tieu de 3 dong
+# Hero image di huong nguoc lai. O the tin, tieu de la nhan de va phu de moi mang
+# noi dung, nen tieu de dai la hong nhip. O hero image KHONG CO phu de: tieu de
+# la toan bo noi dung, mot cau tron ven bao quat ca tin. No duoc phep chay bao
+# nhieu dong tuy y mien con cho. Tran 6 dong chi de chan truong hop dan ca doan
+# van vao, khong phai de giu nhip.
+TRAN_TITLE_LINES = 6
+# Gian dong: chu display co to thi khoang ho mac dinh nhin ra roi rac. Bo sat
+# lai cho khoi chu doc thanh MOT mang, dung nhu cac mau tham khao.
+LEAD, TRAN_LEAD = 6, 2
 SUB_SIZE = 31
 CHIP_SIZE = 26
 VIA_SIZE = 29
@@ -194,7 +203,7 @@ def _grow_sub(d, text, max_w, max_h, max_lines=2):
     return best or (_f(F_SUB, SUB_SIZE), _wrap(d, text, _f(F_SUB, SUB_SIZE), max_w)[:max_lines])
 
 
-def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES):
+def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD):
     """Chọn cỡ chữ lớn nhất mà tiêu đề vẫn vừa cả bề ngang lẫn chiều cao trống.
 
     Chỉ dùng khi tỉ lệ thẻ bị khoá — lúc đó textbox có chiều cao cố định nên
@@ -206,7 +215,7 @@ def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES):
         lines = _wrap(d, text, f, max_w)
         if len(lines) > max_lines:
             continue
-        if _line_h(f, 6) * len(lines) <= max_h:
+        if _line_h(f, lead) * len(lines) <= max_h:
             best = (f, lines)
             break
     if best is None:                       # chỗ quá hẹp — về cỡ nhỏ nhất
@@ -616,6 +625,11 @@ def build(src, title, subtitle, via, out, category="AI",
             "  Go lai co dau day du roi chay lai. The la thu nguoi doc nhin thay\n"
             "  dau tien, chu khong dau lam ca kenh trong nhu lam au.\n"
             "  (Neu that su la tieng Anh, chay lai voi --bo-qua-dau)")
+    if kieu != "tran" and not (subtitle or "").strip():
+        raise SystemExit(
+            "Thieu --subtitle. The tin kieu dai can phu de: tieu de chi la nhan\n"
+            "  de, phu de moi mang noi dung. (Hero image --kieu tran thi khong\n"
+            "  can, vi o do tieu de la mot cau tron ven.)")
     src_img = Image.open(src).convert("RGB")
     img_h, how = _plan_image(src_img)
 
@@ -630,11 +644,22 @@ def build(src, title, subtitle, via, out, category="AI",
     f_via = _f(F_REG, max(12, round(VIA_SIZE * co_chan)), weight=500)
     avail_w = W - PAD * 2
 
+    tran = kieu == "tran"
+    lead = TRAN_LEAD if tran else LEAD
+    so_dong_tieu_de = TRAN_TITLE_LINES if tran else 2
+
     f_title, title_lines = _fit_text(probe, title.upper(), avail_w,
-                                      max_lines=2, hi=TITLE_SIZE_HI,
+                                      max_lines=so_dong_tieu_de,
+                                      hi=TITLE_SIZE_HI,
                                       lo=TITLE_SIZE_LO, bold=True)
-    f_sub, sub_lines = _fit_text(probe, subtitle, avail_w, max_lines=3,
-                                  hi=SUB_SIZE, lo=22)
+    # Hero image khong co phu de. Van nap font de cac nhanh phia sau con doi
+    # tuong de goi, nhung danh sach dong rong nen moi phep tinh chieu cao va moi
+    # vong ve deu tu dong bo qua no.
+    if tran:
+        f_sub, sub_lines = _f(F_SUB, SUB_SIZE), []
+    else:
+        f_sub, sub_lines = _fit_text(probe, subtitle, avail_w, max_lines=3,
+                                      hi=SUB_SIZE, lo=22)
     _, chip_h = _chip_size(probe, category.upper(), f_chip)
     via_h = f_via.getbbox("Ây")[3] - f_via.getbbox("Ây")[1]
 
@@ -650,10 +675,13 @@ def build(src, title, subtitle, via, out, category="AI",
     # Chiều cao tối thiểu textbox cần để chứa hết chữ, ở một hệ số nén cho trước
     def _box_min(nen=1.0, f_t=None, d_t=None, f_s=None, d_s=None):
         g1, g2, g3, g4 = _khoang(nen)
+        _dong_sub = d_s if d_s is not None else sub_lines
+        # Khong co phu de thi khong cong ca chieu cao LAN khoang ho g2 truoc no.
+        cao_sub = (g2 + _line_h(f_s or f_sub, LEAD) * len(_dong_sub)
+                   if _dong_sub else 0)
         return (_cao_dau(nen)
-                + _line_h(f_t or f_title, 6) * len(d_t or title_lines) + g2
-                + _line_h(f_s or f_sub, 6) * len(d_s or sub_lines)
-                + g3 + max(via_h, 34) + g4)
+                + _line_h(f_t or f_title, lead) * len(d_t or title_lines)
+                + cao_sub + g3 + max(via_h, 34) + g4)
 
     nen = 1.0
     # Nhan category VAT qua ranh gioi anh/textbox — khau hai vung lam mot. No co
@@ -667,64 +695,78 @@ def build(src, title, subtitle, via, out, category="AI",
         # Ảnh càng ngang (16:9) thì textbox càng cao — đúng ý đồ bố cục.
         H = RATIOS[ratio]
 
-        # ẢNH ĐƯỢC ƯU TIÊN. Thứ tự nhường chỗ, từ ít thiệt hại đến nhiều:
-        #   1. NÉN khoảng trắng của khối nhận diện (chữ vẫn nguyên cỡ)
-        #   2. RÚT phụ đề bớt dòng
-        #   3. NỚI tỉ lệ thẻ cho cao hơn
-        #   4. cuối cùng mới thu ảnh — và chỉ khi bị ép giữ tỉ lệ
-        while H - img_h < box_min and nen > 0.55:
-            nen = round(nen - 0.05, 2)
-            box_min = _box_min(nen)
-        # Rut phu de bot dong, nhung KHONG duoc rut den muc bi cat cut. Da gap:
-        # ep xuong 1 dong thi phu de dai khong vua o co nho nhat nen bi thay
-        # bang dau ba cham. Cat mat chu la mat noi dung, con nhuong them mot
-        # chut chieu cao thi khong mat gi. Nen dung o 2 dong khi 1 dong se cat.
-        while H - img_h < box_min and len(sub_lines) > 1:
-            thu_f, thu_lines = _fit_text(probe, subtitle, avail_w,
-                                         max_lines=len(sub_lines) - 1,
-                                         hi=SUB_SIZE, lo=19)
-            if "…" in "".join(thu_lines) and len(sub_lines) <= 2:
-                break                       # rut nua la cat mat chu, dung lai
-            f_sub, sub_lines = thu_f, thu_lines
-            box_min = _box_min(nen)
+        # Kieu tran KHONG thuong luong chieu cao. Ca doan duoi day sinh ra cho
+        # kieu dai, noi anh va chu cat nhau mot chieu cao huu han nen phai co ai
+        # do nhuong. O kieu tran anh phu kin the va textbox la mot lop DE LEN
+        # anh, khong phai mot o cat ra tu the: khong ai lan cho ai, khong co gi
+        # de nhuong. Chay nham vao day thi `min(H - img_h, ...)` ben duoi kep
+        # vung chu xuong bang phan anh con thua, va tieu de bi ep nho lai.
+        if not tran:
+            #   1. NÉN khoảng trắng của khối nhận diện (chữ vẫn nguyên cỡ)
+            #   2. RÚT phụ đề bớt dòng
+            #   3. NỚI tỉ lệ thẻ cho cao hơn
+            #   4. cuối cùng mới thu ảnh — và chỉ khi bị ép giữ tỉ lệ
+            while H - img_h < box_min and nen > 0.55:
+                nen = round(nen - 0.05, 2)
+                box_min = _box_min(nen)
+            # Rut phu de bot dong, nhung KHONG duoc rut den muc bi cat cut. Da gap:
+            # ep xuong 1 dong thi phu de dai khong vua o co nho nhat nen bi thay
+            # bang dau ba cham. Cat mat chu la mat noi dung, con nhuong them mot
+            # chut chieu cao thi khong mat gi. Nen dung o 2 dong khi 1 dong se cat.
+            while H - img_h < box_min and len(sub_lines) > 1:
+                thu_f, thu_lines = _fit_text(probe, subtitle, avail_w,
+                                             max_lines=len(sub_lines) - 1,
+                                             hi=SUB_SIZE, lo=19)
+                if "…" in "".join(thu_lines) and len(sub_lines) <= 2:
+                    break                       # rut nua la cat mat chu, dung lai
+                f_sub, sub_lines = thu_f, thu_lines
+                box_min = _box_min(nen)
 
-        if H - img_h < box_min:
-            # Khoa ti le ma van muon chua du chu thi phai THU ANH — khong chap
-            # nhan duoc, vi thu anh la mat noi dung. Thay vi vay, NOI TI LE ra
-            # cao hon cho toi khi anh vua tron ven. Chi khi moi ti le deu khong
-            # du moi danh thu, va bao ro ra man hinh.
-            for ten_ti_le, cao in sorted(RATIOS.items(), key=lambda x: x[1]):
-                if cao <= H:
-                    continue
-                if cao - img_h >= box_min:
-                    ratio, H = ten_ti_le, cao
-                    break
-            else:
-                if not khoa_ti_le:
-                    H = img_h + box_min          # tha the dai hon la thu anh
+            if H - img_h < box_min:
+                # Khoa ti le ma van muon chua du chu thi phai THU ANH — khong chap
+                # nhan duoc, vi thu anh la mat noi dung. Thay vi vay, NOI TI LE ra
+                # cao hon cho toi khi anh vua tron ven. Chi khi moi ti le deu khong
+                # du moi danh thu, va bao ro ra man hinh.
+                for ten_ti_le, cao in sorted(RATIOS.items(), key=lambda x: x[1]):
+                    if cao <= H:
+                        continue
+                    if cao - img_h >= box_min:
+                        ratio, H = ten_ti_le, cao
+                        break
                 else:
-                    img_h, how = H - box_min, "letterbox"
-                    print(f"[canh bao] khoa ti le {ratio} nen phai thu anh xuong "
-                          f"{img_h}px — bo --ratio de hien day du.", file=sys.stderr)
+                    if not khoa_ti_le:
+                        H = img_h + box_min          # tha the dai hon la thu anh
+                    else:
+                        img_h, how = H - box_min, "letterbox"
+                        print(f"[canh bao] khoa ti le {ratio} nen phai thu anh xuong "
+                              f"{img_h}px — bo --ratio de hien day du.", file=sys.stderr)
         # ANH LA CHINH, TEXTBOX LA PHU. Truoc day toan bo cho thua bi don het
         # vao textbox: khoa 4:5 thi chu chiem 58% chieu cao con anh 42%, nguoc
         # vai tro. Nay textbox chi lay phan chu that su can, tran o TRAN_TEXTBOX;
         # phan con lai tra cho vung anh, anh nam giua tren nen mo cung tong mau.
-        box_h = min(H - img_h, max(box_min, int(H * TRAN_TEXTBOX)))
+        if tran:
+            # Vung chu lay dung phan da dinh cua chieu cao the; `img_h` o day chi
+            # con nghia la MOC UON cua man toi, khong phai chieu cao anh nua.
+            box_h = max(box_min, int(H * TRAN_TEXTBOX))
+        else:
+            box_h = min(H - img_h, max(box_min, int(H * TRAN_TEXTBOX)))
         if H - box_h != img_h:
             img_h, how = H - box_h, "letterbox"
         # Chỗ trống chia theo thứ tự ưu tiên: khung cố định -> subtitle
         # (tối đa 3 dòng) -> phần còn lại dành cho tiêu đề nở, chặn ở 2 dòng.
         _g1, _g2, _g3, _g4 = _khoang(nen)
-        frame_h = (_cao_dau(nen) + _g2 + _g3 + max(via_h, 34) + _g4)
-        # Chia cho trong: tieu de truoc (no toi 2 dong), phan con lai cho phu de.
-        # Neu textbox van thua thi phu de no theo — thay vi de mot dong chu nho
-        # lo lung giua khoang trong.
-        sub_h = _line_h(f_sub, 6) * len(sub_lines)
+        frame_h = (_cao_dau(nen) + (_g2 if sub_lines else 0)
+                   + _g3 + max(via_h, 34) + _g4)
+        # Chia cho trong: tieu de truoc, phan con lai cho phu de. Neu textbox van
+        # thua thi phu de no theo — thay vi de mot dong chu nho lo lung giua
+        # khoang trong. O kieu tran khong co phu de nen tieu de an tron cho.
+        sub_h = _line_h(f_sub, LEAD) * len(sub_lines)
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
-                                           box_h - frame_h - sub_h)
-        con_lai = box_h - frame_h - _line_h(f_title, 6) * len(title_lines)
-        if con_lai > _line_h(f_sub, 6) * len(sub_lines) + 12:
+                                           box_h - frame_h - sub_h,
+                                           max_lines=so_dong_tieu_de,
+                                           lead=lead)
+        con_lai = box_h - frame_h - _line_h(f_title, lead) * len(title_lines)
+        if sub_lines and con_lai > sub_h + 12:
             f_sub, sub_lines = _grow_sub(probe, subtitle, avail_w, con_lai)
     else:
         box_h = box_min
@@ -781,8 +823,9 @@ def build(src, title, subtitle, via, out, category="AI",
     # con thua thi day khoi chu xuong giua thay vi de no dinh sat mep tren va bo
     # lai mot mang trong o duoi.
     if ratio != "free":
-        _cao_chu = (_line_h(f_title, 6) * len(title_lines) + g2
-                    + _line_h(f_sub, 6) * len(sub_lines))
+        _cao_chu = (_line_h(f_title, lead) * len(title_lines)
+                    + (g2 + _line_h(f_sub, LEAD) * len(sub_lines)
+                       if sub_lines else 0))
         _cho_trong = (H - g4 - via_h - g3) - y - _cao_chu
         if _cho_trong > 0:
             y += _cho_trong // 2
@@ -798,8 +841,9 @@ def build(src, title, subtitle, via, out, category="AI",
 
     for ln in title_lines:
         d.text((_x_chu(ln, f_title), y), ln, font=f_title, fill=FG)
-        y += _line_h(f_title, 6)
-    y += g2
+        y += _line_h(f_title, lead)
+    if sub_lines:
+        y += g2
 
     # Phu de mac dinh dung MUTED cho lui ve sau. Thuong hieu nao muon ro hon thi
     # keo mau ve phia FG theo `ro_phu_de` — chu van nhat hon tieu de nhung doc
@@ -807,7 +851,7 @@ def build(src, title, subtitle, via, out, category="AI",
     mau_sub = MUTED if b.get("ro_phu_de") is None else _pha(FG, b["ro_phu_de"])
     for ln in sub_lines:
         d.text((_x_chu(ln, f_sub), y), ln, font=f_sub, fill=mau_sub)
-        y += _line_h(f_sub, 6)
+        y += _line_h(f_sub, LEAD)
 
     bottom_y = H - g4 - via_h
     f_handle = _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500)
@@ -848,8 +892,11 @@ def main():
     p = argparse.ArgumentParser(description="Dựng thẻ ảnh cho kênh AI")
     p.add_argument("--image", required=True)
     p.add_argument("--title", required=True)
-    p.add_argument("--subtitle", required=True)
-    p.add_argument("--via", required=True)
+    # Bat buoc o kieu dai, bo qua o kieu tran (hero image khong co phu de).
+    p.add_argument("--subtitle", default="")
+    # Van nhan o ca hai kieu, nhung kieu tran khong ve ra: nguon duoc ghi o chu
+    # thich bai dang thay vi tren the.
+    p.add_argument("--via", default="")
     p.add_argument("--category", default="AI")
     p.add_argument("--category-right", default="")
     p.add_argument("--handle", default=None,
