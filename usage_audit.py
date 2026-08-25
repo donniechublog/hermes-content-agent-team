@@ -33,7 +33,7 @@ import env_load
 ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
 DB = Path.home() / ".9router" / "db" / "data.sqlite"
-PROFILES = ["scout", "illustrator", "writer", "analyst", "teaser"]
+PROFILES = ["scout", "ethan", "designer", "writer", "miles", "analyst", "teaser"]
 
 # Model co cache ma tut duoi muc nay la dang co van de (lat model, hoac
 # prompt qua ngan de cache an)

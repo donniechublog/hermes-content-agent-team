@@ -7,7 +7,8 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 | Vai | Profile hermes | Việc |
 |---|---|---|
 | Finn | `scout` | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
-| Iris | `illustrator` | Dựng thẻ ảnh — dùng ảnh gốc hoặc tự vẽ SVG |
+| Chad | `designer` | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
+| Ethan | `ethan` | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
 | Quinn | `writer` | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
 | Miles | `miles` | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
 | Ada | `analyst` | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
@@ -20,7 +21,7 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
                                               ↓
         Ông Chủ trả lời số thứ tự trong topic Finn
                                               ↓
-        approve_service tạo cặp task Iris → Quinn (Quinn chờ Iris xong)
+     approve_service tạo cặp task vai ảnh → vai viết (vai viết chờ ảnh xong)
                                               ↓
         Bản nháp + thẻ ảnh vào topic Quinn kèm nút ✅ / ❌
                                               ↓
@@ -38,7 +39,12 @@ ghi thêm một dòng cảnh báo.
 
 ## Tệp
 
-- `card.py` — dựng thẻ ảnh. Ảnh giữ nguyên tỉ lệ, textbox co giãn bù phần thiếu
+- `card.py` — dựng ảnh. Kiểu `tran` (cả hai vai ảnh đang dùng): ảnh full bề ngang,
+  không khung, chữ đè lên qua màn tối. Kiểu `dai` còn trong mã nhưng hiện không
+  vai nào dùng
+- `hermes/skills/hero-image/` — skill dùng chung của Chad và Ethan. Nằm thẳng
+  trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
+  không xoá được
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số
 - `moat_publish.py` — đẩy bài đã duyệt sang moat (`push <draft_id>`) và hỏi trạng thái
@@ -68,7 +74,8 @@ ghi thêm một dòng cảnh báo.
 | Vai | Model đo được là hợp nhất | Suy luận | Dự phòng |
 |---|---|---|---|
 | Finn (scout) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → qwen3.8-max |
-| Iris (illustrator) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → mimo-v2.5-pro |
+| Chad (designer) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → mimo-v2.5-pro |
+| Ethan (ethan) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → mimo-v2.5-pro |
 | Quinn (writer) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
 | Miles (miles) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
 | Jean (teaser) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
@@ -132,7 +139,7 @@ Nhưng `--usage-file` cũng có bẫy: nó ghi model được **cấu hình**, k
 mà tệp usage vẫn khai là đang chạy provider mới — chỉ lộ ra khi đối chiếu với log
 9router.
 
-Token burn đo được cho một luồng trọn vẹn (Finn quét → Iris dựng thẻ → Quinn viết,
+Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh dựng → vai viết,
 17 lượt gọi): **~398.000 token chạm model**, cache 36%, 227 giây, ước $0,038.
 
 ## Suy luận (reasoning)

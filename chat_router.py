@@ -22,7 +22,6 @@ HERMES_HOME = str(Path.home() / ".hermes")
 # topic -> profile. Nhan ngoai cac topic nay (vd General) di vao profile mac dinh.
 TOPIC_PROFILE = {
     "scout": "scout",
-    "illustrator": "illustrator",
     "ethan": "ethan",
     "writer": "writer",
     "miles": "miles",

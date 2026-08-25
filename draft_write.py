@@ -2,7 +2,7 @@
 """Ghi file draft tu caption + metadata da biet truoc — tat dinh, khong LLM.
 
 Truoc day writer phai tu go lai source_url / category / via / duong dan anh
-vao JSON, du nhung gia tri nay Finn va illustrator da quyet tu truoc. Go tay
+vao JSON, du nhung gia tri nay Finn va vai dung anh da quyet tu truoc. Go tay
 la co hoi go sai (lech dau, thieu truong, sai kieu). Script nay nhan caption
 tu writer roi tu ghep phan con lai, nen khong the sai.
 
@@ -61,7 +61,7 @@ def main():
                  "(that su can giu thi them --bo-qua-kiem)")
 
     image = a.image or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png")
-    # Anh phu do Iris tai ve: <draft>_2.png, _3.png... Gom san vao draft de
+    # Anh phu do vai dung anh tai ve: <draft>_2.png, _3.png... Gom san vao draft de
     # buoc dang gui thanh album. Nhieu anh that van hon mot anh chung chung.
     phu = sorted(DRAFTS.glob(f"{a.draft_id}_[0-9].png"))
     images = [image] + [str(x) for x in phu] if phu else None
@@ -80,7 +80,7 @@ def main():
         sys.exit(f"Thieu truong bat buoc: {', '.join(missing)}")
 
     if not Path(image).exists():
-        print(f"[canh bao] chua thay anh {image} — illustrator da chay xong chua?",
+        print(f"[canh bao] chua thay anh {image} — vai dung anh da chay xong chua?",
               file=sys.stderr)
 
     out = DRAFTS / f"{a.draft_id}.json"

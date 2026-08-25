@@ -270,7 +270,7 @@ ANH_RAC = re.compile(
 def _anh_cua(url: str, timeout=8) -> str:
     """Lay og:image (hoac twitter:image) cua mot bai. Hong thi tra chuoi rong.
 
-    Vi sao can: truoc day khong co buoc nay, `image_url` LUON None, nen Iris
+    Vi sao can: truoc day khong co buoc nay, `image_url` LUON None, nen vai dung anh
     lan nao cung phai tu ve SVG — moi the anh nhin giong het nhau. Da kiem 23/23
     tin trong ba ngay deu khong co anh.
     """
@@ -318,7 +318,7 @@ def main():
     ap.add_argument("--top", type=int, default=40,
                     help="So ung vien toi da giu lai (mac dinh 40)")
     ap.add_argument("--khong-lay-anh", action="store_true",
-                    help="Bo qua buoc tai og:image (nhanh hon, nhung Iris se phai tu ve)")
+                    help="Bo qua buoc tai og:image (nhanh hon, nhung vai dung anh se thieu goi y)")
     a = ap.parse_args()
 
     print("Dang quet...", file=sys.stderr)

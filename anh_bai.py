@@ -4,7 +4,7 @@
 Vi sao phai lam lai: truoc day pipeline chi nhin DUNG MOT link ma Finn nhat duoc.
 Link do thuong la trang tai lieu hoac repo, va og:image cua no la mot the thuong
 hieu chung chung — "deepseek-social-card.jpeg" cho MOI bai cua DeepSeek. Ket qua
-la anh bai nao cung giong bai nao, hoac khong co anh nen Iris phai tu ve SVG.
+la anh bai nao cung giong bai nao, hoac khong co anh that de dung.
 
 Vi du that: tin "DeepSeek-v4-flash-vision-exp" co link
 api-docs.deepseek.com/guides/vision/ -> og:image la the thuong hieu. Trong khi

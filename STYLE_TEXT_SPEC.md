@@ -2,7 +2,7 @@
 
 Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh khi có ảnh mẫu mới.
 
-## Hệ chữ — thẻ tin kiểu `dai` (Iris, Ethan)
+## Hệ chữ — kiểu `dai` (hiện không vai nào dùng, giữ trong mã)
 | Vai trò | Font | Cỡ | Kiểu |
 |---|---|---|---|
 | Tiêu đề | JetBrains Mono ExtraBold | 38–104px (tự nở theo chỗ trống) | IN HOA toàn bộ, đơn cách |
@@ -11,7 +11,7 @@ Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh 
 | Via | Inter weight 500 | 29px | chữ thường |
 | Tên kênh | Inter weight 500 | 27px | chữ thường |
 
-## Hệ chữ — hero image kiểu `tran` (Chad)
+## Hệ chữ — kiểu `tran` (Chad và Ethan, kiểu duy nhất đang dùng)
 
 | Vai trò | Font | Cỡ | Kiểu |
 |---|---|---|---|
@@ -40,7 +40,7 @@ rộng hơn chuỗi mẫu đó: dấu sắc trên `Ắ` cao hơn dấu mũ, dấ
 hơn đuôi `y`. Đo bằng chuỗi mẫu thì với giãn dòng bó sát, hai dòng liền nhau
 chồng lên nhau tới 11px.
 
-## Bố cục kiểu `dai` — thẻ tin của Iris và Ethan (1200px ngang)
+## Bố cục kiểu `dai` — hiện không vai nào dùng (1200px ngang)
 1. Vùng ảnh nguồn trên cùng — ảnh thật, không chèn chữ đè lên (trừ mascot nếu còn góc trống).
 2. Khung kỹ thuật: 4 góc vát — 2 góc trên cyan, 2 góc dưới trắng; 2 đường dọc đôi; đường chia ngắt quãng ngay ranh giới ảnh/text.
 3. Chip category trái: nền đặc cyan, chữ đen, đè lên ranh giới ảnh/textbox, có 2 tam giác gấp xuống phải (kiểu ruy-băng).
@@ -49,7 +49,7 @@ chồng lên nhau tới 11px.
 6. Subtitle: căn trái, tối đa 3 dòng, màu xám nhạt (donniechublog) hoặc trắng 95% (dcgr).
 7. Chân thẻ: `via: <nguồn>` trái, màu cyan mờ; hàng icon social + @handle phải, icon mờ hơn chữ.
 
-## Bố cục kiểu `tran` — hero image của Chad
+## Bố cục kiểu `tran` — Chad (donniechublog) và Ethan (dcgr.tech)
 
 **Không vẽ khung, không một nét nào.** Không ngoặc góc, không đường dọc, không
 vạch ngang. Đó là điều kiện để thẻ đọc ra là một mặt phẳng liền: ngoặc góc chính

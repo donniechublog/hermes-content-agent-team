@@ -2,12 +2,12 @@
 """Tim NGUON cho mot tin — buoc research, thuoc khau cua Finn.
 
 Vi sao dat o day: viec di tim nguon la RESEARCH, do la nghe cua Finn. Truoc day
-Iris tu tim nguon de lay anh, Quinn lai tu tim nguon de lay chu — hai lan tra
+Vai dung anh tu tim nguon de lay anh, vai viet lai tu tim de lay chu — hai lan tra
 cuu cho cung mot tin, va co the ra hai bo bai khac nhau, khien bai viet noi mot
 dang con tam anh cho thay mot dang khac.
 
 Nay Finn lam mot lan ngay sau khi Ong Chu chon tin, ghi ra
-state/nguon_<draft_id>.json, roi ca Iris lan Quinn cung doc tep do.
+state/nguon_<draft_id>.json, roi ca vai dung anh lan vai viet cung doc tep do.
 
 Cach tim: Google News KHONG cho URL bai (link cua no la duong chuyen huong chay
 bang JS, chuoi CBMi khong phai base64 cua URL, con DuckDuckGo tra 202 chan bot).

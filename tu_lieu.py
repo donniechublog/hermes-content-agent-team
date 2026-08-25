@@ -80,7 +80,7 @@ def cau_co_so(doan: list) -> list:
 def gom(tieu_de: str, link: str, so_bai_khac=SO_BAI_KHAC, tu_nguon=None) -> dict:
     """tu_nguon: tep JSON do anh_bai.py --luu-nguon sinh ra.
 
-    Uu tien dung lai nguon cua Iris. Hai ly do: khong tra cuu hai lan, va quan
+    Uu tien dung lai nguon da co. Hai ly do: khong tra cuu hai lan, va quan
     trong hon — bai viet giai thich dung nhung gi doc gia nhin thay tren tam anh.
     Moi ben tu tim thi de ra hai bo bai khac nhau.
     """
@@ -97,7 +97,7 @@ def gom(tieu_de: str, link: str, so_bai_khac=SO_BAI_KHAC, tu_nguon=None) -> dict
             j = json.loads(Path(tu_nguon).read_text(encoding="utf-8"))
             dsach = [(t["url"], "") for t in j.get("trang", [])
                      if t.get("url") and t["url"] != link][:so_bai_khac]
-            print(f"[tu_lieu] dung lai {len(dsach)} nguon cua Iris", file=sys.stderr)
+            print(f"[tu_lieu] dung lai {len(dsach)} nguon co san", file=sys.stderr)
         except Exception:                                    # noqa: BLE001
             dsach = []
     if not dsach:

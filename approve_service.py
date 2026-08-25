@@ -8,7 +8,7 @@ update cua nhau. Vi vay dich vu nay xu ly ca hai luong trong cung mot vong lap:
 
   A) callback_query -- nut Duyet/Bo tren ban nhap draft (nhu truoc)
   B) message -- Ong Chu reply so thu tu trong topic scout -> tao cap task
-     illustrator+writer cho dung tin da chon trong manifest cua Finn
+     vai anh + vai viet cho dung tin da chon trong manifest cua Finn
 """
 import json
 import os
@@ -128,7 +128,7 @@ def publish(token, channel, draft_id):
 
     images = d.get("images")
     if images:
-        # Anh co the la URL (teaser lay tu bai goc) HOAC tep cuc bo (the do Iris
+        # Anh co the la URL (teaser lay tu bai goc) HOAC tep cuc bo (the do vai dung anh
         # dung + anh that tai ve). Tep cuc bo phai dinh kem multipart qua
         # attach://, khong the truyen duong dan — Telegram khong doc duoc o may ta.
         items, files = [], {}
@@ -248,43 +248,43 @@ def latest_manifest(vai="scout"):
 
 
 # Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
-# Khong ghi ten ai thi mac dinh Iris, giu nguyen thoi quen cu.
+# Khong ghi ten ai thi mac dinh Chad (donniechublog).
+# Chi con HAI vai dung anh, va ca hai lam CUNG MOT kieu anh: kieu tran, khong
+# khung, khong vach. Khac nhau dung mot thu la THUONG HIEU. Iris da bo: khi ca
+# doi chuyen sang mot kieu anh duy nhat thi vai cua Iris trung khit voi Chad,
+# giu lai chi de hai ban SOUL gan nhu giong het troi ra khoi nhau.
 VAI_ANH = {
-    "iris": ("illustrator", "donniechublog"),
-    "illustrator": ("illustrator", "donniechublog"),
-    "ethan": ("ethan", "dcgr"),
-    # Chad dung hero image kieu tran: anh phu kin the, chu de len, khong co dai
-    # textbox rieng. Khac hai vai kia o BO CUC chu khong o thuong hieu, nen mac
-    # dinh dung bang mau donniechublog.
     "chad": ("designer", "donniechublog"),
     "designer": ("designer", "donniechublog"),
+    "ethan": ("ethan", "dcgr"),
 }
-MAC_DINH_ANH = "iris"
-# Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi Ethan/Iris — them vai
+MAC_DINH_ANH = "chad"
+# Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi — them vai
 # thu ba la sai ngay, nen doi thanh bang tra.
-TEN_VAI_ANH = {"illustrator": "Iris", "ethan": "Ethan", "designer": "Chad"}
+TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad"}
 # Vai viet di theo THUONG HIEU, khong theo vai anh. Quinn viet cho dan ky thuat
 # (donniechublog), Miles viet cho dan kinh doanh/tai chinh/truyen thong
-# (dcgr.tech) — cung khuon caption, khac nguoi doc. Chad dung bang mau
-# donniechublog nen bai cua Chad van ve Quinn, dung nhu truoc.
+# (dcgr.tech) — cung khuon caption, khac nguoi doc. Chon Chad thi bai ve Quinn,
+# chon Ethan thi bai ve Miles: mot lua chon cua Ong Chu quyet ca anh lan chu.
 VAI_VIET = {"donniechublog": "writer", "dcgr": "miles"}
 MAC_DINH_VIET = "writer"
 TEN_VAI_VIET = {"writer": "Quinn", "miles": "Miles"}
-# Vai nao dung kieu tran thay vi kieu dai mac dinh.
-KIEU_ANH = {"designer": "tran"}
+# Ca hai vai dung anh deu dung kieu tran. Giu bang tra thay vi ghim cung mot
+# chuoi de sau nay them mot kieu anh khac con cho ma dat.
+KIEU_ANH = {"designer": "tran", "ethan": "tran"}
 
 
 def doc_lenh_chon(text: str):
     """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)] hoac None.
 
     Quy tac: ten vai ap cho MOI SO dung truoc no, tinh tu ten vai gan nhat.
-    So nao khong co ten vai nao phia sau thi ve mac dinh (Iris).
+    So nao khong co ten vai nao phia sau thi ve mac dinh (Chad).
 
-        1                    -> Iris
-        1, 2, 3              -> ca ba Iris
+        1                    -> Chad
+        1, 2, 3              -> ca ba Chad
         1, 2, 3 - Ethan      -> ca ba Ethan
-        1 - Iris, 2 - Ethan  -> 1 Iris, 2 Ethan
-        1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Iris
+        1 - Chad, 2 - Ethan  -> 1 Chad, 2 Ethan
+        1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Chad
 
     Tra None neu co phan khong hieu duoc, de tin nhan roi ve luong hoi thoai
     thay vi bao loi — Ong Chu con dung chinh topic do de tro chuyen.
@@ -385,25 +385,34 @@ Dung lai. Bao dung mot cau: "Khong tim duoc anh that cho tin nay" kem link da th
 KHONG tao the, KHONG ve SVG, KHONG chay card.py. Ong Chu se quyet dinh bo tin
 hay tu dua anh vao.
 
-BUOC 4 — dung the cho anh CHINH (chi khi buoc 2 co anh):
+BUOC 4 — dung anh CHINH (chi khi buoc 2 co anh):
 cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \\
+  --kieu tran --ratio 4:5 \\
+  --kicker "<nhan ngan TIENG ANH, toi da 2 tu>" \\
   --image /tmp/src_{draft_id}.png \\
-  --title "<tieu de ngan, TOI DA 60 KY TU>" \\
-  --subtitle "<mot cau tom tat y chinh, toi da 140 ky tu>" \\
-  --via "{via}" \\
-  --category "{category}" \\
-  --category-right "<nhan phu ngan, vd: MA NGUON MO / BENCHMARK / M&A>" \\
-  --ratio 4:5{co_kieu}{co_brand} \\
+  --title "<MOT CAU tieng Viet co dau, bao quat ca tin>"{co_brand} \\
   --out {out_png}
 
 Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
 {out_png_goc}_2.png, _3.png... de buoc dang sau gui thanh album.
 
-LUU Y:
-- Anh co chu thich tieng Anh thi doc va dich sang tieng Viet de dung cho subtitle.
-- Tieu de dung font don cach (JetBrains Mono) nen chiem nhieu be ngang. Qua 60
-  ky tu se bi thu nho hoac cat bot. Viet NGAN va DAT.
-- Tieu de va subtitle deu bang TIENG VIET CO DAU.
+LUU Y — doc skill `hero-image` de biet day du, day chi la phan hay sai nhat:
+
+- KHONG co --subtitle, KHONG co --via, KHONG co nhan category. Tren anh chi co
+  bon thu: anh, kicker, tieu de, ten kenh. Khong khung, khong vach.
+- TIEU DE LA MOT CAU HOAN CHINH bao quat ca tin, doc xong la hieu chuyen gi.
+  KHONG gioi han so dong, KHONG gioi han ky tu — script tu chon co chu lon nhat
+  con vua cho. Dung cat cau cho ngan roi de no thanh nhan de cut.
+- Tin co so thi dua so vao chinh cau do.
+- Ten hang trong tieu de duoc TO MAU tu dong, ban khong phai lam gi. Gap hang
+  chua duoc to thi bao lai de them vao danh sach.
+- Kicker dung TIENG ANH, toi da hai tu: BREAKING / MODEL RELEASE / AGENT /
+  FUNDING / BENCHMARK / OPEN SOURCE / M&A / RESEARCH / INFRA / POLICY.
+- Tieu de bang TIENG VIET CO DAU.
+- Nua duoi anh phai TRONG, vi chu se de len do. Anh chup man hinh day chu thi
+  doi anh khac.
+- Nguon anh ({via}) KHONG con in tren anh nua. Bao lai nguon do trong ket qua
+  task de nguoi viet caption dua vao bai.
 - Ket qua bat buoc: file {out_png} phai ton tai sau khi chay (tru truong hop
   buoc 3 — khong co anh that)."""
 
@@ -538,7 +547,7 @@ def chuan_nhan(nhan: str, mac_dinh="TOOL") -> str:
     return NHAN_CHUAN.get(kh, str(nhan).strip().upper())
 
 
-def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
+def create_pair(item, vai_anh="designer", brand="donniechublog"):
     draft_id = slugify(item["title"], "item-" + str(item["index"]))
     out_png = str(DRAFTS / (draft_id + ".png"))
     out_json = str(DRAFTS / (draft_id + ".json"))
@@ -546,7 +555,7 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
 
     # BUOC RESEARCH — thuoc khau cua Finn, chay ngay khi Ong Chu chon tin.
     # Tim nguon la viec research, khong phai viec cua nguoi dung anh hay nguoi
-    # viet chu. Lam mot lan o day thay vi de Iris va Quinn moi ben tu tim: khoi
+    # viet chu. Lam mot lan o day thay vi de hai ben tu tim: khoi
     # tra cuu hai lan, va quan trong hon la ca hai cung doc MOT bo nguon nen bai
     # viet giai thich dung nhung gi doc gia nhin thay tren tam anh.
     nguon_path = STATE_DIR / f"nguon_{draft_id}.json"
@@ -567,7 +576,6 @@ def create_pair(item, vai_anh="illustrator", brand="donniechublog"):
         out_png=out_png, out_png_goc=out_png[:-4],
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
         brand=brand,
-        co_kieu=(f" --kieu {KIEU_ANH[vai_anh]}" if vai_anh in KIEU_ANH else ""),
         co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
     illu_id, err = kanban_create("Anh: " + item["title"], vai_anh, illu_body)
     if err:
@@ -667,7 +675,7 @@ def handle_message(token, group, scout_thread, msg):
             lines.append("#" + str(n) + ": lỗi — " + err)
             continue
         changed = True          # create_pair da danh dau vao `it`
-        ten_hien = TEN_VAI_ANH.get(vai_anh, "Iris")
+        ten_hien = TEN_VAI_ANH.get(vai_anh, "Chad")
         ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
         lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]}"
                      f" + {ten_viet} viết {ids[1]}")

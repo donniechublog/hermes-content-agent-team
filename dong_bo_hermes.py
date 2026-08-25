@@ -24,7 +24,7 @@ ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
 REPO = ROOT / "hermes"
 
-VAI = ["scout", "illustrator", "ethan", "designer", "writer", "miles",
+VAI = ["scout", "ethan", "designer", "writer", "miles",
        "analyst", "teaser", "nova", "market"]
 # Plugin kanban nam trong ban cai hermes nen `hermes update` SE ghi de. Da sua
 # ba thu o day: thu tu cot (running/ready/blocked truoc), co chu nhan profile,

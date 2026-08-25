@@ -26,7 +26,7 @@ ROOT = Path.home() / "content-team"
 HERMES_HOME = Path.home() / ".hermes"
 STATE_FILE = ROOT / "state" / "model_health.json"
 ROUTER = "http://127.0.0.1:20128/v1/chat/completions"
-PROFILES = ["scout", "illustrator", "writer", "analyst", "teaser"]
+PROFILES = ["scout", "ethan", "designer", "writer", "miles", "analyst", "teaser"]
 
 TIMEOUT = 25
 PROBE = {"messages": [{"role": "user", "content": "hi"}], "max_tokens": 5}

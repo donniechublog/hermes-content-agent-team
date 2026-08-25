@@ -1,6 +1,6 @@
 ---
 name: hero-image
-description: "Dựng hero image kiểu tràn cho kênh AI bằng card.py — liền một mặt phẳng, không khung, không vạch ngăn. Cách chọn ảnh cho kiểu tràn, các cờ bắt buộc, và bốn cổng chặn. Dùng cho vai Chad (profile designer)."
+description: "Dựng ảnh cho kênh AI bằng card.py — kiểu tràn, liền một mặt phẳng, không khung, không vạch ngăn. Cách điều phối ảnh và chữ, các cờ bắt buộc, cách viết tiêu đề, kicker, tô tên hãng, và bốn cổng chặn. Dùng chung cho Chad (donniechublog) và Ethan (dcgr.tech)."
 version: 1.0.0
 author: content-team
 license: internal
@@ -14,11 +14,15 @@ metadata:
 
 # hero-image — kiểu tràn, liền một mặt
 
-Hero image là ảnh mở đầu, thứ **đứng một mình được**. Iris và Ethan dựng thẻ tin
-hằng ngày; đây là việc khác.
+Kiểu ảnh duy nhất của đội. **Chad** dựng cho donniechublog, **Ethan** dựng cho
+dcgr.tech. Hai người làm y hệt nhau, khác đúng một cờ:
 
-Khác biệt nằm ở **bố cục**, không nằm ở nguồn ảnh. Mọi ràng buộc về ảnh thật
-giống hệt hai vai kia.
+| Vai | Profile | Cờ riêng |
+|---|---|---|
+| Chad | `designer` | không cần gì thêm, donniechublog là mặc định |
+| Ethan | `ethan` | `--brand dcgr` |
+
+Ngoài cờ đó ra, mọi thứ trong tài liệu này áp cho cả hai như nhau.
 
 ## Kiểu tràn là gì, và vì sao nó tồn tại
 
@@ -54,8 +58,7 @@ tràn sinh ra để xoá.
 Không phụ đề, không nhãn ruy-băng, không cụm `via`, không dãy icon mạng xã hội.
 
 Chữ tiêu đề là **Oswald**, sans condensed, không chân và không đơn cách. Thẻ tin
-của Iris và Ethan vẫn dùng JetBrains Mono, font đơn cách đó là một phần nhận
-diện của chúng. Hero image thì không: font đơn cách bắt mỗi chữ cái chiếm đúng
+kiểu `dai` cũ dùng JetBrains Mono, font đơn cách. Hero image thì không: font đơn cách bắt mỗi chữ cái chiếm đúng
 một ô, nên một câu dài ăn rất nhiều bề ngang và nhìn ra "code" chứ không ra
 "báo". Oswald hẹp ngang nên chứa được câu dài ở cỡ chữ to.
 
@@ -92,29 +95,35 @@ Vì sao phải tìm rộng: link Finn nhặt thường là trang tài liệu, v�
 nó là thẻ thương hiệu chung. Ví dụ thật: `api-docs.deepseek.com` trả
 `deepseek-social-card.jpeg` cho mọi bài.
 
-## Bước 2 — chọn ảnh, và đây là chỗ kiểu tràn kén hơn hẳn
+## Bước 2 — chọn ảnh, và cách ảnh được điều phối
 
-Kiểu tràn phải phóng ảnh lên phủ kín thẻ. Nên **đừng chỉ nhìn điểm, hãy nhìn
-kích thước và tỉ lệ**.
+**Ảnh luôn hiện full bề ngang.** Đó là ưu tiên số một và không thương lượng: cắt
+bề ngang là mất nội dung. Chiều cao tự nhiên của ảnh ở bề ngang đó quyết định
+phần còn lại, và chỉ có hai trường hợp.
+
+**Ảnh cao hơn khổ thẻ** (dọc, gần vuông): ảnh phủ kín, cắt bớt theo chiều dọc,
+**lớp chữ chèn lên** phần dưới qua màn tối. Không mất bề ngang nào.
+
+**Ảnh thấp hơn khổ thẻ** (ngang, 16:9): ảnh nằm sát trên giữ nguyên tỉ lệ, và
+**lớp nền của vùng chữ cao lên** bù đúng phần thiếu. Ảnh KHÔNG bị phóng to cho
+vừa chiều cao: phóng lên là cắt mất bề ngang hoặc vỡ nét, cả hai đều tệ hơn một
+mảng nền phẳng. Đáy ảnh tan dần vào nền nên không lộ ra đường ngang nào.
+
+Vậy nên **đừng loại ảnh chỉ vì nó ngang**. Cả hai hướng đều ra thẻ đúng. Chỉ còn
+hai điều thật sự phải chọn:
 
 | Tiêu chí | Ngưỡng | Vì sao |
 |---|---|---|
-| Hướng | dọc hoặc gần vuông | Khổ đăng là 4:5, ảnh dọc mới phủ kín mà không cắt nhiều |
-| Cạnh ngắn | từ 1000px trở lên | Dưới mức đó phóng lên là vỡ nét |
+| Cạnh ngắn | từ 1000px trở lên | Dưới mức đó phóng lên full bề ngang là vỡ nét |
 | Nửa dưới ảnh | phải trống | Chỗ đó sắp có chữ đè lên |
 
-**Ảnh ngang dẹt kiểu og:image 1200x630 là trường hợp tệ nhất**: phải phóng hơn 2
-lần mới phủ kín khổ 4:5, chữ trong ảnh bay mất một nửa.
+**Nửa dưới phải trống là ràng buộc quan trọng nhất.** Màn tối làm chữ đọc được,
+nhưng nó không xoá được chữ có sẵn trong ảnh. Ảnh chụp màn hình đầy chữ, bảng
+benchmark dày đặc số: đọc thì tốt nhưng không làm nền được. Gặp loại đó thì chọn
+ảnh khác, hoặc báo lại.
 
-Script chặn ở **ngưỡng phóng 1.35 lần**. Quá ngưỡng thì nó tự đổi cách: nền là
-bản cover làm mờ, còn bản sắc nét đặt trọn vẹn lên trên. Vẫn liền một mặt phẳng,
-không có vạch, nhưng ảnh không còn phủ kín. **Đó là phương án đỡ, không phải
-phương án đúng.** Thấy nó kích hoạt thì quay lại chọn ảnh khác trước đã.
-
-**Nửa dưới phải trống là ràng buộc riêng của kiểu tràn.** Màn tối làm chữ đọc
-được, nhưng nó không xoá được chữ có sẵn trong ảnh. Ảnh chụp màn hình đầy chữ,
-bảng benchmark dày đặc số: hợp với thẻ tin của Iris, không hợp hero image. Gặp
-loại đó mà vẫn muốn dùng thì báo lại, đừng cố.
+Ảnh càng dọc thì chữ càng đè lên ảnh; ảnh càng ngang thì mảng nền phẳng càng
+nhiều. Cả hai đều đúng, chọn theo ảnh nào mang thông tin thật.
 
 Ảnh phụ giữ nguyên bản gốc, không đóng khung, chỉ đổi tên `<draft>_2.png`,
 `_3.png`… tối đa 4 ảnh, và mỗi ảnh phải mang thông tin thật chứ không phải
@@ -132,8 +141,8 @@ cd /home/donniechu/content-team && cd /home/donniechu/content-team && cd /home/d
 Chỉ chừng đó cờ. **Không `--subtitle`, không `--via`, không nhãn** — kiểu tràn
 không vẽ thứ nào trong số đó.
 
-**`--kieu tran` là lý do vai này tồn tại.** Thiếu nó là ra thẻ tin kiểu dài, tức
-là làm lại việc của Iris.
+**`--kieu tran` là bắt buộc.** Thiếu nó là ra kiểu `dai` cũ: có khung, có vạch
+ngăn, có phụ đề. Không vai nào dùng kiểu đó nữa.
 
 **`--ratio 4:5` là khổ đăng chuẩn.** Mặc định của script là `free` (chiều cao
 trôi theo ảnh), phải truyền tay.
@@ -161,11 +170,10 @@ Ba cái đầu làm lệnh **dừng hẳn**:
 
 ## Tiêu đề: viết như thế nào
 
-Đây là chỗ khác thẻ tin nhiều nhất, và là chỗ dễ làm sai nhất nếu bạn quen tay
-với Iris.
+Đây là chỗ dễ làm sai nhất, vì thói quen viết nhan đề rất khó bỏ.
 
-Ở thẻ tin, tiêu đề chỉ là **nhan đề** còn phụ đề mới mang nội dung, nên tiêu đề
-phải ngắn dưới 60 ký tự và không được quá 2 dòng.
+Thẻ tin thông thường có tiêu đề là **nhan đề** còn phụ đề mới mang nội dung, nên
+tiêu đề phải ngắn và không quá hai dòng.
 
 Ở hero image **không có phụ đề**. Tiêu đề gánh toàn bộ: nó phải là **một câu
 hoàn chỉnh bao quát được nội dung chính của tin**, đọc xong là hiểu chuyện gì

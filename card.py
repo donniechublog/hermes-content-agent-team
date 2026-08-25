@@ -161,6 +161,9 @@ KICKER_TRACK = 7        # gian chu cai cua kicker; chu nho ma gian rong moi ra n
 # vi kicker phai nam SAT tieu de moi doc ra la mot cum; xa qua thi no troi thanh
 # mot dong chu le loi giua khoang trong.
 KICKER_GAP = 14
+# Ca cum kicker (ke trai + chu + ke phai) chiem dung nua be ngang the.
+KICKER_CUM = 0.50
+KICKER_HO = 20          # ho giua chu va hai duong ke
 # Gian dong: chu display co to thi khoang ho mac dinh nhin ra roi rac. Bo sat
 # lai cho khoi chu doc thanh MOT mang, dung nhu cac mau tham khao.
 LEAD, TRAN_LEAD = 6, 2
@@ -567,7 +570,7 @@ def _render_image_area(canvas, src_img, img_h, how):
     return (x, y, fitted.width, fitted.height)
 
 
-def _tran_anh(canvas, src_img, split):
+def _tran_anh(canvas, src_img, split, nat_h=None):
     """Anh phu KIN the, chu dat de len tren qua mot man toi chuyen dan.
 
     Kieu dai (mac dinh) cat the thanh hai o: anh o tren, textbox mau dac o duoi.
@@ -580,31 +583,49 @@ def _tran_anh(canvas, src_img, split):
     nguon hien tron ven.
     """
     H = canvas.height
-    # Phu kin the phai phong anh len. Phong qua nguong thi vo net va cat mat
-    # noi dung — da thay ro voi anh nguon 1200x630 keo len kho 4:5, phai phong
-    # 2.4 lan, chu trong anh bay mat mot nua. Qua nguong thi doi cach: nen la
-    # ban cover lam mo, con ban SAC dat tron ven len tren. Van la mot mat phang
-    # lien, khong co vach, nhung khong danh doi do net.
-    can = max(W / src_img.width, H / src_img.height)
-    if can <= NGUONG_PHONG:
+    nat_h = nat_h or round(W * src_img.height / src_img.width)
+
+    # ANH LUON HIEN FULL BE NGANG. Do la uu tien so mot, va no quyet dinh phan
+    # con lai: chieu cao tu nhien cua anh o be ngang W la `nat_h`, khong thuong
+    # luong. Chi co hai truong hop.
+    if nat_h >= H:
+        # ANH DU CAO (hoac cao hon the): phu kin, cat bot theo chieu doc, chu
+        # nam de len phan duoi. Day la truong hop "anh qua dai, lop text chen
+        # len" — khong mat be ngang nao, chi mat mot phan chieu cao.
         canvas.paste(_fit_cover(src_img, W, H), (0, 0))
+        ket = split
     else:
-        canvas.paste(_fit_cover(src_img, W, H).filter(
-            ImageFilter.GaussianBlur(56)), (0, 0))
-        sac = _fit_contain(src_img, W, split)
-        canvas.paste(sac, ((W - sac.width) // 2, (split - sac.height) // 2))
-    # Man bat dau mo han tu tren dinh (anh van doc duoc), dam dan xuong, va
-    # dam han o vung chu. Diem uon dat tren `split` mot doan de khong co mot
-    # duong gay lo ra dung cho chu bat dau.
-    uon = max(0, split - int(H * 0.18))
+        # ANH THAP HON THE: dat sat tren, giu nguyen ti le, phan duoi la nen cua
+        # bo nhan dien. Day la truong hop "anh qua ngan, lop nen text cao len".
+        # KHONG phong to cho vua chieu cao: phong len la cat mat be ngang hoac
+        # vo net, ca hai deu te hon mot mang nen phang.
+        canvas.paste(src_img.resize((W, nat_h), Image.LANCZOS), (0, 0))
+        ket = min(nat_h, split)
+
+    # Man toi. Diem uon dat tren `ket` mot doan de khong co duong gay lo ra.
+    #
+    # Voi anh thap, man PHAI dat mo hoan toan dung o day anh. Truoc day no chi
+    # toi alpha 145 o moc chu roi dam dan xuong het the — dung cho anh phu kin,
+    # nhung voi anh thap thi day anh con hien 43% roi cham thang vao nen, lo ra
+    # mot duong ngang. Ca kieu tran sinh ra de xoa dung cai duong do.
+    day_kin = nat_h < H
+    # Dai chuyen tiep. Voi anh phu kin the thi 18% chieu cao the la vua. Voi anh
+    # THAP thi con so do an qua sau vao mot tam anh von da ngan: anh cao 675px ma
+    # dai chuyen 270px la mat 40% tam anh vao bong toi. Co lai theo chinh chieu
+    # cao anh.
+    dai = int(H * 0.18) if not day_kin else min(int(H * 0.18), int(nat_h * 0.30))
+    uon = max(0, ket - dai)
     man = Image.new("L", (1, H))
     for y in range(H):
         if y <= uon:
             a = int(90 * (y / max(1, uon)) ** 2)
+        elif day_kin:
+            t = (y - uon) / max(1, ket - uon)
+            a = 90 + (255 - 90) * min(1.0, t) ** 0.9
         else:
             t = (y - uon) / max(1, H - uon)
-            a = int(90 + (238 - 90) * t ** 0.85)
-        man.putpixel((0, y), min(255, a))
+            a = 90 + (238 - 90) * t ** 0.85
+        man.putpixel((0, y), min(255, int(a)))
     lop = Image.new("RGBA", (W, H), (*BG, 255))
     lop.putalpha(man.resize((W, H)))
     canvas.alpha_composite(lop)
@@ -895,6 +916,12 @@ def build(src, title, subtitle, via, out, category="AI",
             "  can, vi o do tieu de la mot cau tron ven.)")
     src_img = Image.open(src).convert("RGB")
     img_h, how = _plan_image(src_img)
+    # Chieu cao tu nhien cua anh khi hien full be ngang. Kieu tran khong dung
+    # `_plan_image`: ham do chan chieu cao trong khoang IMG_MIN_H..IMG_MAX_H de
+    # thu vua vung anh cua the tin, con o day anh la lop nen nen khong co tran.
+    nat_h = round(W * src_img.height / src_img.width)
+    if kieu == "tran":
+        img_h, how = nat_h, "tran"
 
     # Đo trước phần chữ để biết textbox cần cao bao nhiêu
     probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
@@ -1033,9 +1060,16 @@ def build(src, title, subtitle, via, out, category="AI",
         # vai tro. Nay textbox chi lay phan chu that su can, tran o TRAN_TEXTBOX;
         # phan con lai tra cho vung anh, anh nam giua tren nen mo cung tong mau.
         if tran:
-            # Vung chu lay dung phan da dinh cua chieu cao the; `img_h` o day chi
-            # con nghia la MOC UON cua man toi, khong phai chieu cao anh nua.
-            box_h = max(box_min, int(H * TRAN_TEXTBOX))
+            # Anh hien full be ngang, nen chieu cao tu nhien cua no la con so
+            # quyet dinh moi thu con lai.
+            if nat_h >= H:
+                # Anh du cao: chu de len anh, vung chu lay phan da dinh.
+                box_h = max(box_min, int(H * TRAN_TEXTBOX))
+            else:
+                # Anh thap: nen cua vung chu cao len bu dung phan anh thieu.
+                # Chu can nhieu hon the thi vung chu an nguoc len day anh, va
+                # man toi lo phan chuyen tiep.
+                box_h = max(box_min, H - nat_h)
         else:
             box_h = min(H - img_h, max(box_min, int(H * TRAN_TEXTBOX)))
         if H - box_h != img_h:
@@ -1064,7 +1098,7 @@ def build(src, title, subtitle, via, out, category="AI",
 
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     if kieu == "tran":
-        o_anh = _tran_anh(canvas, src_img, img_h)
+        o_anh = _tran_anh(canvas, src_img, img_h, nat_h)
     else:
         o_anh = _render_image_area(canvas, src_img, img_h, how)
         _paste_mascot(canvas, img_h, o_anh)
@@ -1100,9 +1134,22 @@ def build(src, title, subtitle, via, out, category="AI",
     if kieu == "tran":
         y = img_h + g1
         if kicker:
+            mau_kick = _pha(CYAN, 1.0)
+            rong_chu = _rong_tracked(d, kicker, f_kick, KICKER_TRACK)
             # Tru _kb[1] de DINH chu roi dung vao y, khong phai goc ascender.
-            _ve_tracked(d, (W - _rong_tracked(d, kicker, f_kick, KICKER_TRACK)) / 2,
-                        y - _kb[1], kicker, f_kick, _pha(CYAN, 1.0), KICKER_TRACK)
+            _ve_tracked(d, (W - rong_chu) / 2, y - _kb[1], kicker, f_kick,
+                        mau_kick, KICKER_TRACK)
+            # Hai duong ke hai ben. Ca cum rong dung KICKER_CUM cua the, nen ke
+            # NGAN LAI khi chu dai ra — cum giu nguyen be ngang, chu khong phai
+            # ke giu nguyen do dai. Chu qua dai thi khong con cho, bo ke di.
+            rong_ke = (W * KICKER_CUM - rong_chu) / 2 - KICKER_HO
+            if rong_ke >= 24:
+                giua = y + kick_h / 2
+                trai = (W - rong_chu) / 2 - KICKER_HO
+                d.line([(trai - rong_ke, giua), (trai, giua)],
+                       fill=mau_kick, width=2)
+                d.line([(W - trai, giua), (W - trai + rong_ke, giua)],
+                       fill=mau_kick, width=2)
             y += kick_h + KICKER_GAP
     else:
         chip_y = img_h - chip_h // 2
