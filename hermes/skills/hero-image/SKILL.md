@@ -35,29 +35,30 @@ ngang. Đó là điều kiện để thẻ đọc ra là một mặt phẳng li�
 một cái viền, và nét dọc trong vùng chữ lại tố ra đúng cái ranh giới mà kiểu
 tràn sinh ra để xoá.
 
-Nhãn category cũng **không vắt qua ranh giới** như ở kiểu dài. Ở kiểu tràn nhãn
-tụt hẳn xuống, thành hàng đầu tiên của khối chữ. Để nhãn ở cao độ ranh giới thì
-chính nhãn trở thành vật đánh dấu cái đường vừa xoá.
-
-Thứ tự từ trên xuống, không có gì chen vào giữa:
+**Trên thẻ chỉ còn đúng bốn thứ, tất cả cân giữa:**
 
 ```
         ảnh phủ kín, không viền
               ↓
        màn tối dày dần
               ↓
- nhãn trái ............. nhãn phải
-        TIÊU ĐỀ CÂN GIỮA
-       phụ đề cân giữa
- via: @nguồn ..... icon + @handle
+       TIÊU ĐỀ CÂN GIỮA
+        phụ đề cân giữa
+          @tên kênh
 ```
 
-**Tiêu đề và phụ đề cân giữa**, khác kiểu dài. Thẻ tin căn trái vì ở đó chữ nằm
-trong một textbox riêng, có mép trái làm mốc, và nhãn trái vắt qua ranh giới
-ngay phía trên cùng một đường dọc. Hero image không còn textbox, không còn mốc
-nào: trục đối xứng của tấm ảnh là mốc duy nhất còn lại.
+Không nhãn ruy-băng, không cụm `via`, không dãy icon mạng xã hội.
 
-Hai nhãn và hàng chân vẫn bám hai mép, giữ nhịp của bộ nhận diện.
+Vì sao bỏ hết: cả ba thứ đó đều **bám mép**. Chúng hợp với thẻ tin, nơi mọi thứ
+lấy mép trái textbox làm mốc. Ở hero image thì khung đã gỡ, ranh giới đã gỡ, chữ
+đã về giữa; để lại chúng thì tấm ảnh chỉ còn vài vết dính ở hai góc dưới, kéo
+mắt ra khỏi trục.
+
+**Tiêu đề và phụ đề cân giữa** vì mốc duy nhất còn lại là trục đối xứng của tấm
+ảnh, chứ không phải mép nào cả.
+
+`--category`, `--category-right` và `--via` **vẫn phải truyền** vì lệnh cần,
+nhưng ở kiểu tràn chúng không được vẽ ra.
 
 `card.py` lo hết phần vẽ. Việc của bạn là **chọn đúng ảnh** và **truyền đúng cờ**.
 
@@ -158,30 +159,29 @@ chiều cao textbox, và textbox cao lên thì màn tối trùm lên nhiều ả
 
 ## Nhãn category
 
-`--category-right` là nhãn **luôn hiện lên**, và **dùng TIẾNG ANH**. Chọn một
-trong: `OPEN SOURCE` · `OPEN WEIGHTS` · `BENCHMARK` · `M&A` · `UPDATE` · `LAB` ·
-`INFRA`
+Ở kiểu tràn **không nhãn nào được vẽ ra**, nhưng lệnh vẫn cần hai cờ. Truyền
+`--category MODEL --category-right UPDATE` cho gọn là xong, đừng mất công cân
+nhắc nhãn nào đúng.
 
-Không dùng tiếng Việt ở nhãn: nhãn là từ ngắn, tiếng Anh không có dấu nên không
-bao giờ gõ sai. Chọn nhãn nói đúng loại tin, đừng mặc định một nhãn cho mọi bài.
+(Luật chọn nhãn đầy đủ chỉ áp cho thẻ tin kiểu dài của Iris và Ethan.)
 
-`--category` (nhãn trái) tuỳ thương hiệu:
+## Ghi nguồn vẫn bắt buộc, nhưng ghi ở chỗ khác
 
-- **donniechublog**: vẽ ra, nền đặc màu nhấn. Truyền nhãn thật.
-- **dcgr**: **không được vẽ ra**, vì ở bảng đơn sắc nó thành một khối trắng lớn
-  hút hết mắt khỏi nội dung. Vẫn phải truyền vì lệnh cần, để `MODEL` cho gọn.
+Kiểu tràn không in `via` lên thẻ nữa. Điều đó **không** có nghĩa là thôi ghi
+nguồn: nó chuyển nghĩa vụ đó sang **chú thích bài đăng**.
 
-## Ghi nguồn là bắt buộc
+Khi bàn giao, nói rõ nguồn ảnh cho người viết caption để họ đưa vào bài. Không
+xác định được nguồn thì ghi tên miền của trang lấy ảnh, vẫn hơn là bỏ trống, và
+tuyệt đối không thay bằng hình tự vẽ.
 
-Mọi ảnh dùng lại phải có `via: @tác_giả`. Không xác định được nguồn thì ghi tên
-miền của trang lấy ảnh, vẫn hơn là bỏ trống, và tuyệt đối không thay bằng hình
-tự vẽ.
+Đây là chỗ dễ rơi nhất của kiểu tràn: thẻ không còn nhắc bạn, nên phải tự nhớ.
 
 ## Nhìn lại trước khi giao
 
 Mở tệp ra xem. Ba câu hỏi:
 
-1. Có thấy đường kẻ, ngoặc góc hay vạch nào không? Có là sai, báo lại.
+1. Có thấy đường kẻ, ngoặc góc, nhãn ruy-băng hay dãy icon nào không? Có là
+   sai, báo lại. Trên thẻ chỉ được có ảnh, tiêu đề, phụ đề, tên kênh.
 2. Chữ có nằm đè lên chi tiết dày của ảnh không? Có thì đổi ảnh.
 3. Ảnh có bị phóng vỡ nét, hoặc rơi vào phương án nền mờ không? Có thì đổi ảnh.
 

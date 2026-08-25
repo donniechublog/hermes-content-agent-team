@@ -31,13 +31,17 @@ tràn sinh ra để xoá.
    mờ cộng ảnh sắc đặt lên trên — vẫn liền mặt, nhưng là phương án đỡ.
 2. Màn tối dày dần từ trên xuống, đậm hẳn ở vùng chữ. Điểm uốn đặt cao hơn mốc
    chữ một đoạn để không lộ ra một đường gãy.
-3. Hai chip category **nằm hẳn trong khối chữ**, thành hàng đầu tiên của nó,
-   không vắt qua mốc ảnh/chữ như kiểu dài. Để chip ở cao độ đó thì chính chip
-   trở thành vật đánh dấu cái đường vừa xoá.
+3. **Không chip category, không cụm `via`, không dãy icon social.** Cả ba đều
+   bám mép, hợp với thẻ tin nơi mọi thứ lấy mép trái textbox làm mốc. Ở đây
+   khung đã gỡ và chữ đã về giữa, để lại chúng thì chỉ còn vài vết dính ở hai
+   góc dưới kéo mắt ra khỏi trục.
 4. **Tiêu đề và phụ đề cân giữa**, không căn trái như kiểu dài. Kiểu dài có
    mép trái textbox làm mốc; kiểu tràn không còn textbox nên lấy trục đối xứng
    của tấm ảnh.
-5. Chân thẻ: y hệt kiểu dài, `via` bám mép trái, icon và handle bám mép phải.
+5. Chân thẻ rút còn **đúng tên kênh, cân giữa**.
+
+Hệ quả biên tập: nguồn ảnh không còn được in trên thẻ, nên nghĩa vụ ghi nguồn
+chuyển sang chú thích bài đăng.
 
 Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 

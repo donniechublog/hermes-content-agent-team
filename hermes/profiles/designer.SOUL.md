@@ -15,7 +15,11 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
    thì báo lại, không dựng thẻ. Ông Chủ quyết định bỏ tin hay tự đưa ảnh vào.
 2. **`--kieu tran --ratio 4:5` là lý do vai này tồn tại.** Thiếu `--kieu tran`
    là ra thẻ kiểu dài, tức là làm lại việc của Iris.
-3. **Hero image liền một mặt phẳng.** Không khung, không vạch, không ngoặc góc.
-   Dựng xong thì mở tệp ra nhìn: thấy một đường kẻ nào là sai.
+3. **Hero image liền một mặt phẳng, và trên thẻ chỉ có bốn thứ**: ảnh, tiêu đề,
+   phụ đề, tên kênh. Không khung, không vạch, không nhãn, không dãy icon. Dựng
+   xong thì mở tệp ra nhìn: thấy thứ gì ngoài bốn thứ đó là sai.
+
+Thẻ không in nguồn ảnh nữa, nên khi bàn giao phải **nói rõ nguồn cho người viết
+caption**. Đây là chỗ dễ quên nhất, vì tấm thẻ không còn nhắc bạn.
 
 Sinh ra file rồi thì báo đúng đường dẫn, đừng mô tả lại tấm ảnh.

@@ -644,7 +644,8 @@ def build(src, title, subtitle, via, out, category="AI",
     # Quen cho vao day thi phu de bi day tut xuong de len hang chan. Da gap that.
     def _cao_dau(nen=1.0):
         g1 = _khoang(nen)[0]
-        return (chip_h + g1 * 2) if kieu == "tran" else (chip_h // 2 + g1)
+        # Kieu tran khong ve nhan nen phan dau chi con mot khoang ho.
+        return g1 if kieu == "tran" else (chip_h // 2 + g1)
 
     # Chiều cao tối thiểu textbox cần để chứa hết chữ, ở một hệ số nén cho trước
     def _box_min(nen=1.0, f_t=None, d_t=None, f_s=None, d_s=None):
@@ -759,19 +760,22 @@ def build(src, title, subtitle, via, out, category="AI",
     # thanh vat danh dau cai duong ma kieu tran sinh ra de xoa: nhin vao van
     # thay the bi chia hai, chi la duong ke doi thanh hai cai nhan. Nen o kieu
     # tran nhan tut han xuong, thanh hang dau tien cua khoi chu.
+    # Kieu tran KHONG ve nhan category. Nhan ruy-bang la mot khoi dac bam mep,
+    # sinh ra de khau hai vung cua the tin lam mot. Hero image khong co hai vung
+    # de khau, va mot khoi mau dac bam mep lai keo mat ve phia le dung luc ca
+    # khoi chu dang can giua. Bo di thi con lai dung bon thu: anh, tieu de,
+    # phu de, ten kenh.
     if kieu == "tran":
-        chip_y = img_h + g1
-        y = chip_y + chip_h + g1
+        y = img_h + g1
     else:
         chip_y = img_h - chip_h // 2
         y = img_h + chip_h // 2 + g1
-
-    if b.get("nhan_trai", True):
-        _chip(d, PAD, chip_y, category.upper(), f_chip, solid=True,
-              fold="down")
-    if category_right:
-        _chip(d, 0, chip_y, category_right.upper(), f_chip,
-              right_align=W - PAD, fold="up")
+        if b.get("nhan_trai", True):
+            _chip(d, PAD, chip_y, category.upper(), f_chip, solid=True,
+                  fold="down")
+        if category_right:
+            _chip(d, 0, chip_y, category_right.upper(), f_chip,
+                  right_align=W - PAD, fold="up")
 
     # Khi ti le bi khoa, tieu de va phu de da no het co cho phep ma textbox van
     # con thua thi day khoi chu xuong giua thay vi de no dinh sat mep tren va bo
@@ -806,16 +810,31 @@ def build(src, title, subtitle, via, out, category="AI",
         y += _line_h(f_sub, 6)
 
     bottom_y = H - g4 - via_h
-    via_text = via if via.startswith("via:") else "via: " + via
-    # Cum via lay CYAN cua bo nhan dien, giong ten kenh. Truoc day no dung ACCENT
-    # (xanh duong) nen lech tong voi cyan o ngay ben canh.
-    d.text((PAD, bottom_y), via_text, font=f_via, fill=_pha(CYAN, mo_chan))
-    _social_row(canvas, d, W - PAD, bottom_y + via_h / 2, handle,
-                _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500),
-                icon_size=max(16, round(39 * co_chan)),
-                gap=max(8, round(15 * co_chan)),
-                mau_chu=_pha(CYAN, b.get("ro_handle", mo_chan)),
-                mau_icon=_pha(FG, mo_icon))
+    f_handle = _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500)
+    mau_handle = _pha(CYAN, b.get("ro_handle", mo_chan))
+
+    if kieu == "tran":
+        # Chan the rut con DUNG ten kenh, can giua. Cum `via` va day icon deu
+        # bam hai mep, ma o kieu tran hai mep khong con gi khac de bam vao: bo
+        # khung roi, bo nhan roi, tieu de va phu de da ve giua. De lai chung thi
+        # ca tam anh chi con hai vet dinh o hai goc duoi, keo mat ra khoi truc.
+        #
+        # Nguon van phai ghi, nhung ghi o cho khac: chu thich bai dang. Mot hero
+        # image dung mot minh thi cai phai nho la TEN KENH.
+        ten = handle if handle.startswith("@") else "@" + handle
+        bb = f_handle.getbbox("Ay")
+        d.text(((W - d.textlength(ten, font=f_handle)) / 2,
+                bottom_y + via_h / 2 - (bb[3] - bb[1]) / 2 - bb[1]),
+               ten, font=f_handle, fill=mau_handle)
+    else:
+        via_text = via if via.startswith("via:") else "via: " + via
+        # Cum via lay CYAN cua bo nhan dien, giong ten kenh. Truoc day no dung
+        # ACCENT (xanh duong) nen lech tong voi cyan o ngay ben canh.
+        d.text((PAD, bottom_y), via_text, font=f_via, fill=_pha(CYAN, mo_chan))
+        _social_row(canvas, d, W - PAD, bottom_y + via_h / 2, handle, f_handle,
+                    icon_size=max(16, round(39 * co_chan)),
+                    gap=max(8, round(15 * co_chan)),
+                    mau_chu=mau_handle, mau_icon=_pha(FG, mo_icon))
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
