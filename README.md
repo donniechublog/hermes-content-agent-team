@@ -12,6 +12,8 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 | Heller | `heller` | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
 | Quinn | `writer` | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
 | Miles | `miles` | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
+| Nova | `nova` | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
+| Vera | `market` | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
 | Ada | `analyst` | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
 | Jean | `teaser` | Ghép teaser từ bài đã duyệt |
 
@@ -73,9 +75,11 @@ ghi thêm một dòng cảnh báo.
 - `hermes-approve` — dịch vụ duyệt bài (tệp này)
 - `hermes-dashboard` — bảng điều khiển web, cổng 9119
 
-## Cron
+## Cron (7 job, xem `~/.hermes/cron/jobs.json`)
 
-- `finn-daily-scan` — 07:00 VN, quét nguồn
+- `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — 06:00 VN, ba vai đi tìm tin
+- `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
+- `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
 - `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
   không có gì mới; hỏi theo `workflow_id` (khoá chính) chứ không phải `external_id`;
@@ -83,15 +87,17 @@ ghi thêm một dòng cảnh báo.
 
 ## Model từng vai
 
-| Vai | Model đo được là hợp nhất | Suy luận | Dự phòng |
-|---|---|---|---|
-| Finn (scout) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → qwen3.8-max |
-| Chad (designer) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → mimo-v2.5-pro |
-| Ethan (ethan) | `ds/deepseek-v4-flash` | tắt | deepseek-chat → mimo-v2.5-pro |
-| Quinn (writer) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
-| Miles (miles) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
-| Jean (teaser) | `ds/deepseek-chat` | tắt | v4-pro → v4-flash |
-| Ada (analyst) | `ds/deepseek-reasoner` | **bật** | v4-pro → deepseek-chat |
+**Chuỗi đang chạy** (nguồn sự thật: `~/.hermes/profiles/*/config.yaml`, soi bằng
+`model_watch.py`): 8 vai thường — chính `ds/deepseek-v4-flash`, dự phòng
+`v4flash@api.b.ai → ds/deepseek-chat`. Riêng Ada — chính `ds/deepseek-reasoner`
+(**bật** suy luận, vai duy nhất), dự phòng `v4-pro → deepseek-chat`. Bảng dưới
+là KẾT QUẢ ĐO chọn model, không phải cấu hình:
+
+| Vai | Model đo được là hợp nhất | Suy luận |
+|---|---|---|
+| Finn / Chad / Ethan / Heller | `ds/deepseek-v4-flash` | tắt |
+| Quinn / Miles / Jean | `ds/deepseek-chat` | tắt |
+| Ada | `ds/deepseek-reasoner` | **bật** |
 
 Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
 được chọn — đúng loại việc cần suy luận thật.
@@ -156,7 +162,7 @@ Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh
 
 ## Suy luận (reasoning)
 
-Bốn trong năm vai đặt `agent.reasoning_effort: none`.
+Mọi vai trừ Ada đặt `agent.reasoning_effort: none` (8/9 profile).
 
 Lý do: model deepseek đốt hết ngân sách token vào suy luận rồi trả về **rỗng**.
 Đo thật trên v4-pro: 3/24 lần (2/8 ở `max_tokens=800`, 1/8 ở 1200, 0/8 ở 2000).
@@ -172,5 +178,5 @@ Kimi K3 đậu audition nhưng **đắt gấp 14 lần** v4-pro và mọi tuyế
 
 ## Lưu ý
 
-`.secrets.env` chứa bot token và khoá fal.ai — **không bao giờ commit**.
+`.secrets.env` chứa bot token Telegram và khoá moat — **không bao giờ commit**.
 Chỉ một tiến trình được long-poll một bot token; `approve_service.py` giữ vai trò đó.
