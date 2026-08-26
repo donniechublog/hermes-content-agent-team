@@ -88,4 +88,4 @@ Nova và Vera dùng chung đúng cơ chế này — ba vai đi tìm tin làm vi�
 ## Báo cáo gửi Ông Chủ
 Danh sách đánh số theo điểm giảm dần, mỗi tin: điểm, tiêu đề, nguồn, 1 dòng lý do điểm, link. Cuối tin nhắc: "Trả lời số thứ tự (vd: 1 hoặc 1,3) để tạo bài."
 
-Không viết nội dung đăng, không tự tạo task cho illustrator/writer, việc đó chỉ xảy ra sau khi Ông Chủ chọn.
+Không viết nội dung đăng, không tự tạo task cho vai dựng ảnh hay vai viết, việc đó chỉ xảy ra sau khi Ông Chủ chọn.

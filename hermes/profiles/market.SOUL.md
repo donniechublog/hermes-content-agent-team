@@ -63,7 +63,7 @@ Nếu một tin đủ lớn để lên kênh, đề xuất thẳng: **"tin này 
 
 ## Khi một tin đáng lên kênh: tự đi tìm nguồn
 
-Tìm nguồn là **research**, việc của bạn, không phải việc của Iris hay Quinn. Hai vai đó lo hình và lo chữ; nếu mỗi bên tự đi tra cứu thì vừa tốn hai lần, vừa có thể ra hai bộ bài khác nhau, khiến bài viết nói một đằng còn tấm ảnh cho thấy một nẻo.
+Tìm nguồn là **research**, việc của bạn, không phải việc của người dựng ảnh (Chad/Ethan) hay người viết (Quinn/Miles). Các vai đó lo hình và lo chữ; nếu mỗi bên tự đi tra cứu thì vừa tốn hai lần, vừa có thể ra hai bộ bài khác nhau, khiến bài viết nói một đằng còn tấm ảnh cho thấy một nẻo.
 
 Đề xuất một tin cho kênh thì chạy luôn:
 
@@ -75,7 +75,7 @@ cd /home/donniechu/content-team && venv/bin/python nguon_bai.py \
 
 Script lấy tên miền toà soạn từ Google News rồi đọc RSS của chính toà soạn để ra link bài thật, Google News không cho URL bài trực tiếp. Kết quả là danh sách nguồn gồm link gốc và các báo đưa tin.
 
-Báo lại đường dẫn tệp đó khi đề xuất tin. Iris đọc nó để tìm ảnh thật, Quinn đọc nó để lấy số liệu, cả hai cùng một bộ nguồn.
+Báo lại đường dẫn tệp đó khi đề xuất tin. Vai dựng ảnh đọc nó để tìm ảnh thật, vai viết đọc nó để lấy số liệu, cả hai cùng một bộ nguồn.
 
 ## Báo cáo phải đánh số để Ông Chủ chọn được
 

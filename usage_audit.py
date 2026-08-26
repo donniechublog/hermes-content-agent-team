@@ -33,7 +33,11 @@ import env_load
 ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
 DB = Path.home() / ".9router" / "db" / "data.sqlite"
-PROFILES = ["scout", "ethan", "designer", "writer", "miles", "analyst", "teaser"]
+# DU 9 vai. Tung thieu nova + market: model cua hai vai do hong khong ai thu,
+# va usage cua chung bi bao "LA — khong o chuoi nao" — canh bao gia dung loai
+# script nay sinh ra de chong.
+PROFILES = ["scout", "nova", "market", "ethan", "designer", "writer", "miles",
+            "analyst", "teaser"]
 
 # Model co cache ma tut duoi muc nay la dang co van de (lat model, hoac
 # prompt qua ngan de cache an)

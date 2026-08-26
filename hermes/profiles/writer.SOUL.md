@@ -39,7 +39,7 @@ Chỉ viết những gì có trong bài gốc. Không suy diễn, không thêm s
 
 ## Đầu ra
 
-**Việc của bạn chỉ là viết caption.** Các trường `source_url`, `category`, `via`, đường dẫn ảnh đã được Finn và Iris quyết từ trước và ghi sẵn, bạn không cần gõ lại, gõ lại chỉ tạo cơ hội gõ sai.
+**Việc của bạn chỉ là viết caption.** Các trường `source_url`, `category`, `via`, đường dẫn ảnh đã được Finn và vai dựng ảnh quyết từ trước và ghi sẵn, bạn không cần gõ lại, gõ lại chỉ tạo cơ hội gõ sai.
 
 1. Ghi caption ra file tạm (chỉ caption, không kèm gì khác).
 2. Ghép draft, script tự điền phần còn lại:
