@@ -40,7 +40,7 @@ import json
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 # Tai dung nguyen xi cac helper da kiem chung cua card.py thay vi viet lai:
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
@@ -49,6 +49,7 @@ from card import (
     _f, _wrap, _fit_contain, _fit_cover,
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
+    _tach_nhan, _mau_cua_hang,    # nhan dien + mau that cua hang duoc nhac trong bai
 )
 
 # ---- Khung so -------------------------------------------------------------
@@ -62,10 +63,35 @@ WM = (150, 150, 150)            # watermark mo
 # anh TAN dan vao nen den — khong co duong ngang chia "vung anh" voi "vung chu".
 # Ca the la mot mat phang den lien: anh o tren, tan vao den, chu nam tren den do.
 # Tuyet doi khong ve vien, vach, hay khung — cai lam hai vung tach roi.
-IMG_REGION_H = 800               # anh chiem tu mep tren xuong toi da day nay
-IMG_FADE = 190                   # day anh tan vao den trong chung nay px
-TEXT_TOP = 848                   # chu bat dau, nam tren phan da den han
+IMG_REGION_H = 860               # anh chiem tu mep tren xuong toi da day nay — 860/1350=64%, nen toi con lai 36%, duoi muc 40% da hen
+# Duoi `day` (mep anh that) KHONG con pixel anh nao. Ban dau tung fade "het
+# anh roi nhay thang sang mau nen dac" — ngay ca sau khi noi dai bang mot dai
+# mo, van con MOT MOC ro rang la "anh (roi mo) het, tu day la mang mau dac".
+# Nguoi dung van thay ro hai vung.
+#
+# Doi sang dung HAN cach cua card.py (_tran_anh, da chung minh chay tot cho
+# hero image "kieu tran" — xem STYLE_TEXT_SPEC): KHONG co moc "het anh". Man
+# toi la MOT DUONG CONG LIEN TUC bat dau tu RAT SOM — ngay trong vung anh con
+# ro — dam dan len, chu khong phai "sang het muc roi toi nhanh cuoi cung".
+# Nguoi xem thay chinh tam anh dang tam toi dan, khong thay mot ranh gioi.
+BLUR_STRIP = 70                  # lay day nay px sat day anh lam nguon mo
+BLUR_RADIUS = 46                 # do mo — du manh de khong con thay chi tiet
+# Diem UON: cho man toi chuyen tu "dam dan tu 0" (con trong vung anh, uon
+# cong t²) sang "dam dan len het muc" (uon cong nhe hon). Tinh theo TI LE
+# `day` — anh nao cung uon dung mot nhip, khong phu thuoc anh cao hay ngang.
+UON_TI_LE = 0.55
+# Tu `day` di THEM chung nay px thi dat do toi toi da (255) — chu bat dau
+# ngay sau do la doc duoc ro rang. Dai mo phai phu it nhat toi day.
+FULL_TOI_SAU_DAY = 150
+BLUR_EXT = FULL_TOI_SAU_DAY + 30  # du xa qua moc dat 255, khong ho mot khoang trong nao
+TEXT_GAP = 48                    # tu mep duoi anh that (day) toi dong chu dau
+TEXT_TOP = IMG_REGION_H + TEXT_GAP  # moc TRAN — anh doc du cao thi dung moc nay
 TEXT_BOTTOM = 1240               # chua chu qua day nay (chua cho watermark)
+# Tran RIENG cho chieu cao khoi chu, doc lap voi cho con trong. Neu chi bi
+# chan boi (TEXT_BOTTOM - text_top), anh ngang (day thap) mo ra nhieu cho hon
+# thi _fit_block lai chon co chu TO HON de lap day — dung nguoc voi y muon
+# "chu nhe tay". Tran nay giu do day chu on dinh du anh cao hay ngang.
+TEXT_MAX_H = 400                 # ~30% chieu cao khung — muc tran da hen
 
 # Chu than: thu tu co lon nhat con vua ca chieu cao, giong tinh than _grow cua card.
 BODY_HI, BODY_LO = 50, 34
@@ -120,36 +146,40 @@ def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
     return y
 
 
-def _watermark(canvas, handle):
-    """Ve watermark nghieng, canh giua o day. Khong co font italic rieng nen
-    ve len lop phu roi nghieng bang bien doi affine (shear)."""
+def _watermark(canvas, handle, mau=None):
+    """Ve watermark thang (khong nghieng), canh giua o day.
+
+    `mau`: mau hang duoc nhac toi trong bai, da hoi toi (xem WM_MO) de la chi
+    tiet PHU chu khong canh tranh voi chu chinh. None thi ve mau WM mac dinh
+    (xam mo) — khong nhan ra thuong hieu nao trong bai."""
     if not handle:
         return
     font = _f(F_REG, WM_SIZE, 500)
-    d0 = ImageDraw.Draw(canvas)
-    tw = int(d0.textlength(handle, font=font))
+    d = ImageDraw.Draw(canvas)
+    tw = d.textlength(handle, font=font)
     b = font.getbbox("Âg")
     th = b[3] - b[1]
-    pad = th                                    # dem cho phan nghieng khong bi cat
-    lop = Image.new("RGBA", (tw + pad * 2, th + pad), (0, 0, 0, 0))
-    ImageDraw.Draw(lop).text((pad, 0), handle, font=font, fill=(*WM, 255))
-    shear = 0.20                                # do nghieng gia italic
-    lop = lop.transform(
-        lop.size, Image.AFFINE, (1, shear, -shear * th, 0, 1, 0),
-        resample=Image.BICUBIC)
-    x = (W - lop.width) // 2
-    y = H - 66 - th // 2
-    canvas.alpha_composite(lop, (x, y))
+    x = (W - tw) / 2
+    y = H - 66 - th // 2 - b[1]
+    d.text((x, y), handle, font=font, fill=mau or WM)
 
 
-def _scrim(canvas, tu=0.42):
+def _scrim(canvas, tu=0.34):
     """Man toi day dan cho slide bia: trong o tren, dam dan xuong day de chu
-    hook doc ro. `tu` la moc bat dau lam toi (theo ti le chieu cao)."""
+    hook doc ro. `tu` la moc bat dau lam toi (theo ti le chieu cao).
+
+    Truoc day tu=0.42, mu 1.4: voi hook 2 dong (truong hop ly tuong theo
+    skill Heller) thi du toi, nhung hook 3 dong — van hop le, chi la cau dai
+    hon — day dong dau len cao toi vung con nhat (~34% do toi o do). Da do
+    that tren anh nen phuc tap (nhieu mau, chu san co): dong tren cua hook
+    bi lo nen phia sau. Ha moc bat dau va giam mu (bot "day" ve cuoi) de toi
+    som va deu hon ma khong doi tran do toi o sat day (van ra 235 tai y=H).
+    """
     man = Image.new("L", (1, H), 0)
     y0 = int(H * tu)
     for y in range(y0, H):
         t = (y - y0) / max(1, H - y0)
-        man.putpixel((0, y), int(235 * t ** 1.4))
+        man.putpixel((0, y), int(235 * t ** 1.15))
     lop = Image.new("RGBA", (W, H), (*BG, 0))
     lop.putalpha(man.resize((W, H)))
     canvas.alpha_composite(lop)
@@ -161,20 +191,31 @@ def _open(path):
     return img
 
 
-def _fade_to_black(canvas, y_top, y_bot):
-    """Phu mot lop den tang dan tu trong (y_top) sang dac (y_bot tro xuong).
-    Duoi y_bot den han. Nho lop nay day anh KHONG lo ra mot canh cung, ma tan
-    vao nen — anh va vung chu doc ra mot mat lien."""
+def _fade_to_black(canvas, day):
+    """Man toi MOT DUONG CONG LIEN TUC tu y=0 (chu khong phai tu mot moc
+    "het anh") — dung cach cua card._tran_anh, da chung minh khong de lo ranh
+    gioi cho hero image. Hai doan noi nhau tai `uon` (ca hai cong thuc deu ra
+    dung 90 tai do, khong nhay bac):
+
+      y <= uon : dam dan tu 0 len 90, cong t² (cham roi nhanh dan) — day la
+                 doan CON TRONG vung anh, nen chi tao mot lop toi mong, mat
+                 van thay ro anh, nhung KHONG con "trong tuyet doi" o dau.
+      y >  uon : dam tiep tu 90 len 255, cong t^0.85 (giam toc nhe) — dat 255
+                 tai day + FULL_TOI_SAU_DAY, ngay truoc khi chu bat dau.
+
+    Ca man luon phu KIN chieu cao the (0..H), khong chi mot doan — dung tinh
+    than "anh phu kin the" cua kieu tran, ke ca phan duoi `day` gio la dai mo
+    noi dai chu khong phai mot khoang trong."""
+    uon = max(1, int(day * UON_TI_LE))
+    full_y = day + FULL_TOI_SAU_DAY
     grad = Image.new("L", (1, H), 0)
     for y in range(H):
-        if y <= y_top:
-            a = 0
-        elif y >= y_bot:
-            a = 255
+        if y <= uon:
+            a = 90 * (y / uon) ** 2
         else:
-            t = (y - y_top) / max(1, y_bot - y_top)
-            a = int(255 * t ** 1.35)
-        grad.putpixel((0, y), a)
+            t = min(1.0, (y - uon) / max(1, full_y - uon))
+            a = 90 + (255 - 90) * t ** 0.85
+        grad.putpixel((0, y), min(255, int(a)))
     lop = Image.new("RGBA", (W, H), (*BG, 0))
     lop.putalpha(grad.resize((W, H)))
     canvas.alpha_composite(lop)
@@ -186,7 +227,13 @@ def _body_image(canvas, img):
     Anh cao hon vung thi cat bot theo chieu doc (giu giua), khong bao gio de lo
     hai canh ben — cat ngang la mat noi dung, va vien den hai ben lam anh nhin
     nhu mot cai hop rieng. Anh thap hon vung thi nen den lo o duoi, van tan muot
-    nen khong lo duong ngang nao."""
+    nen khong lo duong ngang nao.
+
+    Tra ve `day` (mep duoi cung cua anh that, theo px) de build_body dat chu
+    NGAY SAU do thay vi mot moc co dinh — anh ngang (vd chup man hinh 16:9)
+    chi cao ~600px sau khi fit be ngang, con IMG_REGION_H tinh cho anh doc
+    (~800px). Moc chu co dinh tung de lai mot khoang den CHET ~240px giua anh
+    va chu — cong don vao thi vung toi vuot qua 50% khung, nhin nang."""
     scale = W / img.width
     nh = round(img.height * scale)
     resized = img.resize((W, nh), Image.LANCZOS)
@@ -194,22 +241,44 @@ def _body_image(canvas, img):
         top = (nh - IMG_REGION_H) // 2            # cat giua theo chieu doc
         canvas.paste(resized.crop((0, top, W, top + IMG_REGION_H)), (0, 0))
         day = IMG_REGION_H
+        strip_y = top + IMG_REGION_H - BLUR_STRIP
     else:
         canvas.paste(resized, (0, 0))
         day = nh
-    _fade_to_black(canvas, day - IMG_FADE, day)
+        strip_y = max(0, nh - BLUR_STRIP)
+    strip = resized.crop((0, strip_y, W, strip_y + BLUR_STRIP))
+
+    # Noi dai chinh anh (khong phai phu mau nen) xuong duoi `day`: phong to
+    # dai mong sat day roi lam mo that manh — mot dai mau/sac tiep tuc tu
+    # chinh anh, khong phai mot khoi mau dac roi vao tu ben ngoai. Chi can phu
+    # toi FULL_TOI_SAU_DAY (+ mot khoang an toan) — qua moc do man toi da dac
+    # 255, co gi ben duoi cung khong con thay duoc nua.
+    ext = strip.resize((W, BLUR_EXT), Image.LANCZOS)
+    ext = ext.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
+    canvas.paste(ext, (0, day))
+
+    # Man toi la MOT duong cong lien tuc tu y=0, khong phai tu `day` — xem
+    # docstring cua _fade_to_black.
+    _fade_to_black(canvas, day)
+    return day
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out):
+def build_body(img_path, text, handle, out, mau_watermark=None):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    _body_image(canvas, _open(img_path))
+    day = _body_image(canvas, _open(img_path))
+    # Anh ngang (vd chup man hinh 16:9) sau khi fit be ngang chi cao ~600px,
+    # thap hon nhieu so voi IMG_REGION_H (800, tinh cho anh doc). Dat chu ngay
+    # sau MEP THAT cua anh (day) thay vi mot moc co dinh — khong thi giua anh
+    # va chu ho ra mot khoang den chet, cong don vao vung toi qua 50% khung.
+    text_top = min(TEXT_TOP, day + TEXT_GAP)
     d = ImageDraw.Draw(canvas)
     paras = [p.strip() for p in text.split("\n\n") if p.strip()]
+    max_h = min(TEXT_BOTTOM - text_top, TEXT_MAX_H)
     font, wrapped, lh, _ = _fit_block(
-        d, paras, W - 2 * PAD, TEXT_BOTTOM - TEXT_TOP, BODY_HI, BODY_LO)
-    _draw_paragraphs(d, PAD, TEXT_TOP, wrapped, font, lh, FG)
-    _watermark(canvas, handle)
+        d, paras, W - 2 * PAD, max_h, BODY_HI, BODY_LO)
+    _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
+    _watermark(canvas, handle, mau_watermark)
     canvas.convert("RGB").save(out, "PNG")
 
 
@@ -235,6 +304,32 @@ def build_cover(img_path, hook, label, out):
     if label:
         d.text((PAD, y_label), label, font=lf, fill=(220, 220, 220))
     canvas.convert("RGB").save(out, "PNG")
+
+
+# ---- Mau watermark theo thuong hieu duoc nhac toi -------------------------
+WM_MO = 0.55                     # do mo cua mau hang o watermark, so voi mau goc
+
+def _dinh_mau_watermark(chunks):
+    """Do qua tung doan chu THEO THU TU (bia/hook truoc, roi cac slide) tim
+    thuong hieu DAU TIEN duoc nhac toi — dung lai dung bang MAU_HANG/logic
+    nhan dien cua card.py (da co san, dung chung cho ten hang to trong tieu
+    de the tin) thay vi tu lam mot bang mau moi.
+
+    Watermark la chi tiet PHU — khong duoc canh tranh voi chu chinh (trang,
+    sang toi da). Keo mau hang ve toi (nhan WM_MO, KHONG qua _du_sang — ham
+    do keo SANG len de lam chu to/dam doc ro, nguoc huong voi y muon "mo hon"
+    o day) truoc khi tra ve, mo tuong tu muc mac dinh (150,150,150 tren nen
+    trang 255,255,255 ~ 0.59) chu khong ve nguyen mau goc.
+
+    Tra ve None neu khong nhan ra hang nao — watermark khi do ve mau WM
+    mac dinh (xam mo)."""
+    for _nhan, text in chunks:
+        for _tu, khoa in _tach_nhan(text):
+            if khoa:
+                mau = _mau_cua_hang(khoa)
+                if mau:
+                    return tuple(round(c * WM_MO) for c in mau)
+    return None
 
 
 # ---- Cong chan tieng Viet -------------------------------------------------
@@ -303,11 +398,13 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
 
+    mau_wm = _dinh_mau_watermark(chunks)
+
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out))
     paths = [str(out)]
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
-        build_body(s["image"], s["text"], handle, p)
+        build_body(s["image"], s["text"], handle, p, mau_wm)
         paths.append(p)
 
     print(f"da dung {len(paths)} slide:")

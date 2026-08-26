@@ -1,7 +1,7 @@
 ---
 name: carousel
-description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — ảnh ở trên, khối chữ trắng trên nền đen ở dưới, watermark nghiêng ở đáy. Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh, và các cổng chặn. Của Heller."
-version: 1.0.0
+description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — ảnh ở trên, khối chữ trắng trên nền đen ở dưới, watermark thẳng đáy tô màu thương hiệu chính bài. Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh, và các cổng chặn. Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
+version: 1.1.0
 author: content-team
 license: internal
 platforms: [linux]
@@ -9,21 +9,23 @@ prerequisites:
   commands: [python3]
 metadata:
   hermes:
-    tags: [carousel, slide, heller, bang-tin, album, donniechublog]
+    tags: [carousel, slide, heller, dre, bang-tin, album, donniechublog, dcgr]
 ---
 
 # carousel — bộ nhiều slide kể một tin
 
-Kiểu ảnh thứ hai của đội, bên cạnh hero image. **Heller** dựng nó. Trong khi
-Chad và Ethan dựng **một thẻ bìa** kiểu tràn cho một tin, Heller kể **cùng một
-tin qua nhiều slide**: một chuỗi ảnh 4:5 nền đen, lướt sang phải để đọc tiếp.
+Kiểu ảnh thứ hai của đội, bên cạnh hero image. **Heller** (donniechublog) và
+**Dre** (dcgr.tech) dựng nó — cùng một `carousel.py`, khác đúng cờ `--brand`,
+giống hệt quan hệ Chad/Ethan bên hero image. Trong khi Chad và Ethan dựng
+**một thẻ bìa** kiểu tràn cho một tin, Heller/Dre kể **cùng một tin qua nhiều
+slide**: một chuỗi ảnh 4:5 nền đen, lướt sang phải để đọc tiếp.
 
 `carousel.py` lo hết phần vẽ. Việc của bạn là **chia tin thành các slide**,
 **viết copy từng slide**, và **chọn một ảnh thật cho mỗi slide**.
 
 ## Carousel khác hero image ở đâu
 
-| | Hero image (Chad/Ethan) | Carousel (Heller) |
+| | Hero image (Chad/Ethan) | Carousel (Heller/Dre) |
 |---|---|---|
 | Số ảnh | một thẻ bìa | 4–8 slide, tối đa 10 |
 | Chữ | một tiêu đề đè lên ảnh | hook ở bìa + đoạn chữ dưới mỗi slide |
@@ -147,8 +149,33 @@ giàu thông tin nhất trong bộ.
 | Tiêu chí | Ngưỡng |
 |---|---|
 | Cạnh ngắn ảnh | từ 1000px trở lên (dưới đó phóng full bề ngang là vỡ nét) |
+| Tỉ lệ | **ưu tiên vuông (1:1)**, hạn chế tối đa ảnh ngang — xem lý do bên dưới |
 | Ảnh bìa: góc dưới-trái | tương đối thoáng cho hook |
 | Ảnh thân | không ràng buộc chỗ trống — chữ ở vùng đen riêng |
+
+### Vì sao ưu tiên ảnh vuông
+
+`carousel.py` dựng slide thân với vùng ảnh cao **860px** (64% khung 1350px) —
+đây là mức đã đo để vùng nền tối còn lại dưới 40%, không nhìn "nặng". Ảnh fit
+theo bề ngang 1080px: vuông luôn ra cao **1080px** (dư hẳn 860, đủ cắt dọc mà
+không mất nội dung hai bên), còn ảnh ngang 16:9 chỉ ra cao **~600px** — hụt
+mất 260px, vùng tối phình quá 40%. Đừng chỉnh code để bù cho ảnh ngang xấu;
+**đổi ảnh** trước.
+
+Không có ảnh vuông sẵn: tự crop vuông từ một ảnh ngang thật (chọn khung ôm
+đúng nội dung chính) — đây là chọn khung, không phải bịa ảnh, vẫn đúng luật
+"không tự vẽ minh hoạ". Cứ hỏi `anh_bai.py` như thường; công cụ đó chấm điểm
+theo tỉ lệ đẹp nhưng không tự động ưu tiên vuông, bạn phải tự cân.
+
+Không giới hạn ảnh trong đúng bài nguồn — tin đủ lớn (hãng lớn, sự kiện có
+đưa tin ảnh) thường có nhiều ảnh thật liên quan nằm rải ở các bài khác cùng
+chủ đề (ảnh sự kiện góc khác, ảnh sản phẩm chính hãng, trụ sở, logo...). Cứ
+tìm thêm — miễn ảnh **thật** và **đúng chủ đề**, không giới hạn ở ảnh nhúng
+sẵn trong link gốc. Tránh dùng lại đúng một tấm cho quá nhiều slide; 6 slide
+mà chỉ xoay vòng 2 ảnh là một điểm trừ trải nghiệm rõ rệt — cứ 4–6 ảnh khác
+nhau cho một bộ 6 slide là hợp lý. Cẩn thận với ảnh **rò rỉ** (leak, chưa
+chính thức xác nhận): rủi ro cả về độ chính xác (có thể sai/giả) lẫn bản
+quyền — bỏ qua, tìm ảnh chính thức khác thay vào.
 
 ## Bước 4 — dựng
 

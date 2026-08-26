@@ -329,9 +329,17 @@ def _tach_nhan(dong: str):
     Tra ve tuple chu khong phai True/False de ben ve con tra duoc MAU cua hang
     do — ca cum "HUGGING FACE" phai ra cung mot mau, ke ca khi hai tu bi tach
     ra hai lan ve.
+
+    So khop KHONG PHAN BIET HOA/THUONG: tieu de the tin (noi ham nay ra doi)
+    luon viet hoa toan bo nen truoc day so thang khong sao — nhung van xuoi
+    thuong (vd chu than carousel.py) viet ten hang kieu "Nvidia" binh thuong,
+    so thang voi BRAND_TU ("NVIDIA") thi trat, lai vo tinh trung mot tu VIET
+    TAT tinh co da hoa san (vd "AMD") thay vi dung hang dang noi toi. Chi
+    UPPER() luc SO KHOP; `khoa` van tra ve dang chuan hoa (hoa) vi MAU_HANG/
+    BRAND_TU luu key hoa — khong lien quan gi toi `tu` goc dung de ve.
     """
     tu = dong.split(" ")
-    sach = [t.strip(_RIA) for t in tu]
+    sach = [t.strip(_RIA).upper() for t in tu]
     khoa = [None] * len(tu)
     i = 0
     while i < len(tu):

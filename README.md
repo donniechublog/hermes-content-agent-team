@@ -10,6 +10,7 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 | Chad | `designer` | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
 | Ethan | `ethan` | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
 | Heller | `heller` | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
+| Dre | `dre` | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Heller, khác đúng một cờ `--brand` |
 | Quinn | `writer` | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
 | Miles | `miles` | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
 | Nova | `nova` | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
@@ -47,15 +48,19 @@ ghi thêm một dòng cảnh báo.
   vai nào dùng
 - `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
-- `carousel.py` — dựng **carousel nhiều slide** (Heller): ảnh full bề ngang ở
-  trên, khối chữ trắng trên nền đen ở dưới, watermark nghiêng ở đáy. Nhận spec
-  JSON, ra `<id>.png` + `<id>_2.png`… đúng khuôn album của `draft_write.py`. Tái
-  dùng helper của `card.py` (nạp font, wrap chữ, fit ảnh, cổng chặn tiếng Việt)
+- `carousel.py` — dựng **carousel nhiều slide** (Heller cho donniechublog, Dre
+  cho dcgr.tech — chung script, khác cờ `--brand`): ảnh full bề ngang ở trên
+  (ưu tiên ảnh vuông — xem skill), khối chữ trắng trên nền đen ở dưới tan liền
+  từ ảnh (không ranh giới cứng), watermark thẳng đáy tự tô màu hãng được nhắc
+  tới trong bài. Nhận spec JSON, ra `<id>.png` + `<id>_2.png`… đúng khuôn album
+  của `draft_write.py`. Tái dùng helper của `card.py` (nạp font, wrap chữ, fit
+  ảnh, cổng chặn tiếng Việt, nhận diện + màu thương hiệu)
 - `hermes/skills/hero-image/` — skill dùng chung của Chad và Ethan. Nằm thẳng
   trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
   không xoá được
-- `hermes/skills/carousel/` — skill của Heller: khung kể chuyện qua các slide,
-  cách viết copy từng slide, luật chọn ảnh, lệnh dựng. Cùng cơ chế trỏ vào như
+- `hermes/skills/carousel/` — skill dùng chung của Heller và Dre: khung kể
+  chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh, lệnh dựng.
+  Cùng cơ chế trỏ vào như
   hero-image
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số

@@ -318,11 +318,18 @@ VAI_ANH = {
     "chad": ("designer", "donniechublog"),
     "designer": ("designer", "donniechublog"),
     "ethan": ("ethan", "dcgr"),
-    # Heller lam khac hai nguoi kia: khong dung the bia (card.py) ma dung mot
-    # CAROUSEL nhieu slide (carousel.py). Van thuong hieu donniechublog nen bai
-    # viet ve Quinn nhu Chad. Ong Chu go "3 heller" de giao tin so 3 cho Heller.
+    # Heller va Dre lam khac may nguoi kia: khong dung the bia (card.py) ma
+    # dung mot CAROUSEL nhieu slide (carousel.py) — xem VAI_CAROUSEL. Heller
+    # van thuong hieu donniechublog nen bai viet ve Quinn nhu Chad; Dre van
+    # dcgr.tech nen bai viet ve Miles nhu Ethan. Ong Chu go "3 heller"/"3 dre"
+    # de giao tin so 3 cho dung nguoi.
     "heller": ("heller", "donniechublog"),
+    "dre": ("dre", "dcgr"),
 }
+# Vai dung carousel.py (nhieu slide) thay vi card.py (mot the bia). Them vai
+# carousel moi thi chi can them vao day — cho o duoi doc bang nay, khong ghim
+# cung ten "heller".
+VAI_CAROUSEL = {"heller", "dre"}
 MAC_DINH_ANH = "chad"
 # Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
 #
@@ -341,7 +348,7 @@ TEN_SANG_CAP.update({
 })
 # Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi — them vai
 # thu ba la sai ngay, nen doi thanh bang tra.
-TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad", "heller": "Heller"}
+TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad", "heller": "Heller", "dre": "Dre"}
 # Vai viet di theo THUONG HIEU, khong theo vai anh. Quinn viet cho dan ky thuat
 # (donniechublog), Miles viet cho dan kinh doanh/tai chinh/truyen thong
 # (dcgr.tech) — cung khuon caption, khac nguoi doc. Chon Chad thi bai ve Quinn,
@@ -664,7 +671,7 @@ def kanban_create(title, assignee, body, parent=None):
 KANBAN_DB = Path.home() / ".hermes" / "kanban.db"
 DA_BAO_CHAN = STATE_DIR / "da_bao_chan.json"
 VAI_CUA_DOI = {"designer": "Chad", "ethan": "Ethan", "heller": "Heller",
-               "writer": "Quinn", "miles": "Miles"}
+               "dre": "Dre", "writer": "Quinn", "miles": "Miles"}
 
 
 def _da_bao() -> set:
@@ -828,9 +835,10 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     except Exception as e:                                   # noqa: BLE001
         print(f"[research] khong tim duoc nguon: {type(e).__name__}: {e}")
 
-    # Heller dung carousel nhieu slide, cac vai anh khac dung the bia. Cung bo
-    # bien nhu nhau nen chon khuon roi format chung; .format bo qua key thua.
-    la_carousel = vai_anh == "heller"
+    # Heller va Dre dung carousel nhieu slide, cac vai anh khac dung the bia.
+    # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
+    # key thua.
+    la_carousel = vai_anh in VAI_CAROUSEL
     khuon = CAROUSEL_BODY if la_carousel else ILLU_BODY
     illu_body = khuon.format(
         source_note=item.get("source_note", ""), link=item["link"],
