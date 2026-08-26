@@ -72,14 +72,36 @@ def keyboard(draft_id):
 
 
 def _send_media_group(token, chat, media, thread_id=None):
-    """Gui album URL anh (Telegram tu tai, khong can file cuc bo). Album
-    KHONG the gan nut bam -- day la gioi han cua Telegram Bot API."""
-    items = [{"type": "photo", "media": m} for m in media]
+    """Gui album anh xem truoc. Album KHONG the gan nut bam -- gioi han Bot API.
+
+    `media` la duong dan CUC BO (draft_write ghi duong dan tuyet doi tren may
+    nay) nen phai upload bang attach:// nhu publish() lam. Truoc day gui thang
+    chuoi duong dan cho Telegram — Telegram khong doc duoc may minh, album KHONG
+    BAO GIO hien, va gia tri tra ve bi vut nen loi im lang: Ong Chu duyet mu moi
+    bai nhieu anh tu ngay dau."""
+    items, files = [], {}
+    for i, m in enumerate(media):
+        m = str(m)
+        if m.startswith("http://") or m.startswith("https://"):
+            items.append({"type": "photo", "media": m})
+        else:
+            if not Path(m).exists():
+                continue
+            key = f"file{i}"
+            items.append({"type": "photo", "media": f"attach://{key}"})
+            files[key] = open(m, "rb")
+    if not items:
+        return {"ok": False, "description": "khong co anh nao ton tai"}
     data = {"chat_id": chat, "media": json.dumps(items)}
     if thread_id:
         data["message_thread_id"] = str(int(thread_id))
-    with httpx.Client(timeout=120) as c:
-        r = c.post(API.format(token=token, method="sendMediaGroup"), data=data)
+    try:
+        with httpx.Client(timeout=120) as c:
+            r = c.post(API.format(token=token, method="sendMediaGroup"),
+                       data=data, files=files or None)
+    finally:
+        for fh in files.values():
+            fh.close()
     return r.json()
 
 
@@ -95,7 +117,11 @@ def draft_push(token, group, draft_id, thread_id=None):
     if images:
         # Album truoc (khong nut), roi tin nhan chu rieng kem nut duyet --
         # nut bam luon nam tren tin nhan NAY, khong phai anh.
-        _send_media_group(token, group, images, thread_id)
+        ra = _send_media_group(token, group, images, thread_id)
+        if not ra.get("ok"):
+            # KHONG nuot loi: Ong Chu phai biet minh dang duyet thieu anh.
+            caption += ("\n\n\u26a0\ufe0f Album xem truoc gui loi: "
+                        + html_escape(str(ra.get("description"))))
         text_payload = {"chat_id": group, "text": caption, "parse_mode": "HTML",
                         "reply_markup": keyboard(draft_id)}
         if thread_id:
@@ -192,12 +218,31 @@ def handle_callback(token, channel, cq):
     msg = cq["message"]
     chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
 
-    if not (DRAFTS / (draft_id + ".json")).exists():
+    p = DRAFTS / (draft_id + ".json")
+    if not p.exists():
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
              text="Không tìm thấy bản nháp", show_alert=True)
         return
 
+    # CHOT TRANG THAI TRUOC KHI LAM GI KHAC. publish() co the mat toi 180s,
+    # trong thoi gian do nut van quay vong va Ong Chu se bam lai — hai callback
+    # xep hang, va truoc day ca hai deu dang. Doc status som + tra loi callback
+    # NGAY de nut thoi quay, roi moi lam viec nang.
+    try:
+        st = json.loads(p.read_text(encoding="utf-8")).get("status")
+    except Exception:                                        # noqa: BLE001
+        st = None
+    if st in ("published", "rejected"):
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Bài này đã xử lý rồi (" + st + ")", show_alert=True)
+        return
+
     if action == "ok":
+        # Danh dau DANG XU LY truoc khi dang: callback thu hai toi trong luc
+        # publish() dang chay se bi chan o nhanh tren.
+        mark_draft(draft_id, "publishing")
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đang đăng…")
         res = publish(token, channel, draft_id)
         ok = res.get("ok")
         mark_draft(draft_id, "published" if ok else "publish_failed")
@@ -209,8 +254,6 @@ def handle_callback(token, channel, cq):
         if ok:
             pushed, why = moat_publish.intake(draft_id)
             note += ("\n\U0001f4e4 moat: " + why) if pushed else ("\n\u26a0\ufe0f moat: " + why)
-        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Đã đăng" if ok else "Lỗi khi đăng")
     elif action == "no":
         mark_draft(draft_id, "rejected")
         note = "❌ ĐÃ BỎ — không đăng"
@@ -223,9 +266,16 @@ def handle_callback(token, channel, cq):
     body = base.replace("BẢN NHÁP", "BẢN NHÁP (đã xử lý)", 1)
     method = "editMessageCaption" if msg.get("caption") else "editMessageText"
     key = "caption" if msg.get("caption") else "text"
-    call(token, method, chat_id=chat_id, message_id=msg_id,
-         **{key: body + "\n\n<b>" + note + "</b>"}, parse_mode="HTML",
-         reply_markup={"inline_keyboard": []})
+    # `note` co the chua text tho tu moat (trang HTML 502 cua nginx...). Khong
+    # escape thi editMessageText bi tu choi -> inline_keyboard khong duoc go ->
+    # nut van con, moi bam tiep. Escape TOAN BO note vi minh chi chen <b> quanh no.
+    r = call(token, method, chat_id=chat_id, message_id=msg_id,
+             **{key: body + "\n\n<b>" + html_escape(note) + "</b>"},
+             parse_mode="HTML", reply_markup={"inline_keyboard": []})
+    if not r.get("ok"):
+        # Khong sua duoc tin nhan (vi du body cu co ky tu la) thi it nhat go nut.
+        call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id,
+             reply_markup={"inline_keyboard": []})
 
 
 # ---------- B) Ong Chu reply so thu tu -> tao cap task ----------
@@ -246,8 +296,16 @@ MANIFEST_THEO_TOPIC = {
 
 
 def latest_manifest(vai="scout"):
-    files = sorted(STATE_DIR.glob(MANIFEST_THEO_TOPIC.get(vai, "finn_candidates_*.json")))
-    return files[-1] if files else None
+    """Manifest MOI NHAT theo mtime, khong phai theo ten.
+
+    Truoc day sap theo ten tep. Nhung ten khong phan anh thu tu ghi: dem 23/08
+    ban `_t2327` ghi luc 23:27 sap TRUOC ban `2026-08-24` ghi luc 23:25 (cron
+    dat ten theo ngay VN, quet lai dat hau to gio). Ong Chu tra loi so theo bao
+    cao moi -> mo nham manifest cu -> tao bai SAI TIN. Thu tu ghi la thu duy
+    nhat dung voi cau hoi "bao cao gan nhat Ong Chu vua doc la cai nao".
+    """
+    files = list(STATE_DIR.glob(MANIFEST_THEO_TOPIC.get(vai, "finn_candidates_*.json")))
+    return max(files, key=lambda f: f.stat().st_mtime) if files else None
 
 
 # Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
@@ -260,6 +318,10 @@ VAI_ANH = {
     "chad": ("designer", "donniechublog"),
     "designer": ("designer", "donniechublog"),
     "ethan": ("ethan", "dcgr"),
+    # Heller lam khac hai nguoi kia: khong dung the bia (card.py) ma dung mot
+    # CAROUSEL nhieu slide (carousel.py). Van thuong hieu donniechublog nen bai
+    # viet ve Quinn nhu Chad. Ong Chu go "3 heller" de giao tin so 3 cho Heller.
+    "heller": ("heller", "donniechublog"),
 }
 MAC_DINH_ANH = "chad"
 # Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
@@ -279,7 +341,7 @@ TEN_SANG_CAP.update({
 })
 # Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi — them vai
 # thu ba la sai ngay, nen doi thanh bang tra.
-TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad"}
+TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad", "heller": "Heller"}
 # Vai viet di theo THUONG HIEU, khong theo vai anh. Quinn viet cho dan ky thuat
 # (donniechublog), Miles viet cho dan kinh doanh/tai chinh/truyen thong
 # (dcgr.tech) — cung khuon caption, khac nguoi doc. Chon Chad thi bai ve Quinn,
@@ -451,6 +513,70 @@ LUU Y — doc skill `hero-image` de biet day du, day chi la phan hay sai nhat:
   buoc 3 — khong co anh that)."""
 
 
+# Body cho Heller — dung carousel nhieu slide thay vi mot the bia. Khac ILLU_BODY
+# o cho: khong chay card.py, ma viet copy tung slide roi chay carousel.py. Van
+# dung anh_bai.py de tim anh that, van cong chan "khong tu ve minh hoa".
+CAROUSEL_BODY = """Nguon: {source_note}
+Link: {link}
+Nguon anh (via): {via}
+Chu de: {title}
+Tom tat: {summary}
+
+NHIEM VU: dung mot CAROUSEL nhieu slide ke tin nay, kieu bang tin — anh full be
+ngang o tren TAN dan vao nen den, khoi chu trang o duoi, watermark nghieng o day.
+Anh va chu la MOT mat phang lien: KHONG vien, KHONG vach, KHONG khung chia hai vung.
+
+DOC SKILL `carousel` TRUOC khi lam — no co day du khung ke chuyen, cach viet copy
+tung slide, luat chon anh, va cong chan. Duoi day chi la phan hay sai nhat.
+
+NGUYEN TAC TREN HET: KHONG BAO GIO tu ve minh hoa. Moi slide phai co mot ANH THAT
+lay tu nguon. Khong du anh that thi chia lai slide hoac gop y; cung lam thi bao
+lai — tuyet doi khong dung hinh gia.
+
+BUOC 1 — hieu tin du sau de chia slide. Finn DA research san, doc bo nguon nay:
+  /home/donniechu/content-team/state/nguon_{draft_id}.json
+
+BUOC 2 — tim anh that (BAT BUOC chay lenh nay):
+cd /home/donniechu/content-team && venv/bin/python anh_bai.py \\
+  --tieu-de "{title}" --link "{link}" --json \\
+  --tu-nguon /home/donniechu/content-team/state/nguon_{draft_id}.json
+Tai cac anh diem cao ve /tmp: /tmp/src_{draft_id}.png, /tmp/src_{draft_id}_2.png...
+Bai arxiv khong co anh minh hoa thi chup bia paper:
+  venv/bin/python arxiv_bia.py --link "{link}" --out /tmp/src_{draft_id}.png
+
+BUOC 3 — chia tin thanh 4-8 slide va viet copy (theo khung ke chuyen trong skill):
+  - BIA: mot cau HOOK giat khien nguoi ta dung luot (thuong la nghich ly hoac con
+    so), kem mot NHAN NGAN. Cover can goc duoi-trai thoang de hook doc ro.
+  - Cac slide sau: moi slide MOT y moi day nguoi doc sang slide sau (cai gi vua
+    xay ra, con so gay soc, y nghia that, doi thu, cai can theo doi).
+  - Slide cuoi de lai mot moc hoac cau hoi, khong chot cut.
+  - Chu TIENG VIET CO DAU, cau ngan, moi doan 2-4 dong, tach doan bang dong trong.
+
+BUOC 4 — ghi spec JSON roi dung (cac anh o BUOC 2 chia cho tung slide theo y):
+cat > /tmp/carousel_{draft_id}.json <<'JSON'
+{{
+  "handle": "donniechublog",
+  "cover":  {{"image": "/tmp/src_{draft_id}.png", "hook": "<cau giat co dau>", "label": "<NHAN NGAN>"}},
+  "slides": [
+    {{"image": "/tmp/src_{draft_id}_2.png", "text": "doan mot.\\n\\ndoan hai."}},
+    {{"image": "/tmp/src_{draft_id}_3.png", "text": "..."}}
+  ]
+}}
+JSON
+cd /home/donniechu/content-team && venv/bin/python carousel.py \\
+  --spec /tmp/carousel_{draft_id}.json --out {out_png} --brand {brand}
+
+Ra {out_png} (bia) + {out_png_goc}_2.png, _3.png... — draft_write.py tu gom thanh
+album khi Quinn ghep draft, ban KHONG phai lam gi them o khau dang.
+
+CONG CHAN: tieng Viet khong dau bi chan (chi tiếng Anh moi them --bo-qua-dau);
+toi da 10 slide ke ca bia; thieu image/text mot slide thi dung.
+
+BAN GIAO: watermark tren slide KHONG phai ghi nguon. Bao lai nguon tin va nguon
+tung anh ({via}) trong ket qua task de Quinn dua vao chu thich bai dang.
+Ket qua bat buoc: {out_png} phai ton tai sau khi chay."""
+
+
 WRITER_BODY = """Bai goc: {title}
 Link: {link}
 Nguon: {source_note}
@@ -537,7 +663,7 @@ def kanban_create(title, assignee, body, parent=None):
 # keo bao cao do ra Telegram.
 KANBAN_DB = Path.home() / ".hermes" / "kanban.db"
 DA_BAO_CHAN = STATE_DIR / "da_bao_chan.json"
-VAI_CUA_DOI = {"designer": "Chad", "ethan": "Ethan",
+VAI_CUA_DOI = {"designer": "Chad", "ethan": "Ethan", "heller": "Heller",
                "writer": "Quinn", "miles": "Miles"}
 
 
@@ -702,7 +828,11 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     except Exception as e:                                   # noqa: BLE001
         print(f"[research] khong tim duoc nguon: {type(e).__name__}: {e}")
 
-    illu_body = ILLU_BODY.format(
+    # Heller dung carousel nhieu slide, cac vai anh khac dung the bia. Cung bo
+    # bien nhu nhau nen chon khuon roi format chung; .format bo qua key thua.
+    la_carousel = vai_anh == "heller"
+    khuon = CAROUSEL_BODY if la_carousel else ILLU_BODY
+    illu_body = khuon.format(
         source_note=item.get("source_note", ""), link=item["link"],
         via=item.get("via", ""), title=item["title"],
         summary=item.get("summary_vi", ""),
@@ -711,7 +841,8 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
         brand=brand,
         co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
-    illu_id, err = kanban_create("Anh: " + item["title"], vai_anh, illu_body)
+    tieu_de_task = ("Carousel: " if la_carousel else "Anh: ") + item["title"]
+    illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
 
@@ -823,31 +954,69 @@ def handle_message(token, group, scout_thread, msg):
 
 # ---------- vong lap chinh ----------
 
+def _ghi_offset(offset: int):
+    """Ghi offset NGUYEN TU. Chet giua luc ghi khong duoc de lai file cut:
+    int() doc file cut se nem ValueError ngay khoi dong -> systemd restart ->
+    crash-loop im lang, va kenh bao dong duy nhat (Telegram) thi can offset."""
+    OFFSET.parent.mkdir(parents=True, exist_ok=True)
+    tmp = OFFSET.with_suffix(".txt.tmp")
+    tmp.write_text(str(offset))
+    os.replace(tmp, OFFSET)
+
+
+def _doc_offset() -> int:
+    """File hong (cut nua chung, rac) thi ve 0 va bao — con hon chet han.
+    offset=0 lam Telegram tra lai cac update con giu (toi da 24h), nhung
+    handle_callback da co chot trang thai nen bai da xu ly khong dang lai."""
+    if not OFFSET.exists():
+        return 0
+    try:
+        return int(OFFSET.read_text().strip())
+    except (ValueError, OSError) as e:
+        print(f"[approve_service] offset.txt hong ({e}), ve 0", flush=True)
+        return 0
+
+
 def loop():
     token, channel, group = load_secrets()
     scout_thread = scout_thread_id()
-    offset = int(OFFSET.read_text()) if OFFSET.exists() else 0
+    offset = _doc_offset()
     print("[approve_service] chay, offset=" + str(offset) +
           ", scout_thread=" + str(scout_thread), flush=True)
+    loi_lien_tiep = 0
     while True:
         try:
             r = call(token, "getUpdates", offset=offset, timeout=50,
                      allowed_updates=["callback_query", "message"])
+            if not r.get("ok"):
+                # 409 (hai poller cung token) / 429: long-poll khong giu duoc,
+                # request tra ve NGAY -> khong sleep la nen API vo han.
+                print("[approve_service] getUpdates tu choi: "
+                      + str(r.get("description")), flush=True)
+                time.sleep(5)
+                continue
             for u in r.get("result", []):
+                # Ghi offset TRUOC khi xu ly tung update. Truoc day ghi sau ca
+                # lo: mot update no giua chung -> offset khong ghi -> restart
+                # xu ly lai tu dau lo, DANG LAI bai da dang. Ghi truoc nghia la
+                # update no se bi mat thay vi chay hai lan — voi dich vu duyet
+                # bai, mat mot lenh (Ong Chu bam lai duoc) re hon dang trung
+                # (doc gia thay hai bai giong het nhau tren channel).
                 offset = u["update_id"] + 1
+                _ghi_offset(offset)
                 if "callback_query" in u:
                     handle_callback(token, channel, u["callback_query"])
                 elif "message" in u:
                     handle_message(token, group, scout_thread, u["message"])
-            OFFSET.parent.mkdir(parents=True, exist_ok=True)
-            OFFSET.write_text(str(offset))
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
             bao_viec_bi_chan(token, group)
+            loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
+            loi_lien_tiep += 1
             print("[approve_service] loi: " + type(e).__name__ + ": " + str(e),
                   flush=True)
-            time.sleep(5)
+            time.sleep(min(60, 5 * loi_lien_tiep))
 
 
 if __name__ == "__main__":

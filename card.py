@@ -1133,6 +1133,19 @@ def build(src, title, subtitle, via, out, category="AI",
     # phu de, ten kenh.
     if kieu == "tran":
         y = img_h + g1
+        # CAN GIUA DOC truoc khi ve BAT KY thu gi. Truoc day khoi can giua nam
+        # sau doan ve kicker: kicker dung yen o y cu con tieu de bi day xuong
+        # `_cho_trong // 2`, ho ra toi 137px voi tieu de mot dong — pha dung
+        # ban sua "kicker sat tieu de". Ca cum (kicker + tieu de + phu de) phai
+        # troi xuong CUNG NHAU, nen phai dich y truoc.
+        if ratio != "free":
+            _cao_cum = ((kick_h + KICKER_GAP if kicker else 0)
+                        + _cao_tieu_de()
+                        + (g2 + _line_h(f_sub, LEAD) * len(sub_lines)
+                           if sub_lines else 0))
+            _thua = (H - g4 - via_h - g3) - y - _cao_cum
+            if _thua > 0:
+                y += _thua // 2
         if kicker:
             mau_kick = _pha(CYAN, 1.0)
             rong_chu = _rong_tracked(d, kicker, f_kick, KICKER_TRACK)
@@ -1163,8 +1176,9 @@ def build(src, title, subtitle, via, out, category="AI",
 
     # Khi ti le bi khoa, tieu de va phu de da no het co cho phep ma textbox van
     # con thua thi day khoi chu xuong giua thay vi de no dinh sat mep tren va bo
-    # lai mot mang trong o duoi.
-    if ratio != "free":
+    # lai mot mang trong o duoi. (Kieu tran da can o tren, TRUOC khi ve kicker —
+    # can lai o day la kicker dung yen con tieu de troi.)
+    if ratio != "free" and kieu != "tran":
         _cao_chu = (_cao_tieu_de()
                     + (g2 + _line_h(f_sub, LEAD) * len(sub_lines)
                        if sub_lines else 0))

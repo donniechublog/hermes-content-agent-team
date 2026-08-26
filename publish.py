@@ -80,10 +80,21 @@ def don_dep(text: str) -> str:
     return text.strip()
 
 
+class TelegramTuChoi(RuntimeError):
+    """Telegram tra ok:false. La Exception THUONG, khong phai SystemExit.
+
+    Truoc day _check goi sys.exit() — SystemExit ke thua BaseException nen
+    xuyen qua moi `except Exception` cua NGUOI GOI THU VIEN: moat_publish
+    da ghi `reported` xong, goi _notify, Telegram 429 -> sys.exit giet ca
+    tien trinh cron -> khong bao gio bao lai. CLI van thoat gon: main() bat
+    loi nay va exit(1).
+    """
+
+
 def _check(r: httpx.Response):
     data = r.json()
     if not data.get("ok"):
-        sys.exit(f"Telegram tu choi: {data.get('description')}")
+        raise TelegramTuChoi(f"Telegram tu choi: {data.get('description')}")
     return data["result"]
 
 
@@ -152,6 +163,13 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
 
 
 def main():
+    try:
+        return _main()
+    except TelegramTuChoi as e:
+        sys.exit(str(e))
+
+
+def _main():
     p = argparse.ArgumentParser(description="Dang bai len Telegram channel")
     p.add_argument("--photo", type=Path, help="Duong dan anh")
     p.add_argument("--caption", default="", help="Chu thich anh (toi da 1024)")

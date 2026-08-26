@@ -14,10 +14,13 @@ BODY="Nhiem vu quet tin kinh doanh sang $DAY (chay theo lich cron). Lam dung huo
 Buoc 1, chay script tat dinh. Khong con cham diem cat top: script dua HET tin trong
 cua so 30h cho ban tu xet (tin watchlist luon co, tin thuong cat theo moi nhat neu
 qua nhieu). Cua so 30h de khong lot tin ra mat toi hom truoc.
-cd /home/donniechu/content-team && venv/bin/python scan_business.py --gio 30
+cd /home/donniechu/content-team && venv/bin/python scan_business.py --gio 30 --out /tmp/vera_quet_$DAY.json
 
-Buoc 2, loc: phan biet tin kiem chung voi thong cao doanh nghiep. Uu tien tin co
-he qua, khong chi co con so lon.
+Buoc 2, DOC TEP /tmp/vera_quet_$DAY.json (dung doc man hinh). Tep co du truong
+"link" cho tung tin — dung DUNG link trong tep, TUYET DOI khong tu bia hay go lai
+tu tri nho. Su co 24/08: 5 tin nop len deu link blank vi bao cao man hinh khong in
+link. Sau do loc: phan biet tin kiem chung voi thong cao doanh nghiep. Uu tien tin
+co he qua, khong chi co con so lon.
 
 Tin co truong "watchlist": true la tin ve top brand nganh AI (OpenAI, Anthropic,
 Google, Meta, Nvidia, Apple, Xiaomi, DeepSeek, Qwen, Samsung...). Nhung tin nay

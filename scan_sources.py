@@ -117,7 +117,15 @@ def score_spread(points: int, median: float) -> int:
 def fetch_hn(limit=40) -> list:
     out = []
     with httpx.Client(timeout=25, headers={"User-Agent": UA}) as c:
-        ids = c.get("https://hacker-news.firebaseio.com/v0/topstories.json").json()
+        # Boc rieng loi goi danh sach: docstring hua "mot nguon chet khong keo
+        # do ca lan quet" nhung loi goi nay tung de tran — HN 503 hoac tra HTML
+        # la JSONDecodeError giet ca luot, Finn mat trang mot ngay.
+        try:
+            ids = c.get("https://hacker-news.firebaseio.com/v0/topstories.json").json()
+        except Exception as e:                               # noqa: BLE001
+            print(f"  [canh bao] HN topstories loi: {type(e).__name__}",
+                  file=sys.stderr)
+            return out
         for sid in ids[:limit]:
             try:
                 it = c.get(
@@ -325,7 +333,14 @@ def main():
     items = []
     for name, fn in (("HackerNews", fetch_hn), ("Reddit", fetch_reddit),
                      ("arXiv", fetch_arxiv)):
-        got = fn()
+        # Hang rao cuoi: du tung fetch_* da tu boc, mot loi bat ngo o mot nguon
+        # cung khong duoc keo do hai nguon con lai.
+        try:
+            got = fn()
+        except Exception as e:                               # noqa: BLE001
+            print(f"  [canh bao] {name} loi: {type(e).__name__}: {e}",
+                  file=sys.stderr)
+            continue
         print(f"  {name}: {len(got)} bai", file=sys.stderr)
         items.extend(got)
 

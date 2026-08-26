@@ -81,6 +81,13 @@ def main():
     ngay = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     ten = f"{TIEN_TO[a.vai]}_{ngay}{('_' + a.hau_to) if a.hau_to else ''}.json"
     out = STATE / ten
+    # KHONG ghi de manifest da co. Ghi de la mat het cờ picked, va TE HON la
+    # doi nghia so thu tu: muc "2" cua ban sang khac muc "2" cua ban toi, Ong
+    # Chu tra loi theo tin nhan cu se ra bai khac. Quet lai trong ngay thi tu
+    # dong deo hau to gio — latest_manifest chon theo mtime nen ban moi thang.
+    if out.exists():
+        out = STATE / (f"{TIEN_TO[a.vai]}_{ngay}"
+                       f"_t{datetime.now(timezone.utc).strftime('%H%M')}.json")
     out.write_text(json.dumps(
         {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": a.vai,
          "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")

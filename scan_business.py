@@ -22,6 +22,7 @@ import argparse
 import json
 import re
 import sys
+import os
 import time
 import unicodedata
 import urllib.parse as up
@@ -283,7 +284,13 @@ def gom_trung(tin: list, nguong=0.6) -> list:
         vao = None
         for n in nhom:
             chung = tu & n["_tu"]
-            if chung and len(chung) / min(len(tu), len(n["_tu"])) >= nguong:
+            # Mau so la MAX chu khong phai MIN. Voi min, tit ngan la tap con
+            # cua tit dai thi LUON gop: "Nvidia stock jumps" nuot "Nvidia stock
+            # slides after Beijing bans chip purchases" (2/min(3,7)=0.67) — hai
+            # tin nguoc nhau thanh mot. Voi max, ca hai tit phai chia se phan
+            # lon tu: ca Cloverleaf kinh dien (invests vs partners) van gop
+            # dung (5/7=0.71), con jumps-vs-slides thi khong (2/7=0.29).
+            if chung and len(chung) / max(len(tu), len(n["_tu"])) >= nguong:
                 vao = n
                 break
         if vao is None:
@@ -291,29 +298,61 @@ def gom_trung(tin: list, nguong=0.6) -> list:
             t["so_bao"] = 1
             t["cac_bao"] = [t["toa_soan"]] if t["toa_soan"] else []
             t["_tu"] = tu
+            # Co watchlist tinh NGAY TAI DAY, tren tung bien the, va nhom giu
+            # co neu BAT KY bien the nao khop. Truoc day tinh sau dedup tren
+            # tit dai dien (ban som nhat): ban tin dau khong nhac ten hang lam
+            # dai dien la ca nhom mat co bao ve — dung kich ban Xiaomi Cube.
+            t["hang_watch"] = ten_watchlist(t["tieu_de"])
             nhom.append(t)
         else:
             vao["so_bao"] += 1
             if t["toa_soan"] and t["toa_soan"] not in vao["cac_bao"]:
                 vao["cac_bao"].append(t["toa_soan"])
+            if not vao.get("hang_watch"):
+                vao["hang_watch"] = ten_watchlist(t["tieu_de"])
     for n in nhom:
         n.pop("_tu", None)
     return nhom
 
 
-def da_thay() -> set:
-    if STATE.exists():
-        return set(json.loads(STATE.read_text(encoding="utf-8")).get("khoa", []))
-    return set()
+def da_thay() -> dict:
+    """Doc bo nho da-thay: {khoa: unix_ts lan cuoi thay}.
+
+    Dinh dang cu la list khoa tran — doc duoc ca hai, chuyen dan sang dict.
+    """
+    if not STATE.exists():
+        return {}
+    d = json.loads(STATE.read_text(encoding="utf-8")).get("khoa", [])
+    if isinstance(d, list):                # dinh dang cu
+        now = time.time()
+        return {k: now for k in d}
+    return d
 
 
-def ghi_moc(khoa: set):
+def ghi_moc(khoa: dict):
+    """Ghi bo nho da-thay, cat theo THOI GIAN, giu cac truong khac cua tep.
+
+    Hai loi cu cua ham nay, ca hai da gay chuyen that:
+    - `sorted(khoa)[-2000:]` cat theo BANG CHU CAI: tin bat dau a–m bi day ra
+      khoi bo nho va bao lai mai, tin bat dau z khong bao gio duoc quen. Gio
+      moi khoa keo theo timestamp va cat theo do.
+    - Ghi de ca tep chi voi hai truong -> xoa mat `ghi_chu` (ghi chu su co
+      26/08 tung bay theo cach nay). Gio doc tep cu, chi thay truong cua minh.
+    """
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    # Giu 2000 khoa gan nhat — du de chong trung ma khong phinh vo han
-    STATE.write_text(json.dumps(
-        {"cap_nhat": datetime.now(timezone.utc).isoformat(),
-         "khoa": sorted(khoa)[-2000:]}, ensure_ascii=False, indent=2),
-        encoding="utf-8")
+    goc = {}
+    if STATE.exists():
+        try:
+            goc = json.loads(STATE.read_text(encoding="utf-8"))
+        except Exception:                                    # noqa: BLE001
+            goc = {}
+    giu = dict(sorted(khoa.items(), key=lambda kv: kv[1])[-2000:])
+    goc["cap_nhat"] = datetime.now(timezone.utc).isoformat()
+    goc["khoa"] = giu
+    tmp = STATE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(goc, ensure_ascii=False, indent=2),
+                   encoding="utf-8")
+    os.replace(tmp, STATE)
 
 
 def main():
@@ -339,17 +378,17 @@ def main():
 
     tin = gom_trung(quet_gnews(a.gio) + quet_bao(a.gio))
     cu = da_thay()
-    khoa_moi = {chuan_hoa(t["tieu_de"]) for t in tin}
+    now = time.time()
 
     if a.lan_dau:
-        ghi_moc(khoa_moi)
-        print(f"Da ghi moc {len(khoa_moi)} tin. Lan sau chi bao cai moi.")
+        ghi_moc({**cu, **{chuan_hoa(t["tieu_de"]): now for t in tin}})
+        print(f"Da ghi moc {len(tin)} tin. Lan sau chi bao cai moi.")
         return
 
     moi = [t for t in tin if chuan_hoa(t["tieu_de"]) not in cu]
     for t in moi:
-        t["hang_watch"] = ten_watchlist(t["tieu_de"])
-        t["watchlist"] = bool(t["hang_watch"])
+        # hang_watch da duoc gom_trung tinh tren TUNG bien the truoc khi gop.
+        t["watchlist"] = bool(t.get("hang_watch"))
 
     # KHONG cham diem, KHONG cat theo do quan trong. Cach cham cu xep theo "nhieu
     # bao dua", nen tin lon ma Google News chi tra vai dong (Xiaomi ra AI Cube,
@@ -385,7 +424,11 @@ def main():
             dau = "[W]" if t["watchlist"] else "   "
             print(f"  {dau} {t['ngay']}  ({t['goc']})  {t['so_bao']} báo")
             print(f"        {t['tieu_de'][:100]}")
-    ghi_moc(cu | khoa_moi)
+    # CHI danh dau tin DA DUA cho Vera (chon), khong phai tat ca tin quet duoc.
+    # Truoc day danh dau het: ngay dot bien, phan bi van --top cat van vao seen
+    # -> lan sau bi loc "da thay" -> khong bao gio toi Vera nua. Van an toan
+    # thanh may xoa tin. Tin bi cat hom nay, mai van con moi thi van len duoc.
+    ghi_moc({**cu, **{chuan_hoa(t["tieu_de"]): now for t in chon}})
 
 
 if __name__ == "__main__":
