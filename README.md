@@ -9,6 +9,7 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 | Finn | `scout` | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
 | Chad | `designer` | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
 | Ethan | `ethan` | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
+| Heller | `heller` | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
 | Quinn | `writer` | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
 | Miles | `miles` | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
 | Ada | `analyst` | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
@@ -44,9 +45,16 @@ ghi thêm một dòng cảnh báo.
   vai nào dùng
 - `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
+- `carousel.py` — dựng **carousel nhiều slide** (Heller): ảnh full bề ngang ở
+  trên, khối chữ trắng trên nền đen ở dưới, watermark nghiêng ở đáy. Nhận spec
+  JSON, ra `<id>.png` + `<id>_2.png`… đúng khuôn album của `draft_write.py`. Tái
+  dùng helper của `card.py` (nạp font, wrap chữ, fit ảnh, cổng chặn tiếng Việt)
 - `hermes/skills/hero-image/` — skill dùng chung của Chad và Ethan. Nằm thẳng
   trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
   không xoá được
+- `hermes/skills/carousel/` — skill của Heller: khung kể chuyện qua các slide,
+  cách viết copy từng slide, luật chọn ảnh, lệnh dựng. Cùng cơ chế trỏ vào như
+  hero-image
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số
 - `moat_publish.py` — đẩy bài đã duyệt sang moat (`push <draft_id>`) và hỏi trạng thái

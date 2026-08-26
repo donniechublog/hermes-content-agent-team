@@ -28,6 +28,8 @@ def main():
     ap.add_argument("--category", help="Ghi de category tu sidecar")
     ap.add_argument("--via", help="Ghi de via tu sidecar")
     ap.add_argument("--image", help="Ghi de duong dan anh tu sidecar")
+    ap.add_argument("--brand", help="Ghi de brand tu sidecar "
+                    "(donniechublog | dcgr). Binh thuong khong can truyen.")
     ap.add_argument("--tu-lieu", help="Tep tu lieu de doi chieu do day du")
     ap.add_argument("--bo-qua-kiem", action="store_true",
                     help="Luu du caption khong dat (chi dung khi Ong Chu yeu cau)")
@@ -72,6 +74,9 @@ def main():
         "source_url": a.source_url or meta.get("source_url", ""),
         "category": a.category or meta.get("category", "AI"),
         "via": a.via if a.via is not None else meta.get("via", ""),
+        # Thuong hieu quyet dinh org ben moat luc bam Duyet. Roi ve
+        # donniechublog khi thieu: do la mac dinh cua ca day chuyen.
+        "brand": a.brand or meta.get("brand", "donniechublog"),
         "status": "pending",
     }
 

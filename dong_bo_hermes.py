@@ -24,7 +24,7 @@ ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
 REPO = ROOT / "hermes"
 
-VAI = ["scout", "ethan", "designer", "writer", "miles",
+VAI = ["scout", "ethan", "designer", "heller", "writer", "miles",
        "analyst", "teaser", "nova", "market"]
 # Plugin kanban nam trong ban cai hermes nen `hermes update` SE ghi de. Da sua
 # ba thu o day: thu tu cot (running/ready/blocked truoc), co chu nhan profile,
@@ -32,7 +32,12 @@ VAI = ["scout", "ethan", "designer", "writer", "miles",
 PLUGIN_KANBAN = Path.home() / "hermes-agent/plugins/kanban/dashboard"
 PLUGIN_TEP = ["plugin_api.py", "dist/index.js", "dist/style.css"]
 SCRIPT = ["finn_daily_scan", "nova_daily_scan", "vera_daily_scan",
-          "model_watch", "usage_audit", "nhat_ky_daily"]
+          "model_watch", "usage_audit", "nhat_ky_daily",
+          # Tung nam ngoai danh sach nay du la job chay DAY NHAT he thong
+          # (moi phut) va co ca lenh find -delete — mot script hong ngoai git
+          # la dung kich ban 22/08. dong_bo con bao "hai ben khop nhau" trong
+          # khi drift nam o phan no khong nhin toi.
+          "moat_publish_watch"]
 # Skill KHONG nam trong danh sach dong bo: ban that cua chung da o thang trong
 # repo (hermes/skills/), va profile tro vao day qua skills.external_dirs. Nho
 # vay `hermes update` khong xoa duoc, va khong can chep qua chep lai.
