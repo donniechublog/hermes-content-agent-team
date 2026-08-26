@@ -64,10 +64,21 @@ TRUY_VAN = [
      "AI chip OR processor OR NPU OR mini PC unveils OR launches OR announces when:7d"),
 ]
 
-# Feed bao de khong phu thuoc mot minh Google News
+# Feed bao de khong phu thuoc mot minh Google News. Day la nguon TAT DINH: no tra
+# dung nhung gi toa soan dang, khong qua xep hang cua Google News. Google News xep
+# hang bat dinh nen tin cu the (Xiaomi ra Cube, Rillet thanh unicorn) luc co luc
+# khong; feed beat cua bao thi luon co.
+#
+# (ten, url, can_loc_ai): feed chuyen ve AI thi can_loc_ai=False (moi tin deu AI).
+# Feed beat chung (venture, startups) can_loc_ai=True: chi giu tin co dinh toi AI,
+# de khong dua ca tin VC khong lien quan vao.
 RSS_BAO = [
-    ("TechCrunch", "https://techcrunch.com/category/artificial-intelligence/feed/"),
-    ("The Verge", "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"),
+    ("TechCrunch", "https://techcrunch.com/category/artificial-intelligence/feed/", False),
+    ("The Verge", "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", False),
+    # Beat goi von / startup: bat tin nhu Rillet ($100M, unicorn), Hugging Face bi
+    # mua lai, ma truy van gop cua Google News hay chon xuong duoi.
+    ("TechCrunch", "https://techcrunch.com/category/venture/feed/", True),
+    ("TechCrunch", "https://techcrunch.com/category/startups/feed/", True),
 ]
 
 # Toa soan uy tin — dung de xep do tin cay, khong dung de loai bo
@@ -203,7 +214,7 @@ def quet_bao(gio_toi_da: int) -> list:
     nguong = time.time() - gio_toi_da * 3600
     ra = []
     ns = {"a": "http://www.w3.org/2005/Atom"}
-    for ten, url in RSS_BAO:
+    for ten, url, can_loc_ai in RSS_BAO:
         try:
             root = ET.fromstring(_get(url).content)
         except Exception as e:                               # noqa: BLE001
@@ -218,6 +229,15 @@ def quet_bao(gio_toi_da: int) -> list:
             ts = _ts(ngay_txt)
             if not td or (ts and ts < nguong):
                 continue
+            # Feed beat chung: chi giu tin dinh toi AI (co "ai"/"artificial
+            # intelligence" hoac ten trong watchlist). Rillet la "AI accounting
+            # startup" nen dat; Fiat Ventures khong AI thi bo.
+            if can_loc_ai:
+                tl = td.lower()
+                if not ("artificial intelligence" in tl
+                        or " ai " in f" {tl} " or " ai," in tl or "ai-" in tl
+                        or trong_watchlist(td)):
+                    continue
             link = it.findtext("link") or ""
             if not link and it.find("a:link", ns) is not None:
                 link = it.find("a:link", ns).get("href") or ""
