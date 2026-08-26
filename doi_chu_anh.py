@@ -25,9 +25,9 @@ Dung:
 --giu khoanh vung KHONG duoc dong den (logo, icon thuong hieu goc...) — co the
 lap lai nhieu lan. Toa do tinh tren anh GOC (truoc khi resize).
 
-Vai Gin dung script nay. Chay xong, dua nen_sach.png cho deck.py qua co
-`--bg-anh` de Irene ve chu tieng Viet len (deck.py lo phan typography, script
-nay khong dung toi chu Viet).
+Vai Gin dung script nay. Chay xong, dua nen_sach.png cho deck.py qua key
+`"bg_anh"` trong JSON spec cua tung slide (khong phai co CLI) de Irene ve chu
+tieng Viet len (deck.py lo phan typography, script nay khong dung toi chu Viet).
 """
 import argparse
 import sys
