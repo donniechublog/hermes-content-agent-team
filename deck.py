@@ -100,6 +100,18 @@ def _two_tone_title(d, x, y, serif_text, sans_text, max_w,
 
 
 def _open_bg(layout):
+    """Nen mot slide: mau phang (mac dinh) hoac ANH THAT da qua doi_chu_anh.py
+    (chu tieng Anh da xoa sach). `bg_anh` la duong dan anh — dung khi remake
+    mot carousel co san, giu nguyen anh nguon, chi thay chu."""
+    if layout.get("bg_anh"):
+        img = Image.open(layout["bg_anh"]).convert("RGB")
+        scale = max(W / img.width, H / img.height)
+        nw, nh = round(img.width * scale), round(img.height * scale)
+        img = img.resize((nw, nh), Image.LANCZOS)
+        x, y = (nw - W) // 2, (nh - H) // 2
+        canvas = img.crop((x, y, x + W, y + H)).convert("RGBA")
+        fg = CREAM if layout.get("fg") == "cream" else WHITE
+        return canvas, fg, INK
     if layout.get("bg") == "cream":
         return Image.new("RGBA", (W, H), (*BG_CREAM, 255)), INK, CREAM
     return Image.new("RGBA", (W, H), (*BG_DARK, 255)), CREAM, INK
@@ -110,18 +122,30 @@ def lay_statement(s):
     """Cau tuyen bo lon + 1-2 dong phu. Slide dau/loi keu."""
     canvas, fg, _ = _open_bg(s)
     d = ImageDraw.Draw(canvas)
-    y = int(H * 0.20)
+    y = int(H * 0.08)
+    if s.get("badge"):
+        y = _badge(d, PAD, y, s["badge"]) + 30
+    y = max(y, int(H * 0.20)) if not s.get("badge") else y
     hf, hl = _grow(d, s["heading"], F_SANS, W - 2 * PAD, 96, 52)
     y = _draw_lines(d, PAD, y, hl, hf, s.get("heading_col_rgb") or fg, lead=1.12)
     y += int(_line_h(hf) * 0.5)
     for sub in s.get("subs", []):
+        # "y"/"x"/"max_w" ghi de vi tri: dung khi bg_anh da co san mot khoi
+        # thiet ke co dinh (vd hop trich dan mau dac) ma chu Viet phai nam
+        # DUNG cho do, khong theo dong chay tu tren xuong nhu cac sub khac.
+        y_ve = sub["y"] if "y" in sub else y
+        x_ve = sub.get("x", PAD)
+        mw = sub.get("max_w", W - x_ve - PAD)
         col = {"white": WHITE, "cream": CREAM, "coral": CORAL,
-               "blue": BLUE, "grey": GREY}.get(sub.get("col", "white"), WHITE)
+               "blue": BLUE, "grey": GREY, "den": INK}.get(sub.get("col", "white"), WHITE)
         bold = sub.get("bold", False)
         sf, sl = _grow(d, sub["text"], F_SANS if bold else F_BODY,
-                       W - 2 * PAD, 44, 30, weight=None if bold else 500)
-        y = _draw_lines(d, PAD, y, sl, sf, col, lead=1.2)
-        y += int(_line_h(sf) * 0.35)
+                       mw, sub.get("hi", 44), sub.get("lo", 30),
+                       weight=None if bold else 500)
+        y_sau = _draw_lines(d, x_ve, y_ve, sl, sf, col, lead=1.2)
+        if "y" in sub:
+            continue
+        y = y_sau + int(_line_h(sf) * 0.35)
     return canvas
 
 
@@ -184,6 +208,85 @@ def lay_checklist(s):
     return canvas
 
 
+def lay_grid3(s):
+    """Badge + tieu de hai tang + nhan chu dat duoi cac anh nho co san TRONG
+    bg_anh (grid mockup) — layout KHONG tu ve anh grid, chi dinh vi chu that
+    duoi anh that. Dung khi remake slide 'STEP...' co san 2-3 anh minh hoa
+    xep hang ngang, chi can doi chu, giu nguyen anh."""
+    canvas, fg, _ = _open_bg(s)
+    d = ImageDraw.Draw(canvas)
+    y = PAD + 20
+    if s.get("badge"):
+        y = _badge(d, PAD, y, s["badge"]) + 30
+    y = _two_tone_title(d, PAD, y, s["serif"], s["sans"], W - 2 * PAD,
+                        serif_col=CORAL, sans_col=fg, hi=80)
+    if s.get("sub"):
+        y += int(H * 0.02)
+        sf, sl = _grow(d, s["sub"], F_BODY, W - 2 * PAD, 36, 26, weight=500)
+        y = _draw_lines(d, PAD, y, sl, sf, GREY, lead=1.2)
+    nf = _f(F_SANS, 30)
+    for nhan in s.get("nhan", []):
+        tw = d.textlength(nhan["text"], font=nf)
+        d.text((nhan["x"] - tw / 2, nhan["y"]), nhan["text"], font=nf, fill=fg)
+    _footer_burst(d, s.get("footer"), fg)
+    return canvas
+
+
+def lay_cover(s):
+    """Tieu de khong lo xep tang (moi dong/tier tu no rieng) de len ANH THAT
+    (bg_anh) — kieu bia carousel remake. Tuy chon mot doan chu nghieng nho o
+    goc, kieu ghi chu tay dinh kem. `tiers`: [[[dong,...], co_cao, co_thap], ...]
+    — cac dong trong CUNG mot tier dung chung mot co (co lon nhat con vua ca
+    ca tier), tier khac nhau co doc lap."""
+    canvas, fg, _ = _open_bg(s)
+    d = ImageDraw.Draw(canvas)
+    max_w = W - 2 * PAD
+    rows = []
+    for lines, hi, lo in s["tiers"]:
+        size = min(_fit_size(d, ln, max_w, hi, lo) for ln in lines)
+        f = _f(F_SANS, size)
+        b = f.getbbox("Âg")
+        lh = int((b[3] - b[1]) * 0.94)
+        for ln in lines:
+            rows.append((ln, f, lh))
+    tong_cao = sum(lh for _, _, lh in rows)
+    y = (H - PAD) - tong_cao
+    title_top = y
+    for text, f, lh in rows:
+        d.text((PAD, y), text, font=f, fill=s.get("title_col_rgb") or fg)
+        y += lh
+
+    gc = s.get("ghi_chu")
+    if gc:
+        gc_max_w = gc.get("max_w", 330)
+        cf_size, max_cap_h = 40, max(60, title_top - 40 - 60)
+        while cf_size > 22:
+            cf = _f(F_SANS, cf_size)
+            cap_lines = _wrap(d, gc["text"], cf, gc_max_w)
+            clh = int((cf.getbbox("Âg")[3] - cf.getbbox("Âg")[1]) * 1.25)
+            if clh * len(cap_lines) <= max_cap_h:
+                break
+            cf_size -= 2
+        lop = Image.new("RGBA", (gc_max_w + 70, clh * len(cap_lines) + 40), (0, 0, 0, 0))
+        dl = ImageDraw.Draw(lop)
+        cy = 10
+        for ln in cap_lines:
+            dl.text((10, cy), ln, font=cf, fill=(255, 255, 255, 255))
+            cy += clh
+        if gc.get("nghieng"):
+            lop = lop.rotate(gc["nghieng"], resample=Image.BICUBIC, expand=True)
+        cap_y = max(60, title_top - 40 - lop.height)
+        canvas.alpha_composite(lop, (gc.get("x", 640), cap_y))
+    return canvas
+
+
+def _fit_size(d, text, max_w, hi, lo):
+    for size in range(hi, lo - 1, -2):
+        if d.textlength(text, font=_f(F_SANS, size)) <= max_w:
+            return size
+    return lo
+
+
 def _footer_burst(d, text, fg):
     if not text:
         return
@@ -219,6 +322,8 @@ LAYOUTS = {
     "statement": lay_statement,
     "list_steps": lay_list_steps,
     "checklist": lay_checklist,
+    "grid3": lay_grid3,
+    "cover": lay_cover,
 }
 
 
@@ -233,6 +338,12 @@ def _gate(slides, bo_qua_dau):
             blob += " " + r
         for sub in s.get("subs", []):
             blob += " " + sub.get("text", "")
+        for nhan in s.get("nhan", []):
+            blob += " " + nhan.get("text", "")
+        for lines, _hi, _lo in s.get("tiers", []):
+            blob += " " + " ".join(lines)
+        if s.get("ghi_chu"):
+            blob += " " + s["ghi_chu"].get("text", "")
         mat = tim_mat_dau(blob)
         if mat:
             loi.append(f"slide {i}: tieng Viet mat dau ({', '.join(mat)})")
