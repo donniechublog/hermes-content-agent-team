@@ -386,6 +386,33 @@ def _links_for(conn: sqlite3.Connection, task_id: str) -> dict[str, list[str]]:
 # GET /board
 # ---------------------------------------------------------------------------
 
+# Ten hien thi (Finn, Chad, Quinn...) cua tung profile, lay tu display_name
+# trong profile.yaml. Bang kanban hien nhan theo TEN NGUOI chu khong phai slug
+# profile (scout, writer...) — slug van la gia tri that trong DB va moi filter.
+# Cache 30s vi /board duoc goi lai lien tuc (moi WS event mot lan) ma
+# list_profiles() doc config cua tung profile tren dia.
+_TEN_VAI_CACHE: tuple[float, dict] = (0.0, {})
+
+
+def _ten_vai() -> dict:
+    global _TEN_VAI_CACHE
+    ts, cached = _TEN_VAI_CACHE
+    now = time.time()
+    if now - ts < 30:
+        return cached
+    ten: dict[str, str] = {}
+    try:
+        from hermes_cli import profiles as profiles_mod
+        for p in profiles_mod.list_profiles():
+            dn = (getattr(p, "display_name", "") or "").strip()
+            if dn:
+                ten[p.name] = dn
+    except Exception:  # noqa: BLE001 — thieu ten chi kem dep, khong duoc gay /board
+        log.debug("khong doc duoc display_name cua profiles", exc_info=True)
+    _TEN_VAI_CACHE = (now, ten)
+    return ten
+
+
 @router.get("/board")
 def get_board(
     tenant: Optional[str] = Query(None, description="Filter to a single tenant"),
@@ -514,6 +541,7 @@ def get_board(
             ],
             "tenants": tenants,
             "assignees": assignees,
+            "display_names": _ten_vai(),
             "latest_event_id": int(latest_event_id),
             "now": int(time.time()),
         }

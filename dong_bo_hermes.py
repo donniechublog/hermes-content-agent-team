@@ -24,8 +24,12 @@ ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
 REPO = ROOT / "hermes"
 
-VAI = ["scout", "ethan", "designer", "heller", "writer", "miles",
+VAI = ["scout", "ethan", "designer", "heller", "dre", "writer", "miles",
        "analyst", "teaser", "nova", "market"]
+# gin.SOUL.md nam trong repo nhung CHUA co profile tren server: Gin chay tren
+# may local (doi_chu_anh.py can torch ~2GB, server khong cong noi — xem
+# requirements-local.txt). Khi nao Gin co profile hermes that thi them "gin"
+# vao VAI; them truoc luc do thi dong_bo chi bao "thieu ben hermes" moi lan.
 # Plugin kanban nam trong ban cai hermes nen `hermes update` SE ghi de. Da sua
 # ba thu o day: thu tu cot (running/ready/blocked truoc), co chu nhan profile,
 # va chia lane theo profile o moi cot chu khong chi cot running.

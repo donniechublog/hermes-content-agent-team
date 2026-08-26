@@ -24,6 +24,14 @@
   const { useState, useEffect, useCallback, useMemo, useRef } = SDK.hooks;
   const { cn, timeAgo } = SDK.utils;
 
+  // Ten hien thi (Finn, Chad, Quinn...) cua tung profile — nap tu payload
+  // /board (display_names, doc tu profile.yaml phia server). Moi NHAN ve
+  // assignee (lane, the, dropdown, drawer) di qua tenVai(); gia tri gui len
+  // API va gia tri filter van la slug profile, chi phan chu nhin thay doi.
+  // Bien o muc module vi cac component ve nhan nam rai rac, khong chung props.
+  let PROFILE_TEN = {};
+  function tenVai(a) { return (a && PROFILE_TEN[a]) || a; }
+
   // Newer host dashboards expose a DS-styled Checkbox on the plugin SDK.
   // Fall back to a native <input type="checkbox"> shim so older hosts that
   // predate the design-system rollout still render. The shim normalises
@@ -670,6 +678,7 @@
       const url = qs.toString() ? `${API}/board?${qs}` : `${API}/board`;
       return SDK.fetchJSON(withBoard(url, board))
         .then(function (data) {
+          if (data && data.display_names) PROFILE_TEN = data.display_names;
           setBoardData(data);
           cursorRef.current = data.latest_event_id || 0;
           setError(null);
@@ -1448,7 +1457,7 @@
                 h("span", { className: "hermes-kanban-attention-row-title" },
                   task.title || tx(t, "untitled", "(untitled)")),
                 h("span", { className: "hermes-kanban-attention-row-meta" },
-                  task.assignee ? "@" + task.assignee : tx(t, "unassigned", "unassigned"),
+                  task.assignee ? "@" + tenVai(task.assignee) : tx(t, "unassigned", "unassigned"),
                   " \u00b7 ",
                   kinds.length > 0 ? kinds.join(", ") : tx(t, "diagnostic", "diagnostic"),
                 ),
@@ -1692,7 +1701,7 @@
             },
               h("option", { value: "" }, "(unassigned)"),
               (assignees || []).map(function (a) {
-                return h("option", { key: a, value: a }, a);
+                return h("option", { key: a, value: a }, tenVai(a));
               }),
             ),
           )
@@ -2451,7 +2460,7 @@
         }, selectChangeHandler(props.setAssigneeFilter)),
           h(SelectOption, { value: "" }, tx(t, "allProfiles", "All profiles")),
           assignees.map(function (a) {
-            return h(SelectOption, { key: a, value: a }, a);
+            return h(SelectOption, { key: a, value: a }, tenVai(a));
           }),
         ),
       ),
@@ -2581,7 +2590,7 @@
           h(SelectOption, { value: "" }, "— reassign —"),
           h(SelectOption, { value: "__none__" }, "(unassign)"),
           props.assignees.map(function (a) {
-            return h(SelectOption, { key: a, value: a }, a);
+            return h(SelectOption, { key: a, value: a }, tenVai(a));
           }),
         ),
         h(Button, {
@@ -2936,7 +2945,7 @@
             ? lanes.map(function (lane) {
                 return h("div", { key: lane.assignee, className: "hermes-kanban-lane" },
                   h("div", { className: "hermes-kanban-lane-head" },
-                    h("span", { className: "hermes-kanban-lane-name" }, lane.assignee),
+                    h("span", { className: "hermes-kanban-lane-name" }, tenVai(lane.assignee)),
                     h("span", { className: "hermes-kanban-lane-count" }, lane.tasks.length),
                   ),
                   lane.tasks.map(function (tk) {
@@ -3130,7 +3139,7 @@
           h("div", { className: "hermes-kanban-card-row hermes-kanban-card-meta" },
             t.assignee
               ? h("span", { className: "hermes-kanban-assignee",
-                            title: `Assigned to Hermes profile @${t.assignee}` }, "@", t.assignee)
+                            title: `Assigned to Hermes profile @${t.assignee}` }, "@", tenVai(t.assignee))
               : h("span", { className: "hermes-kanban-unassigned",
                             title: needsAssignee
                               ? tx(i18n, "needsAssigneeHint", "Dependencies are satisfied, but the dispatcher skips this task until you assign a profile.")
@@ -4249,7 +4258,7 @@
           className: "hermes-kanban-meta-value hermes-kanban-editable",
           onClick: function () { setEditing(true); },
           title: tx(t, "clickToEditAssignee", "Click to edit assignee"),
-        }, props.task.assignee || tx(t, "unassigned", "unassigned")),
+        }, props.task.assignee ? tenVai(props.task.assignee) : tx(t, "unassigned", "unassigned")),
       );
     }
     const save = function () {
