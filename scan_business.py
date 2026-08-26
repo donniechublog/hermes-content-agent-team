@@ -79,6 +79,14 @@ RSS_BAO = [
     # mua lai, ma truy van gop cua Google News hay chon xuong duoi.
     ("TechCrunch", "https://techcrunch.com/category/venture/feed/", True),
     ("TechCrunch", "https://techcrunch.com/category/startups/feed/", True),
+    # Feed CHUYEN AI cua cac toa soan lon: moi tin deu AI nen khong loc. Day la
+    # xuong song tat dinh — phu dung nhung beat Google News hay chon sot: goi von
+    # (SiliconAngle, VentureBeat), enterprise & ha tang (The Register), nghien cuu
+    # & phan cung (Ars Technica).
+    ("SiliconAngle", "https://siliconangle.com/category/ai/feed/", False),
+    ("VentureBeat", "https://venturebeat.com/category/ai/feed/", False),
+    ("The Register", "https://www.theregister.com/software/ai_ml/headlines.atom", False),
+    ("Ars Technica", "https://arstechnica.com/ai/feed/", False),
 ]
 
 # Toa soan uy tin — dung de xep do tin cay, khong dung de loai bo
