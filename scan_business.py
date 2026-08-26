@@ -55,6 +55,13 @@ TRUY_VAN = [
      "MLOps OR inference platform OR model serving startup when:7d"),
     ("chip & bán dẫn cho AI",
      "AI chip deal OR semiconductor financing OR foundry capacity when:7d"),
+    # Them 26/08: nhom tren chi bat DEAL/tai chinh chip, khong bat RA MAT san
+    # pham. Xiaomi ra mat AI Cube (mini PC chay chip Xring) phu day tren Reuters
+    # va Bloomberg ma khong dong nao cham toi: "brand launches AI product" qua
+    # chung nen Google News chon no xuong duoi 50 tin khac. Dong nay nham thang
+    # vao ra mat chip / phan cung AI.
+    ("ra mắt chip & phần cứng AI",
+     "AI chip OR processor OR NPU OR mini PC unveils OR launches OR announces when:7d"),
 ]
 
 # Feed bao de khong phu thuoc mot minh Google News
@@ -67,6 +74,86 @@ RSS_BAO = [
 BAO_LON = ("reuters", "bloomberg", "financial times", "wall street journal", "wsj",
            "the information", "cnbc", "axios", "forbes", "fortune", "nytimes",
            "new york times", "the economist", "techcrunch", "the verge", "ft.com")
+
+# WATCHLIST — cac ten trong nganh AI ma tin ve chung PHAI theo sat, bat ke may
+# bao dua hay diem co hoc bao nhieu. Day la nguyen tac chu khong phai goi y: tin
+# ve mot ten trong day KHONG BAO GIO bi cat truoc khi Vera nhin (xem chon_cho_vera).
+#
+# Vi sao can rieng danh sach nay: diem co hoc xep hang theo "nhieu bao dua". Google
+# News RSS chi tra vai bien the tit cho mot su kien, moi bien the mot bao, nen tin
+# lon nhung chi hien vai dong (Xiaomi ra mat AI Cube, Apple ra chip M6) bi cham
+# thap va cat mat. Ma day la nhung thu tac dong ca nganh. MiMo cua Xiaomi tung la
+# model tieu thu token nhieu nhat the gioi truoc khi v4-flash ra; bo tin Xiaomi la
+# bo dung loai tin quan trong nhat.
+#
+# Gom ca TEN HANG lan TEN MODEL/CHIP, vi tin thuong goi ten san pham chu khong goi
+# ten hang (vd "MiMo", "M6", "Xring", "Gemini" thay vi "Xiaomi", "Apple", "Google").
+WATCHLIST = (
+    # phong thi nghiem & hang lam model
+    "openai", "chatgpt", "gpt", "anthropic", "claude", "google deepmind",
+    "deepmind", "gemini", "meta ai", "llama", "mistral", "mixtral", "cohere",
+    "perplexity", "xai", "grok", "stability ai", "stable diffusion", "midjourney",
+    "runway", "hugging face", "black forest", "flux",
+    # hang Trung Quoc & model
+    "deepseek", "qwen", "alibaba", "tongyi", "bytedance", "doubao", "tencent",
+    "hunyuan", "baidu", "ernie", "moonshot", "kimi", "zhipu", "glm", "minimax",
+    "xiaomi", "mimo", "xring", "01.ai", "yi ",
+    # hang phan cung & nen tang lon
+    "nvidia", "apple", "microsoft", "amazon", "aws", "samsung", "huawei",
+    "qualcomm", "intel", "amd", "tsmc", "arm", "broadcom", "sony", "tesla",
+    "databricks", "snowflake", "oracle", "softbank", "lenovo",
+)
+
+
+# Nhieu ten cung mot hang: gom ve mot moi de "cuu" khong dem Xiaomi/MiMo/Xring
+# thanh ba hang khac nhau, va de OpenAI/ChatGPT/GPT khong chiem ba suat.
+HANG_CUA_TEN = {
+    "chatgpt": "openai", "gpt": "openai",
+    "claude": "anthropic",
+    "gemini": "google deepmind", "deepmind": "google deepmind",
+    "google deepmind": "google deepmind",
+    "meta ai": "meta", "llama": "meta",
+    "mixtral": "mistral",
+    "stable diffusion": "stability ai",
+    "tongyi": "alibaba", "qwen": "alibaba",
+    "doubao": "bytedance", "hunyuan": "tencent", "ernie": "baidu",
+    "kimi": "moonshot", "glm": "zhipu",
+    "mimo": "xiaomi", "xring": "xiaomi",
+    "aws": "amazon",
+    "flux": "black forest", "yi ": "01.ai",
+}
+
+
+def ten_watchlist(tieu_de: str) -> str | None:
+    """Ten HANG trong watchlist ma tin nay noi toi, hoac None.
+
+    So theo BIEN GIOI TU de "arm" khong khop "harm", "yi" khong khop "yield".
+    Ten model/chip (MiMo, Gemini...) duoc quy ve hang chu (Xiaomi, Google) qua
+    HANG_CUA_TEN, de khau "cuu" dam bao du HANG chu khong trung mot hang nhieu lan.
+    """
+    td = " " + tieu_de.lower() + " "
+    for ten in WATCHLIST:
+        khop = (ten in td) if " " in ten else (
+            f" {ten} " in td or f" {ten}'" in td
+            or f" {ten}," in td or f" {ten}." in td or f" {ten}:" in td)
+        if khop:
+            return HANG_CUA_TEN.get(ten, ten)
+    return None
+
+
+def trong_watchlist(tieu_de: str) -> bool:
+    return ten_watchlist(tieu_de) is not None
+
+
+# Dong tu ra mat: dung de UU TIEN khi cuu tin watchlist, khong dung de cham diem.
+# Tin ra mat chip/model/san pham cua hang lon la loai tac dong ca nganh (Apple M6,
+# Xiaomi AI Cube), phai noi len tren tin lat vat (kien tung, co phieu) cung hang.
+DONG_TU_RA_MAT = ("unveil", "launch", "announce", "introduce", "reveal", "debut",
+                  "release", "roll out", "ra mat", "gioi thieu", "trinh lang")
+
+
+def la_ra_mat(tieu_de: str) -> bool:
+    return any(v in tieu_de.lower() for v in DONG_TU_RA_MAT)
 
 
 def _get(url: str, timeout=40) -> httpx.Response:
@@ -228,9 +315,20 @@ def main():
     ap = argparse.ArgumentParser(description="Quet tin kinh doanh/dau tu quanh AI")
     ap.add_argument("--gio", type=int, default=72, help="Chi lay tin trong N gio (mac dinh 72)")
     ap.add_argument("--top", type=int, default=15, help="So tin dua ra (mac dinh 15)")
+    ap.add_argument("--top-watch", type=int, default=10,
+                    help="Toi da bao nhieu tin WATCHLIST bi rot khoi top van "
+                         "duoc them vao cho Vera nhin (mac dinh 10)")
     ap.add_argument("--lan-dau", action="store_true", help="Chi ghi moc, khong bao")
     ap.add_argument("--out", help="Ghi JSON ra tep")
+    ap.add_argument("--state", help="Duong dan file seen khac (de TEST khong dung "
+                    "business_seen.json that). Mac dinh dung file that.")
     a = ap.parse_args()
+
+    # Cho phep tro seen sang file khac khi test. Su co 26/08: chay --lan-dau khi
+    # test lam ghi de business_seen that, danh dau nham tin chua bao la da thay.
+    global STATE
+    if a.state:
+        STATE = Path(a.state)
 
     tin = gom_trung(quet_gnews(a.gio) + quet_bao(a.gio))
     cu = da_thay()
@@ -244,11 +342,46 @@ def main():
     moi = [t for t in tin if chuan_hoa(t["tieu_de"]) not in cu]
     for t in moi:
         t["diem_co_hoc"] = cham(t)
+        t["hang_watch"] = ten_watchlist(t["tieu_de"])
     moi.sort(key=lambda t: -t["diem_co_hoc"])
-    moi = moi[:a.top]
+
+    # CHON CHO VERA: top theo diem, CONG tin watchlist bi rot, DA DANG THEO HANG.
+    #
+    # Diem co hoc xep theo "nhieu bao dua", nen tin ve top brand ma RSS chi tra
+    # vai dong (Xiaomi Cube, Apple M6) bi cham thap va cat mat. Nguyen tac: tin ve
+    # ten trong watchlist KHONG bi cat truoc khi Vera nhin.
+    #
+    # Cuu theo HANG chu khong theo diem: neu chi lay top diem thi OpenAI mot minh
+    # an het suat cuu (5/10 lan do thay), Xiaomi lai rot. Moi hang lay tin tot
+    # nhat cua no truoc, xong vong hai moi lay them. Nho vay "tat ca top brand
+    # deu duoc theo sat" chu khong phai "brand nao nhieu tin thi lan at".
+    top = moi[:a.top]
+    # Gom tin watchlist bi rot theo HANG. Trong moi hang, UU TIEN tin ra mat
+    # (chip/model/san pham) roi moi toi diem — tin tac dong nganh phai noi len
+    # tren tin lat vat cung hang.
+    def _uu_tien(t):
+        return (0 if la_ra_mat(t["tieu_de"]) else 1, -t["diem_co_hoc"])
+    theo_hang = {}
+    for t in moi[a.top:]:
+        if t["hang_watch"]:
+            theo_hang.setdefault(t["hang_watch"], []).append(t)
+    for h in theo_hang:
+        theo_hang[h].sort(key=_uu_tien)
+    # Vong tron qua tung hang; hang xep theo do "dang chu y" cua tin dau bang no,
+    # de neu cham cap thi hang co tin ra mat / diem cao duoc cuu truoc.
+    hang_xep = sorted(theo_hang, key=lambda h: _uu_tien(theo_hang[h][0]))
+    them = []
+    while len(them) < a.top_watch and any(theo_hang.values()):
+        for h in hang_xep:
+            if theo_hang[h] and len(them) < a.top_watch:
+                them.append(theo_hang[h].pop(0))
+    chon = top + them
+    for t in chon:                 # co booleen ro rang cho Vera doc
+        t["watchlist"] = bool(t["hang_watch"])
 
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
-           "tong_quet": len(tin), "tin_moi": moi}
+           "tong_quet": len(tin),
+           "tin_watchlist_them": len(them), "tin_moi": chon}
     if a.out:
         Path(a.out).write_text(json.dumps(ket, ensure_ascii=False, indent=2),
                                encoding="utf-8")
