@@ -11,15 +11,17 @@ DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 
 BODY="Nhiem vu quet tin kinh doanh sang $DAY (chay theo lich cron). Lam dung huong dan trong SOUL.
 
-Buoc 1, chay script tat dinh (cua so 30h de khong lot tin ra mat toi hom truoc):
-cd /home/donniechu/content-team && venv/bin/python scan_business.py --gio 30 --top 20
+Buoc 1, chay script tat dinh. Khong con cham diem cat top: script dua HET tin trong
+cua so 30h cho ban tu xet (tin watchlist luon co, tin thuong cat theo moi nhat neu
+qua nhieu). Cua so 30h de khong lot tin ra mat toi hom truoc.
+cd /home/donniechu/content-team && venv/bin/python scan_business.py --gio 30
 
 Buoc 2, loc: phan biet tin kiem chung voi thong cao doanh nghiep. Uu tien tin co
 he qua, khong chi co con so lon.
 
 Tin co truong "watchlist": true la tin ve top brand nganh AI (OpenAI, Anthropic,
 Google, Meta, Nvidia, Apple, Xiaomi, DeepSeek, Qwen, Samsung...). Nhung tin nay
-duoc dua len BAT KE diem co hoc, va PHAI theo sat: mot hang lon ra chip/model/san
+LUON co trong danh sach (khong bao gio bi cat), va PHAI theo sat: mot hang lon ra chip/model/san
 pham (Apple ra M6, Xiaomi ra AI Cube) la tac dong ca nganh, gan nhu luon dang len.
 Chi bo qua neu that su chi la tin lat vat (co phieu nhich, kien tung nho). Con lai
 uu tien chon.

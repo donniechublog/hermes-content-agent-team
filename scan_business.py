@@ -145,16 +145,6 @@ def trong_watchlist(tieu_de: str) -> bool:
     return ten_watchlist(tieu_de) is not None
 
 
-# Dong tu ra mat: dung de UU TIEN khi cuu tin watchlist, khong dung de cham diem.
-# Tin ra mat chip/model/san pham cua hang lon la loai tac dong ca nganh (Apple M6,
-# Xiaomi AI Cube), phai noi len tren tin lat vat (kien tung, co phieu) cung hang.
-DONG_TU_RA_MAT = ("unveil", "launch", "announce", "introduce", "reveal", "debut",
-                  "release", "roll out", "ra mat", "gioi thieu", "trinh lang")
-
-
-def la_ra_mat(tieu_de: str) -> bool:
-    return any(v in tieu_de.lower() for v in DONG_TU_RA_MAT)
-
 
 def _get(url: str, timeout=40) -> httpx.Response:
     # Khong xin brotli: mot so may chu (OpenAI) tra luong brotli lam httpx nghen.
@@ -283,19 +273,6 @@ def gom_trung(tin: list, nguong=0.6) -> list:
     return nhom
 
 
-def cham(t: dict) -> int:
-    """Diem co hoc 0-50, phan con lai de Vera cham.
-
-    30d do moi + 20d do lan (bao nhieu toa soan dua, co bao lon khong)."""
-    tuoi_h = (time.time() - t["ts"]) / 3600 if t["ts"] else 999
-    moi = 30 if tuoi_h <= 24 else (0 if tuoi_h >= 168 else
-                                   int(round(30 * (168 - tuoi_h) / 144)))
-    lan = min(12, (t.get("so_bao", 1) - 1) * 4)
-    if any(b.lower() in " ".join(t.get("cac_bao", [])).lower() for b in BAO_LON):
-        lan += 8
-    return moi + min(lan, 20)
-
-
 def da_thay() -> set:
     if STATE.exists():
         return set(json.loads(STATE.read_text(encoding="utf-8")).get("khoa", []))
@@ -314,10 +291,12 @@ def ghi_moc(khoa: set):
 def main():
     ap = argparse.ArgumentParser(description="Quet tin kinh doanh/dau tu quanh AI")
     ap.add_argument("--gio", type=int, default=72, help="Chi lay tin trong N gio (mac dinh 72)")
-    ap.add_argument("--top", type=int, default=15, help="So tin dua ra (mac dinh 15)")
-    ap.add_argument("--top-watch", type=int, default=10,
-                    help="Toi da bao nhieu tin WATCHLIST bi rot khoi top van "
-                         "duoc them vao cho Vera nhin (mac dinh 10)")
+    # Khong con cham diem cat top: Vera nhin HET tin trong cua so va tu xet. Day
+    # chi la VAN AN TOAN chong ngay bat thuong dot bien tin, khong phai bo loc do
+    # quan trong. Dat cao, va cat theo MOI NHAT chu khong theo diem, nen tin bi
+    # cat (neu co) luon la tin cu nhat trong cua so.
+    ap.add_argument("--top", type=int, default=120,
+                    help="Van an toan: toi da bao nhieu tin dua cho Vera (mac dinh 120)")
     ap.add_argument("--lan-dau", action="store_true", help="Chi ghi moc, khong bao")
     ap.add_argument("--out", help="Ghi JSON ra tep")
     ap.add_argument("--state", help="Duong dan file seen khac (de TEST khong dung "
@@ -341,58 +320,43 @@ def main():
 
     moi = [t for t in tin if chuan_hoa(t["tieu_de"]) not in cu]
     for t in moi:
-        t["diem_co_hoc"] = cham(t)
         t["hang_watch"] = ten_watchlist(t["tieu_de"])
-    moi.sort(key=lambda t: -t["diem_co_hoc"])
-
-    # CHON CHO VERA: top theo diem, CONG tin watchlist bi rot, DA DANG THEO HANG.
-    #
-    # Diem co hoc xep theo "nhieu bao dua", nen tin ve top brand ma RSS chi tra
-    # vai dong (Xiaomi Cube, Apple M6) bi cham thap va cat mat. Nguyen tac: tin ve
-    # ten trong watchlist KHONG bi cat truoc khi Vera nhin.
-    #
-    # Cuu theo HANG chu khong theo diem: neu chi lay top diem thi OpenAI mot minh
-    # an het suat cuu (5/10 lan do thay), Xiaomi lai rot. Moi hang lay tin tot
-    # nhat cua no truoc, xong vong hai moi lay them. Nho vay "tat ca top brand
-    # deu duoc theo sat" chu khong phai "brand nao nhieu tin thi lan at".
-    top = moi[:a.top]
-    # Gom tin watchlist bi rot theo HANG. Trong moi hang, UU TIEN tin ra mat
-    # (chip/model/san pham) roi moi toi diem — tin tac dong nganh phai noi len
-    # tren tin lat vat cung hang.
-    def _uu_tien(t):
-        return (0 if la_ra_mat(t["tieu_de"]) else 1, -t["diem_co_hoc"])
-    theo_hang = {}
-    for t in moi[a.top:]:
-        if t["hang_watch"]:
-            theo_hang.setdefault(t["hang_watch"], []).append(t)
-    for h in theo_hang:
-        theo_hang[h].sort(key=_uu_tien)
-    # Vong tron qua tung hang; hang xep theo do "dang chu y" cua tin dau bang no,
-    # de neu cham cap thi hang co tin ra mat / diem cao duoc cuu truoc.
-    hang_xep = sorted(theo_hang, key=lambda h: _uu_tien(theo_hang[h][0]))
-    them = []
-    while len(them) < a.top_watch and any(theo_hang.values()):
-        for h in hang_xep:
-            if theo_hang[h] and len(them) < a.top_watch:
-                them.append(theo_hang[h].pop(0))
-    chon = top + them
-    for t in chon:                 # co booleen ro rang cho Vera doc
         t["watchlist"] = bool(t["hang_watch"])
+
+    # KHONG cham diem, KHONG cat theo do quan trong. Cach cham cu xep theo "nhieu
+    # bao dua", nen tin lon ma Google News chi tra vai dong (Xiaomi ra AI Cube,
+    # Apple ra M6) bi cat truoc khi Vera nhin. Vera moi la bo loc that: dua het
+    # tin trong cua so cho no tu xet.
+    #
+    # Xep MOI NHAT truoc — thu tu Vera doc.
+    moi.sort(key=lambda t: -(t["ts"] or 0))
+
+    # Van an toan chi chan tin THUONG. Tin watchlist (top brand) LUON qua, bat ke
+    # cap: cai cap sinh ra de chong ngay dot bien tin lam vo prompt cua Vera, chu
+    # khong phai de bo tin quan trong. Ngay Xiaomi ra Cube ma cap cat mat no thi
+    # lai dung loi cu.
+    wl = [t for t in moi if t["watchlist"]]
+    thuong = [t for t in moi if not t["watchlist"]]
+    chon = wl + thuong[:max(0, a.top - len(wl))]
+    chon.sort(key=lambda t: -(t["ts"] or 0))
 
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
            "tong_quet": len(tin),
-           "tin_watchlist_them": len(them), "tin_moi": chon}
+           "tin_watchlist": sum(1 for t in chon if t["watchlist"]),
+           "tin_moi": chon}
     if a.out:
         Path(a.out).write_text(json.dumps(ket, ensure_ascii=False, indent=2),
                                encoding="utf-8")
         print(a.out)
     else:
-        print(f"=== TIN MOI ({len(moi)}/{len(tin)} sau khi gom trung va bo da bao) ===\n")
-        for t in moi:
+        wl = sum(1 for t in chon if t["watchlist"])
+        print(f"=== {len(chon)}/{len(tin)} tin (sau gom trung, bo da bao) "
+              f"| {wl} tin watchlist ===\n")
+        for t in chon:
             bao = ", ".join(t.get("cac_bao", [])[:3]) or t["toa_soan"]
-            print(f"  [{t['diem_co_hoc']:>2d}d] {t['ngay']}  ({t['goc']})")
+            dau = "[W]" if t["watchlist"] else "   "
+            print(f"  {dau} {t['ngay']}  ({t['goc']})  {t['so_bao']} báo")
             print(f"        {t['tieu_de'][:100]}")
-            print(f"        {t['so_bao']} báo: {bao[:70]}")
     ghi_moc(cu | khoa_moi)
 
 
