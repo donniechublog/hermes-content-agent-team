@@ -26,7 +26,7 @@ Dung:
 lap lai nhieu lan. Toa do tinh tren anh GOC (truoc khi resize).
 
 Vai Gin dung script nay. Chay xong, dua nen_sach.png cho deck.py qua key
-`"bg_anh"` trong JSON spec cua tung slide (khong phai co CLI) de Irene ve chu
+`"bg_anh"` trong JSON spec cua tung slide (khong phai co CLI) de Itachi ve chu
 tieng Viet len (deck.py lo phan typography, script nay khong dung toi chu Viet).
 """
 import argparse

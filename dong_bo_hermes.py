@@ -24,8 +24,8 @@ ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
 REPO = ROOT / "hermes"
 
-VAI = ["scout", "ethan", "designer", "heller", "dre", "gin", "writer",
-       "miles", "analyst", "teaser", "nova", "market"]
+VAI = ["scout", "ethan", "designer", "heller", "dre", "gin", "itachi",
+       "writer", "miles", "analyst", "teaser", "nova", "market"]
 # Gin co profile tren server de giao/theo doi task tren kanban, nhung viec
 # THAT chay tren may local (doi_chu_anh.py can torch ~2GB, server khong cong
 # noi — xem requirements-local.txt). Task cua Gin dispatch tren server se
