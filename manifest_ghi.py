@@ -53,6 +53,16 @@ def main():
         if not it.get("title") or not link:
             print(f"[bo qua] muc {i} thieu title hoac link", file=sys.stderr)
             continue
+        # Link phai la URL THAT. Cong chan cu chi doi khac rong, nen mot chuoi
+        # nhu "blank" lot qua het: manifest ghi xong nhin binh thuong, Ong Chu
+        # chon tin, roi vai dung anh moi phat hien khong co gi de tai va dung
+        # lai. Ngay 24/08 ca nam tin cua Vera deu la "blank", ba cap task chet
+        # cung mot kieu. Chan ngay tu day thi tin hong khong bao gio vao den
+        # danh sach chon.
+        if not link.lower().startswith(("http://", "https://")):
+            print(f"[bo qua] muc {i} link khong phai URL: {link!r}",
+                  file=sys.stderr)
+            continue
         items.append({
             "index": i,
             "title": it["title"],

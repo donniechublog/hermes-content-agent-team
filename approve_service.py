@@ -13,11 +13,14 @@ update cua nhau. Vi vay dich vu nay xu ly ca hai luong trong cung mot vong lap:
 import json
 import os
 import re
+import sqlite3
 import subprocess
 import sys
 import threading
 import time
 from pathlib import Path
+
+from html import escape as html_escape
 
 import httpx
 
@@ -259,6 +262,21 @@ VAI_ANH = {
     "ethan": ("ethan", "dcgr"),
 }
 MAC_DINH_ANH = "chad"
+# Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
+#
+# Mot lua chon sinh ra mot CAP di lien nhau: nguoi dung anh lam cha, nguoi viet
+# lam con cho cha xong. Ca cap do bi khoa vao dung mot thuong hieu. Nen ten nao
+# trong cap cung da du de xac dinh ca cap, va bat Ong Chu phai nho ai la nguoi
+# dung anh con ai la nguoi viet la bat nho mot thu khong can nho.
+#
+#     1 - Chad   ==  1 - Quinn   ->  anh donniechublog + bai cua Quinn
+#     1 - Ethan  ==  1 - Miles   ->  anh dcgr.tech     + bai cua Miles
+TEN_SANG_CAP = dict(VAI_ANH)
+TEN_SANG_CAP.update({
+    "quinn": ("designer", "donniechublog"),
+    "writer": ("designer", "donniechublog"),
+    "miles": ("ethan", "dcgr"),
+})
 # Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi — them vai
 # thu ba la sai ngay, nen doi thanh bang tra.
 TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad"}
@@ -286,6 +304,9 @@ def doc_lenh_chon(text: str):
         1 - Chad, 2 - Ethan  -> 1 Chad, 2 Ethan
         1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Chad
 
+    Ten nguoi VIET cung nhan, va cho ra dung cap do: "1 - Quinn" giong het
+    "1 - Chad", "1 - Miles" giong het "1 - Ethan".
+
     Tra None neu co phan khong hieu duoc, de tin nhan roi ve luong hoi thoai
     thay vi bao loi — Ong Chu con dung chinh topic do de tro chuyen.
     """
@@ -305,7 +326,7 @@ def doc_lenh_chon(text: str):
             if phan.isdigit():
                 manh.append(("so", int(phan)))
             elif re.fullmatch(r"[A-Za-zÀ-ỹ]+", phan):
-                if phan.lower() not in VAI_ANH:
+                if phan.lower() not in TEN_SANG_CAP:
                     return None          # ten la -> khong phai lenh chon
                 manh.append(("vai", phan.lower()))
             else:
@@ -319,7 +340,7 @@ def doc_lenh_chon(text: str):
             if n in thay:
                 continue
             thay.add(n)
-            ra.append((n, *VAI_ANH[ten]))
+            ra.append((n, *TEN_SANG_CAP[ten]))
         cho.clear()
 
     for kind, v in manh:
@@ -492,11 +513,110 @@ def kanban_create(title, assignee, body, parent=None):
         return None, r.stdout[-300:]
 
 
-def write_meta(draft_id, item, out_png):
+# ---- Bao khi mot viec bi chan --------------------------------------------
+# Vai dung anh co mot nguyen tac cung: khong tim duoc anh THAT thi bao lai, tuyet
+# doi khong tu ve minh hoa. Luc do no goi kanban_block, va vi day la block do
+# worker chu dong nen hermes giu nguyen cho toi khi co nguoi go — dung nhu thiet
+# ke. Task viet la con cua task anh nen nam yen o `todo`, cung dung.
+#
+# Cho sai la KHONG AI DUOC BAO. Bao cao nam trong kanban, con Ong Chu ngoi o
+# Telegram: chon hai tin thay len mot bai, khong biet tin kia di dau. Doan nay
+# keo bao cao do ra Telegram.
+KANBAN_DB = Path.home() / ".hermes" / "kanban.db"
+DA_BAO_CHAN = STATE_DIR / "da_bao_chan.json"
+VAI_CUA_DOI = {"designer": "Chad", "ethan": "Ethan",
+               "writer": "Quinn", "miles": "Miles"}
+
+
+def _da_bao() -> set:
+    try:
+        return set(json.loads(DA_BAO_CHAN.read_text(encoding="utf-8")))
+    except Exception:                                        # noqa: BLE001
+        return set()
+
+
+def _ghi_da_bao(ids: set):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    # Giu 300 id gan nhat la du: chi can nho de khoi bao trung, khong phai
+    # de luu lich su.
+    DA_BAO_CHAN.write_text(json.dumps(sorted(ids)[-300:]), encoding="utf-8")
+
+
+def viec_bi_chan() -> list:
+    """[(task_id, ten_vai, tieu_de, ly_do)] cho cac viec dang bi chan."""
+    if not KANBAN_DB.exists():
+        return []
+    try:
+        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
+    except Exception:                                        # noqa: BLE001
+        return []
+    ra = []
+    try:
+        for tid, ai, tieu_de in con.execute(
+                "select id, assignee, title from tasks where status='blocked'"):
+            if ai not in VAI_CUA_DOI:
+                continue
+            ly_do = ""
+            for (tt,) in con.execute(
+                    "select coalesce(summary, error, '') from task_runs "
+                    "where task_id=? order by id desc limit 1", (tid,)):
+                ly_do = tt or ""
+            ra.append((tid, VAI_CUA_DOI[ai], tieu_de, ly_do))
+    except Exception:                                        # noqa: BLE001
+        return []
+    finally:
+        con.close()
+    return ra
+
+
+def bao_viec_bi_chan(token, group):
+    """Bao ve topic duyet moi viec vua bi chan. Im lang khi khong co gi moi.
+
+    GOP thanh MOT tin nhan. Moi viec mot tin thi lan dau bat len se ban ra ca
+    chuc tin lien tiep, va thu nay dang le phai de doc chu khong phai de chiu
+    dung.
+    """
+    da = _da_bao()
+    moi = [x for x in viec_bi_chan() if x[0] not in da]
+    if not moi:
+        return
+
+    thread = None
+    tp = STATE_DIR / "topics.json"
+    if tp.exists():
+        try:
+            thread = json.loads(tp.read_text(encoding="utf-8")).get("writer")
+        except Exception:                                    # noqa: BLE001
+            pass
+
+    dau = ("⛔ <b>1 việc dừng lại</b>" if len(moi) == 1
+           else f"⛔ <b>{len(moi)} việc dừng lại</b>")
+    khoi = [dau, ""]
+    for _tid, ten, tieu_de, ly_do in moi:
+        khoi.append(f"<b>{html_escape(ten)}</b> — "
+                    f"<i>{html_escape(tieu_de[:100])}</i>")
+        khoi.append(html_escape(ly_do.strip()[:400]) or "(khong ghi ly do)")
+        khoi.append("")
+    khoi.append("Bài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ.")
+    try:
+        call(token, "sendMessage", chat_id=group, message_thread_id=thread,
+             text="\n".join(khoi)[:4000], parse_mode="HTML")
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[bao-chan] khong gui duoc: {e}", flush=True)
+        return                       # chua ghi nhan -> lan sau bao lai
+    _ghi_da_bao(da | {x[0] for x in moi})
+
+
+def write_meta(draft_id, item, out_png, brand="donniechublog"):
     """Ghi san metadata cho draft — writer khoi phai go lai bang tay.
 
     Nhung gia tri nay Finn da quyet tu luc quet; bat LLM go lai chi tao co hoi
     go sai. draft_write.py se doc file nay khi ghep draft cuoi cung.
+
+    `brand` di theo duong nay chu khong qua tham so dong lenh: vai viet goi
+    draft_write.py khong kem co nao, nen sidecar la cho DUY NHAT mang duoc
+    thuong hieu tu luc Ong Chu chon tin toi luc bam Duyet. Thieu no thi bai
+    dcgr.tech day nham sang org social cua donniechublog.
     """
     meta = {
         "source_url": item["link"],
@@ -506,6 +626,7 @@ def write_meta(draft_id, item, out_png):
         "title": item["title"],
         "score": item.get("score"),
         "score_reason": item.get("score_reason", ""),
+        "brand": brand,
     }
     DRAFTS.mkdir(parents=True, exist_ok=True)
     (DRAFTS / (draft_id + ".meta.json")).write_text(
@@ -551,7 +672,7 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     draft_id = slugify(item["title"], "item-" + str(item["index"]))
     out_png = str(DRAFTS / (draft_id + ".png"))
     out_json = str(DRAFTS / (draft_id + ".json"))
-    write_meta(draft_id, item, out_png)
+    write_meta(draft_id, item, out_png, brand)
 
     # BUOC RESEARCH — thuoc khau cua Finn, chay ngay khi Ong Chu chon tin.
     # Tim nguon la viec research, khong phai viec cua nguoi dung anh hay nguoi
@@ -707,6 +828,9 @@ def loop():
                     handle_message(token, group, scout_thread, u["message"])
             OFFSET.parent.mkdir(parents=True, exist_ok=True)
             OFFSET.write_text(str(offset))
+            # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
+            # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
+            bao_viec_bi_chan(token, group)
         except Exception as e:                              # noqa: BLE001
             print("[approve_service] loi: " + type(e).__name__ + ": " + str(e),
                   flush=True)
