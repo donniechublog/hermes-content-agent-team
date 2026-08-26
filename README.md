@@ -42,6 +42,8 @@ ghi thêm một dòng cảnh báo.
 - `card.py` — dựng ảnh. Kiểu `tran` (cả hai vai ảnh đang dùng): ảnh full bề ngang,
   không khung, chữ đè lên qua màn tối. Kiểu `dai` còn trong mã nhưng hiện không
   vai nào dùng
+- `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
+  công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
 - `hermes/skills/hero-image/` — skill dùng chung của Chad và Ethan. Nằm thẳng
   trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
   không xoá được
@@ -53,7 +55,9 @@ ghi thêm một dòng cảnh báo.
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
-- `assets/` — font (JetBrains Mono, Inter), icon SVG, mascot
+- `assets/` — font (JetBrains Mono, Inter, Oswald), icon SVG, mascot
+- `requirements.txt` — phụ thuộc Python. venv dùng chung với hermes nên `hermes
+  update` có thể làm mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`
 
 ## Dịch vụ systemd
 

@@ -402,6 +402,19 @@ BUOC 2 — chon anh:
 - Bo anh trung noi dung, bo anh chi la anh bia chung chung neu da co anh co so lieu.
 
 BUOC 3 — neu KHONG tim duoc anh nao:
+
+Truoc khi dung lai, xem link co phai arxiv khong (arxiv.org/abs/... hoac /pdf/...).
+Neu phai, "anh that" cua bai la CHINH TRANG DAU PAPER — ten cong trinh va nhom
+tac gia in tren nen trang that. Do khong phai hinh bia dat, nen chup no khong
+vi pham nguyen tac. Chay:
+
+venv/bin/python arxiv_bia.py \
+  --link "{link}" --out /tmp/src_{draft_id}.png
+
+Chay xong (thoat 0) thi coi nhu DA CO anh chinh, di tiep buoc 4 binh thuong.
+Khong co anh phu.
+
+Neu KHONG phai arxiv, hoac arxiv_bia.py thoat khac 0 (khong tai duoc PDF):
 Dung lai. Bao dung mot cau: "Khong tim duoc anh that cho tin nay" kem link da thu.
 KHONG tao the, KHONG ve SVG, KHONG chay card.py. Ong Chu se quyet dinh bo tin
 hay tu dua anh vao.

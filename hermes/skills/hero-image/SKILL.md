@@ -79,7 +79,10 @@ mắt ra khỏi trục.
 
 **KHÔNG BAO GIỜ tự vẽ minh hoạ.** Vẽ ra là bịa đặt. Hero image phải phản ánh
 đúng cái có thật trong nguồn. Không tìm được ảnh thật thì **báo lại, không dựng
-thẻ**. Ông Chủ quyết định bỏ tin hay tự đưa ảnh vào. Luật cứng, không ngoại lệ.
+thẻ**. Ông Chủ quyết định bỏ tin hay tự đưa ảnh vào. Luật cứng.
+
+Ngoại lệ duy nhất là **bài arxiv**: xem mục "Bài arxiv" bên dưới. Với paper thì
+"ảnh thật" chính là trang bìa của nó, chụp lại được chứ không phải vẽ ra.
 
 Luôn chạy lệnh này trước, đừng tự đoán từ `image_url` trong task:
 
@@ -128,6 +131,30 @@ nhiều. Cả hai đều đúng, chọn theo ảnh nào mang thông tin thật.
 Ảnh phụ giữ nguyên bản gốc, không đóng khung, chỉ đổi tên `<draft>_2.png`,
 `_3.png`… tối đa 4 ảnh, và mỗi ảnh phải mang thông tin thật chứ không phải
 trang trí.
+
+## Bài arxiv: chụp trang bìa thay vì bó tay
+
+Bài arxiv (link `arxiv.org/abs/...` hoặc `/pdf/...`) hầu như không có ảnh minh
+hoạ. Trước đây gặp loại này là dừng và báo lại. Nhưng **"ảnh thật" của một paper
+chính là trang đầu của nó**: tên công trình và nhóm tác giả, in trên nền trắng.
+Chụp lại trang đó không phải vẽ ra hình bịa, nên nguyên tắc "không tự vẽ" vẫn giữ.
+
+Khi `anh_bai.py` không trả ảnh nào **và** link là arxiv, chụp bìa:
+
+```bash
+venv/bin/python arxiv_bia.py --link "<link arxiv>" --out /tmp/src_<draft>.png
+```
+
+Script tải PDF, render **cả trang đầu** ở khổ điện thoại 4:5 (tên công trình
+và tác giả ở trên, thân bài chạy tiếp xuống), rồi làm tối sẵn nửa dưới để
+headline tiếng Việt đè lên đọc rõ. Thoát 0 là xong, coi như đã có ảnh chính, dựng
+thẻ như bình thường. Không có ảnh phụ.
+
+Thoát khác 0 nghĩa là không tải được PDF (paywall, link hỏng): lúc đó mới quay
+lại quy tắc dừng và báo lại.
+
+Chỉ arxiv. Nguồn khác chưa hỗ trợ; gặp loại paper khác mà muốn chụp bìa thì báo
+lại để mở rộng `arxiv_bia.py`.
 
 ## Bước 3 — dựng
 

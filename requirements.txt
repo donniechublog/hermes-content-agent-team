@@ -1,0 +1,12 @@
+# Phu thuoc Python cua content-team.
+#
+# venv la symlink toi ~/hermes-agent/venv (dung chung voi hermes). `hermes
+# update` co the dung lai venv do va lam mat pymupdf — cai chi phuc vu day
+# chuyen nay chu khong phai hermes. Mat thi:
+#     venv/bin/pip install -r requirements.txt
+#
+# httpx va Pillow thuong da co san theo hermes; pymupdf thi khong.
+
+httpx>=0.27          # tai trang, goi API, dung o nhieu script
+Pillow>=10           # dung the anh (card.py), xu ly anh
+pymupdf>=1.24        # render trang dau paper arxiv (arxiv_bia.py)
