@@ -49,7 +49,7 @@ from card import (
     _f, _wrap, _fit_contain, _fit_cover,
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
-    _tach_nhan, _mau_cua_hang,    # nhan dien + mau that cua hang duoc nhac trong bai
+    FONTS,                       # thu muc font, de tro toi SFNS (San Francisco)
 )
 
 # ---- Khung so -------------------------------------------------------------
@@ -57,44 +57,30 @@ W, H = 1080, 1350                # kho dang chuan Instagram/Facebook 4:5
 PAD = 84                         # le trai/phai cua chu, do tu mau tham chieu
 BG = (0, 0, 0)                   # den tuyet doi — dau an cua kieu carousel nay
 FG = (255, 255, 255)            # chu chinh trang
-WM = (150, 150, 150)            # watermark mo
+# Watermark ten kenh: MOT mau xanh co dinh (xanh nhu icon Finder cua macOS),
+# KHONG doi theo brand nua. Font cua Apple (San Francisco / SFNS).
+WM = (10, 132, 255)             # #0A84FF — xanh Apple/Finder
+F_APPLE = str(FONTS / "SFNS.ttf")   # San Francisco (font he thong macOS)
 
-# Vung anh cua slide than. Anh bam MEP TREN va HAI CANH (full be ngang), day
-# anh TAN dan vao nen den — khong co duong ngang chia "vung anh" voi "vung chu".
-# Ca the la mot mat phang den lien: anh o tren, tan vao den, chu nam tren den do.
-# Tuyet doi khong ve vien, vach, hay khung — cai lam hai vung tach roi.
-IMG_REGION_H = 860               # anh chiem tu mep tren xuong toi da day nay — 860/1350=64%, nen toi con lai 36%, duoi muc 40% da hen
-# Duoi `day` (mep anh that) KHONG con pixel anh nao. Ban dau tung fade "het
-# anh roi nhay thang sang mau nen dac" — ngay ca sau khi noi dai bang mot dai
-# mo, van con MOT MOC ro rang la "anh (roi mo) het, tu day la mang mau dac".
-# Nguoi dung van thay ro hai vung.
-#
-# Doi sang dung HAN cach cua card.py (_tran_anh, da chung minh chay tot cho
-# hero image "kieu tran" — xem STYLE_TEXT_SPEC): KHONG co moc "het anh". Man
-# toi la MOT DUONG CONG LIEN TUC bat dau tu RAT SOM — ngay trong vung anh con
-# ro — dam dan len, chu khong phai "sang het muc roi toi nhanh cuoi cung".
-# Nguoi xem thay chinh tam anh dang tam toi dan, khong thay mot ranh gioi.
-BLUR_STRIP = 70                  # lay day nay px sat day anh lam nguon mo
-BLUR_RADIUS = 46                 # do mo — du manh de khong con thay chi tiet
-# Diem UON: cho man toi chuyen tu "dam dan tu 0" (con trong vung anh, uon
-# cong t²) sang "dam dan len het muc" (uon cong nhe hon). Tinh theo TI LE
-# `day` — anh nao cung uon dung mot nhip, khong phu thuoc anh cao hay ngang.
-UON_TI_LE = 0.55
-# Tu `day` di THEM chung nay px thi dat do toi toi da (255) — chu bat dau
-# ngay sau do la doc duoc ro rang. Dai mo phai phu it nhat toi day.
-FULL_TOI_SAU_DAY = 150
-BLUR_EXT = FULL_TOI_SAU_DAY + 30  # du xa qua moc dat 255, khong ho mot khoang trong nao
-TEXT_GAP = 48                    # tu mep duoi anh that (day) toi dong chu dau
-TEXT_TOP = IMG_REGION_H + TEXT_GAP  # moc TRAN — anh doc du cao thi dung moc nay
-TEXT_BOTTOM = 1240               # chua chu qua day nay (chua cho watermark)
-# Tran RIENG cho chieu cao khoi chu, doc lap voi cho con trong. Neu chi bi
-# chan boi (TEXT_BOTTOM - text_top), anh ngang (day thap) mo ra nhieu cho hon
-# thi _fit_block lai chon co chu TO HON de lap day — dung nguoc voi y muon
-# "chu nhe tay". Tran nay giu do day chu on dinh du anh cao hay ngang.
-TEXT_MAX_H = 400                 # ~30% chieu cao khung — muc tran da hen
+# NEN CHO CHU O SLIDE THAN — rang buoc Ong Chu chot (ap cho MOI vai tao hinh):
+#  (1) TREN dong chu dau: KHONG co lop nen — anh SACH. Lop nen KHONG BAO GIO
+#      cao hon dong chu dau.
+#  (2) NGAY TAI dong chu dau: lop nen gan nhu TRONG SUOT — dong chu dau HOA vao
+#      main image, khong bi ngan cach.
+#  (3) Cang XUONG cang DAM DAN len — mot fade DEU tu nhat toi dam, khong thô.
+#      Vung dam NHAT chi ~60% opacity: anh luon con hien >=40%, khong bao gio
+#      thanh mot mang nen nang. Cham 60% quanh dong chu cuoi roi giu.
+BLUR_RADIUS = 14                 # mo NHE thoi — du diu chi tiet sau chu, khong lam nen "tho"/duc
+MAX_TOI = 153                    # do toi TOI DA = 60% opacity (153/255). Anh con hien 40% cho ca o dam nhat
+VEIL_EASE = 1.15                 # gan tuyen tinh: fade DEU tu nhat (dong dau) toi dam, khong dam giat
+TEXT_BASE = 1230                 # day khoi chu, chua ~40px toi watermark
+TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1030 -> vung nen <=24% (<30%)
+FULL_TOI_PAD = 40                # cham 60% truoc day khoi chu chung nay px (dong cuoi nam tren nen dam nhat)
 
 # Chu than: thu tu co lon nhat con vua ca chieu cao, giong tinh than _grow cua card.
-BODY_HI, BODY_LO = 50, 34
+# BODY_LO ha xuong 28 de copy dai van vua vung nen 30% (ma khong tran); copy
+# ngan van len toi BODY_HI.
+BODY_HI, BODY_LO = 46, 28
 BODY_LEAD = 1.28                 # gian dong trong mot doan
 PARA_GAP = 0.7                   # khoang giua hai doan, theo don vi chieu cao dong
 
@@ -146,22 +132,19 @@ def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
     return y
 
 
-def _watermark(canvas, handle, mau=None):
-    """Ve watermark thang (khong nghieng), canh giua o day.
-
-    `mau`: mau hang duoc nhac toi trong bai, da hoi toi (xem WM_MO) de la chi
-    tiet PHU chu khong canh tranh voi chu chinh. None thi ve mau WM mac dinh
-    (xam mo) — khong nhan ra thuong hieu nao trong bai."""
+def _watermark(canvas, handle):
+    """Ve watermark ten kenh: thang, canh giua o day, MOT mau xanh Apple/Finder
+    co dinh, font San Francisco (SFNS). Khong doi mau theo brand."""
     if not handle:
         return
-    font = _f(F_REG, WM_SIZE, 500)
+    font = _f(F_APPLE, WM_SIZE, 560)          # SF, medium — net kieu nhan macOS
     d = ImageDraw.Draw(canvas)
     tw = d.textlength(handle, font=font)
     b = font.getbbox("Âg")
     th = b[3] - b[1]
     x = (W - tw) / 2
     y = H - 66 - th // 2 - b[1]
-    d.text((x, y), handle, font=font, fill=mau or WM)
+    d.text((x, y), handle, font=font, fill=WM)
 
 
 def _scrim(canvas, tu=0.34):
@@ -191,94 +174,94 @@ def _open(path):
     return img
 
 
-def _fade_to_black(canvas, day):
-    """Man toi MOT DUONG CONG LIEN TUC tu y=0 (chu khong phai tu mot moc
-    "het anh") — dung cach cua card._tran_anh, da chung minh khong de lo ranh
-    gioi cho hero image. Hai doan noi nhau tai `uon` (ca hai cong thuc deu ra
-    dung 90 tai do, khong nhay bac):
-
-      y <= uon : dam dan tu 0 len 90, cong t² (cham roi nhanh dan) — day la
-                 doan CON TRONG vung anh, nen chi tao mot lop toi mong, mat
-                 van thay ro anh, nhung KHONG con "trong tuyet doi" o dau.
-      y >  uon : dam tiep tu 90 len 255, cong t^0.85 (giam toc nhe) — dat 255
-                 tai day + FULL_TOI_SAU_DAY, ngay truoc khi chu bat dau.
-
-    Ca man luon phu KIN chieu cao the (0..H), khong chi mot doan — dung tinh
-    than "anh phu kin the" cua kieu tran, ke ca phan duoi `day` gio la dai mo
-    noi dai chu khong phai mot khoang trong."""
-    uon = max(1, int(day * UON_TI_LE))
-    full_y = day + FULL_TOI_SAU_DAY
-    grad = Image.new("L", (1, H), 0)
+def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
+    """Mat na chieu doc: 0 tren `top_y`, tang dan (ease t^) len `hi` tai
+    `full_y`, giu `hi` ben duoi. Dung chung cho ca lop mo lan lop toi nen
+    hai lop chay cung mot nhip, khong lech."""
+    m = Image.new("L", (1, H), 0)
     for y in range(H):
-        if y <= uon:
-            a = 90 * (y / uon) ** 2
+        if y <= top_y:
+            a = 0
+        elif y >= full_y:
+            a = hi
         else:
-            t = min(1.0, (y - uon) / max(1, full_y - uon))
-            a = 90 + (255 - 90) * t ** 0.85
-        grad.putpixel((0, y), min(255, int(a)))
-    lop = Image.new("RGBA", (W, H), (*BG, 0))
-    lop.putalpha(grad.resize((W, H)))
-    canvas.alpha_composite(lop)
+            t = (y - top_y) / max(1, full_y - top_y)
+            a = hi * t ** ease
+        m.putpixel((0, y), min(255, int(a)))
+    return m.resize((W, H))
+
+
+def _veil_bottom(canvas, veil_rgb, text_top):
+    """Lam NEN CHO CHU sao cho DONG CHU DAU hoa vao anh, KHONG bi ngan cach:
+
+      - TREN `text_top`: mat na = 0. Anh sach hoan toan. Lop nen khong bao gio
+        cao hon dong chu dau.
+      - TAI `text_top`: mat na ~0 (gan nhu trong suot) — dong dau lien voi anh.
+      - Cang xuong cang dam (ease VEIL_EASE > 1: giu trong suot lau o tren roi
+        dam nhanh dan), cham gan-max tai `full_y` (~dong cuoi) roi giu xuong day.
+
+    Ca lop mo lan lop toi dung cung mot mat na nay -> dong dau vua trong vua
+    net (lien anh), dong cuoi vua toi vua mo (chu bat ro). Van la ANH LAM MO
+    chu khong phai mau den dat vao (MAX_TOI<255): khong o den chet.
+
+    `veil_rgb` la ban COVER phu kin khung; bi lam mo manh nen cat/phong to (do
+    cover) khong lo ra."""
+    top_y = text_top                              # bat dau NGAY o dong chu dau, tren do = 0
+    full_y = TEXT_BASE - FULL_TOI_PAD             # cham gan-max quanh dong chu cuoi
+    blurred = veil_rgb.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
+    # 1) tron dan sang ban mo — trong tai dong dau, mo dan xuong
+    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=255, ease=VEIL_EASE))
+    # 2) phu lop toi tang dan — trong tai dong dau, gan-max o dong cuoi
+    lop = Image.new("RGB", (W, H), BG)
+    canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=MAX_TOI, ease=VEIL_EASE))
 
 
 def _body_image(canvas, img):
-    """Slide than: anh full be ngang, bam mep tren + hai canh, day tan vao den.
+    """Phu anh len canvas, KHONG cho nao la nen den tro:
 
-    Anh cao hon vung thi cat bot theo chieu doc (giu giua), khong bao gio de lo
-    hai canh ben — cat ngang la mat noi dung, va vien den hai ben lam anh nhin
-    nhu mot cai hop rieng. Anh thap hon vung thi nen den lo o duoi, van tan muot
-    nen khong lo duong ngang nao.
+      - NEN: ban COVER phu kin khung truoc (0..H) -> duoi day anh sac cung la
+        anh (cropped), khong phai mau den. Nho vay veil nhat o tren van khong
+        lo mot dai den nao.
+      - LOP SAC len tren: full be ngang, KHONG cat hai canh -> giu tron chi
+        tiet mep (chup man hinh, bang so khong bi cat chu). Anh 4:5 phu kin
+        luon; anh 1:1 phu 0..~1080, phan duoi la nen cover (nam duoi chu +
+        watermark, da bi veil lam mo).
 
-    Tra ve `day` (mep duoi cung cua anh that, theo px) de build_body dat chu
-    NGAY SAU do thay vi mot moc co dinh — anh ngang (vd chup man hinh 16:9)
-    chi cao ~600px sau khi fit be ngang, con IMG_REGION_H tinh cho anh doc
-    (~800px). Moc chu co dinh tung de lai mot khoang den CHET ~240px giua anh
-    va chu — cong don vao thi vung toi vuot qua 50% khung, nhin nang."""
+    Tra ve ban COVER de _veil_bottom dung lam nguon ban mo. (Luat: anh dua vao
+    carousel da la 1:1 hoac 4:5 — xem crop_ti_le.py; nen luon cham du sau.)"""
+    cover = _fit_cover(img, W, H).convert("RGB")
+    canvas.paste(cover, (0, 0))                   # nen phu kin, khong cho nao den
     scale = W / img.width
     nh = round(img.height * scale)
     resized = img.resize((W, nh), Image.LANCZOS)
-    if nh >= IMG_REGION_H:
-        top = (nh - IMG_REGION_H) // 2            # cat giua theo chieu doc
-        canvas.paste(resized.crop((0, top, W, top + IMG_REGION_H)), (0, 0))
-        day = IMG_REGION_H
-        strip_y = top + IMG_REGION_H - BLUR_STRIP
-    else:
-        canvas.paste(resized, (0, 0))
-        day = nh
-        strip_y = max(0, nh - BLUR_STRIP)
-    strip = resized.crop((0, strip_y, W, strip_y + BLUR_STRIP))
-
-    # Noi dai chinh anh (khong phai phu mau nen) xuong duoi `day`: phong to
-    # dai mong sat day roi lam mo that manh — mot dai mau/sac tiep tuc tu
-    # chinh anh, khong phai mot khoi mau dac roi vao tu ben ngoai. Chi can phu
-    # toi FULL_TOI_SAU_DAY (+ mot khoang an toan) — qua moc do man toi da dac
-    # 255, co gi ben duoi cung khong con thay duoc nua.
-    ext = strip.resize((W, BLUR_EXT), Image.LANCZOS)
-    ext = ext.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
-    canvas.paste(ext, (0, day))
-
-    # Man toi la MOT duong cong lien tuc tu y=0, khong phai tu `day` — xem
-    # docstring cua _fade_to_black.
-    _fade_to_black(canvas, day)
-    return day
+    if nh > H:                                    # cao hon khung: cat giua doc, full be ngang
+        top = (nh - H) // 2
+        resized = resized.crop((0, top, W, top + H))
+    canvas.paste(resized, (0, 0))                 # lop sac uncropped len tren nen cover
+    return cover
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out, mau_watermark=None):
+def build_body(img_path, text, handle, out):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    day = _body_image(canvas, _open(img_path))
-    # Anh ngang (vd chup man hinh 16:9) sau khi fit be ngang chi cao ~600px,
-    # thap hon nhieu so voi IMG_REGION_H (800, tinh cho anh doc). Dat chu ngay
-    # sau MEP THAT cua anh (day) thay vi mot moc co dinh — khong thi giua anh
-    # va chu ho ra mot khoang den chet, cong don vao vung toi qua 50% khung.
-    text_top = min(TEXT_TOP, day + TEXT_GAP)
+    base = _body_image(canvas, _open(img_path))
+
+    # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
+    # cao bao nhieu day len bay nhieu — luon sat day, khong tran len qua 30%,
+    # anh cao/thap khong keo vi tri chu. Copy dai thi _fit_block co chu nho lai
+    # cho vua TEXT_MAX_H (van trong 30%).
     d = ImageDraw.Draw(canvas)
     paras = [p.strip() for p in text.split("\n\n") if p.strip()]
-    max_h = min(TEXT_BOTTOM - text_top, TEXT_MAX_H)
-    font, wrapped, lh, _ = _fit_block(
-        d, paras, W - 2 * PAD, max_h, BODY_HI, BODY_LO)
+    font, wrapped, lh, total = _fit_block(
+        d, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
+    text_top = TEXT_BASE - total
+
+    # Lop nen neo vao dong chu dau: gan-max ngay tu dong chu dau tro xuong (anh
+    # con <10%, chu bat ro), doan chuyen mo dan chi ngay tren dong chu dau.
+    _veil_bottom(canvas, base, text_top)
+
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
-    _watermark(canvas, handle, mau_watermark)
+    _watermark(canvas, handle)
     canvas.convert("RGB").save(out, "PNG")
 
 
@@ -306,32 +289,6 @@ def build_cover(img_path, hook, label, out):
     canvas.convert("RGB").save(out, "PNG")
 
 
-# ---- Mau watermark theo thuong hieu duoc nhac toi -------------------------
-WM_MO = 0.55                     # do mo cua mau hang o watermark, so voi mau goc
-
-def _dinh_mau_watermark(chunks):
-    """Do qua tung doan chu THEO THU TU (bia/hook truoc, roi cac slide) tim
-    thuong hieu DAU TIEN duoc nhac toi — dung lai dung bang MAU_HANG/logic
-    nhan dien cua card.py (da co san, dung chung cho ten hang to trong tieu
-    de the tin) thay vi tu lam mot bang mau moi.
-
-    Watermark la chi tiet PHU — khong duoc canh tranh voi chu chinh (trang,
-    sang toi da). Keo mau hang ve toi (nhan WM_MO, KHONG qua _du_sang — ham
-    do keo SANG len de lam chu to/dam doc ro, nguoc huong voi y muon "mo hon"
-    o day) truoc khi tra ve, mo tuong tu muc mac dinh (150,150,150 tren nen
-    trang 255,255,255 ~ 0.59) chu khong ve nguyen mau goc.
-
-    Tra ve None neu khong nhan ra hang nao — watermark khi do ve mau WM
-    mac dinh (xam mo)."""
-    for _nhan, text in chunks:
-        for _tu, khoa in _tach_nhan(text):
-            if khoa:
-                mau = _mau_cua_hang(khoa)
-                if mau:
-                    return tuple(round(c * WM_MO) for c in mau)
-    return None
-
-
 # ---- Cong chan tieng Viet -------------------------------------------------
 def _gate_text(chunks, bo_qua_dau):
     """Chan tieng Viet mat dau tren toan bo chu cua carousel (giong cong 1 cua
@@ -343,6 +300,74 @@ def _gate_text(chunks, bo_qua_dau):
         mat = tim_mat_dau(t)
         if mat:
             loi.append(f"{nhan}: tieng Viet mat dau ({', '.join(mat)})")
+    return loi
+
+
+# ---- Cong chan anh + chu (code hoa luat, khong dua vao ky luat cua vai) ----
+# Cac luat nay Ong Chu da chot va truoc day chi nam trong SKILL.md — tuc trong
+# cho vai NHO va TUAN THU. Chuyen thanh cong chan cung: vi pham la dung han,
+# in ro cach sua. Vai chi con hai viec khong the code: viet copy va chon anh.
+def _gate_anh(paths):
+    """paths: [(nhan, duong_dan)]. Tra ve (loi, canh_bao)."""
+    import hashlib
+    from PIL import ImageStat
+    loi, canh_bao = [], []
+    da_thay = {}
+    for nhan, p in paths:
+        f = Path(p)
+        if not f.exists():
+            loi.append(f"{nhan}: khong thay tep anh {p}")
+            continue
+        # 1) TRUNG ANH: moi slide mot hinh duy nhat. Bat trung theo noi dung
+        # tep (hash), khong theo ten — copy cung mot anh ra hai ten van bat.
+        # (Hai CROP khac nhau cua cung mot tam thi hash khac — cai do van phai
+        # nho vai/nguoi duyet soi, code khong bat chac chan duoc.)
+        h = hashlib.md5(f.read_bytes()).hexdigest()
+        if h in da_thay:
+            loi.append(f"{nhan}: trung anh voi {da_thay[h]} — moi slide phai "
+                       "mot hinh DUY NHAT, tim anh khac")
+            continue
+        da_thay[h] = nhan
+        img = Image.open(p)
+        w, h_px = img.size
+        # 2) TI LE: phai 1:1 hoac 4:5 (dung sai 3%). Sai thi cat truoc bang
+        # crop_ti_le.py — khong de carousel.py tu xoay so.
+        r = w / h_px
+        if not (abs(r - 1.0) <= 0.03 or abs(r - 0.8) <= 0.03):
+            loi.append(f"{nhan}: ti le {w}x{h_px} ({r:.2f}) khong phai 1:1 hay "
+                       f"4:5 — cat truoc: venv/bin/python crop_ti_le.py "
+                       f"--anh {p} --ra <ra.png> [--ti-le 4:5] [--cx/--cy]")
+        # 3) DO PHAN GIAI: canh ngan <1000px phong len 1080 se mem/vo net.
+        # Canh bao thoi (khong chan): anh doc quyen nho van hon anh sai.
+        if min(w, h_px) < 1000:
+            canh_bao.append(f"{nhan}: canh ngan {min(w, h_px)}px < 1000 — "
+                            "phong len 1080 se hoi mem, co ban to hon thi thay")
+        # 4) DAY ANH SANG: nen chu chi toi max 60% opacity, chu trang can day
+        # anh TOI. Do do sang trung binh 25% duoi; sang qua thi canh bao de
+        # vai crop lai cho day roi vao vung toi (nhu vu mat duong truoc via he).
+        day = img.convert("L").crop((0, int(h_px * 0.75), w, h_px))
+        sang = ImageStat.Stat(day).mean[0]
+        if sang > 150:
+            canh_bao.append(f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — "
+                            "chu trang tren nen 60% se kho doc; crop lai cho "
+                            "day anh la vung toi hon")
+    return loi, canh_bao
+
+
+def _gate_chu(slides):
+    """Chan copy DAI qua vung chu 30%: o co chu NHO NHAT ma khoi chu van cao
+    hon TEXT_MAX_H thi truoc day no lang le tran len tren — vi pham luat 30%.
+    Gio dung han va bao thua bao nhieu de vai cat bot loi."""
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+    loi = []
+    for i, s in enumerate(slides, start=2):
+        paras = [p.strip() for p in s["text"].split("\n\n") if p.strip()]
+        _f_, _w_, _lh_, total = _fit_block(
+            probe, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
+        if total > TEXT_MAX_H:
+            loi.append(f"slide {i}: copy dai qua vung chu 30% (thua "
+                       f"{total - TEXT_MAX_H}px o co chu nho nhat) — cat bot "
+                       f"khoang {round((total - TEXT_MAX_H) / total * 100)}% chu")
     return loi
 
 
@@ -394,17 +419,27 @@ def main():
         sys.exit("Chu carousel khong dat cong chan tieng Viet. Go lai co dau, "
                  "hoac --bo-qua-dau neu that su la tieng Anh.")
 
+    # Cong chan anh (trung / ti le / phan giai / day sang) va copy tran 30%.
+    anh = [("bia", cover["image"])] + \
+          [(f"slide {i}", s["image"]) for i, s in enumerate(slides, start=2)]
+    loi_anh, canh_bao = _gate_anh(anh)
+    loi_chu = _gate_chu(slides)
+    for c in canh_bao:
+        print(f"[CANH BAO] {c}", file=sys.stderr)
+    if loi_anh or loi_chu:
+        for e in loi_anh + loi_chu:
+            print(f"[LOI] {e}", file=sys.stderr)
+        sys.exit("Carousel khong dat cong chan anh/chu. Sua theo huong dan o tren.")
+
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
-
-    mau_wm = _dinh_mau_watermark(chunks)
 
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out))
     paths = [str(out)]
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
-        build_body(s["image"], s["text"], handle, p, mau_wm)
+        build_body(s["image"], s["text"], handle, p)
         paths.append(p)
 
     print(f"da dung {len(paths)} slide:")

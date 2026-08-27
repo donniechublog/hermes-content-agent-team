@@ -50,11 +50,15 @@ ghi thêm một dòng cảnh báo.
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
 - `carousel.py` — dựng **carousel nhiều slide** (Heller cho donniechublog, Dre
   cho dcgr.tech — chung script, khác cờ `--brand`): ảnh full bề ngang ở trên
-  (ưu tiên ảnh vuông — xem skill), khối chữ trắng trên nền đen ở dưới tan liền
-  từ ảnh (không ranh giới cứng), watermark thẳng đáy tự tô màu hãng được nhắc
-  tới trong bài. Nhận spec JSON, ra `<id>.png` + `<id>_2.png`… đúng khuôn album
-  của `draft_write.py`. Tái dùng helper của `card.py` (nạp font, wrap chữ, fit
-  ảnh, cổng chặn tiếng Việt, nhận diện + màu thương hiệu)
+  (ảnh 1:1 hoặc 4:5 — xem skill), chữ ở đáy trên **nền là chính ảnh làm mờ +
+  tối dần ở ~30% dưới** (dòng đầu gần trong suốt, hoà vào ảnh; càng xuống càng
+  đậm; không ranh giới cứng, không mảng đen đặc), watermark tên kênh ở đáy một
+  màu xanh Apple/Finder (`#0A84FF`) font San Francisco (SFNS). Nhận spec JSON,
+  ra `<id>.png` + `<id>_2.png`… đúng khuôn album của `draft_write.py`. Tái dùng
+  helper của `card.py` (nạp font, wrap chữ, fit ảnh, cổng chặn tiếng Việt)
+- `crop_ti_le.py` — cắt một ảnh về **1:1 hoặc 4:5** trước khi đưa vào carousel
+  (luật: ảnh carousel phải đúng một trong hai tỉ lệ đó). Cắt center, hoặc
+  `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh
 - `hermes/skills/hero-image/` — skill dùng chung của Chad và Ethan. Nằm thẳng
   trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
   không xoá được

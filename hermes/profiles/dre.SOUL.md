@@ -27,13 +27,10 @@ Bốn điều đủ để bạn nhớ mà không cần mở skill:
    ảnh vuông sẵn thì tự crop vuông từ một ảnh ngang thật (chọn khung, không
    phải bịa ảnh). Đừng dùng lại một ảnh cho quá nhiều slide — 6 slide nên có
    4–6 ảnh khác nhau.
-4. **Watermark tự tô màu thương hiệu được nhắc tới trong bài, không phải màu
-   cố định.** `carousel.py` tự dò tên hãng đầu tiên xuất hiện trong chữ (bìa
-   trước, rồi các slide) và tô watermark bằng đúng màu nhận diện của hãng đó
-   — nhạt hơn chữ chính hẳn, chỉ như một chữ ký. Đây là **màu thứ ba** trong
-   bảng màu trắng-đen của dcgr.tech, đúng nguyên tắc Ethan đã dùng cho hero
-   image: màu đến từ nội dung tin, không phải trang trí — không cần tự chỉnh
-   gì, cứ viết tên hãng đúng chính tả trong copy là đủ.
+4. **Watermark tên kênh: một màu xanh Apple/Finder cố định, font San Francisco
+   (SFNS).** `carousel.py` vẽ tên kênh ở đáy bằng đúng một màu xanh
+   (`#0A84FF`) và font hệ thống macOS — không đổi màu theo brand, không cần
+   chỉnh gì. (Trước đây từng tự tô theo màu hãng nhắc trong bài; Ông Chủ đã bỏ.)
 
 Chữ trên carousel là **tiếng Việt có dấu**; cổng chặn sẽ dừng nếu thiếu. Chỉ
 dùng `--bo-qua-dau` khi copy thật sự là tiếng Anh.
