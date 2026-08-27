@@ -1,7 +1,7 @@
 ---
 name: hero-image
-description: "Dựng ảnh cho kênh AI bằng card.py — kiểu tràn, liền một mặt phẳng, không khung, không vạch ngăn. Cách điều phối ảnh và chữ, các cờ bắt buộc, cách viết tiêu đề, kicker, tô tên hãng, và bốn cổng chặn. Dùng chung cho Chad (donniechublog) và Ethan (dcgr.tech)."
-version: 1.0.0
+description: "Dựng ảnh cho kênh AI bằng card.py — kiểu tràn, liền một mặt phẳng, không khung, không vạch ngăn. Cách điều phối ảnh và chữ, các cờ bắt buộc, cách viết tiêu đề, kicker, tô tên hãng, bốn cổng chặn, và nguyên tắc chữ chìm vào ảnh. Kèm biến thể --kieu quote: thẻ trích dẫn pull-quote (một câu nói + dấu ngoặc kép + dòng nguồn). Dùng chung cho Chad (donniechublog) và Ethan (dcgr.tech)."
+version: 1.1.0
 author: content-team
 license: internal
 platforms: [linux]
@@ -9,7 +9,7 @@ prerequisites:
   commands: [python3]
 metadata:
   hermes:
-    tags: [hero-image, card, tran, designer, chad, donniechublog, dcgr]
+    tags: [hero-image, card, tran, quote, trich-dan, designer, chad, donniechublog, dcgr]
 ---
 
 # hero-image — kiểu tràn, liền một mặt
@@ -74,6 +74,22 @@ mắt ra khỏi trục.
 ở kiểu tràn. Lệnh vẫn nhận nếu bạn có truyền, nhưng không vẽ ra thứ nào.
 
 `card.py` lo hết phần vẽ. Việc của bạn là **chọn đúng ảnh** và **truyền đúng cờ**.
+
+### Nguyên tắc một câu: chữ chìm vào ảnh
+
+Cái giữ cho thẻ "liền" không phải font hay ảnh, mà là **không để lộ đường mép**
+giữa chữ và ảnh. Ba lỗi phá nó — `card.py` đã chặn sẵn, việc của bạn là **không
+chọn ảnh phá lại**:
+
+- **Không hộp, không blur-strip.** Màn tối là gradient tan dần (đường cong,
+  không mép), không phải một mảng màu đặc hay một dải mờ có cạnh. Nhìn thấy một
+  đường ngang cắt qua thẻ là hỏng — mắt đọc thành "ảnh + bảng chữ" thay vì một mặt.
+- **Màn tối tô bằng màu nền brand, không đen tuyền.** Script đã làm (nó trộn về
+  `BG`); đen `#000` dán lên trông như tấm kính đặt trên ảnh, không phải ảnh tối lại.
+- **Nửa dưới ảnh phải trống** để chữ nhường chủ thể (xem Bước 2). Chữ đè lên chi
+  tiết dày là lỗi chọn ảnh, không phải lỗi màn tối.
+
+Tóm lại: script lo phần vẽ liền mạch; bạn lo **chọn ảnh có bãi đáp** cho nó liền được.
 
 ## Bước 1 — tìm ảnh thật
 
@@ -287,6 +303,44 @@ xác định được nguồn thì ghi tên miền của trang lấy ảnh, vẫ
 tuyệt đối không thay bằng hình tự vẽ.
 
 Đây là chỗ dễ rơi nhất của kiểu tràn: thẻ không còn nhắc bạn, nên phải tự nhớ.
+
+## Kiểu quote — thẻ trích dẫn (biến thể của card.py)
+
+Cùng `card.py`, khác đúng `--kieu quote`. Không thay hero image, mà cho một loại
+nội dung riêng: **một câu nói mạnh đứng một mình** — trích từ bài phỏng vấn, một
+nhận định sắc, một câu chốt của bài. Khác hero image (một câu bao quát *cả tin*)
+ở chỗ đây là **lời của một người**, có ghi nguồn ngay trên thẻ.
+
+Dùng khi bài có một câu đủ mạnh để tự nó dừng người lướt — phỏng vấn, phát biểu,
+một luận điểm gọn. Tin thời sự nhiều tầng thì vẫn dùng hero image hoặc carousel.
+
+Bố cục script tự vẽ, đúng dạng pull-quote của báo:
+- ảnh phủ kín + màn tối liền mạch (cùng bài với kiểu tràn, cùng nguyên tắc trên),
+- câu trích dẫn lớn, đậm trong **khung 2 góc ngoặc bo tròn** (dấu " mở góc
+  trên-trái, đóng góc dưới-phải, nét ngang xuyên giữa dấu). **Không đặt tay,
+  không sửa** — script tự vẽ; bạn chỉ cần câu đủ ngắn để đọc lớn.
+- brand text (tên kênh) góc **trên-trái**, tagline góc trên-phải, dòng nguồn
+  **canh giữa** dưới khung.
+- **Màu**: net khung + brand text = **xanh Apple `#0A84FF` cố định**; **dấu " đổi
+  theo HÃNG được nhắc** trong quote/nguồn (Nvidia→xanh lá, Hugging Face→vàng…),
+  không có hãng thì xanh Apple.
+
+```bash
+venv/bin/python card.py --kieu quote --ratio 4:5 \
+  --image <ảnh thật> \
+  --title "<nguyên văn câu nói, có dấu>" \
+  --attrib "Đọc bài “<tên bài>” - <tác giả>" \
+  --brand <donniechublog|dcgr> --out drafts/<id>.png
+```
+
+- **`--title` là nguyên văn câu nói**, giữ hoa/thường như câu gốc (KHÔNG viết hoa
+  toàn bộ như tiêu đề tràn). Câu quá dài script thu nhỏ dần rồi thêm "…"; quote
+  sống ở chỗ **ngắn, đọc được lớn** — chạm 7 dòng là dấu hiệu nên cắt câu.
+- **`--attrib` là dòng nguồn**: `Đọc bài "<tên bài>" - <tác giả>`, để người đọc
+  lần ra bài gốc. Vẫn có cổng chặn tiếng Việt không dấu như mọi chữ khác.
+- **Ảnh chọn như hero image**: cạnh ngắn ≥1000px, nửa dưới thoáng để câu đè lên
+  đọc rõ; ảnh vuông/dọc hợp hơn ảnh ngang. Vẫn luật cứng **không tự vẽ minh hoạ** —
+  ảnh phải thật và liên quan tới người/bài được trích.
 
 ## Nhìn lại trước khi giao
 

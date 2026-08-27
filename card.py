@@ -38,6 +38,13 @@ F_SUB = str(FONTS / "NotoSerif.ttf")                  # phu de
 # chua duoc cau dai o co chu to, dung dang chu cua cac mau tham khao.
 F_HERO = str(FONTS / "Oswald.ttf")                    # tieu de hero image
 HERO_WEIGHT = 700                                     # truc Weight cua Oswald: 200-700
+# Kieu quote (pull-quote). Chu trich dan la Be Vietnam Pro Bold: sans nhan van,
+# du dau tieng Viet, doc ra "cau noi" chu khong ra "tieu de" nhu Oswald hep.
+# Dau ngoac kep dung NotoSerifDisplay: serif tuong phan cao, cho ra hai dau "
+# to va chac lam vat dong khung — dung dang pull-quote bao chi.
+F_QUOTE = str(FONTS / "BeVietnamPro-Bold.ttf")        # cau trich dan
+F_QUOTE_REG = str(FONTS / "BeVietnamPro-Regular.ttf") # dong nguon (attribution)
+F_MARK = str(FONTS / "Oswald.ttf")                    # dau ngoac kep — glyph co duong net, hoi vuong
 
 W = 1200                          # bề ngang cố định
 IMG_MIN_H = 600                   # ảnh không mỏng hơn 2:1
@@ -174,6 +181,18 @@ BRAND_SIZE = 27   # ten kenh nho hon dong via mot chut
 
 # Tỉ lệ đầu ra khoá cứng: tên → chiều cao thẻ (bề ngang luôn 1200)
 RATIOS = {"1:1": 1200, "4:5": 1500, "3:4": 1600}
+
+# ---- Kieu quote (pull-quote) ---------------------------------------------
+QUOTE_SIZE_HI, QUOTE_SIZE_LO = 66, 40   # co chu trich dan, tu day xuong
+QUOTE_LEAD = 16                         # gian dong quote — thoang hon tieu de
+QUOTE_MAX_LINES = 7                     # dai hon la cau qua dai cho mot the
+QUOTE_PAD = 64                          # le trong hon hero: quote can khoang tho
+MARK_SIZE = 210                         # dau ngoac kep (Oswald: ink that ~28% co font)
+APPLE_BLUE = (10, 132, 255)             # #0A84FF — mau CO DINH cho line khung + brand text
+                                        # (dong bo watermark carousel). Chi DAU " doi theo hang.
+# Man toi cua quote bat dau tan tu day len; tren nguong nay hoan toan trong de
+# nhan vat tho nguyen, khong lo mot duong mep nao (cung bai voi _tran_anh).
+QUOTE_FADE_TOP = 0.38
 
 
 def _f(path, size, weight=None):
@@ -355,6 +374,17 @@ def _tach_nhan(dong: str):
                 khoa[i] = (sach[i],)
             i += 1
     return list(zip(tu, khoa))
+
+
+def _mau_hang_trong(text: str):
+    """Mau cua ten hang DAU TIEN nhan ra trong `text`, hoac None. Dung de to
+    dau ngoac quote theo mau hang duoc nhac toi trong chu de."""
+    for _tu, khoa in _tach_nhan(text or ""):
+        if khoa:
+            mau = _mau_cua_hang(khoa)
+            if mau:
+                return mau
+    return None
 
 
 def _rong_dong(d, dong, font):
@@ -640,6 +670,189 @@ def _tran_anh(canvas, src_img, split, nat_h=None):
     return (0, 0, W, H)
 
 
+def _man_quote(canvas):
+    """Man toi cho kieu quote: gradient tu day len, to bang mau nen brand (BG),
+    KHONG den tuyen. Tan ve 0 tren dinh khoi chu (`QUOTE_FADE_TOP`) theo duong
+    cong power nen khong lo duong mep — nhan vat o nua tren tho nguyen. Chua
+    max ~236 chu khong 255, de day anh con thoang thay chu khong thanh mang det."""
+    H = canvas.height
+    top = int(H * QUOTE_FADE_TOP)
+    man = Image.new("L", (1, H), 0)
+    for y in range(H):
+        if y <= top:
+            a = 0
+        else:
+            t = (y - top) / max(1, H - top)
+            a = int(236 * (t ** 0.82))
+        man.putpixel((0, y), min(255, a))
+    lop = Image.new("RGBA", (W, H), (*BG, 255))
+    lop.putalpha(man.resize((W, H)))
+    canvas.alpha_composite(lop)
+
+
+def _quote_mark(d, cx, cy, font, color, closing=False):
+    """Ve mot dau ngoac kep (glyph FONT) can giua THAT su tai (cx, cy).
+
+    Khong dung font.getbbox de can: voi Oswald no phong chieu cao (bao 113px
+    trong khi ink that ~39px), lam dau lech len tren line. Render thu ra mask,
+    lay ink bbox THAT roi can theo do. Tra ve be rong ink that (de clean line)."""
+    g = "”" if closing else "“"
+    bb = font.getbbox(g)
+    probe = Image.new("L", (bb[2] + 8, bb[3] + 8), 0)
+    ImageDraw.Draw(probe).text((4, 4), g, font=font, fill=255)
+    ink = probe.getbbox() or (4, 4, 5, 5)
+    off_x = (ink[0] + ink[2]) / 2 - 4          # tam ink that, lech tu goc ve (4,4)
+    off_y = (ink[1] + ink[3]) / 2 - 4
+    d.text((cx - off_x, cy - off_y), g, font=font, fill=color)
+    return ink[2] - ink[0]
+
+
+def _quote_frame(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
+    """Khung quote kieu TiaSang: HAI goc ngoac doi nhau (TL + BR), goc bo tron,
+    moi goc giu 1/3 net NGANG + 1/2 net DOC. Dau " (glyph FONT) nam GIUA net
+    ngang, net ngang CLEAN quanh dau.
+
+    MAU: net (line + arc) dung `line_color` CO DINH (xanh Apple); dau " dung
+    `mark_color` (doi theo hang duoc nhac)."""
+    r = 30
+    aw = (x1 - x0) // 3          # net ngang giu 1/3
+    av = (y1 - y0) // 2          # net doc giu 1/2
+    br_lift = 22                 # goc BR nhac len mot chut
+    pad = 14                     # khoang clean line quanh dau
+    mfont = _f(F_MARK, MARK_SIZE, 700)      # font dau ngoac (Oswald, weight day)
+
+    # --- goc tren-trai: dau MO nam GIUA net ngang tren (y0) ---
+    d.arc([x0, y0, x0 + 2 * r, y0 + 2 * r], 180, 270, fill=line_color, width=lw)
+    d.line([(x0, y0 + r), (x0, y0 + av)], fill=line_color, width=lw)  # net doc
+    cx = x0 + r + 30                          # dau keo RA SAT GOC (line keo vao trong)
+    tot = _quote_mark(d, cx, y0, mfont, mark_color, closing=False)
+    ml, mr = cx - tot / 2 - pad, cx + tot / 2 + pad
+    if ml > x0 + r:
+        d.line([(x0 + r, y0), (ml, y0)], fill=line_color, width=lw)  # line vao (trai)
+    if mr < x0 + aw:
+        d.line([(mr, y0), (x0 + aw, y0)], fill=line_color, width=lw)  # line ra (phai)
+
+    # --- goc duoi-phai: dau DONG nam GIUA net ngang duoi (yb), nhac len br_lift ---
+    yb = y1 - br_lift
+    d.arc([x1 - 2 * r, yb - 2 * r, x1, yb], 0, 90, fill=line_color, width=lw)
+    d.line([(x1, yb - av), (x1, yb - r)], fill=line_color, width=lw)  # net doc
+    cx2 = x1 - r - 30                         # dau keo RA SAT GOC (line keo vao trong)
+    tot2 = _quote_mark(d, cx2, yb, mfont, mark_color, closing=True)
+    ml2, mr2 = cx2 - tot2 / 2 - pad, cx2 + tot2 / 2 + pad
+    if ml2 > x1 - aw:
+        d.line([(x1 - aw, yb), (ml2, yb)], fill=line_color, width=lw)  # line vao (trai)
+    if mr2 < x1 - r:
+        d.line([(mr2, yb), (x1 - r, yb)], fill=line_color, width=lw)   # line ra (phai)
+
+
+def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
+    """The pull-quote: mot cau trich dan lon tren anh phu kin.
+
+    Khac hero image (mot tieu de bao quat tin) va carousel (nhieu slide): day la
+    MOT cau noi dat trong ngoac kep, co dong nguon o duoi — dung dang the trich
+    dan cua bao. Anh phu kin + man toi lien mach lo cung mot bai voi kieu tran;
+    chu nam o ~35% day, nhan vat tho nguyen o tren.
+    """
+    H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
+    canvas = Image.new("RGBA", (W, H), (*BG, 255))
+    src_img = Image.open(src).convert("RGB")
+    canvas.paste(_fit_cover(src_img, W, H), (0, 0))   # anh phu kin khung
+    _man_quote(canvas)                                # man toi lien mach
+
+    d = ImageDraw.Draw(canvas)
+    # Khung o le FRAME_X; chu THUT VAO them (TEXT_X > FRAME_X) de hai canh chieu
+    # rong cua khung thoang khoi chu.
+    FRAME_X = 42
+    TEXT_X = FRAME_X + 54
+    avail_w = W - 2 * TEXT_X
+
+    # Cau trich dan — giu nguyen HOA/thuong (khong .upper() nhu tieu de).
+    f_q, q_lines = _fit_text(d, quote, avail_w, max_lines=QUOTE_MAX_LINES,
+                             hi=QUOTE_SIZE_HI, lo=QUOTE_SIZE_LO, path=F_QUOTE)
+    buoc, tren = _buoc_dong(f_q, q_lines, QUOTE_LEAD)
+    quote_h = buoc * len(q_lines)
+
+    f_at = _f(F_QUOTE_REG, 26)
+    at_lines = _wrap(d, attrib, f_at, avail_w) if attrib else []
+    at_lh = _line_h(f_at, 8)
+    at_h = at_lh * len(at_lines)
+
+    # Tagline ngan cua kenh — dong NHO o DAY the. KHONG phai ten kenh (ten kenh
+    # la brand text, da o goc TREN); day chi la mot dong tagline mo ta ngan.
+    f_tag = _f(F_QUOTE_REG, 23)
+    tag = (tagline or "").strip()
+    tag_lh = _line_h(f_tag, 8)
+    tag_h = tag_lh if tag else 0
+
+    f_mark = _f(F_MARK, MARK_SIZE)
+    ob = f_mark.getbbox("“")          # dau mo "
+    cb = f_mark.getbbox("”")          # dau dong "
+    open_h, close_h = ob[3] - ob[1], cb[3] - cb[1]
+
+    # KHUNG CHU NHAT BO GOC bao quanh quote; dau " gan goc TL/BR (xem _quote_frame).
+    # Ba khoang cach can soi ky:
+    BOX_PAD_Y = 66       # khung cao hon khoi chu tren/duoi — chua khoang tho + dau "
+    G_FRAME_SRC = 46     # net khung duoi <-> dong nguon
+    G_SRC_TAG = 14       # nguon <-> tagline
+    BOT_MARGIN = 78      # khoi duoi cung <-> day the
+
+    # Tagline khong con o duoi khung (da dua len top-phai). Duoi khung chi con
+    # dong nguon, CANH GIUA.
+    below_h = at_h
+    frame_bottom = H - BOT_MARGIN - ((below_h + G_FRAME_SRC) if below_h else 0)
+    last_line_bottom = frame_bottom - BOX_PAD_Y
+    first_line_top = last_line_bottom - quote_h
+    frame_top = first_line_top - BOX_PAD_Y
+
+    # Cac dong quote, canh trai (thut vao TEXT_X).
+    qy = first_line_top
+    for ln in q_lines:
+        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=FG)
+        qy += buoc
+
+    # MAU: net khung CO DINH xanh Apple; DAU " doi theo hang duoc nhac trong chu
+    # de (quote hoac dong nguon). Khong nhan ra hang nao thi dau cung xanh Apple.
+    mau_hang = _mau_hang_trong(quote) or _mau_hang_trong(attrib)
+    mark_col = _du_sang(mau_hang) if mau_hang else APPLE_BLUE
+    _quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom,
+                 APPLE_BLUE, mark_col)
+
+    # Duoi khung: dong nguon (attribution), CANH GIUA.
+    ay = frame_bottom + G_FRAME_SRC
+    for ln in at_lines:
+        lw_ln = d.textlength(ln, font=f_at)
+        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=_pha(FG, 0.72))
+        ay += at_lh
+
+    # Hang TREN: brand text canh TRAI, tagline canh PHAI, cung mot hang.
+    # Ca hai nam tren anh nen co vien toi mong de doc duoc.
+    def _chu_vien(txt, x, y, font, fill):
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx or dy:
+                    d.text((x + dx, y + dy), txt, font=font, fill=(0, 0, 0))
+        d.text((x, y), txt, font=font, fill=fill)
+
+    f_h = _f(F_REG, 30, weight=600)
+    ten = handle if handle.startswith("@") else "@" + handle
+    hy = QUOTE_PAD - 4
+    _chu_vien(ten, QUOTE_PAD, hy, f_h, APPLE_BLUE)      # brand text: xanh Apple co dinh
+    if tag:
+        f_tag_top = _f(F_QUOTE_REG, 24)
+        tw = d.textlength(tag, font=f_tag_top)
+        # Can day chu cho ngang hang voi brand text.
+        bb, tb = f_h.getbbox("Ay"), f_tag_top.getbbox("Ay")
+        ty = hy + (bb[3] - bb[1]) - (tb[3] - tb[1])
+        _chu_vien(tag, W - QUOTE_PAD - tw, ty, f_tag_top, _pha(FG, 0.6))
+
+    out = Path(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(out, "PNG", optimize=True)
+    print("the: {}x{} ({:.2f}:1) | kieu: quote | {} dong quote".format(
+        W, H, W / H, len(q_lines)))
+    return out
+
+
 def _chip_size(d, text, font, pad_x=18, pad_y=12):
     b = font.getbbox("Ây")
     return (d.textlength(text, font=font) + pad_x * 2,
@@ -895,18 +1108,19 @@ def tim_mat_dau(text: str) -> list:
 def build(src, title, subtitle, via, out, category="AI",
           category_right="", handle=None, ratio="free",
           tagline="daily AI update", khoa_ti_le=False, brand="donniechublog",
-          bo_qua_dau=False, kieu="dai", kicker=""):
+          bo_qua_dau=False, kieu="dai", kicker="", attrib=""):
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
     b = dat_thuong_hieu(brand)
     handle = handle or b["handle"]
     title, subtitle = bo_dau_cam(title), bo_dau_cam(subtitle)
+    attrib = bo_dau_cam(attrib)
 
     # Chan tieng Viet khong dau TRUOC khi ve, o moi cho chu hien len the.
     loi = {}
     for ten, gt in (("tieu de", title), ("phu de", subtitle),
                     ("category", category), ("category-right", category_right),
-                    ("via", via)):
+                    ("via", via), ("nguon", attrib)):
         m = tim_mat_dau(gt or "")
         if m:
             loi[ten] = m
@@ -917,6 +1131,10 @@ def build(src, title, subtitle, via, out, category="AI",
             "  Go lai co dau day du roi chay lai. The la thu nguoi doc nhin thay\n"
             "  dau tien, chu khong dau lam ca kenh trong nhu lam au.\n"
             "  (Neu that su la tieng Anh, chay lai voi --bo-qua-dau)")
+    # Kieu quote co duong ve rieng (anh phu kin + cau trich dan + dong nguon),
+    # khong di qua logic dai/tran ben duoi. Dat NGAY sau cong tieng Viet co dau.
+    if kieu == "quote":
+        return _render_quote(src, title, attrib, out, handle, ratio, tagline)
     if kieu != "tran" and not (subtitle or "").strip():
         raise SystemExit(
             "Thieu --subtitle. The tin kieu dai can phu de: tieu de chi la nhan\n"
@@ -1285,9 +1503,14 @@ def main():
     p.add_argument("--kicker", default="",
                    help="Nhan ngan phia tren tieu de, CHI co o --kieu tran. "
                         "Vi du: BREAKING, MODEL RELEASE, AGENT, FUNDING")
-    p.add_argument("--kieu", default="dai", choices=["dai", "tran"],
+    p.add_argument("--kieu", default="dai", choices=["dai", "tran", "quote"],
                    help="dai: anh o tren, textbox rieng o duoi (mac dinh). "
-                        "tran: anh phu kin the, chu de len qua man toi")
+                        "tran: anh phu kin the, chu de len qua man toi. "
+                        "quote: the trich dan — cau noi lon trong ngoac kep, "
+                        "co dong nguon o duoi (--title la cau, --attrib la nguon)")
+    p.add_argument("--attrib", default="",
+                   help="Dong nguon cho --kieu quote, vi du: "
+                        "\"Doc bai 'Ten bai' - Tac gia\"")
     p.add_argument("--ratio", default="free",
                    choices=["free"] + list(RATIOS),
                    help="free: chiều cao trôi theo ảnh. 1:1/4:5/3:4: khoá tỉ lệ, "
@@ -1297,7 +1520,7 @@ def main():
     build(a.image, a.title, a.subtitle, a.via, a.out,
           a.category, a.category_right, a.handle, a.ratio, a.tagline,
           khoa_ti_le=getattr(a, "khoa_ti_le", False), brand=a.brand,
-          bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker)
+          bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib)
 
 
 if __name__ == "__main__":

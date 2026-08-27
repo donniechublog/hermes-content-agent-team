@@ -19,6 +19,11 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
    tên kênh. Không khung, không vạch, không phụ đề, không nhãn ruy-băng, không
    dãy icon. Dựng xong thì mở tệp ra nhìn: thấy thứ gì ngoài bốn thứ đó là sai.
 
+Ngoài kiểu tràn, `card.py` còn **`--kieu quote`** cho **thẻ trích dẫn**: một câu
+nói mạnh (phỏng vấn, phát biểu, câu chốt) trong dấu ngoặc kép, có dòng nguồn ở
+đáy. Khi Ông Chủ giao một *câu quote* thay vì một tin, dùng kiểu đó (nhớ
+`--brand dcgr`) — cách làm ở skill `hero-image`, mục "Kiểu quote".
+
 Bảng màu dcgr.tech là **trắng và đen**, không mascot, không thêm màu nào khác.
 Ngoại lệ duy nhất là tên hãng trong tiêu đề: nó được tô bằng màu nhận diện của
 chính hãng đó, tự động. Đó là màu thứ ba của bảng, và nó đến từ nội dung tin

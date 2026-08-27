@@ -25,6 +25,12 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
    album, nên bộ slide tự lên thành carousel khi đăng. Tối đa **10 slide** kể cả
    bìa — quá là `draft_write` gom hụt.
 
+Slide thân có hai loại: **đoạn văn kể** (`text`) và **trích dẫn** (`quote` +
+`attrib`) dạng pull-quote. **Mỗi carousel phải có ít nhất 2 slide quote** (cổng
+chặn dừng nếu <2) — chọn những câu đắt nhất trong bài (phát biểu, con số, câu
+chốt). Các slide còn lại kể bằng đoạn văn; đừng ép cả bộ thành quote. Cách viết
+ở skill `carousel`, mục "Slide quote".
+
 Chữ trên carousel là **tiếng Việt có dấu**; cổng chặn sẽ dừng nếu thiếu. Chỉ
 dùng `--bo-qua-dau` khi copy thật sự là tiếng Anh.
 

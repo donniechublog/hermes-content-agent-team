@@ -52,18 +52,22 @@ ghi thêm một dòng cảnh báo.
 ## Tệp
 
 - `card.py` — dựng ảnh. Kiểu `tran` (cả hai vai ảnh đang dùng): ảnh full bề ngang,
-  không khung, chữ đè lên qua màn tối. Kiểu `dai` còn trong mã nhưng hiện không
-  vai nào dùng
+  không khung, chữ đè lên qua màn tối. Kiểu `quote`: thẻ trích dẫn pull-quote —
+  câu lớn trong **khung 2 góc ngoặc bo tròn**, dòng nguồn `--attrib` canh giữa,
+  brand text góc trên. Màu: **net khung + brand xanh Apple cố định**, **dấu " theo
+  hãng nhắc trong chủ đề**. Kiểu `dai` còn trong mã nhưng hiện không vai nào dùng
 - `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
 - `carousel.py` — dựng **carousel nhiều slide** (Heller cho donniechublog, Dre
-  cho dcgr.tech — chung script, khác cờ `--brand`): ảnh full bề ngang ở trên
-  (ảnh 1:1 hoặc 4:5 — xem skill), chữ ở đáy trên **nền là chính ảnh làm mờ +
-  tối dần ở ~30% dưới** (dòng đầu gần trong suốt, hoà vào ảnh; càng xuống càng
-  đậm; không ranh giới cứng, không mảng đen đặc), watermark tên kênh ở đáy một
-  màu xanh Apple/Finder (`#0A84FF`) font San Francisco (SFNS). Nhận spec JSON,
+  cho dcgr.tech — chung script, khác cờ `--brand`): ảnh phủ kín thẻ
+  (ảnh 1:1 hoặc 4:5 — xem skill), chữ ở đáy **chìm vào ảnh qua scrim liền mạch
+  kiểu bìa** (màn tối bắt đầu từ ~42% chiều cao, đậm dần xuống ~80% ở vùng chữ;
+  không đường mép, không mảng đen đặc — kể cả trên ảnh sáng), brand text (tên kênh)
+  ở **góc trên-trái** một màu xanh Apple/Finder (`#0A84FF`) font San Francisco (SFNS). Nhận spec JSON,
   ra `<id>.png` + `<id>_2.png`… đúng khuôn album của `draft_write.py`. Tái dùng
-  helper của `card.py` (nạp font, wrap chữ, fit ảnh, cổng chặn tiếng Việt)
+  helper của `card.py` (nạp font, wrap chữ, fit ảnh, cổng chặn tiếng Việt). Slide
+  thân có thể là đoạn văn (`text`) hoặc một câu trích dẫn pull-quote (`quote` +
+  `attrib`) — tùy slide
 - `crop_ti_le.py` — cắt một ảnh về **1:1 hoặc 4:5** trước khi đưa vào carousel
   (luật: ảnh carousel phải đúng một trong hai tỉ lệ đó). Cắt center, hoặc
   `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh

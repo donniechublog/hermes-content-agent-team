@@ -1,7 +1,7 @@
 ---
 name: carousel
-description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — ảnh ở trên, chữ ở đáy trên nền ảnh làm mờ + tối dần (tối đa ~60% opacity), watermark tên kênh một màu xanh Apple/Finder font San Francisco. Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), và các cổng chặn. Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
-version: 1.1.0
+description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — chữ chìm vào ảnh qua scrim liền mạch kiểu bìa (bắt đầu tối từ ~42% cao, đậm dần xuống ~80% ở chữ, không đường mép, không vùng đen riêng), watermark tên kênh một màu xanh Apple/Finder font San Francisco. Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), các cổng chặn, và slide quote tùy chọn (một câu trích dẫn + dấu ngoặc kép + nguồn). Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
+version: 1.2.0
 author: content-team
 license: internal
 platforms: [linux]
@@ -55,14 +55,35 @@ Khổ **1080×1350 (4:5), nền đen tuyệt đối**. Hai loại slide:
 
 **Slide thân (slide 2..N)** — từng nhịp của tin:
 ```
-        ảnh full bề ngang, canh đáy vùng ảnh
-        (nền đen lộ ra ở trên nếu ảnh ngang)
+        ảnh phủ kín thẻ (cover)
+              ↓
+        scrim liền mạch từ ~42% cao, đậm dần
+        xuống ~80% ở chữ — KHÔNG đường mép
               ↓
         đoạn chữ trắng, canh trái
         1–2 đoạn, mỗi đoạn 2–4 dòng
+        (hoặc một câu quote — xem "Slide quote")
               ↓
           watermark nghiêng, canh giữa
 ```
+
+### Nguyên tắc liền mạch — không đường mép
+
+Cả bìa lẫn thân đều là **chữ trên ảnh qua màn tối liền mạch**, không có vùng đen
+riêng, không đường mép:
+
+- **Bìa:** hook đè ảnh, màn tối tan dần từ trên xuống (`_scrim`), góc dưới-trái
+  thoáng cho chữ.
+- **Thân:** đoạn văn nằm trên một **scrim liền mạch kiểu bìa** — màn tối bắt đầu
+  từ **cao** (khoảng 42% chiều cao, luôn trên dòng chữ đầu), đậm **dần** xuống
+  theo đường cong tới ~80% ở vùng chữ. Vì gradient dài và bắt đầu từ cao nên
+  **không lộ đường mép** kể cả trên ảnh sáng (logo, nền trắng) — chữ *chìm* vào
+  ảnh. Vẫn là ảnh làm mờ (không phải hộp đen): chỗ đậm nhất ảnh vẫn còn hiện.
+
+Điểm mấu chốt: màn tối **không bắt đầu ngay ở dòng chữ đầu** — bắt đầu ở đó tạo
+một bước nhảy tối ngay trên dòng đầu, trên ảnh sáng là lộ mép, đọc ra "ảnh +
+bảng chữ". `carousel.py` dựng sẵn scrim liền mạch; việc của bạn là **không chọn
+ảnh phá lại** (nửa dưới quá sáng thì chữ trắng vẫn khó đọc — cổng chặn có cảnh báo).
 
 ## Bước 1 — nhận tin đã duyệt
 
@@ -196,6 +217,43 @@ nhau cho một bộ 6 slide là hợp lý. Cẩn thận với ảnh **rò rỉ**
 chính thức xác nhận): rủi ro cả về độ chính xác (có thể sai/giả) lẫn bản
 quyền — bỏ qua, tìm ảnh chính thức khác thay vào.
 
+## Slide quote — BẮT BUỘC ≥2 mỗi bộ (câu trích dẫn)
+
+Slide thân có hai loại: **đoạn-văn** (`text`) và **trích dẫn** (`quote`). **Mỗi
+carousel PHẢI có ít nhất 2 slide quote** — cổng chặn dừng nếu <2. Đây là câu
+trích dẫn mạnh (phát biểu, con số gây sốc, nhận định sắc, câu chốt) đặt trong
+khung ngoặc, để format trích dẫn xuất hiện đều mỗi ngày.
+
+Chọn **những câu đắt nhất** trong bài làm quote; các slide còn lại là đoạn-văn.
+Vẫn **đừng ép cả bộ thành quote** (mất nhịp kể) — cân 2 quote + phần còn lại kể.
+Một bộ 6 slide: ~2–3 quote + 3–4 đoạn-văn là hợp.
+
+Trong spec, slide đó dùng `quote` (và `attrib` tuỳ chọn) thay cho `text`:
+
+```json
+{"image": "<ảnh>", "quote": "<nguyên văn câu nói, có dấu>",
+ "attrib": "Đọc bài “<tên bài>” - <tác giả>"}
+```
+
+`carousel.py` tự vẽ đúng dạng pull-quote: câu lớn canh trái trong một **khung 2
+góc ngoặc bo tròn** (dấu " mở góc trên-trái, đóng góc dưới-phải, nét ngang xuyên
+giữa dấu), dòng nguồn **canh giữa** dưới khung, trên cùng lớp veil liền mạch.
+Brand text (tên kênh) ở **góc trên** như mọi slide. **Bạn không đặt dấu tay,
+không sửa** — tất cả tự vẽ. Về màu:
+
+- **Net khung + brand text = xanh Apple `#0A84FF` cố định** (đồng bộ mọi vai,
+  mọi loại ảnh).
+- **Dấu " đổi màu theo HÃNG được nhắc** trong quote/nguồn (Nvidia → xanh lá,
+  Hugging Face → vàng…); không nhận ra hãng nào thì dấu cũng xanh Apple. Dùng
+  chung bảng màu hãng với `card.py`.
+
+- Mỗi slide thân là **một trong hai**: `text` (đoạn văn) hoặc `quote` (câu trích
+  dẫn). Thiếu cả hai → cổng chặn dừng.
+- Câu quote **giữ hoa/thường như gốc**, không viết hoa toàn bộ. Quá dài (chạm 7
+  dòng ở cỡ nhỏ nhất) → cổng chặn báo cắt. Quote sống ở chỗ **ngắn**.
+- Ảnh slide quote chọn như mọi slide thân: 1:1/4:5, cạnh ngắn ≥1000px, đáy đủ
+  tối cho chữ trắng đọc rõ.
+
 ## Bước 4 — dựng
 
 Viết spec JSON rồi chạy:
@@ -207,7 +265,8 @@ cat > /tmp/carousel_<id>.json <<'JSON'
   "cover":  {"image": "<ảnh bìa>", "hook": "<câu giật>", "label": "AI PHONE"},
   "slides": [
     {"image": "<ảnh 2>", "text": "đoạn một.\n\nđoạn hai."},
-    {"image": "<ảnh 3>", "text": "..."}
+    {"image": "<ảnh 3>", "text": "..."},
+    {"image": "<ảnh 4>", "quote": "<câu trích dẫn>", "attrib": "Đọc bài “...” - <tác giả>"}
   ]
 }
 JSON
@@ -239,7 +298,8 @@ thông báo rồi chạy lại.
 1. **Tiếng Việt không dấu** trong bất kỳ chữ nào (hook, label, mọi slide) →
    **dừng hẳn**, in ra chỗ sai. Gõ lại có dấu. `--bo-qua-dau` chỉ cho tiếng Anh.
 2. **Quá 10 slide** (kể cả bìa) → dừng. `draft_write` chỉ gom tới `_9`.
-3. **Thiếu `cover.image`, `cover.hook`, hay `image`/`text` của một slide** → dừng.
+3. **Thiếu `cover.image`, `cover.hook`, hay `image` của một slide** → dừng. Mỗi
+   slide thân phải có **`text` hoặc `quote`** — thiếu cả hai cũng dừng.
 4. **Trùng ảnh** (hai slide cùng một tệp, so theo nội dung tệp) → dừng. Lưu ý:
    hai CROP khác nhau của cùng một tấm thì code không bắt được — cái đó bạn
    vẫn phải tự soi.

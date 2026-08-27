@@ -50,6 +50,7 @@ from card import (
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
     FONTS,                       # thu muc font, de tro toi SFNS (San Francisco)
+    F_QUOTE, F_QUOTE_REG, F_MARK,  # kieu quote — cung dinh nghia font voi card.py
 )
 
 # ---- Khung so -------------------------------------------------------------
@@ -62,17 +63,22 @@ FG = (255, 255, 255)            # chu chinh trang
 WM = (10, 132, 255)             # #0A84FF — xanh Apple/Finder
 F_APPLE = str(FONTS / "SFNS.ttf")   # San Francisco (font he thong macOS)
 
-# NEN CHO CHU O SLIDE THAN — rang buoc Ong Chu chot (ap cho MOI vai tao hinh):
-#  (1) TREN dong chu dau: KHONG co lop nen — anh SACH. Lop nen KHONG BAO GIO
-#      cao hon dong chu dau.
-#  (2) NGAY TAI dong chu dau: lop nen gan nhu TRONG SUOT — dong chu dau HOA vao
-#      main image, khong bi ngan cach.
-#  (3) Cang XUONG cang DAM DAN len — mot fade DEU tu nhat toi dam, khong thô.
-#      Vung dam NHAT chi ~60% opacity: anh luon con hien >=40%, khong bao gio
-#      thanh mot mang nen nang. Cham 60% quanh dong chu cuoi roi giu.
+# NEN CHO CHU O SLIDE THAN — SCRIM LIEN MACH kieu cover (Ong Chu chot: chu phai
+# "chim" vao anh, KHONG duoc lo mot dai band):
+#  (1) Man toi KHONG bat dau ngay o dong chu dau. Bat dau o do tao mot buoc
+#      nhay toi ngay tren dong dau — tren anh SANG (logo, nen trang) mat bat
+#      duoc mep ngay, doc ra "anh + bang chu". Nen bat dau lam toi tu CAO hon
+#      nhieu (som nhat ~42% chieu cao), giong scrim cua slide bia.
+#  (2) Tu do dam DAN xuong theo duong cong — gradient DAI, khong mep. Dong chu
+#      dau da nam trong phan gradient (khong con "hoa vao anh sach" nhu truoc,
+#      doi lai la lien mach that tren MOI loai anh).
+#  (3) Cham ~MAX_TOI o vung chu de chu trang bat ro ke ca tren anh sang.
 BLUR_RADIUS = 14                 # mo NHE thoi — du diu chi tiet sau chu, khong lam nen "tho"/duc
-MAX_TOI = 153                    # do toi TOI DA = 60% opacity (153/255). Anh con hien 40% cho ca o dam nhat
-VEIL_EASE = 1.15                 # gan tuyen tinh: fade DEU tu nhat (dong dau) toi dam, khong dam giat
+MAX_TOI = 205                    # do toi o vung chu ~80% (truoc 153/60%): dam hon de
+                                 # chu chim lien mach ca tren anh sang, khong lo band
+VEIL_TOP = 0.42                  # scrim bat dau SOM NHAT o 42% chieu cao (kieu cover)
+VEIL_LEAD = 0.16                 # ...va luon bat dau TREN dong chu dau it nhat 16% chieu cao
+VEIL_EASE = 1.4                  # duong cong: nhat o tren, dam dan xuong — khong mep
 TEXT_BASE = 1230                 # day khoi chu, chua ~40px toi watermark
 TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1030 -> vung nen <=24% (<30%)
 FULL_TOI_PAD = 40                # cham 60% truoc day khoi chu chung nay px (dong cuoi nam tren nen dam nhat)
@@ -133,17 +139,23 @@ def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
 
 
 def _watermark(canvas, handle):
-    """Ve watermark ten kenh: thang, canh giua o day, MOT mau xanh Apple/Finder
-    co dinh, font San Francisco (SFNS). Khong doi mau theo brand."""
+    """Ve BRAND TEXT (ten kenh) o goc TREN-trai — nhan dien xuyen suot MOI slide
+    (bia, than, quote). MOT mau xanh Apple/Finder co dinh, font San Francisco
+    (SFNS), khong doi theo brand. Truoc day nam canh giua o DAY; Ong Chu chot
+    dua brand text len tren, day de trong (hoac tagline)."""
     if not handle:
         return
     font = _f(F_APPLE, WM_SIZE, 560)          # SF, medium — net kieu nhan macOS
     d = ImageDraw.Draw(canvas)
-    tw = d.textlength(handle, font=font)
     b = font.getbbox("Âg")
-    th = b[3] - b[1]
-    x = (W - tw) / 2
-    y = H - 66 - th // 2 - b[1]
+    x = PAD
+    y = 56 - b[1]
+    # Brand text nam TREN anh (khong co scrim o dinh) — them vien toi mong de
+    # doc duoc ca tren nen sang (vd chan dung nen trang) lan toi.
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            if dx or dy:
+                d.text((x + dx, y + dy), handle, font=font, fill=(0, 0, 0))
     d.text((x, y), handle, font=font, fill=WM)
 
 
@@ -192,26 +204,32 @@ def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
 
 
 def _veil_bottom(canvas, veil_rgb, text_top):
-    """Lam NEN CHO CHU sao cho DONG CHU DAU hoa vao anh, KHONG bi ngan cach:
+    """Lam NEN CHO CHU theo kieu SCRIM LIEN MACH cua cover — chu "chim" vao anh,
+    khong lo mot dai band nao ke ca tren anh sang:
 
-      - TREN `text_top`: mat na = 0. Anh sach hoan toan. Lop nen khong bao gio
-        cao hon dong chu dau.
-      - TAI `text_top`: mat na ~0 (gan nhu trong suot) — dong dau lien voi anh.
-      - Cang xuong cang dam (ease VEIL_EASE > 1: giu trong suot lau o tren roi
-        dam nhanh dan), cham gan-max tai `full_y` (~dong cuoi) roi giu xuong day.
+      - Man toi bat dau tu CAO (`top_y`, som nhat VEIL_TOP=42% chieu cao, va luon
+        tren dong chu dau it nhat VEIL_LEAD). KHONG bat dau ngay o text_top: bat
+        o do tao mot buoc nhay toi ngay tren dong dau, tren anh sang la lo mep.
+      - Tu `top_y` dam DAN xuong theo duong cong (ease VEIL_EASE), cham gan-max
+        (MAX_TOI) quanh dong chu cuoi (`full_y`) roi giu xuong day. Gradient DAI
+        nen mat khong bat duoc mep.
+      - Dong chu dau nay nam TRONG phan gradient (khong con "hoa vao anh sach"
+        nhu ban cu) — doi lai la lien mach that tren MOI loai anh.
 
-    Ca lop mo lan lop toi dung cung mot mat na nay -> dong dau vua trong vua
-    net (lien anh), dong cuoi vua toi vua mo (chu bat ro). Van la ANH LAM MO
-    chu khong phai mau den dat vao (MAX_TOI<255): khong o den chet.
+    Ca lop mo lan lop toi dung cung mot mat na. Van la ANH LAM MO chu khong phai
+    mang den dat vao (MAX_TOI<255): o dam nhat anh van con hien.
 
     `veil_rgb` la ban COVER phu kin khung; bi lam mo manh nen cat/phong to (do
     cover) khong lo ra."""
-    top_y = text_top                              # bat dau NGAY o dong chu dau, tren do = 0
-    full_y = TEXT_BASE - FULL_TOI_PAD             # cham gan-max quanh dong chu cuoi
+    # Bat dau lam toi tu CAO (>=42% chieu cao), va luon TREN dong chu dau it
+    # nhat VEIL_LEAD — de gradient DAI, khong lo mep ngay tren dong dau nhu khi
+    # bat dau dung o text_top. Day la khac biet lam chu "chim" vao anh.
+    top_y = max(0, min(text_top - int(H * VEIL_LEAD), int(H * VEIL_TOP)))
+    full_y = TEXT_BASE - FULL_TOI_PAD             # cham max quanh dong chu cuoi
     blurred = veil_rgb.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
-    # 1) tron dan sang ban mo — trong tai dong dau, mo dan xuong
-    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=255, ease=VEIL_EASE))
-    # 2) phu lop toi tang dan — trong tai dong dau, gan-max o dong cuoi
+    # 1) tron dan sang ban mo — nhat o tren, mo dan xuong
+    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=245, ease=VEIL_EASE))
+    # 2) phu lop toi tang dan — nhat o tren, gan-max o vung chu
     lop = Image.new("RGB", (W, H), BG)
     canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=MAX_TOI, ease=VEIL_EASE))
 
@@ -265,7 +283,77 @@ def build_body(img_path, text, handle, out):
     canvas.convert("RGB").save(out, "PNG")
 
 
-def build_cover(img_path, hook, label, out):
+# ---- Slide than dang quote (tuy slide) ------------------------------------
+# Mot so slide than khong phai doan van ke ma la MOT cau trich dan manh (phong
+# van, phat bieu, cau chot). Render dang pull-quote: cau lon + dau ngoac kep +
+# dong nguon, cung ngon ngu voi card.py --kieu quote. Anh van phu kin + veil
+# lien mach nhu moi slide than; watermark van o day. Dau ngoac lay ACCENT theo
+# brand (dong bo voi card.py --kieu quote): donniechublog xanh, dcgr trang.
+Q_HI, Q_LO = 60, 38              # co chu quote trong slide than
+Q_LEAD = 14                      # gian dong quote (theo px, giong card.py)
+Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
+Q_MARK = 128                     # co dau ngoac kep
+Q_BOTTOM = 1150                  # day cum quote, chua ~80px toi watermark
+
+
+def build_body_quote(img_path, quote, attrib, handle, out):
+    """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
+    quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
+    duoc nhac. Brand text o goc tren (watermark), dong nguon canh giua duoi khung."""
+    canvas = Image.new("RGBA", (W, H), (*BG, 255))
+    base = _body_image(canvas, _open(img_path))
+    d = ImageDraw.Draw(canvas)
+
+    FRAME_X = 40
+    TEXT_X = FRAME_X + 50                     # chu thut vao, hai canh khung thoang
+    avail = W - 2 * TEXT_X
+
+    f_q, q_lines = card._fit_text(d, quote, avail, max_lines=Q_LINES,
+                                  hi=Q_HI, lo=Q_LO, path=F_QUOTE)
+    buoc, tren = card._buoc_dong(f_q, q_lines, Q_LEAD)
+    quote_h = buoc * len(q_lines)
+
+    f_at = _f(F_QUOTE_REG, 26)
+    at_lines = _wrap(d, attrib, f_at, avail) if attrib else []
+    at_lh = _line_h(f_at, 1.3)
+    at_h = at_lh * len(at_lines)
+
+    BOX_PAD_Y = 62       # khung cao hon chu — khoang tho + dau " o goc
+    G_FRAME_SRC = 44     # khung <-> nguon
+    BOT_MARGIN = 96      # khoi duoi <-> day the
+
+    below_h = at_h
+    frame_bottom = H - BOT_MARGIN - ((below_h + G_FRAME_SRC) if below_h else 0)
+    last_line_bottom = frame_bottom - BOX_PAD_Y
+    first_line_top = last_line_bottom - quote_h
+    frame_top = first_line_top - BOX_PAD_Y
+
+    # Man toi lien mach, neo tu tren dinh khung.
+    _veil_bottom(canvas, base, max(0, frame_top - 24))
+
+    # Cac dong quote.
+    qy = first_line_top
+    for ln in q_lines:
+        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=FG)
+        qy += buoc
+
+    # Net khung xanh Apple (WM) co dinh; dau " theo hang nhac trong quote/nguon.
+    mau_hang = card._mau_hang_trong(quote) or card._mau_hang_trong(attrib)
+    mark_col = card._du_sang(mau_hang) if mau_hang else WM
+    card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, WM, mark_col)
+
+    # Dong nguon CANH GIUA duoi khung.
+    ay = frame_bottom + G_FRAME_SRC
+    for ln in at_lines:
+        lw_ln = d.textlength(ln, font=f_at)
+        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=(190, 190, 190))
+        ay += at_lh
+
+    _watermark(canvas, handle)               # brand text goc tren-trai (WM)
+    canvas.convert("RGB").save(out, "PNG")
+
+
+def build_cover(img_path, hook, label, out, handle=None):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     cover = _fit_cover(_open(img_path), W, H)
     canvas.paste(cover.convert("RGB"), (0, 0))
@@ -286,6 +374,7 @@ def build_cover(img_path, hook, label, out):
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
         d.text((PAD, y_label), label, font=lf, fill=(220, 220, 220))
+    _watermark(canvas, handle)          # brand text goc tren-trai, nhu moi slide
     canvas.convert("RGB").save(out, "PNG")
 
 
@@ -361,6 +450,14 @@ def _gate_chu(slides):
     probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
     loi = []
     for i, s in enumerate(slides, start=2):
+        # Slide quote dung fit rieng (cau don, khong theo vung 30%): chi chan
+        # cau QUA DAI, o co chu nho nhat van tran qua so dong cho phep.
+        if s.get("quote"):
+            n = len(_wrap(probe, s["quote"], _f(F_QUOTE, Q_LO), W - 2 * PAD))
+            if n > Q_LINES:
+                loi.append(f"slide {i}: cau quote qua dai ({n} dong > {Q_LINES} "
+                           "o co nho nhat) — cat cau ngan lai")
+            continue
         paras = [p.strip() for p in s["text"].split("\n\n") if p.strip()]
         _f_, _w_, _lh_, total = _fit_block(
             probe, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
@@ -408,10 +505,30 @@ def main():
     cover["label"] = bo_dau_cam(cover.get("label", ""))
     chunks = [("bia/hook", cover["hook"])]
     for i, s in enumerate(slides, start=2):
-        if not s.get("image") or not s.get("text"):
-            sys.exit(f"Slide {i} thieu image hoac text.")
-        s["text"] = bo_dau_cam(s["text"])
-        chunks.append((f"slide {i}", s["text"]))
+        if not s.get("image"):
+            sys.exit(f"Slide {i} thieu image.")
+        # Moi slide than la MOT trong hai: doan van ke ("text") HOAC cau trich
+        # dan ("quote", kem "attrib" tuy chon). Thieu ca hai la loi.
+        if s.get("quote"):
+            s["quote"] = bo_dau_cam(s["quote"])
+            s["attrib"] = bo_dau_cam(s.get("attrib", ""))
+            chunks.append((f"slide {i}", s["quote"]))
+            if s["attrib"]:
+                chunks.append((f"slide {i}/nguon", s["attrib"]))
+        elif s.get("text"):
+            s["text"] = bo_dau_cam(s["text"])
+            chunks.append((f"slide {i}", s["text"]))
+        else:
+            sys.exit(f"Slide {i} thieu 'text' (doan van) hoac 'quote' (cau trich dan).")
+
+    # Cong chan: MOI carousel phai co IT NHAT 2 slide QUOTE (Ong Chu chot — de
+    # format trich dan duoc ap dung deu moi ngay, khong bi bo quen).
+    so_quote = sum(1 for s in slides if s.get("quote"))
+    if so_quote < 2:
+        sys.exit(f"Carousel can IT NHAT 2 slide QUOTE (hien co {so_quote}). Chon "
+                 "cac cau dat trong bai (phat bieu, con so, cau chot) lam slide "
+                 "dang 'quote'+'attrib' — xem muc 'Slide quote' trong skill.")
+
     loi = _gate_text(chunks, a.bo_qua_dau)
     if loi:
         for e in loi:
@@ -435,11 +552,14 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
 
-    build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out))
+    build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle)
     paths = [str(out)]
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
-        build_body(s["image"], s["text"], handle, p)
+        if s.get("quote"):
+            build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p)
+        else:
+            build_body(s["image"], s["text"], handle, p)
         paths.append(p)
 
     print(f"da dung {len(paths)} slide:")
