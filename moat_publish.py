@@ -36,7 +36,14 @@ STATE_DIR = ROOT / "state"
 SECRETS = ROOT / ".secrets.env"
 
 # Chi cac bucket ANH -- day chuyen nay ra the anh, khong ra video.
-PLATFORMS = ["facebook_post", "instagram_carousel", "tiktok_slide"]
+#
+# KHONG co tiktok_slide: extension chi biet mot luong TikTok la upload VIDEO
+# (content-tiktok.js), nen the anh nhet vao form video se treo o "Post button
+# never enabled" roi het gio. Server van giao task vi cong kiem media-kind mien
+# tru tiktok/instagram (gia dinh mot content script lo ca hai kieu -- dung voi
+# Instagram, sai voi TikTok). Bo o day de khoi de ra task chet moi lan duyet bai.
+# Mo lai khi extension co luong dang anh cho TikTok.
+PLATFORMS = ["facebook_post", "instagram_carousel"]
 
 TIMEOUT = 60
 TRAN_NEN_TANG = 2200        # gioi han caption cua Instagram va TikTok
