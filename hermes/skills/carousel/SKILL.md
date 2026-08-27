@@ -124,10 +124,18 @@ venv/bin/python anh_bai.py \
 
 Script gom ảnh từ link gốc và các báo đưa cùng tin, lọc logo/favicon, xếp hạng.
 Một tin thường cho vài ảnh — chia chúng cho các slide theo ý từng slide nói.
-Thiếu ảnh cho một slide, hai lối hợp lệ:
 
-- **Dùng lại một ảnh** cho slide khác nếu nó vẫn hợp ý — không cấm.
-- **Gộp hai ý** vào một slide để khớp số ảnh có thật.
+**MỖI SLIDE MỘT ẢNH DUY NHẤT — không lặp lại.** Luật cứng: không dùng cùng một
+ảnh cho hai slide, và **cũng không dùng hai crop khác nhau của CÙNG một tấm
+ảnh** (người xem vẫn nhận ra là một hình) — mỗi slide phải là một hình thật
+khác hẳn. Một bộ 6 slide cần 6 nguồn ảnh riêng biệt.
+
+Không đủ ảnh trong đúng bài gốc thì **tìm thêm ảnh thật liên quan** — không giới
+hạn ở ảnh nhúng sẵn: ảnh sự kiện góc khác, ảnh sản phẩm/chip chính hãng, trụ sở,
+người trình bày, logo... (Wikimedia Commons, các báo khác đưa cùng tin). Tất cả
+đều là hãng lớn, material không thiếu. Chỉ khi **thật sự** không kiếm đủ ảnh
+riêng thì mới **gộp hai ý** vào một slide để giảm số ảnh cần (đừng lặp ảnh để
+lấp). Tránh ảnh **rò rỉ/chưa xác thực** (leak) — rủi ro sai và bản quyền.
 
 Bài **arxiv** không có ảnh minh hoạ thì chụp trang bìa paper làm ảnh bìa:
 
@@ -149,18 +157,29 @@ giàu thông tin nhất trong bộ.
 | Tiêu chí | Ngưỡng |
 |---|---|
 | Cạnh ngắn ảnh | từ 1000px trở lên (dưới đó phóng full bề ngang là vỡ nét) |
-| Tỉ lệ | **ưu tiên vuông (1:1)**, hạn chế tối đa ảnh ngang — xem lý do bên dưới |
+| Tỉ lệ | **1:1 (vuông) hoặc 4:5** — bắt buộc. Xem bên dưới |
 | Ảnh bìa: góc dưới-trái | tương đối thoáng cho hook |
-| Ảnh thân | không ràng buộc chỗ trống — chữ ở vùng đen riêng |
+| Ảnh thân | không ràng buộc chỗ trống — nền chữ là ảnh làm mờ ở đáy |
 
-### Vì sao ưu tiên ảnh vuông
+### Tỉ lệ ảnh: 1:1 hoặc 4:5 — không thì tự crop trước
 
-`carousel.py` dựng slide thân với vùng ảnh cao **860px** (64% khung 1350px) —
-đây là mức đã đo để vùng nền tối còn lại dưới 40%, không nhìn "nặng". Ảnh fit
-theo bề ngang 1080px: vuông luôn ra cao **1080px** (dư hẳn 860, đủ cắt dọc mà
-không mất nội dung hai bên), còn ảnh ngang 16:9 chỉ ra cao **~600px** — hụt
-mất 260px, vùng tối phình quá 40%. Đừng chỉnh code để bù cho ảnh ngang xấu;
-**đổi ảnh** trước.
+Ảnh dùng trong carousel phải là **1:1 (vuông)** hoặc **4:5**. Vuông fit bề ngang
+1080px ra cao ~1080 (phủ ~80% khung); 4:5 lấp kín khung. Cả hai đều cao đủ để
+nền chữ (ảnh làm mờ + tối ở ~30% đáy) phủ liền, không hở dải đen. Ảnh ngang
+(16:9, 4:3) fit bề ngang chỉ ra ~600px — hụt, phải cover-crop hai cạnh (mất nội
+dung mép, vd cắt chữ trên screenshot).
+
+**Tìm được ảnh đúng tỉ lệ thì thôi; KHÔNG thì crop về 1:1/4:5 TRƯỚC khi đưa vào
+carousel** (đừng để `carousel.py` tự xoay xở). Dùng `crop_ti_le.py`:
+
+```bash
+venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png              # 1:1, giữa
+venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --ti-le 4:5  # 4:5
+venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --cx 0.62    # tâm lệch phải, ôm chủ thể
+```
+
+Crop là **chọn khung ảnh thật**, không phải bịa ảnh — vẫn đúng luật "không tự
+vẽ". Chọn `--cx/--cy` để ôm đúng chủ thể (chip, sản phẩm, mặt người) vào khung.
 
 Không có ảnh vuông sẵn: tự crop vuông từ một ảnh ngang thật (chọn khung ôm
 đúng nội dung chính) — đây là chọn khung, không phải bịa ảnh, vẫn đúng luật
