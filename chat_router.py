@@ -20,16 +20,23 @@ HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
 HERMES_HOME = str(Path.home() / ".hermes")
 
 # topic -> profile. Nhan ngoai cac topic nay (vd General) di vao profile mac dinh.
+# Khoa TRUNG voi ten profile, va phai co du cho MOI topic trong state/topics.json;
+# thieu mot cai thi chat trong topic do roi ve profile mac dinh (khong phai vai
+# tren bien topic). Heller tung bi sot o day du da co topic 257.
 TOPIC_PROFILE = {
     "scout": "scout",
     "designer": "designer",
     "ethan": "ethan",
+    "heller": "heller",
+    "dre": "dre",
     "writer": "writer",
     "miles": "miles",
     "analyst": "analyst",
     "teaser": "teaser",
     "nova": "nova",
     "market": "market",
+    "gin": "gin",
+    "itachi": "itachi",
 }
 
 REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
