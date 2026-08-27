@@ -59,23 +59,22 @@ BG = (0, 0, 0)                   # den tuyet doi — dau an cua kieu carousel na
 FG = (255, 255, 255)            # chu chinh trang
 WM = (150, 150, 150)            # watermark mo
 
-# NEN CHO CHU O SLIDE THAN — ba rang buoc (Ong Chu chot, ap cho MOI vai tao hinh):
-#  (1) Lop lam nen (mo + toi) CHI phu <=30% chieu cao duoi cung. Tren do anh
-#      SACH hoan toan — 70% khung la anh nguyen ven.
-#  (2) Do dam TANG DAN tu tren xuong. Tinh ca mep mo nhat, ca dai van <=30%.
-#  (3) TUYET DOI khong phai mot mang den dac. Anh HIEN DIEN khap the (phu kin
-#      khung), phan duoi chi bi LAM MO + LAM TOI dan — mat van thay mau/khoi
-#      cua anh sau chu, nhu kinh mo, chu khong phai mot o den chet.
-#
-# Cach lam: anh cover phu kin khung (anh o KHAP noi, ke ca sau chu). Trong 30%
-# duoi, tron dan sang BAN MO cua chinh anh va phu mot lop toi tang dan — nhung
-# do toi cham tran o MAX_TOI (<255) nen anh mo van hien, khong bao gio den dac.
-DARK_TOP_RATIO = 0.70            # lop nen bat dau tu 70% -> chi phu 30% duoi
-BLUR_RADIUS = 26                 # do mo cua ban nen (kinh mo), du xoa chi tiet ma con mau/khoi
-MAX_TOI = 210                    # do toi TOI DA (~82%) — duoi 255 de anh mo van hien, khong den dac
+# NEN CHO CHU O SLIDE THAN — rang buoc Ong Chu chot (ap cho MOI vai tao hinh):
+#  (1) Lop nen chi phu <=30% duoi. Tren do anh SACH hoan toan.
+#  (2) Do dam TANG DAN tu tren xuong.
+#  (3) KHONG phai mang den dac: anh phu kin khung, phan duoi bi LAM MO + toi.
+#  (4) Ngay SAU dong chu dau tien tro xuong (vung sau + duoi chu): toi GAN TOI
+#      DA — anh chi con hien <10% — de chu bat han len, khong con cam giac chu
+#      dat tren mot tam anh mo (hai phan rieng). Lop toi cham gan-max NGAY o
+#      dong chu dau; DUNG dang cao hon dong chu dau. Doan chuyen (mo dan, anh
+#      con hien nhieu) chi la mot dai NGAN ngay tren dong chu dau, khong keo
+#      len tan 70%.
+BLUR_RADIUS = 26                 # do mo ban nen (kinh mo), xoa chi tiet ma con mau/khoi
+MAX_TOI = 232                    # do toi gan-max (~91%) — anh chi con hien ~9% (<10%), van khong 255
+VEIL_LEAD = 85                   # doan chuyen tu anh sach -> gan-max, NGAY TREN dong chu dau chung nay px
 TEXT_BASE = 1230                 # day khoi chu, chua ~40px toi watermark
-TEXT_MAX_H = 240                 # tran khoi chu; copy dai se co chu lai cho vua vung nen
-DARK_HOLD_PAD = 8                # lop toi cham MAX ngay tren dinh chu chung nay px
+TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1030 -> veil bat dau >=70% (<=30%)
+DARK_HOLD_PAD = 6                # lop toi cham gan-max ngay tren dinh chu chung nay px
 
 # Chu than: thu tu co lon nhat con vua ca chieu cao, giong tinh than _grow cua card.
 # BODY_LO ha xuong 28 de copy dai van vua vung nen 30% (ma khong tran); copy
@@ -194,18 +193,25 @@ def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
     return m.resize((W, H))
 
 
-def _veil_bottom(canvas, veil_rgb, hold_y):
-    """Lam NEN CHO CHU o phan duoi ma KHONG bien no thanh mang den dac: trong
-    30% duoi, tron dan sang BAN MO cua anh roi phu lop toi tang dan, ca hai
-    cham muc toi da tai `hold_y` (dinh khoi chu) roi giu nguyen xuong day. Vi
-    lop toi cham tran o MAX_TOI (<255) va ben duoi la ANH DA LAM MO (khong phai
-    mau den dat vao), mat van doc ra mau/khoi cua anh sau chu — mot lop kinh mo
-    toi dan, khong phai mot o den chet.
+def _veil_bottom(canvas, veil_rgb, text_top):
+    """Lam NEN CHO CHU ma khong thanh mang den dac VA khong de lo cam giac
+    "chu dat tren tam anh mo". Neo vao DONG CHU DAU (`text_top`):
 
-    `veil_rgb` la ban COVER phu kin khung (de vung duoi luon co pixel anh, ke ca
-    duoi day anh sac); no bi lam mo manh nen viec no bi cat/phong to (do cover)
-    KHONG lo ra — mat chi thay mot lop mau nhoe."""
-    top_y = int(H * DARK_TOP_RATIO)               # 945 — nen chi phu tu day xuong
+      - Doan chuyen NGAN (VEIL_LEAD px NGAY TREN dong chu dau): anh mo dan +
+        toi dan tu 0 len gan-max. Khong keo len tan 70% — dung cao hon dong
+        chu dau ngoai doan ngan nay.
+      - Tu ngay tren dong chu dau (hold_y) tro XUONG: giu o MAX_TOI (~91%) —
+        anh chi con hien <10%, gan nhu toi han, nen chu bat len ro, khong con
+        thay "tam anh mo" phia sau chu.
+
+    Van la ANH DA LAM MO chu khong phai mau den dat vao (MAX_TOI<255), nen ky
+    thuat khong phai o den chet — nhung du toi de chu doc ra la mot mat lien
+    voi anh chu khong phai hai lop.
+
+    `veil_rgb` la ban COVER phu kin khung; bi lam mo manh nen viec cat/phong to
+    (do cover) khong lo ra."""
+    hold_y = text_top - DARK_HOLD_PAD             # cham gan-max ngay tren dong chu dau
+    top_y = hold_y - VEIL_LEAD                    # doan chuyen ngan, khong len cao hon
     blurred = veil_rgb.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
     # 1) tron dan sang ban mo (duoi cang mo) — full mo tai hold_y
     canvas.paste(blurred, (0, 0), _ramp_mask(top_y, hold_y, hi=255))
@@ -223,14 +229,14 @@ def _body_image(canvas, img):
     ban mo nay phu ca vung duoi day anh sac nen khong cho nao thanh den dac.
     Cover bi cat canh nhung KHONG sao: no chi hien duoi dang DA LAM MO.
 
-    Anh phai cham xuong it nhat vung veil (>=70%), khong thi giua day anh va
-    dinh veil ho ra mot dai DEN. Anh vuong (cao ~1080 = 80%) thi du — dat
-    full be ngang KHONG cat canh. Anh NGANG/thap (ngoai le, khong phai vuong)
-    thi cover cho phu kin, chap nhan cat canh de khong lo dai den."""
-    veil_top = int(H * DARK_TOP_RATIO)
+    Anh phai cham xuong it nhat vung veil (veil bat dau cao nhat o ~70%), khong
+    thi giua day anh va dinh veil ho ra mot dai DEN. Anh vuong (cao ~1080 = 80%)
+    thi du — dat full be ngang KHONG cat canh. Anh NGANG/thap (ngoai le, khong
+    phai vuong) thi cover cho phu kin, chap nhan cat canh de khong lo dai den."""
+    veil_top_max = int(H * 0.70)                  # veil bat dau cao nhat o day
     scale = W / img.width
     nh = round(img.height * scale)
-    if nh >= veil_top + 90:                       # cham du sau vung veil
+    if nh >= veil_top_max + 90:                   # cham du sau vung veil
         resized = img.resize((W, nh), Image.LANCZOS)
         if nh > H:                                # cao hon khung: cat giua doc
             top = (nh - H) // 2
@@ -256,10 +262,9 @@ def build_body(img_path, text, handle, out, mau_watermark=None):
         d, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
     text_top = TEXT_BASE - total
 
-    # Lop nen (mo+toi) cham muc toi da NGAY TREN dinh chu — nen ca khoi chu nam
-    # tren vung nen dam nhat (doc ro), con doan tu 70% xuong dinh chu la phan
-    # chuyen dan (mo+toi tang dan). Ca dai nen = 30% duoi.
-    _veil_bottom(canvas, base, text_top - DARK_HOLD_PAD)
+    # Lop nen neo vao dong chu dau: gan-max ngay tu dong chu dau tro xuong (anh
+    # con <10%, chu bat ro), doan chuyen mo dan chi ngay tren dong chu dau.
+    _veil_bottom(canvas, base, text_top)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle, mau_watermark)
