@@ -49,7 +49,7 @@ from card import (
     _f, _wrap, _fit_contain, _fit_cover,
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
-    _tach_nhan, _mau_cua_hang,    # nhan dien + mau that cua hang duoc nhac trong bai
+    FONTS,                       # thu muc font, de tro toi SFNS (San Francisco)
 )
 
 # ---- Khung so -------------------------------------------------------------
@@ -57,7 +57,10 @@ W, H = 1080, 1350                # kho dang chuan Instagram/Facebook 4:5
 PAD = 84                         # le trai/phai cua chu, do tu mau tham chieu
 BG = (0, 0, 0)                   # den tuyet doi — dau an cua kieu carousel nay
 FG = (255, 255, 255)            # chu chinh trang
-WM = (150, 150, 150)            # watermark mo
+# Watermark ten kenh: MOT mau xanh co dinh (xanh nhu icon Finder cua macOS),
+# KHONG doi theo brand nua. Font cua Apple (San Francisco / SFNS).
+WM = (10, 132, 255)             # #0A84FF — xanh Apple/Finder
+F_APPLE = str(FONTS / "SFNS.ttf")   # San Francisco (font he thong macOS)
 
 # NEN CHO CHU O SLIDE THAN — rang buoc Ong Chu chot (ap cho MOI vai tao hinh):
 #  (1) TREN dong chu dau: KHONG co lop nen — anh SACH. Lop nen KHONG BAO GIO
@@ -129,22 +132,19 @@ def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
     return y
 
 
-def _watermark(canvas, handle, mau=None):
-    """Ve watermark thang (khong nghieng), canh giua o day.
-
-    `mau`: mau hang duoc nhac toi trong bai, da hoi toi (xem WM_MO) de la chi
-    tiet PHU chu khong canh tranh voi chu chinh. None thi ve mau WM mac dinh
-    (xam mo) — khong nhan ra thuong hieu nao trong bai."""
+def _watermark(canvas, handle):
+    """Ve watermark ten kenh: thang, canh giua o day, MOT mau xanh Apple/Finder
+    co dinh, font San Francisco (SFNS). Khong doi mau theo brand."""
     if not handle:
         return
-    font = _f(F_REG, WM_SIZE, 500)
+    font = _f(F_APPLE, WM_SIZE, 560)          # SF, medium — net kieu nhan macOS
     d = ImageDraw.Draw(canvas)
     tw = d.textlength(handle, font=font)
     b = font.getbbox("Âg")
     th = b[3] - b[1]
     x = (W - tw) / 2
     y = H - 66 - th // 2 - b[1]
-    d.text((x, y), handle, font=font, fill=mau or WM)
+    d.text((x, y), handle, font=font, fill=WM)
 
 
 def _scrim(canvas, tu=0.34):
@@ -242,7 +242,7 @@ def _body_image(canvas, img):
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out, mau_watermark=None):
+def build_body(img_path, text, handle, out):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
 
@@ -261,7 +261,7 @@ def build_body(img_path, text, handle, out, mau_watermark=None):
     _veil_bottom(canvas, base, text_top)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
-    _watermark(canvas, handle, mau_watermark)
+    _watermark(canvas, handle)
     canvas.convert("RGB").save(out, "PNG")
 
 
@@ -287,32 +287,6 @@ def build_cover(img_path, hook, label, out):
     if label:
         d.text((PAD, y_label), label, font=lf, fill=(220, 220, 220))
     canvas.convert("RGB").save(out, "PNG")
-
-
-# ---- Mau watermark theo thuong hieu duoc nhac toi -------------------------
-WM_MO = 0.55                     # do mo cua mau hang o watermark, so voi mau goc
-
-def _dinh_mau_watermark(chunks):
-    """Do qua tung doan chu THEO THU TU (bia/hook truoc, roi cac slide) tim
-    thuong hieu DAU TIEN duoc nhac toi — dung lai dung bang MAU_HANG/logic
-    nhan dien cua card.py (da co san, dung chung cho ten hang to trong tieu
-    de the tin) thay vi tu lam mot bang mau moi.
-
-    Watermark la chi tiet PHU — khong duoc canh tranh voi chu chinh (trang,
-    sang toi da). Keo mau hang ve toi (nhan WM_MO, KHONG qua _du_sang — ham
-    do keo SANG len de lam chu to/dam doc ro, nguoc huong voi y muon "mo hon"
-    o day) truoc khi tra ve, mo tuong tu muc mac dinh (150,150,150 tren nen
-    trang 255,255,255 ~ 0.59) chu khong ve nguyen mau goc.
-
-    Tra ve None neu khong nhan ra hang nao — watermark khi do ve mau WM
-    mac dinh (xam mo)."""
-    for _nhan, text in chunks:
-        for _tu, khoa in _tach_nhan(text):
-            if khoa:
-                mau = _mau_cua_hang(khoa)
-                if mau:
-                    return tuple(round(c * WM_MO) for c in mau)
-    return None
 
 
 # ---- Cong chan tieng Viet -------------------------------------------------
@@ -381,13 +355,11 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
 
-    mau_wm = _dinh_mau_watermark(chunks)
-
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out))
     paths = [str(out)]
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
-        build_body(s["image"], s["text"], handle, p, mau_wm)
+        build_body(s["image"], s["text"], handle, p)
         paths.append(p)
 
     print(f"da dung {len(paths)} slide:")

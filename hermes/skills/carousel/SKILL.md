@@ -1,6 +1,6 @@
 ---
 name: carousel
-description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — ảnh ở trên, khối chữ trắng trên nền đen ở dưới, watermark thẳng đáy tô màu thương hiệu chính bài. Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh, và các cổng chặn. Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
+description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — ảnh ở trên, chữ ở đáy trên nền ảnh làm mờ + tối dần (tối đa ~60% opacity), watermark tên kênh một màu xanh Apple/Finder font San Francisco. Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), và các cổng chặn. Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
 version: 1.1.0
 author: content-team
 license: internal
