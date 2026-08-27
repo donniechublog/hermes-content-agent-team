@@ -40,7 +40,7 @@ import json
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 # Tai dung nguyen xi cac helper da kiem chung cua card.py thay vi viet lai:
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
@@ -59,39 +59,25 @@ BG = (0, 0, 0)                   # den tuyet doi — dau an cua kieu carousel na
 FG = (255, 255, 255)            # chu chinh trang
 WM = (150, 150, 150)            # watermark mo
 
-# Vung anh cua slide than. Anh bam MEP TREN va HAI CANH (full be ngang), day
-# anh TAN dan vao nen den — khong co duong ngang chia "vung anh" voi "vung chu".
-# Ca the la mot mat phang den lien: anh o tren, tan vao den, chu nam tren den do.
-# Tuyet doi khong ve vien, vach, hay khung — cai lam hai vung tach roi.
-IMG_REGION_H = 860               # anh chiem tu mep tren xuong toi da day nay — 860/1350=64%, nen toi con lai 36%, duoi muc 40% da hen
-# Duoi `day` (mep anh that) KHONG con pixel anh nao. Ban dau tung fade "het
-# anh roi nhay thang sang mau nen dac" — ngay ca sau khi noi dai bang mot dai
-# mo, van con MOT MOC ro rang la "anh (roi mo) het, tu day la mang mau dac".
-# Nguoi dung van thay ro hai vung.
+# Slide than dung DUNG cong thuc lam nen slide bia (da duoc duyet la "chuan"):
+# anh phu tu mep tren, full be ngang, day han la CHINH ANH dam dan thanh den —
+# KHONG cat o mot moc roi noi bang mot dai mo. Dai mo (blur strip) chinh la thu
+# tao ra cam giac "hai vung": no la mot vet nhoe, khac han ket cau anh sac ben
+# tren, du co lam toi bao nhieu mat van doc ra "day la mot lop nen khac".
 #
-# Doi sang dung HAN cach cua card.py (_tran_anh, da chung minh chay tot cho
-# hero image "kieu tran" — xem STYLE_TEXT_SPEC): KHONG co moc "het anh". Man
-# toi la MOT DUONG CONG LIEN TUC bat dau tu RAT SOM — ngay trong vung anh con
-# ro — dam dan len, chu khong phai "sang het muc roi toi nhanh cuoi cung".
-# Nguoi xem thay chinh tam anh dang tam toi dan, khong thay mot ranh gioi.
-BLUR_STRIP = 70                  # lay day nay px sat day anh lam nguon mo
-BLUR_RADIUS = 46                 # do mo — du manh de khong con thay chi tiet
-# Diem UON: cho man toi chuyen tu "dam dan tu 0" (con trong vung anh, uon
-# cong t²) sang "dam dan len het muc" (uon cong nhe hon). Tinh theo TI LE
-# `day` — anh nao cung uon dung mot nhip, khong phu thuoc anh cao hay ngang.
-UON_TI_LE = 0.55
-# Tu `day` di THEM chung nay px thi dat do toi toi da (255) — chu bat dau
-# ngay sau do la doc duoc ro rang. Dai mo phai phu it nhat toi day.
-FULL_TOI_SAU_DAY = 150
-BLUR_EXT = FULL_TOI_SAU_DAY + 30  # du xa qua moc dat 255, khong ho mot khoang trong nao
-TEXT_GAP = 48                    # tu mep duoi anh that (day) toi dong chu dau
-TEXT_TOP = IMG_REGION_H + TEXT_GAP  # moc TRAN — anh doc du cao thi dung moc nay
-TEXT_BOTTOM = 1240               # chua chu qua day nay (chua cho watermark)
-# Tran RIENG cho chieu cao khoi chu, doc lap voi cho con trong. Neu chi bi
-# chan boi (TEXT_BOTTOM - text_top), anh ngang (day thap) mo ra nhieu cho hon
-# thi _fit_block lai chon co chu TO HON de lap day — dung nguoc voi y muon
-# "chu nhe tay". Tran nay giu do day chu on dinh du anh cao hay ngang.
-TEXT_MAX_H = 400                 # ~30% chieu cao khung — muc tran da hen
+# Cach dung: anh dat full be ngang tu y=0, cham day tu nhien cua no (anh vuong
+# ~1080px, phu ~80% khung). Man toi la MOT duong cong lien tuc, dat DEN HAN
+# NGAY TREN dinh khoi chu — va vi den han o do con NAM TREN pixel anh that
+# (day anh ~1080 > moc den ~880), doan tu moc den xuong day anh la anh-bi-lam-
+# den, roi lien mach sang nen den o duoi: khong co mot ranh gioi nao lo ra.
+#
+# Chu neo tu DUOI len (bottom-anchor) va bi tran chieu cao 30% khung — nen chu
+# LUON sat day, khong bao gio tran len qua 30%, va anh ngan/dai khong con keo
+# vi tri chu chay lung tung nhu khi neo tu tren.
+TEXT_BASE = 1200                 # day khoi chu (mep duoi dong cuoi), chua ~84px toi watermark
+TEXT_MAX_H = 400                 # tran chieu cao khoi chu — 400/1350 = 29.6%, duoi 30%
+DARK_RAMP = 500                  # dai doan anh chuyen dan sang den — cang dai cang muot, khong lo ranh
+DARK_PAD = 30                    # den han cao hon dinh chu chung nay, chu nam tron ven tren nen den
 
 # Chu than: thu tu co lon nhat con vua ca chieu cao, giong tinh than _grow cua card.
 BODY_HI, BODY_LO = 50, 34
@@ -191,30 +177,23 @@ def _open(path):
     return img
 
 
-def _fade_to_black(canvas, day):
-    """Man toi MOT DUONG CONG LIEN TUC tu y=0 (chu khong phai tu mot moc
-    "het anh") — dung cach cua card._tran_anh, da chung minh khong de lo ranh
-    gioi cho hero image. Hai doan noi nhau tai `uon` (ca hai cong thuc deu ra
-    dung 90 tai do, khong nhay bac):
-
-      y <= uon : dam dan tu 0 len 90, cong t² (cham roi nhanh dan) — day la
-                 doan CON TRONG vung anh, nen chi tao mot lop toi mong, mat
-                 van thay ro anh, nhung KHONG con "trong tuyet doi" o dau.
-      y >  uon : dam tiep tu 90 len 255, cong t^0.85 (giam toc nhe) — dat 255
-                 tai day + FULL_TOI_SAU_DAY, ngay truoc khi chu bat dau.
-
-    Ca man luon phu KIN chieu cao the (0..H), khong chi mot doan — dung tinh
-    than "anh phu kin the" cua kieu tran, ke ca phan duoi `day` gio la dai mo
-    noi dai chu khong phai mot khoang trong."""
-    uon = max(1, int(day * UON_TI_LE))
-    full_y = day + FULL_TOI_SAU_DAY
+def _scrim_body(canvas, black_y):
+    """Man toi cho slide than: MOT duong cong lien tuc, trong o tren, dat DEN
+    HAN tai `black_y` roi giu den toi het the. Duong cong ease t^1.6 — bat dau
+    tu 0 voi do doc gan 0 (khong lo mot ranh cung o dinh doan chuyen) roi nhanh
+    dan. `black_y` do build_body chon: cao hon dinh khoi chu mot chut VA khong
+    thap hon day anh — nho vay den han luon roi TREN pixel anh that, doan anh-
+    lam-den noi lien mach vao nen den ben duoi, khong lo duong ngang nao."""
+    soft_y = black_y - DARK_RAMP
     grad = Image.new("L", (1, H), 0)
     for y in range(H):
-        if y <= uon:
-            a = 90 * (y / uon) ** 2
+        if y <= soft_y:
+            a = 0
+        elif y >= black_y:
+            a = 255
         else:
-            t = min(1.0, (y - uon) / max(1, full_y - uon))
-            a = 90 + (255 - 90) * t ** 0.85
+            t = (y - soft_y) / max(1, black_y - soft_y)
+            a = 255 * t ** 1.6
         grad.putpixel((0, y), min(255, int(a)))
     lop = Image.new("RGBA", (W, H), (*BG, 0))
     lop.putalpha(grad.resize((W, H)))
@@ -222,61 +201,48 @@ def _fade_to_black(canvas, day):
 
 
 def _body_image(canvas, img):
-    """Slide than: anh full be ngang, bam mep tren + hai canh, day tan vao den.
+    """Dat anh full be ngang tu mep tren, KHONG cat hai canh (giu tron chi
+    tiet o mep — anh than hay la chup man hinh, bang so). Tra ve `day` = mep
+    duoi that cua anh tren the.
 
-    Anh cao hon vung thi cat bot theo chieu doc (giu giua), khong bao gio de lo
-    hai canh ben — cat ngang la mat noi dung, va vien den hai ben lam anh nhin
-    nhu mot cai hop rieng. Anh thap hon vung thi nen den lo o duoi, van tan muot
-    nen khong lo duong ngang nao.
-
-    Tra ve `day` (mep duoi cung cua anh that, theo px) de build_body dat chu
-    NGAY SAU do thay vi mot moc co dinh — anh ngang (vd chup man hinh 16:9)
-    chi cao ~600px sau khi fit be ngang, con IMG_REGION_H tinh cho anh doc
-    (~800px). Moc chu co dinh tung de lai mot khoang den CHET ~240px giua anh
-    va chu — cong don vao thi vung toi vuot qua 50% khung, nhin nang."""
+    Anh cao hon the thi cat giua theo chieu doc cho phu kin (nhu bia). Anh thap
+    hon the thi cham day o chinh chieu cao tu nhien cua no — phan duoi la nen
+    den, va man toi (ve sau) da dat den han TREN day nay nen khong lo ranh.
+    Nguyen tac chon anh (xem skill) uu tien anh VUONG chinh vi the: anh vuong
+    full be ngang cao ~1080px, phu gan het the, du cho man toi den han truoc
+    khi cham day anh."""
     scale = W / img.width
     nh = round(img.height * scale)
     resized = img.resize((W, nh), Image.LANCZOS)
-    if nh >= IMG_REGION_H:
-        top = (nh - IMG_REGION_H) // 2            # cat giua theo chieu doc
-        canvas.paste(resized.crop((0, top, W, top + IMG_REGION_H)), (0, 0))
-        day = IMG_REGION_H
-        strip_y = top + IMG_REGION_H - BLUR_STRIP
-    else:
-        canvas.paste(resized, (0, 0))
-        day = nh
-        strip_y = max(0, nh - BLUR_STRIP)
-    strip = resized.crop((0, strip_y, W, strip_y + BLUR_STRIP))
-
-    # Noi dai chinh anh (khong phai phu mau nen) xuong duoi `day`: phong to
-    # dai mong sat day roi lam mo that manh — mot dai mau/sac tiep tuc tu
-    # chinh anh, khong phai mot khoi mau dac roi vao tu ben ngoai. Chi can phu
-    # toi FULL_TOI_SAU_DAY (+ mot khoang an toan) — qua moc do man toi da dac
-    # 255, co gi ben duoi cung khong con thay duoc nua.
-    ext = strip.resize((W, BLUR_EXT), Image.LANCZOS)
-    ext = ext.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
-    canvas.paste(ext, (0, day))
-
-    # Man toi la MOT duong cong lien tuc tu y=0, khong phai tu `day` — xem
-    # docstring cua _fade_to_black.
-    _fade_to_black(canvas, day)
-    return day
+    if nh >= H:
+        top = (nh - H) // 2                       # cat giua theo chieu doc
+        canvas.paste(resized.crop((0, top, W, top + H)), (0, 0))
+        return H
+    canvas.paste(resized, (0, 0))
+    return nh
 
 
 # ---- Dung tung slide ------------------------------------------------------
 def build_body(img_path, text, handle, out, mau_watermark=None):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    day = _body_image(canvas, _open(img_path))
-    # Anh ngang (vd chup man hinh 16:9) sau khi fit be ngang chi cao ~600px,
-    # thap hon nhieu so voi IMG_REGION_H (800, tinh cho anh doc). Dat chu ngay
-    # sau MEP THAT cua anh (day) thay vi mot moc co dinh — khong thi giua anh
-    # va chu ho ra mot khoang den chet, cong don vao vung toi qua 50% khung.
-    text_top = min(TEXT_TOP, day + TEXT_GAP)
+    img_bottom = _body_image(canvas, _open(img_path))
+
+    # Do khoi chu TRUOC (tran chieu cao 30%), roi NEO TU DUOI: mep duoi khoi
+    # chu luon o TEXT_BASE, chu cao bao nhieu thi day len bay nhieu — chu luon
+    # sat day, khong bao gio tran len qua 30%, va anh cao/thap khong keo chu
+    # chay vi tri.
     d = ImageDraw.Draw(canvas)
     paras = [p.strip() for p in text.split("\n\n") if p.strip()]
-    max_h = min(TEXT_BOTTOM - text_top, TEXT_MAX_H)
-    font, wrapped, lh, _ = _fit_block(
-        d, paras, W - 2 * PAD, max_h, BODY_HI, BODY_LO)
+    font, wrapped, lh, total = _fit_block(
+        d, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
+    text_top = TEXT_BASE - total
+
+    # Den han cao hon dinh chu DARK_PAD (chu nam tron tren nen den), nhung
+    # khong thap hon day anh — de doan den luon roi tren pixel anh that, noi
+    # lien mach vao nen den duoi day anh.
+    black_y = min(text_top - DARK_PAD, img_bottom)
+    _scrim_body(canvas, black_y)
+
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle, mau_watermark)
     canvas.convert("RGB").save(out, "PNG")
