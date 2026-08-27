@@ -4,19 +4,27 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 
 ## Đội hình
 
-| Vai | Profile hermes | Việc |
-|---|---|---|
-| Finn | `scout` | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
-| Chad | `designer` | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
-| Ethan | `ethan` | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
-| Heller | `heller` | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
-| Dre | `dre` | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Heller, khác đúng một cờ `--brand` |
-| Quinn | `writer` | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
-| Miles | `miles` | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
-| Nova | `nova` | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
-| Vera | `market` | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
-| Ada | `analyst` | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
-| Jean | `teaser` | Ghép teaser từ bài đã duyệt |
+Nhãn hiển thị trên kanban và tên topic Telegram theo dạng **Tên (mã.org)**: `img`=ảnh
+đơn, `cr`=carousel dựng mới, `rcr`=re-carousel (remake nguồn có sẵn), `cap`=viết
+caption; `blog`=donniechublog, `dcgr`=dcgr.tech. Vai quét tin/nội bộ để mã theo beat,
+không org (feed cả hai brand). Slug `Profile hermes` là định danh thật (lệnh, assignee,
+topic map) — không đổi; nhãn chỉ là chữ nhìn thấy.
+
+| Vai | Profile hermes | Nhãn | Việc |
+|---|---|---|---|
+| Finn | `scout` | Finn (scout) | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
+| Chad | `designer` | Chad (img.blog) | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
+| Ethan | `ethan` | Ethan (img.dcgr) | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
+| Heller | `heller` | Heller (cr.blog) | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
+| Dre | `dre` | Dre (cr.dcgr) | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Heller, khác đúng một cờ `--brand` |
+| Gin | `gin` | Gin (clean) | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi. Chạy trên máy local (cần torch), profile server chỉ để giao/theo dõi task |
+| Itachi | `itachi` | Itachi (rcr) | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin — remake carousel nguồn sang tiếng Việt |
+| Quinn | `writer` | Quinn (cap.blog) | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
+| Miles | `miles` | Miles (cap.dcgr) | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
+| Nova | `nova` | Nova (model) | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
+| Vera | `market` | Vera (market) | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
+| Ada | `analyst` | Ada (analyst) | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
+| Jean | `teaser` | Jean (teaser) | Ghép teaser từ bài đã duyệt |
 
 ## Luồng
 
@@ -97,7 +105,7 @@ ghi thêm một dòng cảnh báo.
 ## Model từng vai
 
 **Chuỗi đang chạy** (nguồn sự thật: `~/.hermes/profiles/*/config.yaml`, soi bằng
-`model_watch.py`): 8 vai thường — chính `ds/deepseek-v4-flash`, dự phòng
+`model_watch.py`): 12 vai thường — chính `ds/deepseek-v4-flash`, dự phòng
 `v4flash@api.b.ai → ds/deepseek-chat`. Riêng Ada — chính `ds/deepseek-reasoner`
 (**bật** suy luận, vai duy nhất), dự phòng `v4-pro → deepseek-chat`. Bảng dưới
 là KẾT QUẢ ĐO chọn model, không phải cấu hình:
@@ -107,6 +115,10 @@ là KẾT QUẢ ĐO chọn model, không phải cấu hình:
 | Finn / Chad / Ethan / Heller | `ds/deepseek-v4-flash` | tắt |
 | Quinn / Miles / Jean | `ds/deepseek-chat` | tắt |
 | Ada | `ds/deepseek-reasoner` | **bật** |
+
+Dre, Gin, Itachi thêm sau, clone từ Heller nên cùng chuỗi `v4-flash` (chưa đo
+riêng). Gin chạy việc thật trên máy local (cần torch), profile server chỉ để
+giao/theo dõi task.
 
 Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
 được chọn — đúng loại việc cần suy luận thật.
@@ -171,7 +183,7 @@ Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh
 
 ## Suy luận (reasoning)
 
-Mọi vai trừ Ada đặt `agent.reasoning_effort: none` (8/9 profile).
+Mọi vai trừ Ada đặt `agent.reasoning_effort: none` (12/13 profile).
 
 Lý do: model deepseek đốt hết ngân sách token vào suy luận rồi trả về **rỗng**.
 Đo thật trên v4-pro: 3/24 lần (2/8 ở `max_tokens=800`, 1/8 ở 1200, 0/8 ở 2000).
