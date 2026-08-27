@@ -232,11 +232,26 @@ Cờ:
 
 ## Cổng chặn
 
+Mọi luật dưới đây `carousel.py` TỰ kiểm — vi phạm là dừng hẳn kèm hướng dẫn
+sửa. Bạn không cần (và không thể) tự nhớ thay nó; việc của bạn là sửa theo
+thông báo rồi chạy lại.
+
 1. **Tiếng Việt không dấu** trong bất kỳ chữ nào (hook, label, mọi slide) →
    **dừng hẳn**, in ra chỗ sai. Gõ lại có dấu. `--bo-qua-dau` chỉ cho tiếng Anh.
 2. **Quá 10 slide** (kể cả bìa) → dừng. `draft_write` chỉ gom tới `_9`.
 3. **Thiếu `cover.image`, `cover.hook`, hay `image`/`text` của một slide** → dừng.
-4. **Em-dash** → không chặn, tự thay `—` thành phẩy.
+4. **Trùng ảnh** (hai slide cùng một tệp, so theo nội dung tệp) → dừng. Lưu ý:
+   hai CROP khác nhau của cùng một tấm thì code không bắt được — cái đó bạn
+   vẫn phải tự soi.
+5. **Ảnh sai tỉ lệ** (không phải 1:1 hay 4:5, dung sai 3%) → dừng, kèm sẵn lệnh
+   `crop_ti_le.py` để cắt.
+6. **Copy dài quá vùng chữ 30%** (ở cỡ chữ nhỏ nhất vẫn tràn) → dừng, báo cần
+   cắt bớt bao nhiêu phần trăm chữ.
+7. **Cảnh báo (không chặn)**: cạnh ngắn ảnh <1000px (phóng lên sẽ mềm nét);
+   25% dưới của ảnh quá sáng (chữ trắng trên nền 60% sẽ khó đọc — crop lại cho
+   đáy ảnh rơi vào vùng tối). Thấy cảnh báo thì cân nhắc đổi/crop ảnh, nhưng
+   không bắt buộc.
+8. **Em-dash** → không chặn, tự thay `—` thành phẩy.
 
 ## Bàn giao
 

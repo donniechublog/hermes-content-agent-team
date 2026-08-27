@@ -303,6 +303,74 @@ def _gate_text(chunks, bo_qua_dau):
     return loi
 
 
+# ---- Cong chan anh + chu (code hoa luat, khong dua vao ky luat cua vai) ----
+# Cac luat nay Ong Chu da chot va truoc day chi nam trong SKILL.md — tuc trong
+# cho vai NHO va TUAN THU. Chuyen thanh cong chan cung: vi pham la dung han,
+# in ro cach sua. Vai chi con hai viec khong the code: viet copy va chon anh.
+def _gate_anh(paths):
+    """paths: [(nhan, duong_dan)]. Tra ve (loi, canh_bao)."""
+    import hashlib
+    from PIL import ImageStat
+    loi, canh_bao = [], []
+    da_thay = {}
+    for nhan, p in paths:
+        f = Path(p)
+        if not f.exists():
+            loi.append(f"{nhan}: khong thay tep anh {p}")
+            continue
+        # 1) TRUNG ANH: moi slide mot hinh duy nhat. Bat trung theo noi dung
+        # tep (hash), khong theo ten — copy cung mot anh ra hai ten van bat.
+        # (Hai CROP khac nhau cua cung mot tam thi hash khac — cai do van phai
+        # nho vai/nguoi duyet soi, code khong bat chac chan duoc.)
+        h = hashlib.md5(f.read_bytes()).hexdigest()
+        if h in da_thay:
+            loi.append(f"{nhan}: trung anh voi {da_thay[h]} — moi slide phai "
+                       "mot hinh DUY NHAT, tim anh khac")
+            continue
+        da_thay[h] = nhan
+        img = Image.open(p)
+        w, h_px = img.size
+        # 2) TI LE: phai 1:1 hoac 4:5 (dung sai 3%). Sai thi cat truoc bang
+        # crop_ti_le.py — khong de carousel.py tu xoay so.
+        r = w / h_px
+        if not (abs(r - 1.0) <= 0.03 or abs(r - 0.8) <= 0.03):
+            loi.append(f"{nhan}: ti le {w}x{h_px} ({r:.2f}) khong phai 1:1 hay "
+                       f"4:5 — cat truoc: venv/bin/python crop_ti_le.py "
+                       f"--anh {p} --ra <ra.png> [--ti-le 4:5] [--cx/--cy]")
+        # 3) DO PHAN GIAI: canh ngan <1000px phong len 1080 se mem/vo net.
+        # Canh bao thoi (khong chan): anh doc quyen nho van hon anh sai.
+        if min(w, h_px) < 1000:
+            canh_bao.append(f"{nhan}: canh ngan {min(w, h_px)}px < 1000 — "
+                            "phong len 1080 se hoi mem, co ban to hon thi thay")
+        # 4) DAY ANH SANG: nen chu chi toi max 60% opacity, chu trang can day
+        # anh TOI. Do do sang trung binh 25% duoi; sang qua thi canh bao de
+        # vai crop lai cho day roi vao vung toi (nhu vu mat duong truoc via he).
+        day = img.convert("L").crop((0, int(h_px * 0.75), w, h_px))
+        sang = ImageStat.Stat(day).mean[0]
+        if sang > 150:
+            canh_bao.append(f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — "
+                            "chu trang tren nen 60% se kho doc; crop lai cho "
+                            "day anh la vung toi hon")
+    return loi, canh_bao
+
+
+def _gate_chu(slides):
+    """Chan copy DAI qua vung chu 30%: o co chu NHO NHAT ma khoi chu van cao
+    hon TEXT_MAX_H thi truoc day no lang le tran len tren — vi pham luat 30%.
+    Gio dung han va bao thua bao nhieu de vai cat bot loi."""
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+    loi = []
+    for i, s in enumerate(slides, start=2):
+        paras = [p.strip() for p in s["text"].split("\n\n") if p.strip()]
+        _f_, _w_, _lh_, total = _fit_block(
+            probe, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
+        if total > TEXT_MAX_H:
+            loi.append(f"slide {i}: copy dai qua vung chu 30% (thua "
+                       f"{total - TEXT_MAX_H}px o co chu nho nhat) — cat bot "
+                       f"khoang {round((total - TEXT_MAX_H) / total * 100)}% chu")
+    return loi
+
+
 def main():
     ap = argparse.ArgumentParser(description="Dung carousel nhieu slide (Heller)")
     ap.add_argument("--spec", required=True,
@@ -350,6 +418,18 @@ def main():
             print(f"[LOI] {e}", file=sys.stderr)
         sys.exit("Chu carousel khong dat cong chan tieng Viet. Go lai co dau, "
                  "hoac --bo-qua-dau neu that su la tieng Anh.")
+
+    # Cong chan anh (trung / ti le / phan giai / day sang) va copy tran 30%.
+    anh = [("bia", cover["image"])] + \
+          [(f"slide {i}", s["image"]) for i, s in enumerate(slides, start=2)]
+    loi_anh, canh_bao = _gate_anh(anh)
+    loi_chu = _gate_chu(slides)
+    for c in canh_bao:
+        print(f"[CANH BAO] {c}", file=sys.stderr)
+    if loi_anh or loi_chu:
+        for e in loi_anh + loi_chu:
+            print(f"[LOI] {e}", file=sys.stderr)
+        sys.exit("Carousel khong dat cong chan anh/chu. Sua theo huong dan o tren.")
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
