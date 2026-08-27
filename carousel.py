@@ -64,15 +64,15 @@ WM = (150, 150, 150)            # watermark mo
 #      cao hon dong chu dau.
 #  (2) NGAY TAI dong chu dau: lop nen gan nhu TRONG SUOT — dong chu dau HOA vao
 #      main image, khong bi ngan cach.
-#  (3) Cang XUONG cang DAM DAN len (mo + toi tang dan), cham gan-max quanh dong
-#      chu cuoi roi giu — nen cac dong duoi doc ro, con dong dau van lien anh.
-#  (4) KHONG phai mang den dac: la ANH LAM MO + toi (MAX_TOI<255), khong 255.
-BLUR_RADIUS = 26                 # do mo ban nen (kinh mo), xoa chi tiet ma con mau/khoi
-MAX_TOI = 232                    # do toi gan-max (~91%) o dong cuoi — van khong 255 (khong den dac)
-VEIL_EASE = 1.35                 # >1: giu TRONG SUOT lau o dong dau roi moi dam nhanh dan xuong
+#  (3) Cang XUONG cang DAM DAN len — mot fade DEU tu nhat toi dam, khong thô.
+#      Vung dam NHAT chi ~60% opacity: anh luon con hien >=40%, khong bao gio
+#      thanh mot mang nen nang. Cham 60% quanh dong chu cuoi roi giu.
+BLUR_RADIUS = 14                 # mo NHE thoi — du diu chi tiet sau chu, khong lam nen "tho"/duc
+MAX_TOI = 153                    # do toi TOI DA = 60% opacity (153/255). Anh con hien 40% cho ca o dam nhat
+VEIL_EASE = 1.15                 # gan tuyen tinh: fade DEU tu nhat (dong dau) toi dam, khong dam giat
 TEXT_BASE = 1230                 # day khoi chu, chua ~40px toi watermark
 TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1030 -> vung nen <=24% (<30%)
-FULL_TOI_PAD = 40                # cham gan-max truoc day khoi chu chung nay px (dong cuoi nam tren nen dam)
+FULL_TOI_PAD = 40                # cham 60% truoc day khoi chu chung nay px (dong cuoi nam tren nen dam nhat)
 
 # Chu than: thu tu co lon nhat con vua ca chieu cao, giong tinh than _grow cua card.
 # BODY_LO ha xuong 28 de copy dai van vua vung nen 30% (ma khong tran); copy
@@ -217,30 +217,28 @@ def _veil_bottom(canvas, veil_rgb, text_top):
 
 
 def _body_image(canvas, img):
-    """Lop anh SAC: full be ngang, KHONG cat hai canh — giu tron chi tiet o mep
-    (chup man hinh, bang so khong bi cat chu). Anh vuong cao ~1080px phu ~80%
-    khung; phan duoi (neu co) do lop veil phu ban mo len.
+    """Phu anh len canvas, KHONG cho nao la nen den tro:
 
-    Tra ve ban COVER (phu kin khung) de _veil_bottom dung lam nguon ban mo —
-    ban mo nay phu ca vung duoi day anh sac nen khong cho nao thanh den dac.
-    Cover bi cat canh nhung KHONG sao: no chi hien duoi dang DA LAM MO.
+      - NEN: ban COVER phu kin khung truoc (0..H) -> duoi day anh sac cung la
+        anh (cropped), khong phai mau den. Nho vay veil nhat o tren van khong
+        lo mot dai den nao.
+      - LOP SAC len tren: full be ngang, KHONG cat hai canh -> giu tron chi
+        tiet mep (chup man hinh, bang so khong bi cat chu). Anh 4:5 phu kin
+        luon; anh 1:1 phu 0..~1080, phan duoi la nen cover (nam duoi chu +
+        watermark, da bi veil lam mo).
 
-    Anh phai cham xuong it nhat vung veil (veil bat dau cao nhat o ~70%), khong
-    thi giua day anh va dinh veil ho ra mot dai DEN. Anh vuong (cao ~1080 = 80%)
-    thi du — dat full be ngang KHONG cat canh. Anh NGANG/thap (ngoai le, khong
-    phai vuong) thi cover cho phu kin, chap nhan cat canh de khong lo dai den."""
-    veil_top_max = int(H * 0.70)                  # veil bat dau cao nhat o day
+    Tra ve ban COVER de _veil_bottom dung lam nguon ban mo. (Luat: anh dua vao
+    carousel da la 1:1 hoac 4:5 — xem crop_ti_le.py; nen luon cham du sau.)"""
+    cover = _fit_cover(img, W, H).convert("RGB")
+    canvas.paste(cover, (0, 0))                   # nen phu kin, khong cho nao den
     scale = W / img.width
     nh = round(img.height * scale)
-    if nh >= veil_top_max + 90:                   # cham du sau vung veil
-        resized = img.resize((W, nh), Image.LANCZOS)
-        if nh > H:                                # cao hon khung: cat giua doc
-            top = (nh - H) // 2
-            resized = resized.crop((0, top, W, top + H))
-        canvas.paste(resized, (0, 0))
-    else:                                         # anh ngang/thap: cover cho khong ho dai den
-        canvas.paste(_fit_cover(img, W, H).convert("RGB"), (0, 0))
-    return _fit_cover(img, W, H).convert("RGB")
+    resized = img.resize((W, nh), Image.LANCZOS)
+    if nh > H:                                    # cao hon khung: cat giua doc, full be ngang
+        top = (nh - H) // 2
+        resized = resized.crop((0, top, W, top + H))
+    canvas.paste(resized, (0, 0))                 # lop sac uncropped len tren nen cover
+    return cover
 
 
 # ---- Dung tung slide ------------------------------------------------------
