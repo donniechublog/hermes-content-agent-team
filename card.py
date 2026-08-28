@@ -725,7 +725,7 @@ def _quote_frame(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
     # --- goc tren-trai: dau MO nam GIUA net ngang tren (y0) ---
     d.arc([x0, y0, x0 + 2 * r, y0 + 2 * r], 180, 270, fill=line_color, width=lw)
     d.line([(x0, y0 + r), (x0, y0 + av)], fill=line_color, width=lw)  # net doc
-    cx = x0 + r + 30                          # dau keo RA SAT GOC (line keo vao trong)
+    cx = x0 + r + 30 + pad                    # day dau RA XA goc them mot khoang = pad
     tot = _quote_mark(d, cx, y0, mfont, mark_color, closing=False)
     ml, mr = cx - tot / 2 - pad, cx + tot / 2 + pad
     if ml > x0 + r:
@@ -737,7 +737,7 @@ def _quote_frame(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
     yb = y1 - br_lift
     d.arc([x1 - 2 * r, yb - 2 * r, x1, yb], 0, 90, fill=line_color, width=lw)
     d.line([(x1, yb - av), (x1, yb - r)], fill=line_color, width=lw)  # net doc
-    cx2 = x1 - r - 30                         # dau keo RA SAT GOC (line keo vao trong)
+    cx2 = x1 - r - 30 - pad                   # day dau RA XA goc them mot khoang = pad
     tot2 = _quote_mark(d, cx2, yb, mfont, mark_color, closing=True)
     ml2, mr2 = cx2 - tot2 / 2 - pad, cx2 + tot2 / 2 + pad
     if ml2 > x1 - aw:
@@ -843,7 +843,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
 
     ten = handle if handle.startswith("@") else "@" + handle
     top = QUOTE_PAD - 14
-    f_hchip = _f(F_MONO, 25)          # JetBrains Mono Regular — ten kenh KHONG dam
+    f_hchip = _f(F_MONO, 22)          # JetBrains Mono Regular — ten kenh KHONG dam, can voi tagline
     f_tchip = _f(F_UI, 20)            # JetBrains Mono Bold
     _chip_neo(ten, f_hchip, top, "r", CYAN, (0, 0, 0))            # ten kenh: chip cyan, chu den
     if tag:
