@@ -25,8 +25,8 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
 
 `--attrib` (dòng nguồn dưới khung) tuỳ câu hook là gì:
 - Hook là **lời có thật** của một người → `Phát biểu của <tên>, <chức/hãng>`.
-- Hook là **tiêu đề/góc giật** (không phải lời ai) → ghi **nguồn**: `Theo <báo>`
-  hoặc `<Chủ đề>, theo <báo>`. **Tuyệt đối không** gán câu bạn tự viết thành lời
+- Hook là **tiêu đề/góc giật** (không phải lời ai) → ghi **nguồn**: `via <báo>`
+  hoặc `<Chủ đề>, via <báo>`. **Tuyệt đối không** gán câu bạn tự viết thành lời
   một người cụ thể — bịa lời là sai. Hook thì ghi nguồn, đừng ghi "phát biểu".
 
 Kiểu `--kieu tran` (kicker + tiêu đề mono, layout bảng-tin cổ điển) vẫn dùng được

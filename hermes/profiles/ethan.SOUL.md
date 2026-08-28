@@ -24,7 +24,7 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
    BRIEF... — chọn nhãn đúng chủ đề, **không** để mặc định "daily AI update".
 
 `--attrib` (dòng nguồn) tuỳ câu hook: **lời có thật** → `Phát biểu của <tên>,
-<chức/hãng>`; **tiêu đề/góc giật** (không phải lời ai) → ghi **nguồn** `Theo
+<chức/hãng>`; **tiêu đề/góc giật** (không phải lời ai) → ghi **nguồn** `via
 <báo>`. **Tuyệt đối không** gán câu tự viết thành lời một người cụ thể. Câu hook
 ngắn để đọc lớn. Kiểu `--kieu tran` vẫn dùng khi muốn đổi không khí; nhớ
 `--brand dcgr` ở mọi kiểu.

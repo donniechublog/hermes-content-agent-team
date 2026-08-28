@@ -30,7 +30,7 @@ ta phải đọc tiếp. Câu đó **không nhất thiết là lời ai nói** �
 thể là chính **tiêu đề / một góc giật** (mạnh nhất khi có **con số sốc**), hoặc
 một **câu nói có thật** của người trong bài. `--tagline` là **chip category**
 (MODEL RELEASE / FUNDING / ROBOTICS / IN BRIEF...). `--attrib`: nếu là lời thật
-thì ghi `Phát biểu của <tên>`, nếu là hook/tiêu đề thì ghi nguồn `Theo <báo>` —
+thì ghi `Phát biểu của <tên>`, nếu là hook/tiêu đề thì ghi nguồn `via <báo>` —
 **không gán câu tự viết thành lời một người cụ thể** (bịa lời là sai). Kiểu **hero
 tràn** (`--kieu tran`, phần đầu) vẫn dùng khi muốn đổi không khí. Đọc phần hero
 tràn để nắm luật chọn ảnh/chữ chung; hai kiểu dùng chung mọi nguyên tắc về ảnh.
@@ -327,7 +327,7 @@ thiết là lời ai nói trong bài** — nó có thể là:
 Chọn cái nào gây ấn tượng hơn trong 3 giây. Ranh giới cứng duy nhất: **nếu ghi
 `--attrib` là lời của một người** (`Phát biểu của <tên>`) thì câu phải **đúng là
 lời có thật** của họ. Còn khi câu là tiêu đề/hook do mình soạn thì `--attrib` ghi
-**nguồn** (`Theo <báo>`), **không** gán thành lời một người — bịa lời là sai.
+**nguồn** (`via <báo>`), **không** gán thành lời một người — bịa lời là sai.
 Tin nhiều tầng không nén được vào một câu thì để carousel.
 
 `--tagline` là **chip category** góc trên-trái: MODEL RELEASE / FUNDING / ROBOTICS
