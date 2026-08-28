@@ -3,8 +3,8 @@ name: url-mascot-frame
 description: >
   Turn any image URL (or web-page URL like an X/Twitter post) into a branded,
   shareable graphic: download/screenshot the source image, wrap it in a
-  donniechu.com-branded frame (one of three styles: terminal / glow /
-  brutalist), and stamp it with a @donniechublog handle plus a mascot avatar
+  donniechu.com-branded frame (a cream card with a macOS-style title bar), and
+  stamp it with a @donniechublog handle plus a mascot avatar
   whose expression matches the vibe of the image. Use this
   whenever the user gives a URL and wants it "framed", "made into a post",
   "branded", given a "khung"/"frame"/"watermark", or turned into content for
@@ -14,10 +14,11 @@ description: >
 
 # URL → Mascot Frame
 
-Wrap a source image in a donniechu.com-branded frame (terminal / glow /
-brutalist) and stamp it with the `@donniechublog` handle + a vibe-matched
-mascot. The header/footer bands and the margin around the image *are* the
-frame; the image keeps its native aspect ratio.
+Wrap a source image in the donniechu.com frame — a cream card with a black
+hard-offset shadow and a macOS-style title bar — and stamp it with the
+`@donniechublog` handle + a vibe-matched mascot. The header/footer bands and
+the margin around the image *are* the frame; the image keeps its native aspect
+ratio.
 
 ## The pipeline (4 steps)
 
@@ -106,38 +107,30 @@ one — savage/absurd leans 💀, confusing leans 🤨/🤯.
 ```bash
 node ~/.hermes/profiles/bob/skills/url-mascot-frame/scripts/frame.js \
   --image /tmp/src.png \
-  --frame terminal \
   --emoji "😂" \
   --out ./framed.png
 ```
 
-The frame carries the donniechu.com brand voice (deep navy, cyan, JetBrains
-Mono, macOS window chrome). Layout is a fixed-height header + footer wrapping
-the image, and **the canvas flexes to the source's native aspect ratio** — no
-cropping to a square:
+One donniechu.com preset: a cream card (`#f7f5f0`) with a black hard-offset
+shadow and a macOS-style title bar, in JetBrains Mono. Fixed-height header +
+footer bands, and **the canvas flexes to the source's native aspect ratio** —
+no cropping to a square:
 
 ```
-  ● ● ●   @donniechublog                 ← header: macOS dots + handle
+  ● ● ●            @donniechublog        ← header: macOS dots (left) + handle (right)
   ┌─────────────────────────┐
-  │   source image, native  │           ← floated, per-style border
+  │   source image, native  │           ← floated, no border, the star
   │   aspect, is the star   │
-  └─────────────────────────┘
-  >_ vibe working & agentic AI     🤯    ← footer: prompt (cyan) + mascot
+  └──────────────────────🤯─┘           ← mascot straddles the image's bottom-right
+  >_ vibe working & agentic AI           ← footer: prompt
 ```
 
-Three styles via `--frame` (default `terminal`):
-- **`terminal`** — dark `#0e1117` code-window: title-bar divider, rounded image
-  card, soft drop shadow, cyan prompt. The everyday dark card.
-- **`glow`** — deeper `#0a0a14`, cyan glow top-left + blue glow bottom-right, no
-  divider. Minimal; lets a striking image breathe.
-- **`brutalist`** — light cream `#f7f5f0`, thick black border + hard offset
-  shadow, black-outlined dots. Bold; for light feeds / carousels.
-
-Other options: `--avatar <png>` to force a specific mascot file, `--avatar-index
-N` to pick a different avatar for that emoji, `--no-mascot` for text-only.
+Options: `--avatar <png>` to force a specific mascot file, `--avatar-index N`
+to pick a different avatar for that emoji, `--no-mascot` for text-only.
 `--handle` defaults to `@donniechublog`. The header handle and the footer
-prompt `>_ vibe working & agentic AI` are fixed brand marks; the mascot
-(bottom-right) stays your vibe-matched pick from Step 2.
+prompt `>_ vibe working & agentic AI` are fixed brand marks; the mascot stays
+your vibe-matched pick from Step 2, straddling the image's bottom-right corner
+on the top layer so nothing clips it.
 
 Prints a JSON summary (output path, canvas size, which avatar it used).
 

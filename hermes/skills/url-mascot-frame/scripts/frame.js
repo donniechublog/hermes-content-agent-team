@@ -3,25 +3,23 @@
  * frame.js — wrap a source image in a branded donniechu.com frame with a
  * mood-matched mascot watermark + @handle.
  *
- * Three frame styles carry the donniechu.com brand voice (terminal / dark
- * corner-glow / neobrutalist light). The chrome is fixed-height header + footer
- * bands; the image keeps its native aspect ratio and the canvas flexes to it.
+ * One donniechu.com frame preset: a cream card with a black hard-offset shadow
+ * and a macOS-style title bar. Fixed-height header + footer bands; the image
+ * keeps its native aspect ratio and the canvas flexes to it.
  *
- *   header band : macOS window dots + @handle
- *   image       : native aspect, floated, per-style border
- *   footer band : `>_ vibe working & agentic AI` (left) + mascot (right)
+ *   header band : macOS window dots + @handle (right)
+ *   image       : native aspect, floated, no border
+ *   footer band : `>_ vibe working & agentic AI` (left) + mascot (straddling)
  *
  * The source image must already be on disk. This script only does the
  * deterministic compositing so the visual result is repeatable.
  *
  * Usage:
  *   node frame.js --image <src.png> --emoji "😂" --out <out.png>
- *   node frame.js --image <src.png> --frame glow --emoji "🤯" --out <out.png>
  *
  * Options:
  *   --image        (required) path to the source image
  *   --out          output path (default: ./framed.png)
- *   --frame        terminal | glow | brutalist   (default: terminal)
  *   --emoji        emoji whose mood matches the image; resolves a mascot avatar
  *   --avatar       explicit avatar png path (overrides --emoji)
  *   --avatar-index which avatar to pick from the emoji's list (default 0)
@@ -92,7 +90,6 @@ const hasFlag = (name) => process.argv.includes('--' + name);
 
 const imagePath = arg('image');
 const outPath = arg('out', path.resolve('framed.png'));
-const frameStyle = String(arg('frame', 'terminal')).toLowerCase();
 const emoji = arg('emoji', '');
 let avatarPath = arg('avatar', '');
 const avatarIndex = parseInt(arg('avatar-index', '0'), 10) || 0;
@@ -150,35 +147,15 @@ const MONO = "'JetBrains Mono','JetBrainsMono-Regular','JetBrains Mono NL',ui-mo
 const PROMPT = '>_ vibe working & agentic AI';
 const DOTS = ['#ff5f57', '#febc2e', '#28c840']; // macOS traffic lights
 
-// Per-style palette + treatment. Layout (header/image/footer) is shared; only
-// the "paint" changes — same system, three skins.
-const STYLES = {
-  terminal: {
-    light: false, glow: false,
-    bg: '#0e1117', windowBorder: '#21262d', divider: '#21262d',
-    imgBorder: 'rgba(255,255,255,0.10)', imgBorderThick: false,
-    softShadow: true, dotStroke: null,
-    handleColor: '#8b949e', promptColor: '#00cce0',
-    cardRadiusK: 0.030, outerRadiusK: 0.026, shadowPadK: 0,
-  },
-  glow: {
-    light: false, glow: true,
-    bg: '#0a0a14', windowBorder: '#21262d', divider: null,
-    imgBorder: 'rgba(255,255,255,0.12)', imgBorderThick: false,
-    softShadow: true, dotStroke: null,
-    handleColor: '#8b949e', promptColor: '#00cce0',
-    cardRadiusK: 0.032, outerRadiusK: 0.030, shadowPadK: 0,
-  },
-  brutalist: {
-    light: true, glow: false,
-    bg: '#f7f5f0', windowBorder: '#0a0a0a', divider: '#0a0a0a',
-    imgBorder: '#0a0a0a', imgBorderThick: true,
-    softShadow: false, dotStroke: '#0a0a0a',
-    handleColor: '#555555', promptColor: '#0a0a0a',
-    cardRadiusK: 0.016, outerRadiusK: 0.014, shadowPadK: 0.028,
-  },
+// The single donniechu.com frame preset: cream card, black hard offset shadow,
+// macOS title bar. Brand tokens read from the live site's CSS. The image floats
+// inside with NO border of its own.
+const S = {
+  bg: '#f7f5f0', windowBorder: '#0a0a0a', divider: '#0a0a0a',
+  dotStroke: '#0a0a0a',
+  handleColor: '#555555', promptColor: '#0a0a0a',
+  cardRadiusK: 0.016, outerRadiusK: 0.014, shadowPadK: 0.028,
 };
-const S = STYLES[frameStyle] || STYLES.terminal;
 
 (async () => {
   if (!noMascot && !avatarPath && emoji) {
@@ -200,85 +177,42 @@ const S = STYLES[frameStyle] || STYLES.terminal;
 
   // --- frame geometry (header + image + footer; canvas flexes to the image) ---
   const side = R(short * 0.09);
-  const headerH = R(short * 0.13);      // window title bar: dots + @handle
-  const footerH = R(short * 0.17);      // footer band: prompt + mascot
+  // Top/bottom bands kept close to the side margin so the frame reads balanced
+  // on all four edges (they used to be much thicker than the left/right margin).
+  const headerH = R(short * 0.10);      // thin title bar: dots + @handle
+  const footerH = R(short * 0.10);      // thin footer: prompt (mascot overlaps the image)
   const radius = Math.max(8, R(short * S.cardRadiusK));   // source card corners
   const outerR = Math.max(6, R(short * S.outerRadiusK));  // card / window corners
-  const thick = Math.max(3, R(short * 0.010));            // heavy border (brutalist)
+  const thick = Math.max(2, R(short * 0.005));            // black window border + divider (halved)
+  const gapTop = R(short * 0.04);                        // breathing room below the title bar
   const cardW = W + side * 2;
-  const cardH = H + headerH + footerH;
+  const cardH = H + headerH + gapTop + footerH;
   const shadowPad = R(short * S.shadowPadK);              // hard offset shadow room
   const CW = cardW + shadowPad;
   const CH = cardH + shadowPad;
-  const imgTop = headerH;
+  const imgTop = headerH + gapTop;                       // push the image clear of the toolbar
 
-  // --- background / window surface ---------------------------------------
-  let bgInner = '';
-  if (S.light) {
-    // neobrutalist: hard offset shadow, then cream card with a thick black edge
-    const hw = thick / 2;
-    bgInner = `
+  // --- background: cream card, black hard offset shadow, black title-bar rule
+  const hw = thick / 2;
+  const bgInner = `
   <rect x="${shadowPad}" y="${shadowPad}" width="${cardW}" height="${cardH}" rx="${outerR}" ry="${outerR}" fill="#0a0a0a"/>
-  <rect x="${hw}" y="${hw}" width="${cardW - thick}" height="${cardH - thick}" rx="${outerR}" ry="${outerR}" fill="${S.bg}" stroke="${S.windowBorder}" stroke-width="${thick}"/>`;
-    if (S.divider) {
-      bgInner += `
+  <rect x="${hw}" y="${hw}" width="${cardW - thick}" height="${cardH - thick}" rx="${outerR}" ry="${outerR}" fill="${S.bg}" stroke="${S.windowBorder}" stroke-width="${thick}"/>
   <line x1="0" y1="${headerH}" x2="${cardW}" y2="${headerH}" stroke="${S.divider}" stroke-width="${thick}"/>`;
-    }
-  } else {
-    const glowDefs = S.glow ? `
-    <radialGradient id="gcyan" cx="8%" cy="4%" r="62%">
-      <stop offset="0%"  stop-color="rgba(0,204,224,0.22)"/>
-      <stop offset="55%" stop-color="rgba(0,204,224,0)"/>
-    </radialGradient>
-    <radialGradient id="gblue" cx="100%" cy="100%" r="60%">
-      <stop offset="0%"  stop-color="rgba(88,166,255,0.20)"/>
-      <stop offset="55%" stop-color="rgba(88,166,255,0)"/>
-    </radialGradient>` : '';
-    const glowRects = S.glow ? `
-  <rect x="0" y="0" width="${cardW}" height="${cardH}" rx="${outerR}" ry="${outerR}" fill="url(#gcyan)"/>
-  <rect x="0" y="0" width="${cardW}" height="${cardH}" rx="${outerR}" ry="${outerR}" fill="url(#gblue)"/>` : '';
-    bgInner = `
-  <defs>${glowDefs}</defs>
-  <rect x="0" y="0" width="${cardW}" height="${cardH}" rx="${outerR}" ry="${outerR}" fill="${S.bg}"/>${glowRects}
-  <rect x="0.75" y="0.75" width="${cardW - 1.5}" height="${cardH - 1.5}" rx="${outerR}" ry="${outerR}" fill="none" stroke="${S.windowBorder}" stroke-width="1.5"/>`;
-    if (S.divider) {
-      bgInner += `
-  <line x1="0" y1="${headerH}" x2="${cardW}" y2="${headerH}" stroke="${S.divider}" stroke-width="1.5"/>`;
-    }
-  }
   const bgSvg = Buffer.from(`<svg width="${CW}" height="${CH}" xmlns="http://www.w3.org/2000/svg">${bgInner}
 </svg>`);
   const base = sharp(bgSvg).png();
 
   const layers = [];
 
-  // --- source image card (rounded, per-style border) ---
+  // --- source image: rounded corners, NO border, floated in the card ---
   const mask = Buffer.from(
     `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" rx="${radius}" ry="${radius}"/></svg>`
   );
   const card = await sharp(srcBuf).composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer();
-
-  if (S.softShadow) {
-    const sm = R(short * 0.05);
-    const sigma = Math.max(4, R(short * 0.022));
-    const shadowSvg = Buffer.from(
-      `<svg width="${W + sm * 2}" height="${H + sm * 2}" xmlns="http://www.w3.org/2000/svg"><rect x="${sm}" y="${sm}" width="${W}" height="${H}" rx="${radius}" ry="${radius}" fill="rgba(0,0,0,0.55)"/></svg>`
-    );
-    const shadow = await sharp(shadowSvg).blur(sigma).png().toBuffer();
-    layers.push({ input: shadow, left: side - sm, top: imgTop - sm + R(short * 0.012) });
-  }
   layers.push({ input: card, left: side, top: imgTop });
 
-  // image edge border
-  const ibW = S.imgBorderThick ? thick : 1.5;
-  const ibIn = ibW / 2;
-  const imgBorderSvg = Buffer.from(
-    `<svg width="${CW}" height="${CH}" xmlns="http://www.w3.org/2000/svg"><rect x="${side - ibIn}" y="${imgTop - ibIn}" width="${W + ibW}" height="${H + ibW}" rx="${radius}" ry="${radius}" fill="none" stroke="${S.imgBorder}" stroke-width="${ibW}"/></svg>`
-  );
-  layers.push({ input: imgBorderSvg, left: 0, top: 0 });
-
   // --- header: macOS dots + @handle ---
-  const dotD = Math.max(6, R(headerH * 0.20));
+  const dotD = Math.max(6, R(headerH * 0.28));
   const dotR = dotD / 2;
   const dotGap = R(dotD * 0.7);
   const dotCy = R(headerH / 2);
@@ -288,34 +222,41 @@ const S = STYLES[frameStyle] || STYLES.terminal;
     const stroke = S.dotStroke ? ` stroke="${S.dotStroke}" stroke-width="${Math.max(1, R(thick / 2))}"` : '';
     dotsSvg += `<circle cx="${cx}" cy="${dotCy}" r="${dotR}" fill="${DOTS[i]}"${stroke}/>`;
   }
-  const handleX = side + 3 * dotD + 2 * dotGap + R(dotD * 1.2);
+  // @handle: smaller text, anchored to the RIGHT edge of the header (dots left,
+  // handle right → the title bar is balanced at both ends).
   const headerFont = R(headerH * 0.34);
   const headerBase = R(headerH / 2 + headerFont * 0.35);
-  const headerWeight = S.light ? 700 : 500;
+  const headerWeight = 700;
+  const handleRight = cardW - side;
   const headerSvg = Buffer.from(`<svg width="${CW}" height="${CH}" xmlns="http://www.w3.org/2000/svg">
   ${dotsSvg}
-  <text x="${handleX}" y="${headerBase}" font-family="${MONO}" font-size="${headerFont}" font-weight="${headerWeight}" fill="${S.handleColor}">${esc(handle)}</text>
+  <text x="${handleRight}" y="${headerBase}" text-anchor="end" font-family="${MONO}" font-size="${headerFont}" font-weight="${headerWeight}" letter-spacing="0.3" fill="${S.handleColor}">${esc(handle)}</text>
 </svg>`);
   layers.push({ input: headerSvg, left: 0, top: 0 });
 
   // --- footer: `>_ vibe working & agentic AI` (left) + mascot (right) ---
-  const footFont = R(footerH * 0.19);
+  const footFont = R(footerH * 0.36);
   const footBase = cardH - R(footerH / 2) + R(footFont * 0.35);
-  const footWeight = S.light ? 700 : 500;
+  const footWeight = 700;
   const promptSvg = Buffer.from(`<svg width="${CW}" height="${CH}" xmlns="http://www.w3.org/2000/svg">
   <text x="${side}" y="${footBase}" font-family="${MONO}" font-size="${footFont}" font-weight="${footWeight}" fill="${S.promptColor}">${esc(PROMPT)}</text>
 </svg>`);
   layers.push({ input: promptSvg, left: 0, top: 0 });
 
-  // mascot watermark (bottom-right of footer band) — left as-is, vibe-matched
+  // mascot watermark — bottom-right corner (inset by `side`, unchanged). It
+  // STRADDLES the seam between the footer band and the image: vertical centre
+  // sits exactly on the image's bottom edge, so the lower half is on the border
+  // and the upper half is on the image. Pushed LAST → top-most layer, so the
+  // image can't clip the half that sits over it.
   let chosenAvatar = null;
   if (!noMascot && avatarPath && fs.existsSync(avatarPath)) {
     chosenAvatar = avatarPath;
-    const avH = R(footerH * 0.92);
+    const avH = R(short * 0.16);
     const avBuf = await sharp(avatarPath).resize({ height: avH }).png().toBuffer();
     const am = await sharp(avBuf).metadata();
-    const avX = cardW - side - am.width;
-    const avY = (cardH - footerH) + R((footerH - am.height) / 2);
+    const seamY = cardH - footerH;            // image bottom edge = footer top
+    const avX = cardW - side - am.width;      // bottom-right, inset by side
+    const avY = seamY - R(am.height / 2);      // centre on the seam: half border, half image
     layers.push({ input: avBuf, left: Math.max(0, avX), top: Math.max(0, avY) });
   }
 
@@ -323,7 +264,7 @@ const S = STYLES[frameStyle] || STYLES.terminal;
 
   console.log(JSON.stringify({
     out: outPath,
-    frame: STYLES[frameStyle] ? frameStyle : 'terminal',
+    frame: 'donnie',
     canvas: { width: CW, height: CH },
     source: { width: W, height: H },
     emoji: emoji || null,
