@@ -26,6 +26,7 @@ ICONS = ASSETS / "icons"
 # Brand guideline: JetBrains Mono cho heading/UI, Inter cho body text
 F_BOLD = str(FONTS / "JetBrainsMono-ExtraBold.ttf")   # tieu de
 F_UI = str(FONTS / "JetBrainsMono-Bold.ttf")          # nhan category, UI
+F_MONO = str(FONTS / "JetBrainsMono-Regular.ttf")     # chip neobrutalism khong dam
 F_REG = str(FONTS / "Inter.ttf")                      # via, ten kenh, UI phu
 # Phu de dung serif: no la cau dan chuyen, khong phai nhan UI. Chan chu tao
 # nhip doc cham hon tieu de mono, hai tang chu tach bach han thay vi chi khac
@@ -842,7 +843,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
 
     ten = handle if handle.startswith("@") else "@" + handle
     top = QUOTE_PAD - 14
-    f_hchip = _f(F_BOLD, 25)          # JetBrains Mono ExtraBold — mono chunky
+    f_hchip = _f(F_MONO, 25)          # JetBrains Mono Regular — ten kenh KHONG dam
     f_tchip = _f(F_UI, 20)            # JetBrains Mono Bold
     _chip_neo(ten, f_hchip, top, "r", CYAN, (0, 0, 0))            # ten kenh: chip cyan, chu den
     if tag:
