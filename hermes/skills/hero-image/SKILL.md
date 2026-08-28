@@ -328,12 +328,16 @@ Bố cục script tự vẽ, đúng dạng pull-quote của báo:
 - câu trích dẫn lớn, đậm trong **khung 2 góc ngoặc bo tròn** (dấu " mở góc
   trên-trái, đóng góc dưới-phải, nét ngang xuyên giữa dấu). **Không đặt tay,
   không sửa** — script tự vẽ; bạn chỉ cần câu đủ ngắn để đọc lớn.
-- tagline góc **trên-trái** (xám dịu), brand text (tên kênh) góc **trên-phải**,
-  dòng nguồn **canh giữa** dưới khung.
-- **Màu**: tên kênh **và nét khung** = **`CYAN` của bộ nhận diện** (donniechublog
-  `#00cce0`, dcgr trắng) — cùng tông cyan trên thẻ Bob, KHÔNG dùng xanh Apple.
-  **Dấu " đổi theo HÃNG được nhắc** trong quote/nguồn (Nvidia→xanh lá, Hugging
-  Face→vàng…), không nhận ra hãng thì dấu " cũng CYAN.
+- tagline góc **trên-trái**, brand text (tên kênh) góc **trên-phải**, dòng nguồn
+  **canh giữa** dưới khung.
+- **Hai chữ trên đỉnh theo phong cách NEOBRUTALISM**: mỗi chữ nằm trong một
+  **chip khối đặc** — viền đen dày, **bóng cứng lệch** (không mờ), chữ **JetBrains
+  Mono** đậm. Tagline chip **trắng** (trái), tên kênh chip **`CYAN` nhận diện**
+  (donniechublog `#00cce0`, dcgr trắng — trái/phải vẫn phân biệt bằng vị trí),
+  chữ trong chip đều **đen**. Script tự vẽ, không chỉnh tay.
+- **Màu phần khung**: nét khung = **`CYAN` của bộ nhận diện** (không dùng xanh
+  Apple). **Dấu " đổi theo HÃNG được nhắc** trong quote/nguồn (Nvidia→xanh lá,
+  Hugging Face→vàng…), không nhận ra hãng thì dấu " cũng CYAN.
 
 ```bash
 venv/bin/python card.py --kieu quote --ratio 4:5 \
