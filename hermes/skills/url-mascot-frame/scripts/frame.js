@@ -153,7 +153,9 @@ const DOTS = ['#ff5f57', '#febc2e', '#28c840']; // macOS traffic lights
 const S = {
   bg: '#f7f5f0', windowBorder: '#0a0a0a', divider: '#0a0a0a',
   dotStroke: '#0a0a0a',
-  handleColor: '#555555', promptColor: '#0a0a0a',
+  // handle stays a quiet grey; the cyan accent lives on the footer prompt
+  // (brand light-variant #009bb5 — reads on cream where bright #00cce0 washes out).
+  handleColor: '#6e6e6e', promptColor: '#008299',
   cardRadiusK: 0.016, outerRadiusK: 0.014, shadowPadK: 0.028,
 };
 
@@ -237,7 +239,7 @@ const S = {
   // --- footer: `>_ vibe working & agentic AI` (left) + mascot (right) ---
   const footFont = R(footerH * 0.36);
   const footBase = cardH - R(footerH / 2) + R(footFont * 0.35);
-  const footWeight = 700;
+  const footWeight = 500;
   const promptSvg = Buffer.from(`<svg width="${CW}" height="${CH}" xmlns="http://www.w3.org/2000/svg">
   <text x="${side}" y="${footBase}" font-family="${MONO}" font-size="${footFont}" font-weight="${footWeight}" fill="${S.promptColor}">${esc(PROMPT)}</text>
 </svg>`);
