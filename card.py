@@ -810,12 +810,13 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         d.text((TEXT_X, qy - tren), ln, font=f_q, fill=FG)
         qy += buoc
 
-    # MAU: net khung CO DINH xanh Apple; DAU " doi theo hang duoc nhac trong chu
-    # de (quote hoac dong nguon). Khong nhan ra hang nao thi dau cung xanh Apple.
+    # MAU: net khung dung CYAN cua bo nhan dien (nhu ten kenh, dong tong voi the
+    # cua Bob); DAU " doi theo hang duoc nhac trong chu de (quote hoac dong
+    # nguon). Khong nhan ra hang nao thi dau cung CYAN.
     mau_hang = _mau_hang_trong(quote) or _mau_hang_trong(attrib)
-    mark_col = _du_sang(mau_hang) if mau_hang else APPLE_BLUE
+    mark_col = _du_sang(mau_hang) if mau_hang else CYAN
     _quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom,
-                 APPLE_BLUE, mark_col)
+                 CYAN, mark_col)
 
     # Duoi khung: dong nguon (attribution), CANH GIUA.
     ay = frame_bottom + G_FRAME_SRC

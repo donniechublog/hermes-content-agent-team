@@ -330,10 +330,10 @@ Bố cục script tự vẽ, đúng dạng pull-quote của báo:
   không sửa** — script tự vẽ; bạn chỉ cần câu đủ ngắn để đọc lớn.
 - tagline góc **trên-trái** (xám dịu), brand text (tên kênh) góc **trên-phải**,
   dòng nguồn **canh giữa** dưới khung.
-- **Màu**: tên kênh = **`CYAN` của bộ nhận diện** (donniechublog `#00cce0`, dcgr
-  trắng) — cùng tông cyan trên thẻ Bob, KHÔNG dùng xanh Apple. Nét khung vẫn
-  **xanh Apple `#0A84FF` cố định**; **dấu " đổi theo HÃNG được nhắc** trong
-  quote/nguồn (Nvidia→xanh lá, Hugging Face→vàng…), không có hãng thì xanh Apple.
+- **Màu**: tên kênh **và nét khung** = **`CYAN` của bộ nhận diện** (donniechublog
+  `#00cce0`, dcgr trắng) — cùng tông cyan trên thẻ Bob, KHÔNG dùng xanh Apple.
+  **Dấu " đổi theo HÃNG được nhắc** trong quote/nguồn (Nvidia→xanh lá, Hugging
+  Face→vàng…), không nhận ra hãng thì dấu " cũng CYAN.
 
 ```bash
 venv/bin/python card.py --kieu quote --ratio 4:5 \
