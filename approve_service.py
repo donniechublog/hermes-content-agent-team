@@ -556,7 +556,22 @@ Dung lai. Bao dung mot cau: "Khong tim duoc anh that cho tin nay" kem link da th
 KHONG tao the, KHONG ve SVG, KHONG chay card.py. Ong Chu se quyet dinh bo tin
 hay tu dua anh vao.
 
-BUOC 4 — dung anh CHINH (chi khi buoc 2 co anh):
+BUOC 4 — dung the anh (chi khi buoc 2 co anh). MAC DINH LA KIEU QUOTE.
+
+Kieu CHUAN cua kenh la the TRICH DAN (--kieu quote): mot cau noi manh CO THAT
+trong bai (nguyen van phong van, phat bieu, cau chot) trong khung dau " + dong
+nguon. Doc {source_note} / {summary} va bai goc ({link}) de tim mot cau nhu vay.
+
+4a — CO cau quote that (uu tien):
+cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \\
+  --kieu quote --ratio 4:5 \\
+  --image /tmp/src_{draft_id}.png \\
+  --title "<NGUYEN VAN cau noi, co dau, giu hoa/thuong nhu goc>" \\
+  --attrib "Doc bai “<ten bai>” - <tac gia/nguon>"{co_brand} \\
+  --out {out_png}
+
+4b — bai KHONG co cau quote that nao du manh de dung mot minh: TUYET DOI KHONG
+tu nghi ra mot cau roi dong ngoac kep (do la bia loi nguoi ta). Roi ve hero tran:
 cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \\
   --kieu tran --ratio 4:5 \\
   --kicker "<nhan ngan TIENG ANH, toi da 2 tu>" \\
@@ -582,21 +597,30 @@ viet (Quinn/Miles) MOI bat dau viet caption; anh chua dat, bam "Bo", thi khong
 ai viet ca. Vay nen viec cua ban chi la ra ANH cho that dat — dung cho, cung
 dung tu di goi nguoi viet.
 
-LUU Y — doc skill `hero-image` de biet day du, day chi la phan hay sai nhat:
+LUU Y — doc skill `hero-image` (muc "Kieu quote" la mac dinh, phan hero tran la
+du phong). Day chi la phan hay sai nhat:
 
-- KHONG co --subtitle, KHONG co --via, KHONG co nhan category. Tren anh chi co
-  bon thu: anh, kicker, tieu de, ten kenh. Khong khung, khong vach.
-- TIEU DE LA MOT CAU HOAN CHINH bao quat ca tin, doc xong la hieu chuyen gi.
-  KHONG gioi han so dong, KHONG gioi han ky tu — script tu chon co chu lon nhat
-  con vua cho. Dung cat cau cho ngan roi de no thanh nhan de cut.
-- Tin co so thi dua so vao chinh cau do.
-- Ten hang trong tieu de duoc TO MAU tu dong, ban khong phai lam gi. Gap hang
-  chua duoc to thi bao lai de them vao danh sach.
-- Kicker dung TIENG ANH, toi da hai tu: BREAKING / MODEL RELEASE / AGENT /
-  FUNDING / BENCHMARK / OPEN SOURCE / M&A / RESEARCH / INFRA / POLICY.
-- Tieu de bang TIENG VIET CO DAU.
-- Nua duoi anh phai TRONG, vi chu se de len do. Anh chup man hinh day chu thi
-  doi anh khac.
+Chung ca hai kieu:
+- Anh va chu la MOT mat phang lien. KHONG khung, KHONG vach, KHONG phu de.
+- Chu TIENG VIET CO DAU. Nua duoi/vung dat chu phai TRONG; anh chup man hinh
+  day chu thi doi anh khac.
+- Ten hang trong chu duoc TO MAU tu dong, ban khong phai lam gi. Gap hang chua
+  duoc to thi bao lai de them vao danh sach.
+
+Kieu quote (mac dinh):
+- --title la NGUYEN VAN cau noi, giu hoa/thuong nhu goc (KHONG viet hoa toan bo).
+  Cau ngan de doc lon — cham 7 dong la nen cat.
+- --attrib la dong nguon: `Doc bai "<ten bai>" - <tac gia>`.
+- Dau " trong khung tu doi mau theo hang duoc nhac, tu dong.
+
+Kieu tran (du phong, khi khong co quote that):
+- KHONG --subtitle, KHONG --via, KHONG nhan category. Tren anh chi co bon thu:
+  anh, kicker, tieu de, ten kenh.
+- TIEU DE LA MOT CAU HOAN CHINH bao quat ca tin, khong gioi han so dong/ky tu;
+  tin co so thi dua so vao chinh cau do.
+- Kicker TIENG ANH, toi da hai tu: BREAKING / MODEL RELEASE / AGENT / FUNDING /
+  BENCHMARK / OPEN SOURCE / M&A / RESEARCH / INFRA / POLICY.
+
 - Nguon anh ({via}) KHONG con in tren anh nua. Bao lai nguon do trong ket qua
   task de nguoi viet caption dua vao bai — day la viec SONG SONG, KHONG phai
   dieu kien de gui anh. Ban da gui anh o buoc 5 roi moi ghi nguon cho ho.

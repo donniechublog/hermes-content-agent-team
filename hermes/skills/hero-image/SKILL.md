@@ -12,10 +12,10 @@ metadata:
     tags: [hero-image, card, tran, quote, trich-dan, designer, chad, donniechublog, dcgr]
 ---
 
-# hero-image — kiểu tràn, liền một mặt
+# hero-image — mặc định kiểu quote, dự phòng kiểu tràn
 
-Kiểu ảnh duy nhất của đội. **Chad** dựng cho donniechublog, **Ethan** dựng cho
-dcgr.tech. Hai người làm y hệt nhau, khác đúng một cờ:
+Thẻ ảnh của đội, một mặt phẳng liền. **Chad** dựng cho donniechublog, **Ethan**
+dựng cho dcgr.tech. Hai người làm y hệt nhau, khác đúng một cờ:
 
 | Vai | Profile | Cờ riêng |
 |---|---|---|
@@ -23,6 +23,13 @@ dcgr.tech. Hai người làm y hệt nhau, khác đúng một cờ:
 | Ethan | `ethan` | `--brand dcgr` |
 
 Ngoài cờ đó ra, mọi thứ trong tài liệu này áp cho cả hai như nhau.
+
+**Kiểu mặc định là `--kieu quote`** — thẻ trích dẫn (mục "Kiểu quote" bên dưới):
+một câu nói **có thật** trong bài, đặt trong khung dấu `"` + dòng nguồn. Chỉ khi
+bài **không có câu quote thật** nào đủ mạnh để đứng một mình mới rơi về **hero
+tràn** (`--kieu tran`, phần đầu tài liệu này). **Không bao giờ tự nghĩ ra một câu
+rồi đóng ngoặc kép** — thà dùng tràn còn hơn bịa lời người ta. Đọc phần hero tràn
+để nắm luật chọn ảnh/chữ chung; hai kiểu dùng chung mọi nguyên tắc về ảnh.
 
 ## Kiểu tràn là gì, và vì sao nó tồn tại
 
@@ -304,15 +311,17 @@ tuyệt đối không thay bằng hình tự vẽ.
 
 Đây là chỗ dễ rơi nhất của kiểu tràn: thẻ không còn nhắc bạn, nên phải tự nhớ.
 
-## Kiểu quote — thẻ trích dẫn (biến thể của card.py)
+## Kiểu quote — thẻ trích dẫn (KIỂU MẶC ĐỊNH)
 
-Cùng `card.py`, khác đúng `--kieu quote`. Không thay hero image, mà cho một loại
-nội dung riêng: **một câu nói mạnh đứng một mình** — trích từ bài phỏng vấn, một
-nhận định sắc, một câu chốt của bài. Khác hero image (một câu bao quát *cả tin*)
-ở chỗ đây là **lời của một người**, có ghi nguồn ngay trên thẻ.
+Cùng `card.py`, khác đúng `--kieu quote`. **Đây là kiểu chuẩn/mặc định của kênh**:
+**một câu nói mạnh đứng một mình** — trích từ bài phỏng vấn, một nhận định sắc,
+một câu chốt của bài. Khác hero tràn (một câu bao quát *cả tin*, do người viết
+soạn) ở chỗ đây là **lời có thật của một người**, có ghi nguồn ngay trên thẻ.
 
-Dùng khi bài có một câu đủ mạnh để tự nó dừng người lướt — phỏng vấn, phát biểu,
-một luận điểm gọn. Tin thời sự nhiều tầng thì vẫn dùng hero image hoặc carousel.
+Mặc định thử kiểu này trước. Điều kiện cứng: câu quote phải **có thật** trong bài
+(nguyên văn), không được tự nghĩ ra rồi đóng ngoặc kép. Bài không moi được câu
+quote thật nào đủ mạnh để tự nó dừng người lướt thì mới rơi về hero tràn; tin
+nhiều tầng không nén được vào một câu thì để carousel.
 
 Bố cục script tự vẽ, đúng dạng pull-quote của báo:
 - ảnh phủ kín + màn tối liền mạch (cùng bài với kiểu tràn, cùng nguyên tắc trên),
