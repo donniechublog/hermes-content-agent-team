@@ -824,7 +824,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=_pha(FG, 0.72))
         ay += at_lh
 
-    # Hang TREN: brand text canh TRAI, tagline canh PHAI, cung mot hang.
+    # Hang TREN: tagline canh TRAI, brand text (ten kenh) canh PHAI, cung mot hang.
     # Ca hai nam tren anh nen co vien toi mong de doc duoc.
     def _chu_vien(txt, x, y, font, fill):
         for dx in (-1, 0, 1):
@@ -836,14 +836,17 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     f_h = _f(F_REG, 30, weight=600)
     ten = handle if handle.startswith("@") else "@" + handle
     hy = QUOTE_PAD - 4
-    _chu_vien(ten, QUOTE_PAD, hy, f_h, APPLE_BLUE)      # brand text: xanh Apple co dinh
+    # Ten kenh canh PHAI, dung CYAN cua bo nhan dien (donniechublog #00cce0 —
+    # cung mau cyan tren the cua Bob; dcgr thi CYAN la trang). KHONG dung
+    # APPLE_BLUE nua: lech tong voi nhan dien va trung xanh voi net khung.
+    tw_h = d.textlength(ten, font=f_h)
+    _chu_vien(ten, W - QUOTE_PAD - tw_h, hy, f_h, CYAN)
     if tag:
         f_tag_top = _f(F_QUOTE_REG, 24)
-        tw = d.textlength(tag, font=f_tag_top)
-        # Can day chu cho ngang hang voi brand text.
+        # Tagline canh TRAI, xam diu (chu phu, giong tone chu phu tren the Bob).
         bb, tb = f_h.getbbox("Ay"), f_tag_top.getbbox("Ay")
         ty = hy + (bb[3] - bb[1]) - (tb[3] - tb[1])
-        _chu_vien(tag, W - QUOTE_PAD - tw, ty, f_tag_top, _pha(FG, 0.6))
+        _chu_vien(tag, QUOTE_PAD, ty, f_tag_top, _pha(FG, 0.6))
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
