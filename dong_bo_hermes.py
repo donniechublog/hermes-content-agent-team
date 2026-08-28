@@ -53,6 +53,18 @@ def cap_tep():
     for v in VAI:
         ra.append((f"SOUL {v}", HERMES / "profiles" / v / "SOUL.md",
                    REPO / "profiles" / f"{v}.SOUL.md"))
+    # MEMORY.md mang HANH VI (vd quy uoc tag du an cho fact_store cua bo nao
+    # chung holographic), can lich su git nhu SOUL — day dung la loai "hanh vi
+    # ngoai git" ma script nay sinh ra de phong. USER.md rieng tung vai KHONG
+    # dong bo: co the chua du lieu ca nhan (vd con so bi mat cua teaser). Chi
+    # MEMORY.md + USER.md cua profile mac dinh moi chep (khong bi mat).
+    for v in VAI:
+        ra.append((f"MEMORY {v}", HERMES / "profiles" / v / "memories" / "MEMORY.md",
+                   REPO / "profiles" / f"{v}.MEMORY.md"))
+    ra.append(("MEMORY mac dinh", HERMES / "memories" / "MEMORY.md",
+               REPO / "memories" / "MEMORY.md"))
+    ra.append(("USER mac dinh", HERMES / "memories" / "USER.md",
+               REPO / "memories" / "USER.md"))
     for s in SCRIPT:
         ra.append((f"cron {s}", HERMES / "scripts" / f"{s}.sh",
                    REPO / "scripts" / f"{s}.sh"))
