@@ -178,15 +178,15 @@ const S = {
   const R = Math.round;
 
   // --- frame geometry (header + image + footer; canvas flexes to the image) ---
-  const side = R(short * 0.09);
-  // Top/bottom bands kept close to the side margin so the frame reads balanced
-  // on all four edges (they used to be much thicker than the left/right margin).
-  const headerH = R(short * 0.10);      // thin title bar: dots + @handle
-  const footerH = R(short * 0.10);      // thin footer: prompt (mascot overlaps the image)
+  const side = R(short * 0.045);        // slim margin — image dominates
+  // Top/bottom bands match the (halved) side margin so the frame stays balanced
+  // on all four edges.
+  const headerH = R(short * 0.05);      // thin title bar: dots + @handle
+  const footerH = R(short * 0.05);      // thin footer: prompt (mascot overlaps the image)
   const radius = Math.max(8, R(short * S.cardRadiusK));   // source card corners
   const outerR = Math.max(6, R(short * S.outerRadiusK));  // card / window corners
   const thick = Math.max(2, R(short * 0.005));            // black window border + divider (halved)
-  const gapTop = R(short * 0.04);                        // breathing room below the title bar
+  const gapTop = R(short * 0.02);                        // breathing room below the title bar
   const cardW = W + side * 2;
   const cardH = H + headerH + gapTop + footerH;
   const shadowPad = R(short * S.shadowPadK);              // hard offset shadow room
@@ -214,7 +214,7 @@ const S = {
   layers.push({ input: card, left: side, top: imgTop });
 
   // --- header: macOS dots + @handle ---
-  const dotD = Math.max(6, R(headerH * 0.28));
+  const dotD = Math.max(6, R(headerH * 0.50));
   const dotR = dotD / 2;
   const dotGap = R(dotD * 0.7);
   const dotCy = R(headerH / 2);
@@ -226,7 +226,7 @@ const S = {
   }
   // @handle: smaller text, anchored to the RIGHT edge of the header (dots left,
   // handle right → the title bar is balanced at both ends).
-  const headerFont = R(headerH * 0.34);
+  const headerFont = R(headerH * 0.50);
   const headerBase = R(headerH / 2 + headerFont * 0.35);
   const headerWeight = 700;
   const handleRight = cardW - side;
@@ -237,7 +237,7 @@ const S = {
   layers.push({ input: headerSvg, left: 0, top: 0 });
 
   // --- footer: `>_ vibe working & agentic AI` (left) + mascot (right) ---
-  const footFont = R(footerH * 0.36);
+  const footFont = R(footerH * 0.62);
   const footBase = cardH - R(footerH / 2) + R(footFont * 0.35);
   const footWeight = 500;
   const promptSvg = Buffer.from(`<svg width="${CW}" height="${CH}" xmlns="http://www.w3.org/2000/svg">
