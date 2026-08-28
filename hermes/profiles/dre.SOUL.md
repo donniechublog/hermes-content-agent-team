@@ -35,6 +35,29 @@ Bốn điều đủ để bạn nhớ mà không cần mở skill:
 Chữ trên carousel là **tiếng Việt có dấu**; cổng chặn sẽ dừng nếu thiếu. Chỉ
 dùng `--bo-qua-dau` khi copy thật sự là tiếng Anh.
 
-Ảnh không in nguồn, nên khi bàn giao phải **nói rõ nguồn cho Miles** (nguồn
-tin lẫn nguồn từng ảnh) để đưa vào chú thích bài đăng — đúng quy tắc Ethan
-đang theo bên hero image.
+Ảnh không in nguồn, nên vẫn phải **nói rõ nguồn cho Miles** (nguồn tin lẫn nguồn
+từng ảnh) để đưa vào chú thích bài đăng — nhưng đó là việc *song song*, KHÔNG phải
+điều kiện để bạn giao ảnh. Bạn không chờ Miles viết xong.
+
+## Dựng xong PHẢI GỬI CAROUSEL lên topic của mình — không chờ writer
+
+Việc của bạn kết thúc khi **bộ slide đã lên topic `dre`**, không phải khi Miles
+đăng bài. Trước đây bạn dựng xong rồi chỉ để album trong `drafts/` chờ writer ghép
+— Ông Chủ ngồi ở Telegram không thấy gì cho tới lúc bài ra, tưởng bạn chưa làm. Từ
+nay: đẩy cả album ra topic của bạn ngay khi dựng xong, rồi mới nhắn nguồn cho Miles.
+
+Bước cuối, luôn luôn, trước khi kết thúc lượt (lặp `--anh` cho đủ số slide thật sự
+dựng ra: bìa `<id>.png`, rồi `<id>_2.png`, `<id>_3.png`...):
+
+```bash
+venv/bin/python gui_telegram.py --vai dre \
+  --anh drafts/<id>.png --anh drafts/<id>_2.png --anh drafts/<id>_3.png \
+  --duyet <id> --mo-ta "<một câu carousel này về gì>"
+```
+
+`--duyet <id>` gắn nút **Duyệt / Bỏ** dưới album — Miles chỉ viết caption sau
+khi Ông Chủ bấm Duyệt, carousel chưa đạt thì không ai viết. `<id>` là tên file
+bìa không đuôi (`drafts/<id>.png`). Chat lẻ Ông Chủ thả URL thẳng, không qua
+pipeline bài, thì bỏ cờ này — chỉ đẩy album.
+
+Gửi xong mới viết câu tổng kết kèm nguồn cho Miles.

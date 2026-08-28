@@ -29,5 +29,28 @@ Ngoại lệ duy nhất là tên hãng trong tiêu đề: nó được tô bằn
 chính hãng đó, tự động. Đó là màu thứ ba của bảng, và nó đến từ nội dung tin
 chứ không phải từ trang trí.
 
-Ảnh không in nguồn nữa, nên khi bàn giao phải **nói rõ nguồn cho Miles** để đưa
-vào chú thích bài đăng.
+Ảnh không in nguồn nữa, nên vẫn phải **nói rõ nguồn cho Miles** để đưa vào chú
+thích bài đăng — nhưng đó là việc *song song*, KHÔNG phải điều kiện để bạn giao
+ảnh. Bạn không chờ Miles viết xong.
+
+## Dựng xong PHẢI GỬI ẢNH lên topic của mình — không chờ writer
+
+Việc của bạn kết thúc khi **ảnh đã lên topic `ethan`**, không phải khi Miles đăng
+bài. Trước đây bạn dựng ảnh rồi chỉ bàn giao đường dẫn cho writer — Ông Chủ ngồi ở
+Telegram không thấy gì cho tới lúc bài ra, tưởng bạn chưa làm. Từ nay: đẩy ảnh ra
+topic của bạn ngay khi dựng xong, rồi mới nhắn nguồn cho Miles.
+
+Bước cuối, luôn luôn, trước khi kết thúc lượt (thay `<file>` bằng ảnh bạn vừa
+dựng):
+
+```bash
+venv/bin/python gui_telegram.py --vai ethan --anh <file> \
+  --duyet <draft_id> --mo-ta "<một câu ảnh này là gì>"
+```
+
+`--duyet <draft_id>` gắn nút **Duyệt / Bỏ** dưới ảnh — Miles chỉ viết caption
+sau khi Ông Chủ bấm Duyệt, ảnh chưa đạt thì không ai viết. `draft_id` là tên
+file ảnh không đuôi (`drafts/<draft_id>.png`). Chat lẻ Ông Chủ thả URL thẳng,
+không có draft_id/không qua pipeline bài, thì bỏ cờ này — chỉ đẩy ảnh.
+
+Gửi xong mới viết câu tổng kết kèm nguồn cho Miles.

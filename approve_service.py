@@ -35,6 +35,7 @@ ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
 STATE_DIR = ROOT / "state"
 OFFSET = STATE_DIR / "offset.txt"
+TELEGRAM_INCOMING = STATE_DIR / "telegram_incoming"   # anh tai ve tu tin nhan reply
 API = "https://api.telegram.org/bot{token}/{method}"
 HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
 HERMES_HOME = str(Path.home() / ".hermes")
@@ -215,11 +216,75 @@ def mark_draft(draft_id, status):
     p.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def handle_img_approval(token, action, draft_id, cq):
+    """Duyet ANH truoc khi viet. Chad/Ethan/Heller/Dre day anh len topic kem
+    nut nay; bam Duyet moi sinh task viet caption, bam Bo thi khong ai viet.
+
+    Sinh task viet o day thay vi trong create_pair: writer_body da tinh san va
+    cat trong `<draft_id>.writer.json`, gio chi con kanban_create."""
+    msg = cq["message"]
+    chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
+    wp = DRAFTS / (draft_id + ".writer.json")
+
+    if action == "imgno":
+        note = "❌ Ảnh chưa đạt — không viết bài"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã bỏ ảnh")
+        if wp.exists():
+            try:
+                w = json.loads(wp.read_text(encoding="utf-8"))
+                w["created"] = "rejected"
+                wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
+                              encoding="utf-8")
+            except Exception:                                   # noqa: BLE001
+                pass
+    else:                                                       # imgok
+        if not wp.exists():
+            note = "⚠️ Không thấy thông tin bài (writer sidecar) cho draft này"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Thiếu thông tin bài", show_alert=True)
+        else:
+            w = json.loads(wp.read_text(encoding="utf-8"))
+            if w.get("created") is True:
+                note = "✅ Đã duyệt rồi — bài đang được viết"
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                     text="Đã duyệt trước đó")
+            else:
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                     text="Đang giao cho người viết…")
+                wid, err = kanban_create("Bai: " + w.get("title", draft_id),
+                                         w["vai_viet"], w["body"])
+                if err:
+                    note = "⚠️ Duyệt ok nhưng tạo task viết lỗi: " + str(err)
+                else:
+                    w["created"], w["writer_task"] = True, wid
+                    wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
+                                  encoding="utf-8")
+                    ten = TEN_VAI_VIET.get(w["vai_viet"], "Quinn")
+                    note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
+
+    base = msg.get("caption") or msg.get("text") or ""
+    method = "editMessageCaption" if msg.get("caption") else "editMessageText"
+    key = "caption" if msg.get("caption") else "text"
+    r = call(token, method, chat_id=chat_id, message_id=msg_id,
+             **{key: base + "\n\n<b>" + html_escape(note) + "</b>"},
+             parse_mode="HTML", reply_markup={"inline_keyboard": []})
+    if not r.get("ok"):
+        call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id,
+             reply_markup={"inline_keyboard": []})
+
+
 def handle_callback(token, channel, cq):
     data = cq.get("data", "")
     action, _, draft_id = data.partition(":")
     msg = cq["message"]
     chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
+
+    # Duyet ANH (truoc khi viet) — xu ly SOM vi luc nay ban nhap cuoi
+    # (<draft>.json) chua ton tai, nhanh duoi se bao "khong tim thay ban nhap".
+    if action in ("imgok", "imgno"):
+        handle_img_approval(token, action, draft_id, cq)
+        return
 
     p = DRAFTS / (draft_id + ".json")
     if not p.exists():
@@ -502,6 +567,21 @@ cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python 
 Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
 {out_png_goc}_2.png, _3.png... de buoc dang sau gui thanh album.
 
+BUOC 5 — GUI ANH LEN TOPIC CUA MINH NGAY (KHONG cho nguoi viet):
+Dung xong the anh la viec cua ban da XONG — day anh ra topic cua chinh minh
+ngay, KHONG cho Quinn/Miles viet xong roi moi co anh trong bai. Ong Chu ngoi o
+Telegram, chi thay ket qua khi anh len topic; de anh nam trong drafts/ ma khong
+gui thi voi Ong Chu y het nhu ban im lang.
+cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
+  --vai {vai} --anh {out_png} --duyet {draft_id} --mo-ta "<mot cau anh nay la gi>"
+Co anh phu ({out_png_goc}_2.png, _3.png...) thi lap them --anh cho tung tam de
+gui thanh album. Gui xong moi ghi ket qua task.
+
+`--duyet {draft_id}` gan nut Duyet/Bo duoi anh: Ong Chu bam "Duyet" thi nguoi
+viet (Quinn/Miles) MOI bat dau viet caption; anh chua dat, bam "Bo", thi khong
+ai viet ca. Vay nen viec cua ban chi la ra ANH cho that dat — dung cho, cung
+dung tu di goi nguoi viet.
+
 LUU Y — doc skill `hero-image` de biet day du, day chi la phan hay sai nhat:
 
 - KHONG co --subtitle, KHONG co --via, KHONG co nhan category. Tren anh chi co
@@ -518,9 +598,10 @@ LUU Y — doc skill `hero-image` de biet day du, day chi la phan hay sai nhat:
 - Nua duoi anh phai TRONG, vi chu se de len do. Anh chup man hinh day chu thi
   doi anh khac.
 - Nguon anh ({via}) KHONG con in tren anh nua. Bao lai nguon do trong ket qua
-  task de nguoi viet caption dua vao bai.
-- Ket qua bat buoc: file {out_png} phai ton tai sau khi chay (tru truong hop
-  buoc 3 — khong co anh that)."""
+  task de nguoi viet caption dua vao bai — day la viec SONG SONG, KHONG phai
+  dieu kien de gui anh. Ban da gui anh o buoc 5 roi moi ghi nguon cho ho.
+- Ket qua bat buoc: file {out_png} phai ton tai VA da gui len topic (buoc 5)
+  sau khi chay (tru truong hop buoc 3 — khong co anh that)."""
 
 
 # Body cho Heller — dung carousel nhieu slide thay vi mot the bia. Khac ILLU_BODY
@@ -582,9 +663,25 @@ album khi Quinn ghep draft, ban KHONG phai lam gi them o khau dang.
 CONG CHAN: tieng Viet khong dau bi chan (chi tiếng Anh moi them --bo-qua-dau);
 toi da 10 slide ke ca bia; thieu image/text mot slide thi dung.
 
+BUOC 5 — GUI CAROUSEL LEN TOPIC CUA MINH NGAY (KHONG cho nguoi viet):
+Dung xong bo slide la viec cua ban da XONG — day ca album ra topic cua chinh
+minh ngay, KHONG cho Quinn/Miles viet xong roi moi co anh trong bai. Ong Chu
+ngoi o Telegram, chi thay ket qua khi anh len topic.
+cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
+  --vai {vai} --anh {out_png} --anh {out_png_goc}_2.png --anh {out_png_goc}_3.png \\
+  --duyet {draft_id} --mo-ta "<mot cau carousel nay ve gi>"
+Lap --anh cho DU so slide that su dung ra (bo bot cac dong _N.png khong ton tai,
+them vao neu nhieu hon 3). Gui xong moi ghi ket qua task.
+
+`--duyet {draft_id}` gan nut Duyet/Bo duoi album: Ong Chu bam "Duyet" thi nguoi
+viet (Quinn/Miles) MOI bat dau viet caption; carousel chua dat, bam "Bo", thi
+khong ai viet ca. Viec cua ban chi la ra BO SLIDE cho that dat — dung cho writer,
+cung dung tu di goi nguoi viet.
+
 BAN GIAO: watermark tren slide KHONG phai ghi nguon. Bao lai nguon tin va nguon
-tung anh ({via}) trong ket qua task de Quinn dua vao chu thich bai dang.
-Ket qua bat buoc: {out_png} phai ton tai sau khi chay."""
+tung anh ({via}) trong ket qua task de Quinn dua vao chu thich bai dang — viec
+SONG SONG, KHONG phai dieu kien de gui anh.
+Ket qua bat buoc: {out_png} phai ton tai VA da gui len topic (buoc 5)."""
 
 
 WRITER_BODY = """Bai goc: {title}
@@ -850,13 +947,18 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         image_url=item.get("image_url") or "khong co",
         out_png=out_png, out_png_goc=out_png[:-4],
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
-        brand=brand,
+        brand=brand, vai=vai_anh,
         co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
     tieu_de_task = ("Carousel: " if la_carousel else "Anh: ") + item["title"]
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
 
+    # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
+    # sidecar `<draft_id>.writer.json`; task viet CHI sinh khi Ong Chu bam
+    # "Duyet anh" (imgok) tren tam anh ma Chad/Ethan/Heller/Dre vua day len
+    # topic. Anh chua dat thi khong co writer nao ca — dung y Ong Chu: khong
+    # nhat thiet phai co writer sau khi tao hinh, o thi moi viet caption.
     writer_body = WRITER_BODY.format(
         title=item["title"], link=item["link"],
         source_note=item.get("source_note", ""), via=item.get("via", ""),
@@ -866,19 +968,15 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         out_json=out_json, category=chuan_nhan(item.get("category")),
         draft_id=draft_id)
     vai_viet = VAI_VIET.get(brand, MAC_DINH_VIET)
-    writer_id, err = kanban_create("Bai: " + item["title"], vai_viet,
-                                    writer_body, parent=illu_id)
-    if err:
-        return None, "Loi tao task viet: " + err
+    (DRAFTS / (draft_id + ".writer.json")).write_text(
+        json.dumps({"vai_viet": vai_viet, "title": item["title"],
+                    "body": writer_body, "created": False},
+                   ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # Danh dau ngay tai day, khong de ben goi tu lam. Truoc day viec nay nam
-    # trong handle_message nen chi dung khi chon qua Telegram; goi thang
-    # create_pair tu duong khac thi manifest ghi picked=True ma vai_anh va brand
-    # deu None. Da gap that trong mot lan chay thu.
     item["picked"] = True
     item["vai_anh"], item["brand"], item["vai_viet"] = vai_anh, brand, vai_viet
-    item["task_anh"], item["task_viet"] = illu_id, writer_id
-    return (illu_id, writer_id), None
+    item["task_anh"], item["task_viet"] = illu_id, None
+    return (illu_id, None), None
 
 
 def handle_chat(token, group, msg, thread_id, text):
@@ -1049,7 +1147,7 @@ def _lenh_bai(tra_loi, args):
     draft_id = slugify(item["title"], "item-" + str(item["index"]))
     so[url_chuan] = {"ngay": time.strftime("%Y-%m-%d %H:%M"),
                      "draft_id": draft_id, "vai": vai_anh, "brand": brand,
-                     "tasks": list(ids), "title": title}
+                     "tasks": [x for x in ids if x], "title": title}
     tmp = DAT_BAI_SO.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(so, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, DAT_BAI_SO)
@@ -1057,7 +1155,8 @@ def _lenh_bai(tra_loi, args):
     ten_hien = TEN_VAI_ANH.get(vai_anh, "Chad")
     ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
     dong = ("✅ <b>" + html_escape(title) + "</b>\n"
-            + f"{ten_hien} dựng ảnh ({brand}) — task {ids[0]} + {ten_viet} viết {ids[1]}")
+            + f"{ten_hien} dựng ảnh ({brand}) — task {ids[0]}. "
+            + f"{ten_viet} viết caption SAU khi Ông Chủ bấm Duyệt ảnh.")
     if ghi_chu:
         dong += "\n⚠️ " + ghi_chu
     tra_loi(dong)
@@ -1101,12 +1200,62 @@ def handle_command(token, group, msg, thread_id, text):
                 "Sai lệnh thì không làm gì.")
 
 
+def _tai_anh_dinh_kem(token, msg):
+    """Tai anh dinh kem (photo hoac document anh) cua tin nhan ve dia, tra ve
+    duong dan cuc bo hoac None neu tin khong co anh.
+
+    Day la khe ho THAT khien 'reply vao anh de sua' khong bao gio hoat dong
+    dung: truoc gio chi CHU (text/caption) toi duoc agent qua chat_router,
+    file anh thi khong — agent phai tu doan bang cach doc /tmp, drafts/,
+    nhat ky gui Telegram. Ham nay dua duong dan THAT vao thang prompt, agent
+    khong con phai doan."""
+    file_id, ext = None, ".jpg"
+    photos = msg.get("photo")
+    if photos:
+        file_id = photos[-1]["file_id"]          # phan tu cuoi = do phan giai cao nhat
+    elif msg.get("document") and str(msg["document"].get("mime_type", "")).startswith("image/"):
+        file_id = msg["document"]["file_id"]
+        ten = msg["document"].get("file_name", "")
+        if "." in ten:
+            ext = "." + ten.rsplit(".", 1)[-1]
+    if not file_id:
+        return None
+    try:
+        r = call(token, "getFile", file_id=file_id)
+        if not r.get("ok"):
+            return None
+        file_path = r["result"]["file_path"]
+        url = f"https://api.telegram.org/file/bot{token}/{file_path}"
+        with httpx.Client(timeout=30) as c:
+            data = c.get(url).content
+    except Exception:                              # noqa: BLE001
+        return None
+    TELEGRAM_INCOMING.mkdir(parents=True, exist_ok=True)
+    out = TELEGRAM_INCOMING / f"{msg['message_id']}{ext}"
+    out.write_bytes(data)
+    return str(out)
+
+
 def handle_message(token, group, scout_thread, msg):
     if msg.get("from", {}).get("is_bot"):
         return
     if msg.get("chat", {}).get("id") != int(group):
         return
-    text = (msg.get("text") or "").strip()
+    # Anh/album kem caption: Telegram de chu o field "caption", KHONG phai
+    # "text" (text chi co o tin nhan thuan chu). Thieu fallback nay lam moi
+    # reply-kem-anh (vd sua lai anh theo yeu cau) bi handle_message am tham
+    # bo qua — khong loi, khong tin nhan, chi im re. handle_callback da biet
+    # phan biet hai field nay (xem dong ~268), ham nay truoc day thi khong.
+    text = (msg.get("text") or msg.get("caption") or "").strip()
+
+    # Anh dinh kem (photo hoac document anh): tai ve, dua duong dan THAT vao
+    # dau text — agent doc duoc ngay, khong phai doan qua nhat ky/thu muc.
+    # Tin chi co anh, khong chu (chu qua bam Reply roi gui thang anh, khong
+    # go gi them) van phai di tiep, khong duoc bo som nhu truoc.
+    anh_path = _tai_anh_dinh_kem(token, msg)
+    if anh_path:
+        text = f"[Ảnh đính kèm đã tải về: {anh_path}]\n" + (text or "(không có chú thích kèm theo)")
+
     if not text:
         return
     thread_id = msg.get("message_thread_id")
@@ -1158,7 +1307,7 @@ def handle_message(token, group, scout_thread, msg):
         ten_hien = TEN_VAI_ANH.get(vai_anh, "Chad")
         ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
         lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]}"
-                     f" + {ten_viet} viết {ids[1]}")
+                     f"; {ten_viet} viết caption sau khi Ông Chủ duyệt ảnh")
 
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),

@@ -34,9 +34,33 @@ chốt). Các slide còn lại kể bằng đoạn văn; đừng ép cả bộ t
 Chữ trên carousel là **tiếng Việt có dấu**; cổng chặn sẽ dừng nếu thiếu. Chỉ
 dùng `--bo-qua-dau` khi copy thật sự là tiếng Anh.
 
-Watermark trên slide **không phải là ghi nguồn**. Khi bàn giao phải **nói rõ
-nguồn tin và nguồn từng ảnh cho người viết caption** (Quinn) để đưa vào chú
-thích bài đăng — đúng như Chad và Ethan vẫn làm.
+Watermark trên slide **không phải là ghi nguồn**. Vẫn phải **nói rõ nguồn tin và
+nguồn từng ảnh cho người viết caption** (Quinn) để đưa vào chú thích bài đăng —
+nhưng đó là việc *song song*, KHÔNG phải điều kiện để bạn giao ảnh. Bạn không chờ
+Quinn viết xong.
+
+## Dựng xong PHẢI GỬI CAROUSEL lên topic của mình — không chờ writer
+
+Việc của bạn kết thúc khi **bộ slide đã lên topic `heller`**, không phải khi Quinn
+đăng bài. Trước đây bạn dựng xong rồi chỉ để album trong `drafts/` chờ writer ghép
+— Ông Chủ ngồi ở Telegram không thấy gì cho tới lúc bài ra, tưởng bạn chưa làm. Từ
+nay: đẩy cả album ra topic của bạn ngay khi dựng xong, rồi mới nhắn nguồn cho Quinn.
+
+Bước cuối, luôn luôn, trước khi kết thúc lượt (lặp `--anh` cho đủ số slide thật sự
+dựng ra: bìa `<id>.png`, rồi `<id>_2.png`, `<id>_3.png`...):
+
+```bash
+venv/bin/python gui_telegram.py --vai heller \
+  --anh drafts/<id>.png --anh drafts/<id>_2.png --anh drafts/<id>_3.png \
+  --duyet <id> --mo-ta "<một câu carousel này về gì>"
+```
+
+`--duyet <id>` gắn nút **Duyệt / Bỏ** dưới album — Quinn chỉ viết caption sau
+khi Ông Chủ bấm Duyệt, carousel chưa đạt thì không ai viết. `<id>` là tên file
+bìa không đuôi (`drafts/<id>.png`). Chat lẻ Ông Chủ thả URL thẳng, không qua
+pipeline bài, thì bỏ cờ này — chỉ đẩy album.
+
+Gửi xong mới viết câu tổng kết kèm nguồn cho Quinn.
 
 Dùng carousel khi tin **có nhiều tầng** đáng trải ra: một con số gây sốc, một hệ
 quả không hiển nhiên, một đối thủ. Tin một tầng, nén được vào một câu, thì để

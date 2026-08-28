@@ -3,8 +3,10 @@
 cua mot vai, va ghi lai nhat ky (message_id, file, mo ta) de sau nay tra loi
 mot yeu cau sua con biet dang noi anh nao.
 
-Dung cho Gin/Itachi sau khi tao_nen_ai.py sinh xong anh — `--gui <vai>` trong
-tao_nen_ai.py goi thang ham post() o day.
+Dung cho MOI vai dung anh (Gin, Itachi, Chad/designer, Ethan, Heller, Dre) de
+tu day anh minh vua dung ra topic cua chinh minh — khong phai cho writer viet
+xong roi moi co anh trong bai. Gin/Itachi con duoc goi tu `--gui <vai>` trong
+tao_nen_ai.py, no goi thang ham post() o day.
 
 Khong dung chung tien trinh voi approve_service.py (dich vu duyet bai) — day
 la mot lenh CHAY MOT LAN, khong long-poll, khong dung chung offset Telegram
@@ -48,7 +50,16 @@ def _ghi_nhat_ky(vai: str, message_id, files, mo_ta: str) -> None:
         fh.write(json.dumps(dong, ensure_ascii=False) + "\n")
 
 
-def post(vai: str, files, mo_ta: str = "", reply_to=None) -> dict:
+def _kb_duyet(draft_id: str) -> dict:
+    """Nut Duyet/Bo cho tam anh. Bam Duyet thi approve_service sinh task viet
+    caption (callback imgok:<id>); bam Bo thi khong ai viet (imgno:<id>)."""
+    return {"inline_keyboard": [[
+        {"text": "✅ Duyệt ảnh → viết caption", "callback_data": "imgok:" + draft_id},
+        {"text": "❌ Ảnh chưa đạt", "callback_data": "imgno:" + draft_id},
+    ]]}
+
+
+def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
     """Gui 1 hoac nhieu anh (>1 tu dong thanh album) vao topic cua `vai`.
 
     `reply_to` (message_id, tuy chon): gui thanh REPLY vao dung tin nhan yeu
@@ -111,6 +122,17 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None) -> dict:
     result = res["result"]
     last = result[-1] if isinstance(result, list) else result
     _ghi_nhat_ky(vai, last.get("message_id"), files, mo_ta)
+
+    # Album KHONG gan duoc nut (gioi han Bot API), nen nut Duyet luon nam tren
+    # mot tin nhan chu RIENG ngay duoi anh — dung cho ca anh don lan album.
+    if duyet:
+        with httpx.Client(timeout=60) as c:
+            c.post(API.format(token=token, method="sendMessage"), data={
+                "chat_id": group, "message_thread_id": str(int(thread_id)),
+                "text": ("Ảnh đã xong. Duyệt để người viết làm caption, "
+                         "hoặc bỏ nếu ảnh chưa đạt."),
+                "reply_markup": json.dumps(_kb_duyet(duyet)),
+            })
     return res
 
 
@@ -124,12 +146,17 @@ def gan_day(vai: str, n: int = 5) -> list:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--vai", required=True, choices=["gin", "itachi"])
+    ap.add_argument("--vai", required=True,
+                    choices=["gin", "itachi", "designer", "ethan", "heller", "dre"])
     ap.add_argument("--anh", action="append", default=[], help="Duong dan PNG, lap lai cho nhieu anh (album)")
     ap.add_argument("--mo-ta", default="", help="Caption ngan mo ta anh — giup tra loi SAU biet dang noi anh nao")
     ap.add_argument("--reply-to", type=int, default=None,
                     help="message_id can reply — ket qua sua theo yeu cau thi reply DUNG tin da yeu cau, "
                          "khong gui roi o cuoi topic")
+    ap.add_argument("--duyet", default=None, metavar="DRAFT_ID",
+                    help="Gan nut Duyet/Bo cho tam anh (draft_id). Bam Duyet thi "
+                         "approve_service moi sinh task viet caption; khong co co "
+                         "nay thi chi day anh, khong hoi duyet (dung cho chat le).")
     ap.add_argument("--list", action="store_true", help="In cac lan gui gan day (mac dinh 5) thay vi gui moi")
     a = ap.parse_args()
 
@@ -140,7 +167,7 @@ def main() -> None:
 
     if not a.anh:
         ap.error("--anh la bat buoc (tru khi dung --list)")
-    res = post(a.vai, a.anh, a.mo_ta, reply_to=a.reply_to)
+    res = post(a.vai, a.anh, a.mo_ta, reply_to=a.reply_to, duyet=a.duyet)
     result = res["result"]
     mid = result[-1]["message_id"] if isinstance(result, list) else result["message_id"]
     print(f"da gui {len(a.anh)} anh vao topic '{a.vai}', message_id={mid}")
