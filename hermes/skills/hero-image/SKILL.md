@@ -1,6 +1,6 @@
 ---
 name: hero-image
-description: "Dựng ảnh cho kênh AI bằng card.py — kiểu tràn, liền một mặt phẳng, không khung, không vạch ngăn. Cách điều phối ảnh và chữ, các cờ bắt buộc, cách viết tiêu đề, kicker, tô tên hãng, bốn cổng chặn, và nguyên tắc chữ chìm vào ảnh. Kèm biến thể --kieu quote: thẻ trích dẫn pull-quote (một câu nói + dấu ngoặc kép + dòng nguồn). Dùng chung cho Chad (donniechublog) và Ethan (dcgr.tech)."
+description: "Dựng ảnh cho kênh AI bằng card.py. MẶC ĐỊNH là --kieu quote (thẻ HOOK): một câu lớn trong khung dấu ngoặc kép + chip category (--tagline) + dòng nguồn (--attrib), đập vào mắt trong 3 giây; câu hook có thể là tiêu đề/góc giật hoặc lời có thật của người trong bài, không bắt buộc là trích dẫn. Kiểu --kieu tran (kicker + tiêu đề mono, liền một mặt phẳng, không khung không vạch) là lựa chọn đổi không khí. Gồm cách điều phối ảnh/chữ, các cờ bắt buộc, tô tên hãng, cổng chặn, chữ chìm vào ảnh. Dùng chung cho Chad (donniechublog) và Ethan (dcgr.tech)."
 version: 1.1.0
 author: content-team
 license: internal
@@ -352,19 +352,25 @@ Bố cục script tự vẽ, đúng dạng pull-quote của báo:
 ```bash
 venv/bin/python card.py --kieu quote --ratio 4:5 \
   --image <ảnh thật> \
-  --title "<nguyên văn câu nói, có dấu>" \
-  --attrib "Đọc bài “<tên bài>” - <tác giả>" \
+  --tagline "<CATEGORY ngắn tiếng Anh>" \
+  --title "<CÂU HOOK có dấu, đập vào mắt trong 3s>" \
+  --attrib "<'via <báo>' hoặc 'Phát biểu của <tên>' nếu là lời thật>" \
   --brand <donniechublog|dcgr> --out drafts/<id>.png
 ```
 
-- **`--title` là nguyên văn câu nói**, giữ hoa/thường như câu gốc (KHÔNG viết hoa
-  toàn bộ như tiêu đề tràn). Câu quá dài script thu nhỏ dần rồi thêm "…"; quote
-  sống ở chỗ **ngắn, đọc được lớn** — chạm 7 dòng là dấu hiệu nên cắt câu.
-- **`--attrib` là dòng nguồn**: `Đọc bài "<tên bài>" - <tác giả>`, để người đọc
-  lần ra bài gốc. Vẫn có cổng chặn tiếng Việt không dấu như mọi chữ khác.
+- **`--title` là câu HOOK** — đập vào mắt trong 3 giây. Có thể là **tiêu đề/góc
+  giật** (mạnh nhất khi có con số) HOẶC **lời có thật** của người trong bài. Giữ
+  hoa/thường tự nhiên (KHÔNG viết hoa toàn bộ như tiêu đề tràn). Câu quá dài
+  script thu nhỏ dần rồi thêm "…"; sống ở chỗ **ngắn, đọc lớn** — chạm 7 dòng là
+  nên cắt.
+- **`--tagline` là chip category** (góc trên-trái): MODEL RELEASE / FUNDING /
+  ROBOTICS / CYBERSECURITY / APPS / IN BRIEF... — chọn đúng chủ đề tin.
+- **`--attrib` là dòng nguồn**: hook/tiêu đề → `via <báo>`; lời có thật của một
+  người → `Phát biểu của <tên>, <chức/hãng>`. **Không** gán câu tự viết thành lời
+  một người cụ thể. Vẫn có cổng chặn tiếng Việt không dấu như mọi chữ khác.
 - **Ảnh chọn như hero image**: cạnh ngắn ≥1000px, nửa dưới thoáng để câu đè lên
   đọc rõ; ảnh vuông/dọc hợp hơn ảnh ngang. Vẫn luật cứng **không tự vẽ minh hoạ** —
-  ảnh phải thật và liên quan tới người/bài được trích.
+  ảnh phải thật và liên quan tới tin.
 
 ## Nhìn lại trước khi giao
 
