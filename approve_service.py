@@ -840,7 +840,7 @@ def viec_bi_chan() -> list:
                     "select coalesce(summary, error, '') from task_runs "
                     "where task_id=? order by id desc limit 1", (tid,)):
                 ly_do = tt or ""
-            ra.append((tid, VAI_CUA_DOI[ai], tieu_de, ly_do))
+            ra.append((tid, ai, VAI_CUA_DOI[ai], tieu_de, ly_do))
     except Exception:                                        # noqa: BLE001
         return []
     finally:
@@ -860,30 +860,40 @@ def bao_viec_bi_chan(token, group):
     if not moi:
         return
 
-    thread = None
     tp = STATE_DIR / "topics.json"
-    if tp.exists():
-        try:
-            thread = json.loads(tp.read_text(encoding="utf-8")).get("writer")
-        except Exception:                                    # noqa: BLE001
-            pass
-
-    dau = ("⛔ <b>1 việc dừng lại</b>" if len(moi) == 1
-           else f"⛔ <b>{len(moi)} việc dừng lại</b>")
-    khoi = [dau, ""]
-    for _tid, ten, tieu_de, ly_do in moi:
-        khoi.append(f"<b>{html_escape(ten)}</b> — "
-                    f"<i>{html_escape(tieu_de[:100])}</i>")
-        khoi.append(html_escape(ly_do.strip()[:400]) or "(khong ghi ly do)")
-        khoi.append("")
-    khoi.append("Bài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ.")
     try:
-        call(token, "sendMessage", chat_id=group, message_thread_id=thread,
-             text="\n".join(khoi)[:4000], parse_mode="HTML")
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[bao-chan] khong gui duoc: {e}", flush=True)
-        return                       # chua ghi nhan -> lan sau bao lai
-    _ghi_da_bao(da | {x[0] for x in moi})
+        topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        topics = {}
+
+    # Tach theo THUONG HIEU: viec anh dcgr bao ve topic Miles, donniechublog ve
+    # Quinn — dung nguoi viet cua brand do, khong dua het ve Quinn.
+    nhom = {}
+    for tid, ai, ten, tieu_de, ly_do in moi:
+        brand = VAI_ANH.get(ai, (None, "donniechublog"))[1]
+        vai_viet = VAI_VIET.get(brand, MAC_DINH_VIET)
+        nhom.setdefault(vai_viet, []).append((tid, ten, tieu_de, ly_do))
+
+    da_gui = set()
+    for vai_viet, viecs in nhom.items():
+        thread = topics.get(vai_viet)
+        dau = ("⛔ <b>1 việc dừng lại</b>" if len(viecs) == 1
+               else f"⛔ <b>{len(viecs)} việc dừng lại</b>")
+        khoi = [dau, ""]
+        for _tid, ten, tieu_de, ly_do in viecs:
+            khoi.append(f"<b>{html_escape(ten)}</b> — "
+                        f"<i>{html_escape(tieu_de[:100])}</i>")
+            khoi.append(html_escape(ly_do.strip()[:400]) or "(khong ghi ly do)")
+            khoi.append("")
+        khoi.append("Bài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ.")
+        try:
+            call(token, "sendMessage", chat_id=group, message_thread_id=thread,
+                 text="\n".join(khoi)[:4000], parse_mode="HTML")
+        except Exception as e:                               # noqa: BLE001
+            print(f"[bao-chan] khong gui duoc ({vai_viet}): {e}", flush=True)
+            continue                  # brand nay chua ghi nhan -> lan sau bao lai
+        da_gui |= {t[0] for t in viecs}
+    _ghi_da_bao(da | da_gui)
 
 
 def write_meta(draft_id, item, out_png, brand="donniechublog"):
@@ -1435,6 +1445,20 @@ if __name__ == "__main__":
                 except Exception:                            # noqa: BLE001
                     pass
             key = "teaser" if category.upper() == "TEASER" else "writer"
+            if key == "writer":
+                # Tin thuong tach theo THUONG HIEU: dcgr -> topic Miles,
+                # donniechublog -> Quinn. Truoc day MOI draft deu ve topic Quinn
+                # nen trong nhu Quinn om ca dcgr; that ra Miles viet caption dcgr,
+                # chi la ban nhap bi day nham topic. Brand nam trong sidecar meta.
+                brand = ""
+                mpath = DRAFTS / (draft_id + ".meta.json")
+                if mpath.exists():
+                    try:
+                        brand = json.loads(
+                            mpath.read_text(encoding="utf-8")).get("brand", "")
+                    except Exception:                            # noqa: BLE001
+                        pass
+                key = VAI_VIET.get(brand, MAC_DINH_VIET)
             thread = topics.get(key)
         if len(sys.argv) > 3:
             thread = int(sys.argv[3])
