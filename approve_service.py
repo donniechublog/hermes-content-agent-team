@@ -556,28 +556,35 @@ Dung lai. Bao dung mot cau: "Khong tim duoc anh that cho tin nay" kem link da th
 KHONG tao the, KHONG ve SVG, KHONG chay card.py. Ong Chu se quyet dinh bo tin
 hay tu dua anh vao.
 
-BUOC 4 — dung the anh (chi khi buoc 2 co anh). MAC DINH LA KIEU QUOTE.
+BUOC 4 — dung the anh (chi khi buoc 2 co anh). MAC DINH LA KIEU QUOTE (the HOOK).
 
-Kieu CHUAN cua kenh la the TRICH DAN (--kieu quote): mot cau noi manh CO THAT
-trong bai (nguyen van phong van, phat bieu, cau chot) trong khung dau " + dong
-nguon. Doc {source_note} / {summary} va bai goc ({link}) de tim mot cau nhu vay.
+--kieu quote la mot CAU LON trong khung dau " sao cho DAP VAO MAT trong 3 GIAY
+dau, khien nguoi ta phai doc tiep. Cau nay KHONG nhat thiet la loi ai noi trong
+bai — dung may moc. No co the la:
+ - chinh TIEU DE / mot goc giat cua tin (manh nhat khi co CON SO soc), HOAC
+ - mot cau noi CO THAT cua nguoi trong bai (neu bai co cau du dat).
+Chon cai nao gay an tuong hon. Doc {source_note} / {summary} / bai goc ({link}).
 
-4a — CO cau quote that (uu tien):
+--tagline la CHIP CATEGORY goc tren-trai (nhan ngan TIENG ANH): MODEL RELEASE /
+FUNDING / ROBOTICS / CYBERSECURITY / APPS / OPEN SOURCE / RESEARCH / M&A / IN
+BRIEF... Chon nhan dung chu de tin. (KHONG con mac dinh "daily AI update".)
+
+--attrib la dong nguon o duoi khung:
+ - Cau la LOI CO THAT cua mot nguoi  -> "Phat bieu cua <ten>, <chuc/hang>".
+ - Cau la tieu de/hook (khong phai loi ai) -> ghi NGUON: "Theo <bao>" hoac
+   "<Chu de>, theo <bao>". TUYET DOI KHONG gan cau minh tu viet thanh loi mot
+   nguoi cu the — bia loi la sai. Hook thi ghi nguon, dung ghi "phat bieu".
+
 cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \\
   --kieu quote --ratio 4:5 \\
+  --tagline "<CATEGORY ngan TIENG ANH>" \\
   --image /tmp/src_{draft_id}.png \\
-  --title "<NGUYEN VAN cau noi, co dau, giu hoa/thuong nhu goc>" \\
-  --attrib "Doc bai “<ten bai>” - <tac gia/nguon>"{co_brand} \\
+  --title "<CAU HOOK co dau, dap vao mat trong 3s>" \\
+  --attrib "<'Theo <bao>' hoac 'Phat bieu cua <ten>' neu la loi that>"{co_brand} \\
   --out {out_png}
 
-4b — bai KHONG co cau quote that nao du manh de dung mot minh: TUYET DOI KHONG
-tu nghi ra mot cau roi dong ngoac kep (do la bia loi nguoi ta). Roi ve hero tran:
-cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \\
-  --kieu tran --ratio 4:5 \\
-  --kicker "<nhan ngan TIENG ANH, toi da 2 tu>" \\
-  --image /tmp/src_{draft_id}.png \\
-  --title "<MOT CAU tieng Viet co dau, bao quat ca tin>"{co_brand} \\
-  --out {out_png}
+Kieu tran (--kieu tran, kicker + tieu de mono, layout bang-tin co dien) van dung
+duoc khi ban muon doi khong khi thay vi the hook — nhung MAC DINH la quote/hook.
 
 Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
 {out_png_goc}_2.png, _3.png... de buoc dang sau gui thanh album.
@@ -607,13 +614,15 @@ Chung ca hai kieu:
 - Ten hang trong chu duoc TO MAU tu dong, ban khong phai lam gi. Gap hang chua
   duoc to thi bao lai de them vao danh sach.
 
-Kieu quote (mac dinh):
-- --title la NGUYEN VAN cau noi, giu hoa/thuong nhu goc (KHONG viet hoa toan bo).
-  Cau ngan de doc lon — cham 7 dong la nen cat.
-- --attrib la dong nguon: `Doc bai "<ten bai>" - <tac gia>`.
+Kieu quote / hook (mac dinh):
+- --title la CAU HOOK — dap vao mat trong 3 giay. Co the la tieu de/goc giat
+  HOAC loi that cua nguoi trong bai. Cau NGAN de doc lon (cham 7 dong la cat).
+- --tagline = CHIP CATEGORY (MODEL RELEASE / FUNDING / ROBOTICS / IN BRIEF...).
+- --attrib: loi that -> "Phat bieu cua <ten>"; hook -> "Theo <bao>". Khong gan
+  cau tu viet thanh loi mot nguoi cu the.
 - Dau " trong khung tu doi mau theo hang duoc nhac, tu dong.
 
-Kieu tran (du phong, khi khong co quote that):
+Kieu tran (layout bang-tin co dien, khi muon doi khong khi):
 - KHONG --subtitle, KHONG --via, KHONG nhan category. Tren anh chi co bon thu:
   anh, kicker, tieu de, ten kenh.
 - TIEU DE LA MOT CAU HOAN CHINH bao quat ca tin, khong gioi han so dong/ky tu;

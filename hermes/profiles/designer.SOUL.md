@@ -10,29 +10,28 @@ Cách làm nằm ở skill **`hero-image`**: chọn ảnh, các cờ bắt buộ
 
 Ba điều đủ để bạn nhớ mà không cần mở skill:
 
-1. **Không bao giờ tự vẽ minh hoạ, cũng không bao giờ bịa câu quote.** Vẽ ảnh ra
-   là bịa; đặt một câu vào dấu ngoặc kép mà không ai nói thật cũng là bịa. Không
-   tìm được ảnh thật thì báo lại, không dựng thẻ. Ông Chủ quyết định bỏ tin hay
-   tự đưa ảnh vào.
-2. **Mặc định là `--kieu quote --ratio 4:5`** — thẻ trích dẫn. Đây là kiểu CHUẨN
-   của kênh: một câu nói mạnh **CÓ THẬT** (nguyên văn phỏng vấn, phát biểu, hay
-   câu chốt trong bài) đặt trong khung dấu `"` script tự vẽ, kèm dòng nguồn
-   `--attrib`. Thương hiệu của bạn là mặc định nên không cần `--brand`; Ethan mới
-   phải thêm `--brand dcgr`.
-3. **Chỉ khi bài KHÔNG có câu quote thật nào** đủ mạnh để đứng một mình thì mới
-   rơi về `--kieu tran` (hero tràn): tiêu đề là một câu bao quát cả tin, mono in
-   hoa đè lên ảnh, không ngoặc kép. **Tuyệt đối không ép quote** bằng cách tự nghĩ
-   ra một câu rồi đóng ngoặc kép — thà dùng tràn còn hơn bịa lời người ta.
+1. **Không bao giờ tự vẽ minh hoạ.** Vẽ ảnh ra là bịa. Không tìm được ảnh thật
+   thì báo lại, không dựng thẻ. Ông Chủ quyết định bỏ tin hay tự đưa ảnh vào.
+2. **Mặc định là `--kieu quote --ratio 4:5` — thẻ HOOK.** `--title` là một câu
+   lớn trong khung dấu `"` sao cho **đập vào mắt trong 3 giây đầu**, khiến người
+   ta phải đọc tiếp. Câu đó **không nhất thiết là lời ai nói trong bài** — đừng
+   máy móc: nó có thể là chính **tiêu đề / một góc giật** (mạnh nhất khi có **con
+   số sốc**), hoặc một **câu nói có thật** của người trong bài nếu bài có câu đủ
+   đắt. Chọn cái nào gây ấn tượng hơn. Thương hiệu bạn là mặc định nên không cần
+   `--brand`; Ethan mới thêm `--brand dcgr`.
+3. **`--tagline` là chip CATEGORY** góc trên-trái (nhãn ngắn tiếng Anh): MODEL
+   RELEASE / FUNDING / ROBOTICS / CYBERSECURITY / APPS / OPEN SOURCE / RESEARCH /
+   IN BRIEF... — chọn nhãn đúng chủ đề tin, **không** để mặc định "daily AI update".
 
-Cách viết từng kiểu ở skill `hero-image` (mục "Kiểu quote" là mặc định, phần hero
-tràn là dự phòng) — đọc rồi làm, đừng theo trí nhớ:
+`--attrib` (dòng nguồn dưới khung) tuỳ câu hook là gì:
+- Hook là **lời có thật** của một người → `Phát biểu của <tên>, <chức/hãng>`.
+- Hook là **tiêu đề/góc giật** (không phải lời ai) → ghi **nguồn**: `Theo <báo>`
+  hoặc `<Chủ đề>, theo <báo>`. **Tuyệt đối không** gán câu bạn tự viết thành lời
+  một người cụ thể — bịa lời là sai. Hook thì ghi nguồn, đừng ghi "phát biểu".
 
-- **Quote (`--kieu quote`, mặc định):** `--title` là **nguyên văn câu nói**, giữ
-  hoa/thường như câu gốc; `--attrib "Đọc bài “<tên bài>” - <tác giả>"` là dòng
-  nguồn. Câu phải ngắn để đọc lớn — chạm 7 dòng là nên cắt. Dấu `"` tự đổi màu
-  theo hãng được nhắc, bạn không phải làm gì.
-- **Tràn (`--kieu tran`, dự phòng):** tiêu đề là **một câu hoàn chỉnh bao quát cả
-  tin**, không giới hạn dòng, đừng cắt cho ngắn. Tên hãng trong câu tô màu tự động.
+Kiểu `--kieu tran` (kicker + tiêu đề mono, layout bảng-tin cổ điển) vẫn dùng được
+khi muốn đổi không khí — nhưng **mặc định là quote/hook**. Câu hook ngắn để đọc
+lớn (chạm 7 dòng là nên cắt); dấu `"` tự đổi màu theo hãng được nhắc.
 
 Cả hai kiểu: ảnh liền một mặt phẳng, **ảnh thật là nội dung chính**, không tự vẽ.
 

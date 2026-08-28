@@ -24,12 +24,16 @@ dựng cho dcgr.tech. Hai người làm y hệt nhau, khác đúng một cờ:
 
 Ngoài cờ đó ra, mọi thứ trong tài liệu này áp cho cả hai như nhau.
 
-**Kiểu mặc định là `--kieu quote`** — thẻ trích dẫn (mục "Kiểu quote" bên dưới):
-một câu nói **có thật** trong bài, đặt trong khung dấu `"` + dòng nguồn. Chỉ khi
-bài **không có câu quote thật** nào đủ mạnh để đứng một mình mới rơi về **hero
-tràn** (`--kieu tran`, phần đầu tài liệu này). **Không bao giờ tự nghĩ ra một câu
-rồi đóng ngoặc kép** — thà dùng tràn còn hơn bịa lời người ta. Đọc phần hero tràn
-để nắm luật chọn ảnh/chữ chung; hai kiểu dùng chung mọi nguyên tắc về ảnh.
+**Kiểu mặc định là `--kieu quote`** — thẻ **HOOK** (mục "Kiểu quote" bên dưới):
+một câu lớn trong khung dấu `"` sao cho **đập vào mắt trong 3 giây**, khiến người
+ta phải đọc tiếp. Câu đó **không nhất thiết là lời ai nói** — đừng máy móc: nó có
+thể là chính **tiêu đề / một góc giật** (mạnh nhất khi có **con số sốc**), hoặc
+một **câu nói có thật** của người trong bài. `--tagline` là **chip category**
+(MODEL RELEASE / FUNDING / ROBOTICS / IN BRIEF...). `--attrib`: nếu là lời thật
+thì ghi `Phát biểu của <tên>`, nếu là hook/tiêu đề thì ghi nguồn `Theo <báo>` —
+**không gán câu tự viết thành lời một người cụ thể** (bịa lời là sai). Kiểu **hero
+tràn** (`--kieu tran`, phần đầu) vẫn dùng khi muốn đổi không khí. Đọc phần hero
+tràn để nắm luật chọn ảnh/chữ chung; hai kiểu dùng chung mọi nguyên tắc về ảnh.
 
 ## Kiểu tràn là gì, và vì sao nó tồn tại
 
@@ -311,17 +315,23 @@ tuyệt đối không thay bằng hình tự vẽ.
 
 Đây là chỗ dễ rơi nhất của kiểu tràn: thẻ không còn nhắc bạn, nên phải tự nhớ.
 
-## Kiểu quote — thẻ trích dẫn (KIỂU MẶC ĐỊNH)
+## Kiểu quote — thẻ HOOK (KIỂU MẶC ĐỊNH)
 
 Cùng `card.py`, khác đúng `--kieu quote`. **Đây là kiểu chuẩn/mặc định của kênh**:
-**một câu nói mạnh đứng một mình** — trích từ bài phỏng vấn, một nhận định sắc,
-một câu chốt của bài. Khác hero tràn (một câu bao quát *cả tin*, do người viết
-soạn) ở chỗ đây là **lời có thật của một người**, có ghi nguồn ngay trên thẻ.
+**một câu lớn trong khung dấu `"`** phải **đập vào mắt trong 3 giây đầu**, khiến
+người ta phải đọc tiếp. Đừng máy móc coi nó là "trích dẫn": câu đó **không nhất
+thiết là lời ai nói trong bài** — nó có thể là:
+- chính **tiêu đề / một góc giật** của tin (mạnh nhất khi có **con số sốc**), hoặc
+- một **câu nói có thật** của người trong bài (nếu bài có câu đủ đắt).
 
-Mặc định thử kiểu này trước. Điều kiện cứng: câu quote phải **có thật** trong bài
-(nguyên văn), không được tự nghĩ ra rồi đóng ngoặc kép. Bài không moi được câu
-quote thật nào đủ mạnh để tự nó dừng người lướt thì mới rơi về hero tràn; tin
-nhiều tầng không nén được vào một câu thì để carousel.
+Chọn cái nào gây ấn tượng hơn trong 3 giây. Ranh giới cứng duy nhất: **nếu ghi
+`--attrib` là lời của một người** (`Phát biểu của <tên>`) thì câu phải **đúng là
+lời có thật** của họ. Còn khi câu là tiêu đề/hook do mình soạn thì `--attrib` ghi
+**nguồn** (`Theo <báo>`), **không** gán thành lời một người — bịa lời là sai.
+Tin nhiều tầng không nén được vào một câu thì để carousel.
+
+`--tagline` là **chip category** góc trên-trái: MODEL RELEASE / FUNDING / ROBOTICS
+/ CYBERSECURITY / APPS / IN BRIEF... (không còn mặc định "daily AI update").
 
 Bố cục script tự vẽ, đúng dạng pull-quote của báo:
 - ảnh phủ kín + màn tối liền mạch (cùng bài với kiểu tràn, cùng nguyên tắc trên),
