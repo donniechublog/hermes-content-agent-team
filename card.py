@@ -825,29 +825,28 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=_pha(FG, 0.72))
         ay += at_lh
 
-    # Hang TREN: tagline canh TRAI, brand text (ten kenh) canh PHAI, cung mot hang.
-    # Ca hai nam tren anh nen co vien toi mong de doc duoc.
-    def _chu_vien(txt, x, y, font, fill):
-        for dx in (-1, 0, 1):
-            for dy in (-1, 0, 1):
-                if dx or dy:
-                    d.text((x + dx, y + dy), txt, font=font, fill=(0, 0, 0))
-        d.text((x, y), txt, font=font, fill=fill)
+    # Hang TREN theo phong cach NEOBRUTALISM: hai CHIP khoi dac, vien den day,
+    # bong cung lech (KHONG mo), chu MONO dam (JetBrains Mono). Tagline chip
+    # TRANG canh TRAI; ten kenh chip CYAN nhan dien canh PHAI. Mau phang tuong
+    # phan manh, khong halo mo nhu truoc.
+    def _chip_neo(txt, font, top, align, bg, fg, off=7, bord=4, pad_x=22, pad_y=13):
+        tb = d.textbbox((0, 0), txt, font=font)
+        bw, bh = (tb[2] - tb[0]) + 2 * pad_x, (tb[3] - tb[1]) + 2 * pad_y
+        x0 = QUOTE_PAD if align == "l" else (W - QUOTE_PAD - bw)
+        y0 = top
+        x1, y1 = x0 + bw, y0 + bh
+        d.rectangle([x0 + off, y0 + off, x1 + off, y1 + off], fill=(0, 0, 0))   # bong cung lech
+        d.rectangle([x0, y0, x1, y1], fill=bg, outline=(0, 0, 0), width=bord)   # khoi dac + vien den
+        d.text((x0 + pad_x - tb[0], y0 + pad_y - tb[1]), txt, font=font, fill=fg)
+        return bh
 
-    f_h = _f(F_REG, 30, weight=600)
     ten = handle if handle.startswith("@") else "@" + handle
-    hy = QUOTE_PAD - 4
-    # Ten kenh canh PHAI, dung CYAN cua bo nhan dien (donniechublog #00cce0 —
-    # cung mau cyan tren the cua Bob; dcgr thi CYAN la trang). KHONG dung
-    # APPLE_BLUE nua: lech tong voi nhan dien va trung xanh voi net khung.
-    tw_h = d.textlength(ten, font=f_h)
-    _chu_vien(ten, W - QUOTE_PAD - tw_h, hy, f_h, CYAN)
+    top = QUOTE_PAD - 14
+    f_hchip = _f(F_BOLD, 25)          # JetBrains Mono ExtraBold — mono chunky
+    f_tchip = _f(F_UI, 20)            # JetBrains Mono Bold
+    _chip_neo(ten, f_hchip, top, "r", CYAN, (0, 0, 0))            # ten kenh: chip cyan, chu den
     if tag:
-        f_tag_top = _f(F_QUOTE_REG, 24)
-        # Tagline canh TRAI, xam diu (chu phu, giong tone chu phu tren the Bob).
-        bb, tb = f_h.getbbox("Ay"), f_tag_top.getbbox("Ay")
-        ty = hy + (bb[3] - bb[1]) - (tb[3] - tb[1])
-        _chu_vien(tag, QUOTE_PAD, ty, f_tag_top, _pha(FG, 0.6))
+        _chip_neo(tag, f_tchip, top, "l", (255, 255, 255), (0, 0, 0))  # tagline: chip trang, chu den
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
