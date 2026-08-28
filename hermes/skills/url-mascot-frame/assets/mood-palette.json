@@ -1,0 +1,102 @@
+[
+  {
+    "mood": "laugh",
+    "emoji": "😂",
+    "file": "expr-021-040-0004.png"
+  },
+  {
+    "mood": "nervous-laugh",
+    "emoji": "😅",
+    "file": "expr-021-040-0003.png"
+  },
+  {
+    "mood": "cool",
+    "emoji": "😎",
+    "file": "expr-041-060-0005.png"
+  },
+  {
+    "mood": "approve",
+    "emoji": "👍",
+    "file": "expr-001-020-0001.png"
+  },
+  {
+    "mood": "thinking",
+    "emoji": "🤔",
+    "file": "expr-001-020-0005.png"
+  },
+  {
+    "mood": "skeptical",
+    "emoji": "🤨",
+    "file": "expr-041-060-0008.png"
+  },
+  {
+    "mood": "eyeroll",
+    "emoji": "🙄",
+    "file": "expr-081-100-0018.png"
+  },
+  {
+    "mood": "deadpan",
+    "emoji": "😐",
+    "file": "expr-081-100-0009.png"
+  },
+  {
+    "mood": "dead-inside",
+    "emoji": "🫠",
+    "file": "expr-081-100-0011.png"
+  },
+  {
+    "mood": "mindblown",
+    "emoji": "🤯",
+    "file": "expr-061-080-0016.png"
+  },
+  {
+    "mood": "clown",
+    "emoji": "🤡",
+    "file": "expr-121-135-0005.png"
+  },
+  {
+    "mood": "playful",
+    "emoji": "😜",
+    "file": "expr-041-060-0001.png"
+  },
+  {
+    "mood": "facepalm",
+    "emoji": "🙈",
+    "file": "expr-081-100-0005.png"
+  },
+  {
+    "mood": "dead",
+    "emoji": "💀",
+    "file": "expr-121-135-0011.png"
+  },
+  {
+    "mood": "mischief",
+    "emoji": "😈",
+    "file": "expr-121-135-0004.png"
+  },
+  {
+    "mood": "robot",
+    "emoji": "🤖",
+    "file": "expr-121-135-0014.png"
+  },
+  {
+    "mood": "ghost",
+    "emoji": "👻",
+    "file": "expr-121-135-0010.png"
+  },
+  {
+    "mood": "money",
+    "emoji": "🤑",
+    "file": "expr-121-135-0002.png"
+  },
+  {
+    "mood": "dizzy",
+    "emoji": "😵‍💫",
+    "file": "expr-101-120-0016.png"
+  },
+  {
+    "mood": "exhausted",
+    "emoji": "😮‍💨",
+    "file": "expr-101-120-0011.png"
+  }
+]

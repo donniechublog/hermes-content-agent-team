@@ -1,0 +1,5 @@
+# sharp is a large, platform-specific native dep — reinstall with `npm install`
+node_modules/
+# working backups
+*.bak-*
+*.bak
