@@ -19,6 +19,7 @@ Usage:  python3 get_source.py "<url>" <out-path>
 """
 import html as _htmllib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -47,14 +48,35 @@ def twimg_orig(url: str) -> str:
     return urlunparse(u._replace(path=path, query=urlencode({"format": fmt, "name": "orig"})))
 
 
-def download(url: str, out: str, ua: str = UA) -> int:
-    req = urllib.request.Request(url, headers={"User-Agent": ua})
+def download(url: str, out: str, ua: str = UA, cookie: str = None) -> int:
+    headers = {"User-Agent": ua}
+    if cookie:
+        headers["Cookie"] = cookie
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=60) as r:
         data = r.read()
     if not data:
         sys.exit(f"tai ve 0 byte tu {url}")
     Path(out).write_bytes(data)
     return len(data)
+
+
+def _fb_cookie():
+    """A Facebook session cookie, so gated / personal public posts resolve.
+    Read from $FB_COOKIE, else the FB_COOKIE= line of the project .env files.
+    The VALUE is never logged. Set it like: FB_COOKIE="c_user=...; xs=..."."""
+    c = os.environ.get("FB_COOKIE")
+    if c:
+        return c.strip()
+    for p in (Path.home() / "content-team" / ".secrets.env",
+              Path.home() / ".hermes" / ".env"):
+        try:
+            for line in p.read_text(encoding="utf-8").splitlines():
+                if line.strip().startswith("FB_COOKIE="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return None
 
 
 def _is_image_file(path: str) -> bool:
@@ -147,6 +169,34 @@ def page_fallback(url: str, out: str, allow_screenshot: bool = True) -> bool:
     return screenshot(url, out) if allow_screenshot else False
 
 
+def _fb_image(url: str, out: str) -> bool:
+    """Facebook: pull the post's og:image. A session cookie (FB_COOKIE) makes the
+    desktop page render fully — so gated / personal PUBLIC posts resolve; without
+    one, only public Page posts do (crawler UA). Never screenshots (login wall).
+    The cookie is carried to the CDN too, for lookaside / gated media."""
+    cookie = _fb_cookie()
+    tries = ([(UA, cookie)] if cookie else []) + [(BOT_UA, None)]
+    for ua, ck in tries:
+        headers = {"User-Agent": ua}
+        if ck:
+            headers["Cookie"] = ck
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            page = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "ignore")
+        except Exception:
+            continue
+        img = _og_image_url(page, url)
+        if not img:
+            continue
+        try:
+            download(twimg_orig(img), out, ua=ua, cookie=ck)
+            if _is_image_file(out):
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def main():
     if len(sys.argv) < 3:
         sys.exit("usage: get_source.py <url> <out-path>")
@@ -173,10 +223,11 @@ def main():
             return
         sys.exit(3)
 
-    # 2b) Facebook — login-gated. og:image (crawler UA) or bust; NEVER screenshot
-    #     (a logged-out FB screenshot is only the login wall — worse than failing).
+    # 2b) Facebook — login-gated. With FB_COOKIE even personal PUBLIC posts
+    #     resolve; without it, only public Page posts. og:image or bust — NEVER
+    #     screenshot (a logged-out FB screenshot is only the login wall).
     if host in FB_HOSTS:
-        if page_fallback(url, out, allow_screenshot=False):
+        if _fb_image(url, out):
             print(out)
             return
         sys.exit(3)
