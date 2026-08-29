@@ -69,6 +69,23 @@ def social_media_urls(url: str) -> list:
     return [m.get("url") for m in (j.get("media") or []) if m.get("url")]
 
 
+SCREENSHOT_JS = Path(__file__).resolve().parent / "screenshot.js"
+
+
+def screenshot(url: str, out: str) -> bool:
+    """High-DPR (Retina) screenshot fallback for pages that are not a single
+    image. Returns True if it produced a non-empty file."""
+    if not SCREENSHOT_JS.exists():
+        return False
+    try:
+        subprocess.run(["node", str(SCREENSHOT_JS), url, out],
+                       capture_output=True, text=True, timeout=120)
+    except Exception:
+        return False
+    p = Path(out)
+    return p.exists() and p.stat().st_size > 0
+
+
 def main():
     if len(sys.argv) < 3:
         sys.exit("usage: get_source.py <url> <out-path>")
@@ -85,30 +102,35 @@ def main():
     # 2) X / Instagram post → original media via social-crawl
     if host in ("x.com", "twitter.com", "instagram.com"):
         urls = [twimg_orig(u) for u in social_media_urls(url)]
-        if not urls:
-            sys.exit(3)  # no single image (text tweet / carousel miss) → screenshot
-        download(urls[0], out)
-        print(out)
-        return
+        if urls:
+            download(urls[0], out)
+            print(out)
+            return
+        # text tweet / no media → high-DPR screenshot of the post card
+        if screenshot(url, out):
+            print(out)
+            return
+        sys.exit(3)
 
-    # 3) anything else — keep it ONLY if the server says it's an image. This
-    #    handles extensionless CDN image urls, and lets real pages fall through
-    #    to a screenshot (exit 3) without guessing from the extension.
+    # 3) any other url — keep it if the server returns image/* (handles
+    #    extensionless CDN links); otherwise it's a page → screenshot it.
+    data = None
     try:
         req = urllib.request.Request(url, headers={"User-Agent": UA})
         with urllib.request.urlopen(req, timeout=60) as r:
-            ctype = (r.headers.get("Content-Type") or "").lower()
-            if not ctype.startswith("image/"):
-                sys.exit(3)          # a page, not a single image → screenshot
-            data = r.read()
-    except SystemExit:
-        raise
+            if (r.headers.get("Content-Type") or "").lower().startswith("image/"):
+                data = r.read()
     except Exception:
-        sys.exit(3)
-    if not data:
-        sys.exit(3)
-    Path(out).write_bytes(data)
-    print(out)
+        data = None
+    if data:
+        Path(out).write_bytes(data)
+        print(out)
+        return
+    # 4) not a single image → high-DPR screenshot fallback
+    if screenshot(url, out):
+        print(out)
+        return
+    sys.exit(3)
 
 
 if __name__ == "__main__":

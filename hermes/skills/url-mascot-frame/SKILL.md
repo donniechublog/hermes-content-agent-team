@@ -134,6 +134,18 @@ palette (rare), the script reads MascotStudio's `emoji-map.json`; set
 `MASCOT_DIR=/path/to/MascotStudio` if that repo lives elsewhere. For the normal
 troll palette you do **not** need MascotStudio present.
 
+**Screenshot fallback (optional):** `get_source.py` only needs the browser for the
+rare case where the URL is a page, not an image — it shells out to `screenshot.js`
+(Playwright, deviceScaleFactor 3 for a sharp capture). Enable it once with:
+
+```bash
+npm install playwright && npx playwright install --with-deps chromium
+```
+
+If Playwright/Chromium is absent, direct-image and social-media resolution still
+work; only the page-screenshot fallback is skipped (`get_source.py` then exits
+non-zero for a page URL).
+
 ---
 
 ## Step 4 — Show the result
