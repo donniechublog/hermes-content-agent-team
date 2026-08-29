@@ -168,11 +168,13 @@ const S = {
   // --- load + normalize source ---
   let srcBuf = await sharp(imagePath).rotate().toBuffer();
   let meta = await sharp(srcBuf).metadata();
-  const MAXW = 1600;
+  const MAXW = 2048;   // keep more detail (paired with sendDocument, no TG recompress)
   if (meta.width > MAXW) {
     srcBuf = await sharp(srcBuf).resize({ width: MAXW }).toBuffer();
     meta = await sharp(srcBuf).metadata();
   }
+  // mild unsharp mask — restores bite lost to any downscale; safe on photos.
+  srcBuf = await sharp(srcBuf).sharpen({ sigma: 0.8 }).toBuffer();
   const W = meta.width, H = meta.height;
   const short = Math.min(W, H);
   const R = Math.round;

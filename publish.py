@@ -125,6 +125,23 @@ def send_photo(token, chat, photo: Path, caption="", parse_mode="HTML", thread=N
     return _check(r)
 
 
+def send_document(token, chat, doc: Path, caption="", parse_mode="HTML", thread=None):
+    """Gui anh dang FILE (sendDocument). Khac sendPhoto: Telegram GIU NGUYEN file
+    goc — khong ha ve 1280px, khong nen lai JPEG. Dung khi can giu do net (vd
+    frame HD cua Bob). Anh van hien thumbnail; bam vao xem/tai full-res."""
+    caption = don_dep(caption)
+    if len(caption) > CAPTION_LIMIT:
+        sys.exit(f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
+                 f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
+    with httpx.Client(timeout=120) as c, doc.open("rb") as fh:
+        r = c.post(API.format(token=token, method="sendDocument"),
+                   data={"chat_id": chat, "caption": caption,
+                         "parse_mode": parse_mode,
+                         **({"message_thread_id": str(int(thread))} if thread else {})},
+                   files={"document": (doc.name, fh, "image/png")})
+    return _check(r)
+
+
 def send_media_group(token, chat, media, caption="", parse_mode="HTML",
                      thread=None):
     """Gui album nhieu anh. `media` la danh sach URL (http...) hoac Path cuc bo.
@@ -171,7 +188,10 @@ def main():
 
 def _main():
     p = argparse.ArgumentParser(description="Dang bai len Telegram channel")
-    p.add_argument("--photo", type=Path, help="Duong dan anh")
+    p.add_argument("--photo", type=Path, help="Duong dan anh (sendPhoto — Telegram nen)")
+    p.add_argument("--document", type=Path,
+                   help="Gui anh dang FILE (sendDocument) — giu nguyen do net, "
+                        "Telegram khong ha 1280 khong nen. Dung cho frame HD.")
     p.add_argument("--caption", default="", help="Chu thich anh (toi da 1024)")
     p.add_argument("--text", help="Dang tin chi co chu")
     p.add_argument("--to", help="Ghi de chat_id dich")
@@ -191,6 +211,8 @@ def _main():
     if a.album:
         res = send_media_group(token, chat, a.album, body or a.caption,
                                thread=a.thread)
+    elif a.document:
+        res = send_document(token, chat, a.document, body or a.caption, thread=a.thread)
     elif a.photo:
         res = send_photo(token, chat, a.photo, body or a.caption, thread=a.thread)
     else:
