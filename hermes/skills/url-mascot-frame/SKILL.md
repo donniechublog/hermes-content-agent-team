@@ -44,11 +44,12 @@ an `x.com`/`instagram.com` **post** URL → social-crawl → the `media[]` CDN
 original; any direct image URL → downloaded by **content-type** (works for
 extensionless CDN links too).
 
-**Screenshot is the fallback, not the default.** `get_source.py` exits with code
-**3** only when the URL is not a single image — a text-only tweet, an article, a
-generic page. ONLY THEN open the in-app Browser (`preview_start`/`navigate`),
-locate the dominant card/image (`read_page` + `find` + `scroll_to`), take a
-`computer` `screenshot`, and crop to the content so the frame hugs it.
+For a **page** (a tweet, an article, a Facebook/social post) it grabs the post's
+**own image** first — the `og:image`, fetched with a crawler UA (Facebook only
+serves og tags / lookaside media to crawlers) — so you frame the picture in the
+post, not a screenshot of the whole page. A **high-DPR (3×) screenshot** is the
+last resort, used only when the page has no such image. All of this is inside
+`get_source.py`; it exits non-zero only when the URL is genuinely unreachable.
 
 Do not proceed until `/tmp/src.png` exists and is a valid image.
 

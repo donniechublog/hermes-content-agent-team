@@ -17,13 +17,14 @@ CODE, not in the agent's judgement.
 
 Usage:  python3 get_source.py "<url>" <out-path>
 """
+import html as _htmllib
 import json
 import re
 import subprocess
 import sys
 import urllib.request
 from pathlib import Path
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse, urljoin
 
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
@@ -46,14 +47,27 @@ def twimg_orig(url: str) -> str:
     return urlunparse(u._replace(path=path, query=urlencode({"format": fmt, "name": "orig"})))
 
 
-def download(url: str, out: str) -> int:
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+def download(url: str, out: str, ua: str = UA) -> int:
+    req = urllib.request.Request(url, headers={"User-Agent": ua})
     with urllib.request.urlopen(req, timeout=60) as r:
         data = r.read()
     if not data:
         sys.exit(f"tai ve 0 byte tu {url}")
     Path(out).write_bytes(data)
     return len(data)
+
+
+def _is_image_file(path: str) -> bool:
+    """Magic-byte check — the og:image download really is an image, not an HTML
+    redirect stub (Facebook lookaside serves stubs to the wrong UA)."""
+    try:
+        with open(path, "rb") as f:
+            h = f.read(16)
+    except Exception:
+        return False
+    return (h[:3] == b"\xff\xd8\xff" or h[:8] == b"\x89PNG\r\n\x1a\n"
+            or h[:6] in (b"GIF87a", b"GIF89a") or h[:2] == b"BM"
+            or (h[:4] == b"RIFF" and h[8:12] == b"WEBP"))
 
 
 def social_media_urls(url: str) -> list:
@@ -86,6 +100,45 @@ def screenshot(url: str, out: str) -> bool:
     return p.exists() and p.stat().st_size > 0
 
 
+def _og_image_url(page_html: str, base: str):
+    """The post's OWN image, from the page's og:image / twitter:image meta —
+    i.e. the picture a link-preview would show. Absolute-ised against `base`."""
+    pats = [
+        r'<meta[^>]+property=["\']og:image(?::url)?["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image(?::url)?["\']',
+        r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+    ]
+    for pat in pats:
+        m = re.search(pat, page_html, re.I)
+        if m:
+            return urljoin(base, _htmllib.unescape(m.group(1).strip()))
+    return None
+
+
+# Facebook (and others) emit og: tags only to known crawlers — a browser UA
+# gets a 400 / login wall. Fetch the HTML as a crawler to read the preview image.
+BOT_UA = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
+
+
+def page_fallback(url: str, out: str) -> bool:
+    """A page, not a direct image: grab the post's OWN image (og:image) first —
+    that is 'the image in the post', not the whole page — and only screenshot if
+    the page carries no such image. Returns True on success."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": BOT_UA})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            page = r.read().decode("utf-8", "ignore")
+        img = _og_image_url(page, url)
+        if img:
+            # crawler UA: FB lookaside serves the real bytes only to a crawler.
+            download(twimg_orig(img), out, ua=BOT_UA)
+            if _is_image_file(out):
+                return True
+    except Exception:
+        pass
+    return screenshot(url, out)
+
+
 def main():
     if len(sys.argv) < 3:
         sys.exit("usage: get_source.py <url> <out-path>")
@@ -106,14 +159,14 @@ def main():
             download(urls[0], out)
             print(out)
             return
-        # text tweet / no media → high-DPR screenshot of the post card
-        if screenshot(url, out):
+        # text tweet / no media → the post's og:image, else a screenshot
+        if page_fallback(url, out):
             print(out)
             return
         sys.exit(3)
 
     # 3) any other url — keep it if the server returns image/* (handles
-    #    extensionless CDN links); otherwise it's a page → screenshot it.
+    #    extensionless CDN links); otherwise it's a page.
     data = None
     try:
         req = urllib.request.Request(url, headers={"User-Agent": UA})
@@ -126,8 +179,8 @@ def main():
         Path(out).write_bytes(data)
         print(out)
         return
-    # 4) not a single image → high-DPR screenshot fallback
-    if screenshot(url, out):
+    # 4) a page → its OWN image (og:image), then a high-DPR screenshot
+    if page_fallback(url, out):
         print(out)
         return
     sys.exit(3)
