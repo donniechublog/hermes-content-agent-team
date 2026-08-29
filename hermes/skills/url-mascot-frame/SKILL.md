@@ -83,6 +83,18 @@ tight set of reaction faces:
 | 🤑 | money | money/greed, "pay up", get-rich, $$$ energy |
 | 😵‍💫 | dizzy | overwhelmed, information overload, spun-out, tilted |
 | 😮‍💨 | exhausted | relief sigh, burnt out, "finally", exhausted |
+| 👋 | wave | a greeting, "hi/gm", welcome, hello-there |
+| 🤫 | shush | a secret, "keep it quiet", don't-tell, low-key |
+| 😤 | stern | not impressed, tough stance, "we don't do that here", arms-crossed |
+| 😶 | speechless | no words, blank stare, "…", left speechless |
+| 😇 | angel | wholesome/innocent, "who, me?", blessed, halo energy |
+| 😗 | whistle | playing innocent, whistling away, "nothing to see here" |
+| 🤓 | nerd | ackshually, technical/smart, spec detail, well-actually |
+| 🤩 | starstruck | hyped, "let's gooo", amazed, big W excitement |
+| 🫡 | salute | respect, "o7", acknowledged, aye-aye |
+| 😱 | shock | scared/screaming, "oh no", horror, wtf-in-a-bad-way |
+| 😮 | surprised | mild "oh!", a reveal, huh-didn't-expect-that |
+| 💩 | poop | crap take, "this is garbage", trash, hot mess |
 
 The full machine-readable list is in [assets/mood-palette.json](assets/mood-palette.json),
 and [assets/mood-palette-sheet.png](assets/mood-palette-sheet.png) shows what each

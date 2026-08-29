@@ -93,5 +93,65 @@
     "mood": "exhausted",
     "emoji": "😮‍💨",
     "file": "expr-101-120-0011.png"
+  },
+  {
+    "mood": "wave",
+    "emoji": "👋",
+    "file": "expr-001-020-0004.png"
+  },
+  {
+    "mood": "shush",
+    "emoji": "🤫",
+    "file": "expr-001-020-0013.png"
+  },
+  {
+    "mood": "stern",
+    "emoji": "😤",
+    "file": "expr-001-020-0017.png"
+  },
+  {
+    "mood": "speechless",
+    "emoji": "😶",
+    "file": "expr-001-020-0020.png"
+  },
+  {
+    "mood": "angel",
+    "emoji": "😇",
+    "file": "expr-021-040-0009.png"
+  },
+  {
+    "mood": "whistle",
+    "emoji": "😗",
+    "file": "expr-021-040-0017.png"
+  },
+  {
+    "mood": "nerd",
+    "emoji": "🤓",
+    "file": "expr-041-060-0006.png"
+  },
+  {
+    "mood": "starstruck",
+    "emoji": "🤩",
+    "file": "expr-041-060-0010.png"
+  },
+  {
+    "mood": "salute",
+    "emoji": "🫡",
+    "file": "expr-081-100-0008.png"
+  },
+  {
+    "mood": "shock",
+    "emoji": "😱",
+    "file": "expr-081-100-0020.png"
+  },
+  {
+    "mood": "surprised",
+    "emoji": "😮",
+    "file": "expr-101-120-0003.png"
+  },
+  {
+    "mood": "poop",
+    "emoji": "💩",
+    "file": "expr-121-135-0009.png"
   }
 ]
