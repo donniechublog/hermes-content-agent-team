@@ -229,17 +229,27 @@ def handle_img_approval(token, action, draft_id, cq):
     wp = DRAFTS / (draft_id + ".writer.json")
 
     if action == "imgno":
-        note = "🗑 Đã bỏ hẳn tin — không viết, không làm lại"
-        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Đã bỏ hẳn")
-        if wp.exists():
-            try:
-                w = json.loads(wp.read_text(encoding="utf-8"))
-                w["created"] = "rejected"
-                wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
-                              encoding="utf-8")
-            except Exception:                                   # noqa: BLE001
-                pass
+        try:
+            w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
+        except Exception:                                       # noqa: BLE001
+            w = {}
+        if w.get("created") is True:
+            # Da bam Duyet truoc do (writer dang chay) — khong bo han nua de tranh
+            # trang thai mau thuan (task viet da ton tai ma sidecar lai 'rejected').
+            note = "⚠️ Bài đã duyệt, đang viết — không bỏ hẳn được nữa"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Đã duyệt trước đó, không bỏ", show_alert=True)
+        else:
+            note = "🗑 Đã bỏ hẳn tin — không viết, không làm lại"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Đã bỏ hẳn")
+            if wp.exists():
+                try:
+                    w["created"] = "rejected"
+                    wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
+                                  encoding="utf-8")
+                except Exception:                               # noqa: BLE001
+                    pass
     elif action == "imgredo":
         ip = DRAFTS / (draft_id + ".img.json")
         if not ip.exists():
@@ -278,6 +288,10 @@ def handle_img_approval(token, action, draft_id, cq):
                 note = "✅ Đã duyệt rồi — bài đang được viết"
                 call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                      text="Đã duyệt trước đó")
+            elif w.get("created") == "rejected":
+                note = "🗑 Tin này đã bỏ hẳn trước đó — không viết"
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                     text="Đã bỏ hẳn", show_alert=True)
             else:
                 call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                      text="Đang giao cho người viết…")
