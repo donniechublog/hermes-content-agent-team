@@ -29,36 +29,28 @@ ratio.
 
 ---
 
-## Step 1 — Get the source image
+## Step 1 — Get the ORIGINAL source onto disk
 
-Two kinds of URL:
-
-**A. Direct image URL** (ends in `.jpg .jpeg .png .webp .gif`, or a CDN image
-link). Download it:
+Always fetch the CDN original — a platform-compressed variant or a screenshot is
+soft, and no upscaler recovers detail that was never downloaded. Use the
+deterministic resolver instead of hand-rolling curl:
 
 ```bash
-curl -L -A "Mozilla/5.0" -o /tmp/src.png "<URL>"
+python3 scripts/get_source.py "<URL>" /tmp/src.png
 ```
 
-**B. Web-page URL** (an X/Twitter post, a Reddit thread, an article, etc.) —
-the "image" is the visible content, so screenshot it with the browser:
+It handles every case: `pbs.twimg.com` → `name=orig` (full upload resolution);
+an `x.com`/`instagram.com` **post** URL → social-crawl → the `media[]` CDN
+original; any direct image URL → downloaded by **content-type** (works for
+extensionless CDN links too).
 
-- Open the in-app Browser: `preview_start` with `{url: "<URL>"}` (or `navigate`).
-- If there's one dominant image/card (a tweet, a meme), use `read_page` +
-  `find` to locate that element and `scroll_to` it, then take a `computer`
-  `screenshot`. For a tweet, capture the post card itself (avatar + text +
-  media) — that whole card becomes the framed image, exactly like the user's
-  reference example.
-- Save the screenshot bytes to `/tmp/src.png`. If the screenshot has extra
-  chrome around it, crop to the content first (sharp or the browser's `zoom`
-  region) so the frame hugs the real content.
+**Screenshot is the fallback, not the default.** `get_source.py` exits with code
+**3** only when the URL is not a single image — a text-only tweet, an article, a
+generic page. ONLY THEN open the in-app Browser (`preview_start`/`navigate`),
+locate the dominant card/image (`read_page` + `find` + `scroll_to`), take a
+`computer` `screenshot`, and crop to the content so the frame hugs it.
 
-If a page is really just a wrapper around one image, prefer grabbing the
-underlying image file (its `src`) and downloading it per case A — it's sharper
-than a screenshot.
-
-Do not proceed until `/tmp/src.png` (or your chosen path) actually exists and is
-a valid image.
+Do not proceed until `/tmp/src.png` exists and is a valid image.
 
 ---
 
