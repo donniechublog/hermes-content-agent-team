@@ -51,12 +51,15 @@ def _ghi_nhat_ky(vai: str, message_id, files, mo_ta: str) -> None:
 
 
 def _kb_duyet(draft_id: str) -> dict:
-    """Nut Duyet/Bo cho tam anh. Bam Duyet thi approve_service sinh task viet
-    caption (callback imgok:<id>); bam Bo thi khong ai viet (imgno:<id>)."""
-    return {"inline_keyboard": [[
-        {"text": "✅ Duyệt ảnh → viết caption", "callback_data": "imgok:" + draft_id},
-        {"text": "❌ Ảnh chưa đạt", "callback_data": "imgno:" + draft_id},
-    ]]}
+    """Ba nut cho tam anh (approve_service xu ly callback):
+      imgok   Duyet   -> sinh task viet caption.
+      imgredo Lam lai -> tao lai task anh, designer dung anh khac.
+      imgno   Bo han   -> giet tin, khong viet khong lam lai."""
+    return {"inline_keyboard": [
+        [{"text": "✅ Duyệt ảnh → viết caption", "callback_data": "imgok:" + draft_id}],
+        [{"text": "🔄 Làm lại", "callback_data": "imgredo:" + draft_id},
+         {"text": "🗑 Bỏ hẳn", "callback_data": "imgno:" + draft_id}],
+    ]}
 
 
 def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:

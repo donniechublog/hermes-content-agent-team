@@ -217,19 +217,21 @@ def mark_draft(draft_id, status):
 
 
 def handle_img_approval(token, action, draft_id, cq):
-    """Duyet ANH truoc khi viet. Chad/Ethan/Heller/Dre day anh len topic kem
-    nut nay; bam Duyet moi sinh task viet caption, bam Bo thi khong ai viet.
-
-    Sinh task viet o day thay vi trong create_pair: writer_body da tinh san va
-    cat trong `<draft_id>.writer.json`, gio chi con kanban_create."""
+    """Cong duyet ANH truoc khi viet. Chad/Ethan/Heller/Dre day anh len topic kem
+    ba nut:
+      imgok    (Duyet)   -> sinh task viet caption (writer_body cat san o
+                            `<draft_id>.writer.json`).
+      imgredo  (Lam lai) -> tao lai task ANH (body cat o `<draft_id>.img.json`,
+                            them ghi chu chon anh khac) -> designer dung lai.
+      imgno    (Bo han)  -> giet tin: khong viet, khong lam lai."""
     msg = cq["message"]
     chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
     wp = DRAFTS / (draft_id + ".writer.json")
 
     if action == "imgno":
-        note = "❌ Ảnh chưa đạt — không viết bài"
+        note = "🗑 Đã bỏ hẳn tin — không viết, không làm lại"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Đã bỏ ảnh")
+             text="Đã bỏ hẳn")
         if wp.exists():
             try:
                 w = json.loads(wp.read_text(encoding="utf-8"))
@@ -238,6 +240,33 @@ def handle_img_approval(token, action, draft_id, cq):
                               encoding="utf-8")
             except Exception:                                   # noqa: BLE001
                 pass
+    elif action == "imgredo":
+        ip = DRAFTS / (draft_id + ".img.json")
+        if not ip.exists():
+            note = "⚠️ Không thấy thông tin task ảnh để làm lại"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Thiếu thông tin ảnh", show_alert=True)
+        else:
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Đang giao dựng lại…")
+            im = json.loads(ip.read_text(encoding="utf-8"))
+            n = int(im.get("remakes", 0)) + 1
+            body = im["body"] + (
+                f"\n\n== LAM LAI (lan {n}) ==\n"
+                "Anh truoc CHUA DAT, Ong Chu bam lam lai. Chon ANH KHAC — goc khac, "
+                "nguon khac, cach the hien khac; DUNG lap lai anh cu. Van day len kem "
+                f"nut duyet nhu cu (--duyet {draft_id}).")
+            tieu = ("Carousel (lam lai): " if im.get("carousel")
+                    else "Anh (lam lai): ") + im.get("title", draft_id)
+            rid, err = kanban_create(tieu, im["vai_anh"], body)
+            if err:
+                note = "⚠️ Làm lại lỗi: " + str(err)
+            else:
+                im["remakes"], im["last_task"] = n, rid
+                ip.write_text(json.dumps(im, ensure_ascii=False, indent=2),
+                              encoding="utf-8")
+                ten = TEN_VAI_ANH.get(im["vai_anh"], "Chad")
+                note = f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})"
     else:                                                       # imgok
         if not wp.exists():
             note = "⚠️ Không thấy thông tin bài (writer sidecar) cho draft này"
@@ -282,7 +311,7 @@ def handle_callback(token, channel, cq):
 
     # Duyet ANH (truoc khi viet) — xu ly SOM vi luc nay ban nhap cuoi
     # (<draft>.json) chua ton tai, nhanh duoi se bao "khong tim thay ban nhap".
-    if action in ("imgok", "imgno"):
+    if action in ("imgok", "imgno", "imgredo"):
         handle_img_approval(token, action, draft_id, cq)
         return
 
@@ -599,10 +628,11 @@ cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
 Co anh phu ({out_png_goc}_2.png, _3.png...) thi lap them --anh cho tung tam de
 gui thanh album. Gui xong moi ghi ket qua task.
 
-`--duyet {draft_id}` gan nut Duyet/Bo duoi anh: Ong Chu bam "Duyet" thi nguoi
-viet (Quinn/Miles) MOI bat dau viet caption; anh chua dat, bam "Bo", thi khong
-ai viet ca. Vay nen viec cua ban chi la ra ANH cho that dat — dung cho, cung
-dung tu di goi nguoi viet.
+`--duyet {draft_id}` gan BA nut duoi anh: "Duyet" (nguoi viet Quinn/Miles moi
+viet caption), "Lam lai" (tao lai dung task nay, ban se dung ANH KHAC), "Bo han"
+(giet tin). Vay nen viec cua ban chi la ra ANH cho that dat — dung cho, cung
+dung tu di goi nguoi viet. Neu bi giao "lam lai", doc ghi chu cuoi task va chon
+anh khac han lan truoc.
 
 LUU Y — doc skill `hero-image` (muc "Kieu quote" la mac dinh, phan hero tran la
 du phong). Day chi la phan hay sai nhat:
@@ -706,10 +736,11 @@ cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
 Lap --anh cho DU so slide that su dung ra (bo bot cac dong _N.png khong ton tai,
 them vao neu nhieu hon 3). Gui xong moi ghi ket qua task.
 
-`--duyet {draft_id}` gan nut Duyet/Bo duoi album: Ong Chu bam "Duyet" thi nguoi
-viet (Quinn/Miles) MOI bat dau viet caption; carousel chua dat, bam "Bo", thi
-khong ai viet ca. Viec cua ban chi la ra BO SLIDE cho that dat — dung cho writer,
-cung dung tu di goi nguoi viet.
+`--duyet {draft_id}` gan BA nut duoi album: "Duyet" (nguoi viet Quinn/Miles moi
+viet caption), "Lam lai" (tao lai dung task nay, ban dung BO SLIDE khac), "Bo
+han" (giet tin). Viec cua ban chi la ra BO SLIDE cho that dat — dung cho writer,
+cung dung tu di goi nguoi viet. Neu bi giao "lam lai", doc ghi chu cuoi task va
+lam khac lan truoc.
 
 BAN GIAO: watermark tren slide KHONG phai ghi nguon. Bao lai nguon tin va nguon
 tung anh ({via}) trong ket qua task de Quinn dua vao chu thich bai dang — viec
@@ -996,6 +1027,14 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
+
+    # Cat lai body task anh de LAM LAI duoc: Ong Chu bam "Lam lai" tren anh chua
+    # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
+    # thi nut Lam lai bao khong co thong tin.
+    (DRAFTS / (draft_id + ".img.json")).write_text(
+        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel,
+                    "title": item["title"], "body": illu_body, "remakes": 0},
+                   ensure_ascii=False, indent=2), encoding="utf-8")
 
     # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
     # sidecar `<draft_id>.writer.json`; task viet CHI sinh khi Ong Chu bam
