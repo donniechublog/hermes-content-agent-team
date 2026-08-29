@@ -66,7 +66,6 @@ tight set of reaction faces:
 | 😂 | laugh | it's straightforwardly funny / hits the punchline |
 | 😅 | nervous-laugh | funny but a bit "oof", awkward, too real |
 | 😎 | cool | flex, W, smug confidence, "we won" |
-| 👍 | approve | wholesome, "based", agreeing, a clean take |
 | 🤔 | thinking | makes you ponder, a genuine question, hmm |
 | 🤨 | skeptical | side-eye, "sure buddy", doubtful, sus |
 | 🙄 | eyeroll | tired of this, cliché, obvious ragebait |
