@@ -120,10 +120,18 @@ def _og_image_url(page_html: str, base: str):
 BOT_UA = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
 
 
-def page_fallback(url: str, out: str) -> bool:
+FB_HOSTS = ("facebook.com", "m.facebook.com", "mbasic.facebook.com",
+            "web.facebook.com", "fb.com", "fb.watch")
+
+
+def page_fallback(url: str, out: str, allow_screenshot: bool = True) -> bool:
     """A page, not a direct image: grab the post's OWN image (og:image) first —
-    that is 'the image in the post', not the whole page — and only screenshot if
-    the page carries no such image. Returns True on success."""
+    that is 'the image in the post', not the whole page. Screenshot only if the
+    page has no such image AND a screenshot would be meaningful.
+
+    `allow_screenshot=False` for login-gated hosts (Facebook): a logged-out
+    screenshot there is only ever the login wall, so framing it is worse than
+    failing. Returns True on success."""
     try:
         req = urllib.request.Request(url, headers={"User-Agent": BOT_UA})
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -136,7 +144,7 @@ def page_fallback(url: str, out: str) -> bool:
                 return True
     except Exception:
         pass
-    return screenshot(url, out)
+    return screenshot(url, out) if allow_screenshot else False
 
 
 def main():
@@ -161,6 +169,14 @@ def main():
             return
         # text tweet / no media → the post's og:image, else a screenshot
         if page_fallback(url, out):
+            print(out)
+            return
+        sys.exit(3)
+
+    # 2b) Facebook — login-gated. og:image (crawler UA) or bust; NEVER screenshot
+    #     (a logged-out FB screenshot is only the login wall — worse than failing).
+    if host in FB_HOSTS:
+        if page_fallback(url, out, allow_screenshot=False):
             print(out)
             return
         sys.exit(3)
