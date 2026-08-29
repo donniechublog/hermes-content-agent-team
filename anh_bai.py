@@ -183,30 +183,71 @@ def bao_khac(tieu_de: str, so=DAI_TOI_DA) -> list:
     return ra
 
 
+def _do_hoa(im) -> str:
+    """Doan anh la DO HOA (logo/wordmark/the thuong hieu) thay vi ANH CHUP THAT.
+
+    Tra ve LY DO (chuoi) neu nghi la do hoa, "" neu la anh that. Dua tren ba dau
+    hieu ma anh chup gan nhu KHONG BAO GIO co: vung trong suot, qua it mau, hoac
+    mot mau nen chiem phan lon khung. Nguong dat CHAT de khoi loai nham anh that."""
+    try:
+        # 1) Trong suot: anh chup khong co alpha; logo/wordmark PNG thi co.
+        if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
+            a = im.convert("RGBA").getchannel("A")
+            h = a.histogram()
+            trong = sum(h[:32]) / (sum(h) or 1)          # alpha thap ~ trong suot
+            if trong > 0.06:
+                return f"co ~{int(trong*100)}% vung trong suot (logo/do hoa)"
+        # 2) Dem mau + ti le mau nen troi tren thumbnail 64x64.
+        nho = im.convert("RGB").resize((64, 64))
+        mau = nho.getcolors(4096) or []
+        if mau:
+            mau.sort(reverse=True)
+            so_mau = len(mau)
+            troi = mau[0][0] / 4096.0
+            if so_mau <= 32:
+                return f"chi {so_mau} mau (logo/wordmark)"
+            if troi >= 0.68 and so_mau <= 260:
+                return f"mot mau nen chiem {int(troi * 100)}% (the thuong hieu)"
+    except Exception:                                        # noqa: BLE001
+        pass
+    return ""
+
+
 def do_anh(url: str) -> tuple:
-    """(rong, cao, byte) — tai vua du de doc header anh, khong tai ca tep."""
+    """(rong, cao, byte, do_hoa) — tai anh, doc kich thuoc VA doan co phai DO HOA
+    (logo/wordmark) khong. `do_hoa` la ly_do neu nghi la do hoa, "" neu anh that.
+
+    Tai nhieu hon truoc (toi 4MB) de giai ma noi dung ma phan tich; anh > 4MB gan
+    chac la anh chup that nen khoi phan tich."""
     try:
         with httpx.stream("GET", url, headers=HDR, timeout=15,
                           follow_redirects=True) as r:
             if r.status_code != 200:
-                return (0, 0, 0)
+                return (0, 0, 0, "")
             buf = b""
-            for chunk in r.iter_bytes(16384):
+            for chunk in r.iter_bytes(65536):
                 buf += chunk
-                if len(buf) > 300_000:
+                if len(buf) > 4_000_000:
                     break
+            try:
+                im = Image.open(io.BytesIO(buf))
+                im.load()
+                return (im.size[0], im.size[1], len(buf), _do_hoa(im))
+            except Exception:                                # noqa: BLE001
+                # Tai thieu / cat giua chung: chi doc duoc header kich thuoc,
+                # khong phan tich noi dung (anh lon bi cat gan chac la anh that).
                 try:
                     im = Image.open(io.BytesIO(buf))
-                    return (*im.size, len(buf))
+                    return (im.size[0], im.size[1], len(buf), "")
                 except Exception:                            # noqa: BLE001
-                    continue
+                    return (0, 0, 0, "")
     except Exception:                                        # noqa: BLE001
         pass
-    return (0, 0, 0)
+    return (0, 0, 0, "")
 
 
 def cham(url: str, alt: str, la_og: bool, rong: int, cao: int,
-         tin_model: bool = False) -> tuple:
+         do_hoa: str = "", tin_model: bool = False) -> tuple:
     """(diem, ly_do). Diem cang cao cang dang dung.
 
     Hai uu tien Ong Chu chot:
@@ -225,6 +266,12 @@ def cham(url: str, alt: str, la_og: bool, rong: int, cao: int,
         return (-1, f"ti le qua lech {rong}x{cao}")
     if RAC.search(url) or RAC.search(alt):
         return (-1, "the thuong hieu / logo")
+    # Loai logo/wordmark phat hien qua NOI DUNG anh — TRU khi anh co dau hieu la
+    # bang so / bieu do (thu pipeline MUON): bang benchmark cung it mau, nen
+    # trang troi, de bi nham la do hoa. Tin vao goi y chart de khoi loai nham.
+    la_chart = QUY.search(url) or QUY.search(alt) or QUY_MODEL.search(url) or QUY_MODEL.search(alt)
+    if do_hoa and not la_chart:
+        return (-1, do_hoa)
     if (rong, cao) in CO_AI_SINH:
         return (-1, f"{rong}x{cao} — cỡ chuẩn của model sinh ảnh, gần chắc là minh hoạ AI")
 
@@ -300,9 +347,10 @@ def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -
 
     with cf.ThreadPoolExecutor(max_workers=8) as ex:
         for c, kt in zip(loc, ex.map(lambda x: do_anh(x["anh"]), loc)):
-            c["rong"], c["cao"], c["byte"] = kt
+            c["rong"], c["cao"], c["byte"], c["do_hoa"] = kt
             c["diem"], c["ly_do"] = cham(c["anh"], c["alt"], c["og"],
-                                         kt[0], kt[1], tin_model)
+                                         kt[0], kt[1], do_hoa=kt[3],
+                                         tin_model=tin_model)
     tot = [c for c in loc if c["diem"] > 0]
     tot.sort(key=lambda c: -c["diem"])
     return tot
