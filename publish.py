@@ -195,31 +195,50 @@ def _main():
     p.add_argument("--caption", default="", help="Chu thich anh (toi da 1024)")
     p.add_argument("--text", help="Dang tin chi co chu")
     p.add_argument("--to", help="Ghi de chat_id dich")
+    p.add_argument("--to-env", dest="to_env",
+                   help="Lay chat_id tu bien moi truong nay (vd TELEGRAM_GROUP_ID). "
+                        "Cho phep goi bang MOT lenh tuyet doi, khong can $(...) — "
+                        "hop de dua vao command_allowlist.")
     p.add_argument("--thread", help="message_thread_id (topic) trong group")
+    p.add_argument("--thread-name", dest="thread_name",
+                   help="Ten topic trong state/topics.json (vd bob) — tu giai ra "
+                        "thread id, khoi phai --thread $(...).")
     p.add_argument("--file", type=Path, help="Doc noi dung tu file")
     p.add_argument("--album", nargs="+",
                    help="Gui nhieu anh (URL hoac duong dan cuc bo) thanh 1 album")
     a = p.parse_args()
 
     token, chat = load_secrets()
-    chat = a.to or chat
+    chat = a.to or (os.environ.get(a.to_env) if a.to_env else None) or chat
     if not chat:
-        sys.exit("Thieu TELEGRAM_CHANNEL_ID (hoac dung --to)")
+        sys.exit("Thieu chat_id: dung --to, --to-env VAR, hoac TELEGRAM_CHANNEL_ID")
+
+    # Giai thread tu ten topic (paths tuyet doi theo vi tri file, khong theo cwd).
+    thread = a.thread
+    if a.thread_name:
+        import json
+        topics_path = Path(__file__).resolve().parent / "state" / "topics.json"
+        try:
+            topics = json.loads(topics_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            sys.exit(f"Khong doc duoc {topics_path}: {e}")
+        if a.thread_name not in topics:
+            sys.exit(f"Topic {a.thread_name!r} khong co trong {topics_path}")
+        thread = topics[a.thread_name]
 
     body = a.file.read_text(encoding="utf-8") if a.file else None
 
     if a.album:
-        res = send_media_group(token, chat, a.album, body or a.caption,
-                               thread=a.thread)
+        res = send_media_group(token, chat, a.album, body or a.caption, thread=thread)
     elif a.document:
-        res = send_document(token, chat, a.document, body or a.caption, thread=a.thread)
+        res = send_document(token, chat, a.document, body or a.caption, thread=thread)
     elif a.photo:
-        res = send_photo(token, chat, a.photo, body or a.caption, thread=a.thread)
+        res = send_photo(token, chat, a.photo, body or a.caption, thread=thread)
     else:
         text = body or a.text
         if not text:
             sys.exit("Can --text, --file hoac --photo")
-        res = send_text(token, chat, text, thread=a.thread)
+        res = send_text(token, chat, text, thread=thread)
     print(f"da dang | message_id={res.get('message_id')} chat={chat}")
 
 
