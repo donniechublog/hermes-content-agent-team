@@ -60,8 +60,14 @@ BG = (0, 0, 0)                   # den tuyet doi — dau an cua kieu carousel na
 FG = (255, 255, 255)            # chu chinh trang
 # Watermark ten kenh: MOT mau xanh co dinh (xanh nhu icon Finder cua macOS),
 # KHONG doi theo brand nua. Font cua Apple (San Francisco / SFNS).
-WM = (10, 132, 255)             # #0A84FF — xanh Apple/Finder
+WM = (10, 132, 255)             # #0A84FF — mau du phong neu chua nap thuong hieu
 F_APPLE = str(FONTS / "SFNS.ttf")   # San Francisco (font he thong macOS)
+
+# Neobrutalism (dong bo voi card.py --kieu quote): chip khoi dac, vien den day,
+# bong cung lech, chu mono. Mau chip lay CYAN nhan dien (dat qua dat_thuong_hieu
+# trong main): donniechublog #00cce0, dcgr trang.
+F_MONO_CH = str(FONTS / "JetBrainsMono-Regular.ttf")   # chip ten kenh (khong dam)
+F_UI_CH = str(FONTS / "JetBrainsMono-Bold.ttf")        # chip category (dam)
 
 # NEN CHO CHU O SLIDE THAN — SCRIM LIEN MACH kieu cover (Ong Chu chot: chu phai
 # "chim" vao anh, KHONG duoc lo mot dai band):
@@ -138,25 +144,35 @@ def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
     return y
 
 
+def _cyan():
+    """CYAN nhan dien da nap qua dat_thuong_hieu (donniechublog #00cce0, dcgr
+    trang). Chua nap thi ve mau du phong."""
+    return card.CYAN or WM
+
+
+def _chip_neo(d, txt, font, x, y, fill, fg=(0, 0, 0), anchor="l",
+              off=6, bord=4, pad_x=18, pad_y=10):
+    """Chip NEOBRUTALISM dong bo voi card.py --kieu quote: khoi dac, vien den
+    day, bong cung lech (khong mo), chu mono. anchor 'l' xep tu x sang phai,
+    'r' canh phai o x. Tra ve (x0, y0, x1, y1) de xep tiep."""
+    tb = d.textbbox((0, 0), txt, font=font)
+    bw, bh = (tb[2] - tb[0]) + 2 * pad_x, (tb[3] - tb[1]) + 2 * pad_y
+    x0 = x if anchor == "l" else x - bw
+    x1, y1 = x0 + bw, y + bh
+    d.rectangle([x0 + off, y + off, x1 + off, y1 + off], fill=(0, 0, 0))       # bong cung
+    d.rectangle([x0, y, x1, y1], fill=fill, outline=(0, 0, 0), width=bord)     # khoi + vien
+    d.text((x0 + pad_x - tb[0], y + pad_y - tb[1]), txt, font=font, fill=fg)
+    return (x0, y, x1, y1)
+
+
 def _watermark(canvas, handle):
-    """Ve BRAND TEXT (ten kenh) o goc TREN-trai — nhan dien xuyen suot MOI slide
-    (bia, than, quote). MOT mau xanh Apple/Finder co dinh, font San Francisco
-    (SFNS), khong doi theo brand. Truoc day nam canh giua o DAY; Ong Chu chot
-    dua brand text len tren, day de trong (hoac tagline)."""
+    """BRAND TEXT (ten kenh) goc TREN-trai tren MOI slide — CHIP neobrutalism:
+    khoi CYAN nhan dien, vien den, bong cung, chu mono. Dong bo voi hero card."""
     if not handle:
         return
-    font = _f(F_APPLE, WM_SIZE, 560)          # SF, medium — net kieu nhan macOS
     d = ImageDraw.Draw(canvas)
-    b = font.getbbox("Âg")
-    x = PAD
-    y = 56 - b[1]
-    # Brand text nam TREN anh (khong co scrim o dinh) — them vien toi mong de
-    # doc duoc ca tren nen sang (vd chan dung nen trang) lan toi.
-    for dx in (-1, 0, 1):
-        for dy in (-1, 0, 1):
-            if dx or dy:
-                d.text((x + dx, y + dy), handle, font=font, fill=(0, 0, 0))
-    d.text((x, y), handle, font=font, fill=WM)
+    f = _f(F_MONO_CH, WM_SIZE)
+    _chip_neo(d, handle, f, PAD, 48, fill=_cyan(), anchor="l")
 
 
 def _scrim(canvas, tu=0.34):
@@ -339,8 +355,8 @@ def build_body_quote(img_path, quote, attrib, handle, out):
 
     # Net khung xanh Apple (WM) co dinh; dau " theo hang nhac trong quote/nguon.
     mau_hang = card._mau_hang_trong(quote) or card._mau_hang_trong(attrib)
-    mark_col = card._du_sang(mau_hang) if mau_hang else WM
-    card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, WM, mark_col)
+    mark_col = card._du_sang(mau_hang) if mau_hang else _cyan()
+    card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, _cyan(), mark_col)
 
     # Dong nguon CANH GIUA duoi khung.
     ay = frame_bottom + G_FRAME_SRC
@@ -360,21 +376,23 @@ def build_cover(img_path, hook, label, out, handle=None):
     _scrim(canvas)
     d = ImageDraw.Draw(canvas)
     # Nhan nho o duoi cung; hook nam ngay tren nhan.
-    label = (label or "").strip()
+    label = (label or "").strip().upper()          # category -> chip, viet hoa
     y_label = None
+    lf = None
     if label:
-        lf = _f(F_REG, LABEL_SIZE, 600)
-        lb = lf.getbbox("Âg")
-        y_label = H - 96 - (lb[3] - lb[1])
-    hook_bottom = (y_label - 28) if y_label else (H - 96)
+        lf = _f(F_UI_CH, LABEL_SIZE - 8)            # mono bold, vua chip
+        ltb = d.textbbox((0, 0), label, font=lf)
+        chip_h = (ltb[3] - ltb[1]) + 2 * 10         # + 2*pad_y
+        y_label = H - 84 - chip_h
+    hook_bottom = (y_label - 28) if label else (H - 96)
     hf, wrapped, lh, total = _fit_block(
         d, [hook], W - 2 * PAD, int(H * 0.5), HOOK_HI, HOOK_LO,
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
-        d.text((PAD, y_label), label, font=lf, fill=(220, 220, 220))
-    _watermark(canvas, handle)          # brand text goc tren-trai, nhu moi slide
+        _chip_neo(d, label, lf, PAD, y_label, fill=(255, 255, 255), anchor="l")  # chip category trang
+    _watermark(canvas, handle)          # chip ten kenh goc tren-trai, nhu moi slide
     canvas.convert("RGB").save(out, "PNG")
 
 
