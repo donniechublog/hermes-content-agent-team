@@ -27,10 +27,11 @@ Bốn điều đủ để bạn nhớ mà không cần mở skill:
    ảnh vuông sẵn thì tự crop vuông từ một ảnh ngang thật (chọn khung, không
    phải bịa ảnh). Đừng dùng lại một ảnh cho quá nhiều slide — 6 slide nên có
    4–6 ảnh khác nhau.
-4. **Watermark tên kênh: một màu xanh Apple/Finder cố định, font San Francisco
-   (SFNS).** `carousel.py` vẽ tên kênh ở đáy bằng đúng một màu xanh
-   (`#0A84FF`) và font hệ thống macOS — không đổi màu theo brand, không cần
-   chỉnh gì. (Trước đây từng tự tô theo màu hãng nhắc trong bài; Ông Chủ đã bỏ.)
+4. **Watermark tên kênh: CHIP neobrutalism** (đồng bộ với hero card). `carousel.py`
+   tự vẽ tên kênh ở góc **trên-trái mọi slide** thành một chip khối đặc: viền đen
+   dày, bóng cứng lệch, font JetBrains Mono, **fill = CYAN nhận diện** — dcgr là
+   **trắng**, donniechublog là `#00cce0`. Khung/dấu `"` của slide quote cũng dùng
+   CYAN này. Bạn không cần chỉnh gì, script tự lấy màu theo `--brand`.
 
 Chữ trên carousel là **tiếng Việt có dấu**; cổng chặn sẽ dừng nếu thiếu. Chỉ
 dùng `--bo-qua-dau` khi copy thật sự là tiếng Anh.

@@ -1,6 +1,6 @@
 ---
 name: carousel
-description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — chữ chìm vào ảnh qua scrim liền mạch kiểu bìa (bắt đầu tối từ ~42% cao, đậm dần xuống ~80% ở chữ, không đường mép, không vùng đen riêng), watermark tên kênh một màu xanh Apple/Finder font San Francisco. Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), các cổng chặn, và slide quote tùy chọn (một câu trích dẫn + dấu ngoặc kép + nguồn). Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
+description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — chữ chìm vào ảnh qua scrim liền mạch kiểu bìa (bắt đầu tối từ ~42% cao, đậm dần xuống ~80% ở chữ, không đường mép, không vùng đen riêng). NEOBRUTALISM đồng bộ hero card: chip tên kênh + chip category + khung quote đều khối đặc viền đen, bóng cứng, font JetBrains Mono, màu CYAN nhận diện (donniechublog #00cce0, dcgr trắng). Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), các cổng chặn, và slide quote (một câu hook + dấu ngoặc kép + nguồn). Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
 version: 1.2.0
 author: content-team
 license: internal
@@ -64,7 +64,7 @@ Khổ **1080×1350 (4:5), nền đen tuyệt đối**. Hai loại slide:
         1–2 đoạn, mỗi đoạn 2–4 dòng
         (hoặc một câu quote — xem "Slide quote")
               ↓
-          watermark nghiêng, canh giữa
+   chip tên kênh (neobrutalism, góc trên-trái mọi slide)
 ```
 
 ### Nguyên tắc liền mạch — không đường mép
@@ -241,11 +241,12 @@ giữa dấu), dòng nguồn **canh giữa** dưới khung, trên cùng lớp ve
 Brand text (tên kênh) ở **góc trên** như mọi slide. **Bạn không đặt dấu tay,
 không sửa** — tất cả tự vẽ. Về màu:
 
-- **Net khung + brand text = xanh Apple `#0A84FF` cố định** (đồng bộ mọi vai,
-  mọi loại ảnh).
+- **Nét khung + chip tên kênh + chip category = `CYAN` nhận diện** (đồng bộ với
+  hero card): donniechublog `#00cce0`, dcgr **trắng**. Chip là khối đặc viền đen
+  dày, bóng cứng lệch, font JetBrains Mono (neobrutalism). Không còn xanh Apple.
 - **Dấu " đổi màu theo HÃNG được nhắc** trong quote/nguồn (Nvidia → xanh lá,
-  Hugging Face → vàng…); không nhận ra hãng nào thì dấu cũng xanh Apple. Dùng
-  chung bảng màu hãng với `card.py`.
+  Hugging Face → vàng…); không nhận ra hãng nào thì dấu cũng CYAN. Dùng chung
+  bảng màu hãng với `card.py`.
 
 - Mỗi slide thân là **một trong hai**: `text` (đoạn văn) hoặc `quote` (câu trích
   dẫn). Thiếu cả hai → cổng chặn dừng.
