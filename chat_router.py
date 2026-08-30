@@ -11,9 +11,13 @@ Moi topic giu mot phien rieng qua `--continue <ten phien>`, nen hoi thoai co
 mach chu khong phai moi tin la mot lan chay roi rac.
 """
 import os
-import re
 import subprocess
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import tele_util                                             # noqa: E402
+from tele_util import chia_tin                               # noqa: E402  (re-export cho approve_service)
 
 HERMES_DIR = Path.home() / "hermes-agent"
 HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
@@ -37,6 +41,7 @@ TOPIC_PROFILE = {
     "market": "market",
     "gin": "gin",
     "itachi": "itachi",
+    "bob": "bob",
 }
 
 REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
@@ -71,8 +76,6 @@ def ask(profile, session, text) -> tuple:
 
 
 def clean(text: str) -> str:
-    """Bo ma mau ANSI va cat cho vua gioi han Telegram."""
-    text = re.sub(r"\x1b\[[0-9;]*m", "", text)
-    if len(text) > REPLY_LIMIT:
-        text = text[:REPLY_LIMIT] + "\n\n[... cat bot cho vua gioi han Telegram]"
-    return text
+    """Bo ma mau ANSI. KHONG cat noi dung nua — tin dai duoc `chia_tin` tach
+    thanh nhieu tin (xem handle_chat), nen reply khong con bi mat phan cuoi."""
+    return tele_util.bo_ansi(text)

@@ -29,6 +29,7 @@ import httpx
 import yaml
 
 import env_load
+import tele_util
 
 ROOT = Path.home() / "content-team"
 HERMES = Path.home() / ".hermes"
@@ -163,14 +164,17 @@ def gui(text: str):
     if not (tok and chat):
         print("\n[canh bao] thieu TELEGRAM_BOT_TOKEN/GROUP_ID")
         return
-    payload = {"chat_id": chat, "text": text[:4000], "parse_mode": "HTML"}
+    th = None
     tp = ROOT / "state" / "topics.json"
     if tp.exists():
         th = json.loads(tp.read_text(encoding="utf-8")).get("analyst")
-        if th:
-            payload["message_thread_id"] = int(th)
     try:
-        httpx.post(f"https://api.telegram.org/bot{tok}/sendMessage", json=payload, timeout=30)
+        # Tin dai -> chia thanh nhieu tin gui lien tiep thay vi cat bot.
+        for phan in tele_util.chia_tin(text):
+            payload = {"chat_id": chat, "text": phan, "parse_mode": "HTML"}
+            if th:
+                payload["message_thread_id"] = int(th)
+            httpx.post(f"https://api.telegram.org/bot{tok}/sendMessage", json=payload, timeout=30)
         print("\nDa gui canh bao Telegram.")
     except Exception as e:                                   # noqa: BLE001
         print(f"\n[canh bao] khong gui duoc: {type(e).__name__}: {e}")

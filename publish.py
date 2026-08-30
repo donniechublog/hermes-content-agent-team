@@ -13,6 +13,7 @@ from pathlib import Path
 import httpx
 
 import env_load
+import tele_util
 API = "https://api.telegram.org/bot{token}/{method}"
 CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
 TEXT_LIMIT = 4096
@@ -99,16 +100,18 @@ def _check(r: httpx.Response):
 
 
 def send_text(token, chat, text, parse_mode="HTML", thread=None):
-    text = don_dep(text)
-    if len(text) > TEXT_LIMIT:
-        text = text[: TEXT_LIMIT - 1] + "…"
-    with httpx.Client(timeout=60) as c:
-        payload = {"chat_id": chat, "text": text, "parse_mode": parse_mode,
-                   "disable_web_page_preview": True}
-        if thread:
-            payload["message_thread_id"] = int(thread)
-        r = c.post(API.format(token=token, method="sendMessage"), json=payload)
-    return _check(r)
+    """Gui text; neu dai qua gioi han Telegram thi chia thanh nhieu tin gui
+    lien tiep thay vi cat bot phan cuoi. Tra ve result cua tin cuoi."""
+    ket_qua = None
+    for phan in tele_util.chia_tin(don_dep(text)):
+        with httpx.Client(timeout=60) as c:
+            payload = {"chat_id": chat, "text": phan, "parse_mode": parse_mode,
+                       "disable_web_page_preview": True}
+            if thread:
+                payload["message_thread_id"] = int(thread)
+            r = c.post(API.format(token=token, method="sendMessage"), json=payload)
+        ket_qua = _check(r)
+    return ket_qua
 
 
 def send_photo(token, chat, photo: Path, caption="", parse_mode="HTML", thread=None):

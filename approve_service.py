@@ -30,6 +30,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chat_router                                          # noqa: E402
 import moat_publish                                         # noqa: E402
+import tele_util                                            # noqa: E402
 
 ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
@@ -148,6 +149,22 @@ CAPTION_LIMIT = 1024      # gioi han caption cua sendPhoto / sendMediaGroup
 TEXT_LIMIT = 4096         # gioi han cua sendMessage
 
 
+def _gui_chu(token, chat, text, thread=None):
+    """Gui `text` (co the dai) thanh MOT hoac NHIEU tin neu vuot gioi han
+    sendMessage, thay vi de Telegram tu choi ca tin. Tra ve response cua tin
+    cuoi; dung va tra ve ngay neu mot tin bi tu choi."""
+    res = None
+    for phan in tele_util.chia_tin(text):
+        kw = {"chat_id": chat, "text": phan, "parse_mode": "HTML",
+              "disable_web_page_preview": True}
+        if thread:
+            kw["message_thread_id"] = int(thread)
+        res = call(token, "sendMessage", **kw)
+        if isinstance(res, dict) and not res.get("ok"):
+            return res
+    return res
+
+
 def publish(token, channel, draft_id):
     """Dang draft len channel.
 
@@ -186,8 +203,7 @@ def publish(token, channel, draft_id):
                        files=files or None)
         res = r.json()
         if long_caption and res.get("ok"):
-            return call(token, "sendMessage", chat_id=channel, text=caption,
-                        parse_mode="HTML", disable_web_page_preview=True)
+            return _gui_chu(token, channel, caption)
         return res
 
     img = d.get("image")
@@ -201,11 +217,9 @@ def publish(token, channel, draft_id):
                        files={"photo": (Path(img).name, fh, "image/png")})
         res = r.json()
         if long_caption and res.get("ok"):
-            return call(token, "sendMessage", chat_id=channel, text=caption,
-                        parse_mode="HTML", disable_web_page_preview=True)
+            return _gui_chu(token, channel, caption)
         return res
-    return call(token, "sendMessage", chat_id=channel, text=caption,
-                parse_mode="HTML", disable_web_page_preview=True)
+    return _gui_chu(token, channel, caption)
 
 
 def mark_draft(draft_id, status):
@@ -932,8 +946,9 @@ def bao_viec_bi_chan(token, group):
             khoi.append("")
         khoi.append("Bài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ.")
         try:
-            call(token, "sendMessage", chat_id=group, message_thread_id=thread,
-                 text="\n".join(khoi)[:4000], parse_mode="HTML")
+            for phan in tele_util.chia_tin("\n".join(khoi)):
+                call(token, "sendMessage", chat_id=group, message_thread_id=thread,
+                     text=phan, parse_mode="HTML")
         except Exception as e:                               # noqa: BLE001
             print(f"[bao-chan] khong gui duoc ({vai_viet}): {e}", flush=True)
             continue                  # brand nay chua ghi nhan -> lan sau bao lai
@@ -1002,8 +1017,26 @@ def chuan_nhan(nhan: str, mac_dinh="TOOL") -> str:
     return NHAN_CHUAN.get(kh, str(nhan).strip().upper())
 
 
+def _draft_id(item, brand, vai_anh):
+    """Khoa draft DUY NHAT theo (tin, brand, role lam anh).
+
+    Mot tin hot co the giao cho NHIEU role lam anh (dang nhieu noi, nhieu cach
+    dien dat) -> moi lan giao phai co draft_id rieng, neu khong hai san pham
+    song song dung chung file png/meta/sidecar va nut Duyet -> de len nhau.
+
+    GIOI HAN DO DAI: draft_id di vao callback_data cua nut Duyet/Lam lai/Bo
+    ("imgredo:" + draft_id). Telegram chan callback_data > 64 byte va lang le
+    tu choi ca ban phim -> anh dang len KHONG co nut. Giu draft_id <= 55 ky tu
+    (ASCII) de "imgredo:" + draft_id <= 63 byte. Dat `vai` truoc trong khoa de
+    role luon con nguyen; phan tieu de bi cat bot khi thieu cho."""
+    khoa = slugify(f"{vai_anh}-{brand}", "x")[:20]           # vai truoc -> luon con
+    base = slugify(item["title"], "item-" + str(item["index"]))[: 55 - 1 - len(khoa)]
+    base = base.strip("-") or ("item-" + str(item["index"]))
+    return f"{base}-{khoa}"
+
+
 def create_pair(item, vai_anh="designer", brand="donniechublog"):
-    draft_id = slugify(item["title"], "item-" + str(item["index"]))
+    draft_id = _draft_id(item, brand, vai_anh)
     out_png = str(DRAFTS / (draft_id + ".png"))
     out_json = str(DRAFTS / (draft_id + ".json"))
     write_meta(draft_id, item, out_png, brand)
@@ -1072,6 +1105,10 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     item["picked"] = True
     item["vai_anh"], item["brand"], item["vai_viet"] = vai_anh, brand, vai_viet
     item["task_anh"], item["task_viet"] = illu_id, None
+    # Ghi lai TUNG lan giao (mot tin co the giao nhieu role) — dung de chan
+    # trung y het (cung role + cung brand) o vong chon, xem handle_pick.
+    item.setdefault("da_giao", []).append(
+        {"vai_anh": vai_anh, "brand": brand, "draft_id": draft_id, "task_anh": illu_id})
     return (illu_id, None), None
 
 
@@ -1095,9 +1132,12 @@ def handle_chat(token, group, msg, thread_id, text):
 
     out, err = chat_router.ask(profile, session, text)
     reply = ("⚠️ " + err) if err else chat_router.clean(out)
-    call(token, "sendMessage", chat_id=group,
-         **({"message_thread_id": thread_id} if thread_id else {}),
-         text=reply, disable_web_page_preview=True)
+    # Reply dai vuot 4096 se bi Telegram tu choi/cat -> chia thanh nhieu tin
+    # gui lien tiep (dung thu tu), thay vi cat bot phan cuoi.
+    for phan in chat_router.chia_tin(reply):
+        call(token, "sendMessage", chat_id=group,
+             **({"message_thread_id": thread_id} if thread_id else {}),
+             text=phan, disable_web_page_preview=True)
 
 
 # ---------- lenh slash (dat bai tuong minh) ----------
@@ -1240,7 +1280,7 @@ def _lenh_bai(tra_loi, args):
         tra_loi("❌ " + html_escape(err))
         return
 
-    draft_id = slugify(item["title"], "item-" + str(item["index"]))
+    draft_id = _draft_id(item, brand, vai_anh)
     so[url_chuan] = {"ngay": time.strftime("%Y-%m-%d %H:%M"),
                      "draft_id": draft_id, "vai": vai_anh, "brand": brand,
                      "tasks": [x for x in ids if x], "title": title}
@@ -1392,8 +1432,13 @@ def handle_message(token, group, scout_thread, msg):
         if not it:
             lines.append("#" + str(n) + ": không tìm thấy")
             continue
-        if it.get("picked"):
-            lines.append("#" + str(n) + ": đã chọn trước đó")
+        # Cho phep giao MOT tin cho NHIEU role lam anh (tin hot dang nhieu noi,
+        # nhieu cach dien dat). Chi chan lap Y HET: cung role + cung brand da
+        # giao roi -> khoi tao trung task va de file len nhau.
+        if any(g.get("vai_anh") == vai_anh and g.get("brand") == brand
+               for g in it.get("da_giao", [])):
+            ten_da = TEN_VAI_ANH.get(vai_anh, vai_anh)
+            lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — bỏ qua")
             continue
         ids, err = create_pair(it, vai_anh=vai_anh, brand=brand)
         if err:
@@ -1408,8 +1453,8 @@ def handle_message(token, group, scout_thread, msg):
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
-    call(token, "sendMessage", chat_id=group, message_thread_id=thread_id,
-         text="<b>Kết quả chọn:</b>\n" + "\n".join(lines), parse_mode="HTML")
+    _gui_chu(token, group, "<b>Kết quả chọn:</b>\n" + "\n".join(lines),
+             thread=thread_id)
 
 
 # ---------- vong lap chinh ----------
