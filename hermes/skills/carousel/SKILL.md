@@ -231,7 +231,7 @@ Một bộ 6 slide: ~2–3 quote + 3–4 đoạn-văn là hợp.
 Trong spec, slide đó dùng `quote` (và `attrib` tuỳ chọn) thay cho `text`:
 
 ```json
-{"image": "<ảnh>", "quote": "<nguyên văn câu nói, có dấu>",
+{"image": "<ảnh>", "quote": "<câu nói DỊCH sang tiếng Việt có dấu — giữ tên riêng/thuật ngữ/số liệu>",
  "attrib": "Đọc bài “<tên bài>” - <tác giả>"}
 ```
 
@@ -250,8 +250,11 @@ không sửa** — tất cả tự vẽ. Về màu:
 
 - Mỗi slide thân là **một trong hai**: `text` (đoạn văn) hoặc `quote` (câu trích
   dẫn). Thiếu cả hai → cổng chặn dừng.
-- Câu quote **giữ hoa/thường như gốc**, không viết hoa toàn bộ. Quá dài (chạm 7
-  dòng ở cỡ nhỏ nhất) → cổng chặn báo cắt. Quote sống ở chỗ **ngắn**.
+- Câu quote **DỊCH sang tiếng Việt có dấu** — bài gốc tiếng Anh thì dịch câu
+  trích (giữ tên riêng/thuật ngữ/số liệu), **ĐỪNG chép nguyên văn tiếng Anh** vào
+  ảnh. "Giữ hoa/thường như gốc" chỉ nói về CÁCH viết hoa (không viết hoa toàn bộ),
+  KHÔNG phải giữ nguyên ngôn ngữ. Quá dài (chạm 7 dòng ở cỡ nhỏ nhất) → cổng chặn
+  báo cắt. Quote sống ở chỗ **ngắn**.
 - Ảnh slide quote chọn như mọi slide thân: 1:1/4:5, cạnh ngắn ≥1000px, đáy đủ
   tối cho chữ trắng đọc rõ.
 

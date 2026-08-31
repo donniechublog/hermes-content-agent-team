@@ -733,6 +733,9 @@ BUOC 3 — chia tin thanh 4-8 slide va viet copy (theo khung ke chuyen trong ski
     xay ra, con so gay soc, y nghia that, doi thu, cai can theo doi).
   - Slide cuoi de lai mot moc hoac cau hoi, khong chot cut.
   - Chu TIENG VIET CO DAU, cau ngan, moi doan 2-4 dong, tach doan bang dong trong.
+  - CA CAU QUOTE (trich dan) cung phai DICH sang tieng Viet co dau — bai goc
+    tieng Anh thi DICH cau trich, giu ten rieng/thuat ngu/so lieu; DUNG chep
+    nguyen van tieng Anh vao quote.
 
 BUOC 4 — ghi spec JSON roi dung (cac anh o BUOC 2 chia cho tung slide theo y):
 cat > /tmp/carousel_{draft_id}.json <<'JSON'
