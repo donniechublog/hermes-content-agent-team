@@ -46,6 +46,22 @@ THOI_PHONG = ("gây chấn động", "thay đổi mọi thứ", "cuộc cách m�
 TU_CONG_BO = ("tự công bố", "hãng công bố", "theo công bố", "chưa kiểm chứng",
               "chưa có kiểm chứng", "nội bộ", "tự đo", "theo hãng", "công ty công bố")
 
+# Cum sao rong bi cam (tieu chuan bien tap): noi thang y nghia bang thong tin cu
+# the, dung dan bang "dang chu y / dang quan tam".
+SAO_RONG = ("đáng chú ý", "đáng quan tâm")
+
+# Bat URL/link SONG trong caption. Ngoai http/www con bat DOMAIN TRAN (vd z.ai,
+# openai.com) — truoc day lot vi khong co scheme. Chi bat khi dau cham DINH LIEN;
+# link da defang kieu "z . ai" (dau cach hai ben dau cham) thi cho qua, dung
+# tieu chuan bien tap: link trong noi dung phai viet dau cham thanh " . ".
+_TLD = ("ai", "com", "io", "org", "net", "dev", "app", "xyz", "gg", "sh", "co",
+        "tech", "cloud", "tv", "gov", "edu", "vn", "me", "so")
+_LINK_SONG = re.compile(
+    r"https?://|www\.\w"
+    r"|(?<![\w.])[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+    r"(?:\.[a-z0-9-]{1,63})*\.(?:" + "|".join(_TLD) + r")\b",
+    re.I)
+
 # Tieng Viet CO DAU la yeu cau song con cua kenh. Mat dau la loi nang nhat —
 # nang hon thieu so — vi bai khong dang duoc. Da gap that: Quinn viet ca caption
 # 802 ky tu khong mot dau nao sau khi doi sang provider moi, va khong ai phat
@@ -117,8 +133,25 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
         loi.append("Có em-dash (— hoặc –). Dùng dấu phẩy, dấu hai chấm, "
                    "hoặc tách thành câu riêng.")
 
-    if re.search(r"https?://|www\.", caption):
-        loi.append("Có URL trong bài — link phải để ở còm, không đặt trong caption.")
+    link_song = _LINK_SONG.search(caption)
+    if link_song:
+        loi.append(f'Còn URL/link sống trong bài ("{link_song.group(0).strip()}") — '
+                   'bỏ ra còm, không đặt trong caption. Nếu buộc phải nhắc tên miền '
+                   'thì viết dấu chấm thành " . " (vd z . ai) để không thành link.')
+
+    sao = [p for p in SAO_RONG if p in tran.lower()]
+    if sao:
+        loi.append("Cụm sáo rỗng bị cấm: " + ", ".join(f'"{p}"' for p in sao)
+                   + '. Nói thẳng vì sao quan trọng bằng thông tin cụ thể, '
+                   'không dùng "đáng chú ý / đáng quan tâm".')
+
+    # Tieu chuan bien tap: moi cau mot dong. Bat khi mot DONG con chua >=2 cau
+    # (dau ket cau + khoang trang + chu hoa) -> chi NHAC, khong chan cung.
+    dong_gop = [dg.strip() for dg in caption.splitlines()
+                if re.search(r"[.!?…]\s+[A-ZĐÀ-Ỹ]", dg)]
+    if dong_gop:
+        canh.append("Mỗi câu nên xuống dòng riêng, mỗi đoạn cách một dòng trống "
+                    f"(tiêu chuẩn biên tập). Dòng gộp nhiều câu: “{dong_gop[0][:50]}…”")
 
     the_la = {m.group(1).lower() for m in re.finditer(r"</?([a-zA-Z][\w-]*)", caption)}
     xau = the_la - THE_CHO_PHEP
@@ -160,7 +193,7 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
     tin["so_cau"] = len(cau)
     tin["do_dai"] = len(caption)
     if len(cau) < 3:
-        canh.append(f"Chỉ {len(cau)} câu — cấu trúc SOUL cần mở, thân, vì sao đáng chú ý.")
+        canh.append(f"Chỉ {len(cau)} câu — cấu trúc SOUL cần mở, thân, ý nghĩa.")
     return (loi, canh, tin)
 
 

@@ -784,7 +784,8 @@ Link: {link}
 Nguon: {source_note}
 Via: {via}
 Diem Finn cham: {score}/100 -- ly do: {score_reason}
-(Dung ly do diem nay de viet phan "vi sao dang chu y" trong bai, dung tu y suy dien them)
+(Dung ly do diem nay de viet phan Y NGHIA — vi sao chuyen nay quan trong; noi thang
+bang thong tin cu the, dung tu y suy dien, va KHONG dung cum "dang chu y / dang quan tam")
 
 Du kien (Finn da tom tat — CHI la diem khoi dau, KHONG du de viet):
 {summary}
@@ -809,12 +810,23 @@ tren the anh va o link.
 KHONG dung em-dash (dau — hoac –) o bat cu dau. Dung dau phay, dau hai cham,
 hoac tach thanh cau rieng. Script se tu choi caption co dau nay.
 
+TIEU CHUAN BIEN TAP:
+- Moi CAU xuong dong rieng: het mot cau thi xuong dong roi moi viet cau tiep
+  theo. Moi DOAN cach nhau MOT dong trong.
+- KHONG de link song trong caption (script tu choi, ke ca ten mien tran nhu
+  z.ai). Buoc phai nhac ten mien thi viet dau cham thanh " . " (vd z . ai) de
+  no khong thanh link.
+- KHONG dung cum sao rong "dang chu y", "dang quan tam" va bien the ("ly do
+  dang chu y", "dang chu y vi", "dang quan tam vi"...). Script tu choi. Noi
+  thang y nghia bang thong tin cu the.
+
 Bon y BAT BUOC co, moi y mot cau la du:
 - Chuyen gi vua xay ra, kem SO quan trong nhat
 - So sanh: hon hay kem cai gi, cach biet bao nhieu. Neu nguon co noi cho THUA
   thi phai noi — bo di la thien lech, khong con khach quan
 - Han che hoac dieu kien kem theo, neu nguon co noi
-- Vi sao dang chu y (dung ly do Finn cham diem)
+- Y NGHIA: vi sao chuyen nay quan trong (dung ly do Finn cham diem) — noi thang,
+  KHONG dung cum "dang chu y / dang quan tam vi..."
 
 Do dai: tan dung TOI DA 1024 ky tu, do la gioi han chu thich anh cua Telegram.
 Vua trong muc do thi anh va chu di chung MOT tin nhan, doc gia thay ca hai cung
