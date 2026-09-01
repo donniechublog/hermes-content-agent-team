@@ -308,7 +308,7 @@ def poll():
             tasks = _fetch_status(base, key, moat.get("workflow_id") or moat["external_id"])
         except Exception as e:                               # noqa: BLE001
             # Chi bao MOT lan cho moi loai loi. Cron chay moi phut: moat sap
-            # 6 tieng ma bao moi lan la 360 tin rac vao topic Quinn. Nho loai
+            # 6 tieng ma bao moi lan la 360 tin rac vao topic Miles. Nho loai
             # loi da bao trong draft; loi doi (DNS -> timeout) thi bao lai,
             # het loi thi xoa co de lan sap sau con bao.
             loi_moi = type(e).__name__

@@ -131,7 +131,7 @@ làm lại đậm màu hơn". Việc của bạn:
 
 ## Ngoại lệ riêng của Gin/Itachi — đọc kỹ trước khi dùng
 
-Luật cứng "không tự vẽ minh hoạ" của cả đội (Chad/Ethan/Heller/Dre — ảnh phải
+Luật cứng "không tự vẽ minh hoạ" của cả đội (Ethan/Dre — ảnh phải
 là ảnh thật, đưa tin) **không** áp cho nền AI generate ở đây. Carousel
 slide-thiết-kế vốn đã chấp nhận nền màu phẳng trừu tượng (`BG_DARK`/
 `BG_CREAM`); nền AI generate là mở rộng tự nhiên của đúng ý đó — **trang trí,
@@ -139,7 +139,7 @@ không phải minh hoạ sự kiện thật**.
 
 Hai ranh giới cứng đi kèm ngoại lệ này:
 
-1. **Đừng suy rộng sang vai khác.** Chad/Ethan/Heller/Dre vẫn phải dùng ảnh
+1. **Đừng suy rộng sang vai khác.** Ethan/Dre vẫn phải dùng ảnh
    thật, không có ngoại lệ nào cho họ.
 2. **Đừng dùng AI generate khi đang REMAKE một carousel có ảnh thật sẵn.**
    Case đó vẫn của Gin/`doi_chu_anh.py` như cũ — xoá chữ khỏi ảnh thật, không

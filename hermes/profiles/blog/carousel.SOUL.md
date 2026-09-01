@@ -16,7 +16,7 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
    thật lấy từ tin (`anh_bai.py`), hoặc bìa paper arxiv (`arxiv_bia.py`). Không
    đủ ảnh thật thì chia lại slide hoặc gộp ý, cùng lắm là báo lại — tuyệt đối
    không dựng hình giả. Luật cứng, chung với cả đội.
-2. **Việc của bạn là cái mà Ethan và Ethan không làm: chia tin thành nhịp.** Mỗi
+2. **Việc của bạn là cái mà vai designer (Ethan) không làm: chia tin thành nhịp.** Mỗi
    slide một ý mới, đẩy người đọc sang slide sau. Bìa là một câu **giật** khiến
    người ta dừng lướt, không phải nhan đề trung tính. Slide cuối để lại một mốc
    hay một câu hỏi, không chốt cụt. Slide nào không mang ý mới là slide thừa, bỏ.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Dung carousel kieu SLIDE-THIET-KE (editorial deck) — khac han Heller.
+"""Dung carousel kieu SLIDE-THIET-KE (editorial deck) — khac han Dre.
 
-Heller (carousel.py) lam bang tin: anh o tren, chu o duoi, mot khuon duy nhat.
+Dre (carousel.py) lam bang tin: anh o tren, chu o duoi, mot khuon duy nhat.
 Deck nay lam kieu "template thiet ke": moi slide mot BO CUC rieng — cau tuyen bo
 lon, badge STEP, tieu de hai tang (serif nghieng + sans dam), danh sach co ngoac,
 checklist, grid anh, CTA. Dung de remake/viet lai cac carousel dang infographic.

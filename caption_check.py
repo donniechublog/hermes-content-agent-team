@@ -6,7 +6,7 @@ Ong Chu chot: noi dung co the co dong va ngan gon, nhung KHONG duoc phep thieu.
 Cai gi kiem bang code thi kiem o day, khong nho LLM tu danh gia minh:
 
   - RONG SO: nguon co so lieu ma caption khong co con so nao. Da gap that — tin
-    DeepSeek vision co bang 11 dong so, caption viet ra 0 con so, vi Quinn chi
+    DeepSeek vision co bang 11 dong so, caption viet ra 0 con so, vi Miles chi
     duoc doc 3 cau tom tat cua Finn chu khong duoc doc nguon.
   - LAP Y: cung mot cum 6 tu tro len xuat hien hai lan. Da gap: "mo rong nang luc
     multimodality cho dong model nguon mo pho bien" lap o ca doan 2 lan doan 3 —
@@ -14,7 +14,7 @@ Cai gi kiem bang code thi kiem o day, khong nho LLM tu danh gia minh:
   - THOI PHONG, URL, THE HTML LA, QUA DAI: nhung thu SOUL da cam.
   - SO LIEU TU CONG BO ma khong ghi ro la tu cong bo.
 
-Cai gi CAN DOC HIEU thi de Quinn lo — script chi bao "nguon co N cau mang so,
+Cai gi CAN DOC HIEU thi de Miles lo — script chi bao "nguon co N cau mang so,
 caption dung M cau", con chon so nao la viec cua nguoi viet.
 
 Dung:
@@ -63,7 +63,7 @@ _LINK_SONG = re.compile(
     re.I)
 
 # Tieng Viet CO DAU la yeu cau song con cua kenh. Mat dau la loi nang nhat —
-# nang hon thieu so — vi bai khong dang duoc. Da gap that: Quinn viet ca caption
+# nang hon thieu so — vi bai khong dang duoc. Da gap that: Miles viet ca caption
 # 802 ky tu khong mot dau nao sau khi doi sang provider moi, va khong ai phat
 # hien cho toi khi doc ky.
 DAU = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"

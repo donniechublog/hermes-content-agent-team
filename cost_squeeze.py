@@ -60,7 +60,7 @@ def ty_le_dau(t: str) -> float:
 def suy_luan_cua_vai(vai: str) -> dict:
     """Doc dung cau hinh suy luan ma production dang chay cho vai nay.
 
-    Neu khong doc theo, phep do se sai lech: Quinn chay reasoning_effort=none
+    Neu khong doc theo, phep do se sai lech: Miles chay reasoning_effort=none
     nhung bo do lai de model suy luan thoai mai -> ra con so khong phai cai
     that su tinh tien.
     """
@@ -113,7 +113,7 @@ TIN_WRITER = [
 
 
 def viec_writer():
-    """Viec that cua Quinn: viet caption tieng Viet, moi lan mot tin KHAC nhau."""
+    """Viec that cua Miles: viet caption tieng Viet, moi lan mot tin KHAC nhau."""
     def nhac(i):
         tin = TIN_WRITER[i % len(TIN_WRITER)]
         return (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh "

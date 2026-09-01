@@ -1,6 +1,6 @@
 ---
 name: hero-image
-description: "Dựng ảnh cho kênh AI bằng card.py. MẶC ĐỊNH là --kieu quote (thẻ HOOK): một câu lớn trong khung dấu ngoặc kép + chip category (--tagline) + dòng nguồn (--attrib), đập vào mắt trong 3 giây; câu hook có thể là tiêu đề/góc giật hoặc lời có thật của người trong bài, không bắt buộc là trích dẫn. Kiểu --kieu tran (kicker + tiêu đề mono, liền một mặt phẳng, không khung không vạch) là lựa chọn đổi không khí. Gồm cách điều phối ảnh/chữ, các cờ bắt buộc, tô tên hãng, cổng chặn, chữ chìm vào ảnh. Dùng chung cho Chad (donniechublog) và Ethan (dcgr.tech)."
+description: "Dựng ảnh cho kênh AI bằng card.py. MẶC ĐỊNH là --kieu quote (thẻ HOOK): một câu lớn trong khung dấu ngoặc kép + chip category (--tagline) + dòng nguồn (--attrib), đập vào mắt trong 3 giây; câu hook có thể là tiêu đề/góc giật hoặc lời có thật của người trong bài, không bắt buộc là trích dẫn. Kiểu --kieu tran (kicker + tiêu đề mono, liền một mặt phẳng, không khung không vạch) là lựa chọn đổi không khí. Gồm cách điều phối ảnh/chữ, các cờ bắt buộc, tô tên hãng, cổng chặn, chữ chìm vào ảnh. Dùng chung cho Ethan (donniechublog) và Ethan (dcgr.tech)."
 version: 1.1.0
 author: content-team
 license: internal
@@ -14,12 +14,12 @@ metadata:
 
 # hero-image — mặc định kiểu quote, dự phòng kiểu tràn
 
-Thẻ ảnh của đội, một mặt phẳng liền. **Chad** dựng cho donniechublog, **Ethan**
+Thẻ ảnh của đội, một mặt phẳng liền. **Ethan** dựng cho donniechublog, **Ethan**
 dựng cho dcgr.tech. Hai người làm y hệt nhau, khác đúng một cờ:
 
 | Vai | Profile | Cờ riêng |
 |---|---|---|
-| Chad | `designer` | không cần gì thêm, donniechublog là mặc định |
+| Ethan | `designer` | không cần gì thêm, donniechublog là mặc định |
 | Ethan | `ethan` | `--brand dcgr` |
 
 Ngoài cờ đó ra, mọi thứ trong tài liệu này áp cho cả hai như nhau.

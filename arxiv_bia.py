@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Chup trang bia paper cho cac tin khong co anh (arxiv, OpenReview, PDF hoc thuat).
 
-Vi sao can: Ethan va Chad co mot nguyen tac cung — khong tim duoc anh THAT thi
+Vi sao can: Ethan va Ethan co mot nguyen tac cung — khong tim duoc anh THAT thi
 dung lai, khong tu ve minh hoa. Nhung mot bai arxiv thi "anh that" cua no chinh
 la trang dau paper: ten cong trinh va nhom tac gia, in ra tren nen trang. Do la
 anh that, khong phai hinh bia dat, nen dung nguyen tac van giu.

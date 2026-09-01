@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Dung carousel nhieu slide kieu bang tin — anh o tren, khoi chu trang tren
 nen den o duoi, watermark nghieng o day. Khac han card.py (mot the bia kieu
-tran): day la mot bo N slide ke chuyen, dung cho Heller.
+tran): day la mot bo N slide ke chuyen, dung cho Dre.
 
 Bo cuc moi slide (1080x1350, ti le 4:5, nen den):
 
@@ -180,7 +180,7 @@ def _scrim(canvas, tu=0.34):
     hook doc ro. `tu` la moc bat dau lam toi (theo ti le chieu cao).
 
     Truoc day tu=0.42, mu 1.4: voi hook 2 dong (truong hop ly tuong theo
-    skill Heller) thi du toi, nhung hook 3 dong — van hop le, chi la cau dai
+    skill Dre) thi du toi, nhung hook 3 dong — van hop le, chi la cau dai
     hon — day dong dau len cao toi vung con nhat (~34% do toi o do). Da do
     that tren anh nen phuc tap (nhieu mau, chu san co): dong tren cua hook
     bi lo nen phia sau. Ha moc bat dau va giam mu (bot "day" ve cuoi) de toi
@@ -541,7 +541,7 @@ def _gate_chu(slides):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Dung carousel nhieu slide (Heller)")
+    ap = argparse.ArgumentParser(description="Dung carousel nhieu slide (Dre)")
     ap.add_argument("--spec", required=True,
                     help="File JSON mo ta carousel, hoac '-' doc tu stdin")
     ap.add_argument("--out", required=True,

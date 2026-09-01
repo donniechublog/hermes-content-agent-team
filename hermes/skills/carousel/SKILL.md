@@ -1,6 +1,6 @@
 ---
 name: carousel
-description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — chữ chìm vào ảnh qua scrim liền mạch kiểu bìa (bắt đầu tối từ ~42% cao, đậm dần xuống ~80% ở chữ, không đường mép, không vùng đen riêng). NEOBRUTALISM đồng bộ hero card: chip tên kênh + chip category + khung quote đều khối đặc viền đen, bóng cứng, font JetBrains Mono, màu CYAN nhận diện (donniechublog #00cce0, dcgr trắng). Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), các cổng chặn, và slide quote (một câu hook + dấu ngoặc kép + nguồn). Dùng chung cho Heller (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
+description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — chữ chìm vào ảnh qua scrim liền mạch kiểu bìa (bắt đầu tối từ ~42% cao, đậm dần xuống ~80% ở chữ, không đường mép, không vùng đen riêng). NEOBRUTALISM đồng bộ hero card: chip tên kênh + chip category + khung quote đều khối đặc viền đen, bóng cứng, font JetBrains Mono, màu CYAN nhận diện (donniechublog #00cce0, dcgr trắng). Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), các cổng chặn, và slide quote (một câu hook + dấu ngoặc kép + nguồn). Dùng chung cho Dre (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
 version: 1.2.0
 author: content-team
 license: internal
@@ -9,15 +9,15 @@ prerequisites:
   commands: [python3]
 metadata:
   hermes:
-    tags: [carousel, slide, heller, dre, bang-tin, album, donniechublog, dcgr]
+    tags: [carousel, slide, dre, bang-tin, album, donniechublog, dcgr]
 ---
 
 # carousel — bộ nhiều slide kể một tin
 
-Kiểu ảnh thứ hai của đội, bên cạnh hero image. **Heller** (donniechublog) và
+Kiểu ảnh thứ hai của đội, bên cạnh hero image. **Dre** (donniechublog) và
 **Dre** (dcgr.tech) dựng nó — cùng một `carousel.py`, khác đúng cờ `--brand`,
-giống hệt quan hệ Chad/Ethan bên hero image. Trong khi Chad và Ethan dựng
-**một thẻ bìa** kiểu tràn cho một tin, Heller/Dre kể **cùng một tin qua nhiều
+giống hệt quan hệ Ethan bên hero image. Trong khi vai designer (Ethan) dựng
+**một thẻ bìa** kiểu tràn cho một tin, Dre kể **cùng một tin qua nhiều
 slide**: một chuỗi ảnh 4:5 nền đen, lướt sang phải để đọc tiếp.
 
 `carousel.py` lo hết phần vẽ. Việc của bạn là **chia tin thành các slide**,
@@ -25,7 +25,7 @@ slide**: một chuỗi ảnh 4:5 nền đen, lướt sang phải để đọc ti
 
 ## Carousel khác hero image ở đâu
 
-| | Hero image (Chad/Ethan) | Carousel (Heller/Dre) |
+| | Hero image (Ethan) | Carousel (Dre) |
 |---|---|---|
 | Số ảnh | một thẻ bìa | 5–8 slide (tối thiểu 5), tối đa 10 |
 | Chữ | một tiêu đề đè lên ảnh | hook ở bìa + đoạn chữ dưới mỗi slide |
@@ -87,14 +87,14 @@ bảng chữ". `carousel.py` dựng sẵn scrim liền mạch; việc của bạ
 
 ## Bước 1 — nhận tin đã duyệt
 
-Task của bạn có tiêu đề tin và link gốc, giống task của Chad/Ethan. Đây là tin
+Task của bạn có tiêu đề tin và link gốc, giống task của Ethan. Đây là tin
 Ông Chủ đã chọn từ danh sách Finn/Vera/Nova. **Đọc kỹ link gốc trước khi chia
 slide** — carousel sống chết ở chỗ bạn hiểu tin đủ sâu để tách ra nhiều tầng.
 Không đọc đủ thì các slide chỉ là một câu bị cắt làm năm khúc.
 
 ## Bước 2 — chia tin thành các slide, và viết copy
 
-Đây là phần khó nhất và là lý do Heller tồn tại. Một carousel tốt có **nhịp**:
+Đây là phần khó nhất và là lý do Dre tồn tại. Một carousel tốt có **nhịp**:
 mỗi slide đẩy người đọc sang slide sau.
 
 ### Khung kể chuyện (không cứng, nhưng hầu hết tin AI hợp)
@@ -350,7 +350,7 @@ thông báo rồi chạy lại.
 ## Bàn giao
 
 Watermark trên slide **không phải là ghi nguồn**. Nguồn ảnh và nguồn tin vẫn
-phải chuyển cho người viết caption (Quinn/Miles) để đưa vào chú thích bài đăng,
+phải chuyển cho người viết caption (Miles) để đưa vào chú thích bài đăng,
 đúng như hero image. Khi bàn giao, nói rõ: link gốc, và nguồn từng ảnh nếu lấy
 từ nhiều báo.
 
