@@ -736,7 +736,7 @@ BUOC 3 — chia tin thanh 4-8 slide va viet copy (theo khung ke chuyen trong ski
 BUOC 4 — ghi spec JSON roi dung (cac anh o BUOC 2 chia cho tung slide theo y):
 cat > /tmp/carousel_{draft_id}.json <<'JSON'
 {{
-  "handle": "donniechublog",
+  "handle": "{brand}",
   "cover":  {{"image": "/tmp/src_{draft_id}.png", "hook": "<cau giat co dau>", "label": "<NHAN NGAN>"}},
   "slides": [
     {{"image": "/tmp/src_{draft_id}_2.png", "text": "doan mot.\\n\\ndoan hai."}},

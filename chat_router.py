@@ -21,20 +21,19 @@ from tele_util import chia_tin                               # noqa: E402  (re-e
 
 HERMES_DIR = Path.home() / "hermes-agent"
 HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
-HERMES_HOME = str(Path.home() / ".hermes")
+# Container: home theo brand (moi brand mot ~/.hermes-<brand>). Systemd dat san;
+# roi ve ~/.hermes o che do don cu.
+HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
 
-# topic -> profile. Nhan ngoai cac topic nay (vd General) di vao profile mac dinh.
-# Khoa TRUNG voi ten profile, va phai co du cho MOI topic trong state/topics.json;
-# thieu mot cai thi chat trong topic do roi ve profile mac dinh (khong phai vai
-# tren bien topic). Heller tung bi sot o day du da co topic 257.
+# topic -> profile. Slug generic, trung ten profile trong home cua container.
+# Nhan ngoai cac topic nay (vd General) di vao profile mac dinh. Phai co du cho
+# MOI topic trong state/topics.<brand>.json; thieu mot cai thi chat trong topic
+# do roi ve profile mac dinh.
 TOPIC_PROFILE = {
     "scout": "scout",
     "designer": "designer",
-    "ethan": "ethan",
-    "heller": "heller",
-    "dre": "dre",
+    "carousel": "carousel",
     "writer": "writer",
-    "miles": "miles",
     "analyst": "analyst",
     "teaser": "teaser",
     "nova": "nova",
