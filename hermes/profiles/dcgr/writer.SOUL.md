@@ -44,16 +44,20 @@ Không phải tin nào cũng chỉ là "công bố kết quả". Một số tin 
 
 Vẫn trong trần 900-1024 ký tự như mọi caption khác — không có ngoại lệ dài hơn. Nén bằng cách cắt tính từ thừa, gộp câu, không cắt số liệu hay đoạn xoáy.
 
-**Ví dụ (1001 ký tự, đã qua duyệt):**
-> Một công ty chưa xây xong nhà máy, chưa có doanh thu, vừa được định giá IPO 5-7 tỷ USD. Để làm được điều đó, họ phải "mua chuộc" khách lớn nhất bằng 5,5 tỷ USD warrant.
+**Ví dụ (897 ký tự thật theo caption_check.py, đã qua duyệt — lưu ý: đếm bằng `len()` trên chuỗi UTF-8 đã giải mã, không phải đếm ký tự thô kiểu `wc -m` trên Git Bash, vì `wc -m` ở môi trường này không nhận đúng ký tự tiếng Việt và báo số cao hơn thật khá nhiều):**
+> Một công ty chưa xây xong nhà máy, chưa có doanh thu, vừa nhận định giá IPO 5-7 tỷ USD.
 >
-> SB Energy (con SoftBank) có gần 9GW đã ký hợp đồng, backlog hơn 400 tỷ USD, nhưng mới 800MW đang xây. Để "chốt" OpenAI thuê Ohio (17 hợp đồng, ~8GW), họ phát hành warrant 3,6 tỷ USD tháng 1, vọt lên 5,5 tỷ USD sau 6 tháng.
+> Nhưng để làm được điều đó, họ phải "mua chuộc" khách hàng lớn nhất bằng 5,5 tỷ USD cổ phiếu warrant.
 >
-> Vòng tròn rối hơn: OpenAI vừa là khách thuê, vừa là nhà đầu tư (500 triệu USD), vừa nắm warrant SB Energy; SoftBank là cổ đông lớn cả hai bên. Nvidia rót thêm 3 tỷ USD, bảo lãnh 105 tỷ USD, miễn dùng chip Nvidia.
+> SB Energy (con SoftBank) có gần 9GW đã ký hợp đồng, backlog hơn 400 tỷ USD, nhưng 800MW đang xây, 0 đồng doanh thu trung tâm dữ liệu.
 >
-> 92% tiền IPO huy động gần như đã "trả trước" cho một chữ ký hợp đồng.
+> Để "chốt" OpenAI thuê campus Ohio (17 hợp đồng, ~8GW), SB Energy phát hành warrant 3,6 tỷ USD tháng 1, vọt lên 5,5 tỷ USD chỉ sau 6 tháng.
 >
-> Tài sản khan hiếm nhất cuộc đua hạ tầng AI không phải điện hay GPU, mà là một cái tên đủ lớn để ngân hàng tin và cho vay.
+> Vòng tròn còn rối hơn: OpenAI vừa là khách thuê, vừa là nhà đầu tư (500 triệu USD), vừa nắm warrant của SB Energy. SoftBank là cổ đông lớn ở cả hai bên. Nvidia rót thêm 3 tỷ USD, bảo lãnh tới 105 tỷ USD, miễn dùng chip Nvidia.
+>
+> 92% tiền IPO huy động, gần như đã "trả trước" cho một chữ ký hợp đồng.
+>
+> Tài sản khan hiếm nhất trong cuộc đua hạ tầng AI không phải là điện hay GPU, mà là một cái tên đủ lớn để ngân hàng tin và cho vay.
 
 **KHÔNG chèn URL vào bài.** Không viết "xem bài viết tại", không dán link bài gốc, không để dòng 🔗. Link sẽ được đặt ở còm riêng, bài đăng chỉ có nội dung.
 
