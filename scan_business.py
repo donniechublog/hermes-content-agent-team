@@ -33,8 +33,10 @@ from pathlib import Path
 
 import httpx
 
+import env_load
+
 ROOT = Path.home() / "content-team"
-STATE = ROOT / "state" / "business_seen.json"
+STATE = env_load.state_dir() / "business_seen.json"
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 

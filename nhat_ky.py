@@ -25,14 +25,17 @@ Dung:
 import argparse
 import json
 import re
+import os
 import sqlite3
 import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import env_load
+
 ROOT = Path.home() / "content-team"
-HERMES = Path.home() / ".hermes"
-THU_MUC = ROOT / "state" / "nhat_ky"
+HERMES = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes")))
+THU_MUC = env_load.state_dir() / "nhat_ky"
 GHI_CHU = THU_MUC / "ghi_chu.jsonl"
 VN = timezone(timedelta(hours=7))
 
@@ -127,7 +130,7 @@ def phan_kanban(ngay: str) -> list:
 
 
 def phan_finn(ngay: str) -> dict | None:
-    p = ROOT / "state" / f"finn_candidates_{ngay}.json"
+    p = env_load.state_dir() / f"finn_candidates_{ngay}.json"
     if not p.exists():
         return None
     d = json.loads(p.read_text(encoding="utf-8"))
@@ -185,7 +188,7 @@ def phan_git(ngay: str) -> list:
 
 
 def phan_model(ngay: str) -> dict | None:
-    p = ROOT / "state" / "model_health.json"
+    p = env_load.state_dir() / "model_health.json"
     if not p.exists():
         return None
     d = json.loads(p.read_text(encoding="utf-8"))

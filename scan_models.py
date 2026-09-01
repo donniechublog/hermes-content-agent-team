@@ -34,8 +34,10 @@ from pathlib import Path
 
 import httpx
 
+import env_load
+
 ROOT = Path.home() / "content-team"
-STATE = ROOT / "state" / "models_seen.json"
+STATE = env_load.state_dir() / "models_seen.json"
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 
 OPENROUTER = "https://openrouter.ai/api/v1/models"

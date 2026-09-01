@@ -25,8 +25,10 @@ from pathlib import Path
 
 import httpx
 
+import env_load
+
 ROOT = Path.home() / "content-team"
-STATE = ROOT / "state"
+STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 
 MAX_AGE_HOURS = 72
