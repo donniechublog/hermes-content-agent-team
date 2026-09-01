@@ -65,9 +65,15 @@ def chuoi_da_cau_hinh() -> dict:
         for i, m in enumerate(chain):
             if not m:
                 continue
-            # 9router ghi ten tran, khong co tien to nha cung cap
-            tran = m.split("/")[-1]
-            ra.setdefault(tran, []).append(f"{vai}:{'chinh' if i == 0 else f'du phong {i}'}")
+            nhan = f"{vai}:{'chinh' if i == 0 else f'du phong {i}'}"
+            # 9router ghi ten da bo tien to NHA CUNG CAP (phan dau), nhung ten
+            # 3 phan thi giu phan giua: config `xk/z-ai/glm-5.3` -> router ghi
+            # `z-ai/glm-5.3`. Truoc day chi lay split("/")[-1] ("glm-5.3") nen
+            # model chu luc cua writer bi bao "LA — khong o chuoi nao" oan.
+            # Dang ky CA HAI bien the cho chac.
+            phan = m.split("/")
+            for tran in {phan[-1], "/".join(phan[1:]) or phan[-1]}:
+                ra.setdefault(tran, []).append(nhan)
     return ra
 
 
