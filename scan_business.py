@@ -364,8 +364,11 @@ def main():
     # chi la VAN AN TOAN chong ngay bat thuong dot bien tin, khong phai bo loc do
     # quan trong. Dat cao, va cat theo MOI NHAT chu khong theo diem, nen tin bi
     # cat (neu co) luon la tin cu nhat trong cua so.
-    ap.add_argument("--top", type=int, default=120,
-                    help="Van an toan: toi da bao nhieu tin dua cho Vera (mac dinh 120)")
+    # 80 thay vi 120 (chot 01/09 sau audit chi phi): prompt cua Vera an theo so
+    # tin, ma tin thu 81+ la tin CU NHAT cua so va gan nhu khong bao gio duoc
+    # chon. Tin watchlist van LUON qua bat ke cap.
+    ap.add_argument("--top", type=int, default=80,
+                    help="Van an toan: toi da bao nhieu tin dua cho Vera (mac dinh 80)")
     ap.add_argument("--lan-dau", action="store_true", help="Chi ghi moc, khong bao")
     ap.add_argument("--out", help="Ghi JSON ra tep")
     ap.add_argument("--state", help="Duong dan file seen khac (de TEST khong dung "
@@ -409,10 +412,19 @@ def main():
     chon = wl + thuong[:max(0, a.top - len(wl))]
     chon.sort(key=lambda t: -(t["ts"] or 0))
 
+    # Gon tung item truoc khi ghi tep cho Vera — prompt cua no an theo kich
+    # thuoc tep nay (audit 01/09). `so_bao` du de danh gia do nong; danh sach
+    # ten bao cap 3 (du cho source_note); `hang_watch` trung y voi `watchlist`
+    # thi bo. `chon` goc van dung nguyen cho ghi_moc ben duoi.
+    xuat = []
+    for t in chon:
+        t2 = {k: v for k, v in t.items() if k != "hang_watch"}
+        t2["cac_bao"] = t.get("cac_bao", [])[:3]
+        xuat.append(t2)
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
            "tong_quet": len(tin),
            "tin_watchlist": sum(1 for t in chon if t["watchlist"]),
-           "tin_moi": chon}
+           "tin_moi": xuat}
     if a.out:
         Path(a.out).write_text(json.dumps(ket, ensure_ascii=False, indent=2),
                                encoding="utf-8")

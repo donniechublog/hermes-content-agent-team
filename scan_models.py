@@ -143,7 +143,10 @@ def fetch_openrouter() -> list:
             # manh moi duy nhat con lai. Tim nguoc tren HuggingFace theo ten thi
             # ra model KHAC (tim "sakana" ra TinySwallow) — dua so sai con te hon
             # khong co so, nen khong lam.
-            "mo_ta": (m.get("description") or "")[:400],
+            # 150 ky tu du de Nova biet model la gi; chi tiet no tu doc link.
+            # Truoc day [:400] x moi model moi trong 14 ngay lam prompt phinh
+            # theo ngay nhieu model ra mat (audit 01/09).
+            "mo_ta": (m.get("description") or "")[:150],
         })
     return out
 
@@ -543,7 +546,9 @@ def main():
             goc = (m["id"].split("/")[-1] or "").lower()
             if any(goc in t or t in goc for t in ten_top):
                 continue                       # da nam trong top, khoi tra them
-            m["benchmark_trich"] = trich_benchmark(m.get("hf_id") or "")
+            # Giu MOT doan trich la du de Nova phan dinh "co an tuong khong";
+            # muon xem het thi mo model card — nhieu doan chi phinh prompt.
+            m["benchmark_trich"] = trich_benchmark(m.get("hf_id") or "")[:1]
 
     leo_hang = so_hang({m: r[:a.top] for m, r in arena.items()}, hang_cu())
 
