@@ -30,9 +30,11 @@ from pathlib import Path
 
 import httpx
 
+import env_load
+
 ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
-STATE_DIR = ROOT / "state"
+STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 SECRETS = ROOT / ".secrets.env"
 
 # Chi cac bucket ANH -- day chuyen nay ra the anh, khong ra video.
@@ -384,7 +386,7 @@ def _notify(lines):
         if not group:
             return
         thread = None
-        tp = STATE_DIR / "topics.json"
+        tp = env_load.topics_path()
         if tp.exists():
             thread = json.loads(tp.read_text(encoding="utf-8")).get("writer")
         publish.send_text(token, group, "\n\n".join(lines), thread=thread)

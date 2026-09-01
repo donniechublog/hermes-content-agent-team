@@ -104,7 +104,7 @@ def send(text: str):
         print(text)
         return
     thread = None
-    tp = ROOT / "state" / "topics.json"
+    tp = env_load.topics_path()
     if tp.exists():
         thread = json.loads(tp.read_text(encoding="utf-8")).get("analyst")
     try:

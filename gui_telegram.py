@@ -30,8 +30,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load
 
 ROOT = Path.home() / "content-team"
-STATE = ROOT / "state" / "telegram_sent"
-TOPICS = ROOT / "state" / "topics.json"
+STATE = env_load.state_dir() / "telegram_sent"
+TOPICS = env_load.topics_path()
 API = "https://api.telegram.org/bot{token}/{method}"
 
 

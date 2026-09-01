@@ -165,7 +165,7 @@ def gui(text: str):
         print("\n[canh bao] thieu TELEGRAM_BOT_TOKEN/GROUP_ID")
         return
     th = None
-    tp = ROOT / "state" / "topics.json"
+    tp = env_load.topics_path()
     if tp.exists():
         th = json.loads(tp.read_text(encoding="utf-8")).get("analyst")
     try:

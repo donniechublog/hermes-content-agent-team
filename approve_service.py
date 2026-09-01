@@ -33,15 +33,16 @@ import moat_publish                                         # noqa: E402
 import tele_util                                            # noqa: E402
 
 ROOT = Path.home() / "content-team"
+import env_load                                              # noqa: E402
 DRAFTS = ROOT / "drafts"
-STATE_DIR = ROOT / "state"
+STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 OFFSET = STATE_DIR / "offset.txt"
 TELEGRAM_INCOMING = STATE_DIR / "telegram_incoming"   # anh tai ve tu tin nhan reply
 API = "https://api.telegram.org/bot{token}/{method}"
 HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
-HERMES_HOME = str(Path.home() / ".hermes")
-
-import env_load                                              # noqa: E402
+# HERMES_HOME theo container: moi brand mot home rieng (~/.hermes-<brand>).
+# Systemd/cron dat san; roi ve ~/.hermes o che do don cu.
+HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
 
 
 def load_secrets():
@@ -61,7 +62,7 @@ def call(token, method, **kw):
 
 
 def scout_thread_id():
-    p = STATE_DIR / "topics.json"
+    p = env_load.topics_path()
     if not p.exists():
         return None
     return json.loads(p.read_text(encoding="utf-8")).get("scout")
@@ -548,7 +549,7 @@ def doc_lenh_chon(text: str):
 
 def vai_cua_topic(thread_id):
     """Topic id -> ten vai, doc tu state/topics.json."""
-    tp = STATE_DIR / "topics.json"
+    tp = env_load.topics_path()
     if thread_id is None or not tp.exists():
         return None
     try:
@@ -934,7 +935,7 @@ def bao_viec_bi_chan(token, group):
     if not moi:
         return
 
-    tp = STATE_DIR / "topics.json"
+    tp = env_load.topics_path()
     try:
         topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
     except Exception:                                        # noqa: BLE001
@@ -1135,7 +1136,7 @@ def handle_chat(token, group, msg, thread_id, text):
     Bu lai: dinh tuyen duoc theo topic, moi topic mot phien rieng.
     """
     topics = {}
-    tp = STATE_DIR / "topics.json"
+    tp = env_load.topics_path()
     if tp.exists():
         topics = json.loads(tp.read_text(encoding="utf-8"))
     profile, session = chat_router.route(thread_id, topics)
@@ -1546,7 +1547,7 @@ if __name__ == "__main__":
         # Dinh tuyen topic theo loai noi dung: teaser ve topic Jean, tin tuc
         # ve topic Quinn. Tham so thu 3 (neu co) van ghi de duoc.
         thread = None
-        tp = STATE_DIR / "topics.json"
+        tp = env_load.topics_path()
         if tp.exists():
             topics = json.loads(tp.read_text(encoding="utf-8"))
             dpath = DRAFTS / (draft_id + ".json")

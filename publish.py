@@ -220,7 +220,7 @@ def _main():
     thread = a.thread
     if a.thread_name:
         import json
-        topics_path = Path(__file__).resolve().parent / "state" / "topics.json"
+        topics_path = env_load.topics_path()
         try:
             topics = json.loads(topics_path.read_text(encoding="utf-8"))
         except Exception as e:
