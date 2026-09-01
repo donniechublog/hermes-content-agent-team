@@ -10,6 +10,10 @@
 httpx>=0.27          # tai trang, goi API, dung o nhieu script
 Pillow>=10           # dung the anh (card.py), xu ly anh
 pymupdf>=1.24        # render trang dau paper arxiv (arxiv_bia.py)
+playwright>=1.40     # render_sli.py (Kite) chup HTML->PNG bang Chromium headless.
+#                    # SAU khi cai package con phai tai browser: `playwright
+#                    # install chromium`. Chi carousel.sli dung; cac vai khac
+#                    # (card/carousel/deck) van thuan PIL, khong can.
 # beautifulsoup4/lxml: article_extract.py can nhung thieu o day — chua lo ra
 # vi venv hermes tren server tinh co da co san (phu thuoc bac cau cua thu
 # khac). Ghi ro de venv rieng (vd may local nay) khong bi ImportError.

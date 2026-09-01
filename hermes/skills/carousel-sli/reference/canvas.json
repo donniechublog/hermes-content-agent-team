@@ -1,0 +1,10 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1080, "h": 1350, "title": "01 · Cover" },
+    { "file": "Problem.dc.html", "x": 1200, "y": 0, "w": 1080, "h": 1350, "title": "02 · Vấn đề" },
+    { "file": "HowItWorks.dc.html", "x": 2400, "y": 0, "w": 1080, "h": 1350, "title": "03 · /boost làm gì" },
+    { "file": "RegressionLoop.dc.html", "x": 3600, "y": 0, "w": 1080, "h": 1350, "title": "04 · Vòng lặp" },
+    { "file": "Takeaway.dc.html", "x": 4800, "y": 0, "w": 1080, "h": 1350, "title": "05 · Chốt + CTA" }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -1,0 +1,58 @@
+{
+  "brand": "donniechublog",
+  "section": "AI TOOLING · SỐ 01",
+  "folio": "GOOGLE ANTIGRAVITY",
+  "slides": [
+    {
+      "kind": "cover",
+      "eyebrow": "GOOGLE ANTIGRAVITY · DEEP DIVE",
+      "title": "Lệnh /boost biến bug khó thành lời giải chắc tay",
+      "accent": "/boost",
+      "standfirst": "Bên trong cách agent chia nhỏ vấn đề, chạy trong worktree cách ly và tự kiểm chứng bằng test.",
+      "byline": ["donniechublog", "Phân tích", "5 phút đọc"]
+    },
+    {
+      "kind": "statement",
+      "eyebrow": "BỐI CẢNH",
+      "title": "Với bug khó, agent hay đoán mò",
+      "accent": "đoán mò",
+      "standfirst": "Lỗi càng phức tạp, mô hình càng dễ chắp vá — sửa chỗ này lại phát sinh chỗ khác, mà không có cách nào kiểm chứng rằng nó thật sự đã fix.",
+      "cards": [
+        {"num": "01", "text": "Một lần sửa \"trông có vẻ đúng\" nhưng không ai dám chắc"},
+        {"num": "02", "text": "Fix xong lại kéo theo lỗi hồi quy ở nơi khác"}
+      ]
+    },
+    {
+      "kind": "steps",
+      "eyebrow": "CÁCH VẬN HÀNH",
+      "title": "Chia để trị, rồi kiểm chứng",
+      "steps": [
+        {"title": "Tách bài toán", "desc": "Phân rã bug thành các phần nhỏ, rõ ràng."},
+        {"title": "Subagent chuyên môn", "desc": "Mỗi phần giao cho một agent phù hợp nhất."},
+        {"title": "Worktree cách ly", "desc": "Mỗi agent chạy trong nhánh riêng, không giẫm chân nhau."},
+        {"title": "Regression nhiều vòng", "desc": "Chạy test lặp lại tới khi sạch lỗi mới dừng."}
+      ]
+    },
+    {
+      "kind": "loop",
+      "eyebrow": "CƠ CHẾ",
+      "title": "Chỉ bàn giao khi qua hết test",
+      "accent": "qua hết test",
+      "chips": ["Phân tích", "Sửa", "Chạy lại test"],
+      "standfirst": "Còn test đỏ thì còn lặp. Chỉ khi toàn bộ test xanh, kết quả mới được bàn giao — thay vì tin vào một lần sửa duy nhất.",
+      "callout": "Kết quả: một bản fix đã được kiểm chứng bằng test — không phải một phỏng đoán."
+    },
+    {
+      "kind": "cta",
+      "eyebrow": "ÁP DỤNG",
+      "title": "Cho bug khó & refactor rủi ro cao",
+      "checks": [
+        "Lỗi lặp đi lặp lại, sửa mãi không dứt",
+        "Thay đổi lớn cần chắc chắn không phá test cũ",
+        "Khi cần lời giải kiểm chứng được, không phải phỏng đoán"
+      ],
+      "readmore": {"label": "ĐỌC THÊM", "text": "\"Boost deep reasoning (/boost)\" — Google Antigravity Docs"},
+      "follow": "Theo dõi @donniechublog"
+    }
+  ]
+}
