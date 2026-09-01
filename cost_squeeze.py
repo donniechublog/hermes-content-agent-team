@@ -32,11 +32,19 @@ import env_load
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teaser_assemble import DAI_HONG, tim_giong_tuong_thuat  # noqa: E402
 
+import os
+
 ROOT = Path.home() / "content-team"
-HERMES = Path.home() / ".hermes"
+# Home theo container (systemd/cron dat HERMES_HOME per-brand); roi ve ~/.hermes
+# o che do don cu — cung ly do voi model_watch/usage_audit.
+HERMES = Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
 ROUTER = "http://127.0.0.1:20128/v1/chat/completions"
 
-# USD / 1 trieu token: (input, output, cache_read) — tuyen router that su di
+# USD / 1 trieu token: (input, output, cache_read) — tuyen router that su di.
+# BANG TAY, se cu dan: doi chieu voi 9router (bang usage co cot cost) hoac trang
+# gia cua provider truoc khi tin ket luan "re nhat". Model KHONG co trong bang
+# se bi bao ro va loai khoi xep hang gia — truoc day am tham tinh $0.00 va
+# "thang" giai re nhat, sai dung cai script nay sinh ra de do.
 GIA = {
     "ds/deepseek-chat":      (0.14,  0.28, 0.0028),
     "ds/deepseek-v4-flash":  (0.14,  0.28, 0.0028),
@@ -68,7 +76,11 @@ def suy_luan_cua_vai(vai: str) -> dict:
     sys.path.insert(0, str(Path.home() / "hermes-agent"))
     try:
         from hermes_constants import resolve_reasoning_config
-    except Exception:                                        # noqa: BLE001
+    except Exception as e:                                   # noqa: BLE001
+        # Khong im lang: thieu hermes-agent thi phep do chay voi suy luan mac
+        # dinh, co the LECH so voi production — nguoi doc phai biet.
+        print(f"[canh bao] khong doc duoc cau hinh suy luan production "
+              f"({type(e).__name__}) — do voi thiet lap mac dinh", file=sys.stderr)
         return {}
     cfg = yaml.safe_load((HERMES / "profiles" / vai / "config.yaml").read_text())
     r = resolve_reasoning_config(cfg)
@@ -183,10 +195,13 @@ def main():
             msg = (d["choices"][0].get("message") or {})
             van = rut_van(msg.get("content") or "")
             u = d.get("usage") or {}
-            pin, pout, pc = GIA.get(model, (0, 0, 0))
-            cached = (u.get("prompt_tokens_details") or {}).get("cached_tokens") or 0
-            moi = max(u.get("prompt_tokens", 0) - cached, 0)
-            usd.append((moi * pin + cached * pc + u.get("completion_tokens", 0) * pout) / 1e6)
+            gia = GIA.get(model)
+            if gia:
+                pin, pout, pc = gia
+                cached = (u.get("prompt_tokens_details") or {}).get("cached_tokens") or 0
+                moi = max(u.get("prompt_tokens", 0) - cached, 0)
+                usd.append((moi * pin + cached * pc
+                            + u.get("completion_tokens", 0) * pout) / 1e6)
 
             sai = []
             if not van:
@@ -204,14 +219,21 @@ def main():
             if sai:
                 truot += 1; ly_do.append("+".join(sai))
 
-        gia1000 = st.mean(usd) * 1000 if usd else float("nan")
+        co_gia = model in GIA
+        gia1000 = st.mean(usd) * 1000 if (usd and co_gia) else float("nan")
         hang.append((model, truot, a.n, gia1000, ly_do, tu))
         do_dai = f"  tu tb {st.mean(tu):.0f}" if tu else ""
-        print(f"{model:<24s} truot {truot}/{a.n}  USD/1000 = {gia1000:7.2f}{do_dai}")
+        gia_hien = f"{gia1000:7.2f}" if co_gia else "  ?????"
+        print(f"{model:<24s} truot {truot}/{a.n}  USD/1000 = {gia_hien}{do_dai}")
+        if not co_gia:
+            print(f"{'':24s}   CHUA CO GIA trong bang GIA — them gia truoc khi "
+                  f"so tien, model nay bi loai khoi xep hang gia")
         if ly_do:
             print(f"{'':24s}   ly do: {', '.join(ly_do[:6])}")
 
-    sach = [h for h in hang if h[1] == 0]
+    # NaN (model chua co gia) khong duoc du giai "re nhat" — min() voi NaN
+    # cho ket qua tuy thu tu, co the len nham.
+    sach = [h for h in hang if h[1] == 0 and h[3] == h[3]]
     print("\n" + "=" * 68)
     if sach:
         tot = min(sach, key=lambda h: h[3])

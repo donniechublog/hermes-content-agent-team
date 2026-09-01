@@ -258,8 +258,8 @@ def glow(css):
     return f'<div class="glow" style="{css}"></div>'
 
 
-def masthead(section):
-    return (f'<div class="mast"><span class="mast-name">donniechublog</span>'
+def masthead(brand, section):
+    return (f'<div class="mast"><span class="mast-name">{esc(brand)}</span>'
             f'<span class="rule"></span>'
             f'<span class="mast-sec">{esc(section)}</span></div>')
 
@@ -392,7 +392,7 @@ BUILDERS = {
 }
 
 
-def slide_doc(sl, idx, total, section, folio_left, follow=None):
+def slide_doc(sl, idx, total, brand, section, folio_left, font_css, follow=None):
     kind = sl.get("kind")
     if kind not in BUILDERS:
         raise SystemExit(f"slide {idx}: kind khong hop le '{kind}' "
@@ -400,9 +400,9 @@ def slide_doc(sl, idx, total, section, folio_left, follow=None):
     body = BUILDERS[kind](sl)
     # slide cta có thể ghi 'follow' vào folio trái thay nhãn mặc định
     fol_left = sl.get("follow", follow) if kind == "cta" and (sl.get("follow") or follow) else folio_left
-    inner = masthead(section) + body + folio(fol_left, idx, total)
+    inner = masthead(brand, section) + body + folio(fol_left, idx, total)
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>'
-            f'{_font_face_css()}{BASE_CSS}</style></head><body>'
+            f'{font_css}{BASE_CSS}</style></head><body>'
             f'<div class="art">{inner}</div></body></html>')
 
 
@@ -447,6 +447,7 @@ def _texts(sl):
 
 # ---- render ---------------------------------------------------------------
 def render(spec, out, brand, bo_qua_dau, scale):
+    brand = spec.get("brand") or brand   # spec ghi brand thi thang co --brand
     slides = spec.get("slides") or []
     loi = gate_slides(slides, bo_qua_dau)
     if loi:
@@ -456,8 +457,12 @@ def render(spec, out, brand, bo_qua_dau, scale):
         raise SystemExit(1)
 
     section = spec.get("section", "AI TOOLING")
-    folio_left = spec.get("folio", "GOOGLE ANTIGRAVITY")
+    # Thieu folio thi dung ten brand — truoc day roi ve nhan mau "GOOGLE
+    # ANTIGRAVITY" cua bo demo, lot len album that ma khong ai bao.
+    folio_left = spec.get("folio") or brand
     total = len(slides)
+    # Nhung font mot lan cho ca album — truoc day encode lai ~1.4MB TTF moi slide.
+    font_css = _font_face_css()
 
     try:
         from playwright.sync_api import sync_playwright
@@ -476,7 +481,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
                                   device_scale_factor=scale)
         page = ctx.new_page()
         for i, sl in enumerate(slides, start=1):
-            doc = slide_doc(sl, i, total, section, folio_left)
+            doc = slide_doc(sl, i, total, brand, section, folio_left, font_css)
             page.set_content(doc, wait_until="load")
             page.evaluate("document.fonts.ready")
             page.wait_for_timeout(120)

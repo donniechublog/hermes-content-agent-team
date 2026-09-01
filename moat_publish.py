@@ -121,9 +121,17 @@ def read_draft(draft_id):
     return json.loads(draft_path(draft_id).read_text(encoding="utf-8"))
 
 
+def _ghi_json(path, data):
+    """Ghi atomic (tmp + os.replace): draft la so cai cua he thong, write_text
+    truc tiep ma chet giua chung se de lai JSON cut."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2),
+                   encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def write_draft(draft_id, data):
-    draft_path(draft_id).write_text(
-        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _ghi_json(draft_path(draft_id), data)
 
 
 def images_payload(d):
@@ -288,7 +296,7 @@ def poll():
             pending = list(range(max(0, len(cac_san) - xong)))
             moat["tracking_stopped"] = True
             d["moat"] = moat
-            path.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+            _ghi_json(path, d)
             if pending:
                 lines.append("⏳ " + path.stem + ": còn " + str(len(pending))
                              + " task chưa đăng sau " + str(MAX_TRACK_DAYS)
@@ -315,15 +323,13 @@ def poll():
             if moat.get("loi_da_bao") != loi_moi:
                 moat["loi_da_bao"] = loi_moi
                 d["moat"] = moat
-                path.write_text(json.dumps(d, ensure_ascii=False, indent=2),
-                                encoding="utf-8")
+                _ghi_json(path, d)
                 lines.append("⚠️ " + path.stem + ": khong hoi duoc moat ("
                              + loi_moi + "), se im cho toi khi tinh hinh doi")
             continue
         if moat.pop("loi_da_bao", None):
             d["moat"] = moat
-            path.write_text(json.dumps(d, ensure_ascii=False, indent=2),
-                            encoding="utf-8")
+            _ghi_json(path, d)
             lines.append("✅ " + path.stem + ": moat hoi lai duoc roi")
 
         changed = False
@@ -350,7 +356,7 @@ def poll():
         if changed:
             moat["reported"] = reported
             d["moat"] = moat
-            path.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+            _ghi_json(path, d)
 
     return lines
 

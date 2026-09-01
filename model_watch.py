@@ -24,14 +24,15 @@ import env_load
 import tele_util
 
 ROOT = Path.home() / "content-team"
-HERMES_HOME = Path.home() / ".hermes"
-STATE_FILE = ROOT / "state" / "model_health.json"
 ROUTER = "http://127.0.0.1:20128/v1/chat/completions"
-# DU 9 vai. Tung thieu nova + market: model cua hai vai do hong khong ai thu,
-# va usage cua chung bi bao "LA — khong o chuoi nao" — canh bao gia dung loai
-# script nay sinh ra de chong.
-PROFILES = ["scout", "nova", "market", "ethan", "designer", "writer", "miles",
-            "analyst", "teaser"]
+
+
+def hermes_home() -> Path:
+    """Home hermes cua container hien tai. Systemd/cron dat HERMES_HOME per-brand
+    (vd ~/.hermes-blog, ~/.hermes-dcgr) — hardcode ~/.hermes lam watchdog canh
+    nham mot bo config cu/rong ma khong ai biet. Khong co bien thi roi ve
+    ~/.hermes (che do don cu)."""
+    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
 
 TIMEOUT = 25
 PROBE = {"messages": [{"role": "user", "content": "hi"}], "max_tokens": 5}
@@ -53,8 +54,13 @@ REASONS = {
 def models_in_use() -> dict:
     """Tra ve {model: [mo ta vai tro]} — chi nhung model that su duoc cau hinh."""
     used = {}
-    targets = [("default", HERMES_HOME / "config.yaml")]
-    targets += [(p, HERMES_HOME / "profiles" / p / "config.yaml") for p in PROFILES]
+    home = hermes_home()
+    # Glob thay vi liet ke tay: tung thieu nova + market — model cua hai vai do
+    # hong khong ai thu, usage bi bao "LA" — canh bao gia dung loai script nay
+    # sinh ra de chong. Them vai moi la tu duoc canh, khong phai nho sua day.
+    targets = [("default", home / "config.yaml")]
+    targets += sorted((p.parent.name, p)
+                      for p in (home / "profiles").glob("*/config.yaml"))
     for name, path in targets:
         if not path.exists():
             continue
@@ -132,10 +138,15 @@ def main():
     if not key:
         sys.exit("Thieu OPENAI_API_KEY")
 
+    # Per-brand: phai trung voi duong dan Nova doc trong nova_daily_scan.sh
+    # (state/<CT_BRAND>/model_health.json). Truoc day ghi state/model_health.json
+    # con Nova doc ban brand — hai duong khac nhau, Nova doc tep khong ton tai.
+    state_file = env_load.state_dir() / "model_health.json"
+
     used = models_in_use()
     prev = {}
-    if STATE_FILE.exists():
-        prev = json.loads(STATE_FILE.read_text(encoding="utf-8")).get("models", {})
+    if state_file.exists():
+        prev = json.loads(state_file.read_text(encoding="utf-8")).get("models", {})
 
     now, changes = {}, []
     for model, roles in sorted(used.items()):
@@ -151,10 +162,12 @@ def main():
             mark = "OK " if ok else "HONG"
             print(f"  {mark:5s} {model:<52s} {why}")
 
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(
+    # Ghi atomic: tmp + os.replace, tranh tep hong neu chet giua chung.
+    tmp = state_file.with_suffix(".tmp")
+    tmp.write_text(json.dumps(
         {"checked_at": datetime.now(timezone.utc).isoformat(), "models": now},
         ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, state_file)
 
     broken = [m for m, v in now.items() if not v["ok"]]
 
@@ -172,8 +185,10 @@ def main():
         lines.append("")
     if broken:
         lines.append(f"<i>Hiện {len(broken)}/{len(now)} model đang hỏng.</i>")
-        # Canh bao nang: mot vai mat CA model chinh lan moi du phong
-        for p in PROFILES:
+        # Canh bao nang: mot vai mat CA model chinh lan moi du phong.
+        # Danh sach vai suy tu chinh ket qua probe, khong liet ke tay.
+        vai_co = sorted({r.split(":")[0] for v in now.values() for r in v["roles"]})
+        for p in vai_co:
             mine = [m for m, v in now.items()
                     if any(r.startswith(p + ":") for r in v["roles"])]
             if mine and all(not now[m]["ok"] for m in mine):

@@ -26,10 +26,11 @@ Dung:
 """
 import argparse
 import json
+import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -274,7 +275,7 @@ def fetch_aa() -> dict:
 
 def loc_aa(aa: dict, ngay: int, top: int) -> dict:
     """Chia du lieu cham diem thanh cac muc dang bao."""
-    moc = (datetime.now(timezone.utc) - __import__("datetime").timedelta(days=ngay)
+    moc = (datetime.now(timezone.utc) - timedelta(days=ngay)
            ).strftime("%Y-%m-%d")
     gan_day = [r for r in aa.values() if (r.get("releaseDate") or "") >= moc]
 
@@ -460,10 +461,14 @@ def hang_cu() -> dict:
 
 def ghi_moc(ids: set, xep_hang: dict):
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(json.dumps(
+    # Ghi atomic (tmp + os.replace) nhu scan_business: write_text truc tiep ma
+    # chet giua chung se de lai tep hong, mat sach bo nho da-thay.
+    tmp = STATE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(
         {"cap_nhat": datetime.now(timezone.utc).isoformat(),
          "ids": sorted(ids), "xep_hang": xep_hang},
         ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, STATE)
 
 
 def so_hang(arena: dict, cu: dict) -> list:

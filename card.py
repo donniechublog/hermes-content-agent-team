@@ -189,8 +189,6 @@ QUOTE_LEAD = 16                         # gian dong quote — thoang hon tieu de
 QUOTE_MAX_LINES = 7                     # dai hon la cau qua dai cho mot the
 QUOTE_PAD = 64                          # le trong hon hero: quote can khoang tho
 MARK_SIZE = 210                         # dau ngoac kep (Oswald: ink that ~28% co font)
-APPLE_BLUE = (10, 132, 255)             # #0A84FF — mau CO DINH cho line khung + brand text
-                                        # (dong bo watermark carousel). Chi DAU " doi theo hang.
 # Man toi cua quote bat dau tan tu day len; tren nguong nay hoan toan trong de
 # nhan vat tho nguyen, khong lo mot duong mep nao (cung bai voi _tran_anh).
 QUOTE_FADE_TOP = 0.38
@@ -940,9 +938,19 @@ def _paste_mascot(canvas, img_h, o_anh):
     # Moi goc deu de len anh -> khong dan mascot
 
 
+_ICON_CACHE = {}          # (name, size, color) -> Image; icon tinh, doi duoc
+
+
 def _load_icon(name, size, color):
+    """Doc SVG icon qua rsvg-convert, co CACHE — 5 icon social duoc goi lai moi
+    lan render, khong co ly do gi chay lai subprocess moi lan. Thieu binary thi
+    canh bao MOT lan ro rang thay vi de icon lang le bien mat."""
+    khoa = (name, size, color)
+    if khoa in _ICON_CACHE:
+        return _ICON_CACHE[khoa]
     src = ICONS / (name + ".svg")
     if not src.exists():
+        _ICON_CACHE[khoa] = None
         return None
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
         out = tmp.name
@@ -951,12 +959,19 @@ def _load_icon(name, size, color):
                         "-h", str(size), "-o", out],
                        check=True, capture_output=True, timeout=20)
         icon = Image.open(out).convert("RGBA")
-    except Exception:                                        # noqa: BLE001
+    except Exception as e:                                   # noqa: BLE001
+        if not _ICON_CACHE.get("_da_bao"):
+            _ICON_CACHE["_da_bao"] = True
+            print(f"[canh bao] khong render duoc icon SVG ({type(e).__name__}) "
+                  f"— thieu rsvg-convert? Icon social se KHONG hien.",
+                  file=sys.stderr)
+        _ICON_CACHE[khoa] = None
         return None
     finally:
         Path(out).unlink(missing_ok=True)
     tinted = Image.new("RGBA", icon.size, (*color, 0))
     tinted.putalpha(icon.split()[-1])
+    _ICON_CACHE[khoa] = tinted
     return tinted
 
 
@@ -990,7 +1005,7 @@ def _social_row(canvas, d, right_x, cy, handle, font, icon_size=39, gap=15,
 
 
 
-def _tech_frame(d, H, split, side_col=LINE, box_col=LINE, vach=True):
+def _tech_frame(d, H, split, box_col, vach=True):
     m, brk = 18, 46
     # Hai goc tren: mau nhan. Hai goc duoi: mau trang, cung do day.
     for (x, y, dx, dy, col) in ((m, m, 1, 1, CYAN),
@@ -1111,7 +1126,7 @@ def tim_mat_dau(text: str) -> list:
 
 def build(src, title, subtitle, via, out, category="AI",
           category_right="", handle=None, ratio="free",
-          tagline="daily AI update", khoa_ti_le=False, brand="donniechublog",
+          tagline="daily AI update", brand="donniechublog",
           bo_qua_dau=False, kieu="dai", kicker="", attrib=""):
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
@@ -1279,12 +1294,7 @@ def build(src, title, subtitle, via, out, category="AI",
                         ratio, H = ten_ti_le, cao
                         break
                 else:
-                    if not khoa_ti_le:
-                        H = img_h + box_min          # tha the dai hon la thu anh
-                    else:
-                        img_h, how = H - box_min, "letterbox"
-                        print(f"[canh bao] khoa ti le {ratio} nen phai thu anh xuong "
-                              f"{img_h}px — bo --ratio de hien day du.", file=sys.stderr)
+                    H = img_h + box_min              # tha the dai hon la thu anh
         # ANH LA CHINH, TEXTBOX LA PHU. Truoc day toan bo cho thua bi don het
         # vao textbox: khoa 4:5 thi chu chiem 58% chieu cao con anh 42%, nguoc
         # vai tro. Nay textbox chi lay phan chu that su can, tran o TRAN_TEXTBOX;
@@ -1342,7 +1352,7 @@ def build(src, title, subtitle, via, out, category="AI",
     # cai ranh gioi ma kieu tran sinh ra de xoa. Hero image lien mot mat phang:
     # anh, man toi, chu. Het.
     if kieu != "tran":
-        _tech_frame(d, H, img_h, CYAN, FG, vach=True)
+        _tech_frame(d, H, img_h, FG, vach=True)
 
     g1, g2, g3, g4 = _khoang(nen)
 
@@ -1523,7 +1533,7 @@ def main():
     a = p.parse_args()
     build(a.image, a.title, a.subtitle, a.via, a.out,
           a.category, a.category_right, a.handle, a.ratio, a.tagline,
-          khoa_ti_le=getattr(a, "khoa_ti_le", False), brand=a.brand,
+          brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib)
 
 

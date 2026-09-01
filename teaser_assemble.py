@@ -121,7 +121,7 @@ def assemble(title: str, paragraphs: list, images: list,
     return {
         "caption": caption,
         "images": images[:2],
-        "word_count": sum(len(p.split()) for p in paragraphs),
+        "word_count": sotu,
         "paragraph_count": n,
         "emoji_used": emojis,
     }

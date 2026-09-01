@@ -68,6 +68,10 @@ _LINK_SONG = re.compile(
 # hien cho toi khi doc ky.
 DAU = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"
           "ùúủũụưừứửữựỳýỷỹỵđ")
+# 0.12 CO Y thap hon 0.15 cua model_audition: day la cong chan bai that (caption
+# nhieu ten rieng/thuat ngu tieng Anh keo ty le xuong), con audition do van mau
+# thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. Bo DAU/ty_le_dau
+# con o model_audition.py va cost_squeeze.py — sua thi sua ca ba.
 NGUONG_DAU = 0.12          # van ban tieng Viet that thuong tren 0.15
 
 

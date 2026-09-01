@@ -24,7 +24,6 @@ from card import _f, _wrap, tim_mat_dau, bo_dau_cam
 ASSETS = Path(__file__).resolve().parent / "assets"
 FONTS = ASSETS / "fonts"
 F_SANS = str(FONTS / "BeVietnamPro-Bold.ttf")       # tieu de sans dam
-F_SANS_REG = str(FONTS / "BeVietnamPro-Regular.ttf")
 F_SERIF = str(FONTS / "NotoSerifDisplay.ttf")       # tieu de serif nghieng
 F_BODY = str(FONTS / "Inter.ttf")                   # than chu
 F_COND = str(FONTS / "Oswald.ttf")                  # sans hep (badge, nhan)
@@ -44,16 +43,12 @@ GREY = (150, 150, 150)
 
 
 # ---- helper chung ---------------------------------------------------------
-def _grow(d, text, path, max_w, hi, lo, weight=None, italic=False):
-    """Chon co lon nhat de text (mot doan) vua max_w o toi da... khong gioi han
-    dong. Tra ve (font, lines)."""
-    for size in range(hi, lo - 1, -2):
-        f = _f(path, size, weight)
-        lines = _wrap(d, text, f, max_w)
-        # deck khong gioi han so dong; chi can vua be ngang, uu tien co to
-        if lines:
-            return f, lines
-    f = _f(path, lo, weight)
+def _grow(d, text, path, max_w, hi, lo=None, weight=None, italic=False):
+    """Wrap text o co `hi`. Ten cu hua "co lon nhat vua max_w" nhung vong lap
+    luon tra ve ngay co dau tien (_wrap luon co ket qua khi text khong rong),
+    nen hanh vi that la CO DINH `hi` — giu nguyen de khong doi layout cac deck
+    da xuat. `lo`/`italic` giu cho tuong thich, khong dung."""
+    f = _f(path, hi, weight)
     return f, _wrap(d, text, f, max_w)
 
 
@@ -69,10 +64,6 @@ def _draw_lines(d, x, y, lines, font, fill, lead=1.16):
 def _line_h(font, lead=1.16):
     b = font.getbbox("ÂgqĐ")
     return int((b[3] - b[1]) * lead)
-
-
-def _fit_lines(d, text, path, max_w, size, weight=None):
-    return _wrap(d, text, _f(path, size, weight), max_w)
 
 
 def _badge(d, x, y, text, bg=CORAL, fg=WHITE, size=30):

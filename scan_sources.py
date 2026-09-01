@@ -329,12 +329,19 @@ def main():
                     help="So ung vien toi da giu lai (mac dinh 40)")
     ap.add_argument("--khong-lay-anh", action="store_true",
                     help="Bo qua buoc tai og:image (nhanh hon, nhung vai dung anh se thieu goi y)")
+    ap.add_argument("--reddit", action="store_true",
+                    help="Bat lai nguon Reddit. Mac dinh TAT: Reddit bi chan o "
+                         "tang mang tu 2026-08-20 (xem fetch_reddit), moi lan "
+                         "quet dot 5 request timeout vo ich. Duong mang thong "
+                         "lai thi them co nay vao cron.")
     a = ap.parse_args()
 
     print("Dang quet...", file=sys.stderr)
     items = []
-    for name, fn in (("HackerNews", fetch_hn), ("Reddit", fetch_reddit),
-                     ("arXiv", fetch_arxiv)):
+    nguon = [("HackerNews", fetch_hn), ("arXiv", fetch_arxiv)]
+    if a.reddit:
+        nguon.insert(1, ("Reddit", fetch_reddit))
+    for name, fn in nguon:
         # Hang rao cuoi: du tung fetch_* da tu boc, mot loi bat ngo o mot nguon
         # cung khong duoc keo do hai nguon con lai.
         try:

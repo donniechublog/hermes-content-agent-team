@@ -49,8 +49,8 @@ from card import (
     _f, _wrap, _fit_contain, _fit_cover,
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
-    FONTS,                       # thu muc font, de tro toi SFNS (San Francisco)
-    F_QUOTE, F_QUOTE_REG, F_MARK,  # kieu quote — cung dinh nghia font voi card.py
+    FONTS,                       # thu muc font
+    F_QUOTE, F_QUOTE_REG,        # kieu quote — cung dinh nghia font voi card.py
 )
 
 # ---- Khung so -------------------------------------------------------------
@@ -59,9 +59,8 @@ PAD = 84                         # le trai/phai cua chu, do tu mau tham chieu
 BG = (0, 0, 0)                   # den tuyet doi — dau an cua kieu carousel nay
 FG = (255, 255, 255)            # chu chinh trang
 # Watermark ten kenh: MOT mau xanh co dinh (xanh nhu icon Finder cua macOS),
-# KHONG doi theo brand nua. Font cua Apple (San Francisco / SFNS).
+# KHONG doi theo brand nua.
 WM = (10, 132, 255)             # #0A84FF — mau du phong neu chua nap thuong hieu
-F_APPLE = str(FONTS / "SFNS.ttf")   # San Francisco (font he thong macOS)
 
 # Neobrutalism (dong bo voi card.py --kieu quote): chip khoi dac, vien den day,
 # bong cung lech, chu mono. Mau chip lay CYAN nhan dien (dat qua dat_thuong_hieu
@@ -308,7 +307,6 @@ def build_body(img_path, text, handle, out):
 Q_HI, Q_LO = 60, 38              # co chu quote trong slide than
 Q_LEAD = 14                      # gian dong quote (theo px, giong card.py)
 Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
-Q_MARK = 128                     # co dau ngoac kep
 Q_BOTTOM = 1150                  # day cum quote, chua ~80px toi watermark
 
 

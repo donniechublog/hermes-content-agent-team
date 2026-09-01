@@ -29,7 +29,6 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load
 
-ROOT = Path.home() / "content-team"
 STATE = env_load.state_dir() / "telegram_sent"
 TOPICS = env_load.topics_path()
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -130,12 +129,20 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
     # mot tin nhan chu RIENG ngay duoi anh — dung cho ca anh don lan album.
     if duyet:
         with httpx.Client(timeout=60) as c:
-            c.post(API.format(token=token, method="sendMessage"), data={
+            r2 = c.post(API.format(token=token, method="sendMessage"), data={
                 "chat_id": group, "message_thread_id": str(int(thread_id)),
                 "text": ("Ảnh đã xong. Duyệt để người viết làm caption, "
                          "hoặc bỏ nếu ảnh chưa đạt."),
                 "reply_markup": json.dumps(_kb_duyet(duyet)),
             })
+        res2 = r2.json()
+        if not res2.get("ok"):
+            # Khong duoc im lang: anh da len nhung nut Duyet khong xuat hien
+            # thi pipeline dung o cong duyet ma khong ai biet. Bao loi ro de
+            # vai/agent gui lai.
+            raise SystemExit(
+                f"Anh da gui nhung tin nhan nut Duyet LOI: {res2.get('description')}"
+                f" — pipeline se ket neu khong gui lai nut.")
     return res
 
 

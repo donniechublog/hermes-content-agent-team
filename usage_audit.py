@@ -32,13 +32,14 @@ import env_load
 import tele_util
 
 ROOT = Path.home() / "content-team"
-HERMES = Path.home() / ".hermes"
 DB = Path.home() / ".9router" / "db" / "data.sqlite"
-# DU 9 vai. Tung thieu nova + market: model cua hai vai do hong khong ai thu,
-# va usage cua chung bi bao "LA — khong o chuoi nao" — canh bao gia dung loai
-# script nay sinh ra de chong.
-PROFILES = ["scout", "nova", "market", "ethan", "designer", "writer", "miles",
-            "analyst", "teaser"]
+
+
+def hermes_home() -> Path:
+    """Home hermes cua container hien tai. Systemd/cron dat HERMES_HOME per-brand
+    (vd ~/.hermes-blog, ~/.hermes-dcgr) — hardcode ~/.hermes lam script soi mot
+    bo config cu/rong. Khong co bien thi roi ve ~/.hermes (che do don cu)."""
+    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
 
 # Model co cache ma tut duoi muc nay la dang co van de (lat model, hoac
 # prompt qua ngan de cache an)
@@ -48,8 +49,14 @@ NGUONG_CACHE = 40.0
 def chuoi_da_cau_hinh() -> dict:
     """{ten model tran: [vai dung no]} — doc dung config dang chay."""
     ra = {}
-    for vai in PROFILES:
-        p = HERMES / "profiles" / vai / "config.yaml"
+    home = hermes_home()
+    # Glob thay vi liet ke tay: tung thieu nova + market va usage cua chung bi
+    # bao "LA — khong o chuoi nao" — canh bao gia. Them config goc de model
+    # mac dinh cung khong bi bao LA oan.
+    targets = [("default", home / "config.yaml")]
+    targets += sorted((p.parent.name, p)
+                      for p in (home / "profiles").glob("*/config.yaml"))
+    for vai, p in targets:
         if not p.exists():
             continue
         cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}

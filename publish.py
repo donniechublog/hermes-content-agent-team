@@ -5,6 +5,7 @@ Doc TELEGRAM_BOT_TOKEN / TELEGRAM_CHANNEL_ID tu ~/content-team/.secrets.env.
 Dung cho vai publisher trong pipeline noi dung.
 """
 import argparse
+import json
 import os
 import re
 import sys
@@ -16,7 +17,6 @@ import env_load
 import tele_util
 API = "https://api.telegram.org/bot{token}/{method}"
 CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
-TEXT_LIMIT = 4096
 
 
 def load_secrets():
@@ -117,8 +117,10 @@ def send_text(token, chat, text, parse_mode="HTML", thread=None):
 def send_photo(token, chat, photo: Path, caption="", parse_mode="HTML", thread=None):
     caption = don_dep(caption)
     if len(caption) > CAPTION_LIMIT:
-        sys.exit(f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
-                 f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
+        # Exception thuong, KHONG sys.exit: day la ham thu vien — xem TelegramTuChoi.
+        raise TelegramTuChoi(
+            f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
+            f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
     with httpx.Client(timeout=120) as c, photo.open("rb") as fh:
         r = c.post(API.format(token=token, method="sendPhoto"),
                    data={"chat_id": chat, "caption": caption,
@@ -134,8 +136,10 @@ def send_document(token, chat, doc: Path, caption="", parse_mode="HTML", thread=
     frame HD cua Bob). Anh van hien thumbnail; bam vao xem/tai full-res."""
     caption = don_dep(caption)
     if len(caption) > CAPTION_LIMIT:
-        sys.exit(f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
-                 f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
+        # Exception thuong, KHONG sys.exit: day la ham thu vien — xem TelegramTuChoi.
+        raise TelegramTuChoi(
+            f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
+            f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
     with httpx.Client(timeout=120) as c, doc.open("rb") as fh:
         r = c.post(API.format(token=token, method="sendDocument"),
                    data={"chat_id": chat, "caption": caption,
@@ -153,8 +157,10 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
     """
     caption = don_dep(caption)
     if len(caption) > CAPTION_LIMIT:
-        sys.exit(f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
-                 f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
+        # Exception thuong, KHONG sys.exit: day la ham thu vien — xem TelegramTuChoi.
+        raise TelegramTuChoi(
+            f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
+            f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
     items, files = [], {}
     for i, m in enumerate(media):
         m = str(m)
@@ -169,7 +175,7 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
             entry["media"] = f"attach://{key}"
             files[key] = open(m, "rb")
         items.append(entry)
-    data = {"chat_id": chat, "media": __import__("json").dumps(items)}
+    data = {"chat_id": chat, "media": json.dumps(items)}
     if thread:
         data["message_thread_id"] = str(int(thread))
     try:
@@ -219,7 +225,6 @@ def _main():
     # Giai thread tu ten topic (paths tuyet doi theo vi tri file, khong theo cwd).
     thread = a.thread
     if a.thread_name:
-        import json
         topics_path = env_load.topics_path()
         try:
             topics = json.loads(topics_path.read_text(encoding="utf-8"))
