@@ -1,6 +1,5 @@
 #!/bin/bash
 # Cron: Finn quet tin, cham diem, liet ke danh so, KHONG tu tao task.# Ong Chu chon bang cach reply so thu tu trong topic scout -> approve_service.py xu ly.
-export HERMES_HOME=/home/donniechu/.hermes
 H=/home/donniechu/hermes-agent/venv/bin/python
 # Ngay lay theo GIO VN, khong phai UTC. Cron chay 23:00 UTC = 06:00 VN hom sau,
 # nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
@@ -8,7 +7,7 @@ H=/home/donniechu/hermes-agent/venv/bin/python
 # Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
 KEY="finn-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
-MANIFEST="/home/donniechu/content-team/state/finn_candidates_${DAY}.json"
+MANIFEST="/home/donniechu/content-team/state/${CT_BRAND}/finn_candidates_${DAY}.json"
 
 BODY="Nhiem vu quet tin sang (chay theo lich cron). Lam dung 5 buoc trong SOUL cua ban.
 
@@ -26,7 +25,7 @@ dang con so trong manifest mot dang, Ong Chu tra loi so lai ra bai khac.
 
 Gui thang ban script vua viet:
   /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to -1003763882779 --thread 6 --file /tmp/finn_baocao.txt
+    --to-env TELEGRAM_GROUP_ID --thread-name scout --file /tmp/finn_baocao.txt
 
 KHONG co tin nao dat nguong thi van phai gui mot dong noi ro hom nay khong co gi,
 kem so tin da quet. Ong Chu can phan biet duoc \"hom nay khong co gi\" voi
