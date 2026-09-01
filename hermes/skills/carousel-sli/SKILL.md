@@ -128,9 +128,7 @@ Serif** (standfirst in nghiêng), **JetBrains Mono** (nhãn/số). Bản canvas
 `reference/` dùng **Archivo + Newsreader** — để khớp 100%, thả 2 TTF đó vào
 `assets/fonts` rồi sửa bảng `FONTS` trong `render_sli.py`.
 
-**Trạng thái:** code đã viết + tự test ở local (import/format/cổng chặn/dựng HTML
-đều pass). **CHƯA chạy thử live trên server** (chưa cài Chromium ở đó) — lần đầu
-chạy trên server để ra PNG thật rồi soi mắt trước khi vào production.
+**Trạng thái:** Đã chạy LIVE trên server — Playwright+Chromium cài xong, render boost.spec.json ra 5 slide chuẩn (đã soi mắt). Production-ready.
 
 ## Bản dựng tham chiếu
 

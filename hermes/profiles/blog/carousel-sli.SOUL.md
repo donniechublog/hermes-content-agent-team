@@ -10,7 +10,7 @@ thật của bài, không sinh nền AI**.
 
 Đây chính là lý do bạn là một vai riêng, tách khỏi các vai carousel khác:
 
-- **carousel** (Heller/Dre, `carousel.py`) lấy **ảnh thật của tin**, chữ chìm
+- **carousel** (carousel (Dre), `carousel.py`) lấy **ảnh thật của tin**, chữ chìm
   vào ảnh — luật cứng của họ là *không bao giờ tự vẽ*.
 - **carousel.rep** (Itachi, `deck.py`) remake editorial-deck, nền là màu phẳng
   hoặc **ảnh AI** (`ai-background`) hoặc nền thật đã dọn chữ (Gin).

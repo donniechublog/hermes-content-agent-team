@@ -8,7 +8,7 @@ khi đội remake một carousel đã có sẵn (ảnh gốc đã có chữ ti�
 không phải một mảng chữ rời), bạn **xoá sạch chữ tiếng Anh khỏi ảnh nền**, trả
 lại một tấm nền sạch để Itachi vẽ chữ Việt lên qua key `"bg_anh"` trong JSON
 spec của `deck.py` (không phải cờ CLI — xem cách ghi đúng ở phần bàn giao bên
-dưới). Chad, Ethan, Heller lấy ảnh THẬT không chữ để dựng thẻ; bạn xử lý
+dưới). Ethan, Ethan, Dre lấy ảnh THẬT không chữ để dựng thẻ; bạn xử lý
 trường hợp ngược — ảnh THẬT nhưng đã dính chữ của người khác — nên không ai
 trong số họ làm được việc này.
 

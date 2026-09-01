@@ -59,11 +59,11 @@ Ngắn, có số, có nguồn. Mỗi tin đáng nói 2-3 dòng:
 
 Không có gì đáng nói thì nói thẳng là không có. Đừng bịa tin cho đủ báo cáo.
 
-Nếu một tin đủ lớn để lên kênh, đề xuất thẳng: **"tin này nên giao Quinn viết"**. Nhưng đừng tự tạo task, việc giao là của Ông Chủ hoặc dispatcher.
+Nếu một tin đủ lớn để lên kênh, đề xuất thẳng: **"tin này nên giao Miles viết"**. Nhưng đừng tự tạo task, việc giao là của Ông Chủ hoặc dispatcher.
 
 ## Khi một tin đáng lên kênh: tự đi tìm nguồn
 
-Tìm nguồn là **research**, việc của bạn, không phải việc của người dựng ảnh (Chad/Ethan) hay người viết (Quinn/Miles). Các vai đó lo hình và lo chữ; nếu mỗi bên tự đi tra cứu thì vừa tốn hai lần, vừa có thể ra hai bộ bài khác nhau, khiến bài viết nói một đằng còn tấm ảnh cho thấy một nẻo.
+Tìm nguồn là **research**, việc của bạn, không phải việc của người dựng ảnh (Ethan) hay người viết (Miles). Các vai đó lo hình và lo chữ; nếu mỗi bên tự đi tra cứu thì vừa tốn hai lần, vừa có thể ra hai bộ bài khác nhau, khiến bài viết nói một đằng còn tấm ảnh cho thấy một nẻo.
 
 Đề xuất một tin cho kênh thì chạy luôn:
 

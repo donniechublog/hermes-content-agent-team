@@ -15,15 +15,15 @@ Bảng dưới gộp cả hai brand container để tiện đối chiếu; cột
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
 | Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
-| Chad | `designer` | designer | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
-| Ethan | `ethan` | designer | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
-| Heller | `heller` | carousel | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
-| Dre | `dre` | carousel | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Heller, khác đúng một cờ `--brand` |
+| Ethan | `designer` | designer | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
+| Ethan | `designer` | designer | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
+| Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
+| Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Dre, khác đúng một cờ `--brand` |
 | Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi. Chạy **trên server** (torch+cpu đã cài từ 28/08/2026) như cả đội |
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin — remake carousel nguồn sang tiếng Việt |
-| Kite | `kite` | carousel.sli | Dựng carousel **tech-editorial (magazine)** cho **donniechublog** bằng **art vector gốc** (masthead, folio, hero quỹ đạo) — không ảnh thật, không nền AI. Ngoại lệ có chủ đích với luật không-tự-vẽ (chỉ art trừu tượng, cấm ảnh/logo/số liệu giả). Generator = `render_sli.py` (HTML→PNG, Playwright) — đã viết, chưa chạy live |
-| Quinn | `writer` | writer | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
-| Miles | `miles` | writer | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
+| Kite | `kite` | carousel.sli | Dựng carousel **tech-editorial (magazine)** cho **donniechublog** bằng **art vector gốc** (masthead, folio, hero quỹ đạo) — không ảnh thật, không nền AI. Ngoại lệ có chủ đích với luật không-tự-vẽ (chỉ art trừu tượng, cấm ảnh/logo/số liệu giả). Generator = `render_sli.py` — đã chạy live trên server |
+| Miles | `writer` | writer | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
+| Miles | `writer` | writer | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Miles nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
 | Nova | `nova` | model | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
 | Vera | `market` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
 | Ada | `analyst` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
@@ -38,7 +38,7 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
                                               ↓
      approve_service tạo cặp task vai ảnh → vai viết (vai viết chờ ảnh xong)
                                               ↓
-        Bản nháp + thẻ ảnh vào topic Quinn kèm nút ✅ / ❌
+        Bản nháp + thẻ ảnh vào topic Miles kèm nút ✅ / ❌
                                               ↓
                      ✅ → đăng lên channel      ❌ → đánh dấu bỏ
                               ↓
@@ -48,7 +48,7 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
 
 Bài đã duyệt đi tiếp sang moat (org `dcgr.tech`) làm hàng đợi publish; extension
 trình duyệt claim và đăng lên mạng xã hội. Moat không gọi ngược về máy này —
-cron `moat-publish-watch` (1 phút/lần) hỏi trạng thái rồi báo vào topic Quinn.
+cron `moat-publish-watch` (1 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
 Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên Telegram channel, thẻ duyệt chỉ
 ghi thêm một dòng cảnh báo.
 
@@ -61,7 +61,7 @@ ghi thêm một dòng cảnh báo.
   hãng nhắc trong chủ đề**. Kiểu `dai` còn trong mã nhưng hiện không vai nào dùng
 - `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
-- `carousel.py` — dựng **carousel nhiều slide** (Heller cho donniechublog, Dre
+- `carousel.py` — dựng **carousel nhiều slide** (Dre cho donniechublog, Dre
   cho dcgr.tech — chung script, khác cờ `--brand`): ảnh phủ kín thẻ
   (ảnh 1:1 hoặc 4:5 — xem skill), chữ ở đáy **chìm vào ảnh qua scrim liền mạch
   kiểu bìa** (màn tối bắt đầu từ ~42% chiều cao, đậm dần xuống ~80% ở vùng chữ;
@@ -80,11 +80,11 @@ ghi thêm một dòng cảnh báo.
   khuôn album. Nhận spec JSON (5 kind: cover/statement/steps/loop/cta), font nhúng
   base64 từ `assets/fonts`, cổng chặn tiếng Việt tái dùng `card.tim_mat_dau`.
   **Không ảnh thật** — khác hẳn `carousel.py`/`deck.py`. Cần `playwright install
-  chromium` trên server (xem skill `carousel-sli`). Đã test local, **chưa chạy live**
-- `hermes/skills/hero-image/` — skill dùng chung của Chad và Ethan. Nằm thẳng
+  chromium` trên server (xem skill `carousel-sli`). Đã test local, **đã chạy live trên server**
+- `hermes/skills/hero-image/` — skill dùng chung của vai designer (Ethan, hai brand). Nằm thẳng
   trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
   không xoá được
-- `hermes/skills/carousel/` — skill dùng chung của Heller và Dre: khung kể
+- `hermes/skills/carousel/` — skill dùng chung của vai carousel (Dre, hai brand): khung kể
   chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh, lệnh dựng.
   Cùng cơ chế trỏ vào như
   hero-image
@@ -134,20 +134,20 @@ là KẾT QUẢ ĐO chọn model, không phải cấu hình:
 
 | Vai | Model đo được là hợp nhất | Suy luận |
 |---|---|---|
-| Finn / Chad / Ethan / Heller | `ds/deepseek-v4-flash` | tắt |
-| Quinn / Miles / Jean | `ds/deepseek-chat` | tắt |
+| Finn / Ethan / Ethan / Dre | `ds/deepseek-v4-flash` | tắt |
+| Miles / Miles / Jean | `ds/deepseek-chat` | tắt |
 | Ada | `ds/deepseek-reasoner` | **bật** |
 
-Dre, Gin, Itachi thêm sau, clone từ Heller nên cùng chuỗi `v4-flash` (chưa đo
+Dre, Gin, Itachi thêm sau, clone từ Dre nên cùng chuỗi `v4-flash` (chưa đo
 riêng). Gin chạy việc thật **trên server** (torch+cpu đã cài từ 28/08/2026, xem
 skill `inplace-translate`) — không còn phụ thuộc máy local.
 
-Kite mới scaffold (SOUL/MEMORY/skill trong git). Còn thiếu `~/.hermes/profiles/
-kite/config.yaml` trên server — clone từ Heller (chuỗi `v4-flash`, `reasoning_effort:
-none`) khi kích hoạt. Generator `render_sli.py` đã viết (đã test local: import/
-cổng chặn/dựng HTML pass) nhưng **chưa chạy live** — cần cài `playwright install
-chromium` trên server rồi render thử bộ `reference/boost.spec.json` để soi mắt
-trước khi vào production.
+Kite ĐÃ DEPLOY (2026-09-01): profile `~/.hermes-blog/profiles/carousel-sli/`
+(config clone từ carousel/Dre, chuỗi `v4-flash`, `reasoning_effort: none`), topic
+Telegram "Kite · carousel.sli" (thread 52) + `chat_router` wired. Generator
+`render_sli.py` **đã chạy live** (Playwright+Chromium cài xong, render
+`reference/boost.spec.json` ra 5 slide chuẩn). Còn lại: wire full auto-pipeline
+trong `approve_service` (chọn qua "#N carousel-sli" từ list Finn).
 
 Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
 được chọn — đúng loại việc cần suy luận thật.
@@ -203,7 +203,7 @@ usage của 9router không thấy chi phí chạy qua đây. Muốn đo phải d
 `hermes --usage-file`.
 
 Nhưng `--usage-file` cũng có bẫy: nó ghi model được **cấu hình**, không phải model
-**thực chạy**. Đã bắt được một lần Quinn lặng lẽ tụt xuống `ds/deepseek-v4-pro`
+**thực chạy**. Đã bắt được một lần Miles lặng lẽ tụt xuống `ds/deepseek-v4-pro`
 mà tệp usage vẫn khai là đang chạy provider mới — chỉ lộ ra khi đối chiếu với log
 9router.
 

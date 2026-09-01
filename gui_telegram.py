@@ -3,7 +3,7 @@
 cua mot vai, va ghi lai nhat ky (message_id, file, mo ta) de sau nay tra loi
 mot yeu cau sua con biet dang noi anh nao.
 
-Dung cho MOI vai dung anh (Gin, Itachi, Chad/designer, Ethan, Heller, Dre) de
+Dung cho MOI vai dung anh (slug: designer, carousel, gin, itachi...) de
 tu day anh minh vua dung ra topic cua chinh minh — khong phai cho writer viet
 xong roi moi co anh trong bai. Gin/Itachi con duoc goi tu `--gui <vai>` trong
 tao_nen_ai.py, no goi thang ham post() o day.
@@ -150,7 +150,7 @@ def gan_day(vai: str, n: int = 5) -> list:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--vai", required=True,
-                    choices=["gin", "itachi", "designer", "ethan", "heller", "dre"])
+                    help="slug vai — khop key trong topics.<brand>.json")
     ap.add_argument("--anh", action="append", default=[], help="Duong dan PNG, lap lai cho nhieu anh (album)")
     ap.add_argument("--mo-ta", default="", help="Caption ngan mo ta anh — giup tra loi SAU biet dang noi anh nao")
     ap.add_argument("--reply-to", type=int, default=None,

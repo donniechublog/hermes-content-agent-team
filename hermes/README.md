@@ -21,7 +21,7 @@ slug generic khớp thư mục thật trong home:
     hermes/profiles/dcgr/<slug>.SOUL.md    -> ~/.hermes-dcgr/profiles/<slug>/
     hermes/profiles/shared/<slug>.SOUL.md  -> CẢ HAI home
 
-Map slug ↔ nhân vật: blog `carousel`=Heller, `designer`=Chad, `writer`=Quinn,
+Map slug ↔ nhân vật: blog `carousel`=Dre, `designer`=Ethan, `writer`=Miles,
 `nova`; dcgr `carousel`=Dre, `designer`=Ethan, `writer`=Miles, `market`=Vera;
 shared: `scout`=Finn, `teaser`=Jean, `itachi`, `gin`, `analyst`=Ada, `bob`.
 `carousel-sli`=Kite (blog) đã có SOUL trong git nhưng CHƯA deploy (thiếu
