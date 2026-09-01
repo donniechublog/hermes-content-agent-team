@@ -414,6 +414,52 @@ def _gate_text(chunks, bo_qua_dau):
 # Cac luat nay Ong Chu da chot va truoc day chi nam trong SKILL.md — tuc trong
 # cho vai NHO va TUAN THU. Chuyen thanh cong chan cung: vi pham la dung han,
 # in ro cach sua. Vai chi con hai viec khong the code: viet copy va chon anh.
+# --- Phat hien mat nguoi (offload luat "anh mot nguoi vo danh" cho code) ------
+# Code chi BAT DUOC co mat nguoi hay khong (YuNet, nhe, khong torch). Con "co
+# phai nhan vat cu the trong bai khong" thi code KHONG biet -> de vai/nguoi duyet
+# phan doan. Vi vay day la CANH BAO, khong chan cung.
+_YUNET = None
+_YUNET_DA_THU = False
+
+
+def _yunet():
+    global _YUNET, _YUNET_DA_THU
+    if _YUNET_DA_THU:
+        return _YUNET
+    _YUNET_DA_THU = True
+    try:
+        import os as _os
+        _os.environ.setdefault("OPENCV_LOG_LEVEL", "SILENT")
+        import cv2
+        m = Path(__file__).resolve().parent / "assets" / \
+            "face_detection_yunet_2023mar.onnx"
+        if not m.exists():
+            return None  # thieu model -> bo qua cong nay, khong crash build
+        _YUNET = cv2.FaceDetectorYN_create(str(m), "", (320, 320),
+                                           score_threshold=0.7)
+    except Exception:
+        _YUNET = None  # thieu cv2 / loi -> bo qua em
+    return _YUNET
+
+
+def _dem_mat(path):
+    """So mat nguoi trong anh. None neu khong chay duoc (thieu cv2/model)."""
+    det = _yunet()
+    if det is None:
+        return None
+    try:
+        import cv2
+        im = cv2.imread(str(path))
+        if im is None:
+            return None
+        h, w = im.shape[:2]
+        det.setInputSize((w, h))
+        _n, res = det.detect(im)
+        return 0 if res is None else len(res)
+    except Exception:
+        return None
+
+
 def _gate_anh(paths):
     """paths: [(nhan, duong_dan)]. Tra ve (loi, canh_bao)."""
     import hashlib
@@ -458,6 +504,14 @@ def _gate_anh(paths):
             canh_bao.append(f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — "
                             "chu trang tren nen 60% se kho doc; crop lai cho "
                             "day anh la vung toi hon")
+        # 5) MAT NGUOI: luat "khong dung anh mot nguoi vo danh". Code chi bao co
+        # mat hay khong; vai tu phan doan co phai nhan vat trong bai khong.
+        nmat = _dem_mat(p)
+        if nmat:
+            canh_bao.append(f"{nhan}: phat hien {nmat} mat nguoi — neu KHONG phai "
+                            "nhan vat cu the duoc nhac trong bai thi doi anh, hoac "
+                            "crop bo (vd webcam reviewer o goc). Anh mot nguoi vo "
+                            "danh doc ra la stock.")
     return loi, canh_bao
 
 
@@ -517,6 +571,10 @@ def main():
     if len(slides) + 1 > 10:
         sys.exit(f"Qua nhieu slide ({len(slides)+1}). draft_write gom toi _9, "
                  "toi da 10 slide ke ca bia.")
+    if len(slides) + 1 < 5:
+        sys.exit(f"Carousel can IT NHAT 5 slide ke ca bia (hien {len(slides)+1}). "
+                 "Chuan social content chat luong (Ong Chu chot). Chia them nhip, "
+                 "hoac gom them anh that — ket hop official site + magazine.")
 
     # Chuan hoa em-dash + chan tieng Viet mat dau truoc khi ve bat cu gi.
     cover["hook"] = bo_dau_cam(cover["hook"])

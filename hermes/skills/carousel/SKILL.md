@@ -27,7 +27,7 @@ slide**: một chuỗi ảnh 4:5 nền đen, lướt sang phải để đọc ti
 
 | | Hero image (Chad/Ethan) | Carousel (Heller/Dre) |
 |---|---|---|
-| Số ảnh | một thẻ bìa | 4–8 slide, tối đa 10 |
+| Số ảnh | một thẻ bìa | 5–8 slide (tối thiểu 5), tối đa 10 |
 | Chữ | một tiêu đề đè lên ảnh | hook ở bìa + đoạn chữ dưới mỗi slide |
 | Vai trò ảnh | ảnh là chính, chữ nhường ảnh | ảnh minh hoạ từng ý, chữ mang nội dung |
 | Người đọc làm gì | nhìn một nhịp | lướt, đọc dần, tới cuối mới hiểu hết |
@@ -115,9 +115,10 @@ mỗi slide đẩy người đọc sang slide sau.
 6. **Cái cần theo dõi.** Slide cuối để lại một mốc thời gian, một câu hỏi mở, hay
    một điều sắp tới. Không chốt cụt.
 
-Tin ngắn thì gộp bước, ra **4 slide** (bìa + 3). Tin nhiều tầng thì **6–8**.
-Đừng kéo dài cho đủ số: mỗi slide phải mang **một ý mới**, slide không có ý mới
-là slide thừa.
+**Tối thiểu 5 slide** (bìa + 4) — cổng chặn `carousel.py` dừng nếu ít hơn (chuẩn
+social content chất lượng). Tin nhiều tầng thì **6–8**. Đừng kéo dài cho đủ số:
+mỗi slide phải mang **một ý mới**, slide không có ý mới là slide thừa — thiếu ý
+thì đào sâu tin hoặc thêm góc, đừng nhồi rác.
 
 ### Giọng và độ dài
 
@@ -145,6 +146,26 @@ venv/bin/python anh_bai.py \
 
 Script gom ảnh từ link gốc và các báo đưa cùng tin, lọc logo/favicon, xếp hạng.
 Một tin thường cho vài ảnh — chia chúng cho các slide theo ý từng slide nói.
+
+### Gom ảnh CHẤT LƯỢNG: kết hợp official site + magazine (BẮT BUỘC nghĩ rộng)
+
+`anh_bai.py` fetch **tĩnh** — trang sản phẩm hiện đại (JS render) nó chỉ nhặt
+được `og:image` (thường là banner/sitecard chung chung), BỎ SÓT hết screenshot
+UI thật. Đừng kết luận "bài không có ảnh" từ một lần chạy `anh_bai.py`. Một
+carousel chất lượng **trộn hai nguồn**:
+
+1. **Official / main brand** (trang chính chủ): mở bằng **BROWSER thật** (JS
+   render) rồi lấy screenshot sản phẩm/hero từ DOM — vd trang chủ có `<img>`
+   screenshot UI, video demo (trích 1 frame bằng `cv2` nếu cần, server đã có).
+2. **Magazine / bài review**: The Verge, TechCrunch, The New Stack, BetterStack,
+   9to5Google... thường embed screenshot UI thật, góc chụp khác, chú thích rõ.
+   Dùng WebSearch tìm bài review rồi mở lấy ảnh. LƯU Ý: ảnh review hay dính
+   **webcam mặt reviewer ở góc** → crop bỏ (luật ảnh một-người-vô-danh).
+
+Ưu tiên screenshot **nền tối** cho slide có chữ (contrast). Ảnh tải về nhỏ hơn
+1000px cạnh ngắn thì phóng lên sẽ mềm — chỉ dùng khi làm nền mờ sau chữ, còn có
+bản to hơn thì thay. Trộn official + magazine mới ra bộ đủ 5+ ảnh khác nhau,
+đúng chủ đề, không stock.
 
 **MỖI SLIDE MỘT ẢNH DUY NHẤT — không lặp lại.** Luật cứng: không dùng cùng một
 ảnh cho hai slide, và **cũng không dùng hai crop khác nhau của CÙNG một tấm
@@ -301,21 +322,30 @@ thông báo rồi chạy lại.
 
 1. **Tiếng Việt không dấu** trong bất kỳ chữ nào (hook, label, mọi slide) →
    **dừng hẳn**, in ra chỗ sai. Gõ lại có dấu. `--bo-qua-dau` chỉ cho tiếng Anh.
-2. **Quá 10 slide** (kể cả bìa) → dừng. `draft_write` chỉ gom tới `_9`.
+2. **Dưới 5 slide** (kể cả bìa) → **dừng** (chuẩn tối thiểu). **Quá 10 slide** →
+   dừng (`draft_write` chỉ gom tới `_9`).
 3. **Thiếu `cover.image`, `cover.hook`, hay `image` của một slide** → dừng. Mỗi
    slide thân phải có **`text` hoặc `quote`** — thiếu cả hai cũng dừng.
-4. **Trùng ảnh** (hai slide cùng một tệp, so theo nội dung tệp) → dừng. Lưu ý:
+4. **Dưới 2 slide quote** → dừng (mỗi carousel cần ≥2 pull-quote).
+5. **Trùng ảnh** (hai slide cùng một tệp, so theo nội dung tệp) → dừng. Lưu ý:
    hai CROP khác nhau của cùng một tấm thì code không bắt được — cái đó bạn
    vẫn phải tự soi.
-5. **Ảnh sai tỉ lệ** (không phải 1:1 hay 4:5, dung sai 3%) → dừng, kèm sẵn lệnh
+6. **Ảnh sai tỉ lệ** (không phải 1:1 hay 4:5, dung sai 3%) → dừng, kèm sẵn lệnh
    `crop_ti_le.py` để cắt.
-6. **Copy dài quá vùng chữ 30%** (ở cỡ chữ nhỏ nhất vẫn tràn) → dừng, báo cần
+7. **Copy dài quá vùng chữ 30%** (ở cỡ chữ nhỏ nhất vẫn tràn) → dừng, báo cần
    cắt bớt bao nhiêu phần trăm chữ.
-7. **Cảnh báo (không chặn)**: cạnh ngắn ảnh <1000px (phóng lên sẽ mềm nét);
-   25% dưới của ảnh quá sáng (chữ trắng trên nền 60% sẽ khó đọc — crop lại cho
-   đáy ảnh rơi vào vùng tối). Thấy cảnh báo thì cân nhắc đổi/crop ảnh, nhưng
-   không bắt buộc.
-8. **Em-dash** → không chặn, tự thay `—` thành phẩy.
+8. **Cảnh báo (không chặn)**:
+   - cạnh ngắn ảnh <1000px (phóng lên sẽ mềm nét);
+   - 25% dưới của ảnh quá sáng (chữ trắng trên nền 60% sẽ khó đọc);
+   - **phát hiện mặt người** trong ảnh (YuNet) → **chỉ cảnh báo, KHÔNG chặn**,
+     album vẫn dựng. Code chỉ báo *có mặt hay không*; bạn phán *có phải nhân vật
+     cụ thể trong bài không*. Tin xoay quanh một người (Elon Musk, Peter Thiel,
+     founder Palantir / partner a16z, tác giả phát biểu…) thì ảnh **đúng người
+     đó là ảnh NÊN dùng** — bỏ qua cảnh báo, cứ dùng. Chỉ đổi/crop khi mặt là
+     **người vô danh** không liên quan (vd webcam reviewer ở góc, stock persona).
+     Cần `assets/face_detection_yunet_2023mar.onnx`; thiếu model thì cổng tự bỏ
+     qua (không crash).
+9. **Em-dash** → không chặn, tự thay `—` thành phẩy.
 
 ## Bàn giao
 

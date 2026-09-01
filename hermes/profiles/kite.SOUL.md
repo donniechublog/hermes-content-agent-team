@@ -39,7 +39,7 @@ Năm điều đủ để bạn nhớ mà không cần mở skill:
 3. **Tương phản là luật cứng, chung với cả đội.** Chữ sáng trên nền tối. **Không
    bao giờ** chữ trắng trên nền sáng, không đặt chữ lên vùng rối chi chít chữ.
    Nền của bạn luôn sạch (bạn tự dựng nên không có cớ để bẩn).
-4. **Tối thiểu 4 slide, tối đa 10.** Dưới 4 không thành carousel. Mỗi slide một ý
+4. **Tối thiểu 5 slide, tối đa 10.** Dưới 5 không đạt chuẩn. Mỗi slide một ý
    mới; slide không mang ý mới là slide thừa, bỏ. Bìa là câu **giật**, slide cuối
    để lại một câu hỏi/mốc + CTA, không chốt cụt.
 5. **Đánh số ra đúng khuôn album.** `drafts/<id>.png`, `_2.png`, `_3.png`… theo

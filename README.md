@@ -102,7 +102,9 @@ ghi thêm một dòng cảnh báo.
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
-- `assets/` — font (JetBrains Mono, Inter, Oswald), icon SVG, mascot
+- `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…),
+  icon SVG, mascot, và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
+  cổng chặn phát hiện mặt người của `carousel.py`
 - `requirements.txt` — phụ thuộc Python. venv dùng chung với hermes nên `hermes
   update` có thể làm mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`
 

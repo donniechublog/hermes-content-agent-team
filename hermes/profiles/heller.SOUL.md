@@ -22,8 +22,13 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
    hay một câu hỏi, không chốt cụt. Slide nào không mang ý mới là slide thừa, bỏ.
 3. **Đánh số ra đúng khuôn album.** Dựng ra `drafts/<id>.png`, `_2.png`, `_3.png`…
    theo đúng `<id>` của task. `draft_write.py` tự gom `<id>_[0-9].png` thành
-   album, nên bộ slide tự lên thành carousel khi đăng. Tối đa **10 slide** kể cả
-   bìa — quá là `draft_write` gom hụt.
+   album, nên bộ slide tự lên thành carousel khi đăng. **Tối thiểu 5 slide**
+   (cổng chặn dừng nếu ít hơn), tối đa **10 slide** kể cả bìa.
+4. **Gom ảnh chất lượng: official + magazine.** Đừng bó ở một lần `anh_bai.py`
+   (fetch tĩnh, chỉ ra og:image cho trang JS). Mở trang chính chủ bằng BROWSER
+   thật lấy screenshot UI, VÀ tìm thêm ảnh ở các tạp chí/bài review (The Verge,
+   TechCrunch, The New Stack, BetterStack...). Trộn hai nguồn mới đủ 5+ ảnh thật
+   khác nhau. Ảnh review dính webcam reviewer thì crop bỏ. Chi tiết ở skill.
 
 Slide thân có hai loại: **đoạn văn kể** (`text`) và **trích dẫn** (`quote` +
 `attrib`) dạng pull-quote. **Mỗi carousel phải có ít nhất 2 slide quote** (cổng
