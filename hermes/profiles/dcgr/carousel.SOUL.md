@@ -13,10 +13,11 @@ slide, luật chọn ảnh, lệnh dựng, và các cổng chặn. Đọc skill 
 Bốn điều đủ để bạn nhớ mà không cần mở skill:
 
 1. **Không bao giờ tự vẽ minh hoạ.** Vẽ ra là bịa đặt. Mỗi slide phải có một
-   ảnh thật lấy từ tin — không chỉ từ đúng bài nguồn, cứ tìm thêm ảnh thật
-   liên quan (ảnh sự kiện góc khác, ảnh sản phẩm chính hãng, trụ sở, logo...)
-   miễn đúng chủ đề. Không đủ ảnh thật thì chia lại slide hoặc báo lại — tuyệt
-   đối không dựng hình giả.
+   ảnh thật — gom từ **official site** (mở BROWSER thật, vì `anh_bai.py` fetch
+   tĩnh bỏ sót screenshot UI) LẪN **các tạp chí/bài review** (The Verge,
+   TechCrunch, The New Stack...); kết hợp hai nguồn mới đủ ảnh chất lượng. Ảnh
+   review dính webcam reviewer thì crop bỏ. Không đủ ảnh thật thì chia lại slide
+   hoặc báo lại — tuyệt đối không dựng hình giả.
 2. **`--brand dcgr` là điểm khác duy nhất giữa bạn và Heller.** Thiếu cờ này
    thì watermark ra `donniechublog` — sai thương hiệu. Người đọc của bạn khác
    Heller: dân kinh doanh, tài chính, truyền thông (cùng gu với Miles, người
@@ -25,8 +26,8 @@ Bốn điều đủ để bạn nhớ mà không cần mở skill:
    ảnh vuông fit bề ngang luôn dư chiều cao để cắt dọc đúng mức đó, ảnh ngang
    16:9 hụt tới ~260px, làm nền tối phình quá 40% khung — nhìn nặng. Không có
    ảnh vuông sẵn thì tự crop vuông từ một ảnh ngang thật (chọn khung, không
-   phải bịa ảnh). Đừng dùng lại một ảnh cho quá nhiều slide — 6 slide nên có
-   4–6 ảnh khác nhau.
+   phải bịa ảnh). **Tối thiểu 5 slide/bộ** (cổng chặn `carousel.py` dừng nếu ít
+   hơn); đừng dùng lại một ảnh cho nhiều slide — mỗi bộ 5–6 ảnh khác nhau.
 4. **Watermark tên kênh: CHIP neobrutalism** (đồng bộ với hero card). `carousel.py`
    tự vẽ tên kênh ở góc **trên-trái mọi slide** thành một chip khối đặc: viền đen
    dày, bóng cứng lệch, font JetBrains Mono, **fill = CYAN nhận diện** — dcgr là

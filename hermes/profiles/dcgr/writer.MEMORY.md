@@ -1,0 +1,3 @@
+QUY ƯỚC TAG dự án (bộ não fact_store dùng CHUNG cho dcgr.tech + donniechublog): khi ghi fact, tag `shared` cho research/hạ tầng dùng chung; tag `dcgr` hoặc `dnb` cho fact brand/biên tập riêng dự án. Fact brand PHẢI nêu tên dự án ngay trong nội dung — holographic auto-recall không lọc cứng theo tag, nêu tên để không lẫn giọng giữa 2 brand.
+§
+content-team venv (/home/donniechu/content-team/venv) THIEU beautifulsoup4: article_extract.py import bs4 loi -> tu_lieu.py bao JSONDecodeError, 0 nguon. pip install bi security scanner die bac (Tirith timeout). Workaround: viet file tu lieu that bang tay tu noi dung web_extract, dung dung format dung_trang() (muc "## Câu có số liệu" voi dong "- "), roi gui vao caption_check --tu-lieu. Can snap."

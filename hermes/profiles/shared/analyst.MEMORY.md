@@ -1,3 +1,7 @@
 Analyst (Ada) environment facts: Telegram channel "Bot Mode" (-1003823961196) private, no username; group "Hermes Agents" (-1003763882779). Bot hermespm is admin but Bot API cannot fetch message history/views/reactions — only live getUpdates. No telethon/user session on machine. publish() in approve_service.py returns message_id but mark_draft() never saves it, so published posts untraceable to message ids. Draft status lives in /home/donniechu/content-team/drafts/*.json (status field); kanban DB at /home/donniechu/.hermes/kanban.db.
 §
 QUY ƯỚC TAG dự án (bộ não fact_store dùng CHUNG cho dcgr.tech + donniechublog): khi ghi fact, tag `shared` cho research/hạ tầng dùng chung; tag `dcgr` hoặc `dnb` cho fact brand/biên tập riêng dự án. Fact brand PHẢI nêu tên dự án ngay trong nội dung — holographic auto-recall không lọc cứng theo tag, nêu tên để không lẫn giọng giữa 2 brand.
+§
+Bai content-team bi bo vi trung tin (duplicate) voi bai da duyet: draft bi bo giu status pending, khong ghi ly do. Khi phan tich, phai phan biet "bo vi trung tin" voi "bo vi news kem hap dan" — draft co drop_reason='dup' + dedup_of la loai dedup. Khong tinh vao do hap dan cua tin.
+§
+Draft status "rejected" chua chac = tin kem: co the bi bac vi loi san xuat (anh sai format, caption loi). pilot001 (Cerebras CS-4) bi bac vi anh demo002.png sai format, tin chat luong cao. approve_service.py action "no" chi mark rejected, KHONG luu ly do bac. Khi phan tich, kiem tra anh/kanban truoc khi quy doan "tin kem".

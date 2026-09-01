@@ -32,6 +32,29 @@ Ngắn gọn nằm ở **cách viết**, không phải ở việc cắt bớt ý
 2. **Thân**: 2-3 câu, họ làm gì, đo được gì, khác gì cái trước đó
 3. **Vì sao đáng chú ý**: 1 câu, nói theo hướng người đọc của bạn quan tâm. Dùng lý do chấm điểm ghi trong task, không tự suy diễn thêm
 
+## Khi tin có mâu thuẫn hoặc vòng lợi ích rối: cấu trúc narrative
+
+Không phải tin nào cũng chỉ là "công bố kết quả". Một số tin (thương vụ, định giá, bảo lãnh, deal có bên vừa là khách vừa là nhà đầu tư...) có sẵn một **nghịch lý** ở giữa: số liệu trông hoành tráng nhưng nền tảng lại mỏng, hoặc các bên trong deal vừa mua vừa bán lẫn nhau. Loại này viết theo cấu trúc kết quả thông thường sẽ phẳng, đọc xong không đọng lại gì. Dùng cấu trúc này thay vì cấu trúc 3 bước ở trên:
+
+1. **Câu mở = chính nghịch lý, không phải nguồn tin.** Đừng mở bằng "theo hồ sơ mà X xem được" hay "theo nguồn tin Y" — đẩy attribution nguồn vào giữa bài hoặc bỏ nếu task không yêu cầu bắt buộc. Câu đầu phải là hai vế đối lập cụ thể, có số: "công ty chưa có doanh thu, vừa được định giá X tỷ USD".
+2. **Số liệu leo thang có mốc thời gian.** Khi nguồn có một con số tăng qua nhiều mốc (định giá, warrant, cam kết...), giữ nguyên cả hai đầu mốc và khoảng thời gian giữa chúng ("tăng từ 3,6 lên 5,5 tỷ USD chỉ sau 6 tháng") thay vì chỉ nêu con số cuối. Chính khoảng cách đó tạo kịch tính, không phải con số tự thân.
+3. **Đoạn xoáy riêng cho vòng lợi ích/mâu thuẫn.** Nếu một bên xuất hiện ở nhiều vai (vừa khách vừa nhà đầu tư vừa chủ nợ...), gom hết vào một đoạn, mở đoạn bằng một câu bản lề kiểu "Vòng tròn còn rối hơn:" để đánh dấu đây là bước ngoặt của bài, không rải rác các vai đó ở nhiều đoạn.
+4. **Câu kết khái quát hóa, không recap.** Câu cuối cùng phải nâng vấn đề lên một tầng rộng hơn vụ việc cụ thể (ngành, thị trường, quy luật chung), không lặp lại rủi ro đã nêu. Vẫn phải suy ra trực tiếp từ số liệu đã có trong bài, không bịa thêm nhận định ngoài nguồn — chỉ đổi cách trình bày kết luận, không đổi nguyên tắc "chỉ viết những gì có trong bài gốc" ở dưới.
+5. **Từ có màu sắc, đặt trong ngoặc kép.** Được phép dùng từ mỉa/gai như "mua chuộc", "chốt", "trả trước cho một chữ ký hợp đồng" để giữ giọng sắc, miễn đặt trong ngoặc kép (rõ đây là cách diễn giải, không phải nguyên văn nguồn hay khẳng định pháp lý) và con số đi kèm phải đúng.
+
+Vẫn trong trần 900-1024 ký tự như mọi caption khác — không có ngoại lệ dài hơn. Nén bằng cách cắt tính từ thừa, gộp câu, không cắt số liệu hay đoạn xoáy.
+
+**Ví dụ (1001 ký tự, đã qua duyệt):**
+> Một công ty chưa xây xong nhà máy, chưa có doanh thu, vừa được định giá IPO 5-7 tỷ USD. Để làm được điều đó, họ phải "mua chuộc" khách lớn nhất bằng 5,5 tỷ USD warrant.
+>
+> SB Energy (con SoftBank) có gần 9GW đã ký hợp đồng, backlog hơn 400 tỷ USD, nhưng mới 800MW đang xây. Để "chốt" OpenAI thuê Ohio (17 hợp đồng, ~8GW), họ phát hành warrant 3,6 tỷ USD tháng 1, vọt lên 5,5 tỷ USD sau 6 tháng.
+>
+> Vòng tròn rối hơn: OpenAI vừa là khách thuê, vừa là nhà đầu tư (500 triệu USD), vừa nắm warrant SB Energy; SoftBank là cổ đông lớn cả hai bên. Nvidia rót thêm 3 tỷ USD, bảo lãnh 105 tỷ USD, miễn dùng chip Nvidia.
+>
+> 92% tiền IPO huy động gần như đã "trả trước" cho một chữ ký hợp đồng.
+>
+> Tài sản khan hiếm nhất cuộc đua hạ tầng AI không phải điện hay GPU, mà là một cái tên đủ lớn để ngân hàng tin và cho vay.
+
 **KHÔNG chèn URL vào bài.** Không viết "xem bài viết tại", không dán link bài gốc, không để dòng 🔗. Link sẽ được đặt ở còm riêng, bài đăng chỉ có nội dung.
 
 Định dạng HTML Telegram, chỉ dùng `<b>` `<i>` `<code>`.

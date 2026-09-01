@@ -13,15 +13,31 @@ dõi ngang với mã nguồn.
 
 ## Đồng bộ
 
-Sửa ở `~/.hermes/` rồi chép vào đây trước khi commit:
+Đã **tách container theo brand**: mỗi brand một HERMES_HOME riêng
+(`~/.hermes-blog`, `~/.hermes-dcgr`). Profile trong git tổ chức theo container,
+slug generic khớp thư mục thật trong home:
+
+    hermes/profiles/blog/<slug>.SOUL.md    -> ~/.hermes-blog/profiles/<slug>/
+    hermes/profiles/dcgr/<slug>.SOUL.md    -> ~/.hermes-dcgr/profiles/<slug>/
+    hermes/profiles/shared/<slug>.SOUL.md  -> CẢ HAI home
+
+Map slug ↔ nhân vật: blog `carousel`=Heller, `designer`=Chad, `writer`=Quinn,
+`nova`; dcgr `carousel`=Dre, `designer`=Ethan, `writer`=Miles, `market`=Vera;
+shared: `scout`=Finn, `teaser`=Jean, `itachi`, `gin`, `analyst`=Ada, `bob`.
+`carousel-sli`=Kite (blog) đã có SOUL trong git nhưng CHƯA deploy (thiếu
+config.yaml) → `dong_bo` sẽ báo `[thieu]`, không tạo.
+
+Sửa ở home rồi chép vào git trước khi commit:
 
     venv/bin/python dong_bo_hermes.py --vao-repo
 
-Hoặc chiều ngược lại, khi khôi phục sau `hermes update`:
+Hoặc chiều ngược lại (đẩy git → cả hai home), sau `hermes update`:
 
     venv/bin/python dong_bo_hermes.py --ra-hermes
 
-Script so nội dung và chỉ báo tệp thật sự khác nhau.
+Không cờ = chỉ so sánh. Script quét `profiles/{blog,dcgr,shared}/`, sync SOUL +
+MEMORY + cron (brand-aware) sang home tương ứng; profile/script home không có
+thì báo `[thieu]`, KHÔNG tạo (tôn trọng phân chia per-brand).
 
 ## Plugin kanban
 
