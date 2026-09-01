@@ -234,7 +234,7 @@ def mark_draft(draft_id, status):
 
 
 def handle_img_approval(token, action, draft_id, cq):
-    """Cong duyet ANH truoc khi viet. Chad/Ethan/Heller/Dre day anh len topic kem
+    """Cong duyet ANH truoc khi viet. designer (Ethan)/Dre/Dre day anh len topic kem
     ba nut:
       imgok    (Duyet)   -> sinh task viet caption (writer_body cat san o
                             `<draft_id>.writer.json`).
@@ -292,7 +292,7 @@ def handle_img_approval(token, action, draft_id, cq):
                 im["remakes"], im["last_task"] = n, rid
                 ip.write_text(json.dumps(im, ensure_ascii=False, indent=2),
                               encoding="utf-8")
-                ten = TEN_VAI_ANH.get(im["vai_anh"], "Chad")
+                ten = TEN_VAI_ANH.get(im["vai_anh"], "Ethan")
                 note = f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})"
     else:                                                       # imgok
         if not wp.exists():
@@ -320,7 +320,7 @@ def handle_img_approval(token, action, draft_id, cq):
                     w["created"], w["writer_task"] = True, wid
                     wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
-                    ten = TEN_VAI_VIET.get(w["vai_viet"], "Quinn")
+                    ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
                     note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
 
     base = msg.get("caption") or msg.get("text") or ""
@@ -437,10 +437,10 @@ def latest_manifest(vai="scout"):
 
 
 # Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
-# Khong ghi ten ai thi mac dinh Chad (donniechublog).
+# Khong ghi ten ai thi mac dinh Ethan (donniechublog).
 # Chi con HAI vai dung anh, va ca hai lam CUNG MOT kieu anh: kieu tran, khong
 # khung, khong vach. Khac nhau dung mot thu la THUONG HIEU. Iris da bo: khi ca
-# doi chuyen sang mot kieu anh duy nhat thi vai cua Iris trung khit voi Chad,
+# doi chuyen sang mot kieu anh duy nhat thi vai cua Iris trung khit voi Ethan,
 # giu lai chi de hai ban SOUL gan nhu giong het troi ra khoi nhau.
 # Container = 1 brand co dinh (BRAND). Slug dat theo CHUC NANG, dung chung ten o
 # moi brand: "designer" (the bia, card.py) va "carousel" (nhieu slide,
@@ -448,14 +448,17 @@ def latest_manifest(vai="scout"):
 # go quen tay van dung. Brand KHONG con nam trong map — lay tu BRAND (env).
 VAI_ANH = {
     "designer": "designer", "img": "designer", "anh": "designer",
-    "chad": "designer", "ethan": "designer",          # alias nhan vat cu
+    "ethan": "designer",                               # alias ten persona
     "carousel": "carousel", "cr": "carousel",
-    "heller": "carousel", "dre": "carousel",           # alias
+    "dre": "carousel",                                 # alias ten persona
+    "carousel-sli": "carousel-sli", "sli": "carousel-sli",
+    "kite": "carousel-sli",            # alias ten persona (go "sli" / "kite")
 }
-# Vai dung carousel.py (nhieu slide) thay vi card.py (mot the bia). Them vai
-# carousel moi thi chi can them vao day — cho o duoi doc bang nay, khong ghim
-# cung ten "heller".
-VAI_CAROUSEL = {"carousel"}        # slug dung carousel.py thay card.py
+# Ba loai vai anh, moi loai mot cong cu: card.py (the bia, designer), carousel.py
+# (anh that nhieu slide, carousel), render_sli.py (art vector goc magazine,
+# carousel-sli/Kite). Them vai moi thi khai vao day + dung set duoi.
+VAI_CAROUSEL = {"carousel"}        # slug dung carousel.py (anh that nhieu slide)
+VAI_SLI = {"carousel-sli"}         # slug dung render_sli.py (art vector goc, Kite)
 MAC_DINH_ANH = "designer"
 # Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
 #
@@ -464,20 +467,20 @@ MAC_DINH_ANH = "designer"
 # trong cap cung da du de xac dinh ca cap, va bat Ong Chu phai nho ai la nguoi
 # dung anh con ai la nguoi viet la bat nho mot thu khong can nho.
 #
-#     1 - Chad   ==  1 - Quinn   ->  anh donniechublog + bai cua Quinn
+#     1 - Ethan   ==  1 - Miles   ->  anh donniechublog + bai cua Miles
 #     1 - Ethan  ==  1 - Miles   ->  anh dcgr.tech     + bai cua Miles
 TEN_SANG_CAP = dict(VAI_ANH)
 TEN_SANG_CAP.update({           # ten nguoi viet cung nhan -> ve default anh
     "writer": "designer", "cap": "designer",
-    "quinn": "designer", "miles": "designer",
+    "miles": "designer",
 })
-# Ten hien ra bao cao (slug -> nhan). Slug generic nen chung cho moi brand.
-TEN_VAI_ANH = {"designer": "Designer", "carousel": "Carousel"}
+# Ten hien ra bao cao (slug -> ten persona thong nhat, chung ca hai brand).
+TEN_VAI_ANH = {"designer": "Ethan", "carousel": "Dre", "carousel-sli": "Kite"}
 # Mot container mot nguoi viet duy nhat = "writer" (brand lay tu BRAND, khong
 # con chon nguoi viet theo brand nua). VAI_VIET rong -> .get luon ve MAC_DINH_VIET.
 VAI_VIET = {}
 MAC_DINH_VIET = "writer"
-TEN_VAI_VIET = {"writer": "Writer"}
+TEN_VAI_VIET = {"writer": "Miles"}
 # Vai anh the bia dung kieu tran. Giu bang tra de sau them kieu khac con cho.
 KIEU_ANH = {"designer": "tran"}
 
@@ -486,16 +489,16 @@ def doc_lenh_chon(text: str):
     """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)] hoac None.
 
     Quy tac: ten vai ap cho MOI SO dung truoc no, tinh tu ten vai gan nhat.
-    So nao khong co ten vai nao phia sau thi ve mac dinh (Chad).
+    So nao khong co ten vai nao phia sau thi ve mac dinh (Ethan).
 
-        1                    -> Chad
-        1, 2, 3              -> ca ba Chad
+        1                    -> Ethan
+        1, 2, 3              -> ca ba Ethan
         1, 2, 3 - Ethan      -> ca ba Ethan
-        1 - Chad, 2 - Ethan  -> 1 Chad, 2 Ethan
-        1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Chad
+        1 - Ethan, 2 - Ethan  -> 1 Ethan, 2 Ethan
+        1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Ethan
 
-    Ten nguoi VIET cung nhan, va cho ra dung cap do: "1 - Quinn" giong het
-    "1 - Chad", "1 - Miles" giong het "1 - Ethan".
+    Ten nguoi VIET cung nhan, va cho ra dung cap do: "1 - Miles" giong het
+    "1 - Ethan", "1 - Miles" giong het "1 - Ethan".
 
     Tra None neu co phan khong hieu duoc, de tin nhan roi ve luong hoi thoai
     thay vi bao loi — Ong Chu con dung chinh topic do de tro chuyen.
@@ -577,7 +580,7 @@ cd /home/donniechu/content-team && venv/bin/python anh_bai.py \\
   --tu-nguon /home/donniechu/content-team/state/nguon_{draft_id}.json
 
 Finn DA tim nguon san va ghi vao tep tren — day la ket qua research cua cau ay.
-Ban dung lai bo nguon do, khong tu di tim. Quinn cung doc chinh tep nay de viet,
+Ban dung lai bo nguon do, khong tu di tim. Miles cung doc chinh tep nay de viet,
 nho vay bai viet va tam anh cung noi ve mot thu.
 
 Script lay anh tu chinh link goc VA tu cac bao khac dua cung tin, loc bo
@@ -644,7 +647,7 @@ Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
 
 BUOC 5 — GUI ANH LEN TOPIC CUA MINH NGAY (KHONG cho nguoi viet):
 Dung xong the anh la viec cua ban da XONG — day anh ra topic cua chinh minh
-ngay, KHONG cho Quinn/Miles viet xong roi moi co anh trong bai. Ong Chu ngoi o
+ngay, KHONG cho writer viet xong roi moi co anh trong bai. Ong Chu ngoi o
 Telegram, chi thay ket qua khi anh len topic; de anh nam trong drafts/ ma khong
 gui thi voi Ong Chu y het nhu ban im lang.
 cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
@@ -652,7 +655,7 @@ cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
 Co anh phu ({out_png_goc}_2.png, _3.png...) thi lap them --anh cho tung tam de
 gui thanh album. Gui xong moi ghi ket qua task.
 
-`--duyet {draft_id}` gan BA nut duoi anh: "Duyet" (nguoi viet Quinn/Miles moi
+`--duyet {draft_id}` gan BA nut duoi anh: "Duyet" (nguoi viet writer moi
 viet caption), "Lam lai" (tao lai dung task nay, ban se dung ANH KHAC), "Bo han"
 (giet tin). Vay nen viec cua ban chi la ra ANH cho that dat — dung cho, cung
 dung tu di goi nguoi viet. Neu bi giao "lam lai", doc ghi chu cuoi task va chon
@@ -691,7 +694,7 @@ Kieu tran (layout bang-tin co dien, khi muon doi khong khi):
   sau khi chay (tru truong hop buoc 3 — khong co anh that)."""
 
 
-# Body cho Heller — dung carousel nhieu slide thay vi mot the bia. Khac ILLU_BODY
+# Body cho Dre — dung carousel nhieu slide thay vi mot the bia. Khac ILLU_BODY
 # o cho: khong chay card.py, ma viet copy tung slide roi chay carousel.py. Van
 # dung anh_bai.py de tim anh that, van cong chan "khong tu ve minh hoa".
 CAROUSEL_BODY = """Nguon: {source_note}
@@ -747,14 +750,14 @@ cd /home/donniechu/content-team && venv/bin/python carousel.py \\
   --spec /tmp/carousel_{draft_id}.json --out {out_png} --brand {brand}
 
 Ra {out_png} (bia) + {out_png_goc}_2.png, _3.png... — draft_write.py tu gom thanh
-album khi Quinn ghep draft, ban KHONG phai lam gi them o khau dang.
+album khi Miles ghep draft, ban KHONG phai lam gi them o khau dang.
 
 CONG CHAN: tieng Viet khong dau bi chan (chi tiếng Anh moi them --bo-qua-dau);
 toi da 10 slide ke ca bia; thieu image/text mot slide thi dung.
 
 BUOC 5 — GUI CAROUSEL LEN TOPIC CUA MINH NGAY (KHONG cho nguoi viet):
 Dung xong bo slide la viec cua ban da XONG — day ca album ra topic cua chinh
-minh ngay, KHONG cho Quinn/Miles viet xong roi moi co anh trong bai. Ong Chu
+minh ngay, KHONG cho writer viet xong roi moi co anh trong bai. Ong Chu
 ngoi o Telegram, chi thay ket qua khi anh len topic.
 cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
   --vai {vai} --anh {out_png} --anh {out_png_goc}_2.png --anh {out_png_goc}_3.png \\
@@ -762,16 +765,75 @@ cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
 Lap --anh cho DU so slide that su dung ra (bo bot cac dong _N.png khong ton tai,
 them vao neu nhieu hon 3). Gui xong moi ghi ket qua task.
 
-`--duyet {draft_id}` gan BA nut duoi album: "Duyet" (nguoi viet Quinn/Miles moi
+`--duyet {draft_id}` gan BA nut duoi album: "Duyet" (nguoi viet writer moi
 viet caption), "Lam lai" (tao lai dung task nay, ban dung BO SLIDE khac), "Bo
 han" (giet tin). Viec cua ban chi la ra BO SLIDE cho that dat — dung cho writer,
 cung dung tu di goi nguoi viet. Neu bi giao "lam lai", doc ghi chu cuoi task va
 lam khac lan truoc.
 
 BAN GIAO: watermark tren slide KHONG phai ghi nguon. Bao lai nguon tin va nguon
-tung anh ({via}) trong ket qua task de Quinn dua vao chu thich bai dang — viec
+tung anh ({via}) trong ket qua task de Miles dua vao chu thich bai dang — viec
 SONG SONG, KHONG phai dieu kien de gui anh.
 Ket qua bat buoc: {out_png} phai ton tai VA da gui len topic (buoc 5)."""
+
+
+# Body cho Kite (role carousel.sli) — dung render_sli.py: art VECTOR GOC tu ve,
+# KHONG anh that. Khac han CAROUSEL_BODY (khong anh_bai.py, khong carousel.py).
+SLI_BODY = """Nguon: {source_note}
+Link: {link}
+Chu de: {title}
+Tom tat: {summary}
+
+NHIEM VU: dung mot CAROUSEL tech-editorial (magazine, vibe TechCrunch/The Verge)
+ke tin nay bang ART VECTOR GOC tu ve — KHONG anh that, KHONG nen AI.
+
+DOC SKILL `carousel-sli` TRUOC khi lam — no co he thiet ke (mau, font, khung
+magazine, hero art), 5 kind slide, ranh gioi ngoai le voi luat khong-tu-ve, va
+lenh dung. Doc `reference/boost.spec.json` de biet khuon spec day du.
+
+RANH GIOI: duoc ve art truu tuong / so do khai niem; CAM anh gia, screenshot gia,
+logo hang that, so lieu bia, quote bia. Goi ten san pham bang CHU thi duoc.
+
+BUOC 1 — hieu tin du sau. Finn DA research san, doc bo nguon:
+  /home/donniechu/content-team/state/nguon_{draft_id}.json
+
+BUOC 2 — chia tin thanh 5-8 slide, viet copy TIENG VIET CO DAU. 5 kind:
+cover / statement / steps / loop / cta. Toi thieu 5 slide (cong chan dung neu it
+hon). Moi slide mot y moi; bia HOOK giat; slide cuoi CTA + nguon.
+
+BUOC 3 — ghi spec JSON roi dung:
+cat > /tmp/sli_{draft_id}.json <<'JSON'
+{{
+  "brand": "{brand}",
+  "section": "AI TOOLING",
+  "folio": "<CHU DE NGAN>",
+  "slides": [
+    {{"kind": "cover", "eyebrow": "<CHUYEN MUC>", "title": "<tieu de>", "accent": "<cum nhan>", "standfirst": "<mot cau standfirst>", "byline": ["{brand}", "Phan tich", "N phut doc"]}},
+    {{"kind": "statement", "eyebrow": "BOI CANH", "title": "...", "standfirst": "..."}},
+    {{"kind": "steps", "eyebrow": "CACH VAN HANH", "title": "...", "steps": [{{"title": "...", "desc": "..."}}]}},
+    {{"kind": "loop", "eyebrow": "CO CHE", "title": "...", "accent": "...", "chips": ["...", "..."], "standfirst": "...", "callout": "..."}},
+    {{"kind": "cta", "eyebrow": "AP DUNG", "title": "...", "checks": ["...", "..."], "readmore": {{"label": "DOC THEM", "text": "..."}}, "follow": "Theo doi @{brand}"}}
+  ]
+}}
+JSON
+cd /home/donniechu/content-team && venv/bin/python render_sli.py \\
+  --spec /tmp/sli_{draft_id}.json --out {out_png}{co_brand}
+
+Ra {out_png} (bia) + {out_png_goc}_2.png... — draft_write.py tu gom thanh album.
+CONG CHAN render_sli: tieng Viet co dau; 5..10 slide; slide 1 phai la `cover`.
+
+BUOC 4 — GUI LEN TOPIC CUA MINH NGAY (KHONG cho writer):
+cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
+  --vai {vai} --anh {out_png} --anh {out_png_goc}_2.png --anh {out_png_goc}_3.png \\
+  --duyet {draft_id} --mo-ta "<mot cau carousel nay ve gi>"
+Lap --anh cho DU so slide that su dung ra. Gui xong moi ghi ket qua task.
+
+`--duyet {draft_id}` gan nut Duyet / Lam lai / Bo han. Viec cua ban chi la ra BO
+SLIDE cho that dat — dung cho writer, cung dung tu di goi nguoi viet. Neu bi giao
+"lam lai", doc ghi chu cuoi task va lam khac lan truoc.
+
+BAN GIAO: bao lai nguon tin cho writer de dua vao chu thich bai dang.
+Ket qua bat buoc: {out_png} phai ton tai VA da gui len topic (buoc 4)."""
 
 
 WRITER_BODY = """Bai goc: {title}
@@ -935,7 +997,7 @@ def bao_viec_bi_chan(token, group):
         topics = {}
 
     # Tach theo THUONG HIEU: viec anh dcgr bao ve topic Miles, donniechublog ve
-    # Quinn — dung nguoi viet cua brand do, khong dua het ve Quinn.
+    # Miles — dung nguoi viet cua brand do, khong dua het ve Miles.
     nhom = {}
     for tid, ai, ten, tieu_de, ly_do in moi:
         brand = BRAND
@@ -1065,11 +1127,12 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     except Exception as e:                                   # noqa: BLE001
         print(f"[research] khong tim duoc nguon: {type(e).__name__}: {e}")
 
-    # Heller va Dre dung carousel nhieu slide, cac vai anh khac dung the bia.
+    # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
     # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
     # key thua.
     la_carousel = vai_anh in VAI_CAROUSEL
-    khuon = CAROUSEL_BODY if la_carousel else ILLU_BODY
+    la_sli = vai_anh in VAI_SLI
+    khuon = SLI_BODY if la_sli else (CAROUSEL_BODY if la_carousel else ILLU_BODY)
     illu_body = khuon.format(
         source_note=item.get("source_note", ""), link=item["link"],
         via=item.get("via", ""), title=item["title"],
@@ -1079,7 +1142,8 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
         brand=brand, vai=vai_anh,
         co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
-    tieu_de_task = ("Carousel: " if la_carousel else "Anh: ") + item["title"]
+    tieu_de_task = ("Carousel deck: " if la_sli
+                    else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
@@ -1088,13 +1152,13 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
     # thi nut Lam lai bao khong co thong tin.
     (DRAFTS / (draft_id + ".img.json")).write_text(
-        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel,
+        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel or la_sli,
                     "title": item["title"], "body": illu_body, "remakes": 0},
                    ensure_ascii=False, indent=2), encoding="utf-8")
 
     # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
     # sidecar `<draft_id>.writer.json`; task viet CHI sinh khi Ong Chu bam
-    # "Duyet anh" (imgok) tren tam anh ma Chad/Ethan/Heller/Dre vua day len
+    # "Duyet anh" (imgok) tren tam anh ma designer (Ethan)/Dre/Dre vua day len
     # topic. Anh chua dat thi khong co writer nao ca — dung y Ong Chu: khong
     # nhat thiet phai co writer sau khi tao hinh, o thi moi viet caption.
     writer_body = WRITER_BODY.format(
@@ -1296,8 +1360,8 @@ def _lenh_bai(tra_loi, args):
     tmp.write_text(json.dumps(so, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, DAT_BAI_SO)
 
-    ten_hien = TEN_VAI_ANH.get(vai_anh, "Chad")
-    ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
+    ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
+    ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Miles")
     dong = ("✅ <b>" + html_escape(title) + "</b>\n"
             + f"{ten_hien} dựng ảnh ({brand}) — task {ids[0]}. "
             + f"{ten_viet} viết caption SAU khi Ông Chủ bấm Duyệt ảnh.")
@@ -1330,7 +1394,8 @@ def handle_command(token, group, msg, thread_id, text):
     elif lenh == "/vai":
         dong = [f"<b>Vai ảnh</b> (brand cố định của container: {BRAND}):"]
         for ten, va in sorted(VAI_ANH.items()):
-            kieu = "carousel" if va in VAI_CAROUSEL else "thẻ bìa"
+            kieu = ("carousel deck" if va in VAI_SLI
+                    else "carousel" if va in VAI_CAROUSEL else "thẻ bìa")
             dong.append(f"  <code>{ten}</code> → {va} ({kieu})")
         dong.append("<b>Vai viết</b>: <code>writer</code> — một người viết cho container này.")
         tra_loi("\n".join(dong))
@@ -1450,8 +1515,8 @@ def handle_message(token, group, scout_thread, msg):
             lines.append("#" + str(n) + ": lỗi — " + err)
             continue
         changed = True          # create_pair da danh dau vao `it`
-        ten_hien = TEN_VAI_ANH.get(vai_anh, "Chad")
-        ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
+        ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
+        ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Miles")
         lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]}"
                      f"; {ten_viet} viết caption sau khi Ông Chủ duyệt ảnh")
 
@@ -1534,7 +1599,7 @@ if __name__ == "__main__":
         tok, _ch, grp = load_secrets()
         draft_id = sys.argv[2]
         # Dinh tuyen topic theo loai noi dung: teaser ve topic Jean, tin tuc
-        # ve topic Quinn. Tham so thu 3 (neu co) van ghi de duoc.
+        # ve topic Miles. Tham so thu 3 (neu co) van ghi de duoc.
         thread = None
         tp = env_load.topics_path()
         if tp.exists():
@@ -1550,8 +1615,8 @@ if __name__ == "__main__":
             key = "teaser" if category.upper() == "TEASER" else "writer"
             if key == "writer":
                 # Tin thuong tach theo THUONG HIEU: dcgr -> topic Miles,
-                # donniechublog -> Quinn. Truoc day MOI draft deu ve topic Quinn
-                # nen trong nhu Quinn om ca dcgr; that ra Miles viet caption dcgr,
+                # donniechublog -> Miles. Truoc day MOI draft deu ve topic Miles
+                # nen trong nhu Miles om ca dcgr; that ra Miles viet caption dcgr,
                 # chi la ban nhap bi day nham topic. Brand nam trong sidecar meta.
                 brand = ""
                 mpath = DRAFTS / (draft_id + ".meta.json")

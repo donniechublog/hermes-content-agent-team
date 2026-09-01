@@ -33,6 +33,7 @@ TOPIC_PROFILE = {
     "scout": "scout",
     "designer": "designer",
     "carousel": "carousel",
+    "carousel-sli": "carousel-sli",
     "writer": "writer",
     "analyst": "analyst",
     "teaser": "teaser",
