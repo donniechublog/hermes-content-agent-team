@@ -43,6 +43,17 @@
       "callout": "Kết quả: một bản fix đã được kiểm chứng bằng test — không phải một phỏng đoán."
     },
     {
+      "kind": "statement",
+      "eyebrow": "PHẠM VI",
+      "title": "Nhắm lớp bài tốn từ vài giây tới vài giờ",
+      "accent": "vài giây tới vài giờ",
+      "standfirst": "Race condition, tối ưu thuật toán, refactor nhiều tệp — những ca /boost đáng dùng nhất. Đây là chế độ trả phí, chọn đúng lúc mới bõ.",
+      "cards": [
+        {"num": "01", "text": "Race condition khó tái hiện, cần suy luận nhiều vòng"},
+        {"num": "02", "text": "Refactor đa tệp, phải chắc chắn không phá test cũ"}
+      ]
+    },
+    {
       "kind": "cta",
       "eyebrow": "ÁP DỤNG",
       "title": "Cho bug khó & refactor rủi ro cao",

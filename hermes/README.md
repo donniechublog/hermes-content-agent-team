@@ -24,7 +24,7 @@ slug generic khớp thư mục thật trong home:
 Map slug ↔ nhân vật: blog `carousel`=Dre, `designer`=Ethan, `writer`=Miles,
 `nova`; dcgr `carousel`=Dre, `designer`=Ethan, `writer`=Miles, `market`=Vera;
 shared: `scout`=Finn, `teaser`=Jean, `itachi`, `gin`, `analyst`=Ada, `bob`.
-`carousel-sli`=Kite (blog) đã có SOUL trong git nhưng CHƯA deploy (thiếu
+`carousel-edu`=Kite (blog) đã có SOUL trong git nhưng CHƯA deploy (thiếu
 config.yaml) → `dong_bo` sẽ báo `[thieu]`, không tạo.
 
 Sửa ở home rồi chép vào git trước khi commit:

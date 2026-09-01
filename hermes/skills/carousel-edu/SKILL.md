@@ -1,6 +1,6 @@
 ---
-name: carousel-sli
-description: "Dựng carousel tech-editorial (magazine, vibe TechCrunch/The Verge) bằng ART VECTOR GỐC tự vẽ — không ảnh thật, không nền AI. Hệ thiết kế: nền tối #0A0B0E, duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 5 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: chỉ art trừu tượng/sơ đồ khái niệm, cấm ảnh/screenshot/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.sli)."
+name: carousel-edu
+description: "Carousel EDU — diễn đạt lại kiến thức & nghiên cứu (paper arXiv, kinh nghiệm dev) cho chuyên nghiệp, tường minh; phong cách tech × magazine bằng ART VECTOR GỐC tự vẽ — không ảnh thật, không nền AI. Hệ thiết kế: nền tối #0A0B0E, duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 6 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: chỉ art trừu tượng/sơ đồ khái niệm, cấm ảnh/screenshot/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.edu)."
 version: 0.1.0
 author: content-team
 license: internal
@@ -9,13 +9,19 @@ prerequisites:
   commands: [python3]
 metadata:
   hermes:
-    tags: [carousel-sli, carousel, editorial, magazine, kite, vector, techcrunch, verge]
+    tags: [carousel-edu, carousel, editorial, magazine, kite, vector, techcrunch, verge]
 ---
 
-# carousel-sli — carousel tạp chí công nghệ, art vector gốc
+# carousel-edu — carousel kiến thức & nghiên cứu (tech × magazine)
 
-Kiểu carousel thứ ba của đội, bên cạnh `carousel` bảng-tin (Heller/Dre) và
+Kiểu carousel thứ ba của đội, bên cạnh `carousel` bảng-tin (Dre) và
 `carousel.rep` editorial-deck remake (Itachi). **Kite** dựng nó.
+
+**Mục đích:** diễn đạt lại nội dung **kiến thức & nghiên cứu** — paper arXiv,
+kinh nghiệm dev lâu năm — cho **chuyên nghiệp và tường minh**. Phần lớn research
+là "paper trắng" (text nặng, không ảnh minh hoạ tử tế); chụp ảnh hay tìm ảnh đều
+không hợp → Kite trình bày lại bằng **art vector + typography**. Paper thường dài
+nên **tối thiểu 6 slide** (cổng chặn `render_edu.py` dừng nếu ít hơn).
 
 Điểm tách bạch với các kiểu kia: **không có ảnh nào từ bên ngoài**. Bìa và các
 slide được dựng bằng **art vector tự vẽ** (SVG/đồ hoạ code) + typography, trên
@@ -85,7 +91,7 @@ radial mờ — giữ nhẹ để không phạm chính luật "nền sạch, kh�
 
 ## Chia slide (nhịp feature)
 
-Tối thiểu **5**, tối đa **10**. Khung tham chiếu (không cứng):
+Tối thiểu **6**, tối đa **10**. Khung tham chiếu (không cứng):
 
 1. **Bìa — hook** + hero art + byline.
 2. **Bối cảnh / vấn đề** — vì sao chủ đề đáng quan tâm.
@@ -96,24 +102,24 @@ Tối thiểu **5**, tối đa **10**. Khung tham chiếu (không cứng):
 Mỗi slide **một ý mới**. Bìa giật, slide cuối để lại câu hỏi/mốc + CTA. Chữ Việt
 có dấu; câu ngắn, chủ động; không em-dash.
 
-## Toolchain — `render_sli.py` (hướng B: HTML→PNG)
+## Toolchain — `render_edu.py` (hướng B: HTML→PNG)
 
-Đã chốt **hướng B**: renderer `render_sli.py` ở gốc repo dựng từng slide bằng
+Đã chốt **hướng B**: renderer `render_edu.py` ở gốc repo dựng từng slide bằng
 HTML/CSS/SVG rồi chụp bằng **Chromium headless (Playwright)**. Chạy **trên
 server** như cả đội.
 
 ```bash
-venv/bin/python render_sli.py --spec spec.json --out drafts/<id>.png
+venv/bin/python render_edu.py --spec spec.json --out drafts/<id>.png
 ```
 
 Ra `drafts/<id>.png` (bìa) + `<id>_2.png`… đúng glob `{id}_[0-9].png` của
 `draft_write.py`. Cờ: `--brand` (donniechublog|dcgr), `--bo-qua-dau` (chỉ khi copy
 là tiếng Anh), `--scale` (mặc định 2 → 2160×2700 cho nét), `--spec -` đọc stdin.
 
-**Spec JSON:** xem docstring đầu `render_sli.py` và `reference/boost.spec.json`
+**Spec JSON:** xem docstring đầu `render_edu.py` và `reference/boost.spec.json`
 (spec đầy đủ của bộ /boost). 5 `kind` slide: `cover`, `statement`, `steps`,
 `loop`, `cta`. Cổng chặn tái dùng `card.tim_mat_dau` (tiếng Việt có dấu) + luật
-4..10 slide + slide 1 phải là `cover`.
+6..10 slide + slide 1 phải là `cover`.
 
 **Cài trên server (một lần):**
 ```bash
@@ -121,14 +127,14 @@ venv/bin/pip install playwright
 venv/bin/playwright install chromium
 ```
 
-**Font:** `render_sli.py` nhúng font base64 từ `assets/fonts` (Chromium headless
+**Font:** `render_edu.py` nhúng font base64 từ `assets/fonts` (Chromium headless
 trên server tối giản không có font hệ thống → phải nhúng, tránh tofu tiếng Việt).
 Hiện dùng bộ Vietnamese-safe có sẵn: **Be Vietnam Pro** (display+body), **Noto
 Serif** (standfirst in nghiêng), **JetBrains Mono** (nhãn/số). Bản canvas
 `reference/` dùng **Archivo + Newsreader** — để khớp 100%, thả 2 TTF đó vào
-`assets/fonts` rồi sửa bảng `FONTS` trong `render_sli.py`.
+`assets/fonts` rồi sửa bảng `FONTS` trong `render_edu.py`.
 
-**Trạng thái:** Đã chạy LIVE trên server — Playwright+Chromium cài xong, render boost.spec.json ra 5 slide chuẩn (đã soi mắt). Production-ready.
+**Trạng thái:** Đã chạy LIVE trên server — Playwright+Chromium cài xong, render boost.spec.json ra 6 slide chuẩn (đã soi mắt). Production-ready.
 
 ## Bản dựng tham chiếu
 
@@ -143,6 +149,6 @@ Claude Design (Ông Chủ giữ link).
 1. Bìa có art vector + hook giật không? (Chỉ chữ trên nền đen = hỏng.)
 2. Đủ bộ khung magazine mọi slide (masthead, eyebrow, folio)?
 3. Mọi chữ tương phản đủ? Không chữ trắng trên vùng sáng?
-4. ≥5 slide, mỗi slide một ý mới?
+4. ≥6 slide, mỗi slide một ý mới?
 5. Có mảng art nào bị đọc thành "ảnh/logo/số liệu thật" không? Có thì sửa —
    đó là lằn ranh của ngoại lệ.

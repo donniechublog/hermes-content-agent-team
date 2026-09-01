@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""render_sli.py — renderer carousel tech-editorial (role carousel.sli, vai Kite).
+"""render_edu.py — renderer carousel tech-editorial (role carousel.edu, vai Kite).
 
 Biến một spec JSON thành album PNG kiểu tạp chí công nghệ: art VECTOR gốc + bộ
 khung magazine (masthead, eyebrow chuyên mục, folio, hero orbit), KHÔNG ảnh thật.
 Khác `carousel.py` (ảnh thật + PIL) và `deck.py` (editorial-deck): ở đây từng
 slide là HTML/CSS/SVG, render bằng Chromium headless (Playwright) rồi chụp.
 
-    venv/bin/python render_sli.py --spec spec.json --out drafts/<id>.png
+    venv/bin/python render_edu.py --spec spec.json --out drafts/<id>.png
 
 Xuất ra: <out>.png (bìa) + <out>_2.png, _3.png ... <out>_N.png — đúng glob
 `{id}_[0-9].png` của draft_write.py, nên tự thành album khi đăng.
@@ -17,7 +17,7 @@ Chạy TRÊN SERVER (như cả đội). Cần Chromium của Playwright:
 
 FONT: dùng font Vietnamese-safe có sẵn trong assets/fonts (Be Vietnam Pro cho
 display+body, Noto Serif cho standfirst in nghiêng, JetBrains Mono cho nhãn/số).
-Bản canvas gốc (skill carousel-sli/reference) dùng Archivo + Newsreader — để khớp
+Bản canvas gốc (skill carousel-edu/reference) dùng Archivo + Newsreader — để khớp
 100%, thả 2 TTF đó vào assets/fonts rồi đổi bảng FONTS bên dưới. Font nhúng dạng
 base64 data-URI nên Chromium headless không cần font hệ thống (tránh tofu tiếng
 Việt trên server tối giản).
@@ -58,7 +58,7 @@ Spec JSON:
 }
 
 Mọi chữ là tiếng Việt CÓ DẤU — cổng chặn dừng nếu thiếu (dùng --bo-qua-dau chỉ
-khi copy thật sự là tiếng Anh). Số slide: 4..10.
+khi copy thật sự là tiếng Anh). Số slide: 6..10.
 """
 
 import argparse
@@ -123,7 +123,7 @@ def _font_face_css():
         raise SystemExit(
             "THIEU FONT trong assets/fonts: " + ", ".join(sorted(set(thieu)))
             + "\nTai ve roi dat vao assets/fonts/, hoac sua bang FONTS trong "
-              "render_sli.py cho khop font co san."
+              "render_edu.py cho khop font co san."
         )
     return "\n".join(blocks)
 
@@ -410,8 +410,8 @@ def slide_doc(sl, idx, total, section, folio_left, follow=None):
 def gate_slides(slides, bo_qua_dau):
     loi = []
     n = len(slides)
-    if n < 4:
-        loi.append(f"Chi co {n} slide — toi thieu 4 (duoi do khong thanh carousel).")
+    if n < 6:
+        loi.append(f"Chi co {n} slide — toi thieu 6 (paper dai, edu can du y).")
     if n > 10:
         loi.append(f"Co {n} slide — toi da 10 (draft_write gom hut qua do).")
     if slides and slides[0].get("kind") != "cover":
@@ -489,7 +489,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Renderer carousel.sli (vai Kite)")
+    ap = argparse.ArgumentParser(description="Renderer carousel.edu (vai Kite)")
     ap.add_argument("--spec", required=True, help="file JSON, hoac '-' doc stdin")
     ap.add_argument("--out", required=True, help="drafts/<id>.png (bia)")
     ap.add_argument("--brand", default="donniechublog",

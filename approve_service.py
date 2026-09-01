@@ -451,14 +451,14 @@ VAI_ANH = {
     "ethan": "designer",                               # alias ten persona
     "carousel": "carousel", "cr": "carousel",
     "dre": "carousel",                                 # alias ten persona
-    "carousel-sli": "carousel-sli", "sli": "carousel-sli",
-    "kite": "carousel-sli",            # alias ten persona (go "sli" / "kite")
+    "carousel-edu": "carousel-edu", "edu": "carousel-edu",
+    "kite": "carousel-edu",            # alias ten persona (go "sli" / "kite")
 }
 # Ba loai vai anh, moi loai mot cong cu: card.py (the bia, designer), carousel.py
-# (anh that nhieu slide, carousel), render_sli.py (art vector goc magazine,
-# carousel-sli/Kite). Them vai moi thi khai vao day + dung set duoi.
+# (anh that nhieu slide, carousel), render_edu.py (art vector goc magazine,
+# carousel-edu/Kite). Them vai moi thi khai vao day + dung set duoi.
 VAI_CAROUSEL = {"carousel"}        # slug dung carousel.py (anh that nhieu slide)
-VAI_SLI = {"carousel-sli"}         # slug dung render_sli.py (art vector goc, Kite)
+VAI_EDU = {"carousel-edu"}         # slug dung render_edu.py (art vector goc, Kite)
 MAC_DINH_ANH = "designer"
 # Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
 #
@@ -475,7 +475,7 @@ TEN_SANG_CAP.update({           # ten nguoi viet cung nhan -> ve default anh
     "miles": "designer",
 })
 # Ten hien ra bao cao (slug -> ten persona thong nhat, chung ca hai brand).
-TEN_VAI_ANH = {"designer": "Ethan", "carousel": "Dre", "carousel-sli": "Kite"}
+TEN_VAI_ANH = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite"}
 # Mot container mot nguoi viet duy nhat = "writer" (brand lay tu BRAND, khong
 # con chon nguoi viet theo brand nua). VAI_VIET rong -> .get luon ve MAC_DINH_VIET.
 VAI_VIET = {}
@@ -777,9 +777,9 @@ SONG SONG, KHONG phai dieu kien de gui anh.
 Ket qua bat buoc: {out_png} phai ton tai VA da gui len topic (buoc 5)."""
 
 
-# Body cho Kite (role carousel.sli) — dung render_sli.py: art VECTOR GOC tu ve,
+# Body cho Kite (role carousel.edu) — dung render_edu.py: art VECTOR GOC tu ve,
 # KHONG anh that. Khac han CAROUSEL_BODY (khong anh_bai.py, khong carousel.py).
-SLI_BODY = """Nguon: {source_note}
+EDU_BODY = """Nguon: {source_note}
 Link: {link}
 Chu de: {title}
 Tom tat: {summary}
@@ -787,7 +787,7 @@ Tom tat: {summary}
 NHIEM VU: dung mot CAROUSEL tech-editorial (magazine, vibe TechCrunch/The Verge)
 ke tin nay bang ART VECTOR GOC tu ve — KHONG anh that, KHONG nen AI.
 
-DOC SKILL `carousel-sli` TRUOC khi lam — no co he thiet ke (mau, font, khung
+DOC SKILL `carousel-edu` TRUOC khi lam — no co he thiet ke (mau, font, khung
 magazine, hero art), 5 kind slide, ranh gioi ngoai le voi luat khong-tu-ve, va
 lenh dung. Doc `reference/boost.spec.json` de biet khuon spec day du.
 
@@ -816,11 +816,11 @@ cat > /tmp/sli_{draft_id}.json <<'JSON'
   ]
 }}
 JSON
-cd /home/donniechu/content-team && venv/bin/python render_sli.py \\
+cd /home/donniechu/content-team && venv/bin/python render_edu.py \\
   --spec /tmp/sli_{draft_id}.json --out {out_png}{co_brand}
 
 Ra {out_png} (bia) + {out_png_goc}_2.png... — draft_write.py tu gom thanh album.
-CONG CHAN render_sli: tieng Viet co dau; 5..10 slide; slide 1 phai la `cover`.
+CONG CHAN render_edu: tieng Viet co dau; 5..10 slide; slide 1 phai la `cover`.
 
 BUOC 4 — GUI LEN TOPIC CUA MINH NGAY (KHONG cho writer):
 cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
@@ -1131,8 +1131,8 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
     # key thua.
     la_carousel = vai_anh in VAI_CAROUSEL
-    la_sli = vai_anh in VAI_SLI
-    khuon = SLI_BODY if la_sli else (CAROUSEL_BODY if la_carousel else ILLU_BODY)
+    la_edu = vai_anh in VAI_EDU
+    khuon = EDU_BODY if la_edu else (CAROUSEL_BODY if la_carousel else ILLU_BODY)
     illu_body = khuon.format(
         source_note=item.get("source_note", ""), link=item["link"],
         via=item.get("via", ""), title=item["title"],
@@ -1142,7 +1142,7 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
         brand=brand, vai=vai_anh,
         co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
-    tieu_de_task = ("Carousel deck: " if la_sli
+    tieu_de_task = ("Carousel deck: " if la_edu
                     else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
@@ -1152,7 +1152,7 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
     # thi nut Lam lai bao khong co thong tin.
     (DRAFTS / (draft_id + ".img.json")).write_text(
-        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel or la_sli,
+        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel or la_edu,
                     "title": item["title"], "body": illu_body, "remakes": 0},
                    ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -1394,7 +1394,7 @@ def handle_command(token, group, msg, thread_id, text):
     elif lenh == "/vai":
         dong = [f"<b>Vai ảnh</b> (brand cố định của container: {BRAND}):"]
         for ten, va in sorted(VAI_ANH.items()):
-            kieu = ("carousel deck" if va in VAI_SLI
+            kieu = ("carousel deck" if va in VAI_EDU
                     else "carousel" if va in VAI_CAROUSEL else "thẻ bìa")
             dong.append(f"  <code>{ten}</code> → {va} ({kieu})")
         dong.append("<b>Vai viết</b>: <code>writer</code> — một người viết cho container này.")

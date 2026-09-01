@@ -7,7 +7,7 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 Mỗi profile giờ chỉ có **Tên** và **role** (dạng `Tên - role`) — **không còn hậu tố
 org** `.blog`/`.dcgr` vì mỗi brand đã tách thành container riêng, trong một container
 chỉ có một vai mỗi loại. Các role: `scout`, `designer`, `carousel` (bảng-tin ảnh thật),
-`carousel.rep` (remake nguồn có sẵn), `carousel.sli` (tech-editorial art vector gốc),
+`carousel.rep` (remake nguồn có sẵn), `carousel.edu` (kiến thức & nghiên cứu, tech × magazine),
 `writer`, `teaser`, `market`, `model`, `analyst`, `clean`. Slug `Profile hermes` là
 định danh thật (lệnh, assignee, topic map) — không đổi; nhãn chỉ là chữ nhìn thấy.
 Bảng dưới gộp cả hai brand container để tiện đối chiếu; cột **Việc** ghi rõ brand.
@@ -21,7 +21,7 @@ Bảng dưới gộp cả hai brand container để tiện đối chiếu; cột
 | Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Dre, khác đúng một cờ `--brand` |
 | Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi. Chạy **trên server** (torch+cpu đã cài từ 28/08/2026) như cả đội |
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin — remake carousel nguồn sang tiếng Việt |
-| Kite | `kite` | carousel.sli | Dựng carousel **tech-editorial (magazine)** cho **donniechublog** bằng **art vector gốc** (masthead, folio, hero quỹ đạo) — không ảnh thật, không nền AI. Ngoại lệ có chủ đích với luật không-tự-vẽ (chỉ art trừu tượng, cấm ảnh/logo/số liệu giả). Generator = `render_sli.py` — đã chạy live trên server |
+| Kite | `kite` | carousel.edu | Dựng carousel **EDU** (kiến thức & nghiên cứu, tech × magazine) cho **donniechublog** bằng **art vector gốc** — diễn đạt lại paper/nghiên cứu (paper trắng, không ảnh) cho tường minh. Tối thiểu 6 slide. Ngoại lệ có chủ đích với luật không-tự-vẽ (chỉ art trừu tượng, cấm ảnh/logo/số liệu giả). Generator = `render_edu.py` — đã chạy live trên server |
 | Miles | `writer` | writer | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
 | Miles | `writer` | writer | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Miles nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
 | Nova | `nova` | model | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
@@ -74,13 +74,13 @@ ghi thêm một dòng cảnh báo.
 - `crop_ti_le.py` — cắt một ảnh về **1:1 hoặc 4:5** trước khi đưa vào carousel
   (luật: ảnh carousel phải đúng một trong hai tỉ lệ đó). Cắt center, hoặc
   `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh
-- `render_sli.py` — renderer của **Kite** (role `carousel.sli`): dựng carousel
+- `render_edu.py` — renderer của **Kite** (role `carousel.edu`): dựng carousel
   **tech-editorial art vector gốc** (masthead, folio, hero orbit) bằng HTML/CSS/SVG,
   chụp bằng **Chromium headless (Playwright)** ra `<id>.png` + `<id>_2.png`… đúng
   khuôn album. Nhận spec JSON (5 kind: cover/statement/steps/loop/cta), font nhúng
   base64 từ `assets/fonts`, cổng chặn tiếng Việt tái dùng `card.tim_mat_dau`.
   **Không ảnh thật** — khác hẳn `carousel.py`/`deck.py`. Cần `playwright install
-  chromium` trên server (xem skill `carousel-sli`). Đã test local, **đã chạy live trên server**
+  chromium` trên server (xem skill `carousel-edu`). Đã test local, **đã chạy live trên server**
 - `hermes/skills/hero-image/` — skill dùng chung của vai designer (Ethan, hai brand). Nằm thẳng
   trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
   không xoá được
@@ -88,11 +88,11 @@ ghi thêm một dòng cảnh báo.
   chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh, lệnh dựng.
   Cùng cơ chế trỏ vào như
   hero-image
-- `hermes/skills/carousel-sli/` — skill của **Kite** (role `carousel.sli`):
+- `hermes/skills/carousel-edu/` — skill của **Kite** (role `carousel.edu`):
   carousel tech-editorial bằng **art vector gốc** (không ảnh thật). Chứa hệ thiết
   kế (màu, font, khung magazine, hero motif), ranh giới ngoại lệ với luật
   không-tự-vẽ, `reference/` — bộ /boost 5 slide (`.dc.html`) + `boost.spec.json`
-  làm nguồn sự thật, và mục **Toolchain** cho `render_sli.py` (lệnh, cài Chromium,
+  làm nguồn sự thật, và mục **Toolchain** cho `render_edu.py` (lệnh, cài Chromium,
   font). Generator = hướng B (HTML→PNG)
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số
@@ -142,12 +142,12 @@ Dre, Gin, Itachi thêm sau, clone từ Dre nên cùng chuỗi `v4-flash` (chưa 
 riêng). Gin chạy việc thật **trên server** (torch+cpu đã cài từ 28/08/2026, xem
 skill `inplace-translate`) — không còn phụ thuộc máy local.
 
-Kite ĐÃ DEPLOY (2026-09-01): profile `~/.hermes-blog/profiles/carousel-sli/`
+Kite ĐÃ DEPLOY (2026-09-01): profile `~/.hermes-blog/profiles/carousel-edu/`
 (config clone từ carousel/Dre, chuỗi `v4-flash`, `reasoning_effort: none`), topic
-Telegram "Kite · carousel.sli" (thread 52) + `chat_router` wired. Generator
-`render_sli.py` **đã chạy live** (Playwright+Chromium cài xong, render
+Telegram "Kite · carousel.edu" (thread 52) + `chat_router` wired. Generator
+`render_edu.py` **đã chạy live** (Playwright+Chromium cài xong, render
 `reference/boost.spec.json` ra 5 slide chuẩn). Còn lại: wire full auto-pipeline
-trong `approve_service` (chọn qua "#N carousel-sli" từ list Finn).
+trong `approve_service` (chọn qua "#N carousel-edu" từ list Finn).
 
 Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
 được chọn — đúng loại việc cần suy luận thật.

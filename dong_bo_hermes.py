@@ -17,7 +17,7 @@ muc hermes/ trong repo la ban chep co lich su, to chuc theo container:
 
 Slug la ten thu muc THAT trong home (generic: carousel, designer, writer...),
 khong phai ten nhan vat cu (heller/dre...). Profile co trong git ma home khong
-co (vd carousel-sli chua deploy) se bao [thieu], KHONG bi tao ra.
+co (vd carousel-edu chua deploy) se bao [thieu], KHONG bi tao ra.
 
 Dung:
     venv/bin/python dong_bo_hermes.py              # chi so sanh, khong ghi
