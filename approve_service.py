@@ -43,6 +43,8 @@ HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
 # HERMES_HOME theo container: moi brand mot home rieng (~/.hermes-<brand>).
 # Systemd/cron dat san; roi ve ~/.hermes o che do don cu.
 HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
+env_load.nap()                            # nap secret.<brand>.env de co BRAND luc import
+BRAND = os.environ.get("BRAND", "donniechublog")   # content-brand co dinh cua container ('dcgr'|'donniechublog')
 
 
 def load_secrets():
@@ -440,23 +442,21 @@ def latest_manifest(vai="scout"):
 # khung, khong vach. Khac nhau dung mot thu la THUONG HIEU. Iris da bo: khi ca
 # doi chuyen sang mot kieu anh duy nhat thi vai cua Iris trung khit voi Chad,
 # giu lai chi de hai ban SOUL gan nhu giong het troi ra khoi nhau.
+# Container = 1 brand co dinh (BRAND). Slug dat theo CHUC NANG, dung chung ten o
+# moi brand: "designer" (the bia, card.py) va "carousel" (nhieu slide,
+# carousel.py). Ten nhan vat cu (chad/ethan/heller/dre) giu lam alias de Ong Chu
+# go quen tay van dung. Brand KHONG con nam trong map — lay tu BRAND (env).
 VAI_ANH = {
-    "chad": ("designer", "donniechublog"),
-    "designer": ("designer", "donniechublog"),
-    "ethan": ("ethan", "dcgr"),
-    # Heller va Dre lam khac may nguoi kia: khong dung the bia (card.py) ma
-    # dung mot CAROUSEL nhieu slide (carousel.py) — xem VAI_CAROUSEL. Heller
-    # van thuong hieu donniechublog nen bai viet ve Quinn nhu Chad; Dre van
-    # dcgr.tech nen bai viet ve Miles nhu Ethan. Ong Chu go "3 heller"/"3 dre"
-    # de giao tin so 3 cho dung nguoi.
-    "heller": ("heller", "donniechublog"),
-    "dre": ("dre", "dcgr"),
+    "designer": "designer", "img": "designer", "anh": "designer",
+    "chad": "designer", "ethan": "designer",          # alias nhan vat cu
+    "carousel": "carousel", "cr": "carousel",
+    "heller": "carousel", "dre": "carousel",           # alias
 }
 # Vai dung carousel.py (nhieu slide) thay vi card.py (mot the bia). Them vai
 # carousel moi thi chi can them vao day — cho o duoi doc bang nay, khong ghim
 # cung ten "heller".
-VAI_CAROUSEL = {"heller", "dre"}
-MAC_DINH_ANH = "chad"
+VAI_CAROUSEL = {"carousel"}        # slug dung carousel.py thay card.py
+MAC_DINH_ANH = "designer"
 # Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
 #
 # Mot lua chon sinh ra mot CAP di lien nhau: nguoi dung anh lam cha, nguoi viet
@@ -467,24 +467,19 @@ MAC_DINH_ANH = "chad"
 #     1 - Chad   ==  1 - Quinn   ->  anh donniechublog + bai cua Quinn
 #     1 - Ethan  ==  1 - Miles   ->  anh dcgr.tech     + bai cua Miles
 TEN_SANG_CAP = dict(VAI_ANH)
-TEN_SANG_CAP.update({
-    "quinn": ("designer", "donniechublog"),
-    "writer": ("designer", "donniechublog"),
-    "miles": ("ethan", "dcgr"),
+TEN_SANG_CAP.update({           # ten nguoi viet cung nhan -> ve default anh
+    "writer": "designer", "cap": "designer",
+    "quinn": "designer", "miles": "designer",
 })
-# Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi — them vai
-# thu ba la sai ngay, nen doi thanh bang tra.
-TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad", "heller": "Heller", "dre": "Dre"}
-# Vai viet di theo THUONG HIEU, khong theo vai anh. Quinn viet cho dan ky thuat
-# (donniechublog), Miles viet cho dan kinh doanh/tai chinh/truyen thong
-# (dcgr.tech) — cung khuon caption, khac nguoi doc. Chon Chad thi bai ve Quinn,
-# chon Ethan thi bai ve Miles: mot lua chon cua Ong Chu quyet ca anh lan chu.
-VAI_VIET = {"donniechublog": "writer", "dcgr": "miles"}
+# Ten hien ra bao cao (slug -> nhan). Slug generic nen chung cho moi brand.
+TEN_VAI_ANH = {"designer": "Designer", "carousel": "Carousel"}
+# Mot container mot nguoi viet duy nhat = "writer" (brand lay tu BRAND, khong
+# con chon nguoi viet theo brand nua). VAI_VIET rong -> .get luon ve MAC_DINH_VIET.
+VAI_VIET = {}
 MAC_DINH_VIET = "writer"
-TEN_VAI_VIET = {"writer": "Quinn", "miles": "Miles"}
-# Ca hai vai dung anh deu dung kieu tran. Giu bang tra thay vi ghim cung mot
-# chuoi de sau nay them mot kieu anh khac con cho ma dat.
-KIEU_ANH = {"designer": "tran", "ethan": "tran"}
+TEN_VAI_VIET = {"writer": "Writer"}
+# Vai anh the bia dung kieu tran. Giu bang tra de sau them kieu khac con cho.
+KIEU_ANH = {"designer": "tran"}
 
 
 def doc_lenh_chon(text: str):
@@ -535,7 +530,7 @@ def doc_lenh_chon(text: str):
             if n in thay:
                 continue
             thay.add(n)
-            ra.append((n, *TEN_SANG_CAP[ten]))
+            ra.append((n, TEN_SANG_CAP[ten], BRAND))
         cho.clear()
 
     for kind, v in manh:
@@ -876,10 +871,9 @@ def kanban_create(title, assignee, body, parent=None):
 # Cho sai la KHONG AI DUOC BAO. Bao cao nam trong kanban, con Ong Chu ngoi o
 # Telegram: chon hai tin thay len mot bai, khong biet tin kia di dau. Doan nay
 # keo bao cao do ra Telegram.
-KANBAN_DB = Path.home() / ".hermes" / "kanban.db"
+KANBAN_DB = Path(HERMES_HOME) / "kanban.db"    # kanban cua home container hien tai
 DA_BAO_CHAN = STATE_DIR / "da_bao_chan.json"
-VAI_CUA_DOI = {"designer": "Chad", "ethan": "Ethan", "heller": "Heller",
-               "dre": "Dre", "writer": "Quinn", "miles": "Miles"}
+VAI_CUA_DOI = {"designer": "Designer", "carousel": "Carousel", "writer": "Writer"}
 
 
 def _da_bao() -> set:
@@ -945,7 +939,7 @@ def bao_viec_bi_chan(token, group):
     # Quinn — dung nguoi viet cua brand do, khong dua het ve Quinn.
     nhom = {}
     for tid, ai, ten, tieu_de, ly_do in moi:
-        brand = VAI_ANH.get(ai, (None, "donniechublog"))[1]
+        brand = BRAND
         vai_viet = VAI_VIET.get(brand, MAC_DINH_VIET)
         nhom.setdefault(vai_viet, []).append((tid, ten, tieu_de, ly_do))
 
@@ -1241,10 +1235,9 @@ LENH_HELP = (
     "<b>Lệnh:</b>\n"
     "<code>/bai &lt;url&gt; &lt;vai&gt;</code> — đặt bài tay từ URL: tạo cặp task "
     "ảnh + viết, không qua vòng quét của Finn.\n"
-    "  vai nhận: <code>chad</code>|<code>ethan</code> (thẻ bìa), "
-    "<code>heller</code>|<code>dre</code> (carousel); gõ tên người viết "
-    "(<code>quinn</code>|<code>miles</code>) cũng được — quy về đúng cặp.\n"
-    "<code>/vai</code> — bảng vai: ai làm gì, brand nào.\n"
+    "  vai nhận: <code>designer</code> (thẻ bìa) hoặc <code>carousel</code> "
+    "(nhiều slide); brand cố định theo container.\n"
+    "<code>/vai</code> — bảng vai trong container này.\n"
     "<code>/help</code> — tin này.\n"
     "Sai cú pháp thì không làm gì — lệnh phải tường minh.")
 
@@ -1272,7 +1265,7 @@ def _lenh_bai(tra_loi, args):
                 + cu.get("vai", "?") + ". Không tạo lại.")
         return
 
-    vai_anh, brand = TEN_SANG_CAP[ten]
+    vai_anh, brand = TEN_SANG_CAP[ten], BRAND
     title, image_url, ghi_chu = _doc_trang(url)
     if title is None:
         tra_loi("❌ " + ghi_chu + " — không tạo task. Kiểm tra URL rồi /bai lại.")
@@ -1336,14 +1329,11 @@ def handle_command(token, group, msg, thread_id, text):
     if lenh == "/help":
         tra_loi(LENH_HELP)
     elif lenh == "/vai":
-        dong = ["<b>Vai ảnh</b> (chọn vai là chọn brand + kiểu):"]
-        for ten, (va, br) in sorted(VAI_ANH.items()):
-            if ten in TEN_VAI_ANH or ten in ("chad",):
-                kieu = "carousel" if va in VAI_CAROUSEL else "thẻ bìa"
-                dong.append(f"  <code>{ten}</code> — {TEN_VAI_ANH.get(va, va)}, "
-                            f"{kieu}, {br}")
-        dong.append("<b>Vai viết</b> đi theo brand: Quinn (donniechublog), "
-                    "Miles (dcgr) — gõ tên nào cũng ra đúng cặp.")
+        dong = [f"<b>Vai ảnh</b> (brand cố định của container: {BRAND}):"]
+        for ten, va in sorted(VAI_ANH.items()):
+            kieu = "carousel" if va in VAI_CAROUSEL else "thẻ bìa"
+            dong.append(f"  <code>{ten}</code> → {va} ({kieu})")
+        dong.append("<b>Vai viết</b>: <code>writer</code> — một người viết cho container này.")
         tra_loi("\n".join(dong))
     elif lenh == "/bai":
         _lenh_bai(tra_loi, phan[1:])
