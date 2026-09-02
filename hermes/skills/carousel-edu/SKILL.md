@@ -68,7 +68,8 @@ thì nó thuộc cột CẤM.
 
 Mỗi slide có bộ furniture nhất quán:
 
-1. **Masthead chạy đầu trang:** wordmark `donniechublog` (Archivo 800) — hairline
+1. **Masthead chạy đầu trang:** wordmark `donniechublog` **chìm** (weight 500,
+   cỡ nhỏ, xám `#838A96`) — kiểu wordmark wikipedia, KHÔNG nổi trắng đậm. Hairline
    giãn — nhãn chuyên mục phải (mono, vd `AI TOOLING`).
 2. **Eyebrow chuyên mục:** thanh nhấn cyan ngắn + nhãn mono cyan (vd `BỐI CẢNH`,
    `CÁCH VẬN HÀNH`, `CƠ CHẾ`, `ÁP DỤNG`).
@@ -78,6 +79,18 @@ Mỗi slide có bộ furniture nhất quán:
    số trang hiện tại tô cyan).
 5. **Byline** trên bìa: `donniechublog · Phân tích · N phút đọc`.
 6. **Hero art vector** trên bìa (bắt buộc), motif nhỏ + glow trên các slide trong.
+
+### Ba luật bổ sung (Ông Chủ yêu cầu, đã vào render_edu.py — KHÔNG được phá)
+
+1. **Masthead wordmark chìm như wikipedia** — `.mast-name` = DISPLAY weight 500,
+   cỡ 26px, màu `DIM` (`#7B828E`), KHÔNG phải 700/WHITE/30px. Wordmark đừng giành
+   mắt người đọc.
+2. **Slide `cta` có `follow` → masthead BARE** (chỉ hairline, bỏ wordmark + nhãn
+   chuyên mục). Vì folio slide cuối đã có "Theo dõi @donniechublog" — nhắc kênh 2
+   lần cùng slide là lỗi.
+3. **Dẫn nguồn ghi "via", không ghi "nguồn"** — render_edu.py cổng chặn dừng spec
+   nào có chữ "nguồn" trong trường chữ (kể cả cụm như "mã nguồn mở" — đổi thành
+   "mã mở").
 
 ## Hero art — vẽ khái niệm, không vẽ hiện thực
 
