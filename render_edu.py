@@ -141,8 +141,8 @@ BASE_CSS = """
 /* masthead */
 .mast{display:flex;flex-direction:row;align-items:center;gap:24px;
   position:relative;z-index:2;}
-.mast-name{font-family:%(DISPLAY)s;font-weight:700;font-size:30px;
-  letter-spacing:-0.5px;color:%(WHITE)s;}
+.mast-name{font-family:%(DISPLAY)s;font-weight:500;font-size:26px;
+  letter-spacing:-0.5px;color:%(DIM)s;}
 .rule{flex-grow:1;height:1px;background:%(LINE)s;}
 .mast-sec{font-family:%(MONO)s;font-weight:500;font-size:22px;
   letter-spacing:2px;color:%(DIM)s;}
@@ -258,7 +258,11 @@ def glow(css):
     return f'<div class="glow" style="{css}"></div>'
 
 
-def masthead(brand, section):
+def masthead(brand, section, bare=False):
+    # bare=True: chỉ giữ hairline, không chữ — dùng cho slide cta đã có
+    # "Theo dõi @donniechublog" ở folio, tránh lặp nhận diện kênh 2 chỗ.
+    if bare:
+        return '<div class="mast"><span class="rule"></span></div>'
     return (f'<div class="mast"><span class="mast-name">{esc(brand)}</span>'
             f'<span class="rule"></span>'
             f'<span class="mast-sec">{esc(section)}</span></div>')
@@ -400,7 +404,10 @@ def slide_doc(sl, idx, total, brand, section, folio_left, font_css, follow=None)
     body = BUILDERS[kind](sl)
     # slide cta có thể ghi 'follow' vào folio trái thay nhãn mặc định
     fol_left = sl.get("follow", follow) if kind == "cta" and (sl.get("follow") or follow) else folio_left
-    inner = masthead(brand, section) + body + folio(fol_left, idx, total)
+    # slide cta đã có follow (vd "Theo dõi @donniechublog") thì header bỏ chữ,
+    # chỉ giữ hairline — tránh nhắc nhận diện kênh 2 lần trên cùng một slide.
+    bare = kind == "cta" and bool(sl.get("follow") or follow)
+    inner = masthead(brand, section, bare=bare) + body + folio(fol_left, idx, total)
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>'
             f'{font_css}{BASE_CSS}</style></head><body>'
             f'<div class="art">{inner}</div></body></html>')
@@ -422,6 +429,12 @@ def gate_slides(slides, bo_qua_dau):
                 mat = card.tim_mat_dau(t)
                 if mat:
                     loi.append(f"slide {i} [{nhan}]: tieng Viet mat dau ({', '.join(mat)})")
+    # quy ước dẫn nguồn: dùng 'via', không viết 'nguồn'
+    for i, sl in enumerate(slides, 1):
+        for nhan, t in _texts(sl):
+            low = t.lower()
+            if "nguồn" in low:
+                loi.append(f"slide {i} [{nhan}]: dan nguon phai ghi 'via', khong ghi 'nguồn'")
     return loi
 
 
