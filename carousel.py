@@ -344,8 +344,8 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     at_h = at_lh * len(at_lines)
 
     BOX_PAD_Y = 62       # khung cao hon chu — khoang tho + dau " o goc
-    G_FRAME_CHIP = 44    # khung <-> chip ten kenh
-    G_CHIP_SRC = 36      # chip <-> dong nguon
+    G_FRAME_CHIP = 18    # khung <-> chip ten kenh (sat, khong de du breathspace)
+    G_CHIP_SRC = 16      # chip <-> dong nguon
 
     # Thu tu tu DUOI len (Ong Chu chot 03/09/2026): dong nguon sat day (mep
     # duoi = WM_BOTTOM), chip ten kenh canh trai ngay tren dong nguon, roi khung
