@@ -246,7 +246,7 @@ BRAND_TU = {
     "GITHUB", "REDDIT", "LINKEDIN", "INSTAGRAM", "FACEBOOK", "YOUTUBE",
     "DISCORD", "SALESFORCE", "ADOBE", "SONY", "XIAOMI", "FIGMA", "CANVA",
     "STRIPE", "UBER", "NETFLIX", "SPOTIFY", "ARM", "BROADCOM", "MICRON",
-    "SIEMENS", "FOXCONN", "VINGROUP", "VNG", "FPT", "VIETTEL",
+    "SIEMENS", "FOXCONN", "VINGROUP", "VNG", "FPT", "VIETTEL", "VERTIV",
 }
 # Cum nhieu tu. Xet truoc tu don, vi "AI" mot minh KHONG duoc to — no la tu
 # thuong gap nhat trong moi tieu de, to len thi ca cau nhap nhay.
@@ -293,7 +293,7 @@ MAU_HANG = {
     "KIMI": (110, 130, 255), "MOONSHOT": (110, 130, 255),
     "LLAMA": (0, 129, 251), "VIETTEL": (238, 0, 0),
     "FPT": (0, 110, 181), "VNG": (0, 148, 218),
-    "VINGROUP": (176, 141, 87),
+    "VINGROUP": (176, 141, 87), "VERTIV": (100, 165, 57),
 }
 MAU_CUM = {
     ("HUGGING", "FACE"): (255, 208, 0),
@@ -755,7 +755,20 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     src_img = Image.open(src).convert("RGB")
-    canvas.paste(_fit_cover(src_img, W, H), (0, 0))   # anh phu kin khung
+    # ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
+    # cover-crop lam mat tieu de cua slide/bang nguon, anh doc ra vo nghia).
+    # Nen: ban cover LAM MO + toi phu kin khung; lop sac: anh nguyen ti le,
+    # full W, dat sat tren (chu quote nam duoi). Anh cao hon khung thi chi cat
+    # theo chieu doc, giu tron be ngang. Dong nhip voi carousel._body_image.
+    nen = _fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40))
+    nen = ImageEnhance.Brightness(nen).enhance(0.5)
+    canvas.paste(nen, (0, 0))
+    nat_h = round(src_img.height * W / src_img.width)
+    sac = src_img.resize((W, nat_h), Image.LANCZOS)
+    if nat_h > H:
+        top = (nat_h - H) // 2
+        sac = sac.crop((0, top, W, top + H))
+    canvas.paste(sac, (0, 0))
     _man_quote(canvas)                                # man toi lien mach
 
     d = ImageDraw.Draw(canvas)
@@ -789,17 +802,26 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     open_h, close_h = ob[3] - ob[1], cb[3] - cb[1]
 
     # KHUNG CHU NHAT BO GOC bao quanh quote; dau " gan goc TL/BR (xem _quote_frame).
-    # Ba khoang cach can soi ky:
+    # BO CUC TU DUOI LEN (Ong Chu chot 03/09/2026, dong nhip carousel quote):
+    #   dong nguon sat day -> hang CHIP (ten kenh cyan trai, tagline trang phai)
+    #   -> khung quote. Chip KHONG con o goc tren: o do no de len tieu de cua
+    #   anh nguon (slide/bang), anh doc ra vo nghia.
     BOX_PAD_Y = 66       # khung cao hon khoi chu tren/duoi — chua khoang tho + dau "
-    G_FRAME_SRC = 46     # net khung duoi <-> dong nguon
-    G_SRC_TAG = 14       # nguon <-> tagline
-    BOT_MARGIN = 78      # khoi duoi cung <-> day the
+    CHIP_OFF = 7         # bong cung cua chip
+    GAP_TOP = 54         # chip <-> dong quote cuoi (bbox co descender nen nho hon duoi)
+    GAP_BOT = 66         # chip <-> dong nguon
+    BOT_MARGIN = 30      # dong nguon <-> day the
 
-    # Tagline khong con o duoi khung (da dua len top-phai). Duoi khung chi con
-    # dong nguon, CANH GIUA.
-    below_h = at_h
-    frame_bottom = H - BOT_MARGIN - ((below_h + G_FRAME_SRC) if below_h else 0)
-    last_line_bottom = frame_bottom - BOX_PAD_Y
+    f_hchip = _f(F_MONO, 22)          # JetBrains Mono Regular — ten kenh KHONG dam
+    f_tchip = _f(F_UI, 20)            # JetBrains Mono Bold
+    ten = handle if handle.startswith("@") else "@" + handle
+    htb = d.textbbox((0, 0), ten, font=f_hchip)
+    chip_h = (htb[3] - htb[1]) + 2 * 13
+
+    src_top = H - BOT_MARGIN - at_h
+    chip_top = src_top - GAP_BOT - CHIP_OFF - chip_h
+    last_line_bottom = chip_top - GAP_TOP
+    frame_bottom = last_line_bottom + BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
@@ -817,35 +839,30 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     _quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom,
                  CYAN, mark_col)
 
-    # Duoi khung: dong nguon (attribution), CANH GIUA.
-    ay = frame_bottom + G_FRAME_SRC
+    # Dong nguon (attribution), CANH GIUA, sat day.
+    ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
         d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=_pha(FG, 0.72))
         ay += at_lh
 
-    # Hang TREN theo phong cach NEOBRUTALISM: hai CHIP khoi dac, vien den day,
-    # bong cung lech (KHONG mo), chu MONO dam (JetBrains Mono). Tagline chip
-    # TRANG canh TRAI; ten kenh chip CYAN nhan dien canh PHAI. Mau phang tuong
-    # phan manh, khong halo mo nhu truoc.
-    def _chip_neo(txt, font, top, align, bg, fg, off=7, bord=4, pad_x=22, pad_y=13):
+    # Hang CHIP theo phong cach NEOBRUTALISM: khoi dac, vien den day, bong cung
+    # lech (KHONG mo), chu MONO. Ten kenh chip CYAN canh TRAI, tagline chip
+    # TRANG ke ben. Nam GIUA khung quote va dong nguon.
+    def _chip_neo(txt, font, top, align, bg, fg, off=7, bord=4, pad_x=22, pad_y=13, x=None):
         tb = d.textbbox((0, 0), txt, font=font)
         bw, bh = (tb[2] - tb[0]) + 2 * pad_x, (tb[3] - tb[1]) + 2 * pad_y
-        x0 = QUOTE_PAD if align == "l" else (W - QUOTE_PAD - bw)
+        x0 = x if x is not None else (QUOTE_PAD if align == "l" else (W - QUOTE_PAD - bw))
         y0 = top
         x1, y1 = x0 + bw, y0 + bh
         d.rectangle([x0 + off, y0 + off, x1 + off, y1 + off], fill=(0, 0, 0))   # bong cung lech
         d.rectangle([x0, y0, x1, y1], fill=bg, outline=(0, 0, 0), width=bord)   # khoi dac + vien den
         d.text((x0 + pad_x - tb[0], y0 + pad_y - tb[1]), txt, font=font, fill=fg)
-        return bh
+        return bh, x1
 
-    ten = handle if handle.startswith("@") else "@" + handle
-    top = QUOTE_PAD - 14
-    f_hchip = _f(F_MONO, 22)          # JetBrains Mono Regular — ten kenh KHONG dam, can voi tagline
-    f_tchip = _f(F_UI, 20)            # JetBrains Mono Bold
-    _chip_neo(ten, f_hchip, top, "r", CYAN, (0, 0, 0))            # ten kenh: chip cyan, chu den
-    if tag:
-        _chip_neo(tag, f_tchip, top, "l", (255, 255, 255), (0, 0, 0))  # tagline: chip trang, chu den
+    _, x1 = _chip_neo(ten, f_hchip, chip_top, "l", CYAN, (0, 0, 0))    # ten kenh: chip cyan, chu den
+    if tag:   # tagline: chip trang ke ben phai (tranh dau " dong o goc phai khung)
+        _chip_neo(tag, f_tchip, chip_top, "l", (255, 255, 255), (0, 0, 0), x=x1 + 16 + CHIP_OFF)
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
