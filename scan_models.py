@@ -44,6 +44,10 @@ UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 OPENROUTER = "https://openrouter.ai/api/v1/models"
 CATALOG = "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
 ARENA = "https://lmarena.ai/leaderboard"
+# Bang Code Arena WebDev — nam o trang rieng, payload khac bang text. Su co
+# 04/09/2026: qwen3.8-max-0902 vao #1 WebDev (1691 Elo, tren Fable 5) ngay 02/09
+# ma Nova bao "khong model nao vao/leo hang" vi chi doc text/anh/video.
+ARENA_WEBDEV = "https://arena.ai/leaderboard/code/webdev"
 # Trang cham diem — theo sat MOI hang, ke ca Anthropic va Meta (hai hang khong
 # co RSS). Ong Chu chot: bam vao trang cham diem thay vi bam theo tung hang.
 # Payload RSC chua 616 model voi ~80 truong: releaseDate (phu 616/616),
@@ -242,7 +246,44 @@ def fetch_arena() -> dict:
             rows.append({"hang": h, "ten": ten, "to_chuc": org, "vung": vung_cua(org)})
         rows.sort(key=lambda r: r["hang"])
         ra[mod] = rows
+    ra["webdev"] = fetch_arena_webdev()
     return ra
+
+
+def fetch_arena_webdev() -> list:
+    """Bang Code Arena WebDev cua arena.ai. Hang ghi trong cac object co
+    `modelDisplayName` + `rank` + `rating` (Elo). Mot model co the xuat hien
+    nhieu lan (nhieu provider) — giu hang tot nhat."""
+    try:
+        html = _get(ARENA_WEBDEV, timeout=90).text
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[arena webdev] hong: {type(e).__name__}: {e}", file=sys.stderr)
+        return []
+    manh = re.findall(r'self\.__next_f\.push\(\[1,\s*"((?:[^"\\]|\\.)*)"\]\)', html)
+    if not manh:
+        print("[arena webdev] khong thay payload RSC", file=sys.stderr)
+        return []
+    raw = "".join(json.loads('"' + c + '"') for c in manh)
+    dec = json.JSONDecoder()
+    rows, seen = [], set()
+    xep = []
+    for m in re.finditer(r'\{"[a-zA-Z]', raw):
+        try:
+            o, _ = dec.raw_decode(raw[m.start():])
+        except Exception:                                    # noqa: BLE001
+            continue
+        if isinstance(o, dict) and o.get("modelDisplayName") and o.get("rank"):
+            xep.append(o)
+    for o in sorted(xep, key=lambda x: x.get("rank") or 999):
+        ten = o["modelDisplayName"]
+        if ten in seen:
+            continue
+        seen.add(ten)
+        org = (o.get("modelOrganization") or "").lower()
+        rows.append({"hang": o["rank"], "ten": ten, "to_chuc": org,
+                     "vung": vung_cua(org), "diem": round(o.get("rating") or 0, 1),
+                     "votes": o.get("votes")})
+    return rows
 
 
 # ---------- nguon 4: trang cham diem ----------
@@ -696,7 +737,7 @@ def _in_bao_cao(k: dict, ngay: int):
         print(f"\n=== VUA LEO HANG ({len(leo)}) — thay doi so voi lan quet truoc ===")
         for r in leo[:10]:
             nhan = {"text": "van ban", "image": "tao anh", "video": "tao video",
-                    "coding": "coding AA"}.get(r["loai"], r["loai"])
+                    "coding": "coding AA", "webdev": "webdev"}.get(r["loai"], r["loai"])
             print(f"  [{nhan:<9s}] {r['ten'][:36]:<37s} {r['ghi_chu']}")
 
     tin = k.get("tin_hang") or []
@@ -712,14 +753,16 @@ def _in_bao_cao(k: dict, ngay: int):
             print(f"  {g['ngay']}  {g['repo']:<28s} {g['tag']}")
 
     bxh = k.get("bang_xep_hang") or {}
-    for mod, nhan in (("text", "VAN BAN"), ("image", "TAO ANH"), ("video", "TAO VIDEO")):
+    for mod, nhan in (("text", "VAN BAN"), ("webdev", "CODE WEBDEV"),
+                      ("image", "TAO ANH"), ("video", "TAO VIDEO")):
         rows = bxh.get(mod) or []
         if not rows:
             continue
         print(f"\n=== TOP {nhan} (arena) ===")
         for r in rows[:8]:
             vung = {"my": "My", "tq": "TQ", "khac": "  "}[r["vung"]]
-            print(f"  #{str(r['hang']):<4s} [{vung}] {r['ten'][:40]:<41s} {r['to_chuc']}")
+            diem = f"  {r['diem']}" if r.get("diem") else ""
+            print(f"  #{str(r['hang']):<4s} [{vung}] {r['ten'][:40]:<41s} {r['to_chuc']}{diem}")
 
 
 if __name__ == "__main__":
