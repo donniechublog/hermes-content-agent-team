@@ -188,84 +188,34 @@ def fetch_catalog() -> list:
 
 # ---------- nguon 3: bang xep hang arena ----------
 
-def fetch_arena() -> dict:
-    """Tra {'text': [...], 'image': [...], 'video': [...]} da sap theo hang."""
-    try:
-        html = _get(ARENA, timeout=90).text
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[arena] hong: {type(e).__name__}: {e}", file=sys.stderr)
-        return {}
-    # Du lieu nam trong cac manh self.__next_f.push([1,"...."]) — la chuoi JS
-    # da escape, phai json.loads tung manh roi noi lai moi parse duoc.
-    manh = re.findall(r'self\.__next_f\.push\(\[1,\s*"((?:[^"\\]|\\.)*)"\]\)', html)
-    if not manh:
-        print("[arena] khong thay payload RSC — trang co the da doi cau truc",
-              file=sys.stderr)
-        return {}
-    raw = "".join(json.loads('"' + c + '"') for c in manh)
-    dec = json.JSONDecoder()
-
-    xep, danh_muc = [], {}
-    for m in re.finditer(r'\{"[a-zA-Z]', raw):
-        try:
-            o, _ = dec.raw_decode(raw[m.start():])
-        except Exception:                                    # noqa: BLE001
-            continue
-        if not isinstance(o, dict):
-            continue
-        if "avgScore" in o and o.get("model"):
-            xep.append(o)
-        elif o.get("publicName") and isinstance(o.get("rankByModality"), dict):
-            danh_muc[o["publicName"]] = o
-
-    ra = {}
-    # text: co diem that (avgScore), lay tu bang xep hang chinh
-    seen = set()
-    text = []
-    for o in sorted(xep, key=lambda x: x.get("rank") or 999):
-        if o["model"] in seen:
-            continue
-        seen.add(o["model"])
-        org = (o.get("modelOrganization") or "").lower()
-        text.append({"hang": o.get("rank"), "ten": o["model"], "to_chuc": org,
-                     "vung": vung_cua(org),
-                     "diem": round((o.get("avgScore") or {}).get("value", 0), 4),
-                     "gia_vao": o.get("inputPricePerMillion"),
-                     "gia_ra": o.get("outputPricePerMillion"),
-                     "license": o.get("license"), "link": o.get("modelUrl")})
-    ra["text"] = text
-
-    # anh / video: trang chinh khong kem diem, nhung co rankByModality
-    for mod in ("image", "video"):
-        rows = []
-        for ten, o in danh_muc.items():
-            h = o["rankByModality"].get(mod)
-            if h in (None, BIG):
-                continue
-            org = (o.get("organization") or "").lower()
-            rows.append({"hang": h, "ten": ten, "to_chuc": org, "vung": vung_cua(org)})
-        rows.sort(key=lambda r: r["hang"])
-        ra[mod] = rows
-    ra["webdev"] = fetch_arena_webdev()
-    return ra
+ARENA_BOARDS = (
+    # (khoa, duong dan, nhan in)
+    ("text", "text", "VAN BAN"),
+    ("webdev", "code/webdev", "CODE WEBDEV"),
+    ("vision", "vision", "VISION"),
+    ("search", "search", "SEARCH"),
+    ("image", "text-to-image", "TAO ANH"),
+    ("image_edit", "image-edit", "SUA ANH"),
+    ("video", "text-to-video", "TAO VIDEO"),
+)
 
 
-def fetch_arena_webdev() -> list:
-    """Bang Code Arena WebDev cua arena.ai. Hang ghi trong cac object co
-    `modelDisplayName` + `rank` + `rating` (Elo). Mot model co the xuat hien
+def _arena_board(duong_dan: str) -> list:
+    """Mot bang bat ky cua arena.ai. Hang ghi trong object co `modelDisplayName`
+    + `rank` + `rating` (Elo) trong payload RSC. Mot model co the xuat hien
     nhieu lan (nhieu provider) — giu hang tot nhat."""
+    url = f"https://arena.ai/leaderboard/{duong_dan}"
     try:
-        html = _get(ARENA_WEBDEV, timeout=90).text
+        html = _get(url, timeout=90).text
     except Exception as e:                                   # noqa: BLE001
-        print(f"[arena webdev] hong: {type(e).__name__}: {e}", file=sys.stderr)
+        print(f"[arena {duong_dan}] hong: {type(e).__name__}: {e}", file=sys.stderr)
         return []
     manh = re.findall(r'self\.__next_f\.push\(\[1,\s*"((?:[^"\\]|\\.)*)"\]\)', html)
     if not manh:
-        print("[arena webdev] khong thay payload RSC", file=sys.stderr)
+        print(f"[arena {duong_dan}] khong thay payload RSC", file=sys.stderr)
         return []
     raw = "".join(json.loads('"' + c + '"') for c in manh)
     dec = json.JSONDecoder()
-    rows, seen = [], set()
     xep = []
     for m in re.finditer(r'\{"[a-zA-Z]', raw):
         try:
@@ -274,6 +224,7 @@ def fetch_arena_webdev() -> list:
             continue
         if isinstance(o, dict) and o.get("modelDisplayName") and o.get("rank"):
             xep.append(o)
+    rows, seen = [], set()
     for o in sorted(xep, key=lambda x: x.get("rank") or 999):
         ten = o["modelDisplayName"]
         if ten in seen:
@@ -284,6 +235,121 @@ def fetch_arena_webdev() -> list:
                      "vung": vung_cua(org), "diem": round(o.get("rating") or 0, 1),
                      "votes": o.get("votes")})
     return rows
+
+
+def fetch_arena() -> dict:
+    """{'text': [...], 'webdev': [...], 'vision': ..., 'search', 'image',
+    'image_edit', 'video'} — moi bang cua arena.ai, sap theo hang.
+
+    Truoc 04/09/2026 chi doc bang text + rankByModality image/video tu trang
+    lmarena cu, nen qwen3.8-max-0902 vao #1 WebDev (02/09) khong ai hay."""
+    ra = {}
+    for khoa, duong_dan, _nhan in ARENA_BOARDS:
+        ra[khoa] = _arena_board(duong_dan)
+    return ra
+
+
+# ---------- nguon 6: SWE-bench Verified ----------
+
+SWEBENCH = "https://www.swebench.com/"
+
+
+def fetch_swebench(top: int) -> list:
+    """Bang SWE-bench Verified (chinh thuc). JSON nam trong
+    <script id="leaderboard-data">. Moi dong = agent + model; lay % resolved."""
+    try:
+        html = _get(SWEBENCH, timeout=60).text
+        m = re.search(r'<script type="application/json" id="leaderboard-data">\s*(.*?)\s*</script>',
+                      html, re.S)
+        data = json.loads(m.group(1))
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[swebench] hong: {type(e).__name__}: {e}", file=sys.stderr)
+        return []
+    bang = next((b for b in data if b.get("name") == "Verified"), None)
+    if not bang:
+        return []
+    rows = sorted(bang["results"], key=lambda r: -(r.get("resolved") or 0))
+    return [{"hang": i + 1, "ten": r.get("name", "?"), "model": r.get("model_display"),
+             "to_chuc": (r.get("model_org") or "").lower(), "vung": "khac",
+             "diem": r.get("resolved"), "ngay": r.get("date")}
+            for i, r in enumerate(rows[:top])]
+
+
+# ---------- nguon 7: LiveBench ----------
+
+LIVEBENCH = "https://livebench.ai/"
+
+
+def fetch_livebench(top: int) -> tuple:
+    """LiveBench: trang React, du lieu o table_<YYYY_MM_DD>.csv; danh sach ngay
+    nam trong bundle JS. Tra (rows, ngay_ban). Diem = trung binh cac cot."""
+    try:
+        html = _get(LIVEBENCH, timeout=60).text
+        js_path = re.search(r'src="\./(static/js/main\.[a-z0-9]+\.js)"', html).group(1)
+        js = _get(LIVEBENCH + js_path, timeout=60).text
+        ngay_ds = re.findall(r'\["(20\d\d-\d\d-\d\d)"(?:,"(?:20\d\d-\d\d-\d\d)")*\]', js)
+        tat_ca = sorted(set(re.findall(r'"(20\d\d-\d\d-\d\d)"', js)))
+        ngay = tat_ca[-1] if tat_ca else None
+        csv_txt = None
+        for n in reversed(tat_ca[-4:]):        # ngay moi nhat co the chua co csv
+            r = _get(f"{LIVEBENCH}table_{n.replace('-', '_')}.csv", timeout=60)
+            if r.status_code == 200 and r.text.startswith("model,"):
+                csv_txt, ngay = r.text, n
+                break
+        if not csv_txt:
+            return [], ngay
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[livebench] hong: {type(e).__name__}: {e}", file=sys.stderr)
+        return [], None
+    import csv as _csv
+    import io
+    rows = []
+    for r in _csv.DictReader(io.StringIO(csv_txt)):
+        diem = [float(v) for k, v in r.items() if k != "model" and v not in ("", None)]
+        if diem:
+            rows.append({"ten": r["model"], "diem": round(sum(diem) / len(diem), 1),
+                         "to_chuc": "", "vung": "khac"})
+    rows.sort(key=lambda x: -x["diem"])
+    for i, r in enumerate(rows):
+        r["hang"] = i + 1
+    return rows[:top], ngay
+
+
+# ---------- nguon 8: OpenRouter usage (token thuc te) ----------
+
+OPENROUTER_RANK = "https://openrouter.ai/api/frontend/v1/rankings/models"
+
+
+def fetch_openrouter_usage(top: int) -> tuple:
+    """Model nao duoc DUNG nhieu nhat (token/ngay tren OpenRouter). Khac bang
+    diem: day la thi truong bo phieu bang tien. Tra (rows, ngay)."""
+    try:
+        data = _get(OPENROUTER_RANK, timeout=60).json().get("data", [])
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[openrouter usage] hong: {type(e).__name__}: {e}", file=sys.stderr)
+        return [], None
+    if not data:
+        return [], None
+    ngay = max(r["date"] for r in data)[:10]
+    truoc = sorted({r["date"] for r in data})
+    ngay_truoc = truoc[-2][:10] if len(truoc) > 1 else None
+    tong, tong_truoc = {}, {}
+    for r in data:
+        slug = re.sub(r"-\d{8}$", "", r["model_permaslug"])   # bo hau to ngay
+        tk = (r.get("total_completion_tokens") or 0) + (r.get("total_prompt_tokens") or 0)
+        if r["date"][:10] == ngay:
+            tong[slug] = tong.get(slug, 0) + tk
+        elif ngay_truoc and r["date"][:10] == ngay_truoc:
+            tong_truoc[slug] = tong_truoc.get(slug, 0) + tk
+    rows = []
+    for i, (slug, tk) in enumerate(sorted(tong.items(), key=lambda x: -x[1])[:top]):
+        org = slug.split("/")[0]
+        doi = (tk - tong_truoc[slug]) / tong_truoc[slug] * 100 if tong_truoc.get(slug) else None
+        rows.append({"hang": i + 1, "ten": slug, "to_chuc": org, "vung": vung_cua(org),
+                     "ty_token": round(tk / 1e9, 1),
+                     "doi_pct": round(doi) if doi is not None else None})
+    return rows, ngay
+
 
 
 # ---------- nguon 4: trang cham diem ----------
@@ -366,6 +432,9 @@ def loc_aa(aa: dict, ngay: int, top: int) -> dict:
                                   key=lambda x: (x["ra_mat"] or "", -(x["coding"] or 0)),
                                   reverse=True),
         "bang_coding_goc": _bang_goc(co_diem, gon2, top),
+        "bang_tri_tue_goc": _bang_goc(
+            sorted((r for r in aa.values() if r.get("intelligenceIndex") is not None),
+                   key=lambda r: -r["intelligenceIndex"]), gon2, top, khoa="tri_tue"),
         "nguon_mo_moi": sorted(
             (gon(r) for r in gan_day if r.get("isOpenWeights")),
             key=lambda x: x["ra_mat"] or "", reverse=True),
@@ -379,7 +448,7 @@ def ten_goc(ten: str) -> str:
     return re.sub(r"\s+", " ", t)
 
 
-def _bang_goc(co_diem: list, gon2, top: int) -> list:
+def _bang_goc(co_diem: list, gon2, top: int, khoa: str = "coding") -> list:
     """Top coding theo TEN GOC (moi model mot dong, hang = hang cua bien the
     tot nhat) — de so hang lan nay voi lan truoc bat 'vao top / leo hang'."""
     ra, thay = [], set()
@@ -389,7 +458,8 @@ def _bang_goc(co_diem: list, gon2, top: int) -> list:
             continue
         thay.add(g["ten_goc"])
         ra.append({"hang": len(ra) + 1, "ten": g["ten_goc"], "to_chuc": g["hang_sx"],
-                   "vung": "khac", "coding": g["coding"], "ra_mat": g["ra_mat"]})
+                   "vung": "khac", "coding": g["coding"], "diem": g[khoa],
+                   "ra_mat": g["ra_mat"]})
         if len(ra) >= top:
             break
     return ra
@@ -606,6 +676,9 @@ def main():
     aa = loc_aa(fetch_aa(), a.ngay, a.top)
     tin = fetch_tin_hang(a.ngay)
     gh = fetch_github(a.ngay)
+    swe = fetch_swebench(a.top)
+    lb, lb_ngay = fetch_livebench(a.top)
+    orr, or_ngay = fetch_openrouter_usage(a.top)
 
     tat_ca = {m["id"] for m in orouter} | {m["id"] for m in catalog}
     cu = da_thay()
@@ -616,6 +689,10 @@ def main():
     # duoc "vao top coding" / "leo hang coding". Truoc 04/09/2026 chi so hang
     # arena, nen GPT-6 Astra vao #8 coding ngay ra mat ma khong ai hay.
     hang_moi["coding"] = {r["ten"]: r["hang"] for r in aa.get("bang_coding_goc", [])}
+    hang_moi["tri_tue"] = {r["ten"]: r["hang"] for r in aa.get("bang_tri_tue_goc", [])}
+    hang_moi["swebench"] = {r["ten"]: r["hang"] for r in swe}
+    hang_moi["livebench"] = {r["ten"]: r["hang"] for r in lb}
+    hang_moi["openrouter"] = {r["ten"]: r["hang"] for r in orr}
     if a.lan_dau:
         ghi_moc(tat_ca, hang_moi)
         print(f"Da ghi moc {len(tat_ca)} model. Lan sau se chi bao cai moi.")
@@ -645,6 +722,10 @@ def main():
 
     bang_so = {m: r[:a.top] for m, r in arena.items()}
     bang_so["coding"] = aa.get("bang_coding_goc", [])
+    bang_so["tri_tue"] = aa.get("bang_tri_tue_goc", [])
+    bang_so["swebench"] = swe
+    bang_so["livebench"] = lb
+    bang_so["openrouter"] = orr
     leo_hang = so_hang(bang_so, hang_cu())
 
     # RA MAT THEO BANG CHAM DIEM: nguon "moi" thu hai, doc lap voi router.
@@ -660,6 +741,9 @@ def main():
         "leo_hang": leo_hang,
         "cham_diem": aa,
         "ra_mat_aa_chua_bao": ra_mat_aa,
+        "swebench": swe,
+        "livebench": {"ngay": lb_ngay, "rows": lb},
+        "openrouter_usage": {"ngay": or_ngay, "rows": orr},
         "tin_hang": tin,
         "ban_phat_hanh": gh,
         "moi_tren_router_cua_ta": moi_catalog,
@@ -676,6 +760,12 @@ def main():
 
     da_bao.update({r["ten_goc"]: r["ra_mat"] for r in ra_mat_aa})
     ghi_moc(tat_ca | cu, hang_moi, da_bao)
+
+
+NHAN_BANG = {"text": "van ban", "webdev": "webdev", "vision": "vision", "search": "search",
+             "image": "tao anh", "image_edit": "sua anh", "video": "tao video",
+             "coding": "coding AA", "tri_tue": "tri tue AA", "swebench": "SWE-bench",
+             "livebench": "LiveBench", "openrouter": "OpenRouter usage"}
 
 
 def _in_bao_cao(k: dict, ngay: int):
@@ -736,8 +826,7 @@ def _in_bao_cao(k: dict, ngay: int):
     if leo:
         print(f"\n=== VUA LEO HANG ({len(leo)}) — thay doi so voi lan quet truoc ===")
         for r in leo[:10]:
-            nhan = {"text": "van ban", "image": "tao anh", "video": "tao video",
-                    "coding": "coding AA", "webdev": "webdev"}.get(r["loai"], r["loai"])
+            nhan = NHAN_BANG.get(r["loai"], r["loai"])
             print(f"  [{nhan:<9s}] {r['ten'][:36]:<37s} {r['ghi_chu']}")
 
     tin = k.get("tin_hang") or []
@@ -753,16 +842,37 @@ def _in_bao_cao(k: dict, ngay: int):
             print(f"  {g['ngay']}  {g['repo']:<28s} {g['tag']}")
 
     bxh = k.get("bang_xep_hang") or {}
-    for mod, nhan in (("text", "VAN BAN"), ("webdev", "CODE WEBDEV"),
-                      ("image", "TAO ANH"), ("video", "TAO VIDEO")):
+    for mod, _dd, nhan in ARENA_BOARDS:
         rows = bxh.get(mod) or []
         if not rows:
             continue
-        print(f"\n=== TOP {nhan} (arena) ===")
+        print(f"\n=== TOP {nhan} (arena.ai) ===")
         for r in rows[:8]:
             vung = {"my": "My", "tq": "TQ", "khac": "  "}[r["vung"]]
             diem = f"  {r['diem']}" if r.get("diem") else ""
             print(f"  #{str(r['hang']):<4s} [{vung}] {r['ten'][:40]:<41s} {r['to_chuc']}{diem}")
+
+    tt = (aa.get("bang_tri_tue_goc") or [])
+    if tt:
+        print("\n=== TOP TRI TUE (artificialanalysis intelligence index, theo ten goc) ===")
+        for r in tt[:8]:
+            print(f"  #{str(r['hang']):<4s} {r['ten'][:40]:<41s} {str(r['to_chuc'])[:14]:<15s} {r['diem']}  ra mat {r['ra_mat']}")
+    swe = k.get("swebench") or []
+    if swe:
+        print(f"\n=== SWE-BENCH VERIFIED (chinh thuc, muc moi nhat {max(r['ngay'] or '' for r in swe)}) ===")
+        for r in swe[:8]:
+            print(f"  #{str(r['hang']):<4s} {r['diem']:>5}%  {r['ten'][:44]:<45s} model={r['model']}  {r['ngay']}")
+    lb = k.get("livebench") or {}
+    if lb.get("rows"):
+        print(f"\n=== LIVEBENCH (ban {lb.get('ngay')}) ===")
+        for r in lb["rows"][:8]:
+            print(f"  #{str(r['hang']):<4s} {r['diem']:>5}  {r['ten'][:50]}")
+    orr = k.get("openrouter_usage") or {}
+    if orr.get("rows"):
+        print(f"\n=== OPENROUTER USAGE (token/ngay, ngay {orr.get('ngay')}) — thi truong bo phieu bang tien ===")
+        for r in orr["rows"][:10]:
+            doi = f"  {'+' if r['doi_pct'] > 0 else ''}{r['doi_pct']}% so hom truoc" if r.get("doi_pct") is not None else ""
+            print(f"  #{str(r['hang']):<4s} {r['ty_token']:>8}B  {r['ten'][:40]:<41s}{doi}")
 
 
 if __name__ == "__main__":
