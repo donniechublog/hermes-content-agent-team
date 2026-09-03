@@ -802,10 +802,10 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     open_h, close_h = ob[3] - ob[1], cb[3] - cb[1]
 
     # KHUNG CHU NHAT BO GOC bao quanh quote; dau " gan goc TL/BR (xem _quote_frame).
-    # BO CUC (Ong Chu chot 03/09/2026): hai CHIP CUOI LEN NET KHUNG — net di qua
-    # tam chip theo chieu doc, nhu nhan dan tren hop:
-    #   - chip ten kenh (cyan) o goc TREN-PHAI khung, tren net ngang tren
-    #   - chip tagline (trang) o goc DUOI-TRAI khung, tren net ngang duoi
+    # BO CUC (Ong Chu chot 03/09/2026): hai CHIP can theo muc net khung (tam chip
+    # ngang voi net ngang), khung giu design goc:
+    #   - chip ten kenh (cyan) o goc TREN-PHAI khung, muc net ngang tren
+    #   - chip tagline (trang) o goc DUOI-TRAI khung, muc net ngang duoi
     #   - dong nguon canh giua sat day.
     # Chip KHONG o goc tren the: o do no de len tieu de cua anh nguon.
     BOX_PAD_Y = 66       # khung cao hon khoi chu tren/duoi — chua khoang tho + dau "
@@ -864,20 +864,17 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
 
     fx0, fx1 = FRAME_X, W - FRAME_X
     aw = (fx1 - fx0) // 3                     # 1/3 net ngang cua _quote_frame
-    # Chip ten kenh: goc TREN-PHAI, tam chip nam tren net ngang tren. Keo net
-    # ngang tren tu cuoi doan co san (fx0+aw) sang toi chip de net "xuyen" chip.
+    # Chip ten kenh: goc TREN-PHAI, tam chip ngang muc net ngang tren. Khung giu
+    # nguyen design goc (net 1/3), KHONG keo dai net toi chip.
     tb_h = d.textbbox((0, 0), ten, font=f_hchip)
     hw = (tb_h[2] - tb_h[0]) + 2 * 22
     hx0 = fx1 - CHIP_INSET - hw
-    d.line([(fx0 + aw, frame_top), (hx0 + hw // 2, frame_top)], fill=CYAN, width=5)
     _chip_neo(ten, f_hchip, frame_top - chip_h // 2, "l", CYAN, (0, 0, 0), x=hx0)
     if tag:
-        # Chip tagline: goc DUOI-TRAI, tam chip tren net ngang duoi (yb). Keo net
-        # ngang duoi tu chip sang toi dau doan co san (fx1-aw).
+        # Chip tagline: goc DUOI-TRAI, tam chip ngang muc net ngang duoi (yb).
         tb_t = d.textbbox((0, 0), tag, font=f_tchip)
         tw_ = (tb_t[2] - tb_t[0]) + 2 * 22
         tx0 = fx0 + CHIP_INSET
-        d.line([(tx0 + tw_ // 2, yb), (fx1 - aw, yb)], fill=CYAN, width=5)
         _chip_neo(tag, f_tchip, yb - chip_h // 2, "l", (255, 255, 255), (0, 0, 0), x=tx0)
 
     out = Path(out)
