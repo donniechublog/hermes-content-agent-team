@@ -344,27 +344,16 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     at_h = at_lh * len(at_lines)
 
     BOX_PAD_Y = 62       # khung cao hon chu — khoang tho + dau " o goc
-    CHIP_OFF = 6         # bong cung cua chip (off trong _chip_neo)
-    # chip <-> CHU hai ben BANG NHAU theo mat (Ong Chu chot 03/09/2026). Dong
-    # quote cuoi co phan lung (descender) trong bbox nen so px tren nho hon
-    # duoi mot chut moi nhin deu. GAP_TOP > 40 de net ngang duoi cua khung
-    # (y1-22) van nam tren chip.
-    GAP_TOP = 50
-    GAP_BOT = 62
+    CHIP_INSET = 24      # chip thut vao tu canh phai khung
+    G_FRAME_SRC = 44     # net ngang duoi cua khung <-> dong nguon
+    BR_LIFT = 22         # net ngang duoi nam tren frame_bottom (card._quote_frame)
 
-    # Thu tu tu DUOI len: dong nguon sat day (mep duoi = WM_BOTTOM), chip ten
-    # kenh canh trai, roi khung quote — cach chip hai ben bang nhau (do theo chu).
-    f_wm = _f(F_MONO_CH, WM_SIZE)
-    wtb = d.textbbox((0, 0), handle or "", font=f_wm)
-    chip_h = ((wtb[3] - wtb[1]) + 2 * 10) if handle else 0
-    src_top = H - (WM_BOTTOM - 20) - at_h    # ca cum quote+chip+nguon ha them 20px (03/09/2026)
-    if handle:
-        chip_y = src_top - GAP_BOT - CHIP_OFF - chip_h
-        last_line_bottom = chip_y - GAP_TOP
-    else:
-        chip_y = src_top
-        last_line_bottom = src_top - GAP_TOP - BOX_PAD_Y
-    frame_bottom = last_line_bottom + BOX_PAD_Y
+    # Dong bo voi card._render_quote (Ong Chu chot 03/09/2026): chip ten kenh o
+    # goc TREN-PHAI khung, tam chip ngang muc net ngang tren; khung giu design
+    # goc; dong nguon canh giua sat day.
+    src_top = H - (WM_BOTTOM - 20) - at_h
+    frame_bottom = src_top - G_FRAME_SRC + BR_LIFT
+    last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
@@ -382,8 +371,13 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     mark_col = card._du_sang(mau_hang) if mau_hang else _cyan()
     card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, _cyan(), mark_col)
 
-    # Chip ten kenh canh trai, ngay duoi khung.
-    _watermark(canvas, handle, y=chip_y)
+    # Chip ten kenh goc TREN-PHAI khung, tam chip ngang muc net ngang tren.
+    if handle:
+        f_wm = _f(F_MONO_CH, WM_SIZE)
+        wtb = d.textbbox((0, 0), handle, font=f_wm)
+        cw = (wtb[2] - wtb[0]) + 2 * 18
+        ch = (wtb[3] - wtb[1]) + 2 * 10
+        _watermark(canvas, handle, x=W - FRAME_X - CHIP_INSET - cw, y=frame_top - ch // 2)
 
     # Dong nguon CANH GIUA, sat day the.
     ay = src_top
