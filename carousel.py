@@ -84,7 +84,7 @@ MAX_TOI = 205                    # do toi o vung chu ~80% (truoc 153/60%): dam h
 VEIL_TOP = 0.42                  # scrim bat dau SOM NHAT o 42% chieu cao (kieu cover)
 VEIL_LEAD = 0.16                 # ...va luon bat dau TREN dong chu dau it nhat 16% chieu cao
 VEIL_EASE = 1.4                  # duong cong: nhat o tren, dam dan xuong — khong mep
-TEXT_BASE = 1230                 # day khoi chu, chua ~40px toi watermark
+TEXT_BASE = 1230                 # day khoi chu; dai 1230..H chua chip ten kenh (goc duoi-trai)
 TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1030 -> vung nen <=24% (<30%)
 FULL_TOI_PAD = 40                # cham 60% truoc day khoi chu chung nay px (dong cuoi nam tren nen dam nhat)
 
@@ -164,14 +164,25 @@ def _chip_neo(d, txt, font, x, y, fill, fg=(0, 0, 0), anchor="l",
     return (x0, y, x1, y1)
 
 
-def _watermark(canvas, handle):
-    """BRAND TEXT (ten kenh) goc TREN-trai tren MOI slide — CHIP neobrutalism:
-    khoi CYAN nhan dien, vien den, bong cung, chu mono. Dong bo voi hero card."""
+WM_BOTTOM = 48                   # mep duoi chip ten kenh cach day khung
+
+
+def _watermark(canvas, handle, x=None, y=None):
+    """BRAND TEXT (ten kenh) — CHIP neobrutalism: khoi CYAN nhan dien, vien den,
+    bong cung, chu mono. Dong bo voi hero card.
+
+    VI TRI: goc DUOI-trai, trong dai trong duoi khoi chu (TEXT_BASE..H) — vung
+    scrim toi nhat, KHONG bao gio de len noi dung anh. Truoc day dat goc tren-trai
+    (y=48) nen de thang len tieu de/chart cua anh (Ong Chu bat loi 03/09/2026).
+    `x`/`y` cho phep slide bia xep chip canh chip chuyen muc. Tra ve bbox."""
     if not handle:
-        return
+        return None
     d = ImageDraw.Draw(canvas)
     f = _f(F_MONO_CH, WM_SIZE)
-    _chip_neo(d, handle, f, PAD, 48, fill=_cyan(), anchor="l")
+    if y is None:
+        tb = d.textbbox((0, 0), handle, font=f)
+        y = H - WM_BOTTOM - ((tb[3] - tb[1]) + 2 * 10)     # + 2*pad_y cua _chip_neo
+    return _chip_neo(d, handle, f, PAD if x is None else x, y, fill=_cyan(), anchor="l")
 
 
 def _scrim(canvas, tu=0.34):
@@ -307,13 +318,13 @@ def build_body(img_path, text, handle, out):
 Q_HI, Q_LO = 60, 38              # co chu quote trong slide than
 Q_LEAD = 14                      # gian dong quote (theo px, giong card.py)
 Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
-Q_BOTTOM = 1150                  # day cum quote, chua ~80px toi watermark
+Q_BOTTOM = 1150                  # day cum quote
 
 
 def build_body_quote(img_path, quote, attrib, handle, out):
     """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
-    duoc nhac. Brand text o goc tren (watermark), dong nguon canh giua duoi khung."""
+    duoc nhac. Brand text o goc duoi-trai (watermark), dong nguon canh giua duoi khung."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
     d = ImageDraw.Draw(canvas)
@@ -334,7 +345,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
 
     BOX_PAD_Y = 62       # khung cao hon chu — khoang tho + dau " o goc
     G_FRAME_SRC = 44     # khung <-> nguon
-    BOT_MARGIN = 96      # khoi duoi <-> day the
+    BOT_MARGIN = 150     # khoi duoi <-> day the (chua cho chip ten kenh o duoi-trai)
 
     below_h = at_h
     frame_bottom = H - BOT_MARGIN - ((below_h + G_FRAME_SRC) if below_h else 0)
@@ -363,7 +374,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
         d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=(190, 190, 190))
         ay += at_lh
 
-    _watermark(canvas, handle)               # brand text goc tren-trai (WM)
+    _watermark(canvas, handle)               # chip ten kenh goc duoi-trai
     canvas.convert("RGB").save(out, "PNG")
 
 
@@ -382,15 +393,24 @@ def build_cover(img_path, hook, label, out, handle=None):
         ltb = d.textbbox((0, 0), label, font=lf)
         chip_h = (ltb[3] - ltb[1]) + 2 * 10         # + 2*pad_y
         y_label = H - 84 - chip_h
-    hook_bottom = (y_label - 28) if label else (H - 96)
+    # Khong co label: hook van phai nam TREN chip ten kenh o goc duoi-trai.
+    wm_h = 0
+    if handle:
+        wtb = d.textbbox((0, 0), handle, font=_f(F_MONO_CH, WM_SIZE))
+        wm_h = (wtb[3] - wtb[1]) + 2 * 10
+    hook_bottom = (y_label - 28) if label else (H - WM_BOTTOM - wm_h - 28 if handle else H - 96)
     hf, wrapped, lh, total = _fit_block(
         d, [hook], W - 2 * PAD, int(H * 0.5), HOOK_HI, HOOK_LO,
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
-        _chip_neo(d, label, lf, PAD, y_label, fill=(255, 255, 255), anchor="l")  # chip category trang
-    _watermark(canvas, handle)          # chip ten kenh goc tren-trai, nhu moi slide
+        # Hang duoi cung: chip ten kenh (cyan) + chip category (trang), cung y.
+        bb = _watermark(canvas, handle, y=y_label)
+        cx = (bb[2] + 16 + 6) if bb else PAD           # cach chip truoc 16px + bong 6px
+        _chip_neo(d, label, lf, cx, y_label, fill=(255, 255, 255), anchor="l")
+    else:
+        _watermark(canvas, handle)      # chip ten kenh goc duoi-trai, nhu moi slide
     canvas.convert("RGB").save(out, "PNG")
 
 

@@ -64,7 +64,7 @@ Khổ **1080×1350 (4:5), nền đen tuyệt đối**. Hai loại slide:
         1–2 đoạn, mỗi đoạn 2–4 dòng
         (hoặc một câu quote — xem "Slide quote")
               ↓
-   chip tên kênh (neobrutalism, góc trên-trái mọi slide)
+   chip tên kênh (neobrutalism, góc dưới-trái mọi slide, không đè lên ảnh)
 ```
 
 ### Nguyên tắc liền mạch — không đường mép
@@ -146,6 +146,13 @@ venv/bin/python anh_bai.py \
 
 Script gom ảnh từ link gốc và các báo đưa cùng tin, lọc logo/favicon, xếp hạng.
 Một tin thường cho vài ảnh — chia chúng cho các slide theo ý từng slide nói.
+
+**Tin model ra mắt: ưu tiên benchmark table/chart có trong bài.** Bảng so sánh
+điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là bằng chứng
+mạnh nhất — ưu tiên dùng làm ảnh slide trước cả ảnh logo/hero. Chụp/trích chúng
+từ bài gốc hoặc bài review; slide con số gây sốc ghép với bảng benchmark rất
+khớp. Nhớ crop về 1:1/4:5 và cạnh ngắn ≥1000px (bảng chữ nhỏ thì càng phải bản
+to).
 
 ### Gom ảnh CHẤT LƯỢNG: kết hợp official site + magazine (BẮT BUỘC nghĩ rộng)
 
@@ -259,7 +266,7 @@ Trong spec, slide đó dùng `quote` (và `attrib` tuỳ chọn) thay cho `text`
 `carousel.py` tự vẽ đúng dạng pull-quote: câu lớn canh trái trong một **khung 2
 góc ngoặc bo tròn** (dấu " mở góc trên-trái, đóng góc dưới-phải, nét ngang xuyên
 giữa dấu), dòng nguồn **canh giữa** dưới khung, trên cùng lớp veil liền mạch.
-Brand text (tên kênh) ở **góc trên** như mọi slide. **Bạn không đặt dấu tay,
+Brand text (tên kênh) ở **góc dưới-trái** như mọi slide. **Bạn không đặt dấu tay,
 không sửa** — tất cả tự vẽ. Về màu:
 
 - **Nét khung + chip tên kênh + chip category = `CYAN` nhận diện** (đồng bộ với
