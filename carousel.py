@@ -357,7 +357,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     f_wm = _f(F_MONO_CH, WM_SIZE)
     wtb = d.textbbox((0, 0), handle or "", font=f_wm)
     chip_h = ((wtb[3] - wtb[1]) + 2 * 10) if handle else 0
-    src_top = H - WM_BOTTOM - at_h
+    src_top = H - (WM_BOTTOM - 20) - at_h    # ca cum quote+chip+nguon ha them 20px (03/09/2026)
     if handle:
         chip_y = src_top - GAP_BOT - CHIP_OFF - chip_h
         last_line_bottom = chip_y - GAP_TOP
