@@ -13,6 +13,8 @@ BODY="Nhiem vu quet model sang $DAY (chay theo lich cron). Lam dung huong dan tr
 Buoc 1, chay script tat dinh:
 cd /home/donniechu/content-team && venv/bin/python scan_models.py --ngay 7 --top 10
 
+Muc BAT BUOC DUA VAO BAO CAO o cuoi: MOI muc phai co trong danh sach ban nop (tieu de chua dung ten model script in). manifest_ghi.py se tu choi neu thieu — them vao roi chay lai, khong duoc bo.
+
 Buoc 2, truoc khi khuyen nghi bat cu model nao, doc lai thu da bi loai:
 cat /home/donniechu/content-team/state/${CT_BRAND}/model_health.json
 

@@ -49,6 +49,27 @@ def _ghi_nhat_ky(vai: str, message_id, files, mo_ta: str) -> None:
         fh.write(json.dumps(dong, ensure_ascii=False) + "\n")
 
 
+def _da_gui_gan_day(vai: str, files, phut: int = 30):
+    """Tra ve ban ghi gan nhat neu CUNG bo file (theo ten) da gui trong `phut` phut."""
+    import time as _t
+    p = STATE / f"{vai}.jsonl"
+    if not p.exists():
+        return None
+    ten = sorted(Path(f).name for f in files)
+    moc = _t.time() - phut * 60
+    for dong in reversed(p.read_text(encoding="utf-8").splitlines()):
+        try:
+            d = json.loads(dong)
+        except Exception:                                    # noqa: BLE001
+            continue
+        if d.get("ts", 0) < moc:
+            break
+        if sorted(Path(f).name for f in d.get("files", [])) == ten:
+            return {"message_id": d.get("message_id"),
+                    "luc": _t.strftime("%H:%M", _t.localtime(d["ts"]))}
+    return None
+
+
 def _kb_duyet(draft_id: str) -> dict:
     """Ba nut cho tam anh (approve_service xu ly callback):
       imgok   Duyet   -> sinh task viet caption.
@@ -85,6 +106,16 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
         raise SystemExit(f"Khong thay file: {', '.join(str(f) for f in thieu)}")
     if len(files) > 10:
         raise SystemExit("Toi da 10 anh mot album (gioi han Telegram).")
+
+    # CHONG GUI TRUNG: cung vai + cung bo file trong 30 phut -> khong gui lai.
+    # Su co 04/09/2026: Kite sinh agent con de "kiem tra anh", agent con tu gui
+    # album (msg 301) roi het gio; Kite khong biet nen gui lai (msg 308). Ong
+    # Chu thay mot tin hai album. Ai goi lai cung nhan message_id cu, khong loi.
+    truoc = _da_gui_gan_day(vai, files, phut=30)
+    if truoc:
+        print(f"da gui truoc do luc {truoc['luc']} (message_id={truoc['message_id']}), "
+              f"KHONG gui lai. Muon gui lai that thi doi ten file hoac cho qua 30 phut.")
+        return {"ok": True, "result": {"message_id": truoc["message_id"]}, "trung": True}
 
     if len(files) == 1:
         with httpx.Client(timeout=120) as c, open(files[0], "rb") as fh:

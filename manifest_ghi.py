@@ -36,6 +36,45 @@ TIEN_TO = {"nova": "nova_candidates", "market": "vera_candidates",
            "vera": "vera_candidates"}
 
 
+import re as _re
+
+BAT_BUOC = STATE / "nova_bat_buoc.json"
+
+
+def _chuan(t: str) -> str:
+    return _re.sub(r"[^a-z0-9]+", "", str(t or "").lower())
+
+
+def _khop(ten_bat_buoc: str, tieu_de: str) -> bool:
+    """'qwen3.8-max-0902' khop tieu de 'Qwen3.8 Max 0902 vao #2 WebDev': moi
+    manh chu/so (>=2 ky tu) cua ten phai co trong tieu de (da bo dau cach/ky hieu)."""
+    td = _chuan(tieu_de)
+    manh = [m for m in _re.findall(r"[a-z0-9]+", ten_bat_buoc.lower()) if len(m) >= 2]
+    return bool(manh) and all(m in td for m in manh)
+
+
+def _doc_bb() -> dict:
+    try:
+        return json.loads(BAT_BUOC.read_text(encoding="utf-8")) if BAT_BUOC.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        return {}
+
+
+def kiem_bat_buoc(items: list) -> list:
+    """Muc bat buoc nao KHONG co trong tieu de/tom tat cua danh sach Nova nop."""
+    bb = _doc_bb()
+    van_ban = [(it.get("title", "") + " " + it.get("summary_vi", "")) for it in items]
+    return [v for v in bb.values() if not any(_khop(v["ten"], t) for t in van_ban)]
+
+
+def xoa_bat_buoc(items: list) -> None:
+    bb = _doc_bb()
+    van_ban = [(it.get("title", "") + " " + it.get("summary_vi", "")) for it in items]
+    con = {k: v for k, v in bb.items() if not any(_khop(v["ten"], t) for t in van_ban)}
+    BAT_BUOC.write_text(json.dumps(con, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"da xac nhan {len(bb) - len(con)} muc bat buoc, con lai {len(con)}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Ghi manifest danh so cho Nova/Vera")
     ap.add_argument("--vai", required=True, choices=sorted(TIEN_TO))
@@ -84,6 +123,14 @@ def main():
             "picked": False,
         })
 
+    if a.vai == "nova":
+        thieu = kiem_bat_buoc(items)
+        if thieu:
+            sys.exit("TU CHOI ghi manifest: thieu " + str(len(thieu)) + " muc BAT BUOC "
+                     "(luat Ong Chu: xuat hien tren bang la phai dua, khong duoc bo):\n  - "
+                     + "\n  - ".join(f"{v['ten']} ({v['loai']}: {v['ghi_chu']})" for v in thieu)
+                     + "\nThem cac muc nay vao danh sach roi chay lai.")
+
     ngay = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     ten = f"{TIEN_TO[a.vai]}_{ngay}{('_' + a.hau_to) if a.hau_to else ''}.json"
     out = STATE / ten
@@ -98,6 +145,8 @@ def main():
         {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": a.vai,
          "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(out)
+    if a.vai == "nova":
+        xoa_bat_buoc(items)
     for it in items:
         print(f"  {it['index']}. [{it['via']}] {it['title'][:66]}", file=sys.stderr)
 
