@@ -8,7 +8,7 @@
   "slides": [
     {
       "image": "drafts/src_muse/src_zuck.png",
-      "text": "Meta Superintelligence Labs vừa công bố Muse Spark 1.3, và chính Zuckerberg gọi đây là bước nhảy lớn nhất của dòng Muse trên hai mảng coding cùng công việc agent dài hạn.\n\nDòng Muse ra từ tháng 4, tách biệt hoàn toàn khỏi Llama, hướng tới ý tưởng siêu trí tuệ cá nhân: những agent đa nhiệm, làm việc gần như liên tục cùng người dùng."
+      "text": "Meta Superintelligence Labs công bố Muse Spark 1.3. Zuckerberg gọi đây là bước nhảy lớn nhất của dòng Muse ở coding và agent dài hạn.\n\nMuse ra từ tháng 4, tách hẳn khỏi Llama, hướng tới siêu trí tuệ cá nhân: agent đa nhiệm, chạy liên tục cùng người dùng."
     },
     {
       "image": "drafts/src_muse/src_num.png",
@@ -26,7 +26,7 @@
     },
     {
       "image": "drafts/src_muse/src_banner.png",
-      "text": "Giá giữ nguyên 1,25 USD mỗi triệu token đầu vào và 4,25 USD cho đầu ra, và model đã có sẵn trên Muse Code cùng Meta Model API với cửa sổ 1 triệu token.\n\nZuckerberg lại úp mở bản trọng số mở cùng một model “Watermelon” đang ấp. Chặng tới: Meta thu hẹp khoảng cách với OpenAI, Anthropic và Google ở đúng mảng coding và agent đang nóng nhất."
+      "text": "Giá giữ nguyên 1,25 USD mỗi triệu token vào, 4,25 USD ra; đã có trên Muse Code và Meta Model API, cửa sổ 1 triệu token.\n\nZuckerberg úp mở bản trọng số mở và model “Watermelon”. Mục tiêu: bám sát OpenAI, Anthropic, Google ở coding và agent."
     }
   ]
 }
