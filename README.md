@@ -14,7 +14,7 @@ Bảng dưới gộp cả hai brand container để tiện đối chiếu; cột
 
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
-| Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
+| Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
 | Ethan | `designer` | designer | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
 | Ethan | `designer` | designer | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
 | Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
@@ -96,6 +96,19 @@ ghi thêm một dòng cảnh báo.
   font). Generator = hướng B (HTML→PNG)
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số
+  Từ 03/09/2026: **mọi tin nhắn vào đều có log** (`state/<brand>/approve.log`, xoay
+  vòng 5 MB×3, và journal) theo các nhãn `vao → route → chat/chon/lenh → tele`,
+  và **mọi nhánh đều kết thúc bằng một tin trả về** (kể cả lỗi, hết giờ). Chat
+  chạy qua `_chay_nen` (bọc traceback → ⚠️ về đúng topic), báo tiến độ ở phút 2
+  và 6, tự dừng ở phút 10 và trả phần agent đã in được
+- `chat_router.py` — định tuyến chat Telegram → hermes CLI theo topic. Ghép
+  `CHAT_HINT` (chat thì trả lời ngắn, không tự chạy scan/task) trước mọi tin cho
+  mọi vai; hết giờ thì giết cả process group (`start_new_session` + `killpg`)
+- `ghi_log.py` — log dùng chung (stdout + tệp theo brand) cho hai tệp trên
+- `manifest_ghi.py` / `manifest_build.py` — ghi manifest đánh số vào
+  `state/<brand>/` qua `env_load.state_dir()` — **cùng chỗ approve_service đọc**.
+  Trước 03/09 ghi cứng `state/` gốc nên trả lời số trong topic Vera/Nova luôn ra
+  "Chưa có danh sách"
 - `moat_publish.py` — đẩy bài đã duyệt sang moat (`push <draft_id>`) và hỏi trạng thái
   đăng social (chạy không tham số); khoá ở `.secrets.env` (`MOAT_BASE_URL`, `MOAT_PUBLISH_KEY`)
 - `model_audition.py` — thử model: tiếng Việt đủ dấu, gọi tool thật, có prompt caching không
@@ -108,6 +121,17 @@ ghi thêm một dòng cảnh báo.
 - `requirements.txt` — phụ thuộc Python. venv dùng chung với hermes nên `hermes
   update` có thể làm mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`
 
+## Chạy tuần tự, không song song
+
+Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**:
+
+- `kanban.max_in_progress: 1` trong `~/.hermes-<brand>/config.yaml` — dispatcher mỗi
+  container chỉ chạy một task tại một thời điểm, FIFO theo `created_at`.
+- Lệnh chọn nhiều tin nhiều vai ("1, 3 - Ethan, 2 - Dre") được **sắp theo vai** trước
+  khi tạo task, nên vai xuất hiện trước làm hết bài của mình rồi vai sau mới bắt đầu.
+- Chat Telegram: mỗi container một agent chat tại một thời điểm (`_HANG_AGENT` trong
+  `approve_service.py`); vai sau được báo "đang xếp hàng sau …" rồi tới lượt.
+
 ## Dịch vụ systemd
 
 - `hermes-gateway` — gateway hermes, chứa dispatcher kanban
@@ -116,7 +140,7 @@ ghi thêm một dòng cảnh báo.
 
 ## Cron (7 job, xem `~/.hermes/cron/jobs.json`)
 
-- `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — 06:00 VN, ba vai đi tìm tin
+- `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
 - `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
 - `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước
 - `model-watch` — 30 phút/lần, dò sức khoẻ model

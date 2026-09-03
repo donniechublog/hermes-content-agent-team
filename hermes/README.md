@@ -23,7 +23,8 @@ slug generic khớp thư mục thật trong home:
 
 Map slug ↔ nhân vật: blog `carousel`=Dre, `designer`=Ethan, `writer`=Miles,
 `nova`; dcgr `carousel`=Dre, `designer`=Ethan, `writer`=Miles, `market`=Vera;
-shared: `scout`=Finn, `teaser`=Jean, `itachi`, `gin`, `analyst`=Ada, `bob`.
+shared: `itachi`, `gin`, `analyst`=Ada. Chỉ ở blog: `scout`=Finn, `teaser`=Jean (đọc donniechu.com), `nova`, `carousel-edu`=Kite. `bob` mỗi brand một bản (handle khác)
+(từ 03/09/2026: dcgr chỉ có Vera đi tìm tin, Finn không có cron ở dcgr nên bỏ).
 `carousel-edu`=Kite (blog) đã deploy live từ 01/09/2026 (full pipeline:
 render_edu.py + profile + approve).
 

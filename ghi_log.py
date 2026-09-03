@@ -19,12 +19,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 
 _LOG = None
+_KHOA = __import__("threading").Lock()
 
 
 def _khoi_tao():
     global _LOG
     if _LOG is not None:
         return _LOG
+    with _KHOA:                      # nhieu thread cung khoi tao -> handler lap 3 lan
+        if _LOG is not None:
+            return _LOG
+        return _khoi_tao_that()
+
+
+def _khoi_tao_that():
+    global _LOG
     lg = logging.getLogger("approve")
     lg.setLevel(logging.INFO)
     lg.propagate = False

@@ -31,6 +31,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chat_router                                          # noqa: E402
 import moat_publish                                         # noqa: E402
 import tele_util                                            # noqa: E402
+import ghi_log                                              # noqa: E402
+log, rut = ghi_log.log, ghi_log.rut
 
 ROOT = Path.home() / "content-team"
 import env_load                                              # noqa: E402
@@ -64,9 +66,44 @@ def load_secrets():
 
 
 def call(token, method, **kw):
-    with httpx.Client(timeout=90) as c:
-        r = c.post(API.format(token=token, method=method), json=kw)
-    return r.json()
+    """Goi Bot API. LUON tra ve dict; loi mang -> {"ok": False, "description"}.
+
+    Truoc day nem exception: trong thread nen thi thread chet im, trong vong
+    poll thi ca lo update con lai bi bo. Gio moi loi deu thanh mot dong log +
+    mot ket qua doc duoc, nguoi goi tu quyet."""
+    try:
+        with httpx.Client(timeout=90) as c:
+            r = c.post(API.format(token=token, method=method), json=kw)
+        res = r.json()
+    except Exception as e:                                   # noqa: BLE001
+        res = {"ok": False, "description": f"{type(e).__name__}: {e}"}
+    if not res.get("ok") and method != "getUpdates":
+        log("tele", f"{method} tu choi: {res.get('description')} | "
+                    f"thread={kw.get('message_thread_id')} text={rut(kw.get('text'), 60)}")
+    return res
+
+
+def _chay_nen(ten, fn, token, group, thread_id, *args):
+    """Chay `fn` o thread nen, BOC de khong bao gio chet im.
+
+    Moi nhanh xu ly (chat, lenh, chon so) deu qua day: loi gi cung ghi log day
+    du traceback VA gui mot dong ⚠️ ve dung topic. Nguyen tac: Ong Chu nhan
+    tin, thi luon co tin tra ve — ke ca tin bao hong."""
+    import traceback
+
+    def _boc():
+        t0 = time.time()
+        try:
+            fn(*args)
+            log(ten, f"xong sau {time.time() - t0:.0f}s thread={thread_id}")
+        except Exception as e:                               # noqa: BLE001
+            log("loi", f"{ten} hong: {type(e).__name__}: {e}\n"
+                       + traceback.format_exc())
+            call(token, "sendMessage", chat_id=group,
+                 **({"message_thread_id": thread_id} if thread_id else {}),
+                 text=f"⚠️ Lỗi khi xử lý ({ten}): {type(e).__name__}: {str(e)[:300]}\n"
+                      f"Chi tiết trong log approve của container {ghi_log.brand()}.")
+    threading.Thread(target=_boc, daemon=True, name=f"{ten}-{thread_id}").start()
 
 
 # ---------- A) duyet ban nhap (khong doi so voi truoc) ----------
@@ -324,6 +361,7 @@ def handle_img_approval(token, action, draft_id, cq):
                     ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
                     note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
 
+    log("nut", f"ket qua imgok/imgno/imgredo draft={draft_id}: {note}")
     base = msg.get("caption") or msg.get("text") or ""
     method = "editMessageCaption" if msg.get("caption") else "editMessageText"
     key = "caption" if msg.get("caption") else "text"
@@ -420,6 +458,7 @@ def _dang_nen(token, channel, draft_id, msg):
 
 
 def _sua_tin_go_nut(token, msg, note):
+    log("nut", f"ket qua msg={msg.get('message_id')}: {note}")
     """Ghi ket qua vao tin nhan draft va go ban phim (dung chung cho nhanh Bo
     tren poll thread va nhanh Duyet chay nen)."""
     chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
@@ -594,7 +633,29 @@ def vai_cua_topic(thread_id):
 from task_bodies import ILLU_BODY, CAROUSEL_BODY, EDU_BODY, WRITER_BODY  # noqa: E402
 
 
+# Slug cu (ten nhan vat) -> slug profile hien tai. Sidecar .img.json/.writer.json
+# cu con ghi "dre"/"miles"; task tao tu do se khong ai nhan (khong co profile
+# ten vay) va nam 'ready' mai — su co 01/09/2026: hai bai dcgr ket 2 ngay.
+SLUG_CU = {"miles": "writer", "dre": "carousel", "ethan": "designer",
+           "chad": "designer", "heller": "carousel", "kite": "carousel-edu",
+           "finn": "scout", "vera": "market", "jean": "teaser", "ada": "analyst"}
+
+
+def chuan_assignee(assignee):
+    """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""
+    slug = SLUG_CU.get(str(assignee).lower(), assignee)
+    co = Path(HERMES_HOME) / "profiles" / slug
+    if not co.is_dir():
+        return None, (f"không có profile '{slug}' trong {Path(HERMES_HOME).name} "
+                      f"— task sẽ không ai nhận, không tạo")
+    return slug, None
+
+
 def kanban_create(title, assignee, body, parent=None):
+    assignee, loi = chuan_assignee(assignee)
+    if loi:
+        log("kanban", f"tu choi tao '{title[:60]}': {loi}")
+        return None, loi
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     args = [str(HERMES_PY), "-m", "hermes_cli.main", "kanban", "create", title,
             "--assignee", assignee, "--max-runtime", "25m", "--json",
@@ -604,9 +665,12 @@ def kanban_create(title, assignee, body, parent=None):
     r = subprocess.run(args, cwd=str(Path.home() / "hermes-agent"),
                         env=env, capture_output=True, text=True, timeout=60)
     if r.returncode != 0:
+        log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {(r.stderr or r.stdout)[-200:]}")
         return None, (r.stderr[-300:] or r.stdout[-300:])
     try:
-        return json.loads(r.stdout)["id"], None
+        tid = json.loads(r.stdout)["id"]
+        log("kanban", f"tao task {tid} cho {assignee}: {title[:60]}")
+        return tid, None
     except Exception:                                        # noqa: BLE001
         return None, r.stdout[-300:]
 
@@ -871,6 +935,47 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     return illu_id, None
 
 
+# MOT container, MOT agent chat tai mot thoi diem. Goi nhieu vai cung luc lam
+# 9router/upstream tu choi tam thoi (400 "response_format unavailable", 429) va
+# tra loi nhau lech nhip. Vai sau xep hang; Ong Chu duoc bao dang cho ai.
+_HANG_AGENT = threading.Lock()
+_DANG_CHAY = {"vai": None, "tu": 0.0}
+
+
+def boi_canh_vai(profile) -> str:
+    """Vai chat KHONG nhin thay viec minh vua lam qua kanban: phien chat
+    (tele-<vai>) va phien task la hai phien rieng. Su co 03/09/2026 15:14: Ong
+    Chu hoi Ethan "chua du 6 anh", Ethan tra loi "session trong, khong co draft
+    nao" trong khi 15 phut truoc vua day 3 anh len. Doan nay doc kanban.db lay
+    3 task gan nhat cua vai (tieu de, trang thai, tom tat) + ban nhap lien quan,
+    ghep vao dau tin de vai tra loi dung viec cua minh."""
+    if not profile or not KANBAN_DB.exists():
+        return ""
+    try:
+        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
+        rows = con.execute(
+            "SELECT t.id, t.title, t.status, t.completed_at, "
+            "(SELECT summary FROM task_runs r WHERE r.task_id=t.id "
+            " ORDER BY r.rowid DESC LIMIT 1) "
+            "FROM tasks t WHERE t.assignee=? "
+            "ORDER BY t.created_at DESC LIMIT 3", (profile,)).fetchall()
+        con.close()
+    except Exception as e:                                   # noqa: BLE001
+        log("chat", f"boi canh {profile}: khong doc duoc kanban ({e})")
+        return ""
+    if not rows:
+        return ""
+    dong = ["[Việc gần nhất của bạn trên kanban — để trả lời đúng việc mình đã làm]"]
+    for tid, title, st, done, tom in rows:
+        luc = time.strftime("%d/%m %H:%M", time.localtime(done)) if done else "-"
+        dong.append(f"- {tid} [{st}] {title[:90]} (xong {luc})")
+        if tom:
+            dong.append("    tóm tắt: " + str(tom)[:400].replace("\n", " "))
+    dong.append("Bản nháp nằm ở drafts/<draft_id>.png|.json; log gửi Telegram ở "
+                f"{STATE_DIR / 'telegram_sent'}/<vai>.jsonl.")
+    return "\n".join(dong) + "\n\n"
+
+
 def handle_chat(token, group, msg, thread_id, text):
     """Chuyen tin nhan toi dung agent theo topic, giu mach hoi thoai.
 
@@ -885,18 +990,60 @@ def handle_chat(token, group, msg, thread_id, text):
     profile, session = chat_router.route(thread_id, topics)
 
     who = profile or "trợ lý"
-    call(token, "sendMessage", chat_id=group,
-         **({"message_thread_id": thread_id} if thread_id else {}),
+    kw_thread = {"message_thread_id": thread_id} if thread_id else {}
+    log("route", f"chat -> profile={profile or '(mac dinh)'} session={session} "
+                 f"thread={thread_id} text={rut(text)}")
+    # Xep hang: neu dang co vai khac chay thi bao ro, roi cho toi luot.
+    if not _HANG_AGENT.acquire(blocking=False):
+        cho_ai = _DANG_CHAY["vai"] or "vai khác"
+        log("route", f"thread={thread_id} xep hang sau {cho_ai}")
+        call(token, "sendMessage", chat_id=group, **kw_thread,
+             text=f"⏳ <b>{who}</b> đang xếp hàng sau <b>{cho_ai}</b>, tới lượt sẽ trả lời…",
+             parse_mode="HTML")
+        _HANG_AGENT.acquire()
+    _DANG_CHAY.update(vai=who, tu=time.time())
+    try:
+        _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread)
+    finally:
+        _DANG_CHAY.update(vai=None, tu=0.0)
+        _HANG_AGENT.release()
+
+
+def _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread):
+    call(token, "sendMessage", chat_id=group, **kw_thread,
          text=f"⏳ Đang chuyển cho <b>{who}</b>…", parse_mode="HTML")
 
-    out, err = chat_router.ask(profile, session, text)
+    # Goi agent o thread con de thread nay con ranh bao TIEN DO: qua 2 phut
+    # chua xong thi nhan mot dong, de Ong Chu biet la dang chay chu khong phai
+    # chet. Truoc day 10 phut im lang roi moi bao het gio.
+    ket_qua = {}
+    def _goi():
+        ket_qua["r"] = chat_router.ask(profile, session, boi_canh_vai(profile) + text)
+    th = threading.Thread(target=_goi, daemon=True)
+    th.start()
+    moc_bao = [120, 360]
+    t0 = time.time()
+    while th.is_alive():
+        th.join(5)
+        if moc_bao and time.time() - t0 >= moc_bao[0]:
+            phut = moc_bao.pop(0) // 60
+            call(token, "sendMessage", chat_id=group, **kw_thread,
+                 text=f"⏳ {who} vẫn đang xử lý ({phut} phút)… "
+                      f"tự dừng ở {chat_router.TIMEOUT_SEC // 60} phút.")
+    out, err = ket_qua.get("r") or (None, "Không nhận được kết quả từ agent (thread hỏng).")
     reply = ("⚠️ " + err) if err else chat_router.clean(out)
+    log("chat", f"tra loi thread={thread_id} loi={bool(err)} {len(reply)}c: {rut(reply)}")
     # Reply dai vuot 4096 se bi Telegram tu choi/cat -> chia thanh nhieu tin
     # gui lien tiep (dung thu tu), thay vi cat bot phan cuoi.
     for phan in tele_util.chia_tin(reply):
-        call(token, "sendMessage", chat_id=group,
-             **({"message_thread_id": thread_id} if thread_id else {}),
-             text=phan, disable_web_page_preview=True)
+        r = call(token, "sendMessage", chat_id=group, **kw_thread,
+                 text=phan, disable_web_page_preview=True)
+        if not r.get("ok"):
+            # Thu lai KHONG parse/ky tu la — thuong loi la do noi dung; mat
+            # dinh dang con hon mat cau tra loi.
+            call(token, "sendMessage", chat_id=group, **kw_thread,
+                 text="⚠️ Không gửi được trả lời gốc (" + str(r.get("description"))
+                      + "). Bản rút gọn:\n" + phan[:1500])
 
 
 # ---------- lenh slash (dat bai tuong minh) ----------
@@ -1133,9 +1280,12 @@ def _tai_anh_dinh_kem(token, msg):
 
 
 def handle_message(token, group, msg):
+    mid = msg.get("message_id")
     if msg.get("from", {}).get("is_bot"):
-        return
+        return                      # tin cua chinh bot, khong log cho khoi nhieu
     if msg.get("chat", {}).get("id") != int(group):
+        log("vao", f"bo qua msg={mid}: chat {msg.get('chat', {}).get('id')} "
+                   f"khong phai group {group}")
         return
     # Anh/album kem caption: Telegram de chu o field "caption", KHONG phai
     # "text" (text chi co o tin nhan thuan chu). Thieu fallback nay lam moi
@@ -1152,17 +1302,29 @@ def handle_message(token, group, msg):
     if anh_path:
         text = f"[Ảnh đính kèm đã tải về: {anh_path}]\n" + (text or "(không có chú thích kèm theo)")
 
-    if not text:
-        return
     thread_id = msg.get("message_thread_id")
+    log("vao", f"msg={mid} thread={thread_id} vai={vai_cua_topic(thread_id)} "
+               f"from={msg.get('from', {}).get('id')} text={rut(text)}")
+    if not text:
+        # Sticker, voice, video, file khong phai anh... — khong hieu duoc thi
+        # noi ro, khong im lang (im lang = "khong phan hoi" trong mat Ong Chu).
+        loai = next((k for k in ("sticker", "voice", "video", "audio", "document",
+                                 "animation", "video_note", "poll", "location")
+                     if k in msg), "khong ro")
+        log("vao", f"msg={mid} khong co chu/anh (loai={loai}) -> bao khong ho tro")
+        call(token, "sendMessage", chat_id=group,
+             **({"message_thread_id": thread_id} if thread_id else {}),
+             text=f"Tin dạng {loai} chưa hỗ trợ — chỉ nhận chữ và ảnh (photo hoặc file ảnh).")
+        return
 
     # Dau "/" = LENH, o bat ky topic nao — xu ly rieng, khong bao gio roi ve
     # hoi thoai (mot lenh go sai ma dem hoi LLM la vua on ao vua nguy hiem).
     # Chay nen: /bai co buoc fetch trang + research (nguon_bai, toi 180s),
     # khong duoc nghen vong poll — cung ly do voi handle_chat ben duoi.
     if text.startswith("/"):
-        threading.Thread(target=handle_command, daemon=True,
-                         args=(token, group, msg, thread_id, text)).start()
+        log("route", f"msg={mid} lenh slash")
+        _chay_nen("lenh", handle_command, token, group, thread_id,
+                  token, group, msg, thread_id, text)
         return
 
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin. Moi thu khac la
@@ -1173,15 +1335,34 @@ def handle_message(token, group, msg):
     if not is_pick:
         # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
         # vong lap poll (nut Duyet/Bo phai bam duoc bat cu luc nao).
-        threading.Thread(target=handle_chat, daemon=True,
-                         args=(token, group, msg, thread_id, text)).start()
+        _chay_nen("chat", handle_chat, token, group, thread_id,
+                  token, group, msg, thread_id, text)
         return
 
+    log("route", f"msg={mid} chon so vai={vai} lenh={lenh}")
+    _chay_nen("chon", _xu_ly_chon, token, group, thread_id,
+              token, group, thread_id, vai, lenh)
+
+
+def _xu_ly_chon(token, group, thread_id, vai, lenh):
+    """Tao cap task tu lenh chon so. Chay nen qua _chay_nen."""
     manifest_path = latest_manifest(vai)
     if not manifest_path:
+        mau = MANIFEST_THEO_TOPIC.get(vai, "?")
+        log("chon", f"khong co manifest {mau} trong {STATE_DIR}")
         call(token, "sendMessage", chat_id=group, message_thread_id=thread_id,
-             text="Chưa có danh sách tin nào để chọn trong topic này.")
+             text=f"Chưa có danh sách tin nào để chọn trong topic này.\n"
+                  f"(tìm {mau} trong {STATE_DIR.name}/ — vai {vai} chưa gửi báo cáo "
+                  f"nào cho container {ghi_log.brand()}, hoặc báo cáo ghi sai thư mục)")
         return
+    log("chon", f"manifest={manifest_path.name}")
+    # SAP THEO VAI, giu thu tu vai xuat hien lan dau: "1, 3 - Ethan, 2 - Dre"
+    # -> [1 Ethan, 3 Ethan, 2 Dre]. Dispatcher chay FIFO theo created_at voi
+    # kanban.max_in_progress=1, nen tao task theo thu tu nay = Ethan lam het
+    # bai cua minh roi Dre moi bat dau (yeu cau Ong Chu 03/09/2026: khong giao
+    # cho tat ca cung lam).
+    thu_tu_vai = list(dict.fromkeys(v for _n, v, _b in lenh))
+    lenh = sorted(lenh, key=lambda x: thu_tu_vai.index(x[1]))
 
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     items = {it["index"]: it for it in data.get("items", [])}
@@ -1213,6 +1394,7 @@ def handle_message(token, group, msg):
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
+    log("chon", "ket qua: " + " | ".join(lines))
     _gui_chu(token, group, "<b>Kết quả chọn:</b>\n" + "\n".join(lines),
              thread=thread_id)
 
@@ -1245,7 +1427,10 @@ def _doc_offset() -> int:
 def loop():
     token, channel, group = load_secrets()
     offset = _doc_offset()
-    print("[approve_service] chay, offset=" + str(offset), flush=True)
+    tp = env_load.topics_path()
+    log("start", f"brand={ghi_log.brand()} group={group} state={STATE_DIR} "
+                 f"topics={tp.name}({'co' if tp.exists() else 'THIEU'}) "
+                 f"hermes_home={HERMES_HOME} offset={offset}")
     loi_lien_tiep = 0
     while True:
         try:
@@ -1254,8 +1439,7 @@ def loop():
             if not r.get("ok"):
                 # 409 (hai poller cung token) / 429: long-poll khong giu duoc,
                 # request tra ve NGAY -> khong sleep la nen API vo han.
-                print("[approve_service] getUpdates tu choi: "
-                      + str(r.get("description")), flush=True)
+                log("loi", "getUpdates tu choi: " + str(r.get("description")))
                 time.sleep(5)
                 continue
             for u in r.get("result", []):
@@ -1267,18 +1451,33 @@ def loop():
                 # (doc gia thay hai bai giong het nhau tren channel).
                 offset = u["update_id"] + 1
                 _ghi_offset(offset)
-                if "callback_query" in u:
-                    handle_callback(token, channel, u["callback_query"])
-                elif "message" in u:
-                    handle_message(token, group, u["message"])
+                # Boc TUNG update: mot update hong khong duoc keo ca lo con
+                # lai xuong except ngoai (bi bo qua im lang), va nut bam hong
+                # thi Ong Chu phai thay nut ngung quay kem ly do.
+                try:
+                    if "callback_query" in u:
+                        cq = u["callback_query"]
+                        log("vao", f"callback data={cq.get('data')} "
+                                   f"from={cq.get('from', {}).get('id')}")
+                        handle_callback(token, channel, cq)
+                    elif "message" in u:
+                        handle_message(token, group, u["message"])
+                except Exception as e:                      # noqa: BLE001
+                    import traceback
+                    log("loi", f"update {u.get('update_id')} hong: "
+                               f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+                    if "callback_query" in u:
+                        call(token, "answerCallbackQuery",
+                             callback_query_id=u["callback_query"]["id"],
+                             text=f"Lỗi: {type(e).__name__}: {str(e)[:150]}",
+                             show_alert=True)
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
             bao_viec_bi_chan(token, group)
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
             loi_lien_tiep += 1
-            print("[approve_service] loi: " + type(e).__name__ + ": " + str(e),
-                  flush=True)
+            log("loi", "vong poll: " + type(e).__name__ + ": " + str(e))
             time.sleep(min(60, 5 * loi_lien_tiep))
 
 

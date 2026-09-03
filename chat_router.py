@@ -11,6 +11,7 @@ Moi topic giu mot phien rieng qua `--continue <ten phien>`, nen hoi thoai co
 mach chu khong phai moi tin la mot lan chay roi rac.
 """
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -52,13 +53,32 @@ TIMEOUT_SEC = 600           # agent chay lau; 10 phut la du cho hau het viec
 # nhan "Hom nay ko lam viec ?" roi tu chay lai scan_business, doc cron, mo
 # kanban.db... 74 tin nhan, 10 phut, bi giet vi het gio — Ong Chu khong nhan
 # duoc gi ngoai dong bao het gio.
-CHAT_HINT = (
-    "[Ghi chú hệ thống — tin nhắn hội thoại từ Telegram, không phải task]\n"
-    "Trả lời NGẮN (tối đa vài câu), bằng tiếng Việt, đúng câu hỏi. Không tự "
-    "chạy lại quét/scan, không tạo task, không sửa tệp — trừ khi câu hỏi yêu "
-    "cầu rõ ràng làm việc đó. Việc cần chạy lâu thì nói ngắn cách làm và hỏi "
-    "lại trước. Nếu cần tra cứu thì tối đa 2-3 lệnh đọc nhanh, rồi trả lời.\n\n"
-)
+_TEN_BRAND = {"blog": ("donniechublog", "@donniechublog"),
+              "dcgr": ("dcgr.tech", "@dcgr.tech")}
+
+
+def chat_hint() -> str:
+    """Loi nhac che do hoi thoai, kem BRAND cua container hien tai.
+
+    Vi sao kem brand: nhieu vai dung chung SOUL cho ca hai container (Gin, Ada,
+    Itachi, Bob, Jean). Khi hoi "ban lam cho kenh nao", Gin o dcgr tra loi
+    donniechublog, Bob luon dung handle @donniechublog. Container chi co MOT
+    brand, va ma la noi biet chac dieu do — nen noi thang cho agent moi lan."""
+    key = os.environ.get("CT_BRAND", "")
+    ten, handle = _TEN_BRAND.get(key, ("(chưa rõ brand)", ""))
+    return (
+        "[Ghi chú hệ thống — tin nhắn hội thoại từ Telegram, không phải task]\n"
+        f"Bạn đang chạy trong container của brand **{ten}** (handle {handle}). "
+        "Mọi việc, mọi câu tự giới thiệu đều là cho brand này, không phải brand kia.\n"
+        "Trả lời NGẮN (tối đa vài câu), bằng tiếng Việt, đúng câu hỏi. Không tự "
+        "chạy lại quét/scan, không tạo task, không sửa tệp — trừ khi câu hỏi yêu "
+        "cầu rõ ràng làm việc đó. Việc cần chạy lâu thì nói ngắn cách làm và hỏi "
+        "lại trước. Nếu cần tra cứu thì tối đa 2-3 lệnh đọc nhanh, rồi trả lời.\n\n"
+    )
+
+
+# Tuong thich: ma cu tham chieu CHAT_HINT (hang). Gia tri that lay luc goi.
+CHAT_HINT = chat_hint()
 
 
 def route(thread_id, topics: dict) -> tuple:
@@ -70,7 +90,10 @@ def route(thread_id, topics: dict) -> tuple:
     return profile, session
 
 
-def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True) -> tuple:
+_LOI_HTTP = re.compile(r"^HTTP [45]\d\d\b")
+
+
+def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=1) -> tuple:
     """Goi hermes CLI, tra ve (noi_dung, loi). LUON tra ve — khong nem.
 
     - Chay trong process group rieng (start_new_session) de khi het gio giet
@@ -91,7 +114,7 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True) -> tuple:
     args = [str(HERMES_PY), "-m", "hermes_cli.main"]
     if profile:
         args += ["-p", profile]
-    prompt = (CHAT_HINT + text) if hint else text
+    prompt = (chat_hint() + text) if hint else text
     args += ["--continue", session, "-z", prompt]
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     t0 = time.time()
@@ -136,6 +159,18 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True) -> tuple:
                       "Hỏi ngắn hơn hoặc giao thành task kanban.")
     if proc.returncode != 0 and not out:
         return None, (err[-400:] or f"Agent trả về lỗi rỗng (mã {proc.returncode}).")
+    # Upstream tu choi tam thoi (vd DeepSeek "response_format unavailable now",
+    # 429, 502): hermes in nguyen dong "HTTP 4xx/5xx ..." lam cau tra loi. Thu
+    # lai MOT lan sau vai giay truoc khi dua loi do cho Ong Chu.
+    if _LOI_HTTP.match(out) and thu_lai > 0 and time.time() - t0 < timeout / 2:
+        # 9router ghi "(reset after 17s)" = upstream dang cooldown; cho dung
+        # so giay do + 2, toi da 60. Khong co so thi 8s.
+        m = re.search(r"reset after (\d+)s", out)
+        cho = min(60, int(m.group(1)) + 2) if m else 8
+        log("chat", f"agent tra loi HTTP loi ({out[:60]!r}) -> thu lai sau {cho}s")
+        time.sleep(cho)
+        return ask(profile, session, text, timeout=timeout - dt - cho, hint=hint,
+                   thu_lai=thu_lai - 1)
     return out or "(agent không trả về nội dung)", None
 
 
