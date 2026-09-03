@@ -230,6 +230,22 @@ venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --cx 0.62    # tâm lệ
 Crop là **chọn khung ảnh thật**, không phải bịa ảnh — vẫn đúng luật "không tự
 vẽ". Chọn `--cx/--cy` để ôm đúng chủ thể (chip, sản phẩm, mặt người) vào khung.
 
+### Ảnh quá ngang mà có TIÊU ĐỀ (slide, bảng, chart, banner): GHÉP hai ảnh, đừng crop
+
+Crop một slide/bảng có tiêu đề là mất tiêu đề, ảnh đọc ra vô nghĩa (Ông Chủ
+bắt lỗi 03/09/2026). Với ảnh kiểu này: **tìm thêm MỘT ảnh ngang nữa** cùng bài
+(slide kế tiếp, bảng khác, banner) và xếp DỌC hai ảnh trong cùng khung. Ghi
+`"images": [a, b]` thay cho `"image"`, ở bìa hoặc slide thân đều được:
+
+```json
+{"images": ["slide_1.png", "slide_2.png"], "text": "..."}
+```
+
+`carousel.py` tự ghép: mỗi ảnh full bề ngang, nguyên tỉ lệ, cách nhau 12px nền
+đen, rồi chạy mọi cổng chặn như ảnh thường (kết quả ghép lưu `<out>_N.ghep.png`).
+Hai ảnh 16:9 ghép ra ~0.88 (nằm giữa 4:5 và 1:1) — cổng tỉ lệ chấp nhận cả dải
+**4:5 → 1:1**. Ảnh dưới nằm dưới scrim chữ, nên đặt ảnh QUAN TRỌNG hơn ở trên.
+
 Không có ảnh vuông sẵn: tự crop vuông từ một ảnh ngang thật (chọn khung ôm
 đúng nội dung chính) — đây là chọn khung, không phải bịa ảnh, vẫn đúng luật
 "không tự vẽ minh hoạ". Cứ hỏi `anh_bai.py` như thường; công cụ đó chấm điểm
@@ -337,7 +353,7 @@ thông báo rồi chạy lại.
 5. **Trùng ảnh** (hai slide cùng một tệp, so theo nội dung tệp) → dừng. Lưu ý:
    hai CROP khác nhau của cùng một tấm thì code không bắt được — cái đó bạn
    vẫn phải tự soi.
-6. **Ảnh sai tỉ lệ** (không phải 1:1 hay 4:5, dung sai 3%) → dừng, kèm sẵn lệnh
+6. **Ảnh sai tỉ lệ** (ngoài dải 4:5..1:1, dung sai 3%) → dừng, kèm sẵn lệnh
    `crop_ti_le.py` để cắt.
 7. **Copy dài quá vùng chữ 30%** (ở cỡ chữ nhỏ nhất vẫn tràn) → dừng, báo cần
    cắt bớt bao nhiêu phần trăm chữ.

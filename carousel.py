@@ -212,6 +212,27 @@ def _open(path):
     return img
 
 
+def _ghep_neu_can(muc, nhan, stem):
+    """Slide/bia co "images": [a, b] (hai anh NGANG) -> ghep doc thanh mot anh
+    (card.ghep_doc), ghi ra `<stem>.ghep.png` va gan vao muc["image"] de moi
+    cong chan + builder phia sau dung nhu anh thuong. Xem ghi chu trong
+    card.ghep_doc: thay vi crop anh ngang mat tieu de, xep hai anh ngang
+    trong cung khung."""
+    ds = muc.get("images")
+    if not ds:
+        return
+    if not isinstance(ds, list) or len(ds) < 2:
+        sys.exit(f"{nhan}: 'images' phai la danh sach >= 2 anh (ghep doc); "
+                 "mot anh thi dung 'image'.")
+    for q in ds:
+        if not Path(q).exists():
+            sys.exit(f"{nhan}: khong thay tep anh {q}")
+    ra = Path(f"{stem}.ghep.png")
+    ra.parent.mkdir(parents=True, exist_ok=True)
+    card.ghep_doc(ds).save(ra, "PNG")
+    muc["image"] = str(ra)
+
+
 def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
     """Mat na chieu doc: 0 tren `top_y`, tang dan (ease t^) len `hi` tai
     `full_y`, giu `hi` ben duoi. Dung chung cho ca lop mo lan lop toi nen
@@ -513,11 +534,14 @@ def _gate_anh(paths):
         w, h_px = img.size
         # 2) TI LE: phai 1:1 hoac 4:5 (dung sai 3%). Sai thi cat truoc bang
         # crop_ti_le.py — khong de carousel.py tu xoay so.
+        # Chap nhan ca dai GIUA 4:5 va 1:1 (anh ghep doc hai anh ngang roi vao
+        # day) — full be ngang deu phu 1080..1350 cao, khong lo nen.
         r = w / h_px
-        if not (abs(r - 1.0) <= 0.03 or abs(r - 0.8) <= 0.03):
-            loi.append(f"{nhan}: ti le {w}x{h_px} ({r:.2f}) khong phai 1:1 hay "
-                       f"4:5 — cat truoc: venv/bin/python crop_ti_le.py "
-                       f"--anh {p} --ra <ra.png> [--ti-le 4:5] [--cx/--cy]")
+        if not (0.8 - 0.03 <= r <= 1.0 + 0.03):
+            loi.append(f"{nhan}: ti le {w}x{h_px} ({r:.2f}) khong nam trong 4:5..1:1 "
+                       f"— cat truoc: venv/bin/python crop_ti_le.py "
+                       f"--anh {p} --ra <ra.png> [--ti-le 4:5] [--cx/--cy]; hoac anh "
+                       f"NGANG thi tim them mot anh ngang nua, ghi \"images\": [a, b]")
         # 3) DO PHAN GIAI: canh ngan <1000px phong len 1080 se mem/vo net.
         # Canh bao thoi (khong chan): anh doc quyen nho van hon anh sai.
         if min(w, h_px) < 1000:
@@ -592,6 +616,10 @@ def main():
 
     cover = spec.get("cover") or {}
     slides = spec.get("slides") or []
+    _stem0 = Path(a.out).with_suffix("")
+    _ghep_neu_can(cover, "bia", f"{_stem0}")
+    for i, s in enumerate(slides, start=2):
+        _ghep_neu_can(s, f"slide {i}", f"{_stem0}_{i}")
     if not cover.get("image") or not cover.get("hook"):
         sys.exit("Thieu cover.image hoac cover.hook trong spec.")
     if not slides:

@@ -139,6 +139,13 @@ phần còn lại, và chỉ có hai trường hợp.
 vừa chiều cao: phóng lên là cắt mất bề ngang hoặc vỡ nét, cả hai đều tệ hơn một
 mảng nền phẳng. Đáy ảnh tan dần vào nền nên không lộ ra đường ngang nào.
 
+**Ảnh quá ngang mà có TIÊU ĐỀ** (slide, bảng, chart, banner): đừng crop mất
+tiêu đề (Ông Chủ bắt lỗi 03/09/2026). Tìm thêm MỘT ảnh ngang nữa cùng bài và
+đưa `--image2 <ảnh ngang thứ hai>`: script ghép DỌC hai ảnh trong cùng khung
+(full bề ngang, nguyên tỉ lệ, cách 12px). Dùng được cho cả ba kiểu `dai`,
+`tran`, `quote`; ở `tran`/`quote` ảnh dưới nằm dưới màn tối của chữ, nên đặt
+ảnh quan trọng hơn ở `--image`.
+
 Vậy nên **đừng loại ảnh chỉ vì nó ngang**. Cả hai hướng đều ra thẻ đúng. Chỉ còn
 hai điều thật sự phải chọn:
 

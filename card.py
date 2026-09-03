@@ -535,6 +535,34 @@ def _line_h(font, spacing=8):
     return (b[3] - b[1]) + spacing
 
 
+def ghep_doc(paths, gap=12, nen=(0, 0, 0)):
+    """GHEP DOC nhieu anh NGANG thanh mot anh (Ong Chu chot 03/09/2026): mot anh
+    qua chu nhat ngang (slide, banner, bang) dua vao khung 4:5 se hoac bi crop
+    mat tieu de, hoac de trong nua khung. Thay vi crop, tim THEM mot anh ngang
+    nua va xep hai anh doc trong cung khung: moi anh full be ngang, nguyen ti
+    le, cach nhau `gap` px nen den. Tra ve PIL.Image RGB; mot path thi tra ve
+    anh do nguyen ven."""
+    ims = [Image.open(q).convert("RGB") for q in paths]
+    if len(ims) == 1:
+        return ims[0]
+    w = max(im.width for im in ims)
+    ims = [im.resize((w, round(im.height * w / im.width)), Image.LANCZOS) for im in ims]
+    h = sum(im.height for im in ims) + gap * (len(ims) - 1)
+    out = Image.new("RGB", (w, h), nen)
+    y = 0
+    for im in ims:
+        out.paste(im, (0, y))
+        y += im.height + gap
+    return out
+
+
+def _mo_anh(src):
+    """src: mot duong dan, hoac danh sach duong dan (ghep doc)."""
+    if isinstance(src, (list, tuple)):
+        return ghep_doc(src)
+    return Image.open(src).convert("RGB")
+
+
 def _fit_contain(img, box_w, box_h):
     scale = min(box_w / img.width, box_h / img.height)
     nw, nh = max(1, round(img.width * scale)), max(1, round(img.height * scale))
@@ -754,7 +782,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     """
     H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    src_img = Image.open(src).convert("RGB")
+    src_img = _mo_anh(src)
     # ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
     # cover-crop lam mat tieu de cua slide/bang nguon, anh doc ra vo nghia).
     # Nen: ban cover LAM MO + toi phu kin khung; lop sac: anh nguyen ti le,
@@ -1189,7 +1217,7 @@ def build(src, title, subtitle, via, out, category="AI",
             "Thieu --subtitle. The tin kieu dai can phu de: tieu de chi la nhan\n"
             "  de, phu de moi mang noi dung. (Hero image --kieu tran thi khong\n"
             "  can, vi o do tieu de la mot cau tron ven.)")
-    src_img = Image.open(src).convert("RGB")
+    src_img = _mo_anh(src)
     img_h, how = _plan_image(src_img)
     # Chieu cao tu nhien cua anh khi hien full be ngang. Kieu tran khong dung
     # `_plan_image`: ham do chan chieu cao trong khoang IMG_MIN_H..IMG_MAX_H de
@@ -1526,6 +1554,9 @@ def build(src, title, subtitle, via, out, category="AI",
 def main():
     p = argparse.ArgumentParser(description="Dựng thẻ ảnh cho kênh AI")
     p.add_argument("--image", required=True)
+    p.add_argument("--image2", default=None,
+                   help="Anh NGANG thu hai, ghep DOC duoi --image trong cung khung "
+                        "(dung khi anh chinh qua chu nhat ngang, thay vi crop mat tieu de)")
     p.add_argument("--title", required=True)
     # Bat buoc o kieu dai, bo qua o kieu tran (hero image khong co phu de).
     p.add_argument("--subtitle", default="")
@@ -1561,7 +1592,7 @@ def main():
                         "textbox phình ra bù phần ảnh thiếu")
     p.add_argument("--out", required=True)
     a = p.parse_args()
-    build(a.image, a.title, a.subtitle, a.via, a.out,
+    build([a.image, a.image2] if a.image2 else a.image, a.title, a.subtitle, a.via, a.out,
           a.category, a.category_right, a.handle, a.ratio, a.tagline,
           brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib)
