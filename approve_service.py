@@ -730,6 +730,76 @@ def viec_bi_chan() -> list:
     return ra
 
 
+DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
+_TEN_HIEN = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
+             "writer": "Miles", "scout": "Finn", "nova": "Nova", "market": "Vera",
+             "teaser": "Jean", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
+             "bob": "Bob"}
+
+
+def bao_tien_do_kanban(token, group):
+    """Bao TIEN DO hang doi kanban ve Telegram: task bat dau -> mot dong vao
+    topic cua vai kem so viec con xep hang; task xong/hong -> mot dong nua.
+
+    Vi sao: tu 03/09/2026 moi container chay MOT task mot luc. Sang 04/09 Ong
+    Chu chon 7 bai luc 05:33, Dre lam bai 1, sau bai kia + Nova xep hang ca
+    tieng — va khong ai noi gi, trong nhu he thong dung. Hang doi la thiet ke,
+    im lang thi khong. Chay moi vong poll (~50s), chi bao khi trang thai doi."""
+    if not KANBAN_DB.exists():
+        return
+    try:
+        da = json.loads(DA_BAO_TIEN_DO.read_text(encoding="utf-8")) if DA_BAO_TIEN_DO.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        da = {}
+    try:
+        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
+        rows = con.execute(
+            "SELECT id, assignee, status, title, created_at FROM tasks "
+            "WHERE created_at > ? ORDER BY created_at", (time.time() - 86400,)).fetchall()
+        con.close()
+    except Exception as e:                                   # noqa: BLE001
+        log("tiendo", f"khong doc duoc kanban: {e}")
+        return
+    cho = [r for r in rows if r[2] == "ready"]
+    tp = env_load.topics_path()
+    try:
+        topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        topics = {}
+    doi = False
+    for tid, ai, st, title, _c in rows:
+        if st in ("ready", "todo", "triage") or da.get(tid) == st:
+            continue
+        ten = _TEN_HIEN.get(ai, ai)
+        if st == "running":
+            sau = len(cho)
+            text = (f"▶️ <b>{ten}</b> bắt đầu: <i>{html_escape(title[:80])}</i>"
+                    + (f"\n(còn {sau} việc xếp hàng sau việc này)" if sau else ""))
+        elif st == "done":
+            text = f"✅ <b>{ten}</b> xong: <i>{html_escape(title[:80])}</i>"
+        elif st in ("blocked", "failed"):
+            text = f"⛔ <b>{ten}</b> dừng ({st}): <i>{html_escape(title[:80])}</i>"
+        else:
+            da[tid] = st
+            doi = True
+            continue
+        thread = topics.get(ai)
+        r = call(token, "sendMessage", chat_id=group,
+                 **({"message_thread_id": thread} if thread else {}),
+                 text=text, parse_mode="HTML")
+        log("tiendo", f"{tid} {ai} -> {st} (thread={thread}) gui={'ok' if r.get('ok') else r.get('description')}")
+        da[tid] = st
+        doi = True
+    if doi:
+        # Chi giu task 24h gan nhat cho tep khong phinh.
+        song = {r[0] for r in rows}
+        da = {k: v for k, v in da.items() if k in song}
+        try:
+            DA_BAO_TIEN_DO.write_text(json.dumps(da), encoding="utf-8")
+        except OSError as e:
+            log("tiendo", f"khong ghi duoc {DA_BAO_TIEN_DO.name}: {e}")
+
+
 def bao_viec_bi_chan(token, group):
     """Bao ve topic duyet moi viec vua bi chan. Im lang khi khong co gi moi.
 
@@ -1474,6 +1544,7 @@ def loop():
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
             bao_viec_bi_chan(token, group)
+            bao_tien_do_kanban(token, group)
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
             loi_lien_tiep += 1

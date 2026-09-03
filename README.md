@@ -112,6 +112,11 @@ ghi thêm một dòng cảnh báo.
 - `moat_publish.py` — đẩy bài đã duyệt sang moat (`push <draft_id>`) và hỏi trạng thái
   đăng social (chạy không tham số); khoá ở `.secrets.env` (`MOAT_BASE_URL`, `MOAT_PUBLISH_KEY`)
 - `model_audition.py` — thử model: tiếng Việt đủ dấu, gọi tool thật, có prompt caching không
+- `scan_models.py` — quét của Nova. Từ 04/09/2026 có mục **"RA MẮT THEO BẢNG CHẤM
+  ĐIỂM"** (artificialanalysis, nhóm theo tên gốc, mỗi model báo đúng một lần nhờ
+  `aa_da_bao` trong `models_seen.json`) và bảng coding AA được so hạng với lần trước
+  (`xep_hang.coding`). Trước đó "mới" chỉ là id mới trên router, một lần duy nhất:
+  GPT-6 Astra (03/09, #8 coding) không lên router nên Nova báo "0 model mới"
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
@@ -129,6 +134,10 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   container chỉ chạy một task tại một thời điểm, FIFO theo `created_at`.
 - Lệnh chọn nhiều tin nhiều vai ("1, 3 - Ethan, 2 - Dre") được **sắp theo vai** trước
   khi tạo task, nên vai xuất hiện trước làm hết bài của mình rồi vai sau mới bắt đầu.
+- Hàng đợi có tiếng nói: mỗi task bắt đầu / xong / dừng, approve_service đưa một dòng
+  vào topic của vai đó kèm số việc còn xếp hàng (`bao_tien_do_kanban`, mỗi vòng poll).
+  Ngày 04/09 Ông Chủ chọn 7 bài lúc 05:33, Nova xếp thứ 8, im lặng cả tiếng trông
+  như hệ thống đứng — nên có mục này.
 - Chat Telegram: mỗi container một agent chat tại một thời điểm (`_HANG_AGENT` trong
   `approve_service.py`); vai sau được báo "đang xếp hàng sau …" rồi tới lượt.
 

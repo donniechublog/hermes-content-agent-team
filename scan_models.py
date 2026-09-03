@@ -303,14 +303,55 @@ def loc_aa(aa: dict, ngay: int, top: int) -> dict:
 
     co_diem = [r for r in aa.values() if r.get("codingIndex") is not None]
     co_diem.sort(key=lambda r: -r["codingIndex"])
+    hang_coding = {r["slug"]: i + 1 for i, r in enumerate(co_diem)}
+
+    def gon2(r):
+        g = gon(r)
+        g["hang_coding"] = hang_coding.get(r["slug"])
+        g["ten_goc"] = ten_goc(g["ten"])
+        return g
+
+    # NHOM THEO TEN GOC: AA liet ke moi muc effort la mot dong ("GPT-6 Astra
+    # (high)", "(max)", "(low)"...). Voi Nova do la MOT model ra mat, khong
+    # phai bay. Lay bien the diem coding cao nhat lam dai dien.
+    ra_mat_goc = {}
+    for r in sorted((gon2(r) for r in gan_day),
+                    key=lambda x: -(x["coding"] or 0)):
+        ra_mat_goc.setdefault(r["ten_goc"], r)
     return {
-        "moi_ra_mat": sorted((gon(r) for r in gan_day),
+        "moi_ra_mat": sorted((gon2(r) for r in gan_day),
                              key=lambda x: x["ra_mat"] or "", reverse=True),
+        "ra_mat_theo_ten": sorted(ra_mat_goc.values(),
+                                  key=lambda x: (x["ra_mat"] or "", -(x["coding"] or 0)),
+                                  reverse=True),
+        "bang_coding_goc": _bang_goc(co_diem, gon2, top),
         "nguon_mo_moi": sorted(
             (gon(r) for r in gan_day if r.get("isOpenWeights")),
             key=lambda x: x["ra_mat"] or "", reverse=True),
         "top_coding": [gon(r) for r in co_diem[:top]],
     }
+
+
+def ten_goc(ten: str) -> str:
+    """'GPT-6 Astra (high)' -> 'GPT-6 Astra'; bo phan trong ngoac va hau to effort."""
+    t = re.sub(r"\s*\(.*?\)\s*", " ", str(ten or "")).strip()
+    return re.sub(r"\s+", " ", t)
+
+
+def _bang_goc(co_diem: list, gon2, top: int) -> list:
+    """Top coding theo TEN GOC (moi model mot dong, hang = hang cua bien the
+    tot nhat) — de so hang lan nay voi lan truoc bat 'vao top / leo hang'."""
+    ra, thay = [], set()
+    for r in co_diem:
+        g = gon2(r)
+        if g["ten_goc"] in thay:
+            continue
+        thay.add(g["ten_goc"])
+        ra.append({"hang": len(ra) + 1, "ten": g["ten_goc"], "to_chuc": g["hang_sx"],
+                   "vung": "khac", "coding": g["coding"], "ra_mat": g["ra_mat"]})
+        if len(ra) >= top:
+            break
+    return ra
 
 
 def _lam_tron(v):
@@ -462,14 +503,21 @@ def hang_cu() -> dict:
     return doc_state().get("xep_hang", {})
 
 
-def ghi_moc(ids: set, xep_hang: dict):
+def aa_da_bao() -> dict:
+    """{ten goc: ngay ra mat} cac model AA da BAO roi (moi model bao dung mot lan)."""
+    return doc_state().get("aa_da_bao", {})
+
+
+def ghi_moc(ids: set, xep_hang: dict, da_bao: dict | None = None):
+    if da_bao is None:
+        da_bao = aa_da_bao()
     STATE.parent.mkdir(parents=True, exist_ok=True)
     # Ghi atomic (tmp + os.replace) nhu scan_business: write_text truc tiep ma
     # chet giua chung se de lai tep hong, mat sach bo nho da-thay.
     tmp = STATE.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(
         {"cap_nhat": datetime.now(timezone.utc).isoformat(),
-         "ids": sorted(ids), "xep_hang": xep_hang},
+         "ids": sorted(ids), "xep_hang": xep_hang, "aa_da_bao": da_bao},
         ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, STATE)
 
@@ -523,6 +571,10 @@ def main():
 
     hang_moi = {mod: {r["ten"]: r["hang"] for r in rows}
                 for mod, rows in arena.items()}
+    # Bang coding AA (theo ten goc) cung vao bo nho xep hang -> lan sau bat
+    # duoc "vao top coding" / "leo hang coding". Truoc 04/09/2026 chi so hang
+    # arena, nen GPT-6 Astra vao #8 coding ngay ra mat ma khong ai hay.
+    hang_moi["coding"] = {r["ten"]: r["hang"] for r in aa.get("bang_coding_goc", [])}
     if a.lan_dau:
         ghi_moc(tat_ca, hang_moi)
         print(f"Da ghi moc {len(tat_ca)} model. Lan sau se chi bao cai moi.")
@@ -550,7 +602,15 @@ def main():
             # muon xem het thi mo model card — nhieu doan chi phinh prompt.
             m["benchmark_trich"] = trich_benchmark(m.get("hf_id") or "")[:1]
 
-    leo_hang = so_hang({m: r[:a.top] for m, r in arena.items()}, hang_cu())
+    bang_so = {m: r[:a.top] for m, r in arena.items()}
+    bang_so["coding"] = aa.get("bang_coding_goc", [])
+    leo_hang = so_hang(bang_so, hang_cu())
+
+    # RA MAT THEO BANG CHAM DIEM: nguon "moi" thu hai, doc lap voi router.
+    # Router-based `moi` bo sot model khong len router (GPT-6 Astra 03/09) va
+    # chi bao MOT lan dung ngay id xuat hien — hom do Nova hong la mat luon.
+    da_bao = aa_da_bao()
+    ra_mat_aa = [r for r in aa.get("ra_mat_theo_ten", []) if r["ten_goc"] not in da_bao]
 
     ket = {
         "quet_luc": datetime.now(timezone.utc).isoformat(),
@@ -558,6 +618,7 @@ def main():
         "model_moi": moi,
         "leo_hang": leo_hang,
         "cham_diem": aa,
+        "ra_mat_aa_chua_bao": ra_mat_aa,
         "tin_hang": tin,
         "ban_phat_hanh": gh,
         "moi_tren_router_cua_ta": moi_catalog,
@@ -572,7 +633,8 @@ def main():
     else:
         _in_bao_cao(ket, a.ngay)
 
-    ghi_moc(tat_ca | cu, hang_moi)
+    da_bao.update({r["ten_goc"]: r["ra_mat"] for r in ra_mat_aa})
+    ghi_moc(tat_ca | cu, hang_moi, da_bao)
 
 
 def _in_bao_cao(k: dict, ngay: int):
@@ -606,6 +668,15 @@ def _in_bao_cao(k: dict, ngay: int):
         for m in k["moi_tren_router_cua_ta"][:15]:
             print(f"  {m['id']}")
     aa = k.get("cham_diem") or {}
+    rm = k.get("ra_mat_aa_chua_bao") or []
+    if rm:
+        print(f"\n=== RA MAT THEO BANG CHAM DIEM ({len(rm)}) — artificialanalysis, "
+              "CHUA BAO LAN NAO, moi ten goc mot dong ===")
+        for r in rm[:12]:
+            hc = f"#{r['hang_coding']} coding" if r.get("hang_coding") else "chua co diem coding"
+            print(f"  {r['ra_mat']}  [{r['nuoc']}] {r['ten_goc'][:34]:<35s} "
+                  f"{str(r['hang_sx'])[:14]:<15s} coding={r['coding']}  {hc}"
+                  f"{'  MO NGUON' if r.get('nguon_mo') else ''}")
     tc = aa.get("top_coding") or []
     if tc:
         print("\n=== TOP CODING (artificialanalysis) ===")
@@ -624,8 +695,8 @@ def _in_bao_cao(k: dict, ngay: int):
     if leo:
         print(f"\n=== VUA LEO HANG ({len(leo)}) — thay doi so voi lan quet truoc ===")
         for r in leo[:10]:
-            nhan = {"text": "van ban", "image": "tao anh", "video": "tao video"}.get(
-                r["loai"], r["loai"])
+            nhan = {"text": "van ban", "image": "tao anh", "video": "tao video",
+                    "coding": "coding AA"}.get(r["loai"], r["loai"])
             print(f"  [{nhan:<9s}] {r['ten'][:36]:<37s} {r['ghi_chu']}")
 
     tin = k.get("tin_hang") or []
