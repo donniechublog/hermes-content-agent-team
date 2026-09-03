@@ -324,7 +324,7 @@ Q_BOTTOM = 1150                  # day cum quote
 def build_body_quote(img_path, quote, attrib, handle, out):
     """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
-    duoc nhac. Brand text o goc duoi-trai (watermark), dong nguon canh giua duoi khung."""
+    duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
     d = ImageDraw.Draw(canvas)
@@ -344,11 +344,18 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     at_h = at_lh * len(at_lines)
 
     BOX_PAD_Y = 62       # khung cao hon chu — khoang tho + dau " o goc
-    G_FRAME_SRC = 44     # khung <-> nguon
-    BOT_MARGIN = 150     # khoi duoi <-> day the (chua cho chip ten kenh o duoi-trai)
+    G_FRAME_CHIP = 44    # khung <-> chip ten kenh
+    G_CHIP_SRC = 36      # chip <-> dong nguon
 
-    below_h = at_h
-    frame_bottom = H - BOT_MARGIN - ((below_h + G_FRAME_SRC) if below_h else 0)
+    # Thu tu tu DUOI len (Ong Chu chot 03/09/2026): dong nguon sat day (mep
+    # duoi = WM_BOTTOM), chip ten kenh canh trai ngay tren dong nguon, roi khung
+    # quote tren cung.
+    f_wm = _f(F_MONO_CH, WM_SIZE)
+    wtb = d.textbbox((0, 0), handle or "", font=f_wm)
+    chip_h = ((wtb[3] - wtb[1]) + 2 * 10) if handle else 0
+    src_top = H - WM_BOTTOM - at_h
+    chip_y = (src_top - G_CHIP_SRC - chip_h) if handle else src_top
+    frame_bottom = chip_y - G_FRAME_CHIP
     last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
@@ -367,14 +374,15 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     mark_col = card._du_sang(mau_hang) if mau_hang else _cyan()
     card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, _cyan(), mark_col)
 
-    # Dong nguon CANH GIUA duoi khung.
-    ay = frame_bottom + G_FRAME_SRC
+    # Chip ten kenh canh trai, ngay duoi khung.
+    _watermark(canvas, handle, y=chip_y)
+
+    # Dong nguon CANH GIUA, sat day the.
+    ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
         d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=(190, 190, 190))
         ay += at_lh
-
-    _watermark(canvas, handle)               # chip ten kenh goc duoi-trai
     canvas.convert("RGB").save(out, "PNG")
 
 
