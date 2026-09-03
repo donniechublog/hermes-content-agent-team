@@ -144,7 +144,9 @@ tiêu đề (Ông Chủ bắt lỗi 03/09/2026). Tìm thêm MỘT ảnh ngang n�
 đưa `--image2 <ảnh ngang thứ hai>`: script ghép DỌC hai ảnh trong cùng khung
 (full bề ngang, nguyên tỉ lệ, cách 12px). Dùng được cho cả ba kiểu `dai`,
 `tran`, `quote`; ở `tran`/`quote` ảnh dưới nằm dưới màn tối của chữ, nên đặt
-ảnh quan trọng hơn ở `--image`.
+ảnh quan trọng hơn ở `--image`. **Chọn hai ảnh CÙNG TONE** (cùng nền sáng/tối,
+cùng gam màu): lệch tone đọc ra như hai vùng riêng biệt. Script in
+`[CANH BAO] ghep anh` khi lệch nhiều — thấy là đổi ảnh.
 
 Vậy nên **đừng loại ảnh chỉ vì nó ngang**. Cả hai hướng đều ra thẻ đúng. Chỉ còn
 hai điều thật sự phải chọn:

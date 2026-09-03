@@ -246,6 +246,12 @@ bắt lỗi 03/09/2026). Với ảnh kiểu này: **tìm thêm MỘT ảnh ngang
 Hai ảnh 16:9 ghép ra ~0.88 (nằm giữa 4:5 và 1:1) — cổng tỉ lệ chấp nhận cả dải
 **4:5 → 1:1**. Ảnh dưới nằm dưới scrim chữ, nên đặt ảnh QUAN TRỌNG hơn ở trên.
 
+**Chọn hai ảnh CÙNG TONE.** Hai ảnh lệch tone (một nền trắng một nền đen, gam
+màu khác hẳn) đọc ra như hai vùng riêng biệt, mất cảm giác một khung. Ưu tiên
+cùng nền sáng/tối, cùng gam màu, tốt nhất là hai slide cùng một bộ. Script đo
+độ sáng và màu trung bình, lệch nhiều sẽ in `[CANH BAO] ghep anh` — thấy là
+đổi ảnh, đừng để qua.
+
 Không có ảnh vuông sẵn: tự crop vuông từ một ảnh ngang thật (chọn khung ôm
 đúng nội dung chính) — đây là chọn khung, không phải bịa ảnh, vẫn đúng luật
 "không tự vẽ minh hoạ". Cứ hỏi `anh_bai.py` như thường; công cụ đó chấm điểm

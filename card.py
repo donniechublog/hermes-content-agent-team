@@ -545,6 +545,8 @@ def ghep_doc(paths, gap=12, nen=(0, 0, 0)):
     ims = [Image.open(q).convert("RGB") for q in paths]
     if len(ims) == 1:
         return ims[0]
+    for c in lech_tone(ims):
+        print(f"[CANH BAO] ghep anh: {c}", file=sys.stderr)
     w = max(im.width for im in ims)
     ims = [im.resize((w, round(im.height * w / im.width)), Image.LANCZOS) for im in ims]
     h = sum(im.height for im in ims) + gap * (len(ims) - 1)
@@ -554,6 +556,28 @@ def ghep_doc(paths, gap=12, nen=(0, 0, 0)):
         out.paste(im, (0, y))
         y += im.height + gap
     return out
+
+
+def lech_tone(ims, nguong_sang=60, nguong_mau=70):
+    """Hai anh ghep chung khung ma TONE lech nhau nhieu thi doc ra nhu hai vung
+    rieng biet (Ong Chu chot 03/09/2026: uu tien anh cung tone). Do do sang
+    trung binh (L) va mau trung binh (RGB) cua tung anh; lech qua nguong thi tra
+    ve loi canh bao (khong chan — vai/nguoi duyet quyet)."""
+    from PIL import ImageStat
+    ds = []
+    for im in ims:
+        nho = im.resize((64, 64))
+        ds.append((ImageStat.Stat(nho.convert("L")).mean[0], ImageStat.Stat(nho).mean))
+    ra = []
+    for i in range(len(ds) - 1):
+        (l1, c1), (l2, c2) = ds[i], ds[i + 1]
+        d_sang = abs(l1 - l2)
+        d_mau = sum((a - b) ** 2 for a, b in zip(c1, c2)) ** 0.5
+        if d_sang > nguong_sang or d_mau > nguong_mau:
+            ra.append(f"anh {i+1} va {i+2} lech tone (sang {l1:.0f} vs {l2:.0f}, "
+                      f"mau lech {d_mau:.0f}) — hai vung nhin tach roi; uu tien "
+                      "hai anh CUNG tone (cung nen sang/toi, cung gam mau)")
+    return ra
 
 
 def _mo_anh(src):
