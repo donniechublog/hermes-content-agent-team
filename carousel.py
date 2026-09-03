@@ -344,19 +344,27 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     at_h = at_lh * len(at_lines)
 
     BOX_PAD_Y = 62       # khung cao hon chu — khoang tho + dau " o goc
-    G_FRAME_CHIP = 18    # khung <-> chip ten kenh (sat, khong de du breathspace)
-    G_CHIP_SRC = 16      # chip <-> dong nguon
+    CHIP_OFF = 6         # bong cung cua chip (off trong _chip_neo)
+    # chip <-> CHU hai ben BANG NHAU theo mat (Ong Chu chot 03/09/2026). Dong
+    # quote cuoi co phan lung (descender) trong bbox nen so px tren nho hon
+    # duoi mot chut moi nhin deu. GAP_TOP > 40 de net ngang duoi cua khung
+    # (y1-22) van nam tren chip.
+    GAP_TOP = 50
+    GAP_BOT = 62
 
-    # Thu tu tu DUOI len (Ong Chu chot 03/09/2026): dong nguon sat day (mep
-    # duoi = WM_BOTTOM), chip ten kenh canh trai ngay tren dong nguon, roi khung
-    # quote tren cung.
+    # Thu tu tu DUOI len: dong nguon sat day (mep duoi = WM_BOTTOM), chip ten
+    # kenh canh trai, roi khung quote — cach chip hai ben bang nhau (do theo chu).
     f_wm = _f(F_MONO_CH, WM_SIZE)
     wtb = d.textbbox((0, 0), handle or "", font=f_wm)
     chip_h = ((wtb[3] - wtb[1]) + 2 * 10) if handle else 0
     src_top = H - WM_BOTTOM - at_h
-    chip_y = (src_top - G_CHIP_SRC - chip_h) if handle else src_top
-    frame_bottom = chip_y - G_FRAME_CHIP
-    last_line_bottom = frame_bottom - BOX_PAD_Y
+    if handle:
+        chip_y = src_top - GAP_BOT - CHIP_OFF - chip_h
+        last_line_bottom = chip_y - GAP_TOP
+    else:
+        chip_y = src_top
+        last_line_bottom = src_top - GAP_TOP - BOX_PAD_Y
+    frame_bottom = last_line_bottom + BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
