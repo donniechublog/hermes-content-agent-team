@@ -24,8 +24,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scan_sources import nguon_goc                          # noqa: E402
 
+import env_load                                             # noqa: E402
+
 ROOT = Path.home() / "content-team"
-STATE = ROOT / "state"
+# STATE theo container (state/<CT_BRAND>/), CUNG mot ham voi approve_service.
+# Truoc 03/09/2026 ghi cung ROOT/state nen manifest cua Vera/Nova nam o goc,
+# approve_service (doc state/<brand>/) khong thay -> tra loi so luon ra
+# "Chua co danh sach tin nao de chon". Cron chay trong gateway co san CT_BRAND.
+STATE = env_load.state_dir()
 TIEN_TO = {"nova": "nova_candidates", "market": "vera_candidates",
            "vera": "vera_candidates"}
 

@@ -20,8 +20,11 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import env_load                                             # noqa: E402
+
 ROOT = Path.home() / "content-team"
-STATE = ROOT / "state"
+STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
 
 VALID_CATEGORIES = {"ARXIV", "MO HINH", "MÔ HÌNH", "THU NGHIEM", "THỬ NGHIỆM",
                     "HA TANG", "HẠ TẦNG", "CONG CU", "CÔNG CỤ"}

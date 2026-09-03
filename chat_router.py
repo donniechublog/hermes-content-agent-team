@@ -46,6 +46,20 @@ TOPIC_PROFILE = {
 REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
 TIMEOUT_SEC = 600           # agent chay lau; 10 phut la du cho hau het viec
 
+# Loi nhac che do HOI THOAI, ghep truoc moi tin nhan chat cho MOI vai.
+# Vi sao o day (ma) chu khong chi trong SOUL: SOUL moi vai mot ban, de lech;
+# day la luat chung cua kenh Telegram nen dat mot cho. Su co 02/09/2026: Vera
+# nhan "Hom nay ko lam viec ?" roi tu chay lai scan_business, doc cron, mo
+# kanban.db... 74 tin nhan, 10 phut, bi giet vi het gio — Ong Chu khong nhan
+# duoc gi ngoai dong bao het gio.
+CHAT_HINT = (
+    "[Ghi chú hệ thống — tin nhắn hội thoại từ Telegram, không phải task]\n"
+    "Trả lời NGẮN (tối đa vài câu), bằng tiếng Việt, đúng câu hỏi. Không tự "
+    "chạy lại quét/scan, không tạo task, không sửa tệp — trừ khi câu hỏi yêu "
+    "cầu rõ ràng làm việc đó. Việc cần chạy lâu thì nói ngắn cách làm và hỏi "
+    "lại trước. Nếu cần tra cứu thì tối đa 2-3 lệnh đọc nhanh, rồi trả lời.\n\n"
+)
+
 
 def route(thread_id, topics: dict) -> tuple:
     """Tra ve (profile, ten_phien) cho topic nay."""
@@ -56,22 +70,73 @@ def route(thread_id, topics: dict) -> tuple:
     return profile, session
 
 
-def ask(profile, session, text) -> tuple:
-    """Goi hermes CLI, tra ve (noi_dung, loi)."""
+def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True) -> tuple:
+    """Goi hermes CLI, tra ve (noi_dung, loi). LUON tra ve — khong nem.
+
+    - Chay trong process group rieng (start_new_session) de khi het gio giet
+      duoc CA con lan chau (shell cua terminal tool, chromium...). Truoc day chi
+      giet tien trinh CLI, chau mo coi van chay tiep, ngon tai nguyen.
+    - Het gio ma stdout da co gi thi TRA VE phan do kem ghi chu, thay vi vut.
+    - Ghi log bat dau/ket thuc voi thoi luong + ma thoat, de doi chieu khi
+      Ong Chu bao "khong tra loi".
+    """
+    import time
+    import signal
+    try:
+        import ghi_log
+        log = ghi_log.log
+    except Exception:                                        # noqa: BLE001
+        log = lambda a, b: print(f"[{a}] {b}", flush=True)   # noqa: E731
+
     args = [str(HERMES_PY), "-m", "hermes_cli.main"]
     if profile:
         args += ["-p", profile]
-    args += ["--continue", session, "-z", text]
+    prompt = (CHAT_HINT + text) if hint else text
+    args += ["--continue", session, "-z", prompt]
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
+    t0 = time.time()
+    log("chat", f"goi agent profile={profile or '-'} session={session} "
+                f"home={HERMES_HOME} timeout={timeout}s")
     try:
-        r = subprocess.run(args, cwd=str(HERMES_DIR), env=env,
-                           capture_output=True, text=True, timeout=TIMEOUT_SEC)
+        proc = subprocess.Popen(args, cwd=str(HERMES_DIR), env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, start_new_session=True)
+    except Exception as e:                                   # noqa: BLE001
+        log("chat", f"KHONG chay duoc hermes CLI: {type(e).__name__}: {e}")
+        return None, f"Không chạy được agent: {type(e).__name__}: {e}"
+
+    try:
+        out, err = proc.communicate(timeout=timeout)
+        het_gio = False
     except subprocess.TimeoutExpired:
-        return None, f"Agent chay qua {TIMEOUT_SEC // 60} phut chua xong."
-    out = (r.stdout or "").strip()
-    if r.returncode != 0 and not out:
-        return None, (r.stderr or "").strip()[-400:] or "Agent tra ve loi rong."
-    return out or "(agent khong tra ve noi dung)", None
+        het_gio = True
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            out, err = proc.communicate(timeout=15)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            out, err = proc.communicate()
+    dt = time.time() - t0
+    out = (out or "").strip()
+    err = (err or "").strip()
+    log("chat", f"agent xong profile={profile or '-'} rc={proc.returncode} "
+                f"het_gio={het_gio} {dt:.0f}s out={len(out)}c err={len(err)}c")
+    if het_gio:
+        phut = f"{timeout // 60}" if timeout >= 60 else f"{timeout / 60:.1f}"
+        if out:
+            return (out + f"\n\n⚠️ (agent chạy quá {phut} phút, đã dừng — trên là "
+                          "phần đã trả lời được)"), None
+        return None, (f"Agent chạy quá {phut} phút chưa xong, đã dừng. "
+                      "Hỏi ngắn hơn hoặc giao thành task kanban.")
+    if proc.returncode != 0 and not out:
+        return None, (err[-400:] or f"Agent trả về lỗi rỗng (mã {proc.returncode}).")
+    return out or "(agent không trả về nội dung)", None
 
 
 def clean(text: str) -> str:
