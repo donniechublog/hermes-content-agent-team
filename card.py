@@ -802,14 +802,17 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     open_h, close_h = ob[3] - ob[1], cb[3] - cb[1]
 
     # KHUNG CHU NHAT BO GOC bao quanh quote; dau " gan goc TL/BR (xem _quote_frame).
-    # BO CUC TU DUOI LEN (Ong Chu chot 03/09/2026, dong nhip carousel quote):
-    #   dong nguon sat day -> hang CHIP (ten kenh cyan trai, tagline trang phai)
-    #   -> khung quote. Chip KHONG con o goc tren: o do no de len tieu de cua
-    #   anh nguon (slide/bang), anh doc ra vo nghia.
+    # BO CUC (Ong Chu chot 03/09/2026): hai CHIP CUOI LEN NET KHUNG — net di qua
+    # tam chip theo chieu doc, nhu nhan dan tren hop:
+    #   - chip ten kenh (cyan) o goc TREN-PHAI khung, tren net ngang tren
+    #   - chip tagline (trang) o goc DUOI-TRAI khung, tren net ngang duoi
+    #   - dong nguon canh giua sat day.
+    # Chip KHONG o goc tren the: o do no de len tieu de cua anh nguon.
     BOX_PAD_Y = 66       # khung cao hon khoi chu tren/duoi — chua khoang tho + dau "
+    BR_LIFT = 22         # net ngang duoi nam tren frame_bottom chung nay (xem _quote_frame)
     CHIP_OFF = 7         # bong cung cua chip
-    GAP_TOP = 54         # chip <-> dong quote cuoi (bbox co descender nen nho hon duoi)
-    GAP_BOT = 66         # chip <-> dong nguon
+    CHIP_INSET = 26      # chip thut vao tu canh doc cua khung
+    GAP_BOT = 60         # day chip duoi <-> dong nguon
     BOT_MARGIN = 30      # dong nguon <-> day the
 
     f_hchip = _f(F_MONO, 22)          # JetBrains Mono Regular — ten kenh KHONG dam
@@ -819,9 +822,9 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     chip_h = (htb[3] - htb[1]) + 2 * 13
 
     src_top = H - BOT_MARGIN - at_h
-    chip_top = src_top - GAP_BOT - CHIP_OFF - chip_h
-    last_line_bottom = chip_top - GAP_TOP
-    frame_bottom = last_line_bottom + BOX_PAD_Y
+    yb = src_top - GAP_BOT - CHIP_OFF - chip_h // 2      # net ngang duoi = tam chip duoi
+    frame_bottom = yb + BR_LIFT
+    last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
@@ -846,9 +849,8 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=_pha(FG, 0.72))
         ay += at_lh
 
-    # Hang CHIP theo phong cach NEOBRUTALISM: khoi dac, vien den day, bong cung
-    # lech (KHONG mo), chu MONO. Ten kenh chip CYAN canh TRAI, tagline chip
-    # TRANG ke ben. Nam GIUA khung quote va dong nguon.
+    # CHIP theo phong cach NEOBRUTALISM: khoi dac, vien den day, bong cung lech
+    # (KHONG mo), chu MONO. Cuoi len net khung (xem bo cuc o tren).
     def _chip_neo(txt, font, top, align, bg, fg, off=7, bord=4, pad_x=22, pad_y=13, x=None):
         tb = d.textbbox((0, 0), txt, font=font)
         bw, bh = (tb[2] - tb[0]) + 2 * pad_x, (tb[3] - tb[1]) + 2 * pad_y
@@ -860,9 +862,23 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         d.text((x0 + pad_x - tb[0], y0 + pad_y - tb[1]), txt, font=font, fill=fg)
         return bh, x1
 
-    _, x1 = _chip_neo(ten, f_hchip, chip_top, "l", CYAN, (0, 0, 0))    # ten kenh: chip cyan, chu den
-    if tag:   # tagline: chip trang ke ben phai (tranh dau " dong o goc phai khung)
-        _chip_neo(tag, f_tchip, chip_top, "l", (255, 255, 255), (0, 0, 0), x=x1 + 16 + CHIP_OFF)
+    fx0, fx1 = FRAME_X, W - FRAME_X
+    aw = (fx1 - fx0) // 3                     # 1/3 net ngang cua _quote_frame
+    # Chip ten kenh: goc TREN-PHAI, tam chip nam tren net ngang tren. Keo net
+    # ngang tren tu cuoi doan co san (fx0+aw) sang toi chip de net "xuyen" chip.
+    tb_h = d.textbbox((0, 0), ten, font=f_hchip)
+    hw = (tb_h[2] - tb_h[0]) + 2 * 22
+    hx0 = fx1 - CHIP_INSET - hw
+    d.line([(fx0 + aw, frame_top), (hx0 + hw // 2, frame_top)], fill=CYAN, width=5)
+    _chip_neo(ten, f_hchip, frame_top - chip_h // 2, "l", CYAN, (0, 0, 0), x=hx0)
+    if tag:
+        # Chip tagline: goc DUOI-TRAI, tam chip tren net ngang duoi (yb). Keo net
+        # ngang duoi tu chip sang toi dau doan co san (fx1-aw).
+        tb_t = d.textbbox((0, 0), tag, font=f_tchip)
+        tw_ = (tb_t[2] - tb_t[0]) + 2 * 22
+        tx0 = fx0 + CHIP_INSET
+        d.line([(tx0 + tw_ // 2, yb), (fx1 - aw, yb)], fill=CYAN, width=5)
+        _chip_neo(tag, f_tchip, yb - chip_h // 2, "l", (255, 255, 255), (0, 0, 0), x=tx0)
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
