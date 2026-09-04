@@ -1,6 +1,6 @@
 ---
 name: carousel-edu
-description: "Carousel EDU — diễn đạt lại kiến thức & nghiên cứu (paper arXiv, kinh nghiệm dev) cho chuyên nghiệp, tường minh; phong cách tech × magazine bằng ART VECTOR GỐC tự vẽ — không đi tìm ảnh minh hoạ, không nền AI, nhưng biểu đồ/bảng/trang báo cáo CÓ SẴN thì chèn bản thật trải hết bề ngang slide (kind figure). Hệ thiết kế: nền tối #0A0B0E, duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 6 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: art trừu tượng/sơ đồ khái niệm + hình thật của biểu đồ/bảng/báo cáo có ghi via; cấm ảnh AI/screenshot dựng lại/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.edu)."
+description: "Carousel EDU — diễn đạt lại kiến thức & nghiên cứu (paper arXiv, kinh nghiệm dev) cho chuyên nghiệp, tường minh; phong cách tech × magazine bằng ART VECTOR GỐC tự vẽ — không đi tìm ảnh minh hoạ, không nền AI, nhưng biểu đồ/bảng/trang báo cáo CÓ SẴN thì chèn bản thật trải hết bề ngang slide (kind figure). Hệ thiết kế: nền tối dịu #171A21 (không đen đặc), duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 6 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: art trừu tượng/sơ đồ khái niệm + hình thật của biểu đồ/bảng/báo cáo có ghi via; cấm ảnh AI/screenshot dựng lại/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.edu)."
 version: 0.1.0
 author: content-team
 license: internal
@@ -54,7 +54,11 @@ thì nó thuộc cột CẤM.
 ## Hệ thiết kế (design tokens)
 
 - **Khổ:** 1080×1350 (4:5), portrait.
-- **Nền:** `#0A0B0E` (đen hơi lạnh, không đen tuyệt đối). Nền luôn **sạch** — Kite
+- **Nền:** mỗi theme một mã riêng, quanh `#171A21` (orbit). **Không phải đen
+  đặc** — bản đầu lấy đen gần tuyệt đối (`#0A0B0E`) thì cả thẻ thành một khối
+  mực, nặng trĩ (Ông Chủ chê 04/09/2026). Nền nâng lên một bậc và có một độ
+  sáng nhẹ ở đỉnh thẻ: vẫn tương phản cứng với chữ trắng, mà mắt thở hơn hẳn.
+  Nền luôn **sạch** — Kite
   tự dựng nền nên không bao giờ có cớ để nền rối/chi chít chữ.
 - **Chữ:** trắng `#F4F6F9`; phụ (dịu) `#838A96`; hairline/viền `#262A33`; panel
   `#14161B`.
@@ -147,6 +151,12 @@ radial mờ — giữ nhẹ để không phạm chính luật "nền sạch, kh�
 
 Khi nguồn **đã có** hình đáng đưa lên, đừng vẽ lại: chèn bản thật.
 
+**Bìa cũng vậy.** Mặc định bìa là hero art vector, nhưng tin nào có sẵn một tấm
+hình đáng đưa lên thì thêm `"image"` + `"caption"` vào slide `cover` — bìa lấy
+chính tấm hình đó làm hero, chữ chìm vào nó, không vẽ sơ đồ nữa. Một tấm hình
+thật bao giờ cũng nói được nhiều hơn một sơ đồ trang trí. Cùng bộ luật với
+`figure` bên dưới (bề ngang không cắt, chữ chìm vào ảnh, bắt buộc "via").
+
 ```json
 {"kind": "figure", "eyebrow": "SỐ LIỆU",
  "title": "Điểm số trên SWE-bench Verified", "accent": "SWE-bench Verified",
@@ -178,12 +188,17 @@ nhiêu px để Kite biết mà tự cắt lại cho đúng.
 - **Chữ đè lên ảnh** qua màn tối, kèm một lớp mờ của chính tấm ảnh hiện lên
   **cùng nhịp**. Chỉ làm tối thôi thì chữ trong ảnh vẫn lờ mờ dưới chữ mình;
   lớp mờ mới xoá hết.
-- Màn tối chỉ **chớm lên ~130px ngay trên dòng chữ đầu** rồi đậm rất nhanh, chứ
-  không kéo từ 42% chiều cao như Dre. Nền của Dre là ảnh chụp tối sẵn, kéo dài
-  bao nhiêu cũng không ai thấy; nền ở đây thường là **trắng**, kéo dài là cả nửa
-  trên tấm ảnh bị phủ một lớp mờ mờ xam xám, thấy rõ mồn một và xấu. Đổi lại
-  phải dùng đường cong chữ S (bằng phẳng ở cả hai đầu) mới rút ngắn được dải
-  chuyển tiếp mà mắt vẫn không bắt được đâu là mép.
+- **Nền phẳng thì phía trên dòng chữ đầu phải TRONG TUYỆT ĐỐI.** Màn tối neo
+  đúng vào **chân chữ eyebrow** ("SỐ LIỆU", "BẢNG ĐO"…): trên nó không một chút
+  màu nào, từ nó tăng dần từ 0, qua khỏi đỉnh tiêu đề là đã đậm tối đa. Kéo dài
+  kiểu Dre trên một mảng màu phẳng thì nó không "chìm" đi như trên ảnh chụp —
+  nó lù lù ra đó thành một vệt xám, xấu. Ảnh **chụp** thì ngược lại: dải dài
+  chính là thứ làm chữ chìm vào ảnh, và trên ảnh thì mắt không bắt được nó, nên
+  giữ nguyên kiểu Dre.
+- Đường cong là chữ S (bằng phẳng ở cả hai đầu) nên dù dải ngắn vẫn không lộ mép.
+- Eyebrow lúc này nằm **trên** mép màn tối, tức là nằm trắng trên nền sáng. Màu
+  nhấn của theme sinh ra để đặt trên nền tối, để nguyên là chữ chìm mất — nên
+  nó tự ép tối đi cho đọc được, vẫn ra đúng màu đó.
 - Khối chữ dài thì màn tối bắt cao, ăn lên thân ảnh. Lúc đó **kéo ảnh lên** cho
   đáy nó vừa chạm mép màn tối, không cắt bớt ảnh — cắt là mất nội dung.
 - Masthead: chừa 150px đầu thẻ, ảnh không tràn lên. Nền sáng thì masthead tự
@@ -192,6 +207,10 @@ nhiêu px để Kite biết mà tự cắt lại cho đúng.
 - Ảnh **nền phẳng** dừng ở 63% chiều cao, không tràn xuống vùng chữ: dưới màn
   tối nó vẫn đọc được mờ mờ, chữ mình đè lên chữ của người ta thành một đám rối.
   Ảnh chụp thì phủ xuống thoải mái — ảnh chụp không có chữ để đụng.
+
+**Tiêu đề tối đa 2 dòng** trên mọi slide có ảnh — ảnh đã nói phần việc của nó
+rồi, tiêu đề dài thêm là giành của nhau. Cổng chặn đo thật bằng Chromium, quá
+2 dòng là dừng trước khi ghi tệp nào.
 
 Cổng chặn: `image` phải trỏ tới tệp có thật, rộng **>= 800px** (hẹp hơn mà kéo
 lên 1080 là bể nát — chụp lại bằng `chup_chart.py`, DPR 2), và **bắt buộc**

@@ -1482,6 +1482,13 @@ def handle_message(token, group, msg):
     lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
     is_pick = lenh is not None
     if not is_pick:
+        # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot
+        # rieng (profile_routes theo topic). Bot approve chi con giu nut duyet,
+        # chon so, lenh "/" va tien do kanban — KHONG tra loi chat nua, khong thi
+        # hai bot cung dap mot cau. Bat bang CT_CHAT_QUA_GATEWAY=1 trong unit.
+        if os.environ.get("CT_CHAT_QUA_GATEWAY", "") == "1":
+            log("route", f"msg={mid} chat -> nhuong gateway (CT_CHAT_QUA_GATEWAY=1)")
+            return
         # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
         # vong lap poll (nut Duyet/Bo phai bam duoc bat cu luc nao).
         _chay_nen("chat", handle_chat, token, group, thread_id,
