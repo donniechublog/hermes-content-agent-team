@@ -251,7 +251,12 @@ def _ghep_neu_can(muc, nhan, stem):
                  "tone ra hai vung tach roi — khong duoc de qua.")
     ra = Path(f"{stem}.ghep.png")
     ra.parent.mkdir(parents=True, exist_ok=True)
-    card.ghep_doc(ds).save(ra, "PNG")
+    # Dong dau XUAT XU (xem cong 2c): anh ghep co the roi dung 4:5 chan (vd hai
+    # anh 16:10 xep doc), dau nay cho cong biet chinh carousel.py dung ra no.
+    from PIL.PngImagePlugin import PngInfo
+    _meta = PngInfo()
+    _meta.add_text("nguon_dung", "ghep_doc")
+    card.ghep_doc(ds).save(ra, "PNG", pnginfo=_meta)
     muc["image"] = str(ra)
 
 
@@ -574,6 +579,13 @@ def _dem_mat(path):
         return None
 
 
+def _co_xuat_xu(img):
+    """Anh co DAU VET cua cong cu trong doi khong (crop_ti_le.py, arxiv_bia.py,
+    ghep_doc cua carousel.py)? Dung cho cong 2c."""
+    t = (getattr(img, "text", None) or img.info or {})
+    return bool(t.get("crop_ti_le") or t.get("nguon_dung"))
+
+
 def _goc_crop(img):
     """Doc dau vet crop_ti_le.py ghi trong metadata PNG -> (w_goc, h_goc) hoac None."""
     m = (getattr(img, "text", None) or img.info or {}).get("crop_ti_le")
@@ -645,6 +657,33 @@ def _gate_anh(paths):
                        "Tim them mot anh ngang cung tone, ghi \"images\": [a, b] de ghep "
                        "doc. Chi anh chup nguoi/san pham KHONG co chu moi duoc crop: ghi "
                        "\"crop_ok\": \"<ly do>\" vao slide.")
+        # 2c) CAT TAY NE CONG (Ong Chu bat loi 04/09/2026 — bo K2 Horizon):
+        # ca 7 anh cua bo do deu dung khit 4:5 (0.7996..0.8004) ma KHONG anh nao
+        # co dau crop_ti_le. Nghia la vai cat bang PIL/cv2/ImageMagick, va cong 2b
+        # — von chi doc dau vet cua crop_ti_le.py — khong thay gi de chan. Cong do
+        # hoa ra PHAT nguoi lam dung va THA nguoi lach. Ket qua: mot chart bi cat
+        # mat tieu de ("...osses across the Horizon fleet") va mat truc.
+        #
+        # Anh that tai ve gan nhu khong bao gio dung khit 4:5/1:1 (thuc do tren kho
+        # anh: 1.16, 1.50, 1.78, 1.91...). Dung khit ma khong dau vet = da cat bang
+        # cong cu ngoai. Cac cong cu trong doi deu dong dau (_co_xuat_xu), nen chan
+        # o day khong dung vao duong di hop le nao.
+        #
+        # KHONG mien tru bang "crop_ok": crop_ok noi "toi co y crop", con cong nay
+        # noi "crop bang gi khong ai biet". Khai bao khong thay duoc xuat xu.
+        if not _co_xuat_xu(img):
+            for r_dich, ten_tl in ((0.8, "4:5"), (1.0, "1:1")):
+                if abs(r - r_dich) <= 0.005:
+                    loi.append(
+                        f"{nhan}: anh {w}x{h_px} dung khit {ten_tl} ({r:.4f}) ma KHONG co "
+                        f"dau vet crop_ti_le.py — day la anh da cat bang cong cu ngoai "
+                        f"(PIL/cv2/ImageMagick), vi pham luat 'chi crop qua crop_ti_le.py'. "
+                        f"Chart/bang/slide/banner co chu: DUNG crop — ghi \"chart\": true "
+                        f"(slide than) hoac ghep doc \"images\": [a, b]. Anh chup khong co "
+                        f"chu: cat LAI bang venv/bin/python crop_ti_le.py --anh <goc> --ra "
+                        f"<ra.png> --ti-le {ten_tl}. Anh goc VON DA {ten_tl}: van chay qua "
+                        f"crop_ti_le.py mot lan de dong dau (cat 0, khong mat gi).")
+                    break
         # 3) DO PHAN GIAI: canh ngan <1000px phong len 1080 se mem/vo net.
         # Canh bao thoi (khong chan): anh doc quyen nho van hon anh sai.
         if min(w, h_px) < 1000:
@@ -657,8 +696,8 @@ def _gate_anh(paths):
         sang = ImageStat.Stat(day).mean[0]
         if sang > 150:
             canh_bao.append(f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — "
-                            "chu trang tren nen 60% se kho doc; crop lai cho "
-                            "day anh la vung toi hon")
+                            "chu trang tren scrim ~80% van doc duoc nhung nhat; "
+                            "co anh day toi hon thi uu tien")
         # 5) MAT NGUOI: luat "khong dung anh mot nguoi vo danh". Code chi bao co
         # mat hay khong; vai tu phan doan co phai nhan vat trong bai khong.
         # Ong Chu bat loi 03/09/2026: bia tin GPT-6 Astra dung mat mot nguoi

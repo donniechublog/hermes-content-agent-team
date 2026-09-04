@@ -125,7 +125,8 @@ Thấy là hỏng, dựng lại — đừng gửi đi.
    chart/bảng — không cần crop, không cần tìm ảnh thứ hai. Bìa thì không (hook
    đè lên ảnh), bìa chart phải ghép dọc. **Crop chỉ được làm qua
    `crop_ti_le.py`** (script ghi dấu vết vào PNG để cổng chặn kiểm); tự cắt
-   bằng PIL/cv2/ImageMagick là lách cổng = vi phạm. Ảnh gốc ngang mà đi qua
+   bằng PIL/cv2/ImageMagick là lách cổng = vi phạm — và **từ 04/09 là bị bắt**:
+   ảnh đúng khít 4:5/1:1 mà không có dấu vết bị chặn thẳng (cổng chặn #9). Ảnh gốc ngang mà đi qua
    crop bị chặn, trừ khi slide khai `"crop_ok": "<lý do>"` (chỉ cho ảnh chụp
    người/sản phẩm **không có chữ**).
 3. **Flagship mà chỉ 5 slide.** GPT-6 Astra là model đầu bảng OpenAI, có
@@ -451,11 +452,17 @@ thông báo rồi chạy lại.
    `crop_ti_le.py` để cắt.
 7. **Copy dài quá vùng chữ 30%** (ở cỡ chữ nhỏ nhất vẫn tràn) → dừng, báo cần
    cắt bớt bao nhiêu phần trăm chữ.
-8. **Cảnh báo (không chặn)**:
-   - cạnh ngắn ảnh <1000px (phóng lên sẽ mềm nét);
-   - 25% dưới của ảnh quá sáng (chữ trắng trên nền 60% sẽ khó đọc);
-   - cạnh ngắn ảnh <1000px là cảnh báo; **mặt người** và **crop ảnh ngang**
-     là CHẶN — xem mục 10, 11.
+8. **Cảnh báo (không chặn)**: cạnh ngắn ảnh <1000px (phóng lên sẽ mềm nét);
+   25% dưới của ảnh quá sáng (chữ vẫn đọc được qua scrim ~80%, chỉ nhạt hơn).
+   **Mặt người**, **crop ảnh ngang** và **cắt tay né cổng** là CHẶN — mục 10–12.
+9. **Ảnh đúng khít 4:5 hoặc 1:1 mà KHÔNG có dấu vết `crop_ti_le.py`** → **CHẶN**
+   (Ông Chủ bắt lỗi 04/09/2026, bộ K2 Horizon). Ảnh thật tải về gần như không
+   bao giờ đúng khít 4:5/1:1 (đo thật: 1.16, 1.50, 1.78, 1.91…). Đúng khít mà
+   không dấu = đã cắt bằng PIL/cv2/ImageMagick để né cổng crop. `crop_ti_le.py`,
+   `arxiv_bia.py` và ảnh ghép dọc đều tự đóng dấu nên không bị vướng. **Không có
+   cờ nào miễn trừ** — kể cả `crop_ok`: `crop_ok` nói "tôi cố ý crop", còn cổng
+   này nói "crop bằng gì thì không ai biết". Ảnh gốc vốn đã 4:5/1:1 thì vẫn chạy
+   qua `crop_ti_le.py` một lần để đóng dấu (cắt 0, không mất gì).
 10. **Mặt người** (YuNet) → **CHẶN** nếu slide không khai `"nhan_vat": "<tên>"`.
     Tin xoay quanh một người (Elon Musk, CEO phát biểu, tác giả paper…) thì ảnh
     đúng người đó là ảnh NÊN dùng — khai tên vào `nhan_vat` rồi dựng. Khai sai
