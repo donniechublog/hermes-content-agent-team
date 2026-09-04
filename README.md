@@ -305,6 +305,19 @@ biết. Cache là per-model, mỗi lần lật là mất sạch prefix đã cach
 bị tính lại giá gốc. Cột `cache%` trong `usage_audit.py` chính là thước đo
 nguyên tắc này: tụt cache nghĩa là đang lật model.
 
+**Đã bắt được một nguyên nhân lật cụ thể (cron 05/09/2026, cả Finn/Nova/Vera):**
+bước phụ `title_generation` (Hermes tự đặt tên phiên) gửi `response_format` mà
+DeepSeek v4-flash trả `400 This response_format type is unavailable now`; 9router
+coi đó là lỗi provider và đưa `deepseek/deepseek-v4-flash` vào cooldown ~30s
+(`reset after 28s`); hai lần retry của vòng chính (cách 2–3s) rơi trọn trong
+cooldown → `Fallback activated: v4-flash → deepseek-chat`, dính tới hết phiên
+(1 call v4-flash rồi 11–24 call deepseek-chat). Dòng log nằm ở
+`profiles/<vai>/logs/agent.log`, **không** có trong `logs/gateway.log`. Đếm
+19/08–04/09: lỗi này 5–48 lần/ngày, fallback 4–33 lần/ngày. Chặn bằng
+`auxiliary.title_generation.enabled: false` trong `config.yaml` từng profile:
+`venv/bin/python tat_title_generation.py` (có `--thu`, backup
+`.bak-truoc-tat-title-0905`); tiêu đề phiên vô dụng với task kanban/cron.
+
 ## Provider
 
 Mọi vai trừ Ada chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek
