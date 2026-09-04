@@ -166,18 +166,6 @@ phần còn lại, và chỉ có hai trường hợp.
 vừa chiều cao: phóng lên là cắt mất bề ngang hoặc vỡ nét, cả hai đều tệ hơn một
 mảng nền phẳng. Đáy ảnh tan dần vào nền nên không lộ ra đường ngang nào.
 
-**Nhưng ở `--kieu quote` thì khổ thẻ khoá cứng**, nền không "cao lên" được — nó
-chỉ là phần thẻ còn trống. Ảnh 16:9 ở bề ngang 1200 chỉ cao 675, tức **45%** khổ
-4:5; 55% còn lại là bản cover làm mờ, một mảng bùn không mang thông tin gì. Nên
-từ 04/09/2026 `card.py` **chặn** ảnh thấp hơn 50% khổ thẻ ở kiểu quote (cổng #4)
-và đẩy sang đường đúng: `--image2`. Hai ảnh 16:9 xếp dọc ở bề ngang 1200 cao
-1350 = **90%** khổ thẻ — thẻ đầy ảnh, không còn mảng bùn. Ảnh từ 3:2 trở lên
-(53% khổ thẻ) thì qua: ở đó phần tối là **chỗ đặt chữ**, không phải chỗ trống.
-
-Ghép dọc thì **hai ảnh phải cùng tone** — và từ 04/09 `card.py` cũng **dừng hẳn**
-khi lệch tone chứ không chỉ cảnh báo như trước (carousel đã siết từ trước đó).
-Ép người ta vào một đường thì phải rào luôn cái bẫy của chính đường đó.
-
 **Ảnh quá ngang mà có TIÊU ĐỀ** (slide, bảng, chart, banner): đừng crop mất
 tiêu đề (Ông Chủ bắt lỗi 03/09/2026). Tìm thêm MỘT ảnh ngang nữa cùng bài và
 đưa `--image2 <ảnh ngang thứ hai>`: script ghép DỌC hai ảnh trong cùng khung
@@ -292,9 +280,9 @@ Lưu ý về `--ratio`: nếu ảnh quá dọc so với tỉ lệ bạn khoá, s
 lệ cao hơn để không phải thu ảnh. Dòng in ra cuối lệnh cho biết thẻ thật sự ra
 bao nhiêu, đọc nó.
 
-## Bảy cổng chặn
+## Sáu cổng chặn
 
-Sáu cái đầu làm lệnh **dừng hẳn**:
+Năm cái đầu làm lệnh **dừng hẳn**:
 
 1. **Tiếng Việt không dấu** ở tiêu đề. Từng in ra "CONG CU" trên thẻ thật. Gõ
    lại có dấu rồi chạy lại. Chỉ dùng `--bo-qua-dau` khi chữ **thật sự** là
@@ -311,13 +299,9 @@ Sáu cái đầu làm lệnh **dừng hẳn**:
    `--image` nằm nửa trên còn nguyên), hoặc đưa chart về slide thân carousel với
    `"chart": true`. Ghi đè bằng `--bo-qua-anh` — cờ này giờ **chỉ** phục vụ cổng
    này.
-4. **Ảnh quá ngang ở `--kieu quote`** — thấp hơn 50% khổ thẻ (16:9 và rộng hơn).
-   Khổ quote khoá cứng nên phần thiếu là thẻ bỏ trống, không phải nền cao lên.
-   Ghép dọc bằng `--image2`, hoặc tìm ảnh từ 3:2 trở lên. Ghi đè `--bo-qua-anh`.
-   Kèm theo: **ghép dọc lệch tone** cũng dừng hẳn.
-5. **Thương hiệu không nhận ra** ở `--brand`.
-6. **Thiếu cờ bắt buộc**: `--image --title --out`.
-7. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
+4. **Thương hiệu không nhận ra** ở `--brand`.
+5. **Thiếu cờ bắt buộc**: `--image --title --out`.
+6. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
    nối. Đừng dựa vào nó, cứ gõ đúng từ đầu.
 
 ## Tiêu đề: viết như thế nào
