@@ -277,7 +277,7 @@ def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
     return m.resize((W, H))
 
 
-def _veil_bottom(canvas, veil_rgb, text_top):
+def _veil_bottom(canvas, veil_rgb, text_top, san=0):
     """Lam NEN CHO CHU theo kieu SCRIM LIEN MACH cua cover — chu "chim" vao anh,
     khong lo mot dai band nao ke ca tren anh sang:
 
@@ -299,6 +299,12 @@ def _veil_bottom(canvas, veil_rgb, text_top):
     # nhat VEIL_LEAD — de gradient DAI, khong lo mep ngay tren dong dau nhu khi
     # bat dau dung o text_top. Day la khac biet lam chu "chim" vao anh.
     top_y = max(0, min(text_top - int(H * VEIL_LEAD), int(H * VEIL_TOP)))
+    # `san`: mep duoi cua lop anh SAC khi no ket thuc TREN vung chu (chart ngang
+    # "chart": true). Scrim khong duoc bat dau TREN mep do, neu khong no lam toi
+    # chinh phan duoi cua chart — truc x, nhan, dong chu thich — tuc chart khong
+    # con hien DAY DU (Ong Chu chot 04/09/2026). Duoi mep chart la nen mo, nen
+    # bat dau o do van khong lo mep, va gradient van du dai (~300px tro len).
+    top_y = max(top_y, min(san, text_top - 80))
     full_y = TEXT_BASE - FULL_TOI_PAD             # cham max quanh dong chu cuoi
     blurred = veil_rgb.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
     # 1) tron dan sang ban mo — nhat o tren, mo dan xuong
@@ -326,7 +332,8 @@ def _body_image(canvas, img):
         luon (nen khong lo ra ti nao); anh 1:1 phu 0..~1080, phan duoi la nen
         (nam duoi chu + watermark, da bi veil lam mo).
 
-    Tra ve ban COVER SAC (chua mo) de _veil_bottom tu lam mo theo nhip cua no.
+    Tra ve (COVER SAC, mep_duoi_lop_sac). Cover de _veil_bottom tu lam mo theo
+    nhip cua no; mep duoi de goi y cho scrim khong lem len chart.
     (Luat: anh dua vao carousel da la 1:1 hoac 4:5 — xem crop_ti_le.py; nen
     luon cham du sau.)"""
     cover = _fit_cover(img, W, H).convert("RGB")
@@ -344,13 +351,13 @@ def _body_image(canvas, img):
         # vung tren (0..~60% cao, tren scrim chu) thay vi dinh mep tren.
         y0 = max(0, (int(H * 0.6) - nh) // 2)
     canvas.paste(resized, (0, y0))                # lop sac uncropped len tren nen cover
-    return cover
+    return cover, min(H, y0 + resized.height)     # mep duoi lop sac -> san cho scrim
 
 
 # ---- Dung tung slide ------------------------------------------------------
 def build_body(img_path, text, handle, out):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    base = _body_image(canvas, _open(img_path))
+    base, anh_day = _body_image(canvas, _open(img_path))
 
     # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
     # cao bao nhieu day len bay nhieu — luon sat day, khong tran len qua 30%,
@@ -364,7 +371,7 @@ def build_body(img_path, text, handle, out):
 
     # Lop nen neo vao dong chu dau: gan-max ngay tu dong chu dau tro xuong (anh
     # con <10%, chu bat ro), doan chuyen mo dan chi ngay tren dong chu dau.
-    _veil_bottom(canvas, base, text_top)
+    _veil_bottom(canvas, base, text_top, san=anh_day)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
@@ -388,7 +395,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    base = _body_image(canvas, _open(img_path))
+    base, anh_day = _body_image(canvas, _open(img_path))
     d = ImageDraw.Draw(canvas)
 
     FRAME_X = 40
@@ -420,7 +427,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     frame_top = first_line_top - BOX_PAD_Y
 
     # Man toi lien mach, neo tu tren dinh khung.
-    _veil_bottom(canvas, base, max(0, frame_top - 24))
+    _veil_bottom(canvas, base, max(0, frame_top - 24), san=anh_day)
 
     # Cac dong quote.
     qy = first_line_top

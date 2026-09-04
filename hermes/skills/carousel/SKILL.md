@@ -118,7 +118,17 @@ Thấy là hỏng, dựng lại — đừng gửi đi.
    screenshot, chart** — không phải mặt người.
 2. **Chart / bảng benchmark bị crop.** Chart cắt mất tiêu đề, mất trục, mất
    legend là ảnh vô nghĩa. **Chart, bảng, slide, banner có chữ PHẢI NGUYÊN
-   VẸN** — không crop, không cắt góc. Ảnh ngang thì **ghép dọc hai ảnh cùng
+   VẸN** — không crop, không cắt góc.
+
+   > **Ông Chủ chốt 04/09/2026: "chart phải được hiển thị đầy đủ và full width
+   > của chiều rộng hình."** Hai vế, cả hai đều bắt buộc. *Đầy đủ* = không mất
+   > một chữ nào: tiêu đề, trục, nhãn trục, legend, chú thích chân chart. *Full
+   > width* = trải hết 1080px bề ngang khung, không thu nhỏ, không chừa lề.
+   > Đường duy nhất làm được cả hai là `"chart": true` với **ảnh GỐC chưa cắt**.
+   > Ca bị bắt: bộ K2 Horizon cắt chart 2015x1099 về 879x1099 để lấp đầy khung
+   > — vứt 56% bề ngang, mất chữ đầu tiêu đề ("...osses across the Horizon
+   > fleet") và mất sạch trục y. `carousel.py` còn tự lùi điểm bắt đầu scrim
+   > xuống dưới mép chart, để đáy chart không bị làm tối. Ảnh ngang thì **ghép dọc hai ảnh cùng
    tone** (`"images": [a, b]`), **hoặc** khai `"chart": true` cho slide thân: cổng
    tỉ lệ bỏ qua, `carousel.py` dán chart **full bề ngang nguyên vẹn**, phần
    trống trên/dưới là chính ảnh làm mờ. Đây là đường mặc định cho benchmark
