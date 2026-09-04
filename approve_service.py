@@ -1012,14 +1012,16 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
 #    tin gui truoc tra loi truoc — threading.Lock khong dam bao thu tu danh thuc,
 #    nen dung ve so.
 # 2) Mot semaphore chung gioi han SO VAI chay cung luc (CT_CHAT_SONG_SONG, mac
-#    dinh 2) — de 9router/DeepSeek khong bi dap don (400 "response_format
-#    unavailable", 429), ma mot vai lam lau (Gin xoa chu 2 phut, tran 10 phut)
-#    khong con lam CA DOI cam khau. Su co 04/09 07:19: Itachi doi Gin 108s chi
-#    de tra loi mot cau "xac nhan" — voi khoa chung thi 12 vai chung mot hang,
-#    ai hoi gi cung phai cho vai dang chay xong. Dat CT_CHAT_SONG_SONG=1 la ve
-#    dung hanh vi cu.
+#    dinh 4) — van thu 9router/DeepSeek khoi bi dap don (400 "response_format
+#    unavailable", 429) neu co gi do bung no, nhung KHONG duoc la cai lam reply
+#    doi nhau. Nguyen tac Ong Chu (04/09): task lam lan luot duoc, reply thi
+#    phai song song va nhanh — reply do la viec treo theo het. Mot nguoi go
+#    thi thuc te khong hoi qua 3-4 vai cung luc nen 4 gan nhu khong bao gio
+#    cham; 429 le te da co chat_router thu lai theo "reset after Ns". Su co
+#    04/09 07:19 voi khoa chung: Itachi doi Gin 108s chi de tra loi "xac nhan".
+#    Dat CT_CHAT_SONG_SONG=1 la ve dung hanh vi cu.
 # Task kanban van tuan tu (max_in_progress: 1) — muc nay chi noi ve chat.
-_SO_SONG_SONG = max(1, int(os.environ.get("CT_CHAT_SONG_SONG", "2") or 2))
+_SO_SONG_SONG = max(1, int(os.environ.get("CT_CHAT_SONG_SONG", "4") or 4))
 _CHO_CHAT = threading.BoundedSemaphore(_SO_SONG_SONG)
 _DANG_CHAY = {}                                # who -> t0, cac vai dang goi agent
 _KHOA_DANG_CHAY = threading.Lock()
