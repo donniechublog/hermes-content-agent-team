@@ -49,7 +49,16 @@ def main():
     img = Image.open(a.anh).convert("RGB")
     out = cat(img, TI_LE[a.ti_le], a.cx, a.cy)
     Path(a.ra).parent.mkdir(parents=True, exist_ok=True)
-    out.save(a.ra)
+    # Ghi dau vet crop vao metadata PNG: carousel.py doc ra de CHAN truong hop
+    # crop anh NGANG co tieu de (bang/chart/slide) — Ong Chu bat loi 03/09/2026:
+    # benchmark chart bi crop mat dau/mat truc, doc ra vo nghia. Anh ngang co
+    # chu thi phai GHEP DOC hai anh ("images": [a, b]), khong crop.
+    if Path(a.ra).suffix.lower() != ".png":
+        sys.exit("--ra phai la .png (de giu metadata crop cho carousel.py kiem).")
+    from PIL.PngImagePlugin import PngInfo
+    meta = PngInfo()
+    meta.add_text("crop_ti_le", f"goc={img.size[0]}x{img.size[1]};ti_le={a.ti_le};cx={a.cx};cy={a.cy}")
+    out.save(a.ra, "PNG", pnginfo=meta)
     print(f"{img.size} -> {out.size} ({a.ti_le}) -> {a.ra}", file=sys.stderr)
 
 

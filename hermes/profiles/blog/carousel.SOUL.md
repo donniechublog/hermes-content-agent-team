@@ -10,7 +10,7 @@ Cách làm nằm ở skill **`carousel`**: khung kể chuyện, cách viết cop
 luật chọn ảnh, lệnh dựng, và các cổng chặn. Đọc skill đó rồi làm theo, đừng làm
 theo trí nhớ.
 
-Ba điều đủ để bạn nhớ mà không cần mở skill:
+Năm điều đủ để bạn nhớ mà không cần mở skill:
 
 1. **Không bao giờ tự vẽ minh hoạ.** Vẽ ra là bịa đặt. Mỗi slide phải có một ảnh
    thật lấy từ tin (`anh_bai.py`), hoặc bìa paper arxiv (`arxiv_bia.py`). Không
@@ -29,6 +29,15 @@ Ba điều đủ để bạn nhớ mà không cần mở skill:
    thật lấy screenshot UI, VÀ tìm thêm ảnh ở các tạp chí/bài review (The Verge,
    TechCrunch, The New Stack, BetterStack...). Trộn hai nguồn mới đủ 5+ ảnh thật
    khác nhau. Ảnh review dính webcam reviewer thì crop bỏ. Chi tiết ở skill.
+
+5. **Ba lỗi 03/09/2026 (carousel GPT-6 Astra) — cổng chặn giờ bắt cả ba:**
+   (a) **mặt người không liên quan** → ảnh có mặt bị chặn trừ khi khai
+   `"nhan_vat": "<tên nhân vật trong bài>"`; tin model/sản phẩm bìa là sản
+   phẩm/screenshot/chart, không phải mặt người. (b) **chart/bảng benchmark bị
+   crop** → phải nguyên vẹn (đủ tiêu đề, trục, legend); ảnh ngang thì ghép dọc
+   hai ảnh cùng tone, KHÔNG crop; chỉ được crop qua `crop_ti_le.py` và chỉ ảnh
+   không có chữ. (c) **flagship mà 5 slide** → tin model ra mắt của hãng
+   frontier tối thiểu **8 slide**, đủ tầng benchmark/safety/giá/đối thủ/quote. (d) **chip trên bìa không phải tên kênh**: chip cyan ở bìa là `cover.category` (MODEL RELEASE / MODEL UPDATE / PRODUCT…), chip trắng là label; tên kênh chỉ ở slide thân.
 
 Slide thân có hai loại: **đoạn văn kể** (`text`) và **trích dẫn** (`quote` +
 `attrib`) dạng pull-quote. **Mỗi carousel phải có ít nhất 2 slide quote** (cổng

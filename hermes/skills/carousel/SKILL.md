@@ -1,7 +1,7 @@
 ---
 name: carousel
 description: "Dựng carousel nhiều slide kiểu bảng tin bằng carousel.py — chữ chìm vào ảnh qua scrim liền mạch kiểu bìa (bắt đầu tối từ ~42% cao, đậm dần xuống ~80% ở chữ, không đường mép, không vùng đen riêng). NEOBRUTALISM đồng bộ hero card: chip tên kênh + chip category + khung quote đều khối đặc viền đen, bóng cứng, font JetBrains Mono, màu CYAN nhận diện (donniechublog #00cce0, dcgr trắng). Cách kể chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh (1:1/4:5, mỗi hình duy nhất), các cổng chặn, và slide quote (một câu hook + dấu ngoặc kép + nguồn). Dùng chung cho Dre (donniechublog) và Dre (dcgr.tech), khác đúng cờ --brand."
-version: 1.2.0
+version: 1.3.0
 author: content-team
 license: internal
 platforms: [linux]
@@ -27,7 +27,7 @@ slide**: một chuỗi ảnh 4:5 nền đen, lướt sang phải để đọc ti
 
 | | Hero image (Ethan) | Carousel (Dre) |
 |---|---|---|
-| Số ảnh | một thẻ bìa | 5–8 slide (tối thiểu 5), tối đa 10 |
+| Số ảnh | một thẻ bìa | 5–8 slide (tối thiểu 5; **flagship tối thiểu 8**), tối đa 10 |
 | Chữ | một tiêu đề đè lên ảnh | hook ở bìa + đoạn chữ dưới mỗi slide |
 | Vai trò ảnh | ảnh là chính, chữ nhường ảnh | ảnh minh hoạ từng ý, chữ mang nội dung |
 | Người đọc làm gì | nhìn một nhịp | lướt, đọc dần, tới cuối mới hiểu hết |
@@ -50,7 +50,7 @@ Khổ **1080×1350 (4:5), nền đen tuyệt đối**. Hai loại slide:
       HOOK, chữ đậm trắng, canh trái,
       sát đáy — câu giật khiến người ta
       muốn lướt tiếp
-        NHÃN NGẮN
+   [CATEGORY cyan] [LABEL trắng]   ← KHÔNG có chip tên kênh ở bìa
 ```
 
 **Slide thân (slide 2..N)** — từng nhịp của tin:
@@ -85,6 +85,42 @@ một bước nhảy tối ngay trên dòng đầu, trên ảnh sáng là lộ m
 bảng chữ". `carousel.py` dựng sẵn scrim liền mạch; việc của bạn là **không chọn
 ảnh phá lại** (nửa dưới quá sáng thì chữ trắng vẫn khó đọc — cổng chặn có cảnh báo).
 
+## BỐN LỖI ÔNG CHỦ BẮT 03/09/2026 (carousel GPT-6 Astra, Qwen 3.8) — đọc trước mọi thứ
+
+1. **Mặt người không liên quan.** Bìa dùng ảnh một người lạ chụp ngoài đường,
+   chẳng dính gì tới tin model ra mắt. Từ nay `carousel.py` **CHẶN mọi ảnh có
+   mặt người** trừ khi slide khai `"nhan_vat": "<tên>"` — người đó phải là nhân
+   vật **được nhắc trong bài** (CEO phát biểu, tác giả paper, founder). Không
+   gọi được tên thì không được dùng. Tin model/sản phẩm: bìa là **sản phẩm,
+   screenshot, chart** — không phải mặt người.
+2. **Chart / bảng benchmark bị crop.** Chart cắt mất tiêu đề, mất trục, mất
+   legend là ảnh vô nghĩa. **Chart, bảng, slide, banner có chữ PHẢI NGUYÊN
+   VẸN** — không crop, không cắt góc. Ảnh ngang thì **ghép dọc hai ảnh cùng
+   tone** (`"images": [a, b]`), **hoặc** khai `"chart": true` cho slide thân: cổng
+   tỉ lệ bỏ qua, `carousel.py` dán chart **full bề ngang nguyên vẹn**, phần
+   trống trên/dưới là chính ảnh làm mờ. Đây là đường mặc định cho benchmark
+   chart/bảng — không cần crop, không cần tìm ảnh thứ hai. Bìa thì không (hook
+   đè lên ảnh), bìa chart phải ghép dọc. **Crop chỉ được làm qua
+   `crop_ti_le.py`** (script ghi dấu vết vào PNG để cổng chặn kiểm); tự cắt
+   bằng PIL/cv2/ImageMagick là lách cổng = vi phạm. Ảnh gốc ngang mà đi qua
+   crop bị chặn, trừ khi slide khai `"crop_ok": "<lý do>"` (chỉ cho ảnh chụp
+   người/sản phẩm **không có chữ**).
+3. **Flagship mà chỉ 5 slide.** GPT-6 Astra là model đầu bảng OpenAI, có
+   benchmark, safety, giá, đối thủ, phát biểu… mà bộ chỉ 5 slide. **Tin model
+   ra mắt của hãng frontier (OpenAI, Anthropic, Google, Meta, xAI, DeepSeek,
+   Qwen, Moonshot/Kimi, Z-AI/GLM, MiniMax…) BẮT BUỘC 8–10 slide.** Script tự
+   nhận diện qua tên họ model trong chữ và chặn nếu <8; ghi `"tam_co":
+   "flagship"` cho chắc. `"tam_co": "thuong"` chỉ khi Ông Chủ nói rõ tin nhỏ.
+   Các tầng để đủ 8+: cái gì ra mắt → bảng benchmark nguyên vẹn → chart thứ
+   hai (safety/hallucination/latency) → giá & context & tốc độ → so với đối
+   thủ → phát biểu lãnh đạo (quote) → rủi ro/an toàn → cái cần theo dõi.
+
+4. **Chip trên bìa (hero slide) KHÔNG phải tên kênh.** Chip cyan ở bìa là
+   **category**: `MODEL RELEASE`, `MODEL UPDATE`, `PRODUCT`, `RESEARCH`,
+   `FUNDING`, `POLICY`, `OPINION`… — khai `cover.category`, thiếu là cổng dừng.
+   Chip trắng bên cạnh là `label` (tên model/hãng). Tên kênh `donniechublog`
+   chỉ nằm ở các slide thân.
+
 ## Bước 1 — nhận tin đã duyệt
 
 Task của bạn có tiêu đề tin và link gốc, giống task của Ethan. Đây là tin
@@ -116,7 +152,8 @@ mỗi slide đẩy người đọc sang slide sau.
    một điều sắp tới. Không chốt cụt.
 
 **Tối thiểu 5 slide** (bìa + 4) — cổng chặn `carousel.py` dừng nếu ít hơn (chuẩn
-social content chất lượng). Tin nhiều tầng thì **6–8**. Đừng kéo dài cho đủ số:
+social content chất lượng). Tin nhiều tầng thì **6–8**. **Tin flagship (model ra
+mắt hãng frontier) tối thiểu 8**, cổng chặn tự nhận diện và dừng. Đừng kéo dài cho đủ số:
 mỗi slide phải mang **một ý mới**, slide không có ý mới là slide thừa — thiếu ý
 thì đào sâu tin hoặc thêm góc, đừng nhồi rác.
 
@@ -151,8 +188,10 @@ Một tin thường cho vài ảnh — chia chúng cho các slide theo ý từng
 điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là bằng chứng
 mạnh nhất — ưu tiên dùng làm ảnh slide trước cả ảnh logo/hero. Chụp/trích chúng
 từ bài gốc hoặc bài review; slide con số gây sốc ghép với bảng benchmark rất
-khớp. Nhớ crop về 1:1/4:5 và cạnh ngắn ≥1000px (bảng chữ nhỏ thì càng phải bản
-to).
+khớp. **Chart/bảng phải NGUYÊN VẸN** (đủ tiêu đề, trục, legend, chú thích) —
+KHÔNG crop về 1:1/4:5; chart ngang thì ghép dọc với một chart/bảng khác cùng
+tone (`"images": [a, b]`). Chụp bản to (cạnh ngắn ≥1000px; bảng chữ nhỏ càng
+phải to).
 
 ### Gom ảnh CHẤT LƯỢNG: kết hợp official site + magazine (BẮT BUỘC nghĩ rộng)
 
@@ -228,7 +267,12 @@ venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --cx 0.62    # tâm lệ
 ```
 
 Crop là **chọn khung ảnh thật**, không phải bịa ảnh — vẫn đúng luật "không tự
-vẽ". Chọn `--cx/--cy` để ôm đúng chủ thể (chip, sản phẩm, mặt người) vào khung.
+vẽ". Chọn `--cx/--cy` để ôm đúng chủ thể (chip, sản phẩm) vào khung. **Chỉ crop
+ảnh chụp không có chữ** (sản phẩm, sự kiện, trụ sở). Ảnh có chữ (chart, bảng,
+slide, banner, screenshot UI có tiêu đề) **không crop** — ghép dọc. Và **chỉ
+crop bằng `crop_ti_le.py`**: script ghi dấu vết vào PNG, `carousel.py` đọc ra
+để chặn crop ảnh ngang; ảnh ngang đã crop chỉ qua cổng khi slide khai
+`"crop_ok": "<lý do>"`. Tự cắt bằng PIL/cv2 để né cổng là vi phạm.
 
 ### Ảnh quá ngang mà có TIÊU ĐỀ (slide, bảng, chart, banner): GHÉP hai ảnh, đừng crop
 
@@ -316,11 +360,15 @@ Viết spec JSON rồi chạy:
 cat > /tmp/carousel_<id>.json <<'JSON'
 {
   "handle": "donniechublog",
-  "cover":  {"image": "<ảnh bìa>", "hook": "<câu giật>", "label": "AI PHONE"},
+  "tam_co": "flagship",
+  "cover":  {"image": "<ảnh bìa>", "hook": "<câu giật>", "category": "MODEL RELEASE", "label": "QWEN 3.8 27B · CEREBRAS"},
   "slides": [
     {"image": "<ảnh 2>", "text": "đoạn một.\n\nđoạn hai."},
     {"image": "<ảnh 3>", "text": "..."},
-    {"image": "<ảnh 4>", "quote": "<câu trích dẫn>", "attrib": "Đọc bài “...” - <tác giả>"}
+    {"image": "<ảnh 4>", "quote": "<câu trích dẫn>", "attrib": "Đọc bài “...” - <tác giả>"},
+    {"image": "<chart ngang gốc>", "chart": true, "text": "chart full width, nguyên vẹn"},
+    {"images": ["<chart ngang 1>", "<chart ngang 2>"], "text": "hai chart nguyên vẹn ghép dọc"},
+    {"image": "<ảnh CEO>", "nhan_vat": "Greg Brockman", "quote": "...", "attrib": "Greg Brockman, ..."}
   ]
 }
 JSON
@@ -366,14 +414,19 @@ thông báo rồi chạy lại.
 8. **Cảnh báo (không chặn)**:
    - cạnh ngắn ảnh <1000px (phóng lên sẽ mềm nét);
    - 25% dưới của ảnh quá sáng (chữ trắng trên nền 60% sẽ khó đọc);
-   - **phát hiện mặt người** trong ảnh (YuNet) → **chỉ cảnh báo, KHÔNG chặn**,
-     album vẫn dựng. Code chỉ báo *có mặt hay không*; bạn phán *có phải nhân vật
-     cụ thể trong bài không*. Tin xoay quanh một người (Elon Musk, Peter Thiel,
-     founder Palantir / partner a16z, tác giả phát biểu…) thì ảnh **đúng người
-     đó là ảnh NÊN dùng** — bỏ qua cảnh báo, cứ dùng. Chỉ đổi/crop khi mặt là
-     **người vô danh** không liên quan (vd webcam reviewer ở góc, stock persona).
-     Cần `assets/face_detection_yunet_2023mar.onnx`; thiếu model thì cổng tự bỏ
-     qua (không crash).
+   - cạnh ngắn ảnh <1000px là cảnh báo; **mặt người** và **crop ảnh ngang**
+     là CHẶN — xem mục 10, 11.
+10. **Mặt người** (YuNet) → **CHẶN** nếu slide không khai `"nhan_vat": "<tên>"`.
+    Tin xoay quanh một người (Elon Musk, CEO phát biểu, tác giả paper…) thì ảnh
+    đúng người đó là ảnh NÊN dùng — khai tên vào `nhan_vat` rồi dựng. Khai sai
+    tên là bịa. Người vô danh (webcam reviewer, người đi đường, stock persona)
+    → đổi ảnh. Cần `assets/face_detection_yunet_2023mar.onnx`; thiếu model thì
+    cổng tự bỏ qua (không crash) — nhưng luật vẫn nguyên.
+11. **Ảnh gốc ngang (tỉ lệ ≥1.4) đã qua `crop_ti_le.py`** → **CHẶN**, trừ khi
+    slide khai `"crop_ok": "<lý do>"`. Chart/bảng/slide/banner phải nguyên vẹn
+    — ghép dọc thay vì crop.
+12. **Flagship <8 slide** → **CHẶN**. Tự nhận diện qua tên họ model frontier
+    trong chữ, hoặc `"tam_co": "flagship"`.
 9. **Em-dash** → không chặn, tự thay `—` thành phẩy.
 
 ## Bàn giao

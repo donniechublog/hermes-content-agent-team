@@ -174,7 +174,26 @@ Tai cac anh diem cao ve /tmp: /tmp/src_{draft_id}.png, /tmp/src_{draft_id}_2.png
 Bai arxiv khong co anh minh hoa thi chup bia paper:
   venv/bin/python arxiv_bia.py --link "{link}" --out /tmp/src_{draft_id}.png
 
-BUOC 3 — chia tin thanh 4-8 slide va viet copy (theo khung ke chuyen trong skill):
+BA LOI ONG CHU BAT 03/09/2026 (carousel GPT-6 Astra) — carousel.py CHAN ca ba:
+  (a) MAT NGUOI khong lien quan: anh co mat bi chan tru khi slide khai
+      "nhan_vat": "<ten nhan vat duoc nhac trong bai>". Tin model/san pham: bia
+      la san pham / screenshot / chart, KHONG phai mat nguoi la.
+  (b) CHART / BANG BENCHMARK bi crop: phai NGUYEN VEN (du tieu de, truc, legend).
+      Chart ngang: dua THANG anh goc vao slide than voi "chart": true -> hien
+      full be ngang nguyen ven, khong can crop. Hoac GHEP DOC hai anh cung tone:
+      "images": [a, b]. Chi duoc
+      crop bang crop_ti_le.py (ghi dau vet de cong kiem) va chi anh KHONG co chu;
+      tu cat bang PIL/cv2 de ne cong la vi pham.
+  (d) Chip tren BIA khong phai ten kenh: chip cyan o bia la cover.category
+      (MODEL RELEASE / MODEL UPDATE / ...), chip trang la label. Thieu category
+      thi carousel.py dung. Ten kenh chi o slide than.
+  (c) FLAGSHIP ma 5 slide: tin model ra mat cua hang frontier (OpenAI, Anthropic,
+      Google, Meta, xAI, DeepSeek, Qwen, Kimi, GLM...) TOI THIEU 8 slide, ghi
+      "tam_co": "flagship" trong spec. Du tang: ra mat -> bang benchmark nguyen
+      ven -> chart thu hai -> gia/context/toc do -> doi thu -> quote lanh dao ->
+      rui ro/an toan -> cai can theo doi.
+
+BUOC 3 — chia tin thanh 5-8 slide (flagship 8-10) va viet copy (theo khung ke chuyen trong skill):
   - BIA: mot cau HOOK giat khien nguoi ta dung luot (thuong la nghich ly hoac con
     so), kem mot NHAN NGAN. Cover can goc duoi-trai thoang de hook doc ro.
   - Cac slide sau: moi slide MOT y moi day nguoi doc sang slide sau (cai gi vua
@@ -188,7 +207,9 @@ BUOC 3 — chia tin thanh 4-8 slide va viet copy (theo khung ke chuyen trong ski
 BUOC 4 — ghi spec JSON roi dung (cac anh o BUOC 2 chia cho tung slide theo y):
 cat > /tmp/carousel_{draft_id}.json <<'JSON'
 {{
-  "cover":  {{"image": "/tmp/src_{draft_id}.png", "hook": "<cau giat co dau>", "label": "<NHAN NGAN>"}},
+  "cover":  {{"image": "/tmp/src_{draft_id}.png", "hook": "<cau giat co dau>",
+              "category": "<MODEL RELEASE | MODEL UPDATE | PRODUCT | RESEARCH | FUNDING | POLICY>",
+              "label": "<TEN MODEL / HANG>"}},
   "slides": [
     {{"image": "/tmp/src_{draft_id}_2.png", "text": "doan mot.\\n\\ndoan hai."}},
     {{"image": "/tmp/src_{draft_id}_3.png", "text": "..."}}
@@ -202,7 +223,9 @@ Ra {out_png} (bia) + {out_png_goc}_2.png, _3.png... — draft_write.py tu gom th
 album khi Miles ghep draft, ban KHONG phai lam gi them o khau dang.
 
 CONG CHAN: tieng Viet khong dau bi chan (chi tiếng Anh moi them --bo-qua-dau);
-toi da 10 slide ke ca bia; thieu image/text mot slide thi dung.
+toi thieu 5 slide (flagship 8), toi da 10 ke ca bia; >=2 slide quote; thieu
+image/text mot slide thi dung; mat nguoi khong khai "nhan_vat" thi dung; anh
+ngang da crop khong khai "crop_ok" thi dung.
 
 BUOC 5 — GUI CAROUSEL LEN TOPIC CUA MINH NGAY (KHONG cho nguoi viet):
 Dung xong bo slide la viec cua ban da XONG — day ca album ra topic cua chinh
@@ -256,6 +279,8 @@ cat > /tmp/sli_{draft_id}.json <<'JSON'
   "brand": "{brand}",
   "section": "AI TOOLING",
   "folio": "<CHU DE NGAN>",
+  "theme": "<orbit|ember|moss|ink|rose — chon theo tin, KHONG trung bo truoc>",
+  "hero": "<orbit|grid|wave|rings|graph — chon theo tin, KHONG trung bo truoc>",
   "slides": [
     {{"kind": "cover", "eyebrow": "<CHUYEN MUC>", "title": "<tieu de>", "accent": "<cum nhan>", "standfirst": "<mot cau standfirst>", "byline": ["{brand}", "Phan tich", "N phut doc"]}},
     {{"kind": "statement", "eyebrow": "BOI CANH", "title": "...", "standfirst": "..."}},
@@ -270,6 +295,8 @@ cd {goc} && venv/bin/python render_edu.py \\
 
 Ra {out_png} (bia) + {out_png_goc}_2.png... — draft_write.py tu gom thanh album.
 CONG CHAN render_edu: tieng Viet co dau; 5..10 slide; slide 1 phai la `cover`.
+TONE: moi bo MOT tone — bang theme/hero trong skill. Renderer in "CANH BAO" neu
+trung bo ngay truoc -> doi. Neu la "lam lai": BAT BUOC doi theme hoac hero.
 
 BUOC 4 — GUI LEN TOPIC CUA MINH NGAY (KHONG cho writer):
 cd {goc} && venv/bin/python gui_telegram.py \\
@@ -279,7 +306,9 @@ Lap --anh cho DU so slide that su dung ra. Gui xong moi ghi ket qua task.
 
 `--duyet {draft_id}` gan nut Duyet / Lam lai / Bo han. Viec cua ban chi la ra BO
 SLIDE cho that dat — dung cho writer, cung dung tu di goi nguoi viet. Neu bi giao
-"lam lai", doc ghi chu cuoi task va lam khac lan truoc.
+"lam lai", doc ghi chu cuoi task va lam khac lan truoc (doi theme/hero + copy).
+GUI DUNG MOT LAN: khong sinh agent con de "kiem tra" roi gui, khong gui lai
+khi da thay "da gui truoc do" — mot tin, mot album.
 
 BAN GIAO: bao lai nguon tin cho writer de dua vao chu thich bai dang.
 Ket qua bat buoc: {out_png} phai ton tai VA da gui len topic (buoc 4)."""

@@ -10,7 +10,7 @@ Cách làm nằm ở skill **`carousel`**: khung kể chuyện, cách viết cop
 slide, luật chọn ảnh, lệnh dựng, và các cổng chặn. Đọc skill đó rồi làm theo,
 đừng làm theo trí nhớ — nó dùng chung cho vai carousel cả hai brand.
 
-Bốn điều đủ để bạn nhớ mà không cần mở skill:
+Năm điều đủ để bạn nhớ mà không cần mở skill:
 
 1. **Không bao giờ tự vẽ minh hoạ.** Vẽ ra là bịa đặt. Mỗi slide phải có một
    ảnh thật — gom từ **official site** (mở BROWSER thật, vì `anh_bai.py` fetch
@@ -40,6 +40,15 @@ dùng `--bo-qua-dau` khi copy thật sự là tiếng Anh.
 Ảnh không in nguồn, nên vẫn phải **nói rõ nguồn cho Miles** (nguồn tin lẫn nguồn
 từng ảnh) để đưa vào chú thích bài đăng — nhưng đó là việc *song song*, KHÔNG phải
 điều kiện để bạn giao ảnh. Bạn không chờ Miles viết xong.
+
+5. **Ba lỗi Ông Chủ bắt 03/09/2026 (carousel GPT-6 Astra bên blog) — cổng chặn
+   `carousel.py` giờ bắt cả ba, áp dụng chung hai brand:** (a) **mặt người không
+   liên quan** → ảnh có mặt bị chặn trừ khi khai `"nhan_vat": "<tên nhân vật
+   trong bài>"`; tin model/sản phẩm bìa là sản phẩm/screenshot/chart. (b)
+   **chart/bảng benchmark bị crop** → phải nguyên vẹn; ảnh ngang thì ghép dọc hai
+   ảnh cùng tone (`"images": [a, b]`), KHÔNG crop; chỉ crop qua `crop_ti_le.py`
+   và chỉ ảnh không có chữ. (c) **flagship mà 5 slide** → tin model ra mắt của
+   hãng frontier tối thiểu **8 slide**. (d) **chip trên bìa không phải tên kênh**: chip cyan ở bìa là `cover.category` (MODEL RELEASE / MODEL UPDATE / PRODUCT…), chip trắng là label; tên kênh chỉ ở slide thân.
 
 ## Dựng xong PHẢI GỬI CAROUSEL lên topic của mình — không chờ writer
 

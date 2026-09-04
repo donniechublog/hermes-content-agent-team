@@ -25,7 +25,7 @@ Nhap:
 
   {
     "handle": "donniechublog",           # watermark; mac dinh theo --handle/--brand
-    "cover":  {"image": "...", "hook": "cau giat tit", "label": "AI"},
+    "cover":  {"image": "...", "hook": "cau giat tit", "category": "MODEL RELEASE", "label": "QWEN 3.8 27B"},
     "slides": [
       {"image": "...", "text": "doan 1\\n\\ndoan 2"},
       ...
@@ -36,6 +36,7 @@ Cong chan giong card.py: tieng Viet mat dau bi chan (tru --bo-qua-dau), em-dash
 tu thay bang dau phay.
 """
 import argparse
+import re
 import json
 import sys
 from pathlib import Path
@@ -299,10 +300,15 @@ def _body_image(canvas, img):
     scale = W / img.width
     nh = round(img.height * scale)
     resized = img.resize((W, nh), Image.LANCZOS)
+    y0 = 0
     if nh > H:                                    # cao hon khung: cat giua doc, full be ngang
         top = (nh - H) // 2
         resized = resized.crop((0, top, W, top + H))
-    canvas.paste(resized, (0, 0))                 # lop sac uncropped len tren nen cover
+    elif nh < int(H * 0.6):
+        # Anh NGANG (chart/bang "chart": true) thap hon vung anh: dat vao GIUA
+        # vung tren (0..~60% cao, tren scrim chu) thay vi dinh mep tren.
+        y0 = max(0, (int(H * 0.6) - nh) // 2)
+    canvas.paste(resized, (0, y0))                # lop sac uncropped len tren nen cover
     return cover
 
 
@@ -409,7 +415,15 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     canvas.convert("RGB").save(out, "PNG")
 
 
-def build_cover(img_path, hook, label, out, handle=None):
+CATEGORY_GOI_Y = ["MODEL RELEASE", "MODEL UPDATE", "PRODUCT", "RESEARCH",
+                  "FUNDING", "POLICY", "OPINION"]
+
+
+def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"):
+    """Bia: hang chip duoi cung = chip CATEGORY (cyan, thay cho ten kenh — Ong
+    Chu chot 03/09/2026: hero slide KHONG dung chip 'donniechublog', phai la
+    'MODEL RELEASE' / 'MODEL UPDATE'...) + chip label trang (ten model/hang).
+    Ten kenh chi xuat hien tren cac slide than."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     cover = _fit_cover(_open(img_path), W, H)
     canvas.paste(cover.convert("RGB"), (0, 0))
@@ -424,25 +438,46 @@ def build_cover(img_path, hook, label, out, handle=None):
         ltb = d.textbbox((0, 0), label, font=lf)
         chip_h = (ltb[3] - ltb[1]) + 2 * 10         # + 2*pad_y
         y_label = H - 84 - chip_h
-    # Khong co label: hook van phai nam TREN chip ten kenh o goc duoi-trai.
-    wm_h = 0
-    if handle:
-        wtb = d.textbbox((0, 0), handle, font=_f(F_MONO_CH, WM_SIZE))
-        wm_h = (wtb[3] - wtb[1]) + 2 * 10
-    hook_bottom = (y_label - 28) if label else (H - WM_BOTTOM - wm_h - 28 if handle else H - 96)
+    category = (category or "MODEL UPDATE").strip().upper()
+    # Khong co label: hook van phai nam TREN chip category o goc duoi-trai.
+    wtb = d.textbbox((0, 0), category, font=_f(F_MONO_CH, WM_SIZE))
+    wm_h = (wtb[3] - wtb[1]) + 2 * 10
+    hook_bottom = (y_label - 28) if label else (H - WM_BOTTOM - wm_h - 28)
     hf, wrapped, lh, total = _fit_block(
         d, [hook], W - 2 * PAD, int(H * 0.5), HOOK_HI, HOOK_LO,
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
-        # Hang duoi cung: chip ten kenh (cyan) + chip category (trang), cung y.
-        bb = _watermark(canvas, handle, y=y_label)
+        # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
+        bb = _watermark(canvas, category, y=y_label)
         cx = (bb[2] + 16 + 6) if bb else PAD           # cach chip truoc 16px + bong 6px
         _chip_neo(d, label, lf, cx, y_label, fill=(255, 255, 255), anchor="l")
     else:
-        _watermark(canvas, handle)      # chip ten kenh goc duoi-trai, nhu moi slide
+        _watermark(canvas, category)    # chip category goc duoi-trai
     canvas.convert("RGB").save(out, "PNG")
+
+
+# ---- Cong chan tam co tin ------------------------------------------------
+FLAGSHIP_MIN = 8
+# Ho model cua cac hang frontier (My + top Trung Quoc, theo scan_models.py).
+_FLAGSHIP_RE = re.compile(
+    r"\b(GPT-?\d|GPT-?[0-9.]+|o[3-9](?:-pro|-mini)?|Claude|Opus|Sonnet|Gemini|Llama|"
+    r"Grok|DeepSeek|Qwen|Kimi|GLM|MiniMax|Doubao|Mistral Large|Nova Premier)\b", re.I)
+
+
+def _la_flagship(spec, cover, slides):
+    """Tin flagship = spec khai "tam_co": "flagship", HOAC hook/label/chu nhac
+    ten ho model frontier (tu dong, de vai khong "quen" khai). Khai
+    "tam_co": "thuong" thi tat tu dong (chi khi Ong Chu noi ro)."""
+    tc = str(spec.get("tam_co") or "").strip().lower()
+    if tc == "flagship":
+        return True
+    if tc == "thuong":
+        return False
+    chu = " ".join([cover.get("hook", ""), cover.get("label", "")] +
+                   [s.get("text", "") + " " + s.get("quote", "") for s in slides])
+    return bool(_FLAGSHIP_RE.search(chu))
 
 
 # ---- Cong chan tieng Viet -------------------------------------------------
@@ -509,13 +544,28 @@ def _dem_mat(path):
         return None
 
 
+def _goc_crop(img):
+    """Doc dau vet crop_ti_le.py ghi trong metadata PNG -> (w_goc, h_goc) hoac None."""
+    m = (getattr(img, "text", None) or img.info or {}).get("crop_ti_le")
+    if not m:
+        return None
+    try:
+        goc = [k for k in m.split(";") if k.startswith("goc=")][0][4:]
+        w, h = goc.lower().split("x")
+        return int(w), int(h)
+    except Exception:
+        return None
+
+
 def _gate_anh(paths):
-    """paths: [(nhan, duong_dan)]. Tra ve (loi, canh_bao)."""
+    """paths: [(nhan, duong_dan, muc)] — muc la dict cover/slide trong spec.
+    Tra ve (loi, canh_bao)."""
     import hashlib
     from PIL import ImageStat
     loi, canh_bao = [], []
     da_thay = {}
-    for nhan, p in paths:
+    for nhan, p, muc in paths:
+        muc = muc or {}
         f = Path(p)
         if not f.exists():
             loi.append(f"{nhan}: khong thay tep anh {p}")
@@ -537,11 +587,34 @@ def _gate_anh(paths):
         # Chap nhan ca dai GIUA 4:5 va 1:1 (anh ghep doc hai anh ngang roi vao
         # day) — full be ngang deu phu 1080..1350 cao, khong lo nen.
         r = w / h_px
+        # Slide than khai "chart": true -> nhan CA anh NGANG nguyen ven: _body_image
+        # dan full be ngang khong cat, phan tren/duoi la ban cover lam mo. Chart /
+        # bang benchmark PHAI full width (Ong Chu chot), khong bao gio crop. Bia
+        # thi khong (hook de len anh), bia chart ngang phai ghep doc "images".
+        if muc.get("chart") and nhan != "bia" and r > 1.0 + 0.03:
+            if _goc_crop(img):
+                loi.append(f"{nhan}: chart ma van di qua crop_ti_le.py — chart phai "
+                           "NGUYEN VEN, dua thang anh goc vao voi \"chart\": true")
+            continue
         if not (0.8 - 0.03 <= r <= 1.0 + 0.03):
             loi.append(f"{nhan}: ti le {w}x{h_px} ({r:.2f}) khong nam trong 4:5..1:1 "
                        f"— cat truoc: venv/bin/python crop_ti_le.py "
                        f"--anh {p} --ra <ra.png> [--ti-le 4:5] [--cx/--cy]; hoac anh "
-                       f"NGANG thi tim them mot anh ngang nua, ghi \"images\": [a, b]")
+                       f"NGANG thi tim them mot anh ngang nua, ghi \"images\": [a, b]; "
+                       f"chart/bang benchmark thi ghi \"chart\": true de hien full "
+                       f"width nguyen ven (slide than)")
+        # 2b) CROP ANH NGANG (Ong Chu bat loi 03/09/2026): benchmark chart / bang /
+        # slide bi crop ve 4:5 la mat tieu de, mat truc, doc ra vo nghia. Anh goc
+        # ro rang NGANG (ti le >= 1.4, kieu 16:9 / 3:2) ma di qua crop_ti_le.py
+        # thi CHAN — tru khi vai khai "crop_ok": "<ly do>" (anh chup nguoi/san
+        # pham, khong co chu, crop la chon khung chu the).
+        goc = _goc_crop(img)
+        if goc and goc[0] / goc[1] >= 1.4 and not muc.get("crop_ok"):
+            loi.append(f"{nhan}: anh goc NGANG {goc[0]}x{goc[1]} da bi crop ve {w}x{h_px} — "
+                       "bang/chart/slide/banner co tieu de PHAI NGUYEN VEN, khong crop. "
+                       "Tim them mot anh ngang cung tone, ghi \"images\": [a, b] de ghep "
+                       "doc. Chi anh chup nguoi/san pham KHONG co chu moi duoc crop: ghi "
+                       "\"crop_ok\": \"<ly do>\" vao slide.")
         # 3) DO PHAN GIAI: canh ngan <1000px phong len 1080 se mem/vo net.
         # Canh bao thoi (khong chan): anh doc quyen nho van hon anh sai.
         if min(w, h_px) < 1000:
@@ -558,12 +631,22 @@ def _gate_anh(paths):
                             "day anh la vung toi hon")
         # 5) MAT NGUOI: luat "khong dung anh mot nguoi vo danh". Code chi bao co
         # mat hay khong; vai tu phan doan co phai nhan vat trong bai khong.
+        # Ong Chu bat loi 03/09/2026: bia tin GPT-6 Astra dung mat mot nguoi
+        # khong lien quan. Tu nay CO MAT LA CHAN, tru khi vai khai "nhan_vat":
+        # "<ten>" — nguoi trong anh la nhan vat CU THE duoc nhac trong bai (CEO
+        # phat bieu, tac gia, founder). Khong khai duoc ten thi khong duoc dung.
         nmat = _dem_mat(p)
         if nmat:
-            canh_bao.append(f"{nhan}: phat hien {nmat} mat nguoi — neu KHONG phai "
-                            "nhan vat cu the duoc nhac trong bai thi doi anh, hoac "
-                            "crop bo (vd webcam reviewer o goc). Anh mot nguoi vo "
-                            "danh doc ra la stock.")
+            nv = str(muc.get("nhan_vat") or "").strip()
+            if nv:
+                canh_bao.append(f"{nhan}: {nmat} mat nguoi, khai la '{nv}' — OK neu "
+                                "dung la nguoi do; sai ten la bia dat.")
+            else:
+                loi.append(f"{nhan}: phat hien {nmat} mat nguoi ma slide KHONG khai "
+                           "\"nhan_vat\". Anh nguoi vo danh / khong lien quan tin la "
+                           "loi (doc ra la stock). Doi sang anh san pham/screenshot/"
+                           "chart, hoac neu dung la nhan vat trong bai (CEO, tac gia) "
+                           "thi ghi \"nhan_vat\": \"<ten>\" vao slide.")
     return loi, canh_bao
 
 
@@ -631,10 +714,25 @@ def main():
         sys.exit(f"Carousel can IT NHAT 5 slide ke ca bia (hien {len(slides)+1}). "
                  "Chuan social content chat luong (Ong Chu chot). Chia them nhip, "
                  "hoac gom them anh that — ket hop official site + magazine.")
+    # Ong Chu bat loi 03/09/2026: GPT-6 Astra (flagship OpenAI) ma chi 5 slide.
+    # Tin model ra mat cua hang frontier phai 8-10 slide: bang benchmark, chart,
+    # gia, context, so voi doi thu, phat bieu, cai can theo doi... du nhieu tang.
+    if _la_flagship(spec, cover, slides) and len(slides) + 1 < FLAGSHIP_MIN:
+        sys.exit(f"Tin FLAGSHIP (model ra mat cua hang frontier) can IT NHAT "
+                 f"{FLAGSHIP_MIN} slide ke ca bia (hien {len(slides)+1}). Dao them tang: "
+                 "bang benchmark nguyen ven, chart, gia/context/toc do, so voi doi thu, "
+                 "phat bieu lanh dao, rui ro/an toan, cai can theo doi. Chi khi Ong Chu "
+                 "noi ro tin nho moi duoc ghi \"tam_co\": \"thuong\" de bo qua.")
 
     # Chuan hoa em-dash + chan tieng Viet mat dau truoc khi ve bat cu gi.
     cover["hook"] = bo_dau_cam(cover["hook"])
     cover["label"] = bo_dau_cam(cover.get("label", ""))
+    # Bia phai co "category" (chip cyan thay ten kenh — Ong Chu chot 03/09/2026).
+    cover["category"] = str(cover.get("category") or "").strip().upper()
+    if not cover["category"]:
+        sys.exit("Bia thieu cover.category — chip cyan tren bia la CATEGORY, khong "
+                 "phai ten kenh. Goi y: " + ", ".join(CATEGORY_GOI_Y) +
+                 ". Vd: {\"category\": \"MODEL RELEASE\", \"label\": \"QWEN 3.8 27B\"}")
     chunks = [("bia/hook", cover["hook"])]
     for i, s in enumerate(slides, start=2):
         if not s.get("image"):
@@ -669,8 +767,8 @@ def main():
                  "hoac --bo-qua-dau neu that su la tieng Anh.")
 
     # Cong chan anh (trung / ti le / phan giai / day sang) va copy tran 30%.
-    anh = [("bia", cover["image"])] + \
-          [(f"slide {i}", s["image"]) for i, s in enumerate(slides, start=2)]
+    anh = [("bia", cover["image"], cover)] + \
+          [(f"slide {i}", s["image"], s) for i, s in enumerate(slides, start=2)]
     loi_anh, canh_bao = _gate_anh(anh)
     loi_chu = _gate_chu(slides)
     for c in canh_bao:
@@ -684,7 +782,8 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
 
-    build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle)
+    build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
+                category=cover["category"])
     paths = [str(out)]
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
