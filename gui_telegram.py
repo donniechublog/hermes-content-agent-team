@@ -3,7 +3,7 @@
 cua mot vai, va ghi lai nhat ky (message_id, file, mo ta) de sau nay tra loi
 mot yeu cau sua con biet dang noi anh nao.
 
-Dung cho MOI vai dung anh (Gin, Itachi, Chad/designer, Ethan, Heller, Dre) de
+Dung cho MOI vai dung anh (slug: designer, carousel, gin, itachi...) de
 tu day anh minh vua dung ra topic cua chinh minh — khong phai cho writer viet
 xong roi moi co anh trong bai. Gin/Itachi con duoc goi tu `--gui <vai>` trong
 tao_nen_ai.py, no goi thang ham post() o day.
@@ -29,9 +29,8 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load
 
-ROOT = Path.home() / "content-team"
-STATE = ROOT / "state" / "telegram_sent"
-TOPICS = ROOT / "state" / "topics.json"
+STATE = env_load.state_dir() / "telegram_sent"
+TOPICS = env_load.topics_path()
 API = "https://api.telegram.org/bot{token}/{method}"
 
 
@@ -48,6 +47,27 @@ def _ghi_nhat_ky(vai: str, message_id, files, mo_ta: str) -> None:
             "files": [str(f) for f in files], "mo_ta": mo_ta}
     with (STATE / f"{vai}.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(dong, ensure_ascii=False) + "\n")
+
+
+def _da_gui_gan_day(vai: str, files, phut: int = 30):
+    """Tra ve ban ghi gan nhat neu CUNG bo file (theo ten) da gui trong `phut` phut."""
+    import time as _t
+    p = STATE / f"{vai}.jsonl"
+    if not p.exists():
+        return None
+    ten = sorted(Path(f).name for f in files)
+    moc = _t.time() - phut * 60
+    for dong in reversed(p.read_text(encoding="utf-8").splitlines()):
+        try:
+            d = json.loads(dong)
+        except Exception:                                    # noqa: BLE001
+            continue
+        if d.get("ts", 0) < moc:
+            break
+        if sorted(Path(f).name for f in d.get("files", [])) == ten:
+            return {"message_id": d.get("message_id"),
+                    "luc": _t.strftime("%H:%M", _t.localtime(d["ts"]))}
+    return None
 
 
 def _kb_duyet(draft_id: str) -> dict:
@@ -86,6 +106,16 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
         raise SystemExit(f"Khong thay file: {', '.join(str(f) for f in thieu)}")
     if len(files) > 10:
         raise SystemExit("Toi da 10 anh mot album (gioi han Telegram).")
+
+    # CHONG GUI TRUNG: cung vai + cung bo file trong 30 phut -> khong gui lai.
+    # Su co 04/09/2026: Kite sinh agent con de "kiem tra anh", agent con tu gui
+    # album (msg 301) roi het gio; Kite khong biet nen gui lai (msg 308). Ong
+    # Chu thay mot tin hai album. Ai goi lai cung nhan message_id cu, khong loi.
+    truoc = _da_gui_gan_day(vai, files, phut=30)
+    if truoc:
+        print(f"da gui truoc do luc {truoc['luc']} (message_id={truoc['message_id']}), "
+              f"KHONG gui lai. Muon gui lai that thi doi ten file hoac cho qua 30 phut.")
+        return {"ok": True, "result": {"message_id": truoc["message_id"]}, "trung": True}
 
     if len(files) == 1:
         with httpx.Client(timeout=120) as c, open(files[0], "rb") as fh:
@@ -130,12 +160,20 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
     # mot tin nhan chu RIENG ngay duoi anh — dung cho ca anh don lan album.
     if duyet:
         with httpx.Client(timeout=60) as c:
-            c.post(API.format(token=token, method="sendMessage"), data={
+            r2 = c.post(API.format(token=token, method="sendMessage"), data={
                 "chat_id": group, "message_thread_id": str(int(thread_id)),
                 "text": ("Ảnh đã xong. Duyệt để người viết làm caption, "
                          "hoặc bỏ nếu ảnh chưa đạt."),
                 "reply_markup": json.dumps(_kb_duyet(duyet)),
             })
+        res2 = r2.json()
+        if not res2.get("ok"):
+            # Khong duoc im lang: anh da len nhung nut Duyet khong xuat hien
+            # thi pipeline dung o cong duyet ma khong ai biet. Bao loi ro de
+            # vai/agent gui lai.
+            raise SystemExit(
+                f"Anh da gui nhung tin nhan nut Duyet LOI: {res2.get('description')}"
+                f" — pipeline se ket neu khong gui lai nut.")
     return res
 
 
@@ -150,7 +188,7 @@ def gan_day(vai: str, n: int = 5) -> list:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--vai", required=True,
-                    choices=["gin", "itachi", "designer", "ethan", "heller", "dre"])
+                    help="slug vai — khop key trong topics.<brand>.json")
     ap.add_argument("--anh", action="append", default=[], help="Duong dan PNG, lap lai cho nhieu anh (album)")
     ap.add_argument("--mo-ta", default="", help="Caption ngan mo ta anh — giup tra loi SAU biet dang noi anh nao")
     ap.add_argument("--reply-to", type=int, default=None,

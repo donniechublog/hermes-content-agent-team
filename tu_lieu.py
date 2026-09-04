@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Gom TU LIEU that cho Quinn viet bai — tat dinh, khong LLM.
+"""Gom TU LIEU that cho Miles viet bai — tat dinh, khong LLM.
 
-Vi sao can: truoc day Quinn chi nhan 3 cau tom tat cua Finn. Tom tat do khong co
+Vi sao can: truoc day Miles chi nhan 3 cau tom tat cua Finn. Tom tat do khong co
 mot con so nao, nen caption viet ra cung khong co so nao — no chi la ban chep
 lai tom tat. Da do that tren tin DeepSeek vision: bang benchmark co 11 dong so,
 caption co 0 con so, va bo sot ca chi tiet quan trong nhat (model nay thang
 Opus-4.8 o dau, thua o dau).
 
-Quinn khong the viet du y neu khong duoc doc nguon. File nay lo phan do:
+Miles khong the viet du y neu khong duoc doc nguon. File nay lo phan do:
 
   1. Boc chu tu chinh link goc (article_extract.py)
   2. Boc chu tu 1-2 bai bao khac dua cung tin — noi thuong co bang so va binh
      luan ma trang tai lieu goc khong co
-  3. Rut ra cac CON SO va cau chua so, xep rieng thanh mot muc de Quinn khong
+  3. Rut ra cac CON SO va cau chua so, xep rieng thanh mot muc de Miles khong
      phai doi mat trong ca bai
 
 Dung:
@@ -29,9 +29,9 @@ ROOT = Path.home() / "content-team"
 sys.path.insert(0, str(ROOT))
 
 SO_BAI_KHAC = 2
-CHU_TOI_DA = 6000          # moi nguon, du de Quinn doc ma khong phinh prompt
+CHU_TOI_DA = 6000          # moi nguon, du de Miles doc ma khong phinh prompt
 
-# Cau co so lieu — thu Quinn thuc su can. Bat ca % , diem, gia, kich thuoc model.
+# Cau co so lieu — thu Miles thuc su can. Bat ca % , diem, gia, kich thuoc model.
 CO_SO = re.compile(
     r"\d+[.,]?\d*\s*(%|percent|B\b|M\b|K\b|tokens?|USD|\$|ms\b|GB\b|billion|million)"
     r"|\$\s*\d|\b\d+\.\d+\b|\b\d{2,}\b")
@@ -138,13 +138,13 @@ def dung_trang(tl: dict) -> str:
             chu += len(p)
         L.append("")
     if not tl["nguon"]:
-        L.append("*Không bóc được nội dung từ nguồn nào — Quinn phải nói rõ là "
+        L.append("*Không bóc được nội dung từ nguồn nào — Miles phải nói rõ là "
                  "thiếu tư liệu, không được đoán.*")
     return "\n".join(L)
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Gom tu lieu that cho Quinn")
+    ap = argparse.ArgumentParser(description="Gom tu lieu that cho Miles")
     ap.add_argument("--tieu-de", required=True)
     ap.add_argument("--link", required=True)
     ap.add_argument("--out", help="Ghi ra tep thay vi in ra man hinh")

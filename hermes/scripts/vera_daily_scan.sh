@@ -1,8 +1,7 @@
 #!/bin/bash
 # Cron: Vera quet tin dau tu/kinh te, gui bao cao vao topic market. Khong tao task khac.
-export HERMES_HOME=/home/donniechu/.hermes
 H=/home/donniechu/hermes-agent/venv/bin/python
-# Ngay lay theo GIO VN, khong phai UTC. Cron chay 23:00 UTC = 06:00 VN hom sau,
+# Ngay lay theo GIO VN, khong phai UTC. Cron chay 22:00 UTC = 05:00 VN hom sau,
 # nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
 # kanban tra ve task cu thay vi tao moi, va script im lang tuong da thanh cong.
 # Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
@@ -30,6 +29,7 @@ Chi bo qua neu that su chi la tin lat vat (co phieu nhich, kien tung nho). Con l
 uu tien chon.
 
 Buoc 2b, GHI MANIFEST + BAO CAO. Bat buoc khi CO tin dang len kenh.
+Muc BAT BUOC (tin watchlist, tep bat_buoc_market.json): MOI muc phai co trong danh sach nop. manifest_ghi.py se tu choi neu thieu — them vao roi chay lai, khong duoc bo.
 
   cat > /tmp/market_ds.json <<HET
   [{\"title\": \"...\", \"link\": \"...\", \"summary_vi\": \"...\",
@@ -44,7 +44,7 @@ dang con so trong manifest mot dang, Ong Chu tra loi so lai ra bai khac.
 
 Gui thang ban script vua viet:
   /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to -1003763882779 --thread 83 --file /tmp/market_baocao.txt
+    --to-env TELEGRAM_GROUP_ID --thread-name market --file /tmp/market_baocao.txt
 
 KHONG co tin nao dang len kenh thi bo qua manifest, nhung VAN phai gui mot dong
 noi ro la hom nay khong co gi, kem so tin da quet. Ong Chu can phan biet duoc
@@ -58,7 +58,7 @@ lien nhau, khong xuong dong duoc.
   <bao cao, xuong dong that, dong trong giua cac doan>
   HET
   /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to -1003763882779 --thread 83 --file /tmp/bao_cao_$$.txt
+    --to-env TELEGRAM_GROUP_ID --thread-name market --file /tmp/bao_cao_$$.txt
 
 Dinh dang: chi dung <b>, <i>, <code>, <a href>. KHONG dung <br>, <p>, <ul>
 <li>, markdown ** hay ##. Xuong dong bang xuong dong THAT.

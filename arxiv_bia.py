@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Chup trang bia paper cho cac tin khong co anh (arxiv, OpenReview, PDF hoc thuat).
 
-Vi sao can: Ethan va Chad co mot nguyen tac cung — khong tim duoc anh THAT thi
+Vi sao can: Ethan va Ethan co mot nguyen tac cung — khong tim duoc anh THAT thi
 dung lai, khong tu ve minh hoa. Nhung mot bai arxiv thi "anh that" cua no chinh
 la trang dau paper: ten cong trinh va nhom tac gia, in ra tren nen trang. Do la
 anh that, khong phai hinh bia dat, nen dung nguyen tac van giu.
@@ -153,7 +153,14 @@ def main():
         return 1
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    bia.save(out, "PNG", optimize=True)
+    # Dong dau XUAT XU: anh nay ra dung 1200x1500 (4:5 chan) ma khong qua
+    # crop_ti_le.py — carousel.py chan anh 4:5/1:1 "chan" khong co dau vet vi do
+    # la dau hieu cat tay ne cong (Ong Chu bat loi 04/09/2026). Dau nay cho cong
+    # biet chinh cong cu cua doi dung ra anh, khong phai cat lui.
+    from PIL.PngImagePlugin import PngInfo
+    _meta = PngInfo()
+    _meta.add_text("nguon_dung", "arxiv_bia")
+    bia.save(out, "PNG", optimize=True, pnginfo=_meta)
     if a.json:
         print(json.dumps({"out": str(out), "pdf": pdf_url,
                           "rong": bia.width, "cao": bia.height},

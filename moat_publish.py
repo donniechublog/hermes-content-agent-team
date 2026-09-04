@@ -30,9 +30,11 @@ from pathlib import Path
 
 import httpx
 
+import env_load
+
 ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
-STATE_DIR = ROOT / "state"
+STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 SECRETS = ROOT / ".secrets.env"
 
 # Chi cac bucket ANH -- day chuyen nay ra the anh, khong ra video.
@@ -119,9 +121,17 @@ def read_draft(draft_id):
     return json.loads(draft_path(draft_id).read_text(encoding="utf-8"))
 
 
+def _ghi_json(path, data):
+    """Ghi atomic (tmp + os.replace): draft la so cai cua he thong, write_text
+    truc tiep ma chet giua chung se de lai JSON cut."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2),
+                   encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def write_draft(draft_id, data):
-    draft_path(draft_id).write_text(
-        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _ghi_json(draft_path(draft_id), data)
 
 
 def images_payload(d):
@@ -286,7 +296,7 @@ def poll():
             pending = list(range(max(0, len(cac_san) - xong)))
             moat["tracking_stopped"] = True
             d["moat"] = moat
-            path.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+            _ghi_json(path, d)
             if pending:
                 lines.append("⏳ " + path.stem + ": còn " + str(len(pending))
                              + " task chưa đăng sau " + str(MAX_TRACK_DAYS)
@@ -306,22 +316,20 @@ def poll():
             tasks = _fetch_status(base, key, moat.get("workflow_id") or moat["external_id"])
         except Exception as e:                               # noqa: BLE001
             # Chi bao MOT lan cho moi loai loi. Cron chay moi phut: moat sap
-            # 6 tieng ma bao moi lan la 360 tin rac vao topic Quinn. Nho loai
+            # 6 tieng ma bao moi lan la 360 tin rac vao topic Miles. Nho loai
             # loi da bao trong draft; loi doi (DNS -> timeout) thi bao lai,
             # het loi thi xoa co de lan sap sau con bao.
             loi_moi = type(e).__name__
             if moat.get("loi_da_bao") != loi_moi:
                 moat["loi_da_bao"] = loi_moi
                 d["moat"] = moat
-                path.write_text(json.dumps(d, ensure_ascii=False, indent=2),
-                                encoding="utf-8")
+                _ghi_json(path, d)
                 lines.append("⚠️ " + path.stem + ": khong hoi duoc moat ("
                              + loi_moi + "), se im cho toi khi tinh hinh doi")
             continue
         if moat.pop("loi_da_bao", None):
             d["moat"] = moat
-            path.write_text(json.dumps(d, ensure_ascii=False, indent=2),
-                            encoding="utf-8")
+            _ghi_json(path, d)
             lines.append("✅ " + path.stem + ": moat hoi lai duoc roi")
 
         changed = False
@@ -348,7 +356,7 @@ def poll():
         if changed:
             moat["reported"] = reported
             d["moat"] = moat
-            path.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+            _ghi_json(path, d)
 
     return lines
 
@@ -384,7 +392,7 @@ def _notify(lines):
         if not group:
             return
         thread = None
-        tp = STATE_DIR / "topics.json"
+        tp = env_load.topics_path()
         if tp.exists():
             thread = json.loads(tp.read_text(encoding="utf-8")).get("writer")
         publish.send_text(token, group, "\n\n".join(lines), thread=thread)

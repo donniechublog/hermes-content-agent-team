@@ -31,17 +31,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chat_router                                          # noqa: E402
 import moat_publish                                         # noqa: E402
 import tele_util                                            # noqa: E402
+import ghi_log                                              # noqa: E402
+log, rut = ghi_log.log, ghi_log.rut
 
 ROOT = Path.home() / "content-team"
+import env_load                                              # noqa: E402
 DRAFTS = ROOT / "drafts"
-STATE_DIR = ROOT / "state"
+STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 OFFSET = STATE_DIR / "offset.txt"
 TELEGRAM_INCOMING = STATE_DIR / "telegram_incoming"   # anh tai ve tu tin nhan reply
 API = "https://api.telegram.org/bot{token}/{method}"
 HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
-HERMES_HOME = str(Path.home() / ".hermes")
-
-import env_load                                              # noqa: E402
+# HERMES_HOME theo container: moi brand mot home rieng (~/.hermes-<brand>).
+# Systemd/cron dat san; roi ve ~/.hermes o che do don cu.
+HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
+env_load.nap()                            # nap secret.<brand>.env de co BRAND luc import
+# MOT num brand duy nhat: CT_BRAND ('dcgr'|'blog') la khoa container cua env_load.
+# BRAND (ten content-brand day du) SUY tu CT_BRAND — truoc day la hai bien doc lap
+# voi hai bo gia tri, dat lech mot trong hai la content di nham brand. Van cho
+# BRAND trong env de len (tuong thich nguoc), nhung cau hinh chuan chi can CT_BRAND.
+_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
+BRAND = (os.environ.get("BRAND")
+         or _TEN_BRAND.get(os.environ.get("CT_BRAND", ""), "donniechublog"))
 
 
 def load_secrets():
@@ -55,16 +66,44 @@ def load_secrets():
 
 
 def call(token, method, **kw):
-    with httpx.Client(timeout=90) as c:
-        r = c.post(API.format(token=token, method=method), json=kw)
-    return r.json()
+    """Goi Bot API. LUON tra ve dict; loi mang -> {"ok": False, "description"}.
+
+    Truoc day nem exception: trong thread nen thi thread chet im, trong vong
+    poll thi ca lo update con lai bi bo. Gio moi loi deu thanh mot dong log +
+    mot ket qua doc duoc, nguoi goi tu quyet."""
+    try:
+        with httpx.Client(timeout=90) as c:
+            r = c.post(API.format(token=token, method=method), json=kw)
+        res = r.json()
+    except Exception as e:                                   # noqa: BLE001
+        res = {"ok": False, "description": f"{type(e).__name__}: {e}"}
+    if not res.get("ok") and method != "getUpdates":
+        log("tele", f"{method} tu choi: {res.get('description')} | "
+                    f"thread={kw.get('message_thread_id')} text={rut(kw.get('text'), 60)}")
+    return res
 
 
-def scout_thread_id():
-    p = STATE_DIR / "topics.json"
-    if not p.exists():
-        return None
-    return json.loads(p.read_text(encoding="utf-8")).get("scout")
+def _chay_nen(ten, fn, token, group, thread_id, *args):
+    """Chay `fn` o thread nen, BOC de khong bao gio chet im.
+
+    Moi nhanh xu ly (chat, lenh, chon so) deu qua day: loi gi cung ghi log day
+    du traceback VA gui mot dong ⚠️ ve dung topic. Nguyen tac: Ong Chu nhan
+    tin, thi luon co tin tra ve — ke ca tin bao hong."""
+    import traceback
+
+    def _boc():
+        t0 = time.time()
+        try:
+            fn(*args)
+            log(ten, f"xong sau {time.time() - t0:.0f}s thread={thread_id}")
+        except Exception as e:                               # noqa: BLE001
+            log("loi", f"{ten} hong: {type(e).__name__}: {e}\n"
+                       + traceback.format_exc())
+            call(token, "sendMessage", chat_id=group,
+                 **({"message_thread_id": thread_id} if thread_id else {}),
+                 text=f"⚠️ Lỗi khi xử lý ({ten}): {type(e).__name__}: {str(e)[:300]}\n"
+                      f"Chi tiết trong log approve của container {ghi_log.brand()}.")
+    threading.Thread(target=_boc, daemon=True, name=f"{ten}-{thread_id}").start()
 
 
 # ---------- A) duyet ban nhap (khong doi so voi truoc) ----------
@@ -146,7 +185,6 @@ def draft_push(token, group, draft_id, thread_id=None):
 
 
 CAPTION_LIMIT = 1024      # gioi han caption cua sendPhoto / sendMediaGroup
-TEXT_LIMIT = 4096         # gioi han cua sendMessage
 
 
 def _gui_chu(token, chat, text, thread=None):
@@ -231,7 +269,7 @@ def mark_draft(draft_id, status):
 
 
 def handle_img_approval(token, action, draft_id, cq):
-    """Cong duyet ANH truoc khi viet. Chad/Ethan/Heller/Dre day anh len topic kem
+    """Cong duyet ANH truoc khi viet. designer (Ethan)/Dre/Dre day anh len topic kem
     ba nut:
       imgok    (Duyet)   -> sinh task viet caption (writer_body cat san o
                             `<draft_id>.writer.json`).
@@ -262,8 +300,11 @@ def handle_img_approval(token, action, draft_id, cq):
                     w["created"] = "rejected"
                     wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
-                except Exception:                               # noqa: BLE001
-                    pass
+                except Exception as e:                          # noqa: BLE001
+                    # Khong ghi duoc sidecar nghia la lenh bo KHONG dinh: bam
+                    # Duyet sau do van sinh task viet cho tin da giet. Phai noi.
+                    note = ("⚠️ Bỏ hẳn nhưng KHÔNG ghi được trạng thái ("
+                            + type(e).__name__ + ") — bấm Bỏ hẳn lại lần nữa")
     elif action == "imgredo":
         ip = DRAFTS / (draft_id + ".img.json")
         if not ip.exists():
@@ -289,7 +330,7 @@ def handle_img_approval(token, action, draft_id, cq):
                 im["remakes"], im["last_task"] = n, rid
                 ip.write_text(json.dumps(im, ensure_ascii=False, indent=2),
                               encoding="utf-8")
-                ten = TEN_VAI_ANH.get(im["vai_anh"], "Chad")
+                ten = TEN_VAI_ANH.get(im["vai_anh"], "Ethan")
                 note = f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})"
     else:                                                       # imgok
         if not wp.exists():
@@ -317,9 +358,10 @@ def handle_img_approval(token, action, draft_id, cq):
                     w["created"], w["writer_task"] = True, wid
                     wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
-                    ten = TEN_VAI_VIET.get(w["vai_viet"], "Quinn")
+                    ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
                     note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
 
+    log("nut", f"ket qua imgok/imgno/imgredo draft={draft_id}: {note}")
     base = msg.get("caption") or msg.get("text") or ""
     method = "editMessageCaption" if msg.get("caption") else "editMessageText"
     key = "caption" if msg.get("caption") else "text"
@@ -335,7 +377,6 @@ def handle_callback(token, channel, cq):
     data = cq.get("data", "")
     action, _, draft_id = data.partition(":")
     msg = cq["message"]
-    chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
 
     # Duyet ANH (truoc khi viet) — xu ly SOM vi luc nay ban nhap cuoi
     # (<draft>.json) chua ton tai, nhanh duoi se bao "khong tim thay ban nhap".
@@ -362,12 +403,40 @@ def handle_callback(token, channel, cq):
              text="Bài này đã xử lý rồi (" + st + ")", show_alert=True)
         return
 
+    if st == "publishing":
+        # Dang co thread dang bai nay (publish chay NEN, xem _dang_nen). Truoc
+        # day publish chay dong bo nen callback thu hai tu xep hang sau; nay
+        # phai chan tuong minh de hai thread khong cung dang mot bai.
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đang đăng — chờ chút", show_alert=True)
+        return
+
     if action == "ok":
-        # Danh dau DANG XU LY truoc khi dang: callback thu hai toi trong luc
-        # publish() dang chay se bi chan o nhanh tren.
+        # Danh dau DANG XU LY roi tra callback NGAY; viec nang (upload toi 180s
+        # + moat) chay o thread NEN de vong poll khong nghen — nut cua bai khac
+        # va chat van bam duoc, cung ly do voi handle_chat/handle_command.
         mark_draft(draft_id, "publishing")
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
              text="Đang đăng…")
+        threading.Thread(target=_dang_nen, daemon=True,
+                         args=(token, channel, draft_id, msg)).start()
+        return
+    elif action == "no":
+        mark_draft(draft_id, "rejected")
+        note = "❌ ĐÃ BỎ — không đăng"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã bỏ bài")
+    else:
+        return
+
+    _sua_tin_go_nut(token, msg, note)
+
+
+def _dang_nen(token, channel, draft_id, msg):
+    """Phan nang cua nut Duyet, chay trong thread rieng. Moi duong loi deu phai
+    ra trang thai ro rang: publish_failed cho bam Duyet lai duoc — khong bao
+    gio ket vinh vien o 'publishing' (truoc day exception giua chung se ket)."""
+    try:
         res = publish(token, channel, draft_id)
         ok = res.get("ok")
         mark_draft(draft_id, "published" if ok else "publish_failed")
@@ -379,14 +448,20 @@ def handle_callback(token, channel, cq):
         if ok:
             pushed, why = moat_publish.intake(draft_id)
             note += ("\n\U0001f4e4 moat: " + why) if pushed else ("\n\u26a0\ufe0f moat: " + why)
-    elif action == "no":
-        mark_draft(draft_id, "rejected")
-        note = "❌ ĐÃ BỎ — không đăng"
-        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Đã bỏ bài")
-    else:
-        return
+    except Exception as e:                                   # noqa: BLE001
+        try:
+            mark_draft(draft_id, "publish_failed")
+        except Exception:                                    # noqa: BLE001
+            pass
+        note = "⚠️ Đăng lỗi: " + type(e).__name__ + ": " + str(e)
+    _sua_tin_go_nut(token, msg, note)
 
+
+def _sua_tin_go_nut(token, msg, note):
+    log("nut", f"ket qua msg={msg.get('message_id')}: {note}")
+    """Ghi ket qua vao tin nhan draft va go ban phim (dung chung cho nhanh Bo
+    tren poll thread va nhanh Duyet chay nen)."""
+    chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
     base = msg.get("caption") or msg.get("text") or ""
     body = base.replace("BẢN NHÁP", "BẢN NHÁP (đã xử lý)", 1)
     method = "editMessageCaption" if msg.get("caption") else "editMessageText"
@@ -434,28 +509,29 @@ def latest_manifest(vai="scout"):
 
 
 # Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
-# Khong ghi ten ai thi mac dinh Chad (donniechublog).
+# Khong ghi ten ai thi mac dinh Ethan (donniechublog).
 # Chi con HAI vai dung anh, va ca hai lam CUNG MOT kieu anh: kieu tran, khong
 # khung, khong vach. Khac nhau dung mot thu la THUONG HIEU. Iris da bo: khi ca
-# doi chuyen sang mot kieu anh duy nhat thi vai cua Iris trung khit voi Chad,
+# doi chuyen sang mot kieu anh duy nhat thi vai cua Iris trung khit voi Ethan,
 # giu lai chi de hai ban SOUL gan nhu giong het troi ra khoi nhau.
+# Container = 1 brand co dinh (BRAND). Slug dat theo CHUC NANG, dung chung ten o
+# moi brand: "designer" (the bia, card.py) va "carousel" (nhieu slide,
+# carousel.py). Ten nhan vat cu (chad/ethan/heller/dre) giu lam alias de Ong Chu
+# go quen tay van dung. Brand KHONG con nam trong map — lay tu BRAND (env).
 VAI_ANH = {
-    "chad": ("designer", "donniechublog"),
-    "designer": ("designer", "donniechublog"),
-    "ethan": ("ethan", "dcgr"),
-    # Heller va Dre lam khac may nguoi kia: khong dung the bia (card.py) ma
-    # dung mot CAROUSEL nhieu slide (carousel.py) — xem VAI_CAROUSEL. Heller
-    # van thuong hieu donniechublog nen bai viet ve Quinn nhu Chad; Dre van
-    # dcgr.tech nen bai viet ve Miles nhu Ethan. Ong Chu go "3 heller"/"3 dre"
-    # de giao tin so 3 cho dung nguoi.
-    "heller": ("heller", "donniechublog"),
-    "dre": ("dre", "dcgr"),
+    "designer": "designer", "img": "designer", "anh": "designer",
+    "ethan": "designer",                               # alias ten persona
+    "carousel": "carousel", "cr": "carousel",
+    "dre": "carousel",                                 # alias ten persona
+    "carousel-edu": "carousel-edu", "edu": "carousel-edu",
+    "kite": "carousel-edu",            # alias ten persona (go "sli" / "kite")
 }
-# Vai dung carousel.py (nhieu slide) thay vi card.py (mot the bia). Them vai
-# carousel moi thi chi can them vao day — cho o duoi doc bang nay, khong ghim
-# cung ten "heller".
-VAI_CAROUSEL = {"heller", "dre"}
-MAC_DINH_ANH = "chad"
+# Ba loai vai anh, moi loai mot cong cu: card.py (the bia, designer), carousel.py
+# (anh that nhieu slide, carousel), render_edu.py (art vector goc magazine,
+# carousel-edu/Kite). Them vai moi thi khai vao day + dung set duoi.
+VAI_CAROUSEL = {"carousel"}        # slug dung carousel.py (anh that nhieu slide)
+VAI_EDU = {"carousel-edu"}         # slug dung render_edu.py (art vector goc, Kite)
+MAC_DINH_ANH = "designer"
 # Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
 #
 # Mot lua chon sinh ra mot CAP di lien nhau: nguoi dung anh lam cha, nguoi viet
@@ -463,43 +539,35 @@ MAC_DINH_ANH = "chad"
 # trong cap cung da du de xac dinh ca cap, va bat Ong Chu phai nho ai la nguoi
 # dung anh con ai la nguoi viet la bat nho mot thu khong can nho.
 #
-#     1 - Chad   ==  1 - Quinn   ->  anh donniechublog + bai cua Quinn
+#     1 - Ethan   ==  1 - Miles   ->  anh donniechublog + bai cua Miles
 #     1 - Ethan  ==  1 - Miles   ->  anh dcgr.tech     + bai cua Miles
 TEN_SANG_CAP = dict(VAI_ANH)
-TEN_SANG_CAP.update({
-    "quinn": ("designer", "donniechublog"),
-    "writer": ("designer", "donniechublog"),
-    "miles": ("ethan", "dcgr"),
+TEN_SANG_CAP.update({           # ten nguoi viet cung nhan -> ve default anh
+    "writer": "designer", "cap": "designer",
+    "miles": "designer",
 })
-# Ten hien ra bao cao. Truoc day la mot bieu thuc ba ngoi — them vai
-# thu ba la sai ngay, nen doi thanh bang tra.
-TEN_VAI_ANH = {"ethan": "Ethan", "designer": "Chad", "heller": "Heller", "dre": "Dre"}
-# Vai viet di theo THUONG HIEU, khong theo vai anh. Quinn viet cho dan ky thuat
-# (donniechublog), Miles viet cho dan kinh doanh/tai chinh/truyen thong
-# (dcgr.tech) — cung khuon caption, khac nguoi doc. Chon Chad thi bai ve Quinn,
-# chon Ethan thi bai ve Miles: mot lua chon cua Ong Chu quyet ca anh lan chu.
-VAI_VIET = {"donniechublog": "writer", "dcgr": "miles"}
+# Ten hien ra bao cao (slug -> ten persona thong nhat, chung ca hai brand).
+TEN_VAI_ANH = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite"}
+# Mot container mot nguoi viet duy nhat. Bang VAI_VIET theo brand da bo — no
+# rong tu khi chuyen sang container-per-brand, moi lookup deu ve hang so nay.
 MAC_DINH_VIET = "writer"
-TEN_VAI_VIET = {"writer": "Quinn", "miles": "Miles"}
-# Ca hai vai dung anh deu dung kieu tran. Giu bang tra thay vi ghim cung mot
-# chuoi de sau nay them mot kieu anh khac con cho ma dat.
-KIEU_ANH = {"designer": "tran", "ethan": "tran"}
+TEN_VAI_VIET = {"writer": "Miles"}
 
 
 def doc_lenh_chon(text: str):
     """Phan tich lenh chon tin. Tra ve [(so, vai_anh, thuong_hieu)] hoac None.
 
     Quy tac: ten vai ap cho MOI SO dung truoc no, tinh tu ten vai gan nhat.
-    So nao khong co ten vai nao phia sau thi ve mac dinh (Chad).
+    So nao khong co ten vai nao phia sau thi ve mac dinh (Ethan).
 
-        1                    -> Chad
-        1, 2, 3              -> ca ba Chad
+        1                    -> Ethan
+        1, 2, 3              -> ca ba Ethan
         1, 2, 3 - Ethan      -> ca ba Ethan
-        1 - Chad, 2 - Ethan  -> 1 Chad, 2 Ethan
-        1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Chad
+        1 - Ethan, 2 - Ethan  -> 1 Ethan, 2 Ethan
+        1, 2 - Ethan, 3      -> 1 va 2 Ethan, 3 Ethan
 
-    Ten nguoi VIET cung nhan, va cho ra dung cap do: "1 - Quinn" giong het
-    "1 - Chad", "1 - Miles" giong het "1 - Ethan".
+    Ten nguoi VIET cung nhan, va cho ra dung cap do: "1 - Miles" giong het
+    "1 - Ethan", "1 - Miles" giong het "1 - Ethan".
 
     Tra None neu co phan khong hieu duoc, de tin nhan roi ve luong hoi thoai
     thay vi bao loi — Ong Chu con dung chinh topic do de tro chuyen.
@@ -534,7 +602,7 @@ def doc_lenh_chon(text: str):
             if n in thay:
                 continue
             thay.add(n)
-            ra.append((n, *TEN_SANG_CAP[ten]))
+            ra.append((n, TEN_SANG_CAP[ten], BRAND))
         cho.clear()
 
     for kind, v in manh:
@@ -548,7 +616,7 @@ def doc_lenh_chon(text: str):
 
 def vai_cua_topic(thread_id):
     """Topic id -> ten vai, doc tu state/topics.json."""
-    tp = STATE_DIR / "topics.json"
+    tp = env_load.topics_path()
     if thread_id is None or not tp.exists():
         return None
     try:
@@ -561,295 +629,33 @@ def vai_cua_topic(thread_id):
     return None
 
 
-ILLU_BODY = """Nguon: {source_note}
-Link: {link}
-Nguon anh (via): {via}
-Chu de: {title}
-Tom tat: {summary}
-image_url (og:image so bo, co the la the thuong hieu): {image_url}
-
-NHIEM VU: dung the anh cho bai nay tu ANH THAT cua nguon.
-Thuong hieu: {brand}
-
-NGUYEN TAC TREN HET: KHONG BAO GIO tu ve minh hoa.
-Ve ra la bia dat — the anh phai phan anh dung cai co that trong nguon. Khong tim
-duoc anh thi BAO LAI, khong duoc lap cho trong bang hinh tu nghi ra.
-
-BUOC 1 — tim anh that cua tin nay (BAT BUOC chay lenh nay):
-cd /home/donniechu/content-team && venv/bin/python anh_bai.py \\
-  --tieu-de "{title}" --link "{link}" --json \\
-  --tu-nguon /home/donniechu/content-team/state/nguon_{draft_id}.json
-
-Finn DA tim nguon san va ghi vao tep tren — day la ket qua research cua cau ay.
-Ban dung lai bo nguon do, khong tu di tim. Quinn cung doc chinh tep nay de viet,
-nho vay bai viet va tam anh cung noi ve mot thu.
-
-Script lay anh tu chinh link goc VA tu cac bao khac dua cung tin, loc bo
-logo/favicon/the thuong hieu, do kich thuoc that roi xep hang. Anh co bang so
-hay bieu do duoc cong diem — do la thu doc gia muon nhin.
-
-BUOC 2 — chon anh:
-- Lay anh diem cao nhat lam anh chinh. Tai ve: /tmp/src_{draft_id}.png
-- Neu con anh khac tu 40 diem tro len va NOI DUNG KHAC NHAU (bang benchmark,
-  bieu do gia, so do kien truc...), tai them: /tmp/src_{draft_id}_2.png,
-  _3.png... Toi da 4 anh. Nhieu anh la TOT, khong sao ca.
-- Bo anh trung noi dung, bo anh chi la anh bia chung chung neu da co anh co so lieu.
-
-BUOC 3 — neu KHONG tim duoc anh nao:
-
-Truoc khi dung lai, xem link co phai arxiv khong (arxiv.org/abs/... hoac /pdf/...).
-Neu phai, "anh that" cua bai la CHINH TRANG DAU PAPER — ten cong trinh va nhom
-tac gia in tren nen trang that. Do khong phai hinh bia dat, nen chup no khong
-vi pham nguyen tac. Chay:
-
-venv/bin/python arxiv_bia.py \
-  --link "{link}" --out /tmp/src_{draft_id}.png
-
-Chay xong (thoat 0) thi coi nhu DA CO anh chinh, di tiep buoc 4 binh thuong.
-Khong co anh phu.
-
-Neu KHONG phai arxiv, hoac arxiv_bia.py thoat khac 0 (khong tai duoc PDF):
-Dung lai. Bao dung mot cau: "Khong tim duoc anh that cho tin nay" kem link da thu.
-KHONG tao the, KHONG ve SVG, KHONG chay card.py. Ong Chu se quyet dinh bo tin
-hay tu dua anh vao.
-
-BUOC 4 — dung the anh (chi khi buoc 2 co anh). MAC DINH LA KIEU QUOTE (the HOOK).
-
---kieu quote la mot CAU LON trong khung dau " sao cho DAP VAO MAT trong 3 GIAY
-dau, khien nguoi ta phai doc tiep. Cau nay KHONG nhat thiet la loi ai noi trong
-bai — dung may moc. No co the la:
- - chinh TIEU DE / mot goc giat cua tin (manh nhat khi co CON SO soc), HOAC
- - mot cau noi CO THAT cua nguoi trong bai (neu bai co cau du dat).
-Chon cai nao gay an tuong hon. Doc {source_note} / {summary} / bai goc ({link}).
-
---tagline la CHIP CATEGORY goc tren-trai (nhan ngan TIENG ANH): MODEL RELEASE /
-FUNDING / ROBOTICS / CYBERSECURITY / APPS / OPEN SOURCE / RESEARCH / M&A / IN
-BRIEF... Chon nhan dung chu de tin. (KHONG con mac dinh "daily AI update".)
-
---attrib la dong nguon o duoi khung:
- - Cau la LOI CO THAT cua mot nguoi  -> "Phat bieu cua <ten>, <chuc/hang>".
- - Cau la tieu de/hook (khong phai loi ai) -> ghi NGUON: "via <bao>" hoac
-   "<Chu de>, via <bao>". TUYET DOI KHONG gan cau minh tu viet thanh loi mot
-   nguoi cu the — bia loi la sai. Hook thi ghi nguon, dung ghi "phat bieu".
-
-cd /home/donniechu/content-team && /home/donniechu/hermes-agent/venv/bin/python card.py \\
-  --kieu quote --ratio 4:5 \\
-  --tagline "<CATEGORY ngan TIENG ANH>" \\
-  --image /tmp/src_{draft_id}.png \\
-  --title "<CAU HOOK co dau, dap vao mat trong 3s>" \\
-  --attrib "<'via <bao>' hoac 'Phat bieu cua <ten>' neu la loi that>"{co_brand} \\
-  --out {out_png}
-
-Kieu tran (--kieu tran, kicker + tieu de mono, layout bang-tin co dien) van dung
-duoc khi ban muon doi khong khi thay vi the hook — nhung MAC DINH la quote/hook.
-
-Cac anh phu KHONG dung the — giu nguyen ban goc, chi doi ten thanh
-{out_png_goc}_2.png, _3.png... de buoc dang sau gui thanh album.
-
-BUOC 5 — GUI ANH LEN TOPIC CUA MINH NGAY (KHONG cho nguoi viet):
-Dung xong the anh la viec cua ban da XONG — day anh ra topic cua chinh minh
-ngay, KHONG cho Quinn/Miles viet xong roi moi co anh trong bai. Ong Chu ngoi o
-Telegram, chi thay ket qua khi anh len topic; de anh nam trong drafts/ ma khong
-gui thi voi Ong Chu y het nhu ban im lang.
-cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
-  --vai {vai} --anh {out_png} --duyet {draft_id} --mo-ta "<mot cau anh nay la gi>"
-Co anh phu ({out_png_goc}_2.png, _3.png...) thi lap them --anh cho tung tam de
-gui thanh album. Gui xong moi ghi ket qua task.
-
-`--duyet {draft_id}` gan BA nut duoi anh: "Duyet" (nguoi viet Quinn/Miles moi
-viet caption), "Lam lai" (tao lai dung task nay, ban se dung ANH KHAC), "Bo han"
-(giet tin). Vay nen viec cua ban chi la ra ANH cho that dat — dung cho, cung
-dung tu di goi nguoi viet. Neu bi giao "lam lai", doc ghi chu cuoi task va chon
-anh khac han lan truoc.
-
-LUU Y — doc skill `hero-image` (muc "Kieu quote" la mac dinh, phan hero tran la
-du phong). Day chi la phan hay sai nhat:
-
-Chung ca hai kieu:
-- Anh va chu la MOT mat phang lien. KHONG khung, KHONG vach, KHONG phu de.
-- Chu TIENG VIET CO DAU. Nua duoi/vung dat chu phai TRONG; anh chup man hinh
-  day chu thi doi anh khac.
-- Ten hang trong chu duoc TO MAU tu dong, ban khong phai lam gi. Gap hang chua
-  duoc to thi bao lai de them vao danh sach.
-
-Kieu quote / hook (mac dinh):
-- --title la CAU HOOK — dap vao mat trong 3 giay. Co the la tieu de/goc giat
-  HOAC loi that cua nguoi trong bai. Cau NGAN de doc lon (cham 7 dong la cat).
-- --tagline = CHIP CATEGORY (MODEL RELEASE / FUNDING / ROBOTICS / IN BRIEF...).
-- --attrib: loi that -> "Phat bieu cua <ten>"; hook -> "via <bao>". Khong gan
-  cau tu viet thanh loi mot nguoi cu the.
-- Dau " trong khung tu doi mau theo hang duoc nhac, tu dong.
-
-Kieu tran (layout bang-tin co dien, khi muon doi khong khi):
-- KHONG --subtitle, KHONG --via, KHONG nhan category. Tren anh chi co bon thu:
-  anh, kicker, tieu de, ten kenh.
-- TIEU DE LA MOT CAU HOAN CHINH bao quat ca tin, khong gioi han so dong/ky tu;
-  tin co so thi dua so vao chinh cau do.
-- Kicker TIENG ANH, toi da hai tu: BREAKING / MODEL RELEASE / AGENT / FUNDING /
-  BENCHMARK / OPEN SOURCE / M&A / RESEARCH / INFRA / POLICY.
-
-- Nguon anh ({via}) KHONG con in tren anh nua. Bao lai nguon do trong ket qua
-  task de nguoi viet caption dua vao bai — day la viec SONG SONG, KHONG phai
-  dieu kien de gui anh. Ban da gui anh o buoc 5 roi moi ghi nguon cho ho.
-- Ket qua bat buoc: file {out_png} phai ton tai VA da gui len topic (buoc 5)
-  sau khi chay (tru truong hop buoc 3 — khong co anh that)."""
+# Khuon body task (van ban dai) tach sang task_bodies.py — xem ghi chu o do.
+from task_bodies import ILLU_BODY, CAROUSEL_BODY, EDU_BODY, WRITER_BODY  # noqa: E402
 
 
-# Body cho Heller — dung carousel nhieu slide thay vi mot the bia. Khac ILLU_BODY
-# o cho: khong chay card.py, ma viet copy tung slide roi chay carousel.py. Van
-# dung anh_bai.py de tim anh that, van cong chan "khong tu ve minh hoa".
-CAROUSEL_BODY = """Nguon: {source_note}
-Link: {link}
-Nguon anh (via): {via}
-Chu de: {title}
-Tom tat: {summary}
-
-NHIEM VU: dung mot CAROUSEL nhieu slide ke tin nay, kieu bang tin — anh full be
-ngang o tren TAN dan vao nen den, khoi chu trang o duoi, watermark nghieng o day.
-Anh va chu la MOT mat phang lien: KHONG vien, KHONG vach, KHONG khung chia hai vung.
-
-DOC SKILL `carousel` TRUOC khi lam — no co day du khung ke chuyen, cach viet copy
-tung slide, luat chon anh, va cong chan. Duoi day chi la phan hay sai nhat.
-
-NGUYEN TAC TREN HET: KHONG BAO GIO tu ve minh hoa. Moi slide phai co mot ANH THAT
-lay tu nguon. Khong du anh that thi chia lai slide hoac gop y; cung lam thi bao
-lai — tuyet doi khong dung hinh gia.
-
-BUOC 1 — hieu tin du sau de chia slide. Finn DA research san, doc bo nguon nay:
-  /home/donniechu/content-team/state/nguon_{draft_id}.json
-
-BUOC 2 — tim anh that (BAT BUOC chay lenh nay):
-cd /home/donniechu/content-team && venv/bin/python anh_bai.py \\
-  --tieu-de "{title}" --link "{link}" --json \\
-  --tu-nguon /home/donniechu/content-team/state/nguon_{draft_id}.json
-Tai cac anh diem cao ve /tmp: /tmp/src_{draft_id}.png, /tmp/src_{draft_id}_2.png...
-Bai arxiv khong co anh minh hoa thi chup bia paper:
-  venv/bin/python arxiv_bia.py --link "{link}" --out /tmp/src_{draft_id}.png
-
-BUOC 3 — chia tin thanh 4-8 slide va viet copy (theo khung ke chuyen trong skill):
-  - BIA: mot cau HOOK giat khien nguoi ta dung luot (thuong la nghich ly hoac con
-    so), kem mot NHAN NGAN. Cover can goc duoi-trai thoang de hook doc ro.
-  - Cac slide sau: moi slide MOT y moi day nguoi doc sang slide sau (cai gi vua
-    xay ra, con so gay soc, y nghia that, doi thu, cai can theo doi).
-  - Slide cuoi de lai mot moc hoac cau hoi, khong chot cut.
-  - Chu TIENG VIET CO DAU, cau ngan, moi doan 2-4 dong, tach doan bang dong trong.
-  - CA CAU QUOTE (trich dan) cung phai DICH sang tieng Viet co dau — bai goc
-    tieng Anh thi DICH cau trich, giu ten rieng/thuat ngu/so lieu; DUNG chep
-    nguyen van tieng Anh vao quote.
-
-BUOC 4 — ghi spec JSON roi dung (cac anh o BUOC 2 chia cho tung slide theo y):
-cat > /tmp/carousel_{draft_id}.json <<'JSON'
-{{
-  "handle": "donniechublog",
-  "cover":  {{"image": "/tmp/src_{draft_id}.png", "hook": "<cau giat co dau>", "label": "<NHAN NGAN>"}},
-  "slides": [
-    {{"image": "/tmp/src_{draft_id}_2.png", "text": "doan mot.\\n\\ndoan hai."}},
-    {{"image": "/tmp/src_{draft_id}_3.png", "text": "..."}}
-  ]
-}}
-JSON
-cd /home/donniechu/content-team && venv/bin/python carousel.py \\
-  --spec /tmp/carousel_{draft_id}.json --out {out_png} --brand {brand}
-
-Ra {out_png} (bia) + {out_png_goc}_2.png, _3.png... — draft_write.py tu gom thanh
-album khi Quinn ghep draft, ban KHONG phai lam gi them o khau dang.
-
-CONG CHAN: tieng Viet khong dau bi chan (chi tiếng Anh moi them --bo-qua-dau);
-toi da 10 slide ke ca bia; thieu image/text mot slide thi dung.
-
-BUOC 5 — GUI CAROUSEL LEN TOPIC CUA MINH NGAY (KHONG cho nguoi viet):
-Dung xong bo slide la viec cua ban da XONG — day ca album ra topic cua chinh
-minh ngay, KHONG cho Quinn/Miles viet xong roi moi co anh trong bai. Ong Chu
-ngoi o Telegram, chi thay ket qua khi anh len topic.
-cd /home/donniechu/content-team && venv/bin/python gui_telegram.py \\
-  --vai {vai} --anh {out_png} --anh {out_png_goc}_2.png --anh {out_png_goc}_3.png \\
-  --duyet {draft_id} --mo-ta "<mot cau carousel nay ve gi>"
-Lap --anh cho DU so slide that su dung ra (bo bot cac dong _N.png khong ton tai,
-them vao neu nhieu hon 3). Gui xong moi ghi ket qua task.
-
-`--duyet {draft_id}` gan BA nut duoi album: "Duyet" (nguoi viet Quinn/Miles moi
-viet caption), "Lam lai" (tao lai dung task nay, ban dung BO SLIDE khac), "Bo
-han" (giet tin). Viec cua ban chi la ra BO SLIDE cho that dat — dung cho writer,
-cung dung tu di goi nguoi viet. Neu bi giao "lam lai", doc ghi chu cuoi task va
-lam khac lan truoc.
-
-BAN GIAO: watermark tren slide KHONG phai ghi nguon. Bao lai nguon tin va nguon
-tung anh ({via}) trong ket qua task de Quinn dua vao chu thich bai dang — viec
-SONG SONG, KHONG phai dieu kien de gui anh.
-Ket qua bat buoc: {out_png} phai ton tai VA da gui len topic (buoc 5)."""
+# Slug cu (ten nhan vat) -> slug profile hien tai. Sidecar .img.json/.writer.json
+# cu con ghi "dre"/"miles"; task tao tu do se khong ai nhan (khong co profile
+# ten vay) va nam 'ready' mai — su co 01/09/2026: hai bai dcgr ket 2 ngay.
+SLUG_CU = {"miles": "writer", "dre": "carousel", "ethan": "designer",
+           "chad": "designer", "heller": "carousel", "kite": "carousel-edu",
+           "finn": "scout", "vera": "market", "jean": "teaser", "ada": "analyst"}
 
 
-WRITER_BODY = """Bai goc: {title}
-Link: {link}
-Nguon: {source_note}
-Via: {via}
-Diem Finn cham: {score}/100 -- ly do: {score_reason}
-(Dung ly do diem nay de viet phan Y NGHIA — vi sao chuyen nay quan trong; noi thang
-bang thong tin cu the, dung tu y suy dien, va KHONG dung cum "dang chu y / dang quan tam")
-
-Du kien (Finn da tom tat — CHI la diem khoi dau, KHONG du de viet):
-{summary}
-
-BUOC 1 — DOC TU LIEU THAT (bat buoc, lam truoc khi viet mot chu nao):
-cd /home/donniechu/content-team && venv/bin/python tu_lieu.py \\
-  --tieu-de "{title}" --link "{link}" --out /tmp/tulieu_{draft_id}.md \\
-  --tu-nguon /home/donniechu/content-team/state/nguon_{draft_id}.json
-
-Script boc chu tu bai goc VA tu cac bao khac dua cung tin, roi tach rieng muc
-"Cau co so lieu". Tom tat cua Finn khong co con so nao — viet chay theo no thi
-bai ra cung khong co so nao. Da gap that: tin co bang 11 dong benchmark, caption
-viet ra 0 con so.
-
-BUOC 2 — VIET. Day la bai SOCIAL, khong phai trang tai lieu:
-nhanh, khach quan, ngan gon, xuc tich.
-
-Nguoi doc luot qua trong vai giay. Ho can biet: chuyen gi, con so nao dang nho,
-va co dang quan tam khong. Ho KHONG can bang thong so day du — cai do da co
-tren the anh va o link.
-
-KHONG dung em-dash (dau — hoac –) o bat cu dau. Dung dau phay, dau hai cham,
-hoac tach thanh cau rieng. Script se tu choi caption co dau nay.
-
-TIEU CHUAN BIEN TAP:
-- Moi CAU xuong dong rieng: het mot cau thi xuong dong roi moi viet cau tiep
-  theo. Moi DOAN cach nhau MOT dong trong.
-- KHONG de link song trong caption (script tu choi, ke ca ten mien tran nhu
-  z.ai). Buoc phai nhac ten mien thi viet dau cham thanh " . " (vd z . ai) de
-  no khong thanh link.
-- KHONG dung cum sao rong "dang chu y", "dang quan tam" va bien the ("ly do
-  dang chu y", "dang chu y vi", "dang quan tam vi"...). Script tu choi. Noi
-  thang y nghia bang thong tin cu the.
-
-Bon y BAT BUOC co, moi y mot cau la du:
-- Chuyen gi vua xay ra, kem SO quan trong nhat
-- So sanh: hon hay kem cai gi, cach biet bao nhieu. Neu nguon co noi cho THUA
-  thi phai noi — bo di la thien lech, khong con khach quan
-- Han che hoac dieu kien kem theo, neu nguon co noi
-- Y NGHIA: vi sao chuyen nay quan trong (dung ly do Finn cham diem) — noi thang,
-  KHONG dung cum "dang chu y / dang quan tam vi..."
-
-Do dai: tan dung TOI DA 1024 ky tu, do la gioi han chu thich anh cua Telegram.
-Vua trong muc do thi anh va chu di chung MOT tin nhan, doc gia thay ca hai cung
-luc. Vuot qua la Telegram tach lam hai, anh mot noi chu mot noi.
-
-Nham 800-1000 ky tu. Ngan gon nam o CACH VIET chu khong o viec cat bot y: moi
-cau phai mang mot thong tin moi, khong cau nao lap lai cau truoc.
-
-YEU CAU KY THUAT:
-- Toi da 900 ky tu, HTML Telegram (chi <b> <i> <code>), dung cau truc SOUL.
-- Ghi caption ra file tam /tmp/caption_{draft_id}.txt (CHI caption, khong kem gi khac).
-- Tu kiem truoc khi ghep draft:
-    cd /home/donniechu/content-team && venv/bin/python caption_check.py \\
-      --caption-file /tmp/caption_{draft_id}.txt --tu-lieu /tmp/tulieu_{draft_id}.md
-- Ghep draft bang lenh sau — script tu dien source_url / category / via / duong dan anh,
-  BAN KHONG CAN go lai nhung gia tri do:
-    cd /home/donniechu/content-team && venv/bin/python draft_write.py {draft_id} --caption-file /tmp/caption_{draft_id}.txt --tu-lieu /tmp/tulieu_{draft_id}.md
-- Day vao hang duyet:
-    cd /home/donniechu/content-team && venv/bin/python approve_service.py push {draft_id}
-- KHONG tu dang len channel."""
+def chuan_assignee(assignee):
+    """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""
+    slug = SLUG_CU.get(str(assignee).lower(), assignee)
+    co = Path(HERMES_HOME) / "profiles" / slug
+    if not co.is_dir():
+        return None, (f"không có profile '{slug}' trong {Path(HERMES_HOME).name} "
+                      f"— task sẽ không ai nhận, không tạo")
+    return slug, None
 
 
 def kanban_create(title, assignee, body, parent=None):
+    assignee, loi = chuan_assignee(assignee)
+    if loi:
+        log("kanban", f"tu choi tao '{title[:60]}': {loi}")
+        return None, loi
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     args = [str(HERMES_PY), "-m", "hermes_cli.main", "kanban", "create", title,
             "--assignee", assignee, "--max-runtime", "25m", "--json",
@@ -859,9 +665,12 @@ def kanban_create(title, assignee, body, parent=None):
     r = subprocess.run(args, cwd=str(Path.home() / "hermes-agent"),
                         env=env, capture_output=True, text=True, timeout=60)
     if r.returncode != 0:
+        log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {(r.stderr or r.stdout)[-200:]}")
         return None, (r.stderr[-300:] or r.stdout[-300:])
     try:
-        return json.loads(r.stdout)["id"], None
+        tid = json.loads(r.stdout)["id"]
+        log("kanban", f"tao task {tid} cho {assignee}: {title[:60]}")
+        return tid, None
     except Exception:                                        # noqa: BLE001
         return None, r.stdout[-300:]
 
@@ -875,10 +684,9 @@ def kanban_create(title, assignee, body, parent=None):
 # Cho sai la KHONG AI DUOC BAO. Bao cao nam trong kanban, con Ong Chu ngoi o
 # Telegram: chon hai tin thay len mot bai, khong biet tin kia di dau. Doan nay
 # keo bao cao do ra Telegram.
-KANBAN_DB = Path.home() / ".hermes" / "kanban.db"
+KANBAN_DB = Path(HERMES_HOME) / "kanban.db"    # kanban cua home container hien tai
 DA_BAO_CHAN = STATE_DIR / "da_bao_chan.json"
-VAI_CUA_DOI = {"designer": "Chad", "ethan": "Ethan", "heller": "Heller",
-               "dre": "Dre", "writer": "Quinn", "miles": "Miles"}
+VAI_CUA_DOI = {"designer": "Designer", "carousel": "Carousel", "writer": "Writer"}
 
 
 def _da_bao() -> set:
@@ -922,6 +730,76 @@ def viec_bi_chan() -> list:
     return ra
 
 
+DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
+_TEN_HIEN = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
+             "writer": "Miles", "scout": "Finn", "nova": "Nova", "market": "Vera",
+             "teaser": "Jean", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
+             "bob": "Bob"}
+
+
+def bao_tien_do_kanban(token, group):
+    """Bao TIEN DO hang doi kanban ve Telegram: task bat dau -> mot dong vao
+    topic cua vai kem so viec con xep hang; task xong/hong -> mot dong nua.
+
+    Vi sao: tu 03/09/2026 moi container chay MOT task mot luc. Sang 04/09 Ong
+    Chu chon 7 bai luc 05:33, Dre lam bai 1, sau bai kia + Nova xep hang ca
+    tieng — va khong ai noi gi, trong nhu he thong dung. Hang doi la thiet ke,
+    im lang thi khong. Chay moi vong poll (~50s), chi bao khi trang thai doi."""
+    if not KANBAN_DB.exists():
+        return
+    try:
+        da = json.loads(DA_BAO_TIEN_DO.read_text(encoding="utf-8")) if DA_BAO_TIEN_DO.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        da = {}
+    try:
+        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
+        rows = con.execute(
+            "SELECT id, assignee, status, title, created_at FROM tasks "
+            "WHERE created_at > ? ORDER BY created_at", (time.time() - 86400,)).fetchall()
+        con.close()
+    except Exception as e:                                   # noqa: BLE001
+        log("tiendo", f"khong doc duoc kanban: {e}")
+        return
+    cho = [r for r in rows if r[2] == "ready"]
+    tp = env_load.topics_path()
+    try:
+        topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        topics = {}
+    doi = False
+    for tid, ai, st, title, _c in rows:
+        if st in ("ready", "todo", "triage") or da.get(tid) == st:
+            continue
+        ten = _TEN_HIEN.get(ai, ai)
+        if st == "running":
+            sau = len(cho)
+            text = (f"▶️ <b>{ten}</b> bắt đầu: <i>{html_escape(title[:80])}</i>"
+                    + (f"\n(còn {sau} việc xếp hàng sau việc này)" if sau else ""))
+        elif st == "done":
+            text = f"✅ <b>{ten}</b> xong: <i>{html_escape(title[:80])}</i>"
+        elif st in ("blocked", "failed"):
+            text = f"⛔ <b>{ten}</b> dừng ({st}): <i>{html_escape(title[:80])}</i>"
+        else:
+            da[tid] = st
+            doi = True
+            continue
+        thread = topics.get(ai)
+        r = call(token, "sendMessage", chat_id=group,
+                 **({"message_thread_id": thread} if thread else {}),
+                 text=text, parse_mode="HTML")
+        log("tiendo", f"{tid} {ai} -> {st} (thread={thread}) gui={'ok' if r.get('ok') else r.get('description')}")
+        da[tid] = st
+        doi = True
+    if doi:
+        # Chi giu task 24h gan nhat cho tep khong phinh.
+        song = {r[0] for r in rows}
+        da = {k: v for k, v in da.items() if k in song}
+        try:
+            DA_BAO_TIEN_DO.write_text(json.dumps(da), encoding="utf-8")
+        except OSError as e:
+            log("tiendo", f"khong ghi duoc {DA_BAO_TIEN_DO.name}: {e}")
+
+
 def bao_viec_bi_chan(token, group):
     """Bao ve topic duyet moi viec vua bi chan. Im lang khi khong co gi moi.
 
@@ -934,19 +812,16 @@ def bao_viec_bi_chan(token, group):
     if not moi:
         return
 
-    tp = STATE_DIR / "topics.json"
+    tp = env_load.topics_path()
     try:
         topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
     except Exception:                                        # noqa: BLE001
         topics = {}
 
-    # Tach theo THUONG HIEU: viec anh dcgr bao ve topic Miles, donniechublog ve
-    # Quinn — dung nguoi viet cua brand do, khong dua het ve Quinn.
-    nhom = {}
-    for tid, ai, ten, tieu_de, ly_do in moi:
-        brand = VAI_ANH.get(ai, (None, "donniechublog"))[1]
-        vai_viet = VAI_VIET.get(brand, MAC_DINH_VIET)
-        nhom.setdefault(vai_viet, []).append((tid, ten, tieu_de, ly_do))
+    # Mot container mot nguoi viet — moi viec bi chan deu bao ve topic writer.
+    # (Bang nhom theo brand da bo cung VAI_VIET: luon chi co mot nhom.)
+    nhom = {MAC_DINH_VIET: [(tid, ten, tieu_de, ly_do)
+                            for tid, ai, ten, tieu_de, ly_do in moi]}
 
     da_gui = set()
     for vai_viet, viecs in nhom.items():
@@ -1071,11 +946,12 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     except Exception as e:                                   # noqa: BLE001
         print(f"[research] khong tim duoc nguon: {type(e).__name__}: {e}")
 
-    # Heller va Dre dung carousel nhieu slide, cac vai anh khac dung the bia.
+    # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
     # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
     # key thua.
     la_carousel = vai_anh in VAI_CAROUSEL
-    khuon = CAROUSEL_BODY if la_carousel else ILLU_BODY
+    la_edu = vai_anh in VAI_EDU
+    khuon = EDU_BODY if la_edu else (CAROUSEL_BODY if la_carousel else ILLU_BODY)
     illu_body = khuon.format(
         source_note=item.get("source_note", ""), link=item["link"],
         via=item.get("via", ""), title=item["title"],
@@ -1084,8 +960,10 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         out_png=out_png, out_png_goc=out_png[:-4],
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
         brand=brand, vai=vai_anh,
+        goc=str(ROOT), hermes_py=str(HERMES_PY),
         co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
-    tieu_de_task = ("Carousel: " if la_carousel else "Anh: ") + item["title"]
+    tieu_de_task = ("Carousel deck: " if la_edu
+                    else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
@@ -1094,13 +972,13 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
     # thi nut Lam lai bao khong co thong tin.
     (DRAFTS / (draft_id + ".img.json")).write_text(
-        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel,
+        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel or la_edu,
                     "title": item["title"], "body": illu_body, "remakes": 0},
                    ensure_ascii=False, indent=2), encoding="utf-8")
 
     # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
     # sidecar `<draft_id>.writer.json`; task viet CHI sinh khi Ong Chu bam
-    # "Duyet anh" (imgok) tren tam anh ma Chad/Ethan/Heller/Dre vua day len
+    # "Duyet anh" (imgok) tren tam anh ma designer (Ethan)/Dre/Dre vua day len
     # topic. Anh chua dat thi khong co writer nao ca — dung y Ong Chu: khong
     # nhat thiet phai co writer sau khi tao hinh, o thi moi viet caption.
     writer_body = WRITER_BODY.format(
@@ -1110,8 +988,8 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         score_reason=item.get("score_reason", ""),
         summary=item.get("summary_vi", ""), out_png=out_png,
         out_json=out_json, category=chuan_nhan(item.get("category")),
-        draft_id=draft_id)
-    vai_viet = VAI_VIET.get(brand, MAC_DINH_VIET)
+        draft_id=draft_id, goc=str(ROOT), hermes_py=str(HERMES_PY))
+    vai_viet = MAC_DINH_VIET
     (DRAFTS / (draft_id + ".writer.json")).write_text(
         json.dumps({"vai_viet": vai_viet, "title": item["title"],
                     "body": writer_body, "created": False},
@@ -1124,7 +1002,109 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # trung y het (cung role + cung brand) o vong chon, xem handle_pick.
     item.setdefault("da_giao", []).append(
         {"vai_anh": vai_anh, "brand": brand, "draft_id": draft_id, "task_anh": illu_id})
-    return (illu_id, None), None
+    return illu_id, None
+
+
+# HANG DOI CHAT — hai tang, thay cho mot khoa chung ca container (03/09):
+#
+# 1) Moi PHIEN (tele-<vai>) mot hang FIFO: cung mot vai khong bao gio chay hai
+#    luot cung luc (hai tien trinh `chat -c` cung ghi mot phien = hong mach), va
+#    tin gui truoc tra loi truoc — threading.Lock khong dam bao thu tu danh thuc,
+#    nen dung ve so.
+# 2) Mot semaphore chung gioi han SO VAI chay cung luc (CT_CHAT_SONG_SONG, mac
+#    dinh 4) — van thu 9router/DeepSeek khoi bi dap don (400 "response_format
+#    unavailable", 429) neu co gi do bung no, nhung KHONG duoc la cai lam reply
+#    doi nhau. Nguyen tac Ong Chu (04/09): task lam lan luot duoc, reply thi
+#    phai song song va nhanh — reply do la viec treo theo het. Mot nguoi go
+#    thi thuc te khong hoi qua 3-4 vai cung luc nen 4 gan nhu khong bao gio
+#    cham; 429 le te da co chat_router thu lai theo "reset after Ns". Su co
+#    04/09 07:19 voi khoa chung: Itachi doi Gin 108s chi de tra loi "xac nhan".
+#    Dat CT_CHAT_SONG_SONG=1 la ve dung hanh vi cu.
+# Task kanban van tuan tu (max_in_progress: 1) — muc nay chi noi ve chat.
+_SO_SONG_SONG = max(1, int(os.environ.get("CT_CHAT_SONG_SONG", "4") or 4))
+_CHO_CHAT = threading.BoundedSemaphore(_SO_SONG_SONG)
+_DANG_CHAY = {}                                # who -> t0, cac vai dang goi agent
+_KHOA_DANG_CHAY = threading.Lock()
+
+
+class _HangFIFO:
+    """Ve so xep hang: acquire() lay so, doi toi luot; release() goi so tiep.
+    `vi_tri()` tra ve so nguoi dang dung truoc — de bao Ong Chu con may tin."""
+
+    def __init__(self):
+        self._cv = threading.Condition()
+        self._phat = 0
+        self._phuc_vu = 0
+
+    def lay_so(self) -> tuple:
+        """(so cua minh, so nguoi dang dung truoc). Tach khoi doi() de ben goi
+        kip bao Ong Chu "con N tin truoc" TRONG LUC cho, khong phai sau."""
+        with self._cv:
+            so = self._phat
+            self._phat += 1
+            return so, so - self._phuc_vu
+
+    def doi(self, so):
+        with self._cv:
+            while so != self._phuc_vu:
+                self._cv.wait()
+
+    def release(self):
+        with self._cv:
+            self._phuc_vu += 1
+            self._cv.notify_all()
+
+
+_HANG_PHIEN = {}                               # session -> _HangFIFO
+_KHOA_HANG_PHIEN = threading.Lock()
+
+
+def _hang_cua(session) -> "_HangFIFO":
+    with _KHOA_HANG_PHIEN:
+        h = _HANG_PHIEN.get(session)
+        if h is None:
+            h = _HANG_PHIEN[session] = _HangFIFO()
+        return h
+
+
+def _ai_dang_chay(tru=None) -> str:
+    with _KHOA_DANG_CHAY:
+        ten = [w for w in _DANG_CHAY if w != tru]
+    return ", ".join(sorted(ten)) or "vai khác"
+
+
+def boi_canh_vai(profile) -> str:
+    """Vai chat KHONG nhin thay viec minh vua lam qua kanban: phien chat
+    (tele-<vai>) va phien task la hai phien rieng. Su co 03/09/2026 15:14: Ong
+    Chu hoi Ethan "chua du 6 anh", Ethan tra loi "session trong, khong co draft
+    nao" trong khi 15 phut truoc vua day 3 anh len. Doan nay doc kanban.db lay
+    3 task gan nhat cua vai (tieu de, trang thai, tom tat) + ban nhap lien quan,
+    ghep vao dau tin de vai tra loi dung viec cua minh."""
+    if not profile or not KANBAN_DB.exists():
+        return ""
+    try:
+        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
+        rows = con.execute(
+            "SELECT t.id, t.title, t.status, t.completed_at, "
+            "(SELECT summary FROM task_runs r WHERE r.task_id=t.id "
+            " ORDER BY r.rowid DESC LIMIT 1) "
+            "FROM tasks t WHERE t.assignee=? "
+            "ORDER BY t.created_at DESC LIMIT 3", (profile,)).fetchall()
+        con.close()
+    except Exception as e:                                   # noqa: BLE001
+        log("chat", f"boi canh {profile}: khong doc duoc kanban ({e})")
+        return ""
+    if not rows:
+        return ""
+    dong = ["[Việc gần nhất của bạn trên kanban — để trả lời đúng việc mình đã làm]"]
+    for tid, title, st, done, tom in rows:
+        luc = time.strftime("%d/%m %H:%M", time.localtime(done)) if done else "-"
+        dong.append(f"- {tid} [{st}] {title[:90]} (xong {luc})")
+        if tom:
+            dong.append("    tóm tắt: " + str(tom)[:400].replace("\n", " "))
+    dong.append("Bản nháp nằm ở drafts/<draft_id>.png|.json; log gửi Telegram ở "
+                f"{STATE_DIR / 'telegram_sent'}/<vai>.jsonl.")
+    return "\n".join(dong) + "\n\n"
 
 
 def handle_chat(token, group, msg, thread_id, text):
@@ -1135,24 +1115,84 @@ def handle_chat(token, group, msg, thread_id, text):
     Bu lai: dinh tuyen duoc theo topic, moi topic mot phien rieng.
     """
     topics = {}
-    tp = STATE_DIR / "topics.json"
+    tp = env_load.topics_path()
     if tp.exists():
         topics = json.loads(tp.read_text(encoding="utf-8"))
     profile, session = chat_router.route(thread_id, topics)
 
     who = profile or "trợ lý"
-    call(token, "sendMessage", chat_id=group,
-         **({"message_thread_id": thread_id} if thread_id else {}),
+    kw_thread = {"message_thread_id": thread_id} if thread_id else {}
+    log("route", f"chat -> profile={profile or '(mac dinh)'} session={session} "
+                 f"thread={thread_id} text={rut(text)}")
+    # Tang 1: hang FIFO cua rieng phien nay — cung vai thi tin truoc tra loi truoc.
+    hang = _hang_cua(session)
+    so, truoc = hang.lay_so()
+    da_bao = False
+    if truoc:
+        log("route", f"thread={thread_id} {who} con {truoc} tin truoc trong topic")
+        call(token, "sendMessage", chat_id=group, **kw_thread,
+             text=f"⏳ <b>{who}</b> đang trả lời {truoc} tin trước trong topic này, "
+                  "xong sẽ tới tin này…", parse_mode="HTML")
+        da_bao = True
+    hang.doi(so)
+    try:
+        # Tang 2: cho chung — toi da _SO_SONG_SONG vai goi agent cung luc.
+        if not _CHO_CHAT.acquire(blocking=False):
+            cho_ai = _ai_dang_chay(tru=who)
+            log("route", f"thread={thread_id} {who} cho cho, dang chay: {cho_ai}")
+            if not da_bao:
+                call(token, "sendMessage", chat_id=group, **kw_thread,
+                     text=f"⏳ <b>{who}</b> chờ chỗ — đang có <b>{cho_ai}</b> chạy "
+                          f"(tối đa {_SO_SONG_SONG} vai cùng lúc), tới lượt sẽ trả lời…",
+                     parse_mode="HTML")
+            _CHO_CHAT.acquire()
+        with _KHOA_DANG_CHAY:
+            _DANG_CHAY[who] = time.time()
+        try:
+            _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread)
+        finally:
+            with _KHOA_DANG_CHAY:
+                _DANG_CHAY.pop(who, None)
+            _CHO_CHAT.release()
+    finally:
+        hang.release()
+
+
+def _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread):
+    call(token, "sendMessage", chat_id=group, **kw_thread,
          text=f"⏳ Đang chuyển cho <b>{who}</b>…", parse_mode="HTML")
 
-    out, err = chat_router.ask(profile, session, text)
+    # Goi agent o thread con de thread nay con ranh bao TIEN DO: qua 2 phut
+    # chua xong thi nhan mot dong, de Ong Chu biet la dang chay chu khong phai
+    # chet. Truoc day 10 phut im lang roi moi bao het gio.
+    ket_qua = {}
+    def _goi():
+        ket_qua["r"] = chat_router.ask(profile, session, boi_canh_vai(profile) + text)
+    th = threading.Thread(target=_goi, daemon=True)
+    th.start()
+    moc_bao = [120, 360]
+    t0 = time.time()
+    while th.is_alive():
+        th.join(5)
+        if moc_bao and time.time() - t0 >= moc_bao[0]:
+            phut = moc_bao.pop(0) // 60
+            call(token, "sendMessage", chat_id=group, **kw_thread,
+                 text=f"⏳ {who} vẫn đang xử lý ({phut} phút)… "
+                      f"tự dừng ở {chat_router.TIMEOUT_SEC // 60} phút.")
+    out, err = ket_qua.get("r") or (None, "Không nhận được kết quả từ agent (thread hỏng).")
     reply = ("⚠️ " + err) if err else chat_router.clean(out)
+    log("chat", f"tra loi thread={thread_id} loi={bool(err)} {len(reply)}c: {rut(reply)}")
     # Reply dai vuot 4096 se bi Telegram tu choi/cat -> chia thanh nhieu tin
     # gui lien tiep (dung thu tu), thay vi cat bot phan cuoi.
-    for phan in chat_router.chia_tin(reply):
-        call(token, "sendMessage", chat_id=group,
-             **({"message_thread_id": thread_id} if thread_id else {}),
-             text=phan, disable_web_page_preview=True)
+    for phan in tele_util.chia_tin(reply):
+        r = call(token, "sendMessage", chat_id=group, **kw_thread,
+                 text=phan, disable_web_page_preview=True)
+        if not r.get("ok"):
+            # Thu lai KHONG parse/ky tu la — thuong loi la do noi dung; mat
+            # dinh dang con hon mat cau tra loi.
+            call(token, "sendMessage", chat_id=group, **kw_thread,
+                 text="⚠️ Không gửi được trả lời gốc (" + str(r.get("description"))
+                      + "). Bản rút gọn:\n" + phan[:1500])
 
 
 # ---------- lenh slash (dat bai tuong minh) ----------
@@ -1161,6 +1201,9 @@ def handle_chat(token, group, msg, thread_id, text):
 # va dung han — khong roi ve hoi thoai, khong tu suy dien "chac y la...".
 
 DAT_BAI_SO = STATE_DIR / "dat_bai.json"     # so dedup: url chuan hoa -> lan dat
+# handle_command chay o thread rieng: hai /bai cung luc se cung doc-sua-ghi
+# dat_bai.json -> mat ban ghi dedup, tao cap task trung. Mot khoa la du.
+_KHOA_DAT_BAI = threading.Lock()
 ONG_CHU_IDS = STATE_DIR / "ong_chu.json"    # [user_id...] duoc phep ra lenh
 
 # Chan host noi bo: bot chay ngay tren server (tunnel, dashboard, cron) nen
@@ -1240,10 +1283,9 @@ LENH_HELP = (
     "<b>Lệnh:</b>\n"
     "<code>/bai &lt;url&gt; &lt;vai&gt;</code> — đặt bài tay từ URL: tạo cặp task "
     "ảnh + viết, không qua vòng quét của Finn.\n"
-    "  vai nhận: <code>chad</code>|<code>ethan</code> (thẻ bìa), "
-    "<code>heller</code>|<code>dre</code> (carousel); gõ tên người viết "
-    "(<code>quinn</code>|<code>miles</code>) cũng được — quy về đúng cặp.\n"
-    "<code>/vai</code> — bảng vai: ai làm gì, brand nào.\n"
+    "  vai nhận: <code>designer</code> (thẻ bìa) hoặc <code>carousel</code> "
+    "(nhiều slide); brand cố định theo container.\n"
+    "<code>/vai</code> — bảng vai trong container này.\n"
     "<code>/help</code> — tin này.\n"
     "Sai cú pháp thì không làm gì — lệnh phải tường minh.")
 
@@ -1271,7 +1313,7 @@ def _lenh_bai(tra_loi, args):
                 + cu.get("vai", "?") + ". Không tạo lại.")
         return
 
-    vai_anh, brand = TEN_SANG_CAP[ten]
+    vai_anh, brand = TEN_SANG_CAP[ten], BRAND
     title, image_url, ghi_chu = _doc_trang(url)
     if title is None:
         tra_loi("❌ " + ghi_chu + " — không tạo task. Kiểm tra URL rồi /bai lại.")
@@ -1290,7 +1332,7 @@ def _lenh_bai(tra_loi, args):
         "score_reason": "dat tay, khong qua cham diem",
         "nguon": "adhoc",
     }
-    ids, err = create_pair(item, vai_anh=vai_anh, brand=brand)
+    tid, err = create_pair(item, vai_anh=vai_anh, brand=brand)
     if err:
         tra_loi("❌ " + html_escape(err))
         return
@@ -1298,15 +1340,15 @@ def _lenh_bai(tra_loi, args):
     draft_id = _draft_id(item, brand, vai_anh)
     so[url_chuan] = {"ngay": time.strftime("%Y-%m-%d %H:%M"),
                      "draft_id": draft_id, "vai": vai_anh, "brand": brand,
-                     "tasks": [x for x in ids if x], "title": title}
+                     "tasks": [tid], "title": title}
     tmp = DAT_BAI_SO.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(so, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, DAT_BAI_SO)
 
-    ten_hien = TEN_VAI_ANH.get(vai_anh, "Chad")
-    ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
+    ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
+    ten_viet = TEN_VAI_VIET.get(MAC_DINH_VIET, "Miles")
     dong = ("✅ <b>" + html_escape(title) + "</b>\n"
-            + f"{ten_hien} dựng ảnh ({brand}) — task {ids[0]}. "
+            + f"{ten_hien} dựng ảnh ({brand}) — task {tid}. "
             + f"{ten_viet} viết caption SAU khi Ông Chủ bấm Duyệt ảnh.")
     if ghi_chu:
         dong += "\n⚠️ " + ghi_chu
@@ -1335,17 +1377,16 @@ def handle_command(token, group, msg, thread_id, text):
     if lenh == "/help":
         tra_loi(LENH_HELP)
     elif lenh == "/vai":
-        dong = ["<b>Vai ảnh</b> (chọn vai là chọn brand + kiểu):"]
-        for ten, (va, br) in sorted(VAI_ANH.items()):
-            if ten in TEN_VAI_ANH or ten in ("chad",):
-                kieu = "carousel" if va in VAI_CAROUSEL else "thẻ bìa"
-                dong.append(f"  <code>{ten}</code> — {TEN_VAI_ANH.get(va, va)}, "
-                            f"{kieu}, {br}")
-        dong.append("<b>Vai viết</b> đi theo brand: Quinn (donniechublog), "
-                    "Miles (dcgr) — gõ tên nào cũng ra đúng cặp.")
+        dong = [f"<b>Vai ảnh</b> (brand cố định của container: {BRAND}):"]
+        for ten, va in sorted(VAI_ANH.items()):
+            kieu = ("carousel deck" if va in VAI_EDU
+                    else "carousel" if va in VAI_CAROUSEL else "thẻ bìa")
+            dong.append(f"  <code>{ten}</code> → {va} ({kieu})")
+        dong.append("<b>Vai viết</b>: <code>writer</code> — một người viết cho container này.")
         tra_loi("\n".join(dong))
     elif lenh == "/bai":
-        _lenh_bai(tra_loi, phan[1:])
+        with _KHOA_DAT_BAI:
+            _lenh_bai(tra_loi, phan[1:])
     else:
         tra_loi("Không có lệnh " + html_escape(lenh) + " — /help để xem. "
                 "Sai lệnh thì không làm gì.")
@@ -1387,10 +1428,13 @@ def _tai_anh_dinh_kem(token, msg):
     return str(out)
 
 
-def handle_message(token, group, scout_thread, msg):
+def handle_message(token, group, msg):
+    mid = msg.get("message_id")
     if msg.get("from", {}).get("is_bot"):
-        return
+        return                      # tin cua chinh bot, khong log cho khoi nhieu
     if msg.get("chat", {}).get("id") != int(group):
+        log("vao", f"bo qua msg={mid}: chat {msg.get('chat', {}).get('id')} "
+                   f"khong phai group {group}")
         return
     # Anh/album kem caption: Telegram de chu o field "caption", KHONG phai
     # "text" (text chi co o tin nhan thuan chu). Thieu fallback nay lam moi
@@ -1407,17 +1451,29 @@ def handle_message(token, group, scout_thread, msg):
     if anh_path:
         text = f"[Ảnh đính kèm đã tải về: {anh_path}]\n" + (text or "(không có chú thích kèm theo)")
 
-    if not text:
-        return
     thread_id = msg.get("message_thread_id")
+    log("vao", f"msg={mid} thread={thread_id} vai={vai_cua_topic(thread_id)} "
+               f"from={msg.get('from', {}).get('id')} text={rut(text)}")
+    if not text:
+        # Sticker, voice, video, file khong phai anh... — khong hieu duoc thi
+        # noi ro, khong im lang (im lang = "khong phan hoi" trong mat Ong Chu).
+        loai = next((k for k in ("sticker", "voice", "video", "audio", "document",
+                                 "animation", "video_note", "poll", "location")
+                     if k in msg), "khong ro")
+        log("vao", f"msg={mid} khong co chu/anh (loai={loai}) -> bao khong ho tro")
+        call(token, "sendMessage", chat_id=group,
+             **({"message_thread_id": thread_id} if thread_id else {}),
+             text=f"Tin dạng {loai} chưa hỗ trợ — chỉ nhận chữ và ảnh (photo hoặc file ảnh).")
+        return
 
     # Dau "/" = LENH, o bat ky topic nao — xu ly rieng, khong bao gio roi ve
     # hoi thoai (mot lenh go sai ma dem hoi LLM la vua on ao vua nguy hiem).
     # Chay nen: /bai co buoc fetch trang + research (nguon_bai, toi 180s),
     # khong duoc nghen vong poll — cung ly do voi handle_chat ben duoi.
     if text.startswith("/"):
-        threading.Thread(target=handle_command, daemon=True,
-                         args=(token, group, msg, thread_id, text)).start()
+        log("route", f"msg={mid} lenh slash")
+        _chay_nen("lenh", handle_command, token, group, thread_id,
+                  token, group, msg, thread_id, text)
         return
 
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin. Moi thu khac la
@@ -1426,17 +1482,43 @@ def handle_message(token, group, scout_thread, msg):
     lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
     is_pick = lenh is not None
     if not is_pick:
+        # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot
+        # rieng (profile_routes theo topic). Bot approve chi con giu nut duyet,
+        # chon so, lenh "/" va tien do kanban — KHONG tra loi chat nua, khong thi
+        # hai bot cung dap mot cau. Bat bang CT_CHAT_QUA_GATEWAY=1 trong unit.
+        if os.environ.get("CT_CHAT_QUA_GATEWAY", "") == "1":
+            log("route", f"msg={mid} chat -> nhuong gateway (CT_CHAT_QUA_GATEWAY=1)")
+            return
         # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
         # vong lap poll (nut Duyet/Bo phai bam duoc bat cu luc nao).
-        threading.Thread(target=handle_chat, daemon=True,
-                         args=(token, group, msg, thread_id, text)).start()
+        _chay_nen("chat", handle_chat, token, group, thread_id,
+                  token, group, msg, thread_id, text)
         return
 
+    log("route", f"msg={mid} chon so vai={vai} lenh={lenh}")
+    _chay_nen("chon", _xu_ly_chon, token, group, thread_id,
+              token, group, thread_id, vai, lenh)
+
+
+def _xu_ly_chon(token, group, thread_id, vai, lenh):
+    """Tao cap task tu lenh chon so. Chay nen qua _chay_nen."""
     manifest_path = latest_manifest(vai)
     if not manifest_path:
+        mau = MANIFEST_THEO_TOPIC.get(vai, "?")
+        log("chon", f"khong co manifest {mau} trong {STATE_DIR}")
         call(token, "sendMessage", chat_id=group, message_thread_id=thread_id,
-             text="Chưa có danh sách tin nào để chọn trong topic này.")
+             text=f"Chưa có danh sách tin nào để chọn trong topic này.\n"
+                  f"(tìm {mau} trong {STATE_DIR.name}/ — vai {vai} chưa gửi báo cáo "
+                  f"nào cho container {ghi_log.brand()}, hoặc báo cáo ghi sai thư mục)")
         return
+    log("chon", f"manifest={manifest_path.name}")
+    # SAP THEO VAI, giu thu tu vai xuat hien lan dau: "1, 3 - Ethan, 2 - Dre"
+    # -> [1 Ethan, 3 Ethan, 2 Dre]. Dispatcher chay FIFO theo created_at voi
+    # kanban.max_in_progress=1, nen tao task theo thu tu nay = Ethan lam het
+    # bai cua minh roi Dre moi bat dau (yeu cau Ong Chu 03/09/2026: khong giao
+    # cho tat ca cung lam).
+    thu_tu_vai = list(dict.fromkeys(v for _n, v, _b in lenh))
+    lenh = sorted(lenh, key=lambda x: thu_tu_vai.index(x[1]))
 
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     items = {it["index"]: it for it in data.get("items", [])}
@@ -1455,19 +1537,20 @@ def handle_message(token, group, scout_thread, msg):
             ten_da = TEN_VAI_ANH.get(vai_anh, vai_anh)
             lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — bỏ qua")
             continue
-        ids, err = create_pair(it, vai_anh=vai_anh, brand=brand)
+        tid, err = create_pair(it, vai_anh=vai_anh, brand=brand)
         if err:
             lines.append("#" + str(n) + ": lỗi — " + err)
             continue
         changed = True          # create_pair da danh dau vao `it`
-        ten_hien = TEN_VAI_ANH.get(vai_anh, "Chad")
-        ten_viet = TEN_VAI_VIET.get(VAI_VIET.get(brand, MAC_DINH_VIET), "Quinn")
-        lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {ids[0]}"
+        ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
+        ten_viet = TEN_VAI_VIET.get(MAC_DINH_VIET, "Miles")
+        lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {tid}"
                      f"; {ten_viet} viết caption sau khi Ông Chủ duyệt ảnh")
 
     if changed:
         manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
+    log("chon", "ket qua: " + " | ".join(lines))
     _gui_chu(token, group, "<b>Kết quả chọn:</b>\n" + "\n".join(lines),
              thread=thread_id)
 
@@ -1499,10 +1582,11 @@ def _doc_offset() -> int:
 
 def loop():
     token, channel, group = load_secrets()
-    scout_thread = scout_thread_id()
     offset = _doc_offset()
-    print("[approve_service] chay, offset=" + str(offset) +
-          ", scout_thread=" + str(scout_thread), flush=True)
+    tp = env_load.topics_path()
+    log("start", f"brand={ghi_log.brand()} group={group} state={STATE_DIR} "
+                 f"topics={tp.name}({'co' if tp.exists() else 'THIEU'}) "
+                 f"hermes_home={HERMES_HOME} offset={offset}")
     loi_lien_tiep = 0
     while True:
         try:
@@ -1511,8 +1595,7 @@ def loop():
             if not r.get("ok"):
                 # 409 (hai poller cung token) / 429: long-poll khong giu duoc,
                 # request tra ve NGAY -> khong sleep la nen API vo han.
-                print("[approve_service] getUpdates tu choi: "
-                      + str(r.get("description")), flush=True)
+                log("loi", "getUpdates tu choi: " + str(r.get("description")))
                 time.sleep(5)
                 continue
             for u in r.get("result", []):
@@ -1524,18 +1607,34 @@ def loop():
                 # (doc gia thay hai bai giong het nhau tren channel).
                 offset = u["update_id"] + 1
                 _ghi_offset(offset)
-                if "callback_query" in u:
-                    handle_callback(token, channel, u["callback_query"])
-                elif "message" in u:
-                    handle_message(token, group, scout_thread, u["message"])
+                # Boc TUNG update: mot update hong khong duoc keo ca lo con
+                # lai xuong except ngoai (bi bo qua im lang), va nut bam hong
+                # thi Ong Chu phai thay nut ngung quay kem ly do.
+                try:
+                    if "callback_query" in u:
+                        cq = u["callback_query"]
+                        log("vao", f"callback data={cq.get('data')} "
+                                   f"from={cq.get('from', {}).get('id')}")
+                        handle_callback(token, channel, cq)
+                    elif "message" in u:
+                        handle_message(token, group, u["message"])
+                except Exception as e:                      # noqa: BLE001
+                    import traceback
+                    log("loi", f"update {u.get('update_id')} hong: "
+                               f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
+                    if "callback_query" in u:
+                        call(token, "answerCallbackQuery",
+                             callback_query_id=u["callback_query"]["id"],
+                             text=f"Lỗi: {type(e).__name__}: {str(e)[:150]}",
+                             show_alert=True)
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
             bao_viec_bi_chan(token, group)
+            bao_tien_do_kanban(token, group)
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
             loi_lien_tiep += 1
-            print("[approve_service] loi: " + type(e).__name__ + ": " + str(e),
-                  flush=True)
+            log("loi", "vong poll: " + type(e).__name__ + ": " + str(e))
             time.sleep(min(60, 5 * loi_lien_tiep))
 
 
@@ -1544,9 +1643,9 @@ if __name__ == "__main__":
         tok, _ch, grp = load_secrets()
         draft_id = sys.argv[2]
         # Dinh tuyen topic theo loai noi dung: teaser ve topic Jean, tin tuc
-        # ve topic Quinn. Tham so thu 3 (neu co) van ghi de duoc.
+        # ve topic Miles. Tham so thu 3 (neu co) van ghi de duoc.
         thread = None
-        tp = STATE_DIR / "topics.json"
+        tp = env_load.topics_path()
         if tp.exists():
             topics = json.loads(tp.read_text(encoding="utf-8"))
             dpath = DRAFTS / (draft_id + ".json")
@@ -1560,8 +1659,8 @@ if __name__ == "__main__":
             key = "teaser" if category.upper() == "TEASER" else "writer"
             if key == "writer":
                 # Tin thuong tach theo THUONG HIEU: dcgr -> topic Miles,
-                # donniechublog -> Quinn. Truoc day MOI draft deu ve topic Quinn
-                # nen trong nhu Quinn om ca dcgr; that ra Miles viet caption dcgr,
+                # donniechublog -> Miles. Truoc day MOI draft deu ve topic Miles
+                # nen trong nhu Miles om ca dcgr; that ra Miles viet caption dcgr,
                 # chi la ban nhap bi day nham topic. Brand nam trong sidecar meta.
                 brand = ""
                 mpath = DRAFTS / (draft_id + ".meta.json")
@@ -1571,7 +1670,7 @@ if __name__ == "__main__":
                             mpath.read_text(encoding="utf-8")).get("brand", "")
                     except Exception:                            # noqa: BLE001
                         pass
-                key = VAI_VIET.get(brand, MAC_DINH_VIET)
+                key = MAC_DINH_VIET
             thread = topics.get(key)
         if len(sys.argv) > 3:
             thread = int(sys.argv[3])

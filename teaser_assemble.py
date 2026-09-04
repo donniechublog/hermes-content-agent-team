@@ -38,7 +38,7 @@ CLOSING = ("Xem bài chi tiết ở còm, nếu không thấy còm vui lòng và
 #     thi dang ke lai ca bai chu khong con la loi moi doc — hai cai nay moi chan
 # Teaser CHI dang len Telegram, khong di qua moat sang Facebook/Instagram/TikTok.
 # Nen tran 2.200 cua Instagram khong ap o day — tran do chi danh cho tin hang
-# ngay do Quinn viet. Teaser giu do dai von co cua no.
+# ngay do Miles viet. Teaser giu do dai von co cua no.
 #
 # Do dai khong phai thuoc do chat luong: 300 tu dien dat dung va du thi tot hon
 # 700 tu lan man. Nen khoang mong muon chi la loi NHAC o stderr, script chi chan
@@ -121,7 +121,7 @@ def assemble(title: str, paragraphs: list, images: list,
     return {
         "caption": caption,
         "images": images[:2],
-        "word_count": sum(len(p.split()) for p in paragraphs),
+        "word_count": sotu,
         "paragraph_count": n,
         "emoji_used": emojis,
     }

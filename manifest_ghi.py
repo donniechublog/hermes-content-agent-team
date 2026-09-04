@@ -24,10 +24,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scan_sources import nguon_goc                          # noqa: E402
 
+import env_load                                             # noqa: E402
+
 ROOT = Path.home() / "content-team"
-STATE = ROOT / "state"
+# STATE theo container (state/<CT_BRAND>/), CUNG mot ham voi approve_service.
+# Truoc 03/09/2026 ghi cung ROOT/state nen manifest cua Vera/Nova nam o goc,
+# approve_service (doc state/<brand>/) khong thay -> tra loi so luon ra
+# "Chua co danh sach tin nao de chon". Cron chay trong gateway co san CT_BRAND.
+STATE = env_load.state_dir()
 TIEN_TO = {"nova": "nova_candidates", "market": "vera_candidates",
            "vera": "vera_candidates"}
+
+
+import bat_buoc                                             # noqa: E402
 
 
 def main():
@@ -78,6 +87,11 @@ def main():
             "picked": False,
         })
 
+    vai_bb = "market" if a.vai in ("market", "vera") else a.vai
+    thieu = bat_buoc.kiem(vai_bb, items)
+    if thieu:
+        sys.exit(bat_buoc.loi_thieu(vai_bb, thieu))
+
     ngay = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     ten = f"{TIEN_TO[a.vai]}_{ngay}{('_' + a.hau_to) if a.hau_to else ''}.json"
     out = STATE / ten
@@ -92,6 +106,8 @@ def main():
         {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": a.vai,
          "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(out)
+    da = bat_buoc.xoa(vai_bb, items)
+    print(f"da xac nhan {da} muc bat buoc, con lai {len(bat_buoc.doc(vai_bb))}")
     for it in items:
         print(f"  {it['index']}. [{it['via']}] {it['title'][:66]}", file=sys.stderr)
 

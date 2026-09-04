@@ -17,14 +17,18 @@ import json
 import subprocess
 from pathlib import Path
 
+import os
+
 import httpx
 from bs4 import BeautifulSoup
 
+import env_load
+
 ROOT = Path.home() / "content-team"
-LEDGER = ROOT / "state" / "donniechu_posted.json"
+LEDGER = env_load.state_dir() / "donniechu_posted.json"
 SITEMAP = "https://donniechu.com/sitemap.xml"
 HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
-HERMES_HOME = str(Path.home() / ".hermes")
+HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
 
 
 def fetch_article_urls() -> list:

@@ -1,8 +1,7 @@
 #!/bin/bash
 # Cron: Nova quet model moi ra mat, gui bao cao vao topic nova. Khong tao task khac.
-export HERMES_HOME=/home/donniechu/.hermes
 H=/home/donniechu/hermes-agent/venv/bin/python
-# Ngay lay theo GIO VN, khong phai UTC. Cron chay 23:00 UTC = 06:00 VN hom sau,
+# Ngay lay theo GIO VN, khong phai UTC. Cron chay 22:00 UTC = 05:00 VN hom sau,
 # nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
 # kanban tra ve task cu thay vi tao moi, va script im lang tuong da thanh cong.
 # Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
@@ -14,8 +13,10 @@ BODY="Nhiem vu quet model sang $DAY (chay theo lich cron). Lam dung huong dan tr
 Buoc 1, chay script tat dinh:
 cd /home/donniechu/content-team && venv/bin/python scan_models.py --ngay 7 --top 10
 
+Muc BAT BUOC DUA VAO BAO CAO o cuoi: MOI muc phai co trong danh sach ban nop (tieu de chua dung ten model script in). manifest_ghi.py se tu choi neu thieu — them vao roi chay lai, khong duoc bo.
+
 Buoc 2, truoc khi khuyen nghi bat cu model nao, doc lai thu da bi loai:
-cat /home/donniechu/content-team/state/model_health.json
+cat /home/donniechu/content-team/state/${CT_BRAND}/model_health.json
 
 Buoc 2b, GHI MANIFEST + BAO CAO. Bat buoc khi CO tin dang len kenh.
 
@@ -32,7 +33,7 @@ dang con so trong manifest mot dang, Ong Chu tra loi so lai ra bai khac.
 
 Gui thang ban script vua viet:
   /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to -1003763882779 --thread 82 --file /tmp/nova_baocao.txt
+    --to-env TELEGRAM_GROUP_ID --thread-name nova --file /tmp/nova_baocao.txt
 
 KHONG co tin nao dang len kenh thi bo qua manifest, nhung VAN phai gui mot dong
 noi ro la hom nay khong co gi, kem so tin da quet. Ong Chu can phan biet duoc
@@ -46,7 +47,7 @@ lien nhau, khong xuong dong duoc.
   <bao cao, xuong dong that, dong trong giua cac doan>
   HET
   /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to -1003763882779 --thread 82 --file /tmp/bao_cao_$$.txt
+    --to-env TELEGRAM_GROUP_ID --thread-name nova --file /tmp/bao_cao_$$.txt
 
 Dinh dang: chi dung <b>, <i>, <code>, <a href>. KHONG dung <br>, <p>, <ul>
 <li>, markdown ** hay ##. Xuong dong bang xuong dong THAT.

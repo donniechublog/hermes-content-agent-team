@@ -1,0 +1,38 @@
+{
+  "handle": "donniechublog",
+  "cover": {
+    "image": "drafts/src_muse/src_cover.png",
+    "hook": "Zuckerberg: bước nhảy lớn nhất của Muse, giá rẻ như không cần cân nhắc.",
+    "label": "MODEL META"
+  },
+  "slides": [
+    {
+      "image": "drafts/src_muse/src_zuck.png",
+      "text": "Meta Superintelligence Labs công bố Muse Spark 1.3. Zuckerberg gọi đây là bước nhảy lớn nhất của dòng Muse ở coding và agent dài hạn.\n\nMuse ra từ tháng 4, tách hẳn khỏi Llama, hướng tới siêu trí tuệ cá nhân: agent đa nhiệm, chạy liên tục cùng người dùng."
+    },
+    {
+      "image": "drafts/src_muse/src_num.png",
+      "text": "Về coding, điểm DeepSWE v1.1 nhảy từ 55 lên 75,4, vượt GPT-5.6 Sol (73) và Claude Opus 5 (74).\n\nBước nhảy đáng kinh ngạc nhất nằm ở ngữ cảnh siêu dài: MRCR quanh 512K tới 1M token tăng từ 55,5 lên 98,1, gần gấp đôi."
+    },
+    {
+      "image": "drafts/src_muse/src_agent.png",
+      "quote": "Model biết chủ động hỏi làm rõ khi lệnh còn mơ hồ, xin hỗ trợ khi bị kẹt giữa chừng, và xác nhận trước những hành động quan trọng.",
+      "attrib": "Đọc bài “Introducing Muse Spark 1.3” - Meta Superintelligence Labs"
+    },
+    {
+      "images": [
+        "drafts/src_muse/musecodes_og.jpg",
+        "drafts/src_muse/felloai_hero.png"
+      ],
+      "quote": "Model dùng ít hơn 20% lượt gọi công cụ và 25% token so với 1.2, code sinh ra cũng sạch và bớt dài dòng hơn.",
+      "attrib": "Đọc bài “Introducing Muse Spark 1.3” - Meta Superintelligence Labs"
+    },
+    {
+      "images": [
+        "drafts/src_muse/meta_banner.png",
+        "drafts/src_muse/silicon_demo.png"
+      ],
+      "text": "Giá giữ nguyên 1,25 USD mỗi triệu token vào, 4,25 USD ra; đã có trên Muse Code và Meta Model API, cửa sổ 1 triệu token.\n\nZuckerberg úp mở bản trọng số mở và model “Watermelon”. Mục tiêu: bám sát OpenAI, Anthropic, Google ở coding và agent."
+    }
+  ]
+}

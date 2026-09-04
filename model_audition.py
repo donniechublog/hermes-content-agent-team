@@ -172,8 +172,9 @@ def main():
     print(f"\n{'=' * 72}\nTONG KET")
     for m, v in ket_qua.items():
         print(f"  {'DAT   ' if v.get('dat') else 'TRUOT '} {m}")
-    out = ROOT / "state" / "model_audition.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
+    # state_dir() de per-brand nhu cac script khac (truoc day ghi thang
+    # state/ goc, lech voi phan con lai cua he thong).
+    out = env_load.state_dir() / "model_audition.json"
     out.write_text(json.dumps(ket_qua, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nDa ghi {out}")
 

@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@1,18..72,400;1,18..72,500&family=JetBrains+Mono:wght@500;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #2FD4E1; } a:hover { color: #5fe0ea; }
+  </style>
+</helmet>
+<div style="position: relative; width: 1080px; height: 1350px; background: #0A0B0E; overflow: hidden; box-sizing: border-box; padding: 80px; display: flex; flex-direction: column; justify-content: space-between; font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif; color: #F4F6F9;">
+
+  <div style="position: absolute; bottom: -120px; right: -120px; width: 560px; height: 560px; background: radial-gradient(circle at center, rgba(142,134,240,0.14) 0%, rgba(142,134,240,0) 62%); pointer-events: none;"></div>
+  <svg width="240" height="200" viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: 150px; right: 60px; opacity: 0.85; pointer-events: none;">
+    <ellipse cx="150" cy="70" rx="150" ry="72" fill="none" stroke="#2FD4E1" stroke-opacity="0.25" stroke-width="1.5" transform="rotate(-16 150 70)"/>
+    <circle cx="24" cy="44" r="14" fill="#0A0B0E" stroke="#8E86F0" stroke-width="2"/>
+    <circle cx="24" cy="44" r="4" fill="#8E86F0"/>
+  </svg>
+
+  <!-- masthead -->
+  <div style="display: flex; flex-direction: row; align-items: center; gap: 24px; position: relative;">
+    <span style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -0.5px; color: #F4F6F9;">donniechublog</span>
+    <span style="flex-grow: 1; height: 1px; background: #262A33;"></span>
+    <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; font-size: 22px; letter-spacing: 2px; color: #7B828E;">AI TOOLING</span>
+  </div>
+
+  <div style="position: relative;">
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 14px; margin-bottom: 36px;">
+      <span style="width: 34px; height: 8px; background: #2FD4E1; display: inline-block;"></span>
+      <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 23px; letter-spacing: 3px; color: #2FD4E1;">BỐI CẢNH</span>
+    </div>
+    <h1 style="font-family: 'Archivo', sans-serif; font-size: 86px; font-weight: 900; line-height: 1.04; letter-spacing: -2.5px; margin: 0 0 40px 0; color: #F4F6F9;">Với bug khó, agent hay <span style="color: #2FD4E1;">đoán mò</span></h1>
+    <p style="font-family: 'Newsreader', Georgia, serif; font-style: italic; font-size: 40px; font-weight: 400; line-height: 1.4; color: #B7BDC7; margin: 0; max-width: 880px;">Lỗi càng phức tạp, mô hình càng dễ chắp vá — sửa chỗ này lại phát sinh chỗ khác, mà không có cách nào kiểm chứng rằng nó thật sự đã fix.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px; position: relative;">
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 24px; background: #14161B; border: 1px solid #23262E; border-left: 5px solid #2FD4E1; padding: 30px 34px;">
+      <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 26px; font-weight: 700; color: #8E86F0;">01</span>
+      <span style="font-size: 34px; line-height: 1.35; color: #E7EAEF; font-weight: 500;">Một lần sửa "trông có vẻ đúng" nhưng không ai dám chắc</span>
+    </div>
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 24px; background: #14161B; border: 1px solid #23262E; border-left: 5px solid #2FD4E1; padding: 30px 34px;">
+      <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 26px; font-weight: 700; color: #8E86F0;">02</span>
+      <span style="font-size: 34px; line-height: 1.35; color: #E7EAEF; font-weight: 500;">Fix xong lại kéo theo lỗi hồi quy ở nơi khác</span>
+    </div>
+  </div>
+
+  <div style="position: relative;">
+    <div style="height: 1px; background: #262A33; margin-bottom: 20px;"></div>
+    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: #7B828E; letter-spacing: 1px;">
+      <span>GOOGLE ANTIGRAVITY</span>
+      <span><span style="color: #2FD4E1;">02</span> / 05</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

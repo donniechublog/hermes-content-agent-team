@@ -4,27 +4,30 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 
 ## Đội hình
 
-Nhãn hiển thị trên kanban và tên topic Telegram theo dạng **Tên (mã.org)**: `img`=ảnh
-đơn, `cr`=carousel dựng mới, `rcr`=re-carousel (remake nguồn có sẵn), `cap`=viết
-caption; `blog`=donniechublog, `dcgr`=dcgr.tech. Vai quét tin/nội bộ để mã theo beat,
-không org (feed cả hai brand). Slug `Profile hermes` là định danh thật (lệnh, assignee,
-topic map) — không đổi; nhãn chỉ là chữ nhìn thấy.
+Mỗi profile giờ chỉ có **Tên** và **role** (dạng `Tên - role`) — **không còn hậu tố
+org** `.blog`/`.dcgr` vì mỗi brand đã tách thành container riêng, trong một container
+chỉ có một vai mỗi loại. Các role: `scout`, `designer`, `carousel` (bảng-tin ảnh thật),
+`carousel.rep` (remake nguồn có sẵn), `carousel.edu` (kiến thức & nghiên cứu, tech × magazine),
+`writer`, `teaser`, `market`, `model`, `analyst`, `clean`. Slug `Profile hermes` là
+định danh thật (lệnh, assignee, topic map) — không đổi; nhãn chỉ là chữ nhìn thấy.
+Bảng dưới gộp cả hai brand container để tiện đối chiếu; cột **Việc** ghi rõ brand.
 
-| Vai | Profile hermes | Nhãn | Việc |
+| Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
-| Finn | `scout` | Finn (scout) | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số |
-| Chad | `designer` | Chad (img.blog) | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
-| Ethan | `ethan` | Ethan (img.dcgr) | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
-| Heller | `heller` | Heller (cr.blog) | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
-| Dre | `dre` | Dre (cr.dcgr) | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Heller, khác đúng một cờ `--brand` |
-| Gin | `gin` | Gin (clean) | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi. Chạy trên máy local (cần torch), profile server chỉ để giao/theo dõi task |
-| Itachi | `itachi` | Itachi (rcr) | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin — remake carousel nguồn sang tiếng Việt |
-| Quinn | `writer` | Quinn (cap.blog) | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
-| Miles | `miles` | Miles (cap.dcgr) | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Quinn nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
-| Nova | `nova` | Nova (model) | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
-| Vera | `market` | Vera (market) | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
-| Ada | `analyst` | Ada (analyst) | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
-| Jean | `teaser` | Jean (teaser) | Ghép teaser từ bài đã duyệt |
+| Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
+| Ethan | `designer` | designer | Dựng ảnh cho **donniechublog** — kiểu tràn, không khung |
+| Ethan | `designer` | designer | Dựng ảnh cho **dcgr.tech** — cùng kiểu, khác đúng một cờ `--brand` |
+| Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho **donniechublog** — ảnh trên, chữ dưới, kiểu bảng tin, ra album |
+| Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho **dcgr.tech** — cùng kiểu Dre, khác đúng một cờ `--brand` |
+| Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi. Chạy **trên server** (torch+cpu đã cài từ 28/08/2026) như cả đội |
+| Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin — remake carousel nguồn sang tiếng Việt |
+| Kite | `kite` | carousel.edu | Dựng carousel **EDU** (kiến thức & nghiên cứu, tech × magazine) cho **donniechublog** bằng **art vector gốc** — diễn đạt lại paper/nghiên cứu (paper trắng, không ảnh) cho tường minh. Tối thiểu 6 slide. Ngoại lệ có chủ đích với luật không-tự-vẽ (chỉ art trừu tượng, cấm ảnh/logo/số liệu giả). Generator = `render_edu.py` — đã chạy live trên server |
+| Miles | `writer` | writer | Viết caption tiếng Việt cho **donniechublog**, đẩy vào hàng duyệt |
+| Miles | `writer` | writer | Viết caption tiếng Việt cho **dcgr.tech**, cùng khuôn Miles nhưng người đọc là dân kinh doanh, tài chính, truyền thông |
+| Nova | `nova` | model | Quét bảng xếp hạng model mới, báo cái đáng chú ý |
+| Vera | `market` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
+| Ada | `analyst` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
+| Jean | `teaser` | teaser | Ghép teaser từ bài đã duyệt |
 
 ## Luồng
 
@@ -35,7 +38,7 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
                                               ↓
      approve_service tạo cặp task vai ảnh → vai viết (vai viết chờ ảnh xong)
                                               ↓
-        Bản nháp + thẻ ảnh vào topic Quinn kèm nút ✅ / ❌
+        Bản nháp + thẻ ảnh vào topic Miles kèm nút ✅ / ❌
                                               ↓
                      ✅ → đăng lên channel      ❌ → đánh dấu bỏ
                               ↓
@@ -45,7 +48,7 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
 
 Bài đã duyệt đi tiếp sang moat (org `dcgr.tech`) làm hàng đợi publish; extension
 trình duyệt claim và đăng lên mạng xã hội. Moat không gọi ngược về máy này —
-cron `moat-publish-watch` (1 phút/lần) hỏi trạng thái rồi báo vào topic Quinn.
+cron `moat-publish-watch` (1 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
 Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên Telegram channel, thẻ duyệt chỉ
 ghi thêm một dòng cảnh báo.
 
@@ -54,41 +57,128 @@ ghi thêm một dòng cảnh báo.
 - `card.py` — dựng ảnh. Kiểu `tran` (cả hai vai ảnh đang dùng): ảnh full bề ngang,
   không khung, chữ đè lên qua màn tối. Kiểu `quote`: thẻ trích dẫn pull-quote —
   câu lớn trong **khung 2 góc ngoặc bo tròn**, dòng nguồn `--attrib` canh giữa,
-  brand text góc trên. Màu: **net khung + brand xanh Apple cố định**, **dấu " theo
+  brand text góc dưới-trái. Màu: **net khung + brand xanh Apple cố định**, **dấu " theo
   hãng nhắc trong chủ đề**. Kiểu `dai` còn trong mã nhưng hiện không vai nào dùng
 - `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
-- `carousel.py` — dựng **carousel nhiều slide** (Heller cho donniechublog, Dre
+- `carousel.py` — dựng **carousel nhiều slide** (Dre cho donniechublog, Dre
   cho dcgr.tech — chung script, khác cờ `--brand`): ảnh phủ kín thẻ
   (ảnh 1:1 hoặc 4:5 — xem skill), chữ ở đáy **chìm vào ảnh qua scrim liền mạch
   kiểu bìa** (màn tối bắt đầu từ ~42% chiều cao, đậm dần xuống ~80% ở vùng chữ;
   không đường mép, không mảng đen đặc — kể cả trên ảnh sáng), brand text (tên kênh)
-  ở **góc trên-trái** một màu xanh Apple/Finder (`#0A84FF`) font San Francisco (SFNS). Nhận spec JSON,
+  ở **góc dưới-trái** một màu xanh Apple/Finder (`#0A84FF`) font San Francisco (SFNS). Nhận spec JSON,
   ra `<id>.png` + `<id>_2.png`… đúng khuôn album của `draft_write.py`. Tái dùng
   helper của `card.py` (nạp font, wrap chữ, fit ảnh, cổng chặn tiếng Việt). Slide
   thân có thể là đoạn văn (`text`) hoặc một câu trích dẫn pull-quote (`quote` +
   `attrib`) — tùy slide
+- Nhận diện chart nằm ở `card.la_chart()` (thuần PIL: độ phẳng hàng + số màu
+  riêng biệt sau lượng hoá 5 bit). `card.py` và `carousel.py` dùng chung nó để
+  **ép ảnh chart vào đúng đường** — `"chart": true` ở slide thân, ghép dọc ở
+  bìa/hero — thay vì để vai đối xử với chart như ảnh thường rồi crop mất trục
+- `chup_chart.py` — chụp **chart / bảng benchmark** đúng luật *full chiều rộng
+  trước, chiều cao xét sau* (Ông Chủ chốt 04/09/2026). Mở trang ở khung 1920px,
+  đo bề ngang **thật** của phần tử (`scrollWidth`), **nới khung** cho vừa rồi mới
+  chụp ở DPR 2; chụp xong đo lại ảnh ra, thiếu bề ngang thì dừng chứ không giao
+  ảnh mất nửa phải. Link ảnh trực tiếp thì tải nguyên bản. Cần `playwright` +
+  chromium
+- **`LUAT_ANH.md` — tài liệu chuẩn về LUẬT ẢNH, dùng chung cho mọi vai TẠO ra
+  ảnh** (Ethan/`card.py`, Dre/`carousel.py`, Kite/`render_edu.py`). Một nguồn sự
+  thật duy nhất: không tự vẽ, tìm ảnh thật, chụp chart full chiều rộng, chart
+  nguyên vẹn, tỉ lệ và crop, dấu xuất xứ, ghép dọc, mặt người, không hai vùng.
+  Code là `luat_anh.py`. **Đừng chép luật đó vào SKILL của vai** — chép là trôi
+  khác nhau. Gin/Itachi không tạo ảnh (chỉ sửa trên ảnh gốc) nên không áp bộ này
 - `crop_ti_le.py` — cắt một ảnh về **1:1 hoặc 4:5** trước khi đưa vào carousel
   (luật: ảnh carousel phải đúng một trong hai tỉ lệ đó). Cắt center, hoặc
-  `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh
-- `hermes/skills/hero-image/` — skill dùng chung của Chad và Ethan. Nằm thẳng
+  `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh.
+  **Chỉ cắt chiều cao**: ảnh gốc ngang (≥1.4) mà đòi cắt bề ngang thì script
+  dừng — bề ngang của chart/bảng là nội dung. Ép cắt bằng `--cat-ngang`, chỉ cho
+  ảnh chụp người/sản phẩm không có chữ
+- `render_edu.py` — renderer của **Kite** (role `carousel.edu`): dựng carousel
+  **tech-editorial art vector gốc** (masthead, folio, hero orbit) bằng HTML/CSS/SVG,
+  chụp bằng **Chromium headless (Playwright)** ra `<id>.png` + `<id>_2.png`… đúng
+  khuôn album. Nhận spec JSON (5 kind: cover/statement/steps/loop/cta), font nhúng
+  base64 từ `assets/fonts`, cổng chặn tiếng Việt tái dùng `card.tim_mat_dau`.
+  **Không ảnh thật** — khác hẳn `carousel.py`/`deck.py`. Cần `playwright install
+  chromium` trên server (xem skill `carousel-edu`). Đã test local, **đã chạy live trên server**
+- `hermes/skills/hero-image/` — skill dùng chung của vai designer (Ethan, hai brand). Nằm thẳng
   trong git, profile trỏ vào qua `skills.external_dirs` nên `hermes update`
   không xoá được
-- `hermes/skills/carousel/` — skill dùng chung của Heller và Dre: khung kể
+- `hermes/skills/carousel/` — skill dùng chung của vai carousel (Dre, hai brand): khung kể
   chuyện qua các slide, cách viết copy từng slide, luật chọn ảnh, lệnh dựng.
   Cùng cơ chế trỏ vào như
   hero-image
+- `hermes/skills/carousel-edu/` — skill của **Kite** (role `carousel.edu`):
+  carousel tech-editorial bằng **art vector gốc** (không ảnh thật). Chứa hệ thiết
+  kế (màu, font, khung magazine, hero motif), ranh giới ngoại lệ với luật
+  không-tự-vẽ, `reference/` — bộ /boost 5 slide (`.dc.html`) + `boost.spec.json`
+  làm nguồn sự thật, và mục **Toolchain** cho `render_edu.py` (lệnh, cài Chromium,
+  font). Generator = hướng B (HTML→PNG)
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic
 - `approve_service.py` — dịch vụ nền: nghe nút duyệt và lệnh chọn số
+  Từ 03/09/2026: **mọi tin nhắn vào đều có log** (`state/<brand>/approve.log`, xoay
+  vòng 5 MB×3, và journal) theo các nhãn `vao → route → chat/chon/lenh → tele`,
+  và **mọi nhánh đều kết thúc bằng một tin trả về** (kể cả lỗi, hết giờ). Chat
+  chạy qua `_chay_nen` (bọc traceback → ⚠️ về đúng topic), báo tiến độ ở phút 2
+  và 6, tự dừng ở phút 10 và trả phần agent đã in được
+- `chat_router.py` — định tuyến chat Telegram → hermes CLI theo topic. Ghép
+  `CHAT_HINT` (chat thì trả lời ngắn, không tự chạy scan/task) trước mọi tin cho
+  mọi vai; hết giờ thì giết cả process group (`start_new_session` + `killpg`)
+- `ghi_log.py` — log dùng chung (stdout + tệp theo brand) cho hai tệp trên
+- `manifest_ghi.py` / `manifest_build.py` — ghi manifest đánh số vào
+  `state/<brand>/` qua `env_load.state_dir()` — **cùng chỗ approve_service đọc**.
+  Trước 03/09 ghi cứng `state/` gốc nên trả lời số trong topic Vera/Nova luôn ra
+  "Chưa có danh sách"
 - `moat_publish.py` — đẩy bài đã duyệt sang moat (`push <draft_id>`) và hỏi trạng thái
   đăng social (chạy không tham số); khoá ở `.secrets.env` (`MOAT_BASE_URL`, `MOAT_PUBLISH_KEY`)
 - `model_audition.py` — thử model: tiếng Việt đủ dấu, gọi tool thật, có prompt caching không
+- `scan_models.py` — quét của Nova. Từ 04/09/2026 có mục **"RA MẮT THEO BẢNG CHẤM
+  ĐIỂM"** (artificialanalysis, nhóm theo tên gốc, mỗi model báo đúng một lần nhờ
+  `aa_da_bao` trong `models_seen.json`) và bảng coding AA được so hạng với lần trước
+  (`xep_hang.coding`). Trước đó "mới" chỉ là id mới trên router, một lần duy nhất:
+  GPT-6 Astra (03/09, #8 coding) không lên router nên Nova báo "0 model mới"
+- `bat_buoc.py` — **danh sách BẮT BUỘC** cho ba vai đi tìm tin (luật Ông Chủ 04/09/2026:
+  script quét thấy là phải đưa, hôm trước sót thì hôm sau bổ sung, vai không có quyền bỏ).
+  Script quét gieo mục (`state/<brand>/bat_buoc_<vai>.json`), script ghi manifest
+  (`manifest_build.py` cho Finn, `manifest_ghi.py` cho Nova/Vera) **từ chối** nếu thiếu và
+  xoá mục đã đưa. Tiêu chí: Finn = tiêu đề nhắc hãng frontier hoặc HN/Reddit ≥150 điểm có
+  dấu hiệu AI; Nova = mọi model ra mắt / vào bảng / leo hạng ở 12 bảng; Vera = một mục mỗi
+  hãng lõi mỗi ngày (hoặc tin ≥2 báo), khớp theo tên hãng
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
-- `assets/` — font (JetBrains Mono, Inter, Oswald), icon SVG, mascot
+- `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…),
+  icon SVG, mascot, và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
+  cổng chặn phát hiện mặt người của `carousel.py`
 - `requirements.txt` — phụ thuộc Python. venv dùng chung với hermes nên `hermes
   update` có thể làm mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`
+
+## Chạy tuần tự, không song song
+
+Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**:
+
+- `kanban.max_in_progress: 1` trong `~/.hermes-<brand>/config.yaml` — dispatcher mỗi
+  container chỉ chạy một task tại một thời điểm, FIFO theo `created_at`.
+- Lệnh chọn nhiều tin nhiều vai ("1, 3 - Ethan, 2 - Dre") được **sắp theo vai** trước
+  khi tạo task, nên vai xuất hiện trước làm hết bài của mình rồi vai sau mới bắt đầu.
+- Hàng đợi có tiếng nói: mỗi task bắt đầu / xong / dừng, approve_service đưa một dòng
+  vào topic của vai đó kèm số việc còn xếp hàng (`bao_tien_do_kanban`, mỗi vòng poll).
+  Ngày 04/09 Ông Chủ chọn 7 bài lúc 05:33, Nova xếp thứ 8, im lặng cả tiếng trông
+  như hệ thống đứng — nên có mục này.
+- Chat Telegram (đổi 04/09): **không còn một hàng chung cho cả 12 vai** — với khoá
+  chung, Gin xoá chữ 2 phút là hỏi Miles/Ethan gì cũng đứng im theo (Itachi đợi Gin
+  108 s chỉ để trả lời "xác nhận"). Giờ hai tầng trong `approve_service.py`:
+  - mỗi phiên `tele-<vai>` một hàng FIFO (`_HangFIFO`) — cùng vai không chạy hai lượt
+    cùng lúc, tin trước trả lời trước, có báo "đang trả lời N tin trước";
+  - semaphore chung `CT_CHAT_SONG_SONG` (mặc định **4**) chỉ là van an toàn cho
+    9router/DeepSeek, **không** phải thứ làm reply đợi nhau — một người gõ thực tế không
+    hỏi quá 3–4 vai cùng lúc; đặt `=1` trong unit systemd là về hành vi cũ.
+  - **Nguyên tắc (Ông Chủ, 04/09): task làm lần lượt được, reply phải song song và
+    nhanh** — reply đơ là công việc treo theo hết. Task kanban vẫn `max_in_progress: 1`.
+- Chat giữ mạch bằng `hermes chat -c tele-<vai> --create-if-missing -Q -q` (`chat_router.py`).
+  Trước 04/09 dùng `--continue … -z`: `-z` được xử lý trước và thoát luôn nên `--continue`
+  bị bỏ qua im lặng — **mọi** tin của **mọi** vai đều mở phiên trắng, vai nào cũng
+  "không nhớ gì" (Ethan 03/09, Itachi 04/09). Dòng `phien=↻ Resumed session …` trong
+  `approve.log` là chỗ đối chiếu khi nghi vai mất mạch.
 
 ## Dịch vụ systemd
 
@@ -98,7 +188,7 @@ ghi thêm một dòng cảnh báo.
 
 ## Cron (7 job, xem `~/.hermes/cron/jobs.json`)
 
-- `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — 06:00 VN, ba vai đi tìm tin
+- `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
 - `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
 - `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
@@ -116,13 +206,20 @@ là KẾT QUẢ ĐO chọn model, không phải cấu hình:
 
 | Vai | Model đo được là hợp nhất | Suy luận |
 |---|---|---|
-| Finn / Chad / Ethan / Heller | `ds/deepseek-v4-flash` | tắt |
-| Quinn / Miles / Jean | `ds/deepseek-chat` | tắt |
+| Finn / Ethan / Ethan / Dre | `ds/deepseek-v4-flash` | tắt |
+| Miles / Miles / Jean | `ds/deepseek-chat` | tắt |
 | Ada | `ds/deepseek-reasoner` | **bật** |
 
-Dre, Gin, Itachi thêm sau, clone từ Heller nên cùng chuỗi `v4-flash` (chưa đo
-riêng). Gin chạy việc thật trên máy local (cần torch), profile server chỉ để
-giao/theo dõi task.
+Dre, Gin, Itachi thêm sau, clone từ Dre nên cùng chuỗi `v4-flash` (chưa đo
+riêng). Gin chạy việc thật **trên server** (torch+cpu đã cài từ 28/08/2026, xem
+skill `inplace-translate`) — không còn phụ thuộc máy local.
+
+Kite ĐÃ DEPLOY (2026-09-01): profile `~/.hermes-blog/profiles/carousel-edu/`
+(config clone từ carousel/Dre, chuỗi `v4-flash`, `reasoning_effort: none`), topic
+Telegram "Kite · carousel.edu" (thread 52) + `chat_router` wired. Generator
+`render_edu.py` **đã chạy live** (Playwright+Chromium cài xong, render
+`reference/boost.spec.json` ra 5 slide chuẩn). Còn lại: wire full auto-pipeline
+trong `approve_service` (chọn qua "#N carousel-edu" từ list Finn).
 
 Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
 được chọn — đúng loại việc cần suy luận thật.
@@ -178,7 +275,7 @@ usage của 9router không thấy chi phí chạy qua đây. Muốn đo phải d
 `hermes --usage-file`.
 
 Nhưng `--usage-file` cũng có bẫy: nó ghi model được **cấu hình**, không phải model
-**thực chạy**. Đã bắt được một lần Quinn lặng lẽ tụt xuống `ds/deepseek-v4-pro`
+**thực chạy**. Đã bắt được một lần Miles lặng lẽ tụt xuống `ds/deepseek-v4-pro`
 mà tệp usage vẫn khai là đang chạy provider mới — chỉ lộ ra khi đối chiếu với log
 9router.
 

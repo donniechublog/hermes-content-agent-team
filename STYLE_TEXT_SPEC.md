@@ -11,7 +11,7 @@ Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh 
 | Via | Inter weight 500 | 29px | chữ thường |
 | Tên kênh | Inter weight 500 | 27px | chữ thường |
 
-## Hệ chữ — kiểu `tran` (Chad và Ethan, kiểu duy nhất đang dùng)
+## Hệ chữ — kiểu `tran` (vai designer Ethan, kiểu duy nhất đang dùng)
 
 | Vai trò | Font | Cỡ | Kiểu |
 |---|---|---|---|
@@ -49,7 +49,7 @@ chồng lên nhau tới 11px.
 6. Subtitle: căn trái, tối đa 3 dòng, màu xám nhạt (donniechublog) hoặc trắng 95% (dcgr).
 7. Chân thẻ: `via: <nguồn>` trái, màu cyan mờ; hàng icon social + @handle phải, icon mờ hơn chữ.
 
-## Bố cục kiểu `tran` — Chad (donniechublog) và Ethan (dcgr.tech)
+## Bố cục kiểu `tran` — vai designer Ethan (cả hai brand)
 
 **Không vẽ khung, không một nét nào.** Không ngoặc góc, không đường dọc, không
 vạch ngang. Đó là điều kiện để thẻ đọc ra là một mặt phẳng liền: ngoặc góc chính
@@ -102,6 +102,10 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - Em-dash (—) bị chặn ở mọi văn bản thẻ.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
 - Ảnh là chính, textbox là phụ: text nhường chỗ cho ảnh, không ngược lại.
+- Ảnh chart/bảng/screenshot: `card.la_chart()` nhận diện (phẳng ≥0,85 **và**
+  ≤220 màu riêng biệt) rồi ép vào đường của chart — hero thì phải ghép dọc
+  `--image2`, carousel thì `"chart": true`. Chart luôn phải **nguyên vẹn và
+  trải full bề ngang**; "nửa dưới trống" là luật biên tập, không phải cổng chặn.
 - Phân tầng thị giác: tiêu đề to nhất → subtitle → via/icon mờ dần.
 
 ## Cần ảnh mẫu

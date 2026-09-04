@@ -74,6 +74,10 @@ cd /home/donniechu/content-team && venv/bin/python manifest_build.py \
 
 Nếu script báo lỗi, sửa file đánh giá rồi chạy lại, đừng tự ghi manifest bằng tay để né lỗi.
 
+## Luật Ông Chủ (04/09/2026): không có quyền bỏ nguồn
+
+Script quét in mục **`BAT BUOC DUA VAO BAO CAO`** (tệp `bat_buoc_scout.json`): bài nằm top 8 điểm cơ học của lần quét, hoặc tiêu đề nhắc hãng frontier (OpenAI, Anthropic, Google, Meta, xAI, DeepSeek, Qwen, Kimi, GLM, MiniMax, Mistral, Nvidia, Apple). **Mọi mục trong đó phải có trong danh sách bạn nộp**, chấm điểm trung thực nhưng không được bỏ. Hôm trước sót thì hôm nay mục vẫn còn đó, phải bổ sung. Script ghi manifest **từ chối** nếu thiếu mục nào và in tên mục thiếu: thêm vào rồi chạy lại, đừng cãi với script. Bạn chỉ được xếp thứ tự và viết lý do, quyết bỏ là của Ông Chủ.
+
 ## Báo cáo phải đánh số, và số do script viết
 
 Ông Chủ chọn tin bằng cách trả lời số thứ tự trong topic.

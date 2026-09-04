@@ -1,6 +1,6 @@
 ---
 name: hero-image
-description: "Dựng ảnh cho kênh AI bằng card.py. MẶC ĐỊNH là --kieu quote (thẻ HOOK): một câu lớn trong khung dấu ngoặc kép + chip category (--tagline) + dòng nguồn (--attrib), đập vào mắt trong 3 giây; câu hook có thể là tiêu đề/góc giật hoặc lời có thật của người trong bài, không bắt buộc là trích dẫn. Kiểu --kieu tran (kicker + tiêu đề mono, liền một mặt phẳng, không khung không vạch) là lựa chọn đổi không khí. Gồm cách điều phối ảnh/chữ, các cờ bắt buộc, tô tên hãng, cổng chặn, chữ chìm vào ảnh. Dùng chung cho Chad (donniechublog) và Ethan (dcgr.tech)."
+description: "Dựng ảnh cho kênh AI bằng card.py. MẶC ĐỊNH là --kieu quote (thẻ HOOK): một câu lớn trong khung dấu ngoặc kép + chip category (--tagline) + dòng nguồn (--attrib), đập vào mắt trong 3 giây; câu hook có thể là tiêu đề/góc giật hoặc lời có thật của người trong bài, không bắt buộc là trích dẫn. Kiểu --kieu tran (kicker + tiêu đề mono, liền một mặt phẳng, không khung không vạch) là lựa chọn đổi không khí. Gồm cách điều phối ảnh/chữ, các cờ bắt buộc, tô tên hãng, cổng chặn, chữ chìm vào ảnh. Dùng chung cho Ethan (donniechublog) và Ethan (dcgr.tech)."
 version: 1.1.0
 author: content-team
 license: internal
@@ -14,12 +14,12 @@ metadata:
 
 # hero-image — mặc định kiểu quote, dự phòng kiểu tràn
 
-Thẻ ảnh của đội, một mặt phẳng liền. **Chad** dựng cho donniechublog, **Ethan**
+Thẻ ảnh của đội, một mặt phẳng liền. **Ethan** dựng cho donniechublog, **Ethan**
 dựng cho dcgr.tech. Hai người làm y hệt nhau, khác đúng một cờ:
 
 | Vai | Profile | Cờ riêng |
 |---|---|---|
-| Chad | `designer` | không cần gì thêm, donniechublog là mặc định |
+| Ethan | `designer` | không cần gì thêm, donniechublog là mặc định |
 | Ethan | `ethan` | `--brand dcgr` |
 
 Ngoài cờ đó ra, mọi thứ trong tài liệu này áp cho cả hai như nhau.
@@ -125,6 +125,12 @@ Vì sao phải tìm rộng: link Finn nhặt thường là trang tài liệu, v�
 nó là thẻ thương hiệu chung. Ví dụ thật: `api-docs.deepseek.com` trả
 `deepseek-social-card.jpeg` cho mọi bài.
 
+### Chụp chart / bảng benchmark
+
+**Full chiều rộng trước, chiều cao xét sau** — chụp bằng `chup_chart.py`, đừng
+dùng khung mặc định của công cụ nào. Luật đầy đủ và lý do ở
+[`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 2.
+
 ## Bước 2 — chọn ảnh, và cách ảnh được điều phối
 
 **Ảnh luôn hiện full bề ngang.** Đó là ưu tiên số một và không thương lượng: cắt
@@ -139,6 +145,27 @@ phần còn lại, và chỉ có hai trường hợp.
 vừa chiều cao: phóng lên là cắt mất bề ngang hoặc vỡ nét, cả hai đều tệ hơn một
 mảng nền phẳng. Đáy ảnh tan dần vào nền nên không lộ ra đường ngang nào.
 
+**Nhưng ở `--kieu quote` thì khổ thẻ khoá cứng**, nền không "cao lên" được — nó
+chỉ là phần thẻ còn trống. Ảnh 16:9 ở bề ngang 1200 chỉ cao 675, tức **45%** khổ
+4:5; 55% còn lại là bản cover làm mờ, một mảng bùn không mang thông tin gì. Nên
+từ 04/09/2026 `card.py` **chặn** ảnh thấp hơn 50% khổ thẻ ở kiểu quote (cổng #3)
+và đẩy sang đường đúng: `--image2`. Hai ảnh 16:9 xếp dọc ở bề ngang 1200 cao
+1350 = **90%** khổ thẻ — thẻ đầy ảnh, không còn mảng bùn. Ảnh từ 3:2 trở lên
+(53% khổ thẻ) thì qua: ở đó phần tối là **chỗ đặt chữ**, không phải chỗ trống.
+
+Ghép dọc thì **hai ảnh phải cùng tone** — và từ 04/09 `card.py` cũng **dừng hẳn**
+khi lệch tone chứ không chỉ cảnh báo như trước (carousel đã siết từ trước đó).
+Ép người ta vào một đường thì phải rào luôn cái bẫy của chính đường đó.
+
+**Ảnh quá ngang mà có TIÊU ĐỀ** (slide, bảng, chart, banner): đừng crop mất
+tiêu đề (Ông Chủ bắt lỗi 03/09/2026). Tìm thêm MỘT ảnh ngang nữa cùng bài và
+đưa `--image2 <ảnh ngang thứ hai>`: script ghép DỌC hai ảnh trong cùng khung
+(full bề ngang, nguyên tỉ lệ, áp sát nhau không vạch ngăn). Dùng được cho cả ba kiểu `dai`,
+`tran`, `quote`; ở `tran`/`quote` ảnh dưới nằm dưới màn tối của chữ, nên đặt
+ảnh quan trọng hơn ở `--image`. **Chọn hai ảnh CÙNG TONE** (cùng nền sáng/tối,
+cùng gam màu): lệch tone đọc ra như hai vùng riêng biệt. Script in
+`[CANH BAO] ghep anh` khi lệch nhiều — thấy là đổi ảnh.
+
 Vậy nên **đừng loại ảnh chỉ vì nó ngang**. Cả hai hướng đều ra thẻ đúng. Chỉ còn
 hai điều thật sự phải chọn:
 
@@ -151,6 +178,24 @@ hai điều thật sự phải chọn:
 nhưng nó không xoá được chữ có sẵn trong ảnh. Ảnh chụp màn hình đầy chữ, bảng
 benchmark dày đặc số: đọc thì tốt nhưng không làm nền được. Gặp loại đó thì chọn
 ảnh khác, hoặc báo lại.
+
+### Chart phải đi đường của chart
+
+Với ảnh chart/bảng/screenshot thì vấn đề **không phải** "nửa dưới có trống
+không" mà là **nguyên vẹn + full bề ngang**. `card.py` tự nhận diện
+(`luat_anh.la_chart`) rồi ép sang đúng đường thay vì bảo bạn "đổi ảnh khác".
+
+**Ở hero:** chart đi một mình **bị chặn** (cổng #2) — hook đè lên thì chart nằm
+dưới chữ, đọc không ra. Ghép dọc bằng `--image2`, hoặc để chart cho carousel.
+
+Cách nhận diện, giới hạn của nó, và vì sao cổng chart chạy **một chiều** (khai
+cờ mà máy không nhận ra thì **chỉ cảnh báo**, không chặn): xem
+[`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 3. Đọc mục đó trước khi đụng vào ngưỡng.
+
+Còn "nửa dưới phải trống" ở trên vẫn là **luật biên tập của hero**, không phải
+cổng chặn. Đã thử làm nó thành cổng rồi **gỡ bỏ 04/09/2026**: nó bắt đúng những
+tấm mà cổng chart đã bắt, nhưng báo sai lý do ("đổi ảnh khác") nên đẩy vai đi
+sửa sai chỗ.
 
 Ảnh càng dọc thì chữ càng đè lên ảnh; ảnh càng ngang thì mảng nền phẳng càng
 nhiều. Cả hai đều đúng, chọn theo ảnh nào mang thông tin thật.
@@ -210,17 +255,46 @@ Lưu ý về `--ratio`: nếu ảnh quá dọc so với tỉ lệ bạn khoá, s
 lệ cao hơn để không phải thu ảnh. Dòng in ra cuối lệnh cho biết thẻ thật sự ra
 bao nhiêu, đọc nó.
 
-## Bốn cổng chặn
+## Cổng chặn
 
-Ba cái đầu làm lệnh **dừng hẳn**:
+### Cổng về CHỮ và BỐ CỤC — riêng của hero
 
 1. **Tiếng Việt không dấu** ở tiêu đề. Từng in ra "CONG CU" trên thẻ thật. Gõ
    lại có dấu rồi chạy lại. Chỉ dùng `--bo-qua-dau` khi chữ **thật sự** là
    tiếng Anh.
-2. **Thương hiệu không nhận ra** ở `--brand`.
-3. **Thiếu cờ bắt buộc**: `--image --title --out`.
-4. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
+2. **Chart đi một mình vào hero** (`--kieu quote`/`tran`). Ở hai kiểu đó ảnh phủ
+   kín thẻ, màn tối ăn ~40% đáy, chart đứng một mình là mất trục x và chú thích.
+   Đường đúng: `--image2` để ghép dọc (chart ở `--image` nằm nửa trên còn
+   nguyên), hoặc đưa chart về slide thân carousel với `"chart": true`. Ghi đè
+   bằng `--bo-qua-anh` — cờ này giờ **chỉ** phục vụ cổng này.
+3. **Ảnh quá ngang ở `--kieu quote`** — thấp hơn 50% khổ thẻ (16:9 và rộng hơn).
+   Khổ quote khoá cứng nên phần thiếu là thẻ bỏ trống, không phải nền cao lên.
+   Ghép dọc bằng `--image2`, hoặc tìm ảnh từ 3:2 trở lên. Ghi đè `--bo-qua-anh`.
+4. **Thương hiệu không nhận ra** ở `--brand`.
+5. **Thiếu cờ bắt buộc**: `--image --title --out`.
+6. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
    nối. Đừng dựa vào nó, cứ gõ đúng từ đầu.
+
+### Cổng về ẢNH — dùng chung cả đội
+
+Ảnh bị cắt bề ngang, cắt tay né cổng, chart phải đi đường của chart, ghép lệch
+tone, mặt người vô danh, độ phân giải — **tất cả nằm ở [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md)
+mục 9**, code là `luat_anh.py`.
+
+Từ 04/09/2026 `card.py` gọi **đủ** bộ đó, ngang với carousel — luật Ông Chủ:
+*"ảnh do ai làm mà chả phải đạt tiêu chuẩn"*. Trước đó mục này chỉ đúng trên
+giấy: `luat_anh.py` có cổng, nhưng `card.py` không gọi.
+
+Hệ quả trực tiếp cho lệnh của bạn: **ảnh có mặt người thì phải khai
+`--nhan-vat "<tên>"`**, và tên đó phải là người **được nhắc trong bài** (CEO
+phát biểu, tác giả paper). Không khai là lệnh dừng — ảnh người vô danh đọc ra
+là ảnh stock. Khai sai tên thì tệ hơn: đó là bịa đặt.
+
+Cạnh ngắn <1000px và đáy ảnh quá sáng chỉ **cảnh báo**, không chặn — thấy thì
+cân nhắc đổi ảnh.
+
+Cái **riêng** của hero: `crop_ti_le.py` chỉ cắt chiều cao; muốn cắt bề ngang
+phải `--cat-ngang`, và chỉ được dùng cho ảnh chụp người/sản phẩm **không có chữ**.
 
 ## Tiêu đề: viết như thế nào
 
@@ -385,3 +459,13 @@ Mở tệp ra xem. Ba câu hỏi:
 
 Spec đầy đủ của hệ chữ và bảng màu ở
 `/home/donniechu/content-team/STYLE_TEXT_SPEC.md`.
+
+## Tiêu chí ảnh dùng chung
+
+Mọi luật về **ảnh** — không tự vẽ, tìm ảnh thật, chụp chart, tỉ lệ và crop, dấu
+xuất xứ, ghép dọc, mặt người, không hai vùng, bảng cổng chặn — nằm ở **một tài
+liệu chuẩn duy nhất**: [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md).
+
+Dùng chung với Dre (`carousel`) và Kite (`carousel-edu`); code là `luat_anh.py`.
+**Đừng chép luật đó về đây** — chép là trôi khác nhau, đúng cái đã xảy ra
+03–04/09/2026. SKILL này chỉ giữ phần **bố cục riêng của hero**.

@@ -386,7 +386,7 @@ def _links_for(conn: sqlite3.Connection, task_id: str) -> dict[str, list[str]]:
 # GET /board
 # ---------------------------------------------------------------------------
 
-# Ten hien thi (Finn, Chad, Quinn...) cua tung profile, lay tu display_name
+# Ten hien thi (Finn, Ethan, Miles...) cua tung profile, lay tu display_name
 # trong profile.yaml. Bang kanban hien nhan theo TEN NGUOI chu khong phai slug
 # profile (scout, writer...) — slug van la gia tri that trong DB va moi filter.
 # Cache 30s vi /board duoc goi lai lien tuc (moi WS event mot lan) ma

@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@1,18..72,400;1,18..72,500&family=JetBrains+Mono:wght@500;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #2FD4E1; } a:hover { color: #5fe0ea; }
+  </style>
+</helmet>
+<div style="position: relative; width: 1080px; height: 1350px; background: #0A0B0E; overflow: hidden; box-sizing: border-box; padding: 80px; display: flex; flex-direction: column; justify-content: space-between; font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif; color: #F4F6F9;">
+
+  <!-- atmosphere glows -->
+  <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 900px; height: 640px; background: radial-gradient(ellipse at center, rgba(47,212,225,0.20) 0%, rgba(47,212,225,0) 60%); pointer-events: none;"></div>
+  <div style="position: absolute; top: 120px; right: -80px; width: 520px; height: 520px; background: radial-gradient(circle at center, rgba(142,134,240,0.16) 0%, rgba(142,134,240,0) 62%); pointer-events: none;"></div>
+
+  <!-- running masthead -->
+  <div style="display: flex; flex-direction: row; align-items: center; gap: 24px; position: relative;">
+    <span style="font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -0.5px; color: #F4F6F9;">donniechublog</span>
+    <span style="flex-grow: 1; height: 1px; background: #262A33;"></span>
+    <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; font-size: 22px; letter-spacing: 2px; color: #7B828E;">AI TOOLING · SỐ 01</span>
+  </div>
+
+  <!-- hero art -->
+  <div style="position: relative; margin: 8px 0;">
+    <svg width="100%" viewBox="0 0 920 470" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+      <defs>
+        <radialGradient id="core" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#2FD4E1" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#2FD4E1" stop-opacity="0.05"/>
+        </radialGradient>
+      </defs>
+
+      <!-- orbits -->
+      <g transform="translate(460 235)">
+        <ellipse rx="380" ry="150" fill="none" stroke="#2FD4E1" stroke-opacity="0.28" stroke-width="1.5" transform="rotate(-18)"/>
+        <ellipse rx="300" ry="112" fill="none" stroke="#8E86F0" stroke-opacity="0.30" stroke-width="1.5" transform="rotate(16)"/>
+        <ellipse rx="200" ry="74" fill="none" stroke="#2FD4E1" stroke-opacity="0.22" stroke-width="1.5" transform="rotate(-6)"/>
+
+        <!-- connective lines -->
+        <line x1="0" y1="0" x2="-262" y2="-70" stroke="#2FD4E1" stroke-opacity="0.35" stroke-width="1.5"/>
+        <line x1="0" y1="0" x2="252" y2="86" stroke="#8E86F0" stroke-opacity="0.35" stroke-width="1.5"/>
+        <line x1="0" y1="0" x2="150" y2="-118" stroke="#2FD4E1" stroke-opacity="0.30" stroke-width="1.5"/>
+
+        <!-- subagent nodes -->
+        <g>
+          <circle cx="-262" cy="-70" r="20" fill="#0A0B0E" stroke="#2FD4E1" stroke-width="2"/>
+          <circle cx="-262" cy="-70" r="6" fill="#2FD4E1"/>
+        </g>
+        <g>
+          <circle cx="252" cy="86" r="20" fill="#0A0B0E" stroke="#8E86F0" stroke-width="2"/>
+          <circle cx="252" cy="86" r="6" fill="#8E86F0"/>
+        </g>
+        <g>
+          <circle cx="150" cy="-118" r="16" fill="#0A0B0E" stroke="#2FD4E1" stroke-width="2"/>
+          <circle cx="150" cy="-118" r="5" fill="#2FD4E1"/>
+        </g>
+
+        <!-- core -->
+        <circle r="120" fill="url(#core)"/>
+        <rect x="-58" y="-58" width="116" height="116" rx="26" fill="#101218" stroke="#2FD4E1" stroke-width="2.5"/>
+        <path d="M 8 -34 L -20 6 L -2 6 L -8 34 L 20 -6 L 2 -6 Z" fill="#2FD4E1"/>
+      </g>
+
+      <!-- scatter dots -->
+      <g fill="#2FD4E1" fill-opacity="0.5">
+        <circle cx="70" cy="60" r="3"/>
+        <circle cx="860" cy="120" r="3"/>
+        <circle cx="820" cy="400" r="3"/>
+        <circle cx="120" cy="410" r="3"/>
+        <circle cx="470" cy="30" r="2.5"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- headline block -->
+  <div style="position: relative;">
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 14px; margin-bottom: 24px;">
+      <span style="width: 34px; height: 8px; background: #2FD4E1; display: inline-block;"></span>
+      <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 23px; letter-spacing: 3px; color: #2FD4E1;">GOOGLE ANTIGRAVITY · DEEP DIVE</span>
+    </div>
+    <h1 style="font-family: 'Archivo', sans-serif; font-size: 92px; font-weight: 900; line-height: 1.0; letter-spacing: -3px; margin: 0 0 26px 0; color: #F4F6F9;">Lệnh <span style="color: #2FD4E1;">/boost</span> biến bug khó thành lời giải chắc tay</h1>
+    <p style="font-family: 'Newsreader', Georgia, serif; font-style: italic; font-size: 38px; font-weight: 400; line-height: 1.35; color: #B7BDC7; margin: 0 0 30px 0; max-width: 860px;">Bên trong cách agent chia nhỏ vấn đề, chạy trong worktree cách ly và tự kiểm chứng bằng test.</p>
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 18px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: #7B828E;">
+      <span style="color: #F4F6F9;">donniechublog</span>
+      <span style="width: 4px; height: 4px; border-radius: 50%; background: #4a505c; display: inline-block;"></span>
+      <span>Phân tích</span>
+      <span style="width: 4px; height: 4px; border-radius: 50%; background: #4a505c; display: inline-block;"></span>
+      <span>5 phút đọc</span>
+    </div>
+  </div>
+
+  <!-- folio -->
+  <div style="position: relative;">
+    <div style="height: 1px; background: #262A33; margin-bottom: 20px;"></div>
+    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: #7B828E; letter-spacing: 1px;">
+      <span>GOOGLE ANTIGRAVITY</span>
+      <span><span style="color: #2FD4E1;">01</span> / 05</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

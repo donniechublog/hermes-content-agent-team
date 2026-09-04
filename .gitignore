@@ -1,5 +1,8 @@
 # Khoa bi mat — tuyet doi khong dua vao repo
 .secrets.env
+secret.env
+secret.*.env
+.secrets.*.env
 
 # Du lieu chay: ban nhap, trang thai, con tro Telegram
 drafts/
@@ -10,6 +13,8 @@ state/*
 # ke lai topic cua mot nhom. Mat tep la mat het, phai vao app do tay tung topic.
 # Khong chua gi bi mat: chi la so thu tu topic trong nhom rieng.
 !state/topics.json
+!state/topics.blog.json
+!state/topics.dcgr.json
 
 # Rac
 __pycache__/

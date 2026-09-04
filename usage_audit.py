@@ -32,13 +32,14 @@ import env_load
 import tele_util
 
 ROOT = Path.home() / "content-team"
-HERMES = Path.home() / ".hermes"
 DB = Path.home() / ".9router" / "db" / "data.sqlite"
-# DU 9 vai. Tung thieu nova + market: model cua hai vai do hong khong ai thu,
-# va usage cua chung bi bao "LA — khong o chuoi nao" — canh bao gia dung loai
-# script nay sinh ra de chong.
-PROFILES = ["scout", "nova", "market", "ethan", "designer", "writer", "miles",
-            "analyst", "teaser"]
+
+
+def hermes_home() -> Path:
+    """Home hermes cua container hien tai. Systemd/cron dat HERMES_HOME per-brand
+    (vd ~/.hermes-blog, ~/.hermes-dcgr) — hardcode ~/.hermes lam script soi mot
+    bo config cu/rong. Khong co bien thi roi ve ~/.hermes (che do don cu)."""
+    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
 
 # Model co cache ma tut duoi muc nay la dang co van de (lat model, hoac
 # prompt qua ngan de cache an)
@@ -48,8 +49,14 @@ NGUONG_CACHE = 40.0
 def chuoi_da_cau_hinh() -> dict:
     """{ten model tran: [vai dung no]} — doc dung config dang chay."""
     ra = {}
-    for vai in PROFILES:
-        p = HERMES / "profiles" / vai / "config.yaml"
+    home = hermes_home()
+    # Glob thay vi liet ke tay: tung thieu nova + market va usage cua chung bi
+    # bao "LA — khong o chuoi nao" — canh bao gia. Them config goc de model
+    # mac dinh cung khong bi bao LA oan.
+    targets = [("default", home / "config.yaml")]
+    targets += sorted((p.parent.name, p)
+                      for p in (home / "profiles").glob("*/config.yaml"))
+    for vai, p in targets:
         if not p.exists():
             continue
         cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
@@ -58,9 +65,15 @@ def chuoi_da_cau_hinh() -> dict:
         for i, m in enumerate(chain):
             if not m:
                 continue
-            # 9router ghi ten tran, khong co tien to nha cung cap
-            tran = m.split("/")[-1]
-            ra.setdefault(tran, []).append(f"{vai}:{'chinh' if i == 0 else f'du phong {i}'}")
+            nhan = f"{vai}:{'chinh' if i == 0 else f'du phong {i}'}"
+            # 9router ghi ten da bo tien to NHA CUNG CAP (phan dau), nhung ten
+            # 3 phan thi giu phan giua: config `xk/z-ai/glm-5.3` -> router ghi
+            # `z-ai/glm-5.3`. Truoc day chi lay split("/")[-1] ("glm-5.3") nen
+            # model chu luc cua writer bi bao "LA — khong o chuoi nao" oan.
+            # Dang ky CA HAI bien the cho chac.
+            phan = m.split("/")
+            for tran in {phan[-1], "/".join(phan[1:]) or phan[-1]}:
+                ra.setdefault(tran, []).append(nhan)
     return ra
 
 
@@ -165,7 +178,7 @@ def gui(text: str):
         print("\n[canh bao] thieu TELEGRAM_BOT_TOKEN/GROUP_ID")
         return
     th = None
-    tp = ROOT / "state" / "topics.json"
+    tp = env_load.topics_path()
     if tp.exists():
         th = json.loads(tp.read_text(encoding="utf-8")).get("analyst")
     try:

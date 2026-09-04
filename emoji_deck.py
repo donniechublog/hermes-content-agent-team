@@ -11,14 +11,22 @@ Khong co emoji quoc ky nao trong bo bai (chi loai co quoc gia; co bao quat
 chung nhu cham do, la co checkered van giu vi khong dai dien quoc gia nao).
 """
 import argparse
-import fcntl
 import json
 import os
 import sys
 import tempfile
 from pathlib import Path
 
-STATE_PATH = Path.home() / "content-team" / "state" / "emoji_deck.json"
+try:
+    import fcntl                 # POSIX (server) — khoa tep that
+except ImportError:              # Windows (test local): khong co fcntl,
+    fcntl = None                 # chay khong khoa — mot nguoi thao tac, chap nhan
+
+import env_load
+
+# Per-brand qua env_load.state_dir(), va theo vi tri ma nguon — truoc day
+# hardcode ~/content-team/state: chay o may khac la lang le tao state sai cho.
+STATE_PATH = env_load.state_dir() / "emoji_deck.json"
 
 DECK = [
     "🔥", "✨", "🚀", "💡", "🎯", "🧠", "⚡", "🌱", "🔍", "📌",
@@ -45,9 +53,13 @@ DECK = [
 # cung tu dong duoc loai.
 DECK = list(dict.fromkeys(DECK))
 
+# Loi hua trong docstring "khong co quoc ky" duoc THI HANH tai day, khong chi
+# bang mat thuong: emoji them sau ma dinh ky tu regional-indicator / co se tu
+# dong bi loai.
 FLAG_HINTS = ("🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮", "🇯",
               "🇰", "🇱", "🇲", "🇳", "🇴", "🇵", "🇶", "🇷", "🇸", "🇹",
               "🇺", "🇻", "🇼", "🇽", "🇾", "🇿", "🏳", "🏴", "🎌")
+DECK = [e for e in DECK if not any(h in e for h in FLAG_HINTS)]
 
 
 def _load():
@@ -97,7 +109,8 @@ def next_emoji(count: int) -> list:
     STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
     khoa = STATE_PATH.with_suffix(".lock")
     with open(khoa, "w") as lf:
-        fcntl.flock(lf, fcntl.LOCK_EX)
+        if fcntl:
+            fcntl.flock(lf, fcntl.LOCK_EX)
         try:
             state = _load()
             out = []
@@ -114,7 +127,8 @@ def next_emoji(count: int) -> list:
             _save(state)
             return out
         finally:
-            fcntl.flock(lf, fcntl.LOCK_UN)
+            if fcntl:
+                fcntl.flock(lf, fcntl.LOCK_UN)
 
 
 def main():

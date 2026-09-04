@@ -13,15 +13,32 @@ dõi ngang với mã nguồn.
 
 ## Đồng bộ
 
-Sửa ở `~/.hermes/` rồi chép vào đây trước khi commit:
+Đã **tách container theo brand**: mỗi brand một HERMES_HOME riêng
+(`~/.hermes-blog`, `~/.hermes-dcgr`). Profile trong git tổ chức theo container,
+slug generic khớp thư mục thật trong home:
+
+    hermes/profiles/blog/<slug>.SOUL.md    -> ~/.hermes-blog/profiles/<slug>/
+    hermes/profiles/dcgr/<slug>.SOUL.md    -> ~/.hermes-dcgr/profiles/<slug>/
+    hermes/profiles/shared/<slug>.SOUL.md  -> CẢ HAI home
+
+Map slug ↔ nhân vật: blog `carousel`=Dre, `designer`=Ethan, `writer`=Miles,
+`nova`; dcgr `carousel`=Dre, `designer`=Ethan, `writer`=Miles, `market`=Vera;
+shared: `itachi`, `gin`, `analyst`=Ada. Chỉ ở blog: `scout`=Finn, `teaser`=Jean (đọc donniechu.com), `nova`, `carousel-edu`=Kite. `bob` mỗi brand một bản (handle khác)
+(từ 03/09/2026: dcgr chỉ có Vera đi tìm tin, Finn không có cron ở dcgr nên bỏ).
+`carousel-edu`=Kite (blog) đã deploy live từ 01/09/2026 (full pipeline:
+render_edu.py + profile + approve).
+
+Sửa ở home rồi chép vào git trước khi commit:
 
     venv/bin/python dong_bo_hermes.py --vao-repo
 
-Hoặc chiều ngược lại, khi khôi phục sau `hermes update`:
+Hoặc chiều ngược lại (đẩy git → cả hai home), sau `hermes update`:
 
     venv/bin/python dong_bo_hermes.py --ra-hermes
 
-Script so nội dung và chỉ báo tệp thật sự khác nhau.
+Không cờ = chỉ so sánh. Script quét `profiles/{blog,dcgr,shared}/`, sync SOUL +
+MEMORY + cron (brand-aware) sang home tương ứng; profile/script home không có
+thì báo `[thieu]`, KHÔNG tạo (tôn trọng phân chia per-brand).
 
 ## Plugin kanban
 
