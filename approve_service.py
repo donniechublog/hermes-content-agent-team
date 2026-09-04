@@ -1005,11 +1005,70 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     return illu_id, None
 
 
-# MOT container, MOT agent chat tai mot thoi diem. Goi nhieu vai cung luc lam
-# 9router/upstream tu choi tam thoi (400 "response_format unavailable", 429) va
-# tra loi nhau lech nhip. Vai sau xep hang; Ong Chu duoc bao dang cho ai.
-_HANG_AGENT = threading.Lock()
-_DANG_CHAY = {"vai": None, "tu": 0.0}
+# HANG DOI CHAT — hai tang, thay cho mot khoa chung ca container (03/09):
+#
+# 1) Moi PHIEN (tele-<vai>) mot hang FIFO: cung mot vai khong bao gio chay hai
+#    luot cung luc (hai tien trinh `chat -c` cung ghi mot phien = hong mach), va
+#    tin gui truoc tra loi truoc — threading.Lock khong dam bao thu tu danh thuc,
+#    nen dung ve so.
+# 2) Mot semaphore chung gioi han SO VAI chay cung luc (CT_CHAT_SONG_SONG, mac
+#    dinh 2) — de 9router/DeepSeek khong bi dap don (400 "response_format
+#    unavailable", 429), ma mot vai lam lau (Gin xoa chu 2 phut, tran 10 phut)
+#    khong con lam CA DOI cam khau. Su co 04/09 07:19: Itachi doi Gin 108s chi
+#    de tra loi mot cau "xac nhan" — voi khoa chung thi 12 vai chung mot hang,
+#    ai hoi gi cung phai cho vai dang chay xong. Dat CT_CHAT_SONG_SONG=1 la ve
+#    dung hanh vi cu.
+# Task kanban van tuan tu (max_in_progress: 1) — muc nay chi noi ve chat.
+_SO_SONG_SONG = max(1, int(os.environ.get("CT_CHAT_SONG_SONG", "2") or 2))
+_CHO_CHAT = threading.BoundedSemaphore(_SO_SONG_SONG)
+_DANG_CHAY = {}                                # who -> t0, cac vai dang goi agent
+_KHOA_DANG_CHAY = threading.Lock()
+
+
+class _HangFIFO:
+    """Ve so xep hang: acquire() lay so, doi toi luot; release() goi so tiep.
+    `vi_tri()` tra ve so nguoi dang dung truoc — de bao Ong Chu con may tin."""
+
+    def __init__(self):
+        self._cv = threading.Condition()
+        self._phat = 0
+        self._phuc_vu = 0
+
+    def lay_so(self) -> tuple:
+        """(so cua minh, so nguoi dang dung truoc). Tach khoi doi() de ben goi
+        kip bao Ong Chu "con N tin truoc" TRONG LUC cho, khong phai sau."""
+        with self._cv:
+            so = self._phat
+            self._phat += 1
+            return so, so - self._phuc_vu
+
+    def doi(self, so):
+        with self._cv:
+            while so != self._phuc_vu:
+                self._cv.wait()
+
+    def release(self):
+        with self._cv:
+            self._phuc_vu += 1
+            self._cv.notify_all()
+
+
+_HANG_PHIEN = {}                               # session -> _HangFIFO
+_KHOA_HANG_PHIEN = threading.Lock()
+
+
+def _hang_cua(session) -> "_HangFIFO":
+    with _KHOA_HANG_PHIEN:
+        h = _HANG_PHIEN.get(session)
+        if h is None:
+            h = _HANG_PHIEN[session] = _HangFIFO()
+        return h
+
+
+def _ai_dang_chay(tru=None) -> str:
+    with _KHOA_DANG_CHAY:
+        ten = [w for w in _DANG_CHAY if w != tru]
+    return ", ".join(sorted(ten)) or "vai khác"
 
 
 def boi_canh_vai(profile) -> str:
@@ -1063,20 +1122,38 @@ def handle_chat(token, group, msg, thread_id, text):
     kw_thread = {"message_thread_id": thread_id} if thread_id else {}
     log("route", f"chat -> profile={profile or '(mac dinh)'} session={session} "
                  f"thread={thread_id} text={rut(text)}")
-    # Xep hang: neu dang co vai khac chay thi bao ro, roi cho toi luot.
-    if not _HANG_AGENT.acquire(blocking=False):
-        cho_ai = _DANG_CHAY["vai"] or "vai khác"
-        log("route", f"thread={thread_id} xep hang sau {cho_ai}")
+    # Tang 1: hang FIFO cua rieng phien nay — cung vai thi tin truoc tra loi truoc.
+    hang = _hang_cua(session)
+    so, truoc = hang.lay_so()
+    da_bao = False
+    if truoc:
+        log("route", f"thread={thread_id} {who} con {truoc} tin truoc trong topic")
         call(token, "sendMessage", chat_id=group, **kw_thread,
-             text=f"⏳ <b>{who}</b> đang xếp hàng sau <b>{cho_ai}</b>, tới lượt sẽ trả lời…",
-             parse_mode="HTML")
-        _HANG_AGENT.acquire()
-    _DANG_CHAY.update(vai=who, tu=time.time())
+             text=f"⏳ <b>{who}</b> đang trả lời {truoc} tin trước trong topic này, "
+                  "xong sẽ tới tin này…", parse_mode="HTML")
+        da_bao = True
+    hang.doi(so)
     try:
-        _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread)
+        # Tang 2: cho chung — toi da _SO_SONG_SONG vai goi agent cung luc.
+        if not _CHO_CHAT.acquire(blocking=False):
+            cho_ai = _ai_dang_chay(tru=who)
+            log("route", f"thread={thread_id} {who} cho cho, dang chay: {cho_ai}")
+            if not da_bao:
+                call(token, "sendMessage", chat_id=group, **kw_thread,
+                     text=f"⏳ <b>{who}</b> chờ chỗ — đang có <b>{cho_ai}</b> chạy "
+                          f"(tối đa {_SO_SONG_SONG} vai cùng lúc), tới lượt sẽ trả lời…",
+                     parse_mode="HTML")
+            _CHO_CHAT.acquire()
+        with _KHOA_DANG_CHAY:
+            _DANG_CHAY[who] = time.time()
+        try:
+            _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread)
+        finally:
+            with _KHOA_DANG_CHAY:
+                _DANG_CHAY.pop(who, None)
+            _CHO_CHAT.release()
     finally:
-        _DANG_CHAY.update(vai=None, tu=0.0)
-        _HANG_AGENT.release()
+        hang.release()
 
 
 def _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread):
