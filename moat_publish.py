@@ -47,6 +47,15 @@ STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallb
 PLATFORMS = ["facebook_post", "instagram_carousel"]
 
 TIMEOUT = 60
+
+# Rieng luc DAY bai thi khong dung TIMEOUT chung duoc. Uplink cua may nay do
+# duoc ~50 KB/s (7 MB het 136 giay, moat tra 400 chu khong tu choi -- ca body
+# da qua). Mot bai carousel 5 anh la ~7 MB base64, day du 10 anh la ~14 MB, tuc
+# rieng buoc GHI body mat 2-5 phut. httpx.Client(timeout=60) ap mot con so cho
+# ca connect/read/write, nen moi bai nhieu anh chet o WriteTimeout va bai da len
+# Telegram roi thi khong bao gio sang duoc social.
+# Tach ra: connect/read van ngan de loi mang lo som, chi rieng write nuoi that dai.
+TIMEOUT_DAY = httpx.Timeout(connect=15.0, read=180.0, write=600.0, pool=15.0)
 TRAN_NEN_TANG = 2200        # gioi han caption cua Instagram va TikTok
 MIME_BY_SUFFIX = {".png": "image/png", ".jpg": "image/jpeg",
                   ".jpeg": "image/jpeg", ".webp": "image/webp"}
@@ -236,7 +245,7 @@ def intake(draft_id, scheduled_at=None):
         body["scheduledAt"] = scheduled_at
 
     try:
-        with httpx.Client(timeout=TIMEOUT) as c:
+        with httpx.Client(timeout=TIMEOUT_DAY) as c:
             r = c.post(base + "/publish-intake", json=body,
                        headers={"X-API-Key": key})
     except Exception as e:                                   # noqa: BLE001
