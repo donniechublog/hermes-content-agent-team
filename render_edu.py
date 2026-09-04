@@ -2,7 +2,9 @@
 """render_edu.py — renderer carousel tech-editorial (role carousel.edu, vai Kite).
 
 Biến một spec JSON thành album PNG kiểu tạp chí công nghệ: art VECTOR gốc + bộ
-khung magazine (masthead, eyebrow chuyên mục, folio, hero orbit), KHÔNG ảnh thật.
+khung magazine (masthead, eyebrow chuyên mục, folio, hero orbit). Không đi tìm
+ảnh minh hoạ, nhưng biểu đồ/bảng/báo cáo CÓ SẴN thì chèn bản thật (kind
+"figure", trải hết bề ngang slide).
 Khác `carousel.py` (ảnh thật + PIL) và `deck.py` (editorial-deck): ở đây từng
 slide là HTML/CSS/SVG, render bằng Chromium headless (Playwright) rồi chụp.
 
@@ -51,6 +53,13 @@ Spec JSON:
      "standfirst": "Còn test đỏ thì còn lặp...",
      "callout": "Kết quả: một bản fix đã được kiểm chứng bằng test."},
 
+    {"kind": "figure", "eyebrow": "SỐ LIỆU",
+     "title": "Điểm số dựng lại trên SWE-bench", "accent": "SWE-bench",
+     "image": "drafts/chart_swebench.png",   # chụp bằng chup_chart.py
+     "caption": "Biểu đồ trong bài công bố · via Google DeepMind",
+     "standfirst": "Chữ minh hoạ cho phần chiều cao còn thừa dưới hình.",
+     "cards": [{"num": "01", "text": "..."}]},
+
     {"kind": "cta", "eyebrow": "ÁP DỤNG",
      "title": "Cho bug khó & refactor rủi ro cao",
      "checks": ["...", "...", "..."],
@@ -61,6 +70,13 @@ Spec JSON:
 
 Mọi chữ là tiếng Việt CÓ DẤU — cổng chặn dừng nếu thiếu (dùng --bo-qua-dau chỉ
 khi copy thật sự là tiếng Anh). Số slide: 6..10.
+
+ẢNH THẬT: khung này vẽ art vector, nhưng tin nào CÓ SẴN biểu đồ, bảng số hay
+trang báo cáo thì chèn bản thật bằng kind "figure" — ảnh trải hết bề ngang
+slide (không bao giờ cắt hai bên: bề ngang của một biểu đồ là nội dung), cao
+quá thì giữ mép trên, phần chiều cao còn thừa mới để chữ minh hoạ. Bắt buộc có
+"caption" ghi "via <ai>", và ảnh phải rộng >= 800px (chụp bằng chup_chart.py).
+Vẫn cấm: ảnh minh hoạ AI, screenshot dựng lại, logo hãng, số liệu tự bịa.
 """
 
 import argparse
@@ -212,6 +228,15 @@ BASE_CSS_TPL = """
 .check{display:flex;flex-direction:row;align-items:flex-start;gap:22px;}
 .check-m{color:%(CYAN)s;font-size:38px;font-weight:800;line-height:1.1;}
 .check-t{font-size:35px;font-weight:500;line-height:1.35;color:%(SOFT)s;}
+/* dai hinh that: keo ra ngoai padding 80px de cham hai mep slide */
+.fig{position:relative;z-index:2;width:%(W)spx;margin-left:-80px;
+  overflow:hidden;background:%(PANEL)s;line-height:0;}
+.fig img{width:100%%;height:100%%;object-fit:cover;display:block;}
+.fig-cap{display:flex;flex-direction:row;align-items:baseline;gap:16px;
+  margin-top:22px;font-family:%(MONO)s;font-size:23px;font-weight:500;
+  line-height:1.45;color:%(DIM)s;letter-spacing:0.5px;}
+.fig-bar{flex:none;width:26px;height:3px;background:%(CYAN)s;
+  transform:translateY(-7px);}
 .readmore{background:%(PANEL)s;border:1px solid #23262E;padding:34px 38px;}
 .readmore-l{font-family:%(MONO)s;font-size:22px;font-weight:500;color:%(DIM)s;
   letter-spacing:2px;margin-bottom:14px;}
@@ -393,6 +418,50 @@ def hero_svg(name, th):
 
 
 
+# ---- anh that: hinh minh hoa / bieu do / bao cao --------------------------
+# Luat khung edu la ART VECTOR, nhung tin nao CO SAN mot bieu do, mot bang so
+# hay mot trang bao cao thi ve lai bang tay vua mat cong vua de sai — chen thang
+# ban that vao. Slide kind "figure" lam viec do.
+#
+# Be ngang la NOI DUNG (cung luat voi chup_chart.py): mot bieu do bi cat mep
+# phai thi mat truc, mat cot cuoi, mat luon cai diem duoc to sang — no NOI SAI
+# chu khong phai thieu mot ti. Nen anh LUON trai het 1080px, khong bao gio cat
+# hai ben. Chieu cao thi cat duoc: cao qua tran thi giu mep tren, phan con lai
+# cua chieu cao slide moi den luot chu minh hoa.
+ANH_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+            ".webp": "image/webp", ".gif": "image/gif"}
+FIG_CAO_TOI_DA = 700        # dai anh cao nhat, con lai danh cho eyebrow/title/chu
+FIG_RONG_TOI_THIEU = 800    # hep hon the ma keo len 1080 thi be nat
+
+
+def _do_anh(duong_dan):
+    """-> (Path, rong, cao). Duong dan tuong doi tinh theo CWD truoc, roi ROOT."""
+    p = Path(duong_dan)
+    if not p.exists() and not p.is_absolute():
+        p = ROOT / duong_dan
+    if not p.exists():
+        raise FileNotFoundError(f"khong thay anh '{duong_dan}'")
+    if p.suffix.lower() not in ANH_MIME:
+        raise ValueError(f"anh '{p.name}' duoi la {p.suffix} — "
+                         f"chi nhan {', '.join(sorted(ANH_MIME))}")
+    from PIL import Image
+    with Image.open(p) as im:
+        return p, im.width, im.height
+
+
+def _anh_data_uri(p):
+    """Nhung base64: Chromium doc HTML tu chuoi nen khong co URL goc de giai
+    duong dan tuong doi (giong ly do font phai nhung)."""
+    b64 = base64.b64encode(p.read_bytes()).decode("ascii")
+    return f"data:{ANH_MIME[p.suffix.lower()]};base64,{b64}"
+
+
+def khung_anh(rong, cao):
+    """-> (cao hien, cao neu giu tron ti le). Bang nhau = khong cat ti nao."""
+    cao_that = max(1, round(W * cao / rong))
+    return min(cao_that, FIG_CAO_TOI_DA), cao_that
+
+
 # ---- helpers --------------------------------------------------------------
 def esc(s):
     return html.escape(str(s), quote=True)
@@ -528,6 +597,49 @@ def s_loop(sl, th):
     return g + body
 
 
+def s_figure(sl, th):
+    """Hinh that trai full be ngang; chieu cao thua moi den luot chu."""
+    p, iw, ih = _do_anh(sl["image"])
+    cao, cao_that = khung_anh(iw, ih)
+    cat = cao_that > cao
+    if cat:
+        # Bao ra de Kite biet anh bi cat bao nhieu: neu phan mat la phan dang
+        # noi toi thi phai tu cat lai cho dung truoc khi dua vao day.
+        print(f"figure {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
+              f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
+    # Cat thi giu MEP TREN: bieu do va bang so de tieu de, truc, hang dau o tren.
+    # Mep duoi loang dan vao nen — cat ngang than mot dong chu ma de nguyen thi
+    # trong nhu anh bi xen hong, loang di thi doc ra la "con nua o duoi".
+    loang = (f'<div style="position:absolute;left:0;right:0;bottom:0;height:96px;'
+             f'background:linear-gradient(to bottom,{rgba(th["bg"], 0)} 0%,'
+             f'{rgba(th["bg"], 0.92)} 100%);"></div>') if cat else ""
+    band = (f'<div class="fig" style="height:{cao}px;">'
+            f'<img src="{_anh_data_uri(p)}" alt="" '
+            f'style="object-position:{"top" if cat else "center"};">'
+            f'{loang}</div>')
+    cap = (f'<div class="fig-cap"><span class="fig-bar"></span>'
+           f'<span>{esc(sl["caption"])}</span></div>') if sl.get("caption") else ""
+    chu = ""
+    if sl.get("standfirst"):
+        chu += (f'<p class="standfirst" style="font-size:36px;max-width:900px;'
+                f'margin-top:30px;">{esc(sl["standfirst"])}</p>')
+    for c in sl.get("cards", []):
+        chu += (f'<div class="card" style="margin-top:22px;">'
+                f'<span class="card-num">{esc(c["num"])}</span>'
+                f'<span class="card-txt" style="font-size:31px;">{esc(c["text"])}</span></div>')
+    g = glow("top:-80px;left:-140px;width:520px;height:520px;"
+             f"background:radial-gradient(circle at center,{rgba(th['a'],0.12)} 0%,{rgba(th['a'],0)} 62%);")
+    body = (
+        f'<div class="mid" style="margin-top:40px;">'
+        f'{eyebrow(sl["eyebrow"])}'
+        f'<h1 class="title" style="font-size:62px;margin:22px 0 30px;">'
+        f'{accent_html(sl["title"], sl.get("accent"))}</h1></div>'
+        f'{band}'
+        f'<div class="mid">{cap}{chu}</div>'
+    )
+    return g + body
+
+
 def s_cta(sl, th):
     checks = ""
     for c in sl.get("checks", []):
@@ -553,7 +665,7 @@ def s_cta(sl, th):
 
 BUILDERS = {
     "cover": s_cover, "statement": s_statement, "steps": s_steps,
-    "loop": s_loop, "cta": s_cta,
+    "loop": s_loop, "figure": s_figure, "cta": s_cta,
 }
 
 
@@ -590,6 +702,27 @@ def gate_slides(slides, bo_qua_dau):
                 mat = card.tim_mat_dau(t)
                 if mat:
                     loi.append(f"slide {i} [{nhan}]: tieng Viet mat dau ({', '.join(mat)})")
+    # slide figure: anh phai co that va phai du to. Anh 600px keo len 1080px
+    # (roi chup o scale 2 nua) thi chu tren bieu do nhoe thanh vet — dang len
+    # la ca bo hong, ma luc dung khong ai nhin ra tren man to.
+    for i, sl in enumerate(slides, 1):
+        if sl.get("kind") != "figure":
+            continue
+        if not sl.get("image"):
+            loi.append(f"slide {i}: kind 'figure' phai co 'image' (duong dan tep anh)")
+            continue
+        try:
+            _, rong, cao = _do_anh(sl["image"])
+        except (FileNotFoundError, ValueError) as e:
+            loi.append(f"slide {i}: {e}")
+            continue
+        if rong < FIG_RONG_TOI_THIEU:
+            loi.append(f"slide {i}: anh rong {rong}px, keo len {W}px la be nat. "
+                       f"Chup lai bang chup_chart.py (DPR 2) hoac xin ban goc.")
+        if not sl.get("caption"):
+            loi.append(f"slide {i}: figure phai co 'caption' — hinh muon cua "
+                       f"nguoi ta thi phai ghi 'via <ai>'.")
+
     # quy ước dẫn nguồn: dùng 'via', không viết 'nguồn'
     for i, sl in enumerate(slides, 1):
         for nhan, t in _texts(sl):
@@ -602,7 +735,7 @@ def gate_slides(slides, bo_qua_dau):
 def _texts(sl):
     """(nhan, chuoi) mọi trường chữ cần soi dấu."""
     out = []
-    for k in ("eyebrow", "title", "standfirst", "callout"):
+    for k in ("eyebrow", "title", "standfirst", "callout", "caption"):
         if sl.get(k):
             out.append((k, sl[k]))
     for c in sl.get("cards", []):

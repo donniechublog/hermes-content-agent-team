@@ -1,6 +1,6 @@
 ---
 name: carousel-edu
-description: "Carousel EDU — diễn đạt lại kiến thức & nghiên cứu (paper arXiv, kinh nghiệm dev) cho chuyên nghiệp, tường minh; phong cách tech × magazine bằng ART VECTOR GỐC tự vẽ — không ảnh thật, không nền AI. Hệ thiết kế: nền tối #0A0B0E, duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 6 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: chỉ art trừu tượng/sơ đồ khái niệm, cấm ảnh/screenshot/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.edu)."
+description: "Carousel EDU — diễn đạt lại kiến thức & nghiên cứu (paper arXiv, kinh nghiệm dev) cho chuyên nghiệp, tường minh; phong cách tech × magazine bằng ART VECTOR GỐC tự vẽ — không đi tìm ảnh minh hoạ, không nền AI, nhưng biểu đồ/bảng/trang báo cáo CÓ SẴN thì chèn bản thật trải hết bề ngang slide (kind figure). Hệ thiết kế: nền tối #0A0B0E, duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 6 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: art trừu tượng/sơ đồ khái niệm + hình thật của biểu đồ/bảng/báo cáo có ghi via; cấm ảnh AI/screenshot dựng lại/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.edu)."
 version: 0.1.0
 author: content-team
 license: internal
@@ -23,10 +23,14 @@ là "paper trắng" (text nặng, không ảnh minh hoạ tử tế); chụp ả
 không hợp → Kite trình bày lại bằng **art vector + typography**. Paper thường dài
 nên **tối thiểu 6 slide** (cổng chặn `render_edu.py` dừng nếu ít hơn).
 
-Điểm tách bạch với các kiểu kia: **không có ảnh nào từ bên ngoài**. Bìa và các
-slide được dựng bằng **art vector tự vẽ** (SVG/đồ hoạ code) + typography, trên
-nền tối sạch. Đây là **ngoại lệ có chủ đích** với luật cứng "không bao giờ tự vẽ
-minh hoạ" của cả đội — vì thế nó phải là một vai riêng, không trộn vào `carousel`.
+Điểm tách bạch với các kiểu kia: **không đi tìm ảnh minh hoạ**. Bìa và các slide
+được dựng bằng **art vector tự vẽ** (SVG/đồ hoạ code) + typography, trên nền tối
+sạch. Đây là **ngoại lệ có chủ đích** với luật cứng "không bao giờ tự vẽ minh
+hoạ" của cả đội — vì thế nó phải là một vai riêng, không trộn vào `carousel`.
+
+Nhưng Kite **không phải chỉ biết chữ**. Tin nào **đã có sẵn** một biểu đồ, một
+bảng số hay một trang báo cáo thì chèn **bản thật** vào bằng slide `figure` —
+xem "Hình thật" bên dưới. Vẽ lại một biểu đồ có sẵn vừa mất công vừa dễ sai số.
 
 ## Ranh giới của ngoại lệ (đọc trước tiên)
 
@@ -39,6 +43,7 @@ Luật "không tự vẽ" tồn tại để **không bịa hiện thực**. Kite
 | Sơ đồ khái niệm: vòng lặp, các bước, luồng | Screenshot / UI sản phẩm giả |
 | Đồ hoạ chữ, khối màu, hairline, badge | **Logo/nhận diện hãng thật** (Google, OpenAI…) |
 | Biểu đồ *chỉ khi* số liệu có thật, ghi nguồn | Biểu đồ với số liệu bịa |
+| **Chèn bản thật** của biểu đồ/bảng/báo cáo (`figure`, có caption "via") | Ảnh minh hoạ AI sinh ra |
 | | Quote bịa gán cho người/hãng |
 
 Gọi tên sản phẩm bằng **chữ** ("Google Antigravity") thì được; **tái tạo logo**
@@ -130,6 +135,34 @@ bằng code — trừu tượng, gốc, không đụng logo/ảnh ai.
 Các slide trong: một motif nhỏ ở góc (cung quỹ đạo + node) hoặc chỉ một glow
 radial mờ — giữ nhẹ để không phạm chính luật "nền sạch, không rối".
 
+## Hình thật — biểu đồ, bảng số, trang báo cáo (`kind: figure`)
+
+Khi nguồn **đã có** hình đáng đưa lên, đừng vẽ lại: chèn bản thật.
+
+```json
+{"kind": "figure", "eyebrow": "SỐ LIỆU",
+ "title": "Điểm số trên SWE-bench Verified", "accent": "SWE-bench Verified",
+ "image": "drafts/chart_swebench.png",
+ "caption": "Biểu đồ trong bản công bố · via Google DeepMind",
+ "standfirst": "Chữ minh hoạ cho phần chiều cao còn thừa dưới hình.",
+ "cards": [{"num": "01", "text": "Ý phụ, nếu còn chỗ."}]}
+```
+
+Luật bố cục — **bề ngang trước, chiều cao xét sau** (cùng luật với
+`chup_chart.py`):
+
+- Ảnh **trải hết 1080px**, chạm hai mép slide, **không bao giờ cắt hai bên**.
+  Bề ngang của một biểu đồ là *nội dung*: mất cột cuối, mất trục, mất đúng cái
+  điểm đang nói tới — cắt đi là **nói sai**, không phải thiếu một tí.
+- Chiều cao giữ đúng tỉ lệ, trần **700px**. Cao hơn thì **giữ mép trên** (tiêu
+  đề, trục, hàng đầu nằm ở trên), mép dưới loang vào nền để đọc ra là "còn nữa";
+  renderer in ra mất bao nhiêu px để Kite biết mà tự cắt lại cho đúng.
+- **Phần chiều cao còn thừa** mới đến lượt chữ: `standfirst` + `cards`.
+
+Cổng chặn: `image` phải trỏ tới tệp có thật, rộng **>= 800px** (hẹp hơn mà kéo
+lên 1080 là bể nát — chụp lại bằng `chup_chart.py`, DPR 2), và **bắt buộc**
+`caption` ghi "via <ai>" vì hình là của người ta.
+
 ## Chia slide (nhịp feature)
 
 Tối thiểu **6**, tối đa **10**. Khung tham chiếu (không cứng):
@@ -137,8 +170,9 @@ Tối thiểu **6**, tối đa **10**. Khung tham chiếu (không cứng):
 1. **Bìa — hook** + hero art + byline.
 2. **Bối cảnh / vấn đề** — vì sao chủ đề đáng quan tâm.
 3. **Cách vận hành** — cơ chế chính (hợp với sơ đồ các bước).
-4. **Cơ chế / hệ quả** — tầng sâu hơn (hợp với sơ đồ vòng lặp/luồng).
-5. **Áp dụng + CTA** — khi nào dùng, nguồn để đọc thêm, follow.
+4. **Số liệu** — nếu nguồn có biểu đồ/bảng thật thì `figure`, không thì bỏ.
+5. **Cơ chế / hệ quả** — tầng sâu hơn (hợp với sơ đồ vòng lặp/luồng).
+6. **Áp dụng + CTA** — khi nào dùng, nguồn để đọc thêm, follow.
 
 Mỗi slide **một ý mới**. Bìa giật, slide cuối để lại câu hỏi/mốc + CTA. Chữ Việt
 có dấu; câu ngắn, chủ động; không em-dash.
@@ -159,9 +193,9 @@ là tiếng Anh), `--scale` (mặc định 2 → 2160×2700 cho nét), `--spec -
 `--theme`/`--hero` (xem mục Tone & hero).
 
 **Spec JSON:** xem docstring đầu `render_edu.py` và `reference/boost.spec.json`
-(spec đầy đủ của bộ /boost). 5 `kind` slide: `cover`, `statement`, `steps`,
-`loop`, `cta`. Cổng chặn tái dùng `card.tim_mat_dau` (tiếng Việt có dấu) + luật
-6..10 slide + slide 1 phải là `cover`.
+(spec đầy đủ của bộ /boost). 6 `kind` slide: `cover`, `statement`, `steps`,
+`loop`, `figure`, `cta`. Cổng chặn tái dùng `card.tim_mat_dau` (tiếng Việt có
+dấu) + luật 6..10 slide + slide 1 phải là `cover` + luật ảnh của `figure`.
 
 **Cài trên server (một lần):**
 ```bash
