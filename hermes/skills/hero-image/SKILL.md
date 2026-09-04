@@ -281,6 +281,18 @@ bao nhiêu, đọc nó.
 tone, mặt người vô danh, độ phân giải — **tất cả nằm ở [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md)
 mục 9**, code là `luat_anh.py`.
 
+Từ 04/09/2026 `card.py` gọi **đủ** bộ đó, ngang với carousel — luật Ông Chủ:
+*"ảnh do ai làm mà chả phải đạt tiêu chuẩn"*. Trước đó mục này chỉ đúng trên
+giấy: `luat_anh.py` có cổng, nhưng `card.py` không gọi.
+
+Hệ quả trực tiếp cho lệnh của bạn: **ảnh có mặt người thì phải khai
+`--nhan-vat "<tên>"`**, và tên đó phải là người **được nhắc trong bài** (CEO
+phát biểu, tác giả paper). Không khai là lệnh dừng — ảnh người vô danh đọc ra
+là ảnh stock. Khai sai tên thì tệ hơn: đó là bịa đặt.
+
+Cạnh ngắn <1000px và đáy ảnh quá sáng chỉ **cảnh báo**, không chặn — thấy thì
+cân nhắc đổi ảnh.
+
 Cái **riêng** của hero: `crop_ti_le.py` chỉ cắt chiều cao; muốn cắt bề ngang
 phải `--cat-ngang`, và chỉ được dùng cho ảnh chụp người/sản phẩm **không có chữ**.
 

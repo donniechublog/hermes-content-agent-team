@@ -240,16 +240,11 @@ def _ghep_neu_can(muc, nhan, stem):
     for q in ds:
         if not Path(q).exists():
             sys.exit(f"{nhan}: khong thay tep anh {q}")
-    # CONG CHAN tone (Ong Chu chot 04/09/2026): hai anh lech tone ghep chung
-    # khung doc ra dung nhu HAI VUNG rieng biet — thu ma ca carousel lan hero
-    # deu cam. Truoc day card.lech_tone chi IN canh bao, vai cu the cho qua.
-    # Gio la dung han: doi anh, dung nhan.
-    canh = card.lech_tone([Image.open(q).convert("RGB") for q in ds])
-    if canh:
-        sys.exit(f"{nhan}: " + "; ".join(canh) +
-                 " -> doi mot trong hai anh cho CUNG tone (cung nen sang/toi, cung "
-                 "gam mau; tot nhat hai slide cung mot bo). Ghep hai anh lech "
-                 "tone ra hai vung tach roi — khong duoc de qua.")
+    # CONG CHAN tone: tieu chi o `luat_anh.kiem_lech_tone`, cung mot cho voi
+    # card.py — day la cau hoi "hai anh nay co ghep duoc khong", tuc la do chung.
+    loi_tone, _ = luat_anh.kiem_lech_tone(nhan, [Image.open(q).convert("RGB") for q in ds])
+    if loi_tone:
+        sys.exit("; ".join(loi_tone))
     ra = Path(f"{stem}.ghep.png")
     ra.parent.mkdir(parents=True, exist_ok=True)
     # Dong dau XUAT XU (xem cong 2c): anh ghep co the roi dung 4:5 chan (vd hai

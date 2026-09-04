@@ -40,6 +40,11 @@ CANH_NGAN_MIN = 1000             # duoi nguong nay phong len 1080 se mem
 DAY_SANG_MAX = 150               # do sang trung binh 25% duoi anh
 CHART_PHANG = 0.85
 CHART_SO_MAU = 220
+# Anh cao duoi nguong nay so voi khung KHOA KHO thi khung bo trong phan con lai.
+# Ti le chieu cao khi trai full be ngang: 16:9 = 0.45, 3:2 = 0.53, 4:3 = 0.60,
+# 1:1 = 0.80. Dat 0.50 de chan 16:9 va rong hon; tu 3:2 tro len van qua, vi o do
+# phan toi con lai la CHO DAT CHU chu khong phai cho trong.
+CAO_TOI_THIEU = 0.50
 
 DAU_PNG = ("crop_ti_le", "nguon_dung")   # cac khoa metadata bao "do doi dung ra"
 
@@ -94,6 +99,15 @@ def doc_dau_crop(img):
         return None
 
 
+def doc_cat_ngang(img):
+    """crop_ti_le.py co duoc phep cat BE NGANG tam nay khong (co --cat-ngang)?
+
+    Day la mot UY QUYEN da ghi lai luc cat, tuong duong `crop_ok` khai trong
+    spec — chi khac la no duoc dong dau ngay tai cho cat nen khong khai lai
+    duoc. `kiem_crop_ngang` nhan ca hai."""
+    return _text(img).get("crop_ti_le", "").find("cat_ngang=1") >= 0
+
+
 def co_xuat_xu(img):
     """Anh co dau vet cua bat ky cong cu nao trong doi khong."""
     t = _text(img)
@@ -107,7 +121,23 @@ def la_ghep(img):
 
 # ---- Do luong anh ---------------------------------------------------------
 def do_chart(img, w=480):
-    """(phang, so_mau). Thuan PIL — venv tren server khong chac co numpy."""
+    """(phang, so_mau). Thuan PIL — venv tren server khong chac co numpy.
+
+      phang  — ti le cap pixel KE NHAU theo hang gan nhu bang nhau (lech <= 2).
+               Do hoa vector (chart, bang, UI) toan mang phang voi vai buoc nhay
+               dung; anh chup that thi moi pixel lech nhau mot chut.
+      so_mau — so mau RIENG BIET sau khi luong hoa 5 bit/kenh. Day la phep do
+               tach bach nhat: chart/screenshot dung mot bang mau tay nen ra vai
+               chuc mau, anh chup that ra hang nghin.
+
+    Thu nho bang NEAREST chu KHONG phai LANCZOS: LANCZOS lam nhoe vung phang cua
+    screenshot thanh gradient, tuc la xoa dung cai dau hieu can do.
+
+    Do tren 16 the that trong drafts/ (anh that + scrim phang, tinh huong KHO
+    nhat): phang 0.31..0.95, so_mau 350..4552 — khong tam nao bi goi nham la
+    chart. Chart/screenshot do duoc: phang 0.89..0.99, so_mau 42..65. Nguong dat
+    giua khoang trong do va phai dung CA HAI.
+    """
     h = max(1, round(img.height * w / img.width))
     v = img.convert("RGB").resize((w, h), Image.NEAREST)
     px = v.convert("L").tobytes()
@@ -238,6 +268,79 @@ def kiem_chart(nhan, img, khai_chart, la_bia=False):
     return loi, canh_bao
 
 
+def kiem_anh_thap(nhan, w_anh, h_anh, w_khung, h_khung, da_ghep=False):
+    """Anh QUA NGANG so voi mot khung KHOA KHO -> khung bo trong phan con lai.
+
+    Ong Chu bat loi 04/09/2026 (the "Nvidia thau tom Hugging Face"): anh 16:9
+    trai full be ngang 1200 chi cao 675, tuc 45% kho 4:5. Nua tren la anh, 55%
+    con lai la ban cover lam mo — mot mang bun khong mang thong tin gi. Man toi
+    lien mach chi xoa duoc cai MEP giua hai lop, khong xoa duoc chuyen nua khung
+    bo trong.
+
+    CHI goi cong nay khi khung KHOA KHO (vd card.py --kieu quote, carousel).
+    Khung troi theo anh (card.py --kieu dai) hoac khung co lop nen vung chu cao
+    len bu (--kieu tran) thi khong dinh: o do phan thieu duoc bu that.
+
+    Anh GHEP DOC mien han — do chinh la duong ra cua cong nay.
+    """
+    loi, canh_bao = [], []
+    if da_ghep or not w_anh or not h_anh:
+        return loi, canh_bao
+    nat_h = round(w_khung * h_anh / w_anh)
+    if nat_h >= h_khung * CAO_TOI_THIEU:
+        return loi, canh_bao
+    loi.append(
+        f"{nhan}: anh QUA NGANG cho khung {w_khung}x{h_khung}. Trai full be "
+        f"ngang thi no chi cao {nat_h}px = {nat_h/h_khung:.0%} khung, "
+        f"{1-nat_h/h_khung:.0%} con lai la ban cover lam mo — mot mang bun "
+        "khong mang thong tin gi. Duong ra: tim them MOT anh ngang nua CUNG "
+        "TONE trong cung bai roi ghep DOC (card.py: --image2; carousel: "
+        '"images": [a, b]) — hai anh 16:9 xep lai cao 90% khung. Hoac tim anh '
+        "dung/gan vuong hon: tu 3:2 tro len la du.")
+    return loi, canh_bao
+
+
+def kiem_lech_tone(nhan, ims):
+    """Hai anh sap GHEP DOC ma lech tone thi chan.
+
+    Do luong nam o `lech_tone`; day la phan QUYET DINH. Tach ra thanh cong rieng
+    vi ghep doc la duong ra duoc EP dung boi `kiem_anh_thap` va `kiem_chart` —
+    ep nguoi ta vao mot duong ma de chinh duong do hong lang thi vo nghia.
+    """
+    canh = lech_tone(ims)
+    if not canh:
+        return [], []
+    return ([f"{nhan}: " + "; ".join(canh) + ". Ghep chung khung thi doc ra dung "
+             "HAI VUNG rieng biet — thu ma ca hero lan carousel deu cam. Tot "
+             "nhat lay hai anh trong CUNG MOT BO anh cua bai."], [])
+
+
+def kiem_chart_mot_minh(nhan, img, da_ghep=False):
+    """Chart di MOT MINH vao mot khung dat CHU DE LEN anh phu kin -> CHAN.
+
+    Khac `kiem_chart` (do la chuyen khai co "chart": true cho slide than). Cong
+    nay danh cho khung kieu hero/bia: anh phu kin va mot man toi an ~40% day de
+    chu doc duoc. Chart nam mot minh o do la mat nua duoi cua chinh no — truc x,
+    chu thich, dong nguon. Chart phai NGUYEN VEN va TRAI FULL BE NGANG.
+
+    Anh GHEP DOC duoc mien: chart nam nua tren con nguyen, anh thu hai o duoi
+    chiu man toi. Do la duong ra, khong phai vi pham.
+    """
+    if da_ghep or la_ghep(img):
+        return [], []
+    la_ct, mo_ta = la_chart(img)
+    if not la_ct:
+        return [], []
+    return ([f"{nhan}: CHART DI MOT MINH vao khung co chu de len anh ({mo_ta}). "
+             "Nua duoi cua chart chim han duoi man toi: mat truc x, chu thich, "
+             "dong nguon. Ba duong ra: (1) tim them mot anh ngang CUNG TONE roi "
+             "ghep DOC (card.py --image2 / carousel \"images\": [a, b]) — chart "
+             "nam nua tren con nguyen; (2) de chart cho slide than voi "
+             "\"chart\": true, o do no duoc dan full be ngang nguyen ven; "
+             "(3) doi anh khac lam hero (nguoi, thiet bi, hien truong) va van "
+             "dan chart o slide than."], [])
+
+
 def kiem_ti_le(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=DUNG_SAI_TI_LE):
     """Anh phai nam trong dai 4:5..1:1 (anh ghep doc roi vao giua dai nay)."""
     r = w / h
@@ -263,10 +366,12 @@ def kiem_crop_ngang(nhan, img, w, h, crop_ok=None):
     """Anh goc NGANG ma di qua crop_ti_le.py -> CHAN (Ong Chu bat loi 03/09/2026).
 
     Chart / bang / slide bi crop ve 4:5 la mat tieu de, mat truc, doc ra vo nghia.
-    Chi anh chup nguoi/san pham KHONG co chu moi duoc crop: khai "crop_ok".
+    Chi anh chup nguoi/san pham KHONG co chu moi duoc crop, va co hai cach uy
+    quyen: khai "crop_ok" trong spec, HOAC cat bang `crop_ti_le.py --cat-ngang`
+    (co do dong dau vao PNG, xem `doc_cat_ngang`).
     """
     goc = doc_dau_crop(img)
-    if goc and goc[0] / goc[1] >= NGANG_RO and not crop_ok:
+    if goc and goc[0] / goc[1] >= NGANG_RO and not crop_ok and not doc_cat_ngang(img):
         return [f"{nhan}: anh goc NGANG {goc[0]}x{goc[1]} da bi crop ve {w}x{h} — "
                 "bang/chart/slide/banner co tieu de PHAI NGUYEN VEN, khong crop. "
                 'Tim them mot anh ngang cung tone, ghi "images": [a, b] de ghep '

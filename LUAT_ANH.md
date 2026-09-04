@@ -302,14 +302,35 @@ trừ trải nghiệm rõ rệt.
 | Khai `chart: true` mà máy không nhận ra chart | `kiem_chart` | **chỉ cảnh báo** (mục 3) |
 | Ảnh gốc ngang đã crop, không khai `crop_ok` | `kiem_crop_ngang` | chặn |
 | Ảnh đúng khít 4:5/1:1 mà không có dấu xuất xứ | `kiem_xuat_xu` | chặn |
-| Ghép hai ảnh quá khác tone | `lech_tone` | chặn |
+| Ghép hai ảnh quá khác tone | `kiem_lech_tone` | chặn |
 | Mặt người mà không khai `nhan_vat` | `kiem_mat_nguoi` | chặn |
 | Sai dải tỉ lệ của khung | `kiem_ti_le` | chặn |
+| Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn |
+| Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |
 
 Mỗi hàm trả về `(lỗi, cảnh báo)` và **không hàm nào biết đến canvas**, nên vai
 nào cũng gọi được. Vai tự chọn cổng nào hợp với khung của mình rồi gộp lại.
+
+Uỷ quyền crop bề ngang có **hai** đường, cổng nhận cả hai: khai `crop_ok` trong
+spec, hoặc cắt bằng `crop_ti_le.py --cat-ngang` (cờ đó đóng dấu vào PNG, đọc
+bằng `doc_cat_ngang`). Trước 04/09 chỉ card.py đọc dấu thứ hai nên carousel vẫn
+chặn oan một tấm đã được cho phép cắt.
+
+**Vai nào đã gọi cổng nào** (cập nhật 04/09/2026 — luật Ông Chủ: *"ảnh do ai làm
+mà chả phải đạt tiêu chuẩn"*):
+
+| | Ethan (`card.py`) | Dre (`carousel.py`) | Itachi (`deck.py`) |
+|---|:--:|:--:|:--:|
+| trùng · xuất xứ · mặt người · độ nét · đáy sáng | ✅ | ✅ | ❌ |
+| crop ngang · lệch tone | ✅ | ✅ | ❌ |
+| chart một mình | ✅ | – | ❌ |
+| ảnh quá ngang | ✅ | – | ❌ |
+| `chart: true` · dải tỉ lệ | – | ✅ | ❌ |
+
+Dấu `–` là **không áp dụng cho khung đó**, khác hẳn `❌` là **chưa đấu**. Cột
+Itachi còn trống nguyên.
 
 Sửa một luật ở đây là **cả đội đổi theo** — đó là lý do tài liệu này tồn tại.
 Đừng chép luật sang SKILL của vai; SKILL chỉ trỏ về đây.
