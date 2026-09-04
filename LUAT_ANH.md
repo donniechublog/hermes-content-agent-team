@@ -186,6 +186,12 @@ vẽ". Chọn `--cx/--cy` để ôm đúng chủ thể vào khung.
 **Chỉ crop ảnh chụp KHÔNG có chữ** (sản phẩm, sự kiện, trụ sở). Ảnh có chữ
 (chart, bảng, slide, banner, screenshot UI có tiêu đề) **không crop** — ghép dọc.
 
+**`crop_ti_le.py` tự chặn ở đầu kia:** mặc định nó **chỉ cắt chiều cao**. Ảnh gốc
+ngang (tỉ lệ ≥1.4) mà đòi cắt bề ngang thì script dừng — bề ngang của chart/bảng
+là nội dung. Muốn cắt bề ngang phải thêm `--cat-ngang`, và **chỉ được dùng cho
+ảnh chụp người/sản phẩm không có chữ**. Nên với ảnh ngang, đường đúng gần như
+luôn là **ghép dọc** hoặc `"chart": true`, không phải crop.
+
 Ảnh gốc rõ ràng **ngang** (tỉ lệ ≥1.4) mà đi qua crop thì bị chặn, trừ khi khai
 `"crop_ok": "<lý do>"` — chỉ dành cho ảnh chụp người/sản phẩm không có chữ.
 

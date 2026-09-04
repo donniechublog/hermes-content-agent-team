@@ -148,7 +148,7 @@ mảng nền phẳng. Đáy ảnh tan dần vào nền nên không lộ ra đư�
 **Nhưng ở `--kieu quote` thì khổ thẻ khoá cứng**, nền không "cao lên" được — nó
 chỉ là phần thẻ còn trống. Ảnh 16:9 ở bề ngang 1200 chỉ cao 675, tức **45%** khổ
 4:5; 55% còn lại là bản cover làm mờ, một mảng bùn không mang thông tin gì. Nên
-từ 04/09/2026 `card.py` **chặn** ảnh thấp hơn 50% khổ thẻ ở kiểu quote (cổng #4)
+từ 04/09/2026 `card.py` **chặn** ảnh thấp hơn 50% khổ thẻ ở kiểu quote (cổng #3)
 và đẩy sang đường đúng: `--image2`. Hai ảnh 16:9 xếp dọc ở bề ngang 1200 cao
 1350 = **90%** khổ thẻ — thẻ đầy ảnh, không còn mảng bùn. Ảnh từ 3:2 trở lên
 (53% khổ thẻ) thì qua: ở đó phần tối là **chỗ đặt chữ**, không phải chỗ trống.
@@ -185,7 +185,7 @@ Với ảnh chart/bảng/screenshot thì vấn đề **không phải** "nửa d�
 không" mà là **nguyên vẹn + full bề ngang**. `card.py` tự nhận diện
 (`luat_anh.la_chart`) rồi ép sang đúng đường thay vì bảo bạn "đổi ảnh khác".
 
-**Ở hero:** chart đi một mình **bị chặn** (cổng #4) — hook đè lên thì chart nằm
+**Ở hero:** chart đi một mình **bị chặn** (cổng #2) — hook đè lên thì chart nằm
 dưới chữ, đọc không ra. Ghép dọc bằng `--image2`, hoặc để chart cho carousel.
 
 Cách nhận diện, giới hạn của nó, và vì sao cổng chart chạy **một chiều** (khai

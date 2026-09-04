@@ -22,7 +22,11 @@ TI_LE = {"1:1": 1.0, "4:5": 0.8}          # rong/cao
 # Duoi ti le nay thi anh goc con coi la "gan vuong": cat bot mot chut be ngang
 # de ve 1:1 khong lam mat noi dung. Tu 1.4 tro len (16:9, 3:2, anh chup slide/
 # chart) thi cat be ngang la cat mat truc, mat nhan, mat cot cuoi cua bang.
-NGANG = 1.4
+#
+# Lay tu luat_anh.py — MOT nguon su that. Truoc day so 1.4 nam ca o day lan
+# trong cong chan, hai ban co the troi khac nhau ma khong ai biet (dung cai
+# benh ma LUAT_ANH.md sinh ra de chan).
+from luat_anh import NGANG_RO as NGANG
 
 
 def cat(img, ratio, cx=0.5, cy=0.5, cat_ngang=False):

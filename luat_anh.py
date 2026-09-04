@@ -243,11 +243,20 @@ def kiem_ti_le(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=DUNG_SAI_TI_LE)
     r = w / h
     if lo - dung_sai <= r <= hi + dung_sai:
         return [], []
+    if r >= NGANG_RO:
+        # Anh NGANG: crop_ti_le tu choi cat be ngang (can --cat-ngang), va cat
+        # be ngang cung la sai huong — mat truc/nhan/cot cuoi. Dan thang sang
+        # hai duong dung, dung goi y crop truoc.
+        return [f"{nhan}: ti le {w}x{h} ({r:.2f}) khong nam trong 4:5..1:1. Anh "
+                f"NGANG thi KHONG cat be ngang: (a) tim them mot anh ngang cung "
+                f'tone roi ghep doc, ghi "images": [a, b]; hoac (b) chart/bang '
+                f'benchmark thi ghi "chart": true de hien full be ngang nguyen ven '
+                f"(slide than). Chi khi la anh chup nguoi/san pham KHONG co chu moi "
+                f"duoc cat be ngang: crop_ti_le.py --anh {p} --ra <ra.png> "
+                f"--ti-le 4:5 --cat-ngang"], []
     return [f"{nhan}: ti le {w}x{h} ({r:.2f}) khong nam trong 4:5..1:1 — cat "
             f"truoc: venv/bin/python crop_ti_le.py --anh {p} --ra <ra.png> "
-            f"[--ti-le 4:5] [--cx/--cy]; hoac anh NGANG thi tim them mot anh "
-            f'ngang nua, ghi "images": [a, b]; chart/bang benchmark thi ghi '
-            f'"chart": true de hien full width nguyen ven (slide than)'], []
+            f"[--ti-le 4:5] [--cx/--cy]"], []
 
 
 def kiem_crop_ngang(nhan, img, w, h, crop_ok=None):
@@ -293,9 +302,11 @@ def kiem_xuat_xu(nhan, img, w, h):
                     f'crop_ti_le.py\'. Chart/bang/slide/banner co chu: DUNG crop — '
                     f'ghi "chart": true (slide than) hoac ghep doc "images": [a, b]. '
                     f"Anh chup khong co chu: cat LAI bang venv/bin/python "
-                    f"crop_ti_le.py --anh <goc> --ra <ra.png> --ti-le {ten}. Anh goc "
-                    f"VON DA {ten}: van chay qua crop_ti_le.py mot lan de dong dau "
-                    f"(cat 0, khong mat gi)."], []
+                    f"crop_ti_le.py --anh <goc> --ra <ra.png> --ti-le {ten} "
+                    f"(anh GOC NGANG >={NGANG_RO} thi crop_ti_le tu choi cat be ngang, "
+                    f"phai them --cat-ngang, va chi duoc lam vay voi anh chup "
+                    f"nguoi/san pham KHONG co chu). Anh goc VON DA {ten}: van chay qua "
+                    f"crop_ti_le.py mot lan de dong dau (cat 0, khong mat gi)."], []
     return [], []
 
 
