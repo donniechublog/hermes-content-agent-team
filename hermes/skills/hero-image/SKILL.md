@@ -125,32 +125,11 @@ Vì sao phải tìm rộng: link Finn nhặt thường là trang tài liệu, v�
 nó là thẻ thương hiệu chung. Ví dụ thật: `api-docs.deepseek.com` trả
 `deepseek-social-card.jpeg` cho mọi bài.
 
-### Chụp chart / bảng benchmark: full chiều rộng trước, chiều cao xét sau
+### Chụp chart / bảng benchmark
 
-**Luật Ông Chủ 04/09/2026.** Bề ngang của một chart là **nội dung**: trục, nhãn
-chuỗi, cột cuối của bảng, cái điểm được tô sáng mà cả bài đang nói tới. Cắt mất
-một phần bề ngang thì thứ còn lại không phải thiếu một tí — **nó nói sai**. Chiều
-cao thì khác: cắt bớt mép trên/dưới một chart thường chỉ mất khoảng thở.
-
-Đừng chụp bằng khung mặc định của công cụ nào. Khung mặc định luôn hẹp
-(`screenshot.js` trong repo này đặt 820px), và một chart rộng 1400px trong khung
-đó thì hoặc bị cắt, hoặc bị trang reflow xuống bố cục điện thoại — lúc đó có
-chụp đủ bề ngang cũng không còn là cái chart trên desktop nữa.
-
-```bash
-venv/bin/python chup_chart.py --url "<trang có chart>" --ra chart.png
-venv/bin/python chup_chart.py --url "<trang>" --chon "figure.chart" --ra chart.png
-venv/bin/python chup_chart.py --url "<link ảnh trực tiếp>" --ra chart.png
-```
-
-Script mở ở khung 1920px, **đo bề ngang thật** của phần tử (`scrollWidth`, bắt cả
-phần tràn ra ngoài khung nhìn), **nới khung** cho vừa rồi mới chụp ở DPR 2. Chụp
-xong nó **đo lại ảnh ra**: bề ngang ảnh nhỏ hơn bề ngang thật của chart thì lệnh
-dừng chứ không giao một tấm thiếu nửa phải. Ảnh rất cao thì nó chỉ cảnh báo —
-chiều cao được phép cắt.
-
-Link trỏ thẳng vào một tấm ảnh thì script tải **nguyên bản**, không resize, không
-crop: bản gốc luôn đầy đủ hơn mọi bản chụp lại.
+**Full chiều rộng trước, chiều cao xét sau** — chụp bằng `chup_chart.py`, đừng
+dùng khung mặc định của công cụ nào. Luật đầy đủ và lý do ở
+[`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 2.
 
 ## Bước 2 — chọn ảnh, và cách ảnh được điều phối
 
@@ -181,7 +160,7 @@ khi lệch tone chứ không chỉ cảnh báo như trước (carousel đã si�
 **Ảnh quá ngang mà có TIÊU ĐỀ** (slide, bảng, chart, banner): đừng crop mất
 tiêu đề (Ông Chủ bắt lỗi 03/09/2026). Tìm thêm MỘT ảnh ngang nữa cùng bài và
 đưa `--image2 <ảnh ngang thứ hai>`: script ghép DỌC hai ảnh trong cùng khung
-(full bề ngang, nguyên tỉ lệ, cách 12px). Dùng được cho cả ba kiểu `dai`,
+(full bề ngang, nguyên tỉ lệ, áp sát nhau không vạch ngăn). Dùng được cho cả ba kiểu `dai`,
 `tran`, `quote`; ở `tran`/`quote` ảnh dưới nằm dưới màn tối của chữ, nên đặt
 ảnh quan trọng hơn ở `--image`. **Chọn hai ảnh CÙNG TONE** (cùng nền sáng/tối,
 cùng gam màu): lệch tone đọc ra như hai vùng riêng biệt. Script in
@@ -203,36 +182,20 @@ benchmark dày đặc số: đọc thì tốt nhưng không làm nền được.
 ### Chart phải đi đường của chart
 
 Với ảnh chart/bảng/screenshot thì vấn đề **không phải** "nửa dưới có trống
-không" mà là **chart phải nguyên vẹn và trải full bề ngang**. Nên `card.py` nhận
-diện loại ảnh này rồi ép sang đúng đường, thay vì bảo bạn "đổi ảnh khác".
+không" mà là **nguyên vẹn + full bề ngang**. `card.py` tự nhận diện
+(`luat_anh.la_chart`) rồi ép sang đúng đường thay vì bảo bạn "đổi ảnh khác".
 
-Cách nhận diện (`card.la_chart`), đo trên bản thu nhỏ 480px:
+**Ở hero:** chart đi một mình **bị chặn** (cổng #4) — hook đè lên thì chart nằm
+dưới chữ, đọc không ra. Ghép dọc bằng `--image2`, hoặc để chart cho carousel.
 
-| Phép đo | Chart/screenshot | Ảnh thật |
-|---|---|---|
-| `phẳng` — tỉ lệ cặp pixel kề nhau gần bằng nhau | 0,89–0,99 | 0,31–0,95 |
-| `số màu` — số màu riêng biệt sau lượng hoá 5 bit | 42–65 | 350–4552 |
+Cách nhận diện, giới hạn của nó, và vì sao cổng chart chạy **một chiều** (khai
+cờ mà máy không nhận ra thì **chỉ cảnh báo**, không chặn): xem
+[`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 3. Đọc mục đó trước khi đụng vào ngưỡng.
 
-Phải **cả hai** mới kết luận là chart. Số màu là phép tách bạch nhất: đồ hoạ
-vector dùng một bảng màu tay nên ra vài chục màu, ảnh chụp thật ra hàng nghìn.
-Đo thử trên 16 thẻ thật trong `drafts/` — đều là ảnh thật cộng scrim phẳng, tức
-là tình huống khó nhất — không tấm nào bị gọi nhầm.
-
-Nhận ra là chart thì:
-
-- **Hero (`quote`/`tran`)**: chart đi một mình bị chặn (cổng #4). Ghép dọc bằng
-  `--image2`, hoặc để chart cho carousel.
-- **Carousel slide thân**: bắt khai `"chart": true` — cờ đó cho `carousel.py`
-  dán full bề ngang nguyên vẹn. Khai cờ đó cho một ảnh **không** phải chart cũng
-  bị bắt: cờ này bỏ qua cổng tỉ lệ, dùng cho ảnh thường là lách cổng.
-- **Carousel bìa**: chart làm bìa bị chặn (hook đè lên ảnh thì chart nằm dưới
-  chữ) — ghép dọc `"images": [a, b]`, hoặc đổi bìa và để chart ở slide thân.
-
-Còn "nửa dưới phải trống" ở trên vẫn là **luật biên tập**, không phải cổng chặn.
-Đã thử làm nó thành cổng (đo độ sáng + độ phẳng của vùng dưới màn tối) rồi **gỡ
-bỏ 04/09/2026**: nó bắt đúng những tấm mà cổng chart đã bắt, nhưng báo sai lý do
-("đổi ảnh khác") nên đẩy vai đi sửa sai chỗ — trong khi việc phải làm là đưa
-chart sang đường của chart.
+Còn "nửa dưới phải trống" ở trên vẫn là **luật biên tập của hero**, không phải
+cổng chặn. Đã thử làm nó thành cổng rồi **gỡ bỏ 04/09/2026**: nó bắt đúng những
+tấm mà cổng chart đã bắt, nhưng báo sai lý do ("đổi ảnh khác") nên đẩy vai đi
+sửa sai chỗ.
 
 Ảnh càng dọc thì chữ càng đè lên ảnh; ảnh càng ngang thì mảng nền phẳng càng
 nhiều. Cả hai đều đúng, chọn theo ảnh nào mang thông tin thật.
@@ -292,33 +255,34 @@ Lưu ý về `--ratio`: nếu ảnh quá dọc so với tỉ lệ bạn khoá, s
 lệ cao hơn để không phải thu ảnh. Dòng in ra cuối lệnh cho biết thẻ thật sự ra
 bao nhiêu, đọc nó.
 
-## Bảy cổng chặn
+## Cổng chặn
 
-Sáu cái đầu làm lệnh **dừng hẳn**:
+### Cổng về CHỮ và BỐ CỤC — riêng của hero
 
 1. **Tiếng Việt không dấu** ở tiêu đề. Từng in ra "CONG CU" trên thẻ thật. Gõ
    lại có dấu rồi chạy lại. Chỉ dùng `--bo-qua-dau` khi chữ **thật sự** là
    tiếng Anh.
-2. **Ảnh bị cắt bề ngang**, ở **mọi** kiểu. `card.py` đọc dấu vết
-   `crop_ti_le.py` ghi trong metadata PNG: ảnh gốc ngang (≥1.4) mà đã bị cắt bớt
-   bề ngang thì lệnh dừng. `crop_ti_le.py` cũng tự chặn ở đầu kia — nó chỉ cắt
-   chiều cao, muốn cắt bề ngang phải `--cat-ngang` và chỉ được dùng cho ảnh chụp
-   người/sản phẩm **không có chữ**.
-3. **Chart đi một mình vào hero** (`--kieu quote`/`tran`). `card.py` tự nhận ra
-   ảnh là chart/screenshot (xem "Chart phải đi đường của chart" bên dưới) và
-   dừng: ở hai kiểu đó ảnh phủ kín thẻ, màn tối ăn ~40% đáy, chart đứng một mình
-   là mất trục x và chú thích. Đường đúng: `--image2` để ghép dọc (chart ở
-   `--image` nằm nửa trên còn nguyên), hoặc đưa chart về slide thân carousel với
-   `"chart": true`. Ghi đè bằng `--bo-qua-anh` — cờ này giờ **chỉ** phục vụ cổng
-   này.
-4. **Ảnh quá ngang ở `--kieu quote`** — thấp hơn 50% khổ thẻ (16:9 và rộng hơn).
+2. **Chart đi một mình vào hero** (`--kieu quote`/`tran`). Ở hai kiểu đó ảnh phủ
+   kín thẻ, màn tối ăn ~40% đáy, chart đứng một mình là mất trục x và chú thích.
+   Đường đúng: `--image2` để ghép dọc (chart ở `--image` nằm nửa trên còn
+   nguyên), hoặc đưa chart về slide thân carousel với `"chart": true`. Ghi đè
+   bằng `--bo-qua-anh` — cờ này giờ **chỉ** phục vụ cổng này.
+3. **Ảnh quá ngang ở `--kieu quote`** — thấp hơn 50% khổ thẻ (16:9 và rộng hơn).
    Khổ quote khoá cứng nên phần thiếu là thẻ bỏ trống, không phải nền cao lên.
    Ghép dọc bằng `--image2`, hoặc tìm ảnh từ 3:2 trở lên. Ghi đè `--bo-qua-anh`.
-   Kèm theo: **ghép dọc lệch tone** cũng dừng hẳn.
-5. **Thương hiệu không nhận ra** ở `--brand`.
-6. **Thiếu cờ bắt buộc**: `--image --title --out`.
-7. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
+4. **Thương hiệu không nhận ra** ở `--brand`.
+5. **Thiếu cờ bắt buộc**: `--image --title --out`.
+6. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
    nối. Đừng dựa vào nó, cứ gõ đúng từ đầu.
+
+### Cổng về ẢNH — dùng chung cả đội
+
+Ảnh bị cắt bề ngang, cắt tay né cổng, chart phải đi đường của chart, ghép lệch
+tone, mặt người vô danh, độ phân giải — **tất cả nằm ở [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md)
+mục 9**, code là `luat_anh.py`.
+
+Cái **riêng** của hero: `crop_ti_le.py` chỉ cắt chiều cao; muốn cắt bề ngang
+phải `--cat-ngang`, và chỉ được dùng cho ảnh chụp người/sản phẩm **không có chữ**.
 
 ## Tiêu đề: viết như thế nào
 
@@ -484,31 +448,12 @@ Mở tệp ra xem. Ba câu hỏi:
 Spec đầy đủ của hệ chữ và bảng màu ở
 `/home/donniechu/content-team/STYLE_TEXT_SPEC.md`.
 
-## Tiêu chí ảnh dùng chung — `luat_anh.py`
+## Tiêu chí ảnh dùng chung
 
-Ông Chủ chốt 04/09/2026: **một bộ tiêu chí chung cho mọi vai làm ảnh**, thay vì
-mỗi vai một bộ. Đường cắt một câu:
+Mọi luật về **ảnh** — không tự vẽ, tìm ảnh thật, chụp chart, tỉ lệ và crop, dấu
+xuất xứ, ghép dọc, mặt người, không hai vùng, bảng cổng chặn — nằm ở **một tài
+liệu chuẩn duy nhất**: [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md).
 
-> *"Ảnh này có được dùng không"* → **chung**, nằm ở `luat_anh.py`.
-> *"Đặt nó lên khung thế nào"* → **riêng** từng vai, nằm ở renderer.
-
-Nên các luật dưới đây **giống hệt nhau** ở Ethan (`card.py`), Dre
-(`carousel.py`) và bất kỳ vai làm ảnh nào sau này — sửa một chỗ là cả đội đổi
-theo, không còn cảnh mỗi bên một bản rồi trôi khác nhau:
-
-| Cổng | Chặn hay cảnh báo |
-|---|---|
-| Ảnh trùng (theo nội dung tệp) | chặn |
-| Chart/screenshot thiếu `chart: true` | chặn |
-| Khai `chart: true` mà máy không nhận ra chart | **chỉ cảnh báo** — phép đo bỏ sót chart có đường màu khử răng cưa, chặn ở chiều này là giết việc đúng |
-| Ảnh gốc ngang đã crop, không khai `crop_ok` | chặn |
-| Ảnh đúng khít 4:5/1:1 mà không có dấu xuất xứ (cắt tay) | chặn |
-| Ghép hai ảnh quá khác tone | chặn |
-| Mặt người mà không khai `nhan_vat` | chặn |
-| Cạnh ngắn <1000px, đáy ảnh quá sáng | cảnh báo |
-
-**Dấu xuất xứ:** mọi công cụ trong đội sinh ra ảnh đều tự đóng dấu vào PNG
-(`crop_ti_le.py`, `arxiv_bia.py`, `chup_chart.py`, `doi_chu_anh.py`, ghép dọc).
-Ảnh không dấu mà lại đúng khít tỉ lệ là dấu hiệu cắt tay bằng công cụ ngoài —
-bị chặn. Ảnh gốc vốn đã đúng tỉ lệ thì chạy qua `crop_ti_le.py` một lần để đóng
-dấu, cắt 0, không mất gì.
+Dùng chung với Dre (`carousel`) và Kite (`carousel-edu`); code là `luat_anh.py`.
+**Đừng chép luật đó về đây** — chép là trôi khác nhau, đúng cái đã xảy ra
+03–04/09/2026. SKILL này chỉ giữ phần **bố cục riêng của hero**.

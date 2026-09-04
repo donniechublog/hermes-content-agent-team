@@ -81,6 +81,12 @@ ghi thêm một dòng cảnh báo.
   chụp ở DPR 2; chụp xong đo lại ảnh ra, thiếu bề ngang thì dừng chứ không giao
   ảnh mất nửa phải. Link ảnh trực tiếp thì tải nguyên bản. Cần `playwright` +
   chromium
+- **`LUAT_ANH.md` — tài liệu chuẩn về LUẬT ẢNH, dùng chung cho mọi vai TẠO ra
+  ảnh** (Ethan/`card.py`, Dre/`carousel.py`, Kite/`render_edu.py`). Một nguồn sự
+  thật duy nhất: không tự vẽ, tìm ảnh thật, chụp chart full chiều rộng, chart
+  nguyên vẹn, tỉ lệ và crop, dấu xuất xứ, ghép dọc, mặt người, không hai vùng.
+  Code là `luat_anh.py`. **Đừng chép luật đó vào SKILL của vai** — chép là trôi
+  khác nhau. Gin/Itachi không tạo ảnh (chỉ sửa trên ảnh gốc) nên không áp bộ này
 - `crop_ti_le.py` — cắt một ảnh về **1:1 hoặc 4:5** trước khi đưa vào carousel
   (luật: ảnh carousel phải đúng một trong hai tỉ lệ đó). Cắt center, hoặc
   `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh.

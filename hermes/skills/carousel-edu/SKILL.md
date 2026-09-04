@@ -138,6 +138,13 @@ radial mờ — giữ nhẹ để không phạm chính luật "nền sạch, kh�
 
 ## Hình thật — biểu đồ, bảng số, trang báo cáo (`kind: figure`)
 
+> **Ảnh thật thì theo luật ảnh chung.** Từ khi Kite chèn hình thật, bạn thuộc
+> nhóm vai **tạo ra ảnh**, nên mọi luật ở [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) áp dụng: không
+> tự vẽ thay ảnh có thật, chụp chart full chiều rộng trước, chart phải nguyên
+> vẹn, không cắt tay ngoài `crop_ti_le.py`, không dùng mặt người vô danh, không
+> để ra hai vùng riêng biệt. Đọc mục 2 và 3 trước khi chèn `kind: figure`.
+
+
 Khi nguồn **đã có** hình đáng đưa lên, đừng vẽ lại: chèn bản thật.
 
 ```json

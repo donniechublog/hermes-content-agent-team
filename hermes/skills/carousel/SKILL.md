@@ -146,11 +146,9 @@ Thấy là hỏng, dựng lại — đừng gửi đi.
    trống trên/dưới là chính ảnh làm mờ. Đây là đường mặc định cho benchmark
    chart/bảng — không cần crop, không cần tìm ảnh thứ hai. Bìa thì không (hook
    đè lên ảnh), bìa chart phải ghép dọc. **Crop chỉ được làm qua
-   `crop_ti_le.py`** (script ghi dấu vết vào PNG để cổng chặn kiểm); tự cắt
-   bằng PIL/cv2/ImageMagick là lách cổng = vi phạm — và **từ 04/09 là bị bắt**:
-   ảnh đúng khít 4:5/1:1 mà không có dấu vết bị chặn thẳng (cổng chặn #9). Ảnh gốc ngang mà đi qua
-   crop bị chặn, trừ khi slide khai `"crop_ok": "<lý do>"` (chỉ cho ảnh chụp
-   người/sản phẩm **không có chữ**).
+   `crop_ti_le.py`**, và cắt tay bằng
+   PIL/cv2/ImageMagick là vi phạm — từ 04/09 là **bị bắt**. Cơ chế đầy đủ ở
+   [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 4.
 3. **Flagship mà chỉ 5 slide.** GPT-6 Astra là model đầu bảng OpenAI, có
    benchmark, safety, giá, đối thủ, phát biểu… mà bộ chỉ 5 slide. **Tin model
    ra mắt của hãng frontier (OpenAI, Anthropic, Google, Meta, xAI, DeepSeek,
@@ -239,37 +237,15 @@ KHÔNG crop về 1:1/4:5; chart ngang thì ghép dọc với một chart/bảng 
 tone (`"images": [a, b]`). Chụp bản to (cạnh ngắn ≥1000px; bảng chữ nhỏ càng
 phải to).
 
-### Gom ảnh CHẤT LƯỢNG: kết hợp official site + magazine (BẮT BUỘC nghĩ rộng)
+### Gom ảnh: kết hợp official site + magazine
 
-`anh_bai.py` fetch **tĩnh** — trang sản phẩm hiện đại (JS render) nó chỉ nhặt
-được `og:image` (thường là banner/sitecard chung chung), BỎ SÓT hết screenshot
-UI thật. Đừng kết luận "bài không có ảnh" từ một lần chạy `anh_bai.py`. Một
-carousel chất lượng **trộn hai nguồn**:
+`anh_bai.py` fetch **tĩnh** nên bỏ sót screenshot UI thật của trang JS. Đừng kết
+luận "bài không có ảnh" từ một lần chạy — trộn hai nguồn (chính chủ mở bằng
+browser thật + bài review của magazine). Cách làm ở [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 1.
 
-1. **Official / main brand** (trang chính chủ): mở bằng **BROWSER thật** (JS
-   render) rồi lấy screenshot sản phẩm/hero từ DOM — vd trang chủ có `<img>`
-   screenshot UI, video demo (trích 1 frame bằng `cv2` nếu cần, server đã có).
-2. **Magazine / bài review**: The Verge, TechCrunch, The New Stack, BetterStack,
-   9to5Google... thường embed screenshot UI thật, góc chụp khác, chú thích rõ.
-   Dùng WebSearch tìm bài review rồi mở lấy ảnh. LƯU Ý: ảnh review hay dính
-   **webcam mặt reviewer ở góc** → crop bỏ (luật ảnh một-người-vô-danh).
-
-Ưu tiên screenshot **nền tối** cho slide có chữ (contrast). Ảnh tải về nhỏ hơn
-1000px cạnh ngắn thì phóng lên sẽ mềm — chỉ dùng khi làm nền mờ sau chữ, còn có
-bản to hơn thì thay. Trộn official + magazine mới ra bộ đủ 5+ ảnh khác nhau,
-đúng chủ đề, không stock.
-
-**MỖI SLIDE MỘT ẢNH DUY NHẤT — không lặp lại.** Luật cứng: không dùng cùng một
-ảnh cho hai slide, và **cũng không dùng hai crop khác nhau của CÙNG một tấm
-ảnh** (người xem vẫn nhận ra là một hình) — mỗi slide phải là một hình thật
-khác hẳn. Một bộ 6 slide cần 6 nguồn ảnh riêng biệt.
-
-Không đủ ảnh trong đúng bài gốc thì **tìm thêm ảnh thật liên quan** — không giới
-hạn ở ảnh nhúng sẵn: ảnh sự kiện góc khác, ảnh sản phẩm/chip chính hãng, trụ sở,
-người trình bày, logo... (Wikimedia Commons, các báo khác đưa cùng tin). Tất cả
-đều là hãng lớn, material không thiếu. Chỉ khi **thật sự** không kiếm đủ ảnh
-riêng thì mới **gộp hai ý** vào một slide để giảm số ảnh cần (đừng lặp ảnh để
-lấp). Tránh ảnh **rò rỉ/chưa xác thực** (leak) — rủi ro sai và bản quyền.
+**MỖI SLIDE MỘT ẢNH DUY NHẤT — không lặp lại**, và cũng không dùng hai crop khác
+nhau của cùng một tấm. Một bộ 6 slide cần 6 nguồn ảnh riêng biệt. Không đủ ảnh
+riêng thì **gộp hai ý** vào một slide để giảm số ảnh cần — đừng lặp ảnh để lấp.
 
 Bài **arxiv** không có ảnh minh hoạ thì chụp trang bìa paper làm ảnh bìa:
 
@@ -300,79 +276,36 @@ kiện, ảnh sản phẩm, screenshot, chart đều dùng được, miễn đá
 | Ảnh bìa: góc dưới-trái | tương đối thoáng cho hook |
 | Ảnh thân | nửa dưới không được sáng chói / rối chi tiết (chữ trắng đè lên qua màn tối) |
 
-### Tỉ lệ ảnh: 1:1 hoặc 4:5 — không thì tự crop trước
+### Tỉ lệ ảnh: 1:1 hoặc 4:5
 
-Ảnh dùng trong carousel phải là **1:1 (vuông)** hoặc **4:5**. Vuông fit bề ngang
-1080px ra cao ~1080 (phủ ~80% khung); 4:5 lấp kín khung. Cả hai đều cao đủ để
-nền chữ (ảnh làm mờ + tối ở ~30% đáy) phủ liền, không hở dải đen. Ảnh ngang
-(16:9, 4:3) fit bề ngang chỉ ra ~600px — hụt, phải cover-crop hai cạnh (mất nội
-dung mép, vd cắt chữ trên screenshot).
+Ảnh dùng trong carousel phải là **1:1** hoặc **4:5**. Vuông fit bề ngang 1080px
+ra cao ~1080 (phủ ~80% khung); 4:5 lấp kín khung. Cả hai đều cao đủ để nền chữ
+phủ liền, không hở dải đen. Ảnh ngang fit bề ngang chỉ ra ~600px — hụt.
 
-Tìm được ảnh đúng tỉ lệ thì thôi. Không thì **ảnh ngang ưu tiên GHÉP DỌC hai
-ảnh** (xem mục dưới) — đỡ phải cắt nhiều, giữ trọn bề ngang. Chỉ khi không kiếm
-được ảnh thứ hai cùng tone mới crop về 1:1/4:5 **trước** khi đưa vào carousel
-(đừng để `carousel.py` tự xoay xở), và **chỉ với ảnh không có chữ**. Dùng
-`crop_ti_le.py`:
+Tìm được ảnh đúng tỉ lệ thì thôi. Không thì **ảnh ngang ưu tiên GHÉP DỌC** (mục
+dưới) — đỡ phải cắt nhiều, giữ trọn bề ngang. Chỉ khi không kiếm được ảnh thứ
+hai cùng tone mới crop, và **chỉ với ảnh không có chữ**.
 
-```bash
-venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png              # 1:1, giữa
-venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --ti-le 4:5  # 4:5
-venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --cx 0.62    # tâm lệch phải, ôm chủ thể
-```
-
-Crop là **chọn khung ảnh thật**, không phải bịa ảnh — vẫn đúng luật "không tự
-vẽ". Chọn `--cx/--cy` để ôm đúng chủ thể (chip, sản phẩm) vào khung. **Chỉ crop
-ảnh chụp không có chữ** (sản phẩm, sự kiện, trụ sở). Ảnh có chữ (chart, bảng,
-slide, banner, screenshot UI có tiêu đề) **không crop** — ghép dọc. Và **chỉ
-crop bằng `crop_ti_le.py`**: script ghi dấu vết vào PNG, `carousel.py` đọc ra
-để chặn crop ảnh ngang; ảnh ngang đã crop chỉ qua cổng khi slide khai
-`"crop_ok": "<lý do>"`. Tự cắt bằng PIL/cv2 để né cổng là vi phạm.
+Luật crop đầy đủ — `crop_ti_le.py`, `crop_ok`, và vì sao **cắt tay bằng
+PIL/cv2/ImageMagick là vi phạm và bị chặn** — ở [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 4.
 
 ### Ảnh ngang chữ nhật: GHÉP hai ảnh cho đỡ phải cắt
 
-Ông Chủ chốt 04/09/2026: **ảnh ngang chữ nhật thì cứ ghép cho đỡ phải cắt
-nhiều** — ghép là đường bình thường, không phải phương án chữa cháy. Cắt một
-ảnh 16:9 về 1:1 là bỏ đi gần một nửa bề ngang; ghép dọc hai ảnh giữ trọn cả
-hai. **Điều kiện duy nhất: hai hình không được quá khác tone** (xem ngay dưới).
+Ghép là đường **bình thường** cho ảnh ngang, không phải phương án chữa cháy;
+với ảnh có tiêu đề/chữ thì ghép là **bắt buộc**. Điều kiện duy nhất: hai hình
+không được quá khác tone (cổng chặn dừng hẳn). Đầy đủ ở
+[`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 5.
 
-Riêng ảnh có **TIÊU ĐỀ / chữ** (slide, bảng, chart, banner) thì ghép là **bắt
-buộc**, không được crop: crop là mất tiêu đề, ảnh đọc ra vô nghĩa (Ông Chủ bắt
-lỗi 03/09/2026). Cách làm: **tìm thêm MỘT ảnh ngang nữa** cùng bài (slide kế
-tiếp, bảng khác, banner) và xếp DỌC hai ảnh trong cùng khung. Ghi
-`"images": [a, b]` thay cho `"image"`, ở bìa hoặc slide thân đều được:
+Ở carousel, ghi `"images": [a, b]` thay cho `"image"` — dùng được ở cả bìa lẫn
+slide thân:
 
 ```json
 {"images": ["slide_1.png", "slide_2.png"], "text": "..."}
 ```
 
-`carousel.py` tự ghép: mỗi ảnh full bề ngang, nguyên tỉ lệ, **áp sát nhau không
-vạch ngăn** (trước đây chèn 12px nền đen — vạch đó là một đường kẻ giữa khung,
-đọc ra hai vùng, đã bỏ 04/09), rồi chạy mọi cổng chặn như ảnh thường (kết quả
-ghép lưu `<out>_N.ghep.png`).
-Hai ảnh 16:9 ghép ra ~0.88 (nằm giữa 4:5 và 1:1) — cổng tỉ lệ chấp nhận cả dải
-**4:5 → 1:1**. Ảnh dưới nằm dưới scrim chữ, nên đặt ảnh QUAN TRỌNG hơn ở trên.
-
-**Chọn hai ảnh CÙNG TONE.** Hai ảnh lệch tone (một nền trắng một nền đen, gam
-màu khác hẳn) đọc ra như hai vùng riêng biệt, mất cảm giác một khung. Ưu tiên
-cùng nền sáng/tối, cùng gam màu, tốt nhất là hai slide cùng một bộ. Script đo
-độ sáng và màu trung bình; lệch quá ngưỡng là **cổng chặn dừng hẳn** (từ
-04/09 — trước chỉ cảnh báo nên vai cứ cho qua). Bị chặn thì **đổi ảnh**, không
-có cờ nào để lách.
-
-Không có ảnh vuông sẵn: tự crop vuông từ một ảnh ngang thật (chọn khung ôm
-đúng nội dung chính) — đây là chọn khung, không phải bịa ảnh, vẫn đúng luật
-"không tự vẽ minh hoạ". Cứ hỏi `anh_bai.py` như thường; công cụ đó chấm điểm
-theo tỉ lệ đẹp nhưng không tự động ưu tiên vuông, bạn phải tự cân.
-
-Không giới hạn ảnh trong đúng bài nguồn — tin đủ lớn (hãng lớn, sự kiện có
-đưa tin ảnh) thường có nhiều ảnh thật liên quan nằm rải ở các bài khác cùng
-chủ đề (ảnh sự kiện góc khác, ảnh sản phẩm chính hãng, trụ sở, logo...). Cứ
-tìm thêm — miễn ảnh **thật** và **đúng chủ đề**, không giới hạn ở ảnh nhúng
-sẵn trong link gốc. Tránh dùng lại đúng một tấm cho quá nhiều slide; 6 slide
-mà chỉ xoay vòng 2 ảnh là một điểm trừ trải nghiệm rõ rệt — cứ 4–6 ảnh khác
-nhau cho một bộ 6 slide là hợp lý. Cẩn thận với ảnh **rò rỉ** (leak, chưa
-chính thức xác nhận): rủi ro cả về độ chính xác (có thể sai/giả) lẫn bản
-quyền — bỏ qua, tìm ảnh chính thức khác thay vào.
+Kết quả ghép lưu `<out>_N.ghep.png` rồi chạy mọi cổng chặn như ảnh thường. Hai
+ảnh 16:9 ghép ra ~0.88 — nằm giữa 4:5 và 1:1, cổng tỉ lệ chấp nhận cả dải. Ảnh
+dưới nằm dưới scrim chữ, nên đặt ảnh **quan trọng hơn ở trên**.
 
 ## Slide quote — BẮT BUỘC ≥2 mỗi bộ (câu trích dẫn)
 
@@ -460,43 +393,35 @@ Mọi luật dưới đây `carousel.py` TỰ kiểm — vi phạm là dừng h�
 sửa. Bạn không cần (và không thể) tự nhớ thay nó; việc của bạn là sửa theo
 thông báo rồi chạy lại.
 
+### Cổng về CHỮ và BỐ CỤC — riêng của carousel
+
 1. **Tiếng Việt không dấu** trong bất kỳ chữ nào (hook, label, mọi slide) →
    **dừng hẳn**, in ra chỗ sai. Gõ lại có dấu. `--bo-qua-dau` chỉ cho tiếng Anh.
 2. **Dưới 5 slide** (kể cả bìa) → **dừng** (chuẩn tối thiểu). **Quá 10 slide** →
    dừng (`draft_write` chỉ gom tới `_9`).
 3. **Thiếu `cover.image`, `cover.hook`, hay `image` của một slide** → dừng. Mỗi
    slide thân phải có **`text` hoặc `quote`** — thiếu cả hai cũng dừng.
-4. **Dưới 2 slide quote** → dừng (mỗi carousel cần ≥2 pull-quote).
-5. **Trùng ảnh** (hai slide cùng một tệp, so theo nội dung tệp) → dừng. Lưu ý:
-   hai CROP khác nhau của cùng một tấm thì code không bắt được — cái đó bạn
-   vẫn phải tự soi.
-6. **Ảnh sai tỉ lệ** (ngoài dải 4:5..1:1, dung sai 3%) → dừng, kèm sẵn lệnh
-   `crop_ti_le.py` để cắt.
-7. **Copy dài quá vùng chữ 30%** (ở cỡ chữ nhỏ nhất vẫn tràn) → dừng, báo cần
+4. **Thiếu `cover.category`** → dừng (chip cyan ở bìa là category, không phải
+   tên kênh).
+5. **Dưới 2 slide quote** → dừng (mỗi carousel cần ≥2 pull-quote).
+6. **Copy dài quá vùng chữ 30%** (ở cỡ chữ nhỏ nhất vẫn tràn) → dừng, báo cần
    cắt bớt bao nhiêu phần trăm chữ.
-8. **Cảnh báo (không chặn)**: cạnh ngắn ảnh <1000px (phóng lên sẽ mềm nét);
-   25% dưới của ảnh quá sáng (chữ vẫn đọc được qua scrim ~80%, chỉ nhạt hơn).
-   **Mặt người**, **crop ảnh ngang** và **cắt tay né cổng** là CHẶN — mục 10–12.
-9. **Ảnh đúng khít 4:5 hoặc 1:1 mà KHÔNG có dấu vết `crop_ti_le.py`** → **CHẶN**
-   (Ông Chủ bắt lỗi 04/09/2026, bộ K2 Horizon). Ảnh thật tải về gần như không
-   bao giờ đúng khít 4:5/1:1 (đo thật: 1.16, 1.50, 1.78, 1.91…). Đúng khít mà
-   không dấu = đã cắt bằng PIL/cv2/ImageMagick để né cổng crop. `crop_ti_le.py`,
-   `arxiv_bia.py` và ảnh ghép dọc đều tự đóng dấu nên không bị vướng. **Không có
-   cờ nào miễn trừ** — kể cả `crop_ok`: `crop_ok` nói "tôi cố ý crop", còn cổng
-   này nói "crop bằng gì thì không ai biết". Ảnh gốc vốn đã 4:5/1:1 thì vẫn chạy
-   qua `crop_ti_le.py` một lần để đóng dấu (cắt 0, không mất gì).
-10. **Mặt người** (YuNet) → **CHẶN** nếu slide không khai `"nhan_vat": "<tên>"`.
-    Tin xoay quanh một người (Elon Musk, CEO phát biểu, tác giả paper…) thì ảnh
-    đúng người đó là ảnh NÊN dùng — khai tên vào `nhan_vat` rồi dựng. Khai sai
-    tên là bịa. Người vô danh (webcam reviewer, người đi đường, stock persona)
-    → đổi ảnh. Cần `assets/face_detection_yunet_2023mar.onnx`; thiếu model thì
-    cổng tự bỏ qua (không crash) — nhưng luật vẫn nguyên.
-11. **Ảnh gốc ngang (tỉ lệ ≥1.4) đã qua `crop_ti_le.py`** → **CHẶN**, trừ khi
-    slide khai `"crop_ok": "<lý do>"`. Chart/bảng/slide/banner phải nguyên vẹn
-    — ghép dọc thay vì crop.
-12. **Flagship <8 slide** → **CHẶN**. Tự nhận diện qua tên họ model frontier
-    trong chữ, hoặc `"tam_co": "flagship"`.
-9. **Em-dash** → không chặn, tự thay `—` thành phẩy.
+7. **Câu quote quá dài** (chạm 7 dòng ở cỡ nhỏ nhất) → dừng, báo cắt.
+8. **Flagship <8 slide** → **dừng**. Tự nhận diện qua tên họ model frontier
+   trong chữ, hoặc `"tam_co": "flagship"`.
+9. **Em-dash** → không chặn, tự thay `—` thành dấu phẩy.
+
+### Cổng về ẢNH — dùng chung cả đội
+
+Ảnh trùng, sai tỉ lệ, chart thiếu `chart: true`, crop ảnh ngang, cắt tay né
+cổng, ghép lệch tone, mặt người vô danh, độ phân giải, đáy ảnh sáng — **tất cả
+nằm ở [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) mục 9**, code là `luat_anh.py`.
+
+Cái **riêng** của carousel trong nhóm này chỉ có hai điều:
+
+- Dải tỉ lệ hợp lệ là **4:5 → 1:1** (ảnh ghép dọc hai ảnh ngang rơi vào giữa dải).
+- Slide **thân** khai `"chart": true` thì **miễn cổng tỉ lệ** — ảnh ngang được
+  dán full bề ngang nguyên vẹn. Bìa thì không, vì hook đè lên ảnh.
 
 ## Bàn giao
 
@@ -519,31 +444,12 @@ Mở cả bộ slide ra xem, theo thứ tự:
 Spec đầy đủ của khổ, font và màu ở `carousel.py` (đầu tệp) và
 `/home/donniechu/content-team/STYLE_TEXT_SPEC.md`.
 
-## Tiêu chí ảnh dùng chung — `luat_anh.py`
+## Tiêu chí ảnh dùng chung
 
-Ông Chủ chốt 04/09/2026: **một bộ tiêu chí chung cho mọi vai làm ảnh**, thay vì
-mỗi vai một bộ. Đường cắt một câu:
+Mọi luật về **ảnh** — không tự vẽ, tìm ảnh thật, chụp chart, tỉ lệ và crop, dấu
+xuất xứ, ghép dọc, mặt người, không hai vùng, bảng cổng chặn — nằm ở **một tài
+liệu chuẩn duy nhất**: [`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md).
 
-> *"Ảnh này có được dùng không"* → **chung**, nằm ở `luat_anh.py`.
-> *"Đặt nó lên khung thế nào"* → **riêng** từng vai, nằm ở renderer.
-
-Nên các luật dưới đây **giống hệt nhau** ở Ethan (`card.py`), Dre
-(`carousel.py`) và bất kỳ vai làm ảnh nào sau này — sửa một chỗ là cả đội đổi
-theo, không còn cảnh mỗi bên một bản rồi trôi khác nhau:
-
-| Cổng | Chặn hay cảnh báo |
-|---|---|
-| Ảnh trùng (theo nội dung tệp) | chặn |
-| Chart/screenshot thiếu `chart: true` | chặn |
-| Khai `chart: true` mà máy không nhận ra chart | **chỉ cảnh báo** — phép đo bỏ sót chart có đường màu khử răng cưa, chặn ở chiều này là giết việc đúng |
-| Ảnh gốc ngang đã crop, không khai `crop_ok` | chặn |
-| Ảnh đúng khít 4:5/1:1 mà không có dấu xuất xứ (cắt tay) | chặn |
-| Ghép hai ảnh quá khác tone | chặn |
-| Mặt người mà không khai `nhan_vat` | chặn |
-| Cạnh ngắn <1000px, đáy ảnh quá sáng | cảnh báo |
-
-**Dấu xuất xứ:** mọi công cụ trong đội sinh ra ảnh đều tự đóng dấu vào PNG
-(`crop_ti_le.py`, `arxiv_bia.py`, `chup_chart.py`, `doi_chu_anh.py`, ghép dọc).
-Ảnh không dấu mà lại đúng khít tỉ lệ là dấu hiệu cắt tay bằng công cụ ngoài —
-bị chặn. Ảnh gốc vốn đã đúng tỉ lệ thì chạy qua `crop_ti_le.py` một lần để đóng
-dấu, cắt 0, không mất gì.
+Dùng chung với Ethan (`hero-image`) và Kite (`carousel-edu`); code là
+`luat_anh.py`. **Đừng chép luật đó về đây** — chép là trôi khác nhau, đúng cái
+đã xảy ra 03–04/09/2026. SKILL này chỉ giữ phần **bố cục riêng của carousel**.
