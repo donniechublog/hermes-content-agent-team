@@ -98,20 +98,15 @@ ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
 
 # ---- Design tokens ---------------------------------------------------------
-# Mau trung tinh dung chung; MAU NHAN (CYAN/VIOLET) lay theo THEME. Truoc day
-# chi co mot bo cyan x tim + mot hero "quy dao" nen moi bo Kite dung ra deu
-# giong nhau (Ong Chu chê 04/09: "lam di lam lai mot tone"). Gio spec ghi
-# "theme" / "hero", khong ghi thi renderer tu XOAY khac lan truoc (xem
-# chon_theme_tu_dong).
-BG      = "#0A0B0E"
-PANEL   = "#14161B"
-LINE    = "#262A33"
+# Mau CHU dung chung cho moi theme. Nen/panel/hairline/mau nhan thi khong: moi
+# theme mot bo rieng (THEMES ben duoi). Truoc day chi co mot bo cyan x tim + mot
+# hero "quy dao" nen moi bo Kite dung ra deu giong nhau (Ong Chu che 04/09:
+# "lam di lam lai mot tone"). Gio spec ghi "theme" / "hero", khong ghi thi
+# renderer tu XOAY khac lan truoc (xem chon_theme_tu_dong).
 WHITE   = "#F4F6F9"
 SOFT    = "#E7EAEF"
 MUTED   = "#949AA6"
 DIM     = "#7B828E"
-CYAN    = "#2FD4E1"     # mac dinh (theme "orbit"); render() ghi de theo theme
-VIOLET  = "#8E86F0"
 
 # Moi theme: nen, panel, hairline, 2 mau nhan (chinh x phu), va mau standfirst.
 # Tat ca deu NEN TOI + CHU SANG (luat tuong phan cua ca doi), khac nhau o hue.
@@ -242,7 +237,7 @@ BASE_CSS_TPL = """
 .figwrap{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;
   z-index:0;overflow:hidden;background:%(BG)s;}
 .fig-nen{position:absolute;left:50%%;top:50%%;width:128%%;height:128%%;
-  transform:translate(-50%%,-50%%);object-fit:cover;filter:blur(44px);}
+  transform:translate(-50%%,-50%%);object-fit:cover;filter:blur(%(BLURNEN)spx);}
 .fig-sac{position:absolute;left:0;width:%(W)spx;object-fit:cover;display:block;}
 /* lop MO cua chinh anh, hien dan theo cung nhip voi man toi — chinh no moi xoa
    het chi tiet doc duoc duoi chu; chi lam toi khong thi chu van chong len chu */
@@ -278,6 +273,7 @@ def base_css(th):
         "WHITE": WHITE, "SOFT": SOFT, "MUTED": MUTED, "DIM": DIM,
         "CYAN": th["a"], "VIOLET": th["b"], "STAND": th["stand"],
         "DISPLAY": _ff("Display"), "SERIF": _ff("EditSerif"), "MONO": _ff("Mono"),
+        "BLURNEN": FIG_BLUR_NEN,
     }
 
 
@@ -469,8 +465,24 @@ FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
 FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
 
 
+# Mot tam anh bi soi di soi lai: cong chan doc no, cong chan 2 dong dung slide
+# mot lan, roi vong chup dung lai lan nua. Rieng doc_nen phai quet toan bo pixel
+# va _anh_data_uri phai base64 ca tep — lam lai 3 lan cho mot anh 4MB la phi.
+_NHO_ANH = {}
+
+
+def _nho(khoa, lam):
+    if khoa not in _NHO_ANH:
+        _NHO_ANH[khoa] = lam()
+    return _NHO_ANH[khoa]
+
+
 def _do_anh(duong_dan):
     """-> (Path, rong, cao). Duong dan tuong doi tinh theo CWD truoc, roi ROOT."""
+    return _nho(("do", str(duong_dan)), lambda: _do_anh_that(duong_dan))
+
+
+def _do_anh_that(duong_dan):
     p = Path(duong_dan)
     if not p.exists() and not p.is_absolute():
         p = ROOT / duong_dan
@@ -487,8 +499,10 @@ def _do_anh(duong_dan):
 def _anh_data_uri(p):
     """Nhung base64: Chromium doc HTML tu chuoi nen khong co URL goc de giai
     duong dan tuong doi (giong ly do font phai nhung)."""
-    b64 = base64.b64encode(p.read_bytes()).decode("ascii")
-    return f"data:{ANH_MIME[p.suffix.lower()]};base64,{b64}"
+    def lam():
+        b64 = base64.b64encode(p.read_bytes()).decode("ascii")
+        return f"data:{ANH_MIME[p.suffix.lower()]};base64,{b64}"
+    return _nho(("uri", str(p)), lam)
 
 
 def _sang(rgb):
@@ -506,13 +520,17 @@ def doc_nen(p):
 
     -> (kieu, mau nen, nen co sang khong)
     """
+    return _nho(("nen", str(p)), lambda: _doc_nen_that(p))
+
+
+def _doc_nen_that(p):
     from PIL import Image, ImageStat
     with Image.open(p) as im:
         im = im.convert("RGB")
         w, h = im.size
         d = max(2, min(w, h) // 50)
         vien = [im.crop((0, 0, w, d)), im.crop((0, h - d, w, h)),
-                im.crop((0, 0, d, h)), im.crop((w - d, 0, d + w - d, h))]
+                im.crop((0, 0, d, h)), im.crop((w - d, 0, w, h))]
         tb = [ImageStat.Stat(v).mean[:3] for v in vien]
         lech = max(max(ImageStat.Stat(v).stddev[:3]) for v in vien)
         toan = ImageStat.Stat(im).mean[:3]
@@ -729,16 +747,21 @@ def anh_lam_nen(sl, th, ten):
         mang mau lien; de sac net thi cho nao lop sac khong phu se lo mot ban
         sao lech cua cung noi dung — mat doc ra ngay hai vung.
       - LOP SAC de len tren, full be ngang, KHONG cat hai canh.
-      - CHU de len anh qua man toi LIEN MACH bat dau tu ~42% chieu cao, dam dan
-        theo duong cong, khong co dai band nao. Khong lam toi rieng phan nen:
-        nen toi hon han lop sac se ve ra dung mot hinh chu nhat quanh anh.
+      - CHU de len anh qua man toi + mot lop mo cua chinh tam anh, hai lop di
+        cung mot nhip. Nen PHANG thi man toi neo vao chan chu eyebrow, anh CHUP
+        thi chom len som hon — xem doan dat man toi ben duoi. Khong lam toi
+        rieng phan nen: nen toi hon han lop sac se ve ra dung mot hinh chu nhat
+        quanh anh.
     """
     p, iw, ih = _do_anh(sl["image"])
     kieu, mau_nen, nen_sang = doc_nen(p)
     cao, y0, cao_that = dat_anh(iw, ih, kieu == "phang")
-    if cao_that > cao:
+    if cao_that > cao and ("bao", str(p), cao) not in _NHO_ANH:
         # Bao ra de Kite biet mat bao nhieu: neu phan mat la phan dang noi toi
-        # thi phai tu cat lai cho dung truoc khi dua vao day.
+        # thi phai tu cat lai cho dung truoc khi dua vao day. Chi bao MOT lan:
+        # slide duoc dung hai luot (cong chan 2 dong, roi vong chup), bao ca hai
+        # luot thi Kite tuong co hai anh bi cat.
+        _NHO_ANH[("bao", str(p), cao)] = True
         print(f"{ten} {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
               f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
     uri = _anh_data_uri(p)
@@ -813,7 +836,7 @@ def anh_lam_nen(sl, th, ten):
           # Duong cong chu S (smoothstep): bang phang o CA HAI dau. Bat dau bang
           # phang nen khong co buoc nhay o cho no chom len, ket thuc bang phang
           # nen khong co mep o cho no cham toi da — nho vay moi rut ngan duoc dai
-          # chuyen tiep xuong ~130px ma mat van khong bat duoc dau la mep.
+          # chuyen tiep ma mat van khong bat duoc dau la mep.
           f'for(var i=0;i<=16;i++){{'
           f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'
           f'pc=((y-tren)/span*100).toFixed(2);'
@@ -893,17 +916,17 @@ BUILDERS = {
 }
 
 
-def slide_doc(sl, idx, total, brand, section, folio_left, font_css, th, follow=None):
+def slide_doc(sl, idx, total, brand, section, folio_left, font_css, th):
     kind = sl.get("kind")
     if kind not in BUILDERS:
         raise SystemExit(f"slide {idx}: kind khong hop le '{kind}' "
                          f"(chon: {', '.join(BUILDERS)})")
     body = BUILDERS[kind](sl, th)
     # slide cta có thể ghi 'follow' vào folio trái thay nhãn mặc định
-    fol_left = sl.get("follow", follow) if kind == "cta" and (sl.get("follow") or follow) else folio_left
+    fol_left = sl["follow"] if kind == "cta" and sl.get("follow") else folio_left
     # slide cta đã có follow (vd "Theo dõi @donniechublog") thì header bỏ chữ,
     # chỉ giữ hairline — tránh nhắc nhận diện kênh 2 lần trên cùng một slide.
-    bare = kind == "cta" and bool(sl.get("follow") or follow)
+    bare = kind == "cta" and bool(sl.get("follow"))
     inner = masthead(brand, section, bare=bare) + body + folio(fol_left, idx, total)
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>'
             f'{font_css}{base_css(th)}</style></head><body>'
@@ -1005,11 +1028,13 @@ def _ghi_theme(out, theme, hero):
         pass
 
 
-def chon_theme_tu_dong(spec):
+def chon_theme_tu_dong(spec, bia_anh=False):
     """Spec khong ghi theme/hero -> chon cai IT DUNG NHAT gan day, va khong bao
     gio trung voi bo vua dung truoc. Ghi ro thi ton trong, nhung neu trung
     het ca theme lan hero voi bo ngay truoc thi bao de Kite biet (khong chan:
-    Ong Chu co the co y muon mot loat cung tone)."""
+    Ong Chu co the co y muon mot loat cung tone).
+
+    `bia_anh`: bia dung anh that -> ca bo khong ve hero nao, tra hero=None."""
     gan = _theme_gan_day()
     theme, hero = spec.get("theme"), spec.get("hero")
     if theme and theme not in THEMES:
@@ -1032,7 +1057,9 @@ def chon_theme_tu_dong(spec):
 
     if not theme:
         theme = it_dung_nhat(list(THEMES), [t for t, _ in gan], seed)
-    if not hero:
+    if bia_anh:
+        hero = None
+    elif not hero:
         hero = it_dung_nhat(list(HEROES), [h for _, h in gan], seed // 7)
     if gan and gan[0] == (theme, hero):
         print(f"CANH BAO: theme={theme} hero={hero} TRUNG voi bo ngay truoc "
@@ -1057,9 +1084,13 @@ def render(spec, out, brand, bo_qua_dau, scale):
     total = len(slides)
     # Nhung font mot lan cho ca album — truoc day encode lai ~1.4MB TTF moi slide.
     font_css = _font_face_css()
-    theme, hero = chon_theme_tu_dong(spec)
+    # Hero art CHI ve tren bia. Bia dung anh that thi ca bo khong co hero nao —
+    # van ghi hero vao nhat ky la lan sau no tranh mot hero chua tung xuat hien,
+    # xoay sai. Ghi None cho dung.
+    bia_anh = bool(slides and slides[0].get("image"))
+    theme, hero = chon_theme_tu_dong(spec, bia_anh)
     th = dict(THEMES[theme], hero=hero)
-    print(f"theme={theme} hero={hero}")
+    print(f"theme={theme} hero=" + (hero or "- (bia dung anh that)"))
 
     try:
         from playwright.sync_api import sync_playwright
@@ -1119,7 +1150,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
                             clip={"x": 0, "y": 0, "width": W, "height": H})
             outs.append(path)
         browser.close()
-    _ghi_theme(out, theme, hero)
+    _ghi_theme(out, theme, hero)   # hero=None khi bia dung anh that
     return outs
 
 
