@@ -32,6 +32,9 @@ Spec JSON:
   "theme": "ember",                # tuỳ chọn: orbit|ember|moss|ink|rose — bỏ trống = tự xoay
   "hero": "grid",                  # tuỳ chọn: orbit|grid|wave|rings|graph — bỏ trống = tự xoay
   "slides": [
+    # Bia dung ART VECTOR (mac dinh). Tin nao CO SAN mot tam hinh dang dua len
+    # thi them "image" + "caption": bia lay chinh hinh do lam hero, khong ve so
+    # do nua. Hinh that bao gio cung noi duoc nhieu hon mot so do trang tri.
     {"kind": "cover", "eyebrow": "GOOGLE ANTIGRAVITY · DEEP DIVE",
      "title": "Lệnh /boost biến bug khó thành lời giải chắc tay",
      "accent": "/boost",
@@ -112,17 +115,21 @@ VIOLET  = "#8E86F0"
 
 # Moi theme: nen, panel, hairline, 2 mau nhan (chinh x phu), va mau standfirst.
 # Tat ca deu NEN TOI + CHU SANG (luat tuong phan cua ca doi), khac nhau o hue.
+# Nen KHONG phai den dac. Ban dau lay den gan tuyet doi (#0A0B0E...), dan len
+# the la ca the thanh mot khoi muc, nang tri (Ong Chu che 04/09/2026). Nang nen
+# len mot bac va cho no mot do sang nhe o dinh the (xem BASE_CSS_TPL): van tuong
+# phan cung voi chu trang, ma mat tho hon han.
 THEMES = {
-    "orbit":  dict(bg="#0A0B0E", panel="#14161B", line="#262A33",
-                   a="#2FD4E1", b="#8E86F0", stand="#B7BDC7"),   # cyan x tim (bo /boost)
-    "ember":  dict(bg="#0E0B09", panel="#1B1512", line="#33281F",
-                   a="#FFB454", b="#FF6B6B", stand="#C9BFB4"),   # cam ho phach x do san ho
-    "moss":   dict(bg="#090D0B", panel="#121A16", line="#22302A",
-                   a="#7BE495", b="#D6F26A", stand="#B4C2B8"),   # xanh la x vang chanh
-    "ink":    dict(bg="#0A0E1A", panel="#131A2B", line="#243050",
-                   a="#8FB3FF", b="#F2C94C", stand="#B9C1D6"),   # xanh navy x vang
-    "rose":   dict(bg="#100A10", panel="#1C1220", line="#332238",
-                   a="#FF7EB6", b="#B892FF", stand="#CBB8C8"),   # hong x tim oai huong
+    "orbit":  dict(bg="#171A21", panel="#212530", line="#333846",
+                   a="#2FD4E1", b="#8E86F0", stand="#BFC5CF"),   # cyan x tim (bo /boost)
+    "ember":  dict(bg="#1D1814", panel="#292118", line="#40342A",
+                   a="#FFB454", b="#FF6B6B", stand="#D0C6BB"),   # cam ho phach x do san ho
+    "moss":   dict(bg="#151C18", panel="#1F2A24", line="#2E3D35",
+                   a="#7BE495", b="#D6F26A", stand="#BCCAC0"),   # xanh la x vang chanh
+    "ink":    dict(bg="#161B29", panel="#1F2739", line="#303D5C",
+                   a="#8FB3FF", b="#F2C94C", stand="#C1C9DC"),   # xanh navy x vang
+    "rose":   dict(bg="#1F1721", panel="#2B1F2F", line="#3E2C43",
+                   a="#FF7EB6", b="#B892FF", stand="#D2C0CF"),   # hong x tim oai huong
 }
 HEROES = ("orbit", "grid", "wave", "rings", "graph")   # ten hero SVG tren bia
 
@@ -175,7 +182,8 @@ def _ff(fam):
 
 BASE_CSS_TPL = """
 *{margin:0;padding:0;box-sizing:border-box;}
-.art{position:relative;width:%(W)spx;height:%(H)spx;background:%(BG)s;
+.art{position:relative;width:%(W)spx;height:%(H)spx;
+  background:radial-gradient(ellipse 130%% 78%% at 50%% -8%%,%(PANEL)s 0%%,%(BG)s 66%%);
   overflow:hidden;padding:80px;display:flex;flex-direction:column;
   font-family:%(DISPLAY)s;color:%(WHITE)s;}
 .glow{position:absolute;pointer-events:none;}
@@ -201,17 +209,17 @@ BASE_CSS_TPL = """
 .byline{display:flex;flex-direction:row;align-items:center;gap:18px;
   font-family:%(MONO)s;font-size:22px;font-weight:500;color:%(DIM)s;}
 .byline .b0{color:%(WHITE)s;}
-.dot{width:4px;height:4px;border-radius:50%%;background:#4a505c;
+.dot{width:4px;height:4px;border-radius:50%%;background:%(DIM)s;
   display:inline-block;}
 /* blocks */
 .mid{position:relative;z-index:2;}
 .card{display:flex;flex-direction:row;align-items:center;gap:24px;
-  background:%(PANEL)s;border:1px solid #23262E;border-left:5px solid %(CYAN)s;
+  background:%(PANEL)s;border:1px solid %(LINE)s;border-left:5px solid %(CYAN)s;
   padding:30px 34px;}
 .card-num{font-family:%(MONO)s;font-size:26px;font-weight:700;color:%(VIOLET)s;}
 .card-txt{font-size:34px;line-height:1.35;color:%(SOFT)s;}
 .step{display:flex;flex-direction:row;align-items:flex-start;gap:32px;
-  padding:26px 0;border-top:1px solid #23262E;}
+  padding:26px 0;border-top:1px solid %(LINE)s;}
 .step-num{font-family:%(MONO)s;font-size:48px;font-weight:700;color:%(CYAN)s;
   line-height:1;min-width:78px;}
 .step-t{font-family:%(DISPLAY)s;font-size:42px;font-weight:700;color:%(WHITE)s;
@@ -220,12 +228,12 @@ BASE_CSS_TPL = """
 .chips{display:flex;flex-direction:row;align-items:center;gap:18px;
   flex-wrap:wrap;}
 .chip{font-family:%(MONO)s;font-size:29px;font-weight:700;color:%(SOFT)s;
-  background:%(PANEL)s;border:1px solid #2A2E37;padding:12px 22px;}
+  background:%(PANEL)s;border:1px solid %(LINE)s;padding:12px 22px;}
 .chip0{color:%(BG)s;background:%(CYAN)s;border:none;}
 .arrow{color:%(DIM)s;font-size:32px;font-weight:800;}
 .chip-grp{display:inline-flex;flex-direction:row;align-items:center;gap:18px;}
 .loopmark{color:%(VIOLET)s;font-size:30px;font-weight:700;}
-.callout{background:%(PANEL)s;border:1px solid #23262E;border-left:5px solid %(CYAN)s;
+.callout{background:%(PANEL)s;border:1px solid %(LINE)s;border-left:5px solid %(CYAN)s;
   padding:34px 38px;font-size:34px;font-weight:600;line-height:1.45;color:%(SOFT)s;}
 .check{display:flex;flex-direction:row;align-items:flex-start;gap:22px;}
 .check-m{color:%(CYAN)s;font-size:38px;font-weight:800;line-height:1.1;}
@@ -249,7 +257,7 @@ BASE_CSS_TPL = """
   line-height:1.45;color:%(DIM)s;letter-spacing:0.5px;}
 .fig-bar{flex:none;width:26px;height:3px;background:%(CYAN)s;
   transform:translateY(-7px);}
-.readmore{background:%(PANEL)s;border:1px solid #23262E;padding:34px 38px;}
+.readmore{background:%(PANEL)s;border:1px solid %(LINE)s;padding:34px 38px;}
 .readmore-l{font-family:%(MONO)s;font-size:22px;font-weight:500;color:%(DIM)s;
   letter-spacing:2px;margin-bottom:14px;}
 .readmore-t{font-family:%(SERIF)s;font-style:italic;font-size:36px;font-weight:500;
@@ -580,6 +588,12 @@ def folio(left, n, total):
 
 # ---- slide builders (mỗi cái trả về body HTML giữa .mast và .folio) -------
 def s_cover(sl, th):
+    """Bia. Mac dinh la hero art vector; nhung neu tin CO SAN mot tam hinh dang
+    dua len thi ghi "image" — luc do bia dung chinh tam hinh do lam hero, chu
+    chim vao no, thay vi mot so do tu ve. Hinh that bao gio cung noi duoc nhieu
+    hon mot so do trang tri."""
+    if sl.get("image"):
+        return _cover_anh(sl, th)
     by = sl.get("byline", [])
     bits = []
     for i, b in enumerate(by):
@@ -601,6 +615,34 @@ def s_cover(sl, th):
     )
     hero = f'<div style="margin:8px 0;">{hero_svg(th["hero"], th)}</div>'
     return g + hero + head
+
+
+def _cover_anh(sl, th):
+    """Bia lay anh that lam hero — cung mot mat phang voi khoi chu, nhu figure."""
+    nen, js = anh_lam_nen(sl, th, "bia")
+    by = sl.get("byline", [])
+    bits = []
+    for i, b in enumerate(by):
+        if i:
+            bits.append('<span class="dot"></span>')
+        bits.append(f'<span class="{"b0" if i == 0 else ""}">{esc(b)}</span>')
+    chu = (f'{eyebrow(sl["eyebrow"])}'
+           # 74px chu khong phai 88px nhu bia art: bia co anh chi cho tieu de 2
+           # dong, co chu nho hon mot bac thi 2 dong do chua duoc du y.
+           f'<h1 class="title" style="font-size:74px;margin:22px 0 26px;">'
+           f'{accent_html(sl["title"], sl.get("accent"))}</h1>'
+           f'<p class="standfirst" style="font-size:36px;max-width:880px;'
+           f'margin-bottom:28px;">{esc(sl["standfirst"])}</p>')
+    if by:
+        chu += f'<div class="byline">{"".join(bits)}</div>'
+    if sl.get("caption"):
+        chu += (f'<div class="fig-cap" style="margin-top:18px;">'
+                f'<span class="fig-bar"></span>'
+                f'<span>{esc(sl["caption"])}</span></div>')
+    return (nen
+            + '<div style="flex-grow:1;"></div>'
+            + f'<div class="mid" id="figtxt">{chu}</div>'
+            + js)
 
 
 def s_statement(sl, th):
@@ -637,7 +679,7 @@ def s_steps(sl, th):
         f'<h1 class="title" style="font-size:80px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
         f'</div>'
         f'<div class="mid" style="margin-top:38px;">{rows}'
-        f'<div style="border-bottom:1px solid #23262E;"></div></div>'
+        f'<div style="border-bottom:1px solid %(LINE)s;"></div></div>'
     )
     return g + body
 
@@ -673,8 +715,14 @@ def s_loop(sl, th):
     return g + body
 
 
-def s_figure(sl, th):
-    """Hinh that + chu, MOT MAT PHANG LIEN — dung ngon ngu cua Dre (carousel.py):
+def anh_lam_nen(sl, th, ten):
+    """Dung ANH THAT thanh nen ca the + man toi cho chu — MOT MAT PHANG LIEN,
+    dung ngon ngu cua Dre (carousel.py). Dung chung cho slide `figure` va cho
+    bia khi bia co anh.
+
+    -> (html nen, html script dat man toi). Khoi chu goi rieng, id="figtxt".
+
+    Nguyen tac:
 
       - NEN bao gio cung la anh, khong bao gio la mot hop den dat canh anh: ban
         cover cua chinh tam anh phu kin the roi LAM MO MANH. Mo de no thanh mot
@@ -691,7 +739,7 @@ def s_figure(sl, th):
     if cao_that > cao:
         # Bao ra de Kite biet mat bao nhieu: neu phan mat la phan dang noi toi
         # thi phai tu cat lai cho dung truoc khi dua vao day.
-        print(f"figure {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
+        print(f"{ten} {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
               f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
     uri = _anh_data_uri(p)
     # "phang": trai thang mau nen cua anh ra ca the — cung mot mau thi khong the
@@ -728,20 +776,6 @@ def s_figure(sl, th):
                 f'.rule{{background:rgba(0,0,0,0.16);}}'
                 f'#figtxt .eyebrow-txt{{color:{a_toi};}}'
                 f'#figtxt .eyebrow-bar{{background:{a_toi};}}</style>')
-    chu = (f'{eyebrow(sl["eyebrow"])}'
-           f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
-           f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
-    if sl.get("caption"):
-        chu += (f'<div class="fig-cap"><span class="fig-bar"></span>'
-                f'<span>{esc(sl["caption"])}</span></div>')
-    if sl.get("standfirst"):
-        chu += (f'<p class="standfirst" style="font-size:35px;max-width:900px;'
-                f'margin-top:24px;">{esc(sl["standfirst"])}</p>')
-    for c in sl.get("cards", []):
-        chu += (f'<div class="card" style="margin-top:20px;background:none;'
-                f'border:none;border-left:4px solid {th["a"]};padding:4px 0 4px 26px;">'
-                f'<span class="card-num">{esc(c["num"])}</span>'
-                f'<span class="card-txt" style="font-size:31px;">{esc(c["text"])}</span></div>')
     # Man toi phai bat dau TREN dong chu dau, ma chieu cao khoi chu chi biet sau
     # khi trinh duyet do xong — nen dung mot doan script ngan tu dat lai. Tinh
     # san bang Python thi phai doan so dong tieu de, doan sai la lo mep.
@@ -804,6 +838,26 @@ def s_figure(sl, th):
           f'v.style.top=tren+"px";'
           f'v.style.background="linear-gradient(to bottom,"+st.join(",")+")";'
           f'}};window.__datMan();</script>')
+    return nen, js
+
+
+def s_figure(sl, th):
+    """Hinh that trai het be ngang, chu chim vao anh o duoi."""
+    nen, js = anh_lam_nen(sl, th, "figure")
+    chu = (f'{eyebrow(sl["eyebrow"])}'
+           f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
+           f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
+    if sl.get("caption"):
+        chu += (f'<div class="fig-cap"><span class="fig-bar"></span>'
+                f'<span>{esc(sl["caption"])}</span></div>')
+    if sl.get("standfirst"):
+        chu += (f'<p class="standfirst" style="font-size:35px;max-width:900px;'
+                f'margin-top:24px;">{esc(sl["standfirst"])}</p>')
+    for c in sl.get("cards", []):
+        chu += (f'<div class="card" style="margin-top:20px;background:none;'
+                f'border:none;border-left:4px solid {th["a"]};padding:4px 0 4px 26px;">'
+                f'<span class="card-num">{esc(c["num"])}</span>'
+                f'<span class="card-txt" style="font-size:31px;">{esc(c["text"])}</span></div>')
     return (nen
             + '<div style="flex-grow:1;"></div>'
             + f'<div class="mid" id="figtxt">{chu}</div>'
@@ -876,10 +930,10 @@ def gate_slides(slides, bo_qua_dau):
     # (roi chup o scale 2 nua) thi chu tren bieu do nhoe thanh vet — dang len
     # la ca bo hong, ma luc dung khong ai nhin ra tren man to.
     for i, sl in enumerate(slides, 1):
-        if sl.get("kind") != "figure":
-            continue
-        if not sl.get("image"):
+        if sl.get("kind") == "figure" and not sl.get("image"):
             loi.append(f"slide {i}: kind 'figure' phai co 'image' (duong dan tep anh)")
+            continue
+        if not sl.get("image"):        # bia thi anh la tuy chon
             continue
         try:
             _, rong, cao = _do_anh(sl["image"])
@@ -890,8 +944,8 @@ def gate_slides(slides, bo_qua_dau):
             loi.append(f"slide {i}: anh rong {rong}px, keo len {W}px la be nat. "
                        f"Chup lai bang chup_chart.py (DPR 2) hoac xin ban goc.")
         if not sl.get("caption"):
-            loi.append(f"slide {i}: figure phai co 'caption' — hinh muon cua "
-                       f"nguoi ta thi phai ghi 'via <ai>'.")
+            loi.append(f"slide {i}: slide co anh phai co 'caption' — hinh muon "
+                       f"cua nguoi ta thi phai ghi 'via <ai>'.")
 
     # quy ước dẫn nguồn: dùng 'via', không viết 'nguồn'
     for i, sl in enumerate(slides, 1):
@@ -1030,7 +1084,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
         # de lai nua album trong drafts/ cho Kite tuong la xong.
         loi_dong = []
         for i, sl in enumerate(slides, start=1):
-            if sl.get("kind") != "figure":
+            if not sl.get("image"):
                 continue
             page.set_content(slide_doc(sl, i, total, brand, section, folio_left,
                                        font_css, th), wait_until="load")

@@ -1,6 +1,6 @@
 ---
 name: carousel-edu
-description: "Carousel EDU — diễn đạt lại kiến thức & nghiên cứu (paper arXiv, kinh nghiệm dev) cho chuyên nghiệp, tường minh; phong cách tech × magazine bằng ART VECTOR GỐC tự vẽ — không đi tìm ảnh minh hoạ, không nền AI, nhưng biểu đồ/bảng/trang báo cáo CÓ SẴN thì chèn bản thật trải hết bề ngang slide (kind figure). Hệ thiết kế: nền tối #0A0B0E, duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 6 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: art trừu tượng/sơ đồ khái niệm + hình thật của biểu đồ/bảng/báo cáo có ghi via; cấm ảnh AI/screenshot dựng lại/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.edu)."
+description: "Carousel EDU — diễn đạt lại kiến thức & nghiên cứu (paper arXiv, kinh nghiệm dev) cho chuyên nghiệp, tường minh; phong cách tech × magazine bằng ART VECTOR GỐC tự vẽ — không đi tìm ảnh minh hoạ, không nền AI, nhưng biểu đồ/bảng/trang báo cáo CÓ SẴN thì chèn bản thật trải hết bề ngang slide (kind figure). Hệ thiết kế: nền tối dịu #171A21 (không đen đặc), duotone cyan #2FD4E1 x tím #8E86F0, font Archivo (display) + Newsreader italic (standfirst) + JetBrains Mono (nhãn/số), bộ khung magazine (masthead chạy đầu, eyebrow chuyên mục, hairline, folio số trang, byline) và một hero art vector trên bìa. Chia slide theo nhịp feature, tối thiểu 6 tối đa 10, chữ Việt có dấu, tương phản cứng. Ranh giới ngoại lệ với luật không-tự-vẽ: art trừu tượng/sơ đồ khái niệm + hình thật của biểu đồ/bảng/báo cáo có ghi via; cấm ảnh AI/screenshot dựng lại/logo hãng/số liệu/quote giả. Dùng cho vai Kite (role carousel.edu)."
 version: 0.1.0
 author: content-team
 license: internal
@@ -54,7 +54,11 @@ thì nó thuộc cột CẤM.
 ## Hệ thiết kế (design tokens)
 
 - **Khổ:** 1080×1350 (4:5), portrait.
-- **Nền:** `#0A0B0E` (đen hơi lạnh, không đen tuyệt đối). Nền luôn **sạch** — Kite
+- **Nền:** mỗi theme một mã riêng, quanh `#171A21` (orbit). **Không phải đen
+  đặc** — bản đầu lấy đen gần tuyệt đối (`#0A0B0E`) thì cả thẻ thành một khối
+  mực, nặng trĩ (Ông Chủ chê 04/09/2026). Nền nâng lên một bậc và có một độ
+  sáng nhẹ ở đỉnh thẻ: vẫn tương phản cứng với chữ trắng, mà mắt thở hơn hẳn.
+  Nền luôn **sạch** — Kite
   tự dựng nền nên không bao giờ có cớ để nền rối/chi chít chữ.
 - **Chữ:** trắng `#F4F6F9`; phụ (dịu) `#838A96`; hairline/viền `#262A33`; panel
   `#14161B`.
@@ -139,6 +143,12 @@ radial mờ — giữ nhẹ để không phạm chính luật "nền sạch, kh�
 ## Hình thật — biểu đồ, bảng số, trang báo cáo (`kind: figure`)
 
 Khi nguồn **đã có** hình đáng đưa lên, đừng vẽ lại: chèn bản thật.
+
+**Bìa cũng vậy.** Mặc định bìa là hero art vector, nhưng tin nào có sẵn một tấm
+hình đáng đưa lên thì thêm `"image"` + `"caption"` vào slide `cover` — bìa lấy
+chính tấm hình đó làm hero, chữ chìm vào nó, không vẽ sơ đồ nữa. Một tấm hình
+thật bao giờ cũng nói được nhiều hơn một sơ đồ trang trí. Cùng bộ luật với
+`figure` bên dưới (bề ngang không cắt, chữ chìm vào ảnh, bắt buộc "via").
 
 ```json
 {"kind": "figure", "eyebrow": "SỐ LIỆU",
