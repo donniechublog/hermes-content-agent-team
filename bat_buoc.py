@@ -96,7 +96,10 @@ def khop(muc: dict, item: dict) -> bool:
     # `tu_khoa` (neu co): chi can DU cac tu khoa nay — dung cho tin "mot hang
     # mot ngay" cua Vera (Nvidia mua Hugging Face: 3 bao, Vera chon 1 bai).
     if muc.get("tu_khoa"):
-        return all(_chuan(t) in van_ban for t in muc["tu_khoa"])
+        # Chi khop trong TIEU DE: tom tat bai khac nhac "OpenAI" khong tinh la
+        # da dua tin OpenAI.
+        tieu_de = _chuan(item.get("title") or "")
+        return all(_chuan(t) in tieu_de for t in muc["tu_khoa"])
     manh = [m for m in re.findall(r"[a-z0-9]+", str(muc.get("ten", "")).lower())
             if len(m) >= 2]
     return bool(manh) and all(m in van_ban for m in manh)
