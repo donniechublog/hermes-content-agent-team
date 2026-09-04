@@ -158,8 +158,21 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   vào topic của vai đó kèm số việc còn xếp hàng (`bao_tien_do_kanban`, mỗi vòng poll).
   Ngày 04/09 Ông Chủ chọn 7 bài lúc 05:33, Nova xếp thứ 8, im lặng cả tiếng trông
   như hệ thống đứng — nên có mục này.
-- Chat Telegram: mỗi container một agent chat tại một thời điểm (`_HANG_AGENT` trong
-  `approve_service.py`); vai sau được báo "đang xếp hàng sau …" rồi tới lượt.
+- Chat Telegram (đổi 04/09): **không còn một hàng chung cho cả 12 vai** — với khoá
+  chung, Gin xoá chữ 2 phút là hỏi Miles/Ethan gì cũng đứng im theo (Itachi đợi Gin
+  108 s chỉ để trả lời "xác nhận"). Giờ hai tầng trong `approve_service.py`:
+  - mỗi phiên `tele-<vai>` một hàng FIFO (`_HangFIFO`) — cùng vai không chạy hai lượt
+    cùng lúc, tin trước trả lời trước, có báo "đang trả lời N tin trước";
+  - semaphore chung `CT_CHAT_SONG_SONG` (mặc định **4**) chỉ là van an toàn cho
+    9router/DeepSeek, **không** phải thứ làm reply đợi nhau — một người gõ thực tế không
+    hỏi quá 3–4 vai cùng lúc; đặt `=1` trong unit systemd là về hành vi cũ.
+  - **Nguyên tắc (Ông Chủ, 04/09): task làm lần lượt được, reply phải song song và
+    nhanh** — reply đơ là công việc treo theo hết. Task kanban vẫn `max_in_progress: 1`.
+- Chat giữ mạch bằng `hermes chat -c tele-<vai> --create-if-missing -Q -q` (`chat_router.py`).
+  Trước 04/09 dùng `--continue … -z`: `-z` được xử lý trước và thoát luôn nên `--continue`
+  bị bỏ qua im lặng — **mọi** tin của **mọi** vai đều mở phiên trắng, vai nào cũng
+  "không nhớ gì" (Ethan 03/09, Itachi 04/09). Dòng `phien=↻ Resumed session …` trong
+  `approve.log` là chỗ đối chiếu khi nghi vai mất mạch.
 
 ## Dịch vụ systemd
 

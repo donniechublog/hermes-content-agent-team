@@ -7,7 +7,7 @@ token va them mot gateway ~584 MB. Cach nay chi can MOT bot, MOT tien trinh
 dang chay san (approve_service), va cho phep dinh tuyen theo TOPIC — nhan
 trong topic cua Jean thi Jean tra loi, trong topic cua Finn thi Finn tra loi.
 
-Moi topic giu mot phien rieng qua `--continue <ten phien>`, nen hoi thoai co
+Moi topic giu mot phien rieng qua `chat -c <ten phien>`, nen hoi thoai co
 mach chu khong phai moi tin la mot lan chay roi rac.
 """
 import os
@@ -92,8 +92,25 @@ def route(thread_id, topics: dict) -> tuple:
 
 _LOI_HTTP = re.compile(r"^HTTP [45]\d\d\b")
 
+# `chat -Q` van in vai dong canh bao ha tang truoc cau tra loi (vd
+# "  ⚠ tirith security scanner enabled but not available"); `-z` truoc day
+# khong co. Chi bo cac dong DAU va phai co khoang trang thut dau — cau tra loi
+# that cua agent khong bao gio thut dau, nen khong an nham noi dung.
+_DONG_RAC = re.compile(r"^\s+[⚠✓↻ℹ]")
+# Ghi vao log de lan sau "vai khong nho gi" la doi chieu duoc ngay: dong nay
+# noi ro resume trung phien nao, bao nhieu tin — thay vi phai mo state.db.
+_PHIEN = re.compile(r"(↻ Resumed session[^\n]*|Session \S+ found but has no messages)")
 
-def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=1) -> tuple:
+
+def _bo_dong_rac(out: str) -> str:
+    dong = out.split("\n")
+    i = 0
+    while i < len(dong) and (not dong[i].strip() or _DONG_RAC.match(dong[i])):
+        i += 1
+    return "\n".join(dong[i:]).strip()
+
+
+def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2) -> tuple:
     """Goi hermes CLI, tra ve (noi_dung, loi). LUON tra ve — khong nem.
 
     - Chay trong process group rieng (start_new_session) de khi het gio giet
@@ -115,7 +132,21 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=1) -> tu
     if profile:
         args += ["-p", profile]
     prompt = (chat_hint() + text) if hint else text
-    args += ["--continue", session, "-z", prompt]
+    # KHONG dung `-z` (oneshot): hermes_cli/main.py xu ly `-z` TRUOC roi thoat
+    # ngay (`_run_and_exit_oneshot` chi nhan prompt/model/provider/toolsets/
+    # skills) — `--continue` khong bao gio toi `_resolve_continue_arg`, bi bo
+    # qua IM LANG. Hau qua: MOI tin nhan mo mot phien MOI, khong vai nao nho gi.
+    # Bang chung 04/09/2026: state.db cua itachi KHONG he co phien ten
+    # `tele-itachi`, chi co chuoi phien tu dat ten theo dong dau cua prompt
+    # ("[Ghi chu he thong... #2 #3 #4"); phien 00:20:54 co dung 2 tin. Nen luc
+    # 07:19 Ong Chu tra loi "xac nhan" thi Itachi dap "Xac nhan gi? Chua thay
+    # cau hoi cu the truoc do" du mot phut truoc chinh no vua hoi. Su co Ethan
+    # 03/09 15:14 ("session trong, khong co draft nao") cung mot goc nay.
+    # Duong dung la subcommand `chat`: -c giu mach theo ten, --create-if-missing
+    # tao phien lan dau (thieu co nay thi hermes thoat 1), -Q chi in cau tra loi
+    # cuoi, --no-restore-cwd de lan resume sau khong tu cd di cho khac.
+    args += ["chat", "-c", session, "--create-if-missing",
+             "--no-restore-cwd", "-Q", "-q", prompt]
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     t0 = time.time()
     log("chat", f"goi agent profile={profile or '-'} session={session} "
@@ -146,10 +177,12 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=1) -> tu
                 pass
             out, err = proc.communicate()
     dt = time.time() - t0
-    out = (out or "").strip()
+    out = _bo_dong_rac(out or "")
     err = (err or "").strip()
+    mp = _PHIEN.search(err)
     log("chat", f"agent xong profile={profile or '-'} rc={proc.returncode} "
-                f"het_gio={het_gio} {dt:.0f}s out={len(out)}c err={len(err)}c")
+                f"het_gio={het_gio} {dt:.0f}s out={len(out)}c err={len(err)}c "
+                f"phien={mp.group(1) if mp else '(khong ro)'}")
     if het_gio:
         phut = f"{timeout // 60}" if timeout >= 60 else f"{timeout / 60:.1f}"
         if out:
@@ -161,7 +194,8 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=1) -> tu
         return None, (err[-400:] or f"Agent trả về lỗi rỗng (mã {proc.returncode}).")
     # Upstream tu choi tam thoi (vd DeepSeek "response_format unavailable now",
     # 429, 502): hermes in nguyen dong "HTTP 4xx/5xx ..." lam cau tra loi. Thu
-    # lai MOT lan sau vai giay truoc khi dua loi do cho Ong Chu.
+    # lai toi da HAI lan (tu 04/09, chat co the chay 2 vai song song nen 429 de
+    # gap hon) sau vai giay truoc khi dua loi do cho Ong Chu.
     if _LOI_HTTP.match(out) and thu_lai > 0 and time.time() - t0 < timeout / 2:
         # 9router ghi "(reset after 17s)" = upstream dang cooldown; cho dung
         # so giay do + 2, toi da 60. Khong co so thi 8s.
