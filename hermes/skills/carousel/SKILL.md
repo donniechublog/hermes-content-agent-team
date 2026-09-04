@@ -99,8 +99,9 @@ mảng nhìn tách rời nhau:
   (`BG_BLUR`) — thành một mảng màu liền. Trước 04/09 nền là bản cover **sắc nét**,
   nên dưới bảng benchmark hiện lại chính cái bảng đó ở cỡ khác: mắt bắt ngay,
   đọc ra hai vùng và giống lỗi kỹ thuật.
-- **Không ghép hai ảnh lệch tone** (một nền trắng một nền đen). Đây là cổng chặn
-  dừng hẳn, không phải cảnh báo.
+- **Không ghép hai ảnh quá khác tone** (một nền trắng một nền đen) — Ông Chủ chốt
+  04/09/2026. Đây là cổng chặn dừng hẳn, không phải cảnh báo. Ghép thì được
+  khuyến khích (đỡ phải cắt), nhưng lệch tone là dừng.
 - **Không làm tối riêng một mảng** quanh chart để "cho nổi" — mảng tối có mép
   thẳng chính là vùng thứ hai. Chỉ scrim gradient dài mới được làm tối.
 
@@ -284,8 +285,11 @@ nền chữ (ảnh làm mờ + tối ở ~30% đáy) phủ liền, không hở d
 (16:9, 4:3) fit bề ngang chỉ ra ~600px — hụt, phải cover-crop hai cạnh (mất nội
 dung mép, vd cắt chữ trên screenshot).
 
-**Tìm được ảnh đúng tỉ lệ thì thôi; KHÔNG thì crop về 1:1/4:5 TRƯỚC khi đưa vào
-carousel** (đừng để `carousel.py` tự xoay xở). Dùng `crop_ti_le.py`:
+Tìm được ảnh đúng tỉ lệ thì thôi. Không thì **ảnh ngang ưu tiên GHÉP DỌC hai
+ảnh** (xem mục dưới) — đỡ phải cắt nhiều, giữ trọn bề ngang. Chỉ khi không kiếm
+được ảnh thứ hai cùng tone mới crop về 1:1/4:5 **trước** khi đưa vào carousel
+(đừng để `carousel.py` tự xoay xở), và **chỉ với ảnh không có chữ**. Dùng
+`crop_ti_le.py`:
 
 ```bash
 venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png              # 1:1, giữa
@@ -301,11 +305,17 @@ crop bằng `crop_ti_le.py`**: script ghi dấu vết vào PNG, `carousel.py` đ
 để chặn crop ảnh ngang; ảnh ngang đã crop chỉ qua cổng khi slide khai
 `"crop_ok": "<lý do>"`. Tự cắt bằng PIL/cv2 để né cổng là vi phạm.
 
-### Ảnh quá ngang mà có TIÊU ĐỀ (slide, bảng, chart, banner): GHÉP hai ảnh, đừng crop
+### Ảnh ngang chữ nhật: GHÉP hai ảnh cho đỡ phải cắt
 
-Crop một slide/bảng có tiêu đề là mất tiêu đề, ảnh đọc ra vô nghĩa (Ông Chủ
-bắt lỗi 03/09/2026). Với ảnh kiểu này: **tìm thêm MỘT ảnh ngang nữa** cùng bài
-(slide kế tiếp, bảng khác, banner) và xếp DỌC hai ảnh trong cùng khung. Ghi
+Ông Chủ chốt 04/09/2026: **ảnh ngang chữ nhật thì cứ ghép cho đỡ phải cắt
+nhiều** — ghép là đường bình thường, không phải phương án chữa cháy. Cắt một
+ảnh 16:9 về 1:1 là bỏ đi gần một nửa bề ngang; ghép dọc hai ảnh giữ trọn cả
+hai. **Điều kiện duy nhất: hai hình không được quá khác tone** (xem ngay dưới).
+
+Riêng ảnh có **TIÊU ĐỀ / chữ** (slide, bảng, chart, banner) thì ghép là **bắt
+buộc**, không được crop: crop là mất tiêu đề, ảnh đọc ra vô nghĩa (Ông Chủ bắt
+lỗi 03/09/2026). Cách làm: **tìm thêm MỘT ảnh ngang nữa** cùng bài (slide kế
+tiếp, bảng khác, banner) và xếp DỌC hai ảnh trong cùng khung. Ghi
 `"images": [a, b]` thay cho `"image"`, ở bìa hoặc slide thân đều được:
 
 ```json
