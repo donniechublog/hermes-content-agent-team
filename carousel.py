@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Dung carousel nhieu slide kieu bang tin — anh o tren, khoi chu trang tren
-nen den o duoi, watermark nghieng o day. Khac han card.py (mot the bia kieu
-tran): day la mot bo N slide ke chuyen, dung cho Dre.
+"""Dung carousel nhieu slide kieu bang tin — anh phu kin the, chu trang CHIM
+vao anh qua mot man toi lien mach, chip ten kenh o goc duoi-trai. Khac han
+card.py (mot the bia kieu tran): day la mot bo N slide ke chuyen, dung cho Dre.
+
+LUAT TREN HET (Ong Chu chot 04/09/2026): moi slide la MOT MAT PHANG LIEN.
+Khong vien, khong vach, khong vung den rieng, khong hai vung tach roi. Chu de
+len anh qua gradient dai; nen bao gio cung la anh (lam mo), khong bao gio la
+mot hop den dat canh anh.
 
 Bo cuc moi slide (1080x1350, ti le 4:5, nen den):
 
@@ -11,10 +16,13 @@ Bo cuc moi slide (1080x1350, ti le 4:5, nen den):
     - Nhan ngan (kicker) o duoi hook.
 
   Slide than (slide 2..N):
-    - Anh full be ngang, giu nguyen ti le (contain), canh day vung anh.
-      Anh ngan/ngang thi de lo nen den o tren — dung, khong phong to.
-    - Khoi chu trang canh trai o duoi, tach doan theo dong trong.
-    - Watermark nghieng canh giua o day.
+    - Anh full be ngang, giu nguyen ti le, KHONG cat hai canh (giu tron tieu de
+      cua chart/bang). Cho nao lop sac khong phu thi ben duoi la chinh tam anh
+      da LAM MO MANH lam nen — khong bao gio la nen den tro, cung khong bao gio
+      la mot ban sao sac net cua chinh no (se doc ra hai vung).
+    - Khoi chu trang canh trai o duoi, tach doan theo dong trong, DE LEN anh
+      qua man toi lien mach bat dau tu ~42% chieu cao (_veil_bottom).
+    - Chip ten kenh o goc DUOI-TRAI.
 
 Xuat ra: <out>.png (bia), <out>_2.png, <out>_3.png ... <out>_N.png
 Danh so nay khop dung glob cua draft_write.py (<id>.png + <id>_[0-9].png),
@@ -80,6 +88,9 @@ F_UI_CH = str(FONTS / "JetBrainsMono-Bold.ttf")        # chip category (dam)
 #      doi lai la lien mach that tren MOI loai anh).
 #  (3) Cham ~MAX_TOI o vung chu de chu trang bat ro ke ca tren anh sang.
 BLUR_RADIUS = 14                 # mo NHE thoi — du diu chi tiet sau chu, khong lam nen "tho"/duc
+BG_BLUR = 44                     # mo MANH ban cover lam nen: phai xoa het chi tiet doc duoc,
+                                 # neu khong cho nao lop sac khong phu se lo mot BAN SAO
+                                 # phong to cua chinh tam anh -> mat doc ra HAI VUNG
 MAX_TOI = 205                    # do toi o vung chu ~80% (truoc 153/60%): dam hon de
                                  # chu chim lien mach ca tren anh sang, khong lo band
 VEIL_TOP = 0.42                  # scrim bat dau SOM NHAT o 42% chieu cao (kieu cover)
@@ -228,6 +239,16 @@ def _ghep_neu_can(muc, nhan, stem):
     for q in ds:
         if not Path(q).exists():
             sys.exit(f"{nhan}: khong thay tep anh {q}")
+    # CONG CHAN tone (Ong Chu chot 04/09/2026): hai anh lech tone ghep chung
+    # khung doc ra dung nhu HAI VUNG rieng biet — thu ma ca carousel lan hero
+    # deu cam. Truoc day card.lech_tone chi IN canh bao, vai cu the cho qua.
+    # Gio la dung han: doi anh, dung nhan.
+    canh = card.lech_tone([Image.open(q).convert("RGB") for q in ds])
+    if canh:
+        sys.exit(f"{nhan}: " + "; ".join(canh) +
+                 " -> doi mot trong hai anh cho CUNG tone (cung nen sang/toi, cung "
+                 "gam mau; tot nhat hai slide cung mot bo). Ghep hai anh lech "
+                 "tone ra hai vung tach roi — khong duoc de qua.")
     ra = Path(f"{stem}.ghep.png")
     ra.parent.mkdir(parents=True, exist_ok=True)
     card.ghep_doc(ds).save(ra, "PNG")
@@ -283,20 +304,29 @@ def _veil_bottom(canvas, veil_rgb, text_top):
 
 
 def _body_image(canvas, img):
-    """Phu anh len canvas, KHONG cho nao la nen den tro:
+    """Phu anh len canvas, KHONG cho nao la nen den tro va KHONG BAO GIO de lo
+    HAI VUNG rieng biet (Ong Chu chot 04/09/2026):
 
-      - NEN: ban COVER phu kin khung truoc (0..H) -> duoi day anh sac cung la
-        anh (cropped), khong phai mau den. Nho vay veil nhat o tren van khong
-        lo mot dai den nao.
+      - NEN: ban COVER phu kin khung (0..H), LAM MO MANH (BG_BLUR). Phai mo:
+        cover la ban PHONG TO cua chinh tam anh, de sac net thi cho nao lop tren
+        khong phu se lo mot BAN SAO LECH cua cung noi dung (vd duoi bang
+        benchmark hien lai chinh bang do o co khac) — mat doc ra hai vung, va
+        con giong loi ky thuat. Lam mo bien nen thanh mot mang mau lien, de anh
+        sac o tren doc ra MOT chu the tren MOT mat phang.
+      - KHONG lam toi them nen: nen toi hon han lop sac se ve ra mot hinh chu
+        nhat quanh chart — dung la hai vung. Chi _veil_bottom moi duoc lam toi,
+        va no lam toi theo gradient dai nen khong sinh mep.
       - LOP SAC len tren: full be ngang, KHONG cat hai canh -> giu tron chi
         tiet mep (chup man hinh, bang so khong bi cat chu). Anh 4:5 phu kin
-        luon; anh 1:1 phu 0..~1080, phan duoi la nen cover (nam duoi chu +
-        watermark, da bi veil lam mo).
+        luon (nen khong lo ra ti nao); anh 1:1 phu 0..~1080, phan duoi la nen
+        (nam duoi chu + watermark, da bi veil lam mo).
 
-    Tra ve ban COVER de _veil_bottom dung lam nguon ban mo. (Luat: anh dua vao
-    carousel da la 1:1 hoac 4:5 — xem crop_ti_le.py; nen luon cham du sau.)"""
+    Tra ve ban COVER SAC (chua mo) de _veil_bottom tu lam mo theo nhip cua no.
+    (Luat: anh dua vao carousel da la 1:1 hoac 4:5 — xem crop_ti_le.py; nen
+    luon cham du sau.)"""
     cover = _fit_cover(img, W, H).convert("RGB")
-    canvas.paste(cover, (0, 0))                   # nen phu kin, khong cho nao den
+    # Nen phu kin, khong cho nao den — va lam mo de khong lo ban sao sac net.
+    canvas.paste(cover.filter(ImageFilter.GaussianBlur(BG_BLUR)), (0, 0))
     scale = W / img.width
     nh = round(img.height * scale)
     resized = img.resize((W, nh), Image.LANCZOS)

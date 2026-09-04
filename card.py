@@ -535,13 +535,18 @@ def _line_h(font, spacing=8):
     return (b[3] - b[1]) + spacing
 
 
-def ghep_doc(paths, gap=12, nen=(0, 0, 0)):
+def ghep_doc(paths, gap=0, nen=(0, 0, 0)):
     """GHEP DOC nhieu anh NGANG thanh mot anh (Ong Chu chot 03/09/2026): mot anh
     qua chu nhat ngang (slide, banner, bang) dua vao khung 4:5 se hoac bi crop
     mat tieu de, hoac de trong nua khung. Thay vi crop, tim THEM mot anh ngang
     nua va xep hai anh doc trong cung khung: moi anh full be ngang, nguyen ti
-    le, cach nhau `gap` px nen den. Tra ve PIL.Image RGB; mot path thi tra ve
-    anh do nguyen ven."""
+    le. Tra ve PIL.Image RGB; mot path thi tra ve anh do nguyen ven.
+
+    `gap=0` (Ong Chu chot 04/09/2026): truoc day chen 12px nen den giua hai anh.
+    Vach den do la mot DUONG KE ngang giua khung — dung cai mat bat ngay va doc
+    ra HAI VUNG rieng biet, dung thu ma luat carousel/hero cam. Hai anh ap sat
+    nhau, cong `lech_tone` lo phan tone, moi ra mot mat phang lien. Chi truyen
+    `gap` khac 0 khi co ly do rat cu the."""
     ims = [Image.open(q).convert("RGB") for q in paths]
     if len(ims) == 1:
         return ims[0]

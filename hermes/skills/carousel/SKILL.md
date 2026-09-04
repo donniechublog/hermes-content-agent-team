@@ -85,6 +85,28 @@ một bước nhảy tối ngay trên dòng đầu, trên ảnh sáng là lộ m
 bảng chữ". `carousel.py` dựng sẵn scrim liền mạch; việc của bạn là **không chọn
 ảnh phá lại** (nửa dưới quá sáng thì chữ trắng vẫn khó đọc — cổng chặn có cảnh báo).
 
+### LUẬT CỨNG: KHÔNG BAO GIỜ ĐỂ RA HAI VÙNG RIÊNG BIỆT
+
+Mỗi slide phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
+mảng nhìn tách rời nhau:
+
+- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Chữ luôn đè lên ảnh qua
+  gradient.
+- **Không vạch, không viền, không đường kẻ** ngang giữa khung. Ghép dọc hai ảnh
+  là **áp sát**, không chèn dải đen (bỏ từ 04/09/2026).
+- **Không để lộ bản sao sắc nét của chính tấm ảnh** làm nền. Chỗ nào lớp ảnh sắc
+  không phủ hết (chart ngang, ảnh 1:1), nền là chính tấm đó **làm mờ mạnh**
+  (`BG_BLUR`) — thành một mảng màu liền. Trước 04/09 nền là bản cover **sắc nét**,
+  nên dưới bảng benchmark hiện lại chính cái bảng đó ở cỡ khác: mắt bắt ngay,
+  đọc ra hai vùng và giống lỗi kỹ thuật.
+- **Không ghép hai ảnh lệch tone** (một nền trắng một nền đen). Đây là cổng chặn
+  dừng hẳn, không phải cảnh báo.
+- **Không làm tối riêng một mảng** quanh chart để "cho nổi" — mảng tối có mép
+  thẳng chính là vùng thứ hai. Chỉ scrim gradient dài mới được làm tối.
+
+Khi tự soi lại slide đã dựng: nhìn có thấy **một đường ranh ngang** nào không.
+Thấy là hỏng, dựng lại — đừng gửi đi.
+
 ## BỐN LỖI ÔNG CHỦ BẮT 03/09/2026 (carousel GPT-6 Astra, Qwen 3.8) — đọc trước mọi thứ
 
 1. **Mặt người không liên quan.** Bìa dùng ảnh một người lạ chụp ngoài đường,
@@ -231,23 +253,28 @@ Bài **arxiv** không có ảnh minh hoạ thì chụp trang bìa paper làm ả
 venv/bin/python arxiv_bia.py --link "<link arxiv>" --out /tmp/src_bia.png
 ```
 
-### Ảnh nào hợp — khác hero image một điểm quan trọng
+### Ảnh nào hợp — giống hero image, chỉ nhẹ tay hơn
 
-Ở hero image, chữ **đè lên ảnh**, nên nửa dưới ảnh phải trống. Ở carousel
-**thân**, chữ nằm trong **vùng đen riêng bên dưới ảnh**, không đè lên ảnh. Nên
-ảnh thân **được phép dày đặc chi tiết** — ảnh chụp sự kiện, ảnh sản phẩm, thậm
-chí ảnh có sẵn chữ. Đó là chỗ carousel dễ tìm ảnh hơn hero image.
+**Slide thân KHÔNG có vùng đen riêng.** Chữ đè lên ảnh y như bìa, chỉ khác là
+màn tối bắt đầu từ cao hơn và dài hơn (xem "Nguyên tắc liền mạch"). Nền sau chữ
+luôn là **chính tấm ảnh đó được làm mờ và làm tối**, không phải một hộp đen đặt
+dưới ảnh.
 
-Chỉ **ảnh bìa** là ngoại lệ: hook đè lên nó, nên bìa cần **góc dưới-trái tương
-đối thoáng** để chữ đọc rõ (màn tối đã đỡ một phần). Chọn ảnh bìa mạnh nhất,
-giàu thông tin nhất trong bộ.
+Hệ quả khi chọn ảnh: **nửa dưới ảnh thân phải chịu được chữ trắng đè lên** —
+đừng chọn ảnh mà đáy là mảng trắng chói hoặc chi tiết rối (mặt người, chữ to,
+hoa văn dày). Ảnh thân vẫn **dễ hơn bìa** vì màn tối ở thân dày hơn: ảnh chụp sự
+kiện, ảnh sản phẩm, screenshot, chart đều dùng được, miễn đáy không sáng chói.
+Ưu tiên screenshot/ảnh **nền tối** cho slide nhiều chữ.
+
+**Ảnh bìa** khắt khe nhất: hook chữ to đè lên, nên bìa cần **góc dưới-trái tương
+đối thoáng**. Chọn ảnh bìa mạnh nhất, giàu thông tin nhất trong bộ.
 
 | Tiêu chí | Ngưỡng |
 |---|---|
 | Cạnh ngắn ảnh | từ 1000px trở lên (dưới đó phóng full bề ngang là vỡ nét) |
 | Tỉ lệ | **1:1 (vuông) hoặc 4:5** — bắt buộc. Xem bên dưới |
 | Ảnh bìa: góc dưới-trái | tương đối thoáng cho hook |
-| Ảnh thân | không ràng buộc chỗ trống — nền chữ là ảnh làm mờ ở đáy |
+| Ảnh thân | nửa dưới không được sáng chói / rối chi tiết (chữ trắng đè lên qua màn tối) |
 
 ### Tỉ lệ ảnh: 1:1 hoặc 4:5 — không thì tự crop trước
 
@@ -285,16 +312,19 @@ bắt lỗi 03/09/2026). Với ảnh kiểu này: **tìm thêm MỘT ảnh ngang
 {"images": ["slide_1.png", "slide_2.png"], "text": "..."}
 ```
 
-`carousel.py` tự ghép: mỗi ảnh full bề ngang, nguyên tỉ lệ, cách nhau 12px nền
-đen, rồi chạy mọi cổng chặn như ảnh thường (kết quả ghép lưu `<out>_N.ghep.png`).
+`carousel.py` tự ghép: mỗi ảnh full bề ngang, nguyên tỉ lệ, **áp sát nhau không
+vạch ngăn** (trước đây chèn 12px nền đen — vạch đó là một đường kẻ giữa khung,
+đọc ra hai vùng, đã bỏ 04/09), rồi chạy mọi cổng chặn như ảnh thường (kết quả
+ghép lưu `<out>_N.ghep.png`).
 Hai ảnh 16:9 ghép ra ~0.88 (nằm giữa 4:5 và 1:1) — cổng tỉ lệ chấp nhận cả dải
 **4:5 → 1:1**. Ảnh dưới nằm dưới scrim chữ, nên đặt ảnh QUAN TRỌNG hơn ở trên.
 
 **Chọn hai ảnh CÙNG TONE.** Hai ảnh lệch tone (một nền trắng một nền đen, gam
 màu khác hẳn) đọc ra như hai vùng riêng biệt, mất cảm giác một khung. Ưu tiên
 cùng nền sáng/tối, cùng gam màu, tốt nhất là hai slide cùng một bộ. Script đo
-độ sáng và màu trung bình, lệch nhiều sẽ in `[CANH BAO] ghep anh` — thấy là
-đổi ảnh, đừng để qua.
+độ sáng và màu trung bình; lệch quá ngưỡng là **cổng chặn dừng hẳn** (từ
+04/09 — trước chỉ cảnh báo nên vai cứ cho qua). Bị chặn thì **đổi ảnh**, không
+có cờ nào để lách.
 
 Không có ảnh vuông sẵn: tự crop vuông từ một ảnh ngang thật (chọn khung ôm
 đúng nội dung chính) — đây là chọn khung, không phải bịa ảnh, vẫn đúng luật
