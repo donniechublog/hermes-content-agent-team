@@ -22,8 +22,10 @@ Trang thai duoc ghi nguoc vao chinh file draft (khoa "moat"), nen mot bai da
 day roi khong bao gio day lai, va mot ket qua da bao roi khong bao lai.
 """
 import base64
+import html
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -109,6 +111,20 @@ def ten_khoa(brand=None):
     return KHOA_THEO_BRAND.get(brand or MAC_DINH_BRAND, KHOA_MAC_DINH)
 
 
+# CUNG quy uoc voi approve_service: CT_BRAND ('blog'|'dcgr') la khoa container,
+# BRAND (ten content-brand day du) suy tu no va van cho env de len.
+_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
+
+
+def brand_container():
+    """Brand ma container nay phu trach. Rong = che do don cu (khong loc)."""
+    load_secrets()
+    ten = os.environ.get("BRAND", "").strip()
+    if ten:
+        return ten
+    return _TEN_BRAND.get(os.environ.get("CT_BRAND", "").strip(), "")
+
+
 def base_url():
     load_secrets()
     return (os.environ.get("MOAT_BASE_URL") or "").rstrip("/")
@@ -153,6 +169,18 @@ def _ghi_json(path, data):
 
 def write_draft(draft_id, data):
     _ghi_json(draft_path(draft_id), data)
+
+
+# Caption duoc viet CHO TELEGRAM (parse_mode=HTML): <b>, <i>, <code>. Facebook,
+# Instagram va TikTok khong hieu HTML — chung in nguyen chu "<b>" ra bai dang.
+# Do tren drafts hien co: 42/61 bai co the, chi gom b/i/code, khong co <a> va
+# khong co entity — nen boc the va giu nguyen chu ben trong la du, khong mat gi.
+_THE_HTML = re.compile(r"</?[a-zA-Z][a-zA-Z0-9-]*[^>]*>")
+
+
+def chu_thuan(text):
+    """Caption dang len social: bo the HTML, giu chu ben trong."""
+    return html.unescape(_THE_HTML.sub("", text or "")).strip()
 
 
 def images_payload(d):
@@ -223,7 +251,9 @@ def intake(draft_id, scheduled_at=None):
     # Tran chi ap cho TIN HANG NGAY. Ong Chu chot lay gioi han Instagram lam moc
     # va chap nhan danh doi: mot ban dang duoc khap noi, thay vi fine-tune rieng
     # tung nen tang. Chan o day la lop cuoi — toi day bai phai dang duoc ngay.
-    cap = d.get("caption") or ""
+    # Boc the TRUOC khi do: tran nay phai do dung chuoi that su dang len,
+    # khong phai chuoi con lan the HTML.
+    cap = chu_thuan(d.get("caption"))
     if len(cap) > TRAN_NEN_TANG:
         return False, (f"caption {len(cap)} ky tu, vuot tran {TRAN_NEN_TANG} cua "
                        f"Instagram/TikTok (thua {len(cap) - TRAN_NEN_TANG}). "
@@ -235,8 +265,8 @@ def intake(draft_id, scheduled_at=None):
 
     body = {
         "externalId": draft_id,
-        "title": (d.get("caption") or "")[:80],
-        "caption": d.get("caption") or "",
+        "title": cap[:80],
+        "caption": cap,
         "sourceUrl": d.get("source_url") or "",
         "images": images,
         "platforms": PLATFORMS,
@@ -289,6 +319,14 @@ def poll():
     if not base_url():
         return []
 
+    # drafts/ dung CHUNG cho moi container, ma poll() lai ghi co trang thai
+    # ("loi_da_bao", "reported", "tracking_stopped") nguoc vao chinh file draft.
+    # Container nao cung soi ca thu muc thi hai tien trinh thay nhau dat va xoa
+    # cung mot co: co che "chi bao MOT lan" thanh bao mai mai, va bao sai — moi
+    # container giai ra mot khoa khac nhau cho cung mot brand, nen ben thay
+    # workflow ben khong. Moi container chi soi bai cua brand minh.
+    cua_toi = brand_container()
+
     lines = []
     for path in sorted(DRAFTS.glob("*.json")):
         if path.name.endswith(".meta.json"):
@@ -301,6 +339,9 @@ def poll():
         if not isinstance(moat, dict) or not moat.get("external_id"):
             continue
         if moat.get("tracking_stopped"):
+            continue
+        # Bai day tu truoc khi tach brand khong co khoa "brand" -> mac dinh.
+        if cua_toi and (moat.get("brand") or d.get("brand") or MAC_DINH_BRAND) != cua_toi:
             continue
         reported = moat.get("reported") or {}
         if reported and all(v in TERMINAL for v in reported.values()) \
