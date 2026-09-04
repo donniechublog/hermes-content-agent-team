@@ -12,7 +12,7 @@ Hai chieu deu do BEN NAY chu dong:
 Moat khong goi nguoc ve day: host nay khong mo cong nao ra ngoai, va mot
 vong poll 10 phut du nhanh cho viec "bao xem da len Facebook chua".
 
-Khoa: MOT khoa cho MOI thuong hieu, trong .secrets.env, gui qua header
+Khoa: MOT khoa cho MOI thuong hieu, trong secret.<brand>.env, gui qua header
 X-API-Key. MOAT_PUBLISH_KEY cho donniechublog, MOAT_PUBLISH_KEY_DCGR cho
 dcgr.tech. Mot khoa ung voi dung mot org ben moat -- khong bao gio truyen
 org_id tu day, chinh cai khoa da chon org roi. Nen chon dung khoa la toan bo
@@ -35,7 +35,6 @@ import env_load
 ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
 STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
-SECRETS = ROOT / ".secrets.env"
 
 # Chi cac bucket ANH -- day chuyen nay ra the anh, khong ra video.
 #
@@ -66,12 +65,23 @@ PLATFORM_LABEL = {"facebook": "Facebook", "instagram": "Instagram", "tiktok": "T
 
 
 def load_secrets():
-    if SECRETS.exists():
-        for line in SECRETS.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+    """Nap cau hinh qua env_load: secret.common.env -> secret.<brand>.env ->
+    .secrets.env.
+
+    Truoc day ham nay tu doc MOT MINH .secrets.env. Hau qua: tien trinh chay
+    doc lap (cron goi poll()) khong bao gio thay tep rieng cua brand, chi
+    approve_service -- vi no goi env_load.nap() luc import -- moi thay. Hai
+    duong vao cung mot module ma ra hai ket qua khac nhau, va brand dcgr thi
+    khong duong nao thay khoa ca. Mot cua nap duy nhat de het lech.
+    """
+    env_load.nap()
+
+
+def _cho_trong(v):
+    """Gia tri kieu '<dan khoa vao day>' trong secret.<brand>.env la CHO TRONG
+    chua dien, khong phai khoa. Coi la chua cau hinh, thay vi cam dau goi moat
+    de an 401 moi phut."""
+    return v.startswith("<")
 
 
 # Thuong hieu -> ten bien moi truong chua khoa. Khoa quyet dinh org ben moat,
@@ -108,6 +118,8 @@ def config(brand=None):
     """
     base = base_url()
     key = os.environ.get(ten_khoa(brand)) or ""
+    if _cho_trong(key):
+        key = ""
     if not base or not key:
         return None, None
     return base, key
