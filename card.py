@@ -585,6 +585,148 @@ def lech_tone(ims, nguong_sang=60, nguong_mau=70):
     return ra
 
 
+# Anh goc NGANG tu ti le nay tro len thi be ngang chac chan mang noi dung
+# (chart, bang benchmark, slide, banner) — trung nguong voi carousel._gate_anh.
+CROP_NGANG = 1.4
+
+
+def _dau_crop(path):
+    """Doc dau vet `crop_ti_le.py` ghi trong metadata PNG.
+
+    Tra ve (w_goc, h_goc, cat_ngang) hoac None. Cung dinh dang ma
+    carousel._goc_crop doc — mot cho ghi, hai cho doc."""
+    try:
+        with Image.open(path) as im:
+            m = (getattr(im, "text", None) or im.info or {}).get("crop_ti_le")
+    except Exception:                                    # noqa: BLE001
+        return None
+    if not m:
+        return None
+    kv = dict(k.split("=", 1) for k in m.split(";") if "=" in k)
+    try:
+        w, h = kv["goc"].lower().split("x")
+        return int(w), int(h), bool(int(kv.get("cat_ngang", "0")))
+    except Exception:                                    # noqa: BLE001
+        return None
+
+
+def _chan_chart(src):
+    """Chart / screenshot di vao kieu `quote`/`tran` MOT MINH thi DUNG.
+
+    O hai kieu do anh phu kin the va man toi an ~40% day: chart nam mot minh la
+    nua duoi cua no chim han — mat truc x, mat chu thich, mat dong nguon. Duong
+    dung da co san va la GHEP DOC (`--image2`): chart o `--image` nam nua tren
+    con nguyen, anh thu hai o duoi chiu man toi (chinh skill hero-image da ghi
+    "dat anh quan trong hon o --image").
+
+    Anh ghep thi cho qua — do la duong dung. Chi chan chart di mot minh."""
+    if isinstance(src, (list, tuple)) and len([q for q in src if q]) >= 2:
+        return
+    q = src[0] if isinstance(src, (list, tuple)) else src
+    with Image.open(q) as im:
+        la_ct, do_ct = la_chart(im.convert("RGB"))
+    if not la_ct:
+        return
+    raise SystemExit(
+        f"CHART DI MOT MINH VAO HERO — {q} ({do_ct})\n"
+        "  Kieu quote/tran phu anh kin the va man toi an ~40% day, nen chart\n"
+        "  dung mot minh la mat nua duoi: truc x, chu thich, dong nguon.\n"
+        "  Chart phai NGUYEN VEN va TRAI FULL BE NGANG. Ba duong dung:\n"
+        "   1. Tim them mot anh ngang CUNG TONE, dua vao --image2: script ghep\n"
+        "      DOC, chart o --image nam nua tren con nguyen, anh kia chiu man toi.\n"
+        "   2. De chart cho carousel: slide than voi \"chart\": true — carousel.py\n"
+        "      dan full be ngang nguyen ven, khong crop, khong ep ti le.\n"
+        "   3. Doi anh khac lam hero (nguoi, thiet bi, hien truong) va van dan\n"
+        "      chart o slide than.\n"
+        "  (Chac chan muon chart mot minh thi --bo-qua-anh)")
+
+
+def _chan_crop(src):
+    """DUNG neu anh dua vao la mot anh NGANG da bi cat bot BE NGANG.
+
+    Ong Chu chot 04/09/2026: chup chart / bang benchmark thi FULL CHIEU RONG di
+    truoc, chieu cao xet sau. Be ngang cua chart la truc, la nhan chuoi, la cot
+    cuoi cua bang — cat di thi thu con lai khong phai thieu mot ti, no NOI SAI.
+    Bia "Gemini 3.8 Flash" lot luoi vi mat nua phai: mat luon cai bubble Gemini
+    ma chinh cau hook dang noi toi.
+
+    carousel.py da chan viec nay tu 03/09/2026 (`_gate_anh`), card.py thi chua —
+    nen mot tam anh bi crop ngang van vao duoc hero/quote. Day la cho bit lai."""
+    for q in (src if isinstance(src, (list, tuple)) else [src]):
+        if not q:
+            continue
+        d = _dau_crop(q)
+        if not d:
+            continue
+        gw, gh, ok = d
+        if ok or gw / max(1, gh) < CROP_NGANG:
+            continue
+        raise SystemExit(
+            f"ANH BI CAT BE NGANG — {q}\n"
+            f"  Anh goc NGANG {gw}x{gh} ({gw/gh:.2f}) da di qua crop_ti_le.py.\n"
+            "  Chart / bang benchmark / slide co tieu de PHAI NGUYEN VEN be ngang:\n"
+            "  full chieu rong truoc, chieu cao xet sau. Dua thang ANH GOC vao\n"
+            "  --image; anh qua ngang thi tim them mot anh ngang cung tone va\n"
+            "  ghep doc bang --image2.")
+
+# ---- Nhan dien anh CHART / SCREENSHOT -------------------------------------
+# Ong Chu chot 04/09/2026: van de cua chart KHONG phai "nua duoi co trong hay
+# khong" ma la CHART PHAI NGUYEN VEN VA TRAI FULL BE NGANG. Duong `"chart": true`
+# cua carousel lam dung viec do roi, nhung khong co gi BAT vai phai dung no —
+# vai cu doi xu chart nhu anh thuong, va the la no bi crop, bi vui duoi man toi.
+# Nen phai nhan dien duoc "tam nay la chart/screenshot" de ep vao dung duong.
+#
+# Hai phep do, deu tinh tren ban thu nho 480px bang NEAREST (khong LANCZOS:
+# LANCZOS lam nhoe vung phang cua screenshot thanh gradient, tuc la xoa dung cai
+# dau hieu can do):
+#
+#   phang — ti le cap pixel KE NHAU theo hang gan nhu bang nhau (lech <= 2).
+#           Do hoa vector (chart, bang, UI) toan mang phang voi vai buoc nhay
+#           dung; anh chup that thi moi pixel lech nhau mot chut.
+#   so_mau — so mau RIENG BIET sau khi luong hoa 5 bit/kenh. Day la phep do tach
+#           bach nhat do duoc: chart/screenshot dung mot bang mau tay nen ra vai
+#           chuc mau; anh that ra hang nghin.
+#
+# Do tren 16 the that trong drafts/ (deu la anh that + scrim phang, tuc la ca
+# tinh huong KHO nhat): phang 0.31..0.95, so_mau 350..4552 -> khong tam nao bi
+# goi nham la chart. Chart/screenshot do duoc: phang 0.89..0.99, so_mau 42..65.
+# Nguong dat o giua khoang trong do, va phai dung CA HAI.
+CHART_PHANG = 0.85
+CHART_SO_MAU = 220
+
+
+def do_chart(img, w=480):
+    """Tra ve (phang, so_mau) cua `img`. Thuan PIL — venv tren server khong chac
+    co numpy (chi doi_chu_anh.py can, va no chi chay o may local)."""
+    h = max(1, round(img.height * w / img.width))
+    v = img.convert("RGB").resize((w, h), Image.NEAREST)
+    # tobytes() thay cho getdata(): getdata() bi bo o Pillow 14, va tobytes cho
+    # thang mot day byte — dung luon lam gia tri L, khong phai boc qua sequence.
+    px = v.convert("L").tobytes()
+    bang = tong = 0
+    for y in range(h):
+        r = px[y * w:(y + 1) * w]
+        for i in range(w - 1):
+            tong += 1
+            if abs(r[i] - r[i + 1]) <= 2:
+                bang += 1
+    phang = bang / max(1, tong)
+    # Luong hoa 5 bit/kenh bang posterize roi dem mau rieng biet. getcolors can
+    # tran du lon; 480px * chieu cao la tran chac chan du.
+    from PIL import ImageOps                       # noqa: PLC0415 — cung bai lech_tone
+    mau = ImageOps.posterize(v, 5).getcolors(w * h) or []
+    return phang, len(mau)
+
+
+def la_chart(img):
+    """`img` co phai chart / bang / screenshot / slide (do hoa vector) khong.
+
+    Tra ve (True/False, mo_ta) — mo_ta la chuoi so lieu de nhet vao loi, cho
+    nguoi doc thay vi sao script ket luan nhu vay thay vi phai tin."""
+    phang, so_mau = do_chart(img)
+    mo_ta = f"phang {phang:.0%}, chi {so_mau} mau"
+    return (phang >= CHART_PHANG and so_mau <= CHART_SO_MAU), mo_ta
+
 def _mo_anh(src):
     """src: mot duong dan, hoac danh sach duong dan (ghep doc)."""
     if isinstance(src, (list, tuple)):
@@ -1214,7 +1356,8 @@ def tim_mat_dau(text: str) -> list:
 def build(src, title, subtitle, via, out, category="AI",
           category_right="", handle=None, ratio="free",
           tagline="daily AI update", brand="donniechublog",
-          bo_qua_dau=False, kieu="dai", kicker="", attrib=""):
+          bo_qua_dau=False, kieu="dai", kicker="", attrib="",
+          bo_qua_anh=False):
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
     b = dat_thuong_hieu(brand)
@@ -1237,6 +1380,9 @@ def build(src, title, subtitle, via, out, category="AI",
             "  Go lai co dau day du roi chay lai. The la thu nguoi doc nhin thay\n"
             "  dau tien, chu khong dau lam ca kenh trong nhu lam au.\n"
             "  (Neu that su la tieng Anh, chay lai voi --bo-qua-dau)")
+    _chan_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu
+    if kieu in ("quote", "tran") and not bo_qua_anh:
+        _chan_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
     # Kieu quote co duong ve rieng (anh phu kin + cau trich dan + dong nguon),
     # khong di qua logic dai/tran ben duoi. Dat NGAY sau cong tieng Viet co dau.
     if kieu == "quote":
@@ -1596,6 +1742,9 @@ def main():
     p.add_argument("--category-right", default="")
     p.add_argument("--handle", default=None,
                    help="Ghi de ten kenh; mac dinh lay theo --brand")
+    p.add_argument("--bo-qua-anh", action="store_true",
+                   help="Bo qua cong chan chart di mot minh vao hero (chi dung khi "
+                        "da nhin tan mat va chac chan muon chart dung mot minh)")
     p.add_argument("--bo-qua-dau", action="store_true",
                    help="Bo qua kiem tra tieng Viet khong dau (chi dung khi chu "
                         "that su la tieng Anh)")
@@ -1624,7 +1773,8 @@ def main():
     build([a.image, a.image2] if a.image2 else a.image, a.title, a.subtitle, a.via, a.out,
           a.category, a.category_right, a.handle, a.ratio, a.tagline,
           brand=a.brand,
-          bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib)
+          bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib,
+          bo_qua_anh=a.bo_qua_anh)
 
 
 if __name__ == "__main__":

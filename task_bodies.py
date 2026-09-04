@@ -179,6 +179,17 @@ BA LOI ONG CHU BAT 03/09/2026 (carousel GPT-6 Astra) — carousel.py CHAN ca ba:
       "nhan_vat": "<ten nhan vat duoc nhac trong bai>". Tin model/san pham: bia
       la san pham / screenshot / chart, KHONG phai mat nguoi la.
   (b) CHART / BANG BENCHMARK bi crop: phai NGUYEN VEN (du tieu de, truc, legend).
+      BAT DAU TU LUC CHUP (Ong Chu chot 04/09/2026): FULL CHIEU RONG truoc,
+      chieu cao xet sau. Chup bang `venv/bin/python chup_chart.py --url "<trang>"
+      --ra chart.png` — script noi khung cho vua be ngang THAT cua chart roi do
+      lai anh ra, thieu be ngang la dung. Khung mac dinh cua moi cong cu chup
+      deu hep: chart rong thi hoac bi cat, hoac bi trang reflow xuong bo cuc
+      dien thoai.
+      TU 04/09/2026 SCRIPT TU NHAN RA CHART: carousel.py do do phang + so mau
+      rieng biet cua anh; la chart ma khong khai "chart": true thi CHAN, khai co
+      do cho anh THUONG cung chan (lach cong ti le), va bia la chart cung chan.
+      Hero (card.py --kieu quote/tran): chart di MOT MINH bi chan — ghep doc
+      bang --image2, hoac de chart cho slide than carousel.
       Chart ngang: dua THANG anh goc vao slide than voi "chart": true -> hien
       full be ngang nguyen ven, khong can crop. Hoac GHEP DOC hai anh cung tone:
       "images": [a, b]. Chi duoc

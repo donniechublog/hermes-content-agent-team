@@ -71,9 +71,22 @@ ghi thêm một dòng cảnh báo.
   helper của `card.py` (nạp font, wrap chữ, fit ảnh, cổng chặn tiếng Việt). Slide
   thân có thể là đoạn văn (`text`) hoặc một câu trích dẫn pull-quote (`quote` +
   `attrib`) — tùy slide
+- Nhận diện chart nằm ở `card.la_chart()` (thuần PIL: độ phẳng hàng + số màu
+  riêng biệt sau lượng hoá 5 bit). `card.py` và `carousel.py` dùng chung nó để
+  **ép ảnh chart vào đúng đường** — `"chart": true` ở slide thân, ghép dọc ở
+  bìa/hero — thay vì để vai đối xử với chart như ảnh thường rồi crop mất trục
+- `chup_chart.py` — chụp **chart / bảng benchmark** đúng luật *full chiều rộng
+  trước, chiều cao xét sau* (Ông Chủ chốt 04/09/2026). Mở trang ở khung 1920px,
+  đo bề ngang **thật** của phần tử (`scrollWidth`), **nới khung** cho vừa rồi mới
+  chụp ở DPR 2; chụp xong đo lại ảnh ra, thiếu bề ngang thì dừng chứ không giao
+  ảnh mất nửa phải. Link ảnh trực tiếp thì tải nguyên bản. Cần `playwright` +
+  chromium
 - `crop_ti_le.py` — cắt một ảnh về **1:1 hoặc 4:5** trước khi đưa vào carousel
   (luật: ảnh carousel phải đúng một trong hai tỉ lệ đó). Cắt center, hoặc
-  `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh
+  `--cx/--cy` để ôm chủ thể. Là chọn khung ảnh thật, không phải bịa ảnh.
+  **Chỉ cắt chiều cao**: ảnh gốc ngang (≥1.4) mà đòi cắt bề ngang thì script
+  dừng — bề ngang của chart/bảng là nội dung. Ép cắt bằng `--cat-ngang`, chỉ cho
+  ảnh chụp người/sản phẩm không có chữ
 - `render_edu.py` — renderer của **Kite** (role `carousel.edu`): dựng carousel
   **tech-editorial art vector gốc** (masthead, folio, hero orbit) bằng HTML/CSS/SVG,
   chụp bằng **Chromium headless (Playwright)** ra `<id>.png` + `<id>_2.png`… đúng

@@ -125,6 +125,33 @@ Vì sao phải tìm rộng: link Finn nhặt thường là trang tài liệu, v�
 nó là thẻ thương hiệu chung. Ví dụ thật: `api-docs.deepseek.com` trả
 `deepseek-social-card.jpeg` cho mọi bài.
 
+### Chụp chart / bảng benchmark: full chiều rộng trước, chiều cao xét sau
+
+**Luật Ông Chủ 04/09/2026.** Bề ngang của một chart là **nội dung**: trục, nhãn
+chuỗi, cột cuối của bảng, cái điểm được tô sáng mà cả bài đang nói tới. Cắt mất
+một phần bề ngang thì thứ còn lại không phải thiếu một tí — **nó nói sai**. Chiều
+cao thì khác: cắt bớt mép trên/dưới một chart thường chỉ mất khoảng thở.
+
+Đừng chụp bằng khung mặc định của công cụ nào. Khung mặc định luôn hẹp
+(`screenshot.js` trong repo này đặt 820px), và một chart rộng 1400px trong khung
+đó thì hoặc bị cắt, hoặc bị trang reflow xuống bố cục điện thoại — lúc đó có
+chụp đủ bề ngang cũng không còn là cái chart trên desktop nữa.
+
+```bash
+venv/bin/python chup_chart.py --url "<trang có chart>" --ra chart.png
+venv/bin/python chup_chart.py --url "<trang>" --chon "figure.chart" --ra chart.png
+venv/bin/python chup_chart.py --url "<link ảnh trực tiếp>" --ra chart.png
+```
+
+Script mở ở khung 1920px, **đo bề ngang thật** của phần tử (`scrollWidth`, bắt cả
+phần tràn ra ngoài khung nhìn), **nới khung** cho vừa rồi mới chụp ở DPR 2. Chụp
+xong nó **đo lại ảnh ra**: bề ngang ảnh nhỏ hơn bề ngang thật của chart thì lệnh
+dừng chứ không giao một tấm thiếu nửa phải. Ảnh rất cao thì nó chỉ cảnh báo —
+chiều cao được phép cắt.
+
+Link trỏ thẳng vào một tấm ảnh thì script tải **nguyên bản**, không resize, không
+crop: bản gốc luôn đầy đủ hơn mọi bản chụp lại.
+
 ## Bước 2 — chọn ảnh, và cách ảnh được điều phối
 
 **Ảnh luôn hiện full bề ngang.** Đó là ưu tiên số một và không thương lượng: cắt
@@ -160,6 +187,40 @@ hai điều thật sự phải chọn:
 nhưng nó không xoá được chữ có sẵn trong ảnh. Ảnh chụp màn hình đầy chữ, bảng
 benchmark dày đặc số: đọc thì tốt nhưng không làm nền được. Gặp loại đó thì chọn
 ảnh khác, hoặc báo lại.
+
+### Chart phải đi đường của chart
+
+Với ảnh chart/bảng/screenshot thì vấn đề **không phải** "nửa dưới có trống
+không" mà là **chart phải nguyên vẹn và trải full bề ngang**. Nên `card.py` nhận
+diện loại ảnh này rồi ép sang đúng đường, thay vì bảo bạn "đổi ảnh khác".
+
+Cách nhận diện (`card.la_chart`), đo trên bản thu nhỏ 480px:
+
+| Phép đo | Chart/screenshot | Ảnh thật |
+|---|---|---|
+| `phẳng` — tỉ lệ cặp pixel kề nhau gần bằng nhau | 0,89–0,99 | 0,31–0,95 |
+| `số màu` — số màu riêng biệt sau lượng hoá 5 bit | 42–65 | 350–4552 |
+
+Phải **cả hai** mới kết luận là chart. Số màu là phép tách bạch nhất: đồ hoạ
+vector dùng một bảng màu tay nên ra vài chục màu, ảnh chụp thật ra hàng nghìn.
+Đo thử trên 16 thẻ thật trong `drafts/` — đều là ảnh thật cộng scrim phẳng, tức
+là tình huống khó nhất — không tấm nào bị gọi nhầm.
+
+Nhận ra là chart thì:
+
+- **Hero (`quote`/`tran`)**: chart đi một mình bị chặn (cổng #4). Ghép dọc bằng
+  `--image2`, hoặc để chart cho carousel.
+- **Carousel slide thân**: bắt khai `"chart": true` — cờ đó cho `carousel.py`
+  dán full bề ngang nguyên vẹn. Khai cờ đó cho một ảnh **không** phải chart cũng
+  bị bắt: cờ này bỏ qua cổng tỉ lệ, dùng cho ảnh thường là lách cổng.
+- **Carousel bìa**: chart làm bìa bị chặn (hook đè lên ảnh thì chart nằm dưới
+  chữ) — ghép dọc `"images": [a, b]`, hoặc đổi bìa và để chart ở slide thân.
+
+Còn "nửa dưới phải trống" ở trên vẫn là **luật biên tập**, không phải cổng chặn.
+Đã thử làm nó thành cổng (đo độ sáng + độ phẳng của vùng dưới màn tối) rồi **gỡ
+bỏ 04/09/2026**: nó bắt đúng những tấm mà cổng chart đã bắt, nhưng báo sai lý do
+("đổi ảnh khác") nên đẩy vai đi sửa sai chỗ — trong khi việc phải làm là đưa
+chart sang đường của chart.
 
 Ảnh càng dọc thì chữ càng đè lên ảnh; ảnh càng ngang thì mảng nền phẳng càng
 nhiều. Cả hai đều đúng, chọn theo ảnh nào mang thông tin thật.
@@ -219,16 +280,28 @@ Lưu ý về `--ratio`: nếu ảnh quá dọc so với tỉ lệ bạn khoá, s
 lệ cao hơn để không phải thu ảnh. Dòng in ra cuối lệnh cho biết thẻ thật sự ra
 bao nhiêu, đọc nó.
 
-## Bốn cổng chặn
+## Sáu cổng chặn
 
-Ba cái đầu làm lệnh **dừng hẳn**:
+Năm cái đầu làm lệnh **dừng hẳn**:
 
 1. **Tiếng Việt không dấu** ở tiêu đề. Từng in ra "CONG CU" trên thẻ thật. Gõ
    lại có dấu rồi chạy lại. Chỉ dùng `--bo-qua-dau` khi chữ **thật sự** là
    tiếng Anh.
-2. **Thương hiệu không nhận ra** ở `--brand`.
-3. **Thiếu cờ bắt buộc**: `--image --title --out`.
-4. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
+2. **Ảnh bị cắt bề ngang**, ở **mọi** kiểu. `card.py` đọc dấu vết
+   `crop_ti_le.py` ghi trong metadata PNG: ảnh gốc ngang (≥1.4) mà đã bị cắt bớt
+   bề ngang thì lệnh dừng. `crop_ti_le.py` cũng tự chặn ở đầu kia — nó chỉ cắt
+   chiều cao, muốn cắt bề ngang phải `--cat-ngang` và chỉ được dùng cho ảnh chụp
+   người/sản phẩm **không có chữ**.
+3. **Chart đi một mình vào hero** (`--kieu quote`/`tran`). `card.py` tự nhận ra
+   ảnh là chart/screenshot (xem "Chart phải đi đường của chart" bên dưới) và
+   dừng: ở hai kiểu đó ảnh phủ kín thẻ, màn tối ăn ~40% đáy, chart đứng một mình
+   là mất trục x và chú thích. Đường đúng: `--image2` để ghép dọc (chart ở
+   `--image` nằm nửa trên còn nguyên), hoặc đưa chart về slide thân carousel với
+   `"chart": true`. Ghi đè bằng `--bo-qua-anh` — cờ này giờ **chỉ** phục vụ cổng
+   này.
+4. **Thương hiệu không nhận ra** ở `--brand`.
+5. **Thiếu cờ bắt buộc**: `--image --title --out`.
+6. **Em-dash** thì không chặn mà **tự thay**: `—` thành dấu phẩy, `–` thành gạch
    nối. Đừng dựa vào nó, cứ gõ đúng từ đầu.
 
 ## Tiêu đề: viết như thế nào

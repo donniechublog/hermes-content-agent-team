@@ -117,7 +117,18 @@ Thấy là hỏng, dựng lại — đừng gửi đi.
    gọi được tên thì không được dùng. Tin model/sản phẩm: bìa là **sản phẩm,
    screenshot, chart** — không phải mặt người.
 2. **Chart / bảng benchmark bị crop.** Chart cắt mất tiêu đề, mất trục, mất
-   legend là ảnh vô nghĩa. **Chart, bảng, slide, banner có chữ PHẢI NGUYÊN
+   legend là ảnh vô nghĩa. **Bắt đầu từ lúc CHỤP** (luật Ông Chủ 04/09/2026):
+   full chiều rộng trước, chiều cao xét sau — chụp bằng
+   `venv/bin/python chup_chart.py --url "<trang>" --ra chart.png`, script nới
+   khung cho vừa bề ngang thật của chart rồi đo lại ảnh ra, thiếu bề ngang là
+   nó dừng. Đừng chụp bằng khung mặc định của công cụ nào: khung mặc định luôn
+   hẹp, chart rộng thì hoặc bị cắt, hoặc bị trang reflow xuống bố cục điện thoại.
+   **Từ 04/09/2026 `carousel.py` tự nhận ra ảnh nào là chart/screenshot**
+   (`card.la_chart`: đo độ phẳng + số màu riêng biệt) và **bắt** khai
+   `"chart": true` — không khai là chặn, kèm số liệu để bạn thấy vì sao. Chiều
+   ngược lại cũng bị bắt: khai `"chart": true` cho một ảnh **không** phải chart
+   là lách cổng tỉ lệ. Bìa mà là chart cũng bị chặn (hook đè lên thì chart nằm
+   dưới chữ) — ghép dọc `"images": [a, b]`, hoặc đổi bìa và để chart ở slide thân. **Chart, bảng, slide, banner có chữ PHẢI NGUYÊN
    VẸN** — không crop, không cắt góc. Ảnh ngang thì **ghép dọc hai ảnh cùng
    tone** (`"images": [a, b]`), **hoặc** khai `"chart": true` cho slide thân: cổng
    tỉ lệ bỏ qua, `carousel.py` dán chart **full bề ngang nguyên vẹn**, phần

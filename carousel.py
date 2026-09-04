@@ -579,6 +579,13 @@ def _dem_mat(path):
         return None
 
 
+def _la_ghep(img):
+    """Anh nay co phai ban GHEP DOC do carousel.py dung ra khong (xem
+    `_ghep_neu_can`)? Bia chart hop le di duong nay."""
+    t = (getattr(img, "text", None) or img.info or {})
+    return t.get("nguon_dung") == "ghep_doc"
+
+
 def _co_xuat_xu(img):
     """Anh co DAU VET cua cong cu trong doi khong (crop_ti_le.py, arxiv_bia.py,
     ghep_doc cua carousel.py)? Dung cho cong 2c."""
@@ -624,6 +631,35 @@ def _gate_anh(paths):
         da_thay[h] = nhan
         img = Image.open(p)
         w, h_px = img.size
+        # 1b) EP CHART VAO DUNG DUONG (Ong Chu chot 04/09/2026). Van de cua chart
+        # khong phai "nua duoi co trong khong" ma la NGUYEN VEN + FULL BE NGANG.
+        # Duong "chart": true lam dung viec do (xem `_body_image`), nhung truoc
+        # day khong co gi BAT vai phai dung: vai cu doi xu chart nhu anh thuong,
+        # va the la no lan luot di qua crop, qua cong ti le, roi nam vui duoi
+        # scrim. Gio script tu nhan ra chart/screenshot va bat khai co.
+        la_ct, do_ct = card.la_chart(img.convert("RGB"))
+        if la_ct and nhan != "bia" and not muc.get("chart"):
+            loi.append(f"{nhan}: anh nay LA CHART/SCREENSHOT ({do_ct}) ma slide "
+                       'khong khai "chart": true. Them co do vao slide — '
+                       "carousel.py se dan anh FULL BE NGANG NGUYEN VEN (khong "
+                       "crop, khong ep ti le), phan tren/duoi lay chinh anh lam "
+                       "mo. Do la duong duy nhat giu tron truc va nhan cua chart.")
+            continue
+        if la_ct and nhan == "bia" and not _la_ghep(img):
+            loi.append(f"{nhan}: BIA la chart/screenshot ({do_ct}). Bia co hook de "
+                       "len anh nen chart nam duoi chu, doc khong ra. Ghep DOC hai "
+                       'anh ngang cung tone ("images": [a, b]) de chart len nua tren '
+                       "va chu de len nua duoi; hoac de chart o SLIDE THAN voi "
+                       '"chart": true va tim anh khac lam bia.')
+            continue
+        # 1c) Khai "chart": true cho mot anh KHONG phai chart la lach cong ti le
+        # (co do bo qua kiem 1:1/4:5). Bat luon chieu nguoc lai.
+        if muc.get("chart") and not la_ct and nhan != "bia":
+            loi.append(f'{nhan}: khai "chart": true nhung anh khong phai chart/'
+                       f"screenshot ({do_ct}) — co do bo qua cong ti le, dung no "
+                       "cho anh thuong la lach cong. Bo co di va cat ve 1:1/4:5 "
+                       "bang crop_ti_le.py, hoac ghep doc \"images\": [a, b].")
+            continue
         # 2) TI LE: phai 1:1 hoac 4:5 (dung sai 3%). Sai thi cat truoc bang
         # crop_ti_le.py — khong de carousel.py tu xoay so.
         # Chap nhan ca dai GIUA 4:5 va 1:1 (anh ghep doc hai anh ngang roi vao
