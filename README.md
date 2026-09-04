@@ -198,31 +198,38 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 
 ## Model từng vai
 
-**Chuỗi đang chạy** (nguồn sự thật: `~/.hermes/profiles/*/config.yaml`, soi bằng
-`model_watch.py`): 12 vai thường — chính `ds/deepseek-v4-flash`, dự phòng
-`v4flash@api.b.ai → ds/deepseek-chat`. Riêng Ada — chính `ds/deepseek-reasoner`
-(**bật** suy luận, vai duy nhất), dự phòng `v4-pro → deepseek-chat`. Bảng dưới
-là KẾT QUẢ ĐO chọn model, không phải cấu hình:
+**Chuỗi đang chạy** (nguồn sự thật: `~/.hermes-<brand>/profiles/*/config.yaml`
+— mỗi container một home riêng từ khi tách brand, không còn `~/.hermes` gộp
+chung). Đo lại 04/09/2026, theo brand:
 
-| Vai | Model đo được là hợp nhất | Suy luận |
-|---|---|---|
-| Finn / Ethan / Ethan / Dre | `ds/deepseek-v4-flash` | tắt |
-| Miles / Miles / Jean | `ds/deepseek-chat` | tắt |
-| Ada | `ds/deepseek-reasoner` | **bật** |
+| Vai | donniechublog | dcgr.tech | Suy luận |
+|---|---|---|---|
+| Ada (analyst) | `ds/deepseek-reasoner` | `ds/deepseek-reasoner` | **bật** — vai duy nhất, việc đối chiếu điểm chấm cần suy luận thật |
+| Bob | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | **medium** |
+| Ethan (designer) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Dre (carousel) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Kite (carousel-edu) | `ds/deepseek-v4-flash` | — (chưa deploy) | tắt |
+| Gin / Itachi | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Nova / Vera (market) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Finn (scout) | `ds/deepseek-v4-flash` | — (dcgr chỉ có Vera) | tắt |
+| Jean (teaser) | `ds/deepseek-v4-flash` | — (blog only) | tắt |
+| Miles (writer) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
 
-Dre, Gin, Itachi thêm sau, clone từ Dre nên cùng chuỗi `v4-flash` (chưa đo
-riêng). Gin chạy việc thật **trên server** (torch+cpu đã cài từ 28/08/2026, xem
-skill `inplace-translate`) — không còn phụ thuộc máy local.
+Dự phòng của mọi vai (trừ Ada): `v4flash@api.b.ai → ds/deepseek-chat` (xem
+mục Provider). Gin chạy việc thật **trên server** (torch+cpu cài từ 28/08/2026,
+xem skill `inplace-translate`) — không còn phụ thuộc máy local. Kite ĐÃ DEPLOY
+(2026-09-01), generator `render_edu.py` chạy live trên server.
 
-Kite ĐÃ DEPLOY (2026-09-01): profile `~/.hermes-blog/profiles/carousel-edu/`
-(config clone từ carousel/Dre, chuỗi `v4-flash`, `reasoning_effort: none`), topic
-Telegram "Kite · carousel.edu" (thread 52) + `chat_router` wired. Generator
-`render_edu.py` **đã chạy live** (Playwright+Chromium cài xong, render
-`reference/boost.spec.json` ra 5 slide chuẩn). Còn lại: wire full auto-pipeline
-trong `approve_service` (chọn qua "#N carousel-edu" từ list Finn).
-
-Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
-được chọn — đúng loại việc cần suy luận thật.
+**Đã thử glm-5.3 rồi hạ lại 04/09/2026:** Finn/Jean/Miles bên donniechublog và
+Ethan bên dcgr.tech từng chạy chính bằng `xk/z-ai/glm-5.3`, kết quả một đợt A/B
+chỉnh trực tiếp trên server ngày 01/09/2026 — không đi qua git nên không có
+commit nào ghi lại lý do chọn. Audit 04/09 đo bằng `usage_audit.py`: glm-5.3 tốn
+**$0,416 / 20 request** (~$0,0208/req) so với v4-flash **$0,0997 / 204 request**
+(~$0,0005/req trong cùng cửa sổ) — đắt hơn khoảng **40 lần mỗi request** mà
+không có bảng audition nào chứng minh bù lại được bằng chất lượng, nên cả bốn
+vai đã hạ về `ds/deepseek-v4-flash` cùng ngày. Bản config trước khi hạ được giữ
+ở `profiles/<vai>/config.yaml.bak-truoc-doi-v4flash-0904` trong từng home,
+phòng khi cần so lại hoặc thử lại có kiểm soát hơn.
 
 Đo bằng `cost_squeeze.py`, chạy lặp trên việc thật, chấm bằng code:
 
@@ -256,10 +263,10 @@ nguyên tắc này: tụt cache nghĩa là đang lật model.
 
 ## Provider
 
-Tám vai chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek gốc, dự
-phòng là `v4flash` của provider mới (connection `openai-compatible-chat-ba685909…`,
-baseUrl `api.b.ai`) rồi `ds/deepseek-chat`. Ada giữ `ds/deepseek-reasoner` vì
-provider mới không có.
+Mọi vai trừ Ada chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek
+gốc, dự phòng là `v4flash` của
+provider mới (connection `openai-compatible-chat-ba685909…`, baseUrl `api.b.ai`)
+rồi `ds/deepseek-chat`. Ada giữ `ds/deepseek-reasoner` vì provider mới không có.
 
 **Provider mới từng là tuyến chính, đã hạ xuống dự phòng ngày 25/08** khi nó trả
 429 hết quota suốt nhiều giờ. Dây chuyền không gãy vì dự phòng gánh được, nhưng
@@ -278,6 +285,15 @@ Nhưng `--usage-file` cũng có bẫy: nó ghi model được **cấu hình**, k
 **thực chạy**. Đã bắt được một lần Miles lặng lẽ tụt xuống `ds/deepseek-v4-pro`
 mà tệp usage vẫn khai là đang chạy provider mới — chỉ lộ ra khi đối chiếu với log
 9router.
+
+**Điểm mù thứ hai: cả hai brand dùng CHUNG một instance 9router cục bộ**
+(`http://127.0.0.1:20128/v1` trong cả hai `config.yaml`), và trong log
+`usageHistory` cả hai brand hiện ra đúng **một** `apiKey` duy nhất. `usage_audit.py`
+có sẵn cờ `--api-key` để tách theo client, nhưng vô dụng ở trạng thái hiện tại vì
+chỉ có một khoá — nên báo cáo usage-audit của blog và dcgr luôn ra **cùng một
+con số tổng**, không tách được brand nào tốn bao nhiêu. Muốn tách được: cấp thêm
+một virtual key trong 9router, gán cho một brand qua `config.yaml`, rồi thêm
+`--api-key <khoá đó>` vào cron `usage_audit.sh` của brand đó.
 
 Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh dựng → vai viết,
 17 lượt gọi): **~398.000 token chạm model**, cache 36%, 227 giây, ước $0,038.

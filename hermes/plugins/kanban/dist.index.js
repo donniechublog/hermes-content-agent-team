@@ -95,7 +95,7 @@
   }
 
   // Board column display order; any backend status not listed here renders after these.
-  const COLUMN_ORDER = ["running", "ready", "blocked", "todo", "done", "review", "scheduled", "triage"];
+  const COLUMN_ORDER = ["triage", "todo", "ready", "running", "blocked", "review", "done"];
   // English fallback dictionaries — used when the i18n catalog is missing
   // a key, and as defaults for the get*() helpers below so callers running
   // outside any React component (where there's no `t`) still get sane text.
@@ -2874,9 +2874,7 @@
     };
 
     const lanes = useMemo(function () {
-      // Truoc day chi cot "running" moi chia lane theo profile, nen o cac cot
-      // khac khong biet task cua bot nao. Chia lane o MOI cot.
-      if (!props.laneByProfile) return null;
+      if (!props.laneByProfile || props.column.name !== "running") return null;
       const byProfile = {};
       for (const tk of props.column.tasks) {
         const key = tk.assignee || "(unassigned)";
