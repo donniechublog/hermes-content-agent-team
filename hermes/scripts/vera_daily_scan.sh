@@ -8,62 +8,23 @@ H=/home/donniechu/hermes-agent/venv/bin/python
 KEY="vera-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 
-BODY="Nhiem vu quet tin kinh doanh sang $DAY (chay theo lich cron). Lam dung huong dan trong SOUL.
+BODY="Nhiem vu quet tin sang $DAY (chay theo lich cron). Phan CO HOC — chay script quet, loc
+trung, cham diem co hoc, ghep manifest danh so, viet bao cao, gui topic — DA LA SCRIPT.
+Viec cua ban chi co MOT: loc tin co HE QUA (IPO, thau tom, ha tang, chinh sach, lao dong, kien tung), ghi muc chac chan theo so bao, viet tom tat co so. Lam dung BA BUOC, khong them lenh nao khac.
 
-Buoc 1, chay script tat dinh. Khong con cham diem cat top: script dua HET tin trong
-cua so 30h cho ban tu xet (tin watchlist luon co, tin thuong cat theo moi nhat neu
-qua nhieu). Cua so 30h de khong lot tin ra mat toi hom truoc.
-cd /home/donniechu/content-team && venv/bin/python scan_business.py --gio 30 --out /tmp/vera_quet_$DAY.json
+BUOC 1 — doc ban chuan bi (danh sach ung vien mot dong/tin, muc BAT BUOC, khung tep nop):
+cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai market
 
-Buoc 2, DOC TEP /tmp/vera_quet_$DAY.json (dung doc man hinh). Tep co du truong
-"link" cho tung tin — dung DUNG link trong tep, TUYET DOI khong tu bia hay go lai
-tu tri nho. Su co 24/08: 5 tin nop len deu link blank vi bao cao man hinh khong in
-link. Sau do loc: phan biet tin kiem chung voi thong cao doanh nghiep. Uu tien tin
-co he qua, khong chi co con so lon.
+BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Link phai Y HET
+danh sach (khong go lai tu tri nho). MOI muc BAT BUOC phai co mat. KHONG cat/grep
+tep JSON goc, KHONG web_search, KHONG chay scan_*/manifest_*/publish.py tay.
 
-Tin co truong "watchlist": true la tin ve top brand nganh AI (OpenAI, Anthropic,
-Google, Meta, Nvidia, Apple, Xiaomi, DeepSeek, Qwen, Samsung...). Nhung tin nay
-LUON co trong danh sach (khong bao gio bi cat), va PHAI theo sat: mot hang lon ra chip/model/san
-pham (Apple ra M6, Xiaomi ra AI Cube) la tac dong ca nganh, gan nhu luon dang len.
-Chi bo qua neu that su chi la tin lat vat (co phieu nhich, kien tung nho). Con lai
-uu tien chon.
-
-Buoc 2b, GHI MANIFEST + BAO CAO. Bat buoc khi CO tin dang len kenh.
-Muc BAT BUOC (tin watchlist, tep bat_buoc_market.json): MOI muc phai co trong danh sach nop. manifest_ghi.py se tu choi neu thieu — them vao roi chay lai, khong duoc bo.
-
-  cat > /tmp/market_ds.json <<HET
-  [{\"title\": \"...\", \"link\": \"...\", \"summary_vi\": \"...\",
-     \"source_note\": \"...\"}]
-  HET
-  cd /home/donniechu/content-team && venv/bin/python manifest_ghi.py \\
-    --vai market --in /tmp/market_ds.json --bao-cao /tmp/market_baocao.txt
-
-Script tu danh so, tu suy via tu ten mien, VA tu viet luon ban bao cao danh so.
-KHONG tu go lai so vao tin nhan: go lai la co hoi lech, so trong tin nhan mot
-dang con so trong manifest mot dang, Ong Chu tra loi so lai ra bai khac.
-
-Gui thang ban script vua viet:
-  /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to-env TELEGRAM_GROUP_ID --thread-name market --file /tmp/market_baocao.txt
-
-KHONG co tin nao dang len kenh thi bo qua manifest, nhung VAN phai gui mot dong
-noi ro la hom nay khong co gi, kem so tin da quet. Ong Chu can phan biet duoc
-\"hom nay khong co gi\" voi \"co gi do hong\".
-
-Buoc 3, gui bao cao vao topic cua ban. GHI RA TEP TRUOC roi dung --file
-DUNG nhet ca bao cao vao mot tham so --text: nhet mot dong thi ca bai dinh
-lien nhau, khong xuong dong duoc.
-
-  cat > /tmp/bao_cao_$$.txt <<'HET'
-  <bao cao, xuong dong that, dong trong giua cac doan>
-  HET
-  /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to-env TELEGRAM_GROUP_ID --thread-name market --file /tmp/bao_cao_$$.txt
-
-Dinh dang: chi dung <b>, <i>, <code>, <a href>. KHONG dung <br>, <p>, <ul>
-<li>, markdown ** hay ##. Xuong dong bang xuong dong THAT.
-
-Khong co gi dang noi thi gui mot dong bao khong co gi. KHONG tao task kanban nao."
+BUOC 3 — nop:
+cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai market
+Khong tin nao dat nguong thi chay: quet_nop.py --vai market --khong-co (script gui dong
+'hom nay khong co gi' kem so tin da quet — Ong Chu can phan biet voi 'co gi do hong').
+Script bao [LOI] thi sua tep JSON roi chay lai DUNG lenh (toi da 2 lan). Xong: ket
+thuc task bang dong 'Ket qua task' script in ra. KHONG tao task kanban nao."
 
 OUT=$($H -m hermes_cli.main kanban create "Quet tin kinh doanh $DAY" \
   --assignee market --max-runtime 20m \

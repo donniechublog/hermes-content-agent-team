@@ -75,21 +75,33 @@ ghi thêm một dòng cảnh báo.
   riêng biệt sau lượng hoá 5 bit). `card.py` và `carousel.py` dùng chung nó để
   **ép ảnh chart vào đúng đường** — `"chart": true` ở slide thân, ghép dọc ở
   bìa/hero — thay vì để vai đối xử với chart như ảnh thường rồi crop mất trục
-- **`dre_chuan_bi.py` + `dre_nop.py` — luồng Dre từ 04/09/2026, code tối đa, LLM
-  tối thiểu.** Đo trước khi đổi: mỗi task carousel tốn 51–60 tool call (curl tải
-  từng ảnh, ls/grep dò file, ghi rồi đọc lại spec, mở từng ảnh, crop lặp).
-  `dre_chuan_bi.py` (tất định, **chạy nền ngay lúc Ông Chủ chọn tin** từ
-  `approve_service.create_pair`): giải mã link Google News của Vera ra bài thật,
-  lấy tiêu đề tiếng Anh để tìm báo khác, `anh_bai` + mở browser thật (img lớn,
-  figure/table/canvas) → tải, bỏ trùng/logo/ảnh AI → đo bằng `luat_anh` (chart,
-  tỉ lệ, mặt, đáy sáng) → cắt sẵn 1:1/4:5 qua `crop_ti_le` → tính cặp ghép dọc
-  cùng tone → bóc tư liệu (`tu_lieu`) → in **brief** với mã ảnh A1… + khung
-  `spec.json` + `bang_anh.png`. Vai chỉ viết chữ + mã ảnh vào `spec.json`.
-  `dre_nop.py`: đổi mã → tệp (cắt `cat_ngang`, ghép `ghep`, chart tự
-  `"chart": true`), chặn sớm lỗi hay mắc, xoá slide cũ, chạy `carousel.py`, gửi
-  album kèm nút duyệt, ghi `drafts/<id>.ban_giao.md` (approve_service dán vào
-  task Miles khi bấm Duyệt), ghi `da_dung.json` để lần "Làm lại" bắt buộc đổi
-  bìa/hook. Mọi thứ ở `state/<brand>/dre/<id>/`. Task Dre giờ là 3 lệnh.
+- **Kiến trúc 3 lớp cho mọi vai (04/09/2026): CHUẨN BỊ (script, chạy nền) →
+  VIẾT (LLM, một tệp) → NỘP (script).** Đo trước khi đổi: Dre 51–60 tool
+  call/task, Ethan 19–43, Kite 32, Miles 14–24, Finn/Nova/Vera 14–22, phần lớn
+  là việc cơ học (curl tải ảnh, ls/grep dò file, cat JSON, tự đếm ký tự, chạy
+  cổng chặn nhiều vòng, web_search lại tin vì link Google News đọc ra rỗng).
+  Giờ mỗi task là **3 lệnh**, kỳ vọng ~4 tool call.
+  - `anh_chuan_bi.py` — **engine dùng chung** cho mọi vai làm ảnh/chữ từ một tin,
+    `approve_service.create_pair` khởi chạy nền (`--im`) ngay lúc Ông Chủ chọn:
+    giải mã link Google News, tiêu đề tiếng Anh, Bing News RSS tìm báo khác, một
+    phiên chromium (chữ bài, img lớn, chụp table/figure/canvas), `anh_bai`,
+    Wikimedia Commons khi < 5 ảnh; dHash bỏ trùng; phân loại chart (luật bổ sung
+    nền trắng ≥45% & cạnh ≥8%, đo trên ảnh thật), mặt người, tỉ lệ; cắt sẵn
+    1:1/4:5 qua `crop_ti_le`; cặp ghép cùng tone; tư liệu (lọc câu liên quan).
+    Kết quả `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
+  - Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`
+    (carousel), `ethan_chuan_bi/ethan_nop` (hero `card.py`, `anh2` ghép dọc,
+    `nhan_vat`), `kite_chuan_bi/kite_nop` (`render_edu.py`, hình thật cho
+    `figure`, theme/hero không trùng), `miles_chuan_bi/miles_nop` (caption: chuẩn
+    hoá em-dash, đếm, `caption_check`, `draft_write`, push). Nop chặn sớm lỗi hay
+    mắc, chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi `drafts/<id>.ban_giao.md`
+    (approve_service dán vào task Miles khi bấm Duyệt), `da_dung.json` để "Làm
+    lại" bắt buộc đổi ảnh/hook/tone. `--khong-gui`/`--out`/`--khong-push` để thử.
+  - `quet_chuan_bi.py --vai scout|nova|market` + `quet_nop.py`: ba vai đi tìm tin
+    nhận danh sách ứng viên **một dòng mỗi tin** + mục BẮT BUỘC + khung tệp nộp;
+    nop ghép manifest (`manifest_build`/`manifest_ghi`), kiểm bắt buộc, viết báo
+    cáo, gửi topic; `--khong-co` gửi dòng "hôm nay không có gì"; `--thu` không
+    ghi manifest thật, không xoá bắt buộc.
 - `chup_chart.py` — chụp **chart / bảng benchmark** đúng luật *full chiều rộng
   trước, chiều cao xét sau* (Ông Chủ chốt 04/09/2026). Mở trang ở khung 1920px,
   đo bề ngang **thật** của phần tử (`scrollWidth`), **nới khung** cho vừa rồi mới

@@ -27,7 +27,14 @@ import bat_buoc                                             # noqa: E402
 ROOT = Path.home() / "content-team"
 STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
 
-VALID_CATEGORIES = {"ARXIV", "MO HINH", "MÔ HÌNH", "THU NGHIEM", "THỬ NGHIỆM",
+# Nhan chuan la TIENG ANH (approve_service.NHAN_CHUAN) — SOUL/brief cua Finn ke
+# ARXIV / MODEL / LAB / INFRA / TOOL / ENGINEERING / BUSINESS / RESEARCH /
+# SECURITY. Bang cu chi co ban tieng Viet nen moi lan Finn nop deu bi bao
+# "category khong hop le" (thay 04/09/2026 khi chay thu quet_nop). Nhan ca hai.
+VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BUSINESS",
+                    "RESEARCH", "SECURITY", "OPEN SOURCE", "OPEN WEIGHTS", "BENCHMARK",
+                    "M&A", "UPDATE",
+                    "MO HINH", "MÔ HÌNH", "THU NGHIEM", "THỬ NGHIỆM",
                     "HA TANG", "HẠ TẦNG", "CONG CU", "CÔNG CỤ"}
 
 
@@ -46,6 +53,8 @@ def main():
     ap.add_argument("--out", required=True, help="Duong dan manifest ghi ra")
     ap.add_argument("--bao-cao", metavar="PATH",
                     help="Ghi luon ban bao cao danh so, de gui bang publish.py --file")
+    ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
+                    help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
     a = ap.parse_args()
 
     cands = json.loads(Path(a.candidates).read_text(encoding="utf-8"))["candidates"]
@@ -117,8 +126,9 @@ def main():
         {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": "scout",
          "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"da ghi {len(items)} muc -> {out}")
-    print(f"da xac nhan {bat_buoc.xoa('scout', items)} muc bat buoc, "
-          f"con lai {len(bat_buoc.doc('scout'))}")
+    if not a.khong_xoa_bat_buoc:
+        print(f"da xac nhan {bat_buoc.xoa('scout', items)} muc bat buoc, "
+              f"con lai {len(bat_buoc.doc('scout'))}")
 
     # Bao cao do SCRIPT viet, khong de Finn go lai so. Dung chung ham voi Nova
     # va Vera nen ba vai hien cung mot dinh dang.

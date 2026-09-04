@@ -21,7 +21,7 @@ Vai chi dien CHU + MA ANH (A1, A2...). Tep nay:
 Loi thi in [LOI] + cach sua, thoat 1; vai sua spec.json roi chay lai DUNG lenh.
 
 Dung:
-    venv/bin/python dre_nop.py <draft_id>                # spec o state/<brand>/dre/<id>/spec.json
+    venv/bin/python dre_nop.py <draft_id>                # spec o state/<brand>/chuan_bi/<id>/spec.json
     venv/bin/python dre_nop.py <draft_id> --khong-gui    # thu: dung slide, khong gui Telegram
 """
 import argparse
@@ -37,7 +37,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import dre_chuan_bi as cb                                    # noqa: E402
+import anh_chuan_bi as cb                                    # noqa: E402
 
 DRAFTS = ROOT / "drafts"
 
@@ -219,20 +219,17 @@ def ban_giao(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop carousel cua Dre (tat dinh)")
     ap.add_argument("draft_id")
-    ap.add_argument("--spec", help="Tep spec (mac dinh state/<brand>/dre/<id>/spec.json)")
+    ap.add_argument("--spec", help="Tep spec (mac dinh state/<brand>/chuan_bi/<id>/spec.json)")
     ap.add_argument("--khong-gui", action="store_true", help="Chi dung slide, khong gui Telegram")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Tat cong tieng Viet (chi khi chu THAT SU la tieng Anh)")
     ap.add_argument("--out", help="Ghi slide ra cho khac (de thu, khong de len drafts/)")
     a = ap.parse_args()
 
-    meta = cb._doc_json(DRAFTS / f"{a.draft_id}.meta.json")
-    if not meta:
-        sys.exit(f"Khong thay drafts/{a.draft_id}.meta.json")
+    meta = cb.nap_meta(a.draft_id)
     brand = cb._brand_cua(meta)
-    os.environ.setdefault("CT_BRAND", cb.TEN_CT.get(brand, "blog"))
     import env_load
-    wd = env_load.state_dir() / "dre" / a.draft_id
+    wd = cb.workdir(env_load.state_dir(), a.draft_id)
     m = cb._doc_json(wd / "xong.json")
     if not m:
         sys.exit(f"Chua chuan bi. Chay truoc: venv/bin/python dre_chuan_bi.py {a.draft_id}")

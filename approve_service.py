@@ -987,19 +987,19 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
-    if la_carousel:
-        # Phan CO HOC cua Dre (tim/tai/do/cat anh, boc tu lieu) chay NEN ngay
-        # bay gio, khong doi toi luc task duoc dispatch: toi luc Dre nhan viec
-        # thi brief da san, task chi con viet copy. Khong chan reply cho Ong Chu.
-        try:
-            _wd = STATE_DIR / "dre" / draft_id
-            _wd.mkdir(parents=True, exist_ok=True)
-            subprocess.Popen(
-                [str(ROOT / "venv/bin/python"), str(ROOT / "dre_chuan_bi.py"), draft_id, "--im"],
-                cwd=str(ROOT), stdout=open(_wd / "chuan_bi.log", "ab"),
-                stderr=subprocess.STDOUT, start_new_session=True)
-        except Exception as e:                               # noqa: BLE001
-            print(f"[dre] khong khoi chay chuan bi nen: {type(e).__name__}: {e}")
+    # Phan CO HOC cua vai anh (nguon, tai/do/cat anh, tu lieu) chay NEN ngay bay
+    # gio bang engine dung chung anh_chuan_bi.py — toi luc Dre/Ethan/Kite nhan
+    # viec thi brief da san, task chi con viet chu; Miles doc lai cung tu lieu.
+    # Khong chan reply cho Ong Chu.
+    try:
+        _wd = STATE_DIR / "chuan_bi" / draft_id
+        _wd.mkdir(parents=True, exist_ok=True)
+        subprocess.Popen(
+            [str(ROOT / "venv/bin/python"), str(ROOT / "anh_chuan_bi.py"), draft_id, "--im"],
+            cwd=str(ROOT), stdout=open(_wd / "chuan_bi.log", "ab"),
+            stderr=subprocess.STDOUT, start_new_session=True)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[chuan_bi] khong khoi chay nen: {type(e).__name__}: {e}")
 
     # Cat lai body task anh de LAM LAI duoc: Ong Chu bam "Lam lai" tren anh chua
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
