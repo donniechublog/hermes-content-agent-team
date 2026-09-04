@@ -54,6 +54,7 @@ from PIL import Image, ImageDraw, ImageFilter
 # Tai dung nguyen xi cac helper da kiem chung cua card.py thay vi viet lai:
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
+import luat_anh
 from card import (
     _f, _wrap, _fit_contain, _fit_cover,
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
@@ -548,181 +549,65 @@ _YUNET = None
 _YUNET_DA_THU = False
 
 
-def _yunet():
-    global _YUNET, _YUNET_DA_THU
-    if _YUNET_DA_THU:
-        return _YUNET
-    _YUNET_DA_THU = True
-    try:
-        import os as _os
-        _os.environ.setdefault("OPENCV_LOG_LEVEL", "SILENT")
-        import cv2
-        m = Path(__file__).resolve().parent / "assets" / \
-            "face_detection_yunet_2023mar.onnx"
-        if not m.exists():
-            return None  # thieu model -> bo qua cong nay, khong crash build
-        _YUNET = cv2.FaceDetectorYN_create(str(m), "", (320, 320),
-                                           score_threshold=0.7)
-    except Exception:
-        _YUNET = None  # thieu cv2 / loi -> bo qua em
-    return _YUNET
-
-
-def _dem_mat(path):
-    """So mat nguoi trong anh. None neu khong chay duoc (thieu cv2/model)."""
-    det = _yunet()
-    if det is None:
-        return None
-    try:
-        import cv2
-        im = cv2.imread(str(path))
-        if im is None:
-            return None
-        h, w = im.shape[:2]
-        det.setInputSize((w, h))
-        _n, res = det.detect(im)
-        return 0 if res is None else len(res)
-    except Exception:
-        return None
-
-
-def _co_xuat_xu(img):
-    """Anh co DAU VET cua cong cu trong doi khong (crop_ti_le.py, arxiv_bia.py,
-    ghep_doc cua carousel.py)? Dung cho cong 2c."""
-    t = (getattr(img, "text", None) or img.info or {})
-    return bool(t.get("crop_ti_le") or t.get("nguon_dung"))
-
-
-def _goc_crop(img):
-    """Doc dau vet crop_ti_le.py ghi trong metadata PNG -> (w_goc, h_goc) hoac None."""
-    m = (getattr(img, "text", None) or img.info or {}).get("crop_ti_le")
-    if not m:
-        return None
-    try:
-        goc = [k for k in m.split(";") if k.startswith("goc=")][0][4:]
-        w, h = goc.lower().split("x")
-        return int(w), int(h)
-    except Exception:
-        return None
+# Cac phep do va cong chan ANH da chuyen sang `luat_anh.py` — bo tieu chi dung
+# chung cho moi vai lam anh (Ong Chu chot 04/09/2026). Giu lai vai alias cho
+# tuong thich; dung `luat_anh.*` cho code moi.
+_dem_mat = luat_anh.dem_mat
+_la_ghep = luat_anh.la_ghep
+_co_xuat_xu = luat_anh.co_xuat_xu
+_goc_crop = luat_anh.doc_dau_crop
 
 
 def _gate_anh(paths):
     """paths: [(nhan, duong_dan, muc)] — muc la dict cover/slide trong spec.
-    Tra ve (loi, canh_bao)."""
-    import hashlib
-    from PIL import ImageStat
+
+    Chi PHAN HOP cac cong chan cua `luat_anh` theo dung thu tu cua khung
+    carousel; ban than cac luat nam ben do va dung chung voi Ethan/Itachi.
+    Cai RIENG cua carousel chi la: dai ti le 4:5..1:1, va viec slide than khai
+    "chart": true thi mien cong ti le (anh ngang duoc dan full be ngang).
+
+    Tra ve (loi, canh_bao).
+    """
     loi, canh_bao = [], []
     da_thay = {}
+
+    def gom(ket_qua):
+        a, b = ket_qua
+        loi.extend(a)
+        canh_bao.extend(b)
+        return not a
+
     for nhan, p, muc in paths:
         muc = muc or {}
-        f = Path(p)
-        if not f.exists():
+        if not Path(p).exists():
             loi.append(f"{nhan}: khong thay tep anh {p}")
             continue
-        # 1) TRUNG ANH: moi slide mot hinh duy nhat. Bat trung theo noi dung
-        # tep (hash), khong theo ten — copy cung mot anh ra hai ten van bat.
-        # (Hai CROP khac nhau cua cung mot tam thi hash khac — cai do van phai
-        # nho vai/nguoi duyet soi, code khong bat chac chan duoc.)
-        h = hashlib.md5(f.read_bytes()).hexdigest()
-        if h in da_thay:
-            loi.append(f"{nhan}: trung anh voi {da_thay[h]} — moi slide phai "
-                       "mot hinh DUY NHAT, tim anh khac")
+        if not gom(luat_anh.kiem_trung(nhan, p, da_thay)):
             continue
-        da_thay[h] = nhan
         img = Image.open(p)
         w, h_px = img.size
-        # 2) TI LE: phai 1:1 hoac 4:5 (dung sai 3%). Sai thi cat truoc bang
-        # crop_ti_le.py — khong de carousel.py tu xoay so.
-        # Chap nhan ca dai GIUA 4:5 va 1:1 (anh ghep doc hai anh ngang roi vao
-        # day) — full be ngang deu phu 1080..1350 cao, khong lo nen.
-        r = w / h_px
-        # Slide than khai "chart": true -> nhan CA anh NGANG nguyen ven: _body_image
-        # dan full be ngang khong cat, phan tren/duoi la ban cover lam mo. Chart /
-        # bang benchmark PHAI full width (Ong Chu chot), khong bao gio crop. Bia
-        # thi khong (hook de len anh), bia chart ngang phai ghep doc "images".
-        if muc.get("chart") and nhan != "bia" and r > 1.0 + 0.03:
-            if _goc_crop(img):
-                loi.append(f"{nhan}: chart ma van di qua crop_ti_le.py — chart phai "
-                           "NGUYEN VEN, dua thang anh goc vao voi \"chart\": true")
+        la_bia = (nhan == "bia")
+        khai_chart = bool(muc.get("chart"))
+
+        if not gom(luat_anh.kiem_chart(nhan, img, khai_chart, la_bia)):
             continue
-        if not (0.8 - 0.03 <= r <= 1.0 + 0.03):
-            loi.append(f"{nhan}: ti le {w}x{h_px} ({r:.2f}) khong nam trong 4:5..1:1 "
-                       f"— cat truoc: venv/bin/python crop_ti_le.py "
-                       f"--anh {p} --ra <ra.png> [--ti-le 4:5] [--cx/--cy]; hoac anh "
-                       f"NGANG thi tim them mot anh ngang nua, ghi \"images\": [a, b]; "
-                       f"chart/bang benchmark thi ghi \"chart\": true de hien full "
-                       f"width nguyen ven (slide than)")
-        # 2b) CROP ANH NGANG (Ong Chu bat loi 03/09/2026): benchmark chart / bang /
-        # slide bi crop ve 4:5 la mat tieu de, mat truc, doc ra vo nghia. Anh goc
-        # ro rang NGANG (ti le >= 1.4, kieu 16:9 / 3:2) ma di qua crop_ti_le.py
-        # thi CHAN — tru khi vai khai "crop_ok": "<ly do>" (anh chup nguoi/san
-        # pham, khong co chu, crop la chon khung chu the).
-        goc = _goc_crop(img)
-        if goc and goc[0] / goc[1] >= 1.4 and not muc.get("crop_ok"):
-            loi.append(f"{nhan}: anh goc NGANG {goc[0]}x{goc[1]} da bi crop ve {w}x{h_px} — "
-                       "bang/chart/slide/banner co tieu de PHAI NGUYEN VEN, khong crop. "
-                       "Tim them mot anh ngang cung tone, ghi \"images\": [a, b] de ghep "
-                       "doc. Chi anh chup nguoi/san pham KHONG co chu moi duoc crop: ghi "
-                       "\"crop_ok\": \"<ly do>\" vao slide.")
-        # 2c) CAT TAY NE CONG (Ong Chu bat loi 04/09/2026 — bo K2 Horizon):
-        # ca 7 anh cua bo do deu dung khit 4:5 (0.7996..0.8004) ma KHONG anh nao
-        # co dau crop_ti_le. Nghia la vai cat bang PIL/cv2/ImageMagick, va cong 2b
-        # — von chi doc dau vet cua crop_ti_le.py — khong thay gi de chan. Cong do
-        # hoa ra PHAT nguoi lam dung va THA nguoi lach. Ket qua: mot chart bi cat
-        # mat tieu de ("...osses across the Horizon fleet") va mat truc.
-        #
-        # Anh that tai ve gan nhu khong bao gio dung khit 4:5/1:1 (thuc do tren kho
-        # anh: 1.16, 1.50, 1.78, 1.91...). Dung khit ma khong dau vet = da cat bang
-        # cong cu ngoai. Cac cong cu trong doi deu dong dau (_co_xuat_xu), nen chan
-        # o day khong dung vao duong di hop le nao.
-        #
-        # KHONG mien tru bang "crop_ok": crop_ok noi "toi co y crop", con cong nay
-        # noi "crop bang gi khong ai biet". Khai bao khong thay duoc xuat xu.
-        if not _co_xuat_xu(img):
-            for r_dich, ten_tl in ((0.8, "4:5"), (1.0, "1:1")):
-                if abs(r - r_dich) <= 0.005:
-                    loi.append(
-                        f"{nhan}: anh {w}x{h_px} dung khit {ten_tl} ({r:.4f}) ma KHONG co "
-                        f"dau vet crop_ti_le.py — day la anh da cat bang cong cu ngoai "
-                        f"(PIL/cv2/ImageMagick), vi pham luat 'chi crop qua crop_ti_le.py'. "
-                        f"Chart/bang/slide/banner co chu: DUNG crop — ghi \"chart\": true "
-                        f"(slide than) hoac ghep doc \"images\": [a, b]. Anh chup khong co "
-                        f"chu: cat LAI bang venv/bin/python crop_ti_le.py --anh <goc> --ra "
-                        f"<ra.png> --ti-le {ten_tl}. Anh goc VON DA {ten_tl}: van chay qua "
-                        f"crop_ti_le.py mot lan de dong dau (cat 0, khong mat gi).")
-                    break
-        # 3) DO PHAN GIAI: canh ngan <1000px phong len 1080 se mem/vo net.
-        # Canh bao thoi (khong chan): anh doc quyen nho van hon anh sai.
-        if min(w, h_px) < 1000:
-            canh_bao.append(f"{nhan}: canh ngan {min(w, h_px)}px < 1000 — "
-                            "phong len 1080 se hoi mem, co ban to hon thi thay")
-        # 4) DAY ANH SANG: nen chu chi toi max 60% opacity, chu trang can day
-        # anh TOI. Do do sang trung binh 25% duoi; sang qua thi canh bao de
-        # vai crop lai cho day roi vao vung toi (nhu vu mat duong truoc via he).
-        day = img.convert("L").crop((0, int(h_px * 0.75), w, h_px))
-        sang = ImageStat.Stat(day).mean[0]
-        if sang > 150:
-            canh_bao.append(f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — "
-                            "chu trang tren scrim ~80% van doc duoc nhung nhat; "
-                            "co anh day toi hon thi uu tien")
-        # 5) MAT NGUOI: luat "khong dung anh mot nguoi vo danh". Code chi bao co
-        # mat hay khong; vai tu phan doan co phai nhan vat trong bai khong.
-        # Ong Chu bat loi 03/09/2026: bia tin GPT-6 Astra dung mat mot nguoi
-        # khong lien quan. Tu nay CO MAT LA CHAN, tru khi vai khai "nhan_vat":
-        # "<ten>" — nguoi trong anh la nhan vat CU THE duoc nhac trong bai (CEO
-        # phat bieu, tac gia, founder). Khong khai duoc ten thi khong duoc dung.
-        nmat = _dem_mat(p)
-        if nmat:
-            nv = str(muc.get("nhan_vat") or "").strip()
-            if nv:
-                canh_bao.append(f"{nhan}: {nmat} mat nguoi, khai la '{nv}' — OK neu "
-                                "dung la nguoi do; sai ten la bia dat.")
-            else:
-                loi.append(f"{nhan}: phat hien {nmat} mat nguoi ma slide KHONG khai "
-                           "\"nhan_vat\". Anh nguoi vo danh / khong lien quan tin la "
-                           "loi (doc ra la stock). Doi sang anh san pham/screenshot/"
-                           "chart, hoac neu dung la nhan vat trong bai (CEO, tac gia) "
-                           "thi ghi \"nhan_vat\": \"<ten>\" vao slide.")
+
+        # RIENG CUA CAROUSEL: slide than khai "chart": true -> nhan ca anh NGANG
+        # nguyen ven (_body_image dan full be ngang, khong cat). Bia thi khong,
+        # vi hook de len anh; bia chart ngang phai ghep doc "images".
+        r = w / h_px
+        if khai_chart and not la_bia and r > luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE:
+            if luat_anh.doc_dau_crop(img):
+                loi.append(f"{nhan}: chart ma van di qua crop_ti_le.py — chart phai "
+                           'NGUYEN VEN, dua thang anh goc vao voi "chart": true')
+            continue
+        gom(luat_anh.kiem_ti_le(nhan, p, w, h_px))
+
+        gom(luat_anh.kiem_crop_ngang(nhan, img, w, h_px, muc.get("crop_ok")))
+        gom(luat_anh.kiem_xuat_xu(nhan, img, w, h_px))
+        gom(luat_anh.kiem_do_phan_giai(nhan, w, h_px))
+        gom(luat_anh.kiem_day_sang(nhan, img))
+        gom(luat_anh.kiem_mat_nguoi(nhan, p, muc.get("nhan_vat")))
     return loi, canh_bao
 
 

@@ -117,8 +117,17 @@ Thấy là hỏng, dựng lại — đừng gửi đi.
    gọi được tên thì không được dùng. Tin model/sản phẩm: bìa là **sản phẩm,
    screenshot, chart** — không phải mặt người.
 2. **Chart / bảng benchmark bị crop.** Chart cắt mất tiêu đề, mất trục, mất
-   legend là ảnh vô nghĩa. **Chart, bảng, slide, banner có chữ PHẢI NGUYÊN
-   VẸN** — không crop, không cắt góc.
+   legend là ảnh vô nghĩa. **Bắt đầu từ lúc CHỤP** (luật Ông Chủ 04/09/2026):
+   full chiều rộng trước, chiều cao xét sau — chụp bằng
+   `venv/bin/python chup_chart.py --url "<trang>" --ra chart.png`, script nới
+   khung cho vừa bề ngang thật của chart rồi đo lại ảnh ra, thiếu bề ngang là
+   nó dừng. Đừng chụp bằng khung mặc định của công cụ nào: khung mặc định luôn
+   hẹp, chart rộng thì hoặc bị cắt, hoặc bị trang reflow xuống bố cục điện thoại.
+   **Từ 04/09/2026 `carousel.py` tự nhận ra ảnh nào là chart/screenshot**
+   (`card.la_chart`: đo độ phẳng + số màu riêng biệt) và **bắt** khai
+   `"chart": true` — không khai là chặn, kèm số liệu để bạn thấy vì sao. Bìa mà
+   là chart cũng bị chặn (hook đè lên thì chart nằm dưới chữ) — ghép dọc
+   `"images": [a, b]`, hoặc đổi bìa và để chart ở slide thân.
 
    > **Ông Chủ chốt 04/09/2026: "chart phải được hiển thị đầy đủ và full width
    > của chiều rộng hình."** Hai vế, cả hai đều bắt buộc. *Đầy đủ* = không mất
@@ -128,7 +137,10 @@ Thấy là hỏng, dựng lại — đừng gửi đi.
    > Ca bị bắt: bộ K2 Horizon cắt chart 2015x1099 về 879x1099 để lấp đầy khung
    > — vứt 56% bề ngang, mất chữ đầu tiêu đề ("...osses across the Horizon
    > fleet") và mất sạch trục y. `carousel.py` còn tự lùi điểm bắt đầu scrim
-   > xuống dưới mép chart, để đáy chart không bị làm tối. Ảnh ngang thì **ghép dọc hai ảnh cùng
+   > xuống dưới mép chart, để đáy chart không bị làm tối.
+
+   **Chart, bảng, slide, banner có chữ PHẢI NGUYÊN
+   VẸN** — không crop, không cắt góc. Ảnh ngang thì **ghép dọc hai ảnh cùng
    tone** (`"images": [a, b]`), **hoặc** khai `"chart": true` cho slide thân: cổng
    tỉ lệ bỏ qua, `carousel.py` dán chart **full bề ngang nguyên vẹn**, phần
    trống trên/dưới là chính ảnh làm mờ. Đây là đường mặc định cho benchmark
@@ -506,3 +518,32 @@ Mở cả bộ slide ra xem, theo thứ tự:
 
 Spec đầy đủ của khổ, font và màu ở `carousel.py` (đầu tệp) và
 `/home/donniechu/content-team/STYLE_TEXT_SPEC.md`.
+
+## Tiêu chí ảnh dùng chung — `luat_anh.py`
+
+Ông Chủ chốt 04/09/2026: **một bộ tiêu chí chung cho mọi vai làm ảnh**, thay vì
+mỗi vai một bộ. Đường cắt một câu:
+
+> *"Ảnh này có được dùng không"* → **chung**, nằm ở `luat_anh.py`.
+> *"Đặt nó lên khung thế nào"* → **riêng** từng vai, nằm ở renderer.
+
+Nên các luật dưới đây **giống hệt nhau** ở Ethan (`card.py`), Dre
+(`carousel.py`) và bất kỳ vai làm ảnh nào sau này — sửa một chỗ là cả đội đổi
+theo, không còn cảnh mỗi bên một bản rồi trôi khác nhau:
+
+| Cổng | Chặn hay cảnh báo |
+|---|---|
+| Ảnh trùng (theo nội dung tệp) | chặn |
+| Chart/screenshot thiếu `chart: true` | chặn |
+| Khai `chart: true` mà máy không nhận ra chart | **chỉ cảnh báo** — phép đo bỏ sót chart có đường màu khử răng cưa, chặn ở chiều này là giết việc đúng |
+| Ảnh gốc ngang đã crop, không khai `crop_ok` | chặn |
+| Ảnh đúng khít 4:5/1:1 mà không có dấu xuất xứ (cắt tay) | chặn |
+| Ghép hai ảnh quá khác tone | chặn |
+| Mặt người mà không khai `nhan_vat` | chặn |
+| Cạnh ngắn <1000px, đáy ảnh quá sáng | cảnh báo |
+
+**Dấu xuất xứ:** mọi công cụ trong đội sinh ra ảnh đều tự đóng dấu vào PNG
+(`crop_ti_le.py`, `arxiv_bia.py`, `chup_chart.py`, `doi_chu_anh.py`, ghép dọc).
+Ảnh không dấu mà lại đúng khít tỉ lệ là dấu hiệu cắt tay bằng công cụ ngoài —
+bị chặn. Ảnh gốc vốn đã đúng tỉ lệ thì chạy qua `crop_ti_le.py` một lần để đóng
+dấu, cắt 0, không mất gì.

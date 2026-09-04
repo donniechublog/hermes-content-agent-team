@@ -205,6 +205,7 @@ BASE_CSS_TPL = """
   background:%(PANEL)s;border:1px solid #2A2E37;padding:12px 22px;}
 .chip0{color:%(BG)s;background:%(CYAN)s;border:none;}
 .arrow{color:%(DIM)s;font-size:32px;font-weight:800;}
+.chip-grp{display:inline-flex;flex-direction:row;align-items:center;gap:18px;}
 .loopmark{color:%(VIOLET)s;font-size:30px;font-weight:700;}
 .callout{background:%(PANEL)s;border:1px solid #23262E;border-left:5px solid %(CYAN)s;
   padding:34px 38px;font-size:34px;font-weight:600;line-height:1.45;color:%(SOFT)s;}
@@ -243,6 +244,21 @@ def rgba(hexs, alpha):
 _SVG_HEAD = ('<svg width="100%" viewBox="0 0 920 470" xmlns="http://www.w3.org/2000/svg"'
              ' style="display:block;position:relative;z-index:2;">')
 
+# Hero ve trong mot khung 920x470 co hai. Cac hero co MANG TO kin khung (grid:
+# luoi + dai quet; wave: vung song do bong) bi cat cut o dung bien khung, nhin ra
+# mot HINH CHU NHAT dan len nen — dung luat "moi slide la mot mat phang lien".
+# Mask nay lam mem bon canh, art tan dan vao nen thay vi dut ngang.
+_HERO_MASK = """
+  <defs>
+    <filter id="heroBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+    <mask id="heroFade">
+      <rect x="38" y="26" width="844" height="418" fill="#fff" filter="url(#heroBlur)"/>
+    </mask>
+  </defs>
+"""
+
 # "orbit": loi phat sang + node bay quy dao (bo /boost goc)
 HERO_ORBIT = """
   <defs><radialGradient id="core" cx="50%%" cy="50%%" r="50%%">
@@ -271,7 +287,6 @@ HERO_ORBIT = """
     <circle cx="820" cy="400" r="3"/><circle cx="120" cy="410" r="3"/>
     <circle cx="470" cy="30" r="2.5"/>
   </g>
-</svg>
 """
 
 # "grid": luoi toa do + mot o sang + duong quet — hop benchmark, bang so, do luong
@@ -373,7 +388,8 @@ def hero_svg(name, th):
     )
     body = HERO_TPL[name] % {"CYAN": th["a"], "VIOLET": th["b"], "BG": th["bg"],
                              "GRID_LINES": grid_lines}
-    return _SVG_HEAD + body + "</svg>"
+    return (_SVG_HEAD + _HERO_MASK
+            + '<g mask="url(#heroFade)">' + body + "</g></svg>")
 
 
 
@@ -482,13 +498,20 @@ def s_steps(sl, th):
 
 
 def s_loop(sl, th):
-    chips = ""
+    # Hang chip xuong dong duoc, nhung mui ten "→" khong duoc dung cuoi dong va
+    # dau lap "↻" khong duoc dung dau dong mot minh (cu de roi tung the la flex
+    # item thi ca hai deu bi vat ra rieng, nhin nhu loi). Nen buoc moi mui ten
+    # voi chip DI SAU no, va dau lap voi chip CUOI, thanh mot cum khong the tach.
     items = sl.get("chips", [])
+    cum = []
     for i, c in enumerate(items):
+        phan = f'<span class="chip {"chip0" if i == 0 else ""}">{esc(c)}</span>'
         if i:
-            chips += '<span class="arrow">&rarr;</span>'
-        chips += f'<span class="chip {"chip0" if i == 0 else ""}">{esc(c)}</span>'
-    chips += '<span class="loopmark">&#8635;</span>'
+            phan = f'<span class="arrow">&rarr;</span>' + phan
+        if i == len(items) - 1:
+            phan += '<span class="loopmark">&#8635;</span>'
+        cum.append(f'<span class="chip-grp">{phan}</span>')
+    chips = "".join(cum) or '<span class="loopmark">&#8635;</span>'
     callout = (f'<div class="callout" style="margin-top:0;">{esc(sl["callout"])}</div>'
                if sl.get("callout") else "")
     g = glow("top:200px;left:-120px;width:520px;height:520px;"

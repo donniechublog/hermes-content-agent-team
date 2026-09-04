@@ -34,6 +34,8 @@ import sys
 import time
 from pathlib import Path
 
+import luat_anh
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -209,6 +211,7 @@ def main():
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(out), sach)
+    luat_anh.dong_dau_tep(out, "doi_chu_anh")
     print(f"da xoa {len(da_xoa)} vung chu -> {out}", file=sys.stderr)
 
     if a.xem_mask:

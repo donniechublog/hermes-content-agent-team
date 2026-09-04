@@ -102,6 +102,10 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - Em-dash (—) bị chặn ở mọi văn bản thẻ.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
 - Ảnh là chính, textbox là phụ: text nhường chỗ cho ảnh, không ngược lại.
+- Ảnh chart/bảng/screenshot: `card.la_chart()` nhận diện (phẳng ≥0,85 **và**
+  ≤220 màu riêng biệt) rồi ép vào đường của chart — hero thì phải ghép dọc
+  `--image2`, carousel thì `"chart": true`. Chart luôn phải **nguyên vẹn và
+  trải full bề ngang**; "nửa dưới trống" là luật biên tập, không phải cổng chặn.
 - Phân tầng thị giác: tiêu đề to nhất → subtitle → via/icon mờ dần.
 
 ## Cần ảnh mẫu
