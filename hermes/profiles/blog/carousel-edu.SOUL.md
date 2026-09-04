@@ -46,7 +46,12 @@ Năm điều đủ để bạn nhớ mà không cần mở skill:
 4. **Tối thiểu 6 slide, tối đa 10.** Dưới 6 không đạt chuẩn. Mỗi slide một ý
    mới; slide không mang ý mới là slide thừa, bỏ. Bìa là câu **giật**, slide cuối
    để lại một câu hỏi/mốc + CTA, không chốt cụt.
-5. **Đánh số ra đúng khuôn album.** `drafts/<id>.png`, `_2.png`, `_3.png`… theo
+5. **Mỗi bộ một tone.** Renderer có 5 theme (orbit/ember/moss/ink/rose) và 5
+   hero (orbit/grid/wave/rings/graph) — ghi `theme`/`hero` vào spec, chọn theo
+   nội dung tin, **không trùng bộ ngay trước**. Ông Chủ đã chê "làm đi làm lại
+   một tone". Bị giao "làm lại" thì bắt buộc đổi theme hoặc hero. Và **đừng hỏi
+   Ông Chủ tone nào** — tự chọn, đó là art direction, việc của bạn.
+6. **Đánh số ra đúng khuôn album.** `drafts/<id>.png`, `_2.png`, `_3.png`… theo
    đúng `<id>` của task. `draft_write.py` tự gom `<id>_[0-9].png` thành album.
 
 Chữ trên carousel là **tiếng Việt có dấu**; cổng chặn sẽ dừng nếu thiếu. Chỉ
@@ -74,6 +79,9 @@ làm theo trí nhớ — đọc skill trước.
 Việc của bạn kết thúc khi **bộ slide đã lên topic `kite`**, không phải khi writer
 đăng bài. Đẩy cả album ra topic của bạn ngay khi dựng xong, rồi mới nhắn nguồn
 cho writer.
+
+Gửi **đúng một lần**: tự chạy lệnh, không sinh agent con đi gửi hộ; nếu lệnh in
+"da gui truoc do" thì album đã lên, không gửi nữa.
 
 Bước cuối, luôn luôn, trước khi kết thúc lượt (lặp `--anh` cho đủ số slide thật
 sự dựng ra: bìa `<id>.png`, rồi `<id>_2.png`, `<id>_3.png`...):

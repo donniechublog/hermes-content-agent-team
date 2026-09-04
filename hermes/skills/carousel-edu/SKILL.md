@@ -92,6 +92,34 @@ Mỗi slide có bộ furniture nhất quán:
    nào có chữ "nguồn" trong trường chữ (kể cả cụm như "mã nguồn mở" — đổi thành
    "mã mở").
 
+## Tone & hero — MỖI BỘ MỘT TONE, không lặp bộ trước
+
+Ông Chủ chê (04/09/2026): Kite làm đi làm lại một tone cyan × tím + hero quỹ
+đạo. Renderer giờ có **5 theme** và **5 hero**, spec ghi `"theme"` / `"hero"`:
+
+| theme | tone | hợp với |
+|---|---|---|
+| `orbit` | cyan × tím | agent, hệ thống, mặc định cũ |
+| `ember` | cam hổ phách × đỏ san hô | hiệu năng, tốc độ, cảnh báo |
+| `moss` | xanh lá × vàng chanh | dữ liệu mở, tăng trưởng, sinh học |
+| `ink` | xanh navy × vàng | benchmark, học thuật, paper nghiêm |
+| `rose` | hồng × tím oải hương | sinh ảnh, sáng tạo, multimodal |
+
+| hero | hình | hợp với |
+|---|---|---|
+| `orbit` | lõi sáng + node quỹ đạo | subagent, phân việc |
+| `grid` | lưới toạ độ + ô sáng | benchmark, bảng số, đo lường |
+| `wave` | dải sóng + điểm nối | xu hướng, tín hiệu, theo thời gian |
+| `rings` | vòng đồng tâm + kim | mục tiêu, độ chính xác, tầng lớp |
+| `graph` | mạng node-cạnh | quan hệ, so sánh nhiều bên |
+
+Luật: **chọn theo nội dung tin**, và **không trùng cả theme lẫn hero với bộ
+ngay trước** (renderer in `CANH BAO` nếu trùng — thấy là đổi). **"Làm lại" thì
+BẮT BUỘC đổi theme hoặc hero** — Ông Chủ bấm làm lại để thấy bộ khác, không phải
+bộ cũ render lại. Bỏ trống hai khoá này thì renderer tự xoay khác lần trước
+(ghi nhớ ở `state/edu_theme_da_dung.jsonl`); vẫn nên tự chọn cho hợp tin. Cờ
+`--theme`/`--hero` ghi đè spec.
+
 ## Hero art — vẽ khái niệm, không vẽ hiện thực
 
 Bìa cần một mảng art vector kể đúng khái niệm của bài. Ví dụ bộ /boost: một **lõi
@@ -127,7 +155,8 @@ venv/bin/python render_edu.py --spec spec.json --out drafts/<id>.png
 
 Ra `drafts/<id>.png` (bìa) + `<id>_2.png`… đúng glob `{id}_[0-9].png` của
 `draft_write.py`. Cờ: `--brand` (donniechublog|dcgr), `--bo-qua-dau` (chỉ khi copy
-là tiếng Anh), `--scale` (mặc định 2 → 2160×2700 cho nét), `--spec -` đọc stdin.
+là tiếng Anh), `--scale` (mặc định 2 → 2160×2700 cho nét), `--spec -` đọc stdin,
+`--theme`/`--hero` (xem mục Tone & hero).
 
 **Spec JSON:** xem docstring đầu `render_edu.py` và `reference/boost.spec.json`
 (spec đầy đủ của bộ /boost). 5 `kind` slide: `cover`, `statement`, `steps`,
