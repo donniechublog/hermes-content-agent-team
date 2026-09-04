@@ -168,9 +168,17 @@ nhiêu px để Kite biết mà tự cắt lại cho đúng.
     mép. *(Làm mờ bản cover kiểu Dre ở đây lại ra một mảng xám lệch tông với
     chính tấm ảnh sắc ở trên — vẫn đọc ra hai vùng.)*
   - **Ảnh chụp**: bản cover của chính nó, làm mờ mạnh — đúng cách của Dre.
-- **Chữ đè lên ảnh** qua màn tối liền mạch bắt đầu từ ~42% chiều cao, đậm dần
-  theo đường cong, kèm một lớp mờ của chính tấm ảnh hiện lên **cùng nhịp**. Chỉ
-  làm tối thôi thì chữ trong ảnh vẫn lờ mờ dưới chữ mình; lớp mờ mới xoá hết.
+- **Chữ đè lên ảnh** qua màn tối, kèm một lớp mờ của chính tấm ảnh hiện lên
+  **cùng nhịp**. Chỉ làm tối thôi thì chữ trong ảnh vẫn lờ mờ dưới chữ mình;
+  lớp mờ mới xoá hết.
+- Màn tối chỉ **chớm lên ~130px ngay trên dòng chữ đầu** rồi đậm rất nhanh, chứ
+  không kéo từ 42% chiều cao như Dre. Nền của Dre là ảnh chụp tối sẵn, kéo dài
+  bao nhiêu cũng không ai thấy; nền ở đây thường là **trắng**, kéo dài là cả nửa
+  trên tấm ảnh bị phủ một lớp mờ mờ xam xám, thấy rõ mồn một và xấu. Đổi lại
+  phải dùng đường cong chữ S (bằng phẳng ở cả hai đầu) mới rút ngắn được dải
+  chuyển tiếp mà mắt vẫn không bắt được đâu là mép.
+- Khối chữ dài thì màn tối bắt cao, ăn lên thân ảnh. Lúc đó **kéo ảnh lên** cho
+  đáy nó vừa chạm mép màn tối, không cắt bớt ảnh — cắt là mất nội dung.
 - Masthead: chừa 150px đầu thẻ, ảnh không tràn lên. Nền sáng thì masthead tự
   đổi sang mực tối — **không** phủ thêm một màn tối ở đỉnh, màn đó chính là một
   dải band vắt ngang, đúng cái đang tránh.

@@ -449,9 +449,13 @@ FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc du
                        # khong thi cho nao lop sac khong phu se lo mot BAN SAO
                        # phong to cua chinh tam anh -> mat doc ra HAI VUNG
 FIG_MAX_TOI = 0.80     # do toi o vung chu; van la ANH LAM MO chu khong phai mang den
-FIG_VEIL_TOP = 0.42    # man toi bat dau SOM NHAT o 42% chieu cao
-FIG_VEIL_LEAD = 0.16   # ...va luon bat dau TREN dong chu dau it nhat 16% chieu cao
-FIG_VEIL_EASE = 1.4    # duong cong: nhat o tren, dam dan xuong — khong sinh mep
+# Dre bat man toi tu ~42% chieu cao vi nen ANH CHUP toi san, keo dai bao nhieu
+# cung khong ai thay. O day nen thuong la TRANG (bieu do, trang tai lieu): keo
+# dai the la ca nua tren tam anh bi phu mot lop mo mo xam xam, thay ro mon mot
+# va xau (Ong Chu che 04/09/2026). Nen chi chom len ngay TREN dong chu dau:
+# vua du de mot duong cong mem an het buoc chuyen, khong du de thanh mot dai.
+FIG_VEIL_LEAD = 132    # px man toi chom len tren dong chu dau
+FIG_VEIL_QUA = 26      # ...va cham do dam toi da ngay khi qua khoi dong do
 FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
 FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
 
@@ -703,10 +707,10 @@ def s_figure(sl, th):
     nen = (
         f'<div class="figwrap" style="background:{mau_nen};">'
         f'{lot}'
-        f'<img class="fig-sac" src="{uri}" alt="" '
+        f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
         f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
         f'<div class="fig-molop" id="figmo">'
-        f'<img src="{uri}" alt="" style="top:{y0}px;height:{cao}px;'
+        f'<img class="fig-doi" src="{uri}" alt="" style="top:{y0}px;height:{cao}px;'
         f'object-fit:cover;object-position:top;"></div>'
         f'<div class="fig-man" id="figman"></div>'
         f'</div>'
@@ -743,25 +747,37 @@ def s_figure(sl, th):
         chenh = _sang([int(mau_nen[k:k + 2], 16) for k in (1, 3, 5)]) - _sang((r, g, b))
         max_toi = min(0.95, max(FIG_MAX_TOI, 1 - 20.0 / max(1.0, chenh)))
     js = (f'<script>window.__datMan=function(){{'
-          f'var H={H},MAX={max_toi:.3f},E={FIG_VEIL_EASE};'
+          f'var H={H},MAX={max_toi:.3f};'
           # set_content giu nguyen window nen ham nay con song sang slide sau;
           # slide khong phai figure thi khong co phan tu nao — thoat ngay.
           f'var v=document.getElementById("figman");if(!v)return;'
           f'var t=document.getElementById("figtxt");'
           f'var top=t?t.getBoundingClientRect().top:H*0.58;'
-          f'var tren=Math.max(0,Math.min(top-H*{FIG_VEIL_LEAD},H*{FIG_VEIL_TOP}));'
-          f'var day=Math.max(tren+120,top-24),span=H-tren,st=[];'
-          f'for(var i=0;i<=12;i++){{'
-          f'var y=tren+(day-tren)*i/12,a=MAX*Math.pow(i/12,E);'
-          f'st.push("rgba({r},{g},{b},"+a.toFixed(3)+") "+((y-tren)/span*100).toFixed(2)+"%");}}'
+          f'var tren=Math.max(0,top-{FIG_VEIL_LEAD});'
+          f'var day=Math.min(H,top+{FIG_VEIL_QUA}),span=H-tren,st=[],sm=[];'
+          # Duong cong chu S (smoothstep): bang phang o CA HAI dau. Bat dau bang
+          # phang nen khong co buoc nhay o cho no chom len, ket thuc bang phang
+          # nen khong co mep o cho no cham toi da — nho vay moi rut ngan duoc dai
+          # chuyen tiep xuong ~130px ma mat van khong bat duoc dau la mep.
+          f'for(var i=0;i<=16;i++){{'
+          f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'
+          f'pc=((y-tren)/span*100).toFixed(2);'
+          f'st.push("rgba({r},{g},{b},"+(MAX*ss).toFixed(3)+") "+pc+"%");'
+          # Lop mo di CHUNG mot nhip voi man toi (Dre: "ca lop mo lan lop toi
+          # dung cung mot mat na"), nhung binh phuong them: lam mo la thu mat
+          # nhan ra som nhat, de no len sau mot chut thi vung tren sach hon.
+          f'sm.push("rgba(0,0,0,"+(0.96*ss*ss).toFixed(3)+") "+(y/H*100).toFixed(2)+"%");}}'
           f'st.push("rgba({r},{g},{b},{max_toi:.3f}) 100%");'
-          # Lop mo dung CHUNG mot nhip voi man toi (Dre: "ca lop mo lan lop toi
-          # dung cung mot mat na") — lech nhip la thay hai buoc chuyen khac nhau.
-          f'var m=document.getElementById("figmo"),sm=["rgba(0,0,0,0) 0%"];'
-          f'for(var j=0;j<=12;j++){{'
-          f'var yj=tren+(day-tren)*j/12,aj=0.96*Math.pow(j/12,E);'
-          f'sm.push("rgba(0,0,0,"+aj.toFixed(3)+") "+(yj/H*100).toFixed(2)+"%");}}'
-          f'sm.push("rgba(0,0,0,0.96) 100%");'
+          f'sm.unshift("rgba(0,0,0,0) 0%");sm.push("rgba(0,0,0,0.96) 100%");'
+          # Khoi chu dai thi man toi bat cao, an len than anh. Thay vi cat bot
+          # anh (mat noi dung), KEO ANH LEN cho day no vua cham mep man toi —
+          # chi keo trong phan le con trong o tren, khong bao gio cham masthead.
+          f'var ds=document.querySelectorAll(".fig-doi");'
+          f'if(ds.length){{var iy=parseFloat(ds[0].style.top),'
+          f'ih=parseFloat(ds[0].style.height),'
+          f'doi=Math.min(Math.max(0,iy+ih-tren),Math.max(0,iy-{FIG_DINH}));'
+          f'if(doi>0){{for(var k=0;k<ds.length;k++)ds[k].style.top=(iy-doi)+"px";}}}}'
+          f'var m=document.getElementById("figmo");'
           f'var g="linear-gradient(to bottom,"+sm.join(",")+")";'
           f'if(m){{m.style.webkitMaskImage=g;m.style.maskImage=g;}}'
           f'v.style.top=tren+"px";'
