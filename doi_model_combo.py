@@ -34,8 +34,10 @@ def tep_config() -> list:
                      if os.path.exists(p)])
 
 
-def sua(s: str, model: str) -> tuple:
-    """Chi doi dong `  default:` nam trong khoi `model:`."""
+def sua(s: str, model: str, tu: str = "ds/deepseek-v4-flash") -> tuple:
+    """Chi doi dong `  default:` nam trong khoi `model:`, va chi khi gia tri hien
+    tai la `tu` (mac dinh v4-flash truc tiep) — analyst dung deepseek-reasoner
+    co chu y, khong dong cham."""
     m = re.search(r"^model:\n((?:  .*\n)+)", s, re.M)
     if not m:
         return s, "khong co khoi model"
@@ -45,6 +47,8 @@ def sua(s: str, model: str) -> tuple:
         return s, "khong co default"
     if cu.group(1).strip() == model:
         return s, f"da la {model}"
+    if tu and cu.group(1).strip() != tu:
+        return s, f"giu nguyen {cu.group(1).strip()} (khong phai {tu})"
     khoi_moi = khoi[:cu.start(1)] + model + khoi[cu.end(1):]
     return s[:m.start(1)] + khoi_moi + s[m.end(1):], f"{cu.group(1).strip()} -> {model}"
 
@@ -52,12 +56,14 @@ def sua(s: str, model: str) -> tuple:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="DS-v4Flash")
+    ap.add_argument("--tu", default="ds/deepseek-v4-flash",
+                    help="chi doi profile dang o model nay; '' = doi tat ca")
     ap.add_argument("--thu", action="store_true", help="chi in, khong ghi")
     a = ap.parse_args()
     loi = 0
     for f in tep_config():
         s = open(f, encoding="utf-8").read()
-        moi, trang_thai = sua(s, a.model)
+        moi, trang_thai = sua(s, a.model, a.tu)
         ok = True
         if yaml is not None and moi != s:
             ok = ((yaml.safe_load(moi) or {}).get("model") or {}).get("default") == a.model
