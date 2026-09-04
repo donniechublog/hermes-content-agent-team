@@ -44,6 +44,7 @@ Luật "không tự vẽ" tồn tại để **không bịa hiện thực**. Kite
 | Đồ hoạ chữ, khối màu, hairline, badge | **Logo/nhận diện hãng thật** (Google, OpenAI…) |
 | Biểu đồ *chỉ khi* số liệu có thật, ghi nguồn | Biểu đồ với số liệu bịa |
 | **Chèn bản thật** của biểu đồ/bảng/báo cáo (`figure`, có caption "via") | Ảnh minh hoạ AI sinh ra |
+| Ảnh chụp hiện trường có thật, ghi "via" | Ảnh + chữ tách thành hai mảng rời |
 | | Quote bịa gán cho người/hãng |
 
 Gọi tên sản phẩm bằng **chữ** ("Google Antigravity") thì được; **tái tạo logo**
@@ -148,16 +149,34 @@ Khi nguồn **đã có** hình đáng đưa lên, đừng vẽ lại: chèn bả
  "cards": [{"num": "01", "text": "Ý phụ, nếu còn chỗ."}]}
 ```
 
-Luật bố cục — **bề ngang trước, chiều cao xét sau** (cùng luật với
-`chup_chart.py`):
+Luật bố cục. Hai luật, luật thứ hai đứng trên:
 
-- Ảnh **trải hết 1080px**, chạm hai mép slide, **không bao giờ cắt hai bên**.
-  Bề ngang của một biểu đồ là *nội dung*: mất cột cuối, mất trục, mất đúng cái
-  điểm đang nói tới — cắt đi là **nói sai**, không phải thiếu một tí.
-- Chiều cao giữ đúng tỉ lệ, trần **700px**. Cao hơn thì **giữ mép trên** (tiêu
-  đề, trục, hàng đầu nằm ở trên), mép dưới loang vào nền để đọc ra là "còn nữa";
-  renderer in ra mất bao nhiêu px để Kite biết mà tự cắt lại cho đúng.
-- **Phần chiều cao còn thừa** mới đến lượt chữ: `standfirst` + `cards`.
+**1. Bề ngang trước, chiều cao xét sau** (cùng luật với `chup_chart.py`): ảnh
+**trải hết 1080px**, chạm hai mép slide, **không bao giờ cắt hai bên**. Bề ngang
+của một biểu đồ là *nội dung*: mất cột cuối, mất trục, mất đúng cái điểm đang
+nói tới — cắt đi là **nói sai**, không phải thiếu một tí. Cao quá thì cắt, và
+**giữ mép trên** (tiêu đề, trục, hàng đầu nằm ở trên); renderer in ra mất bao
+nhiêu px để Kite biết mà tự cắt lại cho đúng.
+
+**2. Một mặt phẳng liền — chữ chìm vào ảnh, không bao giờ là hai mảng.** Đây là
+đúng luật của Dre (`carousel.py`), Kite dùng chung ngôn ngữ đó:
+
+- **Nền quanh ảnh bao giờ cũng liền với ảnh**, không bao giờ là một hộp tối đặt
+  cạnh ảnh. Hai cách, renderer tự chọn theo ảnh:
+  - Ảnh có **nền phẳng** (biểu đồ, bảng số, trang tài liệu — thường nền trắng):
+    trải thẳng **màu nền của chính nó** ra cả thẻ. Cùng một màu thì không thể có
+    mép. *(Làm mờ bản cover kiểu Dre ở đây lại ra một mảng xám lệch tông với
+    chính tấm ảnh sắc ở trên — vẫn đọc ra hai vùng.)*
+  - **Ảnh chụp**: bản cover của chính nó, làm mờ mạnh — đúng cách của Dre.
+- **Chữ đè lên ảnh** qua màn tối liền mạch bắt đầu từ ~42% chiều cao, đậm dần
+  theo đường cong, kèm một lớp mờ của chính tấm ảnh hiện lên **cùng nhịp**. Chỉ
+  làm tối thôi thì chữ trong ảnh vẫn lờ mờ dưới chữ mình; lớp mờ mới xoá hết.
+- Masthead: chừa 150px đầu thẻ, ảnh không tràn lên. Nền sáng thì masthead tự
+  đổi sang mực tối — **không** phủ thêm một màn tối ở đỉnh, màn đó chính là một
+  dải band vắt ngang, đúng cái đang tránh.
+- Ảnh **nền phẳng** dừng ở 63% chiều cao, không tràn xuống vùng chữ: dưới màn
+  tối nó vẫn đọc được mờ mờ, chữ mình đè lên chữ của người ta thành một đám rối.
+  Ảnh chụp thì phủ xuống thoải mái — ảnh chụp không có chữ để đụng.
 
 Cổng chặn: `image` phải trỏ tới tệp có thật, rộng **>= 800px** (hẹp hơn mà kéo
 lên 1080 là bể nát — chụp lại bằng `chup_chart.py`, DPR 2), và **bắt buộc**
