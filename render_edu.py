@@ -454,8 +454,9 @@ FIG_MAX_TOI = 0.80     # do toi o vung chu; van la ANH LAM MO chu khong phai man
 # dai the la ca nua tren tam anh bi phu mot lop mo mo xam xam, thay ro mon mot
 # va xau (Ong Chu che 04/09/2026). Nen chi chom len ngay TREN dong chu dau:
 # vua du de mot duong cong mem an het buoc chuyen, khong du de thanh mot dai.
-FIG_VEIL_LEAD = 132    # px man toi chom len tren dong chu dau
-FIG_VEIL_QUA = 26      # ...va cham do dam toi da ngay khi qua khoi dong do
+FIG_VEIL_LEAD = 132    # px man toi chom len tren dong chu dau — CHI cho anh chup
+FIG_VEIL_QUA = 46      # px qua khoi dinh tieu de thi da dam toi da
+FIG_TIEU_DE_DONG = 2   # slide co anh: tieu de toi da bay nhieu dong
 FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
 FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
 
@@ -718,8 +719,15 @@ def s_figure(sl, th):
     # Dinh the sang thi masthead phai doi sang muc toi, khong the phu them mot
     # man toi o tren: man do chinh la mot dai band vat ngang, dung cai dang tranh.
     if nen_sang:
-        nen += ('<style>.mast-name,.mast-sec{color:rgba(0,0,0,0.62);}'
-                '.rule{background:rgba(0,0,0,0.16);}</style>')
+        # Eyebrow gio nam TREN mep man toi, tuc la nam trang tren nen sang. Mau
+        # nhan cua theme sinh ra de dat tren nen toi, de nguyen la chu chim mat.
+        # Ep no toi di 58% — van ra dung mau do, ma doc duoc tren nen trang.
+        a = [int(th["a"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4)]
+        a_toi = "#%02X%02X%02X" % tuple(int(c * 0.42) for c in a)
+        nen += (f'<style>.mast-name,.mast-sec{{color:rgba(0,0,0,0.62);}}'
+                f'.rule{{background:rgba(0,0,0,0.16);}}'
+                f'#figtxt .eyebrow-txt{{color:{a_toi};}}'
+                f'#figtxt .eyebrow-bar{{background:{a_toi};}}</style>')
     chu = (f'{eyebrow(sl["eyebrow"])}'
            f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
            f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
@@ -753,8 +761,21 @@ def s_figure(sl, th):
           f'var v=document.getElementById("figman");if(!v)return;'
           f'var t=document.getElementById("figtxt");'
           f'var top=t?t.getBoundingClientRect().top:H*0.58;'
-          f'var tren=Math.max(0,top-{FIG_VEIL_LEAD});'
-          f'var day=Math.min(H,top+{FIG_VEIL_QUA}),span=H-tren,st=[],sm=[];'
+          # Nen PHANG: phia tren dong chu dau phai TRONG TUYET DOI. Mot dai
+          # chuyen tiep dai tren mot mang mau phang khong "chim" di nhu tren anh
+          # chup — no lu lu ra do thanh mot vet xam (Ong Chu che 04/09/2026).
+          # Nen moc dung CHAN cua eyebrow: tren no khong mot chut mau nao, tu no
+          # tang dan, qua khoi dinh tieu de la da dam toi da.
+          # Anh CHUP thi nguoc lai: dai chuyen tiep dai chinh la thu lam chu
+          # chim vao anh, va tren anh thi mat khong bat duoc no. Giu kieu Dre.
+          f'var eb=t?t.querySelector(".eyebrow"):null,h1=t?t.querySelector("h1"):null;'
+          f'var tren,day;'
+          f'if({"true" if kieu == "phang" else "false"}&&eb){{'
+          f'tren=eb.getBoundingClientRect().bottom;'
+          f'day=h1?h1.getBoundingClientRect().top+{FIG_VEIL_QUA}:tren+70;'
+          f'if(day<tren+40)day=tren+40;}}'
+          f'else{{tren=Math.max(0,top-{FIG_VEIL_LEAD});day=top+26;}}'
+          f'day=Math.min(H,day);span=H-tren;var st=[],sm=[];'
           # Duong cong chu S (smoothstep): bang phang o CA HAI dau. Bat dau bang
           # phang nen khong co buoc nhay o cho no chom len, ket thuc bang phang
           # nen khong co mep o cho no cham toi da — nho vay moi rut ngan duoc dai
@@ -1002,6 +1023,35 @@ def render(spec, out, brand, bo_qua_dau, scale):
         ctx = browser.new_context(viewport={"width": W, "height": H},
                                   device_scale_factor=scale)
         page = ctx.new_page()
+
+        # Cong chan DO THAT: tieu de tren slide co anh toi da 2 dong. Dem chu
+        # thi doan sai (dau tieng Viet, tu dai ngan khac nhau), nen dung chinh
+        # Chromium do. Chay het mot luot TRUOC khi chup, de neu hong thi khong
+        # de lai nua album trong drafts/ cho Kite tuong la xong.
+        loi_dong = []
+        for i, sl in enumerate(slides, start=1):
+            if sl.get("kind") != "figure":
+                continue
+            page.set_content(slide_doc(sl, i, total, brand, section, folio_left,
+                                       font_css, th), wait_until="load")
+            page.evaluate("document.fonts.ready")
+            n = page.evaluate(
+                "() => {const h=document.querySelector('#figtxt h1');"
+                "if(!h) return 0;"
+                "const lh=parseFloat(getComputedStyle(h).lineHeight);"
+                "return Math.round(h.getBoundingClientRect().height/lh);}")
+            if n > FIG_TIEU_DE_DONG:
+                loi_dong.append(
+                    f"slide {i}: tieu de {n} dong — slide co anh chi cho "
+                    f"{FIG_TIEU_DE_DONG} dong. Anh da noi phan viec cua no roi, "
+                    f"tieu de dai them la giam cua nhau. Cat ngan tieu de lai.")
+        if loi_dong:
+            browser.close()
+            print("CONG CHAN DUNG:", file=sys.stderr)
+            for x in loi_dong:
+                print("  - " + x, file=sys.stderr)
+            raise SystemExit(1)
+
         for i, sl in enumerate(slides, start=1):
             doc = slide_doc(sl, i, total, brand, section, folio_left, font_css, th)
             page.set_content(doc, wait_until="load")

@@ -171,12 +171,17 @@ nhiêu px để Kite biết mà tự cắt lại cho đúng.
 - **Chữ đè lên ảnh** qua màn tối, kèm một lớp mờ của chính tấm ảnh hiện lên
   **cùng nhịp**. Chỉ làm tối thôi thì chữ trong ảnh vẫn lờ mờ dưới chữ mình;
   lớp mờ mới xoá hết.
-- Màn tối chỉ **chớm lên ~130px ngay trên dòng chữ đầu** rồi đậm rất nhanh, chứ
-  không kéo từ 42% chiều cao như Dre. Nền của Dre là ảnh chụp tối sẵn, kéo dài
-  bao nhiêu cũng không ai thấy; nền ở đây thường là **trắng**, kéo dài là cả nửa
-  trên tấm ảnh bị phủ một lớp mờ mờ xam xám, thấy rõ mồn một và xấu. Đổi lại
-  phải dùng đường cong chữ S (bằng phẳng ở cả hai đầu) mới rút ngắn được dải
-  chuyển tiếp mà mắt vẫn không bắt được đâu là mép.
+- **Nền phẳng thì phía trên dòng chữ đầu phải TRONG TUYỆT ĐỐI.** Màn tối neo
+  đúng vào **chân chữ eyebrow** ("SỐ LIỆU", "BẢNG ĐO"…): trên nó không một chút
+  màu nào, từ nó tăng dần từ 0, qua khỏi đỉnh tiêu đề là đã đậm tối đa. Kéo dài
+  kiểu Dre trên một mảng màu phẳng thì nó không "chìm" đi như trên ảnh chụp —
+  nó lù lù ra đó thành một vệt xám, xấu. Ảnh **chụp** thì ngược lại: dải dài
+  chính là thứ làm chữ chìm vào ảnh, và trên ảnh thì mắt không bắt được nó, nên
+  giữ nguyên kiểu Dre.
+- Đường cong là chữ S (bằng phẳng ở cả hai đầu) nên dù dải ngắn vẫn không lộ mép.
+- Eyebrow lúc này nằm **trên** mép màn tối, tức là nằm trắng trên nền sáng. Màu
+  nhấn của theme sinh ra để đặt trên nền tối, để nguyên là chữ chìm mất — nên
+  nó tự ép tối đi cho đọc được, vẫn ra đúng màu đó.
 - Khối chữ dài thì màn tối bắt cao, ăn lên thân ảnh. Lúc đó **kéo ảnh lên** cho
   đáy nó vừa chạm mép màn tối, không cắt bớt ảnh — cắt là mất nội dung.
 - Masthead: chừa 150px đầu thẻ, ảnh không tràn lên. Nền sáng thì masthead tự
@@ -185,6 +190,10 @@ nhiêu px để Kite biết mà tự cắt lại cho đúng.
 - Ảnh **nền phẳng** dừng ở 63% chiều cao, không tràn xuống vùng chữ: dưới màn
   tối nó vẫn đọc được mờ mờ, chữ mình đè lên chữ của người ta thành một đám rối.
   Ảnh chụp thì phủ xuống thoải mái — ảnh chụp không có chữ để đụng.
+
+**Tiêu đề tối đa 2 dòng** trên mọi slide có ảnh — ảnh đã nói phần việc của nó
+rồi, tiêu đề dài thêm là giành của nhau. Cổng chặn đo thật bằng Chromium, quá
+2 dòng là dừng trước khi ghi tệp nào.
 
 Cổng chặn: `image` phải trỏ tới tệp có thật, rộng **>= 800px** (hẹp hơn mà kéo
 lên 1080 là bể nát — chụp lại bằng `chup_chart.py`, DPR 2), và **bắt buộc**
