@@ -448,10 +448,11 @@ def kiem_mat_nguoi(nhan, path, nhan_vat=None):
     if nv:
         return [], [f"{nhan}: {n} mat nguoi, khai la '{nv}' — OK neu dung la nguoi "
                     "do; sai ten la bia dat."]
-    return [f"{nhan}: phat hien {n} mat nguoi ma slide KHONG khai \"nhan_vat\". Anh "
-            "nguoi vo danh / khong lien quan tin la loi (doc ra la stock). Doi sang "
-            "anh san pham/screenshot/chart, hoac neu dung la nhan vat trong bai "
-            "(CEO, tac gia) thi ghi \"nhan_vat\": \"<ten>\" vao slide."], []
+    return [f"{nhan}: phat hien {n} mat nguoi ma KHONG khai nhan vat. Anh nguoi vo "
+            "danh / khong lien quan tin la loi (doc ra la stock). Doi sang anh san "
+            "pham/screenshot/chart; con neu dung la nhan vat trong bai (CEO phat "
+            "bieu, tac gia paper) thi khai ten — carousel/deck: \"nhan_vat\": "
+            "\"<ten>\" trong slide; card.py (hero): --nhan-vat \"<ten>\"."], []
 
 
 def kiem_trung(nhan, path, da_thay):
