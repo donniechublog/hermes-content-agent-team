@@ -2,7 +2,9 @@
 """render_edu.py — renderer carousel tech-editorial (role carousel.edu, vai Kite).
 
 Biến một spec JSON thành album PNG kiểu tạp chí công nghệ: art VECTOR gốc + bộ
-khung magazine (masthead, eyebrow chuyên mục, folio, hero orbit), KHÔNG ảnh thật.
+khung magazine (masthead, eyebrow chuyên mục, folio, hero orbit). Không đi tìm
+ảnh minh hoạ, nhưng biểu đồ/bảng/báo cáo CÓ SẴN thì chèn bản thật (kind
+"figure", trải hết bề ngang slide).
 Khác `carousel.py` (ảnh thật + PIL) và `deck.py` (editorial-deck): ở đây từng
 slide là HTML/CSS/SVG, render bằng Chromium headless (Playwright) rồi chụp.
 
@@ -51,6 +53,13 @@ Spec JSON:
      "standfirst": "Còn test đỏ thì còn lặp...",
      "callout": "Kết quả: một bản fix đã được kiểm chứng bằng test."},
 
+    {"kind": "figure", "eyebrow": "SỐ LIỆU",
+     "title": "Điểm số dựng lại trên SWE-bench", "accent": "SWE-bench",
+     "image": "drafts/chart_swebench.png",   # chụp bằng chup_chart.py
+     "caption": "Biểu đồ trong bài công bố · via Google DeepMind",
+     "standfirst": "Chữ minh hoạ cho phần chiều cao còn thừa dưới hình.",
+     "cards": [{"num": "01", "text": "..."}]},
+
     {"kind": "cta", "eyebrow": "ÁP DỤNG",
      "title": "Cho bug khó & refactor rủi ro cao",
      "checks": ["...", "...", "..."],
@@ -61,6 +70,15 @@ Spec JSON:
 
 Mọi chữ là tiếng Việt CÓ DẤU — cổng chặn dừng nếu thiếu (dùng --bo-qua-dau chỉ
 khi copy thật sự là tiếng Anh). Số slide: 6..10.
+
+ẢNH THẬT: khung này vẽ art vector, nhưng tin nào CÓ SẴN biểu đồ, bảng số hay
+trang báo cáo thì chèn bản thật bằng kind "figure" — ảnh trải hết bề ngang
+slide (không bao giờ cắt hai bên: bề ngang của một biểu đồ là nội dung), cao
+quá thì giữ mép trên. Chữ CHÌM vào ảnh qua màn tối liền mạch + lớp mờ, y như
+Dre bên carousel.py: không bao giờ để ảnh và chữ thành hai mảng rời. Bắt buộc
+có "caption" ghi "via <ai>", và ảnh phải rộng >= 800px (chụp bằng
+chup_chart.py). Vẫn cấm: ảnh minh hoạ AI, screenshot dựng lại, logo hãng,
+số liệu tự bịa.
 """
 
 import argparse
@@ -212,6 +230,25 @@ BASE_CSS_TPL = """
 .check{display:flex;flex-direction:row;align-items:flex-start;gap:22px;}
 .check-m{color:%(CYAN)s;font-size:38px;font-weight:800;line-height:1.1;}
 .check-t{font-size:35px;font-weight:500;line-height:1.35;color:%(SOFT)s;}
+/* hinh that: phu kin the, KHONG bao gio la mot hop dat canh chu */
+.figwrap{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;
+  z-index:0;overflow:hidden;background:%(BG)s;}
+.fig-nen{position:absolute;left:50%%;top:50%%;width:128%%;height:128%%;
+  transform:translate(-50%%,-50%%);object-fit:cover;filter:blur(44px);}
+.fig-sac{position:absolute;left:0;width:%(W)spx;object-fit:cover;display:block;}
+/* lop MO cua chinh anh, hien dan theo cung nhip voi man toi — chinh no moi xoa
+   het chi tiet doc duoc duoi chu; chi lam toi khong thi chu van chong len chu */
+.fig-molop{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;
+  overflow:hidden;}
+.fig-molop img{position:absolute;left:0;width:%(W)spx;object-fit:cover;
+  display:block;filter:blur(14px);}
+/* man toi cho chu — dat lai bang script theo dung dong chu dau */
+.fig-man{position:absolute;left:0;right:0;bottom:0;}
+.fig-cap{display:flex;flex-direction:row;align-items:baseline;gap:16px;
+  margin-top:22px;font-family:%(MONO)s;font-size:23px;font-weight:500;
+  line-height:1.45;color:%(DIM)s;letter-spacing:0.5px;}
+.fig-bar{flex:none;width:26px;height:3px;background:%(CYAN)s;
+  transform:translateY(-7px);}
 .readmore{background:%(PANEL)s;border:1px solid #23262E;padding:34px 38px;}
 .readmore-l{font-family:%(MONO)s;font-size:22px;font-weight:500;color:%(DIM)s;
   letter-spacing:2px;margin-bottom:14px;}
@@ -393,6 +430,113 @@ def hero_svg(name, th):
 
 
 
+# ---- anh that: hinh minh hoa / bieu do / bao cao --------------------------
+# Luat khung edu la ART VECTOR, nhung tin nao CO SAN mot bieu do, mot bang so
+# hay mot trang bao cao thi ve lai bang tay vua mat cong vua de sai — chen thang
+# ban that vao. Slide kind "figure" lam viec do.
+#
+# Be ngang la NOI DUNG (cung luat voi chup_chart.py): mot bieu do bi cat mep
+# phai thi mat truc, mat cot cuoi, mat luon cai diem duoc to sang — no NOI SAI
+# chu khong phai thieu mot ti. Nen anh LUON trai het 1080px, khong bao gio cat
+# hai ben. Chieu cao thi cat duoc: cao qua tran thi giu mep tren, phan con lai
+# cua chieu cao slide moi den luot chu minh hoa.
+ANH_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+            ".webp": "image/webp", ".gif": "image/gif"}
+FIG_RONG_TOI_THIEU = 800    # hep hon the ma keo len 1080 thi be nat
+
+# Bo so lay NGUYEN cua carousel.py (vai Dre) de hai vai noi cung mot thu tieng.
+FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc duoc,
+                       # khong thi cho nao lop sac khong phu se lo mot BAN SAO
+                       # phong to cua chinh tam anh -> mat doc ra HAI VUNG
+FIG_MAX_TOI = 0.80     # do toi o vung chu; van la ANH LAM MO chu khong phai mang den
+# Dre bat man toi tu ~42% chieu cao vi nen ANH CHUP toi san, keo dai bao nhieu
+# cung khong ai thay. O day nen thuong la TRANG (bieu do, trang tai lieu): keo
+# dai the la ca nua tren tam anh bi phu mot lop mo mo xam xam, thay ro mon mot
+# va xau (Ong Chu che 04/09/2026). Nen chi chom len ngay TREN dong chu dau:
+# vua du de mot duong cong mem an het buoc chuyen, khong du de thanh mot dai.
+FIG_VEIL_LEAD = 132    # px man toi chom len tren dong chu dau
+FIG_VEIL_QUA = 26      # ...va cham do dam toi da ngay khi qua khoi dong do
+FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
+FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
+
+
+def _do_anh(duong_dan):
+    """-> (Path, rong, cao). Duong dan tuong doi tinh theo CWD truoc, roi ROOT."""
+    p = Path(duong_dan)
+    if not p.exists() and not p.is_absolute():
+        p = ROOT / duong_dan
+    if not p.exists():
+        raise FileNotFoundError(f"khong thay anh '{duong_dan}'")
+    if p.suffix.lower() not in ANH_MIME:
+        raise ValueError(f"anh '{p.name}' duoi la {p.suffix} — "
+                         f"chi nhan {', '.join(sorted(ANH_MIME))}")
+    from PIL import Image
+    with Image.open(p) as im:
+        return p, im.width, im.height
+
+
+def _anh_data_uri(p):
+    """Nhung base64: Chromium doc HTML tu chuoi nen khong co URL goc de giai
+    duong dan tuong doi (giong ly do font phai nhung)."""
+    b64 = base64.b64encode(p.read_bytes()).decode("ascii")
+    return f"data:{ANH_MIME[p.suffix.lower()]};base64,{b64}"
+
+
+def _sang(rgb):
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
+
+
+def doc_nen(p):
+    """Nen quanh lop sac phai LIEN voi no, khong bao gio la mot mang khac tone.
+
+    Dre lam nen bang chinh tam anh phong to + lam mo — dung cho ANH CHUP. Nhung
+    bieu do/bang so/trang bao cao thi nen cua no la mot mau PHANG (thuong la
+    trang): lam mo ban cover cua no ra mot mang xam-xanh lech han tone voi chinh
+    tam anh sac o tren, van doc ra hai vung. Voi loai do, trai thang MAU NEN cua
+    anh ra ca the la lien mach tuyet doi — cung mot mau, khong the co mep.
+
+    -> (kieu, mau nen, nen co sang khong)
+    """
+    from PIL import Image, ImageStat
+    with Image.open(p) as im:
+        im = im.convert("RGB")
+        w, h = im.size
+        d = max(2, min(w, h) // 50)
+        vien = [im.crop((0, 0, w, d)), im.crop((0, h - d, w, h)),
+                im.crop((0, 0, d, h)), im.crop((w - d, 0, d + w - d, h))]
+        tb = [ImageStat.Stat(v).mean[:3] for v in vien]
+        lech = max(max(ImageStat.Stat(v).stddev[:3]) for v in vien)
+        toan = ImageStat.Stat(im).mean[:3]
+    khac = max(abs(a[k] - b[k]) for a in tb for b in tb for k in range(3))
+    phang = lech < 14 and khac < 16
+    mau = tuple(int(sum(t[k] for t in tb) / 4) for k in range(3))
+    # Dinh the luon la NEN (anh khong tran len FIG_DINH), nen do sang o dinh la
+    # do sang cua nen: mau phang, hoac mau trung binh cua ban lam mo.
+    return ("phang" if phang else "mo",
+            "#%02X%02X%02X" % mau, _sang(mau if phang else toan) > 140)
+
+
+def dat_anh(rong, cao, phang):
+    """Cho anh trai HET be ngang slide roi tra ve (cao hien, y0, cao ti le).
+
+    Nen tang lay cua _body_image trong carousel.py, chinh hai cho cho khung edu:
+
+      - Chua san FIG_DINH cho masthead. Dre khong co masthead nen anh tran len
+        tan dau the duoc; o day tran len la ten kenh nam de len chu trong anh.
+      - Anh co nen PHANG (bieu do, bang so, trang tai lieu) chi duoc dung trong
+        vung tren, KHONG tran xuong vung chu: duoi man toi no van con doc duoc
+        mo mo, chu minh de len chu cua nguoi ta thanh mot dam roi. Anh CHUP thi
+        khong co van de do — cu phu xuong nhu ben Dre.
+      - Cao hon phan duoc phep thi cat, GIU MEP TREN (bieu do/bang de tieu de,
+        truc, hang dau o tren). Thap hon thi dat GIUA vung do, khong dinh mep.
+    """
+    cao_that = max(1, round(W * cao / rong))
+    day = int(H * FIG_DAY_PHANG) if phang else H
+    tran = day - FIG_DINH
+    cao_hien = min(cao_that, tran)
+    return cao_hien, FIG_DINH + (tran - cao_hien) // 2, cao_that
+
+
 # ---- helpers --------------------------------------------------------------
 def esc(s):
     return html.escape(str(s), quote=True)
@@ -528,6 +672,123 @@ def s_loop(sl, th):
     return g + body
 
 
+def s_figure(sl, th):
+    """Hinh that + chu, MOT MAT PHANG LIEN — dung ngon ngu cua Dre (carousel.py):
+
+      - NEN bao gio cung la anh, khong bao gio la mot hop den dat canh anh: ban
+        cover cua chinh tam anh phu kin the roi LAM MO MANH. Mo de no thanh mot
+        mang mau lien; de sac net thi cho nao lop sac khong phu se lo mot ban
+        sao lech cua cung noi dung — mat doc ra ngay hai vung.
+      - LOP SAC de len tren, full be ngang, KHONG cat hai canh.
+      - CHU de len anh qua man toi LIEN MACH bat dau tu ~42% chieu cao, dam dan
+        theo duong cong, khong co dai band nao. Khong lam toi rieng phan nen:
+        nen toi hon han lop sac se ve ra dung mot hinh chu nhat quanh anh.
+    """
+    p, iw, ih = _do_anh(sl["image"])
+    kieu, mau_nen, nen_sang = doc_nen(p)
+    cao, y0, cao_that = dat_anh(iw, ih, kieu == "phang")
+    if cao_that > cao:
+        # Bao ra de Kite biet mat bao nhieu: neu phan mat la phan dang noi toi
+        # thi phai tu cat lai cho dung truoc khi dua vao day.
+        print(f"figure {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
+              f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
+    uri = _anh_data_uri(p)
+    # "phang": trai thang mau nen cua anh ra ca the — cung mot mau thi khong the
+    # co mep. "mo": ban cover cua chinh tam anh, lam mo manh (kieu Dre) — dung
+    # cho anh chup, noi khong co mau nen nao de trai.
+    # Bi cat thi cho phan cuoi TAN vao nen thay vi dut ngang: nen cung mau nen
+    # anh chi viec loang ra, doc thanh "con nua o duoi" chu khong phai "bi xen".
+    mo_day = ('' if cao_that <= cao else
+              'mask-image:linear-gradient(to bottom,#000 calc(100% - 130px),'
+              'transparent 100%);-webkit-mask-image:linear-gradient(to bottom,'
+              '#000 calc(100% - 130px),transparent 100%);')
+    lot = ('' if kieu == "phang"
+           else f'<img class="fig-nen" src="{uri}" alt="">')
+    nen = (
+        f'<div class="figwrap" style="background:{mau_nen};">'
+        f'{lot}'
+        f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
+        f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
+        f'<div class="fig-molop" id="figmo">'
+        f'<img class="fig-doi" src="{uri}" alt="" style="top:{y0}px;height:{cao}px;'
+        f'object-fit:cover;object-position:top;"></div>'
+        f'<div class="fig-man" id="figman"></div>'
+        f'</div>'
+    )
+    # Dinh the sang thi masthead phai doi sang muc toi, khong the phu them mot
+    # man toi o tren: man do chinh la mot dai band vat ngang, dung cai dang tranh.
+    if nen_sang:
+        nen += ('<style>.mast-name,.mast-sec{color:rgba(0,0,0,0.62);}'
+                '.rule{background:rgba(0,0,0,0.16);}</style>')
+    chu = (f'{eyebrow(sl["eyebrow"])}'
+           f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
+           f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
+    if sl.get("caption"):
+        chu += (f'<div class="fig-cap"><span class="fig-bar"></span>'
+                f'<span>{esc(sl["caption"])}</span></div>')
+    if sl.get("standfirst"):
+        chu += (f'<p class="standfirst" style="font-size:35px;max-width:900px;'
+                f'margin-top:24px;">{esc(sl["standfirst"])}</p>')
+    for c in sl.get("cards", []):
+        chu += (f'<div class="card" style="margin-top:20px;background:none;'
+                f'border:none;border-left:4px solid {th["a"]};padding:4px 0 4px 26px;">'
+                f'<span class="card-num">{esc(c["num"])}</span>'
+                f'<span class="card-txt" style="font-size:31px;">{esc(c["text"])}</span></div>')
+    # Man toi phai bat dau TREN dong chu dau, ma chieu cao khoi chu chi biet sau
+    # khi trinh duyet do xong — nen dung mot doan script ngan tu dat lai. Tinh
+    # san bang Python thi phai doan so dong tieu de, doan sai la lo mep.
+    r, g, b = (int(th["bg"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
+    # Dre de man toi dung o 80% vi duoi no la ANH CHUP — con thay anh moi dung.
+    # Duoi mot mau PHANG (chart nen trang) thi khong con gi de giu: dung o 80%
+    # tren nen trang ra mot vung xam nhat, lech han tone toi cua ca album. Nen
+    # day man toi len vua du de vung chu cham gan mau nen cua theme.
+    max_toi = FIG_MAX_TOI
+    if kieu == "phang":
+        chenh = _sang([int(mau_nen[k:k + 2], 16) for k in (1, 3, 5)]) - _sang((r, g, b))
+        max_toi = min(0.95, max(FIG_MAX_TOI, 1 - 20.0 / max(1.0, chenh)))
+    js = (f'<script>window.__datMan=function(){{'
+          f'var H={H},MAX={max_toi:.3f};'
+          # set_content giu nguyen window nen ham nay con song sang slide sau;
+          # slide khong phai figure thi khong co phan tu nao — thoat ngay.
+          f'var v=document.getElementById("figman");if(!v)return;'
+          f'var t=document.getElementById("figtxt");'
+          f'var top=t?t.getBoundingClientRect().top:H*0.58;'
+          f'var tren=Math.max(0,top-{FIG_VEIL_LEAD});'
+          f'var day=Math.min(H,top+{FIG_VEIL_QUA}),span=H-tren,st=[],sm=[];'
+          # Duong cong chu S (smoothstep): bang phang o CA HAI dau. Bat dau bang
+          # phang nen khong co buoc nhay o cho no chom len, ket thuc bang phang
+          # nen khong co mep o cho no cham toi da — nho vay moi rut ngan duoc dai
+          # chuyen tiep xuong ~130px ma mat van khong bat duoc dau la mep.
+          f'for(var i=0;i<=16;i++){{'
+          f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'
+          f'pc=((y-tren)/span*100).toFixed(2);'
+          f'st.push("rgba({r},{g},{b},"+(MAX*ss).toFixed(3)+") "+pc+"%");'
+          # Lop mo di CHUNG mot nhip voi man toi (Dre: "ca lop mo lan lop toi
+          # dung cung mot mat na"), nhung binh phuong them: lam mo la thu mat
+          # nhan ra som nhat, de no len sau mot chut thi vung tren sach hon.
+          f'sm.push("rgba(0,0,0,"+(0.96*ss*ss).toFixed(3)+") "+(y/H*100).toFixed(2)+"%");}}'
+          f'st.push("rgba({r},{g},{b},{max_toi:.3f}) 100%");'
+          f'sm.unshift("rgba(0,0,0,0) 0%");sm.push("rgba(0,0,0,0.96) 100%");'
+          # Khoi chu dai thi man toi bat cao, an len than anh. Thay vi cat bot
+          # anh (mat noi dung), KEO ANH LEN cho day no vua cham mep man toi —
+          # chi keo trong phan le con trong o tren, khong bao gio cham masthead.
+          f'var ds=document.querySelectorAll(".fig-doi");'
+          f'if(ds.length){{var iy=parseFloat(ds[0].style.top),'
+          f'ih=parseFloat(ds[0].style.height),'
+          f'doi=Math.min(Math.max(0,iy+ih-tren),Math.max(0,iy-{FIG_DINH}));'
+          f'if(doi>0){{for(var k=0;k<ds.length;k++)ds[k].style.top=(iy-doi)+"px";}}}}'
+          f'var m=document.getElementById("figmo");'
+          f'var g="linear-gradient(to bottom,"+sm.join(",")+")";'
+          f'if(m){{m.style.webkitMaskImage=g;m.style.maskImage=g;}}'
+          f'v.style.top=tren+"px";'
+          f'v.style.background="linear-gradient(to bottom,"+st.join(",")+")";'
+          f'}};window.__datMan();</script>')
+    return (nen
+            + '<div style="flex-grow:1;"></div>'
+            + f'<div class="mid" id="figtxt">{chu}</div>'
+            + js)
+
+
 def s_cta(sl, th):
     checks = ""
     for c in sl.get("checks", []):
@@ -553,7 +814,7 @@ def s_cta(sl, th):
 
 BUILDERS = {
     "cover": s_cover, "statement": s_statement, "steps": s_steps,
-    "loop": s_loop, "cta": s_cta,
+    "loop": s_loop, "figure": s_figure, "cta": s_cta,
 }
 
 
@@ -590,6 +851,27 @@ def gate_slides(slides, bo_qua_dau):
                 mat = card.tim_mat_dau(t)
                 if mat:
                     loi.append(f"slide {i} [{nhan}]: tieng Viet mat dau ({', '.join(mat)})")
+    # slide figure: anh phai co that va phai du to. Anh 600px keo len 1080px
+    # (roi chup o scale 2 nua) thi chu tren bieu do nhoe thanh vet — dang len
+    # la ca bo hong, ma luc dung khong ai nhin ra tren man to.
+    for i, sl in enumerate(slides, 1):
+        if sl.get("kind") != "figure":
+            continue
+        if not sl.get("image"):
+            loi.append(f"slide {i}: kind 'figure' phai co 'image' (duong dan tep anh)")
+            continue
+        try:
+            _, rong, cao = _do_anh(sl["image"])
+        except (FileNotFoundError, ValueError) as e:
+            loi.append(f"slide {i}: {e}")
+            continue
+        if rong < FIG_RONG_TOI_THIEU:
+            loi.append(f"slide {i}: anh rong {rong}px, keo len {W}px la be nat. "
+                       f"Chup lai bang chup_chart.py (DPR 2) hoac xin ban goc.")
+        if not sl.get("caption"):
+            loi.append(f"slide {i}: figure phai co 'caption' — hinh muon cua "
+                       f"nguoi ta thi phai ghi 'via <ai>'.")
+
     # quy ước dẫn nguồn: dùng 'via', không viết 'nguồn'
     for i, sl in enumerate(slides, 1):
         for nhan, t in _texts(sl):
@@ -602,7 +884,7 @@ def gate_slides(slides, bo_qua_dau):
 def _texts(sl):
     """(nhan, chuoi) mọi trường chữ cần soi dấu."""
     out = []
-    for k in ("eyebrow", "title", "standfirst", "callout"):
+    for k in ("eyebrow", "title", "standfirst", "callout", "caption"):
         if sl.get(k):
             out.append((k, sl[k]))
     for c in sl.get("cards", []):
@@ -724,6 +1006,9 @@ def render(spec, out, brand, bo_qua_dau, scale):
             doc = slide_doc(sl, i, total, brand, section, folio_left, font_css, th)
             page.set_content(doc, wait_until="load")
             page.evaluate("document.fonts.ready")
+            # Font doi chieu cao dong -> doi luon cho dong chu dau. Dat lai man
+            # toi SAU khi font xong, khong thi mep man lech khoi khoi chu.
+            page.evaluate("window.__datMan && window.__datMan()")
             page.wait_for_timeout(120)
             path = out if i == 1 else Path(f"{stem}_{i}.png")
             page.screenshot(path=str(path),

@@ -552,8 +552,22 @@ def ghep_doc(paths, gap=0, nen=(0, 0, 0)):
     ims = [Image.open(q).convert("RGB") for q in paths]
     if len(ims) == 1:
         return ims[0]
-    for c in lech_tone(ims):
-        print(f"[CANH BAO] ghep anh: {c}", file=sys.stderr)
+    # DUNG han, khong chi canh bao (Ong Chu 04/09/2026). Truoc day day chi in
+    # [CANH BAO] va vai cu cho qua — carousel da siet thanh sys.exit tu 04/09
+    # (`_ghep_neu_can`), con card.py thi chua. Gio ghep doc la duong duoc EP
+    # dung khi anh qua ngang (`_chan_anh_thap`), nen cai bay cua chinh duong do
+    # phai duoc rao lai: ep vao mot duong ma de no hong lang la vo nghia.
+    canh = lech_tone(ims)
+    if canh:
+        raise SystemExit(
+            "GHEP ANH LECH TONE — " + "; ".join(canh) + "\n"
+            "  Hai anh ghep chung khung ma lech tone doc ra dung nhu HAI VUNG "
+            "rieng biet,\n"
+            "  tuc la thu ma ca kieu tran lan quote sinh ra de xoa. Doi mot "
+            "trong hai anh\n"
+            "  cho CUNG tone (cung nen sang/toi, cung gam mau) — tot nhat lay "
+            "hai anh\n"
+            "  trong cung mot bo anh cua bai.")
     w = max(im.width for im in ims)
     ims = [im.resize((w, round(im.height * w / im.width)), Image.LANCZOS) for im in ims]
     h = sum(im.height for im in ims) + gap * (len(ims) - 1)
@@ -590,6 +604,49 @@ def _dau_crop(path):
         return int(w), int(h), bool(int(kv.get("cat_ngang", "0")))
     except Exception:                                    # noqa: BLE001
         return None
+
+
+# Anh thap hon nguong nay so voi chieu cao the thi kieu quote ra nua the trong.
+# 16:9 = 0.45, 3:2 = 0.53, 4:3 = 0.60, 1:1 = 0.80. Dat 0.50 de chan 16:9 va rong
+# hon, con 3:2 tro len van qua — o do phan toi la CHO DAT CHU chu khong phai cho
+# trong.
+QUOTE_CAO_TOI_THIEU = 0.50
+
+
+def _chan_anh_thap(src, ratio):
+    """Anh QUA NGANG di mot minh vao kieu quote thi DUNG.
+
+    Ong Chu bat loi 04/09/2026 (tam "Nvidia thau tom Hugging Face"): anh 16:9 o
+    be ngang 1200 chi cao 675, tuc 45% kho 4:5. Nua tren la anh, 55% con lai la
+    ban cover lam mo — mot mang bun khong mang thong tin gi, chu thi troi o tan
+    day. Man toi lien mach chi xoa duoc cai MEP, khong xoa duoc chuyen nua the
+    bo trong.
+
+    Duong dung da co san trong skill: tim them MOT anh ngang nua cung tone va
+    dua vao --image2. Hai anh 16:9 xep doc o be ngang 1200 cao 1350 = 90% kho
+    4:5 — the day anh, khong con mang bun nao."""
+    if isinstance(src, (list, tuple)) and len([q for q in src if q]) >= 2:
+        return
+    H = RATIOS.get(ratio) or RATIOS["4:5"]
+    q = src[0] if isinstance(src, (list, tuple)) else src
+    with Image.open(q) as im:
+        nat_h = round(W * im.height / im.width)
+    if nat_h >= H * QUOTE_CAO_TOI_THIEU:
+        return
+    raise SystemExit(
+        f"ANH QUA NGANG CHO KIEU QUOTE — {q}\n"
+        f"  O be ngang {W}px anh chi cao {nat_h}px = {nat_h/H:.0%} kho the "
+        f"({W}x{H}).\n"
+        f"  Nghia la {1-nat_h/H:.0%} con lai cua the la ban cover lam mo — mot "
+        "mang bun\n"
+        "  khong mang thong tin gi. Man toi xoa duoc cai mep, khong xoa duoc "
+        "chuyen\n"
+        "  nua the bo trong.\n"
+        "  Duong dung: tim them MOT anh ngang nua CUNG TONE trong cung bai va "
+        "dua\n"
+        "  vao --image2 — script ghep DOC, hai anh 16:9 xep lai cao 90% kho the.\n"
+        "  Hoac tim anh dung/gan vuong hon (tu 3:2 tro len la du).\n"
+        "  (Khong co anh thu hai va van muon dung thi --bo-qua-anh)")
 
 
 def _chan_chart(src):
@@ -826,17 +883,39 @@ def _tran_anh(canvas, src_img, split, nat_h=None):
     return (0, 0, W, H)
 
 
-def _man_quote(canvas):
+def _man_quote(canvas, nat_h=None):
     """Man toi cho kieu quote: gradient tu day len, to bang mau nen brand (BG),
     KHONG den tuyen. Tan ve 0 tren dinh khoi chu (`QUOTE_FADE_TOP`) theo duong
     cong power nen khong lo duong mep — nhan vat o nua tren tho nguyen. Chua
-    max ~236 chu khong 255, de day anh con thoang thay chu khong thanh mang det."""
+    max ~236 chu khong 255, de day anh con thoang thay chu khong thanh mang det.
+
+    ANH THAP HON THE (Ong Chu bat loi 04/09/2026, tam "Nvidia thau tom Hugging
+    Face"): moc tan 38% la mot con so CO DINH, trong khi day lop anh SAC lai o
+    `nat_h`. Anh 16:9 vao kho 4:5 co nat_h = 675/1500 = 45% the, tuc la mep
+    sac/mo nam o 45% ma man toi cho do moi dat alpha 39/255 (15%) — mep hien ro
+    mon mot, va the doc ra HAI VUNG: nua tren anh net, nua duoi mot mang mo.
+    Dung thu ma ca kieu tran lan quote sinh ra de xoa.
+
+    `_tran_anh` da giai dung bai nay tu truoc (nhanh `day_kin`), `_man_quote`
+    thi chua duoc vá theo. Nay khop lai: anh thap thi keo diem uon len va bat
+    man dat DAC (255) dung tai day anh, nen khong con mep nao de lo. Doan
+    chuyen tiep co theo chinh chieu cao anh de khong an qua sau vao mot tam
+    von da ngan."""
     H = canvas.height
     top = int(H * QUOTE_FADE_TOP)
+    thap = nat_h is not None and nat_h < H
+    ket = min(int(nat_h), H) if thap else H
+    if thap:
+        dai = min(int(H * 0.18), int(nat_h * 0.30))
+        top = min(top, max(0, ket - dai))
     man = Image.new("L", (1, H), 0)
     for y in range(H):
         if y <= top:
             a = 0
+        elif thap:
+            # Dat DAC ngay tai day anh; duoi do giu nguyen — khong con mep.
+            t = (y - top) / max(1, ket - top)
+            a = int(255 * (min(1.0, t) ** 0.82))
         else:
             t = (y - top) / max(1, H - top)
             a = int(236 * (t ** 0.82))
@@ -926,7 +1005,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         top = (nat_h - H) // 2
         sac = sac.crop((0, top, W, top + H))
     canvas.paste(sac, (0, 0))
-    _man_quote(canvas)                                # man toi lien mach
+    _man_quote(canvas, nat_h)                         # man toi lien mach
 
     d = ImageDraw.Draw(canvas)
     # Khung o le FRAME_X; chu THUT VAO them (TEXT_X > FRAME_X) de hai canh chieu
@@ -1341,6 +1420,8 @@ def build(src, title, subtitle, via, out, category="AI",
     _chan_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu
     if kieu in ("quote", "tran") and not bo_qua_anh:
         _chan_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
+    if kieu == "quote" and not bo_qua_anh:
+        _chan_anh_thap(src, ratio)   # anh qua ngang: nua the se bo trong
     # Kieu quote co duong ve rieng (anh phu kin + cau trich dan + dong nguon),
     # khong di qua logic dai/tran ben duoi. Dat NGAY sau cong tieng Viet co dau.
     if kieu == "quote":
