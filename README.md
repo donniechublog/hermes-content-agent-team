@@ -75,6 +75,21 @@ ghi thêm một dòng cảnh báo.
   riêng biệt sau lượng hoá 5 bit). `card.py` và `carousel.py` dùng chung nó để
   **ép ảnh chart vào đúng đường** — `"chart": true` ở slide thân, ghép dọc ở
   bìa/hero — thay vì để vai đối xử với chart như ảnh thường rồi crop mất trục
+- **`dre_chuan_bi.py` + `dre_nop.py` — luồng Dre từ 04/09/2026, code tối đa, LLM
+  tối thiểu.** Đo trước khi đổi: mỗi task carousel tốn 51–60 tool call (curl tải
+  từng ảnh, ls/grep dò file, ghi rồi đọc lại spec, mở từng ảnh, crop lặp).
+  `dre_chuan_bi.py` (tất định, **chạy nền ngay lúc Ông Chủ chọn tin** từ
+  `approve_service.create_pair`): giải mã link Google News của Vera ra bài thật,
+  lấy tiêu đề tiếng Anh để tìm báo khác, `anh_bai` + mở browser thật (img lớn,
+  figure/table/canvas) → tải, bỏ trùng/logo/ảnh AI → đo bằng `luat_anh` (chart,
+  tỉ lệ, mặt, đáy sáng) → cắt sẵn 1:1/4:5 qua `crop_ti_le` → tính cặp ghép dọc
+  cùng tone → bóc tư liệu (`tu_lieu`) → in **brief** với mã ảnh A1… + khung
+  `spec.json` + `bang_anh.png`. Vai chỉ viết chữ + mã ảnh vào `spec.json`.
+  `dre_nop.py`: đổi mã → tệp (cắt `cat_ngang`, ghép `ghep`, chart tự
+  `"chart": true`), chặn sớm lỗi hay mắc, xoá slide cũ, chạy `carousel.py`, gửi
+  album kèm nút duyệt, ghi `drafts/<id>.ban_giao.md` (approve_service dán vào
+  task Miles khi bấm Duyệt), ghi `da_dung.json` để lần "Làm lại" bắt buộc đổi
+  bìa/hook. Mọi thứ ở `state/<brand>/dre/<id>/`. Task Dre giờ là 3 lệnh.
 - `chup_chart.py` — chụp **chart / bảng benchmark** đúng luật *full chiều rộng
   trước, chiều cao xét sau* (Ông Chủ chốt 04/09/2026). Mở trang ở khung 1920px,
   đo bề ngang **thật** của phần tử (`scrollWidth`), **nới khung** cho vừa rồi mới
@@ -124,6 +139,12 @@ ghi thêm một dòng cảnh báo.
   `CHAT_HINT` (chat thì trả lời ngắn, không tự chạy scan/task) trước mọi tin cho
   mọi vai; hết giờ thì giết cả process group (`start_new_session` + `killpg`)
 - `ghi_log.py` — log dùng chung (stdout + tệp theo brand) cho hai tệp trên
+- `nguon_bai.py` — research của Finn chạy lúc chọn tin. Từ 04/09/2026 tự **giải
+  mã link Google News** (`giai_ma_gnews`, thử tĩnh rồi chromium) — tin của Vera
+  luôn mang link chuyển hướng, trước đó `anh_bai`/`tu_lieu` đọc ra rỗng và Dre
+  phải web_search lại. `approve_service` dùng link thật cho mọi task sau và ghi
+  vào meta. Task body giờ nhận đường dẫn nguồn thật `state/<brand>/nguon_<id>.json`
+  (trước trỏ `state/` gốc nên vai nào cũng không thấy bộ nguồn của Finn).
 - `manifest_ghi.py` / `manifest_build.py` — ghi manifest đánh số vào
   `state/<brand>/` qua `env_load.state_dir()` — **cùng chỗ approve_service đọc**.
   Trước 03/09 ghi cứng `state/` gốc nên trả lời số trong topic Vera/Nova luôn ra

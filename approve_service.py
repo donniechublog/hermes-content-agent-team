@@ -350,8 +350,16 @@ def handle_img_approval(token, action, draft_id, cq):
             else:
                 call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                      text="Đang giao cho người viết…")
+                # Ban giao tu vai anh (dre_nop.py ghi: link that, nguon tung anh)
+                # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
+                # phai "nhan Miles".
+                _body = w["body"]
+                _bg = DRAFTS / (draft_id + ".ban_giao.md")
+                if _bg.exists():
+                    _body += ("\n\n== BAN GIAO TU VAI ANH (tu dong) ==\n"
+                              + _bg.read_text(encoding="utf-8"))
                 wid, err = kanban_create("Bai: " + w.get("title", draft_id),
-                                         w["vai_viet"], w["body"])
+                                         w["vai_viet"], _body)
                 if err:
                     note = "⚠️ Duyệt ok nhưng tạo task viết lỗi: " + str(err)
                 else:
@@ -945,6 +953,18 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
             capture_output=True, text=True, timeout=180, cwd=str(ROOT))
     except Exception as e:                                   # noqa: BLE001
         print(f"[research] khong tim duoc nguon: {type(e).__name__}: {e}")
+    # Link cua Vera la duong chuyen huong Google News; nguon_bai da giai ma ra
+    # bai that (link_gnews/link_goc). Dung link THAT cho moi vai sau va cho
+    # meta — truoc day Dre/Miles nhan link chuyen huong, doc ra rong, phai tu
+    # web_search lai (do 04/09/2026).
+    try:
+        _ng = json.loads(nguon_path.read_text(encoding="utf-8"))
+        _that = _ng.get("link_goc") or ""
+        if _ng.get("link_gnews") and _that and _that != item["link"]:
+            item["link_gnews"], item["link"] = item["link"], _that
+            write_meta(draft_id, item, out_png, brand)
+    except Exception:                                        # noqa: BLE001
+        pass
 
     # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
     # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
@@ -959,7 +979,7 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         image_url=item.get("image_url") or "khong co",
         out_png=out_png, out_png_goc=out_png[:-4],
         category=chuan_nhan(item.get("category")), draft_id=draft_id,
-        brand=brand, vai=vai_anh,
+        brand=brand, vai=vai_anh, nguon=str(nguon_path),
         goc=str(ROOT), hermes_py=str(HERMES_PY),
         co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
     tieu_de_task = ("Carousel deck: " if la_edu
@@ -967,6 +987,19 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body)
     if err:
         return None, "Loi tao task anh: " + err
+    if la_carousel:
+        # Phan CO HOC cua Dre (tim/tai/do/cat anh, boc tu lieu) chay NEN ngay
+        # bay gio, khong doi toi luc task duoc dispatch: toi luc Dre nhan viec
+        # thi brief da san, task chi con viet copy. Khong chan reply cho Ong Chu.
+        try:
+            _wd = STATE_DIR / "dre" / draft_id
+            _wd.mkdir(parents=True, exist_ok=True)
+            subprocess.Popen(
+                [str(ROOT / "venv/bin/python"), str(ROOT / "dre_chuan_bi.py"), draft_id, "--im"],
+                cwd=str(ROOT), stdout=open(_wd / "chuan_bi.log", "ab"),
+                stderr=subprocess.STDOUT, start_new_session=True)
+        except Exception as e:                               # noqa: BLE001
+            print(f"[dre] khong khoi chay chuan bi nen: {type(e).__name__}: {e}")
 
     # Cat lai body task anh de LAM LAI duoc: Ong Chu bam "Lam lai" tren anh chua
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
@@ -988,7 +1021,8 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         score_reason=item.get("score_reason", ""),
         summary=item.get("summary_vi", ""), out_png=out_png,
         out_json=out_json, category=chuan_nhan(item.get("category")),
-        draft_id=draft_id, goc=str(ROOT), hermes_py=str(HERMES_PY))
+        draft_id=draft_id, nguon=str(nguon_path),
+        goc=str(ROOT), hermes_py=str(HERMES_PY))
     vai_viet = MAC_DINH_VIET
     (DRAFTS / (draft_id + ".writer.json")).write_text(
         json.dumps({"vai_viet": vai_viet, "title": item["title"],
