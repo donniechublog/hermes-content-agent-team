@@ -16,6 +16,7 @@ Dung:
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -54,11 +55,39 @@ def _bat_buoc(vai_bb: str) -> list:
         L.append(f"## BẮT BUỘC đưa vào danh sách nộp ({len(bb)}) — script ghi manifest từ chối nếu thiếu; "
                  "chấm điểm trung thực nhưng KHÔNG được bỏ")
         for v in bb.values():
+            link = bat_buoc.link_goi_y(v)
             L.append(f"- [{v.get('loai', '')}] {v.get('ten', '')[:90]} | {v.get('ghi_chu', '')[:60]}"
-                     + (f" | {v['link'][:100]}" if v.get("link") else ""))
+                     + (f" | {link[:100]}" if link else ""))
     else:
         L.append("## BẮT BUỘC: không có mục nào đang chờ")
     return L
+
+
+def _bo_sung_bat_buoc(cs: list) -> int:
+    """Muc BAT BUOC mang tu hom truoc ma scan hom nay khong con (loc 72h, chong
+    trung) thi them vao cuoi candidates voi diem co hoc 0, de manifest_build
+    doi chieu duoc link. 05/09: 4/8 muc "khong tim thay trong candidates",
+    Finn mo 18 tool call roi block task."""
+    co = {bat_buoc.chuan_link(c.get("link", "")) for c in cs}
+    n = 0
+    for v in bat_buoc.doc("scout").values():
+        link = v.get("link", "")
+        if not link or bat_buoc.chuan_link(link) in co:
+            continue
+        m = re.search(r"(\d+)\s*diem", v.get("ghi_chu", ""))
+        try:
+            tuoi = (datetime.now(timezone.utc)
+                    - datetime.strptime(v.get("ngay", ""), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    ).total_seconds() / 3600
+        except ValueError:
+            tuoi = 0.0
+        cs.append({"source": "bat_buoc", "title": v.get("ten", ""), "link": link, "discussion": "",
+                   "points": int(m.group(1)) if m else 0, "comments": 0,
+                   "via": bat_buoc.chuan_link(link).split("/")[0], "nguoi_dang": "",
+                   "age_hours": tuoi, "score_recency": 0, "score_spread": 0, "score_partial": 0,
+                   "source_median_points": 0, "image_url": None, "bat_buoc": True})
+        n += 1
+    return n
 
 
 # ---- scout (Finn) -----------------------------------------------------------
@@ -71,9 +100,16 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
             sys.exit(f"[LOI] scan_sources.py hong: {(r.stderr or '')[-400:]}")
     d = json.loads(cand.read_text(encoding="utf-8"))
     cs = d.get("candidates", [])
+    bo_sung = _bo_sung_bat_buoc(cs)
+    if bo_sung:
+        d["candidates"] = cs
+        cand.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
     L = [f"# FINN — QUÉT XONG {datetime.now(VN).strftime('%d/%m %H:%M')} VN: {len(cs)} ứng viên "
          f"(đã lọc 72h, chống trùng, chấm sẵn 50/100 điểm cơ học)",
          "Mỗi dòng: #k | điểm cơ học (mới+lan) | nguồn điểm/bình luận | tuổi | tiêu đề | link"]
+    if bo_sung:
+        L.append(f"({bo_sung} mục BẮT BUỘC mang từ hôm trước không còn trong quét hôm nay đã được thêm "
+                 "vào cuối danh sách, nguồn bat_buoc, điểm cơ học 0: vẫn phải nộp, chấm trung thực)")
     for k, c in enumerate(cs, 1):
         L.append(f"#{k} | {c.get('score_partial', 0):2d} (mới {c.get('score_recency', 0)}, lan {c.get('score_spread', 0)})"
                  f" | {c.get('source', '')} {c.get('points', 0)}p/{c.get('comments', 0)}c | {c.get('age_hours', 0):.0f}h"
@@ -81,7 +117,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
         if c.get("summary") or c.get("description"):
             L.append(f"     {str(c.get('summary') or c.get('description'))[:200]}")
     L += [""] + _bat_buoc("scout")
-    L += ["", f"## Viết đánh giá vào: {wd}/picks.json — TỐI ĐA 8 tin điểm cao nhất (bắt buộc gồm đủ mục BẮT BUỘC)",
+    L += ["", f"## Viết đánh giá vào: {wd}/picks.json — đủ mọi mục BẮT BUỘC + TỐI ĐA 8 tin điểm cao nhất ngoài đó",
           json.dumps([{"link": "<URL y hệt trong danh sách>",
                        "category": "<ARXIV | MODEL | LAB | INFRA | TOOL | ENGINEERING | BUSINESS | RESEARCH | SECURITY>",
                        "score_technical": "<0-30: có số liệu đo/mã nguồn/paper thì cao>",

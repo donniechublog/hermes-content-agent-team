@@ -646,10 +646,12 @@ def ghi_bat_buoc(ra_mat_aa: list, leo_hang: list, moi_router: list) -> None:
                     f"ra mat {r['ra_mat']}, {r['hang_sx']}, coding={r['coding']}"
                     + (f" #{r['hang_coding']}" if r.get("hang_coding") else ""), ""))
     for l in leo_hang:
-        muc.append((f"{l['loai']}|{l['ten']}", l["ten"], l["loai"], l["ghi_chu"], ""))
+        muc.append((f"{l['loai']}|{l['ten']}", l["ten"], l["loai"], l["ghi_chu"],
+                    bat_buoc.link_goi_y({"loai": l["loai"], "ten": l["ten"]})))
     for m in moi_router:
         muc.append((f"router|{m['id']}", m["id"], "router",
-                    f"moi tren router, ra mat {m.get('ra_mat')}", ""))
+                    f"moi tren router, ra mat {m.get('ra_mat')}",
+                    bat_buoc.link_goi_y({"loai": "router", "ten": m["id"]})))
     bat_buoc.them_nhieu("nova", muc)
 
 

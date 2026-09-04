@@ -13,6 +13,7 @@ Dung:
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -106,7 +107,10 @@ def main() -> int:
     ok = gui(a.vai, bao_cao, a.thu)
     if not ok:
         return 1
-    n = sum(1 for d in bao_cao.read_text(encoding="utf-8").splitlines() if d.strip()[:2].rstrip(".").isdigit())
+    # Bao cao la HTML Telegram, dong tin bat dau bang "<b>1." — bo the truoc khi
+    # dem, khong thi in "nop 0 tin" va vai di doc ma nguon (Nova/Vera 05/09).
+    n = sum(1 for d in bao_cao.read_text(encoding="utf-8").splitlines()
+            if re.sub(r"<[^>]+>", "", d).strip()[:2].rstrip(".").isdigit())
     print(f"[xong] manifest + bao cao ({n} muc) da gui topic {qb.TOPIC[a.vai]}" + (" (thu)" if a.thu else ""))
     print(f"Ket qua task (dung dong nay de ket thuc task): {TEN[a.vai]} nộp {n} tin đánh số, đã gửi báo cáo, "
           "Ông Chủ trả lời số để chọn.")
