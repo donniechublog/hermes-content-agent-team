@@ -633,37 +633,24 @@ def ghi_moc(ids: set, xep_hang: dict, da_bao: dict | None = None):
     os.replace(tmp, STATE)
 
 
-BAT_BUOC = STATE.parent / "nova_bat_buoc.json"
-
-
-def doc_bat_buoc() -> dict:
-    try:
-        return json.loads(BAT_BUOC.read_text(encoding="utf-8")) if BAT_BUOC.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        return {}
+import bat_buoc                                              # noqa: E402
 
 
 def ghi_bat_buoc(ra_mat_aa: list, leo_hang: list, moi_router: list) -> None:
-    """Tich luy moi su kien tat dinh vao mot danh sach BAT BUOC. Muc chi bien
-    mat khi manifest_ghi --vai nova xac nhan da co trong bao cao (xem
-    manifest_ghi.xoa_bat_buoc). Luat Ong Chu 04/09/2026: xuat hien tren bang
-    la phai dua; hom truoc sot thi hom sau bo sung, khong duoc bo."""
-    bb = doc_bat_buoc()
-    hom_nay = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    """Tich luy moi su kien tat dinh vao danh sach BAT BUOC cua Nova (xem
+    bat_buoc.py). Luat Ong Chu 04/09/2026: xuat hien tren bang la phai dua;
+    hom truoc sot thi hom sau bo sung, khong duoc bo."""
+    muc = []
     for r in ra_mat_aa:
-        bb.setdefault(f"ra_mat|{r['ten_goc']}", {
-            "ten": r["ten_goc"], "loai": "ra_mat", "ngay": hom_nay,
-            "ghi_chu": f"ra mat {r['ra_mat']}, {r['hang_sx']}, coding={r['coding']}"
-                       + (f" #{r['hang_coding']}" if r.get("hang_coding") else "")})
+        muc.append((f"ra_mat|{r['ten_goc']}", r["ten_goc"], "ra_mat",
+                    f"ra mat {r['ra_mat']}, {r['hang_sx']}, coding={r['coding']}"
+                    + (f" #{r['hang_coding']}" if r.get("hang_coding") else ""), ""))
     for l in leo_hang:
-        bb.setdefault(f"{l['loai']}|{l['ten']}", {
-            "ten": l["ten"], "loai": l["loai"], "ngay": hom_nay, "ghi_chu": l["ghi_chu"]})
+        muc.append((f"{l['loai']}|{l['ten']}", l["ten"], l["loai"], l["ghi_chu"], ""))
     for m in moi_router:
-        bb.setdefault(f"router|{m['id']}", {
-            "ten": m["id"], "loai": "router", "ngay": hom_nay,
-            "ghi_chu": f"moi tren router, ra mat {m.get('ra_mat')}"})
-    BAT_BUOC.parent.mkdir(parents=True, exist_ok=True)
-    BAT_BUOC.write_text(json.dumps(bb, ensure_ascii=False, indent=2), encoding="utf-8")
+        muc.append((f"router|{m['id']}", m["id"], "router",
+                    f"moi tren router, ra mat {m.get('ra_mat')}", ""))
+    bat_buoc.them_nhieu("nova", muc)
 
 
 def so_hang(arena: dict, cu: dict) -> list:
@@ -794,12 +781,7 @@ def main():
     da_bao.update({r["ten_goc"]: r["ra_mat"] for r in ra_mat_aa})
     ghi_moc(tat_ca | cu, hang_moi, da_bao)
     ghi_bat_buoc(ra_mat_aa, leo_hang, moi)
-    bb = doc_bat_buoc()
-    if bb:
-        print(f"\n=== BAT BUOC DUA VAO BAO CAO ({len(bb)}) — Nova KHONG duoc bo, "
-              "manifest_ghi se tu choi neu thieu ===")
-        for k, v in bb.items():
-            print(f"  {v['ngay']}  [{v['loai']:<12s}] {v['ten'][:40]:<41s} {v['ghi_chu']}")
+    bat_buoc.in_danh_sach("nova")
 
 
 NHAN_BANG = {"text": "van ban", "webdev": "webdev", "vision": "vision", "search": "search",

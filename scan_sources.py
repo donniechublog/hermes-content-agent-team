@@ -26,6 +26,7 @@ from pathlib import Path
 import httpx
 
 import env_load
+import bat_buoc
 
 ROOT = Path.home() / "content-team"
 STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
@@ -95,6 +96,19 @@ def _is_ai_ish(text: str) -> bool:
 
 def _age_hours(ts_epoch: float) -> float:
     return (time.time() - ts_epoch) / 3600.0
+
+
+HANG_FRONTIER = re.compile(
+    r"\b(OpenAI|GPT-?\d|Anthropic|Claude|Google|Gemini|DeepMind|Meta|Llama|Muse Spark|"
+    r"xAI|Grok|DeepSeek|Qwen|Alibaba|Kimi|Moonshot|GLM|Zhipu|MiniMax|Mistral|Nvidia|Apple)\b",
+    re.I)
+
+
+# Bai HN "nong" chi bat buoc khi tieu de co dau hieu AI — HN co ca may bay dien.
+TU_KHOA_AI = re.compile(
+    r"\b(AI|LLMs?|GPT|agents?|agentic|model|neural|transformer|diffusion|RAG|"
+    r"inference|fine-?tun\w*|benchmark|copilot|chatbot|machine learning|deep learning|"
+    r"reasoning|multimodal|token|embedding|MoE|open[- ]weights?|vibe[- ]cod\w*)\b", re.I)
 
 
 def score_recency(age_h: float) -> int:
@@ -379,6 +393,23 @@ def main():
 
     fresh.sort(key=lambda x: x["score_partial"], reverse=True)
     fresh = fresh[: a.top]
+
+    # BAT BUOC (luat Ong Chu 04/09/2026): tieu de nhac hang frontier, hoac bai
+    # HN/Reddit tu 150 diem tro len, la PHAI co trong manifest — Finn cham diem
+    # nhung khong duoc bo. Tich luy sang hom sau neu sot (xem bat_buoc.py).
+    muc = []
+    for it in fresh:
+        hang = HANG_FRONTIER.search(it["title"] or "")
+        nong = (it["source"] != "arxiv" and (it.get("points") or 0) >= 150
+                and TU_KHOA_AI.search(it["title"] or ""))
+        if hang or nong:
+            loai = "frontier" if hang else "nong"
+            muc.append((f"link|{bat_buoc.chuan_link(it['link'])}", it["title"], loai,
+                        (f"nhac {hang.group(0)}; " if hang else "")
+                        + f"{it['source']} {it.get('points', 0)} diem", it["link"]))
+    so_moi = bat_buoc.them_nhieu("scout", muc)
+    print(f"  bat buoc: {len(muc)} muc dat tieu chi, {so_moi} muc moi; tong dang cho "
+          f"{len(bat_buoc.doc('scout'))} (xem bat_buoc_scout.json)", file=sys.stderr)
 
     if not a.khong_lay_anh:
         t0 = time.time()

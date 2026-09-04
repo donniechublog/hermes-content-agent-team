@@ -22,6 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                             # noqa: E402
+import bat_buoc                                             # noqa: E402
 
 ROOT = Path.home() / "content-team"
 STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
@@ -101,6 +102,9 @@ def main():
         if not items:
             sys.exit("Khong co muc nao hop le — khong ghi manifest.")
 
+    thieu = bat_buoc.kiem("scout", items)
+    if thieu:
+        sys.exit(bat_buoc.loi_thieu("scout", thieu))
     items.sort(key=lambda x: x["score"], reverse=True)
     for i, it in enumerate(items, 1):
         it["index"] = i
@@ -113,6 +117,8 @@ def main():
         {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": "scout",
          "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"da ghi {len(items)} muc -> {out}")
+    print(f"da xac nhan {bat_buoc.xoa('scout', items)} muc bat buoc, "
+          f"con lai {len(bat_buoc.doc('scout'))}")
 
     # Bao cao do SCRIPT viet, khong de Finn go lai so. Dung chung ham voi Nova
     # va Vera nen ba vai hien cung mot dinh dang.

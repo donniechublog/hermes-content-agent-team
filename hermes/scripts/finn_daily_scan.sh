@@ -13,6 +13,8 @@ BODY="Nhiem vu quet tin sang (chay theo lich cron). Lam dung 5 buoc trong SOUL c
 
 Duong dan ghi manifest: ${MANIFEST}
 
+Muc BAT BUOC DUA VAO BAO CAO (script quet in ra, tep bat_buoc_scout.json): MOI muc phai co trong picks. manifest_build.py se tu choi neu thieu — them vao roi chay lai, khong duoc bo.
+
 Ghi manifest KEM ban bao cao, dung mot lenh:
 
   cd /home/donniechu/content-team && venv/bin/python manifest_build.py \\

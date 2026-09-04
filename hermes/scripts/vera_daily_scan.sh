@@ -29,6 +29,7 @@ Chi bo qua neu that su chi la tin lat vat (co phieu nhich, kien tung nho). Con l
 uu tien chon.
 
 Buoc 2b, GHI MANIFEST + BAO CAO. Bat buoc khi CO tin dang len kenh.
+Muc BAT BUOC (tin watchlist, tep bat_buoc_market.json): MOI muc phai co trong danh sach nop. manifest_ghi.py se tu choi neu thieu — them vao roi chay lai, khong duoc bo.
 
   cat > /tmp/market_ds.json <<HET
   [{\"title\": \"...\", \"link\": \"...\", \"summary_vi\": \"...\",

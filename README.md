@@ -117,6 +117,13 @@ ghi thêm một dòng cảnh báo.
   `aa_da_bao` trong `models_seen.json`) và bảng coding AA được so hạng với lần trước
   (`xep_hang.coding`). Trước đó "mới" chỉ là id mới trên router, một lần duy nhất:
   GPT-6 Astra (03/09, #8 coding) không lên router nên Nova báo "0 model mới"
+- `bat_buoc.py` — **danh sách BẮT BUỘC** cho ba vai đi tìm tin (luật Ông Chủ 04/09/2026:
+  script quét thấy là phải đưa, hôm trước sót thì hôm sau bổ sung, vai không có quyền bỏ).
+  Script quét gieo mục (`state/<brand>/bat_buoc_<vai>.json`), script ghi manifest
+  (`manifest_build.py` cho Finn, `manifest_ghi.py` cho Nova/Vera) **từ chối** nếu thiếu và
+  xoá mục đã đưa. Tiêu chí: Finn = tiêu đề nhắc hãng frontier hoặc HN/Reddit ≥150 điểm có
+  dấu hiệu AI; Nova = mọi model ra mắt / vào bảng / leo hạng ở 12 bảng; Vera = một mục mỗi
+  hãng lõi mỗi ngày (hoặc tin ≥2 báo), khớp theo tên hãng
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định

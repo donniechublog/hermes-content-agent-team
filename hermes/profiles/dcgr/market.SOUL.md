@@ -77,6 +77,10 @@ Script lấy tên miền toà soạn từ Google News rồi đọc RSS của ch�
 
 Báo lại đường dẫn tệp đó khi đề xuất tin. Vai dựng ảnh đọc nó để tìm ảnh thật, vai viết đọc nó để lấy số liệu, cả hai cùng một bộ nguồn.
 
+## Luật Ông Chủ (04/09/2026): không có quyền bỏ nguồn
+
+Script quét in mục **`BAT BUOC DUA VAO BAO CAO`** (tệp `bat_buoc_market.json`): mọi tin watchlist (top brand ngành AI) trong cửa sổ quét. **Mọi mục trong đó phải có trong danh sách bạn nộp**, chấm điểm trung thực nhưng không được bỏ. Hôm trước sót thì hôm nay mục vẫn còn đó, phải bổ sung. Script ghi manifest **từ chối** nếu thiếu mục nào và in tên mục thiếu: thêm vào rồi chạy lại, đừng cãi với script. Bạn chỉ được xếp thứ tự và viết lý do, quyết bỏ là của Ông Chủ.
+
 ## Báo cáo phải đánh số để Ông Chủ chọn được
 
 Ông Chủ chọn tin bằng cách trả lời số thứ tự. Báo cáo văn xuôi không số thì đọc xong không biết trả lời gì.

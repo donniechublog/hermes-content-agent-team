@@ -34,6 +34,7 @@ from pathlib import Path
 import httpx
 
 import env_load
+import bat_buoc
 
 ROOT = Path.home() / "content-team"
 STATE = env_load.state_dir() / "business_seen.json"
@@ -144,6 +145,13 @@ HANG_CUA_TEN = {
     "aws": "amazon",
     "flux": "black forest", "yi ": "01.ai",
 }
+
+
+# Hang LOI: co tin la bat buoc, ke ca chi mot bao. Hang watchlist khac chi bat
+# buoc khi tu 2 bao tro len (Lenovo ra man hinh moi khong phai tin nganh AI).
+HANG_LOI = {"openai", "anthropic", "google", "deepmind", "meta", "nvidia", "microsoft",
+            "apple", "deepseek", "qwen", "alibaba", "xai", "amazon", "hugging face",
+            "mistral", "moonshot", "kimi", "bytedance", "xiaomi", "samsung"}
 
 
 def ten_watchlist(tieu_de: str) -> str | None:
@@ -421,6 +429,30 @@ def main():
         t2 = {k: v for k, v in t.items() if k != "hang_watch"}
         t2["cac_bao"] = t.get("cac_bao", [])[:3]
         xuat.append(t2)
+    # BAT BUOC (luat Ong Chu 04/09/2026): tin watchlist (top brand nganh AI)
+    # la PHAI co trong manifest cua Vera, tich luy sang hom sau neu sot.
+    # MOT muc moi HANG moi NGAY (khong phai moi bai bao): Nvidia mua Hugging
+    # Face co 3 bao thi Vera chon 1 bai la du. Chi hang LOI, hoac tin >= 2 bao.
+    # Khop bang ten hang trong tieu de/tom tat cua Vera (tu_khoa), khong theo link.
+    if not a.lan_dau:
+        nhom = {}
+        for t in chon:
+            hang = (t.get("hang_watch") or "").lower()
+            if not (t["watchlist"] and hang):
+                continue
+            if hang not in HANG_LOI and (t.get("so_bao") or 0) < 2:
+                continue
+            k = f"hang|{hang}|{t['ngay']}"
+            cu = nhom.get(k)
+            if not cu or (t.get("so_bao") or 0) > (cu.get("so_bao") or 0):
+                nhom[k] = t
+        muc = [(k, f"{t['hang_watch']}: {t['tieu_de']}", "watchlist",
+                f"{t['so_bao']} bao; {t['ngay']}", t.get("link", ""), [t["hang_watch"]])
+               for k, t in nhom.items()]
+        so_moi = bat_buoc.them_nhieu("market", muc)
+        print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
+              f"{len(bat_buoc.doc('market'))} (bat_buoc_market.json)", file=sys.stderr)
+
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
            "tong_quet": len(tin),
            "tin_watchlist": sum(1 for t in chon if t["watchlist"]),
