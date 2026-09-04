@@ -318,6 +318,16 @@ cooldown → `Fallback activated: v4-flash → deepseek-chat`, dính tới hết
 `venv/bin/python tat_title_generation.py` (có `--thu`, backup
 `.bak-truoc-tat-title-0905`); tiêu đề phiên vô dụng với task kanban/cron.
 
+**Từ 05/09/2026 model chính là combo `DS-v4Flash` của 9router** (`doi_model_combo.py`,
+có `--thu`, backup `.bak-truoc-doi-combo-0905`; analyst giữ `ds/deepseek-reasoner`).
+9router chỉ xoay giữa các connection *cùng* provider; ba route v4-flash (deepseek trực
+tiếp `ds/`, xKiro `dsx/deepseek/deepseek-v4-flash`, aellm `dsa/deepseek-v4-flash`) chỉ
+nối được với nhau qua Combo, gọi bằng đúng tên combo làm model (không có prefix
+`combo/`). Trước đó cả ba node đều đặt prefix `ds` nên hai node ngoài bị che, 7 ngày
+0 request. Đo route thật bằng `usageHistory.provider` của 9router; Hermes chỉ thấy
+model `DS-v4Flash`. Combo còn chứa mục chết (`ds/ds/…`, `tokenrouter/…` không có
+credential, `oc/…-free` unavailable) và chưa có `dsa/`: dọn trên dashboard.
+
 ## Provider
 
 Mọi vai trừ Ada chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek
