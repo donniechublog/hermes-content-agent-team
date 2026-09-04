@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""itachi_nop.py — NỘP của Itachi: vẽ chữ Việt tại chỗ (thay ve_chu_thay_the.py
-đã mất) hoặc dựng deck.py theo spec, cổng chặn tiếng Việt, gửi album trả lời
+"""itachi_nop.py — NỘP của Itachi: vẽ chữ Việt tại chỗ (retouch/blend chờ
+GPU, đợt tới) hoặc dựng deck.py theo spec, cổng chặn tiếng Việt, gửi album trả lời
 đúng tin nhắn.
 
 Vẽ tại chỗ: mỗi vùng OCR gốc (x,y,w,h, màu đo được) nhận bản dịch; chọn cỡ chữ

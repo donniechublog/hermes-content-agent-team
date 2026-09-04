@@ -1,6 +1,6 @@
 ---
 name: inplace-translate
-description: "Remake carousel/ảnh có chữ tiếng Anh sang tiếng Việt cho Gin và Itachi. Từ 04/09/2026 luồng là BA BƯỚC: gin_chuan_bi.py (OCR định vị + đo màu, đánh số vùng) → gin_nop.py (LaMa xoá, nen_sach.png + vung.json) và itachi_chuan_bi.py (chữ gốc từng vùng, nền sạch, khung spec) → spec.json → itachi_nop.py (vẽ tại chỗ đúng vị trí/màu/cỡ hoặc deck.py). Thay ve_chu_thay_the.py đã không còn trong repo. Skill này giữ phần vai cần: khi nào dịch tại chỗ, khi nào deck, cú pháp spec, bẫy màu."
+description: "Remake carousel/ảnh có chữ tiếng Anh sang tiếng Việt cho Gin và Itachi. Từ 04/09/2026 luồng là BA BƯỚC: gin_chuan_bi.py (OCR định vị + đo màu, đánh số vùng) → gin_nop.py (LaMa xoá, nen_sach.png + vung.json) và itachi_chuan_bi.py (chữ gốc từng vùng, nền sạch, khung spec) → spec.json → itachi_nop.py (vẽ tại chỗ đúng vị trí/màu/cỡ hoặc deck.py). Phần vẽ tại chỗ nằm trong itachi_nop.py; retouch/blend/nền AI chờ GPU (đợt tới). Skill này giữ phần vai cần: khi nào dịch tại chỗ, khi nào deck, cú pháp spec, bẫy màu."
 version: 2.0.0
 author: content-team
 license: internal
@@ -67,4 +67,5 @@ hoặc chữ có gradient có thể lệch. Dấu hiệu: hai dòng cùng khối
 
 Tiếng Việt mất dấu ở bất kỳ vùng nào → dừng, in rõ vùng. `--bo-qua-dau` chỉ khi
 bản dịch thật sự là tiếng Anh. Logo/hình khối thương hiệu gốc: giữ và báo Ông
-Chủ, không tự thay. Không vẽ minh hoạ, không nền AI (`tao_nen_ai.py` không còn).
+Chủ, không tự thay. Không vẽ minh hoạ, không nền AI (`tao_nen_ai.py` và
+retouch/blend chờ GPU, đợt tới mới bật).

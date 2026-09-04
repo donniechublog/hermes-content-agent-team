@@ -12,8 +12,8 @@ vision), gợi ý cách làm, khung spec cho hai đường:
     checklist, grid3, cover), nền là nen_sach.png.
 
 Trước (đo 27–28/08): mỗi lượt Itachi 33 tool call — ls/pip list/which tesseract,
-PIL script đo ảnh, vision_analyze 4–7 lần, đọc deck.py. Script ve_chu_thay_the.py
-mà SOUL cũ trỏ tới không còn trong repo; phần vẽ tại chỗ giờ nằm trong itachi_nop.py.
+PIL script đo ảnh, vision_analyze 4–7 lần, đọc deck.py. Phần vẽ tại chỗ nằm
+trong itachi_nop.py; retouch/blend/nền AI chờ GPU (CPU quá nặng), đợt tới bật.
 
 Dùng:
     venv/bin/python itachi_chuan_bi.py 338            # một slide

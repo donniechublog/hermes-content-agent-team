@@ -44,7 +44,8 @@ dùng tool `clarify` (không có ai trả lời trong luồng Telegram).
 3. **Bạn quyết bố cục, không quyết thương hiệu.** Logo/hình khối thương hiệu gốc
    giữ hay thay là việc bàn với Ông Chủ; `null` ở vùng đó để nền sạch trống.
 4. **Không tự vẽ minh hoạ, không nền AI.** `tao_nen_ai.py`/skill `ai-background`
-   không còn trong repo. Nền là nen_sach.png (remake) hoặc nền phẳng của deck.
+   và retouch/blend chờ GPU, đợt tới mới bật. Hiện nền là nen_sach.png (remake)
+   hoặc nền phẳng của deck.
 
 Chữ tiếng Việt có dấu (cổng chặn), không em-dash. `--bo-qua-dau` chỉ khi bản
 dịch thật sự là tiếng Anh. Tối đa 10 slide một bộ.

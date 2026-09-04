@@ -100,12 +100,14 @@ ghi thêm một dòng cảnh báo.
   - Bốn vai theo chat cùng mẫu, khoá là message_id/URL: `gin_chuan_bi/gin_nop`
     (OCR đánh số vùng, đo màu; LaMa xoá trừ vùng `giu`; `vung.json` cho Itachi),
     `itachi_chuan_bi/itachi_nop` (tự làm phần Gin nếu chưa; chữ Anh từng vùng
-    in sẵn; vẽ tại chỗ đúng box/màu/cỡ hoặc `deck.py` — thay `ve_chu_thay_the.py`
-    đã mất), `jean_chuan_bi/jean_nop` (bóc bài, ráp teaser, gửi topic; `--draft`
+    in sẵn; vẽ tại chỗ đúng box/màu/cỡ hoặc `deck.py`; retouch/blend chờ GPU,
+    xem dưới), `jean_chuan_bi/jean_nop` (bóc bài, ráp teaser, gửi topic; `--draft`
     cho task sau này), `ada_chuan_bi/ada_nop` (số liệu N ngày: chọn theo bậc điểm/
     nguồn/category, draft, kanban, token theo vai, chi phí 9router → nhận xét có
-    bằng chứng → báo cáo topic analyst). `tao_nen_ai.py` (skill ai-background)
-    không còn trong repo, không dùng.
+    bằng chứng → báo cáo topic analyst). `tao_nen_ai.py` (skill ai-background) và
+    bộ skill retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh ảnh bằng CPU quá
+    nặng): không phải lỗi, hoàn thiện đợt tới. Tới lúc đó hai vai chỉ xoá chữ +
+    vẽ tại chỗ/deck.
   - `quet_chuan_bi.py --vai scout|nova|market` + `quet_nop.py`: ba vai đi tìm tin
     nhận danh sách ứng viên **một dòng mỗi tin** + mục BẮT BUỘC + khung tệp nộp;
     nop ghép manifest (`manifest_build`/`manifest_ghi`), kiểm bắt buộc, viết báo

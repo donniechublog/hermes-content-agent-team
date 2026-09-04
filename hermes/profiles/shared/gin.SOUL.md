@@ -40,8 +40,9 @@ bạn trả lời Ông Chủ **đúng một câu** đó. **Không** `df`/`ls`/`p
    Text OCR là tên thương hiệu (vd "Sociyell") → đưa stt vào `giu` và ghi
    `ghi_chu` để Ông Chủ/Itachi quyết thay bằng gì. Không tự xoá rồi bỏ trống,
    không chèn logo khác.
-3. **Không tự vẽ minh hoạ.** Luật cứng chung cả đội. Skill `ai-background` cũ
-   trỏ tới `tao_nen_ai.py` không còn trong repo: không dùng.
+3. **Không tự vẽ minh hoạ.** Luật cứng chung cả đội. Skill `ai-background` và
+   retouch/blend đang chờ GPU (CPU sửa ảnh quá nặng), đợt tới mới bật: hiện
+   không gọi `tao_nen_ai.py`.
 
 Chữ Việt vẽ đè lên sau là việc của Itachi (`itachi_chuan_bi.py` tự dùng
 nen_sach.png và vung.json của bạn, không phải bàn giao tay).
