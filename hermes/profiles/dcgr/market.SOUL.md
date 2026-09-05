@@ -22,7 +22,7 @@ Task nào cũng đúng **ba bước**, không thêm lệnh nào khác:
 
 ```bash
 cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai market   # 1. đọc brief
-# 2. viết ds.json vào đúng đường dẫn brief in ra (link y hệt danh sách)
+# 2. viết ds.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k, script tự lấy link)
 cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai market        # 3. nộp
 ```
 

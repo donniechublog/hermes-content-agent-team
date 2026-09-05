@@ -51,6 +51,8 @@ def main():
     ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
                     help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
     ap.add_argument("--out", help="Thu: ghi manifest ra tep nay thay vi state/<brand>/")
+    ap.add_argument("--nguon", help="quet.json cua scan_business (Vera): de vai chon bang so thu tu `k`, "
+                                    "script tu lay link, tieu de, so bao")
     a = ap.parse_args()
 
     ds = json.loads(Path(a.infile).read_text(encoding="utf-8"))
@@ -58,10 +60,33 @@ def main():
         ds = ds.get("items") or ds.get("candidates") or []
     if not ds:
         sys.exit("Danh sach rong — khong ghi manifest.")
+    nguon = []
+    if a.nguon and Path(a.nguon).exists():
+        nguon = json.loads(Path(a.nguon).read_text(encoding="utf-8")).get("tin_moi", [])
+
+    def _so_bao(t):
+        return f"{t.get('so_bao', 1)} báo: {', '.join(t.get('cac_bao', [])[:3]) or t.get('toa_soan', '')}"
 
     items = []
     for i, it in enumerate(ds, 1):
-        link = (it.get("link") or "").strip()
+        # Chon bang SO THU TU `k` trong brief (tu 05/09/2026): script tu lay link va
+        # so bao tu quet.json, vai chi viet headline + summary. Van nhan `link`.
+        t = None
+        k = it.get("k") or it.get("stt") or it.get("#")
+        if k is not None and nguon:
+            try:
+                k = int(k)
+            except (TypeError, ValueError):
+                k = 0
+            t = nguon[k - 1] if 1 <= k <= len(nguon) else None
+            if not t:
+                print(f"[bo qua] muc {i}: k={it.get('k')} ngoai danh sach 1..{len(nguon)}", file=sys.stderr)
+                continue
+        link = ((it.get("link") or "").strip()) or (t["link"] if t else "")
+        if not it.get("title") and t:
+            it["title"] = t.get("tieu_de", "")
+        if not it.get("source_note") and t:
+            it["source_note"] = _so_bao(t)
         if not it.get("title") or not link:
             print(f"[bo qua] muc {i} thieu title hoac link", file=sys.stderr)
             continue
@@ -76,7 +101,6 @@ def main():
                   file=sys.stderr)
             continue
         items.append({
-            "index": i,
             "title": it["title"],
             "link": link,
             # via = NGUON TIN, suy tu ten mien. Khong phai kenh phat hien.
@@ -85,15 +109,36 @@ def main():
             "summary_vi": it.get("summary_vi") or "",
             "score": it.get("score"),
             "score_reason": it.get("score_reason") or "",
-            "category": it.get("category") or ("MÔ HÌNH" if a.vai == "nova" else "KINH DOANH"),
+            "category": it.get("category") or ("MODEL" if a.vai == "nova" else "BUSINESS"),
             "image_url": it.get("image_url"),
             "picked": False,
         })
 
     vai_bb = "market" if a.vai in ("market", "vera") else a.vai
-    thieu = bat_buoc.kiem(vai_bb, items)
-    if thieu:
-        sys.exit(bat_buoc.loi_thieu(vai_bb, thieu))
+    # Muc BAT BUOC vai bo sot: script TU THEM kem ghi chu ro tren bao cao, thay vi
+    # tu choi roi bat vai sua toi da 2 vong (05/09/2026). Luat Ong Chu van giu:
+    # quet thay la phai dua; bao cao ghi "vai bo sot" de Ong Chu biet ai sot.
+    for v in bat_buoc.kiem(vai_bb, items):
+        link = bat_buoc.link_goi_y(v)
+        if not link.lower().startswith(("http://", "https://")):
+            print(f"[canh bao] muc BAT BUOC khong co link, khong tu them duoc: "
+                  f"{str(v.get('ten', ''))[:60]}", file=sys.stderr)
+            continue
+        ten = str(v.get("ten", ""))
+        title = ten.split(": ", 1)[1] if vai_bb == "market" and ": " in ten else ten
+        t = next((x for x in nguon
+                  if bat_buoc.chuan_link(x.get("link", "")) == bat_buoc.chuan_link(link)), None)
+        items.append({
+            "title": title, "link": link, "via": nguon_goc(link) or "",
+            "source_note": _so_bao(t) if t else (v.get("ghi_chu") or ""),
+            "summary_vi": "", "score": None,
+            "score_reason": "BAT BUOC, vai bo sot — script tu them",
+            "category": "MODEL" if a.vai == "nova" else "BUSINESS",
+            "image_url": None, "picked": False, "tu_them": True,
+        })
+        print(f"[tu them] muc BAT BUOC vai bo sot: {title[:60]}", file=sys.stderr)
+    for i, it in enumerate(items, 1):
+        it["index"] = i
 
     ngay = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     ten = f"{TIEN_TO[a.vai]}_{ngay}{('_' + a.hau_to) if a.hau_to else ''}.json"

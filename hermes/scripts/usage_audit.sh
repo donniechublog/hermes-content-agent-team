@@ -1,8 +1,7 @@
 #!/bin/bash
-# Soi usage that tu 9router: bat fallback am tham va model tut cache.
-# Khong goi LLM, chi doc SQLite cuc bo, khong ton mot dong nao.
-cd /home/donniechu/content-team || exit 1
-# --gio 24: chay 1 lan/ngay thi phai nhin du 24h. Truoc day --gio 6 nghia la
-# request tu 06:00-24:00 khong bao gio duoc soi — diem mu dung cai script nay
-# sinh ra de bit.
-exec venv/bin/python usage_audit.py --gio 24 --canh-bao
+# usage-audit da GOP vao daily-log tu 05/09/2026: theo_doi_9router.py --gui (nhat ky
+# ngay) tu bao model la (khong o chuoi cau hinh nao), cache thap, fallback, loi,
+# phien rong, connection chet, IP ngoai. Job nay khong con viec.
+# Xoa job `usage-audit` trong ~/.hermes-<brand>/cron/jobs.json (hermes cron remove
+# usage-audit) roi bo tep nay khoi SCRIPT trong dong_bo_hermes.py.
+echo "usage-audit: da gop vao daily-log (theo_doi_9router.py --gui), khong lam gi. Xoa job nay tren server."

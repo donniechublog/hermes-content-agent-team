@@ -10,7 +10,7 @@ kanban.db/state.db, ls drafts, đọc manifest từng tệp. Giờ script gom:
   - Draft: pending / published / rejected + điểm Finn của bài đó.
   - Kanban: task theo vai, done/blocked/failed, thời gian chạy, lỗi cuối.
   - Token: tool call, input token, api call theo vai (profiles/*/state.db) +
-    chi phí thật 9router N ngày.
+    chi phí thật 9router N ngày (từ nhật ký ngày của theo_doi_9router).
   - 9router theo NGÀY (theo_doi_9router.py): req/$/cache%/lật model/lỗi/khoá
     API/IP máy gọi từng ngày, để so ngày này với ngày trước thay vì một số gộp.
 
@@ -151,14 +151,8 @@ def gom_token(ngay: int) -> dict:
         if n:
             ra[prof] = {"phien": n, "tool": tools, "input": inp, "api": api,
                         "top": [(t[:40], tc, it) for t, tc, it in top]}
-    chi_phi = {}
-    try:
-        import usage_audit
-        agg, _ = usage_audit.doc_usage(ngay * 24, None)
-        chi_phi = {m: {"req": v["req"], "prompt": v["prompt"], "usd": round(v["usd"], 4)} for m, v in agg.items()}
-    except Exception:                                        # noqa: BLE001
-        pass
-    return {"theo_vai": ra, "chi_phi_9router": chi_phi, "nhat_ky_9router": gom_9router(ngay)}
+    nk = gom_9router(ngay)
+    return {"theo_vai": ra, "chi_phi_9router": nk.pop("chi_phi", {}), "nhat_ky_9router": nk}
 
 
 def gom_9router(ngay: int) -> dict:
@@ -170,7 +164,7 @@ def gom_9router(ngay: int) -> dict:
         return {}
     hom_nay = datetime.now(VN).date()
     theo_ngay, lat, loi, ip, khoa = [], collections.Counter(), collections.Counter(), {}, collections.Counter()
-    vai, brand, rong, loi_kn = {}, {}, collections.Counter(), []
+    vai, brand, rong, loi_kn, chi_phi = {}, {}, collections.Counter(), [], {}
     for i in range(ngay, -1, -1):
         d = (hom_nay - timedelta(days=i)).strftime("%Y-%m-%d")
         m = tdr.tai(d, lam_moi=(i == 0))
@@ -184,6 +178,11 @@ def gom_9router(ngay: int) -> dict:
                           "watcher": m["ket_noi"]["co_watcher"], "model_chinh": model_chinh})
         lat.update(m["lat_model"])
         loi.update(m["loi"])
+        for nhan, v in m["theo_model"].items():          # $ theo model gop N ngay (thay usage_audit)
+            c = chi_phi.setdefault(nhan.split(" @ ")[0], {"req": 0, "prompt": 0, "usd": 0.0})
+            c["req"] += v["req"]
+            c["prompt"] += v["prompt"]
+            c["usd"] = round(c["usd"] + v["usd"], 4)
         for k, v in m["theo_khoa"].items():
             khoa[k] += v["usd"]
         for k, v in m["ket_noi"]["ip"].items():
@@ -209,7 +208,7 @@ def gom_9router(ngay: int) -> dict:
         t["usd_bai"] = round(t["usd"] / t["bai"], 4) if t["bai"] else None
     return {"theo_ngay": theo_ngay, "vai": dict(sorted(vai.items(), key=lambda kv: -kv[1]["usd"])), "brand": brand,
             "rong": dict(rong.most_common(5)), "loi_ket_noi": loi_kn[:8], "lat_model": dict(lat.most_common(6)), "loi": dict(loi.most_common(6)),
-            "khoa": {k: round(v, 4) for k, v in khoa.items()}, "ip": ip}
+            "khoa": {k: round(v, 4) for k, v in khoa.items()}, "ip": ip, "chi_phi": chi_phi}
 
 
 def viet_brief(m: dict, wd: Path) -> str:

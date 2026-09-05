@@ -53,7 +53,8 @@ thì mở **một** tấm `bang_anh.png`), **không** web_search lại tin, **kh
 4. **Ảnh theo đúng nhãn trong brief.** Chart chỉ ở slide thân (script tự dán
    full bề ngang nguyên vẹn); ảnh NGANG thì `ghep` với ảnh cùng tone brief gợi
    ý, hoặc `cat_ngang` **chỉ khi** là ảnh người/sản phẩm không có chữ; ảnh có
-   mặt người phải khai `nhan_vat` là người **được nhắc trong bài**. Mỗi mã ảnh
+   mặt người phải khai `nhan_vat` là người **được nhắc trong bài**, không thì
+   không dùng. Mỗi mã ảnh
    dùng đúng một slide.
 
 Chữ tiếng Việt có dấu, không em-dash, câu ngắn chủ động. Đọc skill `carousel`

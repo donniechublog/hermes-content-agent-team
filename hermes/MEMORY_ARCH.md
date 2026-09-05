@@ -1,11 +1,11 @@
 # Kiến trúc Memory — v0
 
-Bản ghi quyết định cho hệ memory của đội (dcgr.tech + donniechublog). Bản CHẠY THẬT ở `~/.hermes/`; thư mục `hermes/` trong repo là bản chép để có lịch sử (xem `dong_bo_hermes.py`).
+Bản ghi quyết định cho hệ memory của đội (dcgr.tech + donniechublog). Bản CHẠY THẬT ở `~/.hermes-<brand>/` (mỗi brand một home từ 09/2026); thư mục `hermes/` trong repo là bản chép để có lịch sử (xem `dong_bo_hermes.py`).
 
 ## Ba lớp
 
-1. **Built-in (per-profile, giữ NHỎ)** — `~/.hermes/profiles/<vai>/memories/MEMORY.md` + `USER.md`, và profile mặc định `~/.hermes/memories/`. Chỉ chứa thứ luôn-phải-biết. Giới hạn: MEMORY 2200 / USER 1375 ký tự.
-2. **Retrieval = holographic (BỘ NÃO CHUNG)** — 1 file SQLite `~/.hermes/memory_store.db`, dùng chung cho **mọi persona + cả 2 dự án**. 0đ, không daemon, không API key. Recall = FTS5 keyword + HRR compositional (cần numpy).
+1. **Built-in (per-profile, giữ NHỎ)** — `~/.hermes-<brand>/profiles/<vai>/memories/MEMORY.md` + `USER.md`, và profile mặc định `~/.hermes-<brand>/memories/`. Chỉ chứa thứ luôn-phải-biết. Giới hạn: MEMORY 2200 / USER 1375 ký tự.
+2. **Retrieval = holographic (BỘ NÃO CHUNG)** — 1 file SQLite `memory_store.db` (đường dẫn tuyệt đối, đặt trong `db_path`), dùng chung cho **mọi persona + cả 2 dự án**. 0đ, không daemon, không API key. Recall = FTS5 keyword + HRR compositional (cần numpy).
 3. **Obsidian** — hoãn (thêm sau khi recall thành nút thắt).
 
 Kiến trúc Hermes **ép đúng 1 external provider**. Vì sao chọn holographic thay vì Hindsight/mem0: workload v0 (10–20 bài/ngày) ưu tiên nhẹ/ổn định/ít kinh phí; holographic không có chi phí trích xuất LLM, không dịch vụ ngoài. Đổi sang Hindsight khi mass adoption.
@@ -29,13 +29,16 @@ Provider là **per-profile** (config global KHÔNG kế thừa sang profile). Sa
 
 ```bash
 cd ~/hermes-agent
-DB=/home/donniechu/.hermes/memory_store.db
-# profile mặc định
-venv/bin/python -m hermes_cli.main config set memory.provider holographic
-# từng persona
-for v in scout ethan designer heller dre gin itachi writer miles analyst teaser nova market; do
-  HERMES_HOME=~/.hermes/profiles/$v venv/bin/python -m hermes_cli.main config set memory.provider holographic
-  HERMES_HOME=~/.hermes/profiles/$v venv/bin/python -m hermes_cli.main config set plugins.hermes-memory-store.db_path "$DB"
+DB=/home/donniechu/.hermes-blog/memory_store.db      # MỘT DB chung cho cả hai home
+for H in ~/.hermes-blog ~/.hermes-dcgr; do
+  # profile mặc định của home
+  HERMES_HOME=$H venv/bin/python -m hermes_cli.main config set memory.provider holographic
+  HERMES_HOME=$H venv/bin/python -m hermes_cli.main config set plugins.hermes-memory-store.db_path "$DB"
+  # từng persona — lấy slug thật trong home, không liệt kê tay (slug cũ heller/dre/ethan/miles đã bỏ)
+  for v in $(ls $H/profiles); do
+    HERMES_HOME=$H/profiles/$v venv/bin/python -m hermes_cli.main config set memory.provider holographic
+    HERMES_HOME=$H/profiles/$v venv/bin/python -m hermes_cli.main config set plugins.hermes-memory-store.db_path "$DB"
+  done
 done
 ```
 

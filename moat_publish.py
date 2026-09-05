@@ -10,7 +10,7 @@ Hai chieu deu do BEN NAY chu dong:
   poll()            -- hoi moat xem cac task da dang chua (cron goi dinh ky)
 
 Moat khong goi nguoc ve day: host nay khong mo cong nao ra ngoai, va mot
-vong poll 10 phut du nhanh cho viec "bao xem da len Facebook chua".
+vong poll 5 phut du nhanh cho viec "bao xem da len Facebook chua".
 
 Khoa: MOT khoa cho MOI thuong hieu, trong secret.<brand>.env, gui qua header
 X-API-Key. MOAT_PUBLISH_KEY cho donniechublog, MOAT_PUBLISH_KEY_DCGR cho
@@ -314,7 +314,7 @@ def poll():
     """Hoi moat trang thai cac bai da day, tra ve list dong thong bao moi.
 
     Chi bao MOT lan cho moi task: trang thai da bao duoc ghi vao draft, nen
-    cron chay 10 phut mot lan khong bien thanh may spam.
+    cron chay 5 phut mot lan khong bien thanh may spam.
     """
     if not base_url():
         return []

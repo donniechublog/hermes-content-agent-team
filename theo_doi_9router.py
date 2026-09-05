@@ -46,6 +46,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+import env_load                                              # noqa: E402
 import publish                                               # noqa: E402
 
 VN = timezone(timedelta(hours=7))
@@ -68,6 +69,11 @@ RONG_OUT_MAX = 5
 RONG_PROMPT_MIN = 1000
 # Mọi HERMES_HOME đang chạy (per-brand) → $ theo vai gộp cả hai brand.
 HERMES_HOMES = sorted(Path.home().glob(".hermes-*"))
+# Model CỦA TA mà cache% dưới mức này trên hơn PROMPT_TOI_THIEU_CACHE token prompt
+# là đang lật model giữa hội thoại (cache là per-model). Chuyển từ usage_audit.py
+# khi gộp hai script (05/09/2026).
+NGUONG_CACHE = 40.0
+PROMPT_TOI_THIEU_CACHE = 20_000
 DRAFTS = ROOT / "drafts"
 # Link trong tin Telegram → nhat_ky_web.py (netbird IP để điện thoại mở được
 # không cần DNS). Đổi bằng biến môi trường NHAT_KY_URL.
@@ -115,6 +121,75 @@ def _ten_bang(con) -> tuple[dict, dict]:
     except sqlite3.Error:
         pass
     return khoa, ket_noi
+
+
+def _cac_ten(m: str) -> set:
+    """Các dạng tên 9router có thể ghi cho một model trong config Hermes: nguyên
+    tên (combo `DS-v4Flash`), bỏ tiền tố nhà cung cấp (`ds/deepseek-v4-flash` →
+    `deepseek-v4-flash`), giữ phần giữa với tên 3 phần (`xk/z-ai/glm-5.3` →
+    `z-ai/glm-5.3`). Tất cả chữ thường."""
+    phan = (m or "").split("/")
+    return {m.lower(), phan[-1].lower(), ("/".join(phan[1:]) or phan[-1]).lower()}
+
+
+def chuoi_da_cau_hinh() -> dict:
+    """{tên model (chữ thường): [brand/vai:vị trí]} từ config ĐANG CHẠY của mọi
+    HERMES_HOME, cộng model của công cụ gọi thẳng router (vision của engine ảnh).
+    Model xuất hiện trong usage mà không có ở đây = fallback âm thầm hoặc client
+    khác dùng chung 9router. Chuyển từ usage_audit.py (gộp 05/09/2026)."""
+    import yaml
+    ra = {}
+    homes = HERMES_HOMES or [env_load.hermes_home()]
+    for home in homes:
+        brand = home.name.replace(".hermes-", "")
+        targets = [("default", home / "config.yaml")]
+        targets += sorted((p.parent.name, p) for p in (home / "profiles").glob("*/config.yaml"))
+        for vai, p in targets:
+            if not p.exists():
+                continue
+            try:
+                cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            except Exception:                                # noqa: BLE001
+                continue
+            chain = [(cfg.get("model") or {}).get("default")]
+            chain += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
+            for i, m in enumerate(chain):
+                if not m:
+                    continue
+                nhan = f"{brand}/{vai}:{'chinh' if i == 0 else f'du phong {i}'}"
+                for ten in _cac_ten(m):
+                    ra.setdefault(ten, []).append(nhan)
+    for ten in _cac_ten(env_load.VISION_MODEL):
+        ra.setdefault(ten, []).append("engine anh:vision")
+    return ra
+
+
+def soi_model(theo_model: dict, combo: dict) -> tuple:
+    """(model lạ, cache kém) trong một ngày. `theo_model` là dict 'model @ kết nối'
+    đã gọn; `combo` = {tên combo: [thành viên]} để thành viên của combo trong
+    config cũng tính là của ta."""
+    cau_hinh = chuoi_da_cau_hinh()
+    for ten, tv in combo.items():
+        if ten in cau_hinh:
+            for x in tv:
+                cau_hinh.setdefault(x, cau_hinh[ten])
+    gop = {}
+    for nhan, v in theo_model.items():
+        m = nhan.split(" @ ")[0].lower()
+        a = gop.setdefault(m, {"req": 0, "prompt": 0, "cache": 0, "usd": 0.0})
+        for k in ("req", "prompt", "cache"):
+            a[k] += v[k]
+        a["usd"] += v["usd"]
+    la, kem = [], []
+    for m, a in sorted(gop.items(), key=lambda kv: -kv[1]["usd"]):
+        pct = round(a["cache"] / a["prompt"] * 100, 1) if a["prompt"] else 0.0
+        vai = cau_hinh.get(m) or cau_hinh.get(_chuan_model(m))
+        if not vai:
+            la.append({"model": m, "req": a["req"], "prompt": a["prompt"],
+                       "usd": round(a["usd"], 4), "cache_pct": pct})
+        elif pct < NGUONG_CACHE and a["prompt"] > PROMPT_TOI_THIEU_CACHE:
+            kem.append({"model": m, "prompt": a["prompt"], "cache_pct": pct, "vai": vai[:4]})
+    return la, kem
 
 
 def doc_ngay(ngay: str) -> dict:
@@ -177,10 +252,17 @@ def doc_ngay(ngay: str) -> dict:
     def gon(d):
         return {k: {**v, "usd": round(v["usd"], 4), "cache_pct": pct(v)} for k, v in d.items()}
 
+    tm = gon(theo_model)
+    try:
+        model_la, cache_kem = soi_model(tm, _don_gia(tm, tong)[2])
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[soi model] {type(e).__name__}: {e}", file=sys.stderr)
+        model_la, cache_kem = [], []
     return {
         "ngay": ngay, "cua_so_utc": [t0, t1],
         "tong": {**tong, "usd": round(tong["usd"], 4), "cache_pct": pct(tong)},
-        "theo_model": dict(sorted(gon(theo_model).items(), key=lambda kv: -kv[1]["usd"])),
+        "theo_model": dict(sorted(tm.items(), key=lambda kv: -kv[1]["usd"])),
+        "model_la": model_la, "cache_kem": cache_kem,
         "theo_khoa": gon(theo_khoa),
         "theo_gio": {str(k): v for k, v in sorted(gon(theo_gio).items())},
         "lat_model": dict(lat.most_common()), "lat_vi_du": lat_vi_du,
@@ -191,7 +273,7 @@ def doc_ngay(ngay: str) -> dict:
         "rong": dict(rong.most_common()), "rong_vi_du": rong_vi_du,
         "ket_noi": doc_ket_noi(ngay),
         "loi_ket_noi": loi_ket_noi(con, t0, t1),
-        "vai": gom_vai(ngay, gon(theo_model), tong),
+        "vai": gom_vai(ngay, tm, tong),
     }
 
 
@@ -438,6 +520,13 @@ def viet_md(m: dict) -> str:
     else:
         L.append("Không.")
     L += ["", "## Lỗi", ""] + ([f"- {k}: {v}" for k, v in m["loi"].items()] or ["Không."])
+    L += ["", "## Model lạ (không ở chuỗi cấu hình nào) / cache thấp", ""]
+    L += [f"- LẠ: {x['model']}: {x['req']} req, {x['prompt']:,} prompt, cache {x['cache_pct']}%, ${x['usd']}"
+          for x in m.get("model_la") or []]
+    L += [f"- CACHE THẤP: {x['model']}: {x['cache_pct']}% trên {x['prompt']:,} prompt ({', '.join(x['vai'])})"
+          for x in m.get("cache_kem") or []]
+    if not m.get("model_la") and not m.get("cache_kem"):
+        L.append("Không.")
     L += ["", "## 5 prompt nặng nhất", ""]
     L += [f"- {x['luc']} {x['model']}: {x['prompt']:,} prompt (cache {x['cache']:,}), ${x['usd']}" for x in m["top_prompt"]]
     L += ["", f"## Phiên rỗng (ok, ≤{RONG_OUT_MAX} out dù ≥{RONG_PROMPT_MIN:,} prompt)", ""]
@@ -483,6 +572,12 @@ def van_de(m: dict) -> list[str]:
         ra.append(f"Fallback thật v4-flash → deepseek-chat: {m['fallback']} lần (title_generation/cooldown?)")
     if m["loi"]:
         ra.append("Lỗi: " + "; ".join(f"{k} {v}" for k, v in m["loi"].items()))
+    if m.get("model_la"):
+        ra.append("Model KHÔNG ở chuỗi cấu hình nào (fallback âm thầm / client khác dùng chung 9router): "
+                  + "; ".join(f"{x['model']} {x['req']} req ${x['usd']}" for x in m["model_la"]))
+    if m.get("cache_kem"):
+        ra.append("Cache thấp, đang lật model? " + "; ".join(
+            f"{x['model']} {x['cache_pct']}% trên {x['prompt']:,} prompt" for x in m["cache_kem"]))
     if sum(m["rong"].values()) >= 3:
         ra.append("Phiên rỗng: " + "; ".join(f"{k} {v}" for k, v in m["rong"].items()))
     xau = [x for x in m["loi_ket_noi"] if x["trong_ngay"] and x["bat"]]
@@ -540,7 +635,8 @@ def main() -> int:
     ap.add_argument("--ngay", help="YYYY-MM-DD giờ VN (mặc định hôm qua)")
     ap.add_argument("--canh", action="store_true", help="chạy watcher kết nối (mãi)")
     ap.add_argument("--gui", action="store_true", help="gửi tóm tắt ngày + link vào topic analyst (luôn gửi)")
-    ap.add_argument("--canh-bao", action="store_true", help="chỉ gửi khi có IP lạ/fallback/lỗi/phiên rỗng/connection chết")
+    ap.add_argument("--canh-bao", action="store_true",
+                    help="chỉ gửi khi có IP lạ/fallback/lỗi/phiên rỗng/connection chết/model lạ/cache thấp")
     ap.add_argument("--im", action="store_true")
     a = ap.parse_args()
     if a.canh:

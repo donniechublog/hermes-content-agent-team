@@ -62,7 +62,10 @@ def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi
     """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi da_dung.json
     (`ghi` = cac truong rieng cua vai: bia/anh/hook/theme...). Tra ve message_id."""
     import gui_telegram
-    res = gui_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)
+    try:
+        res = gui_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)
+    except gui_telegram.GuiLoi as e:
+        sys.exit(f"[LOI] {e}")
     r = res.get("result")
     mid = (r[-1] if isinstance(r, list) else r or {}).get("message_id")
     cb._ghi_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),

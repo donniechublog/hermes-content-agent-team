@@ -48,7 +48,7 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
 
 Bài đã duyệt đi tiếp sang moat (org `dcgr.tech`) làm hàng đợi publish; extension
 trình duyệt claim và đăng lên mạng xã hội. Moat không gọi ngược về máy này —
-cron `moat-publish-watch` (1 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
+cron `moat-publish-watch` (5 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
 Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên Telegram channel, thẻ duyệt chỉ
 ghi thêm một dòng cảnh báo.
 
@@ -184,14 +184,17 @@ ghi thêm một dòng cảnh báo.
 - `bat_buoc.py` — **danh sách BẮT BUỘC** cho ba vai đi tìm tin (luật Ông Chủ 04/09/2026:
   script quét thấy là phải đưa, hôm trước sót thì hôm sau bổ sung, vai không có quyền bỏ).
   Script quét gieo mục (`state/<brand>/bat_buoc_<vai>.json`), script ghi manifest
-  (`manifest_build.py` cho Finn, `manifest_ghi.py` cho Nova/Vera) **từ chối** nếu thiếu và
-  xoá mục đã đưa. Tiêu chí: Finn = tiêu đề nhắc hãng frontier hoặc HN/Reddit ≥150 điểm có
+  (`manifest_build.py` cho Finn, `manifest_ghi.py` cho Nova/Vera) **tự thêm** mục thiếu vào
+  manifest kèm ghi chú "vai bỏ sót, script tự thêm" trên báo cáo (từ 05/09/2026, hết vòng
+  từ chối rồi bắt vai sửa) và xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**
+  trong brief, script tự lấy link và số báo — không chép URL nữa. Tiêu chí: Finn = tiêu đề nhắc hãng frontier hoặc HN/Reddit ≥150 điểm có
   dấu hiệu AI; Nova = mọi model ra mắt / vào bảng / leo hạng ở 12 bảng; Vera = một mục mỗi
   hãng lõi mỗi ngày (hoặc tin ≥2 báo), khớp theo tên hãng
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
-- `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `theo_doi_9router.py` — nhật ký 9router **theo ngày** (`state/9router/nhat_ky/9router_<ngày>.md|json`):
-  req/prompt/cache%/$ theo model @ kết nối, theo khoá API, theo giờ VN, fallback thật
+  req/prompt/cache%/$ theo model @ kết nối, theo khoá API, theo giờ VN, **model lạ**
+  (không ở chuỗi cấu hình nào của bất kỳ HERMES_HOME) và **cache thấp** (gộp từ
+  `usage_audit.py` 05/09/2026, tệp đó đã xoá), fallback thật
   v4-flash→deepseek-chat, lỗi, 5 prompt nặng nhất, phiên rỗng (ok nhưng ≤5 token out dù
   prompt ≥1k), snapshot connection lỗi (lastError/errorCode/backoff), **$ theo vai** (ghép
   `session_model_usage` mọi HERMES_HOME × đơn giá 9router trong ngày, phủ ~98%), $/task done,
@@ -277,11 +280,12 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 ## Cron (7 job, xem `~/.hermes/cron/jobs.json`)
 
 - `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
-- `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
+- `usage-audit` — đã gộp vào `daily-log` 05/09/2026; script chỉ còn in một dòng. Xoá job này trên server
 - `daily-log` (trước là `nhat-ky-daily`) — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router hôm qua
   (`theo_doi_9router.py --gui`: tóm tắt ngày + cảnh báo IP ngoài / fallback / lỗi / phiên rỗng / connection chết + link web → topic analyst)
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
-- `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
+- `moat-publish-watch` — 5 phút/lần (nhịp ghi trong script; `jobs.json` còn 1 phút thì đổi),
+  hỏi moat xem bài đã lên social chưa. Im lặng khi
   không có gì mới; hỏi theo `workflow_id` (khoá chính) chứ không phải `external_id`;
   bỏ theo dõi một bài sau 7 ngày và tự xoá file output cron cũ hơn 3 ngày
 
@@ -340,14 +344,14 @@ báo `thinkingCanDisable: false` — không tắt suy luận được.
 
 **1. Bắt buộc phải có giám sát model.** Hermes fallback im lặng hoàn toàn — đặt
 model chính thành model chết, agent vẫn trả lời bình thường, không một dòng báo.
-Cần cả hai lớp: `model_watch.py` (model còn sống không) và `usage_audit.py`
+Cần cả hai lớp: `model_watch.py` (model còn sống không) và `theo_doi_9router.py`
 (model nào **thật sự** được gọi).
 
 **2. Ghim mỗi hội thoại vào một model. Chuyển tầng thì chuyển ở ranh giới task.**
 `try_activate_fallback` đổi model ngay giữa lượt, `restore_primary_runtime` lật
 về model chính ở lượt sau — một hội thoại có thể chạy qua 2–3 model mà không ai
 biết. Cache là per-model, mỗi lần lật là mất sạch prefix đã cache và cả ngữ cảnh
-bị tính lại giá gốc. Cột `cache%` trong `usage_audit.py` chính là thước đo
+bị tính lại giá gốc. Cột `cache%` trong nhật ký ngày của `theo_doi_9router.py` chính là thước đo
 nguyên tắc này: tụt cache nghĩa là đang lật model.
 
 **Đã bắt được một nguyên nhân lật cụ thể (cron 05/09/2026, cả Finn/Nova/Vera):**
@@ -360,11 +364,12 @@ cooldown → `Fallback activated: v4-flash → deepseek-chat`, dính tới hết
 `profiles/<vai>/logs/agent.log`, **không** có trong `logs/gateway.log`. Đếm
 19/08–04/09: lỗi này 5–48 lần/ngày, fallback 4–33 lần/ngày. Chặn bằng
 `auxiliary.title_generation.enabled: false` trong `config.yaml` từng profile:
-`venv/bin/python tat_title_generation.py` (có `--thu`, backup
-`.bak-truoc-tat-title-0905`); tiêu đề phiên vô dụng với task kanban/cron.
+script `tat_title_generation.py` (đã chạy xong và xoá khỏi repo 05/09, xem git log; quay lại
+bằng tệp `.bak-truoc-tat-title-0905` trong từng profile); tiêu đề phiên vô dụng với task kanban/cron.
 
-**Từ 05/09/2026 model chính là combo `DS-v4Flash` của 9router** (`doi_model_combo.py`,
-có `--thu`, backup `.bak-truoc-doi-combo-0905`; analyst giữ `ds/deepseek-reasoner`).
+**Từ 05/09/2026 model chính là combo `DS-v4Flash` của 9router** (đổi bằng script
+`doi_model_combo.py`, đã chạy xong và xoá khỏi repo cùng `bo_fallback_chat.py`; quay lại bằng
+`.bak-truoc-doi-combo-0905` / `.bak-truoc-bo-fallback-chat-0905`; analyst giữ `ds/deepseek-reasoner`).
 9router chỉ xoay giữa các connection *cùng* provider; ba route v4-flash (deepseek trực
 tiếp `ds/`, xKiro `dsx/deepseek/deepseek-v4-flash`, aellm `dsa/deepseek-v4-flash`) chỉ
 nối được với nhau qua Combo, gọi bằng đúng tên combo làm model (không có prefix

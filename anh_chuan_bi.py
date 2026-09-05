@@ -32,6 +32,7 @@ Dung:
     venv/bin/python anh_chuan_bi.py <draft_id> --lam-moi  # bo cache, lam lai
 """
 import argparse
+import contextlib
 import io
 import json
 import os
@@ -539,7 +540,7 @@ def _luu_crop(img: Image.Image, out: Path, ti_le_ten: str, cx=0.5, cy=0.5,
     return ra
 
 
-VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"
+VISION_MODEL = env_load.VISION_MODEL
 VISION_URL = env_load.ROUTER_URL
 
 
@@ -936,6 +937,39 @@ def nap_meta(draft_id: str) -> dict:
     return meta
 
 
+# Tran so engine chay CUNG LUC tren ca may (chung hai brand): moi engine mo mot
+# Chromium 1600x1200 DPR2 + goi vision tung anh. Ong Chu chon 7 tin la 7 engine
+# khoi chay cung luc (audit 05/09/2026). Het cho thi doi, khong bo.
+SO_ENGINE_SONG_SONG = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") or 2))
+
+
+@contextlib.contextmanager
+def _cho_luot():
+    """Giu mot trong N khoa tep state/chuan_bi.<i>.lock (flock) trong luc chuan bi."""
+    import fcntl
+    thu_muc = ROOT / "state"
+    thu_muc.mkdir(parents=True, exist_ok=True)
+    da_bao = False
+    while True:
+        for i in range(SO_ENGINE_SONG_SONG):
+            fh = open(thu_muc / f"chuan_bi.{i}.lock", "w")
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                fh.close()
+                continue
+            try:
+                yield
+            finally:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+                fh.close()
+            return
+        if not da_bao:
+            print(f"[cho] da co {SO_ENGINE_SONG_SONG} engine dang chay, doi toi luot...", file=sys.stderr)
+            da_bao = True
+        time.sleep(5)
+
+
 def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
     """Bao dam xong.json co san (chay neu chua, doi neu tien trinh khac dang chay).
     Tra ve (manifest, workdir, meta)."""
@@ -958,7 +992,8 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
         return _doc_json(xong), wd, meta
     khoa.write_text(str(os.getpid()))
     try:
-        m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser)
+        with _cho_luot():
+            m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser)
         try:
             _route_thieu_anh(draft_id, m)
         except (Exception, SystemExit) as e:                 # noqa: BLE001

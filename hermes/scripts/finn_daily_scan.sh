@@ -16,8 +16,8 @@ Viec cua ban chi co MOT: cham hai thanh phan diem con lai (suc nang ky thuat 0-3
 BUOC 1 — doc ban chuan bi (danh sach ung vien mot dong/tin, muc BAT BUOC, khung tep nop):
 cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai scout
 
-BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Link phai Y HET
-danh sach (khong go lai tu tri nho). MOI muc BAT BUOC phai co mat. KHONG cat/grep
+BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chon tin bang SO THU
+TU #k trong danh sach (khong chep link). MOI muc BAT BUOC phai co mat. KHONG cat/grep
 tep JSON goc, KHONG web_search, KHONG chay scan_*/manifest_*/publish.py tay.
 
 BUOC 3 — nop:

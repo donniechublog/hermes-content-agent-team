@@ -66,11 +66,24 @@ def main():
 
     items, problems = [], []
     for p in picks:
-        key = _norm(p.get("link", ""))
-        c = by_link.get(key)
-        if not c:
-            problems.append(f"khong tim thay trong candidates: {p.get('link')}")
-            continue
+        # Chon bang SO THU TU `k` trong brief (tu 05/09/2026): vai khong phai chep URL
+        # "y het" nua — sai mot ky tu la "khong tim thay" (4/8 muc, 05/09). Van nhan
+        # `link` cho tuong thich.
+        k = p.get("k") or p.get("stt") or p.get("#")
+        if k is not None:
+            try:
+                k = int(k)
+            except (TypeError, ValueError):
+                k = 0
+            c = cands[k - 1] if 1 <= k <= len(cands) else None
+            if not c:
+                problems.append(f"k={p.get('k')} ngoai danh sach 1..{len(cands)}")
+                continue
+        else:
+            c = by_link.get(_norm(p.get("link", "")))
+            if not c:
+                problems.append(f"khong tim thay trong candidates: {p.get('link')}")
+                continue
 
         cat = (p.get("category") or "").strip()
         if cat and cat.upper() not in VALID_CATEGORIES:
@@ -92,7 +105,7 @@ def main():
             "via": c["via"],
             "image_url": p.get("image_url") or c.get("image_url"),
             # tu danh gia cua Finn
-            "category": cat or "CONG CU",
+            "category": cat or "TOOL",
             "score_technical": tech,
             "score_relevance": rel,
             "score": c["score_partial"] + tech + rel,
@@ -111,9 +124,28 @@ def main():
         if not items:
             sys.exit("Khong co muc nao hop le — khong ghi manifest.")
 
-    thieu = bat_buoc.kiem("scout", items)
-    if thieu:
-        sys.exit(bat_buoc.loi_thieu("scout", thieu))
+    # Muc BAT BUOC vai bo sot: script TU THEM (diem vai = 0, ghi chu ro tren bao cao)
+    # thay vi tu choi roi bat vai sua toi da 2 vong (05/09/2026: 4/8 muc, Finn mo
+    # 18 tool call roi block task). Luat Ong Chu van giu: quet thay la phai dua.
+    da_co = {_norm(it["link"]) for it in items}
+    for v in bat_buoc.kiem("scout", items):
+        c = by_link.get(_norm(v.get("link", "")))
+        if not c or _norm(c["link"]) in da_co:
+            print(f"  [canh bao] muc BAT BUOC khong co trong candidates, khong tu them duoc: "
+                  f"{str(v.get('ten', ''))[:60]}", file=sys.stderr)
+            continue
+        items.append({
+            "title": c["title"], "link": c["link"],
+            "source_note": f"{c['source']}, {c['points']} diem, {c['comments']} binh luan",
+            "via": c["via"], "image_url": c.get("image_url"),
+            "category": "TOOL", "score_technical": 0, "score_relevance": 0,
+            "score": c["score_partial"],
+            "score_reason": "BAT BUOC, vai bo sot — script tu them, chua cham",
+            "summary_vi": "", "score_recency": c["score_recency"],
+            "score_spread": c["score_spread"], "picked": False, "tu_them": True,
+        })
+        da_co.add(_norm(c["link"]))
+        print(f"  [tu them] muc BAT BUOC vai bo sot: {c['title'][:60]}", file=sys.stderr)
     items.sort(key=lambda x: x["score"], reverse=True)
     for i, it in enumerate(items, 1):
         it["index"] = i

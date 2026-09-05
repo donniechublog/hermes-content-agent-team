@@ -1,6 +1,7 @@
 # Cấu hình hermes (bản trong git)
 
-SOUL và script cron của đội **thật sự chạy** từ `~/.hermes/`, không phải từ đây.
+SOUL và script cron của đội **thật sự chạy** từ `~/.hermes-<brand>/` (mỗi brand một
+home: `~/.hermes-blog`, `~/.hermes-dcgr`), không phải từ đây.
 Thư mục này là bản chép để có lịch sử thay đổi.
 
 Vì sao cần: ngày 22/08 script dọn em-dash của tôi làm hỏng 21 tệp Python. Hai

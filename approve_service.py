@@ -84,6 +84,31 @@ def call(token, method, **kw):
     return res
 
 
+_KHOA_DRAFT = {}                       # draft_id -> Lock: hai nut cua CUNG mot bai chay lan luot
+_KHOA_KHOA_DRAFT = threading.Lock()
+
+
+def _khoa_cua(draft_id):
+    with _KHOA_KHOA_DRAFT:
+        return _KHOA_DRAFT.setdefault(draft_id or "", threading.Lock())
+
+
+def _xu_ly_nut(token, channel, cq):
+    """Nut bam chay o thread NEN (qua _chay_nen): tao task kanban + ghi bang den
+    toi ~2 phut, truoc day chay tren chinh thread poll nen moi nut/tin khac xep
+    hang theo (audit 05/09/2026). Khoa theo draft de hai lan bam cung mot bai
+    van chay lan luot — cac chot trang thai trong handle_callback giu nguyen
+    y nghia nhu khi con tuan tu."""
+    draft_id = cq.get("data", "").partition(":")[2]
+    with _khoa_cua(draft_id):
+        try:
+            handle_callback(token, channel, cq)
+        except Exception as e:                               # noqa: BLE001
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text=f"Lỗi: {type(e).__name__}: {str(e)[:150]}", show_alert=True)
+            raise                                            # _chay_nen ghi traceback + bao topic
+
+
 def _chay_nen(ten, fn, token, group, thread_id, *args):
     """Chay `fn` o thread nen, BOC de khong bao gio chet im.
 
@@ -371,20 +396,26 @@ def _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
         return False
     ho_so = cho.pop(k)
     LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
-    draft_id = ho_so["draft_id"]
-    t = text.strip().lower()
-    if t in ("hủy", "huy", "bỏ", "bo", "thôi", "thoi", "cancel"):
-        note = "↩️ Đã huỷ làm lại — giữ nguyên ảnh hiện tại"
-    elif t in ("làm lại", "lam lai", "redo", ""):
-        note, _ = _giao_lam_lai(draft_id)              # khong neu ly do -> kieu cu
-    else:
-        slide, ly_do = _tach_ly_do_lam_lai(text)
-        note, _ = _giao_lam_lai(draft_id, slide, ly_do)
+    # Giao task (kanban_create + bang den, toi 2 phut) o thread nen, khong nghen poll.
+    _chay_nen("lamlai", _xu_ly_ly_do_lam_lai, token, group, thread_id,
+              token, group, msg, thread_id, ho_so["draft_id"], text)
+    return True
+
+
+def _xu_ly_ly_do_lam_lai(token, group, msg, thread_id, draft_id, text):
+    with _khoa_cua(draft_id):
+        t = text.strip().lower()
+        if t in ("hủy", "huy", "bỏ", "bo", "thôi", "thoi", "cancel"):
+            note = "↩️ Đã huỷ làm lại — giữ nguyên ảnh hiện tại"
+        elif t in ("làm lại", "lam lai", "redo", ""):
+            note, _ = _giao_lam_lai(draft_id)              # khong neu ly do -> kieu cu
+        else:
+            slide, ly_do = _tach_ly_do_lam_lai(text)
+            note, _ = _giao_lam_lai(draft_id, slide, ly_do)
     log("nut", f"lam lai co ly do draft={draft_id}: {note}")
     call(token, "sendMessage", chat_id=group,
          **({"message_thread_id": thread_id} if thread_id else {}),
          reply_to_message_id=msg.get("message_id"), text=note)
-    return True
 
 
 def _lam_lai_het_han(token, group):
@@ -399,16 +430,20 @@ def _lam_lai_het_han(token, group):
             continue
         ho_so = cho.pop(k)
         doi = True
-        note, _ = _giao_lam_lai(ho_so["draft_id"])
-        log("nut", f"lam lai het han draft={ho_so['draft_id']}: {note}")
-        try:
-            call(token, "sendMessage", chat_id=group,
-                 **({"message_thread_id": int(k)} if k not in ("None", "") else {}),
-                 text="⏱ Hết 10 phút chưa nêu lý do — " + note)
-        except Exception as e:                                  # noqa: BLE001
-            log("loi", f"bao het han lam lai: {e}")
+        tid = int(k) if k not in ("None", "") else None
+        _chay_nen("lamlai-han", _giao_het_han, token, group, tid,
+                  token, group, tid, ho_so["draft_id"])
     if doi:
         LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+
+
+def _giao_het_han(token, group, thread_id, draft_id):
+    with _khoa_cua(draft_id):
+        note, _ = _giao_lam_lai(draft_id)
+    log("nut", f"lam lai het han draft={draft_id}: {note}")
+    call(token, "sendMessage", chat_id=group,
+         **({"message_thread_id": thread_id} if thread_id else {}),
+         text="⏱ Hết 10 phút chưa nêu lý do — " + note)
 
 
 def _boc_dong(body: str, nhan: str) -> str:
@@ -2125,18 +2160,16 @@ def loop():
                         cq = u["callback_query"]
                         log("vao", f"callback data={cq.get('data')} "
                                    f"from={cq.get('from', {}).get('id')}")
-                        handle_callback(token, channel, cq)
+                        # Chay nen: tao task/ghi bang den toi 2 phut, khong nghen poll.
+                        _chay_nen("nut", _xu_ly_nut, token, group,
+                                  (cq.get("message") or {}).get("message_thread_id"),
+                                  token, channel, cq)
                     elif "message" in u:
                         handle_message(token, group, u["message"])
                 except Exception as e:                      # noqa: BLE001
                     import traceback
                     log("loi", f"update {u.get('update_id')} hong: "
                                f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
-                    if "callback_query" in u:
-                        call(token, "answerCallbackQuery",
-                             callback_query_id=u["callback_query"]["id"],
-                             text=f"Lỗi: {type(e).__name__}: {str(e)[:150]}",
-                             show_alert=True)
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
             _lam_lai_het_han(token, group)

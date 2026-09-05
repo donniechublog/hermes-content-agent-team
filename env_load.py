@@ -30,6 +30,7 @@ ROOT = _BASE
 HERMES_DIR = Path.home() / "hermes-agent"
 HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
 ROUTER_URL = "http://127.0.0.1:20128/v1/chat/completions"   # 9router cuc bo, chung hai brand
+VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine anh (anh_chuan_bi)
 
 
 def hermes_home() -> Path:
