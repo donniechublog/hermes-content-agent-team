@@ -405,6 +405,37 @@ def _boc_dong(body: str, nhan: str) -> str:
     return (m_.group(1).strip() if m_ else "")
 
 
+def _bao_nhan_viec(token, group, vai, tu_vai, title, tid, ly_do=""):
+    """Bao NGAY vao topic cua vai nhan viec khi viec duoc CHUYEN tu vai khac (Ong
+    Chu 05/09/2026: "it nhat cung thong bao de biet da nhan job"). Khong doi
+    dispatcher: dong ▶️ cua bao_tien_do chi den khi task thuc su chay (poll 50s +
+    dispatcher 60s + hang doi), truoc do topic cua vai moi im lang nhu chua biet gi."""
+    try:
+        tp = env_load.topics_path()
+        topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        topics = {}
+    thread = topics.get(vai)
+    if not thread:
+        return
+    truoc = 0
+    try:
+        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
+        truoc = con.execute("SELECT count(*) FROM tasks WHERE status IN ('ready','running') "
+                            "AND id != ?", (tid,)).fetchone()[0]
+        con.close()
+    except Exception:                                        # noqa: BLE001
+        pass
+    ten, ten_tu = _TEN_HIEN.get(vai, vai), _TEN_HIEN.get(tu_vai, tu_vai or "vai khác")
+    text = (f"📥 <b>{ten}</b> đã nhận việc chuyển từ <b>{ten_tu}</b>: <i>{html_escape(title[:80])}</i>\n"
+            + (f"Lý do: {html_escape(ly_do[:160])}\n" if ly_do else "")
+            + (f"Đang xếp hàng sau {truoc} việc, tới lượt sẽ bắt đầu" if truoc
+               else "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)") + f" · task {tid}")
+    call(token, "sendMessage", chat_id=group, message_thread_id=thread,
+         text=text, parse_mode="HTML")
+    log("route", f"bao {vai} nhan viec tu {tu_vai}: {tid} (truoc={truoc})")
+
+
 def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     """Chuyen mot draft anh sang Kite (carousel-edu, art vector). Tao task
     EDU_BODY, ghi img.json (vai_anh=carousel-edu, giu vai cu o chuyen_tu) de nut
@@ -518,6 +549,10 @@ def handle_img_approval(token, action, draft_id, cq):
                 rid, err = tao_task_kite(draft_id, im, ly_do="Ong Chu bam Gui Kite (thieu anh that)")
                 note = ("⚠️ Chuyển Kite lỗi: " + str(err)) if err else \
                        f"🎨 Đã giao Kite vẽ vector (task {rid}) — {TEN_VAI_ANH.get(im.get('chuyen_tu'), 'vai cũ')} dừng bộ này"
+                if not err:
+                    _bao_nhan_viec(token, chat_id, "carousel-edu", im.get("chuyen_tu"),
+                                   im.get("title", draft_id), rid,
+                                   ly_do="thiếu ảnh thật, Ông Chủ chuyển sang vẽ vector")
     elif action == "imgtiep":
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
         note = "🖼 Giữ nguyên: vai ảnh làm với số ảnh thật hiện có (gộp ý / giảm slide)"
