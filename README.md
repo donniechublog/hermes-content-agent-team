@@ -191,7 +191,10 @@ ghi thêm một dòng cảnh báo.
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `theo_doi_9router.py` — nhật ký 9router **theo ngày** (`state/9router/nhat_ky/9router_<ngày>.md|json`):
   req/prompt/cache%/$ theo model @ kết nối, theo khoá API, theo giờ VN, fallback thật
-  v4-flash→deepseek-chat, lỗi, 5 prompt nặng nhất, IP máy gọi. `--canh` là watcher IP
+  v4-flash→deepseek-chat, lỗi, 5 prompt nặng nhất, phiên rỗng (ok nhưng ≤5 token out dù
+  prompt ≥1k), snapshot connection lỗi (lastError/errorCode/backoff), **$ theo vai** (ghép
+  `session_model_usage` mọi HERMES_HOME × đơn giá 9router trong ngày, phủ ~98%), $/task done,
+  $/bài published theo brand. `--canh` là watcher IP
   (9router không lưu IP, xem "Điểm mù thứ ba"). Ada đọc qua `tai(ngày)` để so ngày với ngày
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
 - `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…),

@@ -47,6 +47,12 @@ def dung_bao_cao(m: dict, spec: dict) -> str:
         for d in nk["theo_ngay"]:
             L.append(f"• {d['ngay']}: {d['req']} / ${d['usd']} / {d['cache_pct']}% / {d['lat']} / {d['loi']} / "
                      f"{d['ip_ngoai'] if d['watcher'] else '?'}")
+    if nk.get("vai"):
+        L.append("<b>$ theo vai:</b> " + "; ".join(f"{k} ${t['usd']}" for k, t in list(nk["vai"].items())[:4]) + ".")
+    if nk.get("brand"):
+        L.append("<b>$/bài:</b> " + "; ".join(
+            f"{b} {('$' + str(t['usd_bai'])) if t['usd_bai'] is not None else 'chưa có bài'} ({t['bai']} bài)"
+            for b, t in nk["brand"].items()) + ".")
     if spec.get("router"):
         L += ["", f"<b>Router:</b> {bo_dau_cam(str(spec['router']))}"]
     if spec.get("ket_luan"):

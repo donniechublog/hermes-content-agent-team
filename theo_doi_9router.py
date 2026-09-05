@@ -61,6 +61,13 @@ GIAY_LAT = 120
 # 9router không ghi session nên không tách được, chỉ đếm để tham khảo.
 FALLBACK_THAT = {("deepseek-v4-flash", "deepseek-chat")}
 LOOPBACK = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
+# Phiên "rỗng": provider trả ok nhưng gần như không có chữ dù prompt lớn — model
+# đốt ngân sách vào suy luận rồi trả về trống (đã đo 3/24 trên deepseek).
+RONG_OUT_MAX = 5
+RONG_PROMPT_MIN = 1000
+# Mọi HERMES_HOME đang chạy (per-brand) → $ theo vai gộp cả hai brand.
+HERMES_HOMES = sorted(Path.home().glob(".hermes-*"))
+DRAFTS = ROOT / "drafts"
 
 
 # ---------------------------------------------------------------- thời gian
@@ -129,7 +136,13 @@ def doc_ngay(ngay: str) -> dict:
     lat = collections.Counter()
     lat_vi_du = []
     truoc = None                                             # (giây, model)
+    rong = collections.Counter()
+    rong_vi_du = []
     for ts, provider, model, cid, ak, status, ptok, ctok, cost, tok in rows:
+        if (status in (None, "ok")) and (ctok or 0) <= RONG_OUT_MAX and (ptok or 0) >= RONG_PROMPT_MIN:
+            rong[model] += 1
+            if len(rong_vi_du) < 5:
+                rong_vi_du.append(f"{_hhmm(ts)} {model} {ptok:,} prompt → {ctok or 0} out")
         try:
             t = json.loads(tok or "{}")
         except Exception:                                    # noqa: BLE001
@@ -171,8 +184,152 @@ def doc_ngay(ngay: str) -> dict:
         "loi": dict(loi.most_common(10)),
         "top_prompt": [{"prompt": p, "luc": h, "model": m, "cache": c, "usd": round(u, 4)}
                        for p, h, m, c, u in sorted(top, reverse=True)[:5]],
+        "rong": dict(rong.most_common()), "rong_vi_du": rong_vi_du,
         "ket_noi": doc_ket_noi(ngay),
+        "loi_ket_noi": loi_ket_noi(con, t0, t1),
+        "vai": gom_vai(ngay, gon(theo_model), tong),
     }
+
+
+# ---------------------------------------------------------------- lỗi connection
+def loi_ket_noi(con, t0: str, t1: str) -> list:
+    """Snapshot providerConnections: connection nào đang unavailable / có lỗi
+    trong ngày, mã gì. Trả lời câu "vì sao lật model" thay vì đoán."""
+    ra = []
+    try:
+        rows = con.execute("select name, provider, isActive, data, updatedAt from providerConnections").fetchall()
+    except sqlite3.Error:
+        return ra
+    for name, provider, active, data, upd in rows:
+        try:
+            d = json.loads(data or "{}")
+        except Exception:                                    # noqa: BLE001
+            d = {}
+        khi = d.get("lastErrorAt") or ""
+        trong_ngay = bool(khi) and t0 <= khi < t1
+        xau = (d.get("testStatus") not in (None, "active")) or d.get("errorCode") or (d.get("backoffLevel") or 0) > 0
+        if trong_ngay or xau:
+            ra.append({"ten": name or provider, "trang_thai": d.get("testStatus"), "ma": d.get("errorCode"),
+                       "loi": (d.get("lastError") or "").replace("\n", " ")[:90], "luc": _hhmm(khi) if khi else "",
+                       "trong_ngay": trong_ngay, "backoff": d.get("backoffLevel") or 0, "bat": bool(active)})
+    return ra
+
+
+# ---------------------------------------------------------------- $ theo vai
+def _chuan_model(ten: str) -> str:
+    """'ds/deepseek-v4-flash' → 'deepseek-v4-flash'; 'xk/z-ai/glm-5.3' → 'z-ai/glm-5.3'
+    (9router ghi tên đã bỏ tiền tố nhà cung cấp), so sánh không phân biệt hoa thường."""
+    phan = (ten or "").split("/")
+    return ("/".join(phan[1:]) if len(phan) > 1 else phan[0]).lower()
+
+
+def _don_gia(theo_model: dict, tong: dict) -> tuple[dict, float, dict]:
+    """$ trên mỗi token (prompt + out) của từng model trong ngày, đọc từ 9router;
+    combo → trung bình có trọng số các thành viên. Thiếu thì dùng giá gộp ngày."""
+    gia, tok = collections.defaultdict(float), collections.defaultdict(int)
+    for nhan, v in theo_model.items():                       # 'model @ kết nối' → gộp theo model
+        m = nhan.split(" @ ")[0].lower()
+        gia[m] += v["usd"]
+        tok[m] += v["prompt"] + v["out"]
+    don = {m: gia[m] / tok[m] for m in gia if tok[m]}
+    gop = tong["usd"] / (tong["prompt"] + tong["out"]) if (tong["prompt"] + tong["out"]) else 0.0
+    combo = {}
+    if DB.exists():
+        try:
+            con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+            for name, models in con.execute("select name, models from combos"):
+                combo[name.lower()] = [_chuan_model(x) for x in json.loads(models or "[]")]
+        except Exception:                                    # noqa: BLE001
+            pass
+    return don, gop, combo
+
+
+def gom_vai(ngay: str, theo_model: dict, tong: dict) -> dict:
+    """Ghép session_model_usage của từng vai (mọi HERMES_HOME) với đơn giá 9router
+    → $ ước lượng theo vai, $/task done, $/bài published. 9router không biết vai
+    nào gọi nên đây là phân bổ theo token, không phải số hoá đơn."""
+    d0 = datetime.strptime(ngay, "%Y-%m-%d").replace(tzinfo=VN)
+    e0, e1 = d0.timestamp(), (d0 + timedelta(days=1)).timestamp()
+    don, gop, combo = _don_gia(theo_model, tong)
+
+    def gia_cua(model: str) -> float:
+        m = _chuan_model(model)
+        if m in don:
+            return don[m]
+        for tv in combo.get(model.lower(), []):
+            if tv in don:
+                return don[tv]
+        return gop
+
+    vai = {}
+    for home in HERMES_HOMES:
+        brand = home.name.replace(".hermes-", "")
+        for p in sorted(home.glob("profiles/*/state.db")):
+            try:
+                c = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
+                rows = c.execute(
+                    "select model, sum(api_call_count), sum(input_tokens), sum(output_tokens), sum(cache_read_tokens), "
+                    "sum(reasoning_tokens), count(distinct session_id) from session_model_usage "
+                    "where last_seen >= ? and last_seen < ? group by model", (e0, e1)).fetchall()
+            except Exception:                                # noqa: BLE001
+                continue
+            if not rows:
+                continue
+            a = {"brand": brand, "api": 0, "in": 0, "out": 0, "cache": 0, "reasoning": 0, "usd": 0.0,
+                 "phien": 0, "model": collections.Counter(), "task_done": 0, "usd_task": None}
+            for model, api, inp, out, cache, rs, phien in rows:
+                a["api"] += api or 0
+                a["in"] += inp or 0
+                a["out"] += out or 0
+                a["cache"] += cache or 0
+                a["reasoning"] += rs or 0
+                a["phien"] = max(a["phien"], phien or 0)
+                a["usd"] += ((inp or 0) + (cache or 0) + (out or 0)) * gia_cua(model)
+                a["model"][model] += api or 0
+            a["model"] = dict(a["model"].most_common(3))
+            a["usd"] = round(a["usd"], 4)
+            vai[f"{brand}/{p.parent.name}"] = a
+        kb = home / "kanban.db"
+        if kb.exists():
+            try:
+                c = sqlite3.connect(f"file:{kb}?mode=ro", uri=True)
+                for ass, n in c.execute("select assignee, count(*) from tasks where status='done' and completed_at >= ? "
+                                        "and completed_at < ? group by assignee", (int(e0), int(e1))):
+                    k = f"{brand}/{ass}"
+                    if k in vai:
+                        vai[k]["task_done"] = n
+                        vai[k]["usd_task"] = round(vai[k]["usd"] / n, 4) if n else None
+            except Exception:                                # noqa: BLE001
+                pass
+    # $/bài: draft published có mtime trong ngày, theo brand (tên brand trong draft
+    # là 'donniechublog'/'dcgr', home là blog/dcgr → khớp bằng chứa chuỗi).
+    bai = collections.Counter()
+    for p in DRAFTS.glob("*.json"):
+        if p.name.endswith((".meta.json", ".img.json", ".writer.json")):
+            continue
+        try:
+            mt = p.stat().st_mtime
+            if not (e0 <= mt < e1):
+                continue
+            d = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:                                    # noqa: BLE001
+            continue
+        if d.get("status") == "published":
+            bai[d.get("brand") or "?"] += 1
+    theo_brand = {}
+    for k, a in vai.items():
+        b = theo_brand.setdefault(a["brand"], {"usd": 0.0, "bai": 0, "usd_bai": None})
+        b["usd"] += a["usd"]
+    for bname, n in bai.items():
+        for b in theo_brand:
+            if b in bname:
+                theo_brand[b]["bai"] += n
+    for b in theo_brand.values():
+        b["usd"] = round(b["usd"], 4)
+        b["usd_bai"] = round(b["usd"] / b["bai"], 4) if b["bai"] else None
+    phu = round(sum(a["usd"] for a in vai.values()) / tong["usd"] * 100) if tong["usd"] else 0
+    return {"theo_vai": dict(sorted(vai.items(), key=lambda kv: -kv[1]["usd"])), "theo_brand": theo_brand,
+            "phu_pct": phu, "ghi_chu": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"}
 
 
 # ---------------------------------------------------------------- IP kết nối
@@ -279,6 +436,25 @@ def viet_md(m: dict) -> str:
     L += ["", "## Lỗi", ""] + ([f"- {k}: {v}" for k, v in m["loi"].items()] or ["Không."])
     L += ["", "## 5 prompt nặng nhất", ""]
     L += [f"- {x['luc']} {x['model']}: {x['prompt']:,} prompt (cache {x['cache']:,}), ${x['usd']}" for x in m["top_prompt"]]
+    L += ["", f"## Phiên rỗng (ok, ≤{RONG_OUT_MAX} out dù ≥{RONG_PROMPT_MIN:,} prompt)", ""]
+    L += ([f"- {k}: {v} lần" for k, v in m["rong"].items()] + ["", "Ví dụ: " + "; ".join(m["rong_vi_du"])]) if m["rong"] else ["Không."]
+    L += ["", "## Connection có lỗi / không sẵn sàng (snapshot lúc chốt)", ""]
+    if m["loi_ket_noi"]:
+        for x in m["loi_ket_noi"]:
+            L.append(f"- {x['ten']}: {x['trang_thai']}, mã {x['ma']}, backoff {x['backoff']}"
+                     f"{', lỗi trong ngày lúc ' + x['luc'] if x['trong_ngay'] else ''}: {x['loi']}")
+    else:
+        L.append("Không.")
+    v = m["vai"]
+    L += ["", f"## $ theo vai (ước lượng, phủ {v['phu_pct']}% tiền 9router) — {v['ghi_chu']}", "",
+          "| brand/vai | phiên | api | in | cache | out | $ | task done | $/task | model |", "|---|--:|--:|--:|--:|--:|--:|--:|--:|---|"]
+    for k, a in v["theo_vai"].items():
+        L.append(f"| {k} | {a['phien']} | {a['api']} | {a['in']:,} | {a['cache']:,} | {a['out']:,} | {a['usd']} | "
+                 f"{a['task_done']} | {a['usd_task'] if a['usd_task'] is not None else '-'} | "
+                 + ", ".join(f"{mm} ({n})" for mm, n in a["model"].items()) + " |")
+    L += ["", "**$/bài published:** " + (", ".join(
+        f"{b}: ${x['usd']} / {x['bai']} bài = {('$' + str(x['usd_bai'])) if x['usd_bai'] is not None else 'chưa có bài'}"
+        for b, x in v["theo_brand"].items()) or "không có dữ liệu vai")]
     kn = m["ket_noi"]
     L += ["", "## IP máy gọi (theo kết nối TCP mới, watcher `--canh`)", ""]
     if not kn["co_watcher"]:
@@ -303,6 +479,11 @@ def van_de(m: dict) -> list[str]:
         ra.append(f"Fallback thật v4-flash → deepseek-chat: {m['fallback']} lần (title_generation/cooldown?)")
     if m["loi"]:
         ra.append("Lỗi: " + "; ".join(f"{k} {v}" for k, v in m["loi"].items()))
+    if sum(m["rong"].values()) >= 3:
+        ra.append("Phiên rỗng: " + "; ".join(f"{k} {v}" for k, v in m["rong"].items()))
+    xau = [x for x in m["loi_ket_noi"] if x["trong_ngay"] and x["bat"]]
+    if xau:
+        ra.append("Connection lỗi trong ngày: " + "; ".join(f"{x['ten']} [{x['ma']}] {x['loi'][:50]}" for x in xau))
     return ra
 
 

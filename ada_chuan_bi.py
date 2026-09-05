@@ -170,6 +170,7 @@ def gom_9router(ngay: int) -> dict:
         return {}
     hom_nay = datetime.now(VN).date()
     theo_ngay, lat, loi, ip, khoa = [], collections.Counter(), collections.Counter(), {}, collections.Counter()
+    vai, brand, rong, loi_kn = {}, {}, collections.Counter(), []
     for i in range(ngay, -1, -1):
         d = (hom_nay - timedelta(days=i)).strftime("%Y-%m-%d")
         m = tdr.tai(d, lam_moi=(i == 0))
@@ -188,7 +189,26 @@ def gom_9router(ngay: int) -> dict:
         for k, v in m["ket_noi"]["ip"].items():
             a = ip.setdefault(k, {"ket_noi": 0, "ngoai": v["ngoai"]})
             a["ket_noi"] += v["ket_noi"]
-    return {"theo_ngay": theo_ngay, "lat_model": dict(lat.most_common(6)), "loi": dict(loi.most_common(6)),
+        rong.update(m.get("rong") or {})
+        loi_kn += [f"{d[5:]} {x['ten']} [{x['ma']}] {x['loi'][:60]}" for x in (m.get("loi_ket_noi") or []) if x["trong_ngay"]]
+        for k, a in (m.get("vai") or {}).get("theo_vai", {}).items():
+            t = vai.setdefault(k, {"usd": 0.0, "api": 0, "task_done": 0, "phien": 0})
+            t["usd"] += a["usd"]
+            t["api"] += a["api"]
+            t["task_done"] += a["task_done"]
+            t["phien"] += a["phien"]
+        for b, x in (m.get("vai") or {}).get("theo_brand", {}).items():
+            t = brand.setdefault(b, {"usd": 0.0, "bai": 0})
+            t["usd"] += x["usd"]
+            t["bai"] += x["bai"]
+    for t in vai.values():
+        t["usd"] = round(t["usd"], 4)
+        t["usd_task"] = round(t["usd"] / t["task_done"], 4) if t["task_done"] else None
+    for t in brand.values():
+        t["usd"] = round(t["usd"], 4)
+        t["usd_bai"] = round(t["usd"] / t["bai"], 4) if t["bai"] else None
+    return {"theo_ngay": theo_ngay, "vai": dict(sorted(vai.items(), key=lambda kv: -kv[1]["usd"])), "brand": brand,
+            "rong": dict(rong.most_common(5)), "loi_ket_noi": loi_kn[:8], "lat_model": dict(lat.most_common(6)), "loi": dict(loi.most_common(6)),
             "khoa": {k: round(v, 4) for k, v in khoa.items()}, "ip": ip}
 
 
@@ -235,6 +255,19 @@ def viet_brief(m: dict, wd: Path) -> str:
                      + "; ".join(f"{k} {v} lần" for k, v in nk["lat_model"].items()))
         if nk["loi"]:
             L.append("Lỗi gộp: " + "; ".join(f"{k} {v}" for k, v in nk["loi"].items()))
+        if nk.get("vai"):
+            L.append("$ theo vai (ước lượng phân bổ token, gộp N ngày) — vai: $ / api call / task done / $/task:")
+            for k, t in list(nk["vai"].items())[:12]:
+                L.append(f"  - {k}: ${t['usd']} / {t['api']} / {t['task_done']} / "
+                         f"{('$' + str(t['usd_task'])) if t['usd_task'] is not None else '-'}")
+        if nk.get("brand"):
+            L.append("$/bài published theo brand: " + ", ".join(
+                f"{b}: ${t['usd']} / {t['bai']} bài = {('$' + str(t['usd_bai'])) if t['usd_bai'] is not None else 'chưa có bài'}"
+                for b, t in nk["brand"].items()))
+        if nk.get("rong"):
+            L.append("Phiên rỗng (ok nhưng ≤5 token out dù prompt ≥1k): " + ", ".join(f"{k} {v}" for k, v in nk["rong"].items()))
+        if nk.get("loi_ket_noi"):
+            L.append("Connection lỗi trong ngày: " + "; ".join(nk["loi_ket_noi"]))
         if nk["khoa"]:
             L.append("Theo khoá API: " + ", ".join(f"{k} ${v}" for k, v in nk["khoa"].items()))
         if nk["ip"]:
@@ -246,7 +279,7 @@ def viet_brief(m: dict, wd: Path) -> str:
           json.dumps({"nhan_xet": ["<3–5 điều rút ra, mỗi điều một câu có số>"],
                       "de_xuat_rubric": [{"thay_doi": "<sửa trọng số/tiêu chí gì>", "bang_chung": "<bài, điểm, kết quả>"}],
                       "token": "<1–2 câu: vai nào đốt nhiều nhất, vì sao, cắt ở đâu>",
-                      "router": "<1–2 câu: ngày nào đốt nhất, có lật model/IP lạ không, xu hướng so ngày trước>",
+                      "router": "<1–2 câu: ngày nào đốt nhất, vai nào đắt nhất và $/bài, có fallback/phiên rỗng/connection lỗi/IP lạ không>",
                       "ket_luan": "<một câu>"}, ensure_ascii=False, indent=1),
           "Không có gì đáng chỉnh thì ghi de_xuat_rubric: [] và nói thẳng. Không suy diễn ngoài số liệu.",
           "", "## Rồi chạy đúng MỘT lệnh:",
