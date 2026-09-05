@@ -1069,6 +1069,35 @@ def _tom_tat_run(tid):
     return (row[0] or ""), (md if isinstance(md, dict) else {})
 
 
+def _xong_ma_khong_giao(tid, ai, created_at):
+    """Vai anh dong task `done` ma KHONG gui album/the nao len topic — tra ve ly do
+    de bao ⛔ thay vi ✅; None neu co san pham that.
+
+    Su co 05/09/2026 07:27 (bai Nvidia/Thinking Machines): brief chi co 1 anh lac
+    de, Dre bo cuoc nhung goi kanban_complete voi metadata tu che
+    {"kind": "carousel_abort"} thay vi kanban_block -> kanban ghi done, topic bao
+    "✅ Dre xong", Ong Chu: "bao xong ma co thay lam gi dau". Kanban tin loi vai;
+    o day tin BANG CHUNG: nhat ky gui Telegram cua vai (telegram_sent/<vai>.jsonl)
+    phai co mot dong SAU luc task duoc tao."""
+    if ai not in TEN_VAI_ANH:
+        return None
+    tom_tat, md = _tom_tat_run(tid)
+    if "abort" in str(md.get("kind", "")).lower():
+        return tom_tat or "vai tự báo bỏ cuộc (abort) nhưng đóng task là xong"
+    p = STATE_DIR / "telegram_sent" / f"{ai}.jsonl"
+    try:
+        for dong in reversed(p.read_text(encoding="utf-8").splitlines()[-80:]):
+            try:
+                d = json.loads(dong)
+            except Exception:                                # noqa: BLE001
+                continue
+            if int(d.get("ts", 0)) >= int(created_at or 0) - 5:
+                return None
+    except OSError:
+        pass
+    return tom_tat or "(không có album nào được gửi lên topic sau khi task bắt đầu)"
+
+
 def _sidecar_theo_task(khoa, tid):
     """Tim <draft_id>.writer.json co khoa (writer_task | ada_task) == tid."""
     for wp in DRAFTS.glob("*.writer.json"):
@@ -1182,7 +1211,14 @@ def bao_tien_do_kanban(token, group):
             text = (f"▶️ <b>{ten}</b> bắt đầu: <i>{html_escape(title[:80])}</i>"
                     + (f"\n(còn {sau} việc xếp hàng sau việc này)" if sau else ""))
         elif st == "done":
-            text = f"✅ <b>{ten}</b> xong: <i>{html_escape(title[:80])}</i>"
+            gia = _xong_ma_khong_giao(tid, ai, _c)
+            if gia:
+                text = (f"⛔ <b>{ten}</b> báo xong nhưng <b>không có sản phẩm</b>: "
+                        f"<i>{html_escape(title[:80])}</i>\n{html_escape(gia.strip()[:500])}\n"
+                        "(Task đóng sai cách — vai phải dùng kanban_block khi thiếu ảnh.)")
+                log("bangden", f"{tid} {ai} done-gia: {gia[:120]}")
+            else:
+                text = f"✅ <b>{ten}</b> xong: <i>{html_escape(title[:80])}</i>"
         elif st in ("blocked", "failed"):
             text = f"⛔ <b>{ten}</b> dừng ({st}): <i>{html_escape(title[:80])}</i>"
         else:

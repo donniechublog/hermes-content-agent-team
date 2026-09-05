@@ -33,10 +33,14 @@ cd {goc} && venv/bin/python ethan_nop.py {draft_id}
 Script tu ghep/cat theo spec, chay moi cong chan cua card.py, dung the, gui len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi
 sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan sua).
+THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): goi tool kanban_block voi ly do
+ngan (anh nao bi loai, vi sao) — Ong Chu quyet tiep. TUYET DOI KHONG kanban_complete khi
+chua gui album: "done" nghia la DA CO san pham tren topic. Khong tu che metadata kieu
+"abort"; abort = kanban_block.
 Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
 dong "[metadata]" ma script in ra (Miles/Ada doc ban giao nay qua kanban). Khong sinh agent
-con, khong gui lai anh. Ban chuan bi noi khong co anh that nao thi ket thuc
-task bang mot cau bao lai — KHONG tao the, KHONG ve."""
+con, khong gui lai anh. Ban chuan bi noi khong co anh that nao thi goi tool kanban_block voi ly do ngan (KHONG kanban_complete — done nghia la
+da co the tren topic) — KHONG tao the, KHONG ve."""
 
 
 # Body cho Dre — CAROUSEL. Tu 04/09/2026 phan CO HOC (tim/tai/do/cat/ghep anh,
@@ -69,7 +73,11 @@ cd {goc} && venv/bin/python dre_nop.py {draft_id}
 Script tu cat/ghep anh theo spec, chay moi cong chan, dung slide, gui album len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. No bao [LOI]
 thi sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan
-sua). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
+sua). THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): goi tool kanban_block voi ly do
+ngan (anh nao bi loai, vi sao) — Ong Chu quyet tiep. TUYET DOI KHONG kanban_complete khi
+chua gui album: "done" nghia la DA CO san pham tren topic. Khong tu che metadata kieu
+"abort"; abort = kanban_block.
+Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
 dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban). Khong sinh
 agent con, khong gui lai album."""
 
@@ -99,8 +107,12 @@ BUOC 3 — nop:
 cd {goc} && venv/bin/python kite_nop.py {draft_id}
 Script tu kiem spec, render bang Chromium, gui album len topic kem nut Duyet/Lam
 lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi sua DUNG cho do trong spec.json roi
-chay lai DUNG lenh nay (toi da 2 lan). Xong: ket thuc task bang dong "Ket qua
-task" script in ra. GUI DUNG MOT LAN: khong sinh agent con, khong gui lai."""
+chay lai DUNG lenh nay (toi da 2 lan). THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): goi tool kanban_block voi ly do
+ngan (anh nao bi loai, vi sao) — Ong Chu quyet tiep. TUYET DOI KHONG kanban_complete khi
+chua gui album: "done" nghia la DA CO san pham tren topic. Khong tu che metadata kieu
+"abort"; abort = kanban_block.
+Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
+dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban). GUI DUNG MOT LAN: khong sinh agent con, khong gui lai."""
 
 
 WRITER_BODY = """Bai goc: {title}
