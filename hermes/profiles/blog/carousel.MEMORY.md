@@ -1,1 +1,3 @@
 QUY ƯỚC TAG dự án (bộ não fact_store dùng CHUNG cho dcgr.tech + donniechublog): khi ghi fact, tag `shared` cho research/hạ tầng dùng chung; tag `dcgr` hoặc `dnb` cho fact brand/biên tập riêng dự án. Fact brand PHẢI nêu tên dự án ngay trong nội dung — holographic auto-recall không lọc cứng theo tag, nêu tên để không lẫn giọng giữa 2 brand.
+§
+Quy ước ảnh carousel donniechublog: tin model ra mắt — ưu tiên dùng benchmark table/chart có trong bài làm ảnh slide (số liệu là bằng chứng mạnh nhất), trước cả ảnh logo/hero.

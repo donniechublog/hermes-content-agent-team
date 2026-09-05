@@ -1,1 +1,3 @@
 QUY ƯỚC TAG dự án (bộ não fact_store dùng CHUNG cho dcgr.tech + donniechublog): khi ghi fact, tag `shared` cho research/hạ tầng dùng chung; tag `dcgr` hoặc `dnb` cho fact brand/biên tập riêng dự án. Fact brand PHẢI nêu tên dự án ngay trong nội dung — holographic auto-recall không lọc cứng theo tag, nêu tên để không lẫn giọng giữa 2 brand.
+§
+quet_nop.py dòng cuối đếm số mục bị bug: kiểm `if d.strip()[:2].rstrip(".").isdigit()` không khớp dòng title HTML `<b>1.</b>` nên luôn in "0 tin đánh số" dù ds.json có đủ mục và báo cáo thật 24 mục đã gửi. Không phải [LOI]; đừng sửa ds.json khi thấy "nộp 0 tin".
