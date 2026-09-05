@@ -969,10 +969,63 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
     khoa.write_text(str(os.getpid()))
     try:
         m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser)
+        try:
+            _route_thieu_anh(draft_id, m)
+        except Exception as e:                               # noqa: BLE001
+            print(f"[route] {type(e).__name__}: {e}", file=sys.stderr)
         _ghi_json(xong, m)
     finally:
         khoa.unlink(missing_ok=True)
     return m, wd, meta
+
+
+def _tg_gui(vai: str, text: str, kb: dict | None = None) -> None:
+    """Gui mot tin CHU len topic cua `vai` (kem nut neu co). Dung env cua
+    gui_telegram; im lang neu thieu token (chay tay ngoai container)."""
+    import env_load, httpx, gui_telegram
+    env_load.nap()
+    token, group = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_GROUP_ID")
+    if not token or not group:
+        print("[route] khong co TELEGRAM_BOT_TOKEN/GROUP -> khong gui tin", file=sys.stderr)
+        return
+    body = {"chat_id": group, "message_thread_id": gui_telegram._topic(vai),
+            "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}
+    if kb:
+        body["reply_markup"] = kb
+    httpx.post(gui_telegram.API.format(token=token, method="sendMessage"), json=body, timeout=30)
+
+
+def _route_thieu_anh(draft_id: str, m: dict) -> None:
+    """0 anh that -> tu chuyen Kite; thieu -> hoi Ong Chu bang nut."""
+    ip = DRAFTS / (draft_id + ".img.json")
+    if not ip.exists():
+        return
+    im = json.loads(ip.read_text(encoding="utf-8"))
+    vai = im.get("vai_anh", "")
+    if vai == "carousel-edu" or im.get("chuyen_kite"):
+        return                                     # da la Kite / da chuyen roi
+    so, tt = int(m.get("so_dung_duoc", 0)), int(m.get("toi_thieu", 5))
+    if so >= tt:
+        return
+    ten = {"designer": "Ethan", "carousel": "Dre"}.get(vai, vai)
+    tieu = m.get("title", draft_id)
+    if so == 0:
+        import approve_service as AS
+        rid, loi = AS.tao_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
+        if loi:
+            _tg_gui(vai, f"🖼 <b>{tieu}</b>: 0 ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
+            return
+        m["chuyen_kite"] = rid
+        _tg_gui(vai, f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được → đã tự chuyển <b>Kite</b> "
+                     f"vẽ vector (task {rid}). {ten} không dựng bộ này.")
+        print(f"[route] 0 anh -> Kite task {rid}", file=sys.stderr)
+        return
+    kb = {"inline_keyboard": [[
+        {"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id},
+        {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id}]]}
+    _tg_gui(vai, f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được "
+                 f"(nguồn: {', '.join(m.get('so_mien') or []) or '—'}). Chọn đường:", kb)
+    m["hoi_kite"] = True
 
 
 def main() -> int:

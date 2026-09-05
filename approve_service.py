@@ -400,6 +400,37 @@ def _lam_lai_het_han(token, group):
         LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
 
 
+def _boc_dong(body: str, nhan: str) -> str:
+    m_ = re.search(r"^" + re.escape(nhan) + r"\s*:\s*(.+)$", body or "", re.M)
+    return (m_.group(1).strip() if m_ else "")
+
+
+def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
+    """Chuyen mot draft anh sang Kite (carousel-edu, art vector). Tao task
+    EDU_BODY, ghi img.json (vai_anh=carousel-edu, giu vai cu o chuyen_tu) de nut
+    Duyet/Lam lai sau do di dung Kite. Tra ve (task_id, loi)."""
+    import task_bodies
+    body_cu = im.get("body", "")
+    link = im.get("link") or _boc_dong(body_cu, "Link")
+    summary = im.get("summary") or _boc_dong(body_cu, "Tom tat")
+    source_note = im.get("source_note") or _boc_dong(body_cu, "Nguon")
+    title = im.get("title", draft_id)
+    body = task_bodies.EDU_BODY.format(source_note=source_note, link=link, title=title,
+                                       summary=summary, goc=str(ROOT), draft_id=draft_id)
+    if ly_do:
+        body += f"\n\n== CHUYEN TU {TEN_VAI_ANH.get(im.get('vai_anh'), im.get('vai_anh'))} ==\n{ly_do}. " \
+                "Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi " \
+                "kite_chuan_bi liet ke hinh that."
+    rid, err = kanban_create("Carousel deck: " + title, "carousel-edu", body)
+    if err:
+        return None, err
+    im.update({"chuyen_tu": im.get("vai_anh"), "vai_anh": "carousel-edu", "carousel": True,
+               "body": body, "chuyen_kite": rid, "ly_do_chuyen": ly_do})
+    (DRAFTS / (draft_id + ".img.json")).write_text(json.dumps(im, ensure_ascii=False, indent=2),
+                                                   encoding="utf-8")
+    return rid, None
+
+
 def handle_img_approval(token, action, draft_id, cq):
     """Cong duyet ANH truoc khi viet. designer (Ethan)/Dre/Dre day anh len topic kem
     ba nut:
@@ -437,6 +468,24 @@ def handle_img_approval(token, action, draft_id, cq):
                     # Duyet sau do van sinh task viet cho tin da giet. Phai noi.
                     note = ("⚠️ Bỏ hẳn nhưng KHÔNG ghi được trạng thái ("
                             + type(e).__name__ + ") — bấm Bỏ hẳn lại lần nữa")
+    elif action == "imgkite":
+        ip = DRAFTS / (draft_id + ".img.json")
+        if not ip.exists():
+            note = "⚠️ Không thấy thông tin task ảnh"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note, show_alert=True)
+        else:
+            im = json.loads(ip.read_text(encoding="utf-8"))
+            if im.get("chuyen_kite"):
+                note = f"↪️ Đã chuyển Kite trước đó (task {im['chuyen_kite']})"
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note)
+            else:
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Đang giao Kite…")
+                rid, err = tao_task_kite(draft_id, im, ly_do="Ong Chu bam Gui Kite (thieu anh that)")
+                note = ("⚠️ Chuyển Kite lỗi: " + str(err)) if err else \
+                       f"🎨 Đã giao Kite vẽ vector (task {rid}) — {TEN_VAI_ANH.get(im.get('chuyen_tu'), 'vai cũ')} dừng bộ này"
+    elif action == "imgtiep":
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
+        note = "🖼 Giữ nguyên: vai ảnh làm với số ảnh thật hiện có (gộp ý / giảm slide)"
     elif action == "imgredo":
         # Ong Chu 04/09/2026: bam Lam lai phai co cho de noi SLIDE NAO va VI SAO.
         # Chi bam "lam lai" thi vai khong biet sua cho nao, lan sau van co the sai
@@ -537,7 +586,7 @@ def handle_callback(token, channel, cq):
 
     # Duyet ANH (truoc khi viet) — xu ly SOM vi luc nay ban nhap cuoi
     # (<draft>.json) chua ton tai, nhanh duoi se bao "khong tim thay ban nhap".
-    if action in ("imgok", "imgno", "imgredo"):
+    if action in ("imgok", "imgno", "imgredo", "imgkite", "imgtiep"):
         handle_img_approval(token, action, draft_id, cq)
         return
 
@@ -1372,7 +1421,9 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # thi nut Lam lai bao khong co thong tin.
     (DRAFTS / (draft_id + ".img.json")).write_text(
         json.dumps({"vai_anh": vai_anh, "carousel": la_carousel or la_edu,
-                    "title": item["title"], "body": illu_body, "remakes": 0},
+                    "title": item["title"], "body": illu_body, "remakes": 0,
+                    "link": item.get("link", ""), "summary": item.get("summary", ""),
+                    "source_note": item.get("source_note", ""), "via": item.get("via", "")},
                    ensure_ascii=False, indent=2), encoding="utf-8")
 
     # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
