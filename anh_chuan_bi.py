@@ -1009,8 +1009,21 @@ def _route_thieu_anh(draft_id: str, m: dict) -> None:
         return
     ten = {"designer": "Ethan", "carousel": "Dre"}.get(vai, vai)
     tieu = m.get("title", draft_id)
+    import approve_service as AS
+    _, khong_kite = AS.chuan_assignee("carousel-edu")
+    if khong_kite:
+        # Brand nay chua co Kite (dcgr 05/09/2026). Noi thang, dung hua chuyen.
+        kb = {"inline_keyboard": [[{"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id}]]}
+        if so == 0:
+            _tg_gui(vai, f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được, và brand này <b>chưa có Kite</b> "
+                         f"để vẽ vector. {ten} sẽ không dựng được bộ này — bỏ tin, hoặc tạo Kite cho brand.", kb)
+            m["khong_kite"] = True
+        else:
+            kb["inline_keyboard"][0].insert(0, {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id})
+            _tg_gui(vai, f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được; brand này chưa có Kite. Chọn:", kb)
+            m["hoi_kite"] = True
+        return
     if so == 0:
-        import approve_service as AS
         rid, loi = AS.tao_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
         if loi:
             _tg_gui(vai, f"🖼 <b>{tieu}</b>: 0 ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")

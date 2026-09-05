@@ -55,6 +55,11 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if not m["anh"]:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng hình giả. Kết thúc task bằng "
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
+    if m.get("khong_kite"):
+        L.append("🛑 0 ẢNH THẬT dùng được và brand này CHƯA CÓ KITE. KHÔNG dựng hình giả. Kết thúc "
+                 "task bằng một câu: \"Không có ảnh thật cho tin này, brand chưa có Kite\" — Ông Chủ "
+                 "đã nhận nút Bỏ hẳn trên topic.")
+        return "\n".join(L)
     if m.get("chuyen_kite"):
         L.append(f"🛑 TIN NÀY ĐÃ CHUYỂN KITE (task {m['chuyen_kite']}) vì 0 ảnh thật dùng được. "
                  "KHÔNG viết spec, KHÔNG dựng. Kết thúc task ngay bằng một câu: "
