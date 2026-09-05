@@ -216,6 +216,20 @@ def ban_giao(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
     return "\n".join(L)
 
 
+def ghi_bang_den(draft_id: str, key: str, value, author: str = "dre") -> None:
+    """Ghi mot muc len bang den cua bai qua bang_den.py (python cua hermes, vi no
+    import hermes_cli.kanban_*). Im lang khi loi — chi in mot dong canh bao."""
+    hermes_py = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
+    try:
+        r = subprocess.run([str(hermes_py), str(ROOT / "bang_den.py"), "ghi", draft_id,
+                            key, json.dumps(value, ensure_ascii=False), "--author", author],
+                           cwd=str(ROOT), capture_output=True, text=True, timeout=60)
+        if r.returncode != 0 or "[bang-den] lỗi" in (r.stderr or ""):
+            print(f"[CANH BAO] bang den: {(r.stderr or r.stdout).strip()[-200:]}")
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[CANH BAO] bang den: {type(e).__name__}: {e}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop carousel cua Dre (tat dinh)")
     ap.add_argument("draft_id")
@@ -298,9 +312,18 @@ def main() -> int:
             "message_id": mid})
     nguon_anh = sorted({m_["mien"] or m_["tu"] for m_ in m["anh"]
                         if m_["ma"] in {ma for _, ds in dung_anh for ma in ds}})
+    # Bang den (kanban swarm, 05/09): script ghi ban giao co cau truc len the goc
+    # cua bai — code lam, LLM khong phai nho. Cung JSON nay in ra dong
+    # "[metadata]" de Dre dan vao kanban_complete(metadata=...) -> Miles/Ada thay
+    # trong "Parent task results". Best-effort: bang den hong khong hong bai.
+    md = {"slide": n, "hook": hook, "nguon_anh": nguon_anh, "tep": str(out),
+          "ban_giao": str(bg_path), "message_id": mid}
+    if not a.khong_gui:
+        ghi_bang_den(a.draft_id, "anh", md)
     print(f"[xong] {n} slide -> {out}" + (f"; da gui topic carousel (message_id={mid}) kem nut duyet"
                                           if mid else "") +
           f"; ban giao cho Miles: {bg_path}")
+    print("[metadata] " + json.dumps(md, ensure_ascii=False))
     print("Ket qua task (dung dong nay de ket thuc task): "
           f"Dựng {n} slide carousel “{hook}”, ảnh từ {', '.join(nguon_anh) or 'nguồn bài'}; "
           + ("đã gửi topic kèm nút duyệt, bàn giao nguồn cho Miles tự động." if mid

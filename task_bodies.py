@@ -33,7 +33,8 @@ cd {goc} && venv/bin/python ethan_nop.py {draft_id}
 Script tu ghep/cat theo spec, chay moi cong chan cua card.py, dung the, gui len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi
 sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan sua).
-Xong: ket thuc task bang dong "Ket qua task" script in ra. Khong sinh agent
+Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
+dong "[metadata]" ma script in ra (Miles/Ada doc ban giao nay qua kanban). Khong sinh agent
 con, khong gui lai anh. Ban chuan bi noi khong co anh that nao thi ket thuc
 task bang mot cau bao lai — KHONG tao the, KHONG ve."""
 
@@ -68,7 +69,8 @@ cd {goc} && venv/bin/python dre_nop.py {draft_id}
 Script tu cat/ghep anh theo spec, chay moi cong chan, dung slide, gui album len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. No bao [LOI]
 thi sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan
-sua). Xong: ket thuc task bang dong "Ket qua task" ma script in ra. Khong sinh
+sua). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
+dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban). Khong sinh
 agent con, khong gui lai album."""
 
 
@@ -123,5 +125,6 @@ BUOC 3 — nop:
 cd {goc} && venv/bin/python miles_nop.py {draft_id}
 Script tu chuan hoa, do ky tu/cau/so, chay cong chan, ghep draft, day vao hang
 duyet. Bao [LOI] thi sua DUNG cho do trong caption.txt roi chay lai DUNG lenh
-nay (toi da 2 lan). Xong: ket thuc task bang dong "Ket qua task" script in ra.
+nay (toi da 2 lan). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
+dong "[metadata]" ma script in ra (Miles/Ada doc ban giao nay qua kanban).
 KHONG tu dang len channel."""

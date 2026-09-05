@@ -13,6 +13,7 @@ Dung:
     venv/bin/python miles_nop.py <draft_id>
     venv/bin/python miles_nop.py <draft_id> --khong-push     # thu: chi kiem + ghi draft thu
 """
+import json
 import argparse
 import re
 import subprocess
@@ -99,8 +100,24 @@ def main() -> int:
             print(f"[LOI] push: {d}")
         return 1
     print((r2.stdout or "").strip()[-300:])
+    # Bang den (kanban swarm, 05/09): ghi ban giao cua Miles len the goc; JSON nay
+    # cung in ra "[metadata]" de Miles dan vao kanban_complete -> Ada soat thay
+    # ngay trong "Parent task results". Best-effort.
+    md = {"do_dai": tin.get("do_dai"), "so_cau": tin.get("so_cau"),
+          "so_trong_caption": tin.get("so_trong_caption"),
+          "draft": f"drafts/{a.draft_id}.json"}
+    hermes_py = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
+    try:
+        r3 = subprocess.run([str(hermes_py), str(ROOT / "bang_den.py"), "ghi", a.draft_id,
+                             "caption", json.dumps(md, ensure_ascii=False), "--author", "miles"],
+                            cwd=str(ROOT), capture_output=True, text=True, timeout=60)
+        if r3.returncode != 0 or "[bang-den] lỗi" in (r3.stderr or ""):
+            print(f"[nhac] bang den: {(r3.stderr or r3.stdout).strip()[-200:]}")
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[nhac] bang den: {type(e).__name__}: {e}")
     print(f"[xong] caption {tin.get('do_dai')} ký tự, {tin.get('so_cau')} câu, "
           f"{tin.get('so_trong_caption')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")
+    print("[metadata] " + json.dumps(md, ensure_ascii=False))
     print("Ket qua task (dung dong nay de ket thuc task): "
           f"Viết caption {tin.get('do_dai')} ký tự, {tin.get('so_trong_caption')} chỗ có số, đã vào hàng duyệt.")
     return 0

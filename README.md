@@ -231,6 +231,35 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   "không nhớ gì" (Ethan 03/09, Itachi 04/09). Dòng `phien=↻ Resumed session …` trong
   `approve.log` là chỗ đối chiếu khi nghi vai mất mạch.
 
+## Bảng đen kanban (swarm) — dcgr từ 05/09/2026
+
+Ông Chủ hỏi "các vai có trao đổi với nhau được không, như clip Hermes". Có ba cách trong
+Hermes; đội chọn **kanban swarm** vì hai cách kia (mỗi vai một bot Telegram, hoặc `delegate_task`
+sinh agent con) hoặc tốn 8 bot hoặc không phải vai thật. Không dùng `create_swarm()` nguyên khối
+vì nó chạy thẳng worker → verifier → synthesizer, không có chỗ cho cổng **Ông Chủ duyệt ảnh**.
+`bang_den.py` dùng đúng các viên gạch của nó và dựng đồ thị theo tiến trình thật của bài:
+
+```
+thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nhận việc; là bảng đen)
+  └─ task Dre        parent = gốc              ← tạo khi Ông Chủ chọn số
+       └─ task Miles parent = [Dre, gốc]       ← tạo khi Ông Chủ bấm "Duyệt ảnh" (cổng giữ nguyên)
+            └─ task Ada "Soát: …" parent = [Miles, gốc]  ← tạo khi Miles xong
+```
+
+- Vai **không nhắn nhau**. Mỗi vai kết thúc bằng `kanban_complete(summary, metadata)`; hermes tự
+  đưa summary/metadata đó vào context task con ("Parent task results"), nên Miles thấy Dre, Ada
+  thấy Miles. `dre_nop.py` / `miles_nop.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
+  `[swarm:blackboard] {…}` trên thẻ gốc) và in dòng `[metadata]` để vai dán vào `kanban_complete`.
+- **Ada** soát 4 điểm (số liệu khớp nguồn, caption khớp ảnh, ghi nguồn, đúng brand) rồi
+  `kanban_complete(metadata={"gate": "pass"|"fix"})`. `approve_service` trả kết quả về topic Miles,
+  **reply ngay dưới thẻ ✅/❌** (push CLI lưu `tg_card_message_id`). Ông Chủ vẫn là người bấm.
+- Nhìn toàn chuỗi: `hermes kanban show <thẻ gốc>` hoặc dashboard — quan hệ cha-con nằm trong
+  `task_links`, bàn giao trong `task_comments`/`task_runs`, không trôi như chat.
+- Bảng đen là lớp thêm, **best-effort**: `bang_den.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
+  đen và không có Ada soát (bài trước 05/09 không có thẻ gốc → cũng không soát).
+- Chỉ bật cho brand trong `CT_BANG_DEN` (mặc định `dcgr`). Blog là nhóm đối chứng của tuần đo
+  bot-mode nên giữ nguyên; muốn bật: `Environment=CT_BANG_DEN=dcgr,blog` trong unit approve.
+
 ## Dịch vụ systemd
 
 - `hermes-gateway` — gateway hermes, chứa dispatcher kanban
