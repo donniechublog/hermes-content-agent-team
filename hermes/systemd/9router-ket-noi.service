@@ -1,0 +1,19 @@
+# Watcher IP máy gọi 9router — ghi state/9router/ket_noi_<ngày>.jsonl.
+# 9router không lưu IP (usageHistory.meta luôn {}), nên bắt ở tầng socket.
+# Cài (một lần, user donniechu, không cần root):
+#   cp ~/content-team/hermes/systemd/9router-ket-noi.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now 9router-ket-noi
+#   systemctl --user status 9router-ket-noi
+[Unit]
+Description=Hermes Content Team - watcher IP ket noi 9router
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/content-team
+ExecStart=%h/content-team/venv/bin/python %h/content-team/theo_doi_9router.py --canh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

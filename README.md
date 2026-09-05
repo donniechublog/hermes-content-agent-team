@@ -189,6 +189,10 @@ ghi thêm một dòng cảnh báo.
   hãng lõi mỗi ngày (hoặc tin ≥2 báo), khớp theo tên hãng
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
+- `theo_doi_9router.py` — nhật ký 9router **theo ngày** (`state/9router/nhat_ky/9router_<ngày>.md|json`):
+  req/prompt/cache%/$ theo model @ kết nối, theo khoá API, theo giờ VN, fallback thật
+  v4-flash→deepseek-chat, lỗi, 5 prompt nặng nhất, IP máy gọi. `--canh` là watcher IP
+  (9router không lưu IP, xem "Điểm mù thứ ba"). Ada đọc qua `tai(ngày)` để so ngày với ngày
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
 - `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…),
   icon SVG, mascot, và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
@@ -229,12 +233,15 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 - `hermes-gateway` — gateway hermes, chứa dispatcher kanban
 - `hermes-approve` — dịch vụ duyệt bài (tệp này)
 - `hermes-dashboard` — bảng điều khiển web, cổng 9119
+- `9router-ket-noi` — user unit (`hermes/systemd/9router-ket-noi.service`), watcher IP kết nối
+  tới cổng 20128 → `state/9router/ket_noi_<ngày>.jsonl`. Không root, không đọc nội dung
 
 ## Cron (7 job, xem `~/.hermes/cron/jobs.json`)
 
 - `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
 - `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
-- `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước
+- `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router hôm qua
+  (`theo_doi_9router.py --canh-bao`: IP ngoài loopback / fallback thật / lỗi → topic analyst)
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
 - `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
   không có gì mới; hỏi theo `workflow_id` (khoá chính) chứ không phải `external_id`;
@@ -361,6 +368,17 @@ chỉ có một khoá — nên báo cáo usage-audit của blog và dcgr luôn r
 con số tổng**, không tách được brand nào tốn bao nhiêu. Muốn tách được: cấp thêm
 một virtual key trong 9router, gán cho một brand qua `config.yaml`, rồi thêm
 `--api-key <khoá đó>` vào cron `usage_audit.sh` của brand đó.
+
+**Điểm mù thứ ba: 9router KHÔNG ghi IP máy gọi.** `usageHistory` không có cột IP,
+`meta` luôn `{}`; `custom-server.js` có tính `x-9r-real-ip` nhưng chỉ dùng cho
+rate-limit. Trong khi service đang bind `0.0.0.0` (LAN 192.168.1.61 + netbird),
+ai trong mạng cũng gọi được bằng khoá chung. Đo 05/09: `theo_doi_9router.py --canh`
+đọc bảng TCP mỗi 2s (psutil, mọi trạng thái trừ LISTEN nên curl mở-đóng 1s vẫn để
+vết TIME_WAIT), ghi IP theo **kết nối**, không theo request — Hermes dùng httpx
+keep-alive nên một kết nối chở nhiều request. Muốn quy request về máy gọi thì vẫn
+phải cấp khoá riêng như trên. Nhật ký ngày `9router_<ngày>.md` gộp cả hai nguồn;
+cột "đổi model liên tiếp" chỉ tin cặp v4-flash→deepseek-chat là fallback thật,
+các cặp khác phần lớn là vai chạy song song (9router không ghi session).
 
 Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh dựng → vai viết,
 17 lượt gọi): **~398.000 token chạm model**, cache 36%, 227 giây, ước $0,038.

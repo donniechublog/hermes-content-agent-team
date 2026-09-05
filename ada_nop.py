@@ -41,6 +41,14 @@ def dung_bao_cao(m: dict, spec: dict) -> str:
         L.append(f"• {bo_dau_cam(str(x.get('thay_doi', '')))} — bằng chứng: {bo_dau_cam(str(x.get('bang_chung', '')))}")
     if spec.get("token"):
         L += ["", f"<b>Token:</b> {bo_dau_cam(str(spec['token']))}"]
+    nk = tk.get("nhat_ky_9router") or {}
+    if nk.get("theo_ngay"):
+        L += ["", "<b>9router theo ngày</b> (req / $ / cache% / fallback / lỗi / IP ngoài)"]
+        for d in nk["theo_ngay"]:
+            L.append(f"• {d['ngay']}: {d['req']} / ${d['usd']} / {d['cache_pct']}% / {d['lat']} / {d['loi']} / "
+                     f"{d['ip_ngoai'] if d['watcher'] else '?'}")
+    if spec.get("router"):
+        L += ["", f"<b>Router:</b> {bo_dau_cam(str(spec['router']))}"]
     if spec.get("ket_luan"):
         L += ["", f"<b>Kết luận:</b> {bo_dau_cam(str(spec['ket_luan']))}"]
     return "\n".join(L)
@@ -61,7 +69,7 @@ def main() -> int:
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] spec.json không phải JSON hợp lệ: {type(e).__name__}: {e}")
     loi = []
-    for k in ("nhan_xet", "de_xuat_rubric", "token", "ket_luan"):
+    for k in ("nhan_xet", "de_xuat_rubric", "token", "router", "ket_luan"):
         v = spec.get(k)
         chuoi = " ".join(str(x.get("thay_doi", "")) + " " + str(x.get("bang_chung", "")) if isinstance(x, dict) else str(x)
                          for x in (v if isinstance(v, list) else [v or ""]))
