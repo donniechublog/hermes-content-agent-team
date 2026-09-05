@@ -74,6 +74,16 @@ def chuoi_da_cau_hinh() -> dict:
             phan = m.split("/")
             for tran in {phan[-1], "/".join(phan[1:]) or phan[-1]}:
                 ra.setdefault(tran, []).append(nhan)
+    # Model do CONG CU goi thang qua router, khong nam trong config vai nao:
+    # vision cua tang chuan bi anh (05/09/2026: 62 req/ngay, $0.004, bi bao
+    # "LA — khong o chuoi nao" oan). Doc tu anh_chuan_bi de mot nguon su that.
+    try:
+        import anh_chuan_bi
+        phan = anh_chuan_bi.VISION_MODEL.split("/")
+        for tran in {phan[-1], "/".join(phan[1:]) or phan[-1]}:
+            ra.setdefault(tran, []).append("anh_chuan_bi:vision")
+    except Exception:                                        # noqa: BLE001
+        pass
     return ra
 
 
