@@ -1,0 +1,19 @@
+# Trang web nhật ký 9router (nhat_ky_web.py) — Telegram gửi link tới đây.
+# Cài (user donniechu, không root):
+#   cp ~/content-team/hermes/systemd/nhat-ky-web.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now nhat-ky-web
+[Unit]
+Description=Hermes Content Team - web nhat ky 9router (cong 9130)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/content-team
+Environment=NHAT_KY_HOST=0.0.0.0
+Environment=NHAT_KY_PORT=9130
+ExecStart=%h/content-team/venv/bin/python %h/content-team/nhat_ky_web.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

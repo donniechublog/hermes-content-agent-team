@@ -443,8 +443,12 @@ def main():
             if hang not in HANG_LOI and (t.get("so_bao") or 0) < 2:
                 continue
             k = f"hang|{hang}|{t['ngay']}"
-            cu = nhom.get(k)
-            if not cu or (t.get("so_bao") or 0) > (cu.get("so_bao") or 0):
+            # KHONG dung ten `cu`: do la bo nho da-thay (da_thay()) dung o cuoi
+            # main cho ghi_moc. Ghi de no o day lam ghi_moc nhan None -> crash
+            # sau khi da ghi --out, tuc Vera co tep ma moc khong duoc cap nhat
+            # (tin bao lai hom sau). Bat 04/09/2026 khi chay thu quet_chuan_bi.
+            cu_nhom = nhom.get(k)
+            if not cu_nhom or (t.get("so_bao") or 0) > (cu_nhom.get("so_bao") or 0):
                 nhom[k] = t
         muc = [(k, f"{t['hang_watch']}: {t['tieu_de']}", "watchlist",
                 f"{t['so_bao']} bao; {t['ngay']}", t.get("link", ""), [t["hang_watch"]])

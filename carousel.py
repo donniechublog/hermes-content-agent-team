@@ -584,6 +584,10 @@ def _gate_anh(paths):
         la_bia = (nhan == "bia")
         khai_chart = bool(muc.get("chart"))
 
+        # Anh RONG chan TRUOC kiem_chart: anh trang tron duoc do_chart cham la
+        # "chart" (phang 100%, 2 mau), de sau thi thong bao thanh "thieu co".
+        if not gom(luat_anh.kiem_anh_rong(nhan, img)):
+            continue
         if not gom(luat_anh.kiem_chart(nhan, img, khai_chart, la_bia)):
             continue
 

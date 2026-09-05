@@ -27,19 +27,16 @@ def dung(items: list, vai: str, ngay: str = None, tieu_de_phu: str = "") -> str:
         d.append(f"<i>{tieu_de_phu}</i>")
     d.append("")
 
+    # Luat Ong Chu 05/09/2026: bao cao CHI la headline, MOT dong moi tin (so, tieu
+    # de, nguon). summary_vi va score_reason van nam trong manifest cho vai viet
+    # doc khi tao task, nhung KHONG len bao cao — Ong Chu doc luot 12 tin trong
+    # mot man hinh.
     for it in items:
         diem = it.get("score")
         dau = f"<b>{it['index']}.</b>" + (f" [{diem}đ]" if diem is not None else "")
-        d.append(f"{dau} {it.get('title', '')}")
-        if it.get("summary_vi"):
-            d.append(f"    {it['summary_vi']}")
-        # Ly do cham diem chi Finn co; hien khi co de Ong Chu biet vi sao no len top
-        if it.get("score_reason"):
-            d.append(f"    <i>{it['score_reason']}</i>")
         phu = " · ".join(x for x in (it.get("via"), it.get("source_note")) if x)
-        if phu:
-            d.append(f"    <i>{phu}</i>")
-        d.append("")
+        d.append(f"{dau} {it.get('title', '')}" + (f" <i>({phu})</i>" if phu else ""))
+    d.append("")
 
     d.append(NHAC)
     return "\n".join(d)

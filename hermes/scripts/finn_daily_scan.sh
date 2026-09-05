@@ -9,33 +9,23 @@ KEY="finn-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 MANIFEST="/home/donniechu/content-team/state/${CT_BRAND}/finn_candidates_${DAY}.json"
 
-BODY="Nhiem vu quet tin sang (chay theo lich cron). Lam dung 5 buoc trong SOUL cua ban.
+BODY="Nhiem vu quet tin sang $DAY (chay theo lich cron). Phan CO HOC — chay script quet, loc
+trung, cham diem co hoc, ghep manifest danh so, viet bao cao, gui topic — DA LA SCRIPT.
+Viec cua ban chi co MOT: cham hai thanh phan diem con lai (suc nang ky thuat 0-30, lien quan 0-20) va tom tat 2-3 cau cho toi da 8 tin. Lam dung BA BUOC, khong them lenh nao khac.
 
-Duong dan ghi manifest: ${MANIFEST}
+BUOC 1 — doc ban chuan bi (danh sach ung vien mot dong/tin, muc BAT BUOC, khung tep nop):
+cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai scout
 
-Muc BAT BUOC DUA VAO BAO CAO (script quet in ra, tep bat_buoc_scout.json): MOI muc phai co trong picks. manifest_build.py se tu choi neu thieu — them vao roi chay lai, khong duoc bo.
+BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Link phai Y HET
+danh sach (khong go lai tu tri nho). MOI muc BAT BUOC phai co mat. KHONG cat/grep
+tep JSON goc, KHONG web_search, KHONG chay scan_*/manifest_*/publish.py tay.
 
-Ghi manifest KEM ban bao cao, dung mot lenh:
-
-  cd /home/donniechu/content-team && venv/bin/python manifest_build.py \\
-    --picks <tep cham diem cua ban> --out ${MANIFEST} \\
-    --bao-cao /tmp/finn_baocao.txt
-
-Script tu danh so, tu ghep du lieu tu candidates, VA tu viet luon ban bao cao.
-KHONG tu go lai so vao tin nhan: go lai la co hoi lech, so trong tin nhan mot
-dang con so trong manifest mot dang, Ong Chu tra loi so lai ra bai khac.
-
-Gui thang ban script vua viet:
-  /home/donniechu/hermes-agent/venv/bin/python /home/donniechu/content-team/publish.py \\
-    --to-env TELEGRAM_GROUP_ID --thread-name scout --file /tmp/finn_baocao.txt
-
-KHONG co tin nao dat nguong thi van phai gui mot dong noi ro hom nay khong co gi,
-kem so tin da quet. Ong Chu can phan biet duoc \"hom nay khong co gi\" voi
-\"co gi do hong\".
-
-Chi dung <b>, <i>, <code>, <a href>. KHONG dung <br>, <p>, <li>, markdown.
-
-KHONG tao task kanban nao. Chi quet, ghi manifest, gui bao cao."
+BUOC 3 — nop:
+cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai scout
+Khong tin nao dat nguong thi chay: quet_nop.py --vai scout --khong-co (script gui dong
+'hom nay khong co gi' kem so tin da quet — Ong Chu can phan biet voi 'co gi do hong').
+Script bao [LOI] thi sua tep JSON roi chay lai DUNG lenh (toi da 2 lan). Xong: ket
+thuc task bang dong 'Ket qua task' script in ra. KHONG tao task kanban nao."
 
 OUT=$($H -m hermes_cli.main kanban create "Quet tin sang $DAY" \
   --assignee scout --max-runtime 20m \

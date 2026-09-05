@@ -12,6 +12,12 @@ metadata:
     tags: [ai-background, carousel, deck, gin, itachi, nen-ai, telegram]
 ---
 
+> **Trạng thái 04/09/2026: CHỜ GPU, chưa bật.** `tao_nen_ai.py` và bộ skill
+> retouch/blend chưa có trên server vì sửa/sinh ảnh bằng CPU quá nặng; không
+> phải lỗi, sẽ hoàn thiện đợt tới khi có GPU. Tới lúc đó Gin/Itachi không sinh
+> nền AI; nền là `nen_sach.png` từ Gin (remake) hoặc nền phẳng của `deck.py`.
+> Khi bật lại thì nối vào `itachi_nop.py`, vai không gọi tay.
+
 # ai-background — nền sinh bằng AI cho carousel gốc
 
 Nguồn nền thứ ba của `deck.py`, bên cạnh nền màu phẳng (`"bg": "cream"` mặc

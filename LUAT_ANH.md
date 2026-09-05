@@ -71,6 +71,25 @@ Không giới hạn ở ảnh nhúng trong đúng link gốc. Tin đủ lớn th
 thật liên quan rải ở các bài khác: ảnh sự kiện góc khác, ảnh sản phẩm chính
 hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 
+### 1.2b Engine tự tìm rộng — không lấy hết ảnh của một URL
+
+Ông Chủ 05/09/2026: *"designer gần như luôn né tránh việc tìm nguồn ảnh, toàn lấy
+ảnh trong một URL, kể cả banner quảng cáo"*. Từ 04/09 vai không tìm ảnh nữa —
+`anh_chuan_bi.py` tìm, vai chỉ chọn mã — nên luật này là luật của **engine**:
+
+- Chỉ lấy ảnh **trong bài** (`article`/`main`); loại quảng cáo, widget, sidebar,
+  nav/footer, placeholder, onboarding, logo — theo cả tổ tiên DOM lẫn src/alt.
+- **Trần mỗi trang**: bài gốc ≤ 4 ảnh, báo khác ≤ 3. Một URL không lấp cả kho.
+- Báo khác phải **cùng tin**: chung ≥ 2 từ đặc trưng với tiêu đề gốc (Google
+  News trả cả bài bệnh thận vì cùng chữ "AI").
+- **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
+  → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
+- Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
+  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → brief nói
+  thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
+- Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
+  hiệu cần xem lại.
+
 ### 1.3 Tin model ra mắt: ưu tiên benchmark table/chart
 
 Bảng so sánh điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là
@@ -291,12 +310,22 @@ bắt được trường hợp đầu (hash), trường hợp sau **vẫn phải
 Một bộ 6 slide cần 4–6 nguồn ảnh riêng biệt; xoay vòng 2 ảnh cho 6 slide là điểm
 trừ trải nghiệm rõ rệt.
 
+**Ảnh rỗng.** Bộ Broadcom dcgr 04/09/2026: bước chụp trả về ảnh **trắng trơn**
+(2 màu, phẳng 100%), ra một slide không có gì ngoài chữ. Không cổng nào bắt —
+trớ trêu là ảnh trắng lại là thứ "giống chart" nhất theo phép đo, nên cổng chart
+cho qua ngay. Đo trên 76 ảnh trong kho: ảnh rỗng = 2 màu, ảnh thật ít màu nhất
+= 40 màu — cách nhau 20 lần nên chặn được chắc (khác các phép đo "slide trống"
+đã thử và bỏ vì chồng lấn với chart sạch). `chup_chart.py` nay tự dừng ngay khi
+chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. **Vẫn phải mở
+ảnh ra xem trước khi ghi vào spec** — tên tệp không nói ảnh có gì.
+
 ---
 
 ## 9. Bảng cổng chặn (`luat_anh.py`)
 
 | Cổng | Hàm | Chặn hay cảnh báo |
 |---|---|---|
+| **Ảnh rỗng** (trắng trơn / một màu) | `kiem_anh_rong` | chặn — chạy **trước** cổng chart |
 | Ảnh trùng (theo nội dung tệp) | `kiem_trung` | chặn |
 | Chart/screenshot thiếu `chart: true` | `kiem_chart` | chặn |
 | Khai `chart: true` mà máy không nhận ra chart | `kiem_chart` | **chỉ cảnh báo** (mục 3) |

@@ -75,6 +75,44 @@ ghi thêm một dòng cảnh báo.
   riêng biệt sau lượng hoá 5 bit). `card.py` và `carousel.py` dùng chung nó để
   **ép ảnh chart vào đúng đường** — `"chart": true` ở slide thân, ghép dọc ở
   bìa/hero — thay vì để vai đối xử với chart như ảnh thường rồi crop mất trục
+- **Kiến trúc 3 lớp cho mọi vai (04/09/2026): CHUẨN BỊ (script, chạy nền) →
+  VIẾT (LLM, một tệp) → NỘP (script).** Đo trước khi đổi: Dre 51–60 tool
+  call/task, Ethan 19–43, Kite 32, Miles 14–24, Finn/Nova/Vera 14–22, phần lớn
+  là việc cơ học (curl tải ảnh, ls/grep dò file, cat JSON, tự đếm ký tự, chạy
+  cổng chặn nhiều vòng, web_search lại tin vì link Google News đọc ra rỗng).
+  Giờ mỗi task là **3 lệnh**, kỳ vọng ~4 tool call.
+  - `anh_chuan_bi.py` — **engine dùng chung** cho mọi vai làm ảnh/chữ từ một tin,
+    `approve_service.create_pair` khởi chạy nền (`--im`) ngay lúc Ông Chủ chọn:
+    giải mã link Google News, tiêu đề tiếng Anh, Bing News RSS tìm báo khác, một
+    phiên chromium (chữ bài, img lớn, chụp table/figure/canvas), `anh_bai`,
+    Wikimedia Commons khi < 5 ảnh; dHash bỏ trùng; phân loại chart (luật bổ sung
+    nền trắng ≥45% & cạnh ≥8%, đo trên ảnh thật), mặt người, tỉ lệ; cắt sẵn
+    1:1/4:5 qua `crop_ti_le`; cặp ghép cùng tone; tư liệu (lọc câu liên quan).
+    Kết quả `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
+  - Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`
+    (carousel), `ethan_chuan_bi/ethan_nop` (hero `card.py`, `anh2` ghép dọc,
+    `nhan_vat`), `kite_chuan_bi/kite_nop` (`render_edu.py`, hình thật cho
+    `figure`, theme/hero không trùng), `miles_chuan_bi/miles_nop` (caption: chuẩn
+    hoá em-dash, đếm, `caption_check`, `draft_write`, push). Nop chặn sớm lỗi hay
+    mắc, chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi `drafts/<id>.ban_giao.md`
+    (approve_service dán vào task Miles khi bấm Duyệt), `da_dung.json` để "Làm
+    lại" bắt buộc đổi ảnh/hook/tone. `--khong-gui`/`--out`/`--khong-push` để thử.
+  - Bốn vai theo chat cùng mẫu, khoá là message_id/URL: `gin_chuan_bi/gin_nop`
+    (OCR đánh số vùng, đo màu; LaMa xoá trừ vùng `giu`; `vung.json` cho Itachi),
+    `itachi_chuan_bi/itachi_nop` (tự làm phần Gin nếu chưa; chữ Anh từng vùng
+    in sẵn; vẽ tại chỗ đúng box/màu/cỡ hoặc `deck.py`; retouch/blend chờ GPU,
+    xem dưới), `jean_chuan_bi/jean_nop` (bóc bài, ráp teaser, gửi topic; `--draft`
+    cho task sau này), `ada_chuan_bi/ada_nop` (số liệu N ngày: chọn theo bậc điểm/
+    nguồn/category, draft, kanban, token theo vai, chi phí 9router → nhận xét có
+    bằng chứng → báo cáo topic analyst). `tao_nen_ai.py` (skill ai-background) và
+    bộ skill retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh ảnh bằng CPU quá
+    nặng): không phải lỗi, hoàn thiện đợt tới. Tới lúc đó hai vai chỉ xoá chữ +
+    vẽ tại chỗ/deck.
+  - `quet_chuan_bi.py --vai scout|nova|market` + `quet_nop.py`: ba vai đi tìm tin
+    nhận danh sách ứng viên **một dòng mỗi tin** + mục BẮT BUỘC + khung tệp nộp;
+    nop ghép manifest (`manifest_build`/`manifest_ghi`), kiểm bắt buộc, viết báo
+    cáo, gửi topic; `--khong-co` gửi dòng "hôm nay không có gì"; `--thu` không
+    ghi manifest thật, không xoá bắt buộc.
 - `chup_chart.py` — chụp **chart / bảng benchmark** đúng luật *full chiều rộng
   trước, chiều cao xét sau* (Ông Chủ chốt 04/09/2026). Mở trang ở khung 1920px,
   đo bề ngang **thật** của phần tử (`scrollWidth`), **nới khung** cho vừa rồi mới
@@ -124,6 +162,12 @@ ghi thêm một dòng cảnh báo.
   `CHAT_HINT` (chat thì trả lời ngắn, không tự chạy scan/task) trước mọi tin cho
   mọi vai; hết giờ thì giết cả process group (`start_new_session` + `killpg`)
 - `ghi_log.py` — log dùng chung (stdout + tệp theo brand) cho hai tệp trên
+- `nguon_bai.py` — research của Finn chạy lúc chọn tin. Từ 04/09/2026 tự **giải
+  mã link Google News** (`giai_ma_gnews`, thử tĩnh rồi chromium) — tin của Vera
+  luôn mang link chuyển hướng, trước đó `anh_bai`/`tu_lieu` đọc ra rỗng và Dre
+  phải web_search lại. `approve_service` dùng link thật cho mọi task sau và ghi
+  vào meta. Task body giờ nhận đường dẫn nguồn thật `state/<brand>/nguon_<id>.json`
+  (trước trỏ `state/` gốc nên vai nào cũng không thấy bộ nguồn của Finn).
 - `manifest_ghi.py` / `manifest_build.py` — ghi manifest đánh số vào
   `state/<brand>/` qua `env_load.state_dir()` — **cùng chỗ approve_service đọc**.
   Trước 03/09 ghi cứng `state/` gốc nên trả lời số trong topic Vera/Nova luôn ra
@@ -145,6 +189,13 @@ ghi thêm một dòng cảnh báo.
   hãng lõi mỗi ngày (hoặc tin ≥2 báo), khớp theo tên hãng
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
+- `theo_doi_9router.py` — nhật ký 9router **theo ngày** (`state/9router/nhat_ky/9router_<ngày>.md|json`):
+  req/prompt/cache%/$ theo model @ kết nối, theo khoá API, theo giờ VN, fallback thật
+  v4-flash→deepseek-chat, lỗi, 5 prompt nặng nhất, phiên rỗng (ok nhưng ≤5 token out dù
+  prompt ≥1k), snapshot connection lỗi (lastError/errorCode/backoff), **$ theo vai** (ghép
+  `session_model_usage` mọi HERMES_HOME × đơn giá 9router trong ngày, phủ ~98%), $/task done,
+  $/bài published theo brand. `--canh` là watcher IP
+  (9router không lưu IP, xem "Điểm mù thứ ba"). Ada đọc qua `tai(ngày)` để so ngày với ngày
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
 - `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…),
   icon SVG, mascot, và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
@@ -180,17 +231,53 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   "không nhớ gì" (Ethan 03/09, Itachi 04/09). Dòng `phien=↻ Resumed session …` trong
   `approve.log` là chỗ đối chiếu khi nghi vai mất mạch.
 
+## Bảng đen kanban (swarm) — dcgr từ 05/09/2026
+
+Ông Chủ hỏi "các vai có trao đổi với nhau được không, như clip Hermes". Có ba cách trong
+Hermes; đội chọn **kanban swarm** vì hai cách kia (mỗi vai một bot Telegram, hoặc `delegate_task`
+sinh agent con) hoặc tốn 8 bot hoặc không phải vai thật. Không dùng `create_swarm()` nguyên khối
+vì nó chạy thẳng worker → verifier → synthesizer, không có chỗ cho cổng **Ông Chủ duyệt ảnh**.
+`bang_den.py` dùng đúng các viên gạch của nó và dựng đồ thị theo tiến trình thật của bài:
+
+```
+thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nhận việc; là bảng đen)
+  └─ task Dre        parent = gốc              ← tạo khi Ông Chủ chọn số
+       └─ task Miles parent = [Dre, gốc]       ← tạo khi Ông Chủ bấm "Duyệt ảnh" (cổng giữ nguyên)
+            └─ task Ada "Soát: …" parent = [Miles, gốc]  ← tạo khi Miles xong
+```
+
+- Vai **không nhắn nhau**. Mỗi vai kết thúc bằng `kanban_complete(summary, metadata)`; hermes tự
+  đưa summary/metadata đó vào context task con ("Parent task results"), nên Miles thấy Dre, Ada
+  thấy Miles. `dre_nop.py` / `miles_nop.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
+  `[swarm:blackboard] {…}` trên thẻ gốc) và in dòng `[metadata]` để vai dán vào `kanban_complete`.
+- **Ada** soát 4 điểm (số liệu khớp nguồn, caption khớp ảnh, ghi nguồn, đúng brand) rồi
+  `kanban_complete(metadata={"gate": "pass"|"fix"})`. `approve_service` trả kết quả về topic Miles,
+  **reply ngay dưới thẻ ✅/❌** (push CLI lưu `tg_card_message_id`). Ông Chủ vẫn là người bấm.
+- Nhìn toàn chuỗi: `hermes kanban show <thẻ gốc>` hoặc dashboard — quan hệ cha-con nằm trong
+  `task_links`, bàn giao trong `task_comments`/`task_runs`, không trôi như chat.
+- Bảng đen là lớp thêm, **best-effort**: `bang_den.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
+  đen và không có Ada soát (bài trước 05/09 không có thẻ gốc → cũng không soát).
+- Chỉ bật cho brand trong `CT_BANG_DEN` (mặc định `dcgr`). Blog là nhóm đối chứng của tuần đo
+  bot-mode nên giữ nguyên; muốn bật: `Environment=CT_BANG_DEN=dcgr,blog` trong unit approve.
+
 ## Dịch vụ systemd
 
 - `hermes-gateway` — gateway hermes, chứa dispatcher kanban
 - `hermes-approve` — dịch vụ duyệt bài (tệp này)
 - `hermes-dashboard` — bảng điều khiển web, cổng 9119
+- `nhat-ky-web` — user unit (`hermes/systemd/nhat-ky-web.service`), `nhat_ky_web.py` cổng 9130:
+  `/` danh sách ngày, `/9router/<ngày>` bảng đầy đủ, `.json` số thô. Tin Telegram 6h sáng
+  (chỉ brand blog gửi, tránh trùng) là tóm tắt req · $ · cache% · fallback + $/bài + link
+  `http://100.87.121.46:9130/9router/<ngày>` (netbird; đổi bằng `NHAT_KY_URL`). Không ảnh, không bảng trong Telegram
+- `9router-ket-noi` — user unit (`hermes/systemd/9router-ket-noi.service`), watcher IP kết nối
+  tới cổng 20128 → `state/9router/ket_noi_<ngày>.jsonl`. Không root, không đọc nội dung
 
 ## Cron (7 job, xem `~/.hermes/cron/jobs.json`)
 
 - `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
 - `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
-- `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước
+- `daily-log` (trước là `nhat-ky-daily`) — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router hôm qua
+  (`theo_doi_9router.py --gui`: tóm tắt ngày + cảnh báo IP ngoài / fallback / lỗi / phiên rỗng / connection chết + link web → topic analyst)
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
 - `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
   không có gì mới; hỏi theo `workflow_id` (khoá chính) chứ không phải `external_id`;
@@ -198,31 +285,38 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 
 ## Model từng vai
 
-**Chuỗi đang chạy** (nguồn sự thật: `~/.hermes/profiles/*/config.yaml`, soi bằng
-`model_watch.py`): 12 vai thường — chính `ds/deepseek-v4-flash`, dự phòng
-`v4flash@api.b.ai → ds/deepseek-chat`. Riêng Ada — chính `ds/deepseek-reasoner`
-(**bật** suy luận, vai duy nhất), dự phòng `v4-pro → deepseek-chat`. Bảng dưới
-là KẾT QUẢ ĐO chọn model, không phải cấu hình:
+**Chuỗi đang chạy** (nguồn sự thật: `~/.hermes-<brand>/profiles/*/config.yaml`
+— mỗi container một home riêng từ khi tách brand, không còn `~/.hermes` gộp
+chung). Đo lại 04/09/2026, theo brand:
 
-| Vai | Model đo được là hợp nhất | Suy luận |
-|---|---|---|
-| Finn / Ethan / Ethan / Dre | `ds/deepseek-v4-flash` | tắt |
-| Miles / Miles / Jean | `ds/deepseek-chat` | tắt |
-| Ada | `ds/deepseek-reasoner` | **bật** |
+| Vai | donniechublog | dcgr.tech | Suy luận |
+|---|---|---|---|
+| Ada (analyst) | `ds/deepseek-reasoner` | `ds/deepseek-reasoner` | **bật** — vai duy nhất, việc đối chiếu điểm chấm cần suy luận thật |
+| Bob | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | **medium** |
+| Ethan (designer) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Dre (carousel) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Kite (carousel-edu) | `ds/deepseek-v4-flash` | — (chưa deploy) | tắt |
+| Gin / Itachi | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Nova / Vera (market) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
+| Finn (scout) | `ds/deepseek-v4-flash` | — (dcgr chỉ có Vera) | tắt |
+| Jean (teaser) | `ds/deepseek-v4-flash` | — (blog only) | tắt |
+| Miles (writer) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
 
-Dre, Gin, Itachi thêm sau, clone từ Dre nên cùng chuỗi `v4-flash` (chưa đo
-riêng). Gin chạy việc thật **trên server** (torch+cpu đã cài từ 28/08/2026, xem
-skill `inplace-translate`) — không còn phụ thuộc máy local.
+Dự phòng của mọi vai (trừ Ada): `v4flash@api.b.ai → ds/deepseek-chat` (xem
+mục Provider). Gin chạy việc thật **trên server** (torch+cpu cài từ 28/08/2026,
+xem skill `inplace-translate`) — không còn phụ thuộc máy local. Kite ĐÃ DEPLOY
+(2026-09-01), generator `render_edu.py` chạy live trên server.
 
-Kite ĐÃ DEPLOY (2026-09-01): profile `~/.hermes-blog/profiles/carousel-edu/`
-(config clone từ carousel/Dre, chuỗi `v4-flash`, `reasoning_effort: none`), topic
-Telegram "Kite · carousel.edu" (thread 52) + `chat_router` wired. Generator
-`render_edu.py` **đã chạy live** (Playwright+Chromium cài xong, render
-`reference/boost.spec.json` ra 5 slide chuẩn). Còn lại: wire full auto-pipeline
-trong `approve_service` (chọn qua "#N carousel-edu" từ list Finn).
-
-Ada là vai duy nhất giữ suy luận: việc của Ada là đối chiếu điểm chấm với tin
-được chọn — đúng loại việc cần suy luận thật.
+**Đã thử glm-5.3 rồi hạ lại 04/09/2026:** Finn/Jean/Miles bên donniechublog và
+Ethan bên dcgr.tech từng chạy chính bằng `xk/z-ai/glm-5.3`, kết quả một đợt A/B
+chỉnh trực tiếp trên server ngày 01/09/2026 — không đi qua git nên không có
+commit nào ghi lại lý do chọn. Audit 04/09 đo bằng `usage_audit.py`: glm-5.3 tốn
+**$0,416 / 20 request** (~$0,0208/req) so với v4-flash **$0,0997 / 204 request**
+(~$0,0005/req trong cùng cửa sổ) — đắt hơn khoảng **40 lần mỗi request** mà
+không có bảng audition nào chứng minh bù lại được bằng chất lượng, nên cả bốn
+vai đã hạ về `ds/deepseek-v4-flash` cùng ngày. Bản config trước khi hạ được giữ
+ở `profiles/<vai>/config.yaml.bak-truoc-doi-v4flash-0904` trong từng home,
+phòng khi cần so lại hoặc thử lại có kiểm soát hơn.
 
 Đo bằng `cost_squeeze.py`, chạy lặp trên việc thật, chấm bằng code:
 
@@ -254,12 +348,49 @@ biết. Cache là per-model, mỗi lần lật là mất sạch prefix đã cach
 bị tính lại giá gốc. Cột `cache%` trong `usage_audit.py` chính là thước đo
 nguyên tắc này: tụt cache nghĩa là đang lật model.
 
+**Đã bắt được một nguyên nhân lật cụ thể (cron 05/09/2026, cả Finn/Nova/Vera):**
+bước phụ `title_generation` (Hermes tự đặt tên phiên) gửi `response_format` mà
+DeepSeek v4-flash trả `400 This response_format type is unavailable now`; 9router
+coi đó là lỗi provider và đưa `deepseek/deepseek-v4-flash` vào cooldown ~30s
+(`reset after 28s`); hai lần retry của vòng chính (cách 2–3s) rơi trọn trong
+cooldown → `Fallback activated: v4-flash → deepseek-chat`, dính tới hết phiên
+(1 call v4-flash rồi 11–24 call deepseek-chat). Dòng log nằm ở
+`profiles/<vai>/logs/agent.log`, **không** có trong `logs/gateway.log`. Đếm
+19/08–04/09: lỗi này 5–48 lần/ngày, fallback 4–33 lần/ngày. Chặn bằng
+`auxiliary.title_generation.enabled: false` trong `config.yaml` từng profile:
+`venv/bin/python tat_title_generation.py` (có `--thu`, backup
+`.bak-truoc-tat-title-0905`); tiêu đề phiên vô dụng với task kanban/cron.
+
+**Từ 05/09/2026 model chính là combo `DS-v4Flash` của 9router** (`doi_model_combo.py`,
+có `--thu`, backup `.bak-truoc-doi-combo-0905`; analyst giữ `ds/deepseek-reasoner`).
+9router chỉ xoay giữa các connection *cùng* provider; ba route v4-flash (deepseek trực
+tiếp `ds/`, xKiro `dsx/deepseek/deepseek-v4-flash`, aellm `dsa/deepseek-v4-flash`) chỉ
+nối được với nhau qua Combo, gọi bằng đúng tên combo làm model (không có prefix
+`combo/`). Trước đó cả ba node đều đặt prefix `ds` nên hai node ngoài bị che, 7 ngày
+0 request. Đo route thật bằng `usageHistory.provider` của 9router; Hermes chỉ thấy
+model `DS-v4Flash`. Combo còn chứa mục chết (`ds/ds/…`, `tokenrouter/…` không có
+credential, `oc/…-free` unavailable) và chưa có `dsa/`: dọn trên dashboard.
+
+**dcgr chạy chat theo bot mode chuẩn của Hermes từ 05/09/2026 (thí điểm, blog giữ
+chat_router để so ~1 tuần).** Gateway dcgr: `multiplex_profiles: true`, 8 `profile_routes`
+theo thread_id, bot riêng @hermesdcgr_bot; approve dcgr vẫn dùng @hermesmodebot cho chọn
+số/Duyệt/Làm lại, chỉ nhường phần chat qua cờ `CT_CHAT_QUA_GATEWAY=1` đặt trong drop-in
+`~/.config/systemd/user/hermes-approve@dcgr.service.d/override.conf` (unit template dùng
+chung, blog không có cờ). Mỗi profile cần `profiles/<vai>/.env` với `OPENAI_API_KEY` +
+`TELEGRAM_ALLOWED_USERS` (multiplex fail-closed, không fallback `.env` gốc) nhưng
+**KHÔNG** được chứa `TELEGRAM_BOT_TOKEN`/`TELEGRAM_HOME_CHANNEL`: `backfill_profile_envs`
+của Hermes chép cả token → gateway từ chối 8 profile vì "same credential" (đã gặp 05/09,
+phải xoá dòng token khỏi 8 tệp). Đo bằng journal `hermes-gateway@dcgr` + `logs/gateway.log`
+(INFO không vào journal) so với approve.log blog: độ trễ, mất mạch, 429/timeout. Nhận xét
+đầu: reply qua gateway ngắn và không biết tình trạng task kanban như approve.
+Bản chụp config + drop-in + mẫu .env để tái tạo: `hermes/gateway/dcgr/` (xem DOC.md ở đó).
+
 ## Provider
 
-Tám vai chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek gốc, dự
-phòng là `v4flash` của provider mới (connection `openai-compatible-chat-ba685909…`,
-baseUrl `api.b.ai`) rồi `ds/deepseek-chat`. Ada giữ `ds/deepseek-reasoner` vì
-provider mới không có.
+Mọi vai trừ Ada chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek
+gốc, dự phòng là `v4flash` của
+provider mới (connection `openai-compatible-chat-ba685909…`, baseUrl `api.b.ai`)
+rồi `ds/deepseek-chat`. Ada giữ `ds/deepseek-reasoner` vì provider mới không có.
 
 **Provider mới từng là tuyến chính, đã hạ xuống dự phòng ngày 25/08** khi nó trả
 429 hết quota suốt nhiều giờ. Dây chuyền không gãy vì dự phòng gánh được, nhưng
@@ -279,8 +410,80 @@ Nhưng `--usage-file` cũng có bẫy: nó ghi model được **cấu hình**, k
 mà tệp usage vẫn khai là đang chạy provider mới — chỉ lộ ra khi đối chiếu với log
 9router.
 
+**Điểm mù thứ hai: cả hai brand dùng CHUNG một instance 9router cục bộ**
+(`http://127.0.0.1:20128/v1` trong cả hai `config.yaml`), và trong log
+`usageHistory` cả hai brand hiện ra đúng **một** `apiKey` duy nhất. `usage_audit.py`
+có sẵn cờ `--api-key` để tách theo client, nhưng vô dụng ở trạng thái hiện tại vì
+chỉ có một khoá — nên báo cáo usage-audit của blog và dcgr luôn ra **cùng một
+con số tổng**, không tách được brand nào tốn bao nhiêu.
+
+**Đã tách 05/09/2026:** 9router có hai khoá `hermes blog` và `hermes dcgr` (bảng
+`apiKeys`); khoá vào Hermes qua `OPENAI_API_KEY` trong `~/.hermes-<brand>/.env`
+(config.yaml chỉ ghi `${OPENAI_API_KEY}`). **Nhưng** dcgr chạy multiplex nên 8
+`profiles/<vai>/.env` cũng có `OPENAI_API_KEY`, và Hermes nạp `.env` của profile với
+`override=True` (`hermes_cli/env_loader.py`) → khoá trong profile **đè** khoá gốc. Lúc
+05/09 12:55 chỉ `.env` gốc mang khoá `hermes dcgr`, 8 profile vẫn mang khoá `hermes blog`
+→ 9router ghi 181/182 request dcgr vào khoá blog, tách mà như chưa tách. Đổi khoá cho
+dcgr = sửa `.env` gốc **và** cả 8 `profiles/*/.env` (blog không có profile .env nên chỉ
+một dòng), rồi restart gateway brand đó. Từ đó `theo_doi_9router.py` tự tách req/$ theo
+brand ở mục "theo khoá API" (đọc tên khoá từ bảng `apiKeys`, không cần sửa code).
+
+**Điểm mù thứ ba: 9router KHÔNG ghi IP máy gọi.** `usageHistory` không có cột IP,
+`meta` luôn `{}`; `custom-server.js` có tính `x-9r-real-ip` nhưng chỉ dùng cho
+rate-limit. Trong khi service đang bind `0.0.0.0` (LAN 192.168.1.61 + netbird),
+ai trong mạng cũng gọi được bằng khoá chung. Đo 05/09: `theo_doi_9router.py --canh`
+đọc bảng TCP mỗi 2s (psutil, mọi trạng thái trừ LISTEN nên curl mở-đóng 1s vẫn để
+vết TIME_WAIT), ghi IP theo **kết nối**, không theo request — Hermes dùng httpx
+keep-alive nên một kết nối chở nhiều request. Muốn quy request về máy gọi thì vẫn
+phải cấp khoá riêng như trên. Nhật ký ngày `9router_<ngày>.md` gộp cả hai nguồn;
+cột "đổi model liên tiếp" chỉ tin cặp v4-flash→deepseek-chat là fallback thật,
+các cặp khác phần lớn là vai chạy song song (9router không ghi session).
+
 Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh dựng → vai viết,
 17 lượt gọi): **~398.000 token chạm model**, cache 36%, 227 giây, ước $0,038.
+
+## Bài học một tuần config 9router không chuẩn (29/08–05/09/2026)
+
+1. **Hai chuỗi dự phòng chồng nhau, không ai nhìn cả hai.** Combo của 9router và
+   `fallback_providers` của Hermes là hai cơ chế độc lập. Tắt deepseek-chat trên 9router
+   xong vẫn thấy nó trong log vì 19 config Hermes còn giữ nó làm dự phòng. Quy tắc: đổi
+   model là phải sửa CẢ HAI chỗ, kiểm bằng `grep deepseek-chat ~/.hermes-*/**/config.yaml`.
+2. **Một route chết trong combo kéo cả chuỗi lật.** xKiro trả 404 "model does not exist"
+   từ 06:34 05/09 mà vẫn nằm trong combo → combo lỗi định kỳ → Hermes fallback. Trước khi
+   thêm route vào combo phải gọi thử; snapshot connection lỗi trong nhật ký ngày để bắt.
+3. **Bước phụ làm lật model chính.** `title_generation` gửi `response_format`, v4-flash trả
+   400, 9router cooldown 30s, 2 retry của Hermes rơi đúng cooldown → cả phiên chạy
+   deepseek-chat. Mọi bước phụ (title, summary, vision) phải cùng model hoặc tắt hẳn.
+4. **9router chỉ xoay connection cùng provider.** Ba route v4-flash khác provider chỉ nối
+   được qua Combo; gọi bằng đúng tên combo, không có tiền tố `combo/`. Prefix trùng
+   (`ds`) từng che mất hai node ngoài.
+5. **Tên model lệch ba kiểu.** Hermes ghi `ds/deepseek-v4-flash`, `DS-v4Flash`,
+   `DeepSeek-V4-Flash`; 9router ghi `deepseek-v4-flash`, `deepseek/deepseek-v4-flash`.
+   Mọi script đối chiếu phải chuẩn hoá (bỏ tiền tố nhà cung cấp, không phân biệt hoa
+   thường, resolve combo qua bảng `combos`), không so chuỗi thô.
+6. **Nhìn số gộp thì không thấy gì.** usage_audit in một bảng N giờ rồi quên; glm-5.3 đắt
+   40x/request ăn 70% tiền suốt nhiều ngày mà README vẫn nói v4-flash. Phải có nhật ký
+   theo ngày, $ theo vai, $/bài, và đọc config thật trên server chứ không tin README.
+7. **Hạ tầng dùng chung thì không tách được ai tốn gì.** Một 9router, một apiKey cho hai
+   brand, bind 0.0.0.0 không ghi IP. Muốn tách brand cần khoá riêng; muốn biết máy nào
+   gọi phải tự bắt ở socket. Đừng để mặc định của công cụ quyết định độ quan sát.
+
+8. **Cache là của từng nhà cung cấp, không phải của model.** Cùng v4-flash, qua DeepSeek
+   trực tiếp cache 93–96%, qua aellm (bán lại) 49% → đắt ~7x mỗi token prompt. Combo phải
+   xếp DeepSeek trực tiếp TRƯỚC, reseller chỉ để dự phòng; và đừng để hết credit (402 hôm
+   05/09 đẩy cả ngày sang aellm).
+9. **System prompt đổi mỗi task vì một dòng.** Hermes in `Current working directory:` vào
+   giữa prompt; workspace `scratch` tạo thư mục mới mỗi task nên 37% cuối prompt (skills,
+   memory) không bao giờ trúng cache giữa hai task. Đo 05/09: hai task carousel cách 5 phút
+   chỉ khác đúng dòng đó. Sửa: `approve_service.kanban_create` tạo task với
+   `--workspace dir:~/.hermes-<brand>/kanban/workspaces/co-dinh`. Còn lại trong prompt chỉ
+   đổi theo ngày (`Conversation started`) và theo model (`Model:`) — thêm lý do ghim model.
+   Sửa SOUL cũng làm cache về 0 cho vai đó, gom sửa thành đợt. Chạy thử từ `~/hermes-agent`
+   thì bị nhét cả AGENTS.md của Hermes (prompt 115k ký tự) — chỉ thử từ `~/content-team`.
+
+Trạng thái sau khi sửa (05/09): combo = [ds trực tiếp, dsx xKiro, dsa aellm], 19 profile dự
+phòng `ds/deepseek-v4-flash`, title_generation tắt, nhật ký ngày + web + tin 6h đã chạy.
+Chỉ tiêu: fallback = 0 từ 06/09; sai thì trang chi tiết chỉ ra route nào.
 
 ## Suy luận (reasoning)
 

@@ -102,6 +102,12 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - Em-dash (—) bị chặn ở mọi văn bản thẻ.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
 - Ảnh là chính, textbox là phụ: text nhường chỗ cho ảnh, không ngược lại.
+- Kiểu `quote` khoá khổ thẻ, nên màn tối phải **đặc hẳn ngay tại đáy lớp ảnh
+  sắc** (`_man_quote(canvas, nat_h)`), không dùng mốc cố định 38%: ảnh 16:9 cao
+  45% khổ thẻ thì mốc cố định để mép sắc/mờ hở ra ở alpha 15/255 — thẻ đọc ra
+  hai vùng. `_tran_anh` đã giải bài này từ trước, `_man_quote` khớp theo. Ảnh
+  thấp hơn 50% khổ thẻ thì chặn hẳn (`luat_anh.kiem_anh_thap`): nửa thẻ bỏ
+  trống, đường ra là ghép dọc `--image2`.
 - Ảnh chart/bảng/screenshot: `card.la_chart()` nhận diện (phẳng ≥0,85 **và**
   ≤220 màu riêng biệt) rồi ép vào đường của chart — hero thì phải ghép dọc
   `--image2`, carousel thì `"chart": true`. Chart luôn phải **nguyên vẹn và

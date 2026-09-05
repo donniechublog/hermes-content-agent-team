@@ -12,7 +12,7 @@ Hai chieu deu do BEN NAY chu dong:
 Moat khong goi nguoc ve day: host nay khong mo cong nao ra ngoai, va mot
 vong poll 10 phut du nhanh cho viec "bao xem da len Facebook chua".
 
-Khoa: MOT khoa cho MOI thuong hieu, trong .secrets.env, gui qua header
+Khoa: MOT khoa cho MOI thuong hieu, trong secret.<brand>.env, gui qua header
 X-API-Key. MOAT_PUBLISH_KEY cho donniechublog, MOAT_PUBLISH_KEY_DCGR cho
 dcgr.tech. Mot khoa ung voi dung mot org ben moat -- khong bao gio truyen
 org_id tu day, chinh cai khoa da chon org roi. Nen chon dung khoa la toan bo
@@ -22,8 +22,10 @@ Trang thai duoc ghi nguoc vao chinh file draft (khoa "moat"), nen mot bai da
 day roi khong bao gio day lai, va mot ket qua da bao roi khong bao lai.
 """
 import base64
+import html
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -35,7 +37,6 @@ import env_load
 ROOT = Path.home() / "content-team"
 DRAFTS = ROOT / "drafts"
 STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
-SECRETS = ROOT / ".secrets.env"
 
 # Chi cac bucket ANH -- day chuyen nay ra the anh, khong ra video.
 #
@@ -48,6 +49,15 @@ SECRETS = ROOT / ".secrets.env"
 PLATFORMS = ["facebook_post", "instagram_carousel"]
 
 TIMEOUT = 60
+
+# Rieng luc DAY bai thi khong dung TIMEOUT chung duoc. Uplink cua may nay do
+# duoc ~50 KB/s (7 MB het 136 giay, moat tra 400 chu khong tu choi -- ca body
+# da qua). Mot bai carousel 5 anh la ~7 MB base64, day du 10 anh la ~14 MB, tuc
+# rieng buoc GHI body mat 2-5 phut. httpx.Client(timeout=60) ap mot con so cho
+# ca connect/read/write, nen moi bai nhieu anh chet o WriteTimeout va bai da len
+# Telegram roi thi khong bao gio sang duoc social.
+# Tach ra: connect/read van ngan de loi mang lo som, chi rieng write nuoi that dai.
+TIMEOUT_DAY = httpx.Timeout(connect=15.0, read=180.0, write=600.0, pool=15.0)
 TRAN_NEN_TANG = 2200        # gioi han caption cua Instagram va TikTok
 MIME_BY_SUFFIX = {".png": "image/png", ".jpg": "image/jpeg",
                   ".jpeg": "image/jpeg", ".webp": "image/webp"}
@@ -66,12 +76,23 @@ PLATFORM_LABEL = {"facebook": "Facebook", "instagram": "Instagram", "tiktok": "T
 
 
 def load_secrets():
-    if SECRETS.exists():
-        for line in SECRETS.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+    """Nap cau hinh qua env_load: secret.common.env -> secret.<brand>.env ->
+    .secrets.env.
+
+    Truoc day ham nay tu doc MOT MINH .secrets.env. Hau qua: tien trinh chay
+    doc lap (cron goi poll()) khong bao gio thay tep rieng cua brand, chi
+    approve_service -- vi no goi env_load.nap() luc import -- moi thay. Hai
+    duong vao cung mot module ma ra hai ket qua khac nhau, va brand dcgr thi
+    khong duong nao thay khoa ca. Mot cua nap duy nhat de het lech.
+    """
+    env_load.nap()
+
+
+def _cho_trong(v):
+    """Gia tri kieu '<dan khoa vao day>' trong secret.<brand>.env la CHO TRONG
+    chua dien, khong phai khoa. Coi la chua cau hinh, thay vi cam dau goi moat
+    de an 401 moi phut."""
+    return v.startswith("<")
 
 
 # Thuong hieu -> ten bien moi truong chua khoa. Khoa quyet dinh org ben moat,
@@ -88,6 +109,20 @@ KHOA_MAC_DINH = "MOAT_PUBLISH_KEY"
 def ten_khoa(brand=None):
     """Ten bien moi truong chua khoa cua thuong hieu nay."""
     return KHOA_THEO_BRAND.get(brand or MAC_DINH_BRAND, KHOA_MAC_DINH)
+
+
+# CUNG quy uoc voi approve_service: CT_BRAND ('blog'|'dcgr') la khoa container,
+# BRAND (ten content-brand day du) suy tu no va van cho env de len.
+_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
+
+
+def brand_container():
+    """Brand ma container nay phu trach. Rong = che do don cu (khong loc)."""
+    load_secrets()
+    ten = os.environ.get("BRAND", "").strip()
+    if ten:
+        return ten
+    return _TEN_BRAND.get(os.environ.get("CT_BRAND", "").strip(), "")
 
 
 def base_url():
@@ -108,6 +143,8 @@ def config(brand=None):
     """
     base = base_url()
     key = os.environ.get(ten_khoa(brand)) or ""
+    if _cho_trong(key):
+        key = ""
     if not base or not key:
         return None, None
     return base, key
@@ -132,6 +169,18 @@ def _ghi_json(path, data):
 
 def write_draft(draft_id, data):
     _ghi_json(draft_path(draft_id), data)
+
+
+# Caption duoc viet CHO TELEGRAM (parse_mode=HTML): <b>, <i>, <code>. Facebook,
+# Instagram va TikTok khong hieu HTML — chung in nguyen chu "<b>" ra bai dang.
+# Do tren drafts hien co: 42/61 bai co the, chi gom b/i/code, khong co <a> va
+# khong co entity — nen boc the va giu nguyen chu ben trong la du, khong mat gi.
+_THE_HTML = re.compile(r"</?[a-zA-Z][a-zA-Z0-9-]*[^>]*>")
+
+
+def chu_thuan(text):
+    """Caption dang len social: bo the HTML, giu chu ben trong."""
+    return html.unescape(_THE_HTML.sub("", text or "")).strip()
 
 
 def images_payload(d):
@@ -202,7 +251,9 @@ def intake(draft_id, scheduled_at=None):
     # Tran chi ap cho TIN HANG NGAY. Ong Chu chot lay gioi han Instagram lam moc
     # va chap nhan danh doi: mot ban dang duoc khap noi, thay vi fine-tune rieng
     # tung nen tang. Chan o day la lop cuoi — toi day bai phai dang duoc ngay.
-    cap = d.get("caption") or ""
+    # Boc the TRUOC khi do: tran nay phai do dung chuoi that su dang len,
+    # khong phai chuoi con lan the HTML.
+    cap = chu_thuan(d.get("caption"))
     if len(cap) > TRAN_NEN_TANG:
         return False, (f"caption {len(cap)} ky tu, vuot tran {TRAN_NEN_TANG} cua "
                        f"Instagram/TikTok (thua {len(cap) - TRAN_NEN_TANG}). "
@@ -214,8 +265,8 @@ def intake(draft_id, scheduled_at=None):
 
     body = {
         "externalId": draft_id,
-        "title": (d.get("caption") or "")[:80],
-        "caption": d.get("caption") or "",
+        "title": cap[:80],
+        "caption": cap,
         "sourceUrl": d.get("source_url") or "",
         "images": images,
         "platforms": PLATFORMS,
@@ -224,7 +275,7 @@ def intake(draft_id, scheduled_at=None):
         body["scheduledAt"] = scheduled_at
 
     try:
-        with httpx.Client(timeout=TIMEOUT) as c:
+        with httpx.Client(timeout=TIMEOUT_DAY) as c:
             r = c.post(base + "/publish-intake", json=body,
                        headers={"X-API-Key": key})
     except Exception as e:                                   # noqa: BLE001
@@ -268,6 +319,14 @@ def poll():
     if not base_url():
         return []
 
+    # drafts/ dung CHUNG cho moi container, ma poll() lai ghi co trang thai
+    # ("loi_da_bao", "reported", "tracking_stopped") nguoc vao chinh file draft.
+    # Container nao cung soi ca thu muc thi hai tien trinh thay nhau dat va xoa
+    # cung mot co: co che "chi bao MOT lan" thanh bao mai mai, va bao sai — moi
+    # container giai ra mot khoa khac nhau cho cung mot brand, nen ben thay
+    # workflow ben khong. Moi container chi soi bai cua brand minh.
+    cua_toi = brand_container()
+
     lines = []
     for path in sorted(DRAFTS.glob("*.json")):
         if path.name.endswith(".meta.json"):
@@ -280,6 +339,9 @@ def poll():
         if not isinstance(moat, dict) or not moat.get("external_id"):
             continue
         if moat.get("tracking_stopped"):
+            continue
+        # Bai day tu truoc khi tach brand khong co khoa "brand" -> mac dinh.
+        if cua_toi and (moat.get("brand") or d.get("brand") or MAC_DINH_BRAND) != cua_toi:
             continue
         reported = moat.get("reported") or {}
         if reported and all(v in TERMINAL for v in reported.values()) \

@@ -105,6 +105,36 @@ def khop(muc: dict, item: dict) -> bool:
     return bool(manh) and all(m in van_ban for m in manh)
 
 
+# Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC
+# khong co link (Nova 05/09 mo 17 tool call grep repo tim link cho 15 muc).
+LINK_BANG = {
+    "text": "https://arena.ai/leaderboard/text",
+    "webdev": "https://arena.ai/leaderboard/code/webdev",
+    "vision": "https://arena.ai/leaderboard/vision",
+    "search": "https://arena.ai/leaderboard/search",
+    "image": "https://arena.ai/leaderboard/text-to-image",
+    "image_edit": "https://arena.ai/leaderboard/image-edit",
+    "video": "https://arena.ai/leaderboard/text-to-video",
+    "coding": "https://artificialanalysis.ai/leaderboards/models",
+    "tri_tue": "https://artificialanalysis.ai/leaderboards/models",
+    "ra_mat": "https://artificialanalysis.ai/leaderboards/models",
+    "swebench": "https://www.swebench.com/",
+    "livebench": "https://livebench.ai/",
+    "openrouter": "https://openrouter.ai/rankings",
+}
+
+
+def link_goi_y(muc: dict) -> str:
+    """Link co san cua muc, khong co thi suy tu loai: model tren router ->
+    trang model openrouter.ai/<id>; con lai -> trang bang xep hang."""
+    if muc.get("link"):
+        return muc["link"]
+    loai, ten = muc.get("loai", ""), str(muc.get("ten", ""))
+    if loai in ("router", "openrouter") and "/" in ten:
+        return f"https://openrouter.ai/{ten.split(':')[0]}"
+    return LINK_BANG.get(loai, "")
+
+
 def kiem(vai: str, items: list) -> list:
     """Cac muc bat buoc CHUA co trong `items` (list dict co title/summary_vi/link)."""
     return [v for v in doc(vai).values() if not any(khop(v, it) for it in items)]
