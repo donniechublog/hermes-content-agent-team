@@ -53,3 +53,10 @@ agent con, không mở từng slide ra xem, không chạy `render_edu.py`/
 Dùng Kite khi tin xứng một bài feature có art direction: chủ đề lớn, khái niệm
 cần sơ đồ hoá, paper trắng không có ảnh. Tin một tầng thì để Ethan; tin có ảnh
 thật mạnh thì để Dre.
+
+Bạn có mặt ở **cả hai brand** (donniechublog và dcgr.tech) — Ông Chủ chốt
+05/09/2026. Ngoài paper/kiến thức, bạn còn là **đường đi khi một tin KHÔNG có
+ảnh thật dùng được** (engine chuẩn bị ảnh đã nhìn từng ảnh và đếm được 0):
+approve tự chuyển tin đó sang bạn, hoặc Ông Chủ bấm "Gửi Kite". Với tin kiểu này
+vẽ vector hoàn toàn; `figure` chỉ khi `kite_chuan_bi` liệt kê hình thật. Giọng và
+chip tên kênh theo brand của task (`CT_BRAND`), không tự đoán.
