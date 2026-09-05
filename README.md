@@ -338,6 +338,19 @@ nối được với nhau qua Combo, gọi bằng đúng tên combo làm model (
 model `DS-v4Flash`. Combo còn chứa mục chết (`ds/ds/…`, `tokenrouter/…` không có
 credential, `oc/…-free` unavailable) và chưa có `dsa/`: dọn trên dashboard.
 
+**dcgr chạy chat theo bot mode chuẩn của Hermes từ 05/09/2026 (thí điểm, blog giữ
+chat_router để so ~1 tuần).** Gateway dcgr: `multiplex_profiles: true`, 8 `profile_routes`
+theo thread_id, bot riêng @hermesdcgr_bot; approve dcgr vẫn dùng @hermesmodebot cho chọn
+số/Duyệt/Làm lại, chỉ nhường phần chat qua cờ `CT_CHAT_QUA_GATEWAY=1` đặt trong drop-in
+`~/.config/systemd/user/hermes-approve@dcgr.service.d/override.conf` (unit template dùng
+chung, blog không có cờ). Mỗi profile cần `profiles/<vai>/.env` với `OPENAI_API_KEY` +
+`TELEGRAM_ALLOWED_USERS` (multiplex fail-closed, không fallback `.env` gốc) nhưng
+**KHÔNG** được chứa `TELEGRAM_BOT_TOKEN`/`TELEGRAM_HOME_CHANNEL`: `backfill_profile_envs`
+của Hermes chép cả token → gateway từ chối 8 profile vì "same credential" (đã gặp 05/09,
+phải xoá dòng token khỏi 8 tệp). Đo bằng journal `hermes-gateway@dcgr` + `logs/gateway.log`
+(INFO không vào journal) so với approve.log blog: độ trễ, mất mạch, 429/timeout. Nhận xét
+đầu: reply qua gateway ngắn và không biết tình trạng task kanban như approve.
+
 ## Provider
 
 Mọi vai trừ Ada chạy chính bằng `ds/deepseek-v4-flash` trên connection DeepSeek
