@@ -435,9 +435,30 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
         else:
             body += (" Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi "
                      "kite_chuan_bi liet ke hinh that.")
-    rid, err = kanban_create("Carousel deck: " + title, "carousel-edu", body)
+    # Bang den: task Kite la con cua the goc va tro thanh `dre_task` (vai anh hien
+    # hanh) trong .writer.json — de Miles noi vao ban giao cua Kite, khong phai cua
+    # Dre da dung. Ghi muc chuyen_kite de bang den ke dung chuyen (05/09: bai Gimlet
+    # di Kite nhung muc `anh` van la cua Dre ban 1).
+    wp = DRAFTS / (draft_id + ".writer.json")
+    try:
+        w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
+    except Exception:                                           # noqa: BLE001
+        w = {}
+    if w.get("root_task"):
+        body += BANG_DEN_NHAC.format(root=w["root_task"])
+    rid, err = kanban_create("Carousel deck: " + title, "carousel-edu", body,
+                             parent=w.get("root_task"))
     if err:
         return None, err
+    if w.get("root_task"):
+        w["dre_task_truoc_kite"], w["dre_task"] = w.get("dre_task"), rid
+        try:
+            wp.write_text(json.dumps(w, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError as e:
+            log("bangden", f"{draft_id}: khong cap nhat dre_task (kite): {e}")
+        _bang_den_ghi(draft_id, "chuyen_kite",
+                      {"task": rid, "tu_vai": im.get("vai_anh"), "ly_do": ly_do,
+                       "anh_that_dung_duoc": co})
     im.update({"chuyen_tu": im.get("vai_anh"), "vai_anh": "carousel-edu", "carousel": True,
                "body": body, "chuyen_kite": rid, "ly_do_chuyen": ly_do})
     (DRAFTS / (draft_id + ".img.json")).write_text(json.dumps(im, ensure_ascii=False, indent=2),

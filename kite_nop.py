@@ -100,6 +100,20 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     return ra, loi, canh
 
 
+def ghi_bang_den(draft_id: str, key: str, value, author: str = "kite") -> None:
+    """Ghi mot muc len bang den cua bai qua bang_den.py (python cua hermes). Im lang
+    khi loi — chi in canh bao. Giong dre_nop/miles_nop."""
+    hermes_py = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
+    try:
+        r = subprocess.run([str(hermes_py), str(ROOT / "bang_den.py"), "ghi", draft_id,
+                            key, json.dumps(value, ensure_ascii=False), "--author", author],
+                           cwd=str(ROOT), capture_output=True, text=True, timeout=60)
+        if r.returncode != 0 or "[bang-den] lỗi" in (r.stderr or ""):
+            print(f"[CANH BAO] bang den: {(r.stderr or r.stdout).strip()[-200:]}")
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[CANH BAO] bang den: {type(e).__name__}: {e}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop carousel.edu cua Kite (tat dinh)")
     ap.add_argument("draft_id")
@@ -189,6 +203,14 @@ def main() -> int:
                                            "luc": time.strftime("%H:%M %d/%m"),
                                            "lan": int((da_dung or {}).get("lan", 0)) + 1,
                                            "message_id": mid})
+    # Bang den (kanban swarm): ban giao co cau truc cua Kite len the goc + dong
+    # "[metadata]" de Kite dan vao kanban_complete -> Miles/Ada thay trong
+    # "Parent task results". Best-effort.
+    md = {"slide": n, "hook": hook, "theme": theme, "hero": hero, "hinh_that": hinh,
+          "tep": str(out), "ban_giao": str(bg_path), "message_id": mid, "vai": "kite"}
+    if not a.khong_gui:
+        ghi_bang_den(a.draft_id, "anh", md)
+    print("[metadata] " + json.dumps(md, ensure_ascii=False))
     print(f"[xong] {n} slide -> {out}; theme={theme} hero={hero}"
           + (f"; da gui topic carousel-edu (message_id={mid}) kem nut duyet" if mid else "")
           + f"; ban giao: {bg_path}")
