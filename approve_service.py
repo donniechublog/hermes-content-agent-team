@@ -1936,8 +1936,23 @@ def handle_command(token, group, msg, thread_id, text):
 
     phan = text.split()
     lenh = phan[0].split("@")[0].lower()    # "/bai@TenBot" -> "/bai"
+    goi_bot = phan[0].split("@")[1].lower() if "@" in phan[0] else ""
 
-    if lenh == "/help":
+    # Hai bot chung group (05/09/2026): lenh cua approve la /bai /vai /hd (+/help
+    # khi goi dich danh /help@<bot duyet>). Lenh KHAC la cua Hermes (gateway):
+    # /help, /kanban, /new, /status... -> approve IM, khong "Khong co lenh".
+    # Gateway phia kia bo qua /bai /vai /hd (telegram.extra.ignore_commands).
+    qua_gateway = os.environ.get("CT_CHAT_QUA_GATEWAY", "") == "1"
+    if lenh == "/help" and qua_gateway and goi_bot and "pm" not in goi_bot:
+        return                                  # /help@hermesdcgr_bot: cua gateway
+    if lenh == "/help" and qua_gateway and not goi_bot:
+        log("route", "/help tran: de gateway tra loi; approve co /hd")
+        return
+    if lenh not in ("/bai", "/vai", "/hd", "/help") and qua_gateway:
+        log("route", f"lenh {lenh}: cua Hermes/gateway, approve im")
+        return
+
+    if lenh in ("/help", "/hd"):
         tra_loi(LENH_HELP)
     elif lenh == "/vai":
         dong = [f"<b>Vai ảnh</b> (brand cố định của container: {BRAND}):"]
