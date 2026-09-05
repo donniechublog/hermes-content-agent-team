@@ -103,7 +103,90 @@ TU_RONG_TRUY_VAN = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or"
                     "introducing", "launches", "unveils", "announces", "says", "new", "news"}
 
 
+# ---- LUAT: KHONG BAO GIO tim kiem bang tieng Viet ----------------------------
+# Ong Chu 05/09/2026. Su co: manifest cua Vera luu tieu de DA DICH sang tieng Viet
+# ("Nvidia dam phan rot $2,5 ty vao Thinking Machines Lab cua Mira Murati"); ca
+# Google News RSS lan Bing News la kho tieng Anh -> 0 ket qua -> chi con 1 trang
+# goc (paywall) -> engine anh vot duoc 1 anh lac de -> Dre bo cuoc. Cung luc, cau
+# tieng Anh tra 40 bai. Tieu de tim kiem phai la tieng Anh: lay og:title cua bai
+# goc; khong lay duoc thi chi giu ten rieng/so (khong dau) trong tieu de Viet.
+_DAU_VIET = re.compile(r"[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"
+                       r"ùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊ"
+                       r"ÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ]")
+_TU_VIET_KHONG_DAU = {"cua", "va", "voi", "cho", "trong", "tren", "duoi", "khi", "la",
+                      "co", "khong", "se", "da", "dang", "moi", "lon", "nho", "ty", "trieu",
+                      "ngan", "nghin", "usd", "vnd", "dong"}
+
+
+def co_tieng_viet(t: str) -> bool:
+    return bool(_DAU_VIET.search(t or ""))
+
+
+def _tieu_de_trang(url: str) -> str:
+    """og:title / <title> cua bai goc — tieu de tieng Anh THAT cua toa soan."""
+    try:
+        r = httpx.get(url, headers=HDR, timeout=20, follow_redirects=True)
+        html = r.text[:200_000]
+        m = (re.search(r'property=["\']og:title["\'][^>]*content=["\']([^"\']+)', html, re.I)
+             or re.search(r'content=["\']([^"\']+)["\'][^>]*property=["\']og:title', html, re.I)
+             or re.search(r"<title[^>]*>([^<]{5,200})</title>", html, re.I))
+        if not m:
+            return ""
+        import html as _h
+        t = _h.unescape(m.group(1)).strip()
+        t = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "", t)      # bo " | Ten bao"
+        return "" if co_tieng_viet(t) or len(t) < 8 else t
+    except Exception:                                        # noqa: BLE001
+        return ""
+
+
+def _ten_rieng_khong_dau(tieu_de_viet: str) -> str:
+    """Duong lui: chi giu ten rieng / so KHONG DAU trong tieu de Viet
+    ("Nvidia Thinking Machines Lab Mira Murati 2,5"). Van la truy van tieng Anh."""
+    t = re.sub(r"[\$;:,\"\'()\[\]|—–-]", " ", tieu_de_viet or "")
+    ra = []
+    for w in t.split():
+        if co_tieng_viet(w) or w.lower() in _TU_VIET_KHONG_DAU or len(w) < 2:
+            continue
+        if w[:1].isupper() or any(c.isdigit() for c in w) or w.isupper():
+            ra.append(w)
+    return " ".join(ra[:8])
+
+
+def tieu_de_tim(tieu_de: str, link: str) -> str:
+    """Tieu de DUNG DE TIM KIEM (tieng Anh). Rong = khong duoc tim gi ca."""
+    if tieu_de and not co_tieng_viet(tieu_de):
+        return tieu_de
+    en = _tieu_de_trang(link) if link else ""
+    if en:
+        print(f"[nguon_bai] tieu de tim = og:title bai goc: {en[:90]}", file=sys.stderr)
+        return en
+    en = _ten_rieng_khong_dau(tieu_de)
+    if len(en.split()) >= 2:
+        # Bac 3: hoi Google News bang ten rieng, lay HEADLINE tieng Anh cua bai
+        # dau (chung >= 2 tu voi ten rieng) — cau day du keo ve nhieu bao hon
+        # hin ten rieng roi rac (Nvidia 05/09: ten rieng -> 3 trang, headline -> 40).
+        try:
+            its = ET.fromstring(_tai(GNEWS.format(q=up.quote(en)), 20).content).findall(".//item")
+            goc = _tu(en)
+            for it in its[:5]:
+                hd = re.sub(r"\s+-\s+[^-]{2,60}$", "", it.findtext("title") or "").strip()
+                if hd and not co_tieng_viet(hd) and len(goc & _tu(hd)) >= 2:
+                    print(f"[nguon_bai] tieu de tim = headline Google News: {hd[:90]}", file=sys.stderr)
+                    return hd
+        except Exception as e:                               # noqa: BLE001
+            print(f"[nguon_bai] google news (headline) hong: {type(e).__name__}", file=sys.stderr)
+        print(f"[nguon_bai] tieu de tim = ten rieng khong dau: {en}", file=sys.stderr)
+        return en
+    print("[nguon_bai] KHONG co tieu de tieng Anh -> khong tim bao khac (luat: khong tim bang tieng Viet)",
+          file=sys.stderr)
+    return ""
+
+
 def _truy_van_bing(tieu_de: str) -> list:
+    if co_tieng_viet(tieu_de):
+        print("[nguon_bai] TU CHOI truy van Bing bang tieng Viet", file=sys.stderr)
+        return []
     """Bing News chi tra ket qua cho truy van NGAN va nhay chu (do 04/09/2026:
     tieu de day du -> 1 bai; "Broadcom AI revenue FY27" -> 11; "Broadcom
     Targets 115B Revenue FY27" -> 0). Sinh NHIEU dang truy van roi lay hop ket
@@ -123,6 +206,9 @@ def _truy_van_bing(tieu_de: str) -> list:
 
 
 def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10) -> list:
+    if co_tieng_viet(tieu_de):
+        print("[nguon_bai] TU CHOI bao_khac_bing bang tieng Viet", file=sys.stderr)
+        return []
     """Bao khac dua cung tin qua Bing News RSS. Khac Google News, link cua Bing
     la chuyen huong HTTP thuong (apiclick.aspx) -> di theo redirect la ra URL
     bai that, khong can browser. ~1s/link.
@@ -186,12 +272,15 @@ def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
             link_gnews, link = link, that
             print(f"[nguon_bai] link Google News -> {link[:90]}", file=sys.stderr)
     ra = [{"url": link, "loai": "gốc", "tieu_de": tieu_de}]
-    try:
-        its = ET.fromstring(_tai(GNEWS.format(q=up.quote(tieu_de)), 25).content
-                            ).findall(".//item")
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[nguon_bai] google news hong: {type(e).__name__}", file=sys.stderr)
-        its = []
+    # Tim kiem CHI bang tieng Anh (xem luat o tren). `ten` rong -> khong hoi feed nao.
+    ten = tieu_de_tim(tieu_de, link)
+    its = []
+    if ten:
+        try:
+            its = ET.fromstring(_tai(GNEWS.format(q=up.quote(ten)), 25).content
+                                ).findall(".//item")
+        except Exception as e:                               # noqa: BLE001
+            print(f"[nguon_bai] google news hong: {type(e).__name__}", file=sys.stderr)
 
     mien = []
     for it in its[: so * 3]:
@@ -202,7 +291,7 @@ def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
             if u not in [m for m, _ in mien]:
                 mien.append((u, it.findtext("title") or ""))
 
-    goc = _tu(tieu_de)
+    goc = _tu(ten or tieu_de)
 
     def _trong_feed(cap):
         m, _ = cap
@@ -233,13 +322,13 @@ def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
     if len(ra) < 3:
         m = re.match(r"https?://([^/]+)", link)
         mien_goc = ((m.group(1) if m else "").replace("www.", ""),)
-        for t in bao_khac_bing(tieu_de, so=so, bo_mien=mien_goc):
+        for t in (bao_khac_bing(ten, so=so, bo_mien=mien_goc) if ten else []):
             if t["url"] not in thay:
                 thay.add(t["url"])
                 ra.append(t)
             if len(ra) > so:
                 break
-    kq = {"tieu_de": tieu_de, "link_goc": link, "trang": ra}
+    kq = {"tieu_de": tieu_de, "tieu_de_en": ten, "link_goc": link, "trang": ra}
     if link_gnews:
         kq["link_gnews"] = link_gnews
     return kq
