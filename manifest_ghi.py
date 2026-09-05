@@ -67,6 +67,7 @@ def main():
     def _so_bao(t):
         return f"{t.get('so_bao', 1)} báo: {', '.join(t.get('cac_bao', [])[:3]) or t.get('toa_soan', '')}"
 
+    vai_bb = "market" if a.vai in ("market", "vera") else a.vai
     items = []
     for i, it in enumerate(ds, 1):
         # Chon bang SO THU TU `k` trong brief (tu 05/09/2026): script tu lay link va
@@ -83,6 +84,13 @@ def main():
                 print(f"[bo qua] muc {i}: k={it.get('k')} ngoai danh sach 1..{len(nguon)}", file=sys.stderr)
                 continue
         link = ((it.get("link") or "").strip()) or (t["link"] if t else "")
+        if not link and it.get("title"):
+            # Nova: muc bat buoc da co link goi y (trang model / bang xep hang) —
+            # vai chi can ghi dung ten model, khong phai di tim URL (05/09/2026).
+            for v in bat_buoc.doc(vai_bb).values():
+                if bat_buoc.khop(v, {"title": it["title"], "summary_vi": ""}):
+                    link = bat_buoc.link_goi_y(v)
+                    break
         if not it.get("title") and t:
             it["title"] = t.get("tieu_de", "")
         if not it.get("source_note") and t:
@@ -114,7 +122,6 @@ def main():
             "picked": False,
         })
 
-    vai_bb = "market" if a.vai in ("market", "vera") else a.vai
     # Muc BAT BUOC vai bo sot: script TU THEM kem ghi chu ro tren bao cao, thay vi
     # tu choi roi bat vai sua toi da 2 vong (05/09/2026). Luat Ong Chu van giu:
     # quet thay la phai dua; bao cao ghi "vai bo sot" de Ong Chu biet ai sot.

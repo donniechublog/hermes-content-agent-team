@@ -157,7 +157,8 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
     L += ["", f"## Viết danh sách vào: {wd}/ds.json — MỘT mục cho MỖI mục bắt buộc (gộp các bảng của cùng model), "
           "tiêu đề phải chứa ĐÚNG tên model như script in",
           json.dumps([{"title": "<Tên model đúng như script in + ý chính, có dấu>",
-                       "link": "<URL thật: trang model/blog hãng/bảng xếp hạng>",
+                       "link": "<bỏ trống với mục BẮT BUỘC (script tự lấy link trang model/bảng); "
+                               "chỉ ghi URL thật khi là tin ngoài danh sách>",
                        "summary_vi": "<MỘT mệnh đề ≤ 15 từ: giá vào/ra mỗi triệu token hoặc hạng bảng; chỉ làm ngữ cảnh "
                                      "cho vai viết, KHÔNG lên báo cáo>",
                        "source_note": "<bảng/nguồn + ngày>"}], ensure_ascii=False, indent=1),
