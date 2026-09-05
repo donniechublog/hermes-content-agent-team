@@ -358,6 +358,16 @@ def _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
     cho_phep = _nap_json(ONG_CHU_IDS, [])
     if cho_phep and uid not in cho_phep:
         return False                      # nguoi khac go, khong phai tra loi cua Ong Chu
+    # CHI nhan khi la REPLY toi dung tin hoi (Ong Chu 05/09/2026). Truoc day moi
+    # chu go trong topic suot 10 phut deu bi nuot lam ly do — hoi Dre chuyen khac
+    # cung thanh "ly do lam lai". Tin hoi da bat force_reply nen reply la mac dinh;
+    # go tron thi tin di duong chat binh thuong, trang thai cho van giu.
+    rt = msg.get("reply_to_message") or {}
+    hoi_mid = cho[k].get("hoi_mid")
+    la_reply = (rt.get("message_id") == hoi_mid) if hoi_mid else \
+        bool(rt.get("from", {}).get("is_bot"))
+    if not la_reply:
+        return False
     ho_so = cho.pop(k)
     LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
     draft_id = ho_so["draft_id"]
@@ -587,13 +597,23 @@ def handle_img_approval(token, action, draft_id, cq):
             # force_reply: Telegram tu bat "tra loi tin nay" -> cau ly do cua Ong Chu la
             # REPLY toi bot duyet. Gateway (bot chat) duoc va de bo qua moi tin reply toi
             # bot khac (adapter, 05/09) -> het canh hai bot cung dap mot cau.
-            call(token, "sendMessage", chat_id=chat_id,
+            r_hoi = call(token, "sendMessage", chat_id=chat_id,
                  **({"message_thread_id": thread_id} if thread_id else {}),
                  parse_mode="HTML", reply_markup={"force_reply": True, "selective": False},
                  text=(f"🔄 Làm lại <b>{im.get('title', draft_id)}</b> (lần {n}).\n"
                        + huong_dan + "\n"
-                       "Gõ <code>hủy</code> để không làm lại. Không trả lời trong 10 phút "
-                       "→ giao theo kiểu cũ (chỉ \"chọn ảnh khác\")."))
+                       "<b>Trả lời (reply) vào đúng tin này.</b> Chữ gõ rời sẽ được coi là chat, "
+                       "không phải lý do. Reply <code>hủy</code> để không làm lại. "
+                       "Không trả lời trong 10 phút → giao theo kiểu cũ (chỉ \"chọn ảnh khác\")."))
+            try:                       # nho message_id tin hoi: chi nhan reply toi dung no
+                _mid_hoi = (r_hoi.get("result") or {}).get("message_id")
+                if _mid_hoi:
+                    cho = _nap_json(LAM_LAI_CHO, {})
+                    if str(thread_id) in cho:
+                        cho[str(thread_id)]["hoi_mid"] = _mid_hoi
+                        LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+            except Exception as _e:                              # noqa: BLE001
+                log("nut", f"khong luu hoi_mid: {type(_e).__name__}: {_e}")
             note = f"⏳ Chờ lý do làm lại (lần {n})"
     else:                                                       # imgok
         if not wp.exists():
