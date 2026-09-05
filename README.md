@@ -468,7 +468,20 @@ Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh
    brand, bind 0.0.0.0 không ghi IP. Muốn tách brand cần khoá riêng; muốn biết máy nào
    gọi phải tự bắt ở socket. Đừng để mặc định của công cụ quyết định độ quan sát.
 
-Trạng thái sau khi sửa (05/09): combo chỉ còn aellm + deepseek trực tiếp, 19 profile dự
+8. **Cache là của từng nhà cung cấp, không phải của model.** Cùng v4-flash, qua DeepSeek
+   trực tiếp cache 93–96%, qua aellm (bán lại) 49% → đắt ~7x mỗi token prompt. Combo phải
+   xếp DeepSeek trực tiếp TRƯỚC, reseller chỉ để dự phòng; và đừng để hết credit (402 hôm
+   05/09 đẩy cả ngày sang aellm).
+9. **System prompt đổi mỗi task vì một dòng.** Hermes in `Current working directory:` vào
+   giữa prompt; workspace `scratch` tạo thư mục mới mỗi task nên 37% cuối prompt (skills,
+   memory) không bao giờ trúng cache giữa hai task. Đo 05/09: hai task carousel cách 5 phút
+   chỉ khác đúng dòng đó. Sửa: `approve_service.kanban_create` tạo task với
+   `--workspace dir:~/.hermes-<brand>/kanban/workspaces/co-dinh`. Còn lại trong prompt chỉ
+   đổi theo ngày (`Conversation started`) và theo model (`Model:`) — thêm lý do ghim model.
+   Sửa SOUL cũng làm cache về 0 cho vai đó, gom sửa thành đợt. Chạy thử từ `~/hermes-agent`
+   thì bị nhét cả AGENTS.md của Hermes (prompt 115k ký tự) — chỉ thử từ `~/content-team`.
+
+Trạng thái sau khi sửa (05/09): combo = [ds trực tiếp, dsx xKiro, dsa aellm], 19 profile dự
 phòng `ds/deepseek-v4-flash`, title_generation tắt, nhật ký ngày + web + tin 6h đã chạy.
 Chỉ tiêu: fallback = 0 từ 06/09; sai thì trang chi tiết chỉ ra route nào.
 

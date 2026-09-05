@@ -795,9 +795,17 @@ def kanban_create(title, assignee, body, parent=None):
         log("kanban", f"tu choi tao '{title[:60]}': {loi}")
         return None, loi
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
+    # --workspace dir:<co dinh>: mac dinh `scratch` tao thu muc moi moi task
+    # (kanban/workspaces/t_xxx) va Hermes in "Current working directory: ..."
+    # vao GIUA system prompt -> 37% cuoi prompt (skills, memory) khong bao gio
+    # trung cache giua hai task cung vai. Do 05/09: 2 task carousel cach 5 phut
+    # chi khac dung dong nay. Thu muc co dinh, khong phai git repo (tranh Hermes
+    # bat "coding posture"); script cua vai deu dung duong dan tuyet doi.
+    ws = Path(HERMES_HOME) / "kanban" / "workspaces" / "co-dinh"
+    ws.mkdir(parents=True, exist_ok=True)
     args = [str(HERMES_PY), "-m", "hermes_cli.main", "kanban", "create", title,
             "--assignee", assignee, "--max-runtime", "25m", "--json",
-            "--body", body]
+            "--workspace", f"dir:{ws}", "--body", body]
     # `parent` la mot id hoac danh sach id (Miles co hai cha: task Dre + the goc
     # bang den). --parent lap lai duoc; None/rong thi bo qua.
     for _cha in ([parent] if isinstance(parent, str) else (parent or [])):
