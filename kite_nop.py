@@ -51,7 +51,10 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     if slides and slides[0].get("kind") != "cover":
         loi.append("slide 1 phải là kind \"cover\"")
     hinh = {a["ma"]: a for a in kb.hinh_that(m)}
-    ra = {"brand": m["brand"], "section": spec.get("section") or "RESEARCH",
+    # brand trong spec render la CHU in o masthead/folio (render_edu chi dung no
+    # lam chu) -> phai la handle hien thi (dcgr -> dcgr.tech), khong phai slug.
+    # d24ddfc da sua byline/follow, con masthead van in "dcgr" (05/09/2026).
+    ra = {"brand": kb.handle_kenh(m["brand"]), "section": spec.get("section") or "RESEARCH",
           "folio": spec.get("folio") or m["title"][:24].upper()}
     theme, hero = spec.get("theme"), spec.get("hero")
     if theme and theme not in render_edu.THEMES:
