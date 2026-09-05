@@ -312,9 +312,28 @@ def _giao_lam_lai(draft_id, slide=None, ly_do=None):
             f"cu. Van day len kem nut duyet nhu cu (--duyet {draft_id}).")
     tieu = ("Carousel (lam lai): " if im.get("carousel") else "Anh (lam lai): ") \
         + im.get("title", draft_id)
-    rid, err = kanban_create(tieu, im["vai_anh"], im["body"] + chi_ro)
+    # Bang den: task lam lai cung la con cua the goc, va tro thanh `dre_task` moi
+    # trong .writer.json — de luc bam Duyet, Miles noi vao BAN LAM LAI (ban giao
+    # moi nhat trong "Parent task results"), khong phai ban dau. Khong co the goc
+    # (bai truoc 05/09, hoac brand chua bat) thi y nhu cu.
+    wp = DRAFTS / (draft_id + ".writer.json")
+    try:
+        w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        w = {}
+    rid, err = kanban_create(tieu, im["vai_anh"], im["body"] + chi_ro,
+                             parent=w.get("root_task"))
     if err:
         return "⚠️ Làm lại lỗi: " + str(err), None
+    if w.get("root_task"):
+        w["dre_task"] = rid
+        try:
+            wp.write_text(json.dumps(w, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError as e:
+            log("bangden", f"{draft_id}: khong cap nhat dre_task: {e}")
+        _bang_den_ghi(draft_id, "lam_lai",
+                      {"lan": n, "slide": slide, "ly_do": ly_do, "task": rid,
+                       "task_truoc": im.get("last_task")})
     im["remakes"], im["last_task"] = n, rid
     if ly_do:
         im.setdefault("ly_do_lam_lai", []).append({"lan": n, "slide": slide, "ly_do": ly_do})
@@ -949,6 +968,20 @@ def _bang_den_root(draft_id, title, goal=""):
     except Exception as e:                                   # noqa: BLE001
         log("bangden", f"{draft_id}: loi tao the goc: {type(e).__name__}: {e}")
         return None
+
+
+def _bang_den_ghi(draft_id, key, value):
+    """Ghi mot muc len bang den qua bang_den.py. Best-effort, khong nem."""
+    try:
+        r = subprocess.run(
+            [str(HERMES_PY), str(ROOT / "bang_den.py"), "ghi", draft_id, key,
+             json.dumps(value, ensure_ascii=False), "--author", "approve_service"],
+            cwd=str(ROOT), env=dict(os.environ, HERMES_HOME=HERMES_HOME),
+            capture_output=True, text=True, timeout=60)
+        if r.returncode != 0 or "lỗi" in (r.stderr or ""):
+            log("bangden", f"{draft_id}: ghi '{key}' loi: {(r.stderr or r.stdout)[-160:]}")
+    except Exception as e:                                   # noqa: BLE001
+        log("bangden", f"{draft_id}: ghi '{key}' loi: {type(e).__name__}: {e}")
 
 
 def _trang_thai_task(tid):
