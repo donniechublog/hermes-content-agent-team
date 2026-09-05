@@ -73,6 +73,8 @@ def viet_brief(m: dict, meta: dict, wd: Path) -> str:
     if bg:
         L += ["", "## Ảnh đã duyệt (bàn giao từ vai ảnh — caption bổ trợ cho ảnh, không lặp lại hook)", bg.strip()]
     L += ["", f"## Viết caption vào: {wd}/caption.txt  (CHỈ caption, HTML Telegram)",
+          "CÂU ĐẦU là hook khiến người đang lướt dừng lại: một con số lớn, một tình huống mâu thuẫn, một nghịch lý, "
+          "một hệ quả bất ngờ. Không mở bằng \"Hãng X vừa công bố\" hay bằng nguồn tin; không lặp hook trên ảnh.",
           "Bốn ý bắt buộc, mỗi ý một câu là đủ, mỗi CÂU xuống dòng riêng, mỗi ĐOẠN cách một dòng trống:",
           "  1. Chuyện gì vừa xảy ra, kèm con số quan trọng nhất.",
           "  2. So sánh: hơn/kém cái gì, cách biệt bao nhiêu; nguồn nói chỗ THUA thì phải nói.",

@@ -33,6 +33,7 @@ BAT_BUOC = {
     "steps": ("eyebrow", "title", "steps"),
     "loop": ("eyebrow", "title", "chips", "standfirst"),
     "figure": ("eyebrow", "title", "image", "caption"),
+    "bars": ("eyebrow", "title", "bars", "caption"),
     "cta": ("eyebrow", "title", "checks"),
 }
 GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
@@ -65,7 +66,7 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     for i, sl in enumerate(slides, 1):
         k = sl.get("kind")
         if k not in BAT_BUOC:
-            loi.append(f"slide {i}: kind \"{k}\" không hợp lệ (cover/statement/steps/loop/figure/cta)")
+            loi.append(f"slide {i}: kind \"{k}\" không hợp lệ (cover/statement/steps/loop/figure/bars/cta)")
             continue
         thieu = [f for f in BAT_BUOC[k] if not sl.get(f)]
         if thieu:
@@ -93,6 +94,18 @@ def giai_spec(spec: dict, m: dict) -> tuple:
         for t in sl.get("checks", []) or []:
             if len(str(t)) > 80:
                 canh.append(f"slide {i}: check dài, rút ≤ 70")
+        if k == "bars":
+            bs = sl.get("bars") or []
+            if not 2 <= len(bs) <= 6:
+                loi.append(f"slide {i}: bars cần 2..6 cột (có {len(bs)})")
+            for j, b in enumerate(bs, 1):
+                b = b if isinstance(b, dict) else {}
+                try:
+                    render_edu._gia_tri(b.get("value"))
+                except (ValueError, TypeError):
+                    loi.append(f"slide {i}: cột {j} \"value\" phải là số thật trong bài (có {b.get('value')!r})")
+                if len(str(b.get("label", ""))) > 28:
+                    canh.append(f"slide {i}: cột {j} label dài, rút ≤ 28")
         if any("nguồn" in str(v).lower() for v in sl.values() if isinstance(v, str)):
             loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
         ra["slides"].append(s2)

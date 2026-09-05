@@ -63,6 +63,15 @@ Spec JSON:
      "standfirst": "Chữ minh hoạ cho phần chiều cao còn thừa dưới hình.",
      "cards": [{"num": "01", "text": "..."}]},
 
+    # Khong co hinh that nhung bai co vai con so: bieu do cot ngang tu so THAT
+    # (2..6 cot, "value" la so, "text" la cach ghi), caption "via" bat buoc.
+    {"kind": "bars", "eyebrow": "SỐ LIỆU",
+     "title": "Chi phí mỗi task giảm ba lần", "accent": "ba lần",
+     "bars": [{"label": "Trước", "value": 2.75, "text": "2,75 USD"},
+              {"label": "Sau boost", "value": 0.9, "text": "0,90 USD", "nhan": true}],
+     "caption": "Số trong bài · via Google DeepMind",
+     "standfirst": "Tuỳ chọn, ≤ 160 ký tự."},
+
     {"kind": "cta", "eyebrow": "ÁP DỤNG",
      "title": "Cho bug khó & refactor rủi ro cao",
      "checks": ["...", "...", "..."],
@@ -233,6 +242,16 @@ BASE_CSS_TPL = """
 .check{display:flex;flex-direction:row;align-items:flex-start;gap:22px;}
 .check-m{color:%(CYAN)s;font-size:38px;font-weight:800;line-height:1.1;}
 .check-t{font-size:35px;font-weight:500;line-height:1.35;color:%(SOFT)s;}
+/* bieu do cot ngang tu so that trong bai (kind bars) */
+.bar{display:flex;flex-direction:row;align-items:center;gap:22px;padding:15px 0;}
+.bar-l{font-family:%(MONO)s;font-size:26px;font-weight:700;color:%(SOFT)s;
+  flex:none;width:300px;line-height:1.2;}
+.bar-track{flex-grow:1;height:46px;background:%(PANEL)s;border:1px solid %(LINE)s;
+  position:relative;}
+.bar-fill{position:absolute;left:0;top:0;bottom:0;background:%(VIOLET)s;}
+.bar-fill.nhan{background:%(CYAN)s;}
+.bar-v{font-family:%(MONO)s;font-size:30px;font-weight:700;color:%(WHITE)s;
+  flex:none;width:190px;text-align:right;}
 /* hinh that: phu kin the, KHONG bao gio la mot hop dat canh chu */
 .figwrap{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;
   z-index:0;overflow:hidden;background:%(BG)s;}
@@ -887,6 +906,53 @@ def s_figure(sl, th):
             + js)
 
 
+def _so(v):
+    """2.75 -> '2,75'; 3.0 -> '3' (kieu Viet, dung khi slide khong ghi 'text')."""
+    f = float(v)
+    return str(int(f)) if f == int(f) else f"{f:.2f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
+def _gia_tri(v):
+    """value cua bars: so, hoac chuoi so kieu Viet ('2,75')."""
+    if isinstance(v, bool):
+        raise ValueError("value phai la so")
+    if isinstance(v, (int, float)):
+        return float(v)
+    return float(str(v).strip().replace(" ", "").replace(",", "."))
+
+
+def s_bars(sl, th):
+    """Bieu do cot ngang tu so THAT trong bai: nhan | thanh | gia tri. Be rong
+    theo cot lon nhat; cot co 'nhan': true (mac dinh cot dau) mau chinh, con
+    lai mau phu. Khong co truc/luoi: 2..6 cot, doc trong 3 giay."""
+    items = sl.get("bars", [])
+    vals = [_gia_tri(b["value"]) for b in items]
+    vmax = max(vals, default=0.0) or 1.0
+    co_nhan = any(b.get("nhan") for b in items)
+    rows = ""
+    for i, (b, v) in enumerate(zip(items, vals)):
+        pct = max(0.0, min(100.0, v / vmax * 100))
+        cls = "bar-fill nhan" if (b.get("nhan") or (i == 0 and not co_nhan)) else "bar-fill"
+        rows += (f'<div class="bar"><span class="bar-l">{esc(b["label"])}</span>'
+                 f'<span class="bar-track"><span class="{cls}" style="width:{pct:.1f}%;"></span></span>'
+                 f'<span class="bar-v">{esc(b.get("text") or _so(v))}</span></div>')
+    cap = (f'<div class="fig-cap" style="margin-top:28px;"><span class="fig-bar"></span>'
+           f'<span>{esc(sl["caption"])}</span></div>') if sl.get("caption") else ""
+    stand = (f'<p class="standfirst" style="font-size:34px;max-width:900px;margin-top:30px;">'
+             f'{esc(sl["standfirst"])}</p>') if sl.get("standfirst") else ""
+    g = glow("bottom:-120px;left:-140px;width:560px;height:560px;"
+             f"background:radial-gradient(circle at center,{rgba(th['a'],0.13)} 0%,{rgba(th['a'],0)} 62%);")
+    body = (
+        f'<div class="mid" style="margin-top:46px;">'
+        f'{eyebrow(sl["eyebrow"])}'
+        f'<h1 class="title" style="font-size:76px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
+        f'</div>'
+        f'<div class="mid" style="margin-top:44px;">{rows}'
+        f'<div style="border-bottom:1px solid {th["line"]};"></div>{cap}{stand}</div>'
+    )
+    return g + body
+
+
 def s_cta(sl, th):
     checks = ""
     for c in sl.get("checks", []):
@@ -912,7 +978,7 @@ def s_cta(sl, th):
 
 BUILDERS = {
     "cover": s_cover, "statement": s_statement, "steps": s_steps,
-    "loop": s_loop, "figure": s_figure, "cta": s_cta,
+    "loop": s_loop, "figure": s_figure, "bars": s_bars, "cta": s_cta,
 }
 
 
@@ -970,6 +1036,27 @@ def gate_slides(slides, bo_qua_dau):
             loi.append(f"slide {i}: slide co anh phai co 'caption' — hinh muon "
                        f"cua nguoi ta thi phai ghi 'via <ai>'.")
 
+    # bars: so that, 2..6 cot, nhan ngan, caption via (so muon cua bai)
+    for i, sl in enumerate(slides, 1):
+        if sl.get("kind") != "bars":
+            continue
+        items = sl.get("bars") or []
+        if not 2 <= len(items) <= 6:
+            loi.append(f"slide {i}: kind 'bars' can 2..6 cot (co {len(items)})")
+        for j, b in enumerate(items, 1):
+            if not isinstance(b, dict) or not b.get("label"):
+                loi.append(f"slide {i}: cot {j} thieu 'label'")
+                continue
+            if len(b["label"]) > 28:
+                loi.append(f"slide {i}: cot {j} label {len(b['label'])} ky tu, toi da 28")
+            try:
+                if _gia_tri(b.get("value")) < 0:
+                    raise ValueError
+            except (ValueError, TypeError):
+                loi.append(f"slide {i}: cot {j} 'value' phai la so >= 0 (co: {b.get('value')!r})")
+        if not sl.get("caption"):
+            loi.append(f"slide {i}: kind 'bars' phai co 'caption' ghi 'via <ai>' — so la cua bai, khong phai cua ta")
+
     # quy ước dẫn nguồn: dùng 'via', không viết 'nguồn'
     for i, sl in enumerate(slides, 1):
         for nhan, t in _texts(sl):
@@ -994,6 +1081,10 @@ def _texts(sl):
         out.append(("chip", c))
     for c in sl.get("checks", []):
         out.append(("check", c))
+    for b in sl.get("bars", []):
+        out.append(("bar.label", b.get("label", "")))
+        if b.get("text"):
+            out.append(("bar.text", b["text"]))
     if sl.get("readmore"):
         out.append(("readmore", sl["readmore"].get("text", "")))
     return out

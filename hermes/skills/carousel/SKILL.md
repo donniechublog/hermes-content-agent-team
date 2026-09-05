@@ -1,6 +1,6 @@
 ---
 name: carousel
-description: "Khung kể chuyện, giọng copy và slide quote cho carousel nhiều slide của Dre (donniechublog và dcgr.tech). Lệnh, luật ảnh, cú pháp spec và cách sửa lỗi nằm trong brief mà dre_chuan_bi.py in mỗi task và trong báo [LOI] của dre_nop.py; skill này chỉ giữ phần vai phải nghĩ."
+description: "Khung kể chuyện, giọng copy và slide quote cho carousel nhiều slide của Dre (một vai cho cả donniechublog và dcgr.tech, khác handle và người đọc). Lệnh, luật ảnh, cú pháp spec và cách sửa lỗi nằm trong brief mà dre_chuan_bi.py in mỗi task và trong báo [LOI] của dre_nop.py; skill này chỉ giữ phần vai phải nghĩ."
 version: 3.0.0
 author: content-team
 license: internal
@@ -14,9 +14,11 @@ metadata:
 
 # carousel — bộ nhiều slide kể một tin
 
-Ethan nén cả tin vào **một thẻ**; Dre trải tin ra **5–10 slide** 4:5 nền đen,
-mỗi slide một ý, người đọc lướt tới đâu hiểu tới đó, slide cuối để lại một câu
-hỏi hay một mốc.
+Ethan nén cả tin vào **một thẻ**; Dre trải tin ra **5–10 slide** 4:5, mỗi slide
+một ý, người đọc lướt tới đâu hiểu tới đó, slide cuối để lại một câu hỏi hay
+một mốc. Nền không cố định một màu: nền phục vụ ảnh, miễn ảnh và chữ nổi; đen
+và trắng là hai màu ưu tiên. Engine hiện dựng biến thể tối (ảnh phủ kín, màn
+tối liền mạch); màu nền không phải trường trong spec.
 
 ## Luồng
 

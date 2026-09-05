@@ -1,6 +1,6 @@
 ---
 name: carousel-edu
-description: "Ranh giới ngoại lệ 'không tự vẽ', bảng tone và hero, nhịp feature cho carousel EDU tech × magazine của Kite (role carousel.edu, cả hai brand). Lệnh, khung spec sáu kind kèm giới hạn chữ, hình thật đã chụp và cách sửa lỗi nằm trong brief mà kite_chuan_bi.py in mỗi task và trong báo [LOI] của kite_nop.py; skill này chỉ giữ phần vai phải nghĩ."
+description: "Ranh giới ngoại lệ 'không tự vẽ', bảng tone và hero, nhịp feature cho carousel EDU tech × magazine của Kite (role carousel.edu, cả hai brand). Lệnh, khung spec bảy kind kèm giới hạn chữ, hình thật đã chụp và cách sửa lỗi nằm trong brief mà kite_chuan_bi.py in mỗi task và trong báo [LOI] của kite_nop.py; skill này chỉ giữ phần vai phải nghĩ."
 version: 3.0.0
 author: content-team
 license: internal
@@ -16,7 +16,17 @@ metadata:
 
 Kite diễn đạt lại paper/nghiên cứu bằng **art vector gốc** trong bộ khung tạp
 chí: masthead, eyebrow chuyên mục, tiêu đề lớn, standfirst in nghiêng, folio,
-hero art trên bìa. Renderer vẽ hết; vai chỉ **chia slide và viết chữ**.
+hero art trên bìa. Renderer vẽ hết; vai **chia slide, chọn hình diễn đạt và
+viết chữ**. Chữ thuần là đường cuối: ý nào có hình nói nhanh hơn thì dùng hình.
+
+| Ý muốn nói | Kind | Hình renderer vẽ |
+|---|---|---|
+| Quy trình, thứ tự | `steps` | dãy bước đánh số |
+| Vòng lặp, cơ chế quay lại | `loop` | chip nối mũi tên khép vòng |
+| So sánh vài con số | `bars` | biểu đồ cột ngang, số thật trong bài, caption via |
+| Biểu đồ, bảng, ảnh có sẵn | `figure` | bản thật trải hết bề ngang |
+| Bối cảnh, nhận định | `statement` | tiêu đề lớn + thẻ đánh số |
+| Áp dụng | `cta` | checklist + đọc thêm |
 
 ## Luồng
 
@@ -27,7 +37,7 @@ cd /home/donniechu/content-team && venv/bin/python kite_nop.py <id>        # 3. 
 ```
 
 Brief in tư liệu, hình thật đã nhìn và liên quan (mã A?), theme/hero gợi ý
-chưa dùng gần đây, khung spec sáu kind với giới hạn độ dài từng trường; nop in
+chưa dùng gần đây, khung spec bảy kind với giới hạn độ dài từng trường; nop in
 `[LOI]` kèm cách sửa. Làm lại thì phải đổi theme hoặc hero.
 
 ## Ranh giới của ngoại lệ (đọc trước tiên)
@@ -76,7 +86,8 @@ via <ai>"; ảnh có mặt người thì caption ghi đúng tên trong bài.
 ## Nhịp feature (tham chiếu, không cứng)
 
 Bìa hook → bối cảnh/vấn đề → cách vận hành (`steps`) → số liệu (`figure` nếu có
-hình thật, không thì bỏ) → cơ chế/hệ quả (`loop`) → áp dụng + CTA. Mỗi slide một
+hình thật, không thì `bars` từ số trong bài, không có số thì bỏ) → cơ chế/hệ quả
+(`loop`) → áp dụng + CTA. Mỗi slide một
 ý mới; bìa giật, slide cuối để lại câu hỏi hay mốc. Tiếng Việt có dấu, câu ngắn
 chủ động, không em-dash, không số ngoài tư liệu, dẫn nguồn ghi "via".
 
