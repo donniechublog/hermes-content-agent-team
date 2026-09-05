@@ -1021,7 +1021,7 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         score_reason=item.get("score_reason", ""),
         summary=item.get("summary_vi", ""), out_png=out_png,
         out_json=out_json, category=chuan_nhan(item.get("category")),
-        draft_id=draft_id, nguon=str(nguon_path),
+        draft_id=draft_id, nguon=str(nguon_path), brand=brand,
         goc=str(ROOT), hermes_py=str(HERMES_PY))
     vai_viet = MAC_DINH_VIET
     (DRAFTS / (draft_id + ".writer.json")).write_text(
