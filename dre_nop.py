@@ -26,11 +26,8 @@ Dung:
 """
 import argparse
 import json
-import os
-import re
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 from PIL import Image
@@ -38,12 +35,9 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import nop_chung as nc                                       # noqa: E402
 
 DRAFTS = ROOT / "drafts"
-
-
-def _chuan(t: str) -> str:
-    return re.sub(r"\s+", " ", (t or "").strip().lower())
 
 
 def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
@@ -170,6 +164,13 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     ra = {"tam_co": spec.get("tam_co") or ("flagship" if m.get("flagship") else None)}
     if not ra["tam_co"]:
         ra.pop("tam_co")
+    nen = str(spec.get("nen") or "").strip().lower()
+    if nen:
+        import carousel
+        if nen not in carousel.NEN:
+            loi.append(f"\"nen\": \"{nen}\" không hợp lệ — chọn {' | '.join(carousel.NEN)}")
+        else:
+            ra["nen"] = nen
     c = giai(cover, "bìa", True) if cover else None
     if c is not None:
         if not str(c.get("hook") or "").strip():
@@ -194,19 +195,6 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     if so_quote < 2:
         loi.append(f"chỉ {so_quote} slide quote, cần ≥ 2 — chọn 2 câu đắt nhất làm \"quote\"+\"attrib\"")
     return ra, loi, dung_anh
-
-
-def kiem_lam_lai(spec: dict, da_dung: dict | None) -> list:
-    if not da_dung:
-        return []
-    loi = []
-    cover = spec.get("cover") or {}
-    if cover.get("anh") and cover.get("anh") == da_dung.get("bia"):
-        loi.append(f"LÀM LẠI: bìa vẫn là {da_dung['bia']} như lần trước — Ông Chủ bấm làm lại "
-                   "nghĩa là bìa chưa đạt, đổi ảnh bìa")
-    if _chuan(cover.get("hook")) == _chuan(da_dung.get("hook")):
-        loi.append("LÀM LẠI: hook giống hệt lần trước — viết hook khác")
-    return loi
 
 
 def don_slide_cu(stem: Path) -> None:
@@ -245,20 +233,6 @@ def ban_giao(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
     return "\n".join(L)
 
 
-def ghi_bang_den(draft_id: str, key: str, value, author: str = "dre") -> None:
-    """Ghi mot muc len bang den cua bai qua bang_den.py (python cua hermes, vi no
-    import hermes_cli.kanban_*). Im lang khi loi — chi in mot dong canh bao."""
-    hermes_py = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
-    try:
-        r = subprocess.run([str(hermes_py), str(ROOT / "bang_den.py"), "ghi", draft_id,
-                            key, json.dumps(value, ensure_ascii=False), "--author", author],
-                           cwd=str(ROOT), capture_output=True, text=True, timeout=60)
-        if r.returncode != 0 or "[bang-den] lỗi" in (r.stderr or ""):
-            print(f"[CANH BAO] bang den: {(r.stderr or r.stdout).strip()[-200:]}")
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[CANH BAO] bang den: {type(e).__name__}: {e}")
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop carousel cua Dre (tat dinh)")
     ap.add_argument("draft_id")
@@ -269,25 +243,10 @@ def main() -> int:
     ap.add_argument("--out", help="Ghi slide ra cho khac (de thu, khong de len drafts/)")
     a = ap.parse_args()
 
-    meta = cb.nap_meta(a.draft_id)
-    brand = cb._brand_cua(meta)
-    import env_load
-    wd = cb.workdir(env_load.state_dir(), a.draft_id)
-    m = cb._doc_json(wd / "xong.json")
-    if not m:
-        sys.exit(f"Chua chuan bi. Chay truoc: venv/bin/python dre_chuan_bi.py {a.draft_id}")
-    spec_path = Path(a.spec) if a.spec else wd / "spec.json"
-    if not spec_path.exists():
-        sys.exit(f"Chua co spec: {spec_path} — viet spec theo khung trong brief "
-                 f"({wd / 'brief.md'}) roi chay lai.")
-    try:
-        spec = json.loads(spec_path.read_text(encoding="utf-8"))
-    except Exception as e:                                   # noqa: BLE001
-        sys.exit(f"[LOI] spec.json khong phai JSON hop le: {type(e).__name__}: {e}")
-
-    da_dung = cb._doc_json(wd / "da_dung.json")
+    meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "dre_chuan_bi.py", "dre_nop.py")
     spec_cs, loi, dung_anh = giai_spec(spec, m, wd)
-    loi = kiem_lam_lai(spec, da_dung) + loi
+    cover = spec.get("cover") or {}
+    loi = nc.kiem_lam_lai(da_dung, "bìa", cover.get("anh"), cover.get("hook"), khoa_anh="bia") + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
@@ -330,25 +289,19 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
-        import gui_telegram
-        res = gui_telegram.post("carousel", [str(f) for f in files], mo_ta, duyet=a.draft_id)
-        r = res.get("result")
-        mid = (r[-1] if isinstance(r, list) else r or {}).get("message_id")
-        cb._ghi_json(wd / "da_dung.json", {
-            "bia": (spec.get("cover") or {}).get("anh"), "hook": hook,
-            "anh": [ma for _, ds in dung_anh for ma in ds],
-            "luc": time.strftime("%H:%M %d/%m"), "lan": int((da_dung or {}).get("lan", 0)) + 1,
-            "message_id": mid})
+        mid = nc.gui_album("carousel", files, mo_ta, a.draft_id, wd, da_dung,
+                           {"bia": cover.get("anh"), "hook": hook,
+                            "anh": [ma for _, ds in dung_anh for ma in ds]})
     nguon_anh = sorted({m_["mien"] or m_["tu"] for m_ in m["anh"]
                         if m_["ma"] in {ma for _, ds in dung_anh for ma in ds}})
     # Bang den (kanban swarm, 05/09): script ghi ban giao co cau truc len the goc
     # cua bai — code lam, LLM khong phai nho. Cung JSON nay in ra dong
-    # "[metadata]" de Dre dan vao kanban_complete(metadata=...) -> Miles/Ada thay
+    # "[metadata]" de Dre dan vao kanban_complete(metadata=...) -> Miles thay
     # trong "Parent task results". Best-effort: bang den hong khong hong bai.
     md = {"slide": n, "hook": hook, "nguon_anh": nguon_anh, "tep": str(out),
           "ban_giao": str(bg_path), "message_id": mid}
     if not a.khong_gui:
-        ghi_bang_den(a.draft_id, "anh", md)
+        nc.ghi_bang_den(a.draft_id, "anh", md, "dre")
     print(f"[xong] {n} slide -> {out}" + (f"; da gui topic carousel (message_id={mid}) kem nut duyet"
                                           if mid else "") +
           f"; ban giao cho Miles: {bg_path}")

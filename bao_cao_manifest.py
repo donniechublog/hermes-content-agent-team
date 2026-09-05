@@ -35,23 +35,11 @@ def dung(items: list, vai: str, ngay: str = None, tieu_de_phu: str = "") -> str:
         diem = it.get("score")
         dau = f"<b>{it['index']}.</b>" + (f" [{diem}đ]" if diem is not None else "")
         phu = " · ".join(x for x in (it.get("via"), it.get("source_note")) if x)
-        d.append(f"{dau} {it.get('title', '')}" + (f" <i>({phu})</i>" if phu else ""))
+        d.append(f"{dau} {it.get('title', '')}" + (f" <i>({phu})</i>" if phu else "")
+                 + (" <i>(vai bỏ sót, script tự thêm)</i>" if it.get("tu_them") else ""))
     d.append("")
 
     d.append(NHAC)
     return "\n".join(d)
 
 
-def khong_co_gi(vai: str, so_da_quet: int, ghi_chu: str = "") -> str:
-    """Ban tin khi khong co tin nao dang len kenh.
-
-    Van phai gui, va van phai co SO DA QUET — de Ong Chu phan biet duoc
-    'hom nay khong co gi' voi 'co gi do hong'.
-    """
-    ten = TEN_VAI.get(vai, vai)
-    ngay = datetime.now(VN).strftime("%Y-%m-%d")
-    t = [f"<b>{ten} — {ngay}</b>", "",
-         f"Đã quét {so_da_quet} tin, không tin nào đáng lên kênh hôm nay."]
-    if ghi_chu:
-        t.append(ghi_chu)
-    return "\n".join(t)

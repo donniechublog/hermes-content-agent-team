@@ -25,7 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path.home() / "content-team"
+ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 SO_BAI_KHAC = 2
@@ -103,7 +103,7 @@ def gom(tieu_de: str, link: str, so_bai_khac=SO_BAI_KHAC, tu_nguon=None) -> dict
     if not dsach:
         try:
             import anh_bai
-            dsach = anh_bai.bao_khac(tieu_de, so=so_bai_khac * 2)[:so_bai_khac]
+            dsach = anh_bai.bao_khac(tieu_de, link, so=so_bai_khac * 2)[:so_bai_khac]
         except Exception as e:                               # noqa: BLE001
             print(f"[tu_lieu] khong lay duoc bao khac: {type(e).__name__}",
                   file=sys.stderr)

@@ -14,23 +14,17 @@ Dung:
     venv/bin/python ethan_nop.py <draft_id> --khong-gui --out /tmp/x.png   # thu
 """
 import argparse
-import json
-import re
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import ethan_chuan_bi as eb                                  # noqa: E402
+import nop_chung as nc                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
-
-
-def _chuan(t):
-    return re.sub(r"\s+", " ", (t or "").strip().lower())
 
 
 def giai_spec(spec: dict, m: dict) -> tuple:
@@ -82,17 +76,6 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None}, []
 
 
-def kiem_lam_lai(spec, da_dung):
-    if not da_dung:
-        return []
-    loi = []
-    if spec.get("anh") == da_dung.get("anh"):
-        loi.append(f"LÀM LẠI: vẫn ảnh {da_dung['anh']} như lần trước — Ông Chủ bấm làm lại nghĩa là ảnh chưa đạt")
-    if _chuan(spec.get("hook") or spec.get("title")) == _chuan(da_dung.get("hook")):
-        loi.append("LÀM LẠI: hook giống hệt lần trước — viết câu khác")
-    return loi
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop hero card cua Ethan (tat dinh)")
     ap.add_argument("draft_id")
@@ -102,24 +85,9 @@ def main() -> int:
     ap.add_argument("--out")
     a = ap.parse_args()
 
-    meta = cb.nap_meta(a.draft_id)
-    brand = cb._brand_cua(meta)
-    import env_load
-    wd = cb.workdir(env_load.state_dir(), a.draft_id)
-    m = cb._doc_json(wd / "xong.json")
-    if not m:
-        sys.exit(f"Chua chuan bi. Chay truoc: venv/bin/python ethan_chuan_bi.py {a.draft_id}")
-    spec_path = Path(a.spec) if a.spec else wd / "spec.json"
-    if not spec_path.exists():
-        sys.exit(f"Chua co spec: {spec_path} — viet theo khung trong {wd / 'brief.md'} roi chay lai.")
-    try:
-        spec = json.loads(spec_path.read_text(encoding="utf-8"))
-    except Exception as e:                                   # noqa: BLE001
-        sys.exit(f"[LOI] spec.json khong phai JSON hop le: {type(e).__name__}: {e}")
-
-    da_dung = cb._doc_json(wd / "da_dung.json")
+    meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "ethan_chuan_bi.py", "ethan_nop.py")
     kq, loi = giai_spec(spec, m)
-    loi = kiem_lam_lai(spec, da_dung) + loi
+    loi = nc.kiem_lam_lai(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title")) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
@@ -172,14 +140,8 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). The o {out}")
     else:
-        import gui_telegram
-        res = gui_telegram.post("designer", [str(out)], f"Thẻ {kq['kieu']}: {hook}"[:1000], duyet=a.draft_id)
-        rr = res.get("result")
-        mid = (rr[-1] if isinstance(rr, list) else rr or {}).get("message_id")
-        cb._ghi_json(wd / "da_dung.json", {"anh": kq["anh"]["ma"], "hook": hook,
-                                           "luc": time.strftime("%H:%M %d/%m"),
-                                           "lan": int((da_dung or {}).get("lan", 0)) + 1,
-                                           "message_id": mid})
+        mid = nc.gui_album("designer", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
+                           {"anh": kq["anh"]["ma"], "hook": hook})
     print(f"[xong] the {kq['kieu']} -> {out}" + (f"; da gui topic designer (message_id={mid}) kem nut duyet"
                                                  if mid else "") + f"; ban giao: {bg_path}")
     print("Ket qua task (dung dong nay de ket thuc task): "

@@ -48,7 +48,7 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
 
 Bài đã duyệt đi tiếp sang moat (org `dcgr.tech`) làm hàng đợi publish; extension
 trình duyệt claim và đăng lên mạng xã hội. Moat không gọi ngược về máy này —
-cron `moat-publish-watch` (1 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
+cron `moat-publish-watch` (5 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
 Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên Telegram channel, thẻ duyệt chỉ
 ghi thêm một dòng cảnh báo.
 
@@ -58,7 +58,8 @@ ghi thêm một dòng cảnh báo.
   không khung, chữ đè lên qua màn tối. Kiểu `quote`: thẻ trích dẫn pull-quote —
   câu lớn trong **khung 2 góc ngoặc bo tròn**, dòng nguồn `--attrib` canh giữa,
   brand text góc dưới-trái. Màu: **net khung + brand xanh Apple cố định**, **dấu " theo
-  hãng nhắc trong chủ đề**. Kiểu `dai` còn trong mã nhưng hiện không vai nào dùng
+  hãng nhắc trong chủ đề**. Kiểu `dai` (thẻ tin có textbox, nhãn, icon social,
+  mascot) đã bỏ khỏi mã 05/09/2026 vì không vai nào dùng
 - `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
 - `carousel.py` — dựng **carousel nhiều slide** (Dre cho donniechublog, Dre
@@ -101,8 +102,8 @@ ghi thêm một dòng cảnh báo.
     (OCR đánh số vùng, đo màu; LaMa xoá trừ vùng `giu`; `vung.json` cho Itachi),
     `itachi_chuan_bi/itachi_nop` (tự làm phần Gin nếu chưa; chữ Anh từng vùng
     in sẵn; vẽ tại chỗ đúng box/màu/cỡ hoặc `deck.py`; retouch/blend chờ GPU,
-    xem dưới), `jean_chuan_bi/jean_nop` (bóc bài, ráp teaser, gửi topic; `--draft`
-    cho task sau này), `ada_chuan_bi/ada_nop` (số liệu N ngày: chọn theo bậc điểm/
+    xem dưới), `jean_chuan_bi/jean_nop` (bóc bài, ráp teaser, gửi topic),
+    `ada_chuan_bi/ada_nop` (số liệu N ngày: chọn theo bậc điểm/
     nguồn/category, draft, kanban, token theo vai, chi phí 9router → nhận xét có
     bằng chứng → báo cáo topic analyst). `tao_nen_ai.py` (skill ai-background) và
     bộ skill retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh ảnh bằng CPU quá
@@ -183,22 +184,25 @@ ghi thêm một dòng cảnh báo.
 - `bat_buoc.py` — **danh sách BẮT BUỘC** cho ba vai đi tìm tin (luật Ông Chủ 04/09/2026:
   script quét thấy là phải đưa, hôm trước sót thì hôm sau bổ sung, vai không có quyền bỏ).
   Script quét gieo mục (`state/<brand>/bat_buoc_<vai>.json`), script ghi manifest
-  (`manifest_build.py` cho Finn, `manifest_ghi.py` cho Nova/Vera) **từ chối** nếu thiếu và
-  xoá mục đã đưa. Tiêu chí: Finn = tiêu đề nhắc hãng frontier hoặc HN/Reddit ≥150 điểm có
+  (`manifest_build.py` cho Finn, `manifest_ghi.py` cho Nova/Vera) **tự thêm** mục thiếu vào
+  manifest kèm ghi chú "vai bỏ sót, script tự thêm" trên báo cáo (từ 05/09/2026, hết vòng
+  từ chối rồi bắt vai sửa) và xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**
+  trong brief, script tự lấy link và số báo — không chép URL nữa. Tiêu chí: Finn = tiêu đề nhắc hãng frontier hoặc HN/Reddit ≥150 điểm có
   dấu hiệu AI; Nova = mọi model ra mắt / vào bảng / leo hạng ở 12 bảng; Vera = một mục mỗi
   hãng lõi mỗi ngày (hoặc tin ≥2 báo), khớp theo tên hãng
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
-- `usage_audit.py` — soi usage thật từ 9router: bắt fallback âm thầm và model tụt cache
 - `theo_doi_9router.py` — nhật ký 9router **theo ngày** (`state/9router/nhat_ky/9router_<ngày>.md|json`):
-  req/prompt/cache%/$ theo model @ kết nối, theo khoá API, theo giờ VN, fallback thật
+  req/prompt/cache%/$ theo model @ kết nối, theo khoá API, theo giờ VN, **model lạ**
+  (không ở chuỗi cấu hình nào của bất kỳ HERMES_HOME) và **cache thấp** (gộp từ
+  `usage_audit.py` 05/09/2026, tệp đó đã xoá), fallback thật
   v4-flash→deepseek-chat, lỗi, 5 prompt nặng nhất, phiên rỗng (ok nhưng ≤5 token out dù
   prompt ≥1k), snapshot connection lỗi (lastError/errorCode/backoff), **$ theo vai** (ghép
   `session_model_usage` mọi HERMES_HOME × đơn giá 9router trong ngày, phủ ~98%), $/task done,
-  $/bài published theo brand. `--canh` là watcher IP
-  (9router không lưu IP, xem "Điểm mù thứ ba"). Ada đọc qua `tai(ngày)` để so ngày với ngày
+  $/bài published theo brand, model lạ, cache thấp
+  (9router không ghi IP máy gọi, xem "Điểm mù thứ ba"). Ada đọc qua `tai(ngày)` để so ngày với ngày
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
 - `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…),
-  icon SVG, mascot, và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
+  và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
   cổng chặn phát hiện mặt người của `carousel.py`
 - `requirements.txt` — phụ thuộc Python. venv dùng chung với hermes nên `hermes
   update` có thể làm mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`
@@ -243,23 +247,23 @@ vì nó chạy thẳng worker → verifier → synthesizer, không có chỗ cho
 thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nhận việc; là bảng đen)
   └─ task Dre        parent = gốc              ← tạo khi Ông Chủ chọn số
        └─ task Miles parent = [Dre, gốc]       ← tạo khi Ông Chủ bấm "Duyệt ảnh" (cổng giữ nguyên)
-            └─ task Ada "Soát: …" parent = [Miles, gốc]  ← tạo khi Miles xong
 ```
 
 - Vai **không nhắn nhau**. Mỗi vai kết thúc bằng `kanban_complete(summary, metadata)`; hermes tự
-  đưa summary/metadata đó vào context task con ("Parent task results"), nên Miles thấy Dre, Ada
-  thấy Miles. `dre_nop.py` / `miles_nop.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
+  đưa summary/metadata đó vào context task con ("Parent task results"), nên Miles thấy Dre.
+  `dre_nop.py` / `miles_nop.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
   `[swarm:blackboard] {…}` trên thẻ gốc) và in dòng `[metadata]` để vai dán vào `kanban_complete`.
-- **Ada** soát 4 điểm (số liệu khớp nguồn, caption khớp ảnh, ghi nguồn, đúng brand) rồi
-  `kanban_complete(metadata={"gate": "pass"|"fix"})`. `approve_service` trả kết quả về topic Miles,
-  **reply ngay dưới thẻ ✅/❌** (push CLI lưu `tg_card_message_id`). Ông Chủ vẫn là người bấm.
+- Task **Ada "Soát"** từng nối sau Miles (05/09 sáng) đã **bỏ 05/09 chiều**: một task LLM mỗi bài
+  để kiểm bốn điểm mà `caption_check.py` giờ làm bằng code (số trong caption phải có trong tư liệu,
+  cụm cấm, độ dài, tiếng Việt). Ông Chủ vẫn là người bấm; push CLI vẫn lưu `tg_card_message_id`
+  để Ada đối chiếu bài với thẻ khi phân tích.
 - Nhìn toàn chuỗi: `hermes kanban show <thẻ gốc>` hoặc dashboard — quan hệ cha-con nằm trong
   `task_links`, bàn giao trong `task_comments`/`task_runs`, không trôi như chat.
 - Bảng đen là lớp thêm, **best-effort**: `bang_den.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
-  đen và không có Ada soát (bài trước 05/09 không có thẻ gốc → cũng không soát).
+  đen.
 - Bật theo `CT_BANG_DEN` (mặc định `dcgr`). **Blog bật từ 05/09/2026 chiều** qua drop-in
-  `hermes-approve@blog.service.d/override.conf` (`Environment=CT_BANG_DEN=dcgr,blog`) — Ada của blog
-  soát y hệt; đã thử thẻ gốc trên kanban blog.
+  `hermes-approve@blog.service.d/override.conf` (`Environment=CT_BANG_DEN=dcgr,blog`); đã thử thẻ gốc
+  trên kanban blog.
 
 ## Dịch vụ systemd
 
@@ -270,17 +274,16 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
   `/` danh sách ngày, `/9router/<ngày>` bảng đầy đủ, `.json` số thô. Tin Telegram 6h sáng
   (chỉ brand blog gửi, tránh trùng) là tóm tắt req · $ · cache% · fallback + $/bài + link
   `http://100.87.121.46:9130/9router/<ngày>` (netbird; đổi bằng `NHAT_KY_URL`). Không ảnh, không bảng trong Telegram
-- `9router-ket-noi` — user unit (`hermes/systemd/9router-ket-noi.service`), watcher IP kết nối
-  tới cổng 20128 → `state/9router/ket_noi_<ngày>.jsonl`. Không root, không đọc nội dung
 
 ## Cron (7 job, xem `~/.hermes/cron/jobs.json`)
 
 - `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
-- `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
+- `usage-audit` — đã gộp vào `daily-log` 05/09/2026; script chỉ còn in một dòng. Xoá job này trên server
 - `daily-log` (trước là `nhat-ky-daily`) — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router hôm qua
   (`theo_doi_9router.py --gui`: tóm tắt ngày + cảnh báo IP ngoài / fallback / lỗi / phiên rỗng / connection chết + link web → topic analyst)
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
-- `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
+- `moat-publish-watch` — 5 phút/lần (nhịp ghi trong script; `jobs.json` còn 1 phút thì đổi),
+  hỏi moat xem bài đã lên social chưa. Im lặng khi
   không có gì mới; hỏi theo `workflow_id` (khoá chính) chứ không phải `external_id`;
   bỏ theo dõi một bài sau 7 ngày và tự xoá file output cron cũ hơn 3 ngày
 
@@ -339,14 +342,14 @@ báo `thinkingCanDisable: false` — không tắt suy luận được.
 
 **1. Bắt buộc phải có giám sát model.** Hermes fallback im lặng hoàn toàn — đặt
 model chính thành model chết, agent vẫn trả lời bình thường, không một dòng báo.
-Cần cả hai lớp: `model_watch.py` (model còn sống không) và `usage_audit.py`
+Cần cả hai lớp: `model_watch.py` (model còn sống không) và `theo_doi_9router.py`
 (model nào **thật sự** được gọi).
 
 **2. Ghim mỗi hội thoại vào một model. Chuyển tầng thì chuyển ở ranh giới task.**
 `try_activate_fallback` đổi model ngay giữa lượt, `restore_primary_runtime` lật
 về model chính ở lượt sau — một hội thoại có thể chạy qua 2–3 model mà không ai
 biết. Cache là per-model, mỗi lần lật là mất sạch prefix đã cache và cả ngữ cảnh
-bị tính lại giá gốc. Cột `cache%` trong `usage_audit.py` chính là thước đo
+bị tính lại giá gốc. Cột `cache%` trong nhật ký ngày của `theo_doi_9router.py` chính là thước đo
 nguyên tắc này: tụt cache nghĩa là đang lật model.
 
 **Đã bắt được một nguyên nhân lật cụ thể (cron 05/09/2026, cả Finn/Nova/Vera):**
@@ -359,11 +362,12 @@ cooldown → `Fallback activated: v4-flash → deepseek-chat`, dính tới hết
 `profiles/<vai>/logs/agent.log`, **không** có trong `logs/gateway.log`. Đếm
 19/08–04/09: lỗi này 5–48 lần/ngày, fallback 4–33 lần/ngày. Chặn bằng
 `auxiliary.title_generation.enabled: false` trong `config.yaml` từng profile:
-`venv/bin/python tat_title_generation.py` (có `--thu`, backup
-`.bak-truoc-tat-title-0905`); tiêu đề phiên vô dụng với task kanban/cron.
+script `tat_title_generation.py` (đã chạy xong và xoá khỏi repo 05/09, xem git log; quay lại
+bằng tệp `.bak-truoc-tat-title-0905` trong từng profile); tiêu đề phiên vô dụng với task kanban/cron.
 
-**Từ 05/09/2026 model chính là combo `DS-v4Flash` của 9router** (`doi_model_combo.py`,
-có `--thu`, backup `.bak-truoc-doi-combo-0905`; analyst giữ `ds/deepseek-reasoner`).
+**Từ 05/09/2026 model chính là combo `DS-v4Flash` của 9router** (đổi bằng script
+`doi_model_combo.py`, đã chạy xong và xoá khỏi repo cùng `bo_fallback_chat.py`; quay lại bằng
+`.bak-truoc-doi-combo-0905` / `.bak-truoc-bo-fallback-chat-0905`; analyst giữ `ds/deepseek-reasoner`).
 9router chỉ xoay giữa các connection *cùng* provider; ba route v4-flash (deepseek trực
 tiếp `ds/`, xKiro `dsx/deepseek/deepseek-v4-flash`, aellm `dsa/deepseek-v4-flash`) chỉ
 nối được với nhau qua Combo, gọi bằng đúng tên combo làm model (không có prefix
@@ -431,14 +435,13 @@ brand ở mục "theo khoá API" (đọc tên khoá từ bảng `apiKeys`, khôn
 
 **Điểm mù thứ ba: 9router KHÔNG ghi IP máy gọi.** `usageHistory` không có cột IP,
 `meta` luôn `{}`; `custom-server.js` có tính `x-9r-real-ip` nhưng chỉ dùng cho
-rate-limit. Trong khi service đang bind `0.0.0.0` (LAN 192.168.1.61 + netbird),
-ai trong mạng cũng gọi được bằng khoá chung. Đo 05/09: `theo_doi_9router.py --canh`
-đọc bảng TCP mỗi 2s (psutil, mọi trạng thái trừ LISTEN nên curl mở-đóng 1s vẫn để
-vết TIME_WAIT), ghi IP theo **kết nối**, không theo request — Hermes dùng httpx
-keep-alive nên một kết nối chở nhiều request. Muốn quy request về máy gọi thì vẫn
-phải cấp khoá riêng như trên. Nhật ký ngày `9router_<ngày>.md` gộp cả hai nguồn;
-cột "đổi model liên tiếp" chỉ tin cặp v4-flash→deepseek-chat là fallback thật,
-các cặp khác phần lớn là vai chạy song song (9router không ghi session).
+rate-limit. Service đang bind `0.0.0.0` (LAN 192.168.1.61 + netbird) nên ai trong
+mạng cũng gọi được bằng khoá chung. Watcher socket `--canh` (đọc bảng TCP mỗi 2s,
+ghi IP theo kết nối) đo 05/09 sáng rồi **bỏ 05/09 chiều**: nó chỉ thấy kết nối,
+không thấy request (httpx keep-alive chở nhiều request một kết nối), và cách đúng
+là bind 9router về `127.0.0.1` hoặc địa chỉ netbird rồi cấp khoá riêng cho từng
+máy (mục "theo khoá API" tự tách). Nhật ký ngày `9router_<ngày>.md` cột "đổi model
+liên tiếp" chỉ tin cặp v4-flash→deepseek-chat là fallback thật,
 
 Token burn đo được cho một luồng trọn vẹn (Finn quét → vai ảnh dựng → vai viết,
 17 lượt gọi): **~398.000 token chạm model**, cache 36%, 227 giây, ước $0,038.

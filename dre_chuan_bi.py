@@ -103,6 +103,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     L.append(f"## Viết spec vào: {m['workdir']}/spec.json")
     khung = {
         "tam_co": "flagship" if m["flagship"] else "thuong",
+        "nen": "<toi | sang — cả bộ một nền; toi: màn tối chữ trắng, sang: màn sáng chữ đen; chọn theo ảnh, mặc định toi>",
         "cover": {"anh": (m.get("goi_y_bia") or ["A?"])[0], "hook": "<một câu giật, ≤ 90 ký tự, có dấu>",
                   "category": "<" + " | ".join(carousel.CATEGORY_GOI_Y) + " | EARNINGS | M&A>",
                   "label": "<TÊN MODEL / HÃNG, VIẾT HOA>"},
@@ -117,7 +118,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
     L.append("Luật điền: mỗi slide MỘT ảnh, MỘT ý; `text` HOẶC `quote`+`attrib`; mỗi mã ảnh dùng đúng "
              "một lần; chart chỉ ở slide thân (script tự dán full bề ngang); ảnh NGANG phải `ghep` "
-             "hoặc `cat_ngang`; ảnh có mặt phải có `nhan_vat`. Tiếng Việt có dấu, không em-dash, "
+             "hoặc `cat_ngang`; ảnh có mặt phải có `nhan_vat`; `nen` sang khi đa số ảnh sáng/nền trắng (ảnh nổi hơn trên màn sáng), toi khi ảnh tối hoặc lẫn lộn. Tiếng Việt có dấu, không em-dash, "
              "câu quote phải DỊCH. Bỏ các slide mẫu không dùng — khung trên chỉ minh hoạ cú pháp.")
     L.append("Khung kể: bìa HOOK (nghịch lý/con số) → chuyện gì vừa xảy ra → con số gây sốc → "
              "ý nghĩa thật → đối thủ/diễn biến → cái cần theo dõi (không chốt cụt).")

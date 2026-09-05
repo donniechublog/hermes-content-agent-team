@@ -16,11 +16,10 @@ từ đầu và chạy thẳng worker → verifier → synthesizer, KHÔNG có c
     thẻ gốc "Bài: …"  (done ngay, assignee `ban_bien_tap` — không ai nhận việc)
       └─ task Dre (parent=gốc)          ← approve_service tạo khi Ông Chủ chọn số
            └─ task Miles (parent=Dre,gốc) ← tạo khi Ông Chủ bấm "Duyệt ảnh"
-                └─ task Ada soát (parent=Miles,gốc) ← tạo khi Miles xong
 
 Mỗi vai kết thúc bằng `kanban_complete(summary, metadata)` — hermes tự đưa
 summary/metadata đó vào context của task con ("Parent task results"), nên
-Miles thấy Dre, Ada thấy Miles mà không ai phải "nhắn" ai. Bảng đen trên thẻ
+Miles thấy Dre mà không ai phải "nhắn" ai. Bảng đen trên thẻ
 gốc là bản ghi gộp toàn bộ chuỗi (đọc bằng `kanban_show(task_id=<gốc>)`).
 
 Dùng (chạy bằng python của hermes-agent, HERMES_HOME của container):
@@ -101,9 +100,15 @@ def tao_root(draft_id: str, title: str, goal: str, author: str) -> tuple:
             f"Mục tiêu:\n{goal or title}")
     with kb.connect_closing() as conn:
         with kb.write_txn(conn):
+            # workspace co dinh nhu approve_service.kanban_create: the goc khong
+            # ai chay nen khong ton cache, nhung de dong bo va khong de scratch
+            # de lai thu muc t_xxx rong moi bai.
+            ws = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))) / "kanban" / "workspaces" / "co-dinh"
+            ws.mkdir(parents=True, exist_ok=True)
             rid = kb.create_task(
                 conn, title=tieu_de, body=than, assignee=ROOT_ASSIGNEE,
                 created_by=author, initial_status="blocked",
+                workspace_kind="dir", workspace_path=str(ws),
                 idempotency_key=f"bang_den:{draft_id}")
             t = kb.get_task(conn, rid)
             if t is not None and t.status == "blocked":
@@ -129,6 +134,28 @@ def ghi(draft_id: str, key: str, value, author: str) -> bool:
     with kb.connect_closing() as conn:
         ks.post_blackboard_update(conn, rid, author=author, key=key, value=value)
     return True
+
+
+def ghi_nen(draft_id: str, key: str, value, author: str = "script", hermes_home=None) -> tuple:
+    """Ghi mot muc len bang den bang PYTHON CUA HERMES trong tien trinh con — de
+    script chay trong venv content-team (khong co hermes_cli) goi duoc.
+    Best-effort: tra ve (ok, thong_bao), khong nem. `hermes_home` None = thua ke
+    moi truong (dispatcher/systemd da dat, hoac _chuan_home suy tu brand);
+    dat gia tri thi ep HERMES_HOME cho tien trinh con.
+    Truoc 05/09/2026 doan nay chep bon ban o dre_nop/kite_nop/miles_nop/approve_service."""
+    import subprocess
+    sys.path.insert(0, str(ROOT))
+    import env_load
+    env = dict(os.environ, HERMES_HOME=str(hermes_home)) if hermes_home else None
+    try:
+        r = subprocess.run([str(env_load.HERMES_PY), str(Path(__file__).resolve()), "ghi", draft_id, key,
+                            json.dumps(value, ensure_ascii=False), "--author", author],
+                           cwd=str(ROOT), env=env, capture_output=True, text=True, timeout=60)
+    except Exception as e:                                   # noqa: BLE001
+        return False, f"{type(e).__name__}: {e}"
+    if r.returncode != 0 or "[bang-den] lỗi" in (r.stderr or ""):
+        return False, (r.stderr or r.stdout).strip()[-200:]
+    return True, ""
 
 
 def doc(draft_id: str) -> dict:

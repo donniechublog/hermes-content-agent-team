@@ -36,7 +36,6 @@ import httpx
 import env_load
 import bat_buoc
 
-ROOT = Path.home() / "content-team"
 STATE = env_load.state_dir() / "business_seen.json"
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
@@ -470,7 +469,6 @@ def main():
         print(f"=== {len(chon)}/{len(tin)} tin (sau gom trung, bo da bao) "
               f"| {wl} tin watchlist ===\n")
         for t in chon:
-            bao = ", ".join(t.get("cac_bao", [])[:3]) or t["toa_soan"]
             dau = "[W]" if t["watchlist"] else "   "
             print(f"  {dau} {t['ngay']}  ({t['goc']})  {t['so_bao']} báo")
             print(f"        {t['tieu_de'][:100]}")

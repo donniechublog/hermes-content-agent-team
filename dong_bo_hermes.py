@@ -28,7 +28,9 @@ import argparse
 import sys
 from pathlib import Path
 
-ROOT = Path.home() / "content-team"
+import env_load
+
+ROOT = env_load.ROOT
 REPO = ROOT / "hermes"
 # Moi brand mot home rieng. Them brand = them mot dong o day.
 HOMES = {"blog": Path.home() / ".hermes-blog",
@@ -59,7 +61,6 @@ def cap_tep():
     ra = []
 
     def them_profile(slug, repo_soul, home_keys):
-        repo_mem = repo_soul.with_name(f"{slug}.MEMORY.md")
         for hk in home_keys:
             H = HOMES[hk]
             ra.append((f"SOUL {hk}/{slug}",
@@ -67,6 +68,11 @@ def cap_tep():
             # MEMORY.md mang HANH VI (vd quy uoc tag fact_store), can lich su
             # nhu SOUL. USER.md rieng tung profile KHONG dong bo (co the co du
             # lieu ca nhan) — chi USER.md base cua home moi chep.
+            # SOUL dung chung (shared/) van co the co MEMORY rieng tung brand
+            # (profiles/<brand>/<slug>.MEMORY.md, vd carousel/designer/writer
+            # tu 05/09/2026): uu tien ban rieng, khong co thi lay ban canh SOUL.
+            rieng = REPO / "profiles" / hk / f"{slug}.MEMORY.md"
+            repo_mem = rieng if rieng.exists() else repo_soul.with_name(f"{slug}.MEMORY.md")
             if repo_mem.exists():
                 ra.append((f"MEMORY {hk}/{slug}",
                            H / "profiles" / slug / "memories" / "MEMORY.md",

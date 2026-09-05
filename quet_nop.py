@@ -92,6 +92,8 @@ def main() -> int:
             sys.exit(f"Chua co {ds} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
                      "(hoac --khong-co neu khong co gi dang len kenh).")
         args = [str(ROOT / "manifest_ghi.py"), "--vai", a.vai, "--in", str(ds), "--bao-cao", str(bao_cao)]
+        if a.vai == "market":
+            args += ["--nguon", str(wd / "quet.json")]      # de Vera chon bang so thu tu k
         if a.thu:
             args += ["--khong-xoa-bat-buoc", "--out", str(wd / "thu_manifest.json")]
     r = _chay(args)

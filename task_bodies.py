@@ -38,7 +38,7 @@ ngan (anh nao bi loai, vi sao) — Ong Chu quyet tiep. TUYET DOI KHONG kanban_co
 chua gui album: "done" nghia la DA CO san pham tren topic. Khong tu che metadata kieu
 "abort"; abort = kanban_block.
 Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
-dong "[metadata]" ma script in ra (Miles/Ada doc ban giao nay qua kanban). Khong sinh agent
+dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban). Khong sinh agent
 con, khong gui lai anh. Ban chuan bi noi khong co anh that nao thi goi tool kanban_block voi ly do ngan (KHONG kanban_complete — done nghia la
 da co the tren topic) — KHONG tao the, KHONG ve."""
 
@@ -138,5 +138,5 @@ cd {goc} && venv/bin/python miles_nop.py {draft_id}
 Script tu chuan hoa, do ky tu/cau/so, chay cong chan, ghep draft, day vao hang
 duyet. Bao [LOI] thi sua DUNG cho do trong caption.txt roi chay lai DUNG lenh
 nay (toi da 2 lan). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
-dong "[metadata]" ma script in ra (Miles/Ada doc ban giao nay qua kanban).
+dong "[metadata]" ma script in ra (ban giao len bang den kanban).
 KHONG tu dang len channel."""

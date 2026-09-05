@@ -31,14 +31,11 @@ import env_load
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teaser_assemble import DAI_HONG, tim_giong_tuong_thuat  # noqa: E402
+from caption_check import ty_le_dau                          # noqa: E402
 
-import os
-
-ROOT = Path.home() / "content-team"
-# Home theo container (systemd/cron dat HERMES_HOME per-brand); roi ve ~/.hermes
-# o che do don cu — cung ly do voi model_watch/usage_audit.
-HERMES = Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
-ROUTER = "http://127.0.0.1:20128/v1/chat/completions"
+ROOT = env_load.ROOT
+HERMES = env_load.hermes_home()          # per-brand, roi ve ~/.hermes
+ROUTER = env_load.ROUTER_URL
 
 # USD / 1 trieu token: (input, output, cache_read) — tuyen router that su di.
 # BANG TAY, se cu dan: doi chieu voi 9router (bang usage co cot cost) hoac trang
@@ -55,15 +52,6 @@ GIA = {
 
 UNG_VIEN = ["ds/deepseek-chat", "ds/deepseek-v4-flash",
             "mimo/mimo-v2.5-pro", "ds/deepseek-v4-pro"]
-
-DAU = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"
-          "ùúủũụưừứửữựỳýỷỹỵđ")
-
-
-def ty_le_dau(t: str) -> float:
-    chu = [c for c in t.lower() if c.isalpha()]
-    return sum(1 for c in chu if c in DAU) / len(chu) if chu else 0.0
-
 
 def suy_luan_cua_vai(vai: str) -> dict:
     """Doc dung cau hinh suy luan ma production dang chay cho vai nay.

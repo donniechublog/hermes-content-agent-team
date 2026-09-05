@@ -82,7 +82,10 @@ def main() -> int:
     else:
         import gui_telegram
         reply = int(a.id) if str(a.id).isdigit() else None
-        res = gui_telegram.post("gin", [str(nen), str(mask_dbg)], mo_ta[:1000], reply_to=reply)
+        try:
+            res = gui_telegram.post("gin", [str(nen), str(mask_dbg)], mo_ta[:1000], reply_to=reply)
+        except gui_telegram.GuiLoi as e:
+            sys.exit(f"[LOI] {e}")
         rr = res.get("result")
         mid = (rr[-1] if isinstance(rr, list) else rr or {}).get("message_id")
     print(f"[xong] xoá {so_xoa} vùng, giữ {so_giu} -> {nen}; vung.json cho Itachi: {vung_json}"

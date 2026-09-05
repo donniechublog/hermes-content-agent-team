@@ -23,7 +23,6 @@ _KHOA = __import__("threading").Lock()
 
 
 def _khoi_tao():
-    global _LOG
     if _LOG is not None:
         return _LOG
     with _KHOA:                      # nhieu thread cung khoi tao -> handler lap 3 lan

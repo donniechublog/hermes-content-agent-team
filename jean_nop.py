@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """jean_nop.py — NỘP của Jean: ráp teaser từ spec (title + paragraphs), kiểm độ
-dài + giọng tường thuật (teaser_assemble), gửi vào topic teaser. Có --draft <id>
-để ghi draft + push vào hàng duyệt khi sau này có task kanban.
+dài + giọng tường thuật (teaser_assemble), gửi vào topic teaser.
 
 Dùng:
     venv/bin/python jean_nop.py "<url>"
     venv/bin/python jean_nop.py "<url>" --khong-gui          # thử: in teaser
-    venv/bin/python jean_nop.py "<url>" --draft <draft_id>   # ghi drafts/<id>.json + push
 """
 import argparse
 import json
@@ -25,7 +23,6 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Nộp teaser của Jean")
     ap.add_argument("url")
     ap.add_argument("--khong-gui", action="store_true")
-    ap.add_argument("--draft", help="Ghi drafts/<id>.json + push vào hàng duyệt (chế độ task)")
     ap.add_argument("--bo-qua-kiem-tra", action="store_true", help="Chỉ khi Ông Chủ yêu cầu")
     a = ap.parse_args()
     wd = jb.workdir(a.url)
@@ -62,21 +59,6 @@ def main() -> int:
     caption = kq["caption"]
     (wd / "teaser.txt").write_text(caption, encoding="utf-8")
     print(f"[do] {kq['word_count']} từ | {kq['paragraph_count']} đoạn | emoji {' '.join(kq['emoji_used'])}")
-
-    if a.draft:
-        from approve_service import DRAFTS
-        out = DRAFTS / f"{a.draft}.json"
-        out.write_text(json.dumps({"caption": caption, "images": kq["images"], "source_url": a.url,
-                                   "category": "TEASER", "via": "", "status": "pending"},
-                                  ensure_ascii=False, indent=2), encoding="utf-8")
-        r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "approve_service.py"), "push", a.draft],
-                           cwd=str(ROOT), capture_output=True, text=True, timeout=180)
-        if r.returncode != 0:
-            print(f"[LOI] push: {(r.stderr or r.stdout)[-300:]}")
-            return 1
-        print(f"[xong] draft {out} đã vào hàng duyệt")
-        print(f"Kết quả task: teaser {kq['word_count']} từ đã vào hàng duyệt.")
-        return 0
 
     if a.khong_gui:
         print(f"[thu] không gửi. Teaser:\n\n{caption}")

@@ -18,6 +18,7 @@ Dung:
     venv/bin/python gui_telegram.py --vai itachi --list      # gan day da gui gi
 """
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -34,28 +35,43 @@ TOPICS = env_load.topics_path()
 API = "https://api.telegram.org/bot{token}/{method}"
 
 
+class GuiLoi(RuntimeError):
+    """Loi gui anh/topic. La Exception THUONG de nguoi goi thu vien bat duoc —
+    SystemExit lot qua moi `except Exception` (bai hoc o publish.TelegramTuChoi).
+    CLI (main) va cac nop bat loi nay roi thoat gon."""
+
+
 def _topic(vai: str) -> int:
-    m = json.loads(TOPICS.read_text(encoding="utf-8"))
+    m = env_load.topics()
     if vai not in m:
-        raise SystemExit(f"Vai '{vai}' chua co topic trong {TOPICS}")
+        raise GuiLoi(f"Vai '{vai}' chua co topic trong {TOPICS}")
     return m[vai]
+
+
+def _md5(files) -> list:
+    return [hashlib.md5(Path(f).read_bytes()).hexdigest() for f in files]
 
 
 def _ghi_nhat_ky(vai: str, message_id, files, mo_ta: str) -> None:
     STATE.mkdir(parents=True, exist_ok=True)
     dong = {"ts": int(time.time()), "message_id": message_id,
-            "files": [str(f) for f in files], "mo_ta": mo_ta}
+            "files": [str(f) for f in files], "md5": _md5(files), "mo_ta": mo_ta}
     with (STATE / f"{vai}.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(dong, ensure_ascii=False) + "\n")
 
 
 def _da_gui_gan_day(vai: str, files, phut: int = 30):
-    """Tra ve ban ghi gan nhat neu CUNG bo file (theo ten) da gui trong `phut` phut."""
+    """Tra ve ban ghi gan nhat neu CUNG bo file da gui trong `phut` phut.
+
+    So theo NOI DUNG (md5) chu khong chi theo ten (audit 05/09/2026): ban "Lam
+    lai" ghi ra dung ten cu drafts/<id>.png, so ten thi album moi bi coi la
+    trung va KHONG bao gio len topic. Dong cu chua co md5 thi so ten nhu truoc."""
     import time as _t
     p = STATE / f"{vai}.jsonl"
     if not p.exists():
         return None
     ten = sorted(Path(f).name for f in files)
+    md5 = sorted(_md5(files))
     moc = _t.time() - phut * 60
     for dong in reversed(p.read_text(encoding="utf-8").splitlines()):
         try:
@@ -64,7 +80,9 @@ def _da_gui_gan_day(vai: str, files, phut: int = 30):
             continue
         if d.get("ts", 0) < moc:
             break
-        if sorted(Path(f).name for f in d.get("files", [])) == ten:
+        giong = (sorted(d["md5"]) == md5) if d.get("md5") else \
+            (sorted(Path(f).name for f in d.get("files", [])) == ten)
+        if giong:
             return {"message_id": d.get("message_id"),
                     "luc": _t.strftime("%H:%M", _t.localtime(d["ts"]))}
     return None
@@ -97,15 +115,15 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     group = os.environ.get("TELEGRAM_GROUP_ID")
     if not token or not group:
-        raise SystemExit("Thieu TELEGRAM_BOT_TOKEN/TELEGRAM_GROUP_ID trong .secrets.env")
+        raise GuiLoi("Thieu TELEGRAM_BOT_TOKEN/TELEGRAM_GROUP_ID trong secret.<brand>.env")
     thread_id = _topic(vai)
 
     files = [Path(f) for f in files]
     thieu = [f for f in files if not f.exists()]
     if thieu:
-        raise SystemExit(f"Khong thay file: {', '.join(str(f) for f in thieu)}")
+        raise GuiLoi(f"Khong thay file: {', '.join(str(f) for f in thieu)}")
     if len(files) > 10:
-        raise SystemExit("Toi da 10 anh mot album (gioi han Telegram).")
+        raise GuiLoi("Toi da 10 anh mot album (gioi han Telegram).")
 
     # CHONG GUI TRUNG: cung vai + cung bo file trong 30 phut -> khong gui lai.
     # Su co 04/09/2026: Kite sinh agent con de "kiem tra anh", agent con tu gui
@@ -150,7 +168,7 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
         res = r.json()
 
     if not res.get("ok"):
-        raise SystemExit(f"Gui Telegram loi: {res.get('description')}")
+        raise GuiLoi(f"Gui Telegram loi: {res.get('description')}")
 
     result = res["result"]
     last = result[-1] if isinstance(result, list) else result
@@ -171,7 +189,7 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
             # Khong duoc im lang: anh da len nhung nut Duyet khong xuat hien
             # thi pipeline dung o cong duyet ma khong ai biet. Bao loi ro de
             # vai/agent gui lai.
-            raise SystemExit(
+            raise GuiLoi(
                 f"Anh da gui nhung tin nhan nut Duyet LOI: {res2.get('description')}"
                 f" — pipeline se ket neu khong gui lai nut.")
     return res
@@ -208,7 +226,10 @@ def main() -> None:
 
     if not a.anh:
         ap.error("--anh la bat buoc (tru khi dung --list)")
-    res = post(a.vai, a.anh, a.mo_ta, reply_to=a.reply_to, duyet=a.duyet)
+    try:
+        res = post(a.vai, a.anh, a.mo_ta, reply_to=a.reply_to, duyet=a.duyet)
+    except GuiLoi as e:
+        sys.exit(str(e))
     result = res["result"]
     mid = result[-1]["message_id"] if isinstance(result, list) else result["message_id"]
     print(f"da gui {len(a.anh)} anh vao topic '{a.vai}', message_id={mid}")

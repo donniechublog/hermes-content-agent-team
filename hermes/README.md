@@ -1,6 +1,7 @@
 # Cấu hình hermes (bản trong git)
 
-SOUL và script cron của đội **thật sự chạy** từ `~/.hermes/`, không phải từ đây.
+SOUL và script cron của đội **thật sự chạy** từ `~/.hermes-<brand>/` (mỗi brand một
+home: `~/.hermes-blog`, `~/.hermes-dcgr`), không phải từ đây.
 Thư mục này là bản chép để có lịch sử thay đổi.
 
 Vì sao cần: ngày 22/08 script dọn em-dash của tôi làm hỏng 21 tệp Python. Hai
@@ -21,9 +22,11 @@ slug generic khớp thư mục thật trong home:
     hermes/profiles/dcgr/<slug>.SOUL.md    -> ~/.hermes-dcgr/profiles/<slug>/
     hermes/profiles/shared/<slug>.SOUL.md  -> CẢ HAI home
 
-Map slug ↔ nhân vật: blog `carousel`=Dre, `designer`=Ethan, `writer`=Miles,
-`nova`; dcgr `carousel`=Dre, `designer`=Ethan, `writer`=Miles, `market`=Vera;
-shared: `itachi`, `gin`, `analyst`=Ada. Chỉ ở blog: `scout`=Finn, `teaser`=Jean (đọc donniechu.com), `nova`, `carousel-edu`=Kite. `bob` mỗi brand một bản (handle khác)
+Map slug ↔ nhân vật. shared (một SOUL cho cả hai home, script tự lấy brand từ
+sidecar, chỉ khác handle và người đọc): `designer`=Ethan, `carousel`=Dre,
+`writer`=Miles, `carousel-edu`=Kite, `itachi`, `gin`, `analyst`=Ada (từ 05/09/2026,
+trước đó designer/carousel/writer mỗi brand một bản). Chỉ ở blog: `scout`=Finn,
+`teaser`=Jean (đọc donniechu.com), `nova`. Chỉ ở dcgr: `market`=Vera. `bob` mỗi brand một bản (handle khác)
 (từ 03/09/2026: dcgr chỉ có Vera đi tìm tin, Finn không có cron ở dcgr nên bỏ).
 `carousel-edu`=Kite (blog) đã deploy live từ 01/09/2026 (full pipeline:
 render_edu.py + profile + approve).

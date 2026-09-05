@@ -28,7 +28,7 @@ import httpx
 import env_load
 import bat_buoc
 
-ROOT = Path.home() / "content-team"
+ROOT = env_load.ROOT
 STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 

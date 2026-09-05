@@ -186,7 +186,10 @@ def main() -> int:
     else:
         import gui_telegram
         reply = int(a.khoa) if str(a.khoa).isdigit() else None
-        res = gui_telegram.post("itachi", [str(f) for f in files], mo_ta, reply_to=reply)
+        try:
+            res = gui_telegram.post("itachi", [str(f) for f in files], mo_ta, reply_to=reply)
+        except gui_telegram.GuiLoi as e:
+            sys.exit(f"[LOI] {e}")
         rr = res.get("result")
         mid = (rr[-1] if isinstance(rr, list) else rr or {}).get("message_id")
     print(f"[xong] {len(files)} slide -> {wd}" + (f"; đã gửi topic itachi (message_id={mid})" if mid else ""))

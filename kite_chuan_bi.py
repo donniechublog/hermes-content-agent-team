@@ -6,7 +6,7 @@ Kite dung art vector goc, KHONG anh that — tru bieu do/bang co that trong bai
 figure, tu lieu) nam o anh_chuan_bi.py dung chung; tep nay in brief theo cach
 nhin cua Kite: tu lieu de dien dat lai paper, danh sach HINH THAT la chart
 (>= 800px) dung duoc cho `figure`, theme/hero goi y (khong trung bo gan day),
-va khung spec 6 kind voi gioi han do dai tung truong (do theo co chu trong
+va khung spec 7 kind voi gioi han do dai tung truong (do theo co chu trong
 render_edu.py de khong tran).
 
 Do 04/09/2026 truoc khi doi: moi task Kite 32 tool call — ls 18, skill_view 13,
@@ -124,6 +124,10 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
              "steps": [{"title": "<≤ 30>", "desc": "<≤ 80>"}, {"title": "…", "desc": "…"}, {"title": "…", "desc": "…"}]},
             {"kind": "figure", "eyebrow": "SỐ LIỆU", "title": "<≤ 60, tối đa 2 dòng>", "accent": "<cụm>",
              "image": "<mã hình thật A?>", "caption": "<Biểu đồ trong bài · via <ai>>", "standfirst": "<≤ 200>"},
+            {"kind": "bars", "eyebrow": "SỐ LIỆU", "title": "<≤ 60>", "accent": "<cụm>",
+             "bars": [{"label": "<≤ 28>", "value": "<số THẬT trong bài, viết dạng số>", "text": "<cách ghi, vd 2,75 USD>"},
+                      {"label": "<≤ 28>", "value": "<số>", "text": "<…>", "nhan": True}],
+             "caption": "<Số trong bài · via <ai>>", "standfirst": "<≤ 160, tuỳ chọn>"},
             {"kind": "loop", "eyebrow": "CƠ CHẾ", "title": "<≤ 60>", "accent": "<cụm>",
              "chips": ["<≤ 3 từ>", "<≤ 3 từ>", "<≤ 3 từ>"], "standfirst": "<≤ 220>", "callout": "<≤ 110>"},
             {"kind": "cta", "eyebrow": "ÁP DỤNG", "title": "<≤ 60>", "checks": ["<≤ 70>", "<≤ 70>", "<≤ 70>"],
@@ -133,8 +137,9 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     }
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
     L.append("Nhịp feature: bìa hook → bối cảnh/vấn đề → cách vận hành (steps) → số liệu (figure nếu có hình thật, "
-             "không thì bỏ slide này) → cơ chế/hệ quả (loop) → áp dụng + CTA. Bỏ slide `figure` nếu không có hình "
-             "thật; thêm `statement` khi cần đủ 6. Dẫn nguồn ghi 'via', không ghi 'nguồn'. Cấm logo hãng, số bịa, "
+             "không thì bars từ 2..6 số THẬT trong bài, không có số thì bỏ) → cơ chế/hệ quả (loop) → áp dụng + CTA. "
+             "Ý nào hình nói nhanh hơn chữ thì dùng hình (steps/loop/bars), chữ thuần là đường cuối. Bỏ `figure` "
+             "nếu không có hình thật; thêm `statement` khi cần đủ 6. Dẫn nguồn ghi 'via', không ghi 'nguồn'. Cấm logo hãng, số bịa, "
              "quote bịa, ảnh AI. Không em-dash.")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python kite_nop.py {m['draft_id']}",

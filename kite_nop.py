@@ -18,13 +18,13 @@ import json
 import re
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import kite_chuan_bi as kb                                   # noqa: E402
+import nop_chung as nc                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
 BAT_BUOC = {
@@ -33,13 +33,10 @@ BAT_BUOC = {
     "steps": ("eyebrow", "title", "steps"),
     "loop": ("eyebrow", "title", "chips", "standfirst"),
     "figure": ("eyebrow", "title", "image", "caption"),
+    "bars": ("eyebrow", "title", "bars", "caption"),
     "cta": ("eyebrow", "title", "checks"),
 }
 GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
-
-
-def _chuan(t):
-    return re.sub(r"\s+", " ", (t or "").strip().lower())
 
 
 def giai_spec(spec: dict, m: dict) -> tuple:
@@ -69,7 +66,7 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     for i, sl in enumerate(slides, 1):
         k = sl.get("kind")
         if k not in BAT_BUOC:
-            loi.append(f"slide {i}: kind \"{k}\" không hợp lệ (cover/statement/steps/loop/figure/cta)")
+            loi.append(f"slide {i}: kind \"{k}\" không hợp lệ (cover/statement/steps/loop/figure/bars/cta)")
             continue
         thieu = [f for f in BAT_BUOC[k] if not sl.get(f)]
         if thieu:
@@ -97,24 +94,22 @@ def giai_spec(spec: dict, m: dict) -> tuple:
         for t in sl.get("checks", []) or []:
             if len(str(t)) > 80:
                 canh.append(f"slide {i}: check dài, rút ≤ 70")
+        if k == "bars":
+            bs = sl.get("bars") or []
+            if not 2 <= len(bs) <= 6:
+                loi.append(f"slide {i}: bars cần 2..6 cột (có {len(bs)})")
+            for j, b in enumerate(bs, 1):
+                b = b if isinstance(b, dict) else {}
+                try:
+                    render_edu._gia_tri(b.get("value"))
+                except (ValueError, TypeError):
+                    loi.append(f"slide {i}: cột {j} \"value\" phải là số thật trong bài (có {b.get('value')!r})")
+                if len(str(b.get("label", ""))) > 28:
+                    canh.append(f"slide {i}: cột {j} label dài, rút ≤ 28")
         if any("nguồn" in str(v).lower() for v in sl.values() if isinstance(v, str)):
             loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
         ra["slides"].append(s2)
     return ra, loi, canh
-
-
-def ghi_bang_den(draft_id: str, key: str, value, author: str = "kite") -> None:
-    """Ghi mot muc len bang den cua bai qua bang_den.py (python cua hermes). Im lang
-    khi loi — chi in canh bao. Giong dre_nop/miles_nop."""
-    hermes_py = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
-    try:
-        r = subprocess.run([str(hermes_py), str(ROOT / "bang_den.py"), "ghi", draft_id,
-                            key, json.dumps(value, ensure_ascii=False), "--author", author],
-                           cwd=str(ROOT), capture_output=True, text=True, timeout=60)
-        if r.returncode != 0 or "[bang-den] lỗi" in (r.stderr or ""):
-            print(f"[CANH BAO] bang den: {(r.stderr or r.stdout).strip()[-200:]}")
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[CANH BAO] bang den: {type(e).__name__}: {e}")
 
 
 def main() -> int:
@@ -126,28 +121,13 @@ def main() -> int:
     ap.add_argument("--out")
     a = ap.parse_args()
 
-    meta = cb.nap_meta(a.draft_id)
-    brand = cb._brand_cua(meta)
-    import env_load
-    wd = cb.workdir(env_load.state_dir(), a.draft_id)
-    m = cb._doc_json(wd / "xong.json")
-    if not m:
-        sys.exit(f"Chua chuan bi. Chay truoc: venv/bin/python kite_chuan_bi.py {a.draft_id}")
-    spec_path = Path(a.spec) if a.spec else wd / "spec.json"
-    if not spec_path.exists():
-        sys.exit(f"Chua co spec: {spec_path} — viet theo khung trong {wd / 'brief.md'} roi chay lai.")
-    try:
-        spec = json.loads(spec_path.read_text(encoding="utf-8"))
-    except Exception as e:                                   # noqa: BLE001
-        sys.exit(f"[LOI] spec.json khong phai JSON hop le: {type(e).__name__}: {e}")
-
-    da_dung = cb._doc_json(wd / "da_dung.json")
+    meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "kite_chuan_bi.py", "kite_nop.py")
     spec_r, loi, canh = giai_spec(spec, m)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
     if da_dung:
         if (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):
             loi.append("LÀM LẠI: theme và hero trùng lần trước — đổi ít nhất một")
-        if _chuan(hook) == _chuan(da_dung.get("hook")):
+        if nc.chuan(hook) == nc.chuan(da_dung.get("hook")):
             loi.append("LÀM LẠI: hook bìa giống lần trước — viết khác")
     for c in canh:
         print(f"[CANH BAO] {c}")
@@ -197,22 +177,15 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
-        import gui_telegram
-        res = gui_telegram.post("carousel-edu", [str(f) for f in files],
-                                f"Carousel edu {n} slide: {hook}"[:1000], duyet=a.draft_id)
-        rr = res.get("result")
-        mid = (rr[-1] if isinstance(rr, list) else rr or {}).get("message_id")
-        cb._ghi_json(wd / "da_dung.json", {"theme": theme, "hero": hero, "hook": hook,
-                                           "luc": time.strftime("%H:%M %d/%m"),
-                                           "lan": int((da_dung or {}).get("lan", 0)) + 1,
-                                           "message_id": mid})
+        mid = nc.gui_album("carousel-edu", files, f"Carousel edu {n} slide: {hook}", a.draft_id, wd, da_dung,
+                           {"theme": theme, "hero": hero, "hook": hook})
     # Bang den (kanban swarm): ban giao co cau truc cua Kite len the goc + dong
-    # "[metadata]" de Kite dan vao kanban_complete -> Miles/Ada thay trong
+    # "[metadata]" de Kite dan vao kanban_complete -> Miles thay trong
     # "Parent task results". Best-effort.
     md = {"slide": n, "hook": hook, "theme": theme, "hero": hero, "hinh_that": hinh,
           "tep": str(out), "ban_giao": str(bg_path), "message_id": mid, "vai": "kite"}
     if not a.khong_gui:
-        ghi_bang_den(a.draft_id, "anh", md)
+        nc.ghi_bang_den(a.draft_id, "anh", md, "kite")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))
     print(f"[xong] {n} slide -> {out}; theme={theme} hero={hero}"
           + (f"; da gui topic carousel-edu (message_id={mid}) kem nut duyet" if mid else "")

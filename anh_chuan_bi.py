@@ -32,7 +32,7 @@ Dung:
     venv/bin/python anh_chuan_bi.py <draft_id> --lam-moi  # bo cache, lam lai
 """
 import argparse
-import hashlib
+import contextlib
 import io
 import json
 import os
@@ -46,6 +46,7 @@ from PIL import Image, ImageDraw, ImageStat
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+import env_load                                              # noqa: E402
 
 DRAFTS = ROOT / "drafts"
 TEN_CT = {"dcgr": "dcgr", "donniechublog": "blog"}      # brand -> CT_BRAND
@@ -92,7 +93,10 @@ def _tom_tat_tu_img_json(draft_id: str) -> dict:
     body = d.get("body", "")
     ra = {}
     for khoa, nhan in (("summary", "Tom tat"), ("source_note", "Nguon")):
-        m = re.search(rf"^{nhan}: (.*)$", body, re.M)
+        if d.get(khoa):                         # approve_service ghi thang khoa nay
+            ra[khoa] = str(d[khoa]).strip()
+            continue
+        m = re.search(rf"^{nhan}: (.*)$", body, re.M)   # sidecar cu: boc tu body
         ra[khoa] = (m.group(1).strip() if m else "")
     ra["remakes"] = int(d.get("remakes", 0) or 0)
     ra["vai_anh"] = d.get("vai_anh", "")
@@ -131,19 +135,10 @@ def nap_nguon(draft_id: str, meta: dict, state: Path) -> tuple:
 
 
 def _tieu_de_trang(url: str) -> str:
-    try:
-        r = httpx.get(url, headers={"User-Agent": UA}, timeout=20, follow_redirects=True)
-        html = r.text[:200_000]
-        m = (re.search(r'property=["\']og:title["\'][^>]*content=["\']([^"\']+)', html, re.I)
-             or re.search(r'content=["\']([^"\']+)["\'][^>]*property=["\']og:title', html, re.I)
-             or re.search(r"<title[^>]*>([^<]{5,200})</title>", html, re.I))
-        if not m:
-            return ""
-        import html as _h
-        t = _h.unescape(m.group(1)).strip()
-        return re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "", t)   # bo " | Ten bao"
-    except Exception:                                        # noqa: BLE001
-        return ""
+    """og:title cua bai goc — mot ban duy nhat o nguon_bai (co luat: tieu de
+    tieng Viet thi tra rong, khong duoc dem di tim kiem)."""
+    import nguon_bai
+    return nguon_bai._tieu_de_trang(url)
 
 
 # ---- 2. anh -----------------------------------------------------------------
@@ -445,7 +440,7 @@ def _host_la_ben_thu_ba(c: dict) -> bool:
     return True
 
 
-def tai_va_loc(cands: list, wd: Path, tin_model: bool) -> list:
+def tai_va_loc(cands: list, wd: Path) -> list:
     """Tai ung vien theo thu tu diem, loai trung (md5) va anh be, luu PNG co dau
     xuat xu. Tra ve danh sach anh da tai [{ma, goc, ...}]."""
     import anh_bai
@@ -545,8 +540,8 @@ def _luu_crop(img: Image.Image, out: Path, ti_le_ten: str, cx=0.5, cy=0.5,
     return ra
 
 
-VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"
-VISION_URL = "http://127.0.0.1:20128/v1/chat/completions"
+VISION_MODEL = env_load.VISION_MODEL
+VISION_URL = env_load.ROUTER_URL
 
 
 def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
@@ -559,7 +554,6 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
     co khi tren bai Broadcom" — chi co nhin moi biet."""
     import base64, json as _j, urllib.request
     try:
-        import env_load
         key = env_load.bat_buoc("OPENAI_API_KEY")
     except Exception:                                        # noqa: BLE001
         return "", None
@@ -773,8 +767,6 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
     nguon, nguon_path, link = nap_nguon(draft_id, meta, state)
     trang = nguon.get("trang", [])
     tom = _tom_tat_tu_img_json(draft_id)
-    import anh_bai
-    tin_model = bool(anh_bai.LA_TIN_MODEL.search(title + " " + nguon.get("tieu_de_en", "")))
 
     # Tieu de TIENG ANH cua bai that (tin Vera/Nova mang tieu de tieng Viet):
     # mot fetch httpx; khong ra thi browser lay og:title sau.
@@ -837,7 +829,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
                 cands.append({"anh": str(out), "tep": str(out), "alt": "trang bia paper",
                               "tu": "arxiv_bia", "trang": link, "diem": 60})
     cands.sort(key=lambda c: -c.get("diem", 0))
-    anh = tai_va_loc(cands, wd, tin_model)
+    anh = tai_va_loc(cands, wd)
     print(f"[anh] tai duoc {len(anh)} anh (chua phan loai/nhin)", file=sys.stderr)
     if len(anh) < 5:
         # Tin mong anh: them anh that tu Wikimedia Commons theo ten rieng dau
@@ -848,7 +840,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
             print(f"[commons] '{tk}': {len(them)} anh", file=sys.stderr)
             if them:
                 da = {a["url"] for a in anh}
-                bo_sung = tai_va_loc([c for c in them if c["anh"] not in da], wd / "commons", tin_model)
+                bo_sung = tai_va_loc([c for c in them if c["anh"] not in da], wd / "commons")
                 for i, a in enumerate(bo_sung, start=len(anh) + 1):
                     if len(anh) >= TOI_DA_ANH:
                         break
@@ -888,7 +880,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         da = {a["url"] for a in anh}
         cands2 = [c for c in cands2 if c["anh"] not in da]
         cands2.sort(key=lambda c: -c.get("diem", 0))
-        bo_sung = tai_va_loc(cands2, wd2, tin_model) if cands2 else []
+        bo_sung = tai_va_loc(cands2, wd2) if cands2 else []
         n0 = len(anh)
         for i, a in enumerate(bo_sung, start=n0 + 1):
             if len(anh) >= TOI_DA_ANH + 4:
@@ -945,11 +937,43 @@ def nap_meta(draft_id: str) -> dict:
     return meta
 
 
+# Tran so engine chay CUNG LUC tren ca may (chung hai brand): moi engine mo mot
+# Chromium 1600x1200 DPR2 + goi vision tung anh. Ong Chu chon 7 tin la 7 engine
+# khoi chay cung luc (audit 05/09/2026). Het cho thi doi, khong bo.
+SO_ENGINE_SONG_SONG = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") or 2))
+
+
+@contextlib.contextmanager
+def _cho_luot():
+    """Giu mot trong N khoa tep state/chuan_bi.<i>.lock (flock) trong luc chuan bi."""
+    import fcntl
+    thu_muc = ROOT / "state"
+    thu_muc.mkdir(parents=True, exist_ok=True)
+    da_bao = False
+    while True:
+        for i in range(SO_ENGINE_SONG_SONG):
+            fh = open(thu_muc / f"chuan_bi.{i}.lock", "w")
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                fh.close()
+                continue
+            try:
+                yield
+            finally:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+                fh.close()
+            return
+        if not da_bao:
+            print(f"[cho] da co {SO_ENGINE_SONG_SONG} engine dang chay, doi toi luot...", file=sys.stderr)
+            da_bao = True
+        time.sleep(5)
+
+
 def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
     """Bao dam xong.json co san (chay neu chua, doi neu tien trinh khac dang chay).
     Tra ve (manifest, workdir, meta)."""
     meta = nap_meta(draft_id)
-    import env_load
     state = env_load.state_dir()
     wd = workdir(state, draft_id)
     wd.mkdir(parents=True, exist_ok=True)
@@ -968,10 +992,13 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
         return _doc_json(xong), wd, meta
     khoa.write_text(str(os.getpid()))
     try:
-        m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser)
+        with _cho_luot():
+            m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser)
         try:
             _route_thieu_anh(draft_id, m)
-        except Exception as e:                               # noqa: BLE001
+        except (Exception, SystemExit) as e:                 # noqa: BLE001
+            # SystemExit cung phai bat: vai ham thu vien (gui_telegram, crop_ti_le)
+            # bao loi bang sys.exit, lot qua thi mat luon xong.json (audit 05/09).
             print(f"[route] {type(e).__name__}: {e}", file=sys.stderr)
         _ghi_json(xong, m)
     finally:
@@ -982,17 +1009,17 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
 def _tg_gui(vai: str, text: str, kb: dict | None = None) -> None:
     """Gui mot tin CHU len topic cua `vai` (kem nut neu co). Dung env cua
     gui_telegram; im lang neu thieu token (chay tay ngoai container)."""
-    import env_load, httpx, gui_telegram
     env_load.nap()
     token, group = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_GROUP_ID")
-    if not token or not group:
-        print("[route] khong co TELEGRAM_BOT_TOKEN/GROUP -> khong gui tin", file=sys.stderr)
+    thread = env_load.topics().get(vai)
+    if not token or not group or not thread:
+        print(f"[route] thieu TELEGRAM_BOT_TOKEN/GROUP hoac topic '{vai}' -> khong gui tin", file=sys.stderr)
         return
-    body = {"chat_id": group, "message_thread_id": gui_telegram._topic(vai),
+    body = {"chat_id": group, "message_thread_id": thread,
             "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}
     if kb:
         body["reply_markup"] = kb
-    httpx.post(gui_telegram.API.format(token=token, method="sendMessage"), json=body, timeout=30)
+    httpx.post(f"https://api.telegram.org/bot{token}/sendMessage", json=body, timeout=30)
 
 
 def _route_thieu_anh(draft_id: str, m: dict) -> None:

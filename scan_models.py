@@ -37,7 +37,6 @@ import httpx
 
 import env_load
 
-ROOT = Path.home() / "content-team"
 STATE = env_load.state_dir() / "models_seen.json"
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 
@@ -287,7 +286,6 @@ def fetch_livebench(top: int) -> tuple:
         html = _get(LIVEBENCH, timeout=60).text
         js_path = re.search(r'src="\./(static/js/main\.[a-z0-9]+\.js)"', html).group(1)
         js = _get(LIVEBENCH + js_path, timeout=60).text
-        ngay_ds = re.findall(r'\["(20\d\d-\d\d-\d\d)"(?:,"(?:20\d\d-\d\d-\d\d)")*\]', js)
         tat_ca = sorted(set(re.findall(r'"(20\d\d-\d\d-\d\d)"', js)))
         ngay = tat_ca[-1] if tat_ca else None
         csv_txt = None

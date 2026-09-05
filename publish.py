@@ -188,6 +188,26 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
     return _check(r)
 
 
+def gui_topic(text: str, vai: str) -> bool:
+    """Gui `text` (HTML) vao topic cua `vai` trong group cua brand. Thieu token/
+    group thi in ra man hinh; loi Telegram thi in canh bao — KHONG nem, vi day la
+    ham cua script cron (usage_audit, model_watch, theo_doi_9router).
+    Truoc 05/09/2026 sau tep tu viet lai doan nay moi tep mot kieu."""
+    env_load.nap()
+    tok = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat = os.environ.get("TELEGRAM_GROUP_ID") or os.environ.get("TELEGRAM_CHANNEL_ID")
+    if not (tok and chat):
+        print("[canh bao] thieu TELEGRAM_BOT_TOKEN/GROUP_ID — in ra man hinh thay vi gui")
+        print(text)
+        return False
+    try:
+        send_text(tok, chat, text, thread=env_load.topics().get(vai))
+        return True
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {e}")
+        return False
+
+
 def main():
     try:
         return _main()

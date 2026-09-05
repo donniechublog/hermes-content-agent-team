@@ -44,7 +44,7 @@ def cat(img, ratio, cx=0.5, cy=0.5, cat_ngang=False):
     chup nguoi/san pham khong co chu, crop la chon khung chu the."""
     w, h = img.size
     if w / h > ratio and not cat_ngang and w / h >= NGANG:
-        raise SystemExit(
+        raise ValueError(
             f"KHONG CAT BE NGANG anh NGANG {w}x{h} ({w/h:.2f}) ve {ratio:.2f}.\n"
             "  Chart / bang benchmark / slide co tieu de: be ngang la NOI DUNG\n"
             "  (truc, nhan chuoi, cot cuoi cua bang). Cat di thi thu con lai\n"
@@ -82,7 +82,10 @@ def main():
     a = ap.parse_args()
 
     img = Image.open(a.anh).convert("RGB")
-    out = cat(img, TI_LE[a.ti_le], a.cx, a.cy, cat_ngang=a.cat_ngang)
+    try:
+        out = cat(img, TI_LE[a.ti_le], a.cx, a.cy, cat_ngang=a.cat_ngang)
+    except ValueError as e:
+        sys.exit(str(e))
     Path(a.ra).parent.mkdir(parents=True, exist_ok=True)
     # Ghi dau vet crop vao metadata PNG: carousel.py doc ra de CHAN truong hop
     # crop anh NGANG co tieu de (bang/chart/slide) — Ong Chu bat loi 03/09/2026:

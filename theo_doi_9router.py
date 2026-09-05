@@ -1,56 +1,39 @@
 #!/usr/bin/env python3
 """theo_doi_9router.py — nhật ký 9router theo NGÀY: model, token, chi phí, lật
-model, lỗi, khoá API và IP máy gọi. Nguồn sự thật cho Ada khi bàn chi phí.
+model, lỗi, khoá API, model lạ, cache thấp, $ theo vai. Nguồn sự thật cho Ada
+khi bàn chi phí; cron `daily-log` chốt ngày hôm qua và gửi tóm tắt lên topic
+analyst (kèm link nhat_ky_web).
 
-Vì sao có tệp này (05/09):
-  - `usage_audit.py` chỉ in một bảng gộp N giờ rồi quên; không có lịch sử để
-    Ada so ngày này với ngày trước, không thấy giờ nào đốt, không thấy chuỗi
-    lật model (v4-flash → deepseek-chat) đã âm thầm ăn tiền suốt 2 tuần.
-  - 9router KHÔNG ghi IP máy gọi: `usageHistory.meta` luôn `{}`, cột IP không
-    có, `custom-server.js` tính `x-9r-real-ip` rồi chỉ dùng cho rate-limit.
-    Mà 9router đang bind 0.0.0.0 (LAN 192.168.1.61 + netbird) — ai trong mạng
-    cũng gọi được bằng khoá chung. Nên IP phải tự bắt ở tầng socket.
+Đọc usageHistory của 9router CHỈ ĐỌC → state/9router/nhat_ky/9router_<ngày>.json
++ .md. Chạy lại bao nhiêu lần cũng ra y hệt (idempotent), nên cả hai brand gọi
+từ nhat_ky_daily.sh đều được.
 
-HAI VIỆC, hai lệnh:
-
-  1. `--canh`  : watcher chạy nền (systemd user, xem hermes/systemd/). Mỗi 2s
-                 đọc bảng TCP (psutil, không cần root), kết nối MỚI tới cổng
-                 20128 → ghi một dòng vào state/9router/ket_noi_<ngày>.jsonl
-                 {t, ip, port}. Chỉ IP + thời điểm, không đọc nội dung.
-  2. `--ngay`  : chốt nhật ký một ngày VN (mặc định hôm qua): đọc usageHistory
-                 CHỈ ĐỌC + ket_noi jsonl → state/9router/nhat_ky/9router_<ngày>
-                 .json + .md. Chạy lại bao nhiêu lần cũng ra y hệt (idempotent),
-                 nên cả hai brand gọi từ nhat_ky_daily.sh đều được.
-
-Giới hạn thật thà: IP ghi theo KẾT NỐI, không theo request (Hermes dùng httpx
-keep-alive, một kết nối chở nhiều request). Muốn tách request theo máy gọi phải
-cấp khoá 9router riêng cho từng máy — xem mục "Điểm mù" trong README.
+9router KHÔNG ghi IP máy gọi (usageHistory.meta luôn {}). Watcher socket từng
+bù chỗ đó (--canh) đã bỏ 05/09/2026 chiều: cách đúng là bind 9router về
+127.0.0.1 hoặc netbird và cấp khoá riêng cho từng máy, không phải rình socket.
 
 Dùng:
     venv/bin/python theo_doi_9router.py                 # chốt hôm qua, in .md
     venv/bin/python theo_doi_9router.py --ngay 2026-09-04
     venv/bin/python theo_doi_9router.py --ngay 2026-09-04 --gui        # tóm tắt + link → topic analyst
     venv/bin/python theo_doi_9router.py --ngay 2026-09-04 --canh-bao   # chỉ gửi khi có chuyện
-    venv/bin/python theo_doi_9router.py --canh          # watcher, chạy mãi
 """
 import argparse
 import collections
 import json
 import os
 import sqlite3
-import subprocess
 import sys
-import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
+import publish                                               # noqa: E402
 
 VN = timezone(timedelta(hours=7))
 DB = Path(os.environ.get("ROUTER_DB", str(Path.home() / ".9router" / "db" / "data.sqlite")))
-CONG = int(os.environ.get("ROUTER_PORT", "20128"))
 # 9router dùng CHUNG cho mọi brand → nhật ký nằm ngoài state/<brand>/.
 THU_MUC = ROOT / "state" / "9router"
 NHAT_KY = THU_MUC / "nhat_ky"
@@ -61,13 +44,17 @@ GIAY_LAT = 120
 # tiếp phần lớn chỉ là vai chạy song song (designer glm xen writer deepseek) —
 # 9router không ghi session nên không tách được, chỉ đếm để tham khảo.
 FALLBACK_THAT = {("deepseek-v4-flash", "deepseek-chat")}
-LOOPBACK = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 # Phiên "rỗng": provider trả ok nhưng gần như không có chữ dù prompt lớn — model
 # đốt ngân sách vào suy luận rồi trả về trống (đã đo 3/24 trên deepseek).
 RONG_OUT_MAX = 5
 RONG_PROMPT_MIN = 1000
 # Mọi HERMES_HOME đang chạy (per-brand) → $ theo vai gộp cả hai brand.
 HERMES_HOMES = sorted(Path.home().glob(".hermes-*"))
+# Model CỦA TA mà cache% dưới mức này trên hơn PROMPT_TOI_THIEU_CACHE token prompt
+# là đang lật model giữa hội thoại (cache là per-model). Chuyển từ usage_audit.py
+# khi gộp hai script (05/09/2026).
+NGUONG_CACHE = 40.0
+PROMPT_TOI_THIEU_CACHE = 20_000
 DRAFTS = ROOT / "drafts"
 # Link trong tin Telegram → nhat_ky_web.py (netbird IP để điện thoại mở được
 # không cần DNS). Đổi bằng biến môi trường NHAT_KY_URL.
@@ -115,6 +102,75 @@ def _ten_bang(con) -> tuple[dict, dict]:
     except sqlite3.Error:
         pass
     return khoa, ket_noi
+
+
+def _cac_ten(m: str) -> set:
+    """Các dạng tên 9router có thể ghi cho một model trong config Hermes: nguyên
+    tên (combo `DS-v4Flash`), bỏ tiền tố nhà cung cấp (`ds/deepseek-v4-flash` →
+    `deepseek-v4-flash`), giữ phần giữa với tên 3 phần (`xk/z-ai/glm-5.3` →
+    `z-ai/glm-5.3`). Tất cả chữ thường."""
+    phan = (m or "").split("/")
+    return {m.lower(), phan[-1].lower(), ("/".join(phan[1:]) or phan[-1]).lower()}
+
+
+def chuoi_da_cau_hinh() -> dict:
+    """{tên model (chữ thường): [brand/vai:vị trí]} từ config ĐANG CHẠY của mọi
+    HERMES_HOME, cộng model của công cụ gọi thẳng router (vision của engine ảnh).
+    Model xuất hiện trong usage mà không có ở đây = fallback âm thầm hoặc client
+    khác dùng chung 9router. Chuyển từ usage_audit.py (gộp 05/09/2026)."""
+    import yaml
+    ra = {}
+    homes = HERMES_HOMES or [env_load.hermes_home()]
+    for home in homes:
+        brand = home.name.replace(".hermes-", "")
+        targets = [("default", home / "config.yaml")]
+        targets += sorted((p.parent.name, p) for p in (home / "profiles").glob("*/config.yaml"))
+        for vai, p in targets:
+            if not p.exists():
+                continue
+            try:
+                cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            except Exception:                                # noqa: BLE001
+                continue
+            chain = [(cfg.get("model") or {}).get("default")]
+            chain += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
+            for i, m in enumerate(chain):
+                if not m:
+                    continue
+                nhan = f"{brand}/{vai}:{'chinh' if i == 0 else f'du phong {i}'}"
+                for ten in _cac_ten(m):
+                    ra.setdefault(ten, []).append(nhan)
+    for ten in _cac_ten(env_load.VISION_MODEL):
+        ra.setdefault(ten, []).append("engine anh:vision")
+    return ra
+
+
+def soi_model(theo_model: dict, combo: dict) -> tuple:
+    """(model lạ, cache kém) trong một ngày. `theo_model` là dict 'model @ kết nối'
+    đã gọn; `combo` = {tên combo: [thành viên]} để thành viên của combo trong
+    config cũng tính là của ta."""
+    cau_hinh = chuoi_da_cau_hinh()
+    for ten, tv in combo.items():
+        if ten in cau_hinh:
+            for x in tv:
+                cau_hinh.setdefault(x, cau_hinh[ten])
+    gop = {}
+    for nhan, v in theo_model.items():
+        m = nhan.split(" @ ")[0].lower()
+        a = gop.setdefault(m, {"req": 0, "prompt": 0, "cache": 0, "usd": 0.0})
+        for k in ("req", "prompt", "cache"):
+            a[k] += v[k]
+        a["usd"] += v["usd"]
+    la, kem = [], []
+    for m, a in sorted(gop.items(), key=lambda kv: -kv[1]["usd"]):
+        pct = round(a["cache"] / a["prompt"] * 100, 1) if a["prompt"] else 0.0
+        vai = cau_hinh.get(m) or cau_hinh.get(_chuan_model(m))
+        if not vai:
+            la.append({"model": m, "req": a["req"], "prompt": a["prompt"],
+                       "usd": round(a["usd"], 4), "cache_pct": pct})
+        elif pct < NGUONG_CACHE and a["prompt"] > PROMPT_TOI_THIEU_CACHE:
+            kem.append({"model": m, "prompt": a["prompt"], "cache_pct": pct, "vai": vai[:4]})
+    return la, kem
 
 
 def doc_ngay(ngay: str) -> dict:
@@ -177,10 +233,17 @@ def doc_ngay(ngay: str) -> dict:
     def gon(d):
         return {k: {**v, "usd": round(v["usd"], 4), "cache_pct": pct(v)} for k, v in d.items()}
 
+    tm = gon(theo_model)
+    try:
+        model_la, cache_kem = soi_model(tm, _don_gia(tm, tong)[2])
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[soi model] {type(e).__name__}: {e}", file=sys.stderr)
+        model_la, cache_kem = [], []
     return {
         "ngay": ngay, "cua_so_utc": [t0, t1],
         "tong": {**tong, "usd": round(tong["usd"], 4), "cache_pct": pct(tong)},
-        "theo_model": dict(sorted(gon(theo_model).items(), key=lambda kv: -kv[1]["usd"])),
+        "theo_model": dict(sorted(tm.items(), key=lambda kv: -kv[1]["usd"])),
+        "model_la": model_la, "cache_kem": cache_kem,
         "theo_khoa": gon(theo_khoa),
         "theo_gio": {str(k): v for k, v in sorted(gon(theo_gio).items())},
         "lat_model": dict(lat.most_common()), "lat_vi_du": lat_vi_du,
@@ -189,9 +252,8 @@ def doc_ngay(ngay: str) -> dict:
         "top_prompt": [{"prompt": p, "luc": h, "model": m, "cache": c, "usd": round(u, 4)}
                        for p, h, m, c, u in sorted(top, reverse=True)[:5]],
         "rong": dict(rong.most_common()), "rong_vi_du": rong_vi_du,
-        "ket_noi": doc_ket_noi(ngay),
         "loi_ket_noi": loi_ket_noi(con, t0, t1),
-        "vai": gom_vai(ngay, gon(theo_model), tong),
+        "vai": gom_vai(ngay, tm, tong),
     }
 
 
@@ -336,84 +398,6 @@ def gom_vai(ngay: str, theo_model: dict, tong: dict) -> dict:
             "phu_pct": phu, "ghi_chu": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"}
 
 
-# ---------------------------------------------------------------- IP kết nối
-def _tep_ket_noi(ngay: str) -> Path:
-    return THU_MUC / f"ket_noi_{ngay}.jsonl"
-
-
-def doc_ket_noi(ngay: str) -> dict:
-    p = _tep_ket_noi(ngay)
-    if not p.exists():
-        return {"co_watcher": False, "ip": {}}
-    ip = collections.defaultdict(lambda: {"ket_noi": 0, "dau": "", "cuoi": "", "ngoai": False})
-    for line in p.read_text(encoding="utf-8").splitlines():
-        try:
-            d = json.loads(line)
-        except Exception:                                    # noqa: BLE001
-            continue
-        a = ip[d.get("ip", "?")]
-        a["ket_noi"] += 1
-        a["dau"] = a["dau"] or d.get("t", "")[11:19]
-        a["cuoi"] = d.get("t", "")[11:19]
-        a["ngoai"] = d.get("ip") not in LOOPBACK
-    return {"co_watcher": True, "ip": dict(sorted(ip.items(), key=lambda kv: -kv[1]["ket_noi"]))}
-
-
-def _ket_noi_hien_tai() -> set:
-    """{(ip, port)} đang ESTABLISHED tới cổng 9router. psutil đọc /proc/net/tcp,
-    không cần root; thiếu psutil thì rơi về `ss`."""
-    # Lấy MỌI trạng thái trừ LISTEN (kể cả TIME_WAIT/CLOSE_WAIT sống 60s): kết
-    # nối ngắn kiểu curl mở-đóng trong <2s vẫn để lại vết, không lọt lưới. Kết
-    # nối do máy này tự gọi (raddr = :20128) cũng tính, ghi IP phía gọi.
-    try:
-        import psutil
-        ra = set()
-        for c in psutil.net_connections("tcp"):
-            if c.status == "LISTEN" or not c.raddr:
-                continue
-            if c.laddr and c.laddr.port == CONG:
-                ra.add((c.raddr.ip, c.raddr.port))
-            elif c.raddr.port == CONG and c.laddr:
-                ra.add((c.laddr.ip, c.laddr.port))
-        return ra
-    except Exception:                                        # noqa: BLE001
-        pass
-    out = subprocess.run(["ss", "-tnaH", f"( sport = :{CONG} or dport = :{CONG} )"],
-                         capture_output=True, text=True, timeout=10).stdout
-    ra = set()
-    for line in out.splitlines():
-        phan = line.split()
-        if len(phan) >= 5 and phan[0] != "LISTEN":
-            local, peer = phan[3], phan[4]
-            chon = peer if local.endswith(f":{CONG}") else local
-            ip, _, port = chon.rpartition(":")
-            ra.add((ip.strip("[]"), int(port or 0)))
-    return ra
-
-
-def canh(chu_ky: float = 2.0) -> None:
-    """Watcher: ghi kết nối mới. Không giữ gì trong RAM ngoài tập đang mở."""
-    THU_MUC.mkdir(parents=True, exist_ok=True)
-    da_thay = _ket_noi_hien_tai()                            # kết nối có sẵn lúc khởi động: bỏ qua
-    print(f"[canh] cổng {CONG}, {len(da_thay)} kết nối sẵn có, ghi vào {THU_MUC}", flush=True)
-    while True:
-        time.sleep(chu_ky)
-        try:
-            gio = _ket_noi_hien_tai()
-        except Exception as e:                               # noqa: BLE001
-            print(f"[canh] lỗi đọc socket: {type(e).__name__}: {e}", flush=True)
-            continue
-        moi = gio - da_thay
-        if moi:
-            now = datetime.now(VN)
-            with _tep_ket_noi(now.strftime("%Y-%m-%d")).open("a", encoding="utf-8") as f:
-                for ip, port in sorted(moi):
-                    f.write(json.dumps({"t": now.isoformat(timespec="seconds"), "ip": ip, "port": port}) + "\n")
-                    if ip not in LOOPBACK:
-                        print(f"[canh] IP NGOÀI: {ip}:{port} lúc {now:%H:%M:%S}", flush=True)
-        da_thay = gio
-
-
 # ---------------------------------------------------------------- báo cáo
 def viet_md(m: dict) -> str:
     if m.get("loi_doc"):
@@ -438,6 +422,13 @@ def viet_md(m: dict) -> str:
     else:
         L.append("Không.")
     L += ["", "## Lỗi", ""] + ([f"- {k}: {v}" for k, v in m["loi"].items()] or ["Không."])
+    L += ["", "## Model lạ (không ở chuỗi cấu hình nào) / cache thấp", ""]
+    L += [f"- LẠ: {x['model']}: {x['req']} req, {x['prompt']:,} prompt, cache {x['cache_pct']}%, ${x['usd']}"
+          for x in m.get("model_la") or []]
+    L += [f"- CACHE THẤP: {x['model']}: {x['cache_pct']}% trên {x['prompt']:,} prompt ({', '.join(x['vai'])})"
+          for x in m.get("cache_kem") or []]
+    if not m.get("model_la") and not m.get("cache_kem"):
+        L.append("Không.")
     L += ["", "## 5 prompt nặng nhất", ""]
     L += [f"- {x['luc']} {x['model']}: {x['prompt']:,} prompt (cache {x['cache']:,}), ${x['usd']}" for x in m["top_prompt"]]
     L += ["", f"## Phiên rỗng (ok, ≤{RONG_OUT_MAX} out dù ≥{RONG_PROMPT_MIN:,} prompt)", ""]
@@ -459,30 +450,24 @@ def viet_md(m: dict) -> str:
     L += ["", "**$/bài published:** " + (", ".join(
         f"{b}: ${x['usd']} / {x['bai']} bài = {('$' + str(x['usd_bai'])) if x['usd_bai'] is not None else 'chưa có bài'}"
         for b, x in v["theo_brand"].items()) or "không có dữ liệu vai")]
-    kn = m["ket_noi"]
-    L += ["", "## IP máy gọi (theo kết nối TCP mới, watcher `--canh`)", ""]
-    if not kn["co_watcher"]:
-        L.append("Watcher chưa chạy ngày này — không có dữ liệu IP. Bật: systemctl --user start 9router-ket-noi.")
-    elif not kn["ip"]:
-        L.append("Không có kết nối mới nào.")
-    else:
-        for ip, v in kn["ip"].items():
-            L.append(f"- {ip}{' **(NGOÀI loopback)**' if v['ngoai'] else ''}: {v['ket_noi']} kết nối, {v['dau']}–{v['cuoi']}")
     return "\n".join(L) + "\n"
 
 
 def van_de(m: dict) -> list[str]:
-    """Những gì đáng đánh thức Ông Chủ: IP lạ, lật model, lỗi."""
+    """Những gì đáng đánh thức Ông Chủ: lật model, lỗi, phiên rỗng, connection chết, model lạ, cache thấp."""
     if m.get("loi_doc"):
         return [m["loi_doc"]]
     ra = []
-    ngoai = [ip for ip, v in m["ket_noi"]["ip"].items() if v["ngoai"]]
-    if ngoai:
-        ra.append("IP NGOÀI loopback gọi 9router: " + ", ".join(ngoai))
     if m["fallback"]:
         ra.append(f"Fallback thật v4-flash → deepseek-chat: {m['fallback']} lần (title_generation/cooldown?)")
     if m["loi"]:
         ra.append("Lỗi: " + "; ".join(f"{k} {v}" for k, v in m["loi"].items()))
+    if m.get("model_la"):
+        ra.append("Model KHÔNG ở chuỗi cấu hình nào (fallback âm thầm / client khác dùng chung 9router): "
+                  + "; ".join(f"{x['model']} {x['req']} req ${x['usd']}" for x in m["model_la"]))
+    if m.get("cache_kem"):
+        ra.append("Cache thấp, đang lật model? " + "; ".join(
+            f"{x['model']} {x['cache_pct']}% trên {x['prompt']:,} prompt" for x in m["cache_kem"]))
     if sum(m["rong"].values()) >= 3:
         ra.append("Phiên rỗng: " + "; ".join(f"{k} {v}" for k, v in m["rong"].items()))
     xau = [x for x in m["loi_ket_noi"] if x["trong_ngay"] and x["bat"]]
@@ -536,16 +521,13 @@ def tai(ngay: str, lam_moi: bool = False) -> dict | None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Nhật ký 9router theo ngày + watcher IP")
+    ap = argparse.ArgumentParser(description="Nhật ký 9router theo ngày")
     ap.add_argument("--ngay", help="YYYY-MM-DD giờ VN (mặc định hôm qua)")
-    ap.add_argument("--canh", action="store_true", help="chạy watcher kết nối (mãi)")
     ap.add_argument("--gui", action="store_true", help="gửi tóm tắt ngày + link vào topic analyst (luôn gửi)")
-    ap.add_argument("--canh-bao", action="store_true", help="chỉ gửi khi có IP lạ/fallback/lỗi/phiên rỗng/connection chết")
+    ap.add_argument("--canh-bao", action="store_true",
+                    help="chỉ gửi khi có fallback/lỗi/phiên rỗng/connection chết/model lạ/cache thấp")
     ap.add_argument("--im", action="store_true")
     a = ap.parse_args()
-    if a.canh:
-        canh()
-        return 0
     ngay = a.ngay or (datetime.now(VN) - timedelta(days=1)).strftime("%Y-%m-%d")
     m, p = dung(ngay)
     if not a.im:
@@ -553,8 +535,7 @@ def main() -> int:
         print(f"[xong] {p}")
     vd = van_de(m)
     if a.gui or (a.canh_bao and vd):
-        import usage_audit
-        usage_audit.gui(tom_tat_tele(m))
+        publish.gui_topic(tom_tat_tele(m), "analyst")
     elif not a.im:
         print("\n--- tin Telegram sẽ là ---\n" + tom_tat_tele(m))
     return 0

@@ -15,7 +15,6 @@ Dung:
 """
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -52,8 +51,8 @@ def _bat_buoc(vai_bb: str) -> list:
     L = []
     bb = bat_buoc.doc(vai_bb)
     if bb:
-        L.append(f"## BẮT BUỘC đưa vào danh sách nộp ({len(bb)}) — script ghi manifest từ chối nếu thiếu; "
-                 "chấm điểm trung thực nhưng KHÔNG được bỏ")
+        L.append(f"## BẮT BUỘC đưa vào danh sách nộp ({len(bb)}) — thiếu thì script tự thêm và ghi chú "
+                 "'vai bỏ sót' lên báo cáo cho Ông Chủ thấy; hãy tự đưa vào và chấm trung thực")
         for v in bb.values():
             link = bat_buoc.link_goi_y(v)
             L.append(f"- [{v.get('loai', '')}] {v.get('ten', '')[:90]} | {v.get('ghi_chu', '')[:60]}"
@@ -118,7 +117,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
             L.append(f"     {str(c.get('summary') or c.get('description'))[:200]}")
     L += [""] + _bat_buoc("scout")
     L += ["", f"## Viết đánh giá vào: {wd}/picks.json — đủ mọi mục BẮT BUỘC + TỐI ĐA 8 tin điểm cao nhất ngoài đó",
-          json.dumps([{"link": "<URL y hệt trong danh sách>",
+          json.dumps([{"k": "<số thứ tự #k trong danh sách (thay cho link, script tự lấy link)>",
                        "category": "<ARXIV | MODEL | LAB | INFRA | TOOL | ENGINEERING | BUSINESS | RESEARCH | SECURITY>",
                        "score_technical": "<0-30: có số liệu đo/mã nguồn/paper thì cao>",
                        "score_relevance": "<0-20: thuộc 5 nhóm (model mới, M&A big tech, arXiv/X/Reddit nổi, use case thật, tin lai); "
@@ -129,7 +128,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
           "--khong-co (script gửi dòng 'hôm nay không có gì' kèm số tin đã quét).",
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python quet_nop.py --vai scout",
-          "Script tự ghép manifest (đối chiếu link, cộng điểm, đánh số), kiểm mục bắt buộc, viết báo cáo đánh số, "
+          "Script tự ghép manifest (đối chiếu số thứ tự, cộng điểm, đánh số), tự thêm mục bắt buộc còn thiếu, viết báo cáo đánh số, "
           "gửi lên topic. Báo [LOI] thì sửa picks.json rồi chạy lại. KHÔNG cat/grep candidates.json, KHÔNG "
           "web_search, KHÔNG chạy manifest_build/publish tay, KHÔNG tạo task kanban."]
     return "\n".join(L)
@@ -158,7 +157,8 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
     L += ["", f"## Viết danh sách vào: {wd}/ds.json — MỘT mục cho MỖI mục bắt buộc (gộp các bảng của cùng model), "
           "tiêu đề phải chứa ĐÚNG tên model như script in",
           json.dumps([{"title": "<Tên model đúng như script in + ý chính, có dấu>",
-                       "link": "<URL thật: trang model/blog hãng/bảng xếp hạng>",
+                       "link": "<bỏ trống với mục BẮT BUỘC (script tự lấy link trang model/bảng); "
+                               "chỉ ghi URL thật khi là tin ngoài danh sách>",
                        "summary_vi": "<MỘT mệnh đề ≤ 15 từ: giá vào/ra mỗi triệu token hoặc hạng bảng; chỉ làm ngữ cảnh "
                                      "cho vai viết, KHÔNG lên báo cáo>",
                        "source_note": "<bảng/nguồn + ngày>"}], ensure_ascii=False, indent=1),
@@ -191,16 +191,15 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
     L += [""] + _bat_buoc("market")
     L += ["", f"## Viết danh sách vào: {wd}/ds.json — tin có HỆ QUẢ (IPO, thâu tóm, hạ tầng, chính sách, lao "
           "động, kiện tụng, cược lớn), kèm mức chắc chắn theo số báo; bỏ giá cổ phiếu trong ngày, PR sản phẩm",
-          json.dumps([{"title": "<HEADLINE một dòng: chủ thể + việc + con số, tiếng Việt có dấu; đây là thứ DUY NHẤT Ông Chủ đọc>",
-                       "link": "<URL y hệt trong danh sách — KHÔNG gõ lại từ trí nhớ>",
+          json.dumps([{"k": "<số thứ tự #k trong danh sách — script tự lấy link và số báo, KHÔNG chép URL>",
+                       "title": "<HEADLINE một dòng: chủ thể + việc + con số, tiếng Việt có dấu; đây là thứ DUY NHẤT Ông Chủ đọc>",
                        "summary_vi": "<MỘT mệnh đề ≤ 15 từ vì sao đáng quan tâm; chỉ làm ngữ cảnh cho vai viết, "
-                                     "KHÔNG lên báo cáo>",
-                       "source_note": "<N báo: tên báo; 'mới 1 nguồn, chưa xác nhận' nếu chỉ 1 báo>"}], ensure_ascii=False, indent=1),
+                                     "KHÔNG lên báo cáo>"}], ensure_ascii=False, indent=1),
           "Mọi tin [W] phải có mặt. Không có gì đáng lên kênh thì chạy bước 3 với --khong-co.",
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python quet_nop.py --vai market",
-          "Script tự ghi manifest đánh số, kiểm mục bắt buộc, viết báo cáo, gửi topic. Báo [LOI] thì sửa ds.json "
-          "rồi chạy lại. KHÔNG chạy nguon_bai.py, KHÔNG web_search, KHÔNG tạo task."]
+          "Script tự ghi manifest đánh số, tự thêm mục bắt buộc còn thiếu, viết báo cáo, gửi topic. Báo [LOI] thì "
+          "sửa ds.json rồi chạy lại. KHÔNG chạy nguon_bai.py, KHÔNG web_search, KHÔNG tạo task."]
     return "\n".join(L)
 
 

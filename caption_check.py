@@ -70,8 +70,8 @@ DAU = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềế�
           "ùúủũụưừứửữựỳýỷỹỵđ")
 # 0.12 CO Y thap hon 0.15 cua model_audition: day la cong chan bai that (caption
 # nhieu ten rieng/thuat ngu tieng Anh keo ty le xuong), con audition do van mau
-# thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. Bo DAU/ty_le_dau
-# con o model_audition.py va cost_squeeze.py — sua thi sua ca ba.
+# thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. DAU/ty_le_dau
+# chi co MOT ban o day; model_audition va cost_squeeze import tu day.
 NGUONG_DAU = 0.12          # van ban tieng Viet that thuong tren 0.15
 
 
@@ -187,6 +187,22 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
                         f"dùng {len(so_cap)}. Cân nhắc thêm một số nữa.")
     elif not so_cap:
         canh.append("Caption không có con số nào — kiểm lại xem nguồn có số không.")
+
+    # SO KHONG CO TRONG TU LIEU: moi con so (>= 2 chu so) trong caption phai tim
+    # thay trong tu lieu, so voi chuoi chu so (bo dau . , cach). Chi NHAC vi hai
+    # ben viet so khac nhau (2,5 ti / 2.5B / 2500 trieu) — chan cung se chan oan.
+    # Day la diem soat so lieu ma truoc phai nho Ada (LLM) doc lai (05/09/2026).
+    if tu_lieu:
+        so_tl = {re.sub(r"[.,\s]", "", m) for m in re.findall(r"\d[\d.,]*", tu_lieu)}
+        la = []
+        for m in re.findall(r"\d[\d.,]*", tran):
+            k = re.sub(r"[.,\s]", "", m)
+            if len(k) >= 2 and k not in so_tl and not any(k in x for x in so_tl):
+                la.append(m)
+        if la:
+            canh.append("Số trong caption KHÔNG thấy trong tư liệu: "
+                        + ", ".join(dict.fromkeys(la)) + " — kiểm lại nguồn, số không có trong "
+                        "tư liệu là bịa (trừ khi anh đổi đơn vị).")
 
     # So benchmark ma khong ghi ro tu cong bo
     if so_cap and not any(k in tran.lower() for k in TU_CONG_BO):

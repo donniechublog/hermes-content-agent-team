@@ -60,7 +60,7 @@ def trang_ngay(ngay: str) -> bytes | None:
 def trang_danh_sach() -> bytes:
     L = ["<h1>Nhật ký 9router theo ngày (giờ VN)</h1>",
          "<table><tr><th>ngày</th><th>req</th><th>$</th><th>cache%</th><th>fallback</th><th>rỗng</th><th>lỗi</th>"
-         "<th>IP ngoài</th><th>$/bài blog</th><th>$/bài dcgr</th><th>model tốn nhất</th></tr>"]
+         "<th>$/bài blog</th><th>$/bài dcgr</th><th>model tốn nhất</th></tr>"]
     for p in sorted(tdr.NHAT_KY.glob("9router_*.json"), reverse=True):
         try:
             m = json.loads(p.read_text(encoding="utf-8"))
@@ -69,18 +69,16 @@ def trang_danh_sach() -> bytes:
         if m.get("loi_doc"):
             continue
         t, ngay = m["tong"], m["ngay"]
-        kn = m["ket_noi"]
-        ip_ngoai = sum(1 for v in kn["ip"].values() if v["ngoai"]) if kn["co_watcher"] else "?"
         brand = (m.get("vai") or {}).get("theo_brand", {})
 
         def bai(b):
             x = brand.get(b)
             return "-" if not x or x["usd_bai"] is None else f"{x['usd_bai']} ({x['bai']})"
         model = next(iter(m["theo_model"]), "-").split(" @ ")[0]
-        canh = " class=canh" if (m.get("fallback") or sum((m.get("rong") or {}).values()) >= 3 or ip_ngoai not in (0, "?")) else ""
+        canh = " class=canh" if (m.get("fallback") or sum((m.get("rong") or {}).values()) >= 3) else ""
         L.append(f"<tr{canh}><td><a href='/9router/{ngay}'>{ngay}</a></td><td>{t['req']}</td><td>{t['usd']}</td>"
                  f"<td>{t['cache_pct']}</td><td>{m.get('fallback', 0)}</td><td>{sum((m.get('rong') or {}).values())}</td>"
-                 f"<td>{t['loi']}</td><td>{ip_ngoai}</td><td>{bai('blog')}</td><td>{bai('dcgr')}</td><td>{html.escape(model)}</td></tr>")
+                 f"<td>{t['loi']}</td><td>{bai('blog')}</td><td>{bai('dcgr')}</td><td>{html.escape(model)}</td></tr>")
     L.append("</table><p>fallback = v4-flash→deepseek-chat trong ≤2 phút; rỗng = ok nhưng ≤5 token out dù prompt ≥1k; "
              "$/bài = $ ước lượng theo vai của brand / số bài published trong ngày (số bài trong ngoặc). Dòng đỏ: có chuyện đáng xem.</p>")
     return _trang("Nhật ký 9router", "".join(L))
