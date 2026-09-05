@@ -10,7 +10,7 @@ config đang chạy bằng bản cũ.
 |---|---|---|
 | `config.yaml` | `~/.hermes-dcgr/config.yaml` | phần quan trọng: `gateway.multiplex_profiles: true`, 8 `gateway.profile_routes` (thread_id lấy từ `state/topics.dcgr.json`), `gateway.platforms.telegram.channel_overrides["-1003763882779"].system_prompt` thay cho chat_hint; `auxiliary.title_generation.enabled: false`; `model.default: DS-v4Flash` |
 | `hermes-approve@dcgr.override.conf` | `~/.config/systemd/user/hermes-approve@dcgr.service.d/override.conf` | bật `CT_CHAT_QUA_GATEWAY=1` chỉ cho instance dcgr; unit template `hermes-approve@.service` dùng chung, blog không có cờ |
-| `profile.env.mau` | `~/.hermes-dcgr/profiles/<vai>/.env` × 8 | chỉ `OPENAI_API_KEY` + `TELEGRAM_ALLOWED_USERS`, **không** token bot |
+| `profile.env.mau` | `~/.hermes-dcgr/profiles/<vai>/.env` × 8 | chỉ `OPENAI_API_KEY` + `TELEGRAM_ALLOWED_USERS`, **không** token bot. `OPENAI_API_KEY` phải là khoá `hermes dcgr` (profile .env đè .env gốc) |
 | (không chụp) | `~/.hermes-dcgr/.env` | `TELEGRAM_BOT_TOKEN` của @hermesdcgr_bot, `TELEGRAM_ALLOWED_USERS`, `OPENAI_API_KEY`, `TELEGRAM_HOME_CHANNEL` |
 
 ## Tái tạo từ đầu

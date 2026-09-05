@@ -390,9 +390,14 @@ con số tổng**, không tách được brand nào tốn bao nhiêu.
 
 **Đã tách 05/09/2026:** 9router có hai khoá `hermes blog` và `hermes dcgr` (bảng
 `apiKeys`); khoá vào Hermes qua `OPENAI_API_KEY` trong `~/.hermes-<brand>/.env`
-(config.yaml chỉ ghi `${OPENAI_API_KEY}`, không phải sửa profile nào). Từ đó
-`theo_doi_9router.py` tự tách req/$ theo brand ở mục "theo khoá API". Đổi khoá =
-sửa đúng một dòng trong `.env` của brand rồi restart gateway brand đó.
+(config.yaml chỉ ghi `${OPENAI_API_KEY}`). **Nhưng** dcgr chạy multiplex nên 8
+`profiles/<vai>/.env` cũng có `OPENAI_API_KEY`, và Hermes nạp `.env` của profile với
+`override=True` (`hermes_cli/env_loader.py`) → khoá trong profile **đè** khoá gốc. Lúc
+05/09 12:55 chỉ `.env` gốc mang khoá `hermes dcgr`, 8 profile vẫn mang khoá `hermes blog`
+→ 9router ghi 181/182 request dcgr vào khoá blog, tách mà như chưa tách. Đổi khoá cho
+dcgr = sửa `.env` gốc **và** cả 8 `profiles/*/.env` (blog không có profile .env nên chỉ
+một dòng), rồi restart gateway brand đó. Từ đó `theo_doi_9router.py` tự tách req/$ theo
+brand ở mục "theo khoá API" (đọc tên khoá từ bảng `apiKeys`, không cần sửa code).
 
 **Điểm mù thứ ba: 9router KHÔNG ghi IP máy gọi.** `usageHistory` không có cột IP,
 `meta` luôn `{}`; `custom-server.js` có tính `x-9r-real-ip` nhưng chỉ dùng cho
