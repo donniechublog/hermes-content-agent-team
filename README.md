@@ -354,6 +354,7 @@ của Hermes chép cả token → gateway từ chối 8 profile vì "same creden
 phải xoá dòng token khỏi 8 tệp). Đo bằng journal `hermes-gateway@dcgr` + `logs/gateway.log`
 (INFO không vào journal) so với approve.log blog: độ trễ, mất mạch, 429/timeout. Nhận xét
 đầu: reply qua gateway ngắn và không biết tình trạng task kanban như approve.
+Bản chụp config + drop-in + mẫu .env để tái tạo: `hermes/gateway/dcgr/` (xem DOC.md ở đó).
 
 ## Provider
 
