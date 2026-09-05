@@ -611,7 +611,8 @@ def _chan_chuan_anh(src, nhan_vat=""):
         with Image.open(q) as im:
             w, h = im.size
             rgb = im.convert("RGB")
-            for l, c in (luat_anh.kiem_xuat_xu(nhan, im, w, h),
+            for l, c in (luat_anh.kiem_anh_rong(nhan, rgb),
+                         luat_anh.kiem_xuat_xu(nhan, im, w, h),
                          luat_anh.kiem_do_phan_giai(nhan, w, h),
                          luat_anh.kiem_day_sang(nhan, rgb),
                          luat_anh.kiem_mat_nguoi(nhan, q, nhan_vat),
@@ -643,7 +644,8 @@ def _chan_chuan_anh(src, nhan_vat=""):
         with Image.open(q) as im:
             w, h = im.size
             rgb = im.convert("RGB")
-            for l, c in (luat_anh.kiem_xuat_xu(nhan, im, w, h),
+            for l, c in (luat_anh.kiem_anh_rong(nhan, rgb),
+                         luat_anh.kiem_xuat_xu(nhan, im, w, h),
                          luat_anh.kiem_do_phan_giai(nhan, w, h),
                          luat_anh.kiem_day_sang(nhan, rgb),
                          luat_anh.kiem_mat_nguoi(nhan, q, nhan_vat),

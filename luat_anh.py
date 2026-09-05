@@ -40,6 +40,8 @@ CANH_NGAN_MIN = 1000             # duoi nguong nay phong len 1080 se mem
 DAY_SANG_MAX = 150               # do sang trung binh 25% duoi anh
 CHART_PHANG = 0.85
 CHART_SO_MAU = 220
+RONG_MAU = 4                     # <= 4 mau rieng biet (sau luong hoa 5 bit) = anh rong
+RONG_PHANG = 0.995               # ... va gan nhu 100% cap pixel ke nhau bang nhau
 # Anh cao duoi nguong nay so voi khung KHOA KHO thi khung bo trong phan con lai.
 # Ti le chieu cao khi trai full be ngang: 16:9 = 0.45, 3:2 = 0.53, 4:3 = 0.60,
 # 1:1 = 0.80. Dat 0.50 de chan 16:9 va rong hon; tu 3:2 tro len van qua, vi o do
@@ -229,6 +231,35 @@ def dem_mat(path):
 
 
 # ---- Cong chan: moi ham tra ve (loi, canh_bao) ----------------------------
+def la_anh_rong(img):
+    """Anh co RONG khong (trang tron / mot mau phang) -> (bool, mo_ta).
+
+    Bo Broadcom dcgr 04/09/2026: buoc chup tra ve anh trang tron (2 mau, phang
+    100%), khong cong nao bat, ra mot slide trong tron chi co chu. Tro treu:
+    anh trang la thu "giong chart" NHAT theo do_chart, nen cong chart cho qua.
+
+    Do tren 76 anh trong kho: anh rong = 2 mau; anh that it mau nhat = 40 mau
+    (screenshot UI toi hai tone). Cach nhau 20 lan nen nguong 4 la an toan —
+    khac han cac phep do "slide trong" da thu va bo (chung chong lan voi chart
+    sach). Day la RONG thuc su, khong phai "thua".
+    """
+    ph, mau = do_chart(img)
+    return (mau <= RONG_MAU and ph >= RONG_PHANG), f"{mau} mau, phang {ph:.0%}"
+
+
+def kiem_anh_rong(nhan, img):
+    """Anh rong (trang tron / mot mau) -> CHAN. Goi TRUOC kiem_chart, neu khong
+    thong bao se la "chart thieu co" thay vi "anh khong co gi"."""
+    rong, mo_ta = la_anh_rong(img)
+    if rong:
+        return [f"{nhan}: anh RONG ({mo_ta}) — khong co noi dung nao de hien. "
+                "Thuong la buoc chup tra ve trang trang (trang chua render, "
+                "selector bat nham phan tu rong, hoac tai ve tep hong). Mo anh "
+                "ra XEM truoc khi ghi vao spec; chup lai bang chup_chart.py "
+                "hoac chon anh khac."], []
+    return [], []
+
+
 def kiem_chart(nhan, img, khai_chart, la_bia=False):
     """Chart phai NGUYEN VEN va FULL BE NGANG (Ong Chu chot 04/09/2026).
 

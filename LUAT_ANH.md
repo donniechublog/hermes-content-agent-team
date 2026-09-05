@@ -291,12 +291,22 @@ bắt được trường hợp đầu (hash), trường hợp sau **vẫn phải
 Một bộ 6 slide cần 4–6 nguồn ảnh riêng biệt; xoay vòng 2 ảnh cho 6 slide là điểm
 trừ trải nghiệm rõ rệt.
 
+**Ảnh rỗng.** Bộ Broadcom dcgr 04/09/2026: bước chụp trả về ảnh **trắng trơn**
+(2 màu, phẳng 100%), ra một slide không có gì ngoài chữ. Không cổng nào bắt —
+trớ trêu là ảnh trắng lại là thứ "giống chart" nhất theo phép đo, nên cổng chart
+cho qua ngay. Đo trên 76 ảnh trong kho: ảnh rỗng = 2 màu, ảnh thật ít màu nhất
+= 40 màu — cách nhau 20 lần nên chặn được chắc (khác các phép đo "slide trống"
+đã thử và bỏ vì chồng lấn với chart sạch). `chup_chart.py` nay tự dừng ngay khi
+chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. **Vẫn phải mở
+ảnh ra xem trước khi ghi vào spec** — tên tệp không nói ảnh có gì.
+
 ---
 
 ## 9. Bảng cổng chặn (`luat_anh.py`)
 
 | Cổng | Hàm | Chặn hay cảnh báo |
 |---|---|---|
+| **Ảnh rỗng** (trắng trơn / một màu) | `kiem_anh_rong` | chặn — chạy **trước** cổng chart |
 | Ảnh trùng (theo nội dung tệp) | `kiem_trung` | chặn |
 | Chart/screenshot thiếu `chart: true` | `kiem_chart` | chặn |
 | Khai `chart: true` mà máy không nhận ra chart | `kiem_chart` | **chỉ cảnh báo** (mục 3) |

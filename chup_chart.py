@@ -29,6 +29,25 @@ from pathlib import Path
 
 import luat_anh
 
+
+def _chan_rong(ra):
+    """Chup xong ma anh RONG thi dung ngay o day, dung giao mot tep trang cho
+    vai. Bo Broadcom dcgr 04/09/2026: ba tam chup ra trang tron (2 mau) van
+    di tiep 5 buoc nua toi tan slide. Bat o nguon re hon bat o cuoi."""
+    from PIL import Image
+    try:
+        with Image.open(ra) as im:
+            rong, mo_ta = luat_anh.la_anh_rong(im.convert("RGB"))
+    except Exception:
+        return
+    if rong:
+        Path(ra).unlink(missing_ok=True)
+        raise SystemExit(
+            f"ANH CHUP RA RONG ({mo_ta}) — da xoa {ra}. Trang chua render xong, "
+            "selector bat nham phan tu rong, hoac trang chan bot. Thu: --chon "
+            "dung phan tu chart, doi lau hon, hoac mo trang bang browser that "
+            "xem no co hien gi khong.")
+
 # Khung mo dau. Rong ngay tu dau de trang khong reflow xuong bo cuc dien thoai:
 # bo cuc dien thoai xep chart thanh cot doc, chu be lai, va luc do co chup dung
 # be ngang thi cung khong con la cai chart tren desktop nua.
@@ -69,6 +88,7 @@ def tai_anh(url: str, ra: Path) -> bool:
     ra.parent.mkdir(parents=True, exist_ok=True)
     ra.write_bytes(data)
     luat_anh.dong_dau_tep(ra, "chup_chart")
+    _chan_rong(ra)
     return True
 
 
@@ -136,9 +156,11 @@ def chup(url: str, ra: Path, chon: str = "", rong_dau: int = RONG_DAU) -> int:
                 page.wait_for_timeout(400)
                 el.screenshot(path=str(ra))
                 luat_anh.dong_dau_tep(ra, "chup_chart")
+                _chan_rong(ra)
             else:
                 page.screenshot(path=str(ra), full_page=True)
                 luat_anh.dong_dau_tep(ra, "chup_chart")
+                _chan_rong(ra)
         finally:
             b.close()
 
