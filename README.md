@@ -386,9 +386,13 @@ mà tệp usage vẫn khai là đang chạy provider mới — chỉ lộ ra khi
 `usageHistory` cả hai brand hiện ra đúng **một** `apiKey` duy nhất. `usage_audit.py`
 có sẵn cờ `--api-key` để tách theo client, nhưng vô dụng ở trạng thái hiện tại vì
 chỉ có một khoá — nên báo cáo usage-audit của blog và dcgr luôn ra **cùng một
-con số tổng**, không tách được brand nào tốn bao nhiêu. Muốn tách được: cấp thêm
-một virtual key trong 9router, gán cho một brand qua `config.yaml`, rồi thêm
-`--api-key <khoá đó>` vào cron `usage_audit.sh` của brand đó.
+con số tổng**, không tách được brand nào tốn bao nhiêu.
+
+**Đã tách 05/09/2026:** 9router có hai khoá `hermes blog` và `hermes dcgr` (bảng
+`apiKeys`); khoá vào Hermes qua `OPENAI_API_KEY` trong `~/.hermes-<brand>/.env`
+(config.yaml chỉ ghi `${OPENAI_API_KEY}`, không phải sửa profile nào). Từ đó
+`theo_doi_9router.py` tự tách req/$ theo brand ở mục "theo khoá API". Đổi khoá =
+sửa đúng một dòng trong `.env` của brand rồi restart gateway brand đó.
 
 **Điểm mù thứ ba: 9router KHÔNG ghi IP máy gọi.** `usageHistory` không có cột IP,
 `meta` luôn `{}`; `custom-server.js` có tính `x-9r-real-ip` nhưng chỉ dùng cho
