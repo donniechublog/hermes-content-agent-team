@@ -358,6 +358,16 @@ def _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
     cho_phep = _nap_json(ONG_CHU_IDS, [])
     if cho_phep and uid not in cho_phep:
         return False                      # nguoi khac go, khong phai tra loi cua Ong Chu
+    # CHI nhan khi la REPLY toi dung tin hoi (Ong Chu 05/09/2026). Truoc day moi
+    # chu go trong topic suot 10 phut deu bi nuot lam ly do — hoi Dre chuyen khac
+    # cung thanh "ly do lam lai". Tin hoi da bat force_reply nen reply la mac dinh;
+    # go tron thi tin di duong chat binh thuong, trang thai cho van giu.
+    rt = msg.get("reply_to_message") or {}
+    hoi_mid = cho[k].get("hoi_mid")
+    la_reply = (rt.get("message_id") == hoi_mid) if hoi_mid else \
+        bool(rt.get("from", {}).get("is_bot"))
+    if not la_reply:
+        return False
     ho_so = cho.pop(k)
     LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
     draft_id = ho_so["draft_id"]
@@ -405,6 +415,37 @@ def _boc_dong(body: str, nhan: str) -> str:
     return (m_.group(1).strip() if m_ else "")
 
 
+def _bao_nhan_viec(token, group, vai, tu_vai, title, tid, ly_do=""):
+    """Bao NGAY vao topic cua vai nhan viec khi viec duoc CHUYEN tu vai khac (Ong
+    Chu 05/09/2026: "it nhat cung thong bao de biet da nhan job"). Khong doi
+    dispatcher: dong ▶️ cua bao_tien_do chi den khi task thuc su chay (poll 50s +
+    dispatcher 60s + hang doi), truoc do topic cua vai moi im lang nhu chua biet gi."""
+    try:
+        tp = env_load.topics_path()
+        topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        topics = {}
+    thread = topics.get(vai)
+    if not thread:
+        return
+    truoc = 0
+    try:
+        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
+        truoc = con.execute("SELECT count(*) FROM tasks WHERE status IN ('ready','running') "
+                            "AND id != ?", (tid,)).fetchone()[0]
+        con.close()
+    except Exception:                                        # noqa: BLE001
+        pass
+    ten, ten_tu = _TEN_HIEN.get(vai, vai), _TEN_HIEN.get(tu_vai, tu_vai or "vai khác")
+    text = (f"📥 <b>{ten}</b> đã nhận việc chuyển từ <b>{ten_tu}</b>: <i>{html_escape(title[:80])}</i>\n"
+            + (f"Lý do: {html_escape(ly_do[:160])}\n" if ly_do else "")
+            + (f"Đang xếp hàng sau {truoc} việc, tới lượt sẽ bắt đầu" if truoc
+               else "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)") + f" · task {tid}")
+    call(token, "sendMessage", chat_id=group, message_thread_id=thread,
+         text=text, parse_mode="HTML")
+    log("route", f"bao {vai} nhan viec tu {tu_vai}: {tid} (truoc={truoc})")
+
+
 def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     """Chuyen mot draft anh sang Kite (carousel-edu, art vector). Tao task
     EDU_BODY, ghi img.json (vai_anh=carousel-edu, giu vai cu o chuyen_tu) de nut
@@ -435,9 +476,30 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
         else:
             body += (" Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi "
                      "kite_chuan_bi liet ke hinh that.")
-    rid, err = kanban_create("Carousel deck: " + title, "carousel-edu", body)
+    # Bang den: task Kite la con cua the goc va tro thanh `dre_task` (vai anh hien
+    # hanh) trong .writer.json — de Miles noi vao ban giao cua Kite, khong phai cua
+    # Dre da dung. Ghi muc chuyen_kite de bang den ke dung chuyen (05/09: bai Gimlet
+    # di Kite nhung muc `anh` van la cua Dre ban 1).
+    wp = DRAFTS / (draft_id + ".writer.json")
+    try:
+        w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
+    except Exception:                                           # noqa: BLE001
+        w = {}
+    if w.get("root_task"):
+        body += BANG_DEN_NHAC.format(root=w["root_task"])
+    rid, err = kanban_create("Carousel deck: " + title, "carousel-edu", body,
+                             parent=w.get("root_task"))
     if err:
         return None, err
+    if w.get("root_task"):
+        w["dre_task_truoc_kite"], w["dre_task"] = w.get("dre_task"), rid
+        try:
+            wp.write_text(json.dumps(w, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError as e:
+            log("bangden", f"{draft_id}: khong cap nhat dre_task (kite): {e}")
+        _bang_den_ghi(draft_id, "chuyen_kite",
+                      {"task": rid, "tu_vai": im.get("vai_anh"), "ly_do": ly_do,
+                       "anh_that_dung_duoc": co})
     im.update({"chuyen_tu": im.get("vai_anh"), "vai_anh": "carousel-edu", "carousel": True,
                "body": body, "chuyen_kite": rid, "ly_do_chuyen": ly_do})
     (DRAFTS / (draft_id + ".img.json")).write_text(json.dumps(im, ensure_ascii=False, indent=2),
@@ -497,6 +559,10 @@ def handle_img_approval(token, action, draft_id, cq):
                 rid, err = tao_task_kite(draft_id, im, ly_do="Ong Chu bam Gui Kite (thieu anh that)")
                 note = ("⚠️ Chuyển Kite lỗi: " + str(err)) if err else \
                        f"🎨 Đã giao Kite vẽ vector (task {rid}) — {TEN_VAI_ANH.get(im.get('chuyen_tu'), 'vai cũ')} dừng bộ này"
+                if not err:
+                    _bao_nhan_viec(token, chat_id, "carousel-edu", im.get("chuyen_tu"),
+                                   im.get("title", draft_id), rid,
+                                   ly_do="thiếu ảnh thật, Ông Chủ chuyển sang vẽ vector")
     elif action == "imgtiep":
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
         note = "🖼 Giữ nguyên: vai ảnh làm với số ảnh thật hiện có (gộp ý / giảm slide)"
@@ -528,13 +594,26 @@ def handle_img_approval(token, action, draft_id, cq):
             else:
                 huong_dan = ("Trả lời <b>lý do</b> ảnh chưa đạt, vd: <code>mặt người lạ</code>, "
                              "<code>chart bị cắt</code>, <code>nửa dưới quá rối</code>")
-            call(token, "sendMessage", chat_id=chat_id,
+            # force_reply: Telegram tu bat "tra loi tin nay" -> cau ly do cua Ong Chu la
+            # REPLY toi bot duyet. Gateway (bot chat) duoc va de bo qua moi tin reply toi
+            # bot khac (adapter, 05/09) -> het canh hai bot cung dap mot cau.
+            r_hoi = call(token, "sendMessage", chat_id=chat_id,
                  **({"message_thread_id": thread_id} if thread_id else {}),
-                 parse_mode="HTML",
+                 parse_mode="HTML", reply_markup={"force_reply": True, "selective": False},
                  text=(f"🔄 Làm lại <b>{im.get('title', draft_id)}</b> (lần {n}).\n"
                        + huong_dan + "\n"
-                       "Gõ <code>hủy</code> để không làm lại. Không trả lời trong 10 phút "
-                       "→ giao theo kiểu cũ (chỉ \"chọn ảnh khác\")."))
+                       "<b>Trả lời (reply) vào đúng tin này.</b> Chữ gõ rời sẽ được coi là chat, "
+                       "không phải lý do. Reply <code>hủy</code> để không làm lại. "
+                       "Không trả lời trong 10 phút → giao theo kiểu cũ (chỉ \"chọn ảnh khác\")."))
+            try:                       # nho message_id tin hoi: chi nhan reply toi dung no
+                _mid_hoi = (r_hoi.get("result") or {}).get("message_id")
+                if _mid_hoi:
+                    cho = _nap_json(LAM_LAI_CHO, {})
+                    if str(thread_id) in cho:
+                        cho[str(thread_id)]["hoi_mid"] = _mid_hoi
+                        LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+            except Exception as _e:                              # noqa: BLE001
+                log("nut", f"khong luu hoi_mid: {type(_e).__name__}: {_e}")
             note = f"⏳ Chờ lý do làm lại (lần {n})"
     else:                                                       # imgok
         if not wp.exists():
@@ -1877,8 +1956,23 @@ def handle_command(token, group, msg, thread_id, text):
 
     phan = text.split()
     lenh = phan[0].split("@")[0].lower()    # "/bai@TenBot" -> "/bai"
+    goi_bot = phan[0].split("@")[1].lower() if "@" in phan[0] else ""
 
-    if lenh == "/help":
+    # Hai bot chung group (05/09/2026): lenh cua approve la /bai /vai /hd (+/help
+    # khi goi dich danh /help@<bot duyet>). Lenh KHAC la cua Hermes (gateway):
+    # /help, /kanban, /new, /status... -> approve IM, khong "Khong co lenh".
+    # Gateway phia kia bo qua /bai /vai /hd (telegram.extra.ignore_commands).
+    qua_gateway = os.environ.get("CT_CHAT_QUA_GATEWAY", "") == "1"
+    if lenh == "/help" and qua_gateway and goi_bot and "pm" not in goi_bot:
+        return                                  # /help@hermesdcgr_bot: cua gateway
+    if lenh == "/help" and qua_gateway and not goi_bot:
+        log("route", "/help tran: de gateway tra loi; approve co /hd")
+        return
+    if lenh not in ("/bai", "/vai", "/hd", "/help") and qua_gateway:
+        log("route", f"lenh {lenh}: cua Hermes/gateway, approve im")
+        return
+
+    if lenh in ("/help", "/hd"):
         tra_loi(LENH_HELP)
     elif lenh == "/vai":
         dong = [f"<b>Vai ảnh</b> (brand cố định của container: {BRAND}):"]

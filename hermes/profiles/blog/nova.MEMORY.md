@@ -1,1 +1,3 @@
 QUY ƯỚC TAG dự án (bộ não fact_store dùng CHUNG cho dcgr.tech + donniechublog): khi ghi fact, tag `shared` cho research/hạ tầng dùng chung; tag `dcgr` hoặc `dnb` cho fact brand/biên tập riêng dự án. Fact brand PHẢI nêu tên dự án ngay trong nội dung — holographic auto-recall không lọc cứng theo tag, nêu tên để không lẫn giọng giữa 2 brand.
+§
+quet_nop.py in dong 'Nova nop N tin' dem sai khi bao cao co the HTML: no dem dong bat dau bang chu so, nhung baocao.txt ghi dong dang "<b>1.</b> Ten..." -> line[:2]="<b" nen n=0 du truoc khi co 10 muc. Chi hien thi cosmetic cua script, GUI topic van dung. Do dung so muc trong baocao.txt hoac manifest items (index) de tinh thuc te.
