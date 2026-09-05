@@ -28,7 +28,19 @@ FIG_RONG_TOI_THIEU = 800
 
 
 def hinh_that(m: dict) -> list:
-    return [a for a in m["anh"] if a["loai"] == "chart" and a["w"] >= FIG_RONG_TOI_THIEU]
+    """Hinh THAT Kite duoc dung: chart/bang VA anh chup, dieu kien: engine da nhin
+    va khong danh dau KHONG LIEN QUAN, >= 800px, khong phai mat nguoi khong ro
+    ai. Ong Chu 05/09/2026: "Dre tim duoc 1-2 anh chat luong thi Kite cung nen
+    dua vao slide, chu khong chi text & card don dieu". Truoc do chi lay chart
+    -> anh chup bi bo, con chart khong lien quan (Fear&Greed) van lot."""
+    ra = []
+    for a in m["anh"]:
+        if a["w"] < FIG_RONG_TOI_THIEU or a.get("lien_quan") is False:
+            continue
+        if any("KHÔNG RÕ AI" in g for g in a.get("ghi_chu", [])):
+            continue
+        ra.append(a)
+    return ra
 
 
 def goi_y_tone(title: str) -> tuple:
@@ -67,13 +79,21 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         L.append(f"Đoạn đầu bài gốc: {tl['doan_dau'][:1500]}")
     if not tl.get("cau_co_so") and not tl.get("doan_dau"):
         L.append("(Không bóc được chữ từ nguồn — chỉ dùng tóm tắt, KHÔNG bịa.)")
-    L += ["", "## Hình thật dùng được cho `figure` / bìa (đã chụp/tải sẵn, ≥ 800px)"]
+    L += ["", "## Hình thật dùng được cho `figure` / bìa `image` (đã nhìn, ≥ 800px)"]
     ht = hinh_that(m)
     if not ht:
-        L.append("Không có biểu đồ/bảng thật nào — dùng art vector cho cả bộ (bình thường với paper trắng).")
+        L.append("Không có hình thật nào liên quan — dùng art vector cho cả bộ (bình thường với paper trắng).")
+    else:
+        L.append(f"CÓ {len(ht)} hình thật liên quan → BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, "
+                 "bìa `image` hoặc `figure` cho ảnh chụp. Bộ toàn text & card khi có ảnh thật là thiếu.")
     for a in ht:
-        L.append(f"- {a['ma']}: {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
-                 + (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
+        kieu = "BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP"
+        L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
+                 + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
+                 + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
+    rac = [a["ma"] for a in m["anh"] if a.get("lien_quan") is False]
+    if rac:
+        L.append(f"Không dùng (engine đánh dấu không liên quan): {', '.join(rac)}")
     L.append(f"Nhìn tất cả trong MỘT tấm: {m['workdir']}/bang_anh.png (chỉ khi cần).")
     L += ["", "## Tone cho bộ này (mỗi bộ một tone, không trùng bộ gần đây)",
           f"Gợi ý: theme={theme}, hero={hero}. Gần đây đã dùng: {gan or 'chưa có'}.",

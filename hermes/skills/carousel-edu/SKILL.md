@@ -92,11 +92,14 @@ giữ nguyên cả theme lẫn hero. Bìa dùng hình thật thì bộ không v�
 
 ## Hình thật (`figure`, hoặc `cover.image`)
 
-Khi nguồn **có sẵn** biểu đồ/bảng thì chèn bản thật thay vì vẽ lại: engine đã
-chụp `table`/`figure`/`canvas` full bề ngang và tải ảnh chart trong bài; brief
-chỉ liệt kê tấm rộng ≥ 800px. Renderer trải ảnh hết bề ngang (không bao giờ cắt
-hai bên), chữ chìm vào ảnh một mặt phẳng liền, nền phẳng thì kéo màu nền của
-chính nó; tiêu đề tối đa 2 dòng. Bắt buộc `caption` "… · via <ai>".
+Brief liệt kê **mọi hình thật đã được nhìn và liên quan** (≥ 800px): biểu
+đồ/bảng chụp full bề ngang **và ảnh chụp**. Ông Chủ chốt 05/09/2026: *nếu engine
+tìm được 1–2 ảnh chất lượng thì Kite phải đưa vào slide, không ra bộ toàn text &
+card đơn điệu.* Có hình thật trong brief → **bắt buộc dùng ít nhất một**: chart/
+bảng vào `figure`; ảnh chụp làm bìa `image` hoặc `figure`. Renderer trải ảnh hết
+bề ngang (không cắt hai bên), chữ chìm vào ảnh một mặt phẳng liền; tiêu đề tối
+đa 2 dòng. Bắt buộc `caption` "… · via <ai>"; ảnh có mặt người thì caption ghi
+đúng tên trong bài. Mã brief ghi "Không dùng" thì không dùng.
 
 ## Nhịp feature (tham chiếu, không cứng)
 

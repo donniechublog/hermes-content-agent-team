@@ -417,10 +417,24 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     title = im.get("title", draft_id)
     body = task_bodies.EDU_BODY.format(source_note=source_note, link=link, title=title,
                                        summary=summary, goc=str(ROOT), draft_id=draft_id)
+    # Engine da nhin anh: co bao nhieu tam that dung duoc? Kite phai DUNG chung
+    # (Ong Chu 05/09/2026), khong ra bo toan text & card.
+    co = []
+    try:
+        xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
+        if xong.exists():
+            mm = json.loads(xong.read_text(encoding="utf-8"))
+            co = [a["ma"] for a in mm.get("anh", []) if a.get("dung") and a.get("lien_quan") is not False]
+    except Exception:                                           # noqa: BLE001
+        co = []
     if ly_do:
-        body += f"\n\n== CHUYEN TU {TEN_VAI_ANH.get(im.get('vai_anh'), im.get('vai_anh'))} ==\n{ly_do}. " \
-                "Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi " \
-                "kite_chuan_bi liet ke hinh that."
+        body += f"\n\n== CHUYEN TU {TEN_VAI_ANH.get(im.get('vai_anh'), im.get('vai_anh'))} ==\n{ly_do}."
+        if co:
+            body += (f" Engine tim duoc {len(co)} anh THAT dung duoc ({', '.join(co)}, xem brief): "
+                     "BAT BUOC dua vao slide (bia image hoac figure), phan con lai ve vector.")
+        else:
+            body += (" Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi "
+                     "kite_chuan_bi liet ke hinh that.")
     rid, err = kanban_create("Carousel deck: " + title, "carousel-edu", body)
     if err:
         return None, err
