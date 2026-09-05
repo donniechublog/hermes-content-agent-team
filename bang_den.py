@@ -101,9 +101,15 @@ def tao_root(draft_id: str, title: str, goal: str, author: str) -> tuple:
             f"Mục tiêu:\n{goal or title}")
     with kb.connect_closing() as conn:
         with kb.write_txn(conn):
+            # workspace co dinh nhu approve_service.kanban_create: the goc khong
+            # ai chay nen khong ton cache, nhung de dong bo va khong de scratch
+            # de lai thu muc t_xxx rong moi bai.
+            ws = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))) / "kanban" / "workspaces" / "co-dinh"
+            ws.mkdir(parents=True, exist_ok=True)
             rid = kb.create_task(
                 conn, title=tieu_de, body=than, assignee=ROOT_ASSIGNEE,
                 created_by=author, initial_status="blocked",
+                workspace_kind="dir", workspace_path=str(ws),
                 idempotency_key=f"bang_den:{draft_id}")
             t = kb.get_task(conn, rid)
             if t is not None and t.status == "blocked":
