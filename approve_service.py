@@ -584,9 +584,12 @@ def handle_img_approval(token, action, draft_id, cq):
             else:
                 huong_dan = ("Trả lời <b>lý do</b> ảnh chưa đạt, vd: <code>mặt người lạ</code>, "
                              "<code>chart bị cắt</code>, <code>nửa dưới quá rối</code>")
+            # force_reply: Telegram tu bat "tra loi tin nay" -> cau ly do cua Ong Chu la
+            # REPLY toi bot duyet. Gateway (bot chat) duoc va de bo qua moi tin reply toi
+            # bot khac (adapter, 05/09) -> het canh hai bot cung dap mot cau.
             call(token, "sendMessage", chat_id=chat_id,
                  **({"message_thread_id": thread_id} if thread_id else {}),
-                 parse_mode="HTML",
+                 parse_mode="HTML", reply_markup={"force_reply": True, "selective": False},
                  text=(f"🔄 Làm lại <b>{im.get('title', draft_id)}</b> (lần {n}).\n"
                        + huong_dan + "\n"
                        "Gõ <code>hủy</code> để không làm lại. Không trả lời trong 10 phút "
