@@ -44,6 +44,12 @@ an `x.com`/`instagram.com` **post** URL → social-crawl → the `media[]` CDN
 original; any direct image URL → downloaded by **content-type** (works for
 extensionless CDN links too).
 
+For an **X photo post** the crawl endpoint hands back an empty `media[]`, and
+`og:image` there is no longer the photo — X now serves a rendered card
+(`jf.x.com/images/post/<id>.png`: author, truncated text, and a cropped, faded
+thumbnail). So the resolver reads the `pbs.twimg.com/media/<id>` reference out of
+the page HTML and rebuilds it at `name=orig`. Frame that, never the card.
+
 For a **page** (a tweet, an article, a Facebook/social post) it grabs the post's
 **own image** first — the `og:image`, fetched with a crawler UA (Facebook only
 serves og tags / lookaside media to crawlers) — so you frame the picture in the
