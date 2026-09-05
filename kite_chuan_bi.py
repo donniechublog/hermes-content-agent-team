@@ -23,6 +23,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import card                                                  # noqa: E402
+
+
+def handle_kenh(brand: str) -> str:
+    """Handle hien thi cua brand: dcgr -> dcgr.tech (Ong Chu 05/09/2026: slide cuoi
+    in 'Theo doi @dcgr' vi dung thang slug). Mot nguon: bang brand cua card.py."""
+    return (getattr(card, 'THUONG_HIEU', {}).get(brand) or {}).get('handle') or brand
+
 
 FIG_RONG_TOI_THIEU = 800
 
@@ -108,7 +116,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         "slides": [
             {"kind": "cover", "eyebrow": "<CHUYÊN MỤC · DEEP DIVE, ≤ 28>", "title": "<hook ≤ 60 ký tự>",
              "accent": "<cụm trong title cần nhấn>", "standfirst": "<1 câu ≤ 200 ký tự>",
-             "byline": [m["brand"], "Phân tích", "5 phút đọc"],
+             "byline": [handle_kenh(m["brand"]), "Phân tích", "5 phút đọc"],
              "image": "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>", "caption": "<'… · via <ai>' bắt buộc khi có image>"},
             {"kind": "statement", "eyebrow": "BỐI CẢNH", "title": "<≤ 60>", "accent": "<cụm nhấn>",
              "standfirst": "<≤ 220>", "cards": [{"num": "01", "text": "<≤ 90>"}, {"num": "02", "text": "<≤ 90>"}]},
@@ -120,7 +128,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
              "chips": ["<≤ 3 từ>", "<≤ 3 từ>", "<≤ 3 từ>"], "standfirst": "<≤ 220>", "callout": "<≤ 110>"},
             {"kind": "cta", "eyebrow": "ÁP DỤNG", "title": "<≤ 60>", "checks": ["<≤ 70>", "<≤ 70>", "<≤ 70>"],
              "readmore": {"label": "ĐỌC THÊM", "text": "<“Tên bài” - tác giả/nơi đăng, ≤ 90>"},
-             "follow": f"Theo dõi @{m['brand']}"},
+             "follow": f"Theo dõi @{handle_kenh(m['brand'])}"},
         ],
     }
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
