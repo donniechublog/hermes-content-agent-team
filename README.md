@@ -247,7 +247,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 
 - `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
 - `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
-- `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router hôm qua
+- `daily-log` (trước là `nhat-ky-daily`) — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router hôm qua
   (`theo_doi_9router.py --gui`: tóm tắt ngày + cảnh báo IP ngoài / fallback / lỗi / phiên rỗng / connection chết + link web → topic analyst)
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
 - `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
