@@ -268,6 +268,119 @@ def mark_draft(draft_id, status):
     p.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _tach_ly_do_lam_lai(text):
+    """'4: chart bi cat' -> ('4', 'chart bi cat'); '2,5: ...' -> ('2, 5', ...);
+    'tat ca: ...' -> ('CA BO', ...); khong co so -> (None, ca cau)."""
+    t = (text or "").strip()
+    m = re.match(r"^\s*(tất cả|tat ca|cả bộ|ca bo|all)\s*[:\-–—]?\s*(.*)$", t, re.I | re.S)
+    if m:
+        return "CA BO", m.group(2).strip()
+    m = re.match(r"^\s*(?:slide|ảnh|anh)?\s*#?\s*(\d[\d\s,]*)\s*[:\-–—]\s*(.*)$", t, re.I | re.S)
+    if m:
+        so = sorted({int(x) for x in re.findall(r"\d+", m.group(1))})
+        return ", ".join(str(x) for x in so), m.group(2).strip()
+    return None, t
+
+
+def _giao_lam_lai(draft_id, slide=None, ly_do=None):
+    """Tao task lam lai cho draft. Tra ve (note, rid). `slide`/`ly_do` None = giao
+    theo kieu cu (khong chi ro). Ca ba duong (co ly do / het han / kieu cu) deu
+    di qua day de body task chi co MOT cho viet."""
+    ip = DRAFTS / (draft_id + ".img.json")
+    if not ip.exists():
+        return "⚠️ Không thấy thông tin task ảnh để làm lại", None
+    im = json.loads(ip.read_text(encoding="utf-8"))
+    n = int(im.get("remakes", 0)) + 1
+    if ly_do:
+        chi_ro = (
+            f"\n\n== LAM LAI (lan {n}) ==\n"
+            "Ong Chu bam lam lai va CHI RO cho chua dat:\n"
+            f"  SLIDE:  {slide or 'khong chi ro (xem ly do)'}\n"
+            f"  LY DO:  {ly_do}\n"
+            "Sua DUNG cho da chi, dung doi lung tung cai khac.\n"
+            "- Carousel: dung lai spec cu, chi thay anh/copy cua slide da neu (cac "
+            "slide khac giu nguyen), roi chay lai carousel.py de ra CA BO (album "
+            "phai du slide).\n"
+            "- Doc lai LUAT_ANH.md truoc khi chon anh moi: ly do o tren thuong "
+            "tuong ung mot cong o do (chart nguyen ven, mat nguoi, hai vung...).\n"
+            f"Van day len kem nut duyet nhu cu (--duyet {draft_id}).")
+    else:
+        chi_ro = (
+            f"\n\n== LAM LAI (lan {n}) ==\n"
+            "Anh truoc CHUA DAT, Ong Chu bam lam lai (khong neu ly do cu the). Chon "
+            "ANH KHAC — goc khac, nguon khac, cach the hien khac; DUNG lap lai anh "
+            f"cu. Van day len kem nut duyet nhu cu (--duyet {draft_id}).")
+    tieu = ("Carousel (lam lai): " if im.get("carousel") else "Anh (lam lai): ") \
+        + im.get("title", draft_id)
+    rid, err = kanban_create(tieu, im["vai_anh"], im["body"] + chi_ro)
+    if err:
+        return "⚠️ Làm lại lỗi: " + str(err), None
+    im["remakes"], im["last_task"] = n, rid
+    if ly_do:
+        im.setdefault("ly_do_lam_lai", []).append({"lan": n, "slide": slide, "ly_do": ly_do})
+    ip.write_text(json.dumps(im, ensure_ascii=False, indent=2), encoding="utf-8")
+    ten = TEN_VAI_ANH.get(im["vai_anh"], "Ethan")
+    if ly_do:
+        cho = f"slide {slide}" if slide and slide != "CA BO" else ("cả bộ" if slide == "CA BO" else "ảnh")
+        return (f"🔄 Đã giao làm lại {cho} (lần {n}) — {ten} — lý do: {ly_do[:120]} "
+                f"(task {rid})"), rid
+    return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})", rid
+
+
+def _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
+    """Neu topic nay dang CHO ly do lam lai va nguoi go la Ong Chu -> nuot tin
+    nhan nay lam ly do, giao task, tra ve True. Khong thi False (tin di tiep
+    duong binh thuong)."""
+    cho = _nap_json(LAM_LAI_CHO, {})
+    k = str(thread_id)
+    if k not in cho:
+        return False
+    uid = msg.get("from", {}).get("id")
+    cho_phep = _nap_json(ONG_CHU_IDS, [])
+    if cho_phep and uid not in cho_phep:
+        return False                      # nguoi khac go, khong phai tra loi cua Ong Chu
+    ho_so = cho.pop(k)
+    LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+    draft_id = ho_so["draft_id"]
+    t = text.strip().lower()
+    if t in ("hủy", "huy", "bỏ", "bo", "thôi", "thoi", "cancel"):
+        note = "↩️ Đã huỷ làm lại — giữ nguyên ảnh hiện tại"
+    elif t in ("làm lại", "lam lai", "redo", ""):
+        note, _ = _giao_lam_lai(draft_id)              # khong neu ly do -> kieu cu
+    else:
+        slide, ly_do = _tach_ly_do_lam_lai(text)
+        note, _ = _giao_lam_lai(draft_id, slide, ly_do)
+    log("nut", f"lam lai co ly do draft={draft_id}: {note}")
+    call(token, "sendMessage", chat_id=group,
+         **({"message_thread_id": thread_id} if thread_id else {}),
+         reply_to_message_id=msg.get("message_id"), text=note)
+    return True
+
+
+def _lam_lai_het_han(token, group):
+    """Cho qua LAM_LAI_HAN giay ma Ong Chu chua neu ly do -> giao theo kieu cu,
+    de khong ket. Goi moi vong poll (re: chi doc mot tep JSON nho)."""
+    cho = _nap_json(LAM_LAI_CHO, {})
+    if not cho:
+        return
+    now, doi = time.time(), False
+    for k in list(cho):
+        if now - float(cho[k].get("ts", 0)) < LAM_LAI_HAN:
+            continue
+        ho_so = cho.pop(k)
+        doi = True
+        note, _ = _giao_lam_lai(ho_so["draft_id"])
+        log("nut", f"lam lai het han draft={ho_so['draft_id']}: {note}")
+        try:
+            call(token, "sendMessage", chat_id=group,
+                 **({"message_thread_id": int(k)} if k not in ("None", "") else {}),
+                 text="⏱ Hết 10 phút chưa nêu lý do — " + note)
+        except Exception as e:                                  # noqa: BLE001
+            log("loi", f"bao het han lam lai: {e}")
+    if doi:
+        LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+
+
 def handle_img_approval(token, action, draft_id, cq):
     """Cong duyet ANH truoc khi viet. designer (Ethan)/Dre/Dre day anh len topic kem
     ba nut:
@@ -306,32 +419,41 @@ def handle_img_approval(token, action, draft_id, cq):
                     note = ("⚠️ Bỏ hẳn nhưng KHÔNG ghi được trạng thái ("
                             + type(e).__name__ + ") — bấm Bỏ hẳn lại lần nữa")
     elif action == "imgredo":
+        # Ong Chu 04/09/2026: bam Lam lai phai co cho de noi SLIDE NAO va VI SAO.
+        # Chi bam "lam lai" thi vai khong biet sua cho nao, lan sau van co the sai
+        # y nhu cu. Nen KHONG giao ngay: ghi "dang cho ly do" cho topic nay, hoi
+        # mot dong, va nuot tin nhan ke tiep cua Ong Chu lam ly do
+        # (_nhan_ly_do_lam_lai). Het LAM_LAI_HAN giay chua tra loi -> giao kieu cu.
         ip = DRAFTS / (draft_id + ".img.json")
         if not ip.exists():
             note = "⚠️ Không thấy thông tin task ảnh để làm lại"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Thiếu thông tin ảnh", show_alert=True)
         else:
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Đang giao dựng lại…")
             im = json.loads(ip.read_text(encoding="utf-8"))
+            thread_id = msg.get("message_thread_id")
+            cho = _nap_json(LAM_LAI_CHO, {})
+            cho[str(thread_id)] = {"draft_id": draft_id, "ts": time.time(),
+                                   "title": im.get("title", draft_id)}
+            LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Chờ anh nêu slide + lý do…")
             n = int(im.get("remakes", 0)) + 1
-            body = im["body"] + (
-                f"\n\n== LAM LAI (lan {n}) ==\n"
-                "Anh truoc CHUA DAT, Ong Chu bam lam lai. Chon ANH KHAC — goc khac, "
-                "nguon khac, cach the hien khac; DUNG lap lai anh cu. Van day len kem "
-                f"nut duyet nhu cu (--duyet {draft_id}).")
-            tieu = ("Carousel (lam lai): " if im.get("carousel")
-                    else "Anh (lam lai): ") + im.get("title", draft_id)
-            rid, err = kanban_create(tieu, im["vai_anh"], body)
-            if err:
-                note = "⚠️ Làm lại lỗi: " + str(err)
+            if im.get("carousel"):
+                huong_dan = ("Trả lời <b>một dòng</b>: <code>số slide: lý do</code>\n"
+                             "Vd: <code>4: chart bị cắt mất trục x</code> · nhiều slide: "
+                             "<code>2,5: ...</code> · cả bộ: <code>tất cả: ...</code>")
             else:
-                im["remakes"], im["last_task"] = n, rid
-                ip.write_text(json.dumps(im, ensure_ascii=False, indent=2),
-                              encoding="utf-8")
-                ten = TEN_VAI_ANH.get(im["vai_anh"], "Ethan")
-                note = f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})"
+                huong_dan = ("Trả lời <b>lý do</b> ảnh chưa đạt, vd: <code>mặt người lạ</code>, "
+                             "<code>chart bị cắt</code>, <code>nửa dưới quá rối</code>")
+            call(token, "sendMessage", chat_id=chat_id,
+                 **({"message_thread_id": thread_id} if thread_id else {}),
+                 parse_mode="HTML",
+                 text=(f"🔄 Làm lại <b>{im.get('title', draft_id)}</b> (lần {n}).\n"
+                       + huong_dan + "\n"
+                       "Gõ <code>hủy</code> để không làm lại. Không trả lời trong 10 phút "
+                       "→ giao theo kiểu cũ (chỉ \"chọn ảnh khác\")."))
+            note = f"⏳ Chờ lý do làm lại (lần {n})"
     else:                                                       # imgok
         if not wp.exists():
             note = "⚠️ Không thấy thông tin bài (writer sidecar) cho draft này"
@@ -1239,6 +1361,8 @@ DAT_BAI_SO = STATE_DIR / "dat_bai.json"     # so dedup: url chuan hoa -> lan dat
 # dat_bai.json -> mat ban ghi dedup, tao cap task trung. Mot khoa la du.
 _KHOA_DAT_BAI = threading.Lock()
 ONG_CHU_IDS = STATE_DIR / "ong_chu.json"    # [user_id...] duoc phep ra lenh
+LAM_LAI_CHO = STATE_DIR / "lam_lai_cho.json"  # {thread_id: {draft_id, ts, ...}} — dang cho ly do
+LAM_LAI_HAN = 600                              # giay cho Ong Chu neu so slide + ly do
 
 # Chan host noi bo: bot chay ngay tren server (tunnel, dashboard, cron) nen
 # mot URL tro nguoc vao trong la fetch thang vao ruot he thong. Chi so khop
@@ -1510,6 +1634,12 @@ def handle_message(token, group, msg):
                   token, group, msg, thread_id, text)
         return
 
+    # Topic nay dang CHO ly do "lam lai" (Ong Chu vua bam nut)? Nuot tin nay
+    # lam ly do, giao task, xong. Dat TRUOC "chon so": mot dong "4: chart bi
+    # cat" ma roi vao topic chon tin se bi hieu nham thanh chon bai so 4.
+    if _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
+        return
+
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin. Moi thu khac la
     # hoi thoai. Finn, Nova, Vera deu duoc — cung mot cach tra loi.
     vai = vai_cua_topic(thread_id)
@@ -1663,6 +1793,7 @@ def loop():
                              show_alert=True)
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
+            _lam_lai_het_han(token, group)
             bao_viec_bi_chan(token, group)
             bao_tien_do_kanban(token, group)
             loi_lien_tiep = 0
