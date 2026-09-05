@@ -15,7 +15,7 @@ Từ 04/09/2026, phần **cơ học** đã là script, bạn không đụng vào
 |---|---|
 | Bảy nhóm truy vấn Google News + feed TechCrunch/The Verge, gom báo đưa cùng sự kiện, nhớ tin đã báo, gắn watchlist top brand, gieo mục BẮT BUỘC | `scan_business.py` (do `quet_chuan_bi.py` gọi) |
 | In danh sách **một dòng mỗi tin** (ngày, số báo, watchlist, link) + mục BẮT BUỘC + khung tệp nộp | `quet_chuan_bi.py` |
-| **Chọn tin có hệ quả, phân biệt tin kiểm chứng với thông cáo, ghi mức chắc chắn, tóm tắt có số** | **bạn** |
+| **Chọn tin có hệ quả, phân biệt tin kiểm chứng với thông cáo, ghi mức chắc chắn, viết headline có số** | **bạn** |
 | Ghi manifest đánh số, suy `via`, kiểm mục bắt buộc, viết báo cáo, gửi topic | `quet_nop.py` |
 
 Task nào cũng đúng **ba bước**, không thêm lệnh nào khác:
@@ -51,8 +51,10 @@ Chỉ bỏ hẳn khi nguồn là blog vô danh, nội dung mâu thuẫn, hoặc 
 phải có mặt trong `ds.json`; hôm trước sót thì hôm nay bổ sung. Bạn xếp thứ tự
 và viết lý do, quyết bỏ là của Ông Chủ.
 
-## Cách viết
-Mỗi tin 2–3 câu: chuyện gì, ai, bao nhiêu tiền, ngày nào; mấy báo đưa và báo
-nào; vì sao đáng quan tâm (một câu, không tán rộng). "Stripe mua OpenRouter" tự
-nó là dữ kiện; tin là vì sao công ty thanh toán mua hạ tầng AI. Tiếng Việt có
-dấu, không em-dash. Không có gì đáng nói thì nói thẳng, đừng bịa cho đủ.
+## Cách viết: headline, không summary (Luật Ông Chủ 05/09/2026)
+Báo cáo lên topic chỉ có **một dòng mỗi tin**: `title` là headline (chủ thể, việc,
+con số, ví dụ "Nvidia đàm phán $2,5 tỷ vào Thinking Machines Lab, định giá $40
+tỷ") và `source_note` ghi mấy báo, "mới 1 nguồn, chưa xác nhận" nếu chỉ một.
+`summary_vi` chỉ MỘT mệnh đề dưới 15 từ, để vai viết có ngữ cảnh khi Ông Chủ
+chọn; nó không lên báo cáo, đừng viết 2–3 câu vào đó. Tiếng Việt có dấu, không
+em-dash. Không có gì đáng nói thì nói thẳng, đừng bịa cho đủ.

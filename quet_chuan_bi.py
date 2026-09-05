@@ -124,7 +124,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
                        "score_relevance": "<0-20: thuộc 5 nhóm (model mới, M&A big tech, arXiv/X/Reddit nổi, use case thật, tin lai); "
                                           "funding round/drama/dự đoán thì trừ nặng>",
                        "score_reason": "<1 câu vì sao điểm này>",
-                       "summary_vi": "<2-3 câu tiếng Việt có dấu, dữ kiện thuần>"}], ensure_ascii=False, indent=1),
+                       "summary_vi": "<MỘT mệnh đề ≤ 15 từ, dữ kiện thuần; chỉ làm ngữ cảnh cho vai viết, KHÔNG lên báo cáo>"}], ensure_ascii=False, indent=1),
           "Điểm tổng = điểm cơ học (script) + technical + relevance. Không tin nào ≥ 50 điểm thì chạy bước 3 với "
           "--khong-co (script gửi dòng 'hôm nay không có gì' kèm số tin đã quét).",
           "", "## Rồi chạy đúng MỘT lệnh:",
@@ -159,8 +159,8 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
           "tiêu đề phải chứa ĐÚNG tên model như script in",
           json.dumps([{"title": "<Tên model đúng như script in + ý chính, có dấu>",
                        "link": "<URL thật: trang model/blog hãng/bảng xếp hạng>",
-                       "summary_vi": "<2-3 dòng có số: mạnh/rẻ hơn cái gì, bảng nào, giá vào/ra mỗi triệu token, "
-                                     "thay được vai nào; đáng thử cho vai nào>",
+                       "summary_vi": "<MỘT mệnh đề ≤ 15 từ: giá vào/ra mỗi triệu token hoặc hạng bảng; chỉ làm ngữ cảnh "
+                                     "cho vai viết, KHÔNG lên báo cáo>",
                        "source_note": "<bảng/nguồn + ngày>"}], ensure_ascii=False, indent=1),
           "Xếp thứ tự: vào top 3 bảng lớn (text, WebDev, coding, trí tuệ) lên đầu. Không có gì đáng lên kênh thì "
           "chạy bước 3 với --khong-co.",
@@ -191,11 +191,11 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
     L += [""] + _bat_buoc("market")
     L += ["", f"## Viết danh sách vào: {wd}/ds.json — tin có HỆ QUẢ (IPO, thâu tóm, hạ tầng, chính sách, lao "
           "động, kiện tụng, cược lớn), kèm mức chắc chắn theo số báo; bỏ giá cổ phiếu trong ngày, PR sản phẩm",
-          json.dumps([{"title": "<tiêu đề tiếng Việt có dấu, có số>",
+          json.dumps([{"title": "<HEADLINE một dòng: chủ thể + việc + con số, tiếng Việt có dấu; đây là thứ DUY NHẤT Ông Chủ đọc>",
                        "link": "<URL y hệt trong danh sách — KHÔNG gõ lại từ trí nhớ>",
-                       "summary_vi": "<2-3 câu: chuyện gì, ai, bao nhiêu tiền, ngày nào; vì sao đáng quan tâm; "
-                                     "'mới một nguồn, chưa bên thứ hai xác nhận' nếu chỉ 1 báo>",
-                       "source_note": "<N báo: tên báo; thông cáo hay tin kiểm chứng>"}], ensure_ascii=False, indent=1),
+                       "summary_vi": "<MỘT mệnh đề ≤ 15 từ vì sao đáng quan tâm; chỉ làm ngữ cảnh cho vai viết, "
+                                     "KHÔNG lên báo cáo>",
+                       "source_note": "<N báo: tên báo; 'mới 1 nguồn, chưa xác nhận' nếu chỉ 1 báo>"}], ensure_ascii=False, indent=1),
           "Mọi tin [W] phải có mặt. Không có gì đáng lên kênh thì chạy bước 3 với --khong-co.",
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python quet_nop.py --vai market",

@@ -7,7 +7,7 @@ chọn. **Bạn không tự quyết bài nào được làm**: đề xuất là 
 là của Ông Chủ qua trả lời số thứ tự. Tin nào được chọn hay bị bỏ là dữ liệu
 học thị hiếu cho analyst, chấm càng trung thực dữ liệu càng có giá.
 
-## Việc của bạn chỉ có một: chấm hai thành phần điểm còn lại và tóm tắt
+## Việc của bạn chỉ có một: chấm hai thành phần điểm còn lại và viết headline
 
 Từ 04/09/2026, phần **cơ học** đã là script, bạn không đụng vào:
 
@@ -15,7 +15,7 @@ Từ 04/09/2026, phần **cơ học** đã là script, bạn không đụng vào
 |---|---|
 | Gọi HackerNews + arXiv, lọc 72h, lọc từ khoá AI, chống trùng với mọi bài đã xử lý, chấm sẵn 50/100 điểm (độ mới 30 + độ lan 20), gieo mục BẮT BUỘC | `scan_sources.py` (do `quet_chuan_bi.py` gọi) |
 | In danh sách ứng viên **một dòng mỗi tin** + mục BẮT BUỘC + khung tệp nộp | `quet_chuan_bi.py` |
-| **Chấm sức nặng kỹ thuật (0–30) và liên quan (0–20), viết lý do, tóm tắt 2–3 câu** | **bạn** |
+| **Chấm sức nặng kỹ thuật (0–30) và liên quan (0–20), viết lý do một câu, `summary_vi` một mệnh đề** | **bạn** |
 | Đối chiếu link, cộng điểm, đánh số theo điểm, kiểm mục bắt buộc, viết báo cáo đánh số, gửi topic | `quet_nop.py` |
 
 Task nào cũng đúng **ba bước**, không thêm lệnh nào khác:
@@ -53,5 +53,8 @@ lựa chọn, đừng chấm thấp để né việc. **Luật Ông Chủ 04/09/
 BẮT BUỘC phải có trong danh sách nộp, chấm sao cũng được nhưng không được bỏ;
 hôm trước sót thì hôm nay mục vẫn còn đó.
 
-Tóm tắt 2–3 câu tiếng Việt có dấu, dữ kiện thuần, không em-dash. Không viết nội
-dung đăng, không tạo task cho vai ảnh hay vai viết.
+**Luật Ông Chủ 05/09/2026:** báo cáo lên topic chỉ là headline, một dòng mỗi tin
+(số, điểm, tiêu đề, nguồn). `summary_vi` và `score_reason` không lên báo cáo,
+chỉ nằm trong manifest cho vai viết, nên `summary_vi` là MỘT mệnh đề dưới 15 từ,
+dữ kiện thuần, có dấu, không em-dash. Không viết nội dung đăng, không tạo task
+cho vai ảnh hay vai viết.

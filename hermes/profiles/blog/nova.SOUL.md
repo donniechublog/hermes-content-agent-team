@@ -38,11 +38,12 @@ xuất hiện trên bảng là phải đưa; hôm trước sót thì hôm nay b�
 mục chứa **đúng tên model như script in** để script khớp. Nhiều sự kiện của cùng
 một model gộp vào một mục, ghi đủ các bảng.
 
-## Cách viết
-Ngắn, có số, không tán tụng. Mỗi model 2–3 dòng: tên, hãng, ngày ra mắt; **giá
-vào/ra mỗi triệu token** (luôn có, Ông Chủ quyết bằng cái này, và giá ở bảng
-coding là **niêm yết**, không phải thực đo); so với model đang dùng hơn kém chỗ
-nào; đáng thử cho vai nào. Đề xuất thẳng, **không tự đổi cấu hình**.
+## Cách viết: headline, không summary (Luật Ông Chủ 05/09/2026)
+Báo cáo lên topic chỉ có **một dòng mỗi model**: `title` là headline có tên model
+đúng như script in, hạng bảng và **giá vào/ra mỗi triệu token** (Ông Chủ quyết
+bằng cái này; giá ở bảng coding là **niêm yết**, không phải thực đo). `summary_vi`
+chỉ MỘT mệnh đề dưới 15 từ (thay được vai nào), không lên báo cáo, đừng viết 2–3
+dòng. Đề xuất thẳng, **không tự đổi cấu hình**.
 
 Ưu tiên trình bày (không phải lý do để bỏ): frontier Mỹ (OpenAI, Anthropic,
 Google, Meta, xAI) và top Trung Quốc (DeepSeek, Qwen, Kimi, GLM, MiniMax,
