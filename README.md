@@ -257,8 +257,9 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
   `task_links`, bàn giao trong `task_comments`/`task_runs`, không trôi như chat.
 - Bảng đen là lớp thêm, **best-effort**: `bang_den.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
   đen và không có Ada soát (bài trước 05/09 không có thẻ gốc → cũng không soát).
-- Chỉ bật cho brand trong `CT_BANG_DEN` (mặc định `dcgr`). Blog là nhóm đối chứng của tuần đo
-  bot-mode nên giữ nguyên; muốn bật: `Environment=CT_BANG_DEN=dcgr,blog` trong unit approve.
+- Bật theo `CT_BANG_DEN` (mặc định `dcgr`). **Blog bật từ 05/09/2026 chiều** qua drop-in
+  `hermes-approve@blog.service.d/override.conf` (`Environment=CT_BANG_DEN=dcgr,blog`) — Ada của blog
+  soát y hệt; đã thử thẻ gốc trên kanban blog.
 
 ## Dịch vụ systemd
 
