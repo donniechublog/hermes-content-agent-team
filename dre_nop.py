@@ -53,12 +53,39 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     anh = {a["ma"]: a for a in m["anh"]}
     loi, da_dung, dung_anh = [], {}, []
 
+    chu_bai = ((m.get("chu_bai") or "") + " " + (m.get("tu_lieu", {}).get("doan_dau") or "")
+               + " " + " ".join(m.get("tu_lieu", {}).get("cau_co_so") or [])).lower()
+    try:
+        chu_bai += " " + (wd / "tu_lieu.md").read_text(encoding="utf-8").lower()
+    except OSError:
+        pass
+
+    def _lien_quan(ma_ds, nhan):
+        rac = [ma for ma in ma_ds if anh[ma].get("lien_quan") is False]
+        if rac:
+            loi.append(f"{nhan}: {', '.join(rac)} bị đánh dấu KHÔNG LIÊN QUAN bài "
+                       f"({'; '.join((anh[x].get('mo_ta') or '?')[:60] for x in rac)}) — "
+                       "không dùng, chọn mã khác hoặc gộp ý/giảm slide")
+
     def _mat(ma_ds, muc, nhan):
         co = [ma for ma in ma_ds if anh[ma]["mat"]]
-        if co and not str(muc.get("nhan_vat") or "").strip():
+        nv = str(muc.get("nhan_vat") or "").strip()
+        if co and not nv:
             loi.append(f"{nhan}: {', '.join(co)} có mặt người mà không khai \"nhan_vat\": "
                        "\"<tên người trong bài>\" — khai tên nếu đúng là nhân vật, "
                        "không thì đổi ảnh khác")
+        elif co and nv:
+            # Ten phai XUAT HIEN trong chu bai — khong thi la dien ten CEO cho qua
+            # cong (bia Broadcom 05/09: anh quan chuc G20, khai "Hock Tan").
+            ho = nv.split(",")[0].strip().lower()
+            if chu_bai and ho and ho not in chu_bai and not all(w in chu_bai for w in ho.split()[-2:]):
+                loi.append(f"{nhan}: nhan_vat \"{nv}\" không xuất hiện trong chữ bài — "
+                           "khai tên người KHÔNG có trong bài là bịa. Bỏ ảnh này.")
+            for ma in co:
+                if anh[ma].get("mo_ta") and any(k in anh[ma]["mo_ta"].lower()
+                                                for k in ("không liên quan", "g20", "logo")):
+                    loi.append(f"{nhan}: {ma} — vision mô tả: \"{anh[ma]['mo_ta'][:80]}\" — "
+                               "không phải nhân vật bài này")
 
     def giai(muc: dict, nhan: str, la_bia: bool) -> dict | None:
         ra = {}
@@ -75,6 +102,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
                 if x in da_dung:
                     loi.append(f"{nhan}: {x} đã dùng ở {da_dung[x]} — mỗi ảnh đúng một slide")
                 da_dung[x] = nhan
+            _lien_quan(ghep, nhan)
             ims = [Image.open(anh[x]["goc"]).convert("RGB") for x in ghep]
             rc = 1 / sum(im.height / im.width for im in ims)
             if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
@@ -94,6 +122,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
             if ma in da_dung:
                 loi.append(f"{nhan}: {ma} đã dùng ở {da_dung[ma]} — mỗi ảnh đúng một slide")
             da_dung[ma] = nhan
+            _lien_quan([ma], nhan)
             a = anh[ma]
             if a["loai"] == "chart":
                 if la_bia:

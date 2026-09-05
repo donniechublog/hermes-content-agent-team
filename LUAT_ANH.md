@@ -71,6 +71,25 @@ Không giới hạn ở ảnh nhúng trong đúng link gốc. Tin đủ lớn th
 thật liên quan rải ở các bài khác: ảnh sự kiện góc khác, ảnh sản phẩm chính
 hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 
+### 1.2b Engine tự tìm rộng — không lấy hết ảnh của một URL
+
+Ông Chủ 05/09/2026: *"designer gần như luôn né tránh việc tìm nguồn ảnh, toàn lấy
+ảnh trong một URL, kể cả banner quảng cáo"*. Từ 04/09 vai không tìm ảnh nữa —
+`anh_chuan_bi.py` tìm, vai chỉ chọn mã — nên luật này là luật của **engine**:
+
+- Chỉ lấy ảnh **trong bài** (`article`/`main`); loại quảng cáo, widget, sidebar,
+  nav/footer, placeholder, onboarding, logo — theo cả tổ tiên DOM lẫn src/alt.
+- **Trần mỗi trang**: bài gốc ≤ 4 ảnh, báo khác ≤ 3. Một URL không lấp cả kho.
+- Báo khác phải **cùng tin**: chung ≥ 2 từ đặc trưng với tiêu đề gốc (Google
+  News trả cả bài bệnh thận vì cùng chữ "AI").
+- **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
+  → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
+- Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
+  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → brief nói
+  thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
+- Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
+  hiệu cần xem lại.
+
 ### 1.3 Tin model ra mắt: ưu tiên benchmark table/chart
 
 Bảng so sánh điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là

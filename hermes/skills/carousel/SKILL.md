@@ -123,26 +123,32 @@ dấu " đổi màu theo hãng được nhắc.
   câu chốt/hook. Không gán câu tự viết thành lời một người cụ thể.
 - Cân 2–3 quote + 3–4 slide kể; đừng ép cả bộ thành quote.
 
-## Ảnh: đọc nhãn trong brief là đủ
+## Ảnh: nhãn là gợi ý, cột "ảnh là" và dấu ❌ mới là luật
 
-Luật ảnh của cả đội (không tự vẽ, chart nguyên vẹn full bề ngang, chỉ crop qua
-`crop_ti_le`, ghép dọc cùng tone, mặt người, không hai vùng) nằm ở
-[`LUAT_ANH.md`](/home/donniechu/content-team/LUAT_ANH.md) và đã được
-`dre_chuan_bi.py` + `carousel.py` code hoá. Vai chỉ cần chọn đúng theo nhãn:
+Từ 05/09/2026 mỗi ảnh trong brief đã được **nhìn** (vision) và ghi `ảnh là: …`
+kèm phán `LIÊN_QUAN`. Vì sao: bộ Broadcom/Gimlet dcgr có 4/8 ảnh là **widget
+linh kiện, banner sàn crypto, logo placeholder, ảnh trang trắng** — engine gắn
+nhãn CHART hết, vai đọc nhãn rồi dán lên slide. Không phép đo nào bắt được
+"widget cơ khí trên bài Broadcom"; chỉ nhìn mới biết.
 
-| Nhãn trong brief | Dùng thế nào |
+- Ảnh có **❌ KHÔNG LIÊN QUAN** → **không dùng**, dù nhãn/tỉ lệ đẹp đến đâu.
+  `dre_nop.py` chặn thẳng.
+- Đọc cột `ảnh là:` của **từng** mã trước khi ghép vào slide. Ảnh mô tả không
+  khớp ý slide thì đừng dùng cho slide đó.
+- **THIẾU ẢNH** (brief cảnh báo) → gộp ý để giảm slide, hoặc kết thúc task
+  "Thiếu ảnh thật". **Không nhồi** ảnh không liên quan cho đủ số.
+- **Mặt người KHÔNG RÕ AI** → bỏ. Không điền tên CEO trong bài vào `nhan_vat`
+  để qua cổng — tên phải có trong chữ bài, `dre_nop.py` kiểm.
+- `CHƯA AI NHÌN` (vision không chạy) → mở `bang_anh.png` trước khi dùng.
+
+| Nhãn | Dùng thế nào |
 |---|---|
-| `bìa` | ảnh chụp, không chart, không mặt, góc dưới-trái tối — làm bìa được |
+| `bìa` | ảnh chụp liên quan, không chart, không mặt lạ, góc dưới-trái tối |
 | `thân` | ảnh chụp đã cắt 1:1/4:5 — slide thân |
-| `CHART` | slide thân, script tự dán full bề ngang nguyên vẹn; không làm bìa |
-| `NGANG` | `ghep` với cặp gợi ý, hoặc `cat_ngang` nếu là người/sản phẩm không chữ |
-| `CÓ n MẶT NGƯỜI` | chỉ dùng khi khai `nhan_vat` là người trong bài |
+| `CHART` | slide thân, dán full bề ngang; **hình minh hoạ/AI art không phải chart** |
+| `NGANG` | `ghep` với cặp gợi ý (đã lọc liên quan), hoặc `cat_ngang` nếu là người/sản phẩm không chữ |
 
-Bìa khắt khe nhất: hook chữ to đè lên, cần góc dưới-trái thoáng — brief đã
-xếp gợi ý theo tiêu chí đó. Slide thân dễ hơn vì màn tối dày; ưu tiên ảnh nền
-tối cho slide nhiều chữ.
-
-## Nhìn lại trước khi nộp (đọc spec, không cần mở ảnh)
+## Nhìn lại trước khi nộp
 
 1. Bìa có khiến muốn lướt tiếp không? Hook trung tính là bìa hỏng.
 2. Mỗi slide có một ý mới không? Lặp ý là thừa, bỏ.

@@ -51,6 +51,9 @@ DRAFTS = ROOT / "drafts"
 TEN_CT = {"dcgr": "dcgr", "donniechublog": "blog"}      # brand -> CT_BRAND
 
 # Nguong (cung goc voi luat_anh; o day chi la phan CHON anh de tai)
+URL_RAC = re.compile(r"(default-image|placeholder|onboarding|sprite|/logo|logo[-_.]|wordmark|"
+                     r"/ads?/|advert|sponsor|promo|banner|doubleclick|adsystem|outbrain|taboola|"
+                     r"newsletter|subscribe)", re.I)
 CANH_NGAN_BO = 500          # duoi nguong nay khong tai (phong len 1080 la vo)
 TOI_DA_ANH = 8              # anh giu lai sau khi loc — du cho 10 slide ke ca ghep
 TOI_DA_TAI = 14             # ung vien thu tai (co cai hong/trung)
@@ -195,16 +198,35 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
                     || document.title || '')"""
     JS_TEXT = """() => ((document.querySelector('article') || document.querySelector('main')
                     || document.body).innerText || '').slice(0, 20000)"""
-    JS_IMG = """() => Array.from(document.images)
+    # Chi lay anh TRONG bai (article/main). Truoc day vot ca document.images ->
+    # banner quang cao (Phemex), widget "for you", onboarding, placeholder logo
+    # deu vao kho (bo Broadcom/Gimlet dcgr 05/09/2026). Loai theo ba lop: to
+    # tien la ad/aside/nav/related/promo; src/class/id/alt mang tu quang cao;
+    # va phan tu cao hon 75% trang (chup ca trang chu).
+    JS_LOAI = """
+        const XAU = /(^|[^a-z])(ad|ads|advert|sponsor|promo|banner|widget|related|recommend|sidebar|aside|nav|footer|header|newsletter|subscribe|onboarding|placeholder|default-image|logo|sprite|icon|share|social|comment|popup|modal|overlay|cookie|paywall|outbrain|taboola|dfp|gpt|doubleclick|adsystem)([^a-z]|$)/i;
+        const trongBai = (el) => { const a = document.querySelector('article') || document.querySelector('main');
+            return !a || a.contains(el); };
+        const xau = (el) => { for (let e = el; e; e = e.parentElement) {
+            const t = (e.tagName||'').toLowerCase();
+            if (['aside','nav','footer','header','iframe'].includes(t)) return true;
+            const k = ((e.className && e.className.baseVal) ? e.className.baseVal : (e.className||'')) + ' ' + (e.id||'');
+            if (XAU.test(k.replace(/[-_]/g,' '))) return true; } return false; };
+        const caoQua = (r) => r.height > Math.max(900, 0.75 * document.documentElement.scrollHeight);
+    """
+    JS_IMG = JS_LOAI + """() => Array.from(document.images)
         .filter(i => i.naturalWidth >= 600 && i.naturalHeight >= 350)
+        .filter(i => trongBai(i) && !xau(i) && !XAU.test((i.currentSrc||i.src||'').replace(/[-_]/g,' '))
+                     && !XAU.test((i.alt||'').replace(/[-_]/g,' ')))
         .map(i => ({src: i.currentSrc || i.src, alt: i.alt || '',
                     w: i.naturalWidth, h: i.naturalHeight})).slice(0, 12)"""
-    JS_FIG = """() => { const ra = []; let k = 0;
+    JS_FIG = JS_LOAI + """() => { const ra = []; let k = 0;
         for (const s of ['table', 'canvas', 'svg', 'figure']) {
           for (const el of document.querySelectorAll(s)) {
+            if (!trongBai(el) || xau(el)) continue;
             const r = el.getBoundingClientRect();
             const w = Math.max(el.scrollWidth || 0, r.width), h = Math.max(el.scrollHeight || 0, r.height);
-            if (w < 600 || h < 300 || w > 4000 || h > 6000) continue;
+            if (w < 600 || h < 300 || w > 4000 || h > 6000 || caoQua(r)) continue;
             el.setAttribute('data-dre', 'f' + k);
             ra.push({sel: '[data-dre="f' + k + '"]', w, h, tag: s}); k++;
             if (ra.length >= 4) return ra;
@@ -221,7 +243,9 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
         return time.time() - t0 > gio_han
 
     def lay_anh(page, url, so, chup_fig=True):
-        for im in page.evaluate(JS_IMG) or []:
+        # Tran moi trang: goc <= 4 anh, bao khac <= 3. Truoc day vet toi 12 anh
+        # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026).
+        for im in (page.evaluate(JS_IMG) or [])[: 4 if so == 0 else 3]:
             ra["cands"].append({"anh": im["src"], "alt": im["alt"], "og": False, "tu": "browser",
                                 "trang": url, "rong": im["w"], "cao": im["h"], "diem": 45})
         if not chup_fig:
@@ -239,7 +263,9 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
             except Exception:                                # noqa: BLE001
                 continue
             luat_anh.dong_dau_tep(out, "chup_chart")
-            ra["cands"].append({"anh": str(out), "tep": str(out), "alt": f"{f['tag']} chup tu trang",
+            # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
+            # anh_bai -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
+            ra["cands"].append({"anh": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
                                 "og": False, "tu": "chup", "the": f["tag"], "trang": url,
                                 "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "diem": 50})
 
@@ -294,8 +320,16 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
                                 if "news.google.com" in u or _mien(u) == mien_goc \
                                         or any(_mien(u) == _mien(x["url"]) for x in ra["trang_them"]):
                                     continue
+                                td = (page.title() or "")[:160]
+                                # Google News tra ca bai KHONG lien quan (cung tu "AI"):
+                                # bai benh than, letsdatascience (Gimlet 05/09). Phai
+                                # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
+                                import anh_bai as _ab
+                                if len(_ab._tu_dac_trung(ra["tieu_de_en"]) & _ab._tu_dac_trung(td)) < 2:
+                                    print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
+                                    continue
                                 ra["trang_them"].append({"url": u, "loai": "báo",
-                                                         "tieu_de": (page.title() or "")[:160],
+                                                         "tieu_de": td,
                                                          "toa_soan": "https://" + _mien(u)})
                             except Exception:                # noqa: BLE001
                                 continue
@@ -361,15 +395,54 @@ def anh_commons(tu_khoa: str, so: int = 4) -> list:
 
 
 def _ten_rieng_dau(tieu_de: str) -> str:
-    """Ten rieng dau tieu de (hang/san pham) lam tu khoa Commons. Bo the "[News]"
-    dau tieu de truoc — khong thi "News" thanh tu khoa, ra anh bao 1873."""
+    """Cum ten rieng dau tieu de (hang/san pham) lam tu khoa Commons: lay CAC TU
+    VIET HOA LIEN TIEP ("Gimlet Labs", "Thinking Machines"), khong chi mot tu —
+    "Gimlet" mot minh ra cocktail (05/09/2026). Bo the "[News]" dau tieu de."""
     import nguon_bai
     t = re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or "")
-    for w in re.sub(r"[\$;:,\"\'()\[\]|]", " ", t).split():
-        w = w.replace("’s", "").replace("'s", "")
+    ws = re.sub(r"[\$;:,\"'()\[\]|]", " ", t).split()
+    for i, w in enumerate(ws):
         if w[:1].isupper() and w.isalpha() and len(w) >= 4 and w.lower() not in nguon_bai.TU_RONG_TRUY_VAN:
-            return w
+            cum = [w]
+            for w2 in ws[i + 1:i + 3]:
+                if w2[:1].isupper() and w2.isalpha() and w2.lower() not in nguon_bai.TU_RONG_TRUY_VAN \
+                        and w2.lower() not in ("raises", "nabs", "drops", "launches", "unveils", "forecasts"):
+                    cum.append(w2)
+                else:
+                    break
+            return " ".join(cum)
     return ""
+
+
+_CDN = re.compile(r"cloudfront\.net|imgix\.net|akamai|gstatic\.com|googleusercontent\.com|wp\.com|"
+                  r"files\.wordpress\.com|twimg\.com|cloudinary\.com|fastly|brightspotcdn|ggpht|"
+                  r"ytimg\.com|wikimedia\.org|wikipedia\.org|amazonaws\.com|azureedge\.net|"
+                  r"cloudflare|substackcdn|medium\.com|mzstatic|apple\.com|arxiv\.org", re.I)
+# CHI nha cung cap CDN dung chung. Truoc dat ca nhan con "img."/"cdn." -> img.phemex.com
+# (quang cao san crypto tren siliconangle) duoc coi la CDN va lot (05/09/2026).
+
+
+def _goc_mien(h: str) -> str:
+    """registrable domain tho: 2 nhan cuoi (thestar.com.my -> com.my? -> lay 3 neu TLD 2 chu)."""
+    h = (h or "").lower().replace("www.", "")
+    ps = h.split(".")
+    if len(ps) >= 3 and len(ps[-1]) == 2 and len(ps[-2]) <= 3:
+        return ".".join(ps[-3:])
+    return ".".join(ps[-2:])
+
+
+def _host_la_ben_thu_ba(c: dict) -> bool:
+    """Anh nam tren host KHAC domain trang va khong phai CDN -> gan nhu chac la
+    quang cao/widget ben thu ba (banner Phemex tren siliconangle, 05/09/2026).
+    Anh do engine tu chup/tai (tep local, commons, arxiv) khong xet."""
+    if c.get("tep") or c.get("tu") in ("chup", "commons", "arxiv_bia"):
+        return False
+    ha, ht = _mien(c.get("anh", "") or ""), _mien(c.get("trang", "") or "")
+    if not ha or not ht:
+        return False
+    if _goc_mien(ha) == _goc_mien(ht) or _CDN.search(ha):
+        return False
+    return True
 
 
 def tai_va_loc(cands: list, wd: Path, tin_model: bool) -> list:
@@ -396,6 +469,15 @@ def tai_va_loc(cands: list, wd: Path, tin_model: bool) -> list:
             w, hh = im.size
             if min(w, hh) < CANH_NGAN_BO:
                 continue
+            if _host_la_ben_thu_ba(c):
+                print(f"[tai] bo anh host ben thu ba (quang cao?): {_mien(c.get('anh',''))} tren {_mien(c.get('trang',''))}", file=sys.stderr)
+                continue
+            if URL_RAC.search(c.get("anh", "") or "") or URL_RAC.search(c.get("alt", "") or ""):
+                print(f"[tai] bo url/alt rac: {str(c.get('anh'))[-60:]}", file=sys.stderr)
+                continue                                  # placeholder/onboarding/logo/ad
+            if luat_anh.la_anh_rong(im)[0]:
+                print(f"[tai] bo anh RONG: {str(c.get('anh'))[-60:]}", file=sys.stderr)
+                continue
             if (w, hh) in anh_bai.CO_AI_SINH:
                 continue
             ly_do_do_hoa = anh_bai._do_hoa(im)
@@ -418,11 +500,14 @@ def tai_va_loc(cands: list, wd: Path, tin_model: bool) -> list:
         out = goc_dir / f"{ma}.png"
         im.save(out, "PNG", pnginfo=luat_anh.dong_dau(
             "chup_chart" if c.get("tu") == "chup" else "dre_chuan_bi"))
-        hint = bool(anh_bai.QUY.search(c.get("anh", "") or "") or anh_bai.QUY.search(c.get("alt", "") or "")
-                    or anh_bai.QUY_MODEL.search(c.get("alt", "") or "")
+        # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
+        # khong noi len gi (bao boc ca anh minh hoa lan quang cao).
+        hint = bool((c.get("tu") != "chup" and (anh_bai.QUY.search(c.get("anh", "") or "")
+                                                 or anh_bai.QUY.search(c.get("alt", "") or "")
+                                                 or anh_bai.QUY_MODEL.search(c.get("alt", "") or "")))
                     or c.get("the") in ("table", "canvas", "svg"))
         ra.append({"ma": ma, "goc": str(out), "url": c.get("anh", ""),
-                   "alt": (c.get("alt") or "")[:120], "tu": c.get("tu", ""),
+                   "alt": (c.get("alt") or c.get("alt_chup") or "")[:120], "tu": c.get("tu", ""),
                    "trang": c.get("trang", ""), "mien": _mien(c.get("trang") or c.get("anh")),
                    "diem": c.get("diem", 0), "ly_do": c.get("ly_do", ""), "hint_chart": hint})
     return ra
@@ -460,15 +545,81 @@ def _luu_crop(img: Image.Image, out: Path, ti_le_ten: str, cx=0.5, cy=0.5,
     return ra
 
 
-def phan_loai(a: dict, wd: Path) -> dict:
+VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"
+VISION_URL = "http://127.0.0.1:20128/v1/chat/completions"
+
+
+def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
+    """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
+    theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu khong goi
+    duoc (router tat, thieu key): luc do brief noi ro la CHUA ai nhin.
+
+    Do 05/09/2026 tren bo Broadcom: widget linh kien / bang Fear&Greed / logo bao /
+    nguoi dan ong G20 -> khong; ~2s moi anh. Khong heuristic nao bat duoc "widget
+    co khi tren bai Broadcom" — chi co nhin moi biet."""
+    import base64, json as _j, urllib.request
+    try:
+        import env_load
+        key = env_load.bat_buoc("OPENAI_API_KEY")
+    except Exception:                                        # noqa: BLE001
+        return "", None
+    try:
+        b64 = base64.b64encode(Path(path).read_bytes()).decode()
+        hoi = (f"Bai bao: \"{tieu_de}\"." + (f" Cong ty/san pham chinh: {hang}." if hang else "")
+               + "\nTra loi DUNG 2 dong:\n"
+               "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
+               "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
+               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai; khong = quang cao, "
+               "widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/chu de khac)")
+        body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
+                "stream": False, "temperature": 0,
+                "messages": [{"role": "user", "content": [
+                    {"type": "text", "text": hoi},
+                    {"type": "image_url", "image_url": {"url": "data:image/png;base64," + b64}}]}]}
+        req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json",
+                                              "Authorization": "Bearer " + key})
+        raw = urllib.request.urlopen(req, timeout=90).read().decode().strip()
+        if raw.startswith("data:"):
+            raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
+        txt = _j.loads(raw)["choices"][0]["message"]["content"]
+        mo_ta = re.search(r"MO_TA\s*:\s*(.+)", txt)
+        lq = re.search(r"LIEN_QUAN\s*:\s*(co|có|khong|không)", txt, re.I)
+        mt = mo_ta.group(1).strip()[:200] if mo_ta else txt.strip()[:200]
+        lqv = lq.group(1).lower().startswith("c") if lq else None
+        # Chot tat dinh: mo ta neu dung ten hang -> lien quan (anh tru so/san pham
+        # Broadcom bi vision phan "khong" luc co luc khong, 05/09/2026).
+        # ...nhung chi khi mo ta la BOI CANH hang (tru so/san pham/logo/su kien),
+        # khong phai man hinh/driver/phan mem nhac ten hang (A10 Ubuntu 05/09).
+        BOI_CANH = re.compile(r"tr[uụ] s[oở]|t[oò]a nh[aà]|campus|logo|s[aả]n ph[aẩ]m|thi[eế]t b[iị]|"
+                              r"chip|s[uự] ki[eệ]n|v[aă]n ph[oò]ng|nh[aà] m[aá]y|bi[eể]n hi[eệ]u|"
+                              r"headquarters|office|building|product|device|event", re.I)
+        KHONG = re.compile(r"m[aà]n h[iì]nh|giao di[eệ]n|c[uử]a s[oổ]|driver|ph[aầ]n m[eề]m|screenshot|"
+                           r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
+        if hang and lqv is False and hang.lower() in mt.lower() and BOI_CANH.search(mt) and not KHONG.search(mt):
+            lqv = True
+        if lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt):
+            lqv = False
+        return mt, lqv
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[vision] {Path(path).name}: {type(e).__name__}", file=sys.stderr)
+        return "", None
+
+
+def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can."""
     import luat_anh
     img = Image.open(a["goc"]).convert("RGB")
     w, h = img.size
     r = w / h
     la_ct, mo_ta = luat_anh.la_chart(img)
-    if not la_ct and (a.get("hint_chart") or _chart_theo_hinh(img)):
+    phang, _ = luat_anh.do_chart(img)
+    # Override chi khi phep do KHONG noi nguoc: chart that phang >= 82%, anh chup
+    # 52-77% (do 05/09). Truoc day hint tu alt tu gan de len ca phang 52% -> hinh
+    # minh hoa AI thanh "CHART", dan full be ngang, ra hai vung.
+    if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_theo_hinh(img)):
         la_ct, mo_ta = True, mo_ta + "; nen trang + canh day / alt-tag chart"
+    a["mo_ta"], a["lien_quan"] = mo_ta_anh(a["goc"], tieu_de, _ten_rieng_dau(tieu_de)) if tieu_de else ("", None)
     mat = luat_anh.dem_mat(a["goc"]) or 0
     day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
     goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
@@ -507,7 +658,17 @@ def phan_loai(a: dict, wd: Path) -> dict:
     if a.get("commons"):
         a["ghi_chu"].append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin — hợp bìa/slide bối cảnh")
     if mat:
-        a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI → chỉ dùng khi khai \"nhan_vat\": \"<tên người trong bài>\"")
+        ten = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+", a.get("alt", "") or "")
+        if ten:
+            a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
+                                "chỉ dùng khi đúng người đó, khai \"nhan_vat\" y hệt")
+        else:
+            a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
+                                "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")
+            a["dung"] = [d for d in a["dung"] if d != "bìa"]
+    if a.get("lien_quan") is False:
+        a["dung"] = []
+        a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
     if a["canh_ngan"] < luat_anh.CANH_NGAN_MIN:
         a["ghi_chu"].append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
     if day > luat_anh.DAY_SANG_MAX and not la_ct:
@@ -677,7 +838,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
                               "tu": "arxiv_bia", "trang": link, "diem": 60})
     cands.sort(key=lambda c: -c.get("diem", 0))
     anh = tai_va_loc(cands, wd, tin_model)
-    print(f"[anh] tai duoc {len(anh)} anh dung duoc", file=sys.stderr)
+    print(f"[anh] tai duoc {len(anh)} anh (chua phan loai/nhin)", file=sys.stderr)
     if len(anh) < 5:
         # Tin mong anh: them anh that tu Wikimedia Commons theo ten rieng dau
         # tieu de (tru so, san pham, su kien). Chi bu phan thieu.
@@ -697,10 +858,56 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
                     a["goc"] = str(moi)
                     a["commons"] = True
                     anh.append(a)
-    anh = [phan_loai(a, wd) for a in anh]
+    print("[vision] nhin tung anh, hoi co lien quan bai khong...", file=sys.stderr)
+    anh = [phan_loai(a, wd, nguon.get("tieu_de_en") or title) for a in anh]
+    dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
+    chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
+    print(f"[anh] {len(dung_duoc)} anh DUNG DUOC / {len(anh)} tai ve"
+          + (f"; CHUA NHIN duoc: {', '.join(chua_nhin)}" if chua_nhin else ""), file=sys.stderr)
+
+    flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
+    toi_thieu = carousel.FLAGSHIP_MIN if flagship else 5
+    tieu_de_nhin = nguon.get("tieu_de_en") or title
+    if len(dung_duoc) < toi_thieu and not khong_browser:
+        # VONG TIM RONG (Ong Chu 05/09/2026): kho mong thi engine phai di tim,
+        # khong bao "du" bang rac. Them bao (Bing, loc lien quan, bo mien da co)
+        # mo bang browser lay anh + Commons; tai, NHIN, dem lai. Mot vong.
+        import nguon_bai
+        mien_co = {_mien(t.get("url", "")) for t in trang} | {a.get("mien") for a in anh}
+        them_bao = nguon_bai.bao_khac_bing(tieu_de_nhin, so=6, bo_mien=tuple(x for x in mien_co if x))[:4]
+        print(f"[tim rong] thieu ({len(dung_duoc)}/{toi_thieu}): +{len(them_bao)} bao moi"
+              + (": " + ", ".join(_mien(t["url"]) for t in them_bao) if them_bao else ""), file=sys.stderr)
+        wd2 = wd / "them"
+        cands2 = []
+        if them_bao:
+            bp2 = browser_pass([{"url": t["url"], "loai": "báo"} for t in them_bao], wd2, tim_them=False)
+            cands2 += bp2["cands"]
+        tk = _ten_rieng_dau(tieu_de_nhin)
+        if tk:
+            cands2 += anh_commons(tk, so=6)
+        da = {a["url"] for a in anh}
+        cands2 = [c for c in cands2 if c["anh"] not in da]
+        cands2.sort(key=lambda c: -c.get("diem", 0))
+        bo_sung = tai_va_loc(cands2, wd2, tin_model) if cands2 else []
+        n0 = len(anh)
+        for i, a in enumerate(bo_sung, start=n0 + 1):
+            if len(anh) >= TOI_DA_ANH + 4:
+                break
+            a["ma"] = f"A{i}"
+            moi = wd / "goc" / f"{a['ma']}.png"
+            Path(a["goc"]).replace(moi)
+            a["goc"] = str(moi)
+            if a.get("tu") == "commons":
+                a["commons"] = True
+            anh.append(phan_loai(a, wd, tieu_de_nhin))
+        dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
+        chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
+        print(f"[tim rong] sau vong: {len(dung_duoc)} anh DUNG DUOC / {len(anh)} "
+              f"(+{len(anh) - n0} tai them)", file=sys.stderr)
+    so_mien = sorted({(a.get("mien") or a.get("tu") or "?") for a in dung_duoc})
 
     goi_y_bia = [a["ma"] for a in sorted(
-        (a for a in anh if "bìa" in a["dung"]),
+        (a for a in anh if "bìa" in a["dung"] and a.get("lien_quan") is not False),
         key=lambda a: (a["goc_trai_sang"], -a["canh_ngan"]))][:3]
     print("[tu_lieu] boc chu tu nguon...", file=sys.stderr)
     tl = gom_tu_lieu(title, link, nguon_path, wd, nguon.get("tieu_de_en", ""))
@@ -712,13 +919,14 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
               "so_nguon": max(tl.get("so_nguon", 0), 1), "tu": "browser"}
         (wd / "tu_lieu.md").write_text("# Tư liệu (chữ lấy từ browser)\n\n" + "\n\n".join(doan[:60]),
                                        encoding="utf-8")
-    flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
     m = {"draft_id": draft_id, "brand": _brand_cua(meta), "title": title, "link": link,
          "via": meta.get("via", ""), "category": meta.get("category", ""),
          "summary": tom.get("summary", ""), "source_note": tom.get("source_note", ""),
          "workdir": str(wd), "tao_luc": int(time.time()),
-         "flagship": flagship, "toi_thieu": carousel.FLAGSHIP_MIN if flagship else 5,
-         "anh": anh, "cap_ghep": cap_ghep(anh), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
+         "flagship": flagship, "toi_thieu": toi_thieu, "so_mien": so_mien,
+         "anh": anh, "cap_ghep": cap_ghep(dung_duoc), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
+         "so_dung_duoc": len(dung_duoc), "chua_nhin": chua_nhin,
+         "chu_bai": (bp.get("chu") or "")[:20000],
          "nguon_path": str(nguon_path), "tieu_de_en": nguon.get("tieu_de_en", "")}
     bang_anh(anh, wd / "bang_anh.png")
     return m

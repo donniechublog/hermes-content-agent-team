@@ -55,11 +55,29 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if not m["anh"]:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng hình giả. Kết thúc task bằng "
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
+    so_dd = m.get("so_dung_duoc", len([a for a in m["anh"] if a["dung"]]))
+    if m["anh"] and so_dd < m.get("toi_thieu", 5):
+        L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} ảnh dùng được, cần ≥ {m.get('toi_thieu', 5)} slide. "
+                 "KHÔNG nhồi ảnh không liên quan cho đủ. Hoặc gộp ý để giảm số slide, hoặc "
+                 "kết thúc task: \"Thiếu ảnh thật cho tin này\" kèm số ảnh có.")
+    if m.get("so_mien") is not None:
+        L.append(f"Ảnh dùng được lấy từ {len(m['so_mien'])} nguồn: {', '.join(m['so_mien']) or '—'}"
+                 + (" — chỉ MỘT nguồn; bộ ≥4 slide nên có ảnh từ ≥2 nguồn, cân nhắc gộp ý."
+                    if len(m['so_mien']) == 1 and so_dd >= 4 else ""))
+    if m.get("chua_nhin"):
+        L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
+                 "số, có thể sai; mở bang_anh.png trước khi dùng.")
     for a in m["anh"]:
+        if a.get("lien_quan") is False:
+            L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "
+                     f"(nguồn: {a['mien'] or a['tu']})")
+            continue
         dong = (f"- {a['ma']}: {a['w']}x{a['h']} ({a['ti_le']}) {a['loai'].upper()}"
-                f"{' NGANG' if a['ngang'] else ''} | dùng: {'; '.join(a['dung'])}"
+                f"{' NGANG' if a['ngang'] else ''} | dùng: {'; '.join(a['dung']) or 'không'}"
                 f" | nguồn: {a['mien'] or a['tu']}")
-        if a.get("alt"):
+        if a.get("mo_ta"):
+            dong += f" | ảnh là: {a['mo_ta'][:110]}"
+        elif a.get("alt"):
             dong += f" | alt: {a['alt'][:70]}"
         if a["ghi_chu"]:
             dong += " | " + "; ".join(a["ghi_chu"])
@@ -69,7 +87,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if m.get("cap_ghep"):
         L.append("Cặp ảnh ngang ghép dọc được (cùng tone): " +
                  ", ".join("+".join(c) for c in m["cap_ghep"]))
-    L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/bang_anh.png (mở tối đa một lần, khi thật cần).")
+    L.append("Mỗi ảnh đã được NHÌN (cột \"ảnh là\"). Ảnh ❌ tuyệt đối không dùng dù nhãn gì. "
+             f"Bảng thu nhỏ: {m['workdir']}/bang_anh.png")
     L.append("")
     L.append(f"## Viết spec vào: {m['workdir']}/spec.json")
     khung = {
