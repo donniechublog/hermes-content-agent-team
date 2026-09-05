@@ -164,6 +164,13 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     ra = {"tam_co": spec.get("tam_co") or ("flagship" if m.get("flagship") else None)}
     if not ra["tam_co"]:
         ra.pop("tam_co")
+    nen = str(spec.get("nen") or "").strip().lower()
+    if nen:
+        import carousel
+        if nen not in carousel.NEN:
+            loi.append(f"\"nen\": \"{nen}\" không hợp lệ — chọn {' | '.join(carousel.NEN)}")
+        else:
+            ra["nen"] = nen
     c = giai(cover, "bìa", True) if cover else None
     if c is not None:
         if not str(c.get("hook") or "").strip():

@@ -8,7 +8,7 @@ Khong vien, khong vach, khong vung den rieng, khong hai vung tach roi. Chu de
 len anh qua gradient dai; nen bao gio cung la anh (lam mo), khong bao gio la
 mot hop den dat canh anh.
 
-Bo cuc moi slide (1080x1350, ti le 4:5, nen den):
+Bo cuc moi slide (1080x1350, ti le 4:5; nen "toi" mac dinh hoac "sang" — xem NEN):
 
   Slide bia (slide 1):
     - Anh phu kin the (cover), man toi day dan o nua duoi.
@@ -66,8 +66,25 @@ from card import (
 # ---- Khung so -------------------------------------------------------------
 W, H = 1080, 1350                # kho dang chuan Instagram/Facebook 4:5
 PAD = 84                         # le trai/phai cua chu, do tu mau tham chieu
-BG = (0, 0, 0)                   # den tuyet doi — dau an cua kieu carousel nay
-FG = (255, 255, 255)            # chu chinh trang
+# Hai bien the nen (Ong Chu chot 05/09/2026: nen KHONG co dinh den, nen phuc vu
+# anh, den va trang la hai mau uu tien). "toi" = anh phu kin + man toi lien mach
+# + chu trang (mac dinh); "sang" = cung bo cuc, man SANG lien mach + chu den.
+# Spec khai "nen": "sang" (hoac --nen sang). Moi bo carousel MOT nen.
+NEN = {"toi": {"bg": (0, 0, 0), "fg": (255, 255, 255), "mo": (190, 190, 190)},
+       "sang": {"bg": (255, 255, 255), "fg": (0, 0, 0), "mo": (80, 80, 80)}}
+NEN_HIEN = "toi"
+BG = (0, 0, 0)                   # nen/man phu (dat lai qua dat_nen)
+FG = (255, 255, 255)            # chu chinh (dat lai qua dat_nen)
+MO = (190, 190, 190)            # chu phu (dong nguon quote)
+
+
+def dat_nen(ten):
+    """Chon bien the nen cho ca bo. Goi truoc khi dung slide nao."""
+    global NEN_HIEN, BG, FG, MO
+    if ten not in NEN:
+        raise ValueError(f"nen phai la mot trong: {', '.join(NEN)} (co: {ten!r})")
+    NEN_HIEN = ten
+    BG, FG, MO = NEN[ten]["bg"], NEN[ten]["fg"], NEN[ten]["mo"]
 # Watermark ten kenh: MOT mau xanh co dinh (xanh nhu icon Finder cua macOS),
 # KHONG doi theo brand nua.
 WM = (10, 132, 255)             # #0A84FF — mau du phong neu chua nap thuong hieu
@@ -160,6 +177,25 @@ def _cyan():
     """CYAN nhan dien da nap qua dat_thuong_hieu (donniechublog #00cce0, dcgr
     trang). Chua nap thi ve mau du phong."""
     return card.CYAN or WM
+
+
+def _net():
+    """Mau NET (khung quote): CYAN nhan dien, nhung tren nen SANG mau gan trang
+    (dcgr) thi khong thay — doi sang den. Chip van giu CYAN vi co vien den."""
+    c = _cyan()
+    if NEN_HIEN == "sang" and card._do_sang(c) > 0.85:
+        return (0, 0, 0)
+    return c
+
+
+def _mau_dau(mau_hang):
+    """Mau dau " theo hang: nen toi keo sang cho doc duoc; nen sang giu nguyen
+    (mau hang thuong dam, doc ro tren trang), tru khi qua nhat thi ve _net()."""
+    if not mau_hang:
+        return _net()
+    if NEN_HIEN == "sang":
+        return _net() if card._do_sang(tuple(mau_hang[:3])) > 0.85 else tuple(mau_hang[:3])
+    return card._du_sang(mau_hang)
 
 
 def _chip_neo(d, txt, font, x, y, fill, fg=(0, 0, 0), anchor="l",
@@ -433,8 +469,8 @@ def build_body_quote(img_path, quote, attrib, handle, out):
 
     # Net khung xanh Apple (WM) co dinh; dau " theo hang nhac trong quote/nguon.
     mau_hang = card._mau_hang_trong(quote) or card._mau_hang_trong(attrib)
-    mark_col = card._du_sang(mau_hang) if mau_hang else _cyan()
-    card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, _cyan(), mark_col)
+    mark_col = _mau_dau(mau_hang)
+    card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, _net(), mark_col)
 
     # Chip ten kenh goc TREN-PHAI khung, tam chip ngang muc net ngang tren.
     if handle:
@@ -448,7 +484,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
-        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=(190, 190, 190))
+        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=MO)
         ay += at_lh
     canvas.convert("RGB").save(out, "PNG")
 
@@ -490,7 +526,8 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
         bb = _watermark(canvas, category, y=y_label)
         cx = (bb[2] + 16 + 6) if bb else PAD           # cach chip truoc 16px + bong 6px
-        _chip_neo(d, label, lf, cx, y_label, fill=(255, 255, 255), anchor="l")
+        # chip label: trang chu den tren nen toi, den chu trang tren nen sang
+        _chip_neo(d, label, lf, cx, y_label, fill=FG, fg=BG, anchor="l")
     else:
         _watermark(canvas, category)    # chip category goc duoi-trai
     canvas.convert("RGB").save(out, "PNG")
@@ -628,6 +665,8 @@ def main():
     ap.add_argument("--brand", default="donniechublog",
                     help="donniechublog | dcgr — quyet dinh handle mac dinh")
     ap.add_argument("--handle", help="Ghi de watermark (mac dinh lay theo brand)")
+    ap.add_argument("--nen", choices=list(NEN),
+                    help="Bien the nen: toi (mac dinh) | sang. Ghi de spec.nen")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Tat cong chan tieng Viet (chi khi chu THAT SU la tieng Anh)")
     a = ap.parse_args()
@@ -639,6 +678,11 @@ def main():
         sys.exit(f"Thuong hieu khong nhan ra: {a.brand}")
     b = dat_thuong_hieu(a.brand)
     handle = a.handle or spec.get("handle") or b["handle"]
+    nen = a.nen or str(spec.get("nen") or "toi").strip().lower()
+    try:
+        dat_nen(nen)
+    except ValueError as e:
+        sys.exit(f"{e}")
 
     cover = spec.get("cover") or {}
     slides = spec.get("slides") or []

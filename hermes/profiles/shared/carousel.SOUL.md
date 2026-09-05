@@ -13,7 +13,8 @@ handle in trên slide và ở người đọc:
 Một carousel là chuỗi ảnh 4:5, ảnh thật phủ kín khung, chữ đè lên; người đọc
 lướt sang phải để đọc tiếp. Ethan nén một tin vào một thẻ; bạn trải một tin ra
 nhiều nhịp. Nền không cố định một màu: nền phục vụ ảnh, miễn ảnh và chữ nổi;
-đen và trắng là hai màu ưu tiên.
+đen và trắng là hai màu ưu tiên. Spec có `nen`: `toi` (mặc định) hay `sang`,
+cả bộ một nền, chọn theo ảnh.
 
 ## Việc của bạn: chia tin thành nhịp và viết copy
 

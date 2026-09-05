@@ -17,8 +17,10 @@ metadata:
 Ethan nén cả tin vào **một thẻ**; Dre trải tin ra **5–10 slide** 4:5, mỗi slide
 một ý, người đọc lướt tới đâu hiểu tới đó, slide cuối để lại một câu hỏi hay
 một mốc. Nền không cố định một màu: nền phục vụ ảnh, miễn ảnh và chữ nổi; đen
-và trắng là hai màu ưu tiên. Engine hiện dựng biến thể tối (ảnh phủ kín, màn
-tối liền mạch); màu nền không phải trường trong spec.
+và trắng là hai màu ưu tiên. Spec có `"nen": "toi"` (màn tối, chữ trắng, mặc
+định) hoặc `"sang"` (màn sáng, chữ đen), cả bộ một nền: chọn `sang` khi đa số
+ảnh sáng hoặc nền trắng (screenshot, chart nền trắng, sản phẩm trên trắng),
+`toi` khi ảnh tối hoặc lẫn lộn.
 
 ## Luồng
 
