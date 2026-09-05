@@ -16,11 +16,10 @@ từ đầu và chạy thẳng worker → verifier → synthesizer, KHÔNG có c
     thẻ gốc "Bài: …"  (done ngay, assignee `ban_bien_tap` — không ai nhận việc)
       └─ task Dre (parent=gốc)          ← approve_service tạo khi Ông Chủ chọn số
            └─ task Miles (parent=Dre,gốc) ← tạo khi Ông Chủ bấm "Duyệt ảnh"
-                └─ task Ada soát (parent=Miles,gốc) ← tạo khi Miles xong
 
 Mỗi vai kết thúc bằng `kanban_complete(summary, metadata)` — hermes tự đưa
 summary/metadata đó vào context của task con ("Parent task results"), nên
-Miles thấy Dre, Ada thấy Miles mà không ai phải "nhắn" ai. Bảng đen trên thẻ
+Miles thấy Dre mà không ai phải "nhắn" ai. Bảng đen trên thẻ
 gốc là bản ghi gộp toàn bộ chuỗi (đọc bằng `kanban_show(task_id=<gốc>)`).
 
 Dùng (chạy bằng python của hermes-agent, HERMES_HOME của container):

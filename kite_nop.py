@@ -167,7 +167,7 @@ def main() -> int:
         mid = nc.gui_album("carousel-edu", files, f"Carousel edu {n} slide: {hook}", a.draft_id, wd, da_dung,
                            {"theme": theme, "hero": hero, "hook": hook})
     # Bang den (kanban swarm): ban giao co cau truc cua Kite len the goc + dong
-    # "[metadata]" de Kite dan vao kanban_complete -> Miles/Ada thay trong
+    # "[metadata]" de Kite dan vao kanban_complete -> Miles thay trong
     # "Parent task results". Best-effort.
     md = {"slide": n, "hook": hook, "theme": theme, "hero": hero, "hinh_that": hinh,
           "tep": str(out), "ban_giao": str(bg_path), "message_id": mid, "vai": "kite"}

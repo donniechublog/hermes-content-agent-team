@@ -101,8 +101,8 @@ def main() -> int:
         return 1
     print((r2.stdout or "").strip()[-300:])
     # Bang den (kanban swarm, 05/09): ghi ban giao cua Miles len the goc; JSON nay
-    # cung in ra "[metadata]" de Miles dan vao kanban_complete -> Ada soat thay
-    # ngay trong "Parent task results". Best-effort.
+    # cung in ra "[metadata]" de Miles dan vao kanban_complete (len bang den).
+    # Best-effort.
     md = {"do_dai": tin.get("do_dai"), "so_cau": tin.get("so_cau"),
           "so_trong_caption": tin.get("so_trong_caption"),
           "draft": f"drafts/{a.draft_id}.json"}

@@ -289,7 +289,7 @@ def main() -> int:
                         if m_["ma"] in {ma for _, ds in dung_anh for ma in ds}})
     # Bang den (kanban swarm, 05/09): script ghi ban giao co cau truc len the goc
     # cua bai — code lam, LLM khong phai nho. Cung JSON nay in ra dong
-    # "[metadata]" de Dre dan vao kanban_complete(metadata=...) -> Miles/Ada thay
+    # "[metadata]" de Dre dan vao kanban_complete(metadata=...) -> Miles thay
     # trong "Parent task results". Best-effort: bang den hong khong hong bai.
     md = {"slide": n, "hook": hook, "nguon_anh": nguon_anh, "tep": str(out),
           "ban_giao": str(bg_path), "message_id": mid}

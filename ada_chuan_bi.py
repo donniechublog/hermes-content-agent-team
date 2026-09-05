@@ -163,7 +163,7 @@ def gom_9router(ngay: int) -> dict:
     except Exception:                                        # noqa: BLE001
         return {}
     hom_nay = datetime.now(VN).date()
-    theo_ngay, lat, loi, ip, khoa = [], collections.Counter(), collections.Counter(), {}, collections.Counter()
+    theo_ngay, lat, loi, khoa = [], collections.Counter(), collections.Counter(), collections.Counter()
     vai, brand, rong, loi_kn, chi_phi = {}, {}, collections.Counter(), [], {}
     for i in range(ngay, -1, -1):
         d = (hom_nay - timedelta(days=i)).strftime("%Y-%m-%d")
@@ -174,8 +174,7 @@ def gom_9router(ngay: int) -> dict:
         model_chinh = next(iter(m["theo_model"]), "-")
         theo_ngay.append({"ngay": d[5:], "req": t["req"], "usd": t["usd"], "cache_pct": t["cache_pct"],
                           "lat": m.get("fallback", 0), "loi": t["loi"],
-                          "ip_ngoai": sum(1 for v in m["ket_noi"]["ip"].values() if v["ngoai"]),
-                          "watcher": m["ket_noi"]["co_watcher"], "model_chinh": model_chinh})
+                          "model_chinh": model_chinh})
         lat.update(m["lat_model"])
         loi.update(m["loi"])
         for nhan, v in m["theo_model"].items():          # $ theo model gop N ngay (thay usage_audit)
@@ -185,9 +184,6 @@ def gom_9router(ngay: int) -> dict:
             c["usd"] = round(c["usd"] + v["usd"], 4)
         for k, v in m["theo_khoa"].items():
             khoa[k] += v["usd"]
-        for k, v in m["ket_noi"]["ip"].items():
-            a = ip.setdefault(k, {"ket_noi": 0, "ngoai": v["ngoai"]})
-            a["ket_noi"] += v["ket_noi"]
         rong.update(m.get("rong") or {})
         loi_kn += [f"{d[5:]} {x['ten']} [{x['ma']}] {x['loi'][:60]}" for x in (m.get("loi_ket_noi") or []) if x["trong_ngay"]]
         for k, a in (m.get("vai") or {}).get("theo_vai", {}).items():
@@ -208,7 +204,7 @@ def gom_9router(ngay: int) -> dict:
         t["usd_bai"] = round(t["usd"] / t["bai"], 4) if t["bai"] else None
     return {"theo_ngay": theo_ngay, "vai": dict(sorted(vai.items(), key=lambda kv: -kv[1]["usd"])), "brand": brand,
             "rong": dict(rong.most_common(5)), "loi_ket_noi": loi_kn[:8], "lat_model": dict(lat.most_common(6)), "loi": dict(loi.most_common(6)),
-            "khoa": {k: round(v, 4) for k, v in khoa.items()}, "ip": ip, "chi_phi": chi_phi}
+            "khoa": {k: round(v, 4) for k, v in khoa.items()}, "chi_phi": chi_phi}
 
 
 def viet_brief(m: dict, wd: Path) -> str:
@@ -245,10 +241,9 @@ def viet_brief(m: dict, wd: Path) -> str:
             f"{k}: {v['req']} req, {v['prompt']:,} prompt, ${v['usd']}" for k, v in top))
     nk = tk.get("nhat_ky_9router") or {}
     if nk.get("theo_ngay"):
-        L += ["", "## 9router theo ngày (req / $ / cache% / fallback v4-flash→deepseek-chat / lỗi / IP ngoài | model tốn nhất)"]
+        L += ["", "## 9router theo ngày (req / $ / cache% / fallback v4-flash→deepseek-chat / lỗi | model tốn nhất)"]
         for d in nk["theo_ngay"]:
-            ipn = f"{d['ip_ngoai']}" if d["watcher"] else "?"
-            L.append(f"  - {d['ngay']}: {d['req']} / ${d['usd']} / {d['cache_pct']}% / {d['lat']} / {d['loi']} / {ipn} | {d['model_chinh']}")
+            L.append(f"  - {d['ngay']}: {d['req']} / ${d['usd']} / {d['cache_pct']}% / {d['lat']} / {d['loi']} | {d['model_chinh']}")
         if nk["lat_model"]:
             L.append("Đổi model liên tiếp gộp (gồm cả vai chạy song song, chỉ v4-flash→deepseek-chat là fallback thật): "
                      + "; ".join(f"{k} {v} lần" for k, v in nk["lat_model"].items()))
@@ -269,11 +264,6 @@ def viet_brief(m: dict, wd: Path) -> str:
             L.append("Connection lỗi trong ngày: " + "; ".join(nk["loi_ket_noi"]))
         if nk["khoa"]:
             L.append("Theo khoá API: " + ", ".join(f"{k} ${v}" for k, v in nk["khoa"].items()))
-        if nk["ip"]:
-            L.append("IP máy gọi (kết nối TCP): " + ", ".join(
-                f"{k} {v['ket_noi']}{' NGOÀI' if v['ngoai'] else ''}" for k, v in nk["ip"].items()))
-        elif any(not d["watcher"] for d in nk["theo_ngay"]):
-            L.append("IP: watcher 9router-ket-noi chưa chạy — không có dữ liệu IP, đừng suy đoán.")
     L += ["", f"## Viết nhận xét vào: {wd}/spec.json — CHỈ từ số liệu trên, mỗi ý kèm bằng chứng (bài nào, điểm bao nhiêu, kết quả gì)",
           json.dumps({"nhan_xet": ["<3–5 điều rút ra, mỗi điều một câu có số>"],
                       "de_xuat_rubric": [{"thay_doi": "<sửa trọng số/tiêu chí gì>", "bang_chung": "<bài, điểm, kết quả>"}],

@@ -43,10 +43,9 @@ def dung_bao_cao(m: dict, spec: dict) -> str:
         L += ["", f"<b>Token:</b> {bo_dau_cam(str(spec['token']))}"]
     nk = tk.get("nhat_ky_9router") or {}
     if nk.get("theo_ngay"):
-        L += ["", "<b>9router theo ngày</b> (req / $ / cache% / fallback / lỗi / IP ngoài)"]
+        L += ["", "<b>9router theo ngày</b> (req / $ / cache% / fallback / lỗi)"]
         for d in nk["theo_ngay"]:
-            L.append(f"• {d['ngay']}: {d['req']} / ${d['usd']} / {d['cache_pct']}% / {d['lat']} / {d['loi']} / "
-                     f"{d['ip_ngoai'] if d['watcher'] else '?'}")
+            L.append(f"• {d['ngay']}: {d['req']} / ${d['usd']} / {d['cache_pct']}% / {d['lat']} / {d['loi']}")
     if nk.get("vai"):
         L.append("<b>$ theo vai:</b> " + "; ".join(f"{k} ${t['usd']}" for k, t in list(nk["vai"].items())[:4]) + ".")
     if nk.get("brand"):
