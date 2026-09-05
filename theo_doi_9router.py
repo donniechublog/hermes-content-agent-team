@@ -29,7 +29,8 @@ cấp khoá 9router riêng cho từng máy — xem mục "Điểm mù" trong REA
 Dùng:
     venv/bin/python theo_doi_9router.py                 # chốt hôm qua, in .md
     venv/bin/python theo_doi_9router.py --ngay 2026-09-04
-    venv/bin/python theo_doi_9router.py --ngay 2026-09-04 --canh-bao   # gửi analyst nếu có chuyện
+    venv/bin/python theo_doi_9router.py --ngay 2026-09-04 --gui        # tóm tắt + link → topic analyst
+    venv/bin/python theo_doi_9router.py --ngay 2026-09-04 --canh-bao   # chỉ gửi khi có chuyện
     venv/bin/python theo_doi_9router.py --canh          # watcher, chạy mãi
 """
 import argparse
@@ -68,6 +69,9 @@ RONG_PROMPT_MIN = 1000
 # Mọi HERMES_HOME đang chạy (per-brand) → $ theo vai gộp cả hai brand.
 HERMES_HOMES = sorted(Path.home().glob(".hermes-*"))
 DRAFTS = ROOT / "drafts"
+# Link trong tin Telegram → nhat_ky_web.py (netbird IP để điện thoại mở được
+# không cần DNS). Đổi bằng biến môi trường NHAT_KY_URL.
+WEB_URL = os.environ.get("NHAT_KY_URL", "http://100.87.121.46:9130").rstrip("/")
 
 
 # ---------------------------------------------------------------- thời gian
@@ -487,6 +491,27 @@ def van_de(m: dict) -> list[str]:
     return ra
 
 
+def tom_tat_tele(m: dict) -> str:
+    """Tin Telegram mỗi sáng: 4 số quan trọng + $/bài + vai đắt nhất + cảnh báo
+    + link bản đầy đủ. Không bảng (Telegram không render), không ảnh."""
+    ngay = m["ngay"]
+    if m.get("loi_doc"):
+        return f"<b>9router {ngay[8:]}/{ngay[5:7]}</b>: {m['loi_doc']}"
+    t = m["tong"]
+    L = [f"<b>9router {ngay[8:]}/{ngay[5:7]}</b>: {t['req']} req · ${t['usd']} · cache {t['cache_pct']}% · fallback {m['fallback']}"]
+    v = m.get("vai") or {}
+    if v.get("theo_brand"):
+        L.append("$/bài: " + " · ".join(
+            f"{b} {('$' + str(x['usd_bai'])) if x['usd_bai'] is not None else 'chưa có bài'} ({x['bai']} bài)"
+            for b, x in v["theo_brand"].items()))
+    if v.get("theo_vai"):
+        L.append("Đắt nhất: " + ", ".join(f"{k} ${a['usd']}" for k, a in list(v["theo_vai"].items())[:3]))
+    for x in van_de(m):
+        L.append(f"⚠ {x}")
+    L.append(f'Chi tiết: <a href="{WEB_URL}/9router/{ngay}">{WEB_URL}/9router/{ngay}</a>')
+    return "\n".join(L)
+
+
 def dung(ngay: str) -> tuple[dict, Path]:
     """Đọc + ghi json/md cho một ngày. Trả (số liệu, đường dẫn .md)."""
     NHAT_KY.mkdir(parents=True, exist_ok=True)
@@ -514,7 +539,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Nhật ký 9router theo ngày + watcher IP")
     ap.add_argument("--ngay", help="YYYY-MM-DD giờ VN (mặc định hôm qua)")
     ap.add_argument("--canh", action="store_true", help="chạy watcher kết nối (mãi)")
-    ap.add_argument("--canh-bao", action="store_true", help="gửi topic analyst nếu có IP lạ/lật model/lỗi")
+    ap.add_argument("--gui", action="store_true", help="gửi tóm tắt ngày + link vào topic analyst (luôn gửi)")
+    ap.add_argument("--canh-bao", action="store_true", help="chỉ gửi khi có IP lạ/fallback/lỗi/phiên rỗng/connection chết")
     ap.add_argument("--im", action="store_true")
     a = ap.parse_args()
     if a.canh:
@@ -526,9 +552,11 @@ def main() -> int:
         print(p.read_text(encoding="utf-8"))
         print(f"[xong] {p}")
     vd = van_de(m)
-    if a.canh_bao and vd:
+    if a.gui or (a.canh_bao and vd):
         import usage_audit
-        usage_audit.gui(f"<b>⚠️ 9router {ngay}</b>\n\n" + "\n".join(f"- {x}" for x in vd))
+        usage_audit.gui(tom_tat_tele(m))
+    elif not a.im:
+        print("\n--- tin Telegram sẽ là ---\n" + tom_tat_tele(m))
     return 0
 
 

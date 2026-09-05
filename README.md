@@ -236,6 +236,10 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 - `hermes-gateway` — gateway hermes, chứa dispatcher kanban
 - `hermes-approve` — dịch vụ duyệt bài (tệp này)
 - `hermes-dashboard` — bảng điều khiển web, cổng 9119
+- `nhat-ky-web` — user unit (`hermes/systemd/nhat-ky-web.service`), `nhat_ky_web.py` cổng 9130:
+  `/` danh sách ngày, `/9router/<ngày>` bảng đầy đủ, `.json` số thô. Tin Telegram 6h sáng
+  (chỉ brand blog gửi, tránh trùng) là tóm tắt req · $ · cache% · fallback + $/bài + link
+  `http://100.87.121.46:9130/9router/<ngày>` (netbird; đổi bằng `NHAT_KY_URL`). Không ảnh, không bảng trong Telegram
 - `9router-ket-noi` — user unit (`hermes/systemd/9router-ket-noi.service`), watcher IP kết nối
   tới cổng 20128 → `state/9router/ket_noi_<ngày>.jsonl`. Không root, không đọc nội dung
 
@@ -244,7 +248,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 - `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN** (22:00 UTC, từ 04/09/2026), ba vai đi tìm tin, chạy nối tiếp vì `max_in_progress: 1`
 - `usage-audit` — 06:00 VN, soi usage thật, bắt fallback âm thầm
 - `nhat-ky-daily` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router hôm qua
-  (`theo_doi_9router.py --canh-bao`: IP ngoài loopback / fallback thật / lỗi → topic analyst)
+  (`theo_doi_9router.py --gui`: tóm tắt ngày + cảnh báo IP ngoài / fallback / lỗi / phiên rỗng / connection chết + link web → topic analyst)
 - `model-watch` — 30 phút/lần, dò sức khoẻ model
 - `moat-publish-watch` — 1 phút/lần, hỏi moat xem bài đã lên social chưa. Im lặng khi
   không có gì mới; hỏi theo `workflow_id` (khoá chính) chứ không phải `external_id`;
