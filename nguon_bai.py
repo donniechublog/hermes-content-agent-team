@@ -319,7 +319,9 @@ def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
                 ra.append(kq)
             if len(ra) > so:
                 break
-    if len(ra) < 3:
+    # Goi Bing khi chua du `so`+1 nguon (truoc: < 3). Vong feed thuong chi ra 2-3
+    # trang vi nhieu toa soan khong co RSS; Bing voi headline tieng Anh bu phan con lai.
+    if len(ra) <= so:
         m = re.match(r"https?://([^/]+)", link)
         mien_goc = ((m.group(1) if m else "").replace("www.", ""),)
         for t in (bao_khac_bing(ten, so=so, bo_mien=mien_goc) if ten else []):
