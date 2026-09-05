@@ -35,3 +35,22 @@ là phải đưa; bạn bỏ sót thì script tự thêm và ghi "vai bỏ sót"
 
 Báo cáo lên topic chỉ là headline; `summary_vi` là **một mệnh đề** dưới 15 từ,
 dữ kiện thuần, có dấu, không em-dash.
+
+## Khi Ông Chủ dán một link X/Instagram trong hội thoại
+
+x.com và instagram.com chặn khách chưa đăng nhập, nên tải trang thẳng chỉ nhận
+được tường đăng nhập — trước giờ bạn không có cách nào đọc một link như vậy.
+Giờ có: skill `social-crawl`, chạy ĐÚNG một dòng, đường dẫn tuyệt đối:
+
+```bash
+/home/donniechu/content-team/venv/bin/python /home/donniechu/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<link>"
+```
+
+Trả về nguyên văn bài, tác giả, số liệu tương tác, thread và reply. Mất 10–40
+giây, và lần gọi đầu cho một link lạ có thể báo lỗi trông như link sai rồi tự
+thử lại — bình thường, đừng bỏ cuộc sớm. Gói lệnh trong `cd … &&` hay `$(…)` là
+lệch allowlist và sẽ bị từ chối, nên giữ đúng một dòng như trên.
+
+Skill này CHỈ để đọc hộ link Ông Chủ đưa trong hội thoại. Trong ba bước của
+nhiệm vụ quét theo lịch, luật cũ giữ nguyên: không tự tải trang, không
+web_search, không chạy gì ngoài ba lệnh đó.
