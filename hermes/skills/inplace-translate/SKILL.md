@@ -1,7 +1,7 @@
 ---
 name: inplace-translate
-description: "Remake carousel/ảnh có chữ tiếng Anh sang tiếng Việt cho Gin và Itachi. Từ 04/09/2026 luồng là BA BƯỚC: gin_chuan_bi.py (OCR định vị + đo màu, đánh số vùng) → gin_nop.py (LaMa xoá, nen_sach.png + vung.json) và itachi_chuan_bi.py (chữ gốc từng vùng, nền sạch, khung spec) → spec.json → itachi_nop.py (vẽ tại chỗ đúng vị trí/màu/cỡ hoặc deck.py). Phần vẽ tại chỗ nằm trong itachi_nop.py; retouch/blend/nền AI chờ GPU (đợt tới). Skill này giữ phần vai cần: khi nào dịch tại chỗ, khi nào deck, cú pháp spec, bẫy màu."
-version: 2.0.0
+description: "Khi nào dịch tại chỗ, khi nào thiết kế lại bằng deck, và bẫy màu đo được, cho Gin và Itachi khi remake carousel có chữ tiếng Anh sang tiếng Việt. Lệnh, danh sách vùng chữ, khung spec và cách sửa lỗi nằm trong brief mà gin_chuan_bi.py / itachi_chuan_bi.py in mỗi lần và trong báo [LOI] của nop; skill này chỉ giữ phần vai phải nghĩ."
+version: 3.0.0
 author: content-team
 license: internal
 platforms: [linux]
@@ -14,47 +14,26 @@ metadata:
 
 # inplace-translate — dịch ảnh có chữ sang tiếng Việt
 
-Hai vai, một chuỗi script:
+Gin xoá chữ khỏi ảnh nền (OCR định vị + LaMa), trả nền sạch và vị trí, màu chữ
+gốc; Itachi viết chữ Việt lên: **tại chỗ** đúng box gốc, hoặc **deck** thiết kế
+lại. `<id>` là message_id trong dòng `[Ảnh đính kèm đã tải về: …/<id>.jpg]`.
 
-| Bước | Lệnh | Ra |
-|---|---|---|
-| Gin 1 | `gin_chuan_bi.py <id>` | danh sách vùng chữ đánh số (text OCR, x,y,w,h, màu), `vung_preview.png` |
-| Gin 2 (tuỳ chọn) | `spec.json` `{"giu": [stt], "xoa_them": [[x,y,w,h]], "ghi_chu": "…"}` | chỉ khi có logo cần giữ |
-| Gin 3 | `gin_nop.py <id>` | `nen_sach.png`, `mask_debug.png`, `vung.json`; gửi trả lời tin nhắn |
-| Itachi 1 | `itachi_chuan_bi.py <id> [<id2>…]` | chữ Anh từng vùng, nền sạch (tự làm phần Gin nếu chưa), gợi ý đường, khung spec |
-| Itachi 2 | `spec.json` | chữ Việt cho từng slide |
-| Itachi 3 | `itachi_nop.py <id>` | slide tiếng Việt, gửi album trả lời tin nhắn |
-
-`<id>` là message_id trong dòng `[Ảnh đính kèm đã tải về: …/telegram_incoming/<id>.jpg]`.
-Workdir: `state/<brand>/chuan_bi/gin_<id>/` và `itachi_<id>/`.
+```bash
+cd /home/donniechu/content-team && venv/bin/python gin_chuan_bi.py <id>              # Gin 1
+cd /home/donniechu/content-team && venv/bin/python gin_nop.py <id>                   # Gin 3 (bước 2 chỉ khi có logo cần giữ)
+cd /home/donniechu/content-team && venv/bin/python itachi_chuan_bi.py <id> [<id2>…]  # Itachi 1
+cd /home/donniechu/content-team && venv/bin/python itachi_nop.py <id>                # Itachi 3 (bước 2: spec.json)
+```
 
 ## Khi nào dịch tại chỗ, khi nào deck
 
-- **Tại chỗ** (`"cach": "tai_cho"`): nhãn, badge, tiêu đề một dòng, slide ít
-  vùng. Chữ Việt vẽ đúng box gốc, cỡ chữ lớn nhất còn vừa, font theo chiều cao
-  (≥4,5% ảnh → bold, không thì regular; ghi `font` để đổi: bold/regular/serif/
-  condensed/mono), màu đo được từ ảnh gốc.
+- **Tại chỗ**: nhãn, badge, tiêu đề một dòng, slide ít vùng. Chữ Việt vẽ đúng box
+  gốc, cỡ chữ lớn nhất còn vừa, font theo chiều cao, màu đo được từ ảnh gốc.
 - **Đoạn văn nhiều dòng**: OCR trả một box mỗi dòng, câu Việt hiếm khi ngắt
-  giống bản Anh. Dùng `"gop": [[stt_đầu, stt_cuối, "bản dịch cả đoạn"]]` để
-  gộp dải vùng thành một khối (script wrap trong khối đó), hoặc chuyển slide đó
-  sang `"cach": "deck"` với `statement`/`list_steps`.
-- **Deck** (`"cach": "deck"`): thiết kế lại, `bg_anh: true` để lấy nền sạch của
-  slide đó, bỏ thì nền phẳng. Trường theo layout in trong brief.
-
-## Cú pháp spec (Itachi)
-
-```json
-{"slides": [
-  {"nguon": "338", "cach": "tai_cho",
-   "vung": {"1": "Xin chào thế giới", "2": null,
-            "3": {"text": "Đoạn thân bài", "font": "regular", "align": "center", "color_rgb": [230, 230, 230]}},
-   "gop": [[4, 6, "Ba dòng gốc gộp thành một đoạn tiếng Việt, script tự xuống dòng."]]},
-  {"nguon": "340", "cach": "deck", "layout": "statement", "bg_anh": true,
-   "heading": "Câu tuyên bố lớn", "subs": [{"text": "dòng phụ", "col": "cream"}]}
-]}
-```
-
-`null` = bỏ vùng (logo, nhiễu OCR): nền sạch để trống chỗ đó.
+  giống bản Anh. Dùng `gop` để gộp dải vùng thành một khối (script wrap trong
+  khối đó), hoặc chuyển slide đó sang deck với `statement`/`list_steps`.
+- **Deck**: thiết kế lại; `bg_anh: true` để lấy nền sạch của slide đó, bỏ thì
+  nền phẳng. `null` ở một vùng = bỏ vùng (logo, nhiễu OCR), nền sạch để trống.
 
 ## Bẫy màu đo được
 
@@ -63,9 +42,8 @@ hoặc chữ có gradient có thể lệch. Dấu hiệu: hai dòng cùng khối
 `[20,55,134]`, dòng kia `[237,248,249]` → dòng sáng gần chắc sai, ghi
 `color_rgb` theo dòng đúng. Ảnh BodyMist 28/08 mất trắng 3 dòng vì bỏ qua.
 
-## Cổng chặn
+## Ranh giới
 
-Tiếng Việt mất dấu ở bất kỳ vùng nào → dừng, in rõ vùng. `--bo-qua-dau` chỉ khi
-bản dịch thật sự là tiếng Anh. Logo/hình khối thương hiệu gốc: giữ và báo Ông
-Chủ, không tự thay. Không vẽ minh hoạ, không nền AI (`tao_nen_ai.py` và
-retouch/blend chờ GPU, đợt tới mới bật).
+Logo và hình khối thương hiệu gốc: giữ và báo Ông Chủ, không tự thay. Không vẽ
+minh hoạ, không nền AI (retouch/blend chờ GPU). Tiếng Việt mất dấu ở bất kỳ
+vùng nào thì nop dừng; `--bo-qua-dau` chỉ khi bản dịch thật sự là tiếng Anh.
