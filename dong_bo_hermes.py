@@ -28,7 +28,9 @@ import argparse
 import sys
 from pathlib import Path
 
-ROOT = Path.home() / "content-team"
+import env_load
+
+ROOT = env_load.ROOT
 REPO = ROOT / "hermes"
 # Moi brand mot home rieng. Them brand = them mot dong o day.
 HOMES = {"blog": Path.home() / ".hermes-blog",

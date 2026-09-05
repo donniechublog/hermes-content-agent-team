@@ -28,23 +28,24 @@ from html import escape as html_escape
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import env_load                                              # noqa: E402
+import bang_den                                              # noqa: E402
 import chat_router                                          # noqa: E402
 import moat_publish                                         # noqa: E402
 import tele_util                                            # noqa: E402
 import ghi_log                                              # noqa: E402
 log, rut = ghi_log.log, ghi_log.rut
 
-ROOT = Path.home() / "content-team"
-import env_load                                              # noqa: E402
+ROOT = env_load.ROOT
 DRAFTS = ROOT / "drafts"
 STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 OFFSET = STATE_DIR / "offset.txt"
 TELEGRAM_INCOMING = STATE_DIR / "telegram_incoming"   # anh tai ve tu tin nhan reply
 API = "https://api.telegram.org/bot{token}/{method}"
-HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
+HERMES_PY = env_load.HERMES_PY
 # HERMES_HOME theo container: moi brand mot home rieng (~/.hermes-<brand>).
 # Systemd/cron dat san; roi ve ~/.hermes o che do don cu.
-HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
+HERMES_HOME = str(env_load.hermes_home())
 env_load.nap()                            # nap secret.<brand>.env de co BRAND luc import
 # MOT num brand duy nhat: CT_BRAND ('dcgr'|'blog') la khoa container cua env_load.
 # BRAND (ten content-brand day du) SUY tu CT_BRAND — truoc day la hai bien doc lap
@@ -757,9 +758,9 @@ def _dang_nen(token, channel, draft_id, msg):
 
 
 def _sua_tin_go_nut(token, msg, note):
-    log("nut", f"ket qua msg={msg.get('message_id')}: {note}")
     """Ghi ket qua vao tin nhan draft va go ban phim (dung chung cho nhanh Bo
     tren poll thread va nhanh Duyet chay nen)."""
+    log("nut", f"ket qua msg={msg.get('message_id')}: {note}")
     chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
     base = msg.get("caption") or msg.get("text") or ""
     body = base.replace("BẢN NHÁP", "BẢN NHÁP (đã xử lý)", 1)
@@ -985,61 +986,10 @@ def kanban_create(title, assignee, body, parent=None):
         return None, r.stdout[-300:]
 
 
-# ---- Bao khi mot viec bi chan --------------------------------------------
-# Vai dung anh co mot nguyen tac cung: khong tim duoc anh THAT thi bao lai, tuyet
-# doi khong tu ve minh hoa. Luc do no goi kanban_block, va vi day la block do
-# worker chu dong nen hermes giu nguyen cho toi khi co nguoi go — dung nhu thiet
-# ke. Task viet la con cua task anh nen nam yen o `todo`, cung dung.
-#
-# Cho sai la KHONG AI DUOC BAO. Bao cao nam trong kanban, con Ong Chu ngoi o
-# Telegram: chon hai tin thay len mot bai, khong biet tin kia di dau. Doan nay
-# keo bao cao do ra Telegram.
-KANBAN_DB = Path(HERMES_HOME) / "kanban.db"    # kanban cua home container hien tai
-DA_BAO_CHAN = STATE_DIR / "da_bao_chan.json"
-VAI_CUA_DOI = {"designer": "Designer", "carousel": "Carousel", "writer": "Writer"}
-
-
-def _da_bao() -> set:
-    try:
-        return set(json.loads(DA_BAO_CHAN.read_text(encoding="utf-8")))
-    except Exception:                                        # noqa: BLE001
-        return set()
-
-
-def _ghi_da_bao(ids: set):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    # Giu 300 id gan nhat la du: chi can nho de khoi bao trung, khong phai
-    # de luu lich su.
-    DA_BAO_CHAN.write_text(json.dumps(sorted(ids)[-300:]), encoding="utf-8")
-
-
-def viec_bi_chan() -> list:
-    """[(task_id, ten_vai, tieu_de, ly_do)] cho cac viec dang bi chan."""
-    if not KANBAN_DB.exists():
-        return []
-    try:
-        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
-    except Exception:                                        # noqa: BLE001
-        return []
-    ra = []
-    try:
-        for tid, ai, tieu_de in con.execute(
-                "select id, assignee, title from tasks where status='blocked'"):
-            if ai not in VAI_CUA_DOI:
-                continue
-            ly_do = ""
-            for (tt,) in con.execute(
-                    "select coalesce(summary, error, '') from task_runs "
-                    "where task_id=? order by id desc limit 1", (tid,)):
-                ly_do = tt or ""
-            ra.append((tid, ai, VAI_CUA_DOI[ai], tieu_de, ly_do))
-    except Exception:                                        # noqa: BLE001
-        return []
-    finally:
-        con.close()
-    return ra
-
-
+# Kanban cua home container hien tai. Viec bi chan/that bai duoc bao qua
+# bao_tien_do_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
+# viec voi no va bo sot Kite, da bo 05/09/2026.
+KANBAN_DB = Path(HERMES_HOME) / "kanban.db"
 DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
 _TEN_HIEN = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
              "writer": "Miles", "scout": "Finn", "nova": "Nova", "market": "Vera",
@@ -1113,17 +1063,11 @@ def _bang_den_root(draft_id, title, goal=""):
 
 
 def _bang_den_ghi(draft_id, key, value):
-    """Ghi mot muc len bang den qua bang_den.py. Best-effort, khong nem."""
-    try:
-        r = subprocess.run(
-            [str(HERMES_PY), str(ROOT / "bang_den.py"), "ghi", draft_id, key,
-             json.dumps(value, ensure_ascii=False), "--author", "approve_service"],
-            cwd=str(ROOT), env=dict(os.environ, HERMES_HOME=HERMES_HOME),
-            capture_output=True, text=True, timeout=60)
-        if r.returncode != 0 or "lỗi" in (r.stderr or ""):
-            log("bangden", f"{draft_id}: ghi '{key}' loi: {(r.stderr or r.stdout)[-160:]}")
-    except Exception as e:                                   # noqa: BLE001
-        log("bangden", f"{draft_id}: ghi '{key}' loi: {type(e).__name__}: {e}")
+    """Ghi mot muc len bang den qua bang_den.ghi_nen (python cua hermes, tien
+    trinh con). Best-effort, khong nem."""
+    ok, loi = bang_den.ghi_nen(draft_id, key, value, "approve_service", hermes_home=HERMES_HOME)
+    if not ok:
+        log("bangden", f"{draft_id}: ghi '{key}' loi: {loi}")
 
 
 def _trang_thai_task(tid):
@@ -1313,7 +1257,13 @@ def bao_tien_do_kanban(token, group):
             else:
                 text = f"✅ <b>{ten}</b> xong: <i>{html_escape(title[:80])}</i>"
         elif st in ("blocked", "failed"):
-            text = f"⛔ <b>{ten}</b> dừng ({st}): <i>{html_escape(title[:80])}</i>"
+            # Kem LY DO (summary/error cua lan chay cuoi) — day la cai Ong Chu can
+            # de go: vai anh block vi thieu anh that thi bao ro anh nao bi loai.
+            ly_do, _ = _tom_tat_run(tid)
+            text = (f"⛔ <b>{ten}</b> dừng ({st}): <i>{html_escape(title[:80])}</i>"
+                    + (f"\n{html_escape(ly_do.strip()[:400])}" if ly_do.strip() else "")
+                    + ("\nBài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ."
+                       if ai in TEN_VAI_ANH else ""))
         else:
             da[tid] = st
             doi = True
@@ -1344,50 +1294,6 @@ def bao_tien_do_kanban(token, group):
             log("tiendo", f"khong ghi duoc {DA_BAO_TIEN_DO.name}: {e}")
 
 
-def bao_viec_bi_chan(token, group):
-    """Bao ve topic duyet moi viec vua bi chan. Im lang khi khong co gi moi.
-
-    GOP thanh MOT tin nhan. Moi viec mot tin thi lan dau bat len se ban ra ca
-    chuc tin lien tiep, va thu nay dang le phai de doc chu khong phai de chiu
-    dung.
-    """
-    da = _da_bao()
-    moi = [x for x in viec_bi_chan() if x[0] not in da]
-    if not moi:
-        return
-
-    tp = env_load.topics_path()
-    try:
-        topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        topics = {}
-
-    # Mot container mot nguoi viet — moi viec bi chan deu bao ve topic writer.
-    # (Bang nhom theo brand da bo cung VAI_VIET: luon chi co mot nhom.)
-    nhom = {MAC_DINH_VIET: [(tid, ten, tieu_de, ly_do)
-                            for tid, ai, ten, tieu_de, ly_do in moi]}
-
-    da_gui = set()
-    for vai_viet, viecs in nhom.items():
-        thread = topics.get(vai_viet)
-        dau = ("⛔ <b>1 việc dừng lại</b>" if len(viecs) == 1
-               else f"⛔ <b>{len(viecs)} việc dừng lại</b>")
-        khoi = [dau, ""]
-        for _tid, ten, tieu_de, ly_do in viecs:
-            khoi.append(f"<b>{html_escape(ten)}</b> — "
-                        f"<i>{html_escape(tieu_de[:100])}</i>")
-            khoi.append(html_escape(ly_do.strip()[:400]) or "(khong ghi ly do)")
-            khoi.append("")
-        khoi.append("Bài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ.")
-        try:
-            for phan in tele_util.chia_tin("\n".join(khoi)):
-                call(token, "sendMessage", chat_id=group, message_thread_id=thread,
-                     text=phan, parse_mode="HTML")
-        except Exception as e:                               # noqa: BLE001
-            print(f"[bao-chan] khong gui duoc ({vai_viet}): {e}", flush=True)
-            continue                  # brand nay chua ghi nhan -> lan sau bao lai
-        da_gui |= {t[0] for t in viecs}
-    _ghi_da_bao(da | da_gui)
 
 
 def write_meta(draft_id, item, out_png, brand="donniechublog"):
@@ -2234,7 +2140,6 @@ def loop():
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
             _lam_lai_het_han(token, group)
-            bao_viec_bi_chan(token, group)
             bao_tien_do_kanban(token, group)
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
@@ -2261,21 +2166,9 @@ if __name__ == "__main__":
                         dpath.read_text(encoding="utf-8")).get("category", "")
                 except Exception:                            # noqa: BLE001
                     pass
-            key = "teaser" if category.upper() == "TEASER" else "writer"
-            if key == "writer":
-                # Tin thuong tach theo THUONG HIEU: dcgr -> topic Miles,
-                # donniechublog -> Miles. Truoc day MOI draft deu ve topic Miles
-                # nen trong nhu Miles om ca dcgr; that ra Miles viet caption dcgr,
-                # chi la ban nhap bi day nham topic. Brand nam trong sidecar meta.
-                brand = ""
-                mpath = DRAFTS / (draft_id + ".meta.json")
-                if mpath.exists():
-                    try:
-                        brand = json.loads(
-                            mpath.read_text(encoding="utf-8")).get("brand", "")
-                    except Exception:                            # noqa: BLE001
-                        pass
-                key = MAC_DINH_VIET
+            # Mot container mot nguoi viet: tin thuong ve topic writer cua
+            # container, teaser ve topic Jean.
+            key = "teaser" if category.upper() == "TEASER" else MAC_DINH_VIET
             thread = topics.get(key)
         if len(sys.argv) > 3:
             thread = int(sys.argv[3])

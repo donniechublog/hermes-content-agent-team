@@ -19,10 +19,31 @@ KIEN TRUC CONTAINER (nhieu brand tren 1 ma nguon):
   `state_dir()`. Khong co `CT_BRAND` -> roi ve che do don cu (`.secrets.env`,
   `state/`), nen ma cu van chay binh thuong truoc khi cutover.
 """
+import json
 import os
 from pathlib import Path
 
 _BASE = Path(__file__).resolve().parent
+# Goc du an = thu muc chua tep nay. Truoc day 16 tep tu tinh `Path.home() /
+# "content-team"` — dung tren server, sai o moi may khac (audit 05/09/2026).
+ROOT = _BASE
+HERMES_DIR = Path.home() / "hermes-agent"
+HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
+ROUTER_URL = "http://127.0.0.1:20128/v1/chat/completions"   # 9router cuc bo, chung hai brand
+
+
+def hermes_home() -> Path:
+    """HERMES_HOME cua container hien tai (~/.hermes-<brand>, systemd/cron dat san);
+    khong co bien thi roi ve ~/.hermes (che do don cu)."""
+    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
+
+
+def topics() -> dict:
+    """Anh xa ten vai -> thread_id cua brand; rong neu tep thieu hoac hong."""
+    try:
+        return json.loads(topics_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
 
 
 def _brand() -> str:

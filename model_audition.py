@@ -21,14 +21,13 @@ Dung:
 import argparse
 import json
 import time
-from pathlib import Path
 
 import httpx
 
 import env_load
+from caption_check import ty_le_dau
 
-ROOT = Path.home() / "content-team"
-ROUTER = "http://127.0.0.1:20128/v1/chat/completions"
+ROUTER = env_load.ROUTER_URL
 
 UNGVIEN = [
     "tokenrouter/qwen/qwen3.8-max",
@@ -61,18 +60,9 @@ DEM = ("Boi canh bien tap (khong doi): kenh dang tin AI cho doc gia Viet Nam, "
        "kiem chung duoc. ") * 60
 TIN = "OpenAI vua ra mat mo hinh moi giam 40% chi phi suy luan."
 
-DAU = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"
-          "ùúủũụưừứửữựỳýỷỹỵđ")
-
-# Nguong dat: van ban tieng Viet co dau that thuong tren 0.15
+# Nguong dat: van ban tieng Viet co dau that thuong tren 0.15 (caption_check
+# dung 0.12 co chu y — cong chan bai that co nhieu ten rieng tieng Anh).
 NGUONG_DAU = 0.15
-
-
-def ty_le_dau(text: str) -> float:
-    chu = [c for c in text.lower() if c.isalpha()]
-    if not chu:
-        return 0.0
-    return sum(1 for c in chu if c in DAU) / len(chu)
 
 
 def goi(model: str, key: str, dung_tool: bool, max_tokens: int) -> dict:

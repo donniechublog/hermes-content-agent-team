@@ -15,7 +15,9 @@ import json
 import sys
 from pathlib import Path
 
-DRAFTS = Path.home() / "content-team" / "drafts"
+import env_load
+
+DRAFTS = env_load.ROOT / "drafts"
 
 
 def main():

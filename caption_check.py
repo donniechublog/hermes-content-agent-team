@@ -70,8 +70,8 @@ DAU = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềế�
           "ùúủũụưừứửữựỳýỷỹỵđ")
 # 0.12 CO Y thap hon 0.15 cua model_audition: day la cong chan bai that (caption
 # nhieu ten rieng/thuat ngu tieng Anh keo ty le xuong), con audition do van mau
-# thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. Bo DAU/ty_le_dau
-# con o model_audition.py va cost_squeeze.py — sua thi sua ca ba.
+# thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. DAU/ty_le_dau
+# chi co MOT ban o day; model_audition va cost_squeeze import tu day.
 NGUONG_DAU = 0.12          # van ban tieng Viet that thuong tren 0.15
 
 

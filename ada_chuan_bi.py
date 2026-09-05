@@ -37,7 +37,7 @@ import env_load                                              # noqa: E402
 
 VN = timezone(timedelta(hours=7))
 DRAFTS = ROOT / "drafts"
-HERMES = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes")))
+HERMES = env_load.hermes_home()
 
 
 def workdir() -> Path:

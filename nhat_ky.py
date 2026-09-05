@@ -25,7 +25,6 @@ Dung:
 import argparse
 import json
 import re
-import os
 import sqlite3
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -33,8 +32,8 @@ from pathlib import Path
 
 import env_load
 
-ROOT = Path.home() / "content-team"
-HERMES = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes")))
+ROOT = env_load.ROOT
+HERMES = env_load.hermes_home()
 THU_MUC = env_load.state_dir() / "nhat_ky"
 GHI_CHU = THU_MUC / "ghi_chu.jsonl"
 VN = timezone(timedelta(hours=7))

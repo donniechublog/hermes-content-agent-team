@@ -18,6 +18,7 @@ Dung:
     venv/bin/python gui_telegram.py --vai itachi --list      # gan day da gui gi
 """
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -41,21 +42,30 @@ def _topic(vai: str) -> int:
     return m[vai]
 
 
+def _md5(files) -> list:
+    return [hashlib.md5(Path(f).read_bytes()).hexdigest() for f in files]
+
+
 def _ghi_nhat_ky(vai: str, message_id, files, mo_ta: str) -> None:
     STATE.mkdir(parents=True, exist_ok=True)
     dong = {"ts": int(time.time()), "message_id": message_id,
-            "files": [str(f) for f in files], "mo_ta": mo_ta}
+            "files": [str(f) for f in files], "md5": _md5(files), "mo_ta": mo_ta}
     with (STATE / f"{vai}.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(dong, ensure_ascii=False) + "\n")
 
 
 def _da_gui_gan_day(vai: str, files, phut: int = 30):
-    """Tra ve ban ghi gan nhat neu CUNG bo file (theo ten) da gui trong `phut` phut."""
+    """Tra ve ban ghi gan nhat neu CUNG bo file da gui trong `phut` phut.
+
+    So theo NOI DUNG (md5) chu khong chi theo ten (audit 05/09/2026): ban "Lam
+    lai" ghi ra dung ten cu drafts/<id>.png, so ten thi album moi bi coi la
+    trung va KHONG bao gio len topic. Dong cu chua co md5 thi so ten nhu truoc."""
     import time as _t
     p = STATE / f"{vai}.jsonl"
     if not p.exists():
         return None
     ten = sorted(Path(f).name for f in files)
+    md5 = sorted(_md5(files))
     moc = _t.time() - phut * 60
     for dong in reversed(p.read_text(encoding="utf-8").splitlines()):
         try:
@@ -64,7 +74,9 @@ def _da_gui_gan_day(vai: str, files, phut: int = 30):
             continue
         if d.get("ts", 0) < moc:
             break
-        if sorted(Path(f).name for f in d.get("files", [])) == ten:
+        giong = (sorted(d["md5"]) == md5) if d.get("md5") else \
+            (sorted(Path(f).name for f in d.get("files", [])) == ten)
+        if giong:
             return {"message_id": d.get("message_id"),
                     "luc": _t.strftime("%H:%M", _t.localtime(d["ts"]))}
     return None

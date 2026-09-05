@@ -56,7 +56,7 @@ from PIL import Image, ImageDraw, ImageFilter
 import card
 import luat_anh
 from card import (
-    _f, _wrap, _fit_contain, _fit_cover,
+    _f, _wrap, _fit_cover,
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
     FONTS,                       # thu muc font
@@ -536,23 +536,6 @@ def _gate_text(chunks, bo_qua_dau):
 # Cac luat nay Ong Chu da chot va truoc day chi nam trong SKILL.md — tuc trong
 # cho vai NHO va TUAN THU. Chuyen thanh cong chan cung: vi pham la dung han,
 # in ro cach sua. Vai chi con hai viec khong the code: viet copy va chon anh.
-# --- Phat hien mat nguoi (offload luat "anh mot nguoi vo danh" cho code) ------
-# Code chi BAT DUOC co mat nguoi hay khong (YuNet, nhe, khong torch). Con "co
-# phai nhan vat cu the trong bai khong" thi code KHONG biet -> de vai/nguoi duyet
-# phan doan. Vi vay day la CANH BAO, khong chan cung.
-_YUNET = None
-_YUNET_DA_THU = False
-
-
-# Cac phep do va cong chan ANH da chuyen sang `luat_anh.py` — bo tieu chi dung
-# chung cho moi vai lam anh (Ong Chu chot 04/09/2026). Giu lai vai alias cho
-# tuong thich; dung `luat_anh.*` cho code moi.
-_dem_mat = luat_anh.dem_mat
-_la_ghep = luat_anh.la_ghep
-_co_xuat_xu = luat_anh.co_xuat_xu
-_goc_crop = luat_anh.doc_dau_crop
-
-
 def _gate_anh(paths):
     """paths: [(nhan, duong_dan, muc)] — muc la dict cover/slide trong spec.
 

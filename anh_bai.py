@@ -27,8 +27,6 @@ import io
 import json
 import re
 import sys
-import urllib.parse as up
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import httpx
@@ -36,7 +34,6 @@ from PIL import Image
 
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
-GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
 # Anh khong dai dien noi dung — the thuong hieu, logo, avatar...
 RAC = re.compile(
@@ -129,58 +126,21 @@ def _tu_dac_trung(t: str) -> set:
             if w not in bo and len(w) > 2}
 
 
-def bao_khac(tieu_de: str, so=DAI_TOI_DA) -> list:
+def bao_khac(tieu_de: str, link: str = "", so=DAI_TOI_DA) -> list:
     """Bai bao KHAC dua cung tin nay — noi thuong co bieu do va bang so that.
+    Tra ve [(url, tieu_de)].
 
-    Google News KHONG cho URL bai. `<link>` cua no la duong chuyen huong
-    news.google.com/rss/articles/CBMi... chay bang JS, theo redirect ra trang
-    trung gian 592KB khong co link that; chuoi CBMi cung khong phai base64 cua
-    URL. Da thu ca DuckDuckGo html/lite — tra 202, chan bot.
-
-    Nhung Google News CO cho ten mien toa soan o <source url>. Nen di duong vong:
-    lay ten mien -> doc RSS cua chinh toa soan do -> tim bai theo tieu de. RSS
-    toa soan chi giu 10-40 bai gan nhat, nhung tin cua ta luon duoi 72h nen vua du.
-    """
+    Uy quyen cho `nguon_bai.tim` (Google News -> ten mien toa soan -> RSS toa
+    soan -> khop tieu de, roi Bing bu phan thieu). Truoc 05/09/2026 vong do feed
+    do duoc chep o day mot ban nua va chi chay khi thieu tep nguon cua Finn."""
+    import nguon_bai
     try:
-        r = _tai(GNEWS.format(q=up.quote(tieu_de)), 25)
-        its = ET.fromstring(r.content).findall(".//item")
-    except Exception:                                        # noqa: BLE001
+        kq = nguon_bai.tim(tieu_de, link, so)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[anh_bai] khong tim duoc bao khac: {type(e).__name__}", file=sys.stderr)
         return []
-    mien = []
-    for it in its[:so * 2]:
-        src = it.find("source")
-        u = (src.get("url") if src is not None else "") or ""
-        td = it.findtext("title") or ""
-        if u and (u, td) not in mien:
-            mien.append((u.rstrip("/"), td))
-
-    goc = _tu_dac_trung(tieu_de)
-
-    def _tim_trong_feed(cap):
-        m, td_gg = cap
-        for duong in ("/feed/", "/rss", "/feed", "/rss.xml", "/index.xml"):
-            try:
-                rr = _tai(m + duong, 15)
-                if rr.status_code != 200 or b"<item" not in rr.content[:400_000]:
-                    continue
-                for i in ET.fromstring(rr.content).findall(".//item"):
-                    t = i.findtext("title") or ""
-                    chung = goc & _tu_dac_trung(t)
-                    if chung and len(chung) / max(len(goc), 1) >= 0.5:
-                        return (i.findtext("link") or "", t)
-                return None
-            except Exception:                                # noqa: BLE001
-                continue
-        return None
-
-    ra = []
-    with cf.ThreadPoolExecutor(max_workers=6) as ex:
-        for kq in ex.map(_tim_trong_feed, mien[:so * 2]):
-            if kq and kq[0]:
-                ra.append(kq)
-            if len(ra) >= so:
-                break
-    return ra
+    return [(t["url"], t.get("tieu_de", "")) for t in kq.get("trang", [])
+            if t.get("url") and t.get("loai") != "gốc"][:so]
 
 
 def _do_hoa(im) -> str:
@@ -321,7 +281,7 @@ def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -
     else:
         trang = [(link, "goc")]
         if sau_rong:
-            trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de) if u]
+            trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de, link) if u]
 
     ung_vien = []
     with cf.ThreadPoolExecutor(max_workers=6) as ex:

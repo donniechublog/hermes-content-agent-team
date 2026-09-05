@@ -20,26 +20,17 @@ import argparse
 import collections
 import datetime as dt
 import json
-import os
 import sqlite3
 import sys
 from pathlib import Path
 
-import httpx
 import yaml
 
 import env_load
-import tele_util
+import publish
 
-ROOT = Path.home() / "content-team"
 DB = Path.home() / ".9router" / "db" / "data.sqlite"
-
-
-def hermes_home() -> Path:
-    """Home hermes cua container hien tai. Systemd/cron dat HERMES_HOME per-brand
-    (vd ~/.hermes-blog, ~/.hermes-dcgr) — hardcode ~/.hermes lam script soi mot
-    bo config cu/rong. Khong co bien thi roi ve ~/.hermes (che do don cu)."""
-    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
+hermes_home = env_load.hermes_home      # per-brand: ~/.hermes-<brand>, roi ve ~/.hermes
 
 # Model co cache ma tut duoi muc nay la dang co van de (lat model, hoac
 # prompt qua ngan de cache an)
@@ -177,30 +168,7 @@ def main():
         print("\nKhong co van de: moi model deu nam trong chuoi va cache dat nguong.")
 
     if a.canh_bao and van_de:
-        gui("<b>⚠️ Soi usage 9router</b>\n\n" + "\n".join(van_de).replace("•", "-"))
-
-
-def gui(text: str):
-    env_load.nap()
-    tok = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat = os.environ.get("TELEGRAM_GROUP_ID") or os.environ.get("TELEGRAM_CHANNEL_ID")
-    if not (tok and chat):
-        print("\n[canh bao] thieu TELEGRAM_BOT_TOKEN/GROUP_ID")
-        return
-    th = None
-    tp = env_load.topics_path()
-    if tp.exists():
-        th = json.loads(tp.read_text(encoding="utf-8")).get("analyst")
-    try:
-        # Tin dai -> chia thanh nhieu tin gui lien tiep thay vi cat bot.
-        for phan in tele_util.chia_tin(text):
-            payload = {"chat_id": chat, "text": phan, "parse_mode": "HTML"}
-            if th:
-                payload["message_thread_id"] = int(th)
-            httpx.post(f"https://api.telegram.org/bot{tok}/sendMessage", json=payload, timeout=30)
-        print("\nDa gui canh bao Telegram.")
-    except Exception as e:                                   # noqa: BLE001
-        print(f"\n[canh bao] khong gui duoc: {type(e).__name__}: {e}")
+        publish.gui_topic("<b>⚠️ Soi usage 9router</b>\n\n" + "\n".join(van_de).replace("•", "-"), "analyst")
 
 
 if __name__ == "__main__":

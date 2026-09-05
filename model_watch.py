@@ -15,24 +15,15 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
 import httpx
 import yaml
 
 import env_load
-import tele_util
+import publish
 
-ROOT = Path.home() / "content-team"
-ROUTER = "http://127.0.0.1:20128/v1/chat/completions"
-
-
-def hermes_home() -> Path:
-    """Home hermes cua container hien tai. Systemd/cron dat HERMES_HOME per-brand
-    (vd ~/.hermes-blog, ~/.hermes-dcgr) — hardcode ~/.hermes lam watchdog canh
-    nham mot bo config cu/rong ma khong ai biet. Khong co bien thi roi ve
-    ~/.hermes (che do don cu)."""
-    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
+ROUTER = env_load.ROUTER_URL
+hermes_home = env_load.hermes_home      # per-brand: ~/.hermes-<brand>, roi ve ~/.hermes
 
 TIMEOUT = 25
 PROBE = {"messages": [{"role": "user", "content": "hi"}], "max_tokens": 5}
@@ -100,30 +91,6 @@ def probe(model: str, key: str) -> tuple:
         pass
     code = inner or r.status_code
     return False, code, REASONS.get(code, f"loi HTTP {code}")
-
-
-def send(text: str):
-    tok = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat = os.environ.get("TELEGRAM_GROUP_ID") or os.environ.get("TELEGRAM_CHANNEL_ID")
-    if not (tok and chat):
-        print("[canh bao] thieu TELEGRAM_BOT_TOKEN/GROUP_ID — in ra man hinh thay vi gui")
-        print(text)
-        return
-    thread = None
-    tp = env_load.topics_path()
-    if tp.exists():
-        thread = json.loads(tp.read_text(encoding="utf-8")).get("analyst")
-    try:
-        # Tin dai -> chia thanh nhieu tin gui lien tiep thay vi de Telegram
-        # tu choi ca tin khi vuot 4096.
-        for phan in tele_util.chia_tin(text):
-            payload = {"chat_id": chat, "text": phan, "parse_mode": "HTML"}
-            if thread:
-                payload["message_thread_id"] = int(thread)
-            httpx.post(f"https://api.telegram.org/bot{tok}/sendMessage",
-                       json=payload, timeout=30)
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {e}")
 
 
 def main():
@@ -196,7 +163,7 @@ def main():
     else:
         lines.append(f"<i>Cả {len(now)} model đều khỏe.</i>")
 
-    send("\n".join(lines))
+    publish.gui_topic("\n".join(lines), "analyst")
     if not a.quiet:
         print(f"\nDa gui canh bao: {len(changes)} thay doi.")
 

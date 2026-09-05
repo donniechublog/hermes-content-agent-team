@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                             # noqa: E402
 import bat_buoc                                             # noqa: E402
 
-ROOT = Path.home() / "content-team"
+ROOT = env_load.ROOT
 STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
 
 # Nhan chuan la TIENG ANH (approve_service.NHAN_CHUAN) — SOUL/brief cua Finn ke

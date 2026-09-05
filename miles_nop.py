@@ -51,7 +51,7 @@ def main() -> int:
     ap.add_argument("--khong-push", action="store_true", help="Thu: kiem + ghi draft vao workdir, khong push")
     a = ap.parse_args()
 
-    meta = cb.nap_meta(a.draft_id)
+    cb.nap_meta(a.draft_id)                  # dat CT_BRAND theo brand cua draft
     import env_load
     wd = cb.workdir(env_load.state_dir(), a.draft_id)
     p_cap = Path(a.caption) if a.caption else wd / "caption.txt"
@@ -106,15 +106,8 @@ def main() -> int:
     md = {"do_dai": tin.get("do_dai"), "so_cau": tin.get("so_cau"),
           "so_trong_caption": tin.get("so_trong_caption"),
           "draft": f"drafts/{a.draft_id}.json"}
-    hermes_py = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
-    try:
-        r3 = subprocess.run([str(hermes_py), str(ROOT / "bang_den.py"), "ghi", a.draft_id,
-                             "caption", json.dumps(md, ensure_ascii=False), "--author", "miles"],
-                            cwd=str(ROOT), capture_output=True, text=True, timeout=60)
-        if r3.returncode != 0 or "[bang-den] lỗi" in (r3.stderr or ""):
-            print(f"[nhac] bang den: {(r3.stderr or r3.stdout).strip()[-200:]}")
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[nhac] bang den: {type(e).__name__}: {e}")
+    import nop_chung as nc
+    nc.ghi_bang_den(a.draft_id, "caption", md, "miles")
     print(f"[xong] caption {tin.get('do_dai')} ký tự, {tin.get('so_cau')} câu, "
           f"{tin.get('so_trong_caption')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))

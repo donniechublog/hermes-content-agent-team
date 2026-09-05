@@ -697,7 +697,7 @@ def s_steps(sl, th):
         f'<h1 class="title" style="font-size:80px;margin:24px 0 8px;">{accent_html(sl["title"], sl.get("accent"))}</h1>'
         f'</div>'
         f'<div class="mid" style="margin-top:38px;">{rows}'
-        f'<div style="border-bottom:1px solid %(LINE)s;"></div></div>'
+        f'<div style="border-bottom:1px solid {th["line"]};"></div></div>'
     )
     return g + body
 
@@ -712,7 +712,7 @@ def s_loop(sl, th):
     for i, c in enumerate(items):
         phan = f'<span class="chip {"chip0" if i == 0 else ""}">{esc(c)}</span>'
         if i:
-            phan = f'<span class="arrow">&rarr;</span>' + phan
+            phan = '<span class="arrow">&rarr;</span>' + phan
         if i == len(items) - 1:
             phan += '<span class="loopmark">&#8635;</span>'
         cum.append(f'<span class="chip-grp">{phan}</span>')

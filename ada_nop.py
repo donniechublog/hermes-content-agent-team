@@ -26,7 +26,7 @@ def dung_bao_cao(m: dict, spec: dict) -> str:
     L = [f"<b>Ada: phân tích {m['ngay']} ngày qua</b>", ""]
     L.append(f"<b>Tin:</b> quét {mf['tong']}, chọn {mf['chon']}. Theo bậc điểm: "
              + ", ".join(f"{k} {v[1]}/{v[0]}" for k, v in mf["theo_bac"].items()) + ".")
-    L.append(f"<b>Draft:</b> " + ", ".join(f"{k} {v}" for k, v in dr["theo_trang_thai"].items()) + ".")
+    L.append("<b>Draft:</b> " + ", ".join(f"{k} {v}" for k, v in dr["theo_trang_thai"].items()) + ".")
     vai_nang = sorted(tk["theo_vai"].items(), key=lambda kv: -kv[1]["input"])[:3]
     if vai_nang:
         L.append("<b>Token nặng nhất:</b> " + "; ".join(f"{k} {v['input']:,} input / {v['tool']} tool" for k, v in vai_nang) + ".")

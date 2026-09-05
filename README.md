@@ -58,7 +58,8 @@ ghi thêm một dòng cảnh báo.
   không khung, chữ đè lên qua màn tối. Kiểu `quote`: thẻ trích dẫn pull-quote —
   câu lớn trong **khung 2 góc ngoặc bo tròn**, dòng nguồn `--attrib` canh giữa,
   brand text góc dưới-trái. Màu: **net khung + brand xanh Apple cố định**, **dấu " theo
-  hãng nhắc trong chủ đề**. Kiểu `dai` còn trong mã nhưng hiện không vai nào dùng
+  hãng nhắc trong chủ đề**. Kiểu `dai` (thẻ tin có textbox, nhãn, icon social,
+  mascot) đã bỏ khỏi mã 05/09/2026 vì không vai nào dùng
 - `arxiv_bia.py` — bài arxiv không có ảnh minh hoạ thì chụp trang đầu paper (tên
   công trình + tác giả) làm ảnh, thay vì bó tay. Cần `pymupdf`
 - `carousel.py` — dựng **carousel nhiều slide** (Dre cho donniechublog, Dre
@@ -101,8 +102,8 @@ ghi thêm một dòng cảnh báo.
     (OCR đánh số vùng, đo màu; LaMa xoá trừ vùng `giu`; `vung.json` cho Itachi),
     `itachi_chuan_bi/itachi_nop` (tự làm phần Gin nếu chưa; chữ Anh từng vùng
     in sẵn; vẽ tại chỗ đúng box/màu/cỡ hoặc `deck.py`; retouch/blend chờ GPU,
-    xem dưới), `jean_chuan_bi/jean_nop` (bóc bài, ráp teaser, gửi topic; `--draft`
-    cho task sau này), `ada_chuan_bi/ada_nop` (số liệu N ngày: chọn theo bậc điểm/
+    xem dưới), `jean_chuan_bi/jean_nop` (bóc bài, ráp teaser, gửi topic),
+    `ada_chuan_bi/ada_nop` (số liệu N ngày: chọn theo bậc điểm/
     nguồn/category, draft, kanban, token theo vai, chi phí 9router → nhận xét có
     bằng chứng → báo cáo topic analyst). `tao_nen_ai.py` (skill ai-background) và
     bộ skill retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh ảnh bằng CPU quá
@@ -198,7 +199,7 @@ ghi thêm một dòng cảnh báo.
   (9router không lưu IP, xem "Điểm mù thứ ba"). Ada đọc qua `tai(ngày)` để so ngày với ngày
 - `cost_squeeze.py` — chạy lặp trên việc thật, tìm model rẻ nhất mà vẫn ổn định
 - `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…),
-  icon SVG, mascot, và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
+  và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho
   cổng chặn phát hiện mặt người của `carousel.py`
 - `requirements.txt` — phụ thuộc Python. venv dùng chung với hermes nên `hermes
   update` có thể làm mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`

@@ -26,7 +26,7 @@ from scan_sources import nguon_goc                          # noqa: E402
 
 import env_load                                             # noqa: E402
 
-ROOT = Path.home() / "content-team"
+ROOT = env_load.ROOT
 # STATE theo container (state/<CT_BRAND>/), CUNG mot ham voi approve_service.
 # Truoc 03/09/2026 ghi cung ROOT/state nen manifest cua Vera/Nova nam o goc,
 # approve_service (doc state/<brand>/) khong thay -> tra loi so luon ra

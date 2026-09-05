@@ -34,7 +34,7 @@ import httpx
 
 import env_load
 
-ROOT = Path.home() / "content-team"
+ROOT = env_load.ROOT
 DRAFTS = ROOT / "drafts"
 STATE_DIR = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
 

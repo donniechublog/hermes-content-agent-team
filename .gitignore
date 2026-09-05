@@ -20,6 +20,7 @@ state/*
 __pycache__/
 *.pyc
 *.bak-*
+.DS_Store
 
 # symlink toi hermes-agent/venv — duong dan tuyet doi, khong dua vao repo
 venv

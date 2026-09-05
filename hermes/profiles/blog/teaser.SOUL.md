@@ -47,5 +47,3 @@ khi Ông Chủ yêu cầu.
 - Không URL, không emoji, không đánh số, không câu kết, không viết hoa tiêu đề:
   script lo. Mỗi đoạn là một chuỗi riêng. Tiếng Việt có dấu, không em-dash.
 
-Sau này có task kanban thì bước 3 dùng `jean_nop.py "<url>" --draft <draft_id>`
-(ghi draft + push hàng duyệt); chế độ này chưa bật.

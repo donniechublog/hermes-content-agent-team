@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-"""Dựng thẻ ảnh cho kênh AI — chiều cao co giãn theo tỉ lệ ảnh gốc.
+"""Dựng thẻ ảnh hero cho kênh AI (vai designer / Ethan). Hai kiểu:
 
-Nguyên tắc bố cục:
-  - Bề ngang cố định 1200px. Ảnh gốc giữ NGUYÊN tỉ lệ, trải hết bề ngang.
-    Không cắt, không lẹm mất nội dung nào.
-  - Textbox bên dưới co giãn: ảnh càng ngang (16:9) thì textbox càng cao,
-    vừa cân bố cục vừa có chỗ cho tiêu đề lớn.
-  - Ảnh quá ngang (>2:1) hoặc quá dọc (>1:1) thì mới thu vừa khung giới hạn,
-    nền lấp bằng chính ảnh đó làm mờ — vẫn không mất nội dung.
-  - Mascot góc trên-phải, ≤10% chiều cao vùng ảnh.
-  - Font Be Vietnam Pro. Icon là logo SVG chính chủ, tô âm bản.
+  - `quote` (mặc định): pull-quote 4:5 — ảnh phủ kín, câu trích dẫn lớn trong
+    khung hai góc ngoặc, dòng nguồn canh giữa, chip tên kênh và tagline.
+  - `tran`: ảnh full bề ngang, tiêu đề MỘT câu đè lên qua màn tối liền mạch,
+    kicker ngắn phía trên, tên kênh canh giữa ở đáy. Không khung, không nhãn.
+
+Bề ngang cố định 1200px; ảnh không bao giờ bị cắt bề ngang (luật LUAT_ANH.md).
+Kiểu `dai` cũ (ảnh trên, textbox riêng dưới, nhãn category, hàng icon social,
+mascot) đã bỏ 05/09/2026: từ khi cả đội chuyển sang một kiểu ảnh duy nhất,
+không vai nào gọi tới nó nữa.
 """
 import argparse
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
@@ -23,7 +21,6 @@ import luat_anh
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 FONTS = ASSETS / "fonts"
-ICONS = ASSETS / "icons"
 
 # Brand guideline: JetBrains Mono cho heading/UI, Inter cho body text
 F_BOLD = str(FONTS / "JetBrainsMono-ExtraBold.ttf")   # tieu de
@@ -50,16 +47,6 @@ F_QUOTE_REG = str(FONTS / "BeVietnamPro-Regular.ttf") # dong nguon (attribution)
 F_MARK = str(FONTS / "Oswald.ttf")                    # dau ngoac kep — glyph co duong net, hoi vuong
 
 W = 1200                          # bề ngang cố định
-IMG_MIN_H = 600                   # ảnh không mỏng hơn 2:1
-IMG_MAX_H = 1200                  # ảnh không cao hơn 1:1
-SUB_GROW_MAX = 50                 # cỡ tối đa phụ đề được nở tới khi còn chỗ
-# Ảnh luôn được giữ ít nhất chừng này phần chiều cao thẻ — chữ phải nhường,
-# không được lấn. Bảng số bị thu nhỏ là mất dữ liệu; phụ đề ngắn đi một dòng
-# thì không mất gì.
-TY_LE_ANH_TOI_THIEU = 0.72
-# Kieu tran chi duoc phong anh toi muc nay de phu kin the. Qua nguong thi
-# nen mo + anh sac dat len, vi vo net la mat noi dung.
-NGUONG_PHONG = 1.35
 # Tran chieu cao textbox khi ti le bi khoa. Anh la noi dung chinh, textbox chi
 # la phan chu thich; cho nao thua thi tra cho anh chu khong don vao textbox.
 TRAN_TEXTBOX = 0.40
@@ -72,19 +59,12 @@ PAD = 44
 THUONG_HIEU = {
     "donniechublog": {
         "handle": "donniechublog",
-        "mascot": "mascot.png",
-        "nhan_trai": True,
-        "socials": ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"],
         # Ten hang trong tieu de lay CYAN cua bo nhan dien. Bang mau nay da co
         # mot mau nhan manh roi, muon them mau rieng cua tung hang nua thi doi
         # "cyan" thanh "hang" o day, khong phai sua cho nao khac.
         "to_ten_hang": "cyan",
-        # Phu de keo ve gan FG thay vi mau MUTED xam: xam qua thi cau dan
-        # chuyen bi chim, doc luot qua la mat. Giong muc dcgr dang dung.
-        "ro_phu_de": 1.0,
-        # Ten kenh ro va dung mau CYAN nhan dien; hang icon mo han xuong.
+        # Ten kenh ro va dung mau CYAN nhan dien.
         "ro_handle": 1.0,
-        "mo_icon": 0.34,
         "mau": {
             "BG": (14, 17, 23), "BG_CARD": (22, 27, 34),
             "FG": (230, 237, 243), "MUTED": (139, 147, 158),
@@ -92,11 +72,9 @@ THUONG_HIEU = {
             "CYAN": (0, 204, 224), "LINE": (48, 54, 61),
         },
     },
-    # dcgr.tech: chi trang va den. Khong mascot mau — mot hinh nhieu mau giua
-    # bang mau don sac se pha vo chinh cai lam nen nhan dien cua no.
+    # dcgr.tech: chi trang va den.
     "dcgr": {
         "handle": "dcgr.tech",
-        "mascot": None,
         # Bang mau chi co trang va den, nen to ten hang bang mau nhan cua bo
         # nhan dien la vo nghia: mau nhan o day CHINH LA mau chu. Mau thu ba
         # cua no khong phai mot mau co dinh them vao bang, ma la mau cua chinh
@@ -105,19 +83,11 @@ THUONG_HIEU = {
         # the luon mang y nghia.
         "to_ten_hang": "hang",
         "mau_du_phong": (255, 176, 32),   # hang chua biet mau: ho phach
-        # Chi giu nhan phai. Nhan trai nen dac mau nhan, ma o bang don sac no
-        # thanh mot khoi trang lon hut het mat khoi noi dung.
-        "nhan_trai": False,
-        "socials": ["telegram", "linkedin", "x-twitter", "tiktok", "youtube"],
-        # Cum via va hang social la thong tin PHU: lam mo va thu nho de chung lui
-        # ve sau, nhuong mat cho tieu de va phu de.
-        "co_chan": 0.85,        # co chu + icon o chan the: 85% co goc
+        # Chan the la thong tin PHU: nho va mo hon de lui ve sau.
+        "co_chan": 0.85,        # co chu o chan the: 85% co goc
         "mo_chan": 0.55,        # do sang chu chan, 1.0 la bang FG
-        "ro_phu_de": 1.0,      # phu de sang gan bang FG thay vi mau MUTED xam
-        # Ten kenh la nhan dien, khong phai chu thich: no phai doc ro. Chi cum
-        # "via:" va hang icon moi lui ve sau theo mo_chan.
+        # Ten kenh la nhan dien, khong phai chu thich: no phai doc ro.
         "ro_handle": 0.95,
-        "mo_icon": 0.34,
         "mau": {
             "BG": (10, 10, 10), "BG_CARD": (26, 26, 26),
             "FG": (255, 255, 255), "MUTED": (150, 150, 150),
@@ -129,14 +99,11 @@ THUONG_HIEU = {
 
 # Gia tri mac dinh; build() ghi de theo --brand
 BG = BG_CARD = FG = MUTED = ACCENT = ACCENT_DIM = CYAN = LINE = None
-SOCIALS = []
-MASCOT_PATH = None
 
 
 def dat_thuong_hieu(ten: str):
-    """Nap bang mau, mascot va danh sach social cua mot thuong hieu."""
+    """Nap bang mau cua mot thuong hieu."""
     global BG, BG_CARD, FG, MUTED, ACCENT, ACCENT_DIM, CYAN, LINE
-    global SOCIALS, MASCOT_PATH
     b = THUONG_HIEU.get(ten)
     if b is None:
         raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
@@ -146,12 +113,7 @@ def dat_thuong_hieu(ten: str):
     FG, MUTED = m["FG"], m["MUTED"]
     ACCENT, ACCENT_DIM = m["ACCENT"], m["ACCENT_DIM"]
     CYAN, LINE = m["CYAN"], m["LINE"]
-    SOCIALS = list(b["socials"])
-    MASCOT_PATH = (ASSETS / b["mascot"]) if b.get("mascot") else None
     return b
-
-MASCOT_MAX_H_RATIO = 0.10
-MASCOT_MARGIN = 44
 
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
 TITLE_GROW_MAX = 104              # trần khi tiêu đề nở vào chỗ trống
@@ -178,7 +140,6 @@ KICKER_HO = 20          # ho giua chu va hai duong ke
 # lai cho khoi chu doc thanh MOT mang, dung nhu cac mau tham khao.
 LEAD, TRAN_LEAD = 6, 2
 SUB_SIZE = 31
-CHIP_SIZE = 26
 VIA_SIZE = 29
 BRAND_SIZE = 27   # ten kenh nho hon dong via mot chut
 
@@ -464,24 +425,6 @@ def _fit_text(d, text, max_w, max_lines, hi, lo, bold=False, path=None,
     return f, lines
 
 
-def _grow_sub(d, text, max_w, max_h, max_lines=2):
-    """Chon co chu lon nhat cho phu de ma van vua cho trong con lai.
-
-    Khi anh khong an het chieu cao, textbox thua ra kha nhieu — de phu de o co
-    nho nhat mot dong thi phi cho va nhin trong rong. No ra toi 2 dong.
-    """
-    best = None
-    for size in range(SUB_GROW_MAX, 20, -1):
-        f = _f(F_SUB, size)
-        lines = _wrap(d, text, f, max_w)
-        if len(lines) > max_lines:
-            continue
-        if _line_h(f, 6) * len(lines) <= max_h:
-            best = (f, lines)
-            break
-    return best or (_f(F_SUB, SUB_SIZE), _wrap(d, text, _f(F_SUB, SUB_SIZE), max_w)[:max_lines])
-
-
 def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
                 path=None, weight=None, hi=None, do_that=False):
     """Chọn cỡ chữ lớn nhất mà tiêu đề vẫn vừa cả bề ngang lẫn chiều cao trống.
@@ -569,8 +512,6 @@ def ghep_doc(paths, gap=0, nen=(0, 0, 0)):
     return out
 
 
-
-
 def _chan_anh_thap(src, ratio):
     """Anh qua ngang di MOT MINH vao kieu quote thi DUNG.
 
@@ -590,39 +531,6 @@ def _chan_anh_thap(src, ratio):
     if loi:
         raise SystemExit("ANH QUA NGANG CHO KIEU QUOTE — " + "\n  ".join(loi) +
                          "\n  (Khong co anh thu hai va van muon dung thi --bo-qua-anh)")
-
-
-def _chan_chuan_anh(src, nhan_vat=""):
-    """Bo cong CHUAN ANH dung chung — Ethan chiu dung tieu chuan nhu Dre.
-
-    Ong Chu chot 04/09/2026: "anh do ai lam ma cha phai dat tieu chuan". Truoc
-    do bang trong docstring cua `luat_anh` ghi thang ra chenh lech: mat nguoi,
-    dau vet crop, anh trung, do phan giai — carousel.py CO, card.py KHONG. Bon
-    cong do khong co gi rieng cua carousel ca, chung chi tinh co duoc viet o do
-    vi do la cho Ong Chu bat loi truoc.
-
-    Gom het loi roi bao MOT LAN (nhu carousel) thay vi dung o cai dau tien: sua
-    mot vong con hon chay lai bon lan.
-    """
-    duong = [q for q in (src if isinstance(src, (list, tuple)) else [src]) if q]
-    loi, canh_bao, da_thay = [], [], {}
-    for q in duong:
-        nhan = str(q)
-        with Image.open(q) as im:
-            w, h = im.size
-            rgb = im.convert("RGB")
-            for l, c in (luat_anh.kiem_anh_rong(nhan, rgb),
-                         luat_anh.kiem_xuat_xu(nhan, im, w, h),
-                         luat_anh.kiem_do_phan_giai(nhan, w, h),
-                         luat_anh.kiem_day_sang(nhan, rgb),
-                         luat_anh.kiem_mat_nguoi(nhan, q, nhan_vat),
-                         luat_anh.kiem_trung(nhan, q, da_thay)):
-                loi += l
-                canh_bao += c
-    for c in canh_bao:
-        print(f"[CANH BAO] {c}", file=sys.stderr)
-    if loi:
-        raise SystemExit("ANH KHONG DAT CHUAN —\n  " + "\n  ".join(loi))
 
 
 def _chan_chuan_anh(src, nhan_vat=""):
@@ -693,27 +601,11 @@ def _chan_crop(src):
                 "GOC vao --image,\n  anh qua ngang thi ghep doc bang --image2.")
 
 
-# Ba phep do nay da chuyen sang `luat_anh.py` — bo tieu chi anh dung chung
-# (Ong Chu chot 04/09/2026). Giu ten cu o day de moi cho dang goi `card.la_chart`
-# / `card.lech_tone` van chay; MOT nguon su that nam ben luat_anh.
-do_chart = luat_anh.do_chart
-la_chart = luat_anh.la_chart
-lech_tone = luat_anh.lech_tone
-CHART_PHANG = luat_anh.CHART_PHANG
-CHART_SO_MAU = luat_anh.CHART_SO_MAU
-
-
 def _mo_anh(src):
     """src: mot duong dan, hoac danh sach duong dan (ghep doc)."""
     if isinstance(src, (list, tuple)):
         return ghep_doc(src)
     return Image.open(src).convert("RGB")
-
-
-def _fit_contain(img, box_w, box_h):
-    scale = min(box_w / img.width, box_h / img.height)
-    nw, nh = max(1, round(img.width * scale)), max(1, round(img.height * scale))
-    return img.resize((nw, nh), Image.LANCZOS)
 
 
 def _fit_cover(img, box_w, box_h):
@@ -743,43 +635,6 @@ def _khoang(nen: float) -> tuple:
             max(4, int(10 * nen)),       # giua tieu de va phu de
             max(14, int(34 * nen)),      # truoc dong via
             max(22, int(PAD * nen)))     # le duoi
-
-
-def _plan_image(src_img):
-    """Tính chiều cao vùng ảnh và cách đặt — không bao giờ cắt nội dung."""
-    natural_h = round(W * src_img.height / src_img.width)
-    if IMG_MIN_H <= natural_h <= IMG_MAX_H:
-        return natural_h, "exact"          # trường hợp phổ biến: 16:9, 4:3, 1:1
-    if natural_h < IMG_MIN_H:
-        return IMG_MIN_H, "letterbox"      # ảnh siêu ngang (panorama)
-    return IMG_MAX_H, "letterbox"          # ảnh dọc
-
-
-def _render_image_area(canvas, src_img, img_h, how):
-    """Ve vung anh. Tra ve o chu nhat (x, y, rong, cao) ma ANH THAT chiem cho.
-
-    Can o nay de dat mascot: uu tien tren het la HIEN DAY DU anh nguon. Anh
-    bang so hay bieu do ma bi che mot goc la mat du lieu, khong chap nhan duoc.
-    """
-    if how == "exact":
-        canvas.paste(src_img.resize((W, img_h), Image.LANCZOS), (0, 0))
-        return (0, 0, W, img_h)          # anh phu kin, khong con cho trong
-    blur = _fit_cover(src_img, W, img_h).filter(ImageFilter.GaussianBlur(48))
-    blur = ImageEnhance.Brightness(blur).enhance(0.38)
-    canvas.paste(blur, (0, 0))
-    # KHONG thut le. Truoc day inset=40 moi ben, cong voi viec anh da phai ha
-    # chieu cao de chua cho chu, lam bang benchmark 1200x979 chi con hien o
-    # 1030x840 — thu hep vo co gan 15% be ngang. Uu tien la HIEN DAY DU va TO
-    # NHAT co the; vien mo hai ben chi la phan thua, khong phai bo cuc.
-    fitted = _fit_contain(src_img, W, img_h)
-    x, y = (W - fitted.width) // 2, (img_h - fitted.height) // 2
-    canvas.paste(fitted, (x, y))
-    # Chi ve vien khi anh KHONG cham mep — cham mep roi thi vien la thua
-    if fitted.width < W - 2 or fitted.height < img_h - 2:
-        ImageDraw.Draw(canvas).rectangle(
-            [x - 1, y - 1, x + fitted.width, y + fitted.height],
-            outline=(*LINE, 255), width=2)
-    return (x, y, fitted.width, fitted.height)
 
 
 def _tran_anh(canvas, src_img, split, nat_h=None):
@@ -986,17 +841,8 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     at_lh = _line_h(f_at, 8)
     at_h = at_lh * len(at_lines)
 
-    # Tagline ngan cua kenh — dong NHO o DAY the. KHONG phai ten kenh (ten kenh
-    # la brand text, da o goc TREN); day chi la mot dong tagline mo ta ngan.
-    f_tag = _f(F_QUOTE_REG, 23)
+    # Tagline ngan cua kenh — chip nho o goc duoi-trai khung (xem ben duoi).
     tag = (tagline or "").strip()
-    tag_lh = _line_h(f_tag, 8)
-    tag_h = tag_lh if tag else 0
-
-    f_mark = _f(F_MARK, MARK_SIZE)
-    ob = f_mark.getbbox("“")          # dau mo "
-    cb = f_mark.getbbox("”")          # dau dong "
-    open_h, close_h = ob[3] - ob[1], cb[3] - cb[1]
 
     # KHUNG CHU NHAT BO GOC bao quanh quote; dau " gan goc TL/BR (xem _quote_frame).
     # BO CUC (Ong Chu chot 03/09/2026): hai CHIP can theo muc net khung (tam chip
@@ -1060,7 +906,6 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         return bh, x1
 
     fx0, fx1 = FRAME_X, W - FRAME_X
-    aw = (fx1 - fx0) // 3                     # 1/3 net ngang cua _quote_frame
     # Chip ten kenh: goc TREN-PHAI, tam chip ngang muc net ngang tren. Khung giu
     # nguyen design goc (net 1/3), KHONG keo dai net toi chip.
     tb_h = d.textbbox((0, 0), ten, font=f_hchip)
@@ -1069,8 +914,6 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     _chip_neo(ten, f_hchip, frame_top - chip_h // 2, "l", CYAN, (0, 0, 0), x=hx0)
     if tag:
         # Chip tagline: goc DUOI-TRAI, tam chip ngang muc net ngang duoi (yb).
-        tb_t = d.textbbox((0, 0), tag, font=f_tchip)
-        tw_ = (tb_t[2] - tb_t[0]) + 2 * 22
         tx0 = fx0 + CHIP_INSET
         _chip_neo(tag, f_tchip, yb - chip_h // 2, "l", (255, 255, 255), (0, 0, 0), x=tx0)
 
@@ -1082,124 +925,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     return out
 
 
-def _chip_size(d, text, font, pad_x=18, pad_y=12):
-    b = font.getbbox("Ây")
-    return (d.textlength(text, font=font) + pad_x * 2,
-            (b[3] - b[1]) + pad_y * 2)
-
-
-def _chip(d, x, y, text, font, pad_x=18, pad_y=12, right_align=None,
-          solid=False, fold=None):
-    """Nhan category, co tam giac gap o canh tao cam giac hinh khoi.
-
-    Tam giac dung mau toi hon (ACCENT_DIM) nhu mot mat bi khuat sang — thu
-    phap ruy-bang quen thuoc, khien the noi len khoi mat phang cua anh.
-    """
-    bw, bh = _chip_size(d, text, font, pad_x, pad_y)
-    if right_align is not None:
-        x = right_align - bw
-    b = font.getbbox("Ây")
-    # Cao dung bang nua tren cua the — the vat qua mep textbox nen nua tren
-    # chinh la phan de len anh; lay dung so nay thi tam giac cham sat mep,
-    # khong con khe ho.
-    fold_w = bh // 2
-
-    if solid:
-        d.rectangle([x, y, x + bw, y + bh], fill=CYAN)
-        d.text((x + pad_x, y + pad_y - b[1]), text, font=font, fill=BG)
-    else:
-        d.rectangle([x, y, x + bw, y + bh], fill=BG_CARD, outline=CYAN,
-                    width=2)
-        d.text((x + pad_x, y + pad_y - b[1]), text, font=font, fill=FG)
-
-    # Tam giac gap, cung mau than the. CA HAI deu bam canh PHAI cua the — truoc
-    # day the phai gap sang trai nen hai the doi dinh vao nhau, nhin nhu bi hut
-    # vao giua. Cung huong thi nhip deu va mat di theo mot chieu.
-    if fold == "down":
-        # HAI tam giac doi xung tren duoi, khoet mot chu V o dau phai — dung
-        # hinh duoi ruy bang. Mot tam giac don chi giong goc bi gap, hai cai
-        # moi doc ra la dai bang.
-        d.polygon([(x + bw, y), (x + bw + fold_w, y), (x + bw, y + fold_w)],
-                  fill=CYAN)
-        d.polygon([(x + bw, y + bh), (x + bw + fold_w, y + bh),
-                   (x + bw, y + bh - fold_w)], fill=CYAN)
-    elif fold == "up":
-        tri = [(x + bw, y), (x + bw, y + fold_w), (x + bw + fold_w, y + fold_w)]
-        d.polygon(tri, fill=BG_CARD)
-        d.line(tri + [tri[0]], fill=CYAN, width=2)
-    return bw, bh
-
-
-def _de_len(a, b, ho=8) -> bool:
-    """Hai o chu nhat co cham nhau khong (cong mot khoang ho cho de tho)."""
-    ax, ay, aw, ah = a
-    bx, by, bw, bh = b
-    return not (ax + aw + ho <= bx or bx + bw + ho <= ax
-                or ay + ah + ho <= by or by + bh + ho <= ay)
-
-
-def _paste_mascot(canvas, img_h, o_anh):
-    """Dat mascot vao goc KHONG che anh. Khong con goc nao trong thi BO HAN.
-
-    Truoc day mascot luon dan cung mot cho o goc tren-phai, nen voi anh phu kin
-    khung no che mat mot phan noi dung — da gap that: che cot Opus-4.8 cua mot
-    bang benchmark. Nhan dien thuong hieu da co goc cyan, nhan category, tieu de
-    va dai mang xa hoi; thieu mascot mot the khong mat nhan dien, con che mat so
-    lieu thi hong ca tam anh.
-    """
-    if MASCOT_PATH is None or not MASCOT_PATH.exists():
-        return
-    mascot = Image.open(MASCOT_PATH).convert("RGBA")
-    th = int(img_h * MASCOT_MAX_H_RATIO)
-    tw = int(th * mascot.width / mascot.height)
-    m = MASCOT_MARGIN
-    # Thu bon goc cua vung anh, uu tien tren-phai nhu cu
-    goc = [(W - tw - m, m), (m, m),
-           (W - tw - m, img_h - th - m), (m, img_h - th - m)]
-    for x, y in goc:
-        if y < 0 or x < 0:
-            continue
-        if not _de_len((x, y, tw, th), o_anh):
-            canvas.alpha_composite(mascot.resize((tw, th), Image.LANCZOS), (x, y))
-            return
     # Moi goc deu de len anh -> khong dan mascot
-
-
-_ICON_CACHE = {}          # (name, size, color) -> Image; icon tinh, doi duoc
-
-
-def _load_icon(name, size, color):
-    """Doc SVG icon qua rsvg-convert, co CACHE — 5 icon social duoc goi lai moi
-    lan render, khong co ly do gi chay lai subprocess moi lan. Thieu binary thi
-    canh bao MOT lan ro rang thay vi de icon lang le bien mat."""
-    khoa = (name, size, color)
-    if khoa in _ICON_CACHE:
-        return _ICON_CACHE[khoa]
-    src = ICONS / (name + ".svg")
-    if not src.exists():
-        _ICON_CACHE[khoa] = None
-        return None
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        out = tmp.name
-    try:
-        subprocess.run(["rsvg-convert", str(src), "-w", str(size),
-                        "-h", str(size), "-o", out],
-                       check=True, capture_output=True, timeout=20)
-        icon = Image.open(out).convert("RGBA")
-    except Exception as e:                                   # noqa: BLE001
-        if not _ICON_CACHE.get("_da_bao"):
-            _ICON_CACHE["_da_bao"] = True
-            print(f"[canh bao] khong render duoc icon SVG ({type(e).__name__}) "
-                  f"— thieu rsvg-convert? Icon social se KHONG hien.",
-                  file=sys.stderr)
-        _ICON_CACHE[khoa] = None
-        return None
-    finally:
-        Path(out).unlink(missing_ok=True)
-    tinted = Image.new("RGBA", icon.size, (*color, 0))
-    tinted.putalpha(icon.split()[-1])
-    _ICON_CACHE[khoa] = tinted
-    return tinted
 
 
 def _pha(mau, do_sang: float, nen=None):
@@ -1207,53 +933,6 @@ def _pha(mau, do_sang: float, nen=None):
     nen = nen if nen is not None else BG
     t = max(0.0, min(1.0, do_sang))
     return tuple(int(n + (c - n) * t) for c, n in zip(mau, nen))
-
-
-def _social_row(canvas, d, right_x, cy, handle, font, icon_size=39, gap=15,
-                mau_chu=None, mau_icon=None):
-    """Hang icon + ten kenh, can sat le phai. Cung tong mau voi cum via."""
-    mau_chu = mau_chu if mau_chu is not None else ACCENT
-    mau_icon = mau_icon if mau_icon is not None else FG
-    handle_text = handle if handle.startswith("@") else "@" + handle
-    b = font.getbbox("Ay")
-    tw = d.textlength(handle_text, font=font)
-    x = right_x - tw
-    d.text((x, cy - (b[3] - b[1]) / 2 - b[1]), handle_text, font=font,
-           fill=mau_chu)
-    x -= gap + 4
-    for name in reversed(SOCIALS):
-        icon = _load_icon(name, icon_size, mau_icon)
-        x -= icon_size
-        if icon is not None:
-            canvas.alpha_composite(icon, (int(x), int(cy - icon_size / 2)))
-        x -= gap
-
-
-
-
-
-def _tech_frame(d, H, split, box_col, vach=True):
-    m, brk = 18, 46
-    # Hai goc tren: mau nhan. Hai goc duoi: mau trang, cung do day.
-    for (x, y, dx, dy, col) in ((m, m, 1, 1, CYAN),
-                                (W - m, m, -1, 1, CYAN),
-                                (m, H - m, 1, -1, FG),
-                                (W - m, H - m, -1, -1, FG)):
-        d.line([(x, y), (x + dx * brk, y)], fill=col, width=3)
-        d.line([(x, y), (x, y + dy * brk)], fill=col, width=3)
-    # Vung anh KHONG ve net doc hai ben nua: anh nay chay sat mep nen net chi
-    # cat vao noi dung, khong con vai tro khung.
-    # Hai net doc trong textbox — mau nghich voi net o vung anh, tao nhip
-    for x in (m, W - m):
-        d.line([(x, split + 12), (x, H - m - brk - 12)], fill=box_col, width=2)
-    # Kieu tran khong ve vach: vach la thu bien anh va chu thanh hai o rieng,
-    # dung noi ma chinh no la cai can bo.
-    if not vach:
-        return
-    d.line([(0, split), (int(W * 0.34), split)], fill=LINE, width=2)
-    d.line([(int(W * 0.42), split), (W, split)], fill=LINE, width=2)
-    d.line([(int(W * 0.34), split), (int(W * 0.40), split)],
-           fill=ACCENT, width=3)
 
 
 # Em-dash bi cam trong moi van ban dang. caption_check chan o bai viet, publish
@@ -1351,23 +1030,21 @@ def tim_mat_dau(text: str) -> list:
     return don if len(don) >= 2 else []
 
 
-def build(src, title, subtitle, via, out, category="AI",
-          category_right="", handle=None, ratio="free",
-          tagline="daily AI update", brand="donniechublog",
-          bo_qua_dau=False, kieu="dai", kicker="", attrib="",
-          bo_qua_anh=False, nhan_vat=""):
+def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
+          brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
+          attrib="", bo_qua_anh=False, nhan_vat=""):
+    """Dung the `quote` (mac dinh) hoac `tran`. `src`: mot duong dan, hoac danh
+    sach hai duong dan (ghep doc). `title` la cau trich dan (quote) hoac cau
+    tieu de (tran)."""
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
     b = dat_thuong_hieu(brand)
     handle = handle or b["handle"]
-    title, subtitle = bo_dau_cam(title), bo_dau_cam(subtitle)
-    attrib = bo_dau_cam(attrib)
+    title, attrib = bo_dau_cam(title), bo_dau_cam(attrib)
 
     # Chan tieng Viet khong dau TRUOC khi ve, o moi cho chu hien len the.
     loi = {}
-    for ten, gt in (("tieu de", title), ("phu de", subtitle),
-                    ("category", category), ("category-right", category_right),
-                    ("via", via), ("nguon", attrib)):
+    for ten, gt in (("tieu de", title), ("nguon", attrib)):
         m = tim_mat_dau(gt or "")
         if m:
             loi[ten] = m
@@ -1378,58 +1055,40 @@ def build(src, title, subtitle, via, out, category="AI",
             "  Go lai co dau day du roi chay lai. The la thu nguoi doc nhin thay\n"
             "  dau tien, chu khong dau lam ca kenh trong nhu lam au.\n"
             "  (Neu that su la tieng Anh, chay lai voi --bo-qua-dau)")
+    if kieu not in ("quote", "tran"):
+        raise SystemExit(f"--kieu phai la quote hoac tran, nhan {kieu!r}")
     _chan_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu
     if not bo_qua_anh:
         _chan_chuan_anh(src, nhan_vat)   # chuan anh chung: xuat xu, do net, mat nguoi, trung
-    if kieu in ("quote", "tran") and not bo_qua_anh:
         _chan_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
     if kieu == "quote" and not bo_qua_anh:
         _chan_anh_thap(src, ratio)   # anh qua ngang: nua the se bo trong
-    # Kieu quote co duong ve rieng (anh phu kin + cau trich dan + dong nguon),
-    # khong di qua logic dai/tran ben duoi. Dat NGAY sau cong tieng Viet co dau.
+    # Kieu quote co duong ve rieng (anh phu kin + cau trich dan + dong nguon).
     if kieu == "quote":
         return _render_quote(src, title, attrib, out, handle, ratio, tagline)
-    if kieu != "tran" and not (subtitle or "").strip():
-        raise SystemExit(
-            "Thieu --subtitle. The tin kieu dai can phu de: tieu de chi la nhan\n"
-            "  de, phu de moi mang noi dung. (Hero image --kieu tran thi khong\n"
-            "  can, vi o do tieu de la mot cau tron ven.)")
-    src_img = _mo_anh(src)
-    img_h, how = _plan_image(src_img)
-    # Chieu cao tu nhien cua anh khi hien full be ngang. Kieu tran khong dung
-    # `_plan_image`: ham do chan chieu cao trong khoang IMG_MIN_H..IMG_MAX_H de
-    # thu vua vung anh cua the tin, con o day anh la lop nen nen khong co tran.
-    nat_h = round(W * src_img.height / src_img.width)
-    if kieu == "tran":
-        img_h, how = nat_h, "tran"
 
-    # Đo trước phần chữ để biết textbox cần cao bao nhiêu
+    # ---- kieu tran: hero image, tieu de la MOT cau tron ven de len anh -------
+    src_img = _mo_anh(src)
+    # Chieu cao tu nhien cua anh khi hien full be ngang: con so quyet dinh moi
+    # thu con lai — anh la lop nen, khong co tran.
+    nat_h = round(W * src_img.height / src_img.width)
+    img_h, how = nat_h, "tran"
+
     probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
-    f_chip = _f(F_UI, CHIP_SIZE)
     co_chan = b.get("co_chan") or 1.0
     mo_chan = b.get("mo_chan") or 1.0
-    # Hang icon social la thu it dang chu y nhat tren the: ai cung biet
-    # no la gi, no khong mang thong tin. De no mo hon ca cum via.
-    mo_icon = b.get("mo_icon") or round(mo_chan * 0.62, 2)
     f_via = _f(F_REG, max(12, round(VIA_SIZE * co_chan)), weight=500)
     avail_w = W - PAD * 2
-
-    tran = kieu == "tran"
-    lead = TRAN_LEAD if tran else LEAD
-    so_dong_tieu_de = TRAN_TITLE_LINES if tran else 2
-    # Hero image dung Oswald (khong chan, condensed); the tin giu JetBrains Mono
-    # vi font don cach la mot phan nhan dien cua no.
-    font_tieu_de = F_HERO if tran else F_BOLD
-    do_day = HERO_WEIGHT if tran else None
-
+    lead = TRAN_LEAD
+    # Hero image dung Oswald (khong chan, condensed): mot cau dai van vua be
+    # ngang o co chu to, dung dang chu cua cac mau tham khao.
     f_title, title_lines = _fit_text(probe, title.upper(), avail_w,
-                                      max_lines=so_dong_tieu_de,
-                                      hi=TITLE_SIZE_HI,
-                                      lo=TITLE_SIZE_LO, bold=True,
-                                      path=font_tieu_de, weight=do_day)
+                                      max_lines=TRAN_TITLE_LINES,
+                                      hi=TITLE_SIZE_HI, lo=TITLE_SIZE_LO, bold=True,
+                                      path=F_HERO, weight=HERO_WEIGHT)
 
-    # Kicker: nhan ngan phia tren tieu de. Chi co o kieu tran.
-    kicker = (kicker or "").strip().upper() if tran else ""
+    # Kicker: nhan ngan phia tren tieu de.
+    kicker = (kicker or "").strip().upper()
     f_kick = _f(F_REG, KICKER_SIZE, weight=700)
     # Do CHIEU CAO CHU THAT chu khong dung _line_h. _line_h do bang bbox cua
     # "Ây" — co ca dau mu lan duoi chu y — vi no phuc vu chu tieng Viet co dau.
@@ -1437,288 +1096,111 @@ def build(src, title, subtitle, via, out, category="AI",
     # troi o duoi, va cong voi khoang ho nua thi kicker troi han khoi tieu de.
     _kb = f_kick.getbbox(kicker) if kicker else (0, 0, 0, 0)
     kick_h = (_kb[3] - _kb[1]) if kicker else 0
-    # Hero image khong co phu de. Van nap font de cac nhanh phia sau con doi
-    # tuong de goi, nhung danh sach dong rong nen moi phep tinh chieu cao va moi
-    # vong ve deu tu dong bo qua no.
-    if tran:
-        f_sub, sub_lines = _f(F_SUB, SUB_SIZE), []
-    else:
-        f_sub, sub_lines = _fit_text(probe, subtitle, avail_w, max_lines=3,
-                                      hi=SUB_SIZE, lo=22)
-    _, chip_h = _chip_size(probe, category.upper(), f_chip)
     via_h = f_via.getbbox("Ây")[3] - f_via.getbbox("Ây")[1]
 
-    # Chieu cao phan DAU textbox, phan nam tren tieu de. Hai kieu an khac nhau:
-    #   dai  — nhan VAT qua ranh gioi, chi nua duoi cua no roi vao textbox
-    #   tran — nhan nam han trong khoi chu, an tron chieu cao cong hai khoang ho
-    # Quen cho vao day thi phu de bi day tut xuong de len hang chan. Da gap that.
     def _cao_tieu_de(f=None, dong=None):
-        """Chieu cao khoi tieu de. Kieu tran do that, kieu dai giu cach cu."""
+        """Chieu cao khoi tieu de, do bang CHINH cac dong se ve."""
         f, dong = f or f_title, dong if dong is not None else title_lines
-        if tran:
-            return _buoc_dong(f, dong, lead)[0] * len(dong)
-        return _line_h(f, lead) * len(dong)
+        return _buoc_dong(f, dong, lead)[0] * len(dong)
 
     def _cao_dau(nen=1.0):
-        g1 = _khoang(nen)[0]
-        # Kieu tran khong ve nhan category; phan dau la khoang ho, cong them
-        # kicker neu co (kicker cong mot khoang ho nua truoc tieu de).
-        if kieu == "tran":
-            return g1 + (kick_h + KICKER_GAP if kicker else 0)
-        return chip_h // 2 + g1
+        # Phan dau textbox la khoang ho, cong them kicker neu co (kicker cong
+        # mot khoang ho nua truoc tieu de). Kieu tran khong ve nhan category.
+        return _khoang(nen)[0] + (kick_h + KICKER_GAP if kicker else 0)
 
-    # Chiều cao tối thiểu textbox cần để chứa hết chữ, ở một hệ số nén cho trước
-    def _box_min(nen=1.0, f_t=None, d_t=None, f_s=None, d_s=None):
-        g1, g2, g3, g4 = _khoang(nen)
-        _dong_sub = d_s if d_s is not None else sub_lines
-        # Khong co phu de thi khong cong ca chieu cao LAN khoang ho g2 truoc no.
-        cao_sub = (g2 + _line_h(f_s or f_sub, LEAD) * len(_dong_sub)
-                   if _dong_sub else 0)
-        return (_cao_dau(nen)
-                + _cao_tieu_de(f_t, d_t)
-                + cao_sub + g3 + max(via_h, 34) + g4)
+    def _box_min(nen=1.0, f_t=None, d_t=None):
+        """Chieu cao toi thieu textbox de chua het chu, o mot he so nen."""
+        _g1, _g2, g3, g4 = _khoang(nen)
+        return _cao_dau(nen) + _cao_tieu_de(f_t, d_t) + g3 + max(via_h, 34) + g4
 
     nen = 1.0
-    # Nhan category VAT qua ranh gioi anh/textbox — khau hai vung lam mot. No co
-    # de len mep duoi cua anh, nhung Ong Chu da chot: che phan chu thich thi
-    # chap nhan duoc, khong can khat khe. Chi mascot moi phai tranh, vi no nam
-    # o giua vung anh chu khong o mep.
     box_min = _box_min()
-
     if ratio in RATIOS:
-        # Khoá tỉ lệ đầu ra: textbox phình ra bù phần ảnh thiếu.
-        # Ảnh càng ngang (16:9) thì textbox càng cao — đúng ý đồ bố cục.
+        # Khoa ti le dau ra. Kieu tran KHONG thuong luong chieu cao: anh phu
+        # kin the va textbox la mot lop DE LEN anh, khong ai lan cho ai.
         H = RATIOS[ratio]
-
-        # Kieu tran KHONG thuong luong chieu cao. Ca doan duoi day sinh ra cho
-        # kieu dai, noi anh va chu cat nhau mot chieu cao huu han nen phai co ai
-        # do nhuong. O kieu tran anh phu kin the va textbox la mot lop DE LEN
-        # anh, khong phai mot o cat ra tu the: khong ai lan cho ai, khong co gi
-        # de nhuong. Chay nham vao day thi `min(H - img_h, ...)` ben duoi kep
-        # vung chu xuong bang phan anh con thua, va tieu de bi ep nho lai.
-        if not tran:
-            #   1. NÉN khoảng trắng của khối nhận diện (chữ vẫn nguyên cỡ)
-            #   2. RÚT phụ đề bớt dòng
-            #   3. NỚI tỉ lệ thẻ cho cao hơn
-            #   4. cuối cùng mới thu ảnh — và chỉ khi bị ép giữ tỉ lệ
-            while H - img_h < box_min and nen > 0.55:
-                nen = round(nen - 0.05, 2)
-                box_min = _box_min(nen)
-            # Rut phu de bot dong, nhung KHONG duoc rut den muc bi cat cut. Da gap:
-            # ep xuong 1 dong thi phu de dai khong vua o co nho nhat nen bi thay
-            # bang dau ba cham. Cat mat chu la mat noi dung, con nhuong them mot
-            # chut chieu cao thi khong mat gi. Nen dung o 2 dong khi 1 dong se cat.
-            while H - img_h < box_min and len(sub_lines) > 1:
-                thu_f, thu_lines = _fit_text(probe, subtitle, avail_w,
-                                             max_lines=len(sub_lines) - 1,
-                                             hi=SUB_SIZE, lo=19)
-                if "…" in "".join(thu_lines) and len(sub_lines) <= 2:
-                    break                       # rut nua la cat mat chu, dung lai
-                f_sub, sub_lines = thu_f, thu_lines
-                box_min = _box_min(nen)
-
-            if H - img_h < box_min:
-                # Khoa ti le ma van muon chua du chu thi phai THU ANH — khong chap
-                # nhan duoc, vi thu anh la mat noi dung. Thay vi vay, NOI TI LE ra
-                # cao hon cho toi khi anh vua tron ven. Chi khi moi ti le deu khong
-                # du moi danh thu, va bao ro ra man hinh.
-                for ten_ti_le, cao in sorted(RATIOS.items(), key=lambda x: x[1]):
-                    if cao <= H:
-                        continue
-                    if cao - img_h >= box_min:
-                        ratio, H = ten_ti_le, cao
-                        break
-                else:
-                    H = img_h + box_min              # tha the dai hon la thu anh
-        # ANH LA CHINH, TEXTBOX LA PHU. Truoc day toan bo cho thua bi don het
-        # vao textbox: khoa 4:5 thi chu chiem 58% chieu cao con anh 42%, nguoc
-        # vai tro. Nay textbox chi lay phan chu that su can, tran o TRAN_TEXTBOX;
-        # phan con lai tra cho vung anh, anh nam giua tren nen mo cung tong mau.
-        if tran:
-            # Anh hien full be ngang, nen chieu cao tu nhien cua no la con so
-            # quyet dinh moi thu con lai.
-            if nat_h >= H:
-                # Anh du cao: chu de len anh, vung chu lay phan da dinh.
-                box_h = max(box_min, int(H * TRAN_TEXTBOX))
-            else:
-                # Anh thap: nen cua vung chu cao len bu dung phan anh thieu.
-                # Chu can nhieu hon the thi vung chu an nguoc len day anh, va
-                # man toi lo phan chuyen tiep.
-                box_h = max(box_min, H - nat_h)
+        if nat_h >= H:
+            # Anh du cao: chu de len anh, vung chu lay phan da dinh.
+            box_h = max(box_min, int(H * TRAN_TEXTBOX))
         else:
-            box_h = min(H - img_h, max(box_min, int(H * TRAN_TEXTBOX)))
+            # Anh thap: nen cua vung chu cao len bu dung phan anh thieu. Chu
+            # can nhieu hon the thi vung chu an nguoc len day anh, va man toi
+            # lo phan chuyen tiep.
+            box_h = max(box_min, H - nat_h)
         if H - box_h != img_h:
             img_h, how = H - box_h, "letterbox"
-        # Chỗ trống chia theo thứ tự ưu tiên: khung cố định -> subtitle
-        # (tối đa 3 dòng) -> phần còn lại dành cho tiêu đề nở, chặn ở 2 dòng.
+        # Cho trong con lai danh cho tieu de no, chan o TRAN_TITLE_LINES dong.
         _g1, _g2, _g3, _g4 = _khoang(nen)
-        frame_h = (_cao_dau(nen) + (_g2 if sub_lines else 0)
-                   + _g3 + max(via_h, 34) + _g4)
-        # Chia cho trong: tieu de truoc, phan con lai cho phu de. Neu textbox van
-        # thua thi phu de no theo — thay vi de mot dong chu nho lo lung giua
-        # khoang trong. O kieu tran khong co phu de nen tieu de an tron cho.
-        sub_h = _line_h(f_sub, LEAD) * len(sub_lines)
+        frame_h = _cao_dau(nen) + _g3 + max(via_h, 34) + _g4
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
-                                           box_h - frame_h - sub_h,
-                                           max_lines=so_dong_tieu_de,
-                                           lead=lead, path=font_tieu_de,
-                                           weight=do_day, do_that=tran,
-                                           hi=TRAN_TITLE_MAX if tran else None)
-        con_lai = box_h - frame_h - _cao_tieu_de()
-        if sub_lines and con_lai > sub_h + 12:
-            f_sub, sub_lines = _grow_sub(probe, subtitle, avail_w, con_lai)
+                                           box_h - frame_h,
+                                           max_lines=TRAN_TITLE_LINES,
+                                           lead=lead, path=F_HERO,
+                                           weight=HERO_WEIGHT, do_that=True,
+                                           hi=TRAN_TITLE_MAX)
     else:
         box_h = box_min
         H = img_h + box_h
 
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    if kieu == "tran":
-        o_anh = _tran_anh(canvas, src_img, img_h, nat_h)
-    else:
-        o_anh = _render_image_area(canvas, src_img, img_h, how)
-        _paste_mascot(canvas, img_h, o_anh)
+    _tran_anh(canvas, src_img, img_h, nat_h)
     d = ImageDraw.Draw(canvas)
-    # Mot he mau co dinh, khong phu thuoc anh sang hay toi:
-    #   vung anh   -> cyan, dong bo voi hai ngoac goc TREN va nhan category
-    #   vung chu   -> trang, dong bo voi hai ngoac goc DUOI
-    # Kieu tran KHONG ve khung, khong mot net nao. Truoc day no van ve hai
-    # ngoac goc va hai net doc trong vung chu, chi bo moi cai vach ngang. Nhung
-    # ngoac goc chinh la mot cai vien, va net doc trong vung chu lai to ra dung
-    # cai ranh gioi ma kieu tran sinh ra de xoa. Hero image lien mot mat phang:
-    # anh, man toi, chu. Het.
-    if kieu != "tran":
-        _tech_frame(d, H, img_h, FG, vach=True)
+    # Kieu tran KHONG ve khung, khong mot net nao: anh, man toi, chu. Het.
+    g1, _g2, g3, g4 = _khoang(nen)
 
-    g1, g2, g3, g4 = _khoang(nen)
+    # Kieu tran khong co ranh gioi anh/chu, nen nhan (kicker) tut han xuong
+    # thanh hang dau tien cua khoi chu. Khi khoa ti le, CAN GIUA DOC ca cum
+    # (kicker + tieu de) TRUOC khi ve — kicker va tieu de phai troi cung nhau.
+    y = img_h + g1
+    if ratio != "free":
+        _cao_cum = (kick_h + KICKER_GAP if kicker else 0) + _cao_tieu_de()
+        _thua = (H - g4 - via_h - g3) - y - _cao_cum
+        if _thua > 0:
+            y += _thua // 2
+    if kicker:
+        mau_kick = _pha(CYAN, 1.0)
+        rong_chu = _rong_tracked(d, kicker, f_kick, KICKER_TRACK)
+        # Tru _kb[1] de DINH chu roi dung vao y, khong phai goc ascender.
+        _ve_tracked(d, (W - rong_chu) / 2, y - _kb[1], kicker, f_kick,
+                    mau_kick, KICKER_TRACK)
+        # Hai duong ke hai ben. Ca cum rong dung KICKER_CUM cua the, nen ke
+        # NGAN LAI khi chu dai ra — cum giu nguyen be ngang, chu khong phai
+        # ke giu nguyen do dai. Chu qua dai thi khong con cho, bo ke di.
+        rong_ke = (W * KICKER_CUM - rong_chu) / 2 - KICKER_HO
+        if rong_ke >= 24:
+            giua = y + kick_h / 2
+            trai = (W - rong_chu) / 2 - KICKER_HO
+            d.line([(trai - rong_ke, giua), (trai, giua)],
+                   fill=mau_kick, width=2)
+            d.line([(W - trai, giua), (W - trai + rong_ke, giua)],
+                   fill=mau_kick, width=2)
+        y += kick_h + KICKER_GAP
 
-    # Cho dat nhan category khac han giua hai kieu.
-    #
-    # Kieu dai co ranh gioi that giua anh va textbox, va nhan duoc dat VAT qua
-    # ranh gioi do de khau hai vung lam mot, dong thoi tra lai chieu cao textbox
-    # cho tieu de.
-    #
-    # Kieu tran khong co ranh gioi nao. De nhan o cao do thi chinh nhan tro
-    # thanh vat danh dau cai duong ma kieu tran sinh ra de xoa: nhin vao van
-    # thay the bi chia hai, chi la duong ke doi thanh hai cai nhan. Nen o kieu
-    # tran nhan tut han xuong, thanh hang dau tien cua khoi chu.
-    # Kieu tran KHONG ve nhan category. Nhan ruy-bang la mot khoi dac bam mep,
-    # sinh ra de khau hai vung cua the tin lam mot. Hero image khong co hai vung
-    # de khau, va mot khoi mau dac bam mep lai keo mat ve phia le dung luc ca
-    # khoi chu dang can giua. Bo di thi con lai dung bon thu: anh, tieu de,
-    # phu de, ten kenh.
-    if kieu == "tran":
-        y = img_h + g1
-        # CAN GIUA DOC truoc khi ve BAT KY thu gi. Truoc day khoi can giua nam
-        # sau doan ve kicker: kicker dung yen o y cu con tieu de bi day xuong
-        # `_cho_trong // 2`, ho ra toi 137px voi tieu de mot dong — pha dung
-        # ban sua "kicker sat tieu de". Ca cum (kicker + tieu de + phu de) phai
-        # troi xuong CUNG NHAU, nen phai dich y truoc.
-        if ratio != "free":
-            _cao_cum = ((kick_h + KICKER_GAP if kicker else 0)
-                        + _cao_tieu_de()
-                        + (g2 + _line_h(f_sub, LEAD) * len(sub_lines)
-                           if sub_lines else 0))
-            _thua = (H - g4 - via_h - g3) - y - _cao_cum
-            if _thua > 0:
-                y += _thua // 2
-        if kicker:
-            mau_kick = _pha(CYAN, 1.0)
-            rong_chu = _rong_tracked(d, kicker, f_kick, KICKER_TRACK)
-            # Tru _kb[1] de DINH chu roi dung vao y, khong phai goc ascender.
-            _ve_tracked(d, (W - rong_chu) / 2, y - _kb[1], kicker, f_kick,
-                        mau_kick, KICKER_TRACK)
-            # Hai duong ke hai ben. Ca cum rong dung KICKER_CUM cua the, nen ke
-            # NGAN LAI khi chu dai ra — cum giu nguyen be ngang, chu khong phai
-            # ke giu nguyen do dai. Chu qua dai thi khong con cho, bo ke di.
-            rong_ke = (W * KICKER_CUM - rong_chu) / 2 - KICKER_HO
-            if rong_ke >= 24:
-                giua = y + kick_h / 2
-                trai = (W - rong_chu) / 2 - KICKER_HO
-                d.line([(trai - rong_ke, giua), (trai, giua)],
-                       fill=mau_kick, width=2)
-                d.line([(W - trai, giua), (W - trai + rong_ke, giua)],
-                       fill=mau_kick, width=2)
-            y += kick_h + KICKER_GAP
-    else:
-        chip_y = img_h - chip_h // 2
-        y = img_h + chip_h // 2 + g1
-        if b.get("nhan_trai", True):
-            _chip(d, PAD, chip_y, category.upper(), f_chip, solid=True,
-                  fold="down")
-        if category_right:
-            _chip(d, 0, chip_y, category_right.upper(), f_chip,
-                  right_align=W - PAD, fold="up")
-
-    # Khi ti le bi khoa, tieu de va phu de da no het co cho phep ma textbox van
-    # con thua thi day khoi chu xuong giua thay vi de no dinh sat mep tren va bo
-    # lai mot mang trong o duoi. (Kieu tran da can o tren, TRUOC khi ve kicker —
-    # can lai o day la kicker dung yen con tieu de troi.)
-    if ratio != "free" and kieu != "tran":
-        _cao_chu = (_cao_tieu_de()
-                    + (g2 + _line_h(f_sub, LEAD) * len(sub_lines)
-                       if sub_lines else 0))
-        _cho_trong = (H - g4 - via_h - g3) - y - _cao_chu
-        if _cho_trong > 0:
-            y += _cho_trong // 2
-
-    # Kieu tran can giua tieu de va phu de; kieu dai can trai.
-    #
-    # Can trai hop voi the tin vi o do chu nam trong mot textbox rieng, co mep
-    # trai lam moc, va con nhan trai vat qua ranh gioi ngay phia tren cung mot
-    # duong doc. Hero image khong con textbox, khong con moc nao: chu noi tren
-    # anh, nen truc doi xung cua tam anh la moc duy nhat con lai.
+    # Tieu de can giua: chu noi tren anh, truc doi xung cua tam anh la moc duy
+    # nhat. Ve TUNG TU (de to ten thuong hieu) nen do be ngang dung cach do.
     def _x_chu(ln, font):
-        # O kieu tran tieu de duoc ve TUNG TU (de to ten thuong hieu), nen phai
-        # do be ngang dung cach do — do ca chuoi mot lan se lech vai pixel.
-        return (W - _rong_dong(d, ln, font)) / 2 if kieu == "tran" else PAD
+        return (W - _rong_dong(d, ln, font)) / 2
 
-    che_do_to = b.get("to_ten_hang") if tran else None
+    che_do_to = b.get("to_ten_hang")
     mau_du_phong = b.get("mau_du_phong")
     # Dat dong dau bang DINH CHU chu khong bang goc ve: nho vay khoang ho toi
     # kicker khong doi theo viec dong do co dau hay khong.
-    buoc, tren = (_buoc_dong(f_title, title_lines, lead) if tran
-                  else (_line_h(f_title, lead), 0))
+    buoc, tren = _buoc_dong(f_title, title_lines, lead)
     for ln in title_lines:
         _ve_dong(d, _x_chu(ln, f_title), y - tren, ln, f_title, FG,
                  che_do_to, mau_du_phong)
         y += buoc
-    if sub_lines:
-        y += g2
 
-    # Phu de mac dinh dung MUTED cho lui ve sau. Thuong hieu nao muon ro hon thi
-    # keo mau ve phia FG theo `ro_phu_de` — chu van nhat hon tieu de nhung doc
-    # duoc thoai mai.
-    mau_sub = MUTED if b.get("ro_phu_de") is None else _pha(FG, b["ro_phu_de"])
-    for ln in sub_lines:
-        d.text((_x_chu(ln, f_sub), y), ln, font=f_sub, fill=mau_sub)
-        y += _line_h(f_sub, LEAD)
-
+    # Chan the chi con TEN KENH, can giua. Nguon van phai ghi, nhung ghi o chu
+    # thich bai dang; mot hero image dung mot minh thi cai phai nho la TEN KENH.
     bottom_y = H - g4 - via_h
     f_handle = _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500)
     mau_handle = _pha(CYAN, b.get("ro_handle", mo_chan))
-
-    if kieu == "tran":
-        # Chan the rut con DUNG ten kenh, can giua. Cum `via` va day icon deu
-        # bam hai mep, ma o kieu tran hai mep khong con gi khac de bam vao: bo
-        # khung roi, bo nhan roi, tieu de va phu de da ve giua. De lai chung thi
-        # ca tam anh chi con hai vet dinh o hai goc duoi, keo mat ra khoi truc.
-        #
-        # Nguon van phai ghi, nhung ghi o cho khac: chu thich bai dang. Mot hero
-        # image dung mot minh thi cai phai nho la TEN KENH.
-        ten = handle if handle.startswith("@") else "@" + handle
-        bb = f_handle.getbbox("Ay")
-        d.text(((W - d.textlength(ten, font=f_handle)) / 2,
-                bottom_y + via_h / 2 - (bb[3] - bb[1]) / 2 - bb[1]),
-               ten, font=f_handle, fill=mau_handle)
-    else:
-        via_text = via if via.startswith("via:") else "via: " + via
-        # Cum via lay CYAN cua bo nhan dien, giong ten kenh. Truoc day no dung
-        # ACCENT (xanh duong) nen lech tong voi cyan o ngay ben canh.
-        d.text((PAD, bottom_y), via_text, font=f_via, fill=_pha(CYAN, mo_chan))
-        _social_row(canvas, d, W - PAD, bottom_y + via_h / 2, handle, f_handle,
-                    icon_size=max(16, round(39 * co_chan)),
-                    gap=max(8, round(15 * co_chan)),
-                    mau_chu=mau_handle, mau_icon=_pha(FG, mo_icon))
+    ten = handle if handle.startswith("@") else "@" + handle
+    bb = f_handle.getbbox("Ay")
+    d.text(((W - d.textlength(ten, font=f_handle)) / 2,
+            bottom_y + via_h / 2 - (bb[3] - bb[1]) / 2 - bb[1]),
+           ten, font=f_handle, fill=mau_handle)
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -1729,19 +1211,13 @@ def build(src, title, subtitle, via, out, category="AI",
 
 
 def main():
-    p = argparse.ArgumentParser(description="Dựng thẻ ảnh cho kênh AI")
+    p = argparse.ArgumentParser(description="Dựng thẻ ảnh hero cho kênh AI")
     p.add_argument("--image", required=True)
     p.add_argument("--image2", default=None,
                    help="Anh NGANG thu hai, ghep DOC duoi --image trong cung khung "
                         "(dung khi anh chinh qua chu nhat ngang, thay vi crop mat tieu de)")
-    p.add_argument("--title", required=True)
-    # Bat buoc o kieu dai, bo qua o kieu tran (hero image khong co phu de).
-    p.add_argument("--subtitle", default="")
-    # Van nhan o ca hai kieu, nhung kieu tran khong ve ra: nguon duoc ghi o chu
-    # thich bai dang thay vi tren the.
-    p.add_argument("--via", default="")
-    p.add_argument("--category", default="AI")
-    p.add_argument("--category-right", default="")
+    p.add_argument("--title", required=True,
+                   help="Cau trich dan (--kieu quote) hoac cau tieu de tron ven (--kieu tran)")
     p.add_argument("--handle", default=None,
                    help="Ghi de ten kenh; mac dinh lay theo --brand")
     p.add_argument("--nhan-vat", default="",
@@ -1758,27 +1234,24 @@ def main():
                    choices=sorted(THUONG_HIEU),
                    help="Bo nhan dien: donniechublog (xanh dem) hoac dcgr (trang den)")
     p.add_argument("--tagline", default="daily AI update",
-                   help="Mo ta ngan duoi ten kenh trong khoi thuong hieu")
+                   help="Chip tagline o goc duoi-trai khung quote (chip category)")
     p.add_argument("--kicker", default="",
                    help="Nhan ngan phia tren tieu de, CHI co o --kieu tran. "
                         "Vi du: BREAKING, MODEL RELEASE, AGENT, FUNDING")
-    p.add_argument("--kieu", default="dai", choices=["dai", "tran", "quote"],
-                   help="dai: anh o tren, textbox rieng o duoi (mac dinh). "
-                        "tran: anh phu kin the, chu de len qua man toi. "
-                        "quote: the trich dan — cau noi lon trong ngoac kep, "
-                        "co dong nguon o duoi (--title la cau, --attrib la nguon)")
+    p.add_argument("--kieu", default="quote", choices=["quote", "tran"],
+                   help="quote: the trich dan — cau noi lon trong ngoac kep, co dong "
+                        "nguon o duoi (--title la cau, --attrib la nguon). "
+                        "tran: anh phu kin the, tieu de de len qua man toi.")
     p.add_argument("--attrib", default="",
                    help="Dong nguon cho --kieu quote, vi du: "
                         "\"Doc bai 'Ten bai' - Tac gia\"")
     p.add_argument("--ratio", default="free",
                    choices=["free"] + list(RATIOS),
-                   help="free: chiều cao trôi theo ảnh. 1:1/4:5/3:4: khoá tỉ lệ, "
-                        "textbox phình ra bù phần ảnh thiếu")
+                   help="free: chiều cao trôi theo ảnh. 1:1/4:5/3:4: khoá tỉ lệ")
     p.add_argument("--out", required=True)
     a = p.parse_args()
-    build([a.image, a.image2] if a.image2 else a.image, a.title, a.subtitle, a.via, a.out,
-          a.category, a.category_right, a.handle, a.ratio, a.tagline,
-          brand=a.brand,
+    build([a.image, a.image2] if a.image2 else a.image, a.title, a.out,
+          handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib,
           bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat)
 

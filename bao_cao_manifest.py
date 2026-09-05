@@ -42,16 +42,3 @@ def dung(items: list, vai: str, ngay: str = None, tieu_de_phu: str = "") -> str:
     return "\n".join(d)
 
 
-def khong_co_gi(vai: str, so_da_quet: int, ghi_chu: str = "") -> str:
-    """Ban tin khi khong co tin nao dang len kenh.
-
-    Van phai gui, va van phai co SO DA QUET — de Ong Chu phan biet duoc
-    'hom nay khong co gi' voi 'co gi do hong'.
-    """
-    ten = TEN_VAI.get(vai, vai)
-    ngay = datetime.now(VN).strftime("%Y-%m-%d")
-    t = [f"<b>{ten} — {ngay}</b>", "",
-         f"Đã quét {so_da_quet} tin, không tin nào đáng lên kênh hôm nay."]
-    if ghi_chu:
-        t.append(ghi_chu)
-    return "\n".join(t)

@@ -137,6 +137,28 @@ def ghi(draft_id: str, key: str, value, author: str) -> bool:
     return True
 
 
+def ghi_nen(draft_id: str, key: str, value, author: str = "script", hermes_home=None) -> tuple:
+    """Ghi mot muc len bang den bang PYTHON CUA HERMES trong tien trinh con — de
+    script chay trong venv content-team (khong co hermes_cli) goi duoc.
+    Best-effort: tra ve (ok, thong_bao), khong nem. `hermes_home` None = thua ke
+    moi truong (dispatcher/systemd da dat, hoac _chuan_home suy tu brand);
+    dat gia tri thi ep HERMES_HOME cho tien trinh con.
+    Truoc 05/09/2026 doan nay chep bon ban o dre_nop/kite_nop/miles_nop/approve_service."""
+    import subprocess
+    sys.path.insert(0, str(ROOT))
+    import env_load
+    env = dict(os.environ, HERMES_HOME=str(hermes_home)) if hermes_home else None
+    try:
+        r = subprocess.run([str(env_load.HERMES_PY), str(Path(__file__).resolve()), "ghi", draft_id, key,
+                            json.dumps(value, ensure_ascii=False), "--author", author],
+                           cwd=str(ROOT), env=env, capture_output=True, text=True, timeout=60)
+    except Exception as e:                                   # noqa: BLE001
+        return False, f"{type(e).__name__}: {e}"
+    if r.returncode != 0 or "[bang-den] lỗi" in (r.stderr or ""):
+        return False, (r.stderr or r.stdout).strip()[-200:]
+    return True, ""
+
+
 def doc(draft_id: str) -> dict:
     rid = root_of(draft_id)
     if not rid:

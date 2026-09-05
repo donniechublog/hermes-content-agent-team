@@ -18,8 +18,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-import card
-from card import _f, _wrap, tim_mat_dau, bo_dau_cam
+from card import _f, _wrap, tim_mat_dau
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 FONTS = ASSETS / "fonts"

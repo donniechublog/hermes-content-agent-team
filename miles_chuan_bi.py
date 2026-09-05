@@ -18,8 +18,6 @@ Dung:
     venv/bin/python miles_chuan_bi.py <draft_id>
 """
 import argparse
-import json
-import re
 import sys
 from pathlib import Path
 
@@ -39,22 +37,13 @@ GIONG = {
 }
 
 
-def _doc_writer_json(draft_id: str) -> dict:
-    w = cb._doc_json(DRAFTS / f"{draft_id}.writer.json", {}) or {}
-    body = w.get("body", "")
-    ra = {"score": "", "score_reason": "", "summary": ""}
-    m = re.search(r"Diem Finn cham: (\S+)/100 -- ly do: (.*)", body)
-    if m:
-        ra["score"], ra["score_reason"] = m.group(1), m.group(2).strip()
-    m = re.search(r"\(Dung ly do diem nay.*?\)\n\nDu kien.*?:\n(.*?)\n\nBUOC 1", body, re.S)
-    if m:
-        ra["summary"] = m.group(1).strip()
-    return ra
-
-
 def viet_brief(m: dict, meta: dict, wd: Path) -> str:
     brand = cb._brand_cua(meta)
-    wj = _doc_writer_json(m["draft_id"])
+    # Diem va ly do cham nam san trong meta.json (approve_service.write_meta).
+    # Truoc day boc bang regex tu VAN BAN body task: doi mot chu trong mau la
+    # regex chet im (regex tom tat da chet nhu the, audit 05/09/2026).
+    diem = str(meta.get("score") if meta.get("score") is not None else "")
+    ly_do = str(meta.get("score_reason") or "")
     bg = ""
     for p in (DRAFTS / f"{m['draft_id']}.ban_giao.md", wd / f"{m['draft_id']}.ban_giao.md"):
         if p.exists():
@@ -65,12 +54,12 @@ def viet_brief(m: dict, meta: dict, wd: Path) -> str:
          f"Link gốc (thật): {m['link']}"]
     if m.get("tieu_de_en"):
         L.append(f"Tiêu đề bài gốc: {m['tieu_de_en']}")
-    if wj["score_reason"]:
-        L.append(f"Điểm chấm: {wj['score']}/100 — lý do (dùng cho câu Ý NGHĨA, không suy diễn thêm): {wj['score_reason']}")
+    if ly_do:
+        L.append(f"Điểm chấm: {diem}/100 — lý do (dùng cho câu Ý NGHĨA, không suy diễn thêm): {ly_do}")
     L += ["", f"## Người đọc: {GIONG.get(brand, GIONG['donniechublog'])}"]
     L += ["", "## Tư liệu thật (CHỈ viết những gì có ở đây; nguồn không nói thì ghi \"chưa công bố\")"]
-    if m.get("summary") or wj["summary"]:
-        L.append(f"Tóm tắt (Finn/Vera, chỉ là điểm khởi đầu): {m.get('summary') or wj['summary']}")
+    if m.get("summary"):
+        L.append(f"Tóm tắt (Finn/Vera, chỉ là điểm khởi đầu): {m['summary']}")
     tl = m.get("tu_lieu", {})
     cs = tl.get("cau_co_so", [])
     if cs:

@@ -17,13 +17,14 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import env_load                                              # noqa: E402
 import tele_util                                             # noqa: E402
 
-HERMES_DIR = Path.home() / "hermes-agent"
-HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
+HERMES_DIR = env_load.HERMES_DIR
+HERMES_PY = env_load.HERMES_PY
 # Container: home theo brand (moi brand mot ~/.hermes-<brand>). Systemd dat san;
 # roi ve ~/.hermes o che do don cu.
-HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
+HERMES_HOME = str(env_load.hermes_home())
 
 # topic -> profile. Slug generic, trung ten profile trong home cua container.
 # Nhan ngoai cac topic nay (vd General) di vao profile mac dinh. Phai co du cho

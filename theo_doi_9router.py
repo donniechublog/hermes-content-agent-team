@@ -46,7 +46,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import env_load                                              # noqa: E402
+import publish                                               # noqa: E402
 
 VN = timezone(timedelta(hours=7))
 DB = Path(os.environ.get("ROUTER_DB", str(Path.home() / ".9router" / "db" / "data.sqlite")))
@@ -553,8 +553,7 @@ def main() -> int:
         print(f"[xong] {p}")
     vd = van_de(m)
     if a.gui or (a.canh_bao and vd):
-        import usage_audit
-        usage_audit.gui(tom_tat_tele(m))
+        publish.gui_topic(tom_tat_tele(m), "analyst")
     elif not a.im:
         print("\n--- tin Telegram sẽ là ---\n" + tom_tat_tele(m))
     return 0

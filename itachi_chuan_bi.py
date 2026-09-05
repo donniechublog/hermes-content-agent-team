@@ -63,7 +63,6 @@ def goi_y_cach(s: dict) -> str:
     v = s["vung"]
     if not v:
         return "không có chữ: cover/statement trên nền sạch"
-    cao = sorted(x["h"] for x in v)
     dong_dai = sum(1 for x in v if x["w"] > s["w"] * 0.55)
     if len(v) <= 4 and dong_dai <= 1:
         return "tai_cho (ít vùng, nhãn/tiêu đề ngắn)"
