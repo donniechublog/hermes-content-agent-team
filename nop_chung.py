@@ -114,18 +114,44 @@ def kiem_so_tren_anh(chu: str, m: dict, wd: Path) -> list:
             "kiểm lại nguồn, số không có trong tư liệu là bịa (trừ khi đổi đơn vị)"]
 
 
+# Tu chuc nang tieng Anh: cau tieng Anh THAT gan nhu luon co vai tu trong day,
+# con mot nhan toan ten rieng + so ("Claude Opus 4.5 vs GPT-5.2: 82,5 MMLU")
+# thi khong co tu nao. Day la thu phan biet "chua dich" voi "ten san pham".
+_TU_ANH = {
+    "the", "a", "an", "of", "to", "in", "on", "at", "for", "from", "with", "by",
+    "is", "are", "was", "were", "be", "been", "has", "have", "had", "will",
+    "would", "can", "could", "should", "that", "this", "these", "those", "it",
+    "its", "we", "they", "our", "their", "you", "your", "he", "she", "his",
+    "her", "but", "not", "than", "then", "when", "while", "which", "who",
+    "what", "how", "why", "says", "said", "about", "into", "over", "after",
+    "before", "now", "most", "more", "all", "any", "some", "much", "many",
+}
+
+
 def kiem_quote_dich(chu: str, nhan: str) -> list:
-    """Quote con nguyen tieng Anh -> loi. Luat 'quote phai DICH sang tieng Viet'
-    tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).
-    Do bang dau tieng Viet: cau tieng Viet that gan nhu luon co dau."""
+    """Quote/hook CON NGUYEN TIENG ANH -> loi. Luat "quote phai DICH sang tieng
+    Viet" tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).
+
+    Do bang HAI dieu kien, khong phai mot: (1) khong co dau tieng Viet, VA
+    (2) co >= 2 tu chuc nang tieng Anh. Ban dau chi do dieu kien (1) — sai:
+    no chan ca nhan hop le toan ten rieng va so ("Claude Opus 4.5 vs GPT-5.2:
+    82,5 vs 79,1 MMLU", "GPT-5 Codex Max: 2,75 USD / 1M token"), 5/6 hook thu
+    that bi chan oan (do 06/09/2026). card.tim_mat_dau CO Y khong bao tieng
+    Anh vi dung ly do do; cong nay khong duoc di nguoc quyet dinh ay.
+
+    Tieng Viet GO MAT DAU khong phai viec cua ham nay — card.tim_mat_dau lo,
+    va no bao dung ten loi."""
     t = (chu or "").strip()
     if len(t) < 25:
         return []
     import caption_check
-    if caption_check.ty_le_dau(t) < 0.02:
-        return [f"{nhan}: \"{t[:60]}…\" trông như còn nguyên tiếng Anh — quote phải DỊCH sang "
-                "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
-    return []
+    if caption_check.ty_le_dau(t) >= 0.02:
+        return []
+    tu = re.findall(r"[A-Za-z']+", t.lower())
+    if sum(1 for w in tu if w in _TU_ANH) < 2:
+        return []
+    return [f"{nhan}: \"{t[:60]}…\" trông như còn nguyên tiếng Anh — phải DỊCH sang "
+            "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
 
 
 def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi: dict):
