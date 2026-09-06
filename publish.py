@@ -192,7 +192,7 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
 def gui_topic(text: str, vai: str) -> bool:
     """Gui `text` (HTML) vao topic cua `vai` trong group cua brand. Thieu token/
     group thi in ra man hinh; loi Telegram thi in canh bao — KHONG nem, vi day la
-    ham cua script cron (usage_audit, model_watch, theo_doi_9router).
+    ham cua script cron (model_watch, nhat_ky_daily, theo_doi_9router).
     Truoc 05/09/2026 sau tep tu viet lai doan nay moi tep mot kieu."""
     env_load.nap()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")

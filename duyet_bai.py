@@ -417,7 +417,8 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     source_note = im.get("source_note") or _boc_dong(body_cu, "Nguon")
     title = im.get("title", draft_id)
     body = task_bodies.EDU_BODY.format(source_note=source_note, link=link, title=title,
-                                       summary=summary, goc=str(ROOT), draft_id=draft_id)
+                                       summary=summary, goc=str(ROOT), draft_id=draft_id,
+                                       ket_thuc=task_bodies.KET_THUC_VAI_ANH)
     # Engine da nhin anh: co bao nhieu tam that dung duoc? Kite phai DUNG chung
     # (Ong Chu 05/09/2026), khong ra bo toan text & card.
     co = []

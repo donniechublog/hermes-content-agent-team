@@ -42,6 +42,12 @@ STATE = env_load.state_dir() / "models_seen.json"
 UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 
 OPENROUTER = "https://openrouter.ai/api/v1/models"
+# CATALOG cua HERMES (tai lieu cua hermes-agent), KHONG phai catalog cua
+# 9router. metadata.source cua chinh tep do ghi "hermes-agent repo", va
+# upstream hermes_cli/models.py dung dung tep nay lam danh muc model cua
+# CLI. Truoc 06/09/2026 muc nay duoc dan nhan "MOI TREN ROUTER CUA TA —
+# goi duoc ngay", tuc noi voi Nova mot dieu khong dung: co trong catalog
+# Hermes khong co nghia la 9router cua ta dinh tuyen duoc.
 CATALOG = "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
 ARENA = "https://lmarena.ai/leaderboard"
 # Bang Code Arena WebDev — nam o trang rieng, payload khac bang text. Su co
@@ -1239,7 +1245,17 @@ def main():
     ghi_moc(tat_ca | cu, hang_moi, da_bao)
     ghi_bat_buoc(ra_mat_aa, leo_hang, moi, hf)
     if not a.khong_bat_buoc:
-        bat_buoc.in_danh_sach("nova")
+        # In ra STDERR, khong phai stdout: `quet_chuan_bi` chep nguyen stdout vao
+        # brief roi TU in danh sach bat buoc mot lan nua — Nova doc hai ban cua
+        # cung mot danh sach, va ban in tu day con mang cau luat CU ("script ghi
+        # manifest se tu choi neu thieu") mau thuan voi luat that tu 05/09
+        # ("thieu thi script tu them"). Mot danh sach, mot cau luat (06/09/2026).
+        import io
+        import contextlib
+        _dem = io.StringIO()
+        with contextlib.redirect_stdout(_dem):
+            bat_buoc.in_danh_sach("nova")
+        print(_dem.getvalue(), file=sys.stderr, end="")
 
 
 NHAN_BANG = {"text": "van ban", "webdev": "webdev", "vision": "vision", "search": "search",
@@ -1319,8 +1335,8 @@ def _in_bao_cao(k: dict, ngay: int):
             print(f"  --- {m['id']}  ({m['ra_mat']})")
             print(f"      {m['mo_ta'][:180]}")
     if k.get("moi_tren_router_cua_ta"):
-        print(f"\n=== MOI TREN ROUTER CUA TA ({len(k['moi_tren_router_cua_ta'])}) "
-              "— goi duoc ngay ===")
+        print(f"\n=== MOI TRONG CATALOG CUA HERMES ({len(k['moi_tren_router_cua_ta'])}) "
+              "— danh muc model cua hermes-agent, CHUA chac 9router goi duoc ===")
         for m in k["moi_tren_router_cua_ta"][:15]:
             print(f"  {m['id']}")
     aa = k.get("cham_diem") or {}

@@ -33,6 +33,7 @@ from duyet_giao_viec import (  # noqa: E402
     BANG_DEN_NHAC, MAC_DINH_ANH, MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_CAROUSEL, VAI_EDU, _bang_den_root, chuan_nhan, kanban_create,
 )
 # Khuon body task (van ban dai) tach sang task_bodies.py — xem ghi chu o do.
+import task_bodies                                            # noqa: E402
 from task_bodies import ILLU_BODY, CAROUSEL_BODY, EDU_BODY, WRITER_BODY  # noqa: E402
 
 
@@ -221,16 +222,16 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     la_carousel = vai_anh in VAI_CAROUSEL
     la_edu = vai_anh in VAI_EDU
     khuon = EDU_BODY if la_edu else (CAROUSEL_BODY if la_carousel else ILLU_BODY)
+    # Chi truyen khoa cac template THAT SU dung. Truoc 06/09/2026 cho nay truyen
+    # 9 khoa thua (image_url, out_png, out_png_goc, category, vai, nguon,
+    # hermes_py, co_brand) — `str.format` bo qua khoa thua IM LANG, nen chung cu
+    # nam do sau khi template da bo dung cai chung phuc vu, va nguoi doc tuong
+    # body van co nhung thu do.
     illu_body = khuon.format(
         source_note=item.get("source_note", ""), link=item["link"],
-        via=item.get("via", ""), title=item["title"],
-        summary=item.get("summary_vi", ""),
-        image_url=item.get("image_url") or "khong co",
-        out_png=out_png, out_png_goc=out_png[:-4],
-        category=chuan_nhan(item.get("category")), draft_id=draft_id,
-        brand=brand, vai=vai_anh, nguon=str(nguon_path),
-        goc=str(ROOT), hermes_py=str(HERMES_PY),
-        co_brand=("" if brand == "donniechublog" else f" --brand {brand}"))
+        title=item["title"], summary=item.get("summary_vi", ""),
+        draft_id=draft_id, brand=brand, goc=str(ROOT),
+        ket_thuc=task_bodies.KET_THUC_VAI_ANH)
     tieu_de_task = ("Carousel deck: " if la_edu
                     else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
     # Bang den: the goc cua bai truoc, task anh la con cua no. Khong co goc
@@ -271,15 +272,17 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # "Duyet anh" (imgok) tren tam anh ma designer (Ethan)/Dre/Dre vua day len
     # topic. Anh chua dat thi khong co writer nao ca — dung y Ong Chu: khong
     # nhat thiet phai co writer sau khi tao hinh, o thi moi viet caption.
+    # Nhan diem phai theo VAI QUET that: dong "Diem Finn cham" hien tren ca task
+    # cua dcgr, noi Vera quet — va Vera/Nova khong cham diem nen `score` ra None.
+    diem = item.get("score")
     writer_body = WRITER_BODY.format(
         title=item["title"], link=item["link"],
         source_note=item.get("source_note", ""), via=item.get("via", ""),
-        score=item.get("score", "?"),
-        score_reason=item.get("score_reason", ""),
-        summary=item.get("summary_vi", ""), out_png=out_png,
-        out_json=out_json, category=chuan_nhan(item.get("category")),
-        draft_id=draft_id, nguon=str(nguon_path), brand=brand,
-        goc=str(ROOT), hermes_py=str(HERMES_PY))
+        # Chi Finn cham diem; Nova/Vera khong co bo cham nao nen `score` ra None.
+        vai_quet="Finn" if isinstance(diem, (int, float)) else "vai quet",
+        score=f"{diem}/100" if isinstance(diem, (int, float)) else "khong cham diem",
+        score_reason=item.get("score_reason", "") or "(khong co)",
+        draft_id=draft_id, brand=brand, goc=str(ROOT))
     vai_viet = MAC_DINH_VIET
     _ghi_json(DRAFTS / (draft_id + ".writer.json"),
               {"vai_viet": vai_viet, "title": item["title"],

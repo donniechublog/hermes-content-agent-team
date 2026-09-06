@@ -73,7 +73,10 @@ TEP_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
 # watch" tung nam ngoai danh sach du la job chay DAY NHAT (moi phut) co ca
 # find -delete — mot script hong ngoai git la dung kich ban 22/08.
 SCRIPT = ["finn_daily_scan", "nova_daily_scan", "vera_daily_scan",
-          "model_watch", "usage_audit", "nhat_ky_daily", "moat_publish_watch"]
+          "model_watch", "nhat_ky_daily", "moat_publish_watch"]
+# `usage_audit` da bo khoi danh sach 06/09/2026: job cron da go khoi ca hai home,
+# va tep chi con la mot stub echo mot dong ("da gop vao daily-log"). Giu mot stub
+# trong git de dong bo ra server chi de nhac nguoi ta xoa no la mot vong lap kin.
 # Skill KHONG dong bo: ban that da o thang trong repo (hermes/skills/), profile
 # tro vao qua skills.external_dirs nen `hermes update` khong xoa duoc.
 
