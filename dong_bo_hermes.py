@@ -311,7 +311,10 @@ def nhac_don_ban_cai() -> None:
     d = HERMES_AGENT / "plugins" / "kanban" / "dashboard"
     if not (HERMES_AGENT / ".git").exists() or not d.exists():
         return
-    r = subprocess.run(["git", "-C", str(HERMES_AGENT), "status", "--porcelain", "--", str(d)],
+    # --untracked-files=no: chi tinh tep git THEO DOI bi sua. Sau tep .bak cu
+    # (untracked) tung lam canh bao nay keu nham ngay 07/09 du ban cai da sach.
+    r = subprocess.run(["git", "-C", str(HERMES_AGENT), "status", "--porcelain",
+                        "--untracked-files=no", "--", str(d)],
                        capture_output=True, text=True, timeout=10)
     if r.returncode == 0 and r.stdout.strip():
         print(f"\n[!] {d} dang lech so voi upstream (ban va cu con nam trong ban cai).")
