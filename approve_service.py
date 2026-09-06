@@ -84,6 +84,31 @@ def call(token, method, **kw):
     return res
 
 
+def _ghi_json(path, data, indent=2):
+    """Ghi mot tep state JSON NGUYEN TU: tmp cung thu muc + os.replace.
+
+    Vi sao 06/09/2026: ca tep nay ghi state bang write_text thang, trong khi
+    offset.txt/dat_bai.json (va moat_publish, bat_buoc, emoji_deck...) da di qua
+    tmp tu lau. write_text CAT NGAN tep cu truoc khi ghi noi dung moi: dich vu
+    bi restart hay het cho dia dung giua hai buoc do se de lai mot sidecar cut,
+    va moi nguoi doc sau do (nut Duyet, vai anh, moat) nem ValueError — bai ket
+    vinh vien ma khong ai biet.
+
+    Ten tmp mang pid + thread id vi nhieu thread nen cung ghi mot tep state
+    (nut chay nen, vong poll): dung chung mot ten tmp thi hai ban ghi lai lan
+    vao nhau roi ban lai lan do moi la cai duoc replace."""
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_name(f"{p.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    try:
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=indent),
+                       encoding="utf-8")
+        os.replace(tmp, p)
+    except BaseException:
+        tmp.unlink(missing_ok=True)              # khong de lai rac .tmp
+        raise
+
+
 _KHOA_DRAFT = {}                       # draft_id -> Lock: hai nut cua CUNG mot bai chay lan luot
 _KHOA_KHOA_DRAFT = threading.Lock()
 
@@ -291,7 +316,7 @@ def mark_draft(draft_id, status):
     d = json.loads(p.read_text(encoding="utf-8"))
     d["status"] = status
     d["decided_at"] = int(time.time())
-    p.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+    _ghi_json(p, d)
 
 
 def _tach_ly_do_lam_lai(text):
@@ -354,7 +379,7 @@ def _giao_lam_lai(draft_id, slide=None, ly_do=None):
     if w.get("root_task"):
         w["dre_task"] = rid
         try:
-            wp.write_text(json.dumps(w, ensure_ascii=False, indent=2), encoding="utf-8")
+            _ghi_json(wp, w)
         except OSError as e:
             log("bangden", f"{draft_id}: khong cap nhat dre_task: {e}")
         _bang_den_ghi(draft_id, "lam_lai",
@@ -363,7 +388,7 @@ def _giao_lam_lai(draft_id, slide=None, ly_do=None):
     im["remakes"], im["last_task"] = n, rid
     if ly_do:
         im.setdefault("ly_do_lam_lai", []).append({"lan": n, "slide": slide, "ly_do": ly_do})
-    ip.write_text(json.dumps(im, ensure_ascii=False, indent=2), encoding="utf-8")
+    _ghi_json(ip, im)
     ten = TEN_VAI_ANH.get(im["vai_anh"], "Ethan")
     if ly_do:
         cho = f"slide {slide}" if slide and slide != "CA BO" else ("cả bộ" if slide == "CA BO" else "ảnh")
@@ -397,32 +422,82 @@ def _reply_that(msg: dict):
     return rt
 
 
+# Doc-sua-ghi lam_lai_cho.json dien ra o HAI thread: nut Lam lai chay nen
+# (_chay_nen) con han 10 phut quet o thread poll. Khoa nay chi om cac doan doc-
+# ghi ngan (mot tep JSON nho), KHONG bao gio om lenh mang hay kanban_create.
+_KHOA_LAM_LAI = threading.Lock()
+
+
+def _nap_lam_lai_cho() -> dict:
+    """Ban ghi "dang cho ly do lam lai", KHOA THEO DRAFT_ID.
+
+    Vi sao doi khoa (06/09/2026): truoc day khoa la thread_id, ma mot topic
+    (carousel cua Dre) thuong co nhieu bo cho duyet cung luc. Bam Lam lai bai A
+    roi bam Lam lai bai B trong vong 10 phut thi ban ghi cua A bi ghi de IM
+    LANG, trong khi nut cua A da doi chu thanh "Cho ly do lam lai" nen khong
+    bam lai duoc nua: A khong bao gio duoc giao lam lai. Ban ghi CU (khoa la
+    thread_id, chua co truong thread_id) van doc duoc de bai dang cho luc
+    restart khong mat."""
+    tho = _nap_json(LAM_LAI_CHO, {})
+    ra = {}
+    if not isinstance(tho, dict):
+        return ra
+    for k, v in tho.items():
+        if not isinstance(v, dict) or not v.get("draft_id"):
+            continue
+        if "thread_id" not in v:          # ban ghi cu: khoa CHINH la thread_id
+            v = dict(v, thread_id=(int(k) if str(k).lstrip("-").isdigit() else None))
+        ra[v["draft_id"]] = v
+    return ra
+
+
+def _cho_trong_topic(cho: dict, thread_id) -> list:
+    """Cac bai dang cho ly do trong DUNG mot topic."""
+    return [v for v in cho.values() if str(v.get("thread_id")) == str(thread_id)]
+
+
+def _qua_han(v: dict) -> bool:
+    """Ban ghi cho ly do da qua LAM_LAI_HAN (vong poll chua kip don). `ts` rac
+    cung tinh la qua han — de ket con te hon giao theo kieu cu."""
+    try:
+        return time.time() - float(v.get("ts", 0)) >= LAM_LAI_HAN
+    except (TypeError, ValueError):
+        return True
+
+
 def _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
     """Neu topic nay dang CHO ly do lam lai va nguoi go la Ong Chu -> nuot tin
     nhan nay lam ly do, giao task, tra ve True. Khong thi False (tin di tiep
     duong binh thuong)."""
-    cho = _nap_json(LAM_LAI_CHO, {})
-    k = str(thread_id)
-    if k not in cho:
-        return False
-    uid = msg.get("from", {}).get("id")
-    cho_phep = _nap_json(ONG_CHU_IDS, [])
-    if cho_phep and uid not in cho_phep:
-        return False                      # nguoi khac go, khong phai tra loi cua Ong Chu
-    # CHI nhan khi la REPLY toi dung tin hoi (Ong Chu 05/09/2026). Truoc day moi
-    # chu go trong topic suot 10 phut deu bi nuot lam ly do — hoi Dre chuyen khac
-    # cung thanh "ly do lam lai". Tin hoi da bat force_reply nen reply la mac dinh;
-    # go tron thi tin di duong chat binh thuong, trang thai cho van giu.
-    # Qua _reply_that: khong co hoi_mid thi nhanh lui ve "reply toi tin cua bot"
-    # von LUON dung trong topic (Telegram tu gan tin goc topic do bot tao).
-    rt = _reply_that(msg) or {}
-    hoi_mid = cho[k].get("hoi_mid")
-    la_reply = (rt.get("message_id") == hoi_mid) if hoi_mid else \
-        bool(rt.get("from", {}).get("is_bot"))
-    if not la_reply:
-        return False
-    ho_so = cho.pop(k)
-    LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+    with _KHOA_LAM_LAI:
+        cho = _nap_lam_lai_cho()
+        ds = _cho_trong_topic(cho, thread_id)
+        if not ds:
+            return False
+        uid = msg.get("from", {}).get("id")
+        cho_phep = _nap_json(ONG_CHU_IDS, [])
+        if cho_phep and uid not in cho_phep:
+            return False                  # nguoi khac go, khong phai tra loi cua Ong Chu
+        # CHI nhan khi la REPLY toi dung tin hoi (Ong Chu 05/09/2026). Truoc day moi
+        # chu go trong topic suot 10 phut deu bi nuot lam ly do — hoi Dre chuyen khac
+        # cung thanh "ly do lam lai". Tin hoi da bat force_reply nen reply la mac dinh;
+        # go tron thi tin di duong chat binh thuong, trang thai cho van giu.
+        # `hoi_mid` con la thu DUY NHAT noi cau tra loi nay thuoc bai nao khi topic
+        # co nhieu bo cho (06/09/2026) — doan mo la giao lam lai nham bai.
+        rt = _reply_that(msg) or {}
+        mid = rt.get("message_id")
+        ho_so = next((v for v in ds if v.get("hoi_mid") and v["hoi_mid"] == mid), None)
+        if ho_so is None:
+            # Ban ghi khong co hoi_mid (tin hoi gui loi, hoac ban ghi cu truoc
+            # 06/09) thi lui ve luat cu "reply toi mot tin cua bot" — chi cho
+            # phep khi topic dang cho DUY NHAT mot bai, khong thi khong doan.
+            thieu = [v for v in ds if not v.get("hoi_mid")]
+            if len(ds) == 1 and thieu and rt.get("from", {}).get("is_bot"):
+                ho_so = thieu[0]
+        if ho_so is None:
+            return False
+        cho.pop(ho_so["draft_id"], None)
+        _ghi_json(LAM_LAI_CHO, cho, indent=None)
     # Giao task (kanban_create + bang den, toi 2 phut) o thread nen, khong nghen poll.
     _chay_nen("lamlai", _xu_ly_ly_do_lam_lai, token, group, thread_id,
               token, group, msg, thread_id, ho_so["draft_id"], text)
@@ -448,20 +523,24 @@ def _xu_ly_ly_do_lam_lai(token, group, msg, thread_id, draft_id, text):
 def _lam_lai_het_han(token, group):
     """Cho qua LAM_LAI_HAN giay ma Ong Chu chua neu ly do -> giao theo kieu cu,
     de khong ket. Goi moi vong poll (re: chi doc mot tep JSON nho)."""
-    cho = _nap_json(LAM_LAI_CHO, {})
-    if not cho:
-        return
-    now, doi = time.time(), False
-    for k in list(cho):
-        if now - float(cho[k].get("ts", 0)) < LAM_LAI_HAN:
-            continue
-        ho_so = cho.pop(k)
-        doi = True
-        tid = int(k) if k not in ("None", "") else None
+    with _KHOA_LAM_LAI:
+        cho = _nap_lam_lai_cho()
+        if not cho:
+            return
+        het = []
+        for did in list(cho):
+            if _qua_han(cho[did]):
+                het.append(cho.pop(did))
+        if het:
+            _ghi_json(LAM_LAI_CHO, cho, indent=None)
+    # Bat thread NGOAI khoa: _giao_het_han om khoa draft roi goi kanban (toi 2
+    # phut), giu _KHOA_LAM_LAI suot doan do se chan ca nut Lam lai lan cau tra
+    # loi cua Ong Chu.
+    for ho_so in het:
+        tid = ho_so.get("thread_id")
+        tid = int(tid) if str(tid).lstrip("-").isdigit() else None
         _chay_nen("lamlai-han", _giao_het_han, token, group, tid,
                   token, group, tid, ho_so["draft_id"])
-    if doi:
-        LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
 
 
 def _giao_het_han(token, group, thread_id, draft_id):
@@ -557,7 +636,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     if w.get("root_task"):
         w["dre_task_truoc_kite"], w["dre_task"] = w.get("dre_task"), rid
         try:
-            wp.write_text(json.dumps(w, ensure_ascii=False, indent=2), encoding="utf-8")
+            _ghi_json(wp, w)
         except OSError as e:
             log("bangden", f"{draft_id}: khong cap nhat dre_task (kite): {e}")
         _bang_den_ghi(draft_id, "chuyen_kite",
@@ -565,8 +644,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
                        "anh_that_dung_duoc": co})
     im.update({"chuyen_tu": im.get("vai_anh"), "vai_anh": "carousel-edu", "carousel": True,
                "body": body, "chuyen_kite": rid, "ly_do_chuyen": ly_do})
-    (DRAFTS / (draft_id + ".img.json")).write_text(json.dumps(im, ensure_ascii=False, indent=2),
-                                                   encoding="utf-8")
+    _ghi_json(DRAFTS / (draft_id + ".img.json"), im)
     return rid, None
 
 
@@ -600,8 +678,7 @@ def handle_img_approval(token, action, draft_id, cq):
             if wp.exists():
                 try:
                     w["created"] = "rejected"
-                    wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
-                                  encoding="utf-8")
+                    _ghi_json(wp, w)
                 except Exception as e:                          # noqa: BLE001
                     # Khong ghi duoc sidecar nghia la lenh bo KHONG dinh: bam
                     # Duyet sau do van sinh task viet cho tin da giet. Phai noi.
@@ -627,8 +704,44 @@ def handle_img_approval(token, action, draft_id, cq):
                                    im.get("title", draft_id), rid,
                                    ly_do="thiếu ảnh thật, Ông Chủ chuyển sang vẽ vector")
     elif action == "imgtiep":
-        call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
-        note = "🖼 Giữ nguyên: vai ảnh làm với số ảnh thật hiện có (gộp ý / giảm slide)"
+        # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
+        # xong.json van nguyen (8 voi tin flagship), nen dre_nop van chan "chi N
+        # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
+        # Gio HA SAN that: ve `toi_thieu_co_ban` (san cua carousel.py). Duoi san
+        # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
+        xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
+        try:
+            mm = json.loads(xong.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            mm = {}
+        san = int(mm.get("toi_thieu_co_ban", 5))
+        so = int(mm.get("so_dung_duoc", 0))
+        cu = int(mm.get("toi_thieu", san))
+        if not mm:
+            note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Thiếu xong.json", show_alert=True)
+        elif so < san:
+            note = (f"⚠️ Chỉ {so} ảnh thật mà carousel cần tối thiểu {san} slide — "
+                    f"bấm tiếp cũng không dựng được. Chuyển Kite vẽ vector, hoặc bỏ tin.")
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text=f"Không đủ: {so} ảnh < {san} slide", show_alert=True)
+        elif cu <= san:
+            note = f"🖼 Sàn đã ở mức tối thiểu {san} slide — vai làm với {so} ảnh hiện có"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
+        else:
+            mm["toi_thieu"] = san
+            mm["ha_san_luc"] = int(time.time())
+            try:
+                tmp = xong.with_suffix(".json.tmp")
+                tmp.write_text(json.dumps(mm, ensure_ascii=False, indent=1), encoding="utf-8")
+                tmp.replace(xong)
+                note = (f"🖼 Đã hạ sàn {cu} → {san} slide cho bài này: vai ảnh làm với "
+                        f"{so} ảnh thật hiện có (gộp ý / giảm slide)")
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} slide")
+            except OSError as e:
+                note = f"⚠️ Không ghi được xong.json ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                     text="Ghi xong.json lỗi", show_alert=True)
     elif action == "imgredo":
         # Ong Chu 04/09/2026: bam Lam lai phai co cho de noi SLIDE NAO va VI SAO.
         # Chi bam "lam lai" thi vai khong biet sua cho nao, lan sau van co the sai
@@ -643,10 +756,27 @@ def handle_img_approval(token, action, draft_id, cq):
         else:
             im = json.loads(ip.read_text(encoding="utf-8"))
             thread_id = msg.get("message_thread_id")
-            cho = _nap_json(LAM_LAI_CHO, {})
-            cho[str(thread_id)] = {"draft_id": draft_id, "ts": time.time(),
-                                   "title": im.get("title", draft_id)}
-            LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+            # MOT topic chi cho ly do cua MOT bai mot luc: cau tra loi cua Ong Chu
+            # la mot dong chu, khong mang dau hieu nao ve bai ngoai tin duoc reply.
+            # Topic dang cho bai khac thi noi ro va GIU NGUYEN nut cua bai nay de
+            # bam lai sau (thoat som, khong xuong doan go ban phim o cuoi ham).
+            with _KHOA_LAM_LAI:
+                cho = _nap_lam_lai_cho()
+                khac = [v for v in _cho_trong_topic(cho, thread_id)
+                        if v.get("draft_id") != draft_id and not _qua_han(v)]
+                if not khac:
+                    cho[draft_id] = {"draft_id": draft_id, "thread_id": thread_id,
+                                     "ts": time.time(),
+                                     "title": im.get("title", draft_id)}
+                    _ghi_json(LAM_LAI_CHO, cho, indent=None)
+            if khac:
+                log("nut", f"imgredo {draft_id}: topic {thread_id} dang cho ly do "
+                           f"cua {khac[0].get('draft_id')} -> khong nhan, giu nut")
+                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                     text="Đang chờ lý do bài: " + str(khac[0].get("title", ""))[:110]
+                          + " — trả lời bài đó trước rồi bấm lại nút này.",
+                     show_alert=True)
+                return
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Chờ anh nêu slide + lý do…")
             n = int(im.get("remakes", 0)) + 1
@@ -671,10 +801,13 @@ def handle_img_approval(token, action, draft_id, cq):
             try:                       # nho message_id tin hoi: chi nhan reply toi dung no
                 _mid_hoi = (r_hoi.get("result") or {}).get("message_id")
                 if _mid_hoi:
-                    cho = _nap_json(LAM_LAI_CHO, {})
-                    if str(thread_id) in cho:
-                        cho[str(thread_id)]["hoi_mid"] = _mid_hoi
-                        LAM_LAI_CHO.write_text(json.dumps(cho, ensure_ascii=False), encoding="utf-8")
+                    # Doc lai trong khoa: giua hai doan nay la mot lenh mang, han
+                    # 10 phut o thread poll co the vua don ban ghi khac.
+                    with _KHOA_LAM_LAI:
+                        cho = _nap_lam_lai_cho()
+                        if draft_id in cho:
+                            cho[draft_id]["hoi_mid"] = _mid_hoi
+                            _ghi_json(LAM_LAI_CHO, cho, indent=None)
             except Exception as _e:                              # noqa: BLE001
                 log("nut", f"khong luu hoi_mid: {type(_e).__name__}: {_e}")
             note = f"⏳ Chờ lý do làm lại (lần {n})"
@@ -718,8 +851,7 @@ def handle_img_approval(token, action, draft_id, cq):
                     note = "⚠️ Duyệt ok nhưng tạo task viết lỗi: " + str(err)
                 else:
                     w["created"], w["writer_task"] = True, wid
-                    wp.write_text(json.dumps(w, ensure_ascii=False, indent=2),
-                                  encoding="utf-8")
+                    _ghi_json(wp, w)
                     ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
                     note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
 
@@ -1277,7 +1409,7 @@ def bao_tien_do_kanban(token, group):
         song = {r[0] for r in rows}
         da = {k: v for k, v in da.items() if k in song}
         try:
-            DA_BAO_TIEN_DO.write_text(json.dumps(da), encoding="utf-8")
+            _ghi_json(DA_BAO_TIEN_DO, da, indent=None)
         except OSError as e:
             log("tiendo", f"khong ghi duoc {DA_BAO_TIEN_DO.name}: {e}")
 
@@ -1305,9 +1437,7 @@ def write_meta(draft_id, item, out_png, brand="donniechublog"):
         "score_reason": item.get("score_reason", ""),
         "brand": brand,
     }
-    DRAFTS.mkdir(parents=True, exist_ok=True)
-    (DRAFTS / (draft_id + ".meta.json")).write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    _ghi_json(DRAFTS / (draft_id + ".meta.json"), meta)
 
 
 # Nhan category dung TIENG ANH. Ong Chu chot: bo tieng Viet o nhan de khoi phat
@@ -1441,12 +1571,11 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # Cat lai body task anh de LAM LAI duoc: Ong Chu bam "Lam lai" tren anh chua
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
     # thi nut Lam lai bao khong co thong tin.
-    (DRAFTS / (draft_id + ".img.json")).write_text(
-        json.dumps({"vai_anh": vai_anh, "carousel": la_carousel or la_edu,
-                    "title": item["title"], "body": illu_body, "remakes": 0,
-                    "link": item.get("link", ""), "summary": item.get("summary", ""),
-                    "source_note": item.get("source_note", ""), "via": item.get("via", "")},
-                   ensure_ascii=False, indent=2), encoding="utf-8")
+    _ghi_json(DRAFTS / (draft_id + ".img.json"),
+              {"vai_anh": vai_anh, "carousel": la_carousel or la_edu,
+               "title": item["title"], "body": illu_body, "remakes": 0,
+               "link": item.get("link", ""), "summary": item.get("summary", ""),
+               "source_note": item.get("source_note", ""), "via": item.get("via", "")})
 
     # KHONG tao task viet ngay nua. Tinh san writer_body + vai_viet roi cat vao
     # sidecar `<draft_id>.writer.json`; task viet CHI sinh khi Ong Chu bam
@@ -1463,11 +1592,10 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
         draft_id=draft_id, nguon=str(nguon_path), brand=brand,
         goc=str(ROOT), hermes_py=str(HERMES_PY))
     vai_viet = MAC_DINH_VIET
-    (DRAFTS / (draft_id + ".writer.json")).write_text(
-        json.dumps({"vai_viet": vai_viet, "title": item["title"],
-                    "body": writer_body, "created": False,
-                    "root_task": root_id, "dre_task": illu_id},
-                   ensure_ascii=False, indent=2), encoding="utf-8")
+    _ghi_json(DRAFTS / (draft_id + ".writer.json"),
+              {"vai_viet": vai_viet, "title": item["title"],
+               "body": writer_body, "created": False,
+               "root_task": root_id, "dre_task": illu_id})
 
     item["picked"] = True
     item["vai_anh"], item["brand"], item["vai_viet"] = vai_anh, brand, vai_viet
@@ -1581,6 +1709,29 @@ def boi_canh_vai(profile) -> str:
     return "\n".join(dong) + "\n\n"
 
 
+# Vai CHAY BANG CHAT: ca luong viec cua ho la Ong Chu tha mot tam anh hoac mot
+# URL vao topic, khong reply gi ca, agent tu nhan va lam (gin/itachi sua anh,
+# bob dung frame). Khong co nut, khong co lenh slash. Neu ap luat "khong reply
+# = chi doc" cho ho thi ba vai nay chet han — nen mien tru, va ghi ro o day de
+# lan sau khong ai tuong day la sot.
+VAI_CHAT_LAM_VIEC = {"gin", "itachi", "bob"}
+
+
+def _bo_cong_cu_chat(vai, msg) -> str:
+    """Toolset cho mot tin chat: None = day du, BO_CHI_DOC = chi doc.
+
+    Luat Ong Chu 06/09/2026: chi BAM NUT hoac REPLY moi tinh la dang lam viec;
+    moi tin go troi deu la chat ngoai task. Truoc day luat nay chi la mot loi
+    NHAC trong prompt (chat_router.chat_hint) — va loi nhac da tung that bai
+    that: 02/09/2026 Vera nhan "Hom nay ko lam viec ?" roi tu chay
+    scan_business, doc cron, mo kanban.db, 74 tin, chay 10 phut roi bi giet vi
+    het gio. Nay thanh cong that: tin go troi chay voi bo cong cu chi doc, agent
+    khong con terminal/write_file/execute_code de ma tu y lam."""
+    if vai in VAI_CHAT_LAM_VIEC:
+        return None
+    return None if _reply_that(msg) else chat_router.BO_CHI_DOC
+
+
 def handle_chat(token, group, msg, thread_id, text):
     """Chuyen tin nhan toi dung agent theo topic, giu mach hoi thoai.
 
@@ -1623,7 +1774,8 @@ def handle_chat(token, group, msg, thread_id, text):
         with _KHOA_DANG_CHAY:
             _DANG_CHAY[who] = time.time()
         try:
-            _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread)
+            _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread,
+                          _bo_cong_cu_chat(vai_cua_topic(thread_id), msg))
         finally:
             with _KHOA_DANG_CHAY:
                 _DANG_CHAY.pop(who, None)
@@ -1632,16 +1784,20 @@ def handle_chat(token, group, msg, thread_id, text):
         hang.release()
 
 
-def _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread):
+def _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread,
+                  toolsets=None):
     call(token, "sendMessage", chat_id=group, **kw_thread,
          text=f"⏳ Đang chuyển cho <b>{who}</b>…", parse_mode="HTML")
+    log("chat", f"thread={thread_id} {who} bo cong cu="
+                f"{toolsets or 'day du'} (chi doc = tin go troi, khong reply)")
 
     # Goi agent o thread con de thread nay con ranh bao TIEN DO: qua 2 phut
     # chua xong thi nhan mot dong, de Ong Chu biet la dang chay chu khong phai
     # chet. Truoc day 10 phut im lang roi moi bao het gio.
     ket_qua = {}
     def _goi():
-        ket_qua["r"] = chat_router.ask(profile, session, boi_canh_vai(profile) + text)
+        ket_qua["r"] = chat_router.ask(profile, session, boi_canh_vai(profile) + text,
+                                       toolsets=toolsets)
     th = threading.Thread(target=_goi, daemon=True)
     th.start()
     moc_bao = [120, 360]
@@ -1679,7 +1835,7 @@ DAT_BAI_SO = STATE_DIR / "dat_bai.json"     # so dedup: url chuan hoa -> lan dat
 # dat_bai.json -> mat ban ghi dedup, tao cap task trung. Mot khoa la du.
 _KHOA_DAT_BAI = threading.Lock()
 ONG_CHU_IDS = STATE_DIR / "ong_chu.json"    # [user_id...] duoc phep ra lenh
-LAM_LAI_CHO = STATE_DIR / "lam_lai_cho.json"  # {thread_id: {draft_id, ts, ...}} — dang cho ly do
+LAM_LAI_CHO = STATE_DIR / "lam_lai_cho.json"  # {draft_id: {draft_id, thread_id, ts, ...}} — dang cho ly do
 LAM_LAI_HAN = 600                              # giay cho Ong Chu neu so slide + ly do
 
 # Chan host noi bo: bot chay ngay tren server (tunnel, dashboard, cron) nen
@@ -1817,9 +1973,7 @@ def _lenh_bai(tra_loi, args):
     so[url_chuan] = {"ngay": time.strftime("%Y-%m-%d %H:%M"),
                      "draft_id": draft_id, "vai": vai_anh, "brand": brand,
                      "tasks": [tid], "title": title}
-    tmp = DAT_BAI_SO.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(so, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, DAT_BAI_SO)
+    _ghi_json(DAT_BAI_SO, so)
 
     ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
     ten_viet = TEN_VAI_VIET.get(MAC_DINH_VIET, "Miles")
@@ -2012,6 +2166,15 @@ def handle_message(token, group, msg):
               token, group, thread_id, vai, lenh)
 
 
+_KHOA_MANIFEST = {}                    # manifest path -> Lock
+_KHOA_KHOA_MANIFEST = threading.Lock()
+
+
+def _khoa_manifest(path):
+    with _KHOA_KHOA_MANIFEST:
+        return _KHOA_MANIFEST.setdefault(str(path), threading.Lock())
+
+
 def _xu_ly_chon(token, group, thread_id, vai, lenh):
     """Tao cap task tu lenh chon so. Chay nen qua _chay_nen."""
     manifest_path = latest_manifest(vai)
@@ -2032,36 +2195,57 @@ def _xu_ly_chon(token, group, thread_id, vai, lenh):
     thu_tu_vai = list(dict.fromkeys(v for _n, v, _b in lenh))
     lenh = sorted(lenh, key=lambda x: thu_tu_vai.index(x[1]))
 
-    data = json.loads(manifest_path.read_text(encoding="utf-8"))
-    items = {it["index"]: it for it in data.get("items", [])}
-    lines = []
-    changed = False
-    for n, vai_anh, brand in lenh:
-        it = items.get(n)
-        if not it:
-            lines.append("#" + str(n) + ": không tìm thấy")
-            continue
-        # Cho phep giao MOT tin cho NHIEU role lam anh (tin hot dang nhieu noi,
-        # nhieu cach dien dat). Chi chan lap Y HET: cung role + cung brand da
-        # giao roi -> khoi tao trung task va de file len nhau.
-        if any(g.get("vai_anh") == vai_anh and g.get("brand") == brand
-               for g in it.get("da_giao", [])):
-            ten_da = TEN_VAI_ANH.get(vai_anh, vai_anh)
-            lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — bỏ qua")
-            continue
-        tid, err = create_pair(it, vai_anh=vai_anh, brand=brand)
-        if err:
-            lines.append("#" + str(n) + ": lỗi — " + err)
-            continue
-        changed = True          # create_pair da danh dau vao `it`
-        ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
-        ten_viet = TEN_VAI_VIET.get(MAC_DINH_VIET, "Miles")
-        lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {tid}"
-                     f"; {ten_viet} viết caption sau khi Ông Chủ duyệt ảnh")
-
-    if changed:
-        manifest_path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
-                                  encoding="utf-8")
+    # KHOA THEO MANIFEST, om CA vong tao task. Vi sao 06/09/2026: moi lenh chon
+    # chay mot thread rieng (_chay_nen), ma ca ba buoc "doc ca manifest ->
+    # create_pair (toi 180s moi tin vi nguon_bai chay dong bo) -> ghi lai ca
+    # manifest" deu khong khoa. Lenh thu hai doc ban CU roi ghi de, nuot mat
+    # `da_giao`/`picked` cua lenh truoc — ma chinh `da_giao` la cong chan giao
+    # trung, nen lan chon sau se tao task doi cho tin da giao.
+    #
+    # Khoa theo MANIFEST chu khong phai mot khoa chung: moi vai di tim tin
+    # (Finn/Nova/Vera) mot tep rieng, nen hai topic khac nhau van chay song song
+    # y nhu cu — chi hai lenh chon TRONG CUNG mot topic moi xep hang, va do dung
+    # la nhung lenh dam vao nhau. Xep hang cung khong lam cham viec that:
+    # dispatcher kanban chay tuan tu (max_in_progress=1) roi. Nhung doi co the
+    # toi vai phut nen phai BAO mot dong, khong duoc im (cung luat voi chat).
+    khoa = _khoa_manifest(manifest_path)
+    if not khoa.acquire(blocking=False):
+        log("chon", f"xep hang sau mot lenh chon dang chay tren {manifest_path.name}")
+        call(token, "sendMessage", chat_id=group, message_thread_id=thread_id,
+             text="⏳ Đang chạy lệnh chọn trước trong topic này (mỗi tin mất tới 3 "
+                  "phút tìm nguồn) — xong sẽ tới lệnh này, không cần gõ lại.")
+        khoa.acquire()
+    try:
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        items = {it["index"]: it for it in data.get("items", [])}
+        lines = []
+        for n, vai_anh, brand in lenh:
+            it = items.get(n)
+            if not it:
+                lines.append("#" + str(n) + ": không tìm thấy")
+                continue
+            # Cho phep giao MOT tin cho NHIEU role lam anh (tin hot dang nhieu noi,
+            # nhieu cach dien dat). Chi chan lap Y HET: cung role + cung brand da
+            # giao roi -> khoi tao trung task va de file len nhau.
+            if any(g.get("vai_anh") == vai_anh and g.get("brand") == brand
+                   for g in it.get("da_giao", [])):
+                ten_da = TEN_VAI_ANH.get(vai_anh, vai_anh)
+                lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — bỏ qua")
+                continue
+            tid, err = create_pair(it, vai_anh=vai_anh, brand=brand)
+            if err:
+                lines.append("#" + str(n) + ": lỗi — " + err)
+                continue
+            ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
+            ten_viet = TEN_VAI_VIET.get(MAC_DINH_VIET, "Miles")
+            lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {tid}"
+                         f"; {ten_viet} viết caption sau khi Ông Chủ duyệt ảnh")
+            # Ghi NGAY sau TUNG tin (create_pair da danh dau vao `it`), khong doi
+            # het vong nhu truoc: tin sau no giua chung thi cac tin truoc do van
+            # co `da_giao` tren dia, chon lai khong tao task doi.
+            _ghi_json(manifest_path, data)
+    finally:
+        khoa.release()
     log("chon", "ket qua: " + " | ".join(lines))
     _gui_chu(token, group, "<b>Kết quả chọn:</b>\n" + "\n".join(lines),
              thread=thread_id)
@@ -2179,7 +2363,7 @@ if __name__ == "__main__":
                 _dp = DRAFTS / (draft_id + ".json")
                 _d = json.loads(_dp.read_text(encoding="utf-8"))
                 _d["tg_card_message_id"] = _mid
-                _dp.write_text(json.dumps(_d, ensure_ascii=False, indent=2), encoding="utf-8")
+                _ghi_json(_dp, _d)
         except Exception as _e:                              # noqa: BLE001
             print(f"[push] khong luu message_id: {type(_e).__name__}: {_e}")
         print("day ban nhap -> topic " + str(thread) + " | " +
