@@ -182,8 +182,6 @@ def main():
         for pr in problems:
             print("  - " + pr)
             print("  - " + pr, file=sys.stderr)
-        if not items:
-            sys.exit("Khong co muc nao hop le — khong ghi manifest.")
 
     # Muc BAT BUOC vai bo sot: script TU THEM (diem vai = 0, ghi chu ro tren bao cao)
     # thay vi tu choi roi bat vai sua toi da 2 vong (05/09/2026: 4/8 muc, Finn mo
@@ -207,6 +205,23 @@ def main():
         })
         da_co.add(_norm(c["link"]))
         print(f"  [tu them] muc BAT BUOC vai bo sot: {c['title'][:60]}", file=sys.stderr)
+    # CONG RONG — dat NGOAI khoi `if problems`. Truoc 06/09/2026 no nam LOT
+    # TRONG khoi do, ma ca hai duong vao deu cho problems RONG: Finn ghi picks
+    # la `[]`, hoac ghi dict sai khoa (`{"tin": [...]}` — script chi nhan "picks"
+    # / "items"). Khi ay items=[] va problems=[] nen cong khong bao gio chay:
+    # script ghi manifest 0 muc, ghi bao cao chi co tieu de + dong moi tra loi
+    # so ma khong co so nao, tra rc=0, va quet_nop gui thang len topic.
+    # Nang hon: quet_nop co dinh ten `finn_candidates_<ngay>.json` nen lan chay
+    # lai de THANG len tep tot trong ngay, con duyet_chon_tin chon manifest theo
+    # mtime — ban rong thanh ban moi nhat, khong co duong lui.
+    if not items:
+        sys.exit("Khong co muc nao hop le — KHONG ghi manifest (tranh de len ban tot "
+                 "cua lan chay truoc).\n"
+                 "  - picks rong hay sai khoa? Script chi doc mang, hoac dict co "
+                 "khoa \"picks\"/\"items\".\n"
+                 "  - That su hom nay khong co tin nao dat nguong thi chay lai "
+                 "quet_nop voi --khong-co.")
+
     items.sort(key=lambda x: x["score"], reverse=True)
     for i, it in enumerate(items, 1):
         it["index"] = i

@@ -104,15 +104,46 @@ def khop(muc: dict, item: dict) -> bool:
     ten_chuan = _chuan(muc.get("ten", ""))
     if ten_chuan and ten_chuan in van_ban:
         return True
-    # Roi moi den tung manh. Nguong 2 ky tu (truoc 06/09/2026) khop gan nhu moi
-    # tieu de: "v3", "ai", "4o" nam san trong van ban da bo ky hieu, nen mot muc
-    # BAT BUOC bi coi la "da dua" trong khi bai noi chuyen khac. Doi thanh:
-    # manh >= 3 ky tu, va phai co it nhat mot manh >= 4 ky tu lam neo.
-    manh = [m for m in re.findall(r"[a-z0-9]+", str(muc.get("ten", "")).lower())
-            if len(m) >= 3]
+    # Roi moi den tung manh. Hai nguong KHAC NHAU, va truoc 06/09/2026 chung bi
+    # gop lam mot nen sinh ra loi nguoc dau:
+    #
+    #   - Nguong DUOC DUNG duong manh vun: phai co mot manh >= 4 ky tu lam neo.
+    #     Khong co neo thi khong so manh, vi "ai"/"v3" don doc khop moi thu.
+    #   - Tap manh PHAI CO DU: giu ca manh 2 ky tu CO CHU SO. "r1", "k2", "v3",
+    #     "o4" chinh la thu PHAN BIET phien ban, vut chung di la tu tay xoa cai
+    #     dac trung nhat cua ten.
+    #
+    # Ban truoc loc `len(m) >= 3` cho CA HAI viec, nen "DeepSeek R1" rut con
+    # ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la khop() tra True, kiem()
+    # tuong da dua nen khong tu them, roi xoa() xoa han muc khoi danh sach. Tin
+    # R1 mat VINH VIEN — scan_models ghi `aa_da_bao` vao moc nen khong gieo lai.
+    # Cung co che do voi "o4-mini" (con moi ["mini"]), "Kimi K2", "Grok 4 Fast".
+    #
+    # Manh ngan THUAN CHU ("ai", "ml", "vs") van bo: chung khong phan biet gi.
+    #
+    # Manh ngan CO SO thi giu, nhung khong duoc so tran: `van_ban` da bo het ky
+    # hieu nen no la mot chuoi lien, va mot manh "4" don doc se dinh vao bat cu
+    # con so nao trong bai ("tang 40% toc do"). Vi so hieu phien ban LUON viet
+    # SAT ten model, manh ngan phai khop dang DINH LIEN voi manh ke no:
+    #   "Grok 4 Fast" vs "xAI ra mat Grok 5 Fast, tang 40%" -> tim "grok4" /
+    #   "4fast", ca hai deu khong co -> khong khop (truoc day tra True).
+    tat_ca = re.findall(r"[a-z0-9]+", str(muc.get("ten", "")).lower())
+    manh = [m for m in tat_ca if len(m) >= 3 or any(c.isdigit() for c in m)]
     if not manh or not any(len(m) >= 4 for m in manh):
         return False
-    return all(m in van_ban for m in manh)
+    for i, m in enumerate(manh):
+        if len(m) >= 3:
+            if m not in van_ban:
+                return False
+            continue
+        ke = []
+        if i > 0:
+            ke.append(manh[i - 1] + m)
+        if i + 1 < len(manh):
+            ke.append(m + manh[i + 1])
+        if not (any(k in van_ban for k in ke) if ke else m in van_ban):
+            return False
+    return True
 
 
 # Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC

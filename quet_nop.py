@@ -27,6 +27,25 @@ import quet_chuan_bi as qb                                   # noqa: E402
 TEN = {"scout": "Finn", "nova": "Nova", "market": "Vera"}
 
 
+# Nhan cua cac dong dang chu y trong stderr cua manifest_build / manifest_ghi.
+# "[bo qua]" la loai NANG NHAT — mat tron mot tin — va truoc 06/09/2026 no KHONG
+# nam trong bo loc: bo loc chi nhat [canh bao] / [tu them] / dong bat dau "- ",
+# nen ca ba nhanh [bo qua] cua manifest_ghi (k ngoai danh sach, thieu title hoac
+# link, link khong phai URL) khong bao gio duoc in. Chay thu voi Vera: mot muc
+# go nham k=9 lam tin "OpenAI IPO dinh gia 900 ty USD" bien mat sach, KHONG mot
+# dong canh bao nao, rc=0, va vai ket thuc task bao "da gui bao cao".
+NHAN_CANH_BAO = ("[canh bao]", "[tu them]", "[bo qua]", "[LOI]")
+
+
+def loc_canh_bao(stderr: str) -> list:
+    """Cac dong stderr dang cho vai va Ong Chu doc (rc=0 KHONG co nghia la sach:
+    script van ghi manifest khi da cat diem ngoai dai, doi category la, bo tin
+    trung, cat theo tran, hay BO HAN mot tin)."""
+    return [d.strip() for d in (stderr or "").splitlines()
+            if d.strip() and (any(n in d for n in NHAN_CANH_BAO)
+                              or d.strip().startswith("- "))]
+
+
 def _chay(args: list, timeout=300):
     return subprocess.run([sys.executable] + args, cwd=str(ROOT), capture_output=True, text=True, timeout=timeout)
 
@@ -112,8 +131,7 @@ def main() -> int:
     # khi da cat diem ngoai dai, doi category la, bo tin trung hay cat theo tran
     # 8 tin. Truoc 06/09/2026 nhung dong do chi nam o stderr va bi nuot o day —
     # vai tuong moi thu binh thuong, Ong Chu khong bao gio biet.
-    canh = [d.strip() for d in (r.stderr or "").splitlines()
-            if d.strip() and ("[canh bao]" in d or "[tu them]" in d or d.strip().startswith("- "))]
+    canh = loc_canh_bao(r.stderr)
     if canh:
         print("\n[SCRIPT DA SUA/CANH BAO] — bao cao gui di van tinh, nhung biet de lan sau nop dung:")
         for d in canh[:20]:

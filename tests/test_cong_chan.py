@@ -553,6 +553,132 @@ def test_dong_nguon_doc_duoc_tren_day_the_sang():
         assert chenh > 120, (f"dong nguon khong noi tren nen: chenh sang chi {chenh} "
                              "(nen ~230, chu phai tach han ra)")
 
+# ------------------------------------- bat_buoc: manh ngan CO SO la thu phan biet
+def test_khop_giu_so_hieu_phien_ban():
+    """`ten` cua muc BAT BUOC hay co so hieu phien ban ngan: "R1", "K2", "o4",
+    "4 Fast". Loc `len >= 3` vut sach chung, nen "DeepSeek R1" rut con
+    ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la khop() tra True, kiem()
+    tuong da dua nen khong tu them, roi xoa() xoa han muc. Tin R1 mat VINH VIEN
+    vi scan_models ghi `aa_da_bao` vao moc nen khong gieo lai.
+
+    Chieu nguoc lai cung phai dung: manh ngan khong duoc so tran tren van ban da
+    bo ky hieu, vi "4" don doc dinh vao moi con so ("tang 40% toc do")."""
+    khong_khop = [
+        ("DeepSeek R1", "DeepSeek V4 ra mat, re hon 10 lan"),
+        ("o4-mini", "OpenAI ra mat o3-mini gia re"),
+        ("Kimi K2", "Moonshot ra mat Kimi K3"),
+        ("Grok 4 Fast", "xAI ra mat Grok 5 Fast, tang 40% toc do"),
+        ("Gemini 3 Flash", "Google ra mat Gemini 2.5 Flash ban cap nhat"),
+    ]
+    phai_khop = [
+        ("DeepSeek R1", "DeepSeek R1 ban cap nhat manh hon"),
+        ("o4-mini", "OpenAI ra mat o4-mini gia re"),
+        ("Kimi K2", "Moonshot ra mat Kimi K2 ban moi"),
+        ("Grok 4 Fast", "xAI ra mat Grok 4 Fast"),
+        ("Claude Opus 4.6", "Claude Opus 4.6 dat 82% SWE-bench Verified"),
+    ]
+    for ten, td in khong_khop:
+        assert not bb.khop({"ten": ten}, {"title": td}), \
+            f"muc {ten!r} bi coi la 'da dua' boi tin khac: {td!r} — se bi xoa oan"
+    for ten, td in phai_khop:
+        assert bb.khop({"ten": ten}, {"title": td}), \
+            f"muc {ten!r} KHONG nhan ra chinh no trong {td!r} — se bi them trung"
+
+
+# ------------------------------------------ nhan_vat: chuc danh va dau tieng Viet
+_BAI = ("sam altman, ceo of openai, said the model is ready today. "
+        "jensen huang of nvidia spoke at the event. "
+        "pham nhat vuong opened the new plant in hai phong.")
+
+
+def test_nhan_vat_co_chuc_danh_hoac_dau_van_qua():
+    """Phep so cu (`ho = nv.split(",")[0]`, roi `ho not in chu_bai`) tach hau to
+    CHI bang dau phay va so CHUOI CON chu khong so TU. Hai huong hong: chan oan
+    ten kem chuc danh trong ngoac / sau gach, chan oan ten Viet CO DAU khi bai
+    goc viet khong dau; va lot bua khi bai tinh co chua dung ky tu do o cho
+    khac. Vai doc "Bo anh nay" roi bo dung tam anh dung."""
+    for nv in ("Sam Altman (CEO OpenAI)", "Jensen Huang – Nvidia",
+               "Sam Altman - CEO OpenAI", "Phạm Nhật Vượng", "Sam Altman"):
+        assert nc._ten_co_trong_bai(nv, _BAI), f"chan oan ten dung: {nv!r}"
+
+
+def test_nhan_vat_van_bat_ten_bia():
+    """Cong nay sinh ra sau su co bia ten 05/09 (anh quan chuc G20, khai "Hock
+    Tan"), noi long khong duoc lam mat no."""
+    for nv in ("Hock Tan", "Tim Cook (CEO Apple)", "Nguyen Van Bia"):
+        assert not nc._ten_co_trong_bai(nv, _BAI), f"lot ten khong co trong bai: {nv!r}"
+
+
+def test_mo_ta_logo_hang_trong_bai_khong_bi_chan():
+    """Cong chi no khi anh CO MAT NGUOI va vai DA khai ten — tuc nham dung vao
+    anh chan dung/su kien, loai anh the hero can nhat. Tu tran "logo" trong bo
+    tu khoa chan luon "CEO tren san khau, phia sau la logo OpenAI" — anh chuan
+    nhat cua loai do, va la thu chinh prompt vision day rang LA lien quan."""
+    anh_ok = {"A1": {"mat": 1, "mo_ta": "Sam Altman phát biểu trên sân khấu, "
+                                        "phía sau là logo OpenAI"}}
+    assert not nc.kiem_nhan_vat(anh_ok, ["A1"], "Sam Altman", _BAI, ""), \
+        "chan oan anh su kien co logo hang trong bai"
+    # nhung logo cua TO BAO thi van phai chan
+    anh_bao = {"A1": {"mat": 1, "mo_ta": "Ảnh có watermark của hãng tin, "
+                                         "không rõ người"}}
+    assert nc.kiem_nhan_vat(anh_bao, ["A1"], "Sam Altman", _BAI, "")
+
+
+# ------------------------------------------------------- quet_nop: dong [bo qua]
+def test_quet_nop_in_ca_dong_bo_qua():
+    """[bo qua] = mat tron mot tin, loai nang nhat, ma truoc 06/09/2026 bo loc
+    khong nhat no. Vera go nham k=9: tin "OpenAI IPO dinh gia 900 ty USD" bien
+    mat sach, khong mot dong canh bao, rc=0, vai bao "da gui bao cao"."""
+    import quet_nop
+    ra = quet_nop.loc_canh_bao(
+        "[bo qua] muc 2: k=9 ngoai danh sach 1..5\n"
+        "[canh bao] category khong hop le\n"
+        "dong thuong khong lien quan\n"
+        "[LOI] khong doc duoc tep\n")
+    assert any("[bo qua]" in d for d in ra), "dong [bo qua] van bi nuot"
+    assert any("[LOI]" in d for d in ra)
+    assert not any("dong thuong" in d for d in ra)
+
+
+# --------------------------------- manifest_build: khong ghi de bang manifest rong
+def test_manifest_rong_khong_ghi_de():
+    """Cong `if not items` truoc 06/09/2026 nam LOT TRONG khoi `if problems`, ma
+    ca hai duong vao deu cho problems RONG: picks la `[]`, hoac dict sai khoa
+    (script chi nhan "picks"/"items"). Khi ay script ghi manifest 0 muc, gui bao
+    cao chi co tieu de + dong moi tra loi so ma khong co so nao, rc=0. Nang hon:
+    quet_nop co dinh ten tep theo NGAY nen lan chay lai de thang len ban tot, va
+    duyet_chon_tin chon manifest theo mtime — khong co duong lui."""
+    import json
+    import os
+    import subprocess
+    moi_truong = {**os.environ, "CT_BRAND": "thu_rong_mb"}
+    kho = ROOT / "state" / "thu_rong_mb"
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        (t / "c.json").write_text(json.dumps({"candidates": [
+            {"link": "https://a.com/1", "title": "T", "source": "HN", "points": 9,
+             "comments": 1, "via": "hn", "score_partial": 40, "score_recency": 5,
+             "score_spread": 2, "image_url": None}]}), encoding="utf-8")
+        try:
+            for ten, noi_dung in (("rong", "[]"),
+                                  ("sai khoa", '{"tin": [{"k": 1}]}')):
+                (t / "p.json").write_text(noi_dung, encoding="utf-8")
+                ra = t / "m.json"
+                if ra.exists():
+                    ra.unlink()
+                r = subprocess.run(
+                    [str(ROOT / "venv/bin/python"), str(ROOT / "manifest_build.py"),
+                     "--candidates", str(t / "c.json"), "--picks", str(t / "p.json"),
+                     "--out", str(ra)],
+                    env=moi_truong, capture_output=True, text=True, cwd=str(ROOT))
+                assert r.returncode != 0, f"picks {ten}: van tra rc=0"
+                assert not ra.exists(), f"picks {ten}: van ghi manifest rong de len ban tot"
+        finally:
+            if kho.exists():
+                for tep in kho.glob("*"):
+                    tep.unlink()
+                kho.rmdir()
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

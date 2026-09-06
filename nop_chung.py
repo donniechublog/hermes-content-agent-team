@@ -10,6 +10,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -71,6 +72,48 @@ def chu_bai_cua(m: dict, wd: Path) -> str:
     return s
 
 
+def _khong_dau(t: str) -> str:
+    """Bo dau tieng Viet, ha chu thuong (cung phep nhu teaser_assemble._bo_dau)."""
+    t = t.replace("đ", "d").replace("Đ", "D")
+    nfd = unicodedata.normalize("NFD", t)
+    return "".join(c for c in nfd if unicodedata.category(c) != "Mn").lower()
+
+
+def _tu(t: str) -> list:
+    """Chuoi -> danh sach TU da bo dau, moi ky tu khong phai chu/so la ranh gioi."""
+    return [w for w in re.split(r"[^0-9a-z]+", _khong_dau(t)) if w]
+
+
+def _ten_co_trong_bai(nv: str, chu_bai: str) -> bool:
+    """Ten nguoi vai khai co thuc su nam trong chu bai khong.
+
+    Truoc 06/09/2026 phep so la `ho not in chu_bai` voi `ho = nv.split(",")[0]`
+    — tach hau to CHI bang dau phay, va so CHUOI CON chu khong so TU. Hai huong
+    hong cung luc:
+
+      - CHAN OAN: "Sam Altman (CEO OpenAI)" hay "Jensen Huang - Nvidia" giu
+        nguyen ca hau to, tat nhien khong nam trong chu bai; du phong "hai tu
+        cuoi" thi ra ["(ceo", "openai)"] — con dinh dau ngoac nen cung truot.
+        Ten tieng Viet co dau ("Pham Nhat Vuong") khong khop bai goc viet khong
+        dau. Vai doc "Bo anh nay" roi bo dung tam anh dung.
+      - LOT BUA: `w in chu_bai` la khop chuoi con, nen "Jensen Huang - Nvidia"
+        LOT chi vi bai tinh co co dau gach en o cho khac. Cung mot khai bao,
+        chan hay lot phu thuoc vao mot ky tu vo can trong bai.
+
+    Gio: bo dau ca hai ben, cat hau to o MOI dau ngan cach (, ( ) - - | /), roi
+    so theo TU nguyen ven.
+    """
+    dau_tien = re.split(r"[,(\[|/]|\s[-–—]\s", nv)[0]
+    ten = _tu(dau_tien)
+    if not ten:
+        return True                      # khong con gi de doi chieu -> khong chan
+    bai = set(_tu(chu_bai))
+    if all(w in bai for w in ten):
+        return True
+    # Ten dai (co ten dem): chap nhan hai tu cuoi — "Nguyen Van A" khop "Van A".
+    return len(ten) > 2 and all(w in bai for w in ten[-2:])
+
+
 def kiem_nhan_vat(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> list:
     """Cong chan MAT NGUOI dung chung Dre/Ethan.
 
@@ -88,13 +131,25 @@ def kiem_nhan_vat(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> list:
         return loi
     if not co or not nv:
         return loi
-    ho = nv.split(",")[0].strip().lower()
-    if chu_bai and ho and ho not in chu_bai and not all(w in chu_bai for w in ho.split()[-2:]):
+    if chu_bai and not _ten_co_trong_bai(nv, chu_bai):
         loi.append(f"{nhan}nhan_vat \"{nv}\" không xuất hiện trong chữ bài — "
-                   "khai tên người KHÔNG có trong bài là bịa. Bỏ ảnh này.")
+                   "khai tên người KHÔNG có trong bài là bịa. Bỏ ảnh này. "
+                   "(Nếu tên đúng thì bỏ phần chức danh: khai \"Sam Altman\", "
+                   "không khai \"Sam Altman (CEO OpenAI)\".)")
+    # VISION MO TA: chi chan cac cum HEP. Truoc 06/09/2026 bo tu khoa co ca tu
+    # tran "logo", ma cong nay chi no khi anh CO MAT NGUOI va vai DA khai ten —
+    # tuc no nham dung vao anh chan dung/su kien, loai anh the hero can nhat.
+    # Anh hop le nhat cua loai do la "CEO dung tren san khau, phia sau la logo
+    # hang": vision tra dung LIEN_QUAN=co (chinh prompt o anh_chuan_bi day rang
+    # logo-tren-toa-nha / su kien cua chinh cong ty trong bai LA lien quan), roi
+    # cong nay van chan vi mo ta co chuoi con "logo". Anh khong lien quan da co
+    # cong rieng (`lien_quan is False` o dre_nop/ethan_nop), nen o day chi giu
+    # nhung cum thuc su noi len "day la logo cua TO BAO, khong phai cua bai".
     for ma in co:
         mo_ta = (anh.get(ma, {}).get("mo_ta") or "").lower()
-        if mo_ta and any(k in mo_ta for k in ("không liên quan", "g20", "logo")):
+        if mo_ta and any(k in mo_ta for k in ("không liên quan", "g20",
+                                              "logo báo", "logo của tờ",
+                                              "logo hãng tin", "watermark")):
             loi.append(f"{nhan}{ma} — vision mô tả: \"{anh[ma]['mo_ta'][:80]}\" — "
                        "không phải nhân vật bài này")
     return loi
