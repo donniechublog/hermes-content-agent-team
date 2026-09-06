@@ -1,0 +1,15 @@
+[Unit]
+Description=Hermes Dashboard (dcgr)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/hermes-agent
+Environment=HERMES_HOME=%h/.hermes-dcgr
+Environment=HERMES_DASHBOARD_SESSION_TOKEN=<DAT TOKEN THAT O DAY — KHONG COMMIT>
+ExecStart=%h/hermes-agent/venv/bin/hermes dashboard --port 9121 --host 127.0.0.1 --no-open --skip-build
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

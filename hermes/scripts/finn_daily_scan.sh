@@ -1,20 +1,22 @@
 #!/bin/bash
+# Duong dan theo $HOME, khong go cung /home/donniechu (sua 06/09/2026):
+# doi ten user Unix hoac chay thu tren may khac la gay im lang.
 # Cron: Finn quet tin, cham diem, liet ke danh so, KHONG tu tao task.# Ong Chu chon bang cach reply so thu tu trong topic scout -> approve_service.py xu ly.
-H=/home/donniechu/hermes-agent/venv/bin/python
+H=$HOME/hermes-agent/venv/bin/python
 # Ngay lay theo GIO VN, khong phai UTC. Cron chay 22:00 UTC = 05:00 VN hom sau,
 # nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
 # kanban tra ve task cu thay vi tao moi, va script im lang tuong da thanh cong.
 # Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
 KEY="finn-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
-MANIFEST="/home/donniechu/content-team/state/${CT_BRAND}/finn_candidates_${DAY}.json"
+MANIFEST="$HOME/content-team/state/${CT_BRAND}/finn_candidates_${DAY}.json"
 
 BODY="Nhiem vu quet tin sang $DAY (chay theo lich cron). Phan CO HOC — chay script quet, loc
 trung, cham diem co hoc, ghep manifest danh so, viet bao cao, gui topic — DA LA SCRIPT.
 Viec cua ban chi co MOT: cham hai thanh phan diem con lai (suc nang ky thuat 0-30, lien quan 0-20) va viet summary_vi theo dung khung BUOC 1 in ra. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (danh sach ung vien mot dong/tin, muc BAT BUOC, khung tep nop):
-cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai scout
+cd $HOME/content-team && venv/bin/python quet_chuan_bi.py --vai scout
 
 BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1, THEO DUNG khung
 va luat ma BUOC 1 in ra (khung do la NGUON SU THAT — cron nay khong nhac lai
@@ -22,7 +24,7 @@ luat nop, vi nhac lai la de troi). KHONG cat/grep tep JSON goc, KHONG web_search
 KHONG chay scan_*/manifest_*/publish.py tay.
 
 BUOC 3 — nop:
-cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai scout
+cd $HOME/content-team && venv/bin/python quet_nop.py --vai scout
 Khong tin nao dat nguong thi chay: quet_nop.py --vai scout --khong-co (script gui dong
 'hom nay khong co gi' kem so tin da quet — Ong Chu can phan biet voi 'co gi do hong').
 Script bao [LOI] thi sua tep JSON roi chay lai DUNG lenh (toi da 2 lan). Xong: ket

@@ -471,6 +471,79 @@ def chuan(b):
     return b.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
 
+# ---- Chup CAU HINH quyet dinh PROMPT ------------------------------------------
+# Prompt that cua mot vai = SOUL + MEMORY + SKILL (deu trong git) + config.yaml
+# cua profile (KHONG trong git). Nghia la sau `hermes update` hay khi dung may
+# moi, ba phan dau tai lap duoc con phan thu tu thi phai nho — ma chinh phan do
+# quyet dinh vai duoc dung skill nao, chay lenh nao, model nao (audit 06/09/2026:
+# ban chup gateway dcgr ghi `external_dirs: []` trong khi README noi SKILL song
+# qua chinh khoa do).
+#
+# KHONG chup ca tep: moi config.yaml ~495 dong ma phan lon la mac dinh cua hermes,
+# se troi theo tung ban cap nhat va lam nhieu moi ban diff. Chi chup nhung khoa
+# THUC SU doi hanh vi cua vai.
+KHOA_PROMPT = [
+    ("agent", "model"),
+    ("agent", "reasoning_effort"),
+    ("agent", "fallback_providers"),
+    ("skills", "external_dirs"),
+    ("skills", "enabled"),
+    ("terminal", "command_allowlist"),
+    ("kanban", "max_in_progress"),
+    ("auxiliary", "title_generation", "enabled"),
+    ("toolsets",),
+    ("disabled_toolsets",),
+]
+TEP_CAU_HINH = REPO / "profiles" / "cau_hinh_that.yaml"
+
+
+def _lay(d, duong):
+    for k in duong:
+        if not isinstance(d, dict) or k not in d:
+            return None
+        d = d[k]
+    return d
+
+
+def chup_cau_hinh() -> int:
+    """Ghi cac khoa quyet dinh prompt cua MOI profile o CA hai home vao git."""
+    try:
+        import yaml
+    except ImportError:
+        print("[LOI] can pyyaml: venv/bin/pip install -r requirements.txt")
+        return 1
+    ra = {}
+    for hk, H in HOMES.items():
+        thu_muc = H / "profiles"
+        if not thu_muc.is_dir():
+            continue
+        for pd in sorted(thu_muc.iterdir()):
+            cf = pd / "config.yaml"
+            if not cf.is_file():
+                continue
+            try:
+                d = yaml.safe_load(cf.read_text(encoding="utf-8")) or {}
+            except Exception as e:                           # noqa: BLE001
+                ra[f"{hk}/{pd.name}"] = {"LOI_DOC": f"{type(e).__name__}: {e}"}
+                continue
+            muc = {}
+            for duong in KHOA_PROMPT:
+                v = _lay(d, duong)
+                if v not in (None, [], {}, ""):
+                    muc["/".join(duong)] = v
+            ra[f"{hk}/{pd.name}"] = muc
+    TEP_CAU_HINH.parent.mkdir(parents=True, exist_ok=True)
+    dau = ("# CAC KHOA CAU HINH QUYET DINH PROMPT — ban chup, TEP DO MAY GHI.\n"
+           "# Sinh bang: venv/bin/python dong_bo_hermes.py --chup-cau-hinh\n"
+           "# Doc de biet vai dang chay model nao, thay duoc skill nao, chay duoc\n"
+           "# lenh nao. KHONG dung de trien khai nguoc: doi cau hinh that thi sua\n"
+           "# tren may chu roi chup lai trong cung mot commit.\n\n")
+    TEP_CAU_HINH.write_text(dau + yaml.safe_dump(ra, allow_unicode=True, sort_keys=True),
+                            encoding="utf-8")
+    print(f"Da chup {len(ra)} profile -> {TEP_CAU_HINH}")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="Dong bo SOUL/cron/plugin kanban voi git (multi-home)")
     g = ap.add_mutually_exclusive_group()
@@ -478,6 +551,8 @@ def main():
     g.add_argument("--ra-hermes", action="store_true", help="repo -> home")
     g.add_argument("--kiem-upstream", action="store_true",
                    help="hermes-agent doi gi o plugins/kanban/dashboard ke tu hash trong UPSTREAM")
+    g.add_argument("--chup-cau-hinh", action="store_true",
+                   help="chup cac khoa cau hinh quyet dinh prompt cua moi profile vao git")
     g.add_argument("--chot-upstream", action="store_true",
                    help="Da port xong upstream: ghi HEAD hermes-agent vao UPSTREAM")
     ap.add_argument("--ep", action="store_true",
@@ -490,6 +565,8 @@ def main():
 
     if a.kiem_upstream:
         return kiem_upstream()
+    if a.chup_cau_hinh:
+        return chup_cau_hinh()
     if a.chot_upstream:
         h = ghi_upstream()
         print(f"UPSTREAM = {h}" if h else f"[!] Khong doc duoc HEAD cua {HERMES_AGENT}")

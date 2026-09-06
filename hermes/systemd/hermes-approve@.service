@@ -1,0 +1,17 @@
+[Unit]
+Description=Hermes Content Team approve (%i)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/content-team
+EnvironmentFile=%h/content-team/secret.common.env
+EnvironmentFile=%h/content-team/secret.%i.env
+Environment=CT_BRAND=%i
+Environment=HERMES_HOME=%h/.hermes-%i
+ExecStart=%h/hermes-agent/venv/bin/python %h/content-team/approve_service.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

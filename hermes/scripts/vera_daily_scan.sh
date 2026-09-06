@@ -1,6 +1,8 @@
 #!/bin/bash
+# Duong dan theo $HOME, khong go cung /home/donniechu (sua 06/09/2026):
+# doi ten user Unix hoac chay thu tren may khac la gay im lang.
 # Cron: Vera quet tin dau tu/kinh te, gui bao cao vao topic market. Khong tao task khac.
-H=/home/donniechu/hermes-agent/venv/bin/python
+H=$HOME/hermes-agent/venv/bin/python
 # Ngay lay theo GIO VN, khong phai UTC. Cron chay 22:00 UTC = 05:00 VN hom sau,
 # nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
 # kanban tra ve task cu thay vi tao moi, va script im lang tuong da thanh cong.
@@ -13,7 +15,7 @@ trung, cham diem co hoc, ghep manifest danh so, viet bao cao, gui topic — DA L
 Viec cua ban chi co MOT: loc tin co HE QUA (IPO, thau tom, ha tang, chinh sach, lao dong, kien tung), ghi muc chac chan theo so bao, viet tom tat co so. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (danh sach ung vien mot dong/tin, muc BAT BUOC, khung tep nop):
-cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai market
+cd $HOME/content-team && venv/bin/python quet_chuan_bi.py --vai market
 
 BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1, THEO DUNG khung
 va luat ma BUOC 1 in ra (khung do la NGUON SU THAT — cron nay khong nhac lai
@@ -21,7 +23,7 @@ luat nop, vi nhac lai la de troi). KHONG cat/grep tep JSON goc, KHONG web_search
 KHONG chay scan_*/manifest_*/publish.py tay.
 
 BUOC 3 — nop:
-cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai market
+cd $HOME/content-team && venv/bin/python quet_nop.py --vai market
 Khong tin nao dat nguong thi chay: quet_nop.py --vai market --khong-co (script gui dong
 'hom nay khong co gi' kem so tin da quet — Ong Chu can phan biet voi 'co gi do hong').
 Script bao [LOI] thi sua tep JSON roi chay lai DUNG lenh (toi da 2 lan). Xong: ket

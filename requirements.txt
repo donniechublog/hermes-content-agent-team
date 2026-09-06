@@ -25,5 +25,12 @@ lxml>=5
 pyyaml>=6           # doc config.yaml cua hermes: model_watch, theo_doi_9router, cost_squeeze
 markdown>=3.5       # nhat_ky_web.py render nhat ky 9router ra HTML
 
-# doi_chu_anh.py (Gin) can them torch + LaMa, ~2GB — CHI cai tren may local xu
-# ly anh nang, khong dua vao day. Xem requirements-local.txt.
+opencv-python-headless  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx trong
+#                       # assets/). Truoc 06/09/2026 chi ghi o requirements-local
+#                       # nhu thu "may local moi can" — nhung luat_anh chay tren
+#                       # SERVER cho moi vai lam anh. Thieu no thi `_yunet()` tra
+#                       # None va cong mat nguoi TAT IM LANG, khong mot dong bao:
+#                       # dung loai hong ma audit goi la "âm thầm".
+
+# doi_chu_anh.py (Gin) can them torch + LaMa + easyocr, ~2GB — CHI cai tren may
+# local xu ly anh nang, khong dua vao day. Xem requirements-local.txt.

@@ -1,7 +1,9 @@
 #!/bin/bash
+# Duong dan theo $HOME, khong go cung /home/donniechu (sua 06/09/2026):
+# doi ten user Unix hoac chay thu tren may khac la gay im lang.
 # Cron 6h sang VN: chot nhat ky NGAY HOM QUA (da tron ven) va mo trang hom nay.
 # Chay thang script tat dinh, KHONG qua agent, chi ghep du lieu, khong can LLM.
-cd /home/donniechu/content-team || exit 1
+cd $HOME/content-team || exit 1
 HOM_QUA=$(TZ=Asia/Ho_Chi_Minh date -d yesterday +%F)
 HOM_NAY=$(TZ=Asia/Ho_Chi_Minh date +%F)
 # KHONG nuot stderr (sua 06/09/2026): `>/dev/null 2>&1` cong voi viec nhat_ky.py
