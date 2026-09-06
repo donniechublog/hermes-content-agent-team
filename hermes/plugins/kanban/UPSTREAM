@@ -1,0 +1,15 @@
+# Xuất xứ bản chép plugin kanban trong repo này. TỆP DO MÁY GHI, đừng sửa tay.
+#
+# `hermes/plugins/kanban/` không phải mã của đội: nó là bản cài hermes-agent
+# (vendor) CỘNG ba bản vá của đội. Muốn nâng lên hermes mới thì phải biết bản
+# vá đang đứng trên commit upstream nào, nếu không chỉ còn nước đoán.
+#
+# Rebase 3 chiều lần sau:
+#   git -C ~/hermes-agent diff e77464022ddf6210691f3d13adde98f988453c68..HEAD -- plugins/kanban/dashboard
+#   # xem upstream đổi gì, vá lại ba bản vá lên bản mới, chạy --vao-repo
+#
+# Dòng `commit:` được `dong_bo_hermes.py --vao-repo` ghi lại mỗi lần kéo bản
+# cài về repo.
+
+commit: e77464022ddf6210691f3d13adde98f988453c68
+ghi_luc: 06/09/2026

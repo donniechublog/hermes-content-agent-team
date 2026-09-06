@@ -214,7 +214,10 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.65rem;
+  /* 0.65rem qua nho, khong doc duoc ten bot nao, phai ro chuot vao tung the
+     de mo. Nang len 0.82rem va cho mau ro hon.
+     Khoi phuc 06/09/2026: --vao-repo da keo ban goc hermes de len, mat va nay. */
+  font-size: 0.82rem;
   /* Assignee/profile names are case-sensitive. Do not visually uppercase
    * lane headers, otherwise a valid `analyst` profile appears as `ANALYST`
    * in the WebUI and users may copy the wrong casing back into edits. */
@@ -223,8 +226,12 @@
   padding: 0 0.1rem;
 }
 .hermes-kanban-lane-name {
-  font-weight: 600;
+  font-weight: 700;
   font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--color-foreground);
+  /* Vien trai mau nhan de mat bam duoc ngay dau moi lan */
+  border-left: 3px solid var(--color-ring, currentColor);
+  padding-left: 0.4rem;
 }
 .hermes-kanban-lane-count {
   margin-left: auto;
@@ -302,8 +309,15 @@
 }
 
 .hermes-kanban-assignee {
-  font-weight: 500;
-  color: color-mix(in srgb, var(--color-foreground) 80%, var(--color-muted-foreground));
+  /* Ten profile la thu can nhin dau tien tren the: dam, ro mau, khong bi cat.
+     Truoc day no chim vao dam chu xam nen phai mo tung the moi biet bot nao. */
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-foreground);
+  background: color-mix(in srgb, var(--color-ring) 16%, transparent);
+  border-radius: 0.25rem;
+  padding: 0.05rem 0.35rem;
+  white-space: nowrap;
 }
 .hermes-kanban-unassigned {
   font-style: italic;
