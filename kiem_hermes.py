@@ -29,9 +29,13 @@ HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
 
 # Cot ta doc bang SQL THO. Thieu mot cot la nhat ky/bang dieu phoi chet cham.
 COT_CAN = {
+    # nhat_ky.phan_kanban + duyet_giao_viec (SELECT ... FROM tasks)
     "tasks": ["id", "title", "assignee", "status", "created_at", "completed_at",
-              "result", "last_failure_error", "metadata"],
-    "task_runs": ["summary", "error", "status", "task_id", "metadata"],
+              "result", "last_failure_error"],
+    # nhat_ky.phan_kanban + duyet_giao_viec (banh giao doc `metadata` o DAY,
+    # khong phai o `tasks` — cot cua hai bang de nho nham)
+    "task_runs": ["task_id", "status", "summary", "error", "metadata"],
+    # plugin kanban: stream_events
     "task_events": ["id", "task_id", "run_id", "kind", "payload", "created_at"],
 }
 # Co CLI ta truyen cho `hermes chat`. `-z` tung duoc xu ly TRUOC va thoat luon
