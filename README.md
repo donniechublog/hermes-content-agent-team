@@ -232,6 +232,16 @@ ghi thêm một dòng cảnh báo.
   Nợ kỹ thuật đã biết: `TBENCH` là edge function moi từ bundle JS của tbench.ai,
   không phải API công bố — đổi project ref là chết im, cần theo dõi. `ids` trong
   `models_seen.json` chỉ tăng, chưa có cơ chế cắt tỉa (~40 byte/model/ngày).
+
+  `fetch_opencompass` chập chờn (máy chủ ở TQ, hỏng kiểu `ConnectTimeout` /
+  `SSL: UNEXPECTED_EOF` chứ không phải bị chặn) nên có retry 2 lần; đo 06/09 từ
+  server thì một lượt hỏng cả 2 lần, lượt sau sạch. **Đường lui nếu nó tệ đi**:
+  CDN tĩnh `https://cdn.opencompass.org.cn/assets/llm-rank/<fileName>.json`
+  nhanh và ổn hơn hẳn (1,7s so với 6,5s), schema là `OverallTable`/`Knowledge`/
+  `Reason`/`Math`/`CodeTable`. Chưa dùng vì `<fileName>` xoay theo quý và chỉ
+  API kia mới cho biết tên — muốn chuyển thì phải nhớ tên tệp vào state và chỉ
+  gọi API khi CDN trả 404. Chưa làm: đổi một nguồn đang chạy được lấy thêm một
+  chỗ để hỏng thì không lời.
 - `bat_buoc.py` — **danh sách BẮT BUỘC** cho ba vai đi tìm tin (luật Ông Chủ 04/09/2026:
   script quét thấy là phải đưa, hôm trước sót thì hôm sau bổ sung, vai không có quyền bỏ).
   Script quét gieo mục (`state/<brand>/bat_buoc_<vai>.json`), script ghi manifest
