@@ -351,12 +351,22 @@ def _khoanh(png: Path, x: float, y: float, w: float, h: float, dpr: int = DPR):
 
 def _cua_so(rows: list, idx: int, hdr_h: float, bang_w: float) -> tuple:
     """[dau, cuoi] hàng đưa vào ảnh. Trong top → từ hàng 1; sâu → từ idx-2. Kéo
-    xuống tới khi ảnh đủ cao (rộng/cao <= TI_LE_MUC_TIEU) hoặc chạm trần."""
+    xuống hết cỡ TRẦN CHIỀU CAO (CAO_TOI_DA_CSS, khớp chiều cao thẻ lúc dựng) —
+    không dừng sớm chỉ vì đã "đủ tỉ lệ".
+
+    Ông Chủ 06/09/2026: "bảng xếp hạng đó rất dài, chụp full chiều dài cũng chả
+    vấn đề" — chữ giờ chỉ làm mờ cục bộ đúng vùng nó đè lên (`_mo_vung_chu`
+    trong card.py), không còn cần ảnh vừa khít một tỉ lệ để "đi một mình vào
+    hero" như hồi còn màn tối cả thẻ. Trước đây dừng sớm ở TI_LE_MUC_TIEU=1.5
+    để khỏi chụp thừa; giờ bỏ hẳn điều kiện đó, chỉ còn CHẶN TRÊN la CAO_TOI_DA_CSS
+    (đã chọn khớp chiều cao thẻ dựng ra — chụp thêm nữa cũng bị cắt mất khi
+    ghép vào thẻ, không ích gì). Bảng càng dài càng lộ nhiều hàng hơn quanh
+    model — tốt hơn, không phải rủi ro."""
     n = len(rows)
     dau = 1 if idx <= TOP_MAC_DINH + 2 else max(1, idx - TREN_MODEL)
     cuoi = min(n - 1, max(idx + 2, dau + TOP_MAC_DINH - 1))
     cao = lambda k: rows[k]["y"] + rows[k]["h"] - rows[dau]["y"] + hdr_h
-    while cuoi + 1 < n and cao(cuoi) < bang_w / TI_LE_MUC_TIEU and cao(cuoi + 1) <= CAO_TOI_DA_CSS:
+    while cuoi + 1 < n and cao(cuoi + 1) <= CAO_TOI_DA_CSS:
         cuoi += 1
     while cuoi > idx + 1 and cao(cuoi) > CAO_TOI_DA_CSS:
         cuoi -= 1

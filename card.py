@@ -15,7 +15,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageStat
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import luat_anh
 
@@ -822,11 +822,13 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     src_img = _mo_anh(src)
     # ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
     # cover-crop lam mat tieu de cua slide/bang nguon, anh doc ra vo nghia).
-    # Nen: ban cover LAM MO + toi phu kin khung; lop sac: anh nguyen ti le,
-    # full W, dat sat tren (chu quote nam duoi). Anh cao hon khung thi chi cat
-    # theo chieu doc, giu tron be ngang. Dong nhip voi carousel._body_image.
+    # Nen: ban cover LAM MO phu kin khung (KHONG lam toi — Ong Chu 06/09/2026:
+    # "lam mo chu dung boi them mau", ap dung ca cho lop nen nay chu khong chi
+    # vung chu; truoc day co giam sang .enhance(0.5), gio bo, giu nguyen do sang
+    # goc, chi mo). Lop sac: anh nguyen ti le, full W, dat sat tren (chu quote
+    # nam duoi). Anh cao hon khung thi chi cat theo chieu doc, giu tron be
+    # ngang. Dong nhip voi carousel._body_image.
     nen = _fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40))
-    nen = ImageEnhance.Brightness(nen).enhance(0.5)
     canvas.paste(nen, (0, 0))
     nat_h = round(src_img.height * W / src_img.width)
     sac = src_img.resize((W, nat_h), Image.LANCZOS)
