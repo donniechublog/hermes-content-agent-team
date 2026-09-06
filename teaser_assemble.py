@@ -110,7 +110,18 @@ def _muc_khong_duoc_nhac(outline: list, paragraphs: list) -> list:
 
 
 def assemble(title: str, paragraphs: list, images: list,
-             bo_qua_kiem_tra: bool = False, outline: list = None) -> dict:
+             bo_qua_kiem_tra: bool = False, outline: list = None,
+             lay_emoji=None) -> dict:
+    """`lay_emoji(n) -> list` de tiem bo emoji tu ngoai; mac dinh la
+    `emoji_deck.next_emoji`, tuc SO XOAY VONG THAT tren dia.
+
+    Vi sao tham so nay ton tai: `emoji_deck.next_emoji` ghi
+    `state/<brand>/emoji_deck.json` duoi flock, nen MOI lan goi assemble deu
+    day con tro di that. Test cua cong chan goi assemble bon lan moi lan chay
+    suite -> con tro emoji cua Jean tren server nhay ba buoc moi lan ai do chay
+    test, va hai bai teaser lien tiep khong con lien mach emoji. Truyen
+    `lay_emoji=lambda n: [...]` de test khong dung vao so that.
+    """
     n = len(paragraphs)
     if n == 0:
         raise ValueError("Can it nhat 1 doan van")
@@ -171,7 +182,7 @@ def assemble(title: str, paragraphs: list, images: list,
                   + "\n  - ".join(bo_sot[:5])
                   + "\n  (khong chan — neu co y bo thi bo, nhung dung bo vi quen)",
                   file=sys.stderr)
-    emojis = emoji_deck.next_emoji(n)
+    emojis = (lay_emoji or emoji_deck.next_emoji)(n)
     body = "\n\n".join(f"{e} {p}".strip() for e, p in zip(emojis, paragraphs))
     caption = f"{title.upper()}\n\n{body}\n\n{CLOSING}"
     return {
