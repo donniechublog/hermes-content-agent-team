@@ -183,22 +183,29 @@ def tach_hang(tieu_de: str, model: str):
 
 
 def goi_y_nguon(tieu_de: str = "", link: str = "", via: str = "", chu: str = "") -> list:
-    """Xếp registry: nguồn được NHẮC (link/via/chữ bài) trước, rồi theo chủ đề tin,
-    rồi phần còn lại. Không loại nguồn nào — "không giới hạn nguồn"."""
+    """Xếp registry: nguồn được NHẮC (tiêu đề/link/via/chữ bài) trước, rồi theo chủ
+    đề tin, rồi phần còn lại. Không loại nguồn nào — "không giới hạn nguồn".
+
+    Mỗi mục trả về mang thêm `duoc_nhac`: True khi CHÍNH TIN nhắc tới nguồn đó.
+    Chụp được từ nguồn `duoc_nhac=False` nghĩa là ảnh nói về MỘT BẢNG KHÁC với
+    bảng trong tiêu đề — vẫn dùng được nhưng phải cảnh báo, xem `cau_xep_hang`
+    trong anh_chuan_bi.py."""
     # Tieu de NAM TRONG chuoi do "nguon duoc nhac": tin hay goi thang ten trang
     # ("#1 LiveCodeBench", "leo top OpenCompass") ma khong co link toi trang do.
     goi = f"{tieu_de} {link} {via} {chu[:3000]}".lower()
     chu_de = f"{tieu_de} {chu[:1500]}".lower()
-    diem = {}
+    diem, ra = {}, []
     for i, n in enumerate(NGUON):
         d = 1000 - i
-        if re.search(n["mien"], goi, re.I):
+        nhac = bool(re.search(n["mien"], goi, re.I))
+        if nhac:
             d += 500
         for pat, mas in CHU_DE:
             if n["ma"] in mas and re.search(pat, chu_de, re.I):
                 d += 200
         diem[n["ma"]] = d
-    return sorted(NGUON, key=lambda n: -diem[n["ma"]])
+        ra.append({**n, "duoc_nhac": nhac})
+    return sorted(ra, key=lambda n: -diem[n["ma"]])
 
 
 # ---- Chụp ----------------------------------------------------------------------
@@ -892,7 +899,8 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                    f"({kq['kieu']}, {im.width}x{im.height}) — {kq['dong'][:70]}")
             kq_cuoi = {"tep": str(out), "kieu": kq["kieu"], "nguon": n["ma"], "site": n["site"],
                        "bang": n["bang"], "hang": kq.get("hang") or hang_goi_y, "model": kq["model"],
-                       "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None}
+                       "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None,
+                       "duoc_nhac": bool(n.get("duoc_nhac", True))}
             break
         br.close()  # dong browser cung dong het cac context/page con lai
     if kq_cuoi:
