@@ -154,37 +154,69 @@ def kiem_quote_dich(chu: str, nhan: str) -> list:
             "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
 
 
+def _album_da_len(draft_id: str) -> bool:
+    """Album cua draft nay da duoc Telegram nhan chua — doc nhat ky telegram_sent
+    ma gui_telegram ghi NGAY SAU khi album di, truoc buoc gui nut Duyet."""
+    try:
+        d = env_load.state_dir() / "telegram_sent"
+        if not d.exists() or not draft_id:
+            return False
+        for p in d.glob("*.jsonl"):
+            for dong in p.read_text(encoding="utf-8").splitlines()[-400:]:
+                if draft_id in dong:
+                    return True
+    except OSError:
+        pass
+    return False
+
+
 def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi: dict):
     """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi da_dung.json
     (`ghi` = cac truong rieng cua vai: bia/anh/hook/theme...). Tra ve message_id."""
     import gui_telegram
+    xong = cb._doc_json(wd / "xong.json") or {}
+
+    def _ghi_so(mid=None):
+        """Ghi da_dung.json + so anh da dung. Goi NGAY KHI album da len topic, ke
+        ca khi buoc gui nut Duyet loi ngay sau do: anh da nam tren Telegram thi
+        so PHAI co dong tuong ung, khong thi bai sau dung lai dung tam vua dang —
+        chinh thu luat nay sinh ra de chan (do 06/09/2026)."""
+        cb._ghi_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
+                                           "lan": int((da_dung or {}).get("lan", 0)) + 1,
+                                           "message_id": mid})
+        # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot
+        # khoa: Ethan de anh ghep thu hai o "anh2", Kite de o "hinh".
+        import luat_anh
+        goc = {a["ma"]: a["goc"] for a in xong.get("anh", [])}
+        ma_ds = []
+        for k in ("anh", "anh2", "bia", "hinh"):
+            v = ghi.get(k)
+            ma_ds += list(v) if isinstance(v, (list, tuple)) else [v]
+        for ma in dict.fromkeys(x for x in ma_ds if x):
+            if goc.get(ma):
+                luat_anh.ghi_da_dung(goc[ma], draft_id, vai, xong.get("link", ""))
+
     try:
         res = gui_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)
     except gui_telegram.GuiLoi as e:
+        # Album co the DA len roi ma rieng buoc gui nut Duyet moi hong (429 flood
+        # control chang han). Truoc 06/09/2026 nhanh nay thoat ngay, so trong ron
+        # trong khi anh da nam tren topic.
+        if _album_da_len(draft_id):
+            _ghi_so()
+            sys.exit(f"[LOI] album ĐÃ lên topic nhưng gửi nút Duyệt lỗi: {e}\n"
+                     "Ảnh đã ghi vào sổ. ĐỪNG chạy lại (sẽ trùng) — báo Ông Chủ "
+                     "duyệt tay bộ vừa lên.")
         sys.exit(f"[LOI] {e}")
     r = res.get("result")
     mid = (r[-1] if isinstance(r, list) else r or {}).get("message_id")
-    cb._ghi_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
-                                       "lan": int((da_dung or {}).get("lan", 0)) + 1,
-                                       "message_id": mid})
-    # So anh da dung LIEN PHIEN (Ong Chu 06/09/2026): ghi anh GOC cua tung ma da
-    # dung, de bai sau khong dung lai (kiem_da_dung o buoc nop).
-    #
-    # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot khoa.
-    # Ban dau chi doc `ghi["anh"]` (list) hoac cap (anh, bia): Ethan mat `anh2`
-    # (anh ghep doc thu hai khong bao gio bi danh dau, bai sau dung lai duoc) va
-    # Kite mat sach (ghi cua Kite khong co khoa nao trong hai khoa do). Do
-    # 06/09/2026: chi Dre ghi du. Ai them khoa moi thi them vao day.
-    import luat_anh
-    xong = cb._doc_json(wd / "xong.json") or {}
-    goc = {a["ma"]: a["goc"] for a in xong.get("anh", [])}
-    ma_ds = []
-    for k in ("anh", "anh2", "bia", "hinh"):
-        v = ghi.get(k)
-        ma_ds += list(v) if isinstance(v, (list, tuple)) else [v]
-    for ma in dict.fromkeys(m for m in ma_ds if m):     # bo trung, giu thu tu
-        if goc.get(ma):
-            luat_anh.ghi_da_dung(goc[ma], draft_id, vai)
+    if res.get("trung"):
+        # post() thay md5 trung trong 30 phut nen tra ve SOM, KHONG gui nut Duyet.
+        # Khong duoc de vai in "da gui kem nut duyet" trong khi khong co nut nao.
+        print("[CANH BAO] album trùng bản đã gửi trong 30 phút nên KHÔNG gửi lại, "
+              "và KHÔNG có nút Duyệt mới. Xem lại topic: bộ trước mà thiếu nút thì "
+              "báo Ông Chủ duyệt tay.")
+    _ghi_so(mid)
     return mid
 
 

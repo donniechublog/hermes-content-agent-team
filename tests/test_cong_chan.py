@@ -151,13 +151,103 @@ def test_tin_xep_hang_khong_co_bang_thi_khong_chan():
     assert "BẮT BUỘC" in dong2, dong2
 
 
-def test_cong_xep_hang_chi_chan_khi_co_anh_XH():
-    """dre_nop/ethan_nop chỉ được chặn khi m["xep_hang"] thật sự có."""
+def test_cong_xep_hang_chi_chan_khi_CHUP_duoc_bang():
+    """dre_nop/ethan_nop chỉ được chặn khi engine CHỤP được bảng thật
+    (kieu == "chup"). Không có ảnh XH, hoặc chỉ có thẻ dự phòng engine tự dựng,
+    đều không được ép — xem test_the_du_phong_khong_duoc_ep_lam_anh_chinh."""
     import re as _re
-    for tep, mau in (("dre_nop.py", r'tin_xep_hang"\)\s+and\s+m\.get\("xep_hang"\)'),
-                     ("ethan_nop.py", r'tin_xep_hang"\)\s+and\s+m\.get\("xep_hang"\)')):
+    mau = r'\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\) == "chup"'
+    for tep in ("dre_nop.py", "ethan_nop.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
-        assert _re.search(mau, src), f"{tep}: cổng xếp hạng thiếu điều kiện m['xep_hang']"
+        assert _re.search(mau, src), f"{tep}: cổng xếp hạng phải đòi kieu == 'chup'"
+
+
+# ------------------------------------------------ tin xếp hạng: nhận diện & thẻ bịa
+TIEU_DE_THUONG = [
+    "Reflection gọi vốn 2 tỷ USD, vòng seed do Nvidia dẫn đầu",
+    "OpenAI vượt mốc 1 tỷ người dùng hàng tuần",
+    "Doanh thu Anthropic vượt 10 tỷ USD năm 2026",
+    "Nvidia công bố GPU mới, giá vượt 40.000 USD",
+    "Cuộc đua chip AI: TSMC dẫn đầu về công suất 2nm",
+    "Amazon ra chip Nova mới cho trung tâm dữ liệu",
+]
+TIEU_DE_XEP_HANG = [
+    "GPT-5.2 leo lên #1 trên bảng xếp hạng LMArena",
+    "Gemini 3 Pro đứng đầu bảng xếp hạng Text Arena",
+    "Claude Opus 4.5 vượt GPT-5 trên leaderboard SWE-bench",
+    "Qwen3-Max lọt top 3 Intelligence Index",
+]
+
+
+def test_tin_thuong_khong_bi_dong_dau_xep_hang():
+    """Trước 06/09 mọi chữ 'vượt/dẫn đầu/số 1' đều kích hoạt, kéo engine đi lục
+    12 bảng xếp hạng cho một tin gọi vốn rồi dựng thẻ số liệu bịa."""
+    import xep_hang as xh
+    for t in TIEU_DE_THUONG:
+        assert not xh.la_tin_xep_hang(t, ""), f"vẫn bắt nhầm: {t}"
+
+
+def test_tin_xep_hang_that_van_duoc_nhan():
+    import xep_hang as xh
+    for t in TIEU_DE_XEP_HANG:
+        assert xh.la_tin_xep_hang(t, ""), f"mất nhận diện: {t}"
+
+
+def test_ho_model_trung_tu_thuong_phai_di_kem_so():
+    """'seed', 'nova', 'solar'... chỉ là tên model khi có số phiên bản."""
+    import xep_hang as xh
+    assert xh.tach_model("vòng seed do Nvidia dẫn đầu") == []
+    assert xh.tach_model("Amazon ra chip Nova mới") == []
+    assert xh.tach_model("IBM mở nguồn Granite 4"), "Granite 4 phải nhận ra"
+    assert xh.tach_model("GPT-5.2 leo lên #1"), "GPT-5.2 phải nhận ra"
+
+
+def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
+    """kieu='the' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
+    ảnh thật. Chỉ kieu='chup' mới bật cổng bắt buộc."""
+    import ethan_nop
+    anh = [{"ma": "A1", "goc": "/tmp/x.png", "san": None, "loai": "anh", "ti_le": 1.0,
+            "mat": 0, "ngang": False, "canh_ngan": 1200, "w": 1200, "h": 1200,
+            "goc_trai_sang": 50, "dung": ["nền hero"], "ghi_chu": [], "mien": "x.com",
+            "tu": "x", "lien_quan": True}]
+    spec = {"anh": "A1", "kieu": "quote", "hook": "Mô hình mới đạt điểm cao nhất bảng",
+            "tagline": "MODEL", "attrib": "via X"}
+    for kieu, phai_chan in (("chup", True), ("the", False)):
+        m = {"anh": anh, "tin_xep_hang": True, "chu_bai": "", "tu_lieu": {}, "draft_id": "d1",
+             "xep_hang": {"kieu": kieu, "site": "arena.ai", "bang": "Text Arena",
+                          "model": "seed", "hang": 5}}
+        _, loi, _ = ethan_nop.giai_spec(spec, m, Path("/tmp"))
+        co = any("XẾP HẠNG" in x for x in loi)
+        assert co == phai_chan, f"kieu={kieu}: {'phải chặn' if phai_chan else 'không được chặn'}"
+
+
+# ------------------------------------------------- sổ ảnh đã dùng: khoá theo TIN
+def test_so_anh_khoa_theo_tin_khong_theo_draft():
+    """Cùng một tin giao cho Dre rồi Ethan ra hai draft_id khác nhau nhưng dùng
+    chung bộ ảnh — vai sau không được bị chặn sạch."""
+    import luat_anh as la
+    from PIL import Image, ImageDraw
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        la._so_da_dung = lambda: d / "s.jsonl"
+        p = d / "a.png"
+        im = Image.new("RGB", (800, 600), (255, 255, 255))
+        dr = ImageDraw.Draw(im)
+        for i, h in enumerate([380, 300, 240, 180, 120]):
+            dr.rectangle([60 + i * 140, 500 - h, 160 + i * 140, 500], fill=(40, 90, 200))
+        im.save(p)
+        LINK = "https://openai.com/tin-abc"
+        la.ghi_da_dung(p, "tin-abc-carousel-blog", "carousel", LINK)
+        # cùng tin, vai khác -> KHÔNG chặn
+        assert la.kiem_da_dung("A1", p, "tin-abc-designer-blog", LINK)[0] == []
+        # tin khác dùng lại đúng tấm đó -> CHẶN
+        assert la.kiem_da_dung("A1", p, "tin-xyz-carousel-blog", "https://x.com/khac")[0]
+
+
+def test_khoa_tin_chuan_hoa_url():
+    import luat_anh as la
+    assert la.khoa_tin("https://www.OpenAI.com/tin/") == la.khoa_tin("http://openai.com/tin")
+    assert la.khoa_tin("https://x.com/a?utm=1#z") == "x.com/a"
 
 
 if __name__ == "__main__":

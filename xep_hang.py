@@ -87,16 +87,33 @@ CHU_DE = [
 ]
 
 # ---- Nhận diện tin xếp hạng + tách model/hạng ---------------------------------
+# CHI nhan khi co dau hieu BANG XEP HANG, khong nhan tu roi. Truoc 06/09/2026
+# mau nay con bat "vượt", "dẫn đầu", "đứng đầu", "số 1", "top N" dung mot minh —
+# nhung chu co trong hau het tom tat cua Finn/Nova/Vera. Do that: 6/6 tieu de
+# goi von / doanh thu / gia chip deu bi dong dau TIN XEP HANG ("Reflection gọi
+# vốn 2 tỷ USD, vòng seed do Nvidia dẫn đầu"), keo theo ca chuoi hong ben duoi.
 _XEP_HANG = re.compile(
-    r"(xếp hạng|thứ hạng|leaderboard|ranking|ranked|\brank\b|standing|"
-    r"đứng đầu|dẫn đầu|đứng thứ|hạng \d|#\s?\d|top\s?\d|top-\d|leo \d|leo lên|vượt|áp sát|"
-    r"soán ngôi|chen chân|lọt top|elo|arena|intelligence index|trí tuệ .{0,20}(artificial|analysis)|"
-    r"benchmark.{0,25}(#\d|top|đầu|nhất)|số 1|number one|no\.\s?1|\bfirst place\b)", re.I)
+    # (a) ten bang / khai niem xep hang — tu no da du nghia
+    r"(xếp hạng|thứ hạng|bảng xếp hạng|leaderboard|ranking|ranked|\brank\b|"
+    r"elo|arena|intelligence index|trí tuệ .{0,20}(artificial|analysis)|"
+    r"soán ngôi|lọt top|"
+    # (b) tu chi vi tri — CHI khi di kem ngu canh bang/benchmark trong 40 ky tu
+    r"(?:đứng đầu|dẫn đầu|đứng thứ|vượt|áp sát|chen chân|số 1|number one|no\.\s?1|"
+    r"first place|hạng \d|#\s?\d|top\s?\d|top-\d|leo \d|leo lên)"
+    r".{0,40}(bảng|leaderboard|arena|benchmark|xếp hạng|bxh)|"
+    r"(?:bảng|leaderboard|arena|benchmark|xếp hạng|bxh).{0,40}"
+    r"(?:đứng đầu|dẫn đầu|đứng thứ|vượt|áp sát|số 1|hạng \d|#\s?\d|top\s?\d|leo lên))", re.I)
 
 # Họ model + đuôi phiên bản. Bắt cả "GPT-6 Astra (max)", "Claude Fable 5.1", "Kimi-K3",
 # "Grok Imagine Video 1.5 Agent", "Qwen3.8-27B", "GLM-5.2 (Max)", "Muse Spark 1.2".
+# Ho model. Cac ho TRUNG TU THUONG tieng Anh/Viet (Seed, Solar, Granite, Phi,
+# Command, Nova, Step, Yi) da tach rieng xuong _HO_CAN_SO: chung chi duoc nhan
+# khi DI KEM so phien ban. Truoc 06/09/2026 chung nam chung o day, nen "vòng
+# seed do Nvidia dẫn đầu" ra models=['seed'] va keo ca engine di luc 11 bang
+# xep hang cho mot tin goi von.
 _HO = (r"GPT|Claude|Gemini|Gemma|Grok|Kimi|Qwen|GLM|DeepSeek|Llama|Mistral|Mixtral|Muse Spark|"
-       r"MiniMax|Nemotron|Seed|Solar|Granite|Phi|Command|Nova|Jamba|Hunyuan|Doubao|Yi|Step|o\d")
+       r"MiniMax|Nemotron|Jamba|Hunyuan|Doubao|o\d")
+_HO_CAN_SO = r"Seed|Solar|Granite|Phi|Command|Nova|Step|Yi"
 # Duoi cho phep: TU dat ten (khong phai dong tu/tu Viet) hoac so phien ban. So tran
 # (khong cham) chi nhan khi KHONG di truoc mot tu thuong: "Opus 4 (Thinking)" co,
 # "55 điểm" khong. Neu khong, "GPT-6 Astra (max) 55 điểm" se an ca "55".
@@ -106,7 +123,8 @@ _DUOI = (r"(?:Astra|Flash|Pro|Max|Mini|Nano|Ultra|Sol|Sonnet|Opus|Haiku|Fable|Th
          r"[KVRM]\d+(?:\.\d+)?[A-Za-z]*|\d+[bB]|\d+\.\d+(?:\.\d+)*[A-Za-z]*|"
          # (?-i:) — tat IGNORECASE cuc bo: co re.I thi [a-z] khop ca "A" cua "Astra"
          r"\d{1,3}(?![\s]*(?-i:[a-zàáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ])))")
-_MODEL = re.compile(r"\b((?:" + _HO + r")(?:[-\s]?" + _DUOI + r")*"
+_MODEL = re.compile(r"\b((?:(?:" + _HO + r")|(?:(?:" + _HO_CAN_SO + r")(?=[-\s]?\d)))"
+                    r"(?:[-\s]?" + _DUOI + r")*"
                     r"(?:\s?\((?:max|high|thinking|xhigh|low|medium|pro|mini)\))?)", re.I)
 
 _HANG = re.compile(r"(?:#|hạng |thứ |rank(?:ed)? |vị trí |top )\s?(\d{1,3})\b|\b(\d{1,3})\s?(?:st|nd|rd|th)\b", re.I)

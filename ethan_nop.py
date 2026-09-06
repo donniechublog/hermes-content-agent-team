@@ -47,7 +47,12 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH).
     # CHI chan khi engine THUC SU co anh xep hang (xem ghi chu cung viec o
     # dre_nop.py): khong co ma XH ma van chan thi vai khong bao gio nop duoc.
-    if m.get("tin_xep_hang") and m.get("xep_hang") and not a.get("xep_hang"):
+# THE DU PHONG (kieu="the") KHONG duoc ep lam anh chinh: no la anh do
+# minh dung, chua he doc bang that, con ghi ten bang lay tu nguon DOAN
+# theo tu khoa. Ep no thay cho anh that = dang len kenh mot khang dinh
+# khong kiem chung (do 06/09/2026). Chi bat cong khi da CHUP duoc bang.
+    if (m.get("tin_xep_hang") and (m.get("xep_hang") or {}).get("kieu") == "chup"
+            and not a.get("xep_hang")):
         loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
                    + cb.cau_xep_hang(m) + ".")
     # Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua ngang.
@@ -99,7 +104,8 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     import luat_anh
     for x in (ma, ma2):
         if x:
-            l, _ = luat_anh.kiem_da_dung(x, anh[x]["goc"], m.get("draft_id", ""))
+            l, _ = luat_anh.kiem_da_dung(x, anh[x]["goc"], m.get("draft_id", ""),
+                                         m.get("link", ""))
             loi += l
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
     # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.

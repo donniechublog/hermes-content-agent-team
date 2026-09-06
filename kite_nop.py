@@ -85,7 +85,7 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
                 # co cong nay tu dau; Kite thi khong doc lan khong ghi, nen mot
                 # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
                 l, _ = luat_anh.kiem_da_dung(f"slide {i} ({img})", hinh[img]["goc"],
-                                             m.get("draft_id", ""))
+                                             m.get("draft_id", ""), m.get("link", ""))
                 loi += l
                 if not sl.get("caption"):
                     loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")

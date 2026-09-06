@@ -204,7 +204,20 @@ def _so_da_dung():
     return env_load.state_dir() / "anh_da_dung.jsonl"
 
 
-def ghi_da_dung(duong_dan, draft_id: str, vai: str) -> None:
+def khoa_tin(link: str) -> str:
+    """Khoa on dinh cua MOT TIN (khong phai mot draft).
+
+    Cung mot tin giao cho Dre roi giao cho Ethan ra HAI draft_id khac nhau
+    (duyet_chon_tin._draft_id ghep them vai-brand) nhung van la MOT tin va dung
+    CHUNG bo anh engine tai ve. So "anh da dung" khoa theo draft thi vai nop sau
+    bi chan sach anh cua vai truoc — do 06/09/2026: Ethan mat toan bo 5-6 ma Dre
+    da dung, khong nop duoc the nao."""
+    import re as _re
+    u = _re.sub(r"^https?://(www\.)?", "", (link or "").strip().lower()).rstrip("/")
+    return _re.sub(r"[?#].*$", "", u)
+
+
+def ghi_da_dung(duong_dan, draft_id: str, vai: str, link: str = "") -> None:
     import json, time
     q = Path(duong_dan)
     try:
@@ -212,13 +225,13 @@ def ghi_da_dung(duong_dan, draft_id: str, vai: str) -> None:
             h = dhash(im)
     except Exception:                                        # noqa: BLE001
         return
-    dong = {"dhash": h, "draft_id": draft_id, "vai": vai,
+    dong = {"dhash": h, "draft_id": draft_id, "vai": vai, "tin": khoa_tin(link),
             "ten": q.name, "luc": int(time.time())}
     with open(_so_da_dung(), "a", encoding="utf-8") as f:
         f.write(json.dumps(dong, ensure_ascii=False) + "\n")
 
 
-def kiem_da_dung(nhan, duong_dan, draft_id: str):
+def kiem_da_dung(nhan, duong_dan, draft_id: str, link: str = ""):
     """KHONG DUNG LAI ANH DA DUNG (Ong Chu chot 06/09/2026): bang ti so giai golf
     Ricoh len hai the cua hai tin khac nhau trong cung mot ngay.
 
@@ -237,12 +250,17 @@ def kiem_da_dung(nhan, duong_dan, draft_id: str):
     except Exception:                                        # noqa: BLE001
         return [], []
     moc = time.time() - NGAY_NHO_ANH * 86400
+    tin = khoa_tin(link)
     for line in so.read_text(encoding="utf-8").splitlines():
         try:
             d = json.loads(line)
         except Exception:                                    # noqa: BLE001
             continue
         if d.get("draft_id") == draft_id or d.get("luc", 0) < moc:
+            continue
+        # Cung MOT TIN nhung vai khac (Dre roi Ethan) thi KHONG chan: hai vai
+        # dung chung bo anh cua bai do, chan la vai sau khong con anh nao.
+        if tin and d.get("tin") and d["tin"] == tin:
             continue
         if gan_giong(int(d.get("dhash", 0)), h):
             khi = time.strftime("%d/%m %H:%M", time.localtime(d.get("luc", 0)))

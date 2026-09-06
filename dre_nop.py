@@ -105,7 +105,10 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
             # dan toi canh do: --khong-browser, tach_model() rong (tin xep hang
             # KHONG neu ten model, vd "Bảng xếp hạng AI tháng 9"), hoac
             # tim_va_chup nem. Luc do de vai dung anh thuong, brief da noi ro.
-            if la_bia and m.get("tin_xep_hang") and m.get("xep_hang") and not a.get("xep_hang"):
+            # Xem ghi chu cung viec o ethan_nop.py: the du phong khong ep duoc.
+            if (la_bia and m.get("tin_xep_hang")
+                    and (m.get("xep_hang") or {}).get("kieu") == "chup"
+                    and not a.get("xep_hang")):
                 loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
                            f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m) + ".")
             if a["loai"] == "chart" and not a.get("xep_hang"):
@@ -190,7 +193,8 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026. Dat SAU
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
     for ma_, nhan_ in da_dung.items():
-        l, _ = luat_anh.kiem_da_dung(f"{nhan_} ({ma_})", anh[ma_]["goc"], m.get("draft_id", ""))
+        l, _ = luat_anh.kiem_da_dung(f"{nhan_} ({ma_})", anh[ma_]["goc"],
+                                     m.get("draft_id", ""), m.get("link", ""))
         loi += l
     n = len(slides) + 1
     if n < m.get("toi_thieu", 5):

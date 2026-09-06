@@ -681,7 +681,14 @@ def cau_xep_hang(m: dict) -> str:
 def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
     """Dong 🏁 trong brief: `khoa` la "anh" (hero) hay "bìa" (carousel), `vai` la
     ten file nop chan (ethan_nop / dre_nop)."""
-    if m.get("xep_hang"):
+    xh_ = m.get("xep_hang") or {}
+    if xh_ and xh_.get("kieu") != "chup":
+        # Khong chup duoc bang that -> chi co the du phong. Goi y, khong ep.
+        return ("🏁 Tin xếp hạng nhưng engine KHÔNG chụp được bảng thật, chỉ dựng được "
+                f"THẺ DỰ PHÒNG (mã \"XH\": {cau_xep_hang(m)}). Thẻ đó KHÔNG khẳng định thứ "
+                f"hạng đã kiểm chứng, nên {vai} không ép: dùng ảnh thật tốt nhất nếu có, "
+                "chỉ dùng thẻ khi không còn ảnh nào khá hơn.")
+    if xh_:
         return (f"🏁 TIN XẾP HẠNG → {khoa}\"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về "
                 f"ranking phải là bảng/chart xếp hạng, khoanh đúng model). {vai} chặn ảnh khác. "
                 + cau_xep_hang(m) + ".")
