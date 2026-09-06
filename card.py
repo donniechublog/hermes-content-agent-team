@@ -290,6 +290,20 @@ def _du_sang(mau, toi_thieu=0.42):
     return mau
 
 
+def _du_toi(mau, toi_da=0.42):
+    """Keo mau ve phia den cho toi khi doc duoc tren nen SANG — anh cua _du_sang.
+
+    Can thiet vi nguyen bo nhan dien duoc dinh nghia cho NEN TOI: CYAN cua dcgr
+    la trang thuan, dat len anh nen trang thi CR 1.04, bien mat hoan toan.
+    """
+    mau = tuple(mau[:3])
+    for _ in range(24):
+        if _do_sang(mau) <= toi_da:
+            break
+        mau = tuple(max(0, round(c * 0.88)) for c in mau)
+    return mau
+
+
 def _mau_cua_hang(tu_sach: tuple):
     """Mau cua mot ten hang (da tach dau, viet hoa). None neu chua biet."""
     if len(tu_sach) > 1 and tuple(tu_sach) in MAU_CUM:
@@ -718,14 +732,28 @@ def _mo_vung_chu(canvas, frame_top):
     canvas.paste(Image.composite(mo, vung, mat_na), (0, top))
 
 
+# Nguong quyet dinh chu SANG hay chu TOI tren mot vung nen.
+#
+# Truoc 06/09/2026 la 140, go tay. Diem dung la cho hai lua chon hoa nhau:
+# tinh theo WCAG (co tuyen tinh hoa gamma) voi FG=(230,237,243) va BG=(14,17,23)
+# thi CR(chu trang) = CR(chu toi) tai nen xam 116. O 140, chu trang chi con
+# CR 2.85 trong khi chu toi cho 5.62 — tuc nguong cu chon SAI phe tren ca dai
+# nen 116..140, dung dai hay gap nhat o anh chup nua sang nua toi.
+NGUONG_NEN_SANG = 116
+
+
+def _sang_vung(canvas, box) -> float:
+    """Do sang trung binh cua mot vung canvas (0..255)."""
+    return ImageStat.Stat(canvas.crop(tuple(int(v) for v in box)).convert("L")).mean[0]
+
+
 def _mau_doi_nen(canvas, box):
     """Mau chu TUONG PHAN voi vung anh ben duoi `box` (x0,y0,x1,y1), DO SAU KHI
-    da lam mo (`_mo_vung_chu`) — do sang trung binh, MOT phep do duy nhat.
+    da lam mo (`_mo_vung_chu`).
 
     Vung toi -> chu sang (FG); vung sang -> chu toi (BG, mau nen thuong hieu,
     khong phai den tuyet doi)."""
-    sang = ImageStat.Stat(canvas.crop(tuple(int(v) for v in box)).convert("L")).mean[0]
-    return FG if sang < 140 else BG
+    return FG if _sang_vung(canvas, box) < NGUONG_NEN_SANG else BG
 
 
 def _quote_mark(d, cx, cy, font, color, closing=False):
@@ -891,7 +919,26 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     frame_top = first_line_top - BOX_PAD_Y
 
     _mo_vung_chu(canvas, frame_top)
-    mau_chu = _mau_doi_nen(canvas, (TEXT_X, frame_top, W - TEXT_X, frame_bottom))
+    # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi.
+    #
+    # Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong: anh chup co hero
+    # toi phia tren roi bang trang phia duoi, anh ghep doc hai tam khac tone,
+    # anh phong canh troi sang dat toi. Mot phep mean cho ca khoi thi trung
+    # binh 136 -> chon chu TRANG, nhung nua duoi khoi la nen 243-250: may dong
+    # quote cuoi la trang tren trang. Loi DOI XUNG: trung binh 142 -> chon chu
+    # toi, nua tren toi cua khoi thanh den-tren-den (do that CR 1.15).
+    #
+    # Ly do ghi trong c2e991f ("mo xoa het chi tiet nen do sang trong khoi deu
+    # lai, mot mau la du") khong dung: Gaussian ban kinh 28 chi xoa chi tiet co
+    # ~28px, khong he san phang chenh sang co vai tram px.
+    dai_dong = [(TEXT_X, first_line_top + i * buoc,
+                 W - TEXT_X, first_line_top + (i + 1) * buoc)
+                for i in range(len(q_lines))]
+    sang_dong = [_sang_vung(canvas, b) for b in dai_dong] or [0.0]
+    mau_dong = [FG if sg < NGUONG_NEN_SANG else BG for sg in sang_dong]
+    # Phe cua CA KHOI — dung cho net khung va dau ngoac, hai thu trai het khoi.
+    nen_sang = sum(1 for sg in sang_dong if sg >= NGUONG_NEN_SANG) * 2 >= len(sang_dong)
+    mau_chu = BG if nen_sang else FG
     # DONG NGUON do RIENG. No duoc ve tai `src_top`, tuc NAM DUOI `frame_bottom`
     # — ngoai han cai hop vua do. Anh co khoi chu toi nhung day the sang thi
     # `mau_chu` ra TRANG (dung cho quote), roi dong nguon cung trang dat len day
@@ -902,17 +949,27 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
 
     # Cac dong quote, canh trai (thut vao TEXT_X).
     qy = first_line_top
-    for ln in q_lines:
-        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=mau_chu)
+    for ln, mau_ln in zip(q_lines, mau_dong):
+        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=mau_ln)
         qy += buoc
 
     # MAU: net khung dung CYAN cua bo nhan dien (nhu ten kenh, dong tong voi the
     # cua Bob); DAU " doi theo hang duoc nhac trong chu de (quote hoac dong
     # nguon). Khong nhan ra hang nao thi dau cung CYAN.
+    # Ca hai deu phai theo quyet dinh sang/toi cua nen. Truoc 06/09/2026 net
+    # khung la CYAN CUNG, khong co nhanh nao doi: tren anh nen sang, CYAN cua
+    # dcgr (trang thuan) cho CR 1.04 — bon doan line + hai arc bien mat sach;
+    # CYAN cua donniechublog cho 1.88, nhat han. Con dau ngoac thi _du_sang keo
+    # mau hang SANG THEM (nguong 0.42 von danh cho nen toi), tuc sai chieu.
+    # Hai dau " co 210px va khung la vat nhan dien cua kieu pull-quote.
+    mau_net = _du_toi(CYAN) if nen_sang else CYAN
     mau_hang = _mau_hang_trong(quote) or _mau_hang_trong(attrib)
-    mark_col = _du_sang(mau_hang) if mau_hang else CYAN
+    if mau_hang:
+        mark_col = _du_toi(mau_hang) if nen_sang else _du_sang(mau_hang)
+    else:
+        mark_col = mau_net
     _quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom,
-                 CYAN, mark_col)
+                 mau_net, mark_col)
 
     # Dong nguon (attribution), CANH GIUA, sat day. Vung nay da duoc
     # _mo_vung_chu lam mo tu truoc, va mau lay theo phep do cua CHINH no.

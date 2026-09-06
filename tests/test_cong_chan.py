@@ -679,6 +679,116 @@ def test_manifest_rong_khong_ghi_de():
                     tep.unlink()
                 kho.rmdir()
 
+# --------------------------------------------- the quote tren nen nua sang nua toi
+def _cr(a, b):
+    """Ti so tuong phan WCAG giua hai mau (da tuyen tinh hoa gamma)."""
+    def lin(c):
+        c = c / 255.0
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    def L(m):
+        return 0.2126 * lin(m[0]) + 0.7152 * lin(m[1]) + 0.0722 * lin(m[2])
+    x, y = L(a), L(b)
+    hi, lo = max(x, y), min(x, y)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def _anh_hai_tone(w, h, ra, ranh):
+    """Nua TREN toi, nua DUOI sang, ranh o `ranh` (ti le chieu cao). Van day de
+    khong bi `_chan_chart` bat nham la bieu do."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (w, h), (250, 250, 250))
+    d = ImageDraw.Draw(im)
+    yr = int(h * ranh)
+    for x in range(0, w, 7):
+        v, u = (x * 37) % 150, (x * 29) % 40
+        d.rectangle([x, 0, x + 4, yr], fill=(18 + v // 5, 20 + v // 4, 26 + v // 3))
+        d.rectangle([x, yr, x + 4, h], fill=(250 - u, 248 - u, 245 - u // 2))
+    for y in range(0, h, 13):
+        v = (y * 53) % 90
+        d.rectangle([0, y, w, y + 2],
+                    fill=(14 + v // 3, 18 + v // 2, 30 + v // 2) if y < yr
+                    else (252 - v // 4, 246 - v // 5, 240 - v // 6))
+    im.save(ra)
+    return ra
+
+
+def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
+    """Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong (anh chup co hero
+    toi tren, bang trang duoi; anh ghep doc hai tam khac tone). Truoc 06/09/2026
+    `_mau_doi_nen` lay MOT mean cho ca khoi: trung binh 136 -> chon chu TRANG
+    trong khi nua duoi khoi la nen 243-250, may dong cuoi la trang tren trang.
+    Loi DOI XUNG o chieu kia: trung binh 142 -> chu toi, nua tren thanh
+    den-tren-den. Do tung dai dong thi moi dong deu phai doc duoc."""
+    from PIL import Image, ImageDraw
+    import card
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        card.dat_thuong_hieu("donniechublog")
+        ve_goc = ImageDraw.ImageDraw.text
+        da_ve = []
+
+        def ve_ghi(self, xy, text, *a, **kw):
+            da_ve.append((xy, text, kw.get("fill")))
+            return ve_goc(self, xy, text, *a, **kw)
+
+        quote = "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified"
+        # 0.756: ranh roi GIUA khoi chu. 0.60: ca khoi tren nen sang.
+        for ranh in (0.756, 0.60, 0.95):
+            da_ve.clear()
+            src = _anh_hai_tone(1200, 1560, t / f"g{int(ranh*1000)}.png", ranh)
+            ra = t / f"the{int(ranh*1000)}.png"
+            ImageDraw.ImageDraw.text = ve_ghi
+            try:
+                card.build(str(src), quote, str(ra), handle="@donniechublog",
+                           ratio="4:5", attrib="Đọc bài đầy đủ tại donniechublog")
+            finally:
+                ImageDraw.ImageDraw.text = ve_goc
+            im = Image.open(ra).convert("RGB")
+            dong = [(xy, tx, f) for xy, tx, f in da_ve if tx and tx in quote and f]
+            assert len(dong) >= 3, f"khong ghi nhan du dong quote ({len(dong)})"
+            for (x, y), tx, mau in dong:
+                # nen = trung vi cua dai chua dong (chu chi chiem thieu so pixel)
+                dai = im.crop((int(x), int(y) + 20, im.width - int(x), int(y) + 95))
+                px = sorted(dai.convert("L").getdata())
+                nen = px[len(px) // 2]
+                assert _cr(mau, (nen,) * 3) >= 4.0, (
+                    f"ranh {ranh}: dong {tx[:28]!r} mau {mau} tren nen L={nen} "
+                    f"chi CR {_cr(mau, (nen,) * 3):.2f}")
+
+
+def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
+    """Net khung + hai dau " 210px la vat nhan dien cua kieu pull-quote. Truoc
+    06/09/2026 net khung la CYAN CUNG, khong nhanh nao doi: tren anh nen sang,
+    CYAN cua dcgr (trang thuan) cho CR 1.04 — bien mat sach; cua donniechublog
+    cho 1.88, nhat han. Dau ngoac con te hon: `_du_sang` keo mau hang SANG THEM,
+    dung luat danh cho nen toi, tuc sai chieu."""
+    import card
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        for brand in ("donniechublog", "dcgr"):
+            card.dat_thuong_hieu(brand)
+            goc = card._quote_frame
+            ghi = {}
+
+            def bat(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
+                ghi["net"], ghi["mark"] = line_color, mark_color
+                return goc(d, x0, y0, x1, y1, line_color, mark_color, lw)
+
+            card._quote_frame = bat
+            try:
+                # ranh 0.60: ca khoi chu nam tren nen SANG
+                src = _anh_hai_tone(1200, 1560, t / f"s_{brand}.png", 0.60)
+                card.build(str(src), "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench",
+                           str(t / f"the_{brand}.png"), handle="@donniechublog",
+                           ratio="4:5", attrib="Đọc bài đầy đủ tại donniechublog")
+            finally:
+                card._quote_frame = goc
+            for ten in ("net", "mark"):
+                cr = _cr(ghi[ten], (250, 250, 250))
+                assert cr >= 3.0, (f"{brand}: {ten} khung {ghi[ten]} tren nen sang "
+                                   f"chi CR {cr:.2f} — chim")
+        card.dat_thuong_hieu("donniechublog")
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

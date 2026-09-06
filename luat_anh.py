@@ -578,13 +578,21 @@ def kiem_do_phan_giai(nhan, w, h):
 
 
 def kiem_day_sang(nhan, img, tu=0.75):
-    """Day anh qua sang thi chu trang de len se nhat. Canh bao."""
+    """Day anh qua sang: bao de vai biet, KHONG chan.
+
+    Noi dung canh bao da duoc viet lai 06/09/2026. Ban cu noi "chu trang tren
+    scrim ~80% van doc duoc nhung nhat" — ca hai ve deu khong con dung: lop
+    scrim bi go han o 9b7244d, va tu nay card.py doi mau chu theo TUNG DAI DONG
+    nen day anh sang thi chu o do la chu TOI, khong phai chu trang nhat. Cai
+    that su mat tren day anh sang la NET KHUNG mau nhan dien (nay da co nhanh
+    keo toi) va do "phang" cua the — mot canh bao ve GU ANH, khong phai ve chu.
+    """
     w, h = img.size
     sang = ImageStat.Stat(img.convert("L").crop((0, int(h * tu), w, h))).mean[0]
     if sang > DAY_SANG_MAX:
-        return [], [f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — chu trang "
-                    "tren scrim ~80% van doc duoc nhung nhat; co anh day toi hon "
-                    "thi uu tien"]
+        return [], [f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — the van "
+                    "doc duoc (chu tu doi sang mau toi), nhung anh day toi cho "
+                    "the co chieu sau hon; co ban toi hon thi uu tien"]
     return [], []
 
 
