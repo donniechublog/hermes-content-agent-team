@@ -1023,10 +1023,23 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # Fetch tinh doc ra rong (trang JS) -> dung chu lay tu browser.
         import tu_lieu as _tl
         doan = [d.strip() for d in bp["chu"].split("\n") if len(d.strip()) > 40]
-        tl = {"cau_co_so": _tl.cau_co_so(doan)[:25], "doan_dau": " ".join(doan)[:1500],
+        cau_so = _tl.cau_co_so(doan)[:25]
+        tl = {"cau_co_so": cau_so, "doan_dau": " ".join(doan)[:1500],
               "so_nguon": max(tl.get("so_nguon", 0), 1), "tu": "browser"}
-        (wd / "tu_lieu.md").write_text("# Tư liệu (chữ lấy từ browser)\n\n" + "\n\n".join(doan[:60]),
-                                       encoding="utf-8")
+        # Dung CHINH `dung_trang` de dung tep, khong tu ghep chuoi.
+        #
+        # Ban tu ghep truoc 06/09/2026 chi in cac doan van thuan, KHONG co dong
+        # nao bat dau bang "- ". Ma `caption_check` tim cau nguon bang dung dau
+        # hieu do (`l.startswith("- ") and SO.search(l)`), nen tren moi bai di
+        # qua nhanh nay — bai trang JS, tuc phan lon trang san pham hien dai —
+        # cong "nguon co so ma caption khong co so" TU TAT, khong bao gi, va
+        # `cau_so_trong_nguon` ve 0. Miles doc tu_lieu.md chu khong doc xong.json
+        # nen khong co duong nao khac de biet.
+        (wd / "tu_lieu.md").write_text(
+            _tl.dung_trang({"tieu_de": title, "cau_co_so": cau_so,
+                            "nguon": [{"nhan": "Chữ lấy từ browser", "tieu_de": title,
+                                       "url": link, "doan": doan[:60]}]}),
+            encoding="utf-8")
     m = {"draft_id": draft_id, "brand": _brand_cua(meta), "title": title, "link": link,
          "via": meta.get("via", ""), "category": meta.get("category", ""),
          "summary": tom.get("summary", ""), "source_note": tom.get("source_note", ""),
@@ -1108,6 +1121,24 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
             t0 = time.time()
             while khoa.exists() and time.time() - t0 < cho:
                 time.sleep(3)
+            # HET GIO MA PID VAN SONG: KHONG duoc ghi de khoa. Truoc 06/09/2026
+            # doan duoi ghi `dang_chay.pid` vo dieu kien, nen khi may ban that
+            # (tran CT_CHUAN_BI_SONG_SONG=2, Ong Chu chon 7 tin mot luc, moi
+            # engine ton browser 110s x2 + vision + Bing) thi engine thu hai
+            # khoi dong tren CUNG mot draft: ca hai cung ghi xong.json, va
+            # engine xong truoc unlink khoa cua engine sau.
+            if khoa.exists():
+                try:
+                    con = int(khoa.read_text().strip() or 0)
+                    os.kill(con, 0)
+                except (ValueError, ProcessLookupError, PermissionError):
+                    khoa.unlink(missing_ok=True)          # chet that -> don khoa
+                else:
+                    sys.exit(f"[LOI] tien trinh {con} van dang chuan bi {draft_id} "
+                             f"sau {cho}s. KHONG chay engine thu hai tren cung mot "
+                             "draft (hai ban se de len xong.json cua nhau). Doi "
+                             "them roi chay lai, hoac `--lam-moi` neu chac tien "
+                             "trinh kia treo.")
         except (ValueError, ProcessLookupError, PermissionError):
             khoa.unlink(missing_ok=True)
     if xong.exists() and not lam_moi:

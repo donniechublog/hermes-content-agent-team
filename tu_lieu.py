@@ -40,16 +40,23 @@ CO_SO = re.compile(
 def boc(url: str) -> dict:
     """Goi article_extract.py — dung lai bo boc da co thay vi viet lai.
 
-    Ghi ra tep tam chu khong doc stdout: article_extract in CA JSON lan duong
-    dan ra stdout, nen json.loads se vap vao phan duoi.
+    Ghi ra TEP TAM (`--out`) chu khong doc stdout. Ly do ghi trong docstring cu
+    ("article_extract in CA JSON lan duong dan ra stdout") la SAI va da sua
+    06/09/2026: voi `--out` no chi in DUONG DAN, khong co `--out` thi chi in
+    JSON. Ly do that de dung tep tam la bai dai — JSON vai tram KB qua ong
+    stdout thi de dinh tran ong va lan voi canh bao cua thu vien.
+
+    Chay bang `sys.executable` chu khong phai duong `venv/bin/python` go cung:
+    duong cung lam ham nay chi chay duoc khi cwd la repo va venv nam dung cho —
+    goi tu tien trinh khac (cron, engine nen) la ImportError im lang o tien
+    trinh con.
     """
     import tempfile
     try:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as fh:
             tam = fh.name
         r = subprocess.run(
-            [str(ROOT / "venv/bin/python"), str(ROOT / "article_extract.py"), url,
-             "--out", tam],
+            [sys.executable, str(ROOT / "article_extract.py"), url, "--out", tam],
             capture_output=True, text=True, timeout=90, cwd=str(ROOT))
         # Truoc 06/09/2026 khong ai nhin returncode va cung khong in stderr cua
         # tien trinh con: article_extract chet vi thieu bs4/lxml thi tu_lieu chi
