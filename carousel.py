@@ -417,6 +417,13 @@ def build_body(img_path, text, handle, out):
 # lien mach nhu moi slide than; watermark van o day. Dau ngoac lay ACCENT theo
 # brand (dong bo voi card.py --kieu quote): donniechublog xanh, dcgr trang.
 Q_HI, Q_LO = 60, 38              # co chu quote trong slide than
+# Be rong THAT su cua chu quote khi ve (build_body_quote thut vao trong khung).
+# Cong chan _gate_chu truoc 06/09/2026 do o W - 2*PAD = 912px trong khi ban ve
+# chi rong 900px: cau vua du 7 dong luc do khi ve thanh 8 dong — lot cong roi
+# bi cat. Hai cho phai dung CUNG mot so.
+Q_FRAME_X = 40                   # le khung quote
+Q_TEXT_X = Q_FRAME_X + 50        # chu thut vao trong khung
+Q_AVAIL = W - 2 * Q_TEXT_X
 Q_LEAD = 14                      # gian dong quote (theo px, giong card.py)
 Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
 Q_BOTTOM = 1150                  # day cum quote
@@ -430,9 +437,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     base, anh_day = _body_image(canvas, _open(img_path))
     d = ImageDraw.Draw(canvas)
 
-    FRAME_X = 40
-    TEXT_X = FRAME_X + 50                     # chu thut vao, hai canh khung thoang
-    avail = W - 2 * TEXT_X
+    FRAME_X, TEXT_X, avail = Q_FRAME_X, Q_TEXT_X, Q_AVAIL
 
     f_q, q_lines = card._fit_text(d, quote, avail, max_lines=Q_LINES,
                                   hi=Q_HI, lo=Q_LO, path=F_QUOTE)
@@ -534,6 +539,11 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
 
 
 # ---- Cong chan tam co tin ------------------------------------------------
+# San tuyet doi cua mot bo carousel (ke ca bia). Duoi muc nay thi khong con la
+# carousel — tin mot tang de Ethan dung mot the hero. anh_chuan_bi doc hang so
+# nay (khong chep so 5) va ghi vao xong.json de approve_service biet ha san toi
+# dau khi Ong Chu bam "lam voi N anh".
+MIN_SLIDE = 5
 FLAGSHIP_MIN = 8
 # Ho model cua cac hang frontier (My + top Trung Quoc, theo scan_models.py).
 _FLAGSHIP_RE = re.compile(
@@ -640,7 +650,8 @@ def _gate_chu(slides):
         # Slide quote dung fit rieng (cau don, khong theo vung 30%): chi chan
         # cau QUA DAI, o co chu nho nhat van tran qua so dong cho phep.
         if s.get("quote"):
-            n = len(_wrap(probe, s["quote"], _f(F_QUOTE, Q_LO), W - 2 * PAD))
+            # Do o DUNG be rong luc ve (Q_AVAIL), khong phai W - 2*PAD.
+            n = len(_wrap(probe, s["quote"], _f(F_QUOTE, Q_LO), Q_AVAIL))
             if n > Q_LINES:
                 loi.append(f"slide {i}: cau quote qua dai ({n} dong > {Q_LINES} "
                            "o co nho nhat) — cat cau ngan lai")
@@ -697,8 +708,8 @@ def main():
     if len(slides) + 1 > 10:
         sys.exit(f"Qua nhieu slide ({len(slides)+1}). draft_write gom toi _9, "
                  "toi da 10 slide ke ca bia.")
-    if len(slides) + 1 < 5:
-        sys.exit(f"Carousel can IT NHAT 5 slide ke ca bia (hien {len(slides)+1}). "
+    if len(slides) + 1 < MIN_SLIDE:
+        sys.exit(f"Carousel can IT NHAT {MIN_SLIDE} slide ke ca bia (hien {len(slides)+1}). "
                  "Chuan social content chat luong (Ong Chu chot). Chia them nhip, "
                  "hoac gom them anh that — ket hop official site + magazine.")
     # Ong Chu bat loi 03/09/2026: GPT-6 Astra (flagship OpenAI) ma chi 5 slide.

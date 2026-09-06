@@ -67,7 +67,9 @@ def main():
     image = a.image or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png")
     # Anh phu do vai dung anh tai ve: <draft>_2.png, _3.png... Gom san vao draft de
     # buoc dang gui thanh album. Nhieu anh that van hon mot anh chung chung.
-    phu = sorted(DRAFTS.glob(f"{a.draft_id}_[0-9].png"))
+    # Dung env_load.album_phu (khong tu glob "_[0-9].png") vi mau do bo sot
+    # slide thu 10 tro len — bug that lam mat slide 10 khoi album dang kenh.
+    phu = env_load.album_phu(a.draft_id, DRAFTS)
     images = [image] + [str(x) for x in phu] if phu else None
     draft = {
         "caption": caption,

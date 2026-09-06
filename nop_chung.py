@@ -58,6 +58,76 @@ def kiem_lam_lai(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "anh
     return loi
 
 
+def chu_bai_cua(m: dict, wd: Path) -> str:
+    """Chu bai + tu lieu gom ve mot chuoi chu thuong, de doi chieu ten nguoi hay
+    so lieu vai khai co that su nam trong bai khong."""
+    tl = m.get("tu_lieu") or {}
+    s = ((m.get("chu_bai") or "") + " " + (tl.get("doan_dau") or "")
+         + " " + " ".join(tl.get("cau_co_so") or [])).lower()
+    try:
+        s += " " + (wd / "tu_lieu.md").read_text(encoding="utf-8").lower()
+    except OSError:
+        pass
+    return s
+
+
+def kiem_nhan_vat(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> list:
+    """Cong chan MAT NGUOI dung chung Dre/Ethan.
+
+    Truoc 06/09/2026 chi dre_nop co day du ba lop nay; ethan_nop chi kiem "co
+    khai ten hay chua", nen mot cai ten CEO bia dat van qua cong cho the hero
+    (su co bia Broadcom 05/09: anh quan chuc G20, khai "Hock Tan"). Gom mot cho
+    de hai vai khong con lech."""
+    co = [ma for ma in ma_ds if ma and anh.get(ma, {}).get("mat")]
+    nv = str(nhan_vat or "").strip()
+    loi = []
+    if co and not nv:
+        loi.append(f"{nhan}{', '.join(co)} có mặt người mà không khai \"nhan_vat\": "
+                   "\"<tên người trong bài>\" — khai tên nếu đúng là nhân vật, "
+                   "không thì đổi ảnh khác")
+        return loi
+    if not co or not nv:
+        return loi
+    ho = nv.split(",")[0].strip().lower()
+    if chu_bai and ho and ho not in chu_bai and not all(w in chu_bai for w in ho.split()[-2:]):
+        loi.append(f"{nhan}nhan_vat \"{nv}\" không xuất hiện trong chữ bài — "
+                   "khai tên người KHÔNG có trong bài là bịa. Bỏ ảnh này.")
+    for ma in co:
+        mo_ta = (anh.get(ma, {}).get("mo_ta") or "").lower()
+        if mo_ta and any(k in mo_ta for k in ("không liên quan", "g20", "logo")):
+            loi.append(f"{nhan}{ma} — vision mô tả: \"{anh[ma]['mo_ta'][:80]}\" — "
+                       "không phải nhân vật bài này")
+    return loi
+
+
+def kiem_so_tren_anh(chu: str, m: dict, wd: Path) -> list:
+    """Canh bao (khong chan) cac con so vai viet len ANH ma tu lieu khong co.
+
+    Cung mot phep doi chieu caption_check dung cho caption cua Miles, nhung
+    truoc 06/09/2026 khong vai lam anh nao goi — so bia tren slide di thang len
+    Telegram. Chi CANH BAO vi doi don vi (2,5 ti / 2.5B) la chuyen binh thuong."""
+    import caption_check
+    la = caption_check.so_la(chu, chu_bai_cua(m, wd))
+    if not la:
+        return []
+    return [f"số trên slide KHÔNG thấy trong tư liệu: {', '.join(la[:8])} — "
+            "kiểm lại nguồn, số không có trong tư liệu là bịa (trừ khi đổi đơn vị)"]
+
+
+def kiem_quote_dich(chu: str, nhan: str) -> list:
+    """Quote con nguyen tieng Anh -> loi. Luat 'quote phai DICH sang tieng Viet'
+    tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).
+    Do bang dau tieng Viet: cau tieng Viet that gan nhu luon co dau."""
+    t = (chu or "").strip()
+    if len(t) < 25:
+        return []
+    import caption_check
+    if caption_check.ty_le_dau(t) < 0.02:
+        return [f"{nhan}: \"{t[:60]}…\" trông như còn nguyên tiếng Anh — quote phải DỊCH sang "
+                "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
+    return []
+
+
 def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi: dict):
     """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi da_dung.json
     (`ghi` = cac truong rieng cua vai: bia/anh/hook/theme...). Tra ve message_id."""

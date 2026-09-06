@@ -35,6 +35,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import env_load                                              # noqa: E402
 import nop_chung as nc                                       # noqa: E402
 
 DRAFTS = ROOT / "drafts"
@@ -47,12 +48,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     anh = {a["ma"]: a for a in m["anh"]}
     loi, da_dung, dung_anh = [], {}, []
 
-    chu_bai = ((m.get("chu_bai") or "") + " " + (m.get("tu_lieu", {}).get("doan_dau") or "")
-               + " " + " ".join(m.get("tu_lieu", {}).get("cau_co_so") or [])).lower()
-    try:
-        chu_bai += " " + (wd / "tu_lieu.md").read_text(encoding="utf-8").lower()
-    except OSError:
-        pass
+    chu_bai = nc.chu_bai_cua(m, wd)
 
     def _lien_quan(ma_ds, nhan):
         rac = [ma for ma in ma_ds if anh[ma].get("lien_quan") is False]
@@ -62,24 +58,8 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
                        "không dùng, chọn mã khác hoặc gộp ý/giảm slide")
 
     def _mat(ma_ds, muc, nhan):
-        co = [ma for ma in ma_ds if anh[ma]["mat"]]
-        nv = str(muc.get("nhan_vat") or "").strip()
-        if co and not nv:
-            loi.append(f"{nhan}: {', '.join(co)} có mặt người mà không khai \"nhan_vat\": "
-                       "\"<tên người trong bài>\" — khai tên nếu đúng là nhân vật, "
-                       "không thì đổi ảnh khác")
-        elif co and nv:
-            # Ten phai XUAT HIEN trong chu bai — khong thi la dien ten CEO cho qua
-            # cong (bia Broadcom 05/09: anh quan chuc G20, khai "Hock Tan").
-            ho = nv.split(",")[0].strip().lower()
-            if chu_bai and ho and ho not in chu_bai and not all(w in chu_bai for w in ho.split()[-2:]):
-                loi.append(f"{nhan}: nhan_vat \"{nv}\" không xuất hiện trong chữ bài — "
-                           "khai tên người KHÔNG có trong bài là bịa. Bỏ ảnh này.")
-            for ma in co:
-                if anh[ma].get("mo_ta") and any(k in anh[ma]["mo_ta"].lower()
-                                                for k in ("không liên quan", "g20", "logo")):
-                    loi.append(f"{nhan}: {ma} — vision mô tả: \"{anh[ma]['mo_ta'][:80]}\" — "
-                               "không phải nhân vật bài này")
+        # Cong chan nam o nop_chung de Ethan dung chung dung mot ban (06/09/2026).
+        loi.extend(nc.kiem_nhan_vat(anh, ma_ds, muc.get("nhan_vat"), chu_bai, f"{nhan}: "))
 
     def giai(muc: dict, nhan: str, la_bia: bool) -> dict | None:
         ra = {}
@@ -186,6 +166,10 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
             continue
         if not (str(g.get("text") or "").strip() or str(g.get("quote") or "").strip()):
             loi.append(f"slide {i}: cần \"text\" hoặc \"quote\"")
+        # Quote con nguyen tieng Anh: cong chan tieng Viet cua card.py chi bat
+        # "tieng Viet go mat dau", co y bo qua tieng Anh nen quote chua dich lot
+        # thang len Telegram (06/09/2026).
+        loi.extend(nc.kiem_quote_dich(g.get("quote"), f"slide {i}"))
         ra["slides"].append(g)
     n = len(slides) + 1
     if n < m.get("toi_thieu", 5):
@@ -194,13 +178,17 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     so_quote = sum(1 for s in slides if str(s.get("quote") or "").strip())
     if so_quote < 2:
         loi.append(f"chỉ {so_quote} slide quote, cần ≥ 2 — chọn 2 câu đắt nhất làm \"quote\"+\"attrib\"")
-    return ra, loi, dung_anh
+    # So tren slide co trong tu lieu khong (chi CANH BAO — doi don vi la thuong).
+    chu_slide = " ".join(str(x.get(k) or "") for x in [cover] + list(slides)
+                         for k in ("hook", "text", "quote", "label", "attrib"))
+    canh = nc.kiem_so_tren_anh(chu_slide, m, wd)
+    return ra, loi, canh, dung_anh
 
 
 def don_slide_cu(stem: Path) -> None:
-    """Xoa <id>_2..9.png va *.ghep.png cua lan truoc: draft_write gom
-    <id>_[0-9].png thanh album, lan lam lai it slide hon se lot slide cu."""
-    for p in list(stem.parent.glob(stem.name + "_[0-9].png")) + \
+    """Xoa <id>_2..10.png va *.ghep.png cua lan truoc: draft_write gom
+    thanh album, lan lam lai it slide hon se lot slide cu."""
+    for p in list(env_load.album_phu(stem.name, stem.parent)) + \
             list(stem.parent.glob(stem.name + "*.ghep.png")):
         p.unlink(missing_ok=True)
 
@@ -244,7 +232,9 @@ def main() -> int:
     a = ap.parse_args()
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "dre_chuan_bi.py", "dre_nop.py")
-    spec_cs, loi, dung_anh = giai_spec(spec, m, wd)
+    spec_cs, loi, canh, dung_anh = giai_spec(spec, m, wd)
+    for c in canh:
+        print(f"[CANH BAO] {c}")
     cover = spec.get("cover") or {}
     loi = nc.kiem_lam_lai(da_dung, "bìa", cover.get("anh"), cover.get("hook"), khoa_anh="bia") + loi
     if loi:

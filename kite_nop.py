@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import env_load                                              # noqa: E402
 import kite_chuan_bi as kb                                   # noqa: E402
 import nop_chung as nc                                       # noqa: E402
 
@@ -39,7 +40,7 @@ BAT_BUOC = {
 GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
 
 
-def giai_spec(spec: dict, m: dict) -> tuple:
+def giai_spec(spec: dict, m: dict, wd) -> tuple:
     import render_edu
     loi, canh = [], []
     slides = spec.get("slides") or []
@@ -109,6 +110,20 @@ def giai_spec(spec: dict, m: dict) -> tuple:
         if any("nguồn" in str(v).lower() for v in sl.values() if isinstance(v, str)):
             loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
         ra["slides"].append(s2)
+
+    # Brief noi "CO n hinh that lien quan -> BAT BUOC dung it nhat mot"
+    # (kite_chuan_bi.py), nhung truoc 06/09/2026 khong cong nao kiem: vai bo qua
+    # ca bang benchmark that roi ve vector, dung cai loi Ong Chu da bat 05/09
+    # ("dung anh that khi engine tim duoc").
+    if hinh and not any(sl.get("image") for sl in slides):
+        loi.append(f"có {len(hinh)} hình thật dùng được ({', '.join(hinh)}) mà không slide nào dùng — "
+                   "BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, hoặc image ở bìa. "
+                   "Vẽ vector hết trong khi có hình thật là bỏ phí bằng chứng của bài.")
+
+    # So tren slide phai co trong tu lieu (canh bao) — Kite ve so bia la loi nang
+    # nhat cua carousel kien thuc, ma truoc 06/09/2026 khong ai doi chieu.
+    chu = " ".join(str(v) for sl in slides for v in sl.values() if isinstance(v, str))
+    canh.extend(nc.kiem_so_tren_anh(chu, m, wd))
     return ra, loi, canh
 
 
@@ -122,7 +137,7 @@ def main() -> int:
     a = ap.parse_args()
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "kite_chuan_bi.py", "kite_nop.py")
-    spec_r, loi, canh = giai_spec(spec, m)
+    spec_r, loi, canh = giai_spec(spec, m, wd)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
     if da_dung:
         if (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):
@@ -140,7 +155,7 @@ def main() -> int:
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")
-    for p in stem.parent.glob(stem.name + "_[0-9].png"):
+    for p in env_load.album_phu(stem.name, stem.parent):
         p.unlink(missing_ok=True)
     p_spec = wd / "render_edu.spec.json"
     p_spec.write_text(json.dumps(spec_r, ensure_ascii=False, indent=2), encoding="utf-8")

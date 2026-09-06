@@ -620,6 +620,15 @@ def aa_da_bao() -> dict:
 def ghi_moc(ids: set, xep_hang: dict, da_bao: dict | None = None):
     if da_bao is None:
         da_bao = aa_da_bao()
+    # Mot bang tam hong (fetch tra []) truoc 06/09/2026 se ghi de bo nho xep
+    # hang cua bang do bang rong -> lan sau khong con moc de so, "leo hang"
+    # im lang bien mat. Bang RONG khong phai tin moi: giu lai moc cu.
+    cu = hang_cu()
+    xep_hang = {**cu, **{k: v for k, v in (xep_hang or {}).items() if v}}
+    for k, v in (xep_hang or {}).items():
+        if not v and cu.get(k):
+            print(f"[canh bao] bang '{k}' tra rong — giu moc cu {len(cu[k])} muc",
+                  file=sys.stderr)
     STATE.parent.mkdir(parents=True, exist_ok=True)
     # Ghi atomic (tmp + os.replace) nhu scan_business: write_text truc tiep ma
     # chet giua chung se de lai tep hong, mat sach bo nho da-thay.

@@ -20,5 +20,10 @@ playwright>=1.40     # render_edu.py (Kite) chup HTML->PNG bang Chromium headles
 beautifulsoup4>=4.12
 lxml>=5
 
+# Cung dang "co san nho phu thuoc bac cau" nhu bs4/lxml — ghi ro de venv rieng
+# khong bi ImportError (audit 06/09/2026):
+pyyaml>=6           # doc config.yaml cua hermes: model_watch, theo_doi_9router, cost_squeeze
+markdown>=3.5       # nhat_ky_web.py render nhat ky 9router ra HTML
+
 # doi_chu_anh.py (Gin) can them torch + LaMa, ~2GB — CHI cai tren may local xu
 # ly anh nang, khong dua vao day. Xem requirements-local.txt.

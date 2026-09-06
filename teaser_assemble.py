@@ -115,6 +115,24 @@ def assemble(title: str, paragraphs: list, images: list,
                   "  KHONG dat:  Bai viet di sau vao con so chi phi...\n"
                   "  DAT      :  Con so chi phi gay bat ngo: 2,75 USD moi task...\n"
                   "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
+    if not bo_qua_kiem_tra:
+        # SOUL cua Jean cam URL, emoji va danh so TRONG doan (script tu gan emoji
+        # dau moi doan), nhung truoc 06/09/2026 khong cong nao kiem — vai tu chen
+        # link/emoji thi teaser ra hai emoji mot doan hoac lo link tho.
+        xau = []
+        for i, p in enumerate(paragraphs, 1):
+            if re.search(r"https?://|\bwww\.", p):
+                xau.append(f"doan {i}: co URL trong doan — teaser khong dat link, "
+                           "de link o cho khac")
+            if re.match(r"^\s*(\d+[.)]|[-*•])\s", p):
+                xau.append(f"doan {i}: bat dau bang danh so/gach dau dong — "
+                           "teaser viet thanh doan van, script tu gan emoji")
+            if any(ord(c) > 0x2500 for c in p[:3]):
+                xau.append(f"doan {i}: tu chen emoji dau doan — script tu gan, "
+                           "bo emoji trong ban thao")
+        if xau:
+            raise ValueError("Sai luat teaser:\n  - " + "\n  - ".join(xau)
+                             + "\n(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
     emojis = emoji_deck.next_emoji(n)
     body = "\n\n".join(f"{e} {p}".strip() for e, p in zip(emojis, paragraphs))
     caption = f"{title.upper()}\n\n{body}\n\n{CLOSING}"

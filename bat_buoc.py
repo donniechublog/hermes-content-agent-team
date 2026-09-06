@@ -10,10 +10,10 @@ Co che:
     dat tieu chi tat dinh (top diem, watchlist, vao bang xep hang...). Trung
     khoa thi giu muc cu (ngay phat hien cu).
   - Script ghi manifest goi `kiem(vai, items)`: tra ve cac muc CHUA co trong
-    danh sach vai nop -> tu choi ghi. Sau khi ghi thanh cong goi
-    `xoa(vai, items)` de bo cac muc da dua.
-  - Khop bang link (chuan hoa) hoac bang ten: moi manh chu/so (>=2 ky tu) cua
-    ten phai co trong tieu de + tom tat (da bo dau cach, ky hieu).
+    danh sach vai nop. Tu 05/09/2026 script KHONG con tu choi ghi ma TU THEM
+    muc thieu vao manifest kem ghi chu "vai bo sot" (het vong tu choi roi bat
+    vai sua). Sau khi ghi thanh cong goi `xoa(vai, items)` de bo muc da dua.
+  - Khop bang link (chuan hoa) hoac bang ten: xem `khop()`.
 
 Tep: state/<brand>/bat_buoc_<vai>.json (runtime, gitignore).
 """
@@ -100,9 +100,19 @@ def khop(muc: dict, item: dict) -> bool:
         # da dua tin OpenAI.
         tieu_de = _chuan(item.get("title") or "")
         return all(_chuan(t) in tieu_de for t in muc["tu_khoa"])
+    # Ten khop nguyen khoi truoc: chac chan nhat, khong phu thuoc manh vun.
+    ten_chuan = _chuan(muc.get("ten", ""))
+    if ten_chuan and ten_chuan in van_ban:
+        return True
+    # Roi moi den tung manh. Nguong 2 ky tu (truoc 06/09/2026) khop gan nhu moi
+    # tieu de: "v3", "ai", "4o" nam san trong van ban da bo ky hieu, nen mot muc
+    # BAT BUOC bi coi la "da dua" trong khi bai noi chuyen khac. Doi thanh:
+    # manh >= 3 ky tu, va phai co it nhat mot manh >= 4 ky tu lam neo.
     manh = [m for m in re.findall(r"[a-z0-9]+", str(muc.get("ten", "")).lower())
-            if len(m) >= 2]
-    return bool(manh) and all(m in van_ban for m in manh)
+            if len(m) >= 3]
+    if not manh or not any(len(m) >= 4 for m in manh):
+        return False
+    return all(m in van_ban for m in manh)
 
 
 # Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC
@@ -152,18 +162,11 @@ def in_danh_sach(vai: str, tieu_de: str = "BAT BUOC DUA VAO BAO CAO") -> None:
     bb = doc(vai)
     if not bb:
         return
-    print(f"\n=== {tieu_de} ({len(bb)}) — {vai} KHONG duoc bo, script ghi manifest "
-          "se tu choi neu thieu ===")
+    print(f"\n=== {tieu_de} ({len(bb)}) — {vai} KHONG duoc bo; thieu thi script "
+          "ghi manifest TU THEM va ghi ro 'vai bo sot' tren bao cao ===")
     for v in bb.values():
         print(f"  {v['ngay']}  [{v['loai']:<10s}] {str(v['ten'])[:60]:<61s} {v.get('ghi_chu', '')[:70]}")
         if v.get("link"):
             print(f"        {v['link'][:110]}")
 
 
-def loi_thieu(vai: str, thieu: list) -> str:
-    return ("TU CHOI ghi manifest: thieu " + str(len(thieu)) + " muc BAT BUOC "
-            "(luat Ong Chu: script quet thay la phai dua, khong duoc bo):\n  - "
-            + "\n  - ".join(f"{v['ten']} ({v['loai']}: {v.get('ghi_chu', '')[:80]})"
-                            + (f"\n      {v['link']}" if v.get("link") else "")
-                            for v in thieu)
-            + "\nThem cac muc nay vao danh sach roi chay lai.")

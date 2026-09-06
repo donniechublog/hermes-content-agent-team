@@ -38,9 +38,33 @@ VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BU
                     "HA TANG", "HẠ TẦNG", "CONG CU", "CÔNG CỤ"}
 
 
+# Brief cua Finn ghi "toi da 8 tin". Truoc 06/09/2026 chi co cau chu do, khong
+# co cong chan: vai nop 12 muc thi ca 12 vao manifest. Muc BAT BUOC khong bi
+# tran nay cat (luat Ong Chu: quet thay la phai dua).
+TOI_DA_PICK = 8
+
+
 def _norm(u: str) -> str:
     u = re.sub(r"^https?://(www\.)?", "", u or "").rstrip("/")
     return re.sub(r"[?#].*$", "", u).lower()
+
+
+def _diem(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
+    """Doc mot thanh phan diem cua vai: (diem da cat ve dai 0..hi, da_sua?).
+
+    Truoc 06/09/2026: `int(p.get(...))` no thang khi vai ghi "24 diem" hoac
+    null, va diem ngoai dai chi ghi mot dong stderr roi VAN vao manifest —
+    ma quet_nop nuot stderr khi rc=0 nen khong ai thay. Gio cat ve dai va ghi
+    chu tren bao cao, khong bao im lang, khong bat vai sua them mot vong."""
+    try:
+        d = int(gt)
+    except (TypeError, ValueError):
+        problems.append(f"{ten} khong phai so: {gt!r} -> 0 (bai: {tieu_de[:40]})")
+        return 0, True
+    if d < 0 or d > hi:
+        problems.append(f"{ten} phai 0-{hi}, nhan {d} -> cat ve dai (bai: {tieu_de[:40]})")
+        return max(0, min(hi, d)), True
+    return d, False
 
 
 def main():
@@ -65,6 +89,7 @@ def main():
         picks = picks.get("picks") or picks.get("items") or []
 
     items, problems = [], []
+    da_chon = set()                    # k / link da lay: chan vai nop trung mot tin
     for p in picks:
         # Chon bang SO THU TU `k` trong brief (tu 05/09/2026): vai khong phai chep URL
         # "y het" nua — sai mot ky tu la "khong tim thay" (4/8 muc, 05/09). Van nhan
@@ -85,16 +110,28 @@ def main():
                 problems.append(f"khong tim thay trong candidates: {p.get('link')}")
                 continue
 
-        cat = (p.get("category") or "").strip()
-        if cat and cat.upper() not in VALID_CATEGORIES:
-            problems.append(f"category khong hop le: {cat!r} (bai: {c['title'][:40]})")
+        # Trung tin: vai nop hai muc cung tro ve mot bai (hay gap khi vua ghi `k`
+        # vua ghi `link`). Lay muc dau, bo muc sau, noi ro tren bao cao.
+        khoa = _norm(c["link"])
+        if khoa in da_chon:
+            problems.append(f"tin trung, bo muc sau: {c['title'][:50]}")
+            continue
+        da_chon.add(khoa)
 
-        tech = int(p.get("score_technical", 0))
-        rel = int(p.get("score_relevance", 0))
-        if not 0 <= tech <= 30:
-            problems.append(f"score_technical phai 0-30, nhan {tech}")
-        if not 0 <= rel <= 20:
-            problems.append(f"score_relevance phai 0-20, nhan {rel}")
+        cat = (p.get("category") or "").strip()
+        cat_xau = bool(cat) and cat.upper() not in VALID_CATEGORIES
+        if cat_xau:
+            problems.append(f"category khong hop le: {cat!r} -> TOOL (bai: {c['title'][:40]})")
+
+        tech, sua_t = _diem(p.get("score_technical", 0), "score_technical", 30, problems, c["title"])
+        rel, sua_r = _diem(p.get("score_relevance", 0), "score_relevance", 20, problems, c["title"])
+        ghi_chu = p.get("score_reason", "")
+        if sua_t or sua_r or cat_xau:
+            ghi_chu = (ghi_chu + " | script sua: "
+                       + ", ".join(x for x in (
+                           "diem ky thuat cat ve dai" if sua_t else "",
+                           "diem lien quan cat ve dai" if sua_r else "",
+                           f"category {cat!r} khong hop le -> TOOL" if cat_xau else "") if x)).strip()
 
         items.append({
             # tu candidates.json — Finn khong phai go lai
@@ -105,11 +142,11 @@ def main():
             "via": c["via"],
             "image_url": p.get("image_url") or c.get("image_url"),
             # tu danh gia cua Finn
-            "category": cat or "TOOL",
+            "category": "TOOL" if (cat_xau or not cat) else cat,
             "score_technical": tech,
             "score_relevance": rel,
             "score": c["score_partial"] + tech + rel,
-            "score_reason": p.get("score_reason", ""),
+            "score_reason": ghi_chu,
             "summary_vi": p.get("summary_vi", ""),
             # tinh san, de doi chieu ve sau
             "score_recency": c["score_recency"],
@@ -117,9 +154,22 @@ def main():
             "picked": False,
         })
 
+    # Tran 8 tin: giu 8 muc diem cao nhat cua vai, bo phan du va noi ro muc nao
+    # bi bo. Muc BAT BUOC them ben duoi khong tinh vao tran nay.
+    if len(items) > TOI_DA_PICK:
+        items.sort(key=lambda x: x["score"], reverse=True)
+        bo = items[TOI_DA_PICK:]
+        items = items[:TOI_DA_PICK]
+        problems.append(f"vai nop {len(items) + len(bo)} tin, tran la {TOI_DA_PICK} — "
+                        f"giu {TOI_DA_PICK} tin diem cao nhat, bo: "
+                        + "; ".join(f"{b['title'][:40]} ({b['score']}d)" for b in bo))
+
     if problems:
-        print("PHAT HIEN VAN DE:", file=sys.stderr)
+        # In ca stdout LAN stderr: quet_nop chi in stdout khi rc=0 nen canh bao
+        # o stderr truoc day khong ai thay (audit 06/09/2026).
+        print("PHAT HIEN VAN DE:")
         for pr in problems:
+            print("  - " + pr)
             print("  - " + pr, file=sys.stderr)
         if not items:
             sys.exit("Khong co muc nao hop le — khong ghi manifest.")

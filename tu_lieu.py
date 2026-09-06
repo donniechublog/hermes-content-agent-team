@@ -47,15 +47,25 @@ def boc(url: str) -> dict:
     try:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as fh:
             tam = fh.name
-        subprocess.run(
+        r = subprocess.run(
             [str(ROOT / "venv/bin/python"), str(ROOT / "article_extract.py"), url,
              "--out", tam],
             capture_output=True, text=True, timeout=90, cwd=str(ROOT))
+        # Truoc 06/09/2026 khong ai nhin returncode va cung khong in stderr cua
+        # tien trinh con: article_extract chet vi thieu bs4/lxml thi tu_lieu chi
+        # tra {} im lang, vai thay "0 nguon" ma khong co dau vet nao (da xay ra
+        # tren dcgr).
+        if r.returncode != 0:
+            cuoi = [d for d in (r.stderr or "").strip().splitlines() if d.strip()]
+            print(f"[tu_lieu] article_extract loi rc={r.returncode} cho {url[:50]}: "
+                  + (cuoi[-1][:200] if cuoi else "khong co stderr"), file=sys.stderr)
+            Path(tam).unlink(missing_ok=True)
+            return {}
         d = json.loads(Path(tam).read_text(encoding="utf-8"))
         Path(tam).unlink(missing_ok=True)
         return d
     except Exception as e:                                   # noqa: BLE001
-        print(f"[tu_lieu] boc hong {url[:50]}: {type(e).__name__}", file=sys.stderr)
+        print(f"[tu_lieu] boc hong {url[:50]}: {type(e).__name__}: {e}", file=sys.stderr)
         return {}
 
 

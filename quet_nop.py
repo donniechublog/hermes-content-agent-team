@@ -108,6 +108,16 @@ def main() -> int:
               f"danh sach) roi chay lai: venv/bin/python quet_nop.py --vai {a.vai}")
         return 1
     print((r.stdout or "").strip()[-800:])
+    # rc=0 KHONG co nghia la sach: manifest_build/manifest_ghi van ghi manifest
+    # khi da cat diem ngoai dai, doi category la, bo tin trung hay cat theo tran
+    # 8 tin. Truoc 06/09/2026 nhung dong do chi nam o stderr va bi nuot o day —
+    # vai tuong moi thu binh thuong, Ong Chu khong bao gio biet.
+    canh = [d.strip() for d in (r.stderr or "").splitlines()
+            if d.strip() and ("[canh bao]" in d or "[tu them]" in d or d.strip().startswith("- "))]
+    if canh:
+        print("\n[SCRIPT DA SUA/CANH BAO] — bao cao gui di van tinh, nhung biet de lan sau nop dung:")
+        for d in canh[:20]:
+            print("  " + d)
     if not bao_cao.exists():
         sys.exit("[LOI] manifest xong nhung khong thay bao cao")
     ok = gui(a.vai, bao_cao, a.thu)

@@ -108,6 +108,19 @@ def main():
             print(f"[bo qua] muc {i} link khong phai URL: {link!r}",
                   file=sys.stderr)
             continue
+        # Headline la thu DUY NHAT Ong Chu doc tren topic, va brief hua "tieng
+        # Viet co dau", "summary_vi mot menh de <= 15 tu". Truoc 06/09/2026
+        # khong cong nao kiem: title mat dau hoac summary dai ba dong van len
+        # bao cao y nguyen. Chi CANH BAO (khong bo tin) — tin van co gia tri.
+        import card
+        mat_dau = card.tim_mat_dau(it["title"])
+        if mat_dau:
+            print(f"[canh bao] muc {i} title tieng Viet mat dau ({', '.join(mat_dau[:3])}): "
+                  f"{it['title'][:60]}", file=sys.stderr)
+        so_tu = len(str(it.get("summary_vi") or "").split())
+        if so_tu > 15:
+            print(f"[canh bao] muc {i} summary_vi {so_tu} tu (> 15): "
+                  f"{str(it.get('summary_vi'))[:70]}", file=sys.stderr)
         items.append({
             "title": it["title"],
             "link": link,

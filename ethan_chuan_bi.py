@@ -87,14 +87,26 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if not m["anh"]:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng thẻ, không vẽ. Kết thúc task bằng "
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
+    # Nhan cua vision (06/09/2026): truoc day brief cua Ethan khong in co
+    # `lien_quan` lan mo ta, nen vai chon phai anh ❌ roi bi ethan_nop doi lai —
+    # mat mot vong ma vai khong hieu vi sao. Dre da in day du tu truoc.
+    if m.get("chua_nhin"):
+        L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
+                 "số, có thể sai; mở bang_anh.png trước khi dùng.")
     goi_y = []
     for a in m["anh"]:
+        if a.get("lien_quan") is False:
+            L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "
+                     f"(nguồn: {a['mien'] or a['tu']})")
+            continue
         dung, ghi = nhan_ethan(a)
         if dung[0].startswith("nền hero") and not a["mat"]:
             goi_y.append((a["goc_trai_sang"], -a["canh_ngan"], a["ma"]))
         dong = (f"- {a['ma']}: {a['w']}x{a['h']} ({a['ti_le']}) {a['loai'].upper()} | {'; '.join(dung)}"
                 f" | nguồn: {a['mien'] or a['tu']}")
-        if a.get("alt"):
+        if a.get("mo_ta"):
+            dong += f" | ảnh là: {a['mo_ta'][:110]}"
+        elif a.get("alt"):
             dong += f" | alt: {a['alt'][:70]}"
         if ghi:
             dong += " | " + "; ".join(ghi)

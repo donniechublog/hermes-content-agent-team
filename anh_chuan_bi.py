@@ -553,9 +553,15 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
     nguoi dan ong G20 -> khong; ~2s moi anh. Khong heuristic nao bat duoc "widget
     co khi tren bai Broadcom" — chi co nhin moi biet."""
     import base64, json as _j, urllib.request
-    try:
-        key = env_load.bat_buoc("OPENAI_API_KEY")
-    except Exception:                                        # noqa: BLE001
+    # env_load.bat_buoc nem SystemExit, ma SystemExit KHONG phai con cua
+    # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
+    # la ca engine chet giua chung, khong co xong.json, vai chi thay "chua chuan
+    # bi" ma khong biet vi sao (06/09/2026). Doc thang bien, khong nem.
+    env_load.nap()
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        print("[vision] thieu OPENAI_API_KEY -> khong nhin duoc anh, brief se ghi CHUA AI NHIN",
+              file=sys.stderr)
         return "", None
     try:
         b64 = base64.b64encode(Path(path).read_bytes()).decode()
@@ -858,7 +864,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
           + (f"; CHUA NHIN duoc: {', '.join(chua_nhin)}" if chua_nhin else ""), file=sys.stderr)
 
     flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
-    toi_thieu = carousel.FLAGSHIP_MIN if flagship else 5
+    toi_thieu = carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE
     tieu_de_nhin = nguon.get("tieu_de_en") or title
     if len(dung_duoc) < toi_thieu and not khong_browser:
         # VONG TIM RONG (Ong Chu 05/09/2026): kho mong thi engine phai di tim,
@@ -915,7 +921,10 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
          "via": meta.get("via", ""), "category": meta.get("category", ""),
          "summary": tom.get("summary", ""), "source_note": tom.get("source_note", ""),
          "workdir": str(wd), "tao_luc": int(time.time()),
-         "flagship": flagship, "toi_thieu": toi_thieu, "so_mien": so_mien,
+         "flagship": flagship, "toi_thieu": toi_thieu,
+         # San tuyet doi cua carousel.py. Ong Chu bam "lam voi N anh" (imgtiep)
+         # thi approve_service ha `toi_thieu` ve day, khong ha thap hon duoc.
+         "toi_thieu_co_ban": carousel.MIN_SLIDE, "so_mien": so_mien,
          "anh": anh, "cap_ghep": cap_ghep(dung_duoc), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
          "so_dung_duoc": len(dung_duoc), "chua_nhin": chua_nhin,
          "chu_bai": (bp.get("chu") or "")[:20000],

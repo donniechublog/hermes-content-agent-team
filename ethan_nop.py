@@ -27,7 +27,7 @@ import nop_chung as nc                                       # noqa: E402
 DRAFTS = cb.DRAFTS
 
 
-def giai_spec(spec: dict, m: dict) -> tuple:
+def giai_spec(spec: dict, m: dict, wd) -> tuple:
     anh = {a["ma"]: a for a in m["anh"]}
     loi = []
     kieu = (spec.get("kieu") or "quote").strip().lower()
@@ -36,7 +36,7 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     ma, ma2 = spec.get("anh"), spec.get("anh2")
     if not ma or ma not in anh:
         loi.append(f"\"anh\" không tồn tại: {ma} (có: {', '.join(anh) or 'không có ảnh nào'})")
-        return None, loi
+        return None, loi, []
     if ma2 and ma2 not in anh:
         loi.append(f"\"anh2\" không tồn tại: {ma2}")
         ma2 = None
@@ -72,9 +72,11 @@ def giai_spec(spec: dict, m: dict) -> tuple:
                    "dọc với một ảnh ngang cùng tone qua \"anh2\". Đừng đi tìm ảnh "
                    "khác chỉ vì chart bị chặn khi đi một mình.")
 
-    mat = [x for x in (ma, ma2) if x and anh[x]["mat"]]
-    if mat and not str(spec.get("nhan_vat") or "").strip():
-        loi.append(f"{', '.join(mat)} có mặt người mà không khai \"nhan_vat\": \"<tên người trong bài>\"")
+    # Mat nguoi: dung CHUNG cong chan voi Dre (nop_chung.kiem_nhan_vat, 06/09/2026).
+    # Truoc do Ethan chi hoi "co khai ten chua" nen mot ten CEO bia dat van qua —
+    # Dre thi doi chieu ten voi chu bai va voi mo ta cua vision.
+    loi.extend(nc.kiem_nhan_vat(anh, [ma, ma2], spec.get("nhan_vat"),
+                                nc.chu_bai_cua(m, wd), ""))
     if kieu == "quote":
         if not str(spec.get("hook") or "").strip():
             loi.append("thiếu \"hook\"")
@@ -86,9 +88,14 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     else:
         if not str(spec.get("title") or "").strip():
             loi.append("kiểu tran: thiếu \"title\" (một câu hoàn chỉnh)")
+    # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
+    # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
+    hook_hay_title = str(spec.get("hook") or spec.get("title") or "")
+    loi.extend(nc.kiem_quote_dich(hook_hay_title, "hook"))
+    canh = nc.kiem_so_tren_anh(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)
     if loi:
-        return None, loi
-    return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None}, []
+        return None, loi, canh
+    return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None}, [], canh
 
 
 def main() -> int:
@@ -101,7 +108,9 @@ def main() -> int:
     a = ap.parse_args()
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "ethan_chuan_bi.py", "ethan_nop.py")
-    kq, loi = giai_spec(spec, m)
+    kq, loi, canh = giai_spec(spec, m, wd)
+    for c in canh:
+        print(f"[CANH BAO] {c}")
     loi = nc.kiem_lam_lai(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title")) + loi
     if loi:
         for e in loi:

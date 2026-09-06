@@ -106,6 +106,25 @@ def so_trong(t: str) -> list:
     return [m.group(0).strip() for m in CUM_SO.finditer(_bo_the(t)) if m.group(0).strip()]
 
 
+def so_la(chu: str, tu_lieu: str) -> list:
+    """Cac con so trong `chu` KHONG tim thay trong `tu_lieu`.
+
+    So sanh theo chuoi chu so (bo dau . , cach) vi hai ben viet khac nhau
+    (2,5 ti / 2.5B / 2500 trieu). Chi lay so >= 2 chu so. Tach rieng khoi
+    `kiem()` tu 06/09/2026 de vai lam ANH (Dre/Ethan/Kite) dung chung — truoc
+    do chi caption cua Miles duoc soat so, con so in TREN SLIDE thi khong ai
+    doi chieu, du day moi la thu doc gia nhin thay dau tien."""
+    if not tu_lieu or not chu:
+        return []
+    so_tl = {re.sub(r"[.,\s]", "", m) for m in re.findall(r"\d[\d.,]*", tu_lieu)}
+    la = []
+    for m in re.findall(r"\d[\d.,]*", _bo_the(chu)):
+        k = re.sub(r"[.,\s]", "", m)
+        if len(k) >= 2 and k not in so_tl and not any(k in x for x in so_tl):
+            la.append(m)
+    return list(dict.fromkeys(la))
+
+
 def kiem(caption: str, tu_lieu: str = "") -> tuple:
     """Tra ve (loi, canh_bao, thong_tin). Co loi thi khong duoc luu draft."""
     loi, canh, tin = [], [], {}
@@ -193,15 +212,10 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
     # ben viet so khac nhau (2,5 ti / 2.5B / 2500 trieu) — chan cung se chan oan.
     # Day la diem soat so lieu ma truoc phai nho Ada (LLM) doc lai (05/09/2026).
     if tu_lieu:
-        so_tl = {re.sub(r"[.,\s]", "", m) for m in re.findall(r"\d[\d.,]*", tu_lieu)}
-        la = []
-        for m in re.findall(r"\d[\d.,]*", tran):
-            k = re.sub(r"[.,\s]", "", m)
-            if len(k) >= 2 and k not in so_tl and not any(k in x for x in so_tl):
-                la.append(m)
+        la = so_la(tran, tu_lieu)
         if la:
             canh.append("Số trong caption KHÔNG thấy trong tư liệu: "
-                        + ", ".join(dict.fromkeys(la)) + " — kiểm lại nguồn, số không có trong "
+                        + ", ".join(la) + " — kiểm lại nguồn, số không có trong "
                         "tư liệu là bịa (trừ khi anh đổi đơn vị).")
 
     # So benchmark ma khong ghi ro tu cong bo

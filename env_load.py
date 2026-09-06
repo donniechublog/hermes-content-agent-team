@@ -105,6 +105,27 @@ def nap(*them: Path) -> None:
             os.environ.setdefault(k, v)
 
 
+def album_phu(draft_id: str, thu_muc: Path = None) -> list:
+    """Danh sach anh phu <draft_id>_2.png, _3.png... _10.png... sap dung so,
+    khong theo thu tu chuoi.
+
+    Truoc day 3 noi (draft_write, dre_nop, kite_nop) tu glob rieng bang mau
+    `_[0-9].png` — chi khop MOT chu so nen bo sot slide thu 10 tro len. Bug
+    that: Ong Chu duyet du 10 slide tren Telegram nhung album dang kenh chi
+    con 9, vi draft_write doc thieu slide cuoi (audit 06/09/2026). Gom mot cho
+    de sua mot lan, dung o ca ba noi."""
+    d = thu_muc or (ROOT / "drafts")
+    ung_vien = set(d.glob(f"{draft_id}_[0-9].png")) | set(d.glob(f"{draft_id}_[0-9][0-9].png"))
+
+    def so(p: Path) -> int:
+        try:
+            return int(p.stem.rsplit("_", 1)[-1])
+        except ValueError:
+            return 0
+
+    return sorted(ung_vien, key=so)
+
+
 def bat_buoc(ten: str) -> str:
     """Nap roi lay mot bien bat buoc; thieu thi dung han voi loi ro rang."""
     nap()
