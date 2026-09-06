@@ -630,7 +630,7 @@ def _gate_anh(paths):
                 loi.append(f"{nhan}: chart ma van di qua crop_ti_le.py — chart phai "
                            'NGUYEN VEN, dua thang anh goc vao voi "chart": true')
             continue
-        gom(luat_anh.kiem_ti_le(nhan, p, w, h_px))
+        gom(luat_anh.kiem_ti_le(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
 
         gom(luat_anh.kiem_crop_ngang(nhan, img, w, h_px, muc.get("crop_ok")))
         gom(luat_anh.kiem_xuat_xu(nhan, img, w, h_px))

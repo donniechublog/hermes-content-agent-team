@@ -473,10 +473,19 @@ def kiem_chart_mot_minh(nhan, img, da_ghep=False):
              "dan chart o slide than."], [])
 
 
-def kiem_ti_le(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=DUNG_SAI_TI_LE):
-    """Anh phai nam trong dai 4:5..1:1 (anh ghep doc roi vao giua dai nay)."""
+def kiem_ti_le(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=DUNG_SAI_TI_LE, img=None):
+    """Anh phai nam trong dai 4:5..1:1 (anh ghep doc roi vao giua dai nay).
+
+    MIEN TRU anh xep hang, y nhu kiem_chart/kiem_chart_mot_minh da mien: voi tin
+    xep hang thi bang la CHU THE cua tin, duoc dan full be ngang nguyen ven ke ca
+    o bia. Truoc 06/09/2026 cong nay khong mien, nen Dre ket hai dau: cong cua
+    dre_nop BAT BUOC bia la anh XH, con carousel lai chan chinh anh do vi ti le
+    (bang desktop hay ra 1.1-1.5, bang chup khung mobile ra 0.3-0.5; ca hai deu
+    ngoai dai 4:5..1:1). Tro treu la chi THE DU PHONG (1200x1500 = 0.8) lot qua."""
     r = w / h
     if lo - dung_sai <= r <= hi + dung_sai:
+        return [], []
+    if img is not None and la_xep_hang(img):
         return [], []
     if r >= NGANG_RO:
         # Anh NGANG: crop_ti_le tu choi cat be ngang (can --cat-ngang), va cat

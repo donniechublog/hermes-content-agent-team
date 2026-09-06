@@ -250,6 +250,90 @@ def test_khoa_tin_chuan_hoa_url():
     assert la.khoa_tin("https://x.com/a?utm=1#z") == "x.com/a"
 
 
+# ------------------------------------------- ảnh xếp hạng: dấu, cắt, tỉ lệ
+def _anh_xh(d: Path, ten="XH.png", w=1242, h=2688):
+    """Ảnh giả lập bảng xếp hạng đã đóng dấu như xep_hang.py làm."""
+    from PIL import Image, ImageDraw
+    from PIL.PngImagePlugin import PngInfo
+    im = Image.new("RGB", (w, h), (255, 255, 255))
+    dr = ImageDraw.Draw(im)
+    for i in range(12):                      # 12 hàng bảng
+        y = 120 + i * (h - 240) // 12
+        dr.rectangle([60, y, w - 60, y + 60], fill=(240, 240, 245))
+    dr.rectangle([60, h - 700, w - 60, h - 640], outline=(245, 197, 24), width=8)  # khoanh model
+    meta = PngInfo()
+    meta.add_text("nguon_dung", "chup_xep_hang")
+    meta.add_text("model", "GPT-5.2")
+    p = d / ten
+    im.save(p, "PNG", pnginfo=meta)
+    return p
+
+
+def test_luu_crop_giu_dau_anh_goc():
+    """_luu_crop từng dựng PngInfo trắng → bản cắt mất dấu chup_xep_hang →
+    la_xep_hang False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
+    import anh_chuan_bi as cb
+    import luat_anh as la
+    from PIL import Image
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        goc = _anh_xh(d)
+        with Image.open(goc) as im:
+            assert la.la_xep_hang(im), "ảnh gốc phải mang dấu"
+            cb._luu_crop(im, d / "cat.png", "4:5", cy=0.35)
+        with Image.open(d / "cat.png") as ra:
+            assert la.la_xep_hang(ra), "bản cắt MẤT dấu chup_xep_hang"
+            assert la.doc_dau_crop(ra), "bản cắt phải vẫn có dấu crop_ti_le"
+
+
+def test_kiem_ti_le_mien_tru_anh_xep_hang():
+    """Bảng desktop ra ~1.28, bảng mobile ra ~0.46 — cả hai đều ngoài dải
+    4:5..1:1. Không miễn trừ thì Dre kẹt: cổng bắt dùng XH, carousel chặn XH."""
+    import luat_anh as la
+    from PIL import Image
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        for w, h in ((1600, 1250), (1242, 2688)):
+            p = _anh_xh(d, f"xh_{w}x{h}.png", w, h)
+            with Image.open(p) as im:
+                assert la.kiem_ti_le("bìa", p, w, h, img=im)[0] == [], f"chặn oan {w}x{h}"
+        # ảnh thường ngoài dải VẪN phải bị chặn
+        from PIL import Image as I
+        q = d / "thuong.png"
+        I.new("RGB", (1600, 1250), (200, 200, 200)).save(q)
+        with I.open(q) as im:
+            assert la.kiem_ti_le("bìa", q, 1600, 1250, img=im)[0], "ảnh thường phải bị chặn"
+
+
+def test_anh_xep_hang_khong_bi_cat():
+    """Hàng model đã khoanh có thể nằm dưới 55% dải chụp; cắt 4:5 cy=0.35 sẽ
+    xoá mất nó. Ảnh xếp hạng phải giữ nguyên vẹn (a["san"] = a["goc"])."""
+    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    khoi = src[src.index("    san = wd / \"san\""):]
+    khoi = khoi[:khoi.index("a[\"dung\"] = [\"thân")]
+    assert 'if a.get("xep_hang"):' in khoi, "phan_loai thiếu nhánh giữ nguyên ảnh xếp hạng"
+    truoc_elif = khoi[:khoi.index("elif r <")]
+    assert 'a["san"] = a["goc"]' in truoc_elif, "nhánh xếp hạng phải đặt san = goc, không cắt"
+
+
+# ------------------------------------------------- Kite: ảnh chưa ai nhìn
+def test_kite_khong_ep_dung_anh_chua_nhin():
+    """Vision tắt → mọi ảnh lien_quan=None. Ép lúc đó là đẩy quảng cáo/widget
+    lên slide."""
+    import kite_nop
+    def hinh(lien_quan):
+        return {"A1": {"ma": "A1", "goc": "/tmp/a.png", "w": 1200, "h": 800,
+                       "ti_le": 1.5, "loai": "chart", "lien_quan": lien_quan,
+                       "mien": "x.com", "tu": "x", "ghi_chu": []}}
+    slides = [{"kind": "cover", "eyebrow": "X", "title": "T", "standfirst": "S"}] * 6
+    for lq, phai_ep in ((True, True), (None, False)):
+        m = {"anh": list(hinh(lq).values()), "brand": "donniechublog", "title": "T",
+             "draft_id": "d1", "chu_bai": "", "tu_lieu": {}, "link": ""}
+        _, loi, _ = kite_nop.giai_spec({"slides": slides}, m, Path("/tmp"))
+        co = any("BẮT BUỘC dùng ít nhất một" in x for x in loi)
+        assert co == phai_ep, f"lien_quan={lq}: {'phải ép' if phai_ep else 'KHÔNG được ép'}"
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

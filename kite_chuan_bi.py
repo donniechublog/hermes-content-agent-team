@@ -92,10 +92,18 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if not ht:
         L.append("Không có hình thật nào liên quan — dùng art vector cho cả bộ (bình thường với paper trắng).")
     else:
-        L.append(f"CÓ {len(ht)} hình thật liên quan → BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, "
-                 "bìa `image` hoặc `figure` cho ảnh chụp. Bộ toàn text & card khi có ảnh thật là thiếu.")
+        nhin = [a for a in ht if a.get("lien_quan") is True]
+        if nhin:
+            L.append(f"CÓ {len(nhin)} hình thật ĐÃ NHÌN và liên quan → BẮT BUỘC dùng ít nhất một: "
+                     "`figure` cho chart/bảng, bìa `image` hoặc `figure` cho ảnh chụp. "
+                     "Bộ toàn text & card khi có ảnh thật là thiếu.")
+        else:
+            # Vision tat/thieu khoa -> moi anh lien_quan=None. Khong duoc ep.
+            L.append(f"Có {len(ht)} hình đủ khổ nhưng ⚠️ CHƯA AI NHÌN (vision không chạy) — chưa biết "
+                     "chúng có đúng bài không. Dùng thì tự kiểm bằng bang_anh.png, không bắt buộc.")
     for a in ht:
-        kieu = "BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP"
+        kieu = ("BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP") + \
+               ("" if a.get("lien_quan") is True else " ⚠️CHƯA NHÌN")
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))

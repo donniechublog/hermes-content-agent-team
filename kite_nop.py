@@ -122,13 +122,22 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     # (kite_chuan_bi.py), nhung truoc 06/09/2026 khong cong nao kiem: vai bo qua
     # ca bang benchmark that roi ve vector, dung cai loi Ong Chu da bat 05/09
     # ("dung anh that khi engine tim duoc").
-    if hinh and not any(sl.get("image") for sl in slides):
-        loi.append(f"có {len(hinh)} hình thật dùng được ({', '.join(hinh)}) mà không slide nào dùng — "
+    # CHI ep khi anh DA DUOC NHIN (lien_quan is True). Vision tat/thieu
+    # OPENAI_API_KEY thi moi anh co lien_quan=None, hinh_that van nhan het —
+    # ep luc do la day quang cao / widget gia co phieu len slide, dung loai rac
+    # ma vision sinh ra de loai (do 06/09/2026). Chua nhin thi goi y, khong ep.
+    da_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is True]
+    if da_nhin and not any(sl.get("image") for sl in slides):
+        loi.append(f"có {len(da_nhin)} hình thật dùng được ({', '.join(da_nhin)}) mà không slide nào dùng — "
                    "BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, hoặc image ở bìa. "
                    "Vẽ vector hết trong khi có hình thật là bỏ phí bằng chứng của bài.")
 
     # So tren slide phai co trong tu lieu (canh bao) — Kite ve so bia la loi nang
     # nhat cua carousel kien thuc, ma truoc 06/09/2026 khong ai doi chieu.
+    chua_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is None]
+    if chua_nhin and not da_nhin:
+        canh.append(f"vision chưa nhìn {', '.join(chua_nhin)} (router tắt/thiếu khoá) — "
+                    "hình thật CHƯA được kiểm nội dung, chỉ dùng khi bạn tự tin nó đúng bài")
     chu = " ".join(str(v) for sl in slides for v in sl.values() if isinstance(v, str))
     canh.extend(nc.kiem_so_tren_anh(chu, m, wd))
     return ra, loi, canh

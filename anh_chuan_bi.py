@@ -523,6 +523,13 @@ def _luu_crop(img: Image.Image, out: Path, ti_le_ten: str, cx=0.5, cy=0.5,
     from PIL.PngImagePlugin import PngInfo
     ra = crop_ti_le.cat(img, crop_ti_le.TI_LE[ti_le_ten], cx, cy, cat_ngang=cat_ngang)
     meta = PngInfo()
+    # CHEP LAI dau cua anh goc truoc khi them dau crop. Truoc 06/09/2026 ham nay
+    # dung PngInfo TRANG, nen ban cat mat `nguon_dung=chup_xep_hang` -> la_xep_hang
+    # tra False -> mat mien tru o luat_anh, va carousel chan dung cai bia ma
+    # dre_nop bat buoc dung. Xay ra 100% voi anh chup bang tren khung mobile.
+    for k, v in (getattr(img, "text", None) or {}).items():
+        if k != "crop_ti_le" and isinstance(v, str):
+            meta.add_text(k, v)
     meta.add_text("crop_ti_le", f"goc={img.size[0]}x{img.size[1]};ti_le={ti_le_ten};"
                                 f"cx={cx};cy={cy};cat_ngang={int(cat_ngang)}")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -619,7 +626,13 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
               "ngang": r >= luat_anh.NGANG_RO, "san": None, "dung": [], "ghi_chu": []})
     san = wd / "san" / f"{a['ma']}.png"
     if la_ct:
-        if r < luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE:
+        if a.get("xep_hang"):
+            # ANH XEP HANG GIU NGUYEN VEN, khong cat du cao bao nhieu: hang model
+            # da khoanh co the nam duoi 55% dai chup (do that: hang #9, #11 bi cat
+            # mat), va no la CHU THE cua tin chu khong phai anh minh hoa.
+            a["san"] = a["goc"]
+            a["ghi_chu"].append("bảng xếp hạng: giữ nguyên vẹn, dán full bề ngang")
+        elif r < luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE:
             _luu_crop(img, san, "4:5", cy=0.35)           # chart cao: cat bot day
             a["san"] = str(san)
             a["ghi_chu"].append("chart cao, đã cắt bớt phần dưới về 4:5")
