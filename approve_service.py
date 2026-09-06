@@ -1950,10 +1950,16 @@ def handle_message(token, group, msg):
     # duoc — cung mot cach tra loi.
     vai = vai_cua_topic(thread_id)
     lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
-    if lenh is not None and not _la_reply_bao_cao(vai, msg):
-        log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
-                     f"vai={vai} -> coi la hoi thoai")
-        lenh = None
+    if lenh is not None:
+        # DEBUG tam thoi (06/09/2026): in het thong tin reply_to_message de
+        # doi chieu — bo dong nay sau khi xac nhan gate chay dung.
+        rt_dbg = msg.get("reply_to_message")
+        log("debug-reply", f"msg={mid} reply_to_message={json.dumps(rt_dbg, ensure_ascii=False)[:300] if rt_dbg else None}")
+        la_reply = _la_reply_bao_cao(vai, msg)
+        if not la_reply:
+            log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
+                         f"vai={vai} -> coi la hoi thoai")
+            lenh = None
     is_pick = lenh is not None
     if not is_pick:
         # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot
