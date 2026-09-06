@@ -114,7 +114,10 @@ tbench.ai, swebench.com, livebench.ai, aider — nguồn được nhắc trong b
 trước), mở browser, tìm **hàng** chứa model trong bảng lớn nhất (khớp bỏ dấu
 cách/gạch/chấm: "Claude Opus 4.6" ≡ "claude-opus-4-6"), chụp cửa sổ từ hàng 1
 (hoặc từ hàng model-2 nếu nằm sâu) kéo xuống cho tới khi rộng/cao ≤ 1.5 — đủ
-để đi một mình vào hero — **full bề ngang bảng, khoanh vàng hàng model, đọc thứ
+để đi một mình vào hero. Trang chỉ có một bảng mà bảng quá ngang (tbench: 15
+hàng trải 2319px) thì **thu hẹp cửa sổ** (1500 → 1200 → 1000) cho bảng responsive
+tự dồn cột — đủ cột, đúng từng ô, chỉ bố cục hẹp lại; có nhiều bảng thì chọn
+bảng vừa khổ, còn quá ngang mới ghép dọc hai bảng cùng trang — **full bề ngang bảng, khoanh vàng hàng model, đọc thứ
 hạng từ ô đầu**. Không nguồn nào ra → thẻ dự phòng: tên model + #hạng + logo (nếu
 chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng dấu
 `nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.

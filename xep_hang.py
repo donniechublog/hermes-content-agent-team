@@ -198,13 +198,17 @@ const vung = el => { const k = khungCuon(el); const vw = window.innerWidth, vh =
   return {x: Math.max(0, r.x), y: Math.max(0, r.y), w: Math.min(vw, r.right) - Math.max(0, r.x), h: Math.min(vh, r.bottom) - Math.max(0, r.y)}; };
 """
 
-# Tìm bảng + hàng model, không đo gì hết (đo sau khi cuộn).
+# Liệt kê MỌI bảng có hàng chứa model (không chỉ bảng lớn nhất — Ông Chủ 06/09:
+# "trang ảnh rất ngang chắc chắn còn nhiều benchmark table khác"). Mỗi bảng kèm
+# ước lượng tỉ lệ khi chụp đủ cao (rộng / min(cao đủ hàng, trần)), để chọn cái
+# vừa khổ hero trước. Đánh dấu data-xh-bang="k" theo thứ tự.
 _JS_TIM = _JS_NORM + """
-(models) => {
+([models, tranCao, tiLeMucTieu]) => {
+  const ra = [];
   const bangs = Array.from(document.querySelectorAll('table,[role=table],[role=grid]'))
     .map(t => ({t, rows: hangHien(t)}))
-    .filter(b => b.rows.length >= 5 && b.t.getBoundingClientRect().width >= 500)
-    .sort((a, b) => (b.rows.length * b.t.getBoundingClientRect().width) - (a.rows.length * a.t.getBoundingClientRect().width));
+    .filter(b => b.rows.length >= 5 && b.t.getBoundingClientRect().width >= 500);
+  let k = 0;
   for (const {t, rows} of bangs) {
     for (const model of models) {
       const nm = norm(model);
@@ -213,52 +217,36 @@ _JS_TIM = _JS_NORM + """
       const r = rows[idx];
       const cells = Array.from(r.children).map(c => (c.innerText || '').trim().replace(/\\s+/g, ' '));
       const hang = (cells.find(c => /^#?\\d{1,3}$/.test(c)) || '').replace('#', '');
-      const img = r.querySelector('img'); if (img) img.setAttribute('data-xh-logo', '1');
-      t.setAttribute('data-xh-bang', '1'); r.setAttribute('data-xh-row', '1');
-      // Bang xep hang hay nam trong khung cuon rieng cao co dinh (arena 628px, AA
-      // 80vh): chi ~11 hang hien, phan con lai khong render ra anh. Go tran: khung
-      // cao theo noi dung, tai lieu dai ra, cuon bang window nhu binh thuong.
-      const daSua = [];
-      for (let e = t.parentElement; e && e !== document.body; e = e.parentElement) {
-        const cs = getComputedStyle(e);
-        if (/(auto|scroll|hidden)/.test(cs.overflowY) && e.scrollHeight > e.clientHeight + 4
-            && e.clientHeight < window.innerHeight - 100) {
-          daSua.push([e, e.getAttribute('style')]);
-          e.style.setProperty('max-height', 'none', 'important');
-          e.style.setProperty('height', 'auto', 'important');
-          e.style.setProperty('overflow', 'visible', 'important');
-        }
-      }
-      // KIEM CHUNG: go tran xong thi cua so phai keo toi duoc hang model. Trang de
-      // noi dung trong khoi fixed/body overflow hidden (artificialanalysis) thi
-      // cua so khong cuon — tra lai nhu cu va de khung con tu cuon (xem _JS_CUON_DO).
-      if (daSua.length) {
-        r.scrollIntoView({block: 'center'});
-        const y = r.getBoundingClientRect().y;
-        const ok = y > -5 && y < window.innerHeight + 5;
-        if (!ok) { for (const [e, st] of daSua) { if (st === null) e.removeAttribute('style'); else e.setAttribute('style', st); } }
-        window.scrollTo(0, 0);
-      }
-      return {model, idx, so_hang: rows.length, hang: hang ? parseInt(hang, 10) : null,
-              dong: cells.join(' | ').slice(0, 160), logo: !!img};
+      const img = r.querySelector('img'); if (img) img.setAttribute('data-xh-logo', String(k));
+      t.setAttribute('data-xh-bang', String(k)); r.setAttribute('data-xh-row', String(k));
+      const w = t.getBoundingClientRect().width;
+      const caoDu = rows.slice(0, Math.min(rows.length, 40)).reduce((a, x) => a + x.getBoundingClientRect().height, 0);
+      const cao = Math.min(caoDu, tranCao);
+      ra.push({k, model, idx, so_hang: rows.length, hang: hang ? parseInt(hang, 10) : null,
+               dong: cells.join(' | ').slice(0, 160), logo: !!img, w: Math.round(w),
+               ti_le: w / Math.max(1, cao), vua: w / Math.max(1, cao) <= tiLeMucTieu});
+      k++; break;
     }
   }
-  return null;
+  // vừa khổ trước; trong nhóm đó bảng nhiều hàng hơn trước; rồi tới bảng hẹp hơn
+  ra.sort((a, b) => (b.vua - a.vua) || (b.so_hang - a.so_hang) || (a.ti_le - b.ti_le));
+  return ra;
 }"""
 
+# (phần cũ của _JS_TIM bị thay hết ở dưới — giữ thân cho vòng lặp)
 # Cuộn phần tử vào tầm nhìn rồi đo TẤT CẢ theo viewport.
 _JS_CUON_DO = _JS_NORM + """
-([cach, dau, cuoi]) => {
-  const t = document.querySelector('[data-xh-bang]'); if (!t) return null;
+([cach, dau, cuoi, k]) => {
+  const t = document.querySelector('[data-xh-bang="' + k + '"]'); if (!t) return null;
   const rows = hangHien(t);
   const hdrH = rows[0].getBoundingClientRect().height;
   if (cach === 'top') { t.scrollIntoView({block: 'start', inline: 'nearest'}); window.scrollBy(0, -8); }
   else { rows[dau].scrollIntoView({block: 'start', inline: 'nearest'}); window.scrollBy(0, -(hdrH + 12)); }
   // Khung cuon con (khong go tran duoc): dat hang dau cua so ngay duoi header dinh.
-  const k = khungCuon(t);
-  if (k) { const kb = k.getBoundingClientRect(); const muc = cach === 'top' ? t : rows[dau];
+  const kc = khungCuon(t);
+  if (kc) { const kb = kc.getBoundingClientRect(); const muc = cach === 'top' ? t : rows[dau];
     const d = muc.getBoundingClientRect().y - kb.y - (cach === 'top' ? 0 : hdrH + 8);
-    if (Math.abs(d) > 2) k.scrollTop += d; }
+    if (Math.abs(d) > 2) kc.scrollTop += d; }
   // VUNG DINH (sticky) THAT: header co the hai tang (artificialanalysis: 90px, rows[0]
   // chi 36px) — hang model trot xuong duoi tang hai, bi che. Do dinh/day cua moi phan
   // tu sticky dang nam o mep tren, roi cuon bu cho hang dau cua so nam duoi day do.
@@ -272,11 +260,11 @@ _JS_CUON_DO = _JS_NORM + """
   if (cach !== 'top' && st) {
     const y = rows[dau].getBoundingClientRect().y;
     if (y < st.bot + 4) { const d = y - (st.bot + 8);
-      if (k) k.scrollTop += d; else window.scrollBy(0, d); }
+      if (kc) kc.scrollTop += d; else window.scrollBy(0, d); }
     st = stickyDo();
   }
   return {vung: vung(t), bang: rect(t), rows: rows.map(rect), sticky: st,
-          idx: rows.findIndex(r => r.hasAttribute('data-xh-row'))};
+          idx: rows.findIndex(r => r.getAttribute('data-xh-row') === String(k))};
 }"""
 
 _JS_SVG = _JS_NORM + """
@@ -333,10 +321,15 @@ def _giao(a: dict, b: dict) -> dict:
     return {"x": x0, "y": y0, "w": max(0, x1 - x0), "h": max(0, y1 - y0)}
 
 
-def _chup(page, r: dict, out: Path):
+def _chup(page, r: dict, out: Path, dem: int = 8):
+    """Chụp `r` (viewport px), thêm `dem` px hai bên nếu còn chỗ — mép bảng sát
+    mũi tên sort/ô cuối (thấy trên tbench thu hẹp: "COST ⇅" và "$6.2k" chạm cạnh)."""
     if r["w"] < 50 or r["h"] < 30:
         raise RuntimeError(f"vùng chụp rỗng {r}")
-    page.screenshot(path=str(out), clip={"x": r["x"], "y": r["y"], "width": r["w"], "height": r["h"]})
+    vw = page.viewport_size["width"]
+    x0 = max(0, r["x"] - dem)
+    x1 = min(vw, r["x"] + r["w"] + dem)
+    page.screenshot(path=str(out), clip={"x": x0, "y": r["y"], "width": x1 - x0, "height": r["h"]})
 
 
 def _khoanh(png: Path, x: float, y: float, w: float, h: float, dpr: int = DPR):
@@ -364,18 +357,18 @@ def _cua_so(rows: list, idx: int, hdr_h: float, bang_w: float) -> tuple:
     return dau, cuoi
 
 
-def chup_bang(page, models: list, out: Path, dpr: int = DPR):
-    """Chụp cửa sổ top-N của bảng chứa model, khoanh hàng model. None nếu không thấy."""
-    tim = page.evaluate(_JS_TIM, models)
-    if not tim:
-        return None, "không có bảng ≥5 hàng chứa tên model"
-    idx = tim["idx"]
+TI_LE_GHEP = 1.6               # rộng/cao trên mức này thì một bảng không đi một mình vào hero được
+
+
+def _chup_mot_bang(page, tim: dict, out: Path, dpr: int = DPR):
+    """Chụp cửa sổ top-N của MỘT bảng (đã đánh dấu k), khoanh hàng model."""
+    idx, k = tim["idx"], tim["k"]
     out.parent.mkdir(parents=True, exist_ok=True)
     # Lượt 1: cuộn header lên đầu (trường hợp top) hoặc hàng model vào giữa (sâu), đo.
     trong_top = idx <= TOP_MAC_DINH + 2
-    do = page.evaluate(_JS_CUON_DO, ["top" if trong_top else "row", idx, idx])
+    do = page.evaluate(_JS_CUON_DO, ["top" if trong_top else "row", idx, idx, k])
     page.wait_for_timeout(400)
-    do = page.evaluate(_JS_CUON_DO, ["top" if trong_top else "row", idx, idx])
+    do = page.evaluate(_JS_CUON_DO, ["top" if trong_top else "row", idx, idx, k])
     rows, vung, hdr = do["rows"], do["vung"], do["rows"][0]
     st = do.get("sticky")
     hdr_h = max(hdr["h"], (st["bot"] - st["top"]) if st else 0)
@@ -390,8 +383,8 @@ def chup_bang(page, models: list, out: Path, dpr: int = DPR):
     if idx not in hien and trong_top:
         # Hang model bi che (header dinh cao / cuon lech): thu cach 'row' — hang dau
         # cua so len dau viewport, lui mot header.
-        do = page.evaluate(_JS_CUON_DO, ["row", dau, dau]); page.wait_for_timeout(300)
-        do = page.evaluate(_JS_CUON_DO, ["row", dau, dau])
+        do = page.evaluate(_JS_CUON_DO, ["row", dau, dau, k]); page.wait_for_timeout(300)
+        do = page.evaluate(_JS_CUON_DO, ["row", dau, dau, k])
         rows, vung, hdr = do["rows"], do["vung"], do["rows"][0]
         st = do.get("sticky")
         duoi_hdr = max(hdr["y"] + hdr["h"] if hdr["y"] >= vung["y"] - 1 else vung["y"],
@@ -414,25 +407,105 @@ def chup_bang(page, models: list, out: Path, dpr: int = DPR):
     if dinh is not None:
         r = _giao({"x": x, "w": w, "y": dinh, "h": band["y"] + band["h"] - dinh}, vung)
         _chup(page, r, out)
-        goc = (r["x"], r["y"]); do_hdr = 0
+        goc = (max(0, r["x"] - 8), r["y"]); do_hdr = 0
     else:
         # Header không liền band (model sâu, header không dính): chụp riêng rồi ghép.
         p1, p2 = out.with_suffix(".h.png"), out.with_suffix(".b.png")
         _chup(page, _giao(band, vung), p2)
         row_luu = dict(rows[idx]); band_luu = dict(band)
-        do2 = page.evaluate(_JS_CUON_DO, ["top", 0, 0]); page.wait_for_timeout(300)
-        do2 = page.evaluate(_JS_CUON_DO, ["top", 0, 0])
+        do2 = page.evaluate(_JS_CUON_DO, ["top", 0, 0, k]); page.wait_for_timeout(300)
+        do2 = page.evaluate(_JS_CUON_DO, ["top", 0, 0, k])
         h2 = do2["rows"][0]
         _chup(page, _giao({"x": x, "w": w, "y": h2["y"], "h": h2["h"]}, do2["vung"]), p1)
         a, b = Image.open(p1).convert("RGB"), Image.open(p2).convert("RGB")
         g = Image.new("RGB", (max(a.width, b.width), a.height + b.height), (255, 255, 255))
         g.paste(a, (0, 0)); g.paste(b, (0, a.height)); g.save(out, "PNG"); p1.unlink(); p2.unlink()
         rows[idx] = row_luu; band = band_luu
-        goc = (max(band["x"], vung["x"]), max(band["y"], vung["y"])); do_hdr = a.height / dpr
+        goc = (max(0, max(band["x"], vung["x"]) - 8), max(band["y"], vung["y"])); do_hdr = a.height / dpr
     row = rows[idx]
     _khoanh(out, row["x"] - goc[0], row["y"] - goc[1] + do_hdr, min(row["w"], w), row["h"], dpr)
     return {"kieu": "bang", "model": tim["model"], "hang": tim["hang"], "dong": tim["dong"],
             "idx": idx, "so_hang": tim["so_hang"], "logo_co": tim["logo"]}, ""
+
+
+def chup_bang(page, models: list, out: Path, dpr: int = DPR):
+    """Chụp bảng chứa model, chọn bảng VỪA KHỔ nhất trên trang.
+
+    Ông Chủ 06/09/2026: "với những trang ảnh rất ngang, chắc chắn trong trang đó
+    còn nhiều benchmark table khác có thể sử dụng". Trước đây lấy bảng lớn nhất rồi
+    chịu thua nếu nó quá ngang (tbench: 15 hàng, rộng/cao 3.2). Nay: liệt kê mọi
+    bảng có hàng model, thử theo thứ tự vừa khổ → nhiều hàng → hẹp; bảng đầu tiên
+    ra rộng/cao ≤ TI_LE_GHEP thì dùng. Không bảng nào đủ cao thì GHÉP DỌC hai bảng
+    cùng trang (cùng tone sẵn, mỗi bảng đã khoanh model), bảng vừa hơn lên trên."""
+    ung = page.evaluate(_JS_TIM, [models, CAO_TOI_DA_CSS, TI_LE_MUC_TIEU])
+    if not ung:
+        return None, "không có bảng ≥5 hàng chứa tên model"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    da, ly_do = [], []
+    for tim in ung[:3]:
+        p = out if not da else out.with_suffix(f".b{len(da)}.png")
+        try:
+            kq, ld = _chup_mot_bang(page, tim, p, dpr)
+        except Exception as e:                               # noqa: BLE001
+            kq, ld = None, f"{type(e).__name__}: {str(e)[:60]}"
+        if not kq:
+            ly_do.append(f"bảng {tim['k']} ({tim['so_hang']} hàng): {ld}")
+            continue
+        with Image.open(p) as im:
+            r = im.width / im.height
+        da.append((kq, p, r, tim))
+        if r <= TI_LE_GHEP:
+            break
+    if not da:
+        return None, "; ".join(ly_do)
+    da.sort(key=lambda t: (t[2] > TI_LE_GHEP, t[2]))
+    kq, p, r, tim = da[0]
+    if r > TI_LE_GHEP and len(da) < 2:
+        # Trang chi co MOT bang va no qua ngang (tbench: 15 hang trai 2319px o viewport
+        # 2400): bang responsive tra rong theo cua so. Thu hep cua so — bang tu don
+        # cot, van du noi dung, chi bo cuc hep lai. Lay ban dau tien vua kho.
+        rong_cu = page.viewport_size["width"]
+        for rong in (1500, 1200, 1000):
+            page.set_viewport_size({"width": rong, "height": page.viewport_size["height"]})
+            page.wait_for_timeout(700)
+            p2 = out.with_suffix(f".w{rong}.png")
+            try:
+                kq2, _ = _chup_mot_bang(page, tim, p2, dpr)
+            except Exception:                                # noqa: BLE001
+                kq2 = None
+            if not kq2:
+                continue
+            with Image.open(p2) as im2:
+                r2 = im2.width / im2.height
+            if r2 < r:
+                for _, q, _, _ in da:
+                    if q != out and q.exists():
+                        q.unlink()
+                da = [(kq2, p2, r2, tim)]
+                kq, p, r = kq2, p2, r2
+                kq["viewport"] = rong
+            else:
+                p2.unlink(missing_ok=True)
+            if r <= TI_LE_GHEP:
+                break
+        page.set_viewport_size({"width": rong_cu, "height": page.viewport_size["height"]})
+    if r > TI_LE_GHEP and len(da) >= 2:
+        kq2, p2, r2, tim2 = da[1]
+        a, b = Image.open(p).convert("RGB"), Image.open(p2).convert("RGB")
+        b = b.resize((a.width, round(b.height * a.width / b.width)), Image.LANCZOS)
+        g = Image.new("RGB", (a.width, a.height + b.height), (255, 255, 255))
+        g.paste(a, (0, 0)); g.paste(b, (0, a.height))
+        g.save(out, "PNG")
+        kq = {**kq, "kieu": "bang-ghep", "dong": kq["dong"] + " ‖ " + kq2["dong"][:60],
+              "ghep_voi": tim2["k"]}
+    elif p != out:
+        p.replace(out)
+    for _, q, _, _ in da:
+        if q != out and q.exists():
+            q.unlink()
+    if len(ung) > 1:
+        kq["so_bang"] = len(ung)
+    return kq, ""
 
 
 def chup_svg(page, models: list, out: Path, dpr: int = DPR):
