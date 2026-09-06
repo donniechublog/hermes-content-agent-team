@@ -86,6 +86,136 @@ def plugin_home(H: Path) -> Path:
     return H / "plugins" / "kanban" / "dashboard"
 
 
+# ---- Cong cu bi TAT theo profile (agent.disabled_toolsets) ------------------
+# Vi sao phai co co che RIENG, khong nhet vao cap_tep(): cap_tep chep NGUYEN
+# TEP, ma config.yaml cua profile co api_key nen khong duoc vao git. Nhung
+# `agent.disabled_toolsets` lai dung la CHINH SACH — no quyet dinh vai con
+# execute_code/delegate_task hay khong — nen de no chi song tren server la dinh
+# dung cai bay da gap nhieu lan trong repo nay: dung lai home la mat im lang,
+# khong ai biet da tung tat gi. Nen dong bo DUNG MOT KHOA do, qua mot tep chinh
+# sach nho: {slug: [ten toolset]}. Slug nao khong co trong tep thi KHONG dung
+# toi (khong tu y xoa khoa dang co tren server).
+TAT_CONG_CU = REPO / "profiles" / "disabled_toolsets.json"
+
+
+def _cau_hinh_profile(H, slug):
+    return H / "profiles" / slug / "config.yaml"
+
+
+def _doc_tat(p):
+    """Gia tri agent.disabled_toolsets trong config.yaml, hoac None neu khong doc duoc."""
+    import yaml                                            # noqa: WPS433 — chi can khi dung toi
+    try:
+        c = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return None
+    return ((c.get("agent") or {}).get("disabled_toolsets")) or []
+
+
+def _ghi_tat(p, gia_tri):
+    """Dat agent.disabled_toolsets = gia_tri, GIU NGUYEN phan con lai cua tep.
+
+    Khong dump lai bang yaml: config.yaml day chu thich va thu tu khoa co y
+    nghia voi nguoi doc, dump lai la mat sach. Nen sua theo DONG, nhung chi
+    trong dung khoi `agent:`.
+
+    Bay da dinh that 06/09/2026: chen thang sau dong `agent:` ma khong nhin
+    xem khoa DA CO trong khoi hay chua -> hai khoa trung trong cung mot
+    mapping, YAML lay khoa cuoi, thay doi thanh vo tac dung. Nen sau khi sua
+    phai NAP LAI va doi chieu; khong khop thi KHONG ghi."""
+    import yaml                                            # noqa: WPS433
+    dong = p.read_text(encoding="utf-8").splitlines(keepends=True)
+    moi = "  disabled_toolsets: [" + ", ".join(gia_tri) + "]\n"
+    ra, i, xong = [], 0, False
+    while i < len(dong):
+        d = dong[i]
+        ra.append(d)
+        i += 1
+        if xong or d.rstrip("\n") != "agent:":
+            continue
+        # Trong khoi `agent:`: moi dong thut dau (hoac trong) deu thuoc khoi.
+        khoi = []
+        while i < len(dong) and (not dong[i].strip() or dong[i][:1] in (" ", "\t")):
+            khoi.append(dong[i])
+            i += 1
+        thay = False
+        for k, dk in enumerate(khoi):
+            if dk.strip().startswith("disabled_toolsets:"):
+                khoi[k], thay = moi, True
+                break
+        if not thay:
+            khoi.insert(0, moi)
+        ra.extend(khoi)
+        xong = True
+    if not xong:
+        return False, "khong tim thay khoi 'agent:'"
+    chu = "".join(ra)
+    try:                                    # cong doi chieu: sua xong phai DUNG
+        c = yaml.safe_load(chu) or {}
+    except yaml.YAMLError as e:
+        return False, f"sua xong YAML hong: {e}"
+    if ((c.get("agent") or {}).get("disabled_toolsets") or []) != list(gia_tri):
+        return False, "sua xong doc lai khong ra dung gia tri (khoa trung?)"
+    p.write_text(chu, encoding="utf-8")
+    return True, ""
+
+
+def dong_bo_tat_cong_cu(vao_repo, ra_hermes, chi=None):
+    """So sanh/dong bo agent.disabled_toolsets. Tra (so_khac, so_chep)."""
+    import json                                            # noqa: WPS433
+    chinh_sach = {}
+    if TAT_CONG_CU.exists():
+        try:
+            chinh_sach = json.loads(TAT_CONG_CU.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            print(f"  [thieu] doc {TAT_CONG_CU.name} loi: {e}", file=sys.stderr)
+            return 0, 0
+    khac = chep = 0
+    gom = {}                                  # --vao-repo: gom lai tu cac home
+    for hk, H in HOMES.items():
+        if not H.exists():
+            continue
+        for slug_dir in sorted((H / "profiles").glob("*")):
+            slug = slug_dir.name
+            ten = f"tat-cong-cu {hk}/{slug}"
+            if chi and chi not in ten:
+                continue
+            p = _cau_hinh_profile(H, slug)
+            if not p.exists():
+                continue
+            hien = _doc_tat(p)
+            if hien is None:
+                print(f"  [thieu] {ten}: khong doc duoc config.yaml", file=sys.stderr)
+                continue
+            if vao_repo:
+                if hien:
+                    gom[slug] = sorted(hien)
+                continue
+            muon = chinh_sach.get(slug)
+            if muon is None:                  # khong khai trong chinh sach -> khong dung toi
+                continue
+            if sorted(hien) == sorted(muon):
+                continue
+            khac += 1
+            print(f"  KHAC  {ten}: home={hien or '[]'} repo={muon}"
+                  + (" -> home" if ra_hermes else ""))
+            if ra_hermes:
+                ok, ly_do = _ghi_tat(p, muon)
+                if ok:
+                    chep += 1
+                else:
+                    print(f"  [BO QUA] {ten}: {ly_do}", file=sys.stderr)
+    if vao_repo:
+        cu = chinh_sach
+        if gom != cu:
+            TAT_CONG_CU.parent.mkdir(parents=True, exist_ok=True)
+            TAT_CONG_CU.write_text(json.dumps(gom, ensure_ascii=False, indent=2) + "\n",
+                                   encoding="utf-8")
+            print(f"  KHAC  tat-cong-cu -> repo ({len(gom)} profile)")
+            khac, chep = 1, 1
+    return khac, chep
+
+
 def cap_tep():
     """[(ten hien thi, duong that trong home, duong trong repo)]"""
     ra = []
@@ -424,7 +554,12 @@ def main():
                     da_chep += 1
                     print(f"  TAO   kanban {hk} {f} -> home")
 
-    if not khac and not da_chep:
+    # agent.disabled_toolsets: khoa chinh sach nam trong config.yaml (khong chep
+    # ca tep duoc vi co api_key) — dong bo rieng, xem dong_bo_tat_cong_cu.
+    tat_khac, tat_chep = dong_bo_tat_cong_cu(a.vao_repo, a.ra_hermes, a.chi)
+    da_chep += tat_chep
+
+    if not khac and not da_chep and not tat_khac:
         print("Hai ben khop nhau, khong co gi de dong bo.")
         nhac_bat_plugin()
         return 0
