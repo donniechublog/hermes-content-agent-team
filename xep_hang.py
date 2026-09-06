@@ -30,10 +30,13 @@ import luat_anh                                              # noqa: E402
 DPR = 2
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
-# Vien mobile, chi cho nguon danh dau "mobile" (arena.ai — co giao dien mobile
-# rieng, danh sach the doc thay vi bang cuon ngang). 414px * DPR 3 = 1242px, gan
-# khop kho the 1200px nen chu gan nhu khong bi co; chup desktop thi 2668px phai
-# co gan mot nua, chu nho han hai lan.
+# Khung MOBILE — thu TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vao trang nao chup
+# thi cung hay duyet theo kich thuoc mobile, vi hinh luon dang o ratio 4:5").
+# 414px * DPR 3 = 1242px, gan khop kho the 1200px nen chu gan nhu khong bi co;
+# desktop 2400 * DPR 2 = 4800px phai co bon lan. Do 06/09: 12/18 nguon co layout
+# mobile that (arena x6, aa-models, livebench, aider, livecodebench, hle, vellum);
+# 6 nguon con lai (tbench, swebench, bfcl, gaia, opencompass, openrouter) giu bang
+# rong 892-1878px trong khung cuon ngang nen tu dong lui ve desktop.
 MOBILE_VIEWPORT = {"width": 414, "height": 896}
 MOBILE_DPR = 3
 MOBILE_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
@@ -52,25 +55,32 @@ TI_LE_VUA = 1.5
 # lai thu tu nay, khong them nguon la.
 NGUON = [
     {"ma": "arena-text",     "site": "ARENA.AI",  "bang": "Text Arena",
-     "url": "https://arena.ai/leaderboard/text",          "mien": r"arena\.ai|lmarena", "mobile": True},
+     "url": "https://arena.ai/leaderboard/text",          "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-code",     "site": "ARENA.AI",  "bang": "WebDev / Code Arena",
-     "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena", "mobile": True},
+     "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-vision",   "site": "ARENA.AI",  "bang": "Vision Arena",
-     "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena", "mobile": True},
+     "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-t2i",      "site": "ARENA.AI",  "bang": "Text-to-Image Arena",
-     "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena", "mobile": True},
+     "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-t2v",      "site": "ARENA.AI",  "bang": "Text-to-Video Arena",
-     "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena", "mobile": True},
+     "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-search",   "site": "ARENA.AI",  "bang": "Search Arena",
-     "url": "https://arena.ai/leaderboard/search",        "mien": r"arena\.ai|lmarena", "mobile": True},
+     "url": "https://arena.ai/leaderboard/search",        "mien": r"arena\.ai|lmarena"},
     {"ma": "aa-models",      "site": "ARTIFICIALANALYSIS.AI", "bang": "Intelligence Index",
      "url": "https://artificialanalysis.ai/leaderboards/models", "mien": r"artificialanalysis"},
+    # mobile KHONG dung duoc (do 06/09/2026): bang rong 892px trong khung cuon ngang, khung 414 mat cot.
     {"ma": "tbench",         "site": "TBENCH.AI", "bang": "Terminal-Bench",
-     "url": "https://www.tbench.ai/leaderboard",          "mien": r"tbench|terminal[-_ ]?bench"},
+     "url": "https://www.tbench.ai/leaderboard",          "mien": r"tbench|terminal[-_ ]?bench",
+     "khung": "desktop"},
+    # mobile KHONG dung duoc (do 06/09/2026): bang rong 990px trong khung cuon ngang, khung 414 mat cot.
     {"ma": "swebench",       "site": "SWEBENCH.COM", "bang": "SWE-bench",
-     "url": "https://www.swebench.com/",                  "mien": r"swebench|swe[-_ ]?bench"},
+     "url": "https://www.swebench.com/",                  "mien": r"swebench|swe[-_ ]?bench",
+     "khung": "desktop"},
+    # mobile KHONG dung duoc (do 06/09/2026): khung hep chi bat duoc bieu do CHI PHI
+    # chu khong phai bang xep hang, ten model lai bi cat cut ("Claude 4.7 Opu...").
     {"ma": "livebench",      "site": "LIVEBENCH.AI", "bang": "LiveBench",
-     "url": "https://livebench.ai/",                      "mien": r"livebench"},
+     "url": "https://livebench.ai/",                      "mien": r"livebench",
+     "khung": "desktop"},
     {"ma": "aider",          "site": "AIDER.CHAT", "bang": "Aider Polyglot",
      "url": "https://aider.chat/docs/leaderboards/",      "mien": r"aider"},
     # Ông Chủ 06/09/2026: "phải sử dụng hình ảnh từ tất cả trang này, đừng tự giới
@@ -84,22 +94,31 @@ NGUON = [
     #     nhóm hàng lặp nào nhận ra được; mỗi trang cần một bộ bóc riêng.
     #   epoch.ai — bảng vẽ bằng <canvas>, không định vị được hàng để khoanh.
     #   mteb (HF Space) — benchmark embedding, không phải xếp hạng model kiểu tin.
-    # KHONG mobile: openrouter khong render bang xep hang nao o khung <900px.
+    # openrouter khong render bang xep hang nao o khung <900px -> luon lui ve desktop.
     {"ma": "openrouter",     "site": "OPENROUTER.AI", "bang": "LLM Rankings (lượt dùng)",
-     "url": "https://openrouter.ai/rankings",             "mien": r"openrouter"},
+     "url": "https://openrouter.ai/rankings",             "mien": r"openrouter",
+     "khung": "desktop"},
+    # mobile KHONG dung duoc (do 06/09/2026): bang rong 556px, rong hon khung 414 nen mat cot.
     {"ma": "livecodebench",  "site": "LIVECODEBENCH", "bang": "LiveCodeBench",
-     "url": "https://livecodebench.github.io/leaderboard.html", "mien": r"livecodebench"},
+     "url": "https://livecodebench.github.io/leaderboard.html", "mien": r"livecodebench",
+     "khung": "desktop"},
     {"ma": "bfcl",           "site": "GORILLA (UC BERKELEY)", "bang": "Function-Calling Leaderboard",
      "url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
      "mien": r"\bbfcl\b|gorilla\.cs\.berkeley|berkeley function"},
+    # mobile KHONG dung duoc (do 06/09/2026): bang cuon ngang 1788px, khung 414 mat cot.
     {"ma": "gaia",           "site": "GAIA BENCHMARK", "bang": "GAIA",
-     "url": "https://gaia-benchmark-leaderboard.hf.space/", "mien": r"\bgaia\b"},
+     "url": "https://gaia-benchmark-leaderboard.hf.space/", "mien": r"\bgaia\b",
+     "khung": "desktop"},
     {"ma": "hle",            "site": "SAFE.AI", "bang": "Humanity's Last Exam",
      "url": "https://agi.safe.ai/",                       "mien": r"agi\.safe\.ai|humanity'?s? last exam|\bHLE\b"},
+    # mobile KHONG dung duoc (do 06/09/2026): bieu do cot mang ngu nghia bang: toa do hang khong trung cho hien, chup ra lech.
     {"ma": "vellum",         "site": "VELLUM.AI", "bang": "LLM Leaderboard",
-     "url": "https://www.vellum.ai/llm-leaderboard",      "mien": r"vellum"},
+     "url": "https://www.vellum.ai/llm-leaderboard",      "mien": r"vellum",
+     "khung": "desktop"},
+    # mobile KHONG dung duoc (do 06/09/2026): bang rong 1417px trong khung cuon ngang, khung 414 mat cot.
     {"ma": "opencompass",    "site": "OPENCOMPASS", "bang": "OpenCompass LLM",
-     "url": "https://rank.opencompass.org.cn/leaderboard/llm", "mien": r"opencompass|司南"},
+     "url": "https://rank.opencompass.org.cn/leaderboard/llm", "mien": r"opencompass|司南",
+     "khung": "desktop"},
 ]
 
 # Từ khoá chọn bảng con của một site theo chủ đề tin (video → arena-t2v trước...)
@@ -250,16 +269,31 @@ const vung = el => { const k = khungCuon(el); const vw = window.innerWidth, vh =
 # ước lượng tỉ lệ khi chụp đủ cao (rộng / min(cao đủ hàng, trần)), để chọn cái
 # vừa khổ hero trước. Đánh dấu data-xh-bang="k" theo thứ tự.
 _JS_TIM = _JS_NORM + """
-([models, tranCao, tiLeMucTieu]) => {
+([models, tranCao, tiLeMucTieu, vuaKhung]) => {
   const ra = [];
+  const vw = window.innerWidth;
+  // Nguong be ngang theo KHUNG NHIN, khong phai 500px cung: o khung mobile 414
+  // moi bang deu hep hon 500 -> khoa cung thi khong bao gio chup duoc bang o mobile.
+  const toiThieu = Math.min(500, vw * 0.6);
   const bangs = Array.from(document.querySelectorAll('table,[role=table],[role=grid]'))
     .map(t => ({t, rows: hangHien(t)}))
-    .filter(b => b.rows.length >= 5 && b.t.getBoundingClientRect().width >= 500);
+    .filter(b => b.rows.length >= 5 && b.t.getBoundingClientRect().width >= toiThieu)
+    // `vuaKhung`: bo bang RONG HON khung nhin — no nam trong khung cuon ngang nen
+    // chup ra chi duoc mot lat cat ben trai, mat cot phai (tbench/swebench/bfcl/
+    // gaia/opencompass o khung mobile).
+    .filter(b => !vuaKhung ||
+                 Math.max(b.t.getBoundingClientRect().width, b.t.scrollWidth) <= vw * 1.05);
   let k = 0;
   for (const {t, rows} of bangs) {
     for (const model of models) {
       const nm = norm(model);
-      const idx = rows.findIndex((r, i) => i > 0 && norm(r.innerText || r.textContent).includes(nm));
+      // CHI khop theo innerText (chu THAT SU hien), khong lui ve textContent: mot
+      // dai rong tren thanh nav van chua textContent cua con chau an -> khop nham,
+      // ra anh khoanh vang mot o trong (thay tren vellum o khung mobile 06/09).
+      const idx = rows.findIndex((r, i) => {
+        const t = (r.innerText || '').trim();
+        return i > 0 && t.length >= 3 && norm(t).includes(nm);
+      });
       if (idx < 0) continue;
       const r = rows[idx];
       const cells = Array.from(r.children).map(c => (c.innerText || '').trim().replace(/\\s+/g, ' '));
@@ -338,22 +372,25 @@ _JS_SVG = _JS_NORM + """
 }"""
 
 
-def _doi_bang(page):
-    """Đợi trang render xong bảng (≥5 hàng hiện) hoặc SVG lớn, tối đa 14s, rồi
-    thêm 1.2s cho font/logo. Chờ cố định 6s là đánh bạc: arena text-to-video có
-    lúc chưa ra hàng nào ở giây thứ 6."""
-    page.wait_for_timeout(1500)
+def _doi_bang(page, giay: int = 14):
+    """Đợi trang render xong BẢNG (≥5 hàng) hoặc DANH SÁCH hàng-thẻ hoặc SVG lớn,
+    tối đa `giay`, rồi thêm 1.2s cho font/logo. Chờ cố định 6s là đánh bạc: arena
+    text-to-video có lúc chưa ra hàng nào ở giây thứ 6.
+
+    Phải nhận cả danh sách chứ không chỉ bảng: trang chỉ có danh sách (arena, aa,
+    livebench ở khung mobile) mà chỉ dò bảng thì lần nào cũng đợi hết `giay` vô ích."""
+    page.wait_for_timeout(1200)
     t0 = time.time()
-    while time.time() - t0 < 14:
-        n = page.evaluate("""() => { let m = 0;
-            for (const t of document.querySelectorAll('table,[role=table],[role=grid]')) {
-              const k = Array.from(t.querySelectorAll('tr,[role=row]')).filter(r => r.getBoundingClientRect().height > 0).length;
-              if (k > m) m = k; }
-            const svg = Array.from(document.querySelectorAll('svg')).some(s => s.getBoundingClientRect().width >= 500);
-            return m >= 5 ? m : (svg ? -1 : 0); }""")
-        if n:
+    while time.time() - t0 < giay:
+        if page.evaluate(_JS_NORM_DS + """() => {
+              for (const t of document.querySelectorAll('table,[role=table],[role=grid]'))
+                if (Array.from(t.querySelectorAll('tr,[role=row]'))
+                      .filter(r => r.getBoundingClientRect().height > 0).length >= 5) return true;
+              if (timDanhSach(null)) return true;
+              return Array.from(document.querySelectorAll('svg'))
+                       .some(s => s.getBoundingClientRect().width >= 500); }"""):
             break
-        page.wait_for_timeout(700)
+        page.wait_for_timeout(600)
     page.wait_for_timeout(1200)
 
 
@@ -400,7 +437,7 @@ def _cua_so(rows: list, idx: int, hdr_h: float) -> tuple:
     return dau, cuoi
 
 
-def _chup_mot_bang(page, tim: dict, out: Path):
+def _chup_mot_bang(page, tim: dict, out: Path, dpr: int = DPR):
     """Chụp cửa sổ top-N của MỘT bảng (đã đánh dấu k), khoanh hàng model."""
     idx, k = tim["idx"], tim["k"]
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -459,26 +496,26 @@ def _chup_mot_bang(page, tim: dict, out: Path):
         a, b = Image.open(p1).convert("RGB"), Image.open(p2).convert("RGB")
         g = Image.new("RGB", (max(a.width, b.width), a.height + b.height), (255, 255, 255))
         g.paste(a, (0, 0)); g.paste(b, (0, a.height)); g.save(out, "PNG"); p1.unlink(); p2.unlink()
-        goc = (max(0, max(band["x"], vung["x"]) - 8), max(band["y"], vung["y"])); do_hdr = a.height / DPR
+        goc = (max(0, max(band["x"], vung["x"]) - 8), max(band["y"], vung["y"])); do_hdr = a.height / dpr
     row = rows[idx]
-    _khoanh(out, row["x"] - goc[0], row["y"] - goc[1] + do_hdr, min(row["w"], w), row["h"])
+    _khoanh(out, row["x"] - goc[0], row["y"] - goc[1] + do_hdr, min(row["w"], w), row["h"], dpr)
     return {"kieu": "bang", "model": tim["model"], "hang": tim["hang"], "dong": tim["dong"],
             "logo_co": tim["logo"]}, ""
 
 
-def chup_bang(page, models: list, out: Path):
+def chup_bang(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool = False):
     """Chụp bảng chứa model, chọn bảng VỪA KHỔ nhất trang. Thử tối đa 3 bảng theo
     thứ tự vừa khổ → nhiều hàng → hẹp, lấy bảng đầu ra rộng/cao ≤ TI_LE_VUA.
     Vẫn quá ngang thì thu hẹp cửa sổ trình duyệt cho bảng tự dồn cột (tbench ra
     3.2 nếu không làm)."""
-    ung = page.evaluate(_JS_TIM, [models, CAO_TOI_DA_CSS, TI_LE_VUA])
+    ung = page.evaluate(_JS_TIM, [models, CAO_TOI_DA_CSS, TI_LE_VUA, vua_khung])
     if not ung:
         return None, "không có bảng ≥5 hàng chứa tên model"
     da, ly_do = [], []
     for tim in ung[:3]:
         p = out if not da else out.with_suffix(f".b{len(da)}.png")
         try:
-            kq, ld = _chup_mot_bang(page, tim, p)
+            kq, ld = _chup_mot_bang(page, tim, p, dpr)
         except Exception as e:                               # noqa: BLE001
             kq, ld = None, f"{type(e).__name__}: {str(e)[:60]}"
         if not kq:
@@ -503,7 +540,7 @@ def chup_bang(page, models: list, out: Path):
             page.wait_for_timeout(700)
             p2 = out.with_suffix(f".w{rong}.png")
             try:
-                kq2, _ = _chup_mot_bang(page, tim, p2)
+                kq2, _ = _chup_mot_bang(page, tim, p2, dpr)
             except Exception:                                # noqa: BLE001
                 kq2 = None
             if not kq2:
@@ -683,12 +720,16 @@ def chup_danh_sach(page, models: list, out: Path, dpr: int = DPR):
     CÙNG DẠNG (openrouter dàn top-10 thành hai `<ol>` 5 hàng cạnh nhau, một cột
     rộng/cao ~1.75) thì GHÉP DỌC các cột lại — cùng một cách `chup_bang` ghép hai
     bảng, để ra khối dọc vừa khổ hero thay vì dải ngang."""
-    # Doi danh sach render xong, giong `_doi_bang` cua duong desktop: openrouter
-    # dung hang ~3s moi co CHU trong hang (do co hang rong truoc do), 800ms cua
-    # `tim_va_chup` la khong du. Poll thay vi cho cung mot con so.
+    # Trang KHONG co danh sach hang-the nao (tbench/swebench/gaia/opencompass chi
+    # co <table>): ve NGAY. Khong bail som thi moi nguon nhu vay ngon tron 12s poll
+    # cua tran 150s — do that: tbench mat 37s mot luot vi cho vo ich.
+    if not page.evaluate(_JS_NORM_DS + "() => !!timDanhSach(null)"):
+        return None, "trang không có danh sách hàng-thẻ nào"
+    # Co danh sach roi thi doi CHU hien trong hang: openrouter dung hang ~3s moi co
+    # chu (dung hang rong truoc do). Poll thay vi cho cung mot con so.
     t0 = time.time()
-    while time.time() - t0 < 12:
-        if page.evaluate(_JS_DS, [models, True]):
+    while time.time() - t0 < 10:
+        if page.evaluate(_JS_DS, [models, True, -1]):
             break
         page.wait_for_timeout(700)
     else:
@@ -734,7 +775,7 @@ def chup_danh_sach(page, models: list, out: Path, dpr: int = DPR):
 
 
 
-def chup_svg(page, models: list, out: Path):
+def chup_svg(page, models: list, out: Path, dpr: int = DPR):
     tim = page.evaluate(_JS_SVG, [models, True])
     if not tim:
         return None, "không có nhãn SVG chứa tên model"
@@ -747,7 +788,7 @@ def chup_svg(page, models: list, out: Path):
     r = _giao({"x": s["x"], "y": s["y"], "w": s["w"], "h": min(s["h"], CAO_TOI_DA_CSS)}, do["vung"])
     _chup(page, r, out)
     n = do["nhan"]
-    _khoanh(out, n["x"] - r["x"], n["y"] - r["y"], n["w"], n["h"])
+    _khoanh(out, n["x"] - r["x"], n["y"] - r["y"], n["w"], n["h"], dpr)
     return {"kieu": "svg", "model": tim["model"], "hang": None, "dong": tim["dong"], "logo_co": False}, ""
 
 
@@ -832,12 +873,10 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     kq_cuoi = None
     with sync_playwright() as p:
         br = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb"])
-        # Viewport cao san bang tran cua so chup: khong doi kich thuoc giua chung
-        # (doi la trang reflow, bbox do truoc do lech). HAI bo context: mobile
-        # cho nguon co co "mobile" (arena.ai — chu von to san cho man 414px, gan
-        # nhu khong bi co lai khi vao the 1200px, khac han desktop phai co gan
-        # mot nua), desktop cho phan con lai. Tao LAZY, dung lai giua cac nguon
-        # cung loai — khong tao lai context moi lan.
+        # Hai bo context: mobile (thu truoc, moi nguon) va desktop (lui ve khi
+        # mobile khong ra). Tao LAZY, dung lai giua cac nguon — khong tao lai moi
+        # lan. Viewport desktop cao san bang tran cua so chup: khong doi kich
+        # thuoc giua chung, doi la trang reflow, bbox do truoc do lech.
         ctx_desktop = ctx_mobile = pg_desktop = pg_mobile = None
 
         def trang_desktop():
@@ -848,36 +887,38 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                 pg_desktop = ctx_desktop.new_page()
             return pg_desktop
 
-        def chup_desktop(pg, url=None):
-            """Đường bảng desktop: bảng trước, không có thì chart SVG."""
-            if url:
-                pg.goto(url, wait_until="domcontentloaded", timeout=40000)
-                pg.wait_for_timeout(800)
-            _doi_bang(pg)
-            kq, ly_do = chup_bang(pg, models, out)
+        def trang_mobile():
+            nonlocal ctx_mobile, pg_mobile
+            if ctx_mobile is None:
+                ctx_mobile = br.new_context(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
+                                            is_mobile=True, has_touch=True, user_agent=MOBILE_UA)
+                pg_mobile = ctx_mobile.new_page()
+            return pg_mobile
+
+        def thu_chup(pg, dpr, vua_khung, giay):
+            """Một lượt trên MỘT khung: danh sách hàng-thẻ → bảng → chart SVG."""
+            _doi_bang(pg, giay)
+            # Danh sach truoc bang: trang co ca hai (arena, aa, livebench o khung
+            # mobile) thi danh sach la ban da xep lai cho man doc, hon han bang.
+            kq, ly_do = chup_danh_sach(pg, models, out, dpr)
             if kq:
                 return kq, ly_do
-            # Khong phai <table>: thu danh sach hang-the (openrouter dung <ol><li>).
-            kq2, ly_do2 = chup_danh_sach(pg, models, out, DPR)
+            kq2, ly_do2 = chup_bang(pg, models, out, dpr, vua_khung)
             if kq2:
                 return kq2, ly_do2
-            kq3, ly_do3 = chup_svg(pg, models, out)
-            return kq3, f"bảng: {ly_do}; danh sách: {ly_do2}; svg: {ly_do3}"
+            kq3, ly_do3 = chup_svg(pg, models, out, dpr)
+            return kq3, f"danh sách: {ly_do}; bảng: {ly_do2}; svg: {ly_do3}"
 
         for n in nguon_ds:
-            di_dong = bool(n.get("mobile"))
-            if di_dong:
-                if ctx_mobile is None:
-                    ctx_mobile = br.new_context(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
-                                                is_mobile=True, has_touch=True, user_agent=MOBILE_UA)
-                    pg_mobile = ctx_mobile.new_page()
-                pg = pg_mobile
-            else:
-                pg = trang_desktop()
             if time.time() - t0 > GIO_HAN:
                 in_log(f"[xep_hang] hết giờ ({GIO_HAN}s), dừng ở {n['ma']}")
                 break
             out = out_dir / f"xep_hang_{n['ma']}.png"
+            # Mobile la MAC DINH cho moi nguon; `khung: desktop` chi danh dau nhung
+            # nguon DA DO la mobile khong dung duoc (ly do ghi ngay tren muc trong
+            # NGUON). Go co ra thi van chay dung, chi ton them mot luot mo trang.
+            chi_desktop = n.get("khung") == "desktop"
+            pg = trang_desktop() if chi_desktop else trang_mobile()
             try:
                 resp = pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
                 # Cloudflare challenge / 429: khong doi 14s vo ich, sang nguon khac ngay.
@@ -889,17 +930,24 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                         r"just a moment|security verification|attention required|access denied", tieu_de):
                     in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({resp.status if resp else '?'} — {tieu_de[:40]!r}), bỏ qua")
                     continue
-                if di_dong:
-                    kq, ly_do = chup_danh_sach(pg, models, out, MOBILE_DPR)
-                    if not kq:
-                        # Model ngoai ~11-12 muc dau cua danh sach mobile: mo lai chinh
-                        # nguon nay o khung desktop, bang <table> tim duoc moi hang.
-                        # Chu se nho hon vi anh desktop phai co ve kho the, nhung con
-                        # hon khong co anh.
-                        kq, ly_do2 = chup_desktop(trang_desktop(), n["url"])
-                        ly_do = f"mobile: {ly_do}; desktop: {ly_do2}"
+                # KHUNG MOBILE TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vào trang
+                # nào chụp thì cũng hãy duyệt theo kích thước mobile, vì hình luôn
+                # đăng ở ratio 4:5"). 414px x DPR3 = 1242px, gan khop kho the
+                # 1200px nen chu gan nhu khong bi co; desktop 2400 x DPR2 = 4800px
+                # phai co bon lan, chu be lai bay nhieu. `vua_khung=True`: o khung
+                # hep phai BO bang rong hon khung — no nam trong khung cuon ngang,
+                # chup ra chi duoc lat cat ben trai (tbench/swebench/bfcl/gaia/
+                # opencompass). Hut thi mo lai chinh nguon do o khung desktop.
+                if chi_desktop:
+                    kq, ly_do = thu_chup(pg, DPR, False, 14)
                 else:
-                    kq, ly_do = chup_desktop(pg)
+                    kq, ly_do = thu_chup(pg, MOBILE_DPR, True, 8)
+                    if not kq:
+                        pg = trang_desktop()
+                        pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
+                        pg.wait_for_timeout(800)
+                        kq, ly_do2 = thu_chup(pg, DPR, False, 14)
+                        ly_do = f"mobile: {ly_do}; desktop: {ly_do2}"
             except Exception as e:                           # noqa: BLE001
                 in_log(f"[xep_hang] {n['ma']}: {type(e).__name__}: {str(e)[:80]}")
                 continue
