@@ -36,13 +36,8 @@ HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 SO_NGUON = 4
 
-TU_RONG = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
-           "new", "ai", "model", "is", "its", "as", "at", "by", "from", "how"}
-
-
-def _tu(t: str) -> set:
-    return {w for w in re.sub(r"[^\w\s]", " ", t.lower()).split()
-            if w not in TU_RONG and len(w) > 2}
+TU_RONG = quet_chung.TU_RONG           # mot ban duy nhat, xem quet_chung
+_tu = quet_chung.tu_dac_trung
 
 
 def _tai(url: str, timeout=20):

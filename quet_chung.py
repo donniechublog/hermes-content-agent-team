@@ -95,3 +95,16 @@ def moc_thoi_gian(txt: str) -> float:
         except Exception:                                    # noqa: BLE001
             continue
     return 0.0
+
+# Tu qua chung, bo khi so "hai tieu de co noi cung mot chuyen khong". Truoc
+# 06/09/2026 co hai ban: `nguon_bai.TU_RONG` va mot bo go tay trong
+# `anh_bai._tu_dac_trung`, khac nhau dung mot tu ("how") — nen cung mot cap tieu
+# de co the "cung tin" voi ham nay va "khac tin" voi ham kia.
+TU_RONG = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
+           "new", "ai", "model", "is", "its", "as", "at", "by", "from", "how"}
+
+
+def tu_dac_trung(t: str) -> set:
+    """Tu dac trung cua mot tieu de: bo dau cau, bo tu chung, bo tu <= 2 ky tu."""
+    return {w for w in re.sub(r"[^\w\s]", " ", (t or "").lower()).split()
+            if w not in TU_RONG and len(w) > 2}

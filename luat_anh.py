@@ -27,6 +27,7 @@ CACH DUNG: moi ham `kiem_*` tra ve (loi, canh_bao) — hai danh sach chuoi. Vai
 tu chon cong nao hop voi khung cua minh roi gop lai. Khong ham nao ve gi, khong
 ham nao biet den canvas — de vai nao cung goi duoc.
 """
+import re
 from pathlib import Path
 
 from PIL import Image, ImageOps, ImageStat
@@ -179,6 +180,79 @@ def la_chart(img):
     phang, so_mau = do_chart(img)
     return (phang >= CHART_PHANG and so_mau <= CHART_SO_MAU), \
            f"phang {phang:.0%}, chi {so_mau} mau"
+
+
+# ---- ANH RAC: MOT bo tu vung cho ca ba cho -----------------------------------
+#
+# Truoc 06/09/2026 co BA bo tu vung "anh rac" chong lan nhau ma khac han nhau:
+# `anh_bai.RAC` (favicon/avatar/1x1/gravatar/author...), `anh_chuan_bi.URL_RAC`
+# (quang cao/newsletter/wordmark...), va chuoi JS `XAU` chay trong browser. Anh
+# bi mot bo bat con hai bo kia cho qua, tuy no di duong nao vao — ma ba duong
+# deu do vao cung mot ho anh. Gio mot bo, ba noi dung chung.
+#
+# Tach lam hai vi chung tra loi hai cau hoi khac nhau:
+#   TU_RAC_URL  — "URL hay alt nay noi day la do trang tri" (dung o moi noi)
+#   TU_RAC_DOM  — them, chi co nghia khi soi VI TRI trong DOM (class/to tien):
+#                 mot tu nhu "header" trong URL khong noi len gi.
+TU_RAC_URL = [
+    # do trang tri cua trang
+    "logo", "wordmark", "favicon", "avatar", "gravatar", "author", "sprite",
+    "placeholder", "default-image", "onboarding",
+    # anh do 1 pixel / anh chen cho
+    r"1x1", r"tracking[-_]?pixel", r"pixel\.(gif|png)", "spacer",
+    # the chia se mac dinh cua trang (khong phai anh cua bai)
+    "social[-_]?card", "og[-_]?default", "default[-_]?og", "share[-_]?image",
+    "card[-_]?default", "banner[-_]?site", "banner",
+    # quang cao
+    "/ads?/", "advert", "adsystem", "doubleclick", "outbrain", "taboola",
+    "sponsor", "promo", "newsletter", "subscribe",
+]
+TU_RAC_DOM = [
+    "widget", "related", "recommend", "sidebar", "aside", "nav", "footer",
+    "header", "share", "social", "comment", "popup", "modal", "overlay",
+    "cookie", "paywall", "icon", "ads", "gpt", "dfp",
+]
+
+# Khop tren URL/alt: khong doi ranh gioi tu, vi ten tep hay dinh lien
+# ("site-logo.png", "hero_placeholder.jpg").
+RAC = re.compile("(" + "|".join(TU_RAC_URL) + ")", re.I)
+
+
+def _js_re(tu: list) -> str:
+    """Dung `new RegExp("...", "i")` chu KHONG phai regex literal `/.../i`.
+
+    Tu vung co `/ads?/` — dau `/` trong do dong som mot regex literal cua JS va
+    ca doan script chet voi "Invalid regular expression flags". json.dumps lo
+    phan thoat ky tu cho dung chuan JS.
+    """
+    import json as _j
+    return 'new RegExp(' + _j.dumps("(^|[^a-z])(" + "|".join(tu) + ")([^a-z]|$)") + ', "i")'
+
+
+def js_rac_url() -> str:
+    """Regex JS cho SRC va ALT — chi tu vung URL."""
+    return _js_re(TU_RAC_URL)
+
+
+def js_rac_dom() -> str:
+    """Regex JS cho CLASS/ID va to tien — tu vung URL cong tu vung DOM.
+
+    Tach khoi `js_rac_url` (06/09/2026) vi ban cu ap CUNG mot bo cho ca hai, ma
+    bo do chua "gpt" (Google Publisher Tag) va "icon" — nen moi anh co "gpt"
+    trong URL bi bo, tuc DUNG cac anh ve GPT-4/GPT-5, va "silicon" dinh "icon".
+    Trong class cua mot the div thi "gpt" van la quang cao; trong ten tep anh
+    thi khong.
+    """
+    return _js_re(TU_RAC_URL + TU_RAC_DOM)
+
+
+# ---- NGUONG CHON/TAI ANH -----------------------------------------------------
+# Ba con so cho ba buoc KHAC NHAU, de canh nhau cho khoi tuong chung mau thuan:
+CANH_NGAN_TAI = 500        # buoc TAI (anh_chuan_bi): duoi muc nay khong buon tai
+DIEN_TICH_TAI = 120_000    # buoc XEP HANG ung vien (anh_bai): ~350x350
+TAI_W_MIN, TAI_H_MIN = 600, 350   # buoc DOC DOM: bo anh nho ngay trong trang
+# CANH_NGAN_MIN (o duoi) la nguong CANH BAO luc NOP, khong phai luc tai: anh 700px
+# van co the la tam duy nhat co that, chan cung se mat tin.
 
 
 def dhash(im) -> int:

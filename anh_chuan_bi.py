@@ -46,6 +46,7 @@ from PIL import Image, ImageDraw, ImageStat
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+import luat_anh                                              # noqa: E402
 import env_load                                              # noqa: E402
 import xep_hang                                              # noqa: E402
 
@@ -53,10 +54,8 @@ DRAFTS = ROOT / "drafts"
 TEN_CT = {"dcgr": "dcgr", "donniechublog": "blog"}      # brand -> CT_BRAND
 
 # Nguong (cung goc voi luat_anh; o day chi la phan CHON anh de tai)
-URL_RAC = re.compile(r"(default-image|placeholder|onboarding|sprite|/logo|logo[-_.]|wordmark|"
-                     r"/ads?/|advert|sponsor|promo|banner|doubleclick|adsystem|outbrain|taboola|"
-                     r"newsletter|subscribe)", re.I)
-CANH_NGAN_BO = 500          # duoi nguong nay khong tai (phong len 1080 la vo)
+URL_RAC = luat_anh.RAC                 # mot bo tu vung, xem luat_anh
+CANH_NGAN_BO = luat_anh.CANH_NGAN_TAI   # xem luat_anh (ba nguong dat canh nhau)
 TOI_DA_ANH = 8              # anh giu lai sau khi loc — du cho 10 slide ke ca ghep
 TOI_DA_TAI = 14             # ung vien thu tai (co cai hong/trung)
 TAI_TOI_DA_BYTE = 14_000_000
@@ -200,20 +199,21 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
     # tien la ad/aside/nav/related/promo; src/class/id/alt mang tu quang cao;
     # va phan tu cao hon 75% trang (chup ca trang chu).
     JS_LOAI = """
-        const XAU = /(^|[^a-z])(ad|ads|advert|sponsor|promo|banner|widget|related|recommend|sidebar|aside|nav|footer|header|newsletter|subscribe|onboarding|placeholder|default-image|logo|sprite|icon|share|social|comment|popup|modal|overlay|cookie|paywall|outbrain|taboola|dfp|gpt|doubleclick|adsystem)([^a-z]|$)/i;
+        const XAU_DOM = """ + luat_anh.js_rac_dom() + """;
+        const XAU_URL = """ + luat_anh.js_rac_url() + """;
         const trongBai = (el) => { const a = document.querySelector('article') || document.querySelector('main');
             return !a || a.contains(el); };
         const xau = (el) => { for (let e = el; e; e = e.parentElement) {
             const t = (e.tagName||'').toLowerCase();
             if (['aside','nav','footer','header','iframe'].includes(t)) return true;
             const k = ((e.className && e.className.baseVal) ? e.className.baseVal : (e.className||'')) + ' ' + (e.id||'');
-            if (XAU.test(k.replace(/[-_]/g,' '))) return true; } return false; };
+            if (XAU_DOM.test(k.replace(/[-_]/g,' '))) return true; } return false; };
         const caoQua = (r) => r.height > Math.max(900, 0.75 * document.documentElement.scrollHeight);
     """
     JS_IMG = JS_LOAI + """() => Array.from(document.images)
-        .filter(i => i.naturalWidth >= 600 && i.naturalHeight >= 350)
-        .filter(i => trongBai(i) && !xau(i) && !XAU.test((i.currentSrc||i.src||'').replace(/[-_]/g,' '))
-                     && !XAU.test((i.alt||'').replace(/[-_]/g,' ')))
+        .filter(i => i.naturalWidth >= """ + str(luat_anh.TAI_W_MIN) + """ && i.naturalHeight >= """ + str(luat_anh.TAI_H_MIN) + """)
+        .filter(i => trongBai(i) && !xau(i) && !XAU_URL.test((i.currentSrc||i.src||'').replace(/[-_]/g,' '))
+                     && !XAU_URL.test((i.alt||'').replace(/[-_]/g,' ')))
         .map(i => ({src: i.currentSrc || i.src, alt: i.alt || '',
                     w: i.naturalWidth, h: i.naturalHeight})).slice(0, 12)"""
     JS_FIG = JS_LOAI + """() => { const ra = []; let k = 0;
