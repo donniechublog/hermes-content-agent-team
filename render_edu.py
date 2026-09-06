@@ -97,6 +97,7 @@ import argparse
 import base64
 import html
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -912,13 +913,35 @@ def _so(v):
     return str(int(f)) if f == int(f) else f"{f:.2f}".rstrip("0").rstrip(".").replace(".", ",")
 
 
+_SO_TRONG_CHU = re.compile(r"\d[\d.,]*")
+_CHAM_NGHIN = re.compile(r"^\d{1,3}(\.\d{3})+$")
+
+
 def _gia_tri(v):
-    """value cua bars: so, hoac chuoi so kieu Viet ('2,75')."""
+    """value cua bars: so, hoac chuoi so kieu Viet ('2,75' thap phan, '1.200'
+    hang nghin).
+
+    Truoc 06/09/2026 chi doi ',' thanh '.', con dau CHAM giu nguyen — nen
+    float("1.200") = 1.2. Kite viet "1.200 tac vu" (dung kieu Viet, dung cai
+    docstring noi la chap nhan) canh mot cot "900" thi cot 1.200 ve rong 0.1%
+    con cot 900 ve rong 100%: bieu do noi NGUOC han so lieu, trong khi chu tren
+    cot van ghi dung "1.200 tac vu". Cong khong bat vi 1.2 van la so >= 0.
+
+    Chi hong khi TRON dinh dang trong cung mot slide — moi cot cung viet cham
+    hang nghin thi deu chia 1000, ti le van dung — nhung "so 4 chu so canh so 3
+    chu so" chinh la canh hay gap nhat.
+    """
     if isinstance(v, bool):
         raise ValueError("value phai la so")
     if isinstance(v, (int, float)):
         return float(v)
-    return float(str(v).strip().replace(" ", "").replace(",", "."))
+    t = str(v).strip().replace(" ", "")
+    if "," in t:
+        # kieu Viet day du: cham la hang nghin, phay la thap phan
+        return float(t.replace(".", "").replace(",", "."))
+    if _CHAM_NGHIN.match(t):
+        return float(t.replace(".", ""))
+    return float(t)                       # "2.75" kieu Anh: cham la thap phan
 
 
 def s_bars(sl, th):
@@ -1050,10 +1073,25 @@ def gate_slides(slides, bo_qua_dau):
             if len(b["label"]) > 28:
                 loi.append(f"slide {i}: cot {j} label {len(b['label'])} ky tu, toi da 28")
             try:
-                if _gia_tri(b.get("value")) < 0:
+                gt = _gia_tri(b.get("value"))
+                if gt < 0:
                     raise ValueError
             except (ValueError, TypeError):
                 loi.append(f"slide {i}: cot {j} 'value' phai la so >= 0 (co: {b.get('value')!r})")
+                continue
+            # `text` la thu NGUOI DOC nhin thay tren cot, `value` la thu quyet
+            # dinh CHIEU DAI cot. Hai cai lech nhau thi bieu do noi mot dang, chu
+            # noi mot dang — va khong cong nao bat duoc neu khong doi chieu.
+            so_text = _SO_TRONG_CHU.search(str(b.get("text") or ""))
+            if so_text:
+                try:
+                    gt_text = _gia_tri(so_text.group(0))
+                except (ValueError, TypeError):
+                    gt_text = None
+                if gt_text is not None and abs(gt_text - gt) > max(0.01, abs(gt) * 0.01):
+                    loi.append(f"slide {i}: cot {j} 'text' ghi {so_text.group(0)!r} nhung "
+                               f"'value' la {b.get('value')!r} (doc ra {gt:g}) — chieu dai "
+                               "cot se khong khop con so nguoi doc nhin thay")
         if not sl.get("caption"):
             loi.append(f"slide {i}: kind 'bars' phai co 'caption' ghi 'via <ai>' — so la cua bai, khong phai cua ta")
 

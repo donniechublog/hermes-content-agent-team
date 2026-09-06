@@ -552,14 +552,21 @@ VISION_MODEL = env_load.VISION_MODEL
 VISION_URL = env_load.ROUTER_URL
 
 
-def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
+def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
+              nhan_them: str = "") -> tuple:
     """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
     theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu khong goi
     duoc (router tat, thieu key): luc do brief noi ro la CHUA ai nhin.
 
     Do 05/09/2026 tren bo Broadcom: widget linh kien / bang Fear&Greed / logo bao /
     nguoi dan ong G20 -> khong; ~2s moi anh. Khong heuristic nao bat duoc "widget
-    co khi tren bai Broadcom" — chi co nhin moi biet."""
+    co khi tren bai Broadcom" — chi co nhin moi biet.
+
+    `hoi_them` / `nhan_them` (tuy chon): xin THEM mot dong tra loi va lay ve
+    nguyen van dong do — luc nay ham tra ve (mo_ta, lien_quan, them). Bob dung
+    de hoi luon mood cua anh trong CHINH luot nhin nay, thay vi mo mot lenh
+    HTTP rieng (meo cu nam trong MEMORY.md, khong ai kiem). Cac vai khac khong
+    truyen thi hanh vi va gia tri tra ve giu nguyen y cu."""
     import base64, json as _j, urllib.request
     # env_load.bat_buoc nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
@@ -570,7 +577,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
     if not key:
         print("[vision] thieu OPENAI_API_KEY -> khong nhin duoc anh, brief se ghi CHUA AI NHIN",
               file=sys.stderr)
-        return "", None
+        return ("", None, "") if (hoi_them and nhan_them) else ("", None)
     try:
         b64 = base64.b64encode(Path(path).read_bytes()).decode()
         hoi = (f"Bai bao: \"{tieu_de}\"." + (f" Cong ty/san pham chinh: {hang}." if hang else "")
@@ -579,6 +586,8 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
                "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai; khong = quang cao, "
                "widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/chu de khac)")
+        if hoi_them and nhan_them:
+            hoi = hoi.replace("DUNG 2 dong", "DUNG 3 dong") + f"\n{nhan_them}: {hoi_them}"
         body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
                 "stream": False, "temperature": 0,
                 "messages": [{"role": "user", "content": [
@@ -608,10 +617,13 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "") -> tuple:
             lqv = True
         if lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt):
             lqv = False
+        if hoi_them and nhan_them:
+            t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
+            return mt, lqv, (t.group(1).strip()[:120] if t else "")
         return mt, lqv
     except Exception as e:                                   # noqa: BLE001
         print(f"[vision] {Path(path).name}: {type(e).__name__}", file=sys.stderr)
-        return "", None
+        return ("", None, "") if (hoi_them and nhan_them) else ("", None)
 
 
 def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:

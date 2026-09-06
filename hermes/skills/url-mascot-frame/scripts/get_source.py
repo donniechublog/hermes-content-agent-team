@@ -75,7 +75,11 @@ def _is_image_file(path: str) -> bool:
 # a cropped, faded thumbnail). The real upload is still in the page HTML, and
 # the crawl endpoint returns an empty media[] for photo posts, so read the media
 # id straight off the page and rebuild the CDN url at full resolution.
-TWIMG_MEDIA_RE = re.compile(r"pbs\.twimg\.com/media/([A-Za-z0-9_-]{6,})")
+# Capture the stored format too: the page carries both `<id>` and
+# `<id>.png:large` / `<id>.jpg:large` forms, and `name=orig` is only served
+# for the format the image was actually stored in.
+TWIMG_MEDIA_RE = re.compile(
+    r"pbs\.twimg\.com/media/([A-Za-z0-9_-]{6,})(?:\.(jpg|jpeg|png|webp))?")
 
 
 def twimg_from_page(url: str) -> list:
@@ -87,13 +91,27 @@ def twimg_from_page(url: str) -> list:
     except Exception:
         return []
     seen, out = set(), []
-    for mid in TWIMG_MEDIA_RE.findall(page):
+    for mid, ext in TWIMG_MEDIA_RE.findall(page):
         if mid in seen:
             continue
         seen.add(mid)
         # Rebuilt from the id, not rewritten: the page also carries
         # `<id>.jpg:large` forms that twimg_orig() cannot parse.
-        out.append(f"https://pbs.twimg.com/media/{mid}?format=jpg&name=orig")
+        #
+        # The format matters. `name=orig` is served ONLY for the format the
+        # image was stored in: hard-coding `format=jpg` on a post whose image is
+        # a PNG (screenshot memes — the channel's main content) returns 404, not
+        # a transcoded JPEG. The 404 is swallowed by the candidate loop, the file
+        # is deleted, and page_fallback then grabs the og:image render card — so
+        # Bob frames a 1200x630 card instead of the original, exit code 0, no
+        # warning. That is exactly the failure fa36904 added this helper to fix.
+        #
+        # Try the stored format first, then the other one: the candidate loop
+        # already skips whatever fails, so extra candidates cost nothing.
+        thu = [ext.lower()] if ext else []
+        thu += [f for f in ("jpg", "png") if f not in thu]
+        for f in thu:
+            out.append(f"https://pbs.twimg.com/media/{mid}?format={f}&name=orig")
     return out
 
 

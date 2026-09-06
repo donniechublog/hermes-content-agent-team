@@ -69,6 +69,33 @@ def handle_kenh(brand: str) -> str:
     return h if h.startswith("@") else "@" + h
 
 
+def bang_mood() -> dict:
+    """{emoji: mood} doc tu assets/mood-palette.json cua chinh skill — MOT nguon
+    su that, khong chep tay lai vao day."""
+    import json
+    try:
+        ds = json.loads((SKILL / "assets" / "mood-palette.json").read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return {}
+    return {m["emoji"]: m.get("mood", "") for m in ds if m.get("emoji")}
+
+
+def mood_tu_vision(txt: str) -> str:
+    """Emoji dau tien trong `txt` co nam trong bang mood cua skill. "" neu khong.
+
+    Chi nhan emoji THUOC BANG: vision tra ve chu tu do, ma frame.js chi doi
+    emoji sang mascot cho nhung mood da co anh."""
+    bang = bang_mood()
+    for ky_tu in txt or "":
+        if ky_tu in bang:
+            return ky_tu
+    # emoji ghep (vd 😵‍💫, 😮‍💨) khong duyet duoc theo tung ky tu
+    for e in bang:
+        if len(e) > 1 and e in (txt or ""):
+            return e
+    return ""
+
+
 def la_url(s: str) -> bool:
     return urlparse(s).scheme in ("http", "https")
 
@@ -152,9 +179,10 @@ def gui(anh: Path, chu_thich: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Dong khung mot anh cho Bob (tat dinh)")
     ap.add_argument("nguon", help="URL bat ky, hoac duong dan anh da tai ve")
-    ap.add_argument("--emoji", default=EMOJI_MAC_DINH,
-                    help=f"mood mascot khop voi anh (mac dinh {EMOJI_MAC_DINH}); "
-                         "bang mood o SKILL.md cua url-mascot-frame")
+    ap.add_argument("--emoji", default=None,
+                    help="mood mascot, GHI DE ket qua nhin anh; khong truyen thi "
+                         f"lay tu luot vision, khong nhan ra thi {EMOJI_MAC_DINH}. "
+                         "Bang mood o SKILL.md cua url-mascot-frame")
     ap.add_argument("--chu-thich", default="", help="Mot dong ve anh, gui kem")
     ap.add_argument("--khong-nhin", action="store_true",
                     help="Bo qua buoc vision mo ta anh (nhanh hon, tu chon mood)")
@@ -183,20 +211,30 @@ def main() -> int:
     # mau thuan voi luat "ngoai lenh nay khong chay gi khac". Gio engine nhin
     # ho: cung ham `mo_ta_anh` ma Dre/Ethan/Kite dung. Hong thi bao va di tiep,
     # vi Bob van co the tu nhin neu model cua no doc duoc anh.
+    emoji, vi_sao = a.emoji, "Ông Chủ chỉ định"
     if not a.khong_nhin:
         try:
             import anh_chuan_bi as cb
-            mo_ta, _ = cb.mo_ta_anh(src, "anh gui cho kenh de dong khung")
+            mo_ta, _, mood = cb.mo_ta_anh(
+                src, "anh gui cho kenh de dong khung",
+                hoi_them="<DUNG MOT emoji trong bang: " + " ".join(bang_mood()) + ">",
+                nhan_them="MOOD")
         except Exception as e:                               # noqa: BLE001
-            mo_ta = ""
+            mo_ta, mood = "", ""
             print(f"[nhin] khong goi duoc vision: {type(e).__name__}", file=sys.stderr)
         if mo_ta:
             print(f"[nhin] ảnh này là: {mo_ta}")
         else:
-            print("[nhin] chưa nhìn được ảnh — chọn mood theo ngữ cảnh Ông Chủ đưa, "
-                  f"không chắc thì để {EMOJI_MAC_DINH}")
-    dong_khung(src, ra, a.emoji, handle)
-    print(f"[khung] {ra}  ({ra.stat().st_size // 1024} KB, handle {handle}, mood {a.emoji})")
+            print("[nhin] chưa nhìn được ảnh")
+        if emoji is None:
+            tim = mood_tu_vision(mood) or mood_tu_vision(mo_ta)
+            if tim:
+                emoji, vi_sao = tim, f"vision chọn ({bang_mood().get(tim, '')})"
+    if emoji is None:
+        emoji, vi_sao = EMOJI_MAC_DINH, "mặc định an toàn — chưa định vị được mood"
+    dong_khung(src, ra, emoji, handle)
+    print(f"[khung] {ra}  ({ra.stat().st_size // 1024} KB, handle {handle}, "
+          f"mood {emoji} — {vi_sao})")
 
     if a.khong_gui:
         print(f"[thu] khong gui. Anh o: {ra}")

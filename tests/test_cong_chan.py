@@ -884,6 +884,122 @@ def test_bo_bai_thi_go_anh_khoi_so():
         assert la.xoa_da_dung("bai-khong-co") == 0
         assert len((d / "s.jsonl").read_text(encoding="utf-8").strip().splitlines()) == 1
 
+# ------------------------------------------------ bars: so kieu Viet, va cong text
+def test_gia_tri_bars_doc_dung_cham_hang_nghin():
+    """Kite viet "1.200" (mot nghin hai tram) — dung kieu Viet, dung cai docstring
+    noi la chap nhan. Truoc 06/09/2026 `_gia_tri` chi doi ',' thanh '.', nen
+    float("1.200") = 1.2: cot "1.200 tac vu" ve rong 0.1% con cot "900" ve rong
+    100%, bieu do noi NGUOC han so lieu ma chu tren cot van ghi dung."""
+    import render_edu as re_
+    assert re_._gia_tri("1.200") == 1200.0
+    assert re_._gia_tri("12.345") == 12345.0
+    assert re_._gia_tri("1.200,50") == 1200.5      # cham nghin + phay thap phan
+    assert re_._gia_tri("2,75") == 2.75            # phay thap phan kieu Viet
+    assert re_._gia_tri("2.75") == 2.75            # cham thap phan kieu Anh
+    assert re_._gia_tri(900) == 900.0
+    vals = [re_._gia_tri("1.200"), re_._gia_tri(900)]
+    ti_le = [round(v / max(vals) * 100, 1) for v in vals]
+    assert ti_le == [100.0, 75.0], f"ti le cot sai: {ti_le}"
+
+
+def test_cong_bars_bat_text_lech_value():
+    """`text` la thu NGUOI DOC nhin thay tren cot, `value` la thu quyet dinh
+    CHIEU DAI cot. Lech nhau thi bieu do noi mot dang, chu noi mot dang — va
+    truoc day khong cong nao doi chieu hai cai."""
+    import render_edu as re_
+    def bars(v, t):
+        return [{"kind": "cover", "eyebrow": "e", "title": "t"}] + [
+            {"kind": "bars", "eyebrow": "e", "title": "t", "caption": "via HN",
+             "bars": [{"label": "Truoc", "value": v, "text": t},
+                      {"label": "Sau", "value": 900, "text": "900 tác vụ"}]}]
+    loi = [d for d in re_.gate_slides(bars(1.2, "1.200 tác vụ"), False) if "cot 1" in d]
+    assert loi, "khong bat duoc text 1.200 di voi value 1.2"
+    assert not [d for d in re_.gate_slides(bars("1.200", "1.200 tác vụ"), False)
+                if "cot 1" in d], "bao nham khi text va value khop"
+
+
+# ------------------------------------------- get_source: giu dinh dang goc twimg
+def test_twimg_giu_dinh_dang_anh_goc():
+    """`name=orig` chi duoc phuc vu o DUNG dinh dang anh duoc luu. Ep
+    `format=jpg` cho post co anh PNG (anh chup man hinh meme — noi dung chinh
+    cua kenh) thi CDN tra 404 chu khong tra ban JPEG. 404 bi vong ung vien nuot,
+    tep bi xoa, roi page_fallback lay og:image = THE render 1200x630 — Bob dong
+    khung cai the do, exit 0, khong canh bao. Dung cai loi ma fa36904 sinh ham
+    nay de sua."""
+    import importlib.util
+    duong = ROOT / "hermes/skills/url-mascot-frame/scripts/get_source.py"
+    spec = importlib.util.spec_from_file_location("get_source_thu", duong)
+    gs = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gs)
+    trang = ('<img src="https://pbs.twimg.com/media/GxAbc123DEF.png:large">'
+             '<img src="https://pbs.twimg.com/media/GwPlain777AA.jpg">')
+
+    class _R:
+        def read(self):
+            return trang.encode()
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    goc = gs.urllib.request.urlopen
+    gs.urllib.request.urlopen = lambda *a, **k: _R()
+    try:
+        ra = gs.twimg_from_page("https://x.com/x/status/1")
+    finally:
+        gs.urllib.request.urlopen = goc
+    png = [u for u in ra if "GxAbc123DEF" in u]
+    assert png and "format=png" in png[0], f"anh PNG khong duoc thu bang PNG truoc: {png}"
+    jpg = [u for u in ra if "GwPlain777AA" in u]
+    assert jpg and "format=jpg" in jpg[0], f"anh JPG khong duoc thu bang JPG truoc: {jpg}"
+
+
+# ------------------------------------------------------ Bob: mood tu luot nhin
+def test_bob_dung_ket_qua_nhin_de_chon_mood():
+    """main() goi mo_ta_anh, IN mo ta, roi dong khung bang `a.emoji` va gui —
+    tat ca trong mot lan chay. Truoc 06/09/2026 bien `mo_ta` khong bao gio cham
+    toi mood, ma Bob chi thay stdout SAU KHI tien trinh thoat (luc anh da len
+    kenh) va SOUL cam chay lenh thu hai. Ket qua: mood DONG CUNG o mac dinh,
+    tinh nang khop tam trang chet lang le, van ton mot luot vision moi lan."""
+    import bob_nop
+    import anh_chuan_bi as cb
+    da_dong = {}
+
+    def khung_gia(src, ra, emoji, handle):
+        da_dong["emoji"] = emoji
+        Path(ra).write_bytes(b"x")
+
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        (t / "goc.png").write_bytes(b"anh gia")
+        goc_lay, goc_khung, goc_mo_ta = bob_nop.lay_anh, bob_nop.dong_khung, cb.mo_ta_anh
+        bob_nop.lay_anh = lambda nguon, ra: (Path(ra).write_bytes(b"x"), "thu")[1]
+        bob_nop.dong_khung = khung_gia
+        try:
+            # (1) vision doc ra mood -> phai dung mood do
+            cb.mo_ta_anh = lambda *a, **k: ("mot con robot dang go phim", None, "MOOD: 🤖")
+            bob_nop.main_thu = None
+            sys.argv = ["bob_nop.py", str(t / "goc.png"), "--khong-gui",
+                        "--out", str(t / "ra1.png")]
+            bob_nop.main()
+            assert da_dong["emoji"] == "🤖", f"khong dung mood vision chon: {da_dong}"
+
+            # (2) Ong Chu truyen --emoji -> luon thang
+            sys.argv = ["bob_nop.py", str(t / "goc.png"), "--khong-gui",
+                        "--emoji", "😂", "--out", str(t / "ra2.png")]
+            bob_nop.main()
+            assert da_dong["emoji"] == "😂", f"--emoji bi ghi de: {da_dong}"
+
+            # (3) vision hong / khong doc ra mood -> mac dinh an toan
+            cb.mo_ta_anh = lambda *a, **k: ("", None, "")
+            sys.argv = ["bob_nop.py", str(t / "goc.png"), "--khong-gui",
+                        "--out", str(t / "ra3.png")]
+            bob_nop.main()
+            assert da_dong["emoji"] == bob_nop.EMOJI_MAC_DINH, \
+                f"khong roi ve mac dinh an toan: {da_dong}"
+        finally:
+            bob_nop.lay_anh, bob_nop.dong_khung, cb.mo_ta_anh = goc_lay, goc_khung, goc_mo_ta
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0
