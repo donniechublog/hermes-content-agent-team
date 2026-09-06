@@ -1,17 +1,25 @@
-# Style text trên thẻ — spec hiện tại (card.py)
+# Style text trên thẻ — spec hiện tại (`card.py`)
 
-Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh khi có ảnh mẫu mới.
+Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh khi đổi renderer.
 
-## Hệ chữ — kiểu `dai` (đã bỏ khỏi mã 05/09/2026, giữ lại làm tham chiếu thiết kế)
+`card.py` có **hai** kiểu thẻ, và **mặc định là `quote`** (`card.build(kieu="quote")`,
+`ethan_nop` cũng vậy). `--kieu tran` là lựa chọn có chủ đích khi muốn ảnh phủ kín
+thẻ. Kiểu `dai` đã bỏ khỏi mã 05/09/2026; bản mô tả thiết kế của nó chuyển sang
+[NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md).
+
+Luật *"ảnh này có được dùng không"* nằm ở [LUAT_ANH.md](LUAT_ANH.md); tệp này chỉ
+nói *"đặt chữ lên khung thế nào"*.
+
+## Hệ chữ — kiểu `quote`
+
 | Vai trò | Font | Cỡ | Kiểu |
 |---|---|---|---|
-| Tiêu đề | JetBrains Mono ExtraBold | 38–104px (tự nở theo chỗ trống) | IN HOA toàn bộ, đơn cách |
-| Subtitle | Noto Serif | 20–50px | chữ thường, có dấu, serif |
-| Chip nhãn | JetBrains Mono Bold | 26px | IN HOA |
-| Via | Inter weight 500 | 29px | chữ thường |
-| Tên kênh | Inter weight 500 | 27px | chữ thường |
+| Câu trích dẫn | Be Vietnam Pro **Bold** | 40–66px, tự nở theo chỗ trống; tối đa 7 dòng | giữ nguyên HOA/thường (**không** `.upper()` như tiêu đề) |
+| Dòng nguồn (`--attrib`) | Be Vietnam Pro Regular | 26px | canh giữa, sát đáy thẻ |
+| Chip tên kênh | JetBrains Mono Regular | 22px | góc TRÊN-PHẢI khung |
+| Chip tagline | JetBrains Mono Bold | 20px | góc DƯỚI-TRÁI khung |
 
-## Hệ chữ — kiểu `tran` (vai designer Ethan, kiểu duy nhất đang dùng)
+## Hệ chữ — kiểu `tran`
 
 | Vai trò | Font | Cỡ | Kiểu |
 |---|---|---|---|
@@ -40,14 +48,34 @@ rộng hơn chuỗi mẫu đó: dấu sắc trên `Ắ` cao hơn dấu mũ, dấ
 hơn đuôi `y`. Đo bằng chuỗi mẫu thì với giãn dòng bó sát, hai dòng liền nhau
 chồng lên nhau tới 11px.
 
-## Bố cục kiểu `dai` — đã bỏ khỏi mã 05/09/2026, tham chiếu thiết kế (1200px ngang)
-1. Vùng ảnh nguồn trên cùng — ảnh thật, không chèn chữ đè lên (trừ mascot nếu còn góc trống).
-2. Khung kỹ thuật: 4 góc vát — 2 góc trên cyan, 2 góc dưới trắng; 2 đường dọc đôi; đường chia ngắt quãng ngay ranh giới ảnh/text.
-3. Chip category trái: nền đặc cyan, chữ đen, đè lên ranh giới ảnh/textbox, có 2 tam giác gấp xuống phải (kiểu ruy-băng).
-4. Chip category phải: nền trong suốt, viền cyan, chữ trắng, gấp lên.
-5. Tiêu đề: căn trái, tối đa 2 dòng, trắng FG.
-6. Subtitle: căn trái, tối đa 3 dòng, màu xám nhạt (donniechublog) hoặc trắng 95% (dcgr).
-7. Chân thẻ: `via: <nguồn>` trái, màu cyan mờ; hàng icon social + @handle phải, icon mờ hơn chữ.
+## Bố cục kiểu `quote` — mặc định (1200px ngang, khoá khổ 4:5)
+
+Đây là dạng thẻ trích dẫn của báo: **một câu** trong ngoặc kép, có dòng nguồn ở
+dưới. Khác hero (một tiêu đề bao quát tin) và khác carousel (nhiều slide).
+
+1. **Ảnh luôn hiện full bề ngang, không cắt hai cạnh.** Ảnh cao hơn khổ thì chỉ
+   cắt theo chiều dọc. Ảnh thấp hơn khổ thì đặt sát trên và **tan dần** vào lớp
+   nền mờ ở đúng đáy ảnh — không đặt màn tối, không để lộ một đường ranh ngang.
+2. **KHÔNG CÓ MÀN TỐI** (Ông Chủ chốt 06/09/2026). Thay vào đó chỉ **làm mờ cục
+   bộ** đúng vùng chữ đè lên (`_mo_vung_chu`, Gaussian `QUOTE_BLUR = 28`). Ảnh
+   phía trên vùng chữ giữ nguyên 100% sắc nét — bảng xếp hạng, chart hiện trọn
+   tới sát mép khối chữ. Mờ tan dần từ `frame_top - QUOTE_BLUR_DEM` tới
+   `frame_top` để ranh giới NÉT/MỜ không đọc ra thành hai vùng.
+3. **Màu chữ đo theo TỪNG DẢI DÒNG**, không phải một trung bình cho cả khối
+   (`_sang_vung` + `NGUONG_NEN_SANG = 116`). Ảnh có ranh sáng/tối ngang cắt qua
+   khối chữ là ca rất thường; một phép trung bình thì nửa khối thành
+   trắng-trên-trắng hoặc đen-trên-đen.
+4. **Dòng nguồn đo riêng**: nó nằm DƯỚI khung, ngoài hộp vừa đo, nên lấy màu
+   theo dải của chính nó.
+5. **Khung chữ nhật bo góc** quanh câu trích, hai dấu `“` `”` cỡ lớn gần góc
+   trên-trái / dưới-phải. Nét khung và dấu ngoặc **theo quyết định sáng/tối của
+   khối**: nền sáng thì kéo màu nhận diện về phía tối (`_du_toi`), nếu không thì
+   trên ảnh nền trắng chúng biến mất.
+6. **Hai chip neobrutalism** (khối đặc, viền đen 4px, bóng cứng lệch, chữ mono):
+   tên kênh góc trên-phải khung, tagline góc dưới-trái, tâm chip ngang mức nét
+   khung. Chip **không** đặt ở góc thẻ — ở đó nó đè lên tiêu đề của ảnh nguồn.
+7. Ảnh thấp hơn 50% khổ thẻ bị chặn hẳn (`luat_anh.kiem_anh_thap`): nửa thẻ bỏ
+   trống. Đường ra là ghép dọc `--image2`.
 
 ## Bố cục kiểu `tran` — vai designer Ethan (cả hai brand)
 
@@ -96,37 +124,18 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - FG trắng, MUTED #969696
 - ACCENT/CYAN = trắng. Chip trái không dùng (nền trắng đặc hút mắt).
 
-## Nguyên tắc
-- Tiêu đề font đơn cách → thẻ tin kiểu dài tối đa 60 ký tự, quá bị thu/cắt.
-  Hero image kiểu tràn KHÔNG có trần này: tiêu đề là một câu, chữ tự co theo.
+## Nguyên tắc chung
+
 - Em-dash (—) bị chặn ở mọi văn bản thẻ.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
-- Ảnh là chính, textbox là phụ: text nhường chỗ cho ảnh, không ngược lại.
-- Kiểu `quote` **KHÔNG CÒN MÀN TỐI** (Ông Chủ chốt 06/09/2026, sau nhiều lần
-  bắt cùng một lỗi — nền phủ chữ cao hơn chính chữ, đọc ra hai vùng riêng
-  biệt). Thử qua ba bản trước khi chốt: mốc cố định 38% → khớp theo khối chữ
-  thật (vẫn là màn tối, chỉ đổi hình học) → viền tương phản quanh chữ (bị chê
-  "phèn như karaoke") → bản chốt dưới đây:
-  - **Chỉ làm MỜ CỤC BỘ đúng vùng chữ đè lên** (`_mo_vung_chu`, Gaussian blur
-    bán kính `QUOTE_BLUR = 28`), KHÔNG darkening. Ảnh phía trên vùng chữ giữ
-    nguyên 100% sắc nét — bảng xếp hạng, chart hiện trọn từ đầu tới sát mép
-    khối chữ. Mờ tan dần từ `frame_top - QUOTE_BLUR_DEM` (nét) tới `frame_top`
-    (mờ đều) theo đường cong power — cùng kiểu tan đã dùng cho màn tối trước
-    đây, để không tái lặp đúng lỗi "ranh giới đột ngột" — lần này là ranh giới
-    NÉT/MỜ thay vì SÁNG/TỐI.
-  - Màu chữ (`_mau_doi_nen`) đo độ sáng trung bình của vùng ĐÃ MỜ — một phép
-    đo duy nhất, không viền: mờ xoá hết chi tiết rối (chữ/kẻ trong bảng gốc),
-    làm đồng đều độ sáng trong khối, nên một màu duy nhất là đủ để đọc được
-    trên toàn khối, kể cả khối vốn vừa sáng vừa tối (bảng nền trắng chữ đen).
-  - Ảnh thấp hơn 50% khổ thẻ vẫn chặn hẳn (`luat_anh.kiem_anh_thap`): nửa thẻ
-    bỏ trống, đường ra là ghép dọc `--image2`. Ảnh thấp hơn khổ thẻ (nhưng qua
-    được cổng đó) vẫn có một lớp nền mờ/tối RIÊNG lấp phần thiếu — đó là nền
-    cho PHẦN THẺ KHÔNG CÓ ẢNH (compositing), khác hẳn mờ-cho-chữ ở trên.
-- Ảnh chart/bảng/screenshot: `card.la_chart()` nhận diện (phẳng ≥0,85 **và**
-  ≤220 màu riêng biệt) rồi ép vào đường của chart — hero thì phải ghép dọc
-  `--image2`, carousel thì `"chart": true`. Chart luôn phải **nguyên vẹn và
-  trải full bề ngang**; "nửa dưới trống" là luật biên tập, không phải cổng chặn.
-- Phân tầng thị giác: tiêu đề to nhất → subtitle → via/icon mờ dần.
-
-## Cần ảnh mẫu
-Chưa rõ "họ" là ai / style nào. Gửi ảnh mẫu (đường dẫn file hoặc URL) để diff ra khác biệt: font? cách đặt chữ đè lên ảnh? chip? màu?
+- Ảnh là chính, chữ là lớp đè lên: chữ nhường chỗ cho ảnh, không ngược lại.
+- Tên hãng trong tiêu đề được tô màu tự động, tra `MAU_HANG` / `MAU_CUM` trong
+  `card.py`. Riêng `AI` đứng một mình không tô.
+- Giãn dòng đo bằng `_buoc_dong()`, tức đo **chính các dòng sắp vẽ**, không đo
+  bằng chuỗi mẫu `"Ây"`: tiêu đề tiếng Việt viết hoa trải rộng hơn chuỗi đó (dấu
+  sắc trên `Ắ` cao hơn dấu mũ, dấu nặng dưới `Ạ` thấp hơn đuôi `y`), đo bằng
+  chuỗi mẫu thì hai dòng liền nhau chồng lên nhau tới 11px.
+- Ảnh chart/bảng/screenshot: `luat_anh.la_chart()` nhận diện rồi ép vào đường
+  của chart — hero thì ghép dọc `--image2`, carousel thì `"chart": true`. Chart
+  luôn phải nguyên vẹn và trải full bề ngang.
+- Phân tầng thị giác: câu trích / tiêu đề to nhất → dòng nguồn → chip mờ dần.

@@ -50,6 +50,7 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     if slides and slides[0].get("kind") != "cover":
         loi.append("slide 1 phải là kind \"cover\"")
     hinh = {a["ma"]: a for a in kb.hinh_that(m)}
+    da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (kiem_trung)
     # brand trong spec render la CHU in o masthead/folio (render_edu chi dung no
     # lam chu) -> phai la handle hien thi (dcgr -> dcgr.tech), khong phai slug.
     # d24ddfc da sua byline/follow, con masthead van in "dcgr" (05/09/2026).
@@ -87,6 +88,33 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
                 l, _ = luat_anh.kiem_da_dung(f"slide {i} ({img})", hinh[img]["goc"],
                                              m.get("draft_id", ""), m.get("link", ""))
                 loi += l
+                # LUAT_ANH.md:12 tuyen bo Kite "phai theo" luat anh, nhung bang
+                # cong chan §9 khong co cot Kite va chuoi kite_* khong goi cong
+                # nao ngoai kiem_da_dung — mot khoang cach im lang giua tai lieu
+                # va ma (audit 06/09/2026). Bon cong duoi day khong dinh gi toi
+                # bo cuc nen ap duoc nguyen xi cho khung cua Kite:
+                nhan = f"slide {i} ({img})"
+                l, c = luat_anh.kiem_trung(nhan, hinh[img]["goc"], da_thay)
+                loi += l
+                canh += c
+                try:
+                    from PIL import Image as _Im
+                    with _Im.open(hinh[img]["goc"]) as _im:
+                        l, c = luat_anh.kiem_anh_rong(nhan, _im)
+                        loi += l
+                        canh += c
+                        l, c = luat_anh.kiem_do_phan_giai(nhan, _im.width, _im.height)
+                        loi += l
+                        canh += c
+                except OSError as e:
+                    loi.append(f"{nhan}: khong mo duoc anh ({type(e).__name__})")
+                # Mat nguoi: Kite khong co truong `nhan_vat` trong spec (khac
+                # card.py/carousel.py), nen o day chi CANH BAO — chan cung se
+                # khoa het anh su kien ma vai khong co cach nao khai.
+                l, c = luat_anh.kiem_mat_nguoi(nhan, hinh[img]["goc"])
+                canh += [d + " — Kite chưa có trường nhan_vat, tự soi xem "
+                         "người trong ảnh có đúng là người trong bài không"
+                         for d in l] + c
                 if not sl.get("caption"):
                     loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
         for f, gh in GIOI_HAN.items():

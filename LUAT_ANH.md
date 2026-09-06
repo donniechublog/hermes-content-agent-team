@@ -39,6 +39,15 @@ Bỏ thẳng, không cần cân nhắc:
 
 ## 1. Tìm ảnh thật
 
+> **AI làm việc này (rõ một lần, 06/09/2026).** Từ 04/09/2026 **vai không đi tìm
+> ảnh nữa** — `anh_chuan_bi.py` tìm sẵn và brief chỉ đưa ra danh sách mã; vai
+> chọn mã. Nên §1.1 → §1.4 dưới đây là **luật của engine**, và các lệnh CLI in
+> kèm là **công cụ tay** để Ông Chủ hoặc người sửa code chạy lại một bước khi
+> nghi ngờ — **không phải việc giao cho vai**. `task_bodies.py` cấm vai chạy
+> chúng, và cấm đúng: chạy tay giữa chừng là đè lên kết quả engine.
+>
+> Đọc §1.2b trước nếu chỉ có thời gian đọc một mục: đó là hợp đồng thật đang chạy.
+
 ### 1.1 Luôn chạy `anh_bai.py` trước
 
 Đừng tự đoán từ `image_url` trong task.
@@ -404,20 +413,31 @@ chặn oan một tấm đã được cho phép cắt.
 **Vai nào đã gọi cổng nào** (cập nhật 04/09/2026 — luật Ông Chủ: *"ảnh do ai làm
 mà chả phải đạt tiêu chuẩn"*):
 
-| | Ethan (`card.py`) | Dre (`carousel.py`) | Itachi (`deck.py`) |
-|---|:--:|:--:|:--:|
-| trùng · xuất xứ · mặt người · độ nét · đáy sáng | ✅ | ✅ | ❌ |
-| trùng liên phiên · tin xếp hạng → ảnh xếp hạng | ✅ | ✅ | ❌ |
-| crop ngang · lệch tone | ✅ | ✅ | ❌ |
-| chart một mình | ✅ | – | ❌ |
-| ảnh quá ngang | ✅ | – | ❌ |
-| `chart: true` · dải tỉ lệ | – | ✅ | ❌ |
+| | Ethan (`card.py`) | Dre (`carousel.py`) | Kite (`render_edu.py`) | Itachi (`deck.py`) |
+|---|:--:|:--:|:--:|:--:|
+| ảnh rỗng · trùng trong bộ · độ nét | ✅ | ✅ | ✅ | ❌ |
+| xuất xứ · đáy sáng | ✅ | ✅ | – | ❌ |
+| mặt người | ✅ | ✅ | ⚠️ | ❌ |
+| trùng liên phiên (14 ngày) | ✅ | ✅ | ✅ | ❌ |
+| tin xếp hạng → ảnh xếp hạng | ✅ | ✅ | – | ❌ |
+| crop ngang · lệch tone | ✅ | ✅ | – | ❌ |
+| chart một mình | ✅ | – | – | ❌ |
+| ảnh quá ngang | ✅ | – | – | ❌ |
+| `chart: true` · dải tỉ lệ | – | ✅ | – | ❌ |
 
 Dấu `–` là **không áp dụng cho khung đó**, khác hẳn `❌` là **chưa đấu**. Cột
 Itachi còn trống nguyên.
 
+`⚠️` của Kite là **cảnh báo, không chặn**: spec của `render_edu` không có trường
+`nhan_vat` (khác `card.py`/`carousel.py`), nên chặn cứng sẽ khoá mọi ảnh sự kiện
+mà vai không có đường khai. Muốn nâng lên ✅ thì phải thêm trường đó vào spec
+trước. Kite không đi qua các cổng có dấu `–` vì `kind: figure` dán ảnh nguyên
+khổ, không crop và không đè chữ lên ảnh.
+
 Sửa một luật ở đây là **cả đội đổi theo** — đó là lý do tài liệu này tồn tại.
-Đừng chép luật sang SKILL của vai; SKILL chỉ trỏ về đây.
+Đừng chép luật sang SKILL của vai. (SKILL **không** trỏ về đây: từ a757f61 luật
+ảnh đi vào brief do `*_chuan_bi.py` tự sinh, nên tệp này là nguồn cho **code và
+người**, không phải cho prompt của vai.)
 
 ---
 
