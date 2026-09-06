@@ -372,6 +372,31 @@ def _giao_lam_lai(draft_id, slide=None, ly_do=None):
     return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})", rid
 
 
+def _reply_that(msg: dict):
+    """Tin ma Ong Chu THUC SU bam Reply vao, hoac None neu chi go troi.
+
+    Trong sieu nhom co topic (is_forum), Telegram GAN SAN reply_to_message cho
+    MOI tin trong topic — tro toi tin dich vu tao topic, va tin do do CHINH BOT
+    tao ra. Nen ca hai cach kiem cu deu luon dung, khong phan biet duoc gi:
+    "co reply_to_message khong" va "reply toi mot tin cua bot khong".
+
+    Bang chung 06/09/2026 (msg=657, go troi mot chu "5" trong topic Nova):
+        reply_to_message = {"message_id": 16, "message_thread_id": 16,
+                            "from": {"is_bot": true, "username": "hermesdcmodebot"},
+                            "forum_topic_created": {...}}
+
+    Tin goc topic nhan ra bang forum_topic_created, va message_id cua no CHINH
+    LA message_thread_id. Loc dung no ra thi phan con lai moi la reply that."""
+    rt = msg.get("reply_to_message")
+    if not rt:
+        return None
+    if rt.get("forum_topic_created") is not None:
+        return None
+    if rt.get("message_id") == msg.get("message_thread_id"):
+        return None
+    return rt
+
+
 def _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
     """Neu topic nay dang CHO ly do lam lai va nguoi go la Ong Chu -> nuot tin
     nhan nay lam ly do, giao task, tra ve True. Khong thi False (tin di tiep
@@ -388,7 +413,9 @@ def _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
     # chu go trong topic suot 10 phut deu bi nuot lam ly do — hoi Dre chuyen khac
     # cung thanh "ly do lam lai". Tin hoi da bat force_reply nen reply la mac dinh;
     # go tron thi tin di duong chat binh thuong, trang thai cho van giu.
-    rt = msg.get("reply_to_message") or {}
+    # Qua _reply_that: khong co hoi_mid thi nhanh lui ve "reply toi tin cua bot"
+    # von LUON dung trong topic (Telegram tu gan tin goc topic do bot tao).
+    rt = _reply_that(msg) or {}
     hoi_mid = cho[k].get("hoi_mid")
     la_reply = (rt.get("message_id") == hoi_mid) if hoi_mid else \
         bool(rt.get("from", {}).get("is_bot"))
@@ -854,8 +881,10 @@ def _la_reply_bao_cao(vai: str, msg: dict) -> bool:
     quet_nop.py ghi mid nay qua `publish.py --luu-mid` ngay khi gui bao cao.
     Chua co tep (bao cao gui truoc khi co co che nay, hoac ghi loi) thi lui ve
     kiem "co phai reply toi mot tin CUA BOT" — long hon nhung van chan duoc
-    hoi thoai thuong (khong bam Reply thi luon la False o day)."""
-    rt = msg.get("reply_to_message")
+    hoi thoai thuong. Phai loc qua _reply_that truoc: trong topic, Telegram tu
+    gan reply_to_message = tin goc topic (do bot tao) cho MOI tin, nen thieu
+    buoc loc do thi ca hai nhanh deu luon dung — dung bug 06/09/2026."""
+    rt = _reply_that(msg)
     if not rt:
         return False
     mid = _nap_json(STATE_DIR / f"bao_cao_mid.{vai}.json", {}).get("message_id")
@@ -1951,11 +1980,14 @@ def handle_message(token, group, msg):
     vai = vai_cua_topic(thread_id)
     lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
     if lenh is not None:
-        # DEBUG tam thoi (06/09/2026): in het thong tin reply_to_message de
-        # doi chieu — bo dong nay sau khi xac nhan gate chay dung.
-        rt_dbg = msg.get("reply_to_message")
-        log("debug-reply", f"msg={mid} reply_to_message={json.dumps(rt_dbg, ensure_ascii=False)[:300] if rt_dbg else None}")
+        # Ghi lai quyet dinh cong reply: khi Ong Chu bao "go so ma khong ra bai"
+        # (hoac nguoc lai) thi mot dong nay du de biet Telegram gui reply nao len
+        # va cong da xu ra sao — khoi phai dung lai ban debug in nguyen JSON.
+        rt_that = _reply_that(msg)
         la_reply = _la_reply_bao_cao(vai, msg)
+        log("route", f"msg={mid} ung-vien-chon vai={vai} "
+                     f"reply_that={rt_that.get('message_id') if rt_that else None} "
+                     f"la_reply_bao_cao={la_reply}")
         if not la_reply:
             log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
                          f"vai={vai} -> coi la hoi thoai")
