@@ -112,8 +112,14 @@ def _bo_dong_rac(out: str) -> str:
 
 
 # Bo cong cu CHI DOC cho chat ngoai task. Do that tren server 06/09/2026:
-# khong gioi han = 38 cong cu (co terminal, execute_code, write_file, patch,
-# delegate_task); `safe` = ba cong cu web_search / web_extract / vision_analyze.
+# cac vai deu dat `toolsets: [hermes-cli]` trong profile, tuc mac dinh 20 cong
+# cu (terminal, process, read_file/write_file/patch/search_files, execute_code,
+# delegate_task, cronjob...); `safe` con web_search / web_extract /
+# vision_analyze. (Con so 38 ghi o ban dau la dem KHI KHONG CO profile — sai
+# boi canh, audit 06/09 bat duoc.)
+# LUU Y: `safe` khai bao gom ca image_gen (toolsets.py: includes web/vision/
+# image_gen); tren server no dang tat vi thieu FAL_KEY, chu khong phai vi `safe`
+# loai no. Co key la bo nay thanh BON cong cu.
 # Tuc la vai van tra loi va tra cuu duoc, nhung KHONG chay duoc script, khong
 # sua duoc tep, khong tao duoc task.
 BO_CHI_DOC = "safe"
