@@ -137,6 +137,51 @@ def test_diem_cao_hon_la_tot_hon():
          "STT phai doi WER -> do chinh xac truoc khi vao bang")
 
 
+def test_hang_rao_khong_de_mot_nguon_giet_ca_luot():
+    """`_thu` phai nuot loi cua MOT nguon va ghi ten no lai.
+
+    Truoc 06/09/2026 phan PARSE cua tung fetcher nam NGOAI try cua chinh no
+    (`max(r["date"] ...)`, `float(v)`, `h < h_cu` khi thieu ranking...), nen mot
+    thay doi schema o mot nguon giet ca 23 bang: stdout rong, khong ghi moc, va
+    brief_nova van dua bao cao rong cho Nova -> "hom nay khong co gi"."""
+    cu = list(s._HONG_KHAC)
+    s._HONG_KHAC.clear()
+    try:
+        def nem():
+            raise KeyError("date")
+        kiem("test_hang_rao_nguon_nem", s._thu("nguon-x", nem, ([], None)) == ([], None),
+             "nguon nem phai tra ve gia tri rong dung hinh, khong nem tiep")
+        kiem("test_hang_rao_ghi_ten", "nguon-x" in s._HONG_KHAC,
+             "nguon hong phai duoc ghi ten de in vao muc NGUON KHONG LAY DUOC")
+        kiem("test_hang_rao_nguon_lanh", s._thu("nguon-y", lambda: [1, 2], []) == [1, 2]
+             and "nguon-y" not in s._HONG_KHAC, "nguon chay duoc khong duoc bao hong")
+    finally:
+        s._HONG_KHAC[:] = cu
+
+
+def test_moi_fetcher_trong_main_deu_qua_hang_rao():
+    """Doc bang AST, khong grep chuoi: trong than `main`, moi loi goi `fetch_*`
+    phai nam BEN TRONG mot loi goi `_thu(...)`. Them nguon moi ma goi thang la
+    mo lai dung cai cua da dong."""
+    import ast
+    cay = ast.parse(Path(s.__file__).read_text(encoding="utf-8"))
+    main = next(n for n in cay.body
+                if isinstance(n, ast.FunctionDef) and n.name == "main")
+
+    trong_thu = set()
+    for n in ast.walk(main):
+        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                and n.func.id == "_thu"):
+            for con in ast.walk(n):
+                trong_thu.add(id(con))
+
+    thang = sorted({n.func.id for n in ast.walk(main)
+                    if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                    and n.func.id.startswith("fetch_") and id(n) not in trong_thu})
+    kiem("test_moi_fetcher_trong_main_deu_qua_hang_rao", not thang,
+         f"goi thang khong qua _thu: {thang}")
+
+
 if __name__ == "__main__":
     for f in list(globals()):
         if f.startswith("test_"):

@@ -20,7 +20,6 @@ Chay:  venv/bin/python tests/test_ham_thuan.py
 """
 import sys
 import threading
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -100,14 +99,6 @@ def test_hang_fifo_dung_thu_tu_duoi_nhieu_luong():
     import duyet_chat as dc
     h = dc._HangFIFO()
     ra, khoa = [], threading.Lock()
-
-    def cho(i):
-        so, _ = h.lay_so()
-        time.sleep(0.01 * (5 - i))        # dao thu tu toi dich co y
-        h.doi(so)
-        with khoa:
-            ra.append(i)
-        h.release()
 
     # lay so TUAN TU (dung nhu vong poll: mot thread nhan tin), roi tha ra
     sos = []
@@ -191,6 +182,51 @@ def test_ten_watchlist_theo_bien_gioi_tu():
     import scan_business as sb
     assert sb.ten_watchlist("Arm raises guidance") is not None
     assert sb.ten_watchlist("New harm reduction policy for AI") is None
+
+
+# ------------------------------------------------------------- cap_fallback
+def test_cap_fallback_doc_tu_config_dang_chay():
+    """Hang so `FALLBACK_THAT` chi co cap (v4-flash -> deepseek-chat), von khong
+    con profile nao dung tu khi doi combo 05/09/2026 — nen `m["fallback"]` luon
+    0 va `van_de()` khong bao gio danh thuc ai. Cap phai duoc dung TU config."""
+    import tempfile
+    import theo_doi_9router as t
+    with tempfile.TemporaryDirectory() as tmp:
+        home = Path(tmp) / ".hermes-blog"
+        (home / "profiles" / "writer").mkdir(parents=True)
+        (home / "profiles" / "writer" / "config.yaml").write_text(
+            "model:\n  default: DS-v4Flash\n"
+            "fallback_providers:\n  - model: ds/deepseek-v4-pro\n"
+            "  - model: ds/deepseek-chat\n", encoding="utf-8")
+        cu = t.HERMES_HOMES
+        t.HERMES_HOMES = [home]
+        try:
+            cap = t.cap_fallback()
+        finally:
+            t.HERMES_HOMES = cu
+    assert ("ds-v4flash", "deepseek-v4-pro") in cap, sorted(cap)
+    assert ("deepseek-v4-pro", "deepseek-chat") in cap, sorted(cap)
+    assert ("deepseek-v4-flash", "deepseek-chat") in cap, "phai giu ca hang so cu"
+
+
+def test_cap_fallback_bo_qua_chuoi_trung_ten():
+    """Combo lat giua ba route CUNG mot model khong phai fallback — usage ghi
+    cung mot `model` nen dem vao la bao dong gia moi ngay."""
+    import tempfile
+    import theo_doi_9router as t
+    with tempfile.TemporaryDirectory() as tmp:
+        home = Path(tmp) / ".hermes-dcgr"
+        home.mkdir(parents=True)
+        (home / "config.yaml").write_text(
+            "model:\n  default: ds/deepseek-v4-flash\n"
+            "fallback_providers:\n  - model: ds/deepseek-v4-flash\n", encoding="utf-8")
+        cu = t.HERMES_HOMES
+        t.HERMES_HOMES = [home]
+        try:
+            cap = t.cap_fallback()
+        finally:
+            t.HERMES_HOMES = cu
+    assert cap == set(t.FALLBACK_THAT), f"them cap trung ten: {sorted(cap)}"
 
 
 if __name__ == "__main__":

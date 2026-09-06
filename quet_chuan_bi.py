@@ -155,18 +155,43 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
 def brief_nova(wd: Path, lam_moi: bool) -> str:
     rep = wd / "scan_models.txt"
     if lam_moi or not _moi(rep):
-        r = _chay([str(ROOT / "scan_models.py"), "--ngay", "7", "--top", "10",
-                   "--khong-bat-buoc"], timeout=1200)
-        rep.write_text((r.stdout or "") + "\n[stderr]\n" + (r.stderr or "")[-1500:], encoding="utf-8")
-    bao_cao = rep.read_text(encoding="utf-8").split("\n[stderr]\n")[0]
+        try:
+            r = _chay([str(ROOT / "scan_models.py"), "--ngay", "7", "--top", "10",
+                       "--khong-bat-buoc"], timeout=1200)
+        except subprocess.TimeoutExpired:
+            sys.exit("[LOI] scan_models.py qua 20 phut chua xong — bao Ong Chu, "
+                     "dung chay lai ngay (nguon nao do dang treo).")
+        rep.write_text((r.stdout or "") + "\n[stderr]\n" + (r.stderr or "")[-4000:], encoding="utf-8")
+        # KIEM MA THOAT. brief_scout:118 va brief_market deu kiem, rieng day thi
+        # khong: scan_models chet giua chung van ghi scan_models.txt gan rong,
+        # brief in "Bao cao cua script:" trong, Nova suy ra "khong co gi" va chay
+        # `quet_nop --khong-co`. Ong Chu doc "hom nay khong co gi" trong khi that
+        # ra 23 bang deu khong duoc doc. Dung loai hong README goi la dang so
+        # nhat, va no im lang tuyet doi.
+        if r.returncode != 0:
+            sys.exit(f"[LOI] scan_models.py hong (ma {r.returncode}): "
+                     f"{(r.stderr or '')[-600:]}\n"
+                     "  KHONG duoc bao 'hom nay khong co gi' — bao Ong Chu la "
+                     "script quet hong.")
+    tho = rep.read_text(encoding="utf-8")
+    bao_cao = tho.split("\n[stderr]\n")[0]
+    # Dua canh bao cua script vao brief. Truoc 06/09/2026 stderr bi vut sach o
+    # day, nen moi dong "[openrouter] HONG", "[canh bao] bang 'x' tra rong",
+    # "[canh bao] bang_so lech" deu khong bao gio toi mat Nova.
+    canh = [d.strip() for d in tho.split("\n[stderr]\n")[-1].splitlines()
+            if d.strip() and ("HONG" in d or "[canh bao]" in d or "hong:" in d)]
     mh = {}
     try:
         mh = json.loads((env_load.state_dir() / "model_health.json").read_text(encoding="utf-8"))
     except Exception:                                        # noqa: BLE001
         pass
     chet = [k for k, v in (mh.get("models") or {}).items() if not v.get("ok")]
-    L = [f"# NOVA — QUÉT XONG {datetime.now(VN).strftime('%d/%m %H:%M')} VN (scan_models.py --ngay 7 --top 10)",
-         "Báo cáo của script (đọc ở đây, KHÔNG chạy lại, KHÔNG web_search):", "", _cat(bao_cao), ""]
+    L = [f"# NOVA — QUÉT XONG {datetime.now(VN).strftime('%d/%m %H:%M')} VN (scan_models.py --ngay 7 --top 10)"]
+    if canh:
+        L += ["", "## ⚠ SCRIPT BÁO SỰ CỐ Ở NGUỒN — báo cáo dưới đây THIẾU, không phải "
+              "'hôm nay không có gì'. Nhắc đúng các nguồn này trong summary để Ông Chủ biết:",
+              *(f"  {d}" for d in canh[:12])]
+    L += ["Báo cáo của script (đọc ở đây, KHÔNG chạy lại, KHÔNG web_search):", "", _cat(bao_cao), ""]
     L.append("Model đội đã đo và đang chết/loại (không đề xuất lại như tin mới): "
              + (", ".join(chet) if chet else "không có") +
              ". Đã loại có lý do: gemini-3.7-flash (cache 0%, đắt 44 lần), kimi-k3 (không tắt suy luận), grok "

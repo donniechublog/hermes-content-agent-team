@@ -1,4 +1,10 @@
 #!/bin/bash
+# Thoat KHAC 0 khi hong: hermes chi coi job la loi khi returncode != 0
+# (cron/scheduler.py). Truoc 06/09/2026 hai nhanh loi ben duoi chi `echo`
+# roi de script ket thuc binh thuong -> last_status "ok", failure_streak 0,
+# va vi moi job deu `deliver: local` nen khong ai duoc bao gi ca.
+# Khong dung -e: hai nhanh kiem tra o cuoi phai chay du.
+set -uo pipefail
 # Duong dan theo $HOME, khong go cung /home/donniechu (sua 06/09/2026):
 # doi ten user Unix hoac chay thu tren may khac la gay im lang.
 # Cron: Nova quet model moi ra mat, gui bao cao vao topic nova. Khong tao task khac.
@@ -40,8 +46,10 @@ OUT=$($H -m hermes_cli.main kanban create "Quet model sang $DAY" \
 if ! echo "$OUT" | grep -q '"id"'; then
   echo "nova_daily_scan LOI: khong tao duoc task"
   echo "$OUT" | head -5
+  exit 1
 elif ! echo "$OUT" | grep -qF "\"title\": \"Quet model sang $DAY\""; then
   echo "nova_daily_scan CANH BAO: kanban tra ve task CU (trung idempotency-key)."
   echo "  Task hom nay KHONG duoc tao. Kiem tra khoa: $KEY"
   echo "$OUT" | grep '"title"' | head -2
+  exit 1
 fi

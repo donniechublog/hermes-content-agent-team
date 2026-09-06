@@ -276,13 +276,32 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` gộp chung:
 `~/.hermes-blog/cron/jobs.json` (5 job) và `~/.hermes-dcgr/cron/jobs.json` (4 job).
 
-- `finn-daily-scan`, `nova-daily-scan`, `vera-daily-scan` — **05:00 VN**
-  (22:00 UTC), chạy nối tiếp vì `max_in_progress: 1`.
+- `finn-daily-scan` (blog), `nova-daily-scan` (blog), `vera-daily-scan` (dcgr)
+  — **05:00 VN** (22:00 UTC). Ba job này nằm ở **hai container khác nhau**, nên
+  chỉ finn và nova là nối tiếp nhau (`max_in_progress: 1` của blog); vera chạy
+  song song ở dcgr.
 - `daily-log` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router
   (`theo_doi_9router.py --gui` → topic analyst).
-- `model-watch` — 30 phút/lần.
+- `model-watch` — `*/30 0,4,5,10-23 * * *`, tức **tắt 08:00–10:59 và
+  13:00–16:59 VN**, đúng khung giờ chọn số buổi sáng. Model chết lúc 8h thì 11h
+  mới có cảnh báo. Nếu không cố ý thì đổi về `*/30 * * * *` trên máy chủ
+  (`hermes cron`), tệp `hermes/cron/jobs.*.json` chỉ là bản chụp.
 - `moat-publish-watch` — 5 phút/lần, hỏi moat xem bài đã lên social chưa; im
   lặng khi không có gì mới, bỏ theo dõi một bài sau 7 ngày.
+
+**Job hỏng thì biết bằng cách nào.** Hermes chỉ coi một job là lỗi khi script
+thoát khác 0. Trước 06/09/2026 mọi script đều thoát 0 kể cả khi hỏng: ba script
+quét in `LOI`/`CANH BAO` rồi kết thúc bình thường, còn `nhat_ky_daily.sh` kết
+bằng `| tail -3` (trả mã của `tail`) và một `echo`. Nghĩa là nhật ký chết cả
+tuần vẫn hiện `last_status: ok`, `failure_streak: 0`. Nay cả bốn script thoát
+khác 0 khi hỏng, nên `failure_streak` trong `~/.hermes-<brand>/cron/jobs.json`
+và dashboard là chỗ đối chiếu thật.
+
+Còn lại (**việc của Ông Chủ**): cả 9 job đều `deliver: local`, tức output không
+đi đâu cả — muốn được nhắn khi job hỏng thì phải đổi `deliver`, nhưng nó gửi
+vào channel chung chứ không phải topic, và `moat-publish-watch` chạy 288
+lần/ngày nên bật thẳng là spam. Cách gọn hơn: một job soát `failure_streak` mỗi
+sáng.
 
 ## State: tệp nào của ai
 
