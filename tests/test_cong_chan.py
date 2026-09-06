@@ -402,6 +402,82 @@ def test_anh_xep_hang_mien_cong_dung_lai():
         assert la.kiem_da_dung("A1", t2, "bai2-designer-blog", "https://a.com/2")[0]
 
 
+# ------------------------------------------------- watermark cua Bob (@handle)
+def test_handle_bob_luon_co_cong_va_nhan_ca_hai_kieu_khoa():
+    """CT_BRAND la khoa CONTAINER ('blog'), card.THUONG_HIEU khoa theo TEN brand
+    ('donniechublog'). Truoc 06/09/2026 `handle_kenh` tra thang gia tri tra cuu
+    nen tren container blog no roi ve chinh chuoi 'blog': MOI anh Bob dong khung
+    in watermark "blog" thay vi "@donniechublog"."""
+    import bob_nop
+    assert bob_nop.handle_kenh("blog") == "@donniechublog"
+    assert bob_nop.handle_kenh("dcgr").startswith("@")
+    # dua san ten brand (kieu khoa con lai) van phai ra dung
+    assert bob_nop.handle_kenh("donniechublog") == "@donniechublog"
+    # da co "@" thi khong duoc nhan doi
+    assert bob_nop.handle_kenh("@donniechublog") == "@donniechublog"
+    # brand la khong biet: van phai co "@", khong duoc tra chuoi tran
+    assert bob_nop.handle_kenh("khong_co_that").startswith("@")
+
+
+# ------------------------------------------- tran 8 tin khong cat muc BAT BUOC
+def test_tran_tin_khong_cat_muc_bat_buoc():
+    """Muc BAT BUOC ton tu hom truoc duoc gan score_partial=0 nen diem toi da chi
+    con 50 — LUON xep chot va truoc 06/09/2026 LUON bi tran 8 tin cat. Cat xong
+    thi `bat_buoc.kiem` lai them BAN TRONG (score=0, summary_vi rong, ghi chu
+    "vai bo sot"): bao cao do oan cho vai la bo sot dung tin no vua cham ky, con
+    vai viet bai thi mat sach tom tat."""
+    import json
+    import os
+    import subprocess
+    BRAND = "thu_tran_bb"
+    moi_truong = {**os.environ, "CT_BRAND": BRAND}
+    kho = ROOT / "state" / BRAND
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        BB = "https://anthropic.com/claude-opus-46"
+        # ghi danh sach bat buoc bang chinh tien trinh con (cung state dir)
+        subprocess.run([str(ROOT / "venv/bin/python"), "-c",
+                        "import sys; sys.path.insert(0, %r); import bat_buoc; "
+                        "bat_buoc.them('scout', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
+                        % (str(ROOT), BB)],
+                       env=moi_truong, check=True, capture_output=True)
+        try:
+            cands = {"candidates": [
+                {"link": BB, "title": "Claude Opus 4.6 dat 82% SWE-bench Verified",
+                 "source": "HN", "points": 10, "comments": 2, "via": "hn",
+                 "score_partial": 0, "score_recency": 0, "score_spread": 0, "image_url": None}
+            ] + [{"link": f"https://ex.com/{i}", "title": f"Tin thuong {i}", "source": "HN",
+                  "points": 100 + i, "comments": 5, "via": "hn", "score_partial": 40,
+                  "score_recency": 10, "score_spread": 5, "image_url": None}
+                 for i in range(1, 10)]}
+            (t / "c.json").write_text(json.dumps(cands), encoding="utf-8")
+            picks = [{"k": 1, "category": "MODEL", "score_technical": 28,
+                      "score_relevance": 19, "score_reason": "model lon",
+                      "summary_vi": "Claude Opus 4.6 dat 82% SWE-bench Verified"}] + \
+                    [{"k": i + 1, "category": "TOOL", "score_technical": 20,
+                      "score_relevance": 15, "summary_vi": f"tin {i}"} for i in range(1, 10)]
+            (t / "p.json").write_text(json.dumps(picks), encoding="utf-8")
+
+            r = subprocess.run(
+                [str(ROOT / "venv/bin/python"), str(ROOT / "manifest_build.py"),
+                 "--candidates", str(t / "c.json"), "--picks", str(t / "p.json"),
+                 "--out", str(t / "m.json"), "--khong-xoa-bat-buoc"],
+                env=moi_truong, capture_output=True, text=True, cwd=str(ROOT))
+            assert r.returncode == 0, f"manifest_build hong: {r.stderr[-300:]}"
+
+            items = json.loads((t / "m.json").read_text(encoding="utf-8"))["items"]
+            muc = [i for i in items if "opus" in i["link"].lower()]
+            assert muc, "muc BAT BUOC bi tran cat khoi manifest"
+            assert muc[0]["score"] == 47, f"muc BAT BUOC bi thay ban trong: {muc[0]['score']}"
+            assert muc[0]["summary_vi"], "muc BAT BUOC mat tom tat cua vai"
+            # tran VAN con hieu luc voi tin thuong: 9 nop -> 8 giu
+            thuong = [i for i in items if "opus" not in i["link"].lower()]
+            assert len(thuong) == 8, f"tran 8 tin thuong khong con chay: {len(thuong)}"
+        finally:
+            for tep in kho.glob("*"):
+                tep.unlink()
+            kho.rmdir()
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

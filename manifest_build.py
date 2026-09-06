@@ -154,15 +154,26 @@ def main():
             "picked": False,
         })
 
-    # Tran 8 tin: giu 8 muc diem cao nhat cua vai, bo phan du va noi ro muc nao
-    # bi bo. Muc BAT BUOC them ben duoi khong tinh vao tran nay.
-    if len(items) > TOI_DA_PICK:
-        items.sort(key=lambda x: x["score"], reverse=True)
-        bo = items[TOI_DA_PICK:]
-        items = items[:TOI_DA_PICK]
-        problems.append(f"vai nop {len(items) + len(bo)} tin, tran la {TOI_DA_PICK} — "
+    # Tran 8 tin — CHI ap cho tin thuong. Muc BAT BUOC vai da nop phai o ngoai
+    # tran: muc ton tu hom truoc duoc _bo_sung_bat_buoc gan score_partial=0 nen
+    # tran diem chi con 50 (0+30+20), LUON xep chot va LUON bi cat. Cat xong thi
+    # `bat_buoc.kiem` ben duoi lai them BAN TRONG (score=0, summary_vi rong,
+    # ghi chu "vai bo sot") — bao cao gui Ong Chu do oan cho vai la bo sot dung
+    # cai tin no vua cham ky, con vai viet bai thi mat sach tom tat (06/09/2026).
+    bb_link = {bat_buoc.chuan_link(v.get("link", "")) for v in bat_buoc.doc("scout").values()
+               if v.get("link")}
+    la_bb = [it for it in items if bat_buoc.chuan_link(it["link"]) in bb_link]
+    thuong = [it for it in items if bat_buoc.chuan_link(it["link"]) not in bb_link]
+    if len(thuong) > TOI_DA_PICK:
+        thuong.sort(key=lambda x: x["score"], reverse=True)
+        bo = thuong[TOI_DA_PICK:]
+        thuong = thuong[:TOI_DA_PICK]
+        problems.append(f"vai nop {len(thuong) + len(bo)} tin thuong, tran la {TOI_DA_PICK} — "
                         f"giu {TOI_DA_PICK} tin diem cao nhat, bo: "
-                        + "; ".join(f"{b['title'][:40]} ({b['score']}d)" for b in bo))
+                        + "; ".join(f"{b['title'][:40]} ({b['score']}d)" for b in bo)
+                        + (f" (giu nguyen {len(la_bb)} muc BAT BUOC, khong tinh vao tran)"
+                           if la_bb else ""))
+    items = la_bb + thuong
 
     if problems:
         # In ca stdout LAN stderr: quet_nop chi in stdout khi rc=0 nen canh bao
