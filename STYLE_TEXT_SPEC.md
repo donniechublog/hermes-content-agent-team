@@ -102,25 +102,22 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - Em-dash (—) bị chặn ở mọi văn bản thẻ.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
 - Ảnh là chính, textbox là phụ: text nhường chỗ cho ảnh, không ngược lại.
-- Kiểu `quote` khoá khổ thẻ, nên màn tối được tính theo HAI mốc, không mốc
-  nào là tỉ lệ cố định của thẻ:
-  - Bình thường (ảnh còn dư sau điểm chữ bắt đầu): màn tối bắt đầu tan từ
-    `frame_top - QUOTE_MAN_DEM`, tức là **theo đúng khối chữ trích dẫn thật**
-    (`_man_quote(canvas, nat_h, frame_top)`) — không phải mốc cố định 38% như
-    trước. Bắt lỗi nhiều lần (gần nhất: thẻ "Kimi-K3 giữ #5 Code Arena"): quote
-    2 dòng chỉ cần ~170px, nhưng mốc 38% cố định vẫn làm mờ nửa dưới ảnh (bảng
-    xếp hạng) từ tận 38% chiều cao thẻ xuống — nửa bảng bị che mờ vô ích, đúng
-    thứ luật "nền phủ không được cao hơn chữ" cấm. Đo thật: hàng 6-9 của bảng
-    sáng từ 98-207/255 (gần đen) lên 234-254/255 (gần như nguyên bản) sau khi
-    mốc bắt đầu theo khối chữ thay vì theo thẻ.
-  - Ảnh hết sớm (đáy lớp ảnh sắc nằm TRÊN điểm chữ bắt đầu — tấm "Nvidia thâu
-    tóm Hugging Face" 16:9): màn tối phải đặc hẳn (255) **đúng tại đáy ảnh**
-    (`nat_h`), bề rộng vùng tan theo chính chiều cao ảnh
-    (`min(0.18·H, 0.30·nat_h)`) — không phải một khoảng đệm cố định, vì khoảng
-    đệm cố định bó hẹp vùng tan lại và làm lộ mép (đo thật: chênh sáng hai bên
-    mép tăng từ 3/255 lên 38/255 khi thử dùng đệm cố định ở nhánh này).
-  - Ảnh thấp hơn 50% khổ thẻ thì chặn hẳn (`luat_anh.kiem_anh_thap`): nửa thẻ
-    bỏ trống, đường ra là ghép dọc `--image2`.
+- Kiểu `quote` **KHÔNG CÒN MÀN TỐI** (Ông Chủ chốt 06/09/2026, sau nhiều lần
+  bắt cùng một lỗi — nền phủ chữ cao hơn chính chữ, đọc ra hai vùng riêng biệt,
+  dù đã thử khớp theo khối chữ thật ở bản trước). Quote đặt THẲNG lên ảnh gốc:
+  - Màu chữ (`_mau_doi_nen`) đo độ sáng trung bình của đúng vùng ảnh nằm dưới
+    khối chữ (một phép đo duy nhất, không hình học) — vùng tối thì chữ sáng
+    (FG), vùng sáng thì chữ tối (BG, màu nền thương hiệu, không phải đen tuyệt
+    đối). MỘT quyết định cho cả khối, không đo từng dòng.
+  - Mỗi chữ có thêm VIỀN tương phản (`_ve_chu_vien`, `QUOTE_STROKE = 3px`,
+    dòng nguồn mảnh hơn 1px) để vẫn đọc được khi vùng đó vừa sáng vừa tối
+    (bảng xếp hạng: nền trắng, chữ đen — đúng trường hợp làm lộ bug này).
+  - Hệ quả: ảnh (kể cả bảng/chart) hiện NGUYÊN VẸN, không có vùng nào bị làm
+    mờ dù chỉ một chút, ở mọi độ dài quote.
+  - Ảnh thấp hơn 50% khổ thẻ vẫn chặn hẳn (`luat_anh.kiem_anh_thap`): nửa thẻ
+    bỏ trống, đường ra là ghép dọc `--image2`. Ảnh thấp hơn khổ thẻ (nhưng qua
+    được cổng đó) vẫn có một lớp nền mờ/tối lấp phần thiếu — đó là nền cho
+    PHẦN THẺ KHÔNG CÓ ẢNH, khác chuyện màn tối cho chữ đã bỏ ở trên.
 - Ảnh chart/bảng/screenshot: `card.la_chart()` nhận diện (phẳng ≥0,85 **và**
   ≤220 màu riêng biệt) rồi ép vào đường của chart — hero thì phải ghép dọc
   `--image2`, carousel thì `"chart": true`. Chart luôn phải **nguyên vẹn và

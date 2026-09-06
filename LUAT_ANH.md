@@ -227,8 +227,10 @@ thật sự là ảnh chụp thường.
   đổi bìa và để chart ở slide thân.
 - **Ảnh ghép dọc** được miễn hẳn cổng này: nó đã nguyên vẹn + full bề ngang sẵn.
 
-Renderer còn tự **lùi điểm bắt đầu màn tối xuống dưới mép chart**, để đáy chart
-(trục x, nhãn, dòng chú thích) không bị làm tối.
+Kiểu `quote` (mặc định) không còn màn tối nữa (06/09/2026) nên chart hiện
+NGUYÊN VẸN, không có vùng nào bị làm mờ. Kiểu `tran` vẫn còn màn tối riêng của
+nó và tự lùi điểm bắt đầu xuống dưới mép chart để đáy chart (trục x, nhãn, dòng
+chú thích) không bị làm tối.
 
 ---
 
@@ -290,8 +292,10 @@ Cách ghi: `--image2 <ảnh thứ hai>` (hero), hoặc `"images": [a, b]` thay c
 
 Script xếp dọc: mỗi ảnh full bề ngang, nguyên tỉ lệ, **áp sát nhau không vạch
 ngăn** (trước đây chèn 12px nền đen — vạch đó là một đường kẻ giữa khung, đọc ra
-hai vùng, đã bỏ 04/09/2026). Ảnh dưới nằm dưới màn tối của chữ, nên đặt **ảnh
-quan trọng hơn ở trên**.
+hai vùng, đã bỏ 04/09/2026). Chữ (hero kiểu quote) hay slide sau (carousel) đè
+lên ảnh dưới — quote thì đè thẳng với viền tương phản (không còn màn tối, xem
+mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặt **ảnh quan trọng
+hơn ở trên** để nó hiện trọn, không bị chữ/màn tối chia sẻ không gian.
 
 **Điều kiện duy nhất: hai hình không được quá khác tone.** Lệch tone (một nền
 trắng một nền đen, gam màu khác hẳn) đọc ra như hai vùng riêng biệt. Ưu tiên
@@ -324,8 +328,11 @@ nguyên**.
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
 
-- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Chữ luôn đè lên ảnh qua
-  gradient dài.
+- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Carousel/kiểu `tran`: chữ
+  đè lên ảnh qua gradient dài. Hero kiểu `quote` (mặc định, 06/09/2026): không
+  còn gradient nào — chữ đặt thẳng lên ảnh, màu tự đổi tương phản với vùng ảnh
+  bên dưới (`_mau_doi_nen`) kèm viền (`_ve_chu_vien`), nên "vùng riêng" không
+  còn tồn tại để mà tách.
 - **Không vạch, không viền, không đường kẻ** ngang giữa khung.
 - **Không để lộ bản sao sắc nét của chính tấm ảnh** làm nền. Chỗ nào lớp ảnh sắc
   không phủ hết thì nền là chính tấm đó **làm mờ mạnh** — một mảng màu liền.
