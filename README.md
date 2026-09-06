@@ -28,7 +28,7 @@ Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_
 | Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
 | Ethan | `designer` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín |
 | Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
-| Kite | `carousel-edu` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — chỉ donniechublog. Ngoại lệ có chủ đích với luật không-tự-vẽ |
+| Kite | `carousel-edu` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
 | Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
 | Miles | `writer` | writer | Viết caption tiếng Việt cho cả hai brand, đẩy vào hàng duyệt |

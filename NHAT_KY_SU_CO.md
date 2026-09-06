@@ -75,7 +75,7 @@ chung). Đo lại 04/09/2026, theo brand:
 | Bob | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | **medium** |
 | Ethan (designer) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
 | Dre (carousel) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
-| Kite (carousel-edu) | `ds/deepseek-v4-flash` | — (chưa deploy) | tắt |
+| Kite (carousel-edu) | `ds/deepseek-v4-flash` | — (chưa deploy *lúc đo 04/09*; dcgr deploy 05/09) | tắt |
 | Gin / Itachi | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
 | Nova / Vera (market) | `ds/deepseek-v4-flash` | `ds/deepseek-v4-flash` | tắt |
 | Finn (scout) | `ds/deepseek-v4-flash` | — (dcgr chỉ có Vera) | tắt |

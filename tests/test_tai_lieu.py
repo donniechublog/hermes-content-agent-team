@@ -82,6 +82,45 @@ def test_readme_khong_ghi_sai_kieu_the_mac_dinh():
         f"card.build mặc định kieu={mac_dinh!r}, README phải nói đúng thế"
 
 
+def test_bang_doi_hinh_khop_voi_profile_that():
+    """README noi vai nao co o brand nao — doi chieu voi ban chup profile that.
+
+    Dung lop troi nay da xay ra hai lan: README ghi Kite "chua deploy dcgr" (do
+    04/09, mot ngay TRUOC khi dcgr deploy 05/09) va khong ai sua; roi ban viet
+    lai 06/09 chep tiep thanh "chi donniechublog". Ban chup
+    hermes/profiles/cau_hinh_that.yaml gio cho phep kiem bang code.
+    """
+    import re
+    try:
+        import yaml
+    except ImportError:
+        return                       # khong co pyyaml thi bo qua, dung lam do test
+    chup = ROOT / "hermes/profiles/cau_hinh_that.yaml"
+    if not chup.exists():
+        return
+    d = yaml.safe_load(chup.read_text(encoding="utf-8")) or {}
+    co = {}
+    for k in d:
+        brand, slug = k.split("/", 1)
+        co.setdefault(slug, set()).add(brand)
+
+    vb = (ROOT / "README.md").read_text(encoding="utf-8")
+    loi = []
+    for dong in vb.splitlines():
+        m = re.match(r"\|\s*[^|]+\|\s*`([a-z-]+)`\s*\|", dong)
+        if not m:
+            continue
+        slug, brand_co = m.group(1), co.get(m.group(1))
+        if not brand_co:
+            continue
+        thap = dong.lower()
+        if "chỉ donniechublog" in thap or "blog only" in thap:
+            if "dcgr" in brand_co:
+                loi.append(f"README noi `{slug}` chi co o blog, nhung profile that co ca dcgr")
+        if "chỉ dcgr" in thap and "blog" in brand_co:
+            loi.append(f"README noi `{slug}` chi co o dcgr, nhung profile that co ca blog")
+    assert not loi, "bang doi hinh lech voi profile that:\n  " + "\n  ".join(loi)
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0
