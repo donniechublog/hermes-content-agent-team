@@ -107,8 +107,11 @@ and [assets/mood-palette-sheet.png](assets/mood-palette-sheet.png) shows what ea
 one looks like. `frame.js` resolves the emoji → an actual mascot PNG on its own
 via MascotStudio's `emoji-map.json`; you only choose the emoji.
 
-If none fit, 😂 is a safe default for this account. If two fit, pick the funnier
-one — savage/absurd leans 💀, confusing leans 🤨/🤯.
+If you cannot place the mood in the image, use 🙄 (eyeroll). It is the one
+reaction that works in every situation, which is exactly why it is the fallback:
+😂 is a specific claim that something is funny, and lands wrong on an image that
+is not. Only reach for 😂 when the image really is a punchline. If two fit, pick
+the funnier one — savage/absurd leans 💀, confusing leans 🤨/🤯.
 
 ---
 
@@ -117,7 +120,7 @@ one — savage/absurd leans 💀, confusing leans 🤨/🤯.
 ```bash
 node ~/.hermes/profiles/bob/skills/url-mascot-frame/scripts/frame.js \
   --image /tmp/src.png \
-  --emoji "😂" \
+  --emoji "🙄" \
   --out ./framed.png
 ```
 

@@ -50,7 +50,7 @@ Khôi phục nội dung MEMORY.md/USER.md: `dong_bo_hermes.py --ra-hermes` (repo
 
 - **numpy** cần cho HRR compositional (related/probe/reason). Runtime venv `~/hermes-agent/venv` đã có sẵn; `.venv` thì không. Fact ghi lúc thiếu numpy sẽ có `hrr_vector` NULL — cần backfill (`_compute_hrr_vector` + `_rebuild_bank`).
 - **FTS5** hiểu dấu `-` là toán tử NOT, nên query `content-team` = `content NOT team`. Dùng term không dấu gạch.
-- **bob** không nằm trong danh sách đồng bộ (giống SOUL của bob) — MEMORY.md của bob không được version.
+- ~~**bob** không nằm trong danh sách đồng bộ~~ — sai từ lâu, sửa 06/09/2026: `cap_tep()` quét toàn bộ `profiles/{blog,dcgr,shared}/*.SOUL.md` nên bob luôn được đồng bộ như mọi vai. Từ 06/09/2026 SOUL của bob nằm ở `shared/`, còn MEMORY vẫn riêng từng brand (`profiles/<brand>/bob.MEMORY.md`).
 - **SQLite 3.50.4** dính bug WAL-reset; holographic tự né bằng journal_mode=DELETE. `hermes update` nâng runtime SQLite.
 
 ## Đồng bộ & version
