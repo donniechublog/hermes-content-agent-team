@@ -103,21 +103,25 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
 - Ảnh là chính, textbox là phụ: text nhường chỗ cho ảnh, không ngược lại.
 - Kiểu `quote` **KHÔNG CÒN MÀN TỐI** (Ông Chủ chốt 06/09/2026, sau nhiều lần
-  bắt cùng một lỗi — nền phủ chữ cao hơn chính chữ, đọc ra hai vùng riêng biệt,
-  dù đã thử khớp theo khối chữ thật ở bản trước). Quote đặt THẲNG lên ảnh gốc:
-  - Màu chữ (`_mau_doi_nen`) đo độ sáng trung bình của đúng vùng ảnh nằm dưới
-    khối chữ (một phép đo duy nhất, không hình học) — vùng tối thì chữ sáng
-    (FG), vùng sáng thì chữ tối (BG, màu nền thương hiệu, không phải đen tuyệt
-    đối). MỘT quyết định cho cả khối, không đo từng dòng.
-  - Mỗi chữ có thêm VIỀN tương phản (`_ve_chu_vien`, `QUOTE_STROKE = 3px`,
-    dòng nguồn mảnh hơn 1px) để vẫn đọc được khi vùng đó vừa sáng vừa tối
-    (bảng xếp hạng: nền trắng, chữ đen — đúng trường hợp làm lộ bug này).
-  - Hệ quả: ảnh (kể cả bảng/chart) hiện NGUYÊN VẸN, không có vùng nào bị làm
-    mờ dù chỉ một chút, ở mọi độ dài quote.
+  bắt cùng một lỗi — nền phủ chữ cao hơn chính chữ, đọc ra hai vùng riêng
+  biệt). Thử qua ba bản trước khi chốt: mốc cố định 38% → khớp theo khối chữ
+  thật (vẫn là màn tối, chỉ đổi hình học) → viền tương phản quanh chữ (bị chê
+  "phèn như karaoke") → bản chốt dưới đây:
+  - **Chỉ làm MỜ CỤC BỘ đúng vùng chữ đè lên** (`_mo_vung_chu`, Gaussian blur
+    bán kính `QUOTE_BLUR = 28`), KHÔNG darkening. Ảnh phía trên vùng chữ giữ
+    nguyên 100% sắc nét — bảng xếp hạng, chart hiện trọn từ đầu tới sát mép
+    khối chữ. Mờ tan dần từ `frame_top - QUOTE_BLUR_DEM` (nét) tới `frame_top`
+    (mờ đều) theo đường cong power — cùng kiểu tan đã dùng cho màn tối trước
+    đây, để không tái lặp đúng lỗi "ranh giới đột ngột" — lần này là ranh giới
+    NÉT/MỜ thay vì SÁNG/TỐI.
+  - Màu chữ (`_mau_doi_nen`) đo độ sáng trung bình của vùng ĐÃ MỜ — một phép
+    đo duy nhất, không viền: mờ xoá hết chi tiết rối (chữ/kẻ trong bảng gốc),
+    làm đồng đều độ sáng trong khối, nên một màu duy nhất là đủ để đọc được
+    trên toàn khối, kể cả khối vốn vừa sáng vừa tối (bảng nền trắng chữ đen).
   - Ảnh thấp hơn 50% khổ thẻ vẫn chặn hẳn (`luat_anh.kiem_anh_thap`): nửa thẻ
     bỏ trống, đường ra là ghép dọc `--image2`. Ảnh thấp hơn khổ thẻ (nhưng qua
-    được cổng đó) vẫn có một lớp nền mờ/tối lấp phần thiếu — đó là nền cho
-    PHẦN THẺ KHÔNG CÓ ẢNH, khác chuyện màn tối cho chữ đã bỏ ở trên.
+    được cổng đó) vẫn có một lớp nền mờ/tối RIÊNG lấp phần thiếu — đó là nền
+    cho PHẦN THẺ KHÔNG CÓ ẢNH (compositing), khác hẳn mờ-cho-chữ ở trên.
 - Ảnh chart/bảng/screenshot: `card.la_chart()` nhận diện (phẳng ≥0,85 **và**
   ≤220 màu riêng biệt) rồi ép vào đường của chart — hero thì phải ghép dọc
   `--image2`, carousel thì `"chart": true`. Chart luôn phải **nguyên vẹn và

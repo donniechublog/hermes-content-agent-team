@@ -227,10 +227,11 @@ thật sự là ảnh chụp thường.
   đổi bìa và để chart ở slide thân.
 - **Ảnh ghép dọc** được miễn hẳn cổng này: nó đã nguyên vẹn + full bề ngang sẵn.
 
-Kiểu `quote` (mặc định) không còn màn tối nữa (06/09/2026) nên chart hiện
-NGUYÊN VẸN, không có vùng nào bị làm mờ. Kiểu `tran` vẫn còn màn tối riêng của
-nó và tự lùi điểm bắt đầu xuống dưới mép chart để đáy chart (trục x, nhãn, dòng
-chú thích) không bị làm tối.
+Kiểu `quote` (mặc định) không còn màn tối nữa (06/09/2026): chart hiện
+NGUYÊN VẸN từ đầu tới sát mép khối chữ, chỉ đúng dải chữ đè lên mới bị làm mờ
+cục bộ (không phải làm tối) — trục x/nhãn/chú thích của chart phía TRÊN khối
+chữ không hề bị ảnh hưởng. Kiểu `tran` vẫn còn màn tối riêng của nó và tự lùi
+điểm bắt đầu xuống dưới mép chart để đáy chart không bị làm tối.
 
 ---
 
@@ -293,9 +294,9 @@ Cách ghi: `--image2 <ảnh thứ hai>` (hero), hoặc `"images": [a, b]` thay c
 Script xếp dọc: mỗi ảnh full bề ngang, nguyên tỉ lệ, **áp sát nhau không vạch
 ngăn** (trước đây chèn 12px nền đen — vạch đó là một đường kẻ giữa khung, đọc ra
 hai vùng, đã bỏ 04/09/2026). Chữ (hero kiểu quote) hay slide sau (carousel) đè
-lên ảnh dưới — quote thì đè thẳng với viền tương phản (không còn màn tối, xem
-mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặt **ảnh quan trọng
-hơn ở trên** để nó hiện trọn, không bị chữ/màn tối chia sẻ không gian.
+lên ảnh dưới — quote thì chỉ làm mờ cục bộ đúng vùng chữ (không còn màn tối,
+xem mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặt **ảnh quan
+trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/màn tối chia sẻ.
 
 **Điều kiện duy nhất: hai hình không được quá khác tone.** Lệch tone (một nền
 trắng một nền đen, gam màu khác hẳn) đọc ra như hai vùng riêng biệt. Ưu tiên
@@ -329,10 +330,11 @@ Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ c
 mảng nhìn tách rời:
 
 - **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Carousel/kiểu `tran`: chữ
-  đè lên ảnh qua gradient dài. Hero kiểu `quote` (mặc định, 06/09/2026): không
-  còn gradient nào — chữ đặt thẳng lên ảnh, màu tự đổi tương phản với vùng ảnh
-  bên dưới (`_mau_doi_nen`) kèm viền (`_ve_chu_vien`), nên "vùng riêng" không
-  còn tồn tại để mà tách.
+  đè lên ảnh qua gradient tối dài. Hero kiểu `quote` (mặc định, 06/09/2026):
+  không còn TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_mo_vung_chu`,
+  tan dần theo đường cong power, không đột ngột), màu chữ tự đổi tương phản
+  với vùng đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ giữ nguyên
+  sắc nét 100%.
 - **Không vạch, không viền, không đường kẻ** ngang giữa khung.
 - **Không để lộ bản sao sắc nét của chính tấm ảnh** làm nền. Chỗ nào lớp ảnh sắc
   không phủ hết thì nền là chính tấm đó **làm mờ mạnh** — một mảng màu liền.

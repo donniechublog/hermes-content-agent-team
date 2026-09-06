@@ -15,9 +15,10 @@ metadata:
 # hero-image — một thẻ ảnh, mặc định kiểu quote (thẻ HOOK)
 
 Ethan nén cả tin vào **một thẻ**: ảnh thật phủ kín khổ 4:5, một câu hook đè
-thẳng lên ảnh. Kiểu quote (mặc định, 06/09/2026) không còn màn tối — màu chữ
-tự đổi theo độ sáng ảnh, có viền tương phản để luôn đọc được. Tin nhiều tầng
-không nén được vào một câu thì để Dre.
+thẳng lên ảnh. Kiểu quote (mặc định, 06/09/2026) không còn màn tối — chỉ làm
+mờ cục bộ đúng vùng chữ đè lên, phần ảnh còn lại giữ nguyên sắc nét; màu chữ tự
+đổi theo độ sáng vùng đã mờ đó. Tin nhiều tầng không nén được vào một câu thì
+để Dre.
 
 ## Luồng
 
