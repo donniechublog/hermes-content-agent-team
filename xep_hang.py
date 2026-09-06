@@ -451,6 +451,8 @@ def chup_bang(page, models: list, out: Path):
             with Image.open(p2) as im2:
                 r2 = im2.width / im2.height
             if r2 < r:
+                if p != out:
+                    p.unlink(missing_ok=True)     # ban hep hon truoc do, khong con dung toi
                 da = [(kq2, p2, r2, tim)]
                 kq, p, r = kq2, p2, r2
             else:
