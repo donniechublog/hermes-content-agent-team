@@ -127,10 +127,21 @@ LINK_BANG = {
     "video": "https://arena.ai/leaderboard/text-to-video",
     "coding": "https://artificialanalysis.ai/leaderboards/models",
     "tri_tue": "https://artificialanalysis.ai/leaderboards/models",
+    "agentic": "https://artificialanalysis.ai/leaderboards/models",
     "ra_mat": "https://artificialanalysis.ai/leaderboards/models",
     "swebench": "https://www.swebench.com/",
+    "swe_bash": "https://www.swebench.com/",
+    "swe_da_ngon_ngu": "https://www.swebench.com/",
     "livebench": "https://livebench.ai/",
     "openrouter": "https://openrouter.ai/rankings",
+    "tbench": "https://www.tbench.ai/leaderboard",
+    "arcagi": "https://arcprize.org/leaderboard",
+    "hle": "https://scale.com/leaderboard/humanitys_last_exam",
+    "eci": "https://epoch.ai/data/ai-benchmarking-dashboard",
+    "opencompass": "https://rank.opencompass.org.cn/home",
+    "tts": "https://artificialanalysis.ai/text-to-speech",
+    "stt": "https://artificialanalysis.ai/speech-to-text",
+    "i2v": "https://artificialanalysis.ai/video/leaderboard/image-to-video",
 }
 
 

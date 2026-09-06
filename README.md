@@ -199,7 +199,39 @@ ghi thêm một dòng cảnh báo.
   ĐIỂM"** (artificialanalysis, nhóm theo tên gốc, mỗi model báo đúng một lần nhờ
   `aa_da_bao` trong `models_seen.json`) và bảng coding AA được so hạng với lần trước
   (`xep_hang.coding`). Trước đó "mới" chỉ là id mới trên router, một lần duy nhất:
-  GPT-6 Astra (03/09, #8 coding) không lên router nên Nova báo "0 model mới"
+  GPT-6 Astra (03/09, #8 coding) không lên router nên Nova báo "0 model mới".
+
+  **06/09/2026 — 12 bảng → 23 bảng.** Khảo sát 16 nguồn ứng viên, mỗi kết luận
+  "lấy được" bị một lần fetch độc lập phản biện. Ba nhóm thay đổi:
+
+  1. *Sửa chỗ tràn trước đã.* Ở trạng thái production (arena sống + có mốc cũ)
+     báo cáo ra **13.635 ký tự** trong khi brief cắt ở 12.000 — `LIVEBENCH` và
+     `OPENROUTER USAGE` bị nuốt **câm lặng**, Nova không biết hai bảng đó tồn
+     tại. Ba mục `MODEL MOI`, trích benchmark, `ENGINE SUY LUAN` trước đó không
+     có cận trên. Nay có `TRAN_*`, trần brief lên 22.000, và `_cat()` nói rõ khi
+     đã cắt. Thêm nguồn trước khi vá chỗ này là làm phủ sóng **tệ đi**.
+  2. *Số đã tải về mà chưa dùng.* `agenticIndex` nằm sẵn trong payload AA từ lâu
+     nhưng chưa bao giờ được dựng bảng → `so_hang()` mù với "leo hạng agentic"
+     (cùng loại sự cố qwen3.8-max WebDev 02/09). SWE-bench trả 5 split trong
+     **một** request, ta chỉ dùng `Verified`. Cả hai không tốn thêm request nào.
+  3. *Chiều thật sự mới* — `tbench` (agent gõ lệnh trong container), `arcagi`
+     (bài chưa từng thấy), `hle` (trần kiến thức), `eci` (Epoch, có khoảng tin
+     cậy), `opencompass` (đề đóng, phần lớn lab TQ), `tts`/`stt`/`i2v` (mảng
+     không phải văn bản — trước đây mù hẳn), `hf_trending` (bắt model thả trọng
+     số trước router 1–3 ngày).
+
+  **Bảng bị loại và lý do** — không phải vì lấy không được, cả 5 đều lấy được:
+  BFCL đóng băng từ 13/04/2026, LiveCodeBench từ 01/08/2025, Aider Polyglot từ
+  03/10/2025, BigCodeBench từ 16/04/2025, Papers With Code đã đóng cửa. Thêm
+  bảng chết vào script quét = mỗi lần chạy tốn một request để nhận `diff = 0`
+  vĩnh viễn. Vellum bị loại vì tự nó ghi là trang **tổng hợp** lại số của người
+  khác; GAIA vì nó xếp hạng **hệ thống agent** chứ không phải model (cột model
+  là chuỗi viết tay, không join được). SWE-bench `Lite`/`Full`/`Multimodal` đều
+  quá hạn nên chỉ lấy `Verified` + `Multilingual`.
+
+  Nợ kỹ thuật đã biết: `TBENCH` là edge function moi từ bundle JS của tbench.ai,
+  không phải API công bố — đổi project ref là chết im, cần theo dõi. `ids` trong
+  `models_seen.json` chỉ tăng, chưa có cơ chế cắt tỉa (~40 byte/model/ngày).
 - `bat_buoc.py` — **danh sách BẮT BUỘC** cho ba vai đi tìm tin (luật Ông Chủ 04/09/2026:
   script quét thấy là phải đưa, hôm trước sót thì hôm sau bổ sung, vai không có quyền bỏ).
   Script quét gieo mục (`state/<brand>/bat_buoc_<vai>.json`), script ghi manifest
@@ -207,7 +239,7 @@ ghi thêm một dòng cảnh báo.
   manifest kèm ghi chú "vai bỏ sót, script tự thêm" trên báo cáo (từ 05/09/2026, hết vòng
   từ chối rồi bắt vai sửa) và xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**
   trong brief, script tự lấy link và số báo — không chép URL nữa. Tiêu chí: Finn = tiêu đề nhắc hãng frontier hoặc HN/Reddit ≥150 điểm có
-  dấu hiệu AI; Nova = mọi model ra mắt / vào bảng / leo hạng ở 12 bảng; Vera = một mục mỗi
+  dấu hiệu AI; Nova = mọi model ra mắt / vào bảng / leo hạng ở 23 bảng; Vera = một mục mỗi
   hãng lõi mỗi ngày (hoặc tin ≥2 báo), khớp theo tên hãng
 - `model_watch.py` — dò sức khoẻ model đang dùng, báo Telegram khi trạng thái đổi
 - `theo_doi_9router.py` — nhật ký 9router **theo ngày** (`state/9router/nhat_ky/9router_<ngày>.md|json`):

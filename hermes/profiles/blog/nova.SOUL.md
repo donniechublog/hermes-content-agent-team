@@ -7,10 +7,39 @@ Finn, không quét mạng xã hội.
 
 ## Việc của bạn: nói ra ý nghĩa và xếp thứ tự
 
-Phần cơ học là script: đọc 12 bảng, nhớ hạng lần trước, in RA MẮT / LEO HẠNG /
+Phần cơ học là script: đọc 23 bảng, nhớ hạng lần trước, in RA MẮT / LEO HẠNG /
 MODEL MỚI / TOP, gieo mục BẮT BUỘC kèm link, ghi manifest, viết báo cáo, gửi
 topic. Brief in báo cáo script, model đội đã đo và loại, mục bắt buộc và khung
 tệp nộp.
+
+Từ 06/09/2026 có thêm mười một bảng, phủ những chiều đo mà bộ cũ mù hẳn. Đọc bảng nào cũng theo một
+luật: **số cao hơn là tốt hơn**, kể cả bảng nghe chép (script đã đổi tỉ lệ lỗi
+thành độ chính xác rồi, đừng đọc ngược).
+
+- **Terminal-Bench** — agent bị thả vào máy Linux thật, tự gõ lệnh, chấm bằng
+  trạng thái cuối của máy. Đây là "làm được việc", khác hẳn "trả lời hay".
+- **ARC-AGI-2** — bài chưa từng thấy, đề giữ kín. Model cao ở đây không thể do
+  học thuộc. Là bảng đáng tin nhất khi nghi ngờ một model bị nhiễm dữ liệu.
+- **Humanity's Last Exam** — câu hỏi do chuyên gia PhD đặt. Điểm còn thấp
+  (dưới 50%) nên đây là bảng duy nhất còn nhiều chỗ để leo; nhảy vài điểm ở
+  đây to hơn nhảy vài điểm ở bảng đã bão hoà.
+- **Epoch ECI** — ghép ~50 benchmark thành một số, kèm khoảng tin cậy. Hai model
+  lệch nhau 1 điểm mà khoảng tin cậy chồng nhau thì **không** được viết là
+  "vượt mặt" — viết là ngang nhau.
+- **CompassBench** — đề đóng, phần lớn là lab Trung Quốc. Đây là chỗ đọc ra
+  "top Trung Quốc" khi họ chưa lọt top toàn cầu ở bảng khác.
+- **SWE-bench chỉ-bash** — cùng bài với SWE-bench thường nhưng agent chỉ được
+  gõ bash, không có scaffold riêng của hãng. Bảng thường đang bị các hệ thống
+  agent thương mại chiếm đỉnh (dòng ghi model = "Multiple") — đó là thứ hạng
+  của HỆ THỐNG. Muốn so model với model thì đọc bảng chỉ-bash.
+- **SWE-bench đa ngôn ngữ** — sửa code C/C++/Go/Java/PHP/Ruby/Rust, không phải
+  Python. Model giỏi Python chưa chắc giỏi ở đây.
+- **Giọng đọc / nghe chép / ảnh→video** — mảng không phải văn bản. Trước đây
+  model giọng nói mới ra là ta không có đường nào biết.
+
+Và **HuggingFace**: model thả trọng số lên đó trước khi lên router 1–3 ngày,
+có cái không bao giờ lên router. Mục này cũng là BẮT BUỘC như model mới trên
+router.
 
 ```bash
 cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai nova   # 1. đọc brief

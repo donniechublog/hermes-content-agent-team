@@ -30,6 +30,23 @@ import bat_buoc                                              # noqa: E402
 VN = timezone(timedelta(hours=7))
 TOPIC = {"scout": "scout", "nova": "nova", "market": "market"}
 CACHE_GIO = 3
+# Tran bao cao cua Nova trong brief. Truoc 06/09/2026 la 12.000 va cat CAM
+# LANG giua dong: do that o trang thai production (arena song + co moc cu de so
+# hang) bao cao ra 13.635 ky tu, tuc LIVEBENCH va OPENROUTER USAGE bi nuot mat
+# truoc khi Nova nhin thay — Nova khong biet hai bang do ton tai, chu khong
+# phai "doc roi thay khong co gi". Do lai sau khi them 8 bang: 16.800 ky tu.
+TRAN_BAO_CAO = 22000
+
+
+def _cat(bao_cao: str, tran: int = TRAN_BAO_CAO) -> str:
+    """Cat bao cao NHUNG noi ro la da cat — im lang thi vai tuong minh da doc het."""
+    b = bao_cao.strip()
+    if len(b) <= tran:
+        return b
+    return (b[:tran].rsplit("\n", 1)[0]
+            + f"\n\n[!] BAO CAO BI CAT o {tran} ky tu, mat {len(b) - tran} ky tu "
+              "cuoi. Cac bang phia duoi KHONG hien ra day — dung ket luan la "
+              "'khong co gi'. Bao Ong Chu de nang tran.")
 
 
 def workdir(vai: str) -> Path:
@@ -138,7 +155,8 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
 def brief_nova(wd: Path, lam_moi: bool) -> str:
     rep = wd / "scan_models.txt"
     if lam_moi or not _moi(rep):
-        r = _chay([str(ROOT / "scan_models.py"), "--ngay", "7", "--top", "10"], timeout=1200)
+        r = _chay([str(ROOT / "scan_models.py"), "--ngay", "7", "--top", "10",
+                   "--khong-bat-buoc"], timeout=1200)
         rep.write_text((r.stdout or "") + "\n[stderr]\n" + (r.stderr or "")[-1500:], encoding="utf-8")
     bao_cao = rep.read_text(encoding="utf-8").split("\n[stderr]\n")[0]
     mh = {}
@@ -148,7 +166,7 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
         pass
     chet = [k for k, v in (mh.get("models") or {}).items() if not v.get("ok")]
     L = [f"# NOVA — QUÉT XONG {datetime.now(VN).strftime('%d/%m %H:%M')} VN (scan_models.py --ngay 7 --top 10)",
-         "Báo cáo của script (đọc ở đây, KHÔNG chạy lại, KHÔNG web_search):", "", bao_cao.strip()[:12000], ""]
+         "Báo cáo của script (đọc ở đây, KHÔNG chạy lại, KHÔNG web_search):", "", _cat(bao_cao), ""]
     L.append("Model đội đã đo và đang chết/loại (không đề xuất lại như tin mới): "
              + (", ".join(chet) if chet else "không có") +
              ". Đã loại có lý do: gemini-3.7-flash (cache 0%, đắt 44 lần), kimi-k3 (không tắt suy luận), grok "
@@ -162,7 +180,8 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
                        "summary_vi": "<MỘT mệnh đề ≤ 15 từ: giá vào/ra mỗi triệu token hoặc hạng bảng; chỉ làm ngữ cảnh "
                                      "cho vai viết, KHÔNG lên báo cáo>",
                        "source_note": "<bảng/nguồn + ngày>"}], ensure_ascii=False, indent=1),
-          "Xếp thứ tự: vào top 3 bảng lớn (text, WebDev, coding, trí tuệ) lên đầu. Không có gì đáng lên kênh thì "
+          "Xếp thứ tự: vào top 3 bảng lớn (text, WebDev, coding, trí tuệ, ECI, agentic) lên đầu; kế đến là leo hạng "
+          "ở bảng khó bão hoà (HLE, ARC-AGI-2, Terminal-Bench). Không có gì đáng lên kênh thì "
           "chạy bước 3 với --khong-co.",
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python quet_nop.py --vai nova",
