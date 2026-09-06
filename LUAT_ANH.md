@@ -90,11 +90,30 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 - Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
   hiệu cần xem lại.
 
-### 1.3 Tin model ra mắt: ưu tiên benchmark table/chart
+### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 
 Bảng so sánh điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là
 **bằng chứng mạnh nhất** — ưu tiên trước cả ảnh logo/hero. Chụp bản to (cạnh
 ngắn ≥1000px; bảng chữ nhỏ càng phải to).
+
+**Tin về THỨ HẠNG thì bảng xếp hạng chính là ảnh của tin.** Không có ảnh nào
+thay được nó, và **không được đi tìm ảnh khác chỉ vì chart bị chặn khi đi một
+mình** — cổng đó bảo *ghép dọc*, không bảo *đổi tin sang ảnh khác*. Ông Chủ bắt
+lỗi 06/09/2026: hai thẻ liền dùng bảng tỉ số giải golf rồi bảng câu cá trên
+băng cho tin xếp hạng model. Cả hai đều khớp chữ "leaderboard" và không dính gì
+tới tin.
+
+Chart đi đâu, theo khung:
+
+- **Hero (`quote`/`tran`)** — chart ở `anh`, thêm `anh2` là một ảnh ngang cùng
+  tone: script ghép dọc, chart nằm nửa trên **nguyên vẹn**. `ethan_nop.py` gợi ý
+  sẵn cặp ghép (`cap_ghep_hero`).
+- **Carousel slide thân** — `"chart": true`, dán full bề ngang nguyên vẹn.
+
+Nguồn không có sẵn ảnh chart thì **chụp từ chính trang nguồn**: engine
+`anh_chuan_bi.py` mở browser thật và tự chụp `figure/table/canvas/svg` (mã ảnh
+loại `chart`, đóng dấu `chup_chart`). Chụp tay thì dùng `chup_chart.py` — full
+chiều rộng trước, chiều cao xét sau (mục 2).
 
 ### 1.4 Bài arxiv: chụp trang bìa paper
 

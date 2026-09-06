@@ -57,6 +57,21 @@ def giai_spec(spec: dict, m: dict) -> tuple:
             loi.append(f"ghép {ma}+{ma2} vẫn quá ngang ({rc:.2f} > {eb.TI_LE_HERO_MAX}) — chọn cặp khác")
         if b["ti_le"] < 1.2 or a["ti_le"] < 1.2:
             loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ti_le']}, {ma2}={b['ti_le']}")
+    # ẢNH KHÔNG LIÊN QUAN BÀI (Ông Chủ bắt lỗi 06/09/2026). `anh_chuan_bi.py` đã
+    # cho MỌI ảnh ứng viên đi qua vision và đóng cờ `lien_quan`; `dre_nop.py` đọc
+    # cờ đó và từ chối, `ethan_nop.py` thì không đọc — nên Ethan chọn được ảnh
+    # bảng tỉ số giải golf cho tin GPT-6, rồi bảng câu cá trên băng cho tin xếp
+    # hạng trí tuệ. Cả hai đều "leaderboard", và đó đúng là cách nó chọn: bắt
+    # chữ, không nhìn nội dung. Không cổng nào nói gì.
+    rac = [x for x in (ma, ma2) if x and anh[x].get("lien_quan") is False]
+    if rac:
+        loi.append(f"{', '.join(rac)} bị vision đánh dấu KHÔNG LIÊN QUAN bài "
+                   f"({'; '.join((anh[x].get('mo_ta') or '?')[:60] for x in rac)}) — "
+                   "không dùng. Tin xếp hạng/benchmark thì ẢNH ĐÚNG chính là bảng "
+                   "xếp hạng của nguồn: engine đã chụp sẵn (mã loại chart), ghép "
+                   "dọc với một ảnh ngang cùng tone qua \"anh2\". Đừng đi tìm ảnh "
+                   "khác chỉ vì chart bị chặn khi đi một mình.")
+
     mat = [x for x in (ma, ma2) if x and anh[x]["mat"]]
     if mat and not str(spec.get("nhan_vat") or "").strip():
         loi.append(f"{', '.join(mat)} có mặt người mà không khai \"nhan_vat\": \"<tên người trong bài>\"")
