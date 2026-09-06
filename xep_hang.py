@@ -357,7 +357,8 @@ def _cua_so(rows: list, idx: int, hdr_h: float, bang_w: float) -> tuple:
     return dau, cuoi
 
 
-TI_LE_GHEP = 1.6               # rộng/cao trên mức này thì một bảng không đi một mình vào hero được
+TI_LE_GHEP = 1.5               # dừng thu hẹp/ghép khi rộng/cao ≤ mức này. Cổng hero là 1.6 (kiem_anh_thap
+                               # 50% khổ 4:5 = 1200/750); để 1.5 cho có biên — server từng ra đúng 1.600.
 
 
 def _chup_mot_bang(page, tim: dict, out: Path, dpr: int = DPR):
