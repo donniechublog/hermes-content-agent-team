@@ -54,23 +54,51 @@ thì báo `[thieu]`, KHÔNG tạo (tôn trọng phân chia per-brand).
   scheduled, triage`. Sắp theo mức độ cần nhìn, không theo vòng đời. Ba cột cuối
   gần như luôn rỗng trong dây chuyền nội dung. Thứ tự gốc của hermes là
   `triage, todo, ready, running, blocked, review, done` — thấy `triage` đứng đầu
-  trong `dist.index.js` là dấu hiệu bản vá đã mất.
+  trong `dist/index.js` là dấu hiệu bản vá đã mất.
 - **Nhãn profile to lên**: lane header từ `0.65rem` lên `0.82rem` kèm viền trái
   màu nhấn; huy hiệu `@profile` trên thẻ có nền và cỡ `0.8rem`. Trước đó chữ quá
   nhỏ và chìm vào đám xám nên phải mở từng thẻ mới biết bot nào.
 - **Chia lane ở mọi cột**: trước chỉ cột `running` mới tách theo profile.
 - **Hiện tên người thay slug**: `/board` trả thêm `display_names` đọc từ
   `profile.yaml` (cache 30s trong `plugin_api.py`); mọi nhãn assignee trong
-  `dist.index.js` đi qua `tenVai()` nên bảng hiện `Finn`, `Dre`… thay vì
+  `dist/index.js` đi qua `tenVai()` nên bảng hiện `Finn`, `Dre`… thay vì
   `scout`, `writer`. Giá trị gửi lên API và giá trị filter **vẫn là slug**, chỉ
   phần chữ nhìn thấy đổi.
 
-Đây là tệp trong bản cài hermes nên **`hermes update` sẽ ghi đè**. Quy trình sau
-khi cập nhật hermes:
+### Bản vá sống ở đâu (đổi 06/09/2026)
 
-    venv/bin/python dong_bo_hermes.py              # xem lệch những gì
-    venv/bin/python dong_bo_hermes.py --ra-hermes  # khôi phục bản vá
-    systemctl --user restart hermes-dashboard
+Trước đây bản vá nằm **trong bản cài hermes** (`~/hermes-agent/plugins/kanban/dashboard/`),
+tức đúng chỗ `hermes update` ghi đè, rồi `dong_bo_hermes.py` chép qua chép lại để
+"khôi phục". Mất bản vá ba lần là hệ quả tất yếu của việc đặt sai chỗ, không phải
+của cổng chặn yếu.
+
+Hermes có sẵn cách đúng: dashboard quét `<HERMES_HOME>/plugins/<tên>/dashboard/`
+**trước** plugin đi kèm và khử trùng **theo tên** (`_discover_dashboard_plugins`,
+`seen_names`). Một plugin tên `kanban` ở thư mục người dùng che hoàn toàn bản đi
+kèm, cả `dist/` lẫn `plugin_api.py`, và `hermes update` không bao giờ đụng vào
+`<HERMES_HOME>/plugins/`. Nên từ 06/09/2026:
+
+    hermes/plugins/kanban/dashboard/   <->   ~/.hermes-<brand>/plugins/kanban/dashboard/
+
+cho cả hai home, gồm `manifest.json`, `plugin_api.py`, `dist/index.js`,
+`dist/style.css` (bố cục y hệt upstream, không còn tên phẳng `dist.index.js`).
+`~/hermes-agent` chỉ còn là nơi **soi upstream đổi gì**, không còn là điểm đồng bộ.
+
+Chuyển một lần trên server, mỗi home:
+
+    venv/bin/python dong_bo_hermes.py --ra-hermes          # tạo plugins/kanban/ ở cả hai home
+    HERMES_HOME=~/.hermes-blog ~/hermes-agent/venv/bin/python -m hermes_cli.main plugins enable kanban
+    HERMES_HOME=~/.hermes-dcgr ~/hermes-agent/venv/bin/python -m hermes_cli.main plugins enable kanban
+    git -C ~/hermes-agent checkout -- plugins/kanban/dashboard   # bản đi kèm về nguyên bản
+    systemctl --user restart hermes-dashboard@blog hermes-dashboard@dcgr   # unit thật của anh
+
+Bước `plugins enable` là bắt buộc: hermes chỉ mount API của plugin **người dùng**
+khi tên nó có trong `plugins.enabled` của `config.yaml` (GHSA-mcfc-hp25-cjv7).
+Thiếu thì tab kanban vẫn hiện mà mọi `/api/plugins/kanban/*` đều 404.
+`dong_bo_hermes.py` đọc `config.yaml` từng home và nhắc đúng lệnh khi thiếu.
+
+Sau đó `hermes update` không còn liên quan gì tới bản vá. Sửa bản vá thì sửa trong
+git rồi `--ra-hermes` và restart dashboard.
 
 ### Cổng chặn mất bản vá
 
@@ -97,12 +125,19 @@ bằng tay và chắc chắn.
 
 ### Bám theo upstream
 
+Cái giá của việc che plugin đi kèm: upstream đổi gì ở dashboard kanban, đội
+**không tự nhận được** nữa. Đổi mất-im-lặng lấy port-có-chủ-ý, và port là việc
+làm khi rảnh tay, không phải mỗi lần `hermes update`.
+
 `hermes/plugins/kanban/UPSTREAM` ghi hash commit hermes-agent mà bản vá đang
-đứng trên (`dong_bo_hermes.py --vao-repo` tự cập nhật). Có hash mới rebase 3
-chiều được thay vì đoán:
+đứng trên. Quy trình port:
 
-    git -C ~/hermes-agent diff <hash trong UPSTREAM>..HEAD -- plugins/kanban/dashboard
+    venv/bin/python dong_bo_hermes.py --kiem-upstream   # upstream đổi gì kể từ hash đó
+    # vá lại bốn bản vá lên bản mới trong hermes/plugins/kanban/dashboard/
+    venv/bin/python dong_bo_hermes.py --ra-hermes       # đẩy lên hai home, restart dashboard
+    venv/bin/python dong_bo_hermes.py --chot-upstream   # ghi HEAD mới vào UPSTREAM
 
-Bản chép trong repo hiện **đứng sau upstream**: thiếu endpoint export/import
-board và phần giữ connection WS trong `stream_events` của `plugin_api.py`. Chưa
-rebase — cần làm khi rảnh tay, theo đúng lệnh `diff` ở trên.
+Bản trong repo hiện **đứng sau upstream** (theo bản audit, chưa kiểm được trên
+máy Mac vì không có `~/hermes-agent`): thiếu endpoint export/import board và
+phần giữ connection WS trong `stream_events` của `plugin_api.py`. Chạy
+`--kiem-upstream` trên server để thấy đúng diff.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dong bo SOUL/MEMORY/cron giua cac HERMES_HOME dang chay va ban trong git.
+"""Dong bo SOUL/MEMORY/cron/plugin kanban giua cac HERMES_HOME dang chay va ban trong git.
 
 Vi sao can: phan lon HANH VI cua doi nam trong SOUL va script cron, ma hai thu
 do lai o ngoai git. Ngay 22/08 script don em-dash lam hong 21 tep Python: 20 tep
@@ -14,17 +14,21 @@ muc hermes/ trong repo la ban chep co lich su, to chuc theo container:
     hermes/profiles/blog/<slug>.SOUL.md    -> ~/.hermes-blog/profiles/<slug>/
     hermes/profiles/dcgr/<slug>.SOUL.md    -> ~/.hermes-dcgr/profiles/<slug>/
     hermes/profiles/shared/<slug>.SOUL.md  -> CA HAI home
+    hermes/plugins/kanban/dashboard/*      -> <home>/plugins/kanban/dashboard/*  (ca hai)
 
 Slug la ten thu muc THAT trong home (generic: carousel, designer, writer...),
 khong phai ten nhan vat cu (heller/dre...). Profile co trong git ma home khong
 co (vd carousel-edu chua deploy) se bao [thieu], KHONG bi tao ra.
 
 Dung:
-    venv/bin/python dong_bo_hermes.py              # chi so sanh, khong ghi
-    venv/bin/python dong_bo_hermes.py --vao-repo   # home -> repo (truoc khi commit)
-    venv/bin/python dong_bo_hermes.py --ra-hermes  # repo -> home (sau hermes update)
+    venv/bin/python dong_bo_hermes.py                  # chi so sanh, khong ghi
+    venv/bin/python dong_bo_hermes.py --vao-repo       # home -> repo (truoc khi commit)
+    venv/bin/python dong_bo_hermes.py --ra-hermes      # repo -> home (sau khi sua trong git)
+    venv/bin/python dong_bo_hermes.py --kiem-upstream  # hermes-agent doi gi o kanban ke tu UPSTREAM
+    venv/bin/python dong_bo_hermes.py --chot-upstream  # da port xong: ghi HEAD hermes-agent vao UPSTREAM
 """
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -38,12 +42,28 @@ REPO = ROOT / "hermes"
 HOMES = {"blog": Path.home() / ".hermes-blog",
          "dcgr": Path.home() / ".hermes-dcgr"}
 
-# Plugin kanban nam trong ban cai hermes nen `hermes update` SE ghi de. Da sua
-# ba thu o day: thu tu cot (running/ready/blocked truoc), co chu nhan profile,
-# va chia lane theo profile o moi cot chu khong chi cot running.
-PLUGIN_GOC = Path.home() / "hermes-agent"
-PLUGIN_KANBAN = PLUGIN_GOC / "plugins/kanban/dashboard"
-PLUGIN_TEP = ["plugin_api.py", "dist/index.js", "dist/style.css"]
+# ---- Plugin kanban: PLUGIN NGUOI DUNG, khong con va vao ban cai hermes -------
+# Truoc 06/09/2026 ban va nam TRONG ~/hermes-agent/plugins/kanban/dashboard —
+# tuc trong ban cai hermes — nen `hermes update` reset no ve upstream, roi mot
+# lan --vao-repo keo ban da bi reset vao git va xoa mat ba ban va (a1f9387).
+# Cong lech-kich-thuoc 15% khong bat duoc, cong dau vet (06/09 sang) bat duoc
+# nhung van la vo dau: goc re la de ban va o cho hermes update se ghi de.
+#
+# Hermes co san cach dung: dashboard quet <HERMES_HOME>/plugins/<ten>/dashboard/
+# TRUOC plugins di kem, va khu trung THEO TEN (web_server._discover_dashboard_
+# plugins, `seen_names`). Mot plugin ten `kanban` o thu muc nguoi dung che
+# hoan toan ban di kem — ca dist/ lan plugin_api.py — va `hermes update` khong
+# bao gio dung vao <HERMES_HOME>/plugins/. Nen tu 06/09/2026 chieu:
+#
+#     hermes/plugins/kanban/dashboard/  <->  <home>/plugins/kanban/dashboard/
+#
+# cho CA HAI home. ~/hermes-agent chi con la NGUON DE SOI upstream doi gi
+# (--kiem-upstream), khong con la diem dong bo. Dieu kien de API cua plugin
+# nguoi dung duoc mount: `plugins.enabled` trong config.yaml cua home phai co
+# "kanban" (hermes gate theo GHSA-mcfc-hp25-cjv7) — script kiem va nhac.
+HERMES_AGENT = Path(os.environ.get("HERMES_AGENT_DIR") or (Path.home() / "hermes-agent"))
+PLUGIN_TEP = ["manifest.json", "plugin_api.py", "dist/index.js", "dist/style.css"]
+PLUGIN_REPO = REPO / "plugins" / "kanban" / "dashboard"
 # Ghi lai ban va dang dung tren commit upstream nao, de lan sau con rebase 3
 # chieu duoc thay vi doan. Xem chu thich trong chinh tep UPSTREAM.
 TEP_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
@@ -60,6 +80,10 @@ SCRIPT = ["finn_daily_scan", "nova_daily_scan", "vera_daily_scan",
 
 def _slug(soul_path: Path) -> str:
     return soul_path.name[: -len(".SOUL.md")]
+
+
+def plugin_home(H: Path) -> Path:
+    return H / "plugins" / "kanban" / "dashboard"
 
 
 def cap_tep():
@@ -100,23 +124,19 @@ def cap_tep():
         for hk, H in HOMES.items():
             ra.append((f"cron {hk}/{s}", H / "scripts" / f"{s}.sh",
                        REPO / "scripts" / f"{s}.sh"))
+    # Ten muc: "kanban <home> <tep>" — thieu_dau_vet tach tep bang split(" ", 2).
     for f in PLUGIN_TEP:
-        ra.append((f"kanban {f}", PLUGIN_KANBAN / f,
-                   REPO / "plugins" / "kanban" / f.replace("/", ".")))
+        for hk, H in HOMES.items():
+            ra.append((f"kanban {hk} {f}", plugin_home(H) / f, PLUGIN_REPO / f))
     return ra
 
 
 LA_PLUGIN = "kanban "
 
-# Dau vet cua tung ban va doi tu sua trong plugin kanban. Cong bao ve cu so
-# LECH KICH THUOC (15%) va chi chay o chieu --ra-hermes; no hong ca hai dau:
-#  - Chieu --vao-repo KHONG co cong nao. Ngay 04/09/2026 mot ban ~/.hermes vua
-#    bi `hermes update` reset ve upstream da di nguoc vao git (commit a1f9387)
-#    va xoa mat hai ban va: thu tu cot va chia lane o moi cot.
-#  - Ban hermes moi them ~130 dong vao plugin_api.py chi lam lech ~2,4% kich
-#    thuoc, lot duoi nguong, nen --ra-hermes van de mat tinh nang upstream.
-# Tu 06/09/2026 doi sang kiem THEO DAU VET, ap cho CA HAI CHIEU. Kich thuoc
-# khong noi len ban va con hay mat; chuoi dac trung thi co.
+# Dau vet cua tung ban va doi tu sua trong plugin kanban. Van giu du ban va da
+# ra khoi ban cai hermes: no la cong "khong thut lui" — mot lan --vao-repo keo
+# tu mot home vua bi ai do chep nham ban upstream vao van bi chan, thay vi lang
+# le xoa ban va nhu a1f9387. Ap cho CA HAI CHIEU.
 DAU_VET = {
     "dist/index.js": [
         ("nhan ten vai", "tenVai("),
@@ -137,6 +157,14 @@ DAU_VET = {
 }
 
 
+def _tep_plugin(ten: str) -> str | None:
+    """'kanban blog dist/index.js' -> 'dist/index.js'; None neu khong phai muc plugin."""
+    if not ten.startswith(LA_PLUGIN):
+        return None
+    phan = ten.split(" ", 2)
+    return phan[2] if len(phan) == 3 else None
+
+
 def thieu_dau_vet(ten: str, nguon: bytes, dich: bytes) -> str | None:
     """Ly do KHONG nen ghi `nguon` de len `dich`, hoac None neu an toan.
 
@@ -145,9 +173,8 @@ def thieu_dau_vet(ten: str, nguon: bytes, dich: bytes) -> str | None:
     dang mang ban va sang, phai cho chay. Khong bat Exception o day: ca hai ban
     byte da doc xong truoc khi goi, fail-open kieu cu la thu da giau loi.
     """
-    if not ten.startswith(LA_PLUGIN):
-        return None
-    dau = DAU_VET.get(ten[len(LA_PLUGIN):])
+    tep = _tep_plugin(ten)
+    dau = DAU_VET.get(tep) if tep else None
     if not dau or nguon is None or dich is None:
         return None
     mat = [nhan for nhan, chuoi in dau
@@ -158,19 +185,32 @@ def thieu_dau_vet(ten: str, nguon: bytes, dich: bytes) -> str | None:
             + " — ghi de la mat ban va")
 
 
+def hai_home_lech(tep: str, doc_fn=None) -> str | None:
+    """--vao-repo: hai home phai giong nhau o tep plugin nay, khong thi tu choi
+    — chep 'home nao doc sau thang' la im lang nuot ban cua home kia. Tra ve ly
+    do, hoac None neu chi mot home co tep / ca hai giong nhau."""
+    doc_fn = doc_fn or doc
+    ban = {hk: chuan(doc_fn(plugin_home(H) / tep)) for hk, H in HOMES.items()}
+    ban = {hk: b for hk, b in ban.items() if b is not None}
+    if len({b for b in ban.values()}) <= 1:
+        return None
+    return ("hai home co hai ban KHAC NHAU (" + ", ".join(sorted(ban)) + ") — "
+            "xem diff bang tay, chon mot ban, chay lai voi --chi kanban <home>")
+
+
 MAU_UPSTREAM = """\
 # Xuất xứ bản chép plugin kanban trong repo này. TỆP DO MÁY GHI, đừng sửa tay.
 #
-# `hermes/plugins/kanban/` không phải mã của đội: nó là bản cài hermes-agent
-# (vendor) CỘNG ba bản vá của đội. Muốn nâng lên hermes mới thì phải biết bản
-# vá đang đứng trên commit upstream nào, nếu không chỉ còn nước đoán.
+# `hermes/plugins/kanban/dashboard/` là plugin NGƯỜI DÙNG (che plugin đi kèm
+# cùng tên, hermes update không đụng), gồm bản upstream CỘNG bốn bản vá của đội.
+# Vì bị che nên upstream đổi gì ở dashboard kanban đội cũng không tự nhận được —
+# đó là cái giá đổi lấy việc không còn mất bản vá. Muốn nhận thì port có chủ ý:
 #
-# Rebase 3 chiều lần sau:
-#   git -C ~/hermes-agent diff {hash}..HEAD -- plugins/kanban/dashboard
-#   # xem upstream đổi gì, vá lại ba bản vá lên bản mới, chạy --vao-repo
+#   venv/bin/python dong_bo_hermes.py --kiem-upstream   # upstream đổi gì kể từ hash dưới
+#   # vá lại bốn bản vá lên bản mới, --ra-hermes, restart dashboard, rồi:
+#   venv/bin/python dong_bo_hermes.py --chot-upstream   # ghi HEAD mới vào đây
 #
-# Dòng `commit:` được `dong_bo_hermes.py --vao-repo` ghi lại mỗi lần kéo bản
-# cài về repo.
+# `commit:` là HEAD của ~/hermes-agent lúc port lần cuối.
 
 commit: {hash}
 ghi_luc: {ngay}
@@ -180,15 +220,25 @@ ghi_luc: {ngay}
 def hash_upstream() -> str | None:
     """HEAD cua ban cai hermes-agent, hoac None neu no khong phai repo git."""
     try:
-        r = subprocess.run(["git", "-C", str(PLUGIN_GOC), "rev-parse", "HEAD"],
+        r = subprocess.run(["git", "-C", str(HERMES_AGENT), "rev-parse", "HEAD"],
                            capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.SubprocessError):
         return None
     return r.stdout.strip() or None if r.returncode == 0 else None
 
 
+def doc_upstream() -> str | None:
+    try:
+        for d in TEP_UPSTREAM.read_text(encoding="utf-8").splitlines():
+            if d.startswith("commit:"):
+                return d.split(":", 1)[1].strip() or None
+    except OSError:
+        pass
+    return None
+
+
 def ghi_upstream() -> str | None:
-    """Ghi lai HEAD upstream sau khi keo ban cai ve repo. Tra ve hash da ghi."""
+    """Ghi HEAD hermes-agent hien tai vao UPSTREAM (sau khi da port). Tra ve hash."""
     h = hash_upstream()
     if not h:
         return None
@@ -197,6 +247,76 @@ def ghi_upstream() -> str | None:
         MAU_UPSTREAM.format(hash=h, ngay=time.strftime("%d/%m/%Y")),
         encoding="utf-8")
     return h
+
+
+def kiem_upstream() -> int:
+    """In diff cua hermes-agent o plugins/kanban/dashboard ke tu hash trong UPSTREAM."""
+    goc = doc_upstream()
+    if not goc:
+        print(f"[!] Khong doc duoc hash trong {TEP_UPSTREAM}", file=sys.stderr)
+        return 1
+    if not (HERMES_AGENT / ".git").exists():
+        print(f"[!] {HERMES_AGENT} khong phai repo git (dat HERMES_AGENT_DIR neu o cho khac)",
+              file=sys.stderr)
+        return 1
+    r = subprocess.run(["git", "-C", str(HERMES_AGENT), "diff", "--stat",
+                        f"{goc}..HEAD", "--", "plugins/kanban/dashboard"],
+                       capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        print(f"[!] git diff loi: {r.stderr.strip()[:300]}", file=sys.stderr)
+        return 1
+    head = hash_upstream()
+    print(f"UPSTREAM da port: {goc[:12]}   HEAD hermes-agent: {(head or '?')[:12]}")
+    if not r.stdout.strip():
+        print("Upstream KHONG doi gi o plugins/kanban/dashboard ke tu lan port cuoi.")
+        return 0
+    print("Upstream DA DOI (chua co trong plugin cua doi):\n" + r.stdout)
+    print("Xem chi tiet:  git -C", HERMES_AGENT, f"diff {goc[:12]}..HEAD -- plugins/kanban/dashboard")
+    return 0
+
+
+def kanban_da_bat(H: Path) -> bool | None:
+    """config.yaml cua home co `plugins.enabled` chua "kanban" khong.
+    None = khong doc duoc (thieu tep / thieu pyyaml)."""
+    p = H / "config.yaml"
+    try:
+        import yaml
+        cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except Exception:                                        # noqa: BLE001
+        return None
+    pl = cfg.get("plugins") if isinstance(cfg, dict) else None
+    en = pl.get("enabled") if isinstance(pl, dict) else None
+    return isinstance(en, list) and "kanban" in en
+
+
+def nhac_bat_plugin() -> None:
+    """Plugin nguoi dung chi duoc mount API khi co trong plugins.enabled — thieu
+    thi tab kanban van hien ma moi request /api/plugins/kanban/* deu 404."""
+    hermes_py = HERMES_AGENT / "venv" / "bin" / "python"
+    for hk, H in HOMES.items():
+        if not plugin_home(H).exists():
+            continue
+        ok = kanban_da_bat(H)
+        if ok:
+            continue
+        ly = "chua co 'kanban' trong plugins.enabled" if ok is False else "khong doc duoc config.yaml"
+        print(f"\n[!] {hk}: {ly} — API cua plugin se KHONG duoc mount. Bat mot lan:")
+        print(f"    HERMES_HOME={H} {hermes_py} -m hermes_cli.main plugins enable kanban")
+        print(f"    systemctl --user restart hermes-dashboard@{hk}   # hoac unit dashboard cua home nay")
+
+
+def nhac_don_ban_cai() -> None:
+    """Ban cai hermes-agent con giu ban va cu (di san truoc 06/09) thi la ban thu
+    ba gay nhieu: ke tu nay ban di kem phai LA upstream nguyen ban."""
+    d = HERMES_AGENT / "plugins" / "kanban" / "dashboard"
+    if not (HERMES_AGENT / ".git").exists() or not d.exists():
+        return
+    r = subprocess.run(["git", "-C", str(HERMES_AGENT), "status", "--porcelain", "--", str(d)],
+                       capture_output=True, text=True, timeout=10)
+    if r.returncode == 0 and r.stdout.strip():
+        print(f"\n[!] {d} dang lech so voi upstream (ban va cu con nam trong ban cai).")
+        print("    Ke tu 06/09/2026 ban va song o <home>/plugins/kanban/, ban cai phai nguyen ban:")
+        print(f"    git -C {HERMES_AGENT} checkout -- plugins/kanban/dashboard")
 
 
 def doc(p: Path):
@@ -216,20 +336,31 @@ def chuan(b):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Dong bo SOUL/cron voi git (multi-home)")
+    ap = argparse.ArgumentParser(description="Dong bo SOUL/cron/plugin kanban voi git (multi-home)")
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--vao-repo", action="store_true", help="home -> repo")
     g.add_argument("--ra-hermes", action="store_true", help="repo -> home")
+    g.add_argument("--kiem-upstream", action="store_true",
+                   help="hermes-agent doi gi o plugins/kanban/dashboard ke tu hash trong UPSTREAM")
+    g.add_argument("--chot-upstream", action="store_true",
+                   help="Da port xong upstream: ghi HEAD hermes-agent vao UPSTREAM")
     ap.add_argument("--ep", action="store_true",
                     help="Ghi de ke ca khi ben nguon thieu ban va cua tep plugin "
                          "(dung sau khi da xem bang tay va chac chan)")
     ap.add_argument("--chi", metavar="CHUOI",
-                    help="Chi dong bo cac muc co ten chua CHUOI (vd --chi carousel). "
-                         "Dung khi drift hai chieu: day/keo tung phan, khong mu.")
+                    help="Chi dong bo cac muc co ten chua CHUOI (vd --chi carousel, "
+                         "--chi 'kanban blog'). Dung khi drift hai chieu: day/keo tung phan.")
     a = ap.parse_args()
 
+    if a.kiem_upstream:
+        return kiem_upstream()
+    if a.chot_upstream:
+        h = ghi_upstream()
+        print(f"UPSTREAM = {h}" if h else f"[!] Khong doc duoc HEAD cua {HERMES_AGENT}")
+        return 0 if h else 1
+
     khac, thieu, bo_qua, da_chep = [], [], [], 0
-    keo_plugin = False          # co keo tep plugin nao ve repo khong
+    plugin_da_chep = set()      # --vao-repo: moi tep plugin chep MOT lan du hai home
     for ten, that, repo in cap_tep():
         if a.chi and a.chi not in ten:
             continue
@@ -242,6 +373,14 @@ def main():
         khac.append((ten, that, repo, b_b is None))
 
         if a.vao_repo:
+            tep = _tep_plugin(ten)
+            if tep:
+                if tep in plugin_da_chep:
+                    continue                          # home kia da chep roi
+                ly_do = None if a.chi else hai_home_lech(tep)
+                if ly_do and not a.ep:
+                    bo_qua.append((ten, ly_do))
+                    continue
             # Chieu nay truoc day khong co cong nao — chinh no lam mat hai ban
             # va hom 04/09/2026. Nguon = ban that, dich = ban repo.
             ly_do = thieu_dau_vet(ten, a_b, b_b)
@@ -251,13 +390,13 @@ def main():
             repo.parent.mkdir(parents=True, exist_ok=True)
             repo.write_bytes(chuan(a_b))          # ghi LF vao repo
             da_chep += 1
-            if ten.startswith(LA_PLUGIN):
-                keo_plugin = True
+            if tep:
+                plugin_da_chep.add(tep)
         elif a.ra_hermes:
             if b_b is None:
                 continue                # khong co ban repo thi khong ghi de
-            # Nguon = ban repo, dich = ban that. Chan khi ban that co tinh nang
-            # upstream moi ma ban repo chua co.
+            # Nguon = ban repo, dich = ban that. Chan khi ban that co dau vet
+            # ma ban repo thieu (repo thut lui).
             ly_do = thieu_dau_vet(ten, b_b, a_b)
             if ly_do and not a.ep:
                 bo_qua.append((ten, ly_do))
@@ -268,8 +407,23 @@ def main():
 
     for t in thieu:
         print(f"  [thieu] {t}", file=sys.stderr)
-    if not khac:
+    # Plugin nguoi dung: home CHUA co thi --ra-hermes TAO (khac profile: day la
+    # thu duy nhat repo la nguon goc, khong phai ban chep cua home).
+    if a.ra_hermes:
+        for hk, H in HOMES.items():
+            if not H.exists():
+                continue
+            for f in PLUGIN_TEP:
+                dich, nguon = plugin_home(H) / f, PLUGIN_REPO / f
+                if not dich.exists() and nguon.exists() and (not a.chi or a.chi in f"kanban {hk} {f}"):
+                    dich.parent.mkdir(parents=True, exist_ok=True)
+                    dich.write_bytes(chuan(nguon.read_bytes()))
+                    da_chep += 1
+                    print(f"  TAO   kanban {hk} {f} -> home")
+
+    if not khac and not da_chep:
         print("Hai ben khop nhau, khong co gi de dong bo.")
+        nhac_bat_plugin()
         return 0
 
     huong = "-> repo" if a.vao_repo else ("-> home" if a.ra_hermes else "")
@@ -281,14 +435,12 @@ def main():
             print(f"  [BO QUA] {ten}")
             print(f"           {ly_do}")
         print("  Xem lai bang tay roi va lai tu ban moi, hoac chay --ep neu chac chan.")
-    if keo_plugin:
-        h = ghi_upstream()
-        print(f"\nUpstream hermes-agent: {h}" if h
-              else "\n[!] Khong doc duoc HEAD cua ~/hermes-agent, UPSTREAM giu nguyen.")
     if a.vao_repo or a.ra_hermes:
         print(f"\nDa chep {da_chep} tep.")
     else:
         print(f"\n{len(khac)} tep lech. Chay voi --vao-repo hoac --ra-hermes de dong bo.")
+    nhac_bat_plugin()
+    nhac_don_ban_cai()
     return 0
 
 
