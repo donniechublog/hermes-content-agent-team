@@ -49,6 +49,16 @@ import luat_anh                                              # noqa: E402
 DPR = 2
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+# Vien mobile — chi cho nguon co danh dau "mobile": True trong NGUON (arena.ai).
+# Ong Chu 06/09/2026: chup desktop roi ep co lai kho the (W=1200) lam chu nho han
+# mot nua. arena.ai co GIAO DIEN MOBILE RIENG (danh sach the doc, khong phai
+# bang cuon ngang) — chup o do thi chu von da to san cho man 414px, gan sat kho
+# the (1200px) nen gan nhu KHONG bi co lai. Mobile DPR=3 * rong=414 = 1242px,
+# khop voi W=1200 cua the con desktop 2668px phai co gan mot nua.
+MOBILE_VIEWPORT = {"width": 414, "height": 896}
+MOBILE_DPR = 3
+MOBILE_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
+            "(KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1")
 VANG = (245, 197, 24)          # màu khoanh — cùng gam với đồ hoạ tham chiếu của arena.ai
 TOP_MAC_DINH = 10              # ít nhất top-N khi model nằm trong top
 TREN_MODEL = 2                 # model nằm sâu: giữ 2 hàng phía trên, kéo dài xuống dưới
@@ -65,17 +75,17 @@ TI_LE_MUC_TIEU = 1.5
 # không có gợi ý.
 NGUON = [
     {"ma": "arena-text",     "site": "ARENA.AI",  "bang": "Text Arena",
-     "url": "https://arena.ai/leaderboard/text",          "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/text",          "mien": r"arena\.ai|lmarena", "mobile": True},
     {"ma": "arena-code",     "site": "ARENA.AI",  "bang": "WebDev / Code Arena",
-     "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena", "mobile": True},
     {"ma": "arena-vision",   "site": "ARENA.AI",  "bang": "Vision Arena",
-     "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena", "mobile": True},
     {"ma": "arena-t2i",      "site": "ARENA.AI",  "bang": "Text-to-Image Arena",
-     "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena", "mobile": True},
     {"ma": "arena-t2v",      "site": "ARENA.AI",  "bang": "Text-to-Video Arena",
-     "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena", "mobile": True},
     {"ma": "arena-search",   "site": "ARENA.AI",  "bang": "Search Arena",
-     "url": "https://arena.ai/leaderboard/search",        "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/search",        "mien": r"arena\.ai|lmarena", "mobile": True},
     {"ma": "aa-models",      "site": "ARTIFICIALANALYSIS.AI", "bang": "Intelligence Index",
      "url": "https://artificialanalysis.ai/leaderboards/models", "mien": r"artificialanalysis"},
     {"ma": "tbench",         "site": "TBENCH.AI", "bang": "Terminal-Bench",
@@ -525,6 +535,173 @@ def chup_bang(page, models: list, out: Path, dpr: int = DPR):
     return kq, ""
 
 
+# ---- Chụp DANH SÁCH MOBILE (arena.ai: div-list, không phải <table>) -----------
+# Ông Chủ 06/09/2026: arena.ai có giao diện mobile RIÊNG — danh sách các <div>
+# hàng-thẻ (không phải bảng cuộn ngang như tbench/swebench/artificialanalysis,
+# đã thử và KHÔNG có lợi — bảng đó chỉ bị cắt bởi khung hẹp, không tự xếp lại).
+# Chụp ở khung mobile thì chữ vốn đã to sẵn cho màn 414px, gần khớp bề ngang thẻ
+# (1200px) nên gần như không bị co lại — khác hẳn chụp desktop rồi ép co một nửa.
+#
+# Hai cái khó riêng của kiểu này so với <table>:
+#   1. DANH SÁCH CHỈ HIỆN ~11-12 MỤC ĐẦU, không tải thêm khi cuộn. Đã thử cả
+#      `.scrollTop` lẫn `mouse.wheel()` thật, chờ tới 3.6s mỗi lần — nội dung
+#      không đổi. Có ô tìm kiếm riêng (icon kính lúp) để nhảy tới model sâu,
+#      nhưng lái nó qua Playwright không ổn định (toạ độ/hiển thị đổi giữa các
+#      lần tải). Quyết định: KHÔNG cuộn/tìm thêm — model không có trong ~11-12
+#      mục đầu thì nhường ngay cho đường desktop `<table>` (tìm được ở BẤT KỲ
+#      hạng nào) làm dự phòng, xem `tim_va_chup`. Tin xếp hạng hầu như luôn nói
+#      về model đổi hạng ở NHÓM ĐẦU (mới đáng thành tin) nên đây là trường hợp
+#      hiếm, không đáng công sức lái ô tìm kiếm cho bằng được.
+#   2. Không có thẻ ngữ nghĩa (không `<tr>`, không `role=row`) — chỉ là `<div>`
+#      với class Tailwind. Nhận diện TỔNG QUÁT (nhóm các anh em CÙNG cha có
+#      CÙNG chuỗi class, >=5 phần tử, kích thước dạng một hàng) thay vì khoá
+#      cứng một chuỗi class cụ thể — đã đo đúng trên cả arena-code lẫn
+#      arena-text, hai giao diện Tailwind hơi khác nhau, vẫn nhận đúng.
+_JS_NORM_DS = """
+const norm = s => (s||'').toLowerCase().replace(/[\\s\\-_.]+/g,'');
+const rect = el => { const r = el.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height}; };
+const timDanhSach = () => {
+  const groups = new Map();
+  document.querySelectorAll('div').forEach(el => {
+    const p = el.parentElement; if (!p) return;
+    if (!groups.has(p)) groups.set(p, new Map());
+    const m = groups.get(p);
+    const kk = (el.className||'').toString().trim();
+    if (!kk || !m.has(kk)) m.set(kk, m.get(kk) || []);
+    m.get(kk).push(el);
+  });
+  let best = null;
+  for (const [, m] of groups) {
+    for (const [, els] of m) {
+      if (els.length < 5) continue;
+      const r0 = els[0].getBoundingClientRect();
+      if (r0.width < 200 || r0.width > 500 || r0.height < 25 || r0.height > 120) continue;
+      if (!best || els.length > best.length) best = els;
+    }
+  }
+  return best;
+};
+const khungCuonDs = el => { for (let e = el; e; e = e.parentElement) {
+  const cs = getComputedStyle(e);
+  if (/(auto|scroll)/.test(cs.overflowY) && e.scrollHeight > e.clientHeight + 4) return e; }
+  return null; };
+"""
+
+_JS_DS_TIM = _JS_NORM_DS + """
+(models) => {
+  const els = timDanhSach();
+  if (!els) return {tim_thay: false, so_luong: 0};
+  for (const model of models) {
+    const nm = norm(model);
+    const idx = els.findIndex(e => norm(e.innerText || e.textContent).includes(nm));
+    if (idx >= 0) return {tim_thay: true, idx, model, so_luong: els.length};
+  }
+  return {tim_thay: false, so_luong: els.length};
+}
+"""
+
+_JS_DS_DO = _JS_NORM_DS + """
+(model) => {
+  const els = timDanhSach();
+  if (!els) return null;
+  const nm = norm(model);
+  const idx = els.findIndex(e => norm(e.innerText || e.textContent).includes(nm));
+  if (idx < 0) return null;
+  els[idx].scrollIntoView({block: 'center'});
+  return true;
+}
+"""
+
+_JS_DS_DO2 = _JS_NORM_DS + """
+(model) => {
+  const els = timDanhSach();
+  if (!els) return null;
+  const nm = norm(model);
+  const idx = els.findIndex(e => norm(e.innerText || e.textContent).includes(nm));
+  if (idx < 0) return null;
+  const cells = (els[idx].innerText || '').trim().split('\\n').map(s => s.trim()).filter(Boolean);
+  const hang = (cells.find(c => /^#?\\d{1,3}$/.test(c)) || '').replace('#', '');
+  // Header: mot the RIENG, cao <40, chu dau la "Rank"/tuong tu, nam sat TREN
+  // khung cuon cua danh sach — chi tinh la "lien ke" khi danh sach dang o hang
+  // dau (idx nho), vi header khong cuon theo danh sach.
+  let hdr = null;
+  if (idx <= 2) {
+    const kc = khungCuonDs(els[0]);
+    const canhTren = kc ? kc.getBoundingClientRect().y : els[0].getBoundingClientRect().y;
+    const cand = Array.from(document.querySelectorAll('div,span'))
+      .find(e => e.children.length === 0 && /^rank$/i.test((e.textContent||'').trim())
+                 && e.getBoundingClientRect().height > 0 && e.getBoundingClientRect().height < 40
+                 && Math.abs(e.getBoundingClientRect().y + e.getBoundingClientRect().height - canhTren) < 60);
+    if (cand) { let h = cand; for (let i=0;i<4 && h.parentElement;i++){ const r=h.getBoundingClientRect();
+        if (r.width > 200) break; h = h.parentElement; } hdr = rect(h); }
+  }
+  return {idx, hang: hang ? parseInt(hang, 10) : null, dong: cells.join(' | ').slice(0, 160),
+          rows: els.map(rect), hdr, vung: (() => { const kc = khungCuonDs(els[0]);
+            const r = kc ? kc.getBoundingClientRect() : {x:0,y:0,width:window.innerWidth,height:window.innerHeight};
+            return {x: Math.max(0,r.x), y: Math.max(0,r.y), w: Math.min(window.innerWidth, r.x+r.width)-Math.max(0,r.x),
+                    h: Math.min(window.innerHeight, r.y+r.height)-Math.max(0,r.y)}; })()};
+}
+"""
+
+
+def _tim_trong_danh_sach(page, models: list):
+    """Tìm model trong danh sách ĐANG HIỂN THỊ — KHÔNG cuộn thêm.
+
+    Đây là mảng CỐ ĐỊNH cỡ ~11-12 mục đầu, không tải thêm dù cuộn (xem chú
+    thích khối trên) — model không có ở đây thì nhường lại cho `chup_bang`
+    (bảng desktop, tìm được ở BẤT KỲ hạng nào) làm nguồn dự phòng ngay sau,
+    xem `tim_va_chup`."""
+    kq = page.evaluate(_JS_DS_TIM, models)
+    return kq if kq.get("tim_thay") else None
+
+
+def chup_danh_sach_mobile(page, models: list, out: Path, dpr: int = MOBILE_DPR):
+    """Chụp danh sách kiểu mobile (arena.ai): tìm model trong danh sách đang
+    hiển thị (không cuộn — xem `_tim_trong_danh_sach`), cuộn nó vào giữa khung
+    nhìn, rồi chụp một dải hàng quanh nó (full bề ngang khung di động sẵn —
+    không cần đo/thu hẹp gì thêm, mỗi hàng đã full-width). Trả về `(None, lý do)`
+    nếu model không nằm trong danh sách hiện có — gọi nơi khác lo dự phòng."""
+    tim = _tim_trong_danh_sach(page, models)
+    if not tim:
+        return None, "không tìm thấy trong danh sách (kể cả sau khi cuộn hết)"
+    model = tim["model"]
+    page.evaluate(_JS_DS_DO, model)
+    page.wait_for_timeout(350)
+    do = page.evaluate(_JS_DS_DO2, model)
+    if not do:
+        return None, "mất dấu sau khi cuộn vào giữa khung nhìn"
+    idx, rows, vung, hdr = do["idx"], do["rows"], do["vung"], do.get("hdr")
+    if not (0 <= idx < len(rows)):
+        return None, "chỉ số hàng lệch sau khi cuộn"
+    dau = 0 if idx <= TOP_MAC_DINH else max(0, idx - TREN_MODEL)
+    cuoi = min(len(rows) - 1, max(idx, dau))
+    cao = lambda k: rows[k]["y"] + rows[k]["h"] - rows[dau]["y"]
+    while cuoi + 1 < len(rows) and cao(cuoi + 1) <= CAO_TOI_DA_CSS:
+        cuoi += 1
+    hien = [k for k in range(dau, cuoi + 1)
+            if rows[k]["y"] >= vung["y"] - 1 and rows[k]["y"] + rows[k]["h"] <= vung["y"] + vung["h"] + 1]
+    if idx not in hien:
+        return None, f"hàng model không nằm trong vùng nhìn sau khi cuộn ({len(hien)}/{cuoi-dau+1} hàng hiện)"
+    dau, cuoi = hien[0], hien[-1]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    band = {"x": rows[dau]["x"], "w": rows[dau]["w"],
+            "y": rows[dau]["y"], "h": rows[cuoi]["y"] + rows[cuoi]["h"] - rows[dau]["y"]}
+    dinh_lien_ke = hdr and abs(hdr["y"] + hdr["h"] - band["y"]) < 40
+    if dinh_lien_ke:
+        r = _giao({"x": band["x"], "w": band["w"], "y": hdr["y"], "h": band["y"] + band["h"] - hdr["y"]}, vung)
+        _chup(page, r, out, dem=0)
+        goc = (r["x"], r["y"])
+    else:
+        r = _giao(band, vung)
+        _chup(page, r, out, dem=0)
+        goc = (r["x"], r["y"])
+    row = rows[idx]
+    _khoanh(out, row["x"] - goc[0], row["y"] - goc[1], row["w"], row["h"], dpr)
+    return {"kieu": "danh-sach", "model": model, "hang": do["hang"], "dong": do["dong"],
+            "idx": idx, "logo_co": False}, ""
+
+
+
 def chup_svg(page, models: list, out: Path, dpr: int = DPR):
     tim = page.evaluate(_JS_SVG, models)
     if not tim:
@@ -646,11 +823,26 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     with sync_playwright() as p:
         br = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb"])
         # Viewport cao san bang tran cua so chup: khong doi kich thuoc giua chung
-        # (doi la trang reflow, bbox do truoc do lech).
-        ctx = br.new_context(viewport={"width": 2400, "height": CAO_TOI_DA_CSS + 250},
-                             device_scale_factor=DPR, user_agent=UA)
-        pg = ctx.new_page()
+        # (doi la trang reflow, bbox do truoc do lech). HAI bo context: mobile
+        # cho nguon co co "mobile" (arena.ai — chu von to san cho man 414px, gan
+        # nhu khong bi co lai khi vao the 1200px, khac han desktop phai co gan
+        # mot nua), desktop cho phan con lai. Tao LAZY, dung lai giua cac nguon
+        # cung loai — khong tao lai context moi lan.
+        ctx_desktop = ctx_mobile = pg_desktop = pg_mobile = None
         for n in nguon_ds:
+            di_dong = bool(n.get("mobile"))
+            if di_dong:
+                if ctx_mobile is None:
+                    ctx_mobile = br.new_context(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
+                                                is_mobile=True, has_touch=True, user_agent=MOBILE_UA)
+                    pg_mobile = ctx_mobile.new_page()
+                pg = pg_mobile
+            else:
+                if ctx_desktop is None:
+                    ctx_desktop = br.new_context(viewport={"width": 2400, "height": CAO_TOI_DA_CSS + 250},
+                                                 device_scale_factor=DPR, user_agent=UA)
+                    pg_desktop = ctx_desktop.new_page()
+                pg = pg_desktop
             if time.time() - t0 > gio_han:
                 in_log(f"[xep_hang] hết giờ ({gio_han}s), dừng ở {n['ma']}")
                 break
@@ -666,18 +858,39 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                         r"just a moment|security verification|attention required|access denied", tieu_de):
                     in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({resp.status if resp else '?'} — {tieu_de[:40]!r}), bỏ qua")
                     continue
-                _doi_bang(pg)
-                kq, ly_do = chup_bang(pg, models, out, DPR)
-                if not kq:
-                    kq2, ly_do2 = chup_svg(pg, models, out, DPR)
-                    kq, ly_do = kq2, f"bảng: {ly_do}; svg: {ly_do2}"
+                if di_dong:
+                    kq, ly_do = chup_danh_sach_mobile(pg, models, out, MOBILE_DPR)
+                    if not kq:
+                        # Model khong nam trong danh sach dau (~11-12 muc, khong cuon
+                        # them duoc — xem _tim_trong_danh_sach). Du phong NGAY tai
+                        # chinh nguon nay bang duong desktop <table>, tim duoc o BAT
+                        # KY hang nao. Doi lai chu se nho hon (anh desktop phai co ve
+                        # kho the), nhung con hon khong co anh.
+                        ly_do_mobile = ly_do
+                        if ctx_desktop is None:
+                            ctx_desktop = br.new_context(viewport={"width": 2400, "height": CAO_TOI_DA_CSS + 250},
+                                                         device_scale_factor=DPR, user_agent=UA)
+                            pg_desktop = ctx_desktop.new_page()
+                        pg_desktop.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
+                        pg_desktop.wait_for_timeout(800)
+                        _doi_bang(pg_desktop)
+                        kq, ly_do = chup_bang(pg_desktop, models, out, DPR)
+                        if not kq:
+                            kq2, ly_do2 = chup_svg(pg_desktop, models, out, DPR)
+                            kq, ly_do = kq2, f"mobile: {ly_do_mobile}; desktop bảng: {ly_do}; svg: {ly_do2}"
+                else:
+                    _doi_bang(pg)
+                    kq, ly_do = chup_bang(pg, models, out, DPR)
+                    if not kq:
+                        kq2, ly_do2 = chup_svg(pg, models, out, DPR)
+                        kq, ly_do = kq2, f"bảng: {ly_do}; svg: {ly_do2}"
             except Exception as e:                           # noqa: BLE001
                 in_log(f"[xep_hang] {n['ma']}: {type(e).__name__}: {str(e)[:80]}")
                 continue
             if not kq:
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
-            if kq.get("logo_co") and not logo:
+            if kq.get("logo_co") and not logo and not di_dong:
                 logo = chup_logo(pg, out_dir / "xep_hang_logo.png")
             _dong_dau(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"], site=n["site"],
                       bang=n["bang"], hang=kq.get("hang"), url=n["url"])
@@ -688,7 +901,7 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                        "bang": n["bang"], "hang": kq.get("hang") or hang_goi_y, "model": kq["model"],
                        "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None}
             break
-        br.close()
+        br.close()  # dong browser cung dong het cac context/page con lai
     if kq_cuoi:
         return kq_cuoi
     n = nguon_ds[0] if nguon_ds else NGUON[0]
