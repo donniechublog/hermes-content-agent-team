@@ -216,6 +216,35 @@ def _doc_offset() -> int:
         print(f"[approve_service] offset.txt hong ({e}), ve 0", flush=True)
         return 0
 
+def _soat_tirith():
+    """Bao neu bo quet prompt-injection duoc KHAI la bat nhung khong chay duoc.
+
+    Phat hien 06/09/2026: moi config deu co tirith_enabled: true, tirith_path:
+    tirith, tirith_fail_open: true — nhung BINARY KHONG CO tren may. fail_open
+    nghia la quet hong thi cho lenh chay tiep, nen cai lop phong thu nay dang
+    tat mot cach im lang. Te hon: hermes co in canh bao, nhung dong do bat dau
+    bang khoang trang + "⚠" nen roi dung vao bo loc _DONG_RAC cua chat_router
+    (xem chinh vi du trong comment o do) — khong bao gio den mat ai.
+    Ghi mot dong luc khoi dong la du de con biet duong: khong sua gi, khong
+    chan gi, chi thoi khong noi doi trong nhat ky nua."""
+    import shutil
+    try:
+        cau_hinh = Path(HERMES_HOME) / "config.yaml"
+        chu = cau_hinh.read_text(encoding="utf-8") if cau_hinh.exists() else ""
+    except OSError:
+        return
+    if "tirith_enabled: true" not in chu:
+        return
+    m = re.search(r"^\s*tirith_path:\s*(\S+)", chu, re.M)
+    duong = m.group(1) if m else "tirith"
+    if shutil.which(duong):
+        return
+    mo = "tirith_fail_open: true" in chu
+    log("start", f"⚠️ tirith_enabled: true nhung KHONG co binary '{duong}' trong PATH — "
+                 f"quet prompt-injection dang TAT"
+                 + (" (fail_open: true nen lenh van chay tiep)" if mo else ""))
+
+
 def loop():
     token, channel, group = load_secrets()
     offset = _doc_offset()
@@ -223,6 +252,7 @@ def loop():
     log("start", f"brand={ghi_log.brand()} group={group} state={STATE_DIR} "
                  f"topics={tp.name}({'co' if tp.exists() else 'THIEU'}) "
                  f"hermes_home={HERMES_HOME} offset={offset}")
+    _soat_tirith()
     loi_lien_tiep = 0
     while True:
         try:

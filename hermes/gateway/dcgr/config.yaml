@@ -382,6 +382,20 @@ discord:
       - Give me a sec.
       - On it.
 telegram:
+  # 05/09/2026: hai bot cung nghe mot group. Lenh cho bot duyet (chon so "6 - Dre"
+  # o topic Vera, "5: ly do" tra loi Lam lai) bi bot gateway tra loi lac de.
+  # require_mention + free_response_topics: moi topic van chat tu do, RIENG topic
+  # Vera (83) chi tra loi khi @mention/reply bot — chon so o do khong bi doi dap.
+  require_mention: true
+  free_response_topics:
+    - "-1003763882779:132"
+    - "-1003763882779:290"
+    - "-1003763882779:228"
+    - "-1003763882779:291"
+    - "-1003763882779:9"
+    - "-1003763882779:289"
+    - "-1003763882779:458"
+    - "-1003763882779:1150"
   reactions: false
   allowed_chats: ''
 mattermost:
@@ -498,8 +512,15 @@ gateway:
       chat_id: '-1003763882779'
       thread_id: '458'
       profile: bob
+    - name: tg-carousel-edu
+      platform: telegram
+      chat_id: '-1003763882779'
+      thread_id: '1150'
+      profile: carousel-edu
   platforms:
     telegram:
+      extra:
+        ignore_commands: [bai, vai, hd]   # lenh cua bot duyet @hermespm — gateway im
       channel_overrides:
         '-1003763882779':
           system_prompt: '[Ghi chú hệ thống — đây là tin nhắn hội thoại từ Telegram,
@@ -517,6 +538,12 @@ gateway:
             cầu rõ ràng làm việc đó. Việc cần chạy lâu thì nói ngắn cách làm và hỏi
 
             lại trước. Nếu cần tra cứu thì tối đa 2-3 lệnh đọc nhanh, rồi trả lời.
+            KHÔNG TRẢ LỜI (đáp đúng một từ NO_REPLY, không gì khác) khi tin nhắn là LỆNH cho bot
+            duyệt bài (@hermespm), không phải câu hỏi cho bạn:
+            - chỉ gồm số / danh sách số kèm tên vai, vd "6 - Dre", "1, 3 - Ethan, 2 - Dre";
+            - dạng "<số slide>: <lý do>" hoặc "tất cả: <lý do>" (trả lời yêu cầu Làm lại ảnh);
+            - chỉ một từ "hủy"/"huỷ".
+            Bot duyệt đã xử lý các tin đó; bạn chen vào là trả lời đôi.
 
             '
 streaming:
@@ -579,3 +606,10 @@ _config_version: 37
 # fallback_model:
 #   provider: openrouter
 #   model: anthropic/claude-sonnet-4
+
+# Plugin kanban cua doi la plugin NGUOI DUNG o plugins/kanban/ (che ban di kem,
+# hermes update khong dung). hermes chi mount API cua plugin nguoi dung khi ten
+# co trong danh sach nay. Them 07/09/2026, xem content-team/hermes/README.md.
+plugins:
+  enabled:
+    - kanban
