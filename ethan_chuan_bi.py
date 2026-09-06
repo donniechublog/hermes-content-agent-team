@@ -72,25 +72,14 @@ def cap_ghep_hero(m: dict) -> list:
 
 
 def viet_brief(m: dict, da_dung: dict | None) -> str:
-    L = [f"# ETHAN — ĐÃ CHUẨN BỊ XONG: {m['title']}",
-         f"Brand: {m['brand']} | draft: {m['draft_id']} | kiểu mặc định: quote (thẻ HOOK 4:5)",
-         f"Link gốc: {m['link']}" + (f" | via: {m['via']}" if m.get("via") else "")]
-    if m.get("tieu_de_en"):
-        L.append(f"Tiêu đề bài gốc: {m['tieu_de_en']}")
-    if da_dung:
-        L.append("")
-        L.append(f"⚠️ LÀM LẠI — lần trước ({da_dung.get('luc', '?')}): ảnh {da_dung.get('anh')}, hook "
-                 f"“{da_dung.get('hook', '')}”. Lần này ẢNH và HOOK phải khác.")
-    L += ["", "## Tư liệu"]
-    if m.get("summary"):
-        L.append(f"Tóm tắt (Finn/Vera): {m['summary']}")
-    if m.get("source_note"):
-        L.append(f"Nguồn (Finn/Vera): {m['source_note']}")
-    tl = m.get("tu_lieu", {})
-    for i, c in enumerate(tl.get("cau_co_so", [])[:15], 1):
-        L.append(f"  {i}. {c}")
-    if tl.get("doan_dau"):
-        L.append(f"Đoạn đầu bài gốc: {tl['doan_dau'][:800]}")
+    import brief_chung
+    L = brief_chung.dau(
+        m, "ETHAN",
+        f"Brand: {m['brand']} | draft: {m['draft_id']} | kiểu mặc định: quote (thẻ HOOK 4:5)")
+    L += brief_chung.khoi_lam_lai(
+        da_dung, f"ảnh {da_dung.get('anh')}, hook “{da_dung.get('hook', '')}”. "
+                 "Lần này ẢNH và HOOK phải khác." if da_dung else "")
+    L += brief_chung.khoi_tu_lieu(m, nhan="Finn/Vera", n_cau=15, n_doan=800)
     L += ["", "## Ảnh đã tải & xử lý — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm"]
     if not m["anh"]:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng thẻ, không vẽ. Kết thúc task bằng "

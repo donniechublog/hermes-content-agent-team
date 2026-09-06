@@ -21,35 +21,18 @@ DRAFTS = cb.DRAFTS
 
 def viet_brief(m: dict, da_dung: dict | None) -> str:
     import carousel
-    L = []
-    L.append(f"# DRE — ĐÃ CHUẨN BỊ XONG: {m['title']}")
-    L.append(f"Brand: {m['brand']} | draft: {m['draft_id']} | "
-             f"slide tối thiểu: {m['toi_thieu']}"
-             + (" (FLAGSHIP: tin model của hãng frontier)" if m["flagship"] else "")
-             + " | tối đa 10 | quote ≥ 2")
-    L.append(f"Link gốc: {m['link']}" + (f" | via: {m['via']}" if m.get("via") else ""))
-    if m.get("tieu_de_en"):
-        L.append(f"Tiêu đề bài gốc: {m['tieu_de_en']}")
-    if da_dung:
-        L.append("")
-        L.append(f"⚠️ LÀM LẠI — lần trước đã gửi lúc {da_dung.get('luc', '?')}: bìa {da_dung.get('bia')}, "
-                 f"ảnh dùng {', '.join(da_dung.get('anh', []))}, hook: “{da_dung.get('hook', '')}”. "
-                 "Lần này BÌA và HOOK phải khác, đổi ít nhất nửa số ảnh, đổi cách chia slide.")
-    L.append("")
-    L.append("## Tư liệu")
-    if m.get("summary"):
-        L.append(f"Tóm tắt (Finn): {m['summary']}")
-    if m.get("source_note"):
-        L.append(f"Nguồn (Finn): {m['source_note']}")
-    tl = m.get("tu_lieu", {})
-    if tl.get("cau_co_so"):
-        L.append("Câu có số liệu (bóc từ bài, dùng làm text/quote):")
-        for i, c in enumerate(tl["cau_co_so"], 1):
-            L.append(f"  {i}. {c}")
-    if tl.get("doan_dau"):
-        L.append(f"Đoạn đầu bài gốc: {tl['doan_dau']}")
-    if not tl.get("cau_co_so") and not tl.get("doan_dau"):
-        L.append("(Không bóc được chữ từ nguồn — viết từ tóm tắt, KHÔNG bịa số.)")
+    import brief_chung
+    L = brief_chung.dau(
+        m, "DRE",
+        f"Brand: {m['brand']} | draft: {m['draft_id']} | slide tối thiểu: {m['toi_thieu']}"
+        + (" (FLAGSHIP: tin model của hãng frontier)" if m["flagship"] else "")
+        + " | tối đa 10 | quote ≥ 2")
+    L += brief_chung.khoi_lam_lai(
+        da_dung,
+        f"bìa {da_dung.get('bia')}, ảnh dùng {', '.join(da_dung.get('anh', []))}, "
+        f"hook: “{da_dung.get('hook', '')}”. Lần này BÌA và HOOK phải khác, đổi ít "
+        "nhất nửa số ảnh, đổi cách chia slide." if da_dung else "")
+    L += brief_chung.khoi_tu_lieu(m, n_cau=99, n_doan=100000)
     L.append("")
     L.append("## Ảnh đã tải & xử lý xong — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm")
     if not m["anh"]:
