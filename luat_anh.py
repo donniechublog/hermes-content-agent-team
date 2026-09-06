@@ -249,6 +249,18 @@ def kiem_da_dung(nhan, duong_dan, draft_id: str, link: str = ""):
             h = dhash(im)
     except Exception:                                        # noqa: BLE001
         return [], []
+    # MIEN TRU ANH XEP HANG. Voi tin xep hang, BANG chinh la chu the: hai bai ve
+    # hai model cung nam trong top mot bang se chup dung dai hang do, chi khac
+    # khung khoanh vang — dHash coi la trung. Luc do cong nay chan anh XH, con
+    # cong "TIN XEP HANG phai dung anh XH" o dre_nop/ethan_nop lai chan moi anh
+    # KHAC: hai loi loai tru nhau, vai sua kieu gi cung sai roi tac (do
+    # 06/09/2026). Lap lai bang xep hang la DUNG, khong phai loi.
+    try:
+        with Image.open(duong_dan) as _im:
+            if la_xep_hang(_im):
+                return [], []
+    except Exception:                                        # noqa: BLE001
+        pass
     moc = time.time() - NGAY_NHO_ANH * 86400
     tin = khoa_tin(link)
     for line in so.read_text(encoding="utf-8").splitlines():

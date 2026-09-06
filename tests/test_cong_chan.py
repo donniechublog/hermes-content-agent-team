@@ -334,6 +334,74 @@ def test_kite_khong_ep_dung_anh_chua_nhin():
         assert co == phai_ep, f"lien_quan={lq}: {'phải ép' if phai_ep else 'KHÔNG được ép'}"
 
 
+# -------------------------------------- tách model / hạng từ tiêu đề xếp hạng
+def test_tach_model_giu_so_phien_ban_nguyen():
+    """Lookahead cũ chặn mọi chữ thường sau số → "GPT-6 tops the leaderboard"
+    ra ['GPT'], engine khoanh hàng đầu tiên chứa "gpt" (có thể là GPT-5.2 mini
+    hạng 23) rồi cổng ép dùng đúng tấm đó làm hero."""
+    import xep_hang as xh
+    for t, mong in [("GPT-6 tops the leaderboard", "GPT-6"),
+                    ("Gemini 4 leo lên #1 bảng xếp hạng", "Gemini 4"),
+                    ("Llama 5 vượt Qwen trên LiveBench", "Llama 5"),
+                    ("Grok 5 takes first place", "Grok 5"),
+                    ("GPT-5.2 tops the leaderboard", "GPT-5.2")]:
+        ra = xh.tach_model(t)
+        assert ra and ra[0] == mong, f"{t!r} → {ra[:2]}, mong {mong}"
+
+
+def test_tach_model_khong_an_so_don_vi():
+    """Số đi với đơn vị (điểm, USD, tỷ) không phải số phiên bản."""
+    import xep_hang as xh
+    assert xh.tach_model("GPT-6 Astra đạt 55 điểm trên bảng xếp hạng")[0] == "GPT-6 Astra"
+    assert xh.tach_model("Claude Opus 4.5 giá 3 USD mỗi triệu token")[0] == "Claude Opus 4.5"
+
+
+def test_tach_hang_chon_dung_khong_lay_match_dau():
+    """"Top 10" đầu tiêu đề là kích cỡ danh sách, không phải thứ hạng."""
+    import xep_hang as xh
+    for t, mong in [("Top 10 mô hình AI 2026: GPT-6 Astra dẫn đầu", 1),
+                    ("Kimi K3 lọt top 5 SWE-bench, hạng 4", 4),
+                    ("GPT-6 leo lên #1 bảng xếp hạng LMArena", 1),
+                    ("Gemini 3 Pro hạng 3 trên Text Arena", 3),
+                    ("Qwen3-Max lọt top 5 Intelligence Index", 5)]:
+        md = xh.tach_model(t)
+        assert xh.tach_hang(t, md[0] if md else "") == mong, t
+
+
+def test_anh_xep_hang_mien_cong_dung_lai():
+    """Hai bài về hai model cùng trong top một bảng chụp đúng dải hàng đó, chỉ
+    khác khung khoanh → dHash coi là trùng. Cổng dùng-lại chặn ảnh XH, còn cổng
+    "tin xếp hạng phải dùng XH" chặn mọi ảnh khác: hai lỗi loại trừ nhau."""
+    import luat_anh as la
+    from PIL import Image, ImageDraw
+    from PIL.PngImagePlugin import PngInfo
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        la._so_da_dung = lambda: d / "s.jsonl"
+
+        def bang(ten, khoanh_y, dau=True):
+            im = Image.new("RGB", (1200, 900), (255, 255, 255))
+            dr = ImageDraw.Draw(im)
+            for i in range(10):
+                dr.rectangle([50, 60 + i * 80, 1150, 120 + i * 80], fill=(240, 240, 245))
+            dr.rectangle([50, khoanh_y, 1150, khoanh_y + 60], outline=(245, 197, 24), width=6)
+            m = PngInfo()
+            if dau:
+                m.add_text("nguon_dung", "chup_xep_hang")
+            p = d / ten
+            im.save(p, "PNG", pnginfo=m)
+            return p
+
+        b1, b2 = bang("xh1.png", 140), bang("xh2.png", 620)
+        t1, t2 = bang("t1.png", 140, dau=False), bang("t2.png", 620, dau=False)
+        la.ghi_da_dung(b1, "bai1-designer-blog", "designer", "https://a.com/1")
+        la.ghi_da_dung(t1, "bai1-designer-blog", "designer", "https://a.com/1")
+        # ảnh xếp hạng: bài sau dùng lại được
+        assert la.kiem_da_dung("XH", b2, "bai2-designer-blog", "https://a.com/2")[0] == []
+        # ảnh thường gần giống: vẫn phải chặn
+        assert la.kiem_da_dung("A1", t2, "bai2-designer-blog", "https://a.com/2")[0]
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

@@ -173,8 +173,16 @@ _DUOI = (r"(?:Astra|Flash|Pro|Max|Mini|Nano|Ultra|Sol|Sonnet|Opus|Haiku|Fable|Th
          r"Video|Image|Agent|Spark|Coder|Instruct|Turbo|Lite|Next|Plus|Preview|Chat|Reasoning|"
          r"High|Low|Medium|XHigh|Vision|Code|Omni|Deep|Research|Horizon|Build|Experimental|Exp|"
          r"[KVRM]\d+(?:\.\d+)?[A-Za-z]*|\d+[bB]|\d+\.\d+(?:\.\d+)*[A-Za-z]*|"
-         # (?-i:) — tat IGNORECASE cuc bo: co re.I thi [a-z] khop ca "A" cua "Astra"
-         r"\d{1,3}(?![\s]*(?-i:[a-zàáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ])))")
+         # So NGUYEN lam duoi phien ban: loai bang DANH SACH DON VI, khong bang
+         # "chu thuong bat ky". Truoc 06/09/2026 lookahead cam moi chu thuong
+         # dung sau so, ma tieu de tu nhien gan nhu luon co: "GPT-6 vượt...",
+         # "Grok 5 takes first place" -> models=['GPT'], ['Grok'] — mat so phien
+         # ban. Engine roi khoanh HANG DAU TIEN chua chu "gpt" tren bang (co the
+         # la GPT-5.2 mini hang 23), dong dau model=GPT, va cong ep dung tam do
+         # lam anh chinh. Bai ve GPT-6 #1 di kem anh khoanh model khac.
+         r"\d{1,3}(?!\s*(?-i:(?:điểm|diem|point|elo|%|tỷ|ty|triệu|trieu|nghìn|nghin|"
+         r"USD|đô|do|tokens?|token|lần|lan|bậc|bac|giây|giay|phút|phut|giờ|gio|"
+         r"ngày|ngay|tháng|thang|năm|nam)\b)))")
 _MODEL = re.compile(r"\b((?:(?:" + _HO + r")|(?:(?:" + _HO_CAN_SO + r")(?=[-\s]?\d)))"
                     r"(?:[-\s]?" + _DUOI + r")*"
                     r"(?:\s?\((?:max|high|thinking|xhigh|low|medium|pro|mini)\))?)", re.I)
@@ -205,18 +213,39 @@ def tach_model(tieu_de: str) -> list:
     return list(dict.fromkeys(x for x in ra if len(x) >= 3))
 
 
+# "top N" o dau tieu de hoac sau "lot/vao" la KICH CO DANH SACH, khong phai thu
+# hang cua chu the: "Top 10 mô hình AI 2026: GPT-6 Astra dẫn đầu" -> hang 1 chu
+# khong phai 10 (do 06/09/2026: so nay in TO tren the du phong va vao brief).
+_TOP_LIET_KE = re.compile(r"(?:^|[:\-–—]\s*|\b(?:lọt|lot|vào|vao)\s+)top\s?\d{1,3}\b", re.I)
+_DAN_DAU = re.compile(r"(dẫn đầu|dan dau|đứng đầu|dung dau|số 1|so 1|number one|"
+                      r"no\.\s?1|first place|soán ngôi|soan ngoi|quán quân|quan quan)", re.I)
+
+
 def tach_hang(tieu_de: str, model: str):
-    """Thu hang trong tieu de. Tieu de hay nhac HAI model ("GPT-6 ... ap sat #1
-    Claude Fable"): mot so hang di lien ngay truoc mot TEN MODEL KHAC thi thuoc ve
-    model do, khong phai chu the. Con lai gan cho chu the."""
+    """Thu hang cua CHU THE trong tieu de.
+
+    Tieu de hay nhac HAI model ("GPT-6 ... ap sat #1 Claude Fable"): mot so hang
+    di lien ngay truoc mot TEN MODEL KHAC thi thuoc ve model do. Ngoai ra khong
+    lay match DAU TIEN nua ma xep uu tien: "#N / hạng N / thứ N" (tuong minh) >
+    "top N" (co the chi la kich co danh sach). Va neu tieu de noi thang la dan
+    dau thi hang = 1, ke ca khi phia truoc co "Top 10"."""
     t = tieu_de or ""
+    ro, mo = None, None
     for m in _HANG.finditer(t):
         sau = t[m.end():m.end() + 40]
         mm = _MODEL.match(sau.lstrip())
         if mm and model and not mm.group(1).lower().startswith(model.split()[0].lower()):
             continue                                 # "#1 Claude ..." — hang cua Claude
-        return int(m.group(1) or m.group(2))
-    return None
+        so = int(m.group(1) or m.group(2))
+        la_top = t[m.start():m.end()].lower().lstrip("#").strip().startswith("top")
+        if la_top and _TOP_LIET_KE.search(t[max(0, m.start() - 12):m.end()]):
+            mo = mo if mo is not None else so        # kich co danh sach: chi dung khi khong con gi
+            continue
+        if ro is None:
+            ro = so
+    if _DAN_DAU.search(t):
+        return 1
+    return ro if ro is not None else mo
 
 
 def goi_y_nguon(tieu_de: str = "", link: str = "", via: str = "", chu: str = "") -> list:
