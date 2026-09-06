@@ -176,7 +176,12 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `ai-background` (sinh nền — **chờ GPU**).
 - `hermes/profiles/` — SOUL/MEMORY của các vai; `shared/` áp cho cả hai home.
   Đồng bộ bằng `dong_bo_hermes.py` (`--ra-hermes` / `--ve-git`).
-- `tests/` — chạy thẳng: `venv/bin/python tests/test_cong_chan.py`.
+- `tests/` — chạy thẳng, không cần mạng:
+  `for f in tests/*.py; do venv/bin/python $f; done`. `test_cong_chan` giữ các
+  cổng chặn, `test_cong_thuan` giữ mấy hàm thuần đã từng hồi quy im lặng (lệnh
+  chọn số, `draft_id` ≤ 55 byte, cắt tin nhắn dài), `test_tai_lieu` chặn tài
+  liệu trôi khỏi mã.
+- `kiem_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.
 
@@ -265,6 +270,24 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
 - `model-watch` — 30 phút/lần.
 - `moat-publish-watch` — 5 phút/lần, hỏi moat xem bài đã lên social chưa; im
   lặng khi không có gì mới, bỏ theo dõi một bài sau 7 ngày.
+
+## Sau mỗi `hermes update`
+
+`content-team` đọc vài thứ **bên trong** hermes mà không có API nào bảo đảm:
+định dạng in ra của `hermes chat -Q`, schema thô của `kanban.db`, và một hàm
+private của `kanban_swarm`. Chúng đổi lúc nào cũng được, và đổi thì hỏng lặng lẽ
+— sự cố `-z` nuốt `--continue` (mọi vai mở phiên trắng, "không nhớ gì") mất mấy
+ngày mới lộ ra. Chạy ngay sau khi cập nhật:
+
+```bash
+venv/bin/python kiem_hermes.py
+```
+
+Chỉ đọc, không tạo gì. Thêm `--day-du` nếu muốn một lượt chat thật (tốn LLM).
+Kèm theo: `venv/bin/pip install -r requirements.txt` (venv dùng chung nên
+`hermes update` có thể làm mất pymupdf), và
+`venv/bin/python dong_bo_hermes.py --kiem-upstream` để xem hermes đổi gì trong
+plugin kanban kể từ lần port cuối.
 
 ## Model
 
