@@ -576,7 +576,9 @@ def main():
     if a.vao_repo or a.ra_hermes:
         print(f"\nDa chep {da_chep} tep.")
     else:
-        print(f"\n{len(khac)} tep lech. Chay voi --vao-repo hoac --ra-hermes de dong bo.")
+        # Cong ca muc tat-cong-cu vao: thieu no thi vua in mot dong KHAC xong lai
+        # tong ket "0 tep lech" ngay duoi — nhat ky tu mau thuan, doc mat cong.
+        print(f"\n{len(khac) + tat_khac} tep lech. Chay voi --vao-repo hoac --ra-hermes de dong bo.")
     nhac_bat_plugin()
     nhac_don_ban_cai()
     return 0
