@@ -169,12 +169,21 @@ def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi
                                        "message_id": mid})
     # So anh da dung LIEN PHIEN (Ong Chu 06/09/2026): ghi anh GOC cua tung ma da
     # dung, de bai sau khong dung lai (kiem_da_dung o buoc nop).
+    #
+    # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot khoa.
+    # Ban dau chi doc `ghi["anh"]` (list) hoac cap (anh, bia): Ethan mat `anh2`
+    # (anh ghep doc thu hai khong bao gio bi danh dau, bai sau dung lai duoc) va
+    # Kite mat sach (ghi cua Kite khong co khoa nao trong hai khoa do). Do
+    # 06/09/2026: chi Dre ghi du. Ai them khoa moi thi them vao day.
     import luat_anh
     xong = cb._doc_json(wd / "xong.json") or {}
     goc = {a["ma"]: a["goc"] for a in xong.get("anh", [])}
-    ma_ds = ghi.get("anh") if isinstance(ghi.get("anh"), list) else [ghi.get("anh"), ghi.get("bia")]
-    for ma in ma_ds or []:
-        if ma and goc.get(ma):
+    ma_ds = []
+    for k in ("anh", "anh2", "bia", "hinh"):
+        v = ghi.get(k)
+        ma_ds += list(v) if isinstance(v, (list, tuple)) else [v]
+    for ma in dict.fromkeys(m for m in ma_ds if m):     # bo trung, giu thu tu
+        if goc.get(ma):
             luat_anh.ghi_da_dung(goc[ma], draft_id, vai)
     return mid
 

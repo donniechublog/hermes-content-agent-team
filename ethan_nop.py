@@ -177,7 +177,10 @@ def main() -> int:
         print(f"[thu] khong gui Telegram (--khong-gui). The o {out}")
     else:
         mid = nc.gui_album("designer", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
-                           {"anh": kq["anh"]["ma"], "hook": hook})
+                           {"anh": kq["anh"]["ma"], "hook": hook,
+                            # anh2 (ghep doc) cung phai bi danh dau da dung —
+                            # thieu no thi bai sau dung lai duoc (06/09/2026).
+                            "anh2": (kq["anh2"] or {}).get("ma")})
     print(f"[xong] the {kq['kieu']} -> {out}" + (f"; da gui topic designer (message_id={mid}) kem nut duyet"
                                                  if mid else "") + f"; ban giao: {bg_path}")
     print("Ket qua task (dung dong nay de ket thuc task): "

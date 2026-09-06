@@ -41,6 +41,7 @@ GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
 
 
 def giai_spec(spec: dict, m: dict, wd) -> tuple:
+    import luat_anh
     import render_edu
     loi, canh = [], []
     slides = spec.get("slides") or []
@@ -80,6 +81,12 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
                            f"(có: {', '.join(hinh) or 'không có'}) — bỏ image hoặc đổi mã")
             else:
                 s2["image"] = hinh[img]["goc"]
+                # KHONG DUNG LAI ANH DA DUNG (Ong Chu 06/09/2026). Dre va Ethan
+                # co cong nay tu dau; Kite thi khong doc lan khong ghi, nen mot
+                # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
+                l, _ = luat_anh.kiem_da_dung(f"slide {i} ({img})", hinh[img]["goc"],
+                                             m.get("draft_id", ""))
+                loi += l
                 if not sl.get("caption"):
                     loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
         for f, gh in GIOI_HAN.items():
@@ -193,7 +200,11 @@ def main() -> int:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
         mid = nc.gui_album("carousel-edu", files, f"Carousel edu {n} slide: {hook}", a.draft_id, wd, da_dung,
-                           {"theme": theme, "hero": hero, "hook": hook})
+                           {"theme": theme, "hero": hero, "hook": hook,
+                            # ma hinh THAT da dat len slide — de bai sau (ke ca
+                            # cua Dre/Ethan) khong dung lai (06/09/2026).
+                            "hinh": [sl.get("image") for sl in (spec.get("slides") or [])
+                                     if sl.get("image")]})
     # Bang den (kanban swarm): ban giao co cau truc cua Kite len the goc + dong
     # "[metadata]" de Kite dan vao kanban_complete -> Miles thay trong
     # "Parent task results". Best-effort.
