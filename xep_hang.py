@@ -73,6 +73,33 @@ NGUON = [
      "url": "https://livebench.ai/",                      "mien": r"livebench"},
     {"ma": "aider",          "site": "AIDER.CHAT", "bang": "Aider Polyglot",
      "url": "https://aider.chat/docs/leaderboards/",      "mien": r"aider"},
+    # Ông Chủ 06/09/2026: "phải sử dụng hình ảnh từ tất cả trang này, đừng tự giới
+    # hạn nguồn ảnh". Bảy mục dưới đây đều ĐO THẬT (chụp ra ảnh có khoanh model)
+    # trước khi thêm — không thêm nguồn chưa chụp được, vì mỗi nguồn hỏng ngốn
+    # ~18s của trần 150s mà không bao giờ ra ảnh.
+    # ĐÃ THỬ, CHƯA ĐƯỢC, nên KHÔNG có trong danh sách:
+    #   bigcode-bench.github.io — có bảng 171 hàng nhưng hàng nằm dưới đáy khung
+    #     nhìn mà `scrollIntoView` không kéo trang lên (khung cuộn lạ).
+    #   designarena.ai / scale.com/leaderboard / vals.ai — không có <table> lẫn
+    #     nhóm hàng lặp nào nhận ra được; mỗi trang cần một bộ bóc riêng.
+    #   epoch.ai — bảng vẽ bằng <canvas>, không định vị được hàng để khoanh.
+    #   mteb (HF Space) — benchmark embedding, không phải xếp hạng model kiểu tin.
+    # KHONG mobile: openrouter khong render bang xep hang nao o khung <900px.
+    {"ma": "openrouter",     "site": "OPENROUTER.AI", "bang": "LLM Rankings (lượt dùng)",
+     "url": "https://openrouter.ai/rankings",             "mien": r"openrouter"},
+    {"ma": "livecodebench",  "site": "LIVECODEBENCH", "bang": "LiveCodeBench",
+     "url": "https://livecodebench.github.io/leaderboard.html", "mien": r"livecodebench"},
+    {"ma": "bfcl",           "site": "GORILLA (UC BERKELEY)", "bang": "Function-Calling Leaderboard",
+     "url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
+     "mien": r"\bbfcl\b|gorilla\.cs\.berkeley|berkeley function"},
+    {"ma": "gaia",           "site": "GAIA BENCHMARK", "bang": "GAIA",
+     "url": "https://gaia-benchmark-leaderboard.hf.space/", "mien": r"\bgaia\b"},
+    {"ma": "hle",            "site": "SAFE.AI", "bang": "Humanity's Last Exam",
+     "url": "https://agi.safe.ai/",                       "mien": r"agi\.safe\.ai|humanity'?s? last exam|\bHLE\b"},
+    {"ma": "vellum",         "site": "VELLUM.AI", "bang": "LLM Leaderboard",
+     "url": "https://www.vellum.ai/llm-leaderboard",      "mien": r"vellum"},
+    {"ma": "opencompass",    "site": "OPENCOMPASS", "bang": "OpenCompass LLM",
+     "url": "https://rank.opencompass.org.cn/leaderboard/llm", "mien": r"opencompass|司南"},
 ]
 
 # Từ khoá chọn bảng con của một site theo chủ đề tin (video → arena-t2v trước...)
@@ -80,10 +107,16 @@ CHU_DE = [
     (r"\bvideo\b|text-to-video|tạo video", ["arena-t2v"]),
     (r"\bimage\b|text-to-image|tạo ảnh|hình ảnh", ["arena-t2i"]),
     (r"\bvision\b|thị giác|multimodal|đa phương thức", ["arena-vision"]),
-    (r"webdev|frontend|front-end|\bcode\b|coding|lập trình|swe[-_ ]?bench", ["arena-code", "swebench", "aider"]),
-    (r"terminal|agentic|\bagent\b", ["tbench"]),
+    (r"webdev|frontend|front-end|\bcode\b|coding|lập trình|swe[-_ ]?bench",
+     ["arena-code", "swebench", "aider", "livecodebench"]),
+    (r"terminal|agentic|\bagent\b", ["tbench", "gaia"]),
     (r"\bsearch\b|tìm kiếm", ["arena-search"]),
     (r"intelligence|trí tuệ|artificial ?analysis", ["aa-models"]),
+    # Xep hang theo LUOT DUNG THAT, khong phai diem benchmark — khac han ve ban chat
+    # nen phai co tu khoa rieng, dung de tin "top 10 OpenRouter" roi vao bang diem.
+    (r"openrouter|\busage\b|lượt dùng|thị phần|market share|token/tuần", ["openrouter"]),
+    (r"function[- ]?call|tool[- ]?use|gọi hàm|dùng công cụ", ["bfcl"]),
+    (r"humanity'?s? last exam|\bhle\b|đề thi khó nhất", ["hle"]),
 ]
 
 # ---- Nhận diện tin xếp hạng + tách model/hạng ---------------------------------
@@ -168,20 +201,29 @@ def tach_hang(tieu_de: str, model: str):
 
 
 def goi_y_nguon(tieu_de: str = "", link: str = "", via: str = "", chu: str = "") -> list:
-    """Xếp registry: nguồn được NHẮC (link/via/chữ bài) trước, rồi theo chủ đề tin,
-    rồi phần còn lại. Không loại nguồn nào — "không giới hạn nguồn"."""
-    goi = f"{link} {via} {chu[:3000]}".lower()
+    """Xếp registry: nguồn được NHẮC (tiêu đề/link/via/chữ bài) trước, rồi theo chủ
+    đề tin, rồi phần còn lại. Không loại nguồn nào — "không giới hạn nguồn".
+
+    Mỗi mục trả về mang thêm `duoc_nhac`: True khi CHÍNH TIN nhắc tới nguồn đó.
+    Chụp được từ nguồn `duoc_nhac=False` nghĩa là ảnh nói về MỘT BẢNG KHÁC với
+    bảng trong tiêu đề — vẫn dùng được nhưng phải cảnh báo, xem `cau_xep_hang`
+    trong anh_chuan_bi.py."""
+    # Tieu de NAM TRONG chuoi do "nguon duoc nhac": tin hay goi thang ten trang
+    # ("#1 LiveCodeBench", "leo top OpenCompass") ma khong co link toi trang do.
+    goi = f"{tieu_de} {link} {via} {chu[:3000]}".lower()
     chu_de = f"{tieu_de} {chu[:1500]}".lower()
-    diem = {}
+    diem, ra = {}, []
     for i, n in enumerate(NGUON):
         d = 1000 - i
-        if re.search(n["mien"], goi, re.I):
+        nhac = bool(re.search(n["mien"], goi, re.I))
+        if nhac:
             d += 500
         for pat, mas in CHU_DE:
             if n["ma"] in mas and re.search(pat, chu_de, re.I):
                 d += 200
         diem[n["ma"]] = d
-    return sorted(NGUON, key=lambda n: -diem[n["ma"]])
+        ra.append({**n, "duoc_nhac": nhac})
+    return sorted(ra, key=lambda n: -diem[n["ma"]])
 
 
 # ---- Chụp ----------------------------------------------------------------------
@@ -378,7 +420,7 @@ def _chup_mot_bang(page, tim: dict, out: Path):
                    st["bot"] if st else -1)
     hien = [k for k in range(dau, cuoi + 1)
             if rows[k]["y"] >= duoi_hdr - 1 and rows[k]["y"] + rows[k]["h"] <= vung["y"] + vung["h"] + 1]
-    if idx not in hien and trong_top:
+    if idx not in hien:
         # Hang model bi che (header dinh cao / cuon lech): thu cach 'row' — hang dau
         # cua so len dau viewport, lui mot header.
         do = page.evaluate(_JS_CUON_DO, ["row", dau, k]); page.wait_for_timeout(300)
@@ -514,14 +556,21 @@ def chup_bang(page, models: list, out: Path):
 _JS_NORM_DS = """
 const norm = s => (s||'').toLowerCase().replace(/[\\s\\-_.]+/g,'');
 const rect = el => { const r = el.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height}; };
-const timDanhSach = () => {
+const timDanhSach = (models) => {
+  const chuaModel = els => {
+    if (!models || !models.length) return false;
+    const t = norm(els.map(e => e.textContent || '').join(' '));
+    return models.some(m => t.includes(norm(m)));
+  };
   const groups = new Map();
-  document.querySelectorAll('div').forEach(el => {
+  // div/li/a: openrouter dung <ol><li>, arena dung <div> — quet ca ba, dung khoa
+  // cung mot loai the.
+  document.querySelectorAll('div,li,a').forEach(el => {
     const p = el.parentElement; if (!p) return;
     if (!groups.has(p)) groups.set(p, new Map());
     const m = groups.get(p);
-    const kk = (el.className||'').toString().trim();
-    if (!kk || !m.has(kk)) m.set(kk, m.get(kk) || []);
+    const kk = el.tagName + '|' + (el.className||'').toString().trim();
+    if (!m.has(kk)) m.set(kk, []);
     m.get(kk).push(el);
   });
   let best = null;
@@ -530,10 +579,37 @@ const timDanhSach = () => {
       if (els.length < 5) continue;
       const r0 = els[0].getBoundingClientRect();
       if (r0.width < 200 || r0.width > 500 || r0.height < 25 || r0.height > 120) continue;
-      if (!best || els.length > best.length) best = els;
+      // Hang phai CO CHU. openrouter co dung 10 <div class="flex flex-col"> rong
+      // lam khung bo cuc, dung kich thuoc hang that -> khong loc thi vo nham
+      // chung roi bao "khong thay model".
+      if (els.filter(e => (e.textContent||'').trim().length > 2).length < 5) continue;
+      // Nhom CHUA MODEL luon thang nhom dong hon: openrouter co thanh dieu huong
+      // 12 muc dung dang mot hang, con cot xep hang that chi 5 hang.
+      const diem = [chuaModel(els) ? 1 : 0, els.length];
+      if (!best || diem[0] > best.diem[0] || (diem[0] === best.diem[0] && diem[1] > best.diem[1]))
+        best = Object.assign(els, {diem});
     }
   }
   return best;
+};
+// Moi nhom CUNG DANG voi nhom tot nhat (cung tag+class, khac cha) — openrouter
+// chia top-10 thanh hai <ol> canh nhau, moi cot 5 hang.
+const nhomCungDang = (models) => {
+  const best = timDanhSach(models); if (!best) return [];
+  const dau = best[0];
+  const chuKy = dau.tagName + '|' + (dau.className||'').toString().trim();
+  const theoCha = new Map();
+  for (const e of document.querySelectorAll(dau.tagName)) {
+    if (e.tagName + '|' + (e.className||'').toString().trim() !== chuKy) continue;
+    const r = e.getBoundingClientRect();
+    if (r.height < 10) continue;
+    const p = e.parentElement; if (!p) continue;
+    if (!theoCha.has(p)) theoCha.set(p, []);
+    theoCha.get(p).push(e);
+  }
+  return [...theoCha.values()].filter(v => v.length >= 3)
+    .sort((a, b) => { const ra = a[0].getBoundingClientRect(), rb = b[0].getBoundingClientRect();
+                      return (ra.y - rb.y) || (ra.x - rb.x); });
 };
 const khungCuonDs = el => { for (let e = el; e; e = e.parentElement) {
   const cs = getComputedStyle(e);
@@ -542,9 +618,11 @@ const khungCuonDs = el => { for (let e = el; e; e = e.parentElement) {
 """
 
 # `cuon=true`: dua hang model vao giua khung nhin roi do; `false`: chi do lai.
+# `cot`: -1 = nhom chua model; >=0 = nhom thu may trong cac nhom CUNG DANG (dung
+# de lay not cac cot con lai roi ghep doc, xem `chup_danh_sach`).
 _JS_DS = _JS_NORM_DS + """
-([models, cuon]) => {
-  const els = timDanhSach();
+([models, cuon, cot]) => {
+  const els = cot >= 0 ? (nhomCungDang(models)[cot] || null) : timDanhSach(models);
   if (!els) return null;
   let idx = -1, model = null;
   for (const m of models) {
@@ -552,7 +630,9 @@ _JS_DS = _JS_NORM_DS + """
     idx = els.findIndex(e => norm(e.innerText || e.textContent).includes(nm));
     if (idx >= 0) { model = m; break; }
   }
-  if (idx < 0) return null;
+  // Cot duoc goi DICH DANH (cot >= 0) thi khong doi phai co model: do la cac cot
+  // con lai cua cung mot bang, lay tron de ghep doc.
+  if (idx < 0) { if (cot < 0) return null; idx = 0; }
   if (cuon) { els[idx].scrollIntoView({block: 'center'}); return {cuon_roi: true}; }
   const cells = (els[idx].innerText || '').trim().split('\\n').map(s => s.trim()).filter(Boolean);
   const hang = (cells.find(c => /^#?\\d{1,3}$/.test(c)) || '').replace('#', '');
@@ -567,35 +647,90 @@ _JS_DS = _JS_NORM_DS + """
 """
 
 
-def chup_danh_sach_mobile(page, models: list, out: Path):
-    """Cuộn model vào giữa khung nhìn rồi chụp dải hàng quanh nó (mỗi hàng đã
-    full-width sẵn, không phải đo/thu hẹp gì). `(None, lý do)` nếu model không
-    nằm trong danh sách đang hiển thị."""
-    if not page.evaluate(_JS_DS, [models, True]):
-        return None, "không có model nào trong danh sách đang hiển thị"
-    page.wait_for_timeout(350)
-    do = page.evaluate(_JS_DS, [models, False])
+def _chup_mot_cot(page, models: list, out: Path, dpr: int, cot: int = -1):
+    """Chụp một cột danh sách: `cot=-1` là cột chứa model (và khoanh hàng model),
+    `cot>=0` là cột thứ N trong các cột cùng dạng (chụp trọn, không khoanh).
+    Trả về `(thong_tin, ly_do)`."""
+    do = page.evaluate(_JS_DS, [models, False, cot])
     if not do:
-        return None, "mất dấu sau khi cuộn vào giữa khung nhìn"
+        return None, "mất dấu danh sách"
     idx, rows, vung = do["idx"], do["rows"], do["vung"]
     dau = 0 if idx <= TOP_MAC_DINH else max(0, idx - TREN_MODEL)
-    cuoi = idx
+    cuoi = idx if cot < 0 else len(rows) - 1
     cao = lambda k: rows[k]["y"] + rows[k]["h"] - rows[dau]["y"]
     while cuoi + 1 < len(rows) and cao(cuoi + 1) <= CAO_TOI_DA_CSS:
         cuoi += 1
     hien = [k for k in range(dau, cuoi + 1)
             if rows[k]["y"] >= vung["y"] - 1 and rows[k]["y"] + rows[k]["h"] <= vung["y"] + vung["h"] + 1]
-    if idx not in hien:
-        return None, f"hàng model không nằm trong vùng nhìn sau khi cuộn ({len(hien)}/{cuoi-dau+1} hàng hiện)"
+    if not hien or (cot < 0 and idx not in hien):
+        return None, f"hàng model không nằm trong vùng nhìn ({len(hien)}/{cuoi-dau+1} hàng hiện)"
     dau, cuoi = hien[0], hien[-1]
     out.parent.mkdir(parents=True, exist_ok=True)
     r = _giao({"x": rows[dau]["x"], "w": rows[dau]["w"], "y": rows[dau]["y"],
                "h": rows[cuoi]["y"] + rows[cuoi]["h"] - rows[dau]["y"]}, vung)
-    _chup(page, r, out, dem=0)
-    row = rows[idx]
-    _khoanh(out, row["x"] - r["x"], row["y"] - r["y"], row["w"], row["h"], MOBILE_DPR)
-    return {"kieu": "danh-sach", "model": do["model"], "hang": do["hang"],
-            "dong": do["dong"], "logo_co": False}, ""
+    _chup(page, r, out)
+    if cot < 0:
+        row = rows[idx]
+        _khoanh(out, row["x"] - r["x"], row["y"] - r["y"], row["w"], row["h"], dpr)
+    return {"model": do["model"], "hang": do["hang"], "dong": do["dong"]}, ""
+
+
+def chup_danh_sach(page, models: list, out: Path, dpr: int = DPR):
+    """Danh sách hàng-thẻ (`<div>`/`<li>`) thay cho `<table>`: arena.ai ở khung
+    mobile, openrouter.ai ở khung desktop.
+
+    Chụp dải hàng quanh model, khoanh hàng model. Cột quá ngang mà trang còn cột
+    CÙNG DẠNG (openrouter dàn top-10 thành hai `<ol>` 5 hàng cạnh nhau, một cột
+    rộng/cao ~1.75) thì GHÉP DỌC các cột lại — cùng một cách `chup_bang` ghép hai
+    bảng, để ra khối dọc vừa khổ hero thay vì dải ngang."""
+    # Doi danh sach render xong, giong `_doi_bang` cua duong desktop: openrouter
+    # dung hang ~3s moi co CHU trong hang (do co hang rong truoc do), 800ms cua
+    # `tim_va_chup` la khong du. Poll thay vi cho cung mot con so.
+    t0 = time.time()
+    while time.time() - t0 < 12:
+        if page.evaluate(_JS_DS, [models, True]):
+            break
+        page.wait_for_timeout(700)
+    else:
+        return None, "không có model nào trong danh sách đang hiển thị"
+    page.wait_for_timeout(350)
+    kq, ly_do = _chup_mot_cot(page, models, out, dpr)
+    if not kq:
+        return None, ly_do
+    with Image.open(out) as im:
+        r = im.width / im.height
+    so_cot = page.evaluate(_JS_NORM_DS + "(models) => nhomCungDang(models).length", models)
+    if r <= TI_LE_VUA or so_cot < 2:
+        return {"kieu": "danh-sach", **kq, "logo_co": False}, ""
+    # Qua ngang + con cot cung dang: ghep doc theo dung thu tu tren trang.
+    cot_model = page.evaluate(_JS_NORM_DS + """
+        (models) => { const b = timDanhSach(models);
+                      return nhomCungDang(models).findIndex(g => g[0] === b[0]); }""", models)
+    manh, tam = [], []
+    for i in range(so_cot):
+        if i == cot_model:
+            manh.append(out)
+            continue
+        p = out.with_suffix(f".c{i}.png")
+        k2, _ = _chup_mot_cot(page, models, p, dpr, cot=i)
+        if k2:
+            manh.append(p); tam.append(p)
+    if len(manh) < 2:
+        return {"kieu": "danh-sach", **kq, "logo_co": False}, ""
+    ims = [Image.open(p).convert("RGB") for p in manh]
+    rong = max(i.width for i in ims)
+    ims = [i if i.width == rong else i.resize((rong, round(i.height * rong / i.width)), Image.LANCZOS)
+           for i in ims]
+    g = Image.new("RGB", (rong, sum(i.height for i in ims)), (255, 255, 255))
+    y = 0
+    for i in ims:
+        g.paste(i, (0, y)); y += i.height
+    for i in ims:
+        i.close()
+    g.save(out, "PNG")
+    for p in tam:
+        p.unlink(missing_ok=True)
+    return {"kieu": "danh-sach-ghep", **kq, "logo_co": False}, ""
 
 
 
@@ -722,8 +857,12 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
             kq, ly_do = chup_bang(pg, models, out)
             if kq:
                 return kq, ly_do
-            kq2, ly_do2 = chup_svg(pg, models, out)
-            return kq2, f"bảng: {ly_do}; svg: {ly_do2}"
+            # Khong phai <table>: thu danh sach hang-the (openrouter dung <ol><li>).
+            kq2, ly_do2 = chup_danh_sach(pg, models, out, DPR)
+            if kq2:
+                return kq2, ly_do2
+            kq3, ly_do3 = chup_svg(pg, models, out)
+            return kq3, f"bảng: {ly_do}; danh sách: {ly_do2}; svg: {ly_do3}"
 
         for n in nguon_ds:
             di_dong = bool(n.get("mobile"))
@@ -751,7 +890,7 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                     in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({resp.status if resp else '?'} — {tieu_de[:40]!r}), bỏ qua")
                     continue
                 if di_dong:
-                    kq, ly_do = chup_danh_sach_mobile(pg, models, out)
+                    kq, ly_do = chup_danh_sach(pg, models, out, MOBILE_DPR)
                     if not kq:
                         # Model ngoai ~11-12 muc dau cua danh sach mobile: mo lai chinh
                         # nguon nay o khung desktop, bang <table> tim duoc moi hang.
@@ -778,7 +917,8 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                    f"({kq['kieu']}, {im.width}x{im.height}) — {kq['dong'][:70]}")
             kq_cuoi = {"tep": str(out), "kieu": kq["kieu"], "nguon": n["ma"], "site": n["site"],
                        "bang": n["bang"], "hang": kq.get("hang") or hang_goi_y, "model": kq["model"],
-                       "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None}
+                       "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None,
+                       "duoc_nhac": bool(n.get("duoc_nhac", True))}
             break
         br.close()  # dong browser cung dong het cac context/page con lai
     if kq_cuoi:

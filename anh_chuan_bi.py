@@ -672,10 +672,19 @@ def cau_xep_hang(m: dict) -> str:
     xh = m.get("xep_hang") or {}
     if not xh:
         return "engine KHÔNG có ảnh xếp hạng cho bài này"
-    return (f"engine đã chụp {xh.get('site')} ({xh.get('bang')}): {xh.get('model')}"
-            + (f" #{xh.get('hang')}" if xh.get("hang") else "")
-            + (" — THẺ DỰ PHÒNG vì không chụp được bảng" if xh.get("kieu") == "the"
-               else ", đã khoanh hàng model"))
+    cau = (f"engine đã chụp {xh.get('site')} ({xh.get('bang')}): {xh.get('model')}"
+           + (f" #{xh.get('hang')}" if xh.get("hang") else "")
+           + (" — THẺ DỰ PHÒNG vì không chụp được bảng" if xh.get("kieu") == "the"
+              else ", đã khoanh hàng model"))
+    # Bang trong anh KHAC bang trong tieu de: khong chup duoc bang tin nhac toi nen
+    # engine lay bang khac cua cung model. Anh dung, nhung so hang trong anh co the
+    # KHAC so hang o tieu de — viet theo ANH, dung bung tieu de len ma anh khong do.
+    if xh.get("duoc_nhac") is False and xh.get("kieu") != "the":
+        cau += (f". ⚠️ ĐÂY LÀ BẢNG KHÁC với bảng tiêu đề nhắc tới — engine không chụp "
+                f"được bảng đó. Viết theo ĐÚNG bảng và thứ hạng TRONG ẢNH "
+                f"({xh.get('site')}" + (f" #{xh.get('hang')}" if xh.get("hang") else "")
+                + "), đừng nhắc lại thứ hạng ở tiêu đề như thể ảnh chứng minh nó")
+    return cau
 
 
 def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
@@ -992,7 +1001,8 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
          "toi_thieu_co_ban": carousel.MIN_SLIDE, "so_mien": so_mien,
          "anh": anh, "cap_ghep": cap_ghep(dung_duoc), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
          "so_dung_duoc": len(dung_duoc), "chua_nhin": chua_nhin,
-         "xep_hang": ({k: xh.get(k) for k in ("model", "hang", "site", "bang", "kieu")} if xh else None),
+         "xep_hang": ({k: xh.get(k) for k in ("model", "hang", "site", "bang", "kieu", "duoc_nhac")}
+                      if xh else None),
          "tin_xep_hang": tin_xep_hang,
          "chu_bai": (bp.get("chu") or "")[:20000],
          "nguon_path": str(nguon_path), "tieu_de_en": nguon.get("tieu_de_en", "")}

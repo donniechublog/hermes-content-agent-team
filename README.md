@@ -115,9 +115,12 @@ ghi thêm một dòng cảnh báo.
     cáo, gửi topic; `--khong-co` gửi dòng "hôm nay không có gì"; `--thu` không
     ghi manifest thật, không xoá bắt buộc.
 - `xep_hang.py` — **ảnh cho tin xếp hạng** (Ông Chủ chốt 06/09/2026): tách tên model
-  từ tiêu đề, đi qua registry nguồn xếp hạng (arena.ai ×6, artificialanalysis.ai,
-  tbench, swebench, livebench, aider), mở browser tìm **hàng** chứa model, chụp
-  cửa sổ top-N full bề ngang, **khoanh vàng hàng model**, đọc thứ hạng. Không ra →
+  từ tiêu đề, đi qua registry **18 nguồn xếp hạng** (arena.ai ×6, artificialanalysis,
+  tbench, swebench, livebench, aider, openrouter, livecodebench, bfcl, gaia, hle,
+  vellum, opencompass — mỗi nguồn đã đo thật trước khi thêm), mở browser tìm **hàng**
+  chứa model, chụp cửa sổ top-N full bề ngang, **khoanh vàng hàng model**, đọc
+  thứ hạng. Bảng dạng `<ol>/<li>` (openrouter dàn top-10 thành hai cột 5 hàng) đi
+  đường `chup_danh_sach`, ghép dọc các cột lại cho vừa khổ hero. Không ra →
   thẻ dự phòng (model + #hạng + logo + site). Chạy trong `anh_chuan_bi.py`, ảnh
   mang mã `XH`; `ethan_nop`/`dre_nop` ép tin xếp hạng dùng đúng mã đó.
   **arena.ai chụp bằng khung MOBILE** (không phải desktop): trang có giao diện
