@@ -368,6 +368,36 @@ def test_tach_hang_chon_dung_khong_lay_match_dau():
         assert xh.tach_hang(t, md[0] if md else "") == mong, t
 
 
+def _anh_chup(ra, hat, co=(1200, 900)):
+    """Anh giong ANH CHUP that: bo cuc RIENG theo `hat` (khoi mau tho, khong
+    phai mot gradient chung) cong nhieu pixel-to-pixel. Doi `co` khong lam doi
+    noi dung — dung de dung ca "dung lai anh o co khac".
+
+    Phai dung the: dHash doc bo xuong bo cuc, nen neu moi anh thu deu chung mot
+    gradient thi chung cho cung mot hash va bai test tu no thanh vo nghia.
+    """
+    from PIL import Image
+    trang_thai = hat * 7919 + 12345
+
+    def ke():
+        nonlocal trang_thai
+        trang_thai = (1103515245 * trang_thai + 12345) % (1 << 31)
+        return trang_thai
+
+    tho = Image.new("RGB", (12, 9))
+    tho.putdata([(ke() % 256, ke() % 256, ke() % 256) for _ in range(12 * 9)])
+    im = tho.resize((300, 225), Image.BILINEAR)
+    px = im.load()
+    for y in range(225):
+        for x in range(300):
+            n = ke() % 40 - 20
+            r, g, b = px[x, y]
+            px[x, y] = (max(0, min(255, r + n)), max(0, min(255, g + n)),
+                        max(0, min(255, b + n)))
+    im.resize(co, Image.LANCZOS).save(ra)
+    return ra
+
+
 def test_anh_xep_hang_mien_cong_dung_lai():
     """Hai bài về hai model cùng trong top một bảng chụp đúng dải hàng đó, chỉ
     khác khung khoanh → dHash coi là trùng. Cổng dùng-lại chặn ảnh XH, còn cổng
@@ -393,13 +423,17 @@ def test_anh_xep_hang_mien_cong_dung_lai():
             return p
 
         b1, b2 = bang("xh1.png", 140), bang("xh2.png", 620)
-        t1, t2 = bang("t1.png", 140, dau=False), bang("t2.png", 620, dau=False)
+        # "Anh thuong" phai la anh CHUP that (co nhieu tu nhien), khong phai mot
+        # tam bang nua: bang/chart la do hoa, va do hoa nay di theo nguong chat
+        # rieng (xem test_hai_chart_khac_nhau_khong_bi_coi_la_trung).
+        a1 = _anh_chup(d / "a1.png", 0)
+        a2 = _anh_chup(d / "a2.png", 0, co=(1000, 750))   # cung anh, khac co
         la.ghi_da_dung(b1, "bai1-designer-blog", "designer", "https://a.com/1")
-        la.ghi_da_dung(t1, "bai1-designer-blog", "designer", "https://a.com/1")
+        la.ghi_da_dung(a1, "bai1-designer-blog", "designer", "https://a.com/1")
         # ảnh xếp hạng: bài sau dùng lại được
         assert la.kiem_da_dung("XH", b2, "bai2-designer-blog", "https://a.com/2")[0] == []
-        # ảnh thường gần giống: vẫn phải chặn
-        assert la.kiem_da_dung("A1", t2, "bai2-designer-blog", "https://a.com/2")[0]
+        # ảnh chụp dùng lại (đổi cỡ, khác byte): vẫn phải chặn
+        assert la.kiem_da_dung("A1", a2, "bai2-designer-blog", "https://a.com/2")[0]
 
 
 # ------------------------------------------------- watermark cua Bob (@handle)
@@ -788,6 +822,67 @@ def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
                 assert cr >= 3.0, (f"{brand}: {ten} khung {ghi[ten]} tren nen sang "
                                    f"chi CR {cr:.2f} — chim")
         card.dat_thuong_hieu("donniechublog")
+
+# ------------------------------------------- so "anh da dung": nguong theo loai
+def _bieu_do(ra, gia_tri, mau=(40, 90, 200)):
+    """Bieu do cot nen trang — do hoa vector, khong co nhieu tu nhien."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (1200, 800), (255, 255, 255))
+    d = ImageDraw.Draw(im)
+    d.rectangle([80, 60, 1120, 700], outline=(210, 210, 210), width=3)
+    rong = 1000 // (len(gia_tri) * 2)
+    for i, v in enumerate(gia_tri):
+        x = 100 + i * rong * 2
+        d.rectangle([x, 700 - int(620 * v), x + rong, 700], fill=mau)
+    im.save(ra)
+    return ra
+
+
+def test_hai_chart_khac_nhau_khong_bi_coi_la_trung():
+    """dHash 8x8 doc BO XUONG BO CUC. Anh chup that co nhieu tu nhien nen hai
+    tam khac nhau cach hang chuc bit, nhung do hoa vector thi khong: hai bieu do
+    cot HOAN TOAN khac so lieu, mien cung dang di xuong, chi cach 4-5 bit. Voi
+    nguong chung 6, chart THAT cua bai — bang chung manh nhat — bi bao "TRUNG
+    anh da dung", vai lang le doi sang anh minh hoa yeu hon."""
+    import luat_anh as la
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        la._so_da_dung = lambda: d / "s.jsonl"
+        c1 = _bieu_do(d / "c1.png", [0.90, 0.82, 0.75, 0.60, 0.50])
+        c2 = _bieu_do(d / "c2.png", [0.88, 0.80, 0.70, 0.62, 0.45], mau=(200, 80, 40))
+        la.ghi_da_dung(c1, "baiA", "designer", "https://a.com/1")
+        loi, _ = la.kiem_da_dung("A1", c2, "baiB", "https://a.com/2")
+        assert not loi, f"hai chart khac so lieu bi coi la trung: {loi}"
+        # nhung DUNG LAI y het tam do thi van phai chan
+        import shutil
+        c1b = d / "c1b.png"
+        shutil.copyfile(c1, c1b)
+        assert la.kiem_da_dung("A1", c1b, "baiB", "https://a.com/2")[0], \
+            "dung lai y het mot chart ma khong chan"
+
+
+def test_bo_bai_thi_go_anh_khoi_so():
+    """So duoc ghi o buoc GUI album, tuc TRUOC khi Ong Chu bam nut. Bam "Bo han
+    tin" hay "Lam lai" thi anh KHONG bao gio len kenh, nhung truoc 06/09/2026
+    chung van nam trong so va chan moi bai khac suot 14 ngay — ma thong bao chan
+    chi noi ten bai va cham, KHONG noi bai do da bi bo."""
+    import luat_anh as la
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        la._so_da_dung = lambda: d / "s.jsonl"
+        a1 = _anh_chup(d / "x1.png", 5)
+        a2 = _anh_chup(d / "x2.png", 5, co=(1000, 750))     # cung anh, khac co
+        la.ghi_da_dung(a1, "bai-bi-bo", "designer", "https://a.com/1")
+        la.ghi_da_dung(_anh_chup(d / "y1.png", 9), "bai-khac", "designer",
+                       "https://a.com/9")
+        assert la.kiem_da_dung("A1", a2, "bai-sau", "https://a.com/2")[0], \
+            "chua go thi phai con chan (neu khong, test nay vo nghia)"
+        assert la.xoa_da_dung("bai-bi-bo") == 1
+        assert not la.kiem_da_dung("A1", a2, "bai-sau", "https://a.com/2")[0], \
+            "da bo bai ma anh van bi khoa"
+        # khong duoc go nham dong cua bai khac
+        assert la.xoa_da_dung("bai-khong-co") == 0
+        assert len((d / "s.jsonl").read_text(encoding="utf-8").strip().splitlines()) == 1
 
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]

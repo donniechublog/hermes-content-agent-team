@@ -194,6 +194,41 @@ def gan_giong(h1: int, h2: int, nguong: int = 6) -> bool:
     return bin(h1 ^ h2).count("1") <= nguong
 
 
+# Nguong dHash CHAT cho anh DO HOA (chart, bang, screenshot UI).
+#
+# dHash 8x8 doc BO XUONG BO CUC: sang/toi cua 64 cap pixel ke nhau. Anh chup
+# that co nhieu tu nhien nen hai tam khac nhau cach nhau hang chuc bit — do
+# cheo 16 slide that trong drafts/: 0/120 cap va cham. Do hoa vector thi khong
+# co nhieu do: hai bieu do cot HOAN TOAN khac so lieu, mien la cung dang di
+# xuong, chi cach nhau 5 bit; hai bang xep hang khac noi dung cach 4 bit. Voi
+# nguong chung 6 thi chart THAT cua bai (bang chung manh nhat) bi bao "TRUNG
+# anh da dung", vai lang le doi sang anh minh hoa yeu hon — dau ra xau di ma
+# khong ai thay (06/09/2026).
+#
+# Bien rat mong chu khong an toan: cung do, colA vs colE = 7 — hon nguong dung
+# mot bit. Nen voi anh do hoa chi coi la trung khi gan nhu y het.
+NGUONG_DO_HOA = 2
+
+
+def _md5(duong_dan) -> str:
+    """md5 cua TEP — bat chinh xac ca truong hop tai lai cung mot tap tin."""
+    import hashlib
+    try:
+        return hashlib.md5(Path(duong_dan).read_bytes()).hexdigest()
+    except OSError:
+        return ""
+
+
+def nguong_dhash(im, nguong=6) -> int:
+    """Nguong dHash hop voi LOAI anh: do hoa thi phai chat hon nhieu (xem
+    NGUONG_DO_HOA). Dung chung o buoc NOP (kiem_da_dung) va buoc TAI
+    (anh_chuan_bi khu trung ung vien)."""
+    try:
+        return NGUONG_DO_HOA if la_chart(im)[0] else nguong
+    except Exception:                                        # noqa: BLE001
+        return nguong
+
+
 NGAY_NHO_ANH = 14      # cua so nho anh da dung, xem kiem_da_dung
 
 
@@ -226,9 +261,39 @@ def ghi_da_dung(duong_dan, draft_id: str, vai: str, link: str = "") -> None:
     except Exception:                                        # noqa: BLE001
         return
     dong = {"dhash": h, "draft_id": draft_id, "vai": vai, "tin": khoa_tin(link),
-            "ten": q.name, "luc": int(time.time())}
+            "ten": q.name, "md5": _md5(q), "luc": int(time.time())}
     with open(_so_da_dung(), "a", encoding="utf-8") as f:
         f.write(json.dumps(dong, ensure_ascii=False) + "\n")
+
+
+def xoa_da_dung(draft_id: str) -> int:
+    """Go moi dong cua mot draft khoi so "anh da dung". Tra so dong da go.
+
+    So duoc ghi o buoc GUI album, tuc TRUOC khi Ong Chu bam nut. Bam "Bo han
+    tin" hay "Lam lai" thi bai chet / album bi thay, anh KHONG bao gio len
+    kenh — nhung truoc 06/09/2026 chung van nam trong so va chan moi bai khac
+    suot 14 ngay. Voi cac tin cung chu de (cung anh wire Reuters/AP, cung anh
+    tru so hang) thi bai sau bi day sang anh kem hon, hoac tac han neu tam bi
+    khoa la anh that duy nhat — ma thong bao chan chi noi ten bai va cham, KHONG
+    noi bai do da bi bo.
+    """
+    import json
+    so = _so_da_dung()
+    if not so.exists():
+        return 0
+    dong = so.read_text(encoding="utf-8").splitlines()
+    giu = []
+    for d in dong:
+        try:
+            giu.append(d) if json.loads(d).get("draft_id") != draft_id else None
+        except Exception:                                    # noqa: BLE001
+            giu.append(d)                                    # dong hong: giu nguyen
+    if len(giu) == len(dong):
+        return 0
+    tmp = so.with_suffix(".jsonl.tmp")
+    tmp.write_text(("\n".join(giu) + "\n") if giu else "", encoding="utf-8")
+    tmp.replace(so)
+    return len(dong) - len(giu)
 
 
 def kiem_da_dung(nhan, duong_dan, draft_id: str, link: str = ""):
@@ -263,6 +328,14 @@ def kiem_da_dung(nhan, duong_dan, draft_id: str, link: str = ""):
         pass
     moc = time.time() - NGAY_NHO_ANH * 86400
     tin = khoa_tin(link)
+    # Nguong theo LOAI anh (xem NGUONG_DO_HOA). md5 van chan tuyet doi: cung
+    # mot tap tin thi trung that, khong can doan theo hinh.
+    try:
+        with Image.open(duong_dan) as _im:
+            nguong = nguong_dhash(_im)
+    except Exception:                                        # noqa: BLE001
+        nguong = 6
+    ma = _md5(duong_dan)
     for line in so.read_text(encoding="utf-8").splitlines():
         try:
             d = json.loads(line)
@@ -274,7 +347,7 @@ def kiem_da_dung(nhan, duong_dan, draft_id: str, link: str = ""):
         # dung chung bo anh cua bai do, chan la vai sau khong con anh nao.
         if tin and d.get("tin") and d["tin"] == tin:
             continue
-        if gan_giong(int(d.get("dhash", 0)), h):
+        if (ma and d.get("md5") == ma) or gan_giong(int(d.get("dhash", 0)), h, nguong):
             khi = time.strftime("%d/%m %H:%M", time.localtime(d.get("luc", 0)))
             return [f"{nhan}: TRUNG anh da dung o bai '{d.get('draft_id')}' ({d.get('vai')}, {khi}) — "
                     "moi tin mot anh, nguoi doc kenh nhan ra anh lap lai ngay. Tim anh khac."], []

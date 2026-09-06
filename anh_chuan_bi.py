@@ -471,9 +471,20 @@ def tai_va_loc(cands: list, wd: Path) -> list:
                 continue                                  # logo/wordmark
             h = luat_anh.dhash(im)
             # Trung gan giong (cung anh o co khac, anh <img> vs figure chup): giu ban LON hon.
-            trung = next((k for k, (h2, im2, _, _) in enumerate(da_tai) if luat_anh.gan_giong(h, h2)), None)
+            # Nguong theo LOAI anh: voi do hoa (chart/bang) dHash 8x8 chi doc bo
+            # xuong bo cuc nen HAI bieu do khac han so lieu chi cach nhau 4-5 bit
+            # — nguong chung 6 lam mat mot trong hai chart cua CUNG mot bai. Va
+            # phai IN RA: cac nhanh loai bo khac quanh day deu co dong stderr,
+            # rieng nhanh nay truoc 06/09/2026 bo im lang.
+            ng = luat_anh.nguong_dhash(im)
+            trung = next((k for k, (h2, im2, _, _) in enumerate(da_tai)
+                          if luat_anh.gan_giong(h, h2, luat_anh.nguong_dhash(im2, ng))), None)
             if trung is not None:
-                if w * hh > da_tai[trung][1].width * da_tai[trung][1].height:
+                lon_hon = w * hh > da_tai[trung][1].width * da_tai[trung][1].height
+                print(f"[tai] bo ban {'nho' if lon_hon else 'sau'} vi trung gan giong "
+                      f"(lech {bin(h ^ da_tai[trung][0]).count('1')} bit, nguong {ng}): "
+                      f"{str(c.get('anh'))[:60]}", file=sys.stderr)
+                if lon_hon:
                     da_tai[trung] = (h, im, c, len(data))
                 continue
             da_tai.append((h, im, c, len(data)))

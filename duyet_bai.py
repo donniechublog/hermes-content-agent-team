@@ -24,6 +24,7 @@ import chat_router                                          # noqa: E402
 import moat_publish                                         # noqa: E402
 import tele_util                                            # noqa: E402
 import ghi_log                                              # noqa: E402
+import luat_anh                                             # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, log, rut,
@@ -178,6 +179,27 @@ def publish(token, channel, draft_id):
             return _gui_chu(token, channel, caption)
         return res
     return _gui_chu(token, channel, caption)
+
+def _go_so_anh(draft_id: str, ly_do: str) -> None:
+    """Go anh cua draft khoi so "anh da dung".
+
+    So duoc ghi o buoc GUI album (nop_chung.gui_album), tuc TRUOC khi Ong Chu
+    bam nut. Bam "Bo han tin" thi bai chet, bam "Lam lai" thi album bi thay —
+    ca hai truong hop anh KHONG bao gio len kenh, nhung truoc 06/09/2026 chung
+    van nam trong so va chan moi bai khac suot 14 ngay. Voi tin cung chu de
+    (cung anh wire Reuters/AP, cung anh tru so hang) thi bai sau bi day sang
+    anh kem hon, hoac tac han neu tam bi khoa la anh that duy nhat — ma thong
+    bao chan chi noi ten bai va cham, KHONG noi bai do da bi bo.
+    """
+    try:
+        n = luat_anh.xoa_da_dung(draft_id)
+    except Exception as e:                                      # noqa: BLE001
+        log("nut", f"go so anh {draft_id} loi: {type(e).__name__}")
+        return
+    if n:
+        log("nut", f"go {n} anh cua {draft_id} khoi so da_dung ({ly_do}) — "
+                   "anh chua len kenh thi khong duoc chan bai khac")
+
 
 def mark_draft(draft_id, status):
     p = DRAFTS / (draft_id + ".json")
@@ -470,6 +492,7 @@ def handle_img_approval(token, action, draft_id, cq):
             note = "🗑 Đã bỏ hẳn tin — không viết, không làm lại"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Đã bỏ hẳn")
+            _go_so_anh(draft_id, "bo han tin")
             if wp.exists():
                 try:
                     w["created"] = "rejected"
@@ -574,6 +597,7 @@ def handle_img_approval(token, action, draft_id, cq):
                 return
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Chờ anh nêu slide + lý do…")
+            _go_so_anh(draft_id, "lam lai album")
             n = int(im.get("remakes", 0)) + 1
             if im.get("carousel"):
                 huong_dan = ("Trả lời <b>một dòng</b>: <code>số slide: lý do</code>\n"
