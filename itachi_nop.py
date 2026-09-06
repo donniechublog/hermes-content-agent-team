@@ -23,6 +23,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_chuan_bi as gb                                    # noqa: E402
+import nop_chung as nc                                       # noqa: E402
 from card import _f, _wrap, tim_mat_dau, bo_dau_cam          # noqa: E402
 
 FONTS = ROOT / "assets" / "fonts"
@@ -54,8 +55,35 @@ def _ve_khoi(d: ImageDraw.ImageDraw, text: str, x: int, y: int, w: int, h: int, 
     for ln in lines:
         tw = d.textlength(ln, font=f)
         xx = x + (w - tw) / 2 if align == "center" else x
-        d.text((xx, yy), ln, font=f, fill=tuple(color))
+        d.text((xx, yy), ln, font=f, fill=_mau(color))
         yy += lh
+
+
+def _tran_hop(d: ImageDraw.ImageDraw, text: str, w: int, h: int, font_key: str) -> int:
+    """So pixel chieu cao BI TRAN ra ngoai hop khi da co chu nho het muc.
+
+    `_ve_khoi` co lai co chu toi CO_MIN roi VE BAT KE — vong while thoat vi
+    `size > CO_MIN` la sai, khong phai vi chu da vua. Cau dich dai gap doi cau
+    goc thi chu tran de len phan anh ben duoi va khong cong nao bao (06/09/2026).
+    """
+    path = str(FONT.get(font_key) or FONT["regular"])
+    f = _f(path, CO_MIN)
+    lines = _wrap(d, text, f, w)
+    lh = int((f.getbbox("ÂgqĐ")[3] - f.getbbox("ÂgqĐ")[1]) * 1.12)
+    return max(0, lh * len(lines) - int(h * 1.05))
+
+
+def _mau(c):
+    """color_rgb -> tuple 3 so 0-255. Spec cua vai co the ghi bat cu thu gi;
+    truoc 06/09/2026 `tuple(color)` nem TypeError giua chung buoi ve, mat ca
+    slide va vai chi thay traceback."""
+    try:
+        t = tuple(int(x) for x in list(c)[:3])
+    except (TypeError, ValueError):
+        return (20, 20, 20)
+    if len(t) != 3 or any(not 0 <= x <= 255 for x in t):
+        return (20, 20, 20)
+    return t
 
 
 def ve_tai_cho(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list:
@@ -99,10 +127,26 @@ def ve_tai_cho(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list:
                      "align": val.get("align") or "left", "h_dong": v["h"]})
     if not khoi and not loi:
         loi.append(f"slide {s['id']}: tai_cho nhưng không có vùng nào được dịch")
+    # VUNG OCR KHONG CO TRONG SPEC: truoc 06/09/2026 vong tren chi duyet cac
+    # khoa CO trong `muc["vung"]`, nen mot vung vai QUEN khai thi bien mat y het
+    # vung vai co y bo (`null`) — chu goc bi xoa, chu dich khong duoc ve, khong
+    # mot dong [LOI]. Hai y dinh do phai phan biet duoc.
+    da_khai = set(da_dung) | {str(k) for k in (muc.get("vung") or {})}
+    quen = [k for k in vung if str(k) not in da_khai]
+    if quen:
+        loi.append(f"slide {s['id']}: vùng {', '.join(sorted(quen, key=lambda x: int(x) if str(x).isdigit() else 0))} "
+                   "chưa khai trong spec — dịch thì ghi bản dịch, cố ý bỏ trống "
+                   "thì ghi null (chữ gốc đã bị xoá, không khai là mất hẳn)")
     for kh in khoi:
         kh["text"] = bo_dau_cam(kh["text"])
         if not bo_qua_dau and tim_mat_dau(kh["text"]):
             loi.append(f"slide {s['id']}: tiếng Việt mất dấu: {kh['text'][:50]!r}")
+        tran = _tran_hop(d, kh["text"], kh["w"], kh["h"],
+                         kh["font"] or _font_mac_dinh(kh["h_dong"], s["h"]))
+        if tran:
+            loi.append(f"slide {s['id']}: bản dịch {kh['text'][:36]!r} tràn hộp "
+                       f"{tran}px kể cả khi đã nhỏ hết cỡ ({CO_MIN}px) — rút gọn "
+                       "câu, hoặc gộp vùng để có chỗ rộng hơn")
     if loi:
         return loi
     for kh in khoi:
@@ -159,8 +203,8 @@ def main() -> int:
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        print(f"\nSửa {wd / 'spec.json'} rồi chạy lại: venv/bin/python itachi_nop.py {a.khoa}")
-        return 1
+        return nc.dem_vong_loi(wd, loi,
+                               f"venv/bin/python itachi_nop.py {a.khoa}")
     if deck_slides:
         p_spec = wd / "deck.spec.json"
         p_spec.write_text(json.dumps({"slides": deck_slides}, ensure_ascii=False, indent=1), encoding="utf-8")

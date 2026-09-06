@@ -82,8 +82,35 @@ def tim_giong_tuong_thuat(title: str, paragraphs: list) -> list:
     return loi
 
 
+# Tu qua chung, xuat hien o moi bai — khong dung lam neo doi chieu dan y.
+_TU_CHUNG = {"cua", "va", "voi", "cho", "the", "nhu", "khi", "mot", "cac", "nay",
+             "the", "duoc", "khong", "trong", "tren", "gioi", "thieu", "phan",
+             "the", "nhung", "hon", "sao", "vi", "gi", "lam", "the", "day",
+             "the", "moi", "tai", "tu", "den", "ra", "vao", "la", "co"}
+
+
+def _muc_khong_duoc_nhac(outline: list, paragraphs: list) -> list:
+    """Cac muc h2 cua dan y ma teaser khong nhac lay mot tu dac trung nao."""
+    if not outline:
+        return []
+    # So theo TU NGUYEN VEN, khong phai chuoi con: tieng Viet phan lon la am
+    # tiet 2-4 ky tu nen so chuoi con thi "tre" trung vao "truoc", "tai" trung
+    # vao "lai" — cong se im lang du muc that su bi bo.
+    than = set(re.findall(r"[a-z0-9]+", _bo_dau(" ".join(paragraphs))))
+    ra = []
+    for o in outline:
+        if (o or {}).get("level") != "h2":
+            continue
+        chu = str(o.get("text") or "").strip()
+        neo_tu = [w for w in re.findall(r"[a-z0-9]+", _bo_dau(chu))
+                  if len(w) >= 3 and w not in _TU_CHUNG]
+        if neo_tu and not any(w in than for w in neo_tu):
+            ra.append(chu[:70])
+    return ra
+
+
 def assemble(title: str, paragraphs: list, images: list,
-             bo_qua_kiem_tra: bool = False) -> dict:
+             bo_qua_kiem_tra: bool = False, outline: list = None) -> dict:
     n = len(paragraphs)
     if n == 0:
         raise ValueError("Can it nhat 1 doan van")
@@ -133,6 +160,17 @@ def assemble(title: str, paragraphs: list, images: list,
         if xau:
             raise ValueError("Sai luat teaser:\n  - " + "\n  - ".join(xau)
                              + "\n(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
+
+        # DAN Y CO DUOC NHAC KHONG. SOUL bat Jean "nhac du muc dan y", nhung
+        # truoc 06/09/2026 khong cong nao doi chieu — teaser dai dung so tu ma
+        # bo han mot nua bai van qua sach. CHI NHAC, khong chan: mot muc h2 co
+        # the duoc dien dat bang tu khac han, chan cung se chan oan.
+        bo_sot = _muc_khong_duoc_nhac(outline, paragraphs)
+        if bo_sot:
+            print("[nhac] dan y co muc chua thay nhac toi trong teaser:\n  - "
+                  + "\n  - ".join(bo_sot[:5])
+                  + "\n  (khong chan — neu co y bo thi bo, nhung dung bo vi quen)",
+                  file=sys.stderr)
     emojis = emoji_deck.next_emoji(n)
     body = "\n\n".join(f"{e} {p}".strip() for e, p in zip(emojis, paragraphs))
     caption = f"{title.upper()}\n\n{body}\n\n{CLOSING}"

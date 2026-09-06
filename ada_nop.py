@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import ada_chuan_bi as ab                                    # noqa: E402
+import caption_check as cc                                   # noqa: E402
 import env_load                                              # noqa: E402
 from card import tim_mat_dau, bo_dau_cam                     # noqa: E402
 
@@ -73,7 +74,7 @@ def main() -> int:
         spec = json.loads((wd / "spec.json").read_text(encoding="utf-8"))
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] spec.json không phải JSON hợp lệ: {type(e).__name__}: {e}")
-    loi = []
+    loi, canh = [], []
     for k in ("nhan_xet", "de_xuat_rubric", "token", "router", "ket_luan"):
         v = spec.get(k)
         chuoi = " ".join(str(x.get("thay_doi", "")) + " " + str(x.get("bang_chung", "")) if isinstance(x, dict) else str(x)
@@ -83,6 +84,44 @@ def main() -> int:
             loi.append(f"{k}: tiếng Việt mất dấu ({', '.join(mat)})")
     if not spec.get("nhan_xet"):
         loi.append("thiếu nhan_xet")
+
+    # ADA PHAI CO BANG CHUNG, KHONG CHI CO CHU (06/09/2026).
+    #
+    # Truoc do cong chi kiem dau tieng Viet va "nhan_xet khong rong": brief bat
+    # "moi y kem bang chung (bai nao, diem bao nhieu)" va bat de_xuat_rubric[]
+    # co `bang_chung`, nhung ca hai chi la CHU trong brief — mot de xuat co
+    # `bang_chung` rong van in ra binh thuong. Ma bao cao cua Ada la thu Ong Chu
+    # dung de doi rubric, tuc mot con so bia o day di thang vao cach cham diem.
+    #
+    # `xong.json` da chua moi so THAT, va `brief.md` in chung ra — nen doi chieu
+    # duoc bang code, dung ky thuat `caption_check.so_la` (so sanh theo chuoi
+    # chu so, bo dau cham/phay/cach, vi hai ben viet "2,5 ti" / "2.5B" / "2500
+    # trieu"). Chi CANH BAO, khong chan: hai cach viet khac nhau la chuyen
+    # thuong, chan cung se chan oan.
+    thieu_bc = [str(x.get("thay_doi", ""))[:50] for x in (spec.get("de_xuat_rubric") or [])
+                if isinstance(x, dict) and not str(x.get("bang_chung", "")).strip()]
+    if thieu_bc:
+        loi.append("de_xuat_rubric thiếu bang_chung: " + "; ".join(f'"{t}"' for t in thieu_bc[:3])
+                   + " — đề xuất đổi cách chấm điểm mà không nêu bài nào/điểm bao nhiêu "
+                     "thì Ông Chủ không có cách nào kiểm")
+    brief = ""
+    try:
+        brief = (wd / "brief.md").read_text(encoding="utf-8")
+    except OSError:
+        pass
+    if brief:
+        chuoi = " ".join(
+            (str(x.get("thay_doi", "")) + " " + str(x.get("bang_chung", "")))
+            if isinstance(x, dict) else str(x)
+            for k in ("nhan_xet", "de_xuat_rubric", "token", "router", "ket_luan")
+            for x in (spec.get(k) if isinstance(spec.get(k), list) else [spec.get(k) or ""]))
+        la = cc.so_la(chuoi, brief)
+        if la:
+            canh.append("số không có trong brief: " + ", ".join(la[:6])
+                        + " — Ada chỉ được dùng số của brief, không tự tính lại "
+                          "hay nhớ từ hôm trước")
+    for c in canh:
+        print(f"[canh bao] {c}")
     if loi:
         for e in loi:
             print(f"[LOI] {e}")

@@ -1000,6 +1000,62 @@ def test_bob_dung_ket_qua_nhin_de_chon_mood():
         finally:
             bob_nop.lay_anh, bob_nop.dong_khung, cb.mo_ta_anh = goc_lay, goc_khung, goc_mo_ta
 
+# ------------------------------------------- vong [LOI]: dem trong CODE, khong phai chu
+def test_vong_loi_co_bo_dem_va_reset_khi_loi_doi():
+    """"Toi da 2 lan sua [LOI]" truoc 06/09/2026 chi la CHU trong task body —
+    khong dong code nao dem. Ghep voi cong phi tat dinh (vision doi ket qua
+    giua hai lan chay), vai co the lap toi khi het ngan sach tool call ma khong
+    ai thay gi ngoai mot task treo."""
+    with tempfile.TemporaryDirectory() as td:
+        wd = Path(td)
+        bo_loi = ["thieu anh A2", "slide 3 tran chu"]
+        assert nc.dem_vong_loi(wd, bo_loi, "lenh") == 1
+        assert nc.dem_vong_loi(wd, bo_loi, "lenh") == 1
+        assert nc.dem_vong_loi(wd, bo_loi, "lenh") == 2, "lan thu 3 phai bao DUNG"
+        # bo loi DOI = vai da sua duoc mot thu -> cho di tiep
+        assert nc.dem_vong_loi(wd, ["loi khac han"], "lenh") == 1
+
+
+# ------------------------------------------------ Itachi: vung quen, tran hop, mau
+def test_itachi_mau_sai_dang_khong_lam_chet_ban_ve():
+    """`tuple(color)` voi color tu spec nem TypeError GIUA buoi ve — mat ca
+    slide, vai chi thay traceback."""
+    import itachi_nop as it
+    assert it._mau([12, 34, 56]) == (12, 34, 56)
+    for xau in ("xanh", [1, 2], [300, 0, 0], None, {}, [1, 2, "x"]):
+        assert it._mau(xau) == (20, 20, 20), f"khong do duoc dang xau: {xau!r}"
+
+
+def test_itachi_bat_chu_tran_hop():
+    """`_ve_khoi` co lai co chu toi CO_MIN roi VE BAT KE: vong while thoat vi
+    `size > CO_MIN` chu khong phai vi chu da vua. Cau dich dai gap doi cau goc
+    thi tran de len anh ben duoi, khong cong nao bao."""
+    from PIL import Image, ImageDraw
+    import itachi_nop as it
+    d = ImageDraw.Draw(Image.new("RGB", (1200, 1200)))
+    dai = ("Một câu dịch dài gấp nhiều lần câu gốc, kể lể đủ thứ chi tiết mà hộp "
+           "gốc không bao giờ chứa nổi dù chữ đã nhỏ hết cỡ.")
+    assert it._tran_hop(d, dai, 400, 40, "regular") > 0, "khong bat duoc chu tran"
+    assert it._tran_hop(d, "Ngắn", 400, 60, "regular") == 0, "bao nham chu vua hop"
+
+
+# ------------------------------------------------------ Jean: dan y co duoc nhac
+def test_teaser_nhac_muc_dan_y_bi_bo():
+    """SOUL bat Jean "nhac du muc dan y" nhung khong cong nao doi chieu —
+    teaser dai dung so tu ma bo han mot nua bai van qua sach. So theo TU
+    NGUYEN VEN: tieng Viet phan lon la am tiet 2-4 ky tu nen so chuoi con thi
+    "tre" trung vao "truoc", cong se im lang."""
+    import teaser_assemble as ta
+    dan_y = [{"level": "h2", "text": "Chi phí mỗi task"},
+             {"level": "h2", "text": "Độ trễ khi tải cao"},
+             {"level": "h3", "text": "mục h3 không xét"}]
+    doan = ["Con số chi phí gây bất ngờ: 2,75 USD mỗi task, rẻ hơn bản trước.",
+            "Đổi lại là chất lượng giữ nguyên trên bộ đo nội bộ."]
+    assert ta._muc_khong_duoc_nhac(dan_y, doan) == ["Độ trễ khi tải cao"]
+    du = doan + ["Độ trễ khi tải cao vẫn nằm trong ngưỡng chịu được."]
+    assert ta._muc_khong_duoc_nhac(dan_y, du) == []
+    assert ta._muc_khong_duoc_nhac(None, doan) == []
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

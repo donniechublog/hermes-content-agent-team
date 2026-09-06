@@ -265,9 +265,8 @@ def main() -> int:
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        print(f"\nSua {spec_path} theo cac dong tren roi chay lai: "
-              f"venv/bin/python dre_nop.py {a.draft_id}")
-        return 1
+        return nc.dem_vong_loi(wd, loi,
+                               f"venv/bin/python dre_nop.py {a.draft_id}")
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)

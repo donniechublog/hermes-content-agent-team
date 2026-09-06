@@ -59,6 +59,53 @@ def kiem_lam_lai(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "anh
     return loi
 
 
+# So lan nop HONG voi CUNG mot bo loi truoc khi coi la tac (xem dem_vong_loi).
+TOI_DA_VONG = 3
+
+
+def dem_vong_loi(wd, loi: list, lenh: str, toi_da: int = TOI_DA_VONG) -> int:
+    """Dem so lan nop hong LIEN TIEP voi cung mot bo loi. Tra ve ma thoat.
+
+    "Toi da 2 lan sua [LOI]" truoc 06/09/2026 chi la CHU trong task body —
+    khong mot dong code nao dem. Ghep voi cong phi tat dinh (vision lien_quan
+    doi ket qua giua hai lan chay) va cong tung bat kha thi, vai co the lap toi
+    khi het ngan sach tool call cua Hermes ma khong ai thay gi ngoai mot task
+    treo.
+
+    Dem theo CHU KY loi chu khong theo so lan chay: bo loi doi nghia la vai da
+    sua duoc mot thu, cho no di tiep. Ba lan y het nhau moi la tac that. Moc cu
+    hon 6 gio coi nhu cua task khac.
+    """
+    import hashlib
+    import json as _j
+    import time as _t
+    p = Path(wd) / "nop_lan.json"
+    ky = hashlib.md5("\n".join(sorted(str(x) for x in loi)).encode()).hexdigest()
+    cu = {}
+    try:
+        cu = _j.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    if cu.get("ky") != ky or _t.time() - cu.get("luc", 0) > 6 * 3600:
+        cu = {"ky": ky, "lan": 0}
+    lan = int(cu.get("lan", 0)) + 1
+    try:
+        p.write_text(_j.dumps({"ky": ky, "lan": lan, "luc": int(_t.time()),
+                               "loi_cuoi": [str(x)[:200] for x in loi[:5]]},
+                              ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass
+    if lan < toi_da:
+        print(f"\nSua roi chay lai DUNG lenh: {lenh}"
+              + (f"   (lan {lan}/{toi_da})" if lan > 1 else ""))
+        return 1
+    print(f"\n[DUNG] Da {lan} lan nop voi Y HET bo loi tren — dung sua nua.")
+    print("  Goi kanban_block va ghi nguyen van dong [LOI] dau tien lam ly do. "
+          "Cong nay co the dang doi mot thu khong the co (thieu anh, thieu tu "
+          "lieu, nguon hong) — do la viec cua Ong Chu, khong phai cua vai.")
+    return 2
+
+
 def chu_bai_cua(m: dict, wd: Path) -> str:
     """Chu bai + tu lieu gom ve mot chuoi chu thuong, de doi chieu ten nguoi hay
     so lieu vai khai co that su nam trong bai khong."""

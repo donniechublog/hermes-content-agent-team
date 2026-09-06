@@ -50,7 +50,9 @@ def main() -> int:
             print(f"[LOI] {e}")
         return 1
     try:
-        kq = teaser_assemble.assemble(title, paras, d.get("images", []), bo_qua_kiem_tra=a.bo_qua_kiem_tra)
+        kq = teaser_assemble.assemble(title, paras, d.get("images", []),
+                                      bo_qua_kiem_tra=a.bo_qua_kiem_tra,
+                                      outline=d.get("outline"))
     except ValueError as e:
         for dong in str(e).splitlines():
             print(f"[LOI] {dong}")

@@ -76,8 +76,8 @@ def main() -> int:
         if tin.get("do_dai", 0) > caption_check.GIOI_HAN:
             print(f"[LOI] cần cắt ít nhất {tin['do_dai'] - caption_check.GIOI_HAN} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
-        print(f"\nSua {p_cap} theo cac dong [LOI] roi chay lai: venv/bin/python miles_nop.py {a.draft_id}")
-        return 1
+        return nc.dem_vong_loi(wd, loi,
+                               f"venv/bin/python miles_nop.py {a.draft_id}")
 
     if a.khong_push:
         (wd / "draft_thu.txt").write_text(cap, encoding="utf-8")
