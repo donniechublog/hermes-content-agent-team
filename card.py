@@ -812,8 +812,35 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     sac = src_img.resize((W, nat_h), Image.LANCZOS)
     if nat_h > H:
         top = (nat_h - H) // 2
-        sac = sac.crop((0, top, W, top + H))
-    canvas.paste(sac, (0, 0))
+        canvas.paste(sac.crop((0, top, W, top + H)), (0, 0))
+    else:
+        # ANH THAP HON KHUNG (moi anh ngang: 3:2 ra nat_h=800, 4:3 ra 900 tren
+        # khung 1500) — day la cho sinh ra DUONG RANH ma Ong Chu bat nhieu lan.
+        # Dan thang `sac` len `nen` thi tai dung hang nat_h co mot buoc nhay:
+        # tren la anh SAC, duoi la ban cover-blur cua MOT VUNG KHAC cua chinh
+        # tam anh. Do that (anh 3:2): y=799 L=240.0 -> y=800 L=80.7, tut 159 do
+        # sang trong MOT hang, do net cung roi tu 8.0 xuong 0.6.
+        #
+        # Truoc dot lam lai 06/09/2026 co `_man_quote` dat man DAC dung tai
+        # nat_h de xoa mep (9f129cf viet ro la de sua ca nay); 9b7244d go man
+        # do ma khong thay gi, 0c7415b bo not .enhance(0.5) cua lop nen. Con
+        # `_mo_vung_chu` thi bat dau tan `frame_top - 110`, thuong NAM DUOI mep,
+        # va ngay khi no phu trung thi mat na o do moi dat mot phan nen mep van
+        # lo (anh 4:3 quote 3 dong: mat na ~28%, delta van +20).
+        #
+        # Cach xoa mep dung tinh than "lam mo chu dung boi them mau": khong dat
+        # lai man toi, ma cho lop SAC TAN dan vao lop nen mo qua mot dai ngan
+        # ket thuc dung tai nat_h. Dung smoothstep (dao ham bang 0 o CA HAI dau)
+        # nen khong sinh mep moi o dau dai — mot dai chuyen muot thay cho mot
+        # duong ke.
+        dai = max(1, min(int(nat_h * 0.16), 180))
+        mat_na = Image.new("L", (W, nat_h), 255)
+        for y in range(dai):
+            t = (y + 1) / dai
+            muot = t * t * (3 - 2 * t)                  # smoothstep
+            mat_na.paste(int(255 * (1 - muot)),
+                         (0, nat_h - dai + y, W, nat_h - dai + y + 1))
+        canvas.paste(sac, (0, 0), mat_na)
 
     d = ImageDraw.Draw(canvas)
     # Khung o le FRAME_X; chu THUT VAO them (TEXT_X > FRAME_X) de hai canh chieu
@@ -865,6 +892,13 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
 
     _mo_vung_chu(canvas, frame_top)
     mau_chu = _mau_doi_nen(canvas, (TEXT_X, frame_top, W - TEXT_X, frame_bottom))
+    # DONG NGUON do RIENG. No duoc ve tai `src_top`, tuc NAM DUOI `frame_bottom`
+    # — ngoai han cai hop vua do. Anh co khoi chu toi nhung day the sang thi
+    # `mau_chu` ra TRANG (dung cho quote), roi dong nguon cung trang dat len day
+    # sang: do that la CR 1.08, coi nhu mat chu. Ma dong nguon chinh la cho ghi
+    # "Doc bai ... - <nguon>" — mat no la mat dan nguon (06/09/2026).
+    mau_nguon = (_mau_doi_nen(canvas, (0, src_top, W, src_top + at_h))
+                 if at_lines else mau_chu)
 
     # Cac dong quote, canh trai (thut vao TEXT_X).
     qy = first_line_top
@@ -880,12 +914,12 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     _quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom,
                  CYAN, mark_col)
 
-    # Dong nguon (attribution), CANH GIUA, sat day — cung mau, vung nay da
-    # duoc _mo_vung_chu lam mo tu truoc.
+    # Dong nguon (attribution), CANH GIUA, sat day. Vung nay da duoc
+    # _mo_vung_chu lam mo tu truoc, va mau lay theo phep do cua CHINH no.
     ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
-        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=mau_chu)
+        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=mau_nguon)
         ay += at_lh
 
     # CHIP theo phong cach NEOBRUTALISM: khoi dac, vien den day, bong cung lech

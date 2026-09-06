@@ -478,6 +478,81 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
                 tep.unlink()
             kho.rmdir()
 
+# ------------------------------------------------------------ the quote (card)
+def _anh_van(w, h, ra, dai_toi=None, sang=False):
+    """Anh thu co VAN DAY (khong bi `_chan_chart` bat nham la bieu do) va mot dai
+    toi tuy chon. Kich thuoc tranh khit 4:5 vi cong `_chan_chuan_anh` doi dau vet
+    crop_ti_le.py voi anh dung khit ti le."""
+    from PIL import Image, ImageDraw
+    goc = (250, 250, 250) if sang else (240, 240, 240)
+    im = Image.new("RGB", (w, h), goc)
+    d = ImageDraw.Draw(im)
+    for x in range(0, w, 9 if sang else 7):
+        v = (x * 29) % (40 if sang else 190)
+        d.rectangle([x, 0, x + 5, h],
+                    fill=(250 - v, 248 - v, 245 - v // 2) if sang
+                    else (60 + v, 200 - v // 2, 120 + (v * 3) % 130))
+    if not sang:
+        for y in range(0, h, 11):
+            v = (y * 53) % 160
+            d.rectangle([0, y, w, y + 3], fill=(210 - v, 100 + v, 60 + v // 2))
+    if dai_toi:
+        d.rectangle([0, int(h * dai_toi[0]), w, int(h * dai_toi[1])], fill=(16, 18, 22))
+    im.save(ra)
+    return ra
+
+
+def _dung_the(src, ra, tmp):
+    import card
+    card.dat_thuong_hieu("donniechublog")
+    card.build(str(src), "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified",
+               str(ra), handle="@donniechublog", ratio="4:5",
+               attrib="Đọc bài đầy đủ tại donniechublog - Hacker News")
+    return ra
+
+
+def test_anh_ngang_khong_lo_duong_ranh_ngang():
+    """Anh THAP hon khung (moi anh ngang) dan thang len lop nen se lo mot duong
+    ke ngang tai `nat_h`: tren la anh sac, duoi la ban cover-blur cua MOT VUNG
+    KHAC. Do that trước 06/09/2026: anh 3:2 tut 128 do sang trong MOT hang, 4:3
+    tut 41 — dung cai "the doc ra HAI VUNG" Ong Chu bat nhieu lan. Cong 
+    `_chan_anh_thap` khong do duoc viec nay (no chi chan tu ti le > 1.6)."""
+    from PIL import Image, ImageStat
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        for w, h in ((1500, 1000), (1200, 900), (1600, 1000)):     # 3:2, 4:3, 16:10
+            src = _anh_van(w, h, t / f"g{w}.png", dai_toi=(0.62, 1.0))
+            ra = _dung_the(src, t / f"the{w}.png", t)
+            im = Image.open(ra).convert("L")
+            W_, H_ = im.size
+            nat_h = round(h * W_ / w)
+            hang = [ImageStat.Stat(im.crop((0, y, W_, y + 1))).mean[0]
+                    for y in range(max(0, nat_h - 14), min(H_, nat_h + 15))]
+            buoc = max(abs(hang[i] - hang[i - 1]) for i in range(1, len(hang)))
+            assert buoc < 8, (f"anh {w}x{h}: van lo duong ranh tai nat_h={nat_h}, "
+                              f"buoc nhay {buoc:.1f} do sang trong mot hang")
+
+
+def test_dong_nguon_doc_duoc_tren_day_the_sang():
+    """Dong nguon ("Doc bai ... - <nguon>") duoc ve DUOI `frame_bottom`, tuc
+    ngoai cai hop dung de chon mau chu cho quote. Anh co khoi chu toi nhung day
+    the sang thi truoc 06/09/2026 no lay mau TRANG cua quote dat len nen sang:
+    do that CR 1.04 — mat hoan toan, va mat luon dan nguon."""
+    from PIL import Image
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        # anh 1200x1560 (khong khit 4:5): sang toan bo, chi toi o giua — khoi
+        # quote nam tren nen toi, day the van sang.
+        src = _anh_van(1200, 1560, t / "sang.png", dai_toi=(0.58, 0.90), sang=True)
+        ra = _dung_the(src, t / "the.png", t)
+        im = Image.open(ra).convert("L")
+        W_, H_ = im.size
+        dai = im.crop((150, H_ - 105, W_ - 150, H_ - 25))     # dai chua dong nguon
+        px = sorted(dai.getdata())
+        chenh = px[len(px) // 2] - px[len(px) // 100]         # trung vi - 1%
+        assert chenh > 120, (f"dong nguon khong noi tren nen: chenh sang chi {chenh} "
+                             "(nen ~230, chu phai tach han ra)")
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0
