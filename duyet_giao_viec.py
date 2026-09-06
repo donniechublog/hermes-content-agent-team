@@ -6,28 +6,22 @@ giao"), bang den swarm, bao tien do vao topic. Tach tu approve_service.py 06/09/
 """
 import json
 import os
-import re
 import sqlite3
 import subprocess
 import sys
-import threading
 import time
 from pathlib import Path
 
 from html import escape as html_escape
 
-import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import bang_den                                              # noqa: E402
-import chat_router                                          # noqa: E402
-import moat_publish                                         # noqa: E402
-import tele_util                                            # noqa: E402
 import ghi_log                                              # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
-    HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _ghi_json, call, log, rut,
+    HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _ghi_json, call, log,
 )
 
 

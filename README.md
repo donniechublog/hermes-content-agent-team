@@ -279,7 +279,9 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
 - `finn-daily-scan` (blog), `nova-daily-scan` (blog), `vera-daily-scan` (dcgr)
   — **05:00 VN** (22:00 UTC). Ba job này nằm ở **hai container khác nhau**, nên
   chỉ finn và nova là nối tiếp nhau (`max_in_progress: 1` của blog); vera chạy
-  song song ở dcgr.
+  song song ở dcgr. Thân ba script là **một** tệp
+  `hermes/scripts/quet_daily_scan.sh <vai>`; `finn_daily_scan.sh` và hai tệp kia
+  chỉ còn 7 dòng gọi sang đó, giữ tên cũ để khỏi phải sửa job cron trên máy chủ.
 - `daily-log` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router
   (`theo_doi_9router.py --gui` → topic analyst).
 - `model-watch` — `*/30 0,4,5,10-23 * * *`, tức **tắt 08:00–10:59 và

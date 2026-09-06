@@ -102,7 +102,7 @@ import sys
 from pathlib import Path
 
 # tái dùng cổng chặn tiếng Việt của cả đội
-import card  # noqa: E402  (cùng thư mục)
+import tieng_viet  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -1032,7 +1032,81 @@ _DAN_NGUON_SAI = re.compile(
     re.I)
 
 
+# Truong BAT BUOC cua tung kind — kiem TRONG gate_slides, tuc TRUOC khi mo
+# Chromium (doi 06/09/2026 dot 2).
+#
+# Truoc day bang nay chi song o kite_nop.py va gate_slides khong kiem truong nao
+# ca: mot spec thieu `standfirst` o slide 4 di qua cong sach se, render() mo
+# Chromium, roi `s_statement` nem KeyError THO. Neu no ra o vong chup thu hai
+# (:1281) thi mot phan album da nam trong drafts/ — dung cai album cut ma thiet
+# ke hai vong sinh ra de tranh. Va moi duong khong di qua nop (goi thang
+# render_edu, `--spec -`) thi truoc gio khong co cong nao.
+#
+# `long`: (ten danh sach, cac khoa moi phan tu phai co).
+BAT_BUOC_KIND = {
+    "cover":     {"truong": ("eyebrow", "title", "standfirst")},
+    "statement": {"truong": ("eyebrow", "title", "standfirst"),
+                  "long": ("cards", ("num", "text"))},
+    "steps":     {"truong": ("eyebrow", "title", "steps"),
+                  "long": ("steps", ("title", "desc"))},
+    "loop":      {"truong": ("eyebrow", "title", "standfirst", "callout", "chips")},
+    "figure":    {"truong": ("eyebrow", "title", "standfirst", "image", "caption"),
+                  "long": ("cards", ("num", "text"))},
+    "bars":      {"truong": ("eyebrow", "title", "standfirst", "caption", "bars"),
+                  "long": ("bars", ("label", "value"))},
+    "cta":       {"truong": ("eyebrow", "title", "checks")},
+}
+
+
+def kiem_truong(slides) -> list:
+    """Thieu truong bat buoc / kind la — bat o day, khong de builder nem."""
+    loi = []
+    for i, sl in enumerate(slides, 1):
+        kind = sl.get("kind")
+        if kind not in BUILDERS:
+            loi.append(f"slide {i}: kind {kind!r} khong co — chon mot trong "
+                       + ", ".join(sorted(BUILDERS)))
+            continue
+        q = BAT_BUOC_KIND.get(kind, {})
+        for k in q.get("truong", ()):
+            if not sl.get(k):
+                loi.append(f"slide {i} [{kind}]: thieu '{k}'")
+        ten_ds, khoa = q.get("long", (None, ()))
+        if ten_ds:
+            for j, muc in enumerate(sl.get(ten_ds) or [], 1):
+                if not isinstance(muc, dict):
+                    loi.append(f"slide {i} [{kind}]: {ten_ds}[{j}] phai la object")
+                    continue
+                for k in khoa:
+                    if muc.get(k) in (None, ""):
+                        loi.append(f"slide {i} [{kind}]: {ten_ds}[{j}] thieu '{k}'")
+        # `readmore` cua cta la tuy chon, nhung co thi phai du hai khoa
+        rm = sl.get("readmore")
+        if isinstance(rm, dict):
+            for k in ("label", "text"):
+                if not rm.get(k):
+                    loi.append(f"slide {i} [{kind}]: readmore thieu '{k}'")
+    return loi
+
+
 def gate_slides(slides, bo_qua_dau):
+    # Truong bat buoc TRUOC tien. Kind LA thi dung han (moi cong duoi deu gia
+    # dinh kind hop le); thieu truong thi van chay tiep cac cong con lai de vai
+    # nhan DU loi trong mot lan thay vi sua ba vong. Cac cong duoi doc bang
+    # `.get` nen thieu truong khong lam chung nem — con neu co gi nem that thi
+    # bat lai o duoi, danh sach loi da co van duoc tra ve.
+    loi = kiem_truong(slides)
+    if any("kind" in d and "khong co" in d for d in loi):
+        return loi
+    try:
+        loi += _gate_noi_dung(slides, bo_qua_dau)
+    except Exception as e:                                   # noqa: BLE001
+        loi.append(f"[cong noi dung dung giua chung: {type(e).__name__}: {e} — "
+                   "sua cac loi tren truoc roi chay lai]")
+    return loi
+
+
+def _gate_noi_dung(slides, bo_qua_dau):
     loi = []
     n = len(slides)
     if n < 6:
@@ -1044,7 +1118,7 @@ def gate_slides(slides, bo_qua_dau):
     if not bo_qua_dau:
         for i, sl in enumerate(slides, 1):
             for nhan, t in _texts(sl):
-                mat = card.tim_mat_dau(t)
+                mat = tieng_viet.tim_mat_dau(t)
                 if mat:
                     loi.append(f"slide {i} [{nhan}]: tieng Viet mat dau ({', '.join(mat)})")
     # slide figure: anh phai co that va phai du to. Anh 600px keo len 1080px

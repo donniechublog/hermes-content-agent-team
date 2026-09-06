@@ -5,11 +5,8 @@ Dung cu phap moi chay; sai cu phap / sai ten vai / URL hong thi bao ngan
 va dung han — khong roi ve hoi thoai, khong tu suy dien "chac y la...".
 Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 """
-import json
 import os
 import re
-import sqlite3
-import subprocess
 import sys
 import threading
 import time
@@ -20,16 +17,10 @@ from html import escape as html_escape
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load                                              # noqa: E402
-import bang_den                                              # noqa: E402
-import chat_router                                          # noqa: E402
-import moat_publish                                         # noqa: E402
-import tele_util                                            # noqa: E402
-import ghi_log                                              # noqa: E402
 import quet_chung                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
-    BRAND, STATE_DIR, _ghi_json, _nap_json, call, la_ong_chu, log, rut,
+    BRAND, STATE_DIR, _ghi_json, _nap_json, call, la_ong_chu, log,
 )
 from duyet_giao_viec import (  # noqa: E402
     MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_ANH, VAI_CAROUSEL, VAI_EDU,

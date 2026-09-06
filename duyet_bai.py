@@ -4,10 +4,7 @@ do, het han), chuyen Kite khi thieu anh that, dang len kenh, day ban nhap vao
 hang duyet. Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 """
 import json
-import os
 import re
-import sqlite3
-import subprocess
 import sys
 import threading
 import time
@@ -18,16 +15,11 @@ from html import escape as html_escape
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load                                              # noqa: E402
-import bang_den                                              # noqa: E402
-import chat_router                                          # noqa: E402
 import moat_publish                                         # noqa: E402
-import tele_util                                            # noqa: E402
-import ghi_log                                              # noqa: E402
 import luat_anh                                             # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
-    API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, log, rut,
+    API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, log,
 )
 from duyet_giao_viec import (  # noqa: E402
     BANG_DEN_NHAC, TEN_VAI_ANH, TEN_VAI_VIET, _bang_den_ghi, _bao_nhan_viec, _trang_thai_task, kanban_create,

@@ -37,6 +37,7 @@ TIEN_TO = {"nova": "nova_candidates", "market": "vera_candidates",
 
 
 import bat_buoc                                             # noqa: E402
+import tieng_viet                                           # noqa: E402
 
 
 def main():
@@ -112,8 +113,7 @@ def main():
         # Viet co dau", "summary_vi mot menh de <= 15 tu". Truoc 06/09/2026
         # khong cong nao kiem: title mat dau hoac summary dai ba dong van len
         # bao cao y nguyen. Chi CANH BAO (khong bo tin) — tin van co gia tri.
-        import card
-        mat_dau = card.tim_mat_dau(it["title"])
+        mat_dau = tieng_viet.tim_mat_dau(it["title"])
         if mat_dau:
             print(f"[canh bao] muc {i} title tieng Viet mat dau ({', '.join(mat_dau[:3])}): "
                   f"{it['title'][:60]}", file=sys.stderr)

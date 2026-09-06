@@ -72,7 +72,8 @@ TEP_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
 # KHONG tao (ton trong phan chia job per-brand trong jobs.json). "moat_publish_
 # watch" tung nam ngoai danh sach du la job chay DAY NHAT (moi phut) co ca
 # find -delete — mot script hong ngoai git la dung kich ban 22/08.
-SCRIPT = ["finn_daily_scan", "nova_daily_scan", "vera_daily_scan",
+SCRIPT = ["quet_daily_scan",                              # than chung cua ba vai quet
+          "finn_daily_scan", "nova_daily_scan", "vera_daily_scan",   # vo mong, giu ten cho cron
           "model_watch", "nhat_ky_daily", "moat_publish_watch"]
 # `usage_audit` da bo khoi danh sach 06/09/2026: job cron da go khoi ca hai home,
 # va tep chi con la mot stub echo mot dong ("da gop vao daily-log"). Giu mot stub
