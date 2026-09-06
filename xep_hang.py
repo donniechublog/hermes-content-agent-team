@@ -216,7 +216,13 @@ _JS_TIM = _JS_NORM + """
       if (idx < 0) continue;
       const r = rows[idx];
       const cells = Array.from(r.children).map(c => (c.innerText || '').trim().replace(/\\s+/g, ' '));
-      const hang = (cells.find(c => /^#?\\d{1,3}$/.test(c)) || '').replace('#', '');
+      // Cot HANG (neu co) luon nam trong hai o dau tien tinh tu trai — arena "Rank",
+      // swebench cot checkbox+"#", tbench "RANK". artificialanalysis KHONG CO cot hang
+      // (sap xep ngam theo Intelligence Index) nen KHONG duoc do o ca hang: truoc day
+      // regex bat BAT KY o nao khop "so nguyen <=3 chu so" trong ca hang, va vo nham
+      // chinh diem Intelligence (vd "55") lam thu hang — bao sai "hang #55" trong khi
+      // do la diem so. Gioi han vung do ve HAI O DAU tien moi dung.
+      const hang = (cells.slice(0, 2).find(c => /^#?\\d{1,3}$/.test(c)) || '').replace('#', '');
       const img = r.querySelector('img'); if (img) img.setAttribute('data-xh-logo', String(k));
       t.setAttribute('data-xh-bang', String(k)); r.setAttribute('data-xh-row', String(k));
       const w = t.getBoundingClientRect().width;
