@@ -245,9 +245,13 @@ def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10
         except Exception:                                    # noqa: BLE001
             pass
         try:
+            if not quet_chung.url_an_toan(link):
+                continue
             rr = httpx.head(link, headers=HDR, timeout=12, follow_redirects=True)
             u = str(rr.url)
-            if rr.status_code != 200:
+            # `u` la dia chi SAU chuyen huong va duoc dung lam nguon that cho
+            # bai — mot ket qua tim kiem 302 ve 127.0.0.1 khong duoc di tiep.
+            if rr.status_code != 200 or not quet_chung.url_an_toan(u):
                 continue
         except Exception:                                    # noqa: BLE001
             continue

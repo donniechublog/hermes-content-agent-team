@@ -6,12 +6,15 @@ Dung <article>, JSON-LD BlogPosting va OpenGraph de lay tieu de, outline
 """
 import argparse
 import json
-import re
 import sys
-from urllib.parse import urljoin, urlsplit
+from pathlib import Path
+from urllib.parse import urljoin
 
 import httpx
 from bs4 import BeautifulSoup
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
 
 UA = "Mozilla/5.0 (compatible; donniechu-content-bot/1.0)"
 
@@ -21,24 +24,12 @@ UA = "Mozilla/5.0 (compatible; donniechu-content-bot/1.0)"
 # (9130) va tunnel — nen mot URL tro nguoc vao trong la fetch thang vao ruot he
 # thong. Cong /bai da chan viec nay tu lau (duyet_lenh._HOST_CAM); duong nay thi
 # chua, phat hien 06/09/2026.
-# Chep lai regex thay vi import duyet_lenh: tep nay la script doc lap, chay bang
-# venv rieng trong tien trinh con; keo ca the gioi approve_service vao chi de
-# dung mot regex la doi lay rui ro import de lay mot dong code. Sua mot ben thi
-# sua ca hai.
-_HOST_CAM = re.compile(
-    r"^(localhost$|127\.|10\.|192\.168\.|169\.254\.|0\.)"
-    r"|^172\.(1[6-9]|2\d|3[01])\."
-    r"|\.(local|internal|netbird\.mated)$", re.I)
-
-
-def _kiem_host(url: str, cho: str = "URL") -> None:
-    """Nem ValueError neu URL tro vao mang noi bo. Chi so khop TEN host, khong
-    resolve DNS — cung muc do voi cong /bai, du cho mo hinh rui ro nay."""
-    p = urlsplit(str(url))
-    if p.scheme not in ("http", "https") or not p.hostname:
-        raise ValueError(f"{cho} phai la http/https day du: {url!r}")
-    if _HOST_CAM.search(p.hostname):
-        raise ValueError(f"{cho} tro vao host noi bo ({p.hostname}) — khong boc.")
+# Lay cong tu `quet_chung` chu khong chep lai regex (doi 06/09/2026 dot 2).
+# `quet_chung` la module thuan, khong keo approve_service vao — nen li do cu de
+# chep ("tep nay chay doc lap trong tien trinh con") khong con dung. Ban chep
+# tay chi so khop CHUOI nen "127.1" va "2130706433" deu lot; ban chung dung
+# `ipaddress` + `inet_aton` va la MOT cho duy nhat cho ca day chuyen.
+_kiem_host = quet_chung.kiem_url
 SKIP_IMG_HINTS = ("avatar", "logo", "favicon", "icon-")
 
 

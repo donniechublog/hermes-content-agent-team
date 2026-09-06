@@ -48,6 +48,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import luat_anh                                              # noqa: E402
 import env_load                                              # noqa: E402
+import quet_chung                                            # noqa: E402
 import xep_hang                                              # noqa: E402
 
 DRAFTS = ROOT / "drafts"
@@ -143,10 +144,17 @@ def _tieu_de_trang(url: str) -> str:
 
 # ---- 2. anh -----------------------------------------------------------------
 def _tai_bytes(url: str) -> bytes | None:
+    # Cong host noi bo. URL o day den tu `src` cua HTML bai bao va tu trang tim
+    # kiem — khong phai tu ta. Mot `<img src="http://127.0.0.1:9121/...">` (hay
+    # mot 302 tro ve do) truoc 06/09/2026 duoc tai ve, di qua vision, roi vao
+    # bang anh cua vai. Kiem CA sau chuyen huong, nhu article_extract.
+    if not quet_chung.url_an_toan(url):
+        print(f"[tai] bo qua URL noi bo: {str(url)[:80]}", file=sys.stderr)
+        return None
     try:
         with httpx.stream("GET", url, headers=HDR, timeout=40,
                           follow_redirects=True) as r:
-            if r.status_code != 200:
+            if r.status_code != 200 or not quet_chung.url_an_toan(r.url):
                 return None
             buf = b""
             for chunk in r.iter_bytes(65536):

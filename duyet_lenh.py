@@ -26,9 +26,10 @@ import chat_router                                          # noqa: E402
 import moat_publish                                         # noqa: E402
 import tele_util                                            # noqa: E402
 import ghi_log                                              # noqa: E402
+import quet_chung                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
-    BRAND, ONG_CHU_IDS, STATE_DIR, _ghi_json, _nap_json, call, log, rut,
+    BRAND, STATE_DIR, _ghi_json, _nap_json, call, la_ong_chu, log, rut,
 )
 from duyet_giao_viec import (  # noqa: E402
     MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_ANH, VAI_CAROUSEL, VAI_EDU,
@@ -72,7 +73,10 @@ def _url_hop_le(url):
         return "URL không đọc được."
     if p.scheme not in ("http", "https") or not p.hostname:
         return "URL phải là http/https đầy đủ."
-    if _HOST_CAM.search(p.hostname):
+    # `quet_chung.host_noi_bo` la MOT cong cho ca day chuyen: `_HOST_CAM` o tren
+    # chi so khop chuoi nen bo lot "127.1", "2130706433" va "[::1]". Giu ca hai
+    # cho ro y dinh; ban chung moi la ban quyet dinh.
+    if _HOST_CAM.search(p.hostname) or quet_chung.host_noi_bo(p.hostname):
         return "Host này là địa chỉ nội bộ — không nhận."
     return None
 
@@ -187,11 +191,9 @@ def handle_command(token, group, msg, thread_id, text):
     # Allowlist: co file state/ong_chu.json (danh sach user_id) thi chi nhung
     # id do duoc ra lenh; chua co file thi giu hanh vi cu (ca group — group
     # hien chi co Ong Chu). Tin bao loi kem id de them vao file cho de.
-    uid = msg.get("from", {}).get("id")
-    cho_phep = _nap_json(ONG_CHU_IDS, [])
-    if cho_phep and uid not in cho_phep:
+    if not la_ong_chu(msg):
         tra_loi("Lệnh slash chỉ nhận từ Ông Chủ. (id của bạn: <code>"
-                + str(uid) + "</code>)")
+                + str(msg.get("from", {}).get("id")) + "</code>)")
         return
 
     phan = text.split()

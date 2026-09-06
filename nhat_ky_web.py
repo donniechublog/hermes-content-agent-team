@@ -28,7 +28,12 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import theo_doi_9router as tdr                               # noqa: E402
 
-HOST = os.environ.get("NHAT_KY_HOST", "0.0.0.0")
+# Mac dinh 127.0.0.1, KHONG phai 0.0.0.0 (doi 06/09/2026). Trang nay khong co
+# xac thuc va hien chi phi theo vai, ten khoa API, ten ket noi, model dang chay
+# — bind moi giao dien nghia la ai o cung LAN/netbird cung doc duoc. Muon mo
+# cho dien thoai thi dat NHAT_KY_HOST = dia chi netbird trong unit systemd,
+# dung mo ca 0.0.0.0.
+HOST = os.environ.get("NHAT_KY_HOST", "127.0.0.1")
 PORT = int(os.environ.get("NHAT_KY_PORT", "9130"))
 
 CSS = """
@@ -53,7 +58,14 @@ def trang_ngay(ngay: str) -> bytes | None:
     if not p.exists():
         return None
     import markdown
-    body = markdown.markdown(p.read_text(encoding="utf-8"), extensions=["tables"])
+    # ESCAPE truoc khi render. Python-Markdown cho HTML tho di thang qua, va
+    # chuoi trong tep .md khong phai do ta viet het: ten model, `status`, va
+    # `lastError` deu chep tu usageHistory cua 9router, tuc tu client goi router.
+    # Mot ten model dat la `<img src=x onerror=...>` se chay trong trinh duyet
+    # cua Ong Chu khi bam link 6h sang.
+    tho = p.read_text(encoding="utf-8")
+    an_toan = html.escape(tho, quote=False)
+    body = markdown.markdown(an_toan, extensions=["tables"])
     return _trang(f"9router {ngay}", body + f"<p><a href='/9router/{ngay}.json'>json</a></p>")
 
 

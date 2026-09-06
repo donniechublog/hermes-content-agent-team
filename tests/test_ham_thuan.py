@@ -229,6 +229,102 @@ def test_cap_fallback_bo_qua_chuoi_trung_ten():
     assert cap == set(t.FALLBACK_THAT), f"them cap trung ten: {sorted(cap)}"
 
 
+# --------------------------------------------------- allowlist va ma bai
+def test_la_ong_chu_khong_co_tep_thi_cho_qua():
+    """Chua co state/ong_chu.json = giu hanh vi cu (group rieng). Neu doi thanh
+    "chan het" thi bat cai nay len la khoa chet may dang chay."""
+    import tempfile
+    import duyet_co_so as cs
+    with tempfile.TemporaryDirectory() as tmp:
+        cu = cs.ONG_CHU_IDS
+        cs.ONG_CHU_IDS = Path(tmp) / "khong-co.json"
+        try:
+            assert cs.la_ong_chu({"from": {"id": 999}}) is True
+        finally:
+            cs.ONG_CHU_IDS = cu
+
+
+def test_la_ong_chu_co_tep_thi_chan_nguoi_la():
+    import json as _j
+    import tempfile
+    import duyet_co_so as cs
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "ong_chu.json"
+        p.write_text(_j.dumps([8112291996]), encoding="utf-8")
+        cu = cs.ONG_CHU_IDS
+        cs.ONG_CHU_IDS = p
+        try:
+            assert cs.la_ong_chu({"from": {"id": 8112291996}}) is True
+            assert cs.la_ong_chu({"from": {"id": 12345}}) is False
+            assert cs.la_ong_chu({}) is False          # nut khong co `from`
+            assert cs.la_ong_chu(None) is False
+        finally:
+            cs.ONG_CHU_IDS = cu
+
+
+def test_ma_bai_tu_nut_phai_khop_mau():
+    """`draft_id` trong callback_data den tu client va di THANG vao duong dan
+    tep. `_draft_id` sinh no bang slugify nen moi id that deu khop mau nay."""
+    import duyet_bai as db
+    import duyet_chon_tin as dct
+    hop_le = db._DRAFT_ID_HOP_LE
+    # id that do chinh he thong sinh ra phai qua duoc
+    tin = {"title": "Nvidia đàm phán rót 2,5 tỷ USD vào Thinking Machines", "index": 3}
+    that = dct._draft_id(tin, "donniechublog", "carousel")
+    assert hop_le.match(that), that
+    for xau in ["../../state/blog/lam_lai_cho", "a/b", "..", "", "A-Hoa",
+                "x" * 60, "tin_gach_duoi", "-mo-dau-bang-gach"]:
+        assert not hop_le.match(xau), f"nhan ma bai xau: {xau!r}"
+
+
+# ------------------------------------------------------------- host noi bo
+NOI_BO = ["127.0.0.1", "127.1", "127.0.1", "2130706433", "0x7f.0.0.1",
+          "::1", "[::1]", "localhost", "10.0.0.5", "192.168.1.61",
+          "169.254.169.254", "172.16.0.1", "172.31.255.1", "0.0.0.0",
+          "may.local", "x.internal", "abc.netbird.mated"]
+CONG_KHAI = ["openai.com", "172.32.0.1", "8.8.8.8", "1.1.1.1",
+             "vnexpress.net", "news.ycombinator.com", "arxiv.org"]
+
+
+def test_host_noi_bo_bat_ca_dang_viet_rut_gon():
+    """Cong cu chi so khop CHUOI nen "127.0.0.1" bi chan con "127.1",
+    "2130706433" va "[::1]" thi khong — dung ba cach vong qua ma libc (curl,
+    chromium, httpx) van hieu."""
+    import quet_chung as qc
+    sot = [h for h in NOI_BO if not qc.host_noi_bo(h)]
+    assert not sot, f"khong chan: {sot}"
+
+
+def test_host_cong_khai_khong_bi_chan_oan():
+    """Chan oan con te hon bo lot: day chuyen se im lang khong tai duoc anh."""
+    import quet_chung as qc
+    oan = [h for h in CONG_KHAI if qc.host_noi_bo(h)]
+    assert not oan, f"chan oan: {oan}"
+
+
+def test_kiem_url_chan_scheme_khong_phai_http():
+    """chup_chart tai bang urllib, ma urllib nhan ca `file://`."""
+    import quet_chung as qc
+    for u in ["file:///etc/passwd", "ftp://x.com/a", "data:text/html,x", "x"]:
+        assert not qc.url_an_toan(u), u
+    assert qc.url_an_toan("https://openai.com/index/abc")
+
+
+def test_moi_duong_tai_deu_qua_cong():
+    """Doc bang AST: cac ham tai da duoc noi vao cong. Them mot duong tai moi
+    ma quen goi cong la mo lai cua da dong."""
+    import ast
+    for tep, ham in [("anh_chuan_bi.py", "_tai_bytes"), ("anh_bai.py", "_tai"),
+                     ("chup_chart.py", "tai_anh"), ("article_extract.py", "fetch")]:
+        cay = ast.parse((ROOT / tep).read_text(encoding="utf-8"))
+        f = next((n for n in ast.walk(cay)
+                  if isinstance(n, ast.FunctionDef) and n.name == ham), None)
+        assert f, f"{tep}: khong thay ham {ham}"
+        goi = {ast.unparse(n.func) for n in ast.walk(f) if isinstance(n, ast.Call)}
+        assert any("kiem_url" in g or "url_an_toan" in g or "_kiem_host" in g
+                   for g in goi), f"{tep}:{ham} khong goi cong host"
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

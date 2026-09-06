@@ -77,7 +77,12 @@ CO_AI_SINH = {
 
 
 def _tai(url: str, timeout=15):
-    return httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
+    # Cong host noi bo cho MOI lan tai cua module nay (trang bai, anh ung vien).
+    # URL den tu HTML ben ngoai nen phai kiem ca truoc lan sau chuyen huong.
+    quet_chung.kiem_url(url)
+    r = httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
+    quet_chung.kiem_url(r.url, "URL sau chuyen huong")
+    return r
 
 
 def anh_trong_trang(url: str) -> list:
