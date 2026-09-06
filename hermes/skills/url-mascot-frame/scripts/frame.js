@@ -24,6 +24,7 @@
  *   --avatar       explicit avatar png path (overrides --emoji)
  *   --avatar-index which avatar to pick from the emoji's list (default 0)
  *   --handle       header handle text (default @donniechublog)
+ *   --footer       footer line (default: per-brand table, empty if unknown)
  *   --no-mascot    render the frame + handle only, no mascot
  *
  * Mascot assets come from MascotStudio; override its location with MASCOT_DIR.
@@ -32,7 +33,11 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const MASCOT_DIR = process.env.MASCOT_DIR || '/Users/donniechu/Documents/Codex/MascotStudio';
+// MascotStudio is an OPTIONAL extra source of avatars, only present on the
+// author's Mac. The default used to be that machine's absolute path, so on the
+// Linux server every run stat()'d a directory that can never exist. Bundled
+// avatars under assets/ are the real source; set MASCOT_DIR to opt in.
+const MASCOT_DIR = process.env.MASCOT_DIR || '';
 
 const SKILL_ROOT = path.join(__dirname, '..');
 const BUNDLED_AVATARS = path.join(SKILL_ROOT, 'assets', 'avatars');
@@ -144,7 +149,20 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 // donniechu.com brand tokens (read from the live site's CSS).
 const MONO = "'JetBrains Mono','JetBrainsMono-Regular','JetBrains Mono NL',ui-monospace,'DejaVu Sans Mono','Noto Sans Mono',monospace";
-const PROMPT = '>_ vibe working & agentic AI';
+// Footer line PER BRAND. It used to be one hard-coded constant, so every frame
+// Bob made for dcgr.tech carried donniechublog's site tagline — the one brand
+// mistake nobody notices until it is published. Keyed by handle; an unknown
+// handle gets NO footer rather than another brand's copy, and says so on stderr
+// so the line can be filled in deliberately instead of guessed.
+const FOOTER = {
+  '@donniechublog': '>_ vibe working & agentic AI',
+};
+const footerArg = arg('footer', null);
+const PROMPT = footerArg !== null ? footerArg : (FOOTER[handle] || '');
+if (!PROMPT && footerArg === null) {
+  console.error(`[frame] no footer line configured for ${handle} — rendering `
+    + `without one. Add it to FOOTER in frame.js, or pass --footer "<line>".`);
+}
 const DOTS = ['#ff5f57', '#febc2e', '#28c840']; // macOS traffic lights
 
 // The single donniechu.com frame preset: cream card, black hard offset shadow,

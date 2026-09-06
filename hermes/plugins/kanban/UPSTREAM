@@ -5,11 +5,11 @@
 # vá đang đứng trên commit upstream nào, nếu không chỉ còn nước đoán.
 #
 # Rebase 3 chiều lần sau:
-#   git -C ~/hermes-agent diff e77464022ddf6210691f3d13adde98f988453c68..HEAD -- plugins/kanban/dashboard
+#   git -C ~/hermes-agent diff d4ded0235a05ed8c50aafd8f1b39aba543fcf0b5..HEAD -- plugins/kanban/dashboard
 #   # xem upstream đổi gì, vá lại ba bản vá lên bản mới, chạy --vao-repo
 #
 # Dòng `commit:` được `dong_bo_hermes.py --vao-repo` ghi lại mỗi lần kéo bản
 # cài về repo.
 
-commit: e77464022ddf6210691f3d13adde98f988453c68
-ghi_luc: 06/09/2026
+commit: d4ded0235a05ed8c50aafd8f1b39aba543fcf0b5
+ghi_luc: 06/09/2026 (port ban va giu ket noi WebSocket cua upstream)

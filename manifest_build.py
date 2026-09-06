@@ -133,6 +133,20 @@ def main():
                            "diem lien quan cat ve dai" if sua_r else "",
                            f"category {cat!r} khong hop le -> TOOL" if cat_xau else "") if x)).strip()
 
+        # Cung mot bo kiem nhu manifest_ghi (nhanh Nova/Vera): headline la thu
+        # DUY NHAT Ong Chu doc tren topic, va brief hua "summary_vi mot menh de
+        # <= 15 tu". Truoc 06/09/2026 nhanh Finn khong kiem gi — summary dai ba
+        # dong len bao cao y nguyen, va em-dash lot xuong tan caption.
+        tom = str(p.get("summary_vi") or "")
+        if "—" in tom or "–" in tom:
+            tom = re.sub(r"\s*[—–]\s*", ", ", tom)
+            problems.append(f"summary_vi co em-dash -> doi thanh dau phay "
+                            f"(bai: {c['title'][:40]})")
+        so_tu = len(tom.split())
+        if so_tu > 15:
+            problems.append(f"summary_vi {so_tu} tu (> 15), giu nguyen nhung nen rut: "
+                            f"{tom[:60]}")
+
         items.append({
             # tu candidates.json — Finn khong phai go lai
             "title": c["title"],
@@ -147,7 +161,7 @@ def main():
             "score_relevance": rel,
             "score": c["score_partial"] + tech + rel,
             "score_reason": ghi_chu,
-            "summary_vi": p.get("summary_vi", ""),
+            "summary_vi": tom,
             # tinh san, de doi chieu ve sau
             "score_recency": c["score_recency"],
             "score_spread": c["score_spread"],

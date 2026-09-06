@@ -147,13 +147,21 @@ on the top layer so nothing clips it.
 
 Prints a JSON summary (output path, canvas size, which avatar it used).
 
-**Dependency:** the script needs `sharp`. The 20 palette avatars are **bundled**
-in `assets/avatars/`, so the skill is self-contained and portable — copy the
-folder to any machine and it works. It loads `sharp` from the skill's own
-`node_modules` first (run `npm install` inside the skill folder once), then a
-global `sharp`, then MascotStudio's copy. To pick an avatar *outside* the 20-mood
-palette (rare), the script reads MascotStudio's `emoji-map.json`; set
-`MASCOT_DIR=/path/to/MascotStudio` if that repo lives elsewhere. For the normal
+**Footer line is per brand.** `frame.js` keys it off `--handle` via a small
+`FOOTER` table. `@donniechublog` has its site tagline; an unknown handle renders
+**no footer** and says so on stderr, rather than stamping another brand's copy on
+the image. Pass `--footer "<line>"` to override, or add the brand to that table.
+
+**Dependency:** the script needs `sharp`. The **31 palette avatars** (one per
+mood in `assets/mood-palette.json`; `assets/avatars/` holds 32 files, one spare)
+are **bundled**, so the skill is self-contained and portable — copy the folder to
+any machine and it works. It loads `sharp` from the skill's own `node_modules`
+first (run `npm install` inside the skill folder once), then a global `sharp`.
+To pick an avatar *outside* the palette (rare), the script reads MascotStudio's
+`emoji-map.json` — that repo only exists on the author's Mac, so set
+`MASCOT_DIR=/path/to/MascotStudio` to opt in. It is **unset by default**: the
+old default was that machine's absolute path, which can never exist on the
+server. For the normal
 troll palette you do **not** need MascotStudio present.
 
 **Screenshot fallback (optional):** `get_source.py` only needs the browser for the

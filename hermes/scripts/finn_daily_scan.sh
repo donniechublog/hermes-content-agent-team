@@ -11,14 +11,15 @@ MANIFEST="/home/donniechu/content-team/state/${CT_BRAND}/finn_candidates_${DAY}.
 
 BODY="Nhiem vu quet tin sang $DAY (chay theo lich cron). Phan CO HOC — chay script quet, loc
 trung, cham diem co hoc, ghep manifest danh so, viet bao cao, gui topic — DA LA SCRIPT.
-Viec cua ban chi co MOT: cham hai thanh phan diem con lai (suc nang ky thuat 0-30, lien quan 0-20) va tom tat 2-3 cau cho toi da 8 tin. Lam dung BA BUOC, khong them lenh nao khac.
+Viec cua ban chi co MOT: cham hai thanh phan diem con lai (suc nang ky thuat 0-30, lien quan 0-20) va viet summary_vi theo dung khung BUOC 1 in ra. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (danh sach ung vien mot dong/tin, muc BAT BUOC, khung tep nop):
 cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai scout
 
-BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chon tin bang SO THU
-TU #k trong danh sach (khong chep link). MOI muc BAT BUOC phai co mat. KHONG cat/grep
-tep JSON goc, KHONG web_search, KHONG chay scan_*/manifest_*/publish.py tay.
+BUOC 2 — viet MOT tep JSON vao dung duong dan in o cuoi BUOC 1, THEO DUNG khung
+va luat ma BUOC 1 in ra (khung do la NGUON SU THAT — cron nay khong nhac lai
+luat nop, vi nhac lai la de troi). KHONG cat/grep tep JSON goc, KHONG web_search,
+KHONG chay scan_*/manifest_*/publish.py tay.
 
 BUOC 3 — nop:
 cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai scout
