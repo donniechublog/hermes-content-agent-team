@@ -26,7 +26,10 @@ TAI_LIEU = ["README.md", "LUAT_ANH.md", "STYLE_TEXT_SPEC.md"]
 # Chỉ soi thứ TRÔNG NHƯ đường dẫn trong repo: có đuôi mã/tài liệu, không có
 # khoảng trắng, không phải đường tuyệt đối hay biến (`~/…`, `<id>`, `state/…`).
 DUONG_DAN = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|md|sh|json|js|css|yaml))`")
+# Ten tep RUNTIME (sinh luc chay, khong nam trong git) — khong phai tep repo.
 BO_QUA = ("~", "<", "$", "config.yaml", "jobs.json", "xong.json", "da_dung.json",
+          "meta.json", "spec.json", "vung_ocr.json", "nop_lan.json", "img.json",
+          "writer.json", "ban_giao.md", "caption.txt", "brief.md",
           "models_seen.json", "AGENTS.md", "package.json", "emoji-map.json",
           "boost.spec.json", "vung.json", "kanban.db", "agent.log", "gateway.log",
           "usageHistory")
@@ -120,6 +123,33 @@ def test_bang_doi_hinh_khop_voi_profile_that():
         if "chỉ dcgr" in thap and "blog" in brand_co:
             loi.append(f"README noi `{slug}` chi co o dcgr, nhung profile that co ca blog")
     assert not loi, "bang doi hinh lech voi profile that:\n  " + "\n  ".join(loi)
+
+def test_muc_model_khop_voi_profile_that():
+    """Muc "## Model" cua README khong duoc goi ten mot model ma KHONG profile nao
+    dang chay. README tung ghi "Ada giu `ds/deepseek-reasoner`" suot nhieu ngay
+    sau khi ca 20 profile da chuyen sang combo DS-v4Flash."""
+    import re
+    try:
+        import yaml
+    except ImportError:
+        return
+    chup = ROOT / "hermes/profiles/cau_hinh_that.yaml"
+    if not chup.exists():
+        return
+    d = yaml.safe_load(chup.read_text(encoding="utf-8")) or {}
+    dang_chay = {v.get("model/default") for v in d.values() if v.get("model/default")}
+    vb = (ROOT / "README.md").read_text(encoding="utf-8")
+    m = re.search(r"^## Model\n(.*?)(?=^## )", vb, re.S | re.M)
+    assert m, "README khong con muc '## Model'"
+    # Quy uoc: trong muc Model, ten trong backtick la model DANG chay. Model cu
+    # nhac lai cho lich su thi viet chu thuong, khong backtick. Duong dan tep
+    # (co duoi .yaml/.md/.py/.json) khong phai model.
+    ten_model = {t for t in re.findall(r"`([^`\s]+)`", m.group(1))
+                 if ("/" in t or t.startswith("DS-") or "deepseek" in t.lower())
+                 and not re.search(r"\.(yaml|yml|md|py|json)$", t)}
+    la = sorted(t for t in ten_model if t not in dang_chay)
+    assert not la, ("muc Model nhac model KHONG profile nao dang chay: "
+                    + ", ".join(la) + f" (dang chay: {sorted(dang_chay)})")
 
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]

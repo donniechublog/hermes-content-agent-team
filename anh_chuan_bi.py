@@ -83,7 +83,7 @@ def _doc_json(p: Path, mac_dinh=None):
 
 def _ghi_json(p: Path, d) -> None:
     Path(p).parent.mkdir(parents=True, exist_ok=True)
-    Path(p).write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+    env_load.ghi_json(p, d)
 
 
 def _tom_tat_tu_img_json(draft_id: str) -> dict:

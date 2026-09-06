@@ -69,17 +69,10 @@ def get(url: str, timeout: int = 45, params=None) -> httpx.Response:
                      headers={"User-Agent": UA, "Accept-Encoding": "gzip, deflate"})
 
 
-def ghi_json(p, d, indent: int = 2) -> None:
-    """Ghi JSON NGUYEN TU (tmp cung thu muc + os.replace).
+import env_load                                              # noqa: E402
 
-    `write_text` cat ngan tep cu TRUOC khi ghi noi dung moi: chet giua hai buoc
-    do de lai mot tep cut, va moi nguoi doc sau do nem ValueError.
-    """
-    p = Path(p)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_name(p.name + f".tmp.{os.getpid()}")
-    tmp.write_text(json.dumps(d, ensure_ascii=False, indent=indent), encoding="utf-8")
-    os.replace(tmp, p)
+# Mot ban duy nhat, o env_load (moi script deu da import no).
+ghi_json = env_load.ghi_json
 
 
 def moc_thoi_gian(txt: str) -> float:

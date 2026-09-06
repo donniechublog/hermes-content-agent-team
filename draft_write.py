@@ -94,8 +94,7 @@ def main():
 
     out = DRAFTS / f"{a.draft_id}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(draft, ensure_ascii=False, indent=2),
-                   encoding="utf-8")
+    env_load.ghi_json(out, draft)
     print(f"da ghi {out} | {len(caption)} ky tu caption")
 
 

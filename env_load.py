@@ -135,3 +135,26 @@ def bat_buoc(ten: str) -> str:
             f"Thieu {ten} — kiem tra secret.common.env / secret.<brand>.env "
             f"(hoac .secrets.env che do don)")
     return gt
+
+def ghi_json(p, d, indent: int = 2) -> None:
+    """Ghi mot tep JSON state NGUYEN TU: tmp cung thu muc + os.replace.
+
+    Dat o day vi gan nhu moi script deu da import env_load. `write_text` CAT
+    NGAN tep cu truoc khi ghi noi dung moi — chet dung giua hai buoc do (restart
+    dich vu, het cho dia) de lai mot sidecar cut, va moi nguoi doc sau do nem
+    ValueError: bai ket vinh vien ma khong ai biet.
+
+    Quan trong nhat voi cac tep NHIEU TIEN TRINH cung ghi: `drafts/<id>.meta.json`
+    duoc ghi tu approve_service, tu engine chay nen, VA tu tien trinh hermes cua
+    bang den — ba tien trinh khac nhau, khong khoa chung.
+
+    Ten tmp mang pid de hai tien trinh khong ghi lan vao cung mot tep tam.
+    """
+    import json as _j
+    import os as _os
+    p = Path(p)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_name(p.name + f".tmp.{_os.getpid()}")
+    tmp.write_text(_j.dumps(d, ensure_ascii=False, indent=indent, default=str),
+                   encoding="utf-8")
+    _os.replace(tmp, p)

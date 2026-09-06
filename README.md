@@ -41,7 +41,7 @@ Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_
 ## Luồng
 
 ```
-cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo cáo
+cron 05:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo cáo
                                               ↓
         Ông Chủ trả lời số thứ tự trong topic Finn
                                               ↓
@@ -52,11 +52,14 @@ cron 07:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
                      ✅ → đăng lên channel      ❌ → đánh dấu bỏ
                               ↓
                   đẩy sang moat → extension đăng lên
-                  Facebook / Instagram / TikTok
+                  Facebook / Instagram
 ```
 
 Bài đã duyệt đi tiếp sang moat (org `dcgr.tech`) làm hàng đợi publish; extension
-trình duyệt claim và đăng lên mạng xã hội. Moat không gọi ngược về máy này —
+trình duyệt claim và đăng lên mạng xã hội — Facebook post và Instagram carousel.
+**Không có TikTok**, có chủ đích: extension chỉ biết một luồng TikTok là upload
+video, nhét thẻ ảnh vào form đó là treo (`moat_publish.PLATFORMS`). Moat không
+gọi ngược về máy này —
 cron `moat-publish-watch` (5 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
 Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên Telegram channel, thẻ duyệt chỉ
 ghi thêm một dòng cảnh báo.
@@ -296,10 +299,14 @@ Kite từng nằm sai chỗ ở gốc — Kite chạy cả hai brand nên bộ "
 lẫn, một bộ dcgr vừa dùng theme X là bộ blog kế tiếp bị đẩy sang theme khác mà
 không có lý do nào. Đã chuyển về `state/<brand>/` ngày 06/09/2026.
 
-**Mọi tệp JSON state ghi qua `_ghi_json` / `env_load` (tmp + `os.replace`)**,
-không `write_text` thẳng: `write_text` cắt ngắn tệp cũ trước khi ghi nội dung
-mới, nên restart đúng giữa hai bước đó để lại một sidecar cụt và mọi người đọc
-sau đó ném `ValueError` — bài kẹt vĩnh viễn mà không ai biết.
+**Tệp nào có nhiều tiến trình cùng ghi thì phải ghi qua `env_load.ghi_json`**
+(tmp + `os.replace`), không `write_text` thẳng — đó là `meta.json` (approve,
+engine nền, bảng đen), `drafts/<id>.json` (draft_write, duyet_bai, cron moat) và
+mọi sidecar của `duyet_*`. `write_text` cắt ngắn tệp cũ trước khi ghi nội dung
+mới, nên hai tiến trình trùng thời điểm để lại một sidecar cụt và mọi người đọc
+sau đó ném `ValueError` — bài kẹt vĩnh viễn mà không ai biết. Tệp chỉ một tiến
+trình ghi trong thư mục làm việc riêng (`xong.json`, `spec.json`, `vung_ocr.json`)
+vẫn `write_text`, và đó là chấp nhận được.
 
 ## Sau mỗi `hermes update`
 
@@ -321,14 +328,17 @@ plugin kanban kể từ lần port cuối.
 
 ## Model
 
-Mọi vai trừ Ada chạy chính bằng **combo `DS-v4Flash` của 9router** (ba route
+**Cả 20 profile** chạy chính bằng **combo `DS-v4Flash` của 9router** (ba route
 v4-flash: DeepSeek trực tiếp, xKiro, aellm — DeepSeek trực tiếp xếp trước vì
-cache là của từng nhà cung cấp). Ada giữ `ds/deepseek-reasoner` vì việc đối chiếu
-điểm chấm cần suy luận thật.
+cache là của từng nhà cung cấp). Ada cũng vậy — bản README trước ghi Ada giữ
+deepseek-reasoner, điều đó không còn đúng từ khi đổi sang combo (bản chụp
+`hermes/profiles/cau_hinh_that.yaml` là chỗ đối chiếu).
 
-Mọi vai trừ Ada đặt `agent.reasoning_effort: none`: model deepseek đốt hết ngân
-sách token vào suy luận rồi trả về **rỗng** (đo thật: 3/24 lần trên v4-pro, tái
-hiện y hệt trên v4-flash). Tắt suy luận: 0/24 lần rỗng, nhanh gấp 3, rẻ hơn.
+`agent.reasoning_effort`: **`none`** cho mọi vai làm nội dung, vì model deepseek
+đốt hết ngân sách token vào suy luận rồi trả về **rỗng** (đo thật: 3/24 lần trên
+v4-pro, tái hiện y hệt trên v4-flash; tắt suy luận: 0/24 lần rỗng, nhanh gấp 3).
+Hai ngoại lệ: **Bob** đặt `medium` (việc duy nhất là nhìn một ảnh chọn mood),
+**Ada** không đặt (dùng mặc định của hermes).
 
 Đừng tin bảng model chép trong tài liệu — hỏi thẳng máy chủ bằng lệnh ở đầu tệp
 này. Lịch sử đổi model, số đo giá, và ba điểm mù của 9router: xem
