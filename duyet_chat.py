@@ -140,7 +140,32 @@ def boi_canh_vai(profile) -> str:
 # lan sau khong ai tuong day la sot.
 VAI_CHAT_LAM_VIEC = {"gin", "itachi", "bob"}
 
-def _bo_cong_cu_chat(vai, msg) -> str:
+# Tin DUA VIEC: co anh dinh kem, hoac co URL trong chu. Khong phai tan gau.
+_CO_URL = re.compile(r"https?://\S", re.I)
+
+
+def _tin_dua_viec(msg, text) -> bool:
+    """Tin nay co DUA VIEC vao khong (anh hoac URL), hay chi la tan gau.
+
+    Vi sao can, ngoai luat vai (06/09/2026 chieu, sau khi audit bat duoc ba hoi
+    quy THAT do ban dau chi khoa theo vai):
+      - Jean (teaser) CHET HAN: teaser.SOUL.md:8 "Ong Chu dan mot URL bai vao
+        chat... Do la yeu cau viet teaser", roi chay jean_chuan_bi.py /
+        jean_nop.py bang bash. Bo `safe` khong co terminal.
+      - Skill social-crawl viet RIENG cho duong chat cua Finn/Nova/Vera
+        (social-crawl/SKILL.md:6 "dan mot link x.com/instagram.com vao hoi
+        thoai") — tinh nang moi them o b2bc852, bi giet ngay.
+    Diem chung cua MOI thu bi hong: tin mang theo URL hoac anh. Do cung dung la
+    ranh gioi "dua viec" vs "tan gau" — su co Vera 02/09 ("Hom nay ko lam viec
+    ?") khong co URL lan anh, nen luat nay van chan dung no."""
+    if msg.get("photo"):
+        return True
+    if str((msg.get("document") or {}).get("mime_type", "")).startswith("image/"):
+        return True
+    return bool(_CO_URL.search(text or ""))
+
+
+def _bo_cong_cu_chat(vai, msg, text="") -> str:
     """Toolset cho mot tin chat: None = day du, BO_CHI_DOC = chi doc.
 
     Luat Ong Chu 06/09/2026: chi BAM NUT hoac REPLY moi tinh la dang lam viec;
@@ -152,7 +177,11 @@ def _bo_cong_cu_chat(vai, msg) -> str:
     khong con terminal/write_file/execute_code de ma tu y lam."""
     if vai in VAI_CHAT_LAM_VIEC:
         return None
-    return None if _reply_that(msg) else chat_router.BO_CHI_DOC
+    if _reply_that(msg):
+        return None
+    if _tin_dua_viec(msg, text):
+        return None                   # dua anh/URL = giao viec, du khong reply
+    return chat_router.BO_CHI_DOC
 
 def handle_chat(token, group, msg, thread_id, text):
     """Chuyen tin nhan toi dung agent theo topic, giu mach hoi thoai.
@@ -197,7 +226,7 @@ def handle_chat(token, group, msg, thread_id, text):
             _DANG_CHAY[who] = time.time()
         try:
             _chat_co_khoa(token, group, thread_id, text, profile, session, who, kw_thread,
-                          _bo_cong_cu_chat(vai_cua_topic(thread_id), msg))
+                          _bo_cong_cu_chat(vai_cua_topic(thread_id), msg, text))
         finally:
             with _KHOA_DANG_CHAY:
                 _DANG_CHAY.pop(who, None)
