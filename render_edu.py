@@ -1130,15 +1130,27 @@ def _texts(sl):
 
 
 # ---- chon theme / hero ------------------------------------------------------
-NHAT_KY_THEME = ROOT / "state" / "edu_theme_da_dung.jsonl"
+def _nhat_ky_theme() -> Path:
+    """state/<brand>/edu_theme_da_dung.jsonl — so theme/hero da dung gan day.
+
+    Truoc 06/09/2026 tep nay nam o `state/` GOC, tuc dung chung cho ca hai
+    brand. Kite gio chay cho ca hai, nen bo "4 bo gan nhat" tron lan: mot bo
+    dcgr vua dung theme X la bo blog ke tiep bi day sang theme khac ma khong
+    co ly do nao — hai kenh khac nhau, nguoi doc khac nhau.
+
+    Goi ham chu khong phai hang o cap module: `env_load.state_dir()` doc
+    CT_BRAND luc CHAY, con hang thi chot luc import.
+    """
+    import env_load
+    return env_load.state_dir() / "edu_theme_da_dung.jsonl"
 
 
 def _theme_gan_day(n=4):
     """[(theme, hero)] cua n bo gan nhat, moi nhat truoc."""
-    if not NHAT_KY_THEME.exists():
+    if not _nhat_ky_theme().exists():
         return []
     rows = []
-    for line in NHAT_KY_THEME.read_text("utf-8").splitlines():
+    for line in _nhat_ky_theme().read_text("utf-8").splitlines():
         try:
             d = json.loads(line)
             rows.append((d.get("theme"), d.get("hero")))
@@ -1149,8 +1161,8 @@ def _theme_gan_day(n=4):
 
 def _ghi_theme(out, theme, hero):
     try:
-        NHAT_KY_THEME.parent.mkdir(parents=True, exist_ok=True)
-        with open(NHAT_KY_THEME, "a", encoding="utf-8") as f:
+        _nhat_ky_theme().parent.mkdir(parents=True, exist_ok=True)
+        with open(_nhat_ky_theme(), "a", encoding="utf-8") as f:
             f.write(json.dumps({"out": str(out), "theme": theme, "hero": hero},
                                ensure_ascii=False) + "\n")
     except OSError:

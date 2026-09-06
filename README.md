@@ -271,6 +271,36 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
 - `moat-publish-watch` — 5 phút/lần, hỏi moat xem bài đã lên social chưa; im
   lặng khi không có gì mới, bỏ theo dõi một bài sau 7 ngày.
 
+## State: tệp nào của ai
+
+Năm tiến trình cùng ghi vào `drafts/` và `state/` — dịch vụ duyệt, engine chuẩn
+bị chạy nền, các script nộp, cron moat, và tiến trình hermes của bảng đen. Không
+có bảng này thì không ai biết sửa một tệp sẽ đụng vào ai.
+
+| Tệp | Ai TẠO | Ai SỬA | Ai ĐỌC |
+|---|---|---|---|
+| `drafts/<id>.meta.json` | `duyet_chon_tin.write_meta` | `anh_chuan_bi` (nền), `bang_den` | vai ảnh, vai viết, Ada |
+| `drafts/<id>.img.json` | `duyet_chon_tin` | `duyet_bai` (làm lại, chuyển Kite) | `duyet_bai`, Ada |
+| `drafts/<id>.writer.json` | `duyet_chon_tin` | `duyet_bai` (duyệt / bỏ hẳn) | `duyet_bai`, Ada |
+| `drafts/<id>.json` (bản nháp) | `draft_write` | `duyet_bai.mark_draft`, `moat_publish` (cron) | `duyet_bai`, `publish` |
+| `drafts/<id>.ban_giao.md` | `*_nop` | — | `duyet_bai` dán vào task Miles |
+| `state/<brand>/chuan_bi/<id>/xong.json` | `anh_chuan_bi` | — | mọi `*_chuan_bi` và `*_nop` |
+| `state/<brand>/anh_da_dung.jsonl` | `nop_chung.gui_album` | `duyet_bai` (gỡ khi Bỏ/Làm lại) | `luat_anh.kiem_da_dung` |
+| `state/<brand>/bat_buoc_<vai>.json` | script quét | `manifest_ghi` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
+| `state/<brand>/<vai>_candidates_*.json` | `manifest_*` | — | `duyet_chon_tin` (chọn theo mtime) |
+| `state/9router/` | `theo_doi_9router` | — | `nhat_ky_web`, Ada |
+
+**Quy ước gốc state:** `state/<brand>/` cho mọi thứ thuộc về một brand;
+`state/` gốc **chỉ** cho thứ chung cả máy (nhật ký 9router, khoá). Sổ theme của
+Kite từng nằm sai chỗ ở gốc — Kite chạy cả hai brand nên bộ "4 bộ gần nhất" trộn
+lẫn, một bộ dcgr vừa dùng theme X là bộ blog kế tiếp bị đẩy sang theme khác mà
+không có lý do nào. Đã chuyển về `state/<brand>/` ngày 06/09/2026.
+
+**Mọi tệp JSON state ghi qua `_ghi_json` / `env_load` (tmp + `os.replace`)**,
+không `write_text` thẳng: `write_text` cắt ngắn tệp cũ trước khi ghi nội dung
+mới, nên restart đúng giữa hai bước đó để lại một sidecar cụt và mọi người đọc
+sau đó ném `ValueError` — bài kẹt vĩnh viễn mà không ai biết.
+
 ## Sau mỗi `hermes update`
 
 `content-team` đọc vài thứ **bên trong** hermes mà không có API nào bảo đảm:
