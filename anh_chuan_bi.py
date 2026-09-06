@@ -905,9 +905,21 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
             ds = xep_hang.goi_y_nguon(tieu_de_xh, link, meta.get("via", ""), bp.get("chu", ""))
             print(f"[xep_hang] tin xep hang: model={models[0]!r}, thu {', '.join(n['ma'] for n in ds[:4])}...",
                   file=sys.stderr)
-            xh = xep_hang.tim_va_chup(models, ds, wd / "goc", _brand_cua(meta),
-                                      xep_hang.tach_hang(title, models[0]) or xep_hang.tach_hang(nguon.get("tieu_de_en") or "", models[0]),
-                                      in_log=lambda t: print(t, file=sys.stderr))
+            # BOC. `tim_va_chup` import playwright va launch chromium NGOAI moi
+            # try cua chinh no (xep_hang.py:899,904), va `br.close()` khong nam
+            # trong finally. `hermes update` lam mat playwright khoi venv chung
+            # (da xay ra voi pymupdf) hay chromium chua cai la: tin THUONG van
+            # ra xong.json binh thuong, rieng tin XEP HANG giet ca engine giua
+            # chung — khong xong.json, va vai chay lai qua `chay()` chet y het.
+            # Nhanh "khong co ma XH" (:743) da co san, cu roi ve do.
+            try:
+                xh = xep_hang.tim_va_chup(models, ds, wd / "goc", _brand_cua(meta),
+                                          xep_hang.tach_hang(title, models[0]) or xep_hang.tach_hang(nguon.get("tieu_de_en") or "", models[0]),
+                                          in_log=lambda t: print(t, file=sys.stderr))
+            except Exception as e:                           # noqa: BLE001
+                print(f"[xep_hang] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
+                      file=sys.stderr)
+                xh = None
         else:
             print("[xep_hang] tin xep hang nhung khong tach duoc ten model tu tieu de", file=sys.stderr)
     print(f"[anh] tim tinh qua {len(trang)} nguon...", file=sys.stderr)

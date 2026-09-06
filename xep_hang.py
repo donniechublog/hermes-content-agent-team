@@ -15,6 +15,7 @@ Dùng tay:
     venv/bin/python xep_hang.py --model "Claude Opus 4.6" --nguon arena-text --ra x.png
 """
 import argparse
+import contextlib
 import json
 import re
 import sys
@@ -900,8 +901,13 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     t0 = time.time()
     logo = None
     kq_cuoi = None
-    with sync_playwright() as p:
-        br = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb"])
+    # `closing(...)` chu khong phai `br.close()` o cuoi than: ban cu chi dong
+    # browser tren duong THANH CONG, nen mot ngoai le giua chung (mot nguon doi
+    # DOM, mot `page.evaluate` nem) de lai tien trinh chromium song. Chay 7 tin
+    # mot sang la 7 lan nhu vay.
+    with sync_playwright() as p, contextlib.closing(
+            p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage",
+                                    "--force-color-profile=srgb"])) as br:
         # Hai bo context: mobile (thu truoc, moi nguon) va desktop (lui ve khi
         # mobile khong ra). Tao LAZY, dung lai giua cac nguon — khong tao lai moi
         # lan. Viewport desktop cao san bang tran cua so chup: khong doi kich
@@ -997,7 +1003,6 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                        "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None,
                        "duoc_nhac": bool(n.get("duoc_nhac", True))}
             break
-        br.close()  # dong browser cung dong het cac context/page con lai
     if kq_cuoi:
         return kq_cuoi
     n = nguon_ds[0] if nguon_ds else NGUON[0]

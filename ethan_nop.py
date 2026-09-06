@@ -130,7 +130,8 @@ def main() -> int:
     kq, loi, canh = giai_spec(spec, m, wd)
     for c in canh:
         print(f"[CANH BAO] {c}")
-    loi = nc.kiem_lam_lai(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title")) + loi
+    loi = nc.kiem_lam_lai(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title"),
+                          draft_id=a.draft_id) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")

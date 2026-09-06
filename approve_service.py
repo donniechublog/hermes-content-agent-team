@@ -271,6 +271,59 @@ def _soat_tirith():
                  + (" (fail_open: true nen lenh van chay tiep)" if mo else ""))
 
 
+KET_PUBLISHING_GIAY = 15 * 60          # qua ngan nay ma con "publishing" = ket
+
+
+def _cuu_bai_ket_publishing(token, group):
+    """Bai ket vinh vien o trang thai `publishing` sau khi dich vu khoi dong lai.
+
+    `handle_callback` ghi `publishing` roi dang o mot thread DAEMON. Unit co
+    `Restart=always` va khong co `TimeoutStopSec`, nen SIGTERM giet thread do
+    giua chung — publish() mot minh da toi 180 giay, cong buoc moat toi 600.
+    Sau restart khong co buoc nao doc lai trang thai: `handle_callback` thay
+    `publishing` va tra "Đang đăng — chờ chút" cho MOI lan bam ve sau. Bai do
+    khong bao gio dang duoc va cung khong bo duoc, tru khi co nguoi sua tay
+    tep JSON. Docstring cua `_dang_nen` hua "khong bao gio ket vinh vien" —
+    dieu do chi dung voi exception, khong dung voi restart.
+
+    Chay MOT lan luc khoi dong: bai nao con `publishing` qua 15 phut thi ha ve
+    `publish_failed` (bam Duyet lai duoc) va noi ra o topic cua bai.
+    """
+    gio = int(time.time())
+    cuu = []
+    try:
+        ds = sorted(DRAFTS.glob("*.json"))
+    except OSError:
+        return
+    for p in ds:
+        if p.name.endswith((".meta.json", ".img.json", ".writer.json")):
+            continue
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if d.get("status") != "publishing":
+            continue
+        if gio - int(d.get("decided_at") or 0) < KET_PUBLISHING_GIAY:
+            continue                    # co the mot tien trinh khac dang dang that
+        d["status"] = "publish_failed"
+        d["ghi_chu_cuu"] = f"dich vu khoi dong lai luc {gio}, bo trang thai publishing"
+        try:
+            _ghi_json(p, d)
+        except OSError:
+            continue
+        cuu.append(p.stem)
+    if not cuu:
+        return
+    log("start", f"cuu {len(cuu)} bai ket o publishing: {', '.join(cuu)}")
+    call(token, "sendMessage", chat_id=group,
+         text=("⚠️ Dịch vụ vừa khởi động lại giữa lúc đang đăng. "
+               + str(len(cuu)) + " bài kẹt ở trạng thái \"đang đăng\" đã được mở khoá — "
+               "kiểm tra channel xem bài đã lên chưa rồi bấm Duyệt lại nếu chưa:\n"
+               + "\n".join("• " + html_escape(x) for x in cuu[:10])),
+         parse_mode="HTML")
+
+
 def loop():
     token, channel, group = load_secrets()
     offset = _doc_offset()
@@ -279,6 +332,7 @@ def loop():
                  f"topics={tp.name}({'co' if tp.exists() else 'THIEU'}) "
                  f"hermes_home={HERMES_HOME} offset={offset}")
     _soat_tirith()
+    _cuu_bai_ket_publishing(token, group)
     loi_lien_tiep = 0
     while True:
         try:

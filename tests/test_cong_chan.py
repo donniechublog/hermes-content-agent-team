@@ -1121,6 +1121,87 @@ def test_so_da_dung_duoc_tra_lai_sau_cac_test_tren():
     assert p.parent.exists(), f"so tro vao thu muc khong ton tai: {p}"
 
 
+# --------------------------------------------------- trang thai (buoc 4)
+def test_lam_lai_chi_ap_khi_ong_chu_that_su_bam():
+    """`da_dung.json` duoc ghi o MOI lan gui va duyet_bai khong bao gio xoa, nen
+    "co da_dung" khong dong nghia "Ong Chu bam Lam lai". Ban cu bat vai doi bia
+    o moi lan chay lai, vai doi that, roi gui BO THU HAI kem nut Duyet thu hai.
+    Moc dung la `remakes` trong img.json."""
+    import nop_chung as nc2
+    cu = nc2.so_lan_lam_lai
+    try:
+        # Ong Chu chua bam lan nao; da_dung ghi luc remakes=0 -> chay lai KHONG bi bat
+        nc2.so_lan_lam_lai = lambda _id: 0
+        da_dung = {"bia": "A1", "hook": "Hook cu", "remakes": 0}
+        assert nc2.kiem_lam_lai(da_dung, "bìa", "A1", "Hook cu",
+                                khoa_anh="bia", draft_id="x") == []
+        # Ong Chu bam Lam lai (remakes 0 -> 1): giu nguyen bia+hook thi PHAI bat
+        nc2.so_lan_lam_lai = lambda _id: 1
+        loi = nc2.kiem_lam_lai(da_dung, "bìa", "A1", "Hook cu",
+                               khoa_anh="bia", draft_id="x")
+        assert len(loi) == 2, loi
+        # doi ca hai thi qua
+        assert nc2.kiem_lam_lai(da_dung, "bìa", "A7", "Hook moi",
+                                khoa_anh="bia", draft_id="x") == []
+    finally:
+        nc2.so_lan_lam_lai = cu
+
+
+def test_album_da_len_so_theo_tep_va_thoi_gian():
+    """Ban cu hoi `if draft_id in dong` tren 400 dong cuoi MOI tep .jsonl, khong
+    nhin moc thoi gian: album tu hom qua lam nhanh cuu hieu nham la "vua len",
+    ghi so voi bo anh CHUA gui roi in "ĐỪNG chạy lại" — album moi khong bao gio
+    len va anh bi khoa 14 ngay."""
+    import json as _j
+    import time as _t
+    import nop_chung as nc2
+    import env_load as el
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        cu = el.state_dir
+        el.state_dir = lambda: d
+        try:
+            sent = d / "telegram_sent"
+            sent.mkdir()
+            gio = int(_t.time())
+            with (sent / "carousel.jsonl").open("w", encoding="utf-8") as fh:
+                fh.write(_j.dumps({"ts": gio - 86400, "files": ["/x/bai.png"]}) + "\n")
+                fh.write(_j.dumps({"ts": gio - 60, "files": ["/x/moi.png"]}) + "\n")
+            # bo vua gui 1 phut truoc -> True
+            assert nc2._album_da_len("carousel", ["/x/moi.png"]) is True
+            # CUNG bo do nhung tu hom qua -> False (day la bug cu)
+            assert nc2._album_da_len("carousel", ["/x/bai.png"]) is False
+            # vai khac khong duoc lay nham
+            assert nc2._album_da_len("designer", ["/x/moi.png"]) is False
+            # tien to khong duoc coi la trung ("gpt-5" ⊂ "gpt-5-codex")
+            assert nc2._album_da_len("carousel", ["/x/moi_2.png"]) is False
+        finally:
+            el.state_dir = cu
+
+
+def test_publish_khong_dang_album_lan_hai():
+    """Caption dai: album len truoc, tin chu gui sau. Tin chu hong -> bai thanh
+    publish_failed -> Ong Chu bam ✅ lai -> ban cu dang album LAN HAI."""
+    import json as _j
+    import duyet_bai as db
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        cu_drafts, cu_gui = db.DRAFTS, db._gui_chu
+        db.DRAFTS = d
+        goi = []
+        db._gui_chu = lambda *a, **k: goi.append("chu") or {"ok": True}
+        try:
+            (d / "b.json").write_text(_j.dumps({
+                "caption": "x" * (db.CAPTION_LIMIT + 10),
+                "images": ["/khong-ton-tai.png"],
+                "channel_album_mid": 4242}), encoding="utf-8")
+            res = db.publish("tok", "-100", "b")
+            assert res.get("ok"), res
+            assert goi == ["chu"], f"phai gui MOI tin chu, khong gui lai album: {goi}"
+        finally:
+            db.DRAFTS, db._gui_chu = cu_drafts, cu_gui
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

@@ -1023,6 +1023,15 @@ def slide_doc(sl, idx, total, brand, section, folio_left, font_css, th):
 
 
 # ---- cổng chặn ------------------------------------------------------------
+# "Nguon:" / "nguon tu" dau mot cum dan nguon — KHONG khop "ma nguon mo",
+# "nguon von", "nguon dien", "tai nguyen".
+_DAN_NGUON_SAI = re.compile(
+    r"(?<!\bmã\s)\bnguồn\s*[:—-]"          # "Nguồn: X", "nguồn — X"
+    r"|\bnguồn\s+(?:tin|từ|theo|bài|ảnh|dữ liệu|số liệu)\b"
+    r"|\btheo\s+nguồn\b",
+    re.I)
+
+
 def gate_slides(slides, bo_qua_dau):
     loi = []
     n = len(slides)
@@ -1095,11 +1104,16 @@ def gate_slides(slides, bo_qua_dau):
         if not sl.get("caption"):
             loi.append(f"slide {i}: kind 'bars' phai co 'caption' ghi 'via <ai>' — so la cua bai, khong phai cua ta")
 
-    # quy ước dẫn nguồn: dùng 'via', không viết 'nguồn'
+    # Quy uoc dan nguon: dung 'via', khong viet 'nguon'.
+    #
+    # CHI bat mau DAN NGUON, khong bat moi chu "nguon" (sua 06/09/2026 dot 2).
+    # Ban cu `if "nguồn" in low` chan oan "mo hinh mã nguồn mở", "nguồn vốn",
+    # "nguồn điện" — rieng "mã nguồn mở" co trong gan nhu moi tin model, va
+    # khong co co nao lach duoc, nen Kite bi day thang vao vong "sua 3 lan roi
+    # bi chan" ma khong sua duoc gi.
     for i, sl in enumerate(slides, 1):
         for nhan, t in _texts(sl):
-            low = t.lower()
-            if "nguồn" in low:
+            if _DAN_NGUON_SAI.search(t or ""):
                 loi.append(f"slide {i} [{nhan}]: dan nguon phai ghi 'via', khong ghi 'nguồn'")
     return loi
 

@@ -109,7 +109,7 @@ def main() -> int:
         args = [str(ROOT / "manifest_build.py"), "--candidates", str(wd / "candidates.json"),
                 "--picks", str(picks), "--out", str(out), "--bao-cao", str(bao_cao)]
         if a.thu:
-            args.append("--khong-xoa-bat-buoc")
+            args += ["--khong-xoa-bat-buoc", "--ghi-de"]   # ban thu ghi de duoc
     else:
         ds = wd / "ds.json"
         if not ds.exists():

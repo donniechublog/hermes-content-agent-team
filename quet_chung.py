@@ -109,8 +109,23 @@ def chuan_link(u: str) -> str:
     han "a.io". Hai ban do coi cung mot bai la hai bai; ban cua `bat_buoc` lam
     dung, va day lay theo no.
     """
+    from urllib.parse import parse_qsl, urlencode
     u = re.sub(r"^https?://(www\.)?", "", (u or "").strip().lower())
-    return re.sub(r"[?#].*$", "", u).rstrip("/")
+    u = u.split("#", 1)[0]
+    duong, _, truy_van = u.partition("?")
+    # GIU truy van, chi bo tham so theo doi (sua 06/09/2026 dot 2).
+    #
+    # Ban cu cat sach `?...`. Tren HackerNews, moi bai Ask/Show HN khong co URL
+    # ngoai deu mang link `news.ycombinator.com/item?id=<so>` — cat query la ca
+    # NGHIN bai gop ve dung mot khoa `news.ycombinator.com/item`. Hai he qua,
+    # ca hai im lang: `scan_sources` thay bai text HN thu hai la "da xu ly" nen
+    # bo VINH VIEN, va khoa bat buoc `link|...` trung nen muc thu hai khong bao
+    # gio duoc them. `youtube.com/watch?v=` cung so phan.
+    giu = [(k, v) for k, v in parse_qsl(truy_van)
+           if not k.startswith(("utm_", "fbclid", "gclid", "ref", "oc", "igshid",
+                                "mc_cid", "mc_eid", "_hsenc", "_hsmi"))]
+    duong = duong.rstrip("/")
+    return f"{duong}?{urlencode(sorted(giu))}" if giu else duong
 
 
 def get(url: str, timeout: int = 45, params=None) -> httpx.Response:

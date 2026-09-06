@@ -566,9 +566,12 @@ def fetch_opencompass(top: int) -> tuple:
     if d2 is None:
         return [], None
     rows = []
-    for r in ((d2.get("data") or {}).get("modelRankings") or [])[:top]:
+    # `ranking` co the thieu (OpenCompass la bang chap chon nhat bo, xem NHAT KY).
+    # `so_hang` so `h < h_cu`, va None < int nem TypeError giet ca luot quet —
+    # nen danh so lai theo thu tu tra ve nhu 22 bang kia thay vi tin truong nay.
+    for k, r in enumerate(((d2.get("data") or {}).get("modelRankings") or [])[:top], 1):
         org = (r.get("org") or "").lower()
-        rows.append({"hang": r.get("ranking"), "ten": r.get("model") or "?",
+        rows.append({"hang": r.get("ranking") or k, "ten": r.get("model") or "?",
                      "to_chuc": r.get("org") or "", "vung": vung_cua(org),
                      "diem": r.get("score"), "mo_nguon": bool(r.get("openSource"))})
     return rows, ngay

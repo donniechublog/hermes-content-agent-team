@@ -76,6 +76,9 @@ def main():
     ap.add_argument("--out", required=True, help="Duong dan manifest ghi ra")
     ap.add_argument("--bao-cao", metavar="PATH",
                     help="Ghi luon ban bao cao danh so, de gui bang publish.py --file")
+    ap.add_argument("--ghi-de", action="store_true",
+                    help="Cho ghi de manifest da co (chi dung khi THU — ban that "
+                         "khong duoc ghi de vi duyet_chon_tin ghi nguoc picked/da_giao vao do)")
     ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
                     help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
     a = ap.parse_args()
@@ -241,6 +244,20 @@ def main():
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # KHONG ghi de manifest da co trong ngay (sua 06/09/2026 dot 2) — cung luat
+    # ma manifest_ghi:170 da ap cho Nova/Vera, rieng nhanh Finn thi chua.
+    #
+    # `duyet_chon_tin` ghi NGUOC `picked` va `da_giao` vao chinh tep nay, va
+    # dung `da_giao` lam cong chan giao trung. Task Finn chay lai trong ngay
+    # (kanban retry sau khi buoc gui hong — manifest da ghi TRUOC buoc do) se
+    # ghi de sach hai co ay, va con doi nghia so thu tu: muc "2" cua ban moi
+    # khac muc "2" ma Ong Chu dang nhin. Chon lai "2" luc do la tao cap task
+    # doi hoac ra dung bai khac.
+    if out.exists() and not a.ghi_de:
+        moi = out.with_name(f"{out.stem}_t{datetime.now(timezone.utc).strftime('%H%M')}{out.suffix}")
+        print(f"[canh bao] {out.name} da co — ghi ban moi ra {moi.name} de khong "
+              "mat co picked/da_giao cua ban dang dung", file=sys.stderr)
+        out = moi
     # Khoa goc giong het manifest cua Nova va Vera. Ba vai di tim tin phai ra
     # cung mot dinh dang, khong moi noi mot kieu.
     out.write_text(json.dumps(
