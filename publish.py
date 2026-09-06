@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 import httpx
@@ -235,6 +236,10 @@ def _main():
     p.add_argument("--file", type=Path, help="Doc noi dung tu file")
     p.add_argument("--album", nargs="+",
                    help="Gui nhieu anh (URL hoac duong dan cuc bo) thanh 1 album")
+    p.add_argument("--luu-mid", dest="luu_mid", type=Path,
+                   help="Ghi {message_id, ts} cua tin vua gui vao tep JSON nay — "
+                        "de noi goi (vd bao cao danh so) sau do doi chieu REPLY "
+                        "dung vao tin nao, khong phai tin bat ky trong topic.")
     a = p.parse_args()
 
     token, chat = load_secrets()
@@ -268,6 +273,15 @@ def _main():
             sys.exit("Can --text, --file hoac --photo")
         res = send_text(token, chat, text, thread=thread)
     print(f"da dang | message_id={res.get('message_id')} chat={chat}")
+    if a.luu_mid:
+        # Best-effort: khong luu duoc mid khong duoc lam hong viec da dang xong.
+        try:
+            a.luu_mid.parent.mkdir(parents=True, exist_ok=True)
+            a.luu_mid.write_text(
+                json.dumps({"message_id": res.get("message_id"), "ts": time.time()},
+                          ensure_ascii=False), encoding="utf-8")
+        except OSError as e:
+            print(f"[canh bao] khong ghi duoc --luu-mid {a.luu_mid}: {e}")
 
 
 if __name__ == "__main__":

@@ -41,8 +41,12 @@ def gui(vai: str, tep: Path, thu: bool) -> bool:
     if thu:
         print(f"[thu] khong gui. Noi dung {tep}:\n" + tep.read_text(encoding="utf-8")[:1500])
         return True
+    # --luu-mid: approve_service doi chieu REPLY cua Ong Chu dung vao MID nay
+    # truoc khi coi la lenh chon so — xem ghi chu o _la_reply_bao_cao.
+    mid_tep = env_load.state_dir() / f"bao_cao_mid.{vai}.json"
     r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "publish.py"), "--to-env", "TELEGRAM_GROUP_ID",
-                        "--thread-name", qb.TOPIC[vai], "--file", str(tep)],
+                        "--thread-name", qb.TOPIC[vai], "--file", str(tep),
+                        "--luu-mid", str(mid_tep)],
                        cwd=str(ROOT), capture_output=True, text=True, timeout=120)
     if r.returncode != 0:
         _in_loi(r)

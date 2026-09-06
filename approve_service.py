@@ -843,6 +843,27 @@ def latest_manifest(vai="scout"):
     return max(files, key=lambda f: f.stat().st_mtime) if files else None
 
 
+def _la_reply_bao_cao(vai: str, msg: dict) -> bool:
+    """Tin nay co phai REPLY dung vao bao cao danh so MOI NHAT cua `vai` khong
+    (Ong Chu 06/09/2026: chi tin REPLY moi tinh la lenh, go troi trong topic la
+    hoi thoai — du co dung so). Cung nguyen tac voi _nhan_ly_do_lam_lai o tren,
+    va giai luon mot ke ho khac: truoc day tra loi mot bao cao CU van bi hieu
+    la chon tu manifest MOI NHAT (_xu_ly_chon luon doc latest_manifest), sai bai
+    ma khong ai biet. Gio reply phai khop dung mid bao cao gan nhat moi qua.
+
+    quet_nop.py ghi mid nay qua `publish.py --luu-mid` ngay khi gui bao cao.
+    Chua co tep (bao cao gui truoc khi co co che nay, hoac ghi loi) thi lui ve
+    kiem "co phai reply toi mot tin CUA BOT" — long hon nhung van chan duoc
+    hoi thoai thuong (khong bam Reply thi luon la False o day)."""
+    rt = msg.get("reply_to_message")
+    if not rt:
+        return False
+    mid = _nap_json(STATE_DIR / f"bao_cao_mid.{vai}.json", {}).get("message_id")
+    if mid:
+        return rt.get("message_id") == mid
+    return bool(rt.get("from", {}).get("is_bot"))
+
+
 # Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
 # Khong ghi ten ai thi mac dinh Ethan (donniechublog).
 # Chi con HAI vai dung anh, va ca hai lam CUNG MOT kieu anh: kieu tran, khong
@@ -1923,10 +1944,16 @@ def handle_message(token, group, msg):
     if _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
         return
 
-    # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin. Moi thu khac la
-    # hoi thoai. Finn, Nova, Vera deu duoc — cung mot cach tra loi.
+    # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
+    # REPLY dung vao bao cao (xem _la_reply_bao_cao). Moi thu khac (ke ca dung
+    # so nhung go troi, khong bam Reply) la hoi thoai. Finn, Nova, Vera deu
+    # duoc — cung mot cach tra loi.
     vai = vai_cua_topic(thread_id)
     lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
+    if lenh is not None and not _la_reply_bao_cao(vai, msg):
+        log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
+                     f"vai={vai} -> coi la hoi thoai")
+        lenh = None
     is_pick = lenh is not None
     if not is_pick:
         # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot
