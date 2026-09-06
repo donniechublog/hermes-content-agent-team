@@ -34,6 +34,14 @@ def nhan_ethan(a: dict) -> tuple:
     """(dung, ghi_chu) cho mot anh theo luat cua card.py."""
     dung, ghi = [], []
     r = a["ti_le"]
+    if a.get("xep_hang"):
+        xh = a["xep_hang"]
+        dung.append("✅ ẢNH XẾP HẠNG — ẢNH CHÍNH BẮT BUỘC của tin này, dùng MỘT MÌNH được "
+                    f"(bảng {xh.get('site')} · {xh.get('bang')}, {xh.get('model')}"
+                    + (f" #{xh.get('hang')}" if xh.get('hang') else "") + ", đã khoanh hàng model)")
+        if r > TI_LE_HERO_MAX:
+            ghi.append(f"bảng quá ngang ({r}): thêm \"anh2\" ngang cùng tone để ghép dọc")
+        return dung, ghi
     if a["loai"] == "chart":
         dung.append("CHỈ ghép dọc (anh2) với một ảnh ngang cùng tone, chart một mình bị chặn")
     elif r > TI_LE_HERO_MAX:
@@ -88,6 +96,14 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng thẻ, không vẽ. Kết thúc task bằng "
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
     goi_y = []
+    if m.get("tin_xep_hang"):
+        xh = m.get("xep_hang") or {}
+        L.append("🏁 TIN XẾP HẠNG → \"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về ranking "
+                 "phải là bảng/chart xếp hạng, khoanh đúng model). ethan_nop chặn mọi ảnh chính khác."
+                 + (f" Engine đã chụp {xh.get('site')} ({xh.get('bang')}): {xh.get('model')}"
+                    + (f" #{xh.get('hang')}" if xh.get('hang') else "")
+                    + (" — THẺ DỰ PHÒNG vì không chụp được bảng." if xh.get("kieu") == "the" else ".")
+                    if xh else " ⚠️ Engine KHÔNG có ảnh XH — báo lại, đừng thay bằng ảnh khác."))
     for a in m["anh"]:
         dung, ghi = nhan_ethan(a)
         if dung[0].startswith("nền hero") and not a["mat"]:

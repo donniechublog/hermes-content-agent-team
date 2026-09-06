@@ -114,6 +114,12 @@ ghi thêm một dòng cảnh báo.
     nop ghép manifest (`manifest_build`/`manifest_ghi`), kiểm bắt buộc, viết báo
     cáo, gửi topic; `--khong-co` gửi dòng "hôm nay không có gì"; `--thu` không
     ghi manifest thật, không xoá bắt buộc.
+- `xep_hang.py` — **ảnh cho tin xếp hạng** (Ông Chủ chốt 06/09/2026): tách tên model
+  từ tiêu đề, đi qua registry nguồn xếp hạng (arena.ai ×6, artificialanalysis.ai,
+  tbench, swebench, livebench, aider), mở browser tìm **hàng** chứa model, chụp
+  cửa sổ top-N full bề ngang, **khoanh vàng hàng model**, đọc thứ hạng. Không ra →
+  thẻ dự phòng (model + #hạng + logo + site). Chạy trong `anh_chuan_bi.py`, ảnh
+  mang mã `XH`; `ethan_nop`/`dre_nop` ép tin xếp hạng dùng đúng mã đó
 - `chup_chart.py` — chụp **chart / bảng benchmark** đúng luật *full chiều rộng
   trước, chiều cao xét sau* (Ông Chủ chốt 04/09/2026). Mở trang ở khung 1920px,
   đo bề ngang **thật** của phần tử (`scrollWidth`), **nới khung** cho vừa rồi mới

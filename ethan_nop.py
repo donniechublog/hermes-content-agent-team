@@ -44,7 +44,15 @@ def giai_spec(spec: dict, m: dict) -> tuple:
         loi.append("\"anh2\" trùng \"anh\"")
         ma2 = None
     a = anh[ma]
-    can_ghep = a["loai"] == "chart" or a["ti_le"] > eb.TI_LE_HERO_MAX
+    # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH).
+    if m.get("tin_xep_hang") and not a.get("xep_hang"):
+        xh = m.get("xep_hang") or {}
+        loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
+                   + (f"engine đã chụp {xh.get('site')} ({xh.get('bang')}), {xh.get('model')}"
+                      + (f" #{xh.get('hang')}" if xh.get('hang') else "") + ", đã khoanh hàng model."
+                      if xh else "engine không có ảnh xếp hạng cho bài này — chạy lại ethan_chuan_bi.py."))
+    # Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua ngang.
+    can_ghep = (a["loai"] == "chart" and not a.get("xep_hang")) or a["ti_le"] > eb.TI_LE_HERO_MAX
     if can_ghep and not ma2:
         cap = eb.cap_ghep_hero(m)
         loi.append(f"{ma} là {'CHART' if a['loai'] == 'chart' else 'ảnh NGANG ' + str(a['ti_le'])} — "
@@ -86,6 +94,12 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     else:
         if not str(spec.get("title") or "").strip():
             loi.append("kiểu tran: thiếu \"title\" (một câu hoàn chỉnh)")
+    # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026.
+    import luat_anh
+    for x in (ma, ma2):
+        if x:
+            l, _ = luat_anh.kiem_da_dung(x, anh[x]["goc"], m.get("draft_id", ""))
+            loi += l
     if loi:
         return None, loi
     return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None}, []

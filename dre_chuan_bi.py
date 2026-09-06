@@ -77,6 +77,14 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if m.get("chua_nhin"):
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
+    if m.get("tin_xep_hang"):
+        xh = m.get("xep_hang") or {}
+        L.append("🏁 TIN XẾP HẠNG → bìa \"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về ranking "
+                 "phải là bảng/chart xếp hạng, khoanh đúng model). dre_nop chặn bìa khác."
+                 + (f" Engine đã chụp {xh.get('site')} ({xh.get('bang')}): {xh.get('model')}"
+                    + (f" #{xh.get('hang')}" if xh.get('hang') else "")
+                    + (" — THẺ DỰ PHÒNG vì không chụp được bảng." if xh.get("kieu") == "the" else ".")
+                    if xh else " ⚠️ Engine KHÔNG có ảnh XH — báo lại, đừng thay bằng ảnh khác."))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "
