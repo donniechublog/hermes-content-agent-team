@@ -127,6 +127,39 @@ def test_teaser_khong_bat_nham_ky_tu_tieng_viet():
         assert ord(c) < 0x2500, f"{c!r} U+{ord(c):04X} sẽ bị coi là emoji"
 
 
+# ------------------------------------------------------- tin xếp hạng không bảng
+def test_tin_xep_hang_khong_co_bang_thi_khong_chan():
+    """Bẫy 06/09: tiêu đề trông như tin xếp hạng nhưng không nêu tên model →
+    engine không chụp được bảng → không có mã "XH". Nếu cổng vẫn đòi "XH" thì
+    vai sửa kiểu gì cũng sai và không bao giờ nộp được."""
+    import anh_chuan_bi as cb
+    import xep_hang as xh
+    # tiêu đề kiểu này: là tin xếp hạng nhưng không tách được model
+    for t in ["Bảng xếp hạng AI tháng 9: ai đang dẫn đầu",
+              "LMArena leaderboard cập nhật tuần này"]:
+        assert xh.la_tin_xep_hang(t, ""), t
+        assert not xh.tach_model(t), f"{t}: nếu tách được model thì bẫy không xảy ra"
+    # brief KHÔNG được đòi mã XH khi không có
+    dong = cb.dong_brief_xep_hang({"tin_xep_hang": True, "xep_hang": None}, "bìa", "dre_nop")
+    assert "BẮT BUỘC" not in dong and "chặn ảnh khác" not in dong, dong
+    assert "không chặn" in dong, dong
+    # có bảng thì vẫn đòi như cũ
+    dong2 = cb.dong_brief_xep_hang(
+        {"tin_xep_hang": True, "xep_hang": {"site": "LMArena", "bang": "text",
+                                            "model": "GPT-5.2", "hang": 1, "kieu": "chup"}},
+        "", "ethan_nop")
+    assert "BẮT BUỘC" in dong2, dong2
+
+
+def test_cong_xep_hang_chi_chan_khi_co_anh_XH():
+    """dre_nop/ethan_nop chỉ được chặn khi m["xep_hang"] thật sự có."""
+    import re as _re
+    for tep, mau in (("dre_nop.py", r'tin_xep_hang"\)\s+and\s+m\.get\("xep_hang"\)'),
+                     ("ethan_nop.py", r'tin_xep_hang"\)\s+and\s+m\.get\("xep_hang"\)')):
+        src = (ROOT / tep).read_text(encoding="utf-8")
+        assert _re.search(mau, src), f"{tep}: cổng xếp hạng thiếu điều kiện m['xep_hang']"
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

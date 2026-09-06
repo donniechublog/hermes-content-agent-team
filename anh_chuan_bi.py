@@ -681,10 +681,17 @@ def cau_xep_hang(m: dict) -> str:
 def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
     """Dong 🏁 trong brief: `khoa` la "anh" (hero) hay "bìa" (carousel), `vai` la
     ten file nop chan (ethan_nop / dre_nop)."""
-    return (f"🏁 TIN XẾP HẠNG → {khoa}\"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về "
-            f"ranking phải là bảng/chart xếp hạng, khoanh đúng model). {vai} chặn ảnh khác. "
-            + cau_xep_hang(m)
-            + ("." if m.get("xep_hang") else " ⚠️ — báo lại, đừng thay bằng ảnh khác."))
+    if m.get("xep_hang"):
+        return (f"🏁 TIN XẾP HẠNG → {khoa}\"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về "
+                f"ranking phải là bảng/chart xếp hạng, khoanh đúng model). {vai} chặn ảnh khác. "
+                + cau_xep_hang(m) + ".")
+    # Khong co ma XH: KHONG duoc bao "bat buoc dung XH" nua — truoc 06/09/2026
+    # chieu, brief van doi ma do trong khi no khong ton tai, va nop cung chan
+    # theo, nen vai khong bao gio nop duoc bai. Noi that trang thai va loi ra.
+    return ("🏁 Tin này trông như tin XẾP HẠNG nhưng engine KHÔNG chụp được bảng "
+            "(thường vì tiêu đề không nêu tên model cụ thể). KHÔNG có mã \"XH\": "
+            f"dùng ảnh thật tốt nhất trong danh sách dưới, {vai} không chặn. "
+            "Nói lại một câu cho Ông Chủ là bài xếp hạng mà không có bảng.")
 
 
 def cap_ghep(anh: list) -> list:

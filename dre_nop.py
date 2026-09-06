@@ -98,10 +98,16 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
             da_dung[ma] = nhan
             _lien_quan([ma], nhan)
             a = anh[ma]
-            if la_bia and m.get("tin_xep_hang") and not a.get("xep_hang"):
+            # CHI chan khi engine THUC SU co anh xep hang de dung. Truoc
+            # 06/09/2026 chieu, cong nay chan ca khi m["xep_hang"] la None —
+            # bao vai "bìa dùng \"anh\": \"XH\"" trong khi ma XH khong ton tai,
+            # nen vai sua kieu gi cung sai va khong bao gio nop duoc. Ba duong
+            # dan toi canh do: --khong-browser, tach_model() rong (tin xep hang
+            # KHONG neu ten model, vd "Bảng xếp hạng AI tháng 9"), hoac
+            # tim_va_chup nem. Luc do de vai dung anh thuong, brief da noi ro.
+            if la_bia and m.get("tin_xep_hang") and m.get("xep_hang") and not a.get("xep_hang"):
                 loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
-                           f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m)
-                           + ("." if m.get("xep_hang") else " — chạy lại dre_chuan_bi.py."))
+                           f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m) + ".")
             if a["loai"] == "chart" and not a.get("xep_hang"):
                 if la_bia:
                     loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
