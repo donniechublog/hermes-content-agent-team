@@ -111,7 +111,16 @@ def _bo_dong_rac(out: str) -> str:
     return "\n".join(dong[i:]).strip()
 
 
-def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2) -> tuple:
+# Bo cong cu CHI DOC cho chat ngoai task. Do that tren server 06/09/2026:
+# khong gioi han = 38 cong cu (co terminal, execute_code, write_file, patch,
+# delegate_task); `safe` = ba cong cu web_search / web_extract / vision_analyze.
+# Tuc la vai van tra loi va tra cuu duoc, nhung KHONG chay duoc script, khong
+# sua duoc tep, khong tao duoc task.
+BO_CHI_DOC = "safe"
+
+
+def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
+        toolsets=None) -> tuple:
     """Goi hermes CLI, tra ve (noi_dung, loi). LUON tra ve — khong nem.
 
     - Chay trong process group rieng (start_new_session) de khi het gio giet
@@ -148,6 +157,12 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2) -> tu
     # cuoi, --no-restore-cwd de lan resume sau khong tu cd di cho khac.
     args += ["chat", "-c", session, "--create-if-missing",
              "--no-restore-cwd", "-Q", "-q", prompt]
+    # Han che cong cu cho lan goi nay. Da kiem chung `--toolsets` CO tac dung
+    # tren duong `chat` (khong phai chi -z/--tui nhu dong help noi): cli.py
+    # nhan vao self.enabled_toolsets roi dung no dung dan cho
+    # get_tool_definitions() — danh sach cong cu dua cho model bi cat that.
+    if toolsets:
+        args += ["--toolsets", toolsets]
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     t0 = time.time()
     log("chat", f"goi agent profile={profile or '-'} session={session} "
@@ -205,7 +220,7 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2) -> tu
         log("chat", f"agent tra loi HTTP loi ({out[:60]!r}) -> thu lai sau {cho}s")
         time.sleep(cho)
         return ask(profile, session, text, timeout=timeout - dt - cho, hint=hint,
-                   thu_lai=thu_lai - 1)
+                   thu_lai=thu_lai - 1, toolsets=toolsets)
     return out or "(agent không trả về nội dung)", None
 
 
