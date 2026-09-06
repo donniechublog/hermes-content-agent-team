@@ -38,9 +38,9 @@ import env_load
 
 ROOT = env_load.ROOT
 REPO = ROOT / "hermes"
-# Moi brand mot home rieng. Them brand = them mot dong o day.
-HOMES = {"blog": Path.home() / ".hermes-blog",
-         "dcgr": Path.home() / ".hermes-dcgr"}
+# Moi brand mot home rieng. Khai bao o env_load (soat_cron.py cung doc bang do
+# — hai ban sao thi them brand la sua hai cho, quen mot cho la bo sot ca brand).
+HOMES = env_load.hermes_homes()
 
 # ---- Plugin kanban: PLUGIN NGUOI DUNG, khong con va vao ban cai hermes -------
 # Truoc 06/09/2026 ban va nam TRONG ~/hermes-agent/plugins/kanban/dashboard —
@@ -74,7 +74,8 @@ TEP_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
 # find -delete — mot script hong ngoai git la dung kich ban 22/08.
 SCRIPT = ["quet_daily_scan",                              # than chung cua ba vai quet
           "finn_daily_scan", "nova_daily_scan", "vera_daily_scan",   # vo mong, giu ten cho cron
-          "model_watch", "nhat_ky_daily", "moat_publish_watch"]
+          "model_watch", "nhat_ky_daily", "moat_publish_watch",
+          "soat_cron"]                                    # chay o CA HAI home
 # `usage_audit` da bo khoi danh sach 06/09/2026: job cron da go khoi ca hai home,
 # va tep chi con la mot stub echo mot dong ("da gop vao daily-log"). Giu mot stub
 # trong git de dong bo ra server chi de nhac nguoi ta xoa no la mot vong lap kin.

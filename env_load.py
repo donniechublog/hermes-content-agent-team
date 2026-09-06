@@ -39,6 +39,18 @@ def hermes_home() -> Path:
     return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
 
 
+def hermes_homes() -> dict:
+    """Anh xa brand -> HERMES_HOME cua brand do, cho MOI brand chay tren may nay.
+
+    Vi sao o day chu khong o dong_bo_hermes: tu 07/09/2026 co hai nguoi dung —
+    `dong_bo_hermes` (dong bo SOUL/script) va `soat_cron` (soat cron ca hai home
+    moi sang). Hai ban sao cua cung mot dict thi them mot brand la sua hai cho,
+    va cho nao quen thi im lang bo sot ca mot brand — dung kieu loi tep nay sinh
+    ra de chan. Them brand = them MOT dong o day."""
+    return {"blog": Path.home() / ".hermes-blog",
+            "dcgr": Path.home() / ".hermes-dcgr"}
+
+
 def topics() -> dict:
     """Anh xa ten vai -> thread_id cua brand; rong neu tep thieu hoac hong."""
     try:
