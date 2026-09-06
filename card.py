@@ -152,9 +152,7 @@ QUOTE_LEAD = 16                         # gian dong quote — thoang hon tieu de
 QUOTE_MAX_LINES = 7                     # dai hon la cau qua dai cho mot the
 QUOTE_PAD = 64                          # le trong hon hero: quote can khoang tho
 MARK_SIZE = 210                         # dau ngoac kep (Oswald: ink that ~28% co font)
-# Man toi cua quote bat dau tan tu day len; tren nguong nay hoan toan trong de
-# nhan vat tho nguyen, khong lo mot duong mep nao (cung bai voi _tran_anh).
-QUOTE_FADE_TOP = 0.38
+QUOTE_MAN_DEM = 120                     # khoang dem TREN diem chu bat dau, de tan tu nhien khong dot ngot
 
 
 def _f(path, size, weight=None):
@@ -699,42 +697,51 @@ def _tran_anh(canvas, src_img, split, nat_h=None):
     return (0, 0, W, H)
 
 
-def _man_quote(canvas, nat_h=None):
-    """Man toi cho kieu quote: gradient tu day len, to bang mau nen brand (BG),
-    KHONG den tuyen. Tan ve 0 tren dinh khoi chu (`QUOTE_FADE_TOP`) theo duong
-    cong power nen khong lo duong mep — nhan vat o nua tren tho nguyen. Chua
-    max ~236 chu khong 255, de day anh con thoang thay chu khong thanh mang det.
+def _man_quote(canvas, nat_h, frame_top):
+    """Man toi cho kieu quote, KHOP THEO KHOI CHU THAT — khong phai mot ti le
+    co dinh cua the.
 
-    ANH THAP HON THE (Ong Chu bat loi 04/09/2026, tam "Nvidia thau tom Hugging
-    Face"): moc tan 38% la mot con so CO DINH, trong khi day lop anh SAC lai o
-    `nat_h`. Anh 16:9 vao kho 4:5 co nat_h = 675/1500 = 45% the, tuc la mep
-    sac/mo nam o 45% ma man toi cho do moi dat alpha 39/255 (15%) — mep hien ro
-    mon mot, va the doc ra HAI VUNG: nua tren anh net, nua duoi mot mang mo.
-    Dung thu ma ca kieu tran lan quote sinh ra de xoa.
+    Ong Chu bat loi NHIEU LAN, lan gan nhat voi the "Kimi-K3 giu #5 Code
+    Arena": diem bat dau tan truoc day la mot con so CO DINH (QUOTE_FADE_TOP
+    = 38% chieu cao the), hoan toan khong lien quan toi cau quote dai hay
+    ngan. Cau quote 2 dong chi can ~250px cho khoi chu, nhung man toi van tan
+    tu 38% H tro xuong — mot nua duoi ANH (chinh la bang xep hang dang minh
+    hoa) bi lam mo VO ICH, roi tu diem dat dac toi day the la mot mang phang
+    khong co gi ngoai dong nguon. The doc ra HAI VUNG: anh xam dan phia tren,
+    khoi dac phia duoi, dung cai ma luat "khong duoc tao cam giac hai vung
+    rieng biet" cam — chi khac la lan nay khong phai vi anh ngan, ma vi VUNG
+    TOI RONG HON CHU CAN.
 
-    `_tran_anh` da giai dung bai nay tu truoc (nhanh `day_kin`), `_man_quote`
-    thi chua duoc vá theo. Nay khop lai: anh thap thi keo diem uon len va bat
-    man dat DAC (255) dung tai day anh, nen khong con mep nao de lo. Doan
-    chuyen tiep co theo chinh chieu cao anh de khong an qua sau vao mot tam
-    von da ngan."""
+    Nay diem bat dau tan LAY THEO `frame_top` (da tinh xong tu chinh khoi chu
+    quote — xem `_render_quote`), khong con la ti le co dinh: cau cang ngan,
+    khoi chu cang thap, tan cang bat dau muon — anh lo ra cang nhieu. Cau
+    cang dai thi tan cang som, dung nhu truoc.
+
+    ANH THAP HON DIEM CHU BAT DAU (Ong Chu bat loi 04/09/2026, tam "Nvidia
+    thau tom Hugging Face": anh 16:9 het som, mep sac/mo lo giua chung) van
+    phai dat DAC (255) ngay tai `nat_h` — duoi do khong con anh that, chi con
+    nen mo, dat dac muon hon se lo mep. Truong hop nay `nat_h < frame_top`."""
     H = canvas.height
-    top = int(H * QUOTE_FADE_TOP)
-    thap = nat_h is not None and nat_h < H
-    ket = min(int(nat_h), H) if thap else H
-    if thap:
+    het_anh = nat_h < frame_top          # anh ket thuc TRUOC khi khoi chu bat dau
+    ket = nat_h if het_anh else frame_top
+    dinh = 255 if het_anh else 236       # khong tuyet doi 255 khi con anh: de day anh con thoang thay
+    if het_anh:
+        # Anh het som (tam "Nvidia thau tom Hugging Face", 04/09/2026): be rong
+        # tan phai theo CHINH chieu cao anh, khong phai mot khoang dem co dinh —
+        # anh 675px can dai chuyen ~200px de mep sac/mo tan het het, dung QUOTE_MAN_DEM
+        # (120px co dinh) se bop bang do lai qua gap, mep hien ro hon (do that: chenh
+        # sang hai ben mep tang tu 3/255 len 38/255 khi thu dung dem co dinh o day).
         dai = min(int(H * 0.18), int(nat_h * 0.30))
-        top = min(top, max(0, ket - dai))
+        top = max(0, ket - dai)
+    else:
+        top = max(0, ket - QUOTE_MAN_DEM)
     man = Image.new("L", (1, H), 0)
     for y in range(H):
         if y <= top:
             a = 0
-        elif thap:
-            # Dat DAC ngay tai day anh; duoi do giu nguyen — khong con mep.
-            t = (y - top) / max(1, ket - top)
-            a = int(255 * (min(1.0, t) ** 0.82))
         else:
-            t = (y - top) / max(1, H - top)
-            a = int(236 * (t ** 0.82))
+            t = (y - top) / max(1, ket - top)
+            a = int(dinh * min(1.0, t) ** 0.82)
         man.putpixel((0, y), min(255, a))
     lop = Image.new("RGBA", (W, H), (*BG, 255))
     lop.putalpha(man.resize((W, H)))
@@ -821,7 +828,6 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         top = (nat_h - H) // 2
         sac = sac.crop((0, top, W, top + H))
     canvas.paste(sac, (0, 0))
-    _man_quote(canvas, nat_h)                         # man toi lien mach
 
     d = ImageDraw.Draw(canvas)
     # Khung o le FRAME_X; chu THUT VAO them (TEXT_X > FRAME_X) de hai canh chieu
@@ -870,6 +876,8 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
+
+    _man_quote(canvas, nat_h, frame_top)              # man toi khop theo khoi chu that
 
     # Cac dong quote, canh trai (thut vao TEXT_X).
     qy = first_line_top
