@@ -51,18 +51,18 @@ cron 05:00 VN → task kanban cho Finn → Finn quét, ghi manifest, gửi báo 
                                               ↓
                      ✅ → đăng lên channel      ❌ → đánh dấu bỏ
                               ↓
-                  đẩy sang moat → extension đăng lên
-                  Facebook / Instagram
+                  đẩy sang moat (hàng đợi publish) — hết phần của ta
 ```
 
-Bài đã duyệt đi tiếp sang moat (org `dcgr.tech`) làm hàng đợi publish; extension
-trình duyệt claim và đăng lên mạng xã hội — Facebook post và Instagram carousel.
-**Không có TikTok**, có chủ đích: extension chỉ biết một luồng TikTok là upload
-video, nhét thẻ ảnh vào form đó là treo (`moat_publish.PLATFORMS`). Moat không
-gọi ngược về máy này —
-cron `moat-publish-watch` (5 phút/lần) hỏi trạng thái rồi báo vào topic Miles.
-Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên Telegram channel, thẻ duyệt chỉ
-ghi thêm một dòng cảnh báo.
+**Phần của ta dừng ở moat.** `moat_publish.py` đẩy bài đã duyệt sang moat (org
+`dcgr.tech`) với hai loại: `facebook_post` và `instagram_carousel`
+(`moat_publish.PLATFORMS`), rồi cron `moat-publish-watch` (5 phút/lần) hỏi trạng
+thái và báo vào topic Miles. Moat hỏng không làm hỏng khâu duyệt: bài vẫn lên
+Telegram channel, thẻ duyệt chỉ ghi thêm một dòng cảnh báo.
+
+Từ moat trở đi — extension trình duyệt claim và đăng thế nào, vì sao không có
+TikTok — là **hệ thống của người khác**, ta không viết và không kiểm được. Tài
+liệu này không mô tả nó; muốn biết thì đọc bên đó, không suy từ mã của ta.
 
 
 ## Kiến trúc 3 lớp
