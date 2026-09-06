@@ -77,6 +77,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if m.get("chua_nhin"):
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
+    if m.get("tin_xep_hang"):
+        L.append(cb.dong_brief_xep_hang(m, "bìa ", "dre_nop"))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "

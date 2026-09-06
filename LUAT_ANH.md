@@ -96,12 +96,36 @@ Bảng so sánh điểm benchmark (MMLU, HumanEval, lập trình, toán…) và 
 **bằng chứng mạnh nhất** — ưu tiên trước cả ảnh logo/hero. Chụp bản to (cạnh
 ngắn ≥1000px; bảng chữ nhỏ càng phải to).
 
-**Tin về THỨ HẠNG thì bảng xếp hạng chính là ảnh của tin.** Không có ảnh nào
-thay được nó, và **không được đi tìm ảnh khác chỉ vì chart bị chặn khi đi một
-mình** — cổng đó bảo *ghép dọc*, không bảo *đổi tin sang ảnh khác*. Ông Chủ bắt
-lỗi 06/09/2026: hai thẻ liền dùng bảng tỉ số giải golf rồi bảng câu cá trên
-băng cho tin xếp hạng model. Cả hai đều khớp chữ "leaderboard" và không dính gì
-tới tin.
+**Tin về THỨ HẠNG thì bảng xếp hạng chính là ảnh của tin.** Ông Chủ chốt
+06/09/2026, nguyên văn, sau ba thẻ liền nhau dùng bảng tỉ số golf rồi bảng câu cá
+trên băng:
+
+> nói về ranking phải là table / chart / standing / rank · nếu không có ảnh thì
+> capture screen · tìm tất cả các nguồn, không giới hạn, miễn là capture được
+> hình tử tế · khi capture phải khoanh lại đúng model đang được nhắc tới · không
+> dùng lại ảnh đã dùng trong phiên · không dùng ảnh không liên quan · không
+> capture được thì ảnh = tên model + thứ hạng + logo model + site đánh giá.
+> Không ra output tương tự đồ hoạ tham chiếu (arena.ai) là **fail**.
+
+Từ 06/09 việc này là của **engine**, không phải của vai: `xep_hang.py` chạy
+trong `anh_chuan_bi.py` khi tiêu đề là tin xếp hạng. Nó tách tên model, đi qua
+registry nguồn (arena.ai text/code/vision/t2i/t2v/search, artificialanalysis.ai,
+tbench.ai, swebench.com, livebench.ai, aider — nguồn được nhắc trong bài đi
+trước), mở browser, tìm **hàng** chứa model trong bảng lớn nhất (khớp bỏ dấu
+cách/gạch/chấm: "Claude Opus 4.6" ≡ "claude-opus-4-6"), chụp cửa sổ từ hàng 1
+(hoặc từ hàng model-2 nếu nằm sâu) kéo xuống cho tới khi rộng/cao ≤ 1.5 — đủ
+để đi một mình vào hero. Trang chỉ có một bảng mà bảng quá ngang (tbench: 15
+hàng trải 2319px) thì **thu hẹp cửa sổ** (1500 → 1200 → 1000) cho bảng responsive
+tự dồn cột — đủ cột, đúng từng ô, chỉ bố cục hẹp lại; có nhiều bảng thì chọn
+bảng vừa khổ, còn quá ngang mới ghép dọc hai bảng cùng trang — **full bề ngang bảng, khoanh vàng hàng model, đọc thứ
+hạng từ ô đầu**. Không nguồn nào ra → thẻ dự phòng: tên model + #hạng + logo (nếu
+chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng dấu
+`nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.
+
+Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
+`ethan_nop` / `dre_nop` chặn ảnh chính khác khi `xong.json` có `tin_xep_hang` —
+không phải "chưa đạt", là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
+thể của tin; vẫn chịu mọi cổng khác.
 
 Chart đi đâu, theo khung:
 
@@ -203,8 +227,11 @@ thật sự là ảnh chụp thường.
   đổi bìa và để chart ở slide thân.
 - **Ảnh ghép dọc** được miễn hẳn cổng này: nó đã nguyên vẹn + full bề ngang sẵn.
 
-Renderer còn tự **lùi điểm bắt đầu màn tối xuống dưới mép chart**, để đáy chart
-(trục x, nhãn, dòng chú thích) không bị làm tối.
+Kiểu `quote` (mặc định) không còn màn tối nữa (06/09/2026): chart hiện
+NGUYÊN VẸN từ đầu tới sát mép khối chữ, chỉ đúng dải chữ đè lên mới bị làm mờ
+cục bộ (không phải làm tối) — trục x/nhãn/chú thích của chart phía TRÊN khối
+chữ không hề bị ảnh hưởng. Kiểu `tran` vẫn còn màn tối riêng của nó và tự lùi
+điểm bắt đầu xuống dưới mép chart để đáy chart không bị làm tối.
 
 ---
 
@@ -266,8 +293,10 @@ Cách ghi: `--image2 <ảnh thứ hai>` (hero), hoặc `"images": [a, b]` thay c
 
 Script xếp dọc: mỗi ảnh full bề ngang, nguyên tỉ lệ, **áp sát nhau không vạch
 ngăn** (trước đây chèn 12px nền đen — vạch đó là một đường kẻ giữa khung, đọc ra
-hai vùng, đã bỏ 04/09/2026). Ảnh dưới nằm dưới màn tối của chữ, nên đặt **ảnh
-quan trọng hơn ở trên**.
+hai vùng, đã bỏ 04/09/2026). Chữ (hero kiểu quote) hay slide sau (carousel) đè
+lên ảnh dưới — quote thì chỉ làm mờ cục bộ đúng vùng chữ (không còn màn tối,
+xem mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặt **ảnh quan
+trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/màn tối chia sẻ.
 
 **Điều kiện duy nhất: hai hình không được quá khác tone.** Lệch tone (một nền
 trắng một nền đen, gam màu khác hẳn) đọc ra như hai vùng riêng biệt. Ưu tiên
@@ -300,8 +329,12 @@ nguyên**.
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
 
-- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Chữ luôn đè lên ảnh qua
-  gradient dài.
+- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Carousel/kiểu `tran`: chữ
+  đè lên ảnh qua gradient tối dài. Hero kiểu `quote` (mặc định, 06/09/2026):
+  không còn TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_mo_vung_chu`,
+  tan dần theo đường cong power, không đột ngột), màu chữ tự đổi tương phản
+  với vùng đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ giữ nguyên
+  sắc nét 100%.
 - **Không vạch, không viền, không đường kẻ** ngang giữa khung.
 - **Không để lộ bản sao sắc nét của chính tấm ảnh** làm nền. Chỗ nào lớp ảnh sắc
   không phủ hết thì nền là chính tấm đó **làm mờ mạnh** — một mảng màu liền.
@@ -353,8 +386,10 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Ghép hai ảnh quá khác tone | `kiem_lech_tone` | chặn |
 | Mặt người mà không khai `nhan_vat` | `kiem_mat_nguoi` | chặn |
 | Sai dải tỉ lệ của khung | `kiem_ti_le` | chặn |
-| Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn |
+| Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
 | Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
+| Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
+| Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |
 
@@ -372,6 +407,7 @@ mà chả phải đạt tiêu chuẩn"*):
 | | Ethan (`card.py`) | Dre (`carousel.py`) | Itachi (`deck.py`) |
 |---|:--:|:--:|:--:|
 | trùng · xuất xứ · mặt người · độ nét · đáy sáng | ✅ | ✅ | ❌ |
+| trùng liên phiên · tin xếp hạng → ảnh xếp hạng | ✅ | ✅ | ❌ |
 | crop ngang · lệch tone | ✅ | ✅ | ❌ |
 | chart một mình | ✅ | – | ❌ |
 | ảnh quá ngang | ✅ | – | ❌ |

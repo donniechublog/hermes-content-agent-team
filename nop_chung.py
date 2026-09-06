@@ -141,6 +141,15 @@ def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi
     cb._ghi_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
                                        "lan": int((da_dung or {}).get("lan", 0)) + 1,
                                        "message_id": mid})
+    # So anh da dung LIEN PHIEN (Ong Chu 06/09/2026): ghi anh GOC cua tung ma da
+    # dung, de bai sau khong dung lai (kiem_da_dung o buoc nop).
+    import luat_anh
+    xong = cb._doc_json(wd / "xong.json") or {}
+    goc = {a["ma"]: a["goc"] for a in xong.get("anh", [])}
+    ma_ds = ghi.get("anh") if isinstance(ghi.get("anh"), list) else [ghi.get("anh"), ghi.get("bia")]
+    for ma in ma_ds or []:
+        if ma and goc.get(ma):
+            luat_anh.ghi_da_dung(goc[ma], draft_id, vai)
     return mid
 
 

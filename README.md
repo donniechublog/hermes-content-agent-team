@@ -114,6 +114,19 @@ ghi thêm một dòng cảnh báo.
     nop ghép manifest (`manifest_build`/`manifest_ghi`), kiểm bắt buộc, viết báo
     cáo, gửi topic; `--khong-co` gửi dòng "hôm nay không có gì"; `--thu` không
     ghi manifest thật, không xoá bắt buộc.
+- `xep_hang.py` — **ảnh cho tin xếp hạng** (Ông Chủ chốt 06/09/2026): tách tên model
+  từ tiêu đề, đi qua registry nguồn xếp hạng (arena.ai ×6, artificialanalysis.ai,
+  tbench, swebench, livebench, aider), mở browser tìm **hàng** chứa model, chụp
+  cửa sổ top-N full bề ngang, **khoanh vàng hàng model**, đọc thứ hạng. Không ra →
+  thẻ dự phòng (model + #hạng + logo + site). Chạy trong `anh_chuan_bi.py`, ảnh
+  mang mã `XH`; `ethan_nop`/`dre_nop` ép tin xếp hạng dùng đúng mã đó.
+  **arena.ai chụp bằng khung MOBILE** (không phải desktop): trang có giao diện
+  mobile riêng — danh sách `<div>` thay vì bảng, chữ vốn đã to sẵn cho màn
+  414px nên gần như không bị co lại khi vào thẻ 1200px (khác desktop phải co
+  gần một nửa). Danh sách này chỉ hiện ~11-12 mục đầu, không tải thêm khi
+  cuộn (đã thử `.scrollTop` lẫn `mouse.wheel()` thật) — model không có trong
+  đó thì rơi về đường bảng desktop cũ (tìm được ở bất kỳ hạng nào) ngay trong
+  cùng một lượt, không tính là hết nguồn
 - `chup_chart.py` — chụp **chart / bảng benchmark** đúng luật *full chiều rộng
   trước, chiều cao xét sau* (Ông Chủ chốt 04/09/2026). Mở trang ở khung 1920px,
   đo bề ngang **thật** của phần tử (`scrollWidth`), **nới khung** cho vừa rồi mới

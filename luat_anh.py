@@ -52,8 +52,11 @@ DAU_PNG = ("crop_ti_le", "nguon_dung")   # cac khoa metadata bao "do doi dung ra
 
 
 # ---- Dau vet xuat xu ------------------------------------------------------
-def dong_dau(nguon):
-    """Tra ve PngInfo mang dau `nguon_dung=<nguon>`.
+def dong_dau(xuat_xu, **them):
+    """Tra ve PngInfo mang dau `nguon_dung=<xuat_xu>` (+ cac khoa phu neu co).
+
+    Ten tham so la `xuat_xu` chu khong phai `nguon`: `nguon` la mot trong nhung
+    khoa phu hay dung nhat (nguon=ARENA.AI), de trung ten thi vo TypeError.
 
     Moi cong cu trong doi sinh ra anh PHAI dong dau: crop_ti_le.py, arxiv_bia.py,
     ghep doc cua carousel.py, chup_chart.py. Cong `kiem_xuat_xu` dua vao dau nay
@@ -61,12 +64,15 @@ def dong_dau(nguon):
     """
     from PIL.PngImagePlugin import PngInfo
     m = PngInfo()
-    m.add_text("nguon_dung", str(nguon))
+    m.add_text("nguon_dung", str(xuat_xu))
+    for k, v in them.items():
+        if v is not None:
+            m.add_text(str(k), str(v))
     return m
 
 
-def dong_dau_tep(duong_dan, nguon):
-    """Mo lai mot tep PNG DA LUU va ghi dau `nguon_dung` vao do.
+def dong_dau_tep(duong_dan, xuat_xu, **them):
+    """Mo lai mot tep PNG DA LUU va ghi dau `nguon_dung` (+ khoa phu) vao do.
 
     Cho cac cong cu khong luu bang PIL (playwright screenshot, cv2.imwrite,
     tai thang tu URL). Khong phai PNG thi bo qua, tra ve False — dong dau la
@@ -78,7 +84,7 @@ def dong_dau_tep(duong_dan, nguon):
         if (im.format or "").upper() != "PNG":
             return False
         im.load()
-        im.save(q, "PNG", pnginfo=dong_dau(nguon))
+        im.save(q, "PNG", pnginfo=dong_dau(xuat_xu, **them))
         return True
     except Exception:
         return False
@@ -108,6 +114,13 @@ def doc_cat_ngang(img):
     spec — chi khac la no duoc dong dau ngay tai cho cat nen khong khai lai
     duoc. `kiem_crop_ngang` nhan ca hai."""
     return _text(img).get("crop_ti_le", "").find("cat_ngang=1") >= 0
+
+
+def la_xep_hang(img):
+    """Anh do xep_hang.py dung: bang xep hang chup tu nguon (co khoanh model) hoac
+    the du phong. Voi tin xep hang thi DAY LA CHU THE cua tin (Ong Chu 06/09/2026),
+    nen no duoc mien hai cong von cam chart len bia/hero."""
+    return _text(img).get("nguon_dung") in ("chup_xep_hang", "the_xep_hang")
 
 
 def co_xuat_xu(img):
@@ -166,6 +179,76 @@ def la_chart(img):
     phang, so_mau = do_chart(img)
     return (phang >= CHART_PHANG and so_mau <= CHART_SO_MAU), \
            f"phang {phang:.0%}, chi {so_mau} mau"
+
+
+def dhash(im) -> int:
+    """Difference hash 8x8: hai anh cung noi dung (khac co, khac nen, JPEG lai)
+    cho hash gan nhau. Dung de bat "dung lai anh" ma khong can trung byte."""
+    g = im.convert("L").resize((9, 8), Image.LANCZOS)
+    px = list(g.getdata())
+    return sum(((px[r * 9 + c] > px[r * 9 + c + 1]) << (r * 8 + c))
+               for r in range(8) for c in range(8))
+
+
+def gan_giong(h1: int, h2: int, nguong: int = 6) -> bool:
+    return bin(h1 ^ h2).count("1") <= nguong
+
+
+NGAY_NHO_ANH = 14      # cua so nho anh da dung, xem kiem_da_dung
+
+
+def _so_da_dung():
+    """state/<brand>/anh_da_dung.jsonl — moi dong mot anh da GUI DI (khong phai
+    ung vien). Ghi o buoc gui album, doc o buoc nop."""
+    import env_load
+    return env_load.state_dir() / "anh_da_dung.jsonl"
+
+
+def ghi_da_dung(duong_dan, draft_id: str, vai: str) -> None:
+    import json, time
+    q = Path(duong_dan)
+    try:
+        with Image.open(q) as im:
+            h = dhash(im)
+    except Exception:                                        # noqa: BLE001
+        return
+    dong = {"dhash": h, "draft_id": draft_id, "vai": vai,
+            "ten": q.name, "luc": int(time.time())}
+    with open(_so_da_dung(), "a", encoding="utf-8") as f:
+        f.write(json.dumps(dong, ensure_ascii=False) + "\n")
+
+
+def kiem_da_dung(nhan, duong_dan, draft_id: str):
+    """KHONG DUNG LAI ANH DA DUNG (Ong Chu chot 06/09/2026): bang ti so giai golf
+    Ricoh len hai the cua hai tin khac nhau trong cung mot ngay.
+
+    So theo dHash (gan giong <= 6 bit) chu khong theo ten/byte, vi cung mot tam
+    tai lai tu bao khac se khac byte. Bo qua chinh draft nay (lam lai mot bai thi
+    duoc giu anh). Cua so NGAY_NHO_ANH — "trong phien" hieu la vai tuan gan day:
+    nguoi doc kenh nho anh lau hon mot ngay.
+    """
+    import json, time
+    so = _so_da_dung()
+    if not so.exists():
+        return [], []
+    try:
+        with Image.open(duong_dan) as im:
+            h = dhash(im)
+    except Exception:                                        # noqa: BLE001
+        return [], []
+    moc = time.time() - NGAY_NHO_ANH * 86400
+    for line in so.read_text(encoding="utf-8").splitlines():
+        try:
+            d = json.loads(line)
+        except Exception:                                    # noqa: BLE001
+            continue
+        if d.get("draft_id") == draft_id or d.get("luc", 0) < moc:
+            continue
+        if gan_giong(int(d.get("dhash", 0)), h):
+            khi = time.strftime("%d/%m %H:%M", time.localtime(d.get("luc", 0)))
+            return [f"{nhan}: TRUNG anh da dung o bai '{d.get('draft_id')}' ({d.get('vai')}, {khi}) — "
+                    "moi tin mot anh, nguoi doc kenh nhan ra anh lap lai ngay. Tim anh khac."], []
+    return [], []
 
 
 def lech_tone(ims, nguong_sang=60, nguong_mau=70):
@@ -276,7 +359,7 @@ def kiem_chart(nhan, img, khai_chart, la_bia=False):
     Anh GHEP DOC duoc mien han: no da nguyen ven va full be ngang san.
     """
     loi, canh_bao = [], []
-    if la_ghep(img):
+    if la_ghep(img) or la_xep_hang(img):
         return loi, canh_bao
     la_ct, mo_ta = la_chart(img)
     if la_ct and not khai_chart:
@@ -357,7 +440,7 @@ def kiem_chart_mot_minh(nhan, img, da_ghep=False):
     Anh GHEP DOC duoc mien: chart nam nua tren con nguyen, anh thu hai o duoi
     chiu man toi. Do la duong ra, khong phai vi pham.
     """
-    if da_ghep or la_ghep(img):
+    if da_ghep or la_ghep(img) or la_xep_hang(img):
         return [], []
     la_ct, mo_ta = la_chart(img)
     if not la_ct:

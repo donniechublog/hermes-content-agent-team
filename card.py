@@ -15,7 +15,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import luat_anh
 
@@ -152,9 +152,8 @@ QUOTE_LEAD = 16                         # gian dong quote — thoang hon tieu de
 QUOTE_MAX_LINES = 7                     # dai hon la cau qua dai cho mot the
 QUOTE_PAD = 64                          # le trong hon hero: quote can khoang tho
 MARK_SIZE = 210                         # dau ngoac kep (Oswald: ink that ~28% co font)
-# Man toi cua quote bat dau tan tu day len; tren nguong nay hoan toan trong de
-# nhan vat tho nguyen, khong lo mot duong mep nao (cung bai voi _tran_anh).
-QUOTE_FADE_TOP = 0.38
+QUOTE_BLUR = 28                         # ban kinh mo vung chu de len (Gaussian)
+QUOTE_BLUR_DEM = 110                    # khoang dem TREN diem chu bat dau, de mo tan dan khong dot ngot
 
 
 def _f(path, size, weight=None):
@@ -699,46 +698,34 @@ def _tran_anh(canvas, src_img, split, nat_h=None):
     return (0, 0, W, H)
 
 
-def _man_quote(canvas, nat_h=None):
-    """Man toi cho kieu quote: gradient tu day len, to bang mau nen brand (BG),
-    KHONG den tuyen. Tan ve 0 tren dinh khoi chu (`QUOTE_FADE_TOP`) theo duong
-    cong power nen khong lo duong mep — nhan vat o nua tren tho nguyen. Chua
-    max ~236 chu khong 255, de day anh con thoang thay chu khong thanh mang det.
+def _mo_vung_chu(canvas, frame_top):
+    """Lam MO CUC BO vung anh nam duoi chu, sua canvas tai cho (Ong Chu 06/09/2026:
+    chu co vien "phen nhu karaoke" — bo vien, thay bang lam mo).
 
-    ANH THAP HON THE (Ong Chu bat loi 04/09/2026, tam "Nvidia thau tom Hugging
-    Face"): moc tan 38% la mot con so CO DINH, trong khi day lop anh SAC lai o
-    `nat_h`. Anh 16:9 vao kho 4:5 co nat_h = 675/1500 = 45% the, tuc la mep
-    sac/mo nam o 45% ma man toi cho do moi dat alpha 39/255 (15%) — mep hien ro
-    mon mot, va the doc ra HAI VUNG: nua tren anh net, nua duoi mot mang mo.
-    Dung thu ma ca kieu tran lan quote sinh ra de xoa.
+    Tu `frame_top - dem` toi day the; rieng doan `dem` la fade dan de mep sac/mo
+    khong doc ra hai vung — dung cai loi da bat nhieu lan voi man toi. Mo xoa het
+    chi tiet nen do sang trong khoi deu lai, nho vay MOT mau chu duy nhat
+    (`_mau_doi_nen` do sau khi mo) doc duoc tren ca khoi, khong can vien."""
+    W_, H_ = canvas.size
+    top = max(0, int(frame_top - QUOTE_BLUR_DEM))
+    vung = canvas.crop((0, top, W_, H_))
+    mo = vung.filter(ImageFilter.GaussianBlur(QUOTE_BLUR))
+    # Mat na: full mo tu frame_top tro xuong, rieng doan `dem` phia tren la fade.
+    mat_na = Image.new("L", vung.size, 255)
+    doan_tan = max(1, int(frame_top - top))
+    for y in range(doan_tan):
+        mat_na.paste(int(255 * (y / doan_tan) ** 0.82), (0, y, vung.width, y + 1))
+    canvas.paste(Image.composite(mo, vung, mat_na), (0, top))
 
-    `_tran_anh` da giai dung bai nay tu truoc (nhanh `day_kin`), `_man_quote`
-    thi chua duoc vá theo. Nay khop lai: anh thap thi keo diem uon len va bat
-    man dat DAC (255) dung tai day anh, nen khong con mep nao de lo. Doan
-    chuyen tiep co theo chinh chieu cao anh de khong an qua sau vao mot tam
-    von da ngan."""
-    H = canvas.height
-    top = int(H * QUOTE_FADE_TOP)
-    thap = nat_h is not None and nat_h < H
-    ket = min(int(nat_h), H) if thap else H
-    if thap:
-        dai = min(int(H * 0.18), int(nat_h * 0.30))
-        top = min(top, max(0, ket - dai))
-    man = Image.new("L", (1, H), 0)
-    for y in range(H):
-        if y <= top:
-            a = 0
-        elif thap:
-            # Dat DAC ngay tai day anh; duoi do giu nguyen — khong con mep.
-            t = (y - top) / max(1, ket - top)
-            a = int(255 * (min(1.0, t) ** 0.82))
-        else:
-            t = (y - top) / max(1, H - top)
-            a = int(236 * (t ** 0.82))
-        man.putpixel((0, y), min(255, a))
-    lop = Image.new("RGBA", (W, H), (*BG, 255))
-    lop.putalpha(man.resize((W, H)))
-    canvas.alpha_composite(lop)
+
+def _mau_doi_nen(canvas, box):
+    """Mau chu TUONG PHAN voi vung anh ben duoi `box` (x0,y0,x1,y1), DO SAU KHI
+    da lam mo (`_mo_vung_chu`) — do sang trung binh, MOT phep do duy nhat.
+
+    Vung toi -> chu sang (FG); vung sang -> chu toi (BG, mau nen thuong hieu,
+    khong phai den tuyet doi)."""
+    sang = ImageStat.Stat(canvas.crop(tuple(int(v) for v in box)).convert("L")).mean[0]
+    return FG if sang < 140 else BG
 
 
 def _quote_mark(d, cx, cy, font, color, closing=False):
@@ -797,23 +784,29 @@ def _quote_frame(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
 
 
 def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
-    """The pull-quote: mot cau trich dan lon tren anh phu kin.
+    """The pull-quote: mot cau trich dan lon tren anh phu kin, KHONG LOP NEN.
 
     Khac hero image (mot tieu de bao quat tin) va carousel (nhieu slide): day la
     MOT cau noi dat trong ngoac kep, co dong nguon o duoi — dung dang the trich
-    dan cua bao. Anh phu kin + man toi lien mach lo cung mot bai voi kieu tran;
-    chu nam o ~35% day, nhan vat tho nguyen o tren.
+    dan cua bao.
+
+    Ong Chu chot 06/09/2026, sau nhieu lan bat loi cung mot goc (nen phu chu
+    cao hon chinh cau chu, doc ra hai vung rieng biet): BO HAN man toi. Quote
+    dat THANG len anh goc; vung anh duoi chu duoc lam mo cuc bo (`_mo_vung_chu`)
+    roi mau chu chon theo do sang do duoc (`_mau_doi_nen`).
     """
     H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     src_img = _mo_anh(src)
     # ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
     # cover-crop lam mat tieu de cua slide/bang nguon, anh doc ra vo nghia).
-    # Nen: ban cover LAM MO + toi phu kin khung; lop sac: anh nguyen ti le,
-    # full W, dat sat tren (chu quote nam duoi). Anh cao hon khung thi chi cat
-    # theo chieu doc, giu tron be ngang. Dong nhip voi carousel._body_image.
+    # Nen: ban cover LAM MO phu kin khung (KHONG lam toi — Ong Chu 06/09/2026:
+    # "lam mo chu dung boi them mau", ap dung ca cho lop nen nay chu khong chi
+    # vung chu; truoc day co giam sang .enhance(0.5), gio bo, giu nguyen do sang
+    # goc, chi mo). Lop sac: anh nguyen ti le, full W, dat sat tren (chu quote
+    # nam duoi). Anh cao hon khung thi chi cat theo chieu doc, giu tron be
+    # ngang. Dong nhip voi carousel._body_image.
     nen = _fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40))
-    nen = ImageEnhance.Brightness(nen).enhance(0.5)
     canvas.paste(nen, (0, 0))
     nat_h = round(src_img.height * W / src_img.width)
     sac = src_img.resize((W, nat_h), Image.LANCZOS)
@@ -821,7 +814,6 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
         top = (nat_h - H) // 2
         sac = sac.crop((0, top, W, top + H))
     canvas.paste(sac, (0, 0))
-    _man_quote(canvas, nat_h)                         # man toi lien mach
 
     d = ImageDraw.Draw(canvas)
     # Khung o le FRAME_X; chu THUT VAO them (TEXT_X > FRAME_X) de hai canh chieu
@@ -871,10 +863,13 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
+    _mo_vung_chu(canvas, frame_top)
+    mau_chu = _mau_doi_nen(canvas, (TEXT_X, frame_top, W - TEXT_X, frame_bottom))
+
     # Cac dong quote, canh trai (thut vao TEXT_X).
     qy = first_line_top
     for ln in q_lines:
-        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=FG)
+        d.text((TEXT_X, qy - tren), ln, font=f_q, fill=mau_chu)
         qy += buoc
 
     # MAU: net khung dung CYAN cua bo nhan dien (nhu ten kenh, dong tong voi the
@@ -885,11 +880,12 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     _quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom,
                  CYAN, mark_col)
 
-    # Dong nguon (attribution), CANH GIUA, sat day.
+    # Dong nguon (attribution), CANH GIUA, sat day — cung mau, vung nay da
+    # duoc _mo_vung_chu lam mo tu truoc.
     ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
-        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=_pha(FG, 0.72))
+        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=mau_chu)
         ay += at_lh
 
     # CHIP theo phong cach NEOBRUTALISM: khoi dac, vien den day, bong cung lech

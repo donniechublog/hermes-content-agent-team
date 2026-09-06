@@ -98,7 +98,11 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
             da_dung[ma] = nhan
             _lien_quan([ma], nhan)
             a = anh[ma]
-            if a["loai"] == "chart":
+            if la_bia and m.get("tin_xep_hang") and not a.get("xep_hang"):
+                loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
+                           f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m)
+                           + ("." if m.get("xep_hang") else " — chạy lại dre_chuan_bi.py."))
+            if a["loai"] == "chart" and not a.get("xep_hang"):
                 if la_bia:
                     loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
                                "bìa dùng ảnh khác (gợi ý: "
@@ -106,6 +110,12 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
                     return None
                 ra["image"] = a["san"] or a["goc"]
                 ra["chart"] = True
+            elif a.get("xep_hang"):
+                # Anh xep hang: bia/slide deu dan NGUYEN VEN full be ngang (nhu chart),
+                # va duoc phep lam bia — hook de len nua duoi, bang o nua tren.
+                ra["image"] = a["san"] or a["goc"]
+                if not la_bia:
+                    ra["chart"] = True
             elif a["ngang"]:
                 if muc.get("cat_ngang") and a["h"] < 700:
                     loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
@@ -171,6 +181,11 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
         # thang len Telegram (06/09/2026).
         loi.extend(nc.kiem_quote_dich(g.get("quote"), f"slide {i}"))
         ra["slides"].append(g)
+    # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026. Dat SAU
+    # khi bia + moi slide da giai, luc `da_dung` da co du ma.
+    for ma_, nhan_ in da_dung.items():
+        l, _ = luat_anh.kiem_da_dung(f"{nhan_} ({ma_})", anh[ma_]["goc"], m.get("draft_id", ""))
+        loi += l
     n = len(slides) + 1
     if n < m.get("toi_thieu", 5):
         loi.append(f"chỉ {n} slide, tin này cần tối thiểu {m['toi_thieu']} (kể cả bìa) — "

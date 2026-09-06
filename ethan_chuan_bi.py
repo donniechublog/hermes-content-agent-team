@@ -34,6 +34,14 @@ def nhan_ethan(a: dict) -> tuple:
     """(dung, ghi_chu) cho mot anh theo luat cua card.py."""
     dung, ghi = [], []
     r = a["ti_le"]
+    if a.get("xep_hang"):
+        xh = a["xep_hang"]
+        dung.append("✅ ẢNH XẾP HẠNG — ẢNH CHÍNH BẮT BUỘC của tin này, dùng MỘT MÌNH được "
+                    f"(bảng {xh.get('site')} · {xh.get('bang')}, {xh.get('model')}"
+                    + (f" #{xh.get('hang')}" if xh.get('hang') else "") + ", đã khoanh hàng model)")
+        if r > TI_LE_HERO_MAX:
+            ghi.append(f"bảng quá ngang ({r}): thêm \"anh2\" ngang cùng tone để ghép dọc")
+        return dung, ghi
     if a["loai"] == "chart":
         dung.append("CHỈ ghép dọc (anh2) với một ảnh ngang cùng tone, chart một mình bị chặn")
     elif r > TI_LE_HERO_MAX:
@@ -94,6 +102,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
     goi_y = []
+    if m.get("tin_xep_hang"):
+        L.append(cb.dong_brief_xep_hang(m, "", "ethan_nop"))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "

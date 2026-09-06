@@ -44,7 +44,13 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
         loi.append("\"anh2\" trùng \"anh\"")
         ma2 = None
     a = anh[ma]
-    can_ghep = a["loai"] == "chart" or a["ti_le"] > eb.TI_LE_HERO_MAX
+    # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH).
+    if m.get("tin_xep_hang") and not a.get("xep_hang"):
+        loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
+                   + cb.cau_xep_hang(m)
+                   + ("." if m.get("xep_hang") else " — chạy lại ethan_chuan_bi.py."))
+    # Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua ngang.
+    can_ghep = (a["loai"] == "chart" and not a.get("xep_hang")) or a["ti_le"] > eb.TI_LE_HERO_MAX
     if can_ghep and not ma2:
         cap = eb.cap_ghep_hero(m)
         loi.append(f"{ma} là {'CHART' if a['loai'] == 'chart' else 'ảnh NGANG ' + str(a['ti_le'])} — "
@@ -88,6 +94,12 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     else:
         if not str(spec.get("title") or "").strip():
             loi.append("kiểu tran: thiếu \"title\" (một câu hoàn chỉnh)")
+    # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026.
+    import luat_anh
+    for x in (ma, ma2):
+        if x:
+            l, _ = luat_anh.kiem_da_dung(x, anh[x]["goc"], m.get("draft_id", ""))
+            loi += l
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
     # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
     hook_hay_title = str(spec.get("hook") or spec.get("title") or "")
