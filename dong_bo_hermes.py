@@ -483,9 +483,11 @@ def chuan(b):
 # se troi theo tung ban cap nhat va lam nhieu moi ban diff. Chi chup nhung khoa
 # THUC SU doi hanh vi cua vai.
 KHOA_PROMPT = [
-    ("agent", "model"),
+    ("model", "default"),
+    ("model", "provider"),
+    ("model", "base_url"),
+    ("fallback_providers",),
     ("agent", "reasoning_effort"),
-    ("agent", "fallback_providers"),
     ("skills", "external_dirs"),
     ("skills", "enabled"),
     ("terminal", "command_allowlist"),
@@ -494,6 +496,20 @@ KHOA_PROMPT = [
     ("toolsets",),
     ("disabled_toolsets",),
 ]
+
+# Khoa con mang bi mat — bo truoc khi ghi ra git. `fallback_providers` la mot
+# danh sach dict co `api_key`, va no la khoa THAT chu khong phai bien moi truong
+# o mot so profile.
+KHOA_BI_MAT = ("api_key", "token", "secret", "password")
+
+
+def _loc_bi_mat(v):
+    if isinstance(v, dict):
+        return {k: ("<da bo>" if any(b in k.lower() for b in KHOA_BI_MAT) else _loc_bi_mat(x))
+                for k, x in v.items()}
+    if isinstance(v, list):
+        return [_loc_bi_mat(x) for x in v]
+    return v
 TEP_CAU_HINH = REPO / "profiles" / "cau_hinh_that.yaml"
 
 
@@ -530,7 +546,7 @@ def chup_cau_hinh() -> int:
             for duong in KHOA_PROMPT:
                 v = _lay(d, duong)
                 if v not in (None, [], {}, ""):
-                    muc["/".join(duong)] = v
+                    muc["/".join(duong)] = _loc_bi_mat(v)
             ra[f"{hk}/{pd.name}"] = muc
     TEP_CAU_HINH.parent.mkdir(parents=True, exist_ok=True)
     dau = ("# CAC KHOA CAU HINH QUYET DINH PROMPT — ban chup, TEP DO MAY GHI.\n"
