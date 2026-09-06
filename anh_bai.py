@@ -32,7 +32,10 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
+
+UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 
 # Anh khong dai dien noi dung — the thuong hieu, logo, avatar...

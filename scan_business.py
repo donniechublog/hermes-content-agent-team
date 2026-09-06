@@ -33,11 +33,12 @@ from pathlib import Path
 
 import httpx
 
+import quet_chung                                            # noqa: E402
 import env_load
 import bat_buoc
 
 STATE = env_load.state_dir() / "business_seen.json"
-UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
+UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
 # Moi dong la mot goc theo doi. Them chu de moi = them mot dong.
@@ -175,10 +176,7 @@ def trong_watchlist(tieu_de: str) -> bool:
 
 
 
-def _get(url: str, timeout=40) -> httpx.Response:
-    # Khong xin brotli: mot so may chu (OpenAI) tra luong brotli lam httpx nghen.
-    return httpx.get(url, timeout=timeout, follow_redirects=True,
-                     headers={"User-Agent": UA, "Accept-Encoding": "gzip, deflate"})
+_get = quet_chung.get                  # mot ban duy nhat, xem quet_chung
 
 
 def _ts(txt: str) -> float:

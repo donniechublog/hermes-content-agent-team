@@ -36,10 +36,11 @@ from pathlib import Path
 
 import httpx
 
+import quet_chung                                            # noqa: E402
 import env_load
 
 STATE = env_load.state_dir() / "models_seen.json"
-UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
+UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
 
 OPENROUTER = "https://openrouter.ai/api/v1/models"
 # CATALOG cua HERMES (tai lieu cua hermes-agent), KHONG phai catalog cua
@@ -94,14 +95,7 @@ HANG_TQ = {"deepseek", "moonshot", "moonshotai", "qwen", "alibaba", "zai", "z-ai
 BIG = 9007199254740991          # arena dung so nay lam "khong xep hang"
 
 
-def _get(url: str, timeout=45, params=None) -> httpx.Response:
-    # KHONG xin brotli. May chu cua OpenAI tra ve luong brotli ma bo giai nen cua
-    # httpx nghen giua chung ("decoder process called with data when
-    # can_accept_more_data() is False") — feed hong han, khong phai loi encoding.
-    # Bo 'br' khoi Accept-Encoding thi may chu chuyen sang gzip va doc binh thuong.
-    return httpx.get(url, timeout=timeout, follow_redirects=True, params=params,
-                     headers={"User-Agent": UA,
-                              "Accept-Encoding": "gzip, deflate"})
+_get = quet_chung.get                  # mot ban duy nhat, xem quet_chung
 
 
 def vung_cua(org: str) -> str:

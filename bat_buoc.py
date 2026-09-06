@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
 import env_load                                              # noqa: E402
 
 
@@ -77,11 +78,7 @@ def them_nhieu(vai: str, muc: list) -> int:
     return moi
 
 
-def chuan_link(u: str) -> str:
-    u = (u or "").strip().lower()
-    u = re.sub(r"^https?://(www\.)?", "", u)
-    u = re.sub(r"[?#].*$", "", u)
-    return u.rstrip("/")
+chuan_link = quet_chung.chuan_link     # mot ban duy nhat, xem quet_chung
 
 
 def _chuan(t: str) -> str:

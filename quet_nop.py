@@ -21,10 +21,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+import quet_chung                                            # noqa: E402
 import env_load                                              # noqa: E402
 import quet_chuan_bi as qb                                   # noqa: E402
 
-TEN = {"scout": "Finn", "nova": "Nova", "market": "Vera"}
+TEN = quet_chung.TEN_VAI       # mot ban duy nhat, xem quet_chung
 
 
 # Nhan cua cac dong dang chu y trong stderr cua manifest_build / manifest_ghi.

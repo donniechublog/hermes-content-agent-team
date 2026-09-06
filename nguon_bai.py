@@ -28,7 +28,10 @@ from pathlib import Path
 
 import httpx
 
-UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
+
+UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 SO_NGUON = 4

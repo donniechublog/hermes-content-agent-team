@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
 import env_load                                             # noqa: E402
 import bat_buoc                                             # noqa: E402
 
@@ -44,9 +45,7 @@ VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BU
 TOI_DA_PICK = 8
 
 
-def _norm(u: str) -> str:
-    u = re.sub(r"^https?://(www\.)?", "", u or "").rstrip("/")
-    return re.sub(r"[?#].*$", "", u).lower()
+_norm = quet_chung.chuan_link          # mot ban duy nhat, xem quet_chung
 
 
 def _diem(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
