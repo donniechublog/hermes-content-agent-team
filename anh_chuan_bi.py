@@ -349,17 +349,6 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
     return ra
 
 
-def _dhash(im: Image.Image) -> int:
-    g = im.convert("L").resize((9, 8), Image.LANCZOS)
-    px = list(g.getdata())
-    return sum(((px[r * 9 + c] > px[r * 9 + c + 1]) << (r * 8 + c))
-               for r in range(8) for c in range(8))
-
-
-def _gan_giong(h1: int, h2: int, nguong=6) -> bool:
-    return bin(h1 ^ h2).count("1") <= nguong
-
-
 def anh_commons(tu_khoa: str, so: int = 4) -> list:
     """Anh that tren Wikimedia Commons (tru so, san pham, su kien) cho tin mong
     anh — LUAT_ANH muc 1.2 ke Commons la nguon hop le. Chi goi khi bai + bao khac
@@ -480,9 +469,9 @@ def tai_va_loc(cands: list, wd: Path) -> list:
             la_ct, _ = luat_anh.la_chart(im)
             if ly_do_do_hoa and not la_ct and not _chart_theo_hinh(im):
                 continue                                  # logo/wordmark
-            h = _dhash(im)
+            h = luat_anh.dhash(im)
             # Trung gan giong (cung anh o co khac, anh <img> vs figure chup): giu ban LON hon.
-            trung = next((k for k, (h2, im2, _, _) in enumerate(da_tai) if _gan_giong(h, h2)), None)
+            trung = next((k for k, (h2, im2, _, _) in enumerate(da_tai) if luat_anh.gan_giong(h, h2)), None)
             if trung is not None:
                 if w * hh > da_tai[trung][1].width * da_tai[trung][1].height:
                     da_tai[trung] = (h, im, c, len(data))
@@ -671,6 +660,27 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     return a
 
 
+def cau_xep_hang(m: dict) -> str:
+    """Mot cau ta anh XH engine da chup, dung chung cho brief cua Ethan/Dre va cho
+    cau bao loi cua ethan_nop/dre_nop — de loi noi cung mot thu o moi noi."""
+    xh = m.get("xep_hang") or {}
+    if not xh:
+        return "engine KHÔNG có ảnh xếp hạng cho bài này"
+    return (f"engine đã chụp {xh.get('site')} ({xh.get('bang')}): {xh.get('model')}"
+            + (f" #{xh.get('hang')}" if xh.get("hang") else "")
+            + (" — THẺ DỰ PHÒNG vì không chụp được bảng" if xh.get("kieu") == "the"
+               else ", đã khoanh hàng model"))
+
+
+def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
+    """Dong 🏁 trong brief: `khoa` la "anh" (hero) hay "bìa" (carousel), `vai` la
+    ten file nop chan (ethan_nop / dre_nop)."""
+    return (f"🏁 TIN XẾP HẠNG → {khoa}\"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về "
+            f"ranking phải là bảng/chart xếp hạng, khoanh đúng model). {vai} chặn ảnh khác. "
+            + cau_xep_hang(m)
+            + ("." if m.get("xep_hang") else " ⚠️ — báo lại, đừng thay bằng ảnh khác."))
+
+
 def cap_ghep(anh: list) -> list:
     """Cac cap anh NGANG ghep doc duoc: cung tone (luat_anh.lech_tone) va ti le
     sau ghep nam trong dai carousel chap nhan."""
@@ -815,7 +825,8 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
     # luong. Khong chup duoc thi the du phong (ten model + #hang + logo + site).
     xh = None
     tieu_de_xh = f"{title} {nguon.get('tieu_de_en') or ''}"
-    if not khong_browser and xep_hang.la_tin_xep_hang(tieu_de_xh, tom.get("summary", "")):
+    tin_xep_hang = xep_hang.la_tin_xep_hang(tieu_de_xh, tom.get("summary", ""))
+    if not khong_browser and tin_xep_hang:
         models = xep_hang.tach_model(nguon.get("tieu_de_en") or "") or xep_hang.tach_model(title)
         if models:
             ds = xep_hang.goi_y_nguon(tieu_de_xh, link, meta.get("via", ""), bp.get("chu", ""))
@@ -855,8 +866,8 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
                     + (f" #{xh['hang']}" if xh.get("hang") else "")
                     + (" — THẺ DỰ PHÒNG (không chụp được bảng)" if xh["kieu"] == "the" else ", đã khoanh hàng model"))
         anh.insert(0, {"ma": "XH", "goc": xh["tep"], "url": xh["url"], "alt": mo_ta_xh[:120],
-                       "tu": "xep_hang", "trang": xh["url"], "mien": _mien(xh["url"]), "diem": 100,
-                       "ly_do": "", "hint_chart": xh["kieu"] != "the", "xep_hang": xh})
+                       "tu": "xep_hang", "trang": xh["url"], "mien": _mien(xh["url"]),
+                       "hint_chart": xh["kieu"] != "the", "xep_hang": xh})
     print(f"[anh] tai duoc {len(anh)} anh (chua phan loai/nhin)", file=sys.stderr)
     if len(anh) < 5:
         # Tin mong anh: them anh that tu Wikimedia Commons theo ten rieng dau
@@ -878,10 +889,13 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
                     a["commons"] = True
                     anh.append(a)
     print("[vision] nhin tung anh, hoi co lien quan bai khong...", file=sys.stderr)
-    anh = [phan_loai(a, wd, nguon.get("tieu_de_en") or title) for a in anh]
+    # Anh XH khong hoi vision (tham so tieu_de rong): no la anh do chinh engine chup
+    # tu trang xep hang, da biet chac lien quan — hoi chi ton them mot luot LLM roi
+    # ghi de ket qua ngay duoi. Van qua phan_loai de co do hinh hoc (w/h/ti_le/san).
+    anh = [phan_loai(a, wd, "" if a.get("xep_hang") else (nguon.get("tieu_de_en") or title)) for a in anh]
     for a in anh:
         if a.get("xep_hang"):
-            # Anh xep hang la CHU THE cua tin: khong de vision hay nhan chart bo no.
+            a["mo_ta"] = a["alt"]
             a["lien_quan"] = True
             a["dung"] = ["HERO / BÌA (bảng xếp hạng, model đã khoanh — ảnh chính bắt buộc của tin xếp hạng)",
                          "thân (chart)"]
@@ -937,7 +951,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         (a for a in anh if "bìa" in a["dung"] and a.get("lien_quan") is not False),
         key=lambda a: (a["goc_trai_sang"], -a["canh_ngan"]))][:3]
     if xh:
-        goi_y_bia = ["XH"] + [g for g in goi_y_bia if g != "XH"]
+        goi_y_bia = ["XH"] + goi_y_bia
     print("[tu_lieu] boc chu tu nguon...", file=sys.stderr)
     tl = gom_tu_lieu(title, link, nguon_path, wd, nguon.get("tieu_de_en", ""))
     if len(tl.get("cau_co_so", [])) < 3 and bp.get("chu"):
@@ -955,9 +969,8 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
          "flagship": flagship, "toi_thieu": toi_thieu, "so_mien": so_mien,
          "anh": anh, "cap_ghep": cap_ghep(dung_duoc), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
          "so_dung_duoc": len(dung_duoc), "chua_nhin": chua_nhin,
-         "xep_hang": ({"ma": "XH", **{k: xh.get(k) for k in ("model", "hang", "site", "bang", "kieu", "url", "nguon")}}
-                      if xh else None),
-         "tin_xep_hang": bool(xep_hang.la_tin_xep_hang(tieu_de_xh, tom.get("summary", ""))),
+         "xep_hang": ({k: xh.get(k) for k in ("model", "hang", "site", "bang", "kieu")} if xh else None),
+         "tin_xep_hang": tin_xep_hang,
          "chu_bai": (bp.get("chu") or "")[:20000],
          "nguon_path": str(nguon_path), "tieu_de_en": nguon.get("tieu_de_en", "")}
     bang_anh(anh, wd / "bang_anh.png")

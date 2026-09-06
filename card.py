@@ -698,38 +698,24 @@ def _tran_anh(canvas, src_img, split, nat_h=None):
     return (0, 0, W, H)
 
 
-def _mo_vung_chu(canvas, frame_top, dem=QUOTE_BLUR_DEM):
-    """Lam MO CUC BO dung vung chu de len (Ong Chu chot 06/09/2026: chu co vien
-    "trong nhu karaoke" — bo vien, thay bang lam mo phan anh o duoi chu).
+def _mo_vung_chu(canvas, frame_top):
+    """Lam MO CUC BO vung anh nam duoi chu, sua canvas tai cho (Ong Chu 06/09/2026:
+    chu co vien "phen nhu karaoke" — bo vien, thay bang lam mo).
 
-    Chi mo tu `frame_top - dem` tro xuong DAY THE: phan anh phia tren van net
-    100%. Mo tan dan theo duong cong power (tu 0 tai `frame_top - dem` toi full
-    tai `frame_top`) — tranh dung lai chinh cai loi da bat nhieu lan (mep net/mo
-    dot ngot doc ra hai vung), lan nay la ranh gioi SAC/MO thay vi SANG/TOI. Tu
-    `frame_top` toi day the giu MO DEU — do la vung chua quote, chip, dong
-    nguon (chip co nen dac rieng nen mo duoi no khong sao).
-
-    Vi sao mo la du, khong can vien: mo xoa het chi tiet roi (chu/ke bang trong
-    anh nguon), lam dong deu do sang trong khoi — luc do MOT mau chu duy nhat
-    (do o `_mau_doi_nen` ke tiep) doc duoc tren toan khoi, khong con truong hop
-    vua sang vua toi trong cung mot cau nhu khi chi dua vao mot phep do bat ky.
-
-    Sua canvas tai cho, khong tra ban moi."""
+    Tu `frame_top - dem` toi day the; rieng doan `dem` la fade dan de mep sac/mo
+    khong doc ra hai vung — dung cai loi da bat nhieu lan voi man toi. Mo xoa het
+    chi tiet nen do sang trong khoi deu lai, nho vay MOT mau chu duy nhat
+    (`_mau_doi_nen` do sau khi mo) doc duoc tren ca khoi, khong can vien."""
     W_, H_ = canvas.size
-    top = max(0, int(frame_top - dem))
-    if H_ <= top:
-        return canvas
-    vung = canvas.crop((0, top, W_, H_)).convert("RGB")
+    top = max(0, int(frame_top - QUOTE_BLUR_DEM))
+    vung = canvas.crop((0, top, W_, H_))
     mo = vung.filter(ImageFilter.GaussianBlur(QUOTE_BLUR))
+    # Mat na: full mo tu frame_top tro xuong, rieng doan `dem` phia tren la fade.
     mat_na = Image.new("L", vung.size, 255)
     doan_tan = max(1, int(frame_top - top))
-    for y in range(vung.height):
-        y_that = top + y
-        a = 255 if y_that >= frame_top else int(255 * ((y_that - top) / doan_tan) ** 0.82)
-        mat_na.paste(a, (0, y, vung.width, y + 1))
-    ghep = Image.composite(mo, vung, mat_na)
-    canvas.paste(ghep.convert(canvas.mode), (0, top))
-    return canvas
+    for y in range(doan_tan):
+        mat_na.paste(int(255 * (y / doan_tan) ** 0.82), (0, y, vung.width, y + 1))
+    canvas.paste(Image.composite(mo, vung, mat_na), (0, top))
 
 
 def _mau_doi_nen(canvas, box):
@@ -738,12 +724,7 @@ def _mau_doi_nen(canvas, box):
 
     Vung toi -> chu sang (FG); vung sang -> chu toi (BG, mau nen thuong hieu,
     khong phai den tuyet doi)."""
-    x0, y0, x1, y1 = (max(0, int(box[0])), max(0, int(box[1])),
-                      min(canvas.width, int(box[2])), min(canvas.height, int(box[3])))
-    if x1 <= x0 or y1 <= y0:
-        return FG
-    vung = canvas.convert("RGB").crop((x0, y0, x1, y1))
-    sang = ImageStat.Stat(vung.convert("L")).mean[0]
+    sang = ImageStat.Stat(canvas.crop(tuple(int(v) for v in box)).convert("L")).mean[0]
     return FG if sang < 140 else BG
 
 
@@ -811,11 +792,8 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
 
     Ong Chu chot 06/09/2026, sau nhieu lan bat loi cung mot goc (nen phu chu
     cao hon chinh cau chu, doc ra hai vung rieng biet): BO HAN man toi. Quote
-    dat THANG len anh goc, mau chu tu doi theo do sang vung anh ben duoi
-    (`_mau_doi_nen`) — sang thi chu toi, toi thi chu sang — cong mot vien
-    tuong phan quanh chu (`_ve_chu_vien`) de doc duoc ca khi vung do vua sang
-    vua toi (bang xep hang: nen trang, chu den). Khong con hinh hoc frame_top/
-    nat_h/gradient nao de tinh sai nua.
+    dat THANG len anh goc; vung anh duoi chu duoc lam mo cuc bo (`_mo_vung_chu`)
+    roi mau chu chon theo do sang do duoc (`_mau_doi_nen`).
     """
     H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
@@ -885,11 +863,6 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
-    # KHONG CON LOP NEN CA THE (Ong Chu chot 06/09/2026, sua tiep sau khi vien
-    # chu bi che "phen nhu karaoke"): quote dat THANG len anh goc, CHI lam MO
-    # CUC BO dung vung chu de len (`_mo_vung_chu`) — phan anh phia tren van
-    # net nguyen. Mo lam dong deu do sang trong khoi nen MOT mau chu duy nhat
-    # (`_mau_doi_nen`, do SAU khi da mo) la du, khong can vien.
     _mo_vung_chu(canvas, frame_top)
     mau_chu = _mau_doi_nen(canvas, (TEXT_X, frame_top, W - TEXT_X, frame_bottom))
 

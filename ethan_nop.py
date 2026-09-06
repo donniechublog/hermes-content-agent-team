@@ -46,11 +46,9 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     a = anh[ma]
     # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH).
     if m.get("tin_xep_hang") and not a.get("xep_hang"):
-        xh = m.get("xep_hang") or {}
         loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
-                   + (f"engine đã chụp {xh.get('site')} ({xh.get('bang')}), {xh.get('model')}"
-                      + (f" #{xh.get('hang')}" if xh.get('hang') else "") + ", đã khoanh hàng model."
-                      if xh else "engine không có ảnh xếp hạng cho bài này — chạy lại ethan_chuan_bi.py."))
+                   + cb.cau_xep_hang(m)
+                   + ("." if m.get("xep_hang") else " — chạy lại ethan_chuan_bi.py."))
     # Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua ngang.
     can_ghep = (a["loai"] == "chart" and not a.get("xep_hang")) or a["ti_le"] > eb.TI_LE_HERO_MAX
     if can_ghep and not ma2:

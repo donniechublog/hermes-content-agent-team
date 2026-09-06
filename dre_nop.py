@@ -119,11 +119,9 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
             _lien_quan([ma], nhan)
             a = anh[ma]
             if la_bia and m.get("tin_xep_hang") and not a.get("xep_hang"):
-                xh = m.get("xep_hang") or {}
-                loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. Bìa dùng \"anh\": \"XH\""
-                           + (f" — engine đã chụp {xh.get('site')} ({xh.get('bang')}), {xh.get('model')}"
-                              + (f" #{xh.get('hang')}" if xh.get('hang') else "") + ", đã khoanh hàng model."
-                              if xh else " — engine không có ảnh xếp hạng, chạy lại dre_chuan_bi.py."))
+                loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
+                           f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m)
+                           + ("." if m.get("xep_hang") else " — chạy lại dre_chuan_bi.py."))
             if a["loai"] == "chart" and not a.get("xep_hang"):
                 if la_bia:
                     loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "

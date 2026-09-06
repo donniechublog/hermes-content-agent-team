@@ -123,8 +123,8 @@ chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng d�
 `nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.
 
 Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
-`kiem_xep_hang` chặn ảnh chính khác cho tin xếp hạng — không phải "chưa đạt",
-là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
+`ethan_nop` / `dre_nop` chặn ảnh chính khác khi `xong.json` có `tin_xep_hang` —
+không phải "chưa đạt", là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
 thể của tin; vẫn chịu mọi cổng khác.
 
 Chart đi đâu, theo khung:
@@ -388,7 +388,7 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Sai dải tỉ lệ của khung | `kiem_ti_le` | chặn |
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
 | Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
-| Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `kiem_xep_hang` | chặn |
+| Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
 | Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |

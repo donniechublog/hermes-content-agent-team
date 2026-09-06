@@ -97,13 +97,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
     goi_y = []
     if m.get("tin_xep_hang"):
-        xh = m.get("xep_hang") or {}
-        L.append("🏁 TIN XẾP HẠNG → \"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về ranking "
-                 "phải là bảng/chart xếp hạng, khoanh đúng model). ethan_nop chặn mọi ảnh chính khác."
-                 + (f" Engine đã chụp {xh.get('site')} ({xh.get('bang')}): {xh.get('model')}"
-                    + (f" #{xh.get('hang')}" if xh.get('hang') else "")
-                    + (" — THẺ DỰ PHÒNG vì không chụp được bảng." if xh.get("kieu") == "the" else ".")
-                    if xh else " ⚠️ Engine KHÔNG có ảnh XH — báo lại, đừng thay bằng ảnh khác."))
+        L.append(cb.dong_brief_xep_hang(m, "", "ethan_nop"))
     for a in m["anh"]:
         dung, ghi = nhan_ethan(a)
         if dung[0].startswith("nền hero") and not a["mat"]:
