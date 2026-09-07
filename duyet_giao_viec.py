@@ -78,6 +78,13 @@ VAI_ANH = {
     "dre": "carousel",                                 # alias ten persona
     "carousel-edu": "carousel-edu", "edu": "carousel-edu",
     "kite": "carousel-edu",            # alias ten persona (go "sli" / "kite")
+    "kites": "carousel-edu",           # so nhieu tieng Anh — Ong Chu hay go the
+                                        # khi giao nhieu tin cung luc (vd "3, 4 -
+                                        # Kites"). Su co 06/09/2026: doc_lenh_chon
+                                        # tu choi CA lenh vi "kites" khong khop
+                                        # TEN_SANG_CAP -> roi ve hoi thoai, gui
+                                        # nham cho Finn (topic scout) thay vi tao
+                                        # task cho Kite.
 }
 
 # Ba loai vai anh, moi loai mot cong cu: card.py (the bia, designer), carousel.py
