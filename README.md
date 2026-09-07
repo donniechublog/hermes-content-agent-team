@@ -141,8 +141,15 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
   Bảng chết (BFCL, LiveCodeBench, Aider, BigCodeBench, Papers With Code) bị loại
   có chủ đích — xem nhật ký sự cố.
-- `manifest_ghi.py` / `manifest_build.py` — ghi manifest đánh số vào
-  `state/<brand>/` qua `env_load.state_dir()`, cùng chỗ approve_service đọc.
+- `manifest_ghi.py` (Nova/Vera) / `manifest_build.py` (Finn) — ghi manifest đánh
+  số vào `state/<brand>/` qua `env_load.state_dir()`, cùng chỗ approve_service
+  đọc. Phần cơ học dùng chung nằm ở **`manifest_chung.py`**: chọn theo `k`, dọn
+  `summary_vi`, đánh số, không ghi đè bản đã có, chốt danh sách bắt buộc, dựng
+  báo cáo. Trước 07/09/2026 mỗi script tự viết lại và **đã lệch** — cổng bỏ
+  em-dash chỉ có ở nhánh Finn, dù lý do có nó ("em-dash lọt xuống tận caption")
+  đúng y hệt với Nova/Vera. Cái *không* gộp là cổng báo title mất dấu: title của
+  Nova/Vera do chính vai viết bằng tiếng Việt, còn title của Finn lấy từ
+  `candidates.json` tức tiêu đề gốc báo nước ngoài.
 - `bat_buoc.py` — **danh sách BẮT BUỘC**: script quét thấy là phải đưa, vai không
   có quyền bỏ. Script ghi manifest tự thêm mục thiếu kèm ghi chú "vai bỏ sót" và
   xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**, không chép URL.
@@ -196,8 +203,11 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
   giống hệt nhau, đếm được), `test_spec_dre` giữ cổng spec carousel của Dre
   (36 nhánh, phần lớn là luật Ông Chủ đặt sau một sự cố thật),
-  `test_tai_lieu` chặn tài liệu trôi khỏi mã. Đồ dùng chung của test nằm ở
-  `tests/tam.py` — **không** phải tệp test, `chay.sh` chỉ chạy `test_*.py`.
+  `test_manifest` giữ phần cơ học của manifest — thứ Ông Chủ đọc rồi **trả lời
+  bằng số**, nên sai ở đó không ra lỗi mà ra một danh sách nhìn bình thường
+  nhưng số "2" trỏ tới bài khác — và `test_tai_lieu` chặn tài liệu trôi khỏi mã.
+  Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
+  `chay.sh` chỉ chạy `test_*.py`.
 
   **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
   thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba
