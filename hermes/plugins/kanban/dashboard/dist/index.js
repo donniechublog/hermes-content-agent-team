@@ -95,7 +95,12 @@
   }
 
   // Board column display order; any backend status not listed here renders after these.
-  const COLUMN_ORDER = ["triage", "todo", "ready", "running", "blocked", "review", "done"];
+  // BAN VA CUA DOI: xep theo muc do can nhin, khong theo vong doi. Viec dang
+  // chay va viec cho tay nguoi len truoc; review/scheduled/triage gan nhu luon
+  // rong trong day chuyen noi dung nen lui ve sau. Khoi phuc 06/09/2026: mot
+  // lan chay --vao-repo da keo thu tu goc cua hermes (triage dau tien) de len,
+  // xem hermes/README.md muc "Plugin kanban".
+  const COLUMN_ORDER = ["running", "ready", "blocked", "todo", "done", "review", "scheduled", "triage"];
   // English fallback dictionaries — used when the i18n catalog is missing
   // a key, and as defaults for the get*() helpers below so callers running
   // outside any React component (where there's no `t`) still get sane text.
@@ -2874,7 +2879,10 @@
     };
 
     const lanes = useMemo(function () {
-      if (!props.laneByProfile || props.column.name !== "running") return null;
+      // Truoc day chi cot "running" moi chia lane theo profile, nen o cac cot
+      // khac khong biet task cua bot nao. Chia lane o MOI cot.
+      // Khoi phuc 06/09/2026: --vao-repo da de ban goc hermes len mat va nay.
+      if (!props.laneByProfile) return null;
       const byProfile = {};
       for (const tk of props.column.tasks) {
         const key = tk.assignee || "(unassigned)";

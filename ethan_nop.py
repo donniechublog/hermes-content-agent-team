@@ -27,24 +27,12 @@ import nop_chung as nc                                       # noqa: E402
 DRAFTS = cb.DRAFTS
 
 
-def giai_spec(spec: dict, m: dict) -> tuple:
-    anh = {a["ma"]: a for a in m["anh"]}
-    loi = []
-    kieu = (spec.get("kieu") or "quote").strip().lower()
-    if kieu not in ("quote", "tran"):
-        loi.append("\"kieu\" phải là \"quote\" (mặc định) hoặc \"tran\"")
-    ma, ma2 = spec.get("anh"), spec.get("anh2")
-    if not ma or ma not in anh:
-        loi.append(f"\"anh\" không tồn tại: {ma} (có: {', '.join(anh) or 'không có ảnh nào'})")
-        return None, loi
-    if ma2 and ma2 not in anh:
-        loi.append(f"\"anh2\" không tồn tại: {ma2}")
-        ma2 = None
-    if ma2 == ma:
-        loi.append("\"anh2\" trùng \"anh\"")
-        ma2 = None
-    a = anh[ma]
-    can_ghep = a["loai"] == "chart" or a["ti_le"] > eb.TI_LE_HERO_MAX
+def _kiem_ghep(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
+    """Anh di mot minh duoc khong, va ghep voi "anh2" co hop le khong.
+
+    Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua
+    ngang. Nguong ngang la cua card.py (`eb.TI_LE_HERO_MAX`)."""
+    can_ghep = (a["loai"] == "chart" and not a.get("xep_hang")) or a["ti_le"] > eb.TI_LE_HERO_MAX
     if can_ghep and not ma2:
         cap = eb.cap_ghep_hero(m)
         loi.append(f"{ma} là {'CHART' if a['loai'] == 'chart' else 'ảnh NGANG ' + str(a['ti_le'])} — "
@@ -57,9 +45,11 @@ def giai_spec(spec: dict, m: dict) -> tuple:
             loi.append(f"ghép {ma}+{ma2} vẫn quá ngang ({rc:.2f} > {eb.TI_LE_HERO_MAX}) — chọn cặp khác")
         if b["ti_le"] < 1.2 or a["ti_le"] < 1.2:
             loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ti_le']}, {ma2}={b['ti_le']}")
-    mat = [x for x in (ma, ma2) if x and anh[x]["mat"]]
-    if mat and not str(spec.get("nhan_vat") or "").strip():
-        loi.append(f"{', '.join(mat)} có mặt người mà không khai \"nhan_vat\": \"<tên người trong bài>\"")
+
+
+def _kiem_chu(spec: dict, kieu: str, loi: list) -> None:
+    """Truong chu bat buoc theo kieu the: quote can hook/tagline/attrib, tran
+    can mot cau title tron ven."""
     if kieu == "quote":
         if not str(spec.get("hook") or "").strip():
             loi.append("thiếu \"hook\"")
@@ -71,9 +61,58 @@ def giai_spec(spec: dict, m: dict) -> tuple:
     else:
         if not str(spec.get("title") or "").strip():
             loi.append("kiểu tran: thiếu \"title\" (một câu hoàn chỉnh)")
+
+
+def giai_spec(spec: dict, m: dict, wd) -> tuple:
+    """Spec cua Ethan (ma anh) -> (ket_qua, loi, canh). Tach 07/09/2026: ba cong
+    trung voi Dre (tin xep hang, khong lien quan, anh da dung) sang nop_chung,
+    phan ghep va phan chu thanh hai ham rieng."""
+    anh = {a["ma"]: a for a in m["anh"]}
+    loi = []
+    kieu = (spec.get("kieu") or "quote").strip().lower()
+    if kieu not in ("quote", "tran"):
+        loi.append("\"kieu\" phải là \"quote\" (mặc định) hoặc \"tran\"")
+    ma, ma2 = spec.get("anh"), spec.get("anh2")
+    if not ma or ma not in anh:
+        loi.append(f"\"anh\" không tồn tại: {ma} (có: {', '.join(anh) or 'không có ảnh nào'})")
+        return None, loi, []
+    if ma2 and ma2 not in anh:
+        loi.append(f"\"anh2\" không tồn tại: {ma2}")
+        ma2 = None
+    if ma2 == ma:
+        loi.append("\"anh2\" trùng \"anh\"")
+        ma2 = None
+    a = anh[ma]
+    # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH),
+    # nhung CHI khi engine da CHUP duoc bang — xem nop_chung.can_anh_xep_hang.
+    if nc.can_anh_xep_hang(m, a):
+        loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
+                   + cb.cau_xep_hang(m) + ".")
+    _kiem_ghep(a, ma, ma2, anh, m, loi)
+    # ẢNH KHÔNG LIÊN QUAN BÀI (Ông Chủ bắt lỗi 06/09/2026) — điều kiện dùng chung
+    # với Dre (nop_chung.anh_khong_lien_quan), câu báo của Ethan dài hơn vì Ethan
+    # hay đi tìm ảnh khác khi chart bị chặn một mình.
+    rac, mo_ta = nc.anh_khong_lien_quan(anh, (ma, ma2))
+    if rac:
+        loi.append(f"{', '.join(rac)} bị vision đánh dấu KHÔNG LIÊN QUAN bài ({mo_ta}) — "
+                   "không dùng. Tin xếp hạng/benchmark thì ẢNH ĐÚNG chính là bảng "
+                   "xếp hạng của nguồn: engine đã chụp sẵn (mã loại chart), ghép "
+                   "dọc với một ảnh ngang cùng tone qua \"anh2\". Đừng đi tìm ảnh "
+                   "khác chỉ vì chart bị chặn khi đi một mình.")
+
+    # Mat nguoi: dung CHUNG cong chan voi Dre (nop_chung.kiem_nhan_vat, 06/09/2026).
+    loi.extend(nc.kiem_nhan_vat(anh, [ma, ma2], spec.get("nhan_vat"),
+                                nc.chu_bai_cua(m, wd), ""))
+    _kiem_chu(spec, kieu, loi)
+    loi += nc.kiem_da_dung_nhieu(anh, [(x, x) for x in (ma, ma2) if x], m)
+    # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
+    # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
+    hook_hay_title = str(spec.get("hook") or spec.get("title") or "")
+    loi.extend(nc.kiem_quote_dich(hook_hay_title, "hook"))
+    canh = nc.kiem_so_tren_anh(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)
     if loi:
-        return None, loi
-    return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None}, []
+        return None, loi, canh
+    return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None}, [], canh
 
 
 def main() -> int:
@@ -86,13 +125,16 @@ def main() -> int:
     a = ap.parse_args()
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "ethan_chuan_bi.py", "ethan_nop.py")
-    kq, loi = giai_spec(spec, m)
-    loi = nc.kiem_lam_lai(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title")) + loi
+    kq, loi, canh = giai_spec(spec, m, wd)
+    for c in canh:
+        print(f"[CANH BAO] {c}")
+    loi = nc.kiem_lam_lai(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title"),
+                          draft_id=a.draft_id) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        print(f"\nSua {spec_path} roi chay lai: venv/bin/python ethan_nop.py {a.draft_id}")
-        return 1
+        return nc.dem_vong_loi(wd, loi,
+                               f"venv/bin/python ethan_nop.py {a.draft_id}")
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -141,7 +183,10 @@ def main() -> int:
         print(f"[thu] khong gui Telegram (--khong-gui). The o {out}")
     else:
         mid = nc.gui_album("designer", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
-                           {"anh": kq["anh"]["ma"], "hook": hook})
+                           {"anh": kq["anh"]["ma"], "hook": hook,
+                            # anh2 (ghep doc) cung phai bi danh dau da dung —
+                            # thieu no thi bai sau dung lai duoc (06/09/2026).
+                            "anh2": (kq["anh2"] or {}).get("ma")})
     print(f"[xong] the {kq['kieu']} -> {out}" + (f"; da gui topic designer (message_id={mid}) kem nut duyet"
                                                  if mid else "") + f"; ban giao: {bg_path}")
     print("Ket qua task (dung dong nay de ket thuc task): "

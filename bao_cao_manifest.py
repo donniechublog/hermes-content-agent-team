@@ -9,10 +9,17 @@ manifest mot dang, Ong Chu tra loi so lai ra bai khac.
 Nay ca ba vai deu goi ham nay. Bao cao va manifest sinh ra tu CUNG mot nguon nen
 khong the lech, va ba vai hien cung mot dinh dang nen Ong Chu doc quen mat.
 """
-from datetime import datetime, timezone, timedelta
+import sys
+from datetime import datetime
+from pathlib import Path as _Path
 
-VN = timezone(timedelta(hours=7))
-TEN_VAI = {"scout": "Finn", "nova": "Nova", "market": "Vera", "vera": "Vera"}
+sys.path.insert(0, str(_Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
+
+# Mot ban duy nhat cho ca doi — xem quet_chung. Truoc 06/09/2026 moi tep tu khai
+# lai mui gio VN va bang ten vai, nen sua mot cho la phai nho sua ca cum.
+VN = quet_chung.VN
+TEN_VAI = quet_chung.TEN_VAI
 
 NHAC = ("Trả lời số thứ tự để tạo bài. Thêm tên vai dựng ảnh nếu muốn:\n"
         "<code>1</code> · <code>1, 2</code> · <code>1, 2 - Ethan</code>")

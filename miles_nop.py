@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import caption_check                                         # noqa: E402
+import nop_chung as nc                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -76,8 +77,8 @@ def main() -> int:
         if tin.get("do_dai", 0) > caption_check.GIOI_HAN:
             print(f"[LOI] cần cắt ít nhất {tin['do_dai'] - caption_check.GIOI_HAN} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
-        print(f"\nSua {p_cap} theo cac dong [LOI] roi chay lai: venv/bin/python miles_nop.py {a.draft_id}")
-        return 1
+        return nc.dem_vong_loi(wd, loi,
+                               f"venv/bin/python miles_nop.py {a.draft_id}")
 
     if a.khong_push:
         (wd / "draft_thu.txt").write_text(cap, encoding="utf-8")
@@ -106,7 +107,6 @@ def main() -> int:
     md = {"do_dai": tin.get("do_dai"), "so_cau": tin.get("so_cau"),
           "so_trong_caption": tin.get("so_trong_caption"),
           "draft": f"drafts/{a.draft_id}.json"}
-    import nop_chung as nc
     nc.ghi_bang_den(a.draft_id, "caption", md, "miles")
     print(f"[xong] caption {tin.get('do_dai')} ký tự, {tin.get('so_cau')} câu, "
           f"{tin.get('so_trong_caption')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")

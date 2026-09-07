@@ -39,6 +39,18 @@ def hermes_home() -> Path:
     return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
 
 
+def hermes_homes() -> dict:
+    """Anh xa brand -> HERMES_HOME cua brand do, cho MOI brand chay tren may nay.
+
+    Vi sao o day chu khong o dong_bo_hermes: tu 07/09/2026 co hai nguoi dung —
+    `dong_bo_hermes` (dong bo SOUL/script) va `soat_cron` (soat cron ca hai home
+    moi sang). Hai ban sao cua cung mot dict thi them mot brand la sua hai cho,
+    va cho nao quen thi im lang bo sot ca mot brand — dung kieu loi tep nay sinh
+    ra de chan. Them brand = them MOT dong o day."""
+    return {"blog": Path.home() / ".hermes-blog",
+            "dcgr": Path.home() / ".hermes-dcgr"}
+
+
 def topics() -> dict:
     """Anh xa ten vai -> thread_id cua brand; rong neu tep thieu hoac hong."""
     try:
@@ -105,6 +117,27 @@ def nap(*them: Path) -> None:
             os.environ.setdefault(k, v)
 
 
+def album_phu(draft_id: str, thu_muc: Path = None) -> list:
+    """Danh sach anh phu <draft_id>_2.png, _3.png... _10.png... sap dung so,
+    khong theo thu tu chuoi.
+
+    Truoc day 3 noi (draft_write, dre_nop, kite_nop) tu glob rieng bang mau
+    `_[0-9].png` — chi khop MOT chu so nen bo sot slide thu 10 tro len. Bug
+    that: Ong Chu duyet du 10 slide tren Telegram nhung album dang kenh chi
+    con 9, vi draft_write doc thieu slide cuoi (audit 06/09/2026). Gom mot cho
+    de sua mot lan, dung o ca ba noi."""
+    d = thu_muc or (ROOT / "drafts")
+    ung_vien = set(d.glob(f"{draft_id}_[0-9].png")) | set(d.glob(f"{draft_id}_[0-9][0-9].png"))
+
+    def so(p: Path) -> int:
+        try:
+            return int(p.stem.rsplit("_", 1)[-1])
+        except ValueError:
+            return 0
+
+    return sorted(ung_vien, key=so)
+
+
 def bat_buoc(ten: str) -> str:
     """Nap roi lay mot bien bat buoc; thieu thi dung han voi loi ro rang."""
     nap()
@@ -114,3 +147,26 @@ def bat_buoc(ten: str) -> str:
             f"Thieu {ten} — kiem tra secret.common.env / secret.<brand>.env "
             f"(hoac .secrets.env che do don)")
     return gt
+
+def ghi_json(p, d, indent: int = 2) -> None:
+    """Ghi mot tep JSON state NGUYEN TU: tmp cung thu muc + os.replace.
+
+    Dat o day vi gan nhu moi script deu da import env_load. `write_text` CAT
+    NGAN tep cu truoc khi ghi noi dung moi — chet dung giua hai buoc do (restart
+    dich vu, het cho dia) de lai mot sidecar cut, va moi nguoi doc sau do nem
+    ValueError: bai ket vinh vien ma khong ai biet.
+
+    Quan trong nhat voi cac tep NHIEU TIEN TRINH cung ghi: `drafts/<id>.meta.json`
+    duoc ghi tu approve_service, tu engine chay nen, VA tu tien trinh hermes cua
+    bang den — ba tien trinh khac nhau, khong khoa chung.
+
+    Ten tmp mang pid de hai tien trinh khong ghi lan vao cung mot tep tam.
+    """
+    import json as _j
+    import os as _os
+    p = Path(p)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_name(p.name + f".tmp.{_os.getpid()}")
+    tmp.write_text(_j.dumps(d, ensure_ascii=False, indent=indent, default=str),
+                   encoding="utf-8")
+    _os.replace(tmp, p)

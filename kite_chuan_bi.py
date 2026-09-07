@@ -64,38 +64,36 @@ def goi_y_tone(title: str) -> tuple:
 
 def viet_brief(m: dict, da_dung: dict | None) -> str:
     theme, hero, gan = goi_y_tone(m["title"])
-    L = [f"# KITE — ĐÃ CHUẨN BỊ XONG: {m['title']}",
-         f"Brand: {m['brand']} | draft: {m['draft_id']} | 6..10 slide, slide 1 là cover | art vector gốc, "
-         "KHÔNG ảnh thật trừ hình thật liệt kê dưới",
-         f"Link gốc: {m['link']}" + (f" | via: {m['via']}" if m.get("via") else "")]
-    if m.get("tieu_de_en"):
-        L.append(f"Tiêu đề bài gốc: {m['tieu_de_en']}")
-    if da_dung:
-        L.append("")
-        L.append(f"⚠️ LÀM LẠI — lần trước ({da_dung.get('luc', '?')}): theme={da_dung.get('theme')} "
-                 f"hero={da_dung.get('hero')}, hook “{da_dung.get('hook', '')}”. Lần này BẮT BUỘC đổi theme "
-                 "hoặc hero, và đổi hook/cách chia slide.")
-    L += ["", "## Tư liệu (diễn đạt lại cho tường minh, KHÔNG bịa số, KHÔNG bịa quote)"]
-    if m.get("summary"):
-        L.append(f"Tóm tắt (Finn): {m['summary']}")
-    if m.get("source_note"):
-        L.append(f"Nguồn (Finn): {m['source_note']}")
-    tl = m.get("tu_lieu", {})
-    for i, c in enumerate(tl.get("cau_co_so", [])[:25], 1):
-        L.append(f"  {i}. {c}")
-    if tl.get("doan_dau"):
-        L.append(f"Đoạn đầu bài gốc: {tl['doan_dau'][:1500]}")
-    if not tl.get("cau_co_so") and not tl.get("doan_dau"):
-        L.append("(Không bóc được chữ từ nguồn — chỉ dùng tóm tắt, KHÔNG bịa.)")
+    import brief_chung
+    L = brief_chung.dau(
+        m, "KITE",
+        f"Brand: {m['brand']} | draft: {m['draft_id']} | 6..10 slide, slide 1 là cover | "
+        "art vector gốc, KHÔNG ảnh thật trừ hình thật liệt kê dưới")
+    L += brief_chung.khoi_lam_lai(
+        da_dung, f"theme={da_dung.get('theme')} hero={da_dung.get('hero')}, hook "
+                 f"“{da_dung.get('hook', '')}”. Lần này BẮT BUỘC đổi theme hoặc hero, "
+                 "và đổi hook/cách chia slide." if da_dung else "")
+    L += brief_chung.khoi_tu_lieu(
+        m, tieu_de="## Tư liệu (diễn đạt lại cho tường minh, KHÔNG bịa số, KHÔNG bịa quote)",
+        n_cau=25, n_doan=1500,
+        dong_thieu="(Không bóc được chữ từ nguồn — chỉ dùng tóm tắt, KHÔNG bịa.)")
     L += ["", "## Hình thật dùng được cho `figure` / bìa `image` (đã nhìn, ≥ 800px)"]
     ht = hinh_that(m)
     if not ht:
         L.append("Không có hình thật nào liên quan — dùng art vector cho cả bộ (bình thường với paper trắng).")
     else:
-        L.append(f"CÓ {len(ht)} hình thật liên quan → BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, "
-                 "bìa `image` hoặc `figure` cho ảnh chụp. Bộ toàn text & card khi có ảnh thật là thiếu.")
+        nhin = [a for a in ht if a.get("lien_quan") is True]
+        if nhin:
+            L.append(f"CÓ {len(nhin)} hình thật ĐÃ NHÌN và liên quan → BẮT BUỘC dùng ít nhất một: "
+                     "`figure` cho chart/bảng, bìa `image` hoặc `figure` cho ảnh chụp. "
+                     "Bộ toàn text & card khi có ảnh thật là thiếu.")
+        else:
+            # Vision tat/thieu khoa -> moi anh lien_quan=None. Khong duoc ep.
+            L.append(f"Có {len(ht)} hình đủ khổ nhưng ⚠️ CHƯA AI NHÌN (vision không chạy) — chưa biết "
+                     "chúng có đúng bài không. Dùng thì tự kiểm bằng bang_anh.png, không bắt buộc.")
     for a in ht:
-        kieu = "BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP"
+        kieu = ("BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP") + \
+               ("" if a.get("lien_quan") is True else " ⚠️CHƯA NHÌN")
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))

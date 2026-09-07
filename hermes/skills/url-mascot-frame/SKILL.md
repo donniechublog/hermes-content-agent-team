@@ -44,6 +44,12 @@ an `x.com`/`instagram.com` **post** URL → social-crawl → the `media[]` CDN
 original; any direct image URL → downloaded by **content-type** (works for
 extensionless CDN links too).
 
+For an **X photo post** the crawl endpoint hands back an empty `media[]`, and
+`og:image` there is no longer the photo — X now serves a rendered card
+(`jf.x.com/images/post/<id>.png`: author, truncated text, and a cropped, faded
+thumbnail). So the resolver reads the `pbs.twimg.com/media/<id>` reference out of
+the page HTML and rebuilds it at `name=orig`. Frame that, never the card.
+
 For a **page** (a tweet, an article, a Facebook/social post) it grabs the post's
 **own image** first — the `og:image`, fetched with a crawler UA (Facebook only
 serves og tags / lookaside media to crawlers) — so you frame the picture in the
@@ -101,8 +107,11 @@ and [assets/mood-palette-sheet.png](assets/mood-palette-sheet.png) shows what ea
 one looks like. `frame.js` resolves the emoji → an actual mascot PNG on its own
 via MascotStudio's `emoji-map.json`; you only choose the emoji.
 
-If none fit, 😂 is a safe default for this account. If two fit, pick the funnier
-one — savage/absurd leans 💀, confusing leans 🤨/🤯.
+If you cannot place the mood in the image, use 🙄 (eyeroll). It is the one
+reaction that works in every situation, which is exactly why it is the fallback:
+😂 is a specific claim that something is funny, and lands wrong on an image that
+is not. Only reach for 😂 when the image really is a punchline. If two fit, pick
+the funnier one — savage/absurd leans 💀, confusing leans 🤨/🤯.
 
 ---
 
@@ -111,7 +120,7 @@ one — savage/absurd leans 💀, confusing leans 🤨/🤯.
 ```bash
 node ~/.hermes/profiles/bob/skills/url-mascot-frame/scripts/frame.js \
   --image /tmp/src.png \
-  --emoji "😂" \
+  --emoji "🙄" \
   --out ./framed.png
 ```
 
@@ -138,13 +147,21 @@ on the top layer so nothing clips it.
 
 Prints a JSON summary (output path, canvas size, which avatar it used).
 
-**Dependency:** the script needs `sharp`. The 20 palette avatars are **bundled**
-in `assets/avatars/`, so the skill is self-contained and portable — copy the
-folder to any machine and it works. It loads `sharp` from the skill's own
-`node_modules` first (run `npm install` inside the skill folder once), then a
-global `sharp`, then MascotStudio's copy. To pick an avatar *outside* the 20-mood
-palette (rare), the script reads MascotStudio's `emoji-map.json`; set
-`MASCOT_DIR=/path/to/MascotStudio` if that repo lives elsewhere. For the normal
+**Footer line is per brand.** `frame.js` keys it off `--handle` via a small
+`FOOTER` table. `@donniechublog` has its site tagline; an unknown handle renders
+**no footer** and says so on stderr, rather than stamping another brand's copy on
+the image. Pass `--footer "<line>"` to override, or add the brand to that table.
+
+**Dependency:** the script needs `sharp`. The **31 palette avatars** (one per
+mood in `assets/mood-palette.json`; `assets/avatars/` holds 32 files, one spare)
+are **bundled**, so the skill is self-contained and portable — copy the folder to
+any machine and it works. It loads `sharp` from the skill's own `node_modules`
+first (run `npm install` inside the skill folder once), then a global `sharp`.
+To pick an avatar *outside* the palette (rare), the script reads MascotStudio's
+`emoji-map.json` — that repo only exists on the author's Mac, so set
+`MASCOT_DIR=/path/to/MascotStudio` to opt in. It is **unset by default**: the
+old default was that machine's absolute path, which can never exist on the
+server. For the normal
 troll palette you do **not** need MascotStudio present.
 
 **Screenshot fallback (optional):** `get_source.py` only needs the browser for the

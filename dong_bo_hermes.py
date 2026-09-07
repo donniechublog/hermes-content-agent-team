@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dong bo SOUL/MEMORY/cron giua cac HERMES_HOME dang chay va ban trong git.
+"""Dong bo SOUL/MEMORY/cron/plugin kanban giua cac HERMES_HOME dang chay va ban trong git.
 
 Vi sao can: phan lon HANH VI cua doi nam trong SOUL va script cron, ma hai thu
 do lai o ngoai git. Ngay 22/08 script don em-dash lam hong 21 tep Python: 20 tep
@@ -14,46 +14,211 @@ muc hermes/ trong repo la ban chep co lich su, to chuc theo container:
     hermes/profiles/blog/<slug>.SOUL.md    -> ~/.hermes-blog/profiles/<slug>/
     hermes/profiles/dcgr/<slug>.SOUL.md    -> ~/.hermes-dcgr/profiles/<slug>/
     hermes/profiles/shared/<slug>.SOUL.md  -> CA HAI home
+    hermes/plugins/kanban/dashboard/*      -> <home>/plugins/kanban/dashboard/*  (ca hai)
 
 Slug la ten thu muc THAT trong home (generic: carousel, designer, writer...),
 khong phai ten nhan vat cu (heller/dre...). Profile co trong git ma home khong
 co (vd carousel-edu chua deploy) se bao [thieu], KHONG bi tao ra.
 
 Dung:
-    venv/bin/python dong_bo_hermes.py              # chi so sanh, khong ghi
-    venv/bin/python dong_bo_hermes.py --vao-repo   # home -> repo (truoc khi commit)
-    venv/bin/python dong_bo_hermes.py --ra-hermes  # repo -> home (sau hermes update)
+    venv/bin/python dong_bo_hermes.py                  # chi so sanh, khong ghi
+    venv/bin/python dong_bo_hermes.py --vao-repo       # home -> repo (truoc khi commit)
+    venv/bin/python dong_bo_hermes.py --ra-hermes      # repo -> home (sau khi sua trong git)
+    venv/bin/python dong_bo_hermes.py --kiem-upstream  # hermes-agent doi gi o kanban ke tu UPSTREAM
+    venv/bin/python dong_bo_hermes.py --chot-upstream  # da port xong: ghi HEAD hermes-agent vao UPSTREAM
 """
 import argparse
+import os
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 import env_load
 
 ROOT = env_load.ROOT
 REPO = ROOT / "hermes"
-# Moi brand mot home rieng. Them brand = them mot dong o day.
-HOMES = {"blog": Path.home() / ".hermes-blog",
-         "dcgr": Path.home() / ".hermes-dcgr"}
+# Moi brand mot home rieng. Khai bao o env_load (soat_cron.py cung doc bang do
+# — hai ban sao thi them brand la sua hai cho, quen mot cho la bo sot ca brand).
+HOMES = env_load.hermes_homes()
 
-# Plugin kanban nam trong ban cai hermes nen `hermes update` SE ghi de. Da sua
-# ba thu o day: thu tu cot (running/ready/blocked truoc), co chu nhan profile,
-# va chia lane theo profile o moi cot chu khong chi cot running.
-PLUGIN_KANBAN = Path.home() / "hermes-agent/plugins/kanban/dashboard"
-PLUGIN_TEP = ["plugin_api.py", "dist/index.js", "dist/style.css"]
+# ---- Plugin kanban: PLUGIN NGUOI DUNG, khong con va vao ban cai hermes -------
+# Truoc 06/09/2026 ban va nam TRONG ~/hermes-agent/plugins/kanban/dashboard —
+# tuc trong ban cai hermes — nen `hermes update` reset no ve upstream, roi mot
+# lan --vao-repo keo ban da bi reset vao git va xoa mat ba ban va (a1f9387).
+# Cong lech-kich-thuoc 15% khong bat duoc, cong dau vet (06/09 sang) bat duoc
+# nhung van la vo dau: goc re la de ban va o cho hermes update se ghi de.
+#
+# Hermes co san cach dung: dashboard quet <HERMES_HOME>/plugins/<ten>/dashboard/
+# TRUOC plugins di kem, va khu trung THEO TEN (web_server._discover_dashboard_
+# plugins, `seen_names`). Mot plugin ten `kanban` o thu muc nguoi dung che
+# hoan toan ban di kem — ca dist/ lan plugin_api.py — va `hermes update` khong
+# bao gio dung vao <HERMES_HOME>/plugins/. Nen tu 06/09/2026 chieu:
+#
+#     hermes/plugins/kanban/dashboard/  <->  <home>/plugins/kanban/dashboard/
+#
+# cho CA HAI home. ~/hermes-agent chi con la NGUON DE SOI upstream doi gi
+# (--kiem-upstream), khong con la diem dong bo. Dieu kien de API cua plugin
+# nguoi dung duoc mount: `plugins.enabled` trong config.yaml cua home phai co
+# "kanban" (hermes gate theo GHSA-mcfc-hp25-cjv7) — script kiem va nhac.
+HERMES_AGENT = Path(os.environ.get("HERMES_AGENT_DIR") or (Path.home() / "hermes-agent"))
+PLUGIN_TEP = ["manifest.json", "plugin_api.py", "dist/index.js", "dist/style.css"]
+PLUGIN_REPO = REPO / "plugins" / "kanban" / "dashboard"
+# Ghi lai ban va dang dung tren commit upstream nao, de lan sau con rebase 3
+# chieu duoc thay vi doan. Xem chu thich trong chinh tep UPSTREAM.
+TEP_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
 # Cron scripts brand-aware (mot ban, doc CT_BRAND). Dong bo sang scripts/ cua
 # CA HAI home; home nao khong chay job do thi khong co tep -> bao [thieu],
 # KHONG tao (ton trong phan chia job per-brand trong jobs.json). "moat_publish_
 # watch" tung nam ngoai danh sach du la job chay DAY NHAT (moi phut) co ca
 # find -delete — mot script hong ngoai git la dung kich ban 22/08.
-SCRIPT = ["finn_daily_scan", "nova_daily_scan", "vera_daily_scan",
-          "model_watch", "usage_audit", "nhat_ky_daily", "moat_publish_watch"]
+SCRIPT = ["quet_daily_scan",                              # than chung cua ba vai quet
+          "finn_daily_scan", "nova_daily_scan", "vera_daily_scan",   # vo mong, giu ten cho cron
+          "model_watch", "nhat_ky_daily", "moat_publish_watch",
+          "soat_cron"]                                    # chay o CA HAI home
+# `usage_audit` da bo khoi danh sach 06/09/2026: job cron da go khoi ca hai home,
+# va tep chi con la mot stub echo mot dong ("da gop vao daily-log"). Giu mot stub
+# trong git de dong bo ra server chi de nhac nguoi ta xoa no la mot vong lap kin.
 # Skill KHONG dong bo: ban that da o thang trong repo (hermes/skills/), profile
 # tro vao qua skills.external_dirs nen `hermes update` khong xoa duoc.
 
 
 def _slug(soul_path: Path) -> str:
     return soul_path.name[: -len(".SOUL.md")]
+
+
+def plugin_home(H: Path) -> Path:
+    return H / "plugins" / "kanban" / "dashboard"
+
+
+# ---- Cong cu bi TAT theo profile (agent.disabled_toolsets) ------------------
+# Vi sao phai co co che RIENG, khong nhet vao cap_tep(): cap_tep chep NGUYEN
+# TEP, ma config.yaml cua profile co api_key nen khong duoc vao git. Nhung
+# `agent.disabled_toolsets` lai dung la CHINH SACH — no quyet dinh vai con
+# execute_code/delegate_task hay khong — nen de no chi song tren server la dinh
+# dung cai bay da gap nhieu lan trong repo nay: dung lai home la mat im lang,
+# khong ai biet da tung tat gi. Nen dong bo DUNG MOT KHOA do, qua mot tep chinh
+# sach nho: {slug: [ten toolset]}. Slug nao khong co trong tep thi KHONG dung
+# toi (khong tu y xoa khoa dang co tren server).
+TAT_CONG_CU = REPO / "profiles" / "disabled_toolsets.json"
+
+
+def _cau_hinh_profile(H, slug):
+    return H / "profiles" / slug / "config.yaml"
+
+
+def _doc_tat(p):
+    """Gia tri agent.disabled_toolsets trong config.yaml, hoac None neu khong doc duoc."""
+    import yaml                                            # noqa: WPS433 — chi can khi dung toi
+    try:
+        c = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return None
+    return ((c.get("agent") or {}).get("disabled_toolsets")) or []
+
+
+def _ghi_tat(p, gia_tri):
+    """Dat agent.disabled_toolsets = gia_tri, GIU NGUYEN phan con lai cua tep.
+
+    Khong dump lai bang yaml: config.yaml day chu thich va thu tu khoa co y
+    nghia voi nguoi doc, dump lai la mat sach. Nen sua theo DONG, nhung chi
+    trong dung khoi `agent:`.
+
+    Bay da dinh that 06/09/2026: chen thang sau dong `agent:` ma khong nhin
+    xem khoa DA CO trong khoi hay chua -> hai khoa trung trong cung mot
+    mapping, YAML lay khoa cuoi, thay doi thanh vo tac dung. Nen sau khi sua
+    phai NAP LAI va doi chieu; khong khop thi KHONG ghi."""
+    import yaml                                            # noqa: WPS433
+    dong = p.read_text(encoding="utf-8").splitlines(keepends=True)
+    moi = "  disabled_toolsets: [" + ", ".join(gia_tri) + "]\n"
+    ra, i, xong = [], 0, False
+    while i < len(dong):
+        d = dong[i]
+        ra.append(d)
+        i += 1
+        if xong or d.rstrip("\n") != "agent:":
+            continue
+        # Trong khoi `agent:`: moi dong thut dau (hoac trong) deu thuoc khoi.
+        khoi = []
+        while i < len(dong) and (not dong[i].strip() or dong[i][:1] in (" ", "\t")):
+            khoi.append(dong[i])
+            i += 1
+        thay = False
+        for k, dk in enumerate(khoi):
+            if dk.strip().startswith("disabled_toolsets:"):
+                khoi[k], thay = moi, True
+                break
+        if not thay:
+            khoi.insert(0, moi)
+        ra.extend(khoi)
+        xong = True
+    if not xong:
+        return False, "khong tim thay khoi 'agent:'"
+    chu = "".join(ra)
+    try:                                    # cong doi chieu: sua xong phai DUNG
+        c = yaml.safe_load(chu) or {}
+    except yaml.YAMLError as e:
+        return False, f"sua xong YAML hong: {e}"
+    if ((c.get("agent") or {}).get("disabled_toolsets") or []) != list(gia_tri):
+        return False, "sua xong doc lai khong ra dung gia tri (khoa trung?)"
+    p.write_text(chu, encoding="utf-8")
+    return True, ""
+
+
+def dong_bo_tat_cong_cu(vao_repo, ra_hermes, chi=None):
+    """So sanh/dong bo agent.disabled_toolsets. Tra (so_khac, so_chep)."""
+    import json                                            # noqa: WPS433
+    chinh_sach = {}
+    if TAT_CONG_CU.exists():
+        try:
+            chinh_sach = json.loads(TAT_CONG_CU.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            print(f"  [thieu] doc {TAT_CONG_CU.name} loi: {e}", file=sys.stderr)
+            return 0, 0
+    khac = chep = 0
+    gom = {}                                  # --vao-repo: gom lai tu cac home
+    for hk, H in HOMES.items():
+        if not H.exists():
+            continue
+        for slug_dir in sorted((H / "profiles").glob("*")):
+            slug = slug_dir.name
+            ten = f"tat-cong-cu {hk}/{slug}"
+            if chi and chi not in ten:
+                continue
+            p = _cau_hinh_profile(H, slug)
+            if not p.exists():
+                continue
+            hien = _doc_tat(p)
+            if hien is None:
+                print(f"  [thieu] {ten}: khong doc duoc config.yaml", file=sys.stderr)
+                continue
+            if vao_repo:
+                if hien:
+                    gom[slug] = sorted(hien)
+                continue
+            muon = chinh_sach.get(slug)
+            if muon is None:                  # khong khai trong chinh sach -> khong dung toi
+                continue
+            if sorted(hien) == sorted(muon):
+                continue
+            khac += 1
+            print(f"  KHAC  {ten}: home={hien or '[]'} repo={muon}"
+                  + (" -> home" if ra_hermes else ""))
+            if ra_hermes:
+                ok, ly_do = _ghi_tat(p, muon)
+                if ok:
+                    chep += 1
+                else:
+                    print(f"  [BO QUA] {ten}: {ly_do}", file=sys.stderr)
+    if vao_repo:
+        cu = chinh_sach
+        if gom != cu:
+            TAT_CONG_CU.parent.mkdir(parents=True, exist_ok=True)
+            TAT_CONG_CU.write_text(json.dumps(gom, ensure_ascii=False, indent=2) + "\n",
+                                   encoding="utf-8")
+            print(f"  KHAC  tat-cong-cu -> repo ({len(gom)} profile)")
+            khac, chep = 1, 1
+    return khac, chep
 
 
 def cap_tep():
@@ -94,34 +259,202 @@ def cap_tep():
         for hk, H in HOMES.items():
             ra.append((f"cron {hk}/{s}", H / "scripts" / f"{s}.sh",
                        REPO / "scripts" / f"{s}.sh"))
+    # Ten muc: "kanban <home> <tep>" — thieu_dau_vet tach tep bang split(" ", 2).
     for f in PLUGIN_TEP:
-        ra.append((f"kanban {f}", PLUGIN_KANBAN / f,
-                   REPO / "plugins" / "kanban" / f.replace("/", ".")))
+        for hk, H in HOMES.items():
+            ra.append((f"kanban {hk} {f}", plugin_home(H) / f, PLUGIN_REPO / f))
     return ra
 
 
-# Tep plugin nam trong ban cai hermes. `hermes update` co the doi ca cau truc
-# ben trong, luc do de ban cu cua ta len la hong bang. Neu kich thuoc lech qua
-# nguong nay thi KHONG ghi de, bat phai xem lai bang tay.
-NGUONG_LECH = 0.15          # 15%
 LA_PLUGIN = "kanban "
 
+# Dau vet cua tung ban va doi tu sua trong plugin kanban. Van giu du ban va da
+# ra khoi ban cai hermes: no la cong "khong thut lui" — mot lan --vao-repo keo
+# tu mot home vua bi ai do chep nham ban upstream vao van bi chan, thay vi lang
+# le xoa ban va nhu a1f9387. Ap cho CA HAI CHIEU.
+DAU_VET = {
+    "dist/index.js": [
+        ("nhan ten vai", "tenVai("),
+        ("chia lane moi cot", "if (!props.laneByProfile) return null;"),
+        ("thu tu cot", '["running", "ready", "blocked"'),
+    ],
+    "dist/style.css": [
+        # Khong dung "font-size: 0.82rem;" lam dau vet: chuoi do con nam o
+        # .hermes-kanban-md h4 va mot rule khac, co ca o ban CHUA va, nen
+        # khong phan biet duoc. Lay cau chu thich rieng cua ban va.
+        ("co chu lane", "0.65rem qua nho"),
+        ("vien trai lane", "border-left: 3px solid var(--color-ring"),
+        ("nen huy hieu profile", "color-mix(in srgb, var(--color-ring) 16%"),
+    ],
+    "plugin_api.py": [
+        ("ten vai tu profile.yaml", "display_names"),
+    ],
+}
 
-def canh_bao_de_len(ten: str, that: Path, repo: Path) -> str | None:
-    """Tra ve ly do KHONG nen ghi de, hoac None neu an toan."""
+
+def _tep_plugin(ten: str) -> str | None:
+    """'kanban blog dist/index.js' -> 'dist/index.js'; None neu khong phai muc plugin."""
     if not ten.startswith(LA_PLUGIN):
         return None
+    phan = ten.split(" ", 2)
+    return phan[2] if len(phan) == 3 else None
+
+
+def thieu_dau_vet(ten: str, nguon: bytes, dich: bytes) -> str | None:
+    """Ly do KHONG nen ghi `nguon` de len `dich`, hoac None neu an toan.
+
+    Chi chan khi ben DICH dang co dau vet ma ben NGUON thieu — do dung la kich
+    ban ghi de lam mat ban va. Chieu nguoc lai (nguon co, dich thieu) chinh la
+    dang mang ban va sang, phai cho chay. Khong bat Exception o day: ca hai ban
+    byte da doc xong truoc khi goi, fail-open kieu cu la thu da giau loi.
+    """
+    tep = _tep_plugin(ten)
+    dau = DAU_VET.get(tep) if tep else None
+    if not dau or nguon is None or dich is None:
+        return None
+    mat = [nhan for nhan, chuoi in dau
+           if chuoi.encode() in dich and chuoi.encode() not in nguon]
+    if not mat:
+        return None
+    return ("ben nguon thieu ban va ma ben dich dang co: " + ", ".join(mat)
+            + " — ghi de la mat ban va")
+
+
+def hai_home_lech(tep: str, doc_fn=None) -> str | None:
+    """--vao-repo: hai home phai giong nhau o tep plugin nay, khong thi tu choi
+    — chep 'home nao doc sau thang' la im lang nuot ban cua home kia. Tra ve ly
+    do, hoac None neu chi mot home co tep / ca hai giong nhau."""
+    doc_fn = doc_fn or doc
+    ban = {hk: chuan(doc_fn(plugin_home(H) / tep)) for hk, H in HOMES.items()}
+    ban = {hk: b for hk, b in ban.items() if b is not None}
+    if len({b for b in ban.values()}) <= 1:
+        return None
+    return ("hai home co hai ban KHAC NHAU (" + ", ".join(sorted(ban)) + ") — "
+            "xem diff bang tay, chon mot ban, chay lai voi --chi kanban <home>")
+
+
+MAU_UPSTREAM = """\
+# Xuất xứ bản chép plugin kanban trong repo này. TỆP DO MÁY GHI, đừng sửa tay.
+#
+# `hermes/plugins/kanban/dashboard/` là plugin NGƯỜI DÙNG (che plugin đi kèm
+# cùng tên, hermes update không đụng), gồm bản upstream CỘNG bốn bản vá của đội.
+# Vì bị che nên upstream đổi gì ở dashboard kanban đội cũng không tự nhận được —
+# đó là cái giá đổi lấy việc không còn mất bản vá. Muốn nhận thì port có chủ ý:
+#
+#   venv/bin/python dong_bo_hermes.py --kiem-upstream   # upstream đổi gì kể từ hash dưới
+#   # vá lại bốn bản vá lên bản mới, --ra-hermes, restart dashboard, rồi:
+#   venv/bin/python dong_bo_hermes.py --chot-upstream   # ghi HEAD mới vào đây
+#
+# `commit:` là HEAD của ~/hermes-agent lúc port lần cuối.
+
+commit: {hash}
+ghi_luc: {ngay}
+"""
+
+
+def hash_upstream() -> str | None:
+    """HEAD cua ban cai hermes-agent, hoac None neu no khong phai repo git."""
     try:
-        a, b = that.stat().st_size, repo.stat().st_size
+        r = subprocess.run(["git", "-C", str(HERMES_AGENT), "rev-parse", "HEAD"],
+                           capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return r.stdout.strip() or None if r.returncode == 0 else None
+
+
+def doc_upstream() -> str | None:
+    try:
+        for d in TEP_UPSTREAM.read_text(encoding="utf-8").splitlines():
+            if d.startswith("commit:"):
+                return d.split(":", 1)[1].strip() or None
+    except OSError:
+        pass
+    return None
+
+
+def ghi_upstream() -> str | None:
+    """Ghi HEAD hermes-agent hien tai vao UPSTREAM (sau khi da port). Tra ve hash."""
+    h = hash_upstream()
+    if not h:
+        return None
+    TEP_UPSTREAM.parent.mkdir(parents=True, exist_ok=True)
+    TEP_UPSTREAM.write_text(
+        MAU_UPSTREAM.format(hash=h, ngay=time.strftime("%d/%m/%Y")),
+        encoding="utf-8")
+    return h
+
+
+def kiem_upstream() -> int:
+    """In diff cua hermes-agent o plugins/kanban/dashboard ke tu hash trong UPSTREAM."""
+    goc = doc_upstream()
+    if not goc:
+        print(f"[!] Khong doc duoc hash trong {TEP_UPSTREAM}", file=sys.stderr)
+        return 1
+    if not (HERMES_AGENT / ".git").exists():
+        print(f"[!] {HERMES_AGENT} khong phai repo git (dat HERMES_AGENT_DIR neu o cho khac)",
+              file=sys.stderr)
+        return 1
+    r = subprocess.run(["git", "-C", str(HERMES_AGENT), "diff", "--stat",
+                        f"{goc}..HEAD", "--", "plugins/kanban/dashboard"],
+                       capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        print(f"[!] git diff loi: {r.stderr.strip()[:300]}", file=sys.stderr)
+        return 1
+    head = hash_upstream()
+    print(f"UPSTREAM da port: {goc[:12]}   HEAD hermes-agent: {(head or '?')[:12]}")
+    if not r.stdout.strip():
+        print("Upstream KHONG doi gi o plugins/kanban/dashboard ke tu lan port cuoi.")
+        return 0
+    print("Upstream DA DOI (chua co trong plugin cua doi):\n" + r.stdout)
+    print("Xem chi tiet:  git -C", HERMES_AGENT, f"diff {goc[:12]}..HEAD -- plugins/kanban/dashboard")
+    return 0
+
+
+def kanban_da_bat(H: Path) -> bool | None:
+    """config.yaml cua home co `plugins.enabled` chua "kanban" khong.
+    None = khong doc duoc (thieu tep / thieu pyyaml)."""
+    p = H / "config.yaml"
+    try:
+        import yaml
+        cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     except Exception:                                        # noqa: BLE001
         return None
-    if a == 0 or b == 0:
-        return None
-    lech = abs(a - b) / max(a, b)
-    if lech > NGUONG_LECH:
-        return (f"ban that {a:,} byte / ban repo {b:,} byte, lech {lech:.0%} "
-                "— co the hermes da cap nhat, va rat co the doi cau truc")
-    return None
+    pl = cfg.get("plugins") if isinstance(cfg, dict) else None
+    en = pl.get("enabled") if isinstance(pl, dict) else None
+    return isinstance(en, list) and "kanban" in en
+
+
+def nhac_bat_plugin() -> None:
+    """Plugin nguoi dung chi duoc mount API khi co trong plugins.enabled — thieu
+    thi tab kanban van hien ma moi request /api/plugins/kanban/* deu 404."""
+    hermes_py = HERMES_AGENT / "venv" / "bin" / "python"
+    for hk, H in HOMES.items():
+        if not plugin_home(H).exists():
+            continue
+        ok = kanban_da_bat(H)
+        if ok:
+            continue
+        ly = "chua co 'kanban' trong plugins.enabled" if ok is False else "khong doc duoc config.yaml"
+        print(f"\n[!] {hk}: {ly} — API cua plugin se KHONG duoc mount. Bat mot lan:")
+        print(f"    HERMES_HOME={H} {hermes_py} -m hermes_cli.main plugins enable kanban")
+        print(f"    systemctl --user restart hermes-dashboard@{hk}   # hoac unit dashboard cua home nay")
+
+
+def nhac_don_ban_cai() -> None:
+    """Ban cai hermes-agent con giu ban va cu (di san truoc 06/09) thi la ban thu
+    ba gay nhieu: ke tu nay ban di kem phai LA upstream nguyen ban."""
+    d = HERMES_AGENT / "plugins" / "kanban" / "dashboard"
+    if not (HERMES_AGENT / ".git").exists() or not d.exists():
+        return
+    # --untracked-files=no: chi tinh tep git THEO DOI bi sua. Sau tep .bak cu
+    # (untracked) tung lam canh bao nay keu nham ngay 07/09 du ban cai da sach.
+    r = subprocess.run(["git", "-C", str(HERMES_AGENT), "status", "--porcelain",
+                        "--untracked-files=no", "--", str(d)],
+                       capture_output=True, text=True, timeout=10)
+    if r.returncode == 0 and r.stdout.strip():
+        print(f"\n[!] {d} dang lech so voi upstream (ban va cu con nam trong ban cai).")
+        print("    Ke tu 06/09/2026 ban va song o <home>/plugins/kanban/, ban cai phai nguyen ban:")
+        print(f"    git -C {HERMES_AGENT} checkout -- plugins/kanban/dashboard")
 
 
 def doc(p: Path):
@@ -140,20 +473,125 @@ def chuan(b):
     return b.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
 
+# ---- Chup CAU HINH quyet dinh PROMPT ------------------------------------------
+# Prompt that cua mot vai = SOUL + MEMORY + SKILL (deu trong git) + config.yaml
+# cua profile (KHONG trong git). Nghia la sau `hermes update` hay khi dung may
+# moi, ba phan dau tai lap duoc con phan thu tu thi phai nho — ma chinh phan do
+# quyet dinh vai duoc dung skill nao, chay lenh nao, model nao (audit 06/09/2026:
+# ban chup gateway dcgr ghi `external_dirs: []` trong khi README noi SKILL song
+# qua chinh khoa do).
+#
+# KHONG chup ca tep: moi config.yaml ~495 dong ma phan lon la mac dinh cua hermes,
+# se troi theo tung ban cap nhat va lam nhieu moi ban diff. Chi chup nhung khoa
+# THUC SU doi hanh vi cua vai.
+KHOA_PROMPT = [
+    ("model", "default"),
+    ("model", "provider"),
+    ("model", "base_url"),
+    ("fallback_providers",),
+    ("agent", "reasoning_effort"),
+    ("skills", "external_dirs"),
+    ("skills", "enabled"),
+    ("terminal", "command_allowlist"),
+    ("kanban", "max_in_progress"),
+    ("auxiliary", "title_generation", "enabled"),
+    ("toolsets",),
+    ("disabled_toolsets",),
+]
+
+# Khoa con mang bi mat — bo truoc khi ghi ra git. `fallback_providers` la mot
+# danh sach dict co `api_key`, va no la khoa THAT chu khong phai bien moi truong
+# o mot so profile.
+KHOA_BI_MAT = ("api_key", "token", "secret", "password")
+
+
+def _loc_bi_mat(v):
+    if isinstance(v, dict):
+        return {k: ("<da bo>" if any(b in k.lower() for b in KHOA_BI_MAT) else _loc_bi_mat(x))
+                for k, x in v.items()}
+    if isinstance(v, list):
+        return [_loc_bi_mat(x) for x in v]
+    return v
+TEP_CAU_HINH = REPO / "profiles" / "cau_hinh_that.yaml"
+
+
+def _lay(d, duong):
+    for k in duong:
+        if not isinstance(d, dict) or k not in d:
+            return None
+        d = d[k]
+    return d
+
+
+def chup_cau_hinh() -> int:
+    """Ghi cac khoa quyet dinh prompt cua MOI profile o CA hai home vao git."""
+    try:
+        import yaml
+    except ImportError:
+        print("[LOI] can pyyaml: venv/bin/pip install -r requirements.txt")
+        return 1
+    ra = {}
+    for hk, H in HOMES.items():
+        thu_muc = H / "profiles"
+        if not thu_muc.is_dir():
+            continue
+        for pd in sorted(thu_muc.iterdir()):
+            cf = pd / "config.yaml"
+            if not cf.is_file():
+                continue
+            try:
+                d = yaml.safe_load(cf.read_text(encoding="utf-8")) or {}
+            except Exception as e:                           # noqa: BLE001
+                ra[f"{hk}/{pd.name}"] = {"LOI_DOC": f"{type(e).__name__}: {e}"}
+                continue
+            muc = {}
+            for duong in KHOA_PROMPT:
+                v = _lay(d, duong)
+                if v not in (None, [], {}, ""):
+                    muc["/".join(duong)] = _loc_bi_mat(v)
+            ra[f"{hk}/{pd.name}"] = muc
+    TEP_CAU_HINH.parent.mkdir(parents=True, exist_ok=True)
+    dau = ("# CAC KHOA CAU HINH QUYET DINH PROMPT — ban chup, TEP DO MAY GHI.\n"
+           "# Sinh bang: venv/bin/python dong_bo_hermes.py --chup-cau-hinh\n"
+           "# Doc de biet vai dang chay model nao, thay duoc skill nao, chay duoc\n"
+           "# lenh nao. KHONG dung de trien khai nguoc: doi cau hinh that thi sua\n"
+           "# tren may chu roi chup lai trong cung mot commit.\n\n")
+    TEP_CAU_HINH.write_text(dau + yaml.safe_dump(ra, allow_unicode=True, sort_keys=True),
+                            encoding="utf-8")
+    print(f"Da chup {len(ra)} profile -> {TEP_CAU_HINH}")
+    return 0
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Dong bo SOUL/cron voi git (multi-home)")
+    ap = argparse.ArgumentParser(description="Dong bo SOUL/cron/plugin kanban voi git (multi-home)")
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--vao-repo", action="store_true", help="home -> repo")
     g.add_argument("--ra-hermes", action="store_true", help="repo -> home")
+    g.add_argument("--kiem-upstream", action="store_true",
+                   help="hermes-agent doi gi o plugins/kanban/dashboard ke tu hash trong UPSTREAM")
+    g.add_argument("--chup-cau-hinh", action="store_true",
+                   help="chup cac khoa cau hinh quyet dinh prompt cua moi profile vao git")
+    g.add_argument("--chot-upstream", action="store_true",
+                   help="Da port xong upstream: ghi HEAD hermes-agent vao UPSTREAM")
     ap.add_argument("--ep", action="store_true",
-                    help="Ghi de ke ca khi tep plugin lech nhieu (dung sau khi "
-                         "da xem bang tay va chac chan)")
+                    help="Ghi de ke ca khi ben nguon thieu ban va cua tep plugin "
+                         "(dung sau khi da xem bang tay va chac chan)")
     ap.add_argument("--chi", metavar="CHUOI",
-                    help="Chi dong bo cac muc co ten chua CHUOI (vd --chi carousel). "
-                         "Dung khi drift hai chieu: day/keo tung phan, khong mu.")
+                    help="Chi dong bo cac muc co ten chua CHUOI (vd --chi carousel, "
+                         "--chi 'kanban blog'). Dung khi drift hai chieu: day/keo tung phan.")
     a = ap.parse_args()
 
+    if a.kiem_upstream:
+        return kiem_upstream()
+    if a.chup_cau_hinh:
+        return chup_cau_hinh()
+    if a.chot_upstream:
+        h = ghi_upstream()
+        print(f"UPSTREAM = {h}" if h else f"[!] Khong doc duoc HEAD cua {HERMES_AGENT}")
+        return 0 if h else 1
+
     khac, thieu, bo_qua, da_chep = [], [], [], 0
+    plugin_da_chep = set()      # --vao-repo: moi tep plugin chep MOT lan du hai home
     for ten, that, repo in cap_tep():
         if a.chi and a.chi not in ten:
             continue
@@ -166,13 +604,31 @@ def main():
         khac.append((ten, that, repo, b_b is None))
 
         if a.vao_repo:
+            tep = _tep_plugin(ten)
+            if tep:
+                if tep in plugin_da_chep:
+                    continue                          # home kia da chep roi
+                ly_do = None if a.chi else hai_home_lech(tep)
+                if ly_do and not a.ep:
+                    bo_qua.append((ten, ly_do))
+                    continue
+            # Chieu nay truoc day khong co cong nao — chinh no lam mat hai ban
+            # va hom 04/09/2026. Nguon = ban that, dich = ban repo.
+            ly_do = thieu_dau_vet(ten, a_b, b_b)
+            if ly_do and not a.ep:
+                bo_qua.append((ten, ly_do))
+                continue
             repo.parent.mkdir(parents=True, exist_ok=True)
             repo.write_bytes(chuan(a_b))          # ghi LF vao repo
             da_chep += 1
+            if tep:
+                plugin_da_chep.add(tep)
         elif a.ra_hermes:
             if b_b is None:
                 continue                # khong co ban repo thi khong ghi de
-            ly_do = canh_bao_de_len(ten, that, repo)
+            # Nguon = ban repo, dich = ban that. Chan khi ban that co dau vet
+            # ma ban repo thieu (repo thut lui).
+            ly_do = thieu_dau_vet(ten, b_b, a_b)
             if ly_do and not a.ep:
                 bo_qua.append((ten, ly_do))
                 continue
@@ -182,8 +638,28 @@ def main():
 
     for t in thieu:
         print(f"  [thieu] {t}", file=sys.stderr)
-    if not khac:
+    # Plugin nguoi dung: home CHUA co thi --ra-hermes TAO (khac profile: day la
+    # thu duy nhat repo la nguon goc, khong phai ban chep cua home).
+    if a.ra_hermes:
+        for hk, H in HOMES.items():
+            if not H.exists():
+                continue
+            for f in PLUGIN_TEP:
+                dich, nguon = plugin_home(H) / f, PLUGIN_REPO / f
+                if not dich.exists() and nguon.exists() and (not a.chi or a.chi in f"kanban {hk} {f}"):
+                    dich.parent.mkdir(parents=True, exist_ok=True)
+                    dich.write_bytes(chuan(nguon.read_bytes()))
+                    da_chep += 1
+                    print(f"  TAO   kanban {hk} {f} -> home")
+
+    # agent.disabled_toolsets: khoa chinh sach nam trong config.yaml (khong chep
+    # ca tep duoc vi co api_key) — dong bo rieng, xem dong_bo_tat_cong_cu.
+    tat_khac, tat_chep = dong_bo_tat_cong_cu(a.vao_repo, a.ra_hermes, a.chi)
+    da_chep += tat_chep
+
+    if not khac and not da_chep and not tat_khac:
         print("Hai ben khop nhau, khong co gi de dong bo.")
+        nhac_bat_plugin()
         return 0
 
     huong = "-> repo" if a.vao_repo else ("-> home" if a.ra_hermes else "")
@@ -198,7 +674,11 @@ def main():
     if a.vao_repo or a.ra_hermes:
         print(f"\nDa chep {da_chep} tep.")
     else:
-        print(f"\n{len(khac)} tep lech. Chay voi --vao-repo hoac --ra-hermes de dong bo.")
+        # Cong ca muc tat-cong-cu vao: thieu no thi vua in mot dong KHAC xong lai
+        # tong ket "0 tep lech" ngay duoi — nhat ky tu mau thuan, doc mat cong.
+        print(f"\n{len(khac) + tat_khac} tep lech. Chay voi --vao-repo hoac --ra-hermes de dong bo.")
+    nhac_bat_plugin()
+    nhac_don_ban_cai()
     return 0
 
 

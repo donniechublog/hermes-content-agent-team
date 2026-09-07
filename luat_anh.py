@@ -27,6 +27,7 @@ CACH DUNG: moi ham `kiem_*` tra ve (loi, canh_bao) — hai danh sach chuoi. Vai
 tu chon cong nao hop voi khung cua minh roi gop lai. Khong ham nao ve gi, khong
 ham nao biet den canvas — de vai nao cung goi duoc.
 """
+import re
 from pathlib import Path
 
 from PIL import Image, ImageOps, ImageStat
@@ -52,8 +53,11 @@ DAU_PNG = ("crop_ti_le", "nguon_dung")   # cac khoa metadata bao "do doi dung ra
 
 
 # ---- Dau vet xuat xu ------------------------------------------------------
-def dong_dau(nguon):
-    """Tra ve PngInfo mang dau `nguon_dung=<nguon>`.
+def dong_dau(xuat_xu, **them):
+    """Tra ve PngInfo mang dau `nguon_dung=<xuat_xu>` (+ cac khoa phu neu co).
+
+    Ten tham so la `xuat_xu` chu khong phai `nguon`: `nguon` la mot trong nhung
+    khoa phu hay dung nhat (nguon=ARENA.AI), de trung ten thi vo TypeError.
 
     Moi cong cu trong doi sinh ra anh PHAI dong dau: crop_ti_le.py, arxiv_bia.py,
     ghep doc cua carousel.py, chup_chart.py. Cong `kiem_xuat_xu` dua vao dau nay
@@ -61,12 +65,15 @@ def dong_dau(nguon):
     """
     from PIL.PngImagePlugin import PngInfo
     m = PngInfo()
-    m.add_text("nguon_dung", str(nguon))
+    m.add_text("nguon_dung", str(xuat_xu))
+    for k, v in them.items():
+        if v is not None:
+            m.add_text(str(k), str(v))
     return m
 
 
-def dong_dau_tep(duong_dan, nguon):
-    """Mo lai mot tep PNG DA LUU va ghi dau `nguon_dung` vao do.
+def dong_dau_tep(duong_dan, xuat_xu, **them):
+    """Mo lai mot tep PNG DA LUU va ghi dau `nguon_dung` (+ khoa phu) vao do.
 
     Cho cac cong cu khong luu bang PIL (playwright screenshot, cv2.imwrite,
     tai thang tu URL). Khong phai PNG thi bo qua, tra ve False — dong dau la
@@ -78,7 +85,7 @@ def dong_dau_tep(duong_dan, nguon):
         if (im.format or "").upper() != "PNG":
             return False
         im.load()
-        im.save(q, "PNG", pnginfo=dong_dau(nguon))
+        im.save(q, "PNG", pnginfo=dong_dau(xuat_xu, **them))
         return True
     except Exception:
         return False
@@ -108,6 +115,13 @@ def doc_cat_ngang(img):
     spec — chi khac la no duoc dong dau ngay tai cho cat nen khong khai lai
     duoc. `kiem_crop_ngang` nhan ca hai."""
     return _text(img).get("crop_ti_le", "").find("cat_ngang=1") >= 0
+
+
+def la_xep_hang(img):
+    """Anh do xep_hang.py dung: bang xep hang chup tu nguon (co khoanh model) hoac
+    the du phong. Voi tin xep hang thi DAY LA CHU THE cua tin (Ong Chu 06/09/2026),
+    nen no duoc mien hai cong von cam chart len bia/hero."""
+    return _text(img).get("nguon_dung") in ("chup_xep_hang", "the_xep_hang")
 
 
 def co_xuat_xu(img):
@@ -166,6 +180,252 @@ def la_chart(img):
     phang, so_mau = do_chart(img)
     return (phang >= CHART_PHANG and so_mau <= CHART_SO_MAU), \
            f"phang {phang:.0%}, chi {so_mau} mau"
+
+
+# ---- ANH RAC: MOT bo tu vung cho ca ba cho -----------------------------------
+#
+# Truoc 06/09/2026 co BA bo tu vung "anh rac" chong lan nhau ma khac han nhau:
+# `anh_bai.RAC` (favicon/avatar/1x1/gravatar/author...), `anh_chuan_bi.URL_RAC`
+# (quang cao/newsletter/wordmark...), va chuoi JS `XAU` chay trong browser. Anh
+# bi mot bo bat con hai bo kia cho qua, tuy no di duong nao vao — ma ba duong
+# deu do vao cung mot ho anh. Gio mot bo, ba noi dung chung.
+#
+# Tach lam hai vi chung tra loi hai cau hoi khac nhau:
+#   TU_RAC_URL  — "URL hay alt nay noi day la do trang tri" (dung o moi noi)
+#   TU_RAC_DOM  — them, chi co nghia khi soi VI TRI trong DOM (class/to tien):
+#                 mot tu nhu "header" trong URL khong noi len gi.
+TU_RAC_URL = [
+    # do trang tri cua trang
+    "logo", "wordmark", "favicon", "avatar", "gravatar", "author", "sprite",
+    "placeholder", "default-image", "onboarding",
+    # anh do 1 pixel / anh chen cho
+    r"1x1", r"tracking[-_]?pixel", r"pixel\.(gif|png)", "spacer",
+    # the chia se mac dinh cua trang (khong phai anh cua bai)
+    "social[-_]?card", "og[-_]?default", "default[-_]?og", "share[-_]?image",
+    "card[-_]?default", "banner[-_]?site", "banner",
+    # quang cao
+    "/ads?/", "advert", "adsystem", "doubleclick", "outbrain", "taboola",
+    "sponsor", "promo", "newsletter", "subscribe",
+]
+TU_RAC_DOM = [
+    "widget", "related", "recommend", "sidebar", "aside", "nav", "footer",
+    "header", "share", "social", "comment", "popup", "modal", "overlay",
+    "cookie", "paywall", "icon", "ads", "gpt", "dfp",
+]
+
+# Khop tren URL/alt: khong doi ranh gioi tu, vi ten tep hay dinh lien
+# ("site-logo.png", "hero_placeholder.jpg").
+RAC = re.compile("(" + "|".join(TU_RAC_URL) + ")", re.I)
+
+
+def _js_re(tu: list) -> str:
+    """Dung `new RegExp("...", "i")` chu KHONG phai regex literal `/.../i`.
+
+    Tu vung co `/ads?/` — dau `/` trong do dong som mot regex literal cua JS va
+    ca doan script chet voi "Invalid regular expression flags". json.dumps lo
+    phan thoat ky tu cho dung chuan JS.
+    """
+    import json as _j
+    return 'new RegExp(' + _j.dumps("(^|[^a-z])(" + "|".join(tu) + ")([^a-z]|$)") + ', "i")'
+
+
+def js_rac_url() -> str:
+    """Regex JS cho SRC va ALT — chi tu vung URL."""
+    return _js_re(TU_RAC_URL)
+
+
+def js_rac_dom() -> str:
+    """Regex JS cho CLASS/ID va to tien — tu vung URL cong tu vung DOM.
+
+    Tach khoi `js_rac_url` (06/09/2026) vi ban cu ap CUNG mot bo cho ca hai, ma
+    bo do chua "gpt" (Google Publisher Tag) va "icon" — nen moi anh co "gpt"
+    trong URL bi bo, tuc DUNG cac anh ve GPT-4/GPT-5, va "silicon" dinh "icon".
+    Trong class cua mot the div thi "gpt" van la quang cao; trong ten tep anh
+    thi khong.
+    """
+    return _js_re(TU_RAC_URL + TU_RAC_DOM)
+
+
+# ---- NGUONG CHON/TAI ANH -----------------------------------------------------
+# Ba con so cho ba buoc KHAC NHAU, de canh nhau cho khoi tuong chung mau thuan:
+CANH_NGAN_TAI = 500        # buoc TAI (anh_chuan_bi): duoi muc nay khong buon tai
+DIEN_TICH_TAI = 120_000    # buoc XEP HANG ung vien (anh_bai): ~350x350
+TAI_W_MIN, TAI_H_MIN = 600, 350   # buoc DOC DOM: bo anh nho ngay trong trang
+# CANH_NGAN_MIN (o duoi) la nguong CANH BAO luc NOP, khong phai luc tai: anh 700px
+# van co the la tam duy nhat co that, chan cung se mat tin.
+
+
+def dhash(im) -> int:
+    """Difference hash 8x8: hai anh cung noi dung (khac co, khac nen, JPEG lai)
+    cho hash gan nhau. Dung de bat "dung lai anh" ma khong can trung byte."""
+    g = im.convert("L").resize((9, 8), Image.LANCZOS)
+    px = list(g.getdata())
+    return sum(((px[r * 9 + c] > px[r * 9 + c + 1]) << (r * 8 + c))
+               for r in range(8) for c in range(8))
+
+
+def gan_giong(h1: int, h2: int, nguong: int = 6) -> bool:
+    return bin(h1 ^ h2).count("1") <= nguong
+
+
+# Nguong dHash CHAT cho anh DO HOA (chart, bang, screenshot UI).
+#
+# dHash 8x8 doc BO XUONG BO CUC: sang/toi cua 64 cap pixel ke nhau. Anh chup
+# that co nhieu tu nhien nen hai tam khac nhau cach nhau hang chuc bit — do
+# cheo 16 slide that trong drafts/: 0/120 cap va cham. Do hoa vector thi khong
+# co nhieu do: hai bieu do cot HOAN TOAN khac so lieu, mien la cung dang di
+# xuong, chi cach nhau 5 bit; hai bang xep hang khac noi dung cach 4 bit. Voi
+# nguong chung 6 thi chart THAT cua bai (bang chung manh nhat) bi bao "TRUNG
+# anh da dung", vai lang le doi sang anh minh hoa yeu hon — dau ra xau di ma
+# khong ai thay (06/09/2026).
+#
+# Bien rat mong chu khong an toan: cung do, colA vs colE = 7 — hon nguong dung
+# mot bit. Nen voi anh do hoa chi coi la trung khi gan nhu y het.
+NGUONG_DO_HOA = 2
+
+
+def _md5(duong_dan) -> str:
+    """md5 cua TEP — bat chinh xac ca truong hop tai lai cung mot tap tin."""
+    import hashlib
+    try:
+        return hashlib.md5(Path(duong_dan).read_bytes()).hexdigest()
+    except OSError:
+        return ""
+
+
+def nguong_dhash(im, nguong=6) -> int:
+    """Nguong dHash hop voi LOAI anh: do hoa thi phai chat hon nhieu (xem
+    NGUONG_DO_HOA). Dung chung o buoc NOP (kiem_da_dung) va buoc TAI
+    (anh_chuan_bi khu trung ung vien)."""
+    try:
+        return NGUONG_DO_HOA if la_chart(im)[0] else nguong
+    except Exception:                                        # noqa: BLE001
+        return nguong
+
+
+NGAY_NHO_ANH = 14      # cua so nho anh da dung, xem kiem_da_dung
+
+
+def _so_da_dung():
+    """state/<brand>/anh_da_dung.jsonl — moi dong mot anh da GUI DI (khong phai
+    ung vien). Ghi o buoc gui album, doc o buoc nop."""
+    import env_load
+    return env_load.state_dir() / "anh_da_dung.jsonl"
+
+
+def khoa_tin(link: str) -> str:
+    """Khoa on dinh cua MOT TIN (khong phai mot draft).
+
+    Cung mot tin giao cho Dre roi giao cho Ethan ra HAI draft_id khac nhau
+    (duyet_chon_tin._draft_id ghep them vai-brand) nhung van la MOT tin va dung
+    CHUNG bo anh engine tai ve. So "anh da dung" khoa theo draft thi vai nop sau
+    bi chan sach anh cua vai truoc — do 06/09/2026: Ethan mat toan bo 5-6 ma Dre
+    da dung, khong nop duoc the nao."""
+    import re as _re
+    u = _re.sub(r"^https?://(www\.)?", "", (link or "").strip().lower()).rstrip("/")
+    return _re.sub(r"[?#].*$", "", u)
+
+
+def ghi_da_dung(duong_dan, draft_id: str, vai: str, link: str = "") -> None:
+    import json, time
+    q = Path(duong_dan)
+    try:
+        with Image.open(q) as im:
+            h = dhash(im)
+    except Exception:                                        # noqa: BLE001
+        return
+    dong = {"dhash": h, "draft_id": draft_id, "vai": vai, "tin": khoa_tin(link),
+            "ten": q.name, "md5": _md5(q), "luc": int(time.time())}
+    with open(_so_da_dung(), "a", encoding="utf-8") as f:
+        f.write(json.dumps(dong, ensure_ascii=False) + "\n")
+
+
+def xoa_da_dung(draft_id: str) -> int:
+    """Go moi dong cua mot draft khoi so "anh da dung". Tra so dong da go.
+
+    So duoc ghi o buoc GUI album, tuc TRUOC khi Ong Chu bam nut. Bam "Bo han
+    tin" hay "Lam lai" thi bai chet / album bi thay, anh KHONG bao gio len
+    kenh — nhung truoc 06/09/2026 chung van nam trong so va chan moi bai khac
+    suot 14 ngay. Voi cac tin cung chu de (cung anh wire Reuters/AP, cung anh
+    tru so hang) thi bai sau bi day sang anh kem hon, hoac tac han neu tam bi
+    khoa la anh that duy nhat — ma thong bao chan chi noi ten bai va cham, KHONG
+    noi bai do da bi bo.
+    """
+    import json
+    so = _so_da_dung()
+    if not so.exists():
+        return 0
+    dong = so.read_text(encoding="utf-8").splitlines()
+    giu = []
+    for d in dong:
+        try:
+            giu.append(d) if json.loads(d).get("draft_id") != draft_id else None
+        except Exception:                                    # noqa: BLE001
+            giu.append(d)                                    # dong hong: giu nguyen
+    if len(giu) == len(dong):
+        return 0
+    tmp = so.with_suffix(".jsonl.tmp")
+    tmp.write_text(("\n".join(giu) + "\n") if giu else "", encoding="utf-8")
+    tmp.replace(so)
+    return len(dong) - len(giu)
+
+
+def kiem_da_dung(nhan, duong_dan, draft_id: str, link: str = ""):
+    """KHONG DUNG LAI ANH DA DUNG (Ong Chu chot 06/09/2026): bang ti so giai golf
+    Ricoh len hai the cua hai tin khac nhau trong cung mot ngay.
+
+    So theo dHash (gan giong <= 6 bit) chu khong theo ten/byte, vi cung mot tam
+    tai lai tu bao khac se khac byte. Bo qua chinh draft nay (lam lai mot bai thi
+    duoc giu anh). Cua so NGAY_NHO_ANH — "trong phien" hieu la vai tuan gan day:
+    nguoi doc kenh nho anh lau hon mot ngay.
+    """
+    import json, time
+    so = _so_da_dung()
+    if not so.exists():
+        return [], []
+    try:
+        with Image.open(duong_dan) as im:
+            h = dhash(im)
+    except Exception:                                        # noqa: BLE001
+        return [], []
+    # MIEN TRU ANH XEP HANG. Voi tin xep hang, BANG chinh la chu the: hai bai ve
+    # hai model cung nam trong top mot bang se chup dung dai hang do, chi khac
+    # khung khoanh vang — dHash coi la trung. Luc do cong nay chan anh XH, con
+    # cong "TIN XEP HANG phai dung anh XH" o dre_nop/ethan_nop lai chan moi anh
+    # KHAC: hai loi loai tru nhau, vai sua kieu gi cung sai roi tac (do
+    # 06/09/2026). Lap lai bang xep hang la DUNG, khong phai loi.
+    try:
+        with Image.open(duong_dan) as _im:
+            if la_xep_hang(_im):
+                return [], []
+    except Exception:                                        # noqa: BLE001
+        pass
+    moc = time.time() - NGAY_NHO_ANH * 86400
+    tin = khoa_tin(link)
+    # Nguong theo LOAI anh (xem NGUONG_DO_HOA). md5 van chan tuyet doi: cung
+    # mot tap tin thi trung that, khong can doan theo hinh.
+    try:
+        with Image.open(duong_dan) as _im:
+            nguong = nguong_dhash(_im)
+    except Exception:                                        # noqa: BLE001
+        nguong = 6
+    ma = _md5(duong_dan)
+    for line in so.read_text(encoding="utf-8").splitlines():
+        try:
+            d = json.loads(line)
+        except Exception:                                    # noqa: BLE001
+            continue
+        if d.get("draft_id") == draft_id or d.get("luc", 0) < moc:
+            continue
+        # Cung MOT TIN nhung vai khac (Dre roi Ethan) thi KHONG chan: hai vai
+        # dung chung bo anh cua bai do, chan la vai sau khong con anh nao.
+        if tin and d.get("tin") and d["tin"] == tin:
+            continue
+        if (ma and d.get("md5") == ma) or gan_giong(int(d.get("dhash", 0)), h, nguong):
+            khi = time.strftime("%d/%m %H:%M", time.localtime(d.get("luc", 0)))
+            return [f"{nhan}: TRUNG anh da dung o bai '{d.get('draft_id')}' ({d.get('vai')}, {khi}) — "
+                    "moi tin mot anh, nguoi doc kenh nhan ra anh lap lai ngay. Tim anh khac."], []
+    return [], []
 
 
 def lech_tone(ims, nguong_sang=60, nguong_mau=70):
@@ -276,7 +536,7 @@ def kiem_chart(nhan, img, khai_chart, la_bia=False):
     Anh GHEP DOC duoc mien han: no da nguyen ven va full be ngang san.
     """
     loi, canh_bao = [], []
-    if la_ghep(img):
+    if la_ghep(img) or la_xep_hang(img):
         return loi, canh_bao
     la_ct, mo_ta = la_chart(img)
     if la_ct and not khai_chart:
@@ -357,7 +617,7 @@ def kiem_chart_mot_minh(nhan, img, da_ghep=False):
     Anh GHEP DOC duoc mien: chart nam nua tren con nguyen, anh thu hai o duoi
     chiu man toi. Do la duong ra, khong phai vi pham.
     """
-    if da_ghep or la_ghep(img):
+    if da_ghep or la_ghep(img) or la_xep_hang(img):
         return [], []
     la_ct, mo_ta = la_chart(img)
     if not la_ct:
@@ -372,10 +632,19 @@ def kiem_chart_mot_minh(nhan, img, da_ghep=False):
              "dan chart o slide than."], [])
 
 
-def kiem_ti_le(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=DUNG_SAI_TI_LE):
-    """Anh phai nam trong dai 4:5..1:1 (anh ghep doc roi vao giua dai nay)."""
+def kiem_ti_le(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=DUNG_SAI_TI_LE, img=None):
+    """Anh phai nam trong dai 4:5..1:1 (anh ghep doc roi vao giua dai nay).
+
+    MIEN TRU anh xep hang, y nhu kiem_chart/kiem_chart_mot_minh da mien: voi tin
+    xep hang thi bang la CHU THE cua tin, duoc dan full be ngang nguyen ven ke ca
+    o bia. Truoc 06/09/2026 cong nay khong mien, nen Dre ket hai dau: cong cua
+    dre_nop BAT BUOC bia la anh XH, con carousel lai chan chinh anh do vi ti le
+    (bang desktop hay ra 1.1-1.5, bang chup khung mobile ra 0.3-0.5; ca hai deu
+    ngoai dai 4:5..1:1). Tro treu la chi THE DU PHONG (1200x1500 = 0.8) lot qua."""
     r = w / h
     if lo - dung_sai <= r <= hi + dung_sai:
+        return [], []
+    if img is not None and la_xep_hang(img):
         return [], []
     if r >= NGANG_RO:
         # Anh NGANG: crop_ti_le tu choi cat be ngang (can --cat-ngang), va cat
@@ -456,13 +725,21 @@ def kiem_do_phan_giai(nhan, w, h):
 
 
 def kiem_day_sang(nhan, img, tu=0.75):
-    """Day anh qua sang thi chu trang de len se nhat. Canh bao."""
+    """Day anh qua sang: bao de vai biet, KHONG chan.
+
+    Noi dung canh bao da duoc viet lai 06/09/2026. Ban cu noi "chu trang tren
+    scrim ~80% van doc duoc nhung nhat" — ca hai ve deu khong con dung: lop
+    scrim bi go han o 9b7244d, va tu nay card.py doi mau chu theo TUNG DAI DONG
+    nen day anh sang thi chu o do la chu TOI, khong phai chu trang nhat. Cai
+    that su mat tren day anh sang la NET KHUNG mau nhan dien (nay da co nhanh
+    keo toi) va do "phang" cua the — mot canh bao ve GU ANH, khong phai ve chu.
+    """
     w, h = img.size
     sang = ImageStat.Stat(img.convert("L").crop((0, int(h * tu), w, h))).mean[0]
     if sang > DAY_SANG_MAX:
-        return [], [f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — chu trang "
-                    "tren scrim ~80% van doc duoc nhung nhat; co anh day toi hon "
-                    "thi uu tien"]
+        return [], [f"{nhan}: 25% duoi anh sang (muc {sang:.0f}/255) — the van "
+                    "doc duoc (chu tu doi sang mau toi), nhung anh day toi cho "
+                    "the co chieu sau hon; co ban toi hon thi uu tien"]
     return [], []
 
 

@@ -27,6 +27,15 @@ def don(id_: str, wd: Path, spec: dict) -> tuple:
     anh = Path(d["anh"])
     img = cv2.imread(str(anh))
     giu_stt = {int(x) for x in (spec.get("giu") or []) if str(x).isdigit()}
+    # STT LA thi truoc 06/09/2026 bi bo IM LANG: vai go nham mot so, vung do
+    # khong duoc giu, chu bi xoa mat — va vai tuong da giu duoc. Khac han y dinh.
+    co_that = {int(v["stt"]) for v in d["vung"]}
+    la = sorted(giu_stt - co_that)
+    if la:
+        sys.exit(f"[LOI] `giu` co stt khong ton tai: {', '.join(map(str, la))} "
+                 f"(anh nay chi co vung {', '.join(map(str, sorted(co_that)))}). "
+                 "Sua spec.json roi chay lai — go nham mot so la mot vung chu bi "
+                 "xoa mat ma khong ai bao.")
     giu_list = [(v["x"], v["y"], v["w"], v["h"]) for v in d["vung"] if v["stt"] in giu_stt]
     xoa_them = []
     for r in spec.get("xoa_them") or []:

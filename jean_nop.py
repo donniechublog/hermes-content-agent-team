@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import jean_chuan_bi as jb                                   # noqa: E402
 import teaser_assemble                                       # noqa: E402
-from card import tim_mat_dau, bo_dau_cam                     # noqa: E402
+from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
 
 
 def main() -> int:
@@ -50,7 +50,9 @@ def main() -> int:
             print(f"[LOI] {e}")
         return 1
     try:
-        kq = teaser_assemble.assemble(title, paras, d.get("images", []), bo_qua_kiem_tra=a.bo_qua_kiem_tra)
+        kq = teaser_assemble.assemble(title, paras, d.get("images", []),
+                                      bo_qua_kiem_tra=a.bo_qua_kiem_tra,
+                                      outline=d.get("outline"))
     except ValueError as e:
         for dong in str(e).splitlines():
             print(f"[LOI] {dong}")

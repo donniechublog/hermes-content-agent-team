@@ -32,14 +32,15 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
+
+UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 
 # Anh khong dai dien noi dung — the thuong hieu, logo, avatar...
-RAC = re.compile(
-    r"(logo|favicon|avatar|sprite|placeholder|1x1|pixel|spacer|"
-    r"social[-_]?card|og[-_]?default|default[-_]?og|share[-_]?image|"
-    r"card[-_]?default|banner[-_]?site|gravatar|author)", re.I)
+import luat_anh                                              # noqa: E402
+RAC = luat_anh.RAC                     # mot bo tu vung, xem luat_anh
 
 # Ten tep / alt goi y day la bieu do, bang so — thu doc gia muon xem
 QUY = re.compile(
@@ -59,7 +60,7 @@ LA_TIN_MODEL = re.compile(
 
 DAI_TOI_DA = 6          # so bai dua tin lay them
 ANH_MOI_TRANG = 6       # so anh lay toi da moi trang
-DIEN_TICH_TOI_THIEU = 120_000     # ~350x350; nho hon thi vo khi phong len the
+DIEN_TICH_TOI_THIEU = luat_anh.DIEN_TICH_TAI   # ~350x350, xem luat_anh
 
 # Kich thuoc CHINH XAC ma cac model sinh anh hay xuat ra. Anh chup man hinh hay
 # bang so that gan nhu khong bao gio roi dung vao mot trong nhung con so nay —
@@ -76,7 +77,12 @@ CO_AI_SINH = {
 
 
 def _tai(url: str, timeout=15):
-    return httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
+    # Cong host noi bo cho MOI lan tai cua module nay (trang bai, anh ung vien).
+    # URL den tu HTML ben ngoai nen phai kiem ca truoc lan sau chuyen huong.
+    quet_chung.kiem_url(url)
+    r = httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
+    quet_chung.kiem_url(r.url, "URL sau chuyen huong")
+    return r
 
 
 def anh_trong_trang(url: str) -> list:
@@ -119,11 +125,7 @@ def anh_trong_trang(url: str) -> list:
     return ra[: ANH_MOI_TRANG * 2]
 
 
-def _tu_dac_trung(t: str) -> set:
-    bo = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
-          "new", "ai", "model", "is", "its", "as", "at", "by", "from"}
-    return {w for w in re.sub(r"[^\w\s]", " ", t.lower()).split()
-            if w not in bo and len(w) > 2}
+_tu_dac_trung = quet_chung.tu_dac_trung   # mot ban duy nhat, xem quet_chung
 
 
 def bao_khac(tieu_de: str, link: str = "", so=DAI_TOI_DA) -> list:

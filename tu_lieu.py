@@ -40,22 +40,39 @@ CO_SO = re.compile(
 def boc(url: str) -> dict:
     """Goi article_extract.py — dung lai bo boc da co thay vi viet lai.
 
-    Ghi ra tep tam chu khong doc stdout: article_extract in CA JSON lan duong
-    dan ra stdout, nen json.loads se vap vao phan duoi.
+    Ghi ra TEP TAM (`--out`) chu khong doc stdout. Ly do ghi trong docstring cu
+    ("article_extract in CA JSON lan duong dan ra stdout") la SAI va da sua
+    06/09/2026: voi `--out` no chi in DUONG DAN, khong co `--out` thi chi in
+    JSON. Ly do that de dung tep tam la bai dai — JSON vai tram KB qua ong
+    stdout thi de dinh tran ong va lan voi canh bao cua thu vien.
+
+    Chay bang `sys.executable` chu khong phai duong `venv/bin/python` go cung:
+    duong cung lam ham nay chi chay duoc khi cwd la repo va venv nam dung cho —
+    goi tu tien trinh khac (cron, engine nen) la ImportError im lang o tien
+    trinh con.
     """
     import tempfile
     try:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as fh:
             tam = fh.name
-        subprocess.run(
-            [str(ROOT / "venv/bin/python"), str(ROOT / "article_extract.py"), url,
-             "--out", tam],
+        r = subprocess.run(
+            [sys.executable, str(ROOT / "article_extract.py"), url, "--out", tam],
             capture_output=True, text=True, timeout=90, cwd=str(ROOT))
+        # Truoc 06/09/2026 khong ai nhin returncode va cung khong in stderr cua
+        # tien trinh con: article_extract chet vi thieu bs4/lxml thi tu_lieu chi
+        # tra {} im lang, vai thay "0 nguon" ma khong co dau vet nao (da xay ra
+        # tren dcgr).
+        if r.returncode != 0:
+            cuoi = [d for d in (r.stderr or "").strip().splitlines() if d.strip()]
+            print(f"[tu_lieu] article_extract loi rc={r.returncode} cho {url[:50]}: "
+                  + (cuoi[-1][:200] if cuoi else "khong co stderr"), file=sys.stderr)
+            Path(tam).unlink(missing_ok=True)
+            return {}
         d = json.loads(Path(tam).read_text(encoding="utf-8"))
         Path(tam).unlink(missing_ok=True)
         return d
     except Exception as e:                                   # noqa: BLE001
-        print(f"[tu_lieu] boc hong {url[:50]}: {type(e).__name__}", file=sys.stderr)
+        print(f"[tu_lieu] boc hong {url[:50]}: {type(e).__name__}: {e}", file=sys.stderr)
         return {}
 
 

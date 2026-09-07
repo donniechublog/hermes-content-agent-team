@@ -23,10 +23,12 @@ Dung:
         --loai fix
 """
 import argparse
+import functools
 import json
 import re
 import sqlite3
 import subprocess
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -67,6 +69,35 @@ def _mo(db: Path):
     return sqlite3.connect(f"file:{db}?mode=ro", uri=True) if db.exists() else None
 
 
+# Cac loi doc DB gap trong lan dung trang nay — in ra CUOI trang thay vi lam
+# hong ca trang.
+LOI_DOC = []
+
+
+def _chiu_loi_db(khi_loi):
+    """Boc mot phan_* doc SQLite cua hermes: schema doi la GHI RA, khong chet.
+
+    Ba ham duoi doc thang bang noi bo cua hermes-agent (`executions`, `tasks`,
+    `task_runs`) bang SQL tho. Do la bang cua tien trinh KHAC, hermes co quyen
+    doi bat cu luc nao — va da tung doi (`_heal_session_model_usage_pk` trong
+    hermes_state_schema). Truoc 06/09/2026 khong ai boc, ma cron lai chay
+    `>/dev/null 2>&1`, nen mot lan `hermes update` doi ten cot la nhat ky chet
+    IM LANG: khong trang, khong dong log, khong ai biet cho toi khi can tra cuu.
+    """
+    def bao(f):
+        @functools.wraps(f)
+        def trong(*a, **k):
+            try:
+                return f(*a, **k)
+            except sqlite3.Error as e:
+                loi = f"{f.__name__}: {type(e).__name__}: {e}"
+                LOI_DOC.append(loi)
+                print(f"[nhat_ky] loi doc DB — {loi}", file=sys.stderr)
+                return khi_loi
+        return trong
+    return bao
+
+
 # ---------- cac nguon ----------
 
 # Trang thai hermes dat cho luot da nhan nhung chua xong. Nhat ky chay 23:00 UTC
@@ -85,6 +116,7 @@ def _gom_theo_viec(c: list) -> list:
     return list(nhom.items())
 
 
+@_chiu_loi_db([])
 def phan_cron(ngay: str) -> list:
     con = _mo(HERMES / "cron" / "executions.db")
     if not con:
@@ -106,6 +138,7 @@ def phan_cron(ngay: str) -> list:
     return ra
 
 
+@_chiu_loi_db([])
 def phan_kanban(ngay: str) -> list:
     con = _mo(HERMES / "kanban.db")
     if not con:
@@ -186,6 +219,7 @@ def phan_git(ngay: str) -> list:
     return ra
 
 
+@_chiu_loi_db(None)
 def phan_model(ngay: str) -> dict | None:
     p = env_load.state_dir() / "model_health.json"
     if not p.exists():
@@ -230,6 +264,7 @@ def doc_ghi_chu(ngay: str) -> list:
 # ---------- dung trang ----------
 
 def dung_trang(ngay: str) -> str:
+    LOI_DOC.clear()
     L = [f"# Nhật ký {ngay}", "",
          f"*Dựng lúc {datetime.now(VN).strftime('%H:%M %d/%m')} (giờ VN). "
          "Phần tự động sinh lại được; ghi chú tay lưu riêng ở `ghi_chu.jsonl`.*", ""]
@@ -328,6 +363,15 @@ def dung_trang(ngay: str) -> str:
 
     if len(L) <= 4:
         L.append("*Không có hoạt động nào được ghi lại trong ngày.*")
+    if LOI_DOC:
+        # Hien ngay tren trang: nhat ky thieu mot mang thi phai NHIN THAY la
+        # thieu, khong duoc de nguoi doc tuong hom do khong co viec gi.
+        L += ["", "## ⚠️ Không đọc được một phần dữ liệu", "",
+              "Các mục dưới đây trống vì lỗi đọc CSDL của hermes, **không phải**"
+              " vì hôm đó không có việc:", ""]
+        L += [f"- `{d}`" for d in LOI_DOC]
+        L += ["", "Thường gặp sau `hermes update` đổi schema. Chạy lại "
+              "`venv/bin/python nhat_ky.py --ngay <ngày>` để xem stderr đầy đủ.", ""]
     return "\n".join(L).rstrip() + "\n"
 
 

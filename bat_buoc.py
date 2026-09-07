@@ -10,10 +10,10 @@ Co che:
     dat tieu chi tat dinh (top diem, watchlist, vao bang xep hang...). Trung
     khoa thi giu muc cu (ngay phat hien cu).
   - Script ghi manifest goi `kiem(vai, items)`: tra ve cac muc CHUA co trong
-    danh sach vai nop -> tu choi ghi. Sau khi ghi thanh cong goi
-    `xoa(vai, items)` de bo cac muc da dua.
-  - Khop bang link (chuan hoa) hoac bang ten: moi manh chu/so (>=2 ky tu) cua
-    ten phai co trong tieu de + tom tat (da bo dau cach, ky hieu).
+    danh sach vai nop. Tu 05/09/2026 script KHONG con tu choi ghi ma TU THEM
+    muc thieu vao manifest kem ghi chu "vai bo sot" (het vong tu choi roi bat
+    vai sua). Sau khi ghi thanh cong goi `xoa(vai, items)` de bo muc da dua.
+  - Khop bang link (chuan hoa) hoac bang ten: xem `khop()`.
 
 Tep: state/<brand>/bat_buoc_<vai>.json (runtime, gitignore).
 """
@@ -24,6 +24,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import bang_model                                            # noqa: E402
+import quet_chung                                            # noqa: E402
 import env_load                                              # noqa: E402
 
 
@@ -32,19 +34,39 @@ def tep(vai: str) -> Path:
 
 
 def doc(vai: str) -> dict:
+    """Danh sach BAT BUOC cua vai; {} neu chua co.
+
+    Tep HONG khong duoc im lang tra {}: `them_nhieu` ngay sau do ghi de bang
+    muc cua hom nay, va cac muc "phai dua" mang tu hom truoc bien mat vinh vien
+    — scan_models da ghi `aa_da_bao` nen khong gieo lai lan nua. Nay: doi ten
+    tep hong thanh `.hong` (con de kham) va noi ra mot dong.
+    """
     p = tep(vai)
-    try:
-        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
-    except Exception:                                        # noqa: BLE001
+    if not p.exists():
         return {}
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:                                   # noqa: BLE001
+        hong = p.with_suffix(".json.hong")
+        try:
+            p.replace(hong)
+        except OSError:
+            hong = "(khong doi ten duoc)"
+        print(f"[canh bao] {p.name} HONG ({type(e).__name__}) — da doi ten thanh "
+              f"{hong}. Danh sach BAT BUOC cua {vai} coi nhu rong: cac muc mang "
+              "tu hom truoc DA MAT, khong duoc gieo lai.", file=sys.stderr)
+        return {}
+    return d if isinstance(d, dict) else {}
 
 
 def _ghi(vai: str, bb: dict) -> None:
     p = tep(vai)
     p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(bb, ensure_ascii=False, indent=2), encoding="utf-8")
-    tmp.replace(p)
+    # Qua env_load.ghi_json: ten tep tam mang pid. Ban cu dung `.json.tmp` co
+    # dinh, ma tep nay co it nhat hai nguoi ghi (script quet gieo muc,
+    # manifest_* xoa muc da dua) — hai tien trinh trung thoi diem thi ghi lan
+    # vao cung mot tep tam va `replace` ban cut cua nhau.
+    env_load.ghi_json(p, bb)
 
 
 def them(vai: str, khoa: str, ten: str, loai: str, ghi_chu: str = "",
@@ -77,11 +99,7 @@ def them_nhieu(vai: str, muc: list) -> int:
     return moi
 
 
-def chuan_link(u: str) -> str:
-    u = (u or "").strip().lower()
-    u = re.sub(r"^https?://(www\.)?", "", u)
-    u = re.sub(r"[?#].*$", "", u)
-    return u.rstrip("/")
+chuan_link = quet_chung.chuan_link     # mot ban duy nhat, xem quet_chung
 
 
 def _chuan(t: str) -> str:
@@ -100,28 +118,61 @@ def khop(muc: dict, item: dict) -> bool:
         # da dua tin OpenAI.
         tieu_de = _chuan(item.get("title") or "")
         return all(_chuan(t) in tieu_de for t in muc["tu_khoa"])
-    manh = [m for m in re.findall(r"[a-z0-9]+", str(muc.get("ten", "")).lower())
-            if len(m) >= 2]
-    return bool(manh) and all(m in van_ban for m in manh)
+    # Ten khop nguyen khoi truoc: chac chan nhat, khong phu thuoc manh vun.
+    ten_chuan = _chuan(muc.get("ten", ""))
+    if ten_chuan and ten_chuan in van_ban:
+        return True
+    # Roi moi den tung manh. Hai nguong KHAC NHAU, va truoc 06/09/2026 chung bi
+    # gop lam mot nen sinh ra loi nguoc dau:
+    #
+    #   - Nguong DUOC DUNG duong manh vun: phai co mot manh >= 4 ky tu lam neo.
+    #     Khong co neo thi khong so manh, vi "ai"/"v3" don doc khop moi thu.
+    #   - Tap manh PHAI CO DU: giu ca manh 2 ky tu CO CHU SO. "r1", "k2", "v3",
+    #     "o4" chinh la thu PHAN BIET phien ban, vut chung di la tu tay xoa cai
+    #     dac trung nhat cua ten.
+    #
+    # Ban truoc loc `len(m) >= 3` cho CA HAI viec, nen "DeepSeek R1" rut con
+    # ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la khop() tra True, kiem()
+    # tuong da dua nen khong tu them, roi xoa() xoa han muc khoi danh sach. Tin
+    # R1 mat VINH VIEN — scan_models ghi `aa_da_bao` vao moc nen khong gieo lai.
+    # Cung co che do voi "o4-mini" (con moi ["mini"]), "Kimi K2", "Grok 4 Fast".
+    #
+    # Manh ngan THUAN CHU ("ai", "ml", "vs") van bo: chung khong phan biet gi.
+    #
+    # Manh ngan CO SO thi giu, nhung khong duoc so tran: `van_ban` da bo het ky
+    # hieu nen no la mot chuoi lien, va mot manh "4" don doc se dinh vao bat cu
+    # con so nao trong bai ("tang 40% toc do"). Vi so hieu phien ban LUON viet
+    # SAT ten model, manh ngan phai khop dang DINH LIEN voi manh ke no:
+    #   "Grok 4 Fast" vs "xAI ra mat Grok 5 Fast, tang 40%" -> tim "grok4" /
+    #   "4fast", ca hai deu khong co -> khong khop (truoc day tra True).
+    tat_ca = re.findall(r"[a-z0-9]+", str(muc.get("ten", "")).lower())
+    manh = [m for m in tat_ca if len(m) >= 3 or any(c.isdigit() for c in m)]
+    if not manh or not any(len(m) >= 4 for m in manh):
+        return False
+    for i, m in enumerate(manh):
+        if len(m) >= 3:
+            if m not in van_ban:
+                return False
+            continue
+        ke = []
+        if i > 0:
+            ke.append(manh[i - 1] + m)
+        if i + 1 < len(manh):
+            ke.append(m + manh[i + 1])
+        if not (any(k in van_ban for k in ke) if ke else m in van_ban):
+            return False
+    return True
 
 
 # Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC
 # khong co link (Nova 05/09 mo 17 tool call grep repo tim link cho 15 muc).
-LINK_BANG = {
-    "text": "https://arena.ai/leaderboard/text",
-    "webdev": "https://arena.ai/leaderboard/code/webdev",
-    "vision": "https://arena.ai/leaderboard/vision",
-    "search": "https://arena.ai/leaderboard/search",
-    "image": "https://arena.ai/leaderboard/text-to-image",
-    "image_edit": "https://arena.ai/leaderboard/image-edit",
-    "video": "https://arena.ai/leaderboard/text-to-video",
-    "coding": "https://artificialanalysis.ai/leaderboards/models",
-    "tri_tue": "https://artificialanalysis.ai/leaderboards/models",
-    "ra_mat": "https://artificialanalysis.ai/leaderboards/models",
-    "swebench": "https://www.swebench.com/",
-    "livebench": "https://livebench.ai/",
-    "openrouter": "https://openrouter.ai/rankings",
-}
+# Bang thi doc tu BAN DANG KY (bang_model): truoc 07/09/2026 danh sach nay la
+# ban chep tay thu SAU cua cung mot bo bang, va `test_bang_nova` sinh ra chinh
+# vi mot lan them bang ma quen khai o day -> muc BAT BUOC ra link RONG.
+LINK_BANG = dict(bang_model.LINK_BANG)
+# `ra_mat` KHONG phai mot bang: no la `loai` cua muc BAT BUOC sinh tu "ra mat
+# theo bang cham diem", tro ve trang tong cua artificialanalysis.
+LINK_BANG["ra_mat"] = "https://artificialanalysis.ai/leaderboards/models"
 
 
 def link_goi_y(muc: dict) -> str:
@@ -152,18 +203,11 @@ def in_danh_sach(vai: str, tieu_de: str = "BAT BUOC DUA VAO BAO CAO") -> None:
     bb = doc(vai)
     if not bb:
         return
-    print(f"\n=== {tieu_de} ({len(bb)}) — {vai} KHONG duoc bo, script ghi manifest "
-          "se tu choi neu thieu ===")
+    print(f"\n=== {tieu_de} ({len(bb)}) — {vai} KHONG duoc bo; thieu thi script "
+          "ghi manifest TU THEM va ghi ro 'vai bo sot' tren bao cao ===")
     for v in bb.values():
         print(f"  {v['ngay']}  [{v['loai']:<10s}] {str(v['ten'])[:60]:<61s} {v.get('ghi_chu', '')[:70]}")
         if v.get("link"):
             print(f"        {v['link'][:110]}")
 
 
-def loi_thieu(vai: str, thieu: list) -> str:
-    return ("TU CHOI ghi manifest: thieu " + str(len(thieu)) + " muc BAT BUOC "
-            "(luat Ong Chu: script quet thay la phai dua, khong duoc bo):\n  - "
-            + "\n  - ".join(f"{v['ten']} ({v['loai']}: {v.get('ghi_chu', '')[:80]})"
-                            + (f"\n      {v['link']}" if v.get("link") else "")
-                            for v in thieu)
-            + "\nThem cac muc nay vao danh sach roi chay lai.")

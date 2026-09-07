@@ -1,5 +1,1 @@
 QUY ƯỚC TAG dự án (bộ não fact_store dùng CHUNG cho dcgr.tech + donniechublog): khi ghi fact, tag `shared` cho research/hạ tầng dùng chung; tag `dcgr` hoặc `dnb` cho fact brand/biên tập riêng dự án. Fact brand PHẢI nêu tên dự án ngay trong nội dung — holographic auto-recall không lọc cứng theo tag, nêu tên để không lẫn giọng giữa 2 brand.
-§
-Shell bob export TELEGRAM_BOT_TOKEN RONG (de tat gateway Telegram) — chan env_load.setdefault nen publish.py bao "Thieu TELEGRAM_BOT_TOKEN". Phai chay: env -u TELEGRAM_BOT_TOKEN <publish.py ...>. Token that nam secret.common.env, group -1004410815530.
-§
-Vision tren profile bob: vision_analyze vo dung (fallback model khong nhan anh). Cach xem anh: goi thang local API http://127.0.0.1:20128/v1/chat/completions model ds/deepseek-v4-flash-vision-exp, payload OpenAI-format image_url data URI, them "thinking":{"type":"disabled"} va max_tokens >= 2000, cat duoi "data: [DONE]" truoc json.loads.

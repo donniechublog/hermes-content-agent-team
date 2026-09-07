@@ -14,15 +14,14 @@ tong (partial + technical + relevance), tu danh so thu tu theo diem giam dan.
 """
 import argparse
 import json
-import sys as _sys
-from datetime import datetime, timezone
-import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
 import env_load                                             # noqa: E402
 import bat_buoc                                             # noqa: E402
+import manifest_chung as mc                                 # noqa: E402
 
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
@@ -38,46 +37,95 @@ VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BU
                     "HA TANG", "HẠ TẦNG", "CONG CU", "CÔNG CỤ"}
 
 
-def _norm(u: str) -> str:
-    u = re.sub(r"^https?://(www\.)?", "", u or "").rstrip("/")
-    return re.sub(r"[?#].*$", "", u).lower()
+# Brief cua Finn ghi "toi da 8 tin". Truoc 06/09/2026 chi co cau chu do, khong
+# co cong chan: vai nop 12 muc thi ca 12 vao manifest. Muc BAT BUOC khong bi
+# tran nay cat (luat Ong Chu: quet thay la phai dua).
+TOI_DA_PICK = 8
 
 
-def main():
-    ap = argparse.ArgumentParser(
-        description="Ghep manifest tu danh gia cua Finn + candidates.json")
-    ap.add_argument("--candidates", default="/tmp/candidates.json",
-                    help="File do scan_sources.py sinh ra")
-    ap.add_argument("--picks", required=True,
-                    help="File JSON danh gia cua Finn (mang cac muc)")
-    ap.add_argument("--out", required=True, help="Duong dan manifest ghi ra")
-    ap.add_argument("--bao-cao", metavar="PATH",
-                    help="Ghi luon ban bao cao danh so, de gui bang publish.py --file")
-    ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
-                    help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
-    a = ap.parse_args()
+_norm = quet_chung.chuan_link          # mot ban duy nhat, xem quet_chung
 
-    cands = json.loads(Path(a.candidates).read_text(encoding="utf-8"))["candidates"]
+
+def _diem(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
+    """Doc mot thanh phan diem cua vai: (diem da cat ve dai 0..hi, da_sua?).
+
+    Truoc 06/09/2026: `int(p.get(...))` no thang khi vai ghi "24 diem" hoac
+    null, va diem ngoai dai chi ghi mot dong stderr roi VAN vao manifest —
+    ma quet_nop nuot stderr khi rc=0 nen khong ai thay. Gio cat ve dai va ghi
+    chu tren bao cao, khong bao im lang, khong bat vai sua them mot vong."""
+    try:
+        d = int(gt)
+    except (TypeError, ValueError):
+        problems.append(f"{ten} khong phai so: {gt!r} -> 0 (bai: {tieu_de[:40]})")
+        return 0, True
+    if d < 0 or d > hi:
+        problems.append(f"{ten} phai 0-{hi}, nhan {d} -> cat ve dai (bai: {tieu_de[:40]})")
+        return max(0, min(hi, d)), True
+    return d, False
+
+
+def _muc_tu_pick(p: dict, c: dict, problems: list) -> dict:
+    """Mot muc danh gia cua Finn + mot ung vien tu candidates.json -> mot muc
+    manifest. Khong doc dia, khong ghi gi; moi thu can sua deu ghi vao
+    `problems` va deu di kem ten bai de Ong Chu doi chieu duoc tren bao cao."""
+    cat = (p.get("category") or "").strip()
+    cat_xau = bool(cat) and cat.upper() not in VALID_CATEGORIES
+    if cat_xau:
+        problems.append(f"category khong hop le: {cat!r} -> TOOL (bai: {c['title'][:40]})")
+
+    tech, sua_t = _diem(p.get("score_technical", 0), "score_technical", 30, problems, c["title"])
+    rel, sua_r = _diem(p.get("score_relevance", 0), "score_relevance", 20, problems, c["title"])
+    ghi_chu = p.get("score_reason", "")
+    if sua_t or sua_r or cat_xau:
+        ghi_chu = (ghi_chu + " | script sua: "
+                   + ", ".join(x for x in (
+                       "diem ky thuat cat ve dai" if sua_t else "",
+                       "diem lien quan cat ve dai" if sua_r else "",
+                       f"category {cat!r} khong hop le -> TOOL" if cat_xau else "") if x)).strip()
+
+    # Cung mot bo kiem cho ca ba vai di tim tin (`manifest_chung.don_tom_tat`):
+    # headline la thu DUY NHAT Ong Chu doc tren topic, va brief hua "summary_vi
+    # mot menh de <= 15 tu". Truoc 06/09/2026 nhanh Finn khong kiem gi — summary
+    # dai ba dong len bao cao y nguyen, va em-dash lot xuong tan caption.
+    tom, canh = mc.don_tom_tat(p.get("summary_vi"), f"bai: {c['title'][:40]}")
+    problems.extend(canh)
+
+    return {
+        # tu candidates.json — Finn khong phai go lai
+        "title": c["title"],
+        "link": c["link"],
+        "source_note": f"{c['source']}, {c['points']} diem, "
+                      f"{c['comments']} binh luan",
+        "via": c["via"],
+        "image_url": p.get("image_url") or c.get("image_url"),
+        # tu danh gia cua Finn
+        "category": "TOOL" if (cat_xau or not cat) else cat,
+        "score_technical": tech,
+        "score_relevance": rel,
+        "score": c["score_partial"] + tech + rel,
+        "score_reason": ghi_chu,
+        "summary_vi": tom,
+        # tinh san, de doi chieu ve sau
+        "score_recency": c["score_recency"],
+        "score_spread": c["score_spread"],
+        "picked": False,
+    }
+
+
+def gom_muc(picks: list, cands: list) -> tuple:
+    """picks cua Finn + candidates -> (items, problems). Ham THUAN."""
     by_link = {_norm(c["link"]): c for c in cands}
-
-    picks = json.loads(Path(a.picks).read_text(encoding="utf-8"))
-    if isinstance(picks, dict):
-        picks = picks.get("picks") or picks.get("items") or []
-
     items, problems = [], []
+    da_chon = set()                    # k / link da lay: chan vai nop trung mot tin
     for p in picks:
         # Chon bang SO THU TU `k` trong brief (tu 05/09/2026): vai khong phai chep URL
         # "y het" nua — sai mot ky tu la "khong tim thay" (4/8 muc, 05/09). Van nhan
         # `link` cho tuong thich.
         k = p.get("k") or p.get("stt") or p.get("#")
         if k is not None:
-            try:
-                k = int(k)
-            except (TypeError, ValueError):
-                k = 0
-            c = cands[k - 1] if 1 <= k <= len(cands) else None
+            c, loi = mc.chon_theo_k(k, cands, "")
             if not c:
-                problems.append(f"k={p.get('k')} ngoai danh sach 1..{len(cands)}")
+                problems.append(loi.lstrip(": "))
                 continue
         else:
             c = by_link.get(_norm(p.get("link", "")))
@@ -85,48 +133,45 @@ def main():
                 problems.append(f"khong tim thay trong candidates: {p.get('link')}")
                 continue
 
-        cat = (p.get("category") or "").strip()
-        if cat and cat.upper() not in VALID_CATEGORIES:
-            problems.append(f"category khong hop le: {cat!r} (bai: {c['title'][:40]})")
+        # Trung tin: vai nop hai muc cung tro ve mot bai (hay gap khi vua ghi `k`
+        # vua ghi `link`). Lay muc dau, bo muc sau, noi ro tren bao cao.
+        khoa = _norm(c["link"])
+        if khoa in da_chon:
+            problems.append(f"tin trung, bo muc sau: {c['title'][:50]}")
+            continue
+        da_chon.add(khoa)
+        items.append(_muc_tu_pick(p, c, problems))
+    return items, problems
 
-        tech = int(p.get("score_technical", 0))
-        rel = int(p.get("score_relevance", 0))
-        if not 0 <= tech <= 30:
-            problems.append(f"score_technical phai 0-30, nhan {tech}")
-        if not 0 <= rel <= 20:
-            problems.append(f"score_relevance phai 0-20, nhan {rel}")
 
-        items.append({
-            # tu candidates.json — Finn khong phai go lai
-            "title": c["title"],
-            "link": c["link"],
-            "source_note": f"{c['source']}, {c['points']} diem, "
-                          f"{c['comments']} binh luan",
-            "via": c["via"],
-            "image_url": p.get("image_url") or c.get("image_url"),
-            # tu danh gia cua Finn
-            "category": cat or "TOOL",
-            "score_technical": tech,
-            "score_relevance": rel,
-            "score": c["score_partial"] + tech + rel,
-            "score_reason": p.get("score_reason", ""),
-            "summary_vi": p.get("summary_vi", ""),
-            # tinh san, de doi chieu ve sau
-            "score_recency": c["score_recency"],
-            "score_spread": c["score_spread"],
-            "picked": False,
-        })
+def cat_tran(items: list, bb_link: set, problems: list) -> list:
+    """Tran 8 tin — CHI ap cho tin thuong.
 
-    if problems:
-        print("PHAT HIEN VAN DE:", file=sys.stderr)
-        for pr in problems:
-            print("  - " + pr, file=sys.stderr)
-        if not items:
-            sys.exit("Khong co muc nao hop le — khong ghi manifest.")
+    Muc BAT BUOC vai da nop phai o ngoai tran: muc ton tu hom truoc duoc
+    `_bo_sung_bat_buoc` gan score_partial=0 nen tran diem chi con 50 (0+30+20),
+    LUON xep chot va LUON bi cat. Cat xong thi `bat_buoc.kiem` lai them BAN
+    TRONG (score=0, summary_vi rong, ghi chu "vai bo sot") — bao cao gui Ong Chu
+    do oan cho vai la bo sot dung cai tin no vua cham ky, con vai viet bai thi
+    mat sach tom tat (06/09/2026)."""
+    la_bb = [it for it in items if bat_buoc.chuan_link(it["link"]) in bb_link]
+    thuong = [it for it in items if bat_buoc.chuan_link(it["link"]) not in bb_link]
+    if len(thuong) > TOI_DA_PICK:
+        thuong.sort(key=lambda x: x["score"], reverse=True)
+        bo = thuong[TOI_DA_PICK:]
+        thuong = thuong[:TOI_DA_PICK]
+        problems.append(f"vai nop {len(thuong) + len(bo)} tin thuong, tran la {TOI_DA_PICK} — "
+                        f"giu {TOI_DA_PICK} tin diem cao nhat, bo: "
+                        + "; ".join(f"{b['title'][:40]} ({b['score']}d)" for b in bo)
+                        + (f" (giu nguyen {len(la_bb)} muc BAT BUOC, khong tinh vao tran)"
+                           if la_bb else ""))
+    return la_bb + thuong
 
-    # Muc BAT BUOC vai bo sot: script TU THEM (diem vai = 0, ghi chu ro tren bao cao)
-    # thay vi tu choi roi bat vai sua toi da 2 vong (05/09/2026: 4/8 muc, Finn mo
-    # 18 tool call roi block task). Luat Ong Chu van giu: quet thay la phai dua.
+
+def them_bat_buoc(items: list, cands: list) -> list:
+    """Muc BAT BUOC vai bo sot: script TU THEM (diem vai = 0, ghi chu ro tren bao
+    cao) thay vi tu choi roi bat vai sua toi da 2 vong (05/09/2026: 4/8 muc, Finn
+    mo 18 tool call roi block task). Luat Ong Chu van giu: quet thay la phai dua."""
+    by_link = {_norm(c["link"]): c for c in cands}
     da_co = {_norm(it["link"]) for it in items}
     for v in bat_buoc.kiem("scout", items):
         c = by_link.get(_norm(v.get("link", "")))
@@ -146,29 +191,78 @@ def main():
         })
         da_co.add(_norm(c["link"]))
         print(f"  [tu them] muc BAT BUOC vai bo sot: {c['title'][:60]}", file=sys.stderr)
+    return items
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Ghep manifest tu danh gia cua Finn + candidates.json")
+    ap.add_argument("--candidates", default="/tmp/candidates.json",
+                    help="File do scan_sources.py sinh ra")
+    ap.add_argument("--picks", required=True,
+                    help="File JSON danh gia cua Finn (mang cac muc)")
+    ap.add_argument("--out", required=True, help="Duong dan manifest ghi ra")
+    ap.add_argument("--bao-cao", metavar="PATH",
+                    help="Ghi luon ban bao cao danh so, de gui bang publish.py --file")
+    ap.add_argument("--ghi-de", action="store_true",
+                    help="Cho ghi de manifest da co (chi dung khi THU — ban that "
+                         "khong duoc ghi de vi duyet_chon_tin ghi nguoc picked/da_giao vao do)")
+    ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
+                    help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
+    a = ap.parse_args()
+
+    cands = json.loads(Path(a.candidates).read_text(encoding="utf-8"))["candidates"]
+    picks = json.loads(Path(a.picks).read_text(encoding="utf-8"))
+    if isinstance(picks, dict):
+        picks = picks.get("picks") or picks.get("items") or []
+
+    items, problems = gom_muc(picks, cands)
+    bb_link = {bat_buoc.chuan_link(v.get("link", "")) for v in bat_buoc.doc("scout").values()
+               if v.get("link")}
+    items = cat_tran(items, bb_link, problems)
+
+    if problems:
+        # In ca stdout LAN stderr: quet_nop chi in stdout khi rc=0 nen canh bao
+        # o stderr truoc day khong ai thay (audit 06/09/2026).
+        print("PHAT HIEN VAN DE:")
+        for pr in problems:
+            print("  - " + pr)
+            print("  - " + pr, file=sys.stderr)
+
+    items = them_bat_buoc(items, cands)
+    # CONG RONG — dat NGOAI khoi `if problems`. Truoc 06/09/2026 no nam LOT
+    # TRONG khoi do, ma ca hai duong vao deu cho problems RONG: Finn ghi picks
+    # la `[]`, hoac ghi dict sai khoa (`{"tin": [...]}` — script chi nhan "picks"
+    # / "items"). Khi ay items=[] va problems=[] nen cong khong bao gio chay:
+    # script ghi manifest 0 muc, ghi bao cao chi co tieu de + dong moi tra loi
+    # so ma khong co so nao, tra rc=0, va quet_nop gui thang len topic.
+    # Nang hon: quet_nop co dinh ten `finn_candidates_<ngay>.json` nen lan chay
+    # lai de THANG len tep tot trong ngay, con duyet_chon_tin chon manifest theo
+    # mtime — ban rong thanh ban moi nhat, khong co duong lui.
+    if not items:
+        sys.exit("Khong co muc nao hop le — KHONG ghi manifest (tranh de len ban tot "
+                 "cua lan chay truoc).\n"
+                 "  - picks rong hay sai khoa? Script chi doc mang, hoac dict co "
+                 "khoa \"picks\"/\"items\".\n"
+                 "  - That su hom nay khong co tin nao dat nguong thi chay lai "
+                 "quet_nop voi --khong-co.")
+
     items.sort(key=lambda x: x["score"], reverse=True)
-    for i, it in enumerate(items, 1):
-        it["index"] = i
+    mc.danh_so(items)
 
     out = Path(a.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    # Khoa goc giong het manifest cua Nova va Vera. Ba vai di tim tin phai ra
-    # cung mot dinh dang, khong moi noi mot kieu.
-    out.write_text(json.dumps(
-        {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": "scout",
-         "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    # KHONG ghi de manifest da co trong ngay (sua 06/09/2026 dot 2) — cung luat
+    # ma manifest_ghi da ap cho Nova/Vera, rieng nhanh Finn thi chua. Ly do day
+    # du o `manifest_chung.duong_ra_moi`.
+    if out.exists() and not a.ghi_de:
+        moi = mc.duong_ra_moi(out)
+        print(f"[canh bao] {out.name} da co — ghi ban moi ra {moi.name} de khong "
+              "mat co picked/da_giao cua ban dang dung", file=sys.stderr)
+        out = moi
+    mc.ghi_manifest(out, "scout", items)
     print(f"da ghi {len(items)} muc -> {out}")
-    if not a.khong_xoa_bat_buoc:
-        print(f"da xac nhan {bat_buoc.xoa('scout', items)} muc bat buoc, "
-              f"con lai {len(bat_buoc.doc('scout'))}")
-
-    # Bao cao do SCRIPT viet, khong de Finn go lai so. Dung chung ham voi Nova
-    # va Vera nen ba vai hien cung mot dinh dang.
-    if a.bao_cao:
-        import bao_cao_manifest
-        Path(a.bao_cao).write_text(
-            bao_cao_manifest.dung(items, "scout"), encoding="utf-8")
-        print(f"  bao cao -> {a.bao_cao}", file=_sys.stderr)
+    mc.chot_bat_buoc("scout", items, a.khong_xoa_bat_buoc)
+    mc.viet_bao_cao(a.bao_cao, items, "scout")
     for it in items:
         print(f"  #{it['index']} [{it['score']:3d}] {it['title'][:60]}")
 

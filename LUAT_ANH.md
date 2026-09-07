@@ -39,6 +39,15 @@ Bỏ thẳng, không cần cân nhắc:
 
 ## 1. Tìm ảnh thật
 
+> **AI làm việc này (rõ một lần, 06/09/2026).** Từ 04/09/2026 **vai không đi tìm
+> ảnh nữa** — `anh_chuan_bi.py` tìm sẵn và brief chỉ đưa ra danh sách mã; vai
+> chọn mã. Nên §1.1 → §1.4 dưới đây là **luật của engine**, và các lệnh CLI in
+> kèm là **công cụ tay** để Ông Chủ hoặc người sửa code chạy lại một bước khi
+> nghi ngờ — **không phải việc giao cho vai**. `task_bodies.py` cấm vai chạy
+> chúng, và cấm đúng: chạy tay giữa chừng là đè lên kết quả engine.
+>
+> Đọc §1.2b trước nếu chỉ có thời gian đọc một mục: đó là hợp đồng thật đang chạy.
+
 ### 1.1 Luôn chạy `anh_bai.py` trước
 
 Đừng tự đoán từ `image_url` trong task.
@@ -85,16 +94,85 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 - **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
   → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
 - Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
-  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → brief nói
-  thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
+  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → **ảnh khái
+  niệm** (§1.2c) cho bìa/hero. Vẫn thiếu → brief nói thẳng "THIẾU ẢNH", vai gộp
+  ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
 - Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
   hiệu cần xem lại.
 
-### 1.3 Tin model ra mắt: ưu tiên benchmark table/chart
+### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
+
+Ông Chủ 07/09/2026: *"trong resource gốc không có hình hoặc hình không đạt là bỏ
+qua luôn. Nhắc tới Nhật thì tìm cờ hoặc bản đồ nước Nhật, Nhật đầu tư xây
+compute thì lấy hình datacenter"*. Trước 04/09 Dre tự làm việc này bằng
+web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là luật của
+**engine** (`anh_khai_niem.py`, chạy trong `anh_chuan_bi.py`):
+
+- **Khi nào**: sau vòng tìm rộng mà vẫn thiếu ảnh, *hoặc* có ảnh mà không tấm
+  nào làm bìa/hero được. Không chạy khi tin đã có ảnh riêng đủ dùng.
+- **Từ khoá**: nước/khối được nhắc → cờ đang bay; chủ đề → vật thể **chụp được**
+  (data center → dãy rack, chip → wafer, chứng khoán → sàn giao dịch, chính
+  sách → toà nhà quốc hội…). Bảng cố định trước, model text bù tới 3 từ khoá.
+  Không tìm khái niệm trừu tượng (funding, partnership): Commons chỉ trả minh hoạ tệ.
+- **Nguồn**: chỉ Wikimedia Commons, chỉ JPEG/PNG cạnh ngắn ≥ 700, tên tệp phải
+  chứa ≥ 2 từ đặc trưng của từ khoá và không phải logo/CGI/variant/bản đồ phẳng.
+  Đây là **ảnh thật** — cờ thật, toà nhà thật — nên không vi phạm §0.
+- **Nhìn**: vision được hỏi câu riêng ("có đúng là *cờ Nhật* chụp thật, hợp làm
+  bìa không"), không hỏi "có phải ảnh của tin" vì chắc chắn không phải. Ảnh có
+  mặt người hay là đồ hoạ → bỏ.
+- **Chỗ đứng**: nhãn 🧭 ẢNH KHÁI NIỆM, chỉ **bìa/hero** (ngang thì chỉ ghép dọc),
+  không vào slide thân; gợi ý bìa xếp **sau** mọi ảnh riêng của tin; caption
+  "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và vẫn được nói "thiếu ảnh" nếu
+  thấy cờ/bản đồ không hợp tin.
+
+### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 
 Bảng so sánh điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là
 **bằng chứng mạnh nhất** — ưu tiên trước cả ảnh logo/hero. Chụp bản to (cạnh
 ngắn ≥1000px; bảng chữ nhỏ càng phải to).
+
+**Tin về THỨ HẠNG thì bảng xếp hạng chính là ảnh của tin.** Ông Chủ chốt
+06/09/2026, nguyên văn, sau ba thẻ liền nhau dùng bảng tỉ số golf rồi bảng câu cá
+trên băng:
+
+> nói về ranking phải là table / chart / standing / rank · nếu không có ảnh thì
+> capture screen · tìm tất cả các nguồn, không giới hạn, miễn là capture được
+> hình tử tế · khi capture phải khoanh lại đúng model đang được nhắc tới · không
+> dùng lại ảnh đã dùng trong phiên · không dùng ảnh không liên quan · không
+> capture được thì ảnh = tên model + thứ hạng + logo model + site đánh giá.
+> Không ra output tương tự đồ hoạ tham chiếu (arena.ai) là **fail**.
+
+Từ 06/09 việc này là của **engine**, không phải của vai: `xep_hang.py` chạy
+trong `anh_chuan_bi.py` khi tiêu đề là tin xếp hạng. Nó tách tên model, đi qua
+registry nguồn (arena.ai text/code/vision/t2i/t2v/search, artificialanalysis.ai,
+tbench.ai, swebench.com, livebench.ai, aider — nguồn được nhắc trong bài đi
+trước), mở browser, tìm **hàng** chứa model trong bảng lớn nhất (khớp bỏ dấu
+cách/gạch/chấm: "Claude Opus 4.6" ≡ "claude-opus-4-6"), chụp cửa sổ từ hàng 1
+(hoặc từ hàng model-2 nếu nằm sâu) kéo xuống cho tới khi rộng/cao ≤ 1.5 — đủ
+để đi một mình vào hero. Trang chỉ có một bảng mà bảng quá ngang (tbench: 15
+hàng trải 2319px) thì **thu hẹp cửa sổ** (1500 → 1200 → 1000) cho bảng responsive
+tự dồn cột — đủ cột, đúng từng ô, chỉ bố cục hẹp lại; có nhiều bảng thì chọn
+bảng vừa khổ, còn quá ngang mới ghép dọc hai bảng cùng trang — **full bề ngang bảng, khoanh vàng hàng model, đọc thứ
+hạng từ ô đầu**. Không nguồn nào ra → thẻ dự phòng: tên model + #hạng + logo (nếu
+chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng dấu
+`nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.
+
+Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
+`ethan_nop` / `dre_nop` chặn ảnh chính khác khi `xong.json` có `tin_xep_hang` —
+không phải "chưa đạt", là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
+thể của tin; vẫn chịu mọi cổng khác.
+
+Chart đi đâu, theo khung:
+
+- **Hero (`quote`/`tran`)** — chart ở `anh`, thêm `anh2` là một ảnh ngang cùng
+  tone: script ghép dọc, chart nằm nửa trên **nguyên vẹn**. `ethan_nop.py` gợi ý
+  sẵn cặp ghép (`cap_ghep_hero`).
+- **Carousel slide thân** — `"chart": true`, dán full bề ngang nguyên vẹn.
+
+Nguồn không có sẵn ảnh chart thì **chụp từ chính trang nguồn**: engine
+`anh_chuan_bi.py` mở browser thật và tự chụp `figure/table/canvas/svg` (mã ảnh
+loại `chart`, đóng dấu `chup_chart`). Chụp tay thì dùng `chup_chart.py` — full
+chiều rộng trước, chiều cao xét sau (mục 2).
 
 ### 1.4 Bài arxiv: chụp trang bìa paper
 
@@ -184,8 +262,11 @@ thật sự là ảnh chụp thường.
   đổi bìa và để chart ở slide thân.
 - **Ảnh ghép dọc** được miễn hẳn cổng này: nó đã nguyên vẹn + full bề ngang sẵn.
 
-Renderer còn tự **lùi điểm bắt đầu màn tối xuống dưới mép chart**, để đáy chart
-(trục x, nhãn, dòng chú thích) không bị làm tối.
+Kiểu `quote` (mặc định) không còn màn tối nữa (06/09/2026): chart hiện
+NGUYÊN VẸN từ đầu tới sát mép khối chữ, chỉ đúng dải chữ đè lên mới bị làm mờ
+cục bộ (không phải làm tối) — trục x/nhãn/chú thích của chart phía TRÊN khối
+chữ không hề bị ảnh hưởng. Kiểu `tran` vẫn còn màn tối riêng của nó và tự lùi
+điểm bắt đầu xuống dưới mép chart để đáy chart không bị làm tối.
 
 ---
 
@@ -247,8 +328,10 @@ Cách ghi: `--image2 <ảnh thứ hai>` (hero), hoặc `"images": [a, b]` thay c
 
 Script xếp dọc: mỗi ảnh full bề ngang, nguyên tỉ lệ, **áp sát nhau không vạch
 ngăn** (trước đây chèn 12px nền đen — vạch đó là một đường kẻ giữa khung, đọc ra
-hai vùng, đã bỏ 04/09/2026). Ảnh dưới nằm dưới màn tối của chữ, nên đặt **ảnh
-quan trọng hơn ở trên**.
+hai vùng, đã bỏ 04/09/2026). Chữ (hero kiểu quote) hay slide sau (carousel) đè
+lên ảnh dưới — quote thì chỉ làm mờ cục bộ đúng vùng chữ (không còn màn tối,
+xem mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặt **ảnh quan
+trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/màn tối chia sẻ.
 
 **Điều kiện duy nhất: hai hình không được quá khác tone.** Lệch tone (một nền
 trắng một nền đen, gam màu khác hẳn) đọc ra như hai vùng riêng biệt. Ưu tiên
@@ -281,9 +364,20 @@ nguyên**.
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
 
-- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Chữ luôn đè lên ảnh qua
-  gradient dài.
-- **Không vạch, không viền, không đường kẻ** ngang giữa khung.
+- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Carousel: chữ đè lên ảnh
+  qua gradient tối dài. Hero **cả hai kiểu** `quote` (06/09/2026) và `tran`
+  (07/09/2026): không còn TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên
+  (`_mo_vung_chu`, tan dần theo đường cong power, không đột ngột), màu chữ tự
+  đổi tương phản với vùng đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ
+  giữ nguyên sắc nét 100%.
+- **Không có màu nền đặc ở đâu hết.** Chỗ nào lớp ảnh sắc không phủ tới thì nền
+  là bản cover **làm mờ** của chính tấm đó (`_lop_anh`, dùng chung cho cả hai
+  kiểu thẻ). Kiểu `tran` từng có một nhánh lấy màu nền bộ nhận diện làm nền cho
+  phần ảnh thiếu — ảnh 16:9 trên khổ 4:5 ra hơn nửa thẻ là màu đặc; bỏ
+  07/09/2026.
+- **Không vạch, không đường kẻ NGANG cắt qua khung** chia thẻ làm hai. Khung
+  chữ nhật **khép kín** bao quanh khối chữ thì được (`quote` và `tran`): nó là
+  một vật nằm TRÊN mặt phẳng ảnh, không cắt mặt phẳng đó ra.
 - **Không để lộ bản sao sắc nét của chính tấm ảnh** làm nền. Chỗ nào lớp ảnh sắc
   không phủ hết thì nền là chính tấm đó **làm mờ mạnh** — một mảng màu liền.
 - **Không ghép hai ảnh lệch tone** (mục 5).
@@ -334,8 +428,10 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Ghép hai ảnh quá khác tone | `kiem_lech_tone` | chặn |
 | Mặt người mà không khai `nhan_vat` | `kiem_mat_nguoi` | chặn |
 | Sai dải tỉ lệ của khung | `kiem_ti_le` | chặn |
-| Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn |
+| Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
 | Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
+| Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
+| Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |
 
@@ -350,19 +446,31 @@ chặn oan một tấm đã được cho phép cắt.
 **Vai nào đã gọi cổng nào** (cập nhật 04/09/2026 — luật Ông Chủ: *"ảnh do ai làm
 mà chả phải đạt tiêu chuẩn"*):
 
-| | Ethan (`card.py`) | Dre (`carousel.py`) | Itachi (`deck.py`) |
-|---|:--:|:--:|:--:|
-| trùng · xuất xứ · mặt người · độ nét · đáy sáng | ✅ | ✅ | ❌ |
-| crop ngang · lệch tone | ✅ | ✅ | ❌ |
-| chart một mình | ✅ | – | ❌ |
-| ảnh quá ngang | ✅ | – | ❌ |
-| `chart: true` · dải tỉ lệ | – | ✅ | ❌ |
+| | Ethan (`card.py`) | Dre (`carousel.py`) | Kite (`render_edu.py`) | Itachi (`deck.py`) |
+|---|:--:|:--:|:--:|:--:|
+| ảnh rỗng · trùng trong bộ · độ nét | ✅ | ✅ | ✅ | ❌ |
+| xuất xứ · đáy sáng | ✅ | ✅ | – | ❌ |
+| mặt người | ✅ | ✅ | ⚠️ | ❌ |
+| trùng liên phiên (14 ngày) | ✅ | ✅ | ✅ | ❌ |
+| tin xếp hạng → ảnh xếp hạng | ✅ | ✅ | – | ❌ |
+| crop ngang · lệch tone | ✅ | ✅ | – | ❌ |
+| chart một mình | ✅ | – | – | ❌ |
+| ảnh quá ngang | ✅ | – | – | ❌ |
+| `chart: true` · dải tỉ lệ | – | ✅ | – | ❌ |
 
 Dấu `–` là **không áp dụng cho khung đó**, khác hẳn `❌` là **chưa đấu**. Cột
 Itachi còn trống nguyên.
 
+`⚠️` của Kite là **cảnh báo, không chặn**: spec của `render_edu` không có trường
+`nhan_vat` (khác `card.py`/`carousel.py`), nên chặn cứng sẽ khoá mọi ảnh sự kiện
+mà vai không có đường khai. Muốn nâng lên ✅ thì phải thêm trường đó vào spec
+trước. Kite không đi qua các cổng có dấu `–` vì `kind: figure` dán ảnh nguyên
+khổ, không crop và không đè chữ lên ảnh.
+
 Sửa một luật ở đây là **cả đội đổi theo** — đó là lý do tài liệu này tồn tại.
-Đừng chép luật sang SKILL của vai; SKILL chỉ trỏ về đây.
+Đừng chép luật sang SKILL của vai. (SKILL **không** trỏ về đây: từ a757f61 luật
+ảnh đi vào brief do `*_chuan_bi.py` tự sinh, nên tệp này là nguồn cho **code và
+người**, không phải cho prompt của vai.)
 
 ---
 

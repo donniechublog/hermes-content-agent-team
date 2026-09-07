@@ -21,10 +21,30 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+import quet_chung                                            # noqa: E402
 import env_load                                              # noqa: E402
 import quet_chuan_bi as qb                                   # noqa: E402
 
-TEN = {"scout": "Finn", "nova": "Nova", "market": "Vera"}
+TEN = quet_chung.TEN_VAI       # mot ban duy nhat, xem quet_chung
+
+
+# Nhan cua cac dong dang chu y trong stderr cua manifest_build / manifest_ghi.
+# "[bo qua]" la loai NANG NHAT — mat tron mot tin — va truoc 06/09/2026 no KHONG
+# nam trong bo loc: bo loc chi nhat [canh bao] / [tu them] / dong bat dau "- ",
+# nen ca ba nhanh [bo qua] cua manifest_ghi (k ngoai danh sach, thieu title hoac
+# link, link khong phai URL) khong bao gio duoc in. Chay thu voi Vera: mot muc
+# go nham k=9 lam tin "OpenAI IPO dinh gia 900 ty USD" bien mat sach, KHONG mot
+# dong canh bao nao, rc=0, va vai ket thuc task bao "da gui bao cao".
+NHAN_CANH_BAO = ("[canh bao]", "[tu them]", "[bo qua]", "[LOI]")
+
+
+def loc_canh_bao(stderr: str) -> list:
+    """Cac dong stderr dang cho vai va Ong Chu doc (rc=0 KHONG co nghia la sach:
+    script van ghi manifest khi da cat diem ngoai dai, doi category la, bo tin
+    trung, cat theo tran, hay BO HAN mot tin)."""
+    return [d.strip() for d in (stderr or "").splitlines()
+            if d.strip() and (any(n in d for n in NHAN_CANH_BAO)
+                              or d.strip().startswith("- "))]
 
 
 def _chay(args: list, timeout=300):
@@ -41,8 +61,12 @@ def gui(vai: str, tep: Path, thu: bool) -> bool:
     if thu:
         print(f"[thu] khong gui. Noi dung {tep}:\n" + tep.read_text(encoding="utf-8")[:1500])
         return True
+    # --luu-mid: approve_service doi chieu REPLY cua Ong Chu dung vao MID nay
+    # truoc khi coi la lenh chon so — xem ghi chu o _la_reply_bao_cao.
+    mid_tep = env_load.state_dir() / f"bao_cao_mid.{vai}.json"
     r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "publish.py"), "--to-env", "TELEGRAM_GROUP_ID",
-                        "--thread-name", qb.TOPIC[vai], "--file", str(tep)],
+                        "--thread-name", qb.TOPIC[vai], "--file", str(tep),
+                        "--luu-mid", str(mid_tep)],
                        cwd=str(ROOT), capture_output=True, text=True, timeout=120)
     if r.returncode != 0:
         _in_loi(r)
@@ -85,7 +109,7 @@ def main() -> int:
         args = [str(ROOT / "manifest_build.py"), "--candidates", str(wd / "candidates.json"),
                 "--picks", str(picks), "--out", str(out), "--bao-cao", str(bao_cao)]
         if a.thu:
-            args.append("--khong-xoa-bat-buoc")
+            args += ["--khong-xoa-bat-buoc", "--ghi-de"]   # ban thu ghi de duoc
     else:
         ds = wd / "ds.json"
         if not ds.exists():
@@ -104,6 +128,15 @@ def main() -> int:
               f"danh sach) roi chay lai: venv/bin/python quet_nop.py --vai {a.vai}")
         return 1
     print((r.stdout or "").strip()[-800:])
+    # rc=0 KHONG co nghia la sach: manifest_build/manifest_ghi van ghi manifest
+    # khi da cat diem ngoai dai, doi category la, bo tin trung hay cat theo tran
+    # 8 tin. Truoc 06/09/2026 nhung dong do chi nam o stderr va bi nuot o day —
+    # vai tuong moi thu binh thuong, Ong Chu khong bao gio biet.
+    canh = loc_canh_bao(r.stderr)
+    if canh:
+        print("\n[SCRIPT DA SUA/CANH BAO] — bao cao gui di van tinh, nhung biet de lan sau nop dung:")
+        for d in canh[:20]:
+            print("  " + d)
     if not bao_cao.exists():
         sys.exit("[LOI] manifest xong nhung khong thay bao cao")
     ok = gui(a.vai, bao_cao, a.thu)

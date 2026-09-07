@@ -1,0 +1,17 @@
+{
+  "bob": [
+    "code_execution",
+    "cronjob",
+    "delegation"
+  ],
+  "gin": [
+    "code_execution",
+    "cronjob",
+    "delegation"
+  ],
+  "itachi": [
+    "code_execution",
+    "cronjob",
+    "delegation"
+  ]
+}

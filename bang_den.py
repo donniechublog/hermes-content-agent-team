@@ -35,6 +35,8 @@ import argparse
 import json
 import os
 import sys
+
+import env_load
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -59,9 +61,11 @@ def _meta(draft_id: str) -> dict:
 
 
 def _ghi_meta(draft_id: str, meta: dict) -> None:
-    DRAFTS.mkdir(parents=True, exist_ok=True)
-    _meta_path(draft_id).write_text(json.dumps(meta, ensure_ascii=False, indent=2),
-                                    encoding="utf-8")
+    # NGUYEN TU (06/09/2026). `meta.json` duoc ghi tu BA tien trinh khac nhau —
+    # approve_service, engine chay nen, va tien trinh hermes chay ham nay — ma
+    # khong khoa chung. Ghi bang write_text thang thi mot lan trung thoi diem de
+    # lai sidecar cut, va moi nguoi doc sau do nem ValueError.
+    env_load.ghi_json(_meta_path(draft_id), meta)
 
 
 def _chuan_home(draft_id: str) -> None:

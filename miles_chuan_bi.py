@@ -57,19 +57,11 @@ def viet_brief(m: dict, meta: dict, wd: Path) -> str:
     if ly_do:
         L.append(f"Điểm chấm: {diem}/100 — lý do (dùng cho câu Ý NGHĨA, không suy diễn thêm): {ly_do}")
     L += ["", f"## Người đọc: {GIONG.get(brand, GIONG['donniechublog'])}"]
-    L += ["", "## Tư liệu thật (CHỈ viết những gì có ở đây; nguồn không nói thì ghi \"chưa công bố\")"]
-    if m.get("summary"):
-        L.append(f"Tóm tắt (Finn/Vera, chỉ là điểm khởi đầu): {m['summary']}")
-    tl = m.get("tu_lieu", {})
-    cs = tl.get("cau_co_so", [])
-    if cs:
-        L.append(f"Câu có số liệu ({len(cs)} câu — caption PHẢI có số, lấy từ đây):")
-        for i, c in enumerate(cs[:25], 1):
-            L.append(f"  {i}. {c}")
-    else:
-        L.append("(Nguồn không bóc được câu có số — nói rõ là thiếu số liệu, KHÔNG bịa số.)")
-    if tl.get("doan_dau"):
-        L.append(f"Đoạn đầu bài gốc: {tl['doan_dau'][:1500]}")
+    import brief_chung
+    L += brief_chung.khoi_tu_lieu(
+        m, tieu_de='## Tư liệu thật (CHỈ viết những gì có ở đây; nguồn không nói thì ghi "chưa công bố")',
+        nhan="Finn/Vera, chỉ là điểm khởi đầu", n_cau=25, n_doan=1500,
+        dong_thieu="(Nguồn không bóc được câu có số — nói rõ là thiếu số liệu, KHÔNG bịa số.)")
     if bg:
         L += ["", "## Ảnh đã duyệt (bàn giao từ vai ảnh — caption bổ trợ cho ảnh, không lặp lại hook)", bg.strip()]
     L += ["", f"## Viết caption vào: {wd}/caption.txt  (CHỈ caption, HTML Telegram)",

@@ -28,18 +28,16 @@ from pathlib import Path
 
 import httpx
 
-UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                            # noqa: E402
+
+UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 SO_NGUON = 4
 
-TU_RONG = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
-           "new", "ai", "model", "is", "its", "as", "at", "by", "from", "how"}
-
-
-def _tu(t: str) -> set:
-    return {w for w in re.sub(r"[^\w\s]", " ", t.lower()).split()
-            if w not in TU_RONG and len(w) > 2}
+TU_RONG = quet_chung.TU_RONG           # mot ban duy nhat, xem quet_chung
+_tu = quet_chung.tu_dac_trung
 
 
 def _tai(url: str, timeout=20):
@@ -247,9 +245,13 @@ def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10
         except Exception:                                    # noqa: BLE001
             pass
         try:
+            if not quet_chung.url_an_toan(link):
+                continue
             rr = httpx.head(link, headers=HDR, timeout=12, follow_redirects=True)
             u = str(rr.url)
-            if rr.status_code != 200:
+            # `u` la dia chi SAU chuyen huong va duoc dung lam nguon that cho
+            # bai — mot ket qua tim kiem 302 ve 127.0.0.1 khong duoc di tiep.
+            if rr.status_code != 200 or not quet_chung.url_an_toan(u):
                 continue
         except Exception:                                    # noqa: BLE001
             continue

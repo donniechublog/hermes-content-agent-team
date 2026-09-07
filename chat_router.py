@@ -111,7 +111,55 @@ def _bo_dong_rac(out: str) -> str:
     return "\n".join(dong[i:]).strip()
 
 
-def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2) -> tuple:
+# Bo cong cu CHI DOC cho chat ngoai task. Do that tren server 06/09/2026:
+# cac vai deu dat `toolsets: [hermes-cli]` trong profile, tuc mac dinh 20 cong
+# cu (terminal, process, read_file/write_file/patch/search_files, execute_code,
+# delegate_task, cronjob...); `safe` con web_search / web_extract /
+# vision_analyze. (Con so 38 ghi o ban dau la dem KHI KHONG CO profile — sai
+# boi canh, audit 06/09 bat duoc.)
+# LUU Y: `safe` khai bao gom ca image_gen (toolsets.py: includes web/vision/
+# image_gen); tren server no dang tat vi thieu FAL_KEY, chu khong phai vi `safe`
+# loai no. Co key la bo nay thanh BON cong cu.
+# Tuc la vai van tra loi va tra cuu duoc, nhung KHONG chay duoc script, khong
+# sua duoc tep, khong tao duoc task.
+BO_CHI_DOC = "safe"
+
+
+def dung_argv(profile, session, prompt, toolsets=None) -> list:
+    """Dong lenh `hermes chat` cho mot luot. Tach ra de TEST duoc (06/09/2026
+    dot 2): day dung la doan da gay su co `-z` nuot `--continue`, va truoc gio
+    muon kiem no thi phai chay ca mot tien trinh hermes that.
+
+    KHONG dung `-z` (oneshot): hermes_cli/main.py xu ly `-z` TRUOC roi thoat
+    ngay (`_run_and_exit_oneshot` chi nhan prompt/model/provider/toolsets/
+    skills) — `--continue` khong bao gio toi `_resolve_continue_arg`, bi bo
+    qua IM LANG. Hau qua: MOI tin nhan mo mot phien MOI, khong vai nao nho gi.
+    Bang chung 04/09/2026: state.db cua itachi KHONG he co phien ten
+    `tele-itachi`, chi co chuoi phien tu dat ten theo dong dau cua prompt
+    ("[Ghi chu he thong... #2 #3 #4"); phien 00:20:54 co dung 2 tin. Nen luc
+    07:19 Ong Chu tra loi "xac nhan" thi Itachi dap "Xac nhan gi? Chua thay
+    cau hoi cu the truoc do" du mot phut truoc chinh no vua hoi. Su co Ethan
+    03/09 15:14 ("session trong, khong co draft nao") cung mot goc nay.
+    Duong dung la subcommand `chat`: -c giu mach theo ten, --create-if-missing
+    tao phien lan dau (thieu co nay thi hermes thoat 1), -Q chi in cau tra loi
+    cuoi, --no-restore-cwd de lan resume sau khong tu cd di cho khac.
+
+    `--toolsets` CO tac dung tren duong `chat` (khong phai chi -z/--tui nhu
+    dong help noi): cli.py nhan vao self.enabled_toolsets roi dung no dung dan
+    cho get_tool_definitions() — danh sach cong cu dua cho model bi cat that.
+    """
+    args = [str(HERMES_PY), "-m", "hermes_cli.main"]
+    if profile:
+        args += ["-p", profile]
+    args += ["chat", "-c", session, "--create-if-missing",
+             "--no-restore-cwd", "-Q", "-q", prompt]
+    if toolsets:
+        args += ["--toolsets", toolsets]
+    return args
+
+
+def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
+        toolsets=None) -> tuple:
     """Goi hermes CLI, tra ve (noi_dung, loi). LUON tra ve — khong nem.
 
     - Chay trong process group rieng (start_new_session) de khi het gio giet
@@ -129,25 +177,8 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2) -> tu
     except Exception:                                        # noqa: BLE001
         log = lambda a, b: print(f"[{a}] {b}", flush=True)   # noqa: E731
 
-    args = [str(HERMES_PY), "-m", "hermes_cli.main"]
-    if profile:
-        args += ["-p", profile]
     prompt = (chat_hint() + text) if hint else text
-    # KHONG dung `-z` (oneshot): hermes_cli/main.py xu ly `-z` TRUOC roi thoat
-    # ngay (`_run_and_exit_oneshot` chi nhan prompt/model/provider/toolsets/
-    # skills) — `--continue` khong bao gio toi `_resolve_continue_arg`, bi bo
-    # qua IM LANG. Hau qua: MOI tin nhan mo mot phien MOI, khong vai nao nho gi.
-    # Bang chung 04/09/2026: state.db cua itachi KHONG he co phien ten
-    # `tele-itachi`, chi co chuoi phien tu dat ten theo dong dau cua prompt
-    # ("[Ghi chu he thong... #2 #3 #4"); phien 00:20:54 co dung 2 tin. Nen luc
-    # 07:19 Ong Chu tra loi "xac nhan" thi Itachi dap "Xac nhan gi? Chua thay
-    # cau hoi cu the truoc do" du mot phut truoc chinh no vua hoi. Su co Ethan
-    # 03/09 15:14 ("session trong, khong co draft nao") cung mot goc nay.
-    # Duong dung la subcommand `chat`: -c giu mach theo ten, --create-if-missing
-    # tao phien lan dau (thieu co nay thi hermes thoat 1), -Q chi in cau tra loi
-    # cuoi, --no-restore-cwd de lan resume sau khong tu cd di cho khac.
-    args += ["chat", "-c", session, "--create-if-missing",
-             "--no-restore-cwd", "-Q", "-q", prompt]
+    args = dung_argv(profile, session, prompt, toolsets)
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     t0 = time.time()
     log("chat", f"goi agent profile={profile or '-'} session={session} "
@@ -205,7 +236,7 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2) -> tu
         log("chat", f"agent tra loi HTTP loi ({out[:60]!r}) -> thu lai sau {cho}s")
         time.sleep(cho)
         return ask(profile, session, text, timeout=timeout - dt - cho, hint=hint,
-                   thu_lai=thu_lai - 1)
+                   thu_lai=thu_lai - 1, toolsets=toolsets)
     return out or "(agent không trả về nội dung)", None
 
 

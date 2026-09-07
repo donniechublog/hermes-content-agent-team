@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 import httpx
@@ -191,7 +192,7 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
 def gui_topic(text: str, vai: str) -> bool:
     """Gui `text` (HTML) vao topic cua `vai` trong group cua brand. Thieu token/
     group thi in ra man hinh; loi Telegram thi in canh bao — KHONG nem, vi day la
-    ham cua script cron (usage_audit, model_watch, theo_doi_9router).
+    ham cua script cron (model_watch, nhat_ky_daily, theo_doi_9router).
     Truoc 05/09/2026 sau tep tu viet lai doan nay moi tep mot kieu."""
     env_load.nap()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -235,6 +236,10 @@ def _main():
     p.add_argument("--file", type=Path, help="Doc noi dung tu file")
     p.add_argument("--album", nargs="+",
                    help="Gui nhieu anh (URL hoac duong dan cuc bo) thanh 1 album")
+    p.add_argument("--luu-mid", dest="luu_mid", type=Path,
+                   help="Ghi {message_id, ts} cua tin vua gui vao tep JSON nay — "
+                        "de noi goi (vd bao cao danh so) sau do doi chieu REPLY "
+                        "dung vao tin nao, khong phai tin bat ky trong topic.")
     a = p.parse_args()
 
     token, chat = load_secrets()
@@ -268,6 +273,15 @@ def _main():
             sys.exit("Can --text, --file hoac --photo")
         res = send_text(token, chat, text, thread=thread)
     print(f"da dang | message_id={res.get('message_id')} chat={chat}")
+    if a.luu_mid:
+        # Best-effort: khong luu duoc mid khong duoc lam hong viec da dang xong.
+        try:
+            a.luu_mid.parent.mkdir(parents=True, exist_ok=True)
+            a.luu_mid.write_text(
+                json.dumps({"message_id": res.get("message_id"), "ts": time.time()},
+                          ensure_ascii=False), encoding="utf-8")
+        except OSError as e:
+            print(f"[canh bao] khong ghi duoc --luu-mid {a.luu_mid}: {e}")
 
 
 if __name__ == "__main__":

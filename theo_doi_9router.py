@@ -89,7 +89,7 @@ def _ten_bang(con) -> tuple[dict, dict]:
     khoa, ket_noi = {}, {}
     try:
         for _id, key, name, *_ in con.execute("select id, key, name from apiKeys"):
-            khoa[key] = name or key[-8:]
+            khoa[key] = name or f"khoa …{(key or '')[-4:]}"
     except sqlite3.Error:
         pass
     try:
@@ -145,6 +145,45 @@ def chuoi_da_cau_hinh() -> dict:
     return ra
 
 
+def cap_fallback() -> set:
+    """Cac cap (model chinh -> model du phong) doc TU CONFIG DANG CHAY.
+
+    Vi sao khong dung hang so o tren nua: no duoc viet khi chuoi la
+    `v4-flash -> deepseek-chat`. Tu 05/09/2026 ca 20 profile chuyen sang combo
+    `DS-v4Flash` voi du phong `ds/deepseek-v4-flash` — khong con profile nao co
+    `deepseek-chat`. Nghia la cap duy nhat trong hang so KHONG BAO GIO xuat
+    hien nua, `m["fallback"]` luon 0, va `van_de()` chi nhin dung con so do.
+    "Chi tieu fallback = 0" dang duoc thoa mot cach tam thuong: lop giam sat ma
+    README hua de bat "fallback im lang" thi chinh no da im lang.
+
+    Doc tu config thi them mot profile hay doi mot chuoi la bo do tu theo. Van
+    gop hang so cu vao de nhat ky ngay cu doc lai khong mat y nghia.
+    """
+    ra = set(FALLBACK_THAT)
+    try:
+        import yaml
+    except ImportError:
+        return ra
+    for home in (HERMES_HOMES or [env_load.hermes_home()]):
+        for p in [home / "config.yaml", *sorted((home / "profiles").glob("*/config.yaml"))]:
+            if not p.exists():
+                continue
+            try:
+                cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            except Exception:                                # noqa: BLE001
+                continue
+            chuoi = [(cfg.get("model") or {}).get("default")]
+            chuoi += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
+            chuoi = [_chuan_model(m) for m in chuoi if m]
+            # Moi buoc tut xuong trong chuoi la mot cap fallback that; bo cap
+            # trung ten (combo lat giua ba route CUNG mot model — do khong phai
+            # fallback ma la can bang tai, va usage ghi cung mot `model`).
+            for i in range(len(chuoi) - 1):
+                if chuoi[i] != chuoi[i + 1]:
+                    ra.add((chuoi[i], chuoi[i + 1]))
+    return ra
+
+
 def soi_model(theo_model: dict, combo: dict) -> tuple:
     """(model lạ, cache kém) trong một ngày. `theo_model` là dict 'model @ kết nối'
     đã gọn; `combo` = {tên combo: [thành viên]} để thành viên của combo trong
@@ -173,16 +212,24 @@ def soi_model(theo_model: dict, combo: dict) -> tuple:
     return la, kem
 
 
-def doc_ngay(ngay: str) -> dict:
-    """Gom usageHistory của một ngày VN thành số liệu. Không LLM, không ghi DB."""
-    if not DB.exists():
-        return {"ngay": ngay, "loi_doc": f"không thấy CSDL 9router: {DB}"}
-    con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
-    khoa_ten, kn_ten = _ten_bang(con)
-    t0, t1 = _cua_so_utc(ngay)
-    rows = con.execute(
-        "select timestamp, provider, model, connectionId, apiKey, status, promptTokens, completionTokens, cost, tokens "
-        "from usageHistory where timestamp >= ? and timestamp < ? order by timestamp", (t0, t1)).fetchall()
+def tong_hop(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict]:
+    """Gom cac dong `usageHistory` thanh so lieu. THUAN: khong SQL, khong doc dia.
+
+    Tach khoi `doc_ngay` 07/09/2026. `doc_ngay` la 93 dong trong do dung 4 dong
+    dau cham vao SQLite, con lai la phep dem — ma phep dem do quyet dinh nhung
+    thu khong lo ra khi sai: nhan khoa API (chi duoc 4 ky tu cuoi), cap lat model
+    nao tinh la fallback, model nao bi goi la "tra rong". Nam trong mot ham co
+    mo CSDL thi khong test duoc mot cai nao.
+
+    `rows`: (timestamp, provider, model, connectionId, apiKey, status,
+    promptTokens, completionTokens, cost, tokens-json) — dung thu tu SELECT.
+    `cap_fb`: tap cap (chinh, du phong) doc tu config; None thi tu doc.
+
+    Tra ve (so_lieu, tho). `tho` la bo tich luy CHUA lam tron — `gom_vai` tinh
+    don gia tren no, dung nhu truoc khi tach ham; lam tron truoc roi chia se
+    lech o chu so thu nam.
+    """
+    khoa_ten, kn_ten = khoa_ten or {}, kn_ten or {}
 
     def moi():
         return {"req": 0, "prompt": 0, "cache": 0, "out": 0, "usd": 0.0, "loi": 0}
@@ -209,7 +256,13 @@ def doc_ngay(ngay: str) -> dict:
             t = {}
         cache = int(t.get("cached_tokens") or 0)
         nhan = f"{model} @ {kn_ten.get(cid, provider or '?')}"
-        for a in (tong, theo_model[nhan], theo_khoa[khoa_ten.get(ak, ak or "?")], theo_gio[_gio_vn(ts)]):
+        # Khoa da xoay/xoa khong con dong trong `apiKeys`, va ban truoc
+        # 06/09/2026 lay CHINH CHUOI KHOA lam nhan. Nhan do duoc ghi vao
+        # 9router_<ngay>.json/.md roi phuc vu qua nhat_ky_web — mot khoa API
+        # tho nam trong tep tren dia va tren mot trang HTTP. Chi giu 4 ky tu
+        # cuoi, du de doi chieu tren dashboard 9router.
+        nhan_khoa = khoa_ten.get(ak) or (f"khoa la …{ak[-4:]}" if ak else "?")
+        for a in (tong, theo_model[nhan], theo_khoa[nhan_khoa], theo_gio[_gio_vn(ts)]):
             a["req"] += 1
             a["prompt"] += ptok or 0
             a["cache"] += cache
@@ -239,21 +292,45 @@ def doc_ngay(ngay: str) -> dict:
     except Exception as e:                                   # noqa: BLE001
         print(f"[soi model] {type(e).__name__}: {e}", file=sys.stderr)
         model_la, cache_kem = [], []
-    return {
-        "ngay": ngay, "cua_so_utc": [t0, t1],
+    if cap_fb is None:
+        try:
+            cap_fb = cap_fallback()
+        except Exception as e:                               # noqa: BLE001
+            print(f"[cap fallback] {type(e).__name__}: {e} — dung hang so cu",
+                  file=sys.stderr)
+            cap_fb = set(FALLBACK_THAT)
+    so_lieu = {
         "tong": {**tong, "usd": round(tong["usd"], 4), "cache_pct": pct(tong)},
         "theo_model": dict(sorted(tm.items(), key=lambda kv: -kv[1]["usd"])),
         "model_la": model_la, "cache_kem": cache_kem,
         "theo_khoa": gon(theo_khoa),
         "theo_gio": {str(k): v for k, v in sorted(gon(theo_gio).items())},
         "lat_model": dict(lat.most_common()), "lat_vi_du": lat_vi_du,
-        "fallback": sum(v for k, v in lat.items() if tuple(k.split(" → ")) in FALLBACK_THAT),
+        "fallback": sum(v for k, v in lat.items() if tuple(k.split(" → ")) in cap_fb),
         "loi": dict(loi.most_common(10)),
         "top_prompt": [{"prompt": p, "luc": h, "model": m, "cache": c, "usd": round(u, 4)}
                        for p, h, m, c, u in sorted(top, reverse=True)[:5]],
         "rong": dict(rong.most_common()), "rong_vi_du": rong_vi_du,
+    }
+    return so_lieu, {"tong": tong, "theo_model": tm}
+
+
+def doc_ngay(ngay: str) -> dict:
+    """Gom usageHistory của một ngày VN thành số liệu. Không LLM, không ghi DB."""
+    if not DB.exists():
+        return {"ngay": ngay, "loi_doc": f"không thấy CSDL 9router: {DB}"}
+    con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+    khoa_ten, kn_ten = _ten_bang(con)
+    t0, t1 = _cua_so_utc(ngay)
+    rows = con.execute(
+        "select timestamp, provider, model, connectionId, apiKey, status, promptTokens, completionTokens, cost, tokens "
+        "from usageHistory where timestamp >= ? and timestamp < ? order by timestamp", (t0, t1)).fetchall()
+    so_lieu, tho = tong_hop(rows, khoa_ten, kn_ten)
+    return {
+        "ngay": ngay, "cua_so_utc": [t0, t1],
+        **so_lieu,
         "loi_ket_noi": loi_ket_noi(con, t0, t1),
-        "vai": gom_vai(ngay, tm, tong),
+        "vai": gom_vai(ngay, tho["theo_model"], tho["tong"]),
     }
 
 
@@ -414,7 +491,7 @@ def viet_md(m: dict) -> str:
         L.append(f"- {k}: {v['req']} req, ${v['usd']}")
     L += ["", "## Theo giờ (req / $)", "",
           ", ".join(f"{k}h: {v['req']}/{v['usd']}" for k, v in m["theo_gio"].items()) or "không có request"]
-    L += ["", f"## Đổi model giữa 2 request liên tiếp (≤ 2 phút) — fallback thật v4-flash→deepseek-chat: {m['fallback']} lần", "",
+    L += ["", f"## Đổi model giữa 2 request liên tiếp (≤ 2 phút) — fallback thật (cặp lấy từ config đang chạy): {m['fallback']} lần", "",
           "(các cặp khác đa phần là vai chạy song song, 9router không ghi session nên không tách được)", ""]
     if m["lat_model"]:
         L += [f"- {k}: {v} lần" for k, v in m["lat_model"].items()]
@@ -459,7 +536,7 @@ def van_de(m: dict) -> list[str]:
         return [m["loi_doc"]]
     ra = []
     if m["fallback"]:
-        ra.append(f"Fallback thật v4-flash → deepseek-chat: {m['fallback']} lần (title_generation/cooldown?)")
+        ra.append(f"Fallback thật (chính → dự phòng theo config): {m['fallback']} lần (title_generation/cooldown?)")
     if m["loi"]:
         ra.append("Lỗi: " + "; ".join(f"{k} {v}" for k, v in m["loi"].items()))
     if m.get("model_la"):
