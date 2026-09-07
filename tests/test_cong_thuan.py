@@ -33,6 +33,17 @@ def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
         assert rut == mong, f"{lenh!r} -> {rut}, mong {mong}"
 
 
+def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
+    """Su co 06/09/2026: "3, 4 - Kites" (Ong Chu go so nhieu) bi doc_lenh_chon tu
+    choi CA lenh vi "kites" khong khop TEN_SANG_CAP -> roi ve hoi thoai, gui
+    nham cho Finn (topic scout) thay vi tao task cho Kite."""
+    from duyet_chon_tin import doc_lenh_chon
+    ra = doc_lenh_chon("1 - Ethan 3, 4 - Kites")
+    assert ra is not None, "'kites' (so nhieu) phai duoc hieu nhu 'kite'"
+    rut = [(s, v) for s, v, *_ in ra]
+    assert rut == [(1, "designer"), (3, "carousel-edu"), (4, "carousel-edu")], rut
+
+
 def test_doc_lenh_chon_bo_qua_cau_khong_phai_lenh():
     """Chat thuong khong duoc bien thanh lenh giao viec."""
     from duyet_chon_tin import doc_lenh_chon
