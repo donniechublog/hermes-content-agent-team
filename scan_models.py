@@ -27,7 +27,6 @@ Dung:
 import argparse
 import io
 import json
-import os
 import re
 import sys
 import time
@@ -987,9 +986,28 @@ def trich_benchmark(hf_id: str, quanh: int = 400) -> list:
 # ---------- moc da thay ----------
 
 def doc_state() -> dict:
-    if STATE.exists():
+    """Moc da thay; {} neu chua co.
+
+    Truoc 06/09/2026 khong boc loi: mot lan ghi bi cat ngang (het dia, kill)
+    lam MOI lan chay sau do chet ngay o `da_thay()` cho toi khi co nguoi xoa
+    tay — ma theo muc cron o duoi, khong ai duoc bao. Nay doi ten tep hong roi
+    di tiep voi moc rong: bao cao hom do thua tin (moi thu deu "moi") nhung
+    day chuyen khong dung, va dong canh bao noi ro vi sao.
+    """
+    if not STATE.exists():
+        return {}
+    try:
         return json.loads(STATE.read_text(encoding="utf-8"))
-    return {}
+    except Exception as e:                                   # noqa: BLE001
+        hong = STATE.with_suffix(".json.hong")
+        try:
+            STATE.replace(hong)
+        except OSError:
+            hong = "(khong doi ten duoc)"
+        print(f"[canh bao] {STATE.name} HONG ({type(e).__name__}) — da doi ten "
+              f"thanh {hong}, chay tiep voi moc RONG. Bao cao lan nay se coi moi "
+              "model la moi; lan sau tro lai binh thuong.", file=sys.stderr)
+        return {}
 
 
 def da_thay() -> set:
@@ -1019,14 +1037,14 @@ def ghi_moc(ids: set, xep_hang: dict, da_bao: dict | None = None):
             print(f"[canh bao] bang '{k}' tra rong — giu moc cu {len(cu[k])} muc",
                   file=sys.stderr)
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    # Ghi atomic (tmp + os.replace) nhu scan_business: write_text truc tiep ma
-    # chet giua chung se de lai tep hong, mat sach bo nho da-thay.
-    tmp = STATE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(
-        {"cap_nhat": datetime.now(timezone.utc).isoformat(),
-         "ids": sorted(ids), "xep_hang": xep_hang, "aa_da_bao": da_bao},
-        ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, STATE)
+    # Ghi nguyen tu qua env_load.ghi_json (tmp mang PID + os.replace):
+    # write_text thang ma chet giua chung se de lai tep hong, mat sach bo nho
+    # da-thay; con ten tep tam CO DINH (`.json.tmp`, ban truoc 06/09/2026) thi
+    # cron va mot lan chay tay `--lam-moi` trung thoi diem se ghi lan vao cung
+    # mot tep tam va `replace` ban cut cua nhau.
+    env_load.ghi_json(STATE, {"cap_nhat": datetime.now(timezone.utc).isoformat(),
+                              "ids": sorted(ids), "xep_hang": xep_hang,
+                              "aa_da_bao": da_bao})
 
 
 import bat_buoc                                              # noqa: E402
@@ -1090,6 +1108,33 @@ def so_hang(arena: dict, cu: dict) -> list:
     return ra
 
 
+def _thu(ten: str, fn, khi_hong):
+    """Hang rao cuoi cho MOT nguon: loi bat ngo khong duoc keo do ca luot quet.
+
+    Vi sao can du moi fetcher da co try rieng: cac try do chi boc LOI GOI MANG,
+    khong boc phan PARSE. `max(r["date"] for r in data)` (openrouter usage),
+    `float(v)` (livebench khi o la "-"), `float(mt["accuracy"])` (tbench doi
+    schema), `r["codingIndex"]`, `h < h_cu` khi OpenCompass thieu `ranking` —
+    tat ca nam NGOAI try va nem thang ra `main`, giet ca 23 bang. Khi do:
+    stdout rong, khong bang nao, khong ghi moc, va `brief_nova` van dung bao
+    cao rong do -> Nova ket luan "hom nay khong co gi". Dung loai hong ma
+    README goi la dang so nhat.
+
+    Nguon hong ghi vao `_HONG_KHAC` de in cung muc "NGUON KHONG LAY DUOC" —
+    `bang_hong` chi bat duoc fetcher tra RONG, khong bat duoc fetcher NEM.
+    """
+    try:
+        return fn()
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[{ten}] HONG (ngoai try cua chinh no): {type(e).__name__}: {e}",
+              file=sys.stderr)
+        _HONG_KHAC.append(ten)
+        return khi_hong
+
+
+_HONG_KHAC = []
+
+
 def main():
     ap = argparse.ArgumentParser(description="Quet model moi ra mat (tat dinh)")
     ap.add_argument("--lan-dau", action="store_true",
@@ -1108,24 +1153,27 @@ def main():
                          "tu dung o duoi day, tuc chinh no bi cat truoc tien.")
     a = ap.parse_args()
 
-    orouter = fetch_openrouter()
-    catalog = fetch_catalog()
-    arena = fetch_arena()
-    aa = loc_aa(fetch_aa(), a.ngay, a.top)
-    tin = fetch_tin_hang(a.ngay) + fetch_anthropic(a.ngay)
+    RONG2 = ([], None)                       # cac fetch tra (rows, ngay)
+    orouter = _thu("openrouter", fetch_openrouter, [])
+    catalog = _thu("catalog", fetch_catalog, [])
+    arena = _thu("arena", fetch_arena, {})
+    aa = _thu("aa", lambda: loc_aa(fetch_aa(), a.ngay, a.top), {})
+    tin = (_thu("rss hang", lambda: fetch_tin_hang(a.ngay), [])
+           + _thu("anthropic", lambda: fetch_anthropic(a.ngay), []))
     tin.sort(key=lambda t: t.get("ngay") or "", reverse=True)
-    gh = fetch_github(a.ngay)
-    swe_all = fetch_swebench(a.top)
+    gh = _thu("github", lambda: fetch_github(a.ngay), [])
+    swe_all = _thu("swebench", lambda: fetch_swebench(a.top),
+                   {"swebench": RONG2, "swe_bash": RONG2, "swe_da_ngon_ngu": RONG2})
     swe, swe_ngay = swe_all["swebench"]
-    lb, lb_ngay = fetch_livebench(a.top)
-    orr, or_ngay = fetch_openrouter_usage(a.top)
-    tb, tb_ngay = fetch_tbench(a.top)
-    arc, arc_ngay = fetch_arcagi(a.top)
-    hle, _hle_ngay = fetch_hle(a.top)
-    eci, eci_ngay = fetch_epoch(a.top)
-    oc, oc_ngay = fetch_opencompass(a.top)
-    media = fetch_aa_media(a.top)
-    hf = fetch_hf_trending(a.ngay, a.top)
+    lb, lb_ngay = _thu("livebench", lambda: fetch_livebench(a.top), RONG2)
+    orr, or_ngay = _thu("openrouter usage", lambda: fetch_openrouter_usage(a.top), RONG2)
+    tb, tb_ngay = _thu("tbench", lambda: fetch_tbench(a.top), RONG2)
+    arc, arc_ngay = _thu("arcagi", lambda: fetch_arcagi(a.top), RONG2)
+    hle, _hle_ngay = _thu("hle", lambda: fetch_hle(a.top), RONG2)
+    eci, eci_ngay = _thu("epoch", lambda: fetch_epoch(a.top), RONG2)
+    oc, oc_ngay = _thu("opencompass", lambda: fetch_opencompass(a.top), RONG2)
+    media = _thu("aa media", lambda: fetch_aa_media(a.top), {})
+    hf = _thu("hf-trending", lambda: fetch_hf_trending(a.ngay, a.top), [])
 
     tat_ca = {m["id"] for m in orouter} | {m["id"] for m in catalog}
     cu = da_thay()
@@ -1161,6 +1209,15 @@ def main():
     # "bang nay khong co gi moi" voi "bang nay khong lay duoc". Hai ket luan
     # khac han nhau. Ghi ten ra de Nova biet minh dang nhin thieu cai gi.
     hong = sorted(k for k, v in bang_so.items() if not v)
+    # Nguon KHONG phai bang xep hang khong nam trong `bang_so`, nen `hong` mu
+    # voi chung: openrouter 5xx mot sang la muc "MODEL MOI" in ra "0 cai" va
+    # Nova tin la hom nay khong hang nao ra model. Danh muc router luon co hang
+    # tram model — rong = hong, khong co cach doc nao khac.
+    for ten, gt in (("openrouter", orouter), ("catalog", catalog),
+                    ("aa", aa), ("aa media", media), ("arena", arena)):
+        if not gt and ten not in _HONG_KHAC:
+            print(f"[{ten}] tra RONG — coi nhu khong lay duoc", file=sys.stderr)
+            _HONG_KHAC.append(ten)
     hang_moi = {mod: {r["ten"]: r["hang"] for r in rows}
                 for mod, rows in bang_so.items()}
     if a.lan_dau:
@@ -1221,6 +1278,7 @@ def main():
         "media": media,
         "hf_trending": hf,
         "bang_hong": hong,
+        "nguon_hong": sorted(set(_HONG_KHAC)),
         "tin_hang": tin,
         "ban_phat_hanh": gh,
         "moi_tren_router_cua_ta": moi_catalog,
@@ -1377,10 +1435,18 @@ def _in_bao_cao(k: dict, ngay: int):
             print(f"  {g['ngay']}  {g['repo']:<28s} {g['tag']}")
 
     hong = k.get("bang_hong") or []
-    if hong:
-        print(f"\n=== NGUON KHONG LAY DUOC LAN NAY ({len(hong)}) — cac bang duoi "
+    hong_khac = k.get("nguon_hong") or []
+    if hong or hong_khac:
+        n = len(hong) + len(hong_khac)
+        print(f"\n=== NGUON KHONG LAY DUOC LAN NAY ({n}) — cac nguon duoi "
               "day VANG khoi bao cao, KHONG phai 'khong co gi moi' ===")
-        print("  " + ", ".join(NHAN_BANG.get(x, x) for x in hong))
+        if hong:
+            print("  bang xep hang: " + ", ".join(NHAN_BANG.get(x, x) for x in hong))
+        if hong_khac:
+            # Nguon nem loi (parse doi schema) hoac tra rong bat thuong. Truoc
+            # 06/09/2026 chung khong vao muc nay: mot loi parse giet ca luot
+            # quet ma bao cao van "sach".
+            print("  nguon khac: " + ", ".join(hong_khac))
 
     hf = k.get("hf_trending") or []
     if hf:

@@ -33,19 +33,39 @@ def tep(vai: str) -> Path:
 
 
 def doc(vai: str) -> dict:
+    """Danh sach BAT BUOC cua vai; {} neu chua co.
+
+    Tep HONG khong duoc im lang tra {}: `them_nhieu` ngay sau do ghi de bang
+    muc cua hom nay, va cac muc "phai dua" mang tu hom truoc bien mat vinh vien
+    — scan_models da ghi `aa_da_bao` nen khong gieo lai lan nua. Nay: doi ten
+    tep hong thanh `.hong` (con de kham) va noi ra mot dong.
+    """
     p = tep(vai)
-    try:
-        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
-    except Exception:                                        # noqa: BLE001
+    if not p.exists():
         return {}
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:                                   # noqa: BLE001
+        hong = p.with_suffix(".json.hong")
+        try:
+            p.replace(hong)
+        except OSError:
+            hong = "(khong doi ten duoc)"
+        print(f"[canh bao] {p.name} HONG ({type(e).__name__}) — da doi ten thanh "
+              f"{hong}. Danh sach BAT BUOC cua {vai} coi nhu rong: cac muc mang "
+              "tu hom truoc DA MAT, khong duoc gieo lai.", file=sys.stderr)
+        return {}
+    return d if isinstance(d, dict) else {}
 
 
 def _ghi(vai: str, bb: dict) -> None:
     p = tep(vai)
     p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(bb, ensure_ascii=False, indent=2), encoding="utf-8")
-    tmp.replace(p)
+    # Qua env_load.ghi_json: ten tep tam mang pid. Ban cu dung `.json.tmp` co
+    # dinh, ma tep nay co it nhat hai nguoi ghi (script quet gieo muc,
+    # manifest_* xoa muc da dua) — hai tien trinh trung thoi diem thi ghi lan
+    # vao cung mot tep tam va `replace` ban cut cua nhau.
+    env_load.ghi_json(p, bb)
 
 
 def them(vai: str, khoa: str, ten: str, loai: str, ghi_chu: str = "",

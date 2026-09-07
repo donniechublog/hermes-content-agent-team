@@ -145,6 +145,45 @@ def chuoi_da_cau_hinh() -> dict:
     return ra
 
 
+def cap_fallback() -> set:
+    """Cac cap (model chinh -> model du phong) doc TU CONFIG DANG CHAY.
+
+    Vi sao khong dung hang so o tren nua: no duoc viet khi chuoi la
+    `v4-flash -> deepseek-chat`. Tu 05/09/2026 ca 20 profile chuyen sang combo
+    `DS-v4Flash` voi du phong `ds/deepseek-v4-flash` — khong con profile nao co
+    `deepseek-chat`. Nghia la cap duy nhat trong hang so KHONG BAO GIO xuat
+    hien nua, `m["fallback"]` luon 0, va `van_de()` chi nhin dung con so do.
+    "Chi tieu fallback = 0" dang duoc thoa mot cach tam thuong: lop giam sat ma
+    README hua de bat "fallback im lang" thi chinh no da im lang.
+
+    Doc tu config thi them mot profile hay doi mot chuoi la bo do tu theo. Van
+    gop hang so cu vao de nhat ky ngay cu doc lai khong mat y nghia.
+    """
+    ra = set(FALLBACK_THAT)
+    try:
+        import yaml
+    except ImportError:
+        return ra
+    for home in (HERMES_HOMES or [env_load.hermes_home()]):
+        for p in [home / "config.yaml", *sorted((home / "profiles").glob("*/config.yaml"))]:
+            if not p.exists():
+                continue
+            try:
+                cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            except Exception:                                # noqa: BLE001
+                continue
+            chuoi = [(cfg.get("model") or {}).get("default")]
+            chuoi += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
+            chuoi = [_chuan_model(m) for m in chuoi if m]
+            # Moi buoc tut xuong trong chuoi la mot cap fallback that; bo cap
+            # trung ten (combo lat giua ba route CUNG mot model — do khong phai
+            # fallback ma la can bang tai, va usage ghi cung mot `model`).
+            for i in range(len(chuoi) - 1):
+                if chuoi[i] != chuoi[i + 1]:
+                    ra.add((chuoi[i], chuoi[i + 1]))
+    return ra
+
+
 def soi_model(theo_model: dict, combo: dict) -> tuple:
     """(model lạ, cache kém) trong một ngày. `theo_model` là dict 'model @ kết nối'
     đã gọn; `combo` = {tên combo: [thành viên]} để thành viên của combo trong
@@ -239,6 +278,12 @@ def doc_ngay(ngay: str) -> dict:
     except Exception as e:                                   # noqa: BLE001
         print(f"[soi model] {type(e).__name__}: {e}", file=sys.stderr)
         model_la, cache_kem = [], []
+    try:
+        _cap_fb = cap_fallback()
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[cap fallback] {type(e).__name__}: {e} — dung hang so cu",
+              file=sys.stderr)
+        _cap_fb = set(FALLBACK_THAT)
     return {
         "ngay": ngay, "cua_so_utc": [t0, t1],
         "tong": {**tong, "usd": round(tong["usd"], 4), "cache_pct": pct(tong)},
@@ -247,7 +292,7 @@ def doc_ngay(ngay: str) -> dict:
         "theo_khoa": gon(theo_khoa),
         "theo_gio": {str(k): v for k, v in sorted(gon(theo_gio).items())},
         "lat_model": dict(lat.most_common()), "lat_vi_du": lat_vi_du,
-        "fallback": sum(v for k, v in lat.items() if tuple(k.split(" → ")) in FALLBACK_THAT),
+        "fallback": sum(v for k, v in lat.items() if tuple(k.split(" → ")) in _cap_fb),
         "loi": dict(loi.most_common(10)),
         "top_prompt": [{"prompt": p, "luc": h, "model": m, "cache": c, "usd": round(u, 4)}
                        for p, h, m, c, u in sorted(top, reverse=True)[:5]],
@@ -414,7 +459,7 @@ def viet_md(m: dict) -> str:
         L.append(f"- {k}: {v['req']} req, ${v['usd']}")
     L += ["", "## Theo giờ (req / $)", "",
           ", ".join(f"{k}h: {v['req']}/{v['usd']}" for k, v in m["theo_gio"].items()) or "không có request"]
-    L += ["", f"## Đổi model giữa 2 request liên tiếp (≤ 2 phút) — fallback thật v4-flash→deepseek-chat: {m['fallback']} lần", "",
+    L += ["", f"## Đổi model giữa 2 request liên tiếp (≤ 2 phút) — fallback thật (cặp lấy từ config đang chạy): {m['fallback']} lần", "",
           "(các cặp khác đa phần là vai chạy song song, 9router không ghi session nên không tách được)", ""]
     if m["lat_model"]:
         L += [f"- {k}: {v} lần" for k, v in m["lat_model"].items()]
@@ -459,7 +504,7 @@ def van_de(m: dict) -> list[str]:
         return [m["loi_doc"]]
     ra = []
     if m["fallback"]:
-        ra.append(f"Fallback thật v4-flash → deepseek-chat: {m['fallback']} lần (title_generation/cooldown?)")
+        ra.append(f"Fallback thật (chính → dự phòng theo config): {m['fallback']} lần (title_generation/cooldown?)")
     if m["loi"]:
         ra.append("Lỗi: " + "; ".join(f"{k} {v}" for k, v in m["loi"].items()))
     if m.get("model_la"):
