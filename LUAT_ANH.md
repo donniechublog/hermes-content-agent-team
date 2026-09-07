@@ -338,13 +338,20 @@ nguyên**.
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
 
-- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Carousel/kiểu `tran`: chữ
-  đè lên ảnh qua gradient tối dài. Hero kiểu `quote` (mặc định, 06/09/2026):
-  không còn TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_mo_vung_chu`,
-  tan dần theo đường cong power, không đột ngột), màu chữ tự đổi tương phản
-  với vùng đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ giữ nguyên
-  sắc nét 100%.
-- **Không vạch, không viền, không đường kẻ** ngang giữa khung.
+- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Carousel: chữ đè lên ảnh
+  qua gradient tối dài. Hero **cả hai kiểu** `quote` (06/09/2026) và `tran`
+  (07/09/2026): không còn TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên
+  (`_mo_vung_chu`, tan dần theo đường cong power, không đột ngột), màu chữ tự
+  đổi tương phản với vùng đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ
+  giữ nguyên sắc nét 100%.
+- **Không có màu nền đặc ở đâu hết.** Chỗ nào lớp ảnh sắc không phủ tới thì nền
+  là bản cover **làm mờ** của chính tấm đó (`_lop_anh`, dùng chung cho cả hai
+  kiểu thẻ). Kiểu `tran` từng có một nhánh lấy màu nền bộ nhận diện làm nền cho
+  phần ảnh thiếu — ảnh 16:9 trên khổ 4:5 ra hơn nửa thẻ là màu đặc; bỏ
+  07/09/2026.
+- **Không vạch, không đường kẻ NGANG cắt qua khung** chia thẻ làm hai. Khung
+  chữ nhật **khép kín** bao quanh khối chữ thì được (`quote` và `tran`): nó là
+  một vật nằm TRÊN mặt phẳng ảnh, không cắt mặt phẳng đó ra.
 - **Không để lộ bản sao sắc nét của chính tấm ảnh** làm nền. Chỗ nào lớp ảnh sắc
   không phủ hết thì nền là chính tấm đó **làm mờ mạnh** — một mảng màu liền.
 - **Không ghép hai ảnh lệch tone** (mục 5).

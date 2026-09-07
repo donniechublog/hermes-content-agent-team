@@ -79,15 +79,36 @@ dưới. Khác hero (một tiêu đề bao quát tin) và khác carousel (nhiề
 
 ## Bố cục kiểu `tran` — vai designer Ethan (cả hai brand)
 
-**Không vẽ khung, không một nét nào.** Không ngoặc góc, không đường dọc, không
-vạch ngang. Đó là điều kiện để thẻ đọc ra là một mặt phẳng liền: ngoặc góc chính
-là một cái viền, và nét dọc trong vùng chữ lại tố ra đúng cái ranh giới mà kiểu
-tràn sinh ra để xoá.
+**Ông Chủ chốt 07/09/2026** — bản này thay hẳn bản "không vẽ khung, không một
+nét nào" trước đó. Ba thứ đổi: bỏ nền đặc, chữ tự đổi màu tương phản, và có một
+**khung chữ nhật nét** bao quanh khối chữ, đi theo cách kiểu `quote` của Dre.
+Khác quote đúng một chỗ: không có dấu ngoặc kép, vì đây là tiêu đề chứ không
+phải câu trích dẫn — nên bốn nét khép kín thay cho hai góc ngoặc đối nhau.
 
-1. Ảnh phủ kín thẻ, chạy sát bốn mép. Quá ngưỡng phóng 1.35 lần thì đổi sang nền
-   mờ cộng ảnh sắc đặt lên trên — vẫn liền mặt, nhưng là phương án đỡ.
-2. Màn tối dày dần từ trên xuống, đậm hẳn ở vùng chữ. Điểm uốn đặt cao hơn mốc
-   chữ một đoạn để không lộ ra một đường gãy.
+Vì sao khung không phá luật "một mặt phẳng liền" (LUAT_ANH mục 7): thứ bị cấm là
+**đường cắt ngang chia thẻ làm hai**. Một khung khép kín bao quanh khối chữ là
+một vật nằm TRÊN mặt phẳng ảnh, không cắt mặt phẳng đó ra — đúng như khung của
+kiểu `quote` vẫn làm từ trước.
+
+1. **Ảnh phủ kín thẻ ở mọi trường hợp**, cùng một lớp ảnh với kiểu `quote`
+   (`_lop_anh`): nền là bản cover **làm mờ** phủ kín khung, lớp sắc là ảnh
+   nguyên tỉ lệ full bề ngang đặt sát trên; ảnh cao hơn khung thì chỉ cắt theo
+   chiều dọc, ảnh thấp hơn thì mép dưới của lớp sắc **tan dần** vào lớp nền mờ
+   qua một dải smoothstep. **Không còn nhánh "ảnh thấp → nền màu đặc"**: trước
+   07/09/2026 ảnh 16:9 trên khổ 4:5 để lại hơn **một nửa thẻ** là màu nền của bộ
+   nhận diện — đúng "vùng thứ hai" mà LUAT_ANH mục 7 cấm, và cũng trái với chính
+   mục 1 này. Hai kiểu thẻ dùng chung một hàm nên không lệch nhau được nữa.
+2. **KHÔNG CÓ MÀN TỐI** — giống kiểu `quote` từ 06/09/2026. Chỉ **làm mờ cục bộ**
+   dải chữ đè lên (`_mo_vung_chu`), ảnh phía trên khối chữ giữ nguyên 100% sắc
+   nét. Màn tối dài chính là thứ biến vùng chữ thành mảng thứ hai.
+2b. **Màu chữ đo theo TỪNG DẢI DÒNG** (`_sang_vung` + `NGUONG_NEN_SANG = 116`),
+   không phải một trung bình cho cả khối. Nét khung, kicker, tên hãng trong tiêu
+   đề và tên kênh đều theo phe sáng/tối đo được: nền sáng thì kéo về phía tối
+   (`_du_toi`), nếu không thì trên ảnh nền trắng chúng biến mất. Tên kênh đo
+   **riêng** dải của chính nó — nó nằm ngoài khung, và ảnh có khối chữ tối nhưng
+   đáy thẻ sáng là ca rất thường.
+2c. Chữ **thụt vào trong khung** (`TRAN_TEXT_X = TRAN_FRAME_X + 44`), không ăn
+   ra sát lề thẻ như trước: có khung rồi mà chữ chạm nét là khối chữ đọc ra chật.
 3. **Kicker** phía trên tiêu đề: nhãn ngắn tiếng Anh, cỡ nhỏ, giãn chữ cái,
    màu nhấn. Đây là thứ duy nhất còn lại nói cho người đọc biết loại tin, sau
    khi nhãn category đã bỏ. Tối đa hai từ, giãn chữ cái làm nhãn dài nở nhanh.

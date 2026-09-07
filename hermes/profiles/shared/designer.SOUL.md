@@ -36,6 +36,8 @@ script in.
   nhất khi có con số; hoặc một lời **có thật** của người trong bài. Không gán
   câu tự soạn thành lời một người.
 - Ảnh có mặt người chỉ dùng khi gọi được đúng tên người **được nhắc trong bài**.
-- Mặc định thẻ HOOK (`quote`); kiểu `tran` chỉ khi muốn đổi không khí.
+- Mặc định thẻ HOOK (`quote`); kiểu `tran` chỉ khi muốn đổi không khí — từ
+  07/09/2026 `tran` cũng có khung chữ nhật và chữ tự đổi màu theo nền, không
+  còn màn tối hay mảng nền đặc.
 
 Tiếng Việt có dấu, không em-dash. Cách viết hook kỹ hơn ở skill `hero-image`.

@@ -26,7 +26,7 @@ Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
 | Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
-| Ethan | `designer` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín |
+| Ethan | `designer` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
 | Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
 | Kite | `carousel-edu` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
 | Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
@@ -101,9 +101,13 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 **Dựng ảnh**
 
 - `card.py` — thẻ đơn. Kiểu `quote` (mặc định): pull-quote trong khung hai góc
-  ngoặc, dòng nguồn `--attrib` canh giữa. Kiểu `tran`: ảnh phủ kín, chữ đè lên
-  qua màn tối chuyển dần. Màu chữ/khung đo theo từng dải nền của chính tấm ảnh.
-  Spec chữ và bố cục: [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md).
+  ngoặc, dòng nguồn `--attrib` canh giữa. Kiểu `tran`: tiêu đề một câu trong
+  **khung chữ nhật nét** (Ông Chủ chốt 07/09/2026 — trước đó là "không một nét
+  nào"). Cả hai kiểu dùng chung **một** lớp ảnh (`_lop_anh`): nền là bản cover
+  làm mờ, lớp sắc full bề ngang đặt sát trên, mép dưới tan dần — **không còn
+  màu nền đặc** ở đâu. Không màn tối; màu chữ/khung/tên kênh đo theo từng dải
+  nền của chính tấm ảnh. Spec chữ và bố cục:
+  [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md).
 - `carousel.py` — carousel nhiều slide (Dre): ảnh 1:1 hoặc 4:5 phủ kín thẻ, chữ
   ở đáy chìm vào ảnh, ra `<id>.png` + `<id>_2.png`… đúng khuôn album của
   `draft_write.py`. Dùng lại helper của `card.py`.
@@ -188,7 +192,8 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   cắt tin nhắn dài), `test_ham_thuan` giữ các hàm không ai canh mà quyết định
   nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`),
   `test_soat_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
-  còn ai), `test_tai_lieu` chặn tài liệu trôi khỏi mã.
+  còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
+  giống hệt nhau, đếm được), `test_tai_lieu` chặn tài liệu trôi khỏi mã.
 
   **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
   thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba
