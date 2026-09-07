@@ -49,7 +49,7 @@ import tele_util                                            # noqa: E402
 import ghi_log                                              # noqa: E402
 
 from duyet_co_so import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
-    API, BRAND, DRAFTS, HERMES_HOME, HERMES_PY, OFFSET, ONG_CHU_IDS, ROOT, STATE_DIR, TELEGRAM_INCOMING, _KHOA_DRAFT, _KHOA_KHOA_DRAFT, _TEN_BRAND, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, load_secrets, log, rut,
+    API, BRAND, DRAFTS, HERMES_HOME, HERMES_PY, OFFSET, ONG_CHU_IDS, ROOT, STATE_DIR, TELEGRAM_INCOMING, _KHOA_DRAFT, _KHOA_KHOA_DRAFT, _TEN_BRAND, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, load_secrets, log, rut,
 )
 from duyet_giao_viec import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
     BANG_DEN_ASSIGNEE, BANG_DEN_BRANDS, BANG_DEN_NHAC, DA_BAO_TIEN_DO, KANBAN_DB, MAC_DINH_ANH, MAC_DINH_VIET, NHAN_CHUAN, SLUG_CU, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_ANH, VAI_CAROUSEL, VAI_EDU, _TEN_HIEN, _bang_den_ghi, _bang_den_root, _bao_nhan_viec, _tom_tat_run, _trang_thai_task, _xong_ma_khong_giao, bao_tien_do_kanban, chuan_assignee, chuan_nhan, kanban_create, vai_cua_topic,
@@ -83,9 +83,14 @@ def _tai_anh_dinh_kem(token, msg):
         file_id = photos[-1]["file_id"]          # phan tu cuoi = do phan giai cao nhat
     elif msg.get("document") and str(msg["document"].get("mime_type", "")).startswith("image/"):
         file_id = msg["document"]["file_id"]
+        # Duoi tep lay tu `file_name` cua NGUOI GUI. Chi nhan duoi chu-so
+        # ngan: chuoi nay di thang vao ten tep ghi ra dia ben duoi, va mot
+        # `file_name` chua dau gach cheo hay dau cham kep se dat bytes ra ngoai
+        # thu muc dinh san.
         ten = msg["document"].get("file_name", "")
         if "." in ten:
-            ext = "." + ten.rsplit(".", 1)[-1]
+            duoi = ten.rsplit(".", 1)[-1]
+            ext = "." + duoi.lower() if re.fullmatch(r"[A-Za-z0-9]{1,5}", duoi) else ".jpg"
     if not file_id:
         return None
     try:
@@ -118,17 +123,38 @@ def handle_message(token, group, msg):
     # phan biet hai field nay (xem dong ~268), ham nay truoc day thi khong.
     text = (msg.get("text") or msg.get("caption") or "").strip()
 
+    thread_id = msg.get("message_thread_id")
+    log("vao", f"msg={mid} thread={thread_id} vai={vai_cua_topic(thread_id)} "
+               f"from={msg.get('from', {}).get('id')} text={rut(text)}")
+
+    # ALLOWLIST cho MOI tin, khong chi lenh slash. Truoc 06/09/2026 chi
+    # duyet_lenh va nhanh "ly do lam lai" kiem `ong_chu.json`; lenh chon so va
+    # chat thi khong — bat ky ai trong group reply "1, 3" vao bao cao Finn la
+    # tao duoc cap task ton LLM, con reply kem URL la agent chay voi bo cong cu
+    # day du. Khong co tep ong_chu.json thi giu nguyen hanh vi cu (xem
+    # `la_ong_chu`), nen bat cai nay khong lam ket chet may dang chay.
+    if not la_ong_chu(msg):
+        uid = msg.get("from", {}).get("id")
+        log("vao", f"msg={mid} TU CHOI: {uid} khong co trong ong_chu.json")
+        call(token, "sendMessage", chat_id=group,
+             **({"message_thread_id": thread_id} if thread_id else {}),
+             text="Chỉ Ông Chủ ra lệnh cho đội được. (id của bạn: <code>"
+                  + str(uid) + "</code>)", parse_mode="HTML")
+        return
+
     # Anh dinh kem (photo hoac document anh): tai ve, dua duong dan THAT vao
     # dau text — agent doc duoc ngay, khong phai doan qua nhat ky/thu muc.
     # Tin chi co anh, khong chu (chu qua bam Reply roi gui thang anh, khong
     # go gi them) van phai di tiep, khong duoc bo som nhu truoc.
+    #
+    # SAU allowlist, khong truoc: ham nay ghi bytes cua nguoi gui ra dia
+    # (`state/<brand>/telegram_incoming/`) va truoc 06/09/2026 no chay o dong
+    # dau tien cua handle_message — nguoi la trong group ghi duoc tep vao may
+    # ma khong qua mot cong nao.
     anh_path = _tai_anh_dinh_kem(token, msg)
     if anh_path:
         text = f"[Ảnh đính kèm đã tải về: {anh_path}]\n" + (text or "(không có chú thích kèm theo)")
 
-    thread_id = msg.get("message_thread_id")
-    log("vao", f"msg={mid} thread={thread_id} vai={vai_cua_topic(thread_id)} "
-               f"from={msg.get('from', {}).get('id')} text={rut(text)}")
     if not text:
         # Sticker, voice, video, file khong phai anh... — khong hieu duoc thi
         # noi ro, khong im lang (im lang = "khong phan hoi" trong mat Ong Chu).

@@ -89,7 +89,7 @@ def _ten_bang(con) -> tuple[dict, dict]:
     khoa, ket_noi = {}, {}
     try:
         for _id, key, name, *_ in con.execute("select id, key, name from apiKeys"):
-            khoa[key] = name or key[-8:]
+            khoa[key] = name or f"khoa …{(key or '')[-4:]}"
     except sqlite3.Error:
         pass
     try:
@@ -248,7 +248,13 @@ def doc_ngay(ngay: str) -> dict:
             t = {}
         cache = int(t.get("cached_tokens") or 0)
         nhan = f"{model} @ {kn_ten.get(cid, provider or '?')}"
-        for a in (tong, theo_model[nhan], theo_khoa[khoa_ten.get(ak, ak or "?")], theo_gio[_gio_vn(ts)]):
+        # Khoa da xoay/xoa khong con dong trong `apiKeys`, va ban truoc
+        # 06/09/2026 lay CHINH CHUOI KHOA lam nhan. Nhan do duoc ghi vao
+        # 9router_<ngay>.json/.md roi phuc vu qua nhat_ky_web — mot khoa API
+        # tho nam trong tep tren dia va tren mot trang HTTP. Chi giu 4 ky tu
+        # cuoi, du de doi chieu tren dashboard 9router.
+        nhan_khoa = khoa_ten.get(ak) or (f"khoa la …{ak[-4:]}" if ak else "?")
+        for a in (tong, theo_model[nhan], theo_khoa[nhan_khoa], theo_gio[_gio_vn(ts)]):
             a["req"] += 1
             a["prompt"] += ptok or 0
             a["cache"] += cache

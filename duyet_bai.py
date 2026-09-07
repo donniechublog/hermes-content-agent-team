@@ -27,7 +27,7 @@ import ghi_log                                              # noqa: E402
 import luat_anh                                             # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
-    API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, log, rut,
+    API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, log, rut,
 )
 from duyet_giao_viec import (  # noqa: E402
     BANG_DEN_NHAC, TEN_VAI_ANH, TEN_VAI_VIET, _bang_den_ghi, _bao_nhan_viec, _trang_thai_task, kanban_create,
@@ -686,10 +686,34 @@ def handle_img_approval(token, action, draft_id, cq):
         call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id,
              reply_markup={"inline_keyboard": []})
 
+_DRAFT_ID_HOP_LE = re.compile(r"^[a-z0-9][a-z0-9-]{0,54}$")
+
+
 def handle_callback(token, channel, cq):
     data = cq.get("data", "")
     action, _, draft_id = data.partition(":")
     msg = cq["message"]
+
+    # AI BAM. `callback_data` do client gui len, va truoc 06/09/2026 nhanh nay
+    # khong doc `cq["from"]` mot lan nao: bat ky thanh vien group nao bam ✅ la
+    # bai LEN CHANNEL va day sang moat. Allowlist chi che lenh slash.
+    if not la_ong_chu(cq):
+        uid = (cq.get("from") or {}).get("id")
+        log("nut", f"TU CHOI cq tu {uid}: khong co trong ong_chu.json")
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Chỉ Ông Chủ bấm được nút này.", show_alert=True)
+        return
+
+    # `draft_id` di THANG vao duong dan tep (DRAFTS / f"{draft_id}.json") va
+    # `mark_draft` ghi lai tep do. Chuoi nay den tu client, khong phai tu ta:
+    # mot client tu bien gui "ok:../../state/blog/lam_lai_cho" la doc/ghi
+    # `status` vao mot tep JSON bat ky cua dich vu. `_draft_id` sinh ra bang
+    # slugify nen moi id THAT deu khop mau duoi day.
+    if draft_id and not _DRAFT_ID_HOP_LE.match(draft_id):
+        log("nut", f"TU CHOI cq: draft_id la {draft_id!r}")
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Nút hỏng (mã bài không hợp lệ).", show_alert=True)
+        return
 
     # Duyet ANH (truoc khi viet) — xu ly SOM vi luc nay ban nhap cuoi
     # (<draft>.json) chua ton tai, nhanh duoi se bao "khong tim thay ban nhap".

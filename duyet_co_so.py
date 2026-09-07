@@ -192,3 +192,26 @@ def _nap_json(path, mac_dinh):
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return mac_dinh
+
+
+def la_ong_chu(msg) -> bool:
+    """Tin nhan / nut bam nay co den tu nguoi duoc phep ra lenh khong.
+
+    Nhan ca `message` lan `callback_query` — ca hai deu co truong `from`.
+
+    KHONG co state/ong_chu.json = cho qua het (hanh vi cu: group rieng, chi co
+    Ong Chu). Co tep thi MOI cua deu phai kiem — truoc 06/09/2026 chi hai cho
+    kiem (lenh slash o duyet_lenh, ly do lam lai o duyet_bai) trong khi ba cua
+    con lai thi khong:
+
+      - nut Duyet/Bo/Lam lai  -> bam ✅ la bai len channel VA day sang moat
+      - lenh chon so          -> tao cap task, tot LLM that
+      - chat                  -> agent chay voi bo cong cu day du
+
+    Ba cua do la ba cua nang nhat. Co co che ma che duoc 2/5 con nguy hiem hon
+    khong co: no tao cam giac da khoa cua.
+    """
+    cho_phep = _nap_json(ONG_CHU_IDS, [])
+    if not cho_phep:
+        return True
+    return ((msg or {}).get("from") or {}).get("id") in cho_phep

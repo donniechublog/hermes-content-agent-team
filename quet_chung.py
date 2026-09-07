@@ -17,13 +17,12 @@ nhieu cho, va cac ban da bat dau lech nhau.
 Tep nay KHONG chua logic quet — chi nhung manh nho ma moi nguoi deu can. Script
 quet nao can thu rieng thi cu giu rieng.
 """
-import json
-import os
+import ipaddress
 import re
+import socket
 from datetime import timedelta, timezone
 from email.utils import parsedate_to_datetime
 from datetime import datetime
-from pathlib import Path
 
 import httpx
 
@@ -38,6 +37,63 @@ VN = timezone(timedelta(hours=7))
 # `vera` la but danh cu cho role `market` — bao_cao_manifest van nhan ca hai
 # de bao cao cu khong ra "None".
 TEN_VAI = {"scout": "Finn", "nova": "Nova", "market": "Vera", "vera": "Vera"}
+
+
+# ---------------------------------------------------------------- host noi bo
+_HOST_CAM_TEN = re.compile(r"^localhost$|\.(local|internal|netbird\.mated)$", re.I)
+
+
+def host_noi_bo(host: str) -> bool:
+    """Host nay co tro vao trong may / mang rieng khong.
+
+    MOT cho duy nhat cho ca doi. Truoc 06/09/2026 chi `article_extract` va
+    `duyet_lenh` co cong nay, va ca hai deu so khop bang regex tren CHUOI:
+    `127.0.0.1` bi chan nhung `127.1`, `2130706433` (dang thap phan) va
+    `[::1]` thi khong. Cac duong tai con lai — anh trong HTML bai bao,
+    `page.goto` theo trang tim kiem, `httpx.head` theo chuyen huong,
+    `chup_chart` — khong co cong nao.
+
+    Dung `ipaddress` nen bat duoc moi cach viet cua cung mot dia chi. Van
+    KHONG resolve DNS: mot ten mien cong khai tro ve 127.0.0.1 se lot, va do
+    la gioi han co y (chan tren tung hop, khong phai tuong lua). Bu lai bang
+    cach kiem CA sau chuyen huong, nhu article_extract da lam.
+    """
+    h = (host or "").strip().strip("[]").lower()
+    if not h:
+        return True
+    if _HOST_CAM_TEN.search(h):
+        return True
+    try:
+        ip = ipaddress.ip_address(h)
+    except ValueError:
+        # Dang rut gon ma `ipaddress` tu choi nhung libc (curl, chromium,
+        # httpx qua getaddrinfo) van hieu: "127.1", "2130706433", "0x7f.0.0.1".
+        # Day dung la cach vong qua mot bo loc chi so khop chuoi.
+        try:
+            ip = ipaddress.IPv4Address(socket.inet_aton(h))
+        except (OSError, ValueError):
+            return False           # ten mien binh thuong
+    return (ip.is_loopback or ip.is_private or ip.is_link_local
+            or ip.is_reserved or ip.is_multicast or ip.is_unspecified)
+
+
+def kiem_url(url, cho: str = "URL") -> None:
+    """Nem ValueError neu URL khong phai http/https hoac tro vao mang noi bo."""
+    from urllib.parse import urlsplit
+    p = urlsplit(str(url))
+    if p.scheme not in ("http", "https") or not p.hostname:
+        raise ValueError(f"{cho} phai la http/https day du: {str(url)[:120]!r}")
+    if host_noi_bo(p.hostname):
+        raise ValueError(f"{cho} tro vao host noi bo ({p.hostname}) — khong tai.")
+
+
+def url_an_toan(url) -> bool:
+    """Ban khong nem, cho cac vong loc bo qua URL xau thay vi dung han."""
+    try:
+        kiem_url(url)
+        return True
+    except ValueError:
+        return False
 
 
 def chuan_link(u: str) -> str:
