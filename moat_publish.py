@@ -215,6 +215,21 @@ def images_payload(d):
     return out[:MAX_ANH]
 
 
+def _body_intake(draft_id, d, cap, images, scheduled_at=None):
+    """Payload /publish-intake cua moat — mot cho de doi chieu voi schema cua no."""
+    body = {
+        "externalId": draft_id,
+        "title": cap[:80],
+        "caption": cap,
+        "sourceUrl": d.get("source_url") or "",
+        "images": images,
+        "platforms": PLATFORMS,
+    }
+    if scheduled_at:
+        body["scheduledAt"] = scheduled_at
+    return body
+
+
 def intake(draft_id, scheduled_at=None):
     """Day mot draft da duyet sang hang doi publish cua moat.
 
@@ -263,16 +278,7 @@ def intake(draft_id, scheduled_at=None):
     if not images:
         return False, "khong tim thay anh de day"
 
-    body = {
-        "externalId": draft_id,
-        "title": cap[:80],
-        "caption": cap,
-        "sourceUrl": d.get("source_url") or "",
-        "images": images,
-        "platforms": PLATFORMS,
-    }
-    if scheduled_at:
-        body["scheduledAt"] = scheduled_at
+    body = _body_intake(draft_id, d, cap, images, scheduled_at)
 
     try:
         with httpx.Client(timeout=TIMEOUT_DAY) as c:
@@ -310,6 +316,96 @@ def _fetch_status(base, key, ref):
     return r.json().get("tasks", [])
 
 
+def _poll_mot_bai(path, d, cua_toi, lines):
+    """Mot draft: bo qua neu khong phai bai da day / khac brand / da xong / het
+    han theo doi; hoi moat mot lan, bao MOI trang thai moi mot lan, ghi nguoc
+    vao draft. `lines` la danh sach dong thong bao, ghi them vao."""
+    moat = d.get("moat")
+    if not isinstance(moat, dict) or not moat.get("external_id"):
+        return
+    if moat.get("tracking_stopped"):
+        return
+    # Bai day tu truoc khi tach brand khong co khoa "brand" -> mac dinh.
+    if cua_toi and (moat.get("brand") or d.get("brand") or MAC_DINH_BRAND) != cua_toi:
+        return
+    reported = moat.get("reported") or {}
+    if reported and all(v in TERMINAL for v in reported.values()) \
+            and len(reported) >= len(moat.get("platforms") or PLATFORMS):
+        return
+
+    pushed_at = moat.get("pushed_at") or 0
+    if pushed_at and time.time() - pushed_at > MAX_TRACK_DAYS * 86400:
+        # Dem viec CON THIEU theo danh sach platform da dang ky, khong theo
+        # reported: extension chua tung chay thi reported RONG — ca hai
+        # cach dem deu phai ra "con thieu het", truoc day lai ra "xong".
+        cac_san = moat.get("platforms") or PLATFORMS
+        xong = sum(1 for st in reported.values() if st in TERMINAL)
+        pending = list(range(max(0, len(cac_san) - xong)))
+        moat["tracking_stopped"] = True
+        d["moat"] = moat
+        _ghi_json(path, d)
+        if pending:
+            lines.append("⏳ " + path.stem + ": còn " + str(len(pending))
+                         + " task chưa đăng sau " + str(MAX_TRACK_DAYS)
+                         + " ngày, ngừng theo dõi, xem lại extension")
+        return
+
+    # Hoi dung cai org da day bai nay len. Bai day tu truoc khi tach org
+    # khong co khoa "brand" — roi ve mac dinh, tuc dung khoa cu.
+    base, key = config(moat.get("brand") or d.get("brand"))
+    if not base:
+        # Khoa cua thuong hieu nay bi go khoi .secrets.env SAU khi da day.
+        # Khong hoi duoc thi im: cron chay moi phut, canh bao o day la
+        # 1440 dong rac mot ngay.
+        return
+
+    try:
+        tasks = _fetch_status(base, key, moat.get("workflow_id") or moat["external_id"])
+    except Exception as e:                               # noqa: BLE001
+        # Chi bao MOT lan cho moi loai loi. Cron chay moi phut: moat sap
+        # 6 tieng ma bao moi lan la 360 tin rac vao topic Miles. Nho loai
+        # loi da bao trong draft; loi doi (DNS -> timeout) thi bao lai,
+        # het loi thi xoa co de lan sap sau con bao.
+        loi_moi = type(e).__name__
+        if moat.get("loi_da_bao") != loi_moi:
+            moat["loi_da_bao"] = loi_moi
+            d["moat"] = moat
+            _ghi_json(path, d)
+            lines.append("⚠️ " + path.stem + ": khong hoi duoc moat ("
+                         + loi_moi + "), se im cho toi khi tinh hinh doi")
+        return
+    if moat.pop("loi_da_bao", None):
+        d["moat"] = moat
+        _ghi_json(path, d)
+        lines.append("✅ " + path.stem + ": moat hoi lai duoc roi")
+
+    changed = False
+    for t in tasks:
+        tid, status = t.get("id"), t.get("status")
+        if not tid or status == reported.get(tid):
+            continue
+        reported[tid] = status
+        changed = True
+        if status not in TERMINAL:
+            continue
+        label = PLATFORM_LABEL.get(t.get("platform"), t.get("platform"))
+        if status == "published":
+            line = "✅ " + path.stem + " đã lên " + label
+            if t.get("result_url"):
+                line += "\n" + t["result_url"]
+        elif status == "failed":
+            line = ("❌ " + path.stem + " đăng " + label + " lỗi: "
+                    + (t.get("last_error") or "không rõ lý do"))
+        else:
+            line = "⏹ " + path.stem + " " + label + ": " + status
+        lines.append(line)
+
+    if changed:
+        moat["reported"] = reported
+        d["moat"] = moat
+        _ghi_json(path, d)
+
+
 def poll():
     """Hoi moat trang thai cac bai da day, tra ve list dong thong bao moi.
 
@@ -335,90 +431,7 @@ def poll():
             d = json.loads(path.read_text(encoding="utf-8"))
         except Exception:                                    # noqa: BLE001
             continue
-        moat = d.get("moat")
-        if not isinstance(moat, dict) or not moat.get("external_id"):
-            continue
-        if moat.get("tracking_stopped"):
-            continue
-        # Bai day tu truoc khi tach brand khong co khoa "brand" -> mac dinh.
-        if cua_toi and (moat.get("brand") or d.get("brand") or MAC_DINH_BRAND) != cua_toi:
-            continue
-        reported = moat.get("reported") or {}
-        if reported and all(v in TERMINAL for v in reported.values()) \
-                and len(reported) >= len(moat.get("platforms") or PLATFORMS):
-            continue
-
-        pushed_at = moat.get("pushed_at") or 0
-        if pushed_at and time.time() - pushed_at > MAX_TRACK_DAYS * 86400:
-            # Dem viec CON THIEU theo danh sach platform da dang ky, khong theo
-            # reported: extension chua tung chay thi reported RONG — ca hai
-            # cach dem deu phai ra "con thieu het", truoc day lai ra "xong".
-            cac_san = moat.get("platforms") or PLATFORMS
-            xong = sum(1 for st in reported.values() if st in TERMINAL)
-            pending = list(range(max(0, len(cac_san) - xong)))
-            moat["tracking_stopped"] = True
-            d["moat"] = moat
-            _ghi_json(path, d)
-            if pending:
-                lines.append("⏳ " + path.stem + ": còn " + str(len(pending))
-                             + " task chưa đăng sau " + str(MAX_TRACK_DAYS)
-                             + " ngày, ngừng theo dõi, xem lại extension")
-            continue
-
-        # Hoi dung cai org da day bai nay len. Bai day tu truoc khi tach org
-        # khong co khoa "brand" — roi ve mac dinh, tuc dung khoa cu.
-        base, key = config(moat.get("brand") or d.get("brand"))
-        if not base:
-            # Khoa cua thuong hieu nay bi go khoi .secrets.env SAU khi da day.
-            # Khong hoi duoc thi im: cron chay moi phut, canh bao o day la
-            # 1440 dong rac mot ngay.
-            continue
-
-        try:
-            tasks = _fetch_status(base, key, moat.get("workflow_id") or moat["external_id"])
-        except Exception as e:                               # noqa: BLE001
-            # Chi bao MOT lan cho moi loai loi. Cron chay moi phut: moat sap
-            # 6 tieng ma bao moi lan la 360 tin rac vao topic Miles. Nho loai
-            # loi da bao trong draft; loi doi (DNS -> timeout) thi bao lai,
-            # het loi thi xoa co de lan sap sau con bao.
-            loi_moi = type(e).__name__
-            if moat.get("loi_da_bao") != loi_moi:
-                moat["loi_da_bao"] = loi_moi
-                d["moat"] = moat
-                _ghi_json(path, d)
-                lines.append("⚠️ " + path.stem + ": khong hoi duoc moat ("
-                             + loi_moi + "), se im cho toi khi tinh hinh doi")
-            continue
-        if moat.pop("loi_da_bao", None):
-            d["moat"] = moat
-            _ghi_json(path, d)
-            lines.append("✅ " + path.stem + ": moat hoi lai duoc roi")
-
-        changed = False
-        for t in tasks:
-            tid, status = t.get("id"), t.get("status")
-            if not tid or status == reported.get(tid):
-                continue
-            reported[tid] = status
-            changed = True
-            if status not in TERMINAL:
-                continue
-            label = PLATFORM_LABEL.get(t.get("platform"), t.get("platform"))
-            if status == "published":
-                line = "✅ " + path.stem + " đã lên " + label
-                if t.get("result_url"):
-                    line += "\n" + t["result_url"]
-            elif status == "failed":
-                line = ("❌ " + path.stem + " đăng " + label + " lỗi: "
-                        + (t.get("last_error") or "không rõ lý do"))
-            else:
-                line = "⏹ " + path.stem + " " + label + ": " + status
-            lines.append(line)
-
-        if changed:
-            moat["reported"] = reported
-            d["moat"] = moat
-            _ghi_json(path, d)
+        _poll_mot_bai(path, d, cua_toi, lines)
 
     return lines
 
