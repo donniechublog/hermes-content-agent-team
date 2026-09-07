@@ -211,7 +211,14 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   (36 nhánh, phần lớn là luật Ông Chủ đặt sau một sự cố thật),
   `test_manifest` giữ phần cơ học của manifest — thứ Ông Chủ đọc rồi **trả lời
   bằng số**, nên sai ở đó không ra lỗi mà ra một danh sách nhìn bình thường
-  nhưng số "2" trỏ tới bài khác — và `test_tai_lieu` chặn tài liệu trôi khỏi mã.
+  nhưng số "2" trỏ tới bài khác — `test_caption` giữ cổng caption của Miles
+  (thứ cuối cùng trước hàng duyệt, 14 cổng thuần), `test_spec_ethan` /
+  `test_spec_kite` giữ hai cổng spec còn lại (cùng fixture manifest với
+  `test_spec_dre`; Kite tắt YuNet trong test), và `test_tai_lieu` chặn tài liệu
+  trôi khỏi mã. Ba cổng dùng chung của Dre/Ethan nằm ở `nop_chung`
+  (`can_anh_xep_hang`, `anh_khong_lien_quan`, `kiem_da_dung_nhieu`) — trước
+  07/09/2026 mỗi vai một bản, và đã lệch một lần (Ethan không đọc cờ
+  `lien_quan`).
   Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
   `chay.sh` chỉ chạy `test_*.py`.
 

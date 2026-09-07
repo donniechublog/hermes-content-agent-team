@@ -66,11 +66,10 @@ class _Boi:
         self.da_dung[ma] = nhan
 
     def kiem_lien_quan(self, ma_ds, nhan: str) -> None:
-        rac = [ma for ma in ma_ds if self.anh[ma].get("lien_quan") is False]
+        rac, mo_ta = nc.anh_khong_lien_quan(self.anh, ma_ds)
         if rac:
             self.loi.append(
-                f"{nhan}: {', '.join(rac)} bị đánh dấu KHÔNG LIÊN QUAN bài "
-                f"({'; '.join((self.anh[x].get('mo_ta') or '?')[:60] for x in rac)}) — "
+                f"{nhan}: {', '.join(rac)} bị đánh dấu KHÔNG LIÊN QUAN bài ({mo_ta}) — "
                 "không dùng, chọn mã khác hoặc gộp ý/giảm slide")
 
     def kiem_mat(self, ma_ds, muc: dict, nhan: str) -> None:
@@ -116,17 +115,9 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
     bo.nhan_ma(ma, nhan)
     bo.kiem_lien_quan([ma], nhan)
     a, ra = bo.anh[ma], {}
-    # CHI chan khi engine THUC SU co anh xep hang de dung. Truoc
-    # 06/09/2026 chieu, cong nay chan ca khi m["xep_hang"] la None —
-    # bao vai "bìa dùng \"anh\": \"XH\"" trong khi ma XH khong ton tai,
-    # nen vai sua kieu gi cung sai va khong bao gio nop duoc. Ba duong
-    # dan toi canh do: --khong-browser, tach_model() rong (tin xep hang
-    # KHONG neu ten model, vd "Bảng xếp hạng AI tháng 9"), hoac
-    # tim_va_chup nem. Luc do de vai dung anh thuong, brief da noi ro.
-    # Xem ghi chu cung viec o ethan_nop.py: the du phong khong ep duoc.
-    if (la_bia and m.get("tin_xep_hang")
-            and (m.get("xep_hang") or {}).get("kieu") == "chup"
-            and not a.get("xep_hang")):
+    # Dieu kien "tin xep hang ma bia khong phai bang" dung chung voi Ethan
+    # (nop_chung.can_anh_xep_hang — xem lich su hoi quy o do).
+    if la_bia and nc.can_anh_xep_hang(m, a):
         bo.loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
                       f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m) + ".")
     if a["loai"] == "chart" and not a.get("xep_hang"):
@@ -199,7 +190,6 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     co that, ma khong luat nao co test — `test_cong_chan` nhac `bob_nop` 19 lan,
     `dre_nop` mot lan. Nay o `tests/test_spec_dre.py`.
     """
-    import luat_anh
     bo = _Boi(m, wd)
     loi = bo.loi
 
@@ -241,10 +231,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
         ra["slides"].append(g)
     # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026. Dat SAU
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
-    for ma_, nhan_ in bo.da_dung.items():
-        l, _ = luat_anh.kiem_da_dung(f"{nhan_} ({ma_})", bo.anh[ma_]["goc"],
-                                     m.get("draft_id", ""), m.get("link", ""))
-        loi += l
+    loi += nc.kiem_da_dung_nhieu(bo.anh, [(f"{n} ({ma})", ma) for ma, n in bo.da_dung.items()], m)
     n = len(slides) + 1
     if n < m.get("toi_thieu", 5):
         loi.append(f"chỉ {n} slide, tin này cần tối thiểu {m['toi_thieu']} (kể cả bìa) — "

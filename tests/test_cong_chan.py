@@ -165,9 +165,14 @@ def test_cong_xep_hang_chi_chan_khi_CHUP_duoc_bang():
     đều không được ép — xem test_the_du_phong_khong_duoc_ep_lam_anh_chinh."""
     import re as _re
     mau = r'\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\) == "chup"'
+    # Tu 07/09/2026 dieu kien nam o MOT cho (nop_chung.can_anh_xep_hang); hai vai
+    # phai goi no chu khong tu viet lai — tu viet lai la cach no da lech.
+    assert _re.search(mau, (ROOT / "nop_chung.py").read_text(encoding="utf-8")), \
+        "nop_chung.can_anh_xep_hang phải đòi kieu == 'chup'"
     for tep in ("dre_nop.py", "ethan_nop.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
-        assert _re.search(mau, src), f"{tep}: cổng xếp hạng phải đòi kieu == 'chup'"
+        assert "nc.can_anh_xep_hang(" in src, f"{tep}: phải dùng cổng chung"
+        assert not _re.search(mau, src), f"{tep}: còn bản chép tay của điều kiện"
 
 
 # ------------------------------------------------ tin xếp hạng: nhận diện & thẻ bịa
