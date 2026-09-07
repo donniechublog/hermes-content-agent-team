@@ -178,24 +178,9 @@ def ung_vien_tinh(title: str, link: str, nguon_path: Path, title_en: str = "") -
     return ds
 
 
-def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
-    """MOT phien chromium lam het phan "mo browser that" ma SOUL tung bat vai lam tay:
-
-      - trang goc: og:title (tieu de tieng Anh), CHU bai (innerText cua
-        article/main — trang JS nhu ifm.ai fetch tinh doc ra rong), <img> lon
-        (naturalWidth) ma fetch tinh bo sot, va chup figure/table/canvas/svg lon
-        full be ngang (bang benchmark, chart);
-      - bo nguon mong (chi co link goc): tim bao khac tren trang tim kiem Google
-        News, giai ma tung link /read/ bang cach di theo chuyen huong;
-      - 1-2 trang bao khac: lay <img> lon + figure.
-
-    Khong co playwright / trang hong thi tra ve phan da lay duoc, khong loi."""
-    ra = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
-    try:
-        from playwright.sync_api import sync_playwright
-    except Exception:                                        # noqa: BLE001
-        return ra
-    import urllib.parse as up
+def _js_browser() -> dict:
+    """Cac doan JS chay trong trang. Dung ham (khong phai hang module) vi chung
+    ghep nguong/regex cua luat_anh tai thoi diem goi — doi luat_anh la doi JS."""
     import luat_anh
     JS_TITLE = """() => ((document.querySelector('meta[property="og:title"]')||{}).content
                     || document.title || '')"""
@@ -238,6 +223,109 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
         return ra; }"""
     JS_GNEWS = """() => Array.from(document.querySelectorAll('a[href*="/read/"], a[href*="/articles/"]'))
                      .map(a => a.href).slice(0, 10)"""
+    return {"TITLE": JS_TITLE, "TEXT": JS_TEXT, "IMG": JS_IMG, "FIG": JS_FIG, "GNEWS": JS_GNEWS}
+
+
+def _lay_anh_trang(page, url, so, wd, ra, JS, chup_fig=True):
+    """Anh <img> lon + figure/table/canvas/svg cua MOT trang, ghi vao ra['cands']."""
+    # Tran moi trang: goc <= 4 anh, bao khac <= 3. Truoc day vet toi 12 anh
+    # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026).
+    for im in (page.evaluate(JS["IMG"]) or [])[: 4 if so == 0 else 3]:
+        ra["cands"].append({"anh": im["src"], "alt": im["alt"], "og": False, "tu": "browser",
+                            "trang": url, "rong": im["w"], "cao": im["h"], "diem": 45})
+    if not chup_fig:
+        return
+    for f in page.evaluate(JS["FIG"]) or []:
+        out = wd / "goc" / f"chup_{so}_{f['sel'][-3:-2]}.png"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        el = page.query_selector(f["sel"])
+        if not el:
+            continue
+        try:
+            el.scroll_into_view_if_needed()
+            page.wait_for_timeout(300)
+            el.screenshot(path=str(out))
+        except Exception:                                # noqa: BLE001
+            continue
+        luat_anh.dong_dau_tep(out, "chup_chart")
+        # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
+        # anh_bai -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
+        ra["cands"].append({"anh": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
+                            "og": False, "tu": "chup", "the": f["tag"], "trang": url,
+                            "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "diem": 50})
+
+def _mo_trang(page, url, cho_yen=12000):
+    page.goto(url, wait_until="domcontentloaded", timeout=30000)
+    try:
+        page.wait_for_load_state("networkidle", timeout=cho_yen)
+    except Exception:                                    # noqa: BLE001
+        pass
+    page.wait_for_timeout(700)
+
+
+def _tim_bao_gnews(page, ra, mien_goc, het_gio, JS):
+    """Bo nguon mong: tim bao khac tren Google News theo tieu de tieng Anh, di
+    theo chuyen huong tung link /read/, giu toi da 3 bao lien quan."""
+    import urllib.parse as up
+    # 2) tim bao khac (bo nguon mong)
+    if True:
+        try:
+            q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["tieu_de_en"])[:120]
+            _mo_trang(page, "https://news.google.com/search?q=" + up.quote(q)
+               + "&hl=en-US&gl=US&ceid=US:en", cho_yen=6000)
+            links, thay = [], set()
+            for h in page.evaluate(JS["GNEWS"]) or []:
+                k = h.split("?")[0]
+                if k not in thay:
+                    thay.add(k)
+                    links.append(h)
+            for h in links[:5]:
+                if het_gio() or len(ra["trang_them"]) >= 3:
+                    break
+                try:
+                    page.goto(h, wait_until="domcontentloaded", timeout=25000)
+                    t1 = time.time()
+                    while "news.google.com" in page.url and time.time() - t1 < 12:
+                        page.wait_for_timeout(500)
+                    u = page.url
+                    if "news.google.com" in u or _mien(u) == mien_goc \
+                            or any(_mien(u) == _mien(x["url"]) for x in ra["trang_them"]):
+                        continue
+                    td = (page.title() or "")[:160]
+                    # Google News tra ca bai KHONG lien quan (cung tu "AI"):
+                    # bai benh than, letsdatascience (Gimlet 05/09). Phai
+                    # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
+                    import anh_bai as _ab
+                    if len(_ab._tu_dac_trung(ra["tieu_de_en"]) & _ab._tu_dac_trung(td)) < 2:
+                        print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
+                        continue
+                    ra["trang_them"].append({"url": u, "loai": "báo",
+                                             "tieu_de": td,
+                                             "toa_soan": "https://" + _mien(u)})
+                except Exception:                # noqa: BLE001
+                    continue
+        except Exception as e:                   # noqa: BLE001
+            print(f"[browser] gnews search: {type(e).__name__}", file=sys.stderr)
+
+
+def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
+    """MOT phien chromium lam het phan "mo browser that" ma SOUL tung bat vai lam tay:
+
+      - trang goc: og:title (tieu de tieng Anh), CHU bai (innerText cua
+        article/main — trang JS nhu ifm.ai fetch tinh doc ra rong), <img> lon
+        (naturalWidth) ma fetch tinh bo sot, va chup figure/table/canvas/svg lon
+        full be ngang (bang benchmark, chart);
+      - bo nguon mong (chi co link goc): tim bao khac tren trang tim kiem Google
+        News, giai ma tung link /read/ bang cach di theo chuyen huong;
+      - 1-2 trang bao khac: lay <img> lon + figure.
+
+    Khong co playwright / trang hong thi tra ve phan da lay duoc, khong loi."""
+    ra = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception:                                        # noqa: BLE001
+        return ra
+    JS = _js_browser()
     t0 = time.time()
     goc = next((t.get("url") for t in trang if t.get("loai") == "gốc" and t.get("url")), None) \
         or (trang[0].get("url") if trang else "")
@@ -245,41 +333,6 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
 
     def het_gio():
         return time.time() - t0 > gio_han
-
-    def lay_anh(page, url, so, chup_fig=True):
-        # Tran moi trang: goc <= 4 anh, bao khac <= 3. Truoc day vet toi 12 anh
-        # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026).
-        for im in (page.evaluate(JS_IMG) or [])[: 4 if so == 0 else 3]:
-            ra["cands"].append({"anh": im["src"], "alt": im["alt"], "og": False, "tu": "browser",
-                                "trang": url, "rong": im["w"], "cao": im["h"], "diem": 45})
-        if not chup_fig:
-            return
-        for f in page.evaluate(JS_FIG) or []:
-            out = wd / "goc" / f"chup_{so}_{f['sel'][-3:-2]}.png"
-            out.parent.mkdir(parents=True, exist_ok=True)
-            el = page.query_selector(f["sel"])
-            if not el:
-                continue
-            try:
-                el.scroll_into_view_if_needed()
-                page.wait_for_timeout(300)
-                el.screenshot(path=str(out))
-            except Exception:                                # noqa: BLE001
-                continue
-            luat_anh.dong_dau_tep(out, "chup_chart")
-            # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
-            # anh_bai -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
-            ra["cands"].append({"anh": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
-                                "og": False, "tu": "chup", "the": f["tag"], "trang": url,
-                                "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "diem": 50})
-
-    def mo(page, url, cho_yen=12000):
-        page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        try:
-            page.wait_for_load_state("networkidle", timeout=cho_yen)
-        except Exception:                                    # noqa: BLE001
-            pass
-        page.wait_for_timeout(700)
 
     try:
         with sync_playwright() as p:
@@ -293,52 +346,16 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
                 # 1) trang goc
                 if goc and goc.startswith("http") and GNEWS not in goc:
                     try:
-                        mo(page, goc)
+                        _mo_trang(page, goc)
                         ra["tieu_de_en"] = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "",
-                                                  (page.evaluate(JS_TITLE) or "").strip())
-                        ra["chu"] = page.evaluate(JS_TEXT) or ""
-                        lay_anh(page, goc, 0)
+                                                  (page.evaluate(JS["TITLE"]) or "").strip())
+                        ra["chu"] = page.evaluate(JS["TEXT"]) or ""
+                        _lay_anh_trang(page, goc, 0, wd, ra, JS)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] goc {goc[:60]}: {type(e).__name__}", file=sys.stderr)
                 # 2) tim bao khac (bo nguon mong)
                 if tim_them and ra["tieu_de_en"] and not het_gio():
-                    try:
-                        q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["tieu_de_en"])[:120]
-                        mo(page, "https://news.google.com/search?q=" + up.quote(q)
-                           + "&hl=en-US&gl=US&ceid=US:en", cho_yen=6000)
-                        links, thay = [], set()
-                        for h in page.evaluate(JS_GNEWS) or []:
-                            k = h.split("?")[0]
-                            if k not in thay:
-                                thay.add(k)
-                                links.append(h)
-                        for h in links[:5]:
-                            if het_gio() or len(ra["trang_them"]) >= 3:
-                                break
-                            try:
-                                page.goto(h, wait_until="domcontentloaded", timeout=25000)
-                                t1 = time.time()
-                                while "news.google.com" in page.url and time.time() - t1 < 12:
-                                    page.wait_for_timeout(500)
-                                u = page.url
-                                if "news.google.com" in u or _mien(u) == mien_goc \
-                                        or any(_mien(u) == _mien(x["url"]) for x in ra["trang_them"]):
-                                    continue
-                                td = (page.title() or "")[:160]
-                                # Google News tra ca bai KHONG lien quan (cung tu "AI"):
-                                # bai benh than, letsdatascience (Gimlet 05/09). Phai
-                                # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
-                                import anh_bai as _ab
-                                if len(_ab._tu_dac_trung(ra["tieu_de_en"]) & _ab._tu_dac_trung(td)) < 2:
-                                    print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
-                                    continue
-                                ra["trang_them"].append({"url": u, "loai": "báo",
-                                                         "tieu_de": td,
-                                                         "toa_soan": "https://" + _mien(u)})
-                            except Exception:                # noqa: BLE001
-                                continue
-                    except Exception as e:                   # noqa: BLE001
-                        print(f"[browser] gnews search: {type(e).__name__}", file=sys.stderr)
+                    _tim_bao_gnews(page, ra, mien_goc, het_gio, JS)
                 # 3) bao khac (co san trong nguon + vua tim): lay anh, toi da 2 trang
                 khac = [t for t in trang if t.get("url") and t.get("url") != goc and GNEWS not in t["url"]]
                 khac += ra["trang_them"]
@@ -346,8 +363,8 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
                     if het_gio():
                         break
                     try:
-                        mo(page, t["url"], cho_yen=8000)
-                        lay_anh(page, t["url"], i)
+                        _mo_trang(page, t["url"], cho_yen=8000)
+                        _lay_anh_trang(page, t["url"], i, wd, ra, JS)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] {t['url'][:60]}: {type(e).__name__}", file=sys.stderr)
             finally:
