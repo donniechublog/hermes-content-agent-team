@@ -483,215 +483,229 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     _ghi_json(DRAFTS / (draft_id + ".img.json"), im)
     return rid, None
 
-def handle_img_approval(token, action, draft_id, cq):
-    """Cong duyet ANH truoc khi viet. designer (Ethan)/Dre/Dre day anh len topic kem
-    ba nut:
-      imgok    (Duyet)   -> sinh task viet caption (writer_body cat san o
-                            `<draft_id>.writer.json`).
-      imgredo  (Lam lai) -> tao lai task ANH (body cat o `<draft_id>.img.json`,
-                            them ghi chu chon anh khac) -> designer dung lai.
-      imgno    (Bo han)  -> giet tin: khong viet, khong lam lai."""
-    msg = cq["message"]
-    chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
-    wp = DRAFTS / (draft_id + ".writer.json")
-
-    if action == "imgno":
-        try:
-            w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
-        except Exception:                                       # noqa: BLE001
-            w = {}
-        if w.get("created") is True:
-            # Da bam Duyet truoc do (writer dang chay) — khong bo han nua de tranh
-            # trang thai mau thuan (task viet da ton tai ma sidecar lai 'rejected').
-            note = "⚠️ Bài đã duyệt, đang viết — không bỏ hẳn được nữa"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Đã duyệt trước đó, không bỏ", show_alert=True)
-        else:
-            note = "🗑 Đã bỏ hẳn tin — không viết, không làm lại"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Đã bỏ hẳn")
-            _go_so_anh(draft_id, "bo han tin")
-            if wp.exists():
-                try:
-                    w["created"] = "rejected"
-                    _ghi_json(wp, w)
-                except Exception as e:                          # noqa: BLE001
-                    # Khong ghi duoc sidecar nghia la lenh bo KHONG dinh: bam
-                    # Duyet sau do van sinh task viet cho tin da giet. Phai noi.
-                    note = ("⚠️ Bỏ hẳn nhưng KHÔNG ghi được trạng thái ("
-                            + type(e).__name__ + ") — bấm Bỏ hẳn lại lần nữa")
-    elif action == "imgkite":
-        ip = DRAFTS / (draft_id + ".img.json")
-        if not ip.exists():
-            note = "⚠️ Không thấy thông tin task ảnh"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note, show_alert=True)
-        else:
-            im = json.loads(ip.read_text(encoding="utf-8"))
-            if im.get("chuyen_kite"):
-                note = f"↪️ Đã chuyển Kite trước đó (task {im['chuyen_kite']})"
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note)
-            else:
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Đang giao Kite…")
-                rid, err = tao_task_kite(draft_id, im, ly_do="Ong Chu bam Gui Kite (thieu anh that)")
-                note = ("⚠️ Chuyển Kite lỗi: " + str(err)) if err else \
-                       f"🎨 Đã giao Kite vẽ vector (task {rid}) — {TEN_VAI_ANH.get(im.get('chuyen_tu'), 'vai cũ')} dừng bộ này"
-                if not err:
-                    _bao_nhan_viec(token, chat_id, "carousel-edu", im.get("chuyen_tu"),
-                                   im.get("title", draft_id), rid,
-                                   ly_do="thiếu ảnh thật, Ông Chủ chuyển sang vẽ vector")
-    elif action == "imgtiep":
-        # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
-        # xong.json van nguyen (8 voi tin flagship), nen dre_nop van chan "chi N
-        # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
-        # Gio HA SAN that: ve `toi_thieu_co_ban` (san cua carousel.py). Duoi san
-        # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
-        xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
-        try:
-            mm = json.loads(xong.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            mm = {}
-        san = int(mm.get("toi_thieu_co_ban", 5))
-        so = int(mm.get("so_dung_duoc", 0))
-        cu = int(mm.get("toi_thieu", san))
-        if not mm:
-            note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Thiếu xong.json", show_alert=True)
-        elif so < san:
-            note = (f"⚠️ Chỉ {so} ảnh thật mà carousel cần tối thiểu {san} slide — "
-                    f"bấm tiếp cũng không dựng được. Chuyển Kite vẽ vector, hoặc bỏ tin.")
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text=f"Không đủ: {so} ảnh < {san} slide", show_alert=True)
-        elif cu <= san:
-            note = f"🖼 Sàn đã ở mức tối thiểu {san} slide — vai làm với {so} ảnh hiện có"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
-        else:
-            mm["toi_thieu"] = san
-            mm["ha_san_luc"] = int(time.time())
+def _nut_bo_han(token, draft_id, cq, wp):
+    """imgno: giet tin — khong viet, khong lam lai. Da bam Duyet truoc do thi
+    khong bo nua (task viet da ton tai)."""
+    try:
+        w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
+    except Exception:                                       # noqa: BLE001
+        w = {}
+    if w.get("created") is True:
+        # Da bam Duyet truoc do (writer dang chay) — khong bo han nua de tranh
+        # trang thai mau thuan (task viet da ton tai ma sidecar lai 'rejected').
+        note = "⚠️ Bài đã duyệt, đang viết — không bỏ hẳn được nữa"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã duyệt trước đó, không bỏ", show_alert=True)
+    else:
+        note = "🗑 Đã bỏ hẳn tin — không viết, không làm lại"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã bỏ hẳn")
+        _go_so_anh(draft_id, "bo han tin")
+        if wp.exists():
             try:
-                tmp = xong.with_suffix(".json.tmp")
-                tmp.write_text(json.dumps(mm, ensure_ascii=False, indent=1), encoding="utf-8")
-                tmp.replace(xong)
-                note = (f"🖼 Đã hạ sàn {cu} → {san} slide cho bài này: vai ảnh làm với "
-                        f"{so} ảnh thật hiện có (gộp ý / giảm slide)")
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} slide")
-            except OSError as e:
-                note = f"⚠️ Không ghi được xong.json ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                     text="Ghi xong.json lỗi", show_alert=True)
-    elif action == "imgredo":
-        # Ong Chu 04/09/2026: bam Lam lai phai co cho de noi SLIDE NAO va VI SAO.
-        # Chi bam "lam lai" thi vai khong biet sua cho nao, lan sau van co the sai
-        # y nhu cu. Nen KHONG giao ngay: ghi "dang cho ly do" cho topic nay, hoi
-        # mot dong, va nuot tin nhan ke tiep cua Ong Chu lam ly do
-        # (_nhan_ly_do_lam_lai). Het LAM_LAI_HAN giay chua tra loi -> giao kieu cu.
-        ip = DRAFTS / (draft_id + ".img.json")
-        if not ip.exists():
-            note = "⚠️ Không thấy thông tin task ảnh để làm lại"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Thiếu thông tin ảnh", show_alert=True)
-        else:
-            im = json.loads(ip.read_text(encoding="utf-8"))
-            thread_id = msg.get("message_thread_id")
-            # MOT topic chi cho ly do cua MOT bai mot luc: cau tra loi cua Ong Chu
-            # la mot dong chu, khong mang dau hieu nao ve bai ngoai tin duoc reply.
-            # Topic dang cho bai khac thi noi ro va GIU NGUYEN nut cua bai nay de
-            # bam lai sau (thoat som, khong xuong doan go ban phim o cuoi ham).
-            with _KHOA_LAM_LAI:
-                cho = _nap_lam_lai_cho()
-                khac = [v for v in _cho_trong_topic(cho, thread_id)
-                        if v.get("draft_id") != draft_id and not _qua_han(v)]
-                if not khac:
-                    cho[draft_id] = {"draft_id": draft_id, "thread_id": thread_id,
-                                     "ts": time.time(),
-                                     "title": im.get("title", draft_id)}
-                    _ghi_json(LAM_LAI_CHO, cho, indent=None)
-            if khac:
-                log("nut", f"imgredo {draft_id}: topic {thread_id} dang cho ly do "
-                           f"cua {khac[0].get('draft_id')} -> khong nhan, giu nut")
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                     text="Đang chờ lý do bài: " + str(khac[0].get("title", ""))[:110]
-                          + " — trả lời bài đó trước rồi bấm lại nút này.",
-                     show_alert=True)
-                return
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Chờ anh nêu slide + lý do…")
-            _go_so_anh(draft_id, "lam lai album")
-            n = int(im.get("remakes", 0)) + 1
-            if im.get("carousel"):
-                huong_dan = ("Trả lời <b>một dòng</b>: <code>số slide: lý do</code>\n"
-                             "Vd: <code>4: chart bị cắt mất trục x</code> · nhiều slide: "
-                             "<code>2,5: ...</code> · cả bộ: <code>tất cả: ...</code>")
-            else:
-                huong_dan = ("Trả lời <b>lý do</b> ảnh chưa đạt, vd: <code>mặt người lạ</code>, "
-                             "<code>chart bị cắt</code>, <code>nửa dưới quá rối</code>")
-            # force_reply: Telegram tu bat "tra loi tin nay" -> cau ly do cua Ong Chu la
-            # REPLY toi bot duyet. Gateway (bot chat) duoc va de bo qua moi tin reply toi
-            # bot khac (adapter, 05/09) -> het canh hai bot cung dap mot cau.
-            r_hoi = call(token, "sendMessage", chat_id=chat_id,
-                 **({"message_thread_id": thread_id} if thread_id else {}),
-                 parse_mode="HTML", reply_markup={"force_reply": True, "selective": False},
-                 text=(f"🔄 Làm lại <b>{im.get('title', draft_id)}</b> (lần {n}).\n"
-                       + huong_dan + "\n"
-                       "<b>Trả lời (reply) vào đúng tin này.</b> Chữ gõ rời sẽ được coi là chat, "
-                       "không phải lý do. Reply <code>hủy</code> để không làm lại. "
-                       "Không trả lời trong 10 phút → giao theo kiểu cũ (chỉ \"chọn ảnh khác\")."))
-            try:                       # nho message_id tin hoi: chi nhan reply toi dung no
-                _mid_hoi = (r_hoi.get("result") or {}).get("message_id")
-                if _mid_hoi:
-                    # Doc lai trong khoa: giua hai doan nay la mot lenh mang, han
-                    # 10 phut o thread poll co the vua don ban ghi khac.
-                    with _KHOA_LAM_LAI:
-                        cho = _nap_lam_lai_cho()
-                        if draft_id in cho:
-                            cho[draft_id]["hoi_mid"] = _mid_hoi
-                            _ghi_json(LAM_LAI_CHO, cho, indent=None)
-            except Exception as _e:                              # noqa: BLE001
-                log("nut", f"khong luu hoi_mid: {type(_e).__name__}: {_e}")
-            note = f"⏳ Chờ lý do làm lại (lần {n})"
-    else:                                                       # imgok
-        if not wp.exists():
-            note = "⚠️ Không thấy thông tin bài (writer sidecar) cho draft này"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Thiếu thông tin bài", show_alert=True)
-        else:
-            w = json.loads(wp.read_text(encoding="utf-8"))
-            if w.get("created") is True:
-                note = "✅ Đã duyệt rồi — bài đang được viết"
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                     text="Đã duyệt trước đó")
-            elif w.get("created") == "rejected":
-                note = "🗑 Tin này đã bỏ hẳn trước đó — không viết"
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                     text="Đã bỏ hẳn", show_alert=True)
-            else:
-                call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                     text="Đang giao cho người viết…")
-                # Ban giao tu vai anh (dre_nop.py ghi: link that, nguon tung anh)
-                # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
-                # phai "nhan Miles".
-                _body = w["body"]
-                _bg = DRAFTS / (draft_id + ".ban_giao.md")
-                if _bg.exists():
-                    _body += ("\n\n== BAN GIAO TU VAI ANH (tu dong) ==\n"
-                              + _bg.read_text(encoding="utf-8"))
-                # Bang den: Miles la con cua the goc + task Dre -> thay ban giao
-                # cua Dre trong "Parent task results". Chi noi voi cha DA done:
-                # sau "Lam lai" task Dre cu co the blocked, noi vao la Miles
-                # nam todo mai.
-                _cha = [t for t in (w.get("root_task"), w.get("dre_task"))
-                        if t and _trang_thai_task(t) == "done"]
-                if w.get("root_task"):
-                    _body += BANG_DEN_NHAC.format(root=w["root_task"])
-                wid, err = kanban_create("Bai: " + w.get("title", draft_id),
-                                         w["vai_viet"], _body, parent=_cha)
-                if err:
-                    note = "⚠️ Duyệt ok nhưng tạo task viết lỗi: " + str(err)
-                else:
-                    w["created"], w["writer_task"] = True, wid
-                    _ghi_json(wp, w)
-                    ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
-                    note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
+                w["created"] = "rejected"
+                _ghi_json(wp, w)
+            except Exception as e:                          # noqa: BLE001
+                # Khong ghi duoc sidecar nghia la lenh bo KHONG dinh: bam
+                # Duyet sau do van sinh task viet cho tin da giet. Phai noi.
+                note = ("⚠️ Bỏ hẳn nhưng KHÔNG ghi được trạng thái ("
+                        + type(e).__name__ + ") — bấm Bỏ hẳn lại lần nữa")
+    return note
 
+
+def _nut_kite(token, chat_id, draft_id, cq):
+    """imgkite: giao Kite ve vector thay cho vai anh hien tai (thieu anh that)."""
+    ip = DRAFTS / (draft_id + ".img.json")
+    if not ip.exists():
+        note = "⚠️ Không thấy thông tin task ảnh"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note, show_alert=True)
+    else:
+        im = json.loads(ip.read_text(encoding="utf-8"))
+        if im.get("chuyen_kite"):
+            note = f"↪️ Đã chuyển Kite trước đó (task {im['chuyen_kite']})"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note)
+        else:
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Đang giao Kite…")
+            rid, err = tao_task_kite(draft_id, im, ly_do="Ong Chu bam Gui Kite (thieu anh that)")
+            note = ("⚠️ Chuyển Kite lỗi: " + str(err)) if err else \
+                   f"🎨 Đã giao Kite vẽ vector (task {rid}) — {TEN_VAI_ANH.get(im.get('chuyen_tu'), 'vai cũ')} dừng bộ này"
+            if not err:
+                _bao_nhan_viec(token, chat_id, "carousel-edu", im.get("chuyen_tu"),
+                               im.get("title", draft_id), rid,
+                               ly_do="thiếu ảnh thật, Ông Chủ chuyển sang vẽ vector")
+    return note
+
+
+def _nut_ha_san(token, draft_id, cq):
+    """imgtiep: ha san so slide ve `toi_thieu_co_ban` de vai lam voi so anh hien co."""
+    # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
+    # xong.json van nguyen (8 voi tin flagship), nen dre_nop van chan "chi N
+    # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
+    # Gio HA SAN that: ve `toi_thieu_co_ban` (san cua carousel.py). Duoi san
+    # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
+    xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
+    try:
+        mm = json.loads(xong.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        mm = {}
+    san = int(mm.get("toi_thieu_co_ban", 5))
+    so = int(mm.get("so_dung_duoc", 0))
+    cu = int(mm.get("toi_thieu", san))
+    if not mm:
+        note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Thiếu xong.json", show_alert=True)
+    elif so < san:
+        note = (f"⚠️ Chỉ {so} ảnh thật mà carousel cần tối thiểu {san} slide — "
+                f"bấm tiếp cũng không dựng được. Chuyển Kite vẽ vector, hoặc bỏ tin.")
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text=f"Không đủ: {so} ảnh < {san} slide", show_alert=True)
+    elif cu <= san:
+        note = f"🖼 Sàn đã ở mức tối thiểu {san} slide — vai làm với {so} ảnh hiện có"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
+    else:
+        mm["toi_thieu"] = san
+        mm["ha_san_luc"] = int(time.time())
+        try:
+            tmp = xong.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(mm, ensure_ascii=False, indent=1), encoding="utf-8")
+            tmp.replace(xong)
+            note = (f"🖼 Đã hạ sàn {cu} → {san} slide cho bài này: vai ảnh làm với "
+                    f"{so} ảnh thật hiện có (gộp ý / giảm slide)")
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} slide")
+        except OSError as e:
+            note = f"⚠️ Không ghi được xong.json ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Ghi xong.json lỗi", show_alert=True)
+    return note
+
+
+def _nut_lam_lai(token, chat_id, draft_id, cq, msg):
+    """imgredo: KHONG giao ngay — hoi mot dong, nuot tin ke tiep cua Ong Chu lam
+    ly do (_nhan_ly_do_lam_lai). Tra None khi topic dang cho ly do bai khac:
+    giu nguyen nut, khong sua tin."""
+    # Ong Chu 04/09/2026: bam Lam lai phai co cho de noi SLIDE NAO va VI SAO.
+    # Chi bam "lam lai" thi vai khong biet sua cho nao, lan sau van co the sai
+    # y nhu cu. Nen KHONG giao ngay: ghi "dang cho ly do" cho topic nay, hoi
+    # mot dong, va nuot tin nhan ke tiep cua Ong Chu lam ly do
+    # (_nhan_ly_do_lam_lai). Het LAM_LAI_HAN giay chua tra loi -> giao kieu cu.
+    ip = DRAFTS / (draft_id + ".img.json")
+    if not ip.exists():
+        note = "⚠️ Không thấy thông tin task ảnh để làm lại"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Thiếu thông tin ảnh", show_alert=True)
+    else:
+        im = json.loads(ip.read_text(encoding="utf-8"))
+        thread_id = msg.get("message_thread_id")
+        # MOT topic chi cho ly do cua MOT bai mot luc: cau tra loi cua Ong Chu
+        # la mot dong chu, khong mang dau hieu nao ve bai ngoai tin duoc reply.
+        # Topic dang cho bai khac thi noi ro va GIU NGUYEN nut cua bai nay de
+        # bam lai sau (thoat som, khong xuong doan go ban phim o cuoi ham).
+        with _KHOA_LAM_LAI:
+            cho = _nap_lam_lai_cho()
+            khac = [v for v in _cho_trong_topic(cho, thread_id)
+                    if v.get("draft_id") != draft_id and not _qua_han(v)]
+            if not khac:
+                cho[draft_id] = {"draft_id": draft_id, "thread_id": thread_id,
+                                 "ts": time.time(),
+                                 "title": im.get("title", draft_id)}
+                _ghi_json(LAM_LAI_CHO, cho, indent=None)
+        if khac:
+            log("nut", f"imgredo {draft_id}: topic {thread_id} dang cho ly do "
+                       f"cua {khac[0].get('draft_id')} -> khong nhan, giu nut")
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Đang chờ lý do bài: " + str(khac[0].get("title", ""))[:110]
+                      + " — trả lời bài đó trước rồi bấm lại nút này.",
+                 show_alert=True)
+            return None
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Chờ anh nêu slide + lý do…")
+        _go_so_anh(draft_id, "lam lai album")
+        n = int(im.get("remakes", 0)) + 1
+        if im.get("carousel"):
+            huong_dan = ("Trả lời <b>một dòng</b>: <code>số slide: lý do</code>\n"
+                         "Vd: <code>4: chart bị cắt mất trục x</code> · nhiều slide: "
+                         "<code>2,5: ...</code> · cả bộ: <code>tất cả: ...</code>")
+        else:
+            huong_dan = ("Trả lời <b>lý do</b> ảnh chưa đạt, vd: <code>mặt người lạ</code>, "
+                         "<code>chart bị cắt</code>, <code>nửa dưới quá rối</code>")
+        # force_reply: Telegram tu bat "tra loi tin nay" -> cau ly do cua Ong Chu la
+        # REPLY toi bot duyet. Gateway (bot chat) duoc va de bo qua moi tin reply toi
+        # bot khac (adapter, 05/09) -> het canh hai bot cung dap mot cau.
+        r_hoi = call(token, "sendMessage", chat_id=chat_id,
+             **({"message_thread_id": thread_id} if thread_id else {}),
+             parse_mode="HTML", reply_markup={"force_reply": True, "selective": False},
+             text=(f"🔄 Làm lại <b>{im.get('title', draft_id)}</b> (lần {n}).\n"
+                   + huong_dan + "\n"
+                   "<b>Trả lời (reply) vào đúng tin này.</b> Chữ gõ rời sẽ được coi là chat, "
+                   "không phải lý do. Reply <code>hủy</code> để không làm lại. "
+                   "Không trả lời trong 10 phút → giao theo kiểu cũ (chỉ \"chọn ảnh khác\")."))
+        try:                       # nho message_id tin hoi: chi nhan reply toi dung no
+            _mid_hoi = (r_hoi.get("result") or {}).get("message_id")
+            if _mid_hoi:
+                # Doc lai trong khoa: giua hai doan nay la mot lenh mang, han
+                # 10 phut o thread poll co the vua don ban ghi khac.
+                with _KHOA_LAM_LAI:
+                    cho = _nap_lam_lai_cho()
+                    if draft_id in cho:
+                        cho[draft_id]["hoi_mid"] = _mid_hoi
+                        _ghi_json(LAM_LAI_CHO, cho, indent=None)
+        except Exception as _e:                              # noqa: BLE001
+            log("nut", f"khong luu hoi_mid: {type(_e).__name__}: {_e}")
+        note = f"⏳ Chờ lý do làm lại (lần {n})"
+    return note
+
+
+def _nut_duyet(token, draft_id, cq, wp):
+    """imgok: sinh task viet caption tu writer sidecar, dan kem ban giao cua vai anh."""
+    if not wp.exists():
+        note = "⚠️ Không thấy thông tin bài (writer sidecar) cho draft này"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Thiếu thông tin bài", show_alert=True)
+    else:
+        w = json.loads(wp.read_text(encoding="utf-8"))
+        if w.get("created") is True:
+            note = "✅ Đã duyệt rồi — bài đang được viết"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Đã duyệt trước đó")
+        elif w.get("created") == "rejected":
+            note = "🗑 Tin này đã bỏ hẳn trước đó — không viết"
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Đã bỏ hẳn", show_alert=True)
+        else:
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+                 text="Đang giao cho người viết…")
+            # Ban giao tu vai anh (dre_nop.py ghi: link that, nguon tung anh)
+            # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
+            # phai "nhan Miles".
+            _body = w["body"]
+            _bg = DRAFTS / (draft_id + ".ban_giao.md")
+            if _bg.exists():
+                _body += ("\n\n== BAN GIAO TU VAI ANH (tu dong) ==\n"
+                          + _bg.read_text(encoding="utf-8"))
+            # Bang den: Miles la con cua the goc + task Dre -> thay ban giao
+            # cua Dre trong "Parent task results". Chi noi voi cha DA done:
+            # sau "Lam lai" task Dre cu co the blocked, noi vao la Miles
+            # nam todo mai.
+            _cha = [t for t in (w.get("root_task"), w.get("dre_task"))
+                    if t and _trang_thai_task(t) == "done"]
+            if w.get("root_task"):
+                _body += BANG_DEN_NHAC.format(root=w["root_task"])
+            wid, err = kanban_create("Bai: " + w.get("title", draft_id),
+                                     w["vai_viet"], _body, parent=_cha)
+            if err:
+                note = "⚠️ Duyệt ok nhưng tạo task viết lỗi: " + str(err)
+            else:
+                w["created"], w["writer_task"] = True, wid
+                _ghi_json(wp, w)
+                ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
+                note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
+    return note
+
+
+def _chot_nut(token, msg, draft_id, note):
+    """Duoi chung cua moi nut: ghi log, viet ket qua vao chinh tin co nut va go
+    ban phim; edit hong thi it nhat go ban phim."""
+    chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
     log("nut", f"ket qua imgok/imgno/imgredo draft={draft_id}: {note}")
     base = msg.get("caption") or msg.get("text") or ""
     method = "editMessageCaption" if msg.get("caption") else "editMessageText"
@@ -702,6 +716,36 @@ def handle_img_approval(token, action, draft_id, cq):
     if not r.get("ok"):
         call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id,
              reply_markup={"inline_keyboard": []})
+
+
+def handle_img_approval(token, action, draft_id, cq):
+    """Cong duyet ANH truoc khi viet. designer (Ethan)/Dre/Dre day anh len topic kem
+    ba nut:
+      imgok    (Duyet)   -> sinh task viet caption (writer_body cat san o
+                            `<draft_id>.writer.json`).
+      imgredo  (Lam lai) -> tao lai task ANH (body cat o `<draft_id>.img.json`,
+                            them ghi chu chon anh khac) -> designer dung lai.
+      imgno    (Bo han)  -> giet tin: khong viet, khong lam lai.
+
+    Tach 07/09/2026: moi nut mot ham tra ve `note`, mot duoi chung (_chot_nut).
+    Ban cu la 218 dong, nam nhanh noi tiep trong mot ham; doi chieu bang vet
+    side-effect (26 kich ban), khong doi hanh vi."""
+    msg = cq["message"]
+    chat_id = msg["chat"]["id"]
+    wp = DRAFTS / (draft_id + ".writer.json")
+    if action == "imgno":
+        note = _nut_bo_han(token, draft_id, cq, wp)
+    elif action == "imgkite":
+        note = _nut_kite(token, chat_id, draft_id, cq)
+    elif action == "imgtiep":
+        note = _nut_ha_san(token, draft_id, cq)
+    elif action == "imgredo":
+        note = _nut_lam_lai(token, chat_id, draft_id, cq, msg)
+        if note is None:
+            return
+    else:                                                       # imgok
+        note = _nut_duyet(token, draft_id, cq, wp)
+    _chot_nut(token, msg, draft_id, note)
 
 _DRAFT_ID_HOP_LE = re.compile(r"^[a-z0-9][a-z0-9-]{0,54}$")
 
