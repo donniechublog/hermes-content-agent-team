@@ -194,7 +194,10 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `tong_hop` của nhật ký 9router),
   `test_soat_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
   còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
-  giống hệt nhau, đếm được), `test_tai_lieu` chặn tài liệu trôi khỏi mã.
+  giống hệt nhau, đếm được), `test_spec_dre` giữ cổng spec carousel của Dre
+  (36 nhánh, phần lớn là luật Ông Chủ đặt sau một sự cố thật),
+  `test_tai_lieu` chặn tài liệu trôi khỏi mã. Đồ dùng chung của test nằm ở
+  `tests/tam.py` — **không** phải tệp test, `chay.sh` chỉ chạy `test_*.py`.
 
   **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
   thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba
