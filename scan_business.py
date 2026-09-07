@@ -31,7 +31,6 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
-import httpx
 
 import quet_chung                                            # noqa: E402
 import env_load

@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 import ada_chuan_bi as ab                                    # noqa: E402
 import caption_check as cc                                   # noqa: E402
 import env_load                                              # noqa: E402
-from card import tim_mat_dau, bo_dau_cam                     # noqa: E402
+from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
 
 
 def dung_bao_cao(m: dict, spec: dict) -> str:

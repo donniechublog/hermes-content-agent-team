@@ -125,6 +125,39 @@ def _bo_dong_rac(out: str) -> str:
 BO_CHI_DOC = "safe"
 
 
+def dung_argv(profile, session, prompt, toolsets=None) -> list:
+    """Dong lenh `hermes chat` cho mot luot. Tach ra de TEST duoc (06/09/2026
+    dot 2): day dung la doan da gay su co `-z` nuot `--continue`, va truoc gio
+    muon kiem no thi phai chay ca mot tien trinh hermes that.
+
+    KHONG dung `-z` (oneshot): hermes_cli/main.py xu ly `-z` TRUOC roi thoat
+    ngay (`_run_and_exit_oneshot` chi nhan prompt/model/provider/toolsets/
+    skills) — `--continue` khong bao gio toi `_resolve_continue_arg`, bi bo
+    qua IM LANG. Hau qua: MOI tin nhan mo mot phien MOI, khong vai nao nho gi.
+    Bang chung 04/09/2026: state.db cua itachi KHONG he co phien ten
+    `tele-itachi`, chi co chuoi phien tu dat ten theo dong dau cua prompt
+    ("[Ghi chu he thong... #2 #3 #4"); phien 00:20:54 co dung 2 tin. Nen luc
+    07:19 Ong Chu tra loi "xac nhan" thi Itachi dap "Xac nhan gi? Chua thay
+    cau hoi cu the truoc do" du mot phut truoc chinh no vua hoi. Su co Ethan
+    03/09 15:14 ("session trong, khong co draft nao") cung mot goc nay.
+    Duong dung la subcommand `chat`: -c giu mach theo ten, --create-if-missing
+    tao phien lan dau (thieu co nay thi hermes thoat 1), -Q chi in cau tra loi
+    cuoi, --no-restore-cwd de lan resume sau khong tu cd di cho khac.
+
+    `--toolsets` CO tac dung tren duong `chat` (khong phai chi -z/--tui nhu
+    dong help noi): cli.py nhan vao self.enabled_toolsets roi dung no dung dan
+    cho get_tool_definitions() — danh sach cong cu dua cho model bi cat that.
+    """
+    args = [str(HERMES_PY), "-m", "hermes_cli.main"]
+    if profile:
+        args += ["-p", profile]
+    args += ["chat", "-c", session, "--create-if-missing",
+             "--no-restore-cwd", "-Q", "-q", prompt]
+    if toolsets:
+        args += ["--toolsets", toolsets]
+    return args
+
+
 def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
         toolsets=None) -> tuple:
     """Goi hermes CLI, tra ve (noi_dung, loi). LUON tra ve — khong nem.
@@ -144,31 +177,8 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
     except Exception:                                        # noqa: BLE001
         log = lambda a, b: print(f"[{a}] {b}", flush=True)   # noqa: E731
 
-    args = [str(HERMES_PY), "-m", "hermes_cli.main"]
-    if profile:
-        args += ["-p", profile]
     prompt = (chat_hint() + text) if hint else text
-    # KHONG dung `-z` (oneshot): hermes_cli/main.py xu ly `-z` TRUOC roi thoat
-    # ngay (`_run_and_exit_oneshot` chi nhan prompt/model/provider/toolsets/
-    # skills) — `--continue` khong bao gio toi `_resolve_continue_arg`, bi bo
-    # qua IM LANG. Hau qua: MOI tin nhan mo mot phien MOI, khong vai nao nho gi.
-    # Bang chung 04/09/2026: state.db cua itachi KHONG he co phien ten
-    # `tele-itachi`, chi co chuoi phien tu dat ten theo dong dau cua prompt
-    # ("[Ghi chu he thong... #2 #3 #4"); phien 00:20:54 co dung 2 tin. Nen luc
-    # 07:19 Ong Chu tra loi "xac nhan" thi Itachi dap "Xac nhan gi? Chua thay
-    # cau hoi cu the truoc do" du mot phut truoc chinh no vua hoi. Su co Ethan
-    # 03/09 15:14 ("session trong, khong co draft nao") cung mot goc nay.
-    # Duong dung la subcommand `chat`: -c giu mach theo ten, --create-if-missing
-    # tao phien lan dau (thieu co nay thi hermes thoat 1), -Q chi in cau tra loi
-    # cuoi, --no-restore-cwd de lan resume sau khong tu cd di cho khac.
-    args += ["chat", "-c", session, "--create-if-missing",
-             "--no-restore-cwd", "-Q", "-q", prompt]
-    # Han che cong cu cho lan goi nay. Da kiem chung `--toolsets` CO tac dung
-    # tren duong `chat` (khong phai chi -z/--tui nhu dong help noi): cli.py
-    # nhan vao self.enabled_toolsets roi dung no dung dan cho
-    # get_tool_definitions() — danh sach cong cu dua cho model bi cat that.
-    if toolsets:
-        args += ["--toolsets", toolsets]
+    args = dung_argv(profile, session, prompt, toolsets)
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     t0 = time.time()
     log("chat", f"goi agent profile={profile or '-'} session={session} "

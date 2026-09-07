@@ -29,10 +29,7 @@ gan lai bien toan cuc (da grep `global`), nen sao chep la an toan.
 import json
 import os
 import re
-import sqlite3
-import subprocess
 import sys
-import threading
 import time
 from pathlib import Path
 
@@ -42,10 +39,6 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
-import bang_den                                              # noqa: E402
-import chat_router                                          # noqa: E402
-import moat_publish                                         # noqa: E402
-import tele_util                                            # noqa: E402
 import ghi_log                                              # noqa: E402
 
 from duyet_co_so import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*

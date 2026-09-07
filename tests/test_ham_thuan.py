@@ -325,6 +325,40 @@ def test_moi_duong_tai_deu_qua_cong():
                    for g in goi), f"{tep}:{ham} khong goi cong host"
 
 
+# --------------------------------------------------------- dung_argv (chat)
+def test_argv_chat_khong_bao_gio_co_z():
+    """Dung doan da gay su co 04/09: `-z` duoc hermes_cli xu ly TRUOC va thoat
+    ngay, nen `--continue` bi bo qua IM LANG va MOI tin mo mot phien moi — vai
+    nao cung "khong nho gi". Truoc day muon kiem dong lenh nay phai chay ca mot
+    tien trinh hermes that."""
+    import chat_router as cr
+    a = cr.dung_argv("writer", "tele-writer", "xin chao", "safe")
+    assert "-z" not in a, a
+    assert a[a.index("chat") + 1:a.index("chat") + 3] == ["-c", "tele-writer"]
+    for co in ("--create-if-missing", "--no-restore-cwd", "-Q", "-q"):
+        assert co in a, f"thieu {co}: {a}"
+    assert a[a.index("--toolsets") + 1] == "safe"
+    assert a[:2] == [a[0], "-m"] and a[2] == "hermes_cli.main"
+
+
+def test_argv_khong_profile_thi_khong_co_co_p():
+    import chat_router as cr
+    a = cr.dung_argv(None, "tele-general", "x")
+    assert "-p" not in a, a
+    assert "--toolsets" not in a
+
+
+def test_argv_khop_ban_ke_khai_cua_kiem_hermes():
+    """`kiem_hermes.CO_CHAT` la danh sach co ma script kiem sau moi
+    `hermes update`. Hai ban ke khai nay phai khop, khong thi kiem_hermes bao
+    xanh cho mot dong lenh khong con dung."""
+    import chat_router as cr
+    import kiem_hermes as kh
+    a = set(cr.dung_argv("writer", "tele-writer", "x"))
+    thieu = [c for c in kh.CO_CHAT if c not in a]
+    assert not thieu, f"kiem_hermes doi co {thieu} ma dung_argv khong sinh ra"
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

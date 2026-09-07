@@ -24,7 +24,8 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_chuan_bi as gb                                    # noqa: E402
 import nop_chung as nc                                       # noqa: E402
-from card import _f, _wrap, tim_mat_dau, bo_dau_cam          # noqa: E402
+from card import _f, _wrap                                   # noqa: E402
+from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
 
 FONTS = ROOT / "assets" / "fonts"
 FONT = {"bold": FONTS / "BeVietnamPro-Bold.ttf", "regular": FONTS / "BeVietnamPro-Regular.ttf",

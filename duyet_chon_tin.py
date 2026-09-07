@@ -5,29 +5,19 @@ Khoa theo duong dan manifest (hai lenh chon cung topic xep hang, khong nuot
 da_giao cua nhau). Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 """
 import json
-import os
 import re
-import sqlite3
 import subprocess
 import sys
 import threading
-import time
 from pathlib import Path
 
-from html import escape as html_escape
 
-import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load                                              # noqa: E402
-import bang_den                                              # noqa: E402
-import chat_router                                          # noqa: E402
-import moat_publish                                         # noqa: E402
-import tele_util                                            # noqa: E402
 import ghi_log                                              # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
-    BRAND, DRAFTS, HERMES_PY, ROOT, STATE_DIR, _ghi_json, _gui_chu, _nap_json, _reply_that, call, log, rut,
+    BRAND, DRAFTS, ROOT, STATE_DIR, _ghi_json, _gui_chu, _nap_json, _reply_that, call, log,
 )
 from duyet_giao_viec import (  # noqa: E402
     BANG_DEN_NHAC, MAC_DINH_ANH, MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_CAROUSEL, VAI_EDU, _bang_den_root, chuan_nhan, kanban_create,

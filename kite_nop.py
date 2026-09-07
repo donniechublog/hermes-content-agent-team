@@ -26,17 +26,14 @@ import anh_chuan_bi as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import kite_chuan_bi as kb                                   # noqa: E402
 import nop_chung as nc                                       # noqa: E402
+import render_edu                                            # noqa: E402
 
 DRAFTS = cb.DRAFTS
-BAT_BUOC = {
-    "cover": ("eyebrow", "title", "standfirst"),
-    "statement": ("eyebrow", "title", "standfirst"),
-    "steps": ("eyebrow", "title", "steps"),
-    "loop": ("eyebrow", "title", "chips", "standfirst"),
-    "figure": ("eyebrow", "title", "image", "caption"),
-    "bars": ("eyebrow", "title", "bars", "caption"),
-    "cta": ("eyebrow", "title", "checks"),
-}
+# MOT bang duy nhat, o renderer (doi 06/09/2026 dot 2). Ban chep o day truoc
+# kia thieu vai truong ma builder that su doc cung (`callout` cua loop,
+# `standfirst` cua figure/bars, cac khoa long trong cards/steps/bars), va no chi
+# chay khi di qua nop — goi thang render_edu.py thi khong co cong nao.
+BAT_BUOC = {k: v["truong"] for k, v in render_edu.BAT_BUOC_KIND.items()}
 GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
 
 
@@ -74,6 +71,12 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
         thieu = [f for f in BAT_BUOC[k] if not sl.get(f)]
         if thieu:
             loi.append(f"slide {i} ({k}): thiếu {', '.join(thieu)}")
+        # Khoa LONG (cards[].num, steps[].desc, bars[].label...) — renderer doc
+        # cung nen thieu la KeyError sau khi da mo Chromium.
+        loi += [d.replace(f"slide {i} [{k}]", f"slide {i} ({k})")
+                for d in render_edu.kiem_truong([sl])
+                if "[" in d and "thieu" in d and "]:" in d and
+                not any(f"thieu '{f}'" in d for f in BAT_BUOC[k])]
         s2 = dict(sl)
         img = sl.get("image")
         if img:
