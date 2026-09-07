@@ -27,3 +27,13 @@ venv
 
 # Tep nhap tam thoi
 gif2png_tmp.py
+
+# Va lo 07/09/2026: bon luat cu chi chan dung ten "secret.*.env" va ".secrets.env".
+# Mot tep ten ".env", "telebot.env", "token.txt" van lot vao repo — ma repo nay
+# la PUBLIC. Chan moi bien the, tru cac tep mau (.env.mau) von khong chua gi that.
+.env
+.env.*
+*.env
+token*.txt
+secrets*.txt
+!*.env.mau
