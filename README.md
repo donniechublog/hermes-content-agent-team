@@ -26,7 +26,7 @@ Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
 | Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
-| Ethan | `designer` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín |
+| Ethan | `designer` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
 | Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
 | Kite | `carousel-edu` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
 | Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
@@ -101,9 +101,13 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 **Dựng ảnh**
 
 - `card.py` — thẻ đơn. Kiểu `quote` (mặc định): pull-quote trong khung hai góc
-  ngoặc, dòng nguồn `--attrib` canh giữa. Kiểu `tran`: ảnh phủ kín, chữ đè lên
-  qua màn tối chuyển dần. Màu chữ/khung đo theo từng dải nền của chính tấm ảnh.
-  Spec chữ và bố cục: [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md).
+  ngoặc, dòng nguồn `--attrib` canh giữa. Kiểu `tran`: tiêu đề một câu trong
+  **khung chữ nhật nét** (Ông Chủ chốt 07/09/2026 — trước đó là "không một nét
+  nào"). Cả hai kiểu dùng chung **một** lớp ảnh (`_lop_anh`): nền là bản cover
+  làm mờ, lớp sắc full bề ngang đặt sát trên, mép dưới tan dần — **không còn
+  màu nền đặc** ở đâu. Không màn tối; màu chữ/khung/tên kênh đo theo từng dải
+  nền của chính tấm ảnh. Spec chữ và bố cục:
+  [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md).
 - `carousel.py` — carousel nhiều slide (Dre): ảnh 1:1 hoặc 4:5 phủ kín thẻ, chữ
   ở đáy chìm vào ảnh, ra `<id>.png` + `<id>_2.png`… đúng khuôn album của
   `draft_write.py`. Dùng lại helper của `card.py`.
@@ -187,7 +191,9 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   giữ mấy hàm thuần đã từng hồi quy im lặng (lệnh chọn số, `draft_id` ≤ 55 byte,
   cắt tin nhắn dài), `test_ham_thuan` giữ các hàm không ai canh mà quyết định
   nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`),
-  `test_tai_lieu` chặn tài liệu trôi khỏi mã.
+  `test_soat_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
+  còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
+  giống hệt nhau, đếm được), `test_tai_lieu` chặn tài liệu trôi khỏi mã.
 
   **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
   thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba
@@ -274,7 +280,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 ## Cron
 
 Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` gộp chung:
-`~/.hermes-blog/cron/jobs.json` (5 job) và `~/.hermes-dcgr/cron/jobs.json` (4 job).
+`~/.hermes-blog/cron/jobs.json` (6 job) và `~/.hermes-dcgr/cron/jobs.json` (5 job).
 
 - `finn-daily-scan` (blog), `nova-daily-scan` (blog), `vera-daily-scan` (dcgr)
   — **05:00 VN** (22:00 UTC). Ba job này nằm ở **hai container khác nhau**, nên
@@ -290,6 +296,10 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
   (`hermes cron`), tệp `hermes/cron/jobs.*.json` chỉ là bản chụp.
 - `moat-publish-watch` — 5 phút/lần, hỏi moat xem bài đã lên social chưa; im
   lặng khi không có gì mới, bỏ theo dõi một bài sau 7 ngày.
+- `soat-cron` — **07:00 VN** ở blog (`0 0 * * *`), **07:10 VN** ở dcgr
+  (`10 0 * * *`). Chạy sau ba job quét và `daily-log` nên soi được kết quả buổi
+  sáng đó. Mỗi lần chạy soát **cả hai home**, không chỉ home của mình — xem mục
+  dưới.
 
 **Job hỏng thì biết bằng cách nào.** Hermes chỉ coi một job là lỗi khi script
 thoát khác 0. Trước 06/09/2026 mọi script đều thoát 0 kể cả khi hỏng: ba script
@@ -299,11 +309,46 @@ tuần vẫn hiện `last_status: ok`, `failure_streak: 0`. Nay cả bốn scrip
 khác 0 khi hỏng, nên `failure_streak` trong `~/.hermes-<brand>/cron/jobs.json`
 và dashboard là chỗ đối chiếu thật.
 
-Còn lại (**việc của Ông Chủ**): cả 9 job đều `deliver: local`, tức output không
-đi đâu cả — muốn được nhắn khi job hỏng thì phải đổi `deliver`, nhưng nó gửi
-vào channel chung chứ không phải topic, và `moat-publish-watch` chạy 288
-lần/ngày nên bật thẳng là spam. Cách gọn hơn: một job soát `failure_streak` mỗi
-sáng.
+**Ai đọc con số đó.** `soat_cron.py` (Ông Chủ chốt 07/09/2026), chạy 07:00 VN.
+Nó không đổi `deliver` — đổi `deliver` là đổi cả đường ra của lần chạy **thành
+công**, mà `moat-publish-watch` chạy 288 lần/ngày. Nó đọc thẳng
+`<home>/cron/jobs.json` của **cả hai brand** rồi nhắn vào topic `analyst` khi
+thấy một trong sáu thứ:
+
+| Dấu hiệu | Bắt được cái gì |
+|---|---|
+| `failure_streak > 0`, `last_status != ok`, `last_error` | job có chạy và nổ |
+| `last_delivery_error` | job chạy xong nhưng kết quả không tới ai |
+| `enabled: false` / `state: paused` | job bị tắt hoặc bị treo — **không sinh lần chạy nào**, nên `failure_streak` đứng ở 0 mãi mãi |
+| `next_run_at` nằm lại quá khứ > 15 phút | scheduler không nổ |
+| `ticker_heartbeat` cũ hơn 200s | ticker chết → **mọi** job của home đó đóng băng (ngưỡng lấy đúng của `hermes cron status`: `TICKER_INTERVAL_SECONDS * 3 + 20`) |
+| `ticker_last_success` tụt xa `ticker_heartbeat` | ticker còn sống nhưng tick nào cũng hỏng |
+
+Ba dòng giữa là lý do phải có job soát thay vì chỉ trông vào `failure_streak`:
+chúng **không sinh một lần chạy nào**, nên không cơ chế nào dựa trên kết quả
+chạy thấy được.
+
+Chạy ở **cả hai container** (lệch 10 phút) — đặt một bản thì ngày container đó
+chết là không còn ai báo, đúng cái lỗ hổng cần bịt. Hai lần chạy không sinh hai
+tin: `state/soat_cron.json` (gốc `state/`, dùng chung) ghi bộ vấn đề đã báo
+trong ngày, container thứ hai thấy y hệt thì im. Hết vấn đề sau một ngày có
+vấn đề thì báo **một** dòng "cron sạch" rồi thôi.
+
+Đăng ký trên máy chủ (tệp `hermes/cron/jobs.*.json` chỉ là **bản chụp**, sửa nó
+không tạo được job):
+
+```bash
+HERMES_HOME=$HOME/.hermes-blog ~/hermes-agent/venv/bin/python -m hermes_cli.main \
+  cron create "0 0 * * *" --name soat-cron --script soat_cron.sh --no-agent --deliver local
+HERMES_HOME=$HOME/.hermes-dcgr ~/hermes-agent/venv/bin/python -m hermes_cli.main \
+  cron create "10 0 * * *" --name soat-cron --script soat_cron.sh --no-agent --deliver local
+```
+
+**Bổ trợ, chưa bật:** hermes có `--failure-deliver` — đường ra **chỉ dùng cho
+thông báo hỏng**, cùng ngữ pháp với `--deliver` và nhận cả
+`telegram:<chat_id>:<thread_id>`, tức bắn được thẳng vào một topic. Đặt nó cho
+ba job quét sẽ cho cảnh báo **tức thì** mà lần chạy thành công vẫn im. Nó không
+thay được `soat-cron` (nó chỉ báo được những lần thật sự có chạy), mà đi cùng.
 
 ## State: tệp nào của ai
 
@@ -323,6 +368,7 @@ có bảng này thì không ai biết sửa một tệp sẽ đụng vào ai.
 | `state/<brand>/bat_buoc_<vai>.json` | script quét | `manifest_ghi` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
 | `state/<brand>/<vai>_candidates_*.json` | `manifest_*` | — | `duyet_chon_tin` (chọn theo mtime) |
 | `state/9router/` | `theo_doi_9router` | — | `nhat_ky_web`, Ada |
+| `state/soat_cron.json` | `soat_cron` (brand nào chạy trước) | brand kia | `soat_cron` của brand kia |
 
 **Quy ước gốc state:** `state/<brand>/` cho mọi thứ thuộc về một brand;
 `state/` gốc **chỉ** cho thứ chung cả máy (nhật ký 9router, khoá). Sổ theme của
