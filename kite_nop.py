@@ -73,7 +73,10 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
             loi.append(f"slide {i} ({k}): thiếu {', '.join(thieu)}")
         # Khoa LONG (cards[].num, steps[].desc, bars[].label...) — renderer doc
         # cung nen thieu la KeyError sau khi da mo Chromium.
-        loi += [d.replace(f"slide {i} [{k}]", f"slide {i} ({k})")
+        # kiem_truong([sl]) chi thay MOT slide nen luon danh so "slide 1"; ban
+        # truoc 07/09/2026 tim "slide {i}" de doi -> khong bao gio khop, moi loi
+        # khoa long deu bao "slide 1" du o slide nao (test_spec_kite bat duoc).
+        loi += [d.replace(f"slide 1 [{k}]", f"slide {i} ({k})")
                 for d in render_edu.kiem_truong([sl])
                 if "[" in d and "thieu" in d and "]:" in d and
                 not any(f"thieu '{f}'" in d for f in BAT_BUOC[k])]
