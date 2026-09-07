@@ -261,7 +261,8 @@ def main() -> int:
     for c in canh:
         print(f"[CANH BAO] {c}")
     cover = spec.get("cover") or {}
-    loi = nc.kiem_lam_lai(da_dung, "bìa", cover.get("anh"), cover.get("hook"), khoa_anh="bia") + loi
+    loi = nc.kiem_lam_lai(da_dung, "bìa", cover.get("anh") or "+".join(cover.get("ghep") or []),
+                          cover.get("hook"), khoa_anh="bia", draft_id=a.draft_id) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")

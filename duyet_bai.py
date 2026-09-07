@@ -131,11 +131,26 @@ def publish(token, channel, draft_id):
     Truong hop do: gui anh truoc khong caption, roi gui chu rieng — thay vi de
     Telegram tu choi ca bai.
     """
-    d = json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
+    p_draft = DRAFTS / (draft_id + ".json")
+    d = json.loads(p_draft.read_text(encoding="utf-8"))
     caption = d["caption"]
     long_caption = len(caption) > CAPTION_LIMIT
 
     images = d.get("images")
+    # ALBUM DA LEN CHANNEL ROI THI DUNG GUI LAI (sua 06/09/2026 dot 2).
+    #
+    # Voi caption dai, ham nay gui album TRUOC roi moi gui tin chu; neu tin chu
+    # hong (caption HTML do LLM viet -> Telegram 400) thi ca lan dang bi ghi
+    # `publish_failed`, Ong Chu bam ✅ lai — va album len channel LAN THU HAI.
+    # Doc gia thay hai bai giong het nhau, dung thu README goi la hong te nhat.
+    # Ghi lai id album ngay khi Telegram nhan, roi lan sau chi gui phan con
+    # thieu.
+    if images and d.get("channel_album_mid"):
+        print(f"[publish] album cua {draft_id} da len channel truoc do "
+              f"(mid={d['channel_album_mid']}) — chi gui lai phan chu",
+              file=sys.stderr)
+        return _gui_chu(token, channel, caption) if long_caption else {"ok": True}
+
     if images:
         # Anh co the la URL (teaser lay tu bai goc) HOAC tep cuc bo (the do vai dung anh
         # dung + anh that tai ve). Tep cuc bo phai dinh kem multipart qua
@@ -161,6 +176,16 @@ def publish(token, channel, draft_id):
                        data={"chat_id": channel, "media": json.dumps(items)},
                        files=files or None)
         res = r.json()
+        if res.get("ok"):
+            # Ghi NGAY, truoc khi gui tin chu: buoc sau hong thi lan bam Duyet
+            # ke tiep phai biet album da len roi (xem ghi chu o dau ham).
+            try:
+                mid = (res.get("result") or [{}])[0].get("message_id")
+                d["channel_album_mid"] = mid or True
+                _ghi_json(p_draft, d)
+            except Exception as e:                           # noqa: BLE001
+                print(f"[publish] khong ghi duoc channel_album_mid: {e}",
+                      file=sys.stderr)
         if long_caption and res.get("ok"):
             return _gui_chu(token, channel, caption)
         return res

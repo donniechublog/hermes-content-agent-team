@@ -44,11 +44,32 @@ def nap(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) -> tuple:
     return meta, brand, wd, m, spec, spec_path, cb._doc_json(wd / "da_dung.json")
 
 
-def kiem_lam_lai(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "anh") -> list:
+def so_lan_lam_lai(draft_id: str) -> int:
+    """So lan Ong Chu da bam "Lam lai" cho bai nay (drafts/<id>.img.json)."""
+    d = cb._doc_json(cb.DRAFTS / f"{draft_id}.img.json", {}) or {}
+    return int(d.get("remakes", 0) or 0)
+
+
+def kiem_lam_lai(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "anh",
+                 draft_id: str = "") -> list:
     """Lam lai ma van giu anh/hook cua lan truoc -> loi. `khoa_anh` la khoa trong
-    da_dung.json ("bia" voi carousel, "anh" voi hero)."""
+    da_dung.json ("bia" voi carousel, "anh" voi hero).
+
+    CHI ap khi Ong Chu THAT SU bam "Lam lai" (sua 06/09/2026 dot 2). Truoc day
+    dieu kien la "co da_dung.json", ma tep do duoc ghi o MOI lan gui va
+    duyet_bai khong bao gio xoa — nen moi lan chay lai vi bat ky ly do gi (task
+    kanban retry, vai chay lai sau mot [CANH BAO]) deu bi bao "Ong Chu bam lam
+    lai nghia la bia chua dat, doi bia khac". Vai doi bia that, roi `gui_album`
+    gui BO THU HAI voi mot nut Duyet thu hai; md5 30 phut cua gui_telegram chi
+    chan duoc truong hop tep y het.
+
+    Moc so sanh la `remakes` trong img.json — chinh con so duyet_bai tang moi
+    lan bam nut.
+    """
     if not da_dung:
         return []
+    if draft_id and so_lan_lam_lai(draft_id) <= int(da_dung.get("remakes", -1)):
+        return []                    # chay lai, KHONG phai Ong Chu bam lam lai
     loi = []
     cu = da_dung.get(khoa_anh)
     if anh_moi and cu and anh_moi == cu:
@@ -256,17 +277,42 @@ def kiem_quote_dich(chu: str, nhan: str) -> list:
             "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
 
 
-def _album_da_len(draft_id: str) -> bool:
-    """Album cua draft nay da duoc Telegram nhan chua — doc nhat ky telegram_sent
-    ma gui_telegram ghi NGAY SAU khi album di, truoc buoc gui nut Duyet."""
+PHUT_ALBUM_VUA_LEN = 10
+
+
+def _album_da_len(vai: str, files, phut: int = PHUT_ALBUM_VUA_LEN) -> bool:
+    """Bo anh NAY co vua len Telegram trong `phut` phut qua khong.
+
+    So theo TEN TEP + moc thoi gian, khong phai theo chuoi con cua draft_id
+    (sua 06/09/2026 dot 2). Ban cu quet 400 dong cuoi cua MOI tep .jsonl va hoi
+    `if draft_id in dong` — hai sai lam trong mot dong:
+
+      1. KHONG co moc thoi gian. Bam "Lam lai": album lan 1 tu hom qua da co
+         dong trong so; lan 2 `post()` nem GuiLoi NGAY (429, thieu tep) — nhanh
+         cuu o duoi thay dong CU, ghi da_dung voi bo anh CHUA gui, roi in
+         "ĐỪNG chạy lại". Album moi khong bao gio len, va anh bi khoa 14 ngay.
+      2. So chuoi con: draft `gpt-5-...` khop moi dong cua `gpt-5-codex-...`.
+
+    Doc ca hai truong `files` (co tu 05/09) va chuoi tho cho dong cu.
+    """
+    import json as _j
+    import time as _t
     try:
         d = env_load.state_dir() / "telegram_sent"
-        if not d.exists() or not draft_id:
+        p = d / f"{vai}.jsonl"
+        if not p.exists() or not files:
             return False
-        for p in d.glob("*.jsonl"):
-            for dong in p.read_text(encoding="utf-8").splitlines()[-400:]:
-                if draft_id in dong:
-                    return True
+        ten = sorted(Path(f).name for f in files)
+        moc = _t.time() - phut * 60
+        for dong in reversed(p.read_text(encoding="utf-8").splitlines()[-200:]):
+            try:
+                r = _j.loads(dong)
+            except ValueError:
+                continue
+            if (r.get("ts") or 0) < moc:
+                break                      # cac dong con lai con cu hon nua
+            if sorted(Path(f).name for f in (r.get("files") or [])) == ten:
+                return True
     except OSError:
         pass
     return False
@@ -285,6 +331,9 @@ def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi
         chinh thu luat nay sinh ra de chan (do 06/09/2026)."""
         cb._ghi_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
                                            "lan": int((da_dung or {}).get("lan", 0)) + 1,
+                                           # Moc de phan biet "Ong Chu bam Lam lai"
+                                           # voi "vai chay lai" — xem kiem_lam_lai.
+                                           "remakes": so_lan_lam_lai(draft_id),
                                            "message_id": mid})
         # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot
         # khoa: Ethan de anh ghep thu hai o "anh2", Kite de o "hinh".
@@ -298,13 +347,19 @@ def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi
             if goc.get(ma):
                 luat_anh.ghi_da_dung(goc[ma], draft_id, vai, xong.get("link", ""))
 
+    # Nop THANH CONG thi xoa bo dem vong loi. `dem_vong_loi` chi reset khi BO
+    # LOI doi hoac qua 6 gio, con duong thanh cong truoc 06/09/2026 khong dung
+    # vao tep nop_lan.json — nen mot bai hong 2 lan vi "can >= 2 quote", sua
+    # xong, gui duoc, roi mot gio sau Ong Chu bam Lam lai va vai lai quen quote
+    # la lan=3 NGAY LUOT DAU: [DUNG] va bao goi kanban_block.
+    (wd / "nop_lan.json").unlink(missing_ok=True)
     try:
         res = gui_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)
     except gui_telegram.GuiLoi as e:
         # Album co the DA len roi ma rieng buoc gui nut Duyet moi hong (429 flood
         # control chang han). Truoc 06/09/2026 nhanh nay thoat ngay, so trong ron
         # trong khi anh da nam tren topic.
-        if _album_da_len(draft_id):
+        if _album_da_len(vai, files):
             _ghi_so()
             sys.exit(f"[LOI] album ĐÃ lên topic nhưng gửi nút Duyệt lỗi: {e}\n"
                      "Ảnh đã ghi vào sổ. ĐỪNG chạy lại (sẽ trùng) — báo Ông Chủ "
