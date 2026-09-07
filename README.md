@@ -190,7 +190,8 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `test_cong_chan` giữ các cổng chặn và đường báo lỗi của nop, `test_cong_thuan`
   giữ mấy hàm thuần đã từng hồi quy im lặng (lệnh chọn số, `draft_id` ≤ 55 byte,
   cắt tin nhắn dài), `test_ham_thuan` giữ các hàm không ai canh mà quyết định
-  nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`),
+  nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`,
+  `tong_hop` của nhật ký 9router),
   `test_soat_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
   còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
   giống hệt nhau, đếm được), `test_tai_lieu` chặn tài liệu trôi khỏi mã.

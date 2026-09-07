@@ -212,16 +212,24 @@ def soi_model(theo_model: dict, combo: dict) -> tuple:
     return la, kem
 
 
-def doc_ngay(ngay: str) -> dict:
-    """Gom usageHistory của một ngày VN thành số liệu. Không LLM, không ghi DB."""
-    if not DB.exists():
-        return {"ngay": ngay, "loi_doc": f"không thấy CSDL 9router: {DB}"}
-    con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
-    khoa_ten, kn_ten = _ten_bang(con)
-    t0, t1 = _cua_so_utc(ngay)
-    rows = con.execute(
-        "select timestamp, provider, model, connectionId, apiKey, status, promptTokens, completionTokens, cost, tokens "
-        "from usageHistory where timestamp >= ? and timestamp < ? order by timestamp", (t0, t1)).fetchall()
+def tong_hop(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict]:
+    """Gom cac dong `usageHistory` thanh so lieu. THUAN: khong SQL, khong doc dia.
+
+    Tach khoi `doc_ngay` 07/09/2026. `doc_ngay` la 93 dong trong do dung 4 dong
+    dau cham vao SQLite, con lai la phep dem — ma phep dem do quyet dinh nhung
+    thu khong lo ra khi sai: nhan khoa API (chi duoc 4 ky tu cuoi), cap lat model
+    nao tinh la fallback, model nao bi goi la "tra rong". Nam trong mot ham co
+    mo CSDL thi khong test duoc mot cai nao.
+
+    `rows`: (timestamp, provider, model, connectionId, apiKey, status,
+    promptTokens, completionTokens, cost, tokens-json) — dung thu tu SELECT.
+    `cap_fb`: tap cap (chinh, du phong) doc tu config; None thi tu doc.
+
+    Tra ve (so_lieu, tho). `tho` la bo tich luy CHUA lam tron — `gom_vai` tinh
+    don gia tren no, dung nhu truoc khi tach ham; lam tron truoc roi chia se
+    lech o chu so thu nam.
+    """
+    khoa_ten, kn_ten = khoa_ten or {}, kn_ten or {}
 
     def moi():
         return {"req": 0, "prompt": 0, "cache": 0, "out": 0, "usd": 0.0, "loi": 0}
@@ -284,27 +292,45 @@ def doc_ngay(ngay: str) -> dict:
     except Exception as e:                                   # noqa: BLE001
         print(f"[soi model] {type(e).__name__}: {e}", file=sys.stderr)
         model_la, cache_kem = [], []
-    try:
-        _cap_fb = cap_fallback()
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[cap fallback] {type(e).__name__}: {e} — dung hang so cu",
-              file=sys.stderr)
-        _cap_fb = set(FALLBACK_THAT)
-    return {
-        "ngay": ngay, "cua_so_utc": [t0, t1],
+    if cap_fb is None:
+        try:
+            cap_fb = cap_fallback()
+        except Exception as e:                               # noqa: BLE001
+            print(f"[cap fallback] {type(e).__name__}: {e} — dung hang so cu",
+                  file=sys.stderr)
+            cap_fb = set(FALLBACK_THAT)
+    so_lieu = {
         "tong": {**tong, "usd": round(tong["usd"], 4), "cache_pct": pct(tong)},
         "theo_model": dict(sorted(tm.items(), key=lambda kv: -kv[1]["usd"])),
         "model_la": model_la, "cache_kem": cache_kem,
         "theo_khoa": gon(theo_khoa),
         "theo_gio": {str(k): v for k, v in sorted(gon(theo_gio).items())},
         "lat_model": dict(lat.most_common()), "lat_vi_du": lat_vi_du,
-        "fallback": sum(v for k, v in lat.items() if tuple(k.split(" → ")) in _cap_fb),
+        "fallback": sum(v for k, v in lat.items() if tuple(k.split(" → ")) in cap_fb),
         "loi": dict(loi.most_common(10)),
         "top_prompt": [{"prompt": p, "luc": h, "model": m, "cache": c, "usd": round(u, 4)}
                        for p, h, m, c, u in sorted(top, reverse=True)[:5]],
         "rong": dict(rong.most_common()), "rong_vi_du": rong_vi_du,
+    }
+    return so_lieu, {"tong": tong, "theo_model": tm}
+
+
+def doc_ngay(ngay: str) -> dict:
+    """Gom usageHistory của một ngày VN thành số liệu. Không LLM, không ghi DB."""
+    if not DB.exists():
+        return {"ngay": ngay, "loi_doc": f"không thấy CSDL 9router: {DB}"}
+    con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+    khoa_ten, kn_ten = _ten_bang(con)
+    t0, t1 = _cua_so_utc(ngay)
+    rows = con.execute(
+        "select timestamp, provider, model, connectionId, apiKey, status, promptTokens, completionTokens, cost, tokens "
+        "from usageHistory where timestamp >= ? and timestamp < ? order by timestamp", (t0, t1)).fetchall()
+    so_lieu, tho = tong_hop(rows, khoa_ten, kn_ten)
+    return {
+        "ngay": ngay, "cua_so_utc": [t0, t1],
+        **so_lieu,
         "loi_ket_noi": loi_ket_noi(con, t0, t1),
-        "vai": gom_vai(ngay, tm, tong),
+        "vai": gom_vai(ngay, tho["theo_model"], tho["tong"]),
     }
 
 
