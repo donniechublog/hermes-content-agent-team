@@ -38,3 +38,27 @@ def so_tam(tmp):
         yield d
     finally:
         la._so_da_dung = cu
+
+
+@contextlib.contextmanager
+def bat_buoc_tam(tmp, **danh_sach):
+    """Tro danh sach BAT BUOC vao thu muc tam VA TRA LAI khi ra khoi khoi.
+
+    `danh_sach`: vai -> dict muc, vd `bat_buoc_tam(t, scout={"k1": {...}})`.
+    Cung mot bai hoc voi `so_tam`: `bat_buoc.tep()` doc `env_load.state_dir()`,
+    tuc state THAT cua brand dang chay — mot test quen tra lai la moi test sau
+    do doc nham danh sach cua may that.
+    """
+    import json
+
+    import bat_buoc as bb
+    cu = bb.tep
+    d = Path(tmp)
+    for vai, muc in danh_sach.items():
+        (d / f"bat_buoc_{vai}.json").write_text(json.dumps(muc, ensure_ascii=False),
+                                                encoding="utf-8")
+    bb.tep = lambda vai: d / f"bat_buoc_{vai}.json"
+    try:
+        yield d
+    finally:
+        bb.tep = cu
