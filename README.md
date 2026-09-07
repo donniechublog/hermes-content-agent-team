@@ -228,7 +228,8 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `subprocess`, `httpx`, Playwright — bằng bản **ghi vết** trả dữ liệu định sẵn,
   rồi chạy 7–26 kịch bản qua bản cũ (snapshot `git show HEAD:`) và bản mới, so
   vết + tệp + giá trị trả về. Playwright giả nằm ở scratchpad phiên audit
-  (`pw/fake_pw.py`): `page.evaluate` chọn kết quả theo chuỗi JS, `goto` trả
+  (tệp fake_pw trong scratchpad, ngoài repo): `page.evaluate` chọn kết quả theo
+  chuỗi JS, `goto` trả
   status theo kịch bản. Cách này đã bắt được ba lỗi tách trước khi commit
   (biến cục bộ của hàm cũ, import cục bộ, một `def` bị lát cắt nuốt).
 
