@@ -179,11 +179,21 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `ai-background` (sinh nền — **chờ GPU**).
 - `hermes/profiles/` — SOUL/MEMORY của các vai; `shared/` áp cho cả hai home.
   Đồng bộ bằng `dong_bo_hermes.py` (`--ra-hermes` / `--ve-git`).
-- `tests/` — chạy thẳng, không cần mạng:
-  `for f in tests/*.py; do venv/bin/python $f; done`. `test_cong_chan` giữ các
-  cổng chặn, `test_cong_thuan` giữ mấy hàm thuần đã từng hồi quy im lặng (lệnh
-  chọn số, `draft_id` ≤ 55 byte, cắt tin nhắn dài), `test_tai_lieu` chặn tài
-  liệu trôi khỏi mã.
+- `tests/` — chạy thẳng, không cần mạng: **`tests/chay.sh`** (thoát khác 0 nếu
+  bất kỳ tệp nào hỏng; `tests/chay.sh cong_chan` để lọc). Đừng dùng vòng
+  `for f in tests/*.py; do …; done` nữa: nó trả mã thoát của tệp **cuối cùng**,
+  nên một tệp hỏng ở giữa vẫn "thành công".
+  `test_cong_chan` giữ các cổng chặn và đường báo lỗi của nop, `test_cong_thuan`
+  giữ mấy hàm thuần đã từng hồi quy im lặng (lệnh chọn số, `draft_id` ≤ 55 byte,
+  cắt tin nhắn dài), `test_ham_thuan` giữ các hàm không ai canh mà quyết định
+  nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`),
+  `test_tai_lieu` chặn tài liệu trôi khỏi mã.
+
+  **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
+  thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba
+  bước) — nay truyền `lay_emoji=`; và `luat_anh._so_da_dung` bị gán đè không trả
+  lại, khiến `kiem_da_dung` trả rỗng vô điều kiện trong mọi test sau đó — nay
+  qua `_so_tam()`. Thêm test mới thì giữ đúng hai lối này.
 - `kiem_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.

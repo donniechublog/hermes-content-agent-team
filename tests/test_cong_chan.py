@@ -8,6 +8,7 @@ cổng ở đây phải có ví dụ ĐÚNG-PHẢI-QUA đi kèm ví dụ SAI-PH�
 
 Chạy:  venv/bin/python tests/test_cong_chan.py
 """
+import contextlib
 import sys
 import tempfile
 from pathlib import Path
@@ -17,6 +18,30 @@ sys.path.insert(0, str(ROOT))
 import nop_chung as nc      # noqa: E402
 import bat_buoc as bb       # noqa: E402
 import caption_check as cc  # noqa: E402
+
+
+@contextlib.contextmanager
+def _so_tam(tmp):
+    """Tro so "anh da dung" vao thu muc tam VA TRA LAI khi ra khoi khoi.
+
+    Truoc 06/09/2026 bon test gan thang `la._so_da_dung = lambda: d/"s.jsonl"`
+    va khong bao gio tra lai. Ca suite chay trong MOT tien trinh theo thu tu
+    dinh nghia, nen tu test dau tien tro di `_so_da_dung()` tro toi mot
+    TemporaryDirectory DA BI XOA: `kiem_da_dung` thay tep khong ton tai va tra
+    ve ([], []) VO DIEU KIEN. Cong "khong dung lai anh trong 14 ngay" chet im
+    trong moi test sau do — ke ca test_kite_khong_ep_dung_anh_chua_nhin, von di
+    qua dung cong do o kite_nop.py:88. Test xanh ma cong khong chay.
+
+    Emoji cung mot bai hoc, xem `lay_emoji` cua teaser_assemble.assemble.
+    """
+    import luat_anh as la
+    cu = la._so_da_dung
+    d = Path(tmp)
+    la._so_da_dung = lambda: d / "s.jsonl"
+    try:
+        yield d
+    finally:
+        la._so_da_dung = cu
 
 
 # ---------------------------------------------------------------- quote dịch
@@ -109,12 +134,14 @@ def test_teaser_chan_url_emoji_danh_so():
     day = ("Con so chi phi o muc 2,75 USD moi task, thap hon ba lan doi thu tren thi truong va van "
            "giu chat luong dau ra theo bo do luong cong khai cua ben thu ba doc lap. ") * 3
     ok = [day, day, day]
-    assert ta.assemble("T", ok, [])["word_count"] > 0        # đoạn sạch thì qua
+    # lay_emoji gia: khong duoc dung vao so xoay vong that (state/emoji_deck.json)
+    gia = lambda n: ["•"] * n                                # noqa: E731
+    assert ta.assemble("T", ok, [], lay_emoji=gia)["word_count"] > 0   # đoạn sạch thì qua
     for xau, ten in [("Chi tiet o https://example.com/x " + day, "URL"),
                      ("1. Muc dau tien noi ve chi phi " + day, "đánh số"),
                      ("🚀 Mo hinh moi chay nhanh hon " + day, "emoji")]:
         try:
-            ta.assemble("T", [xau] + ok, [])
+            ta.assemble("T", [xau] + ok, [], lay_emoji=gia)
         except ValueError:
             pass
         else:
@@ -227,9 +254,7 @@ def test_so_anh_khoa_theo_tin_khong_theo_draft():
     chung bộ ảnh — vai sau không được bị chặn sạch."""
     import luat_anh as la
     from PIL import Image, ImageDraw
-    with tempfile.TemporaryDirectory() as tmp:
-        d = Path(tmp)
-        la._so_da_dung = lambda: d / "s.jsonl"
+    with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         p = d / "a.png"
         im = Image.new("RGB", (800, 600), (255, 255, 255))
         dr = ImageDraw.Draw(im)
@@ -405,9 +430,7 @@ def test_anh_xep_hang_mien_cong_dung_lai():
     import luat_anh as la
     from PIL import Image, ImageDraw
     from PIL.PngImagePlugin import PngInfo
-    with tempfile.TemporaryDirectory() as tmp:
-        d = Path(tmp)
-        la._so_da_dung = lambda: d / "s.jsonl"
+    with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
 
         def bang(ten, khoanh_y, dau=True):
             im = Image.new("RGB", (1200, 900), (255, 255, 255))
@@ -845,9 +868,7 @@ def test_hai_chart_khac_nhau_khong_bi_coi_la_trung():
     nguong chung 6, chart THAT cua bai — bang chung manh nhat — bi bao "TRUNG
     anh da dung", vai lang le doi sang anh minh hoa yeu hon."""
     import luat_anh as la
-    with tempfile.TemporaryDirectory() as tmp:
-        d = Path(tmp)
-        la._so_da_dung = lambda: d / "s.jsonl"
+    with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         c1 = _bieu_do(d / "c1.png", [0.90, 0.82, 0.75, 0.60, 0.50])
         c2 = _bieu_do(d / "c2.png", [0.88, 0.80, 0.70, 0.62, 0.45], mau=(200, 80, 40))
         la.ghi_da_dung(c1, "baiA", "designer", "https://a.com/1")
@@ -867,9 +888,7 @@ def test_bo_bai_thi_go_anh_khoi_so():
     chung van nam trong so va chan moi bai khac suot 14 ngay — ma thong bao chan
     chi noi ten bai va cham, KHONG noi bai do da bi bo."""
     import luat_anh as la
-    with tempfile.TemporaryDirectory() as tmp:
-        d = Path(tmp)
-        la._so_da_dung = lambda: d / "s.jsonl"
+    with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         a1 = _anh_chup(d / "x1.png", 5)
         a2 = _anh_chup(d / "x2.png", 5, co=(1000, 750))     # cung anh, khac co
         la.ghi_da_dung(a1, "bai-bi-bo", "designer", "https://a.com/1")
@@ -1055,6 +1074,52 @@ def test_teaser_nhac_muc_dan_y_bi_bo():
     du = doan + ["Độ trễ khi tải cao vẫn nằm trong ngưỡng chịu được."]
     assert ta._muc_khong_duoc_nhac(dan_y, du) == []
     assert ta._muc_khong_duoc_nhac(None, doan) == []
+
+# ------------------------------------------------- duong bao loi cua miles_nop
+def test_miles_nop_bao_loi_thay_vi_no():
+    """Caption truot cong phai ra dong "Sua roi chay lai" + ma thoat 1.
+
+    Bay 06/09/2026 (commit 519adb2): `dem_vong_loi` duoc goi qua `nc` o dong 79
+    trong khi `import nop_chung as nc` nam o dong 109 CUNG ham, nen Python coi
+    `nc` la bien cuc bo va nem UnboundLocalError. Duong di thuong gap nhat cua
+    Miles ket thuc bang traceback: vai khong thay tran vong, khong thay lenh
+    chay lai. Ca 82 test cu van xanh vi khong test nao cham duong nay.
+    """
+    import io
+    import contextlib as _ctx
+    import miles_nop as mn
+    with tempfile.TemporaryDirectory() as tmp:
+        wd = Path(tmp) / "wd"
+        wd.mkdir()
+        # caption vuot tran 1024 ky tu -> chac chan co [LOI]
+        (wd / "caption.txt").write_text("Câu này dài. " * 200, encoding="utf-8")
+        cu_meta, cu_wd, cu_argv = mn.cb.nap_meta, mn.cb.workdir, sys.argv
+        mn.cb.nap_meta = lambda _id: {"brand": "donniechublog"}
+        mn.cb.workdir = lambda _state, _id: wd
+        sys.argv = ["miles_nop.py", "tin-thu-writer-blog"]
+        try:
+            buf = io.StringIO()
+            with _ctx.redirect_stdout(buf):
+                ma = mn.main()
+        finally:
+            mn.cb.nap_meta, mn.cb.workdir, sys.argv = cu_meta, cu_wd, cu_argv
+        ra = buf.getvalue()
+        assert ma == 1, f"ma thoat {ma}, mong doi 1 (con sua duoc)"
+        assert "[LOI]" in ra, ra[-400:]
+        assert "Sua roi chay lai" in ra, "vai khong duoc bao cach chay lai:\n" + ra[-400:]
+        assert (wd / "nop_lan.json").exists(), "khong ghi bo dem vong loi"
+
+
+def test_so_da_dung_duoc_tra_lai_sau_cac_test_tren():
+    """Chot cai bay monkeypatch: sau moi test o tren, `_so_da_dung()` phai tro
+    ve duong THAT chu khong phai mot TemporaryDirectory da bi xoa — neu khong,
+    `kiem_da_dung` tra rong vo dieu kien va moi cong "khong dung lai anh" trong
+    cac test sau deu chet im."""
+    import luat_anh as la
+    p = la._so_da_dung()
+    assert p.name == "anh_da_dung.jsonl", p
+    assert p.parent.exists(), f"so tro vao thu muc khong ton tai: {p}"
+
 
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
