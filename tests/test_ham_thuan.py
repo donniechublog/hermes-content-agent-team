@@ -359,6 +359,113 @@ def test_argv_khop_ban_ke_khai_cua_kiem_hermes():
     assert not thieu, f"kiem_hermes doi co {thieu} ma dung_argv khong sinh ra"
 
 
+# ------------------------------------------------------------ tong_hop (9router)
+# Tach khoi `doc_ngay` 07/09/2026. Phep dem o day quyet dinh nhung thu khong lo
+# ra khi sai: nhan khoa API (chi duoc 4 ky tu cuoi — bao cao nay duoc ghi ra dia
+# VA phuc vu qua nhat_ky_web), cap lat model nao tinh la fallback, model nao bi
+# goi la "tra rong".
+def _dong(giay, model="ds/deepseek-v4-pro", cid="c1", ak="sk-abcd1234efgh",
+          status=None, ptok=2000, ctok=500, cost=0.01, cache=0):
+    """Mot dong usageHistory, dung thu tu SELECT cua doc_ngay."""
+    import json as _j
+    from datetime import datetime, timedelta, timezone
+    ts = (datetime(2026, 9, 5, 17, 0, tzinfo=timezone.utc)
+          + timedelta(seconds=giay)).isoformat().replace("+00:00", "Z")
+    return (ts, model.split("/")[0], model, cid, ak, status, ptok, ctok, cost,
+            _j.dumps({"cached_tokens": cache}))
+
+
+def test_tong_hop_khong_bao_gio_ghi_khoa_api_tho():
+    """Khoa da xoay khong con trong bang `apiKeys` — ban truoc 06/09/2026 lay
+    CHINH CHUOI KHOA lam nhan, roi nhan do di vao json/md va ra trang HTTP."""
+    import theo_doi_9router as tr
+    d, _ = tr.tong_hop([_dong(0, ak="sk-SIEU-BI-MAT-9999")], cap_fb=set())
+    nhan = list(d["theo_khoa"])
+    assert nhan == ["khoa la …9999"], nhan
+    assert "SIEU-BI-MAT" not in repr(d), "khoa tho lot vao bao cao"
+
+
+def test_tong_hop_lay_ten_khoa_khi_con_trong_bang():
+    import theo_doi_9router as tr
+    d, _ = tr.tong_hop([_dong(0, ak="sk-x1")], {"sk-x1": "blog"}, cap_fb=set())
+    assert list(d["theo_khoa"]) == ["blog"]
+
+
+def test_tong_hop_dem_lat_model_trong_nguong_va_bo_qua_ngoai_nguong():
+    """Lat model = hai lan goi LIEN TIEP khac model, cach nhau <= GIAY_LAT."""
+    import theo_doi_9router as tr
+    gan = [_dong(0, "a"), _dong(tr.GIAY_LAT - 1, "b")]
+    xa = [_dong(0, "a"), _dong(tr.GIAY_LAT + 1, "b")]
+    lap = [_dong(0, "a"), _dong(10, "a")]
+    assert tr.tong_hop(gan, cap_fb=set())[0]["lat_model"] == {"a → b": 1}
+    assert tr.tong_hop(xa, cap_fb=set())[0]["lat_model"] == {}
+    assert tr.tong_hop(lap, cap_fb=set())[0]["lat_model"] == {}
+
+
+def test_tong_hop_chi_dem_fallback_dung_cap_duoc_khai():
+    """`fallback` la con so Ong Chu doc de biet model chinh co dang chet khong.
+    Dem moi lan lat vao day la bao dong gia moi ngay."""
+    import theo_doi_9router as tr
+    rows = [_dong(0, "chinh"), _dong(5, "phu"), _dong(200, "chinh"), _dong(205, "la")]
+    d, _ = tr.tong_hop(rows, cap_fb={("chinh", "phu")})
+    assert d["fallback"] == 1, d["lat_model"]
+    assert tr.tong_hop(rows, cap_fb=set())[0]["fallback"] == 0
+
+
+def test_tong_hop_bat_tra_loi_rong_va_khong_bat_lan_bao_loi():
+    """Prompt to ma out ~0 nhung status ok = model nuot tien khong tra gi. Lan
+    BAO LOI thi da co muc `loi` roi, dem hai lan la doc ra hai su co."""
+    import theo_doi_9router as tr
+    rows = [_dong(0, "a", ptok=tr.RONG_PROMPT_MIN, ctok=tr.RONG_OUT_MAX),
+            _dong(300, "b", ptok=tr.RONG_PROMPT_MIN, ctok=tr.RONG_OUT_MAX + 1),
+            _dong(600, "c", ptok=tr.RONG_PROMPT_MIN - 1, ctok=0),
+            _dong(900, "d", ptok=99999, ctok=0, status="error 429")]
+    d, _ = tr.tong_hop(rows, cap_fb=set())
+    assert d["rong"] == {"a": 1}, d["rong"]
+    assert d["loi"] == {"d: error 429": 1}, d["loi"]
+    assert d["tong"]["loi"] == 1
+
+
+def test_tong_hop_cache_pct_va_tong_tien():
+    import theo_doi_9router as tr
+    rows = [_dong(0, ptok=1000, cache=250, cost=0.5),
+            _dong(300, ptok=3000, cache=750, cost=0.25)]
+    d, tho = tr.tong_hop(rows, cap_fb=set())
+    assert d["tong"]["cache_pct"] == 25.0, d["tong"]
+    assert d["tong"]["usd"] == 0.75
+    assert tho["tong"]["usd"] == 0.75, "tho phai la ban CHUA lam tron"
+
+
+def test_tong_hop_top_prompt_lay_5_lan_ton_nhat():
+    import theo_doi_9router as tr
+    rows = [_dong(i * 300, ptok=(i + 1) * 1000) for i in range(8)]
+    d, _ = tr.tong_hop(rows, cap_fb=set())
+    assert [x["prompt"] for x in d["top_prompt"]] == [8000, 7000, 6000, 5000, 4000]
+
+
+def test_tong_hop_ngay_rong_khong_no():
+    """Ngay khong co luot goi nao (9router vua restart) van phai ra bao cao."""
+    import theo_doi_9router as tr
+    d, tho = tr.tong_hop([], cap_fb=set())
+    assert d["tong"]["req"] == 0 and d["tong"]["cache_pct"] == 0.0
+    assert d["theo_model"] == {} and d["top_prompt"] == []
+    assert tho["tong"]["prompt"] == 0
+
+
+def test_tong_hop_khong_cham_vao_dia():
+    """Ham THUAN — no khong duoc mo CSDL hay doc config. Neu mot ban sau lai
+    goi `cap_fallback()` vo dieu kien thi test nay do (cap_fb da truyen vao)."""
+    import theo_doi_9router as tr
+    goi = []
+    that = tr.cap_fallback
+    tr.cap_fallback = lambda: goi.append(1) or set()
+    try:
+        tr.tong_hop([_dong(0)], cap_fb=set())
+    finally:
+        tr.cap_fallback = that
+    assert goi == [], "tong_hop van tu doc config du da duoc truyen cap_fb"
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

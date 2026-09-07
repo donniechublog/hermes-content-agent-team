@@ -753,50 +753,12 @@ def s_loop(sl, th):
     return g + body
 
 
-def anh_lam_nen(sl, th, ten):
-    """Dung ANH THAT thanh nen ca the + man toi cho chu — MOT MAT PHANG LIEN,
-    dung ngon ngu cua Dre (carousel.py). Dung chung cho slide `figure` va cho
-    bia khi bia co anh.
-
-    -> (html nen, html script dat man toi). Khoi chu goi rieng, id="figtxt".
-
-    Nguyen tac:
-
-      - NEN bao gio cung la anh, khong bao gio la mot hop den dat canh anh: ban
-        cover cua chinh tam anh phu kin the roi LAM MO MANH. Mo de no thanh mot
-        mang mau lien; de sac net thi cho nao lop sac khong phu se lo mot ban
-        sao lech cua cung noi dung — mat doc ra ngay hai vung.
-      - LOP SAC de len tren, full be ngang, KHONG cat hai canh.
-      - CHU de len anh qua man toi + mot lop mo cua chinh tam anh, hai lop di
-        cung mot nhip. Nen PHANG thi man toi neo vao chan chu eyebrow, anh CHUP
-        thi chom len som hon — xem doan dat man toi ben duoi. Khong lam toi
-        rieng phan nen: nen toi hon han lop sac se ve ra dung mot hinh chu nhat
-        quanh anh.
-    """
-    p, iw, ih = _do_anh(sl["image"])
-    kieu, mau_nen, nen_sang = doc_nen(p)
-    cao, y0, cao_that = dat_anh(iw, ih, kieu == "phang")
-    if cao_that > cao and ("bao", str(p), cao) not in _NHO_ANH:
-        # Bao ra de Kite biet mat bao nhieu: neu phan mat la phan dang noi toi
-        # thi phai tu cat lai cho dung truoc khi dua vao day. Chi bao MOT lan:
-        # slide duoc dung hai luot (cong chan 2 dong, roi vong chup), bao ca hai
-        # luot thi Kite tuong co hai anh bi cat.
-        _NHO_ANH[("bao", str(p), cao)] = True
-        print(f"{ten} {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
-              f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
-    uri = _anh_data_uri(p)
-    # "phang": trai thang mau nen cua anh ra ca the — cung mot mau thi khong the
-    # co mep. "mo": ban cover cua chinh tam anh, lam mo manh (kieu Dre) — dung
-    # cho anh chup, noi khong co mau nen nao de trai.
-    # Bi cat thi cho phan cuoi TAN vao nen thay vi dut ngang: nen cung mau nen
-    # anh chi viec loang ra, doc thanh "con nua o duoi" chu khong phai "bi xen".
-    mo_day = ('' if cao_that <= cao else
-              'mask-image:linear-gradient(to bottom,#000 calc(100% - 130px),'
-              'transparent 100%);-webkit-mask-image:linear-gradient(to bottom,'
-              '#000 calc(100% - 130px),transparent 100%);')
+def _html_nen(uri, kieu, mau_nen, y0, cao, mo_day):
+    """Ba lop anh: nen (mau phang hoac ban cover mo), lop sac full be ngang, lop
+    mo + man toi de script dat sau."""
     lot = ('' if kieu == "phang"
            else f'<img class="fig-nen" src="{uri}" alt="">')
-    nen = (
+    return (
         f'<div class="figwrap" style="background:{mau_nen};">'
         f'{lot}'
         f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
@@ -807,18 +769,25 @@ def anh_lam_nen(sl, th, ten):
         f'<div class="fig-man" id="figman"></div>'
         f'</div>'
     )
+
+
+def _style_nen_sang(th):
+    """Dinh the sang: masthead va eyebrow doi sang muc toi thay vi phu them man."""
     # Dinh the sang thi masthead phai doi sang muc toi, khong the phu them mot
     # man toi o tren: man do chinh la mot dai band vat ngang, dung cai dang tranh.
-    if nen_sang:
-        # Eyebrow gio nam TREN mep man toi, tuc la nam trang tren nen sang. Mau
-        # nhan cua theme sinh ra de dat tren nen toi, de nguyen la chu chim mat.
-        # Ep no toi di 58% — van ra dung mau do, ma doc duoc tren nen trang.
-        a = [int(th["a"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4)]
-        a_toi = "#%02X%02X%02X" % tuple(int(c * 0.42) for c in a)
-        nen += (f'<style>.mast-name,.mast-sec{{color:rgba(0,0,0,0.62);}}'
-                f'.rule{{background:rgba(0,0,0,0.16);}}'
-                f'#figtxt .eyebrow-txt{{color:{a_toi};}}'
-                f'#figtxt .eyebrow-bar{{background:{a_toi};}}</style>')
+    # Eyebrow gio nam TREN mep man toi, tuc la nam trang tren nen sang. Mau
+    # nhan cua theme sinh ra de dat tren nen toi, de nguyen la chu chim mat.
+    # Ep no toi di 58% — van ra dung mau do, ma doc duoc tren nen trang.
+    a = [int(th["a"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4)]
+    a_toi = "#%02X%02X%02X" % tuple(int(c * 0.42) for c in a)
+    return (f'<style>.mast-name,.mast-sec{{color:rgba(0,0,0,0.62);}}'
+            f'.rule{{background:rgba(0,0,0,0.16);}}'
+            f'#figtxt .eyebrow-txt{{color:{a_toi};}}'
+            f'#figtxt .eyebrow-bar{{background:{a_toi};}}</style>')
+
+
+def _js_dat_man(th, kieu, mau_nen):
+    """Script dat man toi + lop mo theo vi tri khoi chu ma trinh duyet do xong."""
     # Man toi phai bat dau TREN dong chu dau, ma chieu cao khoi chu chi biet sau
     # khi trinh duyet do xong — nen dung mot doan script ngan tu dat lai. Tinh
     # san bang Python thi phai doan so dong tieu de, doan sai la lo mep.
@@ -831,7 +800,7 @@ def anh_lam_nen(sl, th, ten):
     if kieu == "phang":
         chenh = _sang([int(mau_nen[k:k + 2], 16) for k in (1, 3, 5)]) - _sang((r, g, b))
         max_toi = min(0.95, max(FIG_MAX_TOI, 1 - 20.0 / max(1.0, chenh)))
-    js = (f'<script>window.__datMan=function(){{'
+    return (f'<script>window.__datMan=function(){{'
           f'var H={H},MAX={max_toi:.3f};'
           # set_content giu nguyen window nen ham nay con song sang slide sau;
           # slide khong phai figure thi khong co phan tu nao — thoat ngay.
@@ -881,6 +850,53 @@ def anh_lam_nen(sl, th, ten):
           f'v.style.top=tren+"px";'
           f'v.style.background="linear-gradient(to bottom,"+st.join(",")+")";'
           f'}};window.__datMan();</script>')
+
+
+def anh_lam_nen(sl, th, ten):
+    """Dung ANH THAT thanh nen ca the + man toi cho chu — MOT MAT PHANG LIEN,
+    dung ngon ngu cua Dre (carousel.py). Dung chung cho slide `figure` va cho
+    bia khi bia co anh.
+
+    -> (html nen, html script dat man toi). Khoi chu goi rieng, id="figtxt".
+
+    Nguyen tac:
+
+      - NEN bao gio cung la anh, khong bao gio la mot hop den dat canh anh: ban
+        cover cua chinh tam anh phu kin the roi LAM MO MANH. Mo de no thanh mot
+        mang mau lien; de sac net thi cho nao lop sac khong phu se lo mot ban
+        sao lech cua cung noi dung — mat doc ra ngay hai vung.
+      - LOP SAC de len tren, full be ngang, KHONG cat hai canh.
+      - CHU de len anh qua man toi + mot lop mo cua chinh tam anh, hai lop di
+        cung mot nhip. Nen PHANG thi man toi neo vao chan chu eyebrow, anh CHUP
+        thi chom len som hon — xem doan dat man toi ben duoi. Khong lam toi
+        rieng phan nen: nen toi hon han lop sac se ve ra dung mot hinh chu nhat
+        quanh anh.
+    """
+    p, iw, ih = _do_anh(sl["image"])
+    kieu, mau_nen, nen_sang = doc_nen(p)
+    cao, y0, cao_that = dat_anh(iw, ih, kieu == "phang")
+    if cao_that > cao and ("bao", str(p), cao) not in _NHO_ANH:
+        # Bao ra de Kite biet mat bao nhieu: neu phan mat la phan dang noi toi
+        # thi phai tu cat lai cho dung truoc khi dua vao day. Chi bao MOT lan:
+        # slide duoc dung hai luot (cong chan 2 dong, roi vong chup), bao ca hai
+        # luot thi Kite tuong co hai anh bi cat.
+        _NHO_ANH[("bao", str(p), cao)] = True
+        print(f"{ten} {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
+              f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
+    uri = _anh_data_uri(p)
+    # "phang": trai thang mau nen cua anh ra ca the — cung mot mau thi khong the
+    # co mep. "mo": ban cover cua chinh tam anh, lam mo manh (kieu Dre) — dung
+    # cho anh chup, noi khong co mau nen nao de trai.
+    # Bi cat thi cho phan cuoi TAN vao nen thay vi dut ngang: nen cung mau nen
+    # anh chi viec loang ra, doc thanh "con nua o duoi" chu khong phai "bi xen".
+    mo_day = ('' if cao_that <= cao else
+              'mask-image:linear-gradient(to bottom,#000 calc(100% - 130px),'
+              'transparent 100%);-webkit-mask-image:linear-gradient(to bottom,'
+              '#000 calc(100% - 130px),transparent 100%);')
+    nen = _html_nen(uri, kieu, mau_nen, y0, cao, mo_day)
+    if nen_sang:
+        nen += _style_nen_sang(th)
+    js = _js_dat_man(th, kieu, mau_nen)
     return nen, js
 
 
@@ -1296,6 +1312,56 @@ def chon_theme_tu_dong(spec, bia_anh=False):
     return theme, hero
 
 # ---- render ---------------------------------------------------------------
+def _kiem_tieu_de_dong(page, browser, slides, dung_doc):
+    """Cong chan DO THAT: tieu de tren slide co anh toi da FIG_TIEU_DE_DONG dong,
+    do bang chinh Chromium. Chay het mot luot TRUOC khi chup — hong thi khong de
+    lai nua album trong drafts/ cho Kite tuong la xong."""
+    # Cong chan DO THAT: tieu de tren slide co anh toi da 2 dong. Dem chu
+    # thi doan sai (dau tieng Viet, tu dai ngan khac nhau), nen dung chinh
+    # Chromium do. Chay het mot luot TRUOC khi chup, de neu hong thi khong
+    # de lai nua album trong drafts/ cho Kite tuong la xong.
+    loi_dong = []
+    for i, sl in enumerate(slides, start=1):
+        if not sl.get("image"):
+            continue
+        page.set_content(dung_doc(sl, i), wait_until="load")
+        page.evaluate("document.fonts.ready")
+        n = page.evaluate(
+            "() => {const h=document.querySelector('#figtxt h1');"
+            "if(!h) return 0;"
+            "const lh=parseFloat(getComputedStyle(h).lineHeight);"
+            "return Math.round(h.getBoundingClientRect().height/lh);}")
+        if n > FIG_TIEU_DE_DONG:
+            loi_dong.append(
+                f"slide {i}: tieu de {n} dong — slide co anh chi cho "
+                f"{FIG_TIEU_DE_DONG} dong. Anh da noi phan viec cua no roi, "
+                f"tieu de dai them la giam cua nhau. Cat ngan tieu de lai.")
+    if loi_dong:
+        browser.close()
+        print("CONG CHAN DUNG:", file=sys.stderr)
+        for x in loi_dong:
+            print("  - " + x, file=sys.stderr)
+        raise SystemExit(1)
+
+
+def _chup_cac_slide(page, slides, dung_doc, out, stem):
+    """Chup tung slide ra PNG; slide 1 la `out`, con lai `<stem>_<i>.png`."""
+    outs = []
+    for i, sl in enumerate(slides, start=1):
+        doc = dung_doc(sl, i)
+        page.set_content(doc, wait_until="load")
+        page.evaluate("document.fonts.ready")
+        # Font doi chieu cao dong -> doi luon cho dong chu dau. Dat lai man
+        # toi SAU khi font xong, khong thi mep man lech khoi khoi chu.
+        page.evaluate("window.__datMan && window.__datMan()")
+        page.wait_for_timeout(120)
+        path = out if i == 1 else Path(f"{stem}_{i}.png")
+        page.screenshot(path=str(path),
+                        clip={"x": 0, "y": 0, "width": W, "height": H})
+        outs.append(path)
+    return outs
+
+
 def render(spec, out, brand, bo_qua_dau, scale):
     brand = spec.get("brand") or brand   # spec ghi brand thi thang co --brand
     slides = spec.get("slides") or []
@@ -1331,53 +1397,17 @@ def render(spec, out, brand, bo_qua_dau, scale):
 
     out = Path(out)
     stem = out.with_suffix("")
-    outs = []
     with sync_playwright() as p:
         browser = p.chromium.launch(args=["--force-color-profile=srgb"])
         ctx = browser.new_context(viewport={"width": W, "height": H},
                                   device_scale_factor=scale)
         page = ctx.new_page()
 
-        # Cong chan DO THAT: tieu de tren slide co anh toi da 2 dong. Dem chu
-        # thi doan sai (dau tieng Viet, tu dai ngan khac nhau), nen dung chinh
-        # Chromium do. Chay het mot luot TRUOC khi chup, de neu hong thi khong
-        # de lai nua album trong drafts/ cho Kite tuong la xong.
-        loi_dong = []
-        for i, sl in enumerate(slides, start=1):
-            if not sl.get("image"):
-                continue
-            page.set_content(slide_doc(sl, i, total, brand, section, folio_left,
-                                       font_css, th), wait_until="load")
-            page.evaluate("document.fonts.ready")
-            n = page.evaluate(
-                "() => {const h=document.querySelector('#figtxt h1');"
-                "if(!h) return 0;"
-                "const lh=parseFloat(getComputedStyle(h).lineHeight);"
-                "return Math.round(h.getBoundingClientRect().height/lh);}")
-            if n > FIG_TIEU_DE_DONG:
-                loi_dong.append(
-                    f"slide {i}: tieu de {n} dong — slide co anh chi cho "
-                    f"{FIG_TIEU_DE_DONG} dong. Anh da noi phan viec cua no roi, "
-                    f"tieu de dai them la giam cua nhau. Cat ngan tieu de lai.")
-        if loi_dong:
-            browser.close()
-            print("CONG CHAN DUNG:", file=sys.stderr)
-            for x in loi_dong:
-                print("  - " + x, file=sys.stderr)
-            raise SystemExit(1)
+        def dung_doc(sl, i):
+            return slide_doc(sl, i, total, brand, section, folio_left, font_css, th)
 
-        for i, sl in enumerate(slides, start=1):
-            doc = slide_doc(sl, i, total, brand, section, folio_left, font_css, th)
-            page.set_content(doc, wait_until="load")
-            page.evaluate("document.fonts.ready")
-            # Font doi chieu cao dong -> doi luon cho dong chu dau. Dat lai man
-            # toi SAU khi font xong, khong thi mep man lech khoi khoi chu.
-            page.evaluate("window.__datMan && window.__datMan()")
-            page.wait_for_timeout(120)
-            path = out if i == 1 else Path(f"{stem}_{i}.png")
-            page.screenshot(path=str(path),
-                            clip={"x": 0, "y": 0, "width": W, "height": H})
-            outs.append(path)
+        _kiem_tieu_de_dong(page, browser, slides, dung_doc)
+        outs = _chup_cac_slide(page, slides, dung_doc, out, stem)
         browser.close()
     _ghi_theme(out, theme, hero)   # hero=None khi bia dung anh that
     return outs

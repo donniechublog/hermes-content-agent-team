@@ -27,7 +27,46 @@ import nop_chung as nc                                       # noqa: E402
 DRAFTS = cb.DRAFTS
 
 
+def _kiem_ghep(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
+    """Anh di mot minh duoc khong, va ghep voi "anh2" co hop le khong.
+
+    Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua
+    ngang. Nguong ngang la cua card.py (`eb.TI_LE_HERO_MAX`)."""
+    can_ghep = (a["loai"] == "chart" and not a.get("xep_hang")) or a["ti_le"] > eb.TI_LE_HERO_MAX
+    if can_ghep and not ma2:
+        cap = eb.cap_ghep_hero(m)
+        loi.append(f"{ma} là {'CHART' if a['loai'] == 'chart' else 'ảnh NGANG ' + str(a['ti_le'])} — "
+                   f"card.py chặn một mình. Thêm \"anh2\" cùng tone (cặp gợi ý: {cap or 'không có'}) "
+                   "hoặc chọn ảnh khác")
+    if ma2:
+        b = anh[ma2]
+        rc = 1 / (1 / a["ti_le"] + 1 / b["ti_le"])
+        if rc > eb.TI_LE_HERO_MAX:
+            loi.append(f"ghép {ma}+{ma2} vẫn quá ngang ({rc:.2f} > {eb.TI_LE_HERO_MAX}) — chọn cặp khác")
+        if b["ti_le"] < 1.2 or a["ti_le"] < 1.2:
+            loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ti_le']}, {ma2}={b['ti_le']}")
+
+
+def _kiem_chu(spec: dict, kieu: str, loi: list) -> None:
+    """Truong chu bat buoc theo kieu the: quote can hook/tagline/attrib, tran
+    can mot cau title tron ven."""
+    if kieu == "quote":
+        if not str(spec.get("hook") or "").strip():
+            loi.append("thiếu \"hook\"")
+        if not str(spec.get("tagline") or "").strip():
+            loi.append("thiếu \"tagline\" (chip category, ví dụ MODEL RELEASE)")
+        at = str(spec.get("attrib") or "")
+        if not at.strip():
+            loi.append("thiếu \"attrib\" ('via <báo>' hoặc 'Phát biểu của <tên>, <hãng>')")
+    else:
+        if not str(spec.get("title") or "").strip():
+            loi.append("kiểu tran: thiếu \"title\" (một câu hoàn chỉnh)")
+
+
 def giai_spec(spec: dict, m: dict, wd) -> tuple:
+    """Spec cua Ethan (ma anh) -> (ket_qua, loi, canh). Tach 07/09/2026: ba cong
+    trung voi Dre (tin xep hang, khong lien quan, anh da dung) sang nop_chung,
+    phan ghep va phan chu thanh hai ham rieng."""
     anh = {a["ma"]: a for a in m["anh"]}
     loi = []
     kieu = (spec.get("kieu") or "quote").strip().lower()
@@ -44,69 +83,28 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
         loi.append("\"anh2\" trùng \"anh\"")
         ma2 = None
     a = anh[ma]
-    # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH).
-    # CHI chan khi engine THUC SU co anh xep hang (xem ghi chu cung viec o
-    # dre_nop.py): khong co ma XH ma van chan thi vai khong bao gio nop duoc.
-# THE DU PHONG (kieu="the") KHONG duoc ep lam anh chinh: no la anh do
-# minh dung, chua he doc bang that, con ghi ten bang lay tu nguon DOAN
-# theo tu khoa. Ep no thay cho anh that = dang len kenh mot khang dinh
-# khong kiem chung (do 06/09/2026). Chi bat cong khi da CHUP duoc bang.
-    if (m.get("tin_xep_hang") and (m.get("xep_hang") or {}).get("kieu") == "chup"
-            and not a.get("xep_hang")):
+    # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH),
+    # nhung CHI khi engine da CHUP duoc bang — xem nop_chung.can_anh_xep_hang.
+    if nc.can_anh_xep_hang(m, a):
         loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
                    + cb.cau_xep_hang(m) + ".")
-    # Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua ngang.
-    can_ghep = (a["loai"] == "chart" and not a.get("xep_hang")) or a["ti_le"] > eb.TI_LE_HERO_MAX
-    if can_ghep and not ma2:
-        cap = eb.cap_ghep_hero(m)
-        loi.append(f"{ma} là {'CHART' if a['loai'] == 'chart' else 'ảnh NGANG ' + str(a['ti_le'])} — "
-                   f"card.py chặn một mình. Thêm \"anh2\" cùng tone (cặp gợi ý: {cap or 'không có'}) "
-                   "hoặc chọn ảnh khác")
-    if ma2:
-        b = anh[ma2]
-        rc = 1 / (1 / a["ti_le"] + 1 / b["ti_le"])
-        if rc > eb.TI_LE_HERO_MAX:
-            loi.append(f"ghép {ma}+{ma2} vẫn quá ngang ({rc:.2f} > {eb.TI_LE_HERO_MAX}) — chọn cặp khác")
-        if b["ti_le"] < 1.2 or a["ti_le"] < 1.2:
-            loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ti_le']}, {ma2}={b['ti_le']}")
-    # ẢNH KHÔNG LIÊN QUAN BÀI (Ông Chủ bắt lỗi 06/09/2026). `anh_chuan_bi.py` đã
-    # cho MỌI ảnh ứng viên đi qua vision và đóng cờ `lien_quan`; `dre_nop.py` đọc
-    # cờ đó và từ chối, `ethan_nop.py` thì không đọc — nên Ethan chọn được ảnh
-    # bảng tỉ số giải golf cho tin GPT-6, rồi bảng câu cá trên băng cho tin xếp
-    # hạng trí tuệ. Cả hai đều "leaderboard", và đó đúng là cách nó chọn: bắt
-    # chữ, không nhìn nội dung. Không cổng nào nói gì.
-    rac = [x for x in (ma, ma2) if x and anh[x].get("lien_quan") is False]
+    _kiem_ghep(a, ma, ma2, anh, m, loi)
+    # ẢNH KHÔNG LIÊN QUAN BÀI (Ông Chủ bắt lỗi 06/09/2026) — điều kiện dùng chung
+    # với Dre (nop_chung.anh_khong_lien_quan), câu báo của Ethan dài hơn vì Ethan
+    # hay đi tìm ảnh khác khi chart bị chặn một mình.
+    rac, mo_ta = nc.anh_khong_lien_quan(anh, (ma, ma2))
     if rac:
-        loi.append(f"{', '.join(rac)} bị vision đánh dấu KHÔNG LIÊN QUAN bài "
-                   f"({'; '.join((anh[x].get('mo_ta') or '?')[:60] for x in rac)}) — "
+        loi.append(f"{', '.join(rac)} bị vision đánh dấu KHÔNG LIÊN QUAN bài ({mo_ta}) — "
                    "không dùng. Tin xếp hạng/benchmark thì ẢNH ĐÚNG chính là bảng "
                    "xếp hạng của nguồn: engine đã chụp sẵn (mã loại chart), ghép "
                    "dọc với một ảnh ngang cùng tone qua \"anh2\". Đừng đi tìm ảnh "
                    "khác chỉ vì chart bị chặn khi đi một mình.")
 
     # Mat nguoi: dung CHUNG cong chan voi Dre (nop_chung.kiem_nhan_vat, 06/09/2026).
-    # Truoc do Ethan chi hoi "co khai ten chua" nen mot ten CEO bia dat van qua —
-    # Dre thi doi chieu ten voi chu bai va voi mo ta cua vision.
     loi.extend(nc.kiem_nhan_vat(anh, [ma, ma2], spec.get("nhan_vat"),
                                 nc.chu_bai_cua(m, wd), ""))
-    if kieu == "quote":
-        if not str(spec.get("hook") or "").strip():
-            loi.append("thiếu \"hook\"")
-        if not str(spec.get("tagline") or "").strip():
-            loi.append("thiếu \"tagline\" (chip category, ví dụ MODEL RELEASE)")
-        at = str(spec.get("attrib") or "")
-        if not at.strip():
-            loi.append("thiếu \"attrib\" ('via <báo>' hoặc 'Phát biểu của <tên>, <hãng>')")
-    else:
-        if not str(spec.get("title") or "").strip():
-            loi.append("kiểu tran: thiếu \"title\" (một câu hoàn chỉnh)")
-    # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026.
-    import luat_anh
-    for x in (ma, ma2):
-        if x:
-            l, _ = luat_anh.kiem_da_dung(x, anh[x]["goc"], m.get("draft_id", ""),
-                                         m.get("link", ""))
-            loi += l
+    _kiem_chu(spec, kieu, loi)
+    loi += nc.kiem_da_dung_nhieu(anh, [(x, x) for x in (ma, ma2) if x], m)
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
     # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
     hook_hay_title = str(spec.get("hook") or spec.get("title") or "")

@@ -251,6 +251,44 @@ _TU_ANH = {
 }
 
 
+def can_anh_xep_hang(m: dict, a: dict) -> bool:
+    """TIN XEP HANG ma anh chinh/bia KHONG phai bang xep hang -> phai doi.
+
+    CHI khi engine THUC SU CHUP duoc bang (`xep_hang.kieu == "chup"`). Truoc
+    06/09/2026 chieu cong nay chan ca khi m["xep_hang"] la None — bao vai dung
+    ma "XH" trong khi ma do khong ton tai, nen vai sua kieu gi cung sai va khong
+    bao gio nop duoc. Ba duong dan toi canh do: --khong-browser, tach_model()
+    rong (tin xep hang KHONG neu ten model), hoac tim_va_chup nem. The DU PHONG
+    (kieu="the") cung khong ep: no la anh engine tu dung, chua he doc bang that.
+    Dre va Ethan tung moi ben mot ban cua dieu kien nay (07/09/2026 gom lai)."""
+    return bool(m.get("tin_xep_hang")
+                and (m.get("xep_hang") or {}).get("kieu") == "chup"
+                and not a.get("xep_hang"))
+
+
+def anh_khong_lien_quan(anh: dict, ma_ds) -> tuple:
+    """Cac ma bi vision danh dau KHONG LIEN QUAN bai, kem mo ta cua chung.
+
+    Tra ve (rac, mo_ta). Ong Chu bat loi 06/09/2026: Dre doc co nay, Ethan thi
+    khong — nen Ethan chon bang ti so giai golf cho tin GPT-6 ("leaderboard",
+    bat chu khong nhin noi dung). Moi vai tu viet cau bao, dieu kien thi chung."""
+    rac = [ma for ma in ma_ds if ma and anh[ma].get("lien_quan") is False]
+    return rac, "; ".join((anh[x].get("mo_ta") or "?")[:60] for x in rac)
+
+
+def kiem_da_dung_nhieu(anh: dict, cap, m: dict) -> list:
+    """KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026.
+    `cap`: [(nhan, ma)]. Ba vai lam anh deu goi luat_anh.kiem_da_dung theo
+    cung mot cach; gom de khong ai bo `link` (khoa theo TIN, xem luat_anh)."""
+    import luat_anh
+    loi = []
+    for nhan, ma in cap:
+        l, _ = luat_anh.kiem_da_dung(nhan, anh[ma]["goc"], m.get("draft_id", ""),
+                                     m.get("link", ""))
+        loi += l
+    return loi
+
+
 def kiem_quote_dich(chu: str, nhan: str) -> list:
     """Quote/hook CON NGUYEN TIENG ANH -> loi. Luat "quote phai DICH sang tieng
     Viet" tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).

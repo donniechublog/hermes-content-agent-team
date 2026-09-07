@@ -182,6 +182,79 @@ def test_moi_fetcher_trong_main_deu_qua_hang_rao():
          f"goi thang khong qua _thu: {thang}")
 
 
+# ---------------------------------------------------------------- ban dang ky
+# Tu 07/09/2026 sau cho khai bang (ARENA_BOARDS, KHOA_BANG, NHAN_BANG, LINK_BANG,
+# khoi in trong _in_bao_cao, phan `ket` cua cac bang top) deu dan xuat tu
+# bang_model.BANG. Ba test dau cua tep nay gio la hien nhien — giu lai lam
+# cong, nhung cai can canh chuyen sang chinh ban dang ky.
+def test_ban_dang_ky_moi_bang_du_truong():
+    import bang_model as bm
+    xau = [b.khoa for b in bm.BANG
+           if not (b.khoa and b.nhan and b.tieu_de and b.link.startswith("https://")
+                   and b.nguon in ("arena", "aa", "media", "top"))]
+    kiem("test_ban_dang_ky_moi_bang_du_truong", not xau, f"thieu truong: {xau}")
+    kiem("test_ban_dang_ky_arena_co_duong_dan",
+         all(b.duong_dan for b in bm.BANG if b.nguon == "arena"),
+         "bang arena khong co duong dan API thi fetch_arena bo qua no")
+    kiem("test_ban_dang_ky_khong_trung_khoa",
+         len({b.khoa for b in bm.BANG}) == len(bm.BANG))
+
+
+def test_ban_dang_ky_dung_hai_bang_in_rieng():
+    """coding AA (da co muc TOP CODING) va openrouter usage (co cot token/ngay)
+    in theo khuon rieng. Them mot bang `in_bang=False` nua ma khong viet khoi
+    in rieng cho no la bang do bien mat khoi bao cao."""
+    import bang_model as bm
+    rieng = sorted(b.khoa for b in bm.BANG if not b.in_bang)
+    kiem("test_ban_dang_ky_dung_hai_bang_in_rieng", rieng == ["coding", "openrouter"],
+         f"bang in rieng: {rieng}")
+    src = Path(s.__file__).read_text(encoding="utf-8")
+    i = src.find("def _in_bao_cao")
+    kiem("test_openrouter_usage_co_khoi_in_rieng",
+         "OPENROUTER USAGE" in src[i:] and "for b in bang_model.BANG" in src[i:],
+         "_in_bao_cao phai in bang qua ban dang ky VA co khoi rieng cho openrouter")
+
+
+def test_hang_va_ngay_doc_dung_bon_hinh():
+    """Bon nguon, bon cho nam trong tep ket qua. Doc sai mot hinh la bang do in
+    rong ma `hong` khong bao (bang_so van co no)."""
+    import bang_model as bm
+    ket = {"bang_xep_hang": {"text": [{"ten": "a"}]},
+           "cham_diem": {"bang_tri_tue_goc": [{"ten": "b"}]},
+           "media": {"tts": [{"ten": "c"}]},
+           "tbench": {"rows": [{"ten": "d"}], "ngay": "2026-09-01"},
+           "openrouter_usage": {"rows": [{"ten": "e"}], "ngay": "2026-09-02"}}
+    lay = {b.khoa: b for b in bm.BANG}
+    kiem("test_hang_va_ngay_arena", bm.hang_va_ngay(ket, lay["text"]) == ([{"ten": "a"}], None))
+    kiem("test_hang_va_ngay_aa", bm.hang_va_ngay(ket, lay["tri_tue"]) == ([{"ten": "b"}], None))
+    kiem("test_hang_va_ngay_media", bm.hang_va_ngay(ket, lay["tts"]) == ([{"ten": "c"}], None))
+    kiem("test_hang_va_ngay_top",
+         bm.hang_va_ngay(ket, lay["tbench"]) == ([{"ten": "d"}], "2026-09-01"))
+    kiem("test_hang_va_ngay_ket_khoa",
+         bm.hang_va_ngay(ket, lay["openrouter"]) == ([{"ten": "e"}], "2026-09-02"),
+         "openrouter nam o khoa `openrouter_usage` trong ket")
+    kiem("test_hang_va_ngay_thieu_thi_None",
+         bm.hang_va_ngay({}, lay["hle"]) == (None, None))
+
+
+def test_ket_cua_main_co_du_bang_top():
+    """`ket` (tep --out) phai co MOI bang kieu top cua ban dang ky — day la cho
+    duy nhat `hong` khong canh duoc: bang_so co ma ket thieu thi bao cao im."""
+    src = Path(s.__file__).read_text(encoding="utf-8")
+    i = src.find("def main")
+    kiem("test_ket_cua_main_co_du_bang_top",
+         'for b in bang_model.BANG if b.nguon == "top"' in src[i:],
+         "phan bang top cua `ket` phai dan xuat tu ban dang ky")
+
+
+def test_link_bat_buoc_dan_tu_ban_dang_ky():
+    import bang_model as bm
+    lech = [k for k, v in bm.LINK_BANG.items() if bat_buoc.LINK_BANG.get(k) != v]
+    kiem("test_link_bat_buoc_dan_tu_ban_dang_ky", not lech, f"lech: {lech}")
+    kiem("test_link_ra_mat_van_con", bat_buoc.LINK_BANG.get("ra_mat", "").startswith("https://"),
+         "`ra_mat` khong phai bang nhung muc BAT BUOC ra mat can link")
+
+
 if __name__ == "__main__":
     for f in list(globals()):
         if f.startswith("test_"):

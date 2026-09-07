@@ -20,28 +20,9 @@ import bat_buoc as bb       # noqa: E402
 import caption_check as cc  # noqa: E402
 
 
-@contextlib.contextmanager
-def _so_tam(tmp):
-    """Tro so "anh da dung" vao thu muc tam VA TRA LAI khi ra khoi khoi.
-
-    Truoc 06/09/2026 bon test gan thang `la._so_da_dung = lambda: d/"s.jsonl"`
-    va khong bao gio tra lai. Ca suite chay trong MOT tien trinh theo thu tu
-    dinh nghia, nen tu test dau tien tro di `_so_da_dung()` tro toi mot
-    TemporaryDirectory DA BI XOA: `kiem_da_dung` thay tep khong ton tai va tra
-    ve ([], []) VO DIEU KIEN. Cong "khong dung lai anh trong 14 ngay" chet im
-    trong moi test sau do — ke ca test_kite_khong_ep_dung_anh_chua_nhin, von di
-    qua dung cong do o kite_nop.py:88. Test xanh ma cong khong chay.
-
-    Emoji cung mot bai hoc, xem `lay_emoji` cua teaser_assemble.assemble.
-    """
-    import luat_anh as la
-    cu = la._so_da_dung
-    d = Path(tmp)
-    la._so_da_dung = lambda: d / "s.jsonl"
-    try:
-        yield d
-    finally:
-        la._so_da_dung = cu
+# `so_tam` da chuyen sang tests/tam.py 07/09/2026: tep test thu hai can dung
+# no, va bai hoc cua chinh no la mot ban sua mot cho ma quen cho kia.
+from tam import so_tam as _so_tam  # noqa: E402
 
 
 # ---------------------------------------------------------------- quote dịch
@@ -184,9 +165,14 @@ def test_cong_xep_hang_chi_chan_khi_CHUP_duoc_bang():
     đều không được ép — xem test_the_du_phong_khong_duoc_ep_lam_anh_chinh."""
     import re as _re
     mau = r'\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\) == "chup"'
+    # Tu 07/09/2026 dieu kien nam o MOT cho (nop_chung.can_anh_xep_hang); hai vai
+    # phai goi no chu khong tu viet lai — tu viet lai la cach no da lech.
+    assert _re.search(mau, (ROOT / "nop_chung.py").read_text(encoding="utf-8")), \
+        "nop_chung.can_anh_xep_hang phải đòi kieu == 'chup'"
     for tep in ("dre_nop.py", "ethan_nop.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
-        assert _re.search(mau, src), f"{tep}: cổng xếp hạng phải đòi kieu == 'chup'"
+        assert "nc.can_anh_xep_hang(" in src, f"{tep}: phải dùng cổng chung"
+        assert not _re.search(mau, src), f"{tep}: còn bản chép tay của điều kiện"
 
 
 # ------------------------------------------------ tin xếp hạng: nhận diện & thẻ bịa

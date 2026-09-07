@@ -41,118 +41,157 @@ import nop_chung as nc                                       # noqa: E402
 DRAFTS = ROOT / "drafts"
 
 
+class _Boi:
+    """Bo dem dung chung khi giai MOT spec: cac hang so cua bai, cong voi ba cai
+    tich luy ma tung slide deu ghi vao (`loi`, `da_dung`, `dung_anh`).
+
+    Vi sao la mot doi tuong chu khong phai bien cuc bo cua `giai_spec`: phan
+    giai mot slide dai 110 dong va co hai nhanh lon (ghep doc / anh don), nen no
+    phai tach ra thanh ham rieng — ma tach ra thi ba cai tich luy do khong con
+    la bien dong kin nua. Gom mot cho de khong phai truyen sau tham so lac nhau
+    qua tung tang."""
+
+    def __init__(self, m: dict, wd: Path):
+        self.m, self.wd = m, wd
+        self.anh = {a["ma"]: a for a in m["anh"]}
+        self.chu_bai = nc.chu_bai_cua(m, wd)
+        self.loi = []
+        self.da_dung = {}                # ma anh -> nhan slide da dung no
+        self.dung_anh = []               # [(nhan slide, [ma...])]
+
+    def nhan_ma(self, ma: str, nhan: str) -> None:
+        """Ghi nhan mot ma da duoc dung o `nhan`, va bao neu no dung hai lan."""
+        if ma in self.da_dung:
+            self.loi.append(f"{nhan}: {ma} đã dùng ở {self.da_dung[ma]} — mỗi ảnh đúng một slide")
+        self.da_dung[ma] = nhan
+
+    def kiem_lien_quan(self, ma_ds, nhan: str) -> None:
+        rac, mo_ta = nc.anh_khong_lien_quan(self.anh, ma_ds)
+        if rac:
+            self.loi.append(
+                f"{nhan}: {', '.join(rac)} bị đánh dấu KHÔNG LIÊN QUAN bài ({mo_ta}) — "
+                "không dùng, chọn mã khác hoặc gộp ý/giảm slide")
+
+    def kiem_mat(self, ma_ds, muc: dict, nhan: str) -> None:
+        # Cong chan nam o nop_chung de Ethan dung chung dung mot ban (06/09/2026).
+        self.loi.extend(nc.kiem_nhan_vat(self.anh, ma_ds, muc.get("nhan_vat"),
+                                         self.chu_bai, f"{nhan}: "))
+
+
+def _giai_ghep(bo: _Boi, ghep, muc: dict, nhan: str) -> dict | None:
+    """Nhanh "ghep": hai anh NGANG chong doc thanh mot khung 4:5..1:1."""
+    import luat_anh
+    if not isinstance(ghep, list) or len(ghep) != 2:
+        bo.loi.append(f"{nhan}: \"ghep\" phải là đúng 2 mã ảnh, vd [\"A3\", \"A5\"]")
+        return None
+    sai = [x for x in ghep if x not in bo.anh]
+    if sai:
+        bo.loi.append(f"{nhan}: mã ảnh không tồn tại: {', '.join(sai)} (có: {', '.join(bo.anh)})")
+        return None
+    for x in ghep:
+        bo.nhan_ma(x, nhan)
+    bo.kiem_lien_quan(ghep, nhan)
+    ims = [Image.open(bo.anh[x]["goc"]).convert("RGB") for x in ghep]
+    rc = 1 / sum(im.height / im.width for im in ims)
+    if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
+            <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
+        bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
+                      f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
+    if luat_anh.lech_tone(ims):
+        bo.loi.append(f"{nhan}: {ghep[0]} và {ghep[1]} lệch tone, ghép sẽ ra hai vùng — "
+                      f"chọn cặp gợi ý: {bo.m.get('cap_ghep')}")
+    bo.kiem_mat(ghep, muc, nhan)
+    bo.dung_anh.append((nhan, list(ghep)))
+    return {"images": [bo.anh[x]["goc"] for x in ghep]}
+
+
+def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | None:
+    """Nhanh mot ma anh: chon ban dung (goc / da cat san / cat ngang) va chan
+    cac cach dung sai loai anh."""
+    m = bo.m
+    if ma not in bo.anh:
+        bo.loi.append(f"{nhan}: mã ảnh không tồn tại: {ma} (có: {', '.join(bo.anh)})")
+        return None
+    bo.nhan_ma(ma, nhan)
+    bo.kiem_lien_quan([ma], nhan)
+    a, ra = bo.anh[ma], {}
+    # Dieu kien "tin xep hang ma bia khong phai bang" dung chung voi Ethan
+    # (nop_chung.can_anh_xep_hang — xem lich su hoi quy o do).
+    if la_bia and nc.can_anh_xep_hang(m, a):
+        bo.loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
+                      f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m) + ".")
+    if a["loai"] == "chart" and not a.get("xep_hang"):
+        if la_bia:
+            bo.loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
+                          "bìa dùng ảnh khác (gợi ý: "
+                          f"{', '.join(m.get('goi_y_bia') or ['—'])}) hoặc \"ghep\" hai ảnh ngang")
+            return None
+        ra["image"] = a["san"] or a["goc"]
+        ra["chart"] = True
+    elif a.get("xep_hang"):
+        # Anh xep hang: bia/slide deu dan NGUYEN VEN full be ngang (nhu chart),
+        # va duoc phep lam bia — hook de len nua duoi, bang o nua tren.
+        ra["image"] = a["san"] or a["goc"]
+        if not la_bia:
+            ra["chart"] = True
+    elif a["ngang"]:
+        if muc.get("cat_ngang") and a["h"] < 700:
+            bo.loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
+                          "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"ghep\" hoặc bỏ")
+            return None
+        if muc.get("cat_ngang"):
+            tam = muc.get("tam") or [0.5, 0.5]
+            out = bo.wd / "san" / f"{ma}.ngang.png"
+            cb._luu_crop(Image.open(a["goc"]).convert("RGB"), out, "4:5",
+                         float(tam[0]), float(tam[1]), cat_ngang=True)
+            ra["image"] = str(out)
+        else:
+            bo.loi.append(f"{nhan}: {ma} là ảnh NGANG ({a['ti_le']}). Hai đường: "
+                          f"\"ghep\": [\"{ma}\", \"<ảnh ngang cùng tone>\"] "
+                          f"(cặp gợi ý: {m.get('cap_ghep') or 'không có'}), hoặc "
+                          "\"cat_ngang\": true CHỈ KHI đây là ảnh người/sản phẩm không có chữ")
+            return None
+    else:
+        ra["image"] = a["san"]
+    bo.kiem_mat([ma], muc, nhan)
+    bo.dung_anh.append((nhan, [ma]))
+    return ra
+
+
+# Cac truong CHU vai viet, di thang sang spec cua carousel.py khong doi.
+CHU_GIU = ("nhan_vat", "text", "quote", "attrib", "hook", "category", "label")
+
+
+def _giai_muc(bo: _Boi, muc: dict, nhan: str, la_bia: bool) -> dict | None:
+    """Mot muc cua vai (bia hoac mot slide) -> mot muc cua carousel.py."""
+    ghep, ma = muc.get("ghep"), muc.get("anh")
+    if ghep:
+        ra = _giai_ghep(bo, ghep, muc, nhan)
+    elif ma:
+        ra = _giai_don(bo, ma, muc, nhan, la_bia)
+    else:
+        bo.loi.append(f"{nhan}: thiếu \"anh\": \"A?\" hoặc \"ghep\": [\"A?\", \"A?\"]")
+        return None
+    if ra is None:
+        return None
+    for k in CHU_GIU:
+        if muc.get(k) is not None:
+            ra[k] = muc[k]
+    return ra
+
+
 def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     """Dich spec cua vai (ma anh) -> spec cua carousel.py (duong dan). Tra ve
-    (spec_carousel, loi, dung_anh) — dung_anh: [(slide_nhan, [ma...])]."""
-    import luat_anh
-    anh = {a["ma"]: a for a in m["anh"]}
-    loi, da_dung, dung_anh = [], {}, []
+    (spec_carousel, loi, canh, dung_anh) — dung_anh: [(slide_nhan, [ma...])].
 
-    chu_bai = nc.chu_bai_cua(m, wd)
-
-    def _lien_quan(ma_ds, nhan):
-        rac = [ma for ma in ma_ds if anh[ma].get("lien_quan") is False]
-        if rac:
-            loi.append(f"{nhan}: {', '.join(rac)} bị đánh dấu KHÔNG LIÊN QUAN bài "
-                       f"({'; '.join((anh[x].get('mo_ta') or '?')[:60] for x in rac)}) — "
-                       "không dùng, chọn mã khác hoặc gộp ý/giảm slide")
-
-    def _mat(ma_ds, muc, nhan):
-        # Cong chan nam o nop_chung de Ethan dung chung dung mot ban (06/09/2026).
-        loi.extend(nc.kiem_nhan_vat(anh, ma_ds, muc.get("nhan_vat"), chu_bai, f"{nhan}: "))
-
-    def giai(muc: dict, nhan: str, la_bia: bool) -> dict | None:
-        ra = {}
-        ghep, ma = muc.get("ghep"), muc.get("anh")
-        if ghep:
-            if not isinstance(ghep, list) or len(ghep) != 2:
-                loi.append(f"{nhan}: \"ghep\" phải là đúng 2 mã ảnh, vd [\"A3\", \"A5\"]")
-                return None
-            sai = [x for x in ghep if x not in anh]
-            if sai:
-                loi.append(f"{nhan}: mã ảnh không tồn tại: {', '.join(sai)} (có: {', '.join(anh)})")
-                return None
-            for x in ghep:
-                if x in da_dung:
-                    loi.append(f"{nhan}: {x} đã dùng ở {da_dung[x]} — mỗi ảnh đúng một slide")
-                da_dung[x] = nhan
-            _lien_quan(ghep, nhan)
-            ims = [Image.open(anh[x]["goc"]).convert("RGB") for x in ghep]
-            rc = 1 / sum(im.height / im.width for im in ims)
-            if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
-                    <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
-                loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
-                           f"chọn cặp khác (cặp gợi ý: {m.get('cap_ghep')})")
-            if luat_anh.lech_tone(ims):
-                loi.append(f"{nhan}: {ghep[0]} và {ghep[1]} lệch tone, ghép sẽ ra hai vùng — "
-                           f"chọn cặp gợi ý: {m.get('cap_ghep')}")
-            _mat(ghep, muc, nhan)
-            ra["images"] = [anh[x]["goc"] for x in ghep]
-            dung_anh.append((nhan, list(ghep)))
-        elif ma:
-            if ma not in anh:
-                loi.append(f"{nhan}: mã ảnh không tồn tại: {ma} (có: {', '.join(anh)})")
-                return None
-            if ma in da_dung:
-                loi.append(f"{nhan}: {ma} đã dùng ở {da_dung[ma]} — mỗi ảnh đúng một slide")
-            da_dung[ma] = nhan
-            _lien_quan([ma], nhan)
-            a = anh[ma]
-            # CHI chan khi engine THUC SU co anh xep hang de dung. Truoc
-            # 06/09/2026 chieu, cong nay chan ca khi m["xep_hang"] la None —
-            # bao vai "bìa dùng \"anh\": \"XH\"" trong khi ma XH khong ton tai,
-            # nen vai sua kieu gi cung sai va khong bao gio nop duoc. Ba duong
-            # dan toi canh do: --khong-browser, tach_model() rong (tin xep hang
-            # KHONG neu ten model, vd "Bảng xếp hạng AI tháng 9"), hoac
-            # tim_va_chup nem. Luc do de vai dung anh thuong, brief da noi ro.
-            # Xem ghi chu cung viec o ethan_nop.py: the du phong khong ep duoc.
-            if (la_bia and m.get("tin_xep_hang")
-                    and (m.get("xep_hang") or {}).get("kieu") == "chup"
-                    and not a.get("xep_hang")):
-                loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
-                           f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m) + ".")
-            if a["loai"] == "chart" and not a.get("xep_hang"):
-                if la_bia:
-                    loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
-                               "bìa dùng ảnh khác (gợi ý: "
-                               f"{', '.join(m.get('goi_y_bia') or ['—'])}) hoặc \"ghep\" hai ảnh ngang")
-                    return None
-                ra["image"] = a["san"] or a["goc"]
-                ra["chart"] = True
-            elif a.get("xep_hang"):
-                # Anh xep hang: bia/slide deu dan NGUYEN VEN full be ngang (nhu chart),
-                # va duoc phep lam bia — hook de len nua duoi, bang o nua tren.
-                ra["image"] = a["san"] or a["goc"]
-                if not la_bia:
-                    ra["chart"] = True
-            elif a["ngang"]:
-                if muc.get("cat_ngang") and a["h"] < 700:
-                    loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
-                               "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"ghep\" hoặc bỏ")
-                    return None
-                if muc.get("cat_ngang"):
-                    tam = muc.get("tam") or [0.5, 0.5]
-                    out = wd / "san" / f"{ma}.ngang.png"
-                    cb._luu_crop(Image.open(a["goc"]).convert("RGB"), out, "4:5",
-                                 float(tam[0]), float(tam[1]), cat_ngang=True)
-                    ra["image"] = str(out)
-                else:
-                    loi.append(f"{nhan}: {ma} là ảnh NGANG ({a['ti_le']}). Hai đường: "
-                               f"\"ghep\": [\"{ma}\", \"<ảnh ngang cùng tone>\"] "
-                               f"(cặp gợi ý: {m.get('cap_ghep') or 'không có'}), hoặc "
-                               "\"cat_ngang\": true CHỈ KHI đây là ảnh người/sản phẩm không có chữ")
-                    return None
-            else:
-                ra["image"] = a["san"]
-            _mat([ma], muc, nhan)
-            dung_anh.append((nhan, [ma]))
-        else:
-            loi.append(f"{nhan}: thiếu \"anh\": \"A?\" hoặc \"ghep\": [\"A?\", \"A?\"]")
-            return None
-        for k in ("nhan_vat", "text", "quote", "attrib", "hook", "category", "label"):
-            if muc.get(k) is not None:
-                ra[k] = muc[k]
-        return ra
+    Tach thanh `_Boi` + `_giai_ghep`/`_giai_don`/`_giai_muc` ngay 07/09/2026:
+    ban cu la 166 dong voi 36 nhanh trong mot ham, va la cho DUY NHAT kiem spec
+    cua Dre truoc khi ve. Phan lon luat trong day la luat Ong Chu dat sau mot su
+    co that, ma khong luat nao co test — `test_cong_chan` nhac `bob_nop` 19 lan,
+    `dre_nop` mot lan. Nay o `tests/test_spec_dre.py`.
+    """
+    bo = _Boi(m, wd)
+    loi = bo.loi
 
     cover = spec.get("cover") or {}
     slides = spec.get("slides") or []
@@ -170,7 +209,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
             loi.append(f"\"nen\": \"{nen}\" không hợp lệ — chọn {' | '.join(carousel.NEN)}")
         else:
             ra["nen"] = nen
-    c = giai(cover, "bìa", True) if cover else None
+    c = _giai_muc(bo, cover, "bìa", True) if cover else None
     if c is not None:
         if not str(c.get("hook") or "").strip():
             loi.append("bìa: thiếu \"hook\"")
@@ -180,7 +219,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
         ra["cover"] = c
     ra["slides"] = []
     for i, s in enumerate(slides, start=2):
-        g = giai(s, f"slide {i}", False)
+        g = _giai_muc(bo, s, f"slide {i}", False)
         if g is None:
             continue
         if not (str(g.get("text") or "").strip() or str(g.get("quote") or "").strip()):
@@ -192,10 +231,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
         ra["slides"].append(g)
     # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026. Dat SAU
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
-    for ma_, nhan_ in da_dung.items():
-        l, _ = luat_anh.kiem_da_dung(f"{nhan_} ({ma_})", anh[ma_]["goc"],
-                                     m.get("draft_id", ""), m.get("link", ""))
-        loi += l
+    loi += nc.kiem_da_dung_nhieu(bo.anh, [(f"{n} ({ma})", ma) for ma, n in bo.da_dung.items()], m)
     n = len(slides) + 1
     if n < m.get("toi_thieu", 5):
         loi.append(f"chỉ {n} slide, tin này cần tối thiểu {m['toi_thieu']} (kể cả bìa) — "
@@ -207,7 +243,7 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     chu_slide = " ".join(str(x.get(k) or "") for x in [cover] + list(slides)
                          for k in ("hook", "text", "quote", "label", "attrib"))
     canh = nc.kiem_so_tren_anh(chu_slide, m, wd)
-    return ra, loi, canh, dung_anh
+    return ra, loi, canh, bo.dung_anh
 
 
 def don_slide_cu(stem: Path) -> None:

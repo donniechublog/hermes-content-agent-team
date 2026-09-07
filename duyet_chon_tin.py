@@ -173,12 +173,10 @@ def _draft_id(item, brand, vai_anh):
     base = base.strip("-") or ("item-" + str(item["index"]))
     return f"{base}-{khoa}"
 
-def create_pair(item, vai_anh="designer", brand="donniechublog"):
-    draft_id = _draft_id(item, brand, vai_anh)
-    out_png = str(DRAFTS / (draft_id + ".png"))
-    out_json = str(DRAFTS / (draft_id + ".json"))
-    write_meta(draft_id, item, out_png, brand)
-
+def _research_nguon(item, draft_id, out_png, brand):
+    """Tim nguon cho bai (nguon_bai.py) va doi link chuyen huong Google News
+    thanh link that; ghi lai meta neu link doi. Mot lan o day cho ca vai anh
+    lan vai viet."""
     # BUOC RESEARCH — thuoc khau cua Finn, chay ngay khi Ong Chu chon tin.
     # Tim nguon la viec research, khong phai viec cua nguoi dung anh hay nguoi
     # viet chu. Lam mot lan o day thay vi de hai ben tu tim: khoi
@@ -206,34 +204,10 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     except Exception:                                        # noqa: BLE001
         pass
 
-    # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
-    # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
-    # key thua.
-    la_carousel = vai_anh in VAI_CAROUSEL
-    la_edu = vai_anh in VAI_EDU
-    khuon = EDU_BODY if la_edu else (CAROUSEL_BODY if la_carousel else ILLU_BODY)
-    # Chi truyen khoa cac template THAT SU dung. Truoc 06/09/2026 cho nay truyen
-    # 9 khoa thua (image_url, out_png, out_png_goc, category, vai, nguon,
-    # hermes_py, co_brand) — `str.format` bo qua khoa thua IM LANG, nen chung cu
-    # nam do sau khi template da bo dung cai chung phuc vu, va nguoi doc tuong
-    # body van co nhung thu do.
-    illu_body = khuon.format(
-        source_note=item.get("source_note", ""), link=item["link"],
-        title=item["title"], summary=item.get("summary_vi", ""),
-        draft_id=draft_id, brand=brand, goc=str(ROOT),
-        ket_thuc=task_bodies.KET_THUC_VAI_ANH)
-    tieu_de_task = ("Carousel deck: " if la_edu
-                    else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
-    # Bang den: the goc cua bai truoc, task anh la con cua no. Khong co goc
-    # (loi) thi van tao task nhu cu — bang den la lop them, khong phai dieu kien.
-    root_id = _bang_den_root(draft_id, item["title"],
-                             goal=f"{item['title']} — {brand}: {vai_anh} dung anh, "
-                                  f"{MAC_DINH_VIET} viet caption sau khi Ong Chu duyet anh.")
-    if root_id:
-        illu_body += BANG_DEN_NHAC.format(root=root_id)
-    illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body, parent=root_id)
-    if err:
-        return None, "Loi tao task anh: " + err
+
+def _khoi_chay_engine(draft_id):
+    """Chay NEN anh_chuan_bi.py ngay khi Ong Chu chon tin — toi luc vai nhan
+    viec thi brief da san. Khong chan reply cho Ong Chu."""
     # Phan CO HOC cua vai anh (nguon, tai/do/cat anh, tu lieu) chay NEN ngay bay
     # gio bang engine dung chung anh_chuan_bi.py — toi luc Dre/Ethan/Kite nhan
     # viec thi brief da san, task chi con viet chu; Miles doc lai cung tu lieu.
@@ -248,6 +222,10 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     except Exception as e:                                   # noqa: BLE001
         print(f"[chuan_bi] khong khoi chay nen: {type(e).__name__}: {e}")
 
+
+def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu, root_id, illu_id):
+    """Hai sidecar: <id>.img.json de LAM LAI duoc, <id>.writer.json de task viet
+    CHI sinh khi Ong Chu bam Duyet anh. Tra ve vai_viet."""
     # Cat lai body task anh de LAM LAI duoc: Ong Chu bam "Lam lai" tren anh chua
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
     # thi nut Lam lai bao khong co thong tin.
@@ -278,6 +256,48 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
               {"vai_viet": vai_viet, "title": item["title"],
                "body": writer_body, "created": False,
                "root_task": root_id, "dre_task": illu_id})
+    return vai_viet
+
+
+def create_pair(item, vai_anh="designer", brand="donniechublog"):
+    draft_id = _draft_id(item, brand, vai_anh)
+    out_png = str(DRAFTS / (draft_id + ".png"))
+    out_json = str(DRAFTS / (draft_id + ".json"))
+    write_meta(draft_id, item, out_png, brand)
+
+    _research_nguon(item, draft_id, out_png, brand)
+
+    # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
+    # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
+    # key thua.
+    la_carousel = vai_anh in VAI_CAROUSEL
+    la_edu = vai_anh in VAI_EDU
+    khuon = EDU_BODY if la_edu else (CAROUSEL_BODY if la_carousel else ILLU_BODY)
+    # Chi truyen khoa cac template THAT SU dung. Truoc 06/09/2026 cho nay truyen
+    # 9 khoa thua (image_url, out_png, out_png_goc, category, vai, nguon,
+    # hermes_py, co_brand) — `str.format` bo qua khoa thua IM LANG, nen chung cu
+    # nam do sau khi template da bo dung cai chung phuc vu, va nguoi doc tuong
+    # body van co nhung thu do.
+    illu_body = khuon.format(
+        source_note=item.get("source_note", ""), link=item["link"],
+        title=item["title"], summary=item.get("summary_vi", ""),
+        draft_id=draft_id, brand=brand, goc=str(ROOT),
+        ket_thuc=task_bodies.KET_THUC_VAI_ANH)
+    tieu_de_task = ("Carousel deck: " if la_edu
+                    else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
+    # Bang den: the goc cua bai truoc, task anh la con cua no. Khong co goc
+    # (loi) thi van tao task nhu cu — bang den la lop them, khong phai dieu kien.
+    root_id = _bang_den_root(draft_id, item["title"],
+                             goal=f"{item['title']} — {brand}: {vai_anh} dung anh, "
+                                  f"{MAC_DINH_VIET} viet caption sau khi Ong Chu duyet anh.")
+    if root_id:
+        illu_body += BANG_DEN_NHAC.format(root=root_id)
+    illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body, parent=root_id)
+    if err:
+        return None, "Loi tao task anh: " + err
+    _khoi_chay_engine(draft_id)
+
+    vai_viet = _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu, root_id, illu_id)
 
     item["picked"] = True
     item["vai_anh"], item["brand"], item["vai_viet"] = vai_anh, brand, vai_viet

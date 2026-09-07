@@ -1058,11 +1058,24 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
         _chan_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
     if kieu == "quote" and not bo_qua_anh:
         _chan_anh_thap(src, ratio)   # anh qua ngang: nua the se bo trong
-    # Kieu quote co duong ve rieng (anh phu kin + cau trich dan + dong nguon).
+    # Moi kieu the mot ham ve rieng; `build` chi con la cong chan + re nhanh.
     if kieu == "quote":
         return _render_quote(src, title, attrib, out, handle, ratio, tagline)
+    return _render_tran(src, title, out, handle, ratio, kicker, b)
 
-    # ---- kieu tran: hero image, tieu de la MOT cau tron ven de len anh -------
+
+def _render_tran(src, title, out, handle, ratio, kicker, b):
+    """The hero TRAN: anh phu kin the, tieu de MOT cau tron ven de len anh
+    trong mot khung chu nhat net.
+
+    Tach khoi `build` 07/09/2026 cho doi xung voi `_render_quote`: `build`
+    chi con la cong chan (tieng Viet co dau, luat anh) cong mot cho re nhanh,
+    con moi kieu the mot ham ve. Truoc do `build` la 221 dong trong do 187
+    dong chi thuoc ve kieu tran — doc mot kieu phai luot qua ca kieu kia.
+
+    `b`: bang thuong hieu da nap (`dat_thuong_hieu`), can cho co chan, che do
+    to ten hang va do ro cua ten kenh.
+    """
     src_img = _mo_anh(src)
     # Chieu cao tu nhien cua anh khi hien full be ngang: con so quyet dinh moi
     # thu con lai — anh la lop nen, khong co tran.

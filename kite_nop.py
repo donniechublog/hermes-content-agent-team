@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import kite_chuan_bi as kb                                   # noqa: E402
+import luat_anh                                              # noqa: E402
 import nop_chung as nc                                       # noqa: E402
 import render_edu                                            # noqa: E402
 
@@ -37,9 +38,193 @@ BAT_BUOC = {k: v["truong"] for k, v in render_edu.BAT_BUOC_KIND.items()}
 GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
 
 
+def _kiem_hinh_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
+                     da_thay: dict, loi: list, canh: list) -> None:
+    """Slide co `image`: doi ma -> tep, roi bon cong luat anh (da dung, trung
+    trong bo, anh rong, do phan giai) va canh bao mat nguoi. Khong co image thi
+    khong lam gi."""
+    img = sl.get("image")
+
+    if img:
+
+        if img not in hinh:
+
+            loi.append(f"slide {i}: image \"{img}\" không phải mã hình thật dùng được "
+
+                       f"(có: {', '.join(hinh) or 'không có'}) — bỏ image hoặc đổi mã")
+
+        else:
+
+            s2["image"] = hinh[img]["goc"]
+
+            # KHONG DUNG LAI ANH DA DUNG (Ong Chu 06/09/2026). Dre va Ethan
+
+            # co cong nay tu dau; Kite thi khong doc lan khong ghi, nen mot
+
+            # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
+
+            l, _ = luat_anh.kiem_da_dung(f"slide {i} ({img})", hinh[img]["goc"],
+
+                                         m.get("draft_id", ""), m.get("link", ""))
+
+            loi += l
+
+            # LUAT_ANH.md:12 tuyen bo Kite "phai theo" luat anh, nhung bang
+
+            # cong chan §9 khong co cot Kite va chuoi kite_* khong goi cong
+
+            # nao ngoai kiem_da_dung — mot khoang cach im lang giua tai lieu
+
+            # va ma (audit 06/09/2026). Bon cong duoi day khong dinh gi toi
+
+            # bo cuc nen ap duoc nguyen xi cho khung cua Kite:
+
+            nhan = f"slide {i} ({img})"
+
+            l, c = luat_anh.kiem_trung(nhan, hinh[img]["goc"], da_thay)
+
+            loi += l
+
+            canh += c
+
+            try:
+
+                from PIL import Image as _Im
+
+                with _Im.open(hinh[img]["goc"]) as _im:
+
+                    l, c = luat_anh.kiem_anh_rong(nhan, _im)
+
+                    loi += l
+
+                    canh += c
+
+                    l, c = luat_anh.kiem_do_phan_giai(nhan, _im.width, _im.height)
+
+                    loi += l
+
+                    canh += c
+
+            except OSError as e:
+
+                loi.append(f"{nhan}: khong mo duoc anh ({type(e).__name__})")
+
+            # Mat nguoi: Kite khong co truong `nhan_vat` trong spec (khac
+
+            # card.py/carousel.py), nen o day chi CANH BAO — chan cung se
+
+            # khoa het anh su kien ma vai khong co cach nao khai.
+
+            l, c = luat_anh.kiem_mat_nguoi(nhan, hinh[img]["goc"])
+
+            canh += [d + " — Kite chưa có trường nhan_vat, tự soi xem "
+
+                     "người trong ảnh có đúng là người trong bài không"
+
+                     for d in l] + c
+
+            if not sl.get("caption"):
+
+                loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
+
+
+def _giai_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
+                loi: list, canh: list):
+    """Mot slide cua vai -> mot slide cua render_edu, hoac None khi kind la.
+    Tach khoi giai_spec 07/09/2026: than vong lap dai 95 dong."""
+    k = sl.get("kind")
+
+    if k not in BAT_BUOC:
+
+        loi.append(f"slide {i}: kind \"{k}\" không hợp lệ (cover/statement/steps/loop/figure/bars/cta)")
+
+        return None
+
+    thieu = [f for f in BAT_BUOC[k] if not sl.get(f)]
+
+    if thieu:
+
+        loi.append(f"slide {i} ({k}): thiếu {', '.join(thieu)}")
+
+    # Khoa LONG (cards[].num, steps[].desc, bars[].label...) — renderer doc
+
+    # cung nen thieu la KeyError sau khi da mo Chromium.
+
+    # kiem_truong([sl]) chi thay MOT slide nen luon danh so "slide 1"; ban
+
+    # truoc 07/09/2026 tim "slide {i}" de doi -> khong bao gio khop, moi loi
+
+    # khoa long deu bao "slide 1" du o slide nao (test_spec_kite bat duoc).
+
+    loi += [d.replace(f"slide 1 [{k}]", f"slide {i} ({k})")
+
+            for d in render_edu.kiem_truong([sl])
+
+            if "[" in d and "thieu" in d and "]:" in d and
+
+            not any(f"thieu '{f}'" in d for f in BAT_BUOC[k])]
+
+    s2 = dict(sl)
+
+    _kiem_hinh_slide(i, sl, s2, hinh, m, da_thay, loi, canh)
+
+    for f, gh in GIOI_HAN.items():
+
+        v = sl.get(f)
+
+        if isinstance(v, str) and len(v) > gh:
+
+            canh.append(f"slide {i}: {f} dài {len(v)} ký tự (> {gh}) — có thể tràn/nhỏ chữ")
+
+    for c in sl.get("cards", []) or []:
+
+        if len(str(c.get("text", ""))) > 100:
+
+            canh.append(f"slide {i}: card \"{str(c.get('text'))[:30]}…\" dài, rút ≤ 90")
+
+    for st in sl.get("steps", []) or []:
+
+        if len(str(st.get("desc", ""))) > 90:
+
+            canh.append(f"slide {i}: step desc dài, rút ≤ 80")
+
+    for t in sl.get("checks", []) or []:
+
+        if len(str(t)) > 80:
+
+            canh.append(f"slide {i}: check dài, rút ≤ 70")
+
+    if k == "bars":
+
+        bs = sl.get("bars") or []
+
+        if not 2 <= len(bs) <= 6:
+
+            loi.append(f"slide {i}: bars cần 2..6 cột (có {len(bs)})")
+
+        for j, b in enumerate(bs, 1):
+
+            b = b if isinstance(b, dict) else {}
+
+            try:
+
+                render_edu._gia_tri(b.get("value"))
+
+            except (ValueError, TypeError):
+
+                loi.append(f"slide {i}: cột {j} \"value\" phải là số thật trong bài (có {b.get('value')!r})")
+
+            if len(str(b.get("label", ""))) > 28:
+
+                canh.append(f"slide {i}: cột {j} label dài, rút ≤ 28")
+
+    if any("nguồn" in str(v).lower() for v in sl.values() if isinstance(v, str)):
+
+        loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
+    return s2
+
+
 def giai_spec(spec: dict, m: dict, wd) -> tuple:
-    import luat_anh
-    import render_edu
     loi, canh = [], []
     slides = spec.get("slides") or []
     if not (6 <= len(slides) <= 10):
@@ -64,89 +249,9 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
         ra["hero"] = hero
     ra["slides"] = []
     for i, sl in enumerate(slides, 1):
-        k = sl.get("kind")
-        if k not in BAT_BUOC:
-            loi.append(f"slide {i}: kind \"{k}\" không hợp lệ (cover/statement/steps/loop/figure/bars/cta)")
+        s2 = _giai_slide(i, sl, hinh, m, da_thay, loi, canh)
+        if s2 is None:
             continue
-        thieu = [f for f in BAT_BUOC[k] if not sl.get(f)]
-        if thieu:
-            loi.append(f"slide {i} ({k}): thiếu {', '.join(thieu)}")
-        # Khoa LONG (cards[].num, steps[].desc, bars[].label...) — renderer doc
-        # cung nen thieu la KeyError sau khi da mo Chromium.
-        loi += [d.replace(f"slide {i} [{k}]", f"slide {i} ({k})")
-                for d in render_edu.kiem_truong([sl])
-                if "[" in d and "thieu" in d and "]:" in d and
-                not any(f"thieu '{f}'" in d for f in BAT_BUOC[k])]
-        s2 = dict(sl)
-        img = sl.get("image")
-        if img:
-            if img not in hinh:
-                loi.append(f"slide {i}: image \"{img}\" không phải mã hình thật dùng được "
-                           f"(có: {', '.join(hinh) or 'không có'}) — bỏ image hoặc đổi mã")
-            else:
-                s2["image"] = hinh[img]["goc"]
-                # KHONG DUNG LAI ANH DA DUNG (Ong Chu 06/09/2026). Dre va Ethan
-                # co cong nay tu dau; Kite thi khong doc lan khong ghi, nen mot
-                # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
-                l, _ = luat_anh.kiem_da_dung(f"slide {i} ({img})", hinh[img]["goc"],
-                                             m.get("draft_id", ""), m.get("link", ""))
-                loi += l
-                # LUAT_ANH.md:12 tuyen bo Kite "phai theo" luat anh, nhung bang
-                # cong chan §9 khong co cot Kite va chuoi kite_* khong goi cong
-                # nao ngoai kiem_da_dung — mot khoang cach im lang giua tai lieu
-                # va ma (audit 06/09/2026). Bon cong duoi day khong dinh gi toi
-                # bo cuc nen ap duoc nguyen xi cho khung cua Kite:
-                nhan = f"slide {i} ({img})"
-                l, c = luat_anh.kiem_trung(nhan, hinh[img]["goc"], da_thay)
-                loi += l
-                canh += c
-                try:
-                    from PIL import Image as _Im
-                    with _Im.open(hinh[img]["goc"]) as _im:
-                        l, c = luat_anh.kiem_anh_rong(nhan, _im)
-                        loi += l
-                        canh += c
-                        l, c = luat_anh.kiem_do_phan_giai(nhan, _im.width, _im.height)
-                        loi += l
-                        canh += c
-                except OSError as e:
-                    loi.append(f"{nhan}: khong mo duoc anh ({type(e).__name__})")
-                # Mat nguoi: Kite khong co truong `nhan_vat` trong spec (khac
-                # card.py/carousel.py), nen o day chi CANH BAO — chan cung se
-                # khoa het anh su kien ma vai khong co cach nao khai.
-                l, c = luat_anh.kiem_mat_nguoi(nhan, hinh[img]["goc"])
-                canh += [d + " — Kite chưa có trường nhan_vat, tự soi xem "
-                         "người trong ảnh có đúng là người trong bài không"
-                         for d in l] + c
-                if not sl.get("caption"):
-                    loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
-        for f, gh in GIOI_HAN.items():
-            v = sl.get(f)
-            if isinstance(v, str) and len(v) > gh:
-                canh.append(f"slide {i}: {f} dài {len(v)} ký tự (> {gh}) — có thể tràn/nhỏ chữ")
-        for c in sl.get("cards", []) or []:
-            if len(str(c.get("text", ""))) > 100:
-                canh.append(f"slide {i}: card \"{str(c.get('text'))[:30]}…\" dài, rút ≤ 90")
-        for st in sl.get("steps", []) or []:
-            if len(str(st.get("desc", ""))) > 90:
-                canh.append(f"slide {i}: step desc dài, rút ≤ 80")
-        for t in sl.get("checks", []) or []:
-            if len(str(t)) > 80:
-                canh.append(f"slide {i}: check dài, rút ≤ 70")
-        if k == "bars":
-            bs = sl.get("bars") or []
-            if not 2 <= len(bs) <= 6:
-                loi.append(f"slide {i}: bars cần 2..6 cột (có {len(bs)})")
-            for j, b in enumerate(bs, 1):
-                b = b if isinstance(b, dict) else {}
-                try:
-                    render_edu._gia_tri(b.get("value"))
-                except (ValueError, TypeError):
-                    loi.append(f"slide {i}: cột {j} \"value\" phải là số thật trong bài (có {b.get('value')!r})")
-                if len(str(b.get("label", ""))) > 28:
-                    canh.append(f"slide {i}: cột {j} label dài, rút ≤ 28")
-        if any("nguồn" in str(v).lower() for v in sl.values() if isinstance(v, str)):
-            loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
         ra["slides"].append(s2)
 
     # Brief noi "CO n hinh that lien quan -> BAT BUOC dung it nhat mot"

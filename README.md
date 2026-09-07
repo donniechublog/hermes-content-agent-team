@@ -139,10 +139,23 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   tin; tự giải mã link Google News (`giai_ma_gnews`).
 - `scan_models.py` — quét của Nova: 23 bảng xếp hạng, mục "RA MẮT THEO BẢNG CHẤM
   ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
+  **Bảng đăng ký ở `bang_model.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
+  đề in, link, lấy hàng từ đâu). Trước 07/09/2026 thêm một bảng phải khai ở
+  **sáu** chỗ trong hai tệp; quên một chỗ là loại lỗi không báo gì cả (mất bảng
+  trong báo cáo, hoặc mục bắt buộc ra link rỗng). Nay năm chỗ dẫn xuất từ đó;
+  chỉ khối `bang_so` trong `main` còn viết tay, và `main` tự đối chiếu nó với
+  bảng đăng ký.
   Bảng chết (BFCL, LiveCodeBench, Aider, BigCodeBench, Papers With Code) bị loại
   có chủ đích — xem nhật ký sự cố.
-- `manifest_ghi.py` / `manifest_build.py` — ghi manifest đánh số vào
-  `state/<brand>/` qua `env_load.state_dir()`, cùng chỗ approve_service đọc.
+- `manifest_ghi.py` (Nova/Vera) / `manifest_build.py` (Finn) — ghi manifest đánh
+  số vào `state/<brand>/` qua `env_load.state_dir()`, cùng chỗ approve_service
+  đọc. Phần cơ học dùng chung nằm ở **`manifest_chung.py`**: chọn theo `k`, dọn
+  `summary_vi`, đánh số, không ghi đè bản đã có, chốt danh sách bắt buộc, dựng
+  báo cáo. Trước 07/09/2026 mỗi script tự viết lại và **đã lệch** — cổng bỏ
+  em-dash chỉ có ở nhánh Finn, dù lý do có nó ("em-dash lọt xuống tận caption")
+  đúng y hệt với Nova/Vera. Cái *không* gộp là cổng báo title mất dấu: title của
+  Nova/Vera do chính vai viết bằng tiếng Việt, còn title của Finn lấy từ
+  `candidates.json` tức tiêu đề gốc báo nước ngoài.
 - `bat_buoc.py` — **danh sách BẮT BUỘC**: script quét thấy là phải đưa, vai không
   có quyền bỏ. Script ghi manifest tự thêm mục thiếu kèm ghi chú "vai bỏ sót" và
   xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**, không chép URL.
@@ -190,10 +203,35 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `test_cong_chan` giữ các cổng chặn và đường báo lỗi của nop, `test_cong_thuan`
   giữ mấy hàm thuần đã từng hồi quy im lặng (lệnh chọn số, `draft_id` ≤ 55 byte,
   cắt tin nhắn dài), `test_ham_thuan` giữ các hàm không ai canh mà quyết định
-  nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`),
+  nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`,
+  `tong_hop` của nhật ký 9router),
   `test_soat_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
   còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
-  giống hệt nhau, đếm được), `test_tai_lieu` chặn tài liệu trôi khỏi mã.
+  giống hệt nhau, đếm được), `test_spec_dre` giữ cổng spec carousel của Dre
+  (36 nhánh, phần lớn là luật Ông Chủ đặt sau một sự cố thật),
+  `test_manifest` giữ phần cơ học của manifest — thứ Ông Chủ đọc rồi **trả lời
+  bằng số**, nên sai ở đó không ra lỗi mà ra một danh sách nhìn bình thường
+  nhưng số "2" trỏ tới bài khác — `test_caption` giữ cổng caption của Miles
+  (thứ cuối cùng trước hàng duyệt, 14 cổng thuần), `test_spec_ethan` /
+  `test_spec_kite` giữ hai cổng spec còn lại (cùng fixture manifest với
+  `test_spec_dre`; Kite tắt YuNet trong test), và `test_tai_lieu` chặn tài liệu
+  trôi khỏi mã. Ba cổng dùng chung của Dre/Ethan nằm ở `nop_chung`
+  (`can_anh_xep_hang`, `anh_khong_lien_quan`, `kiem_da_dung_nhieu`) — trước
+  07/09/2026 mỗi vai một bản, và đã lệch một lần (Ethan không đọc cờ
+  `lien_quan`).
+  Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
+  `chay.sh` chỉ chạy `test_*.py`.
+
+  **Hàm chạy thật thì đối chiếu bằng VẾT.** Bảy hàm không chạy offline được
+  (duyệt ảnh, router Telegram, tạo cặp task, moat, và ba hàm lái Chromium) đã
+  được tách 07/09/2026 bằng cách thay mọi cạnh I/O — `call` Telegram, kanban,
+  `subprocess`, `httpx`, Playwright — bằng bản **ghi vết** trả dữ liệu định sẵn,
+  rồi chạy 7–26 kịch bản qua bản cũ (snapshot `git show HEAD:`) và bản mới, so
+  vết + tệp + giá trị trả về. Playwright giả nằm ở scratchpad phiên audit
+  (tệp fake_pw trong scratchpad, ngoài repo): `page.evaluate` chọn kết quả theo
+  chuỗi JS, `goto` trả
+  status theo kịch bản. Cách này đã bắt được ba lỗi tách trước khi commit
+  (biến cục bộ của hàm cũ, import cục bộ, một `def` bị lát cắt nuốt).
 
   **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
   thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba

@@ -28,6 +28,7 @@ TAI_LIEU = ["README.md", "LUAT_ANH.md", "STYLE_TEXT_SPEC.md"]
 DUONG_DAN = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|md|sh|json|js|css|yaml))`")
 # Ten tep RUNTIME (sinh luc chay, khong nam trong git) — khong phai tep repo.
 BO_QUA = ("~", "<", "$", "config.yaml", "jobs.json", "xong.json", "da_dung.json",
+          "candidates.json",      # scan_sources sinh ra luc chay (/tmp), khong o repo
           "meta.json", "spec.json", "vung_ocr.json", "nop_lan.json", "img.json",
           "writer.json", "ban_giao.md", "caption.txt", "brief.md",
           "models_seen.json", "AGENTS.md", "package.json", "emoji-map.json",

@@ -125,20 +125,10 @@ def so_la(chu: str, tu_lieu: str) -> list:
     return list(dict.fromkeys(la))
 
 
-def kiem(caption: str, tu_lieu: str = "") -> tuple:
-    """Tra ve (loi, canh_bao, thong_tin). Co loi thi khong duoc luu draft."""
-    loi, canh, tin = [], [], {}
-    tran = _bo_the(caption)
-
-    if not caption.strip():
-        return (["Caption rỗng."], [], {})
-
-    td = ty_le_dau(tran)
-    tin["ty_le_dau"] = round(td, 3)
-    if td < NGUONG_DAU:
-        loi.append(f"MAT DAU tieng Viet — ty le dau {td:.2f}, duoi nguong "
-                   f"{NGUONG_DAU}. Bai khong co dau la khong dang duoc.")
-
+def _kiem_do_dai(caption: str) -> tuple:
+    """Ba nguong do dai: tran nen tang (loi), gioi han chu thich anh (loi),
+    muc nen dat (chi nhac)."""
+    loi, canh = [], []
     if len(caption) > TRAN_NEN_TANG:
         loi.append(f"Dài {len(caption)} ký tự, vượt trần {TRAN_NEN_TANG} của "
                    "Instagram và TikTok. Bài sẽ bị cắt hoặc từ chối khi moat đẩy đi.")
@@ -148,7 +138,14 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
         canh.append(f"{len(caption)} ký tự, còn {GIOI_HAN - len(caption)} ký tự "
                     "chưa dùng trong giới hạn chú thích ảnh. Khai thác thêm số "
                     "liệu hoặc bối cảnh từ tư liệu.")
+    return loi, canh
 
+
+def _kiem_van_phong(caption: str, tran: str) -> tuple:
+    """Nhung thu SOUL da cam va tieu chuan bien tap: em-dash, link song, cum sao
+    rong, moi cau mot dong, the HTML la, tu thoi phong, lap y. `tran` la
+    caption da bo the."""
+    loi, canh = [], []
     # Em-dash: Ong Chu khong dung dau nay trong van ban dang len kenh. Bat o day
     # de nguoi viet sua han, thay vi de publish.py am tham doi giup roi lan sau
     # van viet nhu cu.
@@ -190,7 +187,13 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
     if lap:
         loi.append("Lặp ý — cụm sau xuất hiện hai lần: "
                    + "; ".join(f'"{c}"' for c in lap[:3]))
+    return loi, canh
 
+
+def _kiem_so_lieu(caption: str, tran: str, tu_lieu: str, tin: dict) -> tuple:
+    """So lieu: nguon co so ma caption khong co (loi), so khong co trong tu lieu
+    (nhac), co so ma khong ghi tu cong bo (nhac). Ghi them vao `tin`."""
+    loi, canh = [], []
     so_cap = so_trong(caption)
     tin["so_trong_caption"] = len(so_cap)
 
@@ -222,6 +225,31 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
     if so_cap and not any(k in tran.lower() for k in TU_CONG_BO):
         canh.append("Có số liệu nhưng chưa ghi rõ là hãng tự công bố hay đã kiểm "
                     "chứng độc lập.")
+    return loi, canh
+
+
+def kiem(caption: str, tu_lieu: str = "") -> tuple:
+    """Tra ve (loi, canh_bao, thong_tin). Co loi thi khong duoc luu draft.
+
+    Tach thanh ba nhom 07/09/2026 (do dai / van phong / so lieu) — ban cu la
+    103 dong voi 14 cong noi tiep trong mot ham; thu tu ghi vao `loi` va `canh`
+    giu nguyen (moi nhom chi ghi vao hai danh sach do theo dung thu tu cu)."""
+    loi, canh, tin = [], [], {}
+    tran = _bo_the(caption)
+
+    if not caption.strip():
+        return (["Caption rỗng."], [], {})
+
+    td = ty_le_dau(tran)
+    tin["ty_le_dau"] = round(td, 3)
+    if td < NGUONG_DAU:
+        loi.append(f"MAT DAU tieng Viet — ty le dau {td:.2f}, duoi nguong "
+                   f"{NGUONG_DAU}. Bai khong co dau la khong dang duoc.")
+
+    for l, c in (_kiem_do_dai(caption), _kiem_van_phong(caption, tran),
+                 _kiem_so_lieu(caption, tran, tu_lieu, tin)):
+        loi += l
+        canh += c
 
     cau = [c for c in re.split(r"(?<=[.!?])\s+", tran) if c.strip()]
     tin["so_cau"] = len(cau)
