@@ -101,6 +101,38 @@ def _tai_anh_dinh_kem(token, msg):
     out.write_bytes(data)
     return str(out)
 
+def _bao_khong_ho_tro(token, group, thread_id, msg, mid):
+    """Sticker, voice, video, file khong phai anh... — khong hieu duoc thi noi
+    ro, khong im lang (im lang = "khong phan hoi" trong mat Ong Chu)."""
+    loai = next((k for k in ("sticker", "voice", "video", "audio", "document",
+                             "animation", "video_note", "poll", "location")
+                 if k in msg), "khong ro")
+    log("vao", f"msg={mid} khong co chu/anh (loai={loai}) -> bao khong ho tro")
+    call(token, "sendMessage", chat_id=group,
+         **({"message_thread_id": thread_id} if thread_id else {}),
+         text=f"Tin dạng {loai} chưa hỗ trợ — chỉ nhận chữ và ảnh (photo hoặc file ảnh).")
+
+
+def _lenh_chon_neu_co(msg, thread_id, text, mid):
+    """So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
+    REPLY dung vao bao cao (xem _la_reply_bao_cao). Tra (vai, lenh); lenh None
+    la hoi thoai. Ghi lai quyet dinh cong reply: khi Ong Chu bao "go so ma
+    khong ra bai" thi mot dong log du de biet cong da xu ra sao."""
+    vai = vai_cua_topic(thread_id)
+    lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
+    if lenh is not None:
+        rt_that = _reply_that(msg)
+        la_reply = _la_reply_bao_cao(vai, msg)
+        log("route", f"msg={mid} ung-vien-chon vai={vai} "
+                     f"reply_that={rt_that.get('message_id') if rt_that else None} "
+                     f"la_reply_bao_cao={la_reply}")
+        if not la_reply:
+            log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
+                         f"vai={vai} -> coi la hoi thoai")
+            lenh = None
+    return vai, lenh
+
+
 def handle_message(token, group, msg):
     mid = msg.get("message_id")
     if msg.get("from", {}).get("is_bot"):
@@ -149,15 +181,7 @@ def handle_message(token, group, msg):
         text = f"[Ảnh đính kèm đã tải về: {anh_path}]\n" + (text or "(không có chú thích kèm theo)")
 
     if not text:
-        # Sticker, voice, video, file khong phai anh... — khong hieu duoc thi
-        # noi ro, khong im lang (im lang = "khong phan hoi" trong mat Ong Chu).
-        loai = next((k for k in ("sticker", "voice", "video", "audio", "document",
-                                 "animation", "video_note", "poll", "location")
-                     if k in msg), "khong ro")
-        log("vao", f"msg={mid} khong co chu/anh (loai={loai}) -> bao khong ho tro")
-        call(token, "sendMessage", chat_id=group,
-             **({"message_thread_id": thread_id} if thread_id else {}),
-             text=f"Tin dạng {loai} chưa hỗ trợ — chỉ nhận chữ và ảnh (photo hoặc file ảnh).")
+        _bao_khong_ho_tro(token, group, thread_id, msg, mid)
         return
 
     # Dau "/" = LENH, o bat ky topic nao — xu ly rieng, khong bao gio roi ve
@@ -180,21 +204,7 @@ def handle_message(token, group, msg):
     # REPLY dung vao bao cao (xem _la_reply_bao_cao). Moi thu khac (ke ca dung
     # so nhung go troi, khong bam Reply) la hoi thoai. Finn, Nova, Vera deu
     # duoc — cung mot cach tra loi.
-    vai = vai_cua_topic(thread_id)
-    lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
-    if lenh is not None:
-        # Ghi lai quyet dinh cong reply: khi Ong Chu bao "go so ma khong ra bai"
-        # (hoac nguoc lai) thi mot dong nay du de biet Telegram gui reply nao len
-        # va cong da xu ra sao — khoi phai dung lai ban debug in nguyen JSON.
-        rt_that = _reply_that(msg)
-        la_reply = _la_reply_bao_cao(vai, msg)
-        log("route", f"msg={mid} ung-vien-chon vai={vai} "
-                     f"reply_that={rt_that.get('message_id') if rt_that else None} "
-                     f"la_reply_bao_cao={la_reply}")
-        if not la_reply:
-            log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
-                         f"vai={vai} -> coi la hoi thoai")
-            lenh = None
+    vai, lenh = _lenh_chon_neu_co(msg, thread_id, text, mid)
     is_pick = lenh is not None
     if not is_pick:
         # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot

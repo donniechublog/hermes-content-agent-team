@@ -892,6 +892,90 @@ def the_du_phong(model: str, hang, site: str, bang: str, out: Path, brand: str =
 
 
 # ---- Điều phối --------------------------------------------------------------------
+class _PhienChup:
+    """Mot phien chromium cho ca luot di nguon: hai context (mobile thu truoc, desktop
+    lui ve) tao LAZY va dung lai giua cac nguon. Viewport desktop cao san bang
+    tran cua so chup: khong doi kich thuoc giua chung, doi la trang reflow, bbox
+    do truoc do lech. Tach khoi tim_va_chup 07/09/2026 (118 dong, ba closure)."""
+
+    def __init__(self, br):
+        self.br = br
+        self._ctx = {}
+        self._pg = {}
+
+    def trang(self, khung: str):
+        if khung not in self._pg:
+            if khung == "desktop":
+                self._ctx[khung] = self.br.new_context(
+                    viewport={"width": 2400, "height": CAO_TOI_DA_CSS + 250},
+                    device_scale_factor=DPR, user_agent=UA)
+            else:
+                self._ctx[khung] = self.br.new_context(
+                    viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
+                    is_mobile=True, has_touch=True, user_agent=MOBILE_UA)
+            self._pg[khung] = self._ctx[khung].new_page()
+        return self._pg[khung]
+
+    @staticmethod
+    def thu(pg, models, out, dpr, vua_khung, giay):
+        """Mot luot tren MOT khung: danh sach hang-the -> bang -> chart SVG."""
+        _doi_bang(pg, giay)
+        # Danh sach truoc bang: trang co ca hai (arena, aa, livebench o khung
+        # mobile) thi danh sach la ban da xep lai cho man doc, hon han bang.
+        kq, ly_do = chup_danh_sach(pg, models, out, dpr)
+        if kq:
+            return kq, ly_do
+        kq2, ly_do2 = chup_bang(pg, models, out, dpr, vua_khung)
+        if kq2:
+            return kq2, ly_do2
+        kq3, ly_do3 = chup_svg(pg, models, out, dpr)
+        return kq3, f"danh sách: {ly_do}; bảng: {ly_do2}; svg: {ly_do3}"
+
+
+def _thu_nguon(phien: _PhienChup, n: dict, models: list, out: Path, in_log):
+    """Mot nguon: mo trang (mobile mac dinh, desktop neu nguon danh dau), bo qua
+    khi bi chan, thu chup; mobile hut thi mo lai o desktop. Tra (kq, ly_do, pg);
+    kq None + ly_do None nghia la bo qua (da in log)."""
+    # Mobile la MAC DINH cho moi nguon; `khung: desktop` chi danh dau nhung
+    # nguon DA DO la mobile khong dung duoc (ly do ghi ngay tren muc trong
+    # NGUON). Go co ra thi van chay dung, chi ton them mot luot mo trang.
+    chi_desktop = n.get("khung") == "desktop"
+    pg = phien.trang("desktop" if chi_desktop else "mobile")
+    try:
+        resp = pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
+        # Cloudflare challenge / 429: khong doi 14s vo ich, sang nguon khac ngay.
+        # (arena.ai tra 429 "Just a moment..." sau ~25 luot thu tu mot IP trong
+        # mot gio — may local luc dev; server moi bai goi mot lan.)
+        pg.wait_for_timeout(800)
+        tieu_de = (pg.title() or "").lower()
+        if (resp and resp.status in (403, 429, 503)) or re.search(
+                r"just a moment|security verification|attention required|access denied", tieu_de):
+            in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({resp.status if resp else '?'} — {tieu_de[:40]!r}), bỏ qua")
+            return None, None, pg
+        # KHUNG MOBILE TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vào trang
+        # nào chụp thì cũng hãy duyệt theo kích thước mobile, vì hình luôn
+        # đăng ở ratio 4:5"). 414px x DPR3 = 1242px, gan khop kho the
+        # 1200px nen chu gan nhu khong bi co; desktop 2400 x DPR2 = 4800px
+        # phai co bon lan, chu be lai bay nhieu. `vua_khung=True`: o khung
+        # hep phai BO bang rong hon khung — no nam trong khung cuon ngang,
+        # chup ra chi duoc lat cat ben trai (tbench/swebench/bfcl/gaia/
+        # opencompass). Hut thi mo lai chinh nguon do o khung desktop.
+        if chi_desktop:
+            kq, ly_do = phien.thu(pg, models, out, DPR, False, 14)
+        else:
+            kq, ly_do = phien.thu(pg, models, out, MOBILE_DPR, True, 8)
+            if not kq:
+                pg = phien.trang("desktop")
+                pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
+                pg.wait_for_timeout(800)
+                kq, ly_do2 = phien.thu(pg, models, out, DPR, False, 14)
+                ly_do = f"mobile: {ly_do}; desktop: {ly_do2}"
+    except Exception as e:                           # noqa: BLE001
+        in_log(f"[xep_hang] {n['ma']}: {type(e).__name__}: {str(e)[:80]}")
+        return None, None, pg
+    return kq, ly_do, pg
+
+
 def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                 hang_goi_y=None, in_log=print) -> dict:
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
@@ -908,83 +992,14 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     with sync_playwright() as p, contextlib.closing(
             p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage",
                                     "--force-color-profile=srgb"])) as br:
-        # Hai bo context: mobile (thu truoc, moi nguon) va desktop (lui ve khi
-        # mobile khong ra). Tao LAZY, dung lai giua cac nguon — khong tao lai moi
-        # lan. Viewport desktop cao san bang tran cua so chup: khong doi kich
-        # thuoc giua chung, doi la trang reflow, bbox do truoc do lech.
-        ctx_desktop = ctx_mobile = pg_desktop = pg_mobile = None
-
-        def trang_desktop():
-            nonlocal ctx_desktop, pg_desktop
-            if ctx_desktop is None:
-                ctx_desktop = br.new_context(viewport={"width": 2400, "height": CAO_TOI_DA_CSS + 250},
-                                             device_scale_factor=DPR, user_agent=UA)
-                pg_desktop = ctx_desktop.new_page()
-            return pg_desktop
-
-        def trang_mobile():
-            nonlocal ctx_mobile, pg_mobile
-            if ctx_mobile is None:
-                ctx_mobile = br.new_context(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
-                                            is_mobile=True, has_touch=True, user_agent=MOBILE_UA)
-                pg_mobile = ctx_mobile.new_page()
-            return pg_mobile
-
-        def thu_chup(pg, dpr, vua_khung, giay):
-            """Một lượt trên MỘT khung: danh sách hàng-thẻ → bảng → chart SVG."""
-            _doi_bang(pg, giay)
-            # Danh sach truoc bang: trang co ca hai (arena, aa, livebench o khung
-            # mobile) thi danh sach la ban da xep lai cho man doc, hon han bang.
-            kq, ly_do = chup_danh_sach(pg, models, out, dpr)
-            if kq:
-                return kq, ly_do
-            kq2, ly_do2 = chup_bang(pg, models, out, dpr, vua_khung)
-            if kq2:
-                return kq2, ly_do2
-            kq3, ly_do3 = chup_svg(pg, models, out, dpr)
-            return kq3, f"danh sách: {ly_do}; bảng: {ly_do2}; svg: {ly_do3}"
-
+        phien = _PhienChup(br)
         for n in nguon_ds:
             if time.time() - t0 > GIO_HAN:
                 in_log(f"[xep_hang] hết giờ ({GIO_HAN}s), dừng ở {n['ma']}")
                 break
             out = out_dir / f"xep_hang_{n['ma']}.png"
-            # Mobile la MAC DINH cho moi nguon; `khung: desktop` chi danh dau nhung
-            # nguon DA DO la mobile khong dung duoc (ly do ghi ngay tren muc trong
-            # NGUON). Go co ra thi van chay dung, chi ton them mot luot mo trang.
-            chi_desktop = n.get("khung") == "desktop"
-            pg = trang_desktop() if chi_desktop else trang_mobile()
-            try:
-                resp = pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
-                # Cloudflare challenge / 429: khong doi 14s vo ich, sang nguon khac ngay.
-                # (arena.ai tra 429 "Just a moment..." sau ~25 luot thu tu mot IP trong
-                # mot gio — may local luc dev; server moi bai goi mot lan.)
-                pg.wait_for_timeout(800)
-                tieu_de = (pg.title() or "").lower()
-                if (resp and resp.status in (403, 429, 503)) or re.search(
-                        r"just a moment|security verification|attention required|access denied", tieu_de):
-                    in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({resp.status if resp else '?'} — {tieu_de[:40]!r}), bỏ qua")
-                    continue
-                # KHUNG MOBILE TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vào trang
-                # nào chụp thì cũng hãy duyệt theo kích thước mobile, vì hình luôn
-                # đăng ở ratio 4:5"). 414px x DPR3 = 1242px, gan khop kho the
-                # 1200px nen chu gan nhu khong bi co; desktop 2400 x DPR2 = 4800px
-                # phai co bon lan, chu be lai bay nhieu. `vua_khung=True`: o khung
-                # hep phai BO bang rong hon khung — no nam trong khung cuon ngang,
-                # chup ra chi duoc lat cat ben trai (tbench/swebench/bfcl/gaia/
-                # opencompass). Hut thi mo lai chinh nguon do o khung desktop.
-                if chi_desktop:
-                    kq, ly_do = thu_chup(pg, DPR, False, 14)
-                else:
-                    kq, ly_do = thu_chup(pg, MOBILE_DPR, True, 8)
-                    if not kq:
-                        pg = trang_desktop()
-                        pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
-                        pg.wait_for_timeout(800)
-                        kq, ly_do2 = thu_chup(pg, DPR, False, 14)
-                        ly_do = f"mobile: {ly_do}; desktop: {ly_do2}"
-            except Exception as e:                           # noqa: BLE001
-                in_log(f"[xep_hang] {n['ma']}: {type(e).__name__}: {str(e)[:80]}")
+            kq, ly_do, pg = _thu_nguon(phien, n, models, out, in_log)
+            if kq is None and ly_do is None:
                 continue
             if not kq:
                 # Khop duoc hang nhung khong chup noi bang: van vot lay logo model
