@@ -222,6 +222,16 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
   `chay.sh` chỉ chạy `test_*.py`.
 
+  **Hàm chạy thật thì đối chiếu bằng VẾT.** Bảy hàm không chạy offline được
+  (duyệt ảnh, router Telegram, tạo cặp task, moat, và ba hàm lái Chromium) đã
+  được tách 07/09/2026 bằng cách thay mọi cạnh I/O — `call` Telegram, kanban,
+  `subprocess`, `httpx`, Playwright — bằng bản **ghi vết** trả dữ liệu định sẵn,
+  rồi chạy 7–26 kịch bản qua bản cũ (snapshot `git show HEAD:`) và bản mới, so
+  vết + tệp + giá trị trả về. Playwright giả nằm ở scratchpad phiên audit
+  (`pw/fake_pw.py`): `page.evaluate` chọn kết quả theo chuỗi JS, `goto` trả
+  status theo kịch bản. Cách này đã bắt được ba lỗi tách trước khi commit
+  (biến cục bộ của hàm cũ, import cục bộ, một `def` bị lát cắt nuốt).
+
   **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
   thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba
   bước) — nay truyền `lay_emoji=`; và `luat_anh._so_da_dung` bị gán đè không trả
