@@ -35,6 +35,7 @@ from pathlib import Path
 
 import httpx
 
+import bang_model                                            # noqa: E402
 import quet_chung                                            # noqa: E402
 import env_load
 
@@ -187,16 +188,9 @@ def fetch_catalog() -> list:
 
 # ---------- nguon 3: bang xep hang arena ----------
 
-ARENA_BOARDS = (
-    # (khoa, duong dan, nhan in)
-    ("text", "text", "VAN BAN"),
-    ("webdev", "code/webdev", "CODE WEBDEV"),
-    ("vision", "vision", "VISION"),
-    ("search", "search", "SEARCH"),
-    ("image", "text-to-image", "TAO ANH"),
-    ("image_edit", "image-edit", "SUA ANH"),
-    ("video", "text-to-video", "TAO VIDEO"),
-)
+# Bang arena doc tu BAN DANG KY dung chung (bang_model): khoa, duong dan API,
+# nhan in. Xem bang_model.py cho ly do gom.
+ARENA_BOARDS = bang_model.ARENA_BOARDS
 
 
 def _arena_board(duong_dan: str) -> list:
@@ -1165,16 +1159,22 @@ def main():
            + _thu("anthropic", lambda: fetch_anthropic(a.ngay), []))
     tin.sort(key=lambda t: t.get("ngay") or "", reverse=True)
     gh = _thu("github", lambda: fetch_github(a.ngay), [])
-    swe_all = _thu("swebench", lambda: fetch_swebench(a.top),
-                   {"swebench": RONG2, "swe_bash": RONG2, "swe_da_ngon_ngu": RONG2})
-    swe, swe_ngay = swe_all["swebench"]
-    lb, lb_ngay = _thu("livebench", lambda: fetch_livebench(a.top), RONG2)
-    orr, or_ngay = _thu("openrouter usage", lambda: fetch_openrouter_usage(a.top), RONG2)
-    tb, tb_ngay = _thu("tbench", lambda: fetch_tbench(a.top), RONG2)
-    arc, arc_ngay = _thu("arcagi", lambda: fetch_arcagi(a.top), RONG2)
-    hle, _hle_ngay = _thu("hle", lambda: fetch_hle(a.top), RONG2)
-    eci, eci_ngay = _thu("epoch", lambda: fetch_epoch(a.top), RONG2)
-    oc, oc_ngay = _thu("opencompass", lambda: fetch_opencompass(a.top), RONG2)
+    # Cac bang tra (rows, ngay): gom MOT dict, khoa = khoa trong ban dang ky
+    # (bang_model). Truoc 07/09/2026 moi bang la mot cap bien rieng (`lb,
+    # lb_ngay`...) roi duoc chep tay vao `bang_so` va `ket` — them bang o day
+    # ma quen `ket` thi bao cao im lang thieu bang do, va `hong` khong bat vi
+    # `bang_so` van co no.
+    top = _thu("swebench", lambda: fetch_swebench(a.top),
+               {"swebench": RONG2, "swe_bash": RONG2, "swe_da_ngon_ngu": RONG2})
+    for khoa, ten, fn in (
+            ("livebench", "livebench", fetch_livebench),
+            ("openrouter", "openrouter usage", fetch_openrouter_usage),
+            ("tbench", "tbench", fetch_tbench),
+            ("arcagi", "arcagi", fetch_arcagi),
+            ("hle", "hle", fetch_hle),
+            ("eci", "epoch", fetch_epoch),
+            ("opencompass", "opencompass", fetch_opencompass)):
+        top[khoa] = _thu(ten, lambda fn=fn: fn(a.top), RONG2)
     media = _thu("aa media", lambda: fetch_aa_media(a.top), {})
     hf = _thu("hf-trending", lambda: fetch_hf_trending(a.ngay, a.top), [])
 
@@ -1191,16 +1191,8 @@ def main():
     bang_so["coding"] = aa.get("bang_coding_goc", [])
     bang_so["tri_tue"] = aa.get("bang_tri_tue_goc", [])
     bang_so["agentic"] = aa.get("bang_agentic_goc", [])
-    bang_so["swebench"] = swe
-    bang_so["swe_bash"] = swe_all["swe_bash"][0]
-    bang_so["swe_da_ngon_ngu"] = swe_all["swe_da_ngon_ngu"][0]
-    bang_so["livebench"] = lb
-    bang_so["openrouter"] = orr
-    bang_so["tbench"] = tb
-    bang_so["arcagi"] = arc
-    bang_so["hle"] = hle
-    bang_so["eci"] = eci
-    bang_so["opencompass"] = oc
+    for khoa, (rows, _ngay) in top.items():
+        bang_so[khoa] = rows
     bang_so["tts"] = media.get("tts") or []
     bang_so["stt"] = media.get("stt") or []
     bang_so["i2v"] = media.get("i2v") or []
@@ -1267,17 +1259,10 @@ def main():
         "leo_hang": leo_hang,
         "cham_diem": aa,
         "ra_mat_aa_chua_bao": ra_mat_aa,
-        "swebench": {"ngay": swe_ngay, "rows": swe},
-        "swe_bash": {"ngay": swe_all["swe_bash"][1], "rows": swe_all["swe_bash"][0]},
-        "swe_da_ngon_ngu": {"ngay": swe_all["swe_da_ngon_ngu"][1],
-                            "rows": swe_all["swe_da_ngon_ngu"][0]},
-        "livebench": {"ngay": lb_ngay, "rows": lb},
-        "openrouter_usage": {"ngay": or_ngay, "rows": orr},
-        "tbench": {"ngay": tb_ngay, "rows": tb},
-        "arcagi": {"ngay": arc_ngay, "rows": arc},
-        "hle": {"ngay": None, "rows": hle},
-        "eci": {"ngay": eci_ngay, "rows": eci},
-        "opencompass": {"ngay": oc_ngay, "rows": oc},
+        # Moi bang kieu (rows, ngay) mot muc, khoa theo ban dang ky (`ket_khoa`
+        # neu khac khoa trong bang_so — openrouter -> openrouter_usage).
+        **{(b.ket_khoa or b.khoa): {"ngay": top[b.khoa][1], "rows": top[b.khoa][0]}
+           for b in bang_model.BANG if b.nguon == "top"},
         "media": media,
         "hf_trending": hf,
         "bang_hong": hong,
@@ -1313,15 +1298,7 @@ def main():
         print(_dem.getvalue(), file=sys.stderr, end="")
 
 
-NHAN_BANG = {"text": "van ban", "webdev": "webdev", "vision": "vision", "search": "search",
-             "image": "tao anh", "image_edit": "sua anh", "video": "tao video",
-             "coding": "coding AA", "tri_tue": "tri tue AA", "agentic": "agentic AA",
-             "swebench": "SWE-bench", "swe_bash": "SWE-b bash", "swe_da_ngon_ngu": "SWE-b da nn",
-             "livebench": "LiveBench", "openrouter": "OpenRouter usage",
-             "tbench": "Terminal-B", "arcagi": "ARC-AGI-2", "hle": "HLE",
-             "eci": "Epoch ECI", "opencompass": "CompassBench",
-             "tts": "giong doc", "stt": "nghe chep", "i2v": "anh->video",
-             "hf": "HuggingFace"}
+NHAN_BANG = bang_model.NHAN_BANG
 
 
 # Tran in an. Do 06/09/2026: o trang thai production (arena song + co moc cu de
@@ -1338,11 +1315,8 @@ VUNG_NHAN = {"my": "My", "tq": "TQ", "khac": "  "}
 # Ban ke khai bang xep hang. main() dung de kiem `bang_so` khong lech, va bao
 # cao dung de in con so. Go tay con so nay thi no lech ngay: ban dau ghi 20
 # trong khi that su co 23 (test_bang_nova bat duoc).
-KHOA_BANG = tuple([m for m, _d, _n in ARENA_BOARDS] +
-                  ["coding", "tri_tue", "agentic", "swebench", "swe_bash",
-                   "swe_da_ngon_ngu", "livebench", "openrouter", "tbench",
-                   "arcagi", "hle", "eci", "opencompass", "tts", "stt", "i2v"])
-SO_BANG = len(KHOA_BANG)
+KHOA_BANG = bang_model.KHOA_BANG
+SO_BANG = bang_model.SO_BANG
 
 
 def _in_bang(nhan: str, rows, n: int = TRAN_BANG, ngay=None, diem_hau: str = "",
@@ -1465,45 +1439,15 @@ def _in_bao_cao(k: dict, ngay: int):
     print(f"\n\n########## BANG XEP HANG — {SO_BANG} bang, top {TRAN_BANG} "
           "moi bang (boi canh de xep thu tu, khong phai tin) ##########")
 
-    bxh = k.get("bang_xep_hang") or {}
-    for mod, _dd, nhan in ARENA_BOARDS:
-        _in_bang(f"{nhan} (arena.ai)", bxh.get(mod), diem_hau="")
-    _in_bang("TRI TUE (artificialanalysis intelligence index)",
-             aa.get("bang_tri_tue_goc"))
-    # Bang agentic: so DA co san trong payload AA tu lau, chua bao gio duoc xep
-    # hang nen so_hang() khong bat duoc "leo hang agentic". Them tu 06/09/2026.
-    _in_bang("AGENTIC (artificialanalysis agentic index)",
-             aa.get("bang_agentic_goc"))
-    _in_bang("EPOCH ECI (ghep ~50 benchmark bang IRT, co khoang tin cay)",
-             (k.get("eci") or {}).get("rows"), ngay=(k.get("eci") or {}).get("ngay"),
-             them=lambda r: f"[{r.get('ci_thap')}-{r.get('ci_cao')}]")
-    _in_bang("HUMANITY'S LAST EXAM (cau hoi do chuyen gia PhD dat)",
-             (k.get("hle") or {}).get("rows"), diem_hau="%")
-    _in_bang("ARC-AGI-2 (bai CHUA TUNG THAY, khong hoc thuoc duoc)",
-             (k.get("arcagi") or {}).get("rows"),
-             ngay=(k.get("arcagi") or {}).get("ngay"), diem_hau="%",
-             them=lambda r: (f"${r['gia_moi_bai']:.2f}/bai"
-                             if r.get("gia_moi_bai") else ""))
-    _in_bang("TERMINAL-BENCH 4.0 (agent go lenh trong container that)",
-             (k.get("tbench") or {}).get("rows"),
-             ngay=(k.get("tbench") or {}).get("ngay"), diem_hau="%",
-             them=lambda r: str(r.get("agent") or "")[:16])
-    for ma, nhan in (("swebench", "SWE-BENCH VERIFIED (moi he thong agent)"),
-                     ("swe_bash", "SWE-BENCH VERIFIED — CHI BASH (so sanh model that)"),
-                     ("swe_da_ngon_ngu", "SWE-BENCH DA NGON NGU (C/C++/Go/Java/PHP/Ruby/Rust)")):
-        b = k.get(ma) or {}
-        _in_bang(nhan, b.get("rows"), ngay=b.get("ngay"), diem_hau="%")
-    _in_bang("COMPASSBENCH (de DONG cua OpenCompass, phan lon lab TQ)",
-             (k.get("opencompass") or {}).get("rows"),
-             ngay=(k.get("opencompass") or {}).get("ngay"),
-             them=lambda r: "mo nguon" if r.get("mo_nguon") else "")
-    lb = k.get("livebench") or {}
-    _in_bang("LIVEBENCH", lb.get("rows"), ngay=lb.get("ngay"))
-    md = k.get("media") or {}
-    _in_bang("GIONG DOC — TTS (artificialanalysis, Elo)", md.get("tts"))
-    _in_bang("NGHE CHEP — STT (artificialanalysis, do chinh xac)", md.get("stt"),
-             diem_hau="%")
-    _in_bang("ANH -> VIDEO (artificialanalysis, Elo)", md.get("i2v"))
+    # MOT vong cho ca 21 bang in theo khuon chung, doc tu ban dang ky
+    # (`bang_model.BANG`, thu tu trong do CHINH LA thu tu in). Truoc 07/09/2026
+    # day la 21 loi goi viet tay, moi cai tu ghi lai tieu de, hau to diem va cot
+    # phu — them mot bang la them mot doan lap va mot co hoi lech dinh dang.
+    for b in bang_model.BANG:
+        if not b.in_bang:
+            continue
+        rows, ngay_b = bang_model.hang_va_ngay(k, b)
+        _in_bang(b.tieu_de, rows, ngay=ngay_b, diem_hau=b.diem_hau, them=b.them)
 
     orr = k.get("openrouter_usage") or {}
     if orr.get("rows"):

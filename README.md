@@ -139,6 +139,12 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   tin; tự giải mã link Google News (`giai_ma_gnews`).
 - `scan_models.py` — quét của Nova: 23 bảng xếp hạng, mục "RA MẮT THEO BẢNG CHẤM
   ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
+  **Bảng đăng ký ở `bang_model.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
+  đề in, link, lấy hàng từ đâu). Trước 07/09/2026 thêm một bảng phải khai ở
+  **sáu** chỗ trong hai tệp; quên một chỗ là loại lỗi không báo gì cả (mất bảng
+  trong báo cáo, hoặc mục bắt buộc ra link rỗng). Nay năm chỗ dẫn xuất từ đó;
+  chỉ khối `bang_so` trong `main` còn viết tay, và `main` tự đối chiếu nó với
+  bảng đăng ký.
   Bảng chết (BFCL, LiveCodeBench, Aider, BigCodeBench, Papers With Code) bị loại
   có chủ đích — xem nhật ký sự cố.
 - `manifest_ghi.py` (Nova/Vera) / `manifest_build.py` (Finn) — ghi manifest đánh

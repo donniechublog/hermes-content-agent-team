@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import bang_model                                            # noqa: E402
 import quet_chung                                            # noqa: E402
 import env_load                                              # noqa: E402
 
@@ -165,32 +166,13 @@ def khop(muc: dict, item: dict) -> bool:
 
 # Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC
 # khong co link (Nova 05/09 mo 17 tool call grep repo tim link cho 15 muc).
-LINK_BANG = {
-    "text": "https://arena.ai/leaderboard/text",
-    "webdev": "https://arena.ai/leaderboard/code/webdev",
-    "vision": "https://arena.ai/leaderboard/vision",
-    "search": "https://arena.ai/leaderboard/search",
-    "image": "https://arena.ai/leaderboard/text-to-image",
-    "image_edit": "https://arena.ai/leaderboard/image-edit",
-    "video": "https://arena.ai/leaderboard/text-to-video",
-    "coding": "https://artificialanalysis.ai/leaderboards/models",
-    "tri_tue": "https://artificialanalysis.ai/leaderboards/models",
-    "agentic": "https://artificialanalysis.ai/leaderboards/models",
-    "ra_mat": "https://artificialanalysis.ai/leaderboards/models",
-    "swebench": "https://www.swebench.com/",
-    "swe_bash": "https://www.swebench.com/",
-    "swe_da_ngon_ngu": "https://www.swebench.com/",
-    "livebench": "https://livebench.ai/",
-    "openrouter": "https://openrouter.ai/rankings",
-    "tbench": "https://www.tbench.ai/leaderboard",
-    "arcagi": "https://arcprize.org/leaderboard",
-    "hle": "https://scale.com/leaderboard/humanitys_last_exam",
-    "eci": "https://epoch.ai/data/ai-benchmarking-dashboard",
-    "opencompass": "https://rank.opencompass.org.cn/home",
-    "tts": "https://artificialanalysis.ai/text-to-speech",
-    "stt": "https://artificialanalysis.ai/speech-to-text",
-    "i2v": "https://artificialanalysis.ai/video/leaderboard/image-to-video",
-}
+# Bang thi doc tu BAN DANG KY (bang_model): truoc 07/09/2026 danh sach nay la
+# ban chep tay thu SAU cua cung mot bo bang, va `test_bang_nova` sinh ra chinh
+# vi mot lan them bang ma quen khai o day -> muc BAT BUOC ra link RONG.
+LINK_BANG = dict(bang_model.LINK_BANG)
+# `ra_mat` KHONG phai mot bang: no la `loai` cua muc BAT BUOC sinh tu "ra mat
+# theo bang cham diem", tro ve trang tong cua artificialanalysis.
+LINK_BANG["ra_mat"] = "https://artificialanalysis.ai/leaderboards/models"
 
 
 def link_goi_y(muc: dict) -> str:
