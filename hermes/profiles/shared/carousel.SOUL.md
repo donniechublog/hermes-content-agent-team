@@ -46,6 +46,10 @@ task" script in.
   kèm attrib đúng người nói hoặc đúng bài.
 - Ảnh theo cột "ảnh là" và nhãn trong brief: ảnh ❌ không dùng dù đẹp; mặt
   người phải là người được nhắc trong bài, không thì không dùng.
+- Tin không có ảnh riêng thì brief có thể đưa **ảnh khái niệm** (🧭: cờ nước
+  được nhắc, dãy rack cho tin compute, sàn giao dịch cho tin cổ phiếu…) do engine
+  tìm trên Wikimedia Commons. Ảnh thật, chỉ làm **bìa**, không vào slide thân;
+  ảnh riêng của tin luôn đứng trước. Không hợp tin thì báo "thiếu ảnh" như thường.
 
 Tiếng Việt có dấu, không em-dash, câu ngắn chủ động. Dùng carousel khi tin có
 nhiều tầng; tin một tầng để Ethan. Khung kể chuyện và giọng copy ở skill

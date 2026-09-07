@@ -39,6 +39,9 @@ task" script in.
 - Mỗi bộ một tone; chọn theo nội dung từ gợi ý của brief, không hỏi Ông Chủ.
 - Brief liệt kê hình thật thì **bắt buộc dùng ít nhất một** (bìa hoặc figure);
   bộ toàn chữ và card khi có ảnh thật là thiếu. Mọi hình thật có caption "via".
+  Hình thật gồm cả **ảnh khái niệm** (🧭: cờ nước được nhắc, dãy rack, wafer…)
+  engine tìm trên Wikimedia Commons cho tin không có ảnh riêng: chỉ làm bìa,
+  caption "via Wikimedia Commons".
 - Không bịa: chỉ số liệu có trong tư liệu, dẫn nguồn ghi "via".
 
 Bạn còn là đường đi khi một tin **không có ảnh thật dùng được**: approve tự

@@ -94,10 +94,36 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 - **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
   → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
 - Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
-  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → brief nói
-  thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
+  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → **ảnh khái
+  niệm** (§1.2c) cho bìa/hero. Vẫn thiếu → brief nói thẳng "THIẾU ẢNH", vai gộp
+  ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
 - Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
   hiệu cần xem lại.
+
+### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
+
+Ông Chủ 07/09/2026: *"trong resource gốc không có hình hoặc hình không đạt là bỏ
+qua luôn. Nhắc tới Nhật thì tìm cờ hoặc bản đồ nước Nhật, Nhật đầu tư xây
+compute thì lấy hình datacenter"*. Trước 04/09 Dre tự làm việc này bằng
+web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là luật của
+**engine** (`anh_khai_niem.py`, chạy trong `anh_chuan_bi.py`):
+
+- **Khi nào**: sau vòng tìm rộng mà vẫn thiếu ảnh, *hoặc* có ảnh mà không tấm
+  nào làm bìa/hero được. Không chạy khi tin đã có ảnh riêng đủ dùng.
+- **Từ khoá**: nước/khối được nhắc → cờ đang bay; chủ đề → vật thể **chụp được**
+  (data center → dãy rack, chip → wafer, chứng khoán → sàn giao dịch, chính
+  sách → toà nhà quốc hội…). Bảng cố định trước, model text bù tới 3 từ khoá.
+  Không tìm khái niệm trừu tượng (funding, partnership): Commons chỉ trả minh hoạ tệ.
+- **Nguồn**: chỉ Wikimedia Commons, chỉ JPEG/PNG cạnh ngắn ≥ 700, tên tệp phải
+  chứa ≥ 2 từ đặc trưng của từ khoá và không phải logo/CGI/variant/bản đồ phẳng.
+  Đây là **ảnh thật** — cờ thật, toà nhà thật — nên không vi phạm §0.
+- **Nhìn**: vision được hỏi câu riêng ("có đúng là *cờ Nhật* chụp thật, hợp làm
+  bìa không"), không hỏi "có phải ảnh của tin" vì chắc chắn không phải. Ảnh có
+  mặt người hay là đồ hoạ → bỏ.
+- **Chỗ đứng**: nhãn 🧭 ẢNH KHÁI NIỆM, chỉ **bìa/hero** (ngang thì chỉ ghép dọc),
+  không vào slide thân; gợi ý bìa xếp **sau** mọi ảnh riêng của tin; caption
+  "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và vẫn được nói "thiếu ảnh" nếu
+  thấy cờ/bản đồ không hợp tin.
 
 ### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 

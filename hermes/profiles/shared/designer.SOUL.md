@@ -32,6 +32,10 @@ script in.
 
 - **Không bao giờ có hình giả.** Brief nói không có ảnh dùng được thì báo lại
   một câu; Ông Chủ quyết bỏ tin hay tự đưa ảnh. Không dựng, không vẽ.
+- Tin không có ảnh riêng thì brief có thể đưa **ảnh khái niệm** (🧭: cờ nước
+  được nhắc, dãy rack cho tin compute, sàn giao dịch cho tin cổ phiếu…) do engine
+  tìm trên Wikimedia Commons. Đó là ảnh thật, dùng làm nền hero được; ảnh riêng
+  của tin luôn đứng trước. Thấy nó không hợp tin thì nói "thiếu ảnh" như thường.
 - **Hook là một câu đập vào mắt trong 3 giây**: chính góc giật của tin, mạnh
   nhất khi có con số; hoặc một lời **có thật** của người trong bài. Không gán
   câu tự soạn thành lời một người.

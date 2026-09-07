@@ -76,7 +76,9 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `approve_service.create_pair` khởi chạy nền (`--im`) ngay lúc Ông Chủ chọn số:
   giải mã link Google News, Bing News RSS tìm báo khác, một phiên chromium (chữ
   bài, img lớn, chụp table/figure/canvas), `anh_bai`, Wikimedia Commons khi < 5
-  ảnh; dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
+  ảnh; vẫn thiếu hoặc không tấm nào làm bìa được thì `anh_khai_niem.py` tìm
+  **ảnh khái niệm** (cờ nước được nhắc, rack datacenter… LUAT_ANH §1.2c, chỉ
+  bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
   `crop_ti_le`; cặp ghép cùng tone; tư liệu. Kết quả
   `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
 - Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`,
@@ -214,7 +216,8 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   nhưng số "2" trỏ tới bài khác — `test_caption` giữ cổng caption của Miles
   (thứ cuối cùng trước hàng duyệt, 14 cổng thuần), `test_spec_ethan` /
   `test_spec_kite` giữ hai cổng spec còn lại (cùng fixture manifest với
-  `test_spec_dre`; Kite tắt YuNet trong test), và `test_tai_lieu` chặn tài liệu
+  `test_spec_dre`; Kite tắt YuNet trong test), `test_khai_niem` giữ từ khoá,
+  bộ lọc Commons và nhãn của ảnh khái niệm, và `test_tai_lieu` chặn tài liệu
   trôi khỏi mã. Ba cổng dùng chung của Dre/Ethan nằm ở `nop_chung`
   (`can_anh_xep_hang`, `anh_khong_lien_quan`, `kiem_da_dung_nhieu`) — trước
   07/09/2026 mỗi vai một bản, và đã lệch một lần (Ethan không đọc cờ
