@@ -26,10 +26,13 @@ from duyet_co_so import (  # noqa: E402
 
 
 def _bao_nhan_viec(token, group, vai, tu_vai, title, tid, ly_do=""):
-    """Bao NGAY vao topic cua vai nhan viec khi viec duoc CHUYEN tu vai khac (Ong
-    Chu 05/09/2026: "it nhat cung thong bao de biet da nhan job"). Khong doi
-    dispatcher: dong ▶️ cua bao_tien_do chi den khi task thuc su chay (poll 50s +
-    dispatcher 60s + hang doi), truoc do topic cua vai moi im lang nhu chua biet gi."""
+    """Bao NGAY vao topic cua vai nhan viec, ca khi Ong Chu giao task moi (tu_vai=None)
+    lan khi viec duoc CHUYEN tu vai khac (Ong Chu 05/09/2026: "it nhat cung thong bao
+    de biet da nhan job"; mo rong 08/09/2026 sang CA task moi giao, khong chi hang
+    chuyen — truoc do task moi tao trong duyet_chon_tin.py im lang cho toi khi dispatcher
+    chay, cung cai treo da bi bat o 05/09). Khong doi dispatcher: dong ▶️ cua
+    bao_tien_do chi den khi task thuc su chay (poll 50s + dispatcher 60s + hang doi),
+    truoc do topic cua vai moi im lang nhu chua biet gi."""
     try:
         tp = env_load.topics_path()
         topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
@@ -46,14 +49,15 @@ def _bao_nhan_viec(token, group, vai, tu_vai, title, tid, ly_do=""):
         con.close()
     except Exception:                                        # noqa: BLE001
         pass
-    ten, ten_tu = _TEN_HIEN.get(vai, vai), _TEN_HIEN.get(tu_vai, tu_vai or "vai khác")
-    text = (f"📥 <b>{ten}</b> đã nhận việc chuyển từ <b>{ten_tu}</b>: <i>{html_escape(title[:80])}</i>\n"
+    ten = _TEN_HIEN.get(vai, vai)
+    nguon = f" chuyển từ <b>{_TEN_HIEN.get(tu_vai, tu_vai)}</b>" if tu_vai else ""
+    text = (f"📥 <b>{ten}</b> đã nhận task{nguon}: <i>{html_escape(title[:80])}</i>\n"
             + (f"Lý do: {html_escape(ly_do[:160])}\n" if ly_do else "")
             + (f"Đang xếp hàng sau {truoc} việc, tới lượt sẽ bắt đầu" if truoc
                else "Bắt đầu ngay khi dispatcher nhận (≤ 1 phút)") + f" · task {tid}")
     call(token, "sendMessage", chat_id=group, message_thread_id=thread,
          text=text, parse_mode="HTML")
-    log("route", f"bao {vai} nhan viec tu {tu_vai}: {tid} (truoc={truoc})")
+    log("route", f"bao {vai} nhan viec tu {tu_vai or 'Ong Chu'}: {tid} (truoc={truoc})")
 
 # Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
 # Khong ghi ten ai thi mac dinh Ethan (donniechublog).

@@ -20,7 +20,7 @@ from duyet_co_so import (  # noqa: E402
     BRAND, DRAFTS, ROOT, STATE_DIR, _ghi_json, _gui_chu, _nap_json, _reply_that, call, log,
 )
 from duyet_giao_viec import (  # noqa: E402
-    BANG_DEN_NHAC, MAC_DINH_ANH, MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_CAROUSEL, VAI_EDU, _bang_den_root, chuan_nhan, kanban_create,
+    BANG_DEN_NHAC, MAC_DINH_ANH, MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, VAI_CAROUSEL, VAI_EDU, _bang_den_root, _bao_nhan_viec, chuan_nhan, kanban_create,
 )
 # Khuon body task (van ban dai) tach sang task_bodies.py — xem ghi chu o do.
 import task_bodies                                            # noqa: E402
@@ -378,9 +378,14 @@ def _xu_ly_chon(token, group, thread_id, vai, lenh):
                 lines.append("#" + str(n) + ": lỗi — " + err)
                 continue
             ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
-            ten_viet = TEN_VAI_VIET.get(MAC_DINH_VIET, "Miles")
-            lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {tid}"
-                         f"; {ten_viet} viết caption sau khi Ông Chủ duyệt ảnh")
+            # Ong Chu 08/09/2026: bo cum "X viet caption sau khi duyet anh" — thua,
+            # ai cung biet quy trinh nay, khong can nhac lai moi lan giao task.
+            lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {tid}")
+            # Ong Chu 08/09/2026: "cac vai can phan hoi ngay khi duoc giao task la da
+            # nhan task" — truoc day chi hang CHUYEN (Dre->Miles, ->Kite) duoc bao
+            # ngay qua _bao_nhan_viec, con task MOI tao o day thi im lang cho toi khi
+            # dispatcher thuc su chay (co the toi 1 phut). Bao luon cho vai_anh o day.
+            _bao_nhan_viec(token, group, vai_anh, None, it["title"], tid)
             # Ghi NGAY sau TUNG tin (create_pair da danh dau vao `it`), khong doi
             # het vong nhu truoc: tin sau no giua chung thi cac tin truoc do van
             # co `da_giao` tren dia, chon lai khong tao task doi.
