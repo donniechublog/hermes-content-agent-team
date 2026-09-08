@@ -1044,9 +1044,9 @@ def test_itachi_bat_chu_tran_hop():
     assert it._tran_hop(d, "Ngắn", 400, 60, "regular") == 0, "bao nham chu vua hop"
 
 
-# ------------------------------------------------------ Jean: dan y co duoc nhac
+# ------------------------------------------------------ Cape: dan y co duoc nhac
 def test_teaser_nhac_muc_dan_y_bi_bo():
-    """SOUL bat Jean "nhac du muc dan y" nhung khong cong nao doi chieu —
+    """SOUL bat Cape "nhac du muc dan y" nhung khong cong nao doi chieu —
     teaser dai dung so tu ma bo han mot nua bai van qua sach. So theo TU
     NGUYEN VEN: tieng Viet phan lon la am tiet 2-4 ky tu nen so chuoi con thi
     "tre" trung vao "truoc", cong se im lang."""

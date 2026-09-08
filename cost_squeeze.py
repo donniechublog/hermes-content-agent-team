@@ -80,7 +80,7 @@ def soul(vai: str) -> str:
 
 
 def viec_teaser():
-    """Viec that cua Jean: tu du lieu bai goc, viet tieu de + doan van 500-800 tu."""
+    """Viec that cua Cape: tu du lieu bai goc, viet tieu de + doan van 500-800 tu."""
     # KHONG doc tu state/ — thu muc do bi gitignore, ban sao moi se khong co tep.
     # Trich thang tu bai that, va noi ro cach tao lai neu thieu mang.
     mau = ROOT / "mau_bai_goc.json"

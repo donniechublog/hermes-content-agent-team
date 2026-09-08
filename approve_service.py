@@ -388,7 +388,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "push":
         tok, _ch, grp = load_secrets()
         draft_id = sys.argv[2]
-        # Dinh tuyen topic theo loai noi dung: teaser ve topic Jean, tin tuc
+        # Dinh tuyen topic theo loai noi dung: teaser ve topic Cape, tin tuc
         # ve topic Miles. Tham so thu 3 (neu co) van ghi de duoc.
         thread = None
         tp = env_load.topics_path()
@@ -403,7 +403,7 @@ if __name__ == "__main__":
                 except Exception:                            # noqa: BLE001
                     pass
             # Mot container mot nguoi viet: tin thuong ve topic writer cua
-            # container, teaser ve topic Jean.
+            # container, teaser ve topic Cape.
             key = "teaser" if category.upper() == "TEASER" else MAC_DINH_VIET
             thread = topics.get(key)
         if len(sys.argv) > 3:

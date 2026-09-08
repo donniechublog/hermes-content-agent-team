@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""jean_nop.py — NỘP của Jean: ráp teaser từ spec (title + paragraphs), kiểm độ
+"""cape_nop.py — NỘP của Cape: ráp teaser từ spec (title + paragraphs), kiểm độ
 dài + giọng tường thuật (teaser_assemble), gửi vào topic teaser.
 
 Dùng:
-    venv/bin/python jean_nop.py "<url>"
-    venv/bin/python jean_nop.py "<url>" --khong-gui          # thử: in teaser
+    venv/bin/python cape_nop.py "<url>"
+    venv/bin/python cape_nop.py "<url>" --khong-gui          # thử: in teaser
 """
 import argparse
 import json
@@ -14,13 +14,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import jean_chuan_bi as jb                                   # noqa: E402
+import cape_chuan_bi as jb                                   # noqa: E402
 import teaser_assemble                                       # noqa: E402
 from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Nộp teaser của Jean")
+    ap = argparse.ArgumentParser(description="Nộp teaser của Cape")
     ap.add_argument("url")
     ap.add_argument("--khong-gui", action="store_true")
     ap.add_argument("--bo-qua-kiem-tra", action="store_true", help="Chỉ khi Ông Chủ yêu cầu")
@@ -28,7 +28,7 @@ def main() -> int:
     wd = jb.workdir(a.url)
     art = wd / "article.json"
     if not art.exists():
-        sys.exit(f"Chưa chuẩn bị. Chạy trước: venv/bin/python jean_chuan_bi.py \"{a.url}\"")
+        sys.exit(f"Chưa chuẩn bị. Chạy trước: venv/bin/python cape_chuan_bi.py \"{a.url}\"")
     if not (wd / "spec.json").exists():
         sys.exit(f"Chưa có spec: {wd / 'spec.json'} — viết theo brief rồi chạy lại.")
     d = json.loads(art.read_text(encoding="utf-8"))
@@ -56,7 +56,7 @@ def main() -> int:
     except ValueError as e:
         for dong in str(e).splitlines():
             print(f"[LOI] {dong}")
-        print(f"\nSửa {wd / 'spec.json'} rồi chạy lại: venv/bin/python jean_nop.py \"{a.url}\"")
+        print(f"\nSửa {wd / 'spec.json'} rồi chạy lại: venv/bin/python cape_nop.py \"{a.url}\"")
         return 1
     caption = kq["caption"]
     (wd / "teaser.txt").write_text(caption, encoding="utf-8")

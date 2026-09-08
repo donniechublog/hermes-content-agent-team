@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Rap teaser hoan chinh tu ban nhap tho cua Jean — tat dinh, khong LLM.
+"""Rap teaser hoan chinh tu ban nhap tho cua Cape — tat dinh, khong LLM.
 
-Jean chi viet tieu de + cac doan van THUAN (khong emoji, khong cau ket).
+Cape chi viet tieu de + cac doan van THUAN (khong emoji, khong cau ket).
 Script nay tu dong: viet hoa tieu de, gan emoji dung so luong tu emoji_deck
-(khong the sai vi doc dung so doan thuc te, khong phai so Jean tu dem), them
+(khong the sai vi doc dung so doan thuc te, khong phai so Cape tu dem), them
 cau ket co dinh, cat toi da 2 anh dau.
 
-Vi day la buoc rap cuoi cung, Jean khong con co hoi lam sai bon thu nay nua.
+Vi day la buoc rap cuoi cung, Cape khong con co hoi lam sai bon thu nay nua.
 
 Script cung CHAN giong tuong thuat: teaser la loi moi doc, khong phai ban tom
 tat ve mot bai bao. Cac model re (deepseek-chat, v4-flash) hay tuot vao giong
@@ -67,7 +67,7 @@ def _bo_dau(text: str) -> str:
 def tim_giong_tuong_thuat(title: str, paragraphs: list) -> list:
     """Tra ve [(vi tri, cum tu, trich doan)] cho moi cho dinh giong tuong thuat.
 
-    Chi soi tieu de va cac doan Jean viet — KHONG soi CLOSING, vi cau ket co
+    Chi soi tieu de va cac doan Cape viet — KHONG soi CLOSING, vi cau ket co
     dinh von chua chu "bai" mot cach hop le ("Xem bai chi tiet o com").
     """
     loi = []
@@ -154,7 +154,7 @@ def assemble(title: str, paragraphs: list, images: list,
                   "  DAT      :  Con so chi phi gay bat ngo: 2,75 USD moi task...\n"
                   "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
     if not bo_qua_kiem_tra:
-        # SOUL cua Jean cam URL, emoji va danh so TRONG doan (script tu gan emoji
+        # SOUL cua Cape cam URL, emoji va danh so TRONG doan (script tu gan emoji
         # dau moi doan), nhung truoc 06/09/2026 khong cong nao kiem — vai tu chen
         # link/emoji thi teaser ra hai emoji mot doan hoac lo link tho.
         xau = []
@@ -172,7 +172,7 @@ def assemble(title: str, paragraphs: list, images: list,
             raise ValueError("Sai luat teaser:\n  - " + "\n  - ".join(xau)
                              + "\n(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
 
-        # DAN Y CO DUOC NHAC KHONG. SOUL bat Jean "nhac du muc dan y", nhung
+        # DAN Y CO DUOC NHAC KHONG. SOUL bat Cape "nhac du muc dan y", nhung
         # truoc 06/09/2026 khong cong nao doi chieu — teaser dai dung so tu ma
         # bo han mot nua bai van qua sach. CHI NHAC, khong chan: mot muc h2 co
         # the duoc dien dat bang tu khac han, chan cung se chan oan.

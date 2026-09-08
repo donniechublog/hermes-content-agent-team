@@ -18,7 +18,7 @@ import quet_chung                                            # noqa: E402
 
 UA = "Mozilla/5.0 (compatible; donniechu-content-bot/1.0)"
 
-# Chan host noi bo. URL toi day KHONG phai luon tin duoc: jean_chuan_bi.py boc
+# Chan host noi bo. URL toi day KHONG phai luon tin duoc: cape_chuan_bi.py boc
 # dung URL Ong Chu dan vao chat, tu_lieu.py boc link nguon cac vai quet ve tu
 # web. Bot lai chay ngay tren server cung 9router (127.0.0.1:20128), dashboard
 # (9130) va tunnel — nen mot URL tro nguoc vao trong la fetch thang vao ruot he
