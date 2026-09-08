@@ -79,20 +79,30 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         dong_thieu="(Không bóc được chữ từ nguồn — chỉ dùng tóm tắt, KHÔNG bịa.)")
     L += ["", "## Hình thật dùng được cho `figure` / bìa `image` (đã nhìn, ≥ 800px)"]
     ht = hinh_that(m)
+    su_kien = [a for a in ht if not a.get("du_phong")]
+    du_phong = [a for a in ht if a.get("du_phong")]
     if not ht:
-        L.append("Không có hình thật nào liên quan — dùng art vector cho cả bộ (bình thường với paper trắng).")
-    else:
-        nhin = [a for a in ht if a.get("lien_quan") is True]
+        L.append("Không có hình thật nào (kể cả logo/brand/ảnh chủ đề dự phòng) — dùng art vector cho cả bộ "
+                 "(bình thường với paper trắng).")
+    elif su_kien:
+        nhin = [a for a in su_kien if a.get("lien_quan") is True]
         if nhin:
             L.append(f"CÓ {len(nhin)} hình thật ĐÃ NHÌN và liên quan → BẮT BUỘC dùng ít nhất một: "
                      "`figure` cho chart/bảng, bìa `image` hoặc `figure` cho ảnh chụp. "
                      "Bộ toàn text & card khi có ảnh thật là thiếu.")
         else:
             # Vision tat/thieu khoa -> moi anh lien_quan=None. Khong duoc ep.
-            L.append(f"Có {len(ht)} hình đủ khổ nhưng ⚠️ CHƯA AI NHÌN (vision không chạy) — chưa biết "
+            L.append(f"Có {len(su_kien)} hình đủ khổ nhưng ⚠️ CHƯA AI NHÌN (vision không chạy) — chưa biết "
                      "chúng có đúng bài không. Dùng thì tự kiểm bằng bang_anh.png, không bắt buộc.")
+    else:
+        # KHONG anh su kien that, nhung engine da tim duoc anh logo/brand/chu de du phong.
+        L.append(f"KHÔNG có ảnh SỰ KIỆN thật, nhưng có {len(du_phong)} ảnh LOGO/THƯƠNG HIỆU hoặc MINH HOẠ "
+                 "CHỦ ĐỀ liên quan (xem dưới, đều free/CC) → ƯU TIÊN dùng cho bìa `image` thay vì vẽ vector "
+                 "thuần. Chỉ vẽ bìa vector nếu ảnh này cũng KHÔNG hợp (sai chủ đề/quá xấu/quá nhỏ khi nhìn "
+                 "bang_anh.png).")
     for a in ht:
-        kieu = ("BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP") + \
+        kieu = ("LOGO/BRAND/CHỦ ĐỀ DỰ PHÒNG" if a.get("du_phong") else
+                "BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP") + \
                ("" if a.get("lien_quan") is True else " ⚠️CHƯA NHÌN")
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
@@ -137,7 +147,9 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     L.append("Nhịp feature: bìa hook → bối cảnh/vấn đề → cách vận hành (steps) → số liệu (figure nếu có hình thật, "
              "không thì bars từ 2..6 số THẬT trong bài, không có số thì bỏ) → cơ chế/hệ quả (loop) → áp dụng + CTA. "
              "Ý nào hình nói nhanh hơn chữ thì dùng hình (steps/loop/bars), chữ thuần là đường cuối. Bỏ `figure` "
-             "nếu không có hình thật; thêm `statement` khi cần đủ 6. Dẫn nguồn ghi 'via', không ghi 'nguồn'. Cấm logo hãng, số bịa, "
+             "nếu không có hình thật; thêm `statement` khi cần đủ 6. Dẫn nguồn ghi 'via', không ghi 'nguồn'. Logo/brand "
+             "CHỈ dùng cho bìa khi bản chuẩn bị liệt kê rõ là ảnh dự phòng (không có ảnh sự kiện thật) — cấm chèn logo "
+             "hãng tuỳ tiện ở slide khác. Cấm số bịa, "
              "quote bịa, ảnh AI. Không em-dash.")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python kite_nop.py {m['draft_id']}",
@@ -155,7 +167,7 @@ def main() -> int:
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
-    m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho)
+    m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho, cho_phep_logo=True)
     brief = viet_brief(m, cb._doc_json(wd / "da_dung.json"))
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:

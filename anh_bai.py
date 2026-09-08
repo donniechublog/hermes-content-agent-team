@@ -265,6 +265,33 @@ def cham(url: str, alt: str, la_og: bool, rong: int, cao: int,
     return (d, ", ".join(ly))
 
 
+def logo_hang(tieu_de: str, link: str) -> list:
+    """Anh CHUA logo/brand — tang du phong CUOI cho Kite khi khong con anh that
+    su kien/thuong hieu nao (Ong Chu 08/09/2026: uu tien anh THAT > logo/brand/
+    vat lien quan > vector, chi ve vector khi khong con gi). Doan lai DUNG cac
+    trang da biet (link goc + bao khac cung tin), nhung lan nay CHI GIU anh bi
+    `cham()` loai vi kho`p RAC (thuong hieu/logo) — dung nguoc lai muc dich cua
+    `tim()`. Khong doan them trang moi, khong goi vision — Kite tu quyet."""
+    trang = [(link, "goc")] + [(u, "bao khac") for u, _ in bao_khac(tieu_de, link) if u]
+    ung_vien, thay = [], set()
+    with cf.ThreadPoolExecutor(max_workers=6) as ex:
+        for (u, nguon), ds in zip(trang, ex.map(lambda t: anh_trong_trang(t[0]), trang)):
+            for src, alt, og in ds:
+                if not (RAC.search(src) or RAC.search(alt)) or src in thay:
+                    continue
+                thay.add(src)
+                ung_vien.append({"anh": src, "alt": alt, "og": og, "tu": nguon, "trang": u})
+    if not ung_vien:
+        return []
+    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+        for c, kt in zip(ung_vien, ex.map(lambda x: do_anh(x["anh"]), ung_vien)):
+            c["rong"], c["cao"], c["byte"], _ = kt
+    ra = [c for c in ung_vien if c["rong"] >= 400 and c["cao"] >= 400
+          and max(c["rong"], c["cao"]) / max(1, min(c["rong"], c["cao"])) <= 3]
+    ra.sort(key=lambda c: -(c["rong"] * c["cao"]))
+    return ra[:6]
+
+
 def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -> list:
     if tin_model is None:
         tin_model = bool(LA_TIN_MODEL.search(tieu_de))

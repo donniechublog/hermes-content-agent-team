@@ -349,10 +349,17 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
     return ra
 
 
-def anh_commons(tu_khoa: str, so: int = 4) -> list:
+def anh_commons(tu_khoa: str, so: int = 4, khop_chat: bool = True) -> list:
     """Anh that tren Wikimedia Commons (tru so, san pham, su kien) cho tin mong
     anh — LUAT_ANH muc 1.2 ke Commons la nguon hop le. Chi goi khi bai + bao khac
-    khong du 5 anh. Loai SVG/logo (mime + _do_hoa o buoc tai)."""
+    khong du 5 anh. Loai SVG/logo (mime + _do_hoa o buoc tai).
+
+    `khop_chat=True` (mac dinh, dung cho ten rieng hang/san pham): BAT BUOC ten
+    tep chua nguyen cum tu khoa — "Gimlet" mot minh ra cocktail (05/09/2026)
+    nen can khop chat. `khop_chat=False` (Ong Chu 08/09/2026, tang du phong chu
+    de chung cua Kite): tu khoa da la cum 2-3 tu cu the ("data center
+    technician") nen it nguy co lac de hon mot tu don — tin thang xep hang cua
+    Commons, khong doi khop nguyen cum trong ten tep."""
     try:
         r = httpx.get("https://commons.wikimedia.org/w/api.php", params={
             "action": "query", "generator": "search", "gsrsearch": f"{tu_khoa} filetype:bitmap",
@@ -370,13 +377,43 @@ def anh_commons(tu_khoa: str, so: int = 4) -> list:
         if min(w, h) < 600 or ii.get("mime") not in ("image/jpeg", "image/png"):
             continue
         ten = (pg.get("title") or "").replace("File:", "")
-        if tu_khoa.lower() not in ten.lower():       # tim mo cua Commons hay lac de
+        if khop_chat and tu_khoa.lower() not in ten.lower():   # tim mo cua Commons hay lac de
             continue
         ra.append({"anh": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
                    "tu": "commons", "trang": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
                    "rong": w, "cao": h, "diem": 30})
     ra.sort(key=lambda c: -(c["rong"] * c["cao"]))
     return ra[:so]
+
+
+# Ban do CHU DE -> tu khoa anh stock CU THE (Ong Chu 08/09/2026: "object tuong
+# ung voi chu de" — vd tin AI-vieclam khong co anh su kien/logo thi van con
+# ANH MINH HOA chu de chung, mien la CC/free). Xac dinh bang tu khoa, KHONG
+# LLM — cung kieu voi LA_TIN_MODEL/QUY_MODEL o anh_bai.py. Danh sach theo dung
+# nhom chu de pipeline nay hay dua tin (xem TAGLINE_GOI_Y trong ethan_chuan_bi.py).
+CHU_DE_ANH = [
+    (re.compile(r"\b(data ?cent(er|re)|cloud infra|server farm)\b", re.I), "data center technician"),
+    (re.compile(r"\b(chip|semiconductor|wafer|fab|foundry|gpu|tpu)\b", re.I), "semiconductor factory worker"),
+    (re.compile(r"\b(robot|robotic|humanoid|drone)\b", re.I), "industrial robot arm"),
+    (re.compile(r"\b(cyber ?security|hack(er|ing)|breach|ransomware|malware)\b", re.I), "computer security operations center"),
+    (re.compile(r"\b(job|employ(ment|ee)|workforce|hiring|labou?r market|layoff)\b", re.I), "office workers meeting"),
+    (re.compile(r"\b(fund(ing|raise)|venture capital|series [a-e]\b|ipo|valuation|m&a|acqui(re|sition))\b", re.I), "startup office team"),
+    (re.compile(r"\b(polic(y|ies)|regulat(ion|or)|lawsuit|antitrust|congress|senate)\b", re.I), "government building capitol"),
+    (re.compile(r"\b(space|satellite|rocket|orbit|nasa|spacex)\b", re.I), "rocket launch"),
+    (re.compile(r"\b(energy|battery|solar|grid|nuclear reactor)\b", re.I), "power plant control room"),
+    (re.compile(r"\b(app|mobile|smartphone|ios|android)\b", re.I), "person using smartphone app"),
+]
+
+
+def _tu_khoa_chu_de(tieu_de: str, summary: str = "") -> str:
+    """Tu khoa anh stock theo CHU DE chung khi khong con anh su kien/logo nao
+    (tang du phong cuoi cua Kite). Tra ve "" neu khong khop nhom nao — luc do
+    Kite van phai ve vector, KHONG bat ep tim anh khong lien quan."""
+    t = f"{tieu_de} {summary}"
+    for pat, tu_khoa in CHU_DE_ANH:
+        if pat.search(t):
+            return tu_khoa
+    return ""
 
 
 def _ten_rieng_dau(tieu_de: str) -> str:
@@ -430,9 +467,14 @@ def _host_la_ben_thu_ba(c: dict) -> bool:
     return True
 
 
-def tai_va_loc(cands: list, wd: Path) -> list:
+def tai_va_loc(cands: list, wd: Path, cho_phep_logo: bool = False) -> list:
     """Tai ung vien theo thu tu diem, loai trung (md5) va anh be, luu PNG co dau
-    xuat xu. Tra ve danh sach anh da tai [{ma, goc, ...}]."""
+    xuat xu. Tra ve danh sach anh da tai [{ma, goc, ...}].
+
+    `cho_phep_logo`: bo qua hai cong loai "the thuong hieu/logo" (URL_RAC) va
+    "do hoa" (wordmark/flat-color) — CHI dung cho batch logo_hang() cua Kite
+    (Ong Chu 08/09/2026), noi day chinh la thu ta muon giu. Moi noi khac (Ethan/
+    Dre/anh su kien thuong cua Kite) giu mac dinh False, hanh vi khong doi."""
     import anh_bai
     import luat_anh
     goc_dir = wd / "goc"
@@ -457,7 +499,7 @@ def tai_va_loc(cands: list, wd: Path) -> list:
             if _host_la_ben_thu_ba(c):
                 print(f"[tai] bo anh host ben thu ba (quang cao?): {_mien(c.get('anh',''))} tren {_mien(c.get('trang',''))}", file=sys.stderr)
                 continue
-            if URL_RAC.search(c.get("anh", "") or "") or URL_RAC.search(c.get("alt", "") or ""):
+            if not cho_phep_logo and (URL_RAC.search(c.get("anh", "") or "") or URL_RAC.search(c.get("alt", "") or "")):
                 print(f"[tai] bo url/alt rac: {str(c.get('anh'))[-60:]}", file=sys.stderr)
                 continue                                  # placeholder/onboarding/logo/ad
             if luat_anh.la_anh_rong(im)[0]:
@@ -467,7 +509,7 @@ def tai_va_loc(cands: list, wd: Path) -> list:
                 continue
             ly_do_do_hoa = anh_bai._do_hoa(im)
             la_ct, _ = luat_anh.la_chart(im)
-            if ly_do_do_hoa and not la_ct and not _chart_theo_hinh(im):
+            if ly_do_do_hoa and not la_ct and not _chart_theo_hinh(im) and not cho_phep_logo:
                 continue                                  # logo/wordmark
             h = luat_anh.dhash(im)
             # Trung gan giong (cung anh o co khac, anh <img> vs figure chup): giu ban LON hon.
@@ -837,7 +879,8 @@ def gom_tu_lieu(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_en: s
 
 
 
-def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=False) -> dict:
+def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=False,
+            cho_phep_logo=False) -> dict:
     import carousel
     title = meta.get("title", draft_id)
     nguon, nguon_path, link = nap_nguon(draft_id, meta, state)
@@ -1010,6 +1053,54 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
         print(f"[tim rong] sau vong: {len(dung_duoc)} anh DUNG DUOC / {len(anh)} "
               f"(+{len(anh) - n0} tai them)", file=sys.stderr)
+    # Tang du phong CUOI cua Kite (Ong Chu 08/09/2026): het moi cach van khong co
+    # anh THAT nao lien quan (ke ca anh chung thuong hieu tu Commons o vong tren)
+    # -> thu logo/brand roi anh minh hoa chu de chung (CC/free), truoc khi phai
+    # ve vector thuan. Chi Kite goi (cho_phep_logo=True); Ethan/Dre khong doi
+    # hanh vi. Hai nguon deu gan co "du_phong" — Kite tu quyet dung hay bo.
+    def _them_anh_du_phong(cands: list, the_muc: str, mo_ta: str, canh_bao: str) -> bool:
+        if not cands:
+            return False
+        bo_sung = tai_va_loc(cands, wd / the_muc, cho_phep_logo=True)
+        if not bo_sung:
+            return False
+        n0 = len(anh)
+        for i, a in enumerate(bo_sung[:2], start=n0 + 1):
+            a["ma"] = f"A{i}"
+            moi = wd / "goc" / f"{a['ma']}.png"
+            Path(a["goc"]).replace(moi)
+            a["goc"] = str(moi)
+            a["du_phong"] = True
+            a = phan_loai(a, wd, "")           # khong hoi vision — da biet chac la anh du phong
+            a["mo_ta"] = mo_ta
+            a["lien_quan"] = True
+            a["dung"] = a["dung"] or ["bìa"]
+            a["ghi_chu"].insert(0, canh_bao)
+            anh.append(a)
+        return True
+
+    if cho_phep_logo and not any(a.get("lien_quan") is True for a in anh):
+        import anh_bai
+        logo_cands = anh_bai.logo_hang(tieu_de_nhin, link)
+        print(f"[du phong] khong con anh su kien that, thu logo/brand: {len(logo_cands)} ung vien", file=sys.stderr)
+        da_them = _them_anh_du_phong(
+            logo_cands, "logo",
+            "Ảnh chứa logo/thương hiệu liên quan chủ đề (không phải ảnh sự kiện cụ thể)",
+            "⚠️ ẢNH LOGO/BRAND DỰ PHÒNG — chỉ dùng khi KHÔNG còn ảnh sự kiện thật nào")
+        if not da_them:
+            tk_chu_de = _tu_khoa_chu_de(tieu_de_nhin, tom.get("summary", ""))
+            if tk_chu_de:
+                chu_de_cands = anh_commons(tk_chu_de, so=6, khop_chat=False)
+                print(f"[du phong] khong co logo/brand, thu anh chủ đề \"{tk_chu_de}\" (Commons): "
+                      f"{len(chu_de_cands)} ung vien", file=sys.stderr)
+                da_them = _them_anh_du_phong(
+                    chu_de_cands, "chu_de",
+                    f"Ảnh minh hoạ chủ đề \"{tk_chu_de}\" (Wikimedia Commons, không phải ảnh sự kiện cụ thể)",
+                    "⚠️ ẢNH MINH HOẠ CHỦ ĐỀ DỰ PHÒNG — chỉ dùng khi KHÔNG còn ảnh sự kiện/logo thật nào")
+        if da_them:
+            dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
+            print(f"[du phong] -> {len(dung_duoc)} DUNG DUOC", file=sys.stderr)
+
     so_mien = sorted({(a.get("mien") or a.get("tu") or "?") for a in dung_duoc})
 
     goi_y_bia = [a["ma"] for a in sorted(
@@ -1105,7 +1196,7 @@ def _cho_luot():
         time.sleep(5)
 
 
-def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
+def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300, cho_phep_logo=False) -> tuple:
     """Bao dam xong.json co san (chay neu chua, doi neu tien trinh khac dang chay).
     Tra ve (manifest, workdir, meta)."""
     meta = nap_meta(draft_id)
@@ -1146,7 +1237,8 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
     khoa.write_text(str(os.getpid()))
     try:
         with _cho_luot():
-            m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser)
+            m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser,
+                        cho_phep_logo=cho_phep_logo)
         try:
             _route_thieu_anh(draft_id, m)
         except (Exception, SystemExit) as e:                 # noqa: BLE001

@@ -85,18 +85,21 @@ sua). {ket_thuc} Khong sinh
 agent con, khong gui lai album."""
 
 
-# Body cho Kite (role carousel.edu) — render_edu.py: art VECTOR GOC, KHONG anh
-# that (tru bieu do/bang co that: kind figure). Ba buoc nhu Dre/Ethan.
+# Body cho Kite (role carousel.edu) — render_edu.py: uu tien ANH THAT (Ong Chu
+# 08/09/2026: hinh su kien that > logo/brand/vat lien quan > vector, chi ve
+# vector khi ban chuan bi khong liet ke duoc gi ca). Ba buoc nhu Dre/Ethan.
 EDU_BODY = """Nguon: {source_note}
 Link: {link}
 Chu de: {title}
 Tom tat: {summary}
 
-NHIEM VU: dung mot CAROUSEL tech-editorial (magazine) ke tin nay bang ART VECTOR
-GOC — KHONG anh that (tru bieu do/bang co that ma ban chuan bi liet ke), KHONG
-nen AI, KHONG logo hang, KHONG so lieu bia, KHONG quote bia. Phan CO HOC (tu
-lieu, hinh that, tone, cong chan, render, gui, ban giao) DA LA SCRIPT. Viec cua
-ban chi co MOT: chia slide va viet chu. Lam dung BA BUOC, khong them lenh nao.
+NHIEM VU: dung mot CAROUSEL tech-editorial (magazine) ke tin nay cho thuong
+hieu {brand}. UU TIEN theo dung thu tu ban chuan bi da liet ke: hinh SU KIEN
+that > (khong co thi) hinh logo/brand du phong > (van khong co gi thi) ART
+VECTOR GOC. KHONG nen AI, KHONG logo hang o slide khac ngoai bia du phong da
+liet ke, KHONG so lieu bia, KHONG quote bia. Phan CO HOC (tu lieu, hinh that,
+tone, cong chan, render, gui, ban giao) DA LA SCRIPT. Viec cua ban chi co MOT:
+chia slide va viet chu. Lam dung BA BUOC, khong them lenh nao.
 
 BUOC 1 — doc ban chuan bi (tu lieu, hinh that neu co, tone goi y, khung spec):
 cd {goc} && venv/bin/python kite_chuan_bi.py {draft_id}
