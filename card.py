@@ -3,13 +3,19 @@
 
   - `quote` (mặc định): pull-quote 4:5 — ảnh phủ kín, câu trích dẫn lớn trong
     khung hai góc ngoặc, dòng nguồn canh giữa, chip tên kênh và tagline.
-  - `tran`: ảnh full bề ngang, tiêu đề MỘT câu đè lên qua màn tối liền mạch,
-    kicker ngắn phía trên, tên kênh canh giữa ở đáy. Không khung, không nhãn.
+  - `tran`: ảnh full bề ngang, tiêu đề MỘT câu đè lên qua khung chữ nhật nét,
+    kicker ngắn phía trên, tên kênh canh giữa ở đáy.
 
 Bề ngang cố định 1200px; ảnh không bao giờ bị cắt bề ngang (luật LUAT_ANH.md).
 Kiểu `dai` cũ (ảnh trên, textbox riêng dưới, nhãn category, hàng icon social,
 mascot) đã bỏ 05/09/2026: từ khi cả đội chuyển sang một kiểu ảnh duy nhất,
 không vai nào gọi tới nó nữa.
+
+Chữ đè lên ảnh (cả hai kiểu): KHÔNG mặc định phủ lớp nào — chỉ làm mờ cục bộ
+đúng vùng dưới chữ (`_mo_vung_chu`) rồi đổi màu chữ theo độ sáng đo được
+(`_mau_doi_nen`/`_can_bang_dong`). Ngưỡng sáng/tối tính theo đúng cặp màu
+FG/BG của từng thương hiệu (`nen_chu.nguong_tuong_phan`), không còn một con
+số cố định dùng chung cho mọi bảng màu.
 """
 import argparse
 import sys
@@ -18,6 +24,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import luat_anh
+import nen_chu
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 FONTS = ASSETS / "fonts"
@@ -99,11 +106,12 @@ THUONG_HIEU = {
 
 # Gia tri mac dinh; build() ghi de theo --brand
 BG = BG_CARD = FG = MUTED = ACCENT = ACCENT_DIM = CYAN = LINE = None
+NGUONG_NEN_SANG = None    # diem sang nen (0..255) FG/BG hoa nhau — dat qua dat_thuong_hieu
 
 
 def dat_thuong_hieu(ten: str):
     """Nap bang mau cua mot thuong hieu."""
-    global BG, BG_CARD, FG, MUTED, ACCENT, ACCENT_DIM, CYAN, LINE
+    global BG, BG_CARD, FG, MUTED, ACCENT, ACCENT_DIM, CYAN, LINE, NGUONG_NEN_SANG
     b = THUONG_HIEU.get(ten)
     if b is None:
         raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
@@ -113,6 +121,11 @@ def dat_thuong_hieu(ten: str):
     FG, MUTED = m["FG"], m["MUTED"]
     ACCENT, ACCENT_DIM = m["ACCENT"], m["ACCENT_DIM"]
     CYAN, LINE = m["CYAN"], m["LINE"]
+    # Diem hoa nhau cua WCAG contrast ratio giua chu FG va chu BG tren nen xam —
+    # tinh theo dung cap mau CUA THUONG HIEU NAY (nen_chu.nguong_tuong_phan), vi
+    # mot con so co dinh (116, tinh rieng cho FG/BG cua donniechublog) se sai
+    # nguong voi dcgr (FG/BG gan nhu trang tuyet doi / den tuyet doi).
+    NGUONG_NEN_SANG = nen_chu.nguong_tuong_phan(FG, BG)
     return b
 
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
@@ -458,11 +471,16 @@ def _fit_text(d, text, max_w, max_lines, hi, lo, bold=False, path=None,
 
 
 def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
-                path=None, weight=None, hi=None, do_that=False):
+                path=None, weight=None, hi=None):
     """Chọn cỡ chữ lớn nhất mà tiêu đề vẫn vừa cả bề ngang lẫn chiều cao trống.
 
     Chỉ dùng khi tỉ lệ thẻ bị khoá — lúc đó textbox có chiều cao cố định nên
     biết chính xác còn bao nhiêu chỗ cho tiêu đề.
+
+    Đo chiều cao bằng CHÍNH các dòng sẽ vẽ (`_buoc_dong`), không phải một
+    chuỗi mẫu cố định: chuỗi mẫu không có các tổ hợp dấu đôi (mũ/móc + dấu
+    thanh, vd "ẫ" "ệ" "ữ") nên đánh giá thấp một dòng tiếng Việt thật, khiến
+    hai dòng liền nhau chồng lên nhau khi giãn dòng bó sát.
     """
     best = None
     path = path or F_BOLD
@@ -471,8 +489,7 @@ def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
         lines = _wrap(d, text, f, max_w)
         if len(lines) > max_lines:
             continue
-        cao = ((_buoc_dong(f, lines, lead)[0] * len(lines)) if do_that
-               else _line_h(f, lead) * len(lines))
+        cao = _buoc_dong(f, lines, lead)[0] * len(lines)
         if cao <= max_h:
             best = (f, lines)
             break
@@ -488,12 +505,13 @@ def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
 def _buoc_dong(font, lines, lead):
     """Buoc nhay giua hai dong va do nho cua dong dau, do bang CHINH cac dong se ve.
 
-    `_line_h` do bang bbox cua "Ây" — mot chuoi mau co dau mu tren va duoi chu y.
-    Cach do do du cho chu thuong, nhung KHONG du cho tieu de tieng Viet viet hoa:
-    dau sac tren "Ắ" cao hon dau mu, dau nang duoi "Ạ" thap hon duoi chu y. Do
-    that: chuoi mau cao 121px trong khi mot dong that trai tu 0 den 134. Voi gian
-    dong bo sat cua hero image, chenh lech do du de hai dong lien nhau chong len
-    nhau 11px.
+    Mot chuoi mau co dinh (vd "Ây") khong bao gom cac to hop dau DOI (mu/moc +
+    dau thanh, vd "ấ" "ẫ" "ữ") nen danh gia THAP dong tieng Viet that: dau sac
+    tren "Ắ" cao hon dau mu, dau nang duoi "Ạ" thap hon duoi chu y. Do that:
+    chuoi mau cao 121px trong khi mot dong that trai tu 0 den 134. Voi gian
+    dong bo sat cua hero image, chenh lech do du de hai dong lien nhau chong
+    len nhau 11px — nen luon do tren CHINH cac dong se ve, khong doan qua mot
+    chuoi tham chieu.
 
     Tra ve (buoc, tren): `tren` la khoang cach tu goc ve xuong dinh chu cao nhat,
     dung de dat dong dau vao dung cho thay vi tha noi theo viec dong do co dau hay
@@ -505,11 +523,6 @@ def _buoc_dong(font, lines, lead):
     tren = min(h[1] for h in hop)
     duoi = max(h[3] for h in hop)
     return (duoi - tren) + lead, tren
-
-
-def _line_h(font, spacing=8):
-    b = font.getbbox("Ây")
-    return (b[3] - b[1]) + spacing
 
 
 def ghep_doc(paths, gap=0, nen=(0, 0, 0)):
@@ -743,14 +756,12 @@ def _mo_vung_chu(canvas, frame_top):
     canvas.paste(Image.composite(mo, vung, mat_na), (0, top))
 
 
-# Nguong quyet dinh chu SANG hay chu TOI tren mot vung nen.
-#
-# Truoc 06/09/2026 la 140, go tay. Diem dung la cho hai lua chon hoa nhau:
-# tinh theo WCAG (co tuyen tinh hoa gamma) voi FG=(230,237,243) va BG=(14,17,23)
-# thi CR(chu trang) = CR(chu toi) tai nen xam 116. O 140, chu trang chi con
-# CR 2.85 trong khi chu toi cho 5.62 — tuc nguong cu chon SAI phe tren ca dai
-# nen 116..140, dung dai hay gap nhat o anh chup nua sang nua toi.
-NGUONG_NEN_SANG = 116
+# Nguong quyet dinh chu SANG hay chu TOI tren mot vung nen: diem sang xam noi
+# CR(chu trang) = CR(chu toi) — dat qua dat_thuong_hieu (nen_chu.nguong_tuong_phan)
+# theo dung cap mau CUA THUONG HIEU DANG NAP, khong con la mot con so co dinh
+# (116, tinh rieng cho FG/BG cua donniechublog) dung nham sang ca dcgr. Truoc
+# 06/09/2026 con so nay la 140, go tay: sai phe tren ca dai nen 116..140 (dai
+# hay gap nhat o anh chup nua sang nua toi).
 
 
 def _trong_the(canvas, box):
@@ -782,6 +793,47 @@ def _mau_doi_nen(canvas, box):
     Vung toi -> chu sang (FG); vung sang -> chu toi (BG, mau nen thuong hieu,
     khong phai den tuyet doi)."""
     return FG if _sang_vung(canvas, box) < NGUONG_NEN_SANG else BG
+
+
+# Mot dai chu rong (gan het be ngang the) rat de vua co mang toi vua co mang
+# sang cuc bo (vd hero portrait: co ao trang canh vung toi) — TRUNG BINH ca
+# dai van thien dung mot phe, nhung diem sang/toi cuc bo do van lo ra thanh
+# mot "vet sang" duoi chu, du _mo_vung_chu da mo. Do o day THEO ANH THAT (anh
+# Trump 08/09/2026: dai "HON 40 PHAN TRAM" mean=54.6 — chon dung chu trang —
+# nhung std=49.7: mot mang co ao trang lam ho mot khoang du sang de chu trang
+# mat tuong phan tai dung cho do).
+NGUONG_ROI_DONG = 42     # do lech (stddev xam) trong MOT dai vuot muc nay moi can tinh them
+DICH_ROI_DONG = 24       # tinh vua du de KEO do lech ve muc nay (an toan de mot mau doc duoc)
+TOI_TOI_DA_DONG = 195    # tran alpha lop tinh (0..255) cho truong hop cuc doan
+
+
+def _can_bang_dong(canvas, box):
+    """Do sang MOT dai (box); neu do lech (stddev) qua cao — co diem sang/toi
+    cuc bo giua dai — tinh THEM mot lop mong CHI TRONG box nay (khong lan ra
+    ca the) keo ve phia phe da chiem da so, roi tra ve do sang MOI (sau khi
+    tinh) de chon mau chu cho dung. Do lech thap (dai deu mau) thi khong lam
+    gi, giu nguyen tinh than 'khong phu lop nao neu khong can'.
+
+    Tinh mot mau PHANG vao vung giam do lech THEO TI LE (1-alpha) — muon do
+    lech con lai <= DICH_ROI_DONG thi alpha >= 1 - DICH_ROI_DONG/std do duoc."""
+    box = _trong_the(canvas, box)
+    x0, y0, x1, y1 = box
+    st = ImageStat.Stat(canvas.crop(box).convert("L"))
+    if st.stddev[0] <= NGUONG_ROI_DONG:
+        return st.mean[0]
+    mau_ve = BG if st.mean[0] < NGUONG_NEN_SANG else FG
+    do = min(TOI_TOI_DA_DONG,
+             round(255 * max(0.0, 1 - DICH_ROI_DONG / st.stddev[0])))
+    lop = Image.new("RGBA", (x1 - x0, y1 - y0), (*mau_ve[:3], int(do)))
+    canvas.alpha_composite(lop, (x0, y0))
+    return _sang_vung(canvas, box)
+
+
+def _mau_doi_nen_an_toan(canvas, box):
+    """Nhu `_mau_doi_nen`, nhung do sang qua `_can_bang_dong` thay vi
+    `_sang_vung` truc tiep: tu tinh them mot lop mong CHI TRONG box neu do
+    lech qua cao truoc khi chon mau — xem `_can_bang_dong`."""
+    return FG if _can_bang_dong(canvas, box) < NGUONG_NEN_SANG else BG
 
 
 def _quote_mark(d, cx, cy, font, color, closing=False):
@@ -879,7 +931,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
 
     f_at = _f(F_QUOTE_REG, 26)
     at_lines = _wrap(d, attrib, f_at, avail_w) if attrib else []
-    at_lh = _line_h(f_at, 8)
+    at_lh = _buoc_dong(f_at, at_lines, 8)[0]
     at_h = at_lh * len(at_lines)
 
     # Tagline ngan cua kenh — chip nho o goc duoi-trai khung (xem ben duoi).
@@ -1099,10 +1151,11 @@ def _render_tran(src, title, out, handle, ratio, kicker, b):
     # Kicker: nhan ngan phia tren tieu de.
     kicker = (kicker or "").strip().upper()
     f_kick = _f(F_REG, KICKER_SIZE, weight=700)
-    # Do CHIEU CAO CHU THAT chu khong dung _line_h. _line_h do bang bbox cua
-    # "Ây" — co ca dau mu lan duoi chu y — vi no phuc vu chu tieng Viet co dau.
-    # Kicker toan chu Latin viet hoa, khong dau, nen cach do do chua them gan 20px
-    # troi o duoi, va cong voi khoang ho nua thi kicker troi han khoi tieu de.
+    # Do CHIEU CAO CHU THAT bang bbox cua chinh chuoi kicker, khong doan qua
+    # mot chuoi tham chieu co dau tieng Viet (vd "Ây", co ca dau mu lan duoi
+    # chu y): kicker toan chu Latin viet hoa, khong dau, nen mot chuoi tham
+    # chieu co dau se thua them gan 20px troi o duoi, cong voi khoang ho nua
+    # thi kicker troi han khoi tieu de.
     _kb = f_kick.getbbox(kicker) if kicker else (0, 0, 0, 0)
     kick_h = (_kb[3] - _kb[1]) if kicker else 0
     via_h = f_via.getbbox("Ây")[3] - f_via.getbbox("Ây")[1]
@@ -1142,7 +1195,7 @@ def _render_tran(src, title, out, handle, ratio, kicker, b):
                                            box_h - frame_h,
                                            max_lines=TRAN_TITLE_LINES,
                                            lead=lead, path=F_HERO,
-                                           weight=HERO_WEIGHT, do_that=True,
+                                           weight=HERO_WEIGHT,
                                            hi=TRAN_TITLE_MAX)
     else:
         box_h = box_min
@@ -1183,13 +1236,15 @@ def _render_tran(src, title, out, handle, ratio, kicker, b):
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi: ranh
     # sang/toi ngang cat qua khoi chu la ca rat thuong (anh chup hero toi tren
     # nen trang duoi, anh ghep doc hai tone). Mot phep trung binh thi nua khoi
-    # thanh trang-tren-trang hoac den-tren-den.
+    # thanh trang-tren-trang hoac den-tren-den. `_can_bang_dong` (khong phai
+    # `_sang_vung` truc tiep) vi mot dai RONG van co the co diem sang/toi cuc
+    # bo du trung binh ca dai dung phe — xem ghi chu tai dinh nghia ham.
     buoc, tren = _buoc_dong(f_title, title_lines, lead)
     dau_tieu_de = cum_top + (kick_h + KICKER_GAP if kicker else 0)
     dai_dong = [(TRAN_TEXT_X, dau_tieu_de + i * buoc,
                  W - TRAN_TEXT_X, dau_tieu_de + (i + 1) * buoc)
                 for i in range(len(title_lines))]
-    sang_dong = [_sang_vung(canvas, _trong_the(canvas, b)) for b in dai_dong] or [0.0]
+    sang_dong = [_can_bang_dong(canvas, b) for b in dai_dong] or [0.0]
     mau_dong = [FG if sg < NGUONG_NEN_SANG else BG for sg in sang_dong]
     # Phe cua CA KHOI — dung cho net khung, kicker, va mau ten hang trong tieu de.
     nen_sang = sum(1 for sg in sang_dong if sg >= NGUONG_NEN_SANG) * 2 >= len(sang_dong)
@@ -1203,8 +1258,8 @@ def _render_tran(src, title, out, handle, ratio, kicker, b):
     if kicker:
         # Kicker do RIENG dai cua chinh no: no nam tren cung khoi chu, tuc o
         # phan anh sang/toi khac voi may dong tieu de duoi.
-        mau_kick = _mau_doi_nen(canvas, _trong_the(
-            canvas, (TRAN_TEXT_X, cum_top, W - TRAN_TEXT_X, cum_top + max(kick_h, 8))))
+        mau_kick = _mau_doi_nen_an_toan(
+            canvas, (TRAN_TEXT_X, cum_top, W - TRAN_TEXT_X, cum_top + max(kick_h, 8)))
         mau_kick = _du_toi(CYAN) if mau_kick == BG else CYAN
         rong_chu = _rong_tracked(d, kicker, f_kick, KICKER_TRACK)
         # Tru _kb[1] de DINH chu roi dung vao y, khong phai goc ascender.
@@ -1244,8 +1299,7 @@ def _render_tran(src, title, out, handle, ratio, kicker, b):
     # Do RIENG dai cua chinh no: no nam NGOAI khung, va anh co khoi chu toi
     # nhung day the sang la ca rat thuong (loi dong nguon quote 06/09/2026).
     f_handle = _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500)
-    mau_handle = _mau_doi_nen(canvas,
-                              _trong_the(canvas, (0, bottom_y, W, bottom_y + via_h)))
+    mau_handle = _mau_doi_nen_an_toan(canvas, (0, bottom_y, W, bottom_y + via_h))
     mau_handle = (_du_toi(CYAN) if mau_handle == BG
                   else _pha(CYAN, b.get("ro_handle", mo_chan)))
     ten = handle if handle.startswith("@") else "@" + handle
