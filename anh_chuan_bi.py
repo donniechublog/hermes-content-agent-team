@@ -166,6 +166,36 @@ def _tai_bytes(url: str) -> bytes | None:
         return None
 
 
+def ung_vien_social(link: str, wd: Path) -> list:
+    """Anh CUA CHINH post (X/Instagram/Facebook) lam ung vien hang dau.
+
+    Vi sao khong de duong tim anh thuong lo: post mang xa hoi chan khach chua
+    dang nhap, browser_pass mo facebook.com chi thay tuong dang nhap, con
+    anh_bai.tim di tim "bao khac" cho mot post ca nhan thi ra rac. Anh nguoi ta
+    dang kem bai CHINH LA anh that cua tin do — Ong Chu chot 08/09/2026.
+
+    Diem 95: cao hon moi nguon khac de no dung dau khi tai_va_loc cat bot, nhung
+    van de xep_hang (anh bang xep hang, khong di qua tai_va_loc) dung tren.
+    Tai han ve dia thay vi giu link CDN: link CDN co tham so het han (`oe=`).
+    """
+    import social_post
+    if not social_post.la_social(link):
+        return []
+    d = social_post.doc(link, tai_ve=wd / "social",
+                        in_log=lambda t: print(f"[social] {t}", file=sys.stderr))
+    if not d:
+        return []
+    cands = []
+    for i, m in enumerate(d["media"], 1):
+        if m["type"] != "image" or not m["tep"]:
+            continue
+        cands.append({"anh": m["tep"], "tep": m["tep"],
+                      "alt": f"ảnh {i} trong post của {d['author']}".strip(),
+                      "tu": "social_post", "trang": d["link"], "diem": 95})
+    print(f"[social] {len(cands)} anh that tu chinh post", file=sys.stderr)
+    return cands
+
+
 def ung_vien_tinh(title: str, link: str, nguon_path: Path, title_en: str = "") -> list:
     """anh_bai.tim tren bo nguon cua Finn; it qua thi tim rong them (bao khac,
     bang tieu de tieng Anh cua bai that)."""
@@ -987,7 +1017,8 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
     """Ung vien (tim tinh + browser + bia arxiv) -> tai va loc -> chen anh XH ->
     bu Commons neu mong. Tra danh sach anh (chua phan loai)."""
     print(f"[anh] tim tinh qua {len(trang)} nguon...", file=sys.stderr)
-    cands = ung_vien_tinh(title, link, nguon_path, nguon.get("tieu_de_en", ""))
+    cands = ung_vien_social(link, wd) + ung_vien_tinh(title, link, nguon_path,
+                                                     nguon.get("tieu_de_en", ""))
     co = {c["anh"] for c in cands}
     for c in bp["cands"]:
         if c["anh"] not in co:

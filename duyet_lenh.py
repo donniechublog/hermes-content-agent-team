@@ -23,7 +23,7 @@ from duyet_co_so import (  # noqa: E402
     BRAND, STATE_DIR, _ghi_json, _nap_json, call, la_ong_chu, log,
 )
 from duyet_giao_viec import (  # noqa: E402
-    MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_ANH, VAI_CAROUSEL, VAI_EDU,
+    TEN_SANG_CAP, TEN_VAI_ANH, VAI_ANH, VAI_CAROUSEL, VAI_EDU,
 )
 from duyet_chon_tin import (  # noqa: E402
     _draft_id, create_pair,
@@ -101,12 +101,55 @@ def _doc_trang(url):
         title = p.netloc + p.path
     return title, image_url, ghi_chu
 
+# Post mang xa hoi: trang thuong doc bang the og: la du, nhung X/Instagram/
+# Facebook tra ve vo SPA — do that 08/09/2026 tren mot link facebook: 4 cach
+# (UA thuong, UA facebookexternalhit, mbasic, iframe plugins/post.php) deu chi
+# ra ten nguoi dang, 340 KB HTML khong co lay mot cau tieng Viet nao. Duong duy
+# nhat lay duoc chu la endpoint crawl noi bo (skill social-crawl) — cac vai
+# Nova/Scout/Gin dung hang ngay, rieng /bai thi truoc day chua noi vao, nen mot
+# link Facebook sinh ra task tieu de "Nguyen Doan Tung" voi brief rong (su co
+# 08/09/2026, task t_905914b6).
+#
+# Cua goi chung nam o social_post.py — anh_chuan_bi.py cung goi dung cua do de
+# lay ANH cua post. Dung viet lai o day.
+
+
+def _doc_social(url):
+    """Toan van post. Tra (title, summary, image_url, link, ghi_chu) hoac None
+    khi khong lay duoc — goi la de goi y roi ve _doc_trang, khong chan lenh.
+
+    Khong tai anh ve o buoc nay: /bai chi can mot link de dien vao the. Anh that
+    cho slide do anh_chuan_bi.py tai (`ung_vien_social`) khi dung brief, boi luc
+    do moi co thu muc lam viec cua draft."""
+    import social_post
+    d = social_post.doc(url, in_log=lambda t: log("bai", t))
+    if not d or not d["text"]:
+        return None
+    img = next((m["url"] for m in d["media"] if m["type"] == "image"), "")
+    ghi_chu = "" if img else "post khong co anh — vai tu lo phan hinh"
+    return d["title"], d["text"], img, d["link"], ghi_chu
+
+
+# Danh sach vai sinh tu VAI_ANH chu khong go tay: truoc 08/09/2026 dong nay ke
+# "designer hoac carousel" trong khi ma da nhan them kite/edu tu 05/09 — Ong Chu
+# doc /hd thi tuong khong giao duoc cho Kite.
+def _dong_vai_help():
+    kieu = {}
+    for ten, va in sorted(VAI_ANH.items()):
+        kieu.setdefault(va, []).append(ten)
+    ta = {"designer": "thẻ bìa", "carousel": "nhiều slide ảnh thật",
+          "carousel-edu": "carousel art vector"}
+    return "; ".join(f"<code>{' / '.join(t)}</code> ({ta.get(v, v)})"
+                     for v, t in sorted(kieu.items()))
+
+
 LENH_HELP = (
     "<b>Lệnh:</b>\n"
     "<code>/bai &lt;url&gt; &lt;vai&gt;</code> — đặt bài tay từ URL: tạo cặp task "
     "ảnh + viết, không qua vòng quét của Finn.\n"
-    "  vai nhận: <code>designer</code> (thẻ bìa) hoặc <code>carousel</code> "
-    "(nhiều slide); brand cố định theo container.\n"
+    "  vai nhận: " + _dong_vai_help() + "; brand cố định theo container.\n"
+    "  Link X / Instagram / Facebook: tự lấy TOÀN VĂN post (crawl 30-60 giây), "
+    "vai không phải đọc lại trang gốc.\n"
     "<code>/vai</code> — bảng vai trong container này.\n"
     "<code>/help</code> — tin này.\n"
     "Sai cú pháp thì không làm gì — lệnh phải tường minh.")
@@ -135,10 +178,33 @@ def _lenh_bai(tra_loi, args):
         return
 
     vai_anh, brand = TEN_SANG_CAP[ten], BRAND
-    title, image_url, ghi_chu = _doc_trang(url)
-    if title is None:
-        tra_loi("❌ " + ghi_chu + " — không tạo task. Kiểm tra URL rồi /bai lại.")
-        return
+    # Post mang xa hoi: lay TOAN VAN truoc (crawl that, 25-90s nen bao truoc);
+    # that bai thi roi ve doc the og: nhu bai bao thuong.
+    summary, source_note = "", ("Ong Chu dat tay qua lenh /bai — tu doc bai goc "
+                                "va tu tom tat.")
+    social = None
+    import social_post
+    if social_post.la_social(url):
+        tra_loi("⏳ Đang đọc post (crawl thật, có thể 30-60 giây)…")
+        social = _doc_social(url)
+    if social:
+        title, summary, image_url, url, ghi_chu = social
+        # Toan van da nam trong brief: bao vai dung lai, khoi chay research doc
+        # trang goc — Facebook/X chan bot, vai co doc lai cung chi thay tuong dang nhap.
+        source_note = ("Ong Chu dat tay qua lenh /bai — TOAN VAN post da lay san "
+                       "bang crawl noi bo, dung truc tiep, khong can mo lai trang goc.")
+        url_chuan = _chuan_hoa_url(url)          # dedup theo permalink da chuan hoa
+        if url_chuan in so:
+            cu = so[url_chuan]
+            tra_loi("Post này đã đặt " + cu.get("ngay", "?") + " — draft <code>"
+                    + html_escape(cu.get("draft_id", "?")) + "</code>, giao "
+                    + cu.get("vai", "?") + ". Không tạo lại.")
+            return
+    else:
+        title, image_url, ghi_chu = _doc_trang(url)
+        if title is None:
+            tra_loi("❌ " + ghi_chu + " — không tạo task. Kiểm tra URL rồi /bai lại.")
+            return
 
     import hashlib
     item = {
@@ -146,8 +212,8 @@ def _lenh_bai(tra_loi, args):
         # (slug rong) khong de len nhau
         "index": "b" + hashlib.sha1(url_chuan.encode()).hexdigest()[:8],
         "title": title, "link": url,
-        "summary_vi": "",
-        "source_note": "Ong Chu dat tay qua lenh /bai — tu doc bai goc va tu tom tat.",
+        "summary_vi": summary,
+        "source_note": source_note,
         "via": "", "image_url": image_url or "khong co",
         "category": None, "score": "?",
         "score_reason": "dat tay, khong qua cham diem",
@@ -165,10 +231,11 @@ def _lenh_bai(tra_loi, args):
     _ghi_json(DAT_BAI_SO, so)
 
     ten_hien = TEN_VAI_ANH.get(vai_anh, "Ethan")
-    ten_viet = TEN_VAI_VIET.get(MAC_DINH_VIET, "Miles")
+    # Ong Chu 08/09/2026: bo cum "X viet caption sau khi duyet anh" — thua, ai
+    # cung biet quy trinh, khong can nhac lai moi lan giao task. Cung luat voi
+    # duyet_chon_tin.py (bao cao chon tin) — sot lai o day vi hai cho viet rieng.
     dong = ("✅ <b>" + html_escape(title) + "</b>\n"
-            + f"{ten_hien} dựng ảnh ({brand}) — task {tid}. "
-            + f"{ten_viet} viết caption SAU khi Ông Chủ bấm Duyệt ảnh.")
+            + f"{ten_hien} dựng ảnh ({brand}) — task {tid}")
     if ghi_chu:
         dong += "\n⚠️ " + ghi_chu
     tra_loi(dong)
