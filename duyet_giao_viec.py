@@ -194,7 +194,7 @@ DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da b
 
 _TEN_HIEN = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
              "writer": "Miles", "scout": "Finn", "nova": "Nova", "market": "Vera",
-             "teaser": "Jean", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
+             "teaser": "Cape", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
              "bob": "Bob"}
 
 # Moi bai mot the goc (bang_den.py), Dre/Miles/Ada la con cua no. Ly do va so do

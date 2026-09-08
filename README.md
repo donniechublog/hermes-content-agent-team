@@ -35,7 +35,7 @@ Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_
 | Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý |
 | Vera | `market` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
 | Ada | `analyst` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
-| Jean | `teaser` | teaser | Ghép teaser từ bài đã duyệt — blog only |
+| Cape | `teaser` | teaser | Ghép teaser từ bài đã duyệt — blog only |
 | Bob | `bob` | — | Đóng khung một ảnh bất kỳ từ URL, gắn mascot hợp tâm trạng |
 
 ## Luồng
@@ -85,7 +85,7 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `drafts/<id>.ban_giao.md` và `da_dung.json` (để "Làm lại" bắt buộc đổi
   ảnh/hook/tone). `--khong-gui`/`--out`/`--khong-push` để thử.
 - Bốn vai theo chat cùng mẫu, khoá là message_id/URL: `gin_*`, `itachi_*`,
-  `jean_*`, `ada_*`. `bob_nop.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
+  `cape_*`, `ada_*`. `bob_nop.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
   khung → gửi).
 - `quet_chuan_bi.py --vai scout|nova|market` + `quet_nop.py`: ba vai đi tìm tin
   nhận danh sách ứng viên một dòng mỗi tin + mục BẮT BUỘC + khung tệp nộp; nop

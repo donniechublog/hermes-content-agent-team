@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""jean_chuan_bi.py — BRIEF cho Jean (teaser mời đọc bài donniechu.com).
+"""cape_chuan_bi.py — BRIEF cho Cape (teaser mời đọc bài donniechu.com).
 
 Đầu vào: URL bài (Ông Chủ dán vào chat). Script bóc bài (article_extract), in
 tiêu đề, dàn ý, toàn bộ đoạn văn (cắt trần), số ảnh, và luật của teaser_assemble
 (độ dài, cấm giọng tường thuật, không URL/emoji/câu kết). Vai chỉ viết tiêu đề
-+ các đoạn văn thuần vào spec.json rồi chạy jean_nop.py.
++ các đoạn văn thuần vào spec.json rồi chạy cape_nop.py.
 
 Dùng:
-    venv/bin/python jean_chuan_bi.py "https://www.donniechu.com/posts/..."
+    venv/bin/python cape_chuan_bi.py "https://www.donniechu.com/posts/..."
 """
 import argparse
 import json
@@ -31,7 +31,7 @@ def slug(url: str) -> str:
 
 
 def workdir(url: str) -> Path:
-    wd = env_load.state_dir() / "chuan_bi" / f"jean_{slug(url)}"
+    wd = env_load.state_dir() / "chuan_bi" / f"cape_{slug(url)}"
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 
@@ -48,7 +48,7 @@ def boc(url: str, wd: Path, lam_moi: bool) -> dict:
 
 
 def viet_brief(url: str, d: dict, wd: Path) -> str:
-    L = [f"# JEAN — BÀI ĐÃ BÓC: {d.get('title', '')}", f"URL: {url}", f"Ảnh trong bài: {len(d.get('images', []))} "
+    L = [f"# CAPE — BÀI ĐÃ BÓC: {d.get('title', '')}", f"URL: {url}", f"Ảnh trong bài: {len(d.get('images', []))} "
          "(script tự lấy 2 ảnh đầu, bạn không chọn)", ""]
     if d.get("description"):
         L.append(f"Mô tả: {d['description']}")
@@ -73,7 +73,7 @@ def viet_brief(url: str, d: dict, wd: Path) -> str:
           "Không bịa ngoài bài, không URL, không emoji, không đánh số, không câu kết (script tự thêm). "
           "Mỗi đoạn là một chuỗi riêng. Tiếng Việt có dấu, không em-dash.",
           "", "## Rồi chạy đúng MỘT lệnh:",
-          f"cd {ROOT} && venv/bin/python jean_nop.py \"{url}\"",
+          f"cd {ROOT} && venv/bin/python cape_nop.py \"{url}\"",
           "Script ráp teaser (viết hoa tiêu đề, emoji, câu kết, 2 ảnh), kiểm độ dài và giọng, gửi vào topic "
           "teaser. Báo [LOI] thì sửa đúng đoạn đó trong spec.json rồi chạy lại. KHÔNG chạy article_extract/"
           "teaser_assemble tay, KHÔNG dán lại cả teaser vào câu trả lời: trả lời Ông Chủ đúng một câu."]
@@ -81,7 +81,7 @@ def viet_brief(url: str, d: dict, wd: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Brief teaser cho Jean")
+    ap = argparse.ArgumentParser(description="Brief teaser cho Cape")
     ap.add_argument("url")
     ap.add_argument("--lam-moi", action="store_true")
     ap.add_argument("--im", action="store_true")

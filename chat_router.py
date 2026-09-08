@@ -5,7 +5,7 @@ Vi sao khong dung gateway cua hermes: gateway va approve_service khong the
 cung long-poll mot bot token (Telegram tu choi). Tach ra hai bot thi ton them
 token va them mot gateway ~584 MB. Cach nay chi can MOT bot, MOT tien trinh
 dang chay san (approve_service), va cho phep dinh tuyen theo TOPIC — nhan
-trong topic cua Jean thi Jean tra loi, trong topic cua Finn thi Finn tra loi.
+trong topic cua Cape thi Cape tra loi, trong topic cua Finn thi Finn tra loi.
 
 Moi topic giu mot phien rieng qua `chat -c <ten phien>`, nen hoi thoai co
 mach chu khong phai moi tin la mot lan chay roi rac.
@@ -62,7 +62,7 @@ def chat_hint() -> str:
     """Loi nhac che do hoi thoai, kem BRAND cua container hien tai.
 
     Vi sao kem brand: nhieu vai dung chung SOUL cho ca hai container (Gin, Ada,
-    Itachi, Bob, Jean). Khi hoi "ban lam cho kenh nao", Gin o dcgr tra loi
+    Itachi, Bob, Cape). Khi hoi "ban lam cho kenh nao", Gin o dcgr tra loi
     donniechublog, Bob luon dung handle @donniechublog. Container chi co MOT
     brand, va ma la noi biet chac dieu do — nen noi thang cho agent moi lan."""
     key = os.environ.get("CT_BRAND", "")
