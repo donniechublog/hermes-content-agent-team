@@ -45,6 +45,14 @@ DILATE_PX = 10      # no mask them bao nhieu px de trum het vien mo/bong chu
 # badge ~120x40=4800 khong du mau cho Otsu tach dang tin cay (da do that: chu
 # vo vun con sot net). Doan than bai nhieu dong thuong tren 30000, an toan.
 DIEN_TICH_TO_KIN = 15000
+# Tren nguong nay thi THU NHO anh truoc khi cho LaMa, roi chi ghep lai dung
+# vung da xoa. Do that 07/09/2026 tren may nay (7GB RAM, CPU):
+#     1024x1275  OK   9s        1536x1912  OK  16s
+#     1280x1593  OK  10s        2048x2550  CHET — doi 14.7GB mot luot cap phat
+# 2048x2550 la kich thuoc CHUAN cua carousel Instagram, nghia la truoc khi co
+# ham nay Itachi khong lam duoc bat ky anh IG nao — chet giua chung voi mot
+# traceback cua torch, khong mot dong nao noi la anh qua to.
+MAX_PX_LAMA = 3_000_000
 
 
 def _doc_giu(args_giu):
@@ -158,17 +166,49 @@ def _lama():
     return _LAMA
 
 
-def inpaint(img_bgr, mask, verbose=True):
-    if verbose:
-        print("[3/3] LaMa inpaint (lan dau nap model se cham ~5s, "
-              "moi anh sau do ~2 phut tren CPU)...", file=sys.stderr)
-    t0 = time.time()
+def _lama_chay(img_bgr, mask):
     lama = _lama()
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
     out = lama(Image.fromarray(img_rgb), Image.fromarray(mask))
+    return cv2.cvtColor(np.array(out), cv2.COLOR_RGB2BGR)
+
+
+def inpaint(img_bgr, mask, verbose=True):
+    """Xoa vung `mask` bang LaMa. Anh qua to thi dung nen o do phan giai thap
+    roi GHEP LAI dung vung da xoa vao anh goc — ngoai vung do khong mot pixel
+    nao bi dong den, nen anh khong mem di. Vung trong mask von la nen BIA ra,
+    thap phan giai hon mot chut o do chap nhan duoc; het bo nho thi khong co
+    ket qua nao het."""
+    h, w = img_bgr.shape[:2]
+    thu_nho = h * w > MAX_PX_LAMA
+    if verbose:
+        print(f"[3/3] LaMa inpaint {w}x{h}"
+              + (f" (thu nho de vua bo nho, ghep lai vung xoa)" if thu_nho else "")
+              + " (lan dau nap model ~5s)...", file=sys.stderr)
+    t0 = time.time()
+    if not thu_nho:
+        ra = _lama_chay(img_bgr, mask)
+    else:
+        r = (MAX_PX_LAMA / (h * w)) ** 0.5
+        nw, nh = max(1, int(w * r)), max(1, int(h * r))
+        nho = cv2.resize(img_bgr, (nw, nh), interpolation=cv2.INTER_AREA)
+        # Mask thu nho bang INTER_AREA roi lay MOI pixel khac 0: net chu manh
+        # thu nho bang NEAREST se dut quang va LaMa bo sot net.
+        m_nho = (cv2.resize(mask, (nw, nh), interpolation=cv2.INTER_AREA) > 0
+                 ).astype(np.uint8) * 255
+        out = cv2.resize(_lama_chay(nho, m_nho), (w, h), interpolation=cv2.INTER_LANCZOS4)
+        # Ghep co vuot bien: cat thang theo mask de lai duong vien ro giua pixel
+        # goc va pixel phong to. Nhoe 3px, va giu nguyen alpha=1 ben trong mask.
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        alpha = cv2.GaussianBlur(cv2.dilate(mask, k).astype(np.float32) / 255.0, (0, 0), 3)
+        alpha = np.clip(alpha, 0.0, 1.0)
+        alpha[mask > 0] = 1.0
+        a = alpha[:, :, None]
+        ra = (img_bgr.astype(np.float32) * (1 - a) + out.astype(np.float32) * a
+              ).clip(0, 255).astype(np.uint8)
     if verbose:
         print(f"      xong {time.time()-t0:.1f}s", file=sys.stderr)
-    return cv2.cvtColor(np.array(out), cv2.COLOR_RGB2BGR)
+    return ra
 
 
 def xoa_chu(img_bgr, giu_list=None, xoa_them_list=None, verbose=True):

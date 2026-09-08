@@ -29,8 +29,8 @@ Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_
 | Ethan | `designer` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín |
 | Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
 | Kite | `carousel-edu` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
-| Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
-| Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
+| Gin | `gin` | clean | Thay chữ Anh bằng chữ Việt trên **thẻ/dải nền phẳng**, tự tải ảnh từ link IG/X (`gin_chuan_bi.py` → `gin_nop.py`) |
+| Itachi | `itachi` | carousel.rep | Thay chữ ở **mọi chỗ** trên ảnh, kể cả đè lên ảnh thật (OCR+LaMa); hoặc dựng lại kiểu **editorial-deck** (`deck.py`) |
 | Miles | `writer` | writer | Viết caption tiếng Việt cho cả hai brand, đẩy vào hàng duyệt |
 | Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý |
 | Vera | `market` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
@@ -112,6 +112,10 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `cover` / `statement` / `steps` / `loop` / `figure` / `bars` / `cta`. Không ảnh
   thật. Cần `playwright install chromium`.
 - `deck.py` — editorial-deck của Itachi, dựng lại carousel nguồn sang tiếng Việt.
+- `doi_chu_anh.py` — xoá chữ khỏi ảnh nền: OCR định vị (EasyOCR) + mask ôm sát nét
+  + inpaint LaMa. Đường của Itachi, chỗ nền là ảnh thật.
+- `ve_chu.py` — luật VẼ chữ Việt lên ảnh dùng chung cho Gin và Itachi: chọn font,
+  cỡ chữ theo chiều cao mực đo được từ chữ gốc, màu, cổng chặn chữ tràn hộp.
 - `crop_ti_le.py` — cắt ảnh về **1:1 hoặc 4:5**. Chỉ cắt chiều cao; ảnh gốc ngang
   (≥1.4) đòi cắt bề ngang thì dừng, vì bề ngang của chart/bảng là nội dung. Ép
   bằng `--cat-ngang`, chỉ cho ảnh người/sản phẩm không có chữ.
@@ -201,7 +205,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   Ngày 04/09 Ông Chủ chọn 7 bài lúc 05:33, Nova xếp thứ 8, im lặng cả tiếng trông
   như hệ thống đứng — nên có mục này.
 - Chat Telegram (đổi 04/09): **không còn một hàng chung cho cả 12 vai** — với khoá
-  chung, Gin xoá chữ 2 phút là hỏi Miles/Ethan gì cũng đứng im theo (Itachi đợi Gin
+  chung, Itachi xoá chữ 2 phút là hỏi Miles/Ethan gì cũng đứng im theo (vai đợi LaMa
   108 s chỉ để trả lời "xác nhận"). Giờ hai tầng trong `approve_service.py`:
   - mỗi phiên `tele-<vai>` một hàng FIFO (`_HangFIFO`) — cùng vai không chạy hai lượt
     cùng lúc, tin trước trả lời trước, có báo "đang trả lời N tin trước";
@@ -210,6 +214,12 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
     hỏi quá 3–4 vai cùng lúc; đặt `=1` trong unit systemd là về hành vi cũ.
   - **Nguyên tắc (Ông Chủ, 04/09): task làm lần lượt được, reply phải song song và
     nhanh** — reply đơ là công việc treo theo hết. Task kanban vẫn `max_in_progress: 1`.
+  - **Nguyên tắc (Ông Chủ, 08/09): vai cần phản hồi ngay khi được giao task là đã
+    nhận task** — trước đó `_bao_nhan_viec` chỉ bắn khi việc CHUYỂN giữa hai vai
+    (Dre→Miles, →Kite); task MỚI tạo trong `duyet_chon_tin.py` (Ông Chủ chọn tin) thì
+    im lặng cho tới khi dispatcher thực sự chạy (tới 1 phút). Nay `_xu_ly_chon` gọi
+    `_bao_nhan_viec(..., tu_vai=None, ...)` ngay sau `create_pair` nên vai luôn được
+    báo "đã nhận task" tức thì, không đợi dispatcher.
 - Chat giữ mạch bằng `hermes chat -c tele-<vai> --create-if-missing -Q -q` (`chat_router.py`).
   Trước 04/09 dùng `--continue … -z`: `-z` được xử lý trước và thoát luôn nên `--continue`
   bị bỏ qua im lặng — **mọi** tin của **mọi** vai đều mở phiên trắng, vai nào cũng

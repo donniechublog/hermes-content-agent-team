@@ -24,66 +24,16 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_chuan_bi as gb                                    # noqa: E402
 import nop_chung as nc                                       # noqa: E402
-from card import _f, _wrap, tim_mat_dau, bo_dau_cam          # noqa: E402
+from card import tim_mat_dau, bo_dau_cam                     # noqa: E402
+import ve_chu                                                # noqa: E402
+from ve_chu import CO_MIN, FONT                              # noqa: E402  (giu ten cu cho phan duoi)
 
-FONTS = ROOT / "assets" / "fonts"
-FONT = {"bold": FONTS / "BeVietnamPro-Bold.ttf", "regular": FONTS / "BeVietnamPro-Regular.ttf",
-        "serif": FONTS / "NotoSerifDisplay.ttf", "condensed": FONTS / "Oswald.ttf",
-        "mono": FONTS / "JetBrainsMono-Bold.ttf"}
-CO_MIN = 16
-
-
-def _font_mac_dinh(h_vung: int, h_anh: int) -> str:
-    return "bold" if h_vung >= 0.045 * h_anh else "regular"
-
-
-def _ve_khoi(d: ImageDraw.ImageDraw, text: str, x: int, y: int, w: int, h: int, font_key: str,
-             color, align: str) -> None:
-    path = str(FONT.get(font_key) or FONT["regular"])
-    size = max(CO_MIN, int(h * 0.82))
-    while size > CO_MIN:
-        f = _f(path, size)
-        lines = _wrap(d, text, f, w)
-        lh = int((f.getbbox("ÂgqĐ")[3] - f.getbbox("ÂgqĐ")[1]) * 1.12)
-        if lh * len(lines) <= h * 1.05:
-            break
-        size -= 2
-    f = _f(path, size)
-    lines = _wrap(d, text, f, w)
-    lh = int((f.getbbox("ÂgqĐ")[3] - f.getbbox("ÂgqĐ")[1]) * 1.12)
-    yy = y + max(0, (h - lh * len(lines)) // 2)
-    for ln in lines:
-        tw = d.textlength(ln, font=f)
-        xx = x + (w - tw) / 2 if align == "center" else x
-        d.text((xx, yy), ln, font=f, fill=_mau(color))
-        yy += lh
-
-
-def _tran_hop(d: ImageDraw.ImageDraw, text: str, w: int, h: int, font_key: str) -> int:
-    """So pixel chieu cao BI TRAN ra ngoai hop khi da co chu nho het muc.
-
-    `_ve_khoi` co lai co chu toi CO_MIN roi VE BAT KE — vong while thoat vi
-    `size > CO_MIN` la sai, khong phai vi chu da vua. Cau dich dai gap doi cau
-    goc thi chu tran de len phan anh ben duoi va khong cong nao bao (06/09/2026).
-    """
-    path = str(FONT.get(font_key) or FONT["regular"])
-    f = _f(path, CO_MIN)
-    lines = _wrap(d, text, f, w)
-    lh = int((f.getbbox("ÂgqĐ")[3] - f.getbbox("ÂgqĐ")[1]) * 1.12)
-    return max(0, lh * len(lines) - int(h * 1.05))
-
-
-def _mau(c):
-    """color_rgb -> tuple 3 so 0-255. Spec cua vai co the ghi bat cu thu gi;
-    truoc 06/09/2026 `tuple(color)` nem TypeError giua chung buoi ve, mat ca
-    slide va vai chi thay traceback."""
-    try:
-        t = tuple(int(x) for x in list(c)[:3])
-    except (TypeError, ValueError):
-        return (20, 20, 20)
-    if len(t) != 3 or any(not 0 <= x <= 255 for x in t):
-        return (20, 20, 20)
-    return t
+# Luat VE (font, co chu, mau, cong tran hop) da chuyen sang ve_chu.py 07/09/2026
+# de Gin dung chung — xem ve_chu.py. Ba ten duoi la loi vao cu, giu nguyen cach goi.
+_font_mac_dinh = ve_chu.font_mac_dinh
+_ve_khoi = ve_chu.ve_khoi
+_tran_hop = ve_chu.tran_hop
+_mau = ve_chu.mau
 
 
 def ve_tai_cho(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list:
