@@ -86,11 +86,13 @@ khi copy thật sự là tiếng Anh). Số slide: 6..10.
 ẢNH THẬT: khung này vẽ art vector, nhưng tin nào CÓ SẴN biểu đồ, bảng số hay
 trang báo cáo thì chèn bản thật bằng kind "figure" — ảnh trải hết bề ngang
 slide (không bao giờ cắt hai bên: bề ngang của một biểu đồ là nội dung), cao
-quá thì giữ mép trên. Chữ CHÌM vào ảnh qua màn tối liền mạch + lớp mờ, y như
-Dre bên carousel.py: không bao giờ để ảnh và chữ thành hai mảng rời. Bắt buộc
-có "caption" ghi "via <ai>", và ảnh phải rộng >= 800px (chụp bằng
-chup_chart.py). Vẫn cấm: ảnh minh hoạ AI, screenshot dựng lại, logo hãng,
-số liệu tự bịa.
+quá thì giữ mép trên. Chữ đè lên ảnh: MẶC ĐỊNH không phủ lớp nền nào — chỉ đổi
+màu chữ (sáng/tối) tương phản với đúng vùng ảnh nằm dưới chữ. Lớp mờ+tối chỉ
+thêm khi vùng đó thật sự rối (đo trực tiếp trên pixel), và khi thêm thì cũng
+chỉ vừa đủ — không bao giờ tối hơn mức cần, và ranh giới trên không vượt quá
+dòng chữ đầu tiên (không có khoảng đệm để trống phía trên chữ). Bắt buộc có
+"caption" ghi "via <ai>", và ảnh phải rộng >= 800px (chụp bằng chup_chart.py).
+Vẫn cấm: ảnh minh hoạ AI, screenshot dựng lại, logo hãng, số liệu tự bịa.
 """
 
 import argparse
@@ -472,14 +474,18 @@ FIG_RONG_TOI_THIEU = 800    # hep hon the ma keo len 1080 thi be nat
 FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc duoc,
                        # khong thi cho nao lop sac khong phu se lo mot BAN SAO
                        # phong to cua chinh tam anh -> mat doc ra HAI VUNG
-FIG_MAX_TOI = 0.80     # do toi o vung chu; van la ANH LAM MO chu khong phai mang den
-# Dre bat man toi tu ~42% chieu cao vi nen ANH CHUP toi san, keo dai bao nhieu
-# cung khong ai thay. O day nen thuong la TRANG (bieu do, trang tai lieu): keo
-# dai the la ca nua tren tam anh bi phu mot lop mo mo xam xam, thay ro mon mot
-# va xau (Ong Chu che 04/09/2026). Nen chi chom len ngay TREN dong chu dau:
-# vua du de mot duong cong mem an het buoc chuyen, khong du de thanh mot dai.
-FIG_VEIL_LEAD = 132    # px man toi chom len tren dong chu dau — CHI cho anh chup
-FIG_VEIL_QUA = 46      # px qua khoi dinh tieu de thi da dam toi da
+# MAC DINH KHONG CO LOP NEN (Ong Chu chot 08/09/2026, nhac lai nhieu lan): chu
+# de len anh thi doi MAU CHU (sang/toi) cho tuong phan voi dung vung anh nam
+# duoi no, KHONG mac dinh phu mot man toi/mo len ca anh. Lop mo+tinh chi la
+# NGOAI LE — dung khi do thang tren pixel thay vung do qua "roi" (bien thien
+# cao, chu mot mau khong an toan), va khi dung thi cung chi VUA DU, khong bao
+# gio dam hon muc can. Truoc day FIG_MAX_TOI co san 0.80 la sai huong: luon
+# phu du roi moi tinh tiep, thay vi hoi truoc co can phu khong.
+NGUONG_SANG_CHU_TOI = 150  # do sang (0..255) vung duoi chu: qua nguong -> chu TOI
+NGUONG_ROI_CAN_LOP = 26    # do lech (stddev xam) vung duoi chu: qua nguong moi can lop
+TOI_TOI_DA_MO = 0.55       # tran tren cua lop (khi can): "vua du", khong phu ca mang
+VEIL_SPAN = 64             # px: be day duong cong chuyen tiep, bat dau NGAY tai
+                           # dong chu dau — khong con khoang dem truoc no nua
 FIG_TIEU_DE_DONG = 2   # slide co anh: tieu de toi da bay nhieu dong
 FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
 FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
@@ -543,6 +549,10 @@ def doc_nen(p):
     return _nho(("nen", str(p)), lambda: _doc_nen_that(p))
 
 
+NGUONG_LECH_VIEN = 20        # +-do lech mau (tung kenh) con tinh la "gan mau nen"
+TI_LE_PHANG_TOI_THIEU = 0.85  # ti le pixel vien phai gan mau nen moi goi la phang
+
+
 def _doc_nen_that(p):
     from PIL import Image, ImageStat
     with Image.open(p) as im:
@@ -551,16 +561,48 @@ def _doc_nen_that(p):
         d = max(2, min(w, h) // 50)
         vien = [im.crop((0, 0, w, d)), im.crop((0, h - d, w, h)),
                 im.crop((0, 0, d, h)), im.crop((w - d, 0, w, h))]
-        tb = [ImageStat.Stat(v).mean[:3] for v in vien]
-        lech = max(max(ImageStat.Stat(v).stddev[:3]) for v in vien)
+        # MEDIAN + ti le pixel gan mau nen, khong phai mean/stddev: mot bang so
+        # duoc chup sat mep thi hang cuoi (chu/duong ke) hay dinh dung ngay tren
+        # dai vien duoi — chi la THIEU SO trong vien do, nhung stddev bi mot
+        # nhom pixel tuong phan cao keo vong len rat manh, doc nham ra "mo" (anh
+        # chup) roi che mat man toi tran ca len phan bang con doc duoc (Ong Chu
+        # bao 08/09/2026: bang cau hinh bi che mat hang cuoi, chu va anh doc ra
+        # hai mang). Ti le pixel nam trong NGUONG_LECH_VIEN quanh median moi
+        # phan anh dung cau hoi "vien nay co phai CHU YEU mot mau khong".
+        tb, ti_le = [], []
+        for v in vien:
+            st = ImageStat.Stat(v)
+            med = [int(round(x)) for x in st.median]
+            tb.append(med)
+            for k in range(3):
+                lo, hi = max(0, med[k] - NGUONG_LECH_VIEN), min(255, med[k] + NGUONG_LECH_VIEN)
+                ti_le.append(sum(st.h[k * 256:k * 256 + 256][lo:hi + 1]) / st.count[k])
         toan = ImageStat.Stat(im).mean[:3]
     khac = max(abs(a[k] - b[k]) for a in tb for b in tb for k in range(3))
-    phang = lech < 14 and khac < 16
+    phang = min(ti_le) >= TI_LE_PHANG_TOI_THIEU and khac < 16
     mau = tuple(int(sum(t[k] for t in tb) / 4) for k in range(3))
     # Dinh the luon la NEN (anh khong tran len FIG_DINH), nen do sang o dinh la
     # do sang cua nen: mau phang, hoac mau trung binh cua ban lam mo.
     return ("phang" if phang else "mo",
             "#%02X%02X%02X" % mau, _sang(mau if phang else toan) > 140)
+
+
+def _vung_duoi_chu(p, cao_hien, ti_le=0.35):
+    """Do sang + do 'roi' (stddev xam) cua dung dai PIXEL se nam duoi khoi chu
+    — dung ImageOps.fit mo phong chinh xac object-fit:cover;object-position:top
+    ma CSS se ve, khong doan mo. -> (do sang 0..255, do roi 0..255).
+
+    Chi dung cho anh CHUP (kieu "mo"): anh "phang" khong con chi tiet gi duoi
+    no de do — xem nhanh phang trong anh_lam_nen.
+    """
+    from PIL import Image, ImageOps, ImageStat
+    im = _nho(("pil", str(p)), lambda: Image.open(p).convert("RGB"))
+    cao_i = max(1, int(round(cao_hien)))
+    fit = ImageOps.fit(im, (W, cao_i), centering=(0.5, 0.0))
+    d = max(1, int(cao_i * ti_le))
+    dai = fit.crop((0, cao_i - d, W, cao_i)).convert("L")
+    st = ImageStat.Stat(dai)
+    return st.mean[0], st.stddev[0]
 
 
 def dat_anh(rong, cao, phang):
@@ -753,25 +795,62 @@ def s_loop(sl, th):
     return g + body
 
 
+def _mau_toi(th):
+    """Ma hex CYAN nhan dien cua theme, ep toi 42% — van ra dung mau nhung doc
+    duoc tren nen sang. Dung cho eyebrow/accent khi chu phai doi sang TOI."""
+    a = [int(th["a"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4)]
+    return "#%02X%02X%02X" % tuple(int(c * 0.42) for c in a)
+
+
+def _css_mast_toi():
+    """Masthead (ten kenh trai, section phai, gach ngang) doi sang TOI — dung
+    khi DINH the (o tren, sau masthead) la nen sang: mot man toi rieng dat len
+    tren se ve ra mot dai band vat ngang, dung cai dang tranh."""
+    return ('<style>.mast-name,.mast-sec{color:rgba(0,0,0,0.62);}'
+            '.rule{background:rgba(0,0,0,0.16);}</style>')
+
+
+def _css_chu_toi_vung(scope, th):
+    """<style> lat toan bo mau chu trong `scope` (vd '#figtxt') sang TOI — dung
+    khi vung ngay duoi khoi chu do la SANG. Ap dung het: eyebrow, tieu de,
+    accent, standfirst, caption, card, byline — khong chi rieng eyebrow nhu
+    truoc (Ong Chu chot 08/09/2026: doi mau chu la cach chinh, khong phai
+    phu them nen)."""
+    a_toi = _mau_toi(th)
+    return (f'<style>{scope} .eyebrow-txt{{color:{a_toi};}}'
+            f'{scope} .eyebrow-bar{{background:{a_toi};}}'
+            f'{scope} .fig-bar{{background:{a_toi};}}'
+            f'{scope} .title{{color:rgba(0,0,0,0.85);}}'
+            f'{scope} .accent{{color:{a_toi};}}'
+            f'{scope} .standfirst{{color:rgba(0,0,0,0.68);}}'
+            f'{scope} .fig-cap{{color:rgba(0,0,0,0.55);}}'
+            f'{scope} .card-txt{{color:rgba(0,0,0,0.78);}}'
+            f'{scope} .card-num{{color:{a_toi};}}'
+            f'{scope} .byline{{color:rgba(0,0,0,0.55);}}'
+            f'{scope} .byline .b0{{color:rgba(0,0,0,0.85);}}'
+            f'{scope} .dot{{background:rgba(0,0,0,0.4);}}</style>')
+
+
 def anh_lam_nen(sl, th, ten):
-    """Dung ANH THAT thanh nen ca the + man toi cho chu — MOT MAT PHANG LIEN,
-    dung ngon ngu cua Dre (carousel.py). Dung chung cho slide `figure` va cho
-    bia khi bia co anh.
+    """Dung ANH THAT thanh nen ca the. Dung chung cho slide `figure` va cho
+    bia khi bia co anh. -> (html nen, html script dat lop mo neu can). Khoi
+    chu goi rieng, id="figtxt".
 
-    -> (html nen, html script dat man toi). Khoi chu goi rieng, id="figtxt".
+    Nguyen tac (Ong Chu chot 08/09/2026, nhac lai nhieu lan — day la nguyen
+    tac SAU hon ban cu "man toi lien mach"):
 
-    Nguyen tac:
+      MAC DINH KHONG PHU LOP NAO len anh. Doi MAU CHU (sang hoac toi) cho
+      tuong phan voi dung vung anh nam duoi no la du — do thang do sang tren
+      pixel that (ImageOps.fit mo phong dung object-fit:cover), khong doan.
+      Chi khi vung do THAT SU roi (bien thien mau cao — vd anh chup nhieu chi
+      tiet) thi moi them mot lop mo+tinh nhe, va khi them cung chi VUA DU de
+      xoa chi tiet gay roi, khong bao gio dam hon muc can. Ranh gioi tren cua
+      lop do khong duoc vuot qua dong chu dau tien — khong con khoang dem de
+      trong phia tren chu nhu ban cu.
 
-      - NEN bao gio cung la anh, khong bao gio la mot hop den dat canh anh: ban
-        cover cua chinh tam anh phu kin the roi LAM MO MANH. Mo de no thanh mot
-        mang mau lien; de sac net thi cho nao lop sac khong phu se lo mot ban
-        sao lech cua cung noi dung — mat doc ra ngay hai vung.
-      - LOP SAC de len tren, full be ngang, KHONG cat hai canh.
-      - CHU de len anh qua man toi + mot lop mo cua chinh tam anh, hai lop di
-        cung mot nhip. Nen PHANG thi man toi neo vao chan chu eyebrow, anh CHUP
-        thi chom len som hon — xem doan dat man toi ben duoi. Khong lam toi
-        rieng phan nen: nen toi hon han lop sac se ve ra dung mot hinh chu nhat
-        quanh anh.
+      NEN bao gio cung la anh (hoac dung mau nen phang cua no), khong bao gio
+      la mot hop den dat canh anh. LOP SAC trai full be ngang, KHONG cat hai
+      canh.
     """
     p, iw, ih = _do_anh(sl["image"])
     kieu, mau_nen, nen_sang = doc_nen(p)
@@ -785,96 +864,75 @@ def anh_lam_nen(sl, th, ten):
         print(f"{ten} {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
               f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
     uri = _anh_data_uri(p)
-    # "phang": trai thang mau nen cua anh ra ca the — cung mot mau thi khong the
-    # co mep. "mo": ban cover cua chinh tam anh, lam mo manh (kieu Dre) — dung
-    # cho anh chup, noi khong co mau nen nao de trai.
     # Bi cat thi cho phan cuoi TAN vao nen thay vi dut ngang: nen cung mau nen
     # anh chi viec loang ra, doc thanh "con nua o duoi" chu khong phai "bi xen".
     mo_day = ('' if cao_that <= cao else
               'mask-image:linear-gradient(to bottom,#000 calc(100% - 130px),'
               'transparent 100%);-webkit-mask-image:linear-gradient(to bottom,'
               '#000 calc(100% - 130px),transparent 100%);')
-    lot = ('' if kieu == "phang"
-           else f'<img class="fig-nen" src="{uri}" alt="">')
+
+    if kieu == "phang":
+        # Nen la MOT MAU PHANG tu tren xuong duoi (mau_nen trai het figwrap):
+        # duoi anh KHONG con chi tiet gi de "chim" hay can mo — chi can chon
+        # mau chu tuong phan voi mau_nen, KHONG phu lop nao.
+        nen = (f'<div class="figwrap" style="background:{mau_nen};">'
+               f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
+               f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
+               f'</div>')
+        if nen_sang:
+            nen += _css_mast_toi() + _css_chu_toi_vung("#figtxt", th)
+        return nen, ''
+
+    # kieu == "mo": anh CHUP that co the co chi tiet ngay tai vung se de chu
+    # len. Do thang do sang/do roi tren dung dai pixel do (khong doan), quyet
+    # dinh mau chu VA co can lop mo hay khong.
+    sang_duoi, roi_duoi = _vung_duoi_chu(p, cao)
+    chu_toi = sang_duoi > NGUONG_SANG_CHU_TOI
+    can_lop = roi_duoi > NGUONG_ROI_CAN_LOP
+    tint = th["bg"] if not chu_toi else "#FFFFFF"
+    r, g, b = (int(tint.lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
+
+    molop = (f'<div class="fig-molop" id="figmo">'
+             f'<img class="fig-doi" src="{uri}" alt="" style="top:{y0}px;height:{cao}px;'
+             f'object-fit:cover;object-position:top;"></div>'
+             f'<div class="fig-man" id="figman"></div>') if can_lop else ''
     nen = (
         f'<div class="figwrap" style="background:{mau_nen};">'
-        f'{lot}'
+        f'<img class="fig-nen" src="{uri}" alt="">'
         f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
         f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
-        f'<div class="fig-molop" id="figmo">'
-        f'<img class="fig-doi" src="{uri}" alt="" style="top:{y0}px;height:{cao}px;'
-        f'object-fit:cover;object-position:top;"></div>'
-        f'<div class="fig-man" id="figman"></div>'
-        f'</div>'
+        f'{molop}</div>'
     )
-    # Dinh the sang thi masthead phai doi sang muc toi, khong the phu them mot
-    # man toi o tren: man do chinh la mot dai band vat ngang, dung cai dang tranh.
     if nen_sang:
-        # Eyebrow gio nam TREN mep man toi, tuc la nam trang tren nen sang. Mau
-        # nhan cua theme sinh ra de dat tren nen toi, de nguyen la chu chim mat.
-        # Ep no toi di 58% — van ra dung mau do, ma doc duoc tren nen trang.
-        a = [int(th["a"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4)]
-        a_toi = "#%02X%02X%02X" % tuple(int(c * 0.42) for c in a)
-        nen += (f'<style>.mast-name,.mast-sec{{color:rgba(0,0,0,0.62);}}'
-                f'.rule{{background:rgba(0,0,0,0.16);}}'
-                f'#figtxt .eyebrow-txt{{color:{a_toi};}}'
-                f'#figtxt .eyebrow-bar{{background:{a_toi};}}</style>')
-    # Man toi phai bat dau TREN dong chu dau, ma chieu cao khoi chu chi biet sau
-    # khi trinh duyet do xong — nen dung mot doan script ngan tu dat lai. Tinh
-    # san bang Python thi phai doan so dong tieu de, doan sai la lo mep.
-    r, g, b = (int(th["bg"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
-    # Dre de man toi dung o 80% vi duoi no la ANH CHUP — con thay anh moi dung.
-    # Duoi mot mau PHANG (chart nen trang) thi khong con gi de giu: dung o 80%
-    # tren nen trang ra mot vung xam nhat, lech han tone toi cua ca album. Nen
-    # day man toi len vua du de vung chu cham gan mau nen cua theme.
-    max_toi = FIG_MAX_TOI
-    if kieu == "phang":
-        chenh = _sang([int(mau_nen[k:k + 2], 16) for k in (1, 3, 5)]) - _sang((r, g, b))
-        max_toi = min(0.95, max(FIG_MAX_TOI, 1 - 20.0 / max(1.0, chenh)))
+        nen += _css_mast_toi()
+    if chu_toi:
+        nen += _css_chu_toi_vung("#figtxt", th)
+    if not can_lop:
+        return nen, ''
+
+    # Anh du "roi" de can mo: do do mo VUA DU theo dung do roi do duoc, tran o
+    # TOI_TOI_DA_MO (thap hon han mac dinh cu) — cang roi thi cang can nhieu,
+    # khong phai luon phu san mot muc cao roi moi tinh tiep.
+    max_toi = min(TOI_TOI_DA_MO, max(0.0, (roi_duoi - NGUONG_ROI_CAN_LOP) / 90.0))
     js = (f'<script>window.__datMan=function(){{'
           f'var H={H},MAX={max_toi:.3f};'
           # set_content giu nguyen window nen ham nay con song sang slide sau;
-          # slide khong phai figure thi khong co phan tu nao — thoat ngay.
+          # slide khong phai figure/khong can lop thi khong co phan tu — thoat.
           f'var v=document.getElementById("figman");if(!v)return;'
           f'var t=document.getElementById("figtxt");'
           f'var top=t?t.getBoundingClientRect().top:H*0.58;'
-          # Nen PHANG: phia tren dong chu dau phai TRONG TUYET DOI. Mot dai
-          # chuyen tiep dai tren mot mang mau phang khong "chim" di nhu tren anh
-          # chup — no lu lu ra do thanh mot vet xam (Ong Chu che 04/09/2026).
-          # Nen moc dung CHAN cua eyebrow: tren no khong mot chut mau nao, tu no
-          # tang dan, qua khoi dinh tieu de la da dam toi da.
-          # Anh CHUP thi nguoc lai: dai chuyen tiep dai chinh la thu lam chu
-          # chim vao anh, va tren anh thi mat khong bat duoc no. Giu kieu Dre.
-          f'var eb=t?t.querySelector(".eyebrow"):null,h1=t?t.querySelector("h1"):null;'
-          f'var tren,day;'
-          f'if({"true" if kieu == "phang" else "false"}&&eb){{'
-          f'tren=eb.getBoundingClientRect().bottom;'
-          f'day=h1?h1.getBoundingClientRect().top+{FIG_VEIL_QUA}:tren+70;'
-          f'if(day<tren+40)day=tren+40;}}'
-          f'else{{tren=Math.max(0,top-{FIG_VEIL_LEAD});day=top+26;}}'
-          f'day=Math.min(H,day);span=H-tren;var st=[],sm=[];'
-          # Duong cong chu S (smoothstep): bang phang o CA HAI dau. Bat dau bang
-          # phang nen khong co buoc nhay o cho no chom len, ket thuc bang phang
-          # nen khong co mep o cho no cham toi da — nho vay moi rut ngan duoc dai
-          # chuyen tiep ma mat van khong bat duoc dau la mep.
+          # KHONG con khoang dem truoc dong chu dau: lop bat dau NGAY tai do,
+          # dai chuyen tiep chi dai VEIL_SPAN px — vua du mot duong cong mem,
+          # khong du de thanh mot khoang nen bo trong.
+          f'var tren=top,day=Math.min(H,top+{VEIL_SPAN});'
+          f'var span=Math.max(1,H-tren);var st=[],sm=[];'
           f'for(var i=0;i<=16;i++){{'
           f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'
           f'pc=((y-tren)/span*100).toFixed(2);'
           f'st.push("rgba({r},{g},{b},"+(MAX*ss).toFixed(3)+") "+pc+"%");'
-          # Lop mo di CHUNG mot nhip voi man toi (Dre: "ca lop mo lan lop toi
-          # dung cung mot mat na"), nhung binh phuong them: lam mo la thu mat
-          # nhan ra som nhat, de no len sau mot chut thi vung tren sach hon.
-          f'sm.push("rgba(0,0,0,"+(0.96*ss*ss).toFixed(3)+") "+(y/H*100).toFixed(2)+"%");}}'
+          f'sm.push("rgba(0,0,0,"+(0.85*ss*ss).toFixed(3)+") "+(y/H*100).toFixed(2)+"%");}}'
           f'st.push("rgba({r},{g},{b},{max_toi:.3f}) 100%");'
-          f'sm.unshift("rgba(0,0,0,0) 0%");sm.push("rgba(0,0,0,0.96) 100%");'
-          # Khoi chu dai thi man toi bat cao, an len than anh. Thay vi cat bot
-          # anh (mat noi dung), KEO ANH LEN cho day no vua cham mep man toi —
-          # chi keo trong phan le con trong o tren, khong bao gio cham masthead.
-          f'var ds=document.querySelectorAll(".fig-doi");'
-          f'if(ds.length){{var iy=parseFloat(ds[0].style.top),'
-          f'ih=parseFloat(ds[0].style.height),'
-          f'doi=Math.min(Math.max(0,iy+ih-tren),Math.max(0,iy-{FIG_DINH}));'
-          f'if(doi>0){{for(var k=0;k<ds.length;k++)ds[k].style.top=(iy-doi)+"px";}}}}'
+          f'sm.unshift("rgba(0,0,0,0) 0%");sm.push("rgba(0,0,0,0.85) 100%");'
           f'var m=document.getElementById("figmo");'
           f'var g="linear-gradient(to bottom,"+sm.join(",")+")";'
           f'if(m){{m.style.webkitMaskImage=g;m.style.maskImage=g;}}'
