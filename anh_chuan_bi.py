@@ -404,6 +404,23 @@ def anh_commons(tu_khoa: str, so: int = 4) -> list:
     return ra[:so]
 
 
+# Tu tieng Anh CHUNG hay bi nham la ten rieng vi dung dau cau/sau dau hai cham
+# (viet hoa theo chinh ta tieng Anh, khong phai vi la ten rieng) — "Foundry
+# power balance flips: Samsung's choice..." -> "Foundry" mot minh ra Commons
+# toan xuong duc kim loai Milwaukee/quan bar ten "Foundry Live", khong lien
+# quan gi ban dan (Ong Chu 08/09/2026, cung loai loi voi "Gimlet" -> cocktail
+# 05/09/2026 nhung khac nguyen nhan: do la tu hiem gap tu vung chung, day la tu
+# thuong dung nhung ro ngau nhien dung dau cau/menh de). RIENG cho ham nay —
+# KHONG gop vao nguon_bai.TU_RONG_TRUY_VAN vi set do con dung loc tu truy van
+# bao khac, noi "foundry" la tu khoa TOT can giu lai.
+TU_CHUNG_DAU_CAU = {
+    "foundry", "power", "choice", "chip", "chips", "deal", "deals", "report",
+    "study", "data", "demand", "supply", "growth", "boom", "wave", "race",
+    "war", "threat", "risk", "rise", "fall", "shift", "era", "future",
+    "market", "markets", "jobs", "job", "apocalypse", "crisis", "battle",
+    "fight", "surge", "slump", "crunch", "squeeze", "gap", "divide", "bet",
+    "bets", "bubble", "boost", "cut", "cuts", "push", "plan", "plans",
+}
 def _ten_rieng_dau(tieu_de: str) -> str:
     """Cum ten rieng dau tieu de (hang/san pham) lam tu khoa Commons: lay CAC TU
     VIET HOA LIEN TIEP ("Gimlet Labs", "Thinking Machines"), khong chi mot tu —
@@ -412,7 +429,8 @@ def _ten_rieng_dau(tieu_de: str) -> str:
     t = re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or "")
     ws = re.sub(r"[\$;:,\"'()\[\]|]", " ", t).split()
     for i, w in enumerate(ws):
-        if w[:1].isupper() and w.isalpha() and len(w) >= 4 and w.lower() not in nguon_bai.TU_RONG_TRUY_VAN:
+        if w[:1].isupper() and w.isalpha() and len(w) >= 4 and w.lower() not in nguon_bai.TU_RONG_TRUY_VAN \
+                and w.lower() not in TU_CHUNG_DAU_CAU:
             cum = [w]
             for w2 in ws[i + 1:i + 3]:
                 if w2[:1].isupper() and w2.isalpha() and w2.lower() not in nguon_bai.TU_RONG_TRUY_VAN \
