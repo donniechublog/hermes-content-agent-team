@@ -8,6 +8,13 @@ lớn nhất còn vừa bề ngang và chiều cao box (tối thiểu 16px), fon
 cao (≥4.5% ảnh → bold, không thì regular) trừ khi spec ghi `font`; `gop`
 [a, b, text] gộp dải vùng a..b thành một khối, wrap nhiều dòng trong khối đó.
 
+Màu chữ MẶC ĐỊNH giữ nguyên màu đo được lúc OCR (gin_chuan_bi.mau_chu, đo
+TRÊN ẢNH GỐC, trước khi xoá) — giữ đúng thiết kế gốc. Nhưng nền dưới đó là
+NỀN ĐÃ XOÁ/VẼ LẠI (LaMa), có thể lệch tông so với lúc đo màu chữ; script tự
+đo lại độ tương phản THẬT giữa màu đó và nền hiện tại (`nen_chu.py`, dùng
+chung với card.py/carousel.py/render_edu.py) ngay trước khi vẽ — chỉ khi
+KHÔNG đủ mới đổi sang màu an toàn (trắng/đen tuỳ nền), xem `_mau_an_toan`.
+
 Dùng:
     venv/bin/python itachi_nop.py 338              # spec ở state/<brand>/chuan_bi/itachi_338/spec.json
     venv/bin/python itachi_nop.py 338 --khong-gui  # thử
@@ -23,6 +30,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_chuan_bi as gb                                    # noqa: E402
+import nen_chu                                               # noqa: E402
 import nop_chung as nc                                       # noqa: E402
 from card import _f, _wrap                                   # noqa: E402
 from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
@@ -32,6 +40,11 @@ FONT = {"bold": FONTS / "BeVietnamPro-Bold.ttf", "regular": FONTS / "BeVietnamPr
         "serif": FONTS / "NotoSerifDisplay.ttf", "condensed": FONTS / "Oswald.ttf",
         "mono": FONTS / "JetBrainsMono-Bold.ttf"}
 CO_MIN = 16
+# Ti le tuong phan toi thieu (WCAG) giua mau chu va nen — muc "chu lon/dam"
+# (3.0) chu khong phai muc "chu thuong" (4.5): chu dich luon to/dam het co
+# theo _ve_khoi. Duoi muc nay moi doi mau, dung "mac dinh khong doi gi neu
+# khong can" — giu dung thiet ke goc khi van con doc duoc.
+NGUONG_TUONG_PHAN = 3.0
 
 
 def _font_mac_dinh(h_vung: int, h_anh: int) -> str:
@@ -85,6 +98,23 @@ def _mau(c):
     if len(t) != 3 or any(not 0 <= x <= 255 for x in t):
         return (20, 20, 20)
     return t
+
+
+def _mau_an_toan(color_rgb, nen_vung) -> tuple:
+    """Mau chu OCR do tren anh GOC (truoc khi xoa) co con du tuong phan voi
+    NEN THAT sau khi da xoa/ve lai (LaMa) khong — do thang tren pixel
+    (nen_chu.py), khong doan. Du roi thi GIU NGUYEN mau goc (mac dinh khong
+    doi gi). Khong du (nen sau khi xoa lech tong so voi luc do mau chu) moi
+    doi sang mau AN TOAN — trang tren nen toi, den tren nen sang.
+
+    -> (mau_dung, co_doi_khong)."""
+    if nen_vung.width < 1 or nen_vung.height < 1:
+        return color_rgb, False
+    mau_nen = nen_chu.mau_trung_binh(nen_vung)
+    if nen_chu.ti_le_tuong_phan(color_rgb, mau_nen) >= NGUONG_TUONG_PHAN:
+        return color_rgb, False
+    sang, _ = nen_chu.do_sang_lech(nen_vung)
+    return ((255, 255, 255) if sang < 128 else (0, 0, 0)), True
 
 
 def ve_tai_cho(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list:
@@ -148,6 +178,16 @@ def ve_tai_cho(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list:
             loi.append(f"slide {s['id']}: bản dịch {kh['text'][:36]!r} tràn hộp "
                        f"{tran}px kể cả khi đã nhỏ hết cỡ ({CO_MIN}px) — rút gọn "
                        "câu, hoặc gộp vùng để có chỗ rộng hơn")
+        # Mau chu do luc OCR (tren anh GOC) co the khong con du tuong phan voi
+        # NEN THAT sau khi LaMa da xoa/ve lai — do lai tren dung pixel se hien
+        # (im la nen_sach, chua ve gi len o day). Chi doi mau khi that su
+        # khong du, con lai giu nguyen thiet ke goc.
+        nen_vung = im.crop((kh["x"], kh["y"], kh["x"] + kh["w"], kh["y"] + kh["h"]))
+        kh["color_rgb"], da_doi_mau = _mau_an_toan(_mau(kh["color_rgb"]), nen_vung)
+        if da_doi_mau:
+            print(f"[canh bao] slide {s['id']}: vùng {kh['x']},{kh['y']} màu chữ gốc "
+                  "không đủ tương phản với nền sau khi đã xoá — đã đổi sang màu an toàn",
+                  file=sys.stderr)
     if loi:
         return loi
     for kh in khoi:
