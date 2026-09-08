@@ -120,22 +120,73 @@ def co_tieng_viet(t: str) -> bool:
     return bool(_DAU_VIET.search(t or ""))
 
 
-def _tieu_de_trang(url: str) -> str:
-    """og:title / <title> cua bai goc — tieu de tieng Anh THAT cua toa soan."""
+# Trang chan bot (Cloudflare/Akamai) tra 403 kem trang "Just a moment...", hoac
+# title chi con la ten mien tran. Nhan dien de KHONG dem lam tieu de that (bai
+# Economist 08/09/2026: httpx lan Playwright/Chromium that deu bi chan giong nhau).
+_CHAN_BOT = re.compile(r"just a moment|attention required|checking your browser|"
+                       r"access denied|are you (a )?human|enable javascript and cookies",
+                       re.I)
+
+RSS_DOAN = ("/rss.xml", "/feed", "/feed.xml", "/feed/", "/rss", "/index.xml")
+
+
+def _tieu_de_rss(url: str) -> str:
+    """Do RSS cong khai cua toa soan de lay tieu de THAT khi trang bai bi chan bot.
+
+    Vi du that: economist.com chan ca httpx lan Chromium that (403 "Just a
+    moment..."), nhung economist.com/finance-and-economics/rss.xml van 200 va
+    liet ke dung bai voi tieu de goc. Doan feed toan trang truoc, roi feed theo
+    chuyen muc (doan dau URL) — khop link (bo query/slash cuoi) de lay tieu de."""
     try:
-        r = httpx.get(url, headers=HDR, timeout=20, follow_redirects=True)
-        html = r.text[:200_000]
-        m = (re.search(r'property=["\']og:title["\'][^>]*content=["\']([^"\']+)', html, re.I)
-             or re.search(r'content=["\']([^"\']+)["\'][^>]*property=["\']og:title', html, re.I)
-             or re.search(r"<title[^>]*>([^<]{5,200})</title>", html, re.I))
-        if not m:
-            return ""
-        import html as _h
-        t = _h.unescape(m.group(1)).strip()
-        t = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "", t)      # bo " | Ten bao"
-        return "" if co_tieng_viet(t) or len(t) < 8 else t
+        u = up.urlsplit(url)
     except Exception:                                        # noqa: BLE001
         return ""
+    if not u.scheme or not u.netloc:
+        return ""
+    goc = f"{u.scheme}://{u.netloc}"
+    doan_dau = u.path.strip("/").split("/")[0] if u.path.strip("/") else ""
+    ung_vien = [goc + d for d in RSS_DOAN]
+    if doan_dau:
+        ung_vien = [f"{goc}/{doan_dau}/rss.xml", f"{goc}/{doan_dau}/feed"] + ung_vien
+    dich = url.split("?")[0].rstrip("/")
+    for feed in ung_vien[:6]:
+        try:
+            r = _tai(feed, 12)
+            if r.status_code != 200 or b"<item" not in r.content[:400_000]:
+                continue
+            for it in ET.fromstring(r.content).findall(".//item"):
+                lk = (it.findtext("link") or "").split("?")[0].rstrip("/")
+                if lk != dich:
+                    continue
+                t = (it.findtext("title") or "").strip()
+                if t and not co_tieng_viet(t):
+                    print(f"[nguon_bai] tieu de tim = RSS toa soan ({feed}): {t[:90]}",
+                          file=sys.stderr)
+                    return t
+        except Exception:                                    # noqa: BLE001
+            continue
+    return ""
+
+
+def _tieu_de_trang(url: str) -> str:
+    """og:title / <title> cua bai goc — tieu de tieng Anh THAT cua toa soan.
+    Trang bi chan bot (403/challenge) -> thu RSS cong khai truoc khi bo cuoc."""
+    try:
+        r = httpx.get(url, headers=HDR, timeout=20, follow_redirects=True)
+        if r.status_code == 200:
+            html = r.text[:200_000]
+            m = (re.search(r'property=["\']og:title["\'][^>]*content=["\']([^"\']+)', html, re.I)
+                 or re.search(r'content=["\']([^"\']+)["\'][^>]*property=["\']og:title', html, re.I)
+                 or re.search(r"<title[^>]*>([^<]{5,200})</title>", html, re.I))
+            if m:
+                import html as _h
+                t = _h.unescape(m.group(1)).strip()
+                t = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "", t)  # bo " | Ten bao"
+                if t and len(t) >= 8 and not co_tieng_viet(t) and not _CHAN_BOT.search(t):
+                    return t
+    except Exception:                                        # noqa: BLE001
+        pass
+    return _tieu_de_rss(url)
 
 
 def _ten_rieng_khong_dau(tieu_de_viet: str) -> str:
@@ -152,13 +203,20 @@ def _ten_rieng_khong_dau(tieu_de_viet: str) -> str:
 
 
 def tieu_de_tim(tieu_de: str, link: str) -> str:
-    """Tieu de DUNG DE TIM KIEM (tieng Anh). Rong = khong duoc tim gi ca."""
-    if tieu_de and not co_tieng_viet(tieu_de):
-        return tieu_de
+    """Tieu de DUNG DE TIM KIEM (tieng Anh). Rong = khong duoc tim gi ca.
+
+    Uu tien HEADLINE THAT cua toa soan (og:title hoac RSS) hon tieu de dau vao,
+    ke ca khi tieu de dau vao da la tieng Anh: no co the la DEK/subtitle hay
+    tieu de HN paraphrase, cau chu khac voi cach bao khac dua lai tin nen tim
+    ra 0 ket qua. Vi du that (Economist 08/09/2026): dek "Initial effects of AI
+    technology on employment look positive" -> Google News 0 bai; headline that
+    "The jobs apocalypse is postponed. An AI jobs boom is here" -> ra New Yorker."""
     en = _tieu_de_trang(link) if link else ""
     if en:
-        print(f"[nguon_bai] tieu de tim = og:title bai goc: {en[:90]}", file=sys.stderr)
+        print(f"[nguon_bai] tieu de tim = og:title/RSS bai goc: {en[:90]}", file=sys.stderr)
         return en
+    if tieu_de and not co_tieng_viet(tieu_de):
+        return tieu_de
     en = _ten_rieng_khong_dau(tieu_de)
     if len(en.split()) >= 2:
         # Bac 3: hoi Google News bang ten rieng, lay HEADLINE tieng Anh cua bai
