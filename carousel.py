@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
-"""Dung carousel nhieu slide kieu bang tin — anh phu kin the, chu trang CHIM
-vao anh qua mot man toi lien mach, chip ten kenh o goc duoi-trai. Khac han
-card.py (mot the bia kieu tran): day la mot bo N slide ke chuyen, dung cho Dre.
+"""Dung carousel nhieu slide kieu bang tin — anh phu kin the, chip ten kenh o
+goc duoi-trai. Khac han card.py (mot the bia kieu tran): day la mot bo N slide
+ke chuyen, dung cho Dre.
 
-LUAT TREN HET (Ong Chu chot 04/09/2026): moi slide la MOT MAT PHANG LIEN.
-Khong vien, khong vach, khong vung den rieng, khong hai vung tach roi. Chu de
-len anh qua gradient dai; nen bao gio cung la anh (lam mo), khong bao gio la
-mot hop den dat canh anh.
+LUAT TREN HET (Ong Chu chot 04/09/2026, cap nhat 08/09/2026 — xem memory
+[[nguyen-tac-lop-nen-chu-tren-anh]]): moi slide la MOT MAT PHANG LIEN. Khong
+vien, khong vach, khong vung den rieng, khong hai vung tach roi. Chu de len
+anh: MAC DINH KHONG PHU LOP NAO — FG (trang/den, co dinh theo NEN ca bo) tu no
+da tuong phan voi hau het anh. Chi khi do that tren pixel thay vung duoi chu
+khong du tuong phan (qua sang/toi, hoac qua "roi") moi them mot lop mo+tinh
+NGAN va VUA DU (_lop_neu_can), khong bao gio bat dau truoc dong chu dau tien.
+Nen bao gio cung la anh (lam mo neu can), khong bao gio la mot hop den dat
+canh anh.
 
 Bo cuc moi slide (1080x1350, ti le 4:5; nen "toi" mac dinh hoac "sang" — xem NEN):
 
   Slide bia (slide 1):
-    - Anh phu kin the (cover), man toi day dan o nua duoi.
-    - Cau hook chu dam trang, canh trai, nam sat day.
+    - Anh phu kin the (cover), lop mo+tinh o nua duoi CHI KHI can.
+    - Cau hook chu dam, canh trai, nam sat day.
     - Nhan ngan (kicker) o duoi hook.
 
   Slide than (slide 2..N):
@@ -20,8 +25,8 @@ Bo cuc moi slide (1080x1350, ti le 4:5; nen "toi" mac dinh hoac "sang" — xem N
       cua chart/bang). Cho nao lop sac khong phu thi ben duoi la chinh tam anh
       da LAM MO MANH lam nen — khong bao gio la nen den tro, cung khong bao gio
       la mot ban sao sac net cua chinh no (se doc ra hai vung).
-    - Khoi chu trang canh trai o duoi, tach doan theo dong trong, DE LEN anh
-      qua man toi lien mach bat dau tu ~42% chieu cao (_veil_bottom).
+    - Khoi chu canh trai o duoi, tach doan theo dong trong, DE LEN anh — lop
+      mo+tinh (neu can) neo dung tai dong chu dau tien (_lop_neu_can).
     - Chip ten kenh o goc DUOI-TRAI.
 
 Xuat ra: <out>.png (bia), <out>_2.png, <out>_3.png ... <out>_N.png
@@ -95,28 +100,28 @@ WM = (10, 132, 255)             # #0A84FF — mau du phong neu chua nap thuong h
 F_MONO_CH = str(FONTS / "JetBrainsMono-Regular.ttf")   # chip ten kenh (khong dam)
 F_UI_CH = str(FONTS / "JetBrainsMono-Bold.ttf")        # chip category (dam)
 
-# NEN CHO CHU O SLIDE THAN — SCRIM LIEN MACH kieu cover (Ong Chu chot: chu phai
-# "chim" vao anh, KHONG duoc lo mot dai band):
-#  (1) Man toi KHONG bat dau ngay o dong chu dau. Bat dau o do tao mot buoc
-#      nhay toi ngay tren dong dau — tren anh SANG (logo, nen trang) mat bat
-#      duoc mep ngay, doc ra "anh + bang chu". Nen bat dau lam toi tu CAO hon
-#      nhieu (som nhat ~42% chieu cao), giong scrim cua slide bia.
-#  (2) Tu do dam DAN xuong theo duong cong — gradient DAI, khong mep. Dong chu
-#      dau da nam trong phan gradient (khong con "hoa vao anh sach" nhu truoc,
-#      doi lai la lien mach that tren MOI loai anh).
-#  (3) Cham ~MAX_TOI o vung chu de chu trang bat ro ke ca tren anh sang.
+# NEN CHO CHU O SLIDE THAN (Ong Chu chot 08/09/2026, nhac lai nhieu lan — xem
+# memory [[nguyen-tac-lop-nen-chu-tren-anh]]): FG la mot mau CO DINH theo NEN
+# ca bo (trang tren "toi", den tren "sang") — KHONG mac dinh phu lop nao len
+# anh de dat chu. Chi khi do THAT SU tren pixel WYSIWYG (sau khi da dan anh,
+# truoc khi ve chu) thay vung ngay duoi chu khong du tuong phan voi FG (qua
+# sang/qua toi, hoac qua "roi" — bien thien mau cao, chu mot mau khong an toan
+# het cho) moi them MOT lop mo+tinh. Khi them: vua du (tran thap TOI_TOI_DA,
+# khong phai luon phu 80% roi moi tinh tiep), va KHONG BAO GIO bat dau truoc
+# dong chu dau tien (khong con khoang dem VEIL_LEAD/VEIL_TOP chom truoc nhu
+# ban cu).
 BLUR_RADIUS = 14                 # mo NHE thoi — du diu chi tiet sau chu, khong lam nen "tho"/duc
 BG_BLUR = 44                     # mo MANH ban cover lam nen: phai xoa het chi tiet doc duoc,
                                  # neu khong cho nao lop sac khong phu se lo mot BAN SAO
                                  # phong to cua chinh tam anh -> mat doc ra HAI VUNG
-MAX_TOI = 205                    # do toi o vung chu ~80% (truoc 153/60%): dam hon de
-                                 # chu chim lien mach ca tren anh sang, khong lo band
-VEIL_TOP = 0.42                  # scrim bat dau SOM NHAT o 42% chieu cao (kieu cover)
-VEIL_LEAD = 0.16                 # ...va luon bat dau TREN dong chu dau it nhat 16% chieu cao
-VEIL_EASE = 1.4                  # duong cong: nhat o tren, dam dan xuong — khong mep
+NGUONG_SANG_TOI = 130    # nen "toi" (FG trang): sang trung binh duoi chu phai <= muc nay
+NGUONG_SANG_SANG = 130   # nen "sang" (FG den): (255 - sang) duoi chu phai <= muc nay
+NGUONG_ROI_CAN_LOP = 26  # do lech mau (stddev xam) duoi chu vuot muc nay moi can lop
+TOI_TOI_DA = 140         # tran cua lop (0..255, ~55%) — "vua du", khong phu ca mang
+VEIL_SPAN = 70           # px duong cong chuyen tiep — bat dau NGAY tai dong chu dau
+VEIL_EASE = 1.3          # duong cong: nhat luc bat dau, dam dan trong VEIL_SPAN roi giu
 TEXT_BASE = 1230                 # day khoi chu; dai 1230..H chua chip ten kenh (goc duoi-trai)
 TEXT_MAX_H = 200                 # tran khoi chu: giu dinh chu >=1030 -> vung nen <=24% (<30%)
-FULL_TOI_PAD = 40                # cham 60% truoc day khoi chu chung nay px (dong cuoi nam tren nen dam nhat)
 
 # Chu than: thu tu co lon nhat con vua ca chieu cao, giong tinh than _grow cua card.
 # BODY_LO ha xuong 28 de copy dai van vua vung nen 30% (ma khong tran); copy
@@ -234,27 +239,6 @@ def _watermark(canvas, handle, x=None, y=None):
     return _chip_neo(d, handle, f, PAD if x is None else x, y, fill=_cyan(), anchor="l")
 
 
-def _scrim(canvas, tu=0.34):
-    """Man toi day dan cho slide bia: trong o tren, dam dan xuong day de chu
-    hook doc ro. `tu` la moc bat dau lam toi (theo ti le chieu cao).
-
-    Truoc day tu=0.42, mu 1.4: voi hook 2 dong (truong hop ly tuong theo
-    skill Dre) thi du toi, nhung hook 3 dong — van hop le, chi la cau dai
-    hon — day dong dau len cao toi vung con nhat (~34% do toi o do). Da do
-    that tren anh nen phuc tap (nhieu mau, chu san co): dong tren cua hook
-    bi lo nen phia sau. Ha moc bat dau va giam mu (bot "day" ve cuoi) de toi
-    som va deu hon ma khong doi tran do toi o sat day (van ra 235 tai y=H).
-    """
-    man = Image.new("L", (1, H), 0)
-    y0 = int(H * tu)
-    for y in range(y0, H):
-        t = (y - y0) / max(1, H - y0)
-        man.putpixel((0, y), int(235 * t ** 1.15))
-    lop = Image.new("RGBA", (W, H), (*BG, 0))
-    lop.putalpha(man.resize((W, H)))
-    canvas.alpha_composite(lop)
-
-
 # ---- Anh ------------------------------------------------------------------
 def _open(path):
     img = Image.open(path).convert("RGB")
@@ -309,41 +293,46 @@ def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
     return m.resize((W, H))
 
 
-def _veil_bottom(canvas, veil_rgb, text_top, san=0):
-    """Lam NEN CHO CHU theo kieu SCRIM LIEN MACH cua cover — chu "chim" vao anh,
-    khong lo mot dai band nao ke ca tren anh sang:
+def _do_vung_chu(canvas, y0, y1):
+    """Do sang trung binh + do roi (stddev xam) cua DUNG vung pixel WYSIWYG se
+    nam duoi chu — doc thang tren canvas HIEN TAI (sau khi da dan anh, truoc
+    khi ve chu), khong doan qua toa do nguon. -> (sang 0..255, roi 0..255)."""
+    from PIL import ImageStat
+    y0, y1 = max(0, int(y0)), min(H, int(y1))
+    if y1 <= y0:
+        return 255.0, 0.0
+    vung = canvas.convert("L").crop((0, y0, W, y1))
+    st = ImageStat.Stat(vung)
+    return st.mean[0], st.stddev[0]
 
-      - Man toi bat dau tu CAO (`top_y`, som nhat VEIL_TOP=42% chieu cao, va luon
-        tren dong chu dau it nhat VEIL_LEAD). KHONG bat dau ngay o text_top: bat
-        o do tao mot buoc nhay toi ngay tren dong dau, tren anh sang la lo mep.
-      - Tu `top_y` dam DAN xuong theo duong cong (ease VEIL_EASE), cham gan-max
-        (MAX_TOI) quanh dong chu cuoi (`full_y`) roi giu xuong day. Gradient DAI
-        nen mat khong bat duoc mep.
-      - Dong chu dau nay nam TRONG phan gradient (khong con "hoa vao anh sach"
-        nhu ban cu) — doi lai la lien mach that tren MOI loai anh.
 
-    Ca lop mo lan lop toi dung cung mot mat na. Van la ANH LAM MO chu khong phai
-    mang den dat vao (MAX_TOI<255): o dam nhat anh van con hien.
+def _lop_neu_can(canvas, base, text_top, text_bottom):
+    """Them mot lop mo+tinh NGAY TAI text_top — CHI KHI can (xem nguyen tac o
+    dau file). Mac dinh khong lam gi: FG (co dinh theo NEN ca bo) da du tuong
+    phan thi giu nguyen anh.
 
-    `veil_rgb` la ban COVER phu kin khung; bi lam mo manh nen cat/phong to (do
-    cover) khong lo ra."""
-    # Bat dau lam toi tu CAO (>=42% chieu cao), va luon TREN dong chu dau it
-    # nhat VEIL_LEAD — de gradient DAI, khong lo mep ngay tren dong dau nhu khi
-    # bat dau dung o text_top. Day la khac biet lam chu "chim" vao anh.
-    top_y = max(0, min(text_top - int(H * VEIL_LEAD), int(H * VEIL_TOP)))
-    # `san`: mep duoi cua lop anh SAC khi no ket thuc TREN vung chu (chart ngang
-    # "chart": true). Scrim khong duoc bat dau TREN mep do, neu khong no lam toi
-    # chinh phan duoi cua chart — truc x, nhan, dong chu thich — tuc chart khong
-    # con hien DAY DU (Ong Chu chot 04/09/2026). Duoi mep chart la nen mo, nen
-    # bat dau o do van khong lo mep, va gradient van du dai (~300px tro len).
-    top_y = max(top_y, min(san, text_top - 80))
-    full_y = TEXT_BASE - FULL_TOI_PAD             # cham max quanh dong chu cuoi
-    blurred = veil_rgb.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
-    # 1) tron dan sang ban mo — nhat o tren, mo dan xuong
-    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=245, ease=VEIL_EASE))
-    # 2) phu lop toi tang dan — nhat o tren, gan-max o vung chu
+    `base` la ban COVER sac net (chua lam mo) dung lam nguon cho lop mo, cung
+    mot tam anh voi phan da dan len canvas nen khong lech vung. `text_top`/
+    `text_bottom` la vung se do de QUYET DINH co can lop khong; mat na ve ra
+    luon giu phang tu `text_top + VEIL_SPAN` tro xuong H, khong phu thuoc
+    `text_bottom`."""
+    sang, roi = _do_vung_chu(canvas, text_top, text_bottom)
+    if FG == (255, 255, 255):
+        thieu = max(0.0, sang - NGUONG_SANG_TOI)          # nen "toi": qua sang la thieu
+    else:
+        thieu = max(0.0, (255 - sang) - NGUONG_SANG_SANG)  # nen "sang": qua toi la thieu
+    roi_du = max(0.0, roi - NGUONG_ROI_CAN_LOP)
+    if thieu <= 0 and roi_du <= 0:
+        return                       # da du tuong phan tren pixel that — khong phu gi
+    do = min(TOI_TOI_DA, max(40.0, thieu * 1.8, roi_du * 2.2))
+    top_y = max(0, int(text_top))
+    full_y = min(H, top_y + VEIL_SPAN)
+    blurred = base.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
+    # 1) mo NHE ban sac ngay tai vung chu — xoa chi tiet gay roi
+    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=200, ease=VEIL_EASE))
+    # 2) tinh VUA DU (tran TOI_TOI_DA, khong phai mac dinh phu cao roi moi tinh)
     lop = Image.new("RGB", (W, H), BG)
-    canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=MAX_TOI, ease=VEIL_EASE))
+    canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE))
 
 
 def _body_image(canvas, img):
@@ -357,15 +346,14 @@ def _body_image(canvas, img):
         con giong loi ky thuat. Lam mo bien nen thanh mot mang mau lien, de anh
         sac o tren doc ra MOT chu the tren MOT mat phang.
       - KHONG lam toi them nen: nen toi hon han lop sac se ve ra mot hinh chu
-        nhat quanh chart — dung la hai vung. Chi _veil_bottom moi duoc lam toi,
-        va no lam toi theo gradient dai nen khong sinh mep.
+        nhat quanh chart — dung la hai vung. Chi _lop_neu_can moi duoc lam toi
+        (va chi khi thuc su can — xem ham do), theo gradient ngan nen khong
+        sinh mep.
       - LOP SAC len tren: full be ngang, KHONG cat hai canh -> giu tron chi
         tiet mep (chup man hinh, bang so khong bi cat chu). Anh 4:5 phu kin
-        luon (nen khong lo ra ti nao); anh 1:1 phu 0..~1080, phan duoi la nen
-        (nam duoi chu + watermark, da bi veil lam mo).
+        luon (nen khong lo ra ti nao); anh 1:1 phu 0..~1080, phan duoi la nen.
 
-    Tra ve (COVER SAC, mep_duoi_lop_sac). Cover de _veil_bottom tu lam mo theo
-    nhip cua no; mep duoi de goi y cho scrim khong lem len chart.
+    Tra ve ban COVER SAC (de _lop_neu_can dung lam nguon mo neu can).
     (Luat: anh dua vao carousel da la 1:1 hoac 4:5 — xem crop_ti_le.py; nen
     luon cham du sau.)"""
     cover = _fit_cover(img, W, H).convert("RGB")
@@ -383,13 +371,13 @@ def _body_image(canvas, img):
         # vung tren (0..~60% cao, tren scrim chu) thay vi dinh mep tren.
         y0 = max(0, (int(H * 0.6) - nh) // 2)
     canvas.paste(resized, (0, y0))                # lop sac uncropped len tren nen cover
-    return cover, min(H, y0 + resized.height)     # mep duoi lop sac -> san cho scrim
+    return cover
 
 
 # ---- Dung tung slide ------------------------------------------------------
 def build_body(img_path, text, handle, out):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    base, anh_day = _body_image(canvas, _open(img_path))
+    base = _body_image(canvas, _open(img_path))
 
     # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
     # cao bao nhieu day len bay nhieu — luon sat day, khong tran len qua 30%,
@@ -401,9 +389,9 @@ def build_body(img_path, text, handle, out):
         d, paras, W - 2 * PAD, TEXT_MAX_H, BODY_HI, BODY_LO)
     text_top = TEXT_BASE - total
 
-    # Lop nen neo vao dong chu dau: gan-max ngay tu dong chu dau tro xuong (anh
-    # con <10%, chu bat ro), doan chuyen mo dan chi ngay tren dong chu dau.
-    _veil_bottom(canvas, base, text_top, san=anh_day)
+    # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
+    # phan voi FG — xem _lop_neu_can. Khong bao gio bat dau truoc text_top.
+    _lop_neu_can(canvas, base, text_top, TEXT_BASE)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
@@ -434,7 +422,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    base, anh_day = _body_image(canvas, _open(img_path))
+    base = _body_image(canvas, _open(img_path))
     d = ImageDraw.Draw(canvas)
 
     FRAME_X, TEXT_X, avail = Q_FRAME_X, Q_TEXT_X, Q_AVAIL
@@ -463,8 +451,9 @@ def build_body_quote(img_path, quote, attrib, handle, out):
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
-    # Man toi lien mach, neo tu tren dinh khung.
-    _veil_bottom(canvas, base, max(0, frame_top - 24), san=anh_day)
+    # Chi them lop khi do THAT can (xem _lop_neu_can) — neo dung tai dinh khung,
+    # khong con chom truoc 24px nhu ban cu.
+    _lop_neu_can(canvas, base, max(0, frame_top), H)
 
     # Cac dong quote.
     qy = first_line_top
@@ -504,9 +493,8 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     'MODEL RELEASE' / 'MODEL UPDATE'...) + chip label trang (ten model/hang).
     Ten kenh chi xuat hien tren cac slide than."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    cover = _fit_cover(_open(img_path), W, H)
-    canvas.paste(cover.convert("RGB"), (0, 0))
-    _scrim(canvas)
+    cover = _fit_cover(_open(img_path), W, H).convert("RGB")
+    canvas.paste(cover, (0, 0))
     d = ImageDraw.Draw(canvas)
     # Nhan nho o duoi cung; hook nam ngay tren nhan.
     label = (label or "").strip().upper()          # category -> chip, viet hoa
@@ -526,6 +514,10 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         d, [hook], W - 2 * PAD, int(H * 0.5), HOOK_HI, HOOK_LO,
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total
+    # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem
+    # _lop_neu_can) — the tich category/label o duoi la chip dac, tu doc duoc,
+    # khong can lop bao ve.
+    _lop_neu_can(canvas, cover, y, H)
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
