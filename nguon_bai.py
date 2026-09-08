@@ -170,7 +170,15 @@ def _tieu_de_rss(url: str) -> str:
 
 def _tieu_de_trang(url: str) -> str:
     """og:title / <title> cua bai goc — tieu de tieng Anh THAT cua toa soan.
-    Trang bi chan bot (403/challenge) -> thu RSS cong khai truoc khi bo cuoc."""
+    Trang bi chan bot (403/challenge) -> thu RSS cong khai truoc khi bo cuoc.
+
+    Trang SPA chua hydrate (vd techinasia.com fetch tinh) tra <title> = TEN
+    THUONG HIEU site ("Tech in Asia"), khong phai headline — qua check "khong
+    tieng Viet, khong chan-bot" nen bi nhan la tieu de that, roi tro thanh
+    truy van + thuoc do "cung tin" chi con 2 tu chung, khop voi ca bai khong
+    lien quan (Gimlet 06/09: khop nham bai PR "Tech Week Singapore 2026" vi ca
+    hai co "tech" + "asia"). Headline that hau nhu luon >=4 tu; ten thuong
+    hieu/site thi 1-3 tu — loai o day, roi rot ve RSS (dang tin cay hon)."""
     try:
         r = httpx.get(url, headers=HDR, timeout=20, follow_redirects=True)
         if r.status_code == 200:
@@ -182,8 +190,12 @@ def _tieu_de_trang(url: str) -> str:
                 import html as _h
                 t = _h.unescape(m.group(1)).strip()
                 t = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "", t)  # bo " | Ten bao"
-                if t and len(t) >= 8 and not co_tieng_viet(t) and not _CHAN_BOT.search(t):
+                if (t and len(t) >= 8 and len(t.split()) >= 4 and not co_tieng_viet(t)
+                        and not _CHAN_BOT.search(t)):
                     return t
+                if t:
+                    print(f"[nguon_bai] bo tieu de qua ngan (co the la ten site, chua hydrate): {t!r}",
+                          file=sys.stderr)
     except Exception:                                        # noqa: BLE001
         pass
     return _tieu_de_rss(url)
