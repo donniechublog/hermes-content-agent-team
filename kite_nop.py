@@ -218,8 +218,16 @@ def _giai_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
 
                 canh.append(f"slide {i}: cột {j} label dài, rút ≤ 28")
 
-    if any("nguồn" in str(v).lower() for v in sl.values() if isinstance(v, str)):
-
+    # CHI xet dung cac truong mang trich dan (caption, readmore.text) — quet
+    # het sl.values() nhu truoc bat nham nhan/the/tieu de thuong chua chu
+    # "nguồn" theo nghia thuong (vd "Nguồn cung", "Khan hiếm nguồn cung")
+    # tuong la loi dinh dang trich dan (Ong Chu 08/09/2026, bat 2 lan doc lap
+    # trong dot chay lai hom nay: Samsung/TSMC va Wafer).
+    trich_dan = [sl.get("caption")]
+    rm = sl.get("readmore")
+    if isinstance(rm, dict):
+        trich_dan.append(rm.get("text"))
+    if any(isinstance(v, str) and "nguồn" in v.lower() for v in trich_dan):
         loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
     return s2
 
