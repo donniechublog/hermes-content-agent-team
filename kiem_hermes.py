@@ -30,11 +30,16 @@ HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
 # Cot ta doc bang SQL THO. Thieu mot cot la nhat ky/bang dieu phoi chet cham.
 COT_CAN = {
     # nhat_ky.phan_kanban + duyet_giao_viec (SELECT ... FROM tasks)
-    "tasks": ["id", "title", "assignee", "status", "created_at", "completed_at",
-              "result", "last_failure_error"],
+    # Tu 09/09/2026 (C2) moi cau doc kanban.db di qua hermes_adapter — danh sach
+    # nay phai KHOP hermes_adapter._COT_VIEC / _COT_LAN_CHAY. Review Fable bat
+    # duoc hai cot thieu: `started_at` (ada_chuan_bi tinh giay trung binh) va
+    # `task_runs.id` (adapter ORDER BY id de lay lan chay cuoi) — hermes doi
+    # hai cot do thi script nay van xanh ma adapter vo.
+    "tasks": ["id", "title", "assignee", "status", "created_at", "started_at",
+              "completed_at", "result", "last_failure_error"],
     # nhat_ky.phan_kanban + duyet_giao_viec (banh giao doc `metadata` o DAY,
     # khong phai o `tasks` — cot cua hai bang de nho nham)
-    "task_runs": ["task_id", "status", "summary", "error", "metadata"],
+    "task_runs": ["id", "task_id", "status", "summary", "error", "metadata"],
     # plugin kanban: stream_events
     "task_events": ["id", "task_id", "run_id", "kind", "payload", "created_at"],
 }

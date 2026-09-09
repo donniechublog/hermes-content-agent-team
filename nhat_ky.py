@@ -146,9 +146,24 @@ def phan_kanban(ngay: str) -> list:
     # trong ngay la mot cau `select ... from task_runs` rieng.
     tat_ca = hermes_adapter.viec()
     if tat_ca is None:
+        # Adapter da nuot sqlite3.Error va tra None, nen `_chiu_loi_db` KHONG
+        # con bat duoc gi — ma cai decorator do sinh ra dung de dua loi doc DB
+        # len CUOI TRANG (LOI_DOC) thay vi de trang im lang "khong co task".
+        # Review Fable 09/09/2026 bat duoc: ban dau tien cua doan nay tra []
+        # im lang, tuc lam lai dung su co 06/09 ma decorator da sua.
+        loi = "phan_kanban: hermes_adapter khong doc duoc kanban.db (xem stderr)"
+        LOI_DOC.append(loi)
+        print(f"[nhat_ky] loi doc DB — {loi}", file=sys.stderr)
         return []
     trong_ngay = [v for v in tat_ca if _trong_ngay(v["tao_luc"], ngay)]
-    runs = hermes_adapter.lan_chay_cuoi_nhieu([v["id"] for v in trong_ngay]) or {}
+    runs = {}
+    if trong_ngay:                    # khong co task thi khong co gi de tra, khong co gi de bao
+        runs = hermes_adapter.lan_chay_cuoi_nhieu([v["id"] for v in trong_ngay])
+        if runs is None:
+            loi = "phan_kanban: khong doc duoc task_runs — tom tat/loi cua task se trong"
+            LOI_DOC.append(loi)
+            print(f"[nhat_ky] loi doc DB — {loi}", file=sys.stderr)
+            runs = {}
     ra = []
     for v in trong_ngay:
         a, b = _gio_vn(v["tao_luc"]), _gio_vn(v["xong_luc"])

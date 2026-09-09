@@ -35,8 +35,13 @@ set -uo pipefail
 CT="$HOME/content-team"
 AGENT="$HOME/hermes-agent"
 AGENT_PY="$AGENT/venv/bin/python"
-# Lenh cap nhat that cua doi. Doi bang bien moi truong neu quy trinh khac.
-LENH_CAP_NHAT="${LENH_CAP_NHAT:-$AGENT_PY -m hermes_cli.main update}"
+# Lenh cap nhat THAT cua doi la `hermes update` (binary wrapper) — moi tai lieu
+# trong repo (hermes/README.md, MEMORY_ARCH.md, nhat_ky.py) deu goi dung chu do.
+# Ban dau script nay bia ra `python -m hermes_cli.main update` ma khong co bang
+# chung `update` la mot subcommand Python; voi mot script AN TOAN, lenh mac dinh
+# sai nghia la no vo o buoc 2 moi lan chay va duong cap nhat co kiem khong bao
+# gio duoc dung (review Fable 09/09/2026). Doi bang bien moi truong neu can.
+LENH_CAP_NHAT="${LENH_CAP_NHAT:-hermes update}"
 
 THU=0
 TU_LUI=1
@@ -85,6 +90,10 @@ truoc=$(git -C "$AGENT" rev-parse HEAD) || exit 2
 echo "[moc] HEAD truoc khi cap nhat: $truoc"
 
 # --- Cap nhat -------------------------------------------------------------
+# Kiem lenh o DAY chu khong o dau script: `--thu` chi kiem hien trang, khong can
+# lenh update, va phai chay duoc ca tren may khong co `hermes` tren PATH.
+command -v "${LENH_CAP_NHAT%% *}" >/dev/null 2>&1 \
+  || { echo "[LOI] khong thay lenh '${LENH_CAP_NHAT%% *}' tren PATH — dat LENH_CAP_NHAT=... roi chay lai" >&2; exit 2; }
 echo "[chay] $LENH_CAP_NHAT"
 if ! $LENH_CAP_NHAT; then
   echo "[LOI] lenh cap nhat thoat khac 0 — kiem lai hien trang truoc khi lam gi tiep." >&2
