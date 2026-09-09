@@ -190,6 +190,32 @@ def test_khong_con_ai_shell_ra_node():
     assert not xau, f"van con cho goi node: {xau}"
 
 
+# ------------------------------------------------- anh dau vao la (N-r2-3)
+def test_png_trong_suot_ra_nen_kem_khong_phai_den():
+    """convert("RGB") vut alpha -> vung trong suot ra DEN; sharp cua ban Node
+    composite giu alpha nen ra nen the. Logo/meme/sticker la dau vao thuong."""
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "trong.png"
+        Image.new("RGBA", (1200, 800), (0, 0, 0, 0)).save(p)
+        mo = ka.dong_khung(p, Path(t) / "ra.png", khong_mascot=True)
+        c = mo["canvas"]
+        assert _gan(_diem(Path(t) / "ra.png", c["width"] // 2, c["height"] // 2), ka._mau(ka.BG)), \
+            "vung trong suot phai la nen the kem"
+
+
+def test_png_16bit_khong_ra_trang_tinh():
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "i16.png"
+        im = Image.new("I;16", (1200, 800))
+        im.putdata([int(x / 1200 * 65535) for y in range(800) for x in range(1200)])
+        im.save(p)
+        ka.dong_khung(p, Path(t) / "ra.png", khong_mascot=True)
+        g = _hinh_hoc(1200, 800)
+        # giua anh: gradient ~50% -> xam, KHONG phai (255,255,255)
+        px = _diem(Path(t) / "ra.png", g["canh"] + 600, g["header_h"] + 400)
+        assert max(px) < 200, f"anh 16-bit ra trang tinh: {px}"
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())
