@@ -7,9 +7,6 @@ import re
 import sys
 from pathlib import Path
 
-import httpx
-
-import env_load
 import schema
 
 from chuan_bi.chung import DRAFTS, GNEWS, _doc_json, _ghi_json
@@ -130,15 +127,9 @@ def anh_commons(tu_khoa: str, so: int = 4) -> list | None:
     Tra None khi HONG VI MOI TRUONG (mang, API loi) — KHAC voi [] (da chay het,
     khong ra anh nao). Nguoi goi phai tu phan biet hai truong hop nay (quy uoc
     "hong phai lo", audit_content_team C1)."""
-    try:
-        r = httpx.get("https://commons.wikimedia.org/w/api.php", params={
-            "action": "query", "generator": "search", "gsrsearch": f"{tu_khoa} filetype:bitmap",
-            "gsrnamespace": 6, "gsrlimit": 14, "prop": "imageinfo",
-            "iiprop": "url|size|mime", "iiurlwidth": 1800, "format": "json"},
-            headers={"User-Agent": env_load.UA_WIKI}, timeout=20)
-        pages = r.json().get("query", {}).get("pages", {})
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[commons] hong: {type(e).__name__}: {e!r}", file=sys.stderr)
+    import quet_chung
+    pages = quet_chung.hoi_commons(tu_khoa, so=14, loai_logo=False)   # mot ban (ADF-r2-16)
+    if pages is None:
         return None
     ra = []
     for pg in pages.values():

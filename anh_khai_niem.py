@@ -259,17 +259,9 @@ def loc_commons(pages: dict, tu_khoa: str, so: int = 4, canh_ngan_min: int = 700
 def anh_khai_niem(tu_khoa: str, ly_do: str = "", so: int = 4) -> list | None:
     """Ứng viên ảnh khái niệm từ Commons cho một từ khoá. Trả None nếu không gọi
     được API (lỗi mạng/HTTP); [] nếu gọi được nhưng không có ảnh nào khớp."""
-    try:
-        import httpx
-        r = httpx.get("https://commons.wikimedia.org/w/api.php", params={
-            "action": "query", "generator": "search",
-            "gsrsearch": f"{tu_khoa} filetype:bitmap -intitle:logo -intitle:icon",
-            "gsrnamespace": 6, "gsrlimit": 20, "prop": "imageinfo",
-            "iiprop": "url|size|mime", "iiurlwidth": 1800, "format": "json"},
-            headers={"User-Agent": UA}, timeout=20)
-        pages = r.json().get("query", {}).get("pages", {})
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[khai_niem] commons '{tu_khoa}': {type(e).__name__}: {e!r}", file=sys.stderr)
+    import quet_chung
+    pages = quet_chung.hoi_commons(tu_khoa)                  # mot ban (ADF-r2-16), None = hong
+    if pages is None:
         return None
     ra = loc_commons(pages, tu_khoa, so=so)
     for c in ra:

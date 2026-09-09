@@ -128,6 +128,34 @@ def chuan_link(u: str) -> str:
     return f"{duong}?{urlencode(sorted(giu))}" if giu else duong
 
 
+def hoi_commons(cau: str, so: int = 20, loai_logo: bool = True):
+    """Tim anh bitmap tren Wikimedia Commons. Tra `query.pages` (dict, co the
+    rong = KHONG CO anh), hoac None khi HONG VI MOI TRUONG (mang, HTTP, JSON).
+
+    MOT ban cho ba nguoi goi (chuan_bi/nguon, anh_khai_niem, anh_thuong_hieu).
+    Truoc audit lượt 2 (ADF-r2-16) cung query nay chep ba lan, va quy uoc C1
+    chi ap cho hai: anh_thuong_hieu._hoi_commons tra {} khi mat mang, log khong
+    co repr — "mat mang" va "hang khong co anh" la mot.
+
+    `loai_logo`: them -intitle:logo -intitle:icon (anh khai niem / thuong hieu);
+    nguon.anh_commons tim tru so/san pham nen khong loai (co the la anh co logo
+    tren toa nha). Dung UA_WIKI: Wikimedia doi UA co ten cong cu + lien he,
+    UA gia trinh duyet la 403 (do 09/09/2026)."""
+    import sys as _sys
+    tim = f"{cau} filetype:bitmap" + (" -intitle:logo -intitle:icon" if loai_logo else "")
+    try:
+        r = httpx.get("https://commons.wikimedia.org/w/api.php", params={
+            "action": "query", "generator": "search", "gsrsearch": tim,
+            "gsrnamespace": 6, "gsrlimit": so, "prop": "imageinfo",
+            "iiprop": "url|size|mime", "iiurlwidth": 1800, "format": "json"},
+            headers={"User-Agent": env_load.UA_WIKI}, timeout=20)
+        r.raise_for_status()
+        return r.json().get("query", {}).get("pages", {})
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[commons] '{cau[:60]}': {type(e).__name__}: {e!r}", file=_sys.stderr)
+        return None
+
+
 def get(url: str, timeout: int = 45, params=None) -> httpx.Response:
     """GET mot trang.
 

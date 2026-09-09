@@ -49,7 +49,6 @@ Hàm thuần (test được, không mạng) + hàm chạm mạng:
   - `nhan_thuong_hieu` siết nhãn của một ảnh đã qua `phan_loai`.
   - `tu_lieu_wikidata` / `url_commons` / `the_logo` / `anh_hang`  (mạng/ảnh).
 """
-import os
 import re
 import sys
 from pathlib import Path
@@ -424,7 +423,6 @@ def the_logo(tep_logo, out, brand: str = "donniechublog"):
 
 def _do_sang_logo(px) -> float:
     """Độ sáng trung bình của phần ĐỤC trong logo (bỏ vùng trong suốt)."""
-    from PIL import Image
     L = px.convert("L")
     a = px.getchannel("A")
     tong = so = 0
@@ -503,11 +501,15 @@ def anh_hang(hang, so: int = TOI_DA_MOI_HANG, wd=None) -> list:
     bị dừng ở nút "chỉ 2/5 ảnh". Hỏng mạng -> []."""
     khoa = hang["khoa"] if isinstance(hang, dict) else hang
     ten_chinh = TEN_HIEN.get(khoa, (khoa.title(),))[0]
-    ra, da = [], set()
+    ra, da, hong = [], set(), 0
     for ten, cau in truy_van(khoa):
         if len(ra) >= so:
             break
-        for c in loc_commons(_hoi_commons(cau), ten, so=so):
+        pages = _hoi_commons(cau)
+        if pages is None:                    # hong moi truong, KHONG phai "khong co anh"
+            hong += 1
+            continue
+        for c in loc_commons(pages, ten, so=so):
             if c["anh"] in da:
                 continue
             da.add(c["anh"])
@@ -515,6 +517,12 @@ def anh_hang(hang, so: int = TOI_DA_MOI_HANG, wd=None) -> list:
             ra.append(c)
             if len(ra) >= so:
                 break
+    if hong and not ra:
+        # ADF-r2-16: truoc day {} cua _hoi_commons di thang vao loc_commons nen
+        # mat mang == hang khong co anh. Giu hop dong tra [] cua ham, nhung noi
+        # ro de brief/nhat ky khong ket luan sai ve hang.
+        print(f"[thuong_hieu] {khoa}: {hong} truy van Commons HONG (mang/API) — "
+              "khong phai hang khong co anh", file=sys.stderr)
     if len(ra) < so:
         for c in anh_wikidata(hang, wd):
             if c["anh"] not in da:
@@ -562,19 +570,12 @@ def cau_hoi_vision(tieu_de: str, th: dict) -> str:
             "minh hoa chung chung)")
 
 
-def _hoi_commons(cau: str) -> dict:
-    try:
-        import httpx
-        r = httpx.get("https://commons.wikimedia.org/w/api.php", params={
-            "action": "query", "generator": "search",
-            "gsrsearch": f"{cau} filetype:bitmap -intitle:logo -intitle:icon",
-            "gsrnamespace": 6, "gsrlimit": 20, "prop": "imageinfo",
-            "iiprop": "url|size|mime", "iiurlwidth": 1800, "format": "json"},
-            headers={"User-Agent": env_load.UA_WIKI}, timeout=20)
-        return r.json().get("query", {}).get("pages", {})
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[thuong_hieu] commons '{cau}': {type(e).__name__}", file=sys.stderr)
-        return {}
+def _hoi_commons(cau: str):
+    """`query.pages` cua Commons, hoac None khi hong moi truong (C1). Mot ban o
+    quet_chung.hoi_commons (ADF-r2-16) — truoc day ban nay tra {} va log khong
+    repr, nen mat mang trong y het "hang khong co anh"."""
+    import quet_chung
+    return quet_chung.hoi_commons(cau)
 
 
 def nhan_thuong_hieu(a: dict) -> dict:
