@@ -271,14 +271,17 @@ TOI_DA_NGUOI = 2
 
 
 def _hoi_api(url: str, **kw) -> dict:
+    """Gọi Wikidata/Commons API, trả JSON đã parse. None nếu gọi API thất bại
+    (lỗi mạng, thiếu dependency, exception ngoài dự kiến) — KHÔNG phải {} rỗng,
+    để người gọi phân biệt được với API trả lời hợp lệ nhưng rỗng thật sự."""
     kw.setdefault("format", "json")
     try:
         import httpx
         return httpx.get(url, params=kw, headers={"User-Agent": env_load.UA_WIKI},
                          timeout=20).json()
     except Exception as e:                                   # noqa: BLE001
-        print(f"[thuong_hieu] {url.split('//')[-1][:20]}: {type(e).__name__}", file=sys.stderr)
-        return {}
+        print(f"[thuong_hieu] {url.split('//')[-1][:20]}: {type(e).__name__}: {e!r}", file=sys.stderr)
+        return None
 
 
 def _tep_claim(claims: dict, p: str) -> list:
@@ -313,11 +316,19 @@ def qid_hang(hang: str) -> tuple:
     """(qid, claims) của entity CÔNG TY khớp tên hãng, hoặc (None, {})."""
     r = _hoi_api(WIKIDATA, action="wbsearchentities", search=hang, language="en",
                  type="item", limit=5)
+    if r is None:
+        print(f"[thuong_hieu] qid_hang({hang!r}): khong goi duoc Wikidata (wbsearchentities), bo qua",
+              file=sys.stderr)
+        return None, {}
     ids = [x["id"] for x in r.get("search", []) if x.get("id")]
     if not ids:
         return None, {}
-    ent = _hoi_api(WIKIDATA, action="wbgetentities", ids="|".join(ids),
-                   props="claims").get("entities", {})
+    ent = _hoi_api(WIKIDATA, action="wbgetentities", ids="|".join(ids), props="claims")
+    if ent is None:
+        print(f"[thuong_hieu] qid_hang({hang!r}): khong goi duoc Wikidata (wbgetentities), bo qua",
+              file=sys.stderr)
+        return None, {}
+    ent = ent.get("entities", {})
     for qid in ids:                       # giữ thứ tự xếp hạng của Wikidata
         cl = (ent.get(qid) or {}).get("claims", {})
         if sum(p in cl for p in P_CONG_TY) >= 2:
@@ -337,7 +348,13 @@ def tu_lieu_wikidata(hang: str) -> dict:
     ids = list(dict.fromkeys(ceo + _qid_claim(cl, P_SANG_LAP)))[:TOI_DA_NGUOI + 1]
     if ids:
         ent = _hoi_api(WIKIDATA, action="wbgetentities", ids="|".join(ids),
-                       props="claims|labels", languages="en").get("entities", {})
+                       props="claims|labels", languages="en")
+        if ent is None:
+            print(f"[thuong_hieu] tu_lieu_wikidata({hang!r}): khong goi duoc Wikidata "
+                  "(nguoi/CEO), bo qua", file=sys.stderr)
+            ent = {}
+        else:
+            ent = ent.get("entities", {})
         for i in ids:
             e = ent.get(i) or {}
             ten = ((e.get("labels") or {}).get("en") or {}).get("value", "")
@@ -357,6 +374,9 @@ def url_commons(tens: list) -> dict:
         return {}
     r = _hoi_api(COMMONS, action="query", titles="|".join("File:" + t for t in tens),
                  prop="imageinfo", iiprop="url|size|mime", iiurlwidth=1800)
+    if r is None:
+        print("[thuong_hieu] url_commons: khong goi duoc Commons API, bo qua", file=sys.stderr)
+        return {}
     ra = {}
     for pg in ((r.get("query") or {}).get("pages") or {}).values():
         ii = (pg.get("imageinfo") or [{}])[0]

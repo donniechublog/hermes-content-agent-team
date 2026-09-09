@@ -28,6 +28,7 @@ tu chon cong nao hop voi khung cua minh roi gop lai. Khong ham nao ve gi, khong
 ham nao biet den canvas — de vai nao cung goi duoc.
 """
 import re
+import threading
 from pathlib import Path
 
 from PIL import Image, ImageOps, ImageStat
@@ -450,25 +451,39 @@ def lech_tone(ims, nguong_sang=60, nguong_mau=70):
 
 _YUNET = None
 _YUNET_DA_THU = False
+_YUNET_LOCK = threading.Lock()
 
 
 def _yunet():
+    """Nap lazy model YuNet, dung mot lan cho ca doi tien trinh.
+
+    Khoa bang _YUNET_LOCK (audit_content_team B2): `phan_loai` gio duoc
+    anh_chuan_bi._nhin_anh goi tu nhieu luong cung luc qua ThreadPoolExecutor.
+    Khong khoa thi luong A dat _YUNET_DA_THU=True TRUOC khi gan xong _YUNET —
+    `import cv2` va doc file .onnx o giua co the nha GIL — nen luong B doc co
+    thay True nhung _YUNET con None, tra ve None nham nhu may thieu cv2/model
+    du thuc ra co day du. Hau qua im lang: dem_mat() bao 0 mat, cong mat nguoi
+    (LUAT_ANH §6) tu tat theo may rui thu tu luong thay vi theo may that su co
+    cv2 hay khong.
+    """
     global _YUNET, _YUNET_DA_THU
     if _YUNET_DA_THU:
         return _YUNET
-    _YUNET_DA_THU = True
-    try:
-        import os as _os
-        _os.environ.setdefault("OPENCV_LOG_LEVEL", "SILENT")
-        import cv2
-        m = Path(__file__).resolve().parent / "assets" / \
-            "face_detection_yunet_2023mar.onnx"
-        if not m.exists():
-            return None          # thieu model -> bo qua cong, khong crash build
-        _YUNET = cv2.FaceDetectorYN_create(str(m), "", (320, 320),
-                                           score_threshold=0.7)
-    except Exception:
-        _YUNET = None
+    with _YUNET_LOCK:
+        if _YUNET_DA_THU:             # luong khac vua nap xong trong luc cho khoa
+            return _YUNET
+        try:
+            import os as _os
+            _os.environ.setdefault("OPENCV_LOG_LEVEL", "SILENT")
+            import cv2
+            m = Path(__file__).resolve().parent / "assets" / \
+                "face_detection_yunet_2023mar.onnx"
+            if m.exists():            # thieu model -> bo qua cong, khong crash build
+                _YUNET = cv2.FaceDetectorYN_create(str(m), "", (320, 320),
+                                                   score_threshold=0.7)
+        except Exception:
+            _YUNET = None
+        _YUNET_DA_THU = True          # dat SAU CUNG, sau khi _YUNET da co gia tri chot
     return _YUNET
 
 
@@ -750,6 +765,9 @@ def kiem_mat_nguoi(nhan, path, nhan_vat=None):
     nhan vat trong bai khong. Co mat la CHAN, tru khi khai "nhan_vat".
     """
     n = dem_mat(path)
+    if n is None:
+        return [], [f"{nhan}: khong kiem duoc mat nguoi (thieu cv2/model hoac anh "
+                    "loi khi doc) -- can soat tay truoc khi dung anh nay"]
     if not n:
         return [], []
     nv = str(nhan_vat or "").strip()
