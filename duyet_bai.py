@@ -875,6 +875,12 @@ def handle_callback(token, channel, cq):
              text="Không tìm thấy bản nháp", show_alert=True)
         return
 
+    # Nut "day lai moat" — phai xu ly TRUOC chot trang thai ben duoi: bai da
+    # `published` (len channel roi) moi la bai can day lai, nhanh do se chan.
+    if action in ("mlai", "mlaif", "mlaii", "mlait"):
+        _day_lai_moat(token, action, draft_id, cq)
+        return
+
     # CHOT TRANG THAI TRUOC KHI LAM GI KHAC. publish() co the mat toi 180s,
     # trong thoi gian do nut van quay vong va Ong Chu se bam lai — hai callback
     # xep hang, va truoc day ca hai deu dang. Doc status som + tra loi callback
@@ -916,6 +922,60 @@ def handle_callback(token, channel, cq):
 
     _sua_tin_go_nut(token, msg, note)
 
+NEN_TANG_NUT = {"mlaif": ("facebook_post", "Facebook"),
+                "mlaii": ("instagram_carousel", "Instagram"),
+                "mlait": ("tiktok_slide", "TikTok")}
+
+
+def _day_lai_moat(token, action, draft_id, cq):
+    """Nut day lai: `mlai` day ca bai (khi chua vao moat), `mlaif/i/t` dang lai
+    DUNG mot nen tang da that bai.
+
+    Chay o thread nen: intake mat 20-60s (upload anh), ma vong poll dang giu
+    nhung nut khac. Tra loi callback ngay de nut thoi quay.
+    """
+    import threading                                          # noqa: PLC0415
+    call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+         text="Đang đẩy lại…")
+    msg = cq.get("message") or {}
+
+    def chay():
+        try:
+            if action == "mlai":
+                ok, why = moat_publish.intake(draft_id)
+            else:
+                nen_tang, nhan = NEN_TANG_NUT[action]
+                # external_id PHAI khac lan truoc, khong thi moat tra ve
+                # workflow cu (idempotent) va khong co task nao duoc tao.
+                lan = len((_doc_draft(draft_id) or {}).get("moat_lich_su", [])) + 2
+                ok, why = moat_publish.intake(
+                    draft_id, platforms=[nen_tang],
+                    external_id=draft_id + "-lai" + str(lan))
+                why = nhan + ": " + why
+        except Exception as e:                               # noqa: BLE001
+            ok, why = False, type(e).__name__ + ": " + str(e)
+        txt = ("✅ Đã đẩy lại: " if ok else "⚠️ Đẩy lại vẫn lỗi: ") + moat_publish._thoat(why)
+        # Sua chinh tin nhan co nut: bam xong thay ket qua ngay tai do. Con
+        # loi thi giu nut lai de bam tiep.
+        if msg.get("message_id"):
+            call(token, "editMessageText", chat_id=msg["chat"]["id"],
+                 message_id=msg["message_id"],
+                 text=(msg.get("text") or "") + "\n\n<b>" + txt + "</b>",
+                 parse_mode="HTML",
+                 reply_markup=({"inline_keyboard": []} if ok
+                               else (msg.get("reply_markup") or {"inline_keyboard": []})))
+        log("nut", f"day lai moat {action} {draft_id}: {txt}")
+
+    threading.Thread(target=chay, daemon=True).start()
+
+
+def _doc_draft(draft_id):
+    try:
+        return json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return {}
+
+
 def _dang_nen(token, channel, draft_id, msg):
     """Phan nang cua nut Duyet, chay trong thread rieng. Moi duong loi deu phai
     ra trang thai ro rang: publish_failed cho bam Duyet lai duoc — khong bao
@@ -932,6 +992,16 @@ def _dang_nen(token, channel, draft_id, msg):
         if ok:
             pushed, why = moat_publish.intake(draft_id)
             note += ("\n\U0001f4e4 moat: " + why) if pushed else ("\n\u26a0\ufe0f moat: " + why)
+            # Nut cua the bi go ngay sau day, nen loi moat ma chi nam trong
+            # `note` la mot dong chu chet: khong bam lai duoc, va cron day lai
+            # co the cung bo cuoc sau 2 ngay. Reply mot tin RIENG co nut de
+            # con nguoi ra tay bat cu luc nao.
+            if not pushed:
+                moat_publish.bao_the(
+                    draft_id,
+                    "⚠️ Chưa đẩy được sang moat: " + moat_publish._thoat(why)
+                    + "\nĐang tự thử lại theo lịch lùi; bấm nút để thử ngay.",
+                    [{"text": "🔁 Đẩy lại moat", "callback_data": "mlai:" + draft_id}])
     except Exception as e:                                   # noqa: BLE001
         try:
             mark_draft(draft_id, "publish_failed")

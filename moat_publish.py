@@ -283,22 +283,30 @@ def images_payload(d):
     return out[:MAX_ANH]
 
 
-def _body_intake(draft_id, d, cap, images, scheduled_at=None):
-    """Payload /publish-intake cua moat — mot cho de doi chieu voi schema cua no."""
+def _body_intake(draft_id, d, cap, images, scheduled_at=None,
+                 platforms=None, external_id=None):
+    """Payload /publish-intake cua moat — mot cho de doi chieu voi schema cua no.
+
+    `platforms` de dang LAI mot nen tang da that bai ma khong dang lai nhung
+    nen tang da len: intake tao task cho MOI nen tang trong danh sach, nen giu
+    nguyen ca bo la Facebook len hai lan.
+    `external_id` phai KHAC lan truoc thi moat moi tao workflow moi -- no
+    idempotent theo khoa nay, gui lai id cu chi tra ve workflow cu.
+    """
     body = {
-        "externalId": draft_id,
+        "externalId": external_id or draft_id,
         "title": cap[:80],
         "caption": cap,
         "sourceUrl": d.get("source_url") or "",
         "images": images,
-        "platforms": PLATFORMS,
+        "platforms": platforms or PLATFORMS,
     }
     if scheduled_at:
         body["scheduledAt"] = scheduled_at
     return body
 
 
-def intake(draft_id, scheduled_at=None):
+def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
     """Day mot draft da duyet sang hang doi publish cua moat.
 
     Tra (ok, note). Khong bao gio nem ngoai le: bai da len Telegram channel
@@ -346,7 +354,8 @@ def intake(draft_id, scheduled_at=None):
     if not images:
         return False, "khong tim thay anh de day"
 
-    body = _body_intake(draft_id, d, cap, images, scheduled_at)
+    body = _body_intake(draft_id, d, cap, images, scheduled_at,
+                        platforms, external_id)
 
     # Danh dau "dang day" TRUOC khi goi: mot cu kill -9 giua luc upload (may tat,
     # systemd restart, OOM) khong chay duoc nhanh loi nao ben duoi, va bai se mat
@@ -369,6 +378,11 @@ def intake(draft_id, scheduled_at=None):
         return False, loi
 
     out = r.json()
+    # Day lai bang external_id moi sinh ra mot workflow khac; ghi de thang thi
+    # mat dau workflow cu (con task dang theo doi). Cat vao lich su truoc.
+    cu = d.get("moat")
+    if isinstance(cu, dict) and cu.get("workflow_id") != out.get("workflowId"):
+        d.setdefault("moat_lich_su", []).append(cu)
     d["moat"] = {
         "workflow_id": out.get("workflowId"),
         # Ghi lai org da day len. poll() phai hoi dung cai org do, khong
@@ -489,9 +503,12 @@ def day_lai():
         lan = max(int(muc.get("lan", 1)), 1)   # muc write-ahead co lan=0
         if lan > len(LICH_LUI):
             _bo_khoi_hang_doi(draft_id)
-            lines.append("🛑 moat: bo cuoc sau " + str(lan - 1) + " lan day lai "
-                         + draft_id + " — " + str(muc.get("loi", ""))[:120]
-                         + "\nDay tay: python3 moat_publish.py push " + draft_id)
+            txt = ("🛑 Bỏ cuộc sau " + str(lan - 1) + " lần đẩy lại sang moat — "
+                   + _thoat(str(muc.get("loi", ""))[:150]))
+            if not bao_the(draft_id, txt,
+                           [{"text": "🔁 Đẩy lại moat", "callback_data": "mlai:" + draft_id}]):
+                lines.append("🛑 moat: bo cuoc sau " + str(lan - 1) + " lan day lai "
+                             + draft_id + " — " + str(muc.get("loi", ""))[:120])
             continue
         if bay_gio - int(muc.get("luc", 0)) < LICH_LUI[lan - 1] * 60:
             continue
@@ -598,6 +615,15 @@ def _poll_mot_bai(path, d, cua_toi, lines):
         elif status == "failed":
             line = ("❌ " + path.stem + " đăng " + label + " lỗi: "
                     + (t.get("last_error") or "không rõ lý do"))
+            # Bao TRA LOI vao the, kem nut dang lai rieng nen tang nay. Gui
+            # duoc thi thoi khong nem vao topic nua -- cung mot loi bao hai
+            # cho la nhieu, ma reply moi la cai chi dung bai.
+            ma = MA_NUT_DANG_LAI.get(t.get("platform"))
+            nut = ([{"text": "🔁 Đăng lại " + label,
+                     "callback_data": ma + path.stem}] if ma else None)
+            if bao_the(path.stem, "❌ Đăng <b>" + label + "</b> lỗi: "
+                       + _thoat(t.get("last_error") or "không rõ lý do"), nut):
+                continue
         else:
             line = "⏹ " + path.stem + " " + label + ": " + status
         lines.append(line)
@@ -636,6 +662,83 @@ def poll():
         _poll_mot_bai(path, d, cua_toi, lines)
 
     return lines
+
+
+# Ma nut "dang lai" cho tung nen tang. Callback data cua Telegram toi da 64
+# byte, ma _DRAFT_ID_HOP_LE cho draft_id dai toi 55 ky tu -> tien to phai ngan;
+# 6 + 55 = 61, vua du. Dung draft_id thang thay vi mot so tra bang de nut con
+# bam duoc sau khi dich vu restart (khong con so tra nao de tra).
+MA_NUT_DANG_LAI = {"facebook": "mlaif:", "instagram": "mlaii:", "tiktok": "mlait:"}
+
+
+def _thoat(s):
+    """Escape cho parse_mode=HTML. last_error cua extension co the chua dau <>
+    (ten the DOM), khong thoat thi Telegram tu choi ca tin nhan."""
+    return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def _tele(method, **kw):
+    """Goi Bot API. Khong bao gio nem: bao loi that bai khong duoc lam hong
+    vong poll dang chay."""
+    try:
+        sys.path.insert(0, str(ROOT))
+        import publish                                        # noqa: PLC0415
+        token, _channel = publish.load_secrets()
+        if not token:
+            return {"ok": False, "description": "khong co token"}
+        with httpx.Client(timeout=30) as c:
+            r = c.post("https://api.telegram.org/bot" + token + "/" + method,
+                       json=kw)
+        return r.json()
+    except Exception as e:                                   # noqa: BLE001
+        return {"ok": False, "description": type(e).__name__ + ": " + str(e)}
+
+
+def bao_the(draft_id, text, nut=None):
+    """Bao TRA LOI thang vao the cua bai tren Telegram, kem nut neu co.
+
+    Truoc day moi thu bao ket qua deu roi vao topic writer nhu mot dong troi
+    noi: bai nao dang loi thi phai tu doi chieu tieu de. Reply vao dung the moi
+    thay ngay bai nao, va cho nut "dang lai" mot cho de dat.
+
+    Tra True neu gui duoc; nguoi goi lay do quyet dinh co can bao kieu cu nua
+    khong. The bi xoa (reply_to chet) thi gui roi, van hon la mat tin.
+    """
+    try:
+        d = read_draft(draft_id)
+    except Exception:                                        # noqa: BLE001
+        d = {}
+    # Nap secret nhu config() lam: chay tu CLI thi TELEGRAM_GROUP_ID chua co
+    # trong moi truong (systemd moi dat san cho dich vu), va thieu no thi ham
+    # nay im lang khong gui gi -- dung kieu loi ma co che nay sinh ra de chua.
+    env_load.nap()
+    group = os.environ.get("TELEGRAM_GROUP_ID")
+    if not group:
+        print("khong bao duoc the: thieu TELEGRAM_GROUP_ID")
+    if not group:
+        return False
+    kw = {"chat_id": group, "text": text, "parse_mode": "HTML"}
+    try:
+        tp = env_load.topics_path()
+        if tp.exists():
+            thread = json.loads(tp.read_text(encoding="utf-8")).get("writer")
+            if thread:
+                kw["message_thread_id"] = thread
+    except Exception:                                        # noqa: BLE001
+        pass
+    if nut:
+        kw["reply_markup"] = {"inline_keyboard": [nut]}
+    mid = d.get("tg_card_message_id")
+    if mid:
+        r = _tele("sendMessage", reply_to_message_id=mid, **kw)
+        if r.get("ok"):
+            return True
+        # The da bi xoa/qua cu -> Telegram tu choi ca tin. Gui khong reply.
+        print("khong reply duoc the " + str(mid) + ": " + str(r.get("description")))
+    r = _tele("sendMessage", **kw)
+    if not r.get("ok"):
+        print("khong bao duoc Telegram: " + str(r.get("description")))
+    return bool(r.get("ok"))
 
 
 SPOOL = STATE_DIR / "moat_chua_bao.json"
