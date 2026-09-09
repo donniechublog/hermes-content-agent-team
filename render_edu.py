@@ -939,6 +939,7 @@ def anh_lam_nen(sl, th, ten):
           f'v.style.top=tren+"px";'
           f'v.style.background="linear-gradient(to bottom,"+st.join(",")+")";'
           f'}};window.__datMan();</script>')
+    return nen, js
 
 
 def s_figure(sl, th):
