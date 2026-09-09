@@ -293,6 +293,14 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `kiem_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.
+- `cai_dat.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
+  (pip, `playwright install chromium`, `npm ci` cho skill của Bob) rồi kết thúc
+  bằng `kiem_moi_truong.py`. Trước đây ba bước này nằm rải trong comment của
+  `requirements.txt` và `bob_nop.py`, thiếu một bước là hỏng **câm** (thiếu cv2 →
+  cổng mặt người tự tắt). Font và model YuNet đã nằm trong git, không phải tải.
+  `--khong-node` cho máy không làm việc của Bob; `--thu` xem trước, không cài gì.
+- `kiem_moi_truong.py` — chặn đầu: cv2, model YuNet, Chromium, `OPENAI_API_KEY`,
+  `TELEGRAM_BOT_TOKEN`. Mỗi mục tự bọc lỗi nên một mục hỏng không giết cả script.
 
 ## Chạy tuần tự, không song song
 
