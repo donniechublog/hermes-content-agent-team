@@ -72,6 +72,22 @@ def _brand() -> str:
     return os.environ.get("CT_BRAND", "").strip()
 
 
+# CT_BRAND ('dcgr'|'blog', tren) la ten NGAN dung cho thu muc state — KHAC voi
+# slug thuong hieu DAI ('dcgr'|'donniechublog') ma card.py/anh_thuong_hieu.py
+# doi ("dcgr" trung ca hai nen an; "blog" != "donniechublog" thi lo ra ngay).
+# anh_chuan_bi.TEN_CT giu chieu nguoc (dai -> ngan); giu them ban nay o day
+# (khong import duoc anh_chuan_bi vi vong lap) de moi noi doi slug dai deu goi
+# CUNG mot ham, khong tu viet lai phep tra nguoc roi quen mot cho (bat
+# 09/09/2026: anh_thuong_hieu.py co HAI cho lam sai giong het nhau).
+_BRAND_DAI = {"dcgr": "dcgr", "blog": "donniechublog"}
+
+
+def brand_dai(mac_dinh: str = "donniechublog") -> str:
+    """Slug thuong hieu DAI ('donniechublog'/'dcgr') tu CT_BRAND hien tai —
+    dung cho moi loi goi card.dat_thuong_hieu / anh_thuong_hieu.dat_thuong_hieu."""
+    return _BRAND_DAI.get(_brand(), mac_dinh)
+
+
 def _tep_env() -> tuple:
     """Danh sach tep .env theo thu tu uu tien (tep truoc thang qua setdefault)."""
     files = [_BASE / "secret.common.env"]

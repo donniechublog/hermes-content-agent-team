@@ -1338,16 +1338,13 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         anh.append(phan_loai(a, wd, tieu_de_nhin))
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     if len(dung_duoc) < toi_thieu and not khong_browser and len(anh) - n0 < TOI_DA_THEM_TH:
-        # BOC (09/09/2026, bat khi chay lai draft "gpt-image-2.5-sunburst..."):
-        # `os.environ["CT_BRAND"]` la ten NGAN dung cho thu muc state (TEN_CT
-        # anh xa "donniechublog" -> "blog"), khong phai slug thuong hieu ma
-        # `card.dat_thuong_hieu`/`anh_thuong_hieu.dat_thuong_hieu` doi ("dcgr"
-        # trung ca hai nen chua ai thay; "donniechublog" thi khong) — truyen
-        # thang CT_BRAND vao day lam `card.dat_thuong_hieu("blog")` nem
-        # SystemExit "Khong biet thuong hieu 'blog'", giet ca `chuan_bi()`.
-        _brand_ngan = os.environ.get("CT_BRAND", "blog")
-        _brand = next((k for k, v in TEN_CT.items() if v == _brand_ngan), "donniechublog")
-        c = _xep_hang_boi_canh(hangs, wd4, _brand)
+        # `env_load.brand_dai()`, KHONG PHAI os.environ["CT_BRAND"] thang: CT_BRAND
+        # la ten NGAN cho thu muc state ("blog"), con `card.dat_thuong_hieu` doi
+        # slug DAI ("donniechublog") — bat 09/09/2026 khi chay lai draft
+        # "gpt-image-2.5-sunburst...": truyen thang CT_BRAND nem SystemExit
+        # "Khong biet thuong hieu 'blog'", giet ca `chuan_bi()`. Cung mot loi
+        # lap lai o anh_thuong_hieu.py, sua chung mot cho o env_load.brand_dai().
+        c = _xep_hang_boi_canh(hangs, wd4, env_load.brand_dai())
         if c:
             them = tai_va_loc([c], wd4 / "bang")
             for a in them[:1]:

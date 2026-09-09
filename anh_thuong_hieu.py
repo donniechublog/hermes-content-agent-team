@@ -473,8 +473,7 @@ def anh_wikidata(hang, wd=None) -> list:
             import httpx
             goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
                                       timeout=30, follow_redirects=True).content)
-            the, nen = the_logo(goc, Path(wd) / "the_logo.png",
-                                os.environ.get("CT_BRAND", "donniechublog"))
+            the, nen = the_logo(goc, Path(wd) / "the_logo.png", env_load.brand_dai())
         except Exception as e:                               # noqa: BLE001
             print(f"[thuong_hieu] the logo hong: {type(e).__name__}", file=sys.stderr)
             continue

@@ -15,15 +15,57 @@ lo ra khi hong:
   - `gom_trung`      gop nhieu bao dua cung mot su kien. Docstring cua no ke
                      hai lan hoi quy that; ca hai o day thanh test.
   - `chuan_hoa`      khoa dedup ghi vao business_seen.json.
+  - `env_load.brand_dai` doi CT_BRAND (ten NGAN cho state, "blog"/"dcgr") ra slug
+                     thuong hieu DAI ("donniechublog"/"dcgr") ma card.py doi.
+                     Sinh 09/09/2026: lan thang CT_BRAND vao card.dat_thuong_hieu
+                     lam SystemExit "Khong biet thuong hieu 'blog'", giet ca
+                     `chuan_bi()" — bat HAI cho lam sai giong het nhau trong cung
+                     mot lan chay lai (anh_chuan_bi.py va anh_thuong_hieu.py).
 
 Chay:  venv/bin/python tests/test_ham_thuan.py
 """
+import os
 import sys
 import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
+
+# ------------------------------------------------------------- env_load.brand_dai
+def test_brand_dai_doi_dung_ca_hai_chieu():
+    """CT_BRAND ('blog') phai ra 'donniechublog' — chinh loi bat 09/09/2026 (hai
+    cho trong anh_thuong_hieu.py truyen thang CT_BRAND vao card.dat_thuong_hieu,
+    nem 'Khong biet thuong hieu blog' vi card.py chi biet slug DAI)."""
+    import env_load
+    cu = os.environ.get("CT_BRAND")
+    try:
+        os.environ["CT_BRAND"] = "blog"
+        assert env_load.brand_dai() == "donniechublog"
+        os.environ["CT_BRAND"] = "dcgr"
+        assert env_load.brand_dai() == "dcgr"          # trung ca hai chieu, sao cung dung
+    finally:
+        if cu is None:
+            os.environ.pop("CT_BRAND", None)
+        else:
+            os.environ["CT_BRAND"] = cu
+
+
+def test_brand_dai_khong_biet_thi_ve_mac_dinh():
+    """CT_BRAND rong/la (che do don, hoac gia tri khong ro) -> mac_dinh, khong nem."""
+    import env_load
+    cu = os.environ.get("CT_BRAND")
+    try:
+        os.environ.pop("CT_BRAND", None)
+        assert env_load.brand_dai() == "donniechublog"
+        os.environ["CT_BRAND"] = "khong-ro"
+        assert env_load.brand_dai("dcgr") == "dcgr"
+    finally:
+        if cu is None:
+            os.environ.pop("CT_BRAND", None)
+        else:
+            os.environ["CT_BRAND"] = cu
 
 
 # ------------------------------------------------------------ co_tieng_viet
