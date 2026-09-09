@@ -181,12 +181,23 @@ def test_khong_con_tep_node_nao_trong_skill():
 
 
 def test_khong_con_ai_shell_ra_node():
+    """Doc bang ast (E-r2-4): chi bat lenh subprocess.*([... "node" ...]) hoac
+    shutil.which("node") — quet chuoi tho tung bao hong oan voi mot comment."""
+    import ast
     xau = []
     for p in list(ROOT.glob("*.py")) + list((ROOT / "hermes").rglob("*.py")):
-        s = p.read_text(encoding="utf-8", errors="replace")
-        for dong in s.splitlines():
-            if '"node"' in dong or "'node'" in dong:
-                xau.append(f"{p.name}: {dong.strip()[:70]}")
+        try:
+            cay = ast.parse(p.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        for n in ast.walk(cay):
+            if not isinstance(n, ast.Call) or not isinstance(n.func, ast.Attribute):
+                continue
+            goc = n.func.value
+            if not (isinstance(goc, ast.Name) and goc.id in ("subprocess", "shutil")):
+                continue
+            if any(isinstance(c, ast.Constant) and c.value == "node" for a in n.args for c in ast.walk(a)):
+                xau.append(f"{p.name}:{n.lineno} {goc.id}.{n.func.attr}(... 'node')")
     assert not xau, f"van con cho goi node: {xau}"
 
 

@@ -185,8 +185,16 @@ def test_moi_fetcher_trong_main_deu_qua_hang_rao():
                 and n.args[0].id == "_thu")
 
     trong_thu = set()
+    ten_qua = set()                 # ham con trong main duoc DUA vao _thu theo ten
     for n in ast.walk(main):
         if qua_hang_rao(n):
+            for con in ast.walk(n):
+                trong_thu.add(id(con))
+            ten_qua |= {a.id for a in n.args if isinstance(a, ast.Name)}
+    # E-r2-5: `def _lay(): return fetch_x(...)` roi `_thu("x", _lay, {})` VAN qua
+    # hang rao — chinh kieu refactor lambda -> def da bi bao oan mot lan.
+    for n in ast.walk(main):
+        if isinstance(n, ast.FunctionDef) and n.name in ten_qua:
             for con in ast.walk(n):
                 trong_thu.add(id(con))
 

@@ -84,9 +84,17 @@ def test_dam_khong_bien_HTML_da_escape_thanh_the_that():
 def test_khong_con_phu_thuoc_goi_markdown():
     """Kiem MA NGUON, khong kiem goi da cai: may nao con markdown trong venv thi
     van chay duoc du da bo — cai can chan la co ai goi lai no khong."""
-    src = (ROOT / "nhat_ky_web.py").read_text(encoding="utf-8")
-    assert "import markdown" not in src, "van con import markdown"
-    assert "markdown.markdown(" not in src, "van con goi markdown.markdown"
+    # Doc bang ast (E-r2-4): quet chuoi tho bao hong oan voi mot comment nhac
+    # `import markdown`.
+    import ast
+    cay = ast.parse((ROOT / "nhat_ky_web.py").read_text(encoding="utf-8"))
+    nhap = [n for n in ast.walk(cay)
+            if (isinstance(n, ast.Import) and any(a.name.split(".")[0] == "markdown" for a in n.names))
+            or (isinstance(n, ast.ImportFrom) and (n.module or "").split(".")[0] == "markdown")]
+    assert not nhap, "van con import markdown"
+    goi = [n for n in ast.walk(cay) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+           and isinstance(n.func.value, ast.Name) and n.func.value.id == "markdown"]
+    assert not goi, "van con goi markdown.*(...)"
 
 
 if __name__ == "__main__":
