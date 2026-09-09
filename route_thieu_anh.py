@@ -29,6 +29,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
+import vai as vai_mod                                        # noqa: E402
 
 DRAFTS = env_load.ROOT / "drafts"
 
@@ -68,7 +69,7 @@ def sau_chuan_bi(draft_id: str, m: dict) -> None:
     if vai == "carousel-edu" or im.get("chuyen_kite"):
         return                                     # da la Kite / da chuyen roi
     so, tt = int(thieu.get("so", 0)), int(thieu.get("toi_thieu", 5))
-    ten = {"designer": "Ethan", "carousel": "Dre"}.get(vai, vai)
+    ten = vai_mod.ten_hien(vai)      # ban dang ky: vai.py (audit A4)
     tieu = m.get("title", draft_id)
     from duyet_giao_viec import chuan_assignee
     from duyet_bai import tao_task_kite

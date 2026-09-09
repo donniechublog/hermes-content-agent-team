@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import vai as vai_mod                                        # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 import card                                                  # noqa: E402
 
@@ -34,7 +35,6 @@ def handle_kenh(brand: str) -> str:
 
 
 FIG_RONG_TOI_THIEU = 800
-VAI_ANH_TEN = {"carousel": "Dre", "designer": "Ethan"}
 # Tran hinh BAT BUOC: bo chi duoc 6..10 slide, tru bia va cta con 8. Ep het khi
 # engine tim duoc 9 tam la hai cong da nhau, vai khong co duong nao nop duoc.
 TOI_DA_EP_HINH = 6
@@ -51,7 +51,7 @@ def chuyen_tu_vai(m: dict) -> str:
     im = cb._doc_json(cb.DRAFTS / (str(m.get("draft_id", "")) + ".img.json"), {}) or {}
     tu = im.get("chuyen_tu") or ""
     if tu:
-        return VAI_ANH_TEN.get(tu, tu)
+        return vai_mod.ten_hien(tu)      # ban dang ky: vai.py (audit A4)
     return "vai ảnh" if (m.get("chuyen_kite") or im.get("chuyen_kite")) else ""
 
 

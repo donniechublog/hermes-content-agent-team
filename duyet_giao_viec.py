@@ -19,6 +19,7 @@ import env_load                                              # noqa: E402
 import bang_den                                              # noqa: E402
 import ghi_log                                              # noqa: E402
 import hermes_adapter                                        # noqa: E402
+import vai                                                   # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _ghi_json, call, log,
@@ -55,65 +56,19 @@ def _bao_nhan_viec(token, group, vai, tu_vai, title, tid, ly_do=""):
          text=text, parse_mode="HTML")
     log("route", f"bao {vai} nhan viec tu {tu_vai or 'Ong Chu'}: {tid} (truoc={truoc})")
 
-# Vai dung anh -> thuong hieu. Ong Chu chon bang cach tra loi "1 - Ethan".
-# Khong ghi ten ai thi mac dinh Ethan (donniechublog).
-# Chi con HAI vai dung anh, va ca hai lam CUNG MOT kieu anh: kieu tran, khong
-# khung, khong vach. Khac nhau dung mot thu la THUONG HIEU. Iris da bo: khi ca
-# doi chuyen sang mot kieu anh duy nhat thi vai cua Iris trung khit voi Ethan,
-# giu lai chi de hai ban SOUL gan nhu giong het troi ra khoi nhau.
-# Container = 1 brand co dinh (BRAND). Slug dat theo CHUC NANG, dung chung ten o
-# moi brand: "designer" (the bia, card.py) va "carousel" (nhieu slide,
-# carousel.py). Ten nhan vat cu (chad/ethan/heller/dre) giu lam alias de Ong Chu
-# go quen tay van dung. Brand KHONG con nam trong map — lay tu BRAND (env).
-VAI_ANH = {
-    "designer": "designer", "img": "designer", "anh": "designer",
-    "ethan": "designer",                               # alias ten persona
-    "carousel": "carousel", "cr": "carousel",
-    "dre": "carousel",                                 # alias ten persona
-    "carousel-edu": "carousel-edu", "edu": "carousel-edu",
-    "kite": "carousel-edu",            # alias ten persona (go "sli" / "kite")
-    "kites": "carousel-edu",           # so nhieu tieng Anh — Ong Chu hay go the
-                                        # khi giao nhieu tin cung luc (vd "3, 4 -
-                                        # Kites"). Su co 06/09/2026: doc_lenh_chon
-                                        # tu choi CA lenh vi "kites" khong khop
-                                        # TEN_SANG_CAP -> roi ve hoi thoai, gui
-                                        # nham cho Finn (topic scout) thay vi tao
-                                        # task cho Kite.
-}
-
-# Ba loai vai anh, moi loai mot cong cu: card.py (the bia, designer), carousel.py
-# (anh that nhieu slide, carousel), render_edu.py (art vector goc magazine,
-# carousel-edu/Kite). Them vai moi thi khai vao day + dung set duoi.
-VAI_CAROUSEL = {"carousel"}        # slug dung carousel.py (anh that nhieu slide)
-
-VAI_EDU = {"carousel-edu"}         # slug dung render_edu.py (art vector goc, Kite)
-
-MAC_DINH_ANH = "designer"
-
-# Ong Chu go TEN NAO CUNG DUOC — nguoi dung anh hay nguoi viet.
-#
-# Mot lua chon sinh ra mot CAP di lien nhau: nguoi dung anh lam cha, nguoi viet
-# lam con cho cha xong. Ca cap do bi khoa vao dung mot thuong hieu. Nen ten nao
-# trong cap cung da du de xac dinh ca cap, va bat Ong Chu phai nho ai la nguoi
-# dung anh con ai la nguoi viet la bat nho mot thu khong can nho.
-#
-#     1 - Ethan   ==  1 - Miles   ->  anh donniechublog + bai cua Miles
-#     1 - Ethan  ==  1 - Miles   ->  anh dcgr.tech     + bai cua Miles
-TEN_SANG_CAP = dict(VAI_ANH)
-
-TEN_SANG_CAP.update({           # ten nguoi viet cung nhan -> ve default anh
-    "writer": "designer", "cap": "designer",
-    "miles": "designer",
-})
-
-# Ten hien ra bao cao (slug -> ten persona thong nhat, chung ca hai brand).
-TEN_VAI_ANH = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite"}
-
-# Mot container mot nguoi viet duy nhat. Bang VAI_VIET theo brand da bo — no
-# rong tu khi chuyen sang container-per-brand, moi lookup deu ve hang so nay.
-MAC_DINH_VIET = "writer"
-
-TEN_VAI_VIET = {"writer": "Miles"}
+# BANG VAI da gom vao `vai.py` (audit A4/F1) — them mot vai = them MOT dong o
+# do, khong phai sua sau cho nhu truoc. Cac ten duoi day giu nguyen la MAT TIEN
+# cho ho duyet_* (duyet_lenh/duyet_chon_tin/duyet_bai) va test dang goi qua
+# `duyet_giao_viec.X`; ly do ton tai cua tung bang nam trong vai.py.
+VAI_ANH = vai.VAI_ANH
+VAI_CAROUSEL = vai.VAI_CAROUSEL
+VAI_EDU = vai.VAI_EDU
+TEN_SANG_CAP = vai.TEN_SANG_CAP
+TEN_VAI_ANH = vai.TEN_VAI_ANH
+TEN_VAI_VIET = vai.TEN_VAI_VIET
+SLUG_CU = vai.SLUG_CU
+MAC_DINH_ANH = vai.MAC_DINH_ANH
+MAC_DINH_VIET = vai.MAC_DINH_VIET
 
 def vai_cua_topic(thread_id):
     """Topic id -> ten vai, doc tu state/topics.json."""
@@ -138,7 +93,7 @@ SLUG_CU = {"miles": "writer", "dre": "carousel", "ethan": "designer",
 
 def chuan_assignee(assignee):
     """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""
-    slug = SLUG_CU.get(str(assignee).lower(), assignee)
+    slug = vai.slug_that(assignee)
     co = Path(HERMES_HOME) / "profiles" / slug
     if not co.is_dir():
         return None, (f"không có profile '{slug}' trong {Path(HERMES_HOME).name} "
@@ -167,10 +122,7 @@ def kanban_create(title, assignee, body, parent=None):
 # viec voi no va bo sot Kite, da bo 05/09/2026.
 DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
 
-_TEN_HIEN = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
-             "writer": "Miles", "scout": "Finn", "nova": "Nova", "market": "Vera",
-             "teaser": "Cape", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
-             "bob": "Bob"}
+_TEN_HIEN = vai.TEN_HIEN            # xem vai.py
 
 # Moi bai mot the goc (bang_den.py), Dre/Miles/Ada la con cua no. Ly do va so do
 # o dau bang_den.py. O day chi co ba mieng noi vao luong san:
