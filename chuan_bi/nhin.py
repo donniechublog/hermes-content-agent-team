@@ -81,7 +81,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
                                      headers={"Content-Type": "application/json",
                                               "Authorization": "Bearer " + key})
-        raw = urllib.request.urlopen(req, timeout=45).read().decode().strip()
+        raw = _goi_router(req).read().decode().strip()
         if raw.startswith("data:"):
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         txt = _j.loads(raw)["choices"][0]["message"]["content"]
@@ -109,8 +109,50 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             return mt, lqv, (t.group(1).strip()[:120] if t else "")
         return mt, lqv
     except Exception as e:                                   # noqa: BLE001
-        print(f"[vision] {Path(path).name}: {type(e).__name__}", file=sys.stderr)
+        print(f"[vision] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return ("", None, "") if (hoi_them and nhan_them) else ("", None)
+
+
+# Ma HTTP dang thu lai: router qua tai / gateway. 401/400 thi khong (thu lai vo ich).
+_THU_LAI = (429, 502, 503, 504)
+_CHO_THU_LAI = (1, 2, 4)      # giay, tang dan; 3 lan thu lai
+
+
+def _goi_router(req, _ngu=None):
+    """urlopen co thu lai khi 429/5xx (audit lượt 2, B-r2-2): B2 cho 4 luong ban
+    cung luc vao router, gap 429 la anh roi vao "CHUA AI NHIN" va bi loai khoi
+    dung_duoc — song song hoa lam 429 de xay ra HON ban tuan tu ma khong co
+    backoff nao. `_ngu` de test thay time.sleep."""
+    import time
+    import urllib.error
+    import urllib.request
+    ngu = _ngu or time.sleep
+    for lan, cho in enumerate(_CHO_THU_LAI + (None,)):
+        try:
+            return urllib.request.urlopen(req, timeout=45)
+        except urllib.error.HTTPError as e:
+            if e.code not in _THU_LAI or cho is None:
+                raise
+            print(f"[vision] router tra {e.code}, thu lai sau {cho}s (lan {lan + 1}/{len(_CHO_THU_LAI)})",
+                  file=sys.stderr)
+            ngu(cho)
+
+
+def _phan_loai_an_toan(a: dict, wd: Path, tieu_de: str) -> dict:
+    """phan_loai cho executor.map: mot anh hong (PNG cut, dem_mat/crop nem) KHONG
+    duoc lam list(ex.map) nem — ca lo mat, ke ca anh da nhin xong, engine chet
+    khong xong.json (audit lượt 2, B-r2-3). Anh hong tro thanh anh "chua nhin"
+    co ghi chu, cac anh khac di tiep."""
+    try:
+        return phan_loai(a, wd, tieu_de)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[vision] {a.get('ma')} {Path(a.get('goc', '?')).name}: HONG khi phan loai — "
+              f"{type(e).__name__}: {e!r}", file=sys.stderr)
+        a.update({"dung": [], "lien_quan": None, "mo_ta": "", "mat": 0,
+                  "ghi_chu": [f"⚠️ không phân loại được ({type(e).__name__}) — bỏ qua ảnh này"]})
+        a.setdefault("w", 0)
+        a.setdefault("h", 0)
+        return a
 
 
 def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
@@ -220,8 +262,8 @@ def _nhin_anh(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
     # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
     with ThreadPoolExecutor(max_workers=4) as ex:
-        anh = list(ex.map(lambda a: phan_loai(a, wd, "" if a.get("xep_hang")
-                                              else (nguon.get("tieu_de_en") or title)), anh))
+        anh = list(ex.map(lambda a: _phan_loai_an_toan(a, wd, "" if a.get("xep_hang")
+                                                       else (nguon.get("tieu_de_en") or title)), anh))
     for a in anh:
         if a.get("xep_hang"):
             a["mo_ta"] = a["alt"]
