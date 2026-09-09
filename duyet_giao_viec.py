@@ -182,11 +182,14 @@ def _bang_den_ghi(draft_id, key, value):
         log("bangden", f"{draft_id}: ghi '{key}' loi: {loi}")
 
 def _trang_thai_task(tid):
-    """Trang thai hien tai cua mot task, '' neu khong ro.
+    """Trang thai hien tai cua mot task; '' neu task khong co; None neu KHONG DOC
+    DUOC kanban (C1 — hai thu nay khac nhau, nguoi goi phai phan biet).
 
-    Doc qua hermes_adapter — no la noi duy nhat biet schema kanban.db (C2)."""
-    tt = hermes_adapter.trang_thai(tid)
-    return "" if tt is None else tt
+    Truoc audit lượt 2 (C-r2-3) ham nay ep None ve '' — kanban hong luc bam
+    Duyet thi task Miles duoc tao khong co cha (mat ban giao cua Dre) ma note
+    van bao "✅", va nut Duyet bam lai tra cau co dinh "dang duoc viet" — dung
+    loi c81e6e6 sua. Doc qua hermes_adapter — noi duy nhat biet schema (C2)."""
+    return hermes_adapter.trang_thai(tid)
 
 def _tom_tat_run(tid):
     """(summary, metadata_dict) cua lan chay cuoi cua task — cai vai vua ban giao."""
