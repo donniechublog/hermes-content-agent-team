@@ -134,6 +134,37 @@ def test_them_vai_chi_ton_mot_dong():
     assert {v.slug for v in v2.values() if v.renderer == "card"} == {"designer", "thu_nghiem"}
 
 
+# ---- tai lieu khong duoc lech ban dang ky (audit C6) ------------------------
+def _bang_vai_trong_readme():
+    """(ten, slug) tu bang 'Doi hinh' trong README: `| Ten | \\`slug\\` | ... |`."""
+    import re
+    doc = (ROOT / "README.md").read_text(encoding="utf-8")
+    return {m.group(2): m.group(1).strip()
+            for m in re.finditer(r"^\|\s*([A-ZĐ][\wÀ-ỹ]*)\s*\|\s*`([a-z-]+)`\s*\|", doc, re.M)}
+
+
+def test_README_goi_dung_ten_vai_nhu_ban_dang_ky():
+    """Su co C6: tai lieu con goi Kite/Cape bang ten persona cu (Jean, Heller...)
+    trong khi ma da doi. Ten trong bang README phai khop vai.TEN_HIEN."""
+    lech = {slug: (ten, vai.TEN_HIEN.get(slug))
+            for slug, ten in _bang_vai_trong_readme().items()
+            if vai.TEN_HIEN.get(slug) != ten}
+    assert not lech, f"README goi ten khac ban dang ky (slug: README vs vai.py): {lech}"
+
+
+def test_moi_vai_trong_ban_dang_ky_deu_co_trong_README():
+    """Them mot dong vao vai.py ma quen ghi vao bang README thi doi khong biet
+    vai do ton tai — F1 hua 'them vai = mot dong registry', cai gia la phai
+    dong bo tai lieu ngay canh."""
+    thieu = sorted(set(vai.VAI) - set(_bang_vai_trong_readme()))
+    assert not thieu, f"co trong vai.py ma khong co trong bang README: {thieu}"
+
+
+def test_khong_vai_la_nao_trong_README():
+    thua = sorted(set(_bang_vai_trong_readme()) - set(vai.VAI))
+    assert not thua, f"README ke vai khong co trong vai.py: {thua}"
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

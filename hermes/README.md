@@ -30,8 +30,11 @@ SOUL 32 dòng thay hai bản 91 dòng, handle do `bob_nop.py` đọc từ bảng
 `card.py` chứ không gõ trong SOUL). Chỉ ở blog: `scout`=Finn,
 `teaser`=Cape (đọc donniechu.com), `nova`. Chỉ ở dcgr: `market`=Vera.
 (từ 03/09/2026: dcgr chỉ có Vera đi tìm tin, Finn không có cron ở dcgr nên bỏ).
-`carousel-edu`=Kite (blog) đã deploy live từ 01/09/2026 (full pipeline:
-render_edu.py + profile + approve).
+`carousel-edu`=Kite lên live đầu tiên ở **blog** 01/09/2026 (full pipeline:
+render_edu.py + profile + approve), sau đó **dcgr** — SOUL nằm ở `shared/` nên
+chạy CẢ HAI home, đúng như dòng liệt kê phía trên. Chữ "(blog)" ở đây trước
+09/09/2026 đọc thành "chỉ có ở blog" và mâu thuẫn với chính danh sách shared
+ngay trên nó (audit C6).
 
 Sửa ở home rồi chép vào git trước khi commit:
 
