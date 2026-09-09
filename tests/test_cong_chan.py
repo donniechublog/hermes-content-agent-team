@@ -7,8 +7,12 @@ cổng: vai sửa kiểu gì cũng sai và Ông Chủ chỉ thấy im lặng. Ng
 cổng ở đây phải có ví dụ ĐÚNG-PHẢI-QUA đi kèm ví dụ SAI-PHẢI-CHẶN.
 
 Chạy:  venv/bin/python tests/test_cong_chan.py
+
+Ba lệnh subprocess trong tệp này gọi `sys.executable`, KHÔNG gõ cứng
+`venv/bin/python`: đường cứng chỉ đúng trên Linux/macOS và làm test đỏ trên
+Windows (`venv/Scripts/python.exe`) dù mã chính hoàn toàn ổn — xem lý do đầy đủ
+trong docstring của `tu_lieu.boc()`.
 """
-import contextlib
 import sys
 import tempfile
 from pathlib import Path
@@ -480,7 +484,7 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
         t = Path(td)
         BB = "https://anthropic.com/claude-opus-46"
         # ghi danh sach bat buoc bang chinh tien trinh con (cung state dir)
-        subprocess.run([str(ROOT / "venv/bin/python"), "-c",
+        subprocess.run([sys.executable, "-c",
                         "import sys; sys.path.insert(0, %r); import bat_buoc; "
                         "bat_buoc.them('scout', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
                         % (str(ROOT), BB)],
@@ -503,7 +507,7 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
             (t / "p.json").write_text(json.dumps(picks), encoding="utf-8")
 
             r = subprocess.run(
-                [str(ROOT / "venv/bin/python"), str(ROOT / "manifest_build.py"),
+                [sys.executable, str(ROOT / "manifest_build.py"),
                  "--candidates", str(t / "c.json"), "--picks", str(t / "p.json"),
                  "--out", str(t / "m.json"), "--khong-xoa-bat-buoc"],
                 env=moi_truong, capture_output=True, text=True, cwd=str(ROOT))
@@ -711,7 +715,7 @@ def test_manifest_rong_khong_ghi_de():
                 if ra.exists():
                     ra.unlink()
                 r = subprocess.run(
-                    [str(ROOT / "venv/bin/python"), str(ROOT / "manifest_build.py"),
+                    [sys.executable, str(ROOT / "manifest_build.py"),
                      "--candidates", str(t / "c.json"), "--picks", str(t / "p.json"),
                      "--out", str(ra)],
                     env=moi_truong, capture_output=True, text=True, cwd=str(ROOT))
