@@ -127,10 +127,17 @@ CAPTION_LIMIT = 1024      # gioi han caption cua sendPhoto / sendMediaGroup
 # publish_failed va moi bam Duyet lai. Truoc 09/09/2026 chi album co dau, nen
 # bai anh don / bai chi co chu se len channel LAN THU HAI — doc gia thay hai
 # bai giong het nhau, dung thu hong README goi la te nhat.
-#
-# Con thieu (E5 chua xong): buoc cuu `_cuu_bai_ket_publishing` trong
-# approve_service phai DOC cac dau nay — co dau tuc la da len channel that, nen
-# danh dau "published" thay vi ha ve "publish_failed" roi moi bam Duyet lai.
+DAU_LEN_CHANNEL = ("channel_album_mid", "channel_anh_mid", "channel_chu_mid")
+
+
+def da_len_channel(d: dict) -> bool:
+    """Draft nay da co PHAN NAO len channel chua (theo DAU_LEN_CHANNEL).
+
+    `_cuu_bai_ket_publishing` (approve_service) dung de phan biet hai canh
+    giong het nhau tu ben ngoai: bai CHUA kip len channel (moi bam Duyet lai),
+    voi bai DA len roi ma tien trinh chet truoc khi kip ghi "published" (khong
+    duoc moi bam lai)."""
+    return any(d.get(k) for k in DAU_LEN_CHANNEL)
 
 
 def _ghi_dau(p_draft, d, khoa, mid):

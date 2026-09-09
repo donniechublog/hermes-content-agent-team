@@ -49,7 +49,7 @@ from duyet_chon_tin import (  # noqa: E402
     MANIFEST_THEO_TOPIC, _KHOA_MANIFEST, _draft_id, _khoa_manifest, _la_reply_bao_cao, doc_lenh_chon, _xu_ly_chon,
 )
 from duyet_bai import (  # noqa: E402
-    LAM_LAI_CHO, LAM_LAI_HAN, _KHOA_LAM_LAI, _giao_lam_lai, _lam_lai_het_han, _nap_lam_lai_cho, _nhan_ly_do_lam_lai, _send_media_group, _tach_ly_do_lam_lai, _xu_ly_ly_do_lam_lai, _xu_ly_nut, draft_push, keyboard, mark_draft, publish, _sua_tin_go_nut, tao_task_kite, handle_callback, handle_img_approval,
+    LAM_LAI_CHO, LAM_LAI_HAN, _KHOA_LAM_LAI, _giao_lam_lai, _lam_lai_het_han, _nap_lam_lai_cho, _nhan_ly_do_lam_lai, da_len_channel, _send_media_group, _tach_ly_do_lam_lai, _xu_ly_ly_do_lam_lai, _xu_ly_nut, draft_push, keyboard, mark_draft, publish, _sua_tin_go_nut, tao_task_kite, handle_callback, handle_img_approval,
 )
 from duyet_chat import (  # noqa: E402
     handle_chat,
@@ -291,7 +291,7 @@ def _cuu_bai_ket_publishing(token, group):
     `publish_failed` (bam Duyet lai duoc) va noi ra o topic cua bai.
     """
     gio = int(time.time())
-    cuu = []
+    cuu, da_len = [], []
     try:
         ds = sorted(DRAFTS.glob("*.json"))
     except OSError:
@@ -307,21 +307,42 @@ def _cuu_bai_ket_publishing(token, group):
             continue
         if gio - int(d.get("decided_at") or 0) < KET_PUBLISHING_GIAY:
             continue                    # co the mot tien trinh khac dang dang that
-        d["status"] = "publish_failed"
-        d["ghi_chu_cuu"] = f"dich vu khoi dong lai luc {gio}, bo trang thai publishing"
+        # CO DAU len channel = Telegram DA nhan bai nay (`publish` ghi dau ngay
+        # khi tra ok, truoc moi viec khac). Tien trinh chet sau do la chet o
+        # buoc GHI TRANG THAI, khong phai o buoc dang. Ha ve publish_failed luc
+        # nay la moi Ong Chu bam Duyet lai mot bai DA len channel — dung duong
+        # sinh ra "dang trung" ma E5 di dong.
+        if da_len_channel(d):
+            d["status"] = "published"
+            d["ghi_chu_cuu"] = (f"dich vu khoi dong lai luc {gio}; bai DA len channel "
+                                "(co dau channel_*_mid) nen danh dau published")
+            dich = da_len
+        else:
+            d["status"] = "publish_failed"
+            d["ghi_chu_cuu"] = f"dich vu khoi dong lai luc {gio}, bo trang thai publishing"
+            dich = cuu
         try:
             _ghi_json(p, d)
         except OSError:
             continue
-        cuu.append(p.stem)
-    if not cuu:
+        dich.append(p.stem)
+    if not cuu and not da_len:
         return
-    log("start", f"cuu {len(cuu)} bai ket o publishing: {', '.join(cuu)}")
+    log("start", f"cuu {len(cuu)} bai ket o publishing, {len(da_len)} bai da len "
+                 f"channel: {', '.join(cuu + da_len)}")
+    phan = []
+    if da_len:
+        phan.append("✅ " + str(len(da_len)) + " bài ĐÃ lên channel trước khi dịch vụ tắt "
+                    "(Telegram đã nhận) — đã đánh dấu <b>published</b>, "
+                    "<b>đừng bấm Duyệt lại</b> kẻo đăng trùng:\n"
+                    + "\n".join("• " + html_escape(x) for x in da_len[:10]))
+    if cuu:
+        phan.append("⚠️ " + str(len(cuu)) + " bài kẹt ở trạng thái \"đang đăng\" mà CHƯA có "
+                    "dấu nào cho thấy đã lên channel — đã mở khoá, kiểm tra channel rồi "
+                    "bấm Duyệt lại nếu chưa lên:\n"
+                    + "\n".join("• " + html_escape(x) for x in cuu[:10]))
     call(token, "sendMessage", chat_id=group,
-         text=("⚠️ Dịch vụ vừa khởi động lại giữa lúc đang đăng. "
-               + str(len(cuu)) + " bài kẹt ở trạng thái \"đang đăng\" đã được mở khoá — "
-               "kiểm tra channel xem bài đã lên chưa rồi bấm Duyệt lại nếu chưa:\n"
-               + "\n".join("• " + html_escape(x) for x in cuu[:10])),
+         text="Dịch vụ vừa khởi động lại giữa lúc đang đăng.\n\n" + "\n\n".join(phan),
          parse_mode="HTML")
 
 

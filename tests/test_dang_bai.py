@@ -176,6 +176,41 @@ def test_cuu_bai_qua_han_ha_ve_publish_failed_va_bao_group():
             f"phai gui vao dung group truyen vao: {goi_call}"
 
 
+def test_cuu_bai_da_len_channel_thi_danh_dau_published_khong_moi_bam_lai():
+    """Nua sau cua E5: draft ket o "publishing" NHUNG da co dau
+    `channel_*_mid` — `publish` ghi dau do NGAY khi Telegram tra ok, nen bai da
+    that su len channel va tien trinh chi chet o buoc ghi trang thai.
+
+    Ha ve publish_failed luc nay la moi Ong Chu bam Duyet lai mot bai DA len
+    channel: doc gia thay hai bai giong het nhau. Phai danh dau published va noi
+    ro DUNG bam lai."""
+    with tempfile.TemporaryDirectory() as tmp_s:
+        tmp = Path(tmp_s)
+        gio = int(time.time())
+        p = _ghi_draft(tmp, "d9", status="publishing", decided_at=gio - 3600,
+                       channel_album_mid=12345)
+        goi_call = _goi_cuu_bai(tmp)
+        d = json.loads(p.read_text(encoding="utf-8"))
+        assert d["status"] == "published", \
+            f"co dau da len channel ma van ha publish_failed -> se dang trung: {d}"
+        assert d.get("ghi_chu_cuu"), f"phai ghi ly do da danh dau published: {d}"
+        text = goi_call[0][1].get("text", "") if goi_call else ""
+        assert "d9" in text, f"tin bao phai neu ten draft: {goi_call}"
+        assert "Duyệt lại" in text, f"tin bao phai noi ro ve chuyen bam lai: {text}"
+
+
+def test_cuu_bai_dau_chu_cung_tinh_la_da_len_channel():
+    """Bai chi co CHU (khong anh) chi de lai `channel_chu_mid` — cung phai duoc
+    coi la da len channel, khong rieng gi album."""
+    with tempfile.TemporaryDirectory() as tmp_s:
+        tmp = Path(tmp_s)
+        gio = int(time.time())
+        p = _ghi_draft(tmp, "d10", status="publishing", decided_at=gio - 3600,
+                       channel_chu_mid=777)
+        _goi_cuu_bai(tmp)
+        assert json.loads(p.read_text(encoding="utf-8"))["status"] == "published"
+
+
 def test_cuu_bai_con_moi_thi_giu_nguyen_publishing():
     """draft "publishing" voi decided_at MOI (chua qua nguong) -> PHAI GIU
     NGUYEN "publishing" -- co the mot tien trinh khac dang dang that, dong
