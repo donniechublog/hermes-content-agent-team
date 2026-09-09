@@ -75,6 +75,14 @@ NEN_ANH = (os.environ.get("MOAT_NEN_ANH") or "1") != "0"
 NGUONG_NEN = int(os.environ.get("MOAT_NGUONG_NEN") or 400_000)   # bytes
 CHAT_LUONG_NEN = int(os.environ.get("MOAT_CHAT_LUONG_NEN") or 90)
 
+# Tran CUNG cho tong anh mot bai. Nen tung the rieng le khong bao dam gi ca: 10
+# the anh chup (nhieu chi tiet, WebP kem hieu qua hon anh do hoa) van co the ra
+# 5 MB va lai 524. Uplink do duoc dao dong 37-49 KB/s, nen lay 1,5 MB: base64
+# ~2 MB, tuc ~55 giay o luc mang xau nhat -- con nua thoi gian du phong.
+# Vuot tran thi ha chat luong dan; kem nhat van con q60, thua bo bai.
+TRAN_TONG = int(os.environ.get("MOAT_TRAN_TONG") or 1_500_000)
+BAC_CHAT_LUONG = [CHAT_LUONG_NEN, 80, 70, 60]
+
 # Task o cac trang thai nay coi nhu xong, khong hoi lai nua.
 TERMINAL = {"published", "failed", "cancelled"}
 
@@ -194,13 +202,14 @@ def chu_thuan(text):
     return html.unescape(_THE_HTML.sub("", text or "")).strip()
 
 
-def _nen(raw, mime, ten=""):
+def _nen(raw, mime, ten="", chat_luong=None):
     """(bytes, mime) sau khi nen. Tra lai nguyen ban neu khong nen duoc/khong loi.
 
     WebP giu duoc chu tren the carousel o q90 ma nho hon PNG ~6 lan. Giu kenh
     alpha khi anh co, vi convert("RGB") se bien nen trong suot thanh den.
     Moi loi o day deu nuot: day duoc bai van hon la nen dep.
     """
+    q = CHAT_LUONG_NEN if chat_luong is None else chat_luong
     if not NEN_ANH or len(raw) <= NGUONG_NEN:
         return raw, mime
     try:
@@ -208,9 +217,9 @@ def _nen(raw, mime, ten=""):
         im = Image.open(io.BytesIO(raw))
         buf = io.BytesIO()
         if im.mode in ("RGBA", "LA", "P"):
-            im.convert("RGBA").save(buf, "WEBP", quality=CHAT_LUONG_NEN, method=6)
+            im.convert("RGBA").save(buf, "WEBP", quality=q, method=6)
         else:
-            im.convert("RGB").save(buf, "WEBP", quality=CHAT_LUONG_NEN, method=6)
+            im.convert("RGB").save(buf, "WEBP", quality=q, method=6)
         out = buf.getvalue()
     except Exception as e:                                   # noqa: BLE001
         print("khong nen duoc " + ten + ": " + str(e))
@@ -236,20 +245,40 @@ def images_payload(d):
     if not srcs and d.get("image"):
         srcs = [d["image"]]
 
-    out = []
+    # Doc het bytes truoc: phai biet TONG moi chon duoc muc nen, ma nen tung
+    # the roi cong lai thi da muon.
+    tho = []
     for s in srcs:
         if not isinstance(s, str) or not s:
             continue
         if s.startswith("http"):
-            out.append({"url": s})
+            tho.append(("url", s, "", ""))
             continue
         f = Path(s)
         if not f.exists():
             continue
         mime = MIME_BY_SUFFIX.get(f.suffix.lower(), "image/png")
-        raw, mime = _nen(f.read_bytes(), mime, f.name)
-        out.append({"base64": base64.b64encode(raw).decode("ascii"),
-                    "mime": mime})
+        tho.append(("bytes", f.read_bytes(), mime, f.name))
+
+    da_nen = None
+    for q in BAC_CHAT_LUONG:
+        thu = [(k, (_nen(v, mi, ten, q) if k == "bytes" else (v, mi)))
+               for k, v, mi, ten in tho]
+        tong = sum(len(v[0]) for k, v in thu if k == "bytes")
+        da_nen = thu
+        if tong <= TRAN_TONG or not NEN_ANH:
+            break
+        print("anh con " + str(tong // 1024) + " KB o q" + str(q)
+              + ", ha them mot bac")
+
+    out = []
+    for kind, v in (da_nen or []):
+        if kind == "url":
+            out.append({"url": v[0]})
+        else:
+            raw, mime = v
+            out.append({"base64": base64.b64encode(raw).decode("ascii"),
+                        "mime": mime})
     # Moat nhan toi da 10 anh mot bai; gui 11 la ca bai bi tu choi.
     return out[:MAX_ANH]
 
@@ -319,6 +348,11 @@ def intake(draft_id, scheduled_at=None):
 
     body = _body_intake(draft_id, d, cap, images, scheduled_at)
 
+    # Danh dau "dang day" TRUOC khi goi: mot cu kill -9 giua luc upload (may tat,
+    # systemd restart, OOM) khong chay duoc nhanh loi nao ben duoi, va bai se mat
+    # dau y nhu thoi chua co hang doi. Ghi truoc thi cron sau do nhat len.
+    _danh_dau_dang_day(draft_id, brand, scheduled_at)
+
     try:
         with httpx.Client(timeout=TIMEOUT_DAY) as c:
             r = c.post(base + "/publish-intake", json=body,
@@ -330,7 +364,8 @@ def intake(draft_id, scheduled_at=None):
 
     if r.status_code not in (200, 201):
         loi = "moat tra HTTP " + str(r.status_code) + ": " + r.text[:200]
-        xep_day_lai(draft_id, brand, scheduled_at, loi)
+        if not xep_day_lai(draft_id, brand, scheduled_at, loi):
+            _bo_khoi_hang_doi(draft_id)      # loi khong tu khoi, dung giu lai
         return False, loi
 
     out = r.json()
@@ -395,6 +430,19 @@ def _dang_thu_lai(loi):
     return ma in (408, 425, 429) or ma >= 500
 
 
+def _danh_dau_dang_day(draft_id, brand, scheduled_at):
+    """Ghi mot muc "dang day" truoc khi POST. KHONG tang so lan: day la dau vet
+    de song sot qua mot cu kill, khong phai mot lan that bai."""
+    d = _doc_hang_doi()
+    muc = d.get(draft_id) or {"lan": 0}
+    muc["brand"] = brand
+    muc["scheduled_at"] = scheduled_at
+    muc["luc"] = int(time.time())
+    muc["loi"] = muc.get("loi") or "dang day, chua co ket qua"
+    d[draft_id] = muc
+    _ghi_hang_doi(d)
+
+
 def xep_day_lai(draft_id, brand, scheduled_at, loi):
     """Ghi mot bai truot vao hang doi (hoac tang so lan da thu)."""
     if not _dang_thu_lai(loi):
@@ -438,7 +486,7 @@ def day_lai():
         brand = muc.get("brand") or MAC_DINH_BRAND
         if cua_toi and brand != cua_toi:
             continue
-        lan = int(muc.get("lan", 1))
+        lan = max(int(muc.get("lan", 1)), 1)   # muc write-ahead co lan=0
         if lan > len(LICH_LUI):
             _bo_khoi_hang_doi(draft_id)
             lines.append("🛑 moat: bo cuoc sau " + str(lan - 1) + " lan day lai "
