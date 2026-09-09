@@ -6,7 +6,6 @@ giao"), bang den swarm, bao tien do vao topic. Tach tu approve_service.py 06/09/
 """
 import json
 import os
-import sqlite3
 import subprocess
 import sys
 import time
@@ -19,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import bang_den                                              # noqa: E402
 import ghi_log                                              # noqa: E402
+import hermes_adapter                                        # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _ghi_json, call, log,
@@ -41,14 +41,10 @@ def _bao_nhan_viec(token, group, vai, tu_vai, title, tid, ly_do=""):
     thread = topics.get(vai)
     if not thread:
         return
-    truoc = 0
-    try:
-        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
-        truoc = con.execute("SELECT count(*) FROM tasks WHERE status IN ('ready','running') "
-                            "AND id != ?", (tid,)).fetchone()[0]
-        con.close()
-    except Exception:                                        # noqa: BLE001
-        pass
+    truoc = hermes_adapter.dem_dang_chay(tru_tid=tid)
+    if truoc is None:              # khong doc duoc kanban != khong con viec nao
+        log("route", f"khong doc duoc hang doi kanban khi bao {vai} nhan {tid}")
+        truoc = 0
     ten = _TEN_HIEN.get(vai, vai)
     nguon = f" chuyển từ <b>{_TEN_HIEN.get(tu_vai, tu_vai)}</b>" if tu_vai else ""
     text = (f"📥 <b>{ten}</b> đã nhận task{nguon}: <i>{html_escape(title[:80])}</i>\n"
@@ -186,8 +182,6 @@ def kanban_create(title, assignee, body, parent=None):
 # Kanban cua home container hien tai. Viec bi chan/that bai duoc bao qua
 # bao_tien_do_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
 # viec voi no va bo sot Kite, da bo 05/09/2026.
-KANBAN_DB = Path(HERMES_HOME) / "kanban.db"
-
 DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
 
 _TEN_HIEN = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
@@ -249,38 +243,23 @@ def _bang_den_ghi(draft_id, key, value):
         log("bangden", f"{draft_id}: ghi '{key}' loi: {loi}")
 
 def _trang_thai_task(tid):
-    """Trang thai hien tai cua mot task (doc kanban.db ro), '' neu khong ro."""
-    if not tid or not KANBAN_DB.exists():
-        return ""
-    try:
-        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
-        row = con.execute("SELECT status FROM tasks WHERE id=?", (tid,)).fetchone()
-        con.close()
-        return row[0] if row else ""
-    except Exception:                                        # noqa: BLE001
-        return ""
+    """Trang thai hien tai cua mot task, '' neu khong ro.
+
+    Doc qua hermes_adapter — no la noi duy nhat biet schema kanban.db (C2)."""
+    tt = hermes_adapter.trang_thai(tid)
+    return "" if tt is None else tt
 
 def _tom_tat_run(tid):
     """(summary, metadata_dict) cua lan chay cuoi cua task — cai vai vua ban giao."""
-    if not tid or not KANBAN_DB.exists():
+    run = hermes_adapter.lan_chay_cuoi(tid)
+    if not run:                                  # None (khong doc duoc) hoac {} (chua chay)
         return "", {}
-    try:
-        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
-        row = con.execute(
-            "SELECT coalesce(summary, error, ''), metadata FROM task_runs "
-            "WHERE task_id=? ORDER BY id DESC LIMIT 1", (tid,)).fetchone()
-        con.close()
-    except Exception:                                        # noqa: BLE001
-        return "", {}
-    if not row:
-        return "", {}
-    md = row[1]
-    if isinstance(md, (str, bytes)):
-        try:
-            md = json.loads(md)
-        except Exception:                                    # noqa: BLE001
-            md = {}
-    return (row[0] or ""), (md if isinstance(md, dict) else {})
+    # Y het `coalesce(summary, error, '')` cu: chi roi sang `error` khi summary
+    # la NULL, KHONG roi khi summary la chuoi rong.
+    tom = run.get("tom_tat")
+    if tom is None:
+        tom = run.get("loi")
+    return (tom or ""), run.get("metadata") or {}
 
 def _xong_ma_khong_giao(tid, ai, created_at):
     """Vai anh dong task `done` ma KHONG gui album/the nao len topic — tra ve ly do
@@ -318,29 +297,26 @@ def bao_tien_do_kanban(token, group):
     Chu chon 7 bai luc 05:33, Dre lam bai 1, sau bai kia + Nova xep hang ca
     tieng — va khong ai noi gi, trong nhu he thong dung. Hang doi la thiet ke,
     im lang thi khong. Chay moi vong poll (~50s), chi bao khi trang thai doi."""
-    if not KANBAN_DB.exists():
+    if not hermes_adapter.co_kanban():
         return
     try:
         da = json.loads(DA_BAO_TIEN_DO.read_text(encoding="utf-8")) if DA_BAO_TIEN_DO.exists() else {}
     except Exception:                                        # noqa: BLE001
         da = {}
-    try:
-        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
-        rows = con.execute(
-            "SELECT id, assignee, status, title, created_at FROM tasks "
-            "WHERE created_at > ? ORDER BY created_at", (time.time() - 86400,)).fetchall()
-        con.close()
-    except Exception as e:                                   # noqa: BLE001
-        log("tiendo", f"khong doc duoc kanban: {e}")
+    rows = hermes_adapter.viec(tu_ts=time.time() - 86400)
+    if rows is None:                 # co tep ma doc khong duoc -> phai keu
+        log("tiendo", "khong doc duoc kanban")
         return
-    cho = [r for r in rows if r[2] == "ready"]
+    cho = [r for r in rows if r["trang_thai"] == "ready"]
     tp = env_load.topics_path()
     try:
         topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
     except Exception:                                        # noqa: BLE001
         topics = {}
     doi = False
-    for tid, ai, st, title, _c in rows:
+    for v in rows:
+        tid, ai, st = v["id"], v["vai"], v["trang_thai"]
+        title, _c = v["tieu_de"], v["tao_luc"]
         if st in ("ready", "todo", "triage") or da.get(tid) == st:
             continue
         if ai == BANG_DEN_ASSIGNEE:          # the goc/bang den: khong phai viec cua ai

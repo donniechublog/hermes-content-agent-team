@@ -30,6 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
+import hermes_adapter                                        # noqa: E402
 import publish                                               # noqa: E402
 
 VN = timezone(timedelta(hours=7))
@@ -432,18 +433,13 @@ def gom_vai(ngay: str, theo_model: dict, tong: dict) -> dict:
             a["model"] = dict(a["model"].most_common(3))
             a["usd"] = round(a["usd"], 4)
             vai[f"{brand}/{p.parent.name}"] = a
-        kb = home / "kanban.db"
-        if kb.exists():
-            try:
-                c = sqlite3.connect(f"file:{kb}?mode=ro", uri=True)
-                for ass, n in c.execute("select assignee, count(*) from tasks where status='done' and completed_at >= ? "
-                                        "and completed_at < ? group by assignee", (int(e0), int(e1))):
-                    k = f"{brand}/{ass}"
-                    if k in vai:
-                        vai[k]["task_done"] = n
-                        vai[k]["usd_task"] = round(vai[k]["usd"] / n, 4) if n else None
-            except Exception:                                # noqa: BLE001
-                pass
+        # Qua hermes_adapter (C2): schema kanban.db chi mot tep duoc biet.
+        for ass, n in (hermes_adapter.dem_xong_theo_vai(
+                e0, e1, db=home / "kanban.db") or {}).items():
+            k = f"{brand}/{ass}"
+            if k in vai:
+                vai[k]["task_done"] = n
+                vai[k]["usd_task"] = round(vai[k]["usd"] / n, 4) if n else None
     # $/bài: draft published có mtime trong ngày, theo brand (tên brand trong draft
     # là 'donniechublog'/'dcgr', home là blog/dcgr → khớp bằng chứa chuỗi).
     bai = collections.Counter()

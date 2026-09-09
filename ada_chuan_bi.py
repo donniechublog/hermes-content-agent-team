@@ -34,6 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
+import hermes_adapter                                        # noqa: E402
 
 VN = timezone(timedelta(hours=7))
 DRAFTS = ROOT / "drafts"
@@ -114,21 +115,23 @@ def gom_draft(ngay: int) -> dict:
 
 
 def gom_kanban(ngay: int) -> dict:
-    p = HERMES / "kanban.db"
-    if not p.exists():
+    # Doc qua hermes_adapter (C2) — kanban.db la bang cua hermes-agent, chi mot
+    # tep duoc biet schema cua no.
+    viec = hermes_adapter.viec(tu_ts=int(time.time() - ngay * 86400))
+    if viec is None:
         return {}
-    c = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
-    moc = int(time.time() - ngay * 86400)
     theo_vai = collections.defaultdict(collections.Counter)
     thoi_gian = collections.defaultdict(list)
     loi = []
-    for aid, st, title, ca, sa, ea, err in c.execute(
-            "select assignee,status,title,created_at,started_at,completed_at,last_failure_error from tasks where created_at>=?", (moc,)):
+    for v in viec:
+        aid, st, err = v["vai"], v["trang_thai"], v["loi"]
+        sa, ea = v["bat_dau_luc"], v["xong_luc"]
         theo_vai[aid][st] += 1
         if sa and ea:
             thoi_gian[aid].append(int(ea) - int(sa))
         if st in ("blocked", "failed") or err:
-            loi.append({"vai": aid, "status": st, "title": (title or "")[:60], "loi": (err or "")[:160]})
+            loi.append({"vai": aid, "status": st,
+                        "title": (v["tieu_de"] or "")[:60], "loi": (err or "")[:160]})
     return {"theo_vai": {k: dict(v) for k, v in theo_vai.items()},
             "giay_trung_binh": {k: int(sum(v) / len(v)) for k, v in thoi_gian.items() if v},
             "loi": loi[:10]}

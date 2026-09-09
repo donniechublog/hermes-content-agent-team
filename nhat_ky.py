@@ -33,6 +33,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import env_load
+import hermes_adapter
 
 ROOT = env_load.ROOT
 HERMES = env_load.hermes_home()
@@ -140,23 +141,25 @@ def phan_cron(ngay: str) -> list:
 
 @_chiu_loi_db([])
 def phan_kanban(ngay: str) -> list:
-    con = _mo(HERMES / "kanban.db")
-    if not con:
+    # Doc qua hermes_adapter (C2): kanban.db la bang cua hermes, chi mot tep
+    # duoc biet schema cua no. Hai luot doc thay vi N+1 — truoc day moi task
+    # trong ngay la mot cau `select ... from task_runs` rieng.
+    tat_ca = hermes_adapter.viec()
+    if tat_ca is None:
         return []
+    trong_ngay = [v for v in tat_ca if _trong_ngay(v["tao_luc"], ngay)]
+    runs = hermes_adapter.lan_chay_cuoi_nhieu([v["id"] for v in trong_ngay]) or {}
     ra = []
-    for tid, tie, ai, tt, tao, xong, kq, loi in con.execute(
-            "select id,title,assignee,status,created_at,completed_at,result,last_failure_error from tasks"):
-        if not _trong_ngay(tao, ngay):
-            continue
-        a, b = _gio_vn(tao), _gio_vn(xong)
-        run = list(con.execute(
-            "select summary,error,status from task_runs where task_id=? order by id desc limit 1", (tid,)))
-        tom = (run[0][0] if run and run[0][0] else kq) or ""
-        ra.append({"id": tid, "tieu_de": tie, "vai": ai, "trang_thai": tt,
+    for v in trong_ngay:
+        a, b = _gio_vn(v["tao_luc"]), _gio_vn(v["xong_luc"])
+        run = runs.get(v["id"]) or {}
+        tom = (run.get("tom_tat") or v["ket_qua"]) or ""
+        ra.append({"id": v["id"], "tieu_de": v["tieu_de"], "vai": v["vai"],
+                   "trang_thai": v["trang_thai"],
                    "gio": a.strftime("%H:%M") if a else "?",
                    "giay": round((b - a).total_seconds()) if a and b else None,
                    "tom_tat": re.sub(r"\s+", " ", str(tom))[:300],
-                   "loi": (loi or (run[0][1] if run else "")) or ""})
+                   "loi": (v["loi"] or run.get("loi") or "") or ""})
     ra.sort(key=lambda x: x["gio"])
     return ra
 

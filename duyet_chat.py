@@ -6,7 +6,6 @@ chat_router. Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 import json
 import os
 import re
-import sqlite3
 import sys
 import threading
 import time
@@ -18,12 +17,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import chat_router                                          # noqa: E402
 import tele_util                                            # noqa: E402
+import hermes_adapter                                        # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     STATE_DIR, _reply_that, call, log, rut,
 )
 from duyet_giao_viec import (  # noqa: E402
-    KANBAN_DB, vai_cua_topic,
+    vai_cua_topic,
 )
 
 
@@ -101,24 +101,19 @@ def boi_canh_vai(profile) -> str:
     nao" trong khi 15 phut truoc vua day 3 anh len. Doan nay doc kanban.db lay
     3 task gan nhat cua vai (tieu de, trang thai, tom tat) + ban nhap lien quan,
     ghep vao dau tin de vai tra loi dung viec cua minh."""
-    if not profile or not KANBAN_DB.exists():
+    if not profile or not hermes_adapter.co_kanban():
         return ""
-    try:
-        con = sqlite3.connect(f"file:{KANBAN_DB}?mode=ro", uri=True)
-        rows = con.execute(
-            "SELECT t.id, t.title, t.status, t.completed_at, "
-            "(SELECT summary FROM task_runs r WHERE r.task_id=t.id "
-            " ORDER BY r.rowid DESC LIMIT 1) "
-            "FROM tasks t WHERE t.assignee=? "
-            "ORDER BY t.created_at DESC LIMIT 3", (profile,)).fetchall()
-        con.close()
-    except Exception as e:                                   # noqa: BLE001
-        log("chat", f"boi canh {profile}: khong doc duoc kanban ({e})")
+    rows = hermes_adapter.viec(vai=profile, so=3, moi_truoc=True)
+    if rows is None:
+        log("chat", f"boi canh {profile}: khong doc duoc kanban")
         return ""
     if not rows:
         return ""
+    runs = hermes_adapter.lan_chay_cuoi_nhieu([r["id"] for r in rows]) or {}
     dong = ["[Việc gần nhất của bạn trên kanban — để trả lời đúng việc mình đã làm]"]
-    for tid, title, st, done, tom in rows:
+    for v in rows:
+        tid, title, st, done = v["id"], v["tieu_de"], v["trang_thai"], v["xong_luc"]
+        tom = (runs.get(tid) or {}).get("tom_tat")
         luc = time.strftime("%d/%m %H:%M", time.localtime(done)) if done else "-"
         dong.append(f"- {tid} [{st}] {title[:90]} (xong {luc})")
         if tom:
