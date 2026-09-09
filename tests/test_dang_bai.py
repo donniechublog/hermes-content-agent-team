@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""Test cho hai diem sinh su co "dang trung" / "ket publishing" trong nhat ky
+su co du an (issue E3):
+
+  _dang_nen (duyet_bai.py)              phan nang cua nut Duyet, chay o thread
+      rieng. publish() loi HOAC nem exception deu phai ha trang thai ve
+      publish_failed -- khong bao gio duoc ket vinh vien o "publishing" (xem
+      docstring cua chinh ham do). moat_publish.intake() chi duoc goi khi
+      publish() tra ok=True.
+
+  _cuu_bai_ket_publishing (approve_service.py)  chay MOT lan luc dich vu khoi
+      dong: ha ve publish_failed cac draft con ket o "publishing" QUA
+      KET_PUBLISHING_GIAY giay (thread nen bi SIGTERM giet giua chung khi
+      dich vu restart), nhung PHAI de yen draft con moi (< nguong -- co the
+      mot tien trinh khac dang xu ly that) va draft khong o trang thai
+      "publishing" (published/rejected/...).
+
+Chay:  venv/bin/python tests/test_dang_bai.py
+
+--------------------------------------------------------------------------
+BUG SAN XUAT PHAT HIEN KHI VIET TEST NAY (KHONG sua o day -- xem bao cao cuoi
+task e3_telegram_call): approve_service.py dong ~46 import ten
+`_nhan_ly_do_lam_lai` TU `duyet_giao_viec`:
+
+    from duyet_giao_viec import (
+        MAC_DINH_VIET, bao_tien_do_kanban, vai_cua_topic, _nhan_ly_do_lam_lai,
+    )
+
+nhung ham nay CHI dinh nghia trong `duyet_bai.py` (dong 344), khong ton tai
+trong duyet_giao_viec.py. Loi phat sinh tu commit 8cd8226 ("bo shim re-export
+79 ten trong approve_service", 09/09/2026) -- khi don import, ten nay bi dat
+nham vao tuple cua duyet_giao_viec thay vi o lai tuple cua duyet_bai (noi no
+dinh nghia). Hau qua: `import approve_service` NEM ImportError ngay lap tuc,
+tuc dich vu approve_service that (ham loop()) hien KHONG khoi dong duoc.
+
+Shim ngay duoi day CHI gan them attribute con thieu vao module DA NAP TRONG
+BO NHO cua tien trinh test, KHONG dung cham gi den approve_service.py hay
+duyet_bai.py tren dia -- muc dich duy nhat la cho phep test _cuu_bai_ket_publishing
+(hoan toan khong lien quan den _nhan_ly_do_lam_lai) chay duoc. Sua that phai la
+doi dong 46 cua approve_service.py de _nhan_ly_do_lam_lai nam trong tuple import
+tu duyet_bai (dong 51-53) thay vi tu duyet_giao_viec.
+"""
+import json
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+import duyet_bai as db                                         # noqa: E402
+import duyet_giao_viec as dgv                                  # noqa: E402
+
+if not hasattr(dgv, "_nhan_ly_do_lam_lai"):                    # xem bug o tren
+    dgv._nhan_ly_do_lam_lai = db._nhan_ly_do_lam_lai
+
+import approve_service as aps                                  # noqa: E402
+
+
+# =========================================================== _dang_nen =====
+class _MoatGia:
+    """Thay the module `moat_publish` that: chi ghi lai draft_id da goi
+    intake(), khong dong mang that."""
+    def __init__(self):
+        self.goi = []
+
+    def intake(self, draft_id):
+        self.goi.append(draft_id)
+        return True, "da day sang moat (gia)"
+
+
+def _goi_dang_nen(publish_fn):
+    """Thay the publish/mark_draft/moat_publish/_sua_tin_go_nut cua duyet_bai
+    bang gia, goi db._dang_nen(...) voi msg toi thieu, roi tra ve
+    (goi_mark_draft, goi_moat_intake, goi_sua_tin) de assert. Khoi phuc moi
+    monkeypatch trong finally du _dang_nen co nem loi hay khong (khong duoc,
+    nhung phong truong hop)."""
+    goi_mark_draft = []
+    goi_sua_tin = []
+    moat_gia = _MoatGia()
+
+    def _fake_mark_draft(draft_id, status):
+        goi_mark_draft.append((draft_id, status))
+
+    def _fake_sua_tin_go_nut(token, msg, note):
+        goi_sua_tin.append((token, msg, note))
+
+    cu = (db.publish, db.mark_draft, db.moat_publish, db._sua_tin_go_nut)
+    db.publish = publish_fn
+    db.mark_draft = _fake_mark_draft
+    db.moat_publish = moat_gia
+    db._sua_tin_go_nut = _fake_sua_tin_go_nut
+    try:
+        msg = {"chat": {"id": 1}, "message_id": 2, "text": "ban nhap goc"}
+        db._dang_nen("tok", "chan", "d1", msg)
+    finally:
+        db.publish, db.mark_draft, db.moat_publish, db._sua_tin_go_nut = cu
+    return goi_mark_draft, moat_gia.goi, goi_sua_tin
+
+
+def test_dang_nen_publish_ok_thi_danh_dau_published_va_day_moat():
+    """publish() tra ok=True -> mark_draft("d1", "published") va
+    moat_publish.intake("d1") deu phai duoc goi (chi day moat khi Telegram da
+    nhan bai, dung nhu ghi chu trong code)."""
+    goi_mark_draft, goi_moat_intake, goi_sua_tin = _goi_dang_nen(
+        lambda token, channel, draft_id: {"ok": True, "result": [{"message_id": 9}]})
+    assert goi_mark_draft == [("d1", "published")], \
+        f"phai mark_draft ve published: {goi_mark_draft}"
+    assert goi_moat_intake == ["d1"], \
+        f"phai day sang moat khi publish ok=True: {goi_moat_intake}"
+    assert goi_sua_tin, "phai goi _sua_tin_go_nut de go nut tren tin nhan"
+    assert "DA DANG" in goi_sua_tin[0][2].upper() or "ĐÃ ĐĂNG" in goi_sua_tin[0][2], \
+        f"note phai bao da dang thanh cong: {goi_sua_tin[0][2]!r}"
+
+
+def test_dang_nen_publish_tra_loi_thi_ha_publish_failed_khong_day_moat():
+    """publish() tra {"ok": False, "description": ...} -> mark_draft phai ghi
+    "publish_failed" (bam Duyet lai duoc) va moat_publish.intake TUYET DOI
+    khong duoc goi (code chi day khi ok=True)."""
+    goi_mark_draft, goi_moat_intake, goi_sua_tin = _goi_dang_nen(
+        lambda token, channel, draft_id: {"ok": False, "description": "loi X"})
+    assert goi_mark_draft == [("d1", "publish_failed")], \
+        f"phai mark_draft ve publish_failed: {goi_mark_draft}"
+    assert goi_moat_intake == [], \
+        f"KHONG duoc day sang moat khi publish ok=False: {goi_moat_intake}"
+    assert goi_sua_tin and "loi X" in goi_sua_tin[0][2], \
+        f"note phai chua mo ta loi tu Telegram: {goi_sua_tin[0][2]!r}"
+
+
+def test_dang_nen_publish_nem_exception_van_ha_publish_failed():
+    """THEN CHOT cua docstring _dang_nen: "khong bao gio ket vinh vien o
+    publishing" phai dung CA KHI publish() nem exception giua chung (mang rot,
+    bug code...), khong chi khi no tra ve gon gang {"ok": False}. Truoc khi co
+    try/except bao boc, nhanh nay se lam draft ket o "publishing" mai mai."""
+    def _no(token, channel, draft_id):
+        raise RuntimeError("boom")
+
+    goi_mark_draft, goi_moat_intake, goi_sua_tin = _goi_dang_nen(_no)
+    assert goi_mark_draft == [("d1", "publish_failed")], \
+        f"exception giua publish() VAN phai ha publish_failed, khong duoc ket o publishing: {goi_mark_draft}"
+    assert goi_moat_intake == [], \
+        f"khong duoc day sang moat khi publish nem exception: {goi_moat_intake}"
+    assert goi_sua_tin, "phai VAN goi _sua_tin_go_nut de go nut du publish() nem loi"
+    note = goi_sua_tin[0][2]
+    assert "RuntimeError" in note and "boom" in note, \
+        f"note phai neu ro loai loi + thong diep de con debug: {note!r}"
+
+
+# =============================================== _cuu_bai_ket_publishing ===
+def _ghi_draft(tmp: Path, ten: str, **du_lieu) -> Path:
+    p = tmp / f"{ten}.json"
+    p.write_text(json.dumps(du_lieu), encoding="utf-8")
+    return p
+
+
+def _goi_cuu_bai(tmp: Path):
+    """Tro DRAFTS ve tmp va thay call() bang gia (tranh goi Telegram that) roi
+    goi aps._cuu_bai_ket_publishing("tok", "grp"). Tra ve danh sach
+    (method, kwargs) da goi qua call() de assert co bao Telegram hay khong."""
+    goi_call = []
+
+    def _fake_call(token, method, **kw):
+        goi_call.append((method, kw))
+        return {"ok": True}
+
+    cu_drafts, cu_call = aps.DRAFTS, aps.call
+    aps.DRAFTS = tmp
+    aps.call = _fake_call
+    try:
+        aps._cuu_bai_ket_publishing("tok", "grp")
+    finally:
+        aps.DRAFTS, aps.call = cu_drafts, cu_call
+    return goi_call
+
+
+def test_cuu_bai_qua_han_ha_ve_publish_failed_va_bao_group():
+    """draft "publishing" voi decided_at CU (qua KET_PUBLISHING_GIAY) -> phai
+    ha ve publish_failed + ghi ghi_chu_cuu, VA phai bao qua Telegram (group)
+    de Ong Chu biet ma bam Duyet lai."""
+    with tempfile.TemporaryDirectory() as tmp_s:
+        tmp = Path(tmp_s)
+        gio = int(time.time())
+        p = _ghi_draft(tmp, "d1", status="publishing", decided_at=gio - 3600)
+        goi_call = _goi_cuu_bai(tmp)
+        d = json.loads(p.read_text(encoding="utf-8"))
+        assert d["status"] == "publish_failed", \
+            f"qua nguong KET_PUBLISHING_GIAY thi phai ha publish_failed: {d}"
+        assert d.get("ghi_chu_cuu"), f"phai ghi ghi_chu_cuu giai thich ly do: {d}"
+        assert len(goi_call) == 1 and goi_call[0][0] == "sendMessage", \
+            f"phai bao 1 tin nhan sendMessage ve group khi cuu duoc bai: {goi_call}"
+        assert "d1" in goi_call[0][1].get("text", ""), \
+            f"tin bao phai neu ten draft da cuu: {goi_call}"
+        assert goi_call[0][1].get("chat_id") == "grp", \
+            f"phai gui vao dung group truyen vao: {goi_call}"
+
+
+def test_cuu_bai_con_moi_thi_giu_nguyen_publishing():
+    """draft "publishing" voi decided_at MOI (chua qua nguong) -> PHAI GIU
+    NGUYEN "publishing" -- co the mot tien trinh khac dang dang that, dong
+    cua som se dam len bai dang chay dung."""
+    with tempfile.TemporaryDirectory() as tmp_s:
+        tmp = Path(tmp_s)
+        gio = int(time.time())
+        p = _ghi_draft(tmp, "d2", status="publishing", decided_at=gio - 5)
+        goi_call = _goi_cuu_bai(tmp)
+        d = json.loads(p.read_text(encoding="utf-8"))
+        assert d["status"] == "publishing", \
+            f"con moi (<KET_PUBLISHING_GIAY) khong duoc dong cua som: {d}"
+        assert "ghi_chu_cuu" not in d, f"khong duoc dung den draft con moi: {d}"
+        assert goi_call == [], \
+            f"khong cuu bai nao thi khong duoc goi Telegram: {goi_call}"
+
+
+def test_cuu_bai_bo_qua_draft_khong_o_trang_thai_publishing():
+    """draft o trang thai khac (vd "published") -> khong dung den, du
+    decided_at co cu den may."""
+    with tempfile.TemporaryDirectory() as tmp_s:
+        tmp = Path(tmp_s)
+        gio = int(time.time())
+        goc = {"status": "published", "decided_at": gio - 3600}
+        p = _ghi_draft(tmp, "d3", **goc)
+        goi_call = _goi_cuu_bai(tmp)
+        d = json.loads(p.read_text(encoding="utf-8"))
+        assert d == goc, f"draft khong o publishing thi khong duoc dong cham gi: {d}"
+        assert goi_call == [], f"khong cuu bai nao thi khong duoc goi Telegram: {goi_call}"
+
+
+if __name__ == "__main__":
+    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
+    loi = 0
+    for h in ham:
+        try:
+            h()
+            print(f"OK   {h.__name__}")
+        except AssertionError as e:
+            loi += 1
+            print(f"FAIL {h.__name__}: {e}")
+    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
+    sys.exit(1 if loi else 0)
