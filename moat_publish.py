@@ -22,6 +22,7 @@ Trang thai duoc ghi nguoc vao chinh file draft (khoa "moat"), nen mot bai da
 day roi khong bao gio day lai, va mot ket qua da bao roi khong bao lai.
 """
 import base64
+import io
 import html
 import json
 import os
@@ -63,6 +64,16 @@ MIME_BY_SUFFIX = {".png": "image/png", ".jpg": "image/jpeg",
                   ".jpeg": "image/jpeg", ".webp": "image/webp"}
 
 MAX_ANH = 10                # tran so anh mot bai cua moat
+
+# Nen anh truoc khi day. Uplink cua may nay ~50 KB/s, ma Cloudflare dung truoc
+# moat cat request sau 100 giay (loi 524) -- KHONG phai timeout cua httpx, nen
+# noi TIMEOUT_DAY bao nhieu cung vo ich: body chua di het thi ket noi da dut.
+# Mot carousel 5 the PNG la ~7 MB (base64 ~9.7 MB, ~180 giay) => luon 524.
+# Cung bo the do sang WebP q90 con ~1.1 MB (~29 giay), qua duoi tran.
+# Chi nen the nao VUOT nguong; the nho de nguyen. Tat bang MOAT_NEN_ANH=0.
+NEN_ANH = (os.environ.get("MOAT_NEN_ANH") or "1") != "0"
+NGUONG_NEN = int(os.environ.get("MOAT_NGUONG_NEN") or 400_000)   # bytes
+CHAT_LUONG_NEN = int(os.environ.get("MOAT_CHAT_LUONG_NEN") or 90)
 
 # Task o cac trang thai nay coi nhu xong, khong hoi lai nua.
 TERMINAL = {"published", "failed", "cancelled"}
@@ -183,6 +194,33 @@ def chu_thuan(text):
     return html.unescape(_THE_HTML.sub("", text or "")).strip()
 
 
+def _nen(raw, mime, ten=""):
+    """(bytes, mime) sau khi nen. Tra lai nguyen ban neu khong nen duoc/khong loi.
+
+    WebP giu duoc chu tren the carousel o q90 ma nho hon PNG ~6 lan. Giu kenh
+    alpha khi anh co, vi convert("RGB") se bien nen trong suot thanh den.
+    Moi loi o day deu nuot: day duoc bai van hon la nen dep.
+    """
+    if not NEN_ANH or len(raw) <= NGUONG_NEN:
+        return raw, mime
+    try:
+        from PIL import Image                                 # noqa: PLC0415
+        im = Image.open(io.BytesIO(raw))
+        buf = io.BytesIO()
+        if im.mode in ("RGBA", "LA", "P"):
+            im.convert("RGBA").save(buf, "WEBP", quality=CHAT_LUONG_NEN, method=6)
+        else:
+            im.convert("RGB").save(buf, "WEBP", quality=CHAT_LUONG_NEN, method=6)
+        out = buf.getvalue()
+    except Exception as e:                                   # noqa: BLE001
+        print("khong nen duoc " + ten + ": " + str(e))
+        return raw, mime
+    # PNG nho/da toi uu co the con nho hon ban WebP -- giu cai nao nhe hon.
+    if len(out) >= len(raw):
+        return raw, mime
+    return out, "image/webp"
+
+
 def images_payload(d):
     """Anh gui sang moat: URL de nguyen, file cuc bo thi gui bytes.
 
@@ -209,7 +247,8 @@ def images_payload(d):
         if not f.exists():
             continue
         mime = MIME_BY_SUFFIX.get(f.suffix.lower(), "image/png")
-        out.append({"base64": base64.b64encode(f.read_bytes()).decode("ascii"),
+        raw, mime = _nen(f.read_bytes(), mime, f.name)
+        out.append({"base64": base64.b64encode(raw).decode("ascii"),
                     "mime": mime})
     # Moat nhan toi da 10 anh mot bai; gui 11 la ca bai bi tu choi.
     return out[:MAX_ANH]
@@ -285,10 +324,14 @@ def intake(draft_id, scheduled_at=None):
             r = c.post(base + "/publish-intake", json=body,
                        headers={"X-API-Key": key})
     except Exception as e:                                   # noqa: BLE001
-        return False, "khong goi duoc moat: " + type(e).__name__ + ": " + str(e)
+        loi = "khong goi duoc moat: " + type(e).__name__ + ": " + str(e)
+        xep_day_lai(draft_id, brand, scheduled_at, loi)
+        return False, loi
 
     if r.status_code not in (200, 201):
-        return False, "moat tra HTTP " + str(r.status_code) + ": " + r.text[:200]
+        loi = "moat tra HTTP " + str(r.status_code) + ": " + r.text[:200]
+        xep_day_lai(draft_id, brand, scheduled_at, loi)
+        return False, loi
 
     out = r.json()
     d["moat"] = {
@@ -302,8 +345,119 @@ def intake(draft_id, scheduled_at=None):
         "reported": {},
     }
     write_draft(draft_id, d)
+    _bo_khoi_hang_doi(draft_id)
     n = len(out.get("tasks", []))
     return True, "da xep " + str(n) + " task publish"
+
+
+# Hang doi day lai. Bai da len Telegram channel roi ma intake truot (mang dut,
+# Cloudflare 524, moat 5xx) thi TRUOC DAY nam im vinh vien: intake() nuot loi
+# theo thiet ke -- de khong lam hong luong duyet -- va khong ai goi lai. Ghi vao
+# day, cron moat-publish-watch (5 phut/lan) day lai theo lich lui dan.
+# An toan vi intake cua moat idempotent theo external_id: goi lai bai da vao roi
+# thi no tra ve workflow cu kem "duplicate": true, khong de ra task trung.
+HANG_DOI = STATE_DIR / "moat_day_lai.json"
+
+# Phut cho truoc lan thu thu 1, 2, 3... Het bang la bo cuoc va bao mot dong.
+LICH_LUI = [5, 15, 45, 120, 360, 720, 1440]
+
+
+def _doc_hang_doi():
+    try:
+        d = json.loads(HANG_DOI.read_text(encoding="utf-8"))
+        return d if isinstance(d, dict) else {}
+    except Exception:                                        # noqa: BLE001
+        return {}
+
+
+def _ghi_hang_doi(d):
+    try:
+        HANG_DOI.parent.mkdir(parents=True, exist_ok=True)
+        HANG_DOI.write_text(json.dumps(d, ensure_ascii=False, indent=2),
+                            encoding="utf-8")
+    except Exception as e:                                   # noqa: BLE001
+        print("khong ghi duoc hang doi day lai: " + str(e))
+
+
+def _dang_thu_lai(loi):
+    """Loi nay day lai co cua khong?
+
+    Mang dut / 5xx / 408 / 429 / 524 la nhat thoi -> thu lai. Con caption dai,
+    thieu anh, chua cau hinh khoa, 4xx khac la loi cua chinh bai: day lai bao
+    nhieu lan cung the, chi ton bang thong va rac log.
+    """
+    if loi.startswith("khong goi duoc moat"):
+        return True
+    m = re.match(r"moat tra HTTP (\d+)", loi)
+    if not m:
+        return False
+    ma = int(m.group(1))
+    return ma in (408, 425, 429) or ma >= 500
+
+
+def xep_day_lai(draft_id, brand, scheduled_at, loi):
+    """Ghi mot bai truot vao hang doi (hoac tang so lan da thu)."""
+    if not _dang_thu_lai(loi):
+        return False
+    d = _doc_hang_doi()
+    muc = d.get(draft_id) or {"lan": 0, "brand": brand,
+                              "scheduled_at": scheduled_at}
+    muc["lan"] = int(muc.get("lan", 0)) + 1
+    muc["brand"] = brand
+    muc["scheduled_at"] = scheduled_at
+    muc["luc"] = int(time.time())
+    muc["loi"] = loi[:200]
+    d[draft_id] = muc
+    _ghi_hang_doi(d)
+    return True
+
+
+def _bo_khoi_hang_doi(draft_id):
+    """Doc-sua-ghi ngay lap tuc: intake() cung ghi vao file nay giua chung,
+    nen giu mot ban `d` trong bo nho roi ghi de o cuoi la mat cap nhat cua no."""
+    d = _doc_hang_doi()
+    if d.pop(draft_id, None) is not None:
+        _ghi_hang_doi(d)
+
+
+def day_lai():
+    """Day lai cac bai dang cho trong hang doi, tra ve list dong thong bao.
+
+    Chi dung bai cua brand container nay -- hai container dung chung drafts/, ma
+    khoa moat moi la thu quyet dinh bai len org nao.
+    """
+    d = _doc_hang_doi()
+    if not d:
+        return []
+    cua_toi = brand_container()
+    bay_gio = int(time.time())
+    lines = []
+
+    for draft_id in list(d.keys()):
+        muc = d.get(draft_id) or {}
+        brand = muc.get("brand") or MAC_DINH_BRAND
+        if cua_toi and brand != cua_toi:
+            continue
+        lan = int(muc.get("lan", 1))
+        if lan > len(LICH_LUI):
+            _bo_khoi_hang_doi(draft_id)
+            lines.append("🛑 moat: bo cuoc sau " + str(lan - 1) + " lan day lai "
+                         + draft_id + " — " + str(muc.get("loi", ""))[:120]
+                         + "\nDay tay: python3 moat_publish.py push " + draft_id)
+            continue
+        if bay_gio - int(muc.get("luc", 0)) < LICH_LUI[lan - 1] * 60:
+            continue
+
+        # intake() tu tang so lan (loi con thu lai duoc) hoac tu xoa (thanh cong).
+        ok, note = intake(draft_id, muc.get("scheduled_at"))
+        if ok:
+            lines.append("✅ moat: day lai lan " + str(lan) + " thanh cong "
+                         + draft_id + " — " + note)
+        elif not _dang_thu_lai(note):
+            _bo_khoi_hang_doi(draft_id)
+            lines.append("⚠️ moat: thoi day lai " + draft_id
+                         + " vi loi khong tu khoi: " + note[:150])
+    return lines
 
 
 def _fetch_status(base, key, ref):
@@ -491,7 +645,7 @@ if __name__ == "__main__":
             sys.exit("chua cau hinh MOAT_BASE_URL/" + ten_khoa(brand))
         print(json.dumps(_fetch_status(base, key, sys.argv[2]), ensure_ascii=False, indent=2))
         sys.exit(0)
-    out = poll()
+    out = day_lai() + poll()
     _notify(out)
     # Khong co gi moi thi IM HAN (stdout rong). Cron chay moi phut, ma hermes ghi
     # moi ban stdout thanh mot file, in "khong co thay doi" la 1440 file rac/ngay.
