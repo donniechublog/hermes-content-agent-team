@@ -189,14 +189,25 @@ def _research_nguon(item, draft_id, out_png, brand):
     # tra cuu hai lan, va quan trong hon la ca hai cung doc MOT bo nguon nen bai
     # viet giai thich dung nhung gi doc gia nhin thay tren tam anh.
     nguon_path = STATE_DIR / f"nguon_{draft_id}.json"
+    # C-r2-6: truoc day khong nhin returncode va `except: pass` khi doc ket qua —
+    # nguon_bai chet (thieu module, traceback) thi khong mot dong log, khong tep
+    # nguon, vai nhan link Google News chua giai ma; dung trieu chung "Dre/Miles
+    # doc ra rong" 04/09 ma khong ai thay nguyen nhan. `sys.executable` thay
+    # duong venv go cung theo quy uoc tu_lieu.boc().
+    loi = None
     try:
-        subprocess.run(
-            [str(ROOT / "venv/bin/python"), str(ROOT / "nguon_bai.py"),
+        r = subprocess.run(
+            [sys.executable, str(ROOT / "nguon_bai.py"),
              "--tieu-de", item["title"], "--link", item["link"],
              "--out", str(nguon_path)],
             capture_output=True, text=True, timeout=180, cwd=str(ROOT))
+        if r.returncode != 0:
+            loi = f"nguon_bai exit {r.returncode}: {(r.stderr or '').strip()[-300:]}"
     except Exception as e:                                   # noqa: BLE001
-        print(f"[research] khong tim duoc nguon: {type(e).__name__}: {e}")
+        loi = f"{type(e).__name__}: {e!r}"
+    if loi:
+        print(f"[research] {draft_id}: khong tim duoc nguon — {loi}")
+        return loi
     # Link cua Vera la duong chuyen huong Google News; nguon_bai da giai ma ra
     # bai that (link_gnews/link_goc). Dung link THAT cho moi vai sau va cho
     # meta — truoc day Dre/Miles nhan link chuyen huong, doc ra rong, phai tu
@@ -207,8 +218,11 @@ def _research_nguon(item, draft_id, out_png, brand):
         if _ng.get("link_gnews") and _that and _that != item["link"]:
             item["link_gnews"], item["link"] = item["link"], _that
             write_meta(draft_id, item, out_png, brand)
-    except Exception:                                        # noqa: BLE001
-        pass
+    except Exception as e:                                   # noqa: BLE001
+        loi = f"doc {nguon_path.name}: {type(e).__name__}: {e!r}"
+        print(f"[research] {draft_id}: {loi}")
+        return loi
+    return None
 
 
 def _khoi_chay_engine(draft_id):
@@ -268,10 +282,13 @@ def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
 def create_pair(item, vai_anh="designer", brand="donniechublog"):
     draft_id = _draft_id(item, brand, vai_anh)
     out_png = str(DRAFTS / (draft_id + ".png"))
-    out_json = str(DRAFTS / (draft_id + ".json"))
     write_meta(draft_id, item, out_png, brand)
 
-    _research_nguon(item, draft_id, out_png, brand)
+    # Loi research ghi vao item de nguoi goi (_xu_ly_chon) dua len dong tra loi
+    # Ong Chu — khong chi nam trong log (C-r2-6).
+    loi_nguon = _research_nguon(item, draft_id, out_png, brand)
+    if loi_nguon:
+        item["nguon_loi"] = loi_nguon
 
     # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
     # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
@@ -387,6 +404,10 @@ def _xu_ly_chon(token, group, thread_id, vai, lenh):
             # Ong Chu 08/09/2026: bo cum "X viet caption sau khi duyet anh" — thua,
             # ai cung biet quy trinh nay, khong can nhac lai moi lan giao task.
             lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {tid}")
+            if it.get("nguon_loi"):
+                # C-r2-6: research hong thi Ong Chu phai thay ngay o day, khong
+                # phai doi vai bao "doc ra rong" roi di lan log.
+                lines.append(f"   ⚠️ không tìm được nguồn cho #{n}: {it['nguon_loi'][:160]}")
             # Ong Chu 08/09/2026: "cac vai can phan hoi ngay khi duoc giao task la da
             # nhan task" — truoc day chi hang CHUYEN (Dre->Miles, ->Kite) duoc bao
             # ngay qua _bao_nhan_viec, con task MOI tao o day thi im lang cho toi khi

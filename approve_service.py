@@ -378,8 +378,10 @@ def loop():
                         call(token, "sendMessage", chat_id=group,
                              text="🔌 Telegram từ chối getUpdates (" + html_escape(mo_ta)
                                   + "), đang thử lại…", parse_mode="HTML")
-                    except Exception:                            # noqa: BLE001
-                        pass
+                    except Exception as e:                       # noqa: BLE001
+                        # R-r2-7: token sai (401) thi ca getUpdates lan sendMessage
+                        # deu hong — phai co dau vet, khong chi "getUpdates tu choi".
+                        log("loi", "bao mat/hoi ket noi hong: " + repr(e))
                 time.sleep(5)
                 continue
             if mat_ket_noi_tu is not None:
@@ -390,8 +392,10 @@ def loop():
                     try:
                         call(token, "sendMessage", chat_id=group,
                              text=f"✅ Đã kết nối lại Telegram sau {phut:.1f} phút mất kết nối")
-                    except Exception:                            # noqa: BLE001
-                        pass
+                    except Exception as e:                       # noqa: BLE001
+                        # R-r2-7: token sai (401) thi ca getUpdates lan sendMessage
+                        # deu hong — phai co dau vet, khong chi "getUpdates tu choi".
+                        log("loi", "bao mat/hoi ket noi hong: " + repr(e))
                 mat_ket_noi_tu = None
                 loai_loi_dang_bao = None
             for u in r.get("result", []):
@@ -428,7 +432,15 @@ def loop():
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
             loi_lien_tiep += 1
-            log("loi", "vong poll: " + type(e).__name__ + ": " + str(e))
+            log("loi", "vong poll: " + type(e).__name__ + ": " + repr(e))
+            # R-r2-4: day moi la "mat ket noi" that (timeout/DNS/mang dut) — nhanh
+            # tren chi bat 409/429 la API con tra loi duoc. Khong gui duoc gi luc
+            # nay, nhung DAT MOC de vong sau goi duoc thi bao "da ket noi lai sau
+            # N phut"; truoc day moc khong bao gio dat nen khong bao gio bao.
+            if mat_ket_noi_tu is None:
+                mat_ket_noi_tu = time.time()
+            if loai_loi_dang_bao is None:
+                loai_loi_dang_bao = type(e).__name__
             time.sleep(min(60, 5 * loi_lien_tiep))
 
 if __name__ == "__main__":
@@ -447,8 +459,8 @@ if __name__ == "__main__":
                 try:
                     category = json.loads(
                         dpath.read_text(encoding="utf-8")).get("category", "")
-                except Exception:                            # noqa: BLE001
-                    pass
+                except Exception as e:                       # noqa: BLE001
+                    log("loi", f"doc category cua {dpath.name} hong (dung topic mac dinh): {e!r}")
             # Mot container mot nguoi viet: tin thuong ve topic writer cua
             # container, teaser ve topic Cape.
             key = "teaser" if category.upper() == "TEASER" else MAC_DINH_VIET
