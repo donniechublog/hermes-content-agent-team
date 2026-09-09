@@ -478,10 +478,15 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
     import os
     import subprocess
     BRAND = "thu_tran_bb"
-    moi_truong = {**os.environ, "CT_BRAND": BRAND}
-    kho = ROOT / "state" / BRAND
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
+        # State cua tien trinh con di vao TEMP, khong vao state/ that cua repo.
+        # Truoc audit lượt 2 (E-r2-1): tien trinh con ton trong CT_STATE_DIR
+        # nhung phan don o `finally` gõ cung ROOT/"state"/BRAND — dat bien la
+        # FileNotFoundError, 17 test sau khong chay; khong dat bien thi test
+        # tao/xoa state/thu_tran_bb/ TRONG repo. `kho` phai tinh tu CUNG bien.
+        moi_truong = {**os.environ, "CT_BRAND": BRAND, "CT_STATE_DIR": str(t / "state")}
+        kho = t / "state" / BRAND
         BB = "https://anthropic.com/claude-opus-46"
         # ghi danh sach bat buoc bang chinh tien trinh con (cung state dir)
         subprocess.run([sys.executable, "-c",
@@ -699,10 +704,10 @@ def test_manifest_rong_khong_ghi_de():
     import json
     import os
     import subprocess
-    moi_truong = {**os.environ, "CT_BRAND": "thu_rong_mb"}
-    kho = ROOT / "state" / "thu_rong_mb"
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
+        moi_truong = {**os.environ, "CT_BRAND": "thu_rong_mb", "CT_STATE_DIR": str(t / "state")}
+        kho = t / "state" / "thu_rong_mb"          # xem ghi chu o test_tran_tin (E-r2-1)
         (t / "c.json").write_text(json.dumps({"candidates": [
             {"link": "https://a.com/1", "title": "T", "source": "HN", "points": 9,
              "comments": 1, "via": "hn", "score_partial": 40, "score_recency": 5,
@@ -1194,14 +1199,5 @@ def test_publish_khong_dang_album_lan_hai():
 
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

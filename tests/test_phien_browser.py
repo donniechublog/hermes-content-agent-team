@@ -38,6 +38,10 @@ class _BrowserGia:
     def close(self):
         self.da_dong = True
 
+    def is_connected(self):
+        # Chromium that tra False sau khi tien trinh chet/bi kill (N-r2-1)
+        return not self.da_dong and not getattr(self, "chet", False)
+
 
 class _CtxGia:
     def __init__(self, kw):
@@ -122,6 +126,19 @@ def test_khac_tham_so_thi_tien_trinh_rieng():
         _go()
 
 
+def test_browser_chet_giua_bai_thi_mo_lai_khong_tra_xac():
+    """N-r2-1: Chromium crash/OOM giua bai — B4 dung MOT phien cho ca 5 buoc,
+    nen tra lai browser da chet la 4 buoc sau deu TargetClosedError. Phai mo lai."""
+    pw = _gia()
+    with pb.PhienBrowser() as ph:
+        b1 = ph.browser()
+        b1.chet = True                       # tien trinh chet, doi tuong van trong cache
+        b2 = ph.browser()
+        assert b2 is not b1, "tra lai browser da chet"
+        assert len(pw.da_launch) == 2, pw.da_launch
+        assert ph.browser() is b2, "browser song thi van dung chung"
+
+
 def test_ra_khoi_khoi_thi_dong_het():
     pw = _gia()
     try:
@@ -188,14 +205,5 @@ def test_muon_phien_thi_KHONG_duoc_dong_cua_nguoi_khac():
 
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

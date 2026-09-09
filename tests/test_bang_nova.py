@@ -271,8 +271,15 @@ def test_link_bat_buoc_dan_tu_ban_dang_ky():
 
 
 if __name__ == "__main__":
+    # Tep nay dem bang kiem() thay vi assert, nen khong dung tam.chay_tat_ca —
+    # nhung cung phai bat Exception (E-r2-2): mot loi giua chung khong duoc giet
+    # ca tep va nuot dong N/M.
     for f in list(globals()):
         if f.startswith("test_"):
-            globals()[f]()
+            try:
+                globals()[f]()
+            except Exception as e:                           # noqa: BLE001
+                loi += 1
+                print(f"ERR  {f}: {type(e).__name__}: {e}")
     print(f"\n{qua}/{qua + loi} test qua")
     sys.exit(1 if loi else 0)

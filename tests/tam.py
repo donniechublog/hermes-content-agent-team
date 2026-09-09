@@ -15,6 +15,38 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
+def chay_tat_ca(ns: dict) -> None:
+    """Runner chung cho moi tests/test_*.py (audit lượt 2, E-r2-2).
+
+    Truoc day 35 tep chep cung mot khoi `except AssertionError` — tuc mot loi
+    KHONG phai AssertionError (TypeError, KeyError, JSONDecodeError...) giet ca
+    tep: rc=1 nhung khong dong "N/M test qua", cac test sau khong chay, chay.sh
+    chi hien "HONG (ma 1)". Gap 3 lan khi mutation va 1 lan that o HEAD. Day la
+    dieu lượt 1 xep "lam ngay" ma chua lam.
+
+    Dung:  if __name__ == "__main__": chay_tat_ca(globals())
+    - test_* chay theo thu tu dinh nghia; AssertionError -> FAIL; loi khac -> ERR
+      kem ten loi (van dem la hong, van chay tiep);
+    - luon in "N/M test qua" va thoat 1 neu co hong, de chay.sh doc duoc."""
+    import traceback
+    ham = [v for k, v in list(ns.items()) if k.startswith("test_") and callable(v)]
+    hong = 0
+    for h in ham:
+        try:
+            h()
+            print(f"OK   {h.__name__}")
+        except AssertionError as e:
+            hong += 1
+            print(f"FAIL {h.__name__}: {e}")
+        except Exception as e:                               # noqa: BLE001
+            hong += 1
+            dong = traceback.extract_tb(e.__traceback__)[-1]
+            print(f"ERR  {h.__name__}: {type(e).__name__}: {e} "
+                  f"({Path(dong.filename).name}:{dong.lineno})")
+    print(f"\n{len(ham) - hong}/{len(ham)} test qua")
+    sys.exit(1 if hong else 0)
+
+
 @contextlib.contextmanager
 def so_tam(tmp):
     """Tro so "anh da dung" vao thu muc tam VA TRA LAI khi ra khoi khoi.
