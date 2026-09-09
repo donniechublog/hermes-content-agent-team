@@ -16,12 +16,9 @@ Tệp không xóa:
 """
 import argparse
 import io
-import json
-import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", newline="")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", newline="")
