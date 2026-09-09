@@ -15,6 +15,45 @@ grep -h "^  model:" ~/.hermes-*/profiles/*/config.yaml | sort | uniq -c
 
 ---
 
+## Thiếu bảng "Image Edit Arena" và tên mã biến thể (09/09/2026)
+
+Ông Chủ gửi hai ảnh chụp Arena — "Image Edit Arena" và "Text-to-Image Arena",
+cả hai đều xếp GPT-Image-2.5 hạng #1 (Sunburst) và #2 (Flare) — kèm một câu:
+*"làm thông tin về model mà không đưa được 2 chart này vào là quá kém"*. Đúng,
+và có hai lỗ hổng cộng dồn trong `xep_hang.py`, cả hai đều hỏng câm lặng:
+
+1. **"Image Edit Arena" chưa từng có trong registry `NGUON`.** Chỉ có
+   `arena-t2i` (Text-to-Image) — bảng chỉnh sửa ảnh là một board KHÁC, tách
+   riêng trên arena.ai (`/leaderboard/image-edit`), và trước giờ registry chưa
+   liệt kê. Xác nhận bằng WebFetch trước khi thêm (nguyên tắc đã ghi ngay
+   trong `xep_hang.py`: "không thêm nguồn chưa chụp được"): trang thật, 55
+   model, dữ liệu khớp hệt ảnh Ông Chủ gửi (sunburst 1520±9, flare 1491±9, gpt
+   image 2 medium 1461±3...).
+2. **`_DUOI` không có "Sunburst"/"Flare".** Hai cái tên đó là mã của **hai biến
+   thể cùng họ, cùng đứng trên cùng một bảng** — thiếu chúng thì `tach_model`
+   dừng ở "GPT Image 2.5", khớp NHẬP NHẰNG cả hai hàng. Engine khoanh hàng nào
+   tìm thấy trước, bất kể tin đang nói về Sunburst hay Flare — sai ảnh cho
+   đúng một nửa số tin về cặp model này.
+
+**Sửa:** thêm `arena-image-edit` vào `NGUON` (ngay sau `arena-t2i`) và một
+mục `CHU_DE` mới ưu tiên nó khi tiêu đề nói "chỉnh sửa ảnh" / "image edit";
+mục `\bimage\b` chung giờ xét **cả hai** bảng — một model tạo ảnh mạnh
+thường lên cả hai board cùng lúc, đúng như dữ liệu thật lần này. Thêm
+`Sunburst|Flare` vào `_DUOI`. Test hồi quy ở `tests/test_xep_hang.py` khớp lại
+đúng số liệu Ông Chủ gửi (không đoán URL — mọi test dùng dữ liệu đã xác nhận
+qua WebFetch).
+
+**Chưa làm, cần Ông Chủ chốt:** `tim_va_chup()` dừng ở nguồn ĐẦU TIÊN chụp
+được — kiến trúc hiện tại chỉ mang được **một** bảng xếp hạng cho mỗi tin
+(`xh` là một dict, không phải danh sách; `kite_chuan_bi`/`dre_nop`/`card.py`
+đều giả định đúng một ảnh mã `XH`). Nên dù cả hai board giờ đã "thấy" được,
+một tin về GPT-Image-2.5 vẫn chỉ mang được MỘT trong hai chart, không phải cả
+hai như ảnh Ông Chủ gửi cho thấy. Cho một model lên nhiều bảng cùng lúc mang
+NHIỀU ảnh `XH` là một thay đổi kiến trúc lớn hơn — đợi quyết định trước khi
+làm, vì nó chạm schema manifest và giả định "một ảnh xếp hạng" ở mọi vai.
+
+---
+
 ## Nút "hạ sàn" hết đường thì gỡ luôn bàn phím (09/09/2026)
 
 Ông Chủ bấm "🖼 Dre làm với 4 ảnh" (imgtiep) trên một tin chỉ có 4/8 ảnh thật.

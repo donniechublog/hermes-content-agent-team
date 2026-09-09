@@ -130,7 +130,7 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 - `arxiv_bia.py` — đường cuối cho bài arxiv: không còn ứng viên ảnh nào thì chụp
   trang đầu paper (tên công trình + tác giả). Cần `pymupdf`.
 - `xep_hang.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
-  registry **18 nguồn**, mở browser tìm hàng chứa model, chụp cửa sổ top-N,
+  registry **19 nguồn**, mở browser tìm hàng chứa model, chụp cửa sổ top-N,
   khoanh vàng hàng đó, đọc thứ hạng. Chụp bằng **khung mobile trước** (414px ×
   DPR 3 ≈ khổ thẻ 1200px nên chữ gần như không co); 8 nguồn đã đo là mobile
   không dùng được thì mang `khung: "desktop"` kèm lý do ngay trong `NGUON`.

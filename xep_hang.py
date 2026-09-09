@@ -63,6 +63,12 @@ NGUON = [
      "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-t2i",      "site": "ARENA.AI",  "bang": "Text-to-Image Arena",
      "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena"},
+    # Them 09/09/2026: bang RIENG voi text-to-image, do het truoc do — tin GPT
+    # Image 2.5 #1&#2 Image Edit Arena khong co duong nao chup duoc (Ong Chu
+    # gui anh chup 2 bang, hoi sao khong dua vao duoc). Da doc thu URL
+    # (arena.ai/leaderboard/image-edit) truoc khi them, dung 55 model nhu chup.
+    {"ma": "arena-image-edit", "site": "ARENA.AI", "bang": "Image Edit Arena",
+     "url": "https://arena.ai/leaderboard/image-edit", "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-t2v",      "site": "ARENA.AI",  "bang": "Text-to-Video Arena",
      "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-search",   "site": "ARENA.AI",  "bang": "Search Arena",
@@ -125,7 +131,12 @@ NGUON = [
 # Từ khoá chọn bảng con của một site theo chủ đề tin (video → arena-t2v trước...)
 CHU_DE = [
     (r"\bvideo\b|text-to-video|tạo video", ["arena-t2v"]),
-    (r"\bimage\b|text-to-image|tạo ảnh|hình ảnh", ["arena-t2i"]),
+    # "sửa/chỉnh sửa ảnh" ưu tiên bảng EDIT; "image" trần (đa số tin tạo ảnh)
+    # vẫn xét cả hai — một model tạo ảnh mạnh thường lên cả hai bảng (09/09/2026:
+    # GPT-Image-2.5 #1&#2 CẢ Text-to-Image lẫn Image Edit Arena).
+    (r"chỉnh sửa ảnh|sửa ảnh (bằng|với) ai|image edit(?:ing)?|photo edit(?:ing)?",
+     ["arena-image-edit"]),
+    (r"\bimage\b|text-to-image|tạo ảnh|hình ảnh", ["arena-t2i", "arena-image-edit"]),
     (r"\bvision\b|thị giác|multimodal|đa phương thức", ["arena-vision"]),
     (r"webdev|frontend|front-end|\bcode\b|coding|lập trình|swe[-_ ]?bench",
      ["arena-code", "swebench", "aider", "livecodebench"]),
@@ -173,6 +184,12 @@ _HO_CAN_SO = r"Seed|Solar|Granite|Phi|Command|Nova|Step|Yi"
 _DUOI = (r"(?:Astra|Flash|Pro|Max|Mini|Nano|Ultra|Sol|Sonnet|Opus|Haiku|Fable|Thinking|Imagine|"
          r"Video|Image|Agent|Spark|Coder|Instruct|Turbo|Lite|Next|Plus|Preview|Chat|Reasoning|"
          r"High|Low|Medium|XHigh|Vision|Code|Omni|Deep|Research|Horizon|Build|Experimental|Exp|"
+         # Ten ma cua CAC BIEN THE cung ho hien tren mot bang xep hang (09/09/2026:
+         # GPT-Image-2.5 Sunburst #1 va GPT-Image-2.5 Flare #2, CUNG mot bang Image
+         # Edit Arena). Thieu duoi nay thi tach_model dung o "GPT Image 2.5", khop
+         # NHAP NHANG ca hai hang — khoanh dai dung hang nao tim thay truoc, sai
+         # tin khi tin noi ve Flare ma engine khoanh Sunburst.
+         r"Sunburst|Flare|"
          r"[KVRM]\d+(?:\.\d+)?[A-Za-z]*|\d+[bB]|\d+\.\d+(?:\.\d+)*[A-Za-z]*|"
          # So NGUYEN lam duoi phien ban: loai bang DANH SACH DON VI, khong bang
          # "chu thuong bat ky". Truoc 06/09/2026 lookahead cam moi chu thuong

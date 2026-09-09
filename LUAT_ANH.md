@@ -144,9 +144,10 @@ trên băng:
 
 Từ 06/09 việc này là của **engine**, không phải của vai: `xep_hang.py` chạy
 trong `anh_chuan_bi.py` khi tiêu đề là tin xếp hạng. Nó tách tên model, đi qua
-registry nguồn (arena.ai text/code/vision/t2i/t2v/search, artificialanalysis.ai,
-tbench.ai, swebench.com, livebench.ai, aider — nguồn được nhắc trong bài đi
-trước), mở browser, tìm **hàng** chứa model trong bảng lớn nhất (khớp bỏ dấu
+registry nguồn (arena.ai text/code/vision/t2i/**image-edit**/t2v/search,
+artificialanalysis.ai, tbench.ai, swebench.com, livebench.ai, aider — nguồn
+được nhắc trong bài đi trước), mở browser, tìm **hàng** chứa model trong bảng
+lớn nhất (khớp bỏ dấu
 cách/gạch/chấm: "Claude Opus 4.6" ≡ "claude-opus-4-6"), chụp cửa sổ từ hàng 1
 (hoặc từ hàng model-2 nếu nằm sâu) kéo xuống cho tới khi rộng/cao ≤ 1.5 — đủ
 để đi một mình vào hero. Trang chỉ có một bảng mà bảng quá ngang (tbench: 15
