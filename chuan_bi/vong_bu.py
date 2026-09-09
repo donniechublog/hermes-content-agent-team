@@ -45,11 +45,11 @@ def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> lis
     return trang
 
 
-def _lay_tu_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path) -> tuple:
+def _lay_tu_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path, phien=None) -> tuple:
     """Mot phien chromium: tieu de, chu, anh/figure, bao khac; gop vao `nguon`.
     Tra (bp, trang)."""
     print("[browser] mo trang goc (tieu de, chu, anh, figure) + bao khac...", file=sys.stderr)
-    bp = browser_pass(trang, wd, tim_them=len(trang) < 2)
+    bp = browser_pass(trang, wd, tim_them=len(trang) < 2, phien=phien)
     doi = False
     if bp["tieu_de_en"] and not nguon.get("tieu_de_en"):
         nguon["tieu_de_en"] = bp["tieu_de_en"]
@@ -69,7 +69,7 @@ def _lay_tu_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path) -> tup
 
 
 def _chup_xep_hang(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp: dict,
-                   wd: Path, khong_browser: bool) -> tuple:
+                   wd: Path, khong_browser: bool, phien=None) -> tuple:
     """Tin xep hang: chup bang tu chinh trang xep hang, khoanh model. Tra
     (xhs, tin_xep_hang); xhs [] khi khong phai tin xep hang / khong chup duoc.
 
@@ -103,7 +103,7 @@ def _chup_xep_hang(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp
                 xhs = xep_hang.tim_va_chup_nhieu(
                     models, ds, wd / "goc", _brand_cua(meta),
                     xep_hang.tach_hang(title, models[0]) or xep_hang.tach_hang(nguon.get("tieu_de_en") or "", models[0]),
-                    in_log=lambda t: print(t, file=sys.stderr))
+                    in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
             except Exception as e:                           # noqa: BLE001
                 print(f"[xep_hang] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
                       file=sys.stderr)
@@ -198,7 +198,7 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
 
 
 def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
-                   dung_duoc: list, wd: Path) -> tuple:
+                   dung_duoc: list, wd: Path, phien=None) -> tuple:
     """VONG TIM RONG (Ong Chu 05/09/2026): kho mong thi engine phai di tim, khong
     bao "du" bang rac. Mot vong. Tra (anh, dung_duoc, chua_nhin)."""
     # VONG TIM RONG (Ong Chu 05/09/2026): kho mong thi engine phai di tim,
@@ -212,7 +212,7 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     wd2 = wd / "them"
     cands2 = []
     if them_bao:
-        bp2 = browser_pass([{"url": t["url"], "loai": "báo"} for t in them_bao], wd2, tim_them=False)
+        bp2 = browser_pass([{"url": t["url"], "loai": "báo"} for t in them_bao], wd2, tim_them=False, phien=phien)
         cands2 += bp2["cands"]
     tk = _ten_rieng_dau(tieu_de_nhin)
     if tk:
@@ -253,7 +253,7 @@ TOI_DA_THEM_TH = 4          # tran anh thuong hieu them vao mot bo
 XH_BOI_CANH_NGUON = 3       # so bang xep hang thu khi lay anh bang lam boi canh
 
 
-def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str):
+def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
     """BANG XEP HANG lam anh BOI CANH cho tin thieu anh (Ong Chu 09/09/2026:
     "...anh chup tren cac bang xep hang cua model"). Khac `_chup_xep_hang`: kia
     chay cho TIN XEP HANG va anh la chu the bat buoc; day chay cho tin thuong
@@ -275,7 +275,7 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str):
         # lam (xem chu thich cua `_chup_xep_hang`).
         ds = xep_hang.goi_y_nguon("")[:XH_BOI_CANH_NGUON]
         kq = xep_hang.tim_va_chup([h["hang"]], ds, wd / "xh", brand, None,
-                                  in_log=lambda t: print(t, file=sys.stderr))
+                                  in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
     except Exception as e:                                   # noqa: BLE001
         print(f"[thuong hieu] bang xep hang HONG: {type(e).__name__}: {e}", file=sys.stderr)
         return None
@@ -291,7 +291,7 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str):
 
 
 def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
-                      toi_thieu: int = 5, khong_browser: bool = False) -> tuple:
+                      toi_thieu: int = 5, khong_browser: bool = False, phien=None) -> tuple:
     """VONG THUONG HIEU (Ong Chu 09/09/2026: "Dre van chua tu tim them hinh lien
     quan khi lam cac noi dung co Big Brand"): tin ve hang lon ma kho anh mong thi
     engine hoi Commons anh THAT cua chinh hang — tru so, toa nha, campus — TRUOC
@@ -331,7 +331,7 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         # "gpt-image-2.5-sunburst...": truyen thang CT_BRAND nem SystemExit
         # "Khong biet thuong hieu 'blog'", giet ca `chuan_bi()`. Cung mot loi
         # lap lai o anh_thuong_hieu.py, sua chung mot cho o env_load.brand_dai().
-        c = _xep_hang_boi_canh(hangs, wd4, env_load.brand_dai())
+        c = _xep_hang_boi_canh(hangs, wd4, env_load.brand_dai(), phien=phien)
         if c:
             them = tai_va_loc([c], wd4 / "bang")
             for a in them[:1]:

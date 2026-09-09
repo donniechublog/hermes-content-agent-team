@@ -47,7 +47,7 @@ def _tai(url: str, timeout=20):
 GNEWS_BAI = "news.google.com/rss/articles"
 
 
-def giai_ma_gnews(url: str, timeout: int = 30) -> str | None:
+def giai_ma_gnews(url: str, timeout: int = 30, phien=None) -> str | None:
     """Link Google News (news.google.com/rss/articles/CBMi...) -> URL bai THAT.
 
     Tin cua Vera (scan_business doc RSS Google News) luon mang link dang nay.
@@ -72,18 +72,16 @@ def giai_ma_gnews(url: str, timeout: int = 30) -> str | None:
         pass
     try:
         import time as _t
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            b = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
-            try:
-                page = b.new_page(user_agent=UA.replace("compatible; ", ""))
+        from phien_browser import phien_hoac_moi
+        # `phien`: dung chung tien trinh Chromium voi cac buoc khac cua cung mot
+        # bai (audit B4). Khong truyen thi tu mo, tu dong — y nhu truoc.
+        with phien_hoac_moi(phien) as ph:
+            with ph.trang(user_agent=UA.replace("compatible; ", "")) as page:
                 page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
                 t0 = _t.time()
                 while "news.google.com" in page.url and _t.time() - t0 < timeout:
                     page.wait_for_timeout(500)
                 that = page.url
-            finally:
-                b.close()
         if that and "news.google.com" not in that:
             return that
     except Exception as e:                                   # noqa: BLE001

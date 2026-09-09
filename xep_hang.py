@@ -15,7 +15,6 @@ Dùng tay:
     venv/bin/python xep_hang.py --model "Claude Opus 4.6" --nguon arena-text --ra x.png
 """
 import argparse
-import contextlib
 import json
 import re
 import sys
@@ -1022,12 +1021,18 @@ def _thu_nguon(phien: _PhienChup, n: dict, models: list, out: Path, in_log):
     return kq, ly_do, pg
 
 
+# Chup bang xep hang ep srgb de mau tat dinh giua cac lan chup — KHAC bo args
+# cua browser_pass/gnews, nen `PhienBrowser` giu tien trinh rieng cho bo nay
+# (xem phien_browser.py). Gop lam mot phai co y chot srgb cho ca engine.
+ARGS_CHUP = ("--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb")
+
+
 def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
-                hang_goi_y=None, in_log=print) -> dict:
+                hang_goi_y=None, in_log=print, phien_browser=None) -> dict:
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
     nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (tep, kieu, nguon,
     site, bang, hang, model, url). `models` phải khác rỗng."""
-    from playwright.sync_api import sync_playwright
+    from phien_browser import phien_hoac_moi
     t0 = time.time()
     logo = None
     kq_cuoi = None
@@ -1035,10 +1040,8 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     # browser tren duong THANH CONG, nen mot ngoai le giua chung (mot nguon doi
     # DOM, mot `page.evaluate` nem) de lai tien trinh chromium song. Chay 7 tin
     # mot sang la 7 lan nhu vay.
-    with sync_playwright() as p, contextlib.closing(
-            p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage",
-                                    "--force-color-profile=srgb"])) as br:
-        phien = _PhienChup(br)
+    with phien_hoac_moi(phien_browser) as _ph:
+        phien = _PhienChup(_ph.browser(ARGS_CHUP))
         for n in nguon_ds:
             if time.time() - t0 > GIO_HAN:
                 in_log(f"[xep_hang] hết giờ ({GIO_HAN}s), dừng ở {n['ma']}")
@@ -1089,7 +1092,7 @@ def _bo_qua_nguon(n: dict, da_chup_thuong: bool) -> bool:
 
 
 def tim_va_chup_nhieu(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
-                      hang_goi_y=None, in_log=print, toi_da: int = TOI_DA_XH) -> list:
+                      hang_goi_y=None, in_log=print, toi_da: int = TOI_DA_XH, phien_browser=None) -> list:
     """Nhu `tim_va_chup`, nhung KHONG dung o thanh cong dau tien: nguon mang
     `doc_lap: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
     lay CA nguon do lan mot nguon "thuong" khac, khong coi thanh cong o nguon nay
@@ -1108,15 +1111,13 @@ def tim_va_chup_nhieu(models: list, nguon_ds: list, out_dir: Path, brand: str = 
 
     Tra danh sach KHONG RONG — thẻ dự phòng (1 phan tu) khi khong nguon nao
     chup duoc."""
-    from playwright.sync_api import sync_playwright
+    from phien_browser import phien_hoac_moi
     t0 = time.time()
     logo = None
     ket_qua: list = []
     da_chup_thuong = False
-    with sync_playwright() as p, contextlib.closing(
-            p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage",
-                                    "--force-color-profile=srgb"])) as br:
-        phien = _PhienChup(br)
+    with phien_hoac_moi(phien_browser) as _ph:
+        phien = _PhienChup(_ph.browser(ARGS_CHUP))
         for n in nguon_ds:
             if len(ket_qua) >= toi_da:
                 in_log(f"[xep_hang] đủ {toi_da} ảnh, dừng")

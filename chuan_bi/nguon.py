@@ -32,7 +32,7 @@ def _tom_tat_tu_img_json(draft_id: str) -> dict:
 
 
 # ---- 1. nguon ---------------------------------------------------------------
-def nap_nguon(draft_id: str, meta: dict, state: Path) -> tuple:
+def nap_nguon(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
     """Tra ve (nguon_dict, nguon_path, link_that). Giai ma link Google News neu
     can va ghi nguoc vao nguon json + meta de moi vai sau cung dung link that."""
     import nguon_bai
@@ -43,7 +43,7 @@ def nap_nguon(draft_id: str, meta: dict, state: Path) -> tuple:
                                         "tieu_de": meta.get("title", "")}]}
     link_goc = nguon.get("link_goc") or link
     if GNEWS in link_goc:
-        that = nguon_bai.giai_ma_gnews(link_goc)
+        that = nguon_bai.giai_ma_gnews(link_goc, phien=phien)
         if that:
             print(f"[nguon] giai ma Google News -> {that[:90]}", file=sys.stderr)
             nguon["link_gnews"] = link_goc

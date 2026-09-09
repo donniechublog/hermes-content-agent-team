@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 import luat_anh
+from phien_browser import phien_hoac_moi
 
 from chuan_bi.chung import GNEWS, _mien
 
@@ -144,7 +145,7 @@ def _tim_bao_gnews(page, ra, mien_goc, het_gio, JS):
             print(f"[browser] gnews search: {type(e).__name__}", file=sys.stderr)
 
 
-def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
+def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None) -> dict:
     """MOT phien chromium lam het phan "mo browser that" ma SOUL tung bat vai lam tay:
 
       - trang goc: og:title (tieu de tieng Anh), CHU bai (innerText cua
@@ -155,12 +156,15 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
         News, giai ma tung link /read/ bang cach di theo chuyen huong;
       - 1-2 trang bao khac: lay <img> lon + figure.
 
+    `phien` (PhienBrowser, tuy chon): dung chung tien trinh Chromium voi cac
+    buoc khac cua cung mot bai thay vi tu mo rieng — audit B4. Khong truyen thi
+    tu mo va tu dong, y nhu truoc.
+
     Khong co playwright / trang hong thi tra ve phan da lay duoc, khong loi."""
+    # Thieu playwright thi `except` cuoi ham bat va IN RA ly do. Truoc day co
+    # mot buoc kiem rieng o day, tra ve rong IM LANG — dung lop "hong cam lang"
+    # ma quy uoc C1 di go.
     ra = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
-    try:
-        from playwright.sync_api import sync_playwright
-    except Exception:                                        # noqa: BLE001
-        return ra
     JS = _js_browser()
     t0 = time.time()
     goc = next((t.get("url") for t in trang if t.get("loai") == "gốc" and t.get("url")), None) \
@@ -171,14 +175,11 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
         return time.time() - t0 > gio_han
 
     try:
-        with sync_playwright() as p:
-            b = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
-            try:
-                ctx = b.new_context(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
-                                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                                               "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                               "Chrome/124.0 Safari/537.36")
-                page = ctx.new_page()
+        with phien_hoac_moi(phien) as ph:
+            with ph.trang(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
+                          user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                                     "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                     "Chrome/124.0 Safari/537.36") as page:
                 # 1) trang goc
                 if goc and goc.startswith("http") and GNEWS not in goc:
                     try:
@@ -203,8 +204,6 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
                         _lay_anh_trang(page, t["url"], i, wd, ra, JS)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] {t['url'][:60]}: {type(e).__name__}", file=sys.stderr)
-            finally:
-                b.close()
     except Exception as e:                                   # noqa: BLE001
         print(f"[browser] bo qua: {type(e).__name__}: {e}", file=sys.stderr)
     return ra
