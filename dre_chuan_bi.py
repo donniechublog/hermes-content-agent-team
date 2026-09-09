@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import schema                                                # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
@@ -49,7 +50,10 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                  "KHÔNG viết spec, KHÔNG dựng. Kết thúc task ngay bằng một câu: "
                  "\"Đã chuyển Kite vì không có ảnh thật\".")
         return "\n".join(L)
-    so_dd = m.get("so_dung_duoc", len([a for a in m["anh"] if a["dung"]]))
+    # Mac dinh bang CUNG cong thuc voi nguoi ghi (schema.so_anh_dung_duoc): ban
+    # cu dem `len([a for a in m["anh"] if a["dung"]])` — mot so KHAC, vi chum anh
+    # khai niem phai dem la MOT (F2).
+    so_dd = m.get("so_dung_duoc", schema.so_anh_dung_duoc(m.get("anh")))
     if m["anh"] and so_dd < m.get("toi_thieu", 5):
         L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} ảnh dùng được, cần ≥ {m.get('toi_thieu', 5)} slide. "
                  "KHÔNG nhồi ảnh không liên quan cho đủ. Hoặc gộp ý để giảm số slide, hoặc "
