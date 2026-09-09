@@ -30,14 +30,17 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import card                                                  # noqa: E402
+import khung_anh                                             # noqa: E402
+import chup_trang                                            # noqa: E402
 import env_load                                              # noqa: E402
 
 # Skill nam trong repo (profile tro vao qua skills.external_dirs), khong phai
 # trong ~/.hermes — nen duong dan tinh tu ROOT, khong doan theo HERMES_HOME.
 SKILL = ROOT / "hermes" / "skills" / "url-mascot-frame"
 GET_SOURCE = SKILL / "scripts" / "get_source.py"
-SCREENSHOT = SKILL / "scripts" / "screenshot.js"
-FRAME = SKILL / "scripts" / "frame.js"
+# frame.js / screenshot.js da bo 09/09/2026 (audit A6): ca hai viet lai bang
+# PIL + Playwright cua Python (khung_anh.py, chup_trang.py), server het can Node.
+# Skill van giu assets (avatar, font, mood-palette) va SKILL.md.
 
 # Ong Chu 06/09/2026: eyeroll la mood AN TOAN NHAT — no hop voi moi tinh huong,
 # nen khi khong dinh vi duoc mood trong anh thi dung no. Truoc day mac dinh la
@@ -61,7 +64,7 @@ def handle_kenh(brand: str) -> str:
     LUON tra ve co "@". Truoc 06/09/2026 ham nay tra thang gia tri tra cuu:
     tren container blog, CT_BRAND='blog' khong co trong THUONG_HIEU nen roi ve
     chinh chuoi 'blog' — watermark tren MOI anh Bob dong khung in dung chu
-    "blog", va caption Telegram ghi "Bob — blog". frame.js ve nguyen xi, khong
+    "blog", va caption Telegram ghi "Bob — blog". khung_anh ve nguyen xi, khong
     tu them "@" (mac dinh cua no la "@donniechublog")."""
     b = (brand or "").strip()
     b = _TEN_BRAND.get(b, b)
@@ -83,7 +86,7 @@ def bang_mood() -> dict:
 def mood_tu_vision(txt: str) -> str:
     """Emoji dau tien trong `txt` co nam trong bang mood cua skill. "" neu khong.
 
-    Chi nhan emoji THUOC BANG: vision tra ve chu tu do, ma frame.js chi doi
+    Chi nhan emoji THUOC BANG: vision tra ve chu tu do, ma khung_anh chi doi
     emoji sang mascot cho nhung mood da co anh."""
     bang = bang_mood()
     for ky_tu in txt or "":
@@ -122,31 +125,22 @@ def lay_anh(nguon: str, ra: Path) -> str:
                  + (cuoi[-1][:200] if cuoi else "khong co stderr"))
 
     # Trang khong co anh don (tweet toan chu, bai bao) -> chup man hinh DPR cao.
-    if not shutil.which("node"):
-        sys.exit("[LOI] trang khong co anh don va may khong co node de chup man hinh")
-    r2 = subprocess.run(["node", str(SCREENSHOT), nguon, str(ra)],
-                        capture_output=True, text=True, timeout=180, cwd=str(SKILL))
-    if r2.returncode != 0 or not ra.exists():
-        cuoi = [d for d in (r2.stderr or "").strip().splitlines() if d.strip()]
-        sys.exit(f"[LOI] khong lay duoc anh lan chup man hinh: "
-                 + (cuoi[-1][:200] if cuoi else "khong ro"))
+    if not chup_trang.chup(nguon, ra):
+        sys.exit("[LOI] khong lay duoc anh lan chup man hinh (xem stderr o tren)")
     return "chup man hinh (trang khong co anh don)"
 
 
 def dong_khung(src: Path, ra: Path, emoji: str, handle: str) -> None:
-    if not shutil.which("node"):
-        sys.exit("[LOI] thieu node de chay frame.js")
-    r = subprocess.run(["node", str(FRAME), "--image", str(src), "--emoji", emoji,
-                        "--handle", handle, "--out", str(ra)],
-                       capture_output=True, text=True, timeout=180, cwd=str(SKILL))
-    if r.returncode != 0 or not ra.exists():
-        # In MAY dong cuoi, khong phai mot: loi cua frame.js thuong la nhieu
-        # dong (thieu sharp / thieu node_modules) ma dong cuoi chi la goi y.
-        cuoi = [d for d in ((r.stderr or "") + "\n" + (r.stdout or "")).splitlines() if d.strip()]
-        for d in cuoi[-4:]:
-            print(f"[LOI] frame.js: {d[:200]}", file=sys.stderr)
-        sys.exit("[LOI] khong dong duoc khung. Thieu node_modules thi chay: "
-                 f"cd {SKILL} && npm ci")
+    """Goi thang khung_anh trong CUNG tien trinh, thay vi shell ra node frame.js.
+
+    Het mot lop subprocess nghia la loi hien nguyen van (traceback that) chu
+    khong con phai doan tu vai dong stderr cuoi cua Node."""
+    try:
+        khung_anh.dong_khung(src, ra, emoji=emoji, handle=handle)
+    except Exception as e:                                   # noqa: BLE001
+        sys.exit(f"[LOI] khong dong duoc khung: {type(e).__name__}: {e}")
+    if not Path(ra).exists():
+        sys.exit("[LOI] dong khung xong ma khong thay tep ra")
 
 
 def _env_sach() -> dict:
@@ -190,8 +184,10 @@ def main() -> int:
     ap.add_argument("--out", help="Duong dan anh ra (mac dinh tep tam)")
     a = ap.parse_args()
 
-    if not FRAME.exists():
-        sys.exit(f"[LOI] khong thay skill url-mascot-frame o {SKILL}")
+    # Kiem ASSETS cua skill (avatar/font/palette) — phan .js da bo, nhung khung
+    # van doc avatar tu day nen thieu thu muc la hong ngay.
+    if not (SKILL / "assets" / "avatars").is_dir():
+        sys.exit(f"[LOI] khong thay assets cua skill url-mascot-frame o {SKILL}")
 
     env_load.nap()
     brand = os.environ.get("CT_BRAND", "").strip() or "donniechublog"

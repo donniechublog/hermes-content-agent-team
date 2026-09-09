@@ -10,6 +10,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 import luat_anh
+import schema
 
 from chuan_bi.chung import ROOT, _brand_cua
 
@@ -197,8 +198,7 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
     # 5 la co Nhat khong phai 5 slide. `so_dung_duoc` di vao brief (THIEU ANH)
     # va co `thieu_anh` (xem _mo_ta_thieu_anh) ma route_thieu_anh doc de quyet
     # dinh hoi Ong Chu hay chuyen Kite.
-    so_rieng = sum(1 for a in dung_duoc if not a.get("khai_niem"))
-    so_dung_duoc = so_rieng + min(1, len(dung_duoc) - so_rieng)
+    so_dung_duoc = schema.so_anh_dung_duoc(anh)
 
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
     # hang trong tin, 09/09/2026) -> anh KHAI NIEM (co, rack, chung chung; 07/09).
@@ -211,7 +211,8 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
     # (so, dung boi cong chan/brief "bat buoc dung XH") van la BANG DAU TIEN.
     if xhs:
         goi_y_bia = ["XH" if i == 0 else f"XH{i + 1}" for i in range(len(xhs))] + goi_y_bia
-    m = {"draft_id": draft_id, "brand": _brand_cua(meta), "title": title, "link": link,
+    m = {"phien_ban": schema.PHIEN_BAN_MANIFEST,
+         "draft_id": draft_id, "brand": _brand_cua(meta), "title": title, "link": link,
          "via": meta.get("via", ""), "category": meta.get("category", ""),
          "summary": tom.get("summary", ""), "source_note": tom.get("source_note", ""),
          "workdir": str(wd), "tao_luc": int(time.time()),

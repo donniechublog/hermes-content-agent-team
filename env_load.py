@@ -40,6 +40,22 @@ VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine
 # 403 o ca API lan tai anh; doi UA nay thi 200). Khong nhet email vao day.
 UA_WIKI = "donniechu-content-team/1.0 (https://dcgr.tech)"
 
+# UA GIA TRINH DUYET, dung cho trang CHAN BOT (bang xep hang, arxiv). Truoc
+# 09/09/2026 chuoi nay duoc chep tay o BA cho — xep_hang.py, arxiv_bia.py va
+# chuan_bi/browser.py — chi khac cho xuong dong; nang phien ban Chrome thi phai
+# sua ba noi (audit A5).
+#
+# KHONG gop cac UA khac vao day, chung khac nhau CO CHU DICH:
+#   quet_chung.UA        "donniechu-scout/1.0"        — bot thanh that khi di quet
+#   chuan_bi/chung.UA    "donniechu-dre/1.0"          — engine anh, danh rieng de
+#                                                       doc log ben kia biet ai goi
+#   article_extract.UA   "donniechu-content-bot/1.0"  — boc bai
+#   UA_WIKI              — Wikimedia DOI ten cong cu + duong lien he (xem tren)
+# Doi mot trong so do sang UA gia trinh duyet la mat tinh thanh that voi trang
+# minh quet; doi UA_WIKI la an 403 (da do).
+UA_TRINH_DUYET = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+
 
 def hermes_home() -> Path:
     """HERMES_HOME cua container hien tai (~/.hermes-<brand>, systemd/cron dat san);

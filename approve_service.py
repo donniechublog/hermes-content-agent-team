@@ -356,6 +356,8 @@ def loop():
     _soat_tirith()
     _cuu_bai_ket_publishing(token, group)
     loi_lien_tiep = 0
+    mat_ket_noi_tu = None       # epoch luc bat dau chuoi loi hien tai, None = dang on
+    loai_loi_dang_bao = None    # loai loi (409/429/ten exception) da bao — chi bao 1 lan/loai
     while True:
         try:
             r = call(token, "getUpdates", offset=offset, timeout=50,
@@ -363,9 +365,35 @@ def loop():
             if not r.get("ok"):
                 # 409 (hai poller cung token) / 429: long-poll khong giu duoc,
                 # request tra ve NGAY -> khong sleep la nen API vo han.
-                log("loi", "getUpdates tu choi: " + str(r.get("description")))
+                mo_ta = str(r.get("description"))
+                log("loi", "getUpdates tu choi: " + mo_ta)
+                if mat_ket_noi_tu is None:
+                    mat_ket_noi_tu = time.time()
+                if loai_loi_dang_bao != mo_ta:
+                    # Bao NGAY (sendMessage la endpoint khac getUpdates, 409/429 cua
+                    # getUpdates khong can trong no van goi duoc) — chi 1 lan cho
+                    # moi loai loi, tranh spam khi 409 lap lien tuc.
+                    loai_loi_dang_bao = mo_ta
+                    try:
+                        call(token, "sendMessage", chat_id=group,
+                             text="🔌 Telegram từ chối getUpdates (" + html_escape(mo_ta)
+                                  + "), đang thử lại…", parse_mode="HTML")
+                    except Exception:                            # noqa: BLE001
+                        pass
                 time.sleep(5)
                 continue
+            if mat_ket_noi_tu is not None:
+                # Vong nay goi duoc: het chuoi loi (409/429 tu choi hoac exception
+                # ket noi ben duoi).
+                phut = (time.time() - mat_ket_noi_tu) / 60
+                if loai_loi_dang_bao is not None:      # da bao luc mat -> bao khi hoi lai
+                    try:
+                        call(token, "sendMessage", chat_id=group,
+                             text=f"✅ Đã kết nối lại Telegram sau {phut:.1f} phút mất kết nối")
+                    except Exception:                            # noqa: BLE001
+                        pass
+                mat_ket_noi_tu = None
+                loai_loi_dang_bao = None
             for u in r.get("result", []):
                 # Ghi offset TRUOC khi xu ly tung update. Truoc day ghi sau ca
                 # lo: mot update no giua chung -> offset khong ghi -> restart

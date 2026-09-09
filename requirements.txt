@@ -17,13 +17,23 @@ playwright>=1.40     # render_edu.py (Kite) chup HTML->PNG bang Chromium headles
 # beautifulsoup4/lxml: article_extract.py can nhung thieu o day — chua lo ra
 # vi venv hermes tren server tinh co da co san (phu thuoc bac cau cua thu
 # khac). Ghi ro de venv rieng (vd may local nay) khong bi ImportError.
+#
+# lxml GIU LAI, khong bo theo de nghi cua audit D2: da thu doi sang html.parser
+# (stdlib), hai parser giong het nhau tren HTML dong the day du NHUNG voi `<p>`
+# khong dong — hop le va rat pho bien tren bao that — html.parser long doan sau
+# vao doan truoc, sinh ra doan BI NHAN DOI di thang vao cau_co_so cua brief.
+# `article_extract._parser()` gio roi ve html.parser kem canh bao khi thieu lxml,
+# thay vi chet cam nhu truoc.
 beautifulsoup4>=4.12
 lxml>=5
 
 # Cung dang "co san nho phu thuoc bac cau" nhu bs4/lxml — ghi ro de venv rieng
 # khong bi ImportError (audit 06/09/2026):
 pyyaml>=6           # doc config.yaml cua hermes: model_watch, theo_doi_9router, cost_squeeze
-markdown>=3.5       # nhat_ky_web.py render nhat ky 9router ra HTML
+# markdown: DA BO 09/09/2026 (audit D2). nhat_ky_web tu dung HTML tu .md bang
+# `md_sang_html` — lam duoc vi chinh theo_doi_9router sinh ra tep .md do nen tap
+# cu phap dong (`#`/`##`, bang `|`, muc `- `, `**dam**`), kiem trong
+# tests/test_nhat_ky_web.py.
 
 opencv-python-headless  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx trong
 #                       # assets/). Truoc 06/09/2026 chi ghi o requirements-local

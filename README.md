@@ -105,6 +105,30 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   mô tả sẵn hợp đồng để khi có GPU thì bắt tay vào đúng chỗ. Tới lúc đó hai vai
   chỉ xoá chữ + vẽ tại chỗ/deck.
 
+### Thêm một vai mới
+
+Trước 09/09/2026 việc này đụng tám chỗ và quên một chỗ là hỏng **câm**: "kites"
+thiếu trong `TEN_SANG_CAP` làm cả lệnh chọn bị từ chối rồi gửi nhầm cho Finn
+(06/09), sidecar ghi slug cũ làm task nằm `ready` hai ngày (01/09). Từ khi có
+`vai.py` thì còn ba bước, và bước 1 sinh lại mọi bảng cũ:
+
+1. **Một dòng trong `vai.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
+   nhan_anh=…, viet=…)`. `slug` phải trùng **tên thư mục profile thật** trong
+   `HERMES_HOME`, nếu không `chuan_assignee` từ chối tạo task. `go` là mọi chữ
+   Ông Chủ có thể gõ khi chọn tin (kể cả số nhiều kiểu "kites"); `slug_cu` chỉ
+   dành cho slug cũ còn nằm trong sidecar trên đĩa. `VAI_ANH`, `TEN_SANG_CAP`,
+   `TEN_VAI_ANH`, `VAI_CAROUSEL`, `VAI_EDU`, `SLUG_CU`, `TEN_HIEN` tự có theo.
+2. **Một cặp `<vai>_chuan_bi.py` / `<vai>_nop.py`** — cả hai đọc chung
+   `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
+   (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).
+3. **Một SOUL** trong `hermes/profiles/<brand>/<slug>.SOUL.md` (hoặc `shared/`
+   nếu dùng chung cả hai brand), rồi `dong_bo_hermes.py --ra-hermes` đẩy sang
+   home đang chạy.
+
+Còn phải làm tay: một topic trong `state/topics.json` (id do Telegram cấp) và
+`task_bodies.py` nếu vai cần khuôn body riêng. `tests/test_vai.py` giữ cho các
+bảng dẫn xuất không lệch bản viết tay cũ.
+
 ## Tệp
 
 **Dựng ảnh**
@@ -269,6 +293,14 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 - `kiem_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.
+- `cai_dat.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
+  (pip, `playwright install chromium`) rồi kết thúc bằng `kiem_moi_truong.py`.
+  Trước đây các bước này nằm rải trong comment của `requirements.txt` và
+  `bob_nop.py`, thiếu một bước là hỏng **câm** (thiếu cv2 → cổng mặt người tự
+  tắt). Font và model YuNet đã nằm trong git, không phải tải. `--thu` xem trước,
+  không cài gì. **Không còn bước Node nào** từ 09/09/2026 (A6).
+- `kiem_moi_truong.py` — chặn đầu: cv2, model YuNet, Chromium, `OPENAI_API_KEY`,
+  `TELEGRAM_BOT_TOKEN`. Mỗi mục tự bọc lỗi nên một mục hỏng không giết cả script.
 
 ## Chạy tuần tự, không song song
 

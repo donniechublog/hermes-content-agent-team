@@ -64,6 +64,7 @@ except ImportError:              # Windows (chay tay/test): xem `_cho_luot`
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 from phien_browser import PhienBrowser                       # noqa: E402
+import schema                                                # noqa: E402
 
 from chuan_bi.chung import (  # noqa: E402
     DRAFTS, ROOT, UA, _brand_cua, _doc_json, _ghi_json, _hdr,
@@ -263,7 +264,9 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300,
         except (ValueError, ProcessLookupError, PermissionError):
             khoa.unlink(missing_ok=True)
     if xong.exists() and not lam_moi:
-        return _doc_json(xong), wd, meta
+        # doc_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
+        # thay cung mot so, khong ai phai tu doan nua.
+        return schema.doc_manifest(xong), wd, meta
     khoa.write_text(str(os.getpid()))
     try:
         with _cho_luot():

@@ -4,8 +4,9 @@
 
 Vì sao không nhét vào hermes-dashboard: đó là dashboard của Hermes (bind
 127.0.0.1, có session token, code trong hermes-agent), không phải chỗ để thêm
-trang của đội. Cái này là http.server chuẩn Python, không phụ thuộc gì ngoài
-`markdown` (đã có trong venv), CHỈ ĐỌC tệp trong state/9router/nhat_ky.
+trang của đội. Cái này là http.server chuẩn Python, KHÔNG phụ thuộc gói ngoài
+nào — bảng .md tự dựng thành HTML bằng `md_sang_html` (bỏ `markdown`, audit D2)
+— và CHỈ ĐỌC tệp trong state/9router/nhat_ky.
 
 Đường dẫn:
     /                       danh sách ngày, mỗi ngày một dòng số quan trọng
@@ -20,6 +21,7 @@ không có khoá.
 import html
 import json
 import os
+import re
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -53,19 +55,73 @@ def _trang(tieu_de: str, than: str) -> bytes:
             f"{than}").encode("utf-8")
 
 
+def _dam(s: str) -> str:
+    """`**dam**` -> <b>dam</b>. Chay SAU escape nen `s` khong con the HTML nao."""
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
+
+
+def md_sang_html(tho: str) -> str:
+    """Bon cu phap markdown ma `theo_doi_9router` SINH RA: `#`/`##`, bang `|`,
+    muc `- `, va `**dam**`. Khong phai bo render markdown day du (audit D2 —
+    bo goi `markdown`).
+
+    Lam duoc vi dau vao KHONG phai markdown bat ky: chinh ta sinh ra tep .md do,
+    nen tap cu phap dong va kiem duoc (tests/test_nhat_ky_web.py).
+
+    ESCAPE TRUOC, dung the SAU — thu tu nay la bat buoc: ten model, `status` va
+    `lastError` trong tep deu chep tu usageHistory cua 9router, tuc tu client goi
+    router. Mot ten model dat la `<img src=x onerror=...>` se chay trong trinh
+    duyet cua Ong Chu khi bam link luc 6h sang. (Ban cu dung python-markdown
+    cung phai escape truoc vi chinh ly do do.)"""
+    ra, bang = [], []
+
+    def xa_bang():
+        if not bang:
+            return
+        # Dong thu hai cua bang markdown la vach ngan (|---|:--:|), khong phai du lieu.
+        hang = [h for h in bang if not re.fullmatch(r"\|[\s:|-]+\|", h)]
+        ra.append("<table>")
+        for i, h in enumerate(hang):
+            o = [c.strip() for c in h.strip().strip("|").split("|")]
+            the = "th" if i == 0 else "td"
+            ra.append("<tr>" + "".join(f"<{the}>{_dam(c)}</{the}>" for c in o) + "</tr>")
+        ra.append("</table>")
+        bang.clear()
+
+    muc = False
+    for dong in html.escape(tho, quote=False).splitlines():
+        d = dong.rstrip()
+        if d.startswith("|"):
+            bang.append(d)
+            continue
+        xa_bang()
+        if d.startswith("- "):
+            if not muc:
+                ra.append("<ul>")
+                muc = True
+            ra.append(f"<li>{_dam(d[2:])}</li>")
+            continue
+        if muc:
+            ra.append("</ul>")
+            muc = False
+        if d.startswith("## "):
+            ra.append(f"<h2>{_dam(d[3:])}</h2>")
+        elif d.startswith("# "):
+            ra.append(f"<h1>{_dam(d[2:])}</h1>")
+        elif d.strip():
+            ra.append(f"<p>{_dam(d)}</p>")
+    xa_bang()
+    if muc:
+        ra.append("</ul>")
+    return "\n".join(ra)
+
+
 def trang_ngay(ngay: str) -> bytes | None:
     p = tdr.NHAT_KY / f"9router_{ngay}.md"
     if not p.exists():
         return None
-    import markdown
-    # ESCAPE truoc khi render. Python-Markdown cho HTML tho di thang qua, va
-    # chuoi trong tep .md khong phai do ta viet het: ten model, `status`, va
-    # `lastError` deu chep tu usageHistory cua 9router, tuc tu client goi router.
-    # Mot ten model dat la `<img src=x onerror=...>` se chay trong trinh duyet
-    # cua Ong Chu khi bam link 6h sang.
     tho = p.read_text(encoding="utf-8")
-    an_toan = html.escape(tho, quote=False)
-    body = markdown.markdown(an_toan, extensions=["tables"])
+    body = md_sang_html(tho)
     return _trang(f"9router {ngay}", body + f"<p><a href='/9router/{ngay}.json'>json</a></p>")
 
 

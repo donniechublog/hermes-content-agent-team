@@ -20,9 +20,9 @@ Chạy TRÊN SERVER (như cả đội). Cần Chromium của Playwright:
 FONT: dùng font Vietnamese-safe có sẵn trong assets/fonts (Be Vietnam Pro cho
 display+body, Noto Serif cho standfirst in nghiêng, JetBrains Mono cho nhãn/số).
 Bản canvas gốc (skill carousel-edu/reference) dùng Archivo + Newsreader — để khớp
-100%, thả 2 TTF đó vào assets/fonts rồi đổi bảng FONTS bên dưới. Font nhúng dạng
-base64 data-URI nên Chromium headless không cần font hệ thống (tránh tofu tiếng
-Việt trên server tối giản).
+100%, thả 2 TTF đó vào assets/fonts rồi đổi bảng FONTS bên dưới. Font được
+`page.route` phục vụ từ assets/fonts nên Chromium headless không cần font hệ
+thống (tránh tofu tiếng Việt trên server tối giản).
 
 Spec JSON:
 {
@@ -158,8 +158,19 @@ FALLBACK = {
 }
 
 
+FONT_URL = "https://font.noi-bo/"      # khong ra mang: page.route chan het (xem _route_font)
+
+
 def _font_face_css():
-    """Nhúng font base64 để Chromium headless không cần font hệ thống."""
+    """CSS @font-face TRO TOI `page.route`, khong nhung base64 (audit B7).
+
+    Truoc day moi font duoc base64 thang vao CSS, va CSS do di vao HTML cua TUNG
+    slide: ~4,7MB moi `set_content`, 6-10 slide mot bai. Base64 con phinh 33%.
+    Nay CSS chi tro toi mot URL gia va `_route_font` phuc vu tep tu dia — Chromium
+    tai moi font mot lan roi dung lai cho cac slide sau.
+
+    Van kiem tep font co du TAI DAY (khong doi toi luc render): thieu font ma de
+    Chromium tu roi ve font he thong la ca album sai chu ma nhin anh moi biet."""
     blocks = []
     thieu = []
     for fam, faces in FONTS.items():
@@ -168,11 +179,10 @@ def _font_face_css():
             if not fp.exists():
                 thieu.append(fname)
                 continue
-            b64 = base64.b64encode(fp.read_bytes()).decode("ascii")
             blocks.append(
                 "@font-face{font-family:'%s';font-weight:%s;font-style:%s;"
-                "font-display:block;src:url(data:font/ttf;base64,%s) "
-                "format('truetype');}" % (fam, weight, style, b64)
+                "font-display:block;src:url('%s%s') "
+                "format('truetype');}" % (fam, weight, style, FONT_URL, fname)
             )
     if thieu:
         raise SystemExit(
@@ -1434,6 +1444,30 @@ def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
     return theme, hero
 
 # ---- render ---------------------------------------------------------------
+def _route_font(page) -> dict:
+    """Phuc vu font TU DIA cho moi yeu cau toi FONT_URL. Tra ve bo dem da phuc vu.
+
+    Chan tai `FONT_URL` nen KHONG bao gio ra mang that. Bo dem de nguoi goi biet
+    font co thuc su duoc nap khong: khac voi `data:` URL (khong bao giu hong),
+    route hong thi Chromium lang le roi ve font he thong va ca album sai chu."""
+    dem = {"phuc_vu": 0}
+
+    def _tra(route, request):
+        ten = request.url.rsplit("/", 1)[-1]
+        fp = FONTS_DIR / ten
+        # Chi phuc vu tep NGAY TRONG assets/fonts, khong di theo "../".
+        if fp.parent.resolve() != FONTS_DIR.resolve() or not fp.exists():
+            route.abort()
+            return
+        dem["phuc_vu"] += 1
+        route.fulfill(status=200, body=fp.read_bytes(),
+                      headers={"content-type": "font/ttf",
+                               "cache-control": "max-age=86400"})
+
+    page.route(FONT_URL + "*", _tra)
+    return dem
+
+
 def _kiem_tieu_de_dong(page, browser, slides, dung_doc):
     """Cong chan DO THAT: tieu de tren slide co anh toi da FIG_TIEU_DE_DONG dong,
     do bang chinh Chromium. Chay het mot luot TRUOC khi chup — hong thi khong de
@@ -1525,11 +1559,21 @@ def render(spec, out, brand, bo_qua_dau, scale):
                                   device_scale_factor=scale)
         page = ctx.new_page()
 
+        dem_font = _route_font(page)
+
         def dung_doc(sl, i):
             return slide_doc(sl, i, total, brand, section, folio_left, font_css, th)
 
         _kiem_tieu_de_dong(page, browser, slides, dung_doc)
         outs = _chup_cac_slide(page, slides, dung_doc, out, stem)
+        # Font phuc vu qua route thi PHAI co it nhat mot luot. Zero nghia la
+        # Chromium da roi ve font he thong: album van ra anh, chi la sai chu —
+        # dung loai hong ma nhin anh moi biet, nen chan o day.
+        if not dem_font["phuc_vu"]:
+            browser.close()
+            raise SystemExit(
+                "KHONG font nao duoc nap qua page.route — album se sai chu.\n"
+                f"Kiem assets/fonts va FONT_URL ({FONT_URL}) trong render_edu.py.")
         browser.close()
     _ghi_theme(out, theme, hero)   # hero=None khi bia dung anh that
     return outs

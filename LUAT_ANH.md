@@ -307,7 +307,7 @@ một phần bề ngang thì thứ còn lại không phải thiếu một tí �
 Chiều cao thì khác: cắt bớt mép trên/dưới thường chỉ mất khoảng thở.
 
 Đừng chụp bằng khung mặc định của công cụ nào. Khung mặc định luôn hẹp
-(`screenshot.js` trong repo này đặt 820px), và một chart rộng 1400px trong khung
+(`chup_trang.py` trong repo này đặt 820px), và một chart rộng 1400px trong khung
 đó thì hoặc bị cắt, hoặc bị trang reflow xuống bố cục điện thoại — lúc đó có
 chụp đủ bề ngang cũng không còn là cái chart trên desktop nữa.
 

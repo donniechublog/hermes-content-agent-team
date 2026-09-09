@@ -24,7 +24,7 @@ ratio.
 
 1. **Get the source image onto disk** (from the URL).
 2. **Judge the vibe** of that image and pick one matching mascot emoji.
-3. **Run `scripts/frame.js`** to composite the frame + watermark.
+3. **Run `khung_anh.py`** (repo root) to composite the frame + watermark.
 4. **Show the result** to the user.
 
 ---
@@ -104,8 +104,8 @@ tight set of reaction faces:
 
 The full machine-readable list is in [assets/mood-palette.json](assets/mood-palette.json),
 and [assets/mood-palette-sheet.png](assets/mood-palette-sheet.png) shows what each
-one looks like. `frame.js` resolves the emoji → an actual mascot PNG on its own
-via MascotStudio's `emoji-map.json`; you only choose the emoji.
+one looks like. `khung_anh.py` resolves the emoji → an actual mascot PNG from
+that palette on its own; you only choose the emoji.
 
 If you cannot place the mood in the image, use 🙄 (eyeroll). It is the one
 reaction that works in every situation, which is exactly why it is the fallback:
@@ -118,11 +118,16 @@ the funnier one — savage/absurd leans 💀, confusing leans 🤨/🤯.
 ## Step 3 — Composite the frame
 
 ```bash
-node ~/.hermes/profiles/bob/skills/url-mascot-frame/scripts/frame.js \
+venv/bin/python ~/content-team/khung_anh.py \
   --image /tmp/src.png \
   --emoji "🙄" \
   --out ./framed.png
 ```
+
+> Was `node scripts/frame.js` until 09/09/2026. Compositing is now pure Python
+> (Pillow) in `khung_anh.py` — same flags, same geometry, verified against the
+> Node output pixel by pixel. This skill needs no Node and no `npm install`
+> (audit A6).
 
 One donniechu.com preset: a cream card (`#f7f5f0`) with a black hard-offset
 shadow and a macOS-style title bar, in JetBrains Mono. Fixed-height header +
@@ -138,8 +143,9 @@ no cropping to a square:
   >_ vibe working & agentic AI           ← footer: prompt
 ```
 
-Options: `--avatar <png>` to force a specific mascot file, `--avatar-index N`
-to pick a different avatar for that emoji, `--no-mascot` for text-only.
+Options: `--avatar <png>` to force a specific mascot file, `--no-mascot` for
+text-only. (`--avatar-index` is gone with MascotStudio: the palette pins exactly
+one avatar per emoji.)
 `--handle` defaults to `@donniechublog`. The header handle and the footer
 prompt `>_ vibe working & agentic AI` are fixed brand marks; the mascot stays
 your vibe-matched pick from Step 2, straddling the image's bottom-right corner
@@ -147,29 +153,28 @@ on the top layer so nothing clips it.
 
 Prints a JSON summary (output path, canvas size, which avatar it used).
 
-**Footer line is per brand.** `frame.js` keys it off `--handle` via a small
+**Footer line is per brand.** `khung_anh.py` keys it off `--handle` via a small
 `FOOTER` table. `@donniechublog` has its site tagline; an unknown handle renders
 **no footer** and says so on stderr, rather than stamping another brand's copy on
 the image. Pass `--footer "<line>"` to override, or add the brand to that table.
 
-**Dependency:** the script needs `sharp`. The **31 palette avatars** (one per
+**Dependency:** Pillow only (already in `requirements.txt`). The **31 palette avatars** (one per
 mood in `assets/mood-palette.json`; `assets/avatars/` holds 32 files, one spare)
 are **bundled**, so the skill is self-contained and portable — copy the folder to
-any machine and it works. It loads `sharp` from the skill's own `node_modules`
-first (run `npm install` inside the skill folder once), then a global `sharp`.
-To pick an avatar *outside* the palette (rare), the script reads MascotStudio's
-`emoji-map.json` — that repo only exists on the author's Mac, so set
-`MASCOT_DIR=/path/to/MascotStudio` to opt in. It is **unset by default**: the
-old default was that machine's absolute path, which can never exist on the
-server. For the normal
-troll palette you do **not** need MascotStudio present.
+any machine and it works.
 
-**Screenshot fallback (optional):** `get_source.py` only needs the browser for the
-rare case where the URL is a page, not an image — it shells out to `screenshot.js`
-(Playwright, deviceScaleFactor 3 for a sharp capture). Enable it once with:
+The old `MASCOT_DIR` escape hatch (an avatar library outside the palette, living
+only on the author's Mac) is **gone**: on the server that directory can never
+exist, so every run stat()'d a dead path. Pass `--avatar <file.png>` if you ever
+need one outside the palette.
+
+**Screenshot fallback:** `get_source.py` only needs the browser for the rare case
+where the URL is a page, not an image — it calls `chup_trang.py` (Python
+Playwright, deviceScaleFactor 3 for a sharp capture). Chromium comes from the
+project's own install step:
 
 ```bash
-npm install playwright && npx playwright install --with-deps chromium
+bash ~/content-team/cai_dat.sh
 ```
 
 If Playwright/Chromium is absent, direct-image and social-media resolution still
@@ -183,14 +188,14 @@ non-zero for a page URL).
 Send the finished PNG to the user with `SendUserFile` (display `render`) so they
 see it inline. Mention which expression you picked and why in one line, so they
 can ask for a different mood if they disagree. If they want a tweak, re-run
-Step 3 with a different `--emoji` or `--avatar-index` — no need to re-download.
+Step 3 with a different `--emoji` — no need to re-download.
 
 ## Notes & good defaults
 
 - Output naming: default `./framed.png`; if you make several in one session,
   number them (`framed-1.png`, …) so nothing gets overwritten.
 - Very tall or very wide sources still work; the frame scales to the shorter
-  side, and sources wider than 1600px are downscaled for a sane output size.
+  side, and sources wider than 2048px are downscaled for a sane output size.
 - Keep the handle exactly `@donniechublog` unless the user says otherwise.
 - This skill only brands images the user brings via a URL. It is not for
   designing graphics from scratch — for that, reach for a design tool instead.

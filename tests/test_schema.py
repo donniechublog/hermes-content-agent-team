@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""Hợp đồng dữ liệu: một công thức, một bản đọc, không phụ thuộc thứ tự (F2).
+
+Ba duong hong CO THAT ma tep nay giu:
+
+  1. `so_dung_duoc` thieu khoa thi BA noi doan ba kieu — dre_chuan_bi dem lai
+     bang cong thuc khac nguoi ghi (chum anh khai niem dem thanh nhieu thay vi
+     MOT), con duyet_bai/anh_chuan_bi coi la 0 ("khong co anh nao"). Nay ca ba
+     di qua `schema.so_anh_dung_duoc`.
+  2. Manifest ban cu (truoc 09/09/2026) khong co `phien_ban` va co the thieu
+     khoa dan xuat. `doc_manifest` bu lai bang dung cong thuc cua nguoi ghi.
+  3. `write_meta` ghi DE ca dict, ma `bang_den` ghi `root_task` vao cung tep tu
+     mot tien trinh khac. Hom nay chua mat chi vi thu tu goi may man.
+
+Chay:  venv/bin/python tests/test_schema.py
+"""
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+import schema                                                 # noqa: E402
+
+
+# ---------------------------------------------- cong thuc dan xuat, mot ban
+def test_chum_khai_niem_dem_la_mot():
+    """5 la co Nhat, khong phai 5 slide: ca chum anh khai niem chi lam bia."""
+    anh = [{"dung": ["bìa"], "khai_niem": {"tu_khoa": "co"}},
+           {"dung": ["bìa"], "khai_niem": {"tu_khoa": "rack"}},
+           {"dung": ["thân"]}]
+    assert schema.so_anh_dung_duoc(anh) == 2, \
+        "hai anh khai niem phai dem la MOT (cong thuc cu dem thanh 3)"
+
+
+def test_anh_khong_lien_quan_khong_duoc_tinh():
+    anh = [{"dung": ["thân"], "lien_quan": False}, {"dung": ["thân"], "lien_quan": True}]
+    assert schema.so_anh_dung_duoc(anh) == 1
+
+
+def test_anh_khong_dung_duoc_o_dau_thi_khong_tinh():
+    assert schema.so_anh_dung_duoc([{"dung": []}, {"dung": ["thân"]}]) == 1
+
+
+def test_danh_sach_rong_va_None_deu_ra_0():
+    assert schema.so_anh_dung_duoc([]) == 0
+    assert schema.so_anh_dung_duoc(None) == 0
+
+
+def test_khop_cong_thuc_cua_nguoi_ghi():
+    """Nguoi ghi (`chuan_bi.manifest.dung_manifest`) phai goi CHINH ham nay —
+    doc ma nguon de chan viec ai do chep lai cong thuc lan nua."""
+    src = (ROOT / "chuan_bi" / "manifest.py").read_text(encoding="utf-8")
+    assert "schema.so_anh_dung_duoc(" in src, "nguoi ghi khong dung cong thuc chung"
+    assert "so_rieng = sum(" not in src, "cong thuc cu con nam lai trong nguoi ghi"
+
+
+# ------------------------------------------------------------ doc_manifest
+def test_ban_moi_giu_nguyen_khong_bi_dung_cham():
+    m = {"phien_ban": schema.PHIEN_BAN_MANIFEST, "so_dung_duoc": 99,
+         "so_xep_hang": 7, "anh": []}
+    assert schema.doc_manifest(m) == m
+
+
+def test_ban_cu_duoc_bu_so_dung_duoc_dung_cong_thuc():
+    # `khai_niem` phai co noi dung: dict RONG la falsy nen khong danh dau gi ca
+    # (chinh cho nay lam ban dau cua test sai — giu lai lam vi du).
+    cu = {"anh": [{"dung": ["bìa"], "khai_niem": {"tu_khoa": "co"}},
+                  {"dung": ["bìa"], "khai_niem": {"tu_khoa": "rack"}},
+                  {"dung": ["thân"]}]}
+    ra = schema.doc_manifest(cu)
+    assert ra["so_dung_duoc"] == 2, ra
+    assert ra["phien_ban"] == schema.PHIEN_BAN_MANIFEST
+
+
+def test_ban_cu_khong_co_bang_xep_hang_thi_so_xep_hang_la_0():
+    """Nguoi doc tung mac dinh 1 ke ca khi khong co bang nao — nguoc y nghia."""
+    assert schema.doc_manifest({"anh": [], "xep_hang": None})["so_xep_hang"] == 0
+
+
+def test_ban_cu_co_bang_thi_so_xep_hang_it_nhat_1():
+    ra = schema.doc_manifest({"anh": [], "xep_hang": {"model": "gpt", "kieu": "chup"}})
+    assert ra["so_xep_hang"] == 1, ra
+
+
+def test_khong_ghi_de_khoa_da_co_cua_ban_cu():
+    ra = schema.doc_manifest({"anh": [{"dung": ["thân"]}], "so_dung_duoc": 42})
+    assert ra["so_dung_duoc"] == 42, "bu khoa THIEU, khong duoc sua khoa da co"
+
+
+def test_doc_tu_duong_dan_va_khong_nem_khi_tep_hong():
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "xong.json"
+        p.write_text(json.dumps({"anh": [], "title": "x"}), encoding="utf-8")
+        assert schema.doc_manifest(p)["title"] == "x"
+        p.write_text("{khong phai json", encoding="utf-8")
+        assert schema.doc_manifest(p) is None, "tep hong phai ra None, khong nem"
+        assert schema.doc_manifest(Path(t) / "khong-co.json") is None
+
+
+def test_tep_json_khong_phai_dict_cung_ra_None():
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "xong.json"
+        p.write_text("[1, 2, 3]", encoding="utf-8")
+        assert schema.doc_manifest(p) is None
+
+
+# ------------------------------------------------------------- hop_nhat_meta
+def test_tron_giu_khoa_cu_khong_co_trong_ban_moi():
+    """Dung duong da suyt mat: bang_den ghi root_task, write_meta ghi de."""
+    ra = schema.hop_nhat_meta({"root_task": "t_9", "title": "cu"},
+                              {"title": "moi", "brand": "dcgr"})
+    assert ra["root_task"] == "t_9", "mat root_task -> the goc bang den mo coi"
+    assert ra["title"] == "moi" and ra["brand"] == "dcgr"
+
+
+def test_ban_moi_thang_ke_ca_khi_gia_tri_rong():
+    """Rong la Y CUA NGUOI GHI, khong phai 'khong co gi'."""
+    assert schema.hop_nhat_meta({"via": "cu"}, {"via": ""})["via"] == ""
+
+
+def test_tron_voi_ban_cu_rong_hoac_None():
+    assert schema.hop_nhat_meta(None, {"a": 1}) == {"a": 1}
+    assert schema.hop_nhat_meta({}, {"a": 1}) == {"a": 1}
+
+
+def test_khong_sua_dict_dau_vao():
+    cu = {"root_task": "t_9"}
+    schema.hop_nhat_meta(cu, {"title": "moi"})
+    assert cu == {"root_task": "t_9"}, "hop_nhat_meta khong duoc sua ban cu tai cho"
+
+
+def test_write_meta_that_su_tron_chu_khong_ghi_de():
+    """Chay ham THAT, khong mo phong: day la cho da suyt mat root_task."""
+    import duyet_chon_tin as dct
+    with tempfile.TemporaryDirectory() as t:
+        d = Path(t)
+        cu = dct.DRAFTS
+        dct.DRAFTS = d
+        try:
+            (d / "x.meta.json").write_text(json.dumps({"root_task": "t_9"}), encoding="utf-8")
+            dct.write_meta("x", {"link": "http://a", "title": "moi", "category": "ai"},
+                           "x.png", "dcgr")
+            m = json.loads((d / "x.meta.json").read_text(encoding="utf-8"))
+        finally:
+            dct.DRAFTS = cu
+    assert m.get("root_task") == "t_9", f"write_meta van xoa root_task: {m}"
+    assert m.get("title") == "moi" and m.get("brand") == "dcgr", m
+
+
+# --------------------------------------------------- khai bao khop thuc te
+def test_moi_khoa_nguoi_ghi_sinh_ra_deu_co_trong_Manifest():
+    """Them khoa vao dung_manifest ma quen khai o schema.Manifest thi bang khai
+    bao thanh vo dung — chan tu day."""
+    import ast
+    src = (ROOT / "chuan_bi" / "manifest.py").read_text(encoding="utf-8")
+    cay = ast.parse(src)
+    ham = next(n for n in ast.walk(cay)
+               if isinstance(n, ast.FunctionDef) and n.name == "dung_manifest")
+    gan_m = next(n for n in ast.walk(ham)
+                 if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
+                 and any(isinstance(t, ast.Name) and t.id == "m" for t in n.targets))
+    khoa = {k.value for k in gan_m.value.keys if isinstance(k, ast.Constant)}
+    thieu = sorted(khoa - set(schema._kieu(schema.Manifest)))
+    assert not thieu, f"dung_manifest sinh khoa chua khai trong schema.Manifest: {thieu}"
+
+
+def test_moi_khoa_write_meta_deu_co_trong_Meta():
+    import ast
+    src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
+    cay = ast.parse(src)
+    ham = next(n for n in ast.walk(cay)
+               if isinstance(n, ast.FunctionDef) and n.name == "write_meta")
+    gan = next(n for n in ast.walk(ham)
+               if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict))
+    khoa = {k.value for k in gan.value.keys if isinstance(k, ast.Constant)}
+    thieu = sorted(khoa - set(schema._kieu(schema.Meta)))
+    assert not thieu, f"write_meta sinh khoa chua khai trong schema.Meta: {thieu}"
+
+
+if __name__ == "__main__":
+    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
+    loi = 0
+    for h in ham:
+        try:
+            h()
+            print(f"OK   {h.__name__}")
+        except AssertionError as e:
+            loi += 1
+            print(f"FAIL {h.__name__}: {e}")
+    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
+    sys.exit(1 if loi else 0)

@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ghi_log                                              # noqa: E402
+import schema                                                # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     BRAND, DRAFTS, ROOT, STATE_DIR, _ghi_json, _gui_chu, _nap_json, _reply_that, call, log,
@@ -154,7 +155,12 @@ def write_meta(draft_id, item, out_png, brand="donniechublog"):
         "score_reason": item.get("score_reason", ""),
         "brand": brand,
     }
-    _ghi_json(DRAFTS / (draft_id + ".meta.json"), meta)
+    # TRON, khong ghi de: bang_den ghi `root_task` vao cung tep tu mot tien
+    # trinh khac, va write_meta con chay lan hai sau khi giai xong link Google
+    # News. Ghi de ca dict thi ai ghi sau xoa cua ai ghi truoc — hom nay chua
+    # mat chi vi thu tu goi tinh co dung (F2).
+    p_meta = DRAFTS / (draft_id + ".meta.json")
+    _ghi_json(p_meta, schema.hop_nhat_meta(_nap_json(p_meta, {}), meta))
 
 def _draft_id(item, brand, vai_anh):
     """Khoa draft DUY NHAT theo (tin, brand, role lam anh).

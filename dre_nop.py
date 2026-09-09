@@ -233,8 +233,12 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
     loi += nc.kiem_da_dung_nhieu(bo.anh, [(f"{n} ({ma})", ma) for ma, n in bo.da_dung.items()], m)
     n = len(slides) + 1
-    if n < m.get("toi_thieu", 5):
-        loi.append(f"chỉ {n} slide, tin này cần tối thiểu {m['toi_thieu']} (kể cả bìa) — "
+    toi_thieu = m.get("toi_thieu", 5)
+    if n < toi_thieu:
+        # Doc MOT lan: truoc day vao nhanh bang `.get(..., 5)` roi trong than lai
+        # doc `m["toi_thieu"]` tho — thieu khoa va n < 5 la KeyError ngay giua
+        # cong chan, khong phai loi noi dung (F2).
+        loi.append(f"chỉ {n} slide, tin này cần tối thiểu {toi_thieu} (kể cả bìa) — "
                    "chia thêm tầng: con số, ý nghĩa, đối thủ, cái cần theo dõi")
     so_quote = sum(1 for s in slides if str(s.get("quote") or "").strip())
     if so_quote < 2:
