@@ -5,6 +5,7 @@ Dung <article>, JSON-LD BlogPosting va OpenGraph de lay tieu de, outline
 (h2/h3), toan bo doan van, va anh noi dung (loai avatar/logo).
 """
 import argparse
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -44,9 +45,46 @@ def fetch(url: str) -> str:
     return r.text
 
 
+def _parser() -> str:
+    """Ten parser cho BeautifulSoup: lxml neu co, khong thi html.parser + KEU.
+
+    Audit D2 de nghi bo han lxml va dung html.parser (duyet_lenh.py dung parser
+    do tu lau). Do KHONG mien phi, da thu: hai parser cho ket qua y het tren HTML
+    dong the day du, nhung voi `<p>` KHONG DONG — hop le trong HTML va rat pho
+    bien tren bao that — lxml tu dong the con html.parser long doan sau vao doan
+    truoc:
+        <article><h2>A</h2><p>Mot.<p>Hai.</article>
+        lxml        -> ["Mot.", "Hai."]
+        html.parser -> ["Mot. Hai.", "Hai."]     (gop VA nhan doi)
+    Doan bi nhan doi di thang vao `cau_co_so` cua brief, nen giu lxml lam parser
+    CHINH.
+
+    Nhung thieu lxml khong duoc chet CAM: truoc day `BeautifulSoup(html, "lxml")`
+    nem FeatureNotFound, article_extract chet, con tu_lieu chi thay tien trinh
+    con thoat khac 0 (dung lop loi C1). Nay roi ve html.parser va noi ro la ket
+    qua kem hon, thay vi khong co ket qua nao."""
+    global _DA_BAO_PARSER
+    try:
+        # import_module chu khong `import lxml`: van import THAT (bat duoc ban
+        # cai vo), nhung khong de lai mot ten thua cho pyflakes keu — C4 dinh
+        # cho CI chan tren pyflakes.
+        importlib.import_module("lxml")
+        return "lxml"
+    except ImportError:
+        if not _DA_BAO_PARSER:
+            _DA_BAO_PARSER = True
+            print("[article_extract] THIEU lxml -> dung html.parser: doan van tren "
+                  "trang co <p> khong dong se bi gop/nhan doi. Cai lxml de dung "
+                  "(xem requirements.txt).", file=sys.stderr)
+        return "html.parser"
+
+
+_DA_BAO_PARSER = False
+
+
 def extract(url: str) -> dict:
     html = fetch(url)
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, _parser())
     art = soup.find("article") or soup.find("main") or soup
 
     def meta(prop):
