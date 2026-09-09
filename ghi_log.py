@@ -40,14 +40,21 @@ def _khoi_tao_that():
     ra = logging.StreamHandler(sys.stdout)
     ra.setFormatter(fmt)
     lg.addHandler(ra)
-    try:
-        tep = env_load.state_dir() / "approve.log"
-        fh = RotatingFileHandler(tep, maxBytes=5_000_000, backupCount=3,
-                                 encoding="utf-8")
-        fh.setFormatter(fmt)
-        lg.addHandler(fh)
-    except OSError as e:                     # khong ghi tep duoc thi van con stdout
-        lg.warning("[log] khong mo duoc tep log: %s", e)
+    # Chi ghi ra TEP khi co CT_BRAND, tuc dang chay that trong mot container
+    # (systemd/cron dat san bien nay). Test va script chay tay khong co no, va
+    # truoc 09/09/2026 chung ghi thang vao `state/approve.log` that: mot lan
+    # chay tests/ de lai vai chuc dong lan trong nhat ky cua dich vu that, doc
+    # log su co xong phai loc bo tay. Mat tep log o che do don la chap nhan
+    # duoc — stdout van con nguyen (journald cua systemd bat cai do).
+    if os.environ.get("CT_BRAND", "").strip():
+        try:
+            tep = env_load.state_dir() / "approve.log"
+            fh = RotatingFileHandler(tep, maxBytes=5_000_000, backupCount=3,
+                                     encoding="utf-8")
+            fh.setFormatter(fmt)
+            lg.addHandler(fh)
+        except OSError as e:                 # khong ghi tep duoc thi van con stdout
+            lg.warning("[log] khong mo duoc tep log: %s", e)
     _LOG = lg
     return lg
 
