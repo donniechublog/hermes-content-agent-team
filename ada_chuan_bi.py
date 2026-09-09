@@ -22,10 +22,8 @@ Dùng:
 """
 import argparse
 import collections
-import glob
 import json
 import os
-import sqlite3
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -140,22 +138,20 @@ def gom_kanban(ngay: int) -> dict:
 def gom_token(ngay: int) -> dict:
     ra = {}
     moc = int(time.time() - ngay * 86400)
-    for p in glob.glob(str(HERMES / "profiles" / "*" / "state.db")):
-        prof = Path(p).parent.name
-        try:
-            c = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
-            n, tools, inp, api = c.execute(
-                "select count(*), coalesce(sum(tool_call_count),0), coalesce(sum(input_tokens),0), "
-                "coalesce(sum(api_call_count),0) from sessions where started_at>=?", (moc,)).fetchone()
-            top = c.execute("select coalesce(title,''), tool_call_count, input_tokens from sessions where started_at>=? "
-                            "order by input_tokens desc limit 2", (moc,)).fetchall()
-        except Exception:                                    # noqa: BLE001
+    loi_doc = []
+    for p in hermes_adapter.state_db_cac_profile(HERMES):
+        prof = p.parent.name
+        # Qua adapter (ADF-r2-3), va None (khong doc duoc) phai LO ra trong brief
+        # thay vi `continue` cam — Ada tuong vai do khong lam gi ca tuan.
+        tt = hermes_adapter.tom_tat_phien(p, moc)
+        if tt is None:
+            loi_doc.append(prof)
             continue
-        if n:
-            ra[prof] = {"phien": n, "tool": tools, "input": inp, "api": api,
-                        "top": [(t[:40], tc, it) for t, tc, it in top]}
+        if tt["phien"]:
+            ra[prof] = tt
     nk = gom_9router(ngay)
-    return {"theo_vai": ra, "chi_phi_9router": nk.pop("chi_phi", {}), "nhat_ky_9router": nk}
+    return {"theo_vai": ra, "loi_doc": loi_doc,
+            "chi_phi_9router": nk.pop("chi_phi", {}), "nhat_ky_9router": nk}
 
 
 def gom_9router(ngay: int) -> dict:
@@ -234,6 +230,9 @@ def viet_brief(m: dict, wd: Path) -> str:
             L.append(f"  - {e['vai']} {e['status']}: {e['title']} | {e['loi']}")
     tk = m["token"]
     L += ["", "## Token theo vai (phiên / tool call / input token / api call)"]
+    if tk.get("loi_doc"):
+        L.append("⚠️ KHÔNG đọc được state.db của: " + ", ".join(tk["loi_doc"])
+                 + " — số dưới đây THIẾU các vai đó, không phải họ không làm gì")
     for k, v in sorted(tk["theo_vai"].items(), key=lambda kv: -kv[1]["input"]):
         L.append(f"  - {k}: {v['phien']} / {v['tool']} / {v['input']:,} / {v['api']} | nặng nhất: "
                  + "; ".join(f"{t} ({tc} tool, {it:,} in)" for t, tc, it in v["top"]))

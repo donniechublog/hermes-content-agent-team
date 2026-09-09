@@ -83,6 +83,57 @@ def _hoi(cau: str, tham=(), buoc: str = "doc kanban", db=None):
         con.close()
 
 
+# --- state.db cua TUNG PROFILE (profiles/<vai>/state.db) -----------------------
+# Mat ghep noi thu 6 voi hermes (audit lượt 2, ADF-r2-3): theo_doi_9router va
+# ada_chuan_bi tung doc thang bang `session_model_usage` / `sessions` bang SQL
+# tho o hai tep, adapter khong biet, kiem_hermes khong kiem — hermes doi mot
+# cot la nhat ky va brief cua Ada hong cam SAU `hermes update`. Cot dung o day
+# phai KHOP kiem_hermes.COT_CAN["session_model_usage"] / ["sessions"].
+_COT_DUNG_MODEL = ("model", "api_call_count", "input_tokens", "output_tokens",
+                   "cache_read_tokens", "reasoning_tokens", "session_id", "last_seen")
+_COT_PHIEN = ("title", "tool_call_count", "input_tokens", "api_call_count", "started_at")
+
+
+def state_db_cac_profile(home=None):
+    """Moi profiles/*/state.db duoi mot HERMES_HOME (mac dinh: container hien tai)."""
+    goc = Path(home) if home else Path(env_load.hermes_home())
+    return sorted(goc.glob("profiles/*/state.db"))
+
+
+def dung_theo_model(state_db, tu_ts, den_ts):
+    """Tong token/api theo model cua mot profile trong [tu_ts, den_ts) —
+    list dict {model, api, in, out, cache, reasoning, phien}; [] neu khong co;
+    None neu khong doc duoc (C1: hong moi truong phai lo ra, khac voi rong)."""
+    hang = _hoi("select model, sum(api_call_count), sum(input_tokens), sum(output_tokens), "
+                "sum(cache_read_tokens), sum(reasoning_tokens), count(distinct session_id) "
+                "from session_model_usage where last_seen >= ? and last_seen < ? group by model",
+                (tu_ts, den_ts), buoc=f"doc session_model_usage {Path(state_db).parent.name}",
+                db=state_db)
+    if hang is None:
+        return None
+    return [{"model": m, "api": api or 0, "in": i or 0, "out": o or 0, "cache": c or 0,
+             "reasoning": r or 0, "phien": p or 0} for m, api, i, o, c, r, p in hang]
+
+
+def tom_tat_phien(state_db, tu_ts, so_top=2):
+    """Dem phien cua mot profile tu `tu_ts`: dict {phien, tool, input, api, top}
+    (top = [(tieu_de, tool, input)] so_top phien nang nhat); None neu khong doc duoc."""
+    ten = Path(state_db).parent.name
+    tong = _hoi("select count(*), coalesce(sum(tool_call_count),0), coalesce(sum(input_tokens),0), "
+                "coalesce(sum(api_call_count),0) from sessions where started_at>=?",
+                (tu_ts,), buoc=f"doc sessions {ten}", db=state_db)
+    if tong is None:
+        return None
+    top = _hoi("select coalesce(title,''), tool_call_count, input_tokens from sessions "
+               "where started_at>=? order by input_tokens desc limit ?",
+               (tu_ts, so_top), buoc=f"doc sessions top {ten}", db=state_db)
+    if top is None:
+        return None
+    n, tools, inp, api = tong[0]
+    return {"phien": n, "tool": tools, "input": inp, "api": api,
+            "top": [(t[:40], tc, it) for t, tc, it in top]}
+
+
 def tao_task(title, assignee, body, parent=None, max_runtime="25m"):
     """Tao mot task kanban qua CLI cua hermes. Tra (task_id, loi).
 

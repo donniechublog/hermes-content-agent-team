@@ -406,30 +406,31 @@ def gom_vai(ngay: str, theo_model: dict, tong: dict) -> dict:
         return gop
 
     vai = {}
+    loi_doc = []                     # profile co state.db ma khong doc duoc (ADF-r2-3)
     for home in HERMES_HOMES:
         brand = home.name.replace(".hermes-", "")
-        for p in sorted(home.glob("profiles/*/state.db")):
-            try:
-                c = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
-                rows = c.execute(
-                    "select model, sum(api_call_count), sum(input_tokens), sum(output_tokens), sum(cache_read_tokens), "
-                    "sum(reasoning_tokens), count(distinct session_id) from session_model_usage "
-                    "where last_seen >= ? and last_seen < ? group by model", (e0, e1)).fetchall()
-            except Exception:                                # noqa: BLE001
+        for p in hermes_adapter.state_db_cac_profile(home):
+            # Qua adapter (ADF-r2-3): SQL vao state.db cua hermes nam MOT cho,
+            # kiem_hermes kiem duoc cot. None = khong doc duoc -> noi ra, khong
+            # `continue` cam nhu truoc (vai do bien mat khoi nhat ky ma khong ai hay).
+            rows = hermes_adapter.dung_theo_model(p, e0, e1)
+            if rows is None:
+                loi_doc.append(f"{brand}/{p.parent.name}")
                 continue
             if not rows:
                 continue
             a = {"brand": brand, "api": 0, "in": 0, "out": 0, "cache": 0, "reasoning": 0, "usd": 0.0,
                  "phien": 0, "model": collections.Counter(), "task_done": 0, "usd_task": None}
-            for model, api, inp, out, cache, rs, phien in rows:
-                a["api"] += api or 0
-                a["in"] += inp or 0
-                a["out"] += out or 0
-                a["cache"] += cache or 0
-                a["reasoning"] += rs or 0
-                a["phien"] = max(a["phien"], phien or 0)
-                a["usd"] += ((inp or 0) + (cache or 0) + (out or 0)) * gia_cua(model)
-                a["model"][model] += api or 0
+            for r in rows:
+                model = r["model"]
+                a["api"] += r["api"]
+                a["in"] += r["in"]
+                a["out"] += r["out"]
+                a["cache"] += r["cache"]
+                a["reasoning"] += r["reasoning"]
+                a["phien"] = max(a["phien"], r["phien"])
+                a["usd"] += (r["in"] + r["cache"] + r["out"]) * gia_cua(model)
+                a["model"][model] += r["api"]
             a["model"] = dict(a["model"].most_common(3))
             a["usd"] = round(a["usd"], 4)
             vai[f"{brand}/{p.parent.name}"] = a
@@ -468,7 +469,8 @@ def gom_vai(ngay: str, theo_model: dict, tong: dict) -> dict:
         b["usd_bai"] = round(b["usd"] / b["bai"], 4) if b["bai"] else None
     phu = round(sum(a["usd"] for a in vai.values()) / tong["usd"] * 100) if tong["usd"] else 0
     return {"theo_vai": dict(sorted(vai.items(), key=lambda kv: -kv[1]["usd"])), "theo_brand": theo_brand,
-            "phu_pct": phu, "ghi_chu": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"}
+            "phu_pct": phu, "loi_doc": loi_doc,
+            "ghi_chu": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"}
 
 
 # ---------------------------------------------------------------- báo cáo

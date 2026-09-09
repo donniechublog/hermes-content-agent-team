@@ -43,6 +43,14 @@ COT_CAN = {
     # plugin kanban: stream_events
     "task_events": ["id", "task_id", "run_id", "kind", "payload", "created_at"],
 }
+# profiles/<vai>/state.db — mat ghep noi thu 6 (audit lượt 2, ADF-r2-3): truoc
+# day theo_doi_9router va ada_chuan_bi doc thang bang SQL tho, khong ai kiem.
+# Phai KHOP hermes_adapter._COT_DUNG_MODEL / _COT_PHIEN.
+COT_CAN_STATE = {
+    "session_model_usage": ["model", "api_call_count", "input_tokens", "output_tokens",
+                            "cache_read_tokens", "reasoning_tokens", "session_id", "last_seen"],
+    "sessions": ["title", "tool_call_count", "input_tokens", "api_call_count", "started_at"],
+}
 # Co CLI ta truyen cho `hermes chat`. `-z` tung duoc xu ly TRUOC va thoat luon
 # nen `--continue` bi bo qua im lang — do la ly do danh sach nay ton tai.
 CO_CHAT = ["-c", "--create-if-missing", "--no-restore-cwd", "-Q", "-q"]
@@ -57,27 +65,38 @@ def _home_kanban() -> list:
     return ra
 
 
+def _kiem_bang(ten: str, db: Path, can: dict) -> list:
+    """So cot cua mot tep sqlite voi bang `can` {bang: [cot]}. Tra list loi."""
+    loi = []
+    try:
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    except sqlite3.Error as e:
+        return [f"{ten}: khong mo duoc {db}: {e}"]
+    for bang, cot in can.items():
+        try:
+            co = {r[1] for r in con.execute(f"PRAGMA table_info({bang})")}
+        except sqlite3.Error as e:
+            loi.append(f"{ten}: doc schema {bang} loi: {e}")
+            continue
+        if not co:
+            loi.append(f"{ten}: KHONG con bang `{bang}`")
+            continue
+        thieu = [c for c in cot if c not in co]
+        if thieu:
+            loi.append(f"{ten}: bang `{bang}` thieu cot {', '.join(thieu)}")
+    con.close()
+    return loi
+
+
 def kiem_cot() -> list:
     loi = []
     for ten, db in _home_kanban():
-        try:
-            con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
-        except sqlite3.Error as e:
-            loi.append(f"{ten}: khong mo duoc {db}: {e}")
-            continue
-        for bang, cot in COT_CAN.items():
-            try:
-                co = {r[1] for r in con.execute(f"PRAGMA table_info({bang})")}
-            except sqlite3.Error as e:
-                loi.append(f"{ten}: doc schema {bang} loi: {e}")
-                continue
-            if not co:
-                loi.append(f"{ten}: KHONG con bang `{bang}`")
-                continue
-            thieu = [c for c in cot if c not in co]
-            if thieu:
-                loi.append(f"{ten}: bang `{bang}` thieu cot {', '.join(thieu)}")
-        con.close()
+        loi += _kiem_bang(ten, db, COT_CAN)
+        # state.db cua tung profile cung home (ADF-r2-3): kiem MOT profile la du
+        # vi schema do hermes tao giong nhau, nhung profile chua chay lan nao thi
+        # chua co tep — lay tep dau tien co that.
+        for sdb in sorted(db.parent.glob("profiles/*/state.db"))[:1]:
+            loi += _kiem_bang(f"{ten}/{sdb.parent.name}", sdb, COT_CAN_STATE)
     if not _home_kanban():
         loi.append("khong thay kanban.db o home nao (chay tren may chu?)")
     return loi
