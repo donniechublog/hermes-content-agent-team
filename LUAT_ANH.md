@@ -27,7 +27,7 @@ việc đúng.
 
 Vẽ ra là **bịa đặt**. Ảnh phải phản ánh đúng cái có thật trong nguồn. Không tìm
 được ảnh thật thì **báo lại, không dựng** — Ông Chủ quyết định bỏ tin hay tự đưa
-ảnh vào. Luật cứng, không có ngoại lệ nào ngoài mục 1.4 (bìa paper arxiv).
+ảnh vào. Luật cứng, không có ngoại lệ nào ngoài mục 1.4 (hình & bìa paper arxiv).
 
 Bỏ thẳng, không cần cân nhắc:
 
@@ -174,10 +174,29 @@ Nguồn không có sẵn ảnh chart thì **chụp từ chính trang nguồn**: 
 loại `chart`, đóng dấu `chup_chart`). Chụp tay thì dùng `chup_chart.py` — full
 chiều rộng trước, chiều cao xét sau (mục 2).
 
-### 1.4 Bài arxiv: chụp trang bìa paper
+### 1.4 Bài arxiv: hình trong paper trước, trang bìa sau
 
-Ngoại lệ duy nhất của luật "không tự vẽ" — với paper thì "ảnh thật" chính là
-trang bìa của nó.
+**Ảnh thật của một bài paper là hình của chính nó** — Figure 1 (thường là biểu đồ
+kết quả tổng), Figure 2, Figure 3. Do nhóm tác giả vẽ, bằng số của họ: không ảnh
+nào của tin đó đúng hơn được nữa. Engine bóc thẳng từ PDF, tự động cho mọi tin
+arxiv/PDF; chạy tay thì:
+
+```bash
+venv/bin/python arxiv_hinh.py --link "<link arxiv>" --ra /tmp/hinh
+```
+
+**Figure 1 là hero.** Kite đặt nó vào `image` của slide `cover`, kèm caption
+`"Figure 1 trong paper · via <ai>"` — bìa lấy chính tấm hình đó làm hero thay vì
+vẽ hero art. Ông Chủ 08/09/2026: *"ngay đầu paper có image mà Kite không dùng để
+làm hero"*. Các hình còn lại để cho slide `figure`.
+
+Chỉ **hình**, không bảng: chú thích bảng khi ở trên khi ở dưới tuỳ nơi đăng, và
+từng dòng của bảng trông y như một dòng thân bài — không có mốc nào chắc để chặn
+vùng cắt, mà cắt sai một cái bảng là dán lên slide một bảng **khác** với bảng
+trong bài.
+
+Không bóc được hình nào (paper ảnh scan, PDF hỏng) thì mới tới **trang bìa**
+paper — ngoại lệ duy nhất của luật "không tự vẽ":
 
 ```bash
 venv/bin/python arxiv_bia.py --link "<link arxiv>" --out /tmp/src_bia.png
@@ -298,7 +317,7 @@ luôn là **ghép dọc** hoặc `"chart": true`, không phải crop.
 ### 4.2 Dấu xuất xứ — vì sao không được cắt tay
 
 Mọi công cụ sinh ảnh của đội **tự đóng dấu vào PNG**: `crop_ti_le.py`,
-`arxiv_bia.py`, `chup_chart.py`, `doi_chu_anh.py`, và ảnh ghép dọc.
+`arxiv_hinh.py`, `arxiv_bia.py`, `chup_chart.py`, `doi_chu_anh.py`, và ảnh ghép dọc.
 
 Trước 04/09/2026, cổng crop chỉ đọc dấu của `crop_ti_le.py`. Vai cắt bằng
 PIL/cv2/ImageMagick thì không để lại dấu, cổng không thấy gì để chặn — tức cổng

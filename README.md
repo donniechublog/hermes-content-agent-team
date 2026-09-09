@@ -5,7 +5,8 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 Tệp này chỉ mô tả **hiện trạng**. Chẩn đoán, số đo một lần và bài học rút ra
 nằm ở [NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md). Luật ảnh dùng chung ở
 [LUAT_ANH.md](LUAT_ANH.md); spec chữ trên thẻ ở
-[STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md).
+[STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md). Sơ đồ kiến trúc (Mermaid, theo mô
+hình C4) ở [KIEN_TRUC.md](KIEN_TRUC.md).
 
 Nguồn sự thật của cấu hình là chính máy chủ, không phải tệp này:
 
@@ -121,7 +122,13 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 - `crop_ti_le.py` — cắt ảnh về **1:1 hoặc 4:5**. Chỉ cắt chiều cao; ảnh gốc ngang
   (≥1.4) đòi cắt bề ngang thì dừng, vì bề ngang của chart/bảng là nội dung. Ép
   bằng `--cat-ngang`, chỉ cho ảnh người/sản phẩm không có chữ.
-- `arxiv_bia.py` — bài arxiv không có ảnh thì chụp trang đầu paper. Cần `pymupdf`.
+- `arxiv_hinh.py` — bóc **hình thật trong paper** (Figure 1, 2…) thẳng từ PDF:
+  định vị khối chữ `Figure N:`, lấy vùng đồ hoạ ngay trên nó, render nét ở
+  ~2200px. Chạy cho mọi tin arxiv/PDF, ảnh mã cao điểm nhất — Figure 1 là tấm để
+  Kite làm **hero bìa**. Chỉ hình, **không bảng** (xem `§BẢNG` đầu tệp).
+  Cần `pymupdf`.
+- `arxiv_bia.py` — đường cuối cho bài arxiv: không còn ứng viên ảnh nào thì chụp
+  trang đầu paper (tên công trình + tác giả). Cần `pymupdf`.
 - `xep_hang.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
   registry **18 nguồn**, mở browser tìm hàng chứa model, chụp cửa sổ top-N,
   khoanh vàng hàng đó, đọc thứ hạng. Chụp bằng **khung mobile trước** (414px ×

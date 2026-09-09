@@ -51,6 +51,31 @@ def hinh_that(m: dict) -> list:
     return ra
 
 
+def hinh_mo_dau(ht: list) -> dict | None:
+    """Hinh MO DAU cua paper trong danh sach hinh that (Figure 1, hoac hinh paper
+    dau tien boc duoc), hoac None. Do la tam dung lam hero cua bia."""
+    paper = [a for a in ht if a.get("paper_hinh")]
+    return paper[0] if paper else None
+
+
+def dong_hero_paper(ht: list) -> list:
+    """Dong chi cho Kite dat hinh mo dau paper len bia.
+
+    Ong Chu 08/09/2026: "ngay dau paper co image ma Kite khong dung de lam hero".
+    Truoc do brief chi noi "figure cho chart/bang, bia image cho anh chup" — doc
+    thang ra thi bieu do ket qua cua paper KHONG duoc lam bia, va Kite ve mot
+    hero vector trong khi tam hinh manh nhat cua bai nam duoi slide 4.
+    """
+    h = hinh_mo_dau(ht)
+    if not h:
+        return []
+    return ["", f"⭐ HERO: {h['ma']} là {h['paper_hinh']} — hình mở đầu của chính paper, tấm nói "
+                f"nhiều nhất về bài. Đặt `\"image\": \"{h['ma']}\"` vào SLIDE 1 (cover) kèm "
+                f"`\"caption\": \"{h['paper_hinh']} trong paper · via <ai>\"`; lúc đó bìa lấy "
+                "chính hình đó làm hero, không vẽ hero art. Chỉ bỏ qua khi hình sai bài "
+                "(xem bang_anh.png) — lúc đó nói rõ một câu vì sao. Hình paper còn lại để cho `figure`."]
+
+
 def goi_y_tone(title: str) -> tuple:
     """(theme, hero, gan_day) — chon cai chua dung gan day, xoay theo tieu de."""
     import render_edu
@@ -79,14 +104,17 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         dong_thieu="(Không bóc được chữ từ nguồn — chỉ dùng tóm tắt, KHÔNG bịa.)")
     L += ["", "## Hình thật dùng được cho `figure` / bìa `image` (đã nhìn, ≥ 800px)"]
     ht = hinh_that(m)
+    mo_dau = hinh_mo_dau(ht)               # hinh mo dau paper -> hero cua bia
     if not ht:
         L.append("Không có hình thật nào liên quan — dùng art vector cho cả bộ (bình thường với paper trắng).")
     else:
         nhin = [a for a in ht if a.get("lien_quan") is True]
         if nhin:
             L.append(f"CÓ {len(nhin)} hình thật ĐÃ NHÌN và liên quan → BẮT BUỘC dùng ít nhất một: "
-                     "`figure` cho chart/bảng, bìa `image` hoặc `figure` cho ảnh chụp. "
-                     "Bộ toàn text & card khi có ảnh thật là thiếu.")
+                     "`figure` cho chart/bảng, bìa `image` hoặc `figure` cho ảnh chụp"
+                     + (" — riêng hình mở đầu paper thì lên BÌA, xem ⭐ dưới. "
+                        if hinh_mo_dau(ht) else ". ")
+                     + "Bộ toàn text & card khi có ảnh thật là thiếu.")
         else:
             # Vision tat/thieu khoa -> moi anh lien_quan=None. Khong duoc ep.
             L.append(f"Có {len(ht)} hình đủ khổ nhưng ⚠️ CHƯA AI NHÌN (vision không chạy) — chưa biết "
@@ -95,8 +123,10 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         kieu = ("BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP") + \
                ("" if a.get("lien_quan") is True else " ⚠️CHƯA NHÌN")
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
+                 + (f" | {a['paper_hinh']} của chính paper" if a.get("paper_hinh") else "")
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
+    L += dong_hero_paper(ht)
     rac = [a["ma"] for a in m["anh"] if a.get("lien_quan") is False]
     if rac:
         L.append(f"Không dùng (engine đánh dấu không liên quan): {', '.join(rac)}")
@@ -115,7 +145,9 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
             {"kind": "cover", "eyebrow": "<CHUYÊN MỤC · DEEP DIVE, ≤ 28>", "title": "<hook ≤ 60 ký tự>",
              "accent": "<cụm trong title cần nhấn>", "standfirst": "<1 câu ≤ 200 ký tự>",
              "byline": [handle_kenh(m["brand"]), "Phân tích", "5 phút đọc"],
-             "image": "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>", "caption": "<'… · via <ai>' bắt buộc khi có image>"},
+             "image": (mo_dau["ma"] if mo_dau else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>"),
+             "caption": (f"{mo_dau['paper_hinh']} trong paper · via <ai>" if mo_dau
+                         else "<'… · via <ai>' bắt buộc khi có image>")},
             {"kind": "statement", "eyebrow": "BỐI CẢNH", "title": "<≤ 60>", "accent": "<cụm nhấn>",
              "standfirst": "<≤ 220>", "cards": [{"num": "01", "text": "<≤ 90>"}, {"num": "02", "text": "<≤ 90>"}]},
             {"kind": "steps", "eyebrow": "CÁCH VẬN HÀNH", "title": "<≤ 60>",

@@ -568,17 +568,21 @@ def tai_va_loc(cands: list, wd: Path) -> list:
         ma = f"A{n}"
         out = goc_dir / f"{ma}.png"
         im.save(out, "PNG", pnginfo=luat_anh.dong_dau(
-            "chup_chart" if c.get("tu") == "chup" else "dre_chuan_bi"))
+            {"chup": "chup_chart", "arxiv_hinh": "arxiv_hinh"}.get(c.get("tu"), "dre_chuan_bi")))
         # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
         # khong noi len gi (bao boc ca anh minh hoa lan quang cao).
         hint = bool((c.get("tu") != "chup" and (anh_bai.QUY.search(c.get("anh", "") or "")
                                                  or anh_bai.QUY.search(c.get("alt", "") or "")
                                                  or anh_bai.QUY_MODEL.search(c.get("alt", "") or "")))
-                    or c.get("the") in ("table", "canvas", "svg"))
+                    or c.get("the") in ("table", "canvas", "svg")
+                    or c.get("tu") == "arxiv_hinh")
         ra.append({"ma": ma, "goc": str(out), "url": c.get("anh", ""),
                    "alt": (c.get("alt") or c.get("alt_chup") or "")[:120], "tu": c.get("tu", ""),
                    "trang": c.get("trang", ""), "mien": _mien(c.get("trang") or c.get("anh")),
                    "diem": c.get("diem", 0), "ly_do": c.get("ly_do", ""), "hint_chart": hint,
+                   # Ten hinh trong paper ("Figure 1") — Kite doc de biet tam nao
+                   # la hinh mo dau bai, va de viet caption cho dung.
+                   **({"paper_hinh": c["paper_hinh"]} if c.get("paper_hinh") else {}),
                    **({"khai_niem": c["khai_niem"]} if c.get("khai_niem") else {})})
     return ra
 
@@ -1023,6 +1027,15 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
     for c in bp["cands"]:
         if c["anh"] not in co:
             cands.append(c)
+    # HINH THAT TRONG PAPER (Ong Chu 08/09/2026: "ngay dau paper co image ma
+    # Kite khong dung de lam hero"). Bai arxiv thi anh that cua no la Figure 1,
+    # Figure 2... do chinh nhom tac gia ve — nhung khong duong nao trong engine
+    # cham toi chung: trang abs khong co figure, ban html xuat figure ra
+    # <object> ma document.images khong thay. Boc thang tu PDF. Lam TRUOC nhanh
+    # "khong con ung vien nao -> chup bia": trang bia (ten cong trinh + tac gia)
+    # la duong cuoi, con bieu do ket qua moi la anh dat nhat cua tin.
+    import arxiv_hinh
+    cands = arxiv_hinh.ung_vien(link, wd / "goc") + cands
     # arxiv khong anh: bia paper
     if not cands:
         import arxiv_bia
