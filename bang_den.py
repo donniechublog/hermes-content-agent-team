@@ -154,7 +154,7 @@ def ghi_nen(draft_id: str, key: str, value, author: str = "script", hermes_home=
     try:
         r = subprocess.run([str(env_load.HERMES_PY), str(Path(__file__).resolve()), "ghi", draft_id, key,
                             json.dumps(value, ensure_ascii=False), "--author", author],
-                           cwd=str(ROOT), env=env, capture_output=True, text=True, timeout=60)
+                           cwd=str(ROOT), env=env, capture_output=True, text=True, timeout=120)
     except Exception as e:                                   # noqa: BLE001
         return False, f"{type(e).__name__}: {e}"
     if r.returncode != 0 or "[bang-den] lỗi" in (r.stderr or ""):

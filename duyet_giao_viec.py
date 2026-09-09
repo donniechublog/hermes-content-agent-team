@@ -172,7 +172,7 @@ def kanban_create(title, assignee, body, parent=None):
         if _cha:
             args += ["--parent", _cha]
     r = subprocess.run(args, cwd=str(Path.home() / "hermes-agent"),
-                        env=env, capture_output=True, text=True, timeout=60)
+                        env=env, capture_output=True, text=True, timeout=120)
     if r.returncode != 0:
         log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {(r.stderr or r.stdout)[-200:]}")
         return None, (r.stderr[-300:] or r.stdout[-300:])
@@ -229,7 +229,7 @@ def _bang_den_root(draft_id, title, goal=""):
             [str(HERMES_PY), str(ROOT / "bang_den.py"), "root", draft_id,
              "--title", title, "--goal", goal or title, "--author", "approve_service"],
             cwd=str(ROOT), env=dict(os.environ, HERMES_HOME=HERMES_HOME),
-            capture_output=True, text=True, timeout=60)
+            capture_output=True, text=True, timeout=120)
         rid = ((r.stdout or "").strip().splitlines() or [""])[-1].strip()
         if r.returncode != 0 or not rid.startswith("t_"):
             log("bangden", f"{draft_id}: khong tao duoc the goc: "

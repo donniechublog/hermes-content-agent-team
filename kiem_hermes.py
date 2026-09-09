@@ -84,7 +84,7 @@ def kiem_co_chat() -> list:
         return [f"khong thay python cua hermes: {HERMES_PY}"]
     try:
         r = subprocess.run([str(HERMES_PY), "-m", "hermes_cli.main", "chat", "--help"],
-                           capture_output=True, text=True, timeout=90)
+                           capture_output=True, text=True, timeout=120)
     except (OSError, subprocess.SubprocessError) as e:
         return [f"khong chay duoc `hermes chat --help`: {type(e).__name__}: {e}"]
     if r.returncode != 0:
@@ -103,7 +103,7 @@ def kiem_swarm() -> list:
           "print('THIEU:' + ','.join(thieu) if thieu else 'OK')\n")
     try:
         r = subprocess.run([str(HERMES_PY), "-c", ma], capture_output=True,
-                           text=True, timeout=90)
+                           text=True, timeout=120)
     except (OSError, subprocess.SubprocessError) as e:
         return [f"khong import duoc kanban_swarm: {type(e).__name__}: {e}"]
     out = (r.stdout or "").strip()
@@ -134,7 +134,7 @@ def main() -> int:
         r = subprocess.run([str(HERMES_PY), "-m", "hermes_cli.main", "chat",
                             "-c", "kiem-hermes", "--create-if-missing",
                             "--no-restore-cwd", "-Q", "-q", "Tra loi dung mot tu: OK"],
-                           capture_output=True, text=True, timeout=180)
+                           capture_output=True, text=True, timeout=600)
         print((r.stdout or "")[-300:])
         if r.returncode != 0:
             tat_ca.append(f"chat roundtrip thoat {r.returncode}")

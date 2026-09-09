@@ -57,7 +57,7 @@ def boc(url: str) -> dict:
             tam = fh.name
         r = subprocess.run(
             [sys.executable, str(ROOT / "article_extract.py"), url, "--out", tam],
-            capture_output=True, text=True, timeout=90, cwd=str(ROOT))
+            capture_output=True, text=True, timeout=120, cwd=str(ROOT))
         # Truoc 06/09/2026 khong ai nhin returncode va cung khong in stderr cua
         # tien trinh con: article_extract chet vi thieu bs4/lxml thi tu_lieu chi
         # tra {} im lang, vai thay "0 nguon" ma khong co dau vet nao (da xay ra
