@@ -165,6 +165,31 @@ def test_khong_vai_la_nao_trong_README():
     assert not thua, f"README ke vai khong co trong vai.py: {thua}"
 
 
+def test_chat_router_TOPIC_PROFILE_khop_ban_dang_ky():
+    """ADF-r2-2: bang topic->profile cua chat_router tung chep tay 12 dong; thieu
+    vai moi thi chat trong topic do roi ve profile mac dinh, im lang."""
+    import chat_router
+    assert set(chat_router.TOPIC_PROFILE) == set(vai.VAI), \
+        set(chat_router.TOPIC_PROFILE) ^ set(vai.VAI)
+
+
+def test_duyet_giao_viec_SLUG_CU_la_chinh_ban_cua_vai():
+    """ADF-r2-1: bang chep tay tung ghi de ban dan xuat 21 dong sau."""
+    import duyet_giao_viec as dgv
+    assert dgv.SLUG_CU is vai.SLUG_CU
+
+
+def test_handle_kenh_mot_ban_hai_kieu_khoa():
+    """ADF-r2-9: bob (co @) va kite (khong @) tung cho hai ket qua khac nhau
+    voi cung 'blog'."""
+    import env_load
+    assert env_load.handle_kenh("blog") == "@donniechublog"
+    assert env_load.handle_kenh("donniechublog") == "@donniechublog"
+    assert env_load.handle_kenh("blog", co_a_cong=False) == "donniechublog"
+    assert env_load.handle_kenh("dcgr", co_a_cong=False).startswith("dcgr")
+    assert env_load.handle_kenh("la").startswith("@")
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

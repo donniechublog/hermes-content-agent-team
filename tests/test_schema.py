@@ -172,11 +172,49 @@ def test_moi_khoa_write_meta_deu_co_trong_Meta():
     cay = ast.parse(src)
     ham = next(n for n in ast.walk(cay)
                if isinstance(n, ast.FunctionDef) and n.name == "write_meta")
+    # Loc theo TEN bien `meta` nhu test dung_manifest (E-r2-6): lay dict Assign
+    # DAU TIEN thi mot dict phu dat truoc `meta = {...}` la bao hong oan.
     gan = next(n for n in ast.walk(ham)
-               if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict))
+               if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
+               and any(isinstance(t, ast.Name) and t.id == "meta" for t in n.targets))
     khoa = {k.value for k in gan.value.keys if isinstance(k, ast.Constant)}
     thieu = sorted(khoa - set(schema._kieu(schema.Meta)))
     assert not thieu, f"write_meta sinh khoa chua khai trong schema.Meta: {thieu}"
+
+
+def _khoa_dict_ghi_vao(src: str, ten_tep: str) -> set:
+    """Khoa cua dict literal duoc ghi vao tep co ten chua `ten_tep` (qua
+    _ghi_json/ghi_json/write_text) — doc bang ast, comment khong tinh."""
+    import ast
+    ra = set()
+    for n in ast.walk(ast.parse(src)):
+        if not isinstance(n, ast.Call) or not n.args:
+            continue
+        co_tep = any(isinstance(c, ast.Constant) and isinstance(c.value, str) and ten_tep in c.value
+                     for c in ast.walk(n.args[0]))
+        if not co_tep:
+            continue
+        for d in ast.walk(n):
+            if isinstance(d, ast.Dict):
+                ra |= {k.value for k in d.keys if isinstance(k, ast.Constant)}
+    return ra
+
+
+def test_moi_khoa_writer_json_deu_co_trong_SidecarViet():
+    """ADF-r2-5: .writer.json truoc day khong co TypedDict nao."""
+    src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
+    khoa = _khoa_dict_ghi_vao(src, "writer.json")
+    assert khoa, "khong tim thay cho ghi writer.json trong duyet_chon_tin — cong nay mu"
+    thieu = sorted(khoa - set(schema._kieu(schema.SidecarViet)))
+    assert not thieu, f"writer.json ghi khoa chua khai trong schema.SidecarViet: {thieu}"
+
+
+def test_moi_khoa_img_json_deu_co_trong_SidecarAnh():
+    src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
+    khoa = _khoa_dict_ghi_vao(src, "img.json")
+    assert khoa, "khong tim thay cho ghi img.json trong duyet_chon_tin"
+    thieu = sorted(khoa - set(schema._kieu(schema.SidecarAnh)))
+    assert not thieu, f"img.json ghi khoa chua khai trong schema.SidecarAnh: {thieu}"
 
 
 if __name__ == "__main__":

@@ -96,12 +96,32 @@ def _brand() -> str:
 # CUNG mot ham, khong tu viet lai phep tra nguoc roi quen mot cho (bat
 # 09/09/2026: anh_thuong_hieu.py co HAI cho lam sai giong het nhau).
 _BRAND_DAI = {"dcgr": "dcgr", "blog": "donniechublog"}
+# Cong khai (audit lượt 2, ADF-r2-10): bang nay tung chep o 3 tep nua
+# (moat_publish/duyet_co_so/bob_nop `_TEN_BRAND`) — mot brand moi la sua 4 cho.
+BRAND_DAI = _BRAND_DAI
 
 
 def brand_dai(mac_dinh: str = "donniechublog") -> str:
     """Slug thuong hieu DAI ('donniechublog'/'dcgr') tu CT_BRAND hien tai —
     dung cho moi loi goi card.dat_thuong_hieu / anh_thuong_hieu.dat_thuong_hieu."""
     return _BRAND_DAI.get(_brand(), mac_dinh)
+
+
+def handle_kenh(brand: str, co_a_cong: bool = True) -> str:
+    """Handle hien thi cua brand ("@donniechublog" / "@dcgr.tech"), nhan CA khoa
+    container ('blog') lan slug dai ('donniechublog').
+
+    MOT ban (audit lượt 2, ADF-r2-9): truoc day bob_nop.handle_kenh luon them "@"
+    va doi 'blog', con kite_chuan_bi.handle_kenh tra nguyen 'donniechublog'
+    khong "@" va khong doi 'blog' — cung ten ham, hai ket qua. Nguon su that
+    van la card.THUONG_HIEU (import tai cho de tranh vong: card import env_load).
+    `co_a_cong=False` cho cho tu ghep "@" vao chu (slide cuoi cua Kite)."""
+    import card
+    b = (brand or "").strip()
+    b = _BRAND_DAI.get(b, b)
+    h = (getattr(card, "THUONG_HIEU", {}).get(b) or {}).get("handle") or b
+    h = h.lstrip("@")
+    return ("@" + h) if co_a_cong else h
 
 
 def _tep_env() -> tuple:

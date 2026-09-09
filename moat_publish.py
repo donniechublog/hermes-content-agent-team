@@ -113,7 +113,7 @@ def ten_khoa(brand=None):
 
 # CUNG quy uoc voi approve_service: CT_BRAND ('blog'|'dcgr') la khoa container,
 # BRAND (ten content-brand day du) suy tu no va van cho env de len.
-_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
+_TEN_BRAND = env_load.BRAND_DAI        # mot bang, o env_load (ADF-r2-10)
 
 
 def brand_container():

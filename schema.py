@@ -117,6 +117,23 @@ class SidecarAnh(TypedDict, total=False):
     via: str
     chuyen_kite: str               # duyet_bai ghi khi Ong Chu bam "Gui Kite"
     chuyen_tu: str
+    ly_do_chuyen: str              # duyet_bai.tao_task_kite (ADF-r2-5: tung ghi ma chua khai)
+
+
+class SidecarViet(TypedDict, total=False):
+    """`drafts/<draft_id>.writer.json` — task viet CHI sinh khi Ong Chu bam "Duyet anh".
+
+    duyet_chon_tin.create_pair ghi 6 khoa dau; duyet_bai cap nhat `created`
+    (True khi da tao task, "rejected" khi bo han) va `writer_task`. Khong co
+    TypedDict nay truoc audit lượt 2 (ADF-r2-5) — `created` nhan ba kieu ma khong
+    ai khai, test_schema chi gac Manifest va Meta."""
+    vai_viet: str                  # SLUG vai viet (writer)
+    title: str
+    body: str                      # body task viet, dung san
+    created: bool | str            # False -> True (da tao) | "rejected"
+    root_task: str                 # the goc bang den
+    dre_task: str                  # task vai anh — cha cua task viet
+    writer_task: str               # id task viet, khi da tao
 
 
 class DongAnhDaDung(TypedDict):

@@ -84,12 +84,10 @@ def vai_cua_topic(thread_id):
             return ten
     return None
 
-# Slug cu (ten nhan vat) -> slug profile hien tai. Sidecar .img.json/.writer.json
-# cu con ghi "dre"/"miles"; task tao tu do se khong ai nhan (khong co profile
-# ten vay) va nam 'ready' mai — su co 01/09/2026: hai bai dcgr ket 2 ngay.
-SLUG_CU = {"miles": "writer", "dre": "carousel", "ethan": "designer",
-           "chad": "designer", "heller": "carousel", "kite": "carousel-edu",
-           "finn": "scout", "vera": "market", "jean": "teaser", "ada": "analyst"}
+# SLUG_CU (slug cu -> slug profile; su co 01/09/2026 hai bai dcgr ket 2 ngay vi
+# sidecar ghi "dre"/"miles") nay la VIEW cua vai.py — dong 69 o tren. Truoc audit
+# lượt 2 (ADF-r2-1) mot bang chep tay o day ghi de no 21 dong sau khi gan, nen
+# them slug_cu vao vai.py KHONG toi duoc day (chua lo chi vi hai bang dang trung).
 
 def chuan_assignee(assignee):
     """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""

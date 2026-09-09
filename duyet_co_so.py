@@ -51,7 +51,7 @@ env_load.nap()                            # nap secret.<brand>.env de co BRAND l
 # BRAND (ten content-brand day du) SUY tu CT_BRAND — truoc day la hai bien doc lap
 # voi hai bo gia tri, dat lech mot trong hai la content di nham brand. Van cho
 # BRAND trong env de len (tuong thich nguoc), nhung cau hinh chuan chi can CT_BRAND.
-_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
+_TEN_BRAND = env_load.BRAND_DAI        # mot bang, o env_load (ADF-r2-10)
 
 BRAND = (os.environ.get("BRAND")
          or _TEN_BRAND.get(os.environ.get("CT_BRAND", ""), "donniechublog"))

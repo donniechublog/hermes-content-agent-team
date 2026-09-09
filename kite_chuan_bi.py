@@ -25,13 +25,15 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import vai as vai_mod                                        # noqa: E402
 import route_thieu_anh                                       # noqa: E402
-import card                                                  # noqa: E402
 
 
 def handle_kenh(brand: str) -> str:
-    """Handle hien thi cua brand: dcgr -> dcgr.tech (Ong Chu 05/09/2026: slide cuoi
-    in 'Theo doi @dcgr' vi dung thang slug). Mot nguon: bang brand cua card.py."""
-    return (getattr(card, 'THUONG_HIEU', {}).get(brand) or {}).get('handle') or brand
+    """Handle hien thi cua brand KHONG co "@" (slide cuoi tu ghep): dcgr ->
+    dcgr.tech (Ong Chu 05/09/2026: slide cuoi in 'Theo doi @dcgr' vi dung thang
+    slug). Mot ban o env_load.handle_kenh (ADF-r2-9) — truoc day ban nay khong
+    doi 'blog' -> 'donniechublog' nhu bob_nop."""
+    import env_load
+    return env_load.handle_kenh(brand, co_a_cong=False)
 
 
 FIG_RONG_TOI_THIEU = 800
