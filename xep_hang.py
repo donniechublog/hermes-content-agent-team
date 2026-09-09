@@ -61,14 +61,23 @@ NGUON = [
      "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-vision",   "site": "ARENA.AI",  "bang": "Vision Arena",
      "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena"},
+    # `doc_lap` (09/09/2026): bang nay do NANG LUC RIENG, khong phai mot cach do
+    # khac cua cung mot thu — model tao anh gioi va model sua anh gioi la HAI
+    # bang xep hang khac han (Ong Chu: "một bảng là top model tạo sinh, một bảng
+    # là top model chỉnh sửa, đâu có trùng lặp"). `tim_va_chup_nhieu` doc co nay
+    # de KHONG dung lai sau khi da chup duoc mot bang doc_lap khac — khac voi vi
+    # du arena-code/swebench/aider/livecodebench duoi day: bon cai do la BON CACH
+    # DO CUNG MOT NANG LUC (code), chup mot cai la du, chup them chi lap lai.
     {"ma": "arena-t2i",      "site": "ARENA.AI",  "bang": "Text-to-Image Arena",
-     "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena",
+     "doc_lap": True},
     # Them 09/09/2026: bang RIENG voi text-to-image, do het truoc do — tin GPT
     # Image 2.5 #1&#2 Image Edit Arena khong co duong nao chup duoc (Ong Chu
     # gui anh chup 2 bang, hoi sao khong dua vao duoc). Da doc thu URL
     # (arena.ai/leaderboard/image-edit) truoc khi them, dung 55 model nhu chup.
     {"ma": "arena-image-edit", "site": "ARENA.AI", "bang": "Image Edit Arena",
-     "url": "https://arena.ai/leaderboard/image-edit", "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/image-edit", "mien": r"arena\.ai|lmarena",
+     "doc_lap": True},
     {"ma": "arena-t2v",      "site": "ARENA.AI",  "bang": "Text-to-Video Arena",
      "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-search",   "site": "ARENA.AI",  "bang": "Search Arena",
@@ -128,7 +137,12 @@ NGUON = [
      "khung": "desktop"},
 ]
 
-# Từ khoá chọn bảng con của một site theo chủ đề tin (video → arena-t2v trước...)
+# Từ khoá chọn bảng con của một site theo chủ đề tin (video → arena-t2v trước...).
+# Mã trong CÙNG một mục là ALTERNATE — cùng đo một năng lực (vd arena-code/
+# swebench/aider/livecodebench đều là "giỏi code cỡ nào"), chụp được cái đầu
+# tiên là dừng: chụp thêm chỉ lặp lại cùng một bằng chứng. Nguồn nào đo NĂNG LỰC
+# RIÊNG (không phải cách đo khác của cùng một thứ) thì đánh dấu `doc_lap: True`
+# ngay tại chỗ khai NGUON — xem chú thích ở đó (arena-t2i/arena-image-edit).
 CHU_DE = [
     (r"\bvideo\b|text-to-video|tạo video", ["arena-t2v"]),
     # "sửa/chỉnh sửa ảnh" ưu tiên bảng EDIT; "image" trần (đa số tin tạo ảnh)
@@ -273,7 +287,11 @@ def goi_y_nguon(tieu_de: str = "", link: str = "", via: str = "", chu: str = "")
     Mỗi mục trả về mang thêm `duoc_nhac`: True khi CHÍNH TIN nhắc tới nguồn đó.
     Chụp được từ nguồn `duoc_nhac=False` nghĩa là ảnh nói về MỘT BẢNG KHÁC với
     bảng trong tiêu đề — vẫn dùng được nhưng phải cảnh báo, xem `cau_xep_hang`
-    trong anh_chuan_bi.py."""
+    trong anh_chuan_bi.py.
+
+    Mỗi mục còn giữ nguyên `doc_lap` nếu có (spread từ NGUON) — `tim_va_chup_nhieu`
+    đọc khoá này để biết nguồn nào đo NĂNG LỰC RIÊNG, không phải cách đo khác
+    của cùng một thứ, nên cố lấy hết thay vì dừng ở thành công đầu tiên."""
     # Tieu de NAM TRONG chuoi do "nguon duoc nhac": tin hay goi thang ten trang
     # ("#1 LiveCodeBench", "leo top OpenCompass") ma khong co link toi trang do.
     goi = f"{tieu_de} {link} {via} {chu[:3000]}".lower()
@@ -1043,6 +1061,88 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
     return {"tep": str(out), "kieu": "the", "nguon": n["ma"], "site": n["site"], "bang": n["bang"],
             "hang": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}
+
+
+TOI_DA_XH = 3      # tran so anh xep hang lay cho MOT tin (cac nguon doc_lap)
+
+
+def _bo_qua_nguon(n: dict, da_chup_thuong: bool) -> bool:
+    """Ham THUAN: co bo qua nguon `n` khong, khi DA co it nhat mot anh "thuong"?
+
+    Tach rieng de test khong can Playwright — day la toan bo "luat chon" cua
+    `tim_va_chup_nhieu` (tran so luong `toi_da` va het gio nam o vong lap goi
+    ham nay, khong phai o day). Nguon doc_lap khong bao gio bi luat nay chan —
+    no do NANG LUC RIENG, thanh cong o nguon khac khong lam no "du roi".
+    """
+    return da_chup_thuong and not n.get("doc_lap")
+
+
+def tim_va_chup_nhieu(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
+                      hang_goi_y=None, in_log=print, toi_da: int = TOI_DA_XH) -> list:
+    """Nhu `tim_va_chup`, nhung KHONG dung o thanh cong dau tien: nguon mang
+    `doc_lap: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
+    lay CA nguon do lan mot nguon "thuong" khac, khong coi thanh cong o nguon nay
+    la "du roi". Nguon thuong (khong doc_lap) van dung o thanh cong dau tien nhu
+    truoc — bon cai swebench/aider/livecodebench/arena-code deu la CACH DO KHAC
+    cua CUNG mot nang luc (code), lay them chi lap lai bang chung.
+
+    Ong Chu 09/09/2026, dap lai de xuat "chi lay mot anh xep hang moi tin" tung
+    co trong ban dau cua module nay: *"đã làm social media thì làm gì có chuyện
+    bị giới hạn ở nguồn tư liệu"* — va hai bang vi du (tao anh / sua anh) *"một
+    bảng là top model tạo sinh, một bảng là top model chỉnh sửa, đâu có trùng
+    lặp"*. Dung y: khong tu gioi han khi cac nguon KHONG trung nhau.
+
+    Ham nay TACH KHOI `tim_va_chup` (khong sua ham do) de khong doi hop dong tra
+    ve dict don cua cac noi da goi no (`_xep_hang_boi_canh`, CLI `main()`).
+
+    Tra danh sach KHONG RONG — thẻ dự phòng (1 phan tu) khi khong nguon nao
+    chup duoc."""
+    from playwright.sync_api import sync_playwright
+    t0 = time.time()
+    logo = None
+    ket_qua: list = []
+    da_chup_thuong = False
+    with sync_playwright() as p, contextlib.closing(
+            p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage",
+                                    "--force-color-profile=srgb"])) as br:
+        phien = _PhienChup(br)
+        for n in nguon_ds:
+            if len(ket_qua) >= toi_da:
+                in_log(f"[xep_hang] đủ {toi_da} ảnh, dừng")
+                break
+            if time.time() - t0 > GIO_HAN:
+                in_log(f"[xep_hang] hết giờ ({GIO_HAN}s), dừng ở {n['ma']}")
+                break
+            if _bo_qua_nguon(n, da_chup_thuong):
+                continue                              # da co MOT anh "thuong", nguon khac chi lap lai
+            out = out_dir / f"xep_hang_{n['ma']}.png"
+            kq, ly_do, pg = _thu_nguon(phien, n, models, out, in_log)
+            if kq is None and ly_do is None:
+                continue
+            if not kq:
+                if logo is None:
+                    logo = chup_logo(pg, out_dir / "xep_hang_logo.png")
+                in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
+                continue
+            luat_anh.dong_dau_tep(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
+                                  site=n["site"], bang=n["bang"], hang=kq.get("hang"), url=n["url"])
+            im = Image.open(out)
+            in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "
+                   f"({kq['kieu']}, {im.width}x{im.height}) — {kq['dong'][:70]}")
+            ket_qua.append({"tep": str(out), "kieu": kq["kieu"], "nguon": n["ma"], "site": n["site"],
+                            "bang": n["bang"], "hang": kq.get("hang") or hang_goi_y, "model": kq["model"],
+                            "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None,
+                            "duoc_nhac": bool(n.get("duoc_nhac", True))})
+            if not n.get("doc_lap"):
+                da_chup_thuong = True
+    if ket_qua:
+        return ket_qua
+    n = nguon_ds[0] if nguon_ds else NGUON[0]
+    out = out_dir / "xep_hang_the.png"
+    the_du_phong(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
+    in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
+    return [{"tep": str(out), "kieu": "the", "nguon": n["ma"], "site": n["site"], "bang": n["bang"],
+            "hang": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}]
 
 
 def main() -> int:

@@ -12,6 +12,13 @@ cau lang (khong loi, chi la khong bao gio ra anh dung):
     CUNG mot bang) nen `tach_model` dung o "GPT Image 2.5" — khop nhap nhang ca
     hai hang, engine khoanh hang nao tim thay truoc bat ke tin noi ve bien the nao.
 
+Sau khi sua xong ca hai, Ong Chu bac lai de xuat "chi lay MOT anh xep hang moi
+tin" (ban dau cua `tim_va_chup`): *"đã làm social media thì làm gì có chuyện bị
+giới hạn ở nguồn tư liệu"*, và hai bang vi du *"một bảng là top model tạo sinh,
+một bảng là top model chỉnh sửa, đâu có trùng lặp"*. `tim_va_chup_nhieu` +
+`_bo_qua_nguon` la ket qua: nguon `doc_lap: True` (nang luc rieng, khong phai
+cach do khac cua cung mot thu) khong bao gio bi mot thanh cong khac chan lai.
+
 Chay:  venv/bin/python tests/test_xep_hang.py
 """
 import sys
@@ -104,6 +111,69 @@ def test_tin_chinh_sua_anh_uu_tien_bang_edit_hon_t2i():
     ds = xh.goi_y_nguon("Model X dẫn đầu bảng chỉnh sửa ảnh bằng AI", "", "", "")
     ma_thu_tu = [n["ma"] for n in ds]
     assert ma_thu_tu.index("arena-image-edit") < ma_thu_tu.index("arena-t2i"), ma_thu_tu[:5]
+
+
+# ------------------------------------------------------- doc_lap / _bo_qua_nguon
+def test_hai_nguon_doc_lap_khong_chan_nhau():
+    """Ca hai bang GPT-Image-2.5 dung dau (tao anh, sua anh) deu doc_lap: da
+    chup duoc mot cai KHONG duoc chan cai kia — dung yeu cau cua Ong Chu 09/09."""
+    t2i = {"ma": "arena-t2i", "doc_lap": True}
+    edit = {"ma": "arena-image-edit", "doc_lap": True}
+    assert xh._bo_qua_nguon(edit, da_chup_thuong=False) is False
+    # da chup MOT nguon "thuong" khac (khong lien quan) truoc do van khong chan
+    # nguon doc_lap:
+    assert xh._bo_qua_nguon(t2i, da_chup_thuong=True) is False
+    assert xh._bo_qua_nguon(edit, da_chup_thuong=True) is False
+
+
+def test_nguon_thuong_dung_sau_thanh_cong_dau_tien():
+    """arena-code/swebench/aider/livecodebench la BON CACH DO cua CUNG mot nang
+    luc — thanh cong o mot nguon THUONG phai chan cac nguon THUONG con lai,
+    dung hanh vi cu cua `tim_va_chup` (khong lap lai cung mot bang chung)."""
+    code = {"ma": "arena-code"}                          # khong doc_lap
+    swebench = {"ma": "swebench"}
+    assert xh._bo_qua_nguon(code, da_chup_thuong=False) is False
+    assert xh._bo_qua_nguon(swebench, da_chup_thuong=True) is True
+
+
+def test_kich_ban_that_gpt_image_2_5_lay_ca_hai_bang():
+    """Mo phong DUNG trinh tu quyet dinh cua vong lap trong tim_va_chup_nhieu
+    (khong dung Playwright that) cho ca that: tieu de nhac thang link Image Edit
+    Arena — arena-image-edit len dau danh sach, arena-t2i theo sau, roi cac bang
+    khong lien quan (arena-text...). Ket qua ca hai bang GPT-Image-2.5 deu duoc
+    thu, khong bang nao bi bo vi bang kia da thanh cong."""
+    ds = xh.goi_y_nguon("GPT-Image-2.5 Sunburst dung #1 Image Edit Arena",
+                        "https://arena.ai/leaderboard/image-edit", "", "")
+    da_chup_thuong = False
+    thu = []
+    for n in ds[:6]:                      # tran gio han/toi_da khong can mo phong o day
+        if xh._bo_qua_nguon(n, da_chup_thuong):
+            continue
+        thu.append(n["ma"])               # gia dinh MOI nguon duoc thu deu "chup thanh cong"
+        if not n.get("doc_lap"):
+            da_chup_thuong = True
+    assert "arena-image-edit" in thu and "arena-t2i" in thu, thu
+    # Tin CHI ve mot nang luc (code) thi khong duoc keo them nguon thuong khac
+    ds2 = xh.goi_y_nguon("Kimi-K3 leo len #1 Frontend Code Arena", "", "", "")
+    da_chup_thuong2 = False
+    thu2 = []
+    for n in ds2[:6]:
+        if xh._bo_qua_nguon(n, da_chup_thuong2):
+            continue
+        thu2.append(n["ma"])
+        if not n.get("doc_lap"):
+            da_chup_thuong2 = True
+    assert thu2 == ["arena-code"], f"tin code bi keo them nguon thuong khac: {thu2}"
+
+
+def test_khong_doi_hop_dong_tim_va_chup_cu():
+    """`tim_va_chup` (so, khong "_nhieu") phai con nguyen — `_xep_hang_boi_canh`
+    trong anh_chuan_bi.py va CLI main() van goi ham nay, doi dung MOT dict."""
+    import inspect
+    sig = inspect.signature(xh.tim_va_chup)
+    assert "toi_da" not in sig.parameters, "tim_va_chup bi doi hop dong, se vo hieu _xep_hang_boi_canh"
+    src = inspect.getsource(xh.tim_va_chup)
+    assert "return kq_cuoi" in src and "break" in src, "tim_va_chup khong con dung o thanh cong dau tien"
 
 
 if __name__ == "__main__":

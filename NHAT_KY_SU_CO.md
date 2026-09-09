@@ -43,14 +43,38 @@ thường lên cả hai board cùng lúc, đúng như dữ liệu thật lần n
 đúng số liệu Ông Chủ gửi (không đoán URL — mọi test dùng dữ liệu đã xác nhận
 qua WebFetch).
 
-**Chưa làm, cần Ông Chủ chốt:** `tim_va_chup()` dừng ở nguồn ĐẦU TIÊN chụp
-được — kiến trúc hiện tại chỉ mang được **một** bảng xếp hạng cho mỗi tin
-(`xh` là một dict, không phải danh sách; `kite_chuan_bi`/`dre_nop`/`card.py`
-đều giả định đúng một ảnh mã `XH`). Nên dù cả hai board giờ đã "thấy" được,
-một tin về GPT-Image-2.5 vẫn chỉ mang được MỘT trong hai chart, không phải cả
-hai như ảnh Ông Chủ gửi cho thấy. Cho một model lên nhiều bảng cùng lúc mang
-NHIỀU ảnh `XH` là một thay đổi kiến trúc lớn hơn — đợi quyết định trước khi
-làm, vì nó chạm schema manifest và giả định "một ảnh xếp hạng" ở mọi vai.
+**Cập nhật cùng ngày — lấy được cả hai chart.** Đưa ra lo ngại "kiến trúc chỉ
+mang được một bảng mỗi tin, đổi sang nhiều ảnh là thay đổi lớn hơn, cần chốt
+trước" — Ông Chủ bác thẳng cả tiền đề: *"đã làm social media thì làm gì có
+chuyện bị giới hạn ở nguồn tư liệu"*, và chỉ ra hai bảng đó *"một bảng là top
+model tạo sinh, một bảng là top model chỉnh sửa, đâu có trùng lặp"* — tức
+không có lý do tự giới hạn khi hai nguồn không hề overlap.
+
+Sửa: `xep_hang.tim_va_chup_nhieu()` (hàm mới, **không sửa** `tim_va_chup()` cũ —
+`_xep_hang_boi_canh` trong `anh_chuan_bi.py` và CLI `main()` vẫn gọi bản cũ,
+đợi đúng MỘT dict) đọc cờ `doc_lap: True` gắn ngay tại khai báo NGUON của
+`arena-t2i`/`arena-image-edit`: nguồn "độc lập" (đo năng lực riêng) không bao
+giờ bị một thành công khác chặn lại; nguồn "thường" (4 biến thể đo cùng một
+năng lực code — arena-code/swebench/aider/livecodebench) vẫn dừng ở thành công
+đầu tiên như cũ, lấy thêm chỉ lặp lại bằng chứng. Luật chọn nằm trọn trong một
+hàm thuần `_bo_qua_nguon(n, da_chup_thuong)`, tách riêng để test không cần
+Playwright (không cài được trong môi trường này để mock trình duyệt thật).
+
+`anh_chuan_bi.py` đổi `xh` (dict|None) → `xhs` (list, có thể rỗng) xuyên suốt
+`_chup_xep_hang` → `_gom_va_tai_anh` → `dung_manifest`; mỗi bảng chụp được
+mang mã riêng (`XH`, `XH2`...) qua `_anh_muc_xep_hang()` (hàm thuần, tách để
+test không phải chạy `_gom_va_tai_anh` — hàm đó gọi mạng thật nên test trực
+tiếp treo/timeout). `dung_manifest` nhận cả `None` (quy ước cũ, hai test có
+sẵn của tính năng ảnh thương hiệu truyền `None` ở vị trí này) lẫn `[]` — không
+đổi hành vi cho mọi tin chỉ có một bảng. `m["xep_hang"]` (bảng ĐẦU TIÊN, dùng
+bởi cổng chặn `can_anh_xep_hang`) và mọi gate hiện có không đổi hợp đồng; thêm
+`m["so_xep_hang"]` để `dong_brief_xep_hang` nói rõ cho vai biết có mã `XH2` khi
+có, tránh bỏ phí tấm thứ hai vì brief không nhắc tới nó.
+
+Không đổi những gì các file khác (đang sửa `anh_thuong_hieu.py`/
+`anh_khai_niem.py` cùng lúc) không nhắc tới: mỗi ảnh xếp hạng vẫn mang
+`"xep_hang": xh` của riêng nó nên mọi cổng đọc PER-IMAGE (`dre_nop.py`,
+`ethan_nop.py`, `ethan_chuan_bi.py`) coi XH2 y hệt XH, không cần sửa gì.
 
 ---
 
