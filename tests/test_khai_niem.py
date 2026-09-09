@@ -90,6 +90,25 @@ def test_loc_commons_jpeg_truoc_png_roi_moi_den_kich_thuoc():
                                       "Commons: Big data center racks.png"]
 
 
+def test_ten_loai_khong_bat_chuoi_con():
+    """09/09/2026: "icon" trần nằm trong "sil-icon" nên MỌI ảnh silicon wafer bị
+    bỏ — mà đó là từ khoá khái niệm của toàn bộ tin bán dẫn. "graph" nằm trong
+    "photograph", "chart" nằm trong "Charterhouse"."""
+    pages = {"1": _pg("12-inch silicon wafer.jpg"), "2": _pg("Silicon wafer closeup.jpg")}
+    assert len(k.loc_commons(pages, "silicon wafer")) == 2
+    assert not k.TEN_LOAI.search("aerial photograph of the campus")
+    assert not k.TEN_LOAI.search("charterhouse square")
+    # vẫn phải bắt đúng thứ nó sinh ra để bắt
+    for x in ("app icon.png", "bar graph of sales.png", "chart of revenue.png", "company logo.png"):
+        assert k.TEN_LOAI.search(x), x
+
+
+def test_philippines_co_trong_bang_nuoc():
+    """Bảng SEA có đủ 5 nước còn lại; thiếu Philippines nên tin "Philippines rót
+    34 tỷ USD" không ra từ khoá nào (09/09/2026)."""
+    assert _tk("Philippines plans $34B to catch up in the AI race")[0] == "flag of Philippines"
+
+
 def test_loc_commons_rong_khi_khong_co_gi():
     assert k.loc_commons({}, "x") == [] and k.loc_commons(None, "x") == []
 

@@ -33,6 +33,25 @@ def handle_kenh(brand: str) -> str:
 
 
 FIG_RONG_TOI_THIEU = 800
+VAI_ANH_TEN = {"carousel": "Dre", "designer": "Ethan"}
+# Tran hinh BAT BUOC: bo chi duoc 6..10 slide, tru bia va cta con 8. Ep het khi
+# engine tim duoc 9 tam la hai cong da nhau, vai khong co duong nao nop duoc.
+TOI_DA_EP_HINH = 6
+
+
+def chuyen_tu_vai(m: dict) -> str:
+    """Tên vai đã CHUYỂN tin này sang Kite vì thiếu ảnh thật ("Dre"/"Ethan"), hoặc "".
+
+    Mọi đường vào Kite đều là đường THIẾU ẢNH: `duyet_bai` chỉ gắn nút "Gửi Kite"
+    ở hai chỗ báo thiếu ảnh, và `anh_chuan_bi._route_thieu_anh` tự chuyển khi 0
+    ảnh. Cả hai đều đi qua `tao_task_kite`, nơi ghi `chuyen_tu` vào img.json —
+    xong.json thì KHÔNG có (nút của Ông Chủ bấm sau khi engine đã ghi xong).
+    """
+    im = cb._doc_json(cb.DRAFTS / (str(m.get("draft_id", "")) + ".img.json"), {}) or {}
+    tu = im.get("chuyen_tu") or ""
+    if tu:
+        return VAI_ANH_TEN.get(tu, tu)
+    return "vai ảnh" if (m.get("chuyen_kite") or im.get("chuyen_kite")) else ""
 
 
 def hinh_that(m: dict) -> list:
@@ -76,6 +95,22 @@ def dong_hero_paper(ht: list) -> list:
                 "(xem bang_anh.png) — lúc đó nói rõ một câu vì sao. Hình paper còn lại để cho `figure`."]
 
 
+def hinh_phai_dung(m: dict) -> list:
+    """Mã hình BẮT BUỘC vào bộ, khi tin được CHUYỂN sang Kite vì thiếu ảnh thật.
+
+    Ông Chủ 09/09/2026: *"sau khi tìm được hình tốt mà vẫn ko đủ để làm và pass
+    qua cho Kite thì Kite cũng phải dùng những hình đó trong body"*. Rỗng khi
+    tin không phải hàng chuyển sang, hoặc chưa ai nhìn ảnh (vision tắt thì ép là
+    đẩy quảng cáo/widget lên slide — xem chú thích cùng loại ở kite_nop).
+
+    MỘT nguồn cho cả brief lẫn cổng chặn: hai bản đếm khác nhau là brief bảo
+    dùng 3 mã còn cổng đòi 4.
+    """
+    if not chuyen_tu_vai(m):
+        return []
+    return [a["ma"] for a in hinh_that(m) if a.get("lien_quan") is True][:TOI_DA_EP_HINH]
+
+
 def goi_y_tone(title: str) -> tuple:
     """(theme, hero, gan_day) — chon cai chua dung gan day, xoay theo tieu de."""
     import render_edu
@@ -89,6 +124,9 @@ def goi_y_tone(title: str) -> tuple:
 
 def viet_brief(m: dict, da_dung: dict | None) -> str:
     theme, hero, gan = goi_y_tone(m["title"])
+    # Mã bắt buộc, bỏ mã đã lên bìa: khung in sẵn MỘT `figure` cho mỗi mã còn
+    # lại, để vai khỏi phải tự suy ra "à, ba hình thì ba slide".
+    ep_khung = hinh_phai_dung(m)
     import brief_chung
     L = brief_chung.dau(
         m, "KITE",
@@ -109,7 +147,23 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         L.append("Không có hình thật nào liên quan — dùng art vector cho cả bộ (bình thường với paper trắng).")
     else:
         nhin = [a for a in ht if a.get("lien_quan") is True]
-        if nhin:
+        tu_vai, ep = chuyen_tu_vai(m), hinh_phai_dung(m)
+        if ep:
+            # Ong Chu 09/09/2026: "sau khi tim duoc hinh tot ma van ko du de lam
+            # va pass qua cho Kite thi Kite cung phai dung nhung hinh do trong
+            # body". Truoc do brief chi doi "it nhat mot", ma mot tam thi Kite
+            # de len bia roi ve vector ca body — dung cai Ong Chu che.
+            L.append(f"🔁 TIN NÀY CHUYỂN TỪ {tu_vai} SANG KITE VÌ THIẾU ẢNH THẬT — nhưng "
+                     f"{len(ep)} tấm engine tìm được ({', '.join(ep)}) KHÔNG BỊ BỎ ĐI. "
+                     "Luật cho bộ này:")
+            L.append(f"- **Cả {len(ep)} mã đều phải xuất hiện** trong spec — thiếu tấm nào "
+                     "`kite_nop.py` chặn, kèm tên mã.")
+            L.append("- **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure` "
+                     "(`\"image\": \"<mã>\"` + `\"caption\": \"… · via <ai>\"`). Đặt hết lên bìa "
+                     "rồi vẽ vector cả thân là đúng cái lỗi khiến tin phải chuyển sang đây.")
+            L.append("- Vector chỉ để lấp phần CÒN THIẾU (steps/loop/bars/statement), không thay "
+                     "cho bằng chứng thật đã có.")
+        elif nhin:
             L.append(f"CÓ {len(nhin)} hình thật ĐÃ NHÌN và liên quan → BẮT BUỘC dùng ít nhất một: "
                      "`figure` cho chart/bảng, bìa `image` hoặc `figure` cho ảnh chụp"
                      + (" — riêng hình mở đầu paper thì lên BÌA, xem ⭐ dưới. "
@@ -122,8 +176,21 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     for a in ht:
         kieu = ("BIỂU ĐỒ/BẢNG" if a["loai"] == "chart" else "ẢNH CHỤP") + \
                ("" if a.get("lien_quan") is True else " ⚠️CHƯA NHÌN")
+        th = a.get("thuong_hieu") or {}
+        # Anh THUONG HIEU: noi ro no LA GI, vi caption phai khac nhau han. Mot the
+        # logo bi chu thich "anh tru so" la sai su that (09/09/2026).
+        nhan_th = {"anh": f"🏢 ảnh cơ sở của {th.get('hang')} (KHÔNG phải ảnh của sự việc)",
+                   "nguoi": f"👤 chân dung {th.get('vai', 'lãnh đạo')} {th.get('hang')}: "
+                            f"{th.get('nguoi')} — caption phải nêu đúng tên này, và chỉ dùng khi "
+                            "bài có nhắc người đó",
+                   "logo": f"🔖 THẺ LOGO {th.get('hang')} (logo chính thức trên nền trơn) — hợp làm "
+                           "bìa, đừng chú thích như ảnh chụp",
+                   "xep_hang": f"📊 bảng {th.get('site')} · {th.get('bang')} có {th.get('hang')} — "
+                               "KHÔNG phải bảng của tin này, caption ghi rõ nguồn + tên bảng",
+                   }.get(th.get("loai"), "")
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
                  + (f" | {a['paper_hinh']} của chính paper" if a.get("paper_hinh") else "")
+                 + (f" | {nhan_th}" if nhan_th else "")
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
     L += dong_hero_paper(ht)
@@ -145,15 +212,16 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
             {"kind": "cover", "eyebrow": "<CHUYÊN MỤC · DEEP DIVE, ≤ 28>", "title": "<hook ≤ 60 ký tự>",
              "accent": "<cụm trong title cần nhấn>", "standfirst": "<1 câu ≤ 200 ký tự>",
              "byline": [handle_kenh(m["brand"]), "Phân tích", "5 phút đọc"],
-             "image": (mo_dau["ma"] if mo_dau else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>"),
+             "image": (mo_dau["ma"] if mo_dau else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>"),  # noqa: E501
              "caption": (f"{mo_dau['paper_hinh']} trong paper · via <ai>" if mo_dau
                          else "<'… · via <ai>' bắt buộc khi có image>")},
             {"kind": "statement", "eyebrow": "BỐI CẢNH", "title": "<≤ 60>", "accent": "<cụm nhấn>",
              "standfirst": "<≤ 220>", "cards": [{"num": "01", "text": "<≤ 90>"}, {"num": "02", "text": "<≤ 90>"}]},
             {"kind": "steps", "eyebrow": "CÁCH VẬN HÀNH", "title": "<≤ 60>",
              "steps": [{"title": "<≤ 30>", "desc": "<≤ 80>"}, {"title": "…", "desc": "…"}, {"title": "…", "desc": "…"}]},
-            {"kind": "figure", "eyebrow": "SỐ LIỆU", "title": "<≤ 60, tối đa 2 dòng>", "accent": "<cụm>",
-             "image": "<mã hình thật A?>", "caption": "<Biểu đồ trong bài · via <ai>>", "standfirst": "<≤ 200>"},
+            *[{"kind": "figure", "eyebrow": "SỐ LIỆU", "title": "<≤ 60, tối đa 2 dòng>",
+               "accent": "<cụm>", "image": ma, "caption": "<… · via <ai>>",
+               "standfirst": "<≤ 200>"} for ma in (ep_khung or ["<mã hình thật A?>"])],
             {"kind": "bars", "eyebrow": "SỐ LIỆU", "title": "<≤ 60>", "accent": "<cụm>",
              "bars": [{"label": "<≤ 28>", "value": "<số THẬT trong bài, viết dạng số>", "text": "<cách ghi, vd 2,75 USD>"},
                       {"label": "<≤ 28>", "value": "<số>", "text": "<…>", "nhan": True}],

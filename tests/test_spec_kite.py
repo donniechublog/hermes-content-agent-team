@@ -192,6 +192,86 @@ def test_co_hinh_that_da_nhin_ma_khong_dung_thi_chan():
         assert _co(loi, "BẮT BUỘC dùng ít nhất một", "H1"), loi
 
 
+# ---- tin CHUYEN TU Dre/Ethan vi thieu anh (Ong Chu 09/09/2026) -------------
+def _figure(ma, **k):
+    d = {"kind": "figure", "eyebrow": "SỐ LIỆU", "title": "Bảng điểm",
+         "standfirst": "Kết quả đo trên bộ chuẩn.", "image": ma,
+         "caption": "Bảng trong bài · via nguoi-dua"}
+    d.update(k)
+    return d
+
+
+def test_chuyen_tu_vai_doc_img_json():
+    """Nút "Gửi Kite" của Ông Chủ chỉ ghi `chuyen_tu` vào img.json, xong.json
+    không có — đọc nhầm chỗ là cổng dưới không bao giờ bật."""
+    import anh_chuan_bi as cb
+    import kite_chuan_bi as kb
+    import json as _j
+    with tempfile.TemporaryDirectory() as t:
+        cu, cb.DRAFTS = cb.DRAFTS, Path(t)
+        try:
+            assert kb.chuyen_tu_vai({"draft_id": "d1"}) == ""
+            assert kb.chuyen_tu_vai({"draft_id": "d1", "chuyen_kite": "t_9"}) == "vai ảnh"
+            (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "carousel"}), encoding="utf-8")
+            assert kb.chuyen_tu_vai({"draft_id": "d1"}) == "Dre"
+            (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "designer"}), encoding="utf-8")
+            assert kb.chuyen_tu_vai({"draft_id": "d1"}) == "Ethan"
+        finally:
+            cb.DRAFTS = cu
+
+
+def test_chuyen_kite_doi_dung_DU_ma_hinh():
+    """Ông Chủ 09/09/2026: tin pass sang Kite vì thiếu ảnh thì Kite vẫn phải
+    dùng những hình đó. Cổng "ít nhất một" cũ cho phép bỏ tấm thứ hai."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        anh = [_hinh(wd, ma="H1"), _hinh(wd, ma="H2", w=1100, h=900)]
+        sl = _du(); sl[1] = _figure("H1")
+        _r, loi, _c = _chay(sl, _m(wd, anh, chuyen_kite="t_9"), wd)
+        assert _co(loi, "H2", "phải vào bộ"), loi
+        sl[2] = _figure("H2", title="Bảng hai")
+        _r, loi2, _c = _chay(sl, _m(wd, anh, chuyen_kite="t_9"), wd)
+        assert not _co(loi2, "phải vào bộ"), loi2
+
+
+def test_chuyen_kite_khong_cho_hinh_nam_moi_o_bia():
+    """Một tấm đặt lên bìa rồi vẽ vector cả thân là đúng cái lỗi khiến tin phải
+    chuyển sang Kite."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        anh = [_hinh(wd, ma="H1")]
+        sl = _du()
+        sl[0] = _cover(image="H1", caption="Bảng trong bài · via nguoi-dua")
+        _r, loi, _c = _chay(sl, _m(wd, anh, chuyen_kite="t_9"), wd)
+        assert _co(loi, "chỉ nằm ở BÌA"), loi
+        sl[1] = _figure("H1")            # thêm ở thân -> qua
+        _r, loi2, _c = _chay(sl, _m(wd, anh, chuyen_kite="t_9"), wd)
+        assert not _co(loi2, "chỉ nằm ở BÌA"), loi2
+
+
+def test_chuyen_kite_bo_trang_thi_bao_du_loi_mot_vong():
+    """Bộ không dùng tấm nào: phải nói CẢ "thiếu mã nào" ngay vòng này, và
+    KHÔNG nói "chỉ nằm ở bìa" (sai, vì có nằm ở đâu đâu)."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        anh = [_hinh(wd, ma="H1"), _hinh(wd, ma="H2", w=1100, h=900)]
+        _r, loi, _c = _chay(_du(), _m(wd, anh, chuyen_kite="t_9"), wd)
+        assert _co(loi, "BẮT BUỘC dùng ít nhất một"), loi
+        assert _co(loi, "H1", "H2", "phải vào bộ"), loi
+        assert not _co(loi, "chỉ nằm ở BÌA"), loi
+
+
+def test_khong_chuyen_kite_thi_van_chi_doi_mot_tam():
+    """Tin Kite bình thường (không phải hàng chuyển sang) giữ luật cũ."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        anh = [_hinh(wd, ma="H1"), _hinh(wd, ma="H2", w=1100, h=900)]
+        sl = _du(); sl[1] = _figure("H1")
+        _r, loi, _c = _chay(sl, _m(wd, anh), wd)
+        assert not _co(loi, "phải vào bộ"), loi
+        assert not _co(loi, "chỉ nằm ở BÌA"), loi
+
+
 def test_hinh_chua_nhin_thi_chi_goi_y():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)

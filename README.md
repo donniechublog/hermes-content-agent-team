@@ -77,11 +77,17 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `approve_service.create_pair` khởi chạy nền (`--im`) ngay lúc Ông Chủ chọn số:
   giải mã link Google News, Bing News RSS tìm báo khác, một phiên chromium (chữ
   bài, img lớn, chụp table/figure/canvas), `anh_bai`, Wikimedia Commons khi < 5
-  ảnh; vẫn thiếu hoặc không tấm nào làm bìa được thì `anh_khai_niem.py` tìm
-  **ảnh khái niệm** (cờ nước được nhắc, rack datacenter… LUAT_ANH §1.2c, chỉ
-  bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
+  ảnh; vẫn thiếu hoặc không tấm nào làm bìa được thì hai vòng bù theo độ liên
+  quan giảm dần — `anh_thuong_hieu.py` tìm **ảnh thương hiệu** (trụ sở/campus của
+  chính hãng trong tin, LUAT_ANH §1.2d, vào được slide thân), rồi
+  `anh_khai_niem.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
+  LUAT_ANH §1.2c, chỉ bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
   `crop_ti_le`; cặp ghép cùng tone; tư liệu. Kết quả
   `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
+- Tin **chuyển sang Kite vì thiếu ảnh** (engine tự chuyển khi 0 ảnh, hoặc Ông Chủ
+  bấm "Gửi Kite"): những ảnh thật engine đã tìm được **vẫn phải vào bộ của Kite,
+  và phải có ở body** — `kite_chuan_bi.hinh_phai_dung` là một nguồn cho cả brief
+  lẫn cổng `kite_nop` (LUAT_ANH §1.2e).
 - Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`,
   `ethan_chuan_bi/ethan_nop`, `kite_chuan_bi/kite_nop`, `miles_chuan_bi/miles_nop`.
   Nop chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi
@@ -129,6 +135,18 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   Cần `pymupdf`.
 - `arxiv_bia.py` — đường cuối cho bài arxiv: không còn ứng viên ảnh nào thì chụp
   trang đầu paper (tên công trình + tác giả). Cần `pymupdf`.
+- `anh_thuong_hieu.py` — tin về **hãng lớn** mà kho ảnh mỏng thì đi lấy tư liệu
+  của chính hãng, bốn loại theo độ "là ảnh chụp thật" giảm dần: 🏢 **cơ sở**
+  (tìm tên tệp Commons + `P18` Wikidata), 👤 **chân dung founder/CEO**
+  (`P112`/`P169`, kèm tên nên khai được `nhan_vat`, bỏ người đã thôi chức),
+  📊 **bảng xếp hạng** có model của hãng (mượn `xep_hang.py`, chỉ nhận ảnh chụp
+  thật), 🔖 **thẻ logo** (`P154` trên nền trơn, đường cuối). Lấy **mọi** hãng
+  watchlist tin nhắc tới (tối đa 3), không phải chỉ tên riêng đầu tiêu đề. Lọc
+  theo biên giới từ + bảng nhiễu (Amazon → rừng, Apple → quả táo). Vào được
+  slide thân và đếm đủ — khác ảnh khái niệm. LUAT_ANH §1.2d.
+- `anh_khai_niem.py` — tin không có ảnh riêng thì tìm **ảnh khái niệm** trên
+  Commons theo nước/chủ đề (cờ, rack datacenter, wafer, toà án). Nhãn 🧭, chỉ
+  bìa/hero, cả chùm đếm là một. LUAT_ANH §1.2c.
 - `xep_hang.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
   registry **19 nguồn**, mở browser tìm hàng chứa model, chụp cửa sổ top-N,
   khoanh vàng hàng đó, đọc thứ hạng. Chụp bằng **khung mobile trước** (414px ×

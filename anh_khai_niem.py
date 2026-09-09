@@ -28,7 +28,9 @@ import urllib.request
 
 import env_load
 
-UA = "Mozilla/5.0 (content-team anh_khai_niem)"
+# Wikimedia doi UA co ten cong cu + duong lien he, khong nhan UA kieu trinh
+# duyet (403, do 09/09/2026) -> dung chung mot cho: env_load.UA_WIKI.
+UA = env_load.UA_WIKI
 TOI_DA_TU_KHOA = 3
 
 # Tên nước / khối -> tên chuẩn (khoá là chữ thường, khớp theo từ nguyên).
@@ -45,6 +47,9 @@ for _chuan, _bien_the in {
     "Indonesia": ("indonesia", "indonesian", "jakarta"),
     "Malaysia": ("malaysia", "malaysian"),
     "Thailand": ("thailand", "thai", "bangkok"),
+    # Thiếu trong bảng SEA tới 09/09/2026 (đủ 5 nước còn lại) nên tin
+    # "Philippines rót 34 tỷ USD đuổi theo cuộc đua AI" không ra từ khoá nào.
+    "Philippines": ("philippines", "filipino", "manila"),
     "Australia": ("australia", "australian", "sydney"),
     "United States": ("america", "american", "washington", "pentagon"),
     "Canada": ("canada", "canadian"),
@@ -118,7 +123,13 @@ CHU_DE = [
 ]
 
 # Tên tệp Commons báo hiệu đồ hoạ, không phải ảnh chụp.
-TEN_LOAI = re.compile(r"logo|icon|emblem|coat of arms|\bseal\b|\bsvg\b|diagram|chart|graph|"
+# BIÊN GIỚI TỪ cho icon/graph/chart (09/09/2026): ba từ này viết trần thì khớp
+# CHUỖI CON và loại nhầm chính thứ đang cần — "icon" nằm trong "sil-icon" nên
+# MỌI ảnh "silicon wafer" đều bị bỏ, mà đó là từ khoá khái niệm của toàn bộ tin
+# bán dẫn; "graph" nằm trong "photograph"; "chart" nằm trong "Charterhouse".
+# Bọc \b vẫn bắt đủ "App icon.png", "Bar graph.png", "Chart of...".
+TEN_LOAI = re.compile(r"logo|\bicons?\b|emblem|coat of arms|\bseal\b|\bsvg\b|diagram|"
+                      r"\bcharts?\b|\bgraphs?\b|"
                       r"screenshot|poster|drawing|illustration|clipart|banner|badge|stamp|"
                       r"sticker|infographic|\bmap of\b(?!.*(satellite|relief))|locator map|"
                       r"\bcgi\b|variant|captured|render|3d\b|mockup|template|"

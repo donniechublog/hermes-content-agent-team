@@ -32,6 +32,14 @@ HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
 ROUTER_URL = "http://127.0.0.1:20128/v1/chat/completions"   # 9router cuc bo, chung hai brand
 VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine anh (anh_chuan_bi)
 
+# User-Agent RIENG cho moi thu goi Wikimedia (API commons + tai anh tu
+# upload.wikimedia.org). Robot policy cua Wikimedia doi UA co TEN cong cu va
+# DUONG LIEN HE trong ngoac; UA kieu "Mozilla/5.0 (compatible; donniechu-dre/1.0)"
+# bi tra 403 kem mot dong chu, khong phai JSON — ma ca ba cho goi Commons deu
+# `except Exception -> []`, nen ca duong Wikimedia CHET CAM LANG (do 09/09/2026:
+# 403 o ca API lan tai anh; doi UA nay thi 200). Khong nhet email vao day.
+UA_WIKI = "donniechu-content-team/1.0 (https://dcgr.tech)"
+
 
 def hermes_home() -> Path:
     """HERMES_HOME cua container hien tai (~/.hermes-<brand>, systemd/cron dat san);

@@ -56,6 +56,9 @@ def nhan_ethan(a: dict) -> tuple:
         ghi.append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
     if a.get("commons"):
         ghi.append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin")
+    if a.get("thuong_hieu"):
+        ghi.append(f"🏢 ẢNH THƯƠNG HIỆU ({a['thuong_hieu'].get('hang')}) từ Wikimedia Commons — ảnh THẬT "
+                   "của chính hãng trong tin (trụ sở/campus/biển hiệu), KHÔNG phải ảnh của sự việc đang kể")
     if a.get("khai_niem"):
         kn = a["khai_niem"]
         ghi.append(f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{kn.get('tu_khoa')}\"" + (f": {kn['ly_do']}" if kn.get("ly_do") else "")

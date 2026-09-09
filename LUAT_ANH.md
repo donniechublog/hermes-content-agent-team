@@ -94,9 +94,10 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 - **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
   → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
 - Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
-  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → **ảnh khái
-  niệm** (§1.2c) cho bìa/hero. Vẫn thiếu → brief nói thẳng "THIẾU ẢNH", vai gộp
-  ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
+  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → **ảnh
+  thương hiệu** (§1.2d), rồi **ảnh khái niệm** (§1.2c) cho bìa/hero. Vẫn thiếu →
+  brief nói thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác
+  cho đủ**.
 - Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
   hiệu cần xem lại.
 
@@ -124,6 +125,99 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   không vào slide thân; gợi ý bìa xếp **sau** mọi ảnh riêng của tin; caption
   "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và vẫn được nói "thiếu ảnh" nếu
   thấy cờ/bản đồ không hợp tin.
+
+### 1.2d Ảnh thương hiệu: tin về hãng lớn thì tìm trụ sở của chính hãng đó
+
+Ông Chủ 09/09/2026: *"Dre vẫn chưa tự tìm thêm hình liên quan khi làm các nội
+dung có Big Brand"*. Sáng hôm đó năm tin liên tiếp (Qualcomm × Amazon, xưởng
+Samsung, kiện Anthropic, DeepSeek gọi vốn, Philippines) đều dừng ở nút *"chỉ 2/5
+ảnh thật dùng được — Kite vẽ vector / Dre làm với N ảnh"*, toàn hãng mà Commons
+có hàng trăm ảnh thật. Luật của **engine** (`anh_thuong_hieu.py`):
+
+- **Khi nào**: sau vòng tìm rộng mà vẫn thiếu, hoặc không tấm nào làm bìa được —
+  **trước** ảnh khái niệm. Thứ tự ba vòng bù là theo độ liên quan giảm dần: báo
+  khác cùng tin → ảnh của **chính hãng** trong tin → ảnh **khái niệm** của chủ đề.
+- **Hãng nào**: mọi hãng trong `scan_business.WATCHLIST` mà tin nhắc tới, tối đa
+  3, theo thứ tự xuất hiện — **không phải chỉ tên riêng đầu tiêu đề**. Tên
+  model/chip quy về hãng chủ (Claude → Anthropic, Xring → Xiaomi). Tên trần mà
+  watchlist không giữ (Google, Meta, Snapdragon) bù bằng `TEN_THEM`.
+- **Hỏi gì**: `"<Hãng> headquarters"`, `"<Hãng> building"`, `"<Hãng> campus"` —
+  hỏi thẳng thứ hãng nào cũng có ảnh, không hỏi tên trần. Hỏi tên trần
+  ("Anthropic") ra ảnh khảo cổ *anthropic cut marks*.
+- **Bốn loại tư liệu**, theo độ "là ảnh chụp thật của hãng" giảm dần. Ông Chủ
+  09/09/2026: *"ko thấy ảnh liên quan thì lấy ảnh logo, ảnh founder, ảnh chụp
+  trên các bảng xếp hạng của model… có thiếu tư liệu đâu?"*
+  1. 🏢 **cơ sở** — trụ sở/campus. Tìm tên tệp Commons **và** `P18` của
+     Wikidata: hãng thuần phần mềm không có tệp nào tên "<hãng> headquarters",
+     mà trụ sở OpenAI trên Commons lại tên *"Pioneer Building, San Francisco"* —
+     không một chữ "openai" nào. Wikidata trỏ thẳng tới nó.
+  2. 👤 **chân dung founder/CEO** — `P112`/`P169` → `P18` của chính người đó.
+     Đi **kèm tên**, nên khai được `nhan_vat`: đúng ngoại lệ của §6, khác hẳn
+     mặt vô danh. Bỏ người **đã thôi chức** (qualifier `P582`) — hỏi CEO OpenAI
+     mà không lọc thì Wikidata trả cả CEO tạm quyền cũ, brief ghi sai tên.
+     Brief vẫn dặn: **bài không nhắc tên người này thì bỏ**.
+  3. 📊 **bảng xếp hạng có model của hãng** — mượn `xep_hang.py` chụp bảng, chỉ
+     cho hãng **có làm model** (`hang_co_model`; Qualcomm/TSMC không khớp hàng
+     nào). **Chỉ nhận ảnh chụp thật**: hết đường thì `tim_va_chup` tự dựng *thẻ
+     dự phòng* "`<model> #<hạng>`" — thẻ đó cho một tin KHÔNG PHẢI tin xếp hạng
+     là bịa ra một thứ hạng không ai nói, nên phải vứt.
+  4. 🔖 **thẻ logo** — logo chính thức (`P154`) đặt trên nền trơn, dồn lên nửa
+     trên để hook đè nửa dưới; nền sáng hay tối **chọn theo độ sáng của chính
+     logo** (wordmark chữ đen trên nền tối là mất chữ). Cùng nguyên tắc với
+     `xep_hang.the_du_phong`: không thêm một nét nào của ta, chỉ là chỗ đặt —
+     nên không vướng §0. Là đường **cuối**, chỉ khi không còn ảnh chụp nào.
+- **Lọc**: tên tệp phải chứa **đủ** từ đặc trưng của tên hãng theo *biên giới từ*
+  ("Arm" ≠ "Armstrong"); bỏ đồ hoạ (`TEN_LOAI`); bỏ **nhiễu theo hãng** (Amazon →
+  rừng/sông, Apple → quả táo, Tesla → Nikola Tesla) và **nhiễu chung** (mít tinh,
+  đình công, biểu tình — đo thật: "Amazon building" trả về hai tấm *Solidarity
+  With Alabama Amazon Workers*). JPEG trước, ảnh to trước, cạnh ngắn ≥ 700.
+- **Chỗ đứng**: nhãn 🏢 ẢNH THƯƠNG HIỆU. **Khác ảnh khái niệm ở hai điểm**: nó
+  vào được **slide thân** (là ảnh thật của chính hãng trong tin, đúng loại "trụ
+  sở/sản phẩm" §1.2 vẫn kể là liên quan) và nó **đếm đủ**, không gộp cả chùm
+  thành một. Gợi ý bìa vẫn xếp sau mọi ảnh riêng của tin. Trần **4 tấm** một bộ,
+  2 tấm mỗi hãng — để một bộ không thành album trụ sở.
+- **Mặt người**: ảnh **cơ sở** có mặt là bỏ — người đứng trước cửa hàng trên
+  Commons thì không ai gọi được tên (§6). Ảnh **chân dung** thì ngược lại: mặt
+  là thứ ta đi tìm, và tên đi kèm sẵn. Đừng chặn chân dung theo số mặt đếm được:
+  `luat_anh.dem_mat` trả `None` khi thiếu cv2/model và §6 cho phép cổng mặt tự
+  tắt, nên lấy `mat == 0` làm "không phải chân dung" là bỏ câm lặng mọi chân
+  dung trên máy thiếu cv2. Để **con mắt** phán, bằng câu hỏi riêng cho từng loại
+  tư liệu (`cau_hoi_vision`) — câu chung hỏi "có phải ảnh của tin không" thì
+  chân dung và thẻ logo chắc chắn trượt.
+
+**Wikimedia đòi User-Agent riêng.** Robot policy của Wikimedia trả **403** cho UA
+kiểu trình duyệt; phải có tên công cụ + **đường liên hệ trong ngoặc**
+(`env_load.UA_WIKI`). Áp cho **cả** API `commons.wikimedia.org` **lẫn** bước tải
+byte từ `upload.wikimedia.org`. Ba chỗ gọi Commons đều `except → []`, nên khi UA
+sai thì cả đường Wikimedia — ảnh thương hiệu *và* ảnh khái niệm — **chết câm
+lặng**, không một dòng lỗi nào lên tới brief.
+
+### 1.2e Chuyển sang Kite vì thiếu ảnh thì Kite vẫn phải dùng ảnh đã tìm được
+
+Ông Chủ 09/09/2026: *"sau khi tìm được hình tốt mà vẫn ko đủ để làm và pass qua
+cho Kite thì Kite cũng phải dùng những hình đó trong body"*.
+
+Đường vào Kite **luôn là** đường thiếu ảnh: engine tự chuyển khi 0 ảnh, hoặc Ông
+Chủ bấm "🎨 Gửi Kite vẽ vector" ở một trong hai thông báo thiếu ảnh. Lúc đó
+`img.json` mang `chuyen_tu` (tên vai cũ) — **xong.json không có**, vì nút được
+bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới không bao giờ bật.
+
+- **Cả n mã hình thật đều phải xuất hiện** trong spec, không phải "ít nhất một".
+  Cổng cũ (§ `kite_nop`) chỉ đòi một tấm, nên Kite đặt đúng một tấm lên bìa rồi
+  vẽ vector cả thân — đúng cái bị chê.
+- **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure`.
+- **Trần 6 tấm** (`TOI_DA_EP_HINH`): bộ chỉ được 6..10 slide, trừ bìa và cta còn
+  8. Ép hết khi engine tìm được 9 tấm là hai cổng đá nhau, vai không có đường nộp.
+- Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`). Vision tắt thì mọi ảnh là
+  `None`, ép lúc đó là đẩy quảng cáo/widget lên slide — cùng bài học với cổng
+  "ít nhất một".
+- `kite_chuan_bi.hinh_phai_dung` là **một nguồn** cho cả brief lẫn cổng chặn, và
+  khung spec in sẵn một `figure` cho mỗi mã — đừng bắt vai tự suy ra "ba hình thì
+  ba slide".
+
+Brief của Kite còn ghi rõ **từng tấm là loại gì** (🏢 cơ sở · 👤 chân dung ·
+📊 bảng xếp hạng · 🔖 thẻ logo, §1.2d), vì caption của chúng khác hẳn nhau: chú
+thích một thẻ logo thành "ảnh trụ sở" là sai sự thật.
 
 ### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 

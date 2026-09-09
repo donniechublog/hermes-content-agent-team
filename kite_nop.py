@@ -271,10 +271,31 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     # ep luc do la day quang cao / widget gia co phieu len slide, dung loai rac
     # ma vision sinh ra de loai (do 06/09/2026). Chua nhin thi goi y, khong ep.
     da_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is True]
-    if da_nhin and not any(sl.get("image") for sl in slides):
+    co_anh = [sl for sl in slides if sl.get("image")]
+    if da_nhin and not co_anh:
         loi.append(f"có {len(da_nhin)} hình thật dùng được ({', '.join(da_nhin)}) mà không slide nào dùng — "
                    "BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, hoặc image ở bìa. "
                    "Vẽ vector hết trong khi có hình thật là bỏ phí bằng chứng của bài.")
+    # TIN CHUYEN TU DRE/ETHAN vi thieu anh: sieu chat hon mot bac (Ong Chu
+    # 09/09/2026: "sau khi tim duoc hinh tot ma van ko du de lam va pass qua cho
+    # Kite thi Kite cung phai dung nhung hinh do trong body"). Cong "it nhat
+    # mot" o tren van cho phep dat DUY NHAT mot tam len bia roi ve vector ca
+    # than — dung cai bi che. O day doi DU MA va doi co hinh ngoai bia.
+    ep = kb.hinh_phai_dung(m)
+    if ep:
+        # Chay DOC LAP voi cong tren (khong `elif`): bo khong dung tam nao thi
+        # vai can biet CA "thieu ma nao" ngay vong nay, khong phai sua hai vong.
+        tu_vai = kb.chuyen_tu_vai(m)
+        dung = {sl.get("image") for sl in slides if sl.get("image")}
+        thieu = [ma for ma in ep if ma not in dung]
+        if thieu:
+            loi.append(f"tin chuyển từ {tu_vai} sang Kite VÌ THIẾU ẢNH, nên cả {len(ep)} hình "
+                       f"thật tìm được phải vào bộ — còn thiếu {', '.join(thieu)}. Mỗi tấm một slide "
+                       "`figure` (\"image\": \"<mã>\" + caption \"… · via <ai>\").")
+        if co_anh and not any(sl.get("image") for sl in slides[1:]):
+            loi.append(f"tin chuyển từ {tu_vai} sang Kite vì thiếu ảnh mà hình thật chỉ nằm ở BÌA — "
+                       "phải có ít nhất một slide thân dùng hình thật (`figure`). Đặt hết lên bìa rồi "
+                       "vẽ vector cả thân là đúng cái lỗi khiến tin phải chuyển sang đây.")
 
     # So tren slide phai co trong tu lieu (canh bao) — Kite ve so bia la loi nang
     # nhat cua carousel kien thuc, ma truoc 06/09/2026 khong ai doi chieu.
