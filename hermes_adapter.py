@@ -19,7 +19,9 @@ duoc, khong co gi". Nguoi goi phai phan biet hai truong hop do; log o day da
 kem repr(e) de con biet loi that la gi.
 """
 import json
+import os
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 
@@ -79,6 +81,47 @@ def _hoi(cau: str, tham=(), buoc: str = "doc kanban", db=None):
         return None
     finally:
         con.close()
+
+
+def tao_task(title, assignee, body, parent=None, max_runtime="25m"):
+    """Tao mot task kanban qua CLI cua hermes. Tra (task_id, loi).
+
+    Day la noi DUY NHAT biet hinh dang lenh `hermes kanban create` — co nao,
+    chay o dau, doc ket qua kieu gi. Nguoi goi chi biet "tao task cho vai nay".
+
+    `parent` la mot id hoac danh sach id (Miles co hai cha: task Dre + the goc
+    bang den). `--parent` lap lai duoc; None/rong thi bo qua.
+    """
+    home = str(env_load.hermes_home())
+    # --workspace dir:<co dinh>: mac dinh `scratch` tao thu muc moi moi task
+    # (kanban/workspaces/t_xxx) va Hermes in "Current working directory: ..."
+    # vao GIUA system prompt -> 37% cuoi prompt (skills, memory) khong bao gio
+    # trung cache giua hai task cung vai. Do 05/09: 2 task carousel cach 5 phut
+    # chi khac dung dong nay. Thu muc co dinh, khong phai git repo (tranh Hermes
+    # bat "coding posture"); script cua vai deu dung duong dan tuyet doi.
+    ws = Path(home) / "kanban" / "workspaces" / "co-dinh"
+    try:
+        ws.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        return None, f"khong tao duoc workspace {ws}: {e!r}"
+    args = [str(env_load.HERMES_PY), "-m", "hermes_cli.main", "kanban", "create", title,
+            "--assignee", assignee, "--max-runtime", max_runtime, "--json",
+            "--workspace", f"dir:{ws}", "--body", body]
+    for _cha in ([parent] if isinstance(parent, str) else (parent or [])):
+        if _cha:
+            args += ["--parent", _cha]
+    try:
+        r = subprocess.run(args, cwd=str(env_load.HERMES_DIR),
+                           env=dict(os.environ, HERMES_HOME=home),
+                           capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.SubprocessError) as e:
+        return None, f"{type(e).__name__}: {e!r}"
+    if r.returncode != 0:
+        return None, (r.stderr[-300:] or r.stdout[-300:])
+    try:
+        return json.loads(r.stdout)["id"], None
+    except (ValueError, KeyError, TypeError):
+        return None, r.stdout[-300:]
 
 
 def viec(tu_ts=None, vai=None, so=None, moi_truoc=False):

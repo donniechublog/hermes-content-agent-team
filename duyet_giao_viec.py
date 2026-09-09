@@ -146,38 +146,21 @@ def chuan_assignee(assignee):
     return slug, None
 
 def kanban_create(title, assignee, body, parent=None):
+    """Tao task cho MOT VAI: kiem ten vai roi giao cho hermes_adapter.
+
+    Hinh dang lenh `hermes kanban create` (co, workspace, doc JSON) nam trong
+    hermes_adapter (audit C2) — o day chi con phan cua content-team: vai nay co
+    that khong, va ghi mot dong log doc duoc."""
     assignee, loi = chuan_assignee(assignee)
     if loi:
         log("kanban", f"tu choi tao '{title[:60]}': {loi}")
         return None, loi
-    env = dict(os.environ, HERMES_HOME=HERMES_HOME)
-    # --workspace dir:<co dinh>: mac dinh `scratch` tao thu muc moi moi task
-    # (kanban/workspaces/t_xxx) va Hermes in "Current working directory: ..."
-    # vao GIUA system prompt -> 37% cuoi prompt (skills, memory) khong bao gio
-    # trung cache giua hai task cung vai. Do 05/09: 2 task carousel cach 5 phut
-    # chi khac dung dong nay. Thu muc co dinh, khong phai git repo (tranh Hermes
-    # bat "coding posture"); script cua vai deu dung duong dan tuyet doi.
-    ws = Path(HERMES_HOME) / "kanban" / "workspaces" / "co-dinh"
-    ws.mkdir(parents=True, exist_ok=True)
-    args = [str(HERMES_PY), "-m", "hermes_cli.main", "kanban", "create", title,
-            "--assignee", assignee, "--max-runtime", "25m", "--json",
-            "--workspace", f"dir:{ws}", "--body", body]
-    # `parent` la mot id hoac danh sach id (Miles co hai cha: task Dre + the goc
-    # bang den). --parent lap lai duoc; None/rong thi bo qua.
-    for _cha in ([parent] if isinstance(parent, str) else (parent or [])):
-        if _cha:
-            args += ["--parent", _cha]
-    r = subprocess.run(args, cwd=str(Path.home() / "hermes-agent"),
-                        env=env, capture_output=True, text=True, timeout=120)
-    if r.returncode != 0:
-        log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {(r.stderr or r.stdout)[-200:]}")
-        return None, (r.stderr[-300:] or r.stdout[-300:])
-    try:
-        tid = json.loads(r.stdout)["id"]
-        log("kanban", f"tao task {tid} cho {assignee}: {title[:60]}")
-        return tid, None
-    except Exception:                                        # noqa: BLE001
-        return None, r.stdout[-300:]
+    tid, loi = hermes_adapter.tao_task(title, assignee, body, parent=parent)
+    if loi:
+        log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {loi[:200]}")
+        return None, loi
+    log("kanban", f"tao task {tid} cho {assignee}: {title[:60]}")
+    return tid, None
 
 # Kanban cua home container hien tai. Viec bi chan/that bai duoc bao qua
 # bao_tien_do_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung

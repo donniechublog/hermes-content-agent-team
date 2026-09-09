@@ -181,6 +181,71 @@ def test_sai_schema_cung_tra_None():
             _go()
 
 
+# ------------------------------------------------------ tao_task (CLI hermes)
+class _Ra:
+    def __init__(self, rc=0, out="", err=""):
+        self.returncode, self.stdout, self.stderr = rc, out, err
+
+
+def _tao_task(ket_qua, **kw):
+    """Goi ha.tao_task voi subprocess gia. Tra (ket_qua_ham, args_da_chay)."""
+    import subprocess
+    da_chay = {}
+
+    def _run(args, **k):
+        da_chay["args"] = args
+        da_chay["kw"] = k
+        if isinstance(ket_qua, Exception):
+            raise ket_qua
+        return ket_qua
+    cu = subprocess.run
+    subprocess.run = _run
+    try:
+        return ha.tao_task("Anh: Tin X", "carousel", "than task", **kw), da_chay
+    finally:
+        subprocess.run = cu
+
+
+def test_tao_task_doc_id_tu_json():
+    (tid, loi), da = _tao_task(_Ra(0, '{"id": "t_42"}'))
+    assert (tid, loi) == ("t_42", None), (tid, loi)
+    a = da["args"]
+    assert "kanban" in a and "create" in a and "--json" in a, a
+    assert a[a.index("--assignee") + 1] == "carousel", a
+    assert a[a.index("--workspace") + 1].startswith("dir:"), \
+        "phai dung workspace CO DINH — scratch lam vo cache prompt (do 05/09)"
+
+
+def test_tao_task_nhieu_cha_thi_lap_lai_co_parent():
+    """Miles co HAI cha: task Dre + the goc bang den."""
+    _kq, da = _tao_task(_Ra(0, '{"id": "t_1"}'), parent=["t_dre", "t_goc"])
+    a = da["args"]
+    assert [a[i + 1] for i, x in enumerate(a) if x == "--parent"] == ["t_dre", "t_goc"], a
+
+
+def test_tao_task_mot_cha_dang_chuoi_cung_duoc():
+    _kq, da = _tao_task(_Ra(0, '{"id": "t_1"}'), parent="t_goc")
+    a = da["args"]
+    assert [a[i + 1] for i, x in enumerate(a) if x == "--parent"] == ["t_goc"], a
+
+
+def test_tao_task_rc_khac_0_thi_tra_loi_khong_nem():
+    (tid, loi), _da = _tao_task(_Ra(2, "", "kanban tu choi"))
+    assert tid is None and "kanban tu choi" in loi, (tid, loi)
+
+
+def test_tao_task_json_hong_thi_tra_loi_khong_nem():
+    (tid, loi), _da = _tao_task(_Ra(0, "khong phai json"))
+    assert tid is None and "khong phai json" in loi, (tid, loi)
+
+
+def test_tao_task_subprocess_nem_thi_van_tra_loi():
+    """Thieu python cua hermes / het tien trinh: khong duoc nem len vong poll."""
+    import subprocess
+    (tid, loi), _da = _tao_task(subprocess.TimeoutExpired("x", 120))
+    assert tid is None and "TimeoutExpired" in loi, (tid, loi)
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0
