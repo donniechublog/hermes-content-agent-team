@@ -356,7 +356,9 @@ def test_moi_duong_tai_deu_qua_cong():
     """Doc bang AST: cac ham tai da duoc noi vao cong. Them mot duong tai moi
     ma quen goi cong la mo lai cua da dong."""
     import ast
-    for tep, ham in [("anh_chuan_bi.py", "_tai_bytes"), ("anh_bai.py", "_tai"),
+    # `_tai_bytes` sang chuan_bi/tai_loc.py khi tach goi 09/09/2026 (audit A1) —
+    # cong host van phai duoc goi y nhu cu, chi doi cho tim.
+    for tep, ham in [("chuan_bi/tai_loc.py", "_tai_bytes"), ("anh_bai.py", "_tai"),
                      ("chup_chart.py", "tai_anh"), ("article_extract.py", "fetch")]:
         cay = ast.parse((ROOT / tep).read_text(encoding="utf-8"))
         f = next((n for n in ast.walk(cay)

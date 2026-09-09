@@ -319,7 +319,8 @@ def test_kiem_ti_le_mien_tru_anh_xep_hang():
 def test_anh_xep_hang_khong_bi_cat():
     """Hàng model đã khoanh có thể nằm dưới 55% dải chụp; cắt 4:5 cy=0.35 sẽ
     xoá mất nó. Ảnh xếp hạng phải giữ nguyên vẹn (a["san"] = a["goc"])."""
-    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    # `phan_loai` sang chuan_bi/nhin.py khi tach goi 09/09/2026 (audit A1).
+    src = (ROOT / "chuan_bi" / "nhin.py").read_text(encoding="utf-8")
     khoi = src[src.index("    san = wd / \"san\""):]
     khoi = khoi[:khoi.index("a[\"dung\"] = [\"thân")]
     assert 'if a.get("xep_hang"):' in khoi, "phan_loai thiếu nhánh giữ nguyên ảnh xếp hạng"

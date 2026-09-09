@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+"""PHA NHIN: hoi vision tung anh, do hinh hoc, quyet dinh anh dung duoc o dau.
+
+Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+"""
+import os
+import re
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+from PIL import Image, ImageStat
+
+import luat_anh
+import env_load
+
+from chuan_bi.nguon import _ten_rieng_dau
+from chuan_bi.tai_loc import _chart_theo_hinh, _luu_crop
+
+
+VISION_MODEL = env_load.VISION_MODEL
+
+
+VISION_URL = env_load.ROUTER_URL
+
+
+def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
+              nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None) -> tuple:
+    """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
+    theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu khong goi
+    duoc (router tat, thieu key): luc do brief noi ro la CHUA ai nhin.
+
+    Do 05/09/2026 tren bo Broadcom: widget linh kien / bang Fear&Greed / logo bao /
+    nguoi dan ong G20 -> khong; ~2s moi anh. Khong heuristic nao bat duoc "widget
+    co khi tren bai Broadcom" — chi co nhin moi biet.
+
+    `hoi_them` / `nhan_them` (tuy chon): xin THEM mot dong tra loi va lay ve
+    nguyen van dong do — luc nay ham tra ve (mo_ta, lien_quan, them). Bob dung
+    de hoi luon mood cua anh trong CHINH luot nhin nay, thay vi mo mot lenh
+    HTTP rieng (meo cu nam trong MEMORY.md, khong ai kiem). Cac vai khac khong
+    truyen thi hanh vi va gia tri tra ve giu nguyen y cu.
+
+    `khai_niem` (07/09/2026): anh tim theo tu khoa (co, datacenter) chu khong phai
+    anh cua tin — hoi cau khac (anh_khai_niem.cau_hoi_vision), khong hoi "co phai
+    anh cua tin" vi chac chan khong, va khong ap override "ten hang trong mo ta"."""
+    import base64, json as _j, urllib.request
+    # env_load.bat_buoc nem SystemExit, ma SystemExit KHONG phai con cua
+    # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
+    # la ca engine chet giua chung, khong co xong.json, vai chi thay "chua chuan
+    # bi" ma khong biet vi sao (06/09/2026). Doc thang bien, khong nem.
+    env_load.nap()
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        print("[vision] thieu OPENAI_API_KEY -> khong nhin duoc anh, brief se ghi CHUA AI NHIN",
+              file=sys.stderr)
+        return ("", None, "") if (hoi_them and nhan_them) else ("", None)
+    try:
+        b64 = base64.b64encode(Path(path).read_bytes()).decode()
+        hoi = (f"Bai bao: \"{tieu_de}\"." + (f" Cong ty/san pham chinh: {hang}." if hang else "")
+               + "\nTra loi DUNG 2 dong:\n"
+               "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
+               "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
+               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai; khong = quang cao, "
+               "widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/chu de khac)")
+        if khai_niem:
+            import anh_khai_niem
+            hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem)
+        elif thuong_hieu:
+            # Cau chung hoi "co phai anh CUA TIN khong" — chan dung nha sang lap
+            # va the logo chac chan khong phai, nen bi danh rot dung luc ta can
+            # chung nhat (09/09/2026).
+            import anh_thuong_hieu
+            hoi = anh_thuong_hieu.cau_hoi_vision(tieu_de, thuong_hieu)
+        if hoi_them and nhan_them:
+            hoi = hoi.replace("DUNG 2 dong", "DUNG 3 dong") + f"\n{nhan_them}: {hoi_them}"
+        body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
+                "stream": False, "temperature": 0,
+                "messages": [{"role": "user", "content": [
+                    {"type": "text", "text": hoi},
+                    {"type": "image_url", "image_url": {"url": "data:image/png;base64," + b64}}]}]}
+        req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json",
+                                              "Authorization": "Bearer " + key})
+        raw = urllib.request.urlopen(req, timeout=45).read().decode().strip()
+        if raw.startswith("data:"):
+            raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
+        txt = _j.loads(raw)["choices"][0]["message"]["content"]
+        mo_ta = re.search(r"MO_TA\s*:\s*(.+)", txt)
+        lq = re.search(r"LIEN_QUAN\s*:\s*(co|có|khong|không)", txt, re.I)
+        mt = mo_ta.group(1).strip()[:200] if mo_ta else txt.strip()[:200]
+        lqv = lq.group(1).lower().startswith("c") if lq else None
+        # Chot tat dinh: mo ta neu dung ten hang -> lien quan (anh tru so/san pham
+        # Broadcom bi vision phan "khong" luc co luc khong, 05/09/2026).
+        # ...nhung chi khi mo ta la BOI CANH hang (tru so/san pham/logo/su kien),
+        # khong phai man hinh/driver/phan mem nhac ten hang (A10 Ubuntu 05/09).
+        BOI_CANH = re.compile(r"tr[uụ] s[oở]|t[oò]a nh[aà]|campus|logo|s[aả]n ph[aẩ]m|thi[eế]t b[iị]|"
+                              r"chip|s[uự] ki[eệ]n|v[aă]n ph[oò]ng|nh[aà] m[aá]y|bi[eể]n hi[eệ]u|"
+                              r"headquarters|office|building|product|device|event", re.I)
+        KHONG = re.compile(r"m[aà]n h[iì]nh|giao di[eệ]n|c[uử]a s[oổ]|driver|ph[aầ]n m[eề]m|screenshot|"
+                           r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
+        if khai_niem or thuong_hieu:
+            pass                                   # tin cau tra loi, khong override theo ten hang
+        elif hang and lqv is False and hang.lower() in mt.lower() and BOI_CANH.search(mt) and not KHONG.search(mt):
+            lqv = True
+        elif lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt):
+            lqv = False
+        if hoi_them and nhan_them:
+            t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
+            return mt, lqv, (t.group(1).strip()[:120] if t else "")
+        return mt, lqv
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[vision] {Path(path).name}: {type(e).__name__}", file=sys.stderr)
+        return ("", None, "") if (hoi_them and nhan_them) else ("", None)
+
+
+def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
+    """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can."""
+    img = Image.open(a["goc"]).convert("RGB")
+    w, h = img.size
+    r = w / h
+    la_ct, mo_ta = luat_anh.la_chart(img)
+    phang, _ = luat_anh.do_chart(img)
+    # Override chi khi phep do KHONG noi nguoc: chart that phang >= 82%, anh chup
+    # 52-77% (do 05/09). Truoc day hint tu alt tu gan de len ca phang 52% -> hinh
+    # minh hoa AI thanh "CHART", dan full be ngang, ra hai vung.
+    if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_theo_hinh(img)):
+        la_ct, mo_ta = True, mo_ta + "; nen trang + canh day / alt-tag chart"
+    kn = (a.get("khai_niem") or {}).get("tu_khoa", "")
+    # Hang de con mat doi chieu: voi anh THUONG HIEU la hang cua chinh tam anh do,
+    # khong phai ten rieng dau tieu de. Tin "Qualcomm ... with Amazon" ma dua
+    # "Qualcomm" cho mot tam tru so Amazon thi chot "ten hang trong mo ta" khong
+    # bao gio nay, anh that cua Amazon bi vision danh rot (09/09/2026).
+    hang = (a.get("thuong_hieu") or {}).get("hang") or _ten_rieng_dau(tieu_de)
+    a["mo_ta"], a["lien_quan"] = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
+                                            thuong_hieu=a.get("thuong_hieu"))
+                                  if tieu_de else ("", None))
+    mat = luat_anh.dem_mat(a["goc"]) or 0
+    day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
+    goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
+    a.update({"w": w, "h": h, "ti_le": round(r, 2), "loai": "chart" if la_ct else "anh",
+              "do_chart": mo_ta, "mat": mat, "day_sang": round(day),
+              "goc_trai_sang": round(goc_trai), "canh_ngan": min(w, h),
+              "ngang": r >= luat_anh.NGANG_RO, "san": None, "dung": [], "ghi_chu": []})
+    san = wd / "san" / f"{a['ma']}.png"
+    if la_ct:
+        if a.get("xep_hang"):
+            # ANH XEP HANG GIU NGUYEN VEN, khong cat du cao bao nhieu: hang model
+            # da khoanh co the nam duoi 55% dai chup (do that: hang #9, #11 bi cat
+            # mat), va no la CHU THE cua tin chu khong phai anh minh hoa.
+            a["san"] = a["goc"]
+            a["ghi_chu"].append("bảng xếp hạng: giữ nguyên vẹn, dán full bề ngang")
+        elif r < luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE:
+            _luu_crop(img, san, "4:5", cy=0.35)           # chart cao: cat bot day
+            a["san"] = str(san)
+            a["ghi_chu"].append("chart cao, đã cắt bớt phần dưới về 4:5")
+        else:
+            a["san"] = a["goc"]                           # chart giu NGUYEN
+        a["dung"] = ["thân (chart, dán full bề ngang nguyên vẹn)"]
+        if a["ngang"]:
+            a["dung"].append("ghép dọc với một ảnh ngang cùng tone")
+        a["ghi_chu"].append("KHÔNG làm bìa")
+    else:
+        if a["ngang"]:
+            a["dung"] = ["ghép dọc với một ảnh ngang cùng tone"]
+            if h >= 700:
+                a["dung"].append("cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ")
+            else:
+                # Banner thap (vd 1900x524): cat doc 4:5 chi con ~420px roi phong
+                # len 1080 — mem nhoe (do thu 04/09). Chi con duong ghep.
+                a["ghi_chu"].append("quá thấp để cắt dọc, chỉ ghép")
+        else:
+            ten = "1:1" if r > 0.9 else "4:5"
+            _luu_crop(img, san, ten, cy=0.4 if r < 0.7 else 0.5)
+            a["san"] = str(san)
+            a["dung"] = ["thân"]
+            if not mat and goc_trai < 150:
+                a["dung"].insert(0, "bìa")
+    if a.get("commons"):
+        a["ghi_chu"].append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin — hợp bìa/slide bối cảnh")
+    if mat:
+        ten = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+", a.get("alt", "") or "")
+        if ten:
+            a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
+                                "chỉ dùng khi đúng người đó, khai \"nhan_vat\" y hệt")
+        else:
+            a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
+                                "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")
+            a["dung"] = [d for d in a["dung"] if d != "bìa"]
+    if a.get("lien_quan") is False:
+        a["dung"] = []
+        a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
+    if a["canh_ngan"] < luat_anh.CANH_NGAN_MIN:
+        a["ghi_chu"].append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
+    if day > luat_anh.DAY_SANG_MAX and not la_ct:
+        a["ghi_chu"].append("đáy sáng, chữ trắng hơi nhạt")
+    if a.get("khai_niem"):
+        import anh_khai_niem
+        anh_khai_niem.nhan_khai_niem(a)
+    if a.get("thuong_hieu"):
+        import anh_thuong_hieu
+        anh_thuong_hieu.nhan_thuong_hieu(a)
+    return a
+
+
+def _nhin_anh(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
+    """Phan loai + vision tung anh; anh XH khong hoi vision. Tra
+    (anh, dung_duoc, chua_nhin)."""
+    print("[vision] nhin tung anh, hoi co lien quan bai khong...", file=sys.stderr)
+    # Anh XH khong hoi vision (tham so tieu_de rong): no la anh do chinh engine chup
+    # tu trang xep hang, da biet chac lien quan — hoi chi ton them mot luot LLM roi
+    # ghi de ket qua ngay duoi. Van qua phan_loai de co do hinh hoc (w/h/ti_le/san).
+    # `phan_loai` chi doc/ghi vao chinh dict `a` va duong dan rieng cua no -- khong
+    # co state dung chung giua cac lan goi -- nen chay song song duoc (8-12 anh/bai,
+    # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
+    # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        anh = list(ex.map(lambda a: phan_loai(a, wd, "" if a.get("xep_hang")
+                                              else (nguon.get("tieu_de_en") or title)), anh))
+    for a in anh:
+        if a.get("xep_hang"):
+            a["mo_ta"] = a["alt"]
+            a["lien_quan"] = True
+            a["dung"] = ["HERO / BÌA (bảng xếp hạng, model đã khoanh — ảnh chính bắt buộc của tin xếp hạng)",
+                         "thân (chart)"]
+            a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG DÙNG" not in g and "KHÔNG làm bìa" not in g]
+            a["ghi_chu"].insert(0, "✅ ẢNH XẾP HẠNG do engine chụp từ nguồn — dùng làm ảnh chính")
+    dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
+    chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
+    print(f"[anh] {len(dung_duoc)} anh DUNG DUOC / {len(anh)} tai ve"
+          + (f"; CHUA NHIN duoc: {', '.join(chua_nhin)}" if chua_nhin else ""), file=sys.stderr)
+    return anh, dung_duoc, chua_nhin
