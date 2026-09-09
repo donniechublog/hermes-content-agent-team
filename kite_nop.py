@@ -36,6 +36,12 @@ DRAFTS = cb.DRAFTS
 # chay khi di qua nop — goi thang render_edu.py thi khong co cong nao.
 BAT_BUOC = {k: v["truong"] for k, v in render_edu.BAT_BUOC_KIND.items()}
 GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
+# Chi bat dang DAN NGUON ro rang ("theo nguồn", "nguồn:") — KHONG bat blunt
+# nhu caption/readmore ben duoi, vi standfirst la van xuoi tu do (dung o ca 5
+# kind) va co the hop le chua "nguồn" theo nghia thuong ("nguồn cung", "nguồn
+# lực") — blunt substring o day se bat nham y het loi 08/09/2026 da sua cho
+# title/eyebrow (Samsung/TSMC, Wafer).
+_RE_NGUON_QUY = re.compile(r"(theo\s+nguồn\b|\bnguồn\s*[:：])", re.IGNORECASE)
 
 
 def _kiem_hinh_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
@@ -229,6 +235,11 @@ def _giai_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
         trich_dan.append(rm.get("text"))
     if any(isinstance(v, str) and "nguồn" in v.lower() for v in trich_dan):
         loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
+    # `standfirst` khac caption/readmore.text o cho no la van xuoi tu do, nen
+    # dung mau hep hon (_RE_NGUON_QUY) thay vi blunt substring nhu tren.
+    sf = sl.get("standfirst")
+    if isinstance(sf, str) and _RE_NGUON_QUY.search(sf):
+        loi.append(f"slide {i}: dẫn nguồn ghi 'via', không ghi 'nguồn'")
     return s2
 
 
@@ -299,6 +310,14 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
 
     # So tren slide phai co trong tu lieu (canh bao) — Kite ve so bia la loi nang
     # nhat cua carousel kien thuc, ma truoc 06/09/2026 khong ai doi chieu.
+    # CO Y tinh lai tu `hinh` (= kb.hinh_that(m), da loc >= 800px va bo mat
+    # nguoi khong ro ai), KHONG doc thang m["chua_nhin"]: khoa do trong manifest
+    # tinh tren TOAN BO m["anh"] chua loc (chuan_bi/manifest.py), nen se ke ca
+    # anh nho <800px ma Kite khong bao gio dung duoc — doc thang no vao day se
+    # bao "vision chưa nhìn" cho mot anh khong the thanh candidate, dung loai
+    # canh bao gia da bi bat 08/09/2026 (b403ca4) o cong "nguon/via" ben tren.
+    # `da_nhin` cung tinh cung cach tu `hinh` (khong co khoa manifest tuong
+    # duong) nen hai tap phai chung mot vu tru moi so sanh dung.
     chua_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is None]
     if chua_nhin and not da_nhin:
         canh.append(f"vision chưa nhìn {', '.join(chua_nhin)} (router tắt/thiếu khoá) — "

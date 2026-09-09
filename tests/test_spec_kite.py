@@ -160,6 +160,28 @@ def test_dan_nguon_phai_ghi_via():
         assert _co(loi, "slide 4", "via"), loi
 
 
+def test_dan_nguon_bat_ca_dang_khong_co_theo():
+    """"Nguồn: X" (khong co "Theo" dau) van la dan nguon sai dinh dang."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du(); sl[3] = _statement(standfirst="Nguồn: Nvidia công bố hôm qua.")
+        _r, loi, _c = _chay(sl, _m(wd), wd)
+        assert _co(loi, "slide 4", "via"), loi
+
+
+def test_standfirst_noi_ve_nguon_cung_khong_bi_bat_nham():
+    """b403ca4 (08/09/2026) thu hep cong nay lai vi no da bat nham "Nguồn cung"/
+    "Khan hiếm nguồn cung" (cum tu thuong, chuoi cung ung) trong hai job Kite
+    doc lap cung ngay — nhung fix do KHONG co test bao ve, nen khi standfirst
+    duoc dua tro lai vao cong nay (test tren) phai chan lai dung false positive
+    do, khong chi chan lai lỗi that."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du(); sl[3] = _statement(standfirst="Khan hiếm nguồn cung chip toàn cầu.")
+        _r, loi, _c = _chay(sl, _m(wd), wd)
+        assert not _co(loi, "via"), loi
+
+
 def test_chu_dai_chi_canh_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
@@ -278,6 +300,22 @@ def test_hinh_chua_nhin_thi_chi_goi_y():
         _r, loi, canh = _chay(_du(), _m(wd, [_hinh(wd, lien_quan=None)]), wd)
         assert not _co(loi, "BẮT BUỘC"), loi
         assert _co(canh, "chưa nhìn", "H1"), canh
+
+
+def test_hinh_qua_nho_chua_nhin_khong_bi_bao_gia():
+    """kite_nop tinh "chua nhin" tu `hinh` (= kb.hinh_that(m), da loc >= 800px),
+    KHONG doc thang m["chua_nhin"] cap manifest (tinh tren TOAN BO anh, xem
+    chuan_bi/manifest.py) — anh <800px khong bao gio la candidate cua Kite nen
+    "chua nhin" cua no la nhieu, khong phai tin. Neu sau nay co ai "gon" lai
+    thanh doc thang khoa manifest thi test nay do ngay: NHO se bi bao gia."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        nho = _hinh(wd, ma="NHO", w=400, h=300, lien_quan=None)
+        # Gia lap dung khoa "chua_nhin" cap manifest nhu chuan_bi/manifest.py
+        # se ghi (tinh tren TOAN BO anh, khong loc kich thuoc) — neu kite_nop
+        # doc thang khoa nay thay vi tinh tu `hinh`, NHO se lot vao canh bao.
+        _r, loi, canh = _chay(_du(), _m(wd, [nho], chua_nhin=["NHO"]), wd)
+        assert not _co(canh, "chưa nhìn", "NHO"), canh
 
 
 def test_image_phai_la_ma_hinh_that_va_co_caption():
