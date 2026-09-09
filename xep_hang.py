@@ -26,10 +26,10 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import luat_anh                                              # noqa: E402
+import env_load                                              # noqa: E402
 
 DPR = 2
-UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+UA = env_load.UA_TRINH_DUYET        # mot ban duy nhat, xem env_load (A5)
 # Khung MOBILE — thu TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vao trang nao chup
 # thi cung hay duyet theo kich thuoc mobile, vi hinh luon dang o ratio 4:5").
 # 414px * DPR 3 = 1242px, gan khop kho the 1200px nen chu gan nhu khong bi co;

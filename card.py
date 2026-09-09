@@ -18,6 +18,7 @@ FG/BG của từng thương hiệu (`nen_chu.nguong_tuong_phan`), không còn m�
 số cố định dùng chung cho mọi bảng màu.
 """
 import argparse
+import functools
 import sys
 from pathlib import Path
 
@@ -180,8 +181,15 @@ TRAN_FRAME_R = 26                       # bo goc
 TRAN_FRAME_LW = 4                       # do day net
 
 
+@functools.lru_cache(maxsize=256)
 def _f(path, size, weight=None):
     """Nap font, dat do day neu font co truc bien thien.
+
+    CACHE (audit A5): `_fit_text`/`_fit_block` do chu bang cach thu tung co
+    `range(hi, lo-1, -2)` — moi buoc mot `ImageFont.truetype` doc lai tep TTF tu
+    dia, va moi the goi chung vai chuc lan. Ham thuan theo (path, size, weight)
+    nen cache duoc; da kiem khong cho nao doi font sau khi nhan (`set_variation_by_axes`
+    chi chay TRONG day, truoc khi tra ve).
 
     Truoc day ham nay dat cung [size, weight] vi chi phuc vu Inter, font co dung
     hai truc (opsz, wght) theo dung thu tu do. Oswald chi co MOT truc (Weight),

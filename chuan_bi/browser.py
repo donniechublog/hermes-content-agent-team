@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 import luat_anh
+import env_load
 from phien_browser import phien_hoac_moi
 
 from chuan_bi.chung import GNEWS, _mien
@@ -177,9 +178,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
     try:
         with phien_hoac_moi(phien) as ph:
             with ph.trang(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
-                          user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                                     "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                     "Chrome/124.0 Safari/537.36") as page:
+                          user_agent=env_load.UA_TRINH_DUYET) as page:
                 # 1) trang goc
                 if goc and goc.startswith("http") and GNEWS not in goc:
                     try:
