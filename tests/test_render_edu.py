@@ -126,6 +126,74 @@ def test_anh_gan_nguong_van_duoc_toi_toi_da():
         f"{max_toi}, con doc duoc chu — dung phai gan {re_.TOI_TOI_DA_MO}")
 
 
+# --------------------------------------------------------- mau_noi_bat / theme_gan_mau
+# Ong Chu 09/09/2026, xem bo GPT-Image-2.5 (anh bang xep hang mau xanh la +
+# vang, theme lai chon "rose" hong-tim): "hình thì tông green, yellow mà slide
+# thì toàn pink purple ko được liên quan lắm". Do that tren dung anh: mau noi
+# bat (76,217,111) xanh la — khop THEME "moss" (a=#7BE495, cung mau) hue_dist
+# 0.000, xa nhat voi "rose" (hue_dist 0.447). Theme phai chon theo mau ANH
+# THAT (khong doi duoc), khong theo chu de noi dung.
+def _anh_mot_mau(rgb, w=600, h=800):
+    from PIL import Image
+    d = tempfile.mkdtemp()
+    p = Path(d) / "mau.png"
+    Image.new("RGB", (w, h), rgb).save(p, "PNG")
+    return p
+
+
+def test_mau_noi_bat_doc_dung_mau_chu_dao():
+    import render_edu as re_
+    p = _anh_mot_mau((76, 217, 111))          # xanh la — trung mau bang Arena that
+    rgb = re_.mau_noi_bat(p)
+    assert rgb is not None
+    assert re_.theme_gan_mau(rgb) == "moss", f"mau {rgb} phai khop 'moss', duoc khac"
+
+
+def test_mau_noi_bat_bo_qua_anh_xam_trang_den():
+    """Anh khong co mau ro ret (den trang, xam) -> None, khong ep theme nao."""
+    import render_edu as re_
+    for rgb in [(255, 255, 255), (10, 10, 10), (140, 140, 140)]:
+        p = _anh_mot_mau(rgb)
+        assert re_.mau_noi_bat(p) is None, f"{rgb} phai la None (khong co mau ro)"
+    assert re_.theme_gan_mau(None) is None
+
+
+def test_theme_gan_mau_ca_5_theme_dung_huong():
+    """Moi theme phai la lua chon GAN NHAT cho dung mot mau dai dien cua no —
+    tranh dot bien lat nguoc bang tra cuu ma khong test nao bat duoc."""
+    import render_edu as re_
+    ca = {"orbit": (47, 212, 225), "ember": (255, 180, 84), "moss": (123, 228, 149),
+          "ink": (143, 179, 255), "rose": (255, 126, 182)}
+    for ten, rgb in ca.items():
+        assert re_.theme_gan_mau(rgb) == ten, f"{rgb} phai khop chinh theme {ten}"
+
+
+def test_chon_theme_tu_dong_uu_tien_khop_mau_khi_chua_ghi_theme():
+    """Spec KHONG ghi theme, bia dung anh mau xanh la ro ret -> tu chon 'moss',
+    khong xoay vong nhu truoc (truoc day chon theo lich su gan day, mu mau)."""
+    import render_edu as re_
+    p = _anh_mot_mau((76, 217, 111))
+    theme, hero = re_.chon_theme_tu_dong({"folio": "test"}, bia_anh=True, anh_mau=str(p))
+    assert theme == "moss", theme
+    assert hero is None                       # bia_anh=True luon bo hero
+
+
+def test_chon_theme_tu_dong_canh_bao_khi_theme_da_ghi_lech_mau():
+    """Spec DA ghi theme (vd Kite chon 'rose' theo chu de) nhung anh bia mau
+    xanh la ro ret -> CANH BAO ra stderr, KHONG tu doi (Kite/nguoi van co the
+    co ly do khac), nhung phai thay duoc de sua."""
+    import io
+    import contextlib
+    import render_edu as re_
+    p = _anh_mot_mau((76, 217, 111))
+    buf = io.StringIO()
+    with contextlib.redirect_stderr(buf):
+        theme, _hero = re_.chon_theme_tu_dong(
+            {"folio": "test", "theme": "rose"}, bia_anh=True, anh_mau=str(p))
+    assert theme == "rose", "theme da ghi trong spec khong bi tu doi"
+    assert "LECH MAU" in buf.getvalue(), f"khong canh bao lech mau: {buf.getvalue()!r}"
+
+
 if __name__ == "__main__":
     ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
     loi = 0

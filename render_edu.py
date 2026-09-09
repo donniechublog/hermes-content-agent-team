@@ -1330,13 +1330,70 @@ def _ghi_theme(out, theme, hero):
         pass
 
 
-def chon_theme_tu_dong(spec, bia_anh=False):
+NGUONG_HUE_LECH_MAU = 0.28    # >nguong nay (vong tron hue, 0..0.5) la LECH TONG
+
+
+def mau_noi_bat(path) -> tuple | None:
+    """Mau NOI BAT nhat trong mot anh that (bia/hero) — hue HSV pho bien nhat
+    trong vung du bao hoa, bo qua nen trang/den/xam. None neu anh khong co mau
+    ro net nao (vd anh den-trang, hoac mau noi bat khong chiem du ty le de
+    tin cay — < 5% so pixel da loc).
+
+    Dung de chon THEME khop mau voi anh that: khac vector Kite tu ve theo mau
+    theme, anh that (chup man hinh bang xep hang, anh bao...) mau CO SAN,
+    khong doi duoc — theme phai chay theo anh, khong phai nguoc lai."""
+    from PIL import Image
+    import colorsys
+    try:
+        with Image.open(path) as im:
+            im = im.convert("RGB").resize((80, 80))
+            n = im.width * im.height
+            dem: dict = {}
+            for r, g, b in im.getdata():
+                h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                if s < 0.35 or v < 0.25 or v > 0.97:
+                    continue                  # xam/qua toi/qua sang -> khong tinh la "mau"
+                bucket = round(h * 24)        # 24 khoang ~15 do
+                dem[bucket] = dem.get(bucket, 0) + 1
+    except (OSError, ValueError):
+        return None
+    if not dem:
+        return None
+    bucket, dinh = max(dem.items(), key=lambda kv: kv[1])
+    if dinh / n < 0.05:
+        return None
+    r, g, b = colorsys.hsv_to_rgb(bucket / 24, 0.65, 0.85)
+    return (round(r * 255), round(g * 255), round(b * 255))
+
+
+def theme_gan_mau(rgb) -> str | None:
+    """Ten THEME co mau `a` (accent chinh) GAN NHAT voi `rgb` theo khoang cach
+    hue tren vong tron mau. None neu rgb la None (anh khong co mau ro ret)."""
+    if rgb is None:
+        return None
+    import colorsys
+    h0, _, _ = colorsys.rgb_to_hsv(*(c / 255 for c in rgb))
+    def lech(ten):
+        a = THEMES[ten]["a"].lstrip("#")
+        r, g, b = (int(a[i:i + 2], 16) for i in (0, 2, 4))
+        h1, _, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        d = abs(h0 - h1)
+        return min(d, 1 - d)
+    return min(THEMES, key=lech)
+
+
+def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
     """Spec khong ghi theme/hero -> chon cai IT DUNG NHAT gan day, va khong bao
     gio trung voi bo vua dung truoc. Ghi ro thi ton trong, nhung neu trung
     het ca theme lan hero voi bo ngay truoc thi bao de Kite biet (khong chan:
     Ong Chu co the co y muon mot loat cung tone).
 
-    `bia_anh`: bia dung anh that -> ca bo khong ve hero nao, tra hero=None."""
+    `bia_anh`: bia dung anh that -> ca bo khong ve hero nao, tra hero=None.
+    `anh_mau`: duong dan anh bia (khi bia_anh) — mau NOI BAT cua no, neu ro
+    ret, se CHON THEME KHOP MAU thay vi xoay vong (khi spec chua ghi theme),
+    va CANH BAO neu spec DA ghi mot theme lech mau xa (Ong Chu 09/09/2026:
+    "hình thì tông green, yellow mà slide thì toàn pink purple ko được liên
+    quan lắm" — anh that mau CO SAN, theme phai chay theo no)."""
     gan = _theme_gan_day()
     theme, hero = spec.get("theme"), spec.get("hero")
     if theme and theme not in THEMES:
@@ -1357,8 +1414,16 @@ def chon_theme_tu_dong(spec, bia_anh=False):
             return chua[xoay % len(chua)]
         return sorted(ung_vien, key=lambda x: -thu_tu[x])[0]
 
+    rgb = mau_noi_bat(anh_mau) if (bia_anh and anh_mau) else None
+    theme_khop_mau = theme_gan_mau(rgb)
     if not theme:
-        theme = it_dung_nhat(list(THEMES), [t for t, _ in gan], seed)
+        theme = theme_khop_mau or it_dung_nhat(list(THEMES), [t for t, _ in gan], seed)
+    elif theme_khop_mau and theme != theme_khop_mau:
+        r, g, b = rgb
+        print(f"CANH BAO: theme={theme} LECH MAU voi anh bia (mau noi bat "
+              f"#{r:02X}{g:02X}{b:02X}, hop voi theme={theme_khop_mau} hon) — "
+              "anh that mau co san, doi theme cho khop thay vi doi anh.",
+              file=sys.stderr)
     if bia_anh:
         hero = None
     elif not hero:
@@ -1440,7 +1505,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
     # van ghi hero vao nhat ky la lan sau no tranh mot hero chua tung xuat hien,
     # xoay sai. Ghi None cho dung.
     bia_anh = bool(slides and slides[0].get("image"))
-    theme, hero = chon_theme_tu_dong(spec, bia_anh)
+    theme, hero = chon_theme_tu_dong(spec, bia_anh, slides[0].get("image") if bia_anh else None)
     th = dict(THEMES[theme], hero=hero)
     print(f"theme={theme} hero=" + (hero or "- (bia dung anh that)"))
 
