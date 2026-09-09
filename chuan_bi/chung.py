@@ -11,7 +11,11 @@ from pathlib import Path
 import env_load
 
 
-ROOT = Path(__file__).resolve().parent
+# BOC (09/09/2026): copy nguyen van tu anh_chuan_bi.py o GOC du an, nhung
+# tep nay nam trong chuan_bi/ — mot cap .parent la khong du, DRAFTS thanh
+# chuan_bi/drafts (rong) thay vi drafts/ that. kite_nop.py bao "Khong thay
+# drafts/....meta.json" du tep do TON TAI, chi sai duong dan.
+ROOT = Path(__file__).resolve().parent.parent
 
 
 DRAFTS = ROOT / "drafts"
