@@ -134,13 +134,19 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     a["mo_ta"], a["lien_quan"] = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
                                             thuong_hieu=a.get("thuong_hieu"))
                                   if tieu_de else ("", None))
-    mat = luat_anh.dem_mat(a["goc"]) or 0
+    # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
+    # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua
+    # nhau tren mot detector lam 80-95% anh tra None, tat ca thanh "khong mat".
+    mat_tho = luat_anh.dem_mat(a["goc"])
+    mat = mat_tho or 0
     day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
     goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
     a.update({"w": w, "h": h, "ti_le": round(r, 2), "loai": "chart" if la_ct else "anh",
               "do_chart": mo_ta, "mat": mat, "day_sang": round(day),
               "goc_trai_sang": round(goc_trai), "canh_ngan": min(w, h),
               "ngang": r >= luat_anh.NGANG_RO, "san": None, "dung": [], "ghi_chu": []})
+    if mat_tho is None:
+        a["ghi_chu"].append("⚠️ cổng mặt người KHÔNG chạy (thiếu cv2/model hoặc lỗi) — chưa kiểm mặt")
     san = wd / "san" / f"{a['ma']}.png"
     if la_ct:
         if a.get("xep_hang"):

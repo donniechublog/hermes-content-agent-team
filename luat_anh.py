@@ -28,6 +28,7 @@ tu chon cong nao hop voi khung cua minh roi gop lai. Khong ham nao ve gi, khong
 ham nao biet den canvas — de vai nao cung goi duoc.
 """
 import re
+import sys
 import threading
 from pathlib import Path
 
@@ -488,7 +489,16 @@ def _yunet():
 
 
 def dem_mat(path):
-    """So mat nguoi trong anh. None neu khong chay duoc (thieu cv2/model)."""
+    """So mat nguoi trong anh. None neu khong chay duoc (thieu cv2/model).
+
+    setInputSize + detect PHAI nam trong _YUNET_LOCK (audit lượt 2, B-r2-1):
+    khoa o _yunet() chi bao ve luc NAP model, con mot FaceDetectorYN dung chung
+    thi khong thread-safe khi DUNG — luong A vua setInputSize((w1,h1)) thi luong
+    B setInputSize((w2,h2)) roi A detect() voi kich thuoc sai -> cv2 nem -> None.
+    Do duoc voi 24 anh khac co, 4 luong: tuan tu 0/24 None, song song 22-23/24;
+    nhin.py lam `or 0` nen 80-95% anh bi coi la KHONG co mat — cong mat nguoi
+    (LUAT_ANH §6) tat cam. detect() nhanh (vai ms), khong can song song.
+    """
     det = _yunet()
     if det is None:
         return None
@@ -498,10 +508,12 @@ def dem_mat(path):
         if im is None:
             return None
         h, w = im.shape[:2]
-        det.setInputSize((w, h))
-        _n, res = det.detect(im)
+        with _YUNET_LOCK:
+            det.setInputSize((w, h))
+            _n, res = det.detect(im)
         return 0 if res is None else len(res)
-    except Exception:
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[mat] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return None
 
 
