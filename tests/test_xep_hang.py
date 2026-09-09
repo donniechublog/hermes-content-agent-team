@@ -166,6 +166,25 @@ def test_kich_ban_that_gpt_image_2_5_lay_ca_hai_bang():
     assert thu2 == ["arena-code"], f"tin code bi keo them nguon thuong khac: {thu2}"
 
 
+def test_ca_ba_bang_anh_cua_gpt_image_2_5():
+    """Ca that dung tieu de draft (09/09/2026): tweet cong bo cua @arena xep
+    gpt-image-2.5-sunburst #1 CA BA bang — Text-to-Image, Image Edit, Multi-Image
+    Edit — trong cung mot tweet. Mo phong voi tran TOI_DA_XH nhu vong lap that."""
+    ds = xh.goi_y_nguon(
+        "gpt-image-2.5-sunburst mới vào arena, giữ #1 cả bảng tạo ảnh lẫn sửa ảnh",
+        "https://arena.ai/leaderboard/text-to-image", "", "")
+    da_chup_thuong, thu = False, []
+    for n in ds:
+        if len(thu) >= xh.TOI_DA_XH:
+            break
+        if xh._bo_qua_nguon(n, da_chup_thuong):
+            continue
+        thu.append(n["ma"])
+        if not n.get("doc_lap"):
+            da_chup_thuong = True
+    assert thu == ["arena-t2i", "arena-image-edit", "arena-multi-image-edit"], thu
+
+
 def test_khong_doi_hop_dong_tim_va_chup_cu():
     """`tim_va_chup` (so, khong "_nhieu") phai con nguyen — `_xep_hang_boi_canh`
     trong anh_chuan_bi.py va CLI main() van goi ham nay, doi dung MOT dict."""

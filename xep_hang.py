@@ -78,6 +78,15 @@ NGUON = [
     {"ma": "arena-image-edit", "site": "ARENA.AI", "bang": "Image Edit Arena",
      "url": "https://arena.ai/leaderboard/image-edit", "mien": r"arena\.ai|lmarena",
      "doc_lap": True},
+    # Them 09/09/2026 cung dot: tweet cong bo cua chinh @arena (status
+    # 2097400515546255754) dan lai DUNG bang thu ba nay — "sua NHIEU anh cung
+    # luc" khac han "sua MOT anh" (arena-image-edit), nen cung la nang luc rieng.
+    # URL doc thang tu chu thich nguon in duoi tam anh trong tweet
+    # ("ARENA.AI/LEADERBOARD/IMAGE-EDIT/MULTI-IMAGE-EDIT"), xac nhan lai bang
+    # WebFetch: 42 model, gpt-image-2.5-sunburst #1 diem 1535 — khop anh.
+    {"ma": "arena-multi-image-edit", "site": "ARENA.AI", "bang": "Multi-Image Edit Arena",
+     "url": "https://arena.ai/leaderboard/image-edit/multi-image-edit", "mien": r"arena\.ai|lmarena",
+     "doc_lap": True},
     {"ma": "arena-t2v",      "site": "ARENA.AI",  "bang": "Text-to-Video Arena",
      "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena"},
     {"ma": "arena-search",   "site": "ARENA.AI",  "bang": "Search Arena",
@@ -148,9 +157,11 @@ CHU_DE = [
     # "sửa/chỉnh sửa ảnh" ưu tiên bảng EDIT; "image" trần (đa số tin tạo ảnh)
     # vẫn xét cả hai — một model tạo ảnh mạnh thường lên cả hai bảng (09/09/2026:
     # GPT-Image-2.5 #1&#2 CẢ Text-to-Image lẫn Image Edit Arena).
+    (r"multi-image edit|nhiều ảnh|multi image", ["arena-multi-image-edit"]),
     (r"chỉnh sửa ảnh|sửa ảnh (bằng|với) ai|image edit(?:ing)?|photo edit(?:ing)?",
-     ["arena-image-edit"]),
-    (r"\bimage\b|text-to-image|tạo ảnh|hình ảnh", ["arena-t2i", "arena-image-edit"]),
+     ["arena-image-edit", "arena-multi-image-edit"]),
+    (r"\bimage\b|text-to-image|tạo ảnh|hình ảnh",
+     ["arena-t2i", "arena-image-edit", "arena-multi-image-edit"]),
     (r"\bvision\b|thị giác|multimodal|đa phương thức", ["arena-vision"]),
     (r"webdev|frontend|front-end|\bcode\b|coding|lập trình|swe[-_ ]?bench",
      ["arena-code", "swebench", "aider", "livecodebench"]),
