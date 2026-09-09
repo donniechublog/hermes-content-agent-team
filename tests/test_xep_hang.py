@@ -195,6 +195,16 @@ def test_khong_doi_hop_dong_tim_va_chup_cu():
     assert "return kq_cuoi" in src and "break" in src, "tim_va_chup khong con dung o thanh cong dau tien"
 
 
+def test_hang_tu_tieu_de_khong_lay_sang_bang_doc_lap():
+    """R-r2-5: hang tach tu tieu de la hang tren bang CHINH; bang doc lap
+    (do nang luc khac, nguon svg tra hang=None) khong duoc muon "#1" do."""
+    goi_y = 1
+    assert xh._hang_cua({"hang": 3}, {"doc_lap": True}, goi_y) == 3, "hang doc duoc tu bang thi giu"
+    assert xh._hang_cua({"hang": None}, {"doc_lap": False}, goi_y) == 1, "bang chinh muon hang tieu de"
+    assert xh._hang_cua({"hang": None}, {"doc_lap": True}, goi_y) is None, "bang doc lap KHONG muon"
+    assert xh._hang_cua({}, {}, None) is None
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

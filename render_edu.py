@@ -1361,9 +1361,16 @@ def mau_noi_bat(path) -> tuple | None:
             dem: dict = {}
             for r, g, b in im.getdata():
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                if s < 0.35 or v < 0.25 or v > 0.97:
-                    continue                  # xam/qua toi/qua sang -> khong tinh la "mau"
-                bucket = round(h * 24)        # 24 khoang ~15 do
+                # s < 0.35 da loai trang/xam; KHONG loai them v > 0.97 — do la
+                # loai moi mau bao hoa thuan (do (255,0,0), vang, chinh accent
+                # #FFB454 cua theme ember), tuc anh chart mau tuoi ra None roi
+                # roi ve xoay vong mu mau (audit lượt 2, R-r2-1).
+                if s < 0.35 or v < 0.25:
+                    continue                  # xam/qua toi -> khong tinh la "mau"
+                # 24 khoang ~15 do; % 24 vi round(h*24) cho 0..24 ma 0 va 24 la
+                # CUNG mau do (vong tron hue) — khong gop thi do bi chia doi hai
+                # bucket, thua mau khac it hon (R-r2-2).
+                bucket = round(h * 24) % 24
                 dem[bucket] = dem.get(bucket, 0) + 1
     except (OSError, ValueError):
         return None
@@ -1376,20 +1383,23 @@ def mau_noi_bat(path) -> tuple | None:
     return (round(r * 255), round(g * 255), round(b * 255))
 
 
+def lech_hue(rgb, ten: str) -> float:
+    """Khoang cach hue (vong tron, 0..0.5) giua `rgb` va accent chinh cua theme."""
+    import colorsys
+    h0, _, _ = colorsys.rgb_to_hsv(*(c / 255 for c in rgb))
+    a = THEMES[ten]["a"].lstrip("#")
+    r, g, b = (int(a[i:i + 2], 16) for i in (0, 2, 4))
+    h1, _, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+    d = abs(h0 - h1)
+    return min(d, 1 - d)
+
+
 def theme_gan_mau(rgb) -> str | None:
     """Ten THEME co mau `a` (accent chinh) GAN NHAT voi `rgb` theo khoang cach
     hue tren vong tron mau. None neu rgb la None (anh khong co mau ro ret)."""
     if rgb is None:
         return None
-    import colorsys
-    h0, _, _ = colorsys.rgb_to_hsv(*(c / 255 for c in rgb))
-    def lech(ten):
-        a = THEMES[ten]["a"].lstrip("#")
-        r, g, b = (int(a[i:i + 2], 16) for i in (0, 2, 4))
-        h1, _, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-        d = abs(h0 - h1)
-        return min(d, 1 - d)
-    return min(THEMES, key=lech)
+    return min(THEMES, key=lambda ten: lech_hue(rgb, ten))
 
 
 def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
@@ -1428,7 +1438,10 @@ def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
     theme_khop_mau = theme_gan_mau(rgb)
     if not theme:
         theme = theme_khop_mau or it_dung_nhat(list(THEMES), [t for t, _ in gan], seed)
-    elif theme_khop_mau and theme != theme_khop_mau:
+    elif theme_khop_mau and theme != theme_khop_mau and lech_hue(rgb, theme) > NGUONG_HUE_LECH_MAU:
+        # R-r2-3: chi bao khi theme DA CHON lech tong ro (qua nguong), khong
+        # phai moi khi no khac theme gan nhat — moss (0.37) vs orbit (0.51)
+        # lech 0,08 la cung tong, bao la nhieu.
         r, g, b = rgb
         print(f"CANH BAO: theme={theme} LECH MAU voi anh bia (mau noi bat "
               f"#{r:02X}{g:02X}{b:02X}, hop voi theme={theme_khop_mau} hon) — "

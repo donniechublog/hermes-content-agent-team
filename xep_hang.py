@@ -1080,6 +1080,19 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
 TOI_DA_XH = 3      # tran so anh xep hang lay cho MOT tin (cac nguon doc_lap)
 
 
+def _hang_cua(kq: dict, n: dict, hang_goi_y):
+    """Hang ghi vao alt/manifest cho MOT anh bang xep hang.
+
+    `hang_goi_y` la hang tach tu TIEU DE tin — hang tren MOT bang (bang chinh,
+    duoc nhac). Truoc audit lượt 2 (R-r2-5) no lam fallback cho MOI bang: nguon
+    kieu svg luon tra hang=None nen XH2/XH3 (bang doc lap, do nang luc khac)
+    mang "#1" cua bang khac vao alt — dung loi "khoanh sai hang" ma chuoi commit
+    nhieu bang muon tranh. Chi bang chinh moi duoc muon hang tu tieu de."""
+    if kq.get("hang"):
+        return kq["hang"]
+    return None if n.get("doc_lap") else hang_goi_y
+
+
 def _bo_qua_nguon(n: dict, da_chup_thuong: bool) -> bool:
     """Ham THUAN: co bo qua nguon `n` khong, khi DA co it nhat mot anh "thuong"?
 
@@ -1142,7 +1155,7 @@ def tim_va_chup_nhieu(models: list, nguon_ds: list, out_dir: Path, brand: str = 
             in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "
                    f"({kq['kieu']}, {im.width}x{im.height}) — {kq['dong'][:70]}")
             ket_qua.append({"tep": str(out), "kieu": kq["kieu"], "nguon": n["ma"], "site": n["site"],
-                            "bang": n["bang"], "hang": kq.get("hang") or hang_goi_y, "model": kq["model"],
+                            "bang": n["bang"], "hang": _hang_cua(kq, n, hang_goi_y), "model": kq["model"],
                             "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None,
                             "duoc_nhac": bool(n.get("duoc_nhac", True))})
             if not n.get("doc_lap"):

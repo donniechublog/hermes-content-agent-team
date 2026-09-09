@@ -24,6 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import render_edu as re_                                      # noqa: E402
 
 TH = dict(bg="#171A21", panel="#212530", line="#333846",
           a="#2FD4E1", b="#8E86F0", stand="#BFC5CF")
@@ -192,6 +193,49 @@ def test_chon_theme_tu_dong_canh_bao_khi_theme_da_ghi_lech_mau():
             {"folio": "test", "theme": "rose"}, bia_anh=True, anh_mau=str(p))
     assert theme == "rose", "theme da ghi trong spec khong bi tu doi"
     assert "LECH MAU" in buf.getvalue(), f"khong canh bao lech mau: {buf.getvalue()!r}"
+
+
+def _anh_mau(t, ten, ve):
+    """Anh 100x100, `ve(x, y) -> (r, g, b)`."""
+    from PIL import Image
+    im = Image.new("RGB", (100, 100))
+    px = im.load()
+    for y in range(100):
+        for x in range(100):
+            px[x, y] = ve(x, y)
+    p = t / f"{ten}.png"
+    im.save(p)
+    return str(p)
+
+
+def test_mau_bao_hoa_thuan_khong_bi_loai():
+    """R-r2-1: `v > 0.97` tung loai MOI mau bao hoa thuan — do (255,0,0), vang, va
+    chinh accent #FFB454 cua theme ember — nen anh chart mau tuoi tra None."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        assert re_.mau_noi_bat(_anh_mau(t, "do", lambda x, y: (255, 0, 0))) is not None
+        assert re_.mau_noi_bat(_anh_mau(t, "ember", lambda x, y: (255, 180, 84))) is not None
+        assert re_.mau_noi_bat(_anh_mau(t, "trang", lambda x, y: (250, 250, 250))) is None, "trang van phai bi loai"
+
+
+def test_hue_do_hai_ben_diem_0_gop_thanh_mot():
+    """R-r2-2: hue 0.01 va 0.99 la CUNG mau do; round(h*24) cho 0 va 24 — khong
+    gop thi anh 60% do / 40% xanh chon theme XANH."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        p = _anh_mau(t, "do60", lambda x, y: (230, 30, 40) if x < 30 else ((230, 30, 20) if x < 60 else (40, 60, 230)))
+        rgb = re_.mau_noi_bat(p)
+        assert rgb is not None and rgb[0] > rgb[2], f"mau noi bat phai la DO, ra {rgb}"
+
+
+def test_canh_bao_lech_mau_chi_khi_qua_nguong():
+    """R-r2-3: NGUONG_HUE_LECH_MAU tung khai bao ma khong dung."""
+    gan = re_.theme_gan_mau((0, 200, 180))
+    assert re_.lech_hue((0, 200, 180), gan) <= re_.NGUONG_HUE_LECH_MAU
+    xa = max(re_.THEMES, key=lambda ten: re_.lech_hue((0, 200, 180), ten))
+    assert re_.lech_hue((0, 200, 180), xa) > re_.NGUONG_HUE_LECH_MAU, "phai co theme lech qua nguong de test co nghia"
 
 
 if __name__ == "__main__":
