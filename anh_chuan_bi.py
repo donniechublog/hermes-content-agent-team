@@ -1590,8 +1590,9 @@ def _route_thieu_anh(draft_id: str, m: dict) -> None:
         return
     ten = {"designer": "Ethan", "carousel": "Dre"}.get(vai, vai)
     tieu = m.get("title", draft_id)
-    import approve_service as AS
-    _, khong_kite = AS.chuan_assignee("carousel-edu")
+    from duyet_giao_viec import chuan_assignee
+    from duyet_bai import tao_task_kite
+    _, khong_kite = chuan_assignee("carousel-edu")
     if khong_kite:
         # Brand nay chua co Kite (dcgr 05/09/2026). Noi thang, dung hua chuyen.
         kb = {"inline_keyboard": [[{"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id}]]}
@@ -1605,7 +1606,7 @@ def _route_thieu_anh(draft_id: str, m: dict) -> None:
             m["hoi_kite"] = True
         return
     if so == 0:
-        rid, loi = AS.tao_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
+        rid, loi = tao_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
         if loi:
             _tg_gui(vai, f"🖼 <b>{tieu}</b>: 0 ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
             return

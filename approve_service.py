@@ -21,10 +21,8 @@ Tu 06/09/2026 tep nay CHI con vong poll + dieu phoi tin nhan (handle_message) + 
   duyet_bai.py       nut Duyet/Bo/Lam lai, chuyen Kite, dang kenh, day hang duyet
   duyet_chat.py      chat theo topic: FIFO moi vai + semaphore
   duyet_lenh.py      lenh slash /bai /vai /hd
-Moi ten cu (ke ca ten gach duoi) van import duoc tu day — anh_chuan_bi va cac
-kich ban thu khong phai doi. Trang thai dung chung (khoa, dict) la CUNG mot doi
-tuong o moi module vi `from X import Y` sao chep tham chieu; khong module nao
-gan lai bien toan cuc (da grep `global`), nen sao chep la an toan.
+Khong con re-export names tu day (sua 09/09/2026): anh_chuan_bi va cac kich ban
+thu goi duyet_* truc tiep neu can.
 """
 import json
 import os
@@ -41,23 +39,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import ghi_log                                              # noqa: E402
 
-from duyet_co_so import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
-    API, BRAND, DRAFTS, HERMES_HOME, HERMES_PY, OFFSET, ONG_CHU_IDS, ROOT, STATE_DIR, TELEGRAM_INCOMING, _KHOA_DRAFT, _KHOA_KHOA_DRAFT, _TEN_BRAND, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, load_secrets, log, rut,
+from duyet_co_so import (  # noqa: E402
+    DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _chay_nen, _ghi_json, _reply_that, call, la_ong_chu, load_secrets, log, rut,
 )
-from duyet_giao_viec import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
-    BANG_DEN_ASSIGNEE, BANG_DEN_BRANDS, BANG_DEN_NHAC, DA_BAO_TIEN_DO, KANBAN_DB, MAC_DINH_ANH, MAC_DINH_VIET, NHAN_CHUAN, SLUG_CU, TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_ANH, VAI_CAROUSEL, VAI_EDU, _TEN_HIEN, _bang_den_ghi, _bang_den_root, _bao_nhan_viec, _tom_tat_run, _trang_thai_task, _xong_ma_khong_giao, bao_tien_do_kanban, chuan_assignee, chuan_nhan, kanban_create, vai_cua_topic,
+from duyet_giao_viec import (  # noqa: E402
+    MAC_DINH_VIET, bao_tien_do_kanban, vai_cua_topic, _nhan_ly_do_lam_lai,
 )
-from duyet_chon_tin import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
-    MANIFEST_THEO_TOPIC, _KHOA_KHOA_MANIFEST, _KHOA_MANIFEST, _draft_id, _khoa_manifest, _la_reply_bao_cao, _xu_ly_chon, create_pair, doc_lenh_chon, latest_manifest, slugify, write_meta,
+from duyet_chon_tin import (  # noqa: E402
+    MANIFEST_THEO_TOPIC, _KHOA_MANIFEST, _draft_id, _khoa_manifest, _la_reply_bao_cao, doc_lenh_chon, _xu_ly_chon,
 )
-from duyet_bai import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
-    CAPTION_LIMIT, LAM_LAI_CHO, LAM_LAI_HAN, _KHOA_LAM_LAI, _cho_trong_topic, _dang_nen, _giao_het_han, _giao_lam_lai, _lam_lai_het_han, _nap_lam_lai_cho, _nhan_ly_do_lam_lai, _qua_han, _send_media_group, _sua_tin_go_nut, _tach_ly_do_lam_lai, _xu_ly_ly_do_lam_lai, _xu_ly_nut, draft_push, handle_callback, handle_img_approval, keyboard, mark_draft, publish, tao_task_kite,
+from duyet_bai import (  # noqa: E402
+    LAM_LAI_CHO, LAM_LAI_HAN, _KHOA_LAM_LAI, _giao_lam_lai, _lam_lai_het_han, _nap_lam_lai_cho, _send_media_group, _tach_ly_do_lam_lai, _xu_ly_ly_do_lam_lai, _xu_ly_nut, draft_push, keyboard, mark_draft, publish, _sua_tin_go_nut, tao_task_kite, handle_callback, handle_img_approval,
 )
-from duyet_chat import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
-    VAI_CHAT_LAM_VIEC, _CHO_CHAT, _DANG_CHAY, _HANG_PHIEN, _HangFIFO, _KHOA_DANG_CHAY, _KHOA_HANG_PHIEN, _SO_SONG_SONG, _ai_dang_chay, _bo_cong_cu_chat, _chat_co_khoa, _hang_cua, boi_canh_vai, handle_chat,
+from duyet_chat import (  # noqa: E402
+    handle_chat,
 )
-from duyet_lenh import (  # noqa: E402,F401 — re-export: moi ten cu van goi duoc qua approve_service.*
-    DAT_BAI_SO, LENH_HELP, _HOST_CAM, _KHOA_DAT_BAI, _chuan_hoa_url, _doc_trang, _lenh_bai, _url_hop_le, handle_command,
+from duyet_lenh import (  # noqa: E402
+    handle_command,
 )
 
 
