@@ -10,6 +10,7 @@ from pathlib import Path
 import httpx
 
 import env_load
+import schema
 
 from chuan_bi.chung import DRAFTS, GNEWS, _doc_json, _ghi_json
 
@@ -55,7 +56,17 @@ def nap_nguon(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
             link_goc = that
             if meta.get("source_url") != that:
                 meta["source_url"] = that
-                _ghi_json(DRAFTS / f"{draft_id}.meta.json", meta)
+                # TRON vao ban TREN DIA hien tai, khong ghi de nguyen `meta` (co
+                # the da cu di so voi luc goi ham nay — pipeline chay lau, va
+                # `.meta.json` la tep BA TIEN TRINH cung ghi khong khoa chung:
+                # approve_service, engine nen, va bang_den cua hermes ghi
+                # `root_task` rieng, xem docstring env_load.ghi_json). Ghi de ca
+                # dict y het loi hop_nhat_meta da sua cho duyet_chon_tin.py —
+                # ghi de mat `root_task` neu bang_den vua ghi xong trong luc
+                # tien trinh nay con dang giai ma Google News.
+                p_meta = DRAFTS / f"{draft_id}.meta.json"
+                _ghi_json(p_meta, schema.hop_nhat_meta(
+                    _doc_json(p_meta, {}), {"source_url": that}))
     # Tieu de TIENG ANH cua bai that: tin cua Vera/Nova mang tieu de tieng Viet,
     # tim Google News/RSS bang tieu de do ra rong. Lay <title>/og:title cua trang
     # goc mot lan, ghi vao nguon json de anh_bai/tu_lieu tim bao khac bang no.
