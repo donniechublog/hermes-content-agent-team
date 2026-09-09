@@ -117,6 +117,49 @@ def draft_push(token, group, draft_id, thread_id=None):
 
 CAPTION_LIMIT = 1024      # gioi han caption cua sendPhoto / sendMediaGroup
 
+# Cac dau "phan nay CUA DRAFT DA LEN CHANNEL ROI", ghi vao draft NGAY khi
+# Telegram tra ok — truoc moi viec khac. Moi chan cua `publish` mot dau:
+#   channel_album_mid — album sendMediaGroup   (co tu 06/09/2026)
+#   channel_anh_mid   — anh don sendPhoto
+#   channel_chu_mid   — phan CHU (caption dai tach rieng, hoac bai chi co chu)
+# Vi sao phai co ca ba: tien trinh chet GIUA `publish()` va
+# `mark_draft("published")` thi bai ket o "publishing", buoc cuu ha ve
+# publish_failed va moi bam Duyet lai. Truoc 09/09/2026 chi album co dau, nen
+# bai anh don / bai chi co chu se len channel LAN THU HAI — doc gia thay hai
+# bai giong het nhau, dung thu hong README goi la te nhat.
+#
+# Con thieu (E5 chua xong): buoc cuu `_cuu_bai_ket_publishing` trong
+# approve_service phai DOC cac dau nay — co dau tuc la da len channel that, nen
+# danh dau "published" thay vi ha ve "publish_failed" roi moi bam Duyet lai.
+
+
+def _ghi_dau(p_draft, d, khoa, mid):
+    """Ghi mot dau "da len channel" vao draft NGAY khi
+    Telegram tra ok, TRUOC moi viec khac — best-effort, khong bao gio nem: dang
+    duoc roi ma ghi dau hong thi van la dang duoc."""
+    try:
+        d[khoa] = mid or True
+        _ghi_json(p_draft, d)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[publish] khong ghi duoc {khoa}: {e}", file=sys.stderr)
+
+
+def _chu_mot_lan(token, channel, caption, p_draft, d, draft_id):
+    """Gui phan CHU len channel dung MOT lan cho ca doi draft.
+
+    Ba chan cua `publish` deu ket thuc bang phan chu (sau album, sau anh don,
+    hoac bai chi co chu) — gom mot cho de khong chan nao quen dau."""
+    if d.get("channel_chu_mid"):
+        print(f"[publish] phan chu cua {draft_id} da len channel truoc do "
+              f"(mid={d['channel_chu_mid']}) — khong gui lai", file=sys.stderr)
+        return {"ok": True}
+    res = _gui_chu(token, channel, caption)
+    if isinstance(res, dict) and res.get("ok"):
+        _ghi_dau(p_draft, d, "channel_chu_mid",
+                 (res.get("result") or {}).get("message_id"))
+    return res
+
+
 def publish(token, channel, draft_id):
     """Dang draft len channel.
 
@@ -142,7 +185,8 @@ def publish(token, channel, draft_id):
         print(f"[publish] album cua {draft_id} da len channel truoc do "
               f"(mid={d['channel_album_mid']}) — chi gui lai phan chu",
               file=sys.stderr)
-        return _gui_chu(token, channel, caption) if long_caption else {"ok": True}
+        return (_chu_mot_lan(token, channel, caption, p_draft, d, draft_id)
+                if long_caption else {"ok": True})
 
     if images:
         # Anh co the la URL (teaser lay tu bai goc) HOAC tep cuc bo (the do vai dung anh
@@ -172,19 +216,21 @@ def publish(token, channel, draft_id):
         if res.get("ok"):
             # Ghi NGAY, truoc khi gui tin chu: buoc sau hong thi lan bam Duyet
             # ke tiep phai biet album da len roi (xem ghi chu o dau ham).
-            try:
-                mid = (res.get("result") or [{}])[0].get("message_id")
-                d["channel_album_mid"] = mid or True
-                _ghi_json(p_draft, d)
-            except Exception as e:                           # noqa: BLE001
-                print(f"[publish] khong ghi duoc channel_album_mid: {e}",
-                      file=sys.stderr)
+            _ghi_dau(p_draft, d, "channel_album_mid",
+                     (res.get("result") or [{}])[0].get("message_id"))
         if long_caption and res.get("ok"):
-            return _gui_chu(token, channel, caption)
+            return _chu_mot_lan(token, channel, caption, p_draft, d, draft_id)
         return res
 
     img = d.get("image")
     if img and Path(img).exists():
+        # Cung mot luat voi album: anh don da len roi thi khong gui lai, chi lam
+        # not phan con thieu.
+        if d.get("channel_anh_mid"):
+            print(f"[publish] anh cua {draft_id} da len channel truoc do "
+                  f"(mid={d['channel_anh_mid']}) — khong gui lai", file=sys.stderr)
+            return (_chu_mot_lan(token, channel, caption, p_draft, d, draft_id)
+                    if long_caption else {"ok": True})
         with httpx.Client(timeout=120) as c, open(img, "rb") as fh:
             data = {"chat_id": channel, "parse_mode": "HTML"}
             if not long_caption:
@@ -193,10 +239,13 @@ def publish(token, channel, draft_id):
                        data=data,
                        files={"photo": (Path(img).name, fh, "image/png")})
         res = r.json()
+        if res.get("ok"):
+            _ghi_dau(p_draft, d, "channel_anh_mid",
+                     (res.get("result") or {}).get("message_id"))
         if long_caption and res.get("ok"):
-            return _gui_chu(token, channel, caption)
+            return _chu_mot_lan(token, channel, caption, p_draft, d, draft_id)
         return res
-    return _gui_chu(token, channel, caption)
+    return _chu_mot_lan(token, channel, caption, p_draft, d, draft_id)
 
 def _go_so_anh(draft_id: str, ly_do: str) -> None:
     """Go anh cua draft khoi so "anh da dung".
