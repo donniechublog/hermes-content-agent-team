@@ -128,21 +128,25 @@ def social_media_urls(url: str) -> list:
     return [m.get("url") for m in (j.get("media") or []) if m.get("url")]
 
 
-SCREENSHOT_JS = Path(__file__).resolve().parent / "screenshot.js"
+# Goc repo content-team (script nay nam o hermes/skills/<skill>/scripts/).
+GOC_REPO = Path(__file__).resolve().parents[4]
 
 
 def screenshot(url: str, out: str) -> bool:
     """High-DPR (Retina) screenshot fallback for pages that are not a single
-    image. Returns True if it produced a non-empty file."""
-    if not SCREENSHOT_JS.exists():
-        return False
+    image. Returns True if it produced a non-empty file.
+
+    Was `node screenshot.js`; now `chup_trang.py` (Playwright via Python) so the
+    server needs no Node runtime at all — audit A6."""
     try:
-        subprocess.run(["node", str(SCREENSHOT_JS), url, out],
-                       capture_output=True, text=True, timeout=120)
-    except Exception:
+        if str(GOC_REPO) not in sys.path:
+            sys.path.insert(0, str(GOC_REPO))
+        import chup_trang
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[get_source] khong nap duoc chup_trang: {type(e).__name__}: {e!r}",
+              file=sys.stderr)
         return False
-    p = Path(out)
-    return p.exists() and p.stat().st_size > 0
+    return chup_trang.chup(url, out)
 
 
 def _og_image_url(page_html: str, base: str):
@@ -223,7 +227,7 @@ def main():
 
     # 1) direct twitter image → original resolution
     if "pbs.twimg.com" in host:
-        n = download(twimg_orig(url), out)
+        download(twimg_orig(url), out)
         print(out, file=sys.stderr)
         print(out)
         return

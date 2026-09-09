@@ -3,31 +3,29 @@
 # bao nhieu lan cung khong sao (audit_content_team D3).
 #
 # Vi sao can: cac buoc cai dat truoc gio nam rai trong comment — requirements.txt
-# ghi `playwright install chromium`, bob_nop.py ghi `cd <skill> && npm ci`, con
-# font va model YuNet thi khong ai noi la da nam san trong git. Dung may moi
-# phai doc ba cho roi tu ghep lai, va thieu mot buoc thi hong CAM: thieu cv2 la
-# cong mat nguoi tu tat, thieu Chromium la moi buoc browser chet giua chung.
+# ghi `playwright install chromium`, con font va model YuNet thi khong ai noi la
+# da nam san trong git. Dung may moi phai doc nhieu cho roi tu ghep lai, va thieu
+# mot buoc thi hong CAM: thieu cv2 la cong mat nguoi tu tat, thieu Chromium la
+# moi buoc browser chet giua chung.
 #
-# Ba buoc THAT (font + YuNet onnx da nam trong git, khong phai tai gi):
+# HAI buoc THAT (font + YuNet onnx da nam trong git, khong phai tai gi):
 #   1. pip install -r requirements.txt
 #   2. playwright install chromium        (goi Python co roi van phai tai browser)
-#   3. npm ci trong skill url-mascot-frame (chi Bob dung; --khong-node de bo qua)
+# Node da BO han 09/09/2026 (audit A6): frame.js/screenshot.js viet lai bang PIL
+# + Playwright cua Python, server khong con `npm ci` nao.
 # Ket thuc bang kiem_moi_truong.py — no moi la cho noi that may nay da san sang chua.
 #
 # Dung:
 #     hermes/scripts/../cai_dat.sh          # hoac: bash cai_dat.sh
-#     bash cai_dat.sh --khong-node          # may khong lam viec cua Bob
 #     bash cai_dat.sh --thu                 # chi xem se lam gi, khong cai
 set -uo pipefail
 cd "$(dirname "$0")" || exit 2
 
-KHONG_NODE=0
 THU=0
 for co in "$@"; do
   case "$co" in
-    --khong-node) KHONG_NODE=1 ;;
     --thu) THU=1 ;;
-    *) echo "Tham so la: $co (chi nhan --khong-node, --thu)" >&2; exit 2 ;;
+    *) echo "Tham so la: $co (chi nhan --thu)" >&2; exit 2 ;;
   esac
 done
 
@@ -53,31 +51,17 @@ if [ ! -x "$PY" ]; then
   # --thu VAN chay tiep: xem truoc se lam gi la thu can nhat khi may CHUA dung xong.
   [ "$THU" -eq 1 ] || exit 2
 fi
-echo "[1/3] goi Python"
+echo "[1/2] goi Python"
 chay "$PY" -m pip install -q -r requirements.txt || {
   echo "[LOI] pip install that bai — xem dong tren." >&2; exit 1; }
 
 # --- 2. Chromium cho Playwright --------------------------------------------
 # Cai goi playwright KHONG keo theo browser. `playwright install` tu bo qua khi
 # ban dung da co, nen chay lai vo hai.
-echo "[2/3] Chromium cho Playwright"
+echo "[2/2] Chromium cho Playwright"
 chay "$PY" -m playwright install chromium || {
   echo "[LOI] khong tai duoc Chromium. Tren server toi gian co the con thieu thu vien he" >&2
   echo "      thong: thu '$PY -m playwright install-deps chromium' (can sudo)." >&2; exit 1; }
-
-# --- 3. Node cho skill cua Bob ---------------------------------------------
-SKILL=hermes/skills/url-mascot-frame
-if [ "$KHONG_NODE" -eq 1 ]; then
-  echo "[3/3] bo qua Node (--khong-node) — Bob se khong dong khung anh duoc"
-elif ! command -v npm >/dev/null 2>&1; then
-  echo "[3/3] KHONG co npm -> bo qua. Chi vai Bob can (frame.js/screenshot.js);"
-  echo "      cac vai khac khong dung Node. Cai Node roi chay lai neu can Bob."
-else
-  echo "[3/3] Node cho $SKILL"
-  # `npm ci` doi package-lock.json va tu xoa node_modules cu -> idempotent san.
-  ( cd "$SKILL" && chay npm ci --silent ) || {
-    echo "[LOI] npm ci that bai trong $SKILL." >&2; exit 1; }
-fi
 
 # --- Kiem ------------------------------------------------------------------
 # Font (assets/fonts) va model YuNet (assets/*.onnx) DA nam trong git, khong co
