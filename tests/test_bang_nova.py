@@ -162,16 +162,31 @@ def test_hang_rao_khong_de_mot_nguon_giet_ca_luot():
 def test_moi_fetcher_trong_main_deu_qua_hang_rao():
     """Doc bang AST, khong grep chuoi: trong than `main`, moi loi goi `fetch_*`
     phai nam BEN TRONG mot loi goi `_thu(...)`. Them nguon moi ma goi thang la
-    mo lai dung cai cua da dong."""
+    mo lai dung cai cua da dong.
+
+    Nhan HAI hinh dang (tu 09/09/2026, khi cac nguon chay song song):
+      _thu("ten", fn, mac_dinh)             — goi thang
+      ex.submit(_thu, "ten", fn, mac_dinh)  — nop vao ThreadPoolExecutor
+    Hinh thu hai VAN qua hang rao: submit goi chinh `_thu` trong luong con. Doi
+    HOI `_thu` la tham so DAU tien, nen `ex.submit(fetch_x, ...)` — bo qua hang
+    rao that su — van bi bat nhu truoc."""
     import ast
     cay = ast.parse(Path(s.__file__).read_text(encoding="utf-8"))
     main = next(n for n in cay.body
                 if isinstance(n, ast.FunctionDef) and n.name == "main")
 
+    def qua_hang_rao(n):
+        if not isinstance(n, ast.Call):
+            return False
+        if isinstance(n.func, ast.Name) and n.func.id == "_thu":
+            return True
+        return (isinstance(n.func, ast.Attribute) and n.func.attr == "submit"
+                and bool(n.args) and isinstance(n.args[0], ast.Name)
+                and n.args[0].id == "_thu")
+
     trong_thu = set()
     for n in ast.walk(main):
-        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-                and n.func.id == "_thu"):
+        if qua_hang_rao(n):
             for con in ast.walk(n):
                 trong_thu.add(id(con))
 

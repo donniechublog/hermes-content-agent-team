@@ -30,6 +30,7 @@ import json
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -1151,32 +1152,55 @@ def main():
     a = ap.parse_args()
 
     RONG2 = ([], None)                       # cac fetch tra (rows, ngay)
-    orouter = _thu("openrouter", fetch_openrouter, [])
-    catalog = _thu("catalog", fetch_catalog, [])
-    arena = _thu("arena", fetch_arena, {})
-    aa = _thu("aa", lambda: loc_aa(fetch_aa(), a.ngay, a.top), {})
-    tin = (_thu("rss hang", lambda: fetch_tin_hang(a.ngay), [])
-           + _thu("anthropic", lambda: fetch_anthropic(a.ngay), []))
-    tin.sort(key=lambda t: t.get("ngay") or "", reverse=True)
-    gh = _thu("github", lambda: fetch_github(a.ngay), [])
-    # Cac bang tra (rows, ngay): gom MOT dict, khoa = khoa trong ban dang ky
-    # (bang_model). Truoc 07/09/2026 moi bang la mot cap bien rieng (`lb,
-    # lb_ngay`...) roi duoc chep tay vao `bang_so` va `ket` — them bang o day
-    # ma quen `ket` thi bao cao im lang thieu bang do, va `hong` khong bat vi
-    # `bang_so` van co no.
-    top = _thu("swebench", lambda: fetch_swebench(a.top),
-               {"swebench": RONG2, "swe_bash": RONG2, "swe_da_ngon_ngu": RONG2})
-    for khoa, ten, fn in (
-            ("livebench", "livebench", fetch_livebench),
-            ("openrouter", "openrouter usage", fetch_openrouter_usage),
-            ("tbench", "tbench", fetch_tbench),
-            ("arcagi", "arcagi", fetch_arcagi),
-            ("hle", "hle", fetch_hle),
-            ("eci", "epoch", fetch_epoch),
-            ("opencompass", "opencompass", fetch_opencompass)):
-        top[khoa] = _thu(ten, lambda fn=fn: fn(a.top), RONG2)
-    media = _thu("aa media", lambda: fetch_aa_media(a.top), {})
-    hf = _thu("hf-trending", lambda: fetch_hf_trending(a.ngay, a.top), [])
+    # 15 nguon doc lap, moi nguon da boc trong _thu (hang rao cuoi rieng —
+    # xem docstring _thu) nen an toan chay song song: khong nguon nao doc/ghi
+    # bien chung ngoai _HONG_KHAC (list.append atomic trong CPython). Nop TAT
+    # CA qua executor.submit truoc, roi moi .result() theo DUNG THU TU VA CACH
+    # GHEP nhu ban tuan tu cu — _thu tu bat het Exception nen .result() o day
+    # khong bao gio nem, chi cho toi khi luong cua no xong.
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        f_orouter = ex.submit(_thu, "openrouter", fetch_openrouter, [])
+        f_catalog = ex.submit(_thu, "catalog", fetch_catalog, [])
+        f_arena = ex.submit(_thu, "arena", fetch_arena, {})
+        f_aa = ex.submit(_thu, "aa", lambda: loc_aa(fetch_aa(), a.ngay, a.top), {})
+        f_rss = ex.submit(_thu, "rss hang", lambda: fetch_tin_hang(a.ngay), [])
+        f_anthropic = ex.submit(
+            _thu, "anthropic", lambda: fetch_anthropic(a.ngay), [])
+        f_gh = ex.submit(_thu, "github", lambda: fetch_github(a.ngay), [])
+        # Cac bang tra (rows, ngay): gom MOT dict, khoa = khoa trong ban dang ky
+        # (bang_model). Truoc 07/09/2026 moi bang la mot cap bien rieng (`lb,
+        # lb_ngay`...) roi duoc chep tay vao `bang_so` va `ket` — them bang o day
+        # ma quen `ket` thi bao cao im lang thieu bang do, va `hong` khong bat vi
+        # `bang_so` van co no.
+        f_swebench = ex.submit(
+            _thu, "swebench", lambda: fetch_swebench(a.top),
+            {"swebench": RONG2, "swe_bash": RONG2, "swe_da_ngon_ngu": RONG2})
+        f_top = {}
+        for khoa, ten, fn in (
+                ("livebench", "livebench", fetch_livebench),
+                ("openrouter", "openrouter usage", fetch_openrouter_usage),
+                ("tbench", "tbench", fetch_tbench),
+                ("arcagi", "arcagi", fetch_arcagi),
+                ("hle", "hle", fetch_hle),
+                ("eci", "epoch", fetch_epoch),
+                ("opencompass", "opencompass", fetch_opencompass)):
+            f_top[khoa] = ex.submit(_thu, ten, lambda fn=fn: fn(a.top), RONG2)
+        f_media = ex.submit(_thu, "aa media", lambda: fetch_aa_media(a.top), {})
+        f_hf = ex.submit(
+            _thu, "hf-trending", lambda: fetch_hf_trending(a.ngay, a.top), [])
+
+        orouter = f_orouter.result()
+        catalog = f_catalog.result()
+        arena = f_arena.result()
+        aa = f_aa.result()
+        tin = f_rss.result() + f_anthropic.result()
+        tin.sort(key=lambda t: t.get("ngay") or "", reverse=True)
+        gh = f_gh.result()
+        top = f_swebench.result()
+        for khoa, f in f_top.items():
+            top[khoa] = f.result()
+        media = f_media.result()
+        hf = f_hf.result()
 
     tat_ca = {m["id"] for m in orouter} | {m["id"] for m in catalog}
     cu = da_thay()
