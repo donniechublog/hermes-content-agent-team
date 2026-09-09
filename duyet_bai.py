@@ -23,7 +23,7 @@ from duyet_co_so import (  # noqa: E402
 )
 from duyet_giao_viec import (  # noqa: E402
     BANG_DEN_NHAC, TEN_VAI_ANH, TEN_VAI_VIET, _bang_den_ghi, _bao_nhan_viec, _trang_thai_task,
-    chuan_assignee, kanban_create,
+    chuan_assignee, kanban_create, link_ket_qua, ly_do_task,
 )
 
 
@@ -732,7 +732,23 @@ def _nut_duyet(token, draft_id, cq, wp):
     else:
         w = json.loads(wp.read_text(encoding="utf-8"))
         if w.get("created") is True:
-            note = "✅ Đã duyệt rồi — bài đang được viết"
+            # Bam LAI nut cua tin cu (that su duyet lan dau da qua roi) — tra loi
+            # dung TRANG THAI THAT cua task, khong noi co dinh "dang duoc viet"
+            # nua vi co the da xong tu lau (su co Ong Chu tuong Miles treo, thuc
+            # ra task da done ~12h truoc, chi la bam lai nut cu).
+            wid = w.get("writer_task")
+            tt = _trang_thai_task(wid)
+            ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
+            link = link_ket_qua(wid)
+            if tt == "done":
+                note = f"✅ Bài đã viết xong{' — xem tại ' + link if link else f' (task {wid})'}"
+            elif tt in ("running", "ready"):
+                note = f"⏳ {ten} đang viết (task {wid})"
+            elif tt in ("blocked", "failed"):
+                ly_do = ly_do_task(wid)
+                note = f"⛔ {ten} dừng ({tt}): {ly_do}" if ly_do else f"⛔ {ten} dừng ({tt}) — task {wid}"
+            else:                             # "" (khong ro) hoac None (khong doc duoc kanban)
+                note = "✅ Đã duyệt rồi — bài đang được viết"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Đã duyệt trước đó")
         elif w.get("created") == "rejected":

@@ -121,6 +121,10 @@ def kanban_create(title, assignee, body, parent=None):
 # bao_tien_do_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
 # viec voi no va bo sot Kite, da bo 05/09/2026.
 DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
+TIN_KET_QUA = STATE_DIR / "tin_ket_qua_task.json"    # {task_id: {chat,thread,mid}}
+DA_BAO_TREO = STATE_DIR / "da_bao_treo.json"         # {task_id: epoch lan bao "treo" cuoi}
+NGUONG_TREO_PHUT = 20          # running lau hon nay ma khong doi trang thai -> nghi treo
+LAI_BAO_TREO_PHUT = 30         # con treo thi nhac lai sau moi khoang nay
 
 _TEN_HIEN = vai.TEN_HIEN            # xem vai.py
 
@@ -196,6 +200,34 @@ def _tom_tat_run(tid):
         tom = run.get("loi")
     return (tom or ""), run.get("metadata") or {}
 
+def ly_do_task(tid):
+    """Ban cong khai cua _tom_tat_run: chi can cau ly do, khong can metadata —
+    dung khi tra loi lai nut bam (duyet_bai.py) ve mot task da blocked/failed."""
+    tom_tat, _md = _tom_tat_run(tid)
+    return tom_tat
+
+def link_ket_qua(tid):
+    """Link Telegram toi dong tien do (start/done/blocked...) da gui cho task
+    nay, hoac None neu chua co (chua bao lan nao, hoac gui trong DM khong lam
+    duoc deep-link). Ghi boi bao_tien_do_kanban() moi khi gui mot dong."""
+    if not tid:
+        return None
+    try:
+        tin = json.loads(TIN_KET_QUA.read_text(encoding="utf-8")) if TIN_KET_QUA.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        return None
+    d = tin.get(tid)
+    if not d or not d.get("mid"):
+        return None
+    chat = str(d.get("chat") or "")
+    if not chat.startswith("-100"):        # chi supergroup moi co dang deep-link nay
+        return None
+    noi_bo = chat[4:]
+    thread = d.get("thread")
+    if thread:
+        return f"https://t.me/c/{noi_bo}/{thread}/{d['mid']}"
+    return f"https://t.me/c/{noi_bo}/{d['mid']}"
+
 def _xong_ma_khong_giao(tid, ai, created_at):
     """Vai anh dong task `done` ma KHONG gui album/the nao len topic — tra ve ly do
     de bao ⛔ thay vi ✅; None neu co san pham that.
@@ -226,7 +258,9 @@ def _xong_ma_khong_giao(tid, ai, created_at):
 
 def bao_tien_do_kanban(token, group):
     """Bao TIEN DO hang doi kanban ve Telegram: task bat dau -> mot dong vao
-    topic cua vai kem so viec con xep hang; task xong/hong -> mot dong nua.
+    topic cua vai kem so viec con xep hang; task xong/hong -> mot dong nua;
+    task chay QUA LAU ma khong doi trang thai (worker treo/chet) -> canh bao
+    rieng, nhac lai moi LAI_BAO_TREO_PHUT toi khi het treo.
 
     Vi sao: tu 03/09/2026 moi container chay MOT task mot luc. Sang 04/09 Ong
     Chu chon 7 bai luc 05:33, Dre lam bai 1, sau bai kia + Nova xep hang ca
@@ -238,6 +272,14 @@ def bao_tien_do_kanban(token, group):
         da = json.loads(DA_BAO_TIEN_DO.read_text(encoding="utf-8")) if DA_BAO_TIEN_DO.exists() else {}
     except Exception:                                        # noqa: BLE001
         da = {}
+    try:
+        tin = json.loads(TIN_KET_QUA.read_text(encoding="utf-8")) if TIN_KET_QUA.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        tin = {}
+    try:
+        treo = json.loads(DA_BAO_TREO.read_text(encoding="utf-8")) if DA_BAO_TREO.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        treo = {}
     rows = hermes_adapter.viec(tu_ts=time.time() - 86400)
     if rows is None:                 # co tep ma doc khong duoc -> phai keu
         log("tiendo", "khong doc duoc kanban")
@@ -248,10 +290,27 @@ def bao_tien_do_kanban(token, group):
         topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
     except Exception:                                        # noqa: BLE001
         topics = {}
-    doi = False
+    now = time.time()
+    doi = doi_treo = False
     for v in rows:
         tid, ai, st = v["id"], v["vai"], v["trang_thai"]
         title, _c = v["tieu_de"], v["tao_luc"]
+        if st == "running" and ai != BANG_DEN_ASSIGNEE and v.get("bat_dau_luc"):
+            phut = (now - v["bat_dau_luc"]) / 60
+            if phut >= NGUONG_TREO_PHUT and now - treo.get(tid, 0) >= LAI_BAO_TREO_PHUT * 60:
+                ten_treo = _TEN_HIEN.get(ai, ai)
+                thread_treo = topics.get(ai)
+                call(token, "sendMessage", chat_id=group,
+                     **({"message_thread_id": thread_treo} if thread_treo else {}),
+                     text=(f"⚠️ <b>{ten_treo}</b> không phản hồi hơn {int(phut)} phút: "
+                           f"<i>{html_escape(title[:80])}</i> (task {tid})"),
+                     parse_mode="HTML")
+                treo[tid] = now
+                doi_treo = True
+                log("tiendo", f"{tid} {ai} treo {int(phut)} phut, da bao")
+        elif tid in treo:
+            del treo[tid]                    # roi running (hoac chuyen vai) -> het treo
+            doi_treo = True
         if st in ("ready", "todo", "triage") or da.get(tid) == st:
             continue
         if ai == BANG_DEN_ASSIGNEE:          # the goc/bang den: khong phai viec cua ai
@@ -289,16 +348,29 @@ def bao_tien_do_kanban(token, group):
                  **({"message_thread_id": thread} if thread else {}),
                  text=text, parse_mode="HTML")
         log("tiendo", f"{tid} {ai} -> {st} (thread={thread}) gui={'ok' if r.get('ok') else r.get('description')}")
+        mid = (r.get("result") or {}).get("message_id")
+        if mid:                              # nho lai de dung nut bam sau nay tra ve dung link
+            tin[tid] = {"chat": group, "thread": thread, "mid": mid}
         da[tid] = st
         doi = True
+    # Chi giu task 24h gan nhat cho ba tep khong phinh (da bao dung `r["id"]`:
+    # tung la `r[0]` — rows la dict, luon nem KeyError, chan MOI lan ghi ke tu
+    # do; sua kem trong doi nay vi TIN_KET_QUA/DA_BAO_TREO moi cung se hong theo).
+    song = {r["id"] for r in rows}
     if doi:
-        # Chi giu task 24h gan nhat cho tep khong phinh.
-        song = {r[0] for r in rows}
         da = {k: v for k, v in da.items() if k in song}
+        tin = {k: v for k, v in tin.items() if k in song}
         try:
             _ghi_json(DA_BAO_TIEN_DO, da, indent=None)
+            _ghi_json(TIN_KET_QUA, tin, indent=None)
         except OSError as e:
-            log("tiendo", f"khong ghi duoc {DA_BAO_TIEN_DO.name}: {e}")
+            log("tiendo", f"khong ghi duoc {DA_BAO_TIEN_DO.name}/{TIN_KET_QUA.name}: {e}")
+    if doi_treo:
+        treo = {k: v for k, v in treo.items() if k in song}
+        try:
+            _ghi_json(DA_BAO_TREO, treo, indent=None)
+        except OSError as e:
+            log("tiendo", f"khong ghi duoc {DA_BAO_TREO.name}: {e}")
 
 # Nhan category dung TIENG ANH. Ong Chu chot: bo tieng Viet o nhan de khoi phat
 # sinh loi dau. Nhan la tu ngan, doc gia ky thuat quen ca hai thu tieng, ma
