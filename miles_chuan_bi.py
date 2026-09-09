@@ -24,6 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import route_thieu_anh                                       # noqa: E402
 import caption_check                                         # noqa: E402
 
 DRAFTS = cb.DRAFTS
@@ -94,7 +95,8 @@ def main() -> int:
     a = ap.parse_args()
     # Engine dung chung: da chay tu luc chon tin (vai anh) -> chi doc; chua co thi
     # chay khong browser (Miles chi can chu).
-    m, wd, meta = cb.chay(a.draft_id, a.lam_moi, khong_browser=True, cho=a.cho)
+    m, wd, meta = cb.chay(a.draft_id, a.lam_moi, khong_browser=True, cho=a.cho,
+                          sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     brief = viet_brief(m, meta, wd)
     (wd / "brief_miles.md").write_text(brief, encoding="utf-8")
     if not a.im:

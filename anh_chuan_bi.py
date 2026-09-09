@@ -1441,7 +1441,8 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
     so_mien = sorted({(a.get("mien") or a.get("tu") or "?") for a in dung_duoc})
     # Anh khai niem chi lam bia, nen ca chum chi DEM LA MOT khi xet du/thieu:
     # 5 la co Nhat khong phai 5 slide. `so_dung_duoc` di vao brief (THIEU ANH)
-    # va _route_thieu_anh (hoi Ong Chu / chuyen Kite).
+    # va co `thieu_anh` (xem _mo_ta_thieu_anh) ma route_thieu_anh doc de quyet
+    # dinh hoi Ong Chu hay chuyen Kite.
     so_rieng = sum(1 for a in dung_duoc if not a.get("khai_niem"))
     so_dung_duoc = so_rieng + min(1, len(dung_duoc) - so_rieng)
 
@@ -1558,9 +1559,26 @@ def _cho_luot():
         time.sleep(5)
 
 
-def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
+def _mo_ta_thieu_anh(m: dict) -> dict | None:
+    """Bai nay co THIEU anh that khong, thieu bao nhieu — None neu du.
+
+    Engine chi MO TA, khong quyet dinh (audit A1): hoi Ong Chu hay chuyen Kite
+    la viec cua tang dieu phoi, xem `route_thieu_anh.sau_chuan_bi`."""
+    so, tt = int(m.get("so_dung_duoc", 0)), int(m.get("toi_thieu", 5))
+    return None if so >= tt else {"so": so, "toi_thieu": tt}
+
+
+def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300,
+         sau_chuan_bi=None) -> tuple:
     """Bao dam xong.json co san (chay neu chua, doi neu tien trinh khac dang chay).
-    Tra ve (manifest, workdir, meta)."""
+    Tra ve (manifest, workdir, meta).
+
+    `sau_chuan_bi(draft_id, m)`: moc cho tang GHEP NOI xu ly `m["thieu_anh"]`
+    (hoi Ong Chu / chuyen Kite) — truyen `route_thieu_anh.sau_chuan_bi` vao.
+    Engine khong tu import cai do: lam vay la lop CHUAN BI goi nguoc len lop
+    dieu phoi (audit A1). Goi TRONG khoa va TRUOC khi ghi `xong.json`, nen moi
+    nguoi doc `xong.json` deu thay quyet dinh da chot — day la ly do no la moc
+    dong bo chu khong phai mot viec day sang vong poll khac."""
     meta = nap_meta(draft_id)
     state = env_load.state_dir()
     wd = workdir(state, draft_id)
@@ -1572,8 +1590,17 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
             os.kill(pid, 0)
             print(f"[cho] tien trinh {pid} dang chuan bi, doi toi da {cho}s...", file=sys.stderr)
             t0 = time.time()
+            da_bao_giay = 0
             while khoa.exists() and time.time() - t0 < cho:
                 time.sleep(3)
+                troi = int(time.time() - t0)
+                # Bao dinh ky: doi tron 300s trong im lang thi nguoi doc log
+                # (va nguoi chay tay) khong phan biet duoc "dang doi binh thuong"
+                # voi "treo han" — dung thu im lang ma ca hai dot vua roi di go.
+                if troi - da_bao_giay >= 30:
+                    da_bao_giay = troi
+                    print(f"[cho] ...{troi}s/{cho}s, tien trinh {pid} van giu khoa",
+                          file=sys.stderr)
             # HET GIO MA PID VAN SONG: KHONG duoc ghi de khoa. Truoc 06/09/2026
             # doan duoi ghi `dang_chay.pid` vo dieu kien, nen khi may ban that
             # (tran CT_CHUAN_BI_SONG_SONG=2, Ong Chu chon 7 tin mot luc, moi
@@ -1600,79 +1627,27 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300) -> tuple:
     try:
         with _cho_luot():
             m = chuan_bi(draft_id, meta, state, wd, khong_browser=khong_browser)
-        try:
-            _route_thieu_anh(draft_id, m)
-        except (Exception, SystemExit) as e:                 # noqa: BLE001
-            # SystemExit cung phai bat: vai ham thu vien (gui_telegram, crop_ti_le)
-            # bao loi bang sys.exit, lot qua thi mat luon xong.json (audit 05/09).
-            print(f"[route] {type(e).__name__}: {e}", file=sys.stderr)
+        thieu = _mo_ta_thieu_anh(m)
+        if thieu:
+            m["thieu_anh"] = thieu
+        if sau_chuan_bi is not None:
+            t_route = time.time()
+            try:
+                sau_chuan_bi(draft_id, m)
+            except (Exception, SystemExit) as e:             # noqa: BLE001
+                # SystemExit cung phai bat: vai ham thu vien (gui_telegram, crop_ti_le)
+                # bao loi bang sys.exit, lot qua thi mat luon xong.json (audit 05/09).
+                print(f"[route] {type(e).__name__}: {e}", file=sys.stderr)
+            giay = time.time() - t_route
+            # Moc nay chay TRONG khoa draft: cham la moi tien trinh khac phai
+            # doi theo. Noi ra de con truy, thay vi chi thay ben kia "doi lau".
+            if giay > 10:
+                print(f"[route] mat {giay:.0f}s — khoa draft bi giu suot thoi gian do",
+                      file=sys.stderr)
         _ghi_json(xong, m)
     finally:
         khoa.unlink(missing_ok=True)
     return m, wd, meta
-
-
-def _tg_gui(vai: str, text: str, kb: dict | None = None) -> None:
-    """Gui mot tin CHU len topic cua `vai` (kem nut neu co). Dung env cua
-    gui_telegram; im lang neu thieu token (chay tay ngoai container)."""
-    env_load.nap()
-    token, group = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_GROUP_ID")
-    thread = env_load.topics().get(vai)
-    if not token or not group or not thread:
-        print(f"[route] thieu TELEGRAM_BOT_TOKEN/GROUP hoac topic '{vai}' -> khong gui tin", file=sys.stderr)
-        return
-    body = {"chat_id": group, "message_thread_id": thread,
-            "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}
-    if kb:
-        body["reply_markup"] = kb
-    httpx.post(f"https://api.telegram.org/bot{token}/sendMessage", json=body, timeout=30)
-
-
-def _route_thieu_anh(draft_id: str, m: dict) -> None:
-    """0 anh that -> tu chuyen Kite; thieu -> hoi Ong Chu bang nut."""
-    ip = DRAFTS / (draft_id + ".img.json")
-    if not ip.exists():
-        return
-    im = json.loads(ip.read_text(encoding="utf-8"))
-    vai = im.get("vai_anh", "")
-    if vai == "carousel-edu" or im.get("chuyen_kite"):
-        return                                     # da la Kite / da chuyen roi
-    so, tt = int(m.get("so_dung_duoc", 0)), int(m.get("toi_thieu", 5))
-    if so >= tt:
-        return
-    ten = {"designer": "Ethan", "carousel": "Dre"}.get(vai, vai)
-    tieu = m.get("title", draft_id)
-    from duyet_giao_viec import chuan_assignee
-    from duyet_bai import tao_task_kite
-    _, khong_kite = chuan_assignee("carousel-edu")
-    if khong_kite:
-        # Brand nay chua co Kite (dcgr 05/09/2026). Noi thang, dung hua chuyen.
-        kb = {"inline_keyboard": [[{"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id}]]}
-        if so == 0:
-            _tg_gui(vai, f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được, và brand này <b>chưa có Kite</b> "
-                         f"để vẽ vector. {ten} sẽ không dựng được bộ này — bỏ tin, hoặc tạo Kite cho brand.", kb)
-            m["khong_kite"] = True
-        else:
-            kb["inline_keyboard"][0].insert(0, {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id})
-            _tg_gui(vai, f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được; brand này chưa có Kite. Chọn:", kb)
-            m["hoi_kite"] = True
-        return
-    if so == 0:
-        rid, loi = tao_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
-        if loi:
-            _tg_gui(vai, f"🖼 <b>{tieu}</b>: 0 ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
-            return
-        m["chuyen_kite"] = rid
-        _tg_gui(vai, f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được → đã tự chuyển <b>Kite</b> "
-                     f"vẽ vector (task {rid}). {ten} không dựng bộ này.")
-        print(f"[route] 0 anh -> Kite task {rid}", file=sys.stderr)
-        return
-    kb = {"inline_keyboard": [[
-        {"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id},
-        {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id}]]}
-    _tg_gui(vai, f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được "
-                 f"(nguồn: {', '.join(m.get('so_mien') or []) or '—'}). Chọn đường:", kb)
-    m["hoi_kite"] = True
 
 
 def main() -> int:
@@ -1683,7 +1658,13 @@ def main() -> int:
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
-    m, wd, _ = chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho)
+    # Import o DAY chu khong o dau tep: `main()` la diem vao CLI, tuc cho ghep
+    # noi — con than module `anh_chuan_bi` phai sach bong tang dieu phoi (audit
+    # A1). Dat import nay len dau tep la keo duyet_giao_viec/duyet_bai vao lai
+    # dung cai vua go ra.
+    import route_thieu_anh
+    m, wd, _ = chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
+                    sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     print(f"[xong] {len(m['anh'])} anh, {len(m.get('tu_lieu', {}).get('cau_co_so', []))} cau so lieu -> {wd}",
           file=sys.stderr)
     return 0

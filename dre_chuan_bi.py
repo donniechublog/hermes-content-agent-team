@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
+import route_thieu_anh                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -127,7 +128,8 @@ def main() -> int:
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
-    m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho)
+    m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
+                       sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     da_dung = cb._doc_json(wd / "da_dung.json")
     brief = viet_brief(m, da_dung)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
