@@ -87,8 +87,12 @@ def _tep_env() -> tuple:
 def state_dir() -> Path:
     """Thu muc STATE RUNTIME cua brand (offset, dedup, manifest, drafts tam...).
     `state/<CT_BRAND>/` khi co CT_BRAND, nguoc lai `state/` (che do don cu).
-    Bi gitignore (du lieu chay). Luon tao san thu muc."""
-    d = _BASE / "state"
+    CT_STATE_DIR env var ghi de duong dan co ban. Bi gitignore (du lieu chay). Luon tao san thu muc."""
+    state_base = os.environ.get("CT_STATE_DIR")
+    if state_base:
+        d = Path(state_base)
+    else:
+        d = _BASE / "state"
     key = _brand()
     if key:
         d = d / key
