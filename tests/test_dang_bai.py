@@ -18,27 +18,14 @@ su co du an (issue E3):
 Chay:  venv/bin/python tests/test_dang_bai.py
 
 --------------------------------------------------------------------------
-BUG SAN XUAT PHAT HIEN KHI VIET TEST NAY (KHONG sua o day -- xem bao cao cuoi
-task e3_telegram_call): approve_service.py dong ~46 import ten
-`_nhan_ly_do_lam_lai` TU `duyet_giao_viec`:
-
-    from duyet_giao_viec import (
-        MAC_DINH_VIET, bao_tien_do_kanban, vai_cua_topic, _nhan_ly_do_lam_lai,
-    )
-
-nhung ham nay CHI dinh nghia trong `duyet_bai.py` (dong 344), khong ton tai
-trong duyet_giao_viec.py. Loi phat sinh tu commit 8cd8226 ("bo shim re-export
-79 ten trong approve_service", 09/09/2026) -- khi don import, ten nay bi dat
-nham vao tuple cua duyet_giao_viec thay vi o lai tuple cua duyet_bai (noi no
-dinh nghia). Hau qua: `import approve_service` NEM ImportError ngay lap tuc,
-tuc dich vu approve_service that (ham loop()) hien KHONG khoi dong duoc.
-
-Shim ngay duoi day CHI gan them attribute con thieu vao module DA NAP TRONG
-BO NHO cua tien trinh test, KHONG dung cham gi den approve_service.py hay
-duyet_bai.py tren dia -- muc dich duy nhat la cho phep test _cuu_bai_ket_publishing
-(hoan toan khong lien quan den _nhan_ly_do_lam_lai) chay duoc. Sua that phai la
-doi dong 46 cua approve_service.py de _nhan_ly_do_lam_lai nam trong tuple import
-tu duyet_bai (dong 51-53) thay vi tu duyet_giao_viec.
+BUG SAN XUAT PHAT HIEN KHI VIET TEST NAY -- DA SUA (09/09/2026):
+approve_service.py dong ~46 import `_nhan_ly_do_lam_lai` tu `duyet_giao_viec`,
+nhung ham nay chi dinh nghia trong `duyet_bai.py` (dong 344). Loi phat sinh tu
+commit 8cd8226 ("bo shim re-export 79 ten trong approve_service") -- khi don
+import, ten nay bi dat nham vao tuple cua duyet_giao_viec. Hau qua:
+`import approve_service` nem ImportError ngay lap tuc, dich vu approve_service
+(ham loop()) khong khoi dong duoc. Da sua bang cach chuyen ten nay ve tuple
+import cua duyet_bai; shim tam trong tep test nay da duoc go bo.
 """
 import json
 import sys
@@ -49,11 +36,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import duyet_bai as db                                         # noqa: E402
-import duyet_giao_viec as dgv                                  # noqa: E402
-
-if not hasattr(dgv, "_nhan_ly_do_lam_lai"):                    # xem bug o tren
-    dgv._nhan_ly_do_lam_lai = db._nhan_ly_do_lam_lai
-
 import approve_service as aps                                  # noqa: E402
 
 
