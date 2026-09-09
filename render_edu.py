@@ -483,7 +483,12 @@ FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc du
 # phu du roi moi tinh tiep, thay vi hoi truoc co can phu khong.
 NGUONG_SANG_CHU_TOI = 150  # do sang (0..255) vung duoi chu: qua nguong -> chu TOI
 NGUONG_ROI_CAN_LOP = 26    # do lech (stddev xam) vung duoi chu: qua nguong moi can lop
-TOI_TOI_DA_MO = 0.55       # tran tren cua lop (khi can): "vua du", khong phu ca mang
+# Muc toi khi can_lop (09/09/2026, tang tu 0.55 sau khi Ong Chu xem anh that:
+# so ma van doc duoc ro qua lop mo yeu — xem chu thich tai noi dung max_toi).
+# Khong dat 1.0 tuyet doi: giu lai chut kho anh phia duoi de van la "anh duoc
+# xu ly" chu khong phai "hop mau ke len anh", nhung 0.93 da du toi de khong con
+# chu/so nao doc duoc.
+TOI_TOI_DA_MO = 0.93
 VEIL_SPAN = 64             # px: be day duong cong chuyen tiep, bat dau NGAY tai
                            # dong chu dau — khong con khoang dem truoc no nua
 FIG_TIEU_DE_DONG = 2   # slide co anh: tieu de toi da bay nhieu dong
@@ -910,10 +915,20 @@ def anh_lam_nen(sl, th, ten):
     if not can_lop:
         return nen, ''
 
-    # Anh du "roi" de can mo: do do mo VUA DU theo dung do roi do duoc, tran o
-    # TOI_TOI_DA_MO (thap hon han mac dinh cu) — cang roi thi cang can nhieu,
-    # khong phai luon phu san mot muc cao roi moi tinh tiep.
-    max_toi = min(TOI_TOI_DA_MO, max(0.0, (roi_duoi - NGUONG_ROI_CAN_LOP) / 90.0))
+    # BOC (09/09/2026, Ong Chu xem anh that: "chu blue o duoi nen van con mau
+    # den mo, trong rat xau... blur thi blur 1 mau luon di chu"). Ban cu scale
+    # do toi THEO DUNG do roi do duoc (cang roi cang toi, tran o TOI_TOI_DA_MO)
+    # — nghe hop ly cho ANH CHUP (chi tiet huu co, mo di la du), nhung do
+    # `roi_duoi` la ĐỘ LỆCH MÀU TRUNG BÌNH ca vung, mot bang xep hang thi hau
+    # het la nen TRANG, chi vai dong chu/so MONG xen vao — do that tren chinh
+    # anh XH cua bo nay: roi_duoi=29.2 (vua qua nguong 26) -> max_toi tinh ra
+    # 0.036, gan nhu KHONG toi chut nao, nen so ma van doc ro muot duoi tieu
+    # de. "Vua roi la vua toi" dung cho anh chup, sai cho bang/chart: chu con
+    # DOC DUOC la con xau, khong co muc "hoi doc duoc" chap nhan duoc. Khi da
+    # xac dinh can_lop (that su roi) thi phu THANG len muc toi da, khong scale
+    # theo do roi nua — cham thi bo qua het (nhanh o tren), khong cham thi phu
+    # kin, khong co nac giua.
+    max_toi = TOI_TOI_DA_MO
     js = (f'<script>window.__datMan=function(){{'
           f'var H={H},MAX={max_toi:.3f};'
           # set_content giu nguyen window nen ham nay con song sang slide sau;
