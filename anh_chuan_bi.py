@@ -55,6 +55,11 @@ import sys
 import time
 from pathlib import Path
 
+try:
+    import fcntl                 # POSIX (server) — khoa tep that
+except ImportError:              # Windows (chay tay/test): xem `_cho_luot`
+    fcntl = None
+
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
@@ -159,8 +164,19 @@ SO_ENGINE_SONG_SONG = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") or
 
 @contextlib.contextmanager
 def _cho_luot():
-    """Giu mot trong N khoa tep state/chuan_bi.<i>.lock (flock) trong luc chuan bi."""
-    import fcntl
+    """Giu mot trong N khoa tep state/chuan_bi.<i>.lock (flock) trong luc chuan bi.
+
+    Thieu fcntl (Windows) thi CHAY KHONG KHOA kem mot dong canh bao — tran
+    CT_CHUAN_BI_SONG_SONG khong con hieu luc, nhung may do chi mot nguoi chay
+    tay/chay test, khong phai server hai brand. Truoc 09/09/2026 cho nay
+    `import fcntl` tran nen `chay()` KHONG chay duoc tren Windows chut nao
+    (audit C3); emoji_deck.py da co san mau nay tu lau."""
+    if fcntl is None:
+        print("[cho] khong co fcntl (khong phai POSIX) -> chay KHONG khoa, "
+              f"tran {SO_ENGINE_SONG_SONG} engine song song khong duoc ap",
+              file=sys.stderr)
+        yield
+        return
     thu_muc = ROOT / "state"
     thu_muc.mkdir(parents=True, exist_ok=True)
     da_bao = False

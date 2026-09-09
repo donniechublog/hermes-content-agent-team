@@ -16,7 +16,6 @@ Test giu HAI thu:
 
 Chay:  venv/bin/python tests/test_route_thieu_anh.py
 """
-import contextlib
 import json
 import sys
 import tempfile
@@ -42,16 +41,18 @@ def _chay_gia(tmp, m_engine, sau_chuan_bi=None):
     """Chay cb.chay() voi engine gia (khong browser/mang), tra (m, wd)."""
     wd = Path(tmp) / "wd"
     wd.mkdir(parents=True, exist_ok=True)
-    cu = (cb.chuan_bi, cb._cho_luot, cb.nap_meta, cb.workdir)
+    # Dung `_cho_luot` THAT: tu khi C3 them fallback khi thieu fcntl, no chay
+    # duoc ca tren Windows (khong khoa, co canh bao) nen test khong con phai
+    # thay bang no-op de lach nua.
+    cu = (cb.chuan_bi, cb.nap_meta, cb.workdir)
     cb.chuan_bi = lambda *a, **k: dict(m_engine)
-    cb._cho_luot = lambda: contextlib.nullcontext()      # that su dung fcntl (POSIX)
     cb.nap_meta = lambda d: {}
     cb.workdir = lambda state, d: wd
     try:
         m, wd2, _ = cb.chay("d1", sau_chuan_bi=sau_chuan_bi)
         return m, wd2
     finally:
-        cb.chuan_bi, cb._cho_luot, cb.nap_meta, cb.workdir = cu
+        cb.chuan_bi, cb.nap_meta, cb.workdir = cu
 
 
 def test_chay_ghi_co_thieu_anh_vao_xong_json():

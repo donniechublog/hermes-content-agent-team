@@ -17,6 +17,30 @@ va nhin lai anh that truoc khi chot.
 Cach ly loi: moi buoc lay mot `new_context()` rieng roi dong ngay, nen mot trang
 lam hong context khong keo theo cac buoc sau; chi TIEN TRINH browser la dung chung.
 
+NUA SAU CUA B4 (thay 20 cho `wait_for_timeout` co dinh) — DA SOI, KET LUAN LA
+KHONG DOI DUOC TU XA. Ghi lai day de lan sau khoi soi lai, va de khong ai bien
+mot cho `settle` thanh cho doi selector roi lam anh chup vo:
+
+  1. SETTLE sau cuon/resize/animation, TRUOC khi do hoac chup (13 cho):
+     browser.py:82,100 · chup_chart.py:141,155,161 · render_edu.py:1414 ·
+     xep_hang.py:522,538,567,615,809,812,857. Khong co dieu kien DOM nao de
+     doi — cai dang doi la layout/font/animation da yen chua, ma chuyen do chi
+     nhin trang THAT moi biet. Audit cung noi "chi giu wait_for_timeout o noi
+     co animation chart".
+  2. NHIP POLL trong mot vong da doi theo dieu kien (3 cho): browser.py:126 ·
+     nguon_bai.py (vong doi Google News nha URL) · xep_hang.py:468. O day
+     `wait_for_timeout` la khoang cach giua hai lan kiem — dung nhu vay roi.
+  3. Cho Cloudflare/interstitial kip hien de doc `page.title()` (2 cho):
+     xep_hang.py:994,1015. Doi mot dieu kien o day la doi chinh cai minh dang
+     dinh phat hien.
+  4. `xep_hang._doi_bang:457` nhin thi tuong thay duoc bang `wait_for_selector`
+     theo dung selector o dong 461 — nhung 1200ms do la settle TRUOC khi bat
+     dau do, bo di la doi thoi diem kiem DOM lan dau. Docstring ngay tren no
+     ghi "Cho co dinh 6s la danh bac": cho nay ho da bi timing can mot lan roi.
+
+Muon lam not: phai mo duoc cac trang xep hang that va doi chieu anh chup truoc/
+sau, khong phai doc ma.
+
 Dung:
     with PhienBrowser() as phien:
         with phien.trang(viewport={"width": 1600, "height": 1200}) as page:
