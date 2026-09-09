@@ -42,6 +42,7 @@ import os
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -416,10 +417,14 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110) -> dict:
     return ra
 
 
-def anh_commons(tu_khoa: str, so: int = 4) -> list:
+def anh_commons(tu_khoa: str, so: int = 4) -> list | None:
     """Anh that tren Wikimedia Commons (tru so, san pham, su kien) cho tin mong
     anh — LUAT_ANH muc 1.2 ke Commons la nguon hop le. Chi goi khi bai + bao khac
-    khong du 5 anh. Loai SVG/logo (mime + _do_hoa o buoc tai)."""
+    khong du 5 anh. Loai SVG/logo (mime + _do_hoa o buoc tai).
+
+    Tra None khi HONG VI MOI TRUONG (mang, API loi) — KHAC voi [] (da chay het,
+    khong ra anh nao). Nguoi goi phai tu phan biet hai truong hop nay (quy uoc
+    "hong phai lo", audit_content_team C1)."""
     try:
         r = httpx.get("https://commons.wikimedia.org/w/api.php", params={
             "action": "query", "generator": "search", "gsrsearch": f"{tu_khoa} filetype:bitmap",
@@ -428,8 +433,8 @@ def anh_commons(tu_khoa: str, so: int = 4) -> list:
             headers={"User-Agent": env_load.UA_WIKI}, timeout=20)
         pages = r.json().get("query", {}).get("pages", {})
     except Exception as e:                                   # noqa: BLE001
-        print(f"[commons] hong: {type(e).__name__}", file=sys.stderr)
-        return []
+        print(f"[commons] hong: {type(e).__name__}: {e!r}", file=sys.stderr)
+        return None
     ra = []
     for pg in pages.values():
         ii = (pg.get("imageinfo") or [{}])[0]
@@ -515,22 +520,46 @@ def _host_la_ben_thu_ba(c: dict) -> bool:
     return True
 
 
+def _tai_ung_vien(c: dict) -> tuple:
+    """Bytes cho MOT ung vien cua tai_va_loc: file local (c['tep']) hoac HTTP
+    qua _tai_bytes — ham THUAN, khong dung chung state, an toan chay song song
+    (audit_content_team B3). Tra (data, loi): `loi` giu lai exception cua
+    Path.read_bytes() (`_tai_bytes` tu no da nuot loi, khong bao gio nem) de pha
+    loc tuan tu phia duoi nem lai va in dung log nhu khi con goi truc tiep tai
+    day, khong lam mat dong log loi hien co."""
+    try:
+        if c.get("tep"):
+            return Path(c["tep"]).read_bytes(), None
+        return _tai_bytes(c["anh"]), None
+    except Exception as e:                                   # noqa: BLE001
+        return None, e
+
+
 def tai_va_loc(cands: list, wd: Path) -> list:
     """Tai ung vien theo thu tu diem, loai trung (md5) va anh be, luu PNG co dau
-    xuat xu. Tra ve danh sach anh da tai [{ma, goc, ...}]."""
+    xuat xu. Tra ve danh sach anh da tai [{ma, goc, ...}].
+
+    Pha 1 (song song, ThreadPoolExecutor): tai TRUOC toan bo bytes cho tung ung
+    vien — moi tai la mot HTTP GET doc lap, khong quyet dinh gi ve loc/dedup.
+    Pha 2 (tuan tu, y het truoc day): loc/dedup/early-break PHAI giu dung thu
+    tu diem (quyet dinh "ban nao trung thi giu ban lon hon"), nen khong song
+    song duoc — chi khac o cho lay `data` tu ket qua Pha 1 thay vi tai lai.
+    Chap nhan over-fetch (tai het cands[:TOI_DA_TAI+6], early-break Pha 2 co
+    the bo khong dung toi vai ban) — danh doi lay toc do, audit_content_team B3."""
     import anh_bai
     import luat_anh
     goc_dir = wd / "goc"
     goc_dir.mkdir(parents=True, exist_ok=True)
+    ung_vien = cands[:TOI_DA_TAI + 6]
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        tai_truoc = list(ex.map(_tai_ung_vien, ung_vien))
     da_tai = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
-    for c in cands[:TOI_DA_TAI + 6]:
+    for c, (data, loi) in zip(ung_vien, tai_truoc):
         if len(da_tai) >= TOI_DA_ANH + 4:
             break
         try:
-            if c.get("tep"):
-                data = Path(c["tep"]).read_bytes()
-            else:
-                data = _tai_bytes(c["anh"])
+            if loi is not None:
+                raise loi
             if not data:
                 continue
             im = Image.open(io.BytesIO(data))
@@ -708,7 +737,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
                                      headers={"Content-Type": "application/json",
                                               "Authorization": "Bearer " + key})
-        raw = urllib.request.urlopen(req, timeout=90).read().decode().strip()
+        raw = urllib.request.urlopen(req, timeout=45).read().decode().strip()
         if raw.startswith("data:"):
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         txt = _j.loads(raw)["choices"][0]["message"]["content"]
@@ -1135,6 +1164,9 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
         tk = _ten_rieng_dau(nguon.get("tieu_de_en") or title)
         if tk:
             them = anh_commons(tk, so=6)
+            if them is None:
+                print(f"[anh] anh_commons('{tk}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
+                them = []
             print(f"[commons] '{tk}': {len(them)} anh", file=sys.stderr)
             if them:
                 da = {a["url"] for a in anh}
@@ -1158,7 +1190,13 @@ def _nhin_anh(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     # Anh XH khong hoi vision (tham so tieu_de rong): no la anh do chinh engine chup
     # tu trang xep hang, da biet chac lien quan — hoi chi ton them mot luot LLM roi
     # ghi de ket qua ngay duoi. Van qua phan_loai de co do hinh hoc (w/h/ti_le/san).
-    anh = [phan_loai(a, wd, "" if a.get("xep_hang") else (nguon.get("tieu_de_en") or title)) for a in anh]
+    # `phan_loai` chi doc/ghi vao chinh dict `a` va duong dan rieng cua no -- khong
+    # co state dung chung giua cac lan goi -- nen chay song song duoc (8-12 anh/bai,
+    # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
+    # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        anh = list(ex.map(lambda a: phan_loai(a, wd, "" if a.get("xep_hang")
+                                              else (nguon.get("tieu_de_en") or title)), anh))
     for a in anh:
         if a.get("xep_hang"):
             a["mo_ta"] = a["alt"]
@@ -1193,7 +1231,11 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
         cands2 += bp2["cands"]
     tk = _ten_rieng_dau(tieu_de_nhin)
     if tk:
-        cands2 += anh_commons(tk, so=6)
+        them_commons = anh_commons(tk, so=6)
+        if them_commons is None:
+            print(f"[anh] anh_commons('{tk}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
+            them_commons = []
+        cands2 += them_commons
     da = {a["url"] for a in anh}
     cands2 = [c for c in cands2 if c["anh"] not in da]
     cands2.sort(key=lambda c: -c.get("diem", 0))
@@ -1328,7 +1370,11 @@ def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path) -> tup
             [a["ma"] for a in anh if a.get("lien_quan") is None]
     cands = []
     for t in tks:
-        cands += anh_khai_niem.anh_khai_niem(t["tu_khoa"], t.get("ly_do", ""), so=2)
+        them_kn = anh_khai_niem.anh_khai_niem(t["tu_khoa"], t.get("ly_do", ""), so=2)
+        if them_kn is None:
+            print(f"[anh] anh_khai_niem('{t['tu_khoa']}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
+            them_kn = []
+        cands += them_kn
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["anh"] not in da]
     wd3 = wd / "khai_niem"
