@@ -22,7 +22,8 @@ from duyet_co_so import (  # noqa: E402
     API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, log,
 )
 from duyet_giao_viec import (  # noqa: E402
-    BANG_DEN_NHAC, TEN_VAI_ANH, TEN_VAI_VIET, _bang_den_ghi, _bao_nhan_viec, _trang_thai_task, kanban_create,
+    BANG_DEN_NHAC, TEN_VAI_ANH, TEN_VAI_VIET, _bang_den_ghi, _bao_nhan_viec, _trang_thai_task,
+    chuan_assignee, kanban_create,
 )
 
 
@@ -537,7 +538,8 @@ def _nut_kite(token, chat_id, draft_id, cq):
 
 
 def _nut_ha_san(token, draft_id, cq):
-    """imgtiep: ha san so slide ve `toi_thieu_co_ban` de vai lam voi so anh hien co."""
+    """imgtiep: ha san so slide ve `toi_thieu_co_ban` de vai lam voi so anh hien co.
+    Tra (note, keyboard) — keyboard None nghia la go het (nhu moi nut khac)."""
     # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
     # xong.json van nguyen (8 voi tin flagship), nen dre_nop van chan "chi N
     # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
@@ -551,10 +553,20 @@ def _nut_ha_san(token, draft_id, cq):
     san = int(mm.get("toi_thieu_co_ban", 5))
     so = int(mm.get("so_dung_duoc", 0))
     cu = int(mm.get("toi_thieu", san))
+    keyboard = None
     if not mm:
         note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Thiếu xong.json", show_alert=True)
     elif so < san:
+        # HET DUONG that su: khong the ha san duoi san cung (carousel.MIN_SLIDE),
+        # nen chi con Kite hoac bo tin. Truoc 08/09/2026 noi vay roi GO LUON ban
+        # phim (_chot_nut xoa vo dieu kien) — Ong Chu doc thay "chuyen Kite hoac
+        # bo tin" ma khong con nut nao bam duoc, phai tu go lenh. Gan lai dung
+        # hai nut do thay vi hua suong.
+        _, khong_kite = chuan_assignee("carousel-edu")
+        hang = [] if khong_kite else [{"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id}]
+        hang.append({"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id})
+        keyboard = {"inline_keyboard": [hang]}
         note = (f"⚠️ Chỉ {so} ảnh thật mà carousel cần tối thiểu {san} slide — "
                 f"bấm tiếp cũng không dựng được. Chuyển Kite vẽ vector, hoặc bỏ tin.")
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
@@ -576,7 +588,7 @@ def _nut_ha_san(token, draft_id, cq):
             note = f"⚠️ Không ghi được xong.json ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Ghi xong.json lỗi", show_alert=True)
-    return note
+    return note, keyboard
 
 
 def _nut_lam_lai(token, chat_id, draft_id, cq, msg):
@@ -702,20 +714,22 @@ def _nut_duyet(token, draft_id, cq, wp):
     return note
 
 
-def _chot_nut(token, msg, draft_id, note):
-    """Duoi chung cua moi nut: ghi log, viet ket qua vao chinh tin co nut va go
-    ban phim; edit hong thi it nhat go ban phim."""
+def _chot_nut(token, msg, draft_id, note, keyboard=None):
+    """Duoi chung cua moi nut: ghi log, viet ket qua vao chinh tin co nut, roi go
+    ban phim — TRU KHI `keyboard` duoc truyen vao: con duong tiep (vd het duong
+    ha san nhung van chon duoc Kite/bo tin) thi gan lai dung ban phim do, khong
+    go trang de roi Ong Chu phai tu go lenh. Edit hong thi it nhat go ban phim."""
     chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
     log("nut", f"ket qua imgok/imgno/imgredo draft={draft_id}: {note}")
     base = msg.get("caption") or msg.get("text") or ""
     method = "editMessageCaption" if msg.get("caption") else "editMessageText"
     key = "caption" if msg.get("caption") else "text"
+    kb = keyboard if keyboard is not None else {"inline_keyboard": []}
     r = call(token, method, chat_id=chat_id, message_id=msg_id,
              **{key: base + "\n\n<b>" + html_escape(note) + "</b>"},
-             parse_mode="HTML", reply_markup={"inline_keyboard": []})
+             parse_mode="HTML", reply_markup=kb)
     if not r.get("ok"):
-        call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id,
-             reply_markup={"inline_keyboard": []})
+        call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id, reply_markup=kb)
 
 
 def handle_img_approval(token, action, draft_id, cq):
@@ -733,19 +747,20 @@ def handle_img_approval(token, action, draft_id, cq):
     msg = cq["message"]
     chat_id = msg["chat"]["id"]
     wp = DRAFTS / (draft_id + ".writer.json")
+    keyboard = None
     if action == "imgno":
         note = _nut_bo_han(token, draft_id, cq, wp)
     elif action == "imgkite":
         note = _nut_kite(token, chat_id, draft_id, cq)
     elif action == "imgtiep":
-        note = _nut_ha_san(token, draft_id, cq)
+        note, keyboard = _nut_ha_san(token, draft_id, cq)
     elif action == "imgredo":
         note = _nut_lam_lai(token, chat_id, draft_id, cq, msg)
         if note is None:
             return
     else:                                                       # imgok
         note = _nut_duyet(token, draft_id, cq, wp)
-    _chot_nut(token, msg, draft_id, note)
+    _chot_nut(token, msg, draft_id, note, keyboard)
 
 _DRAFT_ID_HOP_LE = re.compile(r"^[a-z0-9][a-z0-9-]{0,54}$")
 
