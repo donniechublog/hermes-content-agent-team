@@ -53,6 +53,7 @@ Ham nao nhan `phien` tuy chon thi dung `phien_hoac_moi`:
 """
 import contextlib
 import sys
+import threading
 
 ARGS_MAC_DINH = ("--no-sandbox", "--disable-dev-shm-usage")
 
@@ -63,6 +64,7 @@ class PhienBrowser:
     def __init__(self):
         self._pw = None
         self._browser = {}            # tuple(args) -> Browser
+        self._khoa = threading.Lock()  # check-then-launch khong khoa la 2 Chromium, giu 1 (B-r2-4)
 
     def __enter__(self):
         return self
@@ -77,12 +79,24 @@ class PhienBrowser:
         Mo LUOI: bai khong dung browser (vd --khong-browser) thi khong ton mot
         tien trinh Chromium nao."""
         khoa = tuple(args)
-        if khoa not in self._browser:
-            if self._pw is None:
-                from playwright.sync_api import sync_playwright
-                self._pw = sync_playwright().start()
-            self._browser[khoa] = self._pw.chromium.launch(args=list(khoa))
-        return self._browser[khoa]
+        with self._khoa:
+            b = self._browser.get(khoa)
+            # Browser chet giua bai (Chromium crash/OOM, bi kill) ma van nam
+            # trong cache thi MOI buoc sau cua cung bai deu TargetClosedError —
+            # anh_chuan_bi dung MOT phien cho ca 5 buoc, nen truoc B4 mot crash
+            # chi mat mot buoc, sau B4 mat ca gnews/xep_hang/vong_bu (audit
+            # lượt 2, N-r2-1). Mo lai thay vi tra xac.
+            if b is not None and not b.is_connected():
+                print(f"[phien] browser {khoa} da chet, mo lai", file=sys.stderr)
+                with contextlib.suppress(Exception):
+                    b.close()
+                b = None
+            if b is None:
+                if self._pw is None:
+                    from playwright.sync_api import sync_playwright
+                    self._pw = sync_playwright().start()
+                b = self._browser[khoa] = self._pw.chromium.launch(args=list(khoa))
+        return b
 
     @contextlib.contextmanager
     def trang(self, args=ARGS_MAC_DINH, **ctx):
