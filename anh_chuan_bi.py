@@ -153,7 +153,16 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # tim — nen phan tim giu nguyen so cu cho moi vai.
         muc_tieu_tim = max(toi_thieu, carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE)
         tieu_de_nhin = nguon.get("tieu_de_en") or title
-        if len(dung_duoc) < muc_tieu_tim and not khong_browser:
+        # `or not _co_bia(...)` la LOW-12 (10/09/2026): kho "du" ma khong tam nao
+        # len bia/hero duoc thi VAN phai di tim. `dung_duoc` dem bang tien te cua
+        # carousel — anh dung duoc o BAT KY dau, ke ca "chi ghep doc". Tin co 5
+        # anh ngang 16:9 (hinh dang thuong gap nhat cua anh bao) dem ra du 5 va
+        # dong cong nay lai; nhung card.py chan anh ngang >1.6 lan chart di mot
+        # minh, tuc Ethan con 0 anh hero — ma brief cam vai tu tai them ("chi
+        # dung MA ANH"). Dung dung `_co_bia` cua vong khai niem ngay duoi, va
+        # thu tu san co la dung: anh THAT o bao khac cung tin di truoc, het
+        # duong moi ha xuong anh khai niem chung chung (co, rack, datacenter).
+        if (len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc)) and not khong_browser:
             anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, muc_tieu_tim,
                                                        dung_duoc, wd, phien=phien)
         # ANH CUA CHINH HANG trong tin (logo, chan dung founder/CEO, tru so,
