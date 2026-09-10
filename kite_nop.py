@@ -304,16 +304,37 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     # ma vision sinh ra de loai (do 06/09/2026). Chua nhin thi goi y, khong ep.
     da_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is True]
     co_anh = [sl for sl in slides if sl.get("image")]
-    # BIA PHAI LA ANH THAT khi co tam dung duoc (Ong Chu 10/09/2026: "kite van
-    # dung vector lam hero, chua su dung anh"). Cong "it nhat mot" ben duoi van
-    # cho phep nhet het anh vao `figure` than roi ve so do tu ve len bia — dung
-    # cai bi che. Doi CO image o slide 1, khong doi dung ma nao: `hinh_hero` chi
-    # goi y, vai co the chon tam khac trong danh sach.
+    # BIA LUON PHAI LA ANH THAT — khong co ngoai le (Ong Chu 10/09/2026: *"khong
+    # chap nhan viec dung vector o hero slide, thoi dai nay khong co anh gi ma
+    # khong the tim duoc"*). Ban 10/09 sang chi chan khi CO ung vien, nen ba ca
+    # van ra bia vector: 0 anh, vision tat, va tin chuyen sang chi con mot tam
+    # (than gianh mat). Nay ca ba deu chan — im lang ve vector la giau mot that
+    # bai cua vong tim anh duoi mot bo slide trong nhu that.
+    #
+    # Chan cung KHONG lam vai treo: `nc.dem_vong_loi` dem ba vong loi Y HET
+    # nhau roi bao vai `kanban_block` va day len Ong Chu — dung duong danh cho
+    # "cong dang doi mot thu khong the co (thieu anh...)".
     hero = kb.hinh_hero(m)
-    if hero and not (slides and slides[0].get("image")):
-        loi.append(f"bìa đang vẽ hero vector trong khi có hình thật dùng được ({hero['ma']}) — "
-                   f"đặt `\"image\": \"{hero['ma']}\"` + `\"caption\"` vào slide 1 (cover). "
-                   "Hình thật nói nhiều hơn một sơ đồ tự vẽ; bìa có ảnh thì cả bộ không vẽ hero art.")
+    if not (slides and slides[0].get("image")):
+        chua = [ma for ma, a in hinh.items() if a.get("lien_quan") is None]
+        if hero:
+            loi.append(f"bìa đang vẽ hero vector trong khi có hình thật dùng được ({hero['ma']}) — "
+                       f"đặt `\"image\": \"{hero['ma']}\"` + `\"caption\"` vào slide 1 (cover). "
+                       "Hình thật nói nhiều hơn một sơ đồ tự vẽ; bìa có ảnh thì cả bộ không vẽ hero art.")
+        elif chua:
+            # Co anh nhung CHUA AI NHIN: khong duoc ep len bia (day quang cao/
+            # banner len bia), ma cung khong duoc ve vector. Day la hong khau
+            # van hanh, khong phai lua chon bo cuc — noi thang thu can bat.
+            loi.append(f"bìa không có ảnh, mà {len(chua)} hình ({', '.join(chua)}) thì vision CHƯA "
+                       "NHÌN (router tắt/thiếu OPENAI_API_KEY) nên chưa được phép lên bìa. Bìa "
+                       "KHÔNG được vẽ hero vector. Bật vision rồi chạy lại "
+                       f"`kite_chuan_bi.py {m.get('draft_id', '<id>')} --lam-moi`.")
+        else:
+            loi.append("bìa không có ảnh thật và engine giao 0 hình dùng được — bìa KHÔNG được vẽ "
+                       "hero vector. Chạy lại vòng tìm ảnh: "
+                       f"`kite_chuan_bi.py {m.get('draft_id', '<id>')} --lam-moi` (vòng ảnh khái "
+                       "niệm §1.2c tìm cờ nước/datacenter theo chủ đề). Vẫn trắng thì `kanban_block` "
+                       "— đó là việc của Ông Chủ, không phải của vai.")
     if da_nhin and not co_anh:
         loi.append(f"có {len(da_nhin)} hình thật dùng được ({', '.join(da_nhin)}) mà không slide nào dùng — "
                    "BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, hoặc image ở bìa. "

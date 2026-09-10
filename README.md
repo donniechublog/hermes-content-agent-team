@@ -90,6 +90,12 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   lẫn cổng `kite_nop` (LUAT_ANH §1.2e). Trừ **ảnh khái niệm**: §1.2c cấm nó ở
   slide thân, nên ép nó vào body là hai cổng đá nhau — nó về bìa qua
   `hinh_hero`, và `kite_nop` chặn nếu nó xuất hiện ở slide khác slide 1.
+- **Bìa của Kite luôn phải là ảnh thật** (LUAT_ANH §1.2f, Ông Chủ 10/09/2026:
+  *"không chấp nhận việc dùng vector ở hero slide"*). Slide 1 không có `image`
+  là `kite_nop` chặn — **kể cả khi engine giao 0 ảnh**: "không có ảnh" là thất
+  bại của vòng tìm ảnh, không phải một trạng thái hợp lệ của tin, nên nó phải
+  nổ ra chứ không được lặng lẽ thành một bộ slide vẽ tay. Ba vòng lỗi y hệt thì
+  `dem_vong_loi` đẩy lên Ông Chủ qua `kanban_block`.
 - Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`,
   `ethan_chuan_bi/ethan_nop`, `kite_chuan_bi/kite_nop`, `miles_chuan_bi/miles_nop`.
   Nop chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi

@@ -109,16 +109,19 @@ def hinh_hero(m: dict) -> dict | None:
            + [a for a in ut if a.get("khai_niem")])
     # Tin CHUYEN sang Kite vi thieu anh: `kite_nop` doi hinh that nam o slide
     # THAN (Ong Chu 09/09), ma cung mot anh khong len duoc hai slide
-    # (`luat_anh.kiem_trung`). Tam nao bi than giu doc quyen thi bo, LUI xuong
-    # ung vien ke tiep — anh khai niem khong nam trong `hinh_phai_dung` (§1.2c
-    # cam no o than) nen no van nhan duoc bia khi anh rieng bi than giu. Het
-    # ung vien thi than thang va bia ve vector: ep ca hai la hai cong da nhau,
-    # vai khong co duong nao nop duoc.
-    ep = hinh_phai_dung(m)
+    # (`luat_anh.kiem_trung`). Tam nao bi than giu doc quyen thi LUI xuong ung
+    # vien ke tiep, de ca hai tam deu duoc dung: anh khai niem khong nam trong
+    # `_ep_tho` (§1.2c cam no o than) nen no nhan bia khi anh rieng bi than giu.
+    ep = _ep_tho(m)
     for chon in xep:
         if not ep or [ma for ma in ep if ma != chon["ma"]]:
             return chon
-    return None
+    # Chi con DUNG MOT tam: BIA THANG (Ong Chu 10/09/2026: *"khong chap nhan
+    # viec dung vector o hero slide"*). Ban truoc tra None o day — than thang va
+    # bia ve vector. Vong doi cua §1.2e ("phai co hinh o BODY") sinh ra tu ca
+    # NHIEU tam ma Kite chi dung mot; con mot tam thi no VAN duoc dung, chi la
+    # dung o bia. `hinh_phai_dung` tru tam nay ra nen than khong doi no nua.
+    return xep[0]
 
 
 def _hero_la_gi(h: dict) -> tuple:
@@ -153,8 +156,20 @@ def dong_hero(m: dict) -> list:
                 "Hình còn lại để cho `figure`."]
 
 
+def _ep_tho(m: dict) -> list:
+    """Mã hình thật bị ép vào bộ khi tin chuyển sang Kite — CHƯA trừ tấm lên bìa.
+
+    Tách khỏi `hinh_phai_dung` 10/09/2026 để cắt vòng gọi: `hinh_hero` cần biết
+    tấm nào bị thân giữ, mà `hinh_phai_dung` lại cần biết tấm nào đã lên bìa.
+    """
+    if not chuyen_tu_vai(m):
+        return []
+    return [a["ma"] for a in hinh_that(m)
+            if a.get("lien_quan") is True and not a.get("khai_niem")][:TOI_DA_EP_HINH]
+
+
 def hinh_phai_dung(m: dict) -> list:
-    """Mã hình BẮT BUỘC vào bộ, khi tin được CHUYỂN sang Kite vì thiếu ảnh thật.
+    """Mã hình BẮT BUỘC vào SLIDE THÂN, khi tin được CHUYỂN sang Kite vì thiếu ảnh.
 
     Ông Chủ 09/09/2026: *"sau khi tìm được hình tốt mà vẫn ko đủ để làm và pass
     qua cho Kite thì Kite cũng phải dùng những hình đó trong body"*. Rỗng khi
@@ -169,13 +184,17 @@ def hinh_phai_dung(m: dict) -> list:
     Ảnh thương hiệu thì Ở LẠI: §1.2d cho nó vào thân (ảnh thật của chính hãng
     trong tin).
 
+    **Trừ tấm đã lên bìa** (`hinh_hero`): cùng một ảnh không lên được hai slide
+    (`luat_anh.kiem_trung` §8), nên để nó trong danh sách này là đòi một thứ bất
+    khả. Hệ quả: tin chỉ có ĐÚNG MỘT tấm thì danh sách rỗng — tấm đó lên bìa và
+    thân không đòi gì nữa (§1.2f, Ông Chủ 10/09/2026: không chấp nhận hero
+    vector). Đòi của §1.2e sinh ra từ ca NHIỀU tấm mà Kite chỉ dùng một.
+
     MỘT nguồn cho cả brief lẫn cổng chặn: hai bản đếm khác nhau là brief bảo
     dùng 3 mã còn cổng đòi 4.
     """
-    if not chuyen_tu_vai(m):
-        return []
-    return [a["ma"] for a in hinh_that(m)
-            if a.get("lien_quan") is True and not a.get("khai_niem")][:TOI_DA_EP_HINH]
+    h = hinh_hero(m)
+    return [ma for ma in _ep_tho(m) if not (h and ma == h["ma"])]
 
 
 def goi_y_tone(title: str) -> tuple:
@@ -191,13 +210,11 @@ def goi_y_tone(title: str) -> tuple:
 
 def viet_brief(m: dict, da_dung: dict | None) -> str:
     theme, hero, gan = goi_y_tone(m["title"])
-    # Mã bắt buộc, bỏ mã đã lên bìa: khung in sẵn MỘT `figure` cho mỗi mã còn
-    # lại, để vai khỏi phải tự suy ra "à, ba hình thì ba slide". Chú thích này có
-    # từ đầu nhưng code KHÔNG bỏ mã của bìa: in cùng một mã ở cả cover lẫn
-    # `figure` là `luat_anh.kiem_trung` chặn — khung mẫu đẩy vai vào cổng.
+    # Khung in sẵn MỘT `figure` cho mỗi mã bắt buộc, để vai khỏi phải tự suy ra
+    # "à, ba hình thì ba slide". `hinh_phai_dung` đã trừ tấm lên bìa, nên khung
+    # không bao giờ in cùng một mã ở cả cover lẫn `figure` (`kiem_trung` chặn).
     hero_anh = hinh_hero(m)
-    ep_khung = [ma for ma in hinh_phai_dung(m)
-                if not (hero_anh and ma == hero_anh["ma"])]
+    ep_khung = hinh_phai_dung(m)
     import brief_chung
     L = brief_chung.dau(
         m, "KITE",
@@ -222,12 +239,16 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
             # Ong Chu 09/09/2026: "sau khi tim duoc hinh tot ma van ko du de lam
             # va pass qua cho Kite thi Kite cung phai dung nhung hinh do trong
             # body". Truoc do brief chi doi "it nhat mot", ma mot tam thi Kite
-            # de len bia roi ve vector ca body — dung cai Ong Chu che.
+            # de len bia roi ve vector ca body — dung cai Ong Chu che. `ep` da
+            # tru tam len bia, nen o day ke ca hai phia cho vai khoi tuong bia
+            # khong tinh.
+            tong = len(ep) + (1 if hero_anh else 0)
             L.append(f"🔁 TIN NÀY CHUYỂN TỪ {tu_vai} SANG KITE VÌ THIẾU ẢNH THẬT — nhưng "
-                     f"{len(ep)} tấm engine tìm được ({', '.join(ep)}) KHÔNG BỊ BỎ ĐI. "
-                     "Luật cho bộ này:")
-            L.append(f"- **Cả {len(ep)} mã đều phải xuất hiện** trong spec — thiếu tấm nào "
-                     "`kite_nop.py` chặn, kèm tên mã.")
+                     f"{tong} tấm engine tìm được KHÔNG BỊ BỎ ĐI. Luật cho bộ này:")
+            if hero_anh:
+                L.append(f"- **{hero_anh['ma']} lên BÌA** (slide 1) — xem ⭐ dưới.")
+            L.append(f"- **Cả {len(ep)} mã còn lại ({', '.join(ep)}) phải xuất hiện** trong spec — "
+                     "thiếu tấm nào `kite_nop.py` chặn, kèm tên mã.")
             L.append("- **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure` "
                      "(`\"image\": \"<mã>\"` + `\"caption\": \"… · via <ai>\"`). Đặt hết lên bìa "
                      "rồi vẽ vector cả thân là đúng cái lỗi khiến tin phải chuyển sang đây.")

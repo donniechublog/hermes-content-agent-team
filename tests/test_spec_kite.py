@@ -60,6 +60,15 @@ def _hinh(wd, ma="H1", w=1200, h=800, lien_quan=True, **k):
     return a
 
 
+def _du_bia(wd, **mk):
+    """Bộ HỢP LỆ tối thiểu SAU 10/09/2026: bìa BẮT BUỘC có ảnh thật (§1.2f, Ông
+    Chủ: "không chấp nhận việc dùng vector ở hero slide"), nên `_du()` toàn chữ
+    không còn là bộ hợp lệ. Trả (slides, m)."""
+    sl = _du()
+    sl[0] = _cover(image="B1", caption="Bảng trong bài · via AA")
+    return sl, _m(wd, [_hinh(wd, ma="B1")], **mk)
+
+
 @contextlib.contextmanager
 def _khong_soi_mat():
     """YuNet (dem mat) can tep model va ton thoi gian; cong mat nguoi cua Kite
@@ -80,20 +89,36 @@ def _chay(slides, m, wd, **spec):
 
 
 # ---------------------------------------------------------------- hop le
-def test_bo_sau_slide_toan_chu_khong_loi():
+def test_bo_sau_slide_bia_co_anh_khong_loi():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        ra, loi, _c = _chay(_du(), _m(wd), wd)
+        sl, m = _du_bia(wd)
+        ra, loi, _c = _chay(sl, m, wd)
         assert loi == [], loi
         assert len(ra["slides"]) == 6
         assert ra["brand"] == "donniechublog" and ra["section"] == "RESEARCH"
+
+
+def test_bo_toan_chu_bi_chan_vi_bia_ve_hero_vector():
+    """Ông Chủ 10/09/2026: "không chấp nhận việc dùng vector ở hero slide, thời
+    đại này không có ảnh gì mà không thể tìm được". Bộ toàn chữ TỪNG là bộ hợp
+    lệ (test cũ `..._toan_chu_khong_loi`); nay bìa không ảnh là chặn, kể cả khi
+    engine giao 0 hình — im lặng vẽ vector là giấu một thất bại của vòng tìm
+    ảnh dưới một bộ slide trông như thật."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        _r, loi, _c = _chay(_du(), _m(wd), wd)
+        assert _co(loi, "bìa", "0 hình", "KHÔNG được vẽ"), loi
+        assert _co(loi, "--lam-moi"), loi
+        assert _co(loi, "kanban_block"), loi
 
 
 def test_brand_dcgr_ra_handle_hien_thi():
     """Masthead in CHU brand: dcgr -> dcgr.tech, khong phai slug (05/09/2026)."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        ra, loi, _c = _chay(_du(), _m(wd, brand="dcgr"), wd)
+        sl, m = _du_bia(wd, brand="dcgr")
+        ra, loi, _c = _chay(sl, m, wd)
         assert loi == [], loi
         assert ra["brand"] != "dcgr" and "dcgr" in ra["brand"], ra["brand"]
 
@@ -144,10 +169,11 @@ def test_theme_va_hero_la_thi_bao_kem_lua_chon():
     import render_edu
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        _r, loi, _c = _chay(_du(), _m(wd), wd, theme="neon-xyz", hero="rong")
+        sl, m = _du_bia(wd)
+        _r, loi, _c = _chay(sl, m, wd, theme="neon-xyz", hero="rong")
         assert _co(loi, "theme", "neon-xyz") and _co(loi, "hero", "rong"), loi
         th = sorted(render_edu.THEMES)[0]
-        ra, loi2, _c = _chay(_du(), _m(wd), wd, theme=th)
+        ra, loi2, _c = _chay(sl, m, wd, theme=th)
         assert loi2 == [] and ra["theme"] == th
 
 
@@ -185,8 +211,9 @@ def test_standfirst_noi_ve_nguon_cung_khong_bi_bat_nham():
 def test_chu_dai_chi_canh_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        sl = _du(); sl[2] = _statement(title="T" * 80)
-        _r, loi, canh = _chay(sl, _m(wd), wd)
+        sl, m = _du_bia(wd)
+        sl[2] = _statement(title="T" * 80)
+        _r, loi, canh = _chay(sl, m, wd)
         assert loi == [], loi
         assert _co(canh, "slide 3", "title", "80"), canh
 
@@ -196,14 +223,15 @@ def test_bars_can_2_den_6_cot_va_value_phai_la_so():
         wd = Path(t)
         bars = {"kind": "bars", "eyebrow": "SO", "title": "So sánh", "standfirst": "x",
                 "caption": "via AA", "bars": [{"label": "A", "value": "1.200"}]}
-        sl = _du(); sl[4] = bars
-        _r, loi, _c = _chay(sl, _m(wd), wd)
+        sl, m = _du_bia(wd)
+        sl[4] = bars
+        _r, loi, _c = _chay(sl, m, wd)
         assert _co(loi, "slide 5", "2..6"), loi
         bars["bars"] = [{"label": "A", "value": "1.200"}, {"label": "B", "value": "nhiều"}]
-        _r, loi2, _c = _chay(sl, _m(wd), wd)
+        _r, loi2, _c = _chay(sl, m, wd)
         assert _co(loi2, "slide 5", "cột 2", "số thật"), loi2
         bars["bars"] = [{"label": "A", "value": "1.200"}, {"label": "B", "value": "900"}]
-        assert _chay(sl, _m(wd), wd)[1] == []
+        assert _chay(sl, m, wd)[1] == []
 
 
 # ---------------------------------------------------------------- hinh that
@@ -257,18 +285,22 @@ def test_chuyen_kite_doi_dung_DU_ma_hinh():
 
 
 def test_chuyen_kite_khong_cho_hinh_nam_moi_o_bia():
-    """Một tấm đặt lên bìa rồi vẽ vector cả thân là đúng cái lỗi khiến tin phải
-    chuyển sang Kite."""
+    """Đặt MỘT tấm lên bìa rồi vẽ vector cả thân, trong khi engine tìm được HAI
+    tấm — đúng cái lỗi khiến tin phải chuyển sang Kite (Ông Chủ 09/09/2026).
+
+    Đo bằng hai tấm chứ không phải một: từ 10/09/2026 tin chỉ có ĐÚNG MỘT tấm
+    thì tấm đó lên bìa là đúng, không còn là lỗi (xem
+    `test_chuyen_kite_chi_mot_tam_thi_BIA_thang`)."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        anh = [_hinh(wd, ma="H1")]
+        anh = [_hinh(wd, ma="H1"), _hinh(wd, ma="H2", w=1100, h=900)]
         sl = _du()
         sl[0] = _cover(image="H1", caption="Bảng trong bài · via nguoi-dua")
         _r, loi, _c = _chay(sl, _m(wd, anh, chuyen_kite="t_9"), wd)
         assert _co(loi, "chỉ nằm ở BÌA"), loi
-        sl[1] = _figure("H1")            # thêm ở thân -> qua
+        sl[1] = _figure("H2", title="Bảng hai")      # thêm ở thân -> qua
         _r, loi2, _c = _chay(sl, _m(wd, anh, chuyen_kite="t_9"), wd)
-        assert not _co(loi2, "chỉ nằm ở BÌA"), loi2
+        assert loi2 == [], loi2
 
 
 def test_chuyen_kite_bo_trang_thi_bao_du_loi_mot_vong():
@@ -279,7 +311,9 @@ def test_chuyen_kite_bo_trang_thi_bao_du_loi_mot_vong():
         anh = [_hinh(wd, ma="H1"), _hinh(wd, ma="H2", w=1100, h=900)]
         _r, loi, _c = _chay(_du(), _m(wd, anh, chuyen_kite="t_9"), wd)
         assert _co(loi, "BẮT BUỘC dùng ít nhất một"), loi
-        assert _co(loi, "H1", "H2", "phải vào bộ"), loi
+        # H1 la hero -> cong bia goi ten no; H2 la phan con lai -> cong than.
+        assert _co(loi, "bìa", "H1"), loi
+        assert _co(loi, "H2", "phải vào bộ"), loi
         assert not _co(loi, "chỉ nằm ở BÌA"), loi
 
 
@@ -317,11 +351,14 @@ def test_bia_co_anh_that_thi_qua():
 
 def test_hinh_chua_nhin_khong_bi_ep_len_bia():
     """Vision tắt thì mọi ảnh `lien_quan=None` — ép lúc đó là đẩy banner lên
-    bìa, cùng bài học với `hinh_phai_dung`."""
+    bìa, cùng bài học với `hinh_phai_dung`. Nhưng từ 10/09/2026 cũng KHÔNG được
+    lặng lẽ vẽ vector: đây là hỏng khâu vận hành, phải nói ra thứ cần bật."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         _r, loi, _c = _chay(_du(), _m(wd, [_hinh(wd, lien_quan=None)]), wd)
-        assert not _co(loi, "hero vector"), loi
+        assert _co(loi, "vision CHƯA NHÌN", "H1"), loi
+        # KHONG duoc chi dinh dat H1 len bia — chua ai nhin no
+        assert not _co(loi, 'đặt `"image": "H1"'), loi
 
 
 def test_hinh_paper_van_len_bia_du_vision_tat():
@@ -334,15 +371,49 @@ def test_hinh_paper_van_len_bia_du_vision_tat():
         assert _co(loi, "hero vector", "H1"), loi
 
 
-def test_chuyen_kite_chi_mot_tam_thi_khong_doi_bia():
+def test_chuyen_kite_chi_mot_tam_thi_BIA_thang():
     """Hai cổng không được đá nhau: tin chuyển sang Kite đòi hình thật nằm ở
-    slide THÂN (09/09), mà cùng một ảnh không lên được hai slide
-    (`kiem_trung`) — còn đúng một tấm thì thân thắng, bìa vẽ vector."""
+    slide THÂN (09/09), mà cùng một ảnh không lên được hai slide (`kiem_trung`).
+
+    ĐẢO NGƯỢC 10/09/2026 — Ông Chủ: "không chấp nhận việc dùng vector ở hero
+    slide". Bản trước cho THÂN thắng và bìa vẽ vector. Nay BÌA thắng: đòi của
+    §1.2e sinh ra từ ca NHIỀU tấm mà Kite chỉ dùng một; còn đúng một tấm thì nó
+    VẪN được dùng, chỉ là dùng ở bìa. `hinh_phai_dung` trừ tấm ấy ra nên thân
+    không đòi nữa."""
+    import kite_chuan_bi as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        sl = _du(); sl[1] = _figure("H1")
-        _r, loi, _c = _chay(sl, _m(wd, [_hinh(wd)], chuyen_kite="t_9"), wd)
-        assert loi == [], loi
+        m = _m(wd, [_hinh(wd)], chuyen_kite="t_9")
+        assert kb.hinh_hero(m)["ma"] == "H1"
+        assert kb.hinh_phai_dung(m) == [], kb.hinh_phai_dung(m)
+        sl = _du()
+        sl[0] = _cover(image="H1", caption="Bảng trong bài · via AA")
+        assert _chay(sl, m, wd)[1] == [], _chay(sl, m, wd)[1]
+        # ...va de no o THAN roi ve vector bia thi CHAN (khong con duong vector)
+        sl2 = _du(); sl2[1] = _figure("H1")
+        assert _co(_chay(sl2, m, wd)[1], "bìa", "hero vector", "H1")
+
+
+def test_hero_khong_bao_gio_None_khi_con_mot_anh_da_nhin():
+    """Bất biến của §1.2f sau 10/09/2026: còn một tấm ĐÃ NHÌN là còn bìa ảnh.
+    `hinh_hero` chỉ trả None khi engine giao 0 hình dùng được — mọi đường khác
+    dẫn tới hero vector đều đã bị bịt."""
+    import kite_chuan_bi as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        r1 = _hinh(wd, ma="R1")
+        kn = _khai_niem(wd, ma="K1", w=1100, h=900)
+        for ten, anh, mk in [
+            ("1 rieng", [r1], {}),
+            ("1 rieng, CHUYEN sang", [r1], {"chuyen_kite": "t_9"}),
+            ("1 khai niem", [kn], {}),
+            ("1 khai niem, CHUYEN sang", [kn], {"chuyen_kite": "t_9"}),
+            ("rieng + khai niem, CHUYEN sang", [r1, kn], {"chuyen_kite": "t_9"}),
+        ]:
+            assert kb.hinh_hero(_m(wd, anh, **mk)) is not None, ten
+        # chi con MOT duong ra None: engine giao 0 hinh
+        assert kb.hinh_hero(_m(wd)) is None
+        assert kb.hinh_hero(_m(wd, [_hinh(wd, ma="X1", lien_quan=None)])) is None
 
 
 def test_hero_uu_tien_paper_roi_anh_rieng_roi_anh_bu():
@@ -534,8 +605,9 @@ def test_cung_mot_hinh_hai_slide_bi_chan():
 def test_so_tren_slide_khong_co_trong_tu_lieu_thi_canh_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        sl = _du(); sl[1] = _statement(standfirst="Đạt 97,3 điểm.")
-        _r, loi, canh = _chay(sl, _m(wd), wd)
+        sl, m = _du_bia(wd)
+        sl[1] = _statement(standfirst="Đạt 97,3 điểm.")
+        _r, loi, canh = _chay(sl, m, wd)
         assert loi == [], loi
         assert any("97,3" in c for c in canh), canh
 
