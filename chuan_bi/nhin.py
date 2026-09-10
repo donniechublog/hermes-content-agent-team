@@ -261,7 +261,7 @@ def _nhin_anh(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     # co state dung chung giua cac lan goi -- nen chay song song duoc (8-12 anh/bai,
     # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
     # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
-    with ThreadPoolExecutor(max_workers=4) as ex:
+    with ThreadPoolExecutor(max_workers=env_load.so_luong(4)) as ex:
         anh = list(ex.map(lambda a: _phan_loai_an_toan(a, wd, "" if a.get("xep_hang")
                                                        else (nguon.get("tieu_de_en") or title)), anh))
     for a in anh:

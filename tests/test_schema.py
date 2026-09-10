@@ -111,7 +111,7 @@ def test_tron_giu_khoa_cu_khong_co_trong_ban_moi():
     """Dung duong da suyt mat: bang_den ghi root_task, write_meta ghi de."""
     ra = schema.hop_nhat_meta({"root_task": "t_9", "title": "cu"},
                               {"title": "moi", "brand": "dcgr"})
-    assert ra["root_task"] == "t_9", "mat root_task -> the goc bang den mo coi"
+    assert ra.get("root_task") == "t_9", "mat root_task -> the goc bang den mo coi"   # .get: do bang FAIL, khong KeyError (E-r2-7)
     assert ra["title"] == "moi" and ra["brand"] == "dcgr"
 
 
@@ -180,6 +180,14 @@ def test_moi_khoa_write_meta_deu_co_trong_Meta():
     khoa = {k.value for k in gan.value.keys if isinstance(k, ast.Constant)}
     thieu = sorted(khoa - set(schema._kieu(schema.Meta)))
     assert not thieu, f"write_meta sinh khoa chua khai trong schema.Meta: {thieu}"
+
+
+def test_doc_manifest_phien_ban_kieu_la_khong_crash():
+    """N-r2-7: "1" (chuoi) hay None tung nem TypeError o `<` — ham hua None khi
+    khong doc duoc ma lai crash."""
+    for pv in ("1", None, "abc", 1.0):
+        m = schema.doc_manifest({"phien_ban": pv, "anh": []})
+        assert m is not None and m["phien_ban"] == schema.PHIEN_BAN_MANIFEST, (pv, m)
 
 
 def _khoa_dict_ghi_vao(src: str, ten_tep: str) -> set:

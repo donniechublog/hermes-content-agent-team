@@ -152,7 +152,7 @@ def gom_tu_lieu(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_en: s
                 "doan_dau": " ".join(doan)[:1500],
                 "so_nguon": len(tl.get("nguon", []))}
     except Exception as e:                                   # noqa: BLE001
-        print(f"[tu_lieu] hong: {type(e).__name__}: {e}", file=sys.stderr)
+        print(f"[tu_lieu] hong: {type(e).__name__}: {e!r}", file=sys.stderr)
         return {"cau_co_so": [], "doan_dau": "", "so_nguon": 0}
 
 

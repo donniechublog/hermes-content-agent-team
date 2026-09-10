@@ -185,7 +185,14 @@ def doc_manifest(nguon) -> dict | None:
             print(f"[schema] manifest {p} khong phai dict")
             return None
 
-    if m.get("phien_ban", 0) < 1:
+    # N-r2-7: phien_ban "1" (chuoi) hay None (tep sua tay/tool khac) tung nem
+    # TypeError o phep `<` — ham hua "None neu khong doc duoc" ma lai crash.
+    try:
+        pv = int(m.get("phien_ban") or 0)
+    except (TypeError, ValueError):
+        pv = 0
+    m["phien_ban"] = pv                 # chuan hoa ve int; nhanh duoi ghi de neu nang ban
+    if pv < 1:
         if "so_dung_duoc" not in m:
             m["so_dung_duoc"] = so_anh_dung_duoc(m.get("anh") or [])
         # `so_xep_hang` = SO BANG chup duoc. Ban cu chi co `xep_hang` (bang dau

@@ -62,6 +62,9 @@ MAC_DINH_ANH = "designer"
 MAC_DINH_VIET = "writer"
 
 
+_TEN_THUONG = {v.ten.lower(): v.slug for v in VAI.values()}
+
+
 def ten_hien(slug: str) -> str:
     """Ten persona de in ra bao cao; tra lai chinh slug neu chua khai."""
     v = VAI.get(slug)
@@ -73,7 +76,11 @@ def slug_that(chu: str) -> str:
 
     Khong nhan ra thi TRA LAI NGUYEN VAN — nguoi goi (chuan_assignee) con kiem
     profile co that khong roi bao loi tu te, dung nuot o day."""
-    return _SLUG_CU.get(str(chu).lower(), chu)
+    c = str(chu).lower()
+    # Ten persona hien tai (Cape, Nova...) cung la mot cach goi hop le — N-r2-10:
+    # "cape" khong co trong go/slug_cu nen tung tra nguyen "cape", chuan_assignee
+    # bao "khong co profile cape" trong khi moi persona khac deu tu resolve.
+    return _SLUG_CU.get(c) or _TEN_THUONG.get(c, chu)
 
 
 # ---- CAC VIEW DAN XUAT (bang cu, giu y nguyen ngu nghia) --------------------

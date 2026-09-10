@@ -861,7 +861,6 @@ def _lam_tron(v):
 def fetch_tin_hang(ngay: int) -> list:
     """RSS cac hang. Bat su kien so dang ky khong the hien: mo ma nguon, doi
     giay phep, cong bo benchmark. Moi feed doc lap, mot cai chet khong keo do."""
-    import email.utils as eut
     import xml.etree.ElementTree as ET
     nguong = time.time() - ngay * 86400
     ra = []
@@ -886,15 +885,7 @@ def fetch_tin_hang(ngay: int) -> list:
             link = _t("link", "a:link") or ""
             if it.find("a:link", ns) is not None:
                 link = it.find("a:link", ns).get("href") or link
-            ts = 0.0
-            try:
-                ts = eut.parsedate_to_datetime(ngay_txt).timestamp()
-            except Exception:                                # noqa: BLE001
-                try:
-                    ts = datetime.fromisoformat(
-                        (ngay_txt or "").replace("Z", "+00:00")).timestamp()
-                except Exception:                            # noqa: BLE001
-                    ts = 0.0
+            ts = quet_chung.moc_thoi_gian(ngay_txt or "")   # mot ban (ADF-r2-15)
             if ts and ts < nguong:
                 continue
             low = tieu_de.lower()
@@ -919,11 +910,8 @@ def fetch_github(ngay: int) -> list:
         except Exception:                                    # noqa: BLE001
             continue
         pub = d.get("published_at") or ""
-        try:
-            ts = datetime.fromisoformat(pub.replace("Z", "+00:00")).timestamp()
-        except Exception:                                    # noqa: BLE001
-            continue
-        if ts < nguong:
+        ts = quet_chung.moc_thoi_gian(pub)
+        if not ts or ts < nguong:
             continue
         ra.append({"repo": repo, "tag": d.get("tag_name"), "ngay": pub[:10],
                    "ghi_chu": (d.get("body") or "")[:300]})
@@ -1158,7 +1146,7 @@ def main():
     # CA qua executor.submit truoc, roi moi .result() theo DUNG THU TU VA CACH
     # GHEP nhu ban tuan tu cu — _thu tu bat het Exception nen .result() o day
     # khong bao gio nem, chi cho toi khi luong cua no xong.
-    with ThreadPoolExecutor(max_workers=8) as ex:
+    with ThreadPoolExecutor(max_workers=env_load.so_luong(8)) as ex:
         f_orouter = ex.submit(_thu, "openrouter", fetch_openrouter, [])
         f_catalog = ex.submit(_thu, "catalog", fetch_catalog, [])
         f_arena = ex.submit(_thu, "arena", fetch_arena, {})

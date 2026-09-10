@@ -165,6 +165,15 @@ def test_khong_vai_la_nao_trong_README():
     assert not thua, f"README ke vai khong co trong vai.py: {thua}"
 
 
+def test_slug_that_nhan_ten_persona_hien_tai():
+    """N-r2-10: "cape" khong co trong go/slug_cu nen tung tra nguyen "cape"."""
+    assert vai.slug_that("cape") == "teaser"
+    assert vai.slug_that("Cape") == "teaser"
+    assert vai.slug_that("jean") == "teaser", "slug cu van phai dung"
+    assert vai.slug_that("nova") == "nova"
+    assert vai.slug_that("khong-co") == "khong-co", "khong nhan ra thi tra nguyen van"
+
+
 def test_chat_router_TOPIC_PROFILE_khop_ban_dang_ky():
     """ADF-r2-2: bang topic->profile cua chat_router tung chep tay 12 dong; thieu
     vai moi thi chat trong topic do roi ve profile mac dinh, im lang."""

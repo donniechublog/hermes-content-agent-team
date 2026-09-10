@@ -14,6 +14,7 @@ from PIL import Image
 
 import luat_anh
 import quet_chung
+import env_load                                              # noqa: E402
 
 from chuan_bi.chung import TOI_DA_ANH, _goc_mien, _hdr, _mien
 
@@ -115,7 +116,7 @@ def tai_va_loc(cands: list, wd: Path) -> list:
     goc_dir = wd / "goc"
     goc_dir.mkdir(parents=True, exist_ok=True)
     ung_vien = cands[:TOI_DA_TAI + 6]
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    with ThreadPoolExecutor(max_workers=env_load.so_luong(6)) as ex:
         tai_truoc = list(ex.map(_tai_ung_vien, ung_vien))
     da_tai = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
     for c, (data, loi) in zip(ung_vien, tai_truoc):

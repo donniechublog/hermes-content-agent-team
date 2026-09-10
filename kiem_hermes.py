@@ -24,6 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
+import hermes_adapter                                        # noqa: E402
 
 HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
 
@@ -35,11 +36,13 @@ COT_CAN = {
     # duoc hai cot thieu: `started_at` (ada_chuan_bi tinh giay trung binh) va
     # `task_runs.id` (adapter ORDER BY id de lay lan chay cuoi) — hermes doi
     # hai cot do thi script nay van xanh ma adapter vo.
-    "tasks": ["id", "title", "assignee", "status", "created_at", "started_at",
-              "completed_at", "result", "last_failure_error"],
+    # DAN XUAT tu adapter (ADF-r2-4): truoc day chep tay "phai KHOP" ma khong
+    # test nao noi hai bang — hermes doi cot thi kiem_hermes van xanh, adapter vo.
+    "tasks": [c for c, _ in hermes_adapter._COT_VIEC],
     # nhat_ky.phan_kanban + duyet_giao_viec (banh giao doc `metadata` o DAY,
-    # khong phai o `tasks` — cot cua hai bang de nho nham)
-    "task_runs": ["id", "task_id", "status", "summary", "error", "metadata"],
+    # khong phai o `tasks` — cot cua hai bang de nho nham). `id`/`task_id` la
+    # cot adapter dung trong WHERE/ORDER BY, khong nam trong bang map.
+    "task_runs": ["id", "task_id"] + [c for c, _ in hermes_adapter._COT_LAN_CHAY],
     # plugin kanban: stream_events
     "task_events": ["id", "task_id", "run_id", "kind", "payload", "created_at"],
 }
@@ -47,9 +50,8 @@ COT_CAN = {
 # day theo_doi_9router va ada_chuan_bi doc thang bang SQL tho, khong ai kiem.
 # Phai KHOP hermes_adapter._COT_DUNG_MODEL / _COT_PHIEN.
 COT_CAN_STATE = {
-    "session_model_usage": ["model", "api_call_count", "input_tokens", "output_tokens",
-                            "cache_read_tokens", "reasoning_tokens", "session_id", "last_seen"],
-    "sessions": ["title", "tool_call_count", "input_tokens", "api_call_count", "started_at"],
+    "session_model_usage": list(hermes_adapter._COT_DUNG_MODEL),
+    "sessions": list(hermes_adapter._COT_PHIEN),
 }
 # Co CLI ta truyen cho `hermes chat`. `-z` tung duoc xu ly TRUOC va thoat luon
 # nen `--continue` bi bo qua im lang — do la ly do danh sach nay ton tai.

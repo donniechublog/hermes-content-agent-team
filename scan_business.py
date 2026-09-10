@@ -28,7 +28,6 @@ import unicodedata
 import urllib.parse as up
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 
@@ -178,14 +177,7 @@ def trong_watchlist(tieu_de: str) -> bool:
 _get = quet_chung.get                  # mot ban duy nhat, xem quet_chung
 
 
-def _ts(txt: str) -> float:
-    for f in (lambda t: parsedate_to_datetime(t).timestamp(),
-              lambda t: datetime.fromisoformat(t.replace("Z", "+00:00")).timestamp()):
-        try:
-            return f(txt)
-        except Exception:                                    # noqa: BLE001
-            continue
-    return 0.0
+_ts = quet_chung.moc_thoi_gian          # mot ban (ADF-r2-15): 45e206c them ham chung ma chua ai goi
 
 
 def chuan_hoa(tieu_de: str) -> str:

@@ -90,8 +90,11 @@ def _chiu_loi_db(khi_loi):
         def trong(*a, **k):
             try:
                 return f(*a, **k)
-            except sqlite3.Error as e:
-                loi = f"{f.__name__}: {type(e).__name__}: {e}"
+            except (sqlite3.Error, OSError, ValueError) as e:
+                # OSError/ValueError (C-r2-7): phan_finn/phan_model doc JSON tho —
+                # mot tep finn_candidates cut la ca nhat ky ngay do khong sinh,
+                # dung kieu "chet cam" 06/09 ma decorator nay sinh ra de chan.
+                loi = f"{f.__name__}: {type(e).__name__}: {e!r}"
                 LOI_DOC.append(loi)
                 print(f"[nhat_ky] loi doc DB — {loi}", file=sys.stderr)
                 return khi_loi
@@ -179,6 +182,7 @@ def phan_kanban(ngay: str) -> list:
     return ra
 
 
+@_chiu_loi_db(None)
 def phan_finn(ngay: str) -> dict | None:
     p = env_load.state_dir() / f"finn_candidates_{ngay}.json"
     if not p.exists():
