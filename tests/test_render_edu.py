@@ -238,6 +238,63 @@ def test_canh_bao_lech_mau_chi_khi_qua_nguong():
     assert re_.lech_hue((0, 200, 180), xa) > re_.NGUONG_HUE_LECH_MAU, "phai co theme lech qua nguong de test co nghia"
 
 
+def test_logo_hang_tren_nen_sang_van_ra_dung_mau():
+    """LOW-11: bia la LOGO HANG — mot mark mau nam tren nen trang. Nen trang da
+    bi bo loc `s < 0.35` gat het, nhung do ap dao lai dem chia cho TONG pixel,
+    nen logo nao duoi 5% dien tich cung ket luan "anh khong co mau ro net" va
+    tra None. Theme roi ve vong xoay mu mau: tin DeepSeek (xanh duong #4D6CF7)
+    ra slide theme 'moss' xanh la. Mau nao 100% pixel co mau deu la no thi phai
+    tin, du dien tich nho."""
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        ds = (77, 108, 247)                   # card.MAU_HANG["DEEPSEEK"] = #4D6CF7
+        p = _anh_mau(t, "logo_ds",            # logo ~4% dien tich, con lai trang
+                     lambda x, y: ds if y >= 96 else (255, 255, 255))
+        rgb = re_.mau_noi_bat(p)
+        assert rgb is not None, "logo mau ro tren nen trang khong phai 'anh khong co mau'"
+        assert re_.theme_gan_mau(rgb) == "ink", (
+            f"xanh DeepSeek phai khop theme 'ink', mau noi bat doc duoc {rgb} "
+            f"-> {re_.theme_gan_mau(rgb)}")
+
+
+def test_dam_nhieu_ti_hon_khong_tu_quyet_theme():
+    """Mat kia cua LOW-11: da chia cho so pixel DA LOC thi mot anh gan nhu
+    den-trang chi dinh vai pixel mau cung ra 100% ap dao. `TI_LE_ANH_CO_MAU`
+    la cai chan cho do — anh phai co mau THAT moi duoc quyet theme."""
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        p = _anh_mau(t, "nhieu",              # 0,25% dien tich la mau
+                     lambda x, y: (255, 0, 0) if (x < 5 and y < 5) else (250, 250, 250))
+        assert re_.mau_noi_bat(p) is None, "dam nhieu 0,25% khong duoc quyet theme ca bo"
+
+
+def test_theme_bam_mau_hang_khi_anh_khong_co_mau():
+    """LOW-11, Ong Chu chot 10/09/2026: palette cua slide phai di cung mau
+    brand. Bia ve vector (khong co anh mau) thi theme bam MAU NHAN DIEN CUA
+    HANG chu khong xoay vong mu mau — tin DeepSeek (xanh duong #4D6CF7) ra
+    'ink', khong duoc ra 'moss' xanh la nua."""
+    theme, _hero = re_.chon_theme_tu_dong({"folio": "DEEPSEEK V4"}, bia_anh=False)
+    assert theme == "ink", f"tin DeepSeek phai ra theme 'ink', ra {theme}"
+
+
+def test_mau_anh_that_van_thang_mau_hang():
+    """Thu tu uu tien phai giu nguyen: anh that mau CO SAN (luat 09/09/2026)
+    van thang mau hang. Tin DeepSeek (xanh duong) ma bia la anh xanh la ro ret
+    thi theme chay theo ANH, ra 'moss'."""
+    p = _anh_mot_mau((76, 217, 111))
+    theme, _hero = re_.chon_theme_tu_dong(
+        {"folio": "DEEPSEEK V4"}, bia_anh=True, anh_mau=str(p))
+    assert theme == "moss", f"mau anh that phai thang mau hang, ra {theme}"
+
+
+def test_mau_hang_trong_spec_chiu_duoc_spec_khong_co_slides():
+    """`kite_chuan_bi.py` goi `chon_theme_tu_dong({"folio": title})` — spec
+    KHONG co khoa "slides". Duong that dang chay, khong duoc nem."""
+    assert re_.mau_hang_trong_spec({"folio": "DEEPSEEK V4"}) == (77, 108, 247)
+    assert re_.mau_hang_trong_spec({}) is None
+    assert re_.mau_hang_trong_spec({"folio": "MOT CHU DE KHONG NHAC HANG NAO"}) is None
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())
