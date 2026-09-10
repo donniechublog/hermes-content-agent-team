@@ -88,6 +88,26 @@ def avatar_cho_emoji(emoji: str) -> Path | None:
     return None
 
 
+def _ve_rgb(im: Image.Image) -> Image.Image:
+    """Ve RGB ma KHONG lam hong hai loai anh Bob hay nhan (audit lượt 2, N-r2-3):
+
+    - RGBA/LA/P-co-trong-suot (logo, meme, sticker): `convert("RGB")` vut alpha,
+      vung trong suot ra DEN. sharp composite giu alpha nen ban Node ra nen the
+      kem — day dan len nen BG bang kenh alpha truoc.
+    - I;16 (PNG 16-bit, export khoa hoc/mot so tool chup): convert("RGB") ket
+      gia tri >255 thanh 255 -> anh TRANG TINH, khong loi, Bob van gui. Chia
+      ve 8-bit truoc."""
+    if im.mode.startswith("I"):
+        im = im.point(lambda v: v / 256).convert("L")
+    elif im.mode == "P" and "transparency" in im.info:
+        im = im.convert("RGBA")
+    if im.mode in ("RGBA", "LA"):
+        nen = Image.new("RGB", im.size, _mau(BG))
+        nen.paste(im.convert("RGBA"), mask=im.getchannel("A"))
+        return nen
+    return im.convert("RGB")
+
+
 def dong_khung(nguon, ra, emoji: str = "", handle: str = "@donniechublog",
                footer: str | None = None, avatar=None, khong_mascot: bool = False) -> dict:
     """Dong khung mot anh. Tra ve dict mo ta y nhu frame.js in ra."""
@@ -97,7 +117,7 @@ def dong_khung(nguon, ra, emoji: str = "", handle: str = "@donniechublog",
         im = ImageOps.exif_transpose(im)          # sharp().rotate() theo EXIF
     except Exception:                             # noqa: BLE001
         pass
-    im = im.convert("RGB")
+    im = _ve_rgb(im)
     if im.width > MAXW:
         im = im.resize((MAXW, _lam_tron(im.height * MAXW / im.width)), Image.LANCZOS)
     # Unsharp nhe — bu lai do net mat khi thu nho. KHONG khop chinh xac

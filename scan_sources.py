@@ -271,6 +271,15 @@ def seen_keys() -> set:
         for it in data.get("items", []):
             if it.get("link"):
                 keys.add(_norm_url(it["link"]))
+    # CO Y KHONG loc `.meta.json` ra khoi glob nay, khac voi theo_doi_9router.py/
+    # ada_chuan_bi.py/approve_service.py — nhung cho do quet de tim DRAFT THAT
+    # (doc "caption"/"status", thu ".meta.json" khong co), con o day chi doc MOT
+    # truong (`source_url`) ma ".meta.json" CO (schema.Meta, bat buoc, ghi ngay
+    # luc giao task — TRUOC khi vai viet xong caption). Loc no ra la mat dung
+    # bao ve can nhat: mot URL dang co vai viet do (chi co .meta.json, chua co
+    # .json) se khong con tinh la "da dung" nua, va scan_sources co the goi y
+    # lai CHINH URL do cho task thu hai trong luc task dau chua xong — xem
+    # tests/test_scan_sources.py cho phep do bang so.
     for f in (ROOT / "drafts").glob("*.json"):
         try:
             d = json.loads(f.read_text(encoding="utf-8"))

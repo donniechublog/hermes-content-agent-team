@@ -29,7 +29,6 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import card                                                  # noqa: E402
 import khung_anh                                             # noqa: E402
 import chup_trang                                            # noqa: E402
 import env_load                                              # noqa: E402
@@ -50,26 +49,13 @@ EMOJI_MAC_DINH = "🙄"
 RC_KHONG_CO_ANH = 3            # get_source.py thoat 3 khi trang khong co anh don
 
 
-# CT_BRAND la khoa CONTAINER ('blog' | 'dcgr'), con card.THUONG_HIEU khoa theo
-# TEN BRAND ('donniechublog' | 'dcgr'). Hai bo khoa khac nhau o dung mot chu:
-# 'blog' khong co trong THUONG_HIEU.
-_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
-
-
 def handle_kenh(brand: str) -> str:
-    """@handle hien thi cua brand. MOT nguon su that: bang brand cua card.py —
-    truoc day chuoi nay go tay trong SOUL nen phai chep SOUL thanh hai ban.
+    """@handle hien thi cua brand — mot ban o env_load.handle_kenh (ADF-r2-9).
 
-    Nhan CA hai dang khoa (CT_BRAND 'blog' lan ten brand 'donniechublog') va
-    LUON tra ve co "@". Truoc 06/09/2026 ham nay tra thang gia tri tra cuu:
-    tren container blog, CT_BRAND='blog' khong co trong THUONG_HIEU nen roi ve
-    chinh chuoi 'blog' — watermark tren MOI anh Bob dong khung in dung chu
-    "blog", va caption Telegram ghi "Bob — blog". khung_anh ve nguyen xi, khong
-    tu them "@" (mac dinh cua no la "@donniechublog")."""
-    b = (brand or "").strip()
-    b = _TEN_BRAND.get(b, b)
-    h = (getattr(card, "THUONG_HIEU", {}).get(b) or {}).get("handle") or b
-    return h if h.startswith("@") else "@" + h
+    Su co 06/09/2026 giu lai lam ly do ham nay LUON co "@": CT_BRAND='blog'
+    khong co trong card.THUONG_HIEU nen tung roi ve chuoi 'blog' — watermark tren
+    MOI anh Bob dong khung in dung chu "blog"."""
+    return env_load.handle_kenh(brand, co_a_cong=True)
 
 
 def bang_mood() -> dict:

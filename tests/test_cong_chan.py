@@ -7,8 +7,12 @@ cổng: vai sửa kiểu gì cũng sai và Ông Chủ chỉ thấy im lặng. Ng
 cổng ở đây phải có ví dụ ĐÚNG-PHẢI-QUA đi kèm ví dụ SAI-PHẢI-CHẶN.
 
 Chạy:  venv/bin/python tests/test_cong_chan.py
+
+Ba lệnh subprocess trong tệp này gọi `sys.executable`, KHÔNG gõ cứng
+`venv/bin/python`: đường cứng chỉ đúng trên Linux/macOS và làm test đỏ trên
+Windows (`venv/Scripts/python.exe`) dù mã chính hoàn toàn ổn — xem lý do đầy đủ
+trong docstring của `tu_lieu.boc()`.
 """
-import contextlib
 import sys
 import tempfile
 from pathlib import Path
@@ -474,13 +478,18 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
     import os
     import subprocess
     BRAND = "thu_tran_bb"
-    moi_truong = {**os.environ, "CT_BRAND": BRAND}
-    kho = ROOT / "state" / BRAND
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
+        # State cua tien trinh con di vao TEMP, khong vao state/ that cua repo.
+        # Truoc audit lượt 2 (E-r2-1): tien trinh con ton trong CT_STATE_DIR
+        # nhung phan don o `finally` gõ cung ROOT/"state"/BRAND — dat bien la
+        # FileNotFoundError, 17 test sau khong chay; khong dat bien thi test
+        # tao/xoa state/thu_tran_bb/ TRONG repo. `kho` phai tinh tu CUNG bien.
+        moi_truong = {**os.environ, "CT_BRAND": BRAND, "CT_STATE_DIR": str(t / "state")}
+        kho = t / "state" / BRAND
         BB = "https://anthropic.com/claude-opus-46"
         # ghi danh sach bat buoc bang chinh tien trinh con (cung state dir)
-        subprocess.run([str(ROOT / "venv/bin/python"), "-c",
+        subprocess.run([sys.executable, "-c",
                         "import sys; sys.path.insert(0, %r); import bat_buoc; "
                         "bat_buoc.them('scout', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
                         % (str(ROOT), BB)],
@@ -503,7 +512,7 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
             (t / "p.json").write_text(json.dumps(picks), encoding="utf-8")
 
             r = subprocess.run(
-                [str(ROOT / "venv/bin/python"), str(ROOT / "manifest_build.py"),
+                [sys.executable, str(ROOT / "manifest_build.py"),
                  "--candidates", str(t / "c.json"), "--picks", str(t / "p.json"),
                  "--out", str(t / "m.json"), "--khong-xoa-bat-buoc"],
                 env=moi_truong, capture_output=True, text=True, cwd=str(ROOT))
@@ -695,10 +704,10 @@ def test_manifest_rong_khong_ghi_de():
     import json
     import os
     import subprocess
-    moi_truong = {**os.environ, "CT_BRAND": "thu_rong_mb"}
-    kho = ROOT / "state" / "thu_rong_mb"
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
+        moi_truong = {**os.environ, "CT_BRAND": "thu_rong_mb", "CT_STATE_DIR": str(t / "state")}
+        kho = t / "state" / "thu_rong_mb"          # xem ghi chu o test_tran_tin (E-r2-1)
         (t / "c.json").write_text(json.dumps({"candidates": [
             {"link": "https://a.com/1", "title": "T", "source": "HN", "points": 9,
              "comments": 1, "via": "hn", "score_partial": 40, "score_recency": 5,
@@ -711,7 +720,7 @@ def test_manifest_rong_khong_ghi_de():
                 if ra.exists():
                     ra.unlink()
                 r = subprocess.run(
-                    [str(ROOT / "venv/bin/python"), str(ROOT / "manifest_build.py"),
+                    [sys.executable, str(ROOT / "manifest_build.py"),
                      "--candidates", str(t / "c.json"), "--picks", str(t / "p.json"),
                      "--out", str(ra)],
                     env=moi_truong, capture_output=True, text=True, cwd=str(ROOT))
@@ -798,6 +807,76 @@ def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
                 assert _cr(mau, (nen,) * 3) >= 4.0, (
                     f"ranh {ranh}: dong {tx[:28]!r} mau {mau} tren nen L={nen} "
                     f"chi CR {_cr(mau, (nen,) * 3):.2f}")
+
+
+def _anh_mang_sang_doc(w, h, ra, x0_ti=0.42, x1_ti=0.72):
+    """Nen TOI, mot mang SANG DOC (ao trang, cua so, den san khau) chiem mot
+    phan be ngang — mang nay cat qua MOI dai dong, khong phai ranh ngang."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (w, h), (22, 24, 30))
+    d = ImageDraw.Draw(im)
+    for x in range(0, w, 7):
+        v = (x * 37) % 90
+        d.rectangle([x, 0, x + 4, h], fill=(16 + v // 6, 20 + v // 5, 28 + v // 4))
+    for y in range(0, h, 13):
+        v = (y * 53) % 70
+        d.rectangle([0, y, w, y + 2], fill=(14 + v // 4, 18 + v // 3, 26 + v // 3))
+    bx0, bx1 = int(w * x0_ti), int(w * x1_ti)
+    for y in range(0, h, 11):
+        u = (y * 31) % 30
+        d.rectangle([bx0, y, bx1, y + 9], fill=(250 - u, 249 - u, 246 - u // 2))
+    im.save(ra)
+    return ra
+
+
+def test_moi_dong_quote_doc_duoc_khi_co_mang_sang_doc():
+    """Nua con lai cua bai toan tren: mang sang/toi nam GON TRONG mot dai dong.
+
+    Do tung dai (test tren) chi xu duoc ranh NGANG. Mang sang DOC thi trung binh
+    ca dai van thien dung phe — mean 95 chon chu trang — nhung stddev 84 va nen
+    cuc bo tai mang sang la 217: CR 1.19, mat chu dung chuong do. `_can_bang_dong`
+    sinh ra cho ca nay, nhung toi 07/09/2026 moi chi noi vao kieu `tran`; kieu
+    `quote` con dung `_sang_vung` truc tiep.
+
+    Cham bang CUA SO TRUOT doc dai, KHONG phai median ca dai: median cua chinh ca
+    nay van cho CR 5.57 nen gate cu bao xanh trong khi chu da chim."""
+    from PIL import Image, ImageDraw
+    import card
+    with tempfile.TemporaryDirectory() as td:
+        t = Path(td)
+        card.dat_thuong_hieu("donniechublog")
+        ve_goc = ImageDraw.ImageDraw.text
+        da_ve = []
+
+        def ve_ghi(self, xy, text, *a, **kw):
+            da_ve.append((xy, text, kw.get("fill")))
+            return ve_goc(self, xy, text, *a, **kw)
+
+        quote = "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified"
+        for x0_ti, x1_ti in ((0.42, 0.72), (0.0, 0.35), (0.6, 1.0)):
+            da_ve.clear()
+            src = _anh_mang_sang_doc(1200, 1560, t / f"g{int(x0_ti*100)}.png",
+                                     x0_ti, x1_ti)
+            ra = t / f"the{int(x0_ti*100)}.png"
+            ImageDraw.ImageDraw.text = ve_ghi
+            try:
+                card.build(str(src), quote, str(ra), handle="@donniechublog",
+                           ratio="4:5", attrib="Đọc bài đầy đủ tại donniechublog")
+            finally:
+                ImageDraw.ImageDraw.text = ve_goc
+            im = Image.open(ra).convert("RGB")
+            dong = [(xy, tx, f) for xy, tx, f in da_ve if tx and tx in quote and f]
+            assert len(dong) >= 3, f"khong ghi nhan du dong quote ({len(dong)})"
+            for (x, y), tx, mau in dong:
+                dai = im.crop((int(x), int(y) + 20, im.width - int(x), int(y) + 95))
+                for wx in range(0, dai.width - 90, 30):
+                    o = dai.crop((wx, 0, wx + 90, dai.height)).convert("L")
+                    px = sorted(o.getdata())
+                    nen = px[len(px) // 2]
+                    assert _cr(mau, (nen,) * 3) >= 4.0, (
+                        f"mang sang {x0_ti}..{x1_ti}: dong {tx[:28]!r} mau {mau} "
+                        f"tren nen cuc bo L={nen} (x={int(x)+wx}) chi CR "
+                        f"{_cr(mau, (nen,) * 3):.2f}")
 
 
 def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
@@ -1190,14 +1269,5 @@ def test_publish_khong_dang_album_lan_hai():
 
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

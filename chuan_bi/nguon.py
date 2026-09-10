@@ -7,9 +7,7 @@ import re
 import sys
 from pathlib import Path
 
-import httpx
-
-import env_load
+import schema
 
 from chuan_bi.chung import DRAFTS, GNEWS, _doc_json, _ghi_json
 
@@ -55,7 +53,17 @@ def nap_nguon(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
             link_goc = that
             if meta.get("source_url") != that:
                 meta["source_url"] = that
-                _ghi_json(DRAFTS / f"{draft_id}.meta.json", meta)
+                # TRON vao ban TREN DIA hien tai, khong ghi de nguyen `meta` (co
+                # the da cu di so voi luc goi ham nay — pipeline chay lau, va
+                # `.meta.json` la tep BA TIEN TRINH cung ghi khong khoa chung:
+                # approve_service, engine nen, va bang_den cua hermes ghi
+                # `root_task` rieng, xem docstring env_load.ghi_json). Ghi de ca
+                # dict y het loi hop_nhat_meta da sua cho duyet_chon_tin.py —
+                # ghi de mat `root_task` neu bang_den vua ghi xong trong luc
+                # tien trinh nay con dang giai ma Google News.
+                p_meta = DRAFTS / f"{draft_id}.meta.json"
+                _ghi_json(p_meta, schema.hop_nhat_meta(
+                    _doc_json(p_meta, {}), {"source_url": that}))
     # Tieu de TIENG ANH cua bai that: tin cua Vera/Nova mang tieu de tieng Viet,
     # tim Google News/RSS bang tieu de do ra rong. Lay <title>/og:title cua trang
     # goc mot lan, ghi vao nguon json de anh_bai/tu_lieu tim bao khac bang no.
@@ -119,15 +127,9 @@ def anh_commons(tu_khoa: str, so: int = 4) -> list | None:
     Tra None khi HONG VI MOI TRUONG (mang, API loi) — KHAC voi [] (da chay het,
     khong ra anh nao). Nguoi goi phai tu phan biet hai truong hop nay (quy uoc
     "hong phai lo", audit_content_team C1)."""
-    try:
-        r = httpx.get("https://commons.wikimedia.org/w/api.php", params={
-            "action": "query", "generator": "search", "gsrsearch": f"{tu_khoa} filetype:bitmap",
-            "gsrnamespace": 6, "gsrlimit": 14, "prop": "imageinfo",
-            "iiprop": "url|size|mime", "iiurlwidth": 1800, "format": "json"},
-            headers={"User-Agent": env_load.UA_WIKI}, timeout=20)
-        pages = r.json().get("query", {}).get("pages", {})
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[commons] hong: {type(e).__name__}: {e!r}", file=sys.stderr)
+    import quet_chung
+    pages = quet_chung.hoi_commons(tu_khoa, so=14, loai_logo=False)   # mot ban (ADF-r2-16)
+    if pages is None:
         return None
     ra = []
     for pg in pages.values():

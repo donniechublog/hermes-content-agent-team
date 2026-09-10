@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
+import schema                                                # noqa: E402
 
 
 def chuan(t) -> str:
@@ -30,7 +31,7 @@ def nap(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) -> tuple:
     meta = cb.nap_meta(draft_id)               # dat CT_BRAND theo brand cua draft
     brand = cb._brand_cua(meta)
     wd = cb.workdir(env_load.state_dir(), draft_id)
-    m = cb._doc_json(wd / "xong.json")
+    m = schema.doc_manifest(wd / "xong.json")   # bu khoa dan xuat cho ban cu (C-r2-5)
     if not m:
         sys.exit(f"Chua chuan bi. Chay truoc: venv/bin/python {ten_brief} {draft_id}")
     spec_path = Path(spec_arg) if spec_arg else wd / "spec.json"
@@ -360,7 +361,7 @@ def gui_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi
     """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi da_dung.json
     (`ghi` = cac truong rieng cua vai: bia/anh/hook/theme...). Tra ve message_id."""
     import gui_telegram
-    xong = cb._doc_json(wd / "xong.json") or {}
+    xong = schema.doc_manifest(wd / "xong.json") or {}
 
     def _ghi_so(mid=None):
         """Ghi da_dung.json + so anh da dung. Goi NGAY KHI album da len topic, ke

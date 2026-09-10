@@ -181,24 +181,52 @@ def test_khong_con_tep_node_nao_trong_skill():
 
 
 def test_khong_con_ai_shell_ra_node():
+    """Doc bang ast (E-r2-4): chi bat lenh subprocess.*([... "node" ...]) hoac
+    shutil.which("node") — quet chuoi tho tung bao hong oan voi mot comment."""
+    import ast
     xau = []
     for p in list(ROOT.glob("*.py")) + list((ROOT / "hermes").rglob("*.py")):
-        s = p.read_text(encoding="utf-8", errors="replace")
-        for dong in s.splitlines():
-            if '"node"' in dong or "'node'" in dong:
-                xau.append(f"{p.name}: {dong.strip()[:70]}")
+        try:
+            cay = ast.parse(p.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        for n in ast.walk(cay):
+            if not isinstance(n, ast.Call) or not isinstance(n.func, ast.Attribute):
+                continue
+            goc = n.func.value
+            if not (isinstance(goc, ast.Name) and goc.id in ("subprocess", "shutil")):
+                continue
+            if any(isinstance(c, ast.Constant) and c.value == "node" for a in n.args for c in ast.walk(a)):
+                xau.append(f"{p.name}:{n.lineno} {goc.id}.{n.func.attr}(... 'node')")
     assert not xau, f"van con cho goi node: {xau}"
 
 
+# ------------------------------------------------- anh dau vao la (N-r2-3)
+def test_png_trong_suot_ra_nen_kem_khong_phai_den():
+    """convert("RGB") vut alpha -> vung trong suot ra DEN; sharp cua ban Node
+    composite giu alpha nen ra nen the. Logo/meme/sticker la dau vao thuong."""
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "trong.png"
+        Image.new("RGBA", (1200, 800), (0, 0, 0, 0)).save(p)
+        mo = ka.dong_khung(p, Path(t) / "ra.png", khong_mascot=True)
+        c = mo["canvas"]
+        assert _gan(_diem(Path(t) / "ra.png", c["width"] // 2, c["height"] // 2), ka._mau(ka.BG)), \
+            "vung trong suot phai la nen the kem"
+
+
+def test_png_16bit_khong_ra_trang_tinh():
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "i16.png"
+        im = Image.new("I;16", (1200, 800))
+        im.putdata([int(x / 1200 * 65535) for y in range(800) for x in range(1200)])
+        im.save(p)
+        ka.dong_khung(p, Path(t) / "ra.png", khong_mascot=True)
+        g = _hinh_hoc(1200, 800)
+        # giua anh: gradient ~50% -> xam, KHONG phai (255,255,255)
+        px = _diem(Path(t) / "ra.png", g["canh"] + 600, g["header_h"] + 400)
+        assert max(px) < 200, f"anh 16-bit ra trang tinh: {px}"
+
+
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

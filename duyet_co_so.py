@@ -51,7 +51,7 @@ env_load.nap()                            # nap secret.<brand>.env de co BRAND l
 # BRAND (ten content-brand day du) SUY tu CT_BRAND — truoc day la hai bien doc lap
 # voi hai bo gia tri, dat lech mot trong hai la content di nham brand. Van cho
 # BRAND trong env de len (tuong thich nguoc), nhung cau hinh chuan chi can CT_BRAND.
-_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
+_TEN_BRAND = env_load.BRAND_DAI        # mot bang, o env_load (ADF-r2-10)
 
 BRAND = (os.environ.get("BRAND")
          or _TEN_BRAND.get(os.environ.get("CT_BRAND", ""), "donniechublog"))
@@ -95,16 +95,9 @@ def _ghi_json(path, data, indent=2):
     Ten tmp mang pid + thread id vi nhieu thread nen cung ghi mot tep state
     (nut chay nen, vong poll): dung chung mot ten tmp thi hai ban ghi lai lan
     vao nhau roi ban lai lan do moi la cai duoc replace."""
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_name(f"{p.name}.{os.getpid()}.{threading.get_ident()}.tmp")
-    try:
-        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=indent),
-                       encoding="utf-8")
-        os.replace(tmp, p)
-    except BaseException:
-        tmp.unlink(missing_ok=True)              # khong de lai rac .tmp
-        raise
+    # ADF-r2-11: pid+thread va don tmp khi hong nay nam trong env_load.ghi_json
+    # (mot ban cho 4 cho tung tu viet). Giu ten ham cho ho duyet_*.
+    env_load.ghi_json(path, data, indent=indent)
 
 _KHOA_DRAFT = {}                       # draft_id -> Lock: hai nut cua CUNG mot bai chay lan luot
 

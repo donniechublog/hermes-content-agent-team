@@ -15,7 +15,6 @@ Chay:  venv/bin/python tests/test_ha_san_nut.py
 import json
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -41,7 +40,7 @@ def _xong_json(tmp: Path, so_dung_duoc: int, toi_thieu: int, toi_thieu_co_ban=5)
 
 def _goi_ha_san(tmp: Path, so_dung_duoc: int, toi_thieu: int, co_kite: bool):
     """Chay _nut_ha_san voi moi truong gia, tra (note, keyboard)."""
-    xong = _xong_json(tmp, so_dung_duoc, toi_thieu)
+    _xong_json(tmp, so_dung_duoc, toi_thieu)
     profiles = tmp / "home" / "profiles"
     profiles.mkdir(parents=True, exist_ok=True)
     if co_kite:
@@ -132,14 +131,5 @@ def test_chot_nut_mac_dinh_van_go_trang():
 
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

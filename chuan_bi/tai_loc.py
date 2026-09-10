@@ -14,6 +14,7 @@ from PIL import Image
 
 import luat_anh
 import quet_chung
+import env_load                                              # noqa: E402
 
 from chuan_bi.chung import TOI_DA_ANH, _goc_mien, _hdr, _mien
 
@@ -44,14 +45,22 @@ def _tai_bytes(url: str) -> bytes | None:
         with httpx.stream("GET", url, headers=_hdr(url), timeout=40,
                           follow_redirects=True) as r:
             if r.status_code != 200 or not quet_chung.url_an_toan(r.url):
+                print(f"[tai] {str(url)[:70]}: HTTP {r.status_code}"
+                      + ("" if quet_chung.url_an_toan(r.url) else " (chuyen huong vao dia chi noi bo)"),
+                      file=sys.stderr)
                 return None
             buf = b""
             for chunk in r.iter_bytes(65536):
                 buf += chunk
                 if len(buf) > TAI_TOI_DA_BYTE:
+                    print(f"[tai] {str(url)[:70]}: qua {TAI_TOI_DA_BYTE // 1_000_000} MB, bo", file=sys.stderr)
                     return None
             return buf
-    except Exception:                                        # noqa: BLE001
+    except Exception as e:                                   # noqa: BLE001
+        # Truoc audit lượt 2 (C-r2-2): `return None` khong log — mat DNS/proxy thi
+        # 5 ung vien hong ra 0 dong stderr, engine ket luan "tai duoc 0 anh" ->
+        # so_dung_duoc=0 -> tu chuyen Kite, khong dau vet loi moi truong nao.
+        print(f"[tai] {str(url)[:70]}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return None
 
 
@@ -107,7 +116,7 @@ def tai_va_loc(cands: list, wd: Path) -> list:
     goc_dir = wd / "goc"
     goc_dir.mkdir(parents=True, exist_ok=True)
     ung_vien = cands[:TOI_DA_TAI + 6]
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    with ThreadPoolExecutor(max_workers=env_load.so_luong(6)) as ex:
         tai_truoc = list(ex.map(_tai_ung_vien, ung_vien))
     da_tai = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
     for c, (data, loi) in zip(ung_vien, tai_truoc):
@@ -167,7 +176,14 @@ def tai_va_loc(cands: list, wd: Path) -> list:
                 continue
             da_tai.append((h, im, c, len(data)))
         except Exception as e:                               # noqa: BLE001
-            print(f"[tai] {str(c.get('anh'))[:60]}: {type(e).__name__}", file=sys.stderr)
+            print(f"[tai] {str(c.get('anh'))[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
+    # MOT dong tong de brief/route phan biet "trang khong co anh" voi "khong
+    # tai duoc anh nao" (loi moi truong) — C-r2-2. Tung URL da co dong rieng.
+    khong_tai = sum(1 for d, l in tai_truoc if not d)
+    if ung_vien and khong_tai:
+        print(f"[tai] {khong_tai}/{len(ung_vien)} ung vien KHONG tai duoc"
+              + (" — TAT CA, nghi mang/DNS/proxy truoc khi nghi bai khong co anh" if khong_tai == len(ung_vien) else ""),
+              file=sys.stderr)
     ra = []
     for n, (h, im, c, _) in enumerate(da_tai[:TOI_DA_ANH], start=1):
         ma = f"A{n}"

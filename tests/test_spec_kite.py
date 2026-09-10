@@ -160,6 +160,28 @@ def test_dan_nguon_phai_ghi_via():
         assert _co(loi, "slide 4", "via"), loi
 
 
+def test_dan_nguon_bat_ca_dang_khong_co_theo():
+    """"Nguồn: X" (khong co "Theo" dau) van la dan nguon sai dinh dang."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du(); sl[3] = _statement(standfirst="Nguồn: Nvidia công bố hôm qua.")
+        _r, loi, _c = _chay(sl, _m(wd), wd)
+        assert _co(loi, "slide 4", "via"), loi
+
+
+def test_standfirst_noi_ve_nguon_cung_khong_bi_bat_nham():
+    """b403ca4 (08/09/2026) thu hep cong nay lai vi no da bat nham "Nguồn cung"/
+    "Khan hiếm nguồn cung" (cum tu thuong, chuoi cung ung) trong hai job Kite
+    doc lap cung ngay — nhung fix do KHONG co test bao ve, nen khi standfirst
+    duoc dua tro lai vao cong nay (test tren) phai chan lai dung false positive
+    do, khong chi chan lai lỗi that."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du(); sl[3] = _statement(standfirst="Khan hiếm nguồn cung chip toàn cầu.")
+        _r, loi, _c = _chay(sl, _m(wd), wd)
+        assert not _co(loi, "via"), loi
+
+
 def test_chu_dai_chi_canh_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
@@ -272,12 +294,108 @@ def test_khong_chuyen_kite_thi_van_chi_doi_mot_tam():
         assert not _co(loi, "chỉ nằm ở BÌA"), loi
 
 
+# ---- BIA phai dung anh that (Ong Chu 10/09/2026) --------------------------
+def test_bia_ve_vector_trong_khi_co_hinh_that_thi_chan():
+    """Ông Chủ 10/09/2026: "kite vẫn dùng vector làm hero, chưa sử dụng ảnh".
+    Cổng "ít nhất một" cũ cho phép nhét hết ảnh vào `figure` thân rồi vẽ sơ đồ
+    lên bìa."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du(); sl[1] = _figure("H1")
+        _r, loi, _c = _chay(sl, _m(wd, [_hinh(wd)]), wd)
+        assert _co(loi, "bìa", "hero vector", "H1"), loi
+
+
+def test_bia_co_anh_that_thi_qua():
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du()
+        sl[0] = _cover(image="H1", caption="Bảng trong bài · via AA")
+        _r, loi, _c = _chay(sl, _m(wd, [_hinh(wd)]), wd)
+        assert loi == [], loi
+
+
+def test_hinh_chua_nhin_khong_bi_ep_len_bia():
+    """Vision tắt thì mọi ảnh `lien_quan=None` — ép lúc đó là đẩy banner lên
+    bìa, cùng bài học với `hinh_phai_dung`."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        _r, loi, _c = _chay(_du(), _m(wd, [_hinh(wd, lien_quan=None)]), wd)
+        assert not _co(loi, "hero vector"), loi
+
+
+def test_hinh_paper_van_len_bia_du_vision_tat():
+    """Hình paper bóc thẳng từ PDF nên không thể là quảng cáo — LUAT_ANH §1.4
+    "Figure 1 là hero" không phụ thuộc vision."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        h = _hinh(wd, lien_quan=None, paper_hinh="Figure 1")
+        _r, loi, _c = _chay(_du(), _m(wd, [h]), wd)
+        assert _co(loi, "hero vector", "H1"), loi
+
+
+def test_chuyen_kite_chi_mot_tam_thi_khong_doi_bia():
+    """Hai cổng không được đá nhau: tin chuyển sang Kite đòi hình thật nằm ở
+    slide THÂN (09/09), mà cùng một ảnh không lên được hai slide
+    (`kiem_trung`) — còn đúng một tấm thì thân thắng, bìa vẽ vector."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du(); sl[1] = _figure("H1")
+        _r, loi, _c = _chay(sl, _m(wd, [_hinh(wd)], chuyen_kite="t_9"), wd)
+        assert loi == [], loi
+
+
+def test_hero_uu_tien_paper_roi_anh_rieng_roi_anh_bu():
+    """LUAT_ANH §1.2c/§1.2d: gợi ý bìa xếp SAU mọi ảnh riêng của tin."""
+    import kite_chuan_bi as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        kn = _hinh(wd, ma="K1", khai_niem={"tu_khoa": "Japan flag"})
+        th = _hinh(wd, ma="T1", thuong_hieu={"loai": "anh", "hang": "Nvidia"})
+        rieng = _hinh(wd, ma="R1")
+        paper = _hinh(wd, ma="P1", paper_hinh="Figure 1")
+        assert kb.hinh_hero(_m(wd, [kn]))["ma"] == "K1"
+        assert kb.hinh_hero(_m(wd, [kn, th]))["ma"] == "T1"
+        assert kb.hinh_hero(_m(wd, [kn, th, rieng]))["ma"] == "R1"
+        assert kb.hinh_hero(_m(wd, [kn, th, rieng, paper]))["ma"] == "P1"
+        assert kb.hinh_hero(_m(wd)) is None
+
+
+def test_khung_spec_khong_in_ma_cua_bia_lai_o_figure():
+    """Cùng một mã ở cả cover lẫn `figure` là `luat_anh.kiem_trung` chặn — khung
+    mẫu không được đẩy vai vào cổng."""
+    import kite_chuan_bi as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        anh = [_hinh(wd, ma="H1"), _hinh(wd, ma="H2", w=1100, h=900)]
+        m = _m(wd, anh, chuyen_kite="t_9", workdir=str(wd))
+        brief = kb.viet_brief(m, None)
+        spec = brief[brief.index("{\n"):]
+        assert spec.count('"image": "H1"') == 1, spec[:400]
+
+
 def test_hinh_chua_nhin_thi_chi_goi_y():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         _r, loi, canh = _chay(_du(), _m(wd, [_hinh(wd, lien_quan=None)]), wd)
         assert not _co(loi, "BẮT BUỘC"), loi
         assert _co(canh, "chưa nhìn", "H1"), canh
+
+
+def test_hinh_qua_nho_chua_nhin_khong_bi_bao_gia():
+    """kite_nop tinh "chua nhin" tu `hinh` (= kb.hinh_that(m), da loc >= 800px),
+    KHONG doc thang m["chua_nhin"] cap manifest (tinh tren TOAN BO anh, xem
+    chuan_bi/manifest.py) — anh <800px khong bao gio la candidate cua Kite nen
+    "chua nhin" cua no la nhieu, khong phai tin. Neu sau nay co ai "gon" lai
+    thanh doc thang khoa manifest thi test nay do ngay: NHO se bi bao gia."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        nho = _hinh(wd, ma="NHO", w=400, h=300, lien_quan=None)
+        # Gia lap dung khoa "chua_nhin" cap manifest nhu chuan_bi/manifest.py
+        # se ghi (tinh tren TOAN BO anh, khong loc kich thuoc) — neu kite_nop
+        # doc thang khoa nay thay vi tinh tu `hinh`, NHO se lot vao canh bao.
+        _r, loi, canh = _chay(_du(), _m(wd, [nho], chua_nhin=["NHO"]), wd)
+        assert not _co(canh, "chưa nhìn", "NHO"), canh
 
 
 def test_image_phai_la_ma_hinh_that_va_co_caption():
@@ -294,11 +412,14 @@ def test_image_phai_la_ma_hinh_that_va_co_caption():
 def test_image_hop_le_doi_thanh_duong_dan_tep():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        h = _hinh(wd)
-        sl = _du(); sl[1] = _statement(image="H1", caption="Bảng benchmark · via AA")
-        ra, loi, _c = _chay(sl, _m(wd, [h]), wd)
+        h1, h2 = _hinh(wd), _hinh(wd, ma="H2", w=1100, h=900)
+        sl = _du()
+        sl[0] = _cover(image="H1", caption="Bảng benchmark · via AA")
+        sl[1] = _statement(image="H2", caption="Bảng thứ hai · via AA")
+        ra, loi, _c = _chay(sl, _m(wd, [h1, h2]), wd)
         assert loi == [], loi
-        assert ra["slides"][1]["image"] == h["goc"]
+        assert ra["slides"][0]["image"] == h1["goc"]
+        assert ra["slides"][1]["image"] == h2["goc"]
 
 
 def test_hinh_da_dung_o_tin_khac_thi_chan():
@@ -335,14 +456,5 @@ def test_so_tren_slide_khong_co_trong_tu_lieu_thi_canh_bao():
 
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

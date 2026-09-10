@@ -25,8 +25,12 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import route_thieu_anh                                       # noqa: E402
+import vai                                                   # noqa: E402
 
-TI_LE_HERO_MAX = 1.6          # 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5
+# 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5. Song o ban dang ky vai
+# vi engine anh cung phai biet no: no la thu quyet dinh mot tam co lam nen hero
+# duoc khong, tuc co dang di tim tiep khong (LOW-12).
+TI_LE_HERO_MAX = vai.VAI["designer"].ti_le_don_max
 TAGLINE_GOI_Y = ["MODEL RELEASE", "MODEL UPDATE", "FUNDING", "M&A", "EARNINGS", "ROBOTICS",
                  "CYBERSECURITY", "APPS", "OPEN SOURCE", "RESEARCH", "POLICY", "INFRA", "IN BRIEF"]
 
@@ -58,8 +62,14 @@ def nhan_ethan(a: dict) -> tuple:
     if a.get("commons"):
         ghi.append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin")
     if a.get("thuong_hieu"):
-        ghi.append(f"🏢 ẢNH THƯƠNG HIỆU ({a['thuong_hieu'].get('hang')}) từ Wikimedia Commons — ảnh THẬT "
-                   "của chính hãng trong tin (trụ sở/campus/biển hiệu), KHÔNG phải ảnh của sự việc đang kể")
+        # Nhãn theo ĐÚNG LOẠI tư liệu (chân dung có tên / thẻ logo / bảng xếp
+        # hạng / ảnh cơ sở), một bản dùng chung với brief của Dre. Bản cũ ở đây
+        # dán một câu "trụ sở/campus/biển hiệu" cho MỌI loại, nên chân dung
+        # founder tới tay Ethan không có cái tên để khai `nhan_vat` — mà cổng
+        # `kiem_nhan_vat` chặn mặt người không khai tên, tức Ethan buộc phải bỏ
+        # ảnh founder (Ông Chủ 10/09/2026).
+        import anh_thuong_hieu
+        ghi.append(anh_thuong_hieu.nhan_theo_loai(a["thuong_hieu"]))
     if a.get("khai_niem"):
         kn = a["khai_niem"]
         ghi.append(f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{kn.get('tu_khoa')}\"" + (f": {kn['ly_do']}" if kn.get("ly_do") else "")

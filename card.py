@@ -985,10 +985,18 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     # Ly do ghi trong c2e991f ("mo xoa het chi tiet nen do sang trong khoi deu
     # lai, mot mau la du") khong dung: Gaussian ban kinh 28 chi xoa chi tiet co
     # ~28px, khong he san phang chenh sang co vai tram px.
+    #
+    # Dung `_can_bang_dong` chu khong `_sang_vung` truc tiep: do tung dai moi xu
+    # duoc ranh sang/toi NGANG, con mang sang/toi DOC nam gon trong MOT dai (ao
+    # trang, cua so, den san khau) thi trung binh ca dai van thien dung phe ma
+    # chu van chim tai dung cho do. Do that (nen toi co mang sang doc): dai
+    # mean=95 -> chon chu trang, nhung stddev=84 va nen cuc bo tai mang sang la
+    # 217 — CR 1.19, mat chu. Nhanh `tran` da di duong nay tu 07/09/2026 (xem
+    # dai_dong cua no); day la back-port sang kieu quote.
     dai_dong = [(TEXT_X, first_line_top + i * buoc,
                  W - TEXT_X, first_line_top + (i + 1) * buoc)
                 for i in range(len(q_lines))]
-    sang_dong = [_sang_vung(canvas, b) for b in dai_dong] or [0.0]
+    sang_dong = [_can_bang_dong(canvas, b) for b in dai_dong] or [0.0]
     mau_dong = [FG if sg < NGUONG_NEN_SANG else BG for sg in sang_dong]
     # Phe cua CA KHOI — dung cho net khung va dau ngoac, hai thu trai het khoi.
     nen_sang = sum(1 for sg in sang_dong if sg >= NGUONG_NEN_SANG) * 2 >= len(sang_dong)
@@ -998,7 +1006,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     # `mau_chu` ra TRANG (dung cho quote), roi dong nguon cung trang dat len day
     # sang: do that la CR 1.08, coi nhu mat chu. Ma dong nguon chinh la cho ghi
     # "Doc bai ... - <nguon>" — mat no la mat dan nguon (06/09/2026).
-    mau_nguon = (_mau_doi_nen(canvas, (0, src_top, W, src_top + at_h))
+    mau_nguon = (_mau_doi_nen_an_toan(canvas, (0, src_top, W, src_top + at_h))
                  if at_lines else mau_chu)
 
     # Cac dong quote, canh trai (thut vao TEXT_X).
@@ -1081,9 +1089,12 @@ def _pha(mau, do_sang: float, nen=None):
 # song o day bat manifest_ghi/ada_nop/jean_nop/itachi_nop/render_edu phai keo ca
 # PIL vao chi de hoi "chuoi nay co mat dau khong". Re-export de moi loi goi cu
 # (`card.tim_mat_dau`, `card.bo_dau_cam`, `card.DAU_CAM`...) giu nguyen.
-from tieng_viet import (  # noqa: E402,F401
+from tieng_viet import (  # noqa: E402
     AM_MAT_DAU, CUM_MAT_DAU, DAU_CAM, bo_dau_cam, tim_mat_dau,
 )
+# pyflakes khong hieu `# noqa` (chi flake8 hieu) nen ba ten re-export tren bao
+# "imported but unused" o moi lan lint — cham vao de cong pyflakes (CI) sach.
+_RE_EXPORT = (AM_MAT_DAU, CUM_MAT_DAU, DAU_CAM)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",

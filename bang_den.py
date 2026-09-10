@@ -124,8 +124,14 @@ def tao_root(draft_id: str, title: str, goal: str, author: str) -> tuple:
         kb.recompute_ready(conn)
         ks.post_blackboard_update(conn, rid, author=author, key="bai",
                                   value={"draft_id": draft_id, "title": title})
-    meta["root_task"] = rid
-    _ghi_meta(draft_id, meta)
+    # TRON vao ban tren dia NGAY TRUOC khi ghi, khong ghi de `meta` doc o dau
+    # ham: khoi kanban o tren mat thoi gian, va .meta.json la tep ba tien trinh
+    # cung ghi — engine (chuan_bi/nguon.py) co the vua tron source_url that vao
+    # trong luc do. Ghi de la xoa cua nguoi khac (audit lượt 2, C-r2-4 — cung
+    # loi d59691c vua sua o dau kia). Hom nay chua mat chi vi create_pair goi
+    # ham nay TRUOC khi khoi chay engine — thu tu tinh co, khong phai bao ve.
+    import schema
+    _ghi_meta(draft_id, schema.hop_nhat_meta(_meta(draft_id), {"root_task": rid}))
     return rid, True
 
 

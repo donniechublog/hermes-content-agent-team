@@ -54,7 +54,12 @@ class Manifest(TypedDict, total=False):
     link: str
     workdir: str                   # duong dan TUYET DOI toi thu muc lam viec
     anh: list                      # [{ma, goc, san, dung, ghi_chu, lien_quan, ...}]
-    toi_thieu: int                 # so slide toi thieu cua bai nay
+    # So ANH THAT toi thieu de VAI DUOC GIAO dung duoc bo nay (`vai.so_anh_toi_thieu`).
+    # Voi Dre con la so SLIDE toi thieu — moi slide mot anh rieng nen hai con so
+    # trung nhau, va `dre_nop`/`dre_chuan_bi` doc khoa nay theo nghia "slide".
+    # Voi Ethan thi KHONG trung (1 anh, 1 the): truoc 10/09/2026 cho nay luon la
+    # so cua carousel nen bai cua Ethan bi bao thieu anh oan.
+    toi_thieu: int
     flagship: bool
 
     # --- Tuy chon: moi noi doc deu co mac dinh ---
@@ -70,7 +75,8 @@ class Manifest(TypedDict, total=False):
     goi_y_bia: list                # ma anh goi y lam bia, XH dung dau neu co
     chua_nhin: list                # ma anh vision chua nhin duoc
     so_dung_duoc: int              # xem `so_anh_dung_duoc` — CHUM khai niem tinh la MOT
-    toi_thieu_co_ban: int          # san tuyet doi, `ha san` khong xuong duoi day
+    toi_thieu_co_ban: int          # san tuyet doi CUA VAI DO, `ha san` khong xuong duoi day
+    vai_anh: str                   # SLUG vai duoc giao bo anh nay ("" o manifest cu)
     tin_xep_hang: bool
     xep_hang: dict | None          # BANG DAU TIEN; None khi khong chup duoc
     so_xep_hang: int               # so bang chup duoc; 0 khi khong co
@@ -117,6 +123,23 @@ class SidecarAnh(TypedDict, total=False):
     via: str
     chuyen_kite: str               # duyet_bai ghi khi Ong Chu bam "Gui Kite"
     chuyen_tu: str
+    ly_do_chuyen: str              # duyet_bai.tao_task_kite (ADF-r2-5: tung ghi ma chua khai)
+
+
+class SidecarViet(TypedDict, total=False):
+    """`drafts/<draft_id>.writer.json` — task viet CHI sinh khi Ong Chu bam "Duyet anh".
+
+    duyet_chon_tin.create_pair ghi 6 khoa dau; duyet_bai cap nhat `created`
+    (True khi da tao task, "rejected" khi bo han) va `writer_task`. Khong co
+    TypedDict nay truoc audit lượt 2 (ADF-r2-5) — `created` nhan ba kieu ma khong
+    ai khai, test_schema chi gac Manifest va Meta."""
+    vai_viet: str                  # SLUG vai viet (writer)
+    title: str
+    body: str                      # body task viet, dung san
+    created: bool | str            # False -> True (da tao) | "rejected"
+    root_task: str                 # the goc bang den
+    dre_task: str                  # task vai anh — cha cua task viet
+    writer_task: str               # id task viet, khi da tao
 
 
 class DongAnhDaDung(TypedDict):
@@ -168,7 +191,14 @@ def doc_manifest(nguon) -> dict | None:
             print(f"[schema] manifest {p} khong phai dict")
             return None
 
-    if m.get("phien_ban", 0) < 1:
+    # N-r2-7: phien_ban "1" (chuoi) hay None (tep sua tay/tool khac) tung nem
+    # TypeError o phep `<` — ham hua "None neu khong doc duoc" ma lai crash.
+    try:
+        pv = int(m.get("phien_ban") or 0)
+    except (TypeError, ValueError):
+        pv = 0
+    m["phien_ban"] = pv                 # chuan hoa ve int; nhanh duoi ghi de neu nang ban
+    if pv < 1:
         if "so_dung_duoc" not in m:
             m["so_dung_duoc"] = so_anh_dung_duoc(m.get("anh") or [])
         # `so_xep_hang` = SO BANG chup duoc. Ban cu chi co `xep_hang` (bang dau

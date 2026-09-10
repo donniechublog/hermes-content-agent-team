@@ -16,7 +16,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-TAI_LIEU = ["README.md", "LUAT_ANH.md", "STYLE_TEXT_SPEC.md"]
+# KIEN_TRUC.md va hermes/README.md them o audit lượt 2 (ADF-r2-7): KIEN_TRUC.md
+# lech ngay truoc khi vao git (Jean/Cape, create_pair o sai module). SKILL.md
+# va SOUL.md CHUA vao day: chung nhac duong dan tuong doi trong thu muc skill
+# va lenh chay tren server, cong nay se bao oan — can mot cong rieng.
+TAI_LIEU = ["README.md", "LUAT_ANH.md", "STYLE_TEXT_SPEC.md", "KIEN_TRUC.md", "hermes/README.md"]
 
 # NHAT_KY_SU_CO.md CO CHU DICH nam ngoai cong nay: no la NHAT KY, nen viec no
 # nhac toi script da xoa (`usage_audit.py`, `doi_model_combo.py`) hay tep cua
@@ -33,7 +37,9 @@ BO_QUA = ("~", "<", "$", "config.yaml", "jobs.json", "xong.json", "da_dung.json"
           "writer.json", "ban_giao.md", "caption.txt", "brief.md",
           "models_seen.json", "AGENTS.md", "package.json", "emoji-map.json",
           "boost.spec.json", "vung.json", "kanban.db", "agent.log", "gateway.log",
-          "usageHistory")
+          "usageHistory",
+          "profile.yaml",         # tep cua hermes (~/.hermes-*/profiles/*/), khong o repo
+          "dist.index.js")        # hermes/README nhac TEN PHANG CU de noi "khong con dung"
 
 
 def _tep_duoc_nhac(vb: str) -> set:
@@ -153,14 +159,5 @@ def test_muc_model_khop_voi_profile_that():
                     + ", ".join(la) + f" (dang chay: {sorted(dang_chay)})")
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

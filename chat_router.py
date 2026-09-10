@@ -30,20 +30,11 @@ HERMES_HOME = str(env_load.hermes_home())
 # Nhan ngoai cac topic nay (vd General) di vao profile mac dinh. Phai co du cho
 # MOI topic trong state/topics.<brand>.json; thieu mot cai thi chat trong topic
 # do roi ve profile mac dinh.
-TOPIC_PROFILE = {
-    "scout": "scout",
-    "designer": "designer",
-    "carousel": "carousel",
-    "carousel-edu": "carousel-edu",
-    "writer": "writer",
-    "analyst": "analyst",
-    "teaser": "teaser",
-    "nova": "nova",
-    "market": "market",
-    "gin": "gin",
-    "itachi": "itachi",
-    "bob": "bob",
-}
+# Dan xuat tu ban dang ky vai.py (audit lượt 2, ADF-r2-2): truoc day la bang 12
+# dong chep tay — them vai o vai.py ma quen day thi chat trong topic cua vai moi
+# roi ve profile mac dinh, IM LANG. tests/test_vai.py giu hai ben khop.
+import vai as _vai                                            # noqa: E402
+TOPIC_PROFILE = {v.slug: v.slug for v in _vai.VAI.values()}
 
 REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
 TIMEOUT_SEC = 600           # agent chay lau; 10 phut la du cho hau het viec

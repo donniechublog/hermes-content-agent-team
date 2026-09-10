@@ -143,7 +143,7 @@ def _tim_bao_gnews(page, ra, mien_goc, het_gio, JS):
                 except Exception:                # noqa: BLE001
                     continue
         except Exception as e:                   # noqa: BLE001
-            print(f"[browser] gnews search: {type(e).__name__}", file=sys.stderr)
+            print(f"[browser] gnews search: {type(e).__name__}: {e!r}", file=sys.stderr)
 
 
 def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None) -> dict:
@@ -188,7 +188,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                         ra["chu"] = page.evaluate(JS["TEXT"]) or ""
                         _lay_anh_trang(page, goc, 0, wd, ra, JS)
                     except Exception as e:                   # noqa: BLE001
-                        print(f"[browser] goc {goc[:60]}: {type(e).__name__}", file=sys.stderr)
+                        print(f"[browser] goc {goc[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
                 # 2) tim bao khac (bo nguon mong)
                 if tim_them and ra["tieu_de_en"] and not het_gio():
                     _tim_bao_gnews(page, ra, mien_goc, het_gio, JS)
@@ -202,7 +202,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                         _mo_trang(page, t["url"], cho_yen=8000)
                         _lay_anh_trang(page, t["url"], i, wd, ra, JS)
                     except Exception as e:                   # noqa: BLE001
-                        print(f"[browser] {t['url'][:60]}: {type(e).__name__}", file=sys.stderr)
+                        print(f"[browser] {t['url'][:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
     except Exception as e:                                   # noqa: BLE001
         print(f"[browser] bo qua: {type(e).__name__}: {e}", file=sys.stderr)
     return ra

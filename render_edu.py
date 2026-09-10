@@ -105,6 +105,8 @@ from pathlib import Path
 
 # tái dùng cổng chặn tiếng Việt của cả đội
 import tieng_viet  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
+# đo tương phản WCAG dùng CHUNG với card.py/Ethan + itachi_nop.py — xem LOW-9
+import nen_chu  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -491,7 +493,18 @@ FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc du
 # cao, chu mot mau khong an toan), va khi dung thi cung chi VUA DU, khong bao
 # gio dam hon muc can. Truoc day FIG_MAX_TOI co san 0.80 la sai huong: luon
 # phu du roi moi tinh tiep, thay vi hoi truoc co can phu khong.
-NGUONG_SANG_CHU_TOI = 150  # do sang (0..255) vung duoi chu: qua nguong -> chu TOI
+# Chu "toi" o day la rgba(0,0,0,0.85) DE LEN nen (xem _css_chu_toi_vung), khong
+# phai den tuyet doi: ~15% mau nen con xuyen qua. Nguong 150 cu la so tay, chua
+# tung kiem lai bang phep do WCAG that — LOW-9: Kite ra chu gan nhu lien mau
+# voi nen (vd nen xam ~130-149, code van chon chu SANG vi 130-149 < 150, nhung
+# tuong phan chu sang/nen 130-149 chi ~2.7-3.1:1, trong khi chu toi cho tuong
+# phan ~4.5-5.1:1 — sai huong). Tinh lai bang nen_chu.nguong_tuong_phan (dung
+# cong thuc CHUNG voi card.py/Ethan) cho DUNG cap mau THAT dang dung o day,
+# thay vi mot con so co dinh dung chung cho ca chu sang tuyet doi lan chu toi
+# alpha-blend.
+_MAU_CHU_SANG_RGB = tuple(int(WHITE.lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
+_MAU_CHU_TOI_HIEU_DUNG = (38, 38, 38)  # xap xi 0.15 x nen sang (rgba đen 0.85)
+NGUONG_SANG_CHU_TOI = round(nen_chu.nguong_tuong_phan(_MAU_CHU_SANG_RGB, _MAU_CHU_TOI_HIEU_DUNG))
 NGUONG_ROI_CAN_LOP = 26    # do lech (stddev xam) vung duoi chu: qua nguong moi can lop
 # Muc toi khi can_lop (09/09/2026, tang tu 0.55 sau khi Ong Chu xem anh that:
 # so ma van doc duoc ro qua lop mo yeu — xem chu thich tai noi dung max_toi).
@@ -599,7 +612,8 @@ def _doc_nen_that(p):
     # Dinh the luon la NEN (anh khong tran len FIG_DINH), nen do sang o dinh la
     # do sang cua nen: mau phang, hoac mau trung binh cua ban lam mo.
     return ("phang" if phang else "mo",
-            "#%02X%02X%02X" % mau, _sang(mau if phang else toan) > 140)
+            "#%02X%02X%02X" % mau,
+            _sang(mau if phang else toan) > NGUONG_SANG_CHU_TOI)
 
 
 def _vung_duoi_chu(p, cao_hien, ti_le=0.35):
@@ -1341,13 +1355,16 @@ def _ghi_theme(out, theme, hero):
 
 
 NGUONG_HUE_LECH_MAU = 0.28    # >nguong nay (vong tron hue, 0..0.5) la LECH TONG
+TI_LE_ANH_CO_MAU = 0.01       # duoi muc nay pixel co mau tren CA TAM -> anh coi nhu khong mau
+TI_LE_MAU_AP_DAO = 0.05       # mau noi bat phai chiem tung nay so pixel DA LOC
 
 
 def mau_noi_bat(path) -> tuple | None:
     """Mau NOI BAT nhat trong mot anh that (bia/hero) — hue HSV pho bien nhat
     trong vung du bao hoa, bo qua nen trang/den/xam. None neu anh khong co mau
-    ro net nao (vd anh den-trang, hoac mau noi bat khong chiem du ty le de
-    tin cay — < 5% so pixel da loc).
+    ro net nao (vd anh den-trang, anh gan nhu khong con pixel mau nao sau khi
+    loc, hoac mau noi bat khong chiem du ty le de tin cay — < 5% so pixel da
+    loc).
 
     Dung de chon THEME khop mau voi anh that: khac vector Kite tu ve theo mau
     theme, anh that (chup man hinh bang xep hang, anh bao...) mau CO SAN,
@@ -1361,19 +1378,44 @@ def mau_noi_bat(path) -> tuple | None:
             dem: dict = {}
             for r, g, b in im.getdata():
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                if s < 0.35 or v < 0.25 or v > 0.97:
-                    continue                  # xam/qua toi/qua sang -> khong tinh la "mau"
-                bucket = round(h * 24)        # 24 khoang ~15 do
+                # s < 0.35 da loai trang/xam; KHONG loai them v > 0.97 — do la
+                # loai moi mau bao hoa thuan (do (255,0,0), vang, chinh accent
+                # #FFB454 cua theme ember), tuc anh chart mau tuoi ra None roi
+                # roi ve xoay vong mu mau (audit lượt 2, R-r2-1).
+                if s < 0.35 or v < 0.25:
+                    continue                  # xam/qua toi -> khong tinh la "mau"
+                # 24 khoang ~15 do; % 24 vi round(h*24) cho 0..24 ma 0 va 24 la
+                # CUNG mau do (vong tron hue) — khong gop thi do bi chia doi hai
+                # bucket, thua mau khac it hon (R-r2-2).
+                bucket = round(h * 24) % 24
                 dem[bucket] = dem.get(bucket, 0) + 1
     except (OSError, ValueError):
         return None
     if not dem:
         return None
+    tong_loc = sum(dem.values())
     bucket, dinh = max(dem.items(), key=lambda kv: kv[1])
-    if dinh / n < 0.05:
+    # Do do AP DAO tren so pixel DA LOC, khong tren tong pixel: anh logo hang la
+    # mot mark mau nam tren NEN SANG, nen sang da bi bo loc s<0.35 gat het roi ma
+    # van dem chia cho ca tam thi logo nao nho hon 5% dien tich cung ket luan
+    # "khong co mau" — DeepSeek (xanh #4D6CF7) roi ve vong xoay mu mau, ra theme
+    # moss xanh la (LOW-11). Sang TI_LE_ANH_CO_MAU giu cho vai pixel nhieu le
+    # khong tu quyet theme cho ca bo.
+    if tong_loc / n < TI_LE_ANH_CO_MAU or dinh / tong_loc < TI_LE_MAU_AP_DAO:
         return None
     r, g, b = colorsys.hsv_to_rgb(bucket / 24, 0.65, 0.85)
     return (round(r * 255), round(g * 255), round(b * 255))
+
+
+def lech_hue(rgb, ten: str) -> float:
+    """Khoang cach hue (vong tron, 0..0.5) giua `rgb` va accent chinh cua theme."""
+    import colorsys
+    h0, _, _ = colorsys.rgb_to_hsv(*(c / 255 for c in rgb))
+    a = THEMES[ten]["a"].lstrip("#")
+    r, g, b = (int(a[i:i + 2], 16) for i in (0, 2, 4))
+    h1, _, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+    d = abs(h0 - h1)
+    return min(d, 1 - d)
 
 
 def theme_gan_mau(rgb) -> str | None:
@@ -1381,15 +1423,26 @@ def theme_gan_mau(rgb) -> str | None:
     hue tren vong tron mau. None neu rgb la None (anh khong co mau ro ret)."""
     if rgb is None:
         return None
-    import colorsys
-    h0, _, _ = colorsys.rgb_to_hsv(*(c / 255 for c in rgb))
-    def lech(ten):
-        a = THEMES[ten]["a"].lstrip("#")
-        r, g, b = (int(a[i:i + 2], 16) for i in (0, 2, 4))
-        h1, _, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-        d = abs(h0 - h1)
-        return min(d, 1 - d)
-    return min(THEMES, key=lech)
+    return min(THEMES, key=lambda ten: lech_hue(rgb, ten))
+
+
+def mau_hang_trong_spec(spec) -> tuple | None:
+    """Mau nhan dien cua hang duoc nhac toi trong spec, hoac None.
+
+    Tra cuu CUNG mot bang voi cho to ten hang trong tieu de cua Ethan
+    (`card.MAU_HANG` / `MAU_CUM`) — mot bang mau cho ca doi, khong dung bang
+    thu hai roi de hai cho troi khoi nhau.
+
+    Doc `folio` TRUOC roi moi toi eyebrow/title cua bia: folio la nhan chu de
+    ("GOOGLE ANTIGRAVITY"), gan nhu luon la chinh chu the cua tin, con title
+    thi hay nhac hang khac trong cau so sanh ("... vuot GPT-5")."""
+    import card
+    bia = (spec.get("slides") or [{}])[0]
+    for text in (spec.get("folio"), bia.get("eyebrow"), bia.get("title")):
+        mau = card._mau_hang_trong(text or "")
+        if mau:
+            return mau
+    return None
 
 
 def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
@@ -1403,7 +1456,14 @@ def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
     ret, se CHON THEME KHOP MAU thay vi xoay vong (khi spec chua ghi theme),
     va CANH BAO neu spec DA ghi mot theme lech mau xa (Ong Chu 09/09/2026:
     "hình thì tông green, yellow mà slide thì toàn pink purple ko được liên
-    quan lắm" — anh that mau CO SAN, theme phai chay theo no)."""
+    quan lắm" — anh that mau CO SAN, theme phai chay theo no).
+
+    THU TU chon mau cho theme (Ong Chu chot 10/09/2026, LOW-11):
+      1. mau NOI BAT cua anh bia that — manh nhat, khong doi duoc;
+      2. mau NHAN DIEN CUA HANG nhac trong spec (`card.MAU_HANG`) — palette
+         cua slide di cung mau brand, giong cho to ten hang cua Ethan;
+      3. xoay vong cho khoi lap bo truoc — chi khi ca hai tren deu khong co.
+    Nen mot loat tin cung hang se cung tone: do la y muon, khong phai trui."""
     gan = _theme_gan_day()
     theme, hero = spec.get("theme"), spec.get("hero")
     if theme and theme not in THEMES:
@@ -1425,14 +1485,26 @@ def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
         return sorted(ung_vien, key=lambda x: -thu_tu[x])[0]
 
     rgb = mau_noi_bat(anh_mau) if (bia_anh and anh_mau) else None
+    nguon = "anh bia"
+    if rgb is None:
+        # Anh bia khong co mau ro ret (hoac bia ve vector): bam MAU NHAN DIEN
+        # CUA HANG duoc nhac toi, thay vi xoay vong mu mau — tin DeepSeek (xanh
+        # #4D6CF7) tung ra slide theme moss xanh la (LOW-11). Tang nay chi do
+        # cho cho VONG XOAY, khong dung tren mau anh that: luat 09/09/2026
+        # "anh that mau co san, theme phai chay theo anh" van thang.
+        rgb = mau_hang_trong_spec(spec)
+        nguon = "mau hang nhac trong spec"
     theme_khop_mau = theme_gan_mau(rgb)
     if not theme:
         theme = theme_khop_mau or it_dung_nhat(list(THEMES), [t for t, _ in gan], seed)
-    elif theme_khop_mau and theme != theme_khop_mau:
+    elif theme_khop_mau and theme != theme_khop_mau and lech_hue(rgb, theme) > NGUONG_HUE_LECH_MAU:
+        # R-r2-3: chi bao khi theme DA CHON lech tong ro (qua nguong), khong
+        # phai moi khi no khac theme gan nhat — moss (0.37) vs orbit (0.51)
+        # lech 0,08 la cung tong, bao la nhieu.
         r, g, b = rgb
-        print(f"CANH BAO: theme={theme} LECH MAU voi anh bia (mau noi bat "
+        print(f"CANH BAO: theme={theme} LECH MAU voi {nguon} (mau "
               f"#{r:02X}{g:02X}{b:02X}, hop voi theme={theme_khop_mau} hon) — "
-              "anh that mau co san, doi theme cho khop thay vi doi anh.",
+              "mau do co san, doi theme cho khop thay vi doi mau.",
               file=sys.stderr)
     if bia_anh:
         hero = None

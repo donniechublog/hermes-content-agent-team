@@ -73,7 +73,11 @@ mảng art bị đọc thành "bằng chứng thật" thì nó thuộc cột C�
 | `rings` | vòng đồng tâm + kim | mục tiêu, độ chính xác |
 | `graph` | mạng node-cạnh | quan hệ, so sánh nhiều bên |
 
-Chọn theo nội dung, không hỏi Ông Chủ. Bìa dùng hình thật thì bộ không vẽ hero.
+Thứ tự chọn theme, renderer tự làm, không hỏi Ông Chủ: **màu ảnh bìa thật** →
+**màu nhận diện của hãng** được nhắc trong bài (tra `MAU_HANG`, cùng bảng với chỗ
+tô tên hãng của Ethan) → mới tới cột "hợp với" ở bảng trên cho khỏi lặp bộ trước.
+Nên một loạt tin cùng hãng sẽ cùng tone: đó là chủ ý, palette của slide đi cùng
+màu brand. Bìa dùng hình thật thì bộ không vẽ hero.
 
 ## Hình thật
 

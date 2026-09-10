@@ -53,21 +53,38 @@ def trim_jsonl(file_path: Path, keep_lines: int = 5000, dry_run: bool = False) -
     """Cắt ngắn tệp jsonl, giữ keep_lines dòng gần nhất."""
     if not file_path.exists():
         return 0
+    if keep_lines < 1:
+        # lines[-0:] la CA tep: khong xoa gi ma van bao "xoa N dong" (B-r2-5).
+        raise ValueError(f"keep_lines phai >= 1, nhan {keep_lines}")
 
+    # deque(maxlen) chi giu M dong cuoi trong RAM — readlines() nuot ca tep
+    # (500 MB jsonl tren server 2 vCPU la ~650 MB peak, do 1,3x).
+    import collections
+    import os
     try:
         with open(file_path, "r", encoding="utf-8") as fh:
-            lines = fh.readlines()
+            tong = 0
+            cuoi = collections.deque(maxlen=keep_lines)
+            for dong in fh:
+                tong += 1
+                cuoi.append(dong)
     except (OSError, UnicodeDecodeError) as e:
         print(f"[LỖI] Không đọc {file_path.name}: {e}", file=sys.stderr)
         return 0
 
-    if len(lines) <= keep_lines:
+    if tong <= keep_lines:
         return 0
 
-    removed = len(lines) - keep_lines
+    removed = tong - keep_lines
     if not dry_run:
-        with open(file_path, "w", encoding="utf-8") as fh:
-            fh.writelines(lines[-keep_lines:])
+        # Ghi ra tep tam CUNG thu muc roi os.replace: open('w') cat tep ve 0
+        # truoc khi ghi lai, chet giua chung (het dia, kill) la MAT SACH nhat ky
+        # — trong khi luat_anh/gui_telegram dang append vao chinh tep nay tu
+        # tien trinh khac. Cung cach env_load.ghi_json da lam (B-r2-5).
+        tam = file_path.with_name(f"{file_path.name}.tmp.{os.getpid()}")
+        with open(tam, "w", encoding="utf-8") as fh:
+            fh.writelines(cuoi)
+        os.replace(tam, file_path)
 
     print(f"{'[DRY] ' if dry_run else ''}Cắt ngắn {file_path.name}: xóa {removed} dòng cũ")
     return removed

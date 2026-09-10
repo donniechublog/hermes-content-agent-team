@@ -13,16 +13,34 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
-PY=venv/bin/python
-[ -x "$PY" ] || PY=python3
+# Chon interpreter: venv cua du an; khong co thi cai dau tien CO thu vien du an
+# (tren Windows `python3` co the la stub cua Store hoac mot Python khac khong co
+# PIL/httpx — 31/38 tep "hong" chi vi chon nham interpreter, khong phai vi ma).
+PY="${PY:-}"
+if [ -z "$PY" ]; then
+  for ung in venv/bin/python python3 python; do
+    if "$ung" -c "import httpx, PIL" >/dev/null 2>&1; then PY=$ung; break; fi
+  done
+  [ -n "$PY" ] || { echo "[LOI] khong tim thay Python nao co httpx+PIL (chay cai_dat.sh?)" >&2; exit 2; }
+fi
 LOC="${1:-}"
+
+# Cach ly state MAC DINH (audit lượt 2, E-r2-1): khong dat bien thi
+# env_load.state_dir() tro ve state/ THAT cua repo, va bao ve chi con trong
+# vao tung test tu monkeypatch — hai test subprocess cua test_cong_chan da
+# khong. Tu dat o day de "xanh" nghia la xanh trong cach ly, khong phai xanh
+# nho ghi tam vao state that roi xoa di.
+export CT_STATE_DIR="${CT_STATE_DIR:-$(mktemp -d)}"
+# Console Windows cp1252 lam UnicodeEncodeError o dong in ket qua — tuc test
+# qua ma tep bao hong. -X utf8 vo hai tren Linux.
+PYFLAGS="-X utf8"
 
 hong=0
 tong=0
 for f in tests/test_*.py; do
   case "$f" in *"$LOC"*) ;; *) continue ;; esac
   tong=$((tong + 1))
-  ra=$("$PY" "$f" 2>&1)
+  ra=$("$PY" $PYFLAGS "$f" 2>&1)
   ma=$?
   cuoi=$(printf '%s\n' "$ra" | grep -E '[0-9]+/[0-9]+ test qua' | tail -1)
   if [ $ma -eq 0 ]; then

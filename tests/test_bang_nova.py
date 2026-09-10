@@ -185,8 +185,16 @@ def test_moi_fetcher_trong_main_deu_qua_hang_rao():
                 and n.args[0].id == "_thu")
 
     trong_thu = set()
+    ten_qua = set()                 # ham con trong main duoc DUA vao _thu theo ten
     for n in ast.walk(main):
         if qua_hang_rao(n):
+            for con in ast.walk(n):
+                trong_thu.add(id(con))
+            ten_qua |= {a.id for a in n.args if isinstance(a, ast.Name)}
+    # E-r2-5: `def _lay(): return fetch_x(...)` roi `_thu("x", _lay, {})` VAN qua
+    # hang rao — chinh kieu refactor lambda -> def da bi bao oan mot lan.
+    for n in ast.walk(main):
+        if isinstance(n, ast.FunctionDef) and n.name in ten_qua:
             for con in ast.walk(n):
                 trong_thu.add(id(con))
 
@@ -271,8 +279,15 @@ def test_link_bat_buoc_dan_tu_ban_dang_ky():
 
 
 if __name__ == "__main__":
+    # Tep nay dem bang kiem() thay vi assert, nen khong dung tam.chay_tat_ca —
+    # nhung cung phai bat Exception (E-r2-2): mot loi giua chung khong duoc giet
+    # ca tep va nuot dong N/M.
     for f in list(globals()):
         if f.startswith("test_"):
-            globals()[f]()
+            try:
+                globals()[f]()
+            except Exception as e:                           # noqa: BLE001
+                loi += 1
+                print(f"ERR  {f}: {type(e).__name__}: {e}")
     print(f"\n{qua}/{qua + loi} test qua")
     sys.exit(1 if loi else 0)

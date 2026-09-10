@@ -13,6 +13,7 @@ from PIL import Image, ImageStat
 
 import luat_anh
 import env_load
+import vai
 
 from chuan_bi.nguon import _ten_rieng_dau
 from chuan_bi.tai_loc import _chart_theo_hinh, _luu_crop
@@ -81,7 +82,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
                                      headers={"Content-Type": "application/json",
                                               "Authorization": "Bearer " + key})
-        raw = urllib.request.urlopen(req, timeout=45).read().decode().strip()
+        raw = _goi_router(req).read().decode().strip()
         if raw.startswith("data:"):
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         txt = _j.loads(raw)["choices"][0]["message"]["content"]
@@ -109,8 +110,50 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             return mt, lqv, (t.group(1).strip()[:120] if t else "")
         return mt, lqv
     except Exception as e:                                   # noqa: BLE001
-        print(f"[vision] {Path(path).name}: {type(e).__name__}", file=sys.stderr)
+        print(f"[vision] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return ("", None, "") if (hoi_them and nhan_them) else ("", None)
+
+
+# Ma HTTP dang thu lai: router qua tai / gateway. 401/400 thi khong (thu lai vo ich).
+_THU_LAI = (429, 502, 503, 504)
+_CHO_THU_LAI = (1, 2, 4)      # giay, tang dan; 3 lan thu lai
+
+
+def _goi_router(req, _ngu=None):
+    """urlopen co thu lai khi 429/5xx (audit lượt 2, B-r2-2): B2 cho 4 luong ban
+    cung luc vao router, gap 429 la anh roi vao "CHUA AI NHIN" va bi loai khoi
+    dung_duoc — song song hoa lam 429 de xay ra HON ban tuan tu ma khong co
+    backoff nao. `_ngu` de test thay time.sleep."""
+    import time
+    import urllib.error
+    import urllib.request
+    ngu = _ngu or time.sleep
+    for lan, cho in enumerate(_CHO_THU_LAI + (None,)):
+        try:
+            return urllib.request.urlopen(req, timeout=45)
+        except urllib.error.HTTPError as e:
+            if e.code not in _THU_LAI or cho is None:
+                raise
+            print(f"[vision] router tra {e.code}, thu lai sau {cho}s (lan {lan + 1}/{len(_CHO_THU_LAI)})",
+                  file=sys.stderr)
+            ngu(cho)
+
+
+def _phan_loai_an_toan(a: dict, wd: Path, tieu_de: str) -> dict:
+    """phan_loai cho executor.map: mot anh hong (PNG cut, dem_mat/crop nem) KHONG
+    duoc lam list(ex.map) nem — ca lo mat, ke ca anh da nhin xong, engine chet
+    khong xong.json (audit lượt 2, B-r2-3). Anh hong tro thanh anh "chua nhin"
+    co ghi chu, cac anh khac di tiep."""
+    try:
+        return phan_loai(a, wd, tieu_de)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[vision] {a.get('ma')} {Path(a.get('goc', '?')).name}: HONG khi phan loai — "
+              f"{type(e).__name__}: {e!r}", file=sys.stderr)
+        a.update({"dung": [], "lien_quan": None, "mo_ta": "", "mat": 0,
+                  "ghi_chu": [f"⚠️ không phân loại được ({type(e).__name__}) — bỏ qua ảnh này"]})
+        a.setdefault("w", 0)
+        a.setdefault("h", 0)
+        return a
 
 
 def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
@@ -134,13 +177,19 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     a["mo_ta"], a["lien_quan"] = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
                                             thuong_hieu=a.get("thuong_hieu"))
                                   if tieu_de else ("", None))
-    mat = luat_anh.dem_mat(a["goc"]) or 0
+    # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
+    # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua
+    # nhau tren mot detector lam 80-95% anh tra None, tat ca thanh "khong mat".
+    mat_tho = luat_anh.dem_mat(a["goc"])
+    mat = mat_tho or 0
     day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
     goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
     a.update({"w": w, "h": h, "ti_le": round(r, 2), "loai": "chart" if la_ct else "anh",
               "do_chart": mo_ta, "mat": mat, "day_sang": round(day),
               "goc_trai_sang": round(goc_trai), "canh_ngan": min(w, h),
               "ngang": r >= luat_anh.NGANG_RO, "san": None, "dung": [], "ghi_chu": []})
+    if mat_tho is None:
+        a["ghi_chu"].append("⚠️ cổng mặt người KHÔNG chạy (thiếu cv2/model hoặc lỗi) — chưa kiểm mặt")
     san = wd / "san" / f"{a['ma']}.png"
     if la_ct:
         if a.get("xep_hang"):
@@ -178,7 +227,10 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     if a.get("commons"):
         a["ghi_chu"].append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin — hợp bìa/slide bối cảnh")
     if mat:
-        ten = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+", a.get("alt", "") or "")
+        # MOT ban regex duy nhat, o ban dang ky vai: cong "mat nguoi phai khai
+        # ten" cua `vai.anh_chinh_duoc` phai doc ra dung cai ten ma chu thich
+        # duoi day hua la co.
+        ten = vai.ten_nguoi_trong_alt(a.get("alt", "") or "")
         if ten:
             a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
                                 "chỉ dùng khi đúng người đó, khai \"nhan_vat\" y hệt")
@@ -213,9 +265,9 @@ def _nhin_anh(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     # co state dung chung giua cac lan goi -- nen chay song song duoc (8-12 anh/bai,
     # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
     # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
-    with ThreadPoolExecutor(max_workers=4) as ex:
-        anh = list(ex.map(lambda a: phan_loai(a, wd, "" if a.get("xep_hang")
-                                              else (nguon.get("tieu_de_en") or title)), anh))
+    with ThreadPoolExecutor(max_workers=env_load.so_luong(4)) as ex:
+        anh = list(ex.map(lambda a: _phan_loai_an_toan(a, wd, "" if a.get("xep_hang")
+                                                       else (nguon.get("tieu_de_en") or title)), anh))
     for a in anh:
         if a.get("xep_hang"):
             a["mo_ta"] = a["alt"]

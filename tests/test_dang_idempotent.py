@@ -45,7 +45,14 @@ class _FakeHttpx:
 
                 class _R:
                     def json(_self):
-                        return ngoai.res
+                        r = ngoai.res
+                        # E-r2-7: `res` la ket qua ALBUM (list). sendPhoto/
+                        # sendMessage tra MOT message (dict) — tra list o day
+                        # thi ma that .get() no AttributeError va test do vi
+                        # crash phu, khong vi assertion chu dich.
+                        if isinstance(r, list) and not url.endswith("sendMediaGroup"):
+                            return {"ok": True, "result": (r[0] if r else {"message_id": 1})}
+                        return r
                 return _R()
         return _C()
 
@@ -158,14 +165,5 @@ def test_caption_dai_bam_lai_lan_ba_khong_gui_gi_nua():
 
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

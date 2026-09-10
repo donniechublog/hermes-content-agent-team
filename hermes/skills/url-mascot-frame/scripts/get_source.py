@@ -52,7 +52,11 @@ def download(url: str, out: str, ua: str = UA) -> int:
     with urllib.request.urlopen(req, timeout=60) as r:
         data = r.read()
     if not data:
-        sys.exit(f"tai ve 0 byte tu {url}")
+        # raise, KHONG sys.exit: SystemExit khong phai Exception nen thoat khoi ca
+        # hai vong `except Exception: continue` cua twimg_from_page/page_fallback
+        # — mot ung vien CDN tra 200 rong la ca script chet, khong thu ung vien
+        # tiep, khong screenshot (audit lượt 2, N-r2-2).
+        raise ValueError(f"tai ve 0 byte tu {url}")
     Path(out).write_bytes(data)
     return len(data)
 
@@ -227,7 +231,10 @@ def main():
 
     # 1) direct twitter image → original resolution
     if "pbs.twimg.com" in host:
-        download(twimg_orig(url), out)
+        try:
+            download(twimg_orig(url), out)
+        except Exception as e:                               # noqa: BLE001
+            sys.exit(f"khong tai duoc {url}: {type(e).__name__}: {e!r}")
         print(out, file=sys.stderr)
         print(out)
         return

@@ -132,7 +132,7 @@ def ten_khoa(brand=None):
 
 # CUNG quy uoc voi approve_service: CT_BRAND ('blog'|'dcgr') la khoa container,
 # BRAND (ten content-brand day du) suy tu no va van cho env de len.
-_TEN_BRAND = {"blog": "donniechublog", "dcgr": "dcgr"}
+_TEN_BRAND = env_load.BRAND_DAI        # mot bang, o env_load (ADF-r2-10)
 
 
 def brand_container():
@@ -180,10 +180,10 @@ def read_draft(draft_id):
 def _ghi_json(path, data):
     """Ghi atomic (tmp + os.replace): draft la so cai cua he thong, write_text
     truc tiep ma chet giua chung se de lai JSON cut."""
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2),
-                   encoding="utf-8")
-    os.replace(tmp, path)
+    # ADF-r2-11: mot ban o env_load.ghi_json (tmp co pid+thread, mkdir, don tmp
+    # khi hong) — ban cu o day dung ten tmp co dinh nen hai tien trinh cung ghi
+    # mot draft la lan vao nhau.
+    env_load.ghi_json(path, data)
 
 
 def write_draft(draft_id, data):

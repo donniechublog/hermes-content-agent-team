@@ -13,11 +13,12 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
      giai ma link Google News, lay tieu de tieng Anh, hoi Bing News RSS tim bao
      khac khi nguon mong (ghi nguoc vao nguon json de moi vai sau cung dung).
   2. ANH: mot phien chromium (chu bai, <img> lon, chup table/figure/canvas full
-     be ngang) + anh_bai (tinh) + Wikimedia Commons khi < 5 anh. Van thieu thi
-     ba vong bu, theo do LIEN QUAN giam dan: bao khac cung tin (_vong_tim_rong)
-     -> anh THAT cua chinh hang trong tin (anh_thuong_hieu.py: tru so, campus)
-     -> anh khai niem cua chu de (anh_khai_niem.py: co nuoc, rack). Tai ve, bo
-     trung (dHash), bo anh be, logo, co anh AI sinh.
+     be ngang) + anh_bai (tinh) + Wikimedia Commons khi < 5 anh. Thieu thi tim
+     rong sang bao khac cung tin (_vong_tim_rong). Anh THAT cua chinh hang trong
+     tin (anh_thuong_hieu.py: logo, chan dung founder/CEO, tru so, campus) chay
+     cho MOI tin co hang trong watchlist — du anh hay khong (10/09/2026). Van
+     thieu nua thi anh khai niem cua chu de (anh_khai_niem.py: co nuoc, rack).
+     Tai ve, bo trung (dHash), bo anh be, logo, co anh AI sinh.
   3. DO va PHAN LOAI bang `luat_anh` + luat bo sung (nen trang >=45% & canh
      >=8% -> chart): chart/anh chup, ti le, mat nguoi, day sang. Cat san
      1:1/4:5 qua crop_ti_le (co dau vet), cap anh ngang ghep duoc (cung tone),
@@ -65,6 +66,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 from phien_browser import PhienBrowser                       # noqa: E402
 import schema                                                # noqa: E402
+import vai                                                   # noqa: E402
 
 from chuan_bi.chung import (  # noqa: E402
     DRAFTS, ROOT, UA, _brand_cua, _doc_json, _ghi_json, _hdr,
@@ -76,7 +78,7 @@ from chuan_bi.nguon import _tom_tat_tu_img_json, nap_nguon      # noqa: E402
 from chuan_bi.nhin import _nhin_anh, mo_ta_anh                  # noqa: E402
 from chuan_bi.tai_loc import _luu_crop                          # noqa: E402
 from chuan_bi.vong_bu import (  # noqa: E402
-    _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _co_bia, _gom_va_tai_anh,
+    _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _gom_va_tai_anh,
     _lay_tu_browser, _vong_khai_niem, _vong_thuong_hieu, _vong_tim_rong,
 )
 
@@ -124,23 +126,63 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         anh = _gom_va_tai_anh(title, link, nguon_path, nguon, trang, bp, wd, xhs)
         anh, dung_duoc, chua_nhin = _nhin_anh(anh, nguon, title, wd)
         flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
-        toi_thieu = carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE
+        # NGUONG DI THEO VAI (su co 10/09/2026). Truoc day dong nay la
+        # `carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE` — engine
+        # chay chung cho ca ba vai dung anh nen Ethan (card.py, MOT anh la du)
+        # cung bi doi 5 anh, roi ca day "thieu anh" ban cho Ethan cau hoi cua
+        # carousel. `tom["vai_anh"]` da co san tu sidecar .img.json ngay tren
+        # (`_tom_tat_tu_img_json`), chi la truoc gio khong ai dung toi.
+        vai_anh = vai.slug_that(tom.get("vai_anh") or "")
+        if vai_anh not in vai.VAI:
+            # Chay tay, hoac sidecar mat/chua kip ghi. Khong im: nguong sai lam
+            # lech ca `thieu_anh` o manifest lan cau bao gui Ong Chu.
+            print(f"[chuan bi] khong biet vai cua {draft_id} "
+                  f"(vai_anh={tom.get('vai_anh')!r}) -> dung nguong cua "
+                  f"{vai.MAC_DINH_ANH}", file=sys.stderr)
+            vai_anh = vai.MAC_DINH_ANH
+        toi_thieu = vai.so_anh_toi_thieu(vai_anh, flagship)
+        # HAI CAU HOI KHAC NHAU, dung lan nhau la hong ca hai chieu:
+        #   `toi_thieu`             — nguong CHAN: duoi no thi bai bi coi la
+        #                             thieu anh, Ong Chu bi hoi, bai co the bi
+        #                             day sang Kite.
+        #   `vai.du_nguyen_lieu()`  — CON PHAI DI TIM NUA KHONG.
+        # Cau thu hai truoc LOW-12 do bang so cua carousel (5, hay 8 voi tin
+        # flagship) cho CA BA vai. Ong Chu 10/09/2026: *"cach lam anh cua Ethan
+        # dau phai la carousel? nhung gi thuoc ve carousel ma lien quan toi Ethan
+        # la nhung thu ko dung"* va *"carousel la nhieu anh con Ethan lam single
+        # image, nen 'so luong' ko the la thu ap vao duoc"*. Nay ban dang ky vai
+        # tra loi: vai xep nhieu anh moi dem tam, vai mot anh chi hoi da co tam
+        # nao dung lam anh chinh chua — tieu chi CHAT LUONG thi van dung chung o
+        # `luat_anh` + `phan_loai` cho ca ba.
         tieu_de_nhin = nguon.get("tieu_de_en") or title
-        if len(dung_duoc) < toi_thieu and not khong_browser:
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship) and not khong_browser:
             anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, toi_thieu,
                                                        dung_duoc, wd, phien=phien)
-        # Van thieu -> anh THAT CUA CHINH HANG trong tin (tru so/campus) truoc, roi
-        # moi toi anh khai niem chung chung. Ca hai chi mang, chay ca khi --khong-browser.
-        if len(dung_duoc) < toi_thieu or not _co_bia(dung_duoc):
-            anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
-                                                          wd, toi_thieu, khong_browser, phien=phien)
-        # Van thieu, hoac co anh ma khong tam nao lam bia/hero duoc -> anh khai
-        # niem (chi mang, khong browser; chay ca khi --khong-browser).
-        if len(dung_duoc) < toi_thieu or not _co_bia(dung_duoc):
+        # ANH CUA CHINH HANG trong tin (logo, chan dung founder/CEO, tru so,
+        # campus): chay cho MOI tin nhac toi mot hang trong watchlist, KHONG doi
+        # toi luc thieu anh. Ong Chu 10/09/2026, lan thu hai cua cung mot cau:
+        # "Dre van ko chiu di tim cac hinh lien quan nhu logo, brand, founder,
+        # tru so... cua chu de duoc nhac toi". Ban 09/09 treo vong nay sau dieu
+        # kien thieu anh, nen tin nao bai goc du anh la khong bao gio hoi toi
+        # Commons/Wikidata — ma vai bi cam tu tai them ("chi dung MA ANH"), nen bo
+        # anh giao cho Dre trang tron du may moc da san. Tin khong nhac hang nao:
+        # `hang_trong_tin` tra rong va vong thoat ngay, khong mot request nao.
+        # Chi mang, chay ca khi --khong-browser; tran +4 anh nam trong vong.
+        # So truyen vao chi dieu khien MOT thu trong vong do: nhanh mo browser di
+        # chup bang xep hang lam boi canh. Voi vai mot anh no la 0 — mot cai chart
+        # khong bao gio la nen hero duoc, di chup la tra tien browser lay mot tam
+        # Ethan khong dung duoc.
+        anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
+                                                      wd, vai.so_anh_muc_tieu_tim(vai_anh, flagship),
+                                                      khong_browser, phien=phien)
+        # Van thieu, hoac co anh ma khong tam nao lam anh chinh cua VAI NAY duoc
+        # -> anh khai niem chung chung cua chu de, sau anh cua chinh hang (chi
+        # mang, khong browser; chay ca khi --khong-browser).
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd)
         tl = _tu_lieu_bai(title, link, nguon_path, wd, nguon, bp)
         m = dung_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
-                          tin_xep_hang, bp, tl, flagship, toi_thieu)
+                          tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh)
     bang_anh(anh, wd / "bang_anh.png")     # ngoai phien: khong dung browser
     return m
 

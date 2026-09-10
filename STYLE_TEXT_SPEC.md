@@ -42,6 +42,11 @@ Hai thương hiệu tô khác nhau, khai báo bằng khoá `to_ten_hang`:
   mà đến từ chủ thể của tin. Màu quá đậm được `_du_sang()` kéo lên đủ đọc trên
   nền tối. Hãng chưa biết màu thì dùng `mau_du_phong` (hổ phách).
 
+Cùng bảng `MAU_HANG` đó còn quyết **palette của carousel EDU** (Kite): khi ảnh
+bìa không có màu rõ ràng, `render_edu.chon_theme_tu_dong` bám màu hãng nhắc
+trong spec thay vì xoay vòng mù màu (LOW-11 — tin DeepSeek xanh dương từng ra
+slide xanh lá). Thứ tự: màu ảnh thật → màu hãng → xoay vòng.
+
 Giãn dòng và khoảng cách kicker đo bằng `_buoc_dong()`, tức là đo **chính các
 dòng sắp vẽ**, không đo bằng chuỗi mẫu `"Ây"`. Tiêu đề tiếng Việt viết hoa trải
 rộng hơn chuỗi mẫu đó: dấu sắc trên `Ắ` cao hơn dấu mũ, dấu nặng dưới `Ạ` thấp

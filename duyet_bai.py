@@ -17,6 +17,8 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
 import luat_anh                                             # noqa: E402
+import schema                                               # noqa: E402
+import vai                                                  # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, log,
@@ -495,18 +497,19 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
                                        ket_thuc=task_bodies.KET_THUC_VAI_ANH)
     # Engine da nhin anh: co bao nhieu tam that dung duoc? Kite phai DUNG chung
     # (Ong Chu 05/09/2026), khong ra bo toan text & card.
-    co = []
-    try:
-        xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
-        if xong.exists():
-            mm = json.loads(xong.read_text(encoding="utf-8"))
-            co = [a["ma"] for a in mm.get("anh", []) if a.get("dung") and a.get("lien_quan") is not False]
-    except Exception:                                           # noqa: BLE001
-        co = []
+    # C-r2-5: doc qua schema.doc_manifest va dem bang schema.so_anh_dung_duoc —
+    # truoc day tu dem `dung and lien_quan is not False` (khai niem dem tung
+    # tam) nen body noi "4 anh THAT" trong khi manifest noi 2.
+    co, so_that = [], 0
+    xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
+    mm = schema.doc_manifest(xong) if xong.exists() else None
+    if mm:
+        co = [a["ma"] for a in mm.get("anh", []) if a.get("dung") and a.get("lien_quan") is not False]
+        so_that = int(mm.get("so_dung_duoc", 0))
     if ly_do:
         body += f"\n\n== CHUYEN TU {TEN_VAI_ANH.get(im.get('vai_anh'), im.get('vai_anh'))} ==\n{ly_do}."
-        if co:
-            body += (f" Engine tim duoc {len(co)} anh THAT dung duoc ({', '.join(co)}, xem brief): "
+        if so_that:
+            body += (f" Engine tim duoc {so_that} anh THAT dung duoc (ma: {', '.join(co)}, xem brief): "
                      "BAT BUOC dua vao slide (bia image hoac figure), phan con lai ve vector.")
         else:
             body += (" Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi "
@@ -594,21 +597,30 @@ def _nut_kite(token, chat_id, draft_id, cq):
 
 
 def _nut_ha_san(token, draft_id, cq):
-    """imgtiep: ha san so slide ve `toi_thieu_co_ban` de vai lam voi so anh hien co.
-    Tra (note, keyboard) — keyboard None nghia la go het (nhu moi nut khac)."""
+    """imgtiep: ha san ve `toi_thieu_co_ban` de vai lam voi so anh hien co.
+    Tra (note, keyboard) — keyboard None nghia la go het (nhu moi nut khac).
+
+    San la CUA VAI DUOC GIAO (Dre 5 slide, Ethan 1 anh) — tu 10/09/2026 manifest
+    ghi san theo vai thay vi luon lay so cua carousel."""
     # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
     # xong.json van nguyen (8 voi tin flagship), nen dre_nop van chan "chi N
     # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
     # Gio HA SAN that: ve `toi_thieu_co_ban` (san cua carousel.py). Duoi san
     # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
     xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
-    try:
-        mm = json.loads(xong.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        mm = {}
+    # doc_manifest bu so_dung_duoc cho manifest ban 0 (C-r2-5) — doc tho thi
+    # so=0 -> "Chi 0 anh that" du co 6 anh.
+    mm = schema.doc_manifest(xong) or {}
     san = int(mm.get("toi_thieu_co_ban", 5))
     so = int(mm.get("so_dung_duoc", 0))
     cu = int(mm.get("toi_thieu", san))
+    # Goi san pham dung ten cua vai: "slide" cho Dre/Kite, "ảnh" cho Ethan.
+    # Sidecar TRUOC manifest: `tao_task_kite` doi `vai_anh` trong sidecar khi
+    # chuyen bai sang Kite, con manifest giu vai luc chuan bi. Manifest cu
+    # (truoc 10/09/2026) khong co khoa nay -> giu nguyen chu "slide" nhu truoc.
+    _im = _nap_json(DRAFTS / (draft_id + ".img.json"), {})
+    _vai_anh = _im.get("vai_anh") or mm.get("vai_anh") or ""
+    don_vi = vai.don_vi_san(vai.slug_that(_vai_anh)) if _vai_anh else "slide"
     keyboard = None
     if not mm:
         note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
@@ -623,12 +635,12 @@ def _nut_ha_san(token, draft_id, cq):
         hang = [] if khong_kite else [{"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id}]
         hang.append({"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id})
         keyboard = {"inline_keyboard": [hang]}
-        note = (f"⚠️ Chỉ {so} ảnh thật mà carousel cần tối thiểu {san} slide — "
+        note = (f"⚠️ Chỉ {so} ảnh thật mà bài này cần tối thiểu {san} {don_vi} — "
                 f"bấm tiếp cũng không dựng được. Chuyển Kite vẽ vector, hoặc bỏ tin.")
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text=f"Không đủ: {so} ảnh < {san} slide", show_alert=True)
+             text=f"Không đủ: {so} ảnh < {san} {don_vi}", show_alert=True)
     elif cu <= san:
-        note = f"🖼 Sàn đã ở mức tối thiểu {san} slide — vai làm với {so} ảnh hiện có"
+        note = f"🖼 Sàn đã ở mức tối thiểu {san} {don_vi} — vai làm với {so} ảnh hiện có"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
     else:
         mm["toi_thieu"] = san
@@ -637,9 +649,9 @@ def _nut_ha_san(token, draft_id, cq):
             tmp = xong.with_suffix(".json.tmp")
             tmp.write_text(json.dumps(mm, ensure_ascii=False, indent=1), encoding="utf-8")
             tmp.replace(xong)
-            note = (f"🖼 Đã hạ sàn {cu} → {san} slide cho bài này: vai ảnh làm với "
-                    f"{so} ảnh thật hiện có (gộp ý / giảm slide)")
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} slide")
+            note = (f"🖼 Đã hạ sàn {cu} → {san} {don_vi} cho bài này: vai ảnh làm với "
+                    f"{so} ảnh thật hiện có (gộp ý / giảm {don_vi})")
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} {don_vi}")
         except OSError as e:
             note = f"⚠️ Không ghi được xong.json ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
@@ -747,7 +759,9 @@ def _nut_duyet(token, draft_id, cq, wp):
             elif tt in ("blocked", "failed"):
                 ly_do = ly_do_task(wid)
                 note = f"⛔ {ten} dừng ({tt}): {ly_do}" if ly_do else f"⛔ {ten} dừng ({tt}) — task {wid}"
-            else:                             # "" (khong ro) hoac None (khong doc duoc kanban)
+            elif tt is None:                  # khong doc duoc kanban — noi that (C-r2-3)
+                note = f"⚠️ Không đọc được kanban nên không rõ trạng thái task {wid} — xem log approve_service"
+            else:                             # "" (task khong co / trang thai la)
                 note = "✅ Đã duyệt rồi — bài đang được viết"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Đã duyệt trước đó")
@@ -770,12 +784,18 @@ def _nut_duyet(token, draft_id, cq, wp):
             # cua Dre trong "Parent task results". Chi noi voi cha DA done:
             # sau "Lam lai" task Dre cu co the blocked, noi vao la Miles
             # nam todo mai.
-            _cha = [t for t in (w.get("root_task"), w.get("dre_task"))
-                    if t and _trang_thai_task(t) == "done"]
-            if w.get("root_task"):
-                _body += BANG_DEN_NHAC.format(root=w["root_task"])
-            wid, err = kanban_create("Bai: " + w.get("title", draft_id),
-                                     w["vai_viet"], _body, parent=_cha)
+            _tt_cha = {t: _trang_thai_task(t) for t in (w.get("root_task"), w.get("dre_task")) if t}
+            if any(v is None for v in _tt_cha.values()):
+                # C-r2-3: kanban khong doc duoc thi KHONG tao task khong cha —
+                # Miles se mat "Parent task results" (ban giao cua Dre) ma note
+                # van "✅". Noi that va de Ong Chu bam lai.
+                err, wid = "không đọc được kanban để nối thẻ cha — bấm Duyệt lại sau", None
+            else:
+                _cha = [t for t, v in _tt_cha.items() if v == "done"]
+                if w.get("root_task"):
+                    _body += BANG_DEN_NHAC.format(root=w["root_task"])
+                wid, err = kanban_create("Bai: " + w.get("title", draft_id),
+                                         w["vai_viet"], _body, parent=_cha)
             if err:
                 note = "⚠️ Duyệt ok nhưng tạo task viết lỗi: " + str(err)
             else:

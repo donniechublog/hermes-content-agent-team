@@ -207,7 +207,11 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     import nguon_bai
     mien_co = {_mien(t.get("url", "")) for t in trang} | {a.get("mien") for a in anh}
     them_bao = nguon_bai.bao_khac_bing(tieu_de_nhin, so=6, bo_mien=tuple(x for x in mien_co if x))[:4]
-    print(f"[tim rong] thieu ({len(dung_duoc)}/{toi_thieu}): +{len(them_bao)} bao moi"
+    # Tu LOW-12 vong nay con chay khi kho DU anh ma khong tam nao lam anh chinh
+    # cua vai duoc — in "thieu (5/5)" luc do la noi doi nguoi doc log.
+    ly_do = (f"thieu ({len(dung_duoc)}/{toi_thieu})" if len(dung_duoc) < toi_thieu
+             else f"co {len(dung_duoc)} anh nhung khong tam nao lam anh chinh duoc")
+    print(f"[tim rong] {ly_do}: +{len(them_bao)} bao moi"
           + (": " + ", ".join(_mien(t["url"]) for t in them_bao) if them_bao else ""), file=sys.stderr)
     wd2 = wd / "them"
     cands2 = []
@@ -241,10 +245,6 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     print(f"[tim rong] sau vong: {len(dung_duoc)} anh DUNG DUOC / {len(anh)} "
           f"(+{len(anh) - n0} tai them)", file=sys.stderr)
     return anh, dung_duoc, chua_nhin
-
-
-def _co_bia(dung_duoc: list) -> bool:
-    return any("bìa" in a["dung"] for a in dung_duoc)
 
 
 TOI_DA_THEM_TH = 4          # tran anh thuong hieu them vao mot bo
@@ -293,9 +293,15 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
 def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                       toi_thieu: int = 5, khong_browser: bool = False, phien=None) -> tuple:
     """VONG THUONG HIEU (Ong Chu 09/09/2026: "Dre van chua tu tim them hinh lien
-    quan khi lam cac noi dung co Big Brand"): tin ve hang lon ma kho anh mong thi
-    engine hoi Commons anh THAT cua chinh hang — tru so, toa nha, campus — TRUOC
-    khi ha xuong anh khai niem chung chung. Mot vong.
+    quan khi lam cac noi dung co Big Brand"): tin ve hang lon thi engine hoi
+    Commons/Wikidata anh THAT cua chinh hang — logo, chan dung founder/CEO, tru
+    so, toa nha, campus — TRUOC khi ha xuong anh khai niem chung chung. Mot vong.
+
+    Nguoi goi chay vong nay cho MOI tin, khong doi toi luc thieu anh (Ong Chu
+    10/09/2026: "Dre van ko chiu di tim cac hinh lien quan nhu logo, brand,
+    founder, tru so... cua chu de duoc nhac toi" — lan thu hai cua cung mot loi).
+    `toi_thieu` vi vay chi con dieu khien MOT thu: nhanh mo browser di chup bang
+    xep hang o duoi, phan dat nhat, van chi chay khi that su thieu anh.
 
     Truoc vong nay chi co `anh_commons(_ten_rieng_dau(...))`: mot cum ten rieng
     DAU tieu de, hoi bang ten tran. Tin hai hang ("Qualcomm ... with Amazon")

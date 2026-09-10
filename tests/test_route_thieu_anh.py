@@ -105,8 +105,10 @@ def test_moc_no_thi_van_ghi_xong_json():
 
 
 # ------------------------------------------------------- tầng ghép nối quyết định
-def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None)):
-    """Goi rt.sau_chuan_bi voi sidecar gia. Tra (m, cac tin da gui)."""
+def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
+    """Goi rt.sau_chuan_bi voi sidecar gia. Tra (m, cac tin da gui).
+
+    `gui_ok=False` gia lap Telegram tu choi (400) — _tg_gui tra False."""
     import duyet_giao_viec as dgv
     import duyet_bai as db
     drafts = Path(tmp) / "drafts"
@@ -115,7 +117,11 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None)):
     tin = []
     cu = (rt.DRAFTS, rt._tg_gui, dgv.chuan_assignee, db.tao_task_kite)
     rt.DRAFTS = drafts
-    rt._tg_gui = lambda vai, text, kb=None: tin.append((vai, text, kb))
+
+    def _gui(vai, text, kb=None):
+        tin.append((vai, text, kb))
+        return gui_ok
+    rt._tg_gui = _gui
     dgv.chuan_assignee = lambda v: (v, not kite_co)
     db.tao_task_kite = lambda *a, **k: tao_kite
     try:
@@ -123,6 +129,52 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None)):
         return m, tin
     finally:
         rt.DRAFTS, rt._tg_gui, dgv.chuan_assignee, db.tao_task_kite = cu
+
+
+def test_telegram_tu_choi_thi_KHONG_danh_dau_da_hoi():
+    """C-r2-1: truoc day _tg_gui vut ket qua post, m["hoi_kite"]=True van ghi vao
+    xong.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
+    with tempfile.TemporaryDirectory() as tmp:
+        m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
+                         {"vai_anh": "carousel"}, gui_ok=False)
+        assert len(tin) == 1, "van phai THU gui"
+        assert "hoi_kite" not in m, m
+        assert "route_loi" in m and "hoi_kite" in m["route_loi"], m
+
+
+def test_sidecar_cu_ghi_ten_persona_van_toi_dung_topic():
+    """C-r2-1 (N-r2-5): im.json cu ghi vai_anh="dre" (ten persona, chinh ly do
+    vai.py ton tai) — phai doi ve slug "carousel" truoc khi tra topic."""
+    with tempfile.TemporaryDirectory() as tmp:
+        m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
+                         {"vai_anh": "dre"})
+        assert tin and tin[0][0] == "carousel", tin
+        assert m.get("hoi_kite") is True, m
+
+
+def test_tg_gui_that_doc_ok_cua_telegram():
+    """_tg_gui phai nhin vao {"ok": false} cua Telegram, khong chi vao HTTP."""
+    import httpx
+    import os
+
+    class _R:
+        status_code = 400
+        def json(self):
+            return {"ok": False, "description": "Bad Request: message thread not found"}
+    cu_post, cu_topics = httpx.post, rt.env_load.topics
+    cu_env = {k: os.environ.get(k) for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_GROUP_ID")}
+    os.environ["TELEGRAM_BOT_TOKEN"], os.environ["TELEGRAM_GROUP_ID"] = "t", "g"
+    httpx.post = lambda *a, **k: _R()
+    rt.env_load.topics = lambda: {"carousel": 7}
+    try:
+        assert rt._tg_gui("carousel", "x") is False
+    finally:
+        httpx.post, rt.env_load.topics = cu_post, cu_topics
+        for k, v in cu_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
 
 
 def test_du_anh_thi_router_im():
@@ -197,14 +249,5 @@ def test_tao_task_kite_loi_thi_bao_ra_khong_dat_co():
 
 
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

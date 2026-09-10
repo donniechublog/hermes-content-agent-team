@@ -165,15 +165,141 @@ def test_khong_vai_la_nao_trong_README():
     assert not thua, f"README ke vai khong co trong vai.py: {thua}"
 
 
+def test_slug_that_nhan_ten_persona_hien_tai():
+    """N-r2-10: "cape" khong co trong go/slug_cu nen tung tra nguyen "cape"."""
+    assert vai.slug_that("cape") == "teaser"
+    assert vai.slug_that("Cape") == "teaser"
+    assert vai.slug_that("jean") == "teaser", "slug cu van phai dung"
+    assert vai.slug_that("nova") == "nova"
+    assert vai.slug_that("khong-co") == "khong-co", "khong nhan ra thi tra nguyen van"
+
+
+def test_chat_router_TOPIC_PROFILE_khop_ban_dang_ky():
+    """ADF-r2-2: bang topic->profile cua chat_router tung chep tay 12 dong; thieu
+    vai moi thi chat trong topic do roi ve profile mac dinh, im lang."""
+    import chat_router
+    assert set(chat_router.TOPIC_PROFILE) == set(vai.VAI), \
+        set(chat_router.TOPIC_PROFILE) ^ set(vai.VAI)
+
+
+def test_duyet_giao_viec_SLUG_CU_la_chinh_ban_cua_vai():
+    """ADF-r2-1: bang chep tay tung ghi de ban dan xuat 21 dong sau."""
+    import duyet_giao_viec as dgv
+    assert dgv.SLUG_CU is vai.SLUG_CU
+
+
+def test_handle_kenh_mot_ban_hai_kieu_khoa():
+    """ADF-r2-9: bob (co @) va kite (khong @) tung cho hai ket qua khac nhau
+    voi cung 'blog'."""
+    import env_load
+    assert env_load.handle_kenh("blog") == "@donniechublog"
+    assert env_load.handle_kenh("donniechublog") == "@donniechublog"
+    assert env_load.handle_kenh("blog", co_a_cong=False) == "donniechublog"
+    assert env_load.handle_kenh("dcgr", co_a_cong=False).startswith("dcgr")
+    assert env_load.handle_kenh("la").startswith("@")
+
+
+def test_nguong_anh_cua_carousel_khong_troi_khoi_carousel_py():
+    """`vai.py` chep 5/8 cua carousel.py de khong phai import carousel (keo theo
+    card + PIL vao mot ban dang ky phai nhe). Chep thi phai co cong giu."""
+    import carousel
+    assert vai.VAI["carousel"].anh_toi_thieu == carousel.MIN_SLIDE, \
+        f"vai.py ghi {vai.VAI['carousel'].anh_toi_thieu}, carousel.MIN_SLIDE={carousel.MIN_SLIDE}"
+    assert vai.VAI["carousel"].anh_toi_thieu_flagship == carousel.FLAGSHIP_MIN, \
+        f"vai.py ghi {vai.VAI['carousel'].anh_toi_thieu_flagship}, " \
+        f"carousel.FLAGSHIP_MIN={carousel.FLAGSHIP_MIN}"
+    # Ca hai vai XEP NHIEU ANH deu di tim toi so slide cua carousel: Dre vi moi
+    # slide an mot tam that, Kite vi render_edu cung xep nhieu slide.
+    for slug in ("carousel", "carousel-edu"):
+        assert vai.so_anh_muc_tieu_tim(slug) == carousel.MIN_SLIDE
+        assert vai.so_anh_muc_tieu_tim(slug, flagship=True) == carousel.FLAGSHIP_MIN
+
+
+def test_vai_mot_anh_khong_co_so_luong_de_ap():
+    """LOW-12 — Ong Chu: *"carousel la nhieu anh con Ethan lam single image, nen
+    'so luong' ko the la thu ap vao duoc"*. `anh_muc_tieu_tim` cua Ethan phai la
+    0, tuc engine khong duoc dem tam nao ca ma chi hoi da co anh chinh chua."""
+    assert vai.so_anh_muc_tieu_tim("designer") == 0
+    assert vai.so_anh_muc_tieu_tim("designer", flagship=True) == 0, \
+        "tin flagship KHONG lam the hero cua Ethan can them anh"
+    assert vai.VAI["designer"].ti_le_don_max == 1.6 and not vai.VAI["designer"].chart_don
+
+
+def _a(**doi) -> dict:
+    a = {"dung": ["bìa", "thân"], "lien_quan": True, "loai": "anh", "ti_le": 0.8,
+         "mat": 0, "alt": ""}
+    a.update(doi)
+    return a
+
+
+def test_anh_chinh_duoc_hoi_dung_luat_cua_tung_renderer():
+    """Cung mot tam anh, hai vai tra loi khac nhau — va khac dung o cho kho anh
+    khac nhau, khong phai o tieu chi chat luong (thu do dung chung, chay o
+    luat_anh + phan_loai truoc khi toi day)."""
+    # Ti le 1.5: qua NGANG_RO (1.4) nen phan_loai KHONG dan nhan "bìa" -> Dre
+    # khong lam bia duoc; nhung card.py cho toi 1.6 nen Ethan dung lam nen hero.
+    ngang_vua = _a(ti_le=1.5, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
+    assert vai.anh_chinh_duoc("designer", ngang_vua)
+    assert not vai.anh_chinh_duoc("carousel", ngang_vua)
+    # 16:9 thi ca hai deu chiu.
+    ngang_han = _a(ti_le=1.78, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
+    assert not vai.anh_chinh_duoc("designer", ngang_han)
+    assert not vai.anh_chinh_duoc("carousel", ngang_han)
+    # Chart: card.py chan di mot minh.
+    assert not vai.anh_chinh_duoc("designer", _a(loai="chart", ti_le=1.2))
+    # ...tru bang xep hang, la anh chinh BAT BUOC cua tin do.
+    assert vai.anh_chinh_duoc("designer", _a(loai="chart", ti_le=1.2, xep_hang={"site": "arena"}))
+    # Mat nguoi khong ro ai: khai `nhan_vat` la bia, nen khong phai mot duong dung.
+    assert not vai.anh_chinh_duoc("designer", _a(mat=1))
+    assert vai.anh_chinh_duoc("designer", _a(mat=1, alt="Jensen Huang on stage"))
+    assert vai.anh_chinh_duoc("designer", _a(mat=1, thuong_hieu={"nguoi": "Jensen Huang"}))
+    # Vision danh rot thi khong vai nao dung.
+    assert not vai.anh_chinh_duoc("designer", _a(lien_quan=False))
+
+
+def test_du_nguyen_lieu_chi_dem_tam_voi_vai_nhieu_anh():
+    mot_hero = [_a()]
+    assert vai.du_nguyen_lieu("designer", mot_hero), \
+        "Ethan co mot tam lam hero duoc la du — the cua anh ta chi dung MOT anh"
+    assert not vai.du_nguyen_lieu("carousel", mot_hero), \
+        "Dre co bia nhung moi mot tam: van thieu 4 slide"
+    nam_ngang = [_a(ti_le=1.78, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
+                 for _ in range(5)]
+    assert not vai.du_nguyen_lieu("designer", nam_ngang), \
+        "5 anh ngang 16:9 khong cho Ethan mot duong nao — dung su co LOW-12"
+    assert not vai.du_nguyen_lieu("carousel", nam_ngang), "du 5 tam nhung khong co bia"
+    assert vai.du_nguyen_lieu("carousel", [_a() for _ in range(5)])
+    assert not vai.du_nguyen_lieu("carousel", [_a() for _ in range(5)], flagship=True), \
+        "tin flagship can 8 slide"
+    # Vai la -> luat cua vai anh mac dinh, khong nem.
+    assert vai.du_nguyen_lieu("khong-co-vai-nay", mot_hero) == vai.du_nguyen_lieu(
+        vai.MAC_DINH_ANH, mot_hero)
+
+
+def test_so_anh_toi_thieu_theo_tung_vai():
+    """Su co 10/09/2026: engine ap nguong carousel cho MOI vai dung anh, nen bai
+    2 anh cua Ethan bi bao thieu anh va Ong Chu doc thay "carousel can toi thieu
+    5 slide" tren task cua Ethan. Ethan can DUNG MOT anh (card.py), Kite ve
+    vector nen cung mot anh la du; chi Dre moi can 5, va 8 khi tin flagship."""
+    assert vai.so_anh_toi_thieu("designer") == 1
+    assert vai.so_anh_toi_thieu("designer", flagship=True) == 1, \
+        "tin flagship KHONG lam the hero cua Ethan can them anh"
+    assert vai.so_anh_toi_thieu("carousel-edu") == 1
+    assert vai.so_anh_toi_thieu("carousel") == 5
+    assert vai.so_anh_toi_thieu("carousel", flagship=True) == 8
+    # Vai la (sidecar hong, chay tay) -> nguong cua vai anh mac dinh, khong nem.
+    assert vai.so_anh_toi_thieu("") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)
+    assert vai.so_anh_toi_thieu("khong-co-vai-nay") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)
+
+
+def test_don_vi_san_goi_dung_ten_san_pham():
+    """Goi the don cua Ethan la "slide" chinh la thu doc ra thanh "Ethan khong
+    tao duoc slide" (su co 10/09/2026)."""
+    assert vai.don_vi_san("designer") == "ảnh"
+    assert vai.don_vi_san("carousel") == "slide"
+    assert vai.don_vi_san("carousel-edu") == "slide"
+
+
 if __name__ == "__main__":
-    ham = [v for k, v in list(globals().items()) if k.startswith("test_")]
-    loi = 0
-    for h in ham:
-        try:
-            h()
-            print(f"OK   {h.__name__}")
-        except AssertionError as e:
-            loi += 1
-            print(f"FAIL {h.__name__}: {e}")
-    print(f"\n{len(ham) - loi}/{len(ham)} test qua")
-    sys.exit(1 if loi else 0)
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

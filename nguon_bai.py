@@ -30,6 +30,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import quet_chung                                            # noqa: E402
+import env_load                                              # noqa: E402
 
 UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
@@ -384,7 +385,7 @@ def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
         return None
 
     thay = {link}
-    with cf.ThreadPoolExecutor(max_workers=6) as ex:
+    with cf.ThreadPoolExecutor(max_workers=env_load.so_luong(6)) as ex:
         for kq in ex.map(_trong_feed, mien[: so * 3]):
             if kq and kq["url"] and kq["url"] not in thay:
                 thay.add(kq["url"])

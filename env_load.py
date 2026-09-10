@@ -96,12 +96,45 @@ def _brand() -> str:
 # CUNG mot ham, khong tu viet lai phep tra nguoc roi quen mot cho (bat
 # 09/09/2026: anh_thuong_hieu.py co HAI cho lam sai giong het nhau).
 _BRAND_DAI = {"dcgr": "dcgr", "blog": "donniechublog"}
+# Cong khai (audit lượt 2, ADF-r2-10): bang nay tung chep o 3 tep nua
+# (moat_publish/duyet_co_so/bob_nop `_TEN_BRAND`) — mot brand moi la sua 4 cho.
+BRAND_DAI = _BRAND_DAI
 
 
 def brand_dai(mac_dinh: str = "donniechublog") -> str:
     """Slug thuong hieu DAI ('donniechublog'/'dcgr') tu CT_BRAND hien tai —
     dung cho moi loi goi card.dat_thuong_hieu / anh_thuong_hieu.dat_thuong_hieu."""
     return _BRAND_DAI.get(_brand(), mac_dinh)
+
+
+def so_luong(mac_dinh: int) -> int:
+    """So worker cho mot ThreadPoolExecutor: min(mac dinh cua cho goi, CT_WORKERS).
+
+    7 cho gõ cứng 4/6/8 (audit lượt 2, B-r2-6) — tren server 2 vCPU hay khi
+    router vision gioi han, khong chinh duoc ma khong sua ma. CT_WORKERS chi ha
+    xuong, khong nang len: moi cho da chon tran theo tinh chat I/O cua no."""
+    try:
+        tran = int(os.environ.get("CT_WORKERS", "0") or 0)
+    except ValueError:
+        tran = 0
+    return max(1, min(mac_dinh, tran)) if tran > 0 else mac_dinh
+
+
+def handle_kenh(brand: str, co_a_cong: bool = True) -> str:
+    """Handle hien thi cua brand ("@donniechublog" / "@dcgr.tech"), nhan CA khoa
+    container ('blog') lan slug dai ('donniechublog').
+
+    MOT ban (audit lượt 2, ADF-r2-9): truoc day bob_nop.handle_kenh luon them "@"
+    va doi 'blog', con kite_chuan_bi.handle_kenh tra nguyen 'donniechublog'
+    khong "@" va khong doi 'blog' — cung ten ham, hai ket qua. Nguon su that
+    van la card.THUONG_HIEU (import tai cho de tranh vong: card import env_load).
+    `co_a_cong=False` cho cho tu ghep "@" vao chu (slide cuoi cua Kite)."""
+    import card
+    b = (brand or "").strip()
+    b = _BRAND_DAI.get(b, b)
+    h = (getattr(card, "THUONG_HIEU", {}).get(b) or {}).get("handle") or b
+    h = h.lstrip("@")
+    return ("@" + h) if co_a_cong else h
 
 
 def _tep_env() -> tuple:
@@ -208,9 +241,20 @@ def ghi_json(p, d, indent: int = 2) -> None:
     """
     import json as _j
     import os as _os
+    import threading as _th
     p = Path(p)
     p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_name(p.name + f".tmp.{_os.getpid()}")
-    tmp.write_text(_j.dumps(d, ensure_ascii=False, indent=indent, default=str),
-                   encoding="utf-8")
-    _os.replace(tmp, p)
+    # pid + thread id (ADF-r2-11, lay tu duyet_co_so._ghi_json): approve_service
+    # ghi cung mot tep state tu nhieu thread (nut chay nen, vong poll) — chung
+    # mot ten tmp thi hai ban ghi lan vao nhau roi ban lai lan moi la cai replace.
+    tmp = p.with_name(f"{p.name}.tmp.{_os.getpid()}.{_th.get_ident()}")
+    try:
+        tmp.write_text(_j.dumps(d, ensure_ascii=False, indent=indent, default=str),
+                       encoding="utf-8")
+        _os.replace(tmp, p)
+    except BaseException:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+        raise

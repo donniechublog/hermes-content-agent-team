@@ -84,12 +84,10 @@ def vai_cua_topic(thread_id):
             return ten
     return None
 
-# Slug cu (ten nhan vat) -> slug profile hien tai. Sidecar .img.json/.writer.json
-# cu con ghi "dre"/"miles"; task tao tu do se khong ai nhan (khong co profile
-# ten vay) va nam 'ready' mai — su co 01/09/2026: hai bai dcgr ket 2 ngay.
-SLUG_CU = {"miles": "writer", "dre": "carousel", "ethan": "designer",
-           "chad": "designer", "heller": "carousel", "kite": "carousel-edu",
-           "finn": "scout", "vera": "market", "jean": "teaser", "ada": "analyst"}
+# SLUG_CU (slug cu -> slug profile; su co 01/09/2026 hai bai dcgr ket 2 ngay vi
+# sidecar ghi "dre"/"miles") nay la VIEW cua vai.py — dong 69 o tren. Truoc audit
+# lượt 2 (ADF-r2-1) mot bang chep tay o day ghi de no 21 dong sau khi gan, nen
+# them slug_cu vao vai.py KHONG toi duoc day (chua lo chi vi hai bang dang trung).
 
 def chuan_assignee(assignee):
     """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""
@@ -182,11 +180,14 @@ def _bang_den_ghi(draft_id, key, value):
         log("bangden", f"{draft_id}: ghi '{key}' loi: {loi}")
 
 def _trang_thai_task(tid):
-    """Trang thai hien tai cua mot task, '' neu khong ro.
+    """Trang thai hien tai cua mot task; '' neu task khong co; None neu KHONG DOC
+    DUOC kanban (C1 — hai thu nay khac nhau, nguoi goi phai phan biet).
 
-    Doc qua hermes_adapter — no la noi duy nhat biet schema kanban.db (C2)."""
-    tt = hermes_adapter.trang_thai(tid)
-    return "" if tt is None else tt
+    Truoc audit lượt 2 (C-r2-3) ham nay ep None ve '' — kanban hong luc bam
+    Duyet thi task Miles duoc tao khong co cha (mat ban giao cua Dre) ma note
+    van bao "✅", va nut Duyet bam lai tra cau co dinh "dang duoc viet" — dung
+    loi c81e6e6 sua. Doc qua hermes_adapter — noi duy nhat biet schema (C2)."""
+    return hermes_adapter.trang_thai(tid)
 
 def _tom_tat_run(tid):
     """(summary, metadata_dict) cua lan chay cuoi cua task — cai vai vua ban giao."""

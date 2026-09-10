@@ -20,6 +20,7 @@ HAI LOAI ALIAS, co y tach doi — chung khong trung nhau:
 Vd "chad"/"heller" chi la slug_cu (khong ai go nua), con "img"/"cr"/"kites" chi
 la `go` (chua bao gio la ten thu muc profile).
 """
+import re
 from dataclasses import dataclass
 
 
@@ -33,18 +34,64 @@ class Vai:
     renderer: str = ""                         # card | carousel | render_edu
     nhan_anh: bool = False                     # vai DUNG ANH (chon tin giao duoc)
     viet: bool = False                         # vai viet caption
+    # So ANH THAT toi thieu de vai nay dung duoc mot san pham. Voi vai carousel
+    # con la so SLIDE toi thieu (moi slide mot anh rieng) — hai con so do trung
+    # nhau nen `toi_thieu` trong manifest lam duoc ca hai viec; voi Ethan thi
+    # KHONG trung, va do chinh la su co 10/09/2026 duoi day.
+    anh_toi_thieu: int = 1
+    anh_toi_thieu_flagship: int = 0            # 0 = tin flagship khong nang nguong
+    # ---- SO LUONG co phai tieu chi cua vai nay khong (LOW-12, 10/09/2026) ----
+    # Ong Chu: *"tieu chi ve anh thi la chung cua moi designer, nhung carousel la
+    # nhieu anh con Ethan lam single image, nen 'so luong' ko the la thu ap vao
+    # duoc"*. Tieu chi CHAT LUONG (net, khong rac, lien quan, day toi) van dung
+    # chung o `luat_anh` + `chuan_bi.nhin.phan_loai` cho ca ba vai. Chi hai thu
+    # duoi day di theo vai, va chung tra loi hai cau khac han nhau:
+    #
+    #   anh_muc_tieu_tim  BAO NHIEU tam thi ngung di tim. CHI co nghia voi vai
+    #                     xep NHIEU anh (Dre: moi slide mot anh). 0 = vai lam
+    #                     SAN PHAM MOT ANH -> khong dem, chi hoi "da co tam nao
+    #                     dung lam anh chinh chua".
+    #   ti_le_don_max     tam anh phai <= ti le nay moi DUNG MOT MINH duoc, theo
+    #                     kho cua renderer. 0 = vai khong xet (moi anh dung duoc
+    #                     deu la mot slide, tam lam bia do `phan_loai` dan nhan).
+    anh_muc_tieu_tim: int = 0
+    anh_muc_tieu_tim_flagship: int = 0
+    ti_le_don_max: float = 0.0
+    chart_don: bool = True                     # chart dung MOT MINH duoc khong
 
 
 VAI = {v.slug: v for v in [
     # --- ba vai DUNG ANH: moi vai mot cong cu dung anh rieng ---
+    # anh_toi_thieu=1: card.py dung MOT tam anh lam nen hero. Su co 10/09/2026:
+    # engine anh dung chung ap nguong cua carousel (5, hay 8 voi tin flagship)
+    # cho CA Ethan, nen hai bai chi co 2 anh that bi chan o buoc "thieu anh" va
+    # Ong Chu doc duoc dong "carousel can toi thieu 5 slide" tren task cua Ethan
+    # — trong khi Ethan chi can 1 anh. Nguong phai di theo VAI, khong phai theo
+    # module dung dau tien.
+    # anh_muc_tieu_tim=0: card.py dung MOT tam anh — "du 5 anh" khong noi len dieu
+    # gi ve viec Ethan co dung duoc bo nay khong (LOW-12). 1.6 = 1200/750, nguong
+    # kiem_anh_thap cua card.py o kho 4:5; chart va anh ngang hon the chi con
+    # duong ghep doc, khong dung mot minh duoc.
     Vai("designer", "Ethan", go=("img", "anh", "ethan"), slug_cu=("ethan", "chad"),
-        renderer="card", nhan_anh=True),
+        renderer="card", nhan_anh=True, anh_toi_thieu=1,
+        ti_le_don_max=1.6, chart_don=False),
+    # 5 va 8 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN. Chep so o day chu
+    # khong import carousel: tep nay la BAN DANG KY, phai nhe (carousel keo theo
+    # card + PIL). test_vai giu hai ban khong troi khoi nhau.
     Vai("carousel", "Dre", go=("cr", "dre"), slug_cu=("dre", "heller"),
-        renderer="carousel", nhan_anh=True),
+        renderer="carousel", nhan_anh=True, anh_toi_thieu=5, anh_toi_thieu_flagship=8,
+        anh_muc_tieu_tim=5, anh_muc_tieu_tim_flagship=8),
     # "kites": so nhieu tieng Anh — Ong Chu hay go the khi giao nhieu tin cung
     # luc ("3, 4 - Kites"). Thieu no la ca lenh chon bi tu choi (su co 06/09/2026).
+    # anh_toi_thieu=1: Kite ve ART VECTOR GOC, anh that chi la hinh chen them —
+    # bai khong co anh that van dung duoc bo slide (day cung la ly do
+    # route_thieu_anh bo qua han vai nay).
+    # anh_muc_tieu_tim 5/8: render_edu cung XEP NHIEU SLIDE, nen so luong van la
+    # mot tieu chi that. Giu dung so engine van di tim tu truoc LOW-12 — vai nay
+    # chua duoc ra lai, va ha xuong la Kite it hinh chen hon truoc.
     Vai("carousel-edu", "Kite", go=("edu", "kite", "kites"), slug_cu=("kite",),
-        renderer="render_edu", nhan_anh=True),
+        renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
+        anh_muc_tieu_tim=5, anh_muc_tieu_tim_flagship=8),
     # --- vai VIET ---
     Vai("writer", "Miles", go=("cap", "miles"), slug_cu=("miles",), viet=True),
     # --- vai di tim tin / phan tich / chat ---
@@ -62,6 +109,9 @@ MAC_DINH_ANH = "designer"
 MAC_DINH_VIET = "writer"
 
 
+_TEN_THUONG = {v.ten.lower(): v.slug for v in VAI.values()}
+
+
 def ten_hien(slug: str) -> str:
     """Ten persona de in ra bao cao; tra lai chinh slug neu chua khai."""
     v = VAI.get(slug)
@@ -73,7 +123,107 @@ def slug_that(chu: str) -> str:
 
     Khong nhan ra thi TRA LAI NGUYEN VAN — nguoi goi (chuan_assignee) con kiem
     profile co that khong roi bao loi tu te, dung nuot o day."""
-    return _SLUG_CU.get(str(chu).lower(), chu)
+    c = str(chu).lower()
+    # Ten persona hien tai (Cape, Nova...) cung la mot cach goi hop le — N-r2-10:
+    # "cape" khong co trong go/slug_cu nen tung tra nguyen "cape", chuan_assignee
+    # bao "khong co profile cape" trong khi moi persona khac deu tu resolve.
+    return _SLUG_CU.get(c) or _TEN_THUONG.get(c, chu)
+
+
+def so_anh_toi_thieu(slug: str, flagship: bool = False) -> int:
+    """So ANH THAT toi thieu de vai `slug` dung duoc san pham cua no.
+
+    Vi sao la ham o day chu khong phai hang so trong carousel.py: engine anh
+    (`anh_chuan_bi.chuan_bi`) chay CHUNG cho ca ba vai dung anh va truoc
+    10/09/2026 no lay thang `carousel.MIN_SLIDE`/`FLAGSHIP_MIN` — tuc ap luat
+    cua Dre cho Ethan lan Kite. Hau qua: bai giao Ethan chi co 2 anh (rat
+    thuong gap voi tin khong phai benchmark) bi ket o buoc "thieu anh", roi
+    Telegram noi voi Ethan bang tieng cua carousel ("chuyen Kite ve vector",
+    "can toi thieu 5 slide") du card.py chi can 1 anh.
+
+    Vai la khong biet -> nguong cua vai anh mac dinh (Ethan). Nguoi goi nen
+    keu mot dong khi roi vao day: sidecar mat `vai_anh` la mot chuyen khac."""
+    v = VAI.get(slug) or VAI[MAC_DINH_ANH]
+    if flagship and v.anh_toi_thieu_flagship:
+        return v.anh_toi_thieu_flagship
+    return v.anh_toi_thieu
+
+
+# Ten rieng >= 2 tu trong alt/caption ("Jensen Huang"). MOT ban duy nhat: chu
+# thich anh cua `chuan_bi.nhin.phan_loai` va cong "mat nguoi phai khai ten" duoi
+# day phai doc ra CUNG mot cai ten, khong duoc moi noi mot regex.
+_TEN_NGUOI = re.compile(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+")
+
+
+def ten_nguoi_trong_alt(alt: str) -> list:
+    """Cac ten nguoi neu trong alt/caption cua mot tam anh."""
+    return _TEN_NGUOI.findall(alt or "")
+
+
+def anh_chinh_duoc(slug: str, a: dict) -> bool:
+    """Tam anh `a` (mot muc trong manifest) co dung MOT MINH lam ANH CHINH cua
+    vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.
+
+    Tieu chi CHAT LUONG (net, khong rac, lien quan bai) khong nam o day: chung
+    dung chung cho moi vai va da chay o `luat_anh` + `chuan_bi.nhin.phan_loai`.
+    Ham nay chi tra loi phan di theo KHO cua renderer."""
+    v = VAI.get(slug) or VAI[MAC_DINH_ANH]
+    if a.get("lien_quan") is False or not a.get("dung"):
+        return False
+    if a.get("xep_hang"):
+        return True                            # anh chinh BAT BUOC cua tin xep hang
+    if not v.ti_le_don_max:
+        # Vai xep NHIEU anh: "anh chinh" la tam lam BIA, nhan do phan_loai dan.
+        return "bìa" in a["dung"]
+    if a.get("loai") == "chart" and not v.chart_don:
+        return False
+    if float(a.get("ti_le") or 0) > v.ti_le_don_max:
+        return False
+    # Mat nguoi khong ro ai: `nop_chung.kiem_nhan_vat` chan, ma vai thi khong
+    # duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc.
+    if a.get("mat") and not ((a.get("thuong_hieu") or {}).get("nguoi")
+                             or ten_nguoi_trong_alt(a.get("alt") or "")):
+        return False
+    return True
+
+
+def so_anh_muc_tieu_tim(slug: str, flagship: bool = False) -> int:
+    """Bao nhieu tam thi NGUNG di tim. 0 = vai lam san pham mot anh, so luong
+    khong phai tieu chi cua no — hoi `du_nguyen_lieu` thay vi so sanh con so nay."""
+    v = VAI.get(slug) or VAI[MAC_DINH_ANH]
+    if flagship and v.anh_muc_tieu_tim_flagship:
+        return v.anh_muc_tieu_tim_flagship
+    return v.anh_muc_tieu_tim
+
+
+def du_nguyen_lieu(slug: str, dung_duoc: list, flagship: bool = False) -> bool:
+    """Vai `slug` DA DU nguyen lieu chua — engine con phai di tim anh nua khong.
+
+    Hai ve, va ve thu hai KHONG ap cho moi vai (Ong Chu 10/09/2026: *"carousel
+    la nhieu anh con Ethan lam single image, nen 'so luong' ko the la thu ap vao
+    duoc"*):
+
+      1. phai co it nhat MOT tam dung lam anh chinh — moi vai deu can;
+      2. va du so tam — CHI voi vai xep nhieu anh (`anh_muc_tieu_tim`), vi o do
+         moi slide an mot tam that. Vai lam san pham mot anh de so nay bang 0.
+
+    Truoc LOW-12 engine hoi ve thu hai bang so cua carousel (5, hay 8 voi tin
+    flagship) cho CA Ethan: tin co 5 anh ngang 16:9 dem ra "du 5" nen engine
+    ngung tim, trong khi card.py chan anh ngang >1.6 di mot minh — Ethan con 0
+    duong dung, ma brief thi cam vai tu tai them."""
+    if not any(anh_chinh_duoc(slug, a) for a in dung_duoc):
+        return False
+    # muc = 0 (vai mot anh): ve nay luon dung, tuc chi con ve thu nhat.
+    return len(dung_duoc) >= so_anh_muc_tieu_tim(slug, flagship)
+
+
+def don_vi_san(slug: str) -> str:
+    """Chu de goi mot don vi san pham cua vai: "slide" hay "ảnh".
+
+    Dung cho cau bao gui Ong Chu. Goi the don cua Ethan la "slide" chinh la
+    thu lam su co 10/09/2026 doc ra nhu "Ethan khong tao duoc slide"."""
+    v = VAI.get(slug)
+    return "slide" if v and v.renderer in ("carousel", "render_edu") else "ảnh"
 
 
 # ---- CAC VIEW DAN XUAT (bang cu, giu y nguyen ngu nghia) --------------------

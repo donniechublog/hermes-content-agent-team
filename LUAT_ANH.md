@@ -94,10 +94,10 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 - **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
   → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
 - Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
-  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → **ảnh
-  thương hiệu** (§1.2d), rồi **ảnh khái niệm** (§1.2c) cho bìa/hero. Vẫn thiếu →
-  brief nói thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác
-  cho đủ**.
+  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. **Ảnh thương hiệu**
+  (§1.2d) chạy cho **mọi tin có hãng trong watchlist**, đủ ảnh hay không. Vẫn
+  thiếu sau đó → **ảnh khái niệm** (§1.2c) cho bìa/hero. Vẫn thiếu → brief nói
+  thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
 - Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
   hiệu cần xem lại.
 
@@ -134,9 +134,19 @@ Samsung, kiện Anthropic, DeepSeek gọi vốn, Philippines) đều dừng ở 
 ảnh thật dùng được — Kite vẽ vector / Dre làm với N ảnh"*, toàn hãng mà Commons
 có hàng trăm ảnh thật. Luật của **engine** (`anh_thuong_hieu.py`):
 
-- **Khi nào**: sau vòng tìm rộng mà vẫn thiếu, hoặc không tấm nào làm bìa được —
-  **trước** ảnh khái niệm. Thứ tự ba vòng bù là theo độ liên quan giảm dần: báo
-  khác cùng tin → ảnh của **chính hãng** trong tin → ảnh **khái niệm** của chủ đề.
+- **Khi nào**: **mọi tin nhắc tới một hãng trong watchlist**, kể cả khi bài gốc
+  đã đủ ảnh — chạy sau vòng tìm rộng, **trước** ảnh khái niệm. Ông Chủ
+  10/09/2026, lần thứ hai của cùng một câu: *"Dre vẫn ko chịu đi tìm các hình
+  liên quan như logo, brand, founder, trụ sở... của chủ đề được nhắc tới"*. Bản
+  09/09 treo vòng này sau điều kiện *thiếu ảnh*, nên tin nào bài gốc đủ ảnh là
+  không bao giờ hỏi tới Commons/Wikidata — mà vai thì bị cấm tự tải thêm, nên bộ
+  ảnh giao cho vai trắng trơn dù máy móc đã sẵn. Tin không nhắc hãng nào:
+  `hang_trong_tin` trả rỗng, vòng thoát ngay, không một request nào.
+- **Trần**: thêm tối đa 4 ảnh một bộ (`TOI_DA_THEM_TH`), và tổng ảnh không quá
+  `TOI_DA_ANH + 4`. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối
+  cảnh thì vẫn chỉ chạy khi **thật sự thiếu ảnh** — đó là phần đắt.
+- **Chỗ đứng**: ảnh của hãng xếp **sau** ảnh riêng của tin trong gợi ý bìa
+  (`goi_y_bia`), nên bài có ảnh riêng tốt không bị chúng chiếm bìa.
 - **Hãng nào**: mọi hãng trong `scan_business.WATCHLIST` mà tin nhắc tới, tối đa
   3, theo thứ tự xuất hiện — **không phải chỉ tên riêng đầu tiêu đề**. Tên
   model/chip quy về hãng chủ (Claude → Anthropic, Xring → Xiaomi). Tên trần mà
@@ -218,6 +228,32 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
 Brief của Kite còn ghi rõ **từng tấm là loại gì** (🏢 cơ sở · 👤 chân dung ·
 📊 bảng xếp hạng · 🔖 thẻ logo, §1.2d), vì caption của chúng khác hẳn nhau: chú
 thích một thẻ logo thành "ảnh trụ sở" là sai sự thật.
+
+### 1.2f Bìa của Kite phải là ảnh thật khi có ảnh thật dùng được
+
+Ông Chủ 10/09/2026: *"kite vẫn dùng vector làm hero, chưa sử dụng ảnh"*.
+
+Bản trước (08/09) chỉ chỉ định hero khi ảnh có `paper_hinh` — tức **chỉ bài
+arxiv** (§1.4). Mọi tin còn lại thì brief nói "bìa `image` **hoặc** `figure`"
+(tuỳ chọn) và `kite_nop` chỉ đòi "dùng ít nhất một ảnh ở đâu đó", nên nhét hết
+ảnh vào `figure` thân rồi vẽ sơ đồ lên bìa là **hợp lệ**. Đo 10/09: ba ca — tin
+thường, tin chuyển sang vì thiếu ảnh, và ảnh khái niệm đặt nhầm vào thân — đều
+qua cổng không một dòng lỗi.
+
+- **`kite_chuan_bi.hinh_hero`** chọn tấm lên bìa, **một nguồn** cho cả brief lẫn
+  cổng chặn (cùng lý do với `hinh_phai_dung` §1.2e). Thứ tự: hình paper (§1.4) →
+  ảnh riêng của tin → ảnh thương hiệu (§1.2d) → ảnh khái niệm (§1.2c); hai loại
+  bù xếp sau mọi ảnh riêng, đúng như hai mục đó ghi.
+- **Cổng**: có ứng viên hero mà slide `cover` không có `image` → `kite_nop` chặn.
+  Cổng đòi **có** ảnh ở bìa, không đòi đúng mã nào — `hinh_hero` chỉ gợi ý.
+- Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`), trừ hình paper (bóc thẳng từ
+  PDF nên không thể là quảng cáo). Vision tắt thì mọi ảnh là `None` — ép lúc đó
+  là đẩy banner lên bìa, cùng bài học với cổng "ít nhất một".
+- **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
+  **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`kiem_trung` §8).
+  Còn đúng một tấm thì thân thắng và bìa vẽ vector — `hinh_hero` trả `None`.
+- Bìa có ảnh thì **cả bộ không vẽ hero art** (`chon_theme_tu_dong` trả
+  `hero=None`), nên đây là thay thế chứ không phải thêm một lớp trang trí.
 
 ### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 
@@ -545,6 +581,7 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
 | Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
+| Bìa Kite vẽ hero vector trong khi có ảnh thật dùng được (§1.2f) | `kite_nop` | chặn |
 | Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |

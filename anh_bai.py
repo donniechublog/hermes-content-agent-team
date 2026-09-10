@@ -40,6 +40,7 @@ HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 
 # Anh khong dai dien noi dung — the thuong hieu, logo, avatar...
 import luat_anh                                              # noqa: E402
+import env_load                                              # noqa: E402
 RAC = luat_anh.RAC                     # mot bo tu vung, xem luat_anh
 
 # Ten tep / alt goi y day la bieu do, bang so — thu doc gia muon xem
@@ -286,7 +287,7 @@ def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -
             trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de, link) if u]
 
     ung_vien = []
-    with cf.ThreadPoolExecutor(max_workers=6) as ex:
+    with cf.ThreadPoolExecutor(max_workers=env_load.so_luong(6)) as ex:
         for (u, nguon), ds in zip(trang, ex.map(lambda t: anh_trong_trang(t[0]), trang)):
             for src, alt, og in ds:
                 ung_vien.append({"anh": src, "alt": alt, "og": og,
@@ -307,7 +308,7 @@ def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -
             theo_goc[k] = c
     loc = list(theo_goc.values())
 
-    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+    with cf.ThreadPoolExecutor(max_workers=env_load.so_luong(8)) as ex:
         for c, kt in zip(loc, ex.map(lambda x: do_anh(x["anh"]), loc)):
             c["rong"], c["cao"], c["byte"], c["do_hoa"] = kt
             c["diem"], c["ly_do"] = cham(c["anh"], c["alt"], c["og"],
