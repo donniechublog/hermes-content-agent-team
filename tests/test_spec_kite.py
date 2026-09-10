@@ -361,6 +361,91 @@ def test_hero_uu_tien_paper_roi_anh_rieng_roi_anh_bu():
         assert kb.hinh_hero(_m(wd)) is None
 
 
+# ---- ANH KHAI NIEM chi duoc dung o bia (LUAT_ANH §1.2c) -------------------
+def _khai_niem(wd, ma="K1", tu_khoa="Japan flag", **k):
+    """Anh khai niem cua `anh_khai_niem.py`: co nuoc / day rack datacenter lay
+    tu Wikimedia Commons khi tin khong co anh rieng. La ANH CHUP THAT nen no di
+    qua moi cong ky thuat — chi cho dung cua no la bi gioi han."""
+    return _hinh(wd, ma=ma, loai="anh",
+                 khai_niem={"tu_khoa": tu_khoa, "ly_do": "tin nhac Nhat"}, **k)
+
+
+def test_anh_khai_niem_o_slide_than_thi_chan():
+    """§1.2c "Chỗ đứng: chỉ bìa/hero, không vào slide thân". Đo 10/09/2026: ảnh
+    khái niệm đặt vào `figure` thân qua cổng không một dòng lỗi — nó là ảnh
+    minh hoạ CHỦ ĐỀ, không phải ảnh của tin, nên ở thân nó đọc như bằng chứng
+    của bài."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        rieng = _hinh(wd, ma="R1")
+        kn = _khai_niem(wd, ma="K1", w=1100, h=900)
+        sl = _du()
+        sl[0] = _cover(image="R1", caption="Bảng trong bài · via AA")
+        sl[1] = _figure("K1", title="Cờ Nhật")
+        _r, loi, _c = _chay(sl, _m(wd, [rieng, kn]), wd)
+        assert _co(loi, "K1", "KHÁI NIỆM", "bìa"), loi
+
+
+def test_anh_khai_niem_len_bia_thi_qua():
+    """Chặn ở thân, KHÔNG chặn ở bìa — bìa/hero đúng là chỗ của nó."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du()
+        sl[0] = _cover(image="K1", caption="Cờ Nhật · via Wikimedia Commons")
+        _r, loi, _c = _chay(sl, _m(wd, [_khai_niem(wd)]), wd)
+        assert loi == [], loi
+
+
+def test_anh_khai_niem_khong_bi_ep_xuong_than_khi_chuyen_kite():
+    """Hai cổng không được đá nhau: §1.2e ép "đủ mã + phải có hình ở BODY",
+    §1.2c cấm ảnh khái niệm ở thân. Tin CHUYỂN sang Kite mà chỉ có đúng một ảnh
+    khái niệm thì trước 10/09/2026 đường nộp DUY NHẤT là đặt nó xuống `figure`
+    thân — cổng ép đúng cái luật cấm. Nó phải rơi khỏi `hinh_phai_dung`, và bìa
+    là đường nộp còn lại."""
+    import kite_chuan_bi as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        m = _m(wd, [_khai_niem(wd)], chuyen_kite="t_9")
+        assert kb.hinh_phai_dung(m) == [], kb.hinh_phai_dung(m)
+        assert kb.hinh_hero(m)["ma"] == "K1"
+        sl = _du()
+        sl[0] = _cover(image="K1", caption="Cờ Nhật · via Wikimedia Commons")
+        _r, loi, _c = _chay(sl, m, wd)
+        assert loi == [], loi
+
+
+def test_hero_lui_sang_anh_khai_niem_khi_tam_dau_bi_than_giu():
+    """Tin chuyển sang Kite có một ảnh riêng + một ảnh khái niệm: ảnh riêng bị
+    §1.2e giữ ở thân, nên bìa lùi sang ảnh khái niệm thay vì vẽ vector — đúng
+    §1.2f ("bìa phải là ảnh thật khi CÓ ảnh thật dùng được")."""
+    import kite_chuan_bi as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        rieng = _hinh(wd, ma="R1")
+        kn = _khai_niem(wd, ma="K1", w=1100, h=900)
+        m = _m(wd, [rieng, kn], chuyen_kite="t_9")
+        assert kb.hinh_phai_dung(m) == ["R1"], kb.hinh_phai_dung(m)
+        assert kb.hinh_hero(m)["ma"] == "K1"
+        sl = _du()
+        sl[0] = _cover(image="K1", caption="Cờ Nhật · via Wikimedia Commons")
+        sl[1] = _figure("R1")
+        _r, loi, _c = _chay(sl, m, wd)
+        assert loi == [], loi
+
+
+def test_brief_noi_ro_anh_khai_niem_chi_dung_o_bia():
+    """Brief liệt kê ảnh khái niệm chung danh sách "dùng được cho `figure` / bìa
+    `image`" — không nói gì thì vai đặt nó xuống `figure` rồi ăn cổng chặn."""
+    import kite_chuan_bi as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        rieng = _hinh(wd, ma="R1")
+        kn = _khai_niem(wd, ma="K1", w=1100, h=900)
+        brief = kb.viet_brief(_m(wd, [rieng, kn], workdir=str(wd)), None)
+        dong = [d for d in brief.splitlines() if d.startswith("- K1:")]
+        assert dong and "KHÁI NIỆM" in dong[0] and "bìa" in dong[0], dong
+
+
 def test_khung_spec_khong_in_ma_cua_bia_lai_o_figure():
     """Cùng một mã ở cả cover lẫn `figure` là `luat_anh.kiem_trung` chặn — khung
     mẫu không được đẩy vai vào cổng."""

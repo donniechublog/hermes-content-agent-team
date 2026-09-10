@@ -133,6 +133,27 @@ def _kiem_hinh_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
 
+            # ANH KHAI NIEM chi duoc dung o BIA (LUAT_ANH §1.2c "Cho dung:
+            # nhan 🧭 ANH KHAI NIEM, chi bia/hero, khong vao slide than"). No
+            # la anh chup that — co nuoc, day rack datacenter tu Wikimedia
+            # Commons — nen di qua sach moi cong ky thuat; cai sai la CHO
+            # DUNG: o `figure` than no doc nhu bang chung cua bai, trong khi
+            # no chi minh hoa chu de. Do 10/09/2026: dat vao than, cong khong
+            # mot dong loi. Chan o day chu khong loai khoi `hinh_that`, vi no
+            # van phai la ung vien cho `image` cua bia.
+
+            kn = hinh[img].get("khai_niem") or {}
+
+            if kn and i > 1:
+
+                loi.append(f"slide {i}: 🧭 {img} là ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — "
+
+                           "minh hoạ chủ đề, KHÔNG phải ảnh của tin, nên CHỈ được dùng ở bìa "
+
+                           "(slide 1), không vào slide thân. Đưa nó lên cover, hoặc bỏ image của "
+
+                           "slide này và để `figure` cho hình thật của bài.")
+
 
 def _giai_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
                 loi: list, canh: list):

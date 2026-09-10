@@ -104,17 +104,21 @@ def hinh_hero(m: dict) -> dict | None:
     if not ut:
         return None
     rieng = [a for a in ut if not (a.get("khai_niem") or a.get("thuong_hieu"))]
-    chon = ([a for a in rieng if a.get("paper_hinh")] + rieng
-            + [a for a in ut if a.get("thuong_hieu")]
-            + [a for a in ut if a.get("khai_niem")])[0]
+    xep = ([a for a in rieng if a.get("paper_hinh")] + rieng
+           + [a for a in ut if a.get("thuong_hieu")]
+           + [a for a in ut if a.get("khai_niem")])
     # Tin CHUYEN sang Kite vi thieu anh: `kite_nop` doi hinh that nam o slide
     # THAN (Ong Chu 09/09), ma cung mot anh khong len duoc hai slide
-    # (`luat_anh.kiem_trung`). Con dung mot tam thi than duoc uu tien va bia ve
-    # vector — ep ca hai la hai cong da nhau, vai khong co duong nao nop duoc.
+    # (`luat_anh.kiem_trung`). Tam nao bi than giu doc quyen thi bo, LUI xuong
+    # ung vien ke tiep — anh khai niem khong nam trong `hinh_phai_dung` (§1.2c
+    # cam no o than) nen no van nhan duoc bia khi anh rieng bi than giu. Het
+    # ung vien thi than thang va bia ve vector: ep ca hai la hai cong da nhau,
+    # vai khong co duong nao nop duoc.
     ep = hinh_phai_dung(m)
-    if ep and not [ma for ma in ep if ma != chon["ma"]]:
-        return None
-    return chon
+    for chon in xep:
+        if not ep or [ma for ma in ep if ma != chon["ma"]]:
+            return chon
+    return None
 
 
 def _hero_la_gi(h: dict) -> tuple:
@@ -157,12 +161,21 @@ def hinh_phai_dung(m: dict) -> list:
     tin không phải hàng chuyển sang, hoặc chưa ai nhìn ảnh (vision tắt thì ép là
     đẩy quảng cáo/widget lên slide — xem chú thích cùng loại ở kite_nop).
 
+    KHÔNG ép **ảnh khái niệm** (§1.2c: "chỉ bìa/hero, không vào slide thân").
+    Cổng này đòi mỗi mã một slide `figure` *và* ít nhất một tấm ở thân, nên để
+    ảnh khái niệm lọt vào đây là ÉP nó xuống đúng chỗ luật cấm — đo 10/09/2026:
+    tin chuyển sang mà chỉ có một tấm cờ nước thì đường nộp duy nhất là đặt cờ
+    vào `figure` thân. Nó rơi khỏi danh sách này và về bìa qua `hinh_hero`.
+    Ảnh thương hiệu thì Ở LẠI: §1.2d cho nó vào thân (ảnh thật của chính hãng
+    trong tin).
+
     MỘT nguồn cho cả brief lẫn cổng chặn: hai bản đếm khác nhau là brief bảo
     dùng 3 mã còn cổng đòi 4.
     """
     if not chuyen_tu_vai(m):
         return []
-    return [a["ma"] for a in hinh_that(m) if a.get("lien_quan") is True][:TOI_DA_EP_HINH]
+    return [a["ma"] for a in hinh_that(m)
+            if a.get("lien_quan") is True and not a.get("khai_niem")][:TOI_DA_EP_HINH]
 
 
 def goi_y_tone(title: str) -> tuple:
@@ -245,8 +258,17 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                    "xep_hang": f"📊 bảng {th.get('site')} · {th.get('bang')} có {th.get('hang')} — "
                                "KHÔNG phải bảng của tin này, caption ghi rõ nguồn + tên bảng",
                    }.get(th.get("loai"), "")
+        # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat, chi
+        # CHO DUNG cua no bi gioi han (§1.2c). Danh sach nay mang tieu de "dung
+        # duoc cho `figure` / bia `image`" — khong noi gi thi vai dat co nuoc
+        # vao `figure` than roi an cong chan cua kite_nop (do 10/09/2026).
+        kn = a.get("khai_niem") or {}
+        nhan_kn = (f"🧭 ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — minh hoạ chủ đề, KHÔNG phải "
+                   "ảnh của tin: CHỈ dùng ở bìa (slide 1), không vào slide thân; "
+                   "caption 'via Wikimedia Commons'") if kn else ""
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
                  + (f" | {a['paper_hinh']} của chính paper" if a.get("paper_hinh") else "")
+                 + (f" | {nhan_kn}" if nhan_kn else "")
                  + (f" | {nhan_th}" if nhan_th else "")
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))

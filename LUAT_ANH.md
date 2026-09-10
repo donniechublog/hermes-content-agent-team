@@ -125,6 +125,16 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   không vào slide thân; gợi ý bìa xếp **sau** mọi ảnh riêng của tin; caption
   "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và vẫn được nói "thiếu ảnh" nếu
   thấy cờ/bản đồ không hợp tin.
+- **Có cổng chặn thật, không chỉ là câu dặn** (`kite_nop`, §9): `image` là ảnh
+  khái niệm ở slide khác slide 1 → chặn. Đo 10/09/2026 ở đường Kite: cờ Nhật đặt
+  vào `figure` thân đi qua cổng **không một dòng lỗi**, vì nó là **ảnh chụp
+  thật** nên sạch với mọi cổng kỹ thuật (rỗng · trùng · độ nét · mặt người) —
+  cái sai của nó là **chỗ dùng**, mà chỗ dùng thì chỉ tài liệu này biết. Ở
+  `figure` thân nó đọc như bằng chứng của bài, trong khi nó chỉ minh hoạ chủ đề.
+  Vẫn để nó trong `kite_chuan_bi.hinh_that` (ứng viên cho `image` của **bìa**) và
+  brief ghi thẳng nhãn 🧭 ở dòng của nó — loại khỏi danh sách là mất luôn đường
+  lên bìa, tức mất cả tác dụng của §1.2c.
+- **§1.2e không được ép nó xuống thân**: xem chỗ `hinh_phai_dung` ở mục đó.
 
 ### 1.2d Ảnh thương hiệu: tin về hãng lớn thì tìm trụ sở của chính hãng đó
 
@@ -221,6 +231,14 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
 - Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`). Vision tắt thì mọi ảnh là
   `None`, ép lúc đó là đẩy quảng cáo/widget lên slide — cùng bài học với cổng
   "ít nhất một".
+- **Không ép ảnh khái niệm** (§1.2c). Cổng này đòi mỗi mã một slide `figure`
+  *và* ít nhất một tấm ở **thân**, nên để ảnh khái niệm lọt vào tập bị ép là
+  **ép nó xuống đúng chỗ §1.2c cấm** — hai cổng đá nhau. Đo 10/09/2026: tin
+  chuyển sang Kite mà engine chỉ tìm được **một tấm cờ nước** thì đường nộp
+  *duy nhất* qua được là đặt cờ vào `figure` thân. Nó rơi khỏi
+  `hinh_phai_dung` và về bìa qua `hinh_hero` (§1.2f) — đó là đường nộp còn lại.
+  **Ảnh thương hiệu thì ở lại**: §1.2d cho nó vào thân, vì nó là ảnh thật của
+  chính hãng được nhắc trong tin.
 - `kite_chuan_bi.hinh_phai_dung` là **một nguồn** cho cả brief lẫn cổng chặn, và
   khung spec in sẵn một `figure` cho mỗi mã — đừng bắt vai tự suy ra "ba hình thì
   ba slide".
@@ -251,7 +269,12 @@ qua cổng không một dòng lỗi.
   là đẩy banner lên bìa, cùng bài học với cổng "ít nhất một".
 - **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
   **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`kiem_trung` §8).
-  Còn đúng một tấm thì thân thắng và bìa vẽ vector — `hinh_hero` trả `None`.
+  Tấm nào bị thân giữ độc quyền thì **lùi xuống ứng viên kế tiếp**, không bỏ
+  cuộc ngay: ảnh khái niệm không nằm trong `hinh_phai_dung` (§1.2e) nên tin có
+  một ảnh riêng + một ảnh khái niệm thì ảnh riêng ở thân còn **ảnh khái niệm
+  lên bìa** — đúng chỗ của nó, và bìa vẫn là ảnh thật. Hết ứng viên thì thân
+  thắng và bìa vẽ vector — `hinh_hero` trả `None` (tin chỉ có đúng một tấm
+  riêng).
 - Bìa có ảnh thì **cả bộ không vẽ hero art** (`chon_theme_tu_dong` trả
   `hero=None`), nên đây là thay thế chứ không phải thêm một lớp trang trí.
 
@@ -582,6 +605,7 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
 | Bìa Kite vẽ hero vector trong khi có ảnh thật dùng được (§1.2f) | `kite_nop` | chặn |
+| Ảnh khái niệm đặt ở slide **thân** của Kite (§1.2c) | `kite_nop` | chặn |
 | Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |

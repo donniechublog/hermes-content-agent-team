@@ -87,7 +87,9 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 - Tin **chuyển sang Kite vì thiếu ảnh** (engine tự chuyển khi 0 ảnh, hoặc Ông Chủ
   bấm "Gửi Kite"): những ảnh thật engine đã tìm được **vẫn phải vào bộ của Kite,
   và phải có ở body** — `kite_chuan_bi.hinh_phai_dung` là một nguồn cho cả brief
-  lẫn cổng `kite_nop` (LUAT_ANH §1.2e).
+  lẫn cổng `kite_nop` (LUAT_ANH §1.2e). Trừ **ảnh khái niệm**: §1.2c cấm nó ở
+  slide thân, nên ép nó vào body là hai cổng đá nhau — nó về bìa qua
+  `hinh_hero`, và `kite_nop` chặn nếu nó xuất hiện ở slide khác slide 1.
 - Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`,
   `ethan_chuan_bi/ethan_nop`, `kite_chuan_bi/kite_nop`, `miles_chuan_bi/miles_nop`.
   Nop chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi
