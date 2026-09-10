@@ -105,6 +105,8 @@ from pathlib import Path
 
 # tái dùng cổng chặn tiếng Việt của cả đội
 import tieng_viet  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
+# đo tương phản WCAG dùng CHUNG với card.py/Ethan + itachi_nop.py — xem LOW-9
+import nen_chu  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -491,7 +493,18 @@ FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc du
 # cao, chu mot mau khong an toan), va khi dung thi cung chi VUA DU, khong bao
 # gio dam hon muc can. Truoc day FIG_MAX_TOI co san 0.80 la sai huong: luon
 # phu du roi moi tinh tiep, thay vi hoi truoc co can phu khong.
-NGUONG_SANG_CHU_TOI = 150  # do sang (0..255) vung duoi chu: qua nguong -> chu TOI
+# Chu "toi" o day la rgba(0,0,0,0.85) DE LEN nen (xem _css_chu_toi_vung), khong
+# phai den tuyet doi: ~15% mau nen con xuyen qua. Nguong 150 cu la so tay, chua
+# tung kiem lai bang phep do WCAG that — LOW-9: Kite ra chu gan nhu lien mau
+# voi nen (vd nen xam ~130-149, code van chon chu SANG vi 130-149 < 150, nhung
+# tuong phan chu sang/nen 130-149 chi ~2.7-3.1:1, trong khi chu toi cho tuong
+# phan ~4.5-5.1:1 — sai huong). Tinh lai bang nen_chu.nguong_tuong_phan (dung
+# cong thuc CHUNG voi card.py/Ethan) cho DUNG cap mau THAT dang dung o day,
+# thay vi mot con so co dinh dung chung cho ca chu sang tuyet doi lan chu toi
+# alpha-blend.
+_MAU_CHU_SANG_RGB = tuple(int(WHITE.lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
+_MAU_CHU_TOI_HIEU_DUNG = (38, 38, 38)  # xap xi 0.15 x nen sang (rgba đen 0.85)
+NGUONG_SANG_CHU_TOI = round(nen_chu.nguong_tuong_phan(_MAU_CHU_SANG_RGB, _MAU_CHU_TOI_HIEU_DUNG))
 NGUONG_ROI_CAN_LOP = 26    # do lech (stddev xam) vung duoi chu: qua nguong moi can lop
 # Muc toi khi can_lop (09/09/2026, tang tu 0.55 sau khi Ong Chu xem anh that:
 # so ma van doc duoc ro qua lop mo yeu — xem chu thich tai noi dung max_toi).
@@ -599,7 +612,8 @@ def _doc_nen_that(p):
     # Dinh the luon la NEN (anh khong tran len FIG_DINH), nen do sang o dinh la
     # do sang cua nen: mau phang, hoac mau trung binh cua ban lam mo.
     return ("phang" if phang else "mo",
-            "#%02X%02X%02X" % mau, _sang(mau if phang else toan) > 140)
+            "#%02X%02X%02X" % mau,
+            _sang(mau if phang else toan) > NGUONG_SANG_CHU_TOI)
 
 
 def _vung_duoi_chu(p, cao_hien, ti_le=0.35):

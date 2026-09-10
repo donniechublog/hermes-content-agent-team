@@ -118,11 +118,14 @@ và `tests/test_vai.py` giữ mọi bảng dẫn xuất khớp bản đăng ký.
 mọi bảng cũ:
 
 1. **Một dòng trong `vai.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
-   nhan_anh=…, viet=…)`. `slug` phải trùng **tên thư mục profile thật** trong
-   `HERMES_HOME`, nếu không `chuan_assignee` từ chối tạo task. `go` là mọi chữ
-   Ông Chủ có thể gõ khi chọn tin (kể cả số nhiều kiểu "kites"); `slug_cu` chỉ
-   dành cho slug cũ còn nằm trong sidecar trên đĩa. `VAI_ANH`, `TEN_SANG_CAP`,
-   `TEN_VAI_ANH`, `VAI_CAROUSEL`, `VAI_EDU`, `SLUG_CU`, `TEN_HIEN` tự có theo.
+   nhan_anh=…, viet=…, anh_toi_thieu=…)`. `slug` phải trùng **tên thư mục
+   profile thật** trong `HERMES_HOME`, nếu không `chuan_assignee` từ chối tạo
+   task. `go` là mọi chữ Ông Chủ có thể gõ khi chọn tin (kể cả số nhiều kiểu
+   "kites"); `slug_cu` chỉ dành cho slug cũ còn nằm trong sidecar trên đĩa.
+   `anh_toi_thieu` là số ảnh thật tối thiểu để vai dựng được sản phẩm — engine
+   ảnh dùng chung đọc nó qua `so_anh_toi_thieu()`, đặt sai thì bài bị báo thiếu
+   ảnh oan (sự cố 10/09/2026). `VAI_ANH`, `TEN_SANG_CAP`, `TEN_VAI_ANH`,
+   `VAI_CAROUSEL`, `VAI_EDU`, `SLUG_CU`, `TEN_HIEN` tự có theo.
 2. **Một cặp `<vai>_chuan_bi.py` / `<vai>_nop.py`** — cả hai đọc chung
    `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
    (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).

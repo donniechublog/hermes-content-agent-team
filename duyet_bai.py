@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
 import luat_anh                                             # noqa: E402
 import schema                                               # noqa: E402
+import vai                                                  # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, log,
@@ -596,8 +597,11 @@ def _nut_kite(token, chat_id, draft_id, cq):
 
 
 def _nut_ha_san(token, draft_id, cq):
-    """imgtiep: ha san so slide ve `toi_thieu_co_ban` de vai lam voi so anh hien co.
-    Tra (note, keyboard) — keyboard None nghia la go het (nhu moi nut khac)."""
+    """imgtiep: ha san ve `toi_thieu_co_ban` de vai lam voi so anh hien co.
+    Tra (note, keyboard) — keyboard None nghia la go het (nhu moi nut khac).
+
+    San la CUA VAI DUOC GIAO (Dre 5 slide, Ethan 1 anh) — tu 10/09/2026 manifest
+    ghi san theo vai thay vi luon lay so cua carousel."""
     # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
     # xong.json van nguyen (8 voi tin flagship), nen dre_nop van chan "chi N
     # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
@@ -610,6 +614,13 @@ def _nut_ha_san(token, draft_id, cq):
     san = int(mm.get("toi_thieu_co_ban", 5))
     so = int(mm.get("so_dung_duoc", 0))
     cu = int(mm.get("toi_thieu", san))
+    # Goi san pham dung ten cua vai: "slide" cho Dre/Kite, "ảnh" cho Ethan.
+    # Sidecar TRUOC manifest: `tao_task_kite` doi `vai_anh` trong sidecar khi
+    # chuyen bai sang Kite, con manifest giu vai luc chuan bi. Manifest cu
+    # (truoc 10/09/2026) khong co khoa nay -> giu nguyen chu "slide" nhu truoc.
+    _im = _nap_json(DRAFTS / (draft_id + ".img.json"), {})
+    _vai_anh = _im.get("vai_anh") or mm.get("vai_anh") or ""
+    don_vi = vai.don_vi_san(vai.slug_that(_vai_anh)) if _vai_anh else "slide"
     keyboard = None
     if not mm:
         note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
@@ -624,12 +635,12 @@ def _nut_ha_san(token, draft_id, cq):
         hang = [] if khong_kite else [{"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id}]
         hang.append({"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id})
         keyboard = {"inline_keyboard": [hang]}
-        note = (f"⚠️ Chỉ {so} ảnh thật mà carousel cần tối thiểu {san} slide — "
+        note = (f"⚠️ Chỉ {so} ảnh thật mà bài này cần tối thiểu {san} {don_vi} — "
                 f"bấm tiếp cũng không dựng được. Chuyển Kite vẽ vector, hoặc bỏ tin.")
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text=f"Không đủ: {so} ảnh < {san} slide", show_alert=True)
+             text=f"Không đủ: {so} ảnh < {san} {don_vi}", show_alert=True)
     elif cu <= san:
-        note = f"🖼 Sàn đã ở mức tối thiểu {san} slide — vai làm với {so} ảnh hiện có"
+        note = f"🖼 Sàn đã ở mức tối thiểu {san} {don_vi} — vai làm với {so} ảnh hiện có"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
     else:
         mm["toi_thieu"] = san
@@ -638,9 +649,9 @@ def _nut_ha_san(token, draft_id, cq):
             tmp = xong.with_suffix(".json.tmp")
             tmp.write_text(json.dumps(mm, ensure_ascii=False, indent=1), encoding="utf-8")
             tmp.replace(xong)
-            note = (f"🖼 Đã hạ sàn {cu} → {san} slide cho bài này: vai ảnh làm với "
-                    f"{so} ảnh thật hiện có (gộp ý / giảm slide)")
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} slide")
+            note = (f"🖼 Đã hạ sàn {cu} → {san} {don_vi} cho bài này: vai ảnh làm với "
+                    f"{so} ảnh thật hiện có (gộp ý / giảm {don_vi})")
+            call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} {don_vi}")
         except OSError as e:
             note = f"⚠️ Không ghi được xong.json ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],

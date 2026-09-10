@@ -335,7 +335,10 @@ Sơ đồ trên vẽ trước đợt sửa 09/09. Năm khối mới nằm **gi�
 thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương ứng:
 
 - `vai.py` — bản đăng ký vai duy nhất; mọi bảng cũ (`VAI_ANH`, `SLUG_CU`,
-  `TEN_HIEN`, `chat_router.TOPIC_PROFILE`…) là view dẫn xuất.
+  `TEN_HIEN`, `chat_router.TOPIC_PROFILE`…) là view dẫn xuất. Giữ cả **luật
+  riêng của vai**, không chỉ tên: `so_anh_toi_thieu(slug, flagship)` là số ảnh
+  thật tối thiểu để vai dựng được (Ethan 1, Dre 5/8, Kite 1) — engine ảnh dùng
+  chung phải hỏi ở đây, mượn thẳng `carousel.MIN_SLIDE` là sự cố 10/09/2026.
 - `hermes_adapter.py` — mọi SQL vào `kanban.db` và `profiles/*/state.db` của
   hermes; `kiem_hermes.COT_CAN*` dẫn xuất cột từ đây.
 - `schema.py` — hợp đồng dữ liệu (`Manifest`, `Meta`, `SidecarAnh`,
@@ -343,6 +346,8 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   đè `.meta.json` (tệp ba tiến trình cùng ghi).
 - `route_thieu_anh.py` — tầng ghép nối giữa engine (stage 4) và duyệt (stage 6):
   engine chỉ mô tả thiếu ảnh, tầng này quyết định hỏi Ông Chủ / chuyển Kite.
+  "Thiếu" đo theo ngưỡng của **vai được giao**, nên bài 2 ảnh là đủ với Ethan
+  và vẫn thiếu với Dre.
 - `chuan_bi/` — engine `anh_chuan_bi.py` tách thành gói theo pha
   (`nguon → browser → tai_loc → nhin → vong_bu → manifest`); `anh_chuan_bi.py`
   còn là mặt tiền + CLI.

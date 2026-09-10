@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw
 
 import luat_anh
 import schema
+import vai as vai_mod                 # `vai` la ten tham so o vai ham duoi
 
 from chuan_bi.chung import ROOT, _brand_cua
 
@@ -186,10 +187,9 @@ def _tu_lieu_bai(title: str, link: str, nguon_path: Path, wd: Path, nguon: dict,
 
 def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
                   tom: dict, wd: Path, anh: list, xhs: list, tin_xep_hang: bool, bp: dict, tl: dict,
-                  flagship: bool, toi_thieu: int) -> dict:
+                  flagship: bool, toi_thieu: int, vai_anh: str = "") -> dict:
     """Manifest (xong.json) cua bai — thu ma moi *_chuan_bi va *_nop doc. Cac gia
     tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
-    import carousel
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
@@ -217,9 +217,15 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
          "summary": tom.get("summary", ""), "source_note": tom.get("source_note", ""),
          "workdir": str(wd), "tao_luc": int(time.time()),
          "flagship": flagship, "toi_thieu": toi_thieu,
-         # San tuyet doi cua carousel.py. Ong Chu bam "lam voi N anh" (imgtiep)
-         # thi approve_service ha `toi_thieu` ve day, khong ha thap hon duoc.
-         "toi_thieu_co_ban": carousel.MIN_SLIDE, "so_mien": so_mien,
+         # VAI se dung bo anh nay. Ghi vao manifest de nguoi doc sau (nut "ha
+         # san" cua duyet_bai) khoi phai doan tu draft_id — va de biet goi san
+         # pham la "slide" hay "ảnh" (su co 10/09/2026).
+         "vai_anh": vai_anh,
+         # San tuyet doi cua VAI DO (Dre 5 = carousel.MIN_SLIDE, Ethan 1). Ong
+         # Chu bam "lam voi N anh" (imgtiep) thi approve_service ha `toi_thieu`
+         # ve day, khong ha thap hon duoc. Truoc 10/09/2026 cho nay go cung
+         # carousel.MIN_SLIDE cho moi vai, nen bai cua Ethan bi doi 5 anh.
+         "toi_thieu_co_ban": vai_mod.so_anh_toi_thieu(vai_anh), "so_mien": so_mien,
          "anh": anh, "cap_ghep": cap_ghep(dung_duoc), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
          "so_dung_duoc": so_dung_duoc, "chua_nhin": chua_nhin,
          "xep_hang": ({k: xhs[0].get(k) for k in ("model", "hang", "site", "bang", "kieu", "duoc_nhac")}

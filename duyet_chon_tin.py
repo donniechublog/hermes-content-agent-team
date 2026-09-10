@@ -318,9 +318,15 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body, parent=root_id)
     if err:
         return None, "Loi tao task anh: " + err
-    _khoi_chay_engine(draft_id)
 
+    # SIDECAR TRUOC, ENGINE SAU. Engine doc `<draft_id>.img.json` ngay dau
+    # (`_tom_tat_tu_img_json`) de lay tom tat, source_note VA — tu 10/09/2026 —
+    # `vai_anh` de biet can bao nhieu anh that. Chay engine truoc la de no doc
+    # mot tep chua ai ghi: truoc gio chi mat tom tat (im lang), nay con mat ca
+    # nguong nen Ethan lai bi doi du anh cho carousel. Doi cho hai dong nay la
+    # du — _cat_sidecar khong can gi tu engine.
     vai_viet = _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu, root_id, illu_id)
+    _khoi_chay_engine(draft_id)
 
     item["picked"] = True
     item["vai_anh"], item["brand"], item["vai_viet"] = vai_anh, brand, vai_viet

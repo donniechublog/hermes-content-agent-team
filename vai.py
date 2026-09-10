@@ -33,18 +33,36 @@ class Vai:
     renderer: str = ""                         # card | carousel | render_edu
     nhan_anh: bool = False                     # vai DUNG ANH (chon tin giao duoc)
     viet: bool = False                         # vai viet caption
+    # So ANH THAT toi thieu de vai nay dung duoc mot san pham. Voi vai carousel
+    # con la so SLIDE toi thieu (moi slide mot anh rieng) — hai con so do trung
+    # nhau nen `toi_thieu` trong manifest lam duoc ca hai viec; voi Ethan thi
+    # KHONG trung, va do chinh la su co 10/09/2026 duoi day.
+    anh_toi_thieu: int = 1
+    anh_toi_thieu_flagship: int = 0            # 0 = tin flagship khong nang nguong
 
 
 VAI = {v.slug: v for v in [
     # --- ba vai DUNG ANH: moi vai mot cong cu dung anh rieng ---
+    # anh_toi_thieu=1: card.py dung MOT tam anh lam nen hero. Su co 10/09/2026:
+    # engine anh dung chung ap nguong cua carousel (5, hay 8 voi tin flagship)
+    # cho CA Ethan, nen hai bai chi co 2 anh that bi chan o buoc "thieu anh" va
+    # Ong Chu doc duoc dong "carousel can toi thieu 5 slide" tren task cua Ethan
+    # — trong khi Ethan chi can 1 anh. Nguong phai di theo VAI, khong phai theo
+    # module dung dau tien.
     Vai("designer", "Ethan", go=("img", "anh", "ethan"), slug_cu=("ethan", "chad"),
-        renderer="card", nhan_anh=True),
+        renderer="card", nhan_anh=True, anh_toi_thieu=1),
+    # 5 va 8 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN. Chep so o day chu
+    # khong import carousel: tep nay la BAN DANG KY, phai nhe (carousel keo theo
+    # card + PIL). test_vai giu hai ban khong troi khoi nhau.
     Vai("carousel", "Dre", go=("cr", "dre"), slug_cu=("dre", "heller"),
-        renderer="carousel", nhan_anh=True),
+        renderer="carousel", nhan_anh=True, anh_toi_thieu=5, anh_toi_thieu_flagship=8),
     # "kites": so nhieu tieng Anh — Ong Chu hay go the khi giao nhieu tin cung
     # luc ("3, 4 - Kites"). Thieu no la ca lenh chon bi tu choi (su co 06/09/2026).
+    # anh_toi_thieu=1: Kite ve ART VECTOR GOC, anh that chi la hinh chen them —
+    # bai khong co anh that van dung duoc bo slide (day cung la ly do
+    # route_thieu_anh bo qua han vai nay).
     Vai("carousel-edu", "Kite", go=("edu", "kite", "kites"), slug_cu=("kite",),
-        renderer="render_edu", nhan_anh=True),
+        renderer="render_edu", nhan_anh=True, anh_toi_thieu=1),
     # --- vai VIET ---
     Vai("writer", "Miles", go=("cap", "miles"), slug_cu=("miles",), viet=True),
     # --- vai di tim tin / phan tich / chat ---
@@ -81,6 +99,34 @@ def slug_that(chu: str) -> str:
     # "cape" khong co trong go/slug_cu nen tung tra nguyen "cape", chuan_assignee
     # bao "khong co profile cape" trong khi moi persona khac deu tu resolve.
     return _SLUG_CU.get(c) or _TEN_THUONG.get(c, chu)
+
+
+def so_anh_toi_thieu(slug: str, flagship: bool = False) -> int:
+    """So ANH THAT toi thieu de vai `slug` dung duoc san pham cua no.
+
+    Vi sao la ham o day chu khong phai hang so trong carousel.py: engine anh
+    (`anh_chuan_bi.chuan_bi`) chay CHUNG cho ca ba vai dung anh va truoc
+    10/09/2026 no lay thang `carousel.MIN_SLIDE`/`FLAGSHIP_MIN` — tuc ap luat
+    cua Dre cho Ethan lan Kite. Hau qua: bai giao Ethan chi co 2 anh (rat
+    thuong gap voi tin khong phai benchmark) bi ket o buoc "thieu anh", roi
+    Telegram noi voi Ethan bang tieng cua carousel ("chuyen Kite ve vector",
+    "can toi thieu 5 slide") du card.py chi can 1 anh.
+
+    Vai la khong biet -> nguong cua vai anh mac dinh (Ethan). Nguoi goi nen
+    keu mot dong khi roi vao day: sidecar mat `vai_anh` la mot chuyen khac."""
+    v = VAI.get(slug) or VAI[MAC_DINH_ANH]
+    if flagship and v.anh_toi_thieu_flagship:
+        return v.anh_toi_thieu_flagship
+    return v.anh_toi_thieu
+
+
+def don_vi_san(slug: str) -> str:
+    """Chu de goi mot don vi san pham cua vai: "slide" hay "ảnh".
+
+    Dung cho cau bao gui Ong Chu. Goi the don cua Ethan la "slide" chinh la
+    thu lam su co 10/09/2026 doc ra nhu "Ethan khong tao duoc slide"."""
+    v = VAI.get(slug)
+    return "slide" if v and v.renderer in ("carousel", "render_edu") else "ảnh"
 
 
 # ---- CAC VIEW DAN XUAT (bang cu, giu y nguyen ngu nghia) --------------------

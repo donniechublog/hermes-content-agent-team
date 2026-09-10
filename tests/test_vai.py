@@ -199,6 +199,41 @@ def test_handle_kenh_mot_ban_hai_kieu_khoa():
     assert env_load.handle_kenh("la").startswith("@")
 
 
+def test_nguong_anh_cua_carousel_khong_troi_khoi_carousel_py():
+    """`vai.py` chep 5/8 cua carousel.py de khong phai import carousel (keo theo
+    card + PIL vao mot ban dang ky phai nhe). Chep thi phai co cong giu."""
+    import carousel
+    assert vai.VAI["carousel"].anh_toi_thieu == carousel.MIN_SLIDE, \
+        f"vai.py ghi {vai.VAI['carousel'].anh_toi_thieu}, carousel.MIN_SLIDE={carousel.MIN_SLIDE}"
+    assert vai.VAI["carousel"].anh_toi_thieu_flagship == carousel.FLAGSHIP_MIN, \
+        f"vai.py ghi {vai.VAI['carousel'].anh_toi_thieu_flagship}, " \
+        f"carousel.FLAGSHIP_MIN={carousel.FLAGSHIP_MIN}"
+
+
+def test_so_anh_toi_thieu_theo_tung_vai():
+    """Su co 10/09/2026: engine ap nguong carousel cho MOI vai dung anh, nen bai
+    2 anh cua Ethan bi bao thieu anh va Ong Chu doc thay "carousel can toi thieu
+    5 slide" tren task cua Ethan. Ethan can DUNG MOT anh (card.py), Kite ve
+    vector nen cung mot anh la du; chi Dre moi can 5, va 8 khi tin flagship."""
+    assert vai.so_anh_toi_thieu("designer") == 1
+    assert vai.so_anh_toi_thieu("designer", flagship=True) == 1, \
+        "tin flagship KHONG lam the hero cua Ethan can them anh"
+    assert vai.so_anh_toi_thieu("carousel-edu") == 1
+    assert vai.so_anh_toi_thieu("carousel") == 5
+    assert vai.so_anh_toi_thieu("carousel", flagship=True) == 8
+    # Vai la (sidecar hong, chay tay) -> nguong cua vai anh mac dinh, khong nem.
+    assert vai.so_anh_toi_thieu("") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)
+    assert vai.so_anh_toi_thieu("khong-co-vai-nay") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)
+
+
+def test_don_vi_san_goi_dung_ten_san_pham():
+    """Goi the don cua Ethan la "slide" chinh la thu doc ra thanh "Ethan khong
+    tao duoc slide" (su co 10/09/2026)."""
+    assert vai.don_vi_san("designer") == "ảnh"
+    assert vai.don_vi_san("carousel") == "slide"
+    assert vai.don_vi_san("carousel-edu") == "slide"
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

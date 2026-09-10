@@ -54,7 +54,12 @@ class Manifest(TypedDict, total=False):
     link: str
     workdir: str                   # duong dan TUYET DOI toi thu muc lam viec
     anh: list                      # [{ma, goc, san, dung, ghi_chu, lien_quan, ...}]
-    toi_thieu: int                 # so slide toi thieu cua bai nay
+    # So ANH THAT toi thieu de VAI DUOC GIAO dung duoc bo nay (`vai.so_anh_toi_thieu`).
+    # Voi Dre con la so SLIDE toi thieu — moi slide mot anh rieng nen hai con so
+    # trung nhau, va `dre_nop`/`dre_chuan_bi` doc khoa nay theo nghia "slide".
+    # Voi Ethan thi KHONG trung (1 anh, 1 the): truoc 10/09/2026 cho nay luon la
+    # so cua carousel nen bai cua Ethan bi bao thieu anh oan.
+    toi_thieu: int
     flagship: bool
 
     # --- Tuy chon: moi noi doc deu co mac dinh ---
@@ -70,7 +75,8 @@ class Manifest(TypedDict, total=False):
     goi_y_bia: list                # ma anh goi y lam bia, XH dung dau neu co
     chua_nhin: list                # ma anh vision chua nhin duoc
     so_dung_duoc: int              # xem `so_anh_dung_duoc` — CHUM khai niem tinh la MOT
-    toi_thieu_co_ban: int          # san tuyet doi, `ha san` khong xuong duoi day
+    toi_thieu_co_ban: int          # san tuyet doi CUA VAI DO, `ha san` khong xuong duoi day
+    vai_anh: str                   # SLUG vai duoc giao bo anh nay ("" o manifest cu)
     tin_xep_hang: bool
     xep_hang: dict | None          # BANG DAU TIEN; None khi khong chup duoc
     so_xep_hang: int               # so bang chup duoc; 0 khi khong co

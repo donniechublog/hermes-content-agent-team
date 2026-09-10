@@ -65,6 +65,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 from phien_browser import PhienBrowser                       # noqa: E402
 import schema                                                # noqa: E402
+import vai                                                   # noqa: E402
 
 from chuan_bi.chung import (  # noqa: E402
     DRAFTS, ROOT, UA, _brand_cua, _doc_json, _ghi_json, _hdr,
@@ -124,23 +125,48 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         anh = _gom_va_tai_anh(title, link, nguon_path, nguon, trang, bp, wd, xhs)
         anh, dung_duoc, chua_nhin = _nhin_anh(anh, nguon, title, wd)
         flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
-        toi_thieu = carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE
+        # NGUONG DI THEO VAI (su co 10/09/2026). Truoc day dong nay la
+        # `carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE` — engine
+        # chay chung cho ca ba vai dung anh nen Ethan (card.py, MOT anh la du)
+        # cung bi doi 5 anh, roi ca day "thieu anh" ban cho Ethan cau hoi cua
+        # carousel. `tom["vai_anh"]` da co san tu sidecar .img.json ngay tren
+        # (`_tom_tat_tu_img_json`), chi la truoc gio khong ai dung toi.
+        vai_anh = vai.slug_that(tom.get("vai_anh") or "")
+        if vai_anh not in vai.VAI:
+            # Chay tay, hoac sidecar mat/chua kip ghi. Khong im: nguong sai lam
+            # lech ca `thieu_anh` o manifest lan cau bao gui Ong Chu.
+            print(f"[chuan bi] khong biet vai cua {draft_id} "
+                  f"(vai_anh={tom.get('vai_anh')!r}) -> dung nguong cua "
+                  f"{vai.MAC_DINH_ANH}", file=sys.stderr)
+            vai_anh = vai.MAC_DINH_ANH
+        toi_thieu = vai.so_anh_toi_thieu(vai_anh, flagship)
+        # HAI SO KHAC NHAU, dung lan nhau la hong ca hai chieu:
+        #   `toi_thieu`    — nguong CHAN: duoi no thi bai bi coi la thieu anh,
+        #                    Ong Chu bi hoi, bai co the bi day sang Kite.
+        #   `muc_tieu_tim` — bao nhieu anh thi NGUNG di tim. Ethan chi can 1 tam
+        #                    de dung nhung can nhieu tam de CHON: card.py chan
+        #                    chart va anh ngang >1.6 di mot minh, vision con loai
+        #                    them anh khong lien quan. Ha so nay xuong 1 la Ethan
+        #                    het duong chon va block nhieu hon truoc.
+        # Cai sai hom 10/09/2026 la lay so cua carousel de CHAN, khong phai de
+        # tim — nen phan tim giu nguyen so cu cho moi vai.
+        muc_tieu_tim = max(toi_thieu, carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE)
         tieu_de_nhin = nguon.get("tieu_de_en") or title
-        if len(dung_duoc) < toi_thieu and not khong_browser:
-            anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, toi_thieu,
+        if len(dung_duoc) < muc_tieu_tim and not khong_browser:
+            anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, muc_tieu_tim,
                                                        dung_duoc, wd, phien=phien)
         # Van thieu -> anh THAT CUA CHINH HANG trong tin (tru so/campus) truoc, roi
         # moi toi anh khai niem chung chung. Ca hai chi mang, chay ca khi --khong-browser.
-        if len(dung_duoc) < toi_thieu or not _co_bia(dung_duoc):
+        if len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc):
             anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
-                                                          wd, toi_thieu, khong_browser, phien=phien)
+                                                          wd, muc_tieu_tim, khong_browser, phien=phien)
         # Van thieu, hoac co anh ma khong tam nao lam bia/hero duoc -> anh khai
         # niem (chi mang, khong browser; chay ca khi --khong-browser).
-        if len(dung_duoc) < toi_thieu or not _co_bia(dung_duoc):
+        if len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc):
             anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd)
         tl = _tu_lieu_bai(title, link, nguon_path, wd, nguon, bp)
         m = dung_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
-                          tin_xep_hang, bp, tl, flagship, toi_thieu)
+                          tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh)
     bang_anh(anh, wd / "bang_anh.png")     # ngoai phien: khong dung browser
     return m
 
