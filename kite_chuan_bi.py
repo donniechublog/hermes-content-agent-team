@@ -197,6 +197,41 @@ def hinh_phai_dung(m: dict) -> list:
     return [ma for ma in _ep_tho(m) if not (h and ma == h["ma"])]
 
 
+def bao_dam_co_bia(draft_id: str, m: dict, wd, khong_browser: bool, cho: int,
+                   da_lam_moi: bool = False) -> tuple:
+    """Kite KHÔNG được thừa kế một bộ ảnh không đủ cho nhu cầu của chính Kite.
+
+    Ông Chủ 10/09/2026: *"Dre tìm được ảnh đúng, nên kỹ năng tìm ảnh đó dùng
+    được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
+
+    Đo hôm đó, cả chuỗi: (1) `anh_chuan_bi.chay` trả thẳng `xong.json` cũ khi tệp
+    đã có (`if xong.exists() and not lam_moi`), (2) task body giao cho Kite chạy
+    `kite_chuan_bi.py <id>` — KHÔNG có `--lam-moi`. Nên khi tin được chuyển sang
+    Kite vì thiếu ảnh, Kite **đọc lại đúng kết quả đã thất bại của vai cũ** và
+    vòng tìm ảnh KHÔNG BAO GIỜ chạy lần nữa. Kỹ năng tìm ảnh có sẵn, chỉ là
+    không ai gọi nó cho Kite.
+
+    Hai vai dừng ở hai ngưỡng khác nhau: vai cũ cần đủ ~5 ảnh cho carousel và
+    bỏ cuộc khi thiếu; Kite chỉ cần **một tấm lên bìa** (§1.2f) — rẻ hơn nhiều.
+    Nên "vai cũ không đủ" không hề có nghĩa "Kite không đủ", và bắt Kite chịu
+    chung kết luận là sai từ gốc.
+
+    Chạy lại ĐÚNG MỘT lần (`da_lam_moi` chặn đệ quy), và chỉ khi thật sự chưa có
+    tấm nào lên bìa được. Trả `(m, wd)`.
+    """
+    if da_lam_moi or hinh_hero(m) is not None:
+        return m, wd
+    print("[kite] khong co tam nao len bia duoc -> CHAY LAI vong tim anh "
+          "(anh thuong hieu + anh khai niem), khong thua ke ket qua cua vai cu.",
+          file=sys.stderr)
+    m2, wd2, _ = cb.chay(draft_id, True, khong_browser, cho,
+                         sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
+    h = hinh_hero(m2)
+    print(f"[kite] sau khi tim lai: {'bia = ' + h['ma'] if h else 'VAN CHUA co tam nao len bia duoc'}",
+          file=sys.stderr)
+    return m2, wd2
+
+
 def goi_y_tone(title: str) -> tuple:
     """(theme, hero, gan_day) — chon cai chua dung gan day, xoay theo tieu de."""
     import render_edu
@@ -357,6 +392,8 @@ def main() -> int:
     a = ap.parse_args()
     m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
+    # Bia BAT BUOC co anh that (§1.2f) — thieu thi tim lai, dung bao hong.
+    m, wd = bao_dam_co_bia(a.draft_id, m, wd, a.khong_browser, a.cho, a.lam_moi)
     brief = viet_brief(m, cb._doc_json(wd / "da_dung.json"))
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:

@@ -9,6 +9,7 @@ anh chua nhin).
 Chay:  venv/bin/python tests/test_spec_kite.py
 """
 import contextlib
+import pathlib
 import sys
 import tempfile
 from pathlib import Path
@@ -108,7 +109,10 @@ def test_bo_toan_chu_bi_chan_vi_bia_ve_hero_vector():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         _r, loi, _c = _chay(_du(), _m(wd), wd)
-        assert _co(loi, "bìa", "0 hình", "KHÔNG được vẽ"), loi
+        assert _co(loi, "bìa", "vòng tìm ảnh về trắng", "KHÔNG được vẽ"), loi
+        # Nuoc di dau tien la TIM LAI, khong phai bao hong (Ong Chu 10/09/2026:
+        # "ko co ly gi ma ko tim duoc anh de bao hong").
+        assert _co(loi, "đã tự tìm lại"), loi
         assert _co(loi, "--lam-moi"), loi
         assert _co(loi, "kanban_block"), loi
 
@@ -430,6 +434,57 @@ def test_hero_uu_tien_paper_roi_anh_rieng_roi_anh_bu():
         assert kb.hinh_hero(_m(wd, [kn, th, rieng]))["ma"] == "R1"
         assert kb.hinh_hero(_m(wd, [kn, th, rieng, paper]))["ma"] == "P1"
         assert kb.hinh_hero(_m(wd)) is None
+
+
+# ---- KITE PHAI TU TIM LAI ANH, khong thua ke that bai cua vai cu ----------
+def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
+    """Ông Chủ 10/09/2026: *"Dre tìm được ảnh đúng, nên kỹ năng tìm ảnh đó dùng
+    được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
+
+    `anh_chuan_bi.chay` trả thẳng `xong.json` cũ khi tệp đã có, và task body
+    giao cho Kite chạy `kite_chuan_bi.py <id>` KHÔNG kèm `--lam-moi` — nên Kite
+    đọc lại đúng kết quả đã thất bại của vai cũ, vòng tìm ảnh không bao giờ
+    chạy lần nữa. Hai vai dừng ở hai ngưỡng khác nhau: vai cũ cần ~5 ảnh, Kite
+    chỉ cần MỘT tấm lên bìa."""
+    import kite_chuan_bi as kb
+    import anh_chuan_bi as cb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        goi = []
+        sau = _m(wd, [_hinh(wd, ma="K9")])          # vong tim lai ra duoc mot tam
+
+        def gia_chay(draft_id, lam_moi, khong_browser, cho, sau_chuan_bi=None):
+            goi.append(lam_moi)
+            return sau, wd, {}
+
+        cu, cb.chay = cb.chay, gia_chay
+        try:
+            # 1) thua ke bo TRANG -> phai chay lai, va chay voi lam_moi=True
+            m2, _w = kb.bao_dam_co_bia("d1", _m(wd), wd, False, 30)
+            assert goi == [True], goi
+            assert kb.hinh_hero(m2)["ma"] == "K9"
+            # 2) da co tam len bia -> KHONG dung toi engine lan nua
+            goi.clear()
+            kb.bao_dam_co_bia("d1", _m(wd, [_hinh(wd, ma="R1")]), wd, False, 30)
+            assert goi == [], goi
+            # 3) chinh vai da goi --lam-moi -> khong de quy them mot vong nua
+            goi.clear()
+            kb.bao_dam_co_bia("d1", _m(wd), wd, False, 30, da_lam_moi=True)
+            assert goi == [], goi
+        finally:
+            cb.chay = cu
+
+
+def test_task_body_khong_con_bao_kite_ve_vector_hoan_toan():
+    """Câu "ve vector hoan toan" trong task body là CHÍNH HỆ THỐNG bảo vai làm
+    đúng thứ §1.2f cấm: vai đọc body TRƯỚC khi chạy `kite_chuan_bi.py`, nên nó
+    vào vòng với định kiến "bộ này không có ảnh" dù brief tìm lại được."""
+    import duyet_bai
+    src = pathlib.Path(duyet_bai.__file__).read_text(encoding="utf-8")
+    than = src[src.index("def tao_task_kite"):][:3500]
+    assert "ve vector hoan toan" not in than, "task body van bao Kite ve vector"
+    assert "CHAY LAI vong tim" in than, than[-600:]
+
 
 
 # ---- ANH KHAI NIEM chi duoc dung o bia (LUAT_ANH §1.2c) -------------------

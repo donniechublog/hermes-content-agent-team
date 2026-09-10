@@ -330,11 +330,17 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
                        "KHÔNG được vẽ hero vector. Bật vision rồi chạy lại "
                        f"`kite_chuan_bi.py {m.get('draft_id', '<id>')} --lam-moi`.")
         else:
-            loi.append("bìa không có ảnh thật và engine giao 0 hình dùng được — bìa KHÔNG được vẽ "
-                       "hero vector. Chạy lại vòng tìm ảnh: "
-                       f"`kite_chuan_bi.py {m.get('draft_id', '<id>')} --lam-moi` (vòng ảnh khái "
-                       "niệm §1.2c tìm cờ nước/datacenter theo chủ đề). Vẫn trắng thì `kanban_block` "
-                       "— đó là việc của Ông Chủ, không phải của vai.")
+            # 0 anh SAU KHI `kite_chuan_bi.bao_dam_co_bia` da tu chay lai vong
+            # tim — nen day khong con la "vai luoi", ma la vong tim that su ve
+            # trang. Ong Chu 10/09/2026: "Dre tim duoc anh dung... ko co ly gi
+            # ma ko tim duoc anh de bao hong" — nen dong dau tien phai la MOT
+            # LAN NUA, va chi khi lan do cung trang moi den luot bao len.
+            loi.append("bìa không có ảnh thật và vòng tìm ảnh về trắng — bìa KHÔNG được vẽ hero "
+                       f"vector. `kite_chuan_bi.py {m.get('draft_id', '<id>')}` đã tự tìm lại một "
+                       "lượt (ảnh thương hiệu §1.2d + ảnh khái niệm §1.2c, cùng máy móc Dre dùng). "
+                       f"Chạy tay thêm một lượt: `kite_chuan_bi.py {m.get('draft_id', '<id>')} "
+                       "--lam-moi`. Vẫn trắng thì `kanban_block` kèm nguyên văn dòng này — engine "
+                       "về trắng cho một tin có thật là việc của Ông Chủ, không phải của vai.")
     if da_nhin and not co_anh:
         loi.append(f"có {len(da_nhin)} hình thật dùng được ({', '.join(da_nhin)}) mà không slide nào dùng — "
                    "BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, hoặc image ở bìa. "

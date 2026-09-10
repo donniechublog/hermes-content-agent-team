@@ -287,10 +287,40 @@ qua cổng không một dòng lỗi.
   **vẫn chặn** — chỉ là không chỉ định mã nào: đẩy một banner chưa ai nhìn lên
   bìa còn tệ hơn vẽ vector. Đây là hỏng khâu vận hành (thiếu `OPENAI_API_KEY`),
   không phải một lựa chọn bố cục.
-- **Chặn cứng không làm vai treo**: `nop_chung.dem_vong_loi` đếm ba vòng lỗi *y
-  hệt nhau* rồi bảo vai gọi `kanban_block` và đẩy lên Ông Chủ — đúng đường đã
-  dành sẵn cho *"cổng đang đợi một thứ không thể có (thiếu ảnh, thiếu tư liệu,
-  nguồn hỏng)"*.
+- **Kite phải TỰ TÌM LẠI, không được thừa kế thất bại của vai cũ.** Ông Chủ
+  10/09/2026, ngay sau khi xem cổng chặn ở trên: *"Dre tìm được ảnh đúng, nên kỹ
+  năng tìm ảnh đó dùng được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*. Đo cả
+  chuỗi hôm đó, và đây là chỗ hỏng thật sự:
+  1. `anh_chuan_bi.chay` trả **thẳng** `xong.json` cũ khi tệp đã có
+     (`if xong.exists() and not lam_moi`);
+  2. task body giao cho Kite chạy `kite_chuan_bi.py <id>` — **không** `--lam-moi`;
+  3. `tao_task_kite` còn ghi vào body *"tin này không có ảnh thật dùng được: vẽ
+     vector hoàn toàn"* — chính hệ thống giục vai làm thứ mục này cấm.
+
+  Nên tin chuyển sang Kite **đọc lại đúng kết quả đã thất bại của vai cũ** và
+  vòng tìm ảnh không bao giờ chạy lần nữa. Kỹ năng có sẵn, chỉ là không ai gọi
+  nó cho Kite. Mà **hai vai dừng ở hai ngưỡng khác nhau**: vai cũ cần đủ ~5 ảnh
+  cho carousel rồi mới thôi, Kite chỉ cần **một tấm lên bìa** — rẻ hơn hẳn, nên
+  "vai cũ không đủ" không hề có nghĩa "Kite không đủ".
+  `kite_chuan_bi.bao_dam_co_bia` chạy lại vòng tìm **đúng một lượt** khi chưa có
+  tấm nào lên bìa được, trước khi in brief.
+- **Chặn cứng không làm vai treo**: nước đi đầu là *tìm lại*, không phải *báo
+  hỏng*. Hết đường thì `nop_chung.dem_vong_loi` đếm ba vòng lỗi *y hệt nhau* rồi
+  bảo vai gọi `kanban_block` và đẩy lên Ông Chủ — đúng đường đã dành sẵn cho
+  *"cổng đang đợi một thứ không thể có"*. Engine về trắng cho một tin có thật là
+  việc của Ông Chủ, không phải của vai.
+
+**Đo 10/09/2026 — máy móc tìm ảnh KHÔNG hỏng, đừng đi vá nhầm chỗ.** Chín tiêu
+đề tin thật lấy từ chính tài liệu này (Philippines 34 tỷ, Qualcomm × Amazon,
+xưởng Samsung, kiện Anthropic, DeepSeek gọi vốn, Nemotron, Google Antigravity,
+Thinking Machines, SWE-bench) đều **ra từ khoá** qua `hang_trong_tin` (§1.2d)
+hoặc `tu_khoa_khai_niem` (§1.2c) — 9/9, **không cần LLM**, chỉ bảng tĩnh. Và
+`anh_khai_niem.anh_khai_niem("flag of Philippines")` trả về ảnh thật từ Commons.
+Chỗ trắng chỉ xuất hiện với tiêu đề *không nhắc hãng nào trong watchlist, không
+nhắc nước nào, và không khớp mẫu `CHU_DE` nào* — chưa gặp trong lưu lượng thật.
+Nên đừng nhét từ khoá chung chung vào `CHU_DE` để "cho chắc": Commons trả minh
+hoạ tệ cho khái niệm trừu tượng (§1.2c), và thêm một từ khoá sai làm hỏng đúng
+cái §0 giữ.
 - **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
   **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`kiem_trung` §8).
   Tấm nào bị thân giữ độc quyền thì **lùi xuống ứng viên kế tiếp**, không bỏ

@@ -512,8 +512,16 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
             body += (f" Engine tim duoc {so_that} anh THAT dung duoc (ma: {', '.join(co)}, xem brief): "
                      "BAT BUOC dua vao slide (bia image hoac figure), phan con lai ve vector.")
         else:
-            body += (" Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi "
-                     "kite_chuan_bi liet ke hinh that.")
+            # KHONG con giuc Kite ve vector cho ca bo (Ong Chu 10/09/2026: *"khong
+            # chap nhan viec dung vector o hero slide"* + *"Dre tim duoc anh
+            # dung, nen ky nang tim anh do dung duoc. ko co ly gi ma ko tim
+            # duoc anh de bao hong"*). Cau cu la CHINH HE THONG bao vai lam
+            # dung thu bi cam: vai doc body truoc khi chay `kite_chuan_bi.py`,
+            # nen no vao vong voi dinh kien "bo nay khong co anh" du
+            # `kite_chuan_bi` co tim lai duoc.
+            body += (" Vong tim anh cua vai cu chua ra tam nao dung duoc — `kite_chuan_bi.py` se TU "
+                     "CHAY LAI vong tim (anh thuong hieu + anh khai niem, cung may moc Dre dung) "
+                     "truoc khi in brief. Bia BAT BUOC co anh that; KHONG ve hero vector.")
     # Bang den: task Kite la con cua the goc va tro thanh `dre_task` (vai anh hien
     # hanh) trong .writer.json — de Miles noi vao ban giao cua Kite, khong phai cua
     # Dre da dung. Ghi muc chuyen_kite de bang den ke dung chuyen (05/09: bai Gimlet
