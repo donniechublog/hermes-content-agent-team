@@ -35,7 +35,7 @@ pyyaml>=6           # doc config.yaml cua hermes: model_watch, theo_doi_9router,
 # cu phap dong (`#`/`##`, bang `|`, muc `- `, `**dam**`), kiem trong
 # tests/test_nhat_ky_web.py.
 
-opencv-python-headless  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx trong
+opencv-python-headless>=4.9  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx trong
 #                       # assets/). Truoc 06/09/2026 chi ghi o requirements-local
 #                       # nhu thu "may local moi can" — nhung luat_anh chay tren
 #                       # SERVER cho moi vai lam anh. Thieu no thi `_yunet()` tra
@@ -44,3 +44,13 @@ opencv-python-headless  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx trong
 
 # doi_chu_anh.py (Gin) can them torch + LaMa + easyocr, ~2GB — CHI cai tren may
 # local xu ly anh nang, khong dua vao day. Xem requirements-local.txt.
+
+# numpy: gin_chuan_bi.py / doi_chu_anh.py import top-level nhung KHONG khai o
+# day — no den theo opencv-python-headless (phu thuoc bat buoc), nen "thieu"
+# chi la ve mat khai bao (audit lượt 2, ADF-r2-13). Ghi ro de doc requirements
+# la biet, khong phai lan theo cay phu thuoc.
+#
+# Ghim ban (audit D1/ADF-r2-13): khong ghim cung o day vi venv dung chung voi
+# hermes — `hermes update` co the nang bat cu goi nao. Khi co venv rieng (D1):
+#     venv/bin/pip freeze > requirements.lock   (tren SERVER, sau khi da chay on)
+# roi cai_dat.sh dung tep lock do.

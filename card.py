@@ -1081,9 +1081,12 @@ def _pha(mau, do_sang: float, nen=None):
 # song o day bat manifest_ghi/ada_nop/jean_nop/itachi_nop/render_edu phai keo ca
 # PIL vao chi de hoi "chuoi nay co mat dau khong". Re-export de moi loi goi cu
 # (`card.tim_mat_dau`, `card.bo_dau_cam`, `card.DAU_CAM`...) giu nguyen.
-from tieng_viet import (  # noqa: E402,F401
+from tieng_viet import (  # noqa: E402
     AM_MAT_DAU, CUM_MAT_DAU, DAU_CAM, bo_dau_cam, tim_mat_dau,
 )
+# pyflakes khong hieu `# noqa` (chi flake8 hieu) nen ba ten re-export tren bao
+# "imported but unused" o moi lan lint — cham vao de cong pyflakes (CI) sach.
+_RE_EXPORT = (AM_MAT_DAU, CUM_MAT_DAU, DAU_CAM)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
