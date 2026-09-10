@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
 import bat_buoc                                              # noqa: E402
+import vai                                                   # noqa: E402
 
 VN = timezone(timedelta(hours=7))
 TOPIC = {"finn": "finn", "nova": "nova", "vera": "vera"}
@@ -249,7 +250,8 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Brief cho vai di tim tin")
-    ap.add_argument("--vai", required=True, choices=list(TOPIC))
+    # type= chay TRUOC choices: "--vai scout" (cron cu, tay quen) tu ve "finn".
+    ap.add_argument("--vai", required=True, type=vai.slug_that, choices=list(TOPIC))
     ap.add_argument("--lam-moi", action="store_true", help="Quet lai du cache con moi")
     ap.add_argument("--im", action="store_true")
     a = ap.parse_args()

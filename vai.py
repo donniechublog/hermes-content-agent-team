@@ -175,7 +175,9 @@ def vai_viet_cua(vai_quet=None, brand=None) -> str:
     Khong nhan ra ca hai -> `MAC_DINH_VIET`. Nguoi goi nen keu mot dong khi roi
     vao day: mot tin khong biet ai quet lan thuoc brand nao la mot chuyen khac,
     va im lang o day thi bai cua blog roi vao topic cua Miles ma khong ai hay."""
-    q = VIET_THEO_QUET.get(str(vai_quet or "").lower())
+    # slug_that: sidecar cu ghi `vai_quet: "scout"` (LOW-14) — khong bac cau thi
+    # duong chinh xac nhat cua tin blog tu roi xuong luoi brand ma khong ai hay.
+    q = VIET_THEO_QUET.get(slug_that(vai_quet or "").lower())
     if q:
         return q
     b = str(brand or "").lower()
