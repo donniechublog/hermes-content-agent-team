@@ -125,6 +125,16 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   không vào slide thân; gợi ý bìa xếp **sau** mọi ảnh riêng của tin; caption
   "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và vẫn được nói "thiếu ảnh" nếu
   thấy cờ/bản đồ không hợp tin.
+- **Có cổng chặn thật, không chỉ là câu dặn** (`kite_nop`, §9): `image` là ảnh
+  khái niệm ở slide khác slide 1 → chặn. Đo 10/09/2026 ở đường Kite: cờ Nhật đặt
+  vào `figure` thân đi qua cổng **không một dòng lỗi**, vì nó là **ảnh chụp
+  thật** nên sạch với mọi cổng kỹ thuật (rỗng · trùng · độ nét · mặt người) —
+  cái sai của nó là **chỗ dùng**, mà chỗ dùng thì chỉ tài liệu này biết. Ở
+  `figure` thân nó đọc như bằng chứng của bài, trong khi nó chỉ minh hoạ chủ đề.
+  Vẫn để nó trong `kite_chuan_bi.hinh_that` (ứng viên cho `image` của **bìa**) và
+  brief ghi thẳng nhãn 🧭 ở dòng của nó — loại khỏi danh sách là mất luôn đường
+  lên bìa, tức mất cả tác dụng của §1.2c.
+- **§1.2e không được ép nó xuống thân**: xem chỗ `hinh_phai_dung` ở mục đó.
 
 ### 1.2d Ảnh thương hiệu: tin về hãng lớn thì tìm trụ sở của chính hãng đó
 
@@ -221,17 +231,40 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
 - Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`). Vision tắt thì mọi ảnh là
   `None`, ép lúc đó là đẩy quảng cáo/widget lên slide — cùng bài học với cổng
   "ít nhất một".
+- **Không ép ảnh khái niệm** (§1.2c). Cổng này đòi mỗi mã một slide `figure`
+  *và* ít nhất một tấm ở **thân**, nên để ảnh khái niệm lọt vào tập bị ép là
+  **ép nó xuống đúng chỗ §1.2c cấm** — hai cổng đá nhau. Đo 10/09/2026: tin
+  chuyển sang Kite mà engine chỉ tìm được **một tấm cờ nước** thì đường nộp
+  *duy nhất* qua được là đặt cờ vào `figure` thân. Nó rơi khỏi
+  `hinh_phai_dung` và về bìa qua `hinh_hero` (§1.2f) — đó là đường nộp còn lại.
+  **Ảnh thương hiệu thì ở lại**: §1.2d cho nó vào thân, vì nó là ảnh thật của
+  chính hãng được nhắc trong tin.
+- **Trừ tấm đã lên bìa** (`hinh_hero`, §1.2f): cùng một ảnh không lên được hai
+  slide (`kiem_trung` §8), nên để nó trong tập bị ép là đòi một thứ bất khả. Hệ
+  quả: tin chỉ có **đúng một** tấm thì tập này **rỗng** — tấm đó lên bìa và thân
+  không đòi gì nữa.
 - `kite_chuan_bi.hinh_phai_dung` là **một nguồn** cho cả brief lẫn cổng chặn, và
   khung spec in sẵn một `figure` cho mỗi mã — đừng bắt vai tự suy ra "ba hình thì
-  ba slide".
+  ba slide". `_ep_tho` là tập chưa trừ bìa, chỉ `hinh_hero` dùng (cắt vòng gọi).
 
 Brief của Kite còn ghi rõ **từng tấm là loại gì** (🏢 cơ sở · 👤 chân dung ·
 📊 bảng xếp hạng · 🔖 thẻ logo, §1.2d), vì caption của chúng khác hẳn nhau: chú
 thích một thẻ logo thành "ảnh trụ sở" là sai sự thật.
 
-### 1.2f Bìa của Kite phải là ảnh thật khi có ảnh thật dùng được
+### 1.2f Bìa của Kite LUÔN phải là ảnh thật — không có hero vector
 
-Ông Chủ 10/09/2026: *"kite vẫn dùng vector làm hero, chưa sử dụng ảnh"*.
+Ông Chủ 10/09/2026, hai lần trong một ngày. Lần đầu: *"kite vẫn dùng vector làm
+hero, chưa sử dụng ảnh"*. Bản vá buổi sáng chặn **khi có ứng viên**, nên đo lại
+vẫn còn **ba ca ra bìa vector**: 0 ảnh, vision tắt, và tin chuyển sang chỉ còn
+một tấm (thân giành mất). Lần thứ hai, sau khi xem đúng ba ca đó:
+
+> *"không chấp nhận việc dùng vector ở hero slide, thời đại này không có ảnh gì
+> mà không thể tìm được"*
+
+Nên vế điều kiện bị bỏ: **bìa không có `image` là chặn, không trừ ca nào.** Vế
+sau của câu là điều quan trọng hơn — "không có ảnh" **không phải một trạng thái
+hợp lệ của tin**, nó là *thất bại của vòng tìm ảnh*. Lặng lẽ vẽ vector là giấu
+thất bại đó dưới một bộ slide trông như thật, nên cổng phải nói ra.
 
 Bản trước (08/09) chỉ chỉ định hero khi ảnh có `paper_hinh` — tức **chỉ bài
 arxiv** (§1.4). Mọi tin còn lại thì brief nói "bìa `image` **hoặc** `figure`"
@@ -244,14 +277,61 @@ qua cổng không một dòng lỗi.
   cổng chặn (cùng lý do với `hinh_phai_dung` §1.2e). Thứ tự: hình paper (§1.4) →
   ảnh riêng của tin → ảnh thương hiệu (§1.2d) → ảnh khái niệm (§1.2c); hai loại
   bù xếp sau mọi ảnh riêng, đúng như hai mục đó ghi.
-- **Cổng**: có ứng viên hero mà slide `cover` không có `image` → `kite_nop` chặn.
-  Cổng đòi **có** ảnh ở bìa, không đòi đúng mã nào — `hinh_hero` chỉ gợi ý.
+- **Cổng**: slide `cover` không có `image` → `kite_nop` chặn, **luôn**. Cổng đòi
+  **có** ảnh ở bìa, không đòi đúng mã nào — `hinh_hero` chỉ gợi ý. Ba lời báo
+  khác nhau theo nguyên nhân, vì việc phải làm khác nhau: có ứng viên → *đặt mã
+  này vào slide 1*; ảnh có mà **vision chưa nhìn** → *bật vision rồi
+  `--lam-moi`*; **0 ảnh** → *chạy lại vòng tìm ảnh, vẫn trắng thì `kanban_block`*.
 - Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`), trừ hình paper (bóc thẳng từ
-  PDF nên không thể là quảng cáo). Vision tắt thì mọi ảnh là `None` — ép lúc đó
-  là đẩy banner lên bìa, cùng bài học với cổng "ít nhất một".
+  PDF nên không thể là quảng cáo). Vision tắt thì mọi ảnh là `None`, và cổng
+  **vẫn chặn** — chỉ là không chỉ định mã nào: đẩy một banner chưa ai nhìn lên
+  bìa còn tệ hơn vẽ vector. Đây là hỏng khâu vận hành (thiếu `OPENAI_API_KEY`),
+  không phải một lựa chọn bố cục.
+- **Kite phải TỰ TÌM LẠI, không được thừa kế thất bại của vai cũ.** Ông Chủ
+  10/09/2026, ngay sau khi xem cổng chặn ở trên: *"Dre tìm được ảnh đúng, nên kỹ
+  năng tìm ảnh đó dùng được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*. Đo cả
+  chuỗi hôm đó, và đây là chỗ hỏng thật sự:
+  1. `anh_chuan_bi.chay` trả **thẳng** `xong.json` cũ khi tệp đã có
+     (`if xong.exists() and not lam_moi`);
+  2. task body giao cho Kite chạy `kite_chuan_bi.py <id>` — **không** `--lam-moi`;
+  3. `tao_task_kite` còn ghi vào body *"tin này không có ảnh thật dùng được: vẽ
+     vector hoàn toàn"* — chính hệ thống giục vai làm thứ mục này cấm.
+
+  Nên tin chuyển sang Kite **đọc lại đúng kết quả đã thất bại của vai cũ** và
+  vòng tìm ảnh không bao giờ chạy lần nữa. Kỹ năng có sẵn, chỉ là không ai gọi
+  nó cho Kite. Mà **hai vai dừng ở hai ngưỡng khác nhau**: vai cũ cần đủ ~5 ảnh
+  cho carousel rồi mới thôi, Kite chỉ cần **một tấm lên bìa** — rẻ hơn hẳn, nên
+  "vai cũ không đủ" không hề có nghĩa "Kite không đủ".
+  `kite_chuan_bi.bao_dam_co_bia` chạy lại vòng tìm **đúng một lượt** khi chưa có
+  tấm nào lên bìa được, trước khi in brief.
+- **Chặn cứng không làm vai treo**: nước đi đầu là *tìm lại*, không phải *báo
+  hỏng*. Hết đường thì `nop_chung.dem_vong_loi` đếm ba vòng lỗi *y hệt nhau* rồi
+  bảo vai gọi `kanban_block` và đẩy lên Ông Chủ — đúng đường đã dành sẵn cho
+  *"cổng đang đợi một thứ không thể có"*. Engine về trắng cho một tin có thật là
+  việc của Ông Chủ, không phải của vai.
+
+**Đo 10/09/2026 — máy móc tìm ảnh KHÔNG hỏng, đừng đi vá nhầm chỗ.** Chín tiêu
+đề tin thật lấy từ chính tài liệu này (Philippines 34 tỷ, Qualcomm × Amazon,
+xưởng Samsung, kiện Anthropic, DeepSeek gọi vốn, Nemotron, Google Antigravity,
+Thinking Machines, SWE-bench) đều **ra từ khoá** qua `hang_trong_tin` (§1.2d)
+hoặc `tu_khoa_khai_niem` (§1.2c) — 9/9, **không cần LLM**, chỉ bảng tĩnh. Và
+`anh_khai_niem.anh_khai_niem("flag of Philippines")` trả về ảnh thật từ Commons.
+Chỗ trắng chỉ xuất hiện với tiêu đề *không nhắc hãng nào trong watchlist, không
+nhắc nước nào, và không khớp mẫu `CHU_DE` nào* — chưa gặp trong lưu lượng thật.
+Nên đừng nhét từ khoá chung chung vào `CHU_DE` để "cho chắc": Commons trả minh
+hoạ tệ cho khái niệm trừu tượng (§1.2c), và thêm một từ khoá sai làm hỏng đúng
+cái §0 giữ.
 - **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
   **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`kiem_trung` §8).
-  Còn đúng một tấm thì thân thắng và bìa vẽ vector — `hinh_hero` trả `None`.
+  Tấm nào bị thân giữ độc quyền thì **lùi xuống ứng viên kế tiếp**, không bỏ
+  cuộc ngay: ảnh khái niệm không nằm trong tập bị ép (§1.2c cấm nó ở thân) nên
+  tin có một ảnh riêng + một ảnh khái niệm thì ảnh riêng ở thân còn **ảnh khái
+  niệm lên bìa** — đúng chỗ của nó, và cả hai tấm đều được dùng.
+- **Hết ứng viên thì BÌA THẮNG**, không phải thân. Tin chỉ có **đúng một** tấm:
+  tấm đó lên bìa, và `hinh_phai_dung` trừ nó ra nên thân không đòi gì nữa. Đòi
+  của §1.2e sinh ra từ ca **nhiều** tấm mà Kite chỉ dùng một; còn một tấm thì nó
+  **vẫn được dùng**, chỉ là dùng ở bìa. Bản 10/09 sáng cho thân thắng ở ca này —
+  đó chính là một trong ba ca ra hero vector mà Ông Chủ chặn.
 - Bìa có ảnh thì **cả bộ không vẽ hero art** (`chon_theme_tu_dong` trả
   `hero=None`), nên đây là thay thế chứ không phải thêm một lớp trang trí.
 
@@ -581,7 +661,8 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
 | Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
-| Bìa Kite vẽ hero vector trong khi có ảnh thật dùng được (§1.2f) | `kite_nop` | chặn |
+| Bìa Kite không có `image` — mọi trường hợp, kể cả 0 ảnh (§1.2f) | `kite_nop` | chặn |
+| Ảnh khái niệm đặt ở slide **thân** của Kite (§1.2c) | `kite_nop` | chặn |
 | Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |
