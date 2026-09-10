@@ -518,8 +518,8 @@ mảng nhìn tách rời:
   qua gradient tối dài. Hero **cả hai kiểu** `quote` (06/09/2026) và `tran`
   (07/09/2026): không còn TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên
   (`_mo_vung_chu`, tan dần theo đường cong power, không đột ngột), màu chữ tự
-  đổi tương phản với vùng đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ
-  giữ nguyên sắc nét 100%.
+  đổi tương phản với vùng đã mờ đó (`_mau_doi_nen_an_toan`). Phần ảnh phía trên
+  dải chữ giữ nguyên sắc nét 100%.
 - **Không có màu nền đặc ở đâu hết.** Chỗ nào lớp ảnh sắc không phủ tới thì nền
   là bản cover **làm mờ** của chính tấm đó (`_lop_anh`, dùng chung cho cả hai
   kiểu thẻ). Kiểu `tran` từng có một nhánh lấy màu nền bộ nhận diện làm nền cho

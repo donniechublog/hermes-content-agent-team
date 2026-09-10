@@ -13,9 +13,12 @@ không vai nào gọi tới nó nữa.
 
 Chữ đè lên ảnh (cả hai kiểu): KHÔNG mặc định phủ lớp nào — chỉ làm mờ cục bộ
 đúng vùng dưới chữ (`_mo_vung_chu`) rồi đổi màu chữ theo độ sáng đo được
-(`_mau_doi_nen`/`_can_bang_dong`). Ngưỡng sáng/tối tính theo đúng cặp màu
-FG/BG của từng thương hiệu (`nen_chu.nguong_tuong_phan`), không còn một con
-số cố định dùng chung cho mọi bảng màu.
+(`_mau_doi_nen_an_toan`). Độ sáng đo qua `_can_bang_dong` chứ không lấy trung
+bình thuần: một dải chữ có mảng sáng cục bộ (áo trắng, cửa sổ, đèn sân khấu)
+thì trung bình cả dải vẫn nói "nền tối" trong khi chữ chìm đúng chỗ mảng sáng
+đó. Ngưỡng sáng/tối tính theo đúng cặp màu FG/BG của từng thương hiệu
+(`nen_chu.nguong_tuong_phan`), không còn một con số cố định dùng chung cho
+mọi bảng màu.
 """
 import argparse
 import functools
@@ -750,8 +753,12 @@ def _mo_vung_chu(canvas, frame_top):
 
     Tu `frame_top - dem` toi day the; rieng doan `dem` la fade dan de mep sac/mo
     khong doc ra hai vung — dung cai loi da bat nhieu lan voi man toi. Mo xoa het
-    chi tiet nen do sang trong khoi deu lai, nho vay MOT mau chu duy nhat
-    (`_mau_doi_nen` do sau khi mo) doc duoc tren ca khoi, khong can vien."""
+    chi tiet nen do sang trong khoi deu lai, nho vay MOT mau chu duy nhat (chon
+    SAU khi mo) doc duoc tren ca khoi, khong can vien.
+
+    Chi deu duoc chi tiet co ~QUOTE_BLUR px: chenh sang trai vai tram px (mang
+    ao trang cat doc khoi chu) thi mo bao nhieu cung khong san phang, do la
+    viec cua `_can_bang_dong`."""
     W_, H_ = canvas.size
     top = max(0, int(frame_top - QUOTE_BLUR_DEM))
     vung = canvas.crop((0, top, W_, H_))
@@ -794,15 +801,6 @@ def _sang_vung(canvas, box) -> float:
     return ImageStat.Stat(canvas.crop(tuple(int(v) for v in box)).convert("L")).mean[0]
 
 
-def _mau_doi_nen(canvas, box):
-    """Mau chu TUONG PHAN voi vung anh ben duoi `box` (x0,y0,x1,y1), DO SAU KHI
-    da lam mo (`_mo_vung_chu`).
-
-    Vung toi -> chu sang (FG); vung sang -> chu toi (BG, mau nen thuong hieu,
-    khong phai den tuyet doi)."""
-    return FG if _sang_vung(canvas, box) < NGUONG_NEN_SANG else BG
-
-
 # Mot dai chu rong (gan het be ngang the) rat de vua co mang toi vua co mang
 # sang cuc bo (vd hero portrait: co ao trang canh vung toi) — TRUNG BINH ca
 # dai van thien dung mot phe, nhung diem sang/toi cuc bo do van lo ra thanh
@@ -838,9 +836,14 @@ def _can_bang_dong(canvas, box):
 
 
 def _mau_doi_nen_an_toan(canvas, box):
-    """Nhu `_mau_doi_nen`, nhung do sang qua `_can_bang_dong` thay vi
-    `_sang_vung` truc tiep: tu tinh them mot lop mong CHI TRONG box neu do
-    lech qua cao truoc khi chon mau — xem `_can_bang_dong`."""
+    """Mau chu TUONG PHAN voi vung anh ben duoi `box` (x0,y0,x1,y1), DO SAU KHI
+    da lam mo (`_mo_vung_chu`). Vung toi -> chu sang (FG); vung sang -> chu toi
+    (BG, mau nen thuong hieu, khong phai den tuyet doi).
+
+    Do sang lay qua `_can_bang_dong` chu khong phai mean thuan: mean bao "nen
+    toi" van sai khi trong box co mot mang sang cuc bo — chu ra trang roi chim
+    dung tai mang do. `_can_bang_dong` bat ca ay bang stddev va tinh them mot
+    lop mong CHI TRONG box truoc khi chon mau."""
     return FG if _can_bang_dong(canvas, box) < NGUONG_NEN_SANG else BG
 
 
@@ -909,7 +912,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     Ong Chu chot 06/09/2026, sau nhieu lan bat loi cung mot goc (nen phu chu
     cao hon chinh cau chu, doc ra hai vung rieng biet): BO HAN man toi. Quote
     dat THANG len anh goc; vung anh duoi chu duoc lam mo cuc bo (`_mo_vung_chu`)
-    roi mau chu chon theo do sang do duoc (`_mau_doi_nen`).
+    roi mau chu chon theo do sang do duoc (`_mau_doi_nen_an_toan`).
     """
     H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
