@@ -92,8 +92,15 @@ VAI = {v.slug: v for v in [
     Vai("carousel-edu", "Kite", go=("edu", "kite", "kites"), slug_cu=("kite",),
         renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
         anh_muc_tieu_tim=5, anh_muc_tieu_tim_flagship=8),
-    # --- vai VIET ---
+    # --- vai VIET: MOI BRAND MOT NGUOI VIET (LOW-13, 10/09/2026) ---
+    # Hai vai viet KHONG bao gio cung nam trong mot container, dung nhu `scout`
+    # (Finn, chi blog) va `market` (Vera, chi dcgr) — nen ban dang ky giu ca hai,
+    # con moi home chi deploy mot. Ly do tach: nguoi doc hai brand hoi hai cau
+    # khac han nhau (xem GIONG trong miles_chuan_bi), va MEMORY da tach theo
+    # brand tu 05/09/2026 — bai hoc "bot so lieu, noi tien" cua tin kinh doanh
+    # tung ro sang tin model, noi phai giu nguyen tham so va benchmark.
     Vai("writer", "Miles", go=("cap", "miles"), slug_cu=("miles",), viet=True),
+    Vai("writer-tech", "Jika", go=("jika",), viet=True),
     # --- vai di tim tin / phan tich / chat ---
     Vai("scout", "Finn", slug_cu=("finn",)),
     Vai("nova", "Nova"),
@@ -106,7 +113,51 @@ VAI = {v.slug: v for v in [
 ]}
 
 MAC_DINH_ANH = "designer"
+# Nguoi viet MAC DINH khi khong biet gi ca (tin khong ro vai quet lan brand).
+# Van la Miles: doi no la doi hanh vi cua moi duong cu chua kip truyen boi canh.
 MAC_DINH_VIET = "writer"
+
+# --- AI VIET TIN NAY (LOW-13) -----------------------------------------------
+# Truoc 10/09/2026 chi co MOT nguoi viet, nen `MAC_DINH_VIET` la hang so va moi
+# cho cu goi thang no. Gio co hai, va cau tra loi phu thuoc TIN — nen phai hoi
+# qua `vai_viet_cua`, dung doc hang so.
+#
+# Hai bang, hoi theo THU TU nay, va thu tu do co ly do:
+#   1. VAI QUET — chinh xac nhat, vi day la dieu Ong Chu chot: "vai viet di theo
+#      vai quet". Biet vai quet la biet linh vuc that cua tin.
+#   2. BRAND — luoi an toan cho cac duong khong cam theo vai quet (vd
+#      `approve_service push` chi co draft_id + category). Hom nay hai bang cho
+#      CUNG ket qua vi scout/nova nam ca o blog con market o dcgr; giu ca hai la
+#      de hom nao mot vai quet doi container thi ve (1) van dung ngay.
+VIET_THEO_QUET = {
+    "scout": "writer-tech",        # Finn — HN/Reddit/arXiv
+    "nova": "writer-tech",         # Nova — model moi ra mat
+    "market": "writer",            # Vera — kinh doanh, dau tu
+}
+
+# Nhan CA khoa container ('blog') lan slug dai ('donniechublog'): brand di qua
+# sidecar cua bai thi la slug dai, con qua CT_BRAND thi la khoa container.
+# Chep hai chinh ta o day chu khong import env_load: tep nay la BAN DANG KY,
+# giu khong phu thuoc (test_vai kiem hai ban khong troi khoi nhau).
+VIET_THEO_BRAND = {
+    "blog": "writer-tech",
+    "donniechublog": "writer-tech",
+    "dcgr": "writer",
+    "dcgr.tech": "writer",
+}
+
+
+def vai_viet_cua(vai_quet=None, brand=None) -> str:
+    """Slug nguoi viet cho mot tin: hoi VAI QUET truoc, roi toi BRAND.
+
+    Khong nhan ra ca hai -> `MAC_DINH_VIET`. Nguoi goi nen keu mot dong khi roi
+    vao day: mot tin khong biet ai quet lan thuoc brand nao la mot chuyen khac,
+    va im lang o day thi bai cua blog roi vao topic cua Miles ma khong ai hay."""
+    q = VIET_THEO_QUET.get(str(vai_quet or "").lower())
+    if q:
+        return q
+    b = str(brand or "").lower()
+    return VIET_THEO_BRAND.get(b, MAC_DINH_VIET)
 
 
 _TEN_THUONG = {v.ten.lower(): v.slug for v in VAI.values()}

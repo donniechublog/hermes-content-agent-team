@@ -215,7 +215,7 @@ flowchart TD
     imgRole --> imgDraft
 
     subgraph S6["6 · VIẾT CAPTION"]
-        miles["Miles: miles_chuan_bi → miles_nop"]:::container
+        miles["Vai viết (Miles | Jika)<br/>{persona}_chuan_bi → {persona}_nop"]:::container
         llm[["9router → DeepSeek v4-Flash<br/>reasoning_effort: none"]]:::llm
         draftwrite["draft_write.py"]:::container
         miles --> llm
@@ -227,10 +227,10 @@ flowchart TD
     draftwrite --> capDraft
 
     subgraph S7["7 · DUYỆT"]
-        sendcard["gửi thẻ + bản nháp kèm nút ✅/❌<br/>(topic Miles)"]:::container
+        sendcard["gửi thẻ + bản nháp kèm nút ✅/❌<br/>(topic của vai viết)"]:::container
         ocnu2(["Ông Chủ bấm ✅ / ❌"]):::actor
         duyetbai["duyet_bai.py"]:::container
-        tg2["Telegram: topic Miles"]:::external
+        tg2["Telegram: topic vai viết"]:::external
         capDraft --> sendcard
         sendcard ==> tg2
         tg2 --> ocnu2
@@ -289,7 +289,7 @@ sequenceDiagram
     participant AP as "approve_service"
     participant PR as "anh_chuan_bi (engine)"
     participant IR as "Vai ảnh (vd Ethan)"
-    participant MI as "Miles"
+    participant MI as "Vai viết (Miles/Jika)"
     participant LLM as "9router → DeepSeek"
     participant PB as "publish.py"
     participant MO as "Moat"
@@ -301,6 +301,7 @@ sequenceDiagram
     OC->>TG: trả lời số thứ tự đã chọn
     TG->>AP: forward lệnh chọn số
     AP->>AP: create_pair() — task ảnh + task viết (viết chờ ảnh)
+    Note over AP: chốt AI viết theo VAI QUÉT (vai.vai_viet_cua)<br/>ghi vào drafts/{id}.writer.json
     AP->>PR: chạy nền anh_chuan_bi --im
     PR-->>AP: xong.json + bang_anh.png
     AP->>IR: task dựng ảnh (đọc xong.json)
@@ -309,7 +310,7 @@ sequenceDiagram
     MI->>LLM: gọi LLM (DS-v4Flash, reasoning=none)
     LLM-->>MI: caption tiếng Việt
     MI-->>AP: drafts/{id}.json (bản nháp) + writer.json
-    AP->>TG: gửi thẻ ảnh + bản nháp kèm nút ✅/❌ (topic Miles)
+    AP->>TG: gửi thẻ ảnh + bản nháp kèm nút ✅/❌ (topic vai viết)
     TG->>OC: hiển thị thẻ duyệt
 
     alt Duyệt
@@ -321,7 +322,7 @@ sequenceDiagram
         loop mỗi 5 phút — cron moat-publish-watch
             MO-->>AP: trạng thái đăng social
         end
-        AP->>TG: báo trạng thái (topic Miles)
+        AP->>TG: báo trạng thái (topic vai viết)
     else Bỏ
         OC->>TG: bấm ❌
         TG->>AP: callback bỏ (duyet_bai)
@@ -339,6 +340,14 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   riêng của vai**, không chỉ tên: `so_anh_toi_thieu(slug, flagship)` là số ảnh
   thật tối thiểu để vai dựng được (Ethan 1, Dre 5/8, Kite 1) — engine ảnh dùng
   chung phải hỏi ở đây, mượn thẳng `carousel.MIN_SLIDE` là sự cố 10/09/2026.
+  Từ 10/09/2026 (LOW-13) còn giữ **ai viết tin nào**: `vai_viet_cua(vai_quet,
+  brand)` hỏi vai quét trước rồi mới tới brand — Finn/Nova → Jika
+  (`writer-tech`), Vera → Miles (`writer`). Hai vai viết không bao giờ cùng nằm
+  trong một container, đúng như `scout` chỉ có ở blog và `market` chỉ có ở dcgr.
+  Quyết định chốt **một lần** lúc chọn tin và nằm trong `drafts/{id}.writer.json`;
+  `miles_nop`/`approve_service push` đọc lại chỗ đó (qua
+  `nop_chung.vai_viet_cua_bai`) thay vì đoán lại — đoán lại là bài của blog rơi
+  vào topic của Miles mà không cổng nào báo lỗi.
 - `hermes_adapter.py` — mọi SQL vào `kanban.db` và `profiles/*/state.db` của
   hermes; `kiem_hermes.COT_CAN*` dẫn xuất cột từ đây.
 - `schema.py` — hợp đồng dữ liệu (`Manifest`, `Meta`, `SidecarAnh`,

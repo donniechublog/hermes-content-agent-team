@@ -46,18 +46,23 @@ def chuan_hoa(t: str) -> tuple:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Nop caption cua Miles (tat dinh)")
+    ap = argparse.ArgumentParser(description="Nop caption cua vai viet (Miles/Jika) — tat dinh")
     ap.add_argument("draft_id")
     ap.add_argument("--caption")
     ap.add_argument("--khong-push", action="store_true", help="Thu: kiem + ghi draft vao workdir, khong push")
     a = ap.parse_args()
 
-    cb.nap_meta(a.draft_id)                  # dat CT_BRAND theo brand cua draft
+    meta = cb.nap_meta(a.draft_id)           # dat CT_BRAND theo brand cua draft
+    brand = cb._brand_cua(meta)              # de biet AI viet bai nay (LOW-13)
     import env_load
     wd = cb.workdir(env_load.state_dir(), a.draft_id)
+    # Ten tep brief di theo persona: Miles doc brief_miles.md, Jika doc
+    # brief_jika.md — hai vai co the cung chay tren mot container khi con bai cu.
+    persona = nc.persona_viet(nc.vai_viet_cua_bai(a.draft_id, brand))
     p_cap = Path(a.caption) if a.caption else wd / "caption.txt"
     if not p_cap.exists():
-        sys.exit(f"Chua co caption: {p_cap} — viet caption theo brief ({wd / 'brief_miles.md'}) roi chay lai.")
+        sys.exit(f"Chua co caption: {p_cap} — viet caption theo brief "
+                 f"({wd / ('brief_' + persona + '.md')}) roi chay lai.")
     cap, ghi = chuan_hoa(p_cap.read_text(encoding="utf-8"))
     for g in ghi:
         print(f"[da sua] {g}")
@@ -107,7 +112,10 @@ def main() -> int:
     md = {"do_dai": tin.get("do_dai"), "so_cau": tin.get("so_cau"),
           "so_trong_caption": tin.get("so_trong_caption"),
           "draft": f"drafts/{a.draft_id}.json"}
-    nc.ghi_bang_den(a.draft_id, "caption", md, "miles")
+    # `author` theo NGUOI VIET THAT cua bai, khong go cung "miles" (LOW-13):
+    # cung script nay phuc vu ca Miles lan Jika, va bang den la cho Ong Chu doc
+    # ra ai lam gi.
+    nc.ghi_bang_den(a.draft_id, "caption", md, persona)
     print(f"[xong] caption {tin.get('do_dai')} ký tự, {tin.get('so_cau')} câu, "
           f"{tin.get('so_trong_caption')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))

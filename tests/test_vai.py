@@ -34,17 +34,22 @@ VAI_ANH_CU = {
 }
 TEN_SANG_CAP_CU = dict(VAI_ANH_CU)
 TEN_SANG_CAP_CU.update({"writer": "designer", "cap": "designer", "miles": "designer"})
+# LOW-13 (10/09/2026): them nguoi viet thu hai. Cac dong duoi day KHONG thuoc ban
+# chup 3a18f79 — chung la phan MOI duoc them co chu dich, ghi rieng ra de doc
+# diff sau nay con phan biet "vai moi" voi "bang dan xuat troi".
+TEN_SANG_CAP_CU.update({"writer-tech": "designer", "jika": "designer"})
 VAI_CAROUSEL_CU = {"carousel"}
 VAI_EDU_CU = {"carousel-edu"}
 TEN_VAI_ANH_CU = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite"}
-TEN_VAI_VIET_CU = {"writer": "Miles"}
+TEN_VAI_VIET_CU = {"writer": "Miles", "writer-tech": "Jika"}   # +Jika: LOW-13
 SLUG_CU_CU = {"miles": "writer", "dre": "carousel", "ethan": "designer",
               "chad": "designer", "heller": "carousel", "kite": "carousel-edu",
               "finn": "scout", "vera": "market", "jean": "teaser", "ada": "analyst"}
 TEN_HIEN_CU = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
                "writer": "Miles", "scout": "Finn", "nova": "Nova", "market": "Vera",
                "teaser": "Cape", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
-               "bob": "Bob"}
+               "bob": "Bob",
+               "writer-tech": "Jika"}                                  # +Jika: LOW-13
 
 
 def _khop(ten, moi, cu):
@@ -303,3 +308,74 @@ def test_don_vi_san_goi_dung_ten_san_pham():
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())
+
+
+# ---- ai viet tin nay (LOW-13, 10/09/2026) ----------------------------------
+# Truoc do chi co MOT nguoi viet nen khong co gi de kiem. Gio sai o day la bai
+# cua blog roi vao topic cua Miles (hoac nguoc lai) ma KHONG ai bao loi: ca hai
+# slug deu la profile co that, task van tao duoc, chi la giao nham nguoi.
+
+def test_vai_viet_di_theo_vai_quet():
+    """Dieu Ong Chu chot: nguoi viet di theo vai QUET, khong theo vai anh."""
+    assert vai.vai_viet_cua("scout") == "writer-tech", "Finn -> Jika"
+    assert vai.vai_viet_cua("nova") == "writer-tech", "Nova -> Jika"
+    assert vai.vai_viet_cua("market") == "writer", "Vera -> Miles"
+
+
+def test_vai_viet_theo_brand_khi_khong_biet_vai_quet():
+    """Duong `approve_service push` chi co draft_id + category, khong cam vai
+    quet — no phai ra dung nguoi viet bang brand."""
+    for b in ("blog", "donniechublog"):
+        assert vai.vai_viet_cua(None, b) == "writer-tech", b
+    for b in ("dcgr", "dcgr.tech"):
+        assert vai.vai_viet_cua(None, b) == "writer", b
+
+
+def test_vai_quet_thang_brand_khi_hai_ben_khac_nhau():
+    """Vai quet chinh xac hon brand: no noi ve LINH VUC that cua tin."""
+    assert vai.vai_viet_cua("market", "blog") == "writer"
+    assert vai.vai_viet_cua("nova", "dcgr") == "writer-tech"
+
+
+def test_vai_viet_khong_biet_gi_thi_ve_mac_dinh():
+    assert vai.vai_viet_cua() == vai.MAC_DINH_VIET
+    assert vai.vai_viet_cua("khong-co", "khong-co") == vai.MAC_DINH_VIET
+
+
+def test_moi_nguoi_viet_duoc_tro_toi_deu_co_that_va_la_vai_viet():
+    """Go nham slug trong hai bang dinh tuyen = task giao cho profile khong ton
+    tai (su co 01/09/2026 nam 'ready' hai ngay)."""
+    xau = []
+    for ten, bang in (("VIET_THEO_QUET", vai.VIET_THEO_QUET),
+                      ("VIET_THEO_BRAND", vai.VIET_THEO_BRAND)):
+        for khoa, slug in bang.items():
+            v = vai.VAI.get(slug)
+            if v is None or not v.viet:
+                xau.append(f"{ten}[{khoa!r}] -> {slug!r} khong phai vai viet")
+    assert not xau, xau
+
+
+def test_moi_vai_quet_that_deu_co_nguoi_viet():
+    """Vai quet nao co manifest chay that thi phai co ten trong VIET_THEO_QUET,
+    khong duoc roi ve mac dinh im lang."""
+    import duyet_chon_tin
+    thieu = sorted(set(duyet_chon_tin.MANIFEST_THEO_TOPIC) - set(vai.VIET_THEO_QUET))
+    assert not thieu, f"vai quet khong biet giao cho ai viet: {thieu}"
+
+
+def test_hai_bang_dinh_tuyen_khong_mau_thuan_voi_the_trien_khai_hom_nay():
+    """Hom nay moi vai quet nam GON trong mot brand, nen hai duong phai cho cung
+    ket qua. Lech = mot ben da doi ma ben kia quen (vd chuyen Nova sang dcgr)."""
+    brand_cua_quet = {"scout": "blog", "nova": "blog", "market": "dcgr"}
+    for quet, brand in brand_cua_quet.items():
+        assert vai.vai_viet_cua(quet) == vai.vai_viet_cua(None, brand),             f"{quet} ({brand}): bang theo quet va bang theo brand lech nhau"
+
+
+def test_ten_brand_khop_chinh_ta_cua_env_load():
+    """VIET_THEO_BRAND chep chinh ta brand thay vi import env_load (giu ban dang
+    ky nhe). Chep thi phai co cong giu hai ban khong troi khoi nhau."""
+    import env_load
+    for ngan, dai in env_load.BRAND_DAI.items():
+        assert ngan in vai.VIET_THEO_BRAND, f"thieu khoa container {ngan!r}"
+        assert dai in vai.VIET_THEO_BRAND, f"thieu slug dai {dai!r}"
+        assert vai.VIET_THEO_BRAND[ngan] == vai.VIET_THEO_BRAND[dai],             f"{ngan!r} va {dai!r} la MOT brand ma tro toi hai nguoi viet"

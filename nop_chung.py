@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import schema                                                # noqa: E402
+import vai as _vai                                           # noqa: E402
 
 
 def chuan(t) -> str:
@@ -43,6 +44,35 @@ def nap(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) -> tuple:
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] spec.json khong phai JSON hop le: {type(e).__name__}: {e}")
     return meta, brand, wd, m, spec, spec_path, cb._doc_json(wd / "da_dung.json")
+
+
+# ---- ai viet bai nay, va lenh cua nguoi do (LOW-13, 10/09/2026) -------------
+# Tu khi co hai nguoi viet, "miles_nop.py" khong con la cau tra loi dung cho moi
+# bai. Ba thu duoi day tung go cung ten Miles: ten script in trong brief, ten
+# tep brief, va `author` ghi len bang den. Go cung thi task cua Jika bao Jika
+# chay lenh cua Miles, va ban giao cua Jika len bang den mang ten Miles — khong
+# cho nao bao loi, chi doc ra sai.
+
+def vai_viet_cua_bai(draft_id: str, brand: str = "") -> str:
+    """SLUG nguoi viet da chot cho bai nay.
+
+    Nguon su that la sidecar `<draft_id>.writer.json` — duyet_chon_tin chot
+    nguoi viet NGAY luc chon tin (luc do con biet vai quet), con luc nop thi
+    vai quet da khong con trong tam tay. Sidecar cu (ghi truoc LOW-13) khong co
+    khoa `vai_viet`, hoac ghi mot slug la -> hoi lai ban dang ky theo brand."""
+    d = cb._doc_json(cb.DRAFTS / f"{draft_id}.writer.json", {}) or {}
+    slug = str(d.get("vai_viet") or "")
+    if slug in _vai.VAI:
+        return slug
+    return _vai.vai_viet_cua(None, brand)
+
+
+def persona_viet(slug: str) -> str:
+    """Slug vai viet -> chu dung trong TEN SCRIPT va `author` bang den ("miles",
+    "jika"). Lay tu ban dang ky chu khong chep bang thu hai: cac cap script deu
+    dat theo ten nhan vat (miles_nop, dre_nop, kite_nop...), nen ten persona
+    viet thuong CHINH LA tien to script."""
+    return _vai.ten_hien(slug).lower()
 
 
 def so_lan_lam_lai(draft_id: str) -> int:

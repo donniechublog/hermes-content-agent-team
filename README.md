@@ -24,6 +24,12 @@ không còn hậu tố `.blog`/`.dcgr`. Slug **Profile hermes** là định danh
 Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_chung.nap`
 đọc ra từ `drafts/<id>.*.json`. Cùng một script phục vụ cả hai brand.
 
+**Hai người viết, cắt theo vai quét** (LOW-13, 10/09/2026): Finn và Nova → **Jika**
+(`writer-tech`, donniechublog); Vera → **Miles** (`writer`, dcgr.tech). Quyết định chốt
+ngay lúc chọn tin và nằm trong `drafts/<id>.writer.json`; mọi bước sau đọc lại chỗ đó
+thay vì đoán lại. Bảng định tuyến ở `vai.vai_viet_cua` — hỏi vai quét trước, brand làm
+lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin.
+
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
 | Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
@@ -32,7 +38,8 @@ Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_
 | Kite | `carousel-edu` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
 | Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
-| Miles | `writer` | writer | Viết caption tiếng Việt cho cả hai brand, đẩy vào hàng duyệt |
+| Miles | `writer` | writer | Viết caption tiếng Việt cho tin **kinh doanh, đầu tư** của **dcgr.tech** (từ 10/09/2026, LOW-13; trước đó viết cả hai brand). Profile `writer` bên blog **giữ lại cho việc còn tồn**, không nhận việc mới |
+| Jika | `writer-tech` | writer | Viết caption tiếng Việt cho tin **model mới, arXiv/Hacker News** — **chỉ donniechublog** (từ 10/09/2026, LOW-13). Cùng script, cùng luật caption như Miles; khác ở người đọc và ở MEMORY riêng |
 | Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý |
 | Vera | `market` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
 | Ada | `analyst` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
