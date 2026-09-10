@@ -13,11 +13,12 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
      giai ma link Google News, lay tieu de tieng Anh, hoi Bing News RSS tim bao
      khac khi nguon mong (ghi nguoc vao nguon json de moi vai sau cung dung).
   2. ANH: mot phien chromium (chu bai, <img> lon, chup table/figure/canvas full
-     be ngang) + anh_bai (tinh) + Wikimedia Commons khi < 5 anh. Van thieu thi
-     ba vong bu, theo do LIEN QUAN giam dan: bao khac cung tin (_vong_tim_rong)
-     -> anh THAT cua chinh hang trong tin (anh_thuong_hieu.py: tru so, campus)
-     -> anh khai niem cua chu de (anh_khai_niem.py: co nuoc, rack). Tai ve, bo
-     trung (dHash), bo anh be, logo, co anh AI sinh.
+     be ngang) + anh_bai (tinh) + Wikimedia Commons khi < 5 anh. Thieu thi tim
+     rong sang bao khac cung tin (_vong_tim_rong). Anh THAT cua chinh hang trong
+     tin (anh_thuong_hieu.py: logo, chan dung founder/CEO, tru so, campus) chay
+     cho MOI tin co hang trong watchlist — du anh hay khong (10/09/2026). Van
+     thieu nua thi anh khai niem cua chu de (anh_khai_niem.py: co nuoc, rack).
+     Tai ve, bo trung (dHash), bo anh be, logo, co anh AI sinh.
   3. DO va PHAN LOAI bang `luat_anh` + luat bo sung (nen trang >=45% & canh
      >=8% -> chart): chart/anh chup, ti le, mat nguoi, day sang. Cat san
      1:1/4:5 qua crop_ti_le (co dau vet), cap anh ngang ghep duoc (cung tone),
@@ -155,11 +156,19 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         if len(dung_duoc) < muc_tieu_tim and not khong_browser:
             anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, muc_tieu_tim,
                                                        dung_duoc, wd, phien=phien)
-        # Van thieu -> anh THAT CUA CHINH HANG trong tin (tru so/campus) truoc, roi
-        # moi toi anh khai niem chung chung. Ca hai chi mang, chay ca khi --khong-browser.
-        if len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc):
-            anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
-                                                          wd, muc_tieu_tim, khong_browser, phien=phien)
+        # ANH CUA CHINH HANG trong tin (logo, chan dung founder/CEO, tru so,
+        # campus): chay cho MOI tin nhac toi mot hang trong watchlist, KHONG doi
+        # toi luc thieu anh. Ong Chu 10/09/2026, lan thu hai cua cung mot cau:
+        # "Dre van ko chiu di tim cac hinh lien quan nhu logo, brand, founder,
+        # tru so... cua chu de duoc nhac toi". Ban 09/09 treo vong nay sau dieu
+        # kien thieu anh, nen tin nao bai goc du anh la khong bao gio hoi toi
+        # Commons/Wikidata — ma vai bi cam tu tai them ("chi dung MA ANH"), nen bo
+        # anh giao cho Dre trang tron du may moc da san. Tin khong nhac hang nao:
+        # `hang_trong_tin` tra rong va vong thoat ngay, khong mot request nao.
+        # Chi mang, chay ca khi --khong-browser; tran +4 anh nam trong vong.
+        anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
+                                                      wd, muc_tieu_tim, khong_browser, phien=phien)
+        # Van thieu -> anh khai niem chung chung cua chu de, sau anh cua chinh hang.
         # Van thieu, hoac co anh ma khong tam nao lam bia/hero duoc -> anh khai
         # niem (chi mang, khong browser; chay ca khi --khong-browser).
         if len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc):

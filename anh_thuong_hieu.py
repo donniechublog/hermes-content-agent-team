@@ -578,6 +578,37 @@ def _hoi_commons(cau: str):
     return quet_chung.hoi_commons(cau)
 
 
+def nhan_theo_loai(th: dict) -> str:
+    """Câu nhãn cho MỘT ảnh thương hiệu, theo LOẠI tư liệu. Thuần.
+
+    Tách khỏi `nhan_thuong_hieu` 10/09/2026 để brief nào cũng dùng đúng một bản:
+    `ethan_chuan_bi.nhan_ethan` dựng lại `ghi_chu` từ đầu nên tự viết một câu
+    "trụ sở/campus/biển hiệu" chung cho MỌI loại — một tấm chân dung founder tới
+    tay Ethan mất luôn cái TÊN để khai `nhan_vat`, mà `nop_chung.kiem_nhan_vat`
+    chặn ảnh có mặt người không khai tên. Tức Ethan buộc phải bỏ ảnh founder,
+    đúng cái Ông Chủ hỏi ("task này thì ko chịu dùng hình của Founder")."""
+    hang, loai = th.get("hang", "?"), th.get("loai", "anh")
+    if loai == "nguoi":
+        ai, vai = th.get("nguoi", "?"), th.get("vai", "lãnh đạo")
+        return (f"👤 CHÂN DUNG {vai.upper()} — {ai}, {vai} {hang} (Wikidata/Commons). "
+                f"Chỉ dùng khi BÀI CÓ NHẮC {ai}, và phải khai \"nhan_vat\": \"{ai}\" "
+                "y hệt. Bài không nhắc tên người này thì bỏ (LUAT_ANH §6).")
+    if loai == "logo":
+        return (f"🔖 THẺ LOGO {hang} — logo chính thức đặt trên nền trơn, dồn lên "
+                f"nửa trên để hook đè nửa dưới. Nền {th.get('nen', 'tối')} → khai "
+                f"\"nen\": \"{'sang' if th.get('nen') == 'sáng' else 'toi'}\". "
+                "Đường cuối khi tin không có ảnh thật nào khác — đừng dùng nếu đã "
+                "có ảnh chụp.")
+    if loai == "xep_hang":
+        return (f"📊 BẢNG XẾP HẠNG có {hang} — ảnh engine chụp từ "
+                f"{th.get('site', '?')} ({th.get('bang', '?')}), đã khoanh hàng. "
+                "KHÔNG phải bảng của tin này; chỉ làm slide bối cảnh cho thấy hãng "
+                "đang đứng đâu, và caption phải ghi rõ nguồn + bảng.")
+    return (f"🏢 ẢNH THƯƠNG HIỆU ({hang}) từ Wikimedia Commons — ảnh THẬT của chính "
+            "hãng trong tin (trụ sở/campus/biển hiệu/sản phẩm), KHÔNG phải ảnh của sự "
+            "việc đang kể; hợp bìa và slide bối cảnh, đừng gán cho slide nói số liệu")
+
+
 def nhan_thuong_hieu(a: dict) -> dict:
     """Siết nhãn một ảnh thương hiệu ĐÃ qua `phan_loai`. Thuần.
 
@@ -587,7 +618,7 @@ def nhan_thuong_hieu(a: dict) -> dict:
     dùng", mà người đứng trước cửa hàng Samsung trên Commons thì không ai gọi
     được tên."""
     th = a.get("thuong_hieu") or {}
-    hang, loai = th.get("hang", "?"), th.get("loai", "anh")
+    loai = th.get("loai", "anh")
     if a.get("lien_quan") is False:
         return a                                  # phan_loai đã xoá dung + ghi ❌
     a["ghi_chu"] = [g for g in a["ghi_chu"] if "Wikimedia Commons" not in g]
@@ -595,15 +626,13 @@ def nhan_thuong_hieu(a: dict) -> dict:
     if loai == "nguoi":
         # Mặt người ở đây là CÓ CHỦ Ý và GỌI ĐƯỢC TÊN — đúng ngoại lệ của
         # LUAT_ANH §6 ("trừ khi khai nhan_vat"), khác hẳn mặt vô danh.
-        ai, vai = th.get("nguoi", "?"), th.get("vai", "lãnh đạo")
+        #
         # KHÔNG chặn theo `mat` ở đây: `luat_anh.dem_mat` trả None (-> 0) khi
         # thiếu cv2/model, và LUAT_ANH §6 nói rõ cổng mặt được phép tự tắt. Lấy
         # `mat == 0` làm "không phải chân dung" thì trên máy thiếu cv2 MỌI chân
         # dung đều bị bỏ câm lặng. Ảnh này là P18 của chính người đó trên
         # Wikidata; đúng/sai để con mắt (cau_hoi_vision) phán.
-        a["ghi_chu"].insert(0, f"👤 CHÂN DUNG {vai.upper()} — {ai}, {vai} {hang} (Wikidata/Commons). "
-                               f"Chỉ dùng khi BÀI CÓ NHẮC {ai}, và phải khai \"nhan_vat\": \"{ai}\" "
-                               "y hệt. Bài không nhắc tên người này thì bỏ (LUAT_ANH §6).")
+        a["ghi_chu"].insert(0, nhan_theo_loai(th))
         return a
 
     if loai == "logo":
@@ -613,18 +642,11 @@ def nhan_thuong_hieu(a: dict) -> dict:
         a["dung"] = ["bìa"]
         a["ghi_chu"] = [g for g in a["ghi_chu"]
                         if "KHÔNG làm bìa" not in g and "chart" not in g.lower()]
-        a["ghi_chu"].insert(0, f"🔖 THẺ LOGO {hang} — logo chính thức đặt trên nền trơn, dồn lên "
-                               f"nửa trên để hook đè nửa dưới. Nền {th.get('nen', 'tối')} → khai "
-                               f"\"nen\": \"{'sang' if th.get('nen') == 'sáng' else 'toi'}\". "
-                               "Đường cuối khi tin không có ảnh thật nào khác — đừng dùng nếu đã "
-                               "có ảnh chụp.")
+        a["ghi_chu"].insert(0, nhan_theo_loai(th))
         return a
 
     if loai == "xep_hang":
-        a["ghi_chu"].insert(0, f"📊 BẢNG XẾP HẠNG có {hang} — ảnh engine chụp từ "
-                               f"{th.get('site', '?')} ({th.get('bang', '?')}), đã khoanh hàng. "
-                               "KHÔNG phải bảng của tin này; chỉ làm slide bối cảnh cho thấy hãng "
-                               "đang đứng đâu, và caption phải ghi rõ nguồn + bảng.")
+        a["ghi_chu"].insert(0, nhan_theo_loai(th))
         return a
 
     if a.get("loai") == "chart":
@@ -637,7 +659,5 @@ def nhan_thuong_hieu(a: dict) -> dict:
         a["ghi_chu"].insert(0, f"❌ ảnh thương hiệu có {a['mat']} mặt người vô danh → KHÔNG DÙNG "
                                "(LUAT_ANH §6)")
         return a
-    a["ghi_chu"].insert(0, f"🏢 ẢNH THƯƠNG HIỆU ({hang}) từ Wikimedia Commons — ảnh THẬT của chính "
-                           "hãng trong tin (trụ sở/campus/biển hiệu/sản phẩm), KHÔNG phải ảnh của sự "
-                           "việc đang kể; hợp bìa và slide bối cảnh, đừng gán cho slide nói số liệu")
+    a["ghi_chu"].insert(0, nhan_theo_loai(th))
     return a

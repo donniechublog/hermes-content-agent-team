@@ -58,8 +58,14 @@ def nhan_ethan(a: dict) -> tuple:
     if a.get("commons"):
         ghi.append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin")
     if a.get("thuong_hieu"):
-        ghi.append(f"🏢 ẢNH THƯƠNG HIỆU ({a['thuong_hieu'].get('hang')}) từ Wikimedia Commons — ảnh THẬT "
-                   "của chính hãng trong tin (trụ sở/campus/biển hiệu), KHÔNG phải ảnh của sự việc đang kể")
+        # Nhãn theo ĐÚNG LOẠI tư liệu (chân dung có tên / thẻ logo / bảng xếp
+        # hạng / ảnh cơ sở), một bản dùng chung với brief của Dre. Bản cũ ở đây
+        # dán một câu "trụ sở/campus/biển hiệu" cho MỌI loại, nên chân dung
+        # founder tới tay Ethan không có cái tên để khai `nhan_vat` — mà cổng
+        # `kiem_nhan_vat` chặn mặt người không khai tên, tức Ethan buộc phải bỏ
+        # ảnh founder (Ông Chủ 10/09/2026).
+        import anh_thuong_hieu
+        ghi.append(anh_thuong_hieu.nhan_theo_loai(a["thuong_hieu"]))
     if a.get("khai_niem"):
         kn = a["khai_niem"]
         ghi.append(f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{kn.get('tu_khoa')}\"" + (f": {kn['ly_do']}" if kn.get("ly_do") else "")

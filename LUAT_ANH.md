@@ -94,10 +94,10 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 - **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
   → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
 - Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
-  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. Vẫn thiếu → **ảnh
-  thương hiệu** (§1.2d), rồi **ảnh khái niệm** (§1.2c) cho bìa/hero. Vẫn thiếu →
-  brief nói thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác
-  cho đủ**.
+  đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. **Ảnh thương hiệu**
+  (§1.2d) chạy cho **mọi tin có hãng trong watchlist**, đủ ảnh hay không. Vẫn
+  thiếu sau đó → **ảnh khái niệm** (§1.2c) cho bìa/hero. Vẫn thiếu → brief nói
+  thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
 - Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
   hiệu cần xem lại.
 
@@ -134,9 +134,19 @@ Samsung, kiện Anthropic, DeepSeek gọi vốn, Philippines) đều dừng ở 
 ảnh thật dùng được — Kite vẽ vector / Dre làm với N ảnh"*, toàn hãng mà Commons
 có hàng trăm ảnh thật. Luật của **engine** (`anh_thuong_hieu.py`):
 
-- **Khi nào**: sau vòng tìm rộng mà vẫn thiếu, hoặc không tấm nào làm bìa được —
-  **trước** ảnh khái niệm. Thứ tự ba vòng bù là theo độ liên quan giảm dần: báo
-  khác cùng tin → ảnh của **chính hãng** trong tin → ảnh **khái niệm** của chủ đề.
+- **Khi nào**: **mọi tin nhắc tới một hãng trong watchlist**, kể cả khi bài gốc
+  đã đủ ảnh — chạy sau vòng tìm rộng, **trước** ảnh khái niệm. Ông Chủ
+  10/09/2026, lần thứ hai của cùng một câu: *"Dre vẫn ko chịu đi tìm các hình
+  liên quan như logo, brand, founder, trụ sở... của chủ đề được nhắc tới"*. Bản
+  09/09 treo vòng này sau điều kiện *thiếu ảnh*, nên tin nào bài gốc đủ ảnh là
+  không bao giờ hỏi tới Commons/Wikidata — mà vai thì bị cấm tự tải thêm, nên bộ
+  ảnh giao cho vai trắng trơn dù máy móc đã sẵn. Tin không nhắc hãng nào:
+  `hang_trong_tin` trả rỗng, vòng thoát ngay, không một request nào.
+- **Trần**: thêm tối đa 4 ảnh một bộ (`TOI_DA_THEM_TH`), và tổng ảnh không quá
+  `TOI_DA_ANH + 4`. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối
+  cảnh thì vẫn chỉ chạy khi **thật sự thiếu ảnh** — đó là phần đắt.
+- **Chỗ đứng**: ảnh của hãng xếp **sau** ảnh riêng của tin trong gợi ý bìa
+  (`goi_y_bia`), nên bài có ảnh riêng tốt không bị chúng chiếm bìa.
 - **Hãng nào**: mọi hãng trong `scan_business.WATCHLIST` mà tin nhắc tới, tối đa
   3, theo thứ tự xuất hiện — **không phải chỉ tên riêng đầu tiêu đề**. Tên
   model/chip quy về hãng chủ (Claude → Anthropic, Xring → Xiaomi). Tên trần mà
