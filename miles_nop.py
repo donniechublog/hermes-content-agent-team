@@ -82,8 +82,10 @@ def main() -> int:
         if tin.get("do_dai", 0) > caption_check.GIOI_HAN:
             print(f"[LOI] cần cắt ít nhất {tin['do_dai'] - caption_check.GIOI_HAN} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
+        # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
+        # bao Jika chay miles_nop.py doc ra nhu giao nham nguoi (LOW-13).
         return nc.dem_vong_loi(wd, loi,
-                               f"venv/bin/python miles_nop.py {a.draft_id}")
+                               f"venv/bin/python {persona}_nop.py {a.draft_id}")
 
     if a.khong_push:
         (wd / "draft_thu.txt").write_text(cap, encoding="utf-8")

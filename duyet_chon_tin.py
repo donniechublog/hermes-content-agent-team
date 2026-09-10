@@ -323,9 +323,12 @@ def create_pair(item, vai_anh="designer", brand="donniechublog", vai_quet=None):
                     else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
     # Bang den: the goc cua bai truoc, task anh la con cua no. Khong co goc
     # (loi) thi van tao task nhu cu — bang den la lop them, khong phai dieu kien.
+    # Muc tieu tren the goc goi TEN NGUOI VIET THAT cua bai, khong phai hang so
+    # `MAC_DINH_VIET` (LOW-13): the goc la thu Ong Chu doc de biet ai lam gi.
     root_id = _bang_den_root(draft_id, item["title"],
                              goal=f"{item['title']} — {brand}: {vai_anh} dung anh, "
-                                  f"{MAC_DINH_VIET} viet caption sau khi Ong Chu duyet anh.")
+                                  f"{_vai.vai_viet_cua(vai_quet, brand)} viet caption "
+                                  f"sau khi Ong Chu duyet anh.")
     if root_id:
         illu_body += BANG_DEN_NHAC.format(root=root_id)
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body, parent=root_id)
