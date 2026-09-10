@@ -113,6 +113,9 @@ lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi sua DUNG cho do trong spec.json ro
 chay lai DUNG lenh nay (toi da 2 lan). {ket_thuc} GUI DUNG MOT LAN: khong sinh agent con, khong gui lai."""
 
 
+# {persona} = ten script cua NGUOI VIET bai nay ("miles" | "jika") — tu 10/09/2026
+# co hai vai viet (LOW-13), nen hai dong lenh trong body khong con go cung ten
+# Miles duoc nua. duyet_chon_tin dien khoa nay tu slug vai viet da chot.
 WRITER_BODY = """Bai goc: {title}
 Link: {link}
 Nguon: {source_note}
@@ -124,7 +127,7 @@ anh, moi luat co hoc cua caption DA duoc script gom san. Viec cua ban chi co
 MOT: viet caption. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (tu lieu co so lieu, doan dau bai, hook tren anh, luat):
-cd {goc} && venv/bin/python miles_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python {persona}_chuan_bi.py {draft_id}
 
 BUOC 2 — viet caption vao DUNG tep in o cuoi BUOC 1 (chi caption, HTML Telegram
 <b> <i> <code>, tieng Viet co dau, moi cau xuong dong rieng, doan cach dong
@@ -132,7 +135,7 @@ trong, nham 800-1000 ky tu). KHONG tu dem ky tu, KHONG curl doc lai bai, KHONG
 chay tu_lieu/caption_check/draft_write/approve_service tay.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python miles_nop.py {draft_id}
+cd {goc} && venv/bin/python {persona}_nop.py {draft_id}
 Script tu chuan hoa, do ky tu/cau/so, chay cong chan, ghep draft, day vao hang
 duyet. Bao [LOI] thi sua DUNG cho do trong caption.txt roi chay lai DUNG lenh
 nay (toi da 2 lan). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o

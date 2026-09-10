@@ -28,6 +28,7 @@ from pathlib import Path
 import httpx
 
 import env_load
+import vai
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teaser_assemble import DAI_HONG, tim_giong_tuong_thuat  # noqa: E402
@@ -92,7 +93,7 @@ def viec_teaser():
     nhac = (f"Du lieu bai goc:\n{json.dumps(art, ensure_ascii=False)[:60000]}\n\n"
             "Viet tieu de va cac doan van thuan theo dung huong dan. "
             'Tra ve JSON: {"title": str, "paragraphs": [str, ...]}')
-    return soul("teaser"), nhac, DAI_HONG
+    return soul("cape"), nhac, DAI_HONG
 
 
 # Nhieu tin khac nhau, KHONG lap mot tin. Lap mot tin lam bo do mu: v4-flash
@@ -118,10 +119,10 @@ def viec_writer():
         tin = TIN_WRITER[i % len(TIN_WRITER)]
         return (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh "
                 "Telegram, 3 den 5 cau. Chi tra ve caption, khong giai thich.")
-    return soul("writer"), nhac, (15, 400)
+    return soul("miles"), nhac, (15, 400)
 
 
-VIEC = {"teaser": viec_teaser, "writer": viec_writer}
+VIEC = {"cape": viec_teaser, "miles": viec_writer}
 
 
 def rut_van(noi_dung: str) -> str:
@@ -161,7 +162,7 @@ def chay(model, key, sys_prompt, nhac, max_tokens=4000, extra=None):
 
 def main():
     ap = argparse.ArgumentParser(description="Ep chi phi ma van giu on dinh")
-    ap.add_argument("--vai", required=True, choices=sorted(VIEC))
+    ap.add_argument("--vai", required=True, type=vai.slug_that, choices=sorted(VIEC))
     ap.add_argument("-n", type=int, default=5, help="So lan chay moi model")
     ap.add_argument("--models", nargs="*", help="Model can thu")
     a = ap.parse_args()

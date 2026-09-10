@@ -403,7 +403,7 @@ def test_anh_da_gui_o_bai_khac_thi_chan():
     import luat_anh
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        luat_anh.ghi_da_dung(m["anh"][1]["goc"], "tin-khac", "carousel",
+        luat_anh.ghi_da_dung(m["anh"][1]["goc"], "tin-khac", "dre",
                              "https://vi.du/mot-tin-khac-han")
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert _co(loi, "slide 2", "TRUNG anh da dung", "tin-khac"), loi
@@ -414,7 +414,7 @@ def test_lam_lai_chinh_bai_nay_thi_khong_bi_coi_la_dung_lai():
     import luat_anh
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        luat_anh.ghi_da_dung(m["anh"][1]["goc"], m["draft_id"], "carousel", m["link"])
+        luat_anh.ghi_da_dung(m["anh"][1]["goc"], m["draft_id"], "dre", m["link"])
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
 
@@ -425,7 +425,7 @@ def test_cung_tin_nhung_vai_khac_thi_khong_chan():
     import luat_anh
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        luat_anh.ghi_da_dung(m["anh"][1]["goc"], "tin-thu-ethan", "designer", m["link"])
+        luat_anh.ghi_da_dung(m["anh"][1]["goc"], "tin-thu-ethan", "ethan", m["link"])
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
 

@@ -104,17 +104,24 @@ def hinh_hero(m: dict) -> dict | None:
     if not ut:
         return None
     rieng = [a for a in ut if not (a.get("khai_niem") or a.get("thuong_hieu"))]
-    chon = ([a for a in rieng if a.get("paper_hinh")] + rieng
-            + [a for a in ut if a.get("thuong_hieu")]
-            + [a for a in ut if a.get("khai_niem")])[0]
+    xep = ([a for a in rieng if a.get("paper_hinh")] + rieng
+           + [a for a in ut if a.get("thuong_hieu")]
+           + [a for a in ut if a.get("khai_niem")])
     # Tin CHUYEN sang Kite vi thieu anh: `kite_nop` doi hinh that nam o slide
     # THAN (Ong Chu 09/09), ma cung mot anh khong len duoc hai slide
-    # (`luat_anh.kiem_trung`). Con dung mot tam thi than duoc uu tien va bia ve
-    # vector — ep ca hai la hai cong da nhau, vai khong co duong nao nop duoc.
-    ep = hinh_phai_dung(m)
-    if ep and not [ma for ma in ep if ma != chon["ma"]]:
-        return None
-    return chon
+    # (`luat_anh.kiem_trung`). Tam nao bi than giu doc quyen thi LUI xuong ung
+    # vien ke tiep, de ca hai tam deu duoc dung: anh khai niem khong nam trong
+    # `_ep_tho` (§1.2c cam no o than) nen no nhan bia khi anh rieng bi than giu.
+    ep = _ep_tho(m)
+    for chon in xep:
+        if not ep or [ma for ma in ep if ma != chon["ma"]]:
+            return chon
+    # Chi con DUNG MOT tam: BIA THANG (Ong Chu 10/09/2026: *"khong chap nhan
+    # viec dung vector o hero slide"*). Ban truoc tra None o day — than thang va
+    # bia ve vector. Vong doi cua §1.2e ("phai co hinh o BODY") sinh ra tu ca
+    # NHIEU tam ma Kite chi dung mot; con mot tam thi no VAN duoc dung, chi la
+    # dung o bia. `hinh_phai_dung` tru tam nay ra nen than khong doi no nua.
+    return xep[0]
 
 
 def _hero_la_gi(h: dict) -> tuple:
@@ -149,20 +156,80 @@ def dong_hero(m: dict) -> list:
                 "Hình còn lại để cho `figure`."]
 
 
+def _ep_tho(m: dict) -> list:
+    """Mã hình thật bị ép vào bộ khi tin chuyển sang Kite — CHƯA trừ tấm lên bìa.
+
+    Tách khỏi `hinh_phai_dung` 10/09/2026 để cắt vòng gọi: `hinh_hero` cần biết
+    tấm nào bị thân giữ, mà `hinh_phai_dung` lại cần biết tấm nào đã lên bìa.
+    """
+    if not chuyen_tu_vai(m):
+        return []
+    return [a["ma"] for a in hinh_that(m)
+            if a.get("lien_quan") is True and not a.get("khai_niem")][:TOI_DA_EP_HINH]
+
+
 def hinh_phai_dung(m: dict) -> list:
-    """Mã hình BẮT BUỘC vào bộ, khi tin được CHUYỂN sang Kite vì thiếu ảnh thật.
+    """Mã hình BẮT BUỘC vào SLIDE THÂN, khi tin được CHUYỂN sang Kite vì thiếu ảnh.
 
     Ông Chủ 09/09/2026: *"sau khi tìm được hình tốt mà vẫn ko đủ để làm và pass
     qua cho Kite thì Kite cũng phải dùng những hình đó trong body"*. Rỗng khi
     tin không phải hàng chuyển sang, hoặc chưa ai nhìn ảnh (vision tắt thì ép là
     đẩy quảng cáo/widget lên slide — xem chú thích cùng loại ở kite_nop).
 
+    KHÔNG ép **ảnh khái niệm** (§1.2c: "chỉ bìa/hero, không vào slide thân").
+    Cổng này đòi mỗi mã một slide `figure` *và* ít nhất một tấm ở thân, nên để
+    ảnh khái niệm lọt vào đây là ÉP nó xuống đúng chỗ luật cấm — đo 10/09/2026:
+    tin chuyển sang mà chỉ có một tấm cờ nước thì đường nộp duy nhất là đặt cờ
+    vào `figure` thân. Nó rơi khỏi danh sách này và về bìa qua `hinh_hero`.
+    Ảnh thương hiệu thì Ở LẠI: §1.2d cho nó vào thân (ảnh thật của chính hãng
+    trong tin).
+
+    **Trừ tấm đã lên bìa** (`hinh_hero`): cùng một ảnh không lên được hai slide
+    (`luat_anh.kiem_trung` §8), nên để nó trong danh sách này là đòi một thứ bất
+    khả. Hệ quả: tin chỉ có ĐÚNG MỘT tấm thì danh sách rỗng — tấm đó lên bìa và
+    thân không đòi gì nữa (§1.2f, Ông Chủ 10/09/2026: không chấp nhận hero
+    vector). Đòi của §1.2e sinh ra từ ca NHIỀU tấm mà Kite chỉ dùng một.
+
     MỘT nguồn cho cả brief lẫn cổng chặn: hai bản đếm khác nhau là brief bảo
     dùng 3 mã còn cổng đòi 4.
     """
-    if not chuyen_tu_vai(m):
-        return []
-    return [a["ma"] for a in hinh_that(m) if a.get("lien_quan") is True][:TOI_DA_EP_HINH]
+    h = hinh_hero(m)
+    return [ma for ma in _ep_tho(m) if not (h and ma == h["ma"])]
+
+
+def bao_dam_co_bia(draft_id: str, m: dict, wd, khong_browser: bool, cho: int,
+                   da_lam_moi: bool = False) -> tuple:
+    """Kite KHÔNG được thừa kế một bộ ảnh không đủ cho nhu cầu của chính Kite.
+
+    Ông Chủ 10/09/2026: *"Dre tìm được ảnh đúng, nên kỹ năng tìm ảnh đó dùng
+    được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
+
+    Đo hôm đó, cả chuỗi: (1) `anh_chuan_bi.chay` trả thẳng `xong.json` cũ khi tệp
+    đã có (`if xong.exists() and not lam_moi`), (2) task body giao cho Kite chạy
+    `kite_chuan_bi.py <id>` — KHÔNG có `--lam-moi`. Nên khi tin được chuyển sang
+    Kite vì thiếu ảnh, Kite **đọc lại đúng kết quả đã thất bại của vai cũ** và
+    vòng tìm ảnh KHÔNG BAO GIỜ chạy lần nữa. Kỹ năng tìm ảnh có sẵn, chỉ là
+    không ai gọi nó cho Kite.
+
+    Hai vai dừng ở hai ngưỡng khác nhau: vai cũ cần đủ ~5 ảnh cho carousel và
+    bỏ cuộc khi thiếu; Kite chỉ cần **một tấm lên bìa** (§1.2f) — rẻ hơn nhiều.
+    Nên "vai cũ không đủ" không hề có nghĩa "Kite không đủ", và bắt Kite chịu
+    chung kết luận là sai từ gốc.
+
+    Chạy lại ĐÚNG MỘT lần (`da_lam_moi` chặn đệ quy), và chỉ khi thật sự chưa có
+    tấm nào lên bìa được. Trả `(m, wd)`.
+    """
+    if da_lam_moi or hinh_hero(m) is not None:
+        return m, wd
+    print("[kite] khong co tam nao len bia duoc -> CHAY LAI vong tim anh "
+          "(anh thuong hieu + anh khai niem), khong thua ke ket qua cua vai cu.",
+          file=sys.stderr)
+    m2, wd2, _ = cb.chay(draft_id, True, khong_browser, cho,
+                         sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
+    h = hinh_hero(m2)
+    print(f"[kite] sau khi tim lai: {'bia = ' + h['ma'] if h else 'VAN CHUA co tam nao len bia duoc'}",
+          file=sys.stderr)
+    return m2, wd2
 
 
 def goi_y_tone(title: str) -> tuple:
@@ -178,13 +245,11 @@ def goi_y_tone(title: str) -> tuple:
 
 def viet_brief(m: dict, da_dung: dict | None) -> str:
     theme, hero, gan = goi_y_tone(m["title"])
-    # Mã bắt buộc, bỏ mã đã lên bìa: khung in sẵn MỘT `figure` cho mỗi mã còn
-    # lại, để vai khỏi phải tự suy ra "à, ba hình thì ba slide". Chú thích này có
-    # từ đầu nhưng code KHÔNG bỏ mã của bìa: in cùng một mã ở cả cover lẫn
-    # `figure` là `luat_anh.kiem_trung` chặn — khung mẫu đẩy vai vào cổng.
+    # Khung in sẵn MỘT `figure` cho mỗi mã bắt buộc, để vai khỏi phải tự suy ra
+    # "à, ba hình thì ba slide". `hinh_phai_dung` đã trừ tấm lên bìa, nên khung
+    # không bao giờ in cùng một mã ở cả cover lẫn `figure` (`kiem_trung` chặn).
     hero_anh = hinh_hero(m)
-    ep_khung = [ma for ma in hinh_phai_dung(m)
-                if not (hero_anh and ma == hero_anh["ma"])]
+    ep_khung = hinh_phai_dung(m)
     import brief_chung
     L = brief_chung.dau(
         m, "KITE",
@@ -209,12 +274,16 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
             # Ong Chu 09/09/2026: "sau khi tim duoc hinh tot ma van ko du de lam
             # va pass qua cho Kite thi Kite cung phai dung nhung hinh do trong
             # body". Truoc do brief chi doi "it nhat mot", ma mot tam thi Kite
-            # de len bia roi ve vector ca body — dung cai Ong Chu che.
+            # de len bia roi ve vector ca body — dung cai Ong Chu che. `ep` da
+            # tru tam len bia, nen o day ke ca hai phia cho vai khoi tuong bia
+            # khong tinh.
+            tong = len(ep) + (1 if hero_anh else 0)
             L.append(f"🔁 TIN NÀY CHUYỂN TỪ {tu_vai} SANG KITE VÌ THIẾU ẢNH THẬT — nhưng "
-                     f"{len(ep)} tấm engine tìm được ({', '.join(ep)}) KHÔNG BỊ BỎ ĐI. "
-                     "Luật cho bộ này:")
-            L.append(f"- **Cả {len(ep)} mã đều phải xuất hiện** trong spec — thiếu tấm nào "
-                     "`kite_nop.py` chặn, kèm tên mã.")
+                     f"{tong} tấm engine tìm được KHÔNG BỊ BỎ ĐI. Luật cho bộ này:")
+            if hero_anh:
+                L.append(f"- **{hero_anh['ma']} lên BÌA** (slide 1) — xem ⭐ dưới.")
+            L.append(f"- **Cả {len(ep)} mã còn lại ({', '.join(ep)}) phải xuất hiện** trong spec — "
+                     "thiếu tấm nào `kite_nop.py` chặn, kèm tên mã.")
             L.append("- **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure` "
                      "(`\"image\": \"<mã>\"` + `\"caption\": \"… · via <ai>\"`). Đặt hết lên bìa "
                      "rồi vẽ vector cả thân là đúng cái lỗi khiến tin phải chuyển sang đây.")
@@ -245,8 +314,17 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                    "xep_hang": f"📊 bảng {th.get('site')} · {th.get('bang')} có {th.get('hang')} — "
                                "KHÔNG phải bảng của tin này, caption ghi rõ nguồn + tên bảng",
                    }.get(th.get("loai"), "")
+        # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat, chi
+        # CHO DUNG cua no bi gioi han (§1.2c). Danh sach nay mang tieu de "dung
+        # duoc cho `figure` / bia `image`" — khong noi gi thi vai dat co nuoc
+        # vao `figure` than roi an cong chan cua kite_nop (do 10/09/2026).
+        kn = a.get("khai_niem") or {}
+        nhan_kn = (f"🧭 ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — minh hoạ chủ đề, KHÔNG phải "
+                   "ảnh của tin: CHỈ dùng ở bìa (slide 1), không vào slide thân; "
+                   "caption 'via Wikimedia Commons'") if kn else ""
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
                  + (f" | {a['paper_hinh']} của chính paper" if a.get("paper_hinh") else "")
+                 + (f" | {nhan_kn}" if nhan_kn else "")
                  + (f" | {nhan_th}" if nhan_th else "")
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
@@ -314,6 +392,8 @@ def main() -> int:
     a = ap.parse_args()
     m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
+    # Bia BAT BUOC co anh that (§1.2f) — thieu thi tim lai, dung bao hong.
+    m, wd = bao_dam_co_bia(a.draft_id, m, wd, a.khong_browser, a.cho, a.lam_moi)
     brief = viet_brief(m, cb._doc_json(wd / "da_dung.json"))
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:

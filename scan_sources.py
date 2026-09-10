@@ -417,9 +417,9 @@ def main():
             muc.append((f"link|{bat_buoc.chuan_link(it['link'])}", it["title"], loai,
                         (f"nhac {hang.group(0)}; " if hang else "")
                         + f"{it['source']} {it.get('points', 0)} diem", it["link"]))
-    so_moi = bat_buoc.them_nhieu("scout", muc)
+    so_moi = bat_buoc.them_nhieu("finn", muc)
     print(f"  bat buoc: {len(muc)} muc dat tieu chi, {so_moi} muc moi; tong dang cho "
-          f"{len(bat_buoc.doc('scout'))} (xem bat_buoc_scout.json)", file=sys.stderr)
+          f"{len(bat_buoc.doc('finn'))} (xem bat_buoc_finn.json)", file=sys.stderr)
 
     if not a.khong_lay_anh:
         t0 = time.time()

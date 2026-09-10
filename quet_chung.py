@@ -36,7 +36,7 @@ VN = timezone(timedelta(hours=7))
 # bao_cao_manifest.TEN_VAI) va chung phai nho sua cung luc.
 # `vera` la but danh cu cho role `market` — bao_cao_manifest van nhan ca hai
 # de bao cao cu khong ra "None".
-TEN_VAI = {"scout": "Finn", "nova": "Nova", "market": "Vera", "vera": "Vera"}
+TEN_VAI = {"finn": "Finn", "nova": "Nova", "vera": "Vera"}
 
 
 # ---------------------------------------------------------------- host noi bo

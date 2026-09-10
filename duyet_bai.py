@@ -512,8 +512,16 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
             body += (f" Engine tim duoc {so_that} anh THAT dung duoc (ma: {', '.join(co)}, xem brief): "
                      "BAT BUOC dua vao slide (bia image hoac figure), phan con lai ve vector.")
         else:
-            body += (" Tin nay KHONG co anh that dung duoc: ve vector hoan toan, kind figure chi khi "
-                     "kite_chuan_bi liet ke hinh that.")
+            # KHONG con giuc Kite ve vector cho ca bo (Ong Chu 10/09/2026: *"khong
+            # chap nhan viec dung vector o hero slide"* + *"Dre tim duoc anh
+            # dung, nen ky nang tim anh do dung duoc. ko co ly gi ma ko tim
+            # duoc anh de bao hong"*). Cau cu la CHINH HE THONG bao vai lam
+            # dung thu bi cam: vai doc body truoc khi chay `kite_chuan_bi.py`,
+            # nen no vao vong voi dinh kien "bo nay khong co anh" du
+            # `kite_chuan_bi` co tim lai duoc.
+            body += (" Vong tim anh cua vai cu chua ra tam nao dung duoc — `kite_chuan_bi.py` se TU "
+                     "CHAY LAI vong tim (anh thuong hieu + anh khai niem, cung may moc Dre dung) "
+                     "truoc khi in brief. Bia BAT BUOC co anh that; KHONG ve hero vector.")
     # Bang den: task Kite la con cua the goc va tro thanh `dre_task` (vai anh hien
     # hanh) trong .writer.json — de Miles noi vao ban giao cua Kite, khong phai cua
     # Dre da dung. Ghi muc chuyen_kite de bang den ke dung chuyen (05/09: bai Gimlet
@@ -525,7 +533,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
         w = {}
     if w.get("root_task"):
         body += BANG_DEN_NHAC.format(root=w["root_task"])
-    rid, err = kanban_create("Carousel deck: " + title, "carousel-edu", body,
+    rid, err = kanban_create("Carousel deck: " + title, "kite", body,
                              parent=w.get("root_task"))
     if err:
         return None, err
@@ -538,7 +546,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
         _bang_den_ghi(draft_id, "chuyen_kite",
                       {"task": rid, "tu_vai": im.get("vai_anh"), "ly_do": ly_do,
                        "anh_that_dung_duoc": co})
-    im.update({"chuyen_tu": im.get("vai_anh"), "vai_anh": "carousel-edu", "carousel": True,
+    im.update({"chuyen_tu": im.get("vai_anh"), "vai_anh": "kite", "carousel": True,
                "body": body, "chuyen_kite": rid, "ly_do_chuyen": ly_do})
     _ghi_json(DRAFTS / (draft_id + ".img.json"), im)
     return rid, None
@@ -590,7 +598,7 @@ def _nut_kite(token, chat_id, draft_id, cq):
             note = ("⚠️ Chuyển Kite lỗi: " + str(err)) if err else \
                    f"🎨 Đã giao Kite vẽ vector (task {rid}) — {TEN_VAI_ANH.get(im.get('chuyen_tu'), 'vai cũ')} dừng bộ này"
             if not err:
-                _bao_nhan_viec(token, chat_id, "carousel-edu", im.get("chuyen_tu"),
+                _bao_nhan_viec(token, chat_id, "kite", im.get("chuyen_tu"),
                                im.get("title", draft_id), rid,
                                ly_do="thiếu ảnh thật, Ông Chủ chuyển sang vẽ vector")
     return note
@@ -631,7 +639,7 @@ def _nut_ha_san(token, draft_id, cq):
         # phim (_chot_nut xoa vo dieu kien) — Ong Chu doc thay "chuyen Kite hoac
         # bo tin" ma khong con nut nao bam duoc, phai tu go lenh. Gan lai dung
         # hai nut do thay vi hua suong.
-        _, khong_kite = chuan_assignee("carousel-edu")
+        _, khong_kite = chuan_assignee("kite")
         hang = [] if khong_kite else [{"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id}]
         hang.append({"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id})
         keyboard = {"inline_keyboard": [hang]}

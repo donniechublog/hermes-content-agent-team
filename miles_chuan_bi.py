@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 import caption_check                                         # noqa: E402
+import nop_chung as nc                                        # noqa: E402
 
 DRAFTS = cb.DRAFTS
 GIONG = {
@@ -38,7 +39,7 @@ GIONG = {
 }
 
 
-def viet_brief(m: dict, meta: dict, wd: Path) -> str:
+def viet_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
     brand = cb._brand_cua(meta)
     # Diem va ly do cham nam san trong meta.json (approve_service.write_meta).
     # Truoc day boc bang regex tu VAN BAN body task: doi mot chu trong mau la
@@ -50,7 +51,7 @@ def viet_brief(m: dict, meta: dict, wd: Path) -> str:
         if p.exists():
             bg = p.read_text(encoding="utf-8")
             break
-    L = [f"# MILES — TƯ LIỆU ĐÃ SẴN: {m['title']}",
+    L = [f"# {persona.upper()} — TƯ LIỆU ĐÃ SẴN: {m['title']}",
          f"Brand: {brand} | draft: {m['draft_id']} | category: {meta.get('category', '')} | via: {meta.get('via', '')}",
          f"Link gốc (thật): {m['link']}"]
     if m.get("tieu_de_en"):
@@ -79,7 +80,7 @@ def viet_brief(m: dict, meta: dict, wd: Path) -> str:
           "Số liệu hãng tự công bố phải ghi rõ \"hãng tự công bố\". Không lặp một cụm 6 từ hai lần. "
           "Chỉ dùng số có trong tư liệu.",
           "", "## Rồi chạy đúng MỘT lệnh:",
-          f"cd {ROOT} && venv/bin/python miles_nop.py {m['draft_id']}",
+          f"cd {ROOT} && venv/bin/python {persona}_nop.py {m['draft_id']}",
           "Script tự chuẩn hoá (em-dash → phẩy), đếm ký tự/câu/số, chạy cổng chặn, ghép draft, đẩy vào hàng "
           "duyệt. Báo [LOI] thì sửa đúng chỗ đó trong caption.txt rồi chạy lại. KHÔNG tự đếm ký tự, KHÔNG "
           "curl đọc lại bài, KHÔNG chạy caption_check/draft_write/approve_service tay."]
@@ -87,7 +88,7 @@ def viet_brief(m: dict, meta: dict, wd: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Brief caption cho Miles")
+    ap = argparse.ArgumentParser(description="Brief caption cho vai viet (Miles/Jika)")
     ap.add_argument("draft_id")
     ap.add_argument("--lam-moi", action="store_true")
     ap.add_argument("--im", action="store_true")
@@ -97,8 +98,11 @@ def main() -> int:
     # chay khong browser (Miles chi can chu).
     m, wd, meta = cb.chay(a.draft_id, a.lam_moi, khong_browser=True, cho=a.cho,
                           sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
-    brief = viet_brief(m, meta, wd)
-    (wd / "brief_miles.md").write_text(brief, encoding="utf-8")
+    # AI viet bai nay (LOW-13): quyet dinh da chot tu luc chon tin, nam trong
+    # sidecar writer.json. Ten tep brief va lenh nop in ra deu theo persona do.
+    persona = nc.persona_viet(nc.vai_viet_cua_bai(a.draft_id, cb._brand_cua(meta)))
+    brief = viet_brief(m, meta, wd, persona)
+    (wd / f"brief_{persona}.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)
     return 0

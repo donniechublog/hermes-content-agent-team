@@ -77,7 +77,10 @@ def route(thread_id, topics: dict) -> tuple:
     """Tra ve (profile, ten_phien) cho topic nay."""
     by_id = {v: k for k, v in topics.items()}
     key = by_id.get(thread_id)
-    profile = TOPIC_PROFILE.get(key)
+    # `slug_that` bac cau slug role cu (LOW-14): `state/topics.json` cua che do
+    # don con nguyen khoa cu, va khong khop o day la chat roi ve profile mac
+    # dinh trong IM LANG — dung cai hong ma khoi comment tren canh bao.
+    profile = TOPIC_PROFILE.get(key) or TOPIC_PROFILE.get(_vai.slug_that(key or ""))
     session = f"tele-{key or 'general'}"
     return profile, session
 

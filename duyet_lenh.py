@@ -23,7 +23,7 @@ from duyet_co_so import (  # noqa: E402
     BRAND, STATE_DIR, _ghi_json, _nap_json, call, la_ong_chu, log,
 )
 from duyet_giao_viec import (  # noqa: E402
-    TEN_SANG_CAP, TEN_VAI_ANH, VAI_ANH, VAI_CAROUSEL, VAI_EDU,
+    TEN_SANG_CAP, TEN_VAI_ANH, TEN_VAI_VIET, VAI_ANH, VAI_CAROUSEL, VAI_EDU,
 )
 from duyet_chon_tin import (  # noqa: E402
     _draft_id, create_pair,
@@ -137,8 +137,8 @@ def _dong_vai_help():
     kieu = {}
     for ten, va in sorted(VAI_ANH.items()):
         kieu.setdefault(va, []).append(ten)
-    ta = {"designer": "thẻ bìa", "carousel": "nhiều slide ảnh thật",
-          "carousel-edu": "carousel art vector"}
+    ta = {"ethan": "thẻ bìa", "dre": "nhiều slide ảnh thật",
+          "kite": "carousel art vector"}
     return "; ".join(f"<code>{' / '.join(t)}</code> ({ta.get(v, v)})"
                      for v, t in sorted(kieu.items()))
 
@@ -280,7 +280,8 @@ def handle_command(token, group, msg, thread_id, text):
             kieu = ("carousel deck" if va in VAI_EDU
                     else "carousel" if va in VAI_CAROUSEL else "thẻ bìa")
             dong.append(f"  <code>{ten}</code> → {va} ({kieu})")
-        dong.append("<b>Vai viết</b>: <code>writer</code> — một người viết cho container này.")
+        viet = ", ".join(f"<code>{s}</code>" for s in sorted(TEN_VAI_VIET))
+        dong.append(f"<b>Vai viết</b>: {viet} — một người viết cho container này.")
         tra_loi("\n".join(dong))
     elif lenh == "/bai":
         with _KHOA_DAT_BAI:

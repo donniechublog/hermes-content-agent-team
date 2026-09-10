@@ -38,6 +38,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import ghi_log                                              # noqa: E402
+import nop_chung                                             # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _chay_nen, _ghi_json, _reply_that, call, la_ong_chu, load_secrets, log, rut,
@@ -461,9 +462,16 @@ if __name__ == "__main__":
                         dpath.read_text(encoding="utf-8")).get("category", "")
                 except Exception as e:                       # noqa: BLE001
                     log("loi", f"doc category cua {dpath.name} hong (dung topic mac dinh): {e!r}")
-            # Mot container mot nguoi viet: tin thuong ve topic writer cua
-            # container, teaser ve topic Cape.
-            key = "teaser" if category.upper() == "TEASER" else MAC_DINH_VIET
+            # Tin thuong ve topic NGUOI VIET CUA BAI, teaser ve topic Cape.
+            # Truoc 10/09/2026 cho nay go `MAC_DINH_VIET` vi ca doi chi co mot
+            # nguoi viet ("mot container mot nguoi viet"). Van dung mot nguoi
+            # moi container, nhung ten cua nguoi do khac nhau theo brand
+            # (LOW-13), va cau tra loi da duoc chot tu luc chon tin — doc lai
+            # sidecar thay vi doan lai, de bai khong roi vao topic cua vai kia.
+            if category.upper() == "TEASER":
+                key = "cape"
+            else:
+                key = nop_chung.vai_viet_cua_bai(draft_id, env_load.brand_dai())
             thread = topics.get(key)
         if len(sys.argv) > 3:
             thread = int(sys.argv[3])

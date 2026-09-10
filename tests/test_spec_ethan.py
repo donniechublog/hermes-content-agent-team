@@ -215,7 +215,7 @@ def test_anh_da_dung_o_tin_khac_thi_chan():
     import luat_anh
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        luat_anh.ghi_da_dung(anh[0]["goc"], "tin-khac", "designer", "https://vi.du/khac")
+        luat_anh.ghi_da_dung(anh[0]["goc"], "tin-khac", "ethan", "https://vi.du/khac")
         _kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
         assert _co(loi, "TRUNG anh da dung", "tin-khac"), loi
 

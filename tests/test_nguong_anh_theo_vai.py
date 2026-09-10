@@ -54,21 +54,21 @@ def test_manifest_ghi_nguong_theo_vai_duoc_giao():
     """`toi_thieu` va `toi_thieu_co_ban` la cua VAI DUOC GIAO. Truoc 10/09/2026
     `toi_thieu_co_ban` go cung `carousel.MIN_SLIDE` cho moi vai, nen nut "ha san"
     cua mot bai Ethan cung lay san 5."""
-    m_ethan = _manifest("designer", 2)
+    m_ethan = _manifest("ethan", 2)
     assert m_ethan["toi_thieu"] == 1, m_ethan["toi_thieu"]
     assert m_ethan["toi_thieu_co_ban"] == 1, m_ethan["toi_thieu_co_ban"]
-    assert m_ethan["vai_anh"] == "designer"
+    assert m_ethan["vai_anh"] == "ethan"
 
-    m_dre = _manifest("carousel", 2)
+    m_dre = _manifest("dre", 2)
     assert m_dre["toi_thieu"] == 5, "Dre KHONG duoc doi hanh vi: moi slide mot anh"
     assert m_dre["toi_thieu_co_ban"] == 5
-    assert _manifest("carousel", 2, flagship=True)["toi_thieu"] == 8, "tin flagship van la 8 cho Dre"
+    assert _manifest("dre", 2, flagship=True)["toi_thieu"] == 8, "tin flagship van la 8 cho Dre"
 
 
 def test_tin_flagship_khong_lam_the_cua_ethan_can_them_anh():
     """`flagship` la luat cua carousel (bo phai day hon cho tin lon). The hero
     cua Ethan van la MOT tam anh du tin co lon co nao."""
-    assert _manifest("designer", 2, flagship=True)["toi_thieu"] == 1
+    assert _manifest("ethan", 2, flagship=True)["toi_thieu"] == 1
 
 
 # --------------------------------------- 2. quyet dinh "bai nay co thieu anh"
@@ -78,11 +78,11 @@ def test_hai_anh_that_la_DU_cho_ethan_va_THIEU_cho_dre():
     Voi Ethan phai la None (khong co gi de hoi) — truoc sua, ham nay tra
     {"so": 2, "toi_thieu": 5} va do la thu keo ca day "thieu anh" chay."""
     import anh_chuan_bi as cb
-    assert cb._mo_ta_thieu_anh(_manifest("designer", 2)) is None, \
+    assert cb._mo_ta_thieu_anh(_manifest("ethan", 2)) is None, \
         "2 anh that ma bao Ethan thieu anh — dung loi 10/09/2026"
-    assert cb._mo_ta_thieu_anh(_manifest("carousel", 2)) == {"so": 2, "toi_thieu": 5}
+    assert cb._mo_ta_thieu_anh(_manifest("dre", 2)) == {"so": 2, "toi_thieu": 5}
     # Va khong anh nao thi Ethan cung thieu that (0 < 1) — cong van con.
-    assert cb._mo_ta_thieu_anh(_manifest("designer", 0)) == {"so": 0, "toi_thieu": 1}
+    assert cb._mo_ta_thieu_anh(_manifest("ethan", 0)) == {"so": 0, "toi_thieu": 1}
 
 
 # ------------------------------------------- 3. tang ghep noi khong hoi oan
@@ -98,8 +98,8 @@ def test_khong_hoi_ong_chu_khi_ethan_du_anh():
         with tempfile.TemporaryDirectory() as tmp:
             rt.DRAFTS = Path(tmp)
             (rt.DRAFTS / "d1.img.json").write_text(
-                json.dumps({"vai_anh": "designer"}), encoding="utf-8")
-            m = _manifest("designer", 2)
+                json.dumps({"vai_anh": "ethan"}), encoding="utf-8")
+            m = _manifest("ethan", 2)
             import anh_chuan_bi as cb
             thieu = cb._mo_ta_thieu_anh(m)
             if thieu:
@@ -123,7 +123,7 @@ def _ha_san(tmp: Path, manifest: dict, sidecar: dict | None):
     drafts.mkdir(exist_ok=True)
     if sidecar is not None:
         (drafts / "d1.img.json").write_text(json.dumps(sidecar), encoding="utf-8")
-    (tmp / "home" / "profiles" / "carousel-edu").mkdir(parents=True, exist_ok=True)
+    (tmp / "home" / "profiles" / "kite").mkdir(parents=True, exist_ok=True)
     cu = (db.STATE_DIR, db.DRAFTS, dgv.HERMES_HOME, db.call)
     db.STATE_DIR, db.DRAFTS = tmp / "state", drafts
     dgv.HERMES_HOME = str(tmp / "home")
@@ -140,7 +140,7 @@ def test_nut_ha_san_khong_goi_the_cua_ethan_la_slide():
     tren mot task le ra chi la mot tam anh."""
     with tempfile.TemporaryDirectory() as tmp:
         note = _ha_san(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
-                                   "toi_thieu_co_ban": 1, "vai_anh": "designer"}, None)
+                                   "toi_thieu_co_ban": 1, "vai_anh": "ethan"}, None)
     assert "slide" not in note.lower(), f"van goi san pham cua Ethan la slide: {note}"
     assert "ảnh" in note
 
@@ -149,7 +149,7 @@ def test_nut_ha_san_van_noi_slide_cho_dre_va_cho_manifest_cu():
     """Dre khong doi gi; manifest cu (khong co `vai_anh`) giu nguyen chu cu."""
     with tempfile.TemporaryDirectory() as tmp:
         note = _ha_san(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
-                                   "toi_thieu_co_ban": 5, "vai_anh": "carousel"}, None)
+                                   "toi_thieu_co_ban": 5, "vai_anh": "dre"}, None)
         assert "slide" in note, note
         cu = _ha_san(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
                                  "toi_thieu_co_ban": 5}, None)
@@ -161,8 +161,8 @@ def test_nut_ha_san_theo_sidecar_khi_bai_da_chuyen_kite():
     sidecar la ban moi nhat — bai da sang Kite thi lai goi la slide."""
     with tempfile.TemporaryDirectory() as tmp:
         note = _ha_san(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
-                                   "toi_thieu_co_ban": 1, "vai_anh": "designer"},
-                       {"vai_anh": "carousel-edu", "chuyen_tu": "designer"})
+                                   "toi_thieu_co_ban": 1, "vai_anh": "ethan"},
+                       {"vai_anh": "kite", "chuyen_tu": "ethan"})
     assert "slide" in note, note
 
 
@@ -213,7 +213,7 @@ def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
     # Mot tam DUNG DUOC nhung khong lam hero duoc thi chua phai la du.
     a = {"dung": ["ghép dọc với một ảnh ngang cùng tone"], "lien_quan": True,
          "loai": "anh", "ti_le": 1.78, "mat": 0, "alt": ""}
-    assert not vai_mod.du_nguyen_lieu("designer", [a]), \
+    assert not vai_mod.du_nguyen_lieu("ethan", [a]), \
         "engine se ngung tim khi Ethan van chua co tam nao lam nen hero"
 
 

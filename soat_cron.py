@@ -280,7 +280,7 @@ def main() -> int:
         print(tin)
         return 0
 
-    if not publish.gui_topic(tin, "analyst"):
+    if not publish.gui_topic(tin, "ada"):
         # Co chuyen de noi ma khong noi duoc: phai thoat khac 0, khong thi
         # chinh job canh bao lai la job hong im lang.
         print("[LOI] khong gui duoc canh bao cron", file=sys.stderr)

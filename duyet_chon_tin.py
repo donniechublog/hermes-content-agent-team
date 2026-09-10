@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ghi_log                                              # noqa: E402
 import schema                                                # noqa: E402
+import vai as _vai                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     BRAND, DRAFTS, ROOT, STATE_DIR, _ghi_json, _gui_chu, _nap_json, _reply_that, call, log,
@@ -36,12 +37,12 @@ def slugify(title, fallback):
 # nen ca ba phai chon duoc bang cach tra loi so — truoc day chi Finn lam duoc,
 # bao cao cua Nova va Vera la van xuoi khong so nen Ong Chu khong biet rep gi.
 MANIFEST_THEO_TOPIC = {
-    "scout": "finn_candidates_*.json",
+    "finn": "finn_candidates_*.json",
     "nova": "nova_candidates_*.json",
-    "market": "vera_candidates_*.json",
+    "vera": "vera_candidates_*.json",
 }
 
-def latest_manifest(vai="scout"):
+def latest_manifest(vai="finn"):
     """Manifest MOI NHAT theo mtime, khong phai theo ten.
 
     Truoc day sap theo ten tep. Nhung ten khong phan anh thu tu ghi: dem 23/08
@@ -243,7 +244,8 @@ def _khoi_chay_engine(draft_id):
         print(f"[chuan_bi] khong khoi chay nen: {type(e).__name__}: {e}")
 
 
-def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu, root_id, illu_id):
+def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu, root_id, illu_id,
+                 vai_quet=None):
     """Hai sidecar: <id>.img.json de LAM LAI duoc, <id>.writer.json de task viet
     CHI sinh khi Ong Chu bam Duyet anh. Tra ve vai_viet."""
     # Cat lai body task anh de LAM LAI duoc: Ong Chu bam "Lam lai" tren anh chua
@@ -263,15 +265,26 @@ def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
     # Nhan diem phai theo VAI QUET that: dong "Diem Finn cham" hien tren ca task
     # cua dcgr, noi Vera quet — va Vera/Nova khong cham diem nen `score` ra None.
     diem = item.get("score")
+    # Ten vai quet lay tu ban dang ky khi biet that (LOW-13). Truoc do cho nay
+    # go cung "Finn" cho MOI tin co diem — dung tinh co, vi chi Finn cham diem;
+    # nhung neu mai Nova/Vera co bo cham thi dong nay noi sai ten ma khong ai
+    # thay. Khong biet vai quet (lenh /bai dat tay) thi giu chu chung nhu cu.
+    ten_quet = _vai.ten_hien(vai_quet) if vai_quet else "Finn"
+    # AI VIET BAI NAY (LOW-13, 10/09/2026). Truoc day la hang so MAC_DINH_VIET:
+    # mot nguoi viet cho ca hai brand. Gio hoi ban dang ky — vai quet truoc,
+    # brand lam luoi. `brand` o day luon co that (create_pair nhan mac dinh
+    # "donniechublog"), nen ke ca lenh /bai dat tay khong biet vai quet van ra
+    # dung nguoi cua container, khong roi ve Miles im lang.
+    vai_viet = _vai.vai_viet_cua(vai_quet, brand)
     writer_body = WRITER_BODY.format(
         title=item["title"], link=item["link"],
         source_note=item.get("source_note", ""), via=item.get("via", ""),
         # Chi Finn cham diem; Nova/Vera khong co bo cham nao nen `score` ra None.
-        vai_quet="Finn" if isinstance(diem, (int, float)) else "vai quet",
+        vai_quet=ten_quet if isinstance(diem, (int, float)) else "vai quet",
         score=f"{diem}/100" if isinstance(diem, (int, float)) else "khong cham diem",
         score_reason=item.get("score_reason", "") or "(khong co)",
-        draft_id=draft_id, brand=brand, goc=str(ROOT))
-    vai_viet = MAC_DINH_VIET
+        draft_id=draft_id, brand=brand, goc=str(ROOT),
+        persona=_vai.ten_hien(vai_viet).lower())
     _ghi_json(DRAFTS / (draft_id + ".writer.json"),
               {"vai_viet": vai_viet, "title": item["title"],
                "body": writer_body, "created": False,
@@ -279,7 +292,7 @@ def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
     return vai_viet
 
 
-def create_pair(item, vai_anh="designer", brand="donniechublog"):
+def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     draft_id = _draft_id(item, brand, vai_anh)
     out_png = str(DRAFTS / (draft_id + ".png"))
     write_meta(draft_id, item, out_png, brand)
@@ -310,9 +323,12 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
                     else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
     # Bang den: the goc cua bai truoc, task anh la con cua no. Khong co goc
     # (loi) thi van tao task nhu cu — bang den la lop them, khong phai dieu kien.
+    # Muc tieu tren the goc goi TEN NGUOI VIET THAT cua bai, khong phai hang so
+    # `MAC_DINH_VIET` (LOW-13): the goc la thu Ong Chu doc de biet ai lam gi.
     root_id = _bang_den_root(draft_id, item["title"],
                              goal=f"{item['title']} — {brand}: {vai_anh} dung anh, "
-                                  f"{MAC_DINH_VIET} viet caption sau khi Ong Chu duyet anh.")
+                                  f"{_vai.vai_viet_cua(vai_quet, brand)} viet caption "
+                                  f"sau khi Ong Chu duyet anh.")
     if root_id:
         illu_body += BANG_DEN_NHAC.format(root=root_id)
     illu_id, err = kanban_create(tieu_de_task, vai_anh, illu_body, parent=root_id)
@@ -325,7 +341,8 @@ def create_pair(item, vai_anh="designer", brand="donniechublog"):
     # mot tep chua ai ghi: truoc gio chi mat tom tat (im lang), nay con mat ca
     # nguong nen Ethan lai bi doi du anh cho carousel. Doi cho hai dong nay la
     # du — _cat_sidecar khong can gi tu engine.
-    vai_viet = _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu, root_id, illu_id)
+    vai_viet = _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
+                            root_id, illu_id, vai_quet=vai_quet)
     _khoi_chay_engine(draft_id)
 
     item["picked"] = True
@@ -402,7 +419,7 @@ def _xu_ly_chon(token, group, thread_id, vai, lenh):
                 ten_da = TEN_VAI_ANH.get(vai_anh, vai_anh)
                 lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — bỏ qua")
                 continue
-            tid, err = create_pair(it, vai_anh=vai_anh, brand=brand)
+            tid, err = create_pair(it, vai_anh=vai_anh, brand=brand, vai_quet=vai)
             if err:
                 lines.append("#" + str(n) + ": lỗi — " + err)
                 continue

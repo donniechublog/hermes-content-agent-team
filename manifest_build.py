@@ -173,7 +173,7 @@ def them_bat_buoc(items: list, cands: list) -> list:
     mo 18 tool call roi block task). Luat Ong Chu van giu: quet thay la phai dua."""
     by_link = {_norm(c["link"]): c for c in cands}
     da_co = {_norm(it["link"]) for it in items}
-    for v in bat_buoc.kiem("scout", items):
+    for v in bat_buoc.kiem("finn", items):
         c = by_link.get(_norm(v.get("link", "")))
         if not c or _norm(c["link"]) in da_co:
             print(f"  [canh bao] muc BAT BUOC khong co trong candidates, khong tu them duoc: "
@@ -217,7 +217,7 @@ def main():
         picks = picks.get("picks") or picks.get("items") or []
 
     items, problems = gom_muc(picks, cands)
-    bb_link = {bat_buoc.chuan_link(v.get("link", "")) for v in bat_buoc.doc("scout").values()
+    bb_link = {bat_buoc.chuan_link(v.get("link", "")) for v in bat_buoc.doc("finn").values()
                if v.get("link")}
     items = cat_tran(items, bb_link, problems)
 
@@ -259,10 +259,10 @@ def main():
         print(f"[canh bao] {out.name} da co — ghi ban moi ra {moi.name} de khong "
               "mat co picked/da_giao cua ban dang dung", file=sys.stderr)
         out = moi
-    mc.ghi_manifest(out, "scout", items)
+    mc.ghi_manifest(out, "finn", items)
     print(f"da ghi {len(items)} muc -> {out}")
-    mc.chot_bat_buoc("scout", items, a.khong_xoa_bat_buoc)
-    mc.viet_bao_cao(a.bao_cao, items, "scout")
+    mc.chot_bat_buoc("finn", items, a.khong_xoa_bat_buoc)
+    mc.viet_bao_cao(a.bao_cao, items, "finn")
     for it in items:
         print(f"  #{it['index']} [{it['score']:3d}] {it['title'][:60]}")
 

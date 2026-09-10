@@ -344,7 +344,7 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
-        mid = nc.gui_album("carousel", files, mo_ta, a.draft_id, wd, da_dung,
+        mid = nc.gui_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
                            {"bia": cover.get("anh"), "hook": hook,
                             "anh": [ma for _, ds in dung_anh for ma in ds]})
     nguon_anh = sorted({m_["mien"] or m_["tu"] for m_ in m["anh"]

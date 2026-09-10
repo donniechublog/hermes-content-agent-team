@@ -24,6 +24,7 @@ sys.path.insert(0, str(ROOT))
 import quet_chung                                            # noqa: E402
 import env_load                                              # noqa: E402
 import quet_chuan_bi as qb                                   # noqa: E402
+import vai                                                   # noqa: E402
 
 TEN = quet_chung.TEN_VAI       # mot ban duy nhat, xem quet_chung
 
@@ -76,7 +77,7 @@ def gui(vai: str, tep: Path, thu: bool) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop cho vai di tim tin")
-    ap.add_argument("--vai", required=True, choices=list(qb.TOPIC))
+    ap.add_argument("--vai", required=True, type=vai.slug_that, choices=list(qb.TOPIC))
     ap.add_argument("--khong-co", action="store_true")
     ap.add_argument("--thu", action="store_true")
     a = ap.parse_args()
@@ -86,10 +87,10 @@ def main() -> int:
 
     if a.khong_co:
         so = "?"
-        if a.vai == "scout":
+        if a.vai == "finn":
             d = json.loads((wd / "candidates.json").read_text(encoding="utf-8")) if (wd / "candidates.json").exists() else {}
             so = len(d.get("candidates", []))
-        elif a.vai == "market":
+        elif a.vai == "vera":
             d = json.loads((wd / "quet.json").read_text(encoding="utf-8")) if (wd / "quet.json").exists() else {}
             so = d.get("tong_quet", "?")
         tep = wd / "khong_co.txt"
@@ -100,7 +101,7 @@ def main() -> int:
         return 0 if ok else 1
 
     bao_cao = wd / "baocao.txt"
-    if a.vai == "scout":
+    if a.vai == "finn":
         picks = wd / "picks.json"
         if not picks.exists():
             sys.exit(f"Chua co {picks} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
@@ -116,14 +117,14 @@ def main() -> int:
             sys.exit(f"Chua co {ds} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
                      "(hoac --khong-co neu khong co gi dang len kenh).")
         args = [str(ROOT / "manifest_ghi.py"), "--vai", a.vai, "--in", str(ds), "--bao-cao", str(bao_cao)]
-        if a.vai == "market":
+        if a.vai == "vera":
             args += ["--nguon", str(wd / "quet.json")]      # de Vera chon bang so thu tu k
         if a.thu:
             args += ["--khong-xoa-bat-buoc", "--out", str(wd / "thu_manifest.json")]
     r = _chay(args)
     if r.returncode != 0:
         _in_loi(r)
-        tep = "picks.json" if a.vai == "scout" else "ds.json"
+        tep = "picks.json" if a.vai == "finn" else "ds.json"
         print(f"\nSua {wd / tep} theo cac dong [LOI] (thieu muc bat buoc thi THEM vao, link phai y het "
               f"danh sach) roi chay lai: venv/bin/python quet_nop.py --vai {a.vai}")
         return 1

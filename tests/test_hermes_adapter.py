@@ -55,15 +55,15 @@ _KANBAN_DB_THAT = ha.kanban_db
 def test_viec_loc_theo_vai_va_gioi_han():
     with tempfile.TemporaryDirectory() as tmp:
         _db(tmp, tasks=[
-            ("t1", "designer", "done", "bai 1", 100, 101, 102, "xong", None),
-            ("t2", "writer", "ready", "bai 2", 200, None, None, None, None),
-            ("t3", "designer", "running", "bai 3", 300, 301, None, None, None),
+            ("t1", "ethan", "done", "bai 1", 100, 101, 102, "xong", None),
+            ("t2", "miles", "ready", "bai 2", 200, None, None, None, None),
+            ("t3", "ethan", "running", "bai 3", 300, 301, None, None, None),
         ])
         try:
-            ra = ha.viec(vai="designer")
+            ra = ha.viec(vai="ethan")
             assert [v["id"] for v in ra] == ["t1", "t3"], ra
             assert ra[0]["tieu_de"] == "bai 1" and ra[0]["trang_thai"] == "done", ra[0]
-            moi = ha.viec(vai="designer", so=1, moi_truoc=True)
+            moi = ha.viec(vai="ethan", so=1, moi_truoc=True)
             assert [v["id"] for v in moi] == ["t3"], moi
         finally:
             _go()
@@ -201,7 +201,7 @@ def _tao_task(ket_qua, **kw):
     cu = subprocess.run
     subprocess.run = _run
     try:
-        return ha.tao_task("Anh: Tin X", "carousel", "than task", **kw), da_chay
+        return ha.tao_task("Anh: Tin X", "dre", "than task", **kw), da_chay
     finally:
         subprocess.run = cu
 
@@ -211,7 +211,7 @@ def test_tao_task_doc_id_tu_json():
     assert (tid, loi) == ("t_42", None), (tid, loi)
     a = da["args"]
     assert "kanban" in a and "create" in a and "--json" in a, a
-    assert a[a.index("--assignee") + 1] == "carousel", a
+    assert a[a.index("--assignee") + 1] == "dre", a
     assert a[a.index("--workspace") + 1].startswith("dir:"), \
         "phai dung workspace CO DINH — scratch lam vo cache prompt (do 05/09)"
 

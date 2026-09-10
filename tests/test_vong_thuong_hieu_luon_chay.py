@@ -73,7 +73,7 @@ def _vong_bu_da_chay(so_anh_cua_tin: int,
     cb.PhienBrowser = lambda *a, **k: _Phien()
     cb.nap_nguon = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
-    cb._tom_tat_tu_img_json = lambda d: {"vai_anh": "carousel", "summary": ""}
+    cb._tom_tat_tu_img_json = lambda d: {"vai_anh": "dre", "summary": ""}
     cb._bo_sung_nguon = lambda *a, **k: []
     cb._lay_tu_browser = lambda trang, *a, **k: (
         {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)

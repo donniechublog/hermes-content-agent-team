@@ -83,7 +83,7 @@ PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon
             "dung_manifest", "bang_anh")
 
 
-def _vong_bu_da_chay(anh_bai: list, vai_anh="designer", khong_browser=False,
+def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
                      tieu_de="OpenAI ships new image model for developers") -> list:
     """Chay THAT `chuan_bi()` voi moi pha nang thay bang stub, tra ve ten cac vong
     bu da duoc goi. Khong mang, khong browser, khong vision."""
@@ -166,7 +166,7 @@ def test_khong_browser_van_khong_mo_phien_nao():
 def test_vai_nhieu_anh_giu_nguyen_cach_dem_cu():
     """Ban sua khong duoc dong toi Dre/Kite: o do moi slide an mot tam that, nen
     SO LUONG van la mot tieu chi that."""
-    for vai_anh in ("carousel", "carousel-edu"):
+    for vai_anh in ("dre", "kite"):
         assert "tim_rong" not in _vong_bu_da_chay([_anh(f"A{i + 1}") for i in range(5)],
                                                   vai_anh=vai_anh), \
             f"{vai_anh}: du 5 tam va co bia ma van di tim"

@@ -24,19 +24,26 @@ không còn hậu tố `.blog`/`.dcgr`. Slug **Profile hermes** là định danh
 Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_chung.nap`
 đọc ra từ `drafts/<id>.*.json`. Cùng một script phục vụ cả hai brand.
 
+**Hai người viết, cắt theo vai quét** (LOW-13, 10/09/2026): Finn và Nova → **Jika**
+(`jika`, donniechublog); Vera → **Miles** (`writer`, dcgr.tech). Quyết định chốt
+ngay lúc chọn tin và nằm trong `drafts/<id>.writer.json`; mọi bước sau đọc lại chỗ đó
+thay vì đoán lại. Bảng định tuyến ở `vai.vai_viet_cua` — hỏi vai quét trước, brand làm
+lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin.
+
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
-| Finn | `scout` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
-| Ethan | `designer` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
-| Dre | `carousel` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
-| Kite | `carousel-edu` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
+| Finn | `finn` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
+| Ethan | `ethan` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
+| Dre | `dre` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
+| Kite | `kite` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
 | Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
-| Miles | `writer` | writer | Viết caption tiếng Việt cho cả hai brand, đẩy vào hàng duyệt |
+| Miles | `miles` | writer | Viết caption tiếng Việt cho tin **kinh doanh, đầu tư** của **dcgr.tech** (từ 10/09/2026, LOW-13; trước đó viết cả hai brand). Profile `miles` bên blog **giữ lại cho việc còn tồn**, không nhận việc mới |
+| Jika | `jika` | writer | Viết caption tiếng Việt cho tin **model mới, arXiv/Hacker News** — **chỉ donniechublog** (từ 10/09/2026, LOW-13). Cùng script, cùng luật caption như Miles; khác ở người đọc và ở MEMORY riêng |
 | Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý |
-| Vera | `market` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
-| Ada | `analyst` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
-| Cape | `teaser` | teaser | Ghép teaser từ bài đã duyệt — blog only |
+| Vera | `vera` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
+| Ada | `ada` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
+| Cape | `cape` | teaser | Ghép teaser từ bài đã duyệt — blog only |
 | Bob | `bob` | — | Đóng khung một ảnh bất kỳ từ URL, gắn mascot hợp tâm trạng |
 
 ## Luồng
@@ -87,7 +94,20 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 - Tin **chuyển sang Kite vì thiếu ảnh** (engine tự chuyển khi 0 ảnh, hoặc Ông Chủ
   bấm "Gửi Kite"): những ảnh thật engine đã tìm được **vẫn phải vào bộ của Kite,
   và phải có ở body** — `kite_chuan_bi.hinh_phai_dung` là một nguồn cho cả brief
-  lẫn cổng `kite_nop` (LUAT_ANH §1.2e).
+  lẫn cổng `kite_nop` (LUAT_ANH §1.2e). Trừ **ảnh khái niệm**: §1.2c cấm nó ở
+  slide thân, nên ép nó vào body là hai cổng đá nhau — nó về bìa qua
+  `hinh_hero`, và `kite_nop` chặn nếu nó xuất hiện ở slide khác slide 1.
+- **Bìa của Kite luôn phải là ảnh thật** (LUAT_ANH §1.2f, Ông Chủ 10/09/2026:
+  *"không chấp nhận việc dùng vector ở hero slide"*). Slide 1 không có `image`
+  là `kite_nop` chặn — **kể cả khi engine giao 0 ảnh**: "không có ảnh" là thất
+  bại của vòng tìm ảnh, không phải một trạng thái hợp lệ của tin, nên nó phải
+  nổ ra chứ không được lặng lẽ thành một bộ slide vẽ tay.
+- Và nước đi đầu là **tìm lại**, không phải báo hỏng: `kite_chuan_bi` không được
+  thừa kế `xong.json` đã thất bại của vai cũ (`anh_chuan_bi.chay` trả thẳng tệp
+  cũ, còn task body của Kite không có `--lam-moi`), nên `bao_dam_co_bia` tự chạy
+  lại vòng tìm ảnh một lượt khi chưa có tấm nào lên bìa được. Vai cũ cần ~5 ảnh
+  mới đủ, Kite chỉ cần một tấm — "vai cũ không đủ" không có nghĩa Kite không đủ.
+  Hết đường thì `dem_vong_loi` đẩy lên Ông Chủ qua `kanban_block`.
 - Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`,
   `ethan_chuan_bi/ethan_nop`, `kite_chuan_bi/kite_nop`, `miles_chuan_bi/miles_nop`.
   Nop chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi
@@ -96,7 +116,7 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 - Bốn vai theo chat cùng mẫu, khoá là message_id/URL: `gin_*`, `itachi_*`,
   `cape_*`, `ada_*`. `bob_nop.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
   khung → gửi).
-- `quet_chuan_bi.py --vai scout|nova|market` + `quet_nop.py`: ba vai đi tìm tin
+- `quet_chuan_bi.py --vai finn|nova|vera` + `quet_nop.py`: ba vai đi tìm tin
   nhận danh sách ứng viên một dòng mỗi tin + mục BẮT BUỘC + khung tệp nộp; nop
   ghép manifest, kiểm bắt buộc, viết báo cáo, gửi topic. `--khong-co` gửi dòng
   "hôm nay không có gì"; `--thu` không ghi manifest thật.
@@ -395,7 +415,7 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
   `hermes/scripts/quet_daily_scan.sh <vai>`; `finn_daily_scan.sh` và hai tệp kia
   chỉ còn 7 dòng gọi sang đó, giữ tên cũ để khỏi phải sửa job cron trên máy chủ.
 - `daily-log` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router
-  (`theo_doi_9router.py --gui` → topic analyst).
+  (`theo_doi_9router.py --gui` → topic `ada`).
 - `model-watch` — `*/30 0,4,5,10-23 * * *`, tức **tắt 08:00–10:59 và
   13:00–16:59 VN**, đúng khung giờ chọn số buổi sáng. Model chết lúc 8h thì 11h
   mới có cảnh báo. Nếu không cố ý thì đổi về `*/30 * * * *` trên máy chủ
@@ -418,7 +438,7 @@ và dashboard là chỗ đối chiếu thật.
 **Ai đọc con số đó.** `soat_cron.py` (Ông Chủ chốt 07/09/2026), chạy 07:00 VN.
 Nó không đổi `deliver` — đổi `deliver` là đổi cả đường ra của lần chạy **thành
 công**, mà `moat-publish-watch` chạy 288 lần/ngày. Nó đọc thẳng
-`<home>/cron/jobs.json` của **cả hai brand** rồi nhắn vào topic `analyst` khi
+`<home>/cron/jobs.json` của **cả hai brand** rồi nhắn vào topic `ada` khi
 thấy một trong sáu thứ:
 
 | Dấu hiệu | Bắt được cái gì |

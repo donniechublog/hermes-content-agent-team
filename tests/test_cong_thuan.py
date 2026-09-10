@@ -21,10 +21,10 @@ def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
     so khong co ten vai nao phia sau ve mac dinh (Ethan/designer)."""
     from duyet_chon_tin import doc_lenh_chon
     ca = [
-        ("1", [(1, "designer")]),
-        ("1, 3 - Ethan, 2 - Dre", [(1, "designer"), (3, "designer"), (2, "carousel")]),
-        ("2 - Dre", [(2, "carousel")]),
-        ("1 2 3", [(1, "designer"), (2, "designer"), (3, "designer")]),
+        ("1", [(1, "ethan")]),
+        ("1, 3 - Ethan, 2 - Dre", [(1, "ethan"), (3, "ethan"), (2, "dre")]),
+        ("2 - Dre", [(2, "dre")]),
+        ("1 2 3", [(1, "ethan"), (2, "ethan"), (3, "ethan")]),
     ]
     for lenh, mong in ca:
         ra = doc_lenh_chon(lenh)
@@ -41,7 +41,7 @@ def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
     ra = doc_lenh_chon("1 - Ethan 3, 4 - Kites")
     assert ra is not None, "'kites' (so nhieu) phai duoc hieu nhu 'kite'"
     rut = [(s, v) for s, v, *_ in ra]
-    assert rut == [(1, "designer"), (3, "carousel-edu"), (4, "carousel-edu")], rut
+    assert rut == [(1, "ethan"), (3, "kite"), (4, "kite")], rut
 
 
 def test_doc_lenh_chon_bo_qua_cau_khong_phai_lenh():
@@ -66,7 +66,7 @@ def test_draft_id_luon_vua_callback_data_cua_telegram():
         {"title": "———", "index": 4},
     ]
     for it in ca:
-        for vai in ("designer", "carousel", "carousel-edu"):
+        for vai in ("ethan", "dre", "kite"):
             for brand in ("donniechublog", "dcgr"):
                 d = _draft_id(it, brand, vai)
                 assert d, f"draft_id rong: {it['title'][:20]!r}"
@@ -84,7 +84,7 @@ def test_draft_id_khac_nhau_theo_vai_va_brand():
     from duyet_chon_tin import _draft_id
     it = {"title": "Claude Opus 4.6 dat 82% SWE-bench Verified", "index": 2}
     ds = {_draft_id(it, b, v) for b in ("donniechublog", "dcgr")
-          for v in ("designer", "carousel", "carousel-edu")}
+          for v in ("ethan", "dre", "kite")}
     assert len(ds) == 6, f"draft_id bi trung giua cac vai/brand: {sorted(ds)}"
 
 

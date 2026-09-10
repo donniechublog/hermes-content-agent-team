@@ -232,7 +232,7 @@ def test_muc_tu_nop_lay_link_va_so_bao_tu_nguon_khi_vai_ghi_k():
     import manifest_ghi as mg
     nguon = [{"link": "https://x.vn/1", "tieu_de": "Nvidia rót vốn",
               "so_bao": 3, "cac_bao": ["VnExpress", "Tuổi Trẻ", "Thanh Niên"]}]
-    muc = mg._muc_tu_nop({"k": 1, "summary_vi": "Rót vốn lớn"}, 1, nguon, "market", "market")
+    muc = mg._muc_tu_nop({"k": 1, "summary_vi": "Rót vốn lớn"}, 1, nguon, "vera", "vera")
     assert muc["link"] == "https://x.vn/1"
     assert muc["title"] == "Nvidia rót vốn"
     assert "3 báo" in muc["source_note"] and "VnExpress" in muc["source_note"]
@@ -241,7 +241,7 @@ def test_muc_tu_nop_lay_link_va_so_bao_tu_nguon_khi_vai_ghi_k():
 def test_muc_tu_nop_k_ngoai_dai_thi_bo_chu_khong_lay_bai_khac():
     import manifest_ghi as mg
     nguon = [{"link": "https://x.vn/1", "tieu_de": "Tin một"}]
-    assert mg._muc_tu_nop({"k": 9, "summary_vi": "x"}, 1, nguon, "market", "market") is None
+    assert mg._muc_tu_nop({"k": 9, "summary_vi": "x"}, 1, nguon, "vera", "vera") is None
 
 
 def test_muc_tu_nop_don_em_dash_giong_nhanh_Finn():
@@ -266,7 +266,7 @@ def test_muc_tu_nop_lay_link_goi_y_cua_muc_bat_buoc_khi_vai_khong_ghi_link():
 def test_muc_tu_nop_category_mac_dinh_theo_vai():
     import manifest_ghi as mg
     n = mg._muc_tu_nop({"title": "T", "link": "https://a.vn/1"}, 1, [], "nova", "nova")
-    v = mg._muc_tu_nop({"title": "T", "link": "https://a.vn/1"}, 1, [], "market", "market")
+    v = mg._muc_tu_nop({"title": "T", "link": "https://a.vn/1"}, 1, [], "vera", "vera")
     assert n["category"] == "MODEL" and v["category"] == "BUSINESS"
 
 

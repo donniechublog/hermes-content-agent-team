@@ -30,7 +30,7 @@ import vai                                                   # noqa: E402
 # 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5. Song o ban dang ky vai
 # vi engine anh cung phai biet no: no la thu quyet dinh mot tam co lam nen hero
 # duoc khong, tuc co dang di tim tiep khong (LOW-12).
-TI_LE_HERO_MAX = vai.VAI["designer"].ti_le_don_max
+TI_LE_HERO_MAX = vai.VAI["ethan"].ti_le_don_max
 TAGLINE_GOI_Y = ["MODEL RELEASE", "MODEL UPDATE", "FUNDING", "M&A", "EARNINGS", "ROBOTICS",
                  "CYBERSECURITY", "APPS", "OPEN SOURCE", "RESEARCH", "POLICY", "INFRA", "IN BRIEF"]
 

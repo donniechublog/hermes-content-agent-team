@@ -54,7 +54,7 @@ def test_kanban_rong_that_thi_KHONG_bao_loi():
 def test_task_runs_khong_doc_duoc_thi_van_ra_task_va_co_dong_bao():
     """viec doc duoc nhung task_runs hong: van liet ke task (tom tat trong), va
     LOI_DOC phai noi ro la phan tom tat/loi bi thieu — khong duoc im."""
-    v = [{"id": "t1", "vai": "designer", "trang_thai": "done", "tieu_de": "Bai X",
+    v = [{"id": "t1", "vai": "ethan", "trang_thai": "done", "tieu_de": "Bai X",
           "tao_luc": _TS, "bat_dau_luc": None, "xong_luc": None,
           "ket_qua": "kq", "loi": None}]
     ra, loi = _chay(v, runs=None)
@@ -64,7 +64,7 @@ def test_task_runs_khong_doc_duoc_thi_van_ra_task_va_co_dong_bao():
 
 
 def test_doc_duoc_het_thi_LOI_DOC_rong_va_lay_dung_tom_tat():
-    v = [{"id": "t1", "vai": "designer", "trang_thai": "done", "tieu_de": "Bai X",
+    v = [{"id": "t1", "vai": "ethan", "trang_thai": "done", "tieu_de": "Bai X",
           "tao_luc": _TS, "bat_dau_luc": None, "xong_luc": None,
           "ket_qua": "kq", "loi": None}]
     ra, loi = _chay(v, runs={"t1": {"tom_tat": "da giao 6 anh", "loi": None}})

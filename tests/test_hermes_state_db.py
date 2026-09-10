@@ -23,7 +23,7 @@ import kiem_hermes                                            # noqa: E402
 
 def _state_db(tmp):
     """state.db toi gian voi dung cac cot adapter dung (mo phong schema hermes)."""
-    p = Path(tmp) / "profiles" / "writer" / "state.db"
+    p = Path(tmp) / "profiles" / "miles" / "state.db"
     p.parent.mkdir(parents=True)
     con = sqlite3.connect(p)
     con.executescript("""
