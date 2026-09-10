@@ -80,22 +80,73 @@ def hinh_mo_dau(ht: list) -> dict | None:
     return paper[0] if paper else None
 
 
-def dong_hero_paper(ht: list) -> list:
-    """Dong chi cho Kite dat hinh mo dau paper len bia.
+def hinh_hero(m: dict) -> dict | None:
+    """Tam duoc chon lam HERO cua bia, hoac None khi bia ve vector.
 
-    Ong Chu 08/09/2026: "ngay dau paper co image ma Kite khong dung de lam hero".
-    Truoc do brief chi noi "figure cho chart/bang, bia image cho anh chup" — doc
-    thang ra thi bieu do ket qua cua paper KHONG duoc lam bia, va Kite ve mot
-    hero vector trong khi tam hinh manh nhat cua bai nam duoi slide 4.
+    Ong Chu 10/09/2026: *"kite van dung vector lam hero, chua su dung anh"*. Ban
+    truoc (08/09) chi chi dinh hero khi anh co `paper_hinh`, tuc **chi bai
+    arxiv**: moi tin con lai — anh chup, tru so, co nuoc, bieu do — brief noi
+    "bia `image` HOAC `figure`" (tuy chon) va cong chi doi "dung it nhat mot anh
+    o dau do", nen dat het vao `figure` than roi ve hero vector la HOP LE.
+
+    Thu tu theo LUAT_ANH: hinh paper (§1.4 "Figure 1 la hero") -> anh rieng cua
+    tin -> anh thuong hieu (§1.2d) -> anh khai niem (§1.2c); hai loai bu xep sau
+    moi anh rieng cua tin, dung nhu tai lieu ghi.
+
+    Chi anh DA DUOC NHIN, tru hinh paper (boc thang tu PDF nen khong the la
+    quang cao): vision tat thi moi anh co `lien_quan=None`, ep luc do la day
+    banner len bia — cung bai hoc voi `hinh_phai_dung`.
+
+    MOT nguon cho ca brief lan cong chan (`kite_nop`).
     """
-    h = hinh_mo_dau(ht)
+    ut = [a for a in hinh_that(m)
+          if a.get("lien_quan") is True or a.get("paper_hinh")]
+    if not ut:
+        return None
+    rieng = [a for a in ut if not (a.get("khai_niem") or a.get("thuong_hieu"))]
+    chon = ([a for a in rieng if a.get("paper_hinh")] + rieng
+            + [a for a in ut if a.get("thuong_hieu")]
+            + [a for a in ut if a.get("khai_niem")])[0]
+    # Tin CHUYEN sang Kite vi thieu anh: `kite_nop` doi hinh that nam o slide
+    # THAN (Ong Chu 09/09), ma cung mot anh khong len duoc hai slide
+    # (`luat_anh.kiem_trung`). Con dung mot tam thi than duoc uu tien va bia ve
+    # vector — ep ca hai la hai cong da nhau, vai khong co duong nao nop duoc.
+    ep = hinh_phai_dung(m)
+    if ep and not [ma for ma in ep if ma != chon["ma"]]:
+        return None
+    return chon
+
+
+def _hero_la_gi(h: dict) -> tuple:
+    """(tam nay LA GI, caption goi y) cho dong ⭐ HERO."""
+    if h.get("paper_hinh"):
+        return (f"{h['paper_hinh']} — hình mở đầu của chính paper, tấm nói nhiều nhất về bài",
+                f"{h['paper_hinh']} trong paper · via <ai>")
+    if h.get("khai_niem"):
+        tk = h["khai_niem"].get("tu_khoa", "")
+        # §1.2c: anh khai niem CHI dung o bia/hero, khong vao slide than — nen
+        # khi no la hero thi noi thang, keo vai lai dat xuong `figure`.
+        return (f"ảnh khái niệm ({tk}) — loại này CHỈ được dùng ở bìa, không vào slide thân",
+                f"{tk} · via Wikimedia Commons")
+    if h.get("thuong_hieu"):
+        return (f"ảnh thương hiệu của {h['thuong_hieu'].get('hang')} (xem nhãn ở trên để "
+                "chú thích đúng loại: cơ sở · chân dung · bảng xếp hạng · thẻ logo)",
+                "<chú thích đúng loại tấm> · via <ai>")
+    return ("biểu đồ/bảng của bài" if h["loai"] == "chart" else "ảnh chụp của bài",
+            "<chú thích ngắn> · via <ai>")
+
+
+def dong_hero(m: dict) -> list:
+    """Dong chi cho Kite dat tam nao len bia, hoac [] khi bia ve vector."""
+    h = hinh_hero(m)
     if not h:
         return []
-    return ["", f"⭐ HERO: {h['ma']} là {h['paper_hinh']} — hình mở đầu của chính paper, tấm nói "
-                f"nhiều nhất về bài. Đặt `\"image\": \"{h['ma']}\"` vào SLIDE 1 (cover) kèm "
-                f"`\"caption\": \"{h['paper_hinh']} trong paper · via <ai>\"`; lúc đó bìa lấy "
-                "chính hình đó làm hero, không vẽ hero art. Chỉ bỏ qua khi hình sai bài "
-                "(xem bang_anh.png) — lúc đó nói rõ một câu vì sao. Hình paper còn lại để cho `figure`."]
+    la_gi, cap = _hero_la_gi(h)
+    return ["", f"⭐ HERO: {h['ma']} là {la_gi}. Đặt `\"image\": \"{h['ma']}\"` vào SLIDE 1 "
+                f"(cover) kèm `\"caption\": \"{cap}\"`; lúc đó bìa lấy chính hình đó làm hero, "
+                "KHÔNG vẽ hero art — `kite_nop.py` chặn bìa vector khi có hình thật dùng được. "
+                "Chỉ bỏ qua khi hình sai bài (xem bang_anh.png) — lúc đó nói rõ một câu vì sao. "
+                "Hình còn lại để cho `figure`."]
 
 
 def hinh_phai_dung(m: dict) -> list:
@@ -128,8 +179,12 @@ def goi_y_tone(title: str) -> tuple:
 def viet_brief(m: dict, da_dung: dict | None) -> str:
     theme, hero, gan = goi_y_tone(m["title"])
     # Mã bắt buộc, bỏ mã đã lên bìa: khung in sẵn MỘT `figure` cho mỗi mã còn
-    # lại, để vai khỏi phải tự suy ra "à, ba hình thì ba slide".
-    ep_khung = hinh_phai_dung(m)
+    # lại, để vai khỏi phải tự suy ra "à, ba hình thì ba slide". Chú thích này có
+    # từ đầu nhưng code KHÔNG bỏ mã của bìa: in cùng một mã ở cả cover lẫn
+    # `figure` là `luat_anh.kiem_trung` chặn — khung mẫu đẩy vai vào cổng.
+    hero_anh = hinh_hero(m)
+    ep_khung = [ma for ma in hinh_phai_dung(m)
+                if not (hero_anh and ma == hero_anh["ma"])]
     import brief_chung
     L = brief_chung.dau(
         m, "KITE",
@@ -145,7 +200,6 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         dong_thieu="(Không bóc được chữ từ nguồn — chỉ dùng tóm tắt, KHÔNG bịa.)")
     L += ["", "## Hình thật dùng được cho `figure` / bìa `image` (đã nhìn, ≥ 800px)"]
     ht = hinh_that(m)
-    mo_dau = hinh_mo_dau(ht)               # hinh mo dau paper -> hero cua bia
     if not ht:
         L.append("Không có hình thật nào liên quan — dùng art vector cho cả bộ (bình thường với paper trắng).")
     else:
@@ -169,8 +223,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         elif nhin:
             L.append(f"CÓ {len(nhin)} hình thật ĐÃ NHÌN và liên quan → BẮT BUỘC dùng ít nhất một: "
                      "`figure` cho chart/bảng, bìa `image` hoặc `figure` cho ảnh chụp"
-                     + (" — riêng hình mở đầu paper thì lên BÌA, xem ⭐ dưới. "
-                        if hinh_mo_dau(ht) else ". ")
+                     + (" — và một tấm phải lên BÌA làm hero, xem ⭐ dưới. "
+                        if hero_anh else ". ")
                      + "Bộ toàn text & card khi có ảnh thật là thiếu.")
         else:
             # Vision tat/thieu khoa -> moi anh lien_quan=None. Khong duoc ep.
@@ -196,7 +250,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                  + (f" | {nhan_th}" if nhan_th else "")
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
-    L += dong_hero_paper(ht)
+    L += dong_hero(m)
     rac = [a["ma"] for a in m["anh"] if a.get("lien_quan") is False]
     if rac:
         L.append(f"Không dùng (engine đánh dấu không liên quan): {', '.join(rac)}")
@@ -215,8 +269,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
             {"kind": "cover", "eyebrow": "<CHUYÊN MỤC · DEEP DIVE, ≤ 28>", "title": "<hook ≤ 60 ký tự>",
              "accent": "<cụm trong title cần nhấn>", "standfirst": "<1 câu ≤ 200 ký tự>",
              "byline": [handle_kenh(m["brand"]), "Phân tích", "5 phút đọc"],
-             "image": (mo_dau["ma"] if mo_dau else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>"),  # noqa: E501
-             "caption": (f"{mo_dau['paper_hinh']} trong paper · via <ai>" if mo_dau
+             "image": (hero_anh["ma"] if hero_anh else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>"),  # noqa: E501
+             "caption": (_hero_la_gi(hero_anh)[1] if hero_anh
                          else "<'… · via <ai>' bắt buộc khi có image>")},
             {"kind": "statement", "eyebrow": "BỐI CẢNH", "title": "<≤ 60>", "accent": "<cụm nhấn>",
              "standfirst": "<≤ 220>", "cards": [{"num": "01", "text": "<≤ 90>"}, {"num": "02", "text": "<≤ 90>"}]},

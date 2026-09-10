@@ -283,6 +283,16 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     # ma vision sinh ra de loai (do 06/09/2026). Chua nhin thi goi y, khong ep.
     da_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is True]
     co_anh = [sl for sl in slides if sl.get("image")]
+    # BIA PHAI LA ANH THAT khi co tam dung duoc (Ong Chu 10/09/2026: "kite van
+    # dung vector lam hero, chua su dung anh"). Cong "it nhat mot" ben duoi van
+    # cho phep nhet het anh vao `figure` than roi ve so do tu ve len bia — dung
+    # cai bi che. Doi CO image o slide 1, khong doi dung ma nao: `hinh_hero` chi
+    # goi y, vai co the chon tam khac trong danh sach.
+    hero = kb.hinh_hero(m)
+    if hero and not (slides and slides[0].get("image")):
+        loi.append(f"bìa đang vẽ hero vector trong khi có hình thật dùng được ({hero['ma']}) — "
+                   f"đặt `\"image\": \"{hero['ma']}\"` + `\"caption\"` vào slide 1 (cover). "
+                   "Hình thật nói nhiều hơn một sơ đồ tự vẽ; bìa có ảnh thì cả bộ không vẽ hero art.")
     if da_nhin and not co_anh:
         loi.append(f"có {len(da_nhin)} hình thật dùng được ({', '.join(da_nhin)}) mà không slide nào dùng — "
                    "BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, hoặc image ở bìa. "

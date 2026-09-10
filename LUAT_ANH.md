@@ -219,6 +219,32 @@ Brief của Kite còn ghi rõ **từng tấm là loại gì** (🏢 cơ sở · 
 📊 bảng xếp hạng · 🔖 thẻ logo, §1.2d), vì caption của chúng khác hẳn nhau: chú
 thích một thẻ logo thành "ảnh trụ sở" là sai sự thật.
 
+### 1.2f Bìa của Kite phải là ảnh thật khi có ảnh thật dùng được
+
+Ông Chủ 10/09/2026: *"kite vẫn dùng vector làm hero, chưa sử dụng ảnh"*.
+
+Bản trước (08/09) chỉ chỉ định hero khi ảnh có `paper_hinh` — tức **chỉ bài
+arxiv** (§1.4). Mọi tin còn lại thì brief nói "bìa `image` **hoặc** `figure`"
+(tuỳ chọn) và `kite_nop` chỉ đòi "dùng ít nhất một ảnh ở đâu đó", nên nhét hết
+ảnh vào `figure` thân rồi vẽ sơ đồ lên bìa là **hợp lệ**. Đo 10/09: ba ca — tin
+thường, tin chuyển sang vì thiếu ảnh, và ảnh khái niệm đặt nhầm vào thân — đều
+qua cổng không một dòng lỗi.
+
+- **`kite_chuan_bi.hinh_hero`** chọn tấm lên bìa, **một nguồn** cho cả brief lẫn
+  cổng chặn (cùng lý do với `hinh_phai_dung` §1.2e). Thứ tự: hình paper (§1.4) →
+  ảnh riêng của tin → ảnh thương hiệu (§1.2d) → ảnh khái niệm (§1.2c); hai loại
+  bù xếp sau mọi ảnh riêng, đúng như hai mục đó ghi.
+- **Cổng**: có ứng viên hero mà slide `cover` không có `image` → `kite_nop` chặn.
+  Cổng đòi **có** ảnh ở bìa, không đòi đúng mã nào — `hinh_hero` chỉ gợi ý.
+- Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`), trừ hình paper (bóc thẳng từ
+  PDF nên không thể là quảng cáo). Vision tắt thì mọi ảnh là `None` — ép lúc đó
+  là đẩy banner lên bìa, cùng bài học với cổng "ít nhất một".
+- **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
+  **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`kiem_trung` §8).
+  Còn đúng một tấm thì thân thắng và bìa vẽ vector — `hinh_hero` trả `None`.
+- Bìa có ảnh thì **cả bộ không vẽ hero art** (`chon_theme_tu_dong` trả
+  `hero=None`), nên đây là thay thế chứ không phải thêm một lớp trang trí.
+
 ### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 
 Bảng so sánh điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là
@@ -545,6 +571,7 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
 | Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
+| Bìa Kite vẽ hero vector trong khi có ảnh thật dùng được (§1.2f) | `kite_nop` | chặn |
 | Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
 | Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |
