@@ -78,7 +78,7 @@ from chuan_bi.nguon import _tom_tat_tu_img_json, nap_nguon      # noqa: E402
 from chuan_bi.nhin import _nhin_anh, mo_ta_anh                  # noqa: E402
 from chuan_bi.tai_loc import _luu_crop                          # noqa: E402
 from chuan_bi.vong_bu import (  # noqa: E402
-    _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _co_bia, _gom_va_tai_anh,
+    _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _gom_va_tai_anh,
     _lay_tu_browser, _vong_khai_niem, _vong_thuong_hieu, _vong_tim_rong,
 )
 
@@ -141,29 +141,22 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
                   f"{vai.MAC_DINH_ANH}", file=sys.stderr)
             vai_anh = vai.MAC_DINH_ANH
         toi_thieu = vai.so_anh_toi_thieu(vai_anh, flagship)
-        # HAI SO KHAC NHAU, dung lan nhau la hong ca hai chieu:
-        #   `toi_thieu`    — nguong CHAN: duoi no thi bai bi coi la thieu anh,
-        #                    Ong Chu bi hoi, bai co the bi day sang Kite.
-        #   `muc_tieu_tim` — bao nhieu anh thi NGUNG di tim. Ethan chi can 1 tam
-        #                    de dung nhung can nhieu tam de CHON: card.py chan
-        #                    chart va anh ngang >1.6 di mot minh, vision con loai
-        #                    them anh khong lien quan. Ha so nay xuong 1 la Ethan
-        #                    het duong chon va block nhieu hon truoc.
-        # Cai sai hom 10/09/2026 la lay so cua carousel de CHAN, khong phai de
-        # tim — nen phan tim giu nguyen so cu cho moi vai.
-        muc_tieu_tim = max(toi_thieu, carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE)
+        # HAI CAU HOI KHAC NHAU, dung lan nhau la hong ca hai chieu:
+        #   `toi_thieu`             — nguong CHAN: duoi no thi bai bi coi la
+        #                             thieu anh, Ong Chu bi hoi, bai co the bi
+        #                             day sang Kite.
+        #   `vai.du_nguyen_lieu()`  — CON PHAI DI TIM NUA KHONG.
+        # Cau thu hai truoc LOW-12 do bang so cua carousel (5, hay 8 voi tin
+        # flagship) cho CA BA vai. Ong Chu 10/09/2026: *"cach lam anh cua Ethan
+        # dau phai la carousel? nhung gi thuoc ve carousel ma lien quan toi Ethan
+        # la nhung thu ko dung"* va *"carousel la nhieu anh con Ethan lam single
+        # image, nen 'so luong' ko the la thu ap vao duoc"*. Nay ban dang ky vai
+        # tra loi: vai xep nhieu anh moi dem tam, vai mot anh chi hoi da co tam
+        # nao dung lam anh chinh chua — tieu chi CHAT LUONG thi van dung chung o
+        # `luat_anh` + `phan_loai` cho ca ba.
         tieu_de_nhin = nguon.get("tieu_de_en") or title
-        # `or not _co_bia(...)` la LOW-12 (10/09/2026): kho "du" ma khong tam nao
-        # len bia/hero duoc thi VAN phai di tim. `dung_duoc` dem bang tien te cua
-        # carousel — anh dung duoc o BAT KY dau, ke ca "chi ghep doc". Tin co 5
-        # anh ngang 16:9 (hinh dang thuong gap nhat cua anh bao) dem ra du 5 va
-        # dong cong nay lai; nhung card.py chan anh ngang >1.6 lan chart di mot
-        # minh, tuc Ethan con 0 anh hero — ma brief cam vai tu tai them ("chi
-        # dung MA ANH"). Dung dung `_co_bia` cua vong khai niem ngay duoi, va
-        # thu tu san co la dung: anh THAT o bao khac cung tin di truoc, het
-        # duong moi ha xuong anh khai niem chung chung (co, rack, datacenter).
-        if (len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc)) and not khong_browser:
-            anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, muc_tieu_tim,
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship) and not khong_browser:
+            anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, toi_thieu,
                                                        dung_duoc, wd, phien=phien)
         # ANH CUA CHINH HANG trong tin (logo, chan dung founder/CEO, tru so,
         # campus): chay cho MOI tin nhac toi mot hang trong watchlist, KHONG doi
@@ -175,12 +168,17 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # anh giao cho Dre trang tron du may moc da san. Tin khong nhac hang nao:
         # `hang_trong_tin` tra rong va vong thoat ngay, khong mot request nao.
         # Chi mang, chay ca khi --khong-browser; tran +4 anh nam trong vong.
+        # So truyen vao chi dieu khien MOT thu trong vong do: nhanh mo browser di
+        # chup bang xep hang lam boi canh. Voi vai mot anh no la 0 — mot cai chart
+        # khong bao gio la nen hero duoc, di chup la tra tien browser lay mot tam
+        # Ethan khong dung duoc.
         anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
-                                                      wd, muc_tieu_tim, khong_browser, phien=phien)
-        # Van thieu -> anh khai niem chung chung cua chu de, sau anh cua chinh hang.
-        # Van thieu, hoac co anh ma khong tam nao lam bia/hero duoc -> anh khai
-        # niem (chi mang, khong browser; chay ca khi --khong-browser).
-        if len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc):
+                                                      wd, vai.so_anh_muc_tieu_tim(vai_anh, flagship),
+                                                      khong_browser, phien=phien)
+        # Van thieu, hoac co anh ma khong tam nao lam anh chinh cua VAI NAY duoc
+        # -> anh khai niem chung chung cua chu de, sau anh cua chinh hang (chi
+        # mang, khong browser; chay ca khi --khong-browser).
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd)
         tl = _tu_lieu_bai(title, link, nguon_path, wd, nguon, bp)
         m = dung_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,

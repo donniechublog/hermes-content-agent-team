@@ -177,8 +177,8 @@ def test_engine_lay_nguong_CHAN_tu_ban_dang_ky_vai():
     Ai do viet lai theo kieu cu thi cac test tren VAN XANH (chung dung thang
     `vai.so_anh_toi_thieu` de dung manifest) — chi cong nay bat duoc.
 
-    KHONG cam han MIN_SLIDE trong ham: `muc_tieu_tim` co quyen dung so do (xem
-    test duoi). Chi cam dung no lam nguong CHAN."""
+    Nguong CHAN va cau hoi "con phai di tim nua khong" la HAI thu: cai thu hai
+    nay do `vai.du_nguyen_lieu`, giu o `tests/test_tim_anh_theo_vai.py`."""
     import inspect
     import re
 
@@ -189,22 +189,32 @@ def test_engine_lay_nguong_CHAN_tu_ban_dang_ky_vai():
          "vai — do la su co 10/09/2026")
 
 
-def test_engine_van_di_tim_du_mot_be_anh_cho_moi_vai():
-    """Nguoc lai voi test tren: HA luon so anh di tim xuong 1 cho Ethan cung la
-    hong, chi la hong kieu khac — card.py chan chart va anh ngang >1.6 di mot
-    minh, vision con loai them, nen Ethan can nhieu tam de CHON du chi dung mot.
-    `muc_tieu_tim` phai >= so cu (5, hay 8 voi tin flagship)."""
+def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
+    """Nguoc lai voi test tren: lay nguong CHAN (Ethan 1) lam so de NGUNG DI TIM
+    cung hong, chi la hong kieu khac — engine se dung ngay khi co mot tam bat ky
+    dung duoc, ke ca tam Ethan khong lam hero duoc.
+
+    Ban cu chong cai do bang `muc_tieu_tim = max(toi_thieu, MIN_SLIDE)`, tuc lay
+    so cua carousel — chinh la thu Ong Chu bac 10/09/2026 ("carousel la nhieu anh
+    con Ethan lam single image, nen 'so luong' ko the la thu ap vao duoc"). Nay
+    hai duong tach han: `toi_thieu` chi de CHAN, con di tim thi hoi
+    `vai.du_nguyen_lieu` — no doi phai co anh CHINH, khong doi du so tam."""
     import inspect
 
     import anh_chuan_bi as cb
+    import vai as vai_mod
     src = inspect.getsource(cb.chuan_bi)
-    assert "muc_tieu_tim = max(" in src and "MIN_SLIDE" in src, \
-        "muc tieu tim anh khong con giu so cu — Ethan se it anh de chon hon truoc"
     for dong in src.splitlines():
         d = dong.strip()
-        if d.startswith("#") or "len(dung_duoc) <" not in d:
+        if d.startswith("#") or "_vong_tim_rong(" not in d or "=" not in d:
             continue
-        assert "muc_tieu_tim" in d, f"vong tim anh dang do bang nguong chan: {d}"
+        assert "toi_thieu" not in d.split("_vong_tim_rong(")[0], \
+            f"vong tim anh dang do bang nguong chan: {d}"
+    # Mot tam DUNG DUOC nhung khong lam hero duoc thi chua phai la du.
+    a = {"dung": ["ghép dọc với một ảnh ngang cùng tone"], "lien_quan": True,
+         "loai": "anh", "ti_le": 1.78, "mat": 0, "alt": ""}
+    assert not vai_mod.du_nguyen_lieu("designer", [a]), \
+        "engine se ngung tim khi Ethan van chua co tam nao lam nen hero"
 
 
 def test_sidecar_ghi_truoc_khi_engine_chay():

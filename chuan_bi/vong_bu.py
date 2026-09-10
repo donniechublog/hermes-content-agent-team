@@ -207,10 +207,10 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     import nguon_bai
     mien_co = {_mien(t.get("url", "")) for t in trang} | {a.get("mien") for a in anh}
     them_bao = nguon_bai.bao_khac_bing(tieu_de_nhin, so=6, bo_mien=tuple(x for x in mien_co if x))[:4]
-    # Tu LOW-12 vong nay con chay khi kho DU anh ma khong tam nao lam bia/hero
-    # duoc — in "thieu (5/5)" luc do la noi doi nguoi doc log.
+    # Tu LOW-12 vong nay con chay khi kho DU anh ma khong tam nao lam anh chinh
+    # cua vai duoc — in "thieu (5/5)" luc do la noi doi nguoi doc log.
     ly_do = (f"thieu ({len(dung_duoc)}/{toi_thieu})" if len(dung_duoc) < toi_thieu
-             else f"du {len(dung_duoc)} anh nhung khong tam nao lam bia/hero duoc")
+             else f"co {len(dung_duoc)} anh nhung khong tam nao lam anh chinh duoc")
     print(f"[tim rong] {ly_do}: +{len(them_bao)} bao moi"
           + (": " + ", ".join(_mien(t["url"]) for t in them_bao) if them_bao else ""), file=sys.stderr)
     wd2 = wd / "them"
@@ -245,10 +245,6 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     print(f"[tim rong] sau vong: {len(dung_duoc)} anh DUNG DUOC / {len(anh)} "
           f"(+{len(anh) - n0} tai them)", file=sys.stderr)
     return anh, dung_duoc, chua_nhin
-
-
-def _co_bia(dung_duoc: list) -> bool:
-    return any("bìa" in a["dung"] for a in dung_duoc)
 
 
 TOI_DA_THEM_TH = 4          # tran anh thuong hieu them vao mot bo

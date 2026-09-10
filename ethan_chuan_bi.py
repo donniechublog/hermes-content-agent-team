@@ -25,8 +25,12 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import route_thieu_anh                                       # noqa: E402
+import vai                                                   # noqa: E402
 
-TI_LE_HERO_MAX = 1.6          # 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5
+# 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5. Song o ban dang ky vai
+# vi engine anh cung phai biet no: no la thu quyet dinh mot tam co lam nen hero
+# duoc khong, tuc co dang di tim tiep khong (LOW-12).
+TI_LE_HERO_MAX = vai.VAI["designer"].ti_le_don_max
 TAGLINE_GOI_Y = ["MODEL RELEASE", "MODEL UPDATE", "FUNDING", "M&A", "EARNINGS", "ROBOTICS",
                  "CYBERSECURITY", "APPS", "OPEN SOURCE", "RESEARCH", "POLICY", "INFRA", "IN BRIEF"]
 
