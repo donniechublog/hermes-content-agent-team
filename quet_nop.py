@@ -86,10 +86,10 @@ def main() -> int:
 
     if a.khong_co:
         so = "?"
-        if a.vai == "scout":
+        if a.vai == "finn":
             d = json.loads((wd / "candidates.json").read_text(encoding="utf-8")) if (wd / "candidates.json").exists() else {}
             so = len(d.get("candidates", []))
-        elif a.vai == "market":
+        elif a.vai == "vera":
             d = json.loads((wd / "quet.json").read_text(encoding="utf-8")) if (wd / "quet.json").exists() else {}
             so = d.get("tong_quet", "?")
         tep = wd / "khong_co.txt"
@@ -100,7 +100,7 @@ def main() -> int:
         return 0 if ok else 1
 
     bao_cao = wd / "baocao.txt"
-    if a.vai == "scout":
+    if a.vai == "finn":
         picks = wd / "picks.json"
         if not picks.exists():
             sys.exit(f"Chua co {picks} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
@@ -116,14 +116,14 @@ def main() -> int:
             sys.exit(f"Chua co {ds} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
                      "(hoac --khong-co neu khong co gi dang len kenh).")
         args = [str(ROOT / "manifest_ghi.py"), "--vai", a.vai, "--in", str(ds), "--bao-cao", str(bao_cao)]
-        if a.vai == "market":
+        if a.vai == "vera":
             args += ["--nguon", str(wd / "quet.json")]      # de Vera chon bang so thu tu k
         if a.thu:
             args += ["--khong-xoa-bat-buoc", "--out", str(wd / "thu_manifest.json")]
     r = _chay(args)
     if r.returncode != 0:
         _in_loi(r)
-        tep = "picks.json" if a.vai == "scout" else "ds.json"
+        tep = "picks.json" if a.vai == "finn" else "ds.json"
         print(f"\nSua {wd / tep} theo cac dong [LOI] (thieu muc bat buoc thi THEM vao, link phai y het "
               f"danh sach) roi chay lai: venv/bin/python quet_nop.py --vai {a.vai}")
         return 1

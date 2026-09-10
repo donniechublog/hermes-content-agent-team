@@ -44,7 +44,7 @@ def _goi_ha_san(tmp: Path, so_dung_duoc: int, toi_thieu: int, co_kite: bool):
     profiles = tmp / "home" / "profiles"
     profiles.mkdir(parents=True, exist_ok=True)
     if co_kite:
-        (profiles / "carousel-edu").mkdir(exist_ok=True)   # slug THAT (SLUG_CU anh xa "kite"-> day)
+        (profiles / "kite").mkdir(exist_ok=True)   # slug THAT (SLUG_CU anh xa "kite"-> day)
     cu_state, cu_home, cu_call = db.STATE_DIR, dgv.HERMES_HOME, db.call
     db.STATE_DIR, dgv.HERMES_HOME = tmp / "state", str(tmp / "home")
     db.call = lambda *a, **k: {"ok": True}

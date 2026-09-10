@@ -342,8 +342,8 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   chung phải hỏi ở đây, mượn thẳng `carousel.MIN_SLIDE` là sự cố 10/09/2026.
   Từ 10/09/2026 (LOW-13) còn giữ **ai viết tin nào**: `vai_viet_cua(vai_quet,
   brand)` hỏi vai quét trước rồi mới tới brand — Finn/Nova → Jika
-  (`jika`), Vera → Miles (`writer`). Hai vai viết không bao giờ cùng nằm
-  trong một container, đúng như `scout` chỉ có ở blog và `market` chỉ có ở dcgr.
+  (`jika`), Vera → Miles (`miles`). Hai vai viết không bao giờ cùng nằm
+  trong một container, đúng như `finn` chỉ có ở blog và `vera` chỉ có ở dcgr.
   Quyết định chốt **một lần** lúc chọn tin và nằm trong `drafts/{id}.writer.json`;
   `miles_nop`/`approve_service push` đọc lại chỗ đó (qua
   `nop_chung.vai_viet_cua_bai`) thay vì đoán lại — đoán lại là bài của blog rơi

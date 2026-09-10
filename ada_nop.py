@@ -136,7 +136,7 @@ def main() -> int:
         print(f"[thu] không gửi. Báo cáo lưu {p_md}:\n\n{bao_cao}")
         return 0
     r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "publish.py"), "--to-env", "TELEGRAM_GROUP_ID",
-                        "--thread-name", "analyst", "--file", str(wd / "bao_cao.txt")],
+                        "--thread-name", "ada", "--file", str(wd / "bao_cao.txt")],
                        cwd=str(ROOT), capture_output=True, text=True, timeout=120)
     if r.returncode != 0:
         print(f"[LOI] gửi: {(r.stderr or r.stdout)[-300:]}")

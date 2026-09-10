@@ -117,7 +117,7 @@ def them_bat_buoc(items: list, nguon: list, vai: str, vai_bb: str) -> list:
                   f"{str(v.get('ten', ''))[:60]}", file=sys.stderr)
             continue
         ten = str(v.get("ten", ""))
-        title = ten.split(": ", 1)[1] if vai_bb == "market" and ": " in ten else ten
+        title = ten.split(": ", 1)[1] if vai_bb == "vera" and ": " in ten else ten
         t = next((x for x in nguon
                   if bat_buoc.chuan_link(x.get("link", "")) == bat_buoc.chuan_link(link)), None)
         items.append({
@@ -157,7 +157,9 @@ def main():
     if a.nguon and Path(a.nguon).exists():
         nguon = json.loads(Path(a.nguon).read_text(encoding="utf-8")).get("tin_moi", [])
 
-    vai_bb = "market" if a.vai in ("market", "vera") else a.vai
+    # "market" o day KHONG phai slug sot lai cua LOW-14 — no la chu Ong Chu (va
+    # script cron cu) con go duoc; giu de lenh cu khong gay giua chung.
+    vai_bb = "vera" if a.vai in ("market", "vera") else a.vai
     items = []
     for i, it in enumerate(ds, 1):
         muc = _muc_tu_nop(it, i, nguon, a.vai, vai_bb)

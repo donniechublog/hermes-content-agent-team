@@ -99,7 +99,7 @@ def _chay_bao_tien_do_gia(tmp, rows, gui_ghi_lai):
     dg.hermes_adapter.co_kanban = lambda: True
     dg.hermes_adapter.viec = lambda tu_ts=None: list(rows)
     tp = state / "topics.json"
-    tp.write_text(json.dumps({"writer": 52}), encoding="utf-8")
+    tp.write_text(json.dumps({"miles": 52}), encoding="utf-8")
     dg.env_load.topics_path = lambda: tp
 
     def _call_gia(token, method, **kw):
@@ -116,7 +116,7 @@ def _chay_bao_tien_do_gia(tmp, rows, gui_ghi_lai):
 def test_treo_bao_khi_running_qua_lau():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
-        rows = [{"id": "t_1", "vai": "writer", "trang_thai": "running",
+        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
                   "tieu_de": "Bai test", "tao_luc": now - 3000,
                   "bat_dau_luc": now - dg.NGUONG_TREO_PHUT * 60 - 60,
                   "xong_luc": None, "ket_qua": None, "loi": None}]
@@ -131,7 +131,7 @@ def test_treo_bao_khi_running_qua_lau():
 def test_treo_chua_qua_nguong_thi_im():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
-        rows = [{"id": "t_1", "vai": "writer", "trang_thai": "running",
+        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
                   "tieu_de": "Bai test", "tao_luc": now - 60,
                   "bat_dau_luc": now - 60,       # moi chay 1 phut, chua treo
                   "xong_luc": None, "ket_qua": None, "loi": None}]
@@ -147,7 +147,7 @@ def test_treo_khong_bao_lap_trong_cua_so_lai_bao():
         # Da bao "treo" 5 phut truoc — con trong cua so LAI_BAO_TREO_PHUT (30p).
         (state / "da_bao_treo.json").write_text(
             json.dumps({"t_1": now - 5 * 60}), encoding="utf-8")
-        rows = [{"id": "t_1", "vai": "writer", "trang_thai": "running",
+        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
                   "tieu_de": "Bai test", "tao_luc": now - 3000,
                   "bat_dau_luc": now - dg.NGUONG_TREO_PHUT * 60 - 60,
                   "xong_luc": None, "ket_qua": None, "loi": None}]
@@ -162,7 +162,7 @@ def test_treo_duoc_xoa_khi_task_het_running():
         state = Path(tmp)
         (state / "da_bao_treo.json").write_text(
             json.dumps({"t_1": now - 40 * 60}), encoding="utf-8")
-        rows = [{"id": "t_1", "vai": "writer", "trang_thai": "done",
+        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "done",
                   "tieu_de": "Bai test", "tao_luc": now - 3000,
                   "bat_dau_luc": now - 3000, "xong_luc": now,
                   "ket_qua": None, "loi": None}]

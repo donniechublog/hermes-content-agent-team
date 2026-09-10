@@ -92,7 +92,7 @@ def viec_teaser():
     nhac = (f"Du lieu bai goc:\n{json.dumps(art, ensure_ascii=False)[:60000]}\n\n"
             "Viet tieu de va cac doan van thuan theo dung huong dan. "
             'Tra ve JSON: {"title": str, "paragraphs": [str, ...]}')
-    return soul("teaser"), nhac, DAI_HONG
+    return soul("cape"), nhac, DAI_HONG
 
 
 # Nhieu tin khac nhau, KHONG lap mot tin. Lap mot tin lam bo do mu: v4-flash
@@ -118,10 +118,10 @@ def viec_writer():
         tin = TIN_WRITER[i % len(TIN_WRITER)]
         return (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh "
                 "Telegram, 3 den 5 cau. Chi tra ve caption, khong giai thich.")
-    return soul("writer"), nhac, (15, 400)
+    return soul("miles"), nhac, (15, 400)
 
 
-VIEC = {"teaser": viec_teaser, "writer": viec_writer}
+VIEC = {"cape": viec_teaser, "miles": viec_writer}
 
 
 def rut_van(noi_dung: str) -> str:

@@ -66,7 +66,7 @@ def main() -> int:
         print(f"[thu] không gửi. Teaser:\n\n{caption}")
         return 0
     r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "publish.py"), "--to-env", "TELEGRAM_GROUP_ID",
-                        "--thread-name", "teaser", "--file", str(wd / "teaser.txt")],
+                        "--thread-name", "cape", "--file", str(wd / "teaser.txt")],
                        cwd=str(ROOT), capture_output=True, text=True, timeout=120)
     if r.returncode != 0:
         print(f"[LOI] gửi: {(r.stderr or r.stdout)[-300:]}")

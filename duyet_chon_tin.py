@@ -37,12 +37,12 @@ def slugify(title, fallback):
 # nen ca ba phai chon duoc bang cach tra loi so — truoc day chi Finn lam duoc,
 # bao cao cua Nova va Vera la van xuoi khong so nen Ong Chu khong biet rep gi.
 MANIFEST_THEO_TOPIC = {
-    "scout": "finn_candidates_*.json",
+    "finn": "finn_candidates_*.json",
     "nova": "nova_candidates_*.json",
-    "market": "vera_candidates_*.json",
+    "vera": "vera_candidates_*.json",
 }
 
-def latest_manifest(vai="scout"):
+def latest_manifest(vai="finn"):
     """Manifest MOI NHAT theo mtime, khong phai theo ten.
 
     Truoc day sap theo ten tep. Nhung ten khong phan anh thu tu ghi: dem 23/08
@@ -292,7 +292,7 @@ def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
     return vai_viet
 
 
-def create_pair(item, vai_anh="designer", brand="donniechublog", vai_quet=None):
+def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     draft_id = _draft_id(item, brand, vai_anh)
     out_png = str(DRAFTS / (draft_id + ".png"))
     write_meta(draft_id, item, out_png, brand)

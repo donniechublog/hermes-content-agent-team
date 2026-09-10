@@ -252,7 +252,7 @@ def test_so_anh_khoa_theo_tin_khong_theo_draft():
             dr.rectangle([60 + i * 140, 500 - h, 160 + i * 140, 500], fill=(40, 90, 200))
         im.save(p)
         LINK = "https://openai.com/tin-abc"
-        la.ghi_da_dung(p, "tin-abc-carousel-blog", "carousel", LINK)
+        la.ghi_da_dung(p, "tin-abc-carousel-blog", "dre", LINK)
         # cùng tin, vai khác -> KHÔNG chặn
         assert la.kiem_da_dung("A1", p, "tin-abc-designer-blog", LINK)[0] == []
         # tin khác dùng lại đúng tấm đó -> CHẶN
@@ -442,8 +442,8 @@ def test_anh_xep_hang_mien_cong_dung_lai():
         # rieng (xem test_hai_chart_khac_nhau_khong_bi_coi_la_trung).
         a1 = _anh_chup(d / "a1.png", 0)
         a2 = _anh_chup(d / "a2.png", 0, co=(1000, 750))   # cung anh, khac co
-        la.ghi_da_dung(b1, "bai1-designer-blog", "designer", "https://a.com/1")
-        la.ghi_da_dung(a1, "bai1-designer-blog", "designer", "https://a.com/1")
+        la.ghi_da_dung(b1, "bai1-designer-blog", "ethan", "https://a.com/1")
+        la.ghi_da_dung(a1, "bai1-designer-blog", "ethan", "https://a.com/1")
         # ảnh xếp hạng: bài sau dùng lại được
         assert la.kiem_da_dung("XH", b2, "bai2-designer-blog", "https://a.com/2")[0] == []
         # ảnh chụp dùng lại (đổi cỡ, khác byte): vẫn phải chặn
@@ -491,7 +491,7 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
         # ghi danh sach bat buoc bang chinh tien trinh con (cung state dir)
         subprocess.run([sys.executable, "-c",
                         "import sys; sys.path.insert(0, %r); import bat_buoc; "
-                        "bat_buoc.them('scout', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
+                        "bat_buoc.them('finn', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
                         % (str(ROOT), BB)],
                        env=moi_truong, check=True, capture_output=True)
         try:
@@ -937,7 +937,7 @@ def test_hai_chart_khac_nhau_khong_bi_coi_la_trung():
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         c1 = _bieu_do(d / "c1.png", [0.90, 0.82, 0.75, 0.60, 0.50])
         c2 = _bieu_do(d / "c2.png", [0.88, 0.80, 0.70, 0.62, 0.45], mau=(200, 80, 40))
-        la.ghi_da_dung(c1, "baiA", "designer", "https://a.com/1")
+        la.ghi_da_dung(c1, "baiA", "ethan", "https://a.com/1")
         loi, _ = la.kiem_da_dung("A1", c2, "baiB", "https://a.com/2")
         assert not loi, f"hai chart khac so lieu bi coi la trung: {loi}"
         # nhung DUNG LAI y het tam do thi van phai chan
@@ -957,8 +957,8 @@ def test_bo_bai_thi_go_anh_khoi_so():
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         a1 = _anh_chup(d / "x1.png", 5)
         a2 = _anh_chup(d / "x2.png", 5, co=(1000, 750))     # cung anh, khac co
-        la.ghi_da_dung(a1, "bai-bi-bo", "designer", "https://a.com/1")
-        la.ghi_da_dung(_anh_chup(d / "y1.png", 9), "bai-khac", "designer",
+        la.ghi_da_dung(a1, "bai-bi-bo", "ethan", "https://a.com/1")
+        la.ghi_da_dung(_anh_chup(d / "y1.png", 9), "bai-khac", "ethan",
                        "https://a.com/9")
         assert la.kiem_da_dung("A1", a2, "bai-sau", "https://a.com/2")[0], \
             "chua go thi phai con chan (neu khong, test nay vo nghia)"
@@ -1230,17 +1230,17 @@ def test_album_da_len_so_theo_tep_va_thoi_gian():
             sent = d / "telegram_sent"
             sent.mkdir()
             gio = int(_t.time())
-            with (sent / "carousel.jsonl").open("w", encoding="utf-8") as fh:
+            with (sent / "dre.jsonl").open("w", encoding="utf-8") as fh:
                 fh.write(_j.dumps({"ts": gio - 86400, "files": ["/x/bai.png"]}) + "\n")
                 fh.write(_j.dumps({"ts": gio - 60, "files": ["/x/moi.png"]}) + "\n")
             # bo vua gui 1 phut truoc -> True
-            assert nc2._album_da_len("carousel", ["/x/moi.png"]) is True
+            assert nc2._album_da_len("dre", ["/x/moi.png"]) is True
             # CUNG bo do nhung tu hom qua -> False (day la bug cu)
-            assert nc2._album_da_len("carousel", ["/x/bai.png"]) is False
+            assert nc2._album_da_len("dre", ["/x/bai.png"]) is False
             # vai khac khong duoc lay nham
-            assert nc2._album_da_len("designer", ["/x/moi.png"]) is False
+            assert nc2._album_da_len("ethan", ["/x/moi.png"]) is False
             # tien to khong duoc coi la trung ("gpt-5" ⊂ "gpt-5-codex")
-            assert nc2._album_da_len("carousel", ["/x/moi_2.png"]) is False
+            assert nc2._album_da_len("dre", ["/x/moi_2.png"]) is False
         finally:
             el.state_dir = cu
 

@@ -450,7 +450,7 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
-        mid = nc.gui_album("carousel-edu", files, f"Carousel edu {n} slide: {hook}", a.draft_id, wd, da_dung,
+        mid = nc.gui_album("kite", files, f"Carousel edu {n} slide: {hook}", a.draft_id, wd, da_dung,
                            {"theme": theme, "hero": hero, "hook": hook,
                             # ma hinh THAT da dat len slide — de bai sau (ke ca
                             # cua Dre/Ethan) khong dung lai (06/09/2026).

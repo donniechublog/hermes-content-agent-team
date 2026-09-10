@@ -122,9 +122,9 @@ def test_chuan_hoa_url_bo_tracking_giu_phan_con_lai():
 # -------------------------------------------------------------------- route
 def test_route_topic_ra_dung_vai():
     import chat_router as cr
-    topics = {"scout": 11, "writer": 22, "carousel-edu": 33}
-    assert cr.route(11, topics) == ("scout", "tele-scout")
-    assert cr.route(33, topics) == ("carousel-edu", "tele-carousel-edu")
+    topics = {"finn": 11, "miles": 22, "kite": 33}
+    assert cr.route(11, topics) == ("finn", "tele-finn")
+    assert cr.route(33, topics) == ("kite", "tele-kite")
 
 
 def test_route_topic_la_khong_ra_profile_nhung_van_co_phien():
@@ -235,8 +235,8 @@ def test_cap_fallback_doc_tu_config_dang_chay():
     import theo_doi_9router as t
     with tempfile.TemporaryDirectory() as tmp:
         home = Path(tmp) / ".hermes-blog"
-        (home / "profiles" / "writer").mkdir(parents=True)
-        (home / "profiles" / "writer" / "config.yaml").write_text(
+        (home / "profiles" / "miles").mkdir(parents=True)
+        (home / "profiles" / "miles" / "config.yaml").write_text(
             "model:\n  default: DS-v4Flash\n"
             "fallback_providers:\n  - model: ds/deepseek-v4-pro\n"
             "  - model: ds/deepseek-chat\n", encoding="utf-8")
@@ -312,7 +312,7 @@ def test_ma_bai_tu_nut_phai_khop_mau():
     hop_le = db._DRAFT_ID_HOP_LE
     # id that do chinh he thong sinh ra phai qua duoc
     tin = {"title": "Nvidia đàm phán rót 2,5 tỷ USD vào Thinking Machines", "index": 3}
-    that = dct._draft_id(tin, "donniechublog", "carousel")
+    that = dct._draft_id(tin, "donniechublog", "dre")
     assert hop_le.match(that), that
     for xau in ["../../state/blog/lam_lai_cho", "a/b", "..", "", "A-Hoa",
                 "x" * 60, "tin_gach_duoi", "-mo-dau-bang-gach"]:
@@ -376,7 +376,7 @@ def test_argv_chat_khong_bao_gio_co_z():
     nao cung "khong nho gi". Truoc day muon kiem dong lenh nay phai chay ca mot
     tien trinh hermes that."""
     import chat_router as cr
-    a = cr.dung_argv("writer", "tele-writer", "xin chao", "safe")
+    a = cr.dung_argv("miles", "tele-writer", "xin chao", "safe")
     assert "-z" not in a, a
     assert a[a.index("chat") + 1:a.index("chat") + 3] == ["-c", "tele-writer"]
     for co in ("--create-if-missing", "--no-restore-cwd", "-Q", "-q"):
@@ -398,7 +398,7 @@ def test_argv_khop_ban_ke_khai_cua_kiem_hermes():
     xanh cho mot dong lenh khong con dung."""
     import chat_router as cr
     import kiem_hermes as kh
-    a = set(cr.dung_argv("writer", "tele-writer", "x"))
+    a = set(cr.dung_argv("miles", "tele-writer", "x"))
     thieu = [c for c in kh.CO_CHAT if c not in a]
     assert not thieu, f"kiem_hermes doi co {thieu} ma dung_argv khong sinh ra"
 

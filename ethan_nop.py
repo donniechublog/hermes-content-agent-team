@@ -182,7 +182,7 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). The o {out}")
     else:
-        mid = nc.gui_album("designer", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
+        mid = nc.gui_album("ethan", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
                            {"anh": kq["anh"]["ma"], "hook": hook,
                             # anh2 (ghep doc) cung phai bi danh dau da dung —
                             # thieu no thi bai sau dung lai duoc (06/09/2026).

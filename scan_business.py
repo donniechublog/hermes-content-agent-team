@@ -441,9 +441,9 @@ def main():
         muc = [(k, f"{t['hang_watch']}: {t['tieu_de']}", "watchlist",
                 f"{t['so_bao']} bao; {t['ngay']}", t.get("link", ""), [t["hang_watch"]])
                for k, t in nhom.items()]
-        so_moi = bat_buoc.them_nhieu("market", muc)
+        so_moi = bat_buoc.them_nhieu("vera", muc)
         print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
-              f"{len(bat_buoc.doc('market'))} (bat_buoc_market.json)", file=sys.stderr)
+              f"{len(bat_buoc.doc('vera'))} (bat_buoc_vera.json)", file=sys.stderr)
 
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
            "tong_quet": len(tin),

@@ -266,9 +266,9 @@ def test_chuyen_tu_vai_doc_img_json():
         try:
             assert kb.chuyen_tu_vai({"draft_id": "d1"}) == ""
             assert kb.chuyen_tu_vai({"draft_id": "d1", "chuyen_kite": "t_9"}) == "vai ảnh"
-            (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "carousel"}), encoding="utf-8")
+            (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "dre"}), encoding="utf-8")
             assert kb.chuyen_tu_vai({"draft_id": "d1"}) == "Dre"
-            (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "designer"}), encoding="utf-8")
+            (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "ethan"}), encoding="utf-8")
             assert kb.chuyen_tu_vai({"draft_id": "d1"}) == "Ethan"
         finally:
             cb.DRAFTS = cu
@@ -640,7 +640,7 @@ def test_hinh_da_dung_o_tin_khac_thi_chan():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         h = _hinh(wd)
-        luat_anh.ghi_da_dung(h["goc"], "tin-khac", "carousel", "https://vi.du/khac")
+        luat_anh.ghi_da_dung(h["goc"], "tin-khac", "dre", "https://vi.du/khac")
         sl = _du(); sl[1] = _statement(image="H1", caption="x · via AA")
         _r, loi, _c = _chay(sl, _m(wd, [h]), wd)
         assert _co(loi, "slide 2", "TRUNG anh da dung"), loi

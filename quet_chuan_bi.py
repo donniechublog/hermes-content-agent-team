@@ -28,7 +28,7 @@ import env_load                                              # noqa: E402
 import bat_buoc                                              # noqa: E402
 
 VN = timezone(timedelta(hours=7))
-TOPIC = {"scout": "scout", "nova": "nova", "market": "market"}
+TOPIC = {"finn": "finn", "nova": "nova", "vera": "vera"}
 CACHE_GIO = 3
 # Tran bao cao cua Nova trong brief. Truoc 06/09/2026 la 12.000 va cat CAM
 # LANG giua dong: do that o trang thai production (arena song + co moc cu de so
@@ -86,7 +86,7 @@ def _bo_sung_bat_buoc(cs: list) -> int:
     Finn mo 18 tool call roi block task."""
     co = {bat_buoc.chuan_link(c.get("link", "")) for c in cs}
     n = 0
-    for v in bat_buoc.doc("scout").values():
+    for v in bat_buoc.doc("finn").values():
         link = v.get("link", "")
         if not link or bat_buoc.chuan_link(link) in co:
             continue
@@ -132,7 +132,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
                  f" | {c.get('title', '')[:110]} | {c.get('link', '')}")
         if c.get("summary") or c.get("description"):
             L.append(f"     {str(c.get('summary') or c.get('description'))[:200]}")
-    L += [""] + _bat_buoc("scout")
+    L += [""] + _bat_buoc("finn")
     L += ["", f"## Viết đánh giá vào: {wd}/picks.json — đủ mọi mục BẮT BUỘC + TỐI ĐA 8 tin điểm cao nhất ngoài đó",
           json.dumps([{"k": "<số thứ tự #k trong danh sách (thay cho link, script tự lấy link)>",
                        "category": "<ARXIV | MODEL | LAB | INFRA | TOOL | ENGINEERING | BUSINESS | RESEARCH | SECURITY>",
@@ -232,7 +232,7 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
         L.append(f"#{k} | {'[W]' if t.get('watchlist') else '   '} | {t.get('ngay', '')} | "
                  f"{t.get('so_bao', 1)} báo: {', '.join(t.get('cac_bao', [])[:3]) or t.get('toa_soan', '')}"
                  f" | {t.get('tieu_de', '')[:110]} | {t.get('link', '')}")
-    L += [""] + _bat_buoc("market")
+    L += [""] + _bat_buoc("vera")
     L += ["", f"## Viết danh sách vào: {wd}/ds.json — tin có HỆ QUẢ (IPO, thâu tóm, hạ tầng, chính sách, lao "
           "động, kiện tụng, cược lớn), kèm mức chắc chắn theo số báo; bỏ giá cổ phiếu trong ngày, PR sản phẩm",
           json.dumps([{"k": "<số thứ tự #k trong danh sách — script tự lấy link và số báo, KHÔNG chép URL>",
@@ -254,7 +254,7 @@ def main() -> int:
     ap.add_argument("--im", action="store_true")
     a = ap.parse_args()
     wd = workdir(a.vai)
-    brief = {"scout": brief_scout, "nova": brief_nova, "market": brief_market}[a.vai](wd, a.lam_moi)
+    brief = {"finn": brief_scout, "nova": brief_nova, "vera": brief_market}[a.vai](wd, a.lam_moi)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)

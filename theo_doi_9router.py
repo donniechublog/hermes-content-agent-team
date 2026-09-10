@@ -610,7 +610,7 @@ def main() -> int:
         print(f"[xong] {p}")
     vd = van_de(m)
     if a.gui or (a.canh_bao and vd):
-        publish.gui_topic(tom_tat_tele(m), "analyst")
+        publish.gui_topic(tom_tat_tele(m), "ada")
     elif not a.im:
         print("\n--- tin Telegram sẽ là ---\n" + tom_tat_tele(m))
     return 0

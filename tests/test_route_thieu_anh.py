@@ -136,20 +136,23 @@ def test_telegram_tu_choi_thi_KHONG_danh_dau_da_hoi():
     xong.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
-                         {"vai_anh": "carousel"}, gui_ok=False)
+                         {"vai_anh": "dre"}, gui_ok=False)
         assert len(tin) == 1, "van phai THU gui"
         assert "hoi_kite" not in m, m
         assert "route_loi" in m and "hoi_kite" in m["route_loi"], m
 
 
-def test_sidecar_cu_ghi_ten_persona_van_toi_dung_topic():
-    """C-r2-1 (N-r2-5): im.json cu ghi vai_anh="dre" (ten persona, chinh ly do
-    vai.py ton tai) — phai doi ve slug "carousel" truoc khi tra topic."""
-    with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
-                         {"vai_anh": "dre"})
-        assert tin and tin[0][0] == "carousel", tin
-        assert m.get("hoi_kite") is True, m
+def test_sidecar_cu_ghi_slug_cu_van_toi_dung_topic():
+    """C-r2-1 (N-r2-5): im.json cu ghi mot chu KHAC slug hien tai — phai doi ve
+    slug that truoc khi tra topic, khong thi task nam 'ready' mai (su co
+    01/09/2026). Sau LOW-14 chu do la slug ROLE cu ("carousel"), con "heller"
+    la ten persona doi truoc nua; ca hai deu phai ra "dre"."""
+    for chu in ("carousel", "heller"):
+        with tempfile.TemporaryDirectory() as tmp:
+            m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
+                             {"vai_anh": chu})
+            assert tin and tin[0][0] == "dre", (chu, tin)
+            assert m.get("hoi_kite") is True, (chu, m)
 
 
 def test_tg_gui_that_doc_ok_cua_telegram():
@@ -165,9 +168,9 @@ def test_tg_gui_that_doc_ok_cua_telegram():
     cu_env = {k: os.environ.get(k) for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_GROUP_ID")}
     os.environ["TELEGRAM_BOT_TOKEN"], os.environ["TELEGRAM_GROUP_ID"] = "t", "g"
     httpx.post = lambda *a, **k: _R()
-    rt.env_load.topics = lambda: {"carousel": 7}
+    rt.env_load.topics = lambda: {"dre": 7}
     try:
-        assert rt._tg_gui("carousel", "x") is False
+        assert rt._tg_gui("dre", "x") is False
     finally:
         httpx.post, rt.env_load.topics = cu_post, cu_topics
         for k, v in cu_env.items():
@@ -179,7 +182,7 @@ def test_tg_gui_that_doc_ok_cua_telegram():
 
 def test_du_anh_thi_router_im():
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"title": "x"}, {"vai_anh": "carousel"})
+        m, tin = _router(tmp, {"title": "x"}, {"vai_anh": "dre"})
         assert tin == [] and "hoi_kite" not in m, (m, tin)
 
 
@@ -200,14 +203,14 @@ def test_khong_co_sidecar_thi_im():
 def test_da_la_kite_thi_khong_tu_chuyen_nua():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "x"},
-                         {"vai_anh": "carousel-edu"})
+                         {"vai_anh": "kite"})
         assert tin == [] and "chuyen_kite" not in m, (m, tin)
 
 
 def test_khong_anh_nao_thi_tu_chuyen_kite():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin A"},
-                         {"vai_anh": "carousel"})
+                         {"vai_anh": "dre"})
         assert m.get("chuyen_kite") == "t_7", m
         assert tin and "Kite" in tin[0][1], tin
 
@@ -215,7 +218,7 @@ def test_khong_anh_nao_thi_tu_chuyen_kite():
 def test_thieu_nhung_con_anh_thi_hoi_ong_chu_hai_nut():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "Tin B"},
-                         {"vai_anh": "carousel"})
+                         {"vai_anh": "dre"})
         assert m.get("hoi_kite") is True, m
         nut = [b["callback_data"] for b in tin[0][2]["inline_keyboard"][0]]
         assert "imgkite:d1" in nut and "imgtiep:d1" in nut, nut
@@ -225,7 +228,7 @@ def test_brand_khong_co_kite_thi_khong_hua_chuyen():
     """dcgr 05/09/2026: khong duoc hien nut Kite khi brand chua co Kite."""
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "Tin C"},
-                         {"vai_anh": "carousel"}, kite_co=False)
+                         {"vai_anh": "dre"}, kite_co=False)
         assert m.get("hoi_kite") is True, m
         nut = [b["callback_data"] for b in tin[0][2]["inline_keyboard"][0]]
         assert "imgkite:d1" not in nut, f"hua chuyen Kite khi brand chua co: {nut}"
@@ -235,7 +238,7 @@ def test_brand_khong_co_kite_thi_khong_hua_chuyen():
 def test_brand_khong_co_kite_va_0_anh_thi_bao_bo_tin():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin D"},
-                         {"vai_anh": "carousel"}, kite_co=False)
+                         {"vai_anh": "dre"}, kite_co=False)
         assert m.get("khong_kite") is True, m
         assert "chuyen_kite" not in m, m
 
@@ -243,7 +246,7 @@ def test_brand_khong_co_kite_va_0_anh_thi_bao_bo_tin():
 def test_tao_task_kite_loi_thi_bao_ra_khong_dat_co():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin E"},
-                         {"vai_anh": "carousel"}, tao_kite=(None, "kanban 500"))
+                         {"vai_anh": "dre"}, tao_kite=(None, "kanban 500"))
         assert "chuyen_kite" not in m, "dat co chuyen_kite du tao task hong"
         assert tin and "lỗi" in tin[0][1], tin
 

@@ -127,7 +127,7 @@ def boi_canh_vai(profile) -> str:
 # bob dung frame). Khong co nut, khong co lenh slash. Neu ap luat "khong reply
 # = chi doc" cho ho thi ba vai nay chet han — nen mien tru, va ghi ro o day de
 # lan sau khong ai tuong day la sot.
-VAI_CHAT_LAM_VIEC = {"gin", "itachi", "bob", "analyst"}
+VAI_CHAT_LAM_VIEC = {"gin", "itachi", "bob", "ada"}
 # analyst (Ada) them 06/09/2026 chieu, sau khi audit bat duoc: Ada dung la Jean
 # thu hai. SOUL cua Ada la chay ada_chuan_bi.py roi ada_nop.py BANG BASH, ma
 # Ada khong co task kanban nao o blog (dem that: 0), khong nut, khong cron rieng,

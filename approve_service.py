@@ -469,7 +469,7 @@ if __name__ == "__main__":
             # (LOW-13), va cau tra loi da duoc chot tu luc chon tin — doc lai
             # sidecar thay vi doan lai, de bai khong roi vao topic cua vai kia.
             if category.upper() == "TEASER":
-                key = "teaser"
+                key = "cape"
             else:
                 key = nop_chung.vai_viet_cua_bai(draft_id, env_load.brand_dai())
             thread = topics.get(key)
