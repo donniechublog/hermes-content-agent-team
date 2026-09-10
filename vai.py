@@ -19,6 +19,9 @@ HAI LOAI ALIAS, co y tach doi — chung khong trung nhau:
             truoc). Dung de doc du lieu cu, khong phai de go.
 Vd "chad"/"heller" chi la slug_cu (khong ai go nua), con "img"/"cr"/"kites" chi
 la `go` (chua bao gio la ten thu muc profile).
+
+TEN VAI MOI: dat theo TEN NHAN VAT, khong theo role — xem luat trong docstring
+cua lop `Vai` ngay duoi.
 """
 import re
 from dataclasses import dataclass
@@ -26,7 +29,23 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Vai:
-    """Mot vai. `slug` PHAI trung ten thu muc profile that trong HERMES_HOME."""
+    """Mot vai. `slug` PHAI trung ten thu muc profile that trong HERMES_HOME.
+
+    LUAT DAT TEN (Ong Chu, 10/09/2026): **khong bao gio dat slug theo ROLE.**
+    Moi vai chi co MOT cai ten, dung y het nhau o moi noi — trong ma nguon, tren
+    kanban, trong ten topic Telegram, trong ten cap script. `slug` va `ten` vi
+    the chi khac nhau o chu hoa: "jika" / "Jika".
+
+    Vi sao: dat theo role la mot vai co hai ten, va nguoi doc phai thuoc long
+    bang doi chieu. Da tra gia mot lan ngay hom dat ten: slug `writer-tech` vua
+    ra doi da bi doc nham thanh "vai cua brand dcgr.tech" — brand kia ten co chu
+    "tech", con "-tech" trong slug lai chi NGUOI DOC cua brand blog.
+
+    Cac slug theo role con lai (`writer`, `designer`, `carousel`, `carousel-edu`,
+    `scout`, `market`, `teaser`, `analyst`) la NO CU, co truoc luat nay. Chung
+    dang mang du lieu song (task kanban, topic, sidecar tren dia) nen chua doi
+    duoc trong mot buoc; vai MOI thi phai theo luat ngay tu dau.
+    """
     slug: str
     ten: str                                   # ten hien ra bao cao/topic
     go: tuple = ()                             # chu Ong Chu go duoc khi chon tin
@@ -100,7 +119,7 @@ VAI = {v.slug: v for v in [
     # brand tu 05/09/2026 — bai hoc "bot so lieu, noi tien" cua tin kinh doanh
     # tung ro sang tin model, noi phai giu nguyen tham so va benchmark.
     Vai("writer", "Miles", go=("cap", "miles"), slug_cu=("miles",), viet=True),
-    Vai("writer-tech", "Jika", go=("jika",), viet=True),
+    Vai("jika", "Jika", viet=True),
     # --- vai di tim tin / phan tich / chat ---
     Vai("scout", "Finn", slug_cu=("finn",)),
     Vai("nova", "Nova"),
@@ -130,8 +149,8 @@ MAC_DINH_VIET = "writer"
 #      CUNG ket qua vi scout/nova nam ca o blog con market o dcgr; giu ca hai la
 #      de hom nao mot vai quet doi container thi ve (1) van dung ngay.
 VIET_THEO_QUET = {
-    "scout": "writer-tech",        # Finn — HN/Reddit/arXiv
-    "nova": "writer-tech",         # Nova — model moi ra mat
+    "scout": "jika",               # Finn — HN/Reddit/arXiv
+    "nova": "jika",                # Nova — model moi ra mat
     "market": "writer",            # Vera — kinh doanh, dau tu
 }
 
@@ -140,8 +159,8 @@ VIET_THEO_QUET = {
 # Chep hai chinh ta o day chu khong import env_load: tep nay la BAN DANG KY,
 # giu khong phu thuoc (test_vai kiem hai ban khong troi khoi nhau).
 VIET_THEO_BRAND = {
-    "blog": "writer-tech",
-    "donniechublog": "writer-tech",
+    "blog": "jika",
+    "donniechublog": "jika",
     "dcgr": "writer",
     "dcgr.tech": "writer",
 }

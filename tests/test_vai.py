@@ -37,11 +37,11 @@ TEN_SANG_CAP_CU.update({"writer": "designer", "cap": "designer", "miles": "desig
 # LOW-13 (10/09/2026): them nguoi viet thu hai. Cac dong duoi day KHONG thuoc ban
 # chup 3a18f79 — chung la phan MOI duoc them co chu dich, ghi rieng ra de doc
 # diff sau nay con phan biet "vai moi" voi "bang dan xuat troi".
-TEN_SANG_CAP_CU.update({"writer-tech": "designer", "jika": "designer"})
+TEN_SANG_CAP_CU.update({"jika": "designer"})
 VAI_CAROUSEL_CU = {"carousel"}
 VAI_EDU_CU = {"carousel-edu"}
 TEN_VAI_ANH_CU = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite"}
-TEN_VAI_VIET_CU = {"writer": "Miles", "writer-tech": "Jika"}   # +Jika: LOW-13
+TEN_VAI_VIET_CU = {"writer": "Miles", "jika": "Jika"}          # +Jika: LOW-13
 SLUG_CU_CU = {"miles": "writer", "dre": "carousel", "ethan": "designer",
               "chad": "designer", "heller": "carousel", "kite": "carousel-edu",
               "finn": "scout", "vera": "market", "jean": "teaser", "ada": "analyst"}
@@ -49,7 +49,7 @@ TEN_HIEN_CU = {"designer": "Ethan", "carousel": "Dre", "carousel-edu": "Kite",
                "writer": "Miles", "scout": "Finn", "nova": "Nova", "market": "Vera",
                "teaser": "Cape", "analyst": "Ada", "gin": "Gin", "itachi": "Itachi",
                "bob": "Bob",
-               "writer-tech": "Jika"}                                  # +Jika: LOW-13
+               "jika": "Jika"}                                         # +Jika: LOW-13
 
 
 def _khop(ten, moi, cu):
@@ -317,8 +317,8 @@ if __name__ == "__main__":
 
 def test_vai_viet_di_theo_vai_quet():
     """Dieu Ong Chu chot: nguoi viet di theo vai QUET, khong theo vai anh."""
-    assert vai.vai_viet_cua("scout") == "writer-tech", "Finn -> Jika"
-    assert vai.vai_viet_cua("nova") == "writer-tech", "Nova -> Jika"
+    assert vai.vai_viet_cua("scout") == "jika", "Finn -> Jika"
+    assert vai.vai_viet_cua("nova") == "jika", "Nova -> Jika"
     assert vai.vai_viet_cua("market") == "writer", "Vera -> Miles"
 
 
@@ -326,7 +326,7 @@ def test_vai_viet_theo_brand_khi_khong_biet_vai_quet():
     """Duong `approve_service push` chi co draft_id + category, khong cam vai
     quet — no phai ra dung nguoi viet bang brand."""
     for b in ("blog", "donniechublog"):
-        assert vai.vai_viet_cua(None, b) == "writer-tech", b
+        assert vai.vai_viet_cua(None, b) == "jika", b
     for b in ("dcgr", "dcgr.tech"):
         assert vai.vai_viet_cua(None, b) == "writer", b
 
@@ -334,7 +334,7 @@ def test_vai_viet_theo_brand_khi_khong_biet_vai_quet():
 def test_vai_quet_thang_brand_khi_hai_ben_khac_nhau():
     """Vai quet chinh xac hon brand: no noi ve LINH VUC that cua tin."""
     assert vai.vai_viet_cua("market", "blog") == "writer"
-    assert vai.vai_viet_cua("nova", "dcgr") == "writer-tech"
+    assert vai.vai_viet_cua("nova", "dcgr") == "jika"
 
 
 def test_vai_viet_khong_biet_gi_thi_ve_mac_dinh():
