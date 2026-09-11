@@ -285,15 +285,17 @@ _TU_ANH = {
 def can_anh_xep_hang(m: dict, a: dict) -> bool:
     """TIN XEP HANG ma anh chinh/bia KHONG phai bang xep hang -> phai doi.
 
-    CHI khi engine THUC SU CHUP duoc bang (`xep_hang.kieu == "chup"`). Truoc
+    CHI khi engine THUC SU CHUP duoc bang (`xep_hang.la_chup(kieu)` — LOW-21:
+    ban cu so voi chuoi "chup" ma xep_hang chua bao gio phat ra). Truoc
     06/09/2026 chieu cong nay chan ca khi m["xep_hang"] la None — bao vai dung
     ma "XH" trong khi ma do khong ton tai, nen vai sua kieu gi cung sai va khong
     bao gio nop duoc. Ba duong dan toi canh do: --khong-browser, tach_model()
     rong (tin xep hang KHONG neu ten model), hoac tim_va_chup nem. The DU PHONG
     (kieu="the") cung khong ep: no la anh engine tu dung, chua he doc bang that.
     Dre va Ethan tung moi ben mot ban cua dieu kien nay (07/09/2026 gom lai)."""
+    import xep_hang
     return bool(m.get("tin_xep_hang")
-                and (m.get("xep_hang") or {}).get("kieu") == "chup"
+                and xep_hang.la_chup((m.get("xep_hang") or {}).get("kieu"))
                 and not a.get("xep_hang"))
 
 

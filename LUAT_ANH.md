@@ -100,6 +100,26 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
   thẳng "THIẾU ẢNH", vai gộp ý/giảm slide hoặc báo — **không nhồi rác cho đủ**.
 - Brief ghi số **nguồn** của ảnh dùng được; bộ ≥ 4 slide mà chỉ một nguồn là dấu
   hiệu cần xem lại.
+- **Trang công bố chính chủ của model** (LOW-21, Ông Chủ 11/09/2026: *"khi làm
+  carousel từ một topic gốc, phải tìm tất cả ảnh liên quan chứ không phải chỉ tìm
+  ảnh trong nguồn topic, đặc biệt là những thông tin liên quan tới benchmark của
+  model"*). Tin nhắc tới một model của hãng trong watchlist thì engine **luôn**
+  ghé trang công bố của hãng — không đợi thiếu ảnh, cùng lý do với §1.2d. Đường
+  đi (`anh_thuong_hieu.trang_cong_bo`, nối ở `vong_bu._them_trang_cong_bo`
+  **trước** khi mở browser): Wikidata `P856` (website chính thức) → `/news/`,
+  `/en/news/`, `/blog/`… hoặc RSS của hãng khi HTML chặn bot (openai.com) → khớp
+  slug tên model đã tách (`xep_hang.tach_model`, bỏ hậu tố effort `-max`/`-high`,
+  khoá ngắn nhất còn ≥ 2 mảnh để không khớp mọi bài của hãng). Trang đó vào
+  `nguon_<id>.json` với `loai: "công bố"` (Miles cùng dùng), browser mở nó
+  **trước** báo khác và lấy **4 ảnh** như bài gốc — chart benchmark ở đó là ảnh
+  đắt nhất của tin model. Vì sao cần đường riêng: đo 11/09, trang
+  `deepseek.com/en/news/deepseek-v4-1-flash/` có 4 chart 5148×2640… nhưng Google
+  News không index nó và 13/14 báo đưa tin không link sang; engine cũ không có
+  cách nào tới, Dre bị chặn "thiếu ảnh" với 5/8 tấm toàn logo + rack data center.
+- **Truy vấn báo khác phải giữ tên model** (cùng LOW-21): tiêu đề Việt rơi về
+  `nguon_bai._ten_rieng_khong_dau` thì token có gạch nối (`deepseek-v4.1-flash-max`)
+  là **một** tên riêng, không xoá gạch rồi tách; Bing thử thêm bản bỏ gạch trước
+  (`deepseek v4.1 flash max` → 6 báo, bản có gạch → 1).
 
 ### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
 

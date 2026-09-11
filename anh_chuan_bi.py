@@ -79,7 +79,8 @@ from chuan_bi.nhin import _nhin_anh, mo_ta_anh                  # noqa: E402
 from chuan_bi.tai_loc import _luu_crop                          # noqa: E402
 from chuan_bi.vong_bu import (  # noqa: E402
     _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _gom_va_tai_anh,
-    _lay_tu_browser, _vong_khai_niem, _vong_thuong_hieu, _vong_tim_rong,
+    _lay_tu_browser, _them_trang_cong_bo, _vong_khai_niem, _vong_thuong_hieu,
+    _vong_tim_rong,
 )
 
 # MAT TIEN cua goi `chuan_bi`: nhung ten ma cac vai/test VAN goi qua
@@ -118,6 +119,9 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         tom = _tom_tat_tu_img_json(draft_id)
 
         trang = _bo_sung_nguon(nguon, nguon_path, trang, link)
+        # Trang cong bo CHINH CHU cua model (LOW-21): chay cho moi tin nhac model
+        # cua hang trong watchlist, TRUOC browser de browser ghe lay chart.
+        trang = _them_trang_cong_bo(nguon, nguon_path, trang, title, tom.get("summary", ""))
         bp = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
         if not khong_browser:
             bp, trang = _lay_tu_browser(trang, wd, nguon, nguon_path, phien=phien)

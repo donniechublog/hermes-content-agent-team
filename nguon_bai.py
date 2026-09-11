@@ -204,11 +204,19 @@ def _tieu_de_trang(url: str) -> str:
 
 def _ten_rieng_khong_dau(tieu_de_viet: str) -> str:
     """Duong lui: chi giu ten rieng / so KHONG DAU trong tieu de Viet
-    ("Nvidia Thinking Machines Lab Mira Murati 2,5"). Van la truy van tieng Anh."""
-    t = re.sub(r"[\$;:,\"\'()\[\]|—–-]", " ", tieu_de_viet or "")
+    ("Nvidia Thinking Machines Lab Mira Murati 2,5"). Van la truy van tieng Anh.
+
+    GIU gach noi TRONG token (LOW-21, 11/09/2026): ten model kieu
+    `deepseek-v4.1-flash-max` la MOT ten rieng. Ban cu xoa `-` truoc khi tach
+    tu, nen no vo thanh `deepseek` (thuong, khong so -> bo) + `v4.1` + `flash`
+    + `max`, truy van con `v4.1 LiveBench #6 81.4 2.4` -> Bing 0 bao, va Dre bi
+    chan "thieu anh" cho tin ma bao nao cung dua. Gach dai/ngang (— –) van la
+    dau cau, van xoa."""
+    t = re.sub(r"[\$;:,\"\'()\[\]|—–]", " ", tieu_de_viet or "")
     ra = []
     for w in t.split():
-        if co_tieng_viet(w) or w.lower() in _TU_VIET_KHONG_DAU or len(w) < 2:
+        w = w.strip("-")
+        if not w or co_tieng_viet(w) or w.lower() in _TU_VIET_KHONG_DAU or len(w) < 2:
             continue
         if w[:1].isupper() or any(c.isdigit() for c in w) or w.isupper():
             ra.append(w)
@@ -260,17 +268,23 @@ def _truy_van_bing(tieu_de: str) -> list:
     tieu de day du -> 1 bai; "Broadcom AI revenue FY27" -> 11; "Broadcom
     Targets 115B Revenue FY27" -> 0). Sinh NHIEU dang truy van roi lay hop ket
     qua: tu dac trung 5/4/3 tu (giu "AI"/"model"), ten rieng + so 4/3 tu, ten
-    rieng dau + AI."""
+    rieng dau + AI.
+
+    Ten model co gach noi (`deepseek-v4.1-flash-max`) thu THEM ban bo gach
+    TRUOC (LOW-21, do 11/09/2026: `deepseek-v4.1-flash-max LiveBench #6` -> 1
+    bai, `deepseek v4.1 flash max` -> 6 bai — Bing coi gach noi la mot token
+    khac voi cach bao viet "DeepSeek V4.1 Flash")."""
     t = re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or "")
     t = re.sub(r"[\$;:,\"\'()\[\]|]", " ", t)
-    tu = [w for w in t.split() if w.lower() not in TU_RONG_TRUY_VAN and len(w) > 1]
-    rieng = [w for w in tu if w[:1].isupper() or any(c.isdigit() for c in w)]
     ra = []
-    for ds in (tu[:5], tu[:4], tu[:3], rieng[:4], rieng[:3],
-               ([rieng[0], "AI"] if rieng and "AI" in tu else [])):
-        q = " ".join(ds)
-        if q and q not in ra:
-            ra.append(q)
+    for tt in ([t.replace("-", " "), t] if "-" in t else [t]):
+        tu = [w for w in tt.split() if w.lower() not in TU_RONG_TRUY_VAN and len(w) > 1]
+        rieng = [w for w in tu if w[:1].isupper() or any(c.isdigit() for c in w)]
+        for ds in (tu[:5], tu[:4], tu[:3], rieng[:4], rieng[:3],
+                   ([rieng[0], "AI"] if rieng and "AI" in tu else [])):
+            q = " ".join(ds)
+            if q and q not in ra:
+                ra.append(q)
     return ra
 
 

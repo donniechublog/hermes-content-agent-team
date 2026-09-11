@@ -77,7 +77,7 @@ def _anh_chart(ma: str) -> dict:
                 goc_trai_sang=200, dung=["thân (chart, dán full bề ngang nguyên vẹn)"])
 
 
-PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon",
+PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
             "_lay_tu_browser", "_chup_xep_hang", "_gom_va_tai_anh", "_nhin_anh",
             "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_tu_lieu_bai",
             "dung_manifest", "bang_anh")
@@ -101,6 +101,7 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
                                                 Path(s) / "n.json", "http://vi.du/a")
     cb._tom_tat_tu_img_json = lambda d: {"vai_anh": vai_anh, "summary": ""}
     cb._bo_sung_nguon = lambda *a, **k: []
+    cb._them_trang_cong_bo = lambda n, p, trang, *a, **k: trang
     cb._lay_tu_browser = lambda trang, *a, **k: (
         {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)
     cb._chup_xep_hang = lambda *a, **k: ([], False)

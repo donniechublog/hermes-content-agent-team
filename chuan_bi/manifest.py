@@ -40,8 +40,9 @@ def cau_xep_hang(m: dict) -> str:
 def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
     """Dong 🏁 trong brief: `khoa` la "anh" (hero) hay "bìa" (carousel), `vai` la
     ten file nop chan (ethan_nop / dre_nop)."""
+    import xep_hang
     xh_ = m.get("xep_hang") or {}
-    if xh_ and xh_.get("kieu") != "chup":
+    if xh_ and not xep_hang.la_chup(xh_.get("kieu")):
         # Khong chup duoc bang that -> chi co the du phong. Goi y, khong ep.
         return ("🏁 Tin xếp hạng nhưng engine KHÔNG chụp được bảng thật, chỉ dựng được "
                 f"THẺ DỰ PHÒNG (mã \"XH\": {cau_xep_hang(m)}). Thẻ đó KHÔNG khẳng định thứ "

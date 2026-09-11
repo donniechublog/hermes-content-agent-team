@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb   # noqa: E402
 
 
-def _xh(bang, model, kieu="chup"):
+def _xh(bang, model, kieu="bang"):
     return {"tep": f"/tmp/{bang}.png", "kieu": kieu, "nguon": bang, "site": "ARENA.AI",
             "bang": bang, "hang": 1, "model": model, "url": f"https://arena.ai/{bang}",
             "dong": "...", "logo": None, "duoc_nhac": True}
@@ -116,7 +116,7 @@ def test_dung_manifest_khong_bang_thi_khong_dinh_xh_vao_goi_y():
 def test_brief_noi_ro_co_bang_thu_hai():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "ARENA.AI", "bang": "Text-to-Image Arena",
-                      "model": "GPT-Image-2.5 Sunburst", "hang": 1, "kieu": "chup",
+                      "model": "GPT-Image-2.5 Sunburst", "hang": 1, "kieu": "bang",
                       "duoc_nhac": True},
          "so_xep_hang": 2}
     dong = cb.dong_brief_xep_hang(m, "bìa", "dre_nop")
@@ -127,7 +127,7 @@ def test_brief_noi_ro_co_bang_thu_hai():
 def test_brief_mot_bang_khong_nhac_xh2():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "ARENA.AI", "bang": "Text Arena", "model": "Kimi-K3",
-                      "hang": 1, "kieu": "chup", "duoc_nhac": True},
+                      "hang": 1, "kieu": "bang", "duoc_nhac": True},
          "so_xep_hang": 1}
     dong = cb.dong_brief_xep_hang(m, "bìa", "dre_nop")
     assert "XH2" not in dong, dong

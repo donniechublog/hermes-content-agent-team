@@ -63,11 +63,12 @@ def _js_browser() -> dict:
     return {"TITLE": JS_TITLE, "TEXT": JS_TEXT, "IMG": JS_IMG, "FIG": JS_FIG, "GNEWS": JS_GNEWS}
 
 
-def _lay_anh_trang(page, url, so, wd, ra, JS, chup_fig=True):
+def _lay_anh_trang(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
     """Anh <img> lon + figure/table/canvas/svg cua MOT trang, ghi vao ra['cands']."""
     # Tran moi trang: goc <= 4 anh, bao khac <= 3. Truoc day vet toi 12 anh
-    # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026).
-    for im in (page.evaluate(JS["IMG"]) or [])[: 4 if so == 0 else 3]:
+    # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026). Trang CONG BO chinh
+    # chu (LOW-21) duoc tran cua bai goc: chart benchmark o do la anh dat nhat.
+    for im in (page.evaluate(JS["IMG"]) or [])[: tran or (4 if so == 0 else 3)]:
         ra["cands"].append({"anh": im["src"], "alt": im["alt"], "og": False, "tu": "browser",
                             "trang": url, "rong": im["w"], "cao": im["h"], "diem": 45})
     if not chup_fig:
@@ -195,12 +196,16 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                 # 3) bao khac (co san trong nguon + vua tim): lay anh, toi da 2 trang
                 khac = [t for t in trang if t.get("url") and t.get("url") != goc and GNEWS not in t["url"]]
                 khac += ra["trang_them"]
+                # Trang cong bo chinh chu di TRUOC (LOW-21): chi mo 2 trang khac,
+                # khong duoc de no rot khoi cua so vi bao Bing them vao truoc.
+                khac.sort(key=lambda t: t.get("loai") != "công bố")
                 for i, t in enumerate(khac[:2], start=1):
                     if het_gio():
                         break
                     try:
                         _mo_trang(page, t["url"], cho_yen=8000)
-                        _lay_anh_trang(page, t["url"], i, wd, ra, JS)
+                        _lay_anh_trang(page, t["url"], i, wd, ra, JS,
+                                       tran=4 if t.get("loai") == "công bố" else None)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] {t['url'][:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
     except Exception as e:                                   # noqa: BLE001

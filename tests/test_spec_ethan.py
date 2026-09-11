@@ -174,7 +174,7 @@ def test_tin_xep_hang_da_chup_bang_ma_anh_khong_phai_XH_thi_chan():
         xh = _anh(wd, "XH", 1200, 900, loai="chart", xep_hang={"site": "LMArena"})
         anh = [_anh(wd, "A1", 1000, 1250), xh]
         m = _m(wd, anh, tin_xep_hang=True,
-               xep_hang={"kieu": "chup", "site": "LMArena", "bang": "text", "model": "GPT"})
+               xep_hang={"kieu": "bang", "site": "LMArena", "bang": "text", "model": "GPT"})
         _kq, loi, _c = _chay(_spec("A1"), m, wd)
         assert _co(loi, "XẾP HẠNG", "XH"), loi
         kq, loi2, _c = _chay(_spec("XH"), m, wd)

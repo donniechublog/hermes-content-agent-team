@@ -45,6 +45,34 @@ def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> lis
     return trang
 
 
+def _them_trang_cong_bo(nguon: dict, nguon_path: Path, trang: list, tieu_de: str,
+                        tom_tat: str = "") -> list:
+    """TRANG CONG BO CHINH CHU cua model trong tin (LOW-21, Ong Chu 11/09/2026:
+    "phai tim tat ca anh lien quan chu khong phai chi tim anh trong nguon topic,
+    dac biet la nhung thong tin lien quan toi benchmark cua model"). Chay cho MOI
+    tin nhac model cua hang trong watchlist, khong doi thieu anh — cung ly do
+    voi `_vong_thuong_hieu`. Lam TRUOC khi mo browser de browser ghe trang do
+    lay chart. Ghi vao nguon json de tu_lieu (Miles) cung dung. Tra `trang`."""
+    import anh_thuong_hieu as th
+    import xep_hang
+    if any(t.get("loai") == "công bố" for t in trang):
+        return trang
+    models = xep_hang.tach_model(nguon.get("tieu_de_en") or "") or xep_hang.tach_model(tieu_de)
+    hangs = th.hang_trong_tin(f"{tieu_de} {nguon.get('tieu_de_en') or ''}", tom_tat) if models else []
+    if not hangs:
+        return trang
+    mien_co = {_mien(t.get("url", "")) for t in trang}
+    for h in hangs[:1]:
+        cb = th.trang_cong_bo(h, models)
+        if not cb or _mien(cb["url"]) in mien_co or any(t.get("url") == cb["url"] for t in trang):
+            continue
+        nguon.setdefault("trang", []).append(cb)
+        _ghi_json(nguon_path, nguon)
+        print(f"[nguon] cong bo chinh chu: {cb['url'][:90]}", file=sys.stderr)
+        return nguon["trang"]
+    return trang
+
+
 def _lay_tu_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path, phien=None) -> tuple:
     """Mot phien chromium: tieu de, chu, anh/figure, bao khac; gop vao `nguon`.
     Tra (bp, trang)."""

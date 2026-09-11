@@ -87,6 +87,10 @@ nhất một**: chart hoặc bảng vào `figure`, ảnh chụp làm bìa `image
 Bộ toàn chữ và card khi có ảnh thật là thiếu. Mọi hình thật có `caption` "… ·
 via <ai>"; ảnh có mặt người thì caption ghi đúng tên trong bài.
 
+Tin về một model: hình thật phải gồm chart từ **trang công bố của hãng** (nguồn
+`loai: "công bố"`), engine tự ghé — LUAT_ANH §1.2b. Brief tin model không có tấm
+nào từ miền của hãng thì nói rõ khi báo thiếu, đừng vẽ vector thay.
+
 ## Nhịp feature (tham chiếu, không cứng)
 
 Bìa hook → bối cảnh/vấn đề → cách vận hành (`steps`) → số liệu (`figure` nếu có
