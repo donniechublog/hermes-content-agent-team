@@ -158,21 +158,21 @@ def test_tin_xep_hang_khong_co_bang_thi_khong_chan():
     # có bảng thì vẫn đòi như cũ
     dong2 = cb.dong_brief_xep_hang(
         {"tin_xep_hang": True, "xep_hang": {"site": "LMArena", "bang": "text",
-                                            "model": "GPT-5.2", "hang": 1, "kieu": "chup"}},
+                                            "model": "GPT-5.2", "hang": 1, "kieu": "bang"}},
         "", "ethan_nop")
     assert "BẮT BUỘC" in dong2, dong2
 
 
 def test_cong_xep_hang_chi_chan_khi_CHUP_duoc_bang():
     """dre_nop/ethan_nop chỉ được chặn khi engine CHỤP được bảng thật
-    (kieu == "chup"). Không có ảnh XH, hoặc chỉ có thẻ dự phòng engine tự dựng,
-    đều không được ép — xem test_the_du_phong_khong_duoc_ep_lam_anh_chinh."""
+    (`xep_hang.la_chup(kieu)`). Không có ảnh XH, hoặc chỉ có thẻ dự phòng engine
+    tự dựng, đều không được ép — xem test_the_du_phong_khong_duoc_ep_lam_anh_chinh."""
     import re as _re
-    mau = r'\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\) == "chup"'
+    mau = r'xep_hang\.la_chup\(\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\)\)'
     # Tu 07/09/2026 dieu kien nam o MOT cho (nop_chung.can_anh_xep_hang); hai vai
     # phai goi no chu khong tu viet lai — tu viet lai la cach no da lech.
     assert _re.search(mau, (ROOT / "nop_chung.py").read_text(encoding="utf-8")), \
-        "nop_chung.can_anh_xep_hang phải đòi kieu == 'chup'"
+        "nop_chung.can_anh_xep_hang phải hỏi xep_hang.la_chup(kieu)"
     for tep in ("dre_nop.py", "ethan_nop.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
         assert "nc.can_anh_xep_hang(" in src, f"{tep}: phải dùng cổng chung"
@@ -221,7 +221,7 @@ def test_ho_model_trung_tu_thuong_phai_di_kem_so():
 
 def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
     """kieu='the' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
-    ảnh thật. Chỉ kieu='chup' mới bật cổng bắt buộc."""
+    ảnh thật. Chỉ kieu chụp thật (`xep_hang.KIEU_CHUP`) mới bật cổng bắt buộc."""
     import ethan_nop
     anh = [{"ma": "A1", "goc": "/tmp/x.png", "san": None, "loai": "anh", "ti_le": 1.0,
             "mat": 0, "ngang": False, "canh_ngan": 1200, "w": 1200, "h": 1200,
@@ -229,7 +229,7 @@ def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
             "tu": "x", "lien_quan": True}]
     spec = {"anh": "A1", "kieu": "quote", "hook": "Mô hình mới đạt điểm cao nhất bảng",
             "tagline": "MODEL", "attrib": "via X"}
-    for kieu, phai_chan in (("chup", True), ("the", False)):
+    for kieu, phai_chan in (("bang", True), ("danh-sach", True), ("the", False), ("chup", False)):
         m = {"anh": anh, "tin_xep_hang": True, "chu_bai": "", "tu_lieu": {}, "draft_id": "d1",
              "xep_hang": {"kieu": kieu, "site": "arena.ai", "bang": "Text Arena",
                           "model": "seed", "hang": 5}}

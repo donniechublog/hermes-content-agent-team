@@ -79,6 +79,12 @@ là" của từng mã trước khi ghép vào slide; mô tả không khớp ý s
 ảnh thì gộp ý để giảm slide hoặc kết thúc task "Thiếu ảnh thật", không nhồi. Mặt
 người không rõ ai thì bỏ; không điền tên CEO cho qua cổng.
 
+Tin về một model: brief phải có ảnh từ **trang công bố của hãng** (nguồn
+`loai: "công bố"` — chart benchmark, KV cache, giá) chứ không chỉ ảnh trong link
+gốc; engine tự ghé (LUAT_ANH §1.2b). Nếu brief của một tin model mà không có
+tấm nào từ miền của hãng, ghi rõ điều đó trong câu "Thiếu ảnh thật" — đó là lỗi
+engine, không phải tin không có ảnh.
+
 ## Nhìn lại trước khi nộp
 
 1. Bìa có khiến muốn lướt tiếp không? Hook trung tính là bìa hỏng.

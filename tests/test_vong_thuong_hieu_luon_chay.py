@@ -50,7 +50,7 @@ def _anh(ma: str) -> dict:
             "canh_ngan": 1200, "mien": "vi_du.com", "tu": "bai", "ghi_chu": []}
 
 
-PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon",
+PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
             "_lay_tu_browser", "_chup_xep_hang", "_gom_va_tai_anh", "_nhin_anh",
             "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_tu_lieu_bai",
             "dung_manifest", "bang_anh")
@@ -75,6 +75,7 @@ def _vong_bu_da_chay(so_anh_cua_tin: int,
                                                 Path(s) / "n.json", "http://vi.du/a")
     cb._tom_tat_tu_img_json = lambda d: {"vai_anh": "dre", "summary": ""}
     cb._bo_sung_nguon = lambda *a, **k: []
+    cb._them_trang_cong_bo = lambda n, p, trang, *a, **k: trang
     cb._lay_tu_browser = lambda trang, *a, **k: (
         {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)
     cb._chup_xep_hang = lambda *a, **k: ([], False)

@@ -1,0 +1,257 @@
+#!/usr/bin/env python3
+"""LOW-21 (11/09/2026) — Dre bi chan tin DeepSeek-V4.1-Flash (LiveBench #6) vi
+"thieu anh" trong khi trang cong bo cua DeepSeek co 4 chart benchmark.
+
+Ong Chu: *"khi lam carousel tu mot topic goc, phai tim tat ca anh lien quan chu
+khong phai chi tim anh trong nguon topic, dac biet la nhung thong tin lien quan
+toi benchmark cua model"*. Lan thu ba cua cung hinh dang loi (LOW-10, LOW-12).
+
+Ba loi do duoc, moi loi mot nhom test FAIL TREN CODE CU:
+  1. `nguon_bai._ten_rieng_khong_dau` xoa gach noi truoc khi tach tu -> ten model
+     `deepseek-v4.1-flash-max` vo, mat chu `deepseek`, truy van Bing ra 0 bao.
+  2. `manifest`/`nop_chung` doi `kieu == "chup"` — gia tri xep_hang chua bao gio
+     phat ra; moi test cu stub "chup" nen xanh gia. Cong o muc MA NGUON: tap
+     `kieu` xep_hang phat ra phai duoc nguoi doc coi la "chup that".
+  3. Khong co duong nao toi trang cong bo chinh chu cua model
+     (`anh_thuong_hieu.trang_cong_bo` + `vong_bu._them_trang_cong_bo` +
+     `browser_pass` uu tien trang do voi tran 4 anh).
+
+Chay:  venv/bin/python tests/test_tim_tat_ca_anh_lien_quan.py
+"""
+import ast
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+import nguon_bai                                              # noqa: E402
+import xep_hang                                               # noqa: E402
+import nop_chung                                              # noqa: E402
+import anh_thuong_hieu as th                                  # noqa: E402
+import chuan_bi.manifest as manifest                          # noqa: E402
+import chuan_bi.vong_bu as vong_bu                            # noqa: E402
+import chuan_bi.browser as browser                            # noqa: E402
+
+TIEU_DE = "deepseek-v4.1-flash-max vào bảng LiveBench ở #6, 81.4 điểm, kém đầu bảng 2.4"
+
+
+# ------------------------------------------------ 1. truy van giu ten model
+def test_ten_rieng_khong_dau_giu_token_gach_noi():
+    en = nguon_bai._ten_rieng_khong_dau(TIEU_DE)
+    assert "deepseek-v4.1-flash-max" in en.split(), en
+    assert "deepseek" in en.lower(), f"mat ten hang: {en!r}"
+
+
+def test_tieu_de_tim_khong_mat_ten_hang_khi_og_title_rong():
+    """Dung canh that: og:title cua livebench.ai la 'LiveBench' (bi bo vi < 4 tu),
+    Google News hong -> roi ve ten rieng. Ket qua PHAI con 'deepseek'."""
+    cu = nguon_bai._tieu_de_trang, nguon_bai._tai
+    nguon_bai._tieu_de_trang = lambda url: ""
+
+    def _hong(*a, **k):
+        raise OSError("khong mang trong test")
+    nguon_bai._tai = _hong
+    try:
+        en = nguon_bai.tieu_de_tim(TIEU_DE, "https://livebench.ai/")
+    finally:
+        nguon_bai._tieu_de_trang, nguon_bai._tai = cu
+    assert "deepseek" in en.lower(), f"truy van khong co ten hang/model: {en!r}"
+
+
+def test_truy_van_bing_thu_ban_bo_gach_truoc():
+    """Do 11/09: 'deepseek-v4.1-flash-max ...' -> 1 bai, 'deepseek v4.1 flash max' -> 6."""
+    qs = nguon_bai._truy_van_bing("deepseek-v4.1-flash-max LiveBench #6 81.4")
+    assert qs and "-" not in qs[0], qs
+    assert qs[0].lower().startswith("deepseek v4.1 flash"), qs
+    assert any("-" in q for q in qs), "van phai giu ban co gach de khong mat ket qua cu"
+
+
+# ------------------------------------------------ 2. kieu "chup that" thong nhat
+def _kieu_xep_hang_phat_ra() -> set:
+    """Moi gia tri chuoi gan cho khoa "kieu" trong dict literal cua xep_hang.py."""
+    cay = ast.parse((ROOT / "xep_hang.py").read_text(encoding="utf-8"))
+    ra = set()
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Dict):
+            for k, v in zip(n.keys, n.values):
+                if isinstance(k, ast.Constant) and k.value == "kieu" \
+                        and isinstance(v, ast.Constant) and isinstance(v.value, str):
+                    ra.add(v.value)
+    return ra
+
+
+def test_moi_kieu_xep_hang_phat_ra_deu_duoc_nguoi_doc_hieu():
+    phat = _kieu_xep_hang_phat_ra()
+    assert phat, "khong doc duoc kieu nao tu xep_hang.py — test hong"
+    assert "the" in phat, "the du phong phai con"
+    la = {k for k in phat if k != "the"}
+    assert la and la <= xep_hang.KIEU_CHUP, f"xep_hang phat {la} ma KIEU_CHUP chi biet {set(xep_hang.KIEU_CHUP)}"
+    assert "chup" not in phat and "chup" not in xep_hang.KIEU_CHUP, \
+        "'chup' la gia tri ma stub test tung bia ra, khong duoc quay lai"
+    for k in la:
+        assert xep_hang.la_chup(k), k
+    assert not xep_hang.la_chup("the") and not xep_hang.la_chup(None)
+
+
+def test_brief_va_cong_nop_coi_bang_chup_that_la_bat_buoc():
+    m = {"tin_xep_hang": True,
+         "xep_hang": {"site": "LIVEBENCH.AI", "bang": "LiveBench", "model": "deepseek-v4.1-flash-max",
+                      "hang": 6, "kieu": "bang", "duoc_nhac": True}}
+    dong = manifest.dong_brief_xep_hang(m, "bìa ", "dre_nop")
+    assert "BẮT BUỘC" in dong and "THẺ DỰ PHÒNG" not in dong, dong
+    assert nop_chung.can_anh_xep_hang(m, {"ma": "A1"}), "bang chup that ma cong khong ep"
+    assert not nop_chung.can_anh_xep_hang(m, {"ma": "XH", "xep_hang": m["xep_hang"]})
+    m["xep_hang"]["kieu"] = "the"
+    assert "THẺ DỰ PHÒNG" in manifest.dong_brief_xep_hang(m, "bìa ", "dre_nop")
+    assert not nop_chung.can_anh_xep_hang(m, {"ma": "A1"})
+
+
+def test_nguoi_doc_kieu_khong_so_chuoi_tay():
+    """Cong o muc ma nguon: hai noi doc phai hoi xep_hang.la_chup, khong so chuoi."""
+    for tep in ("chuan_bi/manifest.py", "nop_chung.py"):
+        src = (ROOT / tep).read_text(encoding="utf-8")
+        assert 'get("kieu") == "chup"' not in src and 'get("kieu") != "chup"' not in src, tep
+        assert "xep_hang.la_chup(" in src, f"{tep}: phai dung xep_hang.la_chup"
+
+
+# ------------------------------------------------ 3. trang cong bo chinh chu
+HTML_NEWS = """<html><head>
+<link rel="preload" as="image" href="/images/blog/deepseek-v4-1-flash/cover.webp">
+</head><body>
+<a href="/en/news/">News</a>
+<a href="/en/news/deepseek-v3-2/">V3.2</a>
+<a href="/en/news/deepseek-v4-1-flash/">Introducing DeepSeek-V4.1-Flash</a>
+<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">HF</a>
+</body></html>"""
+RSS = """<rss><channel><item><title>GPT-6 Astra</title>
+<link>https://vi.du/index/gpt-6-astra-next-generation-work</link></item></channel></rss>"""
+
+
+def _voi_stub(website, tai):
+    cu = th.website_hang, th._tai_html
+    th.website_hang = website
+    th._tai_html = tai
+    return cu
+
+
+def _phuc_hoi(cu):
+    th.website_hang, th._tai_html = cu
+
+
+def test_khoa_model_bo_hau_to_effort_va_giu_toi_thieu_hai_manh():
+    assert th._khoa_model(["deepseek-v4.1-flash-max"]) == ["deepseek-v4-1-flash", "deepseek-v4-1", "deepseek-v4"]
+    assert th._khoa_model(xep_hang.tach_model("GPT-6 Astra (max) 55 điểm"))[0] == "gpt-6-astra"
+    assert th._khoa_model([]) == []
+
+
+def test_trang_cong_bo_khop_bai_khong_khop_anh_bia():
+    goi = []
+
+    def _tai(url, timeout=15, feed=False):
+        goi.append(url)
+        return HTML_NEWS if url.endswith("/news/") and not feed else ""
+    cu = _voi_stub(lambda hang: "https://vi.du", _tai)
+    try:
+        kq = th.trang_cong_bo({"khoa": "deepseek", "hang": "DeepSeek"},
+                              xep_hang.tach_model(TIEU_DE))
+    finally:
+        _phuc_hoi(cu)
+    assert kq and kq["url"] == "https://vi.du/en/news/deepseek-v4-1-flash/", kq
+    assert kq["loai"] == "công bố" and kq["toa_soan"] == "https://vi.du"
+    assert len(goi) == 1, f"khop o /news/ ma van fetch tiep: {goi}"
+
+
+def test_trang_cong_bo_roi_ve_rss_khi_html_bi_chan():
+    def _tai(url, timeout=15, feed=False):
+        return RSS if feed and url.endswith("/news/rss.xml") else ""
+    cu = _voi_stub(lambda hang: "https://vi.du", _tai)
+    try:
+        kq = th.trang_cong_bo({"khoa": "openai", "hang": "OpenAI"},
+                              xep_hang.tach_model("GPT-6 Astra dẫn đầu bảng"))
+    finally:
+        _phuc_hoi(cu)
+    assert kq and kq["url"] == "https://vi.du/index/gpt-6-astra-next-generation-work", kq
+
+
+def test_trang_cong_bo_khong_hoi_gi_khi_khong_co_model_hay_website():
+    goi = []
+    cu = _voi_stub(lambda hang: goi.append(("web", hang)) or "", lambda *a, **k: goi.append("tai") or "")
+    try:
+        assert th.trang_cong_bo({"khoa": "samsung", "hang": "Samsung"}, []) is None
+        assert goi == [], f"khong co model ma van hoi: {goi}"
+        assert th.trang_cong_bo({"khoa": "x", "hang": "X"}, ["GPT-6"]) is None
+        assert "tai" not in goi, "khong co website ma van fetch"
+    finally:
+        _phuc_hoi(cu)
+
+
+def test_them_trang_cong_bo_ghi_vao_nguon_json_mot_lan():
+    cu = th.trang_cong_bo, th.hang_trong_tin
+    th.trang_cong_bo = lambda h, models: {"url": "https://vi.du/news/deepseek-v4-1-flash/",
+                                          "loai": "công bố", "tieu_de": "", "toa_soan": "https://vi.du"}
+    th.hang_trong_tin = lambda td, tt="": [{"khoa": "deepseek", "hang": "DeepSeek"}]
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "nguon_d1.json"
+            nguon = {"tieu_de_en": "", "trang": [{"url": "https://livebench.ai/", "loai": "gốc"}]}
+            trang = vong_bu._them_trang_cong_bo(nguon, p, nguon["trang"], TIEU_DE, "")
+            assert [t["loai"] for t in trang] == ["gốc", "công bố"], trang
+            tren_dia = json.loads(p.read_text(encoding="utf-8"))
+            assert tren_dia["trang"][-1]["loai"] == "công bố", "phai ghi nguon json cho Miles cung dung"
+            trang2 = vong_bu._them_trang_cong_bo(nguon, p, trang, TIEU_DE, "")
+            assert len(trang2) == 2, "goi lan hai khong duoc them trung"
+            # Tin khong nhac model nao: khong dong toi nguon
+            nguon3 = {"tieu_de_en": "", "trang": [{"url": "https://vi.du/a", "loai": "gốc"}]}
+            assert vong_bu._them_trang_cong_bo(nguon3, p, nguon3["trang"],
+                                               "Samsung opens new chip plant", "") == nguon3["trang"]
+    finally:
+        th.trang_cong_bo, th.hang_trong_tin = cu
+
+
+class _PageGia:
+    def __init__(self, so_anh):
+        self.so_anh = so_anh
+
+    def evaluate(self, js):
+        return [{"src": f"http://vi.du/{i}.png", "alt": "", "w": 1600, "h": 900}
+                for i in range(self.so_anh)]
+
+
+def test_browser_tran_anh_trang_cong_bo_bang_bai_goc():
+    """Bao khac <= 3 anh, nhung trang cong bo chinh chu duoc 4 nhu bai goc —
+    4 chart benchmark cua DeepSeek ma cat con 3 la mat mot tam."""
+    JS = {"IMG": ""}
+    with tempfile.TemporaryDirectory() as tmp:
+        ra = {"cands": []}
+        browser._lay_anh_trang(_PageGia(6), "http://vi.du", 1, Path(tmp), ra, JS, chup_fig=False)
+        assert len(ra["cands"]) == 3
+        ra = {"cands": []}
+        browser._lay_anh_trang(_PageGia(6), "http://vi.du", 1, Path(tmp), ra, JS, chup_fig=False, tran=4)
+        assert len(ra["cands"]) == 4
+    src = (ROOT / "chuan_bi" / "browser.py").read_text(encoding="utf-8")
+    assert 'tran=4 if t.get("loai") == "công bố"' in src, "browser_pass phai cap tran 4 cho trang cong bo"
+    assert 'khac.sort(key=lambda t: t.get("loai") != "công bố")' in src, "trang cong bo phai duoc mo truoc"
+
+
+def test_engine_noi_trang_cong_bo_truoc_browser():
+    """Cong o muc ma nguon: chuan_bi() goi _them_trang_cong_bo giua _bo_sung_nguon
+    va _lay_tu_browser — de browser ghe trang do lay chart."""
+    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    a, b, c = src.index("_bo_sung_nguon(nguon"), src.index("_them_trang_cong_bo(nguon"), src.index("_lay_tu_browser(trang")
+    assert a < b < c, "thu tu phai la bo_sung_nguon -> them_trang_cong_bo -> lay_tu_browser"
+
+
+if __name__ == "__main__":
+    tests = [(k, v) for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
+    qua = 0
+    for ten, f in tests:
+        try:
+            f()
+            qua += 1
+            print(f"  ok  {ten}")
+        except Exception as e:                               # noqa: BLE001
+            print(f"FAIL  {ten}: {type(e).__name__}: {e}")
+    print(f"{qua}/{len(tests)} test qua")
+    sys.exit(0 if qua == len(tests) else 1)

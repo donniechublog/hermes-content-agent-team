@@ -384,18 +384,20 @@ discord:
 telegram:
   # 05/09/2026: hai bot cung nghe mot group. Lenh cho bot duyet (chon so "6 - Dre"
   # o topic Vera, "5: ly do" tra loi Lam lai) bi bot gateway tra loi lac de.
-  # require_mention + free_response_topics: moi topic van chat tu do, RIENG topic
-  # Vera (83) chi tra loi khi @mention/reply bot — chon so o do khong bi doi dap.
+  #
+  # 08/09/2026 — BO free_response_topics. Luat Ong Chu dat: chat thuong thi
+  # gateway IM, chi rep khi duoc goi dich danh (@hermesdcgr_bot ... hoac
+  # /lenh@hermesdcgr_bot) hoac khi reply thang vao tin cua chinh no. Nho vay:
+  #   - "/bai <url> kite" chi mot minh bot duyet xu ly, gateway khong chen
+  #     "Unknown command /bai" (adapter upstream khong con doc ignore_commands);
+  #   - chon so / ly do lam lai reply vao the cua bot duyet khong bi doi dap.
+  # Lam bang CONFIG chu khong va code: ba commit va adapter (7a70605, d1d4573,
+  # d4ded02) da bi `reset --hard origin/main` 07/09 xoa mat, ma tien trinh van
+  # chay code cu nen cong im 3 ngay khong ai biet. Config thi song qua rebase.
+  # Muon mo lai chat tu do cho topic nao thi them lai dong cua topic do:
+  #   free_response_topics: ["-1003763882779:1150", ...]  (132 designer, 290
+  #   carousel, 228 writer, 291 itachi, 9 analyst, 289 gin, 458 bob, 1150 kite)
   require_mention: true
-  free_response_topics:
-    - "-1003763882779:132"
-    - "-1003763882779:290"
-    - "-1003763882779:228"
-    - "-1003763882779:291"
-    - "-1003763882779:9"
-    - "-1003763882779:289"
-    - "-1003763882779:458"
-    - "-1003763882779:1150"
   reactions: false
   allowed_chats: ''
 mattermost:
@@ -472,36 +474,36 @@ gateway:
   trust_recent_files_seconds: 600
   multiplex_profiles: true
   profile_routes:
-    - name: tg-designer
+    - name: tg-ethan
       platform: telegram
       chat_id: '-1003763882779'
       thread_id: '132'
-      profile: designer
-    - name: tg-carousel
+      profile: ethan
+    - name: tg-dre
       platform: telegram
       chat_id: '-1003763882779'
       thread_id: '290'
-      profile: carousel
-    - name: tg-writer
+      profile: dre
+    - name: tg-miles
       platform: telegram
       chat_id: '-1003763882779'
       thread_id: '228'
-      profile: writer
+      profile: miles
     - name: tg-itachi
       platform: telegram
       chat_id: '-1003763882779'
       thread_id: '291'
       profile: itachi
-    - name: tg-market
+    - name: tg-vera
       platform: telegram
       chat_id: '-1003763882779'
       thread_id: '83'
-      profile: market
-    - name: tg-analyst
+      profile: vera
+    - name: tg-ada
       platform: telegram
       chat_id: '-1003763882779'
       thread_id: '9'
-      profile: analyst
+      profile: ada
     - name: tg-gin
       platform: telegram
       chat_id: '-1003763882779'
@@ -512,11 +514,11 @@ gateway:
       chat_id: '-1003763882779'
       thread_id: '458'
       profile: bob
-    - name: tg-carousel-edu
+    - name: tg-kite
       platform: telegram
       chat_id: '-1003763882779'
       thread_id: '1150'
-      profile: carousel-edu
+      profile: kite
   platforms:
     telegram:
       extra:

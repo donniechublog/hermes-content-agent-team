@@ -80,7 +80,7 @@ def test_ban_cu_khong_co_bang_xep_hang_thi_so_xep_hang_la_0():
 
 
 def test_ban_cu_co_bang_thi_so_xep_hang_it_nhat_1():
-    ra = schema.doc_manifest({"anh": [], "xep_hang": {"model": "gpt", "kieu": "chup"}})
+    ra = schema.doc_manifest({"anh": [], "xep_hang": {"model": "gpt", "kieu": "bang"}})
     assert ra["so_xep_hang"] == 1, ra
 
 

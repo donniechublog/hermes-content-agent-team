@@ -365,6 +365,114 @@ def tu_lieu_wikidata(hang: str) -> dict:
     return ra
 
 
+# ---- Trang CÔNG BỐ chính chủ của model ---------------------------------------
+# Ông Chủ 11/09/2026 (LOW-21): *"khi làm carousel từ một topic gốc, phải tìm tất
+# cả ảnh liên quan chứ không phải chỉ tìm ảnh trong nguồn topic, đặc biệt là
+# những thông tin liên quan tới benchmark của model"* — và *"chỉ cần vào trang
+# announce của DeepSeek đã quá nhiều tư liệu và hình ảnh"*. Đo thật: trang
+# deepseek.com/en/news/deepseek-v4-1-flash/ có 4 chart benchmark 5148×2640…,
+# nhưng Google News không index nó và 13/14 báo không link sang, nên engine
+# không có đường nào tới. Đường ở đây: Wikidata P856 (website chính thức) ->
+# trang danh sách tin của hãng -> khớp tên model (đã tách bằng
+# xep_hang.tach_model) trong slug link. Chỉ mạng tĩnh, ≤ 1 + len(DUONG_TIN) fetch.
+P_WEBSITE = "P856"
+DUONG_TIN = ("/news/", "/en/news/", "/blog/", "/news", "/blog", "/research/")
+# Trang HTML bị chặn bot (openai.com trả 0 byte cho httpx, đo 11/09/2026) thì
+# RSS công khai vẫn mở — cùng bài học với `nguon_bai._tieu_de_rss` (Economist).
+DUONG_FEED = ("/news/rss.xml", "/rss.xml", "/blog/rss.xml", "/blog/feed.xml", "/feed.xml")
+TOI_DA_TRANG_CONG_BO = 1
+
+
+def _slug(t: str) -> str:
+    """'DeepSeek-V4.1-Flash' -> 'deepseek-v4-1-flash' — cùng cách hãng đặt slug URL."""
+    return re.sub(r"-{2,}", "-", re.sub(r"[^a-z0-9]+", "-", (t or "").lower())).strip("-")
+
+
+def _khoa_model(models: list) -> list:
+    """Các khoá slug để khớp link, DÀI trước NGẮN sau, bỏ hậu tố effort/thinking
+    (`-max`, `-high`…: trang công bố đặt tên model, không đặt tên biến thể effort).
+    Khoá ngắn nhất phải còn ≥ 2 mảnh (`deepseek-v4`), tránh khớp mọi bài của hãng."""
+    ra = []
+    for m in models or []:
+        s = _slug(m)
+        s = re.sub(r"-(max|high|xhigh|low|medium|thinking|effort)$", "", s)
+        while s.count("-") >= 1:
+            if s not in ra:
+                ra.append(s)
+            s = s.rsplit("-", 1)[0]
+    return ra
+
+
+def website_hang(hang: str) -> str:
+    """Website chính thức của hãng theo Wikidata P856, hoặc ''."""
+    _, cl = qid_hang(hang)
+    for c in (cl or {}).get(P_WEBSITE, []):
+        if c.get("rank") == "deprecated":
+            continue
+        v = c.get("mainsnak", {}).get("datavalue", {}).get("value")
+        if isinstance(v, str) and v.startswith("http"):
+            return v.rstrip("/")
+    return ""
+
+
+def _tai_html(url: str, timeout: int = 15, feed: bool = False) -> str:
+    """HTML (hoặc RSS khi `feed`) của một trang, UA trình duyệt — trang hãng hay
+    chặn UA bot. '' nếu hỏng hay sai loại nội dung."""
+    import httpx
+    import quet_chung
+    try:
+        quet_chung.kiem_url(url)
+        r = httpx.get(url, headers={"User-Agent": env_load.UA_TRINH_DUYET,
+                                    "Accept-Encoding": "gzip, deflate"},
+                      timeout=timeout, follow_redirects=True)
+        loai = r.headers.get("content-type", "")
+        if r.status_code == 200 and (("xml" in loai or "rss" in loai) if feed else "html" in loai):
+            return r.text[:400_000]
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[cong bo] {url[:60]}: {type(e).__name__}", file=sys.stderr)
+    return ""
+
+
+def trang_cong_bo(hang: dict, models: list) -> dict | None:
+    """Trang công bố CHÍNH CHỦ của model trong tin: {"url", "tieu_de", "toa_soan"}
+    hoặc None. `hang` là một mục của `hang_trong_tin`, `models` từ
+    `xep_hang.tach_model`. Không hỏi gì khi thiếu một trong hai."""
+    from urllib.parse import urljoin
+    khoa = _khoa_model(models)
+    if not hang or not khoa:
+        return None
+    site = website_hang(hang.get("hang") or hang.get("khoa", ""))
+    if not site:
+        print(f"[cong bo] {hang.get('hang')}: Wikidata khong co website (P856)", file=sys.stderr)
+        return None
+    mien = re.sub(r"^https?://(www\.)?", "", site).lower()
+    for duong in DUONG_TIN + DUONG_FEED:
+        la_feed = duong in DUONG_FEED
+        html = _tai_html(site + duong, feed=la_feed)
+        if not html:
+            continue
+        links = []
+        # Chỉ <a href> (HTML) hoặc <link> (RSS): <link rel=preload href=…cover.webp>
+        # cũng mang slug model (đo 11/09: bắt nhầm ảnh bìa thay vì bài). Bỏ luôn
+        # URL có đuôi tệp.
+        mau = r"<link>\s*([^<\s]+)\s*</link>" if la_feed else r"""<a\s[^>]*?href=["']([^"'#?]+)"""
+        for m in re.finditer(mau, html, re.I):
+            u = urljoin(site + duong, m.group(1).rstrip("\\"))
+            if mien in u.lower() and u not in links \
+                    and not re.search(r"\.(png|jpe?g|webp|gif|svg|pdf|css|js|xml)$", u, re.I):
+                links.append(u)
+        for k in khoa:                              # khoá dài (đúng model) thắng khoá ngắn
+            # Khớp trên ĐƯỜNG DẪN (bỏ scheme + host): '/en/news/deepseek-v4-1-flash/'
+            trung = [u for u in links if k in _slug(re.sub(r"^https?://[^/]+", "", u))]
+            if trung:
+                u = trung[0]
+                print(f"[cong bo] {hang.get('hang')}: {u} (khop '{k}' o {duong})", file=sys.stderr)
+                return {"url": u, "loai": "công bố", "tieu_de": "", "toa_soan": site}
+    print(f"[cong bo] {hang.get('hang')}: khong thay bai nao khop {khoa[:2]} tren {site}",
+          file=sys.stderr)
+    return None
+
+
 def url_commons(tens: list) -> dict:
     """Tên tệp Commons -> {url, rong, cao, mime}. Hỏi một lượt. SVG được Commons
     render sẵn ra PNG ở `thumburl`, nên logo vector cũng dùng được."""

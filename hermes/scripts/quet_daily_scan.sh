@@ -8,7 +8,14 @@
 # dau lech: audit 05/09 do trung ~50%, den 06/09 la ~90% vi BODY duoc mo rong
 # giong nhau o ca ba ban. Sua mot cho ma quen hai cho kia la chuyen da xay ra.
 #
-# Dung:  quet_daily_scan.sh scout|nova|market
+# Dung:  quet_daily_scan.sh finn|nova|vera
+#
+# Tham so la SLUG PROFILE (ten nhan vat, LOW-14), va chinh no la assignee.
+# Truoc LOW-20 tham so la role cu (scout|market) va assignee di theo no: sang
+# 11/09 cutover doi `--vai` trong BODY ma quen `--assignee`, task giao cho
+# profile khong ton tai, dispatcher lang le bo qua (khong bao "stuck"), cron
+# van "ok" — Vera va Finn im ca sang ma khong ai hay. Nen o day khong con hai
+# ten cho mot vai nua, va co cong kiem profile TON TAI truoc khi tao task.
 #
 # Thoat KHAC 0 khi hong: hermes chi coi job la loi khi returncode != 0
 # (cron/scheduler.py). Ban cu chi `echo` roi ket thuc binh thuong -> last_status
@@ -18,21 +25,31 @@ set -uo pipefail
 
 VAI="${1:-}"
 case "$VAI" in
-  scout)  TIEU_DE="Quet tin sang";       KHOA=finn
-          VIEC="cham hai thanh phan diem con lai (suc nang ky thuat 0-30, lien quan 0-20) va viet summary_vi theo dung khung BUOC 1 in ra" ;;
-  nova)   TIEU_DE="Quet model sang";     KHOA=nova
-          VIEC="noi ra Y NGHIA (manh/re hon cai gi, bang nao, gia vao/ra, thay duoc vai nao) cho tung model bat buoc va xep thu tu" ;;
-  market) TIEU_DE="Quet tin kinh doanh"; KHOA=vera
-          VIEC="loc tin co HE QUA (IPO, thau tom, ha tang, chinh sach, lao dong, kien tung), ghi muc chac chan theo so bao, viet tom tat co so" ;;
-  *) echo "Dung: $(basename "$0") scout|nova|market" >&2; exit 2 ;;
+  finn)  TIEU_DE="Quet tin sang"
+         VIEC="cham hai thanh phan diem con lai (suc nang ky thuat 0-30, lien quan 0-20) va viet summary_vi theo dung khung BUOC 1 in ra" ;;
+  nova)  TIEU_DE="Quet model sang"
+         VIEC="noi ra Y NGHIA (manh/re hon cai gi, bang nao, gia vao/ra, thay duoc vai nao) cho tung model bat buoc va xep thu tu" ;;
+  vera)  TIEU_DE="Quet tin kinh doanh"
+         VIEC="loc tin co HE QUA (IPO, thau tom, ha tang, chinh sach, lao dong, kien tung), ghi muc chac chan theo so bao, viet tom tat co so" ;;
+  *) echo "Dung: $(basename "$0") finn|nova|vera (slug profile, khong phai role cu)" >&2; exit 2 ;;
 esac
+
+# Cong LOW-20: profile phai co that trong home dang chay. Cron cua hermes chay
+# voi HERMES_HOME cua brand (systemd Environment=HERMES_HOME=%h/.hermes-%i);
+# khong dat thi hermes dung ~/.hermes. Kanban `create` nhan assignee bat ky nen
+# chi o day moi chan duoc, va thoat 1 de failure_streak tang thay vi "ok".
+NHA="${HERMES_HOME:-$HOME/.hermes}"
+if [ ! -d "$NHA/profiles/$VAI" ]; then
+  echo "${VAI}_daily_scan LOI: khong co profile '$VAI' trong $NHA/profiles — task se khong ai nhan" >&2
+  exit 1
+fi
 
 H=$HOME/hermes-agent/venv/bin/python
 # Ngay lay theo GIO VN, khong phai UTC. Cron chay 22:00 UTC = 05:00 VN hom sau,
 # nen `date -u` tra ve ngay HOM TRUOC — khoa chong trung trung voi lan chay cu,
 # kanban tra ve task cu thay vi tao moi, va script im lang tuong da thanh cong.
 # Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
-KEY="$KHOA-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
+KEY="$VAI-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 
 BODY="Nhiem vu quet tin sang $DAY (chay theo lich cron). Phan CO HOC — chay script quet, loc
@@ -64,11 +81,11 @@ OUT=$($H -m hermes_cli.main kanban create "$TIEU_DE $DAY" \
 #     ve TASK CU voi tieu de cu, ma van co truong "id" — grep cu chi nhin "id"
 #     nen im lang, tuong da chay. Sang 23/08 ca ba vai deu khong chay vi loi nay.
 if ! echo "$OUT" | grep -q '"id"'; then
-  echo "${KHOA}_daily_scan LOI: khong tao duoc task"
+  echo "${VAI}_daily_scan LOI: khong tao duoc task"
   echo "$OUT" | head -5
   exit 1
 elif ! echo "$OUT" | grep -qF "\"title\": \"$TIEU_DE $DAY\""; then
-  echo "${KHOA}_daily_scan CANH BAO: kanban tra ve task CU (trung idempotency-key)."
+  echo "${VAI}_daily_scan CANH BAO: kanban tra ve task CU (trung idempotency-key)."
   echo "  Task hom nay KHONG duoc tao. Kiem tra khoa: $KEY"
   echo "$OUT" | grep '"title"' | head -2
   exit 1

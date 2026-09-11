@@ -4,7 +4,7 @@
 # lenh nao. KHONG dung de trien khai nguoc: doi cau hinh that thi sua
 # tren may chu roi chup lai trong cung mot commit.
 
-blog/analyst:
+blog/ada:
   auxiliary/title_generation/enabled: false
   fallback_providers:
   - api_key: <da bo>
@@ -36,7 +36,20 @@ blog/bob:
   - terminal
   - file
   - vision
-blog/carousel:
+blog/cape:
+  agent/reasoning_effort: none
+  auxiliary/title_generation/enabled: false
+  fallback_providers:
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: ds/deepseek-v4-flash
+    provider: custom
+  model/base_url: http://127.0.0.1:20128/v1
+  model/default: DS-v4Flash
+  model/provider: custom
+  toolsets:
+  - hermes-cli
+blog/dre:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
   fallback_providers:
@@ -51,7 +64,7 @@ blog/carousel:
   - /home/donniechu/content-team/hermes/skills
   toolsets:
   - hermes-cli
-blog/carousel-edu:
+blog/ethan:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
   fallback_providers:
@@ -66,7 +79,7 @@ blog/carousel-edu:
   - /home/donniechu/content-team/hermes/skills
   toolsets:
   - hermes-cli
-blog/designer:
+blog/finn:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
   fallback_providers:
@@ -77,10 +90,9 @@ blog/designer:
   model/base_url: http://127.0.0.1:20128/v1
   model/default: DS-v4Flash
   model/provider: custom
-  skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
   toolsets:
   - hermes-cli
+  - kanban
 blog/gin:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
@@ -124,6 +136,34 @@ blog/jika:
   model/provider: custom
   toolsets:
   - hermes-cli
+blog/kite:
+  agent/reasoning_effort: none
+  auxiliary/title_generation/enabled: false
+  fallback_providers:
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: ds/deepseek-v4-flash
+    provider: custom
+  model/base_url: http://127.0.0.1:20128/v1
+  model/default: DS-v4Flash
+  model/provider: custom
+  skills/external_dirs:
+  - /home/donniechu/content-team/hermes/skills
+  toolsets:
+  - hermes-cli
+blog/miles:
+  agent/reasoning_effort: none
+  auxiliary/title_generation/enabled: false
+  fallback_providers:
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: ds/deepseek-v4-flash
+    provider: custom
+  model/base_url: http://127.0.0.1:20128/v1
+  model/default: DS-v4Flash
+  model/provider: custom
+  toolsets:
+  - hermes-cli
 blog/nova:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
@@ -138,47 +178,7 @@ blog/nova:
   toolsets:
   - hermes-cli
   - kanban
-blog/scout:
-  agent/reasoning_effort: none
-  auxiliary/title_generation/enabled: false
-  fallback_providers:
-  - api_key: <da bo>
-    base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
-    provider: custom
-  model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
-  model/provider: custom
-  toolsets:
-  - hermes-cli
-  - kanban
-blog/teaser:
-  agent/reasoning_effort: none
-  auxiliary/title_generation/enabled: false
-  fallback_providers:
-  - api_key: <da bo>
-    base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
-    provider: custom
-  model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
-  model/provider: custom
-  toolsets:
-  - hermes-cli
-blog/writer:
-  agent/reasoning_effort: none
-  auxiliary/title_generation/enabled: false
-  fallback_providers:
-  - api_key: <da bo>
-    base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
-    provider: custom
-  model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
-  model/provider: custom
-  toolsets:
-  - hermes-cli
-dcgr/analyst:
+dcgr/ada:
   auxiliary/title_generation/enabled: false
   fallback_providers:
   - api_key: <da bo>
@@ -210,7 +210,7 @@ dcgr/bob:
   - terminal
   - file
   - vision
-dcgr/carousel:
+dcgr/dre:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
   fallback_providers:
@@ -225,22 +225,7 @@ dcgr/carousel:
   - /home/donniechu/content-team/hermes/skills
   toolsets:
   - hermes-cli
-dcgr/carousel-edu:
-  agent/reasoning_effort: none
-  auxiliary/title_generation/enabled: false
-  fallback_providers:
-  - api_key: <da bo>
-    base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
-    provider: custom
-  model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
-  model/provider: custom
-  skills/external_dirs:
-  - /home/donniechu/content-team/hermes/skills
-  toolsets:
-  - hermes-cli
-dcgr/designer:
+dcgr/ethan:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
   fallback_providers:
@@ -285,7 +270,35 @@ dcgr/itachi:
   - /home/donniechu/content-team/hermes/skills
   toolsets:
   - hermes-cli
-dcgr/market:
+dcgr/kite:
+  agent/reasoning_effort: none
+  auxiliary/title_generation/enabled: false
+  fallback_providers:
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: ds/deepseek-v4-flash
+    provider: custom
+  model/base_url: http://127.0.0.1:20128/v1
+  model/default: DS-v4Flash
+  model/provider: custom
+  skills/external_dirs:
+  - /home/donniechu/content-team/hermes/skills
+  toolsets:
+  - hermes-cli
+dcgr/miles:
+  agent/reasoning_effort: none
+  auxiliary/title_generation/enabled: false
+  fallback_providers:
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: ds/deepseek-v4-flash
+    provider: custom
+  model/base_url: http://127.0.0.1:20128/v1
+  model/default: DS-v4Flash
+  model/provider: custom
+  toolsets:
+  - hermes-cli
+dcgr/vera:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
   fallback_providers:
@@ -299,16 +312,3 @@ dcgr/market:
   toolsets:
   - hermes-cli
   - kanban
-dcgr/writer:
-  agent/reasoning_effort: none
-  auxiliary/title_generation/enabled: false
-  fallback_providers:
-  - api_key: <da bo>
-    base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
-    provider: custom
-  model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
-  model/provider: custom
-  toolsets:
-  - hermes-cli

@@ -180,6 +180,20 @@ CHU_DE = [
 # nhung chu co trong hau het tom tat cua Finn/Nova/Vera. Do that: 6/6 tieu de
 # goi von / doanh thu / gia chip deu bi dong dau TIN XEP HANG ("Reflection gọi
 # vốn 2 tỷ USD, vòng seed do Nvidia dẫn đầu"), keo theo ca chuoi hong ben duoi.
+# Gia tri `kieu` ma tim_va_chup / tim_va_chup_nhieu PHAT RA khi CHUP DUOC bang
+# that (bang, hai bang ghep, danh sach hang-the, nhan SVG). Chi "the" la the du
+# phong engine tu dung. LOW-21 (11/09/2026): manifest va nop_chung tung doi
+# `kieu == "chup"` — gia tri KHONG MOT nhanh nao o day phat ra — nen moi tin xep
+# hang deu bi brief goi la "THE DU PHONG" va cong ep bia XH chua tung chay; test
+# thi stub "chup" nen xanh gia. Nguoi doc hoi qua `la_chup`, khong so chuoi.
+KIEU_CHUP = frozenset({"bang", "bang-ghep", "danh-sach", "danh-sach-ghep", "svg"})
+
+
+def la_chup(kieu) -> bool:
+    """Anh XH nay la CHUP THAT tu trang xep hang (True) hay the du phong (False)."""
+    return kieu in KIEU_CHUP
+
+
 _XEP_HANG = re.compile(
     # (a) ten bang / khai niem xep hang — tu no da du nghia
     r"(xếp hạng|thứ hạng|bảng xếp hạng|leaderboard|ranking|ranked|\brank\b|"

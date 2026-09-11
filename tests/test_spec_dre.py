@@ -205,7 +205,7 @@ def test_anh_xep_hang_duoc_lam_bia_con_lam_slide_thi_la_chart():
         wd = Path(t)
         xh = _anh(wd, "XH", 1200, 900, loai="chart", xep_hang={"site": "LMArena"})
         anh = [xh] + [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
-        m = _m(wd, anh, tin_xep_hang=True, xep_hang={"kieu": "chup"})
+        m = _m(wd, anh, tin_xep_hang=True, xep_hang={"kieu": "bang"})
         ra, loi, _c, _d = _chay(_spec(_bia("XH"), _du_slide(["A2", "A3", "A4", "A5"])), m, wd)
         assert loi == [], loi
         assert "chart" not in ra["cover"], "bia xep hang khong duoc dan kieu chart"
@@ -216,7 +216,7 @@ def test_tin_xep_hang_ma_bia_khong_phai_bang_thi_chan():
         wd = Path(t)
         xh = _anh(wd, "XH", 1200, 900, loai="chart", xep_hang={"site": "LMArena"})
         anh = [xh] + [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
-        m = _m(wd, anh, tin_xep_hang=True, xep_hang={"kieu": "chup", "site": "LMArena",
+        m = _m(wd, anh, tin_xep_hang=True, xep_hang={"kieu": "bang", "site": "LMArena",
                                                      "bang": "text", "model": "GPT"})
         _ra, loi, _c, _d = _chay(_spec(_bia("A2"), _du_slide(["A3", "A4", "A5", "XH"])), m, wd)
         assert _co(loi, "bìa", "TIN XẾP HẠNG"), loi
