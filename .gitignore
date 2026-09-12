@@ -27,3 +27,6 @@ venv
 
 # Tep nhap tam thoi
 gif2png_tmp.py
+
+# Worktree cua Claude Code (EnterWorktree) — moi phien mot ban rieng, khong dua vao repo
+.claude/worktrees/
