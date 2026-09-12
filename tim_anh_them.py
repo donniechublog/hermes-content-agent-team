@@ -173,7 +173,7 @@ def ung_vien_tu_url(urls: list, wd: Path, phien=None) -> list:
 
 
 def ung_vien_tu_khoa(tu_khoa: str, wd: Path, mien_co: set, phien=None) -> list:
-    """Mot tu khoa -> bao moi (Bing News) mo bang browser + Commons."""
+    """Mot tu khoa -> bao cung tin (Bing News, mo browser) + Commons + Openverse + og:image bao ve thuc the."""
     cands = []
     bao = nguon_bai.bao_khac_bing(tu_khoa, so=SO_BAO_MOI_LUOT, bo_mien=tuple(x for x in mien_co if x))
     print(f"[tim them] Bing '{tu_khoa}': {len(bao)} bao"
@@ -188,6 +188,11 @@ def ung_vien_tu_khoa(tu_khoa: str, wd: Path, mien_co: set, phien=None) -> list:
     ov = ung_vien_openverse(tu_khoa)
     print(f"[tim them] Openverse '{tu_khoa}': {len(ov)} ung vien", file=sys.stderr)
     cands += ov
+    # Anh BAO CHI ve thuc the (og:image cua bai gan day) — cach nguoi tim bang
+    # tay (Ong Chu 12/09/2026, 7 link TSMC). Khong doi "cung tin".
+    import anh_bao_thuc_the
+    bt = anh_bao_thuc_the.anh_bao_thuc_the([tu_khoa], bo_mien=tuple(x for x in mien_co if x))
+    cands += bt
     return cands
 
 
