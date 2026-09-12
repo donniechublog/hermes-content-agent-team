@@ -14,7 +14,6 @@
 Kết quả web xếp SAU og:image báo chí (diem 42) vì có thể lẫn rác cả loạt; vision
 vẫn nhìn từng tấm như mọi ảnh khác. Thuần phần bóc/lọc để test được.
 """
-import json
 import re
 import sys
 import urllib.parse as up
