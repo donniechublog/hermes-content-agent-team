@@ -1,8 +1,10 @@
 # TỪ ĐIỂN TÊN — bản nháp bước 0 (chưa đụng mã)
 
-Nguồn: 103 module, 1058 def/class (930 tên khác nhau), 680 hằng số. Đề xuất sinh máy từ bảng A; `?token` = chưa có trong bảng; ⚠️ = token mơ hồ, phải chọn tay theo nghĩa tại chỗ.
+Sinh tự động bởi `gen.py` từ repo hiện tại: 103 module, 1058 def/class (930 tên khác nhau), 680 hằng số. `?token` = chưa có trong bảng; ⚠️ = token mơ hồ, phải chọn tay theo nghĩa tại chỗ.
 
-Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi; tên vai (ethan/dre/kite…) giữ; token đã là English giữ nguyên.
+**Tiêu chí (Ông Chủ 12/09/2026):** nghĩa dịch không cần đúng từng chữ — chỉ cần KHÔNG hai hàm/lớp top-level nào trong cùng module trùng tên sau khi dịch. Xem mục F.
+
+Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi; tên vai (ethan/dre/kite…) giữ nguyên; token đã là English giữ nguyên. Sửa `cum.json` / `don.json` / `moho.json` / `them.json` / `overrides.json` rồi chạy lại `python3 gen.py .` để bảng dưới cập nhật.
 
 ## A. Từ gốc — CỤM (khớp trước)
 
@@ -654,7 +656,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `xuat` | `export` |  |
 | `yeu` | `weak` |  |
 
-## B. Module (103)
+## B. Module
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
@@ -1093,7 +1095,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_gate_text` | `_gate_text` |  |
 | `_gate_anh` | `_gate_image` |  |
 | `gom` | `gather` |  |
-| `_gate_chu` | `_gate_text` | ⚠️ chu |
+| `_gate_chu` | `_gate_overflow` |  |
 
 ### `chat_router`
 
@@ -1314,7 +1316,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_Boi` | `_Context` |  |
+| `_Boi` | `Context` |  |
 | `nhan_ma` | `mark_code` |  |
 | `kiem_lien_quan` | `check_relevant` |  |
 | `kiem_mat` | `check_faces` |  |
@@ -1368,7 +1370,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_HangFIFO` | `_RankFIFCell` | ⚠️ hang |
+| `_HangFIFO` | `RankFIFCell` | ⚠️ hang |
 | `lay_so` | `take_count` | ⚠️ so |
 | `doi` | `change` |  |
 | `release` | `release` |  |
@@ -2247,7 +2249,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `chup_logo` | `capture_logo` |  |
 | `the_du_phong` | `fallback_card` |  |
 | `giua` | `middle` |  |
-| `_PhienChup` | `_SessionCapture` |  |
+| `_PhienChup` | `SessionCapture` |  |
 | `trang` | `page` |  |
 | `thu` | `try` | ⚠️ thu |
 | `_thu_nguon` | `_try_source` | ⚠️ thu |
@@ -3221,3 +3223,9 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `mong` | 1 | teaser_assemble |
 | `web` | 1 | nhat_ky_web, theo_doi_9router |
 | `vang` | 1 | xep_hang |
+
+## F. Va chạm tên — PHẢI SỬA trước khi rename
+
+Hai hàm/lớp top-level khác nhau trong CÙNG module mà dịch ra CÙNG một tên — rename thẳng sẽ ghi đè, gây lỗi gọi thật. Sửa bằng `overrides.json` (`"module.ten_goc": "ten_moi"`), không cần đụng bảng từ điển chung.
+
+**Không còn va chạm nào** — đo trên 103 module / 937 hàm-lớp top-level.

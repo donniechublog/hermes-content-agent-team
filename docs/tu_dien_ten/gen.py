@@ -10,6 +10,13 @@ B/C/D/E cập nhật theo, thay vì phải nhờ dựng lại từ đầu.
 Dùng:
     cd docs/tu_dien_ten
     python3 gen.py .
+
+Tiêu chí (Ông Chủ 12/09/2026): "ngữ nghĩa là gì không quan trọng, thích gán nó
+là gì cũng được, không bị lẫn lộn hàm là được" — tên dịch không cần đúng nghĩa
+từng chữ, chỉ cần KHÔNG HAI HÀM/LỚP top-level nào trong CÙNG một module trùng
+tên sau khi dịch (mục F ở cuối bảng .md). `overrides.json` ("module.ten_goc":
+"ten_moi") ghi đè tuyệt đối cho từng ca va chạm cụ thể, không cần sửa cả bảng
+từ điển chỉ vì một ca lẻ.
 """
 import ast
 import collections
@@ -76,6 +83,7 @@ them = json.load(open(S / "them.json", encoding="utf-8"))
 for k, v in them["DON"].items():
     (CUM if "_" in k else DON).setdefault(k, v)
 PASS = set(them["PASS"])
+OVERRIDES = json.load(open(S / "overrides.json", encoding="utf-8")) if (S / "overrides.json").exists() else {}
 
 
 def dich(name: str):
@@ -99,6 +107,22 @@ def dich(name: str):
         out.append(p if (p in PASS or p.isdigit()) else DON.get(p, f"?{p}"))
         i += 1
     return "_".join(out), flags
+
+
+def dich_ten(mod: str, name: str, kind: str):
+    """Tên hàm/lớp -> (đề xuất English, {cờ}). Ưu tiên `overrides.json` theo
+    `module.ten_goc` tuyệt đối; không có override thì dịch máy như thường."""
+    khoa = f"{mod}.{name}"
+    if khoa in OVERRIDES:
+        return OVERRIDES[khoa], set()
+    lead = "_" if name.startswith("_") else ""
+    core = name.lstrip("_")
+    if kind == "class":
+        snake = re.sub(r"(?<!^)(?=[A-Z])", "_", core).lower()
+        en, fl = dich(snake)
+        return "".join(w.capitalize() for w in en.split("_")), fl
+    en, fl = dich(core)
+    return lead + en, fl
 
 
 mods = sorted(set(raw_mods))
@@ -129,6 +153,31 @@ L += ["", "## C. Hàm/lớp theo module", ""]
 by = collections.defaultdict(list)
 for mod, name, kind, ln in raw_defs:
     by[mod].append((name, kind, ln))
+# Va cham: CHI xet top-level (co the goi tu ngoai qua module.ten) — nested def
+# trong closure khong gay "loi goi" theo nghia Ong Chu noi, tach rieng khoi
+# bang C (co the liet ca nested tuy dang render duoi).
+top_level = collections.defaultdict(set)
+for f in files:
+    mod = str(f.relative_to(ROOT))[:-3].replace("/", ".")
+    try:
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+    except Exception:                                              # noqa: BLE001
+        continue
+    for n in tree.body:
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if not (n.name.startswith("__") or n.name == "main"):
+                top_level[mod].add(n.name)
+va_cham = {}
+for mod, names in top_level.items():
+    kind_cua = {n: k for m, n, k, _ in raw_defs if m == mod}
+    en_names = collections.defaultdict(list)
+    for name in names:
+        en, _fl = dich_ten(mod, name, kind_cua.get(name, "def"))
+        en_names[en].append(name)
+    dup = {en: origs for en, origs in en_names.items() if len(origs) > 1}
+    if dup:
+        va_cham[mod] = dup
+
 for mod in mods:
     if not by.get(mod):
         continue
@@ -138,18 +187,11 @@ for mod in mods:
         if name in seen or name.startswith("__") or name == "main":
             continue
         seen.add(name)
-        lead = "_" if name.startswith("_") else ""
-        core = name.lstrip("_")
-        if kind == "class":
-            snake = re.sub(r"(?<!^)(?=[A-Z])", "_", core).lower()
-            en, fl = dich(snake)
-            en = "".join(w.capitalize() for w in en.split("_"))
-        else:
-            en, fl = dich(core)
+        en, fl = dich_ten(mod, name, kind)
         for p in en.split("_"):
             if p.startswith("?"):
                 unmapped[p[1:]] += 1
-        L.append(f"| `{name}` | `{lead}{en}` | {('⚠️ ' + ' '.join(sorted(fl))) if fl else ''} |")
+        L.append(f"| `{name}` | `{en}` | {('⚠️ ' + ' '.join(sorted(fl))) if fl else ''} |")
     L.append("")
 L += ["## D. Hằng số module", "", "| Module | Hiện tại | Đề xuất | Cờ |", "|---|---|---|---|"]
 for mod, c in sorted(set(raw_consts)):
@@ -163,6 +205,23 @@ L += ["", "## E. Token chưa có trong bảng", "", "| token | lần | ví dụ 
 for t, n in unmapped.most_common():
     L.append(f"| `{t}` | {n} | {', '.join(sorted(where.get(t, []))[:3])} |")
 
+L += ["", "## F. Va chạm tên — PHẢI SỬA trước khi rename",
+      "",
+      "Hai hàm/lớp top-level khác nhau trong CÙNG module mà dịch ra CÙNG một tên "
+      "— rename thẳng sẽ ghi đè, gây lỗi gọi thật. Sửa bằng `overrides.json` "
+      "(`\"module.ten_goc\": \"ten_moi\"`), không cần đụng bảng từ điển chung.", ""]
+if va_cham:
+    L += ["| Module | Tên đề xuất trùng | Các hàm gốc bị trùng |", "|---|---|---|"]
+    for mod, dup in va_cham.items():
+        for en, origs in dup.items():
+            L.append(f"| `{mod}` | `{en}` | {', '.join(f'`{o}`' for o in origs)} |")
+else:
+    L.append("**Không còn va chạm nào.**")
+
 out = S / "TU_DIEN_TEN_nhap.md"
 out.write_text("\n".join(L), encoding="utf-8")
-print(f"đã ghi {out} — {len(L)} dòng, {len(unmapped)} token chưa map ({sum(unmapped.values())} lượt)")
+so_va_cham = sum(len(v) for v in va_cham.values())
+print(f"đã ghi {out} — {len(L)} dòng, {len(unmapped)} token chưa map ({sum(unmapped.values())} lượt), "
+      f"{so_va_cham} va chạm tên trong {len(va_cham)} module")
+if so_va_cham:
+    sys.exit(1)                     # cong: build "that bai" khi con va cham chua sua

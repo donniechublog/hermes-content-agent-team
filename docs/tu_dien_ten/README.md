@@ -16,16 +16,26 @@ nhằng, nhưng đổi ngay là refactor giữa lúc nhiều nhánh đang hoạt
 | `don.json` | Từ gốc dạng TỪ ĐƠN |
 | `moho.json` | Token mơ hồ (một chữ không dấu, nhiều nghĩa) kèm giải nghĩa — cần chọn tay |
 | `them.json` | Bổ sung `don.json` + danh sách `PASS` (token đã là English, giữ nguyên) |
-| `gen.py` | Sinh lại `TU_DIEN_TEN_nhap.md` từ 4 tệp JSON trên + repo hiện tại |
+| `overrides.json` | Đè tuyệt đối theo `"module.tên_gốc": "tên_mới"` — sửa từng ca va chạm riêng lẻ |
+| `gen.py` | Sinh lại `TU_DIEN_TEN_nhap.md` từ 5 tệp JSON trên + repo hiện tại; tự kiểm va chạm (mục F) |
 
-## ⚠️ Bảng C (hàm/lớp) chỉ là khung nháp — phải soát theo HÀNH VI, không theo nghĩa từng chữ
+## Tiêu chí chốt (Ông Chủ 12/09/2026, đã hạ so với lượt thử đầu)
 
-Ông Chủ 12/09/2026: *"từ gốc nghĩa tiếng việt là gì không quá quan trọng, miễn
-là khi chuyển qua tiếng anh thì nó đúng với hàm sau khi đã đổi tên biến để
-không bị lỗi gọi"*. Xem `SOAT_NGU_NGHIA_5_module.md` — lượt thử soát tay 86
-hàm/lớp trong 5 module quan trọng nhất (nhiều nơi gọi tới nhất): **70% tên dịch
-máy sai hoặc gây hiểu nhầm** khi đối chiếu với docstring/thân hàm thật. Việc
-rename mỗi hàm phải đọc hành vi thật, không nhận thẳng cột dịch máy của bảng C.
+> *"ngữ nghĩa là gì không quan trọng, thích gán nó là gì cũng được, không bị
+> lẫn lộn hàm là được"*
+
+Nghĩa là bảng C (hàm/lớp) **KHÔNG cần đúng nghĩa từng chữ** — chỉ cần **không
+hai hàm/lớp top-level nào trong cùng module trùng tên** sau khi dịch (đó mới
+là thứ gây "lỗi gọi" thật — Python ghi đè định nghĩa trùng tên trong cùng
+module). `gen.py` tự kiểm điều này ở **mục F**; đã đo trên toàn bộ 103 module /
+937 hàm-lớp: **0 va chạm còn lại** (1 ca duy nhất tìm được —
+`carousel._gate_chu` trùng `carousel._gate_text` — đã sửa qua `overrides.json`).
+
+Lượt thử đầu (`SOAT_NGU_NGHIA_5_module.md`) soát tay 86 hàm theo hành vi thật,
+tìm ra 70% tên dịch máy "sai nghĩa" — tệp đó vẫn giữ làm tham khảo (một số tên
+trong đó đọc tự nhiên hơn), nhưng **không còn là điều kiện bắt buộc**: dịch sai
+nghĩa nhưng không trùng tên thì không sao, không cần soát lại toàn bộ ~930 hàm
+theo kiểu đó nữa.
 
 ## Cách duyệt / sửa
 
