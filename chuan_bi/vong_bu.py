@@ -345,6 +345,13 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     cands = []
     for h in hangs:
         cands += th.anh_hang(h, wd=wd4 / h["khoa"])
+    # `tai_va_loc` tu ghi hop dong "tai ung vien THEO THU TU DIEM" — noi duy
+    # nhat trong ca thang anh thuong hieu ma diem THAT SU khac nhau (anh noi/san
+    # pham 28 > nguoi 24 > logo 18, dat o `anh_thuong_hieu._ung_vien`), nhung
+    # bo sot sort nay tu dau (kieu tin nhieu hang: cands cua hang A duoc noi
+    # TRUOC hang B bat ke loai anh, dung thu tu goi `anh_hang` chu khong theo
+    # do "minh hoa duoc" nhieu hay it). `_vong_tim_rong` (:198) da lam dung.
+    cands.sort(key=lambda c: -c.get("diem", 0))
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["anh"] not in da]
     bo_sung = tai_va_loc(cands, wd4) if cands else []

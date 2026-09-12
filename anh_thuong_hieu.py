@@ -569,6 +569,17 @@ def anh_wikidata(hang, wd=None) -> list:
             c["thuong_hieu"]["vai"] = n["vai"]
             c["alt"] = f"Commons: {n['ten']} — {n['vai']} {ten_chinh}"
             ra.append(c)
+        # BAT ANH NGANG cua chinh nguoi nay tren Commons (Ong Chu 12/09/2026:
+        # "chỉ cần search claude hay anthropic thì cũng ra một rừng ảnh rồi").
+        # Wikidata P18 chi giu DUNG MOT anh (thuong la chan dung studio, doc) —
+        # chua bao gio hoi Commons theo TEN NGUOI. Do that 12/09: search "Dario
+        # Amodei" ra 9 anh su kien/hop bao 4000x2667..8192x5464, ti le 1.5, ma
+        # pipeline chua bao gio cham toi vi HAU_TO chi khop "headquarters/
+        # building/campus". Ten day du it dung hang nhu ten hang (khong nhu
+        # "Anthropic" trung khao co, "Claude" trung hoi hoa) nen dung lai
+        # `_tu_dac_trung`/`_co_tu` cua chinh module nay, khong can bang NHIEU.
+        for c in anh_nguoi_ngang(n["ten"], n["vai"], ten_chinh, khoa):
+            ra.append(c)
     for t in tl["logo"]:
         u = thong.get(t)
         if not u or not wd:
@@ -596,6 +607,55 @@ def _ung_vien(u: dict, ten_tep: str, hang: str, khoa: str, loai: str, ly_do: str
             "trang": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
             "diem": {"anh": 28, "nguoi": 24, "logo": 18}.get(loai, 20),
             "thuong_hieu": {"hang": hang, "khoa": khoa, "loai": loai, "tu_khoa": ly_do}}
+
+
+TOI_DA_NGUOI_NGANG = 2   # tran anh ngang moi nguoi — tranh mot CEO chiem het luot
+
+
+def anh_nguoi_ngang(ten: str, vai: str, hang: str, khoa: str) -> list:
+    """Ảnh NGANG của chính người này trên Commons (họp báo, sự kiện, phỏng vấn)
+    — KHÁC ảnh chân dung studio duy nhất mà Wikidata P18 giữ.
+
+    Ông Chủ 12/09/2026: *"chỉ cần search claude hay anthropic thì cũng ra một
+    rừng ảnh rồi, kiếm cái ảnh rõ nét và ratio phù hợp khó thế sao?"* — đúng, đo
+    thật: search "Dario Amodei" ra 9 ảnh họp báo/sự kiện 4000x2667..8192x5464,
+    tỉ lệ 1,5 (ngang), mà `anh_wikidata` trước đây CHƯA BAO GIỜ hỏi Commons theo
+    TÊN NGƯỜI — chỉ lấy đúng một ảnh P18 (thường là chân dung studio, dọc).
+
+    Search "Anthropic"/"Claude AI" một mình thì nhiễu thật (khảo cổ, hội hoạ,
+    từ điển — xem `NHIEU`), nhưng TÊN NGƯỜI ĐẦY ĐỦ hiếm khi trùng nghĩa khác;
+    dùng lại đúng `_tu_dac_trung`/_co_tu` đã có cho tên hãng: lọc CẢ hai từ của
+    tên phải khớp tên tệp theo biên giới từ. Vẫn cùng cổng LUAT_ANH §6 với chân
+    dung (khai `nhan_vat`) — chỉ khác đủ ngang để không teo khi lên bìa."""
+    import anh_khai_niem
+    pages = _hoi_commons(f'"{ten}"')
+    if pages is None:
+        return []
+    dac_trung = _tu_dac_trung(ten)
+    ra = []
+    for pg in pages.values():
+        ii = (pg.get("imageinfo") or [{}])[0]
+        w, h = ii.get("width", 0), ii.get("height", 0)
+        if min(w, h) < CANH_NGAN_MIN or w < h:            # doc/vuong hep -> bo, day la
+            continue                                       # duong rieng cho "ti le phu hop"
+        if ii.get("mime") not in ("image/jpeg", "image/png"):
+            continue
+        ten_tep = (pg.get("title") or "").replace("File:", "")
+        thap = ten_tep.lower()
+        if anh_khai_niem.TEN_LOAI.search(thap) or not all(_co_tu(t, thap) for t in dac_trung):
+            continue
+        c = _ung_vien({"url": ii.get("thumburl") or ii.get("url"), "rong": w, "cao": h,
+                       "mime": ii.get("mime")}, ten_tep, hang, khoa, "nguoi",
+                      f"{vai} {hang}, ảnh ngang (Commons)")
+        c["diem"] = 26     # giua "anh" cong ty/san pham (28) va chan dung doc (24):
+                           # van la mot nguoi, nhung du ngang de khong can crop nat
+        c["thuong_hieu"]["nguoi"] = ten
+        c["thuong_hieu"]["vai"] = vai
+        c["alt"] = f"Commons: {ten} — {vai} {hang}, ảnh ngang"
+        ra.append(c)
+        if len(ra) >= TOI_DA_NGUOI_NGANG:
+            break
+    return ra
 
 
 def anh_hang(hang, so: int = TOI_DA_MOI_HANG, wd=None) -> list:
