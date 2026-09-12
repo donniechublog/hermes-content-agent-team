@@ -63,7 +63,8 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
     i_hoi_mac_dinh = src.index('hoi = (f"Bai bao: \\"{tieu_de}\\".')
     i_khai_niem = src.index("if khai_niem:")
     doan_mac_dinh = src[i_hoi_mac_dinh:i_khai_niem]
-    assert "RO NET" in doan_mac_dinh and "goc nghieng" in doan_mac_dinh, doan_mac_dinh
+    assert "RO NET" in doan_mac_dinh and "out-of-focus" in doan_mac_dinh, doan_mac_dinh
+    assert "man hinh dien thoai" in doan_mac_dinh or "chup lai" in doan_mac_dinh, doan_mac_dinh
 
 
 # --------------------------------------------------- 3. tối thiểu ảnh thật/slide

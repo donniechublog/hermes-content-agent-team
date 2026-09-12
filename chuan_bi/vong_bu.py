@@ -466,11 +466,19 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         moi.parent.mkdir(parents=True, exist_ok=True)
         Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
-        # tieu_de rong = KHONG hoi vision, dung nhu anh xep hang: day la trang
-        # cua CHINH tin, "co lien quan bai khong" thi khong phai cau hoi.
-        a = phan_loai(a, wd, "")
-        a["lien_quan"] = True
-        a["mo_ta"] = "ảnh hero của chính bài gốc, chụp ở khung điện thoại"
+        # Hoi CHAT LUONG, khong hoi lai "co lien quan" (LOW-45, 12/09/2026):
+        # truoc day tieu_de rong = KHONG hoi vision, ep thang lien_quan=True vi
+        # "day la trang cua CHINH tin". Dung ve TOPIC, nhung bo qua het CHAT
+        # LUONG — do that 12/09: anh hero that cua bai Moonshot/Kimi K3 la mot
+        # anh bao Getty chup nghieng man hinh App Store, van len bia du xau.
+        # `chup_nguon=True` doi mo_ta_anh hoi CAU RIENG (chi chat luong, xem
+        # docstring), khong dung cau mac dinh (se hoi lai ca "co dung chu de"
+        # — thua, va co the rot vi ly do sai). Rong tieu_de (hiem, ca xep_hang
+        # cu) van skip vision nhu cu.
+        a = phan_loai(a, wd, tieu_de, chup_nguon=True) if tieu_de else phan_loai(a, wd, "")
+        if a.get("lien_quan") is None:
+            a["lien_quan"] = True          # khong hoi duoc (rong/router hong) -> giu y cu, khong chan oan
+        a["mo_ta"] = a.get("mo_ta") or "ảnh hero của chính bài gốc, chụp ở khung điện thoại"
         # `phan_loai` doc mot anh chup trang la "chart/screenshot" (nen trang,
         # nhieu chu) roi dan nhan KHONG LAM BIA — dung cho chart cua nguoi khac,
         # sai cho tam nay: Ong Chu 12/09/2026 chot "cat lay khoi lead roi lam
@@ -495,6 +503,15 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
                                f"{a['mien']}, chụp ở khung điện thoại; caption ghi "
                                f"\"… · via {a['mien']}\"")
         anh.append(a)
+        # ROT chat luong (LOW-45) thi KHONG dung lai o day: con URL khac trong
+        # `urls` (bao khac cung tin, LOW-33) co the co hero sach hon — giu ban
+        # ghi nay (de thay trong bang_anh.png/chua_nhin) nhung thu tiep, dung
+        # ket luan "het lead" tu MOT trang xau.
+        if a.get("lien_quan") is False:
+            a["dung"] = []
+            print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']}) RỚT chất lượng "
+                  f"({a.get('mo_ta', '')[:60]!r}), thử URL khác", file=sys.stderr)
+            continue
         print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']})", file=sys.stderr)
         break
     else:

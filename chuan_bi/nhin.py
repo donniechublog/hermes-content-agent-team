@@ -27,7 +27,7 @@ VISION_URL = env_load.ROUTER_URL
 
 def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
               nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None,
-              khai_niem_theo_loai: bool = False) -> tuple:
+              khai_niem_theo_loai: bool = False, chup_nguon: bool = False) -> tuple:
     """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
     theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu KHONG HOI
     DUOC (thieu key, router hong ca hai lan thu lai cua `_goi_router`): luc do
@@ -56,7 +56,18 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
 
     `khai_niem` (07/09/2026): anh tim theo tu khoa (co, datacenter) chu khong phai
     anh cua tin — hoi cau khac (anh_khai_niem.cau_hoi_vision), khong hoi "co phai
-    anh cua tin" vi chac chan khong, va khong ap override "ten hang trong mo ta"."""
+    anh cua tin" vi chac chan khong, va khong ap override "ten hang trong mo ta".
+
+    `chup_nguon` (LOW-45, 12/09/2026): anh hero CHUP TU CHINH TRANG NGUON
+    (`vong_bu._vong_chup_nguon`) — LA anh cua tin, cau hoi khong hoi lai "co
+    lien quan khong" nua (chac chan co, tu DOM cua chinh bai), CHI hoi CHAT
+    LUONG (ro net, khong phai anh bao chup lai mot man hinh khac). Truoc ticket
+    nay nhanh `_vong_chup_nguon` bo qua vision HOAN TOAN, ep `lien_quan = True`
+    thang — do that 12/09: anh hero that cua bai Moonshot/Kimi K3 la mot anh
+    bao Getty chup nghieng man hinh App Store, van bi ep True du xau, roi
+    tam ngang do LAI bi mot vong khac (`_lay_anh_trang`, da chan o LOW-45 phan
+    1) chup lai lan nua thanh mot tam khac — ca hai deu khong qua cong chat
+    luong nao. Nhanh nay dong no lai."""
     import base64, json as _j, urllib.request
     # env_load.bat_buoc nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
@@ -85,11 +96,28 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                + "\nTra loi DUNG 2 dong:\n"
                "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
-               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET "
-               "khong mo/nhoe, khong phai anh chup lai mot man hinh o goc nghieng kho nhin; "
+               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; "
                "khong = quang cao, widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/"
-               "chu de khac, hoac mo/nhoe/chup nghieng du dung chu de)")
-        if khai_niem:
+               "chu de khac, HOAC la anh chup LAI mot man hinh dien thoai/may tinh bang MAY ANH KHAC "
+               "(nhin thay duoc vien man hinh, phan chieu anh sang, hoac nen phia sau man hinh bi mo/"
+               "out-of-focus trong khi chu tren man hinh net) thay vi anh xuat truc tiep tu man hinh — "
+               "loai nay du doc duoc chu tren man hinh van tinh la khong, vi la anh chup thu cap)")
+        if chup_nguon:
+            # LA anh cua tin (tu chinh DOM cua bai) — khong hoi lai "co lien
+            # quan khong", CHI hoi CHAT LUONG. Tach khoi nhanh mac dinh o tren
+            # vi cau do con hoi ca "co dung chu de" — cau hoi thua, va vo tinh
+            # cho phep mot cau tra loi "khong" vi LY DO CHU DE (hiem gap that
+            # nhung ve mat logic van sai) lam rot mot anh chac chan la hero.
+            hoi = (f"Day la ANH HERO cua chinh bai bao: \"{tieu_de}\" — CHAC CHAN la anh cua tin, "
+                   "khong hoi 'co lien quan khong'.\nTra loi DUNG 2 dong:\n"
+                   "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
+                   "LIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke, KHONG "
+                   "phai anh bao chup LAI mot man hinh dien thoai/may tinh bang MAY ANH KHAC (thay "
+                   "duoc vien man hinh, phan chieu anh sang, hoac nen phia sau man hinh bi mo/"
+                   "out-of-focus trong khi chu tren man hinh net); khong = mo/nhoe, HOAC dung la anh "
+                   "chup lai man hinh kieu do du doc duoc chu — loai nay van la KHONG DUNG DUOC vi la "
+                   "anh chup thu cap, khong phai anh xuat truc tiep)")
+        elif khai_niem:
             import anh_khai_niem
             hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)
         elif thuong_hieu:
@@ -125,7 +153,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                               r"headquarters|office|building|product|device|event", re.I)
         KHONG = re.compile(r"m[aà]n h[iì]nh|giao di[eệ]n|c[uử]a s[oổ]|driver|ph[aầ]n m[eề]m|screenshot|"
                            r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
-        if khai_niem or thuong_hieu:
+        if khai_niem or thuong_hieu or chup_nguon:
             pass                                   # tin cau tra loi, khong override theo ten hang
         elif hang and lqv is False and hang.lower() in mt.lower() and BOI_CANH.search(mt) and not KHONG.search(mt):
             lqv = True
@@ -209,8 +237,11 @@ def _phan_loai_an_toan(a: dict, wd: Path, tieu_de: str) -> dict:
         return a
 
 
-def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
-    """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can."""
+def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> dict:
+    """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can.
+
+    `chup_nguon` (LOW-45): anh hero chup tu chinh trang nguon — xem
+    `mo_ta_anh(..., chup_nguon=True)`."""
     img = Image.open(a["goc"]).convert("RGB")
     w, h = img.size
     r = w / h
@@ -231,7 +262,8 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     hang = (a.get("thuong_hieu") or {}).get("hang") or _ten_rieng_dau(tieu_de)
     a["mo_ta"], a["lien_quan"] = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
                                             khai_niem_theo_loai=kn_theo_loai,
-                                            thuong_hieu=a.get("thuong_hieu"))
+                                            thuong_hieu=a.get("thuong_hieu"),
+                                            chup_nguon=chup_nguon)
                                   if tieu_de else ("", None))
     # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
     # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua
