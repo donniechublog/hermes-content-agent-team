@@ -228,6 +228,11 @@ CHO_KHOA_GIAY = 60
 # engine tu noi ra thay vi bi cat cau. `_ngu` tach ra de test khong ngu that.
 CHO_LUOT_GIAY = 240
 _ngu = time.sleep
+# Engine chet BAT THUONG (khoa mo coi = tien trinh truoc khong toi `finally`) bay
+# nhieu lan tren MOT draft thi DUNG va bao, khong cho vai chay lai nua (LOW-28).
+# t_24b214a6 12/09/2026: SIGSEGV 3 lan, vai tu xoa khoa va goi lai 16 lan trong
+# 50 phut vi khong co gi noi "thoi". Hai lan la du de biet khong phai ngau nhien.
+TOI_DA_CHET = 2
 
 # Chet bang tin hieu (SIGSEGV trong PIL/torch/playwright...) thi `try/except`
 # khong thay gi va log khong co traceback — t_24b214a6 chet `exit 139` ba lan ma
@@ -306,9 +311,12 @@ def _doi_khoa(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
          khoa (06/09/2026: hai engine tren cung draft de len xong.json cua nhau).
 
     Tach ra khoi `chay()` de test duoc bang mot tep khoa gia, khong can meta
-    draft hay browser. `ngu` chi de test khong phai ngu that."""
+    draft hay browser. `ngu` chi de test khong phai ngu that.
+
+    Tra ve True khi gap KHOA MO COI (tien trinh truoc chet bat thuong) — `chay()`
+    dem so lan do de dung lai (LOW-28)."""
     if not khoa.exists():
-        return
+        return False
     try:
         pid = int(khoa.read_text().strip() or 0)
         os.kill(pid, 0)
@@ -316,7 +324,7 @@ def _doi_khoa(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
         print(f"[cho] khoa mo coi (pid {khoa.read_text().strip() or '?'} da chet) "
               "-> don khoa, chay tiep khong doi", file=sys.stderr)
         khoa.unlink(missing_ok=True)
-        return
+        return True
     print(f"[cho] tien trinh {pid} dang chuan bi, doi toi da {cho}s...", file=sys.stderr)
     t0 = time.time()
     da_bao_giay = 0
@@ -329,17 +337,50 @@ def _doi_khoa(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
             da_bao_giay = troi
             print(f"[cho] ...{troi}s/{cho}s, tien trinh {pid} van giu khoa", file=sys.stderr)
     if not khoa.exists():
-        return
+        return False
     try:
         con = int(khoa.read_text().strip() or 0)
         os.kill(con, 0)
     except (ValueError, ProcessLookupError, PermissionError):
         khoa.unlink(missing_ok=True)          # chet trong luc doi -> don khoa
-        return
+        return True
     sys.exit(f"[LOI] tien trinh {con} van dang chuan bi {draft_id} sau {cho}s. "
              "KHONG chay engine thu hai tren cung mot draft (hai ban se de len "
              "xong.json cua nhau). Doi them roi chay lai, hoac `--lam-moi` neu "
              "chac tien trinh kia treo.")
+
+
+def dem_chet(wd: Path, mo_coi: bool, lam_moi: bool = False) -> int:
+    """So lan engine chet bat thuong LIEN TIEP tren draft nay (LOW-28). Ham thuan
+    tren mot tep `so_lan_chet.json` trong wd: `mo_coi` -> +1; `lam_moi` -> ve 0;
+    xong.json ghi duoc -> `chay()` goi lai voi lam_moi=True de ve 0."""
+    tep = wd / "so_lan_chet.json"
+    n = 0
+    if not lam_moi:
+        try:
+            n = int(_doc_json(tep).get("n", 0)) if tep.exists() else 0
+        except Exception:                                    # noqa: BLE001
+            n = 0
+        if mo_coi:
+            n += 1
+    _ghi_json(tep, {"n": n})
+    return n
+
+
+def _bao_chet_lap(draft_id: str, so_chet: int) -> None:
+    """Mot dong Telegram vao topic cua vai anh khi engine chet lap — im lang la
+    cai da khien 50 phut cua t_24b214a6 khong ai thay (INV-3)."""
+    try:
+        import publish
+        tom = _tom_tat_tu_img_json(draft_id)
+        slug = vai.slug_that(tom.get("vai_anh") or "") or vai.MAC_DINH_ANH
+        publish.gui_topic(
+            f"⛔ Engine chuẩn bị ảnh chết bất thường <b>{so_chet} lần liên tiếp</b> trên draft "
+            f"<code>{draft_id}</code> — đã DỪNG, không chạy lại. Xem "
+            f"<code>state/&lt;brand&gt;/chuan_bi/{draft_id}/chuan_bi.log</code> (faulthandler in "
+            "chỗ chết). Sửa xong thì chạy lại với <code>--lam-moi</code>.", slug)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[chet] khong bao duoc Telegram: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=CHO_KHOA_GIAY,
@@ -362,8 +403,13 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=CHO_KHOA_GIAY,
     wd = workdir(state, draft_id)
     wd.mkdir(parents=True, exist_ok=True)
     xong, khoa = wd / "xong.json", wd / "dang_chay.pid"
-    if not lam_moi:
-        _doi_khoa(khoa, cho, draft_id)
+    mo_coi = _doi_khoa(khoa, cho, draft_id) if not lam_moi else False
+    so_chet = dem_chet(wd, mo_coi, lam_moi)
+    if so_chet >= TOI_DA_CHET and not xong.exists():
+        _bao_chet_lap(draft_id, so_chet)
+        sys.exit(f"[LOI] engine da chet bat thuong {so_chet} lan lien tiep tren {draft_id} "
+                 "— DUNG, KHONG chay lai. Da bao Ong Chu. Chi chay lai voi `--lam-moi` "
+                 "sau khi sua nguyen nhan (xem chuan_bi.log).")
     if xong.exists() and not lam_moi:
         # doc_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
         # thay cung mot so, khong ai phai tu doan nua.
@@ -390,6 +436,7 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=CHO_KHOA_GIAY,
                 print(f"[route] mat {giay:.0f}s — khoa draft bi giu suot thoi gian do",
                       file=sys.stderr)
         _ghi_json(xong, m)
+        dem_chet(wd, False, lam_moi=True)     # di toi cuoi -> xoa bo dem chet
     finally:
         khoa.unlink(missing_ok=True)
     return m, wd, meta

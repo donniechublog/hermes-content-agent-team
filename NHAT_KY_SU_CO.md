@@ -794,3 +794,14 @@ khi DB có nhịp thở mỗi phút là nói sai, không phải đo thô; (2) gi
 code (`_cho_luot`) bị số liệu máy chủ bác — ghi vào ticket cả cái bị bác; (3) hai
 hẹn giờ bằng nhau (300s/300s) thì cái ngoài luôn thắng, đường xử lý phía sau
 không bao giờ được chạm tới.
+
+**Bổ sung cùng ngày (LOW-24/25/27/28).** Truy segfault bằng `faulthandler` trên máy
+chủ: chết tại `luat_anh.dem_mat → det.detect()`; chạy từng ảnh trong tiến trình
+riêng thì 7/8 ok, **A2.png 9440×5310 chết `-11` kể cả một mình** — YuNet không
+chịu ảnh 50 MP, vision 503 chỉ trùng thời điểm. Vá: thu về `MAT_CANH_MAX=1600`
+trước khi dò; chạy lại đúng draft: `exit 139` → `exit 0` + `xong.json`. Kèm:
+cổng `kiem_hang_tren_the` (hạng trên thẻ = hạng trong ảnh, Ethan + Dre),
+`max_runtime` 40m cho vai ảnh (đo p95 dre/kite ≈ 23 phút), `_cho_luot` có trần
+240s + báo 30s, và engine tự dừng + báo Telegram khi chết bất thường 2 lần liên
+tiếp (`so_lan_chet.json`). Deploy: push `origin` (= máy chủ, `updateInstead`),
+restart `hermes-approve@blog/@dcgr`.
