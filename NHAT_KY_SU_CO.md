@@ -805,15 +805,6 @@ dùng kiểu này nữa và `card.py` không còn nhánh nào cho nó. Trước 
 6. Subtitle: căn trái, tối đa 3 dòng, màu xám nhạt (donniechublog) hoặc trắng 95% (dcgr).
 7. Chân thẻ: `via: <nguồn>` trái, màu cyan mờ; hàng icon social + @handle phải, icon mờ hơn chữ.
 
-## Bố cục kiểu `dai` — đã bỏ khỏi mã 05/09/2026, tham chiếu thiết kế (1200px ngang)
-1. Vùng ảnh nguồn trên cùng — ảnh thật, không chèn chữ đè lên (trừ mascot nếu còn góc trống).
-2. Khung kỹ thuật: 4 góc vát — 2 góc trên cyan, 2 góc dưới trắng; 2 đường dọc đôi; đường chia ngắt quãng ngay ranh giới ảnh/text.
-3. Chip category trái: nền đặc cyan, chữ đen, đè lên ranh giới ảnh/textbox, có 2 tam giác gấp xuống phải (kiểu ruy-băng).
-4. Chip category phải: nền trong suốt, viền cyan, chữ trắng, gấp lên.
-5. Tiêu đề: căn trái, tối đa 2 dòng, trắng FG.
-6. Subtitle: căn trái, tối đa 3 dòng, màu xám nhạt (donniechublog) hoặc trắng 95% (dcgr).
-7. Chân thẻ: `via: <nguồn>` trái, màu cyan mờ; hàng icon social + @handle phải, icon mờ hơn chữ.
-
 ---
 
 ## Thẻ "#3 bảng văn bản" đi kèm ảnh khoanh #26, và 50 phút Ethan "không phản hồi" (12/09/2026)
