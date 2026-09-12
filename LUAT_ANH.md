@@ -170,6 +170,11 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   (data center → dãy rack, chip → wafer, chứng khoán → sàn giao dịch, chính
   sách → toà nhà quốc hội…). Bảng cố định trước, model text bù tới 3 từ khoá.
   Không tìm khái niệm trừu tượng (funding, partnership): Commons chỉ trả minh hoạ tệ.
+  Minh hoạ biên tập CÓ SẴN (vẽ tay/digital, kiểu The Economist) được dùng như ảnh
+  chụp — §0 cấm *tự vẽ*, không cấm *dùng*; vẫn gạt icon/clipart/sơ đồ/logo (Ông
+  Chủ 12/09/2026). Từ khoá LLM bị CẤM đề xuất phần cứng ngành AI (rack, datacenter,
+  GPU, chip, robot) khi tin không nói về phần cứng — "tin nào cũng AI" không phải
+  lý do ra phòng máy.
 - **Nguồn**: chỉ Wikimedia Commons, chỉ JPEG/PNG cạnh ngắn ≥ 700, tên tệp phải
   chứa ≥ 2 từ đặc trưng của từ khoá và không phải logo/CGI/variant/bản đồ phẳng.
   Đây là **ảnh thật** — cờ thật, toà nhà thật — nên không vi phạm §0.

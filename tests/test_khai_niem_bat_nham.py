@@ -76,6 +76,22 @@ def test_prompt_llm_khong_lay_vat_nganh_AI_lam_vi_du():
     import inspect
     src = inspect.getsource(k.tu_khoa_llm)
     assert "server racks, a product" not in src, "vi du 'server racks' con trong prompt"
+    # Bo vi du chua du: do 12/09 lan 2, model VAN de "computer server rack" cho tin
+    # toan. Prompt phai CAM THANG phan cung nganh AI trong khi tin khong noi ve no.
+    assert "do NOT suggest AI-industry hardware" in src and "server racks, data center, GPU" in src
+
+
+def test_minh_hoa_bien_tap_duoc_dung_nhu_anh_chup():
+    """Ông Chủ 12/09/2026: "ảnh illustration cũng chả sao cả, The Economist còn
+    dùng". LUAT_ANH §0 cấm TỰ VẼ, không cấm DÙNG minh hoạ có sẵn. Bộ lọc tên tệp
+    và câu hỏi con mắt không được gạt illustration/drawing; icon/clipart/sơ đồ
+    vẫn gạt."""
+    for ten in ("Mathematics illustration.jpg", "Drawing of a classroom.jpg", "Poster of geometry.jpg"):
+        assert not k.TEN_LOAI.search(ten.lower()), ten
+    for ten in ("Math icon.svg", "Clipart abacus.png", "Diagram of proof.png", "Bar chart.png"):
+        assert k.TEN_LOAI.search(ten.lower()), ten
+    c = k.cau_hoi_vision(TIN_TOAN, "blackboard mathematical formulas")
+    assert "minh hoa bien tap" in c and "anh CHUP THAT" not in c, c
 
 
 def test_cau_hoi_vision_theo_loai_khong_xet_hop_bai():

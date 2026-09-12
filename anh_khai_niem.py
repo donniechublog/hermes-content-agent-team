@@ -151,7 +151,10 @@ CHU_DE = [
 # Bọc \b vẫn bắt đủ "App icon.png", "Bar graph.png", "Chart of...".
 TEN_LOAI = re.compile(r"logo|\bicons?\b|emblem|coat of arms|\bseal\b|\bsvg\b|diagram|"
                       r"\bcharts?\b|\bgraphs?\b|"
-                      r"screenshot|poster|drawing|illustration|clipart|banner|badge|stamp|"
+                      # poster|drawing|illustration TUNG bi loai o day. Ong Chu 12/09/2026:
+                      # "ảnh illustration cũng chả sao, The Economist còn dùng" — LUAT_ANH §0
+                      # cam TU VE, khong cam DUNG minh hoa co san. Van loai clipart/icon/so do.
+                      r"screenshot|clipart|banner|badge|stamp|"
                       r"sticker|infographic|\bmap of\b(?!.*(satellite|relief))|locator map|"
                       r"\bcgi\b|variant|captured|render|3d\b|mockup|template|"
                       r"rising sun|ensign|naval|\bwar\b|military|protest", re.I)   # cờ chiến/biểu tình
@@ -200,14 +203,19 @@ def tu_khoa_llm(tieu_de: str, tom_tat: str = "") -> list:
     key = os.environ.get("OPENAI_API_KEY")
     if not key or not tieu_de:
         return []
-    hoi = ("You pick REAL-PHOTO search keywords for Wikimedia Commons to illustrate a news "
-           "story when the story itself has no usable image. Keywords must name concrete, "
-           "photographable things (a flag flying, a building, a laboratory bench, a product), never "
-           # "server racks" tung nam trong vi du nay — do that 12/09/2026: tin TOAN HOC
-           # ra tu khoa "server racks data center" chi vi model chep vi du. Vi du
-           # khong duoc la mot vat cua nganh AI.
-           
-           "abstract ideas (growth, partnership, AI). English only, 2-4 words each.\n"
+    # Thien kien PHONG MAY (Ong Chu 12/09/2026, hai lan): bo vi du "server racks"
+    # roi model VAN de "computer server rack" cho tin toan — vi tin nao cung co
+    # chu "AI". Nen phai CAM THANG, khong chi bo vi du. Minh hoa bien tap (ve
+    # tay/digital nhu The Economist) duoc dung nhu anh chup — chi cam tu ve.
+    hoi = ("You pick search keywords for Wikimedia Commons to illustrate a news story when "
+           "the story itself has no usable image. Keywords must name concrete, visible things "
+           "(a flag flying, a building, a laboratory bench, a product, a chalkboard) — a photo or an "
+           "editorial illustration of them is fine — never abstract ideas (growth, partnership, AI).\n"
+           "HARD RULE: do NOT suggest AI-industry hardware — server racks, data center, GPU, chip, "
+           "circuit board, robot, computer screen — unless the story is literally about that hardware. "
+           "Every story here is about AI; that is NOT a reason to show a machine room. Pick the thing "
+           "the story is about (math -> chalkboard equations; law -> courthouse; school -> classroom).\n"
+           "English only, 2-4 words each.\n"
            f"Story: {tieu_de}\n" + (f"Summary: {tom_tat[:400]}\n" if tom_tat else "")
            + "Answer with up to 3 lines, each exactly: KEYWORD: <keyword> | <why, 5 words>")
     body = {"model": env_load.VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 200,
@@ -333,13 +341,14 @@ def cau_hoi_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> str:
     # LA vat lien quan. Chi con xet: co dung la vat do, chup that, nhin ra.
     quy_dinh = (f" Tu khoa \"{tu_khoa}\" do LOAI TIN quy dinh la vat lien quan (bang loai tin cua "
                 "Ong Chu) — KHONG xet no co hop bai hay khong, coi nhu hop; chi xet anh co dung la "
-                "vat do, chup that, nhin ra vat chinh." if theo_loai else "")
+                "vat do, nhin ra vat chinh." if theo_loai else "")
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no duoc tim lam ANH KHAI NIEM "
             f"theo tu khoa \"{tu_khoa}\" de lam anh bia.{quy_dinh}\nTra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
-            f"LIEN_QUAN: co | khong  (co = anh CHUP THAT, ro net, dung la {tu_khoa}, khong co chu lon, "
+            f"LIEN_QUAN: co | khong  (co = anh chup that HOAC minh hoa bien tap (ve tay/digital) "
+            f"ro net, dung la {tu_khoa}, khong co chu lon, "
             f"tu khoa \"{tu_khoa}\" that su hop chu de bai tren, VA nhin vao la NHAN RA NGAY vat "
-            "chinh — vat do lien quan chu de bai; khong = khong phai thu do, do hoa/ban ve/so do/"
+            "chinh — vat do lien quan chu de bai; khong = khong phai thu do, so do/icon/clipart/"
             "ban do phang, mo, nhieu chu, logo, co nguoi ro mat, tu khoa lac chu de bai, HOAC anh "
             "roi/chat chung khong nhan ra vat gi la vat chinh du co dung tu khoa "
             "(khong can dep, chi can NHIN RA va lien quan)")
