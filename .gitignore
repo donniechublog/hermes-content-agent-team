@@ -37,3 +37,8 @@ gif2png_tmp.py
 token*.txt
 secrets*.txt
 !*.env.mau
+
+# Thu muc lam viec cua Claude Code (worktree tam khi chay viec nen). Do cua
+# cong cu, khong phai cua du an — de lai thi no nam mai trong `git status` va
+# che mat cac thay doi that (12/09/2026).
+.claude/
