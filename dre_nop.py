@@ -37,6 +37,7 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import nop_chung as nc                                       # noqa: E402
+import schema                                                # noqa: E402
 
 DRAFTS = ROOT / "drafts"
 
@@ -138,7 +139,7 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
         if not la_bia:
             ra["chart"] = True
     elif a["ngang"]:
-        if muc.get("cat_ngang") and a["h"] < 700:
+        if muc.get("cat_ngang") and a["h"] < schema.CAO_TOI_THIEU_CAT_NGANG:
             bo.loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
                           "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"ghep\" hoặc bỏ")
             return None

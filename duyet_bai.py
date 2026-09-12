@@ -494,7 +494,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     title = im.get("title", draft_id)
     body = task_bodies.EDU_BODY.format(source_note=source_note, link=link, title=title,
                                        summary=summary, goc=str(ROOT), draft_id=draft_id,
-                                       ket_thuc=task_bodies.KET_THUC_VAI_ANH)
+                                       ket_thuc=task_bodies.ket_thuc_vai_anh(ROOT, draft_id))
     # Engine da nhin anh: co bao nhieu tam that dung duoc? Kite phai DUNG chung
     # (Ong Chu 05/09/2026), khong ra bo toan text & card.
     # C-r2-5: doc qua schema.doc_manifest va dem bang schema.so_anh_dung_duoc —

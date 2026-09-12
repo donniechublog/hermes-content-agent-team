@@ -312,7 +312,11 @@ def du_nguyen_lieu(slug: str, dung_duoc: list, flagship: bool = False) -> bool:
     if not any(anh_chinh_duoc(slug, a) for a in dung_duoc):
         return False
     # muc = 0 (vai mot anh): ve nay luon dung, tuc chi con ve thu nhat.
-    return len(dung_duoc) >= so_anh_muc_tieu_tim(slug, flagship)
+    # Dem SLIDE dung duoc (schema.so_anh_dung_duoc), khong dem TAM: tin TSMC
+    # 12/09/2026 co 5 tam nhung mot tam 900x600 chi ghep duoc ma khong co cap
+    # -> 4 slide, engine van bao "du 5" va ngung tim (t_a8ffd2f6).
+    import schema
+    return schema.so_anh_dung_duoc(dung_duoc) >= so_anh_muc_tieu_tim(slug, flagship)
 
 
 def don_vi_san(slug: str) -> str:

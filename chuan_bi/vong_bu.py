@@ -257,17 +257,28 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     if them_bao:
         bp2 = browser_pass([{"url": t["url"], "loai": "báo"} for t in them_bao], wd2, tim_them=False, phien=phien)
         cands2 += bp2["cands"]
+        # Noi ra tung buoc (12/09/2026, tin TSMC): vong nay ghe 4 bao moi ma
+        # "+0 tai them", khong mot dong nao cho biet 0 la do trang khong co anh,
+        # anh trung, hay tai hong — phai doan.
+        print(f"[tim rong] browser boc {len(bp2['cands'])} ung vien tu {len(them_bao)} bao", file=sys.stderr)
     tk = _ten_rieng_dau(tieu_de_nhin)
     if tk:
         them_commons = anh_commons(tk, so=6)
         if them_commons is None:
             print(f"[anh] anh_commons('{tk}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
             them_commons = []
+        print(f"[tim rong] Commons '{tk}': {len(them_commons)} ung vien", file=sys.stderr)
         cands2 += them_commons
+    else:
+        print("[tim rong] khong co ten rieng dau tieu de -> khong hoi Commons", file=sys.stderr)
     da = {a["url"] for a in anh}
+    n_truoc = len(cands2)
     cands2 = [c for c in cands2 if c["anh"] not in da]
+    if n_truoc != len(cands2):
+        print(f"[tim rong] bo {n_truoc - len(cands2)} ung vien trung URL da co", file=sys.stderr)
     cands2.sort(key=lambda c: -c.get("diem", 0))
     bo_sung = tai_va_loc(cands2, wd2) if cands2 else []
+    print(f"[tim rong] tai + loc: {len(bo_sung)} anh giu lai / {len(cands2)} ung vien", file=sys.stderr)
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(anh) >= TOI_DA_ANH + 4:
