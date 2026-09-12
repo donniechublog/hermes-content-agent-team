@@ -52,6 +52,20 @@ def test_cau_hoi_vision_hoi_ca_TU_KHOA_CO_HOP_BAI():
     assert "hop chu de bai" in c, c
     assert "lac chu de bai" in c, c
 
+def test_cau_hoi_vision_hoi_ca_NHIN_RA_VAT_CHINH():
+    """LOW-34 (Ông Chủ 12/09/2026): *"ĐẸP hay ko thì ko phải vấn đề, nhưng ảnh
+    hiển thị rõ ràng, có các object liên quan tới topic thì được tính là đẹp"*.
+
+    Hai điều kiện đo được, không phải thang thẩm mỹ: nhìn ra được vật chính, và
+    vật đó liên quan topic. Chặn ca từ khoá ĐÚNG mà ảnh vẫn vô dụng — búi dây
+    chằng chịt cho từ khoá "data center server racks" thì đúng từ khoá nhưng
+    không nhận ra rack nào."""
+    c = k.cau_hoi_vision(TIN_TOAN, "data center server racks")
+    assert "NHAN RA NGAY vat chinh" in c, c
+    assert "roi/chat chung khong nhan ra vat gi" in c, c
+    # Khong duoc bien thanh thang tham my: phai noi ro khong can dep.
+    assert "khong can dep" in c, c
+
 
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)

@@ -278,14 +278,30 @@ def anh_khai_niem(tu_khoa: str, ly_do: str = "", so: int = 4) -> list | None:
 
 def cau_hoi_vision(tieu_de: str, tu_khoa: str) -> str:
     """Câu hỏi con mắt engine dành riêng cho ảnh khái niệm: không hỏi "có phải ảnh
-    của tin" (chắc chắn không), hỏi "có đúng là <từ khoá>, chụp thật, hợp làm bìa"."""
+    của tin" (chắc chắn không), hỏi "có đúng là <từ khoá>, chụp thật, hợp làm bìa".
+
+    Chiều RÕ RÀNG (LOW-34, Ông Chủ chốt 12/09/2026). Ticket mở ra để hỏi "thế nào
+    là ảnh đẹp" — Ông Chủ gạt luôn vế thẩm mỹ: *"ĐẸP hay ko thì ko phải vấn đề,
+    nhưng ảnh hiển thị rõ ràng, có các object liên quan tới topic thì được tính
+    là đẹp"*. Nên không có thang thẩm mỹ nào ở đây; chỉ hai điều kiện NHÌN LÀ
+    THẤY, con mắt trả lời được:
+
+      1. NHÌN RA ĐƯỢC vật chính — không phải một mảng rối không biết đang xem gì.
+      2. Vật trong ảnh LIÊN QUAN topic của bài.
+
+    Khác chiều "từ khoá có hợp bài không" (LOW-30) ở chỗ: ca đó chặn từ khoá SAI
+    ngay từ đầu; chiều này chặn ca từ khoá ĐÚNG mà tấm ảnh vẫn vô dụng — vd
+    "data center server racks" cho tin compute là đúng từ khoá, nhưng nếu tấm ảnh
+    là một búi dây chằng chịt không nhận ra rack nào thì vẫn trượt."""
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no duoc tim lam ANH KHAI NIEM "
             f"theo tu khoa \"{tu_khoa}\" de lam anh bia.\nTra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
             f"LIEN_QUAN: co | khong  (co = anh CHUP THAT, ro net, dung la {tu_khoa}, khong co chu lon, "
-            f"VA tu khoa \"{tu_khoa}\" that su hop chu de bai tren; khong = khong phai thu do, "
-            "do hoa/ban ve/so do/ban do phang, mo, nhieu chu, logo, co nguoi ro mat, HOAC tu khoa "
-            "lac chu de bai — anh dung tu khoa nhung tu khoa sai bai thi van tra khong")
+            f"tu khoa \"{tu_khoa}\" that su hop chu de bai tren, VA nhin vao la NHAN RA NGAY vat "
+            "chinh — vat do lien quan chu de bai; khong = khong phai thu do, do hoa/ban ve/so do/"
+            "ban do phang, mo, nhieu chu, logo, co nguoi ro mat, tu khoa lac chu de bai, HOAC anh "
+            "roi/chat chung khong nhan ra vat gi la vat chinh du co dung tu khoa "
+            "(khong can dep, chi can NHIN RA va lien quan)")
 
 
 def nhan_khai_niem(a: dict) -> dict:
