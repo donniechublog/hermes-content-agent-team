@@ -108,7 +108,8 @@ def kanban_create(title, assignee, body, parent=None):
     if loi:
         log("kanban", f"tu choi tao '{title[:60]}': {loi}")
         return None, loi
-    tid, loi = hermes_adapter.tao_task(title, assignee, body, parent=parent)
+    tid, loi = hermes_adapter.tao_task(title, assignee, body, parent=parent,
+                                       max_runtime=vai.max_runtime_cua(assignee))
     if loi:
         log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {loi[:200]}")
         return None, loi

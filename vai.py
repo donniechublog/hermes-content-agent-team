@@ -210,6 +210,24 @@ def slug_that(chu: str) -> str:
     return _SLUG_CU.get(c) or _TEN_THUONG.get(c, chu)
 
 
+# ---- NGAN SACH THOI GIAN mot lan chay (LOW-25, 12/09/2026) ----------------------
+# Truoc do moi task tao voi "25m" cung mot gia tri (hermes_adapter.tao_task mac
+# dinh, khong call site nao override). Do tren kanban.db may chu 14 ngay
+# (run completed, phut): dre median 3.0 / p95 22.9, kite p95 17.8 / max 22.9,
+# ethan p95 2.3 (blog) 7.6 (dcgr); vai viet/quet p95 <= 8.6. Vai anh mo
+# Chromium + vision tung anh nen 25m la sat tran; vai viet thi 25m thua.
+# Canh bao "chay lau" o duyet_giao_viec (NGUONG_TREO_PHUT=20) phai NHO HON ca
+# hai con so nay — test_ngan_sach_thoi_gian giu bat bien do.
+MAX_RUNTIME = "25m"
+MAX_RUNTIME_ANH = "40m"
+
+
+def max_runtime_cua(slug: str) -> str:
+    """`--max-runtime` cho task cua vai nay: vai DUNG ANH 40m, con lai 25m."""
+    v = VAI.get(slug_that(slug) or slug)
+    return MAX_RUNTIME_ANH if v and v.nhan_anh else MAX_RUNTIME
+
+
 def so_anh_toi_thieu(slug: str, flagship: bool = False) -> int:
     """So ANH THAT toi thieu de vai `slug` dung duoc san pham cua no.
 

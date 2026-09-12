@@ -223,6 +223,11 @@ SO_ENGINE_SONG_SONG = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") or
 # phia sau vong doi khong bao gio duoc cham toi. Phai NHO HAN tran ngoai de khi
 # het gio engine con kip thoat bang mot cau vai doc duoc.
 CHO_KHOA_GIAY = 60
+# Doi CHO TRONG trong tran engine song song toi da bay nhieu giay (LOW-25). Cung
+# ly do voi CHO_KHOA_GIAY: phai nho hon tran bash tool (~300s) de khi het gio
+# engine tu noi ra thay vi bi cat cau. `_ngu` tach ra de test khong ngu that.
+CHO_LUOT_GIAY = 240
+_ngu = time.sleep
 
 # Chet bang tin hieu (SIGSEGV trong PIL/torch/playwright...) thi `try/except`
 # khong thay gi va log khong co traceback — t_24b214a6 chet `exit 139` ba lan ma
@@ -248,7 +253,8 @@ def _cho_luot():
         return
     thu_muc = ROOT / "state"
     thu_muc.mkdir(parents=True, exist_ok=True)
-    da_bao = False
+    t0 = time.time()
+    da_bao_giay = -30
     while True:
         for i in range(SO_ENGINE_SONG_SONG):
             fh = open(thu_muc / f"chuan_bi.{i}.lock", "w")
@@ -263,10 +269,19 @@ def _cho_luot():
                 fcntl.flock(fh, fcntl.LOCK_UN)
                 fh.close()
             return
-        if not da_bao:
-            print(f"[cho] da co {SO_ENGINE_SONG_SONG} engine dang chay, doi toi luot...", file=sys.stderr)
-            da_bao = True
-        time.sleep(5)
+        troi = int(time.time() - t0)
+        # Bao moi 30s (LOW-25): truoc 12/09/2026 chi in MOT dong roi im, va vong
+        # `while True` khong co tran — doi hang trong nhin y het treo, roi bi
+        # bash tool cua vai cat o 300s ma khong mot cau nao noi vi sao.
+        if troi - da_bao_giay >= 30:
+            da_bao_giay = troi
+            print(f"[cho] da co {SO_ENGINE_SONG_SONG} engine dang chay, doi toi luot... "
+                  f"{troi}s/{CHO_LUOT_GIAY}s", file=sys.stderr)
+        if troi >= CHO_LUOT_GIAY:
+            sys.exit(f"[LOI] doi {CHO_LUOT_GIAY}s van chua co cho trong "
+                     f"(tran {SO_ENGINE_SONG_SONG} engine song song). Khong phai loi cua "
+                     "draft nay — chay lai sau vai phut, dung chay lai ngay.")
+        _ngu(5)
 
 
 def _mo_ta_thieu_anh(m: dict) -> dict | None:
