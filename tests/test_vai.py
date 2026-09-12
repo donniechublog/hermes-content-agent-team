@@ -321,9 +321,10 @@ def test_du_nguyen_lieu_chi_dem_tam_voi_vai_nhieu_anh():
     assert not vai.du_nguyen_lieu("ethan", nam_ngang), \
         "5 anh ngang 16:9 khong cho Ethan mot duong nao — dung su co LOW-12"
     assert not vai.du_nguyen_lieu("dre", nam_ngang), "du 5 tam nhung khong co bia"
-    assert vai.du_nguyen_lieu("dre", [_a() for _ in range(5)])
-    assert not vai.du_nguyen_lieu("dre", [_a() for _ in range(5)], flagship=True), \
-        "tin flagship can 8 slide"
+    assert not vai.du_nguyen_lieu("dre", [_a() for _ in range(5)]), "tin thuong can 6 slide (12/09/2026)"
+    assert vai.du_nguyen_lieu("dre", [_a() for _ in range(6)])
+    assert not vai.du_nguyen_lieu("dre", [_a() for _ in range(6)], flagship=True), \
+        "tin flagship can 7 slide"
     # Vai la -> luat cua vai anh mac dinh, khong nem.
     assert vai.du_nguyen_lieu("khong-co-vai-nay", mot_hero) == vai.du_nguyen_lieu(
         vai.MAC_DINH_ANH, mot_hero)
@@ -333,13 +334,13 @@ def test_so_anh_toi_thieu_theo_tung_vai():
     """Su co 10/09/2026: engine ap nguong carousel cho MOI vai dung anh, nen bai
     2 anh cua Ethan bi bao thieu anh va Ong Chu doc thay "carousel can toi thieu
     5 slide" tren task cua Ethan. Ethan can DUNG MOT anh (card.py), Kite ve
-    vector nen cung mot anh la du; chi Dre moi can 5, va 8 khi tin flagship."""
+    vector nen cung mot anh la du; chi Dre moi can 6, va 7 khi tin flagship (12/09/2026)."""
     assert vai.so_anh_toi_thieu("ethan") == 1
     assert vai.so_anh_toi_thieu("ethan", flagship=True) == 1, \
         "tin flagship KHONG lam the hero cua Ethan can them anh"
     assert vai.so_anh_toi_thieu("kite") == 1
-    assert vai.so_anh_toi_thieu("dre") == 5
-    assert vai.so_anh_toi_thieu("dre", flagship=True) == 8
+    assert vai.so_anh_toi_thieu("dre") == 6, "Ong Chu 12/09/2026: tin thuong 6"
+    assert vai.so_anh_toi_thieu("dre", flagship=True) == 7, "Ong Chu 12/09/2026: flagship 7"
     # Vai la (sidecar hong, chay tay) -> nguong cua vai anh mac dinh, khong nem.
     assert vai.so_anh_toi_thieu("") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)
     assert vai.so_anh_toi_thieu("khong-co-vai-nay") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)

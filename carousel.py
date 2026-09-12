@@ -535,8 +535,10 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
 # carousel — tin mot tang de Ethan dung mot the hero. anh_chuan_bi doc hang so
 # nay (khong chep so 5) va ghi vao xong.json de approve_service biet ha san toi
 # dau khi Ong Chu bam "lam voi N anh".
-MIN_SLIDE = 5
-FLAGSHIP_MIN = 8
+# Ong Chu 12/09/2026: "ha flagship xuong 7, tin thuong giu 6" — hoi vi sao Dre doi 8
+# anh khi mot carousel 6 la dat. Truoc do 5 / 8 (8 tu loi GPT-6 Astra 03/09).
+MIN_SLIDE = 6
+FLAGSHIP_MIN = 7
 # Ho model cua cac hang frontier (My + top Trung Quoc, theo scan_models.py).
 _FLAGSHIP_RE = re.compile(
     r"\b(GPT-?\d|GPT-?[0-9.]+|o[3-9](?:-pro|-mini)?|Claude|Opus|Sonnet|Gemini|Llama|"
@@ -705,7 +707,7 @@ def main():
                  "Chuan social content chat luong (Ong Chu chot). Chia them nhip, "
                  "hoac gom them anh that — ket hop official site + magazine.")
     # Ong Chu bat loi 03/09/2026: GPT-6 Astra (flagship OpenAI) ma chi 5 slide.
-    # Tin model ra mat cua hang frontier phai 8-10 slide: bang benchmark, chart,
+    # Tin model ra mat cua hang frontier phai 7-10 slide: bang benchmark, chart,
     # gia, context, so voi doi thu, phat bieu, cai can theo doi... du nhieu tang.
     if _la_flagship(spec, cover, slides) and len(slides) + 1 < FLAGSHIP_MIN:
         sys.exit(f"Tin FLAGSHIP (model ra mat cua hang frontier) can IT NHAT "

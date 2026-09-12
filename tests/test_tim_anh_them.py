@@ -52,9 +52,12 @@ def test_anh_ngang_qua_thap_khong_dem_mot_minh():
 
 
 def test_engine_phai_tim_tiep_khi_chi_du_tam_ma_thieu_slide():
+    # Nguong Dre tu 12/09/2026 la 6 (carousel.MIN_SLIDE); bo 6 tam trong do mot tam
+    # 900x600 chi ghep duoc -> 5 slide -> chua du.
     bo = [_a(ma="A3", dung=["bìa", "thân"]), _ngang(ma="A2", h=942), _ngang(ma="A6"),
-          _ngang(ma="A7"), _ngang(ma="A5", h=600, dung=["ghép dọc với một ảnh ngang cùng tone"])]
-    assert not vai.du_nguyen_lieu("dre", bo), "5 tam nhung 4 slide: engine CHUA duoc ngung tim"
+          _ngang(ma="A7"), _a(ma="A8"), _ngang(ma="A5", h=600, dung=["ghép dọc với một ảnh ngang cùng tone"])]
+    assert schema.so_anh_dung_duoc(bo) == 5
+    assert not vai.du_nguyen_lieu("dre", bo), "6 tam nhung 5 slide: engine CHUA duoc ngung tim"
     bo[-1]["h"] = 1000
     assert vai.du_nguyen_lieu("dre", bo)
 
