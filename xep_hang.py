@@ -55,11 +55,14 @@ TI_LE_VUA = 1.5
 # lai thu tu nay, khong them nguon la.
 NGUON = [
     {"ma": "arena-text",     "site": "ARENA.AI",  "bang": "Text Arena",
-     "url": "https://arena.ai/leaderboard/text",          "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/text",          "mien": r"arena\.ai|lmarena",
+     "bang_re": r"\btext\b(?![- ]?to[- ]?)|văn bản|van ban|\bchat\b"},
     {"ma": "arena-code",     "site": "ARENA.AI",  "bang": "WebDev / Code Arena",
-     "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena",
+     "bang_re": r"\bcode\b|webdev|frontend|front-end|lập trình|lap trinh"},
     {"ma": "arena-vision",   "site": "ARENA.AI",  "bang": "Vision Arena",
-     "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena",
+     "bang_re": r"\bvision\b|thị giác|thi giac"},
     # `doc_lap` (09/09/2026): bang nay do NANG LUC RIENG, khong phai mot cach do
     # khac cua cung mot thu — model tao anh gioi va model sua anh gioi la HAI
     # bang xep hang khac han (Ong Chu: "một bảng là top model tạo sinh, một bảng
@@ -69,6 +72,7 @@ NGUON = [
     # DO CUNG MOT NANG LUC (code), chup mot cai la du, chup them chi lap lai.
     {"ma": "arena-t2i",      "site": "ARENA.AI",  "bang": "Text-to-Image Arena",
      "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena",
+     "bang_re": r"text[- ]?to[- ]?image|tạo ảnh|tao anh|\bt2i\b",
      "doc_lap": True},
     # Them 09/09/2026: bang RIENG voi text-to-image, do het truoc do — tin GPT
     # Image 2.5 #1&#2 Image Edit Arena khong co duong nao chup duoc (Ong Chu
@@ -76,6 +80,7 @@ NGUON = [
     # (arena.ai/leaderboard/image-edit) truoc khi them, dung 55 model nhu chup.
     {"ma": "arena-image-edit", "site": "ARENA.AI", "bang": "Image Edit Arena",
      "url": "https://arena.ai/leaderboard/image-edit", "mien": r"arena\.ai|lmarena",
+     "bang_re": r"image[- ]?edit|sửa ảnh|sua anh|chỉnh sửa ảnh",
      "doc_lap": True},
     # Them 09/09/2026 cung dot: tweet cong bo cua chinh @arena (status
     # 2097400515546255754) dan lai DUNG bang thu ba nay — "sua NHIEU anh cung
@@ -85,11 +90,14 @@ NGUON = [
     # WebFetch: 42 model, gpt-image-2.5-sunburst #1 diem 1535 — khop anh.
     {"ma": "arena-multi-image-edit", "site": "ARENA.AI", "bang": "Multi-Image Edit Arena",
      "url": "https://arena.ai/leaderboard/image-edit/multi-image-edit", "mien": r"arena\.ai|lmarena",
+     "bang_re": r"multi[- ]?image|nhiều ảnh|nhieu anh",
      "doc_lap": True},
     {"ma": "arena-t2v",      "site": "ARENA.AI",  "bang": "Text-to-Video Arena",
-     "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena",
+     "bang_re": r"\bvideo\b|tạo video|tao video"},
     {"ma": "arena-search",   "site": "ARENA.AI",  "bang": "Search Arena",
-     "url": "https://arena.ai/leaderboard/search",        "mien": r"arena\.ai|lmarena"},
+     "url": "https://arena.ai/leaderboard/search",        "mien": r"arena\.ai|lmarena",
+     "bang_re": r"\bsearch\b|tìm kiếm|tim kiem"},
     {"ma": "aa-models",      "site": "ARTIFICIALANALYSIS.AI", "bang": "Intelligence Index",
      "url": "https://artificialanalysis.ai/leaderboards/models", "mien": r"artificialanalysis"},
     # mobile KHONG dung duoc (do 06/09/2026): bang rong 892px trong khung cuon ngang, khung 414 mat cot.
@@ -152,6 +160,12 @@ NGUON = [
 # RIÊNG (không phải cách đo khác của cùng một thứ) thì đánh dấu `doc_lap: True`
 # ngay tại chỗ khai NGUON — xem chú thích ở đó (arena-t2i/arena-image-edit).
 CHU_DE = [
+    # Bang TEXT (LOW-22, 12/09/2026): truoc day khong co mục nao cho no, nen mot
+    # chu "code" trong 1500 ky tu dau bai goc du day arena-code (+200) len tren
+    # arena-text cho mot tin noi ro "bang van ban" — anh chup #26 bang code di
+    # kem tieu de #3 bang text. Tu khoa cua BANG trong tieu de phai co trong luong.
+    # `text` khong duoc an "text-to-image"/"text-to-video" (link hai bang do).
+    (r"\btext\b(?![- ]?to[- ]?)|văn bản|van ban|\bchat\b", ["arena-text"]),
     (r"\bvideo\b|text-to-video|tạo video", ["arena-t2v"]),
     # "sửa/chỉnh sửa ảnh" ưu tiên bảng EDIT; "image" trần (đa số tin tạo ảnh)
     # vẫn xét cả hai — một model tạo ảnh mạnh thường lên cả hai bảng (09/09/2026:
@@ -320,10 +334,18 @@ def goi_y_nguon(tieu_de: str = "", link: str = "", via: str = "", chu: str = "")
     # ("#1 LiveCodeBench", "leo top OpenCompass") ma khong co link toi trang do.
     goi = f"{tieu_de} {link} {via} {chu[:3000]}".lower()
     chu_de = f"{tieu_de} {chu[:1500]}".lower()
+    # BANG nao duoc nhac thi doc o TIEU DE / LINK / VIA — KHONG doc o than bai
+    # (LOW-22): than bai ve mot model text hau nhu luon co chu "code", ma bay bang
+    # arena chung mot ten mien nen truoc 12/09/2026 `duoc_nhac` = "co arena.ai
+    # o dau do" — ca 7 bang deu True, canh bao "BANG KHAC" trong cau_xep_hang
+    # khong bao gio no. Nguon co `bang_re` thi phai KHOP bang moi la duoc nhac.
+    nhac_bang = f"{tieu_de} {link} {via}".lower()
     diem, ra = {}, []
     for i, n in enumerate(NGUON):
         d = 1000 - i
         nhac = bool(re.search(n["mien"], goi, re.I))
+        if nhac and n.get("bang_re"):
+            nhac = bool(re.search(n["bang_re"], nhac_bang, re.I))
         if nhac:
             d += 500
         for pat, mas in CHU_DE:

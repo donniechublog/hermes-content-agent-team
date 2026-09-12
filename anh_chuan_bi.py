@@ -51,6 +51,7 @@ Dung:
 """
 import argparse
 import contextlib
+import faulthandler
 import os
 import sys
 import time
@@ -208,6 +209,19 @@ def nap_meta(draft_id: str) -> dict:
 # khoi chay cung luc (audit 05/09/2026). Het cho thi doi, khong bo.
 SO_ENGINE_SONG_SONG = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") or 2))
 
+# Doi khoa `dang_chay.pid` cua MOT draft toi da bay nhieu giay (LOW-26, 12/09/2026).
+# Truoc do la 300 — bang dung tran bash tool cua vai (~300s), nen lan chay dau
+# cua t_24b214a6 doi tron 300s roi bi chinh tool cat (`exit 124`), nhanh don khoa
+# phia sau vong doi khong bao gio duoc cham toi. Phai NHO HAN tran ngoai de khi
+# het gio engine con kip thoat bang mot cau vai doc duoc.
+CHO_KHOA_GIAY = 60
+
+# Chet bang tin hieu (SIGSEGV trong PIL/torch/playwright...) thi `try/except`
+# khong thay gi va log khong co traceback — t_24b214a6 chet `exit 139` ba lan ma
+# chuan_bi.log im lang. faulthandler in khung ngan xep Python ra stderr dung luc
+# do, la manh moi duy nhat de truy (LOW-27).
+faulthandler.enable()
+
 
 @contextlib.contextmanager
 def _cho_luot():
@@ -256,10 +270,63 @@ def _mo_ta_thieu_anh(m: dict) -> dict | None:
     return None if so >= tt else {"so": so, "toi_thieu": tt}
 
 
-def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300,
+def _doi_khoa(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
+    """Xu ly `dang_chay.pid` cua MOT draft truoc khi engine chay (LOW-26).
+
+    Ba truong hop, theo thu tu:
+      1. Khong co khoa                 -> di tiep.
+      2. Khoa MO COI (pid da chet)     -> DON NGAY, noi ra, di tiep. Khong doi
+         mot giay nao: tien trinh chet bang SIGSEGV khong chay toi `finally`
+         nen khoa nam lai; t_24b214a6 (12/09/2026) phai tu `ps -p` roi `rm -f`.
+      3. pid CON SONG                  -> doi toi da `cho` giay, bao moi 30s;
+         het gio ma van song thi thoat bang mot cau vai doc duoc. KHONG ghi de
+         khoa (06/09/2026: hai engine tren cung draft de len xong.json cua nhau).
+
+    Tach ra khoi `chay()` de test duoc bang mot tep khoa gia, khong can meta
+    draft hay browser. `ngu` chi de test khong phai ngu that."""
+    if not khoa.exists():
+        return
+    try:
+        pid = int(khoa.read_text().strip() or 0)
+        os.kill(pid, 0)
+    except (ValueError, ProcessLookupError, PermissionError):
+        print(f"[cho] khoa mo coi (pid {khoa.read_text().strip() or '?'} da chet) "
+              "-> don khoa, chay tiep khong doi", file=sys.stderr)
+        khoa.unlink(missing_ok=True)
+        return
+    print(f"[cho] tien trinh {pid} dang chuan bi, doi toi da {cho}s...", file=sys.stderr)
+    t0 = time.time()
+    da_bao_giay = 0
+    while khoa.exists() and time.time() - t0 < cho:
+        ngu(3)
+        troi = int(time.time() - t0)
+        # Bao dinh ky: doi trong im lang thi nguoi doc log (va nguoi chay tay)
+        # khong phan biet duoc "dang doi binh thuong" voi "treo han".
+        if troi - da_bao_giay >= 30:
+            da_bao_giay = troi
+            print(f"[cho] ...{troi}s/{cho}s, tien trinh {pid} van giu khoa", file=sys.stderr)
+    if not khoa.exists():
+        return
+    try:
+        con = int(khoa.read_text().strip() or 0)
+        os.kill(con, 0)
+    except (ValueError, ProcessLookupError, PermissionError):
+        khoa.unlink(missing_ok=True)          # chet trong luc doi -> don khoa
+        return
+    sys.exit(f"[LOI] tien trinh {con} van dang chuan bi {draft_id} sau {cho}s. "
+             "KHONG chay engine thu hai tren cung mot draft (hai ban se de len "
+             "xong.json cua nhau). Doi them roi chay lai, hoac `--lam-moi` neu "
+             "chac tien trinh kia treo.")
+
+
+def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=CHO_KHOA_GIAY,
          sau_chuan_bi=None) -> tuple:
     """Bao dam xong.json co san (chay neu chua, doi neu tien trinh khac dang chay).
     Tra ve (manifest, workdir, meta).
+
+    `cho`: so giay toi da doi mot engine KHAC dang giu `dang_chay.pid` con song.
+    Mac dinh CHO_KHOA_GIAY (60) — xem chu thich o hang so do: 300 bang dung tran
+    bash tool cua vai nen "doi het khoa" chua bao gio thanh cong tu trong tay vai.
 
     `sau_chuan_bi(draft_id, m)`: moc cho tang GHEP NOI xu ly `m["thieu_anh"]`
     (hoi Ong Chu / chuyen Kite) — truyen `route_thieu_anh.sau_chuan_bi` vao.
@@ -272,43 +339,8 @@ def chay(draft_id: str, lam_moi=False, khong_browser=False, cho=300,
     wd = workdir(state, draft_id)
     wd.mkdir(parents=True, exist_ok=True)
     xong, khoa = wd / "xong.json", wd / "dang_chay.pid"
-    if not lam_moi and khoa.exists():
-        try:
-            pid = int(khoa.read_text().strip() or 0)
-            os.kill(pid, 0)
-            print(f"[cho] tien trinh {pid} dang chuan bi, doi toi da {cho}s...", file=sys.stderr)
-            t0 = time.time()
-            da_bao_giay = 0
-            while khoa.exists() and time.time() - t0 < cho:
-                time.sleep(3)
-                troi = int(time.time() - t0)
-                # Bao dinh ky: doi tron 300s trong im lang thi nguoi doc log
-                # (va nguoi chay tay) khong phan biet duoc "dang doi binh thuong"
-                # voi "treo han" — dung thu im lang ma ca hai dot vua roi di go.
-                if troi - da_bao_giay >= 30:
-                    da_bao_giay = troi
-                    print(f"[cho] ...{troi}s/{cho}s, tien trinh {pid} van giu khoa",
-                          file=sys.stderr)
-            # HET GIO MA PID VAN SONG: KHONG duoc ghi de khoa. Truoc 06/09/2026
-            # doan duoi ghi `dang_chay.pid` vo dieu kien, nen khi may ban that
-            # (tran CT_CHUAN_BI_SONG_SONG=2, Ong Chu chon 7 tin mot luc, moi
-            # engine ton browser 110s x2 + vision + Bing) thi engine thu hai
-            # khoi dong tren CUNG mot draft: ca hai cung ghi xong.json, va
-            # engine xong truoc unlink khoa cua engine sau.
-            if khoa.exists():
-                try:
-                    con = int(khoa.read_text().strip() or 0)
-                    os.kill(con, 0)
-                except (ValueError, ProcessLookupError, PermissionError):
-                    khoa.unlink(missing_ok=True)          # chet that -> don khoa
-                else:
-                    sys.exit(f"[LOI] tien trinh {con} van dang chuan bi {draft_id} "
-                             f"sau {cho}s. KHONG chay engine thu hai tren cung mot "
-                             "draft (hai ban se de len xong.json cua nhau). Doi "
-                             "them roi chay lai, hoac `--lam-moi` neu chac tien "
-                             "trinh kia treo.")
-        except (ValueError, ProcessLookupError, PermissionError):
-            khoa.unlink(missing_ok=True)
+    if not lam_moi:
+        _doi_khoa(khoa, cho, draft_id)
     if xong.exists() and not lam_moi:
         # doc_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
         # thay cung mot so, khong ai phai tu doan nua.

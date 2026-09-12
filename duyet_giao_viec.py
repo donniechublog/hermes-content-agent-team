@@ -121,8 +121,41 @@ def kanban_create(title, assignee, body, parent=None):
 DA_BAO_TIEN_DO = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
 TIN_KET_QUA = STATE_DIR / "tin_ket_qua_task.json"    # {task_id: {chat,thread,mid}}
 DA_BAO_TREO = STATE_DIR / "da_bao_treo.json"         # {task_id: epoch lan bao "treo" cuoi}
-NGUONG_TREO_PHUT = 20          # running lau hon nay ma khong doi trang thai -> nghi treo
-LAI_BAO_TREO_PHUT = 30         # con treo thi nhac lai sau moi khoang nay
+NGUONG_TREO_PHUT = 20          # lan chay hien tai lau hon nay -> bao (xem cau_chay_lau)
+LAI_BAO_TREO_PHUT = 30         # con chay thi nhac lai sau moi khoang nay
+NHIP_IM_PHUT = 5               # khong co heartbeat lau hon nay -> goi la "im lang"
+
+
+def cau_chay_lau(ten: str, title: str, tid: str, phut: float, nhip_cuoi, pid, now) -> str:
+    """Cau bao khi mot lan chay keo dai qua NGUONG_TREO_PHUT — noi DUNG cai do duoc.
+
+    Ba trang thai khac han nhau ma cau cu "khong phan hoi hon N phut" gop lam mot
+    (LOW-23): (a) worker da CHET, (b) im lang that (khong heartbeat qua NHIP_IM_PHUT),
+    (c) van dang lam, chi la lau. Khong doc duoc nhip/pid thi noi la khong biet."""
+    bai = f"<i>{html_escape(title[:80])}</i> (task {tid})"
+    song = hermes_adapter.pid_song(pid)
+    if song is False:
+        return (f"⛔ <b>{ten}</b>: worker (pid {pid}) đã chết sau {int(phut)} phút chạy: {bai}\n"
+                "hermes sẽ thu hồi và xếp lại hàng.")
+    if nhip_cuoi:
+        im = (now - nhip_cuoi) / 60
+        if im >= NHIP_IM_PHUT:
+            return (f"⚠️ <b>{ten}</b> không phản hồi {int(im)} phút (nhịp thở cuối "
+                    f"{time.strftime('%H:%M', time.localtime(nhip_cuoi))}), đã chạy "
+                    f"{int(phut)} phút: {bai}")
+        return (f"⏳ <b>{ten}</b> vẫn đang làm, đã {int(phut)} phút (nhịp thở "
+                f"{int(im)} phút trước): {bai}\nQuá max_runtime thì hermes sẽ tự dừng.")
+    return (f"⚠️ <b>{ten}</b> không phản hồi hơn {int(phut)} phút (không có nhịp thở "
+            f"ghi lại): {bai}")
+
+
+def cau_bi_dung(ten: str, title: str, tid: str, troi, tran, st: str) -> str:
+    """Cau bao khi hermes giet worker vi qua max_runtime (run outcome=timed_out)."""
+    bai = f"<i>{html_escape(title[:80])}</i> (task {tid})"
+    phut = f"{int(troi) // 60} phút" if troi else "quá giờ"
+    tran_ = f" (trần {int(tran) // 60} phút)" if tran else ""
+    sau = "đang chạy lại" if st == "running" else "đã xếp lại hàng, sẽ chạy lại"
+    return f"⏱ <b>{ten}</b> bị hermes dừng sau {phut}{tran_}, {sau}: {bai}"
 
 _TEN_HIEN = vai.TEN_HIEN            # xem vai.py
 
@@ -293,25 +326,55 @@ def bao_tien_do_kanban(token, group):
         topics = {}
     now = time.time()
     doi = doi_treo = False
+    # LOW-23 (12/09/2026): "chay bao lau" do tu LAN CHAY DANG MO, khong tu
+    # tasks.started_at (moc lan DAU, hermes khong bao gio reset — task bi giet o
+    # 25m roi chay lai bi bao "khong phan hoi 40 phut" ngay giay dau). "Con song
+    # khong" doc tu last_heartbeat_at/worker_pid — t_24b214a6 tho deu moi 60s
+    # suot 50 phut ma Telegram van noi "khong phan hoi". None = khong doc duoc
+    # -> coi nhu khong biet, roi ve cach cu, khong phai "da chet".
+    moc = hermes_adapter.moc_lan_chay() or {}
+    nhip = hermes_adapter.nhip_tho([r["id"] for r in rows]) or {}
+    lan_cuoi = None                          # doc luoi: chi khi co task ready/running
     for v in rows:
         tid, ai, st = v["id"], v["vai"], v["trang_thai"]
         title, _c = v["tieu_de"], v["tao_luc"]
-        if st == "running" and ai != BANG_DEN_ASSIGNEE and v.get("bat_dau_luc"):
-            phut = (now - v["bat_dau_luc"]) / 60
+        bat_dau = (moc.get(tid) or (None,))[0] or v.get("bat_dau_luc")
+        if st == "running" and ai != BANG_DEN_ASSIGNEE and bat_dau:
+            phut = (now - bat_dau) / 60
             if phut >= NGUONG_TREO_PHUT and now - treo.get(tid, 0) >= LAI_BAO_TREO_PHUT * 60:
                 ten_treo = _TEN_HIEN.get(ai, ai)
                 thread_treo = topics.get(ai)
+                nhip_cuoi, pid = nhip.get(tid) or (None, None)
+                text = cau_chay_lau(ten_treo, title, tid, phut, nhip_cuoi, pid, now)
                 call(token, "sendMessage", chat_id=group,
                      **({"message_thread_id": thread_treo} if thread_treo else {}),
-                     text=(f"⚠️ <b>{ten_treo}</b> không phản hồi hơn {int(phut)} phút: "
-                           f"<i>{html_escape(title[:80])}</i> (task {tid})"),
-                     parse_mode="HTML")
+                     text=text, parse_mode="HTML")
                 treo[tid] = now
                 doi_treo = True
-                log("tiendo", f"{tid} {ai} treo {int(phut)} phut, da bao")
+                log("tiendo", f"{tid} {ai} chay {int(phut)} phut, da bao: {text[:60]}")
         elif tid in treo:
             del treo[tid]                    # roi running (hoac chuyen vai) -> het treo
             doi_treo = True
+        # BI HERMES DUNG VI QUA max_runtime: task ve `ready` roi chay lai; vong
+        # nay truoc 12/09/2026 bo qua `ready` nen hai lan giet cua t_24b214a6
+        # hoan toan im lang tren Telegram. Bao MOT lan cho MOI run timed_out.
+        if st in ("ready", "running") and ai != BANG_DEN_ASSIGNEE:
+            if lan_cuoi is None:
+                lan_cuoi = hermes_adapter.lan_chay_cuoi_nhieu([r["id"] for r in rows]) or {}
+            lc = lan_cuoi.get(tid) or {}
+            khoa_tt = f"{tid}:timed_out:{lc.get('id_lan_chay')}"
+            if lc.get("trang_thai") == "timed_out" and not da.get(khoa_tt):
+                md = lc.get("metadata") or {}
+                ten_tt = _TEN_HIEN.get(ai, ai)
+                thread_tt = topics.get(ai)
+                text = cau_bi_dung(ten_tt, title, tid, md.get("elapsed_seconds"),
+                                   md.get("limit_seconds"), st)
+                call(token, "sendMessage", chat_id=group,
+                     **({"message_thread_id": thread_tt} if thread_tt else {}),
+                     text=text, parse_mode="HTML")
+                da[khoa_tt] = True
+                doi = True
+                log("tiendo", f"{tid} {ai} timed_out run {lc.get('id_lan_chay')}, da bao")
         if st in ("ready", "todo", "triage") or da.get(tid) == st:
             continue
         if ai == BANG_DEN_ASSIGNEE:          # the goc/bang den: khong phai viec cua ai
@@ -359,7 +422,8 @@ def bao_tien_do_kanban(token, group):
     # do; sua kem trong doi nay vi TIN_KET_QUA/DA_BAO_TREO moi cung se hong theo).
     song = {r["id"] for r in rows}
     if doi:
-        da = {k: v for k, v in da.items() if k in song}
+        # khoa "tid:timed_out:<run>" cung song theo task cua no
+        da = {k: v for k, v in da.items() if k.split(":")[0] in song}
         tin = {k: v for k, v in tin.items() if k in song}
         try:
             _ghi_json(DA_BAO_TIEN_DO, da, indent=None)

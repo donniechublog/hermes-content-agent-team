@@ -49,7 +49,8 @@ _COT_VIEC = (("id", "id"), ("assignee", "vai"), ("status", "trang_thai"),
              ("started_at", "bat_dau_luc"), ("completed_at", "xong_luc"),
              ("result", "ket_qua"), ("last_failure_error", "loi"))
 _COT_LAN_CHAY = (("summary", "tom_tat"), ("error", "loi"),
-                 ("status", "trang_thai"), ("metadata", "metadata"))
+                 ("status", "trang_thai"), ("metadata", "metadata"),
+                 ("id", "id_lan_chay"))      # id de bao MOI lan timed_out dung mot lan
 
 
 def _mo(db=None):
@@ -267,6 +268,58 @@ def _chuan_hoa_lan_chay(hang):
     ra["metadata"] = md if isinstance(md, dict) else {}
     return ra
 
+
+
+# --- LAN CHAY HIEN TAI + NHIP THO (LOW-23, 12/09/2026) ------------------------
+# `tasks.started_at` la moc LAN DAU task tung chay, hermes KHONG bao gio cap nhat
+# (`COALESCE(started_at, ?)`), va chinh bo quet timeout cua hermes ghi: "Runtime
+# is per attempt, not lifetime-of-task". Do "chay bao lau" phai lay tu
+# task_runs cua run dang mo; "con song khong" lay tu last_heartbeat_at/worker_pid
+# — ca hai deu co san trong kanban.db, truoc day khong ai SELECT.
+
+def moc_lan_chay(db=None):
+    """{task_id: (started_at cua run dang mo, run_id)} cho moi task 'running'.
+    {} neu khong co; None neu khong doc duoc."""
+    hang = _hoi("SELECT t.id, r.started_at, r.id FROM tasks t "
+                "JOIN task_runs r ON r.id = t.current_run_id "
+                "WHERE t.status = 'running'", (), "doc moc lan chay", db=db)
+    if hang is None:
+        return None
+    return {h[0]: (h[1], h[2]) for h in hang}
+
+
+def nhip_tho(tids, db=None):
+    """{task_id: (last_heartbeat_at, worker_pid)} — {} neu khong co; None neu
+    khong doc duoc (kanban.db cu chua co cot thi cung ve None, nguoi goi coi
+    nhu 'khong biet', khong phai 'da chet')."""
+    tids = [t for t in (tids or []) if t]
+    if not tids:
+        return {}
+    ra = {}
+    for i in range(0, len(tids), 400):
+        lo = tids[i:i + 400]
+        hang = _hoi("SELECT id, last_heartbeat_at, worker_pid FROM tasks "
+                    "WHERE id IN (" + ",".join("?" * len(lo)) + ")",
+                    tuple(lo), "doc nhip tho", db=db)
+        if hang is None:
+            return None
+        for h in hang:
+            ra[h[0]] = (h[1], h[2])
+    return ra
+
+
+def pid_song(pid) -> bool | None:
+    """True/False neu kiem duoc; None neu khong co pid. Cung may voi hermes
+    (approve_service chay canh gateway) nen `os.kill(pid, 0)` co nghia."""
+    if not pid:
+        return None
+    try:
+        os.kill(int(pid), 0)
+    except (ProcessLookupError, ValueError):
+        return False
+    except PermissionError:
+        return True
+    return True
 
 def dem_xong_theo_vai(tu_ts, den_ts, db=None):
     """{vai: so task 'done' xong trong khoang [tu_ts, den_ts)} — None neu khong
