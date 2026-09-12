@@ -33,7 +33,12 @@ ROOT = env_load.ROOT
 # "Chua co danh sach tin nao de chon". Cron chay trong gateway co san CT_BRAND.
 STATE = env_load.state_dir()
 TIEN_TO = {"nova": "nova_candidates", "market": "vera_candidates",
-           "vera": "vera_candidates"}
+           "vera": "vera_candidates", "qinn": "qinn_candidates"}
+
+# Nhan mac dinh khi vai khong ghi `category`. Qinn quet X: phan lon la tool /
+# ky thuat, nen TOOL (nhan hop le cua manifest_build) la mac dinh dung hon
+# BUSINESS.
+NHAN_MAC_DINH = {"nova": "MODEL", "qinn": "TOOL"}
 
 
 import bat_buoc                                             # noqa: E402
@@ -43,6 +48,12 @@ import quet_chung                                           # noqa: E402
 
 
 def _so_bao(t: dict) -> str:
+    # Tin X (Qinn): "1 báo" vô nghĩa — cái Ông Chủ cần thấy là TÁC GIẢ và tin
+    # đến từ home hay từ list nào (list là tập tài khoản Ông Chủ tự chọn, nên
+    # đáng tin hơn home; xem SOUL của Qinn).
+    if t.get("nguon_x"):
+        ai = t.get("toa_soan") or ""
+        return f"{ai} · {t['nguon_x']}" if ai else str(t["nguon_x"])
     return f"{t.get('so_bao', 1)} báo: {', '.join(t.get('cac_bao', [])[:3]) or t.get('toa_soan', '')}"
 
 
@@ -101,7 +112,7 @@ def _muc_tu_nop(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> dict | 
         "summary_vi": tom,
         "score": it.get("score"),
         "score_reason": it.get("score_reason") or "",
-        "category": it.get("category") or ("MODEL" if vai == "nova" else "BUSINESS"),
+        "category": it.get("category") or NHAN_MAC_DINH.get(vai, "BUSINESS"),
         "image_url": it.get("image_url"),
         "picked": False,
     }

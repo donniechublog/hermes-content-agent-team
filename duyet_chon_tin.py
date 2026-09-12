@@ -41,6 +41,7 @@ MANIFEST_THEO_TOPIC = {
     "finn": "finn_candidates_*.json",
     "nova": "nova_candidates_*.json",
     "vera": "vera_candidates_*.json",
+    "qinn": "qinn_candidates_*.json",
 }
 
 def latest_manifest(vai="finn"):

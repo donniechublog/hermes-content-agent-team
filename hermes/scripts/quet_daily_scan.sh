@@ -31,7 +31,9 @@ case "$VAI" in
          VIEC="noi ra Y NGHIA (manh/re hon cai gi, bang nao, gia vao/ra, thay duoc vai nao) cho tung model bat buoc va xep thu tu" ;;
   vera)  TIEU_DE="Quet tin kinh doanh"
          VIEC="loc tin co HE QUA (IPO, thau tom, ha tang, chinh sach, lao dong, kien tung), ghi muc chac chan theo so bao, viet tom tat co so" ;;
-  *) echo "Dung: $(basename "$0") finn|nova|vera (slug profile, khong phai role cu)" >&2; exit 2 ;;
+  qinn)  TIEU_DE="Quet X luot"
+         VIEC="loc tin KY THUAT DUNG DUOC LAU (tool/repo, bao mat, kien truc, cach lam), bo thong bao phat hanh / benchmark / hype, toi da 6 tin, va bao ngay neu brief noi CRAWLER DUNG" ;;
+  *) echo "Dung: $(basename "$0") finn|nova|vera|qinn (slug profile, khong phai role cu)" >&2; exit 2 ;;
 esac
 
 # Cong LOW-20: profile phai co that trong home dang chay. Cron cua hermes chay
@@ -51,6 +53,19 @@ H=$HOME/hermes-agent/venv/bin/python
 # Da dinh dung loi nay sang 23/08: ba vai deu khong chay.
 KEY="$VAI-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
+
+# Vai chay NHIEU LAN trong ngay phai co LUOT trong khoa chong trung va trong
+# tieu de. Khong co thi luot 2,3,4 trung khoa cua luot 1: kanban tra ve task CU
+# (da done), khoi kiem ben duoi thoat 1, va ca ba luot sau im lang khong chay.
+# Luot = khung 6 tieng bat dau 05:00 VN — cung cong thuc voi quet_chuan_bi.luot().
+case "$VAI" in
+  qinn)
+    GIO=$(TZ=Asia/Ho_Chi_Minh date +%H)
+    LUOT=$(( ((10#$GIO - 5 + 24) % 24) / 6 ))
+    KEY="$KEY-p$LUOT"
+    DAY="$DAY luot $((LUOT + 1))/4"
+    ;;
+esac
 
 BODY="Nhiem vu quet tin sang $DAY (chay theo lich cron). Phan CO HOC — chay script quet, loc
 trung, cham diem co hoc, ghep manifest danh so, viet bao cao, gui topic — DA LA SCRIPT.

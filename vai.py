@@ -127,6 +127,10 @@ VAI = {v.slug: v for v in [
     Vai("finn", "Finn", slug_cu=("scout",)),
     Vai("nova", "Nova"),
     Vai("vera", "Vera", slug_cu=("market",)),
+    # Qinn (12/09/2026) — quet X. Khong tu crawl: doc lai qua GET /tweets cua
+    # social-publishing (session X song tren may crawler). CHI brand blog, nhu
+    # Finn; chay 4 lan/ngay vi tin X troi nhanh hon HN/arXiv.
+    Vai("qinn", "Qinn"),
     Vai("cape", "Cape", slug_cu=("teaser", "jean")),   # persona cu: Jean
     Vai("ada", "Ada", slug_cu=("analyst",)),
     Vai("gin", "Gin"),
@@ -153,6 +157,7 @@ MAC_DINH_VIET = "miles"
 #      de hom nao mot vai quet doi container thi ve (1) van dung ngay.
 VIET_THEO_QUET = {
     "finn": "jika",                # Finn — HN/Reddit/arXiv
+    "qinn": "jika",                # Qinn — X (tin ky thuat, cung nguoi doc voi Finn)
     "nova": "jika",                # Nova — model moi ra mat
     "vera": "miles",               # Vera — kinh doanh, dau tu
 }
