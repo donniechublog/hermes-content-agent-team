@@ -1,19 +1,30 @@
 #!/usr/bin/env python3
-"""render_edu.py — anh_lam_nen(): mat cau lenh `return` cuoi ham (09/09/2026).
+"""render_edu.py — hop dong tra ve cua `anh_lam_nen` + chon theme theo mau anh.
 
-Commit e883880 ("doi mau chu theo nen truoc, chi phu lop mo/toi khi pixel that
-su roi") viet lai `anh_lam_nen` nhung lam ROI cau `return nen, js` cuoi cung —
-nhanh "anh chup ma vung duoi chu THAT SU roi" (can_lop=True) build xong `js`
-roi RA KHOI HAM khong return, Python tra ve None ngam. Moi noi goi ham nay
-(`_cover_anh`, `s_figure`) deu doi unpack `(nen, js)`; gap None thi
-`TypeError: cannot unpack non-iterable NoneType object` — sap tat ca cong
-chan roi den thang Chromium trong `render()`.
+HAI LOP GUARDRAIL chong len nhau o day, de rieng vi hai doi lan khac nhau:
 
-Khong ai bat duoc vi ca hai nhanh con lai ("phang" va "mo" nhung khong roi)
-deu co return rieng ngay tai cho, chi nhanh "mo VA roi" (anh chup that co chi
-tiet — dung loai anh Kite hay dung nhat: bang xep hang, chart chup man hinh)
-la di qua het than ham roi moi return — va truoc 09/09/2026 chua bo nao chay
-qua dung nhanh do trong test.
+1. `anh_lam_nen` phai RETURN o moi nhanh (09/09/2026). Commit e883880 viet lai
+   ham nay nhung lam ROI cau `return` cuoi cung — nhanh "anh chup ma vung duoi
+   chu THAT SU roi" build xong roi RA KHOI HAM khong return, Python tra ve None
+   ngam. Moi noi goi (`_cover_anh`, `s_figure`) deu unpack; gap None thi
+   `TypeError: cannot unpack non-iterable NoneType object` — sap tat ca cong
+   chan roi den thang Chromium trong `render()`. Khong ai bat duoc vi hai nhanh
+   con lai co return rieng ngay tai cho, chi nhanh "mo VA roi" (dung loai anh
+   Kite hay dung nhat: bang xep hang, chart chup man hinh) di qua het than ham.
+
+2. ANH CHUP VAO DONG, khong con lop mo che chu (10/09/2026). Ong Chu bat: anh
+   bi "day xuong / cat cut" vi anh nam lop absolute con khoi chu neo day the de
+   len phan duoi cua no, che bang mot lop mo 0.93. Commit aac796a bo HET co che
+   veil/gradient-mask do va dua anh kieu "mo" vao DONG (flex item) giua masthead
+   va khoi chu — chong nhau tro thanh KHONG THE, nen khong con gi de che.
+
+   Hop dong tra ve doi theo: `(nen, js)` -> `(nen, js, anh)`, roi 12/09/2026
+   bo han slot `js` o giua -> `(nen, anh)`. aac796a de lai slot do luon bang
+   chuoi rong va hai noi goi van `+ js` vao HTML; bo slot bien "khong con
+   script dat lop mo" tu mot assert (`js == ""`) thanh dieu KHONG THE xay ra.
+   Cong chan nay gio o `tests/test_render_edu_xac_lop_mo.py` cung voi cac xac
+   con lai cua co che veil — VA voi cong chan nguoc: carousel.py giu ban sao
+   rieng cua co che do va van dung that, khong duoc xoa theo.
 
 Chay:  venv/bin/python tests/test_render_edu.py
 """
@@ -50,29 +61,49 @@ def _anh_chup_roi(w=1200, h=1500):
 
 
 def test_anh_lam_nen_tra_ve_tuple_khong_phai_none():
-    """Nhanh 'mo VA roi' phai return (nen, js), khong duoc roi qua het than
-    ham ma khong return (bug that: None, TypeError o moi noi goi)."""
+    """Nhanh 'mo' (anh chup) phai return (nen, js, anh), khong duoc roi qua het
+    than ham ma khong return (bug that: None, TypeError o moi noi goi).
+
+    KHONG in `ra` vao thong bao assert: `nen`/`anh` chua data URI base64 cua ca
+    tam anh, mot dong FAIL nhu vay dai 1.1MB va nuot chung log cua `chay.sh`.
+    """
     import render_edu as re_
     p = _anh_chup_roi()
     sl = {"image": str(p)}
     ra = re_.anh_lam_nen(sl, TH, "figure")
     assert ra is not None, "anh_lam_nen tra None — mat return cuoi ham"
-    assert isinstance(ra, tuple) and len(ra) == 2, f"phai la (nen, js), duoc {ra!r}"
-    nen, js = ra
-    assert isinstance(nen, str) and "<div" in nen
-    assert isinstance(js, str) and "__datMan" in js, \
-        "js rong — chung to khong di qua đúng nhanh can_lop=True can kiem"
+    assert isinstance(ra, tuple) and len(ra) == 2, \
+        f"phai la (nen, anh), duoc tuple {len(ra) if isinstance(ra, tuple) else type(ra).__name__}"
+    nen, anh = ra
+    assert isinstance(nen, str) and "fig-nen" in nen, \
+        "nen phai co lop <img class=fig-nen> (tam anh phong to lam mo)"
+    # Cai xac nhan da di dung nhanh "mo": chi nhanh do moi dung anh trong dong.
+    # Nhanh "phang" tra anh rong, nen assert nay thay cho `"__datMan" in js` cu.
+    assert isinstance(anh, str) and "fig-anh-wrap" in anh, \
+        "anh rong — chung to khong di qua dung nhanh 'mo' can kiem"
 
 
 def test_s_figure_khong_nem_khi_dung_anh_roi():
     """Goi qua dung builder that (`s_figure`) — cong chan o muc thap hon co
-    the che mat loi neu chi test noi bo ham con."""
+    the che mat loi neu chi test noi bo ham con.
+
+    Them (12/09/2026): kiem ca THU TU — anh phai nam TRUOC khoi chu trong luong
+    DOM. Do la toan bo co che chong "chu de len anh" sau 10/09/2026: anh la
+    flex item, khoi chu la flex item ke tiep, nen trinh duyet khong the xep
+    chong. Neu ai do dua anh tro lai lop absolute thi thu tu nay vo nghia va
+    test duoi day do — day la cai `s_figure` cu (chi do len > 100) khong bat.
+    """
     import render_edu as re_
     p = _anh_chup_roi()
     sl = {"image": str(p), "eyebrow": "SO LIEU", "title": "Tieu de test",
          "kind": "figure"}
     html = re_.s_figure(sl, TH)
     assert isinstance(html, str) and len(html) > 100
+    i_anh, i_chu = html.find("fig-anh-wrap"), html.find('id="figtxt"')
+    assert i_anh != -1, "s_figure khong dat anh vao dong (thieu fig-anh-wrap)"
+    assert i_chu != -1, "s_figure khong co khoi chu #figtxt"
+    assert i_anh < i_chu, \
+        f"anh phai nam TRUOC khoi chu trong dong (anh @{i_anh}, chu @{i_chu})"
 
 
 def _anh_bang_xep_hang(w=1188, h=1524):
@@ -82,7 +113,13 @@ def _anh_bang_xep_hang(w=1188, h=1524):
     dan toi max_toi=0.036 (gan nhu khong toi) truoc khi sua. Anh chup THAT (noise
     day dac ca vung, xem `_anh_chup_roi`) khong tai hien duoc ca nay — do ro
     "roi VUA DU de kich hoat, nhung con qua yeu de che het chu" phai la mot anh
-    RIENG, gan sat nguong."""
+    RIENG, gan sat nguong.
+
+    Tu 10/09/2026 khong con lop mo nao de "vua du" hay "khong du" nua, nhung
+    GIU nguyen fixture: no van la lop anh tung lam hong man hinh that (bang xep
+    hang nen trang), nen no la anh dung de kiem rang co che MOI — anh vao dong,
+    doi mau chu theo nen — ap dung cho chinh no.
+    """
     from PIL import Image
     random.seed(1)
     im = Image.new("RGB", (w, h), (255, 255, 255))
@@ -108,23 +145,35 @@ def _anh_bang_xep_hang(w=1188, h=1524):
     return p
 
 
-def test_anh_gan_nguong_van_duoc_toi_toi_da():
-    """Chinh loi Ong Chu bat 09/09/2026: 'chữ blue ở dưới nền vẫn còn màu đen
-    mờ... blur thì blur 1 màu luôn đi chứ'. Anh chi VUA QUA nguong roi (nhu
-    bang xep hang: nen trang, chu mong) truoc day chi duoc toi ~3.6% — so con
-    doc ro muot duoi tieu de. Gio phai toi GAN BANG TOI_TOI_DA_MO, khong con ti
-    le theo do roi nua."""
-    import re as _re
+def test_anh_gan_nguong_khong_con_lop_mo_che_chu():
+    """Ke tiep cua `test_anh_gan_nguong_van_duoc_toi_toi_da` (09/09/2026).
+
+    Ban cu chot cach chua cu: anh gan nguong roi (bang xep hang — nen trang,
+    chu mong) phai duoc phu lop mo GAN BANG TOI_TOI_DA_MO, vi luc do khoi chu
+    con de len anh nen chi tiet duoi chu phai bi xoa.
+
+    10/09/2026 Ong Chu bac ca cach chua: lop mo do lam anh doc ra nhu bi "cat
+    got". Cach chua moi bo han viec chong nhau — anh vao dong, chu luon nam
+    duoi mep anh — nen dung phai la KHONG con lop mo nao het. Test doi chieu:
+    cung tam anh do, gio phai ra anh-trong-dong va TUYET DOI khong co mot manh
+    nao cua co che veil cu.
+    """
     import render_edu as re_
     p = _anh_bang_xep_hang()
     sl = {"image": str(p)}
-    nen, js = re_.anh_lam_nen(sl, TH, "bia")
-    m = _re.search(r"MAX=([\d.]+)", js)
-    assert m, f"khong thay MAX= trong js: {js[:200]!r}"
-    max_toi = float(m.group(1))
-    assert max_toi >= re_.TOI_TOI_DA_MO - 0.01, (
-        f"anh gan nguong (roi vua qua {re_.NGUONG_ROI_CAN_LOP}) chi duoc toi "
-        f"{max_toi}, con doc duoc chu — dung phai gan {re_.TOI_TOI_DA_MO}")
+    ra = re_.anh_lam_nen(sl, TH, "bia")
+    assert isinstance(ra, tuple) and len(ra) == 2, \
+        f"phai la (nen, anh), duoc tuple {len(ra) if isinstance(ra, tuple) else type(ra).__name__}"
+    nen, anh = ra
+    assert "fig-anh-wrap" in anh, "anh gan nguong phai vao dong, khong con nam lop absolute"
+    ca = nen + anh
+    # Dau vet cua co che cu, dung nhu no TUNG XUAT HIEN trong HTML sinh ra:
+    # hai class cua lop phu, ten ham script, va `MAX=` (tham so do toi trong
+    # slot `js` cu). KHONG dung ten hang `TOI_TOI_DA_MO` lam dau — no la ten
+    # bien Python, chua bao gio di vao HTML, nen assert se luon dung mot cach
+    # vo nghia va khong bat duoc ban cu.
+    for dau in ("fig-molop", "fig-man", "__datMan", "MAX="):
+        assert dau not in ca, f"con sot manh cua lop mo cu: {dau}"
 
 
 # --------------------------------------------------------- mau_noi_bat / theme_gan_mau

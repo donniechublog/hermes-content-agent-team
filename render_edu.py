@@ -281,14 +281,6 @@ BASE_CSS_TPL = """
   display:flex;flex-direction:row;align-items:flex-start;justify-content:center;
   margin-top:14px;}
 .fig-anh{max-width:100%%;max-height:100%%;width:auto;height:auto;display:block;}
-/* lop MO cua chinh anh, hien dan theo cung nhip voi man toi — chinh no moi xoa
-   het chi tiet doc duoc duoi chu; chi lam toi khong thi chu van chong len chu */
-.fig-molop{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;
-  overflow:hidden;}
-.fig-molop img{position:absolute;left:0;width:%(W)spx;object-fit:cover;
-  display:block;filter:blur(14px);}
-/* man toi cho chu — dat lai bang script theo dung dong chu dau */
-.fig-man{position:absolute;left:0;right:0;bottom:0;}
 .fig-cap{display:flex;flex-direction:row;align-items:baseline;gap:16px;
   margin-top:22px;font-family:%(MONO)s;font-size:23px;font-weight:500;
   line-height:1.45;color:%(DIM)s;letter-spacing:0.5px;}
@@ -513,15 +505,6 @@ FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc du
 _MAU_CHU_SANG_RGB = tuple(int(WHITE.lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
 _MAU_CHU_TOI_HIEU_DUNG = (38, 38, 38)  # xap xi 0.15 x nen sang (rgba đen 0.85)
 NGUONG_SANG_CHU_TOI = round(nen_chu.nguong_tuong_phan(_MAU_CHU_SANG_RGB, _MAU_CHU_TOI_HIEU_DUNG))
-NGUONG_ROI_CAN_LOP = 26    # do lech (stddev xam) vung duoi chu: qua nguong moi can lop
-# Muc toi khi can_lop (09/09/2026, tang tu 0.55 sau khi Ong Chu xem anh that:
-# so ma van doc duoc ro qua lop mo yeu — xem chu thich tai noi dung max_toi).
-# Khong dat 1.0 tuyet doi: giu lai chut kho anh phia duoi de van la "anh duoc
-# xu ly" chu khong phai "hop mau ke len anh", nhung 0.93 da du toi de khong con
-# chu/so nao doc duoc.
-TOI_TOI_DA_MO = 0.93
-VEIL_SPAN = 64             # px: be day duong cong chuyen tiep, bat dau NGAY tai
-                           # dong chu dau — khong con khoang dem truoc no nua
 FIG_TIEU_DE_DONG = 2   # slide co anh: tieu de toi da bay nhieu dong
 FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
 FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
@@ -631,7 +614,7 @@ def _vung_duoi_chu(p, ti_le=0.35):
     nen la chinh tam anh cover phong to lam mo. Do ban mo do, khong do tam anh
     — chon mau chu theo tam anh la sai (chu trang tren nen mo sang = mat chu).
     """
-    from PIL import Image, ImageFilter, ImageOps, ImageStat
+    from PIL import Image, ImageStat
     im = _nho(("pil", str(p)), lambda: Image.open(p).convert("RGB"))
     d = max(1, int(H * ti_le))
     dai = im.resize((max(1, W // 8), max(1, H // 8))).convert("L")
@@ -738,7 +721,7 @@ def s_cover(sl, th):
 
 def _cover_anh(sl, th):
     """Bia lay anh that lam hero — anh vao dong, khoi chu nam duoi mep anh."""
-    nen, js, anh = anh_lam_nen(sl, th, "bia")
+    nen, anh = anh_lam_nen(sl, th, "bia")
     by = sl.get("byline", [])
     bits = []
     for i, b in enumerate(by):
@@ -760,8 +743,7 @@ def _cover_anh(sl, th):
                 f'<span>{esc(sl["caption"])}</span></div>')
     return (nen + anh
             + '<div style="flex-grow:1;min-height:0;"></div>'
-            + f'<div class="mid" id="figtxt">{chu}</div>'
-            + js)
+            + f'<div class="mid" id="figtxt">{chu}</div>')
 
 
 def s_statement(sl, th):
@@ -872,20 +854,18 @@ def _css_chu_toi_vung(scope, th):
 
 def anh_lam_nen(sl, th, ten):
     """Dung ANH THAT thanh nen ca the. Dung chung cho slide `figure` va cho
-    bia khi bia co anh. -> (html nen, html script dat lop mo neu can). Khoi
-    chu goi rieng, id="figtxt".
+    bia khi bia co anh. -> (html nen, html anh trong dong). Khoi chu goi
+    rieng, id="figtxt".
 
     Nguyen tac (Ong Chu chot 08/09/2026, nhac lai nhieu lan — day la nguyen
     tac SAU hon ban cu "man toi lien mach"):
 
       MAC DINH KHONG PHU LOP NAO len anh. Doi MAU CHU (sang hoac toi) cho
       tuong phan voi dung vung anh nam duoi no la du — do thang do sang tren
-      pixel that (ImageOps.fit mo phong dung object-fit:cover), khong doan.
-      Chi khi vung do THAT SU roi (bien thien mau cao — vd anh chup nhieu chi
-      tiet) thi moi them mot lop mo+tinh nhe, va khi them cung chi VUA DU de
-      xoa chi tiet gay roi, khong bao gio dam hon muc can. Ranh gioi tren cua
-      lop do khong duoc vuot qua dong chu dau tien — khong con khoang dem de
-      trong phia tren chu nhu ban cu.
+      pixel that cua ban mo lam nen (xem _vung_duoi_chu), khong doan.
+      Tu 10/09/2026 (aac796a) khong con lop mo nao het, ke ca khi vung duoi
+      chu roi: anh di vao DONG nen khoi chu khong the de len anh — khong con
+      gi de che.
 
       NEN bao gio cung la anh (hoac dung mau nen phang cua no), khong bao gio
       la mot hop den dat canh anh. LOP SAC trai full be ngang, KHONG cat hai
@@ -920,7 +900,7 @@ def anh_lam_nen(sl, th, ten):
                f'</div>')
         if nen_sang:
             nen += _css_mast_toi() + _css_chu_toi_vung("#figtxt", th)
-        return nen, "", ""
+        return nen, ""
 
     # kieu == "mo": ANH CHUP di vao DONG (flex item) giua masthead va khoi chu,
     # khong con lop tuyet doi de chu de len. Truoc 10/09/2026 anh nam lop
@@ -939,12 +919,12 @@ def anh_lam_nen(sl, th, ten):
         nen += _css_chu_toi_vung("#figtxt", th)
     anh = (f'<div class="fig-anh-wrap"><img class="fig-anh" src="{uri}" '
            f'alt=""></div>')
-    return nen, "", anh
+    return nen, anh
 
 
 def s_figure(sl, th):
     """Hinh that trai het be ngang, chu chim vao anh o duoi."""
-    nen, js, anh = anh_lam_nen(sl, th, "figure")
+    nen, anh = anh_lam_nen(sl, th, "figure")
     chu = (f'{eyebrow(sl["eyebrow"])}'
            f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
            f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
@@ -961,8 +941,7 @@ def s_figure(sl, th):
                 f'<span class="card-txt" style="font-size:31px;">{esc(c["text"])}</span></div>')
     return (nen + anh
             + '<div style="flex-grow:1;min-height:0;"></div>'
-            + f'<div class="mid" id="figtxt">{chu}</div>'
-            + js)
+            + f'<div class="mid" id="figtxt">{chu}</div>')
 
 
 def _so(v):
@@ -1540,9 +1519,6 @@ def _chup_cac_slide(page, slides, dung_doc, out, stem):
         doc = dung_doc(sl, i)
         page.set_content(doc, wait_until="load")
         page.evaluate("document.fonts.ready")
-        # Font doi chieu cao dong -> doi luon cho dong chu dau. Dat lai man
-        # toi SAU khi font xong, khong thi mep man lech khoi khoi chu.
-        page.evaluate("window.__datMan && window.__datMan()")
         page.wait_for_timeout(120)
         path = out if i == 1 else Path(f"{stem}_{i}.png")
         page.screenshot(path=str(path),
