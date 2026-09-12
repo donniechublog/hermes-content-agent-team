@@ -477,6 +477,18 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         # bia". Mo lai dung bia, TRU khi co mat nguoi: cong mat (LUAT_ANH §6)
         # doi khai `nhan_vat`, ma spec cua Kite khong co truong do.
         a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG làm bìa" not in g]
+        # KHOI TIT (trang khong co anh hero) la NAC CUOI, sau khai niem (Ong Chu
+        # 12/09/2026 xem bia toan chu-de-chu: "thieu idea den the a?"). Giu anh
+        # trong `anh` nhung KHONG tinh la dung duoc; `nang_khoi_tit` mo lai lam
+        # bia chi khi khai niem cung rong.
+        if a.get("kieu") == "tit":
+            a["dung"] = []
+            a["ghi_chu"].insert(0, "📰 KHỐI TÍT CHỤP TỪ TRANG NGUỒN (trang không có ảnh hero) — "
+                                   "chỉ làm bìa khi không còn ảnh nào khác")
+            anh.append(a)
+            print(f"[chup nguon] {a['ma']} <- {a['mien']} khoi tit ({a['w']}x{a['h']}), de dau",
+                  file=sys.stderr)
+            break
         if not a.get("mat"):
             a["dung"] = ["bìa (ảnh hero của chính bài gốc)", "thân"]
         a["ghi_chu"].insert(0, "📰 ẢNH HERO CHỤP TỪ TRANG NGUỒN — ảnh chính của bài trên "
@@ -488,6 +500,18 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     else:
         print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
     return _ra()
+
+
+def nang_khoi_tit(anh: list) -> tuple:
+    """Nấc cuối cùng: mở khối tít đã chụp (`kieu == "tit"`) làm bìa khi thực thể
+    và khái niệm đều rỗng. Thuần. Trả (anh, dung_duoc, chua_nhin)."""
+    for a in anh:
+        if a.get("kieu") == "tit" and not a["dung"] and not a.get("mat"):
+            a["dung"] = ["bìa (khối tít của bài gốc — không còn ảnh nào khác)", "thân"]
+            print(f"[chup nguon] {a['ma']}: nang khoi tit lam bia (nac cuoi)", file=sys.stderr)
+            break
+    return anh, [a for a in anh if a["dung"] and a.get("lien_quan") is not False], \
+        [a["ma"] for a in anh if a.get("lien_quan") is None]
 
 
 def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,

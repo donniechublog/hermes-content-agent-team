@@ -115,6 +115,30 @@ def test_khong_co_anh_hero_thi_chup_khoi_tit():
     assert '"kieu": "hero" if r["co_anh"] else "tit"' in src
 
 
+def test_khoi_tit_la_nac_cuoi_sau_khai_niem():
+    """Ông Chủ 12/09/2026 xem bìa tin toán ra toàn chữ: "AI giải toán giỏi hoàn
+    toàn có thể dùng hình bảng đen... thiếu idea đến thế à?". Khối tít (trang
+    không ảnh hero) chỉ làm bìa khi thực thể + khái niệm đều rỗng."""
+    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    assert src.index("_vong_khai_niem(anh") < src.index("nang_khoi_tit(anh)")
+    a = {"ma": "A1", "kieu": "tit", "dung": [], "lien_quan": True, "ghi_chu": []}
+    b = {"ma": "A2", "kieu": "tit", "dung": [], "lien_quan": True, "mat": True, "ghi_chu": []}
+    anh, dung, _ = vong_bu.nang_khoi_tit([b, a])
+    assert dung == [a] and a["dung"][0].startswith("bìa"), (a, b)
+    assert b["dung"] == [], "co mat nguoi thi khong len bia"
+
+
+def test_bang_khai_niem_co_toan_khoa_hoc_lop_hoc():
+    import anh_khai_niem
+    tk = [x["tu_khoa"] for x in anh_khai_niem.tu_khoa_heuristic(
+        "AI is getting good at math. Mathematicians worry about what that means")]
+    assert "blackboard mathematical formulas" in tk, tk
+    tk = [x["tu_khoa"] for x in anh_khai_niem.tu_khoa_heuristic("AlphaFold predicts new protein structures")]
+    assert "laboratory bench scientist" in tk, tk
+    tk = [x["tu_khoa"] for x in anh_khai_niem.tu_khoa_heuristic("Students use ChatGPT for homework")]
+    assert "classroom students" in tk, tk
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

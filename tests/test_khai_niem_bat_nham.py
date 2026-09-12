@@ -39,10 +39,13 @@ def test_tin_an_ninh_mang_that_van_ra_dung_ro():
         assert "server room cables" in _tk(tieu_de), tieu_de
 
 
-def test_tin_toan_hoc_thuan_khong_ra_tu_khoa_nao():
-    """Không có từ khoá còn hơn có từ khoá sai: rỗng thì vòng khái niệm thoát
-    ngay và nấc chụp trang nguồn (LOW-22) lo phần ảnh."""
-    assert _tk(TIN_TOAN, "The Erdos problems are a lighthouse for deeper understanding") == []
+def test_tin_toan_hoc_ra_bang_den_khong_ra_phong_may():
+    """Trước 12/09 test này đòi RỖNG ("không từ khoá còn hơn từ khoá sai"). Ông
+    Chủ xem bìa toán toàn chữ: "hoàn toàn có thể dùng hình bảng đen công thức
+    làm hero, thiếu idea đến thế à?" — nên tin toán phải ra bảng đen, và vẫn
+    KHÔNG được ra phòng máy."""
+    tk = _tk(TIN_TOAN, "The Erdos problems are a lighthouse for deeper understanding")
+    assert tk == ["blackboard mathematical formulas"], tk
 
 
 def test_cau_hoi_vision_hoi_ca_TU_KHOA_CO_HOP_BAI():

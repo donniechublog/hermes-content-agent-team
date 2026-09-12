@@ -127,6 +127,20 @@ CHU_DE = [
      "electric car charging", "tin xe điện"),
     (re.compile(r"\bcoding\b|developer|programm|\bgithub\b|\bide\b|software engineer", re.I),
      "programmer typing code", "tin lập trình"),
+    # Toan / khoa hoc / lop hoc (Ong Chu 12/09/2026: "AI giai toan gioi hoan toan
+    # co the dung hinh bang den cong thuc lam hero, thieu idea den the a?"). Bang
+    # nay truoc do khong co dong nao cho tin nghien cuu, nen tin toan roi thang
+    # xuong chup khoi tit. Do Commons 12/09: "blackboard mathematical formulas"
+    # ra 3 anh ngang >= 1600px; "laboratory bench scientist" 4; "classroom students" 4.
+    (re.compile(r"\bmath(s|ematic\w*)?\b|\btheorem\b|\bproof\b|\bolympiad\b|\bimo\b|"
+                r"\bequation|\balgebra|\bgeometr|\bcalculus\b|erd[oő]s", re.I),
+     "blackboard mathematical formulas", "tin toán học"),
+    (re.compile(r"\bscien(ce|tist)|\bresearch(er)?s?\b|\bphysic|\bchemist|\bbiolog|\bprotein|"
+                r"\bgenom|\bnobel\b|\blab\b|laboratory", re.I),
+     "laboratory bench scientist", "tin khoa học"),
+    (re.compile(r"\bstudents?\b|\bschools?\b|\bteachers?\b|\bclassroom|\buniversit|\beducation|"
+                r"\bexams?\b|\bhomework\b", re.I),
+     "classroom students", "tin giáo dục"),
 ]
 
 # Tên tệp Commons báo hiệu đồ hoạ, không phải ảnh chụp.
