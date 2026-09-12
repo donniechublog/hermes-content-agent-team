@@ -87,9 +87,23 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         txt = _j.loads(raw)["choices"][0]["message"]["content"]
         mo_ta = re.search(r"MO_TA\s*:\s*(.+)", txt)
-        lq = re.search(r"LIEN_QUAN\s*:\s*(co|có|khong|không)", txt, re.I)
+        # LI[EÊ]N: model tra loi tieng Viet nen hay tu danh dau ca NHAN
+        # "LIÊN_QUAN" (dung dau, khac de bai "LIEN_QUAN" khong dau) — regex cu
+        # bo lo, roi anh RO RANG khong lien quan (widget gia co phieu A1/A4
+        # trong tin TSMC) lai duoc dem la "chua nhin" = dung duoc, xuyen thang
+        # qua cong chan lien_quan-is-False (12/09/2026, chay lai task TSMC sau
+        # khi ha nguong: 5/5 tro thanh "du 6" chi vi 5 anh cu deu roi vao ke ho
+        # nay, khong phai vi tim them anh that).
+        lq = re.search(r"LI[EÊ]N[_\s]QUAN\s*:\s*(co|có|khong|không)", txt, re.I)
         mt = mo_ta.group(1).strip()[:200] if mo_ta else txt.strip()[:200]
         lqv = lq.group(1).lower().startswith("c") if lq else None
+        if mo_ta and lq is None:
+            # Truoc day im lang: mo_ta co (vision CHAY that) nhung lien_quan
+            # khong parse duoc thi lqv=None GIONG HET truong hop chua goi duoc
+            # router — nguoi doc log khong phan biet noi duoc "chua nhin" that
+            # voi "da nhin nhung parse hong".
+            print(f"[vision] {Path(path).name}: co MO_TA nhung khong parse duoc dong "
+                  f"LIEN_QUAN tu: {txt[:200]!r}", file=sys.stderr)
         # Chot tat dinh: mo ta neu dung ten hang -> lien quan (anh tru so/san pham
         # Broadcom bi vision phan "khong" luc co luc khong, 05/09/2026).
         # ...nhung chi khi mo ta la BOI CANH hang (tru so/san pham/logo/su kien),
