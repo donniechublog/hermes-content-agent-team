@@ -74,12 +74,21 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         JSON hong); tra (mo_ta, lien_quan, them) khi hoi duoc — lien_quan van
         co the None o day, nghia la HOI DUOC nhung khong doc ra LIEN_QUAN."""
         b64 = base64.b64encode(Path(path).read_bytes()).decode()
+        # Dieu kien RO NET (LOW-45, 12/09/2026, Ong Chu: "chi can dung lay anh
+        # xau"): truoc day cau hoi mac dinh (duong "anh rieng cua tin", pho bien
+        # nhat) chi hoi "co lien quan bai khong", KHONG hoi ve do net/goc chup —
+        # khac han hai nhanh khai_niem/thuong_hieu ben duoi da co san cum "qua
+        # mo" tu lau. Anh bao chup nghieng mot man hinh (vd App Store cua Kimi
+        # K3, do that tren dcgr) lot qua de dang vi dung chu de nhung mo/nghieng
+        # — them dung mot dieu kien nhu hai nhanh kia, khong mo cau hoi rieng.
         hoi = (f"Bai bao: \"{tieu_de}\"." + (f" Cong ty/san pham chinh: {hang}." if hang else "")
                + "\nTra loi DUNG 2 dong:\n"
                "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
-               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai; khong = quang cao, "
-               "widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/chu de khac)")
+               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET "
+               "khong mo/nhoe, khong phai anh chup lai mot man hinh o goc nghieng kho nhin; "
+               "khong = quang cao, widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/"
+               "chu de khac, hoac mo/nhoe/chup nghieng du dung chu de)")
         if khai_niem:
             import anh_khai_niem
             hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)
