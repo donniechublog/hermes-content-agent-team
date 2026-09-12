@@ -395,6 +395,28 @@ cái §0 giữ.
 - Bìa có ảnh thì **cả bộ không vẽ hero art** (`chon_theme_tu_dong` trả
   `hero=None`), nên đây là thay thế chứ không phải thêm một lớp trang trí.
 
+### 1.2g Con mắt trả lời mà không đọc ra được thì hỏi lại, không mặc định duyệt
+
+- `lien_quan` có 3 giá trị: `True` (liên quan), `False` (không liên quan — vision
+  đã xem và từ chối), `None` (chưa biết). Mọi nơi lọc `dung_duoc` viết
+  `lien_quan is not False`, tức **`None` từng được coi là duyệt** — đây là lỗ
+  fail-open. Ông Chủ 12/09/2026 đóng lại: *"đóng luôn cổng fail-open"*.
+- `None` có **hai nguồn gốc khác hẳn nhau**, và chỉ một nguồn được đóng:
+  1. **Không hỏi được** (thiếu `OPENAI_API_KEY`, router hỏng cả 3 lần thử lại
+     429/5xx) — đây là "vision tắt" có chủ đích ở nơi khác (`kite_nop.py`:
+     "vision tắt thì ép là đẩy quảng cáo/banner lên bìa"), **giữ nguyên `None`**.
+     Không hỏi lại ở đây — `_goi_router` đã có backoff riêng.
+  2. **Hỏi được nhưng không đọc ra dòng `LIEN_QUAN`** (model trả lời lệch định
+     dạng) — đo 12/09/2026 trên máy chủ: ảnh trụ sở Tesla (Terafab) và một ứng
+     viên thương hiệu Anthropic đều lọt bìa qua đường này dù router đã trả lời,
+     chỉ là câu trả lời không parse được. Ca này **hỏi lại đúng 1 lần**
+     (`chuan_bi/nhin.mo_ta_anh`); vẫn không đọc ra thì **coi là RỚT**
+     (`lien_quan = False`), không còn là `None` nữa.
+- Không gộp hai ca làm một: nếu "không hỏi được" cũng bị đóng thì mọi lần vision
+  tắt (thiếu key ở môi trường dev/test) sẽ biến TOÀN BỘ ảnh của tin thành rớt —
+  không còn ảnh nào để dùng, sai với hợp đồng "chưa ai nhìn" mà nhiều nơi khác
+  (brief, `hinh_hero`, `kite_nop`) đang dựa vào.
+
 ### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 
 Bảng so sánh điểm benchmark (MMLU, HumanEval, lập trình, toán…) và biểu đồ là

@@ -29,8 +29,20 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
               nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None,
               khai_niem_theo_loai: bool = False) -> tuple:
     """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
-    theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu khong goi
-    duoc (router tat, thieu key): luc do brief noi ro la CHUA ai nhin.
+    theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu KHONG HOI
+    DUOC (thieu key, router hong ca hai lan thu lai cua `_goi_router`): luc do
+    brief noi ro la CHUA ai nhin, dung y nhu tu truoc.
+
+    Ong Chu 12/09/2026, dong CONG FAIL-OPEN: truoc day router TRA LOI duoc
+    nhung dong LIEN_QUAN khong doc ra duoc (model lech dinh dang) cung thanh
+    None — ma moi noi loc `dung_duoc` deu viet `lien_quan is not False`, tuc
+    None DUOC COI LA DUYET. Do that 12/09 tren may chu: anh Tesla (Terafab) va
+    logo Anthropic (truoc khi sua ca thanh cong 32 diem) deu lot bia qua duong
+    nay — router CO tra loi, chi la khong parse duoc. Phan biet ro hai ca:
+      - KHONG HOI DUOC (thieu key / het luot thu 429-5xx / loi mang) -> giu
+        nguyen None, KHONG hoi lai o day (da co backoff rieng o _goi_router).
+      - HOI DUOC nhung khong doc ra LIEN_QUAN -> HOI LAI DUNG 1 LAN; van khong
+        doc ra thi COI LA ROT (lqv=False), khong con la None nua.
 
     Do 05/09/2026 tren bo Broadcom: widget linh kien / bang Fear&Greed / logo bao /
     nguoi dan ong G20 -> khong; ~2s moi anh. Khong heuristic nao bat duoc "widget
@@ -56,7 +68,11 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         print("[vision] thieu OPENAI_API_KEY -> khong nhin duoc anh, brief se ghi CHUA AI NHIN",
               file=sys.stderr)
         return ("", None, "") if (hoi_them and nhan_them) else ("", None)
-    try:
+
+    def _mot_lan():
+        """Mot lan hoi + parse. Nem exception khi KHONG HOI DUOC (mang/router/
+        JSON hong); tra (mo_ta, lien_quan, them) khi hoi duoc — lien_quan van
+        co the None o day, nghia la HOI DUOC nhung khong doc ra LIEN_QUAN."""
         b64 = base64.b64encode(Path(path).read_bytes()).decode()
         hoi = (f"Bai bao: \"{tieu_de}\"." + (f" Cong ty/san pham chinh: {hang}." if hang else "")
                + "\nTra loi DUNG 2 dong:\n"
@@ -106,13 +122,40 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             lqv = True
         elif lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt):
             lqv = False
+        them = ""
         if hoi_them and nhan_them:
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
-            return mt, lqv, (t.group(1).strip()[:120] if t else "")
-        return mt, lqv
+            them = t.group(1).strip()[:120] if t else ""
+        return mt, lqv, them
+
+    try:
+        mt, lqv, them = _mot_lan()
     except Exception as e:                                   # noqa: BLE001
         print(f"[vision] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return ("", None, "") if (hoi_them and nhan_them) else ("", None)
+
+    if lqv is None:
+        # HOI DUOC (khong nem o tren) nhung khong doc ra LIEN_QUAN — hoi lai
+        # DUNG MOT LAN truoc khi ket luan. Loi lan 2 (mang/router) van la
+        # "khong hoi duoc", khong phai co so de ROT — nhung da co MOT cau tra
+        # loi that (lan 1) ma van khong parse duoc lan nao thi khong the tiep
+        # tuc coi la "chua ai nhin": dong lai thanh ROT.
+        print(f"[vision] {Path(path).name}: khong doc duoc LIEN_QUAN, hoi lai 1 lan", file=sys.stderr)
+        try:
+            mt2, lqv2, them2 = _mot_lan()
+        except Exception as e:                               # noqa: BLE001
+            print(f"[vision] {Path(path).name}: lan 2 hong: {type(e).__name__}: {e!r}", file=sys.stderr)
+            mt2, lqv2, them2 = mt, None, them
+        if lqv2 is None:
+            print(f"[vision] {Path(path).name}: van khong doc duoc sau 2 lan hoi -> COI LA ROT "
+                  "(khong con fail-open)", file=sys.stderr)
+            mt, lqv, them = (mt2 or mt), False, (them2 or them)
+        else:
+            mt, lqv, them = mt2, lqv2, them2
+
+    if hoi_them and nhan_them:
+        return mt, lqv, them
+    return mt, lqv
 
 
 # Ma HTTP dang thu lai: router qua tai / gateway. 401/400 thi khong (thu lai vo ich).
