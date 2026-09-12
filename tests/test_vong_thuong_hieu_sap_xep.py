@@ -59,7 +59,11 @@ def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
     assert goi["thu_tu_diem"] == sorted(goi["thu_tu_diem"], reverse=True), (
         f"cands khong duoc sap theo diem giam dan: {goi['thu_tu_diem']} — "
         f"vi pham hop dong cua tai_va_loc ('tai ung vien theo thu tu diem')")
-    assert goi["thu_tu_diem"][0] == 28, "anh tru so (diem cao hon) phai dung TRUOC chan dung"
+    # Tu 12/09/2026 diem con duoc cong theo LOAI TIN (loai_tin.diem_theo_loai) —
+    # khong assert so tuyet doi, chi assert thu tu: tru so (goc 28) van TRUOC
+    # chan dung (goc 24) voi category mac dinh.
+    assert goi["thu_tu_diem"][0] > goi["thu_tu_diem"][1], \
+        "anh tru so (diem cao hon) phai dung TRUOC chan dung"
 
 
 if __name__ == "__main__":

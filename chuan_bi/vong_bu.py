@@ -119,6 +119,12 @@ def _chup_xep_hang(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp
     xhs: list = []
     tieu_de_xh = f"{title} {nguon.get('tieu_de_en') or ''}"
     tin_xep_hang = xep_hang.la_tin_xep_hang(tieu_de_xh, tom.get("summary", ""))
+    # Bang loai tin (loai_tin.py, Ong Chu 12/09/2026: "noi den model thi co them
+    # hinh benchmark"): category MODEL/BENCHMARK ep chup bang du tieu de khong co
+    # chu "#1"/"top" nao — truoc day chi regex tieu de quyet dinh.
+    import loai_tin
+    if loai_tin.muon(meta.get("category"), "xep_hang"):
+        tin_xep_hang = True
     if not khong_browser and tin_xep_hang:
         models = xep_hang.tach_model(nguon.get("tieu_de_en") or "") or xep_hang.tach_model(title)
         if models:
@@ -324,7 +330,8 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
 
 
 def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
-                      toi_thieu: int = 5, khong_browser: bool = False, phien=None) -> tuple:
+                      toi_thieu: int = 5, khong_browser: bool = False, phien=None,
+                      category: str = "") -> tuple:
     """VONG THUONG HIEU (Ong Chu 09/09/2026: "Dre van chua tu tim them hinh lien
     quan khi lam cac noi dung co Big Brand"): tin ve hang lon thi engine hoi
     Commons/Wikidata anh THAT cua chinh hang — logo, chan dung founder/CEO, tru
@@ -347,9 +354,19 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         return anh, [a for a in anh if a["dung"] and a.get("lien_quan") is not False], \
             [a["ma"] for a in anh if a.get("lien_quan") is None]
     wd4 = wd / "thuong_hieu"
+    import loai_tin
     cands = []
     for h in hangs:
         cands += th.anh_hang(h, wd=wd4 / h["khoa"])
+        # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
+        if loai_tin.muon(category, "co_phieu") and not khong_browser:
+            cands += th.anh_co_phieu(h, wd4 / h["khoa"], phien=phien)
+    # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
+    # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
+    # truoc logo (loai_tin.BANG_ANH_THEO_LOAI, Ong Chu 12/09/2026).
+    for c in cands:
+        c["diem"] = c.get("diem", 0) + loai_tin.diem_theo_loai(
+            category, (c.get("thuong_hieu") or {}).get("loai", "anh"))
     # `tai_va_loc` tu ghi hop dong "tai ung vien THEO THU TU DIEM" — noi duy
     # nhat trong ca thang anh thuong hieu ma diem THAT SU khac nhau (anh noi/san
     # pham 28 > nguoi 24 > logo 18, dat o `anh_thuong_hieu._ung_vien`), nhung
@@ -473,14 +490,30 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     return _ra()
 
 
-def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path) -> tuple:
+def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
+                    category: str = "") -> tuple:
     """VONG KHAI NIEM (Ong Chu 07/09/2026): tin khong co anh rieng (thieu, hoac
     khong tam nao lam bia duoc) thi engine tim ANH THAT theo khai niem cua tin —
     co/ban do nuoc duoc nhac, datacenter cho tin compute... — nhu Dre tung tu
     lam khi con web_search. Chi Commons, chi bia/hero, dung sau anh rieng cua tin.
     Mot vong. Tra (anh, dung_duoc, chua_nhin)."""
     import anh_khai_niem
-    tks = anh_khai_niem.tu_khoa_khai_niem(tieu_de_nhin, tom_tat)
+    import anh_thuong_hieu as th
+    import loai_tin
+    # Tu khoa do LOAI TIN ep truoc heuristic: co nuoc cua HANG trong tin (LAB/
+    # INFRA — truoc day co chi ra khi tieu de nhac ten nuoc), datacenter/nha may
+    # cho INFRA du tieu de khong khop CHU_DE. Bang: loai_tin.py (12/09/2026).
+    them = []
+    if loai_tin.muon(category, "co_nuoc_hang"):
+        for h in th.hang_trong_tin(tieu_de_nhin, tom_tat):
+            nuoc = loai_tin.nuoc_cua(h["khoa"])
+            if nuoc and f"flag of {nuoc}" not in them:
+                them.append(f"flag of {nuoc}")
+    if loai_tin.muon(category, "khai_niem_ha_tang"):
+        them += [t for t in loai_tin.TU_KHOA_HA_TANG if t not in them]
+    if loai_tin.muon(category, "san_giao_dich"):
+        them.append("stock exchange trading floor")
+    tks = anh_khai_niem.tu_khoa_khai_niem(tieu_de_nhin, tom_tat, them=them)
     print("[khai niem] tu khoa: " + (", ".join(f"'{t['tu_khoa']}'" for t in tks) or "khong ra"),
           file=sys.stderr)
     if not tks:

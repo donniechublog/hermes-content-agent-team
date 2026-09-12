@@ -338,6 +338,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
     L += dong_hero(m)
+    import loai_tin
+    L += loai_tin.dong_brief(m)
     rac = [a["ma"] for a in m["anh"] if a.get("lien_quan") is False]
     if rac:
         L.append(f"Không dùng (engine đánh dấu không liên quan): {', '.join(rac)}")

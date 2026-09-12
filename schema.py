@@ -72,6 +72,8 @@ class Manifest(TypedDict, total=False):
     chu_bai: str                   # CAT con 20000 ky tu luc ghi
     so_mien: list
     cap_ghep: list
+    ghep_hai_hang: list        # M&A: cap [ma_A, ma_B] anh cua HAI hang (loai_tin.py, 12/09/2026)
+    thu_tu_anh_theo_loai: list  # loai tin -> vat duoc phep, de brief noi vi sao co logo/co/bieu do gia
     goi_y_bia: list                # ma anh goi y lam bia, XH dung dau neu co
     chua_nhin: list                # ma anh vision chua nhin duoc
     so_dung_duoc: int              # xem `so_anh_dung_duoc` — CHUM khai niem tinh la MOT

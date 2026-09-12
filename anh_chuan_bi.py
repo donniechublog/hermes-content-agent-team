@@ -180,9 +180,13 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # chup bang xep hang lam boi canh. Voi vai mot anh no la 0 — mot cai chart
         # khong bao gio la nen hero duoc, di chup la tra tien browser lay mot tam
         # Ethan khong dung duoc.
+        # `category` da duoc Finn/Vera gan tu luc quet va nam san trong meta —
+        # toi 12/09/2026 engine anh chua doc no o dau (loai_tin.py).
+        category = meta.get("category", "")
         anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
                                                       wd, vai.so_anh_muc_tieu_tim(vai_anh, flagship),
-                                                      khong_browser, phien=phien)
+                                                      khong_browser, phien=phien,
+                                                      category=category)
         # Van thieu -> CHUP CHINH TRANG NGUON o khung dien thoai, cat lay khoi
         # lead (anh chinh + tit). Ong Chu 06/09/2026 da chot luat khung mobile,
         # nhac lai 12/09: "co the capture man hinh mobile source goc ma?" —
@@ -196,7 +200,8 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # -> anh khai niem chung chung cua chu de, sau anh cua chinh hang (chi
         # mang, khong browser; chay ca khi --khong-browser).
         if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd)
+            anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd,
+                                                        category=category)
         tl = _tu_lieu_bai(title, link, nguon_path, wd, nguon, bp)
         m = dung_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
                           tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh)

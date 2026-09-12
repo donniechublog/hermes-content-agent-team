@@ -70,6 +70,34 @@ def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
             "Nói lại một câu cho Ông Chủ là bài xếp hạng mà không có bảng.")
 
 
+def ghep_hai_hang(anh: list, category) -> list:
+    """Tin THƯƠNG VỤ: cặp ảnh của HAI hãng khác nhau để vai ghép dọc. Bảng loại
+    tin (Ông Chủ 12/09/2026): *"nếu nói đến thương vụ thì lấy hình liên quan của
+    hai brand đặt vào"*. Trả [[ma_A, ma_B], ...] — ưu tiên cùng loại (logo+logo,
+    trụ sở+trụ sở) và dùng được; rỗng khi không phải M&A hay chỉ có một hãng."""
+    import loai_tin
+    if not loai_tin.muon(category, "ghep_hai_hang"):
+        return []
+    theo_hang = {}
+    for a in anh:
+        th = a.get("thuong_hieu") or {}
+        if not th.get("khoa") or not a.get("dung") or a.get("lien_quan") is False:
+            continue
+        theo_hang.setdefault(th["khoa"], []).append(a)
+    if len(theo_hang) < 2:
+        return []
+    (ka, la), (kb, lb) = list(theo_hang.items())[:2]
+    ra = []
+    for loai in ("logo", "anh", "nguoi"):
+        x = next((a for a in la if (a.get("thuong_hieu") or {}).get("loai") == loai), None)
+        y = next((a for a in lb if (a.get("thuong_hieu") or {}).get("loai") == loai), None)
+        if x and y:
+            ra.append([x["ma"], y["ma"]])
+    if not ra:
+        ra.append([la[0]["ma"], lb[0]["ma"]])
+    return ra
+
+
 def cap_ghep(anh: list) -> list:
     """Cac cap anh NGANG ghep doc duoc: cung tone (luat_anh.lech_tone) va ti le
     sau ghep nam trong dai carousel chap nhan."""
@@ -228,6 +256,8 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
          # carousel.MIN_SLIDE cho moi vai, nen bai cua Ethan bi doi 5 anh.
          "toi_thieu_co_ban": vai_mod.so_anh_toi_thieu(vai_anh), "so_mien": so_mien,
          "anh": anh, "cap_ghep": cap_ghep(dung_duoc), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
+         "ghep_hai_hang": ghep_hai_hang(anh, meta.get("category", "")),
+         "thu_tu_anh_theo_loai": list(__import__("loai_tin").thu_tu_anh(meta.get("category", ""))),
          "so_dung_duoc": so_dung_duoc, "chua_nhin": chua_nhin,
          "xep_hang": ({k: xhs[0].get(k) for k in ("model", "hang", "site", "bang", "kieu", "duoc_nhac")}
                       if xhs else None),

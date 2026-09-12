@@ -87,6 +87,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if m.get("cap_ghep"):
         L.append("Cặp ảnh ngang ghép dọc được (cùng tone): " +
                  ", ".join("+".join(c) for c in m["cap_ghep"]))
+    import loai_tin
+    L += loai_tin.dong_brief(m)
     L.append("Mỗi ảnh đã được NHÌN (cột \"ảnh là\"). Ảnh ❌ tuyệt đối không dùng dù nhãn gì. "
              f"Bảng thu nhỏ: {m['workdir']}/bang_anh.png")
     L.append("")

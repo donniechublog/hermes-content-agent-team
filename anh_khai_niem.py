@@ -219,9 +219,20 @@ def doc_tra_loi_llm(txt: str) -> list:
     return ra[:TOI_DA_TU_KHOA]
 
 
-def tu_khoa_khai_niem(tieu_de: str, tom_tat: str = "", dung_llm: bool = True) -> list:
-    """Heuristic trước (chắc, không mạng), LLM bù cho tới 3 từ khoá."""
-    ra = tu_khoa_heuristic(tieu_de, tom_tat)
+def tu_khoa_khai_niem(tieu_de: str, tom_tat: str = "", dung_llm: bool = True,
+                      them: list | None = None) -> list:
+    """Heuristic trước (chắc, không mạng), LLM bù cho tới 3 từ khoá.
+
+    `them` (12/09/2026, bảng loại tin `loai_tin.py`): từ khoá do LOẠI TIN ép
+    vào TRƯỚC heuristic — cờ nước của hãng (`NUOC_CUA_HANG`), datacenter/nhà
+    máy cho tin INFRA dù tiêu đề không có chữ nào khớp `CHU_DE`. Trước đây cờ
+    chỉ ra khi tiêu đề nhắc tên nước, nên tin Samsung không bao giờ ra cờ Hàn."""
+    ra = [{"tu_khoa": t, "ly_do": "theo loại tin"} for t in (them or []) if t]
+    for x in tu_khoa_heuristic(tieu_de, tom_tat):
+        if len(ra) >= TOI_DA_TU_KHOA:
+            break
+        if all(x["tu_khoa"] != y["tu_khoa"] for y in ra):
+            ra.append(x)
     if dung_llm and len(ra) < TOI_DA_TU_KHOA:
         for x in tu_khoa_llm(tieu_de, tom_tat):
             if len(ra) >= TOI_DA_TU_KHOA:

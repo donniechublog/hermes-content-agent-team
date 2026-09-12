@@ -132,6 +132,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if goi_y:
         L.append("Gợi ý nền hero (không chart, không mặt, nửa dưới tối trước): " + ", ".join(g[2] for g in goi_y[:3]))
     cap = cap_ghep_hero(m)
+    import loai_tin
+    L += loai_tin.dong_brief(m)
     if cap:
         L.append("Cặp ghép dọc được (cùng tone, dùng \"anh\"+\"anh2\"): " + ", ".join("+".join(c) for c in cap))
     L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/bang_anh.png (mở tối đa một lần, khi thật cần).")

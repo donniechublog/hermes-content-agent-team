@@ -677,6 +677,76 @@ def anh_nguoi_ngang(ten: str, vai: str, hang: str, khoa: str) -> list:
     return ra
 
 
+CO_PHIEU_URL = "https://www.google.com/finance/quote/{ma}"
+CO_PHIEU_CHO = 2500            # ms cho bieu do SVG ve xong
+
+
+def anh_co_phieu(hang, wd, phien=None) -> list:
+    """Biểu đồ giá cổ phiếu của hãng — chụp trang Google Finance ở khung mobile.
+
+    Bảng loại tin (`loai_tin.py`, Ông Chủ 12/09/2026): tin BUSINESS/M&A thì "mã
+    cổ phiếu" là một vật liên quan. Chỉ hãng có trong `loai_tin.MA_CO_PHIEU`
+    (niêm yết); hãng tư nhân trả [] ngay, không đoán. Tường chặn bot -> [] (dùng
+    chung `phien_browser.bi_chan`). Là đồ hoạ có chủ ý (`cho_do_hoa`, như thẻ
+    logo) nên `tai_va_loc` không loại nó như logo báo lọt."""
+    import loai_tin
+    from pathlib import Path as _P
+    khoa = hang["khoa"] if isinstance(hang, dict) else hang
+    ma = loai_tin.ma_co_phieu(khoa)
+    if not ma or wd is None:
+        return []
+    ten_chinh = TEN_HIEN.get(khoa, (khoa.title(),))[0]
+    ra = _P(wd) / f"co_phieu_{khoa.replace(' ', '_')}.png"
+    ra.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        from phien_browser import (MOBILE_DPR, MOBILE_UA, MOBILE_VIEWPORT, bi_chan,
+                                   phien_hoac_moi)
+        with phien_hoac_moi(phien) as ph:
+            with ph.trang(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
+                          is_mobile=True, has_touch=True, user_agent=MOBILE_UA) as page:
+                resp = page.goto(CO_PHIEU_URL.format(ma=ma), wait_until="domcontentloaded",
+                                 timeout=40000)
+                page.wait_for_timeout(CO_PHIEU_CHO)
+                ly = bi_chan(page.title() or "", resp.status if resp else None,
+                             page.evaluate("document.body ? document.body.innerText : ''") or "")
+                if ly:
+                    print(f"[co_phieu] {ma}: trang chặn ({ly}), bỏ", file=sys.stderr)
+                    return []
+                # Khoi bieu do: the <svg> to nhat trong man dau; khong co thi
+                # chup vung main phia tren (gia + bieu do nam o day).
+                khoi = page.evaluate("""() => {
+                  let best = null, area = 0;
+                  for (const el of document.querySelectorAll('svg, canvas')) {
+                    const r = el.getBoundingClientRect();
+                    if (r.width < 200 || r.height < 100 || r.top > window.innerHeight * 2) continue;
+                    if (r.width * r.height > area) { area = r.width * r.height; best = r; }
+                  }
+                  if (!best) return null;
+                  const dem = 60;   // lay ca dong gia/ten ngay tren bieu do
+                  return {x: 0, y: Math.max(0, best.top - dem), w: window.innerWidth,
+                          h: best.height + dem};
+                }""")
+                if not khoi:
+                    print(f"[co_phieu] {ma}: khong thay bieu do", file=sys.stderr)
+                    return []
+                page.screenshot(path=str(ra), full_page=True,
+                                clip={"x": khoi["x"], "y": khoi["y"],
+                                      "width": khoi["w"], "height": khoi["h"]})
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[co_phieu] {ma}: {type(e).__name__}: {e!r}", file=sys.stderr)
+        return []
+    if not (ra.exists() and ra.stat().st_size > 0):
+        return []
+    from PIL import Image as _Im
+    with _Im.open(ra) as im:
+        w, h = im.size
+    c = _ung_vien({"url": str(ra), "rong": w, "cao": h, "mime": "image/png"},
+                  ra.name, ten_chinh, khoa, "co_phieu", f"biểu đồ giá {ma} (Google Finance)")
+    c.update({"tep": str(ra), "anh": str(ra), "cho_do_hoa": True, "diem": 22})
+    c["thuong_hieu"]["ma"] = ma
+    return [c]
+
+
 def anh_hang(hang, so: int = TOI_DA_MOI_HANG, wd=None) -> list:
     """Ứng viên ảnh thương hiệu cho một hãng ({"khoa","hang"} hoặc khoá).
 
@@ -786,6 +856,11 @@ def nhan_theo_loai(th: dict) -> str:
                 f"\"nen\": \"{'sang' if th.get('nen') == 'sáng' else 'toi'}\". "
                 "Đường cuối khi tin không có ảnh thật nào khác — đừng dùng nếu đã "
                 "có ảnh chụp.")
+    if loai == "co_phieu":
+        return (f"📈 BIỂU ĐỒ GIÁ {th.get('ma', '?')} của {hang} (Google Finance, khung điện thoại) — "
+                "vật liên quan của tin BUSINESS/M&A theo bảng loại tin. Đồ hoạ có chủ ý: dán "
+                "full bề ngang như chart, khai \"chart\": true ở slide thân; caption ghi "
+                "\"via Google Finance\".")
     if loai == "xep_hang":
         return (f"📊 BẢNG XẾP HẠNG có {hang} — ảnh engine chụp từ "
                 f"{th.get('site', '?')} ({th.get('bang', '?')}), đã khoanh hàng. "
@@ -832,6 +907,11 @@ def nhan_thuong_hieu(a: dict) -> dict:
         a["ghi_chu"].insert(0, nhan_theo_loai(th))
         return a
 
+    if loai == "co_phieu":
+        a["dung"] = ["thân (chart, dán full bề ngang nguyên vẹn)"]
+        a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG làm bìa" not in g]
+        a["ghi_chu"].insert(0, nhan_theo_loai(th))
+        return a
     if loai == "xep_hang":
         a["ghi_chu"].insert(0, nhan_theo_loai(th))
         return a
