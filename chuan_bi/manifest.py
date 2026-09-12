@@ -249,7 +249,7 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
     tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
     dx = dan_xuat(anh, so_xh=len(xhs))
-    dung_duoc, chua_nhin, so_mien = dx["dung_duoc"], dx["chua_nhin"], dx["so_mien"]
+    _, chua_nhin, so_mien = dx["dung_duoc"], dx["chua_nhin"], dx["so_mien"]
     so_dung_duoc, goi_y_bia = dx["so_dung_duoc"], dx["goi_y_bia"]
     m = {"phien_ban": schema.PHIEN_BAN_MANIFEST,
          "draft_id": draft_id, "brand": _brand_cua(meta), "title": title, "link": link,
