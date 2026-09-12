@@ -10,9 +10,15 @@
 # lượt 2.
 name: kiem
 
+# `branches: ["**"]` chứ không liệt kê tiền tố: danh sách cũ [main, feat/**,
+# fix/**] bỏ sót sua/**, anh/**, rename/**, claude/** — đo 12/09/2026 thì
+# sua/low35-thuc-the push thật 2 lần, ci.yml có sẵn trong cây, vẫn 0 run, và
+# nhánh đó đang đỏ lint. Whitelist theo tiền tố sẽ lại sót ở kiểu đặt tên sau.
+# Cổng `pull_request` KHÔNG đỡ hộ được: 34/34 run tới nay đều event=push, đội
+# push thẳng chứ không mở PR (LOW-43).
 on:
   push:
-    branches: [main, "feat/**", "fix/**"]
+    branches: ["**"]
   pull_request:
 
 jobs:
