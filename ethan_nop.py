@@ -109,6 +109,8 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
     hook_hay_title = str(spec.get("hook") or spec.get("title") or "")
     loi.extend(nc.kiem_quote_dich(hook_hay_title, "hook"))
+    # So hang tren the phai la so hang trong anh (LOW-24) — dung chung voi bia Dre.
+    loi.extend(nc.kiem_hang_tren_the(hook_hay_title, a, "hook"))
     canh = nc.kiem_so_tren_anh(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)
     if loi:
         return None, loi, canh

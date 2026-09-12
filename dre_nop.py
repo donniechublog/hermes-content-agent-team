@@ -120,6 +120,9 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
     if la_bia and nc.can_anh_xep_hang(m, a):
         bo.loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
                       f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m) + ".")
+    if la_bia:
+        # So hang trong hook bia phai la so hang engine khoanh (LOW-24, chung voi Ethan).
+        bo.loi.extend(nc.kiem_hang_tren_the(str(muc.get("hook") or ""), a, "bìa"))
     if a["loai"] == "chart" and not a.get("xep_hang"):
         if la_bia:
             bo.loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "

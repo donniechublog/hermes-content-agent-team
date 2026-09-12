@@ -348,6 +348,30 @@ def kiem_quote_dich(chu: str, nhan: str) -> list:
             "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
 
 
+def kiem_hang_tren_the(chu: str, a: dict, nhan: str = "hook") -> list:
+    """THU HANG vai viet len the phai TRUNG hang engine KHOANH trong anh (LOW-24).
+
+    Ca 12/09/2026: hook "claude-opus-4-7-high leo lên #3 bảng văn bản Arena" in
+    len anh khoanh hang #26 (bang khac). Brief co ghi "#26 / WebDev / Code Arena"
+    nhung chi la chu dan; `can_anh_xep_hang` EP dung anh XH ma khong hoi hang.
+    Day la cong: so trong chu phai la so trong anh, khong thi khong nop duoc.
+
+    Chi xet khi anh la BANG CHUP THAT (la_chup) va co `hang`; the du phong (kieu
+    "the") in hang tu tieu de nen khong doi chieu. Chu khong noi hang -> khong
+    chan (khong bat vai phai nhac hang). `tach_hang` hieu "dẫn đầu" = 1 va bo
+    "top 10" kieu kich co danh sach — cung bo doc voi engine, khong doc rieng."""
+    import xep_hang
+    xh = (a or {}).get("xep_hang") or {}
+    if not xh.get("hang") or not xep_hang.la_chup(xh.get("kieu")):
+        return []
+    hang_chu = xep_hang.tach_hang(chu or "", xh.get("model") or "")
+    if hang_chu is None or int(hang_chu) == int(xh["hang"]):
+        return []
+    return [f"{nhan}: viết #{hang_chu} nhưng ảnh {a.get('ma', 'XH')} khoanh hàng "
+            f"#{xh['hang']} trên {xh.get('site')} ({xh.get('bang')}) — số trên thẻ phải "
+            f"là số trong ảnh: sửa thành #{xh['hang']} (và nói đúng bảng đó), hoặc đổi ảnh"]
+
+
 PHUT_ALBUM_VUA_LEN = 10
 
 
