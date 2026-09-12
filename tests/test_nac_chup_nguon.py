@@ -104,6 +104,16 @@ def test_khong_browser_thi_bo_qua_nac_nay():
             [], "https://vidu.com/x", [], Path(d), khong_browser=True)
     assert anh == [] and dung_duoc == [] and chua_nhin == []
 
+def test_khong_co_anh_hero_thi_chup_khoi_tit():
+    """Ông Chủ 12/09/2026: "tin ko có tên riêng thì capture màn hình, ko phải đã
+    nói rồi sao?" — bài tiểu luận không ảnh hero KHÔNG được trả rỗng rồi rơi
+    xuống khái niệm (nơi con mắt nhận bừa phòng máy cho tin toán). Phải chụp
+    khối tít ở khung điện thoại."""
+    src = (ROOT / "chup_trang.py").read_text(encoding="utf-8")
+    assert "co_anh: false" in src, "JS phai tra khoi tit khi khong co anh hero"
+    assert 'clip = {"x": 0, "y": max(0, r["top"]), "width": r["w"], "height": r["w"]}' in src
+    assert '"kieu": "hero" if r["co_anh"] else "tit"' in src
+
 
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)

@@ -199,13 +199,15 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # Van thieu, hoac co anh ma khong tam nao lam anh chinh cua VAI NAY duoc
         # -> anh khai niem chung chung cua chu de, sau anh cua chinh hang (chi
         # mang, khong browser; chay ca khi --khong-browser).
+        # ANH THUC THE truoc, KHAI NIEM sau cung (LOW-35, 12/09/2026): anh dai dien cua
+        # chinh thuc the trong tieu de (Wikipedia/Commons) chac hon tu khoa LLM — do tren
+        # may chu: khai niem nhan bua "computer server room" cho tin toan, the can cuoc
+        # Quoc xa cho tin xac minh tuoi. Khai niem chi con la nac CUOI CUNG.
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+            anh, dung_duoc, chua_nhin = _vong_thuc_the(anh, tieu_de_nhin, wd)
         if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd,
                                                         category=category)
-        # NAC CUOI, khong bao gio rong (LOW-35, Ong Chu 12/09/2026: "day la 2026,
-        # moi thu ban can deu co san"): anh dai dien cua chinh thuc the trong tieu de.
-        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = _vong_thuc_the(anh, tieu_de_nhin, wd)
         tl = _tu_lieu_bai(title, link, nguon_path, wd, nguon, bp)
         m = dung_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
                           tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh)

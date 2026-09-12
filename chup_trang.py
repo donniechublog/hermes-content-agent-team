@@ -139,9 +139,13 @@ _JS_LEAD = """() => {
   // CHI ANH HERO, khong lay tit (Ong Chu 12/09/2026: "dung anh hero trong main
   // article lam thumbnail cho hero slide, vi anh do la chu nhat ngang, nen no
   // hien thi vua van voi nua tren"). Tit cua bao la thu render_edu tu viet.
-  if (!ir) return null;
-  return {top: ir.top, bottom: ir.bottom, left: ir.left, right: ir.right,
-          w: W, co_tit: !!hr, co_anh: true};
+  if (ir) return {top: ir.top, bottom: ir.bottom, left: ir.left, right: ir.right,
+                  w: W, co_tit: !!hr, co_anh: true};
+  // KHONG CO ANH HERO (bai kieu tieu luan: toan hoc, chinh sach) -> "capture man
+  // hinh" dung nghia luat 06/09 (Ong Chu nhac lai 12/09: "tin ko co ten rieng
+  // thi capture man hinh"): khoi TIT o khung dien thoai, tu mep tren tit xuong.
+  if (!hr) return null;
+  return {top: hr.top, bottom: hr.bottom, left: 0, right: W, w: W, co_tit: true, co_anh: false};
 }"""
 
 
@@ -218,13 +222,19 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
                 # Clip DUNG khung anh hero, khong lay tit/byline. full_page: clip
                 # theo toa do TAI LIEU; da cuon ve 0 nen toa do khung nhin trung
                 # toa do tai lieu, anh nam duoi mot man van chup du.
-                if r["bottom"] - max(0, r["top"]) < 60:
-                    print(f"[chup_lead] {url[:70]}: anh hero do ra cao {r['bottom']-max(0,r['top']):.0f}px, bo", file=sys.stderr)
-                    return None
-                page.screenshot(path=str(ra), full_page=True,
-                                clip={"x": max(0, r["left"]), "y": max(0, r["top"]),
-                                      "width": r["right"] - max(0, r["left"]),
-                                      "height": r["bottom"] - max(0, r["top"])})
+                if r["co_anh"]:
+                    if r["bottom"] - max(0, r["top"]) < 60:
+                        print(f"[chup_lead] {url[:70]}: anh hero do ra cao {r['bottom']-max(0,r['top']):.0f}px, bo", file=sys.stderr)
+                        return None
+                    clip = {"x": max(0, r["left"]), "y": max(0, r["top"]),
+                            "width": r["right"] - max(0, r["left"]),
+                            "height": r["bottom"] - max(0, r["top"])}
+                else:
+                    # Khong co anh hero: khoi TIT, vuong theo be ngang may (tit + doan
+                    # dau), dung nhu tam Wikipedia 1242x1242 do sang 12/09.
+                    print(f"[chup_lead] {url[:70]}: khong co anh hero, chup khoi tit", file=sys.stderr)
+                    clip = {"x": 0, "y": max(0, r["top"]), "width": r["w"], "height": r["w"]}
+                page.screenshot(path=str(ra), full_page=True, clip=clip)
     except Exception as e:                                   # noqa: BLE001
         print(f"[chup_lead] {url[:70]}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return None
@@ -233,6 +243,7 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
     # `tit_trang` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
     # trong `trang` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.
     return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True, "tit_trang": tit_trang,
+            "kieu": "hero" if r["co_anh"] else "tit",
             "alt": "ảnh chính + tít của chính bài gốc, chụp ở khung điện thoại",
             "ly_do": "khối lead của trang nguồn"
                      + (", có tít" if r["co_tit"] else "")
