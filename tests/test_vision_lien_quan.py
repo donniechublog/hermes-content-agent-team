@@ -118,6 +118,20 @@ def test_thieu_api_key_khong_bi_canh_bao_kep():
         assert "khong parse duoc dong LIEN_QUAN" not in err, "khong co MO_TA thi khong phai cảnh báo parse"
 
 
+# ---------------------------------- cat_ngang_ok hoi chung mot luot (12/09, lan hai)
+def test_hoi_cat_ngang_khi_ngang_cao_khong_phai_chart():
+    """Anh ngang, cao >=700, khong phai chart -> hoi THEM cau CAT_NGANG trong
+    CUNG mot luot (khong ton HTTP rieng); tra ve luu vao cat_ngang_ok."""
+    with tempfile.TemporaryDirectory() as tmp, \
+         mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
+        p = _anh_1x1(Path(tmp))
+        body = _body("MO_TA: bien hieu logo cong ty.\nLIEN_QUAN: co\nCAT_NGANG: khong")
+        with _goi(body):
+            mt, lq, cn = nhin.mo_ta_anh(p, "T", hoi_them="co phai nguoi/san pham khong chu?",
+                                        nhan_them="CAT_NGANG")
+        assert lq is True and cn.lower().startswith("kh")
+
+
 if __name__ == "__main__":
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]

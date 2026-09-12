@@ -188,9 +188,38 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     # "Qualcomm" cho mot tam tru so Amazon thi chot "ten hang trong mo ta" khong
     # bao gio nay, anh that cua Amazon bi vision danh rot (09/09/2026).
     hang = (a.get("thuong_hieu") or {}).get("hang") or _ten_rieng_dau(tieu_de)
-    a["mo_ta"], a["lien_quan"] = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
-                                            thuong_hieu=a.get("thuong_hieu"))
-                                  if tieu_de else ("", None))
+    # HOI LUON co cat_ngang duoc khong (12/09/2026, su co t_a8ffd2f6 lan hai):
+    # ngang cao >=700 truoc day duoc dan mac dinh "cat_ngang: true NEU la anh
+    # nguoi/san pham KHONG co chu" — mot cau DIEU KIEN, khong ai xac nhan dieu
+    # kien do co dung hay khong, ma_engine dem no la "dung duoc mot minh". Dre
+    # chay that: 4/5 tam ngang cao la chart/logo/bien hieu CO CHU, chi 1 tam la
+    # nguoi/san pham that — dem sai 2 slide. Hoi CHUNG mot luot voi mo_ta/lien_quan
+    # (khong ton them HTTP), luu vao `a["cat_ngang_ok"]` (True/False/None =
+    # khong hoi/khong parse duoc), dung ca o dung[] (cau chu dinh, khong con
+    # "NEU") lan o dem slide (schema._chi_ghep_duoc).
+    hoi_cat_ngang = (r >= luat_anh.NGANG_RO and h >= 700 and not la_ct)
+    ket_qua = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn, thuong_hieu=a.get("thuong_hieu"),
+                         hoi_them=("Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co "
+                                   "chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? "
+                                   "Tra loi CHI mot tu: co hoac khong.") if hoi_cat_ngang else "",
+                         nhan_them="CAT_NGANG" if hoi_cat_ngang else "")
+              if tieu_de else ("", None, "") if hoi_cat_ngang else ("", None))
+    if hoi_cat_ngang:
+        a["mo_ta"], a["lien_quan"], cn_txt = ket_qua
+        cn = re.search(r"(co|có|khong|không)", cn_txt or "", re.I)
+        a["cat_ngang_ok"] = (cn.group(1).lower().startswith("c") if cn else None)
+        if cn_txt and cn is None:
+            print(f"[vision] {a.get('ma')}: co tra loi CAT_NGANG nhung khong parse duoc: {cn_txt!r}",
+                  file=sys.stderr)
+    else:
+        a["mo_ta"], a["lien_quan"] = ket_qua
+        a["cat_ngang_ok"] = None
+    # VISION TU NOI "bieu do/do thi" ma cong do hoa (pixel) bo lo (A11, 12/09):
+    # tin theo chinh mo ta cua no hon la phep do phang mau — sua nguoc la_ct SAU
+    # khi co mo_ta, truoc khi quyet dinh nhanh chart/anh o duoi.
+    if not la_ct and re.search(r"biểu đồ|đồ thị|bảng số liệu", a["mo_ta"] or "", re.I):
+        la_ct = True
+        a["cat_ngang_ok"] = None       # la chart thi khong con hoi cat_ngang nua
     # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
     # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua
     # nhau tren mot detector lam 80-95% anh tra None, tat ca thanh "khong mat".
@@ -225,12 +254,18 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     else:
         if a["ngang"]:
             a["dung"] = ["ghép dọc với một ảnh ngang cùng tone"]
-            if h >= 700:
-                a["dung"].append("cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ")
-            else:
+            if h < 700:
                 # Banner thap (vd 1900x524): cat doc 4:5 chi con ~420px roi phong
                 # len 1080 — mem nhoe (do thu 04/09). Chi con duong ghep.
                 a["ghi_chu"].append("quá thấp để cắt dọc, chỉ ghép")
+            elif a.get("cat_ngang_ok") is True:
+                a["dung"].append("cat_ngang: true (ảnh người/sản phẩm không chữ, vision đã xác nhận)")
+            elif a.get("cat_ngang_ok") is False:
+                a["ghi_chu"].append("có chữ/logo/số liệu đè lên (vision xác nhận) — không được crop, chỉ ghép")
+            else:
+                # vision khong tra loi duoc cau CAT_NGANG (hong/parse loi) — giu
+                # dung dieu kien cu, dung tu quyet dinh thay writer.
+                a["dung"].append("cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ")
         else:
             ten = "1:1" if r > 0.9 else "4:5"
             _luu_crop(img, san, ten, cy=0.4 if r < 0.7 else 0.5)
