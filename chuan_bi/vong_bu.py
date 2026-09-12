@@ -571,6 +571,11 @@ def _vong_thuc_the(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
         moi.parent.mkdir(parents=True, exist_ok=True)
         Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
+        # Hoi con mat cau cua ANH KHAI NIEM ("co dung la <ten>, chup that, hop bia"),
+        # KHONG hoi "co phai anh cua su viec" — do that tren may chu 12/09/2026: anh
+        # Wikipedia cua Anthropic 2865x2952 bi tu choi vi cau mac dinh hoi sai. Cung
+        # bay ma anh khai niem da tranh tu 07/09 (docstring mo_ta_anh).
+        a["khai_niem"] = {"tu_khoa": a["thuc_the"]["ten"], "ly_do": "thực thể trong tiêu đề"}
         a = phan_loai(a, wd, tieu_de_nhin)
         anh.append(anh_thuc_the.nhan_thuc_the(a))
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]

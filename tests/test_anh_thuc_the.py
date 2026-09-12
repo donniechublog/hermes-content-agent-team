@@ -63,6 +63,16 @@ def test_nac_chi_chay_khi_con_thieu():
     assert i_kn < i_tt, "nac thuc the phai SAU nac khai niem"
     assert "du_nguyen_lieu(vai_anh, dung_duoc, flagship):\n            anh, dung_duoc, chua_nhin = _vong_thuc_the" in src
 
+def test_vong_thuc_the_hoi_cau_khai_niem_khong_hoi_anh_cua_su_viec():
+    """Đo trên máy chủ 12/09/2026: ảnh Wikipedia của Anthropic bị vision từ chối vì
+    nấc hỏi câu mặc định "có phải ảnh của sự việc". Nấc phải gắn `khai_niem`
+    trước `phan_loai` để đi câu "có đúng là <thực thể>, hợp bìa"."""
+    src = (ROOT / "chuan_bi" / "vong_bu.py").read_text(encoding="utf-8")
+    i = src.index("def _vong_thuc_the")
+    than = src[i:i + 3000]
+    assert 'a["khai_niem"] = {"tu_khoa": a["thuc_the"]["ten"]' in than
+    assert than.index('a["khai_niem"] = ') < than.index("phan_loai(a, wd, tieu_de_nhin)")
+
 
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)

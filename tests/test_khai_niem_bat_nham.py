@@ -66,6 +66,33 @@ def test_cau_hoi_vision_hoi_ca_NHIN_RA_VAT_CHINH():
     # Khong duoc bien thanh thang tham my: phai noi ro khong can dep.
     assert "khong can dep" in c, c
 
+def test_prompt_llm_khong_lay_vat_nganh_AI_lam_vi_du():
+    """Đo trên máy chủ 12/09/2026: tin TOÁN HỌC ra từ khoá "server racks data
+    center" chỉ vì prompt lấy "server racks" làm ví dụ. Ví dụ không được là một
+    vật của ngành AI, không thì mọi tin AI đều bị kéo về phòng máy."""
+    import inspect
+    src = inspect.getsource(k.tu_khoa_llm)
+    assert "server racks, a product" not in src, "vi du 'server racks' con trong prompt"
+
+
+def test_cau_hoi_vision_theo_loai_khong_xet_hop_bai():
+    """Từ khoá do LOẠI TIN ép (cờ nước của hãng cho tin LAB) — con mắt không được
+    tự phán "cờ thì liên quan gì xác minh tuổi". Đo trên máy chủ 12/09: cờ Mỹ bị
+    từ chối cho tin Anthropic dù bảng loại tin (Ông Chủ) coi cờ là vật liên quan."""
+    c = k.cau_hoi_vision("Claude is only for people over 18", "flag of United States", theo_loai=True)
+    assert "do LOAI TIN quy dinh" in c and "KHONG xet no co hop bai" in c, c
+    c0 = k.cau_hoi_vision("Claude is only for people over 18", "flag of United States")
+    assert "do LOAI TIN quy dinh" not in c0
+
+
+def test_loc_commons_tu_khoa_dai_mot_tu_khop_la_du():
+    """"mathematics blackboard equations" (3 từ) hiếm khi có 2 từ cùng trong tên
+    tệp — đo 12/09: 0 ảnh cho cả hai từ khoá toán. Từ khoá ≥3 từ: 1 từ khớp đủ."""
+    pg = {"1": {"title": "File:Blackboard with proof.jpg",
+                "imageinfo": [{"width": 2000, "height": 1500, "mime": "image/jpeg", "thumburl": "u"}]}}
+    assert k.loc_commons(pg, "mathematics blackboard equations"), "phai nhan khi 1/3 tu khop"
+    assert not k.loc_commons(pg, "data center racks"), "tu khoa ngan van doi 2 tu"
+
 
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)

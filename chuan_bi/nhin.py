@@ -26,7 +26,8 @@ VISION_URL = env_load.ROUTER_URL
 
 
 def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
-              nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None) -> tuple:
+              nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None,
+              khai_niem_theo_loai: bool = False) -> tuple:
     """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
     theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu khong goi
     duoc (router tat, thieu key): luc do brief noi ro la CHUA ai nhin.
@@ -65,7 +66,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                "widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/chu de khac)")
         if khai_niem:
             import anh_khai_niem
-            hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem)
+            hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)
         elif thuong_hieu:
             # Cau chung hoi "co phai anh CUA TIN khong" — chan dung nha sang lap
             # va the logo chac chan khong phai, nen bi danh rot dung luc ta can
@@ -169,12 +170,15 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_theo_hinh(img)):
         la_ct, mo_ta = True, mo_ta + "; nen trang + canh day / alt-tag chart"
     kn = (a.get("khai_niem") or {}).get("tu_khoa", "")
+    # Tu khoa do LOAI TIN ep (loai_tin.py) thi con mat khong duoc tu phan "hop bai".
+    kn_theo_loai = (a.get("khai_niem") or {}).get("ly_do", "") == "theo loại tin"
     # Hang de con mat doi chieu: voi anh THUONG HIEU la hang cua chinh tam anh do,
     # khong phai ten rieng dau tieu de. Tin "Qualcomm ... with Amazon" ma dua
     # "Qualcomm" cho mot tam tru so Amazon thi chot "ten hang trong mo ta" khong
     # bao gio nay, anh that cua Amazon bi vision danh rot (09/09/2026).
     hang = (a.get("thuong_hieu") or {}).get("hang") or _ten_rieng_dau(tieu_de)
     a["mo_ta"], a["lien_quan"] = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
+                                            khai_niem_theo_loai=kn_theo_loai,
                                             thuong_hieu=a.get("thuong_hieu"))
                                   if tieu_de else ("", None))
     # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da

@@ -188,7 +188,11 @@ def tu_khoa_llm(tieu_de: str, tom_tat: str = "") -> list:
         return []
     hoi = ("You pick REAL-PHOTO search keywords for Wikimedia Commons to illustrate a news "
            "story when the story itself has no usable image. Keywords must name concrete, "
-           "photographable things (a flag flying, a building, server racks, a product), never "
+           "photographable things (a flag flying, a building, a laboratory bench, a product), never "
+           # "server racks" tung nam trong vi du nay — do that 12/09/2026: tin TOAN HOC
+           # ra tu khoa "server racks data center" chi vi model chep vi du. Vi du
+           # khong duoc la mot vat cua nganh AI.
+           
            "abstract ideas (growth, partnership, AI). English only, 2-4 words each.\n"
            f"Story: {tieu_de}\n" + (f"Summary: {tom_tat[:400]}\n" if tom_tat else "")
            + "Answer with up to 3 lines, each exactly: KEYWORD: <keyword> | <why, 5 words>")
@@ -263,7 +267,12 @@ def loc_commons(pages: dict, tu_khoa: str, so: int = 4, canh_ngan_min: int = 700
             continue
         # Đủ ít nhất hai từ đặc trưng (hoặc tất cả nếu từ khoá ngắn): "center"
         # một mình khớp cả "Center of Excellence".
-        if dac_trung and sum(t in ten_thap for t in dac_trung) < min(2, len(dac_trung)):
+        # Tu khoa DAI (>= 3 tu dac trung, thuong do LLM sinh: "mathematics blackboard
+        # equations") hiem khi co 2 tu cung nam trong ten tep — do that 12/09/2026:
+        # ca hai tu khoa toan hoc tra 0 anh. Voi loai do 1 tu khop la du; con mat
+        # (cau_hoi_vision) moi la cong quyet dinh, khong phai ten tep.
+        can = 1 if len(dac_trung) >= 3 else min(2, len(dac_trung))
+        if dac_trung and sum(t in ten_thap for t in dac_trung) < can:
             continue
         ra.append({"anh": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
                    "mime": ii.get("mime"), "tu": "khai_niem", "trang": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
@@ -287,7 +296,7 @@ def anh_khai_niem(tu_khoa: str, ly_do: str = "", so: int = 4) -> list | None:
     return ra
 
 
-def cau_hoi_vision(tieu_de: str, tu_khoa: str) -> str:
+def cau_hoi_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> str:
     """Câu hỏi con mắt engine dành riêng cho ảnh khái niệm: không hỏi "có phải ảnh
     của tin" (chắc chắn không), hỏi "có đúng là <từ khoá>, chụp thật, hợp làm bìa".
 
@@ -304,8 +313,15 @@ def cau_hoi_vision(tieu_de: str, tu_khoa: str) -> str:
     ngay từ đầu; chiều này chặn ca từ khoá ĐÚNG mà tấm ảnh vẫn vô dụng — vd
     "data center server racks" cho tin compute là đúng từ khoá, nhưng nếu tấm ảnh
     là một búi dây chằng chịt không nhận ra rack nào thì vẫn trượt."""
+    # `theo_loai` (bang loai tin, 12/09/2026): tu khoa do LOAI TIN quy dinh (co nuoc
+    # cua hang, bieu do gia, datacenter cho tin INFRA) — con mat KHONG duoc tu phan
+    # "co nuoc thi lien quan gi bai xac minh tuoi": Ong Chu da chot co nuoc cua hang
+    # LA vat lien quan. Chi con xet: co dung la vat do, chup that, nhin ra.
+    quy_dinh = (f" Tu khoa \"{tu_khoa}\" do LOAI TIN quy dinh la vat lien quan (bang loai tin cua "
+                "Ong Chu) — KHONG xet no co hop bai hay khong, coi nhu hop; chi xet anh co dung la "
+                "vat do, chup that, nhin ra vat chinh." if theo_loai else "")
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no duoc tim lam ANH KHAI NIEM "
-            f"theo tu khoa \"{tu_khoa}\" de lam anh bia.\nTra loi DUNG 2 dong:\n"
+            f"theo tu khoa \"{tu_khoa}\" de lam anh bia.{quy_dinh}\nTra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
             f"LIEN_QUAN: co | khong  (co = anh CHUP THAT, ro net, dung la {tu_khoa}, khong co chu lon, "
             f"tu khoa \"{tu_khoa}\" that su hop chu de bai tren, VA nhin vao la NHAN RA NGAY vat "
