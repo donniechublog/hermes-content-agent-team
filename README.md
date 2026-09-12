@@ -41,6 +41,7 @@ lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
 | Miles | `miles` | writer | Viết caption tiếng Việt cho tin **kinh doanh, đầu tư** của **dcgr.tech** (từ 10/09/2026, LOW-13; trước đó viết cả hai brand). Profile `miles` bên blog **giữ lại cho việc còn tồn**, không nhận việc mới |
 | Jika | `jika` | writer | Viết caption tiếng Việt cho tin **model mới, arXiv/Hacker News** — **chỉ donniechublog** (từ 10/09/2026, LOW-13). Cùng script, cùng luật caption như Miles; khác ở người đọc và ở MEMORY riêng |
+| Qinn | `qinn` | scout.x | Đọc tin kỹ thuật trên X (home timeline + các X List) qua cổng đọc của social-publishing, **4 lượt/ngày** (05:00, 11:00, 17:00, 23:00 VN), cửa sổ 6h mỗi lượt — **chỉ donniechublog**, tin đi sang Jika. Không tự crawl X: session X nằm trên máy crawler, `scan_x.py` chỉ đọc lại (từ 12/09/2026) |
 | Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý |
 | Vera | `vera` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
 | Ada | `ada` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
