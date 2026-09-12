@@ -427,8 +427,16 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     chi song trong `xep_hang.py` (trang bang xep hang), khong ai bac sang duong
     anh cua tin thuong.
 
-    Mot vong, toi da `TOI_DA_TRANG_CHUP` trang, lay tam DAU TIEN chup duoc.
-    Tra (anh, dung_duoc, chua_nhin)."""
+    Mot vong, toi da `TOI_DA_TRANG_CHUP` trang — THU HET, khong dung o trang
+    DAU TIEN qua duoc cong nua (LOW-45, Ong Chu 13/09/2026: do that ca Moonshot/
+    Kimi K3, TechCrunch rot chat luong nhung trang thu hai qua cong ngay la mot
+    anh minh hoa chung chung, trong khi cac trang con lai trong `trang` — bao
+    khac cung tin, LOW-33 — rat co the co anh that cua nguoi sang lap ma vong cu
+    CHUA BAO GIO thu toi vi da dung o trang thu hai). Sau khi thu het, chon BIA
+    la ung vien qua cong DAU TIEN theo thu tu ma KHONG CO MAT NGUOI — anh co mat
+    van qua cong nhung khong len duoc bia (LUAT_ANH §6 doi khai "nhan_vat" ma
+    Kite chua co truong do), giu lam `than` thay vi bo phi. Tra (anh, dung_duoc,
+    chua_nhin)."""
     def _ra():
         return anh, [a for a in anh if a["dung"] and a.get("lien_quan") is not False], \
             [a["ma"] for a in anh if a.get("lien_quan") is None]
@@ -497,24 +505,41 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
             print(f"[chup nguon] {a['ma']} <- {a['mien']} khoi tit ({a['w']}x{a['h']}), de dau",
                   file=sys.stderr)
             break
-        if not a.get("mat"):
-            a["dung"] = ["bìa (ảnh hero của chính bài gốc)", "thân"]
         a["ghi_chu"].insert(0, "📰 ẢNH HERO CHỤP TỪ TRANG NGUỒN — ảnh chính của bài trên "
                                f"{a['mien']}, chụp ở khung điện thoại; caption ghi "
                                f"\"… · via {a['mien']}\"")
         anh.append(a)
-        # ROT chat luong (LOW-45) thi KHONG dung lai o day: con URL khac trong
-        # `urls` (bao khac cung tin, LOW-33) co the co hero sach hon — giu ban
-        # ghi nay (de thay trong bang_anh.png/chua_nhin) nhung thu tiep, dung
-        # ket luan "het lead" tu MOT trang xau.
+        # ROT chat luong (LOW-45) hoac CO MAT NGUOI (LUAT_ANH §6, xem duoi) deu
+        # KHONG dung lai o day: THU HET moi URL (khong dung o trang DAU TIEN qua
+        # cong nua, LOW-45 phan 2) roi moi chon anh nao len BIA sau vong lap —
+        # giu chua tam nay lai, gan tam "than" tam thoi, roi quyet dinh that o
+        # duoi khi da biet toan bo ung vien.
+        a["dung"] = [] if a.get("lien_quan") is False else ["thân"]
         if a.get("lien_quan") is False:
-            a["dung"] = []
             print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']}) RỚT chất lượng "
                   f"({a.get('mo_ta', '')[:60]!r}), thử URL khác", file=sys.stderr)
-            continue
-        print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']})", file=sys.stderr)
-        break
-    else:
+        else:
+            print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']}) qua cổng"
+                  + (", CÓ mặt người" if a.get("mat") else "") + ", thử thêm để so ảnh",
+                  file=sys.stderr)
+    # CHON BIA sau khi da thu HET cac URL (LOW-45, Ong Chu 13/09/2026): trong so
+    # cac ung vien QUA CONG (lien_quan True, khong phai khoi tit), uu tien tam
+    # KHONG CO MAT NGUOI dau tien theo thu tu thu — tam co mat khong len bia
+    # duoc vi cong mat (LUAT_ANH §6) doi khai "nhan_vat" ma Kite chua co truong
+    # do, nhung VAN giu lai lam `than` thay vi bo phi (do that: anh founder that
+    # cua Yang Zhilin tren cac bao khac ve Moonshot/Kimi K3 rat co the nam trong
+    # so nay — truoc ban va nay bi bo qua hoan toan vi vong lap dung som).
+    ung_vien = [a for a in anh if a.get("tu") == "chup_nguon" and a.get("kieu") != "tit"
+                and a.get("lien_quan") is True]
+    khong_mat = [a for a in ung_vien if not a.get("mat")]
+    if khong_mat:
+        bia = khong_mat[0]
+        bia["dung"] = ["bìa (ảnh hero của chính bài gốc)", "thân"]
+        print(f"[chup nguon] {bia['ma']} <- {bia['mien']} lên BÌA (không mặt người)", file=sys.stderr)
+    elif ung_vien:
+        print(f"[chup nguon] {len(ung_vien)} ảnh qua cổng đều CÓ mặt người vô danh với Kite "
+              "(thiếu \"nhan_vat\") — không tấm nào lên bìa, giữ làm thân", file=sys.stderr)
+    if not any(a.get("kieu") == "tit" for a in anh) and not ung_vien:
         print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
     return _ra()
 
