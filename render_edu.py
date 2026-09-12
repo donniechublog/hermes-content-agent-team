@@ -841,8 +841,12 @@ def anh_lam_nen(sl, th, ten):
     bia khi bia co anh. -> (html nen, html anh trong dong). Khoi chu goi
     rieng, id="figtxt".
 
-    Nguyen tac (Ong Chu chot 08/09/2026, nhac lai nhieu lan — day la nguyen
-    tac SAU hon ban cu "man toi lien mach"):
+    Nguyen tac (Ong Chu chot 08/09/2026, `e883880`, CUNG luc voi Dre/carousel.py
+    — xem LUAT_ANH.md muc 7 — nhac lai nhieu lan; day la nguyen tac SAU hon ban
+    cu "man toi lien mach"). Kite doi mau theo TUNG DAI DONG (_css_chu_toi_vung,
+    ham tren) thay vi mot FG co dinh ca bo nhu carousel.py, vi chu Kite nhieu va
+    da dang hon han — hai co che khac nhau cho cung mot ket luan, dung suy
+    ngang tu ben kia:
 
       MAC DINH KHONG PHU LOP NAO len anh. Doi MAU CHU (sang hoac toi) cho
       tuong phan voi dung vung anh nam duoi no la du — do thang do sang tren

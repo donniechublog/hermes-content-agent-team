@@ -649,12 +649,36 @@ nguyên**.
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
 
-- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ. Carousel: chữ đè lên ảnh
-  qua gradient tối dài. Hero **cả hai kiểu** `quote` (06/09/2026) và `tran`
-  (07/09/2026): không còn TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên
-  (`_mo_vung_chu`, tan dần theo đường cong power, không đột ngột), màu chữ tự
-  đổi tương phản với vùng đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ
-  giữ nguyên sắc nét 100%.
+- **Không vùng đen riêng** đặt dưới ảnh để chứa chữ — mặc định là **đổi màu
+  chữ**, không phủ thêm gì lên ảnh. Ông Chủ chốt việc này **một lần, áp dụng
+  cùng lúc cho cả Dre và Kite** (08/09/2026, `e883880`) — **không phải luật
+  riêng của Dre rồi lây sang Kite**. Mỗi khung tự đo trên pixel thật của chính
+  nó, và mỗi khung dùng một cơ chế khác nhau để đạt "đủ tương phản" vì bố cục
+  chữ của chúng khác nhau:
+  - **Carousel (Dre)**: FG một màu cố định cho cả bộ; chỉ thêm lớp mờ+tinh khi
+    đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
+    "rối" (`carousel.py::_lop_neu_can`).
+  - **Hero cả hai kiểu** `quote` (06/09/2026) và `tran` (07/09/2026): không còn
+    TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_mo_vung_chu`, tan dần
+    theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
+    đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ giữ nguyên sắc nét 100%.
+  - **Carousel-edu (Kite)**: màu chữ đổi theo **từng dải dòng** (eyebrow, tiêu
+    đề, accent, standfirst, caption, card, byline — không dồn vào một chỗ như
+    Dre/Ethan, vì Kite chữ nhiều và đa dạng hơn hẳn nên không thể fix một màu
+    cho cả bộ). Blur cả tấm ảnh làm nền **chưa bao giờ** là yêu cầu với Kite
+    (Ông Chủ 12/09/2026, `0b395ad`, nguyên văn: *"blur toàn bộ tấm ảnh để làm
+    nền cho hero slide CHƯA-BAO-GIỜ là việc được yêu cầu với Kite cả, chỉ cần
+    chọn color palette tương đồng"*). Ngoại lệ **duy nhất, và chỉ của Kite**:
+    ảnh **DỌC** chờm qua dòng chữ đầu thì riêng phần chờm được mờ + tint, tính
+    từ dòng chữ đó trở xuống (`render_edu.py::anh_lam_nen`, `window.__datMan`).
+
+  **Ba cơ chế riêng cho một nguyên tắc chung — đừng suy luận chéo.** Dre và
+  Ethan giữ một màu chữ cố định vì chữ trên ảnh ít, đo một lần là đủ; Kite đổi
+  màu theo từng dải vì chữ nhiều và đa dạng hơn — **cùng đi đến kết luận
+  "không cần phủ lớp"**, bằng hai con đường khác hẳn nhau, không phải một bên
+  chép lại bên kia. Ngoại lệ blur-khi-ảnh-dọc-chờm-chữ hiện chỉ được đo và xác
+  nhận cho **hero của Kite** (bảng xếp hạng) — chưa ai đo nó cho Dre/Ethan,
+  nên đừng tự suy ra là nó cũng áp dụng ở đó.
 - **Không có màu nền đặc ở đâu hết.** Chỗ nào lớp ảnh sắc không phủ tới thì nền
   là bản cover **làm mờ** của chính tấm đó (`_lop_anh`, dùng chung cho cả hai
   kiểu thẻ). Kiểu `tran` từng có một nhánh lấy màu nền bộ nhận diện làm nền cho
