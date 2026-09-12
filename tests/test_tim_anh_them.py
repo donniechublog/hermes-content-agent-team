@@ -35,10 +35,14 @@ def _a(**k):
     return a
 
 
-def _ngang(h=1280, **k):
+def _ngang(h=1280, cat_ngang_ok=True, **k):
+    # Mac dinh cat_ngang_ok=True: cac test o day dung `_ngang` de kiem tra
+    # NGUONG CHIEU CAO (700px), khong phai kiem tra noi dung anh -- danh dau
+    # "da xac nhan dung mot minh duoc" nhu vision that se lam voi anh nguoi/
+    # san pham. Test rieng ve noi dung (chart/co chu) nam o tests/test_schema.py.
     k.setdefault("dung", ["ghép dọc với một ảnh ngang cùng tone",
                           "cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ"])
-    return _a(ngang=True, h=h, ti_le=1.5, **k)
+    return _a(ngang=True, h=h, ti_le=1.5, cat_ngang_ok=cat_ngang_ok, **k)
 
 
 def test_anh_ngang_qua_thap_khong_dem_mot_minh():
@@ -59,6 +63,7 @@ def test_engine_phai_tim_tiep_khi_chi_du_tam_ma_thieu_slide():
     assert schema.so_anh_dung_duoc(bo) == 5
     assert not vai.du_nguyen_lieu("dre", bo), "6 tam nhung 5 slide: engine CHUA duoc ngung tim"
     bo[-1]["h"] = 1000
+    bo[-1]["cat_ngang_ok"] = True   # cao du (>=700) VA vision da xac nhan dung mot minh duoc
     assert vai.du_nguyen_lieu("dre", bo)
 
 
