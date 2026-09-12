@@ -166,7 +166,16 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
                           is_mobile=True, has_touch=True, user_agent=MOBILE_UA) as page:
                 resp = None
                 try:
-                    resp = page.goto(url, wait_until="networkidle", timeout=GIO_HAN)
+                    # `domcontentloaded`, KHONG `networkidle` — giong
+                    # `xep_hang._thu_nguon`. Do that tren may chu 12/09/2026:
+                    # theverge KHONG BAO GIO yen (quang cao + websocket chay
+                    # lien tuc) nen goto an tron 45s roi nem TimeoutError, toi
+                    # luc do trang moi tai duoc mot phan va h1/anh hero chua
+                    # hydrate -> "khong thay tit lan anh lead" 3/3 lan, trong
+                    # khi may dev cung URL do lai qua. Doi DOM xong la du: nhip
+                    # cuon danh thuc lazy + vong do lap ben duoi moi la thu
+                    # quyet dinh khi nao anh san sang.
+                    resp = page.goto(url, wait_until="domcontentloaded", timeout=GIO_HAN)
                 except Exception as e:                       # noqa: BLE001
                     print(f"[chup_lead] goto chua yen ({type(e).__name__}), do phan da co",
                           file=sys.stderr)
