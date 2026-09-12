@@ -34,6 +34,27 @@ Brief in ảnh đã tải với mã A1, A2…, cột "ảnh là", nhãn dùng đ
 tư liệu, số slide tối thiểu và khung spec; nop in `[LOI]` kèm cách sửa. Không
 cần nhớ cú pháp hay luật ảnh, đọc brief là đủ.
 
+## Đếm ảnh trước khi chia slide (bài học 10/09/2026)
+
+Cổng chặn ảnh của `dre_nop.py` nghiêm hơn cột "dùng" trong brief, nên **đọc
+brief xong phải tự đếm trước khi viết spec**:
+
+- Ảnh ❌ KHÔNG LIÊN QUAN: brief đã chặn sẵn, `nop` cũng chặn.
+- Ảnh KHÁI NIỆM (cờ, bản đồ, ảnh minh họa theo từ khóa): brief ghi rõ "chỉ làm
+  bìa, KHÔNG vào slide thân". Đừng tính vào số slide thân.
+- Ảnh có mặt người mà alt/caption không nêu tên: bị chặn cho tới khi khai
+  `nhan_vat`, và khai tên không có trong caption là bịa. Coi như không dùng được.
+- Ảnh NGANG chỉ có hai đường: `ghep` với ảnh ngang **cùng tone**, hoặc
+  `cat_ngang` khi là người/sản phẩm KHÔNG có chữ. Ảnh ngang có chữ (logo trên
+  màn hình, screenshot) và cao dưới 700px thì `cat_ngang` bị chặn luôn vì nhoè.
+- Cặp ghép phải cùng tone: kiểm bằng `luat_anh.lech_tone` trước, đừng đoán theo
+  mã; hai ảnh cùng nền tối vẫn có thể lệch (nền xanh đậm vs nền xám).
+
+Số slide thân khả dụng = số mã còn lại SAU khi trừ ảnh khái niệm, ảnh mặt không
+rõ ai, ảnh ❌, và sau khi gộp các cặp ghép. Thấp hơn `toi_thieu - 1` thì dừng:
+`kanban_comment` bảng mã nào bị loại vì sao, `kanban_block(kind="needs_input")`,
+đừng viết spec rồi để `nop` chặn hai lần.
+
 ## Khung kể chuyện (không cứng, hầu hết tin AI hợp)
 
 1. **Bìa — HOOK.** Một câu giật khiến người ta dừng lướt: **nghịch lý** hoặc

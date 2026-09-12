@@ -99,6 +99,31 @@ hình thật, không thì `bars` từ số trong bài, không có số thì bỏ
 ý mới; bìa giật, slide cuối để lại câu hỏi hay mốc. Tiếng Việt có dấu, câu ngắn
 chủ động, không em-dash, không số ngoài tư liệu, dẫn nguồn ghi "via".
 
+## Cổng ảnh có thể ĐÁ NHAU (gặp thật 10/09/2026)
+
+Tin chuyển sang Kite vì thiếu ảnh thì `kite_nop` ép **mọi** mã trong
+`hinh_phai_dung` phải có slide `figure`. Đồng thời `luat_anh.kiem_da_dung`
+chặn ảnh đã lên bộ trong 14 ngày. Hai cổng gặp nhau khi mã bắt buộc trùng ảnh bộ
+trước, hoặc khi các mã còn lại đều vướng `kiem_crop_ngang` (ảnh gốc ngang đã
+crop). Lúc đó vai KHÔNG có đường nộp: bỏ mã bắt buộc thì cổng `hinh_phai_dung`
+chặn, để nguyên thì cổng trùng chặn.
+
+Cách thoát duy nhất trong luật: nộp `kanban_block(kind="needs_input")` kèm
+(a) mã nào vướng cổng nào và vì sao, (b) bằng chứng đây là đụng TÊN MÃ chứ
+không phải dùng lại ảnh (đối chiếu tệp gốc của bộ trước: `xong.json` +
+`render_edu.spec.json` bên đó, vision `mo_ta`), (c) ảnh thay thế đã tải sẵn.
+Đừng tự sửa `luat_anh.py` hay nhồi mã ngoài `hinh_that` — script sẽ chặn
+`image "<mã>" không phải mã hình thật dùng được`.
+
+## Bug renderer đã biết (tránh ở spec)
+
+`render_edu.anh_lam_nen` không có `return` ở cuối khi ảnh chụp dạng "mo"
+cần lớp mo (`can_lop=True`, lỗi `TypeError: cannot unpack non-iterable NoneType`
+trong `s_cover`/`s_figure` khi dùng ảnh chụp rối nhiều chi tiết — ví dụ tủ
+server đèn LED data center). Công đoạn để **bìa vector hero** (không set
+`image`) và đưa ảnh thật bắt buộc vào `figure` dưới dạng **bảng/đồ thị nền
+phang** (không trigger nhánh "mo").
+
 ## Nhìn lại trước khi nộp (đọc spec)
 
 1. Bìa có hook giật và art (hoặc hình thật + caption) không?

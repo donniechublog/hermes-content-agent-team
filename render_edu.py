@@ -273,6 +273,14 @@ BASE_CSS_TPL = """
 .fig-nen{position:absolute;left:50%%;top:50%%;width:128%%;height:128%%;
   transform:translate(-50%%,-50%%);object-fit:cover;filter:blur(%(BLURNEN)spx);}
 .fig-sac{position:absolute;left:0;width:%(W)spx;object-fit:cover;display:block;}
+/* ANH CHUP vao DONG: nam giua masthead va khoi chu, an het phan trong con lai
+   va KHONG BAO GIO bi chu de len (khong con lop mo 0.93 che mep duoi anh).
+   max-height:100%% + object-fit:contain = hien FULL hinh, khong cat, khong keo
+   meo; thieu cho thi thu nho chu khong crop. */
+.fig-anh-wrap{position:relative;z-index:1;flex:1 1 auto;min-height:0;
+  display:flex;flex-direction:row;align-items:flex-start;justify-content:center;
+  margin-top:14px;}
+.fig-anh{max-width:100%%;max-height:100%%;width:auto;height:auto;display:block;}
 /* lop MO cua chinh anh, hien dan theo cung nhip voi man toi — chinh no moi xoa
    het chi tiet doc duoc duoi chu; chi lam toi khong thi chu van chong len chu */
 .fig-molop{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;
@@ -616,22 +624,19 @@ def _doc_nen_that(p):
             _sang(mau if phang else toan) > NGUONG_SANG_CHU_TOI)
 
 
-def _vung_duoi_chu(p, cao_hien, ti_le=0.35):
-    """Do sang + do 'roi' (stddev xam) cua dung dai PIXEL se nam duoi khoi chu
-    — dung ImageOps.fit mo phong chinh xac object-fit:cover;object-position:top
-    ma CSS se ve, khong doan mo. -> (do sang 0..255, do roi 0..255).
+def _vung_duoi_chu(p, ti_le=0.35):
+    """Do sang (0..255) cua NEN se nam duoi khoi chu.
 
-    Chi dung cho anh CHUP (kieu "mo"): anh "phang" khong con chi tiet gi duoi
-    no de do — xem nhanh phang trong anh_lam_nen.
+    Anh CHUP vao dong (xem anh_lam_nen): khoi chu luon nam DUOI mep anh, tren
+    nen la chinh tam anh cover phong to lam mo. Do ban mo do, khong do tam anh
+    — chon mau chu theo tam anh la sai (chu trang tren nen mo sang = mat chu).
     """
-    from PIL import Image, ImageOps, ImageStat
+    from PIL import Image, ImageFilter, ImageOps, ImageStat
     im = _nho(("pil", str(p)), lambda: Image.open(p).convert("RGB"))
-    cao_i = max(1, int(round(cao_hien)))
-    fit = ImageOps.fit(im, (W, cao_i), centering=(0.5, 0.0))
-    d = max(1, int(cao_i * ti_le))
-    dai = fit.crop((0, cao_i - d, W, cao_i)).convert("L")
-    st = ImageStat.Stat(dai)
-    return st.mean[0], st.stddev[0]
+    d = max(1, int(H * ti_le))
+    dai = im.resize((max(1, W // 8), max(1, H // 8))).convert("L")
+    return ImageStat.Stat(dai.crop((0, dai.height - max(1, d // 8), dai.width,
+                                    dai.height))).mean[0], 0.0
 
 
 def dat_anh(rong, cao, phang):
@@ -646,13 +651,18 @@ def dat_anh(rong, cao, phang):
         mo mo, chu minh de len chu cua nguoi ta thanh mot dam roi. Anh CHUP thi
         khong co van de do — cu phu xuong nhu ben Dre.
       - Cao hon phan duoc phep thi cat, GIU MEP TREN (bieu do/bang de tieu de,
-        truc, hang dau o tren). Thap hon thi dat GIUA vung do, khong dinh mep.
+        truc, hang dau o tren).
+      - Thap hon thi NEO NGAY DUOI MASTHEAD (y0 = FIG_DINH), khong dat giua.
+        Dat giua de lai mot dai trong ~280px giua chip kenh va mep tren anh,
+        doc ra nhu anh bi day xuong / bi cat cut (Ong Chu bat 10/09/2026: "day
+        len cao va hien thi full hinh, tinh tu duoi chip"). Anh nam sat ngay
+        duoi chip, phan trong con lai don het xuong duoi khoi chu.
     """
     cao_that = max(1, round(W * cao / rong))
     day = int(H * FIG_DAY_PHANG) if phang else H
     tran = day - FIG_DINH
     cao_hien = min(cao_that, tran)
-    return cao_hien, FIG_DINH + (tran - cao_hien) // 2, cao_that
+    return cao_hien, FIG_DINH, cao_that
 
 
 # ---- helpers --------------------------------------------------------------
@@ -727,8 +737,8 @@ def s_cover(sl, th):
 
 
 def _cover_anh(sl, th):
-    """Bia lay anh that lam hero — cung mot mat phang voi khoi chu, nhu figure."""
-    nen, js = anh_lam_nen(sl, th, "bia")
+    """Bia lay anh that lam hero — anh vao dong, khoi chu nam duoi mep anh."""
+    nen, js, anh = anh_lam_nen(sl, th, "bia")
     by = sl.get("byline", [])
     bits = []
     for i, b in enumerate(by):
@@ -748,8 +758,8 @@ def _cover_anh(sl, th):
         chu += (f'<div class="fig-cap" style="margin-top:18px;">'
                 f'<span class="fig-bar"></span>'
                 f'<span>{esc(sl["caption"])}</span></div>')
-    return (nen
-            + '<div style="flex-grow:1;"></div>'
+    return (nen + anh
+            + '<div style="flex-grow:1;min-height:0;"></div>'
             + f'<div class="mid" id="figtxt">{chu}</div>'
             + js)
 
@@ -910,80 +920,31 @@ def anh_lam_nen(sl, th, ten):
                f'</div>')
         if nen_sang:
             nen += _css_mast_toi() + _css_chu_toi_vung("#figtxt", th)
-        return nen, ''
+        return nen, "", ""
 
-    # kieu == "mo": anh CHUP that co the co chi tiet ngay tai vung se de chu
-    # len. Do thang do sang/do roi tren dung dai pixel do (khong doan), quyet
-    # dinh mau chu VA co can lop mo hay khong.
-    sang_duoi, roi_duoi = _vung_duoi_chu(p, cao)
+    # kieu == "mo": ANH CHUP di vao DONG (flex item) giua masthead va khoi chu,
+    # khong con lop tuyet doi de chu de len. Truoc 10/09/2026 anh nam lop
+    # absolute tai top:y0 va khoi chu (neo day the) de len phan duoi cua no, che
+    # bang mot lop mo 0.93 — Ong Chu doc ra la "anh bi cat got" (10/09/2026).
+    # Dua vao dong thi KHONG THE chong nhau: anh an het phan trong con lai va
+    # khoi chu luon nam duoi mep anh.
+    # Nen the van la chinh tam anh cover phong to lam mo = mot mat phang lien.
+    nen = (f'<div class="figwrap" style="background:{mau_nen};">'
+           f'<img class="fig-nen" src="{uri}" alt=""></div>')
+    sang_duoi, _ = _vung_duoi_chu(p)
     chu_toi = sang_duoi > NGUONG_SANG_CHU_TOI
-    can_lop = roi_duoi > NGUONG_ROI_CAN_LOP
-    tint = th["bg"] if not chu_toi else "#FFFFFF"
-    r, g, b = (int(tint.lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
-
-    molop = (f'<div class="fig-molop" id="figmo">'
-             f'<img class="fig-doi" src="{uri}" alt="" style="top:{y0}px;height:{cao}px;'
-             f'object-fit:cover;object-position:top;"></div>'
-             f'<div class="fig-man" id="figman"></div>') if can_lop else ''
-    nen = (
-        f'<div class="figwrap" style="background:{mau_nen};">'
-        f'<img class="fig-nen" src="{uri}" alt="">'
-        f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
-        f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
-        f'{molop}</div>'
-    )
     if nen_sang:
         nen += _css_mast_toi()
     if chu_toi:
         nen += _css_chu_toi_vung("#figtxt", th)
-    if not can_lop:
-        return nen, ''
-
-    # BOC (09/09/2026, Ong Chu xem anh that: "chu blue o duoi nen van con mau
-    # den mo, trong rat xau... blur thi blur 1 mau luon di chu"). Ban cu scale
-    # do toi THEO DUNG do roi do duoc (cang roi cang toi, tran o TOI_TOI_DA_MO)
-    # — nghe hop ly cho ANH CHUP (chi tiet huu co, mo di la du), nhung do
-    # `roi_duoi` la ĐỘ LỆCH MÀU TRUNG BÌNH ca vung, mot bang xep hang thi hau
-    # het la nen TRANG, chi vai dong chu/so MONG xen vao — do that tren chinh
-    # anh XH cua bo nay: roi_duoi=29.2 (vua qua nguong 26) -> max_toi tinh ra
-    # 0.036, gan nhu KHONG toi chut nao, nen so ma van doc ro muot duoi tieu
-    # de. "Vua roi la vua toi" dung cho anh chup, sai cho bang/chart: chu con
-    # DOC DUOC la con xau, khong co muc "hoi doc duoc" chap nhan duoc. Khi da
-    # xac dinh can_lop (that su roi) thi phu THANG len muc toi da, khong scale
-    # theo do roi nua — cham thi bo qua het (nhanh o tren), khong cham thi phu
-    # kin, khong co nac giua.
-    max_toi = TOI_TOI_DA_MO
-    js = (f'<script>window.__datMan=function(){{'
-          f'var H={H},MAX={max_toi:.3f};'
-          # set_content giu nguyen window nen ham nay con song sang slide sau;
-          # slide khong phai figure/khong can lop thi khong co phan tu — thoat.
-          f'var v=document.getElementById("figman");if(!v)return;'
-          f'var t=document.getElementById("figtxt");'
-          f'var top=t?t.getBoundingClientRect().top:H*0.58;'
-          # KHONG con khoang dem truoc dong chu dau: lop bat dau NGAY tai do,
-          # dai chuyen tiep chi dai VEIL_SPAN px — vua du mot duong cong mem,
-          # khong du de thanh mot khoang nen bo trong.
-          f'var tren=top,day=Math.min(H,top+{VEIL_SPAN});'
-          f'var span=Math.max(1,H-tren);var st=[],sm=[];'
-          f'for(var i=0;i<=16;i++){{'
-          f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'
-          f'pc=((y-tren)/span*100).toFixed(2);'
-          f'st.push("rgba({r},{g},{b},"+(MAX*ss).toFixed(3)+") "+pc+"%");'
-          f'sm.push("rgba(0,0,0,"+(0.85*ss*ss).toFixed(3)+") "+(y/H*100).toFixed(2)+"%");}}'
-          f'st.push("rgba({r},{g},{b},{max_toi:.3f}) 100%");'
-          f'sm.unshift("rgba(0,0,0,0) 0%");sm.push("rgba(0,0,0,0.85) 100%");'
-          f'var m=document.getElementById("figmo");'
-          f'var g="linear-gradient(to bottom,"+sm.join(",")+")";'
-          f'if(m){{m.style.webkitMaskImage=g;m.style.maskImage=g;}}'
-          f'v.style.top=tren+"px";'
-          f'v.style.background="linear-gradient(to bottom,"+st.join(",")+")";'
-          f'}};window.__datMan();</script>')
-    return nen, js
+    anh = (f'<div class="fig-anh-wrap"><img class="fig-anh" src="{uri}" '
+           f'alt=""></div>')
+    return nen, "", anh
 
 
 def s_figure(sl, th):
     """Hinh that trai het be ngang, chu chim vao anh o duoi."""
-    nen, js = anh_lam_nen(sl, th, "figure")
+    nen, js, anh = anh_lam_nen(sl, th, "figure")
     chu = (f'{eyebrow(sl["eyebrow"])}'
            f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
            f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
@@ -998,8 +959,8 @@ def s_figure(sl, th):
                 f'border:none;border-left:4px solid {th["a"]};padding:4px 0 4px 26px;">'
                 f'<span class="card-num">{esc(c["num"])}</span>'
                 f'<span class="card-txt" style="font-size:31px;">{esc(c["text"])}</span></div>')
-    return (nen
-            + '<div style="flex-grow:1;"></div>'
+    return (nen + anh
+            + '<div style="flex-grow:1;min-height:0;"></div>'
             + f'<div class="mid" id="figtxt">{chu}</div>'
             + js)
 

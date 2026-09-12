@@ -53,11 +53,11 @@ def nhan_ethan(a: dict) -> tuple:
         dung.append("ảnh NGANG quá 1.6: CHỈ ghép dọc (anh2) với ảnh ngang cùng tone")
     else:
         dung.append("nền hero (một mình)")
-        if a["goc_trai_sang"] >= 150:
+        if a.get("goc_trai_sang", 0) >= 150:
             ghi.append("nửa dưới sáng, câu hook đè lên hơi nhạt")
-    if a["mat"]:
+    if a.get("mat"):
         ghi.append(f"CÓ {a['mat']} MẶT NGƯỜI → chỉ dùng khi khai \"nhan_vat\": \"<tên người trong bài>\"")
-    if a["canh_ngan"] < 1000:
+    if a.get("canh_ngan", 0) < 1000:
         ghi.append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
     if a.get("commons"):
         ghi.append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin")
@@ -117,8 +117,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                      f"(nguồn: {a['mien'] or a['tu']})")
             continue
         dung, ghi = nhan_ethan(a)
-        if dung[0].startswith("nền hero") and not a["mat"]:
-            goi_y.append((a["goc_trai_sang"], -a["canh_ngan"], a["ma"]))
+        if dung[0].startswith("nền hero") and not a.get("mat"):
+            goi_y.append((a.get("goc_trai_sang", 0), -a.get("canh_ngan", 0), a["ma"]))
         dong = (f"- {a['ma']}: {a['w']}x{a['h']} ({a['ti_le']}) {a['loai'].upper()} | {'; '.join(dung)}"
                 f" | nguồn: {a['mien'] or a['tu']}")
         if a.get("mo_ta"):
