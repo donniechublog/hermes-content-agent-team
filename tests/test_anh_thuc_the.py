@@ -59,8 +59,11 @@ def test_commons_theo_cum_khong_lot_hai_nguoi_ghep_ten():
 
 def test_nac_chi_chay_khi_con_thieu():
     src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
-    i_kn, i_tt = src.index("_vong_khai_niem(anh"), src.index("_vong_thuc_the(anh")
-    assert i_kn < i_tt, "nac thuc the phai SAU nac khai niem"
+    i_cn, i_tt, i_kn = (src.index("_vong_chup_nguon(anh"), src.index("_vong_thuc_the(anh"),
+                        src.index("_vong_khai_niem(anh"))
+    # 1c02bba: thuc the TRUOC khai niem — khai niem (tu khoa LLM) la nac CUOI CUNG
+    # vi do tren may chu no la nac duy nhat sinh duong tinh gia.
+    assert i_cn < i_tt < i_kn, "thu tu phai: chup nguon -> thuc the -> khai niem"
     assert "du_nguyen_lieu(vai_anh, dung_duoc, flagship):\n            anh, dung_duoc, chua_nhin = _vong_thuc_the" in src
 
 def test_vong_thuc_the_hoi_cau_khai_niem_khong_hoi_anh_cua_su_viec():
