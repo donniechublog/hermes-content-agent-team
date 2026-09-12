@@ -15,12 +15,23 @@ dien qua khoa `{ket_thuc}`; dung chep no vao tung body nua.
 # Doan ket thuc task GIONG NHAU cho ca ba vai lam anh (Ethan/Dre/Kite). Truoc
 # 06/09/2026 no duoc chep NGUYEN VAN ba lan, nen mot lan sua luat "abort =
 # kanban_block" phai nho sua ca ba — va da co lan chi sua hai.
-KET_THUC_VAI_ANH = """THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): goi tool kanban_block voi ly do
-ngan (anh nao bi loai, vi sao) — Ong Chu quyet tiep. TUYET DOI KHONG kanban_complete khi
-chua gui album: "done" nghia la DA CO san pham tren topic. Khong tu che metadata kieu
-"abort"; abort = kanban_block.
+KET_THUC_VAI_ANH = """THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): BAN TU DI TIM — chay
+cd {goc} && venv/bin/python tim_anh_them.py {draft_id} --tu-khoa "<tu khoa TIENG ANH cu the>"
+(hang, san pham, nha may, su kien, nguoi trong bai; lap --tu-khoa duoc; co URL trang/anh thi
+--url). Script tai, nhin, do, cat san roi in anh moi; chay lai BUOC 1 de doc brief moi.
+Toi da 3 luot, moi luot doi tu khoa khac han. HET 3 LUOT ma van thieu moi goi tool
+kanban_block, ly do PHAI ke cac tu khoa da thu va anh nao bi loai vi sao — Ong Chu quyet
+tiep. TUYET DOI KHONG kanban_complete khi chua gui album: "done" nghia la DA CO san pham
+tren topic. Khong tu che metadata kieu "abort"; abort = kanban_block.
 Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
 dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban)."""
+
+
+def ket_thuc_vai_anh(goc, draft_id: str) -> str:
+    """KET_THUC_VAI_ANH da dien duong dan: `str.format` cua body KHONG dien de quy
+    vao gia tri `{ket_thuc}`, nen `{goc}`/`{draft_id}` trong doan ket thuc phai
+    dien o day truoc (12/09/2026, khi doan nay bat dau mang mot dong lenh)."""
+    return KET_THUC_VAI_ANH.format(goc=str(goc), draft_id=draft_id)
 
 
 ILLU_BODY = """Nguon: {source_note}

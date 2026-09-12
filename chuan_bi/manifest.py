@@ -214,12 +214,11 @@ def _tu_lieu_bai(title: str, link: str, nguon_path: Path, wd: Path, nguon: dict,
     return tl
 
 
-def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
-                  tom: dict, wd: Path, anh: list, xhs: list, tin_xep_hang: bool, bp: dict, tl: dict,
-                  flagship: bool, toi_thieu: int, vai_anh: str = "") -> dict:
-    """Manifest (xong.json) cua bai — thu ma moi *_chuan_bi va *_nop doc. Cac gia
-    tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
-    xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
+def dan_xuat(anh: list, so_xh: int = 0) -> dict:
+    """Cac gia tri DAN XUAT tu bo anh: dung_duoc, chua_nhin, so_mien, so_dung_duoc,
+    goi_y_bia, cap_ghep. MOT ban cho hai nguoi goi: `dung_manifest` luc engine
+    chay xong, va `tim_anh_them.lam_moi_manifest` khi vai tim them anh sau do —
+    khong thi manifest sau khi them anh mang so cu (12/09/2026)."""
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
     so_mien = sorted({(a.get("mien") or a.get("tu") or "?") for a in dung_duoc})
@@ -228,7 +227,6 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
     # va co `thieu_anh` (xem _mo_ta_thieu_anh) ma route_thieu_anh doc de quyet
     # dinh hoi Ong Chu hay chuyen Kite.
     so_dung_duoc = schema.so_anh_dung_duoc(anh)
-
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
     # hang trong tin, 09/09/2026) -> anh KHAI NIEM (co, rack, chung chung; 07/09).
     goi_y_bia = [a["ma"] for a in sorted(
@@ -238,8 +236,21 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
     # `xhs` co the co NHIEU HON MOT (bang xep hang do nang luc khac nhau, xem
     # `_chup_xep_hang`) — goi y het cac ma XH/XH2/... truoc anh khac; `xep_hang`
     # (so, dung boi cong chan/brief "bat buoc dung XH") van la BANG DAU TIEN.
-    if xhs:
-        goi_y_bia = ["XH" if i == 0 else f"XH{i + 1}" for i in range(len(xhs))] + goi_y_bia
+    if so_xh:
+        goi_y_bia = ["XH" if i == 0 else f"XH{i + 1}" for i in range(so_xh)] + goi_y_bia
+    return {"dung_duoc": dung_duoc, "chua_nhin": chua_nhin, "so_mien": so_mien,
+            "so_dung_duoc": so_dung_duoc, "goi_y_bia": goi_y_bia, "cap_ghep": cap_ghep(dung_duoc)}
+
+
+def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
+                  tom: dict, wd: Path, anh: list, xhs: list, tin_xep_hang: bool, bp: dict, tl: dict,
+                  flagship: bool, toi_thieu: int, vai_anh: str = "") -> dict:
+    """Manifest (xong.json) cua bai — thu ma moi *_chuan_bi va *_nop doc. Cac gia
+    tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
+    xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
+    dx = dan_xuat(anh, so_xh=len(xhs))
+    dung_duoc, chua_nhin, so_mien = dx["dung_duoc"], dx["chua_nhin"], dx["so_mien"]
+    so_dung_duoc, goi_y_bia = dx["so_dung_duoc"], dx["goi_y_bia"]
     m = {"phien_ban": schema.PHIEN_BAN_MANIFEST,
          "draft_id": draft_id, "brand": _brand_cua(meta), "title": title, "link": link,
          "via": meta.get("via", ""), "category": meta.get("category", ""),
@@ -255,7 +266,7 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
          # ve day, khong ha thap hon duoc. Truoc 10/09/2026 cho nay go cung
          # carousel.MIN_SLIDE cho moi vai, nen bai cua Ethan bi doi 5 anh.
          "toi_thieu_co_ban": vai_mod.so_anh_toi_thieu(vai_anh), "so_mien": so_mien,
-         "anh": anh, "cap_ghep": cap_ghep(dung_duoc), "goi_y_bia": goi_y_bia, "tu_lieu": tl,
+         "anh": anh, "cap_ghep": dx["cap_ghep"], "goi_y_bia": goi_y_bia, "tu_lieu": tl,
          "ghep_hai_hang": ghep_hai_hang(anh, meta.get("category", "")),
          "thu_tu_anh_theo_loai": list(__import__("loai_tin").thu_tu_anh(meta.get("category", ""))),
          "so_dung_duoc": so_dung_duoc, "chua_nhin": chua_nhin,

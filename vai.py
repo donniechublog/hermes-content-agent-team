@@ -97,12 +97,12 @@ VAI = {v.slug: v for v in [
     Vai("ethan", "Ethan", go=("img", "anh"), slug_cu=("designer", "chad"),
         renderer="card", nhan_anh=True, anh_toi_thieu=1,
         ti_le_don_max=1.6, chart_don=False),
-    # 5 va 8 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN. Chep so o day chu
+    # 6 va 7 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN (12/09/2026). Chep so o day chu
     # khong import carousel: tep nay la BAN DANG KY, phai nhe (carousel keo theo
     # card + PIL). test_vai giu hai ban khong troi khoi nhau.
     Vai("dre", "Dre", go=("cr",), slug_cu=("carousel", "heller"),
-        renderer="carousel", nhan_anh=True, anh_toi_thieu=5, anh_toi_thieu_flagship=8,
-        anh_muc_tieu_tim=5, anh_muc_tieu_tim_flagship=8),
+        renderer="carousel", nhan_anh=True, anh_toi_thieu=6, anh_toi_thieu_flagship=7,
+        anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
     # "kites": so nhieu tieng Anh — Ong Chu hay go the khi giao nhieu tin cung
     # luc ("3, 4 - Kites"). Thieu no la ca lenh chon bi tu choi (su co 06/09/2026).
     # anh_toi_thieu=1: Kite ve ART VECTOR GOC, anh that chi la hinh chen them —
@@ -113,7 +113,7 @@ VAI = {v.slug: v for v in [
     # chua duoc ra lai, va ha xuong la Kite it hinh chen hon truoc.
     Vai("kite", "Kite", go=("edu", "kites"), slug_cu=("carousel-edu",),
         renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
-        anh_muc_tieu_tim=5, anh_muc_tieu_tim_flagship=8),
+        anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
     # --- vai VIET: MOI BRAND MOT NGUOI VIET (LOW-13, 10/09/2026) ---
     # Hai vai viet KHONG bao gio cung nam trong mot container, dung nhu `finn`
     # (chi blog) va `vera` (chi dcgr) — nen ban dang ky giu ca hai,
@@ -312,7 +312,11 @@ def du_nguyen_lieu(slug: str, dung_duoc: list, flagship: bool = False) -> bool:
     if not any(anh_chinh_duoc(slug, a) for a in dung_duoc):
         return False
     # muc = 0 (vai mot anh): ve nay luon dung, tuc chi con ve thu nhat.
-    return len(dung_duoc) >= so_anh_muc_tieu_tim(slug, flagship)
+    # Dem SLIDE dung duoc (schema.so_anh_dung_duoc), khong dem TAM: tin TSMC
+    # 12/09/2026 co 5 tam nhung mot tam 900x600 chi ghep duoc ma khong co cap
+    # -> 4 slide, engine van bao "du 5" va ngung tim (t_a8ffd2f6).
+    import schema
+    return schema.so_anh_dung_duoc(dung_duoc) >= so_anh_muc_tieu_tim(slug, flagship)
 
 
 def don_vi_san(slug: str) -> str:

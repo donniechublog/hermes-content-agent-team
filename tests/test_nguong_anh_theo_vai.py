@@ -60,9 +60,11 @@ def test_manifest_ghi_nguong_theo_vai_duoc_giao():
     assert m_ethan["vai_anh"] == "ethan"
 
     m_dre = _manifest("dre", 2)
-    assert m_dre["toi_thieu"] == 5, "Dre KHONG duoc doi hanh vi: moi slide mot anh"
-    assert m_dre["toi_thieu_co_ban"] == 5
-    assert _manifest("dre", 2, flagship=True)["toi_thieu"] == 8, "tin flagship van la 8 cho Dre"
+    import carousel
+    assert m_dre["toi_thieu"] == carousel.MIN_SLIDE, "Dre KHONG duoc doi hanh vi: moi slide mot anh"
+    assert m_dre["toi_thieu_co_ban"] == carousel.MIN_SLIDE
+    assert _manifest("dre", 2, flagship=True)["toi_thieu"] == carousel.FLAGSHIP_MIN, \
+        "tin flagship lay nguong flagship cho Dre"
 
 
 def test_tin_flagship_khong_lam_the_cua_ethan_can_them_anh():
@@ -80,7 +82,8 @@ def test_hai_anh_that_la_DU_cho_ethan_va_THIEU_cho_dre():
     import anh_chuan_bi as cb
     assert cb._mo_ta_thieu_anh(_manifest("ethan", 2)) is None, \
         "2 anh that ma bao Ethan thieu anh — dung loi 10/09/2026"
-    assert cb._mo_ta_thieu_anh(_manifest("dre", 2)) == {"so": 2, "toi_thieu": 5}
+    import carousel
+    assert cb._mo_ta_thieu_anh(_manifest("dre", 2)) == {"so": 2, "toi_thieu": carousel.MIN_SLIDE}
     # Va khong anh nao thi Ethan cung thieu that (0 < 1) — cong van con.
     assert cb._mo_ta_thieu_anh(_manifest("ethan", 0)) == {"so": 0, "toi_thieu": 1}
 

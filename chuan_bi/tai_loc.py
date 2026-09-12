@@ -76,7 +76,7 @@ def _host_la_ben_thu_ba(c: dict) -> bool:
     """Anh nam tren host KHAC domain trang va khong phai CDN -> gan nhu chac la
     quang cao/widget ben thu ba (banner Phemex tren siliconangle, 05/09/2026).
     Anh do engine tu chup/tai (tep local, commons, arxiv) khong xet."""
-    if c.get("tep") or c.get("tu") in ("chup", "commons", "arxiv_bia"):
+    if c.get("tep") or c.get("tu") in ("chup", "commons", "arxiv_bia", "openverse"):
         return False
     ha, ht = _mien(c.get("anh", "") or ""), _mien(c.get("trang", "") or "")
     if not ha or not ht:

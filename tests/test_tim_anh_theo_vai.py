@@ -168,9 +168,9 @@ def test_vai_nhieu_anh_giu_nguyen_cach_dem_cu():
     """Ban sua khong duoc dong toi Dre/Kite: o do moi slide an mot tam that, nen
     SO LUONG van la mot tieu chi that."""
     for vai_anh in ("dre", "kite"):
-        assert "tim_rong" not in _vong_bu_da_chay([_anh(f"A{i + 1}") for i in range(5)],
+        assert "tim_rong" not in _vong_bu_da_chay([_anh(f"A{i + 1}") for i in range(6)],
                                                   vai_anh=vai_anh), \
-            f"{vai_anh}: du 5 tam va co bia ma van di tim"
+            f"{vai_anh}: du 6 tam va co bia ma van di tim"
         assert "tim_rong" in _vong_bu_da_chay([_anh("A1"), _anh("A2")], vai_anh=vai_anh), \
             f"{vai_anh}: moi 2 tam ma khong di tim — thieu 3 slide"
         assert "tim_rong" in _vong_bu_da_chay([_anh_ngang(f"A{i + 1}") for i in range(5)],
