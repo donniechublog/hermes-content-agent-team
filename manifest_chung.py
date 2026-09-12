@@ -24,6 +24,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import quet_chung                                           # noqa: E402
+
 TOI_DA_TU_TOM_TAT = 15          # brief cua ca ba vai hua "mot menh de <= 15 tu"
 _EM_DASH = re.compile(r"\s*[—–]\s*")
 
@@ -74,14 +77,26 @@ def danh_so(items: list) -> list:
 
 
 def duong_ra_moi(goc: Path) -> Path:
-    """Ten khac cho ban ghi LAI trong ngay: `<goc>_tHHMM.<duoi>`.
+    """Ten khac cho ban ghi LAI trong ngay: `<goc>_tHHMMSS.<duoi>` (gio VN).
 
     KHONG ghi de ban da co: ghi de la mat co `picked`/`da_giao` ma
     `duyet_chon_tin` ghi nguoc vao chinh tep do, va TE HON la doi nghia so thu
     tu — muc "2" cua ban moi khac muc "2" ma Ong Chu dang nhin, tra loi "2" luc
     do ra dung bai khac.
     """
-    return goc.with_name(f"{goc.stem}_t{datetime.now(timezone.utc).strftime('%H%M')}{goc.suffix}")
+    # Den GIAY, va van kiem lai: ban cu lay UTC theo PHUT, nen hai lan chay
+    # trong cung mot phut ra CUNG mot ten va ban sau DE LEN ban truoc — dung
+    # cai ma docstring nay hua la khong lam. Da xay ra that 12/09/2026: ba lan
+    # chay quet_nop cua Vera luc 22:01:10 / 22:01:48 / 22:02 (UTC) deu ghi vao
+    # `vera_candidates_2026-09-11_t2201.json`, tuc bao cao dau tien gui len
+    # topic tro toi mot tep ma noi dung da bi ban thu ba thay mat.
+    goi = f"{goc.stem}_t{datetime.now(quet_chung.VN).strftime('%H%M%S')}"
+    ra = goc.with_name(f"{goi}{goc.suffix}")
+    n = 2
+    while ra.exists():
+        ra = goc.with_name(f"{goi}-{n}{goc.suffix}")
+        n += 1
+    return ra
 
 
 def ghi_manifest(out: Path, vai: str, items: list) -> None:

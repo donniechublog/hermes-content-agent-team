@@ -39,9 +39,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import ghi_log                                              # noqa: E402
 import nop_chung                                             # noqa: E402
+import vai as _vai                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
-    DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _chay_nen, _ghi_json, _reply_that, call, la_ong_chu, load_secrets, log, rut,
+    DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _chay_nen, _ghi_json, _gui_chu, _reply_that, call, la_ong_chu, load_secrets, log, rut,
 )
 from duyet_giao_viec import (  # noqa: E402
     MAC_DINH_VIET, bao_tien_do_kanban, vai_cua_topic,
@@ -112,7 +113,7 @@ def _bao_khong_ho_tro(token, group, thread_id, msg, mid):
          text=f"Tin dạng {loai} chưa hỗ trợ — chỉ nhận chữ và ảnh (photo hoặc file ảnh).")
 
 
-def _lenh_chon_neu_co(msg, thread_id, text, mid):
+def _lenh_chon_neu_co(token, group, msg, thread_id, text, mid):
     """So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
     REPLY dung vao bao cao (xem _la_reply_bao_cao). Tra (vai, lenh); lenh None
     la hoi thoai. Ghi lai quyet dinh cong reply: khi Ong Chu bao "go so ma
@@ -128,8 +129,28 @@ def _lenh_chon_neu_co(msg, thread_id, text, mid):
         if not la_reply:
             log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
                          f"vai={vai} -> coi la hoi thoai")
+            _bao_khong_phai_reply(token, group, thread_id, vai, rt_that)
             lenh = None
     return vai, lenh
+
+
+def _bao_khong_phai_reply(token, group, thread_id, vai, rt_that):
+    """Noi ro VI SAO lenh chon so khong chay, thay vi im lang.
+
+    Cong reply (06/09/2026) ha moi tin khong-phai-reply xuong hoi thoai. Nhung
+    tren dcgr hoi thoai lai nhuong cho gateway, ma gateway dat
+    `require_mention: true` va da bo `free_response_topics` (08/09/2026) — tin
+    khong nhac ten bot thi KHONG AI tra loi. Ket qua: Ong Chu reply "1, 7 - Dre"
+    luc 07:24 ngay 12/09/2026 (nham vao ban bao cao thu hai trong ba ban Vera
+    gui sang hom do) va khong nhan duoc gi ca: khong bai, khong loi, khong mot
+    dong. Im lang la trang thai te nhat — no giong het luc bot chet."""
+    ly_do = ("tin này không bấm Reply" if not rt_that
+             else "tin này Reply vào một bản báo cáo cũ")
+    _gui_chu(token, group,
+             f"⚠️ Chưa tạo bài: lệnh chọn số phải Reply đúng vào báo cáo MỚI NHẤT "
+             f"của {_vai.ten_hien(vai)} — {ly_do}.\n"
+             f"Bấm Reply vào báo cáo cuối cùng trong topic rồi gửi lại đúng dòng vừa gõ.",
+             thread=thread_id)
 
 
 def handle_message(token, group, msg):
@@ -203,7 +224,7 @@ def handle_message(token, group, msg):
     # REPLY dung vao bao cao (xem _la_reply_bao_cao). Moi thu khac (ke ca dung
     # so nhung go troi, khong bam Reply) la hoi thoai. Finn, Nova, Vera deu
     # duoc — cung mot cach tra loi.
-    vai, lenh = _lenh_chon_neu_co(msg, thread_id, text, mid)
+    vai, lenh = _lenh_chon_neu_co(token, group, msg, thread_id, text, mid)
     is_pick = lenh is not None
     if not is_pick:
         # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot

@@ -18,7 +18,7 @@ Dung:
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -39,6 +39,7 @@ TIEN_TO = {"nova": "nova_candidates", "market": "vera_candidates",
 import bat_buoc                                             # noqa: E402
 import tieng_viet                                           # noqa: E402
 import manifest_chung as mc                                 # noqa: E402
+import quet_chung                                           # noqa: E402
 
 
 def _so_bao(t: dict) -> str:
@@ -168,7 +169,14 @@ def main():
     items = them_bat_buoc(items, nguon, a.vai, vai_bb)
     mc.danh_so(items)
 
-    ngay = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # GIO VN, khong phai UTC. Ca doi song theo ngay VN: cron quet chay 05:01 VN,
+    # `quet_chuan_bi.workdir` dat thu muc `vera_20260912`, bao cao mac dinh cua
+    # `bao_cao_manifest.dung` cung lay gio VN. Rieng dong nay truoc 12/09/2026
+    # lay UTC — tuc 05:01 VN van con la ngay HOM QUA. Hai hau qua that sang
+    # 12/09: bao cao len topic de "Vera — 2026-09-11" cho ban quet ngay 12, va
+    # ten tep dung vao ten cua hom truoc (da co) nen manifest roi xuong nhanh
+    # `duong_ra_moi` -> `vera_candidates_2026-09-11_t2201.json`.
+    ngay = datetime.now(quet_chung.VN).strftime("%Y-%m-%d")
     ten = f"{TIEN_TO[a.vai]}_{ngay}{('_' + a.hau_to) if a.hau_to else ''}.json"
     out = Path(a.out) if a.out else STATE / ten
     # KHONG ghi de manifest da co — ly do day du o `manifest_chung.duong_ra_moi`.

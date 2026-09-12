@@ -1,0 +1,301 @@
+#!/usr/bin/env python3
+"""MOT lan quet = MOT bao cao, va reply vao bao cao do thi phai chay.
+
+Su co 12/09/2026 (ticket "Vera"): trong MOT task, Vera chay `quet_nop.py` ba
+lan — lan 1 ghi `k` sai dinh dang nen 20/27 muc bi bo, lan 2 viet tieu de ASCII
+mat dau, lan 3 sach — va CA BA lan deu gui mot bao cao len topic. Ong Chu thay
+ba ban gan giong nhau, reply "1, 7 - Dre" vao ban thu hai (msg 2004) va khong
+nhan duoc gi ca: `--luu-mid` chi giu mid cua ban CUOI (2005) nen cong
+`_la_reply_bao_cao` tra False, tin roi xuong hoi thoai, ma hoi thoai tren dcgr
+lai nhuong cho gateway dang dat `require_mention: true` — khong ai tra loi.
+
+Bon cong trong tep nay, theo dung thu tu chung da hong hom do:
+  1. `quet_nop.loi_chan_gui`  — ban hong thi KHONG gui (het canh ba bao cao).
+  2. `publish --luu-mid`      — nho mid cua MOI manh, khong chi manh cuoi.
+  3. `_la_reply_bao_cao`      — reply vao manh dau van tinh la lenh.
+  4. `manifest_da_gui`        — so thu tu doc tren ban DA GUI, khong phai ban
+                                moi nhat theo mtime (hai thu do tach nhau ke tu
+                                khi cong 1 chan gui ma van ghi manifest).
+
+Chay:  venv/bin/python tests/test_bao_cao_mot_lan.py
+"""
+import json
+import os
+import sys
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+import httpx
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import manifest_chung as mc                                  # noqa: E402
+import quet_nop                                              # noqa: E402
+from tam import bat_buoc_tam                                 # noqa: E402
+
+
+# Nguyen van stderr cua manifest_ghi trong su co 12/09/2026 (rut gon).
+CANH_MAT_TIN = "[bo qua] muc 1: k=#15 ngoai danh sach 1..80"
+CANH_MAT_DAU = ("[canh bao] muc 1 title tieng Viet mat dau (AI, dat, doanh): "
+                "Moonshot AI (Kimi) dat muc tieu 2 ty USD doanh thu nam")
+CANH_TU_THEM = "[tu them] muc BAT BUOC vai bo sot: OpenAI ra ban ChatGPT rieng"
+CANH_TOM_TAT = "[canh bao] summary_vi 16 tu (> 15), giu nguyen nhung nen rut (muc 4)"
+
+
+# ======================================================= 1. cong chan gui
+def test_loi_chan_gui_chan_ban_mat_tin():
+    """`[bo qua]` = mat tron mot tin. Ban nay len topic la Ong Chu doc thieu."""
+    assert quet_nop.loi_chan_gui([CANH_MAT_TIN]) == [CANH_MAT_TIN]
+
+
+def test_loi_chan_gui_chan_tieu_de_mat_dau():
+    """Headline la thu DUY NHAT Ong Chu doc tren topic."""
+    assert quet_nop.loi_chan_gui([CANH_MAT_DAU]) == [CANH_MAT_DAU]
+
+
+def test_loi_chan_gui_khong_chan_canh_bao_script_da_tu_xu():
+    """`[tu them]` va summary dai: script da xu ly xong, chan la ket task ma
+    Ong Chu khong nhan duoc gi ca."""
+    assert quet_nop.loi_chan_gui([CANH_TU_THEM, CANH_TOM_TAT]) == []
+
+
+class _KetQua:
+    """Gia lap CompletedProcess cua manifest_ghi/manifest_build."""
+
+    def __init__(self, stdout="", stderr="", returncode=0):
+        self.stdout, self.stderr, self.returncode = stdout, stderr, returncode
+
+
+def _chay_main(tmp, stderr, stdout=None, manifest=None):
+    """Chay quet_nop.main() cho Vera voi ket qua manifest_ghi gia lap.
+
+    Tra ve (ma thoat, danh sach lan goi gui). `gui` bi thay bang ban ghi nhan
+    de test khong dung toi Telegram."""
+    d = Path(tmp)
+    os.environ["CT_STATE_DIR"] = str(d)
+    wd = d / "quet" / f"vera_{datetime.now(quet_nop.qb.VN).strftime('%Y%m%d')}"
+    wd.mkdir(parents=True, exist_ok=True)
+    (wd / "ds.json").write_text("[]", encoding="utf-8")
+    (wd / "baocao.txt").write_text("<b>Vera</b>\n<b>1.</b> Tin", encoding="utf-8")
+
+    da_gui = []
+    cu_chay, cu_gui, cu_argv = quet_nop._chay, quet_nop.gui, sys.argv
+    quet_nop._chay = lambda *a, **k: _KetQua(stdout or str(manifest or ""), stderr)
+    quet_nop.gui = lambda *a, **k: (da_gui.append((a, k)), True)[1]
+    sys.argv = ["quet_nop.py", "--vai", "vera"]
+    try:
+        with bat_buoc_tam(tmp, vera={}):
+            ma = quet_nop.main()
+    finally:
+        quet_nop._chay, quet_nop.gui, sys.argv = cu_chay, cu_gui, cu_argv
+    return ma, da_gui
+
+
+def test_quet_nop_khong_gui_ban_mat_tin():
+    """Dung chuoi viec cua lan chay THU NHAT hom 12/09: 20/27 muc bi bo, rc=0,
+    va ban cu van gui thang len topic."""
+    with tempfile.TemporaryDirectory() as t:
+        ma, da_gui = _chay_main(t, stderr="\n".join([CANH_MAT_TIN, CANH_TU_THEM]))
+    assert da_gui == [], f"ban mat tin KHONG duoc gui, nhung gui() da chay: {da_gui}"
+    assert ma == 1, f"phai tra ma khac 0 de vai biet ma sua, duoc {ma}"
+
+
+def test_quet_nop_khong_gui_ban_tieu_de_mat_dau():
+    """Lan chay THU HAI hom 12/09 — chinh ban Ong Chu reply vao."""
+    with tempfile.TemporaryDirectory() as t:
+        ma, da_gui = _chay_main(t, stderr=CANH_MAT_DAU)
+    assert da_gui == [] and ma == 1, (ma, da_gui)
+
+
+def test_quet_nop_van_gui_khi_chi_co_canh_bao_nhe():
+    with tempfile.TemporaryDirectory() as t:
+        man = Path(t) / "vera_candidates_2026-09-12.json"
+        man.write_text("{}", encoding="utf-8")
+        ma, da_gui = _chay_main(t, stderr=CANH_TU_THEM, manifest=man)
+    assert len(da_gui) == 1 and ma == 0, (ma, da_gui)
+
+
+def test_quet_nop_ghim_manifest_vua_gui():
+    """Ghim de duyet_chon_tin doc so thu tu tren dung ban da gui."""
+    with tempfile.TemporaryDirectory() as t:
+        man = Path(t) / "vera_candidates_2026-09-12.json"
+        man.write_text("{}", encoding="utf-8")
+        _ma, da_gui = _chay_main(t, stderr="", manifest=man)
+    assert da_gui, "phai gui"
+    args = da_gui[0][0]
+    assert Path(args[3]) == man, f"gui() phai nhan duong dan manifest vua ghi: {args}"
+
+
+def test_duong_manifest_doc_duoc_ca_hai_kieu_stdout():
+    """manifest_ghi in `<duong dan>`, manifest_build in `da ghi N muc -> <...>`."""
+    with tempfile.TemporaryDirectory() as t:
+        man = Path(t) / "nova_candidates_2026-09-12.json"
+        man.write_text("{}", encoding="utf-8")
+        assert quet_nop.duong_manifest(str(man)) == man
+        assert quet_nop.duong_manifest(f"da ghi 7 muc -> {man}") == man
+        assert quet_nop.duong_manifest(f"{Path(t) / 'khong-co.json'}") is None
+
+
+# ============================================ 2. publish: mid cua MOI manh
+def _gui_gia(handler, text, luu_mid):
+    """Chay `publish.main()` voi Telegram gia lap, tra ve tep mid da ghi."""
+    import publish
+    cu_client, cu_argv = httpx.Client, sys.argv
+    cu_secrets = publish.load_secrets
+
+    def _client_gia(*a, **k):
+        k.pop("transport", None)
+        return cu_client(*a, transport=httpx.MockTransport(handler), **k)
+
+    httpx.Client = _client_gia
+    publish.load_secrets = lambda: ("token-gia", "-100123")
+    tep_text = Path(luu_mid).with_name("bao_cao.txt")
+    tep_text.write_text(text, encoding="utf-8")
+    sys.argv = ["publish.py", "--file", str(tep_text), "--luu-mid", str(luu_mid)]
+    try:
+        publish.main()
+    finally:
+        httpx.Client, sys.argv, publish.load_secrets = cu_client, cu_argv, cu_secrets
+    return json.loads(Path(luu_mid).read_text(encoding="utf-8"))
+
+
+def test_luu_mid_nho_moi_manh_cua_bao_cao_dai():
+    """Bao cao 27 muc vuot 4096 ky tu bi Telegram chia doi; muc so 1 nam o manh
+    DAU va Ong Chu reply vao do. Ban cu chi luu manh cuoi."""
+    dem = {"n": 0}
+
+    def handler(request):
+        dem["n"] += 1
+        return httpx.Response(200, json={"ok": True,
+                                         "result": {"message_id": 2000 + dem["n"]}})
+
+    with tempfile.TemporaryDirectory() as t:
+        dai = "\n".join(f"<b>{i}.</b> Tin so {i} " + "x" * 120 for i in range(1, 40))
+        d = _gui_gia(handler, dai, Path(t) / "bao_cao_mid.vera.json")
+    assert dem["n"] > 1, "test hong: van ban nay phai bi chia thanh nhieu manh"
+    assert d["message_ids"] == [2000 + i for i in range(1, dem["n"] + 1)], d
+    assert d["message_id"] == d["message_ids"][-1], d
+
+
+# ====================================== 3 + 4. cong reply va manifest da gui
+def _dat_mid(tmp, **noi_dung):
+    """Ghi bao_cao_mid.vera.json va tro STATE_DIR cua duyet_chon_tin vao tmp."""
+    import duyet_chon_tin as dct
+    d = Path(tmp)
+    (d / "bao_cao_mid.vera.json").write_text(json.dumps(noi_dung), encoding="utf-8")
+    dct.STATE_DIR = d
+    return dct
+
+
+def _tin(reply_mid):
+    """Tin trong topic: Telegram luon gan san reply_to_message = tin goc topic,
+    nen day dung payload that (xem _reply_that)."""
+    return {"message_id": 2007, "message_thread_id": 83,
+            "text": "1, 7 - Dre",
+            "reply_to_message": {"message_id": reply_mid, "message_thread_id": 83,
+                                 "from": {"id": 1, "is_bot": True}}}
+
+
+def test_reply_vao_manh_dau_van_la_lenh_chon():
+    with tempfile.TemporaryDirectory() as t:
+        dct = _dat_mid(t, message_id=2005, message_ids=[2004, 2005])
+        try:
+            assert dct._la_reply_bao_cao("vera", _tin(2004)), \
+                "reply vao manh DAU cua chinh bao cao do phai tinh la lenh"
+            assert dct._la_reply_bao_cao("vera", _tin(2005))
+        finally:
+            dct.STATE_DIR = Path(t)
+
+
+def test_reply_vao_bao_cao_cu_van_bi_tu_choi():
+    """Cong 06/09/2026 phai giu nguyen: bao cao CU co so thu tu khac."""
+    with tempfile.TemporaryDirectory() as t:
+        dct = _dat_mid(t, message_id=2005, message_ids=[2004, 2005])
+        assert not dct._la_reply_bao_cao("vera", _tin(1976))
+
+
+def test_go_troi_khong_phai_lenh():
+    """Tin khong bam Reply: trong topic Telegram van co reply_to_message tro
+    toi tin goc topic — khong duoc nham (su co 06/09/2026)."""
+    with tempfile.TemporaryDirectory() as t:
+        dct = _dat_mid(t, message_id=2005, message_ids=[2005])
+        msg = {"message_id": 2007, "message_thread_id": 83, "text": "1, 7 - Dre",
+               "reply_to_message": {"message_id": 83, "message_thread_id": 83,
+                                    "forum_topic_created": {"name": "vera"},
+                                    "from": {"id": 1, "is_bot": True}}}
+        assert not dct._la_reply_bao_cao("vera", msg)
+
+
+def test_manifest_da_gui_thang_ban_moi_nhat_theo_mtime():
+    """Ban bi cong CHAN_GUI chan van nam tren dia va MOI hon ban da gui — neu
+    van di theo mtime thi so thu tu tro vao mot bao cao chua ai nhin thay."""
+    with tempfile.TemporaryDirectory() as t:
+        d = Path(t)
+        da_gui = d / "vera_candidates_2026-09-12.json"
+        da_gui.write_text("{}", encoding="utf-8")
+        moi_hon = d / "vera_candidates_2026-09-12_t050203.json"
+        moi_hon.write_text("{}", encoding="utf-8")
+        os.utime(moi_hon, (10**9, 10**9 + 500))       # moi hon han
+        os.utime(da_gui, (10**9, 10**9))
+        dct = _dat_mid(t, message_id=2005, message_ids=[2005], manifest=str(da_gui))
+        assert dct.latest_manifest("vera") == moi_hon, "test hong: mtime phai lech"
+        assert dct.manifest_da_gui("vera") == da_gui
+
+
+def test_manifest_da_gui_tra_none_khi_chua_ghim():
+    """Bao cao gui truoc khi co co che ghim -> nguoi goi lui ve latest_manifest."""
+    with tempfile.TemporaryDirectory() as t:
+        dct = _dat_mid(t, message_id=2005)
+        assert dct.manifest_da_gui("vera") is None
+        dct2 = _dat_mid(t, message_id=2005, manifest=str(Path(t) / "da-xoa.json"))
+        assert dct2.manifest_da_gui("vera") is None, "tep khong con thi khong ghim"
+
+
+# ================================================== ngay VN, khong phai UTC
+class _GioGia:
+    """05:01 gio VN ngay 12/09 = 22:01 UTC ngay 11/09 — dung khoang gio cron quet."""
+
+    @staticmethod
+    def now(tz=None):
+        t = datetime(2026, 9, 11, 22, 1, tzinfo=timezone.utc)
+        return t.astimezone(tz) if tz else t
+
+
+def test_ten_manifest_va_bao_cao_theo_ngay_VN():
+    import manifest_ghi as mg
+    with tempfile.TemporaryDirectory() as t:
+        d = Path(t)
+        (d / "ds.json").write_text(json.dumps(
+            [{"title": "Oracle tăng doanh thu cloud", "link": "https://a.vn/1",
+              "summary_vi": "Oracle tăng mạnh"}]), encoding="utf-8")
+        cu_state, cu_dt, cu_argv = mg.STATE, mg.datetime, sys.argv
+        mg.STATE, mg.datetime = d, _GioGia
+        sys.argv = ["manifest_ghi.py", "--vai", "vera", "--in", str(d / "ds.json"),
+                    "--bao-cao", str(d / "baocao.txt")]
+        try:
+            with bat_buoc_tam(t, vera={}):
+                mg.main()
+        finally:
+            mg.STATE, mg.datetime, sys.argv = cu_state, cu_dt, cu_argv
+        ten = [p.name for p in d.glob("vera_candidates_*.json")]
+        assert ten == ["vera_candidates_2026-09-12.json"], ten
+        assert "2026-09-12" in (d / "baocao.txt").read_text(encoding="utf-8")
+
+
+def test_duong_ra_moi_khong_de_len_ban_chay_cung_phut():
+    """Ba lan chay trong cung mot phut (12/09/2026) tung ra CUNG mot ten."""
+    with tempfile.TemporaryDirectory() as t:
+        goc = Path(t) / "vera_candidates_2026-09-12.json"
+        goc.write_text("{}", encoding="utf-8")
+        a = mc.duong_ra_moi(goc)
+        a.write_text("{}", encoding="utf-8")
+        b = mc.duong_ra_moi(goc)
+        assert a != b, f"ban ghi lai thu hai de len ban thu nhat: {a}"
+
+
+if __name__ == "__main__":
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M
+    chay_tat_ca(globals())

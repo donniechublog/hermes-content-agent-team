@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import threading
+from html import escape as html_escape
 from pathlib import Path
 
 
@@ -54,6 +55,29 @@ def latest_manifest(vai="finn"):
     files = list(STATE_DIR.glob(MANIFEST_THEO_TOPIC.get(vai, "finn_candidates_*.json")))
     return max(files, key=lambda f: f.stat().st_mtime) if files else None
 
+def _mid_bao_cao(vai: str) -> dict:
+    """Noi dung tep `bao_cao_mid.<vai>.json` — quet_nop ghi moi lan gui bao cao.
+
+    Ba khoa: `message_ids` (mid cua TUNG manh tin, bao cao dai bi Telegram chia
+    nho), `message_id` (manh cuoi, giu lai cho ban cu) va `manifest` (duong dan
+    ban manifest DUNG voi bao cao vua gui)."""
+    return _nap_json(STATE_DIR / f"bao_cao_mid.{vai}.json", {})
+
+
+def manifest_da_gui(vai: str):
+    """Manifest dung voi ban bao cao Ong Chu dang nhin, hoac None.
+
+    `latest_manifest` (moi nhat theo mtime) chi bang voi cau nay khi moi lan
+    ghi manifest deu ket thuc bang mot lan gui. Tu 12/09/2026 quet_nop CHAN gui
+    ban hong (mat tin / tieu de mat dau) nhung van ghi manifest, nen hai thu do
+    tach nhau duoc: so thu tu phai doc tren ban DA GUI, khong phai ban moi
+    nhat. Chua ghim (bao cao gui truoc khi co co che nay) -> None, nguoi goi lui
+    ve latest_manifest nhu cu."""
+    p = _mid_bao_cao(vai).get("manifest")
+    q = Path(p) if p else None
+    return q if q and q.exists() else None
+
+
 def _la_reply_bao_cao(vai: str, msg: dict) -> bool:
     """Tin nay co phai REPLY dung vao bao cao danh so MOI NHAT cua `vai` khong
     (Ong Chu 06/09/2026: chi tin REPLY moi tinh la lenh, go troi trong topic la
@@ -71,9 +95,14 @@ def _la_reply_bao_cao(vai: str, msg: dict) -> bool:
     rt = _reply_that(msg)
     if not rt:
         return False
-    mid = _nap_json(STATE_DIR / f"bao_cao_mid.{vai}.json", {}).get("message_id")
-    if mid:
-        return rt.get("message_id") == mid
+    d = _mid_bao_cao(vai)
+    # MOI manh cua CUNG mot lan gui deu tinh: bao cao 27 muc vuot 4096 ky tu bi
+    # Telegram chia doi, muc so 1 nam o manh DAU va Ong Chu reply vao do — chi
+    # doi manh cuoi (`message_id`) la tu choi dung tin that (12/09/2026).
+    mids = [m for m in (d.get("message_ids") or []) if m] or \
+           ([d["message_id"]] if d.get("message_id") else [])
+    if mids:
+        return rt.get("message_id") in mids
     return bool(rt.get("from", {}).get("is_bot"))
 
 def doc_lenh_chon(text: str):
@@ -362,9 +391,36 @@ def _khoa_manifest(path):
     with _KHOA_KHOA_MANIFEST:
         return _KHOA_MANIFEST.setdefault(str(path), threading.Lock())
 
+def _bao_da_nhan(token, group, thread_id, manifest_path, lenh):
+    """Bao NGAY vao chinh topic Ong Chu vua go, TRUOC khi bat tay vao viec.
+
+    Vi sao (Ong Chu 12/09/2026: *"phai co phan hoi 'dang gui cho Dre' ngay sau
+    khi nhan duoc reply"*): tu luc reply den dong ket qua dau tien la 157 giay —
+    do that tren approve.log 11/09/2026, lenh luc 04:22:43, "xong sau 157s" luc
+    04:25:20 — va suot quang do topic im re. Co `_bao_nhan_viec`, nhung no bao
+    vao topic CUA VAI NHAN (Dre), khong phai topic Ong Chu dang nhin; nen ben
+    nay khong khac gi luc lenh bi nuot (su co cung ngay).
+
+    Kem ca tieu de tung so: doc mot dong la biet so vua go co tro dung tin dinh
+    giao khong, thay vi ba phut sau moi phat hien chon nham ban bao cao cu."""
+    items = {it["index"]: it for it in _nap_json(manifest_path, {}).get("items", [])}
+    dong = []
+    for n, vai_anh, _brand in lenh:
+        it = items.get(n)
+        tieu_de = (html_escape((it.get("title") or "")[:70]) if it
+                   else "không có số này trong danh sách")
+        dong.append(f"<b>#{n}</b> → {TEN_VAI_ANH.get(vai_anh, vai_anh)}: <i>{tieu_de}</i>")
+    ten_vai = list(dict.fromkeys(TEN_VAI_ANH.get(v, v) for _n, v, _b in lenh))
+    _gui_chu(token, group,
+             f"📨 Đã nhận — đang gửi cho <b>{', '.join(ten_vai)}</b>:\n"
+             + "\n".join(dong)
+             + "\n\nMỗi tin mất tới 3 phút tìm nguồn; xong sẽ báo lại ngay ở đây.",
+             thread=thread_id)
+
+
 def _xu_ly_chon(token, group, thread_id, vai, lenh):
     """Tao cap task tu lenh chon so. Chay nen qua _chay_nen."""
-    manifest_path = latest_manifest(vai)
+    manifest_path = manifest_da_gui(vai) or latest_manifest(vai)
     if not manifest_path:
         mau = MANIFEST_THEO_TOPIC.get(vai, "?")
         log("chon", f"khong co manifest {mau} trong {STATE_DIR}")
@@ -381,6 +437,10 @@ def _xu_ly_chon(token, group, thread_id, vai, lenh):
     # cho tat ca cung lam).
     thu_tu_vai = list(dict.fromkeys(v for _n, v, _b in lenh))
     lenh = sorted(lenh, key=lambda x: thu_tu_vai.index(x[1]))
+
+    # Bao da nhan TRUOC khi vao khoa va truoc create_pair (toi 180s moi tin):
+    # dong nay phai toi Ong Chu ngay, khong xep sau viec. Xem _bao_da_nhan.
+    _bao_da_nhan(token, group, thread_id, manifest_path, lenh)
 
     # KHOA THEO MANIFEST, om CA vong tao task. Vi sao 06/09/2026: moi lenh chon
     # chay mot thread rieng (_chay_nen), ma ca ba buoc "doc ca manifest ->

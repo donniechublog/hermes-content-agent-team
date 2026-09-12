@@ -121,6 +121,11 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   nhận danh sách ứng viên một dòng mỗi tin + mục BẮT BUỘC + khung tệp nộp; nop
   ghép manifest, kiểm bắt buộc, viết báo cáo, gửi topic. `--khong-co` gửi dòng
   "hôm nay không có gì"; `--thu` không ghi manifest thật.
+  **Một lần quét = một báo cáo**: bản mất tin (`[bo qua]`) hay tiêu đề tiếng
+  Việt mất dấu bị `loi_chan_gui` chặn, rc=1, vai sửa tệp nộp rồi chạy lại — chạy
+  lại mà vẫn gửi thì topic có nhiều bản gần giống nhau và chỉ bản cuối reply
+  được (sự cố Vera 12/09/2026). Gửi xong, `quet_nop` ghim đường dẫn manifest vào
+  `state/<brand>/bao_cao_mid.<vai>.json` để lệnh chọn số đọc đúng bản đã gửi.
 - Skill `ai-background` và bộ retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh
   ảnh bằng CPU quá nặng) — không phải lỗi. Script sinh nền chưa được viết; skill
   mô tả sẵn hợp đồng để khi có GPU thì bắt tay vào đúng chỗ. Tới lúc đó hai vai
@@ -248,6 +253,9 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `duyet_bai` / `duyet_chat` / `duyet_lenh`. Mọi tin nhắn vào đều có log
   (`state/<brand>/approve.log`, xoay vòng 5 MB×3) theo nhãn
   `vao → route → chat/chon/lenh → tele`, và mọi nhánh kết thúc bằng một tin trả về.
+  Lệnh chọn số còn báo **ngay khi nhận** (`_bao_da_nhan`, kèm tiêu đề từng số)
+  trước khi vào việc — `create_pair` mất tới 180 giây một tin, đo thật 157 giây
+  im lặng ngày 11/09/2026.
 - `chat_router.py` — định tuyến chat Telegram → hermes CLI theo topic (blog).
 - `draft_write.py` — ghi bản nháp + album đúng khuôn tên tệp.
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic.

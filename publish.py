@@ -100,10 +100,15 @@ def _check(r: httpx.Response):
     return data["result"]
 
 
-def send_text(token, chat, text, parse_mode="HTML", thread=None):
+def send_text_cac_manh(token, chat, text, parse_mode="HTML", thread=None) -> list:
     """Gui text; neu dai qua gioi han Telegram thi chia thanh nhieu tin gui
-    lien tiep thay vi cat bot phan cuoi. Tra ve result cua tin cuoi."""
-    ket_qua = None
+    lien tiep thay vi cat bot phan cuoi. Tra ve result cua TUNG manh.
+
+    Vi sao nguoi goi can CA danh sach chu khong chi manh cuoi: bao cao danh so
+    dai thanh hai tin thi muc so 1 nam o manh DAU, va Ong Chu reply vao chinh
+    manh do. `--luu-mid` truoc 12/09/2026 chi giu mid cua manh CUOI, nen cong
+    `_la_reply_bao_cao` thay mid khong khop, im lang bo qua ca lenh chon."""
+    ket_qua = []
     for phan in tele_util.chia_tin(don_dep(text)):
         with httpx.Client(timeout=60) as c:
             payload = {"chat_id": chat, "text": phan, "parse_mode": parse_mode,
@@ -111,8 +116,14 @@ def send_text(token, chat, text, parse_mode="HTML", thread=None):
             if thread:
                 payload["message_thread_id"] = int(thread)
             r = c.post(API.format(token=token, method="sendMessage"), json=payload)
-        ket_qua = _check(r)
+        ket_qua.append(_check(r))
     return ket_qua
+
+
+def send_text(token, chat, text, parse_mode="HTML", thread=None):
+    """Gui text (chia nho neu dai). Tra ve result cua tin CUOI."""
+    cac = send_text_cac_manh(token, chat, text, parse_mode, thread)
+    return cac[-1] if cac else None
 
 
 def send_photo(token, chat, photo: Path, caption="", parse_mode="HTML", thread=None):
@@ -237,7 +248,7 @@ def _main():
     p.add_argument("--album", nargs="+",
                    help="Gui nhieu anh (URL hoac duong dan cuc bo) thanh 1 album")
     p.add_argument("--luu-mid", dest="luu_mid", type=Path,
-                   help="Ghi {message_id, ts} cua tin vua gui vao tep JSON nay — "
+                   help="Ghi {message_id, message_ids, ts} cua tin vua gui vao tep JSON nay — "
                         "de noi goi (vd bao cao danh so) sau do doi chieu REPLY "
                         "dung vao tin nao, khong phai tin bat ky trong topic.")
     a = p.parse_args()
@@ -261,6 +272,7 @@ def _main():
 
     body = a.file.read_text(encoding="utf-8") if a.file else None
 
+    cac_manh = []                 # result cua TUNG manh — chi nhanh text moi > 1
     if a.album:
         res = send_media_group(token, chat, a.album, body or a.caption, thread=thread)
     elif a.document:
@@ -271,14 +283,20 @@ def _main():
         text = body or a.text
         if not text:
             sys.exit("Can --text, --file hoac --photo")
-        res = send_text(token, chat, text, thread=thread)
+        cac_manh = send_text_cac_manh(token, chat, text, thread=thread)
+        res = cac_manh[-1] if cac_manh else {}
     print(f"da dang | message_id={res.get('message_id')} chat={chat}")
     if a.luu_mid:
         # Best-effort: khong luu duoc mid khong duoc lam hong viec da dang xong.
         try:
             a.luu_mid.parent.mkdir(parents=True, exist_ok=True)
+            mids = [r.get("message_id") for r in cac_manh] or [res.get("message_id")]
+            # Ghi de CA tep (khong merge): moi lan gui la mot bao cao moi, cac
+            # khoa cu (vd `manifest` do quet_nop ghim) phai bien mat cung ban cu.
             a.luu_mid.write_text(
-                json.dumps({"message_id": res.get("message_id"), "ts": time.time()},
+                json.dumps({"message_id": res.get("message_id"),
+                            "message_ids": [m for m in mids if m],
+                            "ts": time.time()},
                           ensure_ascii=False), encoding="utf-8")
         except OSError as e:
             print(f"[canh bao] khong ghi duoc --luu-mid {a.luu_mid}: {e}")
