@@ -590,7 +590,7 @@ def anh_wikidata(hang, wd=None) -> list:
         # pipeline chua bao gio cham toi vi HAU_TO chi khop "headquarters/
         # building/campus". Ten day du it dung hang nhu ten hang (khong nhu
         # "Anthropic" trung khao co, "Claude" trung hoi hoa) nen dung lai
-        # `_tu_dac_trung`/`_co_tu` cua chinh module nay, khong can bang NHIEU.
+        # `_tu_dac_trung`/`_co_cum` cua chinh module nay, khong can bang NHIEU.
         for c in anh_nguoi_ngang(n["ten"], n["vai"], ten_chinh, khoa):
             ra.append(c)
     for t in tl["logo"]:
@@ -637,8 +637,8 @@ def anh_nguoi_ngang(ten: str, vai: str, hang: str, khoa: str) -> list:
 
     Search "Anthropic"/"Claude AI" một mình thì nhiễu thật (khảo cổ, hội hoạ,
     từ điển — xem `NHIEU`), nhưng TÊN NGƯỜI ĐẦY ĐỦ hiếm khi trùng nghĩa khác;
-    dùng lại đúng `_tu_dac_trung`/_co_tu` đã có cho tên hãng: lọc CẢ hai từ của
-    tên phải khớp tên tệp theo biên giới từ. Vẫn cùng cổng LUAT_ANH §6 với chân
+    dùng lại đúng `_tu_dac_trung`/`_co_cum` đã có cho tên hãng: các từ của tên
+    phải nằm LIỀN NHAU, đúng thứ tự, theo biên giới từ. Vẫn cùng cổng LUAT_ANH §6 với chân
     dung (khai `nhan_vat`) — chỉ khác đủ ngang để không teo khi lên bìa."""
     import anh_khai_niem
     pages = _hoi_commons(f'"{ten}"')
@@ -655,7 +655,13 @@ def anh_nguoi_ngang(ten: str, vai: str, hang: str, khoa: str) -> list:
             continue
         ten_tep = (pg.get("title") or "").replace("File:", "")
         thap = ten_tep.lower()
-        if anh_khai_niem.TEN_LOAI.search(thap) or not all(_co_tu(t, thap) for t in dac_trung):
+        # `_co_cum` chu KHONG `all(_co_tu(...))` (12/09/2026): ban long chi doi
+        # MOI tu co mat dau do nen "Dario Amodei" khop ca "dario rossi meets luca
+        # amodei in rome" — anh HAI NGUOI KHAC, ma caption lai khai
+        # `nhan_vat: "Dario Amodei"`, tuc bia mat nguoi (LUAT_ANH §0/§6). Cung
+        # lop loi ma `loc_commons` vua duoc siet o cung ngay ("Hugging Face" khop
+        # "Rathlin hugging the cliff face"); ban va do khong lan sang day.
+        if anh_khai_niem.TEN_LOAI.search(thap) or not _co_cum(dac_trung, thap):
             continue
         c = _ung_vien({"url": ii.get("thumburl") or ii.get("url"), "rong": w, "cao": h,
                        "mime": ii.get("mime")}, ten_tep, hang, khoa, "nguoi",

@@ -45,6 +45,23 @@ def test_anh_nguoi_ngang_loc_dung_ten_va_ti_le():
     assert c["thuong_hieu"]["nguoi"] == "Dario Amodei"
 
 
+def test_hai_nguoi_khac_ghep_ten_khong_duoc_lot():
+    """Tên phải nằm LIỀN NHAU, đúng thứ tự — không phải "mỗi từ có mặt đâu đó".
+
+    Bản lỏng `all(_co_tu(...))` cho "dario rossi meets luca amodei in rome" đi
+    qua: ảnh HAI NGƯỜI KHÁC, mà caption lại khai `nhan_vat: "Dario Amodei"` —
+    bịa mặt người, đúng thứ LUAT_ANH §0/§6 sinh ra để chặn. Cùng lớp lỗi mà
+    `loc_commons` bị siết ngày 12/09/2026 ("Hugging Face" khớp "Rathlin hugging
+    the cliff face"), bản vá đó không lan sang đây."""
+    pages = {
+        "1": _trang_commons(4000, 2667, "Dario Rossi meets Luca Amodei in Rome.jpg"),
+        "2": _trang_commons(4000, 2667, "Amodei family and Dario Gabbani at a wedding.jpg"),
+    }
+    with mock.patch.object(th, "_hoi_commons", return_value=pages):
+        ra = th.anh_nguoi_ngang("Dario Amodei", "CEO", "Anthropic", "anthropic")
+    assert ra == [], [c["alt"] for c in ra]
+
+
 def test_anh_wikidata_uu_tien_ngang_hon_chan_dung_doc_sau_khi_sap():
     """Ghép với sort của `_vong_thuong_hieu` (test riêng): trong chính danh sách
     `anh_wikidata` trả về, ảnh ngang (26) phải đứng trước chân dung dọc (24)
