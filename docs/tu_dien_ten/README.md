@@ -18,6 +18,15 @@ nhằng, nhưng đổi ngay là refactor giữa lúc nhiều nhánh đang hoạt
 | `them.json` | Bổ sung `don.json` + danh sách `PASS` (token đã là English, giữ nguyên) |
 | `gen.py` | Sinh lại `TU_DIEN_TEN_nhap.md` từ 4 tệp JSON trên + repo hiện tại |
 
+## ⚠️ Bảng C (hàm/lớp) chỉ là khung nháp — phải soát theo HÀNH VI, không theo nghĩa từng chữ
+
+Ông Chủ 12/09/2026: *"từ gốc nghĩa tiếng việt là gì không quá quan trọng, miễn
+là khi chuyển qua tiếng anh thì nó đúng với hàm sau khi đã đổi tên biến để
+không bị lỗi gọi"*. Xem `SOAT_NGU_NGHIA_5_module.md` — lượt thử soát tay 86
+hàm/lớp trong 5 module quan trọng nhất (nhiều nơi gọi tới nhất): **70% tên dịch
+máy sai hoặc gây hiểu nhầm** khi đối chiếu với docstring/thân hàm thật. Việc
+rename mỗi hàm phải đọc hành vi thật, không nhận thẳng cột dịch máy của bảng C.
+
 ## Cách duyệt / sửa
 
 1. Đọc `TU_DIEN_TEN_nhap.md`, mục **E** trước (token chưa map) và các dòng có
