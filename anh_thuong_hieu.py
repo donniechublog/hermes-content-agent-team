@@ -169,6 +169,15 @@ def _tu_dac_trung(ten: str) -> list:
             if w not in TU_CHUNG_TEN and len(w) >= 2]
 
 
+def _co_cum(tus: list, vb: str) -> bool:
+    """Cac tu dac trung phai dung LIEN NHAU, dung thu tu, theo bien gioi tu
+    (LOW-35, 12/09/2026): "Hugging Face" tung khop "West Lighthouse, Rathlin
+    hugging the cliff face" vi chi doi MOI tu co mat. Ten mot tu thi nhu cu."""
+    if not tus:
+        return False
+    return bool(re.search(r"(?<!\w)" + r"\W+".join(re.escape(t) for t in tus) + r"(?!\w)", vb))
+
+
 def _co_tu(tu: str, vb: str) -> bool:
     """Khớp theo BIÊN GIỚI TỪ: "arm" không được khớp "harm"/"Armstrong", "meta"
     không được khớp "metal", "intel" không được khớp "intelligence"."""
@@ -241,7 +250,7 @@ def loc_commons(pages: dict, ten: str, so: int = 4, canh_ngan_min: int = CANH_NG
         thap = ten_tep.lower()
         if anh_khai_niem.TEN_LOAI.search(thap) or NHIEU_CHUNG.search(thap):
             continue
-        if not dac_trung or not all(_co_tu(t, thap) for t in dac_trung):
+        if not _co_cum(dac_trung, thap):
             continue
         if nhieu and nhieu.search(thap):
             continue
@@ -440,6 +449,10 @@ def trang_cong_bo(hang: dict, models: list) -> dict | None:
     from urllib.parse import urljoin
     khoa = _khoa_model(models)
     if not hang or not khoa:
+        # Khong im (INV-3): truoc 12/09/2026 nhanh nay tra None khong mot dong,
+        # nen "vi sao khong co trang cong bo" phai doan.
+        print(f"[cong bo] {(hang or {}).get('hang') or '?'}: bo qua — models={models!r} "
+              f"khong ra khoa slug nao (can 'Hang-Ten-So', vd DeepSeek-V4.1-Flash)", file=sys.stderr)
         return None
     site = website_hang(hang.get("hang") or hang.get("khoa", ""))
     if not site:

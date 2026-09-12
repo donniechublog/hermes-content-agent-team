@@ -159,7 +159,10 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # tra loi: vai xep nhieu anh moi dem tam, vai mot anh chi hoi da co tam
         # nao dung lam anh chinh chua — tieu chi CHAT LUONG thi van dung chung o
         # `luat_anh` + `phan_loai` cho ca ba.
-        tieu_de_nhin = nguon.get("tieu_de_en") or title
+        # Bo hau to site khoi tieu de dung de NHIN/tim hang (LOW-35): " · Hugging
+        # Face" tung lam Hugging Face thanh "hang trong tin" cua mot tin DeepSeek.
+        import nguon_bai
+        tieu_de_nhin = nguon_bai.bo_hau_to_site(nguon.get("tieu_de_en") or "") or title
         if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship) and not khong_browser:
             anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, toi_thieu,
                                                        dung_duoc, wd, phien=phien)

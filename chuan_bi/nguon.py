@@ -171,7 +171,9 @@ def _ten_rieng_dau(tieu_de: str) -> str:
     VIET HOA LIEN TIEP ("Gimlet Labs", "Thinking Machines"), khong chi mot tu —
     "Gimlet" mot minh ra cocktail (05/09/2026). Bo the "[News]" dau tieu de."""
     import nguon_bai
-    t = re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or "")
+    # Hau to site (" · Hugging Face") khong phai ten rieng cua tin (LOW-35):
+    # no tung thanh tu khoa Commons va ra "Octopus' Hugging Face.jpg".
+    t = nguon_bai.bo_hau_to_site(re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or ""))
     ws = re.sub(r"[\$;:,\"'()\[\]|]", " ", t).split()
     for i, w in enumerate(ws):
         if w[:1].isupper() and w.isalpha() and len(w) >= 4 and w.lower() not in nguon_bai.TU_RONG_TRUY_VAN \

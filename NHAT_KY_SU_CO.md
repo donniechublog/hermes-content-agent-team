@@ -905,3 +905,14 @@ trưng, một hàm `cung_tin` dùng cho cả Bing lẫn vòng chụp; `chup_lead
 Bài học: bốn nguồn ảnh tôi kể cho Ông Chủ đều đúng — nhưng cả bốn ngầm tin
 danh sách `trang` là sạch. "Đây là trang của CHÍNH tin, hỏi liên quan làm gì"
 là một giả định, không phải một sự thật; giả định phải có cổng.
+
+**Bổ sung cùng ngày (LOW-34/35).** Cùng draft: (34) trang công bố deepseek.com
+không bao giờ được hỏi — `tach_model("deepseek-ai/DeepSeek-V4.1-Flash · …")`
+ra `['deepseek']` vì tiền tố repo, `_khoa_model` rỗng, `trang_cong_bo` trả
+None **im lặng**; `_them_trang_cong_bo` lại "en trước, có là lấy" nên tiêu đề
+Việt đúng không được xét. Sửa: `tach_model` bỏ `org/`, lấy tên dài nhất từ cả
+hai tiêu đề, `trang_cong_bo` in lý do khi không có khoá. (35) Commons theo tên
+hãng chỉ đòi *mỗi từ có mặt*: "Hugging Face" khớp "Rathlin **hugging** the
+cliff **face**" và "Octopus' Hugging Face"; sửa `_co_cum` (liền nhau, đúng thứ
+tự), `_ten_rieng_dau`/`tieu_de_nhin` đi qua `bo_hau_to_site` nên hậu tố site
+không còn thành hãng trong tin.

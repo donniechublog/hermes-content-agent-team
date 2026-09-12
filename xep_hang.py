@@ -264,7 +264,13 @@ def la_tin_xep_hang(tieu_de: str, tom_tat: str) -> bool:
 def tach_model(tieu_de: str) -> list:
     """Danh sách tên model để thử khớp, DÀI trước NGẮN sau.
     "GPT-6 Astra (max) 55 điểm" -> ["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"]."""
-    m = _MODEL.search(tieu_de or "")
+    # Tieu de trang HuggingFace la "org/Model · Hugging Face": "deepseek-ai/"
+    # dung truoc nen _MODEL bat "deepseek" (khong so, khong duoi) roi dung —
+    # _khoa_model ra rong va trang cong bo chinh chu KHONG BAO GIO duoc hoi
+    # (LOW-34, 12/09/2026: the DeepSeek-V4.1-Flash khong co anh tu deepseek.com).
+    # Bo tien to repo truoc khi tim.
+    tieu_de = re.sub(r"^\s*[\w.-]+/(?=[A-Za-z])", "", tieu_de or "")
+    m = _MODEL.search(tieu_de)
     if not m:
         return []
     ten = m.group(1).strip(" -:")

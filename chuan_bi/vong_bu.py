@@ -57,8 +57,13 @@ def _them_trang_cong_bo(nguon: dict, nguon_path: Path, trang: list, tieu_de: str
     import xep_hang
     if any(t.get("loai") == "công bố" for t in trang):
         return trang
-    models = xep_hang.tach_model(nguon.get("tieu_de_en") or "") or xep_hang.tach_model(tieu_de)
-    hangs = th.hang_trong_tin(f"{tieu_de} {nguon.get('tieu_de_en') or ''}", tom_tat) if models else []
+    # Lay ten model DAI NHAT tu ca hai tieu de, khong "en truoc vi thay" (LOW-34):
+    # tieu de Viet giu nguyen "DeepSeek-V4.1-Flash" trong khi <title> HF chi ra "deepseek".
+    import nguon_bai
+    en = nguon_bai.bo_hau_to_site(nguon.get("tieu_de_en") or "")
+    models = sorted(set(xep_hang.tach_model(en) + xep_hang.tach_model(tieu_de)),
+                    key=lambda t: (-len(t), t))
+    hangs = th.hang_trong_tin(f"{tieu_de} {en}", tom_tat) if models else []
     if not hangs:
         return trang
     mien_co = {_mien(t.get("url", "")) for t in trang}
