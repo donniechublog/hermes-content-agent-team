@@ -262,6 +262,15 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
         # anh trung, hay tai hong — phai doan.
         print(f"[tim rong] browser boc {len(bp2['cands'])} ung vien tu {len(them_bao)} bao", file=sys.stderr)
     tk = _ten_rieng_dau(tieu_de_nhin)
+    # TIM NHU NGUOI (Ong Chu 12/09/2026, 7 link TSMC tim tay): anh web (Bing/
+    # Yandex qua Chromium) + og:image bao chi VE thuc the — khong doi "cung tin".
+    # Truy van = ten rieng dau tieu de (hang/san pham), khong co thi ca tieu de.
+    q_web = tk or tieu_de_nhin
+    if q_web:
+        import tim_anh_web
+        import anh_bao_thuc_the
+        cands2 += tim_anh_web.tim_anh_web(q_web, so=16, phien=phien)
+        cands2 += anh_bao_thuc_the.anh_bao_thuc_the([q_web], bo_mien=tuple(x for x in mien_co if x))
     if tk:
         them_commons = anh_commons(tk, so=6)
         if them_commons is None:

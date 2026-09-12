@@ -48,7 +48,7 @@ from chuan_bi.tai_loc import tai_va_loc                      # noqa: E402
 TOI_DA_LUOT = 3             # moi bai toi da 3 luot tim them (Ong Chu 12/09/2026)
 SO_BAO_MOI_LUOT = 4         # bao moi hoi Bing moi luot
 SO_COMMONS_MOI_LUOT = 6
-TOI_DA_ANH_THEM = 8         # tran anh moi noi vao mot luot
+TOI_DA_ANH_THEM = 12        # tran anh moi noi vao mot luot (8 -> 12 khi co them nguon web, 12/09)
 _ANH_EXT = re.compile(r"\.(jpe?g|png|webp)(\?.*)?$", re.I)
 
 
@@ -175,6 +175,9 @@ def ung_vien_tu_url(urls: list, wd: Path, phien=None) -> list:
 def ung_vien_tu_khoa(tu_khoa: str, wd: Path, mien_co: set, phien=None) -> list:
     """Mot tu khoa -> bao cung tin (Bing News, mo browser) + Commons + Openverse + og:image bao ve thuc the."""
     cands = []
+    # TIM ANH WEB (Bing/Yandex qua Chromium) — cai gan nhat voi "go Google Images".
+    import tim_anh_web
+    cands += tim_anh_web.tim_anh_web(tu_khoa, so=16, phien=phien)
     bao = nguon_bai.bao_khac_bing(tu_khoa, so=SO_BAO_MOI_LUOT, bo_mien=tuple(x for x in mien_co if x))
     print(f"[tim them] Bing '{tu_khoa}': {len(bao)} bao"
           + (": " + ", ".join(_mien(t["url"]) for t in bao) if bao else ""), file=sys.stderr)
