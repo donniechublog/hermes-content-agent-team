@@ -453,6 +453,7 @@ def lech_tone(ims, nguong_sang=60, nguong_mau=70):
 _YUNET = None
 _YUNET_DA_THU = False
 _YUNET_LOCK = threading.Lock()
+MAT_CANH_MAX = 1600            # canh dai nhat dua vao YuNet; lon hon thi thu nho (LOW-27)
 
 
 def _yunet():
@@ -508,6 +509,17 @@ def dem_mat(path):
         if im is None:
             return None
         h, w = im.shape[:2]
+        # THU NHO truoc khi do (LOW-27, 12/09/2026): YuNet SIGSEGV (exit 139, khong
+        # ngoai le Python nao bat duoc) voi anh 9440x5310 — do tung anh trong tien
+        # trinh rieng tren may chu: 7/8 anh cua draft t_24b214a6 ok, A2.png 50MP
+        # chet -11 ngay ca khi chay MOT MINH. Tu do ca engine chet, khoa mo coi,
+        # vai chay lai 16 lan. Model dung o 320px nen thu ve MAT_CANH_MAX khong
+        # mat mat nao dang ke; INTER_AREA de thu nho khong ra rang cua.
+        if max(h, w) > MAT_CANH_MAX:
+            ty = MAT_CANH_MAX / max(h, w)
+            im = cv2.resize(im, (max(1, int(w * ty)), max(1, int(h * ty))),
+                            interpolation=cv2.INTER_AREA)
+            h, w = im.shape[:2]
         with _YUNET_LOCK:
             det.setInputSize((w, h))
             _n, res = det.detect(im)
