@@ -91,8 +91,9 @@ nhật ký ngày, dòng log nào, cron nào.
 
 ## 7. Backlog
 
-Danh sách ticket con đã tạo từ mục "để sau" (LOW-x — một dòng tên). Mục mới
-trong `NHAT_KY_SU_CO.md` sinh ra từ ticket này phải ghi "ticket theo dõi: LOW-x".
+Danh sách ticket con đã tạo từ mục "để sau" (LOW-x — một dòng tên). Ticket này
+sinh ra một **tệp mới** `nhat_ky/YYYY-MM-DD-ten-ngan.md` (không sửa tệp nhật ký
+của ticket khác — xem `NHAT_KY_SU_CO.md`), trong đó phải ghi "ticket theo dõi: LOW-x".
 
 ---
 
