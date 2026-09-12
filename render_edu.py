@@ -270,17 +270,13 @@ BASE_CSS_TPL = """
 /* hinh that: phu kin the, KHONG bao gio la mot hop dat canh chu */
 .figwrap{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;
   z-index:0;overflow:hidden;background:%(BG)s;}
-.fig-nen{position:absolute;left:50%%;top:50%%;width:128%%;height:128%%;
-  transform:translate(-50%%,-50%%);object-fit:cover;filter:blur(%(BLURNEN)spx);}
 .fig-sac{position:absolute;left:0;width:%(W)spx;object-fit:cover;display:block;}
-/* ANH CHUP vao DONG: nam giua masthead va khoi chu, an het phan trong con lai
-   va KHONG BAO GIO bi chu de len (khong con lop mo 0.93 che mep duoi anh).
-   max-height:100%% + object-fit:contain = hien FULL hinh, khong cat, khong keo
-   meo; thieu cho thi thu nho chu khong crop. */
-.fig-anh-wrap{position:relative;z-index:1;flex:1 1 auto;min-height:0;
-  display:flex;flex-direction:row;align-items:flex-start;justify-content:center;
-  margin-top:14px;}
-.fig-anh{max-width:100%%;max-height:100%%;width:auto;height:auto;display:block;}
+/* lop MO cua chinh anh, chi hien tu dong chu dau tro xuong khi anh DOC chom qua
+   vung chu (bang xep hang); anh ngang ket thuc tren chu thi lop nay display:none */
+.fig-molop{position:absolute;left:0;top:0;width:%(W)spx;height:%(H)spx;overflow:hidden;}
+.fig-molop img{position:absolute;left:0;width:%(W)spx;object-fit:cover;display:block;
+  filter:blur(14px);}
+.fig-man{position:absolute;left:0;right:0;bottom:0;}
 .fig-cap{display:flex;flex-direction:row;align-items:baseline;gap:16px;
   margin-top:22px;font-family:%(MONO)s;font-size:23px;font-weight:500;
   line-height:1.45;color:%(DIM)s;letter-spacing:0.5px;}
@@ -307,7 +303,6 @@ def base_css(th):
         "WHITE": WHITE, "SOFT": SOFT, "MUTED": MUTED, "DIM": DIM,
         "CYAN": th["a"], "VIOLET": th["b"], "STAND": th["stand"],
         "DISPLAY": _ff("Display"), "SERIF": _ff("EditSerif"), "MONO": _ff("Mono"),
-        "BLURNEN": FIG_BLUR_NEN,
     }
 
 
@@ -483,7 +478,6 @@ ANH_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
 FIG_RONG_TOI_THIEU = 800    # hep hon the ma keo len 1080 thi be nat
 
 # Bo so lay NGUYEN cua carousel.py (vai Dre) de hai vai noi cung mot thu tieng.
-FIG_BLUR_NEN = 44      # mo manh ban cover lam nen: phai xoa het chi tiet doc duoc,
                        # khong thi cho nao lop sac khong phu se lo mot BAN SAO
                        # phong to cua chinh tam anh -> mat doc ra HAI VUNG
 # MAC DINH KHONG CO LOP NEN (Ong Chu chot 08/09/2026, nhac lai nhieu lan): chu
@@ -508,6 +502,11 @@ NGUONG_SANG_CHU_TOI = round(nen_chu.nguong_tuong_phan(_MAU_CHU_SANG_RGB, _MAU_CH
 FIG_TIEU_DE_DONG = 2   # slide co anh: tieu de toi da bay nhieu dong
 FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
 FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
+# Lop mo CHI cho phan anh chom xuong vung chu (anh doc keo dai: bang xep hang).
+# 955f33b don xac co che nay; dua lai 12/09/2026 sau khi Ong Chu tach hai viec:
+# blur ca anh lam nen = KHONG BAO GIO, mo phan anh nam duoi tit/subtitle = CO.
+TOI_TOI_DA_MO = 0.93   # do dac toi da cua lop tint mau theme phu len phan mo
+VEIL_SPAN = 64         # px: be day duong cong chuyen tiep, bat dau NGAY tai dong chu dau
 
 
 # Mot tam anh bi soi di soi lai: cong chan doc no, cong chan 2 dong dung slide
@@ -605,21 +604,6 @@ def _doc_nen_that(p):
     return ("phang" if phang else "mo",
             "#%02X%02X%02X" % mau,
             _sang(mau if phang else toan) > NGUONG_SANG_CHU_TOI)
-
-
-def _vung_duoi_chu(p, ti_le=0.35):
-    """Do sang (0..255) cua NEN se nam duoi khoi chu.
-
-    Anh CHUP vao dong (xem anh_lam_nen): khoi chu luon nam DUOI mep anh, tren
-    nen la chinh tam anh cover phong to lam mo. Do ban mo do, khong do tam anh
-    — chon mau chu theo tam anh la sai (chu trang tren nen mo sang = mat chu).
-    """
-    from PIL import Image, ImageStat
-    im = _nho(("pil", str(p)), lambda: Image.open(p).convert("RGB"))
-    d = max(1, int(H * ti_le))
-    dai = im.resize((max(1, W // 8), max(1, H // 8))).convert("L")
-    return ImageStat.Stat(dai.crop((0, dai.height - max(1, d // 8), dai.width,
-                                    dai.height))).mean[0], 0.0
 
 
 def dat_anh(rong, cao, phang):
@@ -902,24 +886,50 @@ def anh_lam_nen(sl, th, ten):
             nen += _css_mast_toi() + _css_chu_toi_vung("#figtxt", th)
         return nen, ""
 
-    # kieu == "mo": ANH CHUP di vao DONG (flex item) giua masthead va khoi chu,
-    # khong con lop tuyet doi de chu de len. Truoc 10/09/2026 anh nam lop
-    # absolute tai top:y0 va khoi chu (neo day the) de len phan duoi cua no, che
-    # bang mot lop mo 0.93 — Ong Chu doc ra la "anh bi cat got" (10/09/2026).
-    # Dua vao dong thi KHONG THE chong nhau: anh an het phan trong con lai va
-    # khoi chu luon nam duoi mep anh.
-    # Nen the van la chinh tam anh cover phong to lam mo = mot mat phang lien.
-    nen = (f'<div class="figwrap" style="background:{mau_nen};">'
-           f'<img class="fig-nen" src="{uri}" alt=""></div>')
-    sang_duoi, _ = _vung_duoi_chu(p)
-    chu_toi = sang_duoi > NGUONG_SANG_CHU_TOI
-    if nen_sang:
-        nen += _css_mast_toi()
-    if chu_toi:
-        nen += _css_chu_toi_vung("#figtxt", th)
-    anh = (f'<div class="fig-anh-wrap"><img class="fig-anh" src="{uri}" '
-           f'alt=""></div>')
-    return nen, anh
+    # kieu == "mo" — ANH CHUP. Ong Chu chot lai 12/09/2026, nguyen van ba y:
+    #   (1) "dung anh hero trong main article lam thumbnail cho hero slide, vi
+    #       anh do la chu nhat ngang, nen no hien thi vua van voi nua tren";
+    #   (2) "blur toan bo tam anh de lam nen cho hero slide CHUA-BAO-GIO la viec
+    #       duoc yeu cau voi Kite ca, chi can chon color palette tuong dong voi
+    #       chu de la duoc";
+    #   (3) blur CHI danh cho anh DOC keo qua xuong vung chu (bang xep hang): mo
+    #       phan duoi de tit/subtitle hien len — "chu ko phai la blur toan bo
+    #       anh chinh roi dat lam nen".
+    # NEN = mau theme (palette da chon theo mau anh o chon_theme_tu_dong), khong
+    # `.fig-nen`; ANH = `.fig-sac` full be ngang neo duoi masthead, cao tu nhien
+    # (dat_anh cat khi qua H); LOP MO chi bat khi mep duoi anh chom qua dong chu
+    # dau — do bang JS luc layout — va chi tu dong chu do tro xuong.
+    r, g, b = (int(th["bg"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
+    nen = (f'<div class="figwrap" style="background:{th["bg"]};">'
+           f'<img class="fig-sac fig-doi" src="{uri}" alt="" '
+           f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
+           f'<div class="fig-molop" id="figmo" style="display:none">'
+           f'<img class="fig-doi" src="{uri}" alt="" style="top:{y0}px;height:{cao}px;'
+           f'object-fit:cover;object-position:top;"></div>'
+           f'<div class="fig-man" id="figman" style="display:none"></div></div>'
+           f'<script>window.__datMan=function(){{'
+           f'var H={H},Y0={y0},CAO={cao},MAX={TOI_TOI_DA_MO:.3f};'
+           f'var v=document.getElementById("figman"),m=document.getElementById("figmo");'
+           f'if(!v||!m)return;'
+           f'var t=document.getElementById("figtxt");'
+           f'var top=t?t.getBoundingClientRect().top:H*0.58;'
+           f'if(Y0+CAO<=top){{v.style.display="none";m.style.display="none";return;}}'
+           f'v.style.display="block";m.style.display="block";'
+           f'var tren=top,day=Math.min(H,top+{VEIL_SPAN});'
+           f'var span=Math.max(1,H-tren);var st=[],sm=[];'
+           f'for(var i=0;i<=16;i++){{'
+           f'var q=i/16,ss=q*q*(3-2*q),y=tren+(day-tren)*q,'
+           f'pc=((y-tren)/span*100).toFixed(2);'
+           f'st.push("rgba({r},{g},{b},"+(MAX*ss).toFixed(3)+") "+pc+"%");'
+           f'sm.push("rgba(0,0,0,"+(0.85*ss*ss).toFixed(3)+") "+(y/H*100).toFixed(2)+"%");}}'
+           f'st.push("rgba({r},{g},{b},{TOI_TOI_DA_MO:.3f}) 100%");'
+           f'sm.unshift("rgba(0,0,0,0) 0%");sm.push("rgba(0,0,0,0.85) 100%");'
+           f'var gr="linear-gradient(to bottom,"+sm.join(",")+")";'
+           f'm.style.webkitMaskImage=gr;m.style.maskImage=gr;'
+           f'v.style.top=tren+"px";'
+           f'v.style.background="linear-gradient(to bottom,"+st.join(",")+")";'
+           f'}};</script>')
+    return nen, ""
 
 
 def s_figure(sl, th):
@@ -1519,6 +1529,8 @@ def _chup_cac_slide(page, slides, dung_doc, out, stem):
         doc = dung_doc(sl, i)
         page.set_content(doc, wait_until="load")
         page.evaluate("document.fonts.ready")
+        # Lop mo phan duoi chu dat theo dong chu dau THAT — sau khi font xong.
+        page.evaluate("window.__datMan && window.__datMan()")
         page.wait_for_timeout(120)
         path = out if i == 1 else Path(f"{stem}_{i}.png")
         page.screenshot(path=str(path),

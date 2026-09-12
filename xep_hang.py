@@ -30,17 +30,14 @@ import env_load                                              # noqa: E402
 
 DPR = 2
 UA = env_load.UA_TRINH_DUYET        # mot ban duy nhat, xem env_load (A5)
-# Khung MOBILE — thu TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vao trang nao chup
-# thi cung hay duyet theo kich thuoc mobile, vi hinh luon dang o ratio 4:5").
-# 414px * DPR 3 = 1242px, gan khop kho the 1200px nen chu gan nhu khong bi co;
-# desktop 2400 * DPR 2 = 4800px phai co bon lan. Do 06/09: 12/18 nguon co layout
-# mobile that (arena x6, aa-models, livebench, aider, livecodebench, hle, vellum);
-# 6 nguon con lai (tbench, swebench, bfcl, gaia, opencompass, openrouter) giu bang
-# rong 892-1878px trong khung cuon ngang nen tu dong lui ve desktop.
-MOBILE_VIEWPORT = {"width": 414, "height": 896}
-MOBILE_DPR = 3
-MOBILE_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
-            "(KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1")
+# Khung MOBILE — thu TRUOC cho MOI nguon. Hang so nam o `phien_browser` (dung
+# chung voi chup_trang.py tu 12/09/2026); o day chi giu PHEP DO rieng cua trang
+# xep hang. Do 06/09: 12/18 nguon co layout mobile that (arena x6, aa-models,
+# livebench, aider, livecodebench, hle, vellum); 6 nguon con lai (tbench,
+# swebench, bfcl, gaia, opencompass, openrouter) giu bang rong 892-1878px trong
+# khung cuon ngang nen tu dong lui ve desktop.
+from phien_browser import (MOBILE_DPR, MOBILE_UA,            # noqa: E402
+                           MOBILE_VIEWPORT, bi_chan)
 VANG = (245, 197, 24)          # màu khoanh — cùng gam với đồ hoạ tham chiếu của arena.ai
 TOP_MAC_DINH = 10              # ít nhất top-N khi model nằm trong top
 TREN_MODEL = 2                 # model nằm sâu: giữ 2 hàng phía trên, kéo dài xuống dưới
@@ -1028,10 +1025,11 @@ def _thu_nguon(phien: _PhienChup, n: dict, models: list, out: Path, in_log):
         # (arena.ai tra 429 "Just a moment..." sau ~25 luot thu tu mot IP trong
         # mot gio — may local luc dev; server moi bai goi mot lan.)
         pg.wait_for_timeout(800)
-        tieu_de = (pg.title() or "").lower()
-        if (resp and resp.status in (403, 429, 503)) or re.search(
-                r"just a moment|security verification|attention required|access denied", tieu_de):
-            in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({resp.status if resp else '?'} — {tieu_de[:40]!r}), bỏ qua")
+        # Phep thu nam o `phien_browser.bi_chan` tu 12/09/2026: `chup_trang` chup
+        # khoi lead cung hoi dung cau nay, chep doi thi mot ben vá mà bên kia không.
+        ly = bi_chan(pg.title() or "", resp.status if resp else None)
+        if ly:
+            in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({ly}), bỏ qua")
             return None, None, pg
         # KHUNG MOBILE TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vào trang
         # nào chụp thì cũng hãy duyệt theo kích thước mobile, vì hình luôn

@@ -112,7 +112,14 @@ CHU_DE = [
     (re.compile(r"regulat|\blaw\b|legislation|\bparliament\b|\bsenate\b|\bcongress\b|\bpolicy\b|\bban\b|"
                 r"\bministry\b|government", re.I),
      "parliament building", "tin chính sách"),
-    (re.compile(r"\bcyber|\bhack|ransomware|\bbreach\b|malware|\bphishing\b", re.I),
+    # "hack" TRAN bat nham nghia (Ong Chu 12/09/2026): trong tin AI, "reward
+    # hacking" / "benchmark hacking" la mo hinh lach thuoc do, khong phai tin
+    # tac — ma `\bhack` khop het, nen tin "AI giai toan gioi, nen toan hoc thi
+    # lech chuan" roi vao ro an ninh mang va ra mot tam day mang phong may lam
+    # bia. "hackathon" cung tung khop. Chi bat khi that su noi toi ke tan cong.
+    (re.compile(r"\bcyber|\bhackers?\b|\bhacked\b|"
+                r"\bhacking (?:group|campaign|attack|incident|spree)\b|"
+                r"ransomware|\bbreach\b|malware|\bphishing\b", re.I),
      "server room cables", "tin an ninh mạng"),
     (re.compile(r"\bfactory\b|manufactur|assembly line|\bplant\b", re.I),
      "factory assembly line", "tin sản xuất"),
@@ -276,8 +283,9 @@ def cau_hoi_vision(tieu_de: str, tu_khoa: str) -> str:
             f"theo tu khoa \"{tu_khoa}\" de lam anh bia.\nTra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
             f"LIEN_QUAN: co | khong  (co = anh CHUP THAT, ro net, dung la {tu_khoa}, khong co chu lon, "
-            "hop lam anh bia cho tin tren; khong = khong phai thu do, do hoa/ban ve/so do/ban do phang, "
-            "mo, nhieu chu, logo, hoac co nguoi ro mat)")
+            f"VA tu khoa \"{tu_khoa}\" that su hop chu de bai tren; khong = khong phai thu do, "
+            "do hoa/ban ve/so do/ban do phang, mo, nhieu chu, logo, co nguoi ro mat, HOAC tu khoa "
+            "lac chu de bai — anh dung tu khoa nhung tu khoa sai bai thi van tra khong")
 
 
 def nhan_khai_niem(a: dict) -> dict:

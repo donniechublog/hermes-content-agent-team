@@ -121,6 +121,39 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
   là **một** tên riêng, không xoá gạch rồi tách; Bing thử thêm bản bỏ gạch trước
   (`deepseek v4.1 flash max` → 6 báo, bản có gạch → 1).
 
+### 1.2b2 Chụp chính trang nguồn ở khung mobile — nấc TRƯỚC ảnh khái niệm
+
+Ông Chủ 06/09/2026, nhắc lại 12/09: *"vào trang nào chụp thì cũng hay duyệt theo
+kích thước mobile, vì hình luôn đang ở ratio 4:5"* và *"có thể capture màn hình
+mobile source gốc mà?"*. Trước 12/09 luật này chỉ sống trong `xep_hang.py` (trang
+bảng xếp hạng) và §1.3 (tin model/xếp hạng), nên đường ảnh của **tin thường**
+nhảy thẳng từ ảnh thương hiệu xuống ảnh khái niệm — tin *"AI giải toán giỏi, nền
+toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng máy.
+
+- **Khi nào**: sau vòng thương hiệu mà vẫn thiếu ảnh, **trước** vòng khái niệm.
+  Khối lead là vật **thật** của chính tin; ảnh khái niệm thì không.
+- **Chụp gì**: `chup_trang.chup_lead_mobile` mở trang ở khung điện thoại
+  (`phien_browser.MOBILE_VIEWPORT` 414×896, DPR 3, UA iPhone — **một bản duy
+  nhất**, dùng chung với `xep_hang`), clip **đúng khung ảnh hero** của bài —
+  không kèm tít/byline. Ông Chủ 12/09 (sửa lại bản "khối lead" cùng ngày):
+  *"dùng ảnh hero trong main article làm thumbnail cho hero slide, vì ảnh đó là
+  chữ nhật ngang, nên nó hiển thị vừa vặn với nửa trên của hero slide"*.
+- **Đặt lên bìa Kite thế nào** (`render_edu`, cùng ngày): ảnh full bề ngang neo
+  dưới masthead, **nền là màu palette của theme** — *"blur toàn bộ tấm ảnh để làm
+  nền cho hero slide CHƯA-BAO-GIỜ là việc được yêu cầu với Kite"*. Lớp mờ chỉ
+  dành cho ảnh **dọc** kéo xuống quá vùng chữ (bảng xếp hạng): mờ phần dưới để
+  title/subtitle hiện lên, bật/tắt theo dòng chữ đầu thật.
+- **Bỏ nguồn khi**: trang là tường chặn bot (`phien_browser.bi_chan` — không tìm
+  cách vượt), hoặc không đo được tít lẫn ảnh lead. Thử tối đa 3 trang: bài gốc
+  rồi các báo khác cùng tin.
+- **Lớp nổi** (banner đồng ý cookie, popup) chỉ bị **ẩn khi chụp**; không bấm
+  "Đồng ý", không bấm nút đóng — đọc một trang thì không được thay người dùng
+  chấp nhận điều khoản của họ.
+- **Được làm bìa**, khác chart của người khác: `phan_loai` đọc ảnh chụp trang là
+  "chart/screenshot" rồi dán *KHÔNG LÀM BÌA*, nhãn đó bị gỡ cho ảnh chụp nguồn —
+  **trừ khi có mặt người**, lúc đó §6 vẫn đòi khai `nhan_vat`.
+- **Không hỏi vision** "có liên quan bài không": đây là trang của **chính** tin.
+
 ### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
 
 Ông Chủ 07/09/2026: *"trong resource gốc không có hình hoặc hình không đạt là bỏ
@@ -129,8 +162,10 @@ compute thì lấy hình datacenter"*. Trước 04/09 Dre tự làm việc này 
 web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là luật của
 **engine** (`anh_khai_niem.py`, chạy trong `anh_chuan_bi.py`):
 
-- **Khi nào**: sau vòng tìm rộng mà vẫn thiếu ảnh, *hoặc* có ảnh mà không tấm
-  nào làm bìa/hero được. Không chạy khi tin đã có ảnh riêng đủ dùng.
+- **Khi nào**: sau vòng tìm rộng **và sau nấc chụp trang nguồn (§1.2b2)** mà vẫn
+  thiếu ảnh, *hoặc* có ảnh mà không tấm nào làm bìa/hero được. Không chạy khi tin
+  đã có ảnh riêng đủ dùng. Đây là nấc **cuối**, không phải nấc đầu: từ khoá sai
+  thì cả slide nói sai chuyện (xem `\bhack` bắt nhầm "reward hacking", 12/09/2026).
 - **Từ khoá**: nước/khối được nhắc → cờ đang bay; chủ đề → vật thể **chụp được**
   (data center → dãy rack, chip → wafer, chứng khoán → sàn giao dịch, chính
   sách → toà nhà quốc hội…). Bảng cố định trước, model text bù tới 3 từ khoá.

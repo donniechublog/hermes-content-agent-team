@@ -80,8 +80,8 @@ from chuan_bi.nhin import _nhin_anh, mo_ta_anh                  # noqa: E402
 from chuan_bi.tai_loc import _luu_crop                          # noqa: E402
 from chuan_bi.vong_bu import (  # noqa: E402
     _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _gom_va_tai_anh,
-    _lay_tu_browser, _them_trang_cong_bo, _vong_khai_niem, _vong_thuong_hieu,
-    _vong_tim_rong,
+    _lay_tu_browser, _them_trang_cong_bo, _vong_chup_nguon, _vong_khai_niem,
+    _vong_thuong_hieu, _vong_tim_rong,
 )
 
 # MAT TIEN cua goi `chuan_bi`: nhung ten ma cac vai/test VAN goi qua
@@ -180,6 +180,14 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
                                                       wd, vai.so_anh_muc_tieu_tim(vai_anh, flagship),
                                                       khong_browser, phien=phien)
+        # Van thieu -> CHUP CHINH TRANG NGUON o khung dien thoai, cat lay khoi
+        # lead (anh chinh + tit). Ong Chu 06/09/2026 da chot luat khung mobile,
+        # nhac lai 12/09: "co the capture man hinh mobile source goc ma?" —
+        # truoc do nac nay chi ton tai trong xep_hang.py. Dat TRUOC khai niem:
+        # khoi lead la vat THAT cua chinh tin, anh khai niem thi khong.
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+            anh, dung_duoc, chua_nhin = _vong_chup_nguon(anh, link, trang, wd,
+                                                         khong_browser, phien=phien)
         # Van thieu, hoac co anh ma khong tam nao lam anh chinh cua VAI NAY duoc
         # -> anh khai niem chung chung cua chu de, sau anh cua chinh hang (chi
         # mang, khong browser; chay ca khi --khong-browser).

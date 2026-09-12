@@ -129,6 +129,12 @@ def _hero_la_gi(h: dict) -> tuple:
     if h.get("paper_hinh"):
         return (f"{h['paper_hinh']} — hình mở đầu của chính paper, tấm nói nhiều nhất về bài",
                 f"{h['paper_hinh']} trong paper · via <ai>")
+    if h.get("chup_nguon"):
+        # LOW-22: `phan_loai` doc anh chup trang la loai "chart" — khong co nhanh
+        # nay thi brief goi no la "bieu do/bang cua bai", vai chu thich sai.
+        return (f"khối lead (ảnh chính + tít) chụp từ chính trang {h.get('mien', 'nguồn')} "
+                "ở khung điện thoại — Ông Chủ 12/09/2026: cắt lấy khối lead rồi làm bìa",
+                f"Ảnh chụp từ {h.get('mien', 'trang nguồn')} · via {h.get('mien', '<ai>')}")
     if h.get("khai_niem"):
         tk = h["khai_niem"].get("tu_khoa", "")
         # §1.2c: anh khai niem CHI dung o bia/hero, khong vao slide than — nen
@@ -164,8 +170,11 @@ def _ep_tho(m: dict) -> list:
     """
     if not chuyen_tu_vai(m):
         return []
+    # `chup_nguon` (LOW-22) di cung duong voi khai niem: no la BIA, khong ep
+    # xuong than — mot man hinh trang bao dat o `figure` la lap lai tit cua bai.
     return [a["ma"] for a in hinh_that(m)
-            if a.get("lien_quan") is True and not a.get("khai_niem")][:TOI_DA_EP_HINH]
+            if a.get("lien_quan") is True and not a.get("khai_niem")
+            and not a.get("chup_nguon")][:TOI_DA_EP_HINH]
 
 
 def hinh_phai_dung(m: dict) -> list:

@@ -382,6 +382,73 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     return anh, dung_duoc, chua_nhin
 
 
+TOI_DA_TRANG_CHUP = 3          # thu toi da 3 trang: bai goc roi hai bao khac
+
+
+def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
+                     khong_browser: bool = False, phien=None) -> tuple:
+    """VONG CHUP TRANG NGUON (Ong Chu 06/09/2026, nhac lai 12/09): tin khong co
+    anh dung duoc thi CHUP CHINH TRANG NGUON o khung dien thoai va cat lay khoi
+    lead (anh chinh + tit), TRUOC khi ha xuong anh khai niem Commons.
+
+    Vi sao nam TRUOC `_vong_khai_niem`: khoi lead la mot vat THAT cua chinh tin —
+    anh khai niem thi khong. Tin "AI giai toan gioi, nen toan hoc thi lech chuan"
+    (12/09/2026) khong co anh rieng nen roi thang xuong khai niem va ra mot tam
+    day mang phong may, chang lien quan gi bai. Luat mobile da co tu 06/09 nhung
+    chi song trong `xep_hang.py` (trang bang xep hang), khong ai bac sang duong
+    anh cua tin thuong.
+
+    Mot vong, toi da `TOI_DA_TRANG_CHUP` trang, lay tam DAU TIEN chup duoc.
+    Tra (anh, dung_duoc, chua_nhin)."""
+    def _ra():
+        return anh, [a for a in anh if a["dung"] and a.get("lien_quan") is not False], \
+            [a["ma"] for a in anh if a.get("lien_quan") is None]
+
+    if khong_browser:
+        print("[chup nguon] --khong-browser: bo qua vong nay", file=sys.stderr)
+        return _ra()
+    import chup_trang
+    urls, da = [], set()
+    for u in [link] + [t.get("url", "") for t in (trang or [])]:
+        if u and u not in da:
+            da.add(u)
+            urls.append(u)
+    wd5 = wd / "chup_nguon"
+    for u in urls[:TOI_DA_TRANG_CHUP]:
+        tam = wd5 / (_mien(u).replace(".", "_") + ".png")
+        c = chup_trang.chup_lead_mobile(u, tam, phien=phien)
+        if not c:
+            continue
+        a = {"ma": f"A{len(anh) + 1}", "goc": str(tam), "url": u, "trang": u,
+             "mien": _mien(u), "diem": 0, "hint_chart": False, **c}
+        moi = wd / "goc" / f"{a['ma']}.png"
+        moi.parent.mkdir(parents=True, exist_ok=True)
+        Path(a["goc"]).replace(moi)
+        a["goc"] = str(moi)
+        # tieu_de rong = KHONG hoi vision, dung nhu anh xep hang: day la trang
+        # cua CHINH tin, "co lien quan bai khong" thi khong phai cau hoi.
+        a = phan_loai(a, wd, "")
+        a["lien_quan"] = True
+        a["mo_ta"] = "ảnh hero của chính bài gốc, chụp ở khung điện thoại"
+        # `phan_loai` doc mot anh chup trang la "chart/screenshot" (nen trang,
+        # nhieu chu) roi dan nhan KHONG LAM BIA — dung cho chart cua nguoi khac,
+        # sai cho tam nay: Ong Chu 12/09/2026 chot "cat lay khoi lead roi lam
+        # bia". Mo lai dung bia, TRU khi co mat nguoi: cong mat (LUAT_ANH §6)
+        # doi khai `nhan_vat`, ma spec cua Kite khong co truong do.
+        a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG làm bìa" not in g]
+        if not a.get("mat"):
+            a["dung"] = ["bìa (ảnh hero của chính bài gốc)", "thân"]
+        a["ghi_chu"].insert(0, "📰 ẢNH HERO CHỤP TỪ TRANG NGUỒN — ảnh chính của bài trên "
+                               f"{a['mien']}, chụp ở khung điện thoại; caption ghi "
+                               f"\"… · via {a['mien']}\"")
+        anh.append(a)
+        print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']})", file=sys.stderr)
+        break
+    else:
+        print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
+    return _ra()
+
+
 def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path) -> tuple:
     """VONG KHAI NIEM (Ong Chu 07/09/2026): tin khong co anh rieng (thieu, hoac
     khong tam nao lam bia duoc) thi engine tim ANH THAT theo khai niem cua tin —

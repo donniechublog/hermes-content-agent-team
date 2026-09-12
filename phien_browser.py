@@ -52,10 +52,49 @@ Ham nao nhan `phien` tuy chon thi dung `phien_hoac_moi`:
             ...
 """
 import contextlib
+import re
 import sys
 import threading
 
 ARGS_MAC_DINH = ("--no-sandbox", "--disable-dev-shm-usage")
+
+# KHUNG MOBILE — mot ban duy nhat cho ca doi (Ong Chu 06/09/2026, nhac lai
+# 12/09/2026): "vao trang nao chup thi cung hay duyet theo kich thuoc mobile, vi
+# hinh luon dang o ratio 4:5". 414px * DPR 3 = 1242px, gan khop kho the 1200px
+# nen chu gan nhu khong bi co; desktop 2400 * DPR 2 = 4800px phai co bon lan.
+# O day chu khong o xep_hang.py: tu 12/09 ca `chup_trang` (chup trang nguon lam
+# anh bia) lan `xep_hang` (chup bang) cung dung, chep doi thi mot ngay nao do
+# hai cho lech nhau ma khong ai thay.
+MOBILE_VIEWPORT = {"width": 414, "height": 896}
+MOBILE_DPR = 3
+MOBILE_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
+             "(KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1")
+
+# TUONG CHAN BOT: khong phai noi dung trang, va KHONG duoc co vuot qua — chi
+# nhan ra roi bo nguon do. Truoc 12/09/2026 phep thu nay nam inline trong
+# `xep_hang._thu_nguon`; `chup_trang` chup lead khong co no nen mot trang chan
+# bot ra tam anh "Let's confirm you are human" chay thang len bia (do that tren
+# arstechnica 12/09).
+MA_CHAN = (403, 429, 503)
+_DAU_CHAN = re.compile(r"just a moment|security verification|attention required|access denied|"
+                       r"confirm you are human|verify you are human|are you a robot|"
+                       r"checking your browser|enable javascript and cookies", re.I)
+
+
+def bi_chan(tieu_de: str = "", ma=None, chu: str = "") -> str:
+    """Trang nay co phai tuong chan bot khong -> ly do, hoac "" neu khong.
+
+    Thuan, test duoc. `chu` la chu nhin thay duoc cua trang: mot so tuong chan
+    giu nguyen <title> cua bai (arstechnica) nen chi doc tieu de la bo sot —
+    nhung chi xet khi trang NGAN, vi mot bai that viet ve chan bot cung chua
+    dung cac cum nay."""
+    if ma in MA_CHAN:
+        return f"HTTP {ma}"
+    for nguon, nhan in ((tieu_de, "tiêu đề"), (chu[:600] if len(chu) < 1200 else "", "nội dung")):
+        m = _DAU_CHAN.search(nguon or "")
+        if m:
+            return f"{nhan}: {m.group(0)!r}"
+    return ""
 
 
 class PhienBrowser:

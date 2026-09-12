@@ -1,27 +1,22 @@
 #!/usr/bin/env python3
-"""render_edu.py khong con XAC cua co che lop mo (veil) — va carousel.py CON NGUYEN.
+"""Bìa/figure có ẢNH CHỤP trong render_edu.py — đúng ba ý Ông Chủ chốt 12/09/2026.
 
-Commit aac796a ("anh chup vao dong thay vi lop mo che chu") bo het co che
-veil/gradient-mask trong render_edu.py nhung de lai xac cua no:
+Lịch sử ngắn, vì tệp này đã đổi nghĩa một lần: aac796a đưa ảnh vào dòng (contain)
+và blur cả ảnh làm nền; 955f33b dọn xác lớp mờ và khoá bằng test rằng lớp mờ
+KHÔNG được quay lại. Cùng ngày, Ông Chủ xem bìa thật và nói nguyên văn:
 
-  - ba hang so khong ai doc: NGUONG_ROI_CAN_LOP, TOI_TOI_DA_MO, VEIL_SPAN
-  - ba luat CSS khong con ai gan class: .fig-molop, .fig-molop img, .fig-man
-  - mot `page.evaluate("window.__datMan && window.__datMan()")` VINH VIEN no-op
-    vi khong con cho nao sinh ra `window.__datMan` nua
-  - mot slot `js` giua tuple tra ve cua `anh_lam_nen` luon la chuoi rong, hai
-    noi goi (`_cover_anh`, `s_figure`) van noi `+ js` vao HTML
+  1. "dùng ảnh hero trong main article làm thumbnail cho hero slide, vì ảnh đó
+     là chữ nhật ngang, nên nó hiển thị vừa vặn với nửa trên của hero slide";
+  2. "blur toàn bộ tấm ảnh để làm nền cho hero slide CHƯA-BAO-GIỜ là việc được
+     yêu cầu với Kite cả, chỉ cần chọn color palette tương đồng với chủ đề";
+  3. blur chỉ dành cho ảnh DỌC kéo xuống quá nhiều (bảng xếp hạng): mờ phần
+     dưới để title/subtitle hiện lên — không phải blur cả ảnh chính làm nền.
 
-Vi sao phai la TEST chu khong chi xoa mot lan: xac nay doc ra nhu dang chay —
-hang so co chu thich dai giai thich tai sao 0.93, CSS co ten class that — nen
-lan sau ai do sua "lop mo" cho slide edu se sua o day va tuong la xong, trong
-khi khong mot dong nao trong so do di vao HTML.
+Nên test này khoá CẢ HAI chiều: không còn nền blur (`.fig-nen`) và không còn
+ảnh-trong-dòng (`.fig-anh`); nhưng lớp mờ phần-dưới-chữ (`__datMan`, `.fig-molop`,
+`TOI_TOI_DA_MO`, `VEIL_SPAN`) PHẢI có và phải được đọc thật.
 
-NUA THU HAI, quan trong khong kem: carousel.py co BAN SAO RIENG cua
-NGUONG_ROI_CAN_LOP (dong 119) va VEIL_SPAN (dong 121), va VAN DUNG THAT o
-carousel.py:324 va :329 — co che lop mo con SONG ben do. Test chot ca hai
-chieu: don dep ben render_edu.py thi xanh, keo luon carousel.py theo thi DO.
-
-Chay:  venv/bin/python tests/test_render_edu_xac_lop_mo.py
+Chạy:  venv/bin/python tests/test_render_edu_xac_lop_mo.py
 """
 import random
 import sys
@@ -35,88 +30,71 @@ import render_edu as re_                                      # noqa: E402
 TH = dict(bg="#171A21", panel="#212530", line="#333846",
           a="#2FD4E1", b="#8E86F0", stand="#BFC5CF")
 
-# Ten hang so chi phuc vu co che veil: khong con ai doc sau aac796a.
-HANG_SO_VEIL = ("NGUONG_ROI_CAN_LOP", "TOI_TOI_DA_MO", "VEIL_SPAN")
 
-
-def _anh_chup_roi(w=600, h=760):
-    """PNG gia lam ANH CHUP THAT: vien tren deu mot mau (-> phan loai 'mo',
-    khong 'phang'), 40% duoi la nhieu do lech cao — dung nhanh tung can lop mo.
-    Nho hon fixture cua test_render_edu.py vi o day chi can DUNG NHANH, khong
-    can do lai nguong."""
+def _anh_chup(w=600, h=760):
+    """PNG giả làm ẢNH CHỤP THẬT: viền không phẳng -> phân loại 'mo'."""
     from PIL import Image
     random.seed(0)
     im = Image.new("RGB", (w, h), (40, 60, 90))
     px = im.load()
+    # Vien tren/hai ben deu mot mau, 40% duoi la nhieu: doc_nen ra "mo" (anh
+    # chup), khong phai "phang" (chart) — cung fixture voi test_render_edu.
     for y in range(int(h * 0.6), h):
         for x in range(0, w, 3):
             c = random.randint(0, 255)
             px[x, y] = (c, c, c)
     d = tempfile.mkdtemp()
-    p = Path(d) / "roi.png"
+    p = Path(d) / "chup.png"
     im.save(p, "PNG")
     return p
 
 
-def test_khong_con_hang_so_chi_danh_cho_lop_mo():
-    """Xoa han khoi module, khong phai de lai = None hay 0: con ten thi lan sau
-    con nguoi tuong co cho de chinh."""
-    con = [t for t in HANG_SO_VEIL if hasattr(re_, t)]
-    assert not con, (
-        f"render_edu con hang so cua co che lop mo da bo: {con} — "
-        f"khong mot cho nao trong render_edu.py doc chung")
+def test_nhanh_mo_khong_con_nen_blur_va_khong_con_anh_trong_dong():
+    """Ý 2: nền là màu theme, không phải bản blur của chính tấm ảnh.
+    Ý 1: ảnh là `.fig-sac` full bề ngang, không phải `.fig-anh` contain."""
+    nen, anh = re_.anh_lam_nen({"image": str(_anh_chup())}, TH, "bia")
+    assert "fig-nen" not in nen, "còn nền blur cả ảnh — Ông Chủ: chưa bao giờ yêu cầu"
+    assert "fig-anh" not in nen and "fig-anh" not in anh, "còn ảnh-trong-dòng (contain)"
+    assert 'class="fig-sac' in nen, "ảnh chụp phải là lớp sắc full bề ngang"
+    assert f'background:{TH["bg"]}' in nen, "nền phải là màu palette của theme"
 
 
-def test_css_khong_con_luat_cua_lop_mo():
-    """`.fig-molop` / `.fig-man` khong con duoc gan cho element nao: giu lai thi
-    bang stylesheet noi co mot co che ma render khong con sinh ra."""
+def test_lop_mo_phan_duoi_chu_con_song_va_duoc_doc_that():
+    """Ý 3: lớp mờ chỉ cho phần ảnh chờm xuống chữ. Hằng số phải tồn tại VÀ được
+    đọc trong HTML sinh ra, script đặt lớp phải được sinh và được gọi."""
+    for t in ("TOI_TOI_DA_MO", "VEIL_SPAN"):
+        assert hasattr(re_, t), f"thiếu {t}"
+    nen, _ = re_.anh_lam_nen({"image": str(_anh_chup())}, TH, "bia")
+    assert "window.__datMan=function" in nen, "không sinh script đặt lớp mờ"
+    assert f"{re_.TOI_TOI_DA_MO:.3f}" in nen and f"top+{re_.VEIL_SPAN}" in nen, \
+        "hằng số lớp mờ có tên nhưng không được đọc"
+    assert 'id="figmo"' in nen and 'id="figman"' in nen
+    src = (ROOT / "render_edu.py").read_text(encoding="utf-8")
+    assert 'page.evaluate("window.__datMan && window.__datMan()")' in src, \
+        "_chup_cac_slide không gọi __datMan sau khi font xong — lớp mờ đặt sai dòng chữ"
     css = re_.BASE_CSS_TPL
     for luat in (".fig-molop", ".fig-man"):
-        assert luat not in css, f"BASE_CSS_TPL con luat chet: {luat}"
-    # `.fig-anh` / `.fig-anh-wrap` la co che MOI (anh vao dong) — phai con.
-    assert ".fig-anh-wrap" in css, "xoa nham lop anh-trong-dong dang dung"
+        assert luat in css, f"BASE_CSS_TPL thiếu {luat}"
+    for luat in (".fig-anh-wrap", ".fig-nen{"):
+        assert luat not in css, f"BASE_CSS_TPL còn luật chết: {luat}"
 
 
-def test_khong_con_goi_window_datMan():
-    """`page.evaluate("window.__datMan && window.__datMan()")` la no-op vinh
-    vien: khong con cho nao sinh ra ham do. Doc THAN TEP vi day la mot cau lenh
-    trong `_chup_cac_slide`, khong phai thuoc tinh import duoc."""
-    src = (ROOT / "render_edu.py").read_text(encoding="utf-8")
-    assert "__datMan" not in src, \
-        "render_edu.py con goi window.__datMan — khong con ai dinh nghia ham nay"
-
-
-def test_anh_lam_nen_tra_ve_hai_gia_tri():
-    """Hop dong moi: (nen, anh). Slot `js` o giua luon la "" tu aac796a nen hai
-    noi goi chi `+ js` mot chuoi rong — bo slot thi co che script dat lop mo
-    thanh KHONG THE quay lai, manh hon mot assert `js == ""`."""
-    p = _anh_chup_roi()
-    ra = re_.anh_lam_nen({"image": str(p)}, TH, "figure")
-    assert isinstance(ra, tuple) and len(ra) == 2, (
-        f"phai la (nen, anh), duoc "
-        f"{f'tuple {len(ra)}' if isinstance(ra, tuple) else type(ra).__name__}")
-    nen, anh = ra
-    # KHONG in `nen`/`anh` vao thong bao fail: chung chua data URI base64 ca
-    # tam anh, mot dong FAIL nhu vay nuot chung log cua chay.sh.
-    assert isinstance(nen, str) and isinstance(anh, str), "ca hai phai la str"
-    assert "fig-anh-wrap" in anh, "di sai nhanh: nhanh 'mo' phai dat anh vao dong"
+def test_lop_mo_chi_bat_khi_anh_chom_qua_chu():
+    """Script phải có đường tắt: mép dưới ảnh nằm trên dòng chữ đầu -> ẩn cả
+    lớp mờ lẫn màn tint. Ảnh ngang (ý 1) đi đúng nhánh này."""
+    nen, _ = re_.anh_lam_nen({"image": str(_anh_chup(1500, 1000))}, TH, "bia")
+    assert 'if(Y0+CAO<=top){v.style.display="none";m.style.display="none";return;}' in nen
 
 
 def test_carousel_VAN_con_co_che_lop_mo():
-    """Cong chan chieu nguoc: co che lop mo con SONG trong carousel.py (ban sao
-    rieng cua hai hang so, dung that o :324 va :329). Mot lan don dep sau nay
-    grep theo ten hang so rat de keo luon carousel.py theo — test do ngay."""
+    """Chiều ngược, giữ từ 955f33b: cơ chế lớp mờ của carousel.py là bản riêng,
+    dọn bên render_edu không được kéo theo."""
     import carousel                                           # noqa: PLC0415
     for t in ("NGUONG_ROI_CAN_LOP", "VEIL_SPAN"):
-        assert hasattr(carousel, t), (
-            f"carousel.{t} bi xoa — co che lop mo ben carousel VAN DUNG THAT, "
-            f"chi render_edu bo no")
+        assert hasattr(carousel, t), f"carousel.{t} bị xoá"
     src = (ROOT / "carousel.py").read_text(encoding="utf-8")
-    # Khong chi "co ten": phai con duoc DOC, khong thi lai thanh xac moi.
-    assert "roi - NGUONG_ROI_CAN_LOP" in src, \
-        "carousel khong con doc NGUONG_ROI_CAN_LOP — lop mo ben carousel hong"
-    assert "top_y + VEIL_SPAN" in src, \
-        "carousel khong con doc VEIL_SPAN — lop mo ben carousel hong"
+    assert "roi - NGUONG_ROI_CAN_LOP" in src
+    assert "top_y + VEIL_SPAN" in src
 
 
 if __name__ == "__main__":
