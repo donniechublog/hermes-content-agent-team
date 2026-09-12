@@ -230,7 +230,7 @@ def dan_xuat(anh: list, so_xh: int = 0) -> dict:
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
     # hang trong tin, 09/09/2026) -> anh KHAI NIEM (co, rack, chung chung; 07/09).
     goi_y_bia = [a["ma"] for a in sorted(
-        (a for a in anh if "bìa" in a["dung"] and a.get("lien_quan") is not False),
+        (a for a in anh if vai_mod.co_nhan_bia(a["dung"]) and a.get("lien_quan") is not False),
         key=lambda a: (bool(a.get("khai_niem")), bool(a.get("thuong_hieu")),
                        a["goc_trai_sang"], -a["canh_ngan"]))][:3]
     # `xhs` co the co NHIEU HON MOT (bang xep hang do nang luc khac nhau, xem

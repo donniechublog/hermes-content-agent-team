@@ -263,6 +263,19 @@ def ten_nguoi_trong_alt(alt: str) -> list:
     return _TEN_NGUOI.findall(alt or "")
 
 
+def co_nhan_bia(dung) -> bool:
+    """Nhan "dung duoc o dau" cua mot tam co cho phep lam BIA khong.
+
+    KHONG so bang `"bìa" in dung`: do la phep so PHAN TU trong list, ma nhan
+    that su duoc dan co the mang duoi giai thich — "bìa (ảnh hero của chính bài
+    gốc)" cua vong chup trang nguon. Su co 13/09/2026: sau khi cho vong chup
+    chay TRUOC, engine chup ve 4 anh bao cung tin (deu la bia hop le) roi van
+    ket luan "co 6 anh nhung khong tam nao lam anh chinh duoc" va di tim tiep
+    tren web — chi vi hai chuoi khong bang nhau tuyet doi. Cung ly do khien
+    anh chup khong bao gio xuat hien trong `goi_y_bia`."""
+    return any(str(d).startswith("bìa") for d in (dung or []))
+
+
 def anh_chinh_duoc(slug: str, a: dict) -> bool:
     """Tam anh `a` (mot muc trong manifest) co dung MOT MINH lam ANH CHINH cua
     vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.
@@ -277,7 +290,7 @@ def anh_chinh_duoc(slug: str, a: dict) -> bool:
         return True                            # anh chinh BAT BUOC cua tin xep hang
     if not v.ti_le_don_max:
         # Vai xep NHIEU anh: "anh chinh" la tam lam BIA, nhan do phan_loai dan.
-        return "bìa" in a["dung"]
+        return co_nhan_bia(a.get("dung"))
     if a.get("loai") == "chart" and not v.chart_don:
         return False
     if float(a.get("ti_le") or 0) > v.ti_le_don_max:

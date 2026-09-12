@@ -145,6 +145,67 @@ _JS_LEAD = """() => {
 }"""
 
 
+# Mau NEN THAT cua trang: leo tu body len documentElement, bo qua trong suot.
+# Dung de dem quanh anh chup cho vua khung slide (Ong Chu 13/09/2026: "phu mot
+# lop nen cung mau voi nen cua trang goc, sau do dat text va quote cua chung ta
+# len") — khong crop mat gi, khong phai ghep doi, moi tam chup thanh MOT slide.
+_JS_MAU_NEN = """() => {
+  const trong = (c) => !c || c === 'transparent' || /rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/.test(c);
+  for (const el of [document.body, document.documentElement]) {
+    if (!el) continue;
+    const c = getComputedStyle(el).backgroundColor;
+    if (!trong(c)) return c;
+  }
+  return '#ffffff';
+}"""
+
+
+def _ra_rgb(mau: str) -> tuple:
+    """'rgb(20, 20, 24)' | 'rgba(...)' | '#fff' -> (r, g, b). Khong doc duoc -> trang."""
+    import re as _re
+    m = _re.findall(r"[\d.]+", mau or "")
+    if len(m) >= 3 and ("rgb" in (mau or "")):
+        return tuple(min(255, max(0, int(float(x)))) for x in m[:3])
+    h = (mau or "").strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) == 6:
+        try:
+            return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+        except ValueError:
+            pass
+    return (255, 255, 255)
+
+
+def dem_nen(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: float = 0.42):
+    """Dat anh chup vao giua khung `ti_le` (4:5), phan con lai to MAU NEN cua
+    chinh trang do — ra mot tam dung mot minh lam slide duoc, khong crop mat
+    gi, khong phai ghep cap.
+
+    `cao_tren`: tam anh nam o dau theo chieu doc (0.42 = hoi len tren giua, chua
+    cho chu o nua duoi nhu bo cuc carousel). Tra (w, h) cua tam da dem."""
+    from PIL import Image as _Im
+    im = _Im.open(anh_vao).convert("RGB")
+    w, h = im.size
+    W = max(w, 1080)
+    H = int(round(W / ti_le))
+    if h > H - 40:                      # anh cao hon khung: thu nho vua chieu cao
+        ty = (H - 40) / h
+        im = im.resize((max(1, int(w * ty)), max(1, int(h * ty))), _Im.LANCZOS)
+        w, h = im.size
+    if w > W - 40:
+        tx = (W - 40) / w
+        im = im.resize((max(1, int(w * tx)), max(1, int(h * tx))), _Im.LANCZOS)
+        w, h = im.size
+    nen = _Im.new("RGB", (W, H), _ra_rgb(mau_nen))
+    y = int(round((H - h) * cao_tren))
+    nen.paste(im, ((W - w) // 2, max(0, min(y, H - h))))
+    ra = Path(ra)
+    ra.parent.mkdir(parents=True, exist_ok=True)
+    nen.save(ra, "PNG")
+    return nen.size
+
+
 def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
     """Chup KHOI LEAD cua `url` o khung mobile. -> dict mo ta, hoac None.
 
@@ -192,6 +253,7 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
                 # arstechnica 12/09/2026). Nhan ra thi BO nguon, khong tim cach
                 # vuot.
                 tit_trang = (page.title() or "")[:200]
+                mau_nen = page.evaluate(_JS_MAU_NEN) or "#ffffff"
                 ly = bi_chan(tit_trang, resp.status if resp else None,
                              page.evaluate("document.body ? document.body.innerText : ''") or "")
                 if ly:
@@ -233,6 +295,7 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
     # `tit_trang` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
     # trong `trang` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.
     return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True, "tit_trang": tit_trang,
+            "mau_nen": mau_nen,
             "alt": "ảnh chính + tít của chính bài gốc, chụp ở khung điện thoại",
             "ly_do": "khối lead của trang nguồn"
                      + (", có tít" if r["co_tit"] else "")

@@ -79,7 +79,8 @@ def _anh_chart(ma: str) -> dict:
 
 PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
             "_lay_tu_browser", "_chup_xep_hang", "_gom_va_tai_anh", "_nhin_anh",
-            "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_tu_lieu_bai",
+            "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_vong_chup_nguon",
+            "_vong_thuc_the", "_tu_lieu_bai",
             "dung_manifest", "bang_anh")
 
 
@@ -110,6 +111,15 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
     cb._vong_tim_rong = _vong("tim_rong")
     cb._vong_thuong_hieu = _vong("thuong_hieu")
     cb._vong_khai_niem = _vong("khai_niem")
+    # `_vong_chup_nguon` PHAI thay bang gia nhu moi vong khac: truoc 13/09/2026
+    # no bi bo quen, nen test "khong mang, khong browser" van goi that vao no —
+    # thay bang mot dong "[chup_lead] ... AttributeError '_Phien' object has no
+    # attribute 'trang'" o moi luot chay, va tu khi vong nay tu hoi them bao
+    # cung tin (Bing) thi con la mot cu goi MANG THAT giua bo test offline.
+    cb._vong_chup_nguon = _vong("chup_nguon")
+    # Nhu tren: `_vong_thuc_the` (Wikipedia pageimages) cung goi mang THAT, lam
+    # tep test "khong mang" nay ton 6 phut 34 (do 13/09/2026) thay vi vai giay.
+    cb._vong_thuc_the = _vong("thuc_the")
     cb._tu_lieu_bai = lambda *a, **k: {"cau_co_so": [], "doan_dau": "", "so_nguon": 1}
     cb.dung_manifest = lambda *a, **k: {"anh": anh_bai}
     cb.bang_anh = lambda *a, **k: None
