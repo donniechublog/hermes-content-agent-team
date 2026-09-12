@@ -81,6 +81,36 @@ y hệt lúc lệnh bị nuốt. Nay `_bao_da_nhan` gửi ngay vào đúng topic
 khoá và trước `create_pair` (mỗi tin tới 180 giây), kèm tiêu đề từng số để đọc
 một dòng là biết số vừa gõ có trỏ đúng tin định giao không.
 
+**Mở rộng cùng ngày — luật chung cho MỌI vai, không riêng chọn số.** Ông Chủ:
+*"thật ra tất cả các role đều cần trả lời reply 'đã gửi [task] cho [name]' và
+'đã nhận [task] từ [name]', còn khi nào bắt tay vào làm thì sẽ thông báo 'đã
+bắt đầu ...'"* — tức ba mốc riêng biệt cho MỌI lần giao việc, không chỉ đường
+chọn số vừa vá. Soát lại bốn điểm `kanban_create` thật trong repo (chọn số,
+làm lại, chuyển Kite, duyệt ảnh→viết) thì ba mốc đó **đã có sẵn** ở gần hết:
+
+- **"đã bắt đầu"** đã có từ trước, dùng CHUNG cho mọi task bất kể tạo kiểu gì:
+  `bao_tien_do_kanban` gửi dòng `▶️ <vai> bắt đầu: <tiêu đề>` vào đúng topic của
+  vai đó ngay khi dispatcher chuyển trạng thái sang `running` — không cần sửa.
+- **"đã gửi"** + **"đã nhận"** đã đủ ở ba trong bốn điểm: chọn số (mới vá,
+  `_bao_da_nhan` + `_bao_nhan_viec`), làm lại (gửi ngay trong chính topic người
+  nhận vì không đổi topic nên một dòng là đủ), chuyển Kite (`"🎨 Đã giao
+  Kite..."` + `_bao_nhan_viec` sang topic Kite).
+- **Lỗ còn lại: duyệt ảnh → tạo task viết cho Miles/Jika** (`duyet_bai._nut_duyet`,
+  nút `imgok`). Đây là đường **chạy nhiều nhất** trong cả bốn — mọi tấm ảnh
+  được duyệt đều qua đây, không như chọn số chỉ vài lần một ngày. Trước sửa:
+  `note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"` — gộp
+  "gửi" với "bắt đầu" làm một (task còn chưa chạy đã nói "bắt đầu"), và
+  KHÔNG gọi `_bao_nhan_viec` — topic của Miles/Jika im lặng cho tới khi
+  dispatcher chạy thật (50–60s + hàng đợi), y hệt lỗ hổng LOW-28 nhưng ở một
+  đường tần suất cao hơn nhiều.
+
+Sửa: `_nut_duyet` nhận thêm `chat_id` (trước đó không có đường truyền vào để
+gọi `_bao_nhan_viec`), đổi câu trả lời ngay thành `"✅ Đã duyệt ảnh — đã gửi
+cho {ten} viết caption (task {wid})"` (bỏ chữ "bắt đầu"), và đọc `vai_anh` từ
+sidecar `.img.json` để gọi `_bao_nhan_viec(token, chat_id, vai_viet, vai_anh,
+title, wid)` — nói rõ "chuyển từ Dre/Ethan" trong topic của người viết, đúng
+cơ chế `_bao_nhan_viec` đã có sẵn cho đường chuyển Kite.
+
 **Bài học:** một cổng chỉ *in cảnh báo* rồi vẫn cho đi tiếp thì không phải cổng —
 nó chỉ dời việc hỏng xuống chỗ khác. Ở đây nó dời sang topic của Ông Chủ, dưới
 dạng ba bản gần giống nhau mà chỉ một bản bấm được. Và cổng nào từ chối cũng

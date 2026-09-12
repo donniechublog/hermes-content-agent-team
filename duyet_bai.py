@@ -743,7 +743,7 @@ def _nut_lam_lai(token, chat_id, draft_id, cq, msg):
     return note
 
 
-def _nut_duyet(token, draft_id, cq, wp):
+def _nut_duyet(token, chat_id, draft_id, cq, wp):
     """imgok: sinh task viet caption tu writer sidecar, dan kem ban giao cua vai anh."""
     if not wp.exists():
         note = "⚠️ Không thấy thông tin bài (writer sidecar) cho draft này"
@@ -810,7 +810,24 @@ def _nut_duyet(token, draft_id, cq, wp):
                 w["created"], w["writer_task"] = True, wid
                 _ghi_json(wp, w)
                 ten = TEN_VAI_VIET.get(w["vai_viet"], "Miles")
-                note = f"✅ Đã duyệt ảnh — {ten} bắt đầu viết caption (task {wid})"
+                # "da gui", KHONG phai "bat dau" — dispatcher moi thuc su chay
+                # (Ong Chu 12/09/2026: ba dong rieng cho MOI vai — gui / nhan /
+                # bat dau — khong gop "gui" voi "bat dau" lam mot).
+                note = f"✅ Đã duyệt ảnh — đã gửi cho {ten} viết caption (task {wid})"
+                # Bao NGAY vao topic cua nguoi viet — truoc day im lang toi khi
+                # dispatcher chay that (poll 50s + hang doi), dung mot lo hong
+                # nhu LOW-28 vua va o duong chon so, nhung duong nay CHAY NHIEU
+                # HON: moi anh duoc duyet deu di qua day, khong chi luc Ong Chu
+                # chon so tin moi.
+                _vai_anh_cu = None
+                _ip = DRAFTS / (draft_id + ".img.json")
+                try:
+                    if _ip.exists():
+                        _vai_anh_cu = json.loads(_ip.read_text(encoding="utf-8")).get("vai_anh")
+                except Exception:                            # noqa: BLE001
+                    pass
+                _bao_nhan_viec(token, chat_id, w["vai_viet"], _vai_anh_cu,
+                               w.get("title", draft_id), wid)
     return note
 
 
@@ -859,7 +876,7 @@ def handle_img_approval(token, action, draft_id, cq):
         if note is None:
             return
     else:                                                       # imgok
-        note = _nut_duyet(token, draft_id, cq, wp)
+        note = _nut_duyet(token, chat_id, draft_id, cq, wp)
     _chot_nut(token, msg, draft_id, note, keyboard)
 
 _DRAFT_ID_HOP_LE = re.compile(r"^[a-z0-9][a-z0-9-]{0,54}$")
