@@ -55,14 +55,20 @@ def _cat(bao_cao: str, tran: int = TRAN_BAO_CAO) -> str:
               "'khong co gi'. Bao Ong Chu de nang tran.")
 
 
-def luot(gio_vn: int = None) -> int:
-    """Luot trong ngay cho vai chay nhieu lan: khung 6 tieng bat dau 05:00 VN.
+# Khung gio cua MOT luot, tinh tu 05:00 VN. 12 = hai luot/ngay (05:00 va 17:00
+# VN). Doi so nay la doi CA nhip: phai sua cung luc ba cho — hang so nay, cron
+# expr cua job `qinn-scan`, va cong thuc LUOT trong hermes/scripts/quet_daily_scan.sh.
+KHUNG_GIO = 12
 
-    Bon moc cron la 05/11/17/23 VN, nen moi moc nam dau mot khung: vai chay
-    brief o dau khung va nop trong vong vai phut -> luon cung mot luot. Khong
-    dung gio tron vi nop luc 10:59 va 11:01 se ra hai thu muc khac nhau."""
+
+def luot(gio_vn: int = None) -> int:
+    """Luot trong ngay cho vai chay nhieu lan: khung KHUNG_GIO tieng tu 05:00 VN.
+
+    Moc cron nam dau moi khung, vai chay brief o dau khung va nop trong vong vai
+    phut -> luon cung mot luot. Khong dung gio tron vi nop luc 16:59 va 17:01 se
+    ra hai thu muc khac nhau."""
     h = datetime.now(VN).hour if gio_vn is None else gio_vn
-    return ((h - 5) % 24) // 6
+    return ((h - 5) % 24) // KHUNG_GIO
 
 
 def workdir(vai: str) -> Path:
@@ -271,7 +277,9 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
 def brief_qinn(wd: Path, lam_moi: bool) -> str:
     q = wd / "quet.json"
     if lam_moi or not _moi(q):
-        r = _chay([str(ROOT / "scan_x.py"), "--gio", "6", "--out", str(q)])
+        # Cua so quet trung voi khung mot luot: khong chong lap (tin se trung,
+        # tuy `x_seen.json` da chan) va khong ho (tin roi vao khe giua hai luot).
+        r = _chay([str(ROOT / "scan_x.py"), "--gio", str(KHUNG_GIO), "--out", str(q)])
         (wd / "scan.log").write_text((r.stderr or "") + (r.stdout or ""), encoding="utf-8")
         if r.returncode != 0 or not q.exists():
             sys.exit(f"[LOI] scan_x.py hong: {(r.stderr or '')[-400:]}")

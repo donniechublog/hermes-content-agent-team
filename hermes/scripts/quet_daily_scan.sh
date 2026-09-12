@@ -55,15 +55,17 @@ KEY="$VAI-daily-$(TZ=Asia/Ho_Chi_Minh date +%Y%m%d)"
 DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 
 # Vai chay NHIEU LAN trong ngay phai co LUOT trong khoa chong trung va trong
-# tieu de. Khong co thi luot 2,3,4 trung khoa cua luot 1: kanban tra ve task CU
-# (da done), khoi kiem ben duoi thoat 1, va ca ba luot sau im lang khong chay.
-# Luot = khung 6 tieng bat dau 05:00 VN — cung cong thuc voi quet_chuan_bi.luot().
+# tieu de. Khong co thi luot sau trung khoa cua luot dau: kanban tra ve task CU
+# (da done), khoi kiem ben duoi thoat 1, va luot sau im lang khong chay.
+# KHUNG_GIO phai khop quet_chuan_bi.KHUNG_GIO va cron expr cua job qinn-scan:
+# 12 = hai luot/ngay (05:00 va 17:00 VN).
 case "$VAI" in
   qinn)
+    KHUNG_GIO=12
     GIO=$(TZ=Asia/Ho_Chi_Minh date +%H)
-    LUOT=$(( ((10#$GIO - 5 + 24) % 24) / 6 ))
+    LUOT=$(( ((10#$GIO - 5 + 24) % 24) / KHUNG_GIO ))
     KEY="$KEY-p$LUOT"
-    DAY="$DAY luot $((LUOT + 1))/4"
+    DAY="$DAY luot $((LUOT + 1))/$((24 / KHUNG_GIO))"
     ;;
 esac
 
