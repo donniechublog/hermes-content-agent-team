@@ -80,7 +80,7 @@ from chuan_bi.nhin import _nhin_anh, mo_ta_anh                  # noqa: E402
 from chuan_bi.tai_loc import _luu_crop                          # noqa: E402
 from chuan_bi.vong_bu import (  # noqa: E402
     _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _gom_va_tai_anh,
-    _lay_tu_browser, _them_trang_cong_bo, _vong_chup_nguon, _vong_khai_niem,
+    _lay_tu_browser, _them_trang_cong_bo, _vong_chup_nguon, _vong_khai_niem, _vong_thuc_the,
     _vong_thuong_hieu, _vong_tim_rong,
 )
 
@@ -202,6 +202,10 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd,
                                                         category=category)
+        # NAC CUOI, khong bao gio rong (LOW-35, Ong Chu 12/09/2026: "day la 2026,
+        # moi thu ban can deu co san"): anh dai dien cua chinh thuc the trong tieu de.
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+            anh, dung_duoc, chua_nhin = _vong_thuc_the(anh, tieu_de_nhin, wd)
         tl = _tu_lieu_bai(title, link, nguon_path, wd, nguon, bp)
         m = dung_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
                           tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh)

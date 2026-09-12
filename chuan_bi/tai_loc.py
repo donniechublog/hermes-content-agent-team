@@ -205,7 +205,8 @@ def tai_va_loc(cands: list, wd: Path) -> list:
                    # la hinh mo dau bai, va de viet caption cho dung.
                    **({"paper_hinh": c["paper_hinh"]} if c.get("paper_hinh") else {}),
                    **({"khai_niem": c["khai_niem"]} if c.get("khai_niem") else {}),
-                   **({"thuong_hieu": c["thuong_hieu"]} if c.get("thuong_hieu") else {})})
+                   **({"thuong_hieu": c["thuong_hieu"]} if c.get("thuong_hieu") else {}),
+                   **({"thuc_the": c["thuc_the"]} if c.get("thuc_the") else {})})
     return ra
 
 

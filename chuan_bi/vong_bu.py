@@ -544,3 +544,36 @@ def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     print(f"[khai niem] sau vong: +{len(anh) - n0} anh, "
           f"{sum(1 for a in dung_duoc if a.get('khai_niem'))} khai niem dung duoc", file=sys.stderr)
     return anh, dung_duoc, chua_nhin
+
+
+def _vong_thuc_the(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
+    """NAC CUOI, KHONG BAO GIO RONG (Ong Chu 12/09/2026, dong LOW-35: "ko co ly gi
+    ma ko tim duoc anh minh hoa dau, day la 2026, moi thu ban can deu co san").
+    Anh dai dien cua chinh cac THUC THE trong tieu de — Wikipedia pageimages +
+    Commons theo cum ten rieng (anh_thuc_the.py). Chi chay khi cac nac tren van
+    de bo thieu; qua phan_loai + con mat nhu moi anh. Tra (anh, dung_duoc, chua_nhin)."""
+    import anh_thuc_the
+    models = xep_hang.tach_model(tieu_de_nhin)
+    cands = anh_thuc_the.anh_thuc_the(tieu_de_nhin, models)
+    print("[thuc the] " + (", ".join(sorted({c["thuc_the"]["ten"] for c in cands})) or "khong ra thuc the nao"),
+          file=sys.stderr)
+    da = {a["url"] for a in anh}
+    cands = [c for c in cands if c["anh"] not in da]
+    cands.sort(key=lambda c: -c.get("diem", 0))
+    wd6 = wd / "thuc_the"
+    bo_sung = tai_va_loc(cands, wd6) if cands else []
+    n0 = len(anh)
+    for i, a in enumerate(bo_sung, start=n0 + 1):
+        if len(anh) >= TOI_DA_ANH + 6 or len(anh) - n0 >= TOI_DA_THEM_TH:
+            break
+        a["ma"] = f"A{i}"
+        moi = wd / "goc" / f"{a['ma']}.png"
+        moi.parent.mkdir(parents=True, exist_ok=True)
+        Path(a["goc"]).replace(moi)
+        a["goc"] = str(moi)
+        a = phan_loai(a, wd, tieu_de_nhin)
+        anh.append(anh_thuc_the.nhan_thuc_the(a))
+    dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
+    chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
+    print(f"[thuc the] sau vong: +{len(anh) - n0} anh", file=sys.stderr)
+    return anh, dung_duoc, chua_nhin
