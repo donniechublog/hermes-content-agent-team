@@ -187,7 +187,8 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # khoi lead la vat THAT cua chinh tin, anh khai niem thi khong.
         if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_chup_nguon(anh, link, trang, wd,
-                                                         khong_browser, phien=phien)
+                                                         khong_browser, phien=phien,
+                                                         tieu_de=tieu_de_nhin)
         # Van thieu, hoac co anh ma khong tam nao lam anh chinh cua VAI NAY duoc
         # -> anh khai niem chung chung cua chu de, sau anh cua chinh hang (chi
         # mang, khong browser; chay ca khi --khong-browser).

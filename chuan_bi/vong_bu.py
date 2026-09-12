@@ -393,7 +393,7 @@ TOI_DA_TRANG_CHUP = 3          # thu toi da 3 trang: bai goc roi hai bao khac
 
 
 def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
-                     khong_browser: bool = False, phien=None) -> tuple:
+                     khong_browser: bool = False, phien=None, tieu_de: str = "") -> tuple:
     """VONG CHUP TRANG NGUON (Ong Chu 06/09/2026, nhac lai 12/09): tin khong co
     anh dung duoc thi CHUP CHINH TRANG NGUON o khung dien thoai va cat lay khoi
     lead (anh chinh + tit), TRUOC khi ha xuong anh khai niem Commons.
@@ -426,6 +426,18 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         c = chup_trang.chup_lead_mobile(u, tam, phien=phien)
         if not c:
             continue
+        # BAO KHAC phai CUNG TIN moi duoc lam "anh cua chinh bai" (LOW-33). Truoc
+        # 12/09/2026 muc nay mien kiem — "day la trang cua CHINH tin" — nhung
+        # `trang` gom ca bao khac do Bing khop bang 2 tu, va the DeepSeek-V4.1-Flash
+        # ra anh hero cua bai "Hugging Face robot duck is already a hit". Bai goc
+        # (`link`) van duoc tin; tit khong doc duoc thi khong ket luan, cho qua.
+        if u != link and tieu_de and c.get("tit_trang"):
+            import nguon_bai
+            if not nguon_bai.cung_tin(tieu_de, c["tit_trang"]):
+                print(f"[chup nguon] {_mien(u)}: tít {c['tit_trang'][:60]!r} KHÔNG cùng tin "
+                      f"với {tieu_de[:50]!r} — bỏ, không phải bài gốc", file=sys.stderr)
+                Path(tam).unlink(missing_ok=True)
+                continue
         a = {"ma": f"A{len(anh) + 1}", "goc": str(tam), "url": u, "trang": u,
              "mien": _mien(u), "diem": 0, "hint_chart": False, **c}
         moi = wd / "goc" / f"{a['ma']}.png"

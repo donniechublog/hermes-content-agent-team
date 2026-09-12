@@ -160,6 +160,7 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
     khoi lead."""
     ra = Path(ra)
     ra.parent.mkdir(parents=True, exist_ok=True)
+    tit_trang = ""
     try:
         with phien_hoac_moi(phien) as ph:
             with ph.trang(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
@@ -190,7 +191,8 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
                 # "Let's confirm you are human" lam bia (do that tren
                 # arstechnica 12/09/2026). Nhan ra thi BO nguon, khong tim cach
                 # vuot.
-                ly = bi_chan(page.title() or "", resp.status if resp else None,
+                tit_trang = (page.title() or "")[:200]
+                ly = bi_chan(tit_trang, resp.status if resp else None,
                              page.evaluate("document.body ? document.body.innerText : ''") or "")
                 if ly:
                     print(f"[chup_lead] {url[:70]}: trang chặn bot ({ly}), bỏ nguồn này",
@@ -228,7 +230,9 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
         return None
     if not (ra.exists() and ra.stat().st_size > 0):
         return None
-    return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
+    # `tit_trang` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
+    # trong `trang` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.
+    return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True, "tit_trang": tit_trang,
             "alt": "ảnh chính + tít của chính bài gốc, chụp ở khung điện thoại",
             "ly_do": "khối lead của trang nguồn"
                      + (", có tít" if r["co_tit"] else "")

@@ -40,6 +40,35 @@ SO_NGUON = 4
 TU_RONG = quet_chung.TU_RONG           # mot ban duy nhat, xem quet_chung
 _tu = quet_chung.tu_dac_trung
 
+# ---- "CUNG TIN" (LOW-33, 12/09/2026) ------------------------------------------
+# The Ethan "DeepSeek-V4.1-Flash tha trong so" ra anh con vit-robot: `tieu_de_en`
+# la <title> thô cua trang HuggingFace "deepseek-ai/DeepSeek-V4.1-Flash · Hugging
+# Face" — hau to " · Hugging Face" khong bi boc (regex chi biet | - – —), hai chu
+# "Hugging"+"Face" tu no da du nguong "chung >= 2 tu", nen Bing tra bai
+# "Hugging Face robot duck is already a hit" va no thanh "bao khac cung tin".
+# Ba lop sua: boc hau to voi ca `·`/`»`; ten nen tang (HuggingFace, GitHub,
+# arXiv...) KHONG duoc tinh la tu dac trung; va moi cho quyet "cung tin" di qua
+# MOT ham `cung_tin` — ke ca vong chup trang nguon, truoc day mien kiem.
+_HAU_TO_SITE = re.compile(r"\s+[|\-–—·»]\s+[^|\-–—·»]{2,40}$|\s+::\s+[^:]{2,40}$")
+_TU_NEN = {"hugging", "face", "huggingface", "github", "arxiv", "reddit", "medium",
+           "substack", "youtube", "twitter", "linkedin", "wikipedia", "hacker", "news"}
+
+
+def bo_hau_to_site(t: str) -> str:
+    """"Tieu de · Ten site" / "Tieu de | Ten bao" -> "Tieu de"."""
+    return _HAU_TO_SITE.sub("", (t or "").strip())
+
+
+def tu_cung_tin(t: str) -> set:
+    """Tu dac trung DUNG DE SO "cung tin": bo hau to site va bo ten nen tang."""
+    return _tu(bo_hau_to_site(t)) - _TU_NEN
+
+
+def cung_tin(tieu_de_goc: str, tieu_de_khac: str, toi_thieu: int = 2) -> bool:
+    """Hai tieu de co noi ve CUNG mot tin khong: chung >= `toi_thieu` tu dac trung
+    sau khi bo hau to site va ten nen tang."""
+    return len(tu_cung_tin(tieu_de_goc) & tu_cung_tin(tieu_de_khac)) >= toi_thieu
+
 
 def _tai(url: str, timeout=20):
     return httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
@@ -191,7 +220,7 @@ def _tieu_de_trang(url: str) -> str:
             if m:
                 import html as _h
                 t = _h.unescape(m.group(1)).strip()
-                t = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "", t)  # bo " | Ten bao"
+                t = bo_hau_to_site(t)                    # bo " | Ten bao", " · Hugging Face"
                 if t and len(t.split()) < 4:
                     print(f"[nguon_bai] bo tieu de qua ngan (co the la ten site, chua hydrate): {t!r}",
                           file=sys.stderr)
@@ -302,7 +331,8 @@ def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10
     Tra ve [{url, loai: "báo", tieu_de, toa_soan}]."""
     import email.utils as eu
     import time as _t
-    goc = _tu(tieu_de)
+    tieu_de = bo_hau_to_site(tieu_de)      # LOW-33: " · Hugging Face" khong vao truy van
+    goc = tu_cung_tin(tieu_de)
     moc = _t.time() - ngay * 86400
     its, co_link = [], set()
     for q in _truy_van_bing(tieu_de):
@@ -321,7 +351,7 @@ def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10
     for it in its[: so * 6]:
         link = it.findtext("link") or ""
         td = it.findtext("title") or ""
-        if not link or len(goc & _tu(td)) < 2:
+        if not link or len(goc & tu_cung_tin(td)) < 2:
             continue
         try:
             ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
