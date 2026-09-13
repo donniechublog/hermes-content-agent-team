@@ -98,10 +98,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
                "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; "
                "khong = quang cao, widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/"
-               "chu de khac, HOAC la anh chup LAI mot man hinh dien thoai/may tinh bang MAY ANH KHAC "
-               "(nhin thay duoc vien man hinh, phan chieu anh sang, hoac nen phia sau man hinh bi mo/"
-               "out-of-focus trong khi chu tren man hinh net) thay vi anh xuat truc tiep tu man hinh — "
-               "loai nay du doc duoc chu tren man hinh van tinh la khong, vi la anh chup thu cap)")
+               f"chu de khac, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
         if chup_nguon:
             # LA anh cua tin (tu chinh DOM cua bai) — khong hoi lai "co lien
             # quan khong", CHI hoi CHAT LUONG. Tach khoi nhanh mac dinh o tren
@@ -111,12 +108,8 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             hoi = (f"Day la ANH HERO cua chinh bai bao: \"{tieu_de}\" — CHAC CHAN la anh cua tin, "
                    "khong hoi 'co lien quan khong'.\nTra loi DUNG 2 dong:\n"
                    "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
-                   "LIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke, KHONG "
-                   "phai anh bao chup LAI mot man hinh dien thoai/may tinh bang MAY ANH KHAC (thay "
-                   "duoc vien man hinh, phan chieu anh sang, hoac nen phia sau man hinh bi mo/"
-                   "out-of-focus trong khi chu tren man hinh net); khong = mo/nhoe, HOAC dung la anh "
-                   "chup lai man hinh kieu do du doc duoc chu — loai nay van la KHONG DUNG DUOC vi la "
-                   "anh chup thu cap, khong phai anh xuat truc tiep)")
+                   "LIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; "
+                   f"khong = mo/nhoe, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
         elif khai_niem:
             import anh_khai_niem
             hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)

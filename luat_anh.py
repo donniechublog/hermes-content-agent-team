@@ -34,6 +34,23 @@ from pathlib import Path
 
 from PIL import Image, ImageOps, ImageStat
 
+# ---- Cum dung CHUNG cho MOI cau hoi con mat (LOW-45, 13/09/2026) -----------
+#
+# Ong Chu: "bộ logo của Moonshot hay hình ảnh nhà sáng lập khó kiếm lắm hay sao
+# mà phải dùng cờ China?" — do that: mot anh bao Getty chup nghieng man hinh
+# App Store cua Kimi K3 (nen mo/bokeh, chu net) lot qua BA duong khac nhau
+# (`_lay_anh_trang`'s JS_FIG, `_vong_chup_nguon`, VA `anh_thuong_hieu.
+# cau_hoi_vision` nhanh "anh bo canh") truoc khi bi chan dung ca ba — vi moi
+# nhanh tu viet lai dieu kien "khong mo/nhoe" theo cach rieng, khong dong bo.
+# MOT cum duy nhat, moi cau hoi con mat chen vao ve "khong =" cua no.
+CUM_ANH_CHUP_LAI_MAN_HINH = (
+    "HOAC la anh chup LAI mot man hinh dien thoai/may tinh bang MAY ANH KHAC "
+    "(thay duoc vien man hinh, phan chieu anh sang, hoac nen phia sau man hinh "
+    "bi mo/out-of-focus trong khi chu/hinh tren man hinh net) thay vi anh xuat "
+    "truc tiep tu web/thiet ke — loai nay du doc duoc chu/logo tren man hinh "
+    "van tinh la khong, vi la anh chup thu cap chu khong phai anh goc"
+)
+
 # ---- Nguong (do thuc tren kho anh cua doi, xem chu thich tung cong) --------
 TI_LE_45, TI_LE_11 = 0.8, 1.0
 DUNG_SAI_TI_LE = 0.03            # dai hop le 4:5..1:1, nong 3%

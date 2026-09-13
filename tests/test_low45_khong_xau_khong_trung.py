@@ -55,16 +55,42 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
     """Trước 12/09/2026, nhánh mặc định (không `khai_niem`/`thuong_hieu`) —
     đường mà CẢ ảnh hero thật lẫn ảnh chụp lại trang đều đi qua — không hỏi gì
     về độ nét/góc chụp, chỉ hỏi "có liên quan bài không". Ảnh báo chụp nghiêng
-    một màn hình (đúng ca Kimi K3) lọt qua dễ dàng vì rõ ràng đúng chủ đề."""
+    một màn hình (đúng ca Kimi K3) lọt qua dễ dàng vì rõ ràng đúng chủ đề.
+
+    13/09/2026: cụm "chụp lại màn hình" gộp thành `luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH`
+    dùng chung (xem `test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi` bên dưới)."""
     import inspect
     src = inspect.getsource(nhin.mo_ta_anh)
     # Cụm phải nằm trong nhánh MẶC ĐỊNH (trước dòng gán `hoi` của khai_niem),
     # không phải chỉ tồn tại đâu đó trong tệp.
     i_hoi_mac_dinh = src.index('hoi = (f"Bai bao: \\"{tieu_de}\\".')
-    i_khai_niem = src.index("if khai_niem:")
+    i_khai_niem = src.index("elif khai_niem:")
     doan_mac_dinh = src[i_hoi_mac_dinh:i_khai_niem]
-    assert "RO NET" in doan_mac_dinh and "out-of-focus" in doan_mac_dinh, doan_mac_dinh
-    assert "man hinh dien thoai" in doan_mac_dinh or "chup lai" in doan_mac_dinh, doan_mac_dinh
+    assert "RO NET" in doan_mac_dinh, doan_mac_dinh
+    assert "CUM_ANH_CHUP_LAI_MAN_HINH" in doan_mac_dinh, doan_mac_dinh
+
+
+def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
+    """LOW-45 (13/09/2026) — đúng ảnh Getty chụp nghiêng App Store của Kimi K3
+    (đã chặn ở JS_FIG + _vong_chup_nguon) lọt qua LẦN THỨ BA qua một đường khác
+    hẳn: nhánh "anh bối cảnh" của `anh_thuong_hieu.cau_hoi_vision` (dùng khi
+    Commons/Wikidata rỗng, `_bao_thuong_hieu_rong` tìm ảnh qua báo) chưa từng
+    có cụm này. Một hằng số dùng chung (`luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH`),
+    mọi câu hỏi con mắt đều chèn — đóng cả lớp thay vì vá từng đường một."""
+    import luat_anh
+    assert hasattr(luat_anh, "CUM_ANH_CHUP_LAI_MAN_HINH")
+    assert "man hinh" in luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH.lower()
+
+    import anh_thuong_hieu as th
+    for loai, th_dict in (("nguoi", {"hang": "X", "loai": "nguoi", "nguoi": "A", "vai": "CEO"}),
+                         ("logo", {"hang": "X", "loai": "logo"}),
+                         ("anh", {"hang": "X", "loai": "anh"})):
+        c = th.cau_hoi_vision("tin gi do", th_dict)
+        assert luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH in c, (loai, c)
+
+    import anh_khai_niem as kn
+    c = kn.cau_hoi_vision("tin gi do", "tu khoa x")
+    assert luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH in c, c
 
 
 # --------------------------------------------------- 3. tối thiểu ảnh thật/slide

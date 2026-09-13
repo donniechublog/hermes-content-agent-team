@@ -801,7 +801,14 @@ def hang_co_model(khoa: str) -> bool:
 def cau_hoi_vision(tieu_de: str, th: dict) -> str:
     """Câu hỏi riêng cho ảnh thương hiệu. Câu chung hỏi "có phải ảnh của tin
     không" — chân dung nhà sáng lập và logo chắc chắn không phải, nên bị đánh
-    rớt dù đó đúng là thứ ta đi tìm (09/09/2026)."""
+    rớt dù đó đúng là thứ ta đi tìm (09/09/2026).
+
+    Cả ba nhánh chèn `luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH` (LOW-45, 13/09/2026):
+    đo thật, đúng ảnh Getty chụp nghiêng App Store của Kimi K3 (đã chặn ở
+    `_lay_anh_trang`/`_vong_chup_nguon`) lọt qua ĐÚNG nhánh "anh" ở đây khi tìm
+    thấy qua một đường khác (`_bao_thuong_hieu_rong`) — nhánh này TỪNG chỉ có
+    "quá mờ" chung chung, không đủ chặn ảnh nét-ở-tiền-cảnh/mờ-ở-hậu-cảnh."""
+    import luat_anh
     hang, loai = th.get("hang", "hãng"), th.get("loai", "anh")
     if loai == "nguoi":
         ai = th.get("nguoi", "")
@@ -811,19 +818,21 @@ def cau_hoi_vision(tieu_de: str, th: dict) -> str:
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                 f"LIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan "
                 f"dung cho {hang}; khong = do hoa/tranh ve, anh nhom dong nguoi, qua mo, "
-                "hoac ro rang khong phai anh chan dung)")
+                f"{luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH}, hoac ro rang khong phai anh chan dung)")
     if loai == "logo":
         return (f"Bai bao: \"{tieu_de}\". Anh nay la THE LOGO: logo chinh thuc cua {hang} dat "
                 "tren nen tron.\nTra loi DUNG 2 dong:\n"
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                 f"LIEN_QUAN: co | khong  (co = doc duoc ro logo/ten {hang}, khong be xiu, khong "
-                "meo, khong lan mau nen; khong = logo hang KHAC, chu bi cat, qua nho, hoac trong)")
+                f"meo, khong lan mau nen; khong = logo hang KHAC, chu bi cat, qua nho, trong, "
+                f"{luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua su viec trong tin; no duoc tim "
             f"lam ANH BOI CANH cua {hang} (tru so, campus, bien hieu, nha may, san pham).\n"
             "Tra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
             f"LIEN_QUAN: co | khong  (co = anh CHUP THAT dung la co so/san pham cua {hang}; "
-            "khong = hang khac, do hoa/ban ve, anh mit tinh/bieu tinh, qua mo, hoac chi la anh "
+            f"khong = hang khac, do hoa/ban ve, anh mit tinh/bieu tinh, qua mo, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH}, "
+            "hoac chi la anh "
             "minh hoa chung chung)")
 
 
