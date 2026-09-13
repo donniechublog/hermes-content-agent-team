@@ -245,6 +245,7 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
                   flagship: bool, toi_thieu: int, vai_anh: str = "") -> dict:
     """Manifest (xong.json) cua bai — thu ma moi *_chuan_bi va *_nop doc. Cac gia
     tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
+    import loai_tin            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
     dx = compute_derived(anh, so_xh=len(xhs))
     chua_nhin, so_mien = dx["chua_nhin"], dx["so_mien"]
@@ -266,7 +267,7 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
          "toi_thieu_co_ban": vai_mod.min_images(vai_anh), "so_mien": so_mien,
          "anh": anh, "cap_ghep": dx["cap_ghep"], "goi_y_bia": goi_y_bia, "tu_lieu": tl,
          "ghep_hai_hang": pair_two_vendor_images(anh, meta.get("category", "")),
-         "thu_tu_anh_theo_loai": list(__import__("loai_tin").thu_tu_anh(meta.get("category", ""))),
+         "thu_tu_anh_theo_loai": list(loai_tin.thu_tu_anh(meta.get("category", ""))),
          "so_dung_duoc": so_dung_duoc, "chua_nhin": chua_nhin,
          "xep_hang": ({k: xhs[0].get(k) for k in ("model", "hang", "site", "bang", "kieu", "duoc_nhac")}
                       if xhs else None),
