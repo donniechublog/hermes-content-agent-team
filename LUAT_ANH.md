@@ -769,6 +769,37 @@ mảng nhìn tách rời:
 - **Không làm tối riêng một mảng** quanh chart để "cho nổi": mảng tối có mép
   thẳng chính là vùng thứ hai.
 
+### 7.1 Ảnh rối: chỉ dùng khi hết ảnh sạch, dùng thì nền chữ phải đặc
+
+Ông Chủ 13/09/2026 (LOW-47), nguyên văn: *"không ưu tiên sử dụng tất cả những
+ảnh nhìn rối, trong trường hợp buộc phải dùng, thì lớp nền của text phải làm
+cho nghiêm chỉnh, đừng nham nhở"*.
+
+- **Ảnh rối** = nhiều chữ in sẵn đè lên hình (tiêu đề báo, banner chữ,
+  infographic nhồi chữ), chụp màn hình web/app nhiều chữ, cắt ghép nhiều hình,
+  đồ hoạ nhồi nhét. Biểu đồ/bảng số liệu gọn gàng **không** tính là rối. Chỉ
+  con mắt phân biệt được: vision trả thêm dòng `ROI` (`chuan_bi/nhin.py`,
+  `CAU_ROI`), ghi vào manifest thành `roi`.
+- **Không ưu tiên:** ảnh rối không bao giờ là bìa. Làm thân chỉ khi **hết ảnh
+  sạch** — `nop_chung.kiem_anh_roi` chặn Dre và Ethan nếu còn ảnh sạch dùng
+  một mình được mà chưa dùng, chưa lên bài khác.
+- **Rối nhưng đủ từ khoá thì được, và hợp làm bìa.** Ông Chủ cùng ngày, về
+  chính đồ hoạ "Nvidia Weighs $10B...": *"ảnh này xứng đáng làm hero, thể hiện
+  được đầy đủ mọi từ khoá quan trọng"*. Vision trả thêm dòng `TU_KHOA` (đọc ra
+  đủ tên các hãng/nhân vật chính VÀ con số/sự kiện chính) → manifest
+  `du_tu_khoa`; ảnh rối có cờ này được miễn `kiem_anh_roi`, được làm bìa (kể cả
+  khi đo ra là chart), và bìa hiện **nguyên bề ngang** như slide thân —
+  cover-crop cắt hai mép là mất chữ khoá ở mép.
+- **Buộc dùng thì nền chữ đặc**, không phải lớp mờ 55% như mặc định: chữ in sẵn
+  trong ảnh vẫn lộ lem nhem qua lớp mờ. Carousel `_nen_dac_duoi_chu`, thẻ
+  Ethan `_nen_chu_nghiem`: nền đặc bắt đầu ở **khoảng lặng gần nhất phía trên
+  chữ** (`card._moc_nen_dac` đo chi tiết ngang từng hàng pixel), dải smoothstep
+  nằm trong khoảng lặng đó — nên chữ in sẵn của ảnh bị phủ trọn, không bị cắt
+  nửa dòng, và **không có đường kẻ ngang**. Không bao giờ phủ cao hơn 40% khung
+  từ trên xuống. Đo thật 13/09: đồ hoạ "Nvidia Weighs $10B..." có tiêu đề in sẵn
+  ở hàng 690–989; nếu chỉ phủ dưới chữ của ta thì tiêu đề đó lộ nửa mờ nửa rõ.
+  Đây là ngoại lệ có chủ đích của mục 7 — chỉ cho ảnh rối.
+
 **Tự soi trước khi giao:** nhìn có thấy **một đường ranh ngang** nào không. Thấy
 là hỏng, dựng lại — đừng gửi đi.
 

@@ -124,13 +124,18 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
         # So hang trong hook bia phai la so hang engine khoanh (LOW-24, chung voi Ethan).
         bo.loi.extend(nc.kiem_hang_tren_the(str(muc.get("hook") or ""), a, "bìa"))
     if a["loai"] == "chart" and not a.get("xep_hang"):
-        if la_bia:
+        # Do hoa ROI lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
+        # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
+        if la_bia and a.get("roi"):
+            ra["image"] = a["goc"]
+        elif la_bia:
             bo.loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
                           "bìa dùng ảnh khác (gợi ý: "
                           f"{', '.join(m.get('goi_y_bia') or ['—'])}) hoặc \"ghep\" hai ảnh ngang")
             return None
-        ra["image"] = a["san"] or a["goc"]
-        ra["chart"] = True
+        else:
+            ra["image"] = a["san"] or a["goc"]
+            ra["chart"] = True
     elif a.get("xep_hang"):
         # Anh xep hang: bia/slide deu dan NGUYEN VEN full be ngang (nhu chart),
         # va duoc phep lam bia — hook de len nua duoi, bang o nua tren.
@@ -177,6 +182,9 @@ def _giai_muc(bo: _Boi, muc: dict, nhan: str, la_bia: bool) -> dict | None:
         return None
     if ra is None:
         return None
+    # Anh roi buoc phai dung: carousel.py dat nen chu dac thay lop mo (LOW-47).
+    if any((bo.anh.get(x) or {}).get("roi") for x in (list(ghep) if ghep else [ma])):
+        ra["roi"] = True
     for k in CHU_GIU:
         if muc.get(k) is not None:
             ra[k] = muc[k]
@@ -257,6 +265,8 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # LAM LAI mot slide cu the nhung van ra dung anh cu (Ong Chu 13/09/2026) —
     # dat SAU khi bia + moi slide da giai, luc bo.dung_anh da co du (nhan, ma).
     loi += nc.kiem_khong_lap_anh_lam_lai(bo.anh, bo.dung_anh, m, DRAFTS)
+    # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
+    loi += nc.kiem_anh_roi(bo.anh, bo.da_dung, m)
     return ra, loi, canh, bo.dung_anh
 
 

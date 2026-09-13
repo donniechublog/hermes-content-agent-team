@@ -166,7 +166,7 @@ _JS_LEAD = """() => {
 # Dung de dem quanh anh chup cho vua khung slide (Ong Chu 13/09/2026: "phu mot
 # lop nen cung mau voi nen cua trang goc, sau do dat text va quote cua chung ta
 # len") — khong crop mat gi, khong phai ghep doi, moi tam chup thanh MOT slide.
-_JS_MAU_NEN = """() => {
+_JS_MAU_NEN = r"""() => {
   const trong = (c) => !c || c === 'transparent' || /rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/.test(c);
   for (const el of [document.body, document.documentElement]) {
     if (!el) continue;

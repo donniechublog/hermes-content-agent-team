@@ -25,9 +25,27 @@ VISION_MODEL = env_load.VISION_MODEL
 VISION_URL = env_load.ROUTER_URL
 
 
+# LOW-47 (Ong Chu 13/09/2026): "khong uu tien su dung tat ca nhung anh nhin
+# roi". Do that tren bo Anthropic/Nvidia IPO: anh chup man hinh splash "Claude"
+# con dong "loading chart...", do hoa "Nvidia Weighs $10B..." chu in chim sau
+# cau quote, tieu de bao Nga RBC — ca ba deu qua cong LIEN_QUAN (dung chu de)
+# nhung nhin roi. Chi con mat moi phan biet duoc anh roi voi anh sach.
+CAU_ROI = ("ROI: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, "
+           "banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu "
+           "hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau; khong = anh chup that, "
+           "logo, bien hieu, san pham voi MOT chu the ro, hoac bieu do/bang so lieu gon gang)")
+# Ong Chu 13/09/2026, cung ngay, ve CHINH do hoa "Nvidia Weighs $10B": "anh nay
+# xung dang lam hero, the hien duoc day du moi tu khoa quan trong". Roi thi
+# khong uu tien — TRU KHI nhin vao doc ra du tu khoa chinh cua tin.
+CAU_TU_KHOA = ("TU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac "
+               "cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + "
+               "chu IPO; khong = chi thay mot phan, hoac khong doc ra)")
+
+
 def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
               nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None,
-              khai_niem_theo_loai: bool = False, chup_nguon: bool = False) -> tuple:
+              khai_niem_theo_loai: bool = False, chup_nguon: bool = False,
+              ket_qua: dict | None = None) -> tuple:
     """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
     theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu KHONG HOI
     DUOC (thieu key, router hong ca hai lan thu lai cua `_goi_router`): luc do
@@ -69,6 +87,9 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     1) chup lai lan nua thanh mot tam khac — ca hai deu khong qua cong chat
     luong nao. Nhanh nay dong no lai."""
     import base64, json as _j, urllib.request
+    # `ket_qua` (LOW-47, 13/09/2026): dict nguoi goi truyen vao de nhan them
+    # co "roi" (anh nhin roi) ma KHONG doi so phan tu tuple tra ve — Bob va
+    # test deu mo goi 2/3 phan tu.
     # env_load.bat_buoc nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
     # la ca engine chet giua chung, khong co xong.json, vai chi thay "chua chuan
@@ -119,8 +140,11 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             # chung nhat (09/09/2026).
             import anh_thuong_hieu
             hoi = anh_thuong_hieu.cau_hoi_vision(tieu_de, thuong_hieu)
+        # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
+        # xuong cuoi hang uu tien — xem nop_chung.kiem_anh_roi.
+        hoi = hoi.replace("DUNG 2 dong", "DUNG 4 dong") + "\n" + CAU_ROI + "\n" + CAU_TU_KHOA
         if hoi_them and nhan_them:
-            hoi = hoi.replace("DUNG 2 dong", "DUNG 3 dong") + f"\n{nhan_them}: {hoi_them}"
+            hoi = hoi.replace("DUNG 4 dong", "DUNG 5 dong") + f"\n{nhan_them}: {hoi_them}"
         body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
                 "stream": False, "temperature": 0,
                 "messages": [{"role": "user", "content": [
@@ -170,10 +194,14 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         if hoi_them and nhan_them:
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
             them = t.group(1).strip()[:120] if t else ""
-        return mt, lqv, them
+        rr = re.search(r"^\s*R[OỐ]I\s*:\s*(co|có|khong|không)", txt, re.I | re.M)
+        roi = rr.group(1).lower().startswith("c") if rr else None
+        tk = re.search(r"^\s*T[UỪ]_?\s*KHO[AÁ]\s*:\s*(co|có|khong|không)", txt, re.I | re.M)
+        du_tk = tk.group(1).lower().startswith("c") if tk else None
+        return mt, lqv, them, {"roi": roi, "du_tu_khoa": du_tk}
 
     try:
-        mt, lqv, them = _mot_lan()
+        mt, lqv, them, phu = _mot_lan()
     except Exception as e:                                   # noqa: BLE001
         print(f"[vision] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return ("", None, "") if (hoi_them and nhan_them) else ("", None)
@@ -186,17 +214,20 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         # tuc coi la "chua ai nhin": dong lai thanh ROT.
         print(f"[vision] {Path(path).name}: khong doc duoc LIEN_QUAN, hoi lai 1 lan", file=sys.stderr)
         try:
-            mt2, lqv2, them2 = _mot_lan()
+            mt2, lqv2, them2, phu2 = _mot_lan()
         except Exception as e:                               # noqa: BLE001
             print(f"[vision] {Path(path).name}: lan 2 hong: {type(e).__name__}: {e!r}", file=sys.stderr)
-            mt2, lqv2, them2 = mt, None, them
+            mt2, lqv2, them2, phu2 = mt, None, them, phu
         if lqv2 is None:
             print(f"[vision] {Path(path).name}: van khong doc duoc sau 2 lan hoi -> COI LA ROT "
                   "(khong con fail-open)", file=sys.stderr)
             mt, lqv, them = (mt2 or mt), False, (them2 or them)
+            phu = {k: (phu[k] if phu2.get(k) is None else phu2[k]) for k in phu}
         else:
-            mt, lqv, them = mt2, lqv2, them2
+            mt, lqv, them, phu = mt2, lqv2, them2, phu2
 
+    if ket_qua is not None:
+        ket_qua.update(phu)
     if hoi_them and nhan_them:
         return mt, lqv, them
     return mt, lqv
@@ -279,13 +310,14 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
     # (LOW-45) — hai co so doc lap, mot anh hero chup tu nguon van co the ngang
     # cao va can hoi cat_ngang binh thuong.
     hoi_cat_ngang = (r >= luat_anh.NGANG_RO and h >= 700 and not la_ct)
+    kq = {}
     ket_qua = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
                          khai_niem_theo_loai=kn_theo_loai,
                          thuong_hieu=a.get("thuong_hieu"), chup_nguon=chup_nguon,
                          hoi_them=("Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co "
                                    "chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? "
                                    "Tra loi CHI mot tu: co hoac khong.") if hoi_cat_ngang else "",
-                         nhan_them="CAT_NGANG" if hoi_cat_ngang else "")
+                         nhan_them="CAT_NGANG" if hoi_cat_ngang else "", ket_qua=kq)
               if tieu_de else ("", None, "") if hoi_cat_ngang else ("", None))
     if hoi_cat_ngang:
         a["mo_ta"], a["lien_quan"], cn_txt = ket_qua
@@ -297,6 +329,8 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
     else:
         a["mo_ta"], a["lien_quan"] = ket_qua
         a["cat_ngang_ok"] = None
+    a["roi"] = kq.get("roi")
+    a["du_tu_khoa"] = kq.get("du_tu_khoa")
     # VISION TU NOI "bieu do/do thi" ma cong do hoa (pixel) bo lo (A11, 12/09):
     # tin theo chinh mo ta cua no hon la phep do phang mau — sua nguoc la_ct SAU
     # khi co mo_ta, truoc khi quyet dinh nhanh chart/anh o duoi.
@@ -370,6 +404,15 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
             a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
                                 "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")
             a["dung"] = [d for d in a["dung"] if d != "bìa"]
+    if a.get("roi") and a.get("du_tu_khoa"):
+        a["ghi_chu"].insert(0, "⭐ ẢNH RỐI NHƯNG ĐỦ TỪ KHOÁ chính của tin → dùng thoải mái, HỢP LÀM "
+                               "BÌA; script tự hiện nguyên bề ngang + đặt nền chữ đặc")
+    elif a.get("roi"):
+        # Anh roi khong du tu khoa: khong la bia; lam than chi khi het anh sach
+        # (nop_chung.kiem_anh_roi), va script tu dat nen chu dac (LOW-47).
+        a["dung"] = [d for d in a["dung"] if not str(d).startswith("bìa")]
+        a["ghi_chu"].insert(0, "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT "
+                               "ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc")
     if a.get("lien_quan") is False:
         a["dung"] = []
         a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")

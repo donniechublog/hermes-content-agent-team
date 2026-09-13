@@ -718,6 +718,101 @@ def _lop_anh(canvas, src_img, H) -> int:
     return nat_h
 
 
+NEN_ROI_LE = 24          # nen dac bat dau cach dinh khung chu bao nhieu px
+NEN_ROI_TAN = 170        # dai smoothstep toi da tu anh sang nen dac
+NEN_ROI_LANG = 7         # nang luong ngang TB cua mot hang duoi muc nay = hang LANG
+                         # (do A9 slide quote 13/09: khe lang 620-689 dao dong 3-6, nguong 6 lam
+                         # chuoi dut -> roi ve tran 40% cat nua chu INVESTMENT; 7 thi dung khe)
+NEN_ROI_DAI_LANG = 24    # so hang lang lien nhau toi thieu — khe giua hai dong chu (<20px) khong tinh
+NEN_ROI_TRAN = 0.40      # nen dac khong bat dau cao hon 40% khung — giu phan anh phia tren
+NEN_ROI_TAN_CUNG = 48    # dai chuyen khi khong tim duoc khoang lang nao
+NEN_ROI_CHU = 25         # TB 15 hang lien nhau tu muc nay = CHU IN SAN (do that: chu 25-47, anh chup 8-21)
+NEN_ROI_NHIN = 160       # nhin len bao nhieu px phia tren mot khoang lang de xem con chu in san khong
+
+
+def _nang_luong_hang(canvas) -> list:
+    """Do chi tiet NGANG trung binh cua tung hang pixel (0..255): chenh xam giua
+    hai cot ke nhau, thu nho be ngang 4 lan cho nhanh. Chu in san, canh, van
+    anh cho so cao; troi, nen mo, mang toi cho so gan 0. Chi dung PIL."""
+    from PIL import ImageChops
+    W_, H_ = canvas.size
+    g = canvas.convert("L").resize((max(2, W_ // 4), H_))
+    w = g.width
+    d = ImageChops.difference(g.crop((1, 0, w, H_)), g.crop((0, 0, w - 1, H_)))
+    return list(d.resize((1, H_), Image.BOX).getdata())
+
+
+def _moc_nen_dac(canvas, y0, tan=NEN_ROI_TAN):
+    """Tu `y0` (ngay tren chu cua ta) DI NGUOC LEN tim KHOANG LANG dau tien —
+    NEN_ROI_DAI_LANG hang lien nhau khong chi tiet. Tra (dac, top): nen dac tu
+    `dac` xuong day, dai chuyen smoothstep tu `top` toi `dac` nam TRONG khoang
+    lang do.
+
+    Vi sao phai tim (LOW-47, do that 13/09/2026 tren do hoa "Nvidia Weighs
+    $10B..."): dat nen dac chi ngay duoi chu cua ta thi tieu de in san cua anh
+    (hang 690-989) van nam phia tren, va dai chuyen 180px cat ngang dong chu
+    in san — nua dong mo nua dong ro, dung chu "nham nho". Khoang lang gan
+    nhat phia tren (hang 630-689, nang luong 4-5) moi la cho dai chuyen duoc
+    nam. Cham NEN_ROI_TRAN ma chua co khoang lang sach thi quay ve khoang lang
+    cao nhat da gap; khong gap khoang lang nao moi phu tu tran."""
+    H_ = canvas.size[1]
+    e = _nang_luong_hang(canvas)
+    # TB truot 15 hang: mot dong chu in san la mot KHOI nang luong cao, con
+    # mot canh don le cua anh chup chi cao vai hang.
+    tb = [sum(e[max(0, y - 7):y + 8]) / len(e[max(0, y - 7):y + 8]) for y in range(H_)]
+    tran = int(H_ * NEN_ROI_TRAN)
+    dem = 0
+    du_phong = None
+    y = min(int(y0), H_ - 1)
+    while y > tran:
+        if e[y] < NEN_ROI_LANG:
+            dem += 1
+            if dem >= NEN_ROI_DAI_LANG:
+                bot = y + dem - 1
+                top = y
+                while top - 1 > tran and e[top - 1] < NEN_ROI_LANG:
+                    top -= 1
+                # Khe hep giua chu cua ta va tieu de in san (the Ethan: khe
+                # 1110-1136 ngay duoi chu in san 780-1109) cung la "khoang
+                # lang" — dung o do thi tieu de in san van lo nguyen. Chi nhan
+                # khoang lang khi PHIA TREN no khong con chu in san; con chi tiet
+                # anh chup (8-21) thi nhan, de khong phu mat phan anh dep.
+                if not any(tb[r] >= NEN_ROI_CHU for r in range(max(0, top - NEN_ROI_NHIN), top)):
+                    return bot, max(top, bot - tan)
+                # Nho khoang lang cao nhat da gap: cham tran ma chua co khoang
+                # nao sach thi quay ve day, KHONG dung o tran — dai chuyen o tran
+                # cat ngang chu in san (do that A9 slide quote: tran 540 cat nua
+                # chu "INVESTMENT"; khoang lang 627-650 thi khong cat gi).
+                du_phong = (bot, max(top, bot - tan))
+                y, dem = top - 1, 0
+                continue
+        else:
+            dem = 0
+        y -= 1
+    if du_phong:
+        return du_phong
+    return tran, max(0, tran - NEN_ROI_TAN_CUNG)
+
+
+def _nen_chu_nghiem(canvas, frame_top):
+    """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
+    cua text phai lam cho nghiem chinh, dung nham nho"). `_mo_vung_chu` chi
+    lam mo — tren anh co chu in san, chu cu van lo mo mo sau chu moi, doc ra
+    lem nhem. O day: nen DAC mau BG tu khoang lang gan nhat phia tren khung chu
+    (`_moc_nen_dac`) xuong day, dai smoothstep nam trong khoang lang nen khong
+    cat ngang chi tiet nao va khong co duong ke ngang."""
+    W_, H_ = canvas.size
+    dac, top = _moc_nen_dac(canvas, frame_top - NEN_ROI_LE)
+    mat_na = Image.new("L", (W_, H_), 0)
+    doan = max(1, dac - top)
+    for y in range(top, dac):
+        t = (y - top + 1) / doan
+        mat_na.paste(int(255 * t * t * (3 - 2 * t)), (0, y, W_, y + 1))
+    mat_na.paste(255, (0, dac, W_, H_))
+    canvas.paste(Image.new(canvas.mode, (W_, H_), tuple(BG) + ((255,) if canvas.mode == "RGBA" else ())),
+                 (0, 0), mat_na)
+
+
 def _mo_vung_chu(canvas, frame_top):
     """Lam MO CUC BO vung anh nam duoi chu, sua canvas tai cho (Ong Chu 06/09/2026:
     chu co vien "phen nhu karaoke" — bo vien, thay bang lam mo).
@@ -873,7 +968,7 @@ def _quote_frame(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
         d.line([(mr2, yb), (x1 - r, yb)], fill=line_color, width=lw)   # line ra (phai)
 
 
-def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
+def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", roi=False):
     """The pull-quote: mot cau trich dan lon tren anh phu kin, KHONG LOP NEN.
 
     Khac hero image (mot tieu de bao quat tin) va carousel (nhieu slide): day la
@@ -946,7 +1041,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline=""):
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
-    _mo_vung_chu(canvas, frame_top)
+    (_nen_chu_nghiem if roi else _mo_vung_chu)(canvas, frame_top)
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi.
     #
     # Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong: anh chup co hero
@@ -1072,7 +1167,7 @@ _RE_EXPORT = (AM_MAT_DAU, CUM_MAT_DAU, DAU_CAM)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
-          attrib="", bo_qua_anh=False, nhan_vat=""):
+          attrib="", bo_qua_anh=False, nhan_vat="", roi=False):
     """Dung the `quote` (mac dinh) hoac `tran`. `src`: mot duong dan, hoac danh
     sach hai duong dan (ghep doc). `title` la cau trich dan (quote) hoac cau
     tieu de (tran)."""
@@ -1103,11 +1198,11 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
         _chan_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
     # Moi kieu the mot ham ve rieng; `build` chi con la cong chan + re nhanh.
     if kieu == "quote":
-        return _render_quote(src, title, attrib, out, handle, ratio, tagline)
-    return _render_tran(src, title, out, handle, ratio, kicker, b)
+        return _render_quote(src, title, attrib, out, handle, ratio, tagline, roi=roi)
+    return _render_tran(src, title, out, handle, ratio, kicker, b, roi=roi)
 
 
-def _render_tran(src, title, out, handle, ratio, kicker, b):
+def _render_tran(src, title, out, handle, ratio, kicker, b, roi=False):
     """The hero TRAN: anh phu kin the, tieu de MOT cau tron ven de len anh
     trong mot khung chu nhat net.
 
@@ -1222,7 +1317,7 @@ def _render_tran(src, title, out, handle, ratio, kicker, b):
     bottom_y = H - g4 - via_h
     frame_top = max(TRAN_FRAME_PAD, cum_top - TRAN_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + TRAN_FRAME_PAD)
-    _mo_vung_chu(canvas, frame_top)
+    (_nen_chu_nghiem if roi else _mo_vung_chu)(canvas, frame_top)
 
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi: ranh
     # sang/toi ngang cat qua khoi chu la ca rat thuong (anh chup hero toi tren
@@ -1346,11 +1441,13 @@ def main():
                    choices=["free"] + list(RATIOS),
                    help="free: chiều cao trôi theo ảnh. 1:1/4:5/3:4: khoá tỉ lệ")
     p.add_argument("--out", required=True)
+    p.add_argument("--roi", action="store_true",
+                   help="Anh ROI buoc phai dung: nen chu dac thay lam mo (LOW-47)")
     a = p.parse_args()
     build([a.image, a.image2] if a.image2 else a.image, a.title, a.out,
           handle=a.handle, ratio=a.ratio, tagline=a.tagline, brand=a.brand,
           bo_qua_dau=a.bo_qua_dau, kieu=a.kieu, kicker=a.kicker, attrib=a.attrib,
-          bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat)
+          bo_qua_anh=a.bo_qua_anh, nhan_vat=a.nhan_vat, roi=a.roi)
 
 
 if __name__ == "__main__":
