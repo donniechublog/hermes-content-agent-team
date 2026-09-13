@@ -164,6 +164,15 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # Face" tung lam Hugging Face thanh "hang trong tin" cua mot tin DeepSeek.
         import nguon_bai
         tieu_de_nhin = nguon_bai.bo_hau_to_site(nguon.get("tieu_de_en") or "") or title
+        # THU TU (Ong Chu 13/09/2026): CHUP MAN HINH BAO CUNG TIN TRUOC, tim kiem
+        # anh tren web sau. Mot tin hot co hang tram bao dua, moi bao mot anh hero
+        # dung chu de san — chup ve roi dem nen la co slide, khong phai doan xem
+        # mot tam anh la tren mang co dinh dang gi. Truoc do `_vong_tim_rong`
+        # (Yandex + og:image) chay truoc, la duong dai va de lac de hon han.
+        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+            anh, dung_duoc, chua_nhin = _vong_chup_nguon(anh, link, trang, wd,
+                                                         khong_browser, phien=phien,
+                                                         tieu_de=tieu_de_nhin)
         if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship) and not khong_browser:
             anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, toi_thieu,
                                                        dung_duoc, wd, phien=phien)
@@ -188,15 +197,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
                                                       wd, vai.so_anh_muc_tieu_tim(vai_anh, flagship),
                                                       khong_browser, phien=phien,
                                                       category=category)
-        # Van thieu -> CHUP CHINH TRANG NGUON o khung dien thoai, cat lay khoi
-        # lead (anh chinh + tit). Ong Chu 06/09/2026 da chot luat khung mobile,
-        # nhac lai 12/09: "co the capture man hinh mobile source goc ma?" —
-        # truoc do nac nay chi ton tai trong xep_hang.py. Dat TRUOC khai niem:
-        # khoi lead la vat THAT cua chinh tin, anh khai niem thi khong.
-        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = _vong_chup_nguon(anh, link, trang, wd,
-                                                         khong_browser, phien=phien,
-                                                         tieu_de=tieu_de_nhin)
+        # (Vong chup trang nguon da chay o TREN — xem ghi chu thu tu 13/09/2026.)
         # Van thieu, hoac co anh ma khong tam nao lam anh chinh cua VAI NAY duoc
         # -> anh khai niem chung chung cua chu de, sau anh cua chinh hang (chi
         # mang, khong browser; chay ca khi --khong-browser).

@@ -348,6 +348,84 @@ def kiem_quote_dich(chu: str, nhan: str) -> list:
             "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
 
 
+_CUM_DAN_THUA = ("đọc bài", "xem bài", "đọc thêm", "xem thêm", "nguồn:", "link:")
+# Domain that ke ca khong http(s):// van bi Facebook/Instagram/Telegram quet
+# thanh lien ket va giam hien thi bai dang — bat theo dang "tu.tld" bat ke hoa
+# thuong, khong bat nham so thap phan ("16,35" khong co chu cai truoc dau cham).
+_DOMAIN = re.compile(
+    r"\b[a-zA-Z][a-zA-Z0-9-]*\.(?:com|net|org|vn|io|co|xyz|info|news|me|ai)\b",
+    re.IGNORECASE)
+
+
+def kiem_khong_lap_anh_lam_lai(anh: dict, dung_anh: list, m: dict, drafts_dir) -> list:
+    """LAM LAI mot slide cu the nhung ban moi van la CUNG MOT anh cu, chi doi
+    ten ma (Ong Chu 13/09/2026, Anthropic/Nvidia IPO: bam Lam lai chi ro slide
+    6 hai lan lien, ca hai lan spec moi deu chon lai dung anh cu). Dong "DUNG
+    lap lai anh cu" trong task chi la loi mem — cong nay la loi cung: so theo
+    dHash (khong theo ma anh) cac anh GOC dang dung o tung slide voi danh sach
+    dHash da bi che ghi trong drafts/<id>.img.json (duyet_bai._ghi_cam_anh_lam_lai
+    ghi luc bam nut Lam lai). Chi chan DUNG slide bi Ong Chu neu ten — cac slide
+    khac trong ban lam lai duoc giu nguyen anh cu binh thuong."""
+    draft_id = m.get("draft_id")
+    if not draft_id:
+        return []
+    ip = Path(drafts_dir) / f"{draft_id}.img.json"
+    if not ip.exists():
+        return []
+    try:
+        im = json.loads(ip.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    cam = im.get("cam_anh_slide") or {}
+    if not cam:
+        return []
+    import luat_anh
+    from PIL import Image
+    loi = []
+    for nhan, ma_list in dung_anh:
+        mo = re.search(r"slide (\d+)", nhan)
+        so = "1" if nhan == "bìa" else (mo.group(1) if mo else None)
+        ds = cam.get(so) if so else None
+        if not ds:
+            continue
+        for ma in ma_list:
+            fp = anh.get(ma, {}).get("goc")
+            if not fp:
+                continue
+            try:
+                h = luat_anh.dhash(Image.open(fp).convert("RGB"))
+            except (OSError, ValueError):
+                continue
+            if any(luat_anh.gan_giong(h, int(c, 16)) for c in ds):
+                loi.append(f"{nhan}: {ma} vẫn là ảnh đã bị Ông Chủ từ chối lúc làm lại trước "
+                           "— chọn ảnh THẬT SỰ khác (khác nguồn, khác góc), không chỉ đổi mã")
+                break
+    return loi
+
+
+def kiem_dan_nguon_gon(chu: str, nhan: str) -> list:
+    """Dan nguon KHONG duoc co "đọc bài"/"xem bài"... (Ong Chu 13/09/2026: thua,
+    carousel da co dau doc bai chinh la cai slide) va KHONG duoc co ten mien
+    dang "tenbao.com" — nen tang (FB/IG/Telegram) quet chu do la lien ket va
+    giam hien thi ca bai. Dan nguon chi can "theo <ten bao>" hoac ten nguoi noi,
+    khong can dong tu "doc/xem" va khong can duoi ten mien."""
+    t = (chu or "").strip()
+    if not t:
+        return []
+    loi = []
+    thap = t.lower()
+    cum = next((c for c in _CUM_DAN_THUA if c in thap), None)
+    if cum:
+        loi.append(f"{nhan}: \"{t[:60]}\" có cụm \"{cum}\" — thừa, bỏ đi, dẫn nguồn "
+                   "chỉ cần \"theo <tên báo>\" hoặc tên người nói")
+    mien = _DOMAIN.search(t)
+    if mien:
+        loi.append(f"{nhan}: \"{t[:60]}\" có tên miền \"{mien.group(0)}\" — nền tảng quét "
+                   "thành liên kết, giảm hiển thị cả bài. Bỏ đuôi miền, chỉ giữ tên báo "
+                   "(vd \"theo BusinessTimes\" thay vì \"theo businesstimes.com\")")
+    return loi
+
+
 def kiem_hang_tren_the(chu: str, a: dict, nhan: str = "hook") -> list:
     """THU HANG vai viet len the phai TRUNG hang engine KHOANH trong anh (LOW-24).
 

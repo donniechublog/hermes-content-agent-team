@@ -159,16 +159,54 @@ class DongAnhDaDung(TypedDict):
 
 
 # ---------------------------------------------------------------- dan xuat
-def so_anh_dung_duoc(anh: list) -> int:
-    """So anh DUNG DUOC de xet du/thieu — MOT ban duy nhat cua cong thuc.
+# Anh NGANG thap hon nguong nay khong cat doc 4:5 duoc (con ~80% chieu cao roi
+# phong len 1080 se nhoe) — chi con duong "ghep" voi mot anh ngang khac. MOT ban
+# cho ca nguoi dem (so_anh_dung_duoc) lan cong chan (dre_nop): truoc 12/09/2026
+# dre_nop go cung 700 con nguoi dem thi khong biet, nen A5 900x600 cua tin TSMC
+# duoc dem la mot slide trong khi khong ai dung no mot minh duoc.
+CAO_TOI_THIEU_CAT_NGANG = 700
 
-    Chum anh KHAI NIEM chi lam bia nen ca chum dem la MOT: "5" o day la co Nhat,
-    khong phai 5 slide. Truoc khi gom ve day, `dre_chuan_bi` doan lai bang
-    `len([a for a in anh if a["dung"]])` — mot so KHAC — con `duyet_bai` va
-    `anh_chuan_bi` coi thieu khoa la 0. Ba cach doan cho ba ket luan."""
+
+def _chi_ghep_duoc(a: dict) -> bool:
+    """Tam nay CHI dung duoc qua "ghep" — khong dung MOT MINH duoc, vi mot
+    trong hai ly do:
+      1. qua thap de cat doc (`h < CAO_TOI_THIEU_CAT_NGANG`), hoac
+      2. la anh chup NGANG co chu/logo/so lieu de len (`cat_ngang_ok is False`
+         — vision xac nhan, xem chuan_bi.nhin.phan_loai) nen luat_anh cam crop.
+    Su co 12/09/2026 lan hai (t_a8ffd2f6): Dre chay that, 4/5 anh ngang cao
+    >=700 la bien hieu/logo CO CHU (khong phai chart — chart da co duong rieng
+    "than, dan full be ngang"), nhung cong thuc cu chi nhin chieu cao nen dem
+    ca bon la "dung mot minh duoc" — thua 2 slide so voi that te. `cat_ngang_ok`
+    la None voi manifest CU (chua nhin lai) hoac khi vision khong tra loi duoc
+    cau hoi — coi nhu CHUA XAC NHAN, an toan hon la dem lam dung mot minh."""
+    if not a.get("ngang"):
+        return False
+    if 0 < int(a.get("h") or 0) < CAO_TOI_THIEU_CAT_NGANG:
+        return True
+    if a.get("loai") == "chart":
+        return False           # chart ngang dung MOT MINH qua "than, dan full be ngang"
+    return a.get("cat_ngang_ok") is not True
+
+
+def so_anh_dung_duoc(anh: list) -> int:
+    """So SLIDE dung duoc tu bo anh, de xet du/thieu — MOT ban duy nhat cua cong thuc.
+
+    Dem theo cai vai DUNG DUOC, khong phai so tam tai ve:
+      - chum anh KHAI NIEM chi lam bia nen ca chum dem la MOT ("5" o day la co
+        Nhat, khong phai 5 slide);
+      - anh ngang QUA THAP (`_chi_ghep_duoc`) khong dung mot minh duoc, hai tam
+        nhu the moi ghep thanh MOT slide — mot tam le dem la 0.
+    Su co 12/09/2026 (tin TSMC, t_a8ffd2f6): engine dem "5 dung duoc / toi thieu
+    5" roi NGUNG TIM (bo qua vong chup trang nguon + anh khai niem) trong khi
+    A5 900x600 chi ghep duoc ma khong co cap, tuc chi dung duoc 4 slide. Dre
+    block, Ong Chu phai go tay. Truoc khi gom ve day, `dre_chuan_bi` doan lai
+    bang `len([a for a in anh if a["dung"]])` — mot so KHAC — con `duyet_bai`
+    va `anh_chuan_bi` coi thieu khoa la 0. Ba cach doan cho ba ket luan."""
     dung_duoc = [a for a in (anh or []) if a.get("dung") and a.get("lien_quan") is not False]
-    so_rieng = sum(1 for a in dung_duoc if not a.get("khai_niem"))
-    return so_rieng + min(1, len(dung_duoc) - so_rieng)
+    khai_niem = [a for a in dung_duoc if a.get("khai_niem")]
+    rieng = [a for a in dung_duoc if not a.get("khai_niem")]
+    chi_ghep = [a for a in rieng if _chi_ghep_duoc(a)]
+    return (len(rieng) - len(chi_ghep)) + len(chi_ghep) // 2 + min(1, len(khai_niem))
 
 
 def doc_manifest(nguon) -> dict | None:

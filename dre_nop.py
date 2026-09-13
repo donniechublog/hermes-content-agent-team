@@ -37,6 +37,7 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import nop_chung as nc                                       # noqa: E402
+import schema                                                # noqa: E402
 
 DRAFTS = ROOT / "drafts"
 
@@ -137,7 +138,7 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
         if not la_bia:
             ra["chart"] = True
     elif a["ngang"]:
-        if muc.get("cat_ngang") and a["h"] < 700:
+        if muc.get("cat_ngang") and a["h"] < schema.CAO_TOI_THIEU_CAT_NGANG:
             bo.loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
                           "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"ghep\" hoặc bỏ")
             return None
@@ -230,6 +231,10 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
         # "tieng Viet go mat dau", co y bo qua tieng Anh nen quote chua dich lot
         # thang len Telegram (06/09/2026).
         loi.extend(nc.kiem_quote_dich(g.get("quote"), f"slide {i}"))
+        # Dan nguon gon: khong "doc bai"/"xem bai", khong duoi ten mien — Ong
+        # Chu 13/09/2026, nen tang quet ten mien thanh lien ket, giam hien thi.
+        loi.extend(nc.kiem_dan_nguon_gon(g.get("attrib"), f"slide {i} (attrib)"))
+        loi.extend(nc.kiem_dan_nguon_gon(g.get("text"), f"slide {i} (text)"))
         ra["slides"].append(g)
     # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026. Dat SAU
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
@@ -249,6 +254,9 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     chu_slide = " ".join(str(x.get(k) or "") for x in [cover] + list(slides)
                          for k in ("hook", "text", "quote", "label", "attrib"))
     canh = nc.kiem_so_tren_anh(chu_slide, m, wd)
+    # LAM LAI mot slide cu the nhung van ra dung anh cu (Ong Chu 13/09/2026) —
+    # dat SAU khi bia + moi slide da giai, luc bo.dung_anh da co du (nhan, ma).
+    loi += nc.kiem_khong_lap_anh_lam_lai(bo.anh, bo.dung_anh, m, DRAFTS)
     return ra, loi, canh, bo.dung_anh
 
 

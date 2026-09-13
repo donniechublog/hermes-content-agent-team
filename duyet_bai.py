@@ -286,16 +286,94 @@ def mark_draft(draft_id, status):
 
 def _tach_ly_do_lam_lai(text):
     """'4: chart bi cat' -> ('4', 'chart bi cat'); '2,5: ...' -> ('2, 5', ...);
-    'tat ca: ...' -> ('CA BO', ...); khong co so -> (None, ca cau)."""
+    'tat ca: ...' -> ('CA BO', ...); khong co so -> (None, ca cau).
+
+    Ong Chu 13/09/2026 (Anthropic/Nvidia IPO): ca hai ban that Ong Chu go deu
+    lot qua regex cu — "Làm lại slide 3, 6: ..." co CHU "Làm lại" dung truoc
+    "slide" (regex cu neo ^ ngay tai "slide"), va "Slide 6 vẫn là hình cũ, ..."
+    khong co dau hai cham phan cach (regex cu bat buoc [:\-–—]). Ca hai lan
+    slide roi ve None, cong `kiem_khong_lap_anh_lam_lai` moi (nop_chung.py)
+    khong co gi de chan, nen anh cu lot qua tiep — dung la nguyen nhan that.
+
+    Sua: tim "slide/ảnh N[, M...]" O BAT KY DAU trong cau (khong neo ^, cho
+    phep chu dan truoc), va KHONG bat buoc dau hai cham — co thi tach rieng
+    phan ly do sau dau, khong thi giu nguyen CA CAU lam ly do (khong mat
+    thong tin)."""
     t = (text or "").strip()
-    m = re.match(r"^\s*(tất cả|tat ca|cả bộ|ca bo|all)\s*[:\-–—]?\s*(.*)$", t, re.I | re.S)
+    m = re.match(r"^\s*(tất cả|tat ca|cả bộ|ca bo|all)\b\s*[:\-–—]?\s*(.*)$", t, re.I | re.S)
     if m:
-        return "CA BO", m.group(2).strip()
-    m = re.match(r"^\s*(?:slide|ảnh|anh)?\s*#?\s*(\d[\d\s,]*)\s*[:\-–—]\s*(.*)$", t, re.I | re.S)
+        return "CA BO", (m.group(2).strip() or t)
+    m = re.search(r"(?:slide|ảnh|anh)\s*#?\s*(\d[\d\s,]*)", t, re.I)
+    if m:
+        so = sorted({int(x) for x in re.findall(r"\d+", m.group(1))})
+        duoi = t[m.end():]
+        mm = re.match(r"^\s*[:\-–—]\s*(.*)$", duoi, re.S)
+        ly_do = mm.group(1).strip() if mm else t
+        return ", ".join(str(x) for x in so), (ly_do or t)
+    # Khong co chu "slide/ảnh" nhung go tat so tro len dau ("4: chart bi cat"),
+    # kieu cu truoc 13/09/2026 — van phai nhan.
+    m = re.match(r"^\s*(\d[\d\s,]*)\s*[:\-–—]\s*(.*)$", t, re.S)
     if m:
         so = sorted({int(x) for x in re.findall(r"\d+", m.group(1))})
         return ", ".join(str(x) for x in so), m.group(2).strip()
     return None, t
+
+def _ma_cua_slide(spec: dict, n: int) -> list:
+    """Ma anh dang dung o slide N (1 = bia) theo spec.json HIEN TAI cua chuan_bi
+    (ban Ong Chu vua thay, truoc khi task lam lai ghi de)."""
+    if n == 1:
+        ma = (spec.get("cover") or {}).get("anh")
+        return [ma] if ma else []
+    s_list = spec.get("slides") or []
+    idx = n - 2
+    if idx < 0 or idx >= len(s_list):
+        return []
+    muc = s_list[idx]
+    if muc.get("ghep"):
+        return list(muc["ghep"])
+    return [muc["anh"]] if muc.get("anh") else []
+
+
+def _ghi_cam_anh_lam_lai(draft_id: str, so_slide: list) -> None:
+    """LOW-.. 13/09/2026 (Anthropic/Nvidia IPO): Ong Chu bam Lam lai CHI RO
+    slide 6 hai lan lien, ca hai lan ban moi VAN LA CUNG MOT anh (chi doi ma) —
+    dong "DUNG lap lai anh cu" trong task chi la loi mem, khong ai bat buoc
+    doc/nghe theo. Truoc khi giao task lam lai, chup dHash cua CHINH cac anh
+    GOC dang dung o cac slide bi che (tu spec.json hien tai, luc con la ban Ong
+    Chu vua xem) roi ghi vao img.json duoi "cam_anh_slide" — {"6": ["<dHash
+    hex>", ...]}. `nop_chung.kiem_khong_lap_anh_lam_lai` doc lai khi vai nop
+    ban moi, so theo dHash (khong theo ma anh, vi vai co the doi ten ma A6 ->
+    A9 ma van tro toi CUNG mot file/anh) nen khong the lach bang cach doi ten."""
+    sp = STATE_DIR / "chuan_bi" / draft_id / "spec.json"
+    if not sp.exists() or not so_slide:
+        return
+    try:
+        spec = json.loads(sp.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    ip = DRAFTS / (draft_id + ".img.json")
+    try:
+        im = json.loads(ip.read_text(encoding="utf-8")) if ip.exists() else {}
+    except (OSError, ValueError):
+        im = {}
+    cam = im.setdefault("cam_anh_slide", {})
+    goc_dir = STATE_DIR / "chuan_bi" / draft_id / "goc"
+    from PIL import Image
+    for n in so_slide:
+        for ma in _ma_cua_slide(spec, n):
+            fp = goc_dir / f"{ma}.png"
+            if not fp.exists():
+                continue
+            try:
+                h = luat_anh.dhash(Image.open(fp).convert("RGB"))
+            except (OSError, ValueError):
+                continue
+            ds = cam.setdefault(str(n), [])
+            hx = format(h, "x")
+            if hx not in ds:
+                ds.append(hx)
+    _ghi_json(ip, im)
+
 
 def _giao_lam_lai(draft_id, slide=None, ly_do=None):
     """Tao task lam lai cho draft. Tra ve (note, rid). `slide`/`ly_do` None = giao
@@ -304,6 +382,15 @@ def _giao_lam_lai(draft_id, slide=None, ly_do=None):
     ip = DRAFTS / (draft_id + ".img.json")
     if not ip.exists():
         return "⚠️ Không thấy thông tin task ảnh để làm lại", None
+    if slide == "CA BO":
+        sp = STATE_DIR / "chuan_bi" / draft_id / "spec.json"
+        try:
+            spec0 = json.loads(sp.read_text(encoding="utf-8"))
+            _ghi_cam_anh_lam_lai(draft_id, list(range(1, len(spec0.get("slides") or []) + 2)))
+        except (OSError, ValueError):
+            pass
+    elif slide:
+        _ghi_cam_anh_lam_lai(draft_id, [int(x) for x in re.findall(r"\d+", slide)])
     im = json.loads(ip.read_text(encoding="utf-8"))
     n = int(im.get("remakes", 0)) + 1
     if ly_do:
@@ -494,7 +581,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     title = im.get("title", draft_id)
     body = task_bodies.EDU_BODY.format(source_note=source_note, link=link, title=title,
                                        summary=summary, goc=str(ROOT), draft_id=draft_id,
-                                       ket_thuc=task_bodies.KET_THUC_VAI_ANH)
+                                       ket_thuc=task_bodies.ket_thuc_vai_anh(ROOT, draft_id))
     # Engine da nhin anh: co bao nhieu tam that dung duoc? Kite phai DUNG chung
     # (Ong Chu 05/09/2026), khong ra bo toan text & card.
     # C-r2-5: doc qua schema.doc_manifest va dem bang schema.so_anh_dung_duoc —
