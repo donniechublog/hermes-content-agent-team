@@ -341,6 +341,32 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
                             "site": kq["site"], "bang": kq["bang"], "tu_khoa": kq["model"]}}
 
 
+def _bao_thuong_hieu_rong(h: dict, wd: Path, phien=None) -> list:
+    """Commons/Wikidata RỖNG cho một hãng (LOW-45, 13/09/2026) — tìm BÁO THẬT
+    theo tên hãng qua `nguon_bai.bao_ve_tu_khoa` (không đòi "cùng một sự kiện"
+    như `bao_khac_bing`, chỉ cần bài NÓI VỀ hãng) rồi quét ảnh như
+    `_vong_tim_rong` (`browser_pass`, đã sửa LOW-45 phần 1 nên không còn vớ
+    nhầm `<figure>` là chart). Đo thật: Moonshot AI (QID Wikidata trống, 0 ảnh)
+    → tìm "Moonshot AI" ra báo thật, quét ra ảnh minh hoạ/logo dùng được.
+
+    Gắn `thuong_hieu` cho từng ứng viên để đi qua đúng câu hỏi con mắt và điểm
+    theo loại tin như ảnh Commons/Wikidata. Không mạng/router → []."""
+    import nguon_bai
+    bao = nguon_bai.bao_ve_tu_khoa(h["hang"], so=4)
+    if not bao:
+        print(f"[thuong hieu] {h['khoa']}: khong tim duoc bao ve \"{h['hang']}\"", file=sys.stderr)
+        return []
+    print(f"[thuong hieu] {h['khoa']}: Commons/Wikidata rong, thu {len(bao)} bao "
+          f"({', '.join(_mien(b['url']) for b in bao)})", file=sys.stderr)
+    bp = browser_pass([{"url": b["url"], "loai": "báo"} for b in bao], wd, tim_them=False, phien=phien)
+    ra = []
+    for c in bp["cands"]:
+        c["thuong_hieu"] = {"hang": h["hang"], "khoa": h["khoa"], "loai": "anh",
+                            "tu_khoa": f"báo về {h['hang']}"}
+        ra.append(c)
+    return ra
+
+
 def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                       toi_thieu: int = 5, khong_browser: bool = False, phien=None,
                       category: str = "") -> tuple:
@@ -369,7 +395,16 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     import loai_tin
     cands = []
     for h in hangs:
-        cands += th.anh_hang(h, wd=wd4 / h["khoa"])
+        cands_h = th.anh_hang(h, wd=wd4 / h["khoa"])
+        if not cands_h and not khong_browser:
+            # Commons/Wikidata RONG (hang tre/tu nhan, LOW-45 do that voi Moonshot
+            # AI: QID trong, 0 anh cong ty/logo/founder). Ong Chu 13/09/2026:
+            # "đâu cần tìm đúng tin về việc raise, chỉ cần search tin tức theo
+            # từ khóa kimi/moonshot... là cũng đầy article có ảnh dùng được" —
+            # tim BAO THAT theo tu khoa hang (khong doi cung mot su kien) roi
+            # quet anh nhu vong_tim_rong.
+            cands_h = _bao_thuong_hieu_rong(h, wd4 / h["khoa"], phien=phien)
+        cands += cands_h
         # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
         if loai_tin.muon(category, "co_phieu") and not khong_browser:
             cands += th.anh_co_phieu(h, wd4 / h["khoa"], phien=phien)

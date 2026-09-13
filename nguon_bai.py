@@ -381,6 +381,76 @@ def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10
     return ra
 
 
+def bao_ve_tu_khoa(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int = 20) -> list:
+    """Bao THẬT về một TỪ KHOÁ (tên hãng/sản phẩm) qua Bing News RSS — KHÁC
+    `bao_khac_bing`: không đòi "cùng một sự kiện" với một tiêu đề gốc (đo LOW-45,
+    Ông Chủ 13/09/2026: *"đâu cần tìm đúng tin về việc raise, chỉ cần search tin
+    tức theo từ khóa kimi/moonshot... là cũng đầy article có ảnh dùng được, đã
+    là ảnh khái niệm thì cần gì phải cầu kỳ"*). Dùng khi Commons/Wikidata của
+    một hãng RỖNG (`anh_thuong_hieu.anh_hang`/`anh_wikidata` không ra gì) — hãng
+    trẻ/tư nhân thường không có ảnh trên Wikimedia nhưng có thật trên báo.
+
+    Lọc nhẹ hơn `bao_khac_bing`: chỉ đòi tiêu đề bài chứa lại chính TỪ KHOÁ
+    (không đòi khớp với MỘT sự kiện cụ thể nào) — vì mục đích là ảnh MINH HOẠ
+    hãng/sản phẩm (như ảnh khái niệm), không phải bằng chứng của một tin riêng.
+    Cùng hạ tầng với `bao_khac_bing`: giải chuyển hướng HTTP, chặn SSRF
+    (`quet_chung.url_an_toan`), lọc theo ngày, bỏ trang tổng hợp/`bo_mien`."""
+    if co_tieng_viet(tu_khoa):
+        print("[nguon_bai] TU CHOI bao_ve_tu_khoa bang tieng Viet", file=sys.stderr)
+        return []
+    import email.utils as eu
+    import time as _t
+    can = tu_cung_tin(tu_khoa)
+    if not can:
+        return []
+    moc = _t.time() - ngay * 86400
+    its, co_link = [], set()
+    for q in _truy_van_bing(tu_khoa) or [tu_khoa]:
+        try:
+            r = _tai(BING_RSS.format(q=up.quote(q)), 20)
+            for it in ET.fromstring(r.content).findall(".//item"):
+                k = it.findtext("link") or ""
+                if k and k not in co_link:
+                    co_link.add(k)
+                    its.append(it)
+        except Exception as e:                               # noqa: BLE001
+            print(f"[nguon_bai] bing tu khoa hong: {type(e).__name__}", file=sys.stderr)
+        if len(its) >= so * 3:
+            break
+    ra, thay = [], set()
+    for it in its[: so * 6]:
+        link = it.findtext("link") or ""
+        td = it.findtext("title") or ""
+        # Chi doi bai NOI VE tu khoa (het cac tu cua chinh no co mat), khong
+        # doi CUNG MOT su kien nhu `bao_khac_bing` (`cung_tin`/`goc & ...`).
+        if not link or not can <= tu_cung_tin(td):
+            continue
+        try:
+            ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
+            if ts < moc:
+                continue
+        except Exception:                                    # noqa: BLE001
+            pass
+        try:
+            if not quet_chung.url_an_toan(link):
+                continue
+            rr = httpx.head(link, headers=HDR, timeout=12, follow_redirects=True)
+            u = str(rr.url)
+            if rr.status_code != 200 or not quet_chung.url_an_toan(u):
+                continue
+        except Exception:                                    # noqa: BLE001
+            continue
+        m = re.match(r"https?://([^/]+)", u)
+        mien = (m.group(1) if m else "").replace("www.", "")
+        if not mien or mien in thay or any(b in mien for b in BO_MIEN + tuple(bo_mien)):
+            continue
+        thay.add(mien)
+        ra.append({"url": u, "loai": "báo", "tieu_de": td[:160], "toa_soan": "https://" + mien})
+        if len(ra) >= so:
+            break
+    return ra
+
+
 def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
     link_gnews = None
     if GNEWS_BAI in link:
