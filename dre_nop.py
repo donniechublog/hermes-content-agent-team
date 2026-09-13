@@ -92,10 +92,10 @@ def _giai_ghep(bo: _Boi, ghep, muc: dict, nhan: str) -> dict | None:
     for x in ghep:
         bo.nhan_ma(x, nhan)
     bo.kiem_lien_quan(ghep, nhan)
-    ims = [Image.open(bo.anh[x]["goc"]).convert("RGB") for x in ghep]
-    rc = 1 / sum(im.height / im.width for im in ims)
-    if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
-            <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
+    r1, r2 = (im.width / im.height for im in
+              (Image.open(bo.anh[x]["goc"]) for x in ghep))
+    if not luat_anh.ghep_vua_khung(r1, r2):
+        rc = luat_anh.ti_le_sau_ghep(r1, r2)
         bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
                       f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
     # Cong lech tone (`luat_anh.lech_tone`) da bo khoi he thong (Ong Chu

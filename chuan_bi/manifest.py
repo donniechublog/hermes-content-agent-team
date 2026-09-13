@@ -107,11 +107,8 @@ def cap_ghep(anh: list) -> list:
     for i in range(len(ngang)):
         for j in range(i + 1, len(ngang)):
             x, y = ngang[i], ngang[j]
-            rc = 1 / (1 / x["ti_le"] + 1 / y["ti_le"])
-            if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
-                    <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
-                continue
-            ra.append([x["ma"], y["ma"]])
+            if luat_anh.ghep_vua_khung(x["ti_le"], y["ti_le"]):
+                ra.append([x["ma"], y["ma"]])
     return ra
 
 
