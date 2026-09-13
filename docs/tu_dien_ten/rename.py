@@ -203,9 +203,12 @@ def _doi_module_ngoai_rope(root: Path, mod: str, defs: list, consts: list) -> No
         tu_import = set()
         for m in re.finditer(rf"^\s*from {re.escape(mod)} import ([^\n]+)", src, re.M):
             tu_import |= {x.strip().split(" as ")[0] for x in m.group(1).strip("()").split(",")}
-        k2 += _doi_token(g, lambda pp, p, t, nx, tu=tu_import: bang.get(t.string)
-                         if (t.string in bang and (_la_thuoc_tinh(pp, p, t, mod, t.string)
-                                                  or t.string in tu)) else None)
+        # `import scan_models as s` -> `s.KHOA_BANG` (lo 4: alias khong phai ten module).
+        alias = _alias_module(src, {mod})
+        k2 += _doi_token(g, lambda pp, p, t, nx, tu=tu_import, al=alias: bang.get(t.string)
+                         if (t.string in bang and ((p is not None and p.string == "." and pp is not None
+                                                    and pp.type == tokenize.NAME and pp.string in al)
+                                                   or (t.string in tu and not (p and p.string == ".")))) else None)
     _log(f"  {mod} (token, tệp khác): {k2} chỗ")
 
 
