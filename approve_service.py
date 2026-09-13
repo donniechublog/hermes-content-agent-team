@@ -45,7 +45,7 @@ from duyet_co_so import (  # noqa: E402
     DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _chay_nen, _ghi_json, _gui_chu, _reply_that, call, la_ong_chu, load_secrets, log, rut,
 )
 from duyet_giao_viec import (  # noqa: E402
-    MAC_DINH_VIET, bao_tien_do_kanban, vai_cua_topic,
+    bao_tien_do_kanban, vai_cua_topic,
 )
 from duyet_chon_tin import (  # noqa: E402
     MANIFEST_THEO_TOPIC, _la_reply_bao_cao, doc_lenh_chon, _xu_ly_chon,

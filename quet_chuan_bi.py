@@ -11,7 +11,7 @@ tat / viet y nghia vao MOT tep JSON roi chay quet_nop.py.
 Thu muc lam viec: state/<brand>/quet/<vai>_<YYYYMMDD VN>/
 
 Dung:
-    venv/bin/python quet_chuan_bi.py --vai scout|nova|market [--lam-moi]
+    venv/bin/python quet_chuan_bi.py --vai finn|nova|vera|qinn [--lam-moi]
 """
 import argparse
 import json
@@ -29,7 +29,12 @@ import bat_buoc                                              # noqa: E402
 import vai                                                   # noqa: E402
 
 VN = timezone(timedelta(hours=7))
-TOPIC = {"finn": "finn", "nova": "nova", "vera": "vera"}
+TOPIC = {"finn": "finn", "nova": "nova", "vera": "vera", "qinn": "qinn"}
+
+# Vai chay NHIEU LAN trong ngay: thu muc lam viec phai tach theo luot, khong thi
+# luot sau doc lai ds.json cua luot truoc va nop nham tin cu (cache quet 3h het
+# han nen quet.json thi moi, ds.json thi khong — lech nhau im lang).
+NHIEU_LAN_TRONG_NGAY = {"qinn"}
 CACHE_GIO = 3
 # Tran bao cao cua Nova trong brief. Truoc 06/09/2026 la 12.000 va cat CAM
 # LANG giua dong: do that o trang thai production (arena song + co moc cu de so
@@ -50,8 +55,27 @@ def _cat(bao_cao: str, tran: int = TRAN_BAO_CAO) -> str:
               "'khong co gi'. Bao Ong Chu de nang tran.")
 
 
+# Khung gio cua MOT luot, tinh tu 05:00 VN. 12 = hai luot/ngay (05:00 va 17:00
+# VN). Doi so nay la doi CA nhip: phai sua cung luc ba cho — hang so nay, cron
+# expr cua job `qinn-scan`, va cong thuc LUOT trong hermes/scripts/quet_daily_scan.sh.
+KHUNG_GIO = 12
+
+
+def luot(gio_vn: int = None) -> int:
+    """Luot trong ngay cho vai chay nhieu lan: khung KHUNG_GIO tieng tu 05:00 VN.
+
+    Moc cron nam dau moi khung, vai chay brief o dau khung va nop trong vong vai
+    phut -> luon cung mot luot. Khong dung gio tron vi nop luc 16:59 va 17:01 se
+    ra hai thu muc khac nhau."""
+    h = datetime.now(VN).hour if gio_vn is None else gio_vn
+    return ((h - 5) % 24) // KHUNG_GIO
+
+
 def workdir(vai: str) -> Path:
-    wd = env_load.state_dir() / "quet" / f"{vai}_{datetime.now(VN).strftime('%Y%m%d')}"
+    ten = f"{vai}_{datetime.now(VN).strftime('%Y%m%d')}"
+    if vai in NHIEU_LAN_TRONG_NGAY:
+        ten += f"_p{luot()}"
+    wd = env_load.state_dir() / "quet" / ten
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 
@@ -248,6 +272,65 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
     return "\n".join(L)
 
 
+
+# ---- qinn (Qinn) -------------------------------------------------------------
+def brief_qinn(wd: Path, lam_moi: bool) -> str:
+    q = wd / "quet.json"
+    if lam_moi or not _moi(q):
+        # Cua so quet trung voi khung mot luot: khong chong lap (tin se trung,
+        # tuy `x_seen.json` da chan) va khong ho (tin roi vao khe giua hai luot).
+        r = _chay([str(ROOT / "scan_x.py"), "--gio", str(KHUNG_GIO), "--out", str(q)])
+        (wd / "scan.log").write_text((r.stderr or "") + (r.stdout or ""), encoding="utf-8")
+        if r.returncode != 0 or not q.exists():
+            sys.exit(f"[LOI] scan_x.py hong: {(r.stderr or '')[-400:]}")
+    d = json.loads(q.read_text(encoding="utf-8"))
+    tin = d.get("tin_moi", [])
+    bo = d.get("bo_qua", {})
+
+    L = []
+    # Canh bao tuoi du lieu len TRUOC moi thu khac: "crawler dung" va "hom nay
+    # khong co tin dang" nhin giong nhau neu khong noi ra.
+    for c in d.get("canh_bao", []):
+        L.append(f"## [!] {c}")
+    L.append(
+        f"# QINN — QUET XONG {datetime.now(VN).strftime('%d/%m %H:%M')} VN: {len(tin)} tweet "
+        f"trong {d.get('cua_so_gio', '?')}h (doc {d.get('tong_quet', '?')} tu DB; "
+        f"bo: reply {bo.get('reply', 0)}, qua ngan {bo.get('ngan', 0)}, da thay "
+        f"{bo.get('da_thay', 0)})"
+    )
+    L.append("Xep theo diem CO HOC (tuong tac + link github/arxiv + do dai + thread) — "
+             "diem chi de xep thu tu doc, KHONG phai danh gia. Ban moi la bo loc.")
+    L.append("Moi muc: #k | [diem] | nguon | @tac gia | loai | so lieu | link, roi text thu vao.")
+    for k, t in enumerate(tin, 1):
+        sl = t.get("so_lieu", {}) or {}
+        L.append(
+            f"\n#{k} | [{t.get('diem', 0)}] | {t.get('nguon_x', '')} | {t.get('toa_soan', '')} | "
+            f"{t.get('loai', '')} | {sl.get('views') or 0} views, {sl.get('likes') or 0} likes | "
+            f"{t.get('link', '')}"
+        )
+        L.append("    " + (t.get("text", "") or "").replace("\n", "\n    ")[:900])
+    L += [""] + _bat_buoc("qinn")
+    L += ["", f"## Viet danh sach vao: {wd}/ds.json — chi tin KY THUAT DUNG DUOC LAU: tool/repo "
+          "giai mot viec cu the, ky thuat bao mat, kien truc/he thong, cach lam co the doc lai sau "
+          "3 nam. BO: thong bao phat hanh, benchmark/bang xep hang, hype khong co noi dung, tin "
+          "ngay, crypto, anh/video khong co phuong phap, tweet chi tom tat tin cua nguoi khac.",
+          json.dumps([{"k": "<so thu tu #k — script tu lay link, KHONG chep URL>",
+                       "title": "<HEADLINE mot dong tieng Viet co dau: cai gi + lam duoc gi; "
+                                "day la thu DUY NHAT Ong Chu doc>",
+                       "summary_vi": "<MOT menh de <= 15 tu vi sao dung duoc lau; chi lam ngu canh "
+                                     "cho vai viet, KHONG len bao cao>",
+                       "category": "<TOOL | SECURITY | ARCH | MODEL — de trong thi TOOL>"}],
+                     ensure_ascii=False, indent=1),
+          "Tweet cua tac gia GOC hon tweet ke lai. Tin trong `list:` la nguon Ong Chu tu chon — "
+          "tin hon home, nhung khong duoc mien tieu chi.",
+          "Khong co gi dat nguong thi chay buoc 3 voi --khong-co.",
+          "", "## Roi chay dung MOT lenh:",
+          f"cd {ROOT} && venv/bin/python quet_nop.py --vai qinn",
+          "Script tu ghi manifest danh so, viet bao cao, gui topic. Bao [LOI] thi sua ds.json roi "
+          "chay lai. KHONG chay nguon_bai.py, KHONG web_search, KHONG tao task."]
+    return "\n".join(L)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Brief cho vai di tim tin")
     # type= chay TRUOC choices: "--vai scout" (cron cu, tay quen) tu ve "finn".
@@ -256,7 +339,8 @@ def main() -> int:
     ap.add_argument("--im", action="store_true")
     a = ap.parse_args()
     wd = workdir(a.vai)
-    brief = {"finn": brief_scout, "nova": brief_nova, "vera": brief_market}[a.vai](wd, a.lam_moi)
+    brief = {"finn": brief_scout, "nova": brief_nova, "vera": brief_market,
+             "qinn": brief_qinn}[a.vai](wd, a.lam_moi)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)

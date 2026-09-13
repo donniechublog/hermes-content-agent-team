@@ -9,7 +9,7 @@ buoc), viet bao cao, gui len topic. Vai chi viet picks.json (Finn) hoac ds.json
                  KHONG xoa muc bat buoc
 
 Dung:
-    venv/bin/python quet_nop.py --vai scout|nova|market [--khong-co] [--thu]
+    venv/bin/python quet_nop.py --vai finn|nova|vera|qinn [--khong-co] [--thu]
 """
 import argparse
 import json
@@ -147,7 +147,7 @@ def main() -> int:
         if a.vai == "finn":
             d = json.loads((wd / "candidates.json").read_text(encoding="utf-8")) if (wd / "candidates.json").exists() else {}
             so = len(d.get("candidates", []))
-        elif a.vai == "vera":
+        elif a.vai in ("vera", "qinn"):
             d = json.loads((wd / "quet.json").read_text(encoding="utf-8")) if (wd / "quet.json").exists() else {}
             so = d.get("tong_quet", "?")
         tep = wd / "khong_co.txt"
@@ -174,8 +174,9 @@ def main() -> int:
             sys.exit(f"Chua co {ds} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
                      "(hoac --khong-co neu khong co gi dang len kenh).")
         args = [str(ROOT / "manifest_ghi.py"), "--vai", a.vai, "--in", str(ds), "--bao-cao", str(bao_cao)]
-        if a.vai == "vera":
-            args += ["--nguon", str(wd / "quet.json")]      # de Vera chon bang so thu tu k
+        if a.vai in ("vera", "qinn"):
+            # de vai chon bang so thu tu k; script tu lay link tu quet.json
+            args += ["--nguon", str(wd / "quet.json")]
         if a.thu:
             args += ["--khong-xoa-bat-buoc", "--out", str(wd / "thu_manifest.json")]
     r = _chay(args)
