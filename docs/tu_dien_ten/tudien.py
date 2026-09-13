@@ -260,7 +260,9 @@ def bang_doi_ten(td: TuDien, ROOT: Path) -> dict:
     plan = {"modules": {}, "defs": collections.defaultdict(list), "consts": collections.defaultdict(list)}
     for mod in mods:
         en, _ = td.dich_module(mod)
-        if en != mod:
+        # Chi ghi khi TEN TEP doi; module con chi doi ten goi (chuan_bi.manifest
+        # -> prepare.manifest) thi thuoc buoc `--package`, khong phai rename tep.
+        if en != mod and en.split(".")[-1] != mod.split(".")[-1]:
             plan["modules"][mod] = en
         for name, kind in top.get(mod, []):
             new, _ = td.dich_ten(mod, name, kind)

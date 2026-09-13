@@ -62,8 +62,14 @@ def _project(root: Path):
 
 
 def _rope_rename(proj, res_path: str, offset, new_name: str) -> list:
-    """Một lần rename qua rope. Trả danh sách tệp đã đổi."""
+    """Một lần rename qua rope. Trả danh sách tệp đã đổi.
+
+    `validate()` TRƯỚC mỗi lần: rope cache nội dung tệp; bước vá chuỗi ở đây ghi
+    thẳng ra đĩa, nên nếu không đồng bộ lại thì lần rename sau tính offset trên
+    bản cũ và chèn tên mới lệch chỗ (lô 1, 13/09/2026: `cu =count_attempt_redom_lai`
+    trong test_cong_chan.py → SyntaxError). Kèm Project mới cho mỗi module."""
     from rope.refactor.rename import Rename
+    proj.validate(proj.root)
     res = proj.get_resource(res_path)
     ch = Rename(proj, res, offset).get_changes(new_name, docs=False)
     tep = [c.resource.path for c in ch.changes if hasattr(c, "resource")]
@@ -94,6 +100,12 @@ def _khoa_dict(root: Path) -> set:
     for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
         for m in pat.finditer(f.read_text(encoding="utf-8")):
             ra.add(next(g for g in m.groups() if g))
+    # Ten MODULE/GOI/THU MUC cung la chuoi tren dia (`ROOT / "chuan_bi" / "nhin.py"`,
+    # `state/<brand>/chuan_bi/`): lo 1 doi `"chuan_bi"` -> `"prepare_article"` vi
+    # ham `chuan_bi` trong anh_chuan_bi trung ten goi. Khong bao gio doi ten tran nay.
+    for p in list(root.glob("*.py")) + list(root.glob("*/")) + list(root.glob("*/*.py")):
+        ra.add(p.stem)
+    ra |= {"state", "drafts", "assets", "tests", "hermes", "docs"}
     _KHOA_DICT_CACHE[k] = ra
     return ra
 
@@ -166,10 +178,16 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     mm = (mod_moi or mod_cu).split(".")[-1]
     # Test hay viết chuỗi REGEX: `vai\.so_anh_toi_thieu\(` — dấu `\` trước `.`/`(`
     # phải được chấp nhận và GIỮ NGUYÊN (\g<1>), không thì test soi nguồn đỏ.
+    # Ten thuoc tinh trong chuoi cua patch/setattr/getattr: rope khong doi
+    # (`mock.patch.object(la, "dem_mat")`, `patch("image_rules.dem_mat")`) —
+    # test_anh_roi/test_bao_ve_tu_khoa lo 1 do vi the. Ap cho MOI test, khong
+    # can gate read_text, vi ngu canh da noi ro day la ten thuoc tinh.
     for old, new, _kind in defs:
         thay.append((rf"(?<![\w.])def {re.escape(old)}(?=\\?\()", f"def {new}"))
-        thay.append((rf"(?<![\w.\\]){re.escape(old)}(?=\\?\()", new))
+        thay.append((rf"(?<![\w\\]){re.escape(old)}(?=\\?\()", new))    # cả `nc.cũ(` (alias)
         thay.append((rf"(?<![\w]){re.escape(mc)}(\\?\.){re.escape(old)}\b", rf"{mm}\g<1>{new}"))
+        thay.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*[\w.]+\s*,\s*[\"']){re.escape(old)}(?=[\"'])", rf"\g<1>{new}"))
+        thay.append((rf"(patch\([\"'][\w.]*\.){re.escape(old)}(?=[\"'])", rf"\g<1>{new}"))
     for old, new in consts:
         # `$` loại trừ biến shell trong chuỗi test ("$VAI" của quet_daily_scan.sh
         # không phải hằng Python — pilot 13/09 đã đổi nhầm thành "$ROLE").
@@ -201,9 +219,13 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     # (3) __all__ của chính module
     mod_path = root / (mod_moi or mod_cu).replace(".", "/")
     mod_path = mod_path.with_suffix(".py")
-    if mod_path.exists() and "__all__" in mod_path.read_text(encoding="utf-8"):
+    # Tim DUNG cau lenh `__all__ = [` (dau dong), khong phai chu "__all__" trong
+    # chu thich phia tren — lo 1: `s.index("__all__")` trung vao comment, dau `]`
+    # dau tien sau do nam trong "[a-z_]*" cua comment -> khong doi gi ca.
+    m_all = re.search(r"^__all__\s*=\s*\[", mod_path.read_text(encoding="utf-8"), re.M) if mod_path.exists() else None
+    if m_all:
         s = mod_path.read_text(encoding="utf-8")
-        a, b = s.index("__all__"), s.index("]", s.index("__all__"))
+        a, b = m_all.start(), s.index("]", m_all.end())
         khoi = s[a:b]
         moi = khoi
         for old, new, _k in defs:
@@ -311,10 +333,14 @@ def main() -> int:
                 encoding="utf-8")
         return 0 if a.dry_run or a.no_test or _kiem(root, py) else 1
     mods = a.modules or sorted(set(plan["defs"]) | set(plan["consts"]) | set(plan["modules"]))
-    proj = None if a.dry_run else _project(root)
     for mod in mods:
+        # Project MỚI mỗi module: bước vá chuỗi/shim của module trước ghi thẳng ra
+        # đĩa ngoài rope — không được để rope mang cache cũ sang module sau.
+        proj = None if a.dry_run else _project(root)
         if not doi_mot_module(root, td, plan, mod, not a.no_module, a.dry_run, proj):
             return 1
+        if proj is not None:
+            proj.close()
         if not a.dry_run and not a.no_test and not _kiem(root, py):
             _log(f"DỪNG sau {mod} — sửa tay rồi chạy tiếp từ module kế.")
             return 1
