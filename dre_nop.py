@@ -123,13 +123,18 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
         # So hang trong hook bia phai la so hang engine khoanh (LOW-24, chung voi Ethan).
         bo.loi.extend(nc.kiem_hang_tren_the(str(muc.get("hook") or ""), a, "bìa"))
     if a["loai"] == "chart" and not a.get("xep_hang"):
-        if la_bia:
+        # Do hoa ROI lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
+        # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
+        if la_bia and a.get("roi"):
+            ra["image"] = a["goc"]
+        elif la_bia:
             bo.loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
                           "bìa dùng ảnh khác (gợi ý: "
                           f"{', '.join(m.get('goi_y_bia') or ['—'])}) hoặc \"ghep\" hai ảnh ngang")
             return None
-        ra["image"] = a["san"] or a["goc"]
-        ra["chart"] = True
+        else:
+            ra["image"] = a["san"] or a["goc"]
+            ra["chart"] = True
     elif a.get("xep_hang"):
         # Anh xep hang: bia/slide deu dan NGUYEN VEN full be ngang (nhu chart),
         # va duoc phep lam bia — hook de len nua duoi, bang o nua tren.
