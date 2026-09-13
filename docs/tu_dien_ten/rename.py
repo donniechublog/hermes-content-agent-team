@@ -139,7 +139,8 @@ def _va_fstring(root: Path, mod: str, old: str, new: str) -> int:
         if old not in s or "f\"" not in s and "f'" not in s:
             continue
         alias = _alias_module(s, {base})
-        tu_import = re.search(rf"^\s*from\s+{re.escape(mod)}\s+import\s+\(?[^\n]*\b{re.escape(new)}\b", s, re.M) is not None
+        # Chay TRUOC rope nen dong import con ten CU; chap nhan ca cu lan moi.
+        tu_import = re.search(rf"^\s*from\s+{re.escape(mod)}\s+import\s+\(?[^\n]*\b(?:{re.escape(new)}|{re.escape(old)})\b", s, re.M) is not None
         chinh = f.resolve() == tep_mod.resolve()
         try:
             toks = list(tokenize.generate_tokens(iter(s.splitlines(True)).__next__))
@@ -574,8 +575,9 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     # .get("xep_hang"), "xep_hang":) — khoá trên đĩa không được đổi.
     tran = [(rf'(["\']){re.escape(old)}\1', rf"\g<1>{new}\g<1>")
             for old, new, _k in defs if old not in khoa_json]
+    # Hang MOT TU ("SO") trong ngoac kep la du lieu test (eyebrow "SO") — chi hang co `_`.
     tran += [(rf'(["\']){re.escape(old)}\1', rf"\g<1>{new}\g<1>")
-             for old, new in consts if old not in khoa_json]
+             for old, new in consts if old not in khoa_json and "_" in old]
     tran += hang_tran
     bo = [o for o, _n, _k in defs if o in khoa_json] + [o for o, _n in consts if o in khoa_json]
     if bo:
@@ -602,8 +604,18 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
             k2 += kk
             if moi_src != src:
                 f.write_text(moi_src, encoding="utf-8")
+        # getattr/setattr/hasattr(mod, "tên") trong MA CHINH cung la tham chieu
+        # (lo 5: env_load `getattr(card, "THUONG_HIEU", {})` -> masthead in slug).
+        for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+            src = f.read_text(encoding="utf-8")
+            if not any(o in src for o, _n, _k in defs) and not any(o in src for o, _n in consts):
+                continue
+            moi_src, kk = _thay_dong(src, thay_dong, mc, mm)
+            k2 += kk
+            if moi_src != src:
+                f.write_text(moi_src, encoding="utf-8")
         if k2:
-            _log(f"  chuỗi trong tests (def/gọi/hằng): {k2} chỗ")
+            _log(f"  chuỗi trong tests/getattr (def/gọi/hằng): {k2} chỗ")
         tong += k2
     # (3) MỌI `__all__` trong mã chính: một mục "cũ" mà tệp không còn bind tên đó
     # (đã bị rope đổi — định nghĩa tại chỗ HOẶC tên re-export từ module khác như
@@ -680,9 +692,13 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
         if off is None:
             _log(f"  !! không tìm thấy định nghĩa {old} — bỏ qua")
             continue
-        tep = _rope_rename(proj, res_path, off, new)
-        k = (_va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
-             + _va_fstring(root, mod, old, new) + _va_chu_thich_kieu(root, old, new))
+        # f-string TRUOC rope: rope tinh sai offset trong o {…} co chu Viet cung dong
+        # (lo 5: `caption_check.THOI_PHONG[:6]` -> `TIME_ROOM[TIME_ROOM:6]`). Doi bang
+        # token truoc thi rope khong con thay ten cu o do -> khong ghi lech.
+        kf = _va_fstring(root, mod, old, new)
+        tep = _rope_rename(proj, res_path, off, new)      # tu validate() truoc
+        k = (kf + _va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
+             + _va_chu_thich_kieu(root, old, new))
         _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 2) hằng số
     for old, new in consts:
@@ -691,9 +707,9 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
         if off is None:
             _log(f"  !! không tìm thấy hằng {old} — bỏ qua")
             continue
-        tep = _rope_rename(proj, res_path, off, new)
-        k = (_va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
-             + _va_fstring(root, mod, old, new))
+        kf = _va_fstring(root, mod, old, new)
+        tep = _rope_rename(proj, res_path, off, new)      # tu validate() truoc
+        k = kf + _va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
         _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 3) tên tệp module (chỉ tên tệp, không đổi thư mục gói ở đây)
     if mod_moi:
