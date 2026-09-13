@@ -85,7 +85,7 @@ def main() -> int:
         # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
         # bao Jika chay miles_nop.py doc ra nhu giao nham nguoi (LOW-13).
         return nc.count_round_error(wd, loi,
-                               f"venv/bin/python {persona}_nop.py {a.draft_id}")
+                               f"venv/bin/python {persona}_submit.py {a.draft_id}")
 
     if a.khong_push:
         (wd / "draft_thu.txt").write_text(cap, encoding="utf-8")

@@ -80,7 +80,7 @@ def write_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
           "Số liệu hãng tự công bố phải ghi rõ \"hãng tự công bố\". Không lặp một cụm 6 từ hai lần. "
           "Chỉ dùng số có trong tư liệu.",
           "", "## Rồi chạy đúng MỘT lệnh:",
-          f"cd {ROOT} && venv/bin/python {persona}_nop.py {m['draft_id']}",
+          f"cd {ROOT} && venv/bin/python {persona}_submit.py {m['draft_id']}",
           "Script tự chuẩn hoá (em-dash → phẩy), đếm ký tự/câu/số, chạy cổng chặn, ghép draft, đẩy vào hàng "
           "duyệt. Báo [LOI] thì sửa đúng chỗ đó trong caption.txt rồi chạy lại. KHÔNG tự đếm ký tự, KHÔNG "
           "curl đọc lại bài, KHÔNG chạy caption_check/draft_write/approve_service tay."]

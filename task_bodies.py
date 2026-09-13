@@ -138,7 +138,7 @@ anh, moi luat co hoc cua caption DA duoc script gom san. Viec cua ban chi co
 MOT: viet caption. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (tu lieu co so lieu, doan dau bai, hook tren anh, luat):
-cd {goc} && venv/bin/python {persona}_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python {persona}_prepare.py {draft_id}
 
 BUOC 2 — viet caption vao DUNG tep in o cuoi BUOC 1 (chi caption, HTML Telegram
 <b> <i> <code>, tieng Viet co dau, moi cau xuong dong rieng, doan cach dong
@@ -146,7 +146,7 @@ trong, nham 800-1000 ky tu). KHONG tu dem ky tu, KHONG curl doc lai bai, KHONG
 chay tu_lieu/caption_check/draft_write/approve_service tay.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python {persona}_nop.py {draft_id}
+cd {goc} && venv/bin/python {persona}_submit.py {draft_id}
 Script tu chuan hoa, do ky tu/cau/so, chay cong chan, ghep draft, day vao hang
 duyet. Bao [LOI] thi sua DUNG cho do trong caption.txt roi chay lai DUNG lenh
 nay (toi da 2 lan). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o

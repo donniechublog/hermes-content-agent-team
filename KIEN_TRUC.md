@@ -208,14 +208,14 @@ flowchart TD
     end
 
     subgraph S5["5 · DỰNG ẢNH (theo vai đã chọn)"]
-        imgRole["Ethan (card.py) · Dre (carousel.py) · Kite (render_edu.py)<br/>{vai}_chuan_bi → {vai}_nop"]:::container
+        imgRole["Ethan (card.py) · Dre (carousel.py) · Kite (render_edu.py)<br/>{vai}_prepare → {vai}_submit"]:::container
     end
     xong --> imgRole
     imgDraft[("drafts/{id}.img.json<br/>+ ban_giao.md")]:::datastore
     imgRole --> imgDraft
 
     subgraph S6["6 · VIẾT CAPTION"]
-        miles["Vai viết (Miles | Jika)<br/>{persona}_chuan_bi → {persona}_nop"]:::container
+        miles["Vai viết (Miles | Jika)<br/>{persona}_prepare → {persona}_submit"]:::container
         llm[["9router → DeepSeek v4-Flash<br/>reasoning_effort: none"]]:::llm
         draftwrite["draft_write.py"]:::container
         miles --> llm

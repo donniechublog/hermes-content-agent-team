@@ -21,7 +21,7 @@ Nay giu phan dung, bo phan pha hoai:
 Dung:
     venv/bin/python find_more_images.py <draft_id> --tu-khoa "TSMC fab Arizona" [--tu-khoa ...]
     venv/bin/python find_more_images.py <draft_id> --url https://... [--url ...]
-Sau do chay lai <vai>_chuan_bi.py <draft_id> de doc brief moi (xong.json da cap nhat).
+Sau do chay lai <vai>_prepare.py <draft_id> de doc brief moi (xong.json da cap nhat).
 """
 import argparse
 import json
@@ -246,7 +246,7 @@ def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
     so, tt = int(m.get("so_dung_duoc", 0)), int(m.get("toi_thieu", 5))
     print(f"Slide dựng được: {so} / tối thiểu {tt}"
           + (" — ĐỦ." if so >= tt else f" — còn thiếu {tt - so}."))
-    print(f"Chạy lại: cd {ROOT} && venv/bin/python {vai_anh}_chuan_bi.py {m['draft_id']}  (brief mới, bảng ảnh mới)")
+    print(f"Chạy lại: cd {ROOT} && venv/bin/python {vai_anh}_prepare.py {m['draft_id']}  (brief mới, bảng ảnh mới)")
     if so < tt:
         con = MAX_TURN - so_luot["luot"]
         if con > 0:
@@ -273,7 +273,7 @@ def main() -> int:
     wd = cb.workdir(state, a.draft_id)
     xong, khoa = wd / "xong.json", wd / "dang_chay.pid"
     if not xong.exists():
-        sys.exit(f"[LOI] chua co ban chuan bi ({xong}) — chay <vai>_chuan_bi.py {a.draft_id} truoc")
+        sys.exit(f"[LOI] chua co ban chuan bi ({xong}) — chay <vai>_prepare.py {a.draft_id} truoc")
     so_luot = read_count_turn(wd)
     if so_luot["luot"] >= MAX_TURN:
         sys.exit(f"[DUNG] da het {MAX_TURN} luot tim them cho bai nay (da thu: "

@@ -153,7 +153,7 @@ mọi bảng cũ:
    ảnh dùng chung đọc nó qua `so_anh_toi_thieu()`, đặt sai thì bài bị báo thiếu
    ảnh oan (sự cố 10/09/2026). `VAI_ANH`, `TEN_SANG_CAP`, `TEN_VAI_ANH`,
    `VAI_CAROUSEL`, `VAI_EDU`, `SLUG_CU`, `TEN_HIEN` tự có theo.
-2. **Một cặp `<vai>_chuan_bi.py` / `<vai>_nop.py`** — cả hai đọc chung
+2. **Một cặp `<vai>_prepare.py` / `<vai>_submit.py`** — cả hai đọc chung
    `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
    (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).
 3. **Một SOUL** trong `hermes/profiles/<brand>/<slug>.SOUL.md` (hoặc `shared/`

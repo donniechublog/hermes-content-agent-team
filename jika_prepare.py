@@ -8,7 +8,7 @@ brief, chon theo brand cua bai chu khong theo ten vai.
 
 Tep nay ton tai vi hai le:
   1. quy uoc cua ban dang ky (`role.py`): them mot vai = mot dong o do + MOT CAP
-     <persona>_chuan_bi/_nop + mot SOUL. Task cua Jika phai goi lenh mang ten
+     <persona>_prepare/_submit + mot SOUL. Task cua Jika phai goi lenh mang ten
      Jika, khong the bao Jika "chay miles_prepare.py" — doc ra nhu giao nham.
   2. brief tu chon ten tep va lenh nop theo persona cua bai, nen chay tep nay
      hay tep kia deu ra dung ket qua; khac biet chi la chu Ong Chu doc thay.

@@ -10,7 +10,7 @@ dong "(Khong boc duoc chu tu nguon...)" con mot cai thi khong — nen dung ca do
 vai lai khong duoc nhac la thieu tu lieu.
 
 Tep nay giu PHAN KHUNG. Phan RIENG cua tung vai (luat slide, bang ma anh, cach
-viet hook) van nam trong `*_chuan_bi.py` cua vai do — do moi la thu vai can doc
+viet hook) van nam trong `*_prepare.py` cua vai do — do moi la thu vai can doc
 ky, va gom chung lai chi lam mot ham day tham so.
 """
 
