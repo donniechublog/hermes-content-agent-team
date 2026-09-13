@@ -228,3 +228,53 @@ def test_moi_khoa_img_json_deu_co_trong_SidecarAnh():
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())
+
+
+# ---------------------------------------- cat_ngang_ok (su co t_a8ffd2f6 lan hai, 12/09)
+def test_ngang_qua_thap_van_chi_ghep_bat_ke_cat_ngang_ok():
+    a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 600, "cat_ngang_ok": True}
+    assert schema._chi_ghep_duoc(a), "duoi 700px thi du vision noi 'co' cung khong cat duoc"
+
+
+def test_ngang_cao_co_chu_khong_dung_mot_minh_duoc():
+    """A7/A12 tin TSMC: bien hieu/logo TREN toa nha (CO CHU) — vision tra
+    cat_ngang_ok=False, truoc day cong thuc chi nhin chieu cao nen dem sai
+    la "dung mot minh duoc", thua 2 slide so voi thuc te Dre gap."""
+    a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 1067, "cat_ngang_ok": False}
+    assert schema._chi_ghep_duoc(a)
+
+
+def test_ngang_cao_nguoi_san_pham_khong_chu_dung_mot_minh_duoc():
+    """A8 tin TSMC: ky thuat vien cam chip, KHONG chu — vision xac nhan True."""
+    a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 768, "cat_ngang_ok": True}
+    assert not schema._chi_ghep_duoc(a)
+
+
+def test_chua_xac_nhan_thi_an_toan_coi_la_chi_ghep():
+    """cat_ngang_ok vang mat (manifest cu chua nhin lai, hoac vision hong o
+    cau hoi nay) -- None, KHAC voi False nhung van phai xu ly nhu chua dung
+    mot minh duoc: dong con hon dem thua roi Dre chet giua chung lan hai."""
+    a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 900}
+    assert schema._chi_ghep_duoc(a)
+
+
+def test_chart_ngang_cao_van_dung_mot_minh_du_khong_hoi_cat_ngang():
+    """A10/A11: chart dung duoc qua duong rieng 'than, dan full be ngang', khong
+    can cat_ngang_ok — cat_ngang_ok=None nhung loai=chart thi van KHONG chi_ghep."""
+    a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 1628, "loai": "chart"}
+    assert not schema._chi_ghep_duoc(a)
+
+
+def test_tinh_lai_bo_anh_that_tsmc_lan_hai():
+    """Tai hien dung bo 8 anh dung duoc cua t_a8ffd2f6 sau khi Dre chay that
+    (12/09 chieu): A5 qua thap, A7/A12 co chu, A8 nguoi/san pham, A10/A11 chart."""
+    def _a(ma, ngang, h, **k):
+        d = {"ma": ma, "dung": ["x"], "lien_quan": True, "ngang": ngang, "h": h}
+        d.update(k)
+        return d
+    bo = [_a("A3", False, 1166), _a("A5", True, 600), _a("A6", False, 1020),
+          _a("A7", True, 1067, cat_ngang_ok=False), _a("A8", True, 768, cat_ngang_ok=True),
+          _a("A10", True, 1628, loai="chart"), _a("A11", True, 820, loai="chart"),
+          _a("A12", True, 853, cat_ngang_ok=False)]
+    # rieng khong chi_ghep: A3, A6, A8, A10, A11 = 5. chi_ghep: A5, A7, A12 = 3 -> +1 cap.
+    assert schema.so_anh_dung_duoc(bo) == 6

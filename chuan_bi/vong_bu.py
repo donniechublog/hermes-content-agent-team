@@ -6,6 +6,7 @@ Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y
 import sys
 from pathlib import Path
 
+from PIL import Image
 
 import luat_anh
 import env_load
@@ -431,7 +432,15 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     return anh, dung_duoc, chua_nhin
 
 
-TOI_DA_TRANG_CHUP = 3          # thu toi da 3 trang: bai goc roi hai bao khac
+# Ong Chu 13/09/2026, dua 6 anh chup man hinh 6 bao khac nhau cung mot tin TSMC:
+# *"ai noi voi ban la chi duoc chup tu mot trang nguon duy nhat... 1 article hot
+# thi co hang van to bao khap the gioi dua tin, ban chi cap 6 trong so do ve roi
+# dat quote va text len ma cung phai nghi sao?"*. Truoc do vong nay chup TOI DA 3
+# trang va `break` ngay sau tam DAU TIEN — ca vong chi bao gio ra 1 anh.
+# 12 chu khong phai 6: do that 13/09/2026 tren 8 bao cung tin cua tin TSMC, chi
+# 4 trang chup duoc (3 trang khong do ra khoi lead — anh hero lazy/bo cuc la,
+# 1 trang chan bot 403). Ti le trung ~50%, nen muon 6 slide phai thu ~12 bao.
+TOI_DA_TRANG_CHUP = 12
 
 
 def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
@@ -462,7 +471,34 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         if u and u not in da:
             da.add(u)
             urls.append(u)
+    # Kho URL mong hon tran chup -> tu hoi them BAO CUNG TIN (Bing News). Truoc
+    # day vong nay chi an theo `trang` co san: tin hot co hang tram bao dua ma
+    # `_bo_sung_nguon` chi bo sung khi `len(trang) < 3`, nen thuong chi co 3 URL.
+    if len(urls) < TOI_DA_TRANG_CHUP and tieu_de:
+        import nguon_bai
+        mien_co = tuple(_mien(u) for u in urls if _mien(u))
+        them = nguon_bai.bao_khac_bing(tieu_de, so=TOI_DA_TRANG_CHUP - len(urls),
+                                       bo_mien=mien_co)
+        for t in them:
+            if t["url"] not in da:
+                da.add(t["url"])
+                urls.append(t["url"])
+        print(f"[chup nguon] +{len(them)} bao cung tin de chup"
+              + (": " + ", ".join(_mien(t["url"]) for t in them) if them else ""), file=sys.stderr)
     wd5 = wd / "chup_nguon"
+    n_chup = 0
+    # LOAI TRUNG (Ong Chu 13/09/2026, xem carousel that: "có đến 3 ảnh giống hệt
+    # nhau về nội dung, góc máy, bố cục. việc này không được phép"): nhieu bao
+    # dung CHUNG mot anh photo-wire (AP/Reuters/Getty) cho cung mot tin — chup
+    # tung trang rieng le khong qua `tai_va_loc` nen KHONG bao gio duoc so trung
+    # dHash nhu duong tai anh binh thuong. So tam chup MOI voi: (1) moi anh da
+    # co san trong `anh` (tu vong khac), (2) cac tam DA chup trong CHINH vong nay.
+    da_hash = []
+    for a0 in anh:
+        try:
+            da_hash.append(luat_anh.dhash(Image.open(a0["goc"]).convert("RGB")))
+        except Exception:                                    # noqa: BLE001
+            pass
     for u in urls[:TOI_DA_TRANG_CHUP]:
         tam = wd5 / (_mien(u).replace(".", "_") + ".png")
         c = chup_trang.chup_lead_mobile(u, tam, phien=phien)
@@ -480,11 +516,39 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
                       f"với {tieu_de[:50]!r} — bỏ, không phải bài gốc", file=sys.stderr)
                 Path(tam).unlink(missing_ok=True)
                 continue
+        try:
+            h = luat_anh.dhash(Image.open(tam).convert("RGB"))
+        except Exception:                                    # noqa: BLE001
+            h = None
+        if h is not None:
+            trung = next((h2 for h2 in da_hash if luat_anh.gan_giong(h, h2)), None)
+            if trung is not None:
+                print(f"[chup nguon] {_mien(u)}: TRÙNG ảnh đã có (cùng photo-wire, "
+                      f"lệch {bin(h ^ trung).count('1')} bit) — bỏ", file=sys.stderr)
+                Path(tam).unlink(missing_ok=True)
+                continue
+            da_hash.append(h)
         a = {"ma": f"A{len(anh) + 1}", "goc": str(tam), "url": u, "trang": u,
              "mien": _mien(u), "diem": 0, "hint_chart": False, **c}
         moi = wd / "goc" / f"{a['ma']}.png"
         moi.parent.mkdir(parents=True, exist_ok=True)
-        Path(a["goc"]).replace(moi)
+        # DEM NEN DEN (Ong Chu 13/09/2026, sua lai cung ngay): tam chup khoi lead
+        # thuong la anh NGANG, de nguyen thi dinh luat "ngang phai ghep doi hoac
+        # cat_ngang" va thanh tam le khong dung duoc. Dem xong no la 4:5 dung,
+        # dung MOT MINH lam mot slide. Mau dem la DEN co dinh (khong sample mau
+        # nen trang cua trang nguon) - carousel toi dung nen den + chu trang, dem
+        # trang tao khoang trang lac long giua anh va khung, buoc carousel.py
+        # phai phu them lop mo (_lop_neu_can) len tren de chu doc duoc ("vet
+        # nhat"). Dem den tu dau: khop luon voi nen anh, khong con khoang trang,
+        # khong can lop phu nua.
+        try:
+            chup_trang.dem_nen(tam, moi, "#000000")
+            Path(tam).unlink(missing_ok=True)
+            a["dem_nen"] = "#000000"
+        except Exception as e:                               # noqa: BLE001
+            print(f"[chup nguon] {_mien(u)}: dem nen hong ({type(e).__name__}), giu tam goc",
+                  file=sys.stderr)
+            Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
         # tieu_de rong = KHONG hoi vision, dung nhu anh xep hang: day la trang
         # cua CHINH tin, "co lien quan bai khong" thi khong phai cau hoi.
@@ -503,10 +567,13 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
                                f"{a['mien']}, chụp ở khung điện thoại; caption ghi "
                                f"\"… · via {a['mien']}\"")
         anh.append(a)
-        print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']})", file=sys.stderr)
-        break
-    else:
+        n_chup += 1
+        print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']}"
+              + (f", nền {a['dem_nen']}" if a.get("dem_nen") else "") + ")", file=sys.stderr)
+    if not n_chup:
         print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
+    else:
+        print(f"[chup nguon] sau vong: {n_chup} anh chup tu {n_chup} bao cung tin", file=sys.stderr)
     return _ra()
 
 

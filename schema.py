@@ -168,8 +168,24 @@ CAO_TOI_THIEU_CAT_NGANG = 700
 
 
 def _chi_ghep_duoc(a: dict) -> bool:
-    """Tam nay CHI dung duoc qua "ghep" (anh ngang qua thap de cat doc)."""
-    return bool(a.get("ngang")) and 0 < int(a.get("h") or 0) < CAO_TOI_THIEU_CAT_NGANG
+    """Tam nay CHI dung duoc qua "ghep" — khong dung MOT MINH duoc, vi mot
+    trong hai ly do:
+      1. qua thap de cat doc (`h < CAO_TOI_THIEU_CAT_NGANG`), hoac
+      2. la anh chup NGANG co chu/logo/so lieu de len (`cat_ngang_ok is False`
+         — vision xac nhan, xem chuan_bi.nhin.phan_loai) nen luat_anh cam crop.
+    Su co 12/09/2026 lan hai (t_a8ffd2f6): Dre chay that, 4/5 anh ngang cao
+    >=700 la bien hieu/logo CO CHU (khong phai chart — chart da co duong rieng
+    "than, dan full be ngang"), nhung cong thuc cu chi nhin chieu cao nen dem
+    ca bon la "dung mot minh duoc" — thua 2 slide so voi that te. `cat_ngang_ok`
+    la None voi manifest CU (chua nhin lai) hoac khi vision khong tra loi duoc
+    cau hoi — coi nhu CHUA XAC NHAN, an toan hon la dem lam dung mot minh."""
+    if not a.get("ngang"):
+        return False
+    if 0 < int(a.get("h") or 0) < CAO_TOI_THIEU_CAT_NGANG:
+        return True
+    if a.get("loai") == "chart":
+        return False           # chart ngang dung MOT MINH qua "than, dan full be ngang"
+    return a.get("cat_ngang_ok") is not True
 
 
 def so_anh_dung_duoc(anh: list) -> int:
