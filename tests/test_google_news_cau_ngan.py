@@ -57,12 +57,11 @@ def test_cau_ngan_gop_them_mien_khong_co_o_cau_day_du():
          mock.patch.object(nguon_bai, "_truy_van_bing", return_value=["X ngan"]), \
          mock.patch.object(nguon_bai, "giai_ma_gnews", return_value=None), \
          mock.patch("httpx.get", side_effect=lambda *a, **k: (_ for _ in ()).throw(OSError("khong mang"))):
-        kq = nguon_bai.tim("Headline day du cua bai goc ve X", "https://baigoc.example/x", so=4)
+        nguon_bai.tim("Headline day du cua bai goc ve X", "https://baigoc.example/x", so=4)
 
-    mien = {t["url"] for t in kq["trang"]}
-    # `_trong_feed` (khong co RSS that trong test) se khong ra bai nao, nhung
-    # `mien` trung gian (bien cuc bo) phai da gop CA HAI lan hoi — kiem qua so
-    # LAN goi _tai: it nhat 2 (headline day du + it nhat 1 cau ngan).
+    # `_trong_feed` (khong co RSS that trong test, httpx.get bi chan) se khong
+    # ra bai nao ca — nen chi kiem duoc so LAN goi _tai: it nhat 2 (headline
+    # day du + it nhat 1 cau ngan), khong kiem duoc noi dung `trang` cuoi cung.
     assert len(goi) >= 2, goi
 
 
