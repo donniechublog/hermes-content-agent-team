@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Kiem tra env_load.album_secondary — chan hoi bug that: glob "_[0-9].png" chi khop
 mot chu so nen bo sot slide thu 10 tro len, lam mat slide cuoi khoi album dang
-kenh (audit 06/09/2026, xem draft_write.py/dre_nop.py/kite_nop.py).
+kenh (audit 06/09/2026, xem draft_write.py/dre_submit.py/kite_submit.py).
 
 Khong dung pytest (chua co trong venv). Chay truc tiep:
     venv/bin/python tests/test_album_phu.py

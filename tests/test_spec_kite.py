@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cong chan spec carousel kien thuc cua Kite (`kite_nop.giai_spec`).
+"""Cong chan spec carousel kien thuc cua Kite (`kite_submit.resolve_spec`).
 
 Khac Dre/Ethan: Kite ve vector, anh that la tuy chon. Cong nay kiem TRUOC khi
 render_edu mo Chromium — bao som thi vai sua mot vong thay vi cho ~20s roi
@@ -84,9 +84,9 @@ def _khong_soi_mat():
 
 
 def _chay(slides, m, wd, **spec):
-    import kite_nop
+    import kite_submit
     with _khong_soi_mat():
-        return kite_nop.giai_spec({"slides": slides, **spec}, m, Path(wd))
+        return kite_submit.resolve_spec({"slides": slides, **spec}, m, Path(wd))
 
 
 # ---------------------------------------------------------------- hop le
@@ -259,17 +259,17 @@ def test_chuyen_tu_vai_doc_img_json():
     """Nút "Gửi Kite" của Ông Chủ chỉ ghi `chuyen_tu` vào img.json, xong.json
     không có — đọc nhầm chỗ là cổng dưới không bao giờ bật."""
     import image_prepare as cb
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     import json as _j
     with tempfile.TemporaryDirectory() as t:
         cu, cb.DRAFTS = cb.DRAFTS, Path(t)
         try:
-            assert kb.chuyen_tu_vai({"draft_id": "d1"}) == ""
-            assert kb.chuyen_tu_vai({"draft_id": "d1", "chuyen_kite": "t_9"}) == "vai ảnh"
+            assert kb.transfer_from_role({"draft_id": "d1"}) == ""
+            assert kb.transfer_from_role({"draft_id": "d1", "chuyen_kite": "t_9"}) == "vai ảnh"
             (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "dre"}), encoding="utf-8")
-            assert kb.chuyen_tu_vai({"draft_id": "d1"}) == "Dre"
+            assert kb.transfer_from_role({"draft_id": "d1"}) == "Dre"
             (Path(t) / "d1.img.json").write_text(_j.dumps({"chuyen_tu": "ethan"}), encoding="utf-8")
-            assert kb.chuyen_tu_vai({"draft_id": "d1"}) == "Ethan"
+            assert kb.transfer_from_role({"draft_id": "d1"}) == "Ethan"
         finally:
             cb.DRAFTS = cu
 
@@ -355,7 +355,7 @@ def test_bia_co_anh_that_thi_qua():
 
 def test_hinh_chua_nhin_khong_bi_ep_len_bia():
     """Vision tắt thì mọi ảnh `lien_quan=None` — ép lúc đó là đẩy banner lên
-    bìa, cùng bài học với `hinh_phai_dung`. Nhưng từ 10/09/2026 cũng KHÔNG được
+    bìa, cùng bài học với `figure_right_use`. Nhưng từ 10/09/2026 cũng KHÔNG được
     lặng lẽ vẽ vector: đây là hỏng khâu vận hành, phải nói ra thứ cần bật."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
@@ -382,14 +382,14 @@ def test_chuyen_kite_chi_mot_tam_thi_BIA_thang():
     ĐẢO NGƯỢC 10/09/2026 — Ông Chủ: "không chấp nhận việc dùng vector ở hero
     slide". Bản trước cho THÂN thắng và bìa vẽ vector. Nay BÌA thắng: đòi của
     §1.2e sinh ra từ ca NHIỀU tấm mà Kite chỉ dùng một; còn đúng một tấm thì nó
-    VẪN được dùng, chỉ là dùng ở bìa. `hinh_phai_dung` trừ tấm ấy ra nên thân
+    VẪN được dùng, chỉ là dùng ở bìa. `figure_right_use` trừ tấm ấy ra nên thân
     không đòi nữa."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         m = _m(wd, [_hinh(wd)], chuyen_kite="t_9")
-        assert kb.hinh_hero(m)["ma"] == "H1"
-        assert kb.hinh_phai_dung(m) == [], kb.hinh_phai_dung(m)
+        assert kb.figure_hero(m)["ma"] == "H1"
+        assert kb.figure_right_use(m) == [], kb.figure_right_use(m)
         sl = _du()
         sl[0] = _cover(image="H1", caption="Bảng trong bài · via AA")
         assert _chay(sl, m, wd)[1] == [], _chay(sl, m, wd)[1]
@@ -400,9 +400,9 @@ def test_chuyen_kite_chi_mot_tam_thi_BIA_thang():
 
 def test_hero_khong_bao_gio_None_khi_con_mot_anh_da_nhin():
     """Bất biến của §1.2f sau 10/09/2026: còn một tấm ĐÃ NHÌN là còn bìa ảnh.
-    `hinh_hero` chỉ trả None khi engine giao 0 hình dùng được — mọi đường khác
+    `figure_hero` chỉ trả None khi engine giao 0 hình dùng được — mọi đường khác
     dẫn tới hero vector đều đã bị bịt."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         r1 = _hinh(wd, ma="R1")
@@ -414,26 +414,26 @@ def test_hero_khong_bao_gio_None_khi_con_mot_anh_da_nhin():
             ("1 khai niem, CHUYEN sang", [kn], {"chuyen_kite": "t_9"}),
             ("rieng + khai niem, CHUYEN sang", [r1, kn], {"chuyen_kite": "t_9"}),
         ]:
-            assert kb.hinh_hero(_m(wd, anh, **mk)) is not None, ten
+            assert kb.figure_hero(_m(wd, anh, **mk)) is not None, ten
         # chi con MOT duong ra None: engine giao 0 hinh
-        assert kb.hinh_hero(_m(wd)) is None
-        assert kb.hinh_hero(_m(wd, [_hinh(wd, ma="X1", lien_quan=None)])) is None
+        assert kb.figure_hero(_m(wd)) is None
+        assert kb.figure_hero(_m(wd, [_hinh(wd, ma="X1", lien_quan=None)])) is None
 
 
 def test_hero_uu_tien_paper_roi_anh_rieng_roi_anh_bu():
     """LUAT_ANH §1.2c/§1.2d: gợi ý bìa xếp SAU mọi ảnh riêng của tin."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         kn = _hinh(wd, ma="K1", khai_niem={"tu_khoa": "Japan flag"})
         th = _hinh(wd, ma="T1", thuong_hieu={"loai": "anh", "hang": "Nvidia"})
         rieng = _hinh(wd, ma="R1")
         paper = _hinh(wd, ma="P1", paper_hinh="Figure 1")
-        assert kb.hinh_hero(_m(wd, [kn]))["ma"] == "K1"
-        assert kb.hinh_hero(_m(wd, [kn, th]))["ma"] == "T1"
-        assert kb.hinh_hero(_m(wd, [kn, th, rieng]))["ma"] == "R1"
-        assert kb.hinh_hero(_m(wd, [kn, th, rieng, paper]))["ma"] == "P1"
-        assert kb.hinh_hero(_m(wd)) is None
+        assert kb.figure_hero(_m(wd, [kn]))["ma"] == "K1"
+        assert kb.figure_hero(_m(wd, [kn, th]))["ma"] == "T1"
+        assert kb.figure_hero(_m(wd, [kn, th, rieng]))["ma"] == "R1"
+        assert kb.figure_hero(_m(wd, [kn, th, rieng, paper]))["ma"] == "P1"
+        assert kb.figure_hero(_m(wd)) is None
 
 
 # ---- KITE PHAI TU TIM LAI ANH, khong thua ke that bai cua vai cu ----------
@@ -442,11 +442,11 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
     được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
 
     `image_prepare.run` trả thẳng `xong.json` cũ khi tệp đã có, và task body
-    giao cho Kite chạy `kite_chuan_bi.py <id>` KHÔNG kèm `--lam-moi` — nên Kite
+    giao cho Kite chạy `kite_prepare.py <id>` KHÔNG kèm `--lam-moi` — nên Kite
     đọc lại đúng kết quả đã thất bại của vai cũ, vòng tìm ảnh không bao giờ
     chạy lần nữa. Hai vai dừng ở hai ngưỡng khác nhau: vai cũ cần ~5 ảnh, Kite
     chỉ cần MỘT tấm lên bìa."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     import image_prepare as cb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
@@ -460,16 +460,16 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
         cu, cb.run = cb.run, gia_chay
         try:
             # 1) thua ke bo TRANG -> phai chay lai, va chay voi lam_moi=True
-            m2, _w = kb.bao_dam_co_bia("d1", _m(wd), wd, False, 30)
+            m2, _w = kb.ensure_has_cover("d1", _m(wd), wd, False, 30)
             assert goi == [True], goi
-            assert kb.hinh_hero(m2)["ma"] == "K9"
+            assert kb.figure_hero(m2)["ma"] == "K9"
             # 2) da co tam len bia -> KHONG dung toi engine lan nua
             goi.clear()
-            kb.bao_dam_co_bia("d1", _m(wd, [_hinh(wd, ma="R1")]), wd, False, 30)
+            kb.ensure_has_cover("d1", _m(wd, [_hinh(wd, ma="R1")]), wd, False, 30)
             assert goi == [], goi
             # 3) chinh vai da goi --lam-moi -> khong de quy them mot vong nua
             goi.clear()
-            kb.bao_dam_co_bia("d1", _m(wd), wd, False, 30, da_lam_moi=True)
+            kb.ensure_has_cover("d1", _m(wd), wd, False, 30, da_lam_moi=True)
             assert goi == [], goi
         finally:
             cb.run = cu
@@ -477,7 +477,7 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
 
 def test_task_body_khong_con_bao_kite_ve_vector_hoan_toan():
     """Câu "ve vector hoan toan" trong task body là CHÍNH HỆ THỐNG bảo vai làm
-    đúng thứ §1.2f cấm: vai đọc body TRƯỚC khi chạy `kite_chuan_bi.py`, nên nó
+    đúng thứ §1.2f cấm: vai đọc body TRƯỚC khi chạy `kite_prepare.py`, nên nó
     vào vòng với định kiến "bộ này không có ảnh" dù brief tìm lại được."""
     import duyet_bai
     src = pathlib.Path(duyet_bai.__file__).read_text(encoding="utf-8")
@@ -526,14 +526,14 @@ def test_anh_khai_niem_khong_bi_ep_xuong_than_khi_chuyen_kite():
     """Hai cổng không được đá nhau: §1.2e ép "đủ mã + phải có hình ở BODY",
     §1.2c cấm ảnh khái niệm ở thân. Tin CHUYỂN sang Kite mà chỉ có đúng một ảnh
     khái niệm thì trước 10/09/2026 đường nộp DUY NHẤT là đặt nó xuống `figure`
-    thân — cổng ép đúng cái luật cấm. Nó phải rơi khỏi `hinh_phai_dung`, và bìa
+    thân — cổng ép đúng cái luật cấm. Nó phải rơi khỏi `figure_right_use`, và bìa
     là đường nộp còn lại."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         m = _m(wd, [_khai_niem(wd)], chuyen_kite="t_9")
-        assert kb.hinh_phai_dung(m) == [], kb.hinh_phai_dung(m)
-        assert kb.hinh_hero(m)["ma"] == "K1"
+        assert kb.figure_right_use(m) == [], kb.figure_right_use(m)
+        assert kb.figure_hero(m)["ma"] == "K1"
         sl = _du()
         sl[0] = _cover(image="K1", caption="Cờ Nhật · via Wikimedia Commons")
         _r, loi, _c = _chay(sl, m, wd)
@@ -544,14 +544,14 @@ def test_hero_lui_sang_anh_khai_niem_khi_tam_dau_bi_than_giu():
     """Tin chuyển sang Kite có một ảnh riêng + một ảnh khái niệm: ảnh riêng bị
     §1.2e giữ ở thân, nên bìa lùi sang ảnh khái niệm thay vì vẽ vector — đúng
     §1.2f ("bìa phải là ảnh thật khi CÓ ảnh thật dùng được")."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         rieng = _hinh(wd, ma="R1")
         kn = _khai_niem(wd, ma="K1", w=1100, h=900)
         m = _m(wd, [rieng, kn], chuyen_kite="t_9")
-        assert kb.hinh_phai_dung(m) == ["R1"], kb.hinh_phai_dung(m)
-        assert kb.hinh_hero(m)["ma"] == "K1"
+        assert kb.figure_right_use(m) == ["R1"], kb.figure_right_use(m)
+        assert kb.figure_hero(m)["ma"] == "K1"
         sl = _du()
         sl[0] = _cover(image="K1", caption="Cờ Nhật · via Wikimedia Commons")
         sl[1] = _figure("R1")
@@ -562,12 +562,12 @@ def test_hero_lui_sang_anh_khai_niem_khi_tam_dau_bi_than_giu():
 def test_brief_noi_ro_anh_khai_niem_chi_dung_o_bia():
     """Brief liệt kê ảnh khái niệm chung danh sách "dùng được cho `figure` / bìa
     `image`" — không nói gì thì vai đặt nó xuống `figure` rồi ăn cổng chặn."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         rieng = _hinh(wd, ma="R1")
         kn = _khai_niem(wd, ma="K1", w=1100, h=900)
-        brief = kb.viet_brief(_m(wd, [rieng, kn], workdir=str(wd)), None)
+        brief = kb.write_brief(_m(wd, [rieng, kn], workdir=str(wd)), None)
         dong = [d for d in brief.splitlines() if d.startswith("- K1:")]
         assert dong and "KHÁI NIỆM" in dong[0] and "bìa" in dong[0], dong
 
@@ -575,12 +575,12 @@ def test_brief_noi_ro_anh_khai_niem_chi_dung_o_bia():
 def test_khung_spec_khong_in_ma_cua_bia_lai_o_figure():
     """Cùng một mã ở cả cover lẫn `figure` là `image_rules.check_duplicate` chặn — khung
     mẫu không được đẩy vai vào cổng."""
-    import kite_chuan_bi as kb
+    import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_hinh(wd, ma="H1"), _hinh(wd, ma="H2", w=1100, h=900)]
         m = _m(wd, anh, chuyen_kite="t_9", workdir=str(wd))
-        brief = kb.viet_brief(m, None)
+        brief = kb.write_brief(m, None)
         spec = brief[brief.index("{\n"):]
         assert spec.count('"image": "H1"') == 1, spec[:400]
 
@@ -594,7 +594,7 @@ def test_hinh_chua_nhin_thi_chi_goi_y():
 
 
 def test_hinh_qua_nho_chua_nhin_khong_bi_bao_gia():
-    """kite_nop tinh "chua nhin" tu `hinh` (= kb.hinh_that(m), da loc >= 800px),
+    """kite_nop tinh "chua nhin" tu `hinh` (= kb.figure_real(m), da loc >= 800px),
     KHONG doc thang m["chua_nhin"] cap manifest (tinh tren TOAN BO anh, xem
     chuan_bi/manifest.py) — anh <800px khong bao gio la candidate cua Kite nen
     "chua nhin" cua no la nhieu, khong phai tin. Neu sau nay co ai "gon" lai

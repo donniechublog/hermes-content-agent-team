@@ -1,6 +1,6 @@
 ---
 name: carousel
-description: "Khung kể chuyện, giọng copy và slide quote cho carousel nhiều slide của Dre (một vai cho cả donniechublog và dcgr.tech, khác handle và người đọc). Lệnh, luật ảnh, cú pháp spec và cách sửa lỗi nằm trong brief mà dre_chuan_bi.py in mỗi task và trong báo [LOI] của dre_nop.py; skill này chỉ giữ phần vai phải nghĩ."
+description: "Khung kể chuyện, giọng copy và slide quote cho carousel nhiều slide của Dre (một vai cho cả donniechublog và dcgr.tech, khác handle và người đọc). Lệnh, luật ảnh, cú pháp spec và cách sửa lỗi nằm trong brief mà dre_prepare.py in mỗi task và trong báo [LOI] của dre_submit.py; skill này chỉ giữ phần vai phải nghĩ."
 version: 3.0.0
 author: content-team
 license: internal
@@ -25,9 +25,9 @@ và trắng là hai màu ưu tiên. Spec có `"nen": "toi"` (màn tối, chữ t
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python dre_chuan_bi.py <id>   # 1. brief
+cd /home/donniechu/content-team && venv/bin/python dre_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python dre_nop.py <id>        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python dre_submit.py <id>        # 3. nộp
 ```
 
 Brief in ảnh đã tải với mã A1, A2…, cột "ảnh là", nhãn dùng được ở đâu, cặp ghép,
@@ -36,7 +36,7 @@ cần nhớ cú pháp hay luật ảnh, đọc brief là đủ.
 
 ## Đếm ảnh trước khi chia slide (bài học 10/09/2026)
 
-Cổng chặn ảnh của `dre_nop.py` nghiêm hơn cột "dùng" trong brief, nên **đọc
+Cổng chặn ảnh của `dre_submit.py` nghiêm hơn cột "dùng" trong brief, nên **đọc
 brief xong phải tự đếm trước khi viết spec**:
 
 - Ảnh ❌ KHÔNG LIÊN QUAN: brief đã chặn sẵn, `nop` cũng chặn.

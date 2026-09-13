@@ -24,9 +24,9 @@ tải với mã A1, A2…, cột "ảnh là" (đã nhìn), nhãn dùng được 
 liệu, số slide tối thiểu và khung spec. Nop báo `[LOI]` kèm cách sửa.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python dre_chuan_bi.py <id>   # 1. đọc brief
+cd /home/donniechu/content-team && venv/bin/python dre_prepare.py <id>   # 1. đọc brief
 # 2. viết spec.json vào đúng đường dẫn brief in ra (chỉ chữ + mã ảnh A1, A2…)
-cd /home/donniechu/content-team && venv/bin/python dre_nop.py <id>        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python dre_submit.py <id>        # 3. nộp
 ```
 
 Ngoài ba lệnh trên không chạy gì khác: không `curl`, không `ls`/`grep`, không mở

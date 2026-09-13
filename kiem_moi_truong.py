@@ -20,7 +20,7 @@ dau, ma chet cam lang o GIUA chung, rat xa cho thieu that su:
                              ghi "CHUA AI NHIN" ma khong dung engine lai.
 - Thieu TELEGRAM_BOT_TOKEN -> gui/duyet qua Telegram im lang khong gui duoc
                              (tru profile Bob, noi bien nay RONG la CO Y --
-                             xem bob_nop.py / docstring env_load.nap).
+                             xem bob_submit.py / docstring env_load.nap).
 
 Chay TRUOC khi bat engine, de biet ro thieu gi ma sua, thay vi doi engine
 chay nua chung roi moi phat hien:
@@ -135,13 +135,13 @@ def kiem_openai_key() -> tuple:
 def kiem_telegram_token() -> tuple:
     """TELEGRAM_BOT_TOKEN -- gui tin/duyet qua Telegram can bien nay.
 
-    RONG co the la CO Y (profile Bob tat Telegram, xem bob_nop.py) nen THIEU
+    RONG co the la CO Y (profile Bob tat Telegram, xem bob_submit.py) nen THIEU
     o day khong luon dong nghia sai cau hinh -- ghi chu vao ly do de nguoi
     doc tu quyet, khong tu suy doan thay ho.
     """
     return kiem_bien_moi_truong(
         "TELEGRAM_BOT_TOKEN",
-        "co the RONG CO Y tren profile Bob, xem bob_nop.py")
+        "co the RONG CO Y tren profile Bob, xem bob_submit.py")
 
 
 MUC_KIEM = [

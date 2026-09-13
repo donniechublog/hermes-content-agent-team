@@ -5,7 +5,7 @@ Truoc 09/09/2026 `image_prepare._route_thieu_anh` gui Telegram va tao task Kite
 ngay trong engine, nen engine phai `from duyet_giao_viec import chuan_assignee`
 va `from duyet_bai import tao_task_kite`: lop CHUAN BI goi NGUOC len lop dieu
 phoi. Nay engine ghi `xong.json["thieu_anh"] = {"so": .., "toi_thieu": ..}` va
-nhan mot moc `sau_chuan_bi`; `route_thieu_anh.py` la noi duy nhat biet ca hai phia.
+nhan mot moc `after_prepare`; `route_missing_images.py` la noi duy nhat biet ca hai phia.
 
 Test giu HAI thu:
   1. Hanh vi dinh tuyen khong doi (bon nhanh cua ham cu).
@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                     # noqa: E402
-import route_thieu_anh as rt                                  # noqa: E402
+import route_missing_images as rt                                  # noqa: E402
 
 
 # --------------------------------------------------------------- engine mô tả
@@ -106,33 +106,33 @@ def test_moc_no_thi_van_ghi_xong_json():
 
 # ------------------------------------------------------- tầng ghép nối quyết định
 def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
-    """Goi rt.sau_chuan_bi voi sidecar gia. Tra (m, cac tin da gui).
+    """Goi rt.after_prepare voi sidecar gia. Tra (m, cac tin da gui).
 
-    `gui_ok=False` gia lap Telegram tu choi (400) — _tg_gui tra False."""
+    `gui_ok=False` gia lap Telegram tu choi (400) — _time_send tra False."""
     import duyet_giao_viec as dgv
     import duyet_bai as db
     drafts = Path(tmp) / "drafts"
     drafts.mkdir(parents=True, exist_ok=True)
     (drafts / "d1.img.json").write_text(json.dumps(im), encoding="utf-8")
     tin = []
-    cu = (rt.DRAFTS, rt._tg_gui, dgv.chuan_assignee, db.tao_task_kite)
+    cu = (rt.DRAFTS, rt._time_send, dgv.chuan_assignee, db.tao_task_kite)
     rt.DRAFTS = drafts
 
     def _gui(vai, text, kb=None):
         tin.append((vai, text, kb))
         return gui_ok
-    rt._tg_gui = _gui
+    rt._time_send = _gui
     dgv.chuan_assignee = lambda v: (v, not kite_co)
     db.tao_task_kite = lambda *a, **k: tao_kite
     try:
-        rt.sau_chuan_bi("d1", m)
+        rt.after_prepare("d1", m)
         return m, tin
     finally:
-        rt.DRAFTS, rt._tg_gui, dgv.chuan_assignee, db.tao_task_kite = cu
+        rt.DRAFTS, rt._time_send, dgv.chuan_assignee, db.tao_task_kite = cu
 
 
 def test_telegram_tu_choi_thi_KHONG_danh_dau_da_hoi():
-    """C-r2-1: truoc day _tg_gui vut ket qua post, m["hoi_kite"]=True van ghi vao
+    """C-r2-1: truoc day _time_send vut ket qua post, m["hoi_kite"]=True van ghi vao
     xong.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
@@ -156,7 +156,7 @@ def test_sidecar_cu_ghi_slug_cu_van_toi_dung_topic():
 
 
 def test_tg_gui_that_doc_ok_cua_telegram():
-    """_tg_gui phai nhin vao {"ok": false} cua Telegram, khong chi vao HTTP."""
+    """_time_send phai nhin vao {"ok": false} cua Telegram, khong chi vao HTTP."""
     import httpx
     import os
 
@@ -170,7 +170,7 @@ def test_tg_gui_that_doc_ok_cua_telegram():
     httpx.post = lambda *a, **k: _R()
     rt.env_load.topics = lambda: {"dre": 7}
     try:
-        assert rt._tg_gui("dre", "x") is False
+        assert rt._time_send("dre", "x") is False
     finally:
         httpx.post, rt.env_load.topics = cu_post, cu_topics
         for k, v in cu_env.items():
@@ -194,7 +194,7 @@ def test_khong_co_sidecar_thi_im():
         rt.DRAFTS = drafts
         try:
             m = {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "x"}
-            rt.sau_chuan_bi("d1", m)
+            rt.after_prepare("d1", m)
             assert "chuyen_kite" not in m and "hoi_kite" not in m, m
         finally:
             rt.DRAFTS = cu

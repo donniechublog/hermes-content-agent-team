@@ -93,10 +93,10 @@ def test_khong_hoi_ong_chu_khi_ethan_du_anh():
     """`sau_chuan_bi` chi hoi khi manifest co `thieu_anh`. Bai cua Ethan voi 2
     anh khong con khoa do -> khong mot tin nao gui len topic, khong nut "Gui
     Kite ve vector" nao moc vao task le ra chay tron."""
-    import route_thieu_anh as rt
+    import route_missing_images as rt
     goi = []
-    cu_gui, cu_drafts = rt._tg_gui, rt.DRAFTS
-    rt._tg_gui = lambda *a, **k: goi.append(a) or True
+    cu_gui, cu_drafts = rt._time_send, rt.DRAFTS
+    rt._time_send = lambda *a, **k: goi.append(a) or True
     try:
         with tempfile.TemporaryDirectory() as tmp:
             rt.DRAFTS = Path(tmp)
@@ -107,9 +107,9 @@ def test_khong_hoi_ong_chu_khi_ethan_du_anh():
             thieu = cb._description_missing_image(m)
             if thieu:
                 m["thieu_anh"] = thieu
-            rt.sau_chuan_bi("d1", m)
+            rt.after_prepare("d1", m)
     finally:
-        rt._tg_gui, rt.DRAFTS = cu_gui, cu_drafts
+        rt._time_send, rt.DRAFTS = cu_gui, cu_drafts
     assert not goi, f"da hoi Ong Chu du Ethan khong thieu anh: {goi}"
     assert "hoi_kite" not in m and "chuyen_kite" not in m
 

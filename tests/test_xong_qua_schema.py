@@ -21,9 +21,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-NGUOI_DOC_ENGINE = ["submit_common.py", "duyet_bai.py", "image_prepare.py", "dre_chuan_bi.py",
-                    "ethan_chuan_bi.py", "kite_chuan_bi.py", "miles_chuan_bi.py", "route_thieu_anh.py",
-                    "dre_nop.py", "ethan_nop.py", "kite_nop.py", "miles_nop.py"]
+NGUOI_DOC_ENGINE = ["submit_common.py", "duyet_bai.py", "image_prepare.py", "dre_prepare.py",
+                    "ethan_prepare.py", "kite_prepare.py", "miles_prepare.py", "route_missing_images.py",
+                    "dre_submit.py", "ethan_submit.py", "kite_submit.py", "miles_submit.py"]
 
 
 def _co_xong_json(node) -> bool:

@@ -33,7 +33,7 @@ from pathlib import Path
 
 import scan_common                                            # noqa: E402
 import env_load
-import bat_buoc
+import required
 
 STATE = env_load.state_dir() / "business_seen.json"
 UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
@@ -441,9 +441,9 @@ def main():
         muc = [(k, f"{t['hang_watch']}: {t['tieu_de']}", "watchlist",
                 f"{t['so_bao']} bao; {t['ngay']}", t.get("link", ""), [t["hang_watch"]])
                for k, t in nhom.items()]
-        so_moi = bat_buoc.them_nhieu("vera", muc)
+        so_moi = required.extra_many("vera", muc)
         print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
-              f"{len(bat_buoc.doc('vera'))} (bat_buoc_vera.json)", file=sys.stderr)
+              f"{len(required.read('vera'))} (bat_buoc_vera.json)", file=sys.stderr)
 
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
            "tong_quet": len(tin),

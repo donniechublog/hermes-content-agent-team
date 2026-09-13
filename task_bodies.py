@@ -46,7 +46,7 @@ Ong Chu chon tin). Viec cua ban chi co MOT: chon anh theo ma va viet cau hook.
 Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (anh da tai + xu ly san, tu lieu, khung spec):
-cd {goc} && venv/bin/python ethan_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python ethan_prepare.py {draft_id}
 
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chi
 dien MA ANH (A1, A2...) va CHU (hook, tagline, attrib; hoac title+kicker cho
@@ -54,7 +54,7 @@ kieu tran). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
 article_images.py/card.py/gui_telegram.py tay. Chu tieng Viet co dau.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python ethan_nop.py {draft_id}
+cd {goc} && venv/bin/python ethan_submit.py {draft_id}
 Script tu ghep/cat theo spec, chay moi cong chan cua card.py, dung the, gui len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi
 sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan sua).
@@ -77,7 +77,7 @@ gui Telegram, ban giao cho Miles — DA LA SCRIPT. Viec cua ban chi co MOT:
 chia tin thanh slide va viet copy. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (anh da tai + xu ly san, tu lieu, khung spec):
-cd {goc} && venv/bin/python dre_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python dre_prepare.py {draft_id}
 (Script da chay nen tu luc Ong Chu chon tin; lenh nay thuong chi in ra. Neu no
 bao dang chuan bi thi no tu doi, ban khong lam gi them.)
 
@@ -88,7 +88,7 @@ article_images.py/carousel.py/gui_telegram.py bang tay. Muon nhin anh thi mo DUN
 tam bang_anh.png. Chu tieng Viet co dau, cau quote DICH sang tieng Viet.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python dre_nop.py {draft_id}
+cd {goc} && venv/bin/python dre_submit.py {draft_id}
 Script tu cat/ghep anh theo spec, chay moi cong chan, dung slide, gui album len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. No bao [LOI]
 thi sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan
@@ -110,7 +110,7 @@ lieu, hinh that, tone, cong chan, render, gui, ban giao) DA LA SCRIPT. Viec cua
 ban chi co MOT: chia slide va viet chu. Lam dung BA BUOC, khong them lenh nao.
 
 BUOC 1 — doc ban chuan bi (tu lieu, hinh that neu co, tone goi y, khung spec):
-cd {goc} && venv/bin/python kite_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python kite_prepare.py {draft_id}
 
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1 (6..10
 slide, slide 1 la cover, 6 kind: cover/statement/steps/loop/figure/cta). Chi
@@ -118,7 +118,7 @@ dien CHU + theme/hero + ma hinh that (neu dung). KHONG mo tung slide ra xem,
 KHONG doc reference, KHONG chay render_edu.py/gui_telegram.py tay.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python kite_nop.py {draft_id}
+cd {goc} && venv/bin/python kite_submit.py {draft_id}
 Script tu kiem spec, render bang Chromium, gui album len topic kem nut Duyet/Lam
 lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi sua DUNG cho do trong spec.json roi
 chay lai DUNG lenh nay (toi da 2 lan). {ket_thuc} GUI DUNG MOT LAN: khong sinh agent con, khong gui lai."""

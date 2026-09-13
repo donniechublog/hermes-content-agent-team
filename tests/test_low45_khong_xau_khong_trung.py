@@ -16,7 +16,7 @@ mỗi nhóm FAIL trên code cũ:
      thật không đủ nhạy cho ca này).
   2. Câu hỏi con mắt MẶC ĐỊNH (đường "ảnh riêng của tin") có điều kiện rõ nét/
      không chụp góc nghiêng, đồng bộ với `anh_thuong_hieu`/`anh_khai_niem`.
-  3. `kite_nop.giai_spec` chặn khi bộ nhiều slide dùng quá ít ảnh thật khác
+  3. `kite_submit.resolve_spec` chặn khi bộ nhiều slide dùng quá ít ảnh thật khác
      nhau (8 slide → tối thiểu 3), NHƯNG chỉ khi vòng tìm đủ nguồn.
 
 Chạy:  venv/bin/python tests/test_low45_khong_xau_khong_trung.py

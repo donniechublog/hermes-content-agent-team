@@ -116,9 +116,9 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `drafts/<id>.ban_giao.md` và `da_dung.json` (để "Làm lại" bắt buộc đổi
   ảnh/hook/tone). `--khong-gui`/`--out`/`--khong-push` để thử.
 - Bốn vai theo chat cùng mẫu, khoá là message_id/URL: `gin_*`, `itachi_*`,
-  `cape_*`, `ada_*`. `bob_nop.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
+  `cape_*`, `ada_*`. `bob_submit.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
   khung → gửi).
-- `quet_chuan_bi.py --vai finn|nova|vera` + `quet_nop.py`: ba vai đi tìm tin
+- `scan_prepare.py --vai finn|nova|vera` + `scan_submit.py`: ba vai đi tìm tin
   nhận danh sách ứng viên một dòng mỗi tin + mục BẮT BUỘC + khung tệp nộp; nop
   ghép manifest, kiểm bắt buộc, viết báo cáo, gửi topic. `--khong-co` gửi dòng
   "hôm nay không có gì"; `--thu` không ghi manifest thật.
@@ -233,16 +233,16 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   bảng đăng ký.
   Bảng chết (BFCL, LiveCodeBench, Aider, BigCodeBench, Papers With Code) bị loại
   có chủ đích — xem nhật ký sự cố.
-- `manifest_ghi.py` (Nova/Vera) / `manifest_build.py` (Finn) — ghi manifest đánh
+- `manifest_write.py` (Nova/Vera) / `manifest_build.py` (Finn) — ghi manifest đánh
   số vào `state/<brand>/` qua `env_load.state_dir()`, cùng chỗ approve_service
-  đọc. Phần cơ học dùng chung nằm ở **`manifest_chung.py`**: chọn theo `k`, dọn
+  đọc. Phần cơ học dùng chung nằm ở **`manifest_common.py`**: chọn theo `k`, dọn
   `summary_vi`, đánh số, không ghi đè bản đã có, chốt danh sách bắt buộc, dựng
   báo cáo. Trước 07/09/2026 mỗi script tự viết lại và **đã lệch** — cổng bỏ
   em-dash chỉ có ở nhánh Finn, dù lý do có nó ("em-dash lọt xuống tận caption")
   đúng y hệt với Nova/Vera. Cái *không* gộp là cổng báo title mất dấu: title của
   Nova/Vera do chính vai viết bằng tiếng Việt, còn title của Finn lấy từ
   `candidates.json` tức tiêu đề gốc báo nước ngoài.
-- `bat_buoc.py` — **danh sách BẮT BUỘC**: script quét thấy là phải đưa, vai không
+- `required.py` — **danh sách BẮT BUỘC**: script quét thấy là phải đưa, vai không
   có quyền bỏ. Script ghi manifest tự thêm mục thiếu kèm ghi chú "vai bỏ sót" và
   xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**, không chép URL.
 - `material.py` — bóc chữ bài để đối chiếu số liệu và tên người vai khai.
@@ -334,7 +334,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `cai_dat.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
   (pip, `playwright install chromium`) rồi kết thúc bằng `kiem_moi_truong.py`.
   Trước đây các bước này nằm rải trong comment của `requirements.txt` và
-  `bob_nop.py`, thiếu một bước là hỏng **câm** (thiếu cv2 → cổng mặt người tự
+  `bob_submit.py`, thiếu một bước là hỏng **câm** (thiếu cv2 → cổng mặt người tự
   tắt). Font và model YuNet đã nằm trong git, không phải tải. `--thu` xem trước,
   không cài gì. **Không còn bước Node nào** từ 09/09/2026 (A6).
 - `kiem_moi_truong.py` — chặn đầu: cv2, model YuNet, Chromium, `OPENAI_API_KEY`,
@@ -385,7 +385,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 
 - Vai **không nhắn nhau**. Mỗi vai kết thúc bằng `kanban_complete(summary, metadata)`; hermes tự
   đưa summary/metadata đó vào context task con ("Parent task results"), nên Miles thấy Dre.
-  `dre_nop.py` / `miles_nop.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
+  `dre_submit.py` / `miles_submit.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
   `[swarm:blackboard] {…}` trên thẻ gốc) và in dòng `[metadata]` để vai dán vào `kanban_complete`.
 - Task **Ada "Soát"** từng nối sau Miles (05/09 sáng) đã **bỏ 05/09 chiều**: một task LLM mỗi bài
   để kiểm bốn điểm mà `caption_check.py` giờ làm bằng code (số trong caption phải có trong tư liệu,

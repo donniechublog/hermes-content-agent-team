@@ -308,7 +308,7 @@ def test_mau_anh_that_van_thang_mau_hang():
 
 
 def test_mau_hang_trong_spec_chiu_duoc_spec_khong_co_slides():
-    """`kite_chuan_bi.py` goi `chon_theme_tu_dong({"folio": title})` — spec
+    """`kite_prepare.py` goi `chon_theme_tu_dong({"folio": title})` — spec
     KHONG co khoa "slides". Duong that dang chay, khong duoc nem."""
     assert re_.mau_hang_trong_spec({"folio": "DEEPSEEK V4"}) == (77, 108, 247)
     assert re_.mau_hang_trong_spec({}) is None

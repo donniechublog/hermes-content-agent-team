@@ -1,20 +1,14 @@
-#!/usr/bin/env python3
-"""jika_nop.py — NOP caption cua Jika. Cung engine voi `miles_nop.py`.
+"""SHIM tạm (LOW-50): tên cũ của `jika_submit.py`. Mọi thứ nằm ở `jika_submit.py`.
 
-Xem ghi chu o `jika_chuan_bi.py`: mot cap script mang ten vai la quy uoc cua ban
-dang ky, khong phai mot ban sao logic. `miles_nop.py` doc sidecar writer.json de
-biet AI viet bai nay, nen `author` ghi len bang den va ten tep brief deu ra
-"jika" khi bai la cua Jika — chay tep nao cung the.
+Giữ để task kanban đang `ready`, cron và SOUL trên máy chủ gọi tên cũ vẫn chạy
+trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import jika_nop` và
+`jika_nop.ten` đều trỏ đúng đối tượng thật (kể cả tên `_riêng`). Gỡ sau 1 tuần
+(ticket con của LOW-50)."""
+import sys as _sys
 
-Dung:
-    venv/bin/python jika_nop.py <draft_id>
-    venv/bin/python jika_nop.py <draft_id> --khong-push       # thu: khong day hang duyet
-"""
-import sys
-from pathlib import Path
+import jika_submit as _new
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from miles_nop import main                                   # noqa: E402
+_sys.modules[__name__] = _new
 
 if __name__ == "__main__":
-    sys.exit(main())
+    _sys.exit(_new.main() if hasattr(_new, "main") else 0)

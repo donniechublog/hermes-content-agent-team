@@ -89,7 +89,7 @@ def test_ly_do_task_chua_chay_lan_nao_thi_chuoi_rong():
 
 # --------------------------------------------------- canh bao "khong phan hoi"
 def _chay_bao_tien_do_gia(tmp, rows, gui_ghi_lai):
-    """Chay bao_tien_do_kanban() voi kanban/telegram gia, tra list text da 'gui'."""
+    """Chay bao_tien_do_kanban() voi kanban/telegram gia, tra list text da 'send'."""
     state = Path(tmp)
     cu = (dg.DA_BAO_TIEN_DO, dg.TIN_KET_QUA, dg.DA_BAO_TREO,
           dg.hermes_adapter.co_kanban, dg.hermes_adapter.viec, dg.call, dg.env_load.topics_path)

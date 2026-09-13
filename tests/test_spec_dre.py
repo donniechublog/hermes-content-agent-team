@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cong chan spec carousel cua Dre (`dre_nop.giai_spec`).
+"""Cong chan spec carousel cua Dre (`dre_submit.resolve_spec`).
 
 Audit 06/09/2026 do: ham nay 166 dong, 36 nhanh, va gan nhu KHONG co test —
 `test_cong_chan` nhac `bob_nop` 19 lan, `dre_nop` mot lan. No la cho duy nhat
@@ -10,7 +10,7 @@ tone" khoi he thong, xem test_ghep_hai_anh_lech_tone_khong_con_bi_chan.)
 
 Cong nay bao loi THAY VI ve sai, nen no hong theo hai chieu deu dat:
   - bao oan  -> Dre sua kieu gi cung khong nop duoc (da xay ra voi cong xep
-                hang, xem chu thich dai o dre_nop.py:97)
+                hang, xem chu thich dai o dre_submit.py:97)
   - bo sot   -> anh sai len thang Telegram
 
 Chay:  venv/bin/python tests/test_spec_dre.py
@@ -93,8 +93,8 @@ def _du_slide(anh_ma):
 
 
 def _chay(spec, m, wd):
-    import dre_nop
-    return dre_nop.giai_spec(spec, m, Path(wd))
+    import dre_submit
+    return dre_submit.resolve_spec(spec, m, Path(wd))
 
 
 def _co(loi, *manh):
@@ -440,12 +440,12 @@ def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
     dHash cua anh bi che vao img.json["cam_anh_slide"]["3"] luc bam nut; cong
     o day phai chan slide 3 du ma anh doi ten."""
     import shutil
-    import dre_nop
+    import dre_submit
     import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         with tempfile.TemporaryDirectory() as dr:
-            dre_nop.DRAFTS = Path(dr)
+            dre_submit.DRAFTS = Path(dr)
             try:
                 h = image_rules.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
                 (Path(dr) / f"{m['draft_id']}.img.json").write_text(
@@ -459,18 +459,18 @@ def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
                 _ra, loi, _c, _d = _chay(spec, m, wd)
                 assert _co(loi, "slide 3", "đã bị Ông Chủ từ chối"), loi
             finally:
-                dre_nop.DRAFTS = dre_nop.ROOT / "drafts"
+                dre_submit.DRAFTS = dre_submit.ROOT / "drafts"
 
 
 def test_lam_lai_slide_khac_khong_bi_anh_huong():
     """Cam chi ap cho DUNG slide bi neu — cac slide khac trong ban lam lai van
     duoc giu anh cu binh thuong, khong bi chan oan."""
-    import dre_nop
+    import dre_submit
     import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         with tempfile.TemporaryDirectory() as dr:
-            dre_nop.DRAFTS = Path(dr)
+            dre_submit.DRAFTS = Path(dr)
             try:
                 h = image_rules.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
                 (Path(dr) / f"{m['draft_id']}.img.json").write_text(
@@ -479,7 +479,7 @@ def test_lam_lai_slide_khac_khong_bi_anh_huong():
                 _ra, loi, _c, _d = _chay(spec, m, wd)
                 assert loi == [], loi
             finally:
-                dre_nop.DRAFTS = dre_nop.ROOT / "drafts"
+                dre_submit.DRAFTS = dre_submit.ROOT / "drafts"
 
 
 if __name__ == "__main__":

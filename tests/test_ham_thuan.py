@@ -14,7 +14,7 @@ lo ra khi hong:
                      viet, sinh ra sau su co 04/09 (Itachi doi Gin 108 giay).
   - `gom_trung`      gop nhieu bao dua cung mot su kien. Docstring cua no ke
                      hai lan hoi quy that; ca hai o day thanh test.
-  - `chuan_hoa`      khoa dedup ghi vao business_seen.json.
+  - `standard_ify`      khoa dedup ghi vao business_seen.json.
   - `env_load.brand_long` doi CT_BRAND (ten NGAN cho state, "blog"/"dcgr") ra slug
                      thuong hieu DAI ("donniechublog"/"dcgr") ma card.py doi.
                      Sinh 09/09/2026: lan thang CT_BRAND vao card.dat_thuong_hieu

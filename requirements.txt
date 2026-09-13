@@ -45,7 +45,7 @@ opencv-python-headless>=4.9  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx 
 # swap_image_text.py (Gin) can them torch + LaMa + easyocr, ~2GB — CHI cai tren may
 # local xu ly anh nang, khong dua vao day. Xem requirements-local.txt.
 
-# numpy: gin_chuan_bi.py / swap_image_text.py import top-level nhung KHONG khai o
+# numpy: gin_prepare.py / swap_image_text.py import top-level nhung KHONG khai o
 # day — no den theo opencv-python-headless (phu thuoc bat buoc), nen "thieu"
 # chi la ve mat khai bao (audit lượt 2, ADF-r2-13). Ghi ro de doc requirements
 # la biet, khong phai lan theo cay phu thuoc.

@@ -1,6 +1,6 @@
 ---
 name: hero-image
-description: "Cách viết câu hook, chọn kiểu quote hay tràn, ghi tagline và attrib cho thẻ ảnh hero của Ethan (donniechublog và dcgr.tech). Lệnh, nhãn ảnh, cú pháp spec và cách sửa lỗi nằm trong brief mà ethan_chuan_bi.py in mỗi task và trong báo [LOI] của ethan_nop.py; skill này chỉ giữ phần vai phải nghĩ."
+description: "Cách viết câu hook, chọn kiểu quote hay tràn, ghi tagline và attrib cho thẻ ảnh hero của Ethan (donniechublog và dcgr.tech). Lệnh, nhãn ảnh, cú pháp spec và cách sửa lỗi nằm trong brief mà ethan_prepare.py in mỗi task và trong báo [LOI] của ethan_submit.py; skill này chỉ giữ phần vai phải nghĩ."
 version: 4.0.0
 author: content-team
 license: internal
@@ -23,9 +23,9 @@ mờ cục bộ đúng vùng chữ đè lên, phần ảnh còn lại giữ nguy
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python ethan_chuan_bi.py <id>   # 1. brief
+cd /home/donniechu/content-team && venv/bin/python ethan_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python ethan_nop.py <id>        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python ethan_submit.py <id>        # 3. nộp
 ```
 
 Brief in ảnh đã tải với mã A1, A2…, nhãn theo luật của renderer (nền hero một

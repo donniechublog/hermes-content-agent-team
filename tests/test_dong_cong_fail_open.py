@@ -11,7 +11,7 @@ Luật mới trong `chuan_bi.vision.description_image`:
   - HỎI ĐƯỢC nhưng không đọc ra LIEN_QUAN -> hỏi lại ĐÚNG 1 LẦN; vẫn không đọc
     ra thì COI LÀ RỚT (`False`), không còn là `None`.
   - KHÔNG HỎI ĐƯỢC (thiếu key, hoặc mạng/router hỏng ngay từ lần đầu) -> giữ
-    nguyên `None` — đây là "vision tắt" có chủ đích ở nơi khác (kite_nop.py),
+    nguyên `None` — đây là "vision tắt" có chủ đích ở nơi khác (kite_submit.py),
     không phải ca cần đóng.
 
 Chạy:  venv/bin/python tests/test_dong_cong_fail_open.py
@@ -99,7 +99,7 @@ def test_lech_dinh_dang_ca_hai_lan_thi_rot_khong_phai_none():
 
 def test_thieu_key_van_giu_none_khong_hoi_lai():
     """'Vision tắt' (thiếu OPENAI_API_KEY) là ca có chủ đích ở nơi khác
-    (kite_nop.py) — KHÔNG đóng, và không tốn thêm lượt hỏi nào."""
+    (kite_submit.py) — KHÔNG đóng, và không tốn thêm lượt hỏi nào."""
     with mock.patch.dict("os.environ", {}, clear=True), \
          mock.patch.object(vision, "_call_router") as m:
         mt, lq = vision.description_image(ANH, "Tin gì đó")

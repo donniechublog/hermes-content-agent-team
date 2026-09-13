@@ -7,7 +7,7 @@ image_prepare.py o goc sang chuan_bi/common.py. Tep moi nam sau mot cap thu muc
 nen mot `.parent` chi ra `chuan_bi/`, khien `DRAFTS = ROOT / "drafts"` thanh
 `chuan_bi/drafts` (rong). Moi lenh doc `drafts/<id>.meta.json` bao "Khong thay
 ... task nay khong do approve_service tao?" du tep TON TAI — bat duoc khi
-kite_nop.py chay lai mot draft that.
+kite_submit.py chay lai mot draft that.
 
 Vi sao khong luoi nao bat duoc: pyflakes thay ROOT co dinh nghia va co dung nen
 im; `import chuan_bi.chung` chay binh thuong; con suite thi monkeypatch DRAFTS

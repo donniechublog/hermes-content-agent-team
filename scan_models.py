@@ -1033,13 +1033,13 @@ def ghi_moc(ids: set, xep_hang: dict, da_bao: dict | None = None):
                               "aa_da_bao": da_bao})
 
 
-import bat_buoc                                              # noqa: E402
+import required                                              # noqa: E402
 
 
 def ghi_bat_buoc(ra_mat_aa: list, leo_hang: list, moi_router: list,
                  hf_moi: list | None = None) -> None:
     """Tich luy moi su kien tat dinh vao danh sach BAT BUOC cua Nova (xem
-    bat_buoc.py). Luat Ong Chu 04/09/2026: xuat hien tren bang la phai dua;
+    required.py). Luat Ong Chu 04/09/2026: xuat hien tren bang la phai dua;
     hom truoc sot thi hom sau bo sung, khong duoc bo."""
     muc = []
     for r in ra_mat_aa:
@@ -1048,11 +1048,11 @@ def ghi_bat_buoc(ra_mat_aa: list, leo_hang: list, moi_router: list,
                     + (f" #{r['hang_coding']}" if r.get("hang_coding") else ""), ""))
     for l in leo_hang:
         muc.append((f"{l['loai']}|{l['ten']}", l["ten"], l["loai"], l["ghi_chu"],
-                    bat_buoc.link_goi_y({"loai": l["loai"], "ten": l["ten"]})))
+                    required.link_call_y({"loai": l["loai"], "ten": l["ten"]})))
     for m in moi_router:
         muc.append((f"router|{m['id']}", m["id"], "router",
                     f"moi tren router, ra mat {m.get('ra_mat')}",
-                    bat_buoc.link_goi_y({"loai": "router", "ten": m["id"]})))
+                    required.link_call_y({"loai": "router", "ten": m["id"]})))
     # Model tha trong so tren HuggingFace: cung mot loai su kien "model xuat
     # hien" nhu router, nen cung bat buoc. Khu trung theo doan sau dau / — cung
     # mot model len ca hai noi (deepseek-ai/DeepSeek-V4 vs deepseek/deepseek-v4)
@@ -1067,7 +1067,7 @@ def ghi_bat_buoc(ra_mat_aa: list, leo_hang: list, moi_router: list,
                     f"tha trong so tren HuggingFace {m.get('ra_mat')}, "
                     f"trending {m.get('diem')}, {m.get('tai')} luot tai",
                     f"https://huggingface.co/{m['id']}"))
-    bat_buoc.them_nhieu("nova", muc)
+    required.extra_many("nova", muc)
 
 
 def so_hang(arena: dict, cu: dict) -> list:
@@ -1306,7 +1306,7 @@ def main():
         import contextlib
         _dem = io.StringIO()
         with contextlib.redirect_stdout(_dem):
-            bat_buoc.in_danh_sach("nova")
+            required.in_list_clean("nova")
         print(_dem.getvalue(), file=sys.stderr, end="")
 
 

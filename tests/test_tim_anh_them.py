@@ -68,7 +68,7 @@ def test_engine_phai_tim_tiep_khi_chi_du_tam_ma_thieu_slide():
 
 
 def test_dre_nop_dung_cung_nguong_cat_ngang():
-    src = (ROOT / "dre_nop.py").read_text(encoding="utf-8")
+    src = (ROOT / "dre_submit.py").read_text(encoding="utf-8")
     assert "schema.HEIGHT_MIN_CROP_LANDSCAPE" in src, "dre_nop go cung 700 rieng -> hai nguong lech nhau"
     assert 'a["h"] < 700' not in src
 
@@ -112,7 +112,7 @@ def test_body_task_bao_vai_tu_tim_truoc_khi_block():
 
 
 def test_brief_dre_tro_toi_lenh_tim_them_va_noi_ro_anh_chup_co_bien_hieu():
-    src = (ROOT / "dre_chuan_bi.py").read_text(encoding="utf-8")
+    src = (ROOT / "dre_prepare.py").read_text(encoding="utf-8")
     assert "find_more_images.py" in src
     assert "biển hiệu" in src and "cat_ngang" in src
 

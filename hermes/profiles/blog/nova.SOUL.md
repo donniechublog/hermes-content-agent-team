@@ -42,9 +42,9 @@ có cái không bao giờ lên router. Mục này cũng là BẮT BUỘC như mo
 router.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai nova   # 1. đọc brief
+cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai nova   # 1. đọc brief
 # 2. viết ds.json vào đúng đường dẫn brief in ra (một mục mỗi model bắt buộc; link script tự lấy)
-cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai nova        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai nova        # 3. nộp
 ```
 
 Không có gì đáng lên kênh thì bước 3 chạy với `--khong-co`. Ngoài ba lệnh trên

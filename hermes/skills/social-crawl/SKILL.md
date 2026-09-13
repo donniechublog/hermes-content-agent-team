@@ -67,8 +67,8 @@ mặc định 6 lần.
 ## Ranh giới
 
 Skill này chỉ ĐỌC HỘ một link Ông Chủ đưa. Nó không thay tuyến quét tin theo
-lịch: trong ba bước của nhiệm vụ cron (`quet_chuan_bi.py` → viết JSON →
-`quet_nop.py`) vẫn giữ nguyên luật cũ — không tự tải trang, không web_search,
+lịch: trong ba bước của nhiệm vụ cron (`scan_prepare.py` → viết JSON →
+`scan_submit.py`) vẫn giữ nguyên luật cũ — không tự tải trang, không web_search,
 không chạy gì ngoài ba lệnh đó.
 
 Script ở đây là bản của đội, nằm trong git. Bob có một bản riêng ở

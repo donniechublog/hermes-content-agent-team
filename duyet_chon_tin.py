@@ -87,7 +87,7 @@ def _la_reply_bao_cao(vai: str, msg: dict) -> bool:
     la chon tu manifest MOI NHAT (_xu_ly_chon luon doc latest_manifest), sai bai
     ma khong ai biet. Gio reply phai khop dung mid bao cao gan nhat moi qua.
 
-    quet_nop.py ghi mid nay qua `publish.py --luu-mid` ngay khi gui bao cao.
+    scan_submit.py ghi mid nay qua `publish.py --luu-mid` ngay khi gui bao cao.
     Chua co tep (bao cao gui truoc khi co co che nay, hoac ghi loi) thi lui ve
     kiem "co phai reply toi mot tin CUA BOT" — long hon nhung van chan duoc
     hoi thoai thuong. Phai loc qua _reply_that truoc: trong topic, Telegram tu

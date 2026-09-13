@@ -175,8 +175,8 @@ flowchart TD
 
     subgraph S1["1 · QUÉT TIN"]
         cron1{{"cron 05:00 VN"}}:::cron
-        scan["quet_chuan_bi.py --vai scout|nova|market<br/>Finn / Nova / Vera"]:::container
-        manifest["manifest_chung/_build/_ghi<br/>+ bat_buoc.py"]:::container
+        scan["scan_prepare.py --vai scout|nova|market<br/>Finn / Nova / Vera"]:::container
+        manifest["manifest_chung/_build/_ghi<br/>+ required.py"]:::container
         candidates[("candidates_*.json")]:::datastore
         cron1 -.-> scan
         scan --> manifest
@@ -353,7 +353,7 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
 - `schema.py` — hợp đồng dữ liệu (`Manifest`, `Meta`, `SidecarAnh`,
   `SidecarViet`), `doc_manifest` nâng bản cũ, `hop_nhat_meta` trộn thay vì ghi
   đè `.meta.json` (tệp ba tiến trình cùng ghi).
-- `route_thieu_anh.py` — tầng ghép nối giữa engine (stage 4) và duyệt (stage 6):
+- `route_missing_images.py` — tầng ghép nối giữa engine (stage 4) và duyệt (stage 6):
   engine chỉ mô tả thiếu ảnh, tầng này quyết định hỏi Ông Chủ / chuyển Kite.
   "Thiếu" đo theo ngưỡng của **vai được giao**, nên bài 2 ảnh là đủ với Ethan
   và vẫn thiếu với Dre.

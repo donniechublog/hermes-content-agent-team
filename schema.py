@@ -7,7 +7,7 @@ khai o dau. Hau qua do duoc:
   - `so_dung_duoc` thieu khoa thi BA noi doan ba kieu: dre_chuan_bi dem lai bang
     mot cong thuc KHAC cong thuc cua nguoi ghi, con duyet_bai va anh_chuan_bi coi
     la 0 ("khong co anh nao") — hai ket luan nguoc nhau tu cung mot tep.
-  - `dre_nop.py` vao nhanh bang `m.get("toi_thieu", 5)` roi trong than lai doc
+  - `dre_submit.py` vao nhanh bang `m.get("toi_thieu", 5)` roi trong than lai doc
     `m["toi_thieu"]` tho: thieu khoa la KeyError NGAY TRONG CONG CHAN.
   - `write_meta` ghi DE ca dict 8 khoa, ma `bang_den` ghi `root_task` vao cung
     tep o mot tien trinh khac. Hom nay khong mat chi vi THU TU goi may man.
@@ -21,8 +21,8 @@ Tep nay KHONG kiem tra luc chay (khong validate). No lam ba viec:
 
 CHU Y — "xong.json" KHONG phai mot hop dong. Do la ten tep dung lai o nhieu cho
 voi hinh dang KHAC HAN: engine ghi manifest o
-`state/<brand>/chuan_bi/<id>/xong.json`, con `itachi_chuan_bi.py` ghi
-`{"khoa", "slides"}` va `ada_chuan_bi.py` ghi bao cao gom, deu ten `xong.json`
+`state/<brand>/chuan_bi/<id>/xong.json`, con `itachi_prepare.py` ghi
+`{"khoa", "slides"}` va `ada_prepare.py` ghi bao cao gom, deu ten `xong.json`
 nhung o workdir khac. Chi manifest cua engine moi theo `Manifest` duoi day.
 """
 import json

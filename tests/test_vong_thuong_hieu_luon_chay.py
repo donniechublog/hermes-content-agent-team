@@ -164,14 +164,14 @@ def test_nhan_chan_dung_noi_ten_va_doi_khai_nhan_vat():
 
 
 def test_brief_cua_ethan_khong_con_goi_chan_dung_la_tru_so():
-    """Ban cu cua `nhan_ethan` dan mot cau "tru so/campus/bien hieu" chung cho
+    """Ban cu cua `label_ethan` dan mot cau "tru so/campus/bien hieu" chung cho
     MOI loai tu lieu, va khong noi TEN nguoi. Ethan vi vay khong co duong nao
     khai `nhan_vat` dung, ma `submit_common.check_subject_named` thi chan anh co mat nguoi
     khong khai ten -> Ethan buoc phai bo anh founder."""
-    import ethan_chuan_bi
+    import ethan_prepare
     a = {"ma": "A6", "ti_le": 0.8, "w": 960, "h": 1200, "loai": "anh", "mat": 1,
          "goc_trai_sang": 60, "canh_ngan": 960, "ghi_chu": [], "thuong_hieu": _TH_NGUOI}
-    _dung, ghi = ethan_chuan_bi.nhan_ethan(a)
+    _dung, ghi = ethan_prepare.label_ethan(a)
     chu = " ".join(ghi)
     assert "Jensen Huang" in chu, f"brief cua Ethan khong noi ten nguoi trong anh: {chu}"
     assert "trụ sở/campus/biển hiệu" not in chu, \

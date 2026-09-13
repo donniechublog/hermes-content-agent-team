@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import submit_common as nc      # noqa: E402
-import bat_buoc as bb       # noqa: E402
+import required as bb       # noqa: E402
 import caption_check as cc  # noqa: E402
 
 
@@ -117,18 +117,18 @@ def test_khop_van_nhan_ra_muc_that():
         ("R2", "DeepSeek ra R2"),
     ]
     for ten, tieu_de in that:
-        assert bb.khop({"ten": ten}, {"title": tieu_de, "summary_vi": ""}), f"trượt: {ten}"
+        assert bb.match({"ten": ten}, {"title": tieu_de, "summary_vi": ""}), f"trượt: {ten}"
 
 
 def test_khop_khong_con_khop_bua_voi_manh_ngan():
     # "v3"/"ai" là mảnh 2 ký tự: trước 06/09 khớp gần như mọi tiêu đề
-    assert bb.khop({"ten": "v3 ai"}, {"title": "bai nao cung co v3 va ai", "summary_vi": ""}) is False
+    assert bb.match({"ten": "v3 ai"}, {"title": "bai nao cung co v3 va ai", "summary_vi": ""}) is False
 
 
 def test_khop_uu_tien_link_va_tu_khoa():
-    assert bb.khop({"link": "https://x.com/a/"}, {"link": "http://www.x.com/a"})
-    assert bb.khop({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia mua Hugging Face", "summary_vi": ""})
-    assert not bb.khop({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia ra chip moi", "summary_vi": ""})
+    assert bb.match({"link": "https://x.com/a/"}, {"link": "http://www.x.com/a"})
+    assert bb.match({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia mua Hugging Face", "summary_vi": ""})
+    assert not bb.match({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia ra chip moi", "summary_vi": ""})
 
 
 # ------------------------------------------------------------------ teaser
@@ -170,14 +170,14 @@ def test_tin_xep_hang_khong_co_bang_thi_khong_chan():
         assert xh.is_ranking_story(t, ""), t
         assert not xh.extract_model(t), f"{t}: nếu tách được model thì bẫy không xảy ra"
     # brief KHÔNG được đòi mã XH khi không có
-    dong = cb.ranking_brief_line({"tin_xep_hang": True, "xep_hang": None}, "bìa", "dre_nop")
+    dong = cb.ranking_brief_line({"tin_xep_hang": True, "xep_hang": None}, "bìa", "dre_submit")
     assert "BẮT BUỘC" not in dong and "chặn ảnh khác" not in dong, dong
     assert "không chặn" in dong, dong
     # có bảng thì vẫn đòi như cũ
     dong2 = cb.ranking_brief_line(
         {"tin_xep_hang": True, "xep_hang": {"site": "LMArena", "bang": "text",
                                             "model": "GPT-5.2", "hang": 1, "kieu": "bang"}},
-        "", "ethan_nop")
+        "", "ethan_submit")
     assert "BẮT BUỘC" in dong2, dong2
 
 
@@ -191,7 +191,7 @@ def test_cong_xep_hang_chi_chan_khi_CHUP_duoc_bang():
     # phai goi no chu khong tu viet lai — tu viet lai la cach no da lech.
     assert _re.search(mau, (ROOT / "submit_common.py").read_text(encoding="utf-8")), \
         "submit_common.needs_ranking_image phải hỏi ranking.is_capture(kieu)"
-    for tep in ("dre_nop.py", "ethan_nop.py"):
+    for tep in ("dre_submit.py", "ethan_submit.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
         assert "nc.needs_ranking_image(" in src, f"{tep}: phải dùng cổng chung"
         assert not _re.search(mau, src), f"{tep}: còn bản chép tay của điều kiện"
@@ -240,7 +240,7 @@ def test_ho_model_trung_tu_thuong_phai_di_kem_so():
 def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
     """kieu='the' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
     ảnh thật. Chỉ kieu chụp thật (`ranking.KIND_CAPTURE`) mới bật cổng bắt buộc."""
-    import ethan_nop
+    import ethan_submit
     anh = [{"ma": "A1", "goc": "/tmp/x.png", "san": None, "loai": "anh", "ti_le": 1.0,
             "mat": 0, "ngang": False, "canh_ngan": 1200, "w": 1200, "h": 1200,
             "goc_trai_sang": 50, "dung": ["nền hero"], "ghi_chu": [], "mien": "x.com",
@@ -251,7 +251,7 @@ def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
         m = {"anh": anh, "tin_xep_hang": True, "chu_bai": "", "tu_lieu": {}, "draft_id": "d1",
              "xep_hang": {"kieu": kieu, "site": "arena.ai", "bang": "Text Arena",
                           "model": "seed", "hang": 5}}
-        _, loi, _ = ethan_nop.giai_spec(spec, m, Path("/tmp"))
+        _, loi, _ = ethan_submit.resolve_spec(spec, m, Path("/tmp"))
         co = any("XẾP HẠNG" in x for x in loi)
         assert co == phai_chan, f"kieu={kieu}: {'phải chặn' if phai_chan else 'không được chặn'}"
 
@@ -354,7 +354,7 @@ def test_anh_xep_hang_khong_bi_cat():
 def test_kite_khong_ep_dung_anh_chua_nhin():
     """Vision tắt → mọi ảnh lien_quan=None. Ép lúc đó là đẩy quảng cáo/widget
     lên slide."""
-    import kite_nop
+    import kite_submit
     def hinh(lien_quan):
         return {"A1": {"ma": "A1", "goc": "/tmp/a.png", "w": 1200, "h": 800,
                        "ti_le": 1.5, "loai": "chart", "lien_quan": lien_quan,
@@ -363,7 +363,7 @@ def test_kite_khong_ep_dung_anh_chua_nhin():
     for lq, phai_ep in ((True, True), (None, False)):
         m = {"anh": list(hinh(lq).values()), "brand": "donniechublog", "title": "T",
              "draft_id": "d1", "chu_bai": "", "tu_lieu": {}, "link": ""}
-        _, loi, _ = kite_nop.giai_spec({"slides": slides}, m, Path("/tmp"))
+        _, loi, _ = kite_submit.resolve_spec({"slides": slides}, m, Path("/tmp"))
         co = any("BẮT BUỘC dùng ít nhất một" in x for x in loi)
         assert co == phai_ep, f"lien_quan={lq}: {'phải ép' if phai_ep else 'KHÔNG được ép'}"
 
@@ -471,25 +471,25 @@ def test_anh_xep_hang_mien_cong_dung_lai():
 # ------------------------------------------------- watermark cua Bob (@handle)
 def test_handle_bob_luon_co_cong_va_nhan_ca_hai_kieu_khoa():
     """CT_BRAND la khoa CONTAINER ('blog'), card.THUONG_HIEU khoa theo TEN brand
-    ('donniechublog'). Truoc 06/09/2026 `handle_kenh` tra thang gia tri tra cuu
+    ('donniechublog'). Truoc 06/09/2026 `handle_channel` tra thang gia tri tra cuu
     nen tren container blog no roi ve chinh chuoi 'blog': MOI anh Bob dong khung
     in watermark "blog" thay vi "@donniechublog"."""
-    import bob_nop
-    assert bob_nop.handle_kenh("blog") == "@donniechublog"
-    assert bob_nop.handle_kenh("dcgr").startswith("@")
+    import bob_submit
+    assert bob_submit.handle_channel("blog") == "@donniechublog"
+    assert bob_submit.handle_channel("dcgr").startswith("@")
     # dua san ten brand (kieu khoa con lai) van phai ra dung
-    assert bob_nop.handle_kenh("donniechublog") == "@donniechublog"
+    assert bob_submit.handle_channel("donniechublog") == "@donniechublog"
     # da co "@" thi khong duoc nhan doi
-    assert bob_nop.handle_kenh("@donniechublog") == "@donniechublog"
+    assert bob_submit.handle_channel("@donniechublog") == "@donniechublog"
     # brand la khong biet: van phai co "@", khong duoc tra chuoi tran
-    assert bob_nop.handle_kenh("khong_co_that").startswith("@")
+    assert bob_submit.handle_channel("khong_co_that").startswith("@")
 
 
 # ------------------------------------------- tran 8 tin khong cat muc BAT BUOC
 def test_tran_tin_khong_cat_muc_bat_buoc():
     """Muc BAT BUOC ton tu hom truoc duoc gan score_partial=0 nen diem toi da chi
     con 50 — LUON xep chot va truoc 06/09/2026 LUON bi tran 8 tin cat. Cat xong
-    thi `bat_buoc.kiem` lai them BAN TRONG (score=0, summary_vi rong, ghi chu
+    thi `required.check` lai them BAN TRONG (score=0, summary_vi rong, ghi chu
     "vai bo sot"): bao cao do oan cho vai la bo sot dung tin no vua cham ky, con
     vai viet bai thi mat sach tom tat."""
     import json
@@ -508,8 +508,8 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
         BB = "https://anthropic.com/claude-opus-46"
         # ghi danh sach bat buoc bang chinh tien trinh con (cung state dir)
         subprocess.run([sys.executable, "-c",
-                        "import sys; sys.path.insert(0, %r); import bat_buoc; "
-                        "bat_buoc.them('finn', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
+                        "import sys; sys.path.insert(0, %r); import required; "
+                        "required.extra('finn', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
                         % (str(ROOT), BB)],
                        env=moi_truong, check=True, capture_output=True)
         try:
@@ -628,8 +628,8 @@ def test_dong_nguon_doc_duoc_tren_day_the_sang():
 def test_khop_giu_so_hieu_phien_ban():
     """`ten` cua muc BAT BUOC hay co so hieu phien ban ngan: "R1", "K2", "o4",
     "4 Fast". Loc `len >= 3` vut sach chung, nen "DeepSeek R1" rut con
-    ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la khop() tra True, kiem()
-    tuong da dua nen khong tu them, roi xoa() xoa han muc. Tin R1 mat VINH VIEN
+    ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la match() tra True, check()
+    tuong da dua nen khong tu them, roi delete() xoa han muc. Tin R1 mat VINH VIEN
     vi scan_models ghi `aa_da_bao` vao moc nen khong gieo lai.
 
     Chieu nguoc lai cung phai dung: manh ngan khong duoc so tran tren van ban da
@@ -649,10 +649,10 @@ def test_khop_giu_so_hieu_phien_ban():
         ("Claude Opus 4.6", "Claude Opus 4.6 dat 82% SWE-bench Verified"),
     ]
     for ten, td in khong_khop:
-        assert not bb.khop({"ten": ten}, {"title": td}), \
+        assert not bb.match({"ten": ten}, {"title": td}), \
             f"muc {ten!r} bi coi la 'da dua' boi tin khac: {td!r} — se bi xoa oan"
     for ten, td in phai_khop:
-        assert bb.khop({"ten": ten}, {"title": td}), \
+        assert bb.match({"ten": ten}, {"title": td}), \
             f"muc {ten!r} KHONG nhan ra chinh no trong {td!r} — se bi them trung"
 
 
@@ -700,8 +700,8 @@ def test_quet_nop_in_ca_dong_bo_qua():
     """[bo qua] = mat tron mot tin, loai nang nhat, ma truoc 06/09/2026 bo loc
     khong nhat no. Vera go nham k=9: tin "OpenAI IPO dinh gia 900 ty USD" bien
     mat sach, khong mot dong canh bao, rc=0, vai bao "da gui bao cao"."""
-    import quet_nop
-    ra = quet_nop.loc_canh_bao(
+    import scan_submit
+    ra = scan_submit.filter_warning(
         "[bo qua] muc 2: k=9 ngoai danh sach 1..5\n"
         "[canh bao] category khong hop le\n"
         "dong thuong khong lien quan\n"
@@ -1064,7 +1064,7 @@ def test_bob_dung_ket_qua_nhin_de_chon_mood():
     toi mood, ma Bob chi thay stdout SAU KHI tien trinh thoat (luc anh da len
     kenh) va SOUL cam chay lenh thu hai. Ket qua: mood DONG CUNG o mac dinh,
     tinh nang khop tam trang chet lang le, van ton mot luot vision moi lan."""
-    import bob_nop
+    import bob_submit
     import image_prepare as cb
     da_dong = {}
 
@@ -1075,33 +1075,33 @@ def test_bob_dung_ket_qua_nhin_de_chon_mood():
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
         (t / "goc.png").write_bytes(b"anh gia")
-        goc_lay, goc_khung, goc_mo_ta = bob_nop.lay_anh, bob_nop.dong_khung, cb.description_image
-        bob_nop.lay_anh = lambda nguon, ra: (Path(ra).write_bytes(b"x"), "thu")[1]
-        bob_nop.dong_khung = khung_gia
+        goc_lay, goc_khung, goc_mo_ta = bob_submit.take_image, bob_submit.line_frame, cb.description_image
+        bob_submit.take_image = lambda nguon, ra: (Path(ra).write_bytes(b"x"), "thu")[1]
+        bob_submit.line_frame = khung_gia
         try:
             # (1) vision doc ra mood -> phai dung mood do
             cb.description_image = lambda *a, **k: ("mot con robot dang go phim", None, "MOOD: 🤖")
-            bob_nop.main_thu = None
-            sys.argv = ["bob_nop.py", str(t / "goc.png"), "--khong-gui",
+            bob_submit.main_thu = None
+            sys.argv = ["bob_submit.py", str(t / "goc.png"), "--khong-gui",
                         "--out", str(t / "ra1.png")]
-            bob_nop.main()
+            bob_submit.main()
             assert da_dong["emoji"] == "🤖", f"khong dung mood vision chon: {da_dong}"
 
             # (2) Ong Chu truyen --emoji -> luon thang
-            sys.argv = ["bob_nop.py", str(t / "goc.png"), "--khong-gui",
+            sys.argv = ["bob_submit.py", str(t / "goc.png"), "--khong-gui",
                         "--emoji", "😂", "--out", str(t / "ra2.png")]
-            bob_nop.main()
+            bob_submit.main()
             assert da_dong["emoji"] == "😂", f"--emoji bi ghi de: {da_dong}"
 
             # (3) vision hong / khong doc ra mood -> mac dinh an toan
             cb.description_image = lambda *a, **k: ("", None, "")
-            sys.argv = ["bob_nop.py", str(t / "goc.png"), "--khong-gui",
+            sys.argv = ["bob_submit.py", str(t / "goc.png"), "--khong-gui",
                         "--out", str(t / "ra3.png")]
-            bob_nop.main()
-            assert da_dong["emoji"] == bob_nop.EMOJI_MAC_DINH, \
+            bob_submit.main()
+            assert da_dong["emoji"] == bob_submit.EMOJI_DEFAULT, \
                 f"khong roi ve mac dinh an toan: {da_dong}"
         finally:
-            bob_nop.lay_anh, bob_nop.dong_khung, cb.description_image = goc_lay, goc_khung, goc_mo_ta
+            bob_submit.take_image, bob_submit.line_frame, cb.description_image = goc_lay, goc_khung, goc_mo_ta
 
 # ------------------------------------------- vong [LOI]: dem trong CODE, khong phai chu
 def test_vong_loi_co_bo_dem_va_reset_khi_loi_doi():
@@ -1123,23 +1123,23 @@ def test_vong_loi_co_bo_dem_va_reset_khi_loi_doi():
 def test_itachi_mau_sai_dang_khong_lam_chet_ban_ve():
     """`tuple(color)` voi color tu spec nem TypeError GIUA buoi ve — mat ca
     slide, vai chi thay traceback."""
-    import itachi_nop as it
-    assert it._mau([12, 34, 56]) == (12, 34, 56)
+    import itachi_submit as it
+    assert it._color([12, 34, 56]) == (12, 34, 56)
     for xau in ("xanh", [1, 2], [300, 0, 0], None, {}, [1, 2, "x"]):
-        assert it._mau(xau) == (20, 20, 20), f"khong do duoc dang xau: {xau!r}"
+        assert it._color(xau) == (20, 20, 20), f"khong do duoc dang xau: {xau!r}"
 
 
 def test_itachi_bat_chu_tran_hop():
-    """`_ve_khoi` co lai co chu toi CO_MIN roi VE BAT KE: vong while thoat vi
-    `size > CO_MIN` chu khong phai vi chu da vua. Cau dich dai gap doi cau goc
+    """`_about_block` co lai co chu toi HAS_MIN roi VE BAT KE: vong while thoat vi
+    `size > HAS_MIN` chu khong phai vi chu da vua. Cau dich dai gap doi cau goc
     thi tran de len anh ben duoi, khong cong nao bao."""
     from PIL import Image, ImageDraw
-    import itachi_nop as it
+    import itachi_submit as it
     d = ImageDraw.Draw(Image.new("RGB", (1200, 1200)))
     dai = ("Một câu dịch dài gấp nhiều lần câu gốc, kể lể đủ thứ chi tiết mà hộp "
            "gốc không bao giờ chứa nổi dù chữ đã nhỏ hết cỡ.")
-    assert it._tran_hop(d, dai, 400, 40, "regular") > 0, "khong bat duoc chu tran"
-    assert it._tran_hop(d, "Ngắn", 400, 60, "regular") == 0, "bao nham chu vua hop"
+    assert it._ceiling_box(d, dai, 400, 40, "regular") > 0, "khong bat duoc chu tran"
+    assert it._ceiling_box(d, "Ngắn", 400, 60, "regular") == 0, "bao nham chu vua hop"
 
 
 # ------------------------------------------------------ Cape: dan y co duoc nhac
@@ -1171,7 +1171,7 @@ def test_miles_nop_bao_loi_thay_vi_no():
     """
     import io
     import contextlib as _ctx
-    import miles_nop as mn
+    import miles_submit as mn
     with tempfile.TemporaryDirectory() as tmp:
         wd = Path(tmp) / "wd"
         wd.mkdir()
@@ -1180,7 +1180,7 @@ def test_miles_nop_bao_loi_thay_vi_no():
         cu_meta, cu_wd, cu_argv = mn.cb.load_meta, mn.cb.workdir, sys.argv
         mn.cb.load_meta = lambda _id: {"brand": "donniechublog"}
         mn.cb.workdir = lambda _state, _id: wd
-        sys.argv = ["miles_nop.py", "tin-thu-writer-blog"]
+        sys.argv = ["miles_submit.py", "tin-thu-writer-blog"]
         try:
             buf = io.StringIO()
             with _ctx.redirect_stdout(buf):

@@ -85,7 +85,7 @@ def test_het_duong_khong_co_kite_chi_con_bo_han():
 # ----------------------------------------------------- cac nhanh khac giu nguyen
 def test_ha_san_thanh_cong_khong_dinh_ban_phim():
     """so=6 >= san=5, cu=8 > san -> ha san thanh cong, KHONG can ban phim moi
-    (task da co the tiep tuc qua dre_nop.py, khong can bam gi them nua)."""
+    (task da co the tiep tuc qua dre_submit.py, khong can bam gi them nua)."""
     with tempfile.TemporaryDirectory() as tmp:
         note, kb = _goi_ha_san(Path(tmp), so_dung_duoc=6, toi_thieu=8, co_kite=True)
         assert kb is None

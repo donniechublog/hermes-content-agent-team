@@ -16,7 +16,7 @@ metadata:
 > retouch/blend chưa có trên server vì sửa/sinh ảnh bằng CPU quá nặng; không
 > phải lỗi, sẽ hoàn thiện đợt tới khi có GPU. Tới lúc đó Gin/Itachi không sinh
 > nền AI; nền là `nen_sach.png` từ Gin (remake) hoặc nền phẳng của `deck.py`.
-> Khi bật lại thì nối vào `itachi_nop.py`, vai không gọi tay.
+> Khi bật lại thì nối vào `itachi_submit.py`, vai không gọi tay.
 
 # ai-background — nền sinh bằng AI cho carousel gốc
 

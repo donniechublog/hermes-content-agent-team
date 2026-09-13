@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cong chan spec the hero cua Ethan (`ethan_nop.giai_spec`).
+"""Cong chan spec the hero cua Ethan (`ethan_submit.resolve_spec`).
 
 Cung ho voi cong Dre (`test_spec_dre`): cung manifest anh, cung ba cong dung
 chung o nop_chung (mat nguoi, quote dich, so tren anh), cung cong XH va cong
@@ -39,8 +39,8 @@ def _spec(ma="A1", **k):
 
 
 def _chay(spec, m, wd):
-    import ethan_nop
-    return ethan_nop.giai_spec(spec, m, Path(wd))
+    import ethan_submit
+    return ethan_submit.resolve_spec(spec, m, Path(wd))
 
 
 def _bo(t, them=()):
@@ -124,21 +124,21 @@ def test_anh_ngang_qua_nguong_khong_con_bi_ep_doi_anh2():
     """13/09/2026: bỏ điều kiện "ảnh quá ngang phải ghép" (tương đương
     `image_rules.kiem_anh_thap`, đã bỏ khỏi hệ thống, mọi vai) — ảnh ngang dù vượt
     ngưỡng cũ vẫn được đứng một mình, không còn bị ép thêm "anh2"."""
-    import ethan_chuan_bi as eb
+    import ethan_prepare as eb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "A1", 1000, 1250), _anh(wd, "N1", 1920, 1080)]
-        assert 1920 / 1080 > eb.TI_LE_HERO_MAX
+        assert 1920 / 1080 > eb.RATIO_HERO_MAX
         _kq, loi, _c = _chay(_spec("N1"), _m(wd, anh), wd)
         assert loi == [], loi
 
 
 def test_anh_ngang_duoi_nguong_thi_di_mot_minh_duoc():
-    import ethan_chuan_bi as eb
+    import ethan_prepare as eb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "A1", 1000, 1250), _anh(wd, "N1", 1500, 1000)]
-        assert 1.5 <= eb.TI_LE_HERO_MAX
+        assert 1.5 <= eb.RATIO_HERO_MAX
         _kq, loi, _c = _chay(_spec("N1"), _m(wd, anh), wd)
         assert loi == [], loi
 

@@ -25,8 +25,8 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
      bang anh thu nho `bang_anh.png`.
   4. TU LIEU: tu_lieu.gom (fallback chu tu browser cho trang JS) -> cau co so.
   5. Ghi `xong.json` (manifest role-neutral). Moi vai co tep rieng in BRIEF theo
-     cach nhin cua vai do: dre_chuan_bi.py, ethan_chuan_bi.py, kite_chuan_bi.py,
-     miles_chuan_bi.py — deu doc chung xong.json nay, khong lam lai.
+     cach nhin cua vai do: dre_prepare.py, ethan_prepare.py, kite_prepare.py,
+     miles_prepare.py — deu doc chung xong.json nay, khong lam lai.
 
 Tu 09/09/2026 (audit A1) than engine nam trong goi `chuan_bi/`, tach theo PHA;
 tep nay chi con `chuan_bi()` (noi 9 pha), `chay()` (khoa + idempotent) va CLI —
@@ -475,9 +475,9 @@ def main() -> int:
     # noi — con than module `anh_chuan_bi` phai sach bong tang dieu phoi (audit
     # A1). Dat import nay len dau tep la keo duyet_giao_viec/duyet_bai vao lai
     # dung cai vua go ra.
-    import route_thieu_anh
+    import route_missing_images
     m, wd, _ = run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
-                    sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
+                    sau_chuan_bi=route_missing_images.after_prepare)
     print(f"[xong] {len(m['anh'])} anh, {len(m.get('tu_lieu', {}).get('cau_co_so', []))} cau so lieu -> {wd}",
           file=sys.stderr)
     return 0

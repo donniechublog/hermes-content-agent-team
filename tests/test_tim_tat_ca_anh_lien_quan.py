@@ -99,12 +99,12 @@ def test_brief_va_cong_nop_coi_bang_chup_that_la_bat_buoc():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "LIVEBENCH.AI", "bang": "LiveBench", "model": "deepseek-v4.1-flash-max",
                       "hang": 6, "kieu": "bang", "duoc_nhac": True}}
-    dong = manifest.ranking_brief_line(m, "bìa ", "dre_nop")
+    dong = manifest.ranking_brief_line(m, "bìa ", "dre_submit")
     assert "BẮT BUỘC" in dong and "THẺ DỰ PHÒNG" not in dong, dong
     assert submit_common.needs_ranking_image(m, {"ma": "A1"}), "bang chup that ma cong khong ep"
     assert not submit_common.needs_ranking_image(m, {"ma": "XH", "xep_hang": m["xep_hang"]})
     m["xep_hang"]["kieu"] = "the"
-    assert "THẺ DỰ PHÒNG" in manifest.ranking_brief_line(m, "bìa ", "dre_nop")
+    assert "THẺ DỰ PHÒNG" in manifest.ranking_brief_line(m, "bìa ", "dre_submit")
     assert not submit_common.needs_ranking_image(m, {"ma": "A1"})
 
 

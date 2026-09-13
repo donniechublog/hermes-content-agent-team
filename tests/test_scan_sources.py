@@ -3,7 +3,7 @@
 
 Audit F2 (survey ngoài phạm vi) nêu: `(ROOT / "drafts").glob("*.json")` khớp cả
 `<id>.meta.json` lẫn `<id>.json`, trong khi những chỗ khác (theo_doi_9router.py,
-ada_chuan_bi.py, approve_service.py) đều LỌC BỎ `.meta.json`/`.img.json`/
+ada_prepare.py, approve_service.py) đều LỌC BỎ `.meta.json`/`.img.json`/
 `.writer.json` khi quét `drafts/`. Nhìn thoáng qua giống một glob quên lọc.
 
 ĐÃ ĐO và kết luận đây KHÔNG phải lỗi — hai loại quét có mục đích khác nhau:

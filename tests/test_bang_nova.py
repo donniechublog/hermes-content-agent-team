@@ -6,7 +6,7 @@ KHONG BAO GI CA — script van chay, bao cao van in, chi la Nova mat tin hoac ma
 link, va phai vai ngay sau moi co nguoi de y:
 
   1. Them bang ma quen khai NHAN_BANG  -> muc "leo hang" in ra ma khoa tho
-  2. Them bang ma quen khai LINK_BANG  -> muc BAT BUOC ra link RONG, vai nop
+  2. Them bang ma quen khai LINK_BOARD  -> muc BAT BUOC ra link RONG, vai nop
      tin khong co nguon
   3. In danh sach BAT BUOC hai lan     -> ton 5.600 ky tu o cuoi bao cao, dung
      cho de bi tran cat mat truoc tien
@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import bat_buoc                                             # noqa: E402
+import required                                             # noqa: E402
 import scan_models as s                                     # noqa: E402
 
 KHOA_BANG = s.KHOA_BANG
@@ -46,18 +46,18 @@ def test_moi_bang_co_nhan():
 def test_moi_bang_co_link():
     # `hf` khong nam trong KHOA_BANG (khong phai bang xep hang) nhung muc bat
     # buoc cua no tu mang link rieng — kiem rieng o duoi.
-    thieu = [k for k in KHOA_BANG if not bat_buoc.LINK_BANG.get(k)]
+    thieu = [k for k in KHOA_BANG if not required.LINK_BOARD.get(k)]
     kiem("test_moi_bang_co_link", not thieu,
-         f"thieu LINK_BANG cho: {thieu} -> muc bat buoc se ra link rong")
+         f"thieu LINK_BOARD cho: {thieu} -> muc bat buoc se ra link rong")
 
 
 def test_link_bang_deu_la_url():
-    xau = [k for k, v in bat_buoc.LINK_BANG.items() if not v.startswith("https://")]
+    xau = [k for k, v in required.LINK_BOARD.items() if not v.startswith("https://")]
     kiem("test_link_bang_deu_la_url", not xau, f"khong phai https: {xau}")
 
 
 def test_muc_hf_co_link_rieng():
-    l = bat_buoc.link_goi_y({"loai": "hf", "ten": "deepseek-ai/X",
+    l = required.link_call_y({"loai": "hf", "ten": "deepseek-ai/X",
                              "link": "https://huggingface.co/deepseek-ai/X"})
     kiem("test_muc_hf_co_link_rieng", l == "https://huggingface.co/deepseek-ai/X")
 
@@ -79,8 +79,8 @@ def test_main_kiem_lech_ban_ke_khai():
 
 def test_khong_in_bat_buoc_hai_lan():
     """quet_chuan_bi PHAI goi scan_models voi --khong-bat-buoc, vi chinh no da
-    in danh sach do mot lan roi (qua _bat_buoc, nam NGOAI vung cat)."""
-    src = (ROOT / "quet_chuan_bi.py").read_text(encoding="utf-8")
+    in danh sach do mot lan roi (qua _required, nam NGOAI vung cat)."""
+    src = (ROOT / "scan_prepare.py").read_text(encoding="utf-8")
     i = src.find("def brief_nova")
     j = src.find("def brief_market", i)
     kiem("test_khong_in_bat_buoc_hai_lan", "--khong-bat-buoc" in src[i:j],
@@ -90,14 +90,14 @@ def test_khong_in_bat_buoc_hai_lan():
 def test_bao_cao_bi_cat_thi_noi_ra():
     """Cat cam lang la loi cu: Nova doc het bao cao roi ket luan 'khong co gi',
     trong khi that ra phan duoi da bi xen mat."""
-    import quet_chuan_bi as q
-    dai = "x" * (q.TRAN_BAO_CAO + 5000)
-    ra = q._cat(dai)
+    import scan_prepare as q
+    dai = "x" * (q.CEILING_REPORT + 5000)
+    ra = q._crop(dai)
     kiem("test_bao_cao_bi_cat_thi_noi_ra",
          "BAO CAO BI CAT" in ra and len(ra) < len(dai),
          "cat ma khong bao -> vai tuong nham la da doc het")
     ngan = "y" * 100
-    kiem("test_bao_cao_ngan_thi_khong_dong_gi", q._cat(ngan) == ngan)
+    kiem("test_bao_cao_ngan_thi_khong_dong_gi", q._crop(ngan) == ngan)
 
 
 def test_tran_in_an_co_can_tren():
@@ -272,9 +272,9 @@ def test_ket_cua_main_co_du_bang_top():
 
 def test_link_bat_buoc_dan_tu_ban_dang_ky():
     import bang_model as bm
-    lech = [k for k, v in bm.LINK_BANG.items() if bat_buoc.LINK_BANG.get(k) != v]
+    lech = [k for k, v in bm.LINK_BANG.items() if required.LINK_BOARD.get(k) != v]
     kiem("test_link_bat_buoc_dan_tu_ban_dang_ky", not lech, f"lech: {lech}")
-    kiem("test_link_ra_mat_van_con", bat_buoc.LINK_BANG.get("ra_mat", "").startswith("https://"),
+    kiem("test_link_ra_mat_van_con", required.LINK_BOARD.get("ra_mat", "").startswith("https://"),
          "`ra_mat` khong phai bang nhung muc BAT BUOC ra mat can link")
 
 

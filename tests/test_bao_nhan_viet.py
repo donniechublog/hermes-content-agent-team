@@ -91,7 +91,7 @@ def test_bao_nhan_neu_ro_chuyen_tu_vai_anh():
 
 
 def test_note_noi_da_gui_khong_phai_da_bat_dau():
-    """Ong Chu 12/09/2026: 'gui' va 'bat dau' la HAI moc khac nhau — dispatcher
+    """Ong Chu 12/09/2026: 'send' va 'bat dau' la HAI moc khac nhau — dispatcher
     (bao_tien_do_kanban, dong ▶️) moi la nguoi bao 'bat dau' THAT, khi task
     chuyen sang running. Cau tra loi ngay luc duyet khong duoc noi truoc
     'bắt đầu' vi task con dang xep hang, chua chac ai dong cham toi ngay."""

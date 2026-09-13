@@ -3,7 +3,7 @@
 
 Vi sao (audit_content_team C2): truoc 09/09/2026 tri thuc ve kanban.db nam rai
 o nam tep — duyet_giao_viec.py (4 cau SQL), duyet_chat.py, nhat_ky.py,
-ada_chuan_bi.py — moi tep tu mo sqlite, tu viet ten bang va ten cot, tu chiu
+ada_prepare.py — moi tep tu mo sqlite, tu viet ten bang va ten cot, tu chiu
 loi mot kieu. kanban.db la bang cua TIEN TRINH KHAC: hermes co quyen doi schema
 bat cu luc nao, va da doi. Khi do phai di sua nam cho, ma quen mot cho thi cho
 do hong CAM (tra ve rong, khong ai bao) — dung lop loi C1 goi la "hong cam

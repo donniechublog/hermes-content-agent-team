@@ -92,7 +92,7 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 - Báo khác phải **cùng tin**: chung ≥ 2 từ đặc trưng với tiêu đề gốc (Google
   News trả cả bài bệnh thận vì cùng chữ "AI").
 - **Mỗi ảnh được nhìn** (vision): một câu "ảnh là gì" + LIÊN_QUAN. Không liên quan
-  → ❌, `dre_nop.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
+  → ❌, `dre_submit.py` chặn. Ảnh trắng, ảnh rỗng bỏ ngay khi tải.
 - Đếm **thật**: chỉ ảnh dùng được *và* liên quan. **Thiếu → tìm rộng** (thêm báo
   đã lọc liên quan + Wikimedia Commons), nhìn và đếm lại. **Ảnh thương hiệu**
   (§1.2d) chạy cho **mọi tin có hãng trong watchlist**, đủ ảnh hay không. Vẫn
@@ -411,7 +411,7 @@ qua cổng không một dòng lỗi.
   chuỗi hôm đó, và đây là chỗ hỏng thật sự:
   1. `anh_chuan_bi.chay` trả **thẳng** `xong.json` cũ khi tệp đã có
      (`if xong.exists() and not lam_moi`);
-  2. task body giao cho Kite chạy `kite_chuan_bi.py <id>` — **không** `--lam-moi`;
+  2. task body giao cho Kite chạy `kite_prepare.py <id>` — **không** `--lam-moi`;
   3. `tao_task_kite` còn ghi vào body *"tin này không có ảnh thật dùng được: vẽ
      vector hoàn toàn"* — chính hệ thống giục vai làm thứ mục này cấm.
 
@@ -461,7 +461,7 @@ cái §0 giữ.
   fail-open. Ông Chủ 12/09/2026 đóng lại: *"đóng luôn cổng fail-open"*.
 - `None` có **hai nguồn gốc khác hẳn nhau**, và chỉ một nguồn được đóng:
   1. **Không hỏi được** (thiếu `OPENAI_API_KEY`, router hỏng cả 3 lần thử lại
-     429/5xx) — đây là "vision tắt" có chủ đích ở nơi khác (`kite_nop.py`:
+     429/5xx) — đây là "vision tắt" có chủ đích ở nơi khác (`kite_submit.py`:
      "vision tắt thì ép là đẩy quảng cáo/banner lên bìa"), **giữ nguyên `None`**.
      Không hỏi lại ở đây — `_goi_router` đã có backoff riêng.
   2. **Hỏi được nhưng không đọc ra dòng `LIEN_QUAN`** (model trả lời lệch định
@@ -516,7 +516,7 @@ thể của tin; vẫn chịu mọi cổng khác.
 Chart đi đâu, theo khung:
 
 - **Hero (`quote`/`tran`)** — chart ở `anh`, thêm `anh2` là một ảnh ngang cùng
-  tone: script ghép dọc, chart nằm nửa trên **nguyên vẹn**. `ethan_nop.py` gợi ý
+  tone: script ghép dọc, chart nằm nửa trên **nguyên vẹn**. `ethan_submit.py` gợi ý
   sẵn cặp ghép (`cap_ghep_hero`).
 - **Carousel slide thân** — `"chart": true`, dán full bề ngang nguyên vẹn.
 
@@ -695,7 +695,7 @@ xem mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặ
 trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/màn tối chia sẻ.
 
 **Cổng "không được lệch tone" ĐÃ BỎ (13/09/2026)** — `luat_anh.kiem_lech_tone`
-(và bản dùng trực tiếp `luat_anh.lech_tone` trong `dre_nop.py`) không còn chặn
+(và bản dùng trực tiếp `luat_anh.lech_tone` trong `dre_submit.py`) không còn chặn
 gì, ở mọi vai. Ghép hai ảnh dù khác tone hẳn (một nền trắng một nền đen) vẫn
 qua được cổng; `chuan_bi/manifest.py::cap_ghep` cũng không còn loại cặp lệch
 tone khỏi gợi ý. Việc chọn cặp cùng tone cho đẹp giờ là **gu**, không phải luật.

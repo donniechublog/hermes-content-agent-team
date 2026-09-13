@@ -29,9 +29,9 @@ Brief in tư liệu, hook trên ảnh và mọi giới hạn kèm con số. Nộ
 cách sửa.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python miles_chuan_bi.py <id>   # 1. đọc brief
+cd /home/donniechu/content-team && venv/bin/python miles_prepare.py <id>   # 1. đọc brief
 # 2. viết caption.txt vào đúng đường dẫn brief in ra (chỉ caption)
-cd /home/donniechu/content-team && venv/bin/python miles_nop.py <id>        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python miles_submit.py <id>        # 3. nộp
 ```
 
 Ngoài ba lệnh trên không chạy gì khác: không tự đếm ký tự, không `curl` đọc lại

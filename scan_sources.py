@@ -27,7 +27,7 @@ import httpx
 
 import scan_common                                            # noqa: E402
 import env_load
-import bat_buoc
+import required
 
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
@@ -414,12 +414,12 @@ def main():
                 and TU_KHOA_AI.search(it["title"] or ""))
         if hang or nong:
             loai = "frontier" if hang else "nong"
-            muc.append((f"link|{bat_buoc.chuan_link(it['link'])}", it["title"], loai,
+            muc.append((f"link|{required.chuan_link(it['link'])}", it["title"], loai,
                         (f"nhac {hang.group(0)}; " if hang else "")
                         + f"{it['source']} {it.get('points', 0)} diem", it["link"]))
-    so_moi = bat_buoc.them_nhieu("finn", muc)
+    so_moi = required.extra_many("finn", muc)
     print(f"  bat buoc: {len(muc)} muc dat tieu chi, {so_moi} muc moi; tong dang cho "
-          f"{len(bat_buoc.doc('finn'))} (xem bat_buoc_finn.json)", file=sys.stderr)
+          f"{len(required.read('finn'))} (xem bat_buoc_finn.json)", file=sys.stderr)
 
     if not a.khong_lay_anh:
         t0 = time.time()

@@ -26,7 +26,7 @@ Map slug ↔ nhân vật. shared (một SOUL cho cả hai home, script tự lấ
 sidecar, chỉ khác handle và người đọc): `designer`=Ethan, `carousel`=Dre,
 `writer`=Miles, `carousel-edu`=Kite, `itachi`, `gin`, `analyst`=Ada (từ 05/09/2026,
 trước đó designer/carousel/writer mỗi brand một bản), `bob` (từ 06/09/2026: một
-SOUL 32 dòng thay hai bản 91 dòng, handle do `bob_nop.py` đọc từ bảng brand của
+SOUL 32 dòng thay hai bản 91 dòng, handle do `bob_submit.py` đọc từ bảng brand của
 `card.py` chứ không gõ trong SOUL). Chỉ ở blog: `scout`=Finn,
 `teaser`=Cape (đọc donniechu.com), `nova`. Chỉ ở dcgr: `market`=Vera.
 (từ 03/09/2026: dcgr chỉ có Vera đi tìm tin, Finn không có cron ở dcgr nên bỏ).

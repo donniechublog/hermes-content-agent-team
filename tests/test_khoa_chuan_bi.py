@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LOW-26 (12/09/2026): khoa `dang_chay.pid` cua engine chuan bi anh.
 
-t_24b214a6: ethan_chuan_bi.py chet SIGSEGV (exit 139) ba lan, khoa nam lai; lan
+t_24b214a6: ethan_prepare.py chet SIGSEGV (exit 139) ba lan, khoa nam lai; lan
 chay dau doi tron 300s (= tran bash tool cua vai) roi bi cat `exit 124`. Test:
   - khoa mo coi (pid chet) -> don NGAY, khong ngu mot giay nao, co dong log;
   - pid con song -> doi toi `cho` roi thoat bang SystemExit, KHONG ghi de khoa;

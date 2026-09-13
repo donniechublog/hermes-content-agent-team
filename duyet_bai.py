@@ -606,7 +606,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
             # dung thu bi cam: vai doc body truoc khi chay `kite_chuan_bi.py`,
             # nen no vao vong voi dinh kien "bo nay khong co anh" du
             # `kite_chuan_bi` co tim lai duoc.
-            body += (" Vong tim anh cua vai cu chua ra tam nao dung duoc — `kite_chuan_bi.py` se TU "
+            body += (" Vong tim anh cua vai cu chua ra tam nao dung duoc — `kite_prepare.py` se TU "
                      "CHAY LAI vong tim (anh thuong hieu + anh khai niem, cung may moc Dre dung) "
                      "truoc khi in brief. Bia BAT BUOC co anh that; KHONG ve hero vector.")
     # Bang den: task Kite la con cua the goc va tro thanh `dre_task` (vai anh hien
