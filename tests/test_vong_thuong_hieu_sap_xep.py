@@ -67,6 +67,72 @@ def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
         "anh tru so (diem cao hon) phai dung TRUOC chan dung"
 
 
+def test_moi_hang_co_it_nhat_mot_anh_truoc_khi_hang_nao_duoc_them():
+    """Đo thật 13/09/2026 (tin Anthropic tố Moonshot): 3 hãng trong tin,
+    Anthropic ra 2 chân dung (diem 24), Alibaba ra 2 ảnh trụ sở (diem 28),
+    Moonshot chỉ ra ĐÚNG 1 ảnh thật (diem 20, loại "anh" thường) từ
+    `_bao_thuong_hieu_rong`. `TOI_DA_THEM_TH` = 4 — nếu cứ lấy 4 tấm điểm cao
+    nhất theo thứ tự phẳng, Anthropic (2) + Alibaba (2) chiếm hết 4 slot,
+    Moonshot bị cắt TRƯỚC KHI vào brief dù có ảnh thật hợp lệ — đúng lỗi
+    "bài nhắc cả Anthropic và Moonshot mà chỉ có ảnh Anthropic" Ông Chủ báo.
+    Sau khi round-robin theo hãng khi cắt `TOI_DA_THEM_TH`, ảnh của Moonshot
+    phải sống sót."""
+    def _ung(hang, khoa, diem, i):
+        return {"anh": f"https://x/{khoa}-{i}.jpg", "alt": khoa, "og": False,
+                "tu": "thuong_hieu", "rong": 1800, "cao": 1200, "trang": f"https://x/{khoa}",
+                "diem": diem, "thuong_hieu": {"hang": hang, "khoa": khoa,
+                                              "loai": "nguoi" if diem >= 24 else "anh",
+                                              "tu_khoa": f"{hang}"}}
+
+    cands_theo_hang = {
+        "anthropic": [_ung("Anthropic", "anthropic", 24, 1), _ung("Anthropic", "anthropic", 24, 2)],
+        "alibaba": [_ung("Alibaba", "alibaba", 28, 1), _ung("Alibaba", "alibaba", 28, 2)],
+        "moonshot": [_ung("Moonshot AI", "moonshot", 20, 1)],
+    }
+
+    def anh_hang_gia(hang, so=4, wd=None):
+        return []                                             # Commons rỗng cho cả 3 — ép sang bao_ve_tu_khoa
+
+    def bao_thuong_hieu_rong_gia(h, wd, phien=None):
+        return cands_theo_hang.get(h["khoa"], [])
+
+    def tai_va_loc_gia(cands, wd):
+        wd.mkdir(parents=True, exist_ok=True)
+        ra = []
+        for i, c in enumerate(cands):
+            c = dict(c)
+            p = wd / f"tai_{i}.png"
+            p.write_bytes(b"\x89PNG\r\n")
+            c["goc"] = str(p)
+            ra.append(c)
+        return ra                                               # giữ nguyên thứ tự đưa vào (mô phỏng tải xong)
+
+    def phan_loai_gia(a, wd, tieu_de):
+        a["dung"] = True
+        a["lien_quan"] = True
+        return a
+
+    with tempfile.TemporaryDirectory() as d, \
+         mock.patch("anh_thuong_hieu.hang_trong_tin",
+                   return_value=[{"hang": "Anthropic", "khoa": "anthropic"},
+                                 {"hang": "Alibaba", "khoa": "alibaba"},
+                                 {"hang": "Moonshot AI", "khoa": "moonshot"}]), \
+         mock.patch("anh_thuong_hieu.anh_hang", side_effect=anh_hang_gia), \
+         mock.patch.object(vong_bu, "_bao_thuong_hieu_rong", side_effect=bao_thuong_hieu_rong_gia), \
+         mock.patch.object(vong_bu, "tai_va_loc", side_effect=tai_va_loc_gia), \
+         mock.patch.object(vong_bu, "phan_loai", side_effect=phan_loai_gia):
+        (Path(d) / "goc").mkdir()
+        anh, dung_duoc, _ = vong_bu._vong_thuong_hieu(
+            [], "Anthropic accuses Alibaba and Moonshot AI", "", Path(d))
+
+    hang_da_len = {a["thuong_hieu"]["khoa"] for a in anh if a.get("thuong_hieu")}
+    assert "moonshot" in hang_da_len, (
+        f"ảnh Moonshot bị cắt trước khi vào brief dù có ứng viên thật — "
+        f"chỉ còn hãng: {hang_da_len}")
+    assert hang_da_len == {"anthropic", "alibaba", "moonshot"}, (
+        f"phải có đủ cả 3 hãng trong tin, chỉ thấy: {hang_da_len}")
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

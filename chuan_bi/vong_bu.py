@@ -430,6 +430,29 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["anh"] not in da]
     bo_sung = tai_va_loc(cands, wd4) if cands else []
+    # CONG BANG GIUA CAC HANG khi cat theo TOI_DA_THEM_TH: neu cu giu nguyen
+    # thu tu diem (tren) roi lay N tam dau, tin nhieu hang de bi mot hang co
+    # LOAI anh diem cao (vd "nguoi": chan dung CEO) nuot het slot cua hang con
+    # lai chi co "anh" thuong diem thap hon. Do that 13/09/2026 (Ong Chu:
+    # "bai nhac toi ca Anthropic va Moonshot nhung chi co anh Anthropic, kha
+    # mat can doi"): tin Anthropic+Alibaba+Moonshot ra 2+2+1 ung vien da tai,
+    # Anthropic (chan dung) + Alibaba (tru so) chiem het 4 slot, ung vien
+    # Moonshot (mot anh that tu TechCrunch) diem thap hon bi cat truoc khi
+    # vao brief — dung o day, SAU khi tai (khong dung thu tu tai cua
+    # `tai_va_loc`), chi doi lai THU TU CHON trong luc cat: gop theo hang
+    # ("khoa"), giu nguyen diem-giam-dan TRONG tung hang, roi XEN KE
+    # (round-robin) giua cac hang — moi hang co it nhat mot ung vien vao
+    # truoc khi hang nao duoc ung vien thu hai.
+    theo_hang: dict = {}
+    for a in bo_sung:
+        khoa = (a.get("thuong_hieu") or {}).get("khoa") or f"_khac_{id(a)}"
+        theo_hang.setdefault(khoa, []).append(a)
+    bo_sung = []
+    con = list(theo_hang.values())
+    while any(con):
+        for nhom in con:
+            if nhom:
+                bo_sung.append(nhom.pop(0))
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(anh) >= TOI_DA_ANH + 4 or len(anh) - n0 >= TOI_DA_THEM_TH:
