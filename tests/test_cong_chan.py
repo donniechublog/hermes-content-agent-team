@@ -70,11 +70,11 @@ def test_dan_nguon_gon_bat_cum_thua():
 
 
 def test_dan_nguon_gon_bat_ten_mien_du_khong_co_cum_doc_bai():
-    assert nc.kiem_dan_nguon_gon("theo businesstimes.com", "attrib")
+    assert nc.kiem_dan_nguon_gon("via businesstimes.com", "attrib")
 
 
 def test_dan_nguon_gon_khong_chan_oan():
-    for t in ("theo BusinessTimes", "CEO TSMC", "Phát biểu của C.C. Wei, CEO TSMC",
+    for t in ("via BusinessTimes", "CEO TSMC", "Phát biểu của C.C. Wei, CEO TSMC",
               "TSMC vừa báo doanh thu tháng 8 đạt 514,8 tỷ Đài tệ.",
               "So với tháng 7, tăng 10,1%.", ""):
         assert nc.kiem_dan_nguon_gon(t, "attrib") == [], f"chặn oan: {t}"

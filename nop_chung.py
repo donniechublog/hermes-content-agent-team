@@ -325,13 +325,17 @@ def kiem_da_dung_nhieu(anh: dict, cap, m: dict) -> list:
 def _sach_dung_mot_minh(a: dict) -> bool:
     """Anh SACH dung mot minh duoc cho mot slide/the, khong can vai khai them gi:
     vision da noi ro "khong roi", lien quan, anh chup (khong chart), khong mat
-    nguoi (mat nguoi con phu thuoc ten co trong bai), khong ngang (anh ngang
-    con phai ghep hoac cat doc — chua chac lam duoc). Thieu dieu kien nao cung
-    khong tinh — cong kiem_anh_roi chi duoc bat vai doi anh khi THAT SU co cho
-    doi, khong duoc de vai ket vong."""
+    nguoi (mat nguoi con phu thuoc ten co trong bai), ngang thi phai cat doc duoc
+    (vision cat_ngang_ok + du cao). Thieu dieu kien nao cung khong tinh — cong
+    kiem_anh_roi chi duoc bat vai doi anh khi THAT SU co cho doi, khong de ket."""
     if not a.get("dung") or a.get("lien_quan") is False or a.get("roi") is not False:
         return False
-    return not (a.get("loai") != "anh" or a.get("xep_hang") or a.get("mat") or a.get("ngang"))
+    if a.get("loai") != "anh" or a.get("xep_hang") or a.get("mat"):
+        return False
+    if a.get("ngang"):
+        return (int(a.get("h") or 0) >= schema.CAO_TOI_THIEU_CAT_NGANG
+                and a.get("cat_ngang_ok") is True)
+    return True
 
 
 def kiem_anh_roi(anh: dict, dung: dict, m: dict) -> list:
@@ -447,7 +451,7 @@ def kiem_dan_nguon_gon(chu: str, nhan: str) -> list:
     """Dan nguon KHONG duoc co "đọc bài"/"xem bài"... (Ong Chu 13/09/2026: thua,
     carousel da co dau doc bai chinh la cai slide) va KHONG duoc co ten mien
     dang "tenbao.com" — nen tang (FB/IG/Telegram) quet chu do la lien ket va
-    giam hien thi ca bai. Dan nguon chi can "theo <ten bao>" hoac ten nguoi noi,
+    giam hien thi ca bai. Dan nguon chi can "via <ten bao>" hoac ten nguoi noi,
     khong can dong tu "doc/xem" va khong can duoi ten mien."""
     t = (chu or "").strip()
     if not t:
@@ -457,12 +461,12 @@ def kiem_dan_nguon_gon(chu: str, nhan: str) -> list:
     cum = next((c for c in _CUM_DAN_THUA if c in thap), None)
     if cum:
         loi.append(f"{nhan}: \"{t[:60]}\" có cụm \"{cum}\" — thừa, bỏ đi, dẫn nguồn "
-                   "chỉ cần \"theo <tên báo>\" hoặc tên người nói")
+                   "chỉ cần \"via <tên báo>\" hoặc tên người nói")
     mien = _DOMAIN.search(t)
     if mien:
         loi.append(f"{nhan}: \"{t[:60]}\" có tên miền \"{mien.group(0)}\" — nền tảng quét "
                    "thành liên kết, giảm hiển thị cả bài. Bỏ đuôi miền, chỉ giữ tên báo "
-                   "(vd \"theo BusinessTimes\" thay vì \"theo businesstimes.com\")")
+                   "(vd \"via BusinessTimes\" thay vì \"via businesstimes.com\")")
     return loi
 
 

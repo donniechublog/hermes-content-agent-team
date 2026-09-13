@@ -285,7 +285,7 @@ def mark_draft(draft_id, status):
     _ghi_json(p, d)
 
 def _tach_ly_do_lam_lai(text):
-    """'4: chart bi cat' -> ('4', 'chart bi cat'); '2,5: ...' -> ('2, 5', ...);
+    r"""'4: chart bi cat' -> ('4', 'chart bi cat'); '2,5: ...' -> ('2, 5', ...);
     'tat ca: ...' -> ('CA BO', ...); khong co so -> (None, ca cau).
 
     Ong Chu 13/09/2026 (Anthropic/Nvidia IPO): ca hai ban that Ong Chu go deu

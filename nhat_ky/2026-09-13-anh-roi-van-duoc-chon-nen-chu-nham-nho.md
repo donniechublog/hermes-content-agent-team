@@ -73,17 +73,18 @@ Giới hạn còn lại, ghi rõ để khỏi tưởng đã xong:
 
 - Manifest chuẩn bị TRƯỚC bản vá không có `roi` → cổng im lặng cho tới khi
   chạy lại chuẩn bị ảnh. Không tự vá ngược manifest cũ.
-- Ảnh ngang không được tính là "ảnh sạch thay được" vì trên `main` chưa có
-  `cat_ngang_ok` (nằm ở `feat/org-id-multitenant`, 64e35c4). Cổng vì thế chặn
-  ít hơn mức có thể, không chặn oan.
+- Ảnh ngang chỉ tính là "ảnh sạch thay được" khi vision xác nhận
+  `cat_ngang_ok` và đủ cao (`schema.CAO_TOI_THIEU_CAT_NGANG`).
 - Kite và Bob chưa áp. Bob vẫn nhận câu hỏi có dòng ROI nhưng không dùng.
 
-Phát hiện phụ lúc làm ticket này: 09:19 UTC thư mục chạy thật trên máy chủ bị
-chuyển từ `feat/org-id-multitenant` sang `main`. Hai nhánh lệch nhau 22 commit
-mỗi bên; toàn bộ phần tìm ảnh (`tim_anh_them`, Yandex, chụp nhiều báo, loại trùng
-dHash, ngưỡng slide 6/7) và ba bản vá sáng nay (8709bf3, 23c5087, b16f250) không
-có trên `main`. Ticket này dựng trên `main` vì đó là nhánh đang chạy; chọn nhánh
-nào là nguồn sự thật là việc của Ông Chủ.
+Cùng ngày Ông Chủ sửa mẫu dẫn nguồn: *"sửa 'theo' thành 'via' là ổn"* — brief
+Dre và câu báo lỗi của `kiem_dan_nguon_gon` đổi sang `via <tên báo>`, khớp với
+mẫu Ethan dùng từ trước.
+
+Ảnh rối không phải lúc nào cũng xấu. Ông Chủ chọn chính đồ hoạ "Nvidia Weighs
+$10B" làm hero: *"nó rối trước khi edit, sau khi edit thì nó đủ hết mọi yếu tố
+để làm ảnh bìa"*. Vision hỏi thêm `TU_KHOA`; ảnh rối mà đủ từ khoá được miễn
+cổng, được làm bìa (kể cả khi đo ra là chart), bìa hiện nguyên bề ngang.
 
 Bài học: "đúng chủ đề" và "nhìn được" là hai câu hỏi khác nhau, và cổng nào
 cũng chỉ hỏi câu thứ nhất. Một ảnh đúng tin 100% vẫn có thể là ảnh xấu nhất

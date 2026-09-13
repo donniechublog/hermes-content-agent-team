@@ -199,6 +199,15 @@ def test_khong_tinh_la_sach_neu_khong_the_dung_mot_minh():
     assert loi == [], loi
 
 
+def test_anh_ngang_cat_doc_duoc_la_anh_sach_thay_duoc():
+    import nop_chung as nc
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        anh = {"A1": _muc(t, "A1", 1, roi=True),
+               "A2": _muc(t, "A2", 2, ngang=True, h=1000, cat_ngang_ok=True)}
+        loi = nc.kiem_anh_roi(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y"})
+    assert loi and "A2" in loi[0], loi
+
+
 def test_anh_sach_da_len_bai_khac_khong_tinh():
     import luat_anh
     import nop_chung as nc
