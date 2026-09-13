@@ -257,9 +257,10 @@ def _va_re_export(root: Path, mod_full: str, old: str, new: str) -> int:
     image_prepare._luu_crop/mo_ta_anh. Doi bang token: NAME==old, truoc la `.`,
     truoc nua la alias cua mot module re-export (trong tep do: `import M [as a]`,
     `from pkg import M [as a]`)."""
-    Ms = _modules_re_export(root, mod_full, new)
-    if not Ms:
-        return 0
+    # CA CHINH MODULE: rope co the phan giai sai (lo 4: `nhat_ky.py` trung ten thu
+    # muc `nhat_ky/` -> `import nhat_ky as nk` tro vao thu muc, `nk._gio_vn`
+    # trong test khong duoc doi). Quet token `alias.old` la luoi an toan.
+    Ms = _modules_re_export(root, mod_full, new) | {mod_full.split(".")[-1]}
     n = 0
     for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
         s = f.read_text(encoding="utf-8")
