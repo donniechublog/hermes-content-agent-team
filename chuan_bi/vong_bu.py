@@ -18,9 +18,21 @@ from chuan_bi.nhin import phan_loai
 from chuan_bi.tai_loc import tai_va_loc
 
 
+TOI_DA_NGUON_BAI = 6           # tran nguon bai gop (Google News + Bing News) truoc khi chup
+
 def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> list:
-    """Tieu de tieng Anh (mot fetch) va, khi bo nguon mong, them bao tu Bing —
-    lam TRUOC khi mo browser de browser ghe luon cac trang do. Tra `trang`."""
+    """Tieu de tieng Anh (mot fetch) va, khi con MONG hon `TOI_DA_NGUON_BAI`, them
+    bao tu Bing — lam TRUOC khi mo browser de browser ghe luon cac trang do. Tra
+    `trang`.
+
+    Ong Chu 13/09/2026: "cần kết hợp với bing news, vì thường những chủ đề nóng
+    có rất nhiều tạp chí đưa tin, chỉ cần lấy hình từ các article đó ra, mỗi tạp
+    chí một hình cũng dư material" — truoc day nguong la `< 3` (chi bu khi CON
+    THIEU), qua thap voi tin nong: Google News thuong da co san 2-3 bao la dung
+    nguong, Bing khong bao gio duoc hoi them dai co the CO NHIEU tap chi hon,
+    va `_vong_chup_nguon` (LOW-45) chi thu duoc bao nhieu trang thi `trang` co
+    bay nhieu. Nang nguong + so luong hoi Bing de co NHIEU tap chi hon lam vat
+    lieu, khong chi bu cho du."""
     # Tieu de TIENG ANH cua bai that (tin Vera/Nova mang tieu de tieng Viet):
     # mot fetch httpx; khong ra thi browser lay og:title sau.
     if not nguon.get("tieu_de_en"):
@@ -29,11 +41,11 @@ def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> lis
     # Bo nguon mong -> Bing News RSS bang tieu de tieng Anh (link chuyen huong HTTP
     # thuong, khong can browser). Lam TRUOC khi mo browser de browser ghe luon
     # cac trang bao nay lay anh. Ghi vao nguon json de tu_lieu (Miles) cung dung.
-    if len(trang) < 3 and nguon.get("tieu_de_en"):
+    if len(trang) < TOI_DA_NGUON_BAI and nguon.get("tieu_de_en"):
         import nguon_bai
         co = {t.get("url") for t in trang}
         mien_co = {_mien(t.get("url", "")) for t in trang}
-        them = nguon_bai.bao_khac_bing(nguon["tieu_de_en"], so=4, bo_mien=tuple(mien_co))
+        them = nguon_bai.bao_khac_bing(nguon["tieu_de_en"], so=TOI_DA_NGUON_BAI, bo_mien=tuple(mien_co))
         for t in them:
             if t["url"] not in co:
                 nguon["trang"].append(t)
@@ -411,7 +423,13 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     return anh, dung_duoc, chua_nhin
 
 
-TOI_DA_TRANG_CHUP = 3          # thu toi da 3 trang: bai goc roi hai bao khac
+TOI_DA_TRANG_CHUP = 6          # thu toi da 6 trang (Ong Chu 13/09/2026: "nhiều tạp
+# chí đưa tin, mỗi tạp chí một hình cũng dư material") — bai goc + toi da 5 bao
+# khac (`_bo_sung_nguon` da gop Google News + Bing len TOI_DA_NGUON_BAI=6 trang).
+# Vong nay THU HET (LOW-45), khong dung o trang dau qua cong, nen tran cao hon
+# cham vao thoi gian chay that: moi trang la 1 Playwright screenshot + toi da
+# 2 luot hoi vision (~5-10s) — chap nhan duoc vi vong nay chi chay khi tin con
+# thieu anh, khong phai moi tin.
 
 
 def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
