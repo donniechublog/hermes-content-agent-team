@@ -41,6 +41,7 @@ MANIFEST_THEO_TOPIC = {
     "finn": "finn_candidates_*.json",
     "nova": "nova_candidates_*.json",
     "vera": "vera_candidates_*.json",
+    "qinn": "qinn_candidates_*.json",
 }
 
 def latest_manifest(vai="finn"):
@@ -347,7 +348,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
         source_note=item.get("source_note", ""), link=item["link"],
         title=item["title"], summary=item.get("summary_vi", ""),
         draft_id=draft_id, brand=brand, goc=str(ROOT),
-        ket_thuc=task_bodies.KET_THUC_VAI_ANH)
+        ket_thuc=task_bodies.ket_thuc_vai_anh(ROOT, draft_id))
     tieu_de_task = ("Carousel deck: " if la_edu
                     else ("Carousel: " if la_carousel else "Anh: ")) + item["title"]
     # Bang den: the goc cua bai truoc, task anh la con cua no. Khong co goc

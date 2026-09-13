@@ -55,9 +55,12 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     # khai niem phai dem la MOT (F2).
     so_dd = m.get("so_dung_duoc", schema.so_anh_dung_duoc(m.get("anh")))
     if m["anh"] and so_dd < m.get("toi_thieu", 5):
-        L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} ảnh dùng được, cần ≥ {m.get('toi_thieu', 5)} slide. "
-                 "KHÔNG nhồi ảnh không liên quan cho đủ. Hoặc gộp ý để giảm số slide, hoặc "
-                 "kết thúc task: \"Thiếu ảnh thật cho tin này\" kèm số ảnh có.")
+        L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} slide dựng được, cần ≥ {m.get('toi_thieu', 5)}. "
+                 "KHÔNG nhồi ảnh không liên quan cho đủ. Việc của bạn: TỰ ĐI TÌM — "
+                 f"`cd {ROOT} && venv/bin/python tim_anh_them.py {m['draft_id']} --tu-khoa \"<từ khoá "
+                 "TIẾNG ANH cụ thể>\"` (hãng, sản phẩm, nhà máy, sự kiện, người trong bài; có URL "
+                 "trang/ảnh thì `--url`), tối đa 3 lượt, rồi chạy lại lệnh brief này. Hết 3 lượt "
+                 "vẫn thiếu mới kanban_block, kể rõ từ khoá đã thử.")
     if m.get("so_mien") is not None:
         L.append(f"Ảnh dùng được lấy từ {len(m['so_mien'])} nguồn: {', '.join(m['so_mien']) or '—'}"
                  + (" — chỉ MỘT nguồn; bộ ≥4 slide nên có ảnh từ ≥2 nguồn, cân nhắc gộp ý."
@@ -89,6 +92,9 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                  ", ".join("+".join(c) for c in m["cap_ghep"]))
     import loai_tin
     L += loai_tin.dong_brief(m)
+    L.append("Ảnh CHỤP (trụ sở, nhà máy, người, sản phẩm) có biển hiệu, số nhà, logo trên tường "
+             "VẪN LÀ ẢNH CHỤP — cắt dọc (cat_ngang) được. \"Có chữ\" cấm crop chỉ là chart, bảng, "
+             "slide, banner, ảnh chụp màn hình có tiêu đề.")
     L.append("Mỗi ảnh đã được NHÌN (cột \"ảnh là\"). Ảnh ❌ tuyệt đối không dùng dù nhãn gì. "
              f"Bảng thu nhỏ: {m['workdir']}/bang_anh.png")
     L.append("")
@@ -101,7 +107,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                   "label": "<TÊN MODEL / HÃNG, VIẾT HOA>"},
         "slides": [
             {"anh": "A?", "text": "<đoạn 1.\\n\\nđoạn 2 — tổng ≤ 240 ký tự>"},
-            {"anh": "A?", "quote": "<câu đắt nhất, DỊCH tiếng Việt, ≤ 150 ký tự>", "attrib": "<Ai nói / Đọc bài “…” - nguồn>"},
+            {"anh": "A?", "quote": "<câu đắt nhất, DỊCH tiếng Việt, ≤ 150 ký tự>", "attrib": "<Ai nói, hoặc \"theo <tên báo>\" — KHÔNG \"đọc/xem bài\", KHÔNG đuôi tên miền>"},
             {"ghep": ["A?", "A?"], "text": "<hai ảnh ngang cùng tone xếp dọc>"},
             {"anh": "A?", "nhan_vat": "<tên người trong bài>", "quote": "…", "attrib": "…"},
             {"anh": "A?", "cat_ngang": True, "text": "<chỉ cho ảnh NGANG là người/sản phẩm không chữ>"},
@@ -111,7 +117,10 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     L.append("Luật điền: mỗi slide MỘT ảnh, MỘT ý; `text` HOẶC `quote`+`attrib`; mỗi mã ảnh dùng đúng "
              "một lần; chart chỉ ở slide thân (script tự dán full bề ngang); ảnh NGANG phải `ghep` "
              "hoặc `cat_ngang`; ảnh có mặt phải có `nhan_vat`; `nen` sang khi đa số ảnh sáng/nền trắng (ảnh nổi hơn trên màn sáng), toi khi ảnh tối hoặc lẫn lộn. Tiếng Việt có dấu, không em-dash, "
-             "câu quote phải DỊCH. Bỏ các slide mẫu không dùng — khung trên chỉ minh hoạ cú pháp.")
+             "câu quote phải DỊCH. `attrib` KHÔNG \"đọc bài\"/\"xem bài\" (thừa, slide chính là "
+             "chỗ đọc rồi), KHÔNG đuôi tên miền (.com/.net/...) — nền tảng quét thành liên kết, "
+             "giảm hiển thị cả bài; chỉ \"theo <tên báo>\" hoặc tên người nói. Bỏ các slide mẫu "
+             "không dùng — khung trên chỉ minh hoạ cú pháp.")
     L.append("Khung kể: bìa HOOK (nghịch lý/con số) → chuyện gì vừa xảy ra → con số gây sốc → "
              "ý nghĩa thật → đối thủ/diễn biến → cái cần theo dõi (không chốt cụt).")
     L.append("")

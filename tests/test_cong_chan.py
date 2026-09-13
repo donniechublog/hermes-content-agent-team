@@ -62,6 +62,24 @@ def test_quote_dich_bo_qua_chuoi_ngan():
     assert nc.kiem_quote_dich("It is what it is", "hook") == []   # < 25 ký tự
 
 
+def test_dan_nguon_gon_bat_cum_thua():
+    for t in ('Đọc bài "TSMC hits record" - btimesonline.com',
+              "Xem bài chi tiết trên techcrunch.com",
+              "Nguồn: reuters.com"):
+        assert nc.kiem_dan_nguon_gon(t, "attrib"), f"lọt cụm thừa/tên miền: {t}"
+
+
+def test_dan_nguon_gon_bat_ten_mien_du_khong_co_cum_doc_bai():
+    assert nc.kiem_dan_nguon_gon("theo businesstimes.com", "attrib")
+
+
+def test_dan_nguon_gon_khong_chan_oan():
+    for t in ("theo BusinessTimes", "CEO TSMC", "Phát biểu của C.C. Wei, CEO TSMC",
+              "TSMC vừa báo doanh thu tháng 8 đạt 514,8 tỷ Đài tệ.",
+              "So với tháng 7, tăng 10,1%.", ""):
+        assert nc.kiem_dan_nguon_gon(t, "attrib") == [], f"chặn oan: {t}"
+
+
 # --------------------------------------------------------------- nhân vật
 def test_nhan_vat_ba_lop():
     anh = {"A1": {"mat": True, "mo_ta": "chan dung CEO"},

@@ -97,12 +97,12 @@ VAI = {v.slug: v for v in [
     Vai("ethan", "Ethan", go=("img", "anh"), slug_cu=("designer", "chad"),
         renderer="card", nhan_anh=True, anh_toi_thieu=1,
         ti_le_don_max=1.6, chart_don=False),
-    # 5 va 8 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN. Chep so o day chu
+    # 6 va 7 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN (12/09/2026). Chep so o day chu
     # khong import carousel: tep nay la BAN DANG KY, phai nhe (carousel keo theo
     # card + PIL). test_vai giu hai ban khong troi khoi nhau.
     Vai("dre", "Dre", go=("cr",), slug_cu=("carousel", "heller"),
-        renderer="carousel", nhan_anh=True, anh_toi_thieu=5, anh_toi_thieu_flagship=8,
-        anh_muc_tieu_tim=5, anh_muc_tieu_tim_flagship=8),
+        renderer="carousel", nhan_anh=True, anh_toi_thieu=6, anh_toi_thieu_flagship=7,
+        anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
     # "kites": so nhieu tieng Anh — Ong Chu hay go the khi giao nhieu tin cung
     # luc ("3, 4 - Kites"). Thieu no la ca lenh chon bi tu choi (su co 06/09/2026).
     # anh_toi_thieu=1: Kite ve ART VECTOR GOC, anh that chi la hinh chen them —
@@ -113,7 +113,7 @@ VAI = {v.slug: v for v in [
     # chua duoc ra lai, va ha xuong la Kite it hinh chen hon truoc.
     Vai("kite", "Kite", go=("edu", "kites"), slug_cu=("carousel-edu",),
         renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
-        anh_muc_tieu_tim=5, anh_muc_tieu_tim_flagship=8),
+        anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
     # --- vai VIET: MOI BRAND MOT NGUOI VIET (LOW-13, 10/09/2026) ---
     # Hai vai viet KHONG bao gio cung nam trong mot container, dung nhu `finn`
     # (chi blog) va `vera` (chi dcgr) — nen ban dang ky giu ca hai,
@@ -127,6 +127,10 @@ VAI = {v.slug: v for v in [
     Vai("finn", "Finn", slug_cu=("scout",)),
     Vai("nova", "Nova"),
     Vai("vera", "Vera", slug_cu=("market",)),
+    # Qinn (12/09/2026) — quet X. Khong tu crawl: doc lai qua GET /tweets cua
+    # social-publishing (session X song tren may crawler). CHI brand blog, nhu
+    # Finn; chay 4 lan/ngay vi tin X troi nhanh hon HN/arXiv.
+    Vai("qinn", "Qinn"),
     Vai("cape", "Cape", slug_cu=("teaser", "jean")),   # persona cu: Jean
     Vai("ada", "Ada", slug_cu=("analyst",)),
     Vai("gin", "Gin"),
@@ -153,6 +157,7 @@ MAC_DINH_VIET = "miles"
 #      de hom nao mot vai quet doi container thi ve (1) van dung ngay.
 VIET_THEO_QUET = {
     "finn": "jika",                # Finn — HN/Reddit/arXiv
+    "qinn": "jika",                # Qinn — X (tin ky thuat, cung nguoi doc voi Finn)
     "nova": "jika",                # Nova — model moi ra mat
     "vera": "miles",               # Vera — kinh doanh, dau tu
 }
@@ -258,6 +263,19 @@ def ten_nguoi_trong_alt(alt: str) -> list:
     return _TEN_NGUOI.findall(alt or "")
 
 
+def co_nhan_bia(dung) -> bool:
+    """Nhan "dung duoc o dau" cua mot tam co cho phep lam BIA khong.
+
+    KHONG so bang `"bìa" in dung`: do la phep so PHAN TU trong list, ma nhan
+    that su duoc dan co the mang duoi giai thich — "bìa (ảnh hero của chính bài
+    gốc)" cua vong chup trang nguon. Su co 13/09/2026: sau khi cho vong chup
+    chay TRUOC, engine chup ve 4 anh bao cung tin (deu la bia hop le) roi van
+    ket luan "co 6 anh nhung khong tam nao lam anh chinh duoc" va di tim tiep
+    tren web — chi vi hai chuoi khong bang nhau tuyet doi. Cung ly do khien
+    anh chup khong bao gio xuat hien trong `goi_y_bia`."""
+    return any(str(d).startswith("bìa") for d in (dung or []))
+
+
 def anh_chinh_duoc(slug: str, a: dict) -> bool:
     """Tam anh `a` (mot muc trong manifest) co dung MOT MINH lam ANH CHINH cua
     vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.
@@ -272,7 +290,7 @@ def anh_chinh_duoc(slug: str, a: dict) -> bool:
         return True                            # anh chinh BAT BUOC cua tin xep hang
     if not v.ti_le_don_max:
         # Vai xep NHIEU anh: "anh chinh" la tam lam BIA, nhan do phan_loai dan.
-        return "bìa" in a["dung"]
+        return co_nhan_bia(a.get("dung"))
     if a.get("loai") == "chart" and not v.chart_don:
         return False
     if float(a.get("ti_le") or 0) > v.ti_le_don_max:
@@ -312,7 +330,11 @@ def du_nguyen_lieu(slug: str, dung_duoc: list, flagship: bool = False) -> bool:
     if not any(anh_chinh_duoc(slug, a) for a in dung_duoc):
         return False
     # muc = 0 (vai mot anh): ve nay luon dung, tuc chi con ve thu nhat.
-    return len(dung_duoc) >= so_anh_muc_tieu_tim(slug, flagship)
+    # Dem SLIDE dung duoc (schema.so_anh_dung_duoc), khong dem TAM: tin TSMC
+    # 12/09/2026 co 5 tam nhung mot tam 900x600 chi ghep duoc ma khong co cap
+    # -> 4 slide, engine van bao "du 5" va ngung tim (t_a8ffd2f6).
+    import schema
+    return schema.so_anh_dung_duoc(dung_duoc) >= so_anh_muc_tieu_tim(slug, flagship)
 
 
 def don_vi_san(slug: str) -> str:

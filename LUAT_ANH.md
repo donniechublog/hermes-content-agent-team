@@ -200,6 +200,30 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   lên bìa, tức mất cả tác dụng của §1.2c.
 - **§1.2e không được ép nó xuống thân**: xem chỗ `hinh_phai_dung` ở mục đó.
 
+### 1.2e Vai TỰ ĐI TÌM khi ban chuẩn bị thiếu — `tim_anh_them.py`
+
+Ông Chủ 12/09/2026 (tin TSMC t_a8ffd2f6): *"designer mà không được phép đi tìm
+ảnh, ai nghĩ ra cái luật thiểu năng này?"*. Luật 04/09 "vai chỉ chọn mã" cắt cả
+quyền **tìm**, trong khi cái đắt là **tải/crop/nhìn**, không phải tìm. Engine
+chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là dừng cả bài.
+
+- **Giữ**: engine vẫn chuẩn bị, cổng chặn vẫn của script, vai vẫn không tự
+  curl/crop/mở ảnh.
+- **Bỏ**: thiếu ảnh không còn là "block ngay". Vai chạy
+  `tim_anh_them.py <id> --tu-khoa "<tiếng Anh cụ thể>"` (hãng, sản phẩm, nhà
+  máy, sự kiện, người trong bài; hoặc `--url` trang/ảnh vai biết). Script hỏi
+  Bing News + Wikimedia Commons + **Openverse** (ảnh CC: Wikimedia, Flickr CC…;
+  chỉ giấy phép by / by-sa / cc0 / pdm, cạnh ngắn ≥ 700), mở trang, tải, **nhìn**,
+  đo, cắt sẵn y như engine, nối vào `xong.json`, in ảnh mới. Vai chọn, máy xử lý.
+- **Tối đa 3 lượt** một bài, mỗi lượt đổi từ khoá khác hẳn — không quay lại
+  60 tool call/task. Từ khoá tiếng Việt bị từ chối (§ tìm kiếm chỉ tiếng Anh).
+- Hết 3 lượt vẫn thiếu mới `kanban_block`, lý do **phải kể từ khoá đã thử**.
+- Đếm **slide dựng được**, không đếm tấm (`schema.so_anh_dung_duoc`): ảnh ngang
+  thấp hơn 700px chỉ ghép được, hai tấm mới thành một slide, một tấm lẻ = 0.
+  Cùng số này quyết định engine có tìm tiếp không (`vai.du_nguyen_lieu`).
+- Ảnh **chụp** có biển hiệu, số nhà, logo trên tường vẫn là ảnh chụp — cắt dọc
+  được. "Có chữ" cấm crop chỉ là chart, bảng, slide, banner, screenshot có tiêu đề.
+
 ### 1.2d Ảnh thương hiệu: tin về hãng lớn thì tìm trụ sở của chính hãng đó
 
 > **Nguyên tắc nguồn, chốt lại 13/09/2026 — thay cho mọi giới hạn về nguồn bên
