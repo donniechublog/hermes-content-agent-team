@@ -37,7 +37,7 @@ VERSION_MANIFEST = 1
 class Manifest(TypedDict, total=False):
     """`state/<brand>/chuan_bi/<draft_id>/xong.json` — engine ghi, moi vai doc.
 
-    Nguoi ghi: `chuan_bi.manifest.dung_manifest` (26 khoa goc), roi
+    Nguoi ghi: `prepare.manifest.build_manifest` (26 khoa goc), roi
     `anh_chuan_bi.chay` them `thieu_anh`, `route_thieu_anh.sau_chuan_bi` them
     `chuyen_kite`/`hoi_kite`/`khong_kite` — CA BA con trong khoa cua engine, nen
     nguoi doc luon thay ban da chot. Rieng `duyet_bai._nut_ha_san` ghi de
@@ -172,7 +172,7 @@ def _only_stack_ok(a: dict) -> bool:
     trong hai ly do:
       1. qua thap de cat doc (`h < CAO_TOI_THIEU_CAT_NGANG`), hoac
       2. la anh chup NGANG co chu/logo/so lieu de len (`cat_ngang_ok is False`
-         — vision xac nhan, xem chuan_bi.nhin.phan_loai) nen luat_anh cam crop.
+         — vision xac nhan, xem prepare.vision.classify) nen luat_anh cam crop.
     Su co 12/09/2026 lan hai (t_a8ffd2f6): Dre chay that, 4/5 anh ngang cao
     >=700 la bien hieu/logo CO CHU (khong phai chart — chart da co duong rieng
     "than, dan full be ngang"), nhung cong thuc cu chi nhin chieu cao nen dem

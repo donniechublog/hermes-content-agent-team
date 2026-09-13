@@ -1,4 +1,4 @@
-"""SHIM tạm (LOW-50): tên cũ của `chuan_bi.vision.py`. Mọi thứ nằm ở `chuan_bi.vision.py`.
+"""SHIM tạm (LOW-50): tên cũ của `prepare/vision.py`. Mọi thứ nằm ở `prepare/vision.py`.
 
 Giữ để task kanban đang `ready`, cron và SOUL trên máy chủ gọi tên cũ vẫn chạy
 trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import nhin` và

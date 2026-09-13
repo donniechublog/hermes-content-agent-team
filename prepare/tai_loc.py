@@ -1,4 +1,4 @@
-"""SHIM tạm (LOW-50): tên cũ của `chuan_bi.download_filter.py`. Mọi thứ nằm ở `chuan_bi.download_filter.py`.
+"""SHIM tạm (LOW-50): tên cũ của `prepare/download_filter.py`. Mọi thứ nằm ở `prepare/download_filter.py`.
 
 Giữ để task kanban đang `ready`, cron và SOUL trên máy chủ gọi tên cũ vẫn chạy
 trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import tai_loc` và

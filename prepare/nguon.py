@@ -1,4 +1,4 @@
-"""SHIM tạm (LOW-50): tên cũ của `chuan_bi.source.py`. Mọi thứ nằm ở `chuan_bi.source.py`.
+"""SHIM tạm (LOW-50): tên cũ của `prepare/source.py`. Mọi thứ nằm ở `prepare/source.py`.
 
 Giữ để task kanban đang `ready`, cron và SOUL trên máy chủ gọi tên cũ vẫn chạy
 trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import nguon` và

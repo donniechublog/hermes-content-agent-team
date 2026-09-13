@@ -5,8 +5,10 @@ sang English (xem `feedback_dat_ten_english_cho_sau.md` trong memory của agent
 quy ước cũ không do Ông Chủ đặt — phiên đầu 20/08/2026 tự chọn — bị coi là nhập
 nhằng, nhưng đổi ngay là refactor giữa lúc nhiều nhánh đang hoạt động).
 
-**Trạng thái v0 (13/09/2026): mọi tên trong 103 module đều có tên English đích,
-0 token chưa map, 0 va chạm. Chưa rename một tên nào trong mã. Chờ Ông Chủ duyệt.**
+**Trạng thái (13/09/2026): từ điển v0 đã duyệt (LOW-49). Refactor thật LOW-50 ĐÃ CHẠY
+HẾT trên nhánh `rename/viet-to-english`: 5 lô + đổi gói `chuan_bi/ → prepare/`,
+mọi module/hàm/hằng top-level đã mang tên English; tên tệp cũ là shim (gỡ sau 1 tuần).
+pyflakes 0, `tests/chay.sh` 84/84 sau mỗi lô.**
 
 ## Tiêu chí chốt (Ông Chủ 12/09/2026)
 
@@ -67,6 +69,36 @@ vào `rename.py`, mỗi cái là một ca đo được:
 - Bẫy git: rope tự `git mv` (đã stage) → `git commit` chỉ định tệp docs vẫn kéo
   theo 26 rename đang stage. Trước khi commit công cụ giữa lô: `git reset` hoặc
   `git commit -- <đường dẫn>` tường minh.
+
+Lô 3 (28 module lớp vai), lô 4 (27 module duyệt/điều phối), lô 5 (10 module giữ
+tên tệp) và bước `--package chuan_bi → prepare` — thêm các quy tắc, mỗi cái một ca đo:
+
+- **rope 1.14 / Python 3.12 không đổi tên trong ô `{…}` của f-string**, và khi
+  dòng có chữ Việt trước ô đó rope còn **ghi lệch offset** (`THOI_PHONG[:6]` →
+  `TIME_ROOM[TIME_ROOM:6]`). `_va_fstring` (token) chạy TRƯỚC rope để rope không
+  còn thấy tên cũ ở đó. Soát cả cây sau mỗi lô bằng `soi_trung_ten.py` (dòng `+`
+  có tên mới nhiều hơn số tên cũ ở dòng `-`): 0 nghi ngờ ở lô 1–5.
+- **Tên tệp trùng tên thư mục** (`nhat_ky.py` / `nhat_ky/`): rope phân giải
+  `import nhat_ky as nk` sang thư mục → bỏ sót `nk.<tên>`; sau mỗi rope rename quét
+  token `alias.tên_cũ` cho chính module (luới an toàn, không chỉ module re-export).
+- **Chú thích kiểu dạng chuỗi** `-> "_HangFIFO"` rope không đổi (docs=False) và
+  `-> "X":` từng bị đếm nhầm là khoá dict. Chỉ đổi sau `->`, `x: "…"`, trong
+  `list[...]`/`Optional[...]`; **KHÔNG** đổi `a["dung"]` (subscript = khoá dict —
+  lần đầu đổi nhầm ở 85 tệp).
+- **Tên hàm trùng khoá dict** (`trang_thai`, `dung`): không thay trần trong chuỗi
+  test dù có `_`. **Hằng một từ** (`SO`, `CAO`) không thay trần kể cả trong ngoặc kép.
+- `getattr/setattr/hasattr(mod, "tên")` trong **mã chính** cũng phải đổi
+  (env_load `getattr(card, "THUONG_HIEU")` → masthead in slug).
+- Test chạy mã Python trong chuỗi (`subprocess -c "import bat_buoc; …"`) → mẫu
+  `import cũ` / `from cũ import` trong chuỗi test.
+- Module ngoài rope (`render_edu`, `scan_models`): đổi cả `alias.tên` khi
+  `import scan_models as s`, không chỉ `scan_models.tên`.
+- Chuỗi ghép tên module lúc chạy (`f"{persona}_nop.py"`, `"<vai>_chuan_bi.py"`)
+  công cụ không thấy — grep tay sau lô (9 dòng ở lô 3). systemd `.service`/`.timer`
+  và `%h/…/x.py` (có `/` trước tên) đã vào bộ vá.
+- `--package`: `chuan_bi/x.py` trong tài liệu và `ROOT / "chuan_bi" / "x.py"` trong
+  test đổi theo; `STATE_DIR / "chuan_bi"` và `"chuan_bi"` trần **không bao giờ đổi**
+  (thư mục state trên đĩa). Shim `chuan_bi/__init__.py` → `prepare`.
 
 `tudien.py` là thư viện chung của `gen.py` và `rename.py` — bảng in ra và cái sẽ
 đổi luôn là một bộ. Tên module mới hết shadow được kiểm ở **F2** (tên biến/tham

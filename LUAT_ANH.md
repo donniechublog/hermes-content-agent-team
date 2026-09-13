@@ -252,7 +252,7 @@ chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là d�
 >   hình — vẫn CẤM như cũ, đây là luật về CHẤT LƯỢNG chứ không phải về NGUỒN).
 >
 > Cài đặt: `nguon_bai.bao_ve_tu_khoa` (tìm theo tên hãng, không đòi cùng sự
-> kiện) + `chuan_bi.vong_bu._bao_thuong_hieu_rong` (quét ảnh từ các bài tìm
+> kiện) + `prepare.fallback_rounds._report_brand_empty` (quét ảnh từ các bài tìm
 > được) — trước 13/09/2026 chỉ chạy khi Commons/Wikidata RỖNG; nay chạy
 > **song song, luôn luôn**, không còn là phương án cuối.
 

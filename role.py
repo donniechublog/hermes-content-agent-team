@@ -66,7 +66,7 @@ class Role:
     # Ong Chu: *"tieu chi ve anh thi la chung cua moi designer, nhung carousel la
     # nhieu anh con Ethan lam single image, nen 'so luong' ko the la thu ap vao
     # duoc"*. Tieu chi CHAT LUONG (net, khong rac, lien quan, day toi) van dung
-    # chung o `luat_anh` + `chuan_bi.nhin.phan_loai` cho ca ba vai. Chi hai thu
+    # chung o `luat_anh` + `prepare.vision.classify` cho ca ba vai. Chi hai thu
     # duoi day di theo vai, va chung tra loi hai cau khac han nhau:
     #
     #   anh_muc_tieu_tim  BAO NHIEU tam thi ngung di tim. CHI co nghia voi vai
@@ -253,7 +253,7 @@ def min_images(slug: str, flagship: bool = False) -> int:
 
 
 # Ten rieng >= 2 tu trong alt/caption ("Jensen Huang"). MOT ban duy nhat: chu
-# thich anh cua `chuan_bi.nhin.phan_loai` va cong "mat nguoi phai khai ten" duoi
+# thich anh cua `prepare.vision.classify` va cong "mat nguoi phai khai ten" duoi
 # day phai doc ra CUNG mot cai ten, khong duoc moi noi mot regex.
 _TEN_NGUOI = re.compile(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+")
 
@@ -281,7 +281,7 @@ def can_be_hero(slug: str, a: dict) -> bool:
     vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.
 
     Tieu chi CHAT LUONG (net, khong rac, lien quan bai) khong nam o day: chung
-    dung chung cho moi vai va da chay o `luat_anh` + `chuan_bi.nhin.phan_loai`.
+    dung chung cho moi vai va da chay o `luat_anh` + `prepare.vision.classify`.
     Ham nay chi tra loi phan di theo KHO cua renderer."""
     v = ROLE.get(slug) or ROLE[DEFAULT_IMAGE]
     if a.get("lien_quan") is False or not a.get("dung"):

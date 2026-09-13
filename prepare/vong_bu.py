@@ -1,4 +1,4 @@
-"""SHIM tạm (LOW-50): tên cũ của `chuan_bi.fallback_rounds.py`. Mọi thứ nằm ở `chuan_bi.fallback_rounds.py`.
+"""SHIM tạm (LOW-50): tên cũ của `prepare/fallback_rounds.py`. Mọi thứ nằm ở `prepare/fallback_rounds.py`.
 
 Giữ để task kanban đang `ready`, cron và SOUL trên máy chủ gọi tên cũ vẫn chạy
 trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import vong_bu` và
