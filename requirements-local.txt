@@ -12,3 +12,4 @@ opencv-python-headless   # doc/ghi anh, dung mask, dilate
 easyocr                  # dinh vi vung chu (khong can doc dung noi dung)
 torch                    # nen cua LaMa; tren macOS pip tu chon ban CPU/MPS
 simple-lama-inpainting   # inpaint LaMa — cv2.inpaint de lai vet loang tren anh phuc tap
+rope                     # rename theo AST cho LOW-50 (docs/tu_dien_ten/rename.py), chi may dev

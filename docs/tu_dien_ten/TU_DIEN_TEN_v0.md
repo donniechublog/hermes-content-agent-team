@@ -1,8 +1,10 @@
 # TỪ ĐIỂN TÊN — v0 (chưa đụng mã)
 
-Sinh tự động bởi `gen.py` từ repo hiện tại: 106 module, 1087 def/class (954 tên khác nhau), 700 hằng số. `?token` = chưa có trong bảng; ⚠️ = token mơ hồ, phải chọn tay theo nghĩa tại chỗ.
+Sinh tự động bởi `gen.py` từ repo hiện tại: 106 module, 1095 def/class (962 tên khác nhau), 713 hằng số. `?token` = chưa có trong bảng; ⚠️ = token mơ hồ, phải chọn tay theo nghĩa tại chỗ.
 
-Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi; tên vai (ethan/dre/kite…) giữ nguyên; token đã là English giữ nguyên. Sửa `cum.json` / `don.json` / `moho.json` / `them.json` rồi chạy lại `python3 gen.py .` để bảng dưới cập nhật.
+**Tiêu chí (Ông Chủ 12/09/2026):** nghĩa dịch không cần đúng từng chữ — chỉ cần KHÔNG hai hàm/lớp top-level nào trong cùng module trùng tên sau khi dịch. Xem mục F.
+
+Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi; tên vai (ethan/dre/kite…) giữ nguyên; token đã là English giữ nguyên. Sửa `cum.json` / `don.json` / `moho.json` / `them.json` / `overrides.json` rồi chạy lại `python3 gen.py .` để bảng dưới cập nhật.
 
 ## A. Từ gốc — CỤM (khớp trước)
 
@@ -133,7 +135,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `env_load` | `env_load` |
 | `ghi_chu` | `notes` |
 | `ghi_de` | `overwrite` |
-| `ghi_log` | `log` |
+| `ghi_log` | `write_log` |
 | `ghim_manifest` | `pin_manifest` |
 | `gia_moi_bai` | `price_per_item` |
 | `gia_ra` | `price_out` |
@@ -590,6 +592,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `luat` | `rules` |  |
 | `lui` | `back` |  |
 | `luon` | `always` |  |
+| `luong` | `flow` |  |
 | `luot` | `turn` |  |
 | `luu` | `save` |  |
 | `ma` | `code` | ⚠️ mã=code / mà=but |
@@ -621,6 +624,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ngat` | `break` |  |
 | `ngay` | `date` |  |
 | `nghich` | `reverse` |  |
+| `nghiem` | `strict` |  |
 | `ngoai` | `outside` |  |
 | `nguoi` | `person` |  |
 | `nguon` | `source` |  |
@@ -686,6 +690,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tach` | `extract` |  |
 | `tai` | `download` |  |
 | `tam` | `temp` |  |
+| `tan` | `spread` |  |
 | `tang` | `layer` |  |
 | `tao` | `create` |  |
 | `tap` | `set` |  |
@@ -724,6 +729,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tim` | `find` |  |
 | `tin` | `story` |  |
 | `tinh` | `static` |  |
+| `tit` | `headline` |  |
 | `toan` | `whole` |  |
 | `toi` | `dark` | ⚠️ tối=dark / tới=until |
 | `tong` | `total` |  |
@@ -833,7 +839,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `env_load` | `env_load` |  |
 | `ethan_chuan_bi` | `ethan_prepare` |  |
 | `ethan_nop` | `ethan_submit` |  |
-| `ghi_log` | `log` |  |
+| `ghi_log` | `write_log` |  |
 | `gin_chuan_bi` | `gin_prepare` |  |
 | `gin_nop` | `gin_submit` |  |
 | `gui_telegram` | `send_telegram` |  |
@@ -868,6 +874,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `quet_chung` | `scan_common` |  |
 | `quet_nop` | `scan_submit` |  |
 | `render_edu` | `render_edu` |  |
+| `role` | `role` |  |
 | `route_thieu_anh` | `route_missing_images` |  |
 | `scan_business` | `scan_business` |  |
 | `scan_models` | `scan_models` |  |
@@ -884,7 +891,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tim_anh_them` | `find_more_images` |  |
 | `tim_anh_web` | `find_image_web` |  |
 | `tu_lieu` | `material` |  |
-| `vai` | `role` |  |
 | `xep_hang` | `ranking` |  |
 
 ## C. Hàm/lớp theo module
@@ -1104,7 +1110,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `link_goi_y` | `link_call_y` |  |
 | `kiem` | `check` |  |
 | `xoa` | `delete` |  |
-| `in_danh_sach` | `print_list_clean` | ⚠️ in |
+| `in_danh_sach` | `in_list_clean` | ⚠️ in |
 
 ### `bob_nop`
 
@@ -1178,7 +1184,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_grow_title` | `_grow_title` |  |
 | `_buoc_dong` | `_step_line` | ⚠️ dong |
 | `ghep_doc` | `stack_read` | ⚠️ doc |
-| `_chan_anh_thap` | `_block_image_low` |  |
 | `_chan_chuan_anh` | `_block_standard_image` |  |
 | `_chan_chart` | `_block_chart` |  |
 | `_chan_crop` | `_block_crop` |  |
@@ -1186,6 +1191,9 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_fit_cover` | `_fit_cover` |  |
 | `_khoang` | `_range` |  |
 | `_lop_anh` | `_layer_image` |  |
+| `_nang_luong_hang` | `_capability_flow_rank` | ⚠️ hang |
+| `_moc_nen_dac` | `_timestamp_background_solid` | ⚠️ nen |
+| `_nen_chu_nghiem` | `_text_bg_strict` |  |
 | `_mo_vung_chu` | `_open_region_text` | ⚠️ chu |
 | `_trong_the` | `_within_card` | ⚠️ the |
 | `_sang_vung` | `_bright_region` | ⚠️ sang |
@@ -1221,6 +1229,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_ghep_neu_can` | `_stack_if_can` |  |
 | `_ramp_mask` | `_ramp_mask` |  |
 | `_do_vung_chu` | `_measure_region_text` | ⚠️ chu |
+| `_nen_dac_duoi_chu` | `_background_solid_below_text` | ⚠️ chu nen |
 | `_lop_neu_can` | `_layer_if_can` |  |
 | `_body_image` | `_body_image` |  |
 | `build_body` | `build_body` |  |
@@ -1296,6 +1305,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `mo_ta_anh` | `description_image` |  |
+| `_mot_lan` | `_one_attempt` | ⚠️ lan |
 | `_goi_router` | `_call_router` |  |
 | `_phan_loai_an_toan` | `_classify_hide_whole` |  |
 | `phan_loai` | `classify` |  |
@@ -1324,9 +1334,11 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_gom_va_tai_anh` | `_gather_and_download_image` |  |
 | `_vong_tim_rong` | `_round_widen_search` |  |
 | `_xep_hang_boi_canh` | `_ranking_context_edge` | ⚠️ canh |
+| `_bao_thuong_hieu_rong` | `_report_brand_empty` | ⚠️ rong |
 | `_vong_thuong_hieu` | `_round_brand` |  |
 | `_vong_chup_nguon` | `_round_capture_source` |  |
 | `_ra` | `_out` |  |
+| `nang_khoi_tit` | `capability_block_headline` |  |
 | `_vong_khai_niem` | `_round_concept` |  |
 | `_vong_thuc_the` | `_round_entity` |  |
 
@@ -1481,6 +1493,8 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_go_so_anh` | `_go_count_image` | ⚠️ so |
 | `mark_draft` | `mark_draft` |  |
 | `_tach_ly_do_lam_lai` | `_extract_reason_redo` |  |
+| `_ma_cua_slide` | `_code_of_slide` | ⚠️ ma |
+| `_ghi_cam_anh_lam_lai` | `_write_forbid_image_redo` |  |
 | `_giao_lam_lai` | `_hand_redo` |  |
 | `_nap_lam_lai_cho` | `_load_redo_wait` | ⚠️ cho |
 | `_cho_trong_topic` | `_wait_within_topic` | ⚠️ cho |
@@ -1798,7 +1812,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `doc_dau_crop` | `read_crop_trace` |  |
 | `doc_cat_ngang` | `allows_landscape_crop` |  |
 | `la_xep_hang` | `is_ranking_image` |  |
-| `co_xuat_xu` | `has_provenance` |  |
 | `la_ghep` | `is_stacked_composite` |  |
 | `do_chart` | `measure_chart_signal` |  |
 | `la_chart` | `is_chart` |  |
@@ -1820,14 +1833,10 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `la_anh_rong` | `is_blank_image` |  |
 | `kiem_anh_rong` | `check_blank_image` |  |
 | `kiem_chart` | `check_chart_integrity` |  |
-| `kiem_anh_thap` | `check_image_too_flat` |  |
-| `kiem_lech_tone` | `check_tone_mismatch` |  |
 | `kiem_chart_mot_minh` | `check_chart_standalone` |  |
 | `kiem_ti_le` | `check_aspect_ratio` |  |
 | `kiem_crop_ngang` | `check_crop_landscape` |  |
-| `kiem_xuat_xu` | `check_provenance` |  |
 | `kiem_do_phan_giai` | `check_measure_part_resolve` | ⚠️ phan |
-| `kiem_day_sang` | `check_bright_bottom` |  |
 | `kiem_mat_nguoi` | `check_unnamed_face` |  |
 | `kiem_trung` | `check_duplicate` |  |
 
@@ -1948,6 +1957,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tieu_de_tim` | `title_find` |  |
 | `_truy_van_bing` | `_query_bing` |  |
 | `bao_khac_bing` | `other_outlets_bing` |  |
+| `bao_ve_tu_khoa` | `report_about_keyword` |  |
 | `tim` | `find` |  |
 | `_trong_feed` | `_within_feed` |  |
 
@@ -2009,7 +2019,11 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `can_anh_xep_hang` | `needs_ranking_image` |  |
 | `anh_khong_lien_quan` | `irrelevant_images` |  |
 | `kiem_da_dung_nhieu` | `check_not_reused_across_runs` |  |
+| `_sach_dung_mot_minh` | `_clean_use_alone` | ⚠️ dung |
+| `kiem_anh_roi` | `check_image_fall` |  |
 | `kiem_quote_dich` | `check_quote_translated` |  |
+| `kiem_khong_lap_anh_lam_lai` | `check_no_repeat_image_redo` |  |
+| `kiem_dan_nguon_gon` | `check_guide_source_compact` |  |
 | `kiem_hang_tren_the` | `check_rank_matches_image` |  |
 | `_album_da_len` | `_recently_posted` |  |
 | `gui_album` | `send_album` |  |
@@ -2082,7 +2096,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ghim_manifest` | `pin_manifest` |  |
 | `loc_canh_bao` | `filter_warning` |  |
 | `_chay` | `_run` |  |
-| `_in_loi` | `_print_error` | ⚠️ in |
+| `_in_loi` | `_in_error` | ⚠️ in |
 | `gui` | `send` |  |
 
 ### `render_edu`
@@ -2143,6 +2157,24 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_chup_cac_slide` | `_capture_each_slide` |  |
 | `render` | `render` |  |
 | `dung_doc` | `use_read` | ⚠️ doc dung |
+
+### `role`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `Role` | `Role` |  |
+| `writer_for` | `writer_for` |  |
+| `display_name` | `display_name` |  |
+| `canonical_slug` | `canonical_slug` |  |
+| `max_runtime_for` | `max_runtime_for` |  |
+| `min_images` | `min_images` |  |
+| `person_names_in_alt` | `person_names_in_alt` | ⚠️ in |
+| `has_label_cover` | `has_label_cover` |  |
+| `can_be_hero` | `can_be_hero` |  |
+| `search_target_for` | `search_target_for` |  |
+| `has_enough_material` | `has_enough_material` |  |
+| `product_unit_for` | `product_unit_for` |  |
+| `_build_go_map` | `_build_go_map` |  |
 
 ### `route_thieu_anh`
 
@@ -2210,8 +2242,8 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ghi_bat_buoc` | `write_required` |  |
 | `so_hang` | `count_rank` | ⚠️ hang so |
 | `_thu` | `_try` | ⚠️ thu |
-| `_in_bang` | `_print_board` | ⚠️ bang in |
-| `_in_bao_cao` | `_print_report` | ⚠️ in |
+| `_in_bang` | `_in_board` | ⚠️ bang in |
+| `_in_bao_cao` | `_in_report` | ⚠️ in |
 
 ### `scan_sources`
 
@@ -2352,7 +2384,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ung_vien_tu_khoa` | `candidate_keyword` |  |
 | `noi_anh_moi` | `say_image_new` | ⚠️ moi |
 | `lam_moi_manifest` | `fresh_manifest` |  |
-| `in_ket_qua` | `print_result` | ⚠️ in |
+| `in_ket_qua` | `in_result` | ⚠️ in |
 
 ### `tim_anh_web`
 
@@ -2374,24 +2406,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `cau_co_so` | `sentence_has_count` | ⚠️ so |
 | `gom` | `gather` |  |
 | `dung_trang` | `use_page` | ⚠️ dung |
-
-### `vai`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `Vai` | `Role` |  |
-| `vai_viet_cua` | `writer_for` |  |
-| `ten_hien` | `display_name` |  |
-| `slug_that` | `canonical_slug` |  |
-| `max_runtime_cua` | `max_runtime_for` |  |
-| `so_anh_toi_thieu` | `min_images` |  |
-| `ten_nguoi_trong_alt` | `person_names_in_alt` |  |
-| `co_nhan_bia` | `has_label_cover` | ⚠️ nhan |
-| `anh_chinh_duoc` | `can_be_hero` |  |
-| `so_anh_muc_tieu_tim` | `search_target_for` |  |
-| `du_nguyen_lieu` | `has_enough_material` |  |
-| `don_vi_san` | `product_unit_for` |  |
-| `_map_go` | `_build_go_map` |  |
 
 ### `xep_hang`
 
@@ -2576,6 +2590,14 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `card` | `MAU_CUM` | `COLOR_PHRASE` | ⚠️ mau |
 | `card` | `MAU_HANG` | `COLOR_RANK` | ⚠️ hang mau |
 | `card` | `MUTED` | `MUTED` |  |
+| `card` | `NEN_ROI_CHU` | `BACKGROUND_FALL_TEXT` | ⚠️ chu nen |
+| `card` | `NEN_ROI_DAI_LANG` | `BACKGROUND_FALL_LONG_LANG` | ⚠️ nen |
+| `card` | `NEN_ROI_LANG` | `BACKGROUND_FALL_LANG` | ⚠️ nen |
+| `card` | `NEN_ROI_LE` | `BACKGROUND_FALL_ODD` | ⚠️ nen |
+| `card` | `NEN_ROI_NHIN` | `BACKGROUND_FALL_VISION` | ⚠️ nen |
+| `card` | `NEN_ROI_TAN` | `BACKGROUND_FALL_SPREAD` | ⚠️ nen |
+| `card` | `NEN_ROI_TAN_CUNG` | `BACKGROUND_FALL_SPREAD_SAME` | ⚠️ nen |
+| `card` | `NEN_ROI_TRAN` | `BACKGROUND_FALL_CEILING` | ⚠️ nen |
 | `card` | `NGUONG_NEN_SANG` | `THRESHOLD_BACKGROUND_BRIGHT` | ⚠️ nen sang |
 | `card` | `NGUONG_ROI_DONG` | `THRESHOLD_FALL_LINE` | ⚠️ dong |
 | `card` | `PAD` | `PAD` |  |
@@ -2615,6 +2637,8 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `carousel` | `MO` | `OPEN` |  |
 | `carousel` | `NEN` | `BACKGROUND` | ⚠️ nen |
 | `carousel` | `NEN_HIEN` | `BACKGROUND_SHOW` | ⚠️ nen |
+| `carousel` | `NEN_ROI_LE` | `BACKGROUND_FALL_ODD` | ⚠️ nen |
+| `carousel` | `NEN_ROI_TAN` | `BACKGROUND_FALL_SPREAD` | ⚠️ nen |
 | `carousel` | `NGUONG_ROI_CAN_LOP` | `THRESHOLD_FALL_CAN_LAYER` |  |
 | `carousel` | `NGUONG_SANG_SANG` | `THRESHOLD_BRIGHT_BRIGHT` | ⚠️ sang |
 | `carousel` | `NGUONG_SANG_TOI` | `THRESHOLD_BRIGHT_DARK` | ⚠️ sang toi |
@@ -2649,12 +2673,15 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `chuan_bi.chung` | `TOI_DA_ANH` | `MAX_IMAGE` |  |
 | `chuan_bi.chung` | `UA` | `UA` |  |
 | `chuan_bi.nguon` | `TU_CHUNG_DAU_CAU` | `FROM_COMMON_MARK_SENTENCE` | ⚠️ dau tu |
+| `chuan_bi.nhin` | `CAU_ROI` | `SENTENCE_FALL` |  |
+| `chuan_bi.nhin` | `CAU_TU_KHOA` | `SENTENCE_KEYWORD` |  |
 | `chuan_bi.nhin` | `VISION_MODEL` | `VISION_MODEL` |  |
 | `chuan_bi.nhin` | `VISION_URL` | `VISION_URL` |  |
 | `chuan_bi.tai_loc` | `CANH_NGAN_BO` | `SHORT_SIDE_DROP` | ⚠️ bo |
 | `chuan_bi.tai_loc` | `TAI_TOI_DA_BYTE` | `DOWNLOAD_MAX_BYTE` |  |
 | `chuan_bi.tai_loc` | `TOI_DA_TAI` | `MAX_DOWNLOAD` |  |
 | `chuan_bi.tai_loc` | `URL_RAC` | `URL_JUNK` |  |
+| `chuan_bi.vong_bu` | `TOI_DA_NGUON_BAI` | `MAX_ARTICLE_SOURCES` |  |
 | `chuan_bi.vong_bu` | `TOI_DA_THEM_TH` | `MAX_EXTRA_BRAND_` |  |
 | `chuan_bi.vong_bu` | `TOI_DA_TRANG_CHUP` | `MAX_PAGE_CAPTURE` |  |
 | `chuan_bi.vong_bu` | `XH_BOI_CANH_NGUON` | `XH_CONTEXT_EDGE_SOURCE` | ⚠️ canh |
@@ -2818,6 +2845,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `kite_nop` | `DRAFTS` | `DRAFTS` |  |
 | `kite_nop` | `GIOI_HAN` | `LIMIT` |  |
 | `kite_nop` | `ROOT` | `ROOT` |  |
+| `kite_nop` | `SLIDE_MOI_ANH_THAT` | `SLIDE_NEW_IMAGE_REAL` | ⚠️ moi |
 | `loai_tin` | `BANG_ANH_THEO_LOAI` | `BOARD_IMAGE_BY_TYPE` | ⚠️ bang |
 | `loai_tin` | `MAC_DINH` | `DEFAULT` |  |
 | `loai_tin` | `MA_CO_PHIEU` | `CODE_HAS_BALLOT` | ⚠️ ma |
@@ -2825,14 +2853,13 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `loai_tin` | `TU_KHOA_HA_TANG` | `KEYWORD_LOWER_LAYER` |  |
 | `luat_anh` | `CANH_NGAN_MIN` | `SHORT_SIDE_MIN` |  |
 | `luat_anh` | `CANH_NGAN_TAI` | `SHORT_SIDE_DOWNLOAD` |  |
-| `luat_anh` | `CAO_TOI_THIEU` | `HEIGHT_MIN` |  |
 | `luat_anh` | `CHART_PHANG` | `CHART_FLAT` |  |
 | `luat_anh` | `CHART_SO_MAU` | `CHART_COUNT_COLOR` | ⚠️ mau so |
+| `luat_anh` | `CUM_ANH_CHUP_LAI_MAN_HINH` | `PHRASE_IMAGE_CAPTURE_AGAIN_SCREEN_FIGURE` |  |
 | `luat_anh` | `DAU_PNG` | `MARK_PNG` | ⚠️ dau |
 | `luat_anh` | `DAY_SANG_MAX` | `BRIGHT_BOTTOM_MAX` |  |
 | `luat_anh` | `DIEN_TICH_TAI` | `ASPECT_ACCUMULATE_DOWNLOAD` |  |
 | `luat_anh` | `DUNG_SAI_TI_LE` | `USE_WRONG_RATIO` | ⚠️ dung |
-| `luat_anh` | `KHIT` | `TIGHT` |  |
 | `luat_anh` | `MAT_CANH_MAX` | `FACE_EDGE_MAX` | ⚠️ canh |
 | `luat_anh` | `NGANG_RO` | `LANDSCAPE_CLEAR` |  |
 | `luat_anh` | `NGAY_NHO_ANH` | `DATE_SMALL_IMAGE` |  |
@@ -2973,6 +3000,21 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `render_edu` | `TOI_TOI_DA_MO` | `DARK_MAX_OPEN` | ⚠️ toi |
 | `render_edu` | `VEIL_SPAN` | `VEIL_SPAN` |  |
 | `render_edu` | `WHITE` | `WHITE` |  |
+| `role` | `DEFAULT_IMAGE` | `DEFAULT_IMAGE` |  |
+| `role` | `DEFAULT_WRITE` | `DEFAULT_WRITE` |  |
+| `role` | `DISPLAY_NAME` | `DISPLAY_NAME` |  |
+| `role` | `MAX_RUNTIME` | `MAX_RUNTIME` |  |
+| `role` | `MAX_RUNTIME_IMAGE` | `MAX_RUNTIME_IMAGE` |  |
+| `role` | `NAME_BRIGHT_CAP` | `NAME_BRIGHT_CAP` | ⚠️ cap |
+| `role` | `NAME_ROLE_IMAGE` | `NAME_ROLE_IMAGE` |  |
+| `role` | `NAME_ROLE_WRITE` | `NAME_ROLE_WRITE` |  |
+| `role` | `ROLE` | `ROLE` |  |
+| `role` | `ROLE_CAROUSEL` | `ROLE_CAROUSEL` |  |
+| `role` | `ROLE_EDU` | `ROLE_EDU` |  |
+| `role` | `ROLE_IMAGE` | `ROLE_IMAGE` |  |
+| `role` | `SLUG_OLD` | `SLUG_OLD` |  |
+| `role` | `WRITE_BY_BRAND` | `WRITE_BY_BRAND` |  |
+| `role` | `WRITE_BY_SCAN` | `WRITE_BY_SCAN` |  |
 | `route_thieu_anh` | `DRAFTS` | `DRAFTS` |  |
 | `scan_business` | `BAO_LON` | `REPORT_LARGE` |  |
 | `scan_business` | `GNEWS` | `GNEWS` |  |
@@ -3099,21 +3141,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tu_lieu` | `CO_SO` | `HAS_COUNT` | ⚠️ so |
 | `tu_lieu` | `ROOT` | `ROOT` |  |
 | `tu_lieu` | `SO_BAI_KHAC` | `COUNT_ARTICLE_OTHER` | ⚠️ so |
-| `vai` | `MAC_DINH_ANH` | `DEFAULT_IMAGE` |  |
-| `vai` | `MAC_DINH_VIET` | `DEFAULT_WRITE` |  |
-| `vai` | `MAX_RUNTIME` | `MAX_RUNTIME` |  |
-| `vai` | `MAX_RUNTIME_ANH` | `MAX_RUNTIME_IMAGE` |  |
-| `vai` | `SLUG_CU` | `SLUG_OLD` | ⚠️ cu |
-| `vai` | `TEN_HIEN` | `DISPLAY_NAME` |  |
-| `vai` | `TEN_SANG_CAP` | `NAME_BRIGHT_CAP` | ⚠️ cap sang |
-| `vai` | `TEN_VAI_ANH` | `NAME_ROLE_IMAGE` |  |
-| `vai` | `TEN_VAI_VIET` | `NAME_ROLE_WRITE` |  |
-| `vai` | `VAI` | `ROLE` |  |
-| `vai` | `VAI_ANH` | `ROLE_IMAGE` |  |
-| `vai` | `VAI_CAROUSEL` | `ROLE_CAROUSEL` |  |
-| `vai` | `VAI_EDU` | `ROLE_EDU` |  |
-| `vai` | `VIET_THEO_BRAND` | `WRITE_BY_BRAND` |  |
-| `vai` | `VIET_THEO_QUET` | `WRITE_BY_SCAN` |  |
 | `xep_hang` | `ARGS_CHUP` | `ARGS_CAPTURE` |  |
 | `xep_hang` | `CAO_TOI_DA_CSS` | `HEIGHT_MAX_CSS` |  |
 | `xep_hang` | `CHU_DE` | `TOPIC` |  |
@@ -3138,4 +3165,10 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 Hai hàm/lớp top-level khác nhau trong CÙNG module mà dịch ra CÙNG một tên — rename thẳng sẽ ghi đè, gây lỗi gọi thật. Sửa bằng `overrides.json` (`"module.ten_goc": "ten_moi"`), không cần đụng bảng từ điển chung.
 
-**Không còn va chạm nào.**
+**Không còn va chạm nào** — đo trên 106 module / 1032 hàm-lớp top-level.
+
+## F2. Tên module mới đè lên tên đã dùng — PHẢI SỬA trước khi đổi tên tệp
+
+Tên tệp mới trùng một biến/tham số/def/alias đang có ở tệp khác (kể cả tests): sau rename tên đó SHADOW module → `UnboundLocalError`/pyflakes đỏ. Sửa: đổi tên module trong `cum.json` (khoá = tên tệp cũ), hoặc đổi biến cục bộ đó.
+
+**Không có.**

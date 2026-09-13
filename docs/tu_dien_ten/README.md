@@ -18,6 +18,32 @@ trùng tên sau khi dịch** (Python ghi đè định nghĩa trùng tên trong c
 đó mới là "lỗi gọi" thật). `gen.py` tự kiểm ở **mục F** và thoát mã 1 nếu còn
 va chạm. Nghĩa đúng từng chữ **không** là điều kiện.
 
+## Thực thi (LOW-50) — `rename.py`
+
+```bash
+venv/bin/python docs/tu_dien_ten/rename.py . vai --dry-run     # xem kế hoạch một module
+venv/bin/python docs/tu_dien_ten/rename.py . vai luat_anh      # đổi theo lô, test sau mỗi module
+venv/bin/python docs/tu_dien_ten/rename.py . xep_hang --no-module   # chỉ hàm/hằng, giữ tên tệp
+venv/bin/python docs/tu_dien_ten/rename.py . --package chuan_bi     # đổi thư mục gói — làm cuối
+```
+
+Mỗi module: rope đổi hàm/lớp top-level → hằng số → tên tệp (định nghĩa + mọi nơi
+gọi, `docs=False` nên **không đụng chuỗi** → khoá JSON/đường dẫn state giữ nguyên)
+→ vá chuỗi có quy tắc hẹp (`<cũ>.py` → `<mới>.py` trong .py/.md/.json/.sh trừ lịch
+sử; trong `tests/` chỉ `def cũ(`, `cũ(`, `modcũ.cũ`, tên trần trong ngoặc kép **nếu
+không phải khoá dict**; `__all__`) → shim `<cũ>.py` (`sys.modules[__name__] = <mới>`,
+chạy được cả dạng script) → `pyflakes` + `tests/chay.sh`. Đỏ là dừng.
+
+Pilot `vai.py → role.py` (13/09/2026): 13 hàm/lớp + 14 hằng + module qua 36 tệp,
+xanh sau 3 vòng vá công cụ — ba ca thật đã thành quy tắc: biến cục bộ trùng tên
+module mới (`role = sorted(...)` trong test_vai) → **mục F2**; `"$VAI"` biến shell
+bị đổi thành `"$ROLE"` → lookbehind `$`; test viết regex `vai\.so_anh_toi_thieu\(`
+→ chấp nhận `\.`/`\(`.
+
+`tudien.py` là thư viện chung của `gen.py` và `rename.py` — bảng in ra và cái sẽ
+đổi luôn là một bộ. Tên module mới hết shadow được kiểm ở **F2** (tên biến/tham
+số/def/alias trùng tên tệp mới trong tệp có import module đó).
+
 ## Tệp trong thư mục này
 
 | Tệp | Vai trò |
@@ -28,7 +54,9 @@ va chạm. Nghĩa đúng từng chữ **không** là điều kiện.
 | `moho.json` | 40 token mơ hồ (một chữ không dấu, nhiều nghĩa) + giá trị mặc định đã chọn |
 | `them.json` | Chỉ còn `PASS` — 954 token đã là English/tên riêng/benchmark, giữ nguyên |
 | `overrides.json` | 65 ca đè tuyệt đối theo `"module.tên_gốc": "tên_mới"` — thắng mọi bảng trên |
-| `gen.py` | Sinh lại `TU_DIEN_TEN_v0.md` từ 5 tệp JSON + repo; tự kiểm va chạm |
+| `tudien.py` | Thư viện chung: nạp JSON, `dich`/`dich_ten`/`dich_module`, `quet` repo, kiểm F (trùng tên) + F2 (shadow) |
+| `gen.py` | Sinh lại `TU_DIEN_TEN_v0.md` từ `tudien.py`; exit 1 khi còn F/F2 |
+| `rename.py` | Thực thi (LOW-50): rope + vá chuỗi + shim + pyflakes/tests theo lô |
 | `SOAT_NGU_NGHIA_5_module.md` | Lượt soát tay 86 hàm theo hành vi thật (tham khảo; 60 tên đã đưa vào `overrides.json`) |
 
 ## Thứ tự ưu tiên khi dịch một tên (`gen.py`)

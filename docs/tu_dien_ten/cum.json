@@ -124,7 +124,7 @@
  "env_load": "env_load",
  "ghi_chu": "notes",
  "ghi_de": "overwrite",
- "ghi_log": "log",
+ "ghi_log": "write_log",
  "ghim_manifest": "pin_manifest",
  "gia_moi_bai": "price_per_item",
  "gia_ra": "price_out",
