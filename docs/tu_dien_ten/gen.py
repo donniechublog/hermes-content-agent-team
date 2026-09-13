@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""gen.py — sinh lại TU_DIEN_TEN_nhap.md từ 4 tệp bên cạnh (cum.json / don.json /
+"""gen.py — sinh lại TU_DIEN_TEN_v0.md từ 4 tệp bên cạnh (cum.json / don.json /
 moho.json / them.json) + repo hiện tại. KHÔNG đụng mã nguồn, chỉ đọc + in ra .md.
 
 Vì sao có tệp này: đây là bước 0 của việc "đổi tên Việt không dấu -> English"
@@ -9,7 +9,8 @@ B/C/D/E cập nhật theo, thay vì phải nhờ dựng lại từ đầu.
 
 Dùng:
     cd docs/tu_dien_ten
-    python3 gen.py .
+    python3 gen.py .                      # quét repo chứa thư mục này
+    python3 gen.py . /duong/dan/repo-khac # quét một checkout khác (đủ nhánh hơn)
 
 Tiêu chí (Ông Chủ 12/09/2026): "ngữ nghĩa là gì không quan trọng, thích gán nó
 là gì cũng được, không bị lẫn lộn hàm là được" — tên dịch không cần đúng nghĩa
@@ -26,7 +27,10 @@ import sys
 from pathlib import Path
 
 S = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent
-ROOT = S.parent.parent  # docs/tu_dien_ten/.. .. = gốc repo
+# Tham so 2 (tuy chon): goc repo can quet. Mac dinh docs/tu_dien_ten/../.. — nhung
+# khi main chua gop du cac nhanh feature, tro sang checkout day du (vd nhanh
+# feat/org-id-multitenant) de bang khong hut module.
+ROOT = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else S.parent.parent
 
 # ---- quét repo: module .py trong mã chính (khong venv/hermes vendor/.claude/tests) ----
 BO_QUA = {"venv", "hermes", ".claude", "tests", "__pycache__", "drafts", "state", "assets"}
@@ -80,7 +84,7 @@ CUM = json.load(open(S / "cum.json", encoding="utf-8"))
 DON = json.load(open(S / "don.json", encoding="utf-8"))
 MO_HO = json.load(open(S / "moho.json", encoding="utf-8"))
 them = json.load(open(S / "them.json", encoding="utf-8"))
-for k, v in them["DON"].items():
+for k, v in them.get("DON", {}).items():        # v0: them.json chi con PASS
     (CUM if "_" in k else DON).setdefault(k, v)
 PASS = set(them["PASS"])
 OVERRIDES = json.load(open(S / "overrides.json", encoding="utf-8")) if (S / "overrides.json").exists() else {}
@@ -128,7 +132,7 @@ def dich_ten(mod: str, name: str, kind: str):
 mods = sorted(set(raw_mods))
 unmapped = collections.Counter()
 L = [
-    "# TỪ ĐIỂN TÊN — bản nháp bước 0 (chưa đụng mã)", "",
+    "# TỪ ĐIỂN TÊN — v0 (chưa đụng mã)", "",
     f"Sinh tự động bởi `gen.py` từ repo hiện tại: {len(mods)} module, {len(raw_defs)} def/class "
     f"({len({d[1] for d in raw_defs})} tên khác nhau), {len(set(raw_consts))} hằng số. "
     "`?token` = chưa có trong bảng; ⚠️ = token mơ hồ, phải chọn tay theo nghĩa tại chỗ.", "",
@@ -145,7 +149,9 @@ for m in mods:
     base = m.split(".")[-1]
     en = CUM.get(base)
     fl = set()
-    if en is None:
+    if base == "__init__":                 # ten dac biet cua Python, khong dich
+        en = base
+    elif en is None:
         en, fl = dich(base)
     en = ("prepare." if m.startswith("chuan_bi.") else "") + en
     L.append(f"| `{m}` | `{en}` | {('⚠️ ' + ' '.join(sorted(fl))) if fl else ''} |")
@@ -218,7 +224,7 @@ if va_cham:
 else:
     L.append("**Không còn va chạm nào.**")
 
-out = S / "TU_DIEN_TEN_nhap.md"
+out = S / "TU_DIEN_TEN_v0.md"
 out.write_text("\n".join(L), encoding="utf-8")
 so_va_cham = sum(len(v) for v in va_cham.values())
 print(f"đã ghi {out} — {len(L)} dòng, {len(unmapped)} token chưa map ({sum(unmapped.values())} lượt), "
