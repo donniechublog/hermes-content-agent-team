@@ -6,6 +6,7 @@ Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y
 import sys
 from pathlib import Path
 
+from PIL import Image
 
 import luat_anh
 import env_load
@@ -486,6 +487,18 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
               + (": " + ", ".join(_mien(t["url"]) for t in them) if them else ""), file=sys.stderr)
     wd5 = wd / "chup_nguon"
     n_chup = 0
+    # LOAI TRUNG (Ong Chu 13/09/2026, xem carousel that: "có đến 3 ảnh giống hệt
+    # nhau về nội dung, góc máy, bố cục. việc này không được phép"): nhieu bao
+    # dung CHUNG mot anh photo-wire (AP/Reuters/Getty) cho cung mot tin — chup
+    # tung trang rieng le khong qua `tai_va_loc` nen KHONG bao gio duoc so trung
+    # dHash nhu duong tai anh binh thuong. So tam chup MOI voi: (1) moi anh da
+    # co san trong `anh` (tu vong khac), (2) cac tam DA chup trong CHINH vong nay.
+    da_hash = []
+    for a0 in anh:
+        try:
+            da_hash.append(luat_anh.dhash(Image.open(a0["goc"]).convert("RGB")))
+        except Exception:                                    # noqa: BLE001
+            pass
     for u in urls[:TOI_DA_TRANG_CHUP]:
         tam = wd5 / (_mien(u).replace(".", "_") + ".png")
         c = chup_trang.chup_lead_mobile(u, tam, phien=phien)
@@ -503,6 +516,18 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
                       f"với {tieu_de[:50]!r} — bỏ, không phải bài gốc", file=sys.stderr)
                 Path(tam).unlink(missing_ok=True)
                 continue
+        try:
+            h = luat_anh.dhash(Image.open(tam).convert("RGB"))
+        except Exception:                                    # noqa: BLE001
+            h = None
+        if h is not None:
+            trung = next((h2 for h2 in da_hash if luat_anh.gan_giong(h, h2)), None)
+            if trung is not None:
+                print(f"[chup nguon] {_mien(u)}: TRÙNG ảnh đã có (cùng photo-wire, "
+                      f"lệch {bin(h ^ trung).count('1')} bit) — bỏ", file=sys.stderr)
+                Path(tam).unlink(missing_ok=True)
+                continue
+            da_hash.append(h)
         a = {"ma": f"A{len(anh) + 1}", "goc": str(tam), "url": u, "trang": u,
              "mien": _mien(u), "diem": 0, "hint_chart": False, **c}
         moi = wd / "goc" / f"{a['ma']}.png"
