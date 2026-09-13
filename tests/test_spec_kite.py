@@ -596,7 +596,7 @@ def test_hinh_chua_nhin_thi_chi_goi_y():
 def test_hinh_qua_nho_chua_nhin_khong_bi_bao_gia():
     """kite_nop tinh "chua nhin" tu `hinh` (= kb.figure_real(m), da loc >= 800px),
     KHONG doc thang m["chua_nhin"] cap manifest (tinh tren TOAN BO anh, xem
-    chuan_bi/manifest.py) — anh <800px khong bao gio la candidate cua Kite nen
+    prepare/manifest.py) — anh <800px khong bao gio la candidate cua Kite nen
     "chua nhin" cua no la nhieu, khong phai tin. Neu sau nay co ai "gon" lai
     thanh doc thang khoa manifest thi test nay do ngay: NHO se bi bao gia."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):

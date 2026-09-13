@@ -49,9 +49,9 @@ def test_danh_sach_rong_va_None_deu_ra_0():
 
 
 def test_khop_cong_thuc_cua_nguoi_ghi():
-    """Nguoi ghi (`chuan_bi.manifest.build_manifest`) phai goi CHINH ham nay —
+    """Nguoi ghi (`prepare.manifest.build_manifest`) phai goi CHINH ham nay —
     doc ma nguon de chan viec ai do chep lai cong thuc lan nua."""
-    src = (ROOT / "chuan_bi" / "manifest.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "manifest.py").read_text(encoding="utf-8")
     assert "schema.count_image_use_ok(" in src, "nguoi ghi khong dung cong thuc chung"
     assert "so_rieng = sum(" not in src, "cong thuc cu con nam lai trong nguoi ghi"
 
@@ -154,7 +154,7 @@ def test_moi_khoa_nguoi_ghi_sinh_ra_deu_co_trong_Manifest():
     """Them khoa vao dung_manifest ma quen khai o schema.Manifest thi bang khai
     bao thanh vo dung — chan tu day."""
     import ast
-    src = (ROOT / "chuan_bi" / "manifest.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "manifest.py").read_text(encoding="utf-8")
     cay = ast.parse(src)
     ham = next(n for n in ast.walk(cay)
                if isinstance(n, ast.FunctionDef) and n.name == "build_manifest")

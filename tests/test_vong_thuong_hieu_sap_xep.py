@@ -22,7 +22,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from chuan_bi import fallback_rounds  # noqa: E402
+from prepare import fallback_rounds  # noqa: E402
 
 
 def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():

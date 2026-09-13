@@ -12,11 +12,11 @@ import image_rules
 import env_load
 import ranking
 
-from chuan_bi.browser import browser_pass
-from chuan_bi.common import MAX_IMAGE, _brand_of, _write_json, _domain
-from chuan_bi.source import _leading_proper_noun, _title_page, commons_images, candidate_social, candidate_static
-from chuan_bi.vision import classify
-from chuan_bi.download_filter import download_and_filter
+from prepare.browser import browser_pass
+from prepare.common import MAX_IMAGE, _brand_of, _write_json, _domain
+from prepare.source import _leading_proper_noun, _title_page, commons_images, candidate_social, candidate_static
+from prepare.vision import classify
+from prepare.download_filter import download_and_filter
 
 
 MAX_ARTICLE_SOURCES = 6           # tran nguon bai gop (Google News + Bing News) truoc khi chup

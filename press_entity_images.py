@@ -23,7 +23,7 @@ import httpx
 
 import article_sources
 import scan_common
-from chuan_bi.common import _domain
+from prepare.common import _domain
 
 BING_RSS = "https://www.bing.com/news/search?q={q}&format=rss&mkt={mkt}"
 MKT = ("en-US", "en-GB")          # hai thi truong -> hai bo bai khac nhau (do 12/09)

@@ -49,7 +49,7 @@ def test_yandex_la_nguon_chinh_bing_tat():
 
 def test_noi_vao_vai_va_engine():
     assert "find_image_web.find_image_web(" in (ROOT / "find_more_images.py").read_text(encoding="utf-8")
-    src = (ROOT / "chuan_bi" / "fallback_rounds.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
     assert "find_image_web.find_image_web(" in src and "press_entity_images.press_entity_images(" in src, \
         "engine phai TU tim web + bao ve thuc the trong vong tim rong, khong doi vai goi"
 

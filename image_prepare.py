@@ -34,13 +34,13 @@ nen cron, SOUL va cac vai KHONG phai doi lenh. Phu thuoc mot chieu:
 
     chung  <- nguon, browser, tai_loc <- nhin <- vong_bu ;  manifest <- chung
 
-  chuan_bi/chung.py     hang so, header HTTP, doc/ghi JSON, ten mien
-  chuan_bi/nguon.py     nap nguon Finn/Vera, ung vien tinh/social, Commons
-  chuan_bi/browser.py   phien Chromium, boc anh trong trang, giai link Google News
-  chuan_bi/tai_loc.py   tai song song + loc rac/trung/do hoa, cat san
-  chuan_bi/nhin.py      vision tung anh, do hinh hoc, quyet dinh dung o dau
-  chuan_bi/vong_bu.py   ba vong bu khi kho mong (bao khac, xep hang, thuong hieu, khai niem)
-  chuan_bi/manifest.py  bang anh, cau tu lieu, brief
+  prepare/chung.py     hang so, header HTTP, doc/ghi JSON, ten mien
+  prepare/nguon.py     nap nguon Finn/Vera, ung vien tinh/social, Commons
+  prepare/browser.py   phien Chromium, boc anh trong trang, giai link Google News
+  prepare/tai_loc.py   tai song song + loc rac/trung/do hoa, cat san
+  prepare/nhin.py      vision tung anh, do hinh hoc, quyet dinh dung o dau
+  prepare/vong_bu.py   ba vong bu khi kho mong (bao khac, xep hang, thuong hieu, khai niem)
+  prepare/manifest.py  bang anh, cau tu lieu, brief
 
 Idempotent + khoa: `state/<brand>/chuan_bi/<draft_id>/` (xong.json, dang_chay.pid).
 `--lam-moi` de lam lai tu dau.
@@ -69,16 +69,16 @@ from browser_session import BrowserSession                       # noqa: E402
 import schema                                                # noqa: E402
 import role                                                   # noqa: E402
 
-from chuan_bi.common import (  # noqa: E402
+from prepare.common import (  # noqa: E402
     DRAFTS, ROOT, UA, _brand_of, _read_json, _write_json, _hdr,
 )
-from chuan_bi.manifest import (  # noqa: E402
+from prepare.manifest import (  # noqa: E402
     _article_material, contact_sheet, describe_ranking_image, ranking_brief_line, build_manifest,
 )
-from chuan_bi.source import _summary_from_img_json, load_source      # noqa: E402
-from chuan_bi.vision import _seen_image, description_image                  # noqa: E402
-from chuan_bi.download_filter import _save_crop                          # noqa: E402
-from chuan_bi.fallback_rounds import (  # noqa: E402
+from prepare.source import _summary_from_img_json, load_source      # noqa: E402
+from prepare.vision import _seen_image, description_image                  # noqa: E402
+from prepare.download_filter import _save_crop                          # noqa: E402
+from prepare.fallback_rounds import (  # noqa: E402
     _image_item_ranking, _supplement_source, _capture_ranking, _gather_and_download_image,
     _take_from_browser, _extra_announcement_page, _round_capture_source, _round_concept, _round_entity,
     capability_block_headline,

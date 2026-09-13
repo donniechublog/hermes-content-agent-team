@@ -24,7 +24,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import article_sources                                              # noqa: E402
-from chuan_bi import fallback_rounds                                  # noqa: E402
+from prepare import fallback_rounds                                  # noqa: E402
 sys.path.insert(0, str(ROOT / "tests"))
 from test_spec_dre import _ve                                 # noqa: E402
 

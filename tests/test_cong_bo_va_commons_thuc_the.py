@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import ranking                                              # noqa: E402
 import image_brand as th                                 # noqa: E402
-from chuan_bi import source as cbn, fallback_rounds                   # noqa: E402
+from prepare import source as cbn, fallback_rounds                   # noqa: E402
 
 EN = "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face"
 VI = "DeepSeek-V4.1-Flash thả trọng số: trending 1657, 75.774 lượt tải"

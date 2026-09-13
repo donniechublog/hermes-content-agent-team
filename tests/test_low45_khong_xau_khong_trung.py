@@ -5,7 +5,7 @@ MỘT ảnh (Bloomberg/Getty chụp App Store của Kimi K3) cho cả bìa lẫn
 ảnh xấu, ko ảnh trùng, bài có 8 slide thì tối thiểu phải có 3 hình thật."*
 
 Đo trên máy chủ 12/09: hai vòng quét trang ĐỘC LẬP cùng chụp lại đúng ảnh hero
-của bài TechCrunch — `_lay_anh_trang` (chuan_bi/browser.py, coi mọi `<figure>`
+của bài TechCrunch — `_lay_anh_trang` (prepare/browser.py, coi mọi `<figure>`
 là ứng viên chart) và `_vong_chup_nguon` (LOW-22, tự tìm hero khung mobile) —
 ra hai crop khác hash (dHash cách nhau 22 bit, KHÔNG bắt được bằng gần-giống)
 nên `image_rules.check_duplicate` (md5 tuyệt đối) cũng không bắt được. Ba nhóm test,
@@ -29,8 +29,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import chuan_bi.browser as browser                             # noqa: E402
-import chuan_bi.vision as vision                                   # noqa: E402
+import prepare.browser as browser                             # noqa: E402
+import prepare.vision as vision                                   # noqa: E402
 from tam import so_tam                                         # noqa: E402
 from test_spec_kite import _cover, _statement, _hinh, _m, _chay  # noqa: E402
 

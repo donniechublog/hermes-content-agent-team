@@ -30,9 +30,9 @@ import article_sources                                              # noqa: E402
 import ranking                                               # noqa: E402
 import submit_common                                              # noqa: E402
 import image_brand as th                                  # noqa: E402
-import chuan_bi.manifest as manifest                          # noqa: E402
-import chuan_bi.fallback_rounds as fallback_rounds                            # noqa: E402
-import chuan_bi.browser as browser                            # noqa: E402
+import prepare.manifest as manifest                          # noqa: E402
+import prepare.fallback_rounds as fallback_rounds                            # noqa: E402
+import prepare.browser as browser                            # noqa: E402
 
 TIEU_DE = "deepseek-v4.1-flash-max vào bảng LiveBench ở #6, 81.4 điểm, kém đầu bảng 2.4"
 
@@ -110,7 +110,7 @@ def test_brief_va_cong_nop_coi_bang_chup_that_la_bat_buoc():
 
 def test_nguoi_doc_kieu_khong_so_chuoi_tay():
     """Cong o muc ma nguon: hai noi doc phai hoi ranking.is_capture, khong so chuoi."""
-    for tep in ("chuan_bi/manifest.py", "submit_common.py"):
+    for tep in ("prepare/manifest.py", "submit_common.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
         assert 'get("kieu") == "chup"' not in src and 'get("kieu") != "chup"' not in src, tep
         assert "ranking.is_capture(" in src, f"{tep}: phai dung ranking.is_capture"
@@ -230,7 +230,7 @@ def test_browser_tran_anh_trang_cong_bo_bang_bai_goc():
         ra = {"cands": []}
         browser._take_image_page(_PageGia(6), "http://vi.du", 1, Path(tmp), ra, JS, chup_fig=False, tran=4)
         assert len(ra["cands"]) == 4
-    src = (ROOT / "chuan_bi" / "browser.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "browser.py").read_text(encoding="utf-8")
     assert 'tran=4 if t.get("loai") == "công bố"' in src, "browser_pass phai cap tran 4 cho trang cong bo"
     assert 'khac.sort(key=lambda t: t.get("loai") != "công bố")' in src, "trang cong bo phai duoc mo truoc"
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import schema
 
-from chuan_bi.common import DRAFTS, GNEWS, _read_json, _write_json
+from prepare.common import DRAFTS, GNEWS, _read_json, _write_json
 
 
 def _summary_from_img_json(draft_id: str) -> dict:

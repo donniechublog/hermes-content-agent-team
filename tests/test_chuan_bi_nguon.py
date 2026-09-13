@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`chuan_bi.source.load_source` ghi lại `.meta.json` sau khi giải mã link Google
+"""`prepare.source.load_source` ghi lại `.meta.json` sau khi giải mã link Google
 News — PHẢI trộn vào bản trên đĩa, không ghi đè cả `meta` trong bộ nhớ (F2,
 khảo sát ngoài phạm vi của audit).
 
@@ -8,7 +8,7 @@ engine nền, và `bang_den` của hermes ghi riêng `root_task` — xem docstri
 `env_load.write_json`). `approve_pick.py` đã né việc này bằng `schema.merge_meta`
 (merge, không ghi đè) đúng cho trường hợp NÓ tự nêu ra trong docstring: "write_meta
 chạy hai lần cho một bài — lúc chọn tin, RỒI LÚC GIẢI XONG LINK GOOGLE NEWS". Vế
-sau chính là lệnh gọi trong `chuan_bi/source.py`, nhưng cho tới trước bản sửa này
+sau chính là lệnh gọi trong `prepare/source.py`, nhưng cho tới trước bản sửa này
 nó ghi đè `meta` (bản trong bộ nhớ, có thể đã CŨ đi so với lúc gọi hàm — pipeline
 Kite/Dre/Ethan chạy lâu) thay vì trộn — mất đúng thứ `hop_nhat_meta` sinh ra để giữ.
 
@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import article_sources                                              # noqa: E402
-import chuan_bi.source as source                                # noqa: E402
+import prepare.source as source                                # noqa: E402
 
 GNEWS_URL = "https://news.google.com/rss/articles/CBMi_gia_lap"
 THAT_URL = "https://baothat.vi.du/bai-goc"

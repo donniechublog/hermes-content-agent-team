@@ -39,11 +39,11 @@ import article_sources                                             # noqa: E402
 import schema                                                # noqa: E402
 import role as vai_mod                                        # noqa: E402
 from browser_session import BrowserSession                       # noqa: E402
-from chuan_bi.browser import browser_pass                    # noqa: E402
-from chuan_bi.common import _write_json, _domain                  # noqa: E402
-from chuan_bi.manifest import contact_sheet, compute_derived             # noqa: E402
-from chuan_bi.vision import _seen_image                          # noqa: E402
-from chuan_bi.download_filter import download_and_filter                      # noqa: E402
+from prepare.browser import browser_pass                    # noqa: E402
+from prepare.common import _write_json, _domain                  # noqa: E402
+from prepare.manifest import contact_sheet, compute_derived             # noqa: E402
+from prepare.vision import _seen_image                          # noqa: E402
+from prepare.download_filter import download_and_filter                      # noqa: E402
 
 MAX_TURN = 3             # moi bai toi da 3 luot tim them (Ong Chu 12/09/2026)
 COUNT_REPORT_NEW_TURN = 4         # bao moi hoi Bing moi luot

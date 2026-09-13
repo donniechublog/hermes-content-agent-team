@@ -72,7 +72,7 @@ def test_tu_khoa_khai_niem_them_dung_truoc():
 
 def test_category_ep_chup_bang_xep_hang():
     """MODEL/BENCHMARK ép `tin_xep_hang=True` dù tiêu đề không có '#1'/'top'."""
-    from chuan_bi import fallback_rounds
+    from prepare import fallback_rounds
     goi = {}
     with mock.patch.object(fallback_rounds.ranking, "is_ranking_story", return_value=False), \
          mock.patch.object(fallback_rounds.ranking, "extract_model", return_value=[]):
@@ -88,7 +88,7 @@ def test_category_ep_chup_bang_xep_hang():
 
 
 def test_ghep_hai_hang_chi_khi_ma():
-    from chuan_bi import manifest
+    from prepare import manifest
     anh = [{"ma": "A1", "dung": ["bìa"], "lien_quan": True,
             "thuong_hieu": {"khoa": "nvidia", "loai": "logo"}},
            {"ma": "A2", "dung": ["bìa"], "lien_quan": True,

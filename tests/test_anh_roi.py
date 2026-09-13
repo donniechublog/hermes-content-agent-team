@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PIL import Image, ImageDraw  # noqa: E402
 
-import chuan_bi.vision as vision  # noqa: E402
+import prepare.vision as vision  # noqa: E402
 from tam import so_tam  # noqa: E402
 
 

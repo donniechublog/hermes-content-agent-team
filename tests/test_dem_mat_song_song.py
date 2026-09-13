@@ -51,7 +51,7 @@ def test_song_song_khong_mat_ket_qua_nao():
 
 def test_nhin_ghi_chu_khi_cong_mat_khong_chay():
     """None (khong chay) phai LO ra o ghi_chu, khong lang le thanh 0 mat (C1)."""
-    import chuan_bi.vision as vision
+    import prepare.vision as vision
     cu = image_rules.count_faces
     image_rules.count_faces = lambda p: None
     try:

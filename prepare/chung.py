@@ -6,7 +6,7 @@ trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import chung` 
 (ticket con của LOW-50)."""
 import sys as _sys
 
-import chuan_bi.common as _new
+import prepare.common as _new
 
 _sys.modules[__name__] = _new
 

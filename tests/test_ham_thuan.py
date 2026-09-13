@@ -358,7 +358,7 @@ def test_moi_duong_tai_deu_qua_cong():
     import ast
     # `_tai_bytes` sang chuan_bi/tai_loc.py khi tach goi 09/09/2026 (audit A1) —
     # cong host van phai duoc goi y nhu cu, chi doi cho tim.
-    for tep, ham in [("chuan_bi/download_filter.py", "_download_bytes"), ("article_images.py", "_download"),
+    for tep, ham in [("prepare/download_filter.py", "_download_bytes"), ("article_images.py", "_download"),
                      ("capture_chart.py", "download_image"), ("article_extract.py", "fetch")]:
         cay = ast.parse((ROOT / tep).read_text(encoding="utf-8"))
         f = next((n for n in ast.walk(cay)

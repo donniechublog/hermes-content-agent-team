@@ -16,7 +16,7 @@ import image_rules
 import scan_common
 import env_load                                              # noqa: E402
 
-from chuan_bi.common import MAX_IMAGE, _original_domain, _hdr, _domain
+from prepare.common import MAX_IMAGE, _original_domain, _hdr, _domain
 
 
 # Nguong (cung goc voi luat_anh; o day chi la phan CHON anh de tai)

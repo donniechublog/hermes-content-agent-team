@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from PIL import Image                                         # noqa: E402
-import chuan_bi.vision as vision                                  # noqa: E202,E402
+import prepare.vision as vision                                  # noqa: E202,E402
 
 
 class _Resp:

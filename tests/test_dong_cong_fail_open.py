@@ -7,7 +7,7 @@ Anthropic đều lọt bìa dù router ĐÃ TRẢ LỜI — chỉ là câu trả
 được dòng LIEN_QUAN, và mọi nơi lọc `dung_duoc` viết `lien_quan is not False`
 nên None trôi qua như đã duyệt.
 
-Luật mới trong `chuan_bi.vision.description_image`:
+Luật mới trong `prepare.vision.description_image`:
   - HỎI ĐƯỢC nhưng không đọc ra LIEN_QUAN -> hỏi lại ĐÚNG 1 LẦN; vẫn không đọc
     ra thì COI LÀ RỚT (`False`), không còn là `None`.
   - KHÔNG HỎI ĐƯỢC (thiếu key, hoặc mạng/router hỏng ngay từ lần đầu) -> giữ
@@ -23,7 +23,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import chuan_bi.vision as vision                                   # noqa: E402
+import prepare.vision as vision                                   # noqa: E402
 
 _TAM = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
 _TAM.write(b"\x89PNG\r\n\x1a\n" + b"\0" * 32)

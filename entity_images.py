@@ -30,7 +30,7 @@ MAX_NEW_ENTITY = 2      # anh moi thuc the tu Commons
 
 def entity_within_title(tieu_de: str, models: list | None = None) -> list:
     """Các cụm tên riêng (viết hoa liên tiếp) + tên model, bỏ trùng, giữ thứ tự."""
-    from chuan_bi.source import _leading_proper_noun
+    from prepare.source import _leading_proper_noun
     import article_sources
     ra = []
     t = article_sources.strip_site_suffix(re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or ""))

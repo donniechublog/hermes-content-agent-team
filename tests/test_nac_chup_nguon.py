@@ -19,7 +19,7 @@ import capture_page  # noqa: E402
 import image_rules  # noqa: E402
 import browser_session  # noqa: E402
 import ranking  # noqa: E402
-from chuan_bi import fallback_rounds  # noqa: E402
+from prepare import fallback_rounds  # noqa: E402
 
 
 def test_hang_so_mobile_chi_co_mot_ban():

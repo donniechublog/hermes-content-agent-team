@@ -27,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import role                                                    # noqa: E402
-from chuan_bi.manifest import build_manifest                   # noqa: E402
+from prepare.manifest import build_manifest                   # noqa: E402
 
 
 def _anh(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:

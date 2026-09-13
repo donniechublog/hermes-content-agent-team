@@ -13,7 +13,7 @@ import image_rules
 import schema
 import role as vai_mod                 # `vai` la ten tham so o vai ham duoi
 
-from chuan_bi.common import ROOT, _brand_of
+from prepare.common import ROOT, _brand_of
 
 
 def describe_ranking_image(m: dict) -> str:

@@ -6,7 +6,7 @@ trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import tai_loc
 (ticket con của LOW-50)."""
 import sys as _sys
 
-import chuan_bi.download_filter as _new
+import prepare.download_filter as _new
 
 _sys.modules[__name__] = _new
 

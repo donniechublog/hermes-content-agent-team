@@ -25,7 +25,7 @@ import schema                                                 # noqa: E402
 import task_bodies                                            # noqa: E402
 import role                                                    # noqa: E402
 import find_more_images                                           # noqa: E402
-from chuan_bi import manifest                                 # noqa: E402
+from prepare import manifest                                 # noqa: E402
 
 
 def _a(**k):
@@ -129,7 +129,7 @@ def test_openverse_chi_lay_anh_cc_du_lon():
     assert [c["anh"] for c in ra] == ["https://u/a.jpg"]
     assert ra[0]["tu"] == "openverse" and ra[0]["giay_phep"] == "by"
     assert find_more_images.filter_openverse({}, "x", 8) == [] and find_more_images.filter_openverse(None, "x", 8) == []
-    src = (ROOT / "chuan_bi" / "download_filter.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "download_filter.py").read_text(encoding="utf-8")
     assert '"openverse"' in src, "download_and_filter se vut anh Openverse vi host khac trang (flickr cdn)"
 
 
@@ -148,7 +148,7 @@ def test_anh_commons_qua_to_lay_ban_thumb():
 
 
 def test_vong_tim_rong_noi_ra_tung_buoc():
-    src = (ROOT / "chuan_bi" / "fallback_rounds.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
     for dau in ("browser boc", "Commons", "tai + loc"):
         assert f"[tim rong] {dau}" in src, f"vong tim rong im lang o buoc: {dau}"
 

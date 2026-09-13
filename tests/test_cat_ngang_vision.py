@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`chuan_bi.vision.classify` phai HOI vision cat_ngang_ok cho anh ngang cao,
+"""`prepare.vision.classify` phai HOI vision cat_ngang_ok cho anh ngang cao,
 khong lai de "NEU" mo ho cho writer doan (su co 12/09/2026, t_a8ffd2f6 lan hai).
 
 Dre chay that voi bo anh da co du 8 tam ("du 6 slide" theo cong thuc cu), nhung
@@ -18,7 +18,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from chuan_bi import vision                                     # noqa: E402
+from prepare import vision                                     # noqa: E402
 
 
 def _bat_stderr(ham):
@@ -116,7 +116,7 @@ def test_hong_vision_giu_cau_dieu_kien_cu_khong_chan_writer():
         assert any("NẾU" in d for d in a["dung"]), "vision hong thi giu cau dieu kien cu, khong tu quyet dinh thay writer"
 
 
-from chuan_bi.vision import classify  # noqa: E402  (import sau de mock luat_anh o test rieng khong dinh)
+from prepare.vision import classify  # noqa: E402  (import sau de mock luat_anh o test rieng khong dinh)
 
 
 if __name__ == "__main__":

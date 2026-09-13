@@ -13,7 +13,7 @@ import image_rules
 import env_load
 from browser_session import session_or_new
 
-from chuan_bi.common import GNEWS, _domain
+from prepare.common import GNEWS, _domain
 
 
 def _js_browser() -> dict:

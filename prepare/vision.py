@@ -15,8 +15,8 @@ import image_rules
 import env_load
 import role
 
-from chuan_bi.source import _leading_proper_noun
-from chuan_bi.download_filter import _chart_by_figure, _save_crop
+from prepare.source import _leading_proper_noun
+from prepare.download_filter import _chart_by_figure, _save_crop
 
 
 VISION_MODEL = env_load.VISION_MODEL

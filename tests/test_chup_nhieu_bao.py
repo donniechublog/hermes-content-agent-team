@@ -67,7 +67,7 @@ def test_anh_qua_cao_duoc_thu_nho_vua_khung_khong_bi_cat():
 
 
 def test_vong_chup_giu_moi_tam_khong_dung_o_tam_dau():
-    src = (ROOT / "chuan_bi" / "fallback_rounds.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
     vong = src[src.index("def _round_capture_source"):src.index("def _round_concept")]
     assert "MAX_PAGE_CAPTURE" in vong
     assert "\n        break\n" not in vong, "khong duoc break sau tam dau — carousel can nhieu slide"
@@ -81,7 +81,7 @@ def test_dem_nen_chup_nguon_la_den_khong_lay_mau_trang_nguon():
     them lop mo (_layer_if_can) len tren de chu doc duoc - chinh la "vet nhat".
     Dem DEN co dinh: khop voi nen toi cua carousel va voi nen anh, khong con
     khoang trang, khong can lop phu."""
-    src = (ROOT / "chuan_bi" / "fallback_rounds.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
     vong = src[src.index("def _round_capture_source"):src.index("def _round_concept")]
     assert 'count_background(tam, moi, "#000000")' in vong, (
         "phai dem nen DEN co dinh, khong sample mau nen (thuong la trang) "
@@ -89,7 +89,7 @@ def test_dem_nen_chup_nguon_la_den_khong_lay_mau_trang_nguon():
 
 
 def test_tran_chup_du_cho_mot_carousel():
-    from chuan_bi import fallback_rounds
+    from prepare import fallback_rounds
     import carousel
     assert fallback_rounds.MAX_PAGE_CAPTURE >= carousel.MIN_SLIDE, \
         f"tran chup {fallback_rounds.MAX_PAGE_CAPTURE} < {carousel.MIN_SLIDE} slide toi thieu"

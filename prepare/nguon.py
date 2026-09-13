@@ -6,7 +6,7 @@ trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import nguon` 
 (ticket con của LOW-50)."""
 import sys as _sys
 
-import chuan_bi.source as _new
+import prepare.source as _new
 
 _sys.modules[__name__] = _new
 

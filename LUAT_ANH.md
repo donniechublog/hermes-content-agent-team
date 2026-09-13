@@ -697,7 +697,7 @@ trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/m
 **Cổng "không được lệch tone" ĐÃ BỎ (13/09/2026)** — `luat_anh.kiem_lech_tone`
 (và bản dùng trực tiếp `luat_anh.lech_tone` trong `dre_submit.py`) không còn chặn
 gì, ở mọi vai. Ghép hai ảnh dù khác tone hẳn (một nền trắng một nền đen) vẫn
-qua được cổng; `chuan_bi/manifest.py::cap_ghep` cũng không còn loại cặp lệch
+qua được cổng; `prepare/manifest.py::cap_ghep` cũng không còn loại cặp lệch
 tone khỏi gợi ý. Việc chọn cặp cùng tone cho đẹp giờ là **gu**, không phải luật.
 
 ---
@@ -778,7 +778,7 @@ cho nghiêm chỉnh, đừng nham nhở"*.
 - **Ảnh rối** = nhiều chữ in sẵn đè lên hình (tiêu đề báo, banner chữ,
   infographic nhồi chữ), chụp màn hình web/app nhiều chữ, cắt ghép nhiều hình,
   đồ hoạ nhồi nhét. Biểu đồ/bảng số liệu gọn gàng **không** tính là rối. Chỉ
-  con mắt phân biệt được: vision trả thêm dòng `ROI` (`chuan_bi/nhin.py`,
+  con mắt phân biệt được: vision trả thêm dòng `ROI` (`prepare/nhin.py`,
   `CAU_ROI`), ghi vào manifest thành `roi`.
 - **Không ưu tiên:** ảnh rối không bao giờ là bìa. Làm thân chỉ khi **hết ảnh
   sạch** — `nop_chung.kiem_anh_roi` chặn Dre và Ethan nếu còn ảnh sạch dùng

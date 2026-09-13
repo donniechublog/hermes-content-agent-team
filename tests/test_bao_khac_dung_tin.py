@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "tests"))
 import article_sources                                             # noqa: E402
 import capture_page                                            # noqa: E402
-from chuan_bi import fallback_rounds                                 # noqa: E402
+from prepare import fallback_rounds                                 # noqa: E402
 from test_nac_chup_nguon import _anh_gia                     # noqa: E402
 
 HF = "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face"

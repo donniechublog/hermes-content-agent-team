@@ -70,7 +70,7 @@ def test_vong_thuc_the_hoi_cau_khai_niem_khong_hoi_anh_cua_su_viec():
     """Đo trên máy chủ 12/09/2026: ảnh Wikipedia của Anthropic bị vision từ chối vì
     nấc hỏi câu mặc định "có phải ảnh của sự việc". Nấc phải gắn `khai_niem`
     trước `classify` để đi câu "có đúng là <thực thể>, hợp bìa"."""
-    src = (ROOT / "chuan_bi" / "fallback_rounds.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
     i = src.index("def _round_entity")
     than = src[i:i + 3000]
     assert 'a["khai_niem"] = {"tu_khoa": a["thuc_the"]["ten"]' in than

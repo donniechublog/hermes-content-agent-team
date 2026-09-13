@@ -5,7 +5,7 @@ thuong), khong duoc them thang vao carousel.
 Ong Chu 13/09/2026, xem carousel that: *"có đến 3 ảnh giống hệt nhau về nội
 dung, góc máy, bố cục. việc này ko được phép"*. Nhieu bao dung CHUNG mot anh
 photo-wire (AP/Reuters/Getty) cho cung mot tin bao; `_vong_chup_nguon` chup
-tung trang RIENG LE, khong di qua `chuan_bi.download_filter.download_and_filter` (noi CO san
+tung trang RIENG LE, khong di qua `prepare.download_filter.download_and_filter` (noi CO san
 co che so dHash) nen chua bao gio duoc so trung.
 
 Chay:  venv/bin/python tests/test_loai_trung_chup_nguon.py
@@ -17,7 +17,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from chuan_bi import fallback_rounds                                   # noqa: E402
+from prepare import fallback_rounds                                   # noqa: E402
 
 
 def _anh(tmp: Path, ten: str, seed: int) -> Path:
