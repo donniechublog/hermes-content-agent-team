@@ -324,15 +324,47 @@ def _va_import_cu(root: Path, cu_full: str, moi_full: str) -> int:
     return n
 
 
+_RE_KHOA = re.compile(r'\[\s*["\']([A-Za-z_][\w]*)["\']\s*\]|\.get\(\s*["\']([A-Za-z_][\w]*)["\']|["\']([A-Za-z_][\w]*)["\']\s*:')
+
+
+def _khoa_trong(text: str) -> set:
+    """Ten dung lam khoa dict/JSON trong `text`. `-> "Lop":` (chu thich kieu tra ve
+    dang chuoi) KHONG phai khoa — lo 4: `_HangFIFO` bi coi la khoa nen khong doi."""
+    ra = set()
+    for m in _RE_KHOA.finditer(text):
+        if m.group(3) and re.search(r"->\s*$", text[:m.start()]):
+            continue
+        ra.add(next(g for g in m.groups() if g))
+    return ra
+
+
+def _va_chu_thich_kieu(root: Path, old: str, new: str) -> int:
+    """Chu thich kieu dang CHUOI (`-> "_HangFIFO"`, `x: "Lop"`, `list["Lop"]`) —
+    rope docs=False khong doi (lo 4: pyflakes undefined name '_HangFIFO')."""
+    pats = [(rf'(->\s*)(["\']){re.escape(old)}\2', rf"\g<1>\g<2>{new}\g<2>"),
+            (rf'(\w+:\s*)(["\']){re.escape(old)}\2(?=\s*[,)=\]])', rf"\g<1>\g<2>{new}\g<2>"),
+            (rf'(\[)(["\']){re.escape(old)}\2(?=\])', rf"\g<1>\g<2>{new}\g<2>")]
+    n = 0
+    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+        s = f.read_text(encoding="utf-8")
+        if old not in s:
+            continue
+        moi = s
+        for pat, rep in pats:
+            moi, k = re.subn(pat, rep, moi)
+            n += k
+        if moi != s:
+            f.write_text(moi, encoding="utf-8")
+    return n
+
+
 def _khoa_dict_thuan(root: Path) -> set:
     """Chi cac khoa dict/JSON that (m["x"], .get("x"), "x":), KHONG gom ten module —
     dung de quyet doi `"ten_module_cu"` tran trong tests (lo 2: task body co
     "tim_anh_them" tran, test soi `kt.index("tim_anh_them")`)."""
-    pat = re.compile(r'\[\s*["\']([A-Za-z_][\w]*)["\']\s*\]|\.get\(\s*["\']([A-Za-z_][\w]*)["\']|["\']([A-Za-z_][\w]*)["\']\s*:')
     ra = set()
     for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
-        for m in pat.finditer(f.read_text(encoding="utf-8")):
-            ra.add(next(g for g in m.groups() if g))
+        ra |= _khoa_trong(f.read_text(encoding="utf-8"))
     ra |= {p.name for p in root.iterdir() if p.is_dir()}      # ten thu muc = duong dan tren dia
     return ra
 
@@ -343,11 +375,9 @@ def _khoa_dict(root: Path) -> set:
     k = str(root)
     if k in _KHOA_DICT_CACHE:
         return _KHOA_DICT_CACHE[k]
-    pat = re.compile(r'\[\s*["\']([A-Za-z_][\w]*)["\']\s*\]|\.get\(\s*["\']([A-Za-z_][\w]*)["\']|["\']([A-Za-z_][\w]*)["\']\s*:')
     ra = set()
     for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
-        for m in pat.finditer(f.read_text(encoding="utf-8")):
-            ra.add(next(g for g in m.groups() if g))
+        ra |= _khoa_trong(f.read_text(encoding="utf-8"))
     # Ten MODULE/GOI/THU MUC cung la chuoi tren dia (`ROOT / "chuan_bi" / "nhin.py"`,
     # `state/<brand>/chuan_bi/`): lo 1 doi `"chuan_bi"` -> `"prepare_article"` vi
     # ham `chuan_bi` trong anh_chuan_bi trung ten goi. Khong bao gio doi ten tran nay.
@@ -501,11 +531,14 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
         re_exp = _modules_re_export(root, mod_hien, new)
         thay_dong.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*([\w.]+)\s*,\s*[\"']){re.escape(old)}(?=[\"'])", new, re_exp))
         thay_dong.append((rf"(patch\([\"']([\w.]*)\.){re.escape(old)}(?=[\"'])", new, re_exp))
+    khoa_json = _khoa_dict(root)
     hang_tran = []
     for old, new, _kind in defs:
         # Ten ham NHIEU TU (`_vong_thuc_the`) dung tran o cuoi chuoi soi nguon
         # (`= _vong_thuc_the"` — khong co ngoac): doi trong test soi nguon.
-        if "_" in old.strip("_"):
+        # KHONG khi ten do la khoa dict (lo 4: `"trang_thai": "running"` trong
+        # test_bao_treo bi doi thanh "status" vi ham duyet_co_so.trang_thai).
+        if "_" in old.strip("_") and old not in khoa_json:
             hang_tran.append((rf"(?<![\w$]){re.escape(old)}(?![\w])", new))
     for old, new in consts:
         # `$` loại trừ biến shell trong chuỗi test ("$VAI" của quet_daily_scan.sh
@@ -514,8 +547,11 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
         # ("BAO CAO BI CAT", "NGUON KHONG LAY DUOC", JS `Y0+CAO`) — lo 2 doi bua
         # lam test_bang_nova/test_render_edu do. Chi doi tran khi ten co `_`,
         # va chi trong test SOI NGUON; con lai phai co `mod.` phia truoc.
-        if "_" in old:
+        if "_" in old and old not in khoa_json:
             hang_tran.append((rf"(?<![\w.$]){re.escape(old)}\b", new))
+            # Hang NHIEU TU trong ngoac kep o MOI test (`_HANG_DE = ("TEP_UPSTREAM", …)`
+            # roi getattr theo vong lap — lo 4): ten HANG_CO_GACH khong la du lieu.
+            thay.append((rf'(["\']){re.escape(old)}\1', rf"\g<1>{new}\g<1>"))
         thay.append((rf"(?<![\w]){re.escape(mc)}(\\?\.){re.escape(old)}\b", rf"{mm}\g<1>{new}"))
         re_exp = _modules_re_export(root, mod_hien, new)
         thay_dong.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*([\w.]+)\s*,\s*[\"']){re.escape(old)}(?=[\"'])", new, re_exp))
@@ -528,7 +564,6 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     # Tên TRẦN trong ngoặc kép ("du_nguyen_lieu") — test soi AST hỏi tên hàm.
     # CHỈ khi tên đó không phải khoá dict/JSON ở đâu trong mã (m["xep_hang"],
     # .get("xep_hang"), "xep_hang":) — khoá trên đĩa không được đổi.
-    khoa_json = _khoa_dict(root)
     tran = [(rf'(["\']){re.escape(old)}\1', rf"\g<1>{new}\g<1>")
             for old, new, _k in defs if old not in khoa_json]
     tran += [(rf'(["\']){re.escape(old)}\1', rf"\g<1>{new}\g<1>")
@@ -639,7 +674,7 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
             continue
         tep = _rope_rename(proj, res_path, off, new)
         k = (_va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
-             + _va_fstring(root, mod, old, new))
+             + _va_fstring(root, mod, old, new) + _va_chu_thich_kieu(root, old, new))
         _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 2) hằng số
     for old, new in consts:
