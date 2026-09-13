@@ -4,13 +4,13 @@ chỉ cần search tin tức theo từ khóa kimi / moonshot / kimi k3... là c�
 article có ảnh dùng được mà, đã là ảnh khái niệm thì cần gì phải cầu kỳ?"*
 
 Đo thật 13/09/2026: Moonshot AI có QID Wikidata (`Q130270266`) nhưng RỖNG (0 ảnh
-công ty/logo/founder) — `anh_hang`/`anh_wikidata` đều ra 0, và trước bản vá này
-`_vong_thuong_hieu` bỏ cuộc luôn, rơi thẳng xuống ảnh khái niệm chung chung (cờ
+công ty/logo/founder) — `vendor_images`/`image_wikidata` đều ra 0, và trước bản vá này
+`_round_brand` bỏ cuộc luôn, rơi thẳng xuống ảnh khái niệm chung chung (cờ
 Trung Quốc). Hai việc:
 
-  1. `nguon_bai.bao_ve_tu_khoa`: tìm báo THẬT theo TỪ KHOÁ (tên hãng), KHÔNG đòi
-     "cùng một sự kiện" như `bao_khac_bing` — chỉ cần bài NÓI VỀ từ khoá đó.
-  2. `_vong_thuong_hieu` gọi hàm này khi Commons/Wikidata của một hãng RỖNG, quét
+  1. `article_sources.report_about_keyword`: tìm báo THẬT theo TỪ KHOÁ (tên hãng), KHÔNG đòi
+     "cùng một sự kiện" như `other_outlets_bing` — chỉ cần bài NÓI VỀ từ khoá đó.
+  2. `_round_brand` gọi hàm này khi Commons/Wikidata của một hãng RỖNG, quét
      ảnh từ các báo tìm được (`browser_pass`, đã sửa LOW-45 phần 1 nên không vớ
      nhầm `<figure>` là chart) thay vì bỏ cuộc.
 
@@ -23,8 +23,8 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import nguon_bai                                              # noqa: E402
-from chuan_bi import vong_bu                                  # noqa: E402
+import article_sources                                              # noqa: E402
+from prepare import fallback_rounds                                  # noqa: E402
 sys.path.insert(0, str(ROOT / "tests"))
 from test_spec_dre import _ve                                 # noqa: E402
 
@@ -41,15 +41,15 @@ class _RSS:
 
 
 def test_bao_ve_tu_khoa_khong_doi_cung_su_kien():
-    """Khác `bao_khac_bing` (đòi khớp MỘT sự kiện gốc qua `cung_tin(a, b)` — hai
-    tham số): thân hàm không gọi `cung_tin(`, chỉ dùng `tu_cung_tin(` (tách từ,
+    """Khác `other_outlets_bing` (đòi khớp MỘT sự kiện gốc qua `same_story(a, b)` — hai
+    tham số): thân hàm không gọi `same_story(`, chỉ dùng `story_tokens(` (tách từ,
     một tham số) để so với chính từ khoá."""
     import re
-    src = (ROOT / "nguon_bai.py").read_text(encoding="utf-8")
-    than = src[src.index("def bao_ve_tu_khoa("):src.index("\ndef tim(")]
+    src = (ROOT / "article_sources.py").read_text(encoding="utf-8")
+    than = src[src.index("def report_about_keyword("):src.index("\ndef find(")]
     assert not re.search(r"(?<!tu_)\bcung_tin\(", than), \
-        "bao_ve_tu_khoa không được đòi 'cùng một sự kiện' (cung_tin)"
-    assert "tu_cung_tin(tu_khoa)" in than
+        "report_about_keyword không được đòi 'cùng một sự kiện' (same_story)"
+    assert "story_tokens(tu_khoa)" in than
 
 
 def test_bao_ve_tu_khoa_loc_theo_tu_khoa_khong_theo_su_kien_goc():
@@ -68,10 +68,10 @@ def test_bao_ve_tu_khoa_loc_theo_tu_khoa_khong_theo_su_kien_goc():
         import types
         return types.SimpleNamespace(status_code=200, url=url)
 
-    with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
+    with mock.patch.object(article_sources, "_download", side_effect=_tai_gia), \
          mock.patch("httpx.head", side_effect=_head_gia), \
-         mock.patch("quet_chung.url_an_toan", return_value=True):
-        ra = nguon_bai.bao_ve_tu_khoa("Moonshot AI", so=6)
+         mock.patch("scan_common.url_hide_whole", return_value=True):
+        ra = article_sources.report_about_keyword("Moonshot AI", so=6)
 
     mien = {r["toa_soan"] for r in ra}
     assert mien == {"https://a.example", "https://c.example"}, ra
@@ -81,7 +81,7 @@ def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
     """Đo thật 13/09/2026 (test thử Kite trên tin Anthropic/Moonshot): query
     "Anthropic" — dù chỉ là tên hãng tiếng Anh, không có dấu — vẫn khiến Bing
     News trả về CẢ báo tiếng Việt (cafebiz.vn, thanhnien.vn...) vì đủ từ khoá
-    khớp tiêu đề. `co_tieng_viet(tu_khoa)` ở đầu hàm chỉ chặn được TỪ KHOÁ đầu
+    khớp tiêu đề. `has_vietnamese(tu_khoa)` ở đầu hàm chỉ chặn được TỪ KHOÁ đầu
     vào — không chặn được đây. LUAT_ANH §1.2d: "tìm kiếm bằng tiếng Anh hoặc
     tiếng Trung, tuyệt đối ko được dùng ngôn ngữ khác" — phải lọc trên chính
     TIÊU ĐỀ bài trả về."""
@@ -97,10 +97,10 @@ def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
         import types
         return types.SimpleNamespace(status_code=200, url=url)
 
-    with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
+    with mock.patch.object(article_sources, "_download", side_effect=_tai_gia), \
          mock.patch("httpx.head", side_effect=_head_gia), \
-         mock.patch("quet_chung.url_an_toan", return_value=True):
-        ra = nguon_bai.bao_ve_tu_khoa("Anthropic", so=6)
+         mock.patch("scan_common.url_hide_whole", return_value=True):
+        ra = article_sources.report_about_keyword("Anthropic", so=6)
 
     assert {r["toa_soan"] for r in ra} == {"https://en.example"}, ra
 
@@ -108,7 +108,7 @@ def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
 def test_bao_ve_tu_khoa_khong_gioi_han_thoi_gian():
     """LUAT_ANH §1.2d (13/09/2026): "được tìm không giới hạn thời gian, sự
     kiện". Một bài rất CŨ (2019) về đúng từ khoá vẫn phải được nhận — mặc định
-    `ngay=None` nghĩa là KHÔNG lọc theo ngày (khác `bao_khac_bing`, vẫn lọc
+    `ngay=None` nghĩa là KHÔNG lọc theo ngày (khác `other_outlets_bing`, vẫn lọc
     ngày vì nó tìm 'báo khác CÙNG một sự kiện' — sự kiện thì có mốc thời gian
     thật, khác hẳn 'ảnh minh hoạ về hãng' thì không)."""
     items = [("https://cu.example/1", "Moonshot AI office photos from 2019")]
@@ -120,17 +120,17 @@ def test_bao_ve_tu_khoa_khong_gioi_han_thoi_gian():
         import types
         return types.SimpleNamespace(status_code=200, url=url)
 
-    with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
+    with mock.patch.object(article_sources, "_download", side_effect=_tai_gia), \
          mock.patch("httpx.head", side_effect=_head_gia), \
-         mock.patch("quet_chung.url_an_toan", return_value=True):
-        ra = nguon_bai.bao_ve_tu_khoa("Moonshot AI", so=6)
+         mock.patch("scan_common.url_hide_whole", return_value=True):
+        ra = article_sources.report_about_keyword("Moonshot AI", so=6)
 
     assert {r["toa_soan"] for r in ra} == {"https://cu.example"}, ra
 
 
 def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
-    """`_vong_thuong_hieu`: Commons/Wikidata rỗng cho một hãng -> gọi
-    `bao_ve_tu_khoa` rồi `browser_pass`, ứng viên tìm được gắn `thuong_hieu`
+    """`_round_brand`: Commons/Wikidata rỗng cho một hãng -> gọi
+    `report_about_keyword` rồi `browser_pass`, ứng viên tìm được gắn `thuong_hieu`
     và cuối cùng có mặt trong `dung_duoc` (fail trên code cũ: hãng rỗng thì
     dừng, 0 ảnh, dù có báo thật ngoài kia)."""
     with tempfile.TemporaryDirectory() as d:
@@ -149,23 +149,23 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
                 ra.append(c2)
             return ra
 
-        import luat_anh
-        with mock.patch("anh_thuong_hieu.hang_trong_tin",
+        import image_rules
+        with mock.patch("image_brand.vendors_in_story",
                         return_value=[{"hang": "Moonshot AI", "khoa": "moonshot"}]), \
-             mock.patch("anh_thuong_hieu.anh_hang", return_value=[]), \
-             mock.patch.object(nguon_bai, "bao_ve_tu_khoa",
+             mock.patch("image_brand.vendor_images", return_value=[]), \
+             mock.patch.object(article_sources, "report_about_keyword",
                               return_value=[{"url": "https://baomoi.example/moonshot",
                                             "loai": "báo", "tieu_de": "Moonshot AI raises",
                                             "toa_soan": "https://baomoi.example"}]), \
-             mock.patch.object(vong_bu, "browser_pass",
+             mock.patch.object(fallback_rounds, "browser_pass",
                               return_value={"cands": [ung_vien], "tieu_de_en": "", "chu": "",
                                            "trang_them": []}), \
-             mock.patch.object(vong_bu, "tai_va_loc", side_effect=tai_va_loc_gia), \
-             mock.patch.object(luat_anh, "dem_mat", return_value=0), \
-             mock.patch.object(luat_anh, "la_chart", return_value=(False, "ảnh chụp thật")), \
-             mock.patch.object(luat_anh, "do_chart", return_value=(0.1, 500)), \
-             mock.patch.object(vong_bu, "_xep_hang_boi_canh", return_value=None):  # trung mang that
-            anh, dung_duoc, _ = vong_bu._vong_thuong_hieu([], "Moonshot AI raises funding", "", wd)
+             mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia), \
+             mock.patch.object(image_rules, "count_faces", return_value=0), \
+             mock.patch.object(image_rules, "is_chart", return_value=(False, "ảnh chụp thật")), \
+             mock.patch.object(image_rules, "measure_chart_signal", return_value=(0.1, 500)), \
+             mock.patch.object(fallback_rounds, "_ranking_context_edge", return_value=None):  # trung mang that
+            anh, dung_duoc, _ = fallback_rounds._round_brand([], "Moonshot AI raises funding", "", wd)
 
     assert len(anh) == 1, anh
     a = anh[0]
@@ -177,7 +177,7 @@ def test_tim_bao_chay_song_song_ke_ca_khi_commons_co_anh():
     """LUAT_ANH §1.2d (13/09/2026, Ông Chủ chốt nguyên tắc nguồn): tìm báo theo
     từ khoá KHÔNG còn là phương án cuối khi Commons rỗng — chạy SONG SONG với
     Commons cho MỌI hãng, kể cả khi Commons ĐÃ có ảnh. Fail trên code cũ (nhánh
-    `if not cands_h`): `bao_ve_tu_khoa` không được gọi vì Commons đã có 1 ảnh."""
+    `if not cands_h`): `report_about_keyword` không được gọi vì Commons đã có 1 ảnh."""
     with tempfile.TemporaryDirectory() as d:
         wd = Path(d); (wd / "goc").mkdir()
         anh_commons = {"anh": "https://commons.example/hq.jpg", "alt": "", "og": False,
@@ -190,12 +190,12 @@ def test_tim_bao_chay_song_song_ke_ca_khi_commons_co_anh():
             goi["tim_bao"] = True
             return []
 
-        with mock.patch("anh_thuong_hieu.hang_trong_tin",
+        with mock.patch("image_brand.vendors_in_story",
                         return_value=[{"hang": "Moonshot AI", "khoa": "moonshot"}]), \
-             mock.patch("anh_thuong_hieu.anh_hang", return_value=[anh_commons]), \
-             mock.patch.object(nguon_bai, "bao_ve_tu_khoa", side_effect=bao_ve_tu_khoa_gia), \
-             mock.patch.object(vong_bu, "_xep_hang_boi_canh", return_value=None):
-            vong_bu._vong_thuong_hieu([], "Moonshot AI raises funding", "", wd)
+             mock.patch("image_brand.vendor_images", return_value=[anh_commons]), \
+             mock.patch.object(article_sources, "report_about_keyword", side_effect=bao_ve_tu_khoa_gia), \
+             mock.patch.object(fallback_rounds, "_ranking_context_edge", return_value=None):
+            fallback_rounds._round_brand([], "Moonshot AI raises funding", "", wd)
 
     assert goi["tim_bao"], "tìm báo theo từ khoá phải chạy dù Commons đã có ảnh (không còn là phương án cuối)"
 

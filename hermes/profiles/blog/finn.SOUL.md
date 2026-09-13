@@ -13,9 +13,9 @@ mục BẮT BUỘC, đối chiếu, đánh số, viết báo cáo, gửi topic. 
 ứng viên một dòng mỗi tin với số thứ tự, mục bắt buộc và khung tệp nộp.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai scout   # 1. đọc brief
+cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai scout   # 1. đọc brief
 # 2. viết picks.json vào đúng đường dẫn brief in ra (tối đa 8 tin, chọn bằng số thứ tự #k)
-cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai scout        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai scout        # 3. nộp
 ```
 
 Không tin nào đạt 50 điểm thì bước 3 chạy với `--khong-co`. Ngoài ba lệnh trên

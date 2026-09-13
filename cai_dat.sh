@@ -13,7 +13,7 @@
 #   2. playwright install chromium        (goi Python co roi van phai tai browser)
 # Node da BO han 09/09/2026 (audit A6): frame.js/screenshot.js viet lai bang PIL
 # + Playwright cua Python, server khong con `npm ci` nao.
-# Ket thuc bang kiem_moi_truong.py — no moi la cho noi that may nay da san sang chua.
+# Ket thuc bang check_env.py — no moi la cho noi that may nay da san sang chua.
 #
 # Dung:
 #     hermes/scripts/../cai_dat.sh          # hoac: bash cai_dat.sh
@@ -65,14 +65,14 @@ chay "$PY" -m playwright install chromium || {
 
 # --- Kiem ------------------------------------------------------------------
 # Font (assets/fonts) va model YuNet (assets/*.onnx) DA nam trong git, khong co
-# buoc tai nao. kiem_moi_truong.py noi ro cai nao thieu.
+# buoc tai nao. check_env.py noi ro cai nao thieu.
 echo
 if [ "$THU" -eq 1 ]; then
   echo "[thu] xong — khong cai gi. Bo --thu de chay that."
   exit 0
 fi
-echo "[kiem] chay kiem_moi_truong.py"
-"$PY" kiem_moi_truong.py
+echo "[kiem] chay check_env.py"
+"$PY" check_env.py
 ma=$?
 echo
 if [ $ma -eq 0 ]; then

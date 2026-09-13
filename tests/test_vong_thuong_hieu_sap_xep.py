@@ -2,9 +2,9 @@
 """`_vong_thuong_hieu` phải TẢI ứng viên theo thứ tự điểm — đúng hợp đồng mà
 chính `tai_va_loc` tự ghi trong docstring: "Tai ung vien theo thu tu diem".
 
-`anh_thuong_hieu._ung_vien` gán điểm khác nhau theo LOẠI ảnh: nơi/sản phẩm 28 >
+`image_brand._candidate` gán điểm khác nhau theo LOẠI ảnh: nơi/sản phẩm 28 >
 người (chân dung) 24 > logo 18 — đúng ý "ảnh minh hoạ được nhiều hơn thắng ảnh
-chỉ là headshot". `_vong_tim_rong` (vong_bu.py:198) đã sort đúng; `_vong_thuong_hieu`
+chỉ là headshot". `_vong_tim_rong` (fallback_rounds.py:198) đã sort đúng; `_vong_thuong_hieu`
 thì quên, nên tin NHIỀU HÃNG ("Qualcomm ... with Amazon", docstring của chính
 hàm) nối thẳng candidate của hãng A trước hãng B theo thứ tự gọi `anh_hang`,
 không theo độ "minh hoạ được" — một chân dung của hãng xử lý trước có thể chặn
@@ -22,7 +22,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from chuan_bi import vong_bu  # noqa: E402
+from prepare import fallback_rounds  # noqa: E402
 
 
 def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
@@ -48,13 +48,13 @@ def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
         return []
 
     with tempfile.TemporaryDirectory() as d, \
-         mock.patch("anh_thuong_hieu.hang_trong_tin",
+         mock.patch("image_brand.vendors_in_story",
                    return_value=[{"hang": "HangA", "khoa": "hanga"},
                                  {"hang": "HangB", "khoa": "hangb"}]), \
-         mock.patch("anh_thuong_hieu.anh_hang", side_effect=anh_hang_gia), \
-         mock.patch.object(vong_bu, "_bao_thuong_hieu_rong", return_value=[]), \
-         mock.patch.object(vong_bu, "tai_va_loc", side_effect=tai_va_loc_gia):
-        vong_bu._vong_thuong_hieu([], "Qualcomm partners with HangB on chips", "", Path(d))
+         mock.patch("image_brand.vendor_images", side_effect=anh_hang_gia), \
+         mock.patch.object(fallback_rounds, "_report_brand_empty", return_value=[]), \
+         mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia):
+        fallback_rounds._round_brand([], "Qualcomm partners with HangB on chips", "", Path(d))
 
     assert "thu_tu_diem" in goi, "khong goi toi tai_va_loc — test khong do dung nhanh"
     assert goi["thu_tu_diem"] == sorted(goi["thu_tu_diem"], reverse=True), (
@@ -113,16 +113,16 @@ def test_moi_hang_co_it_nhat_mot_anh_truoc_khi_hang_nao_duoc_them():
         return a
 
     with tempfile.TemporaryDirectory() as d, \
-         mock.patch("anh_thuong_hieu.hang_trong_tin",
+         mock.patch("image_brand.vendors_in_story",
                    return_value=[{"hang": "Anthropic", "khoa": "anthropic"},
                                  {"hang": "Alibaba", "khoa": "alibaba"},
                                  {"hang": "Moonshot AI", "khoa": "moonshot"}]), \
-         mock.patch("anh_thuong_hieu.anh_hang", side_effect=anh_hang_gia), \
-         mock.patch.object(vong_bu, "_bao_thuong_hieu_rong", side_effect=bao_thuong_hieu_rong_gia), \
-         mock.patch.object(vong_bu, "tai_va_loc", side_effect=tai_va_loc_gia), \
-         mock.patch.object(vong_bu, "phan_loai", side_effect=phan_loai_gia):
+         mock.patch("image_brand.vendor_images", side_effect=anh_hang_gia), \
+         mock.patch.object(fallback_rounds, "_report_brand_empty", side_effect=bao_thuong_hieu_rong_gia), \
+         mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia), \
+         mock.patch.object(fallback_rounds, "classify", side_effect=phan_loai_gia):
         (Path(d) / "goc").mkdir()
-        anh, dung_duoc, _ = vong_bu._vong_thuong_hieu(
+        anh, dung_duoc, _ = fallback_rounds._round_brand(
             [], "Anthropic accuses Alibaba and Moonshot AI", "", Path(d))
 
     hang_da_len = {a["thuong_hieu"]["khoa"] for a in anh if a.get("thuong_hieu")}

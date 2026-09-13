@@ -175,8 +175,8 @@ flowchart TD
 
     subgraph S1["1 · QUÉT TIN"]
         cron1{{"cron 05:00 VN"}}:::cron
-        scan["quet_chuan_bi.py --vai scout|nova|market<br/>Finn / Nova / Vera"]:::container
-        manifest["manifest_chung/_build/_ghi<br/>+ bat_buoc.py"]:::container
+        scan["scan_prepare.py --vai scout|nova|market<br/>Finn / Nova / Vera"]:::container
+        manifest["manifest_chung/_build/_ghi<br/>+ required.py"]:::container
         candidates[("candidates_*.json")]:::datastore
         cron1 -.-> scan
         scan --> manifest
@@ -186,7 +186,7 @@ flowchart TD
 
     subgraph S2["2 · CHỌN"]
         ocnu1(["Ông Chủ<br/>trả lời số thứ tự"]):::actor
-        chontin["duyet_chon_tin.py<br/>(trong approve_service)"]:::container
+        chontin["approve_pick.py<br/>(trong approve_service)"]:::container
         tg1 -->|"số đã chọn"| ocnu1
         ocnu1 -->|"vd '1,3-Ethan, 2-Dre'"| chontin
     end
@@ -194,28 +194,28 @@ flowchart TD
     subgraph S3["3 · TẠO CẶP TASK"]
         pair["duyet_chon_tin.create_pair<br/>chạy nền anh_chuan_bi --im"]:::container
         kanban["Kanban swarm (Hermes)<br/>task ảnh → task viết (chờ ảnh)"]:::external
-        blackboard["bang_den.py<br/>ghi bảng đen (tao_root/ghi_nen)"]:::container
+        blackboard["blackboard.py<br/>ghi bảng đen (tao_root/ghi_nen)"]:::container
         chontin --> pair
         pair --> kanban
         pair --> blackboard
     end
 
     subgraph S4["4 · CHUẨN BỊ CHUNG (engine dùng chung)"]
-        prep["anh_chuan_bi.py<br/>giải mã link, research, chụp ảnh,<br/>dHash, phân loại, crop 1:1/4:5"]:::container
+        prep["image_prepare.py<br/>giải mã link, research, chụp ảnh,<br/>dHash, phân loại, crop 1:1/4:5"]:::container
         xong[("state/{brand}/chuan_bi/{id}/<br/>xong.json + bang_anh.png")]:::datastore
         kanban --> prep
         prep --> xong
     end
 
     subgraph S5["5 · DỰNG ẢNH (theo vai đã chọn)"]
-        imgRole["Ethan (card.py) · Dre (carousel.py) · Kite (render_edu.py)<br/>{vai}_chuan_bi → {vai}_nop"]:::container
+        imgRole["Ethan (card.py) · Dre (carousel.py) · Kite (render_edu.py)<br/>{vai}_prepare → {vai}_submit"]:::container
     end
     xong --> imgRole
     imgDraft[("drafts/{id}.img.json<br/>+ ban_giao.md")]:::datastore
     imgRole --> imgDraft
 
     subgraph S6["6 · VIẾT CAPTION"]
-        miles["Vai viết (Miles | Jika)<br/>{persona}_chuan_bi → {persona}_nop"]:::container
+        miles["Vai viết (Miles | Jika)<br/>{persona}_prepare → {persona}_submit"]:::container
         llm[["9router → DeepSeek v4-Flash<br/>reasoning_effort: none"]]:::llm
         draftwrite["draft_write.py"]:::container
         miles --> llm
@@ -229,7 +229,7 @@ flowchart TD
     subgraph S7["7 · DUYỆT"]
         sendcard["gửi thẻ + bản nháp kèm nút ✅/❌<br/>(topic của vai viết)"]:::container
         ocnu2(["Ông Chủ bấm ✅ / ❌"]):::actor
-        duyetbai["duyet_bai.py"]:::container
+        duyetbai["approve_post.py"]:::container
         tg2["Telegram: topic vai viết"]:::external
         capDraft --> sendcard
         sendcard ==> tg2
@@ -264,8 +264,8 @@ trong vài phút — xem chi tiết ở README §"Đội hình"):
   **không qua vòng chọn số** ở stage 2. Gin xoá chữ tiếng Anh trên ảnh nền
   (OCR+LaMa), Itachi dựng lại carousel kiểu editorial-deck (`deck.py`) **từ
   nền sạch của Gin** — quan hệ sinh/tiêu thụ trực tiếp giữa hai vai, tách biệt
-  khỏi engine `anh_chuan_bi.py` dùng chung ở stage 4.
-- **Cape** (teaser; persona cũ tên Jean, `vai.py` giữ `slug_cu=("jean",)`) — đọc
+  khỏi engine `image_prepare.py` dùng chung ở stage 4.
+- **Cape** (teaser; persona cũ tên Jean, `role.py` giữ `slug_cu=("jean",)`) — đọc
   bài **đã duyệt xong** (sau stage 8), ghép teaser cho blog, không tham gia vòng
   duyệt.
 - **Ada** (analyst) — đọc log **sau khi** bài đã đăng/bỏ, đối chiếu điểm chấm
@@ -335,7 +335,7 @@ sequenceDiagram
 Sơ đồ trên vẽ trước đợt sửa 09/09. Năm khối mới nằm **giữa** các stage, không
 thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương ứng:
 
-- `vai.py` — bản đăng ký vai duy nhất; mọi bảng cũ (`VAI_ANH`, `SLUG_CU`,
+- `role.py` — bản đăng ký vai duy nhất; mọi bảng cũ (`VAI_ANH`, `SLUG_CU`,
   `TEN_HIEN`, `chat_router.TOPIC_PROFILE`…) là view dẫn xuất. Giữ cả **luật
   riêng của vai**, không chỉ tên: `so_anh_toi_thieu(slug, flagship)` là số ảnh
   thật tối thiểu để vai dựng được (Ethan 1, Dre 5/8, Kite 1) — engine ảnh dùng
@@ -353,12 +353,12 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
 - `schema.py` — hợp đồng dữ liệu (`Manifest`, `Meta`, `SidecarAnh`,
   `SidecarViet`), `doc_manifest` nâng bản cũ, `hop_nhat_meta` trộn thay vì ghi
   đè `.meta.json` (tệp ba tiến trình cùng ghi).
-- `route_thieu_anh.py` — tầng ghép nối giữa engine (stage 4) và duyệt (stage 6):
+- `route_missing_images.py` — tầng ghép nối giữa engine (stage 4) và duyệt (stage 6):
   engine chỉ mô tả thiếu ảnh, tầng này quyết định hỏi Ông Chủ / chuyển Kite.
   "Thiếu" đo theo ngưỡng của **vai được giao**, nên bài 2 ảnh là đủ với Ethan
   và vẫn thiếu với Dre.
-- `chuan_bi/` — engine `anh_chuan_bi.py` tách thành gói theo pha
-  (`nguon → browser → tai_loc → nhin → vong_bu → manifest`); `anh_chuan_bi.py`
+- `chuan_bi/` — engine `image_prepare.py` tách thành gói theo pha
+  (`nguon → browser → tai_loc → nhin → vong_bu → manifest`); `image_prepare.py`
   còn là mặt tiền + CLI.
 
 ## Bảo trì sơ đồ

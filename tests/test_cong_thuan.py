@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
     """Quy tac: ten vai ap cho MOI SO dung truoc no, tinh tu ten vai gan nhat;
     so khong co ten vai nao phia sau ve mac dinh (Ethan/designer)."""
-    from duyet_chon_tin import doc_lenh_chon
+    from approve_pick import read_pick_command
     ca = [
         ("1", [(1, "ethan")]),
         ("1, 3 - Ethan, 2 - Dre", [(1, "ethan"), (3, "ethan"), (2, "dre")]),
@@ -27,7 +27,7 @@ def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
         ("1 2 3", [(1, "ethan"), (2, "ethan"), (3, "ethan")]),
     ]
     for lenh, mong in ca:
-        ra = doc_lenh_chon(lenh)
+        ra = read_pick_command(lenh)
         assert ra is not None, f"{lenh!r} phai doc duoc"
         rut = [(s, v) for s, v, *_ in ra]
         assert rut == mong, f"{lenh!r} -> {rut}, mong {mong}"
@@ -35,10 +35,10 @@ def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
 
 def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
     """Su co 06/09/2026: "3, 4 - Kites" (Ong Chu go so nhieu) bi doc_lenh_chon tu
-    choi CA lenh vi "kites" khong khop TEN_SANG_CAP -> roi ve hoi thoai, gui
+    choi CA lenh vi "kites" khong khop NAME_BRIGHT_CAP -> roi ve hoi thoai, gui
     nham cho Finn (topic scout) thay vi tao task cho Kite."""
-    from duyet_chon_tin import doc_lenh_chon
-    ra = doc_lenh_chon("1 - Ethan 3, 4 - Kites")
+    from approve_pick import read_pick_command
+    ra = read_pick_command("1 - Ethan 3, 4 - Kites")
     assert ra is not None, "'kites' (so nhieu) phai duoc hieu nhu 'kite'"
     rut = [(s, v) for s, v, *_ in ra]
     assert rut == [(1, "ethan"), (3, "kite"), (4, "kite")], rut
@@ -46,9 +46,9 @@ def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
 
 def test_doc_lenh_chon_bo_qua_cau_khong_phai_lenh():
     """Chat thuong khong duoc bien thanh lenh giao viec."""
-    from duyet_chon_tin import doc_lenh_chon
+    from approve_pick import read_pick_command
     for text in ("", "chào Finn", "hôm nay có gì hay không", "ok"):
-        assert not doc_lenh_chon(text), f"{text!r} khong duoc coi la lenh chon"
+        assert not read_pick_command(text), f"{text!r} khong duoc coi la lenh chon"
 
 
 # ----------------------------------------------------- draft_id <= 55 ky tu
@@ -56,7 +56,7 @@ def test_draft_id_luon_vua_callback_data_cua_telegram():
     """draft_id di vao callback_data ("imgredo:" + draft_id). Telegram chan
     callback_data > 64 byte va LANG LE tu choi ca ban phim — anh dang len khong
     co nut nao. Nen draft_id phai <= 55 ky tu ASCII trong MOI truong hop."""
-    from duyet_chon_tin import _draft_id
+    from approve_pick import _draft_id
     dai = ("Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified và đồng thời "
            "rẻ hơn bốn mươi lần so với bản trước đó của chính hãng")
     ca = [
@@ -81,7 +81,7 @@ def test_draft_id_luon_vua_callback_data_cua_telegram():
 def test_draft_id_khac_nhau_theo_vai_va_brand():
     """Mot tin hot giao cho NHIEU role: moi lan giao phai co draft_id rieng,
     neu khong hai san pham song song dung chung png/meta/sidecar va nut Duyet."""
-    from duyet_chon_tin import _draft_id
+    from approve_pick import _draft_id
     it = {"title": "Claude Opus 4.6 dat 82% SWE-bench Verified", "index": 2}
     ds = {_draft_id(it, b, v) for b in ("donniechublog", "dcgr")
           for v in ("ethan", "dre", "kite")}
@@ -93,10 +93,10 @@ def test_chia_tin_khong_cat_giua_the_html():
     """Telegram tu choi tin co the HTML ho. Cat giua "<b>...</b>" la ca tin bi
     tra ve loi, va nguoi goi chi thay "gui that bai"."""
     import re
-    from tele_util import chia_tin
+    from tele_util import split_message
     tho = "".join(f"<b>Muc {i}</b> mot doan van dai vua du de day qua gioi han. "
                   for i in range(1, 200))
-    phan = chia_tin(tho)
+    phan = split_message(tho)
     assert len(phan) > 1, "van ban thu phai dai hon mot phan"
     for i, p in enumerate(phan, 1):
         mo = len(re.findall(r"<b>", p))
@@ -107,9 +107,9 @@ def test_chia_tin_khong_cat_giua_the_html():
 
 
 def test_chia_tin_luon_tra_it_nhat_mot_phan():
-    from tele_util import chia_tin
+    from tele_util import split_message
     for t in ("", None, "ngan"):
-        ra = chia_tin(t)
+        ra = split_message(t)
         assert isinstance(ra, list) and len(ra) >= 1, f"{t!r} -> {ra!r}"
 
 

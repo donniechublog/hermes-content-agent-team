@@ -13,9 +13,9 @@ gửi trả lời đúng tin nhắn. Ông Chủ gửi ảnh vào topic của b�
 `[Ảnh đính kèm đã tải về: …/telegram_incoming/<id>.jpg]`.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python gin_chuan_bi.py <id>   # 1. đọc danh sách vùng
+cd /home/donniechu/content-team && venv/bin/python gin_prepare.py <id>   # 1. đọc danh sách vùng
 # 2. CHỈ KHI có logo/brand cần giữ: viết spec.json {"giu": [stt…], "ghi_chu": "…"} vào đường dẫn brief in
-cd /home/donniechu/content-team && venv/bin/python gin_nop.py <id>        # 3. xoá + gửi
+cd /home/donniechu/content-team && venv/bin/python gin_submit.py <id>        # 3. xoá + gửi
 ```
 
 Không có logo thì bỏ bước 2. Ngoài ba lệnh trên không chạy gì khác: không

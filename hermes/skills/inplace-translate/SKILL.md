@@ -1,6 +1,6 @@
 ---
 name: inplace-translate
-description: "Khi nào dịch tại chỗ, khi nào thiết kế lại bằng deck, và bẫy màu đo được, cho Gin và Itachi khi remake carousel có chữ tiếng Anh sang tiếng Việt. Lệnh, danh sách vùng chữ, khung spec và cách sửa lỗi nằm trong brief mà gin_chuan_bi.py / itachi_chuan_bi.py in mỗi lần và trong báo [LOI] của nop; skill này chỉ giữ phần vai phải nghĩ."
+description: "Khi nào dịch tại chỗ, khi nào thiết kế lại bằng deck, và bẫy màu đo được, cho Gin và Itachi khi remake carousel có chữ tiếng Anh sang tiếng Việt. Lệnh, danh sách vùng chữ, khung spec và cách sửa lỗi nằm trong brief mà gin_prepare.py / itachi_prepare.py in mỗi lần và trong báo [LOI] của nop; skill này chỉ giữ phần vai phải nghĩ."
 version: 3.0.0
 author: content-team
 license: internal
@@ -19,10 +19,10 @@ gốc; Itachi viết chữ Việt lên: **tại chỗ** đúng box gốc, hoặc
 lại. `<id>` là message_id trong dòng `[Ảnh đính kèm đã tải về: …/<id>.jpg]`.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python gin_chuan_bi.py <id>              # Gin 1
-cd /home/donniechu/content-team && venv/bin/python gin_nop.py <id>                   # Gin 3 (bước 2 chỉ khi có logo cần giữ)
-cd /home/donniechu/content-team && venv/bin/python itachi_chuan_bi.py <id> [<id2>…]  # Itachi 1
-cd /home/donniechu/content-team && venv/bin/python itachi_nop.py <id>                # Itachi 3 (bước 2: spec.json)
+cd /home/donniechu/content-team && venv/bin/python gin_prepare.py <id>              # Gin 1
+cd /home/donniechu/content-team && venv/bin/python gin_submit.py <id>                   # Gin 3 (bước 2 chỉ khi có logo cần giữ)
+cd /home/donniechu/content-team && venv/bin/python itachi_prepare.py <id> [<id2>…]  # Itachi 1
+cd /home/donniechu/content-team && venv/bin/python itachi_submit.py <id>                # Itachi 3 (bước 2: spec.json)
 ```
 
 ## Khi nào dịch tại chỗ, khi nào deck

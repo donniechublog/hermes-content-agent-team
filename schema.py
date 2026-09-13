@@ -7,7 +7,7 @@ khai o dau. Hau qua do duoc:
   - `so_dung_duoc` thieu khoa thi BA noi doan ba kieu: dre_chuan_bi dem lai bang
     mot cong thuc KHAC cong thuc cua nguoi ghi, con duyet_bai va anh_chuan_bi coi
     la 0 ("khong co anh nao") — hai ket luan nguoc nhau tu cung mot tep.
-  - `dre_nop.py` vao nhanh bang `m.get("toi_thieu", 5)` roi trong than lai doc
+  - `dre_submit.py` vao nhanh bang `m.get("toi_thieu", 5)` roi trong than lai doc
     `m["toi_thieu"]` tho: thieu khoa la KeyError NGAY TRONG CONG CHAN.
   - `write_meta` ghi DE ca dict 8 khoa, ma `bang_den` ghi `root_task` vao cung
     tep o mot tien trinh khac. Hom nay khong mat chi vi THU TU goi may man.
@@ -21,8 +21,8 @@ Tep nay KHONG kiem tra luc chay (khong validate). No lam ba viec:
 
 CHU Y — "xong.json" KHONG phai mot hop dong. Do la ten tep dung lai o nhieu cho
 voi hinh dang KHAC HAN: engine ghi manifest o
-`state/<brand>/chuan_bi/<id>/xong.json`, con `itachi_chuan_bi.py` ghi
-`{"khoa", "slides"}` va `ada_chuan_bi.py` ghi bao cao gom, deu ten `xong.json`
+`state/<brand>/chuan_bi/<id>/xong.json`, con `itachi_prepare.py` ghi
+`{"khoa", "slides"}` va `ada_prepare.py` ghi bao cao gom, deu ten `xong.json`
 nhung o workdir khac. Chi manifest cua engine moi theo `Manifest` duoi day.
 """
 import json
@@ -31,13 +31,13 @@ from typing import Any, TypedDict
 
 # Tang phien ban khi doi Y NGHIA mot khoa (khong phai khi them khoa tuy chon).
 # Ban 0 = moi manifest ghi truoc 09/09/2026, khong co truong `phien_ban`.
-PHIEN_BAN_MANIFEST = 1
+VERSION_MANIFEST = 1
 
 
 class Manifest(TypedDict, total=False):
     """`state/<brand>/chuan_bi/<draft_id>/xong.json` — engine ghi, moi vai doc.
 
-    Nguoi ghi: `chuan_bi.manifest.dung_manifest` (26 khoa goc), roi
+    Nguoi ghi: `prepare.manifest.build_manifest` (26 khoa goc), roi
     `anh_chuan_bi.chay` them `thieu_anh`, `route_thieu_anh.sau_chuan_bi` them
     `chuyen_kite`/`hoi_kite`/`khong_kite` — CA BA con trong khoa cua engine, nen
     nguoi doc luon thay ban da chot. Rieng `duyet_bai._nut_ha_san` ghi de
@@ -112,7 +112,7 @@ class Meta(TypedDict, total=False):
     root_task: str                 # the goc bang den; chi brand bat bang den
 
 
-class SidecarAnh(TypedDict, total=False):
+class SidecarImage(TypedDict, total=False):
     """`drafts/<draft_id>.img.json` — de LAM LAI task anh duoc."""
     vai_anh: str                   # SLUG vai (ban cu con ghi ten persona)
     carousel: bool
@@ -128,7 +128,7 @@ class SidecarAnh(TypedDict, total=False):
     ly_do_chuyen: str              # duyet_bai.tao_task_kite (ADF-r2-5: tung ghi ma chua khai)
 
 
-class SidecarViet(TypedDict, total=False):
+class SidecarWrite(TypedDict, total=False):
     """`drafts/<draft_id>.writer.json` — task viet CHI sinh khi Ong Chu bam "Duyet anh".
 
     duyet_chon_tin.create_pair ghi 6 khoa dau; duyet_bai cap nhat `created`
@@ -144,7 +144,7 @@ class SidecarViet(TypedDict, total=False):
     writer_task: str               # id task viet, khi da tao
 
 
-class DongAnhDaDung(TypedDict):
+class LineImageUsed(TypedDict):
     """MOT DONG trong `state/<brand>/anh_da_dung.jsonl` (noi them, khong sua).
 
     Khoa theo TIN chu khong theo draft: cung mot tin giao cho hai vai ra hai
@@ -164,15 +164,15 @@ class DongAnhDaDung(TypedDict):
 # cho ca nguoi dem (so_anh_dung_duoc) lan cong chan (dre_nop): truoc 12/09/2026
 # dre_nop go cung 700 con nguoi dem thi khong biet, nen A5 900x600 cua tin TSMC
 # duoc dem la mot slide trong khi khong ai dung no mot minh duoc.
-CAO_TOI_THIEU_CAT_NGANG = 700
+HEIGHT_MIN_CROP_LANDSCAPE = 700
 
 
-def _chi_ghep_duoc(a: dict) -> bool:
+def _only_stack_ok(a: dict) -> bool:
     """Tam nay CHI dung duoc qua "ghep" — khong dung MOT MINH duoc, vi mot
     trong hai ly do:
       1. qua thap de cat doc (`h < CAO_TOI_THIEU_CAT_NGANG`), hoac
       2. la anh chup NGANG co chu/logo/so lieu de len (`cat_ngang_ok is False`
-         — vision xac nhan, xem chuan_bi.nhin.phan_loai) nen luat_anh cam crop.
+         — vision xac nhan, xem prepare.vision.classify) nen luat_anh cam crop.
     Su co 12/09/2026 lan hai (t_a8ffd2f6): Dre chay that, 4/5 anh ngang cao
     >=700 la bien hieu/logo CO CHU (khong phai chart — chart da co duong rieng
     "than, dan full be ngang"), nhung cong thuc cu chi nhin chieu cao nen dem
@@ -181,14 +181,14 @@ def _chi_ghep_duoc(a: dict) -> bool:
     cau hoi — coi nhu CHUA XAC NHAN, an toan hon la dem lam dung mot minh."""
     if not a.get("ngang"):
         return False
-    if 0 < int(a.get("h") or 0) < CAO_TOI_THIEU_CAT_NGANG:
+    if 0 < int(a.get("h") or 0) < HEIGHT_MIN_CROP_LANDSCAPE:
         return True
     if a.get("loai") == "chart":
         return False           # chart ngang dung MOT MINH qua "than, dan full be ngang"
     return a.get("cat_ngang_ok") is not True
 
 
-def so_anh_dung_duoc(anh: list) -> int:
+def count_image_use_ok(anh: list) -> int:
     """So SLIDE dung duoc tu bo anh, de xet du/thieu — MOT ban duy nhat cua cong thuc.
 
     Dem theo cai vai DUNG DUOC, khong phai so tam tai ve:
@@ -205,11 +205,11 @@ def so_anh_dung_duoc(anh: list) -> int:
     dung_duoc = [a for a in (anh or []) if a.get("dung") and a.get("lien_quan") is not False]
     khai_niem = [a for a in dung_duoc if a.get("khai_niem")]
     rieng = [a for a in dung_duoc if not a.get("khai_niem")]
-    chi_ghep = [a for a in rieng if _chi_ghep_duoc(a)]
+    chi_ghep = [a for a in rieng if _only_stack_ok(a)]
     return (len(rieng) - len(chi_ghep)) + len(chi_ghep) // 2 + min(1, len(khai_niem))
 
 
-def doc_manifest(nguon) -> dict | None:
+def read_manifest(nguon) -> dict | None:
     """Doc manifest cua engine, tu nang ban cu. None neu khong doc duoc.
 
     `nguon` la duong dan toi xong.json, hoac chinh dict da doc san.
@@ -240,17 +240,17 @@ def doc_manifest(nguon) -> dict | None:
     m["phien_ban"] = pv                 # chuan hoa ve int; nhanh duoi ghi de neu nang ban
     if pv < 1:
         if "so_dung_duoc" not in m:
-            m["so_dung_duoc"] = so_anh_dung_duoc(m.get("anh") or [])
+            m["so_dung_duoc"] = count_image_use_ok(m.get("anh") or [])
         # `so_xep_hang` = SO BANG chup duoc. Ban cu chi co `xep_hang` (bang dau
         # tien) nen suy: co bang thi it nhat mot, khong co thi 0. Nguoi doc tung
         # mac dinh 1 ke ca khi khong co bang nao — nguoc han y nghia.
         if "so_xep_hang" not in m:
             m["so_xep_hang"] = 1 if m.get("xep_hang") else 0
-        m["phien_ban"] = PHIEN_BAN_MANIFEST
+        m["phien_ban"] = VERSION_MANIFEST
     return m
 
 
-def hop_nhat_meta(cu: dict | None, moi: dict) -> dict:
+def merge_meta(cu: dict | None, moi: dict) -> dict:
     """Tron ban meta MOI vao ban CU thay vi ghi de.
 
     `write_meta` chay hai lan cho mot bai (luc chon tin, roi luc giai xong link
@@ -264,6 +264,6 @@ def hop_nhat_meta(cu: dict | None, moi: dict) -> dict:
     return ra
 
 
-def _kieu(td) -> dict[str, Any]:
+def _kind(td) -> dict[str, Any]:
     """Khoa -> kieu da khai, dung cho test doi chieu khai bao voi thuc te."""
     return dict(getattr(td, "__annotations__", {}))

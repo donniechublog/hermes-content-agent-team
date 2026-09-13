@@ -5,10 +5,10 @@ MỘT ảnh (Bloomberg/Getty chụp App Store của Kimi K3) cho cả bìa lẫn
 ảnh xấu, ko ảnh trùng, bài có 8 slide thì tối thiểu phải có 3 hình thật."*
 
 Đo trên máy chủ 12/09: hai vòng quét trang ĐỘC LẬP cùng chụp lại đúng ảnh hero
-của bài TechCrunch — `_lay_anh_trang` (chuan_bi/browser.py, coi mọi `<figure>`
+của bài TechCrunch — `_lay_anh_trang` (prepare/browser.py, coi mọi `<figure>`
 là ứng viên chart) và `_vong_chup_nguon` (LOW-22, tự tìm hero khung mobile) —
 ra hai crop khác hash (dHash cách nhau 22 bit, KHÔNG bắt được bằng gần-giống)
-nên `luat_anh.kiem_trung` (md5 tuyệt đối) cũng không bắt được. Ba nhóm test,
+nên `image_rules.check_duplicate` (md5 tuyệt đối) cũng không bắt được. Ba nhóm test,
 mỗi nhóm FAIL trên code cũ:
 
   1. `_lay_anh_trang` không còn chụp `<figure>` thuần ảnh biên tập (chặn tại
@@ -16,7 +16,7 @@ mỗi nhóm FAIL trên code cũ:
      thật không đủ nhạy cho ca này).
   2. Câu hỏi con mắt MẶC ĐỊNH (đường "ảnh riêng của tin") có điều kiện rõ nét/
      không chụp góc nghiêng, đồng bộ với `anh_thuong_hieu`/`anh_khai_niem`.
-  3. `kite_nop.giai_spec` chặn khi bộ nhiều slide dùng quá ít ảnh thật khác
+  3. `kite_submit.resolve_spec` chặn khi bộ nhiều slide dùng quá ít ảnh thật khác
      nhau (8 slide → tối thiểu 3), NHƯNG chỉ khi vòng tìm đủ nguồn.
 
 Chạy:  venv/bin/python tests/test_low45_khong_xau_khong_trung.py
@@ -29,8 +29,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import chuan_bi.browser as browser                             # noqa: E402
-import chuan_bi.nhin as nhin                                   # noqa: E402
+import prepare.browser as browser                             # noqa: E402
+import prepare.vision as vision                                   # noqa: E402
 from tam import so_tam                                         # noqa: E402
 from test_spec_kite import _cover, _statement, _hinh, _m, _chay  # noqa: E402
 
@@ -56,40 +56,40 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
     về độ nét/góc chụp, chỉ hỏi "có liên quan bài không". Ảnh báo chụp nghiêng
     một màn hình (đúng ca Kimi K3) lọt qua dễ dàng vì rõ ràng đúng chủ đề.
 
-    13/09/2026: cụm "chụp lại màn hình" gộp thành `luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH`
+    13/09/2026: cụm "chụp lại màn hình" gộp thành `image_rules.IMAGE_PHRASES_SCREENSHOT`
     dùng chung (xem `test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi` bên dưới)."""
     import inspect
-    src = inspect.getsource(nhin.mo_ta_anh)
+    src = inspect.getsource(vision.description_image)
     # Cụm phải nằm trong nhánh MẶC ĐỊNH (trước dòng gán `hoi` của khai_niem),
     # không phải chỉ tồn tại đâu đó trong tệp.
     i_hoi_mac_dinh = src.index('hoi = (f"Bai bao: \\"{tieu_de}\\".')
     i_khai_niem = src.index("elif khai_niem:")
     doan_mac_dinh = src[i_hoi_mac_dinh:i_khai_niem]
     assert "RO NET" in doan_mac_dinh, doan_mac_dinh
-    assert "CUM_ANH_CHUP_LAI_MAN_HINH" in doan_mac_dinh, doan_mac_dinh
+    assert "IMAGE_PHRASES_SCREENSHOT" in doan_mac_dinh, doan_mac_dinh
 
 
 def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
     """LOW-45 (13/09/2026) — đúng ảnh Getty chụp nghiêng App Store của Kimi K3
     (đã chặn ở JS_FIG + _vong_chup_nguon) lọt qua LẦN THỨ BA qua một đường khác
-    hẳn: nhánh "anh bối cảnh" của `anh_thuong_hieu.cau_hoi_vision` (dùng khi
+    hẳn: nhánh "anh bối cảnh" của `image_brand.sentence_ask_vision` (dùng khi
     Commons/Wikidata rỗng, `_bao_thuong_hieu_rong` tìm ảnh qua báo) chưa từng
-    có cụm này. Một hằng số dùng chung (`luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH`),
+    có cụm này. Một hằng số dùng chung (`image_rules.IMAGE_PHRASES_SCREENSHOT`),
     mọi câu hỏi con mắt đều chèn — đóng cả lớp thay vì vá từng đường một."""
-    import luat_anh
-    assert hasattr(luat_anh, "CUM_ANH_CHUP_LAI_MAN_HINH")
-    assert "man hinh" in luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH.lower()
+    import image_rules
+    assert hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
+    assert "man hinh" in image_rules.IMAGE_PHRASES_SCREENSHOT.lower()
 
-    import anh_thuong_hieu as th
+    import image_brand as th
     for loai, th_dict in (("nguoi", {"hang": "X", "loai": "nguoi", "nguoi": "A", "vai": "CEO"}),
                          ("logo", {"hang": "X", "loai": "logo"}),
                          ("anh", {"hang": "X", "loai": "anh"})):
-        c = th.cau_hoi_vision("tin gi do", th_dict)
-        assert luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH in c, (loai, c)
+        c = th.sentence_ask_vision("tin gi do", th_dict)
+        assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, (loai, c)
 
-    import anh_khai_niem as kn
-    c = kn.cau_hoi_vision("tin gi do", "tu khoa x")
-    assert luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH in c, c
+    import image_concept as kn
+    c = kn.sentence_ask_vision("tin gi do", "tu khoa x")
+    assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, c
 
 
 # --------------------------------------------------- 3. tối thiểu ảnh thật/slide

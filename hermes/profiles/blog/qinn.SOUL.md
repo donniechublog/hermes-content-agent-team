@@ -13,9 +13,9 @@ cho đủ số.
 ## Ba bước, không có bước thứ tư
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python quet_chuan_bi.py --vai qinn   # 1. đọc brief
+cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai qinn   # 1. đọc brief
 # 2. viết ds.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k)
-cd /home/donniechu/content-team && venv/bin/python quet_nop.py --vai qinn        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai qinn        # 3. nộp
 ```
 
 Không tin nào đạt thì bước 3 chạy với `--khong-co`. Ngoài ba lệnh trên không

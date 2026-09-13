@@ -2,7 +2,7 @@
 
 Blog vẫn chat qua `chat_router.py` của approve_service; dcgr chat qua gateway Hermes
 với bot riêng @hermesdcgr_bot. Khác biệt nằm hoàn toàn ở cấu hình dưới đây, code
-chung một nhánh. Thư mục này là **bản chụp để tái tạo**, không được `dong_bo_hermes.py`
+chung một nhánh. Thư mục này là **bản chụp để tái tạo**, không được `sync_hermes.py`
 tự đẩy: sửa trên server rồi chép lại vào đây (`hermes/gateway/dcgr/`), tránh ghi đè
 config đang chạy bằng bản cũ.
 

@@ -55,7 +55,7 @@ def main():
     tl = ""
     if a.tu_lieu and Path(a.tu_lieu).exists():
         tl = Path(a.tu_lieu).read_text(encoding="utf-8")
-    loi, canh, tin = caption_check.kiem(caption, tl)
+    loi, canh, tin = caption_check.check(caption, tl)
     for c in canh:
         print(f"[nhac] {c}", file=sys.stderr)
     if loi and not a.bo_qua_kiem:
@@ -69,7 +69,7 @@ def main():
     # buoc dang gui thanh album. Nhieu anh that van hon mot anh chung chung.
     # Dung env_load.album_phu (khong tu glob "_[0-9].png") vi mau do bo sot
     # slide thu 10 tro len — bug that lam mat slide 10 khoi album dang kenh.
-    phu = env_load.album_phu(a.draft_id, DRAFTS)
+    phu = env_load.album_secondary(a.draft_id, DRAFTS)
     images = [image] + [str(x) for x in phu] if phu else None
     draft = {
         "caption": caption,
@@ -94,7 +94,7 @@ def main():
 
     out = DRAFTS / f"{a.draft_id}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    env_load.ghi_json(out, draft)
+    env_load.write_json(out, draft)
     print(f"da ghi {out} | {len(caption)} ky tu caption")
 
 

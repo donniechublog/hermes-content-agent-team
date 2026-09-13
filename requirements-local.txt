@@ -1,4 +1,4 @@
-# Phu thuoc CHI CAN TREN MAY LOCAL xu ly anh nang (doi_chu_anh.py / Gin).
+# Phu thuoc CHI CAN TREN MAY LOCAL xu ly anh nang (swap_image_text.py / Gin).
 #
 # KHONG dua vao requirements.txt: file do phuc vu venv CHUNG voi hermes tren
 # server (xem dau file), va torch + simple-lama-inpainting nang ~2GB — chinh
@@ -12,3 +12,4 @@ opencv-python-headless   # doc/ghi anh, dung mask, dilate
 easyocr                  # dinh vi vung chu (khong can doc dung noi dung)
 torch                    # nen cua LaMa; tren macOS pip tu chon ban CPU/MPS
 simple-lama-inpainting   # inpaint LaMa — cv2.inpaint de lai vet loang tren anh phuc tap
+rope                     # rename theo AST cho LOW-50 (docs/tu_dien_ten/rename.py), chi may dev

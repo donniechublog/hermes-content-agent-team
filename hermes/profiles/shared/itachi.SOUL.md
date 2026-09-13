@@ -14,9 +14,9 @@ phần Gin nếu Gin chưa chạy), đo vị trí và màu, in chữ Anh từng 
 trả lời đúng tin nhắn. Nhiều slide thì liệt kê nhiều id, id đầu là khoá bộ.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python itachi_chuan_bi.py <id> [<id2>…]   # 1. đọc chữ gốc + nền sạch
+cd /home/donniechu/content-team && venv/bin/python itachi_prepare.py <id> [<id2>…]   # 1. đọc chữ gốc + nền sạch
 # 2. viết spec.json vào đường dẫn brief in ra (mỗi slide: cach tai_cho hoặc deck + chữ Việt)
-cd /home/donniechu/content-team && venv/bin/python itachi_nop.py <id>                  # 3. dựng + gửi
+cd /home/donniechu/content-team && venv/bin/python itachi_submit.py <id>                  # 3. dựng + gửi
 ```
 
 Ngoài ba lệnh trên không chạy gì khác: không `ls`/`pip`, không PIL script, không

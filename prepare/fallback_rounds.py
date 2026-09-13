@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 """PHA VONG BU: kho mong thi di tim them — bao khac, bang xep hang, thuong hieu, khai niem.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import sys
 from pathlib import Path
 
 from PIL import Image
 
-import luat_anh
+import image_rules
 import env_load
-import xep_hang
+import ranking
 
-from chuan_bi.browser import browser_pass
-from chuan_bi.chung import TOI_DA_ANH, _brand_cua, _ghi_json, _mien
-from chuan_bi.nguon import _ten_rieng_dau, _tieu_de_trang, anh_commons, ung_vien_social, ung_vien_tinh
-from chuan_bi.nhin import phan_loai
-from chuan_bi.tai_loc import tai_va_loc
+from prepare.browser import browser_pass
+from prepare.common import MAX_IMAGE, _brand_of, _write_json, _domain
+from prepare.source import _leading_proper_noun, _title_page, commons_images, candidate_social, candidate_static
+from prepare.vision import classify
+from prepare.download_filter import download_and_filter
 
 
-TOI_DA_NGUON_BAI = 6           # tran nguon bai gop (Google News + Bing News) truoc khi chup
+MAX_ARTICLE_SOURCES = 6           # tran nguon bai gop (Google News + Bing News) truoc khi chup
 
-def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> list:
+def _supplement_source(nguon: dict, nguon_path: Path, trang: list, link: str) -> list:
     """Tieu de tieng Anh (mot fetch) va, khi con MONG hon `TOI_DA_NGUON_BAI`, them
     bao tu Bing — lam TRUOC khi mo browser de browser ghe luon cac trang do. Tra
     `trang`.
@@ -37,28 +37,28 @@ def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> lis
     # Tieu de TIENG ANH cua bai that (tin Vera/Nova mang tieu de tieng Viet):
     # mot fetch httpx; khong ra thi browser lay og:title sau.
     if not nguon.get("tieu_de_en"):
-        nguon["tieu_de_en"] = _tieu_de_trang(link)
-        _ghi_json(nguon_path, nguon)
+        nguon["tieu_de_en"] = _title_page(link)
+        _write_json(nguon_path, nguon)
     # Bo nguon mong -> Bing News RSS bang tieu de tieng Anh (link chuyen huong HTTP
     # thuong, khong can browser). Lam TRUOC khi mo browser de browser ghe luon
     # cac trang bao nay lay anh. Ghi vao nguon json de tu_lieu (Miles) cung dung.
-    if len(trang) < TOI_DA_NGUON_BAI and nguon.get("tieu_de_en"):
-        import nguon_bai
+    if len(trang) < MAX_ARTICLE_SOURCES and nguon.get("tieu_de_en"):
+        import article_sources
         co = {t.get("url") for t in trang}
-        mien_co = {_mien(t.get("url", "")) for t in trang}
-        them = nguon_bai.bao_khac_bing(nguon["tieu_de_en"], so=TOI_DA_NGUON_BAI, bo_mien=tuple(mien_co))
+        mien_co = {_domain(t.get("url", "")) for t in trang}
+        them = article_sources.other_outlets_bing(nguon["tieu_de_en"], so=MAX_ARTICLE_SOURCES, bo_mien=tuple(mien_co))
         for t in them:
             if t["url"] not in co:
                 nguon["trang"].append(t)
                 co.add(t["url"])
         if them:
-            _ghi_json(nguon_path, nguon)
+            _write_json(nguon_path, nguon)
             trang = nguon["trang"]
         print(f"[nguon] bing: +{len(them)} bao -> {len(trang)} trang", file=sys.stderr)
     return trang
 
 
-def _them_trang_cong_bo(nguon: dict, nguon_path: Path, trang: list, tieu_de: str,
+def _extra_announcement_page(nguon: dict, nguon_path: Path, trang: list, tieu_de: str,
                         tom_tat: str = "") -> list:
     """TRANG CONG BO CHINH CHU cua model trong tin (LOW-21, Ong Chu 11/09/2026:
     "phai tim tat ca anh lien quan chu khong phai chi tim anh trong nguon topic,
@@ -66,32 +66,32 @@ def _them_trang_cong_bo(nguon: dict, nguon_path: Path, trang: list, tieu_de: str
     tin nhac model cua hang trong watchlist, khong doi thieu anh — cung ly do
     voi `_vong_thuong_hieu`. Lam TRUOC khi mo browser de browser ghe trang do
     lay chart. Ghi vao nguon json de tu_lieu (Miles) cung dung. Tra `trang`."""
-    import anh_thuong_hieu as th
-    import xep_hang
+    import image_brand as th
+    import ranking
     if any(t.get("loai") == "công bố" for t in trang):
         return trang
     # Lay ten model DAI NHAT tu ca hai tieu de, khong "en truoc vi thay" (LOW-34):
     # tieu de Viet giu nguyen "DeepSeek-V4.1-Flash" trong khi <title> HF chi ra "deepseek".
-    import nguon_bai
-    en = nguon_bai.bo_hau_to_site(nguon.get("tieu_de_en") or "")
-    models = sorted(set(xep_hang.tach_model(en) + xep_hang.tach_model(tieu_de)),
+    import article_sources
+    en = article_sources.strip_site_suffix(nguon.get("tieu_de_en") or "")
+    models = sorted(set(ranking.extract_model(en) + ranking.extract_model(tieu_de)),
                     key=lambda t: (-len(t), t))
-    hangs = th.hang_trong_tin(f"{tieu_de} {en}", tom_tat) if models else []
+    hangs = th.vendors_in_story(f"{tieu_de} {en}", tom_tat) if models else []
     if not hangs:
         return trang
-    mien_co = {_mien(t.get("url", "")) for t in trang}
+    mien_co = {_domain(t.get("url", "")) for t in trang}
     for h in hangs[:1]:
-        cb = th.trang_cong_bo(h, models)
-        if not cb or _mien(cb["url"]) in mien_co or any(t.get("url") == cb["url"] for t in trang):
+        cb = th.announcement_page(h, models)
+        if not cb or _domain(cb["url"]) in mien_co or any(t.get("url") == cb["url"] for t in trang):
             continue
         nguon.setdefault("trang", []).append(cb)
-        _ghi_json(nguon_path, nguon)
+        _write_json(nguon_path, nguon)
         print(f"[nguon] cong bo chinh chu: {cb['url'][:90]}", file=sys.stderr)
         return nguon["trang"]
     return trang
 
 
-def _lay_tu_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path, phien=None) -> tuple:
+def _take_from_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path, phien=None) -> tuple:
     """Mot phien chromium: tieu de, chu, anh/figure, bao khac; gop vao `nguon`.
     Tra (bp, trang)."""
     print("[browser] mo trang goc (tieu de, chu, anh, figure) + bao khac...", file=sys.stderr)
@@ -107,14 +107,14 @@ def _lay_tu_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path, phien=
             co.add(t["url"])
             doi = True
     if doi:
-        _ghi_json(nguon_path, nguon)
+        _write_json(nguon_path, nguon)
         trang = nguon["trang"]
     print(f"[browser] tieu de: {(nguon.get('tieu_de_en') or '')[:70]!r}; +{len(bp['trang_them'])} bao; "
           f"{len(bp['cands'])} anh/figure; {len(bp['chu'])} ky tu chu", file=sys.stderr)
     return bp, trang
 
 
-def _chup_xep_hang(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp: dict,
+def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp: dict,
                    wd: Path, khong_browser: bool, phien=None) -> tuple:
     """Tin xep hang: chup bang tu chinh trang xep hang, khoanh model. Tra
     (xhs, tin_xep_hang); xhs [] khi khong phai tin xep hang / khong chup duoc.
@@ -131,17 +131,17 @@ def _chup_xep_hang(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp
     # luong. Khong chup duoc thi the du phong (ten model + #hang + logo + site).
     xhs: list = []
     tieu_de_xh = f"{title} {nguon.get('tieu_de_en') or ''}"
-    tin_xep_hang = xep_hang.la_tin_xep_hang(tieu_de_xh, tom.get("summary", ""))
+    tin_xep_hang = ranking.is_ranking_story(tieu_de_xh, tom.get("summary", ""))
     # Bang loai tin (loai_tin.py, Ong Chu 12/09/2026: "noi den model thi co them
     # hinh benchmark"): category MODEL/BENCHMARK ep chup bang du tieu de khong co
     # chu "#1"/"top" nao — truoc day chi regex tieu de quyet dinh.
-    import loai_tin
-    if loai_tin.muon(meta.get("category"), "xep_hang"):
+    import story_type
+    if story_type.late(meta.get("category"), "xep_hang"):
         tin_xep_hang = True
     if not khong_browser and tin_xep_hang:
-        models = xep_hang.tach_model(nguon.get("tieu_de_en") or "") or xep_hang.tach_model(title)
+        models = ranking.extract_model(nguon.get("tieu_de_en") or "") or ranking.extract_model(title)
         if models:
-            ds = xep_hang.goi_y_nguon(tieu_de_xh, link, meta.get("via", ""), bp.get("chu", ""))
+            ds = ranking.suggest_sources(tieu_de_xh, link, meta.get("via", ""), bp.get("chu", ""))
             print(f"[xep_hang] tin xep hang: model={models[0]!r}, thu {', '.join(n['ma'] for n in ds[:4])}...",
                   file=sys.stderr)
             # BOC. `tim_va_chup_nhieu` import playwright va launch chromium NGOAI
@@ -152,9 +152,9 @@ def _chup_xep_hang(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp
             # giua chung — khong xong.json, va vai chay lai qua `chay()` chet y
             # het. Nhanh "khong co ma XH" (:743) da co san, cu roi ve do.
             try:
-                xhs = xep_hang.tim_va_chup_nhieu(
-                    models, ds, wd / "goc", _brand_cua(meta),
-                    xep_hang.tach_hang(title, models[0]) or xep_hang.tach_hang(nguon.get("tieu_de_en") or "", models[0]),
+                xhs = ranking.find_and_capture_many(
+                    models, ds, wd / "goc", _brand_of(meta),
+                    ranking.extract_rank(title, models[0]) or ranking.extract_rank(nguon.get("tieu_de_en") or "", models[0]),
                     in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
             except Exception as e:                           # noqa: BLE001
                 print(f"[xep_hang] HONG: {type(e).__name__}: {e} — di tiep khong co anh XH",
@@ -165,7 +165,7 @@ def _chup_xep_hang(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp
     return xhs, tin_xep_hang
 
 
-def _anh_muc_xep_hang(i: int, xh: dict) -> dict:
+def _image_item_ranking(i: int, xh: dict) -> dict:
     """Mot ket qua chup xep hang -> mot muc trong danh sach `anh`, mang MA rieng
     (XH cho cai dau, XH2/XH3... cho cac cai sau — nhieu bang do NANG LUC KHAC
     NHAU cua cung model, xem `_chup_xep_hang`). Ham THUAN, tach 09/09/2026 de
@@ -178,11 +178,11 @@ def _anh_muc_xep_hang(i: int, xh: dict) -> dict:
                 + (f" #{xh['hang']}" if xh.get("hang") else "")
                 + (" — THẺ DỰ PHÒNG (không chụp được bảng)" if xh["kieu"] == "the" else ", đã khoanh hàng model"))
     return {"ma": ma, "goc": xh["tep"], "url": xh["url"], "alt": mo_ta_xh[:120],
-            "tu": "xep_hang", "trang": xh["url"], "mien": _mien(xh["url"]),
+            "tu": "xep_hang", "trang": xh["url"], "mien": _domain(xh["url"]),
             "hint_chart": xh["kieu"] != "the", "xep_hang": xh}
 
 
-def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang: list,
+def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: dict, trang: list,
                     bp: dict, wd: Path, xhs: list) -> list:
     """Ung vien (tim tinh + browser + bia arxiv) -> tai va loc -> chen anh XH ->
     bu Commons neu mong. Tra danh sach anh (chua phan loai).
@@ -191,7 +191,7 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
     luc khac nhau (xem `_chup_xep_hang`) — moi cai mang MA rieng (XH, XH2, XH3)
     de vai chon dung tam, khong ghi de len nhau."""
     print(f"[anh] tim tinh qua {len(trang)} nguon...", file=sys.stderr)
-    cands = ung_vien_social(link, wd) + ung_vien_tinh(title, link, nguon_path,
+    cands = candidate_social(link, wd) + candidate_static(title, link, nguon_path,
                                                      nguon.get("tieu_de_en", ""))
     co = {c["anh"] for c in cands}
     for c in bp["cands"]:
@@ -204,41 +204,41 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
     # <object> ma document.images khong thay. Boc thang tu PDF. Lam TRUOC nhanh
     # "khong con ung vien nao -> chup bia": trang bia (ten cong trinh + tac gia)
     # la duong cuoi, con bieu do ket qua moi la anh dat nhat cua tin.
-    import arxiv_hinh
-    cands = arxiv_hinh.ung_vien(link, wd / "goc") + cands
+    import arxiv_figures
+    cands = arxiv_figures.candidate(link, wd / "goc") + cands
     # arxiv khong anh: bia paper
     if not cands:
-        import arxiv_bia
-        pdf = arxiv_bia.la_arxiv(link)
+        import arxiv_cover
+        pdf = arxiv_cover.is_arxiv(link)
         if pdf:
             out = wd / "goc" / "arxiv.png"
-            data = arxiv_bia.tai_pdf(pdf)
-            bia = arxiv_bia.chup_bia(data) if data else None
+            data = arxiv_cover.download_pdf(pdf)
+            bia = arxiv_cover.capture_cover(data) if data else None
             if bia is not None:
                 out.parent.mkdir(parents=True, exist_ok=True)
-                bia.save(out, "PNG", pnginfo=luat_anh.dong_dau("arxiv_bia"))
+                bia.save(out, "PNG", pnginfo=image_rules.stamp_provenance("arxiv_bia"))
                 cands.append({"anh": str(out), "tep": str(out), "alt": "trang bia paper",
                               "tu": "arxiv_bia", "trang": link, "diem": 60})
     cands.sort(key=lambda c: -c.get("diem", 0))
-    anh = tai_va_loc(cands, wd)
+    anh = download_and_filter(cands, wd)
     for i, xh in enumerate(xhs):
-        anh.insert(i, _anh_muc_xep_hang(i, xh))
+        anh.insert(i, _image_item_ranking(i, xh))
     print(f"[anh] tai duoc {len(anh)} anh (chua phan loai/nhin)", file=sys.stderr)
     if len(anh) < 5:
         # Tin mong anh: them anh that tu Wikimedia Commons theo ten rieng dau
         # tieu de (tru so, san pham, su kien). Chi bu phan thieu.
-        tk = _ten_rieng_dau(nguon.get("tieu_de_en") or title)
+        tk = _leading_proper_noun(nguon.get("tieu_de_en") or title)
         if tk:
-            them = anh_commons(tk, so=6)
+            them = commons_images(tk, so=6)
             if them is None:
                 print(f"[anh] anh_commons('{tk}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
                 them = []
             print(f"[commons] '{tk}': {len(them)} anh", file=sys.stderr)
             if them:
                 da = {a["url"] for a in anh}
-                bo_sung = tai_va_loc([c for c in them if c["anh"] not in da], wd / "commons")
+                bo_sung = download_and_filter([c for c in them if c["anh"] not in da], wd / "commons")
                 for i, a in enumerate(bo_sung, start=len(anh) + 1):
-                    if len(anh) >= TOI_DA_ANH:
+                    if len(anh) >= MAX_IMAGE:
                         break
                     a["ma"] = f"A{i}"
                     moi = wd / "goc" / f"{a['ma']}.png"
@@ -249,22 +249,22 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
     return anh
 
 
-def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
+def _round_widen_search(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
                    dung_duoc: list, wd: Path, phien=None) -> tuple:
     """VONG TIM RONG (Ong Chu 05/09/2026): kho mong thi engine phai di tim, khong
     bao "du" bang rac. Mot vong. Tra (anh, dung_duoc, chua_nhin)."""
     # VONG TIM RONG (Ong Chu 05/09/2026): kho mong thi engine phai di tim,
     # khong bao "du" bang rac. Them bao (Bing, loc lien quan, bo mien da co)
     # mo bang browser lay anh + Commons; tai, NHIN, dem lai. Mot vong.
-    import nguon_bai
-    mien_co = {_mien(t.get("url", "")) for t in trang} | {a.get("mien") for a in anh}
-    them_bao = nguon_bai.bao_khac_bing(tieu_de_nhin, so=6, bo_mien=tuple(x for x in mien_co if x))[:4]
+    import article_sources
+    mien_co = {_domain(t.get("url", "")) for t in trang} | {a.get("mien") for a in anh}
+    them_bao = article_sources.other_outlets_bing(tieu_de_nhin, so=6, bo_mien=tuple(x for x in mien_co if x))[:4]
     # Tu LOW-12 vong nay con chay khi kho DU anh ma khong tam nao lam anh chinh
     # cua vai duoc — in "thieu (5/5)" luc do la noi doi nguoi doc log.
     ly_do = (f"thieu ({len(dung_duoc)}/{toi_thieu})" if len(dung_duoc) < toi_thieu
              else f"co {len(dung_duoc)} anh nhung khong tam nao lam anh chinh duoc")
     print(f"[tim rong] {ly_do}: +{len(them_bao)} bao moi"
-          + (": " + ", ".join(_mien(t["url"]) for t in them_bao) if them_bao else ""), file=sys.stderr)
+          + (": " + ", ".join(_domain(t["url"]) for t in them_bao) if them_bao else ""), file=sys.stderr)
     wd2 = wd / "them"
     cands2 = []
     if them_bao:
@@ -274,18 +274,18 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
         # "+0 tai them", khong mot dong nao cho biet 0 la do trang khong co anh,
         # anh trung, hay tai hong — phai doan.
         print(f"[tim rong] browser boc {len(bp2['cands'])} ung vien tu {len(them_bao)} bao", file=sys.stderr)
-    tk = _ten_rieng_dau(tieu_de_nhin)
+    tk = _leading_proper_noun(tieu_de_nhin)
     # TIM NHU NGUOI (Ong Chu 12/09/2026, 7 link TSMC tim tay): anh web (Bing/
     # Yandex qua Chromium) + og:image bao chi VE thuc the — khong doi "cung tin".
     # Truy van = ten rieng dau tieu de (hang/san pham), khong co thi ca tieu de.
     q_web = tk or tieu_de_nhin
     if q_web:
-        import tim_anh_web
-        import anh_bao_thuc_the
-        cands2 += tim_anh_web.tim_anh_web(q_web, so=16, phien=phien)
-        cands2 += anh_bao_thuc_the.anh_bao_thuc_the([q_web], bo_mien=tuple(x for x in mien_co if x))
+        import find_image_web
+        import press_entity_images
+        cands2 += find_image_web.find_image_web(q_web, so=16, phien=phien)
+        cands2 += press_entity_images.press_entity_images([q_web], bo_mien=tuple(x for x in mien_co if x))
     if tk:
-        them_commons = anh_commons(tk, so=6)
+        them_commons = commons_images(tk, so=6)
         if them_commons is None:
             print(f"[anh] anh_commons('{tk}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
             them_commons = []
@@ -299,11 +299,11 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     if n_truoc != len(cands2):
         print(f"[tim rong] bo {n_truoc - len(cands2)} ung vien trung URL da co", file=sys.stderr)
     cands2.sort(key=lambda c: -c.get("diem", 0))
-    bo_sung = tai_va_loc(cands2, wd2) if cands2 else []
+    bo_sung = download_and_filter(cands2, wd2) if cands2 else []
     print(f"[tim rong] tai + loc: {len(bo_sung)} anh giu lai / {len(cands2)} ung vien", file=sys.stderr)
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= TOI_DA_ANH + 4:
+        if len(anh) >= MAX_IMAGE + 4:
             break
         a["ma"] = f"A{i}"
         moi = wd / "goc" / f"{a['ma']}.png"
@@ -311,7 +311,7 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
         a["goc"] = str(moi)
         if a.get("tu") == "commons":
             a["commons"] = True
-        anh.append(phan_loai(a, wd, tieu_de_nhin))
+        anh.append(classify(a, wd, tieu_de_nhin))
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
     print(f"[tim rong] sau vong: {len(dung_duoc)} anh DUNG DUOC / {len(anh)} "
@@ -319,13 +319,13 @@ def _vong_tim_rong(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
     return anh, dung_duoc, chua_nhin
 
 
-TOI_DA_THEM_TH = 4          # tran anh thuong hieu them vao mot bo
+MAX_EXTRA_BRAND_ = 4          # tran anh thuong hieu them vao mot bo
 
 
-XH_BOI_CANH_NGUON = 3       # so bang xep hang thu khi lay anh bang lam boi canh
+XH_CONTEXT_EDGE_SOURCE = 3       # so bang xep hang thu khi lay anh bang lam boi canh
 
 
-def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
+def _ranking_context_edge(hangs: list, wd: Path, brand: str, phien=None):
     """BANG XEP HANG lam anh BOI CANH cho tin thieu anh (Ong Chu 09/09/2026:
     "...anh chup tren cac bang xep hang cua model"). Khac `_chup_xep_hang`: kia
     chay cho TIN XEP HANG va anh la chu the bat buoc; day chay cho tin thuong
@@ -334,8 +334,8 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
     Chi nhan anh CHUP THAT: `tim_va_chup` het duong thi tu dung THE DU PHONG
     ("<model> #<hang>") — the do cho mot tin KHONG PHAI tin xep hang la bia ra
     mot thu hang khong ai noi. Tra ung vien hoac None."""
-    import anh_thuong_hieu as th
-    hs = [h for h in hangs if th.hang_co_model(h["khoa"])]
+    import image_brand as th
+    hs = [h for h in hangs if th.rank_has_model(h["khoa"])]
     if not hs:
         return None
     h = hs[0]
@@ -345,8 +345,8 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
         # 09/09/2026) lam no nem ValueError. Day la nhanh BU anh — hong thi bo
         # qua, khong duoc keo ca engine chet giua chung nhu tin xep hang tung
         # lam (xem chu thich cua `_chup_xep_hang`).
-        ds = xep_hang.goi_y_nguon("")[:XH_BOI_CANH_NGUON]
-        kq = xep_hang.tim_va_chup([h["hang"]], ds, wd / "xh", brand, None,
+        ds = ranking.suggest_sources("")[:XH_CONTEXT_EDGE_SOURCE]
+        kq = ranking.find_and_capture([h["hang"]], ds, wd / "xh", brand, None,
                                   in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
     except Exception as e:                                   # noqa: BLE001
         print(f"[thuong hieu] bang xep hang HONG: {type(e).__name__}: {e}", file=sys.stderr)
@@ -362,7 +362,7 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
                             "site": kq["site"], "bang": kq["bang"], "tu_khoa": kq["model"]}}
 
 
-def _bao_thuong_hieu_rong(h: dict, wd: Path, phien=None) -> list:
+def _report_brand_empty(h: dict, wd: Path, phien=None) -> list:
     """Tìm BÁO THẬT theo tên hãng qua `nguon_bai.bao_ve_tu_khoa` (không đòi
     "cùng một sự kiện" như `bao_khac_bing`, KHÔNG giới hạn thời gian) rồi quét
     ảnh như `_vong_tim_rong` (`browser_pass`, đã sửa LOW-45 phần 1 nên không
@@ -378,13 +378,13 @@ def _bao_thuong_hieu_rong(h: dict, wd: Path, phien=None) -> list:
 
     Gắn `thuong_hieu` cho từng ứng viên để đi qua đúng câu hỏi con mắt và điểm
     theo loại tin như ảnh Commons/Wikidata. Không mạng/router → []."""
-    import nguon_bai
-    bao = nguon_bai.bao_ve_tu_khoa(h["hang"], so=4)
+    import article_sources
+    bao = article_sources.report_about_keyword(h["hang"], so=4)
     if not bao:
         print(f"[thuong hieu] {h['khoa']}: khong tim duoc bao ve \"{h['hang']}\"", file=sys.stderr)
         return []
     print(f"[thuong hieu] {h['khoa']}: Commons/Wikidata rong, thu {len(bao)} bao "
-          f"({', '.join(_mien(b['url']) for b in bao)})", file=sys.stderr)
+          f"({', '.join(_domain(b['url']) for b in bao)})", file=sys.stderr)
     bp = browser_pass([{"url": b["url"], "loai": "báo"} for b in bao], wd, tim_them=False, phien=phien)
     ra = []
     for c in bp["cands"]:
@@ -394,7 +394,7 @@ def _bao_thuong_hieu_rong(h: dict, wd: Path, phien=None) -> list:
     return ra
 
 
-def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
+def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                       toi_thieu: int = 5, khong_browser: bool = False, phien=None,
                       category: str = "") -> tuple:
     """VONG THUONG HIEU (Ong Chu 09/09/2026: "Dre van chua tu tim them hinh lien
@@ -411,18 +411,18 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     Truoc vong nay chi co `anh_commons(_ten_rieng_dau(...))`: mot cum ten rieng
     DAU tieu de, hoi bang ten tran. Tin hai hang ("Qualcomm ... with Amazon")
     khong bao gio hoi toi hang thu hai. Tra (anh, dung_duoc, chua_nhin)."""
-    import anh_thuong_hieu as th
-    hangs = th.hang_trong_tin(tieu_de_nhin, tom_tat)
+    import image_brand as th
+    hangs = th.vendors_in_story(tieu_de_nhin, tom_tat)
     print("[thuong hieu] hang trong tin: " + (", ".join(h["hang"] for h in hangs) or "khong ra"),
           file=sys.stderr)
     if not hangs:
         return anh, [a for a in anh if a["dung"] and a.get("lien_quan") is not False], \
             [a["ma"] for a in anh if a.get("lien_quan") is None]
     wd4 = wd / "thuong_hieu"
-    import loai_tin
+    import story_type
     cands = []
     for h in hangs:
-        cands_h = th.anh_hang(h, wd=wd4 / h["khoa"])
+        cands_h = th.vendor_images(h, wd=wd4 / h["khoa"])
         if not khong_browser:
             # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
             # Wikidata — khong con doi Commons rong moi chay (Ong Chu
@@ -430,16 +430,16 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
             # nguyen tac [khong gioi han thoi gian/su kien/nguon, chi tieng
             # Anh-Trung], khong co bat ky cam doan nao ve nguon anh" — Commons
             # chi con la MOT nguon, khong con doc quyen/duoc hoi truoc).
-            cands_h = cands_h + _bao_thuong_hieu_rong(h, wd4 / h["khoa"], phien=phien)
+            cands_h = cands_h + _report_brand_empty(h, wd4 / h["khoa"], phien=phien)
         cands += cands_h
         # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
-        if loai_tin.muon(category, "co_phieu") and not khong_browser:
-            cands += th.anh_co_phieu(h, wd4 / h["khoa"], phien=phien)
+        if story_type.late(category, "co_phieu") and not khong_browser:
+            cands += th.image_has_ballot(h, wd4 / h["khoa"], phien=phien)
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (loai_tin.BANG_ANH_THEO_LOAI, Ong Chu 12/09/2026).
     for c in cands:
-        c["diem"] = c.get("diem", 0) + loai_tin.diem_theo_loai(
+        c["diem"] = c.get("diem", 0) + story_type.score_by_type(
             category, (c.get("thuong_hieu") or {}).get("loai", "anh"))
     # `tai_va_loc` tu ghi hop dong "tai ung vien THEO THU TU DIEM" — noi duy
     # nhat trong ca thang anh thuong hieu ma diem THAT SU khac nhau (anh noi/san
@@ -450,7 +450,7 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     cands.sort(key=lambda c: -c.get("diem", 0))
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["anh"] not in da]
-    bo_sung = tai_va_loc(cands, wd4) if cands else []
+    bo_sung = download_and_filter(cands, wd4) if cands else []
     # CONG BANG GIUA CAC HANG khi cat theo TOI_DA_THEM_TH: neu cu giu nguyen
     # thu tu diem (tren) roi lay N tam dau, tin nhieu hang de bi mot hang co
     # LOAI anh diem cao (vd "nguoi": chan dung CEO) nuot het slot cua hang con
@@ -476,30 +476,30 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                 bo_sung.append(nhom.pop(0))
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= TOI_DA_ANH + 4 or len(anh) - n0 >= TOI_DA_THEM_TH:
+        if len(anh) >= MAX_IMAGE + 4 or len(anh) - n0 >= MAX_EXTRA_BRAND_:
             break
         a["ma"] = f"A{i}"
         moi = wd / "goc" / f"{a['ma']}.png"
         Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
-        anh.append(phan_loai(a, wd, tieu_de_nhin))
+        anh.append(classify(a, wd, tieu_de_nhin))
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
-    if len(dung_duoc) < toi_thieu and not khong_browser and len(anh) - n0 < TOI_DA_THEM_TH:
+    if len(dung_duoc) < toi_thieu and not khong_browser and len(anh) - n0 < MAX_EXTRA_BRAND_:
         # `env_load.brand_dai()`, KHONG PHAI os.environ["CT_BRAND"] thang: CT_BRAND
         # la ten NGAN cho thu muc state ("blog"), con `card.dat_thuong_hieu` doi
         # slug DAI ("donniechublog") — bat 09/09/2026 khi chay lai draft
         # "gpt-image-2.5-sunburst...": truyen thang CT_BRAND nem SystemExit
         # "Khong biet thuong hieu 'blog'", giet ca `chuan_bi()`. Cung mot loi
         # lap lai o anh_thuong_hieu.py, sua chung mot cho o env_load.brand_dai().
-        c = _xep_hang_boi_canh(hangs, wd4, env_load.brand_dai(), phien=phien)
+        c = _ranking_context_edge(hangs, wd4, env_load.brand_long(), phien=phien)
         if c:
-            them = tai_va_loc([c], wd4 / "bang")
+            them = download_and_filter([c], wd4 / "bang")
             for a in them[:1]:
                 a["ma"] = f"A{len(anh) + 1}"
                 moi = wd / "goc" / f"{a['ma']}.png"
                 Path(a["goc"]).replace(moi)
                 a["goc"] = str(moi)
-                anh.append(phan_loai(a, wd, tieu_de_nhin))
+                anh.append(classify(a, wd, tieu_de_nhin))
         dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
     print(f"[thuong hieu] sau vong: +{len(anh) - n0} anh, "
@@ -516,10 +516,10 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
 # 12 chu khong phai 6: do that 13/09/2026 tren 8 bao cung tin cua tin TSMC, chi
 # 4 trang chup duoc (3 trang khong do ra khoi lead — anh hero lazy/bo cuc la,
 # 1 trang chan bot 403). Ti le trung ~50%, nen muon 6 slide phai thu ~12 bao.
-TOI_DA_TRANG_CHUP = 12
+MAX_PAGE_CAPTURE = 12
 
 
-def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
+def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
                      khong_browser: bool = False, phien=None, tieu_de: str = "") -> tuple:
     """VONG CHUP TRANG NGUON (Ong Chu 06/09/2026, nhac lai 12/09): tin khong co
     anh dung duoc thi CHUP CHINH TRANG NGUON o khung dien thoai va cat lay khoi
@@ -529,7 +529,7 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     anh khai niem thi khong. Tin "AI giai toan gioi, nen toan hoc thi lech chuan"
     (12/09/2026) khong co anh rieng nen roi thang xuong khai niem va ra mot tam
     day mang phong may, chang lien quan gi bai. Luat mobile da co tu 06/09 nhung
-    chi song trong `xep_hang.py` (trang bang xep hang), khong ai bac sang duong
+    chi song trong `ranking.py` (trang bang xep hang), khong ai bac sang duong
     anh cua tin thuong.
 
     Mot vong, toi da `TOI_DA_TRANG_CHUP` trang — THU HET, khong dung o trang
@@ -549,7 +549,7 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     if khong_browser:
         print("[chup nguon] --khong-browser: bo qua vong nay", file=sys.stderr)
         return _ra()
-    import chup_trang
+    import capture_page
     urls, da = [], set()
     for u in [link] + [t.get("url", "") for t in (trang or [])]:
         if u and u not in da:
@@ -558,17 +558,17 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     # Kho URL mong hon tran chup -> tu hoi them BAO CUNG TIN (Bing News). Truoc
     # day vong nay chi an theo `trang` co san: tin hot co hang tram bao dua ma
     # `_bo_sung_nguon` chi bo sung khi `len(trang) < 3`, nen thuong chi co 3 URL.
-    if len(urls) < TOI_DA_TRANG_CHUP and tieu_de:
-        import nguon_bai
-        mien_co = tuple(_mien(u) for u in urls if _mien(u))
-        them = nguon_bai.bao_khac_bing(tieu_de, so=TOI_DA_TRANG_CHUP - len(urls),
+    if len(urls) < MAX_PAGE_CAPTURE and tieu_de:
+        import article_sources
+        mien_co = tuple(_domain(u) for u in urls if _domain(u))
+        them = article_sources.other_outlets_bing(tieu_de, so=MAX_PAGE_CAPTURE - len(urls),
                                        bo_mien=mien_co)
         for t in them:
             if t["url"] not in da:
                 da.add(t["url"])
                 urls.append(t["url"])
         print(f"[chup nguon] +{len(them)} bao cung tin de chup"
-              + (": " + ", ".join(_mien(t["url"]) for t in them) if them else ""), file=sys.stderr)
+              + (": " + ", ".join(_domain(t["url"]) for t in them) if them else ""), file=sys.stderr)
     wd5 = wd / "chup_nguon"
     # LOAI TRUNG (Ong Chu 13/09/2026, xem carousel that: "có đến 3 ảnh giống hệt
     # nhau về nội dung, góc máy, bố cục. việc này không được phép"): nhieu bao
@@ -579,12 +579,12 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     da_hash = []
     for a0 in anh:
         try:
-            da_hash.append(luat_anh.dhash(Image.open(a0["goc"]).convert("RGB")))
+            da_hash.append(image_rules.dhash(Image.open(a0["goc"]).convert("RGB")))
         except Exception:                                    # noqa: BLE001
             pass
-    for u in urls[:TOI_DA_TRANG_CHUP]:
-        tam = wd5 / (_mien(u).replace(".", "_") + ".png")
-        c = chup_trang.chup_lead_mobile(u, tam, phien=phien)
+    for u in urls[:MAX_PAGE_CAPTURE]:
+        tam = wd5 / (_domain(u).replace(".", "_") + ".png")
+        c = capture_page.capture_lead_mobile(u, tam, phien=phien)
         if not c:
             continue
         # BAO KHAC phai CUNG TIN moi duoc lam "anh cua chinh bai" (LOW-33). Truoc
@@ -593,26 +593,26 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         # ra anh hero cua bai "Hugging Face robot duck is already a hit". Bai goc
         # (`link`) van duoc tin; tit khong doc duoc thi khong ket luan, cho qua.
         if u != link and tieu_de and c.get("tit_trang"):
-            import nguon_bai
-            if not nguon_bai.cung_tin(tieu_de, c["tit_trang"]):
-                print(f"[chup nguon] {_mien(u)}: tít {c['tit_trang'][:60]!r} KHÔNG cùng tin "
+            import article_sources
+            if not article_sources.same_story(tieu_de, c["tit_trang"]):
+                print(f"[chup nguon] {_domain(u)}: tít {c['tit_trang'][:60]!r} KHÔNG cùng tin "
                       f"với {tieu_de[:50]!r} — bỏ, không phải bài gốc", file=sys.stderr)
                 Path(tam).unlink(missing_ok=True)
                 continue
         try:
-            h = luat_anh.dhash(Image.open(tam).convert("RGB"))
+            h = image_rules.dhash(Image.open(tam).convert("RGB"))
         except Exception:                                    # noqa: BLE001
             h = None
         if h is not None:
-            trung = next((h2 for h2 in da_hash if luat_anh.gan_giong(h, h2)), None)
+            trung = next((h2 for h2 in da_hash if image_rules.is_near_duplicate(h, h2)), None)
             if trung is not None:
-                print(f"[chup nguon] {_mien(u)}: TRÙNG ảnh đã có (cùng photo-wire, "
+                print(f"[chup nguon] {_domain(u)}: TRÙNG ảnh đã có (cùng photo-wire, "
                       f"lệch {bin(h ^ trung).count('1')} bit) — bỏ", file=sys.stderr)
                 Path(tam).unlink(missing_ok=True)
                 continue
             da_hash.append(h)
         a = {"ma": f"A{len(anh) + 1}", "goc": str(tam), "url": u, "trang": u,
-             "mien": _mien(u), "diem": 0, "hint_chart": False, **c}
+             "mien": _domain(u), "diem": 0, "hint_chart": False, **c}
         moi = wd / "goc" / f"{a['ma']}.png"
         moi.parent.mkdir(parents=True, exist_ok=True)
         # DEM NEN DEN (Ong Chu 13/09/2026, sua lai cung ngay): tam chup khoi lead
@@ -625,11 +625,11 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         # nhat"). Dem den tu dau: khop luon voi nen anh, khong con khoang trang,
         # khong can lop phu nua.
         try:
-            chup_trang.dem_nen(tam, moi, "#000000")
+            capture_page.count_background(tam, moi, "#000000")
             Path(tam).unlink(missing_ok=True)
             a["dem_nen"] = "#000000"
         except Exception as e:                               # noqa: BLE001
-            print(f"[chup nguon] {_mien(u)}: dem nen hong ({type(e).__name__}), giu tam goc",
+            print(f"[chup nguon] {_domain(u)}: dem nen hong ({type(e).__name__}), giu tam goc",
                   file=sys.stderr)
             Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
@@ -642,7 +642,7 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         # docstring), khong dung cau mac dinh (se hoi lai ca "co dung chu de"
         # — thua, va co the rot vi ly do sai). Rong tieu_de (hiem, ca xep_hang
         # cu) van skip vision nhu cu.
-        a = phan_loai(a, wd, tieu_de, chup_nguon=True) if tieu_de else phan_loai(a, wd, "")
+        a = classify(a, wd, tieu_de, chup_nguon=True) if tieu_de else classify(a, wd, "")
         if a.get("lien_quan") is None:
             a["lien_quan"] = True          # khong hoi duoc (rong/router hong) -> giu y cu, khong chan oan
         a["mo_ta"] = a.get("mo_ta") or "ảnh hero của chính bài gốc, chụp ở khung điện thoại"
@@ -706,7 +706,7 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     return _ra()
 
 
-def nang_khoi_tit(anh: list) -> tuple:
+def capability_block_headline(anh: list) -> tuple:
     """Nấc cuối cùng: mở khối tít đã chụp (`kieu == "tit"`) làm bìa khi thực thể
     và khái niệm đều rỗng. Thuần. Trả (anh, dung_duoc, chua_nhin)."""
     for a in anh:
@@ -718,30 +718,30 @@ def nang_khoi_tit(anh: list) -> tuple:
         [a["ma"] for a in anh if a.get("lien_quan") is None]
 
 
-def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
+def _round_concept(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                     category: str = "") -> tuple:
     """VONG KHAI NIEM (Ong Chu 07/09/2026): tin khong co anh rieng (thieu, hoac
     khong tam nao lam bia duoc) thi engine tim ANH THAT theo khai niem cua tin —
     co/ban do nuoc duoc nhac, datacenter cho tin compute... — nhu Dre tung tu
     lam khi con web_search. Chi Commons, chi bia/hero, dung sau anh rieng cua tin.
     Mot vong. Tra (anh, dung_duoc, chua_nhin)."""
-    import anh_khai_niem
-    import anh_thuong_hieu as th
-    import loai_tin
+    import image_concept
+    import image_brand as th
+    import story_type
     # Tu khoa do LOAI TIN ep truoc heuristic: co nuoc cua HANG trong tin (LAB/
     # INFRA — truoc day co chi ra khi tieu de nhac ten nuoc), datacenter/nha may
     # cho INFRA du tieu de khong khop CHU_DE. Bang: loai_tin.py (12/09/2026).
     them = []
-    if loai_tin.muon(category, "co_nuoc_hang"):
-        for h in th.hang_trong_tin(tieu_de_nhin, tom_tat):
-            nuoc = loai_tin.nuoc_cua(h["khoa"])
+    if story_type.late(category, "co_nuoc_hang"):
+        for h in th.vendors_in_story(tieu_de_nhin, tom_tat):
+            nuoc = story_type.country_of(h["khoa"])
             if nuoc and f"flag of {nuoc}" not in them:
                 them.append(f"flag of {nuoc}")
-    if loai_tin.muon(category, "khai_niem_ha_tang"):
-        them += [t for t in loai_tin.TU_KHOA_HA_TANG if t not in them]
-    if loai_tin.muon(category, "san_giao_dich"):
+    if story_type.late(category, "khai_niem_ha_tang"):
+        them += [t for t in story_type.KEYWORD_LOWER_LAYER if t not in them]
+    if story_type.late(category, "san_giao_dich"):
         them.append("stock exchange trading floor")
-    tks = anh_khai_niem.tu_khoa_khai_niem(tieu_de_nhin, tom_tat, them=them)
+    tks = image_concept.keyword_concept(tieu_de_nhin, tom_tat, them=them)
     print("[khai niem] tu khoa: " + (", ".join(f"'{t['tu_khoa']}'" for t in tks) or "khong ra"),
           file=sys.stderr)
     if not tks:
@@ -749,7 +749,7 @@ def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
             [a["ma"] for a in anh if a.get("lien_quan") is None]
     cands = []
     for t in tks:
-        them_kn = anh_khai_niem.anh_khai_niem(t["tu_khoa"], t.get("ly_do", ""), so=2)
+        them_kn = image_concept.image_concept(t["tu_khoa"], t.get("ly_do", ""), so=2)
         if them_kn is None:
             print(f"[anh] anh_khai_niem('{t['tu_khoa']}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
             them_kn = []
@@ -757,16 +757,16 @@ def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["anh"] not in da]
     wd3 = wd / "khai_niem"
-    bo_sung = tai_va_loc(cands, wd3) if cands else []
+    bo_sung = download_and_filter(cands, wd3) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= TOI_DA_ANH + 6:
+        if len(anh) >= MAX_IMAGE + 6:
             break
         a["ma"] = f"A{i}"
         moi = wd / "goc" / f"{a['ma']}.png"
         Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
-        anh.append(phan_loai(a, wd, tieu_de_nhin))
+        anh.append(classify(a, wd, tieu_de_nhin))
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
     print(f"[khai niem] sau vong: +{len(anh) - n0} anh, "
@@ -774,25 +774,25 @@ def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     return anh, dung_duoc, chua_nhin
 
 
-def _vong_thuc_the(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
+def _round_entity(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
     """NAC CUOI, KHONG BAO GIO RONG (Ong Chu 12/09/2026, dong LOW-35: "ko co ly gi
     ma ko tim duoc anh minh hoa dau, day la 2026, moi thu ban can deu co san").
     Anh dai dien cua chinh cac THUC THE trong tieu de — Wikipedia pageimages +
-    Commons theo cum ten rieng (anh_thuc_the.py). Chi chay khi cac nac tren van
+    Commons theo cum ten rieng (entity_images.py). Chi chay khi cac nac tren van
     de bo thieu; qua phan_loai + con mat nhu moi anh. Tra (anh, dung_duoc, chua_nhin)."""
-    import anh_thuc_the
-    models = xep_hang.tach_model(tieu_de_nhin)
-    cands = anh_thuc_the.anh_thuc_the(tieu_de_nhin, models)
+    import entity_images
+    models = ranking.extract_model(tieu_de_nhin)
+    cands = entity_images.entity_images(tieu_de_nhin, models)
     print("[thuc the] " + (", ".join(sorted({c["thuc_the"]["ten"] for c in cands})) or "khong ra thuc the nao"),
           file=sys.stderr)
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["anh"] not in da]
     cands.sort(key=lambda c: -c.get("diem", 0))
     wd6 = wd / "thuc_the"
-    bo_sung = tai_va_loc(cands, wd6) if cands else []
+    bo_sung = download_and_filter(cands, wd6) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= TOI_DA_ANH + 6 or len(anh) - n0 >= TOI_DA_THEM_TH:
+        if len(anh) >= MAX_IMAGE + 6 or len(anh) - n0 >= MAX_EXTRA_BRAND_:
             break
         a["ma"] = f"A{i}"
         moi = wd / "goc" / f"{a['ma']}.png"
@@ -804,8 +804,8 @@ def _vong_thuc_the(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
         # Wikipedia cua Anthropic 2865x2952 bi tu choi vi cau mac dinh hoi sai. Cung
         # bay ma anh khai niem da tranh tu 07/09 (docstring mo_ta_anh).
         a["khai_niem"] = {"tu_khoa": a["thuc_the"]["ten"], "ly_do": "thực thể trong tiêu đề"}
-        a = phan_loai(a, wd, tieu_de_nhin)
-        anh.append(anh_thuc_the.nhan_thuc_the(a))
+        a = classify(a, wd, tieu_de_nhin)
+        anh.append(entity_images.label_entity(a))
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
     print(f"[thuc the] sau vong: +{len(anh) - n0} anh", file=sys.stderr)

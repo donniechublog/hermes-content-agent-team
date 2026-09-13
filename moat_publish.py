@@ -58,12 +58,12 @@ TIMEOUT = 60
 # ca connect/read/write, nen moi bai nhieu anh chet o WriteTimeout va bai da len
 # Telegram roi thi khong bao gio sang duoc social.
 # Tach ra: connect/read van ngan de loi mang lo som, chi rieng write nuoi that dai.
-TIMEOUT_DAY = httpx.Timeout(connect=15.0, read=180.0, write=600.0, pool=15.0)
-TRAN_NEN_TANG = 2200        # gioi han caption cua Instagram va TikTok
+TIMEOUT_BOTTOM = httpx.Timeout(connect=15.0, read=180.0, write=600.0, pool=15.0)
+CEILING_BACKGROUND_LAYER = 2200        # gioi han caption cua Instagram va TikTok
 MIME_BY_SUFFIX = {".png": "image/png", ".jpg": "image/jpeg",
                   ".jpeg": "image/jpeg", ".webp": "image/webp"}
 
-MAX_ANH = 10                # tran so anh mot bai cua moat
+MAX_IMAGE = 10                # tran so anh mot bai cua moat
 
 # Nen anh truoc khi day. Uplink cua may nay ~50 KB/s, ma Cloudflare dung truoc
 # moat cat request sau 100 giay (loi 524) -- KHONG phai timeout cua httpx, nen
@@ -71,17 +71,17 @@ MAX_ANH = 10                # tran so anh mot bai cua moat
 # Mot carousel 5 the PNG la ~7 MB (base64 ~9.7 MB, ~180 giay) => luon 524.
 # Cung bo the do sang WebP q90 con ~1.1 MB (~29 giay), qua duoi tran.
 # Chi nen the nao VUOT nguong; the nho de nguyen. Tat bang MOAT_NEN_ANH=0.
-NEN_ANH = (os.environ.get("MOAT_NEN_ANH") or "1") != "0"
-NGUONG_NEN = int(os.environ.get("MOAT_NGUONG_NEN") or 400_000)   # bytes
-CHAT_LUONG_NEN = int(os.environ.get("MOAT_CHAT_LUONG_NEN") or 90)
+BACKGROUND_IMAGE = (os.environ.get("MOAT_NEN_ANH") or "1") != "0"
+THRESHOLD_BACKGROUND = int(os.environ.get("MOAT_NGUONG_NEN") or 400_000)   # bytes
+QUALITY_BACKGROUND = int(os.environ.get("MOAT_CHAT_LUONG_NEN") or 90)
 
 # Tran CUNG cho tong anh mot bai. Nen tung the rieng le khong bao dam gi ca: 10
 # the anh chup (nhieu chi tiet, WebP kem hieu qua hon anh do hoa) van co the ra
 # 5 MB va lai 524. Uplink do duoc dao dong 37-49 KB/s, nen lay 1,5 MB: base64
 # ~2 MB, tuc ~55 giay o luc mang xau nhat -- con nua thoi gian du phong.
 # Vuot tran thi ha chat luong dan; kem nhat van con q60, thua bo bai.
-TRAN_TONG = int(os.environ.get("MOAT_TRAN_TONG") or 1_500_000)
-BAC_CHAT_LUONG = [CHAT_LUONG_NEN, 80, 70, 60]
+CEILING_TOTAL = int(os.environ.get("MOAT_TRAN_TONG") or 1_500_000)
+TIER_QUALITY = [QUALITY_BACKGROUND, 80, 70, 60]
 
 # Task o cac trang thai nay coi nhu xong, khong hoi lai nua.
 TERMINAL = {"published", "failed", "cancelled"}
@@ -104,10 +104,10 @@ def load_secrets():
     duong vao cung mot module ma ra hai ket qua khac nhau, va brand dcgr thi
     khong duong nao thay khoa ca. Mot cua nap duy nhat de het lech.
     """
-    env_load.nap()
+    env_load.load()
 
 
-def _cho_trong(v):
+def _wait_within(v):
     """Gia tri kieu '<dan khoa vao day>' trong secret.<brand>.env la CHO TRONG
     chua dien, khong phai khoa. Coi la chua cau hinh, thay vi cam dau goi moat
     de an 401 moi phut."""
@@ -117,22 +117,22 @@ def _cho_trong(v):
 # Thuong hieu -> ten bien moi truong chua khoa. Khoa quyet dinh org ben moat,
 # nen bang nay CHINH LA anh xa thuong hieu -> org social. Them mot thuong hieu
 # la them mot dong o day, khong sua cho nao khac.
-KHOA_THEO_BRAND = {
+LOCK_BY_BRAND = {
     "donniechublog": "MOAT_PUBLISH_KEY",
     "dcgr": "MOAT_PUBLISH_KEY_DCGR",
 }
-MAC_DINH_BRAND = "donniechublog"
-KHOA_MAC_DINH = "MOAT_PUBLISH_KEY"
+DEFAULT_BRAND = "donniechublog"
+LOCK_DEFAULT = "MOAT_PUBLISH_KEY"
 
 
-def ten_khoa(brand=None):
+def name_lock(brand=None):
     """Ten bien moi truong chua khoa cua thuong hieu nay."""
-    return KHOA_THEO_BRAND.get(brand or MAC_DINH_BRAND, KHOA_MAC_DINH)
+    return LOCK_BY_BRAND.get(brand or DEFAULT_BRAND, LOCK_DEFAULT)
 
 
 # CUNG quy uoc voi approve_service: CT_BRAND ('blog'|'dcgr') la khoa container,
 # BRAND (ten content-brand day du) suy tu no va van cho env de len.
-_TEN_BRAND = env_load.BRAND_DAI        # mot bang, o env_load (ADF-r2-10)
+_TEN_BRAND = env_load.BRAND_LONG        # mot bang, o env_load (ADF-r2-10)
 
 
 def brand_container():
@@ -161,8 +161,8 @@ def config(brand=None):
     day nham: bai van len Telegram, va the duyet ghi ro thieu khoa nao.
     """
     base = base_url()
-    key = os.environ.get(ten_khoa(brand)) or ""
-    if _cho_trong(key):
+    key = os.environ.get(name_lock(brand)) or ""
+    if _wait_within(key):
         key = ""
     if not base or not key:
         return None, None
@@ -177,17 +177,17 @@ def read_draft(draft_id):
     return json.loads(draft_path(draft_id).read_text(encoding="utf-8"))
 
 
-def _ghi_json(path, data):
+def _write_json(path, data):
     """Ghi atomic (tmp + os.replace): draft la so cai cua he thong, write_text
     truc tiep ma chet giua chung se de lai JSON cut."""
     # ADF-r2-11: mot ban o env_load.ghi_json (tmp co pid+thread, mkdir, don tmp
     # khi hong) — ban cu o day dung ten tmp co dinh nen hai tien trinh cung ghi
     # mot draft la lan vao nhau.
-    env_load.ghi_json(path, data)
+    env_load.write_json(path, data)
 
 
 def write_draft(draft_id, data):
-    _ghi_json(draft_path(draft_id), data)
+    _write_json(draft_path(draft_id), data)
 
 
 # Caption duoc viet CHO TELEGRAM (parse_mode=HTML): <b>, <i>, <code>. Facebook,
@@ -197,20 +197,20 @@ def write_draft(draft_id, data):
 _THE_HTML = re.compile(r"</?[a-zA-Z][a-zA-Z0-9-]*[^>]*>")
 
 
-def chu_thuan(text):
+def pure_text(text):
     """Caption dang len social: bo the HTML, giu chu ben trong."""
     return html.unescape(_THE_HTML.sub("", text or "")).strip()
 
 
-def _nen(raw, mime, ten="", chat_luong=None):
+def _background(raw, mime, ten="", chat_luong=None):
     """(bytes, mime) sau khi nen. Tra lai nguyen ban neu khong nen duoc/khong loi.
 
     WebP giu duoc chu tren the carousel o q90 ma nho hon PNG ~6 lan. Giu kenh
     alpha khi anh co, vi convert("RGB") se bien nen trong suot thanh den.
     Moi loi o day deu nuot: day duoc bai van hon la nen dep.
     """
-    q = CHAT_LUONG_NEN if chat_luong is None else chat_luong
-    if not NEN_ANH or len(raw) <= NGUONG_NEN:
+    q = QUALITY_BACKGROUND if chat_luong is None else chat_luong
+    if not BACKGROUND_IMAGE or len(raw) <= THRESHOLD_BACKGROUND:
         return raw, mime
     try:
         from PIL import Image                                 # noqa: PLC0415
@@ -261,12 +261,12 @@ def images_payload(d):
         tho.append(("bytes", f.read_bytes(), mime, f.name))
 
     da_nen = None
-    for q in BAC_CHAT_LUONG:
-        thu = [(k, (_nen(v, mi, ten, q) if k == "bytes" else (v, mi)))
+    for q in TIER_QUALITY:
+        thu = [(k, (_background(v, mi, ten, q) if k == "bytes" else (v, mi)))
                for k, v, mi, ten in tho]
         tong = sum(len(v[0]) for k, v in thu if k == "bytes")
         da_nen = thu
-        if tong <= TRAN_TONG or not NEN_ANH:
+        if tong <= CEILING_TOTAL or not BACKGROUND_IMAGE:
             break
         print("anh con " + str(tong // 1024) + " KB o q" + str(q)
               + ", ha them mot bac")
@@ -280,7 +280,7 @@ def images_payload(d):
             out.append({"base64": base64.b64encode(raw).decode("ascii"),
                         "mime": mime})
     # Moat nhan toi da 10 anh mot bai; gui 11 la ca bai bi tu choi.
-    return out[:MAX_ANH]
+    return out[:MAX_IMAGE]
 
 
 def _body_intake(draft_id, d, cap, images, scheduled_at=None,
@@ -320,10 +320,10 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
     # Doc draft TRUOC khi lay cau hinh: chua biet thuong hieu thi chua biet
     # phai dung khoa nao, ma khoa moi la thu quyet dinh bai len org nao.
     # Draft ghi truoc khi co truong "brand" roi ve mac dinh — dung nhu cu.
-    brand = d.get("brand") or MAC_DINH_BRAND
+    brand = d.get("brand") or DEFAULT_BRAND
     base, key = config(brand)
     if not base:
-        return False, ("chua cau hinh MOAT_BASE_URL/" + ten_khoa(brand)
+        return False, ("chua cau hinh MOAT_BASE_URL/" + name_lock(brand)
                        + " cho thuong hieu " + brand)
 
     if isinstance(d.get("moat"), dict) and d["moat"].get("workflow_id"):
@@ -344,10 +344,10 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
     # tung nen tang. Chan o day la lop cuoi — toi day bai phai dang duoc ngay.
     # Boc the TRUOC khi do: tran nay phai do dung chuoi that su dang len,
     # khong phai chuoi con lan the HTML.
-    cap = chu_thuan(d.get("caption"))
-    if len(cap) > TRAN_NEN_TANG:
-        return False, (f"caption {len(cap)} ky tu, vuot tran {TRAN_NEN_TANG} cua "
-                       f"Instagram/TikTok (thua {len(cap) - TRAN_NEN_TANG}). "
+    cap = pure_text(d.get("caption"))
+    if len(cap) > CEILING_BACKGROUND_LAYER:
+        return False, (f"caption {len(cap)} ky tu, vuot tran {CEILING_BACKGROUND_LAYER} cua "
+                       f"Instagram/TikTok (thua {len(cap) - CEILING_BACKGROUND_LAYER}). "
                        "Rut ngan roi day lai.")
 
     images = images_payload(d)
@@ -360,21 +360,21 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
     # Danh dau "dang day" TRUOC khi goi: mot cu kill -9 giua luc upload (may tat,
     # systemd restart, OOM) khong chay duoc nhanh loi nao ben duoi, va bai se mat
     # dau y nhu thoi chua co hang doi. Ghi truoc thi cron sau do nhat len.
-    _danh_dau_dang_day(draft_id, brand, scheduled_at)
+    _list_mark_form_bottom(draft_id, brand, scheduled_at)
 
     try:
-        with httpx.Client(timeout=TIMEOUT_DAY) as c:
+        with httpx.Client(timeout=TIMEOUT_BOTTOM) as c:
             r = c.post(base + "/publish-intake", json=body,
                        headers={"X-API-Key": key})
     except Exception as e:                                   # noqa: BLE001
         loi = "khong goi duoc moat: " + type(e).__name__ + ": " + str(e)
-        xep_day_lai(draft_id, brand, scheduled_at, loi)
+        refill(draft_id, brand, scheduled_at, loi)
         return False, loi
 
     if r.status_code not in (200, 201):
         loi = "moat tra HTTP " + str(r.status_code) + ": " + r.text[:200]
-        if not xep_day_lai(draft_id, brand, scheduled_at, loi):
-            _bo_khoi_hang_doi(draft_id)      # loi khong tu khoi, dung giu lai
+        if not refill(draft_id, brand, scheduled_at, loi):
+            _drop_block_queue(draft_id)      # loi khong tu khoi, dung giu lai
         return False, loi
 
     out = r.json()
@@ -394,7 +394,7 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
         "reported": {},
     }
     write_draft(draft_id, d)
-    _bo_khoi_hang_doi(draft_id)
+    _drop_block_queue(draft_id)
     n = len(out.get("tasks", []))
     return True, "da xep " + str(n) + " task publish"
 
@@ -405,30 +405,30 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
 # day, cron moat-publish-watch (5 phut/lan) day lai theo lich lui dan.
 # An toan vi intake cua moat idempotent theo external_id: goi lai bai da vao roi
 # thi no tra ve workflow cu kem "duplicate": true, khong de ra task trung.
-HANG_DOI = STATE_DIR / "moat_day_lai.json"
+QUEUE = STATE_DIR / "moat_day_lai.json"
 
 # Phut cho truoc lan thu thu 1, 2, 3... Het bang la bo cuoc va bao mot dong.
-LICH_LUI = [5, 15, 45, 120, 360, 720, 1440]
+SCHEDULE_BACK = [5, 15, 45, 120, 360, 720, 1440]
 
 
-def _doc_hang_doi():
+def _read_queue():
     try:
-        d = json.loads(HANG_DOI.read_text(encoding="utf-8"))
+        d = json.loads(QUEUE.read_text(encoding="utf-8"))
         return d if isinstance(d, dict) else {}
     except Exception:                                        # noqa: BLE001
         return {}
 
 
-def _ghi_hang_doi(d):
+def _write_queue(d):
     try:
-        HANG_DOI.parent.mkdir(parents=True, exist_ok=True)
-        HANG_DOI.write_text(json.dumps(d, ensure_ascii=False, indent=2),
+        QUEUE.parent.mkdir(parents=True, exist_ok=True)
+        QUEUE.write_text(json.dumps(d, ensure_ascii=False, indent=2),
                             encoding="utf-8")
     except Exception as e:                                   # noqa: BLE001
         print("khong ghi duoc hang doi day lai: " + str(e))
 
 
-def _dang_thu_lai(loi):
+def _form_try_again(loi):
     """Loi nay day lai co cua khong?
 
     Mang dut / 5xx / 408 / 429 / 524 la nhat thoi -> thu lai. Con caption dai,
@@ -444,24 +444,24 @@ def _dang_thu_lai(loi):
     return ma in (408, 425, 429) or ma >= 500
 
 
-def _danh_dau_dang_day(draft_id, brand, scheduled_at):
+def _list_mark_form_bottom(draft_id, brand, scheduled_at):
     """Ghi mot muc "dang day" truoc khi POST. KHONG tang so lan: day la dau vet
     de song sot qua mot cu kill, khong phai mot lan that bai."""
-    d = _doc_hang_doi()
+    d = _read_queue()
     muc = d.get(draft_id) or {"lan": 0}
     muc["brand"] = brand
     muc["scheduled_at"] = scheduled_at
     muc["luc"] = int(time.time())
     muc["loi"] = muc.get("loi") or "dang day, chua co ket qua"
     d[draft_id] = muc
-    _ghi_hang_doi(d)
+    _write_queue(d)
 
 
-def xep_day_lai(draft_id, brand, scheduled_at, loi):
+def refill(draft_id, brand, scheduled_at, loi):
     """Ghi mot bai truot vao hang doi (hoac tang so lan da thu)."""
-    if not _dang_thu_lai(loi):
+    if not _form_try_again(loi):
         return False
-    d = _doc_hang_doi()
+    d = _read_queue()
     muc = d.get(draft_id) or {"lan": 0, "brand": brand,
                               "scheduled_at": scheduled_at}
     muc["lan"] = int(muc.get("lan", 0)) + 1
@@ -470,25 +470,25 @@ def xep_day_lai(draft_id, brand, scheduled_at, loi):
     muc["luc"] = int(time.time())
     muc["loi"] = loi[:200]
     d[draft_id] = muc
-    _ghi_hang_doi(d)
+    _write_queue(d)
     return True
 
 
-def _bo_khoi_hang_doi(draft_id):
+def _drop_block_queue(draft_id):
     """Doc-sua-ghi ngay lap tuc: intake() cung ghi vao file nay giua chung,
     nen giu mot ban `d` trong bo nho roi ghi de o cuoi la mat cap nhat cua no."""
-    d = _doc_hang_doi()
+    d = _read_queue()
     if d.pop(draft_id, None) is not None:
-        _ghi_hang_doi(d)
+        _write_queue(d)
 
 
-def day_lai():
+def bottom_again():
     """Day lai cac bai dang cho trong hang doi, tra ve list dong thong bao.
 
     Chi dung bai cua brand container nay -- hai container dung chung drafts/, ma
     khoa moat moi la thu quyet dinh bai len org nao.
     """
-    d = _doc_hang_doi()
+    d = _read_queue()
     if not d:
         return []
     cua_toi = brand_container()
@@ -497,20 +497,20 @@ def day_lai():
 
     for draft_id in list(d.keys()):
         muc = d.get(draft_id) or {}
-        brand = muc.get("brand") or MAC_DINH_BRAND
+        brand = muc.get("brand") or DEFAULT_BRAND
         if cua_toi and brand != cua_toi:
             continue
         lan = max(int(muc.get("lan", 1)), 1)   # muc write-ahead co lan=0
-        if lan > len(LICH_LUI):
-            _bo_khoi_hang_doi(draft_id)
+        if lan > len(SCHEDULE_BACK):
+            _drop_block_queue(draft_id)
             txt = ("🛑 Bỏ cuộc sau " + str(lan - 1) + " lần đẩy lại sang moat — "
-                   + _thoat(str(muc.get("loi", ""))[:150]))
-            if not bao_the(draft_id, txt,
+                   + _exit(str(muc.get("loi", ""))[:150]))
+            if not report_card(draft_id, txt,
                            [{"text": "🔁 Đẩy lại moat", "callback_data": "mlai:" + draft_id}]):
                 lines.append("🛑 moat: bo cuoc sau " + str(lan - 1) + " lan day lai "
                              + draft_id + " — " + str(muc.get("loi", ""))[:120])
             continue
-        if bay_gio - int(muc.get("luc", 0)) < LICH_LUI[lan - 1] * 60:
+        if bay_gio - int(muc.get("luc", 0)) < SCHEDULE_BACK[lan - 1] * 60:
             continue
 
         # intake() tu tang so lan (loi con thu lai duoc) hoac tu xoa (thanh cong).
@@ -518,8 +518,8 @@ def day_lai():
         if ok:
             lines.append("✅ moat: day lai lan " + str(lan) + " thanh cong "
                          + draft_id + " — " + note)
-        elif not _dang_thu_lai(note):
-            _bo_khoi_hang_doi(draft_id)
+        elif not _form_try_again(note):
+            _drop_block_queue(draft_id)
             lines.append("⚠️ moat: thoi day lai " + draft_id
                          + " vi loi khong tu khoi: " + note[:150])
     return lines
@@ -535,7 +535,7 @@ def _fetch_status(base, key, ref):
     return r.json().get("tasks", [])
 
 
-def _poll_mot_bai(path, d, cua_toi, lines):
+def _poll_one_article(path, d, cua_toi, lines):
     """Mot draft: bo qua neu khong phai bai da day / khac brand / da xong / het
     han theo doi; hoi moat mot lan, bao MOI trang thai moi mot lan, ghi nguoc
     vao draft. `lines` la danh sach dong thong bao, ghi them vao."""
@@ -545,7 +545,7 @@ def _poll_mot_bai(path, d, cua_toi, lines):
     if moat.get("tracking_stopped"):
         return
     # Bai day tu truoc khi tach brand khong co khoa "brand" -> mac dinh.
-    if cua_toi and (moat.get("brand") or d.get("brand") or MAC_DINH_BRAND) != cua_toi:
+    if cua_toi and (moat.get("brand") or d.get("brand") or DEFAULT_BRAND) != cua_toi:
         return
     reported = moat.get("reported") or {}
     if reported and all(v in TERMINAL for v in reported.values()) \
@@ -562,7 +562,7 @@ def _poll_mot_bai(path, d, cua_toi, lines):
         pending = list(range(max(0, len(cac_san) - xong)))
         moat["tracking_stopped"] = True
         d["moat"] = moat
-        _ghi_json(path, d)
+        _write_json(path, d)
         if pending:
             lines.append("⏳ " + path.stem + ": còn " + str(len(pending))
                          + " task chưa đăng sau " + str(MAX_TRACK_DAYS)
@@ -589,13 +589,13 @@ def _poll_mot_bai(path, d, cua_toi, lines):
         if moat.get("loi_da_bao") != loi_moi:
             moat["loi_da_bao"] = loi_moi
             d["moat"] = moat
-            _ghi_json(path, d)
+            _write_json(path, d)
             lines.append("⚠️ " + path.stem + ": khong hoi duoc moat ("
                          + loi_moi + "), se im cho toi khi tinh hinh doi")
         return
     if moat.pop("loi_da_bao", None):
         d["moat"] = moat
-        _ghi_json(path, d)
+        _write_json(path, d)
         lines.append("✅ " + path.stem + ": moat hoi lai duoc roi")
 
     changed = False
@@ -618,11 +618,11 @@ def _poll_mot_bai(path, d, cua_toi, lines):
             # Bao TRA LOI vao the, kem nut dang lai rieng nen tang nay. Gui
             # duoc thi thoi khong nem vao topic nua -- cung mot loi bao hai
             # cho la nhieu, ma reply moi la cai chi dung bai.
-            ma = MA_NUT_DANG_LAI.get(t.get("platform"))
+            ma = CODE_BUTTON_FORM_AGAIN.get(t.get("platform"))
             nut = ([{"text": "🔁 Đăng lại " + label,
                      "callback_data": ma + path.stem}] if ma else None)
-            if bao_the(path.stem, "❌ Đăng <b>" + label + "</b> lỗi: "
-                       + _thoat(t.get("last_error") or "không rõ lý do"), nut):
+            if report_card(path.stem, "❌ Đăng <b>" + label + "</b> lỗi: "
+                       + _exit(t.get("last_error") or "không rõ lý do"), nut):
                 continue
         else:
             line = "⏹ " + path.stem + " " + label + ": " + status
@@ -631,7 +631,7 @@ def _poll_mot_bai(path, d, cua_toi, lines):
     if changed:
         moat["reported"] = reported
         d["moat"] = moat
-        _ghi_json(path, d)
+        _write_json(path, d)
 
 
 def poll():
@@ -659,7 +659,7 @@ def poll():
             d = json.loads(path.read_text(encoding="utf-8"))
         except Exception:                                    # noqa: BLE001
             continue
-        _poll_mot_bai(path, d, cua_toi, lines)
+        _poll_one_article(path, d, cua_toi, lines)
 
     return lines
 
@@ -668,10 +668,10 @@ def poll():
 # byte, ma _DRAFT_ID_HOP_LE cho draft_id dai toi 55 ky tu -> tien to phai ngan;
 # 6 + 55 = 61, vua du. Dung draft_id thang thay vi mot so tra bang de nut con
 # bam duoc sau khi dich vu restart (khong con so tra nao de tra).
-MA_NUT_DANG_LAI = {"facebook": "mlaif:", "instagram": "mlaii:", "tiktok": "mlait:"}
+CODE_BUTTON_FORM_AGAIN = {"facebook": "mlaif:", "instagram": "mlaii:", "tiktok": "mlait:"}
 
 
-def _thoat(s):
+def _exit(s):
     """Escape cho parse_mode=HTML. last_error cua extension co the chua dau <>
     (ten the DOM), khong thoat thi Telegram tu choi ca tin nhan."""
     return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
@@ -694,7 +694,7 @@ def _tele(method, **kw):
         return {"ok": False, "description": type(e).__name__ + ": " + str(e)}
 
 
-def bao_the(draft_id, text, nut=None):
+def report_card(draft_id, text, nut=None):
     """Bao TRA LOI thang vao the cua bai tren Telegram, kem nut neu co.
 
     Truoc day moi thu bao ket qua deu roi vao topic writer nhu mot dong troi
@@ -711,7 +711,7 @@ def bao_the(draft_id, text, nut=None):
     # Nap secret nhu config() lam: chay tu CLI thi TELEGRAM_GROUP_ID chua co
     # trong moi truong (systemd moi dat san cho dich vu), va thieu no thi ham
     # nay im lang khong gui gi -- dung kieu loi ma co che nay sinh ra de chua.
-    env_load.nap()
+    env_load.load()
     group = os.environ.get("TELEGRAM_GROUP_ID")
     if not group:
         print("khong bao duoc the: thieu TELEGRAM_GROUP_ID")
@@ -793,10 +793,10 @@ if __name__ == "__main__":
         brand = sys.argv[3] if len(sys.argv) > 3 else None
         base, key = config(brand)
         if not base:
-            sys.exit("chua cau hinh MOAT_BASE_URL/" + ten_khoa(brand))
+            sys.exit("chua cau hinh MOAT_BASE_URL/" + name_lock(brand))
         print(json.dumps(_fetch_status(base, key, sys.argv[2]), ensure_ascii=False, indent=2))
         sys.exit(0)
-    out = day_lai() + poll()
+    out = bottom_again() + poll()
     _notify(out)
     # Khong co gi moi thi IM HAN (stdout rong). Cron chay moi phut, ma hermes ghi
     # moi ban stdout thanh mot file, in "khong co thay doi" la 1440 file rac/ngay.

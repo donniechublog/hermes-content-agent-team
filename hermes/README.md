@@ -26,7 +26,7 @@ Map slug ↔ nhân vật. shared (một SOUL cho cả hai home, script tự lấ
 sidecar, chỉ khác handle và người đọc): `designer`=Ethan, `carousel`=Dre,
 `writer`=Miles, `carousel-edu`=Kite, `itachi`, `gin`, `analyst`=Ada (từ 05/09/2026,
 trước đó designer/carousel/writer mỗi brand một bản), `bob` (từ 06/09/2026: một
-SOUL 32 dòng thay hai bản 91 dòng, handle do `bob_nop.py` đọc từ bảng brand của
+SOUL 32 dòng thay hai bản 91 dòng, handle do `bob_submit.py` đọc từ bảng brand của
 `card.py` chứ không gõ trong SOUL). Chỉ ở blog: `scout`=Finn,
 `teaser`=Cape (đọc donniechu.com), `nova`. Chỉ ở dcgr: `market`=Vera.
 (từ 03/09/2026: dcgr chỉ có Vera đi tìm tin, Finn không có cron ở dcgr nên bỏ).
@@ -38,11 +38,11 @@ ngay trên nó (audit C6).
 
 Sửa ở home rồi chép vào git trước khi commit:
 
-    venv/bin/python dong_bo_hermes.py --vao-repo
+    venv/bin/python sync_hermes.py --vao-repo
 
 Hoặc chiều ngược lại (đẩy git → cả hai home), sau `hermes update`:
 
-    venv/bin/python dong_bo_hermes.py --ra-hermes
+    venv/bin/python sync_hermes.py --ra-hermes
 
 Không cờ = chỉ so sánh. Script quét `profiles/{blog,dcgr,shared}/`, sync SOUL +
 MEMORY + cron (brand-aware) sang home tương ứng; profile/script home không có
@@ -71,7 +71,7 @@ thì báo `[thieu]`, KHÔNG tạo (tôn trọng phân chia per-brand).
 ### Bản vá sống ở đâu (đổi 06/09/2026)
 
 Trước đây bản vá nằm **trong bản cài hermes** (`~/hermes-agent/plugins/kanban/dashboard/`),
-tức đúng chỗ `hermes update` ghi đè, rồi `dong_bo_hermes.py` chép qua chép lại để
+tức đúng chỗ `hermes update` ghi đè, rồi `sync_hermes.py` chép qua chép lại để
 "khôi phục". Mất bản vá ba lần là hệ quả tất yếu của việc đặt sai chỗ, không phải
 của cổng chặn yếu.
 
@@ -89,7 +89,7 @@ cho cả hai home, gồm `manifest.json`, `plugin_api.py`, `dist/index.js`,
 
 Chuyển một lần trên server, mỗi home:
 
-    venv/bin/python dong_bo_hermes.py --ra-hermes          # tạo plugins/kanban/ ở cả hai home
+    venv/bin/python sync_hermes.py --ra-hermes          # tạo plugins/kanban/ ở cả hai home
     HERMES_HOME=~/.hermes-blog ~/hermes-agent/venv/bin/python -m hermes_cli.main plugins enable kanban
     HERMES_HOME=~/.hermes-dcgr ~/hermes-agent/venv/bin/python -m hermes_cli.main plugins enable kanban
     git -C ~/hermes-agent checkout -- plugins/kanban/dashboard   # bản đi kèm về nguyên bản
@@ -98,7 +98,7 @@ Chuyển một lần trên server, mỗi home:
 Bước `plugins enable` là bắt buộc: hermes chỉ mount API của plugin **người dùng**
 khi tên nó có trong `plugins.enabled` của `config.yaml` (GHSA-mcfc-hp25-cjv7).
 Thiếu thì tab kanban vẫn hiện mà mọi `/api/plugins/kanban/*` đều 404.
-`dong_bo_hermes.py` đọc `config.yaml` từng home và nhắc đúng lệnh khi thiếu.
+`sync_hermes.py` đọc `config.yaml` từng home và nhắc đúng lệnh khi thiếu.
 
 Sau đó `hermes update` không còn liên quan gì tới bản vá. Sửa bản vá thì sửa trong
 git rồi `--ra-hermes` và restart dashboard.
@@ -116,7 +116,7 @@ Trước 06/09/2026 cổng bảo vệ so **lệch kích thước 15%** và chỉ
   dòng vào `plugin_api.py` chỉ lệch ~2,4% — lọt dưới ngưỡng, và `--ra-hermes`
   vẫn đè mất tính năng upstream.
 
-Nay `dong_bo_hermes.py` kiểm **theo dấu vết** (`DAU_VET`), áp cho **cả hai
+Nay `sync_hermes.py` kiểm **theo dấu vết** (`DAU_VET`), áp cho **cả hai
 chiều**: mỗi bản vá có một chuỗi đặc trưng (`tenVai(`, chuỗi lane-check, thứ tự
 cột, các thuộc tính CSS, `display_names`). Trước khi ghi, script so bên nguồn và
 bên đích — **bên đích đang có dấu vết mà bên nguồn thiếu thì từ chối ghi**, vì
@@ -135,10 +135,10 @@ làm khi rảnh tay, không phải mỗi lần `hermes update`.
 `hermes/plugins/kanban/UPSTREAM` ghi hash commit hermes-agent mà bản vá đang
 đứng trên. Quy trình port:
 
-    venv/bin/python dong_bo_hermes.py --kiem-upstream   # upstream đổi gì kể từ hash đó
+    venv/bin/python sync_hermes.py --kiem-upstream   # upstream đổi gì kể từ hash đó
     # vá lại bốn bản vá lên bản mới trong hermes/plugins/kanban/dashboard/
-    venv/bin/python dong_bo_hermes.py --ra-hermes       # đẩy lên hai home, restart dashboard
-    venv/bin/python dong_bo_hermes.py --chot-upstream   # ghi HEAD mới vào UPSTREAM
+    venv/bin/python sync_hermes.py --ra-hermes       # đẩy lên hai home, restart dashboard
+    venv/bin/python sync_hermes.py --chot-upstream   # ghi HEAD mới vào UPSTREAM
 
 Bản trong repo hiện **đứng sau upstream** (theo bản audit, chưa kiểm được trên
 máy Mac vì không có `~/hermes-agent`): thiếu endpoint export/import board và

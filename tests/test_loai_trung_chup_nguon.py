@@ -5,7 +5,7 @@ thuong), khong duoc them thang vao carousel.
 Ong Chu 13/09/2026, xem carousel that: *"có đến 3 ảnh giống hệt nhau về nội
 dung, góc máy, bố cục. việc này ko được phép"*. Nhieu bao dung CHUNG mot anh
 photo-wire (AP/Reuters/Getty) cho cung mot tin bao; `_vong_chup_nguon` chup
-tung trang RIENG LE, khong di qua `chuan_bi.tai_loc.tai_va_loc` (noi CO san
+tung trang RIENG LE, khong di qua `prepare.download_filter.download_and_filter` (noi CO san
 co che so dHash) nen chua bao gio duoc so trung.
 
 Chay:  venv/bin/python tests/test_loai_trung_chup_nguon.py
@@ -17,7 +17,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from chuan_bi import vong_bu                                   # noqa: E402
+from prepare import fallback_rounds                                   # noqa: E402
 
 
 def _anh(tmp: Path, ten: str, seed: int) -> Path:
@@ -39,7 +39,7 @@ def _anh(tmp: Path, ten: str, seed: int) -> Path:
 
 
 def _gia_chup_lead(anh_map):
-    """Gia `chup_trang.chup_lead_mobile`: 'chup' bang cach COPY tep anh co san
+    """Gia `capture_page.capture_lead_mobile`: 'chup' bang cach COPY tep anh co san
     (mo phong hai trang dung CHUNG mot photo-wire khi anh_map anh xa nhieu URL
     ve CUNG mot tep nguon)."""
     def gia(url, ra, phien=None):
@@ -64,9 +64,9 @@ def test_hai_bao_dung_chung_photo_wire_chi_giu_mot_tam():
             "https://b.com/bai-khac-dua-cung-tin": wire,   # CUNG anh, khac bao
             "https://c.com/bai-thu-ba": rieng,
         }
-        with mock.patch("chup_trang.chup_lead_mobile", _gia_chup_lead(anh_map)), \
-             mock.patch("nguon_bai.cung_tin", return_value=True):
-            anh, dung_duoc, _ = vong_bu._vong_chup_nguon(
+        with mock.patch("capture_page.capture_lead_mobile", _gia_chup_lead(anh_map)), \
+             mock.patch("article_sources.same_story", return_value=True):
+            anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://a.com/bai",
                 [{"url": "https://b.com/bai-khac-dua-cung-tin"}, {"url": "https://c.com/bai-thu-ba"}],
                 tmp / "wd")
@@ -88,8 +88,8 @@ def test_khong_trung_voi_anh_da_co_tu_vong_khac():
         Image.open(wire).convert("RGB").save(da_co / "A1.png")
         anh_ban_dau = [{"ma": "A1", "goc": str(da_co / "A1.png"), "dung": ["thân"], "lien_quan": True}]
         anh_map = {"https://a.com/bai": wire}
-        with mock.patch("chup_trang.chup_lead_mobile", _gia_chup_lead(anh_map)):
-            anh, dung_duoc, _ = vong_bu._vong_chup_nguon(anh_ban_dau, "https://a.com/bai", [], tmp / "wd")
+        with mock.patch("capture_page.capture_lead_mobile", _gia_chup_lead(anh_map)):
+            anh, dung_duoc, _ = fallback_rounds._round_capture_source(anh_ban_dau, "https://a.com/bai", [], tmp / "wd")
         assert len(anh) == 1, "anh chup trung voi A1 da co tu truoc phai bi loai"
 
 
@@ -99,9 +99,9 @@ def test_hai_anh_that_su_khac_nhau_deu_duoc_giu():
         a1 = _anh(tmp, "a1.png", seed=1)
         a2 = _anh(tmp, "a2.png", seed=2)
         anh_map = {"https://a.com/bai": a1, "https://b.com/khac": a2}
-        with mock.patch("chup_trang.chup_lead_mobile", _gia_chup_lead(anh_map)), \
-             mock.patch("nguon_bai.cung_tin", return_value=True):
-            anh, dung_duoc, _ = vong_bu._vong_chup_nguon(
+        with mock.patch("capture_page.capture_lead_mobile", _gia_chup_lead(anh_map)), \
+             mock.patch("article_sources.same_story", return_value=True):
+            anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://a.com/bai", [{"url": "https://b.com/khac"}], tmp / "wd")
         assert len(anh) == 2
 

@@ -100,7 +100,7 @@ def main():
     ap.add_argument("--quiet", action="store_true", help="Khong in ra man hinh")
     a = ap.parse_args()
 
-    env_load.nap()
+    env_load.load()
     key = os.environ.get("OPENAI_API_KEY")
     if not key:
         sys.exit("Thieu OPENAI_API_KEY")
@@ -163,7 +163,7 @@ def main():
     else:
         lines.append(f"<i>Cả {len(now)} model đều khỏe.</i>")
 
-    publish.gui_topic("\n".join(lines), "ada")
+    publish.send_topic("\n".join(lines), "ada")
     if not a.quiet:
         print(f"\nDa gui canh bao: {len(changes)} thay doi.")
 

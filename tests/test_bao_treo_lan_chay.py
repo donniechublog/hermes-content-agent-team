@@ -5,7 +5,7 @@ noi dung trang thai; task bi hermes giet (timed_out) phai duoc bao.
 Ca that t_24b214a6: hai run 25.1 phut deu timed_out, heartbeat moi 60s suot,
 Telegram noi "khong phan hoi hon 20 phut" roi im lang khi bi giet. Dung harness
 cua test_bao_treo (kanban/telegram gia), them stub cho ba ham moi cua
-hermes_adapter. Fail tren code cu (khong co moc_lan_chay/cau_chay_lau), pass
+hermes_adapter. Fail tren code cu (khong co run_start/long_run_message), pass
 tren code moi.
 
 Chay:  venv/bin/python tests/test_bao_treo_lan_chay.py
@@ -18,22 +18,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "tests"))
-import duyet_giao_viec as dg                                  # noqa: E402
+import approve_dispatch as dg                                  # noqa: E402
 from test_bao_treo import _chay_bao_tien_do_gia               # noqa: E402
 
 
 def _voi_stub(moc, nhip, lan_cuoi, pid_song, rows, tmp):
     ha = dg.hermes_adapter
-    cu = (ha.moc_lan_chay, ha.nhip_tho, ha.lan_chay_cuoi_nhieu, ha.pid_song)
-    ha.moc_lan_chay = lambda db=None: moc
-    ha.nhip_tho = lambda tids, db=None: nhip
-    ha.lan_chay_cuoi_nhieu = lambda tids: lan_cuoi
-    ha.pid_song = lambda pid: pid_song
+    cu = (ha.run_start, ha.heartbeat, ha.last_run_many, ha.pid_alive)
+    ha.run_start = lambda db=None: moc
+    ha.heartbeat = lambda tids, db=None: nhip
+    ha.last_run_many = lambda tids: lan_cuoi
+    ha.pid_alive = lambda pid: pid_song
     gui = []
     try:
         _chay_bao_tien_do_gia(tmp, rows, gui)
     finally:
-        ha.moc_lan_chay, ha.nhip_tho, ha.lan_chay_cuoi_nhieu, ha.pid_song = cu
+        ha.run_start, ha.heartbeat, ha.last_run_many, ha.pid_alive = cu
     return gui
 
 

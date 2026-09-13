@@ -3,15 +3,15 @@
 RO slide 6 hai lan lien tiep, nhung ca hai ban moi cua Dre deu ra dung anh cu
 (chi doi ma). Hai nguyen nhan that:
 
-  1. `_tach_ly_do_lam_lai` chi bat "slide N: ly do" NEO O DAU CAU va BAT BUOC
+  1. `_extract_reason_redo` chi bat "slide N: ly do" NEO O DAU CAU va BAT BUOC
      dau hai cham — hai cau that Ong Chu go ("Làm lại slide 3, 6: ..." co chu
      dan truoc, "Slide 6 vẫn là hình cũ, ..." khong co hai cham) deu lot qua,
      slide ve None.
   2. Ke ca slide duoc nhan dung, khong co gi CHAN CUNG viec chon lai dung anh —
      dong "DUNG lap lai anh cu" trong task chi la chu, khong ai bat buoc theo.
 
-Tep nay kiem phan (1) o duyet_bai._tach_ly_do_lam_lai va phan ghi-doc dHash cua
-duyet_bai._ghi_cam_anh_lam_lai; cong chan o dre_nop/nop_chung da co test rieng
+Tep nay kiem phan (1) o approve_post._extract_reason_redo va phan ghi-doc dHash cua
+approve_post._write_forbid_image_redo; cong chan o dre_nop/nop_chung da co test rieng
 trong test_spec_dre.py.
 
 Chay:  venv/bin/python tests/test_lam_lai_cam_anh.py
@@ -27,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PIL import Image, ImageDraw  # noqa: E402
 
-import duyet_bai as db  # noqa: E402
-import luat_anh  # noqa: E402
+import approve_post as db  # noqa: E402
+import image_rules  # noqa: E402
 
 
 def _ve(w, h, tone, seed=7):
@@ -44,28 +44,28 @@ def _ve(w, h, tone, seed=7):
 
 
 def test_slide_co_chu_dan_truoc_van_nhan_dung_so():
-    so, ly_do = db._tach_ly_do_lam_lai(
+    so, ly_do = db._extract_reason_redo(
         "Làm lại slide 3, 6: có rất nhiều hình chất lượng hơn, đừng dùng hình chỉ thuần text")
     assert so == "3, 6", so
     assert "chất lượng hơn" in ly_do
 
 
 def test_slide_khong_co_hai_cham_van_nhan_dung_so():
-    so, ly_do = db._tach_ly_do_lam_lai(
+    so, ly_do = db._extract_reason_redo(
         "Slide 6 vẫn là hình cũ, tìm hình khác. Đã nói ko dùng hình chỉ có text")
     assert so == "6", so
     assert "vẫn là hình cũ" in ly_do        # khong mat noi dung khi khong tach duoc
 
 
 def test_kieu_cu_bare_so_van_chay_binh_thuong():
-    assert db._tach_ly_do_lam_lai("4: chart bi cat") == ("4", "chart bi cat")
-    assert db._tach_ly_do_lam_lai("2,5: hai anh nay xau") == ("2, 5", "hai anh nay xau")
+    assert db._extract_reason_redo("4: chart bi cat") == ("4", "chart bi cat")
+    assert db._extract_reason_redo("2,5: hai anh nay xau") == ("2, 5", "hai anh nay xau")
 
 
 def test_tat_ca_va_rong_khong_doi():
-    assert db._tach_ly_do_lam_lai("tất cả: xấu quá")[0] == "CA BO"
-    assert db._tach_ly_do_lam_lai("") == (None, "")
-    assert db._tach_ly_do_lam_lai("làm lại đi") == (None, "làm lại đi")
+    assert db._extract_reason_redo("tất cả: xấu quá")[0] == "CA BO"
+    assert db._extract_reason_redo("") == (None, "")
+    assert db._extract_reason_redo("làm lại đi") == (None, "làm lại đi")
 
 
 def test_ghi_cam_anh_lam_lai_chup_dung_anh_dang_o_slide_bi_neu():
@@ -82,10 +82,10 @@ def test_ghi_cam_anh_lam_lai_chup_dung_anh_dang_o_slide_bi_neu():
         cu_state, cu_drafts = db.STATE_DIR, db.DRAFTS
         db.STATE_DIR, db.DRAFTS = Path(t), Path(t)
         try:
-            db._ghi_cam_anh_lam_lai("tin-thu", [2])
+            db._write_forbid_image_redo("tin-thu", [2])
             im = json.loads((Path(t) / "tin-thu.img.json").read_text(encoding="utf-8"))
-            h_a1 = format(luat_anh.dhash(Image.open(wd / "goc" / "A1.png").convert("RGB")), "x")
-            h_a2 = format(luat_anh.dhash(Image.open(wd / "goc" / "A2.png").convert("RGB")), "x")
+            h_a1 = format(image_rules.dhash(Image.open(wd / "goc" / "A1.png").convert("RGB")), "x")
+            h_a2 = format(image_rules.dhash(Image.open(wd / "goc" / "A2.png").convert("RGB")), "x")
             assert im["cam_anh_slide"]["2"] == [h_a2]
             assert h_a1 not in im["cam_anh_slide"]["2"]
             assert "1" not in im["cam_anh_slide"]           # khong che nham slide khac
@@ -108,7 +108,7 @@ def test_ghi_cam_anh_lam_lai_ghep_ca_hai_ma():
         cu_state, cu_drafts = db.STATE_DIR, db.DRAFTS
         db.STATE_DIR, db.DRAFTS = Path(t), Path(t)
         try:
-            db._ghi_cam_anh_lam_lai("tin-thu", [5])          # slides[3] (ghep) = slide 2+3=5
+            db._write_forbid_image_redo("tin-thu", [5])          # slides[3] (ghep) = slide 2+3=5
             im = json.loads((Path(t) / "tin-thu.img.json").read_text(encoding="utf-8"))
             assert len(im["cam_anh_slide"]["5"]) == 2, im["cam_anh_slide"]
         finally:

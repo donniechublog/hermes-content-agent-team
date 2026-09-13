@@ -37,7 +37,7 @@ lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin
 | Ethan | `ethan` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
 | Dre | `dre` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
 | Kite | `kite` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
-| Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
+| Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `swap_image_text.py`), trả nền sạch cho Itachi |
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
 | Miles | `miles` | writer | Viết caption tiếng Việt cho tin **kinh doanh, đầu tư** của **dcgr.tech** (từ 10/09/2026, LOW-13; trước đó viết cả hai brand). Profile `miles` bên blog **giữ lại cho việc còn tồn**, không nhận việc mới |
 | Jika | `jika` | writer | Viết caption tiếng Việt cho tin **model mới, arXiv/Hacker News** — **chỉ donniechublog** (từ 10/09/2026, LOW-13). Cùng script, cùng luật caption như Miles; khác ở người đọc và ở MEMORY riêng |
@@ -82,14 +82,14 @@ VIẾT (LLM, một tệp) → NỘP (script)**. Trước đó mỗi task tốn 1
 lớn là việc cơ học: curl tải ảnh, ls/grep dò tệp, tự đếm ký tự, chạy cổng chặn
 nhiều vòng. Giờ mỗi task là **3 lệnh**.
 
-- `anh_chuan_bi.py` — **engine dùng chung** cho mọi vai làm ảnh/chữ từ một tin.
+- `image_prepare.py` — **engine dùng chung** cho mọi vai làm ảnh/chữ từ một tin.
   `approve_service.create_pair` khởi chạy nền (`--im`) ngay lúc Ông Chủ chọn số:
   giải mã link Google News, Bing News RSS tìm báo khác, một phiên chromium (chữ
   bài, img lớn, chụp table/figure/canvas), `anh_bai`, Wikimedia Commons khi < 5
   ảnh; vẫn thiếu hoặc không tấm nào làm bìa được thì hai vòng bù theo độ liên
-  quan giảm dần — `anh_thuong_hieu.py` tìm **ảnh thương hiệu** (trụ sở/campus của
+  quan giảm dần — `image_brand.py` tìm **ảnh thương hiệu** (trụ sở/campus của
   chính hãng trong tin, LUAT_ANH §1.2d, vào được slide thân), rồi
-  `anh_khai_niem.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
+  `image_concept.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
   LUAT_ANH §1.2c, chỉ bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
   `crop_ti_le`; cặp ghép cùng tone; tư liệu. Kết quả
   `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
@@ -116,9 +116,9 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `drafts/<id>.ban_giao.md` và `da_dung.json` (để "Làm lại" bắt buộc đổi
   ảnh/hook/tone). `--khong-gui`/`--out`/`--khong-push` để thử.
 - Bốn vai theo chat cùng mẫu, khoá là message_id/URL: `gin_*`, `itachi_*`,
-  `cape_*`, `ada_*`. `bob_nop.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
+  `cape_*`, `ada_*`. `bob_submit.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
   khung → gửi).
-- `quet_chuan_bi.py --vai finn|nova|vera` + `quet_nop.py`: ba vai đi tìm tin
+- `scan_prepare.py --vai finn|nova|vera` + `scan_submit.py`: ba vai đi tìm tin
   nhận danh sách ứng viên một dòng mỗi tin + mục BẮT BUỘC + khung tệp nộp; nop
   ghép manifest, kiểm bắt buộc, viết báo cáo, gửi topic. `--khong-co` gửi dòng
   "hôm nay không có gì"; `--thu` không ghi manifest thật.
@@ -137,14 +137,14 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 Trước 09/09/2026 việc này đụng tám chỗ và quên một chỗ là hỏng **câm**: "kites"
 thiếu trong `TEN_SANG_CAP` làm cả lệnh chọn bị từ chối rồi gửi nhầm cho Finn
 (06/09), sidecar ghi slug cũ làm task nằm `ready` hai ngày (01/09). Từ khi có
-`vai.py` thì còn **ba bước mã** (dưới) cộng **ba bước cấu hình** không dẫn xuất
+`role.py` thì còn **ba bước mã** (dưới) cộng **ba bước cấu hình** không dẫn xuất
 được từ mã: `hermes/profiles/<brand>/<slug>.SOUL.md`, một khoá trong
 `state/topics.<brand>.json` (id topic Telegram), và `hermes/profiles/cau_hinh_that.yaml`.
-`chat_router.TOPIC_PROFILE` tự dẫn xuất từ `vai.py` (từ 09/09/2026, audit lượt 2),
+`chat_router.TOPIC_PROFILE` tự dẫn xuất từ `role.py` (từ 09/09/2026, audit lượt 2),
 và `tests/test_vai.py` giữ mọi bảng dẫn xuất khớp bản đăng ký. Bước 1 sinh lại
 mọi bảng cũ:
 
-1. **Một dòng trong `vai.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
+1. **Một dòng trong `role.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
    nhan_anh=…, viet=…, anh_toi_thieu=…)`. `slug` phải trùng **tên thư mục
    profile thật** trong `HERMES_HOME`, nếu không `chuan_assignee` từ chối tạo
    task. `go` là mọi chữ Ông Chủ có thể gõ khi chọn tin (kể cả số nhiều kiểu
@@ -153,11 +153,11 @@ mọi bảng cũ:
    ảnh dùng chung đọc nó qua `so_anh_toi_thieu()`, đặt sai thì bài bị báo thiếu
    ảnh oan (sự cố 10/09/2026). `VAI_ANH`, `TEN_SANG_CAP`, `TEN_VAI_ANH`,
    `VAI_CAROUSEL`, `VAI_EDU`, `SLUG_CU`, `TEN_HIEN` tự có theo.
-2. **Một cặp `<vai>_chuan_bi.py` / `<vai>_nop.py`** — cả hai đọc chung
+2. **Một cặp `<vai>_prepare.py` / `<vai>_submit.py`** — cả hai đọc chung
    `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
    (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).
 3. **Một SOUL** trong `hermes/profiles/<brand>/<slug>.SOUL.md` (hoặc `shared/`
-   nếu dùng chung cả hai brand), rồi `dong_bo_hermes.py --ra-hermes` đẩy sang
+   nếu dùng chung cả hai brand), rồi `sync_hermes.py --ra-hermes` đẩy sang
    home đang chạy.
 
 Còn phải làm tay: một topic trong `state/topics.json` (id do Telegram cấp) và
@@ -184,48 +184,48 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `cover` / `statement` / `steps` / `loop` / `figure` / `bars` / `cta`. Không ảnh
   thật. Cần `playwright install chromium`.
 - `deck.py` — editorial-deck của Itachi, dựng lại carousel nguồn sang tiếng Việt.
-- `crop_ti_le.py` — cắt ảnh về **1:1 hoặc 4:5**. Chỉ cắt chiều cao; ảnh gốc ngang
+- `crop_ratio.py` — cắt ảnh về **1:1 hoặc 4:5**. Chỉ cắt chiều cao; ảnh gốc ngang
   (≥1.4) đòi cắt bề ngang thì dừng, vì bề ngang của chart/bảng là nội dung. Ép
   bằng `--cat-ngang`, chỉ cho ảnh người/sản phẩm không có chữ.
-- `arxiv_hinh.py` — bóc **hình thật trong paper** (Figure 1, 2…) thẳng từ PDF:
+- `arxiv_figures.py` — bóc **hình thật trong paper** (Figure 1, 2…) thẳng từ PDF:
   định vị khối chữ `Figure N:`, lấy vùng đồ hoạ ngay trên nó, render nét ở
   ~2200px. Chạy cho mọi tin arxiv/PDF, ảnh mã cao điểm nhất — Figure 1 là tấm để
   Kite làm **hero bìa**. Chỉ hình, **không bảng** (xem `§BẢNG` đầu tệp).
   Cần `pymupdf`.
-- `arxiv_bia.py` — đường cuối cho bài arxiv: không còn ứng viên ảnh nào thì chụp
+- `arxiv_cover.py` — đường cuối cho bài arxiv: không còn ứng viên ảnh nào thì chụp
   trang đầu paper (tên công trình + tác giả). Cần `pymupdf`.
-- `anh_thuong_hieu.py` — tin về **hãng lớn** mà kho ảnh mỏng thì đi lấy tư liệu
+- `image_brand.py` — tin về **hãng lớn** mà kho ảnh mỏng thì đi lấy tư liệu
   của chính hãng, bốn loại theo độ "là ảnh chụp thật" giảm dần: 🏢 **cơ sở**
   (tìm tên tệp Commons + `P18` Wikidata), 👤 **chân dung founder/CEO**
   (`P112`/`P169`, kèm tên nên khai được `nhan_vat`, bỏ người đã thôi chức),
-  📊 **bảng xếp hạng** có model của hãng (mượn `xep_hang.py`, chỉ nhận ảnh chụp
+  📊 **bảng xếp hạng** có model của hãng (mượn `ranking.py`, chỉ nhận ảnh chụp
   thật), 🔖 **thẻ logo** (`P154` trên nền trơn, đường cuối). Lấy **mọi** hãng
   watchlist tin nhắc tới (tối đa 3), không phải chỉ tên riêng đầu tiêu đề. Lọc
   theo biên giới từ + bảng nhiễu (Amazon → rừng, Apple → quả táo). Vào được
   slide thân và đếm đủ — khác ảnh khái niệm. LUAT_ANH §1.2d.
-- `anh_khai_niem.py` — tin không có ảnh riêng thì tìm **ảnh khái niệm** trên
+- `image_concept.py` — tin không có ảnh riêng thì tìm **ảnh khái niệm** trên
   Commons theo nước/chủ đề (cờ, rack datacenter, wafer, toà án). Nhãn 🧭, chỉ
   bìa/hero, cả chùm đếm là một. LUAT_ANH §1.2c.
-- `xep_hang.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
+- `ranking.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
   registry **19 nguồn**, mở browser tìm hàng chứa model, chụp cửa sổ top-N,
   khoanh vàng hàng đó, đọc thứ hạng. Chụp bằng **khung mobile trước** (414px ×
   DPR 3 ≈ khổ thẻ 1200px nên chữ gần như không co); 8 nguồn đã đo là mobile
   không dùng được thì mang `khung: "desktop"` kèm lý do ngay trong `NGUON`.
   Không ra thì thẻ dự phòng. Ảnh mang mã `XH`.
-- `chup_chart.py` — chụp chart/bảng benchmark theo luật *full chiều rộng trước,
+- `capture_chart.py` — chụp chart/bảng benchmark theo luật *full chiều rộng trước,
   chiều cao xét sau*: đo `scrollWidth` thật, nới khung cho vừa rồi mới chụp ở
   DPR 2; thiếu bề ngang thì dừng. Cần `playwright` + chromium.
-- `luat_anh.py` + `LUAT_ANH.md` — **một nguồn sự thật** của luật ảnh, dùng chung
+- `image_rules.py` + `LUAT_ANH.md` — **một nguồn sự thật** của luật ảnh, dùng chung
   cho mọi vai TẠO ra ảnh (Ethan, Dre, Kite). Đừng chép luật vào SKILL của vai.
   Gin/Itachi chỉ sửa trên ảnh gốc nên không áp bộ này.
 
 **Đi tìm tin**
 
-- `scan_sources.py` / `nguon_bai.py` — quét nguồn của Finn và research lúc chọn
+- `scan_sources.py` / `article_sources.py` — quét nguồn của Finn và research lúc chọn
   tin; tự giải mã link Google News (`giai_ma_gnews`).
 - `scan_models.py` — quét của Nova: 23 bảng xếp hạng, mục "RA MẮT THEO BẢNG CHẤM
   ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
-  **Bảng đăng ký ở `bang_model.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
+  **Bảng đăng ký ở `model_boards.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
   đề in, link, lấy hàng từ đâu). Trước 07/09/2026 thêm một bảng phải khai ở
   **sáu** chỗ trong hai tệp; quên một chỗ là loại lỗi không báo gì cả (mất bảng
   trong báo cáo, hoặc mục bắt buộc ra link rỗng). Nay năm chỗ dẫn xuất từ đó;
@@ -233,25 +233,25 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   bảng đăng ký.
   Bảng chết (BFCL, LiveCodeBench, Aider, BigCodeBench, Papers With Code) bị loại
   có chủ đích — xem nhật ký sự cố.
-- `manifest_ghi.py` (Nova/Vera) / `manifest_build.py` (Finn) — ghi manifest đánh
+- `manifest_write.py` (Nova/Vera) / `manifest_build.py` (Finn) — ghi manifest đánh
   số vào `state/<brand>/` qua `env_load.state_dir()`, cùng chỗ approve_service
-  đọc. Phần cơ học dùng chung nằm ở **`manifest_chung.py`**: chọn theo `k`, dọn
+  đọc. Phần cơ học dùng chung nằm ở **`manifest_common.py`**: chọn theo `k`, dọn
   `summary_vi`, đánh số, không ghi đè bản đã có, chốt danh sách bắt buộc, dựng
   báo cáo. Trước 07/09/2026 mỗi script tự viết lại và **đã lệch** — cổng bỏ
   em-dash chỉ có ở nhánh Finn, dù lý do có nó ("em-dash lọt xuống tận caption")
   đúng y hệt với Nova/Vera. Cái *không* gộp là cổng báo title mất dấu: title của
   Nova/Vera do chính vai viết bằng tiếng Việt, còn title của Finn lấy từ
   `candidates.json` tức tiêu đề gốc báo nước ngoài.
-- `bat_buoc.py` — **danh sách BẮT BUỘC**: script quét thấy là phải đưa, vai không
+- `required.py` — **danh sách BẮT BUỘC**: script quét thấy là phải đưa, vai không
   có quyền bỏ. Script ghi manifest tự thêm mục thiếu kèm ghi chú "vai bỏ sót" và
   xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**, không chép URL.
-- `tu_lieu.py` — bóc chữ bài để đối chiếu số liệu và tên người vai khai.
+- `material.py` — bóc chữ bài để đối chiếu số liệu và tên người vai khai.
 
 **Duyệt và đăng**
 
 - `approve_service.py` — dịch vụ nền nghe nút duyệt và lệnh chọn số. Mặt tiền
-  mỏng; phần thân nằm ở `duyet_co_so` / `duyet_giao_viec` / `duyet_chon_tin` /
-  `duyet_bai` / `duyet_chat` / `duyet_lenh`. Mọi tin nhắn vào đều có log
+  mỏng; phần thân nằm ở `approve_base` / `approve_dispatch` / `approve_pick` /
+  `approve_post` / `approve_chat` / `approve_command`. Mọi tin nhắn vào đều có log
   (`state/<brand>/approve.log`, xoay vòng 5 MB×3) theo nhãn
   `vao → route → chat/chon/lenh → tele`, và mọi nhánh kết thúc bằng một tin trả về.
   Lệnh chọn số còn báo **ngay khi nhận** (`_bao_da_nhan`, kèm tiêu đề từng số)
@@ -261,16 +261,16 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `draft_write.py` — ghi bản nháp + album đúng khuôn tên tệp.
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic.
 - `moat_publish.py` — đẩy bài đã duyệt sang moat và hỏi trạng thái đăng social.
-- `bang_den.py` — bảng đen kanban (xem dưới).
-- `ghi_log.py`, `env_load.py` — log và nạp môi trường dùng chung.
+- `blackboard.py` — bảng đen kanban (xem dưới).
+- `write_log.py`, `env_load.py` — log và nạp môi trường dùng chung.
 
 **Đo đạc**
 
-- `theo_doi_9router.py` — nhật ký 9router theo ngày
+- `monitor_9router.py` — nhật ký 9router theo ngày
   (`state/9router/nhat_ky/9router_<ngày>.md|json`): req/prompt/cache%/$ theo model,
   theo khoá API, theo giờ VN, model lạ, cache thấp, fallback thật, lỗi, phiên
   rỗng, **$ theo vai** và $/bài theo brand. Ada đọc qua `tai(ngày)`.
-- `nhat_ky.py` + `nhat_ky_web.py` — nhật ký ngày và trang web cổng 9130.
+- `journal.py` + `journal_web.py` — nhật ký ngày và trang web cổng 9130.
 - `model_watch.py` — dò sức khoẻ model, báo Telegram khi trạng thái đổi.
 - `model_audition.py`, `cost_squeeze.py` — thử model trên việc thật.
 
@@ -284,7 +284,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `inplace-translate` (Gin/Itachi), `social-crawl` (bóc media từ post mạng xã hội),
   `ai-background` (sinh nền — **chờ GPU**).
 - `hermes/profiles/` — SOUL/MEMORY của các vai; `shared/` áp cho cả hai home.
-  Đồng bộ bằng `dong_bo_hermes.py` (`--ra-hermes` / `--ve-git`).
+  Đồng bộ bằng `sync_hermes.py` (`--ra-hermes` / `--ve-git`).
 - `tests/` — chạy thẳng, không cần mạng: **`tests/chay.sh`** (thoát khác 0 nếu
   bất kỳ tệp nào hỏng; `tests/chay.sh cong_chan` để lọc). Đừng dùng vòng
   `for f in tests/*.py; do …; done` nữa: nó trả mã thoát của tệp **cuối cùng**,
@@ -328,16 +328,16 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   bước) — nay truyền `lay_emoji=`; và `luat_anh._so_da_dung` bị gán đè không trả
   lại, khiến `kiem_da_dung` trả rỗng vô điều kiện trong mọi test sau đó — nay
   qua `_so_tam()`. Thêm test mới thì giữ đúng hai lối này.
-- `kiem_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
+- `check_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.
 - `cai_dat.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
-  (pip, `playwright install chromium`) rồi kết thúc bằng `kiem_moi_truong.py`.
+  (pip, `playwright install chromium`) rồi kết thúc bằng `check_env.py`.
   Trước đây các bước này nằm rải trong comment của `requirements.txt` và
-  `bob_nop.py`, thiếu một bước là hỏng **câm** (thiếu cv2 → cổng mặt người tự
+  `bob_submit.py`, thiếu một bước là hỏng **câm** (thiếu cv2 → cổng mặt người tự
   tắt). Font và model YuNet đã nằm trong git, không phải tải. `--thu` xem trước,
   không cài gì. **Không còn bước Node nào** từ 09/09/2026 (A6).
-- `kiem_moi_truong.py` — chặn đầu: cv2, model YuNet, Chromium, `OPENAI_API_KEY`,
+- `check_env.py` — chặn đầu: cv2, model YuNet, Chromium, `OPENAI_API_KEY`,
   `TELEGRAM_BOT_TOKEN`. Mỗi mục tự bọc lỗi nên một mục hỏng không giết cả script.
 
 ## Chạy tuần tự, không song song
@@ -375,7 +375,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 Hermes; đội chọn **kanban swarm** vì hai cách kia (mỗi vai một bot Telegram, hoặc `delegate_task`
 sinh agent con) hoặc tốn 8 bot hoặc không phải vai thật. Không dùng `create_swarm()` nguyên khối
 vì nó chạy thẳng worker → verifier → synthesizer, không có chỗ cho cổng **Ông Chủ duyệt ảnh**.
-`bang_den.py` dùng đúng các viên gạch của nó và dựng đồ thị theo tiến trình thật của bài:
+`blackboard.py` dùng đúng các viên gạch của nó và dựng đồ thị theo tiến trình thật của bài:
 
 ```
 thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nhận việc; là bảng đen)
@@ -385,7 +385,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 
 - Vai **không nhắn nhau**. Mỗi vai kết thúc bằng `kanban_complete(summary, metadata)`; hermes tự
   đưa summary/metadata đó vào context task con ("Parent task results"), nên Miles thấy Dre.
-  `dre_nop.py` / `miles_nop.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
+  `dre_submit.py` / `miles_submit.py` **tự ghi** bàn giao có cấu trúc lên bảng đen (comment
   `[swarm:blackboard] {…}` trên thẻ gốc) và in dòng `[metadata]` để vai dán vào `kanban_complete`.
 - Task **Ada "Soát"** từng nối sau Miles (05/09 sáng) đã **bỏ 05/09 chiều**: một task LLM mỗi bài
   để kiểm bốn điểm mà `caption_check.py` giờ làm bằng code (số trong caption phải có trong tư liệu,
@@ -393,7 +393,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
   để Ada đối chiếu bài với thẻ khi phân tích.
 - Nhìn toàn chuỗi: `hermes kanban show <thẻ gốc>` hoặc dashboard — quan hệ cha-con nằm trong
   `task_links`, bàn giao trong `task_comments`/`task_runs`, không trôi như chat.
-- Bảng đen là lớp thêm, **best-effort**: `bang_den.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
+- Bảng đen là lớp thêm, **best-effort**: `blackboard.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
   đen.
 - Bật theo `CT_BANG_DEN` (mặc định `dcgr`). **Blog bật từ 05/09/2026 chiều** qua drop-in
   `hermes-approve@blog.service.d/override.conf` (`Environment=CT_BANG_DEN=dcgr,blog`); đã thử thẻ gốc
@@ -409,7 +409,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 - `hermes-approve@blog` / `hermes-approve@dcgr` — dịch vụ duyệt bài.
 - `hermes-dashboard-blog` — cổng **9120**; `hermes-dashboard-dcgr` — cổng **9121**
   (đều bind 127.0.0.1).
-- `nhat-ky-web` — `nhat_ky_web.py` cổng **9130**: `/` danh sách ngày,
+- `nhat-ky-web` — `journal_web.py` cổng **9130**: `/` danh sách ngày,
   `/9router/<ngày>` bảng đầy đủ, `.json` số thô. Tin Telegram 6h sáng (chỉ brand
   blog gửi, tránh trùng) là tóm tắt req · $ · cache% · fallback + $/bài + link.
 
@@ -425,7 +425,7 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
   `hermes/scripts/quet_daily_scan.sh <vai>`; `finn_daily_scan.sh` và hai tệp kia
   chỉ còn 7 dòng gọi sang đó, giữ tên cũ để khỏi phải sửa job cron trên máy chủ.
 - `daily-log` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router
-  (`theo_doi_9router.py --gui` → topic `ada`).
+  (`monitor_9router.py --gui` → topic `ada`).
 - `model-watch` — `*/30 0,4,5,10-23 * * *`, tức **tắt 08:00–10:59 và
   13:00–16:59 VN**, đúng khung giờ chọn số buổi sáng. Model chết lúc 8h thì 11h
   mới có cảnh báo. Nếu không cố ý thì đổi về `*/30 * * * *` trên máy chủ
@@ -445,7 +445,7 @@ tuần vẫn hiện `last_status: ok`, `failure_streak: 0`. Nay cả bốn scrip
 khác 0 khi hỏng, nên `failure_streak` trong `~/.hermes-<brand>/cron/jobs.json`
 và dashboard là chỗ đối chiếu thật.
 
-**Ai đọc con số đó.** `soat_cron.py` (Ông Chủ chốt 07/09/2026), chạy 07:00 VN.
+**Ai đọc con số đó.** `audit_cron.py` (Ông Chủ chốt 07/09/2026), chạy 07:00 VN.
 Nó không đổi `deliver` — đổi `deliver` là đổi cả đường ra của lần chạy **thành
 công**, mà `moat-publish-watch` chạy 288 lần/ngày. Nó đọc thẳng
 `<home>/cron/jobs.json` của **cả hai brand** rồi nhắn vào topic `ada` khi
@@ -530,13 +530,13 @@ private của `kanban_swarm`. Chúng đổi lúc nào cũng được, và đổi
 ngày mới lộ ra. Chạy ngay sau khi cập nhật:
 
 ```bash
-venv/bin/python kiem_hermes.py
+venv/bin/python check_hermes.py
 ```
 
 Chỉ đọc, không tạo gì. Thêm `--day-du` nếu muốn một lượt chat thật (tốn LLM).
 Kèm theo: `venv/bin/pip install -r requirements.txt` (venv dùng chung nên
 `hermes update` có thể làm mất pymupdf), và
-`venv/bin/python dong_bo_hermes.py --kiem-upstream` để xem hermes đổi gì trong
+`venv/bin/python sync_hermes.py --kiem-upstream` để xem hermes đổi gì trong
 plugin kanban kể từ lần port cuối.
 
 ## Model
@@ -562,7 +562,7 @@ này. Lịch sử đổi model, số đo giá, và ba điểm mù của 9router:
 1. **Phải có giám sát model.** Hermes fallback im lặng hoàn toàn — đặt model
    chính thành model chết, agent vẫn trả lời bình thường, không một dòng báo.
    Cần cả hai lớp: `model_watch.py` (model còn sống không) và
-   `theo_doi_9router.py` (model nào **thật sự** được gọi).
+   `monitor_9router.py` (model nào **thật sự** được gọi).
 2. **Ghim mỗi hội thoại vào một model; chuyển tầng thì chuyển ở ranh giới task.**
    Cache là per-model, mỗi lần lật là mất sạch prefix đã cache. Cột `cache%`
    trong nhật ký ngày chính là thước đo: tụt cache nghĩa là đang lật model.

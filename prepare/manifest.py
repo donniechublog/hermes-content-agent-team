@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PHA MANIFEST: dung bang anh, cau tu lieu va brief cho vai doc.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import sys
 import time
@@ -9,14 +9,14 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-import luat_anh
+import image_rules
 import schema
-import vai as vai_mod                 # `vai` la ten tham so o vai ham duoi
+import role as vai_mod                 # `vai` la ten tham so o vai ham duoi
 
-from chuan_bi.chung import ROOT, _brand_cua
+from prepare.common import ROOT, _brand_of
 
 
-def cau_xep_hang(m: dict) -> str:
+def describe_ranking_image(m: dict) -> str:
     """Mot cau ta anh XH engine da chup, dung chung cho brief cua Ethan/Dre va cho
     cau bao loi cua ethan_nop/dre_nop — de loi noi cung mot thu o moi noi."""
     xh = m.get("xep_hang") or {}
@@ -37,15 +37,15 @@ def cau_xep_hang(m: dict) -> str:
     return cau
 
 
-def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
+def ranking_brief_line(m: dict, khoa: str, vai: str) -> str:
     """Dong 🏁 trong brief: `khoa` la "anh" (hero) hay "bìa" (carousel), `vai` la
     ten file nop chan (ethan_nop / dre_nop)."""
-    import xep_hang
+    import ranking
     xh_ = m.get("xep_hang") or {}
-    if xh_ and not xep_hang.la_chup(xh_.get("kieu")):
+    if xh_ and not ranking.is_capture(xh_.get("kieu")):
         # Khong chup duoc bang that -> chi co the du phong. Goi y, khong ep.
         return ("🏁 Tin xếp hạng nhưng engine KHÔNG chụp được bảng thật, chỉ dựng được "
-                f"THẺ DỰ PHÒNG (mã \"XH\": {cau_xep_hang(m)}). Thẻ đó KHÔNG khẳng định thứ "
+                f"THẺ DỰ PHÒNG (mã \"XH\": {describe_ranking_image(m)}). Thẻ đó KHÔNG khẳng định thứ "
                 f"hạng đã kiểm chứng, nên {vai} không ép: dùng ảnh thật tốt nhất nếu có, "
                 "chỉ dùng thẻ khi không còn ảnh nào khá hơn.")
     if xh_:
@@ -60,7 +60,7 @@ def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
                     "vs chỉnh sửa ảnh) — nên dùng thêm, không chỉ dừng ở XH.")
         return (f"🏁 TIN XẾP HẠNG → {khoa}\"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về "
                 f"ranking phải là bảng/chart xếp hạng, khoanh đúng model). {vai} chặn ảnh khác. "
-                + cau_xep_hang(m) + "." + them)
+                + describe_ranking_image(m) + "." + them)
     # Khong co ma XH: KHONG duoc bao "bat buoc dung XH" nua — truoc 06/09/2026
     # chieu, brief van doi ma do trong khi no khong ton tai, va nop cung chan
     # theo, nen vai khong bao gio nop duoc bai. Noi that trang thai va loi ra.
@@ -70,13 +70,13 @@ def dong_brief_xep_hang(m: dict, khoa: str, vai: str) -> str:
             "Nói lại một câu cho Ông Chủ là bài xếp hạng mà không có bảng.")
 
 
-def ghep_hai_hang(anh: list, category) -> list:
+def pair_two_vendor_images(anh: list, category) -> list:
     """Tin THƯƠNG VỤ: cặp ảnh của HAI hãng khác nhau để vai ghép dọc. Bảng loại
     tin (Ông Chủ 12/09/2026): *"nếu nói đến thương vụ thì lấy hình liên quan của
     hai brand đặt vào"*. Trả [[ma_A, ma_B], ...] — ưu tiên cùng loại (logo+logo,
     trụ sở+trụ sở) và dùng được; rỗng khi không phải M&A hay chỉ có một hãng."""
-    import loai_tin
-    if not loai_tin.muon(category, "ghep_hai_hang"):
+    import story_type
+    if not story_type.late(category, "ghep_hai_hang"):
         return []
     theo_hang = {}
     for a in anh:
@@ -98,7 +98,7 @@ def ghep_hai_hang(anh: list, category) -> list:
     return ra
 
 
-def cap_ghep(anh: list) -> list:
+def stackable_pairs(anh: list) -> list:
     """Cac cap anh NGANG ghep doc duoc: ti le sau ghep nam trong dai carousel
     chap nhan. (13/09/2026: bo dieu kien "cung tone" — luat_anh.lech_tone
     khong con la cam doan ve chat luong/nguon, moi vai.)"""
@@ -108,14 +108,14 @@ def cap_ghep(anh: list) -> list:
         for j in range(i + 1, len(ngang)):
             x, y = ngang[i], ngang[j]
             rc = 1 / (1 / x["ti_le"] + 1 / y["ti_le"])
-            if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
-                    <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
+            if not (image_rules.TI_LE_45 - image_rules.TOLERANCE_RATIO <= rc
+                    <= image_rules.TI_LE_11 + image_rules.TOLERANCE_RATIO):
                 continue
             ra.append([x["ma"], y["ma"]])
     return ra
 
 
-def bang_anh(anh: list, out: Path) -> None:
+def contact_sheet(anh: list, out: Path) -> None:
     """Mot tam thu nho gom moi anh, nhan MA + kich thuoc + loai: vai muon nhin
     thi mo MOT tam nay, khong mo tung anh."""
     if not anh:
@@ -142,12 +142,12 @@ def bang_anh(anh: list, out: Path) -> None:
 
 
 # ---- 4. tu lieu ------------------------------------------------------------
-def gom_tu_lieu(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_en: str = "") -> dict:
-    import tu_lieu
+def gather_material(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_en: str = "") -> dict:
+    import material
     p = wd / "tu_lieu.md"
     try:
-        tl = tu_lieu.gom(title, link, tu_nguon=str(nguon_path))
-        p.write_text(tu_lieu.dung_trang(tl), encoding="utf-8")
+        tl = material.gather(title, link, tu_nguon=str(nguon_path))
+        p.write_text(material.use_page(tl), encoding="utf-8")
         doan = []
         for n in tl.get("nguon", []):
             if n.get("nhan") == "bài gốc":
@@ -158,13 +158,13 @@ def gom_tu_lieu(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_en: s
         # Cau co so tu BAO KHAC chi giu khi lien quan toi tin (chung >= 1 tu dac
         # trung voi tieu de): trang tong hop kieu "Top Tech News" keo theo ca
         # tin tuyen phi cong, funding cua hang khac (do that 04/09, Broadcom).
-        import nguon_bai as _nb
+        import article_sources as _nb
         goc_tu = _nb._tu(title) | _nb._tu(tieu_de_en or "")
         goc_url = (link or "").rstrip("/")
         cau_goc = set()
         for n in tl.get("nguon", []):
             if (n.get("url") or "").rstrip("/") == goc_url or n.get("nhan") == "bài gốc":
-                cau_goc.update(tu_lieu.cau_co_so(n.get("doan", [])))
+                cau_goc.update(material.sentence_has_count(n.get("doan", [])))
         # Lien quan = chung >= 2 tu, hoac chung mot tu MANG SO/ten rieng dau
         # (115b, fy27, broadcom). Chung mot tu thuong ("nearly", "revenue")
         # chua du: cau tuyen phi cong "increased nearly 40%" tung lot vi "nearly".
@@ -184,15 +184,15 @@ def gom_tu_lieu(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_en: s
         return {"cau_co_so": [], "doan_dau": "", "so_nguon": 0}
 
 
-def _tu_lieu_bai(title: str, link: str, nguon_path: Path, wd: Path, nguon: dict, bp: dict) -> dict:
+def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: dict, bp: dict) -> dict:
     """Tu lieu cho vai viet; fetch tinh rong (trang JS) thi dung chu tu browser."""
     print("[tu_lieu] boc chu tu nguon...", file=sys.stderr)
-    tl = gom_tu_lieu(title, link, nguon_path, wd, nguon.get("tieu_de_en", ""))
+    tl = gather_material(title, link, nguon_path, wd, nguon.get("tieu_de_en", ""))
     if len(tl.get("cau_co_so", [])) < 3 and bp.get("chu"):
         # Fetch tinh doc ra rong (trang JS) -> dung chu lay tu browser.
-        import tu_lieu as _tl
+        import material as _tl
         doan = [d.strip() for d in bp["chu"].split("\n") if len(d.strip()) > 40]
-        cau_so = _tl.cau_co_so(doan)[:25]
+        cau_so = _tl.sentence_has_count(doan)[:25]
         tl = {"cau_co_so": cau_so, "doan_dau": " ".join(doan)[:1500],
               "so_nguon": max(tl.get("so_nguon", 0), 1), "tu": "browser"}
         # Dung CHINH `dung_trang` de dung tep, khong tu ghep chuoi.
@@ -205,14 +205,14 @@ def _tu_lieu_bai(title: str, link: str, nguon_path: Path, wd: Path, nguon: dict,
         # `cau_so_trong_nguon` ve 0. Miles doc tu_lieu.md chu khong doc xong.json
         # nen khong co duong nao khac de biet.
         (wd / "tu_lieu.md").write_text(
-            _tl.dung_trang({"tieu_de": title, "cau_co_so": cau_so,
+            _tl.use_page({"tieu_de": title, "cau_co_so": cau_so,
                             "nguon": [{"nhan": "Chữ lấy từ browser", "tieu_de": title,
                                        "url": link, "doan": doan[:60]}]}),
             encoding="utf-8")
     return tl
 
 
-def dan_xuat(anh: list, so_xh: int = 0) -> dict:
+def compute_derived(anh: list, so_xh: int = 0) -> dict:
     """Cac gia tri DAN XUAT tu bo anh: dung_duoc, chua_nhin, so_mien, so_dung_duoc,
     goi_y_bia, cap_ghep. MOT ban cho hai nguoi goi: `dung_manifest` luc engine
     chay xong, va `tim_anh_them.lam_moi_manifest` khi vai tim them anh sau do —
@@ -224,11 +224,11 @@ def dan_xuat(anh: list, so_xh: int = 0) -> dict:
     # 5 la co Nhat khong phai 5 slide. `so_dung_duoc` di vao brief (THIEU ANH)
     # va co `thieu_anh` (xem _mo_ta_thieu_anh) ma route_thieu_anh doc de quyet
     # dinh hoi Ong Chu hay chuyen Kite.
-    so_dung_duoc = schema.so_anh_dung_duoc(anh)
+    so_dung_duoc = schema.count_image_use_ok(anh)
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
     # hang trong tin, 09/09/2026) -> anh KHAI NIEM (co, rack, chung chung; 07/09).
     goi_y_bia = [a["ma"] for a in sorted(
-        (a for a in anh if vai_mod.co_nhan_bia(a["dung"]) and a.get("lien_quan") is not False),
+        (a for a in anh if vai_mod.has_label_cover(a["dung"]) and a.get("lien_quan") is not False),
         key=lambda a: (bool(a.get("khai_niem")), bool(a.get("thuong_hieu")),
                        a["goc_trai_sang"], -a["canh_ngan"]))][:3]
     # `xhs` co the co NHIEU HON MOT (bang xep hang do nang luc khac nhau, xem
@@ -237,20 +237,21 @@ def dan_xuat(anh: list, so_xh: int = 0) -> dict:
     if so_xh:
         goi_y_bia = ["XH" if i == 0 else f"XH{i + 1}" for i in range(so_xh)] + goi_y_bia
     return {"dung_duoc": dung_duoc, "chua_nhin": chua_nhin, "so_mien": so_mien,
-            "so_dung_duoc": so_dung_duoc, "goi_y_bia": goi_y_bia, "cap_ghep": cap_ghep(dung_duoc)}
+            "so_dung_duoc": so_dung_duoc, "goi_y_bia": goi_y_bia, "cap_ghep": stackable_pairs(dung_duoc)}
 
 
-def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
+def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
                   tom: dict, wd: Path, anh: list, xhs: list, tin_xep_hang: bool, bp: dict, tl: dict,
                   flagship: bool, toi_thieu: int, vai_anh: str = "") -> dict:
     """Manifest (xong.json) cua bai — thu ma moi *_chuan_bi va *_nop doc. Cac gia
     tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
+    import story_type            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
-    dx = dan_xuat(anh, so_xh=len(xhs))
+    dx = compute_derived(anh, so_xh=len(xhs))
     chua_nhin, so_mien = dx["chua_nhin"], dx["so_mien"]
     so_dung_duoc, goi_y_bia = dx["so_dung_duoc"], dx["goi_y_bia"]
-    m = {"phien_ban": schema.PHIEN_BAN_MANIFEST,
-         "draft_id": draft_id, "brand": _brand_cua(meta), "title": title, "link": link,
+    m = {"phien_ban": schema.VERSION_MANIFEST,
+         "draft_id": draft_id, "brand": _brand_of(meta), "title": title, "link": link,
          "via": meta.get("via", ""), "category": meta.get("category", ""),
          "summary": tom.get("summary", ""), "source_note": tom.get("source_note", ""),
          "workdir": str(wd), "tao_luc": int(time.time()),
@@ -263,10 +264,10 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
          # Chu bam "lam voi N anh" (imgtiep) thi approve_service ha `toi_thieu`
          # ve day, khong ha thap hon duoc. Truoc 10/09/2026 cho nay go cung
          # carousel.MIN_SLIDE cho moi vai, nen bai cua Ethan bi doi 5 anh.
-         "toi_thieu_co_ban": vai_mod.so_anh_toi_thieu(vai_anh), "so_mien": so_mien,
+         "toi_thieu_co_ban": vai_mod.min_images(vai_anh), "so_mien": so_mien,
          "anh": anh, "cap_ghep": dx["cap_ghep"], "goi_y_bia": goi_y_bia, "tu_lieu": tl,
-         "ghep_hai_hang": ghep_hai_hang(anh, meta.get("category", "")),
-         "thu_tu_anh_theo_loai": list(__import__("loai_tin").thu_tu_anh(meta.get("category", ""))),
+         "ghep_hai_hang": pair_two_vendor_images(anh, meta.get("category", "")),
+         "thu_tu_anh_theo_loai": list(story_type.order_image(meta.get("category", ""))),
          "so_dung_duoc": so_dung_duoc, "chua_nhin": chua_nhin,
          "xep_hang": ({k: xhs[0].get(k) for k in ("model", "hang", "site", "bang", "kieu", "duoc_nhac")}
                       if xhs else None),

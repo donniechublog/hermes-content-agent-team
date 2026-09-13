@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kiem co che dong bo plugin kanban cua dong_bo_hermes.py — day la lan thu ba
+"""Kiem co che dong bo plugin kanban cua sync_hermes.py — day la lan thu ba
 co che nay bi mat ban va (a1f9387), nen phai co luoi.
 
 Khong dung pytest (chua co trong venv). Chay:
@@ -12,14 +12,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import dong_bo_hermes as db  # noqa: E402
+import sync_hermes as db  # noqa: E402
 
 CO_VA = b'x\nif (!props.laneByProfile) return null;\nCOLUMN_ORDER = ["running", "ready", "blocked"]\ntenVai(a)\n'
 KHONG_VA = b'x\nif (!props.laneByProfile || props.column.name !== "running") return null;\nCOLUMN_ORDER = ["triage", "todo"]\n'
 
 
-_HANG_DE = ("HOMES", "REPO", "PLUGIN_REPO", "TEP_UPSTREAM", "TAT_CONG_CU",
-            "TEP_CAU_HINH")
+_HANG_DE = ("HOMES", "REPO", "PLUGIN_REPO", "FILE_UPSTREAM", "ALL_GATE_OLD",
+            "FILE_CONFIG")
 
 
 def _tam():
@@ -34,7 +34,7 @@ def _tam():
 
     Goi trong `with _tam() as t:` de tra lai hang cu — hom nay moi tep test la
     mot tien trinh nen ro ri khong lo ra, nhung doi sang pytest gom mot tien
-    trinh la ro sang moi test khac import dong_bo_hermes.
+    trinh la ro sang moi test khac import sync_hermes.
     """
     return _TamCtx()
 
@@ -46,9 +46,9 @@ class _TamCtx:
         db.HOMES = {"blog": t / "blog", "dcgr": t / "dcgr"}
         db.REPO = t / "repo"
         db.PLUGIN_REPO = db.REPO / "plugins" / "kanban" / "dashboard"
-        db.TEP_UPSTREAM = db.REPO / "plugins" / "kanban" / "UPSTREAM"
-        db.TAT_CONG_CU = db.REPO / "profiles" / "disabled_toolsets.json"
-        db.TEP_CAU_HINH = db.REPO / "profiles" / "cau_hinh_that.yaml"
+        db.FILE_UPSTREAM = db.REPO / "plugins" / "kanban" / "UPSTREAM"
+        db.ALL_GATE_OLD = db.REPO / "profiles" / "disabled_toolsets.json"
+        db.FILE_CONFIG = db.REPO / "profiles" / "cau_hinh_that.yaml"
         return t
 
     def __exit__(self, *e):
@@ -58,28 +58,28 @@ class _TamCtx:
 
 
 def test_ten_muc_tach_dung_tep():
-    assert db._tep_plugin("kanban blog dist/index.js") == "dist/index.js"
-    assert db._tep_plugin("kanban dcgr plugin_api.py") == "plugin_api.py"
-    assert db._tep_plugin("SOUL blog/bob") is None
-    assert db._tep_plugin("kanban dist/index.js") is None       # dinh dang cu, khong nhan
+    assert db._file_plugin("kanban blog dist/index.js") == "dist/index.js"
+    assert db._file_plugin("kanban dcgr plugin_api.py") == "plugin_api.py"
+    assert db._file_plugin("SOUL blog/bob") is None
+    assert db._file_plugin("kanban dist/index.js") is None       # dinh dang cu, khong nhan
 
 
 def test_cong_dau_vet_chan_thut_lui_ca_hai_chieu():
     ten = "kanban blog dist/index.js"
     # dich co ban va, nguon khong -> chan (day la kich ban a1f9387)
-    assert db.thieu_dau_vet(ten, KHONG_VA, CO_VA)
+    assert db.missing_trace(ten, KHONG_VA, CO_VA)
     # nguon co, dich khong -> dang mang ban va sang, cho qua
-    assert db.thieu_dau_vet(ten, CO_VA, KHONG_VA) is None
+    assert db.missing_trace(ten, CO_VA, KHONG_VA) is None
     # giong nhau -> qua
-    assert db.thieu_dau_vet(ten, CO_VA, CO_VA) is None
+    assert db.missing_trace(ten, CO_VA, CO_VA) is None
     # manifest.json khong co dau vet -> khong bao gio chan
-    assert db.thieu_dau_vet("kanban blog manifest.json", b"a", b"b") is None
+    assert db.missing_trace("kanban blog manifest.json", b"a", b"b") is None
 
 
 def test_cap_tep_tro_vao_plugin_nguoi_dung():
     with _tam() as t:
-        cap = {ten: (that, repo) for ten, that, repo in db.cap_tep() if ten.startswith("kanban ")}
-        assert len(cap) == len(db.PLUGIN_TEP) * 2, sorted(cap)
+        cap = {ten: (that, repo) for ten, that, repo in db.cap_file() if ten.startswith("kanban ")}
+        assert len(cap) == len(db.PLUGIN_FILE) * 2, sorted(cap)
         that, repo = cap["kanban blog dist/index.js"]
         assert that == t / "blog" / "plugins" / "kanban" / "dashboard" / "dist" / "index.js", that
         assert repo == db.PLUGIN_REPO / "dist" / "index.js", repo
@@ -93,26 +93,26 @@ def test_hai_home_lech_bi_tu_choi():
             p = db.plugin_home(db.HOMES[hk]) / "dist" / "index.js"
             p.parent.mkdir(parents=True)
             p.write_bytes(CO_VA if hk == "blog" else KHONG_VA)
-        ly = db.hai_home_lech("dist/index.js")
+        ly = db.two_home_offset("dist/index.js")
         assert ly and "blog" in ly and "dcgr" in ly, ly
         # mot home thieu tep -> khong lech
         (db.plugin_home(db.HOMES["dcgr"]) / "dist" / "index.js").unlink()
-        assert db.hai_home_lech("dist/index.js") is None
+        assert db.two_home_offset("dist/index.js") is None
         # hai home giong nhau (khac CRLF) -> khong lech
         (db.plugin_home(db.HOMES["dcgr"]) / "dist" / "index.js").write_bytes(CO_VA.replace(b"\n", b"\r\n"))
-        assert db.hai_home_lech("dist/index.js") is None
+        assert db.two_home_offset("dist/index.js") is None
 
 
 def test_kanban_da_bat_doc_config():
     with _tam():
         H = db.HOMES["blog"]; H.mkdir(parents=True)
         (H / "config.yaml").write_text("plugins:\n  enabled:\n    - kanban\n", encoding="utf-8")
-        assert db.kanban_da_bat(H) is True
+        assert db.kanban_already_catch(H) is True
         (H / "config.yaml").write_text("plugins:\n  enabled: []\n", encoding="utf-8")
-        assert db.kanban_da_bat(H) is False
+        assert db.kanban_already_catch(H) is False
         (H / "config.yaml").write_text("model:\n  default: x\n", encoding="utf-8")
-        assert db.kanban_da_bat(H) is False
-        assert db.kanban_da_bat(db.HOMES["dcgr"]) is None       # khong co tep
+        assert db.kanban_already_catch(H) is False
+        assert db.kanban_already_catch(db.HOMES["dcgr"]) is None       # khong co tep
 
 
 def test_tam_tra_lai_moi_hang_duong_dan():

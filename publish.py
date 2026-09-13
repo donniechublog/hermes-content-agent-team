@@ -21,7 +21,7 @@ CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
 
 
 def load_secrets():
-    env_load.nap()
+    env_load.load()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat = os.environ.get("TELEGRAM_CHANNEL_ID")
     if not tok:
@@ -32,7 +32,7 @@ def load_secrets():
 # Telegram chi hieu mot tap the RAT HEP. Cac the khoi (<br>, <p>, <li>...) bi
 # TU CHOI HAN — tra ve "Bad Request: Unsupported start tag", chu khong phai lo di.
 # Da kiem chung. Nen phai tu doi chung thanh xuong dong that truoc khi gui.
-THE_HOP_LE = {"b", "strong", "i", "em", "u", "ins", "s", "strike", "del",
+CARD_VALID = {"b", "strong", "i", "em", "u", "ins", "s", "strike", "del",
               "a", "code", "pre", "blockquote", "span", "tg-spoiler"}
 
 # The khoi -> xuong dong
@@ -46,7 +46,7 @@ _KHOI = [
 ]
 
 
-def don_dep(text: str) -> str:
+def single_pretty(text: str) -> str:
     """Lam sach chu truoc khi gui Telegram — sua dung ba loi thuong gap.
 
     1. Agent viet chuoi mot dong voi \\n VAN BAN (dau gach nguoc + n) vi phai
@@ -69,7 +69,7 @@ def don_dep(text: str) -> str:
     # bo the khong hop le, giu the hop le nguyen ven
     def _bo(m):
         ten = (m.group(1) or "").lower()
-        return m.group(0) if ten in THE_HOP_LE else ""
+        return m.group(0) if ten in CARD_VALID else ""
     text = re.sub(r"</?([a-zA-Z][a-zA-Z0-9-]*)[^>]*>", _bo, text)
     # 3. bo em-dash. Ong Chu khong dung dau nay trong van ban dang len kenh.
     #    " — " giua cau thanh dau phay; dinh lien chu thanh gach ngang thuong.
@@ -82,7 +82,7 @@ def don_dep(text: str) -> str:
     return text.strip()
 
 
-class TelegramTuChoi(RuntimeError):
+class TelegramReject(RuntimeError):
     """Telegram tra ok:false. La Exception THUONG, khong phai SystemExit.
 
     Truoc day _check goi sys.exit() — SystemExit ke thua BaseException nen
@@ -96,11 +96,11 @@ class TelegramTuChoi(RuntimeError):
 def _check(r: httpx.Response):
     data = r.json()
     if not data.get("ok"):
-        raise TelegramTuChoi(f"Telegram tu choi: {data.get('description')}")
+        raise TelegramReject(f"Telegram tu choi: {data.get('description')}")
     return data["result"]
 
 
-def send_text_cac_manh(token, chat, text, parse_mode="HTML", thread=None) -> list:
+def send_text_fragments(token, chat, text, parse_mode="HTML", thread=None) -> list:
     """Gui text; neu dai qua gioi han Telegram thi chia thanh nhieu tin gui
     lien tiep thay vi cat bot phan cuoi. Tra ve result cua TUNG manh.
 
@@ -109,7 +109,7 @@ def send_text_cac_manh(token, chat, text, parse_mode="HTML", thread=None) -> lis
     manh do. `--luu-mid` truoc 12/09/2026 chi giu mid cua manh CUOI, nen cong
     `_la_reply_bao_cao` thay mid khong khop, im lang bo qua ca lenh chon."""
     ket_qua = []
-    for phan in tele_util.chia_tin(don_dep(text)):
+    for phan in tele_util.split_message(single_pretty(text)):
         with httpx.Client(timeout=60) as c:
             payload = {"chat_id": chat, "text": phan, "parse_mode": parse_mode,
                        "disable_web_page_preview": True}
@@ -122,15 +122,15 @@ def send_text_cac_manh(token, chat, text, parse_mode="HTML", thread=None) -> lis
 
 def send_text(token, chat, text, parse_mode="HTML", thread=None):
     """Gui text (chia nho neu dai). Tra ve result cua tin CUOI."""
-    cac = send_text_cac_manh(token, chat, text, parse_mode, thread)
+    cac = send_text_fragments(token, chat, text, parse_mode, thread)
     return cac[-1] if cac else None
 
 
 def send_photo(token, chat, photo: Path, caption="", parse_mode="HTML", thread=None):
-    caption = don_dep(caption)
+    caption = single_pretty(caption)
     if len(caption) > CAPTION_LIMIT:
         # Exception thuong, KHONG sys.exit: day la ham thu vien — xem TelegramTuChoi.
-        raise TelegramTuChoi(
+        raise TelegramReject(
             f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
             f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
     with httpx.Client(timeout=120) as c, photo.open("rb") as fh:
@@ -146,10 +146,10 @@ def send_document(token, chat, doc: Path, caption="", parse_mode="HTML", thread=
     """Gui anh dang FILE (sendDocument). Khac sendPhoto: Telegram GIU NGUYEN file
     goc — khong ha ve 1280px, khong nen lai JPEG. Dung khi can giu do net (vd
     frame HD cua Bob). Anh van hien thumbnail; bam vao xem/tai full-res."""
-    caption = don_dep(caption)
+    caption = single_pretty(caption)
     if len(caption) > CAPTION_LIMIT:
         # Exception thuong, KHONG sys.exit: day la ham thu vien — xem TelegramTuChoi.
-        raise TelegramTuChoi(
+        raise TelegramReject(
             f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
             f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
     with httpx.Client(timeout=120) as c, doc.open("rb") as fh:
@@ -167,10 +167,10 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
 
     Chu thich chi gan vao anh DAU TIEN — dung quy tac cua Telegram cho album.
     """
-    caption = don_dep(caption)
+    caption = single_pretty(caption)
     if len(caption) > CAPTION_LIMIT:
         # Exception thuong, KHONG sys.exit: day la ham thu vien — xem TelegramTuChoi.
-        raise TelegramTuChoi(
+        raise TelegramReject(
             f"Caption {len(caption)} ky tu, vuot gioi han {CAPTION_LIMIT} "
             f"cua Telegram. Rut ngan hoac tach thanh tin rieng.")
     items, files = [], {}
@@ -200,12 +200,12 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
     return _check(r)
 
 
-def gui_topic(text: str, vai: str) -> bool:
+def send_topic(text: str, vai: str) -> bool:
     """Gui `text` (HTML) vao topic cua `vai` trong group cua brand. Thieu token/
     group thi in ra man hinh; loi Telegram thi in canh bao — KHONG nem, vi day la
     ham cua script cron (model_watch, nhat_ky_daily, theo_doi_9router).
     Truoc 05/09/2026 sau tep tu viet lai doan nay moi tep mot kieu."""
-    env_load.nap()
+    env_load.load()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat = os.environ.get("TELEGRAM_GROUP_ID") or os.environ.get("TELEGRAM_CHANNEL_ID")
     if not (tok and chat):
@@ -223,7 +223,7 @@ def gui_topic(text: str, vai: str) -> bool:
 def main():
     try:
         return _main()
-    except TelegramTuChoi as e:
+    except TelegramReject as e:
         sys.exit(str(e))
 
 
@@ -283,7 +283,7 @@ def _main():
         text = body or a.text
         if not text:
             sys.exit("Can --text, --file hoac --photo")
-        cac_manh = send_text_cac_manh(token, chat, text, thread=thread)
+        cac_manh = send_text_fragments(token, chat, text, thread=thread)
         res = cac_manh[-1] if cac_manh else {}
     print(f"da dang | message_id={res.get('message_id')} chat={chat}")
     if a.luu_mid:

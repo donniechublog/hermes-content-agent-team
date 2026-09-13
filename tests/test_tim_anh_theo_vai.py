@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""ENGINE CON PHAI DI TIM ANH NUA KHONG — hoi theo VAI, khong do bang so cua
+"""ENGINE CON PHAI DI TIM ANH NUA KHONG — hoi theo ROLE, khong do bang so cua
 carousel (LOW-12, 10/09/2026).
 
 Ong Chu: *"Ethan khong tu di tim anh lien quan tren mang ma chi tim anh co trong
 article goc"*. Hoi lai lan mot: *"Dre tim duoc anh ma Ethan ko tim duoc? dau can
-phai tu di may mo. dung code co san cung tim duoc ma?"* — dung, `_vong_tim_rong`
+phai tu di may mo. dung code co san cung tim duoc ma?"* — dung, `_round_widen_search`
 (Bing -> bao khac cung tin -> browser boc anh + Commons) da co san du may moc,
 hong nam o DIEU KIEN mo cong. Lan hai, chot cai sai that su: *"cach lam anh cua
 Ethan dau phai la carousel? nhung gi thuoc ve carousel ma lien quan toi Ethan la
@@ -21,9 +21,9 @@ Tin co 5 anh ngang 16:9 (hinh dang thuong gap nhat cua anh bao) dem ra "du 5"
 nen engine ngung tim; nhung card.py chan anh ngang >1.6 lan chart di mot minh,
 tuc Ethan con 0 duong dung, ma brief cam vai tu tai them ("chi dung MA ANH").
 
-Nay `vai.du_nguyen_lieu` tra loi: MOI vai deu phai co mot tam lam anh chinh,
+Nay `role.has_enough_material` tra loi: MOI vai deu phai co mot tam lam anh chinh,
 rieng SO LUONG thi chi vai xep nhieu anh moi bi dem. Tieu chi CHAT LUONG van
-dung chung o luat_anh + phan_loai, khong dong toi.
+dung chung o luat_anh + classify, khong dong toi.
 
 Chay:  venv/bin/python tests/test_tim_anh_theo_vai.py
 """
@@ -36,7 +36,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                       # noqa: E402
+import image_prepare as cb                                       # noqa: E402
 
 
 # ------------------------------------------------------------------ do dac that
@@ -49,7 +49,7 @@ class _Phien:
 
 
 def _anh(ma: str, **doi) -> dict:
-    """Anh doc 4:5, day toi, khong mat — `phan_loai` dan nhan "bìa" cho no, va
+    """Anh doc 4:5, day toi, khong mat — `classify` dan nhan "bìa" cho no, va
     card.py cung dung lam nen hero duoc."""
     a = {"ma": ma, "goc": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
          "ti_le": 0.8, "w": 960, "h": 1200, "loai": "anh", "ngang": False,
@@ -66,7 +66,7 @@ def _anh_ngang(ma: str) -> dict:
 
 
 def _anh_ngang_vua(ma: str) -> dict:
-    """1.5: qua NGANG_RO (1.4) nen KHONG co nhan "bìa" cua carousel, nhung card.py
+    """1.5: qua LANDSCAPE_CLEAR (1.4) nen KHONG co nhan "bìa" cua carousel, nhung card.py
     cho toi 1.6 — day dung la cho luat cua carousel bat Ethan di tim vo ich."""
     return _anh(ma, ti_le=1.5, w=1500, h=1000, ngang=True, canh_ngan=1000,
                 dung=["ghép dọc với một ảnh ngang cùng tone"])
@@ -77,16 +77,16 @@ def _anh_chart(ma: str) -> dict:
                 goc_trai_sang=200, dung=["thân (chart, dán full bề ngang nguyên vẹn)"])
 
 
-PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
-            "_lay_tu_browser", "_chup_xep_hang", "_gom_va_tai_anh", "_nhin_anh",
-            "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_vong_chup_nguon",
-            "_vong_thuc_the", "_tu_lieu_bai",
-            "dung_manifest", "bang_anh")
+PHA_NANG = ("BrowserSession", "load_source", "_summary_from_img_json", "_supplement_source", "_extra_announcement_page",
+            "_take_from_browser", "_capture_ranking", "_gather_and_download_image", "_seen_image",
+            "_round_widen_search", "_round_brand", "_round_concept", "_round_capture_source",
+            "_round_entity", "_article_material",
+            "build_manifest", "contact_sheet")
 
 
 def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
                      tieu_de="OpenAI ships new image model for developers") -> list:
-    """Chay THAT `chuan_bi()` voi moi pha nang thay bang stub, tra ve ten cac vong
+    """Chay THAT `prepare_article()` voi moi pha nang thay bang stub, tra ve ten cac vong
     bu da duoc goi. Khong mang, khong browser, khong vision."""
     goi = []
     cu = {k: getattr(cb, k) for k in PHA_NANG}
@@ -97,37 +97,37 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
             return a, [x for x in a if x["dung"]], []
         return f
 
-    cb.PhienBrowser = lambda *a, **k: _Phien()
-    cb.nap_nguon = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
+    cb.BrowserSession = lambda *a, **k: _Phien()
+    cb.load_source = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
-    cb._tom_tat_tu_img_json = lambda d: {"vai_anh": vai_anh, "summary": ""}
-    cb._bo_sung_nguon = lambda *a, **k: []
-    cb._them_trang_cong_bo = lambda n, p, trang, *a, **k: trang
-    cb._lay_tu_browser = lambda trang, *a, **k: (
+    cb._summary_from_img_json = lambda d: {"vai_anh": vai_anh, "summary": ""}
+    cb._supplement_source = lambda *a, **k: []
+    cb._extra_announcement_page = lambda n, p, trang, *a, **k: trang
+    cb._take_from_browser = lambda trang, *a, **k: (
         {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)
-    cb._chup_xep_hang = lambda *a, **k: ([], False)
-    cb._gom_va_tai_anh = lambda *a, **k: anh_bai
-    cb._nhin_anh = lambda a, nguon, t, wd: (a, [x for x in a if x["dung"]], [])
-    cb._vong_tim_rong = _vong("tim_rong")
-    cb._vong_thuong_hieu = _vong("thuong_hieu")
-    cb._vong_khai_niem = _vong("khai_niem")
+    cb._capture_ranking = lambda *a, **k: ([], False)
+    cb._gather_and_download_image = lambda *a, **k: anh_bai
+    cb._seen_image = lambda a, nguon, t, wd: (a, [x for x in a if x["dung"]], [])
+    cb._round_widen_search = _vong("tim_rong")
+    cb._round_brand = _vong("thuong_hieu")
+    cb._round_concept = _vong("khai_niem")
     # `_vong_chup_nguon` PHAI thay bang gia nhu moi vong khac: truoc 13/09/2026
     # no bi bo quen, nen test "khong mang, khong browser" van goi that vao no —
     # thay bang mot dong "[chup_lead] ... AttributeError '_Phien' object has no
     # attribute 'trang'" o moi luot chay, va tu khi vong nay tu hoi them bao
     # cung tin (Bing) thi con la mot cu goi MANG THAT giua bo test offline.
-    cb._vong_chup_nguon = _vong("chup_nguon")
+    cb._round_capture_source = _vong("chup_nguon")
     # Nac thuc the (3a3cda5) cung la pha nang (Wikipedia/Commons) — khong stub thi
     # no chay mang that va co the tra du anh, khai niem khong bao gio toi luot.
     # `_vong_thuc_the` (Wikipedia pageimages) cung goi mang THAT, lam tep test
     # "khong mang" nay ton 6 phut 34 (do 13/09/2026) thay vi vai giay.
-    cb._vong_thuc_the = _vong("thuc_the")
-    cb._tu_lieu_bai = lambda *a, **k: {"cau_co_so": [], "doan_dau": "", "so_nguon": 1}
-    cb.dung_manifest = lambda *a, **k: {"anh": anh_bai}
-    cb.bang_anh = lambda *a, **k: None
+    cb._round_entity = _vong("thuc_the")
+    cb._article_material = lambda *a, **k: {"sentence_has_count": [], "doan_dau": "", "so_nguon": 1}
+    cb.build_manifest = lambda *a, **k: {"anh": anh_bai}
+    cb.contact_sheet = lambda *a, **k: None
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            cb.chuan_bi("d1", {"brand": "donniechublog", "title": tieu_de},
+            cb.prepare_article("d1", {"brand": "donniechublog", "title": tieu_de},
                         Path(tmp), Path(tmp), khong_browser=khong_browser)
     finally:
         for k, v in cu.items():
@@ -148,7 +148,7 @@ def test_bai_du_anh_ma_khong_tam_nao_len_hero_thi_van_di_tim():
 
 
 def test_mat_nguoi_khong_ro_ai_khong_tinh_la_hero():
-    """`nop_chung.kiem_nhan_vat` chan anh co mat ma khong khai `nhan_vat`, va vai
+    """`submit_common.check_subject_named` chan anh co mat ma khong khai `nhan_vat`, va vai
     khong duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc."""
     assert "tim_rong" in _vong_bu_da_chay([_anh(f"A{i + 1}", mat=1) for i in range(5)])
     assert "tim_rong" not in _vong_bu_da_chay(
@@ -164,7 +164,7 @@ def test_MOT_tam_hero_la_du_cho_the_don():
 
 
 def test_luat_ti_le_phai_la_cua_card_khong_phai_cua_carousel():
-    """Anh 1.5: carousel khong goi la "bìa" (qua NGANG_RO 1.4) nhung card.py cho
+    """Anh 1.5: carousel khong goi la "bìa" (qua LANDSCAPE_CLEAR 1.4) nhung card.py cho
     toi 1.6. Do bang nhan cua carousel la Ethan di tim mot cach vo ich."""
     assert "tim_rong" not in _vong_bu_da_chay([_anh_ngang_vua("A1")]), \
         "do anh cua Ethan bang nguong 1.4 cua carousel thay vi 1.6 cua card.py"
@@ -232,20 +232,20 @@ def test_hai_vong_bu_phai_hoi_ban_dang_ky_vai():
     """Cong chong troi: cac test tren dung stub, nen ai do do lai bang mot phep
     dem khac van co the vo tinh xanh khi con so tinh co thuan. Day bat thang
     HINH DANG cua ma."""
-    goc = ast.parse(textwrap.dedent(inspect.getsource(cb.chuan_bi)))
-    for ten_vong in ("_vong_tim_rong", "_vong_khai_niem"):
+    goc = ast.parse(textwrap.dedent(inspect.getsource(cb.prepare_article)))
+    for ten_vong in ("_round_widen_search", "_round_concept"):
         ifs = _if_boc_loi_goi(goc, ten_vong)
         assert ifs, f"khong tim thay loi goi {ten_vong} trong mot `if` cua chuan_bi()"
         for nut in ifs:
-            assert "du_nguyen_lieu" in _ten_ham_trong(nut.test), (
-                f"dieu kien mo {ten_vong} khong con hoi `vai.du_nguyen_lieu` — do la "
+            assert "has_enough_material" in _ten_ham_trong(nut.test), (
+                f"dieu kien mo {ten_vong} khong con hoi `role.has_enough_material` — do la "
                 "LOW-12: no se lai do bo anh cua Ethan bang so slide cua carousel")
 
 
 def test_khong_con_so_nao_cua_carousel_trong_duong_di_tim():
-    """`chuan_bi()` chay chung cho ca ba vai, nen mot hang so cua carousel nam
+    """`prepare_article()` chay chung cho ca ba vai, nen mot hang so cua carousel nam
     trong do la ap luat cua Dre len Ethan (Ong Chu 10/09/2026)."""
-    src = textwrap.dedent(inspect.getsource(cb.chuan_bi))
+    src = textwrap.dedent(inspect.getsource(cb.prepare_article))
     for cam in ("MIN_SLIDE", "FLAGSHIP_MIN"):
         for dong in src.splitlines():
             d = dong.strip()

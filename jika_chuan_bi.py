@@ -1,26 +1,14 @@
-#!/usr/bin/env python3
-"""jika_chuan_bi.py — BRIEF cho Jika (vai viet cua donniechublog).
+"""SHIM tạm (LOW-50): tên cũ của `jika_prepare.py`. Mọi thứ nằm ở `jika_prepare.py`.
 
-MOT DONG, khong phai mot ban sao: Jika va Miles dung CHUNG engine chuan bi
-(`miles_chuan_bi.py`). Luat caption, cach gom tu lieu, cach doc ban giao cua vai
-anh la giong het nhau — chi NGUOI DOC khac, va thu do da nam trong `GIONG` cua
-brief, chon theo brand cua bai chu khong theo ten vai.
+Giữ để task kanban đang `ready`, cron và SOUL trên máy chủ gọi tên cũ vẫn chạy
+trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import jika_chuan_bi` và
+`jika_chuan_bi.ten` đều trỏ đúng đối tượng thật (kể cả tên `_riêng`). Gỡ sau 1 tuần
+(ticket con của LOW-50)."""
+import sys as _sys
 
-Tep nay ton tai vi hai le:
-  1. quy uoc cua ban dang ky (`vai.py`): them mot vai = mot dong o do + MOT CAP
-     <persona>_chuan_bi/_nop + mot SOUL. Task cua Jika phai goi lenh mang ten
-     Jika, khong the bao Jika "chay miles_chuan_bi.py" — doc ra nhu giao nham.
-  2. brief tu chon ten tep va lenh nop theo persona cua bai, nen chay tep nay
-     hay tep kia deu ra dung ket qua; khac biet chi la chu Ong Chu doc thay.
+import jika_prepare as _new
 
-Dung:
-    venv/bin/python jika_chuan_bi.py <draft_id>
-"""
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from miles_chuan_bi import main                              # noqa: E402
+_sys.modules[__name__] = _new
 
 if __name__ == "__main__":
-    sys.exit(main())
+    _sys.exit(_new.main() if hasattr(_new, "main") else 0)

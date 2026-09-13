@@ -4,7 +4,7 @@ dọc) mà chưa bao giờ hỏi Commons theo TÊN NGƯỜI để tìm ảnh s�
 
 Ông Chủ 12/09/2026: *"chỉ cần search claude hay anthropic thì cũng ra một rừng
 ảnh rồi, kiếm cái ảnh rõ nét và ratio phù hợp khó thế sao?"* — đúng, đo thật
-bằng chính `quet_chung.hoi_commons`: search "Dario Amodei" ra 9 ảnh họp báo/sự
+bằng chính `scan_common.ask_commons`: search "Dario Amodei" ra 9 ảnh họp báo/sự
 kiện tỉ lệ 1,5 (ngang), điều mà `anh_wikidata` trước đây không bao giờ chạm tới.
 
 Test này KHÔNG gọi mạng thật (mock `_hoi_commons`) để chạy được offline/CI; bằng
@@ -18,7 +18,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_thuong_hieu as th  # noqa: E402
+import image_brand as th  # noqa: E402
 
 
 def _trang_commons(w, h, ten_tep, mime="image/jpeg"):
@@ -35,8 +35,8 @@ def test_anh_nguoi_ngang_loc_dung_ten_va_ti_le():
         "3": _trang_commons(3500, 2300, "Some Other Person at an event.jpg"),  # sai ten -> bo
         "4": _trang_commons(600, 400, "Dario Amodei tiny.jpg"),               # qua nho -> bo
     }
-    with mock.patch.object(th, "_hoi_commons", return_value=pages):
-        ra = th.anh_nguoi_ngang("Dario Amodei", "CEO", "Anthropic", "anthropic")
+    with mock.patch.object(th, "_ask_commons", return_value=pages):
+        ra = th.image_person_landscape("Dario Amodei", "CEO", "Anthropic", "anthropic")
     assert len(ra) == 1, [c["thuong_hieu"] for c in ra]
     c = ra[0]
     assert c["rong"] >= c["cao"], "phai la anh ngang/vuong, khong doc"
@@ -48,7 +48,7 @@ def test_anh_nguoi_ngang_loc_dung_ten_va_ti_le():
 def test_hai_nguoi_khac_ghep_ten_khong_duoc_lot():
     """Tên phải nằm LIỀN NHAU, đúng thứ tự — không phải "mỗi từ có mặt đâu đó".
 
-    Bản lỏng `all(_co_tu(...))` cho "dario rossi meets luca amodei in rome" đi
+    Bản lỏng `all(_has_word(...))` cho "dario rossi meets luca amodei in rome" đi
     qua: ảnh HAI NGƯỜI KHÁC, mà caption lại khai `nhan_vat: "Dario Amodei"` —
     bịa mặt người, đúng thứ LUAT_ANH §0/§6 sinh ra để chặn. Cùng lớp lỗi mà
     `loc_commons` bị siết ngày 12/09/2026 ("Hugging Face" khớp "Rathlin hugging
@@ -57,8 +57,8 @@ def test_hai_nguoi_khac_ghep_ten_khong_duoc_lot():
         "1": _trang_commons(4000, 2667, "Dario Rossi meets Luca Amodei in Rome.jpg"),
         "2": _trang_commons(4000, 2667, "Amodei family and Dario Gabbani at a wedding.jpg"),
     }
-    with mock.patch.object(th, "_hoi_commons", return_value=pages):
-        ra = th.anh_nguoi_ngang("Dario Amodei", "CEO", "Anthropic", "anthropic")
+    with mock.patch.object(th, "_ask_commons", return_value=pages):
+        ra = th.image_person_landscape("Dario Amodei", "CEO", "Anthropic", "anthropic")
     assert ra == [], [c["alt"] for c in ra]
 
 
@@ -76,9 +76,9 @@ def test_anh_wikidata_uu_tien_ngang_hon_chan_dung_doc_sau_khi_sap():
         # anh_nguoi_ngang goi rieng mot lan voi cau la ten nguoi trong ngoac kep.
         return pages_ngang if cau.startswith('"Dario') else pages_p18
 
-    with mock.patch.object(th, "tu_lieu_wikidata", return_value=tl), \
-         mock.patch.object(th, "_hoi_commons", side_effect=hoi_commons_gia):
-        ra = th.anh_wikidata({"khoa": "anthropic", "hang": "Anthropic"})
+    with mock.patch.object(th, "material_wikidata", return_value=tl), \
+         mock.patch.object(th, "_ask_commons", side_effect=hoi_commons_gia):
+        ra = th.image_wikidata({"khoa": "anthropic", "hang": "Anthropic"})
     ra.sort(key=lambda c: -c.get("diem", 0))
     assert ra[0]["rong"] >= ra[0]["cao"], "sau khi sap, anh dau tien phai la anh ngang"
     assert ra[-1]["rong"] < ra[-1]["cao"], "chan dung doc phai roi xuong cuoi"

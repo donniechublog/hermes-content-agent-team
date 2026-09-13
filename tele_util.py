@@ -16,17 +16,17 @@ import re
 
 # Duoi 4096 cua Telegram: chua bien cho sai lech UTF-16 (emoji dem 2 don vi)
 # va cho hau to neu nguoi goi muon them.
-GIOI_HAN = 4000
+LIMIT = 4000
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
-def bo_ansi(text: str) -> str:
+def drop_ansi(text: str) -> str:
     """Bo ma mau ANSI (stdout cua CLI hay lot vao khi chay agent)."""
     return _ANSI.sub("", text or "")
 
 
-def _diem_cat_an_toan(khuc: str, cat: int) -> int:
+def _score_crop_hide_whole(khuc: str, cat: int) -> int:
     """Neu `cat` roi vao giua mot the <...> hoac thuc the &...; thi lui ve
     truoc no, tranh gui HTML vo doi khien Telegram tu choi ca tin."""
     truoc = khuc[:cat]
@@ -39,7 +39,7 @@ def _diem_cat_an_toan(khuc: str, cat: int) -> int:
     return cat
 
 
-def chia_tin(text, gioi_han: int = GIOI_HAN) -> list:
+def split_message(text, gioi_han: int = LIMIT) -> list:
     """Chia `text` thanh danh sach cac phan, moi phan <= `gioi_han` ky tu.
 
     Luon tra ve list co it nhat MOT phan tu (co the la chuoi rong) de nguoi
@@ -58,7 +58,7 @@ def chia_tin(text, gioi_han: int = GIOI_HAN) -> list:
             cat = cua_so.rfind(" ")
         if cat < 1:                             # khoi lien khong co ranh gioi -> cat cung
             cat = gioi_han
-        cat = _diem_cat_an_toan(cua_so, cat)
+        cat = _score_crop_hide_whole(cua_so, cat)
         if cat < 1:                             # phong khi lui the ve 0
             cat = gioi_han
         phan.append(con[:cat].rstrip())

@@ -3,7 +3,7 @@
 
 Đo thật trên `state/dcgr/approve.log` ngày 11/09/2026: lệnh vào lúc 04:22:43,
 dòng `[chon] xong sau 157s` lúc 04:25:20 — **157 giây** topic không có gì. Có
-`_bao_nhan_viec`, nhưng nó gửi vào topic CỦA VAI NHẬN (Dre), không phải topic
+`_bao_nhan_viec`, nhưng nó gửi vào topic CỦA ROLE NHẬN (Dre), không phải topic
 quét Ông Chủ đang nhìn; nên ở bên này im lặng y hệt lúc lệnh bị nuốt.
 
 Luật Ông Chủ 12/09/2026: *"phải có phản hồi 'đang gửi cho Dre' ngay sau khi
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import duyet_chon_tin as dct                                  # noqa: E402
+import approve_pick as dct                                  # noqa: E402
 
 THREAD_VERA = 83          # topic Ông Chủ gõ; topic của Dre là 290 — khác nhau
 
@@ -57,18 +57,18 @@ def _chay(manifest_path, lenh):
     # ticket khac (luat LOW-17 — test fail dung ly do). Tren code moi,
     # `manifest_da_gui` doc tep mid trong CT_STATE_DIR tam, khong co nen tra
     # None va roi ve `latest_manifest` da va.
-    cu = (dct._gui_chu, dct.create_pair, dct._bao_nhan_viec, dct._ghi_json,
+    cu = (dct._send_text, dct.create_pair, dct._report_receive_job, dct._write_json,
           dct.latest_manifest, dct.call)
-    dct._gui_chu = g.gui_chu
+    dct._send_text = g.gui_chu
     dct.create_pair = g.create_pair
-    dct._bao_nhan_viec = lambda *a, **k: None
-    dct._ghi_json = lambda *a, **k: None
+    dct._report_receive_job = lambda *a, **k: None
+    dct._write_json = lambda *a, **k: None
     dct.latest_manifest = lambda _vai="finn": manifest_path
     dct.call = lambda *a, **k: {"ok": True}
     try:
-        dct._xu_ly_chon("tok", -100, THREAD_VERA, "vera", lenh)
+        dct._process_pick("tok", -100, THREAD_VERA, "vera", lenh)
     finally:
-        (dct._gui_chu, dct.create_pair, dct._bao_nhan_viec, dct._ghi_json,
+        (dct._send_text, dct.create_pair, dct._report_receive_job, dct._write_json,
          dct.latest_manifest, dct.call) = cu
     return g.moc
 

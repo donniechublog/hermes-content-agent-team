@@ -69,9 +69,9 @@ def test_anh_thap_khong_de_lai_mang_nen_dac():
     """Loi goc: anh 16:9 tren khung 4:5 -> nat_h 675/1500, hon MOT NUA the la
     mau nen dac. Nay phan thieu la chinh tam anh lam mo — khong hang nao phang."""
     import card
-    card.dat_thuong_hieu("donniechublog")
+    card.set_brand("donniechublog")
     canvas = Image.new("RGBA", (card.W, 1500), (*card.BG, 255))
-    card._lop_anh(canvas, _anh_that(1920, 1080), 1500)
+    card._layer_image(canvas, _anh_that(1920, 1080), 1500)
     phang = _dong_phang(canvas, 700, 1500)
     assert phang == 0, f"{phang} hang mau dac o nua duoi the"
 
@@ -80,9 +80,9 @@ def test_anh_thap_khong_de_lai_duong_ranh_ngang():
     """Mep duoi cua lop sac phai TAN vao lop nen mo (smoothstep), khong duoc la
     mot buoc nhay. Do that truoc khi sua: tut 159 do sang trong MOT hang."""
     import card
-    card.dat_thuong_hieu("donniechublog")
+    card.set_brand("donniechublog")
     canvas = Image.new("RGBA", (card.W, 1500), (*card.BG, 255))
-    nat_h = card._lop_anh(canvas, _anh_that(1800, 1200), 1500)
+    nat_h = card._layer_image(canvas, _anh_that(1800, 1200), 1500)
     xam = canvas.convert("L")
     def _sang(y):
         return sum(xam.getpixel((x, y)) for x in range(0, card.W, 8)) / (card.W // 8)
@@ -98,14 +98,14 @@ def test_luon_giu_tron_be_ngang_khong_cat_hai_canh():
     Thu ca hai nhanh: anh CAO hon the (cat doc) va anh NGANG hon the (lop sac
     thap hon the) — nhanh nao lo dung `_fit_cover` cho lop sac la mat vach."""
     import card
-    card.dat_thuong_hieu("donniechublog")
+    card.set_brand("donniechublog")
     for w, h in ((1200, 2000), (1920, 1080)):
         src = _anh_that(w, h)
         d = ImageDraw.Draw(src)
         d.rectangle([0, 0, 14, h], fill=(255, 0, 0))
         d.rectangle([w - 15, 0, w, h], fill=(0, 255, 0))
         canvas = Image.new("RGBA", (card.W, 1500), (*card.BG, 255))
-        nat_h = card._lop_anh(canvas, src, 1500)
+        nat_h = card._layer_image(canvas, src, 1500)
         assert nat_h == round(card.W * h / w), nat_h
         giua = min(nat_h, 1500) // 2
         rgb = canvas.convert("RGB")
@@ -120,16 +120,16 @@ def test_trong_the_ep_khung_do_nam_trong_anh():
     dai chu sat day the se do ra 'nen toi' va chon chu TRANG du day the sang."""
     import card
     canvas = Image.new("RGBA", (100, 80), (255, 255, 255, 255))
-    assert card._trong_the(canvas, (-20, -5, 500, 900)) == (0, 0, 100, 80)
-    x0, y0, x1, y1 = card._trong_the(canvas, (50, 79, 50, 79))
+    assert card._within_card(canvas, (-20, -5, 500, 900)) == (0, 0, 100, 80)
+    x0, y0, x1, y1 = card._within_card(canvas, (50, 79, 50, 79))
     assert x1 > x0 and y1 > y0, "khung do rong -> ImageStat nem loi"
 
 
 def test_do_sang_sat_day_the_khong_bi_vien_den_keo_xuong():
     import card
-    card.dat_thuong_hieu("donniechublog")
+    card.set_brand("donniechublog")
     canvas = Image.new("RGBA", (card.W, 400), (250, 250, 250, 255))
-    sang = card._sang_vung(canvas, card._trong_the(canvas, (0, 380, card.W, 460)))
+    sang = card._bright_region(canvas, card._within_card(canvas, (0, 380, card.W, 460)))
     assert sang > 200, f"day the sang ma do ra {sang:.0f}"
 
 
@@ -139,14 +139,14 @@ def test_ten_hang_tren_nen_sang_keo_ve_phia_toi():
     cho net khung quote 06/09/2026; kieu tran dat chu thang len anh nen dai chu
     co the sang, phai sua cung mot kieu."""
     import card
-    card.dat_thuong_hieu("donniechublog")
+    card.set_brand("donniechublog")
     im = Image.new("RGB", (600, 90), (250, 250, 250))
     d = ImageDraw.Draw(im)
     f = card._f(card.F_HERO, 60, weight=card.HERO_WEIGHT)
-    card._ve_dong(d, 10, 5, "NVIDIA", f, card.BG, "cyan", None, nen_sang=True)
+    card._about_line(d, 10, 5, "NVIDIA", f, card.BG, "cyan", None, nen_sang=True)
     tren_sang = min(sum(im.getpixel((x, y))) for x in range(600) for y in range(90))
     im2 = Image.new("RGB", (600, 90), (250, 250, 250))
-    card._ve_dong(ImageDraw.Draw(im2), 10, 5, "NVIDIA", f, card.BG, "cyan", None)
+    card._about_line(ImageDraw.Draw(im2), 10, 5, "NVIDIA", f, card.BG, "cyan", None)
     tren_toi = min(sum(im2.getpixel((x, y))) for x in range(600) for y in range(90))
     assert tren_sang < tren_toi, (
         f"nen_sang khong keo mau ten hang ve phia toi ({tren_sang} vs {tren_toi})")
@@ -155,7 +155,7 @@ def test_ten_hang_tren_nen_sang_keo_ve_phia_toi():
 # --------------------------------------------------- the tran dung du
 def _dung_the(tmp, ten_anh, title, **k):
     import card
-    src = Path(tmp) / "nguon.png"
+    src = Path(tmp) / "source.png"
     _anh_that(*ten_anh, sang=k.pop("sang", False)).save(src)
     out = Path(tmp) / "the.png"
     card.build(str(src), title, str(out), kieu="tran", ratio="4:5",
@@ -177,7 +177,7 @@ def test_the_tran_co_khung_chu_nhat_net():
     import card
     with tempfile.TemporaryDirectory() as t:
         im = _dung_the(t, (1920, 1080), "Nvidia mở kho mô hình Nemotron")
-        x = card.TRAN_FRAME_X + card.TRAN_FRAME_LW // 2
+        x = card.CEILING_FRAME_X + card.CEILING_FRAME_LW // 2
         cot = [im.getpixel((x, y)) for y in range(int(1500 * 0.68), int(1500 * 0.88))]
         lech = max(max(abs(p[i] - cot[0][i]) for i in range(3)) for p in cot)
         assert lech < 24, f"khong thay net doc cua khung o x={x} (lech {lech})"
@@ -191,7 +191,7 @@ def test_the_tran_day_sang_thi_chu_doi_sang_mau_toi():
     """Bo man toi roi thi chu phai tu doi mau. Anh day SANG ma chu van trang la
     mat chu — cai gia cua viec bo man toi neu khong do do sang."""
     import card
-    card.dat_thuong_hieu("donniechublog")
+    card.set_brand("donniechublog")
     with tempfile.TemporaryDirectory() as t:
         im = _dung_the(t, (1800, 1200), "Nvidia mở kho mô hình Nemotron", sang=True)
         xam = im.convert("L")

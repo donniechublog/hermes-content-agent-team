@@ -15,8 +15,8 @@ dien qua khoa `{ket_thuc}`; dung chep no vao tung body nua.
 # Doan ket thuc task GIONG NHAU cho ca ba vai lam anh (Ethan/Dre/Kite). Truoc
 # 06/09/2026 no duoc chep NGUYEN VAN ba lan, nen mot lan sua luat "abort =
 # kanban_block" phai nho sua ca ba — va da co lan chi sua hai.
-KET_THUC_VAI_ANH = """THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): BAN TU DI TIM — chay
-cd {goc} && venv/bin/python tim_anh_them.py {draft_id} --tu-khoa "<tu khoa TIENG ANH cu the>"
+END_ROLE_IMAGE = """THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): BAN TU DI TIM — chay
+cd {goc} && venv/bin/python find_more_images.py {draft_id} --tu-khoa "<tu khoa TIENG ANH cu the>"
 (hang, san pham, nha may, su kien, nguoi trong bai; lap --tu-khoa duoc; co URL trang/anh thi
 --url). Script tai, nhin, do, cat san roi in anh moi; chay lai BUOC 1 de doc brief moi.
 Toi da 3 luot, moi luot doi tu khoa khac han. HET 3 LUOT ma van thieu moi goi tool
@@ -27,11 +27,11 @@ Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSO
 dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban)."""
 
 
-def ket_thuc_vai_anh(goc, draft_id: str) -> str:
+def end_role_image(goc, draft_id: str) -> str:
     """KET_THUC_VAI_ANH da dien duong dan: `str.format` cua body KHONG dien de quy
     vao gia tri `{ket_thuc}`, nen `{goc}`/`{draft_id}` trong doan ket thuc phai
     dien o day truoc (12/09/2026, khi doan nay bat dau mang mot dong lenh)."""
-    return KET_THUC_VAI_ANH.format(goc=str(goc), draft_id=draft_id)
+    return END_ROLE_IMAGE.format(goc=str(goc), draft_id=draft_id)
 
 
 ILLU_BODY = """Nguon: {source_note}
@@ -46,15 +46,15 @@ Ong Chu chon tin). Viec cua ban chi co MOT: chon anh theo ma va viet cau hook.
 Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (anh da tai + xu ly san, tu lieu, khung spec):
-cd {goc} && venv/bin/python ethan_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python ethan_prepare.py {draft_id}
 
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chi
 dien MA ANH (A1, A2...) va CHU (hook, tagline, attrib; hoac title+kicker cho
 kieu tran). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
-anh_bai.py/card.py/gui_telegram.py tay. Chu tieng Viet co dau.
+article_images.py/card.py/gui_telegram.py tay. Chu tieng Viet co dau.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python ethan_nop.py {draft_id}
+cd {goc} && venv/bin/python ethan_submit.py {draft_id}
 Script tu ghep/cat theo spec, chay moi cong chan cua card.py, dung the, gui len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi
 sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan sua).
@@ -77,18 +77,18 @@ gui Telegram, ban giao cho Miles — DA LA SCRIPT. Viec cua ban chi co MOT:
 chia tin thanh slide va viet copy. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (anh da tai + xu ly san, tu lieu, khung spec):
-cd {goc} && venv/bin/python dre_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python dre_prepare.py {draft_id}
 (Script da chay nen tu luc Ong Chu chon tin; lenh nay thuong chi in ra. Neu no
 bao dang chuan bi thi no tu doi, ban khong lam gi them.)
 
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1, theo
 khung o do. Chi dien CHU (hook, category, label, text/quote/attrib) va MA ANH
 (A1, A2...). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
-anh_bai.py/carousel.py/gui_telegram.py bang tay. Muon nhin anh thi mo DUNG MOT
+article_images.py/carousel.py/gui_telegram.py bang tay. Muon nhin anh thi mo DUNG MOT
 tam bang_anh.png. Chu tieng Viet co dau, cau quote DICH sang tieng Viet.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python dre_nop.py {draft_id}
+cd {goc} && venv/bin/python dre_submit.py {draft_id}
 Script tu cat/ghep anh theo spec, chay moi cong chan, dung slide, gui album len
 topic cua ban kem nut Duyet/Lam lai/Bo, ghi ban giao cho Miles. No bao [LOI]
 thi sua DUNG cho do trong spec.json roi chay lai DUNG lenh nay (toi da 2 lan
@@ -110,7 +110,7 @@ lieu, hinh that, tone, cong chan, render, gui, ban giao) DA LA SCRIPT. Viec cua
 ban chi co MOT: chia slide va viet chu. Lam dung BA BUOC, khong them lenh nao.
 
 BUOC 1 — doc ban chuan bi (tu lieu, hinh that neu co, tone goi y, khung spec):
-cd {goc} && venv/bin/python kite_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python kite_prepare.py {draft_id}
 
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1 (6..10
 slide, slide 1 la cover, 6 kind: cover/statement/steps/loop/figure/cta). Chi
@@ -118,7 +118,7 @@ dien CHU + theme/hero + ma hinh that (neu dung). KHONG mo tung slide ra xem,
 KHONG doc reference, KHONG chay render_edu.py/gui_telegram.py tay.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python kite_nop.py {draft_id}
+cd {goc} && venv/bin/python kite_submit.py {draft_id}
 Script tu kiem spec, render bang Chromium, gui album len topic kem nut Duyet/Lam
 lai/Bo, ghi ban giao cho Miles. Bao [LOI] thi sua DUNG cho do trong spec.json roi
 chay lai DUNG lenh nay (toi da 2 lan). {ket_thuc} GUI DUNG MOT LAN: khong sinh agent con, khong gui lai."""
@@ -138,7 +138,7 @@ anh, moi luat co hoc cua caption DA duoc script gom san. Viec cua ban chi co
 MOT: viet caption. Lam dung BA BUOC, khong them lenh nao khac.
 
 BUOC 1 — doc ban chuan bi (tu lieu co so lieu, doan dau bai, hook tren anh, luat):
-cd {goc} && venv/bin/python {persona}_chuan_bi.py {draft_id}
+cd {goc} && venv/bin/python {persona}_prepare.py {draft_id}
 
 BUOC 2 — viet caption vao DUNG tep in o cuoi BUOC 1 (chi caption, HTML Telegram
 <b> <i> <code>, tieng Viet co dau, moi cau xuong dong rieng, doan cach dong
@@ -146,7 +146,7 @@ trong, nham 800-1000 ky tu). KHONG tu dem ky tu, KHONG curl doc lai bai, KHONG
 chay tu_lieu/caption_check/draft_write/approve_service tay.
 
 BUOC 3 — nop:
-cd {goc} && venv/bin/python {persona}_nop.py {draft_id}
+cd {goc} && venv/bin/python {persona}_submit.py {draft_id}
 Script tu chuan hoa, do ky tu/cau/so, chay cong chan, ghep draft, day vao hang
 duyet. Bao [LOI] thi sua DUNG cho do trong caption.txt roi chay lai DUNG lenh
 nay (toi da 2 lan). Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o

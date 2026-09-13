@@ -31,16 +31,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load
-import bat_buoc
+import required
 
 STATE = env_load.state_dir() / "business_seen.json"
-UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
 # Moi dong la mot goc theo doi. Them chu de moi = them mot dong.
-TRUY_VAN = [
+QUERY = [
     ("gọi vốn / IPO", "AI startup IPO OR funding round OR valuation when:7d"),
     ("thâu tóm", "AI company acquisition OR acquires OR merger when:7d"),
     ("hạ tầng & vốn lớn", "AI datacenter investment billion when:7d"),
@@ -74,7 +74,7 @@ TRUY_VAN = [
 # (ten, url, can_loc_ai): feed chuyen ve AI thi can_loc_ai=False (moi tin deu AI).
 # Feed beat chung (venture, startups) can_loc_ai=True: chi giu tin co dinh toi AI,
 # de khong dua ca tin VC khong lien quan vao.
-RSS_BAO = [
+RSS_REPORT = [
     ("TechCrunch", "https://techcrunch.com/category/artificial-intelligence/feed/", False),
     ("The Verge", "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", False),
     # Beat goi von / startup: bat tin nhu Rillet ($100M, unicorn), Hugging Face bi
@@ -92,7 +92,7 @@ RSS_BAO = [
 ]
 
 # Toa soan uy tin — dung de xep do tin cay, khong dung de loai bo
-BAO_LON = ("reuters", "bloomberg", "financial times", "wall street journal", "wsj",
+REPORT_LARGE = ("reuters", "bloomberg", "financial times", "wall street journal", "wsj",
            "the information", "cnbc", "axios", "forbes", "fortune", "nytimes",
            "new york times", "the economist", "techcrunch", "the verge", "ft.com")
 
@@ -128,7 +128,7 @@ WATCHLIST = (
 
 # Nhieu ten cung mot hang: gom ve mot moi de "cuu" khong dem Xiaomi/MiMo/Xring
 # thanh ba hang khac nhau, va de OpenAI/ChatGPT/GPT khong chiem ba suat.
-HANG_CUA_TEN = {
+RANK_OF_NAME = {
     "chatgpt": "openai", "gpt": "openai",
     "claude": "anthropic",
     "gemini": "google deepmind", "deepmind": "google deepmind",
@@ -147,12 +147,12 @@ HANG_CUA_TEN = {
 
 # Hang LOI: co tin la bat buoc, ke ca chi mot bao. Hang watchlist khac chi bat
 # buoc khi tu 2 bao tro len (Lenovo ra man hinh moi khong phai tin nganh AI).
-HANG_LOI = {"openai", "anthropic", "google", "deepmind", "meta", "nvidia", "microsoft",
+RANK_ERROR = {"openai", "anthropic", "google", "deepmind", "meta", "nvidia", "microsoft",
             "apple", "deepseek", "qwen", "alibaba", "xai", "amazon", "hugging face",
             "mistral", "moonshot", "kimi", "bytedance", "xiaomi", "samsung"}
 
 
-def ten_watchlist(tieu_de: str) -> str | None:
+def name_watchlist(tieu_de: str) -> str | None:
     """Ten HANG trong watchlist ma tin nay noi toi, hoac None.
 
     So theo BIEN GIOI TU de "arm" khong khop "harm", "yi" khong khop "yield".
@@ -165,22 +165,22 @@ def ten_watchlist(tieu_de: str) -> str | None:
             f" {ten} " in td or f" {ten}'" in td
             or f" {ten}," in td or f" {ten}." in td or f" {ten}:" in td)
         if khop:
-            return HANG_CUA_TEN.get(ten, ten)
+            return RANK_OF_NAME.get(ten, ten)
     return None
 
 
-def trong_watchlist(tieu_de: str) -> bool:
-    return ten_watchlist(tieu_de) is not None
+def within_watchlist(tieu_de: str) -> bool:
+    return name_watchlist(tieu_de) is not None
 
 
 
-_get = quet_chung.get                  # mot ban duy nhat, xem quet_chung
+_get = scan_common.get                  # mot ban duy nhat, xem quet_chung
 
 
-_ts = quet_chung.moc_thoi_gian          # mot ban (ADF-r2-15): 45e206c them ham chung ma chua ai goi
+_ts = scan_common.timestamp_time          # mot ban (ADF-r2-15): 45e206c them ham chung ma chua ai goi
 
 
-def chuan_hoa(tieu_de: str) -> str:
+def standard_ify(tieu_de: str) -> str:
     """Rut tieu de ve dang so sanh duoc, de gom cac bao dua cung mot tin.
 
     Google News gan ' - Ten Toa Soan' vao cuoi. Cat phan do truoc, roi bo dau
@@ -191,15 +191,15 @@ def chuan_hoa(tieu_de: str) -> str:
     return re.sub(r"\s+", " ", t).strip()
 
 
-def toa_soan(tieu_de: str) -> str:
+def outlet(tieu_de: str) -> str:
     m = re.search(r"\s+-\s+([^-]{2,40})$", tieu_de)
     return m.group(1).strip() if m else ""
 
 
-def quet_gnews(gio_toi_da: int) -> list:
+def scan_gnews(gio_toi_da: int) -> list:
     nguong = time.time() - gio_toi_da * 3600
     ra = []
-    for nhan, q in TRUY_VAN:
+    for nhan, q in QUERY:
         try:
             root = ET.fromstring(_get(GNEWS.format(q=up.quote(q))).content)
         except Exception as e:                               # noqa: BLE001
@@ -210,18 +210,18 @@ def quet_gnews(gio_toi_da: int) -> list:
             ts = _ts(it.findtext("pubDate") or "")
             if not td or (ts and ts < nguong):
                 continue
-            ra.append({"goc": nhan, "tieu_de": td, "toa_soan": toa_soan(td),
+            ra.append({"goc": nhan, "tieu_de": td, "toa_soan": outlet(td),
                        "link": it.findtext("link") or "", "ts": ts,
                        "ngay": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
                        if ts else "?"})
     return ra
 
 
-def quet_bao(gio_toi_da: int) -> list:
+def scan_report(gio_toi_da: int) -> list:
     nguong = time.time() - gio_toi_da * 3600
     ra = []
     ns = {"a": "http://www.w3.org/2005/Atom"}
-    for ten, url, can_loc_ai in RSS_BAO:
+    for ten, url, can_loc_ai in RSS_REPORT:
         try:
             root = ET.fromstring(_get(url).content)
         except Exception as e:                               # noqa: BLE001
@@ -243,7 +243,7 @@ def quet_bao(gio_toi_da: int) -> list:
                 tl = td.lower()
                 if not ("artificial intelligence" in tl
                         or " ai " in f" {tl} " or " ai," in tl or "ai-" in tl
-                        or trong_watchlist(td)):
+                        or within_watchlist(td)):
                     continue
             link = it.findtext("link") or ""
             if not link and it.find("a:link", ns) is not None:
@@ -256,16 +256,16 @@ def quet_bao(gio_toi_da: int) -> list:
 
 
 # Tu qua pho bien, khong giup phan biet su kien
-TU_RONG = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
+FROM_EMPTY = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
            "as", "at", "by", "from", "its", "it", "is", "are", "be", "new", "ai",
            "says", "said", "after", "over", "into", "amid", "this", "that"}
 
 
-def _tu_khoa(tieu_de: str) -> set:
-    return {w for w in chuan_hoa(tieu_de).split() if w not in TU_RONG and len(w) > 2}
+def _keyword(tieu_de: str) -> set:
+    return {w for w in standard_ify(tieu_de).split() if w not in FROM_EMPTY and len(w) > 2}
 
 
-def gom_trung(tin: list, nguong=0.6) -> list:
+def gather_duplicate(tin: list, nguong=0.6) -> list:
     """Mot su kien nhieu bao dua -> giu ban som nhat, dem so bao de biet do nong.
 
     So khop nguyen van KHONG du: cac bao dien dat khac nhau ve cung mot viec.
@@ -276,7 +276,7 @@ def gom_trung(tin: list, nguong=0.6) -> list:
     """
     nhom = []
     for t in sorted(tin, key=lambda x: x["ts"] or 0):      # som nhat truoc
-        tu = _tu_khoa(t["tieu_de"])
+        tu = _keyword(t["tieu_de"])
         if not tu:
             continue
         vao = None
@@ -300,20 +300,20 @@ def gom_trung(tin: list, nguong=0.6) -> list:
             # co neu BAT KY bien the nao khop. Truoc day tinh sau dedup tren
             # tit dai dien (ban som nhat): ban tin dau khong nhac ten hang lam
             # dai dien la ca nhom mat co bao ve — dung kich ban Xiaomi Cube.
-            t["hang_watch"] = ten_watchlist(t["tieu_de"])
+            t["hang_watch"] = name_watchlist(t["tieu_de"])
             nhom.append(t)
         else:
             vao["so_bao"] += 1
             if t["toa_soan"] and t["toa_soan"] not in vao["cac_bao"]:
                 vao["cac_bao"].append(t["toa_soan"])
             if not vao.get("hang_watch"):
-                vao["hang_watch"] = ten_watchlist(t["tieu_de"])
+                vao["hang_watch"] = name_watchlist(t["tieu_de"])
     for n in nhom:
         n.pop("_tu", None)
     return nhom
 
 
-def da_thay() -> dict:
+def already_see() -> dict:
     """Doc bo nho da-thay: {khoa: unix_ts lan cuoi thay}.
 
     Dinh dang cu la list khoa tran — doc duoc ca hai, chuyen dan sang dict.
@@ -327,7 +327,7 @@ def da_thay() -> dict:
     return d
 
 
-def ghi_moc(khoa: dict):
+def write_timestamp(khoa: dict):
     """Ghi bo nho da-thay, cat theo THOI GIAN, giu cac truong khac cua tep.
 
     Hai loi cu cua ham nay, ca hai da gay chuyen that:
@@ -377,16 +377,16 @@ def main():
     if a.state:
         STATE = Path(a.state)
 
-    tin = gom_trung(quet_gnews(a.gio) + quet_bao(a.gio))
-    cu = da_thay()
+    tin = gather_duplicate(scan_gnews(a.gio) + scan_report(a.gio))
+    cu = already_see()
     now = time.time()
 
     if a.lan_dau:
-        ghi_moc({**cu, **{chuan_hoa(t["tieu_de"]): now for t in tin}})
+        write_timestamp({**cu, **{standard_ify(t["tieu_de"]): now for t in tin}})
         print(f"Da ghi moc {len(tin)} tin. Lan sau chi bao cai moi.")
         return
 
-    moi = [t for t in tin if chuan_hoa(t["tieu_de"]) not in cu]
+    moi = [t for t in tin if standard_ify(t["tieu_de"]) not in cu]
     for t in moi:
         # hang_watch da duoc gom_trung tinh tren TUNG bien the truoc khi gop.
         t["watchlist"] = bool(t.get("hang_watch"))
@@ -428,7 +428,7 @@ def main():
             hang = (t.get("hang_watch") or "").lower()
             if not (t["watchlist"] and hang):
                 continue
-            if hang not in HANG_LOI and (t.get("so_bao") or 0) < 2:
+            if hang not in RANK_ERROR and (t.get("so_bao") or 0) < 2:
                 continue
             k = f"hang|{hang}|{t['ngay']}"
             # KHONG dung ten `cu`: do la bo nho da-thay (da_thay()) dung o cuoi
@@ -441,9 +441,9 @@ def main():
         muc = [(k, f"{t['hang_watch']}: {t['tieu_de']}", "watchlist",
                 f"{t['so_bao']} bao; {t['ngay']}", t.get("link", ""), [t["hang_watch"]])
                for k, t in nhom.items()]
-        so_moi = bat_buoc.them_nhieu("vera", muc)
+        so_moi = required.extra_many("vera", muc)
         print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
-              f"{len(bat_buoc.doc('vera'))} (bat_buoc_vera.json)", file=sys.stderr)
+              f"{len(required.read('vera'))} (bat_buoc_vera.json)", file=sys.stderr)
 
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
            "tong_quet": len(tin),
@@ -465,7 +465,7 @@ def main():
     # Truoc day danh dau het: ngay dot bien, phan bi van --top cat van vao seen
     # -> lan sau bi loc "da thay" -> khong bao gio toi Vera nua. Van an toan
     # thanh may xoa tin. Tin bi cat hom nay, mai van con moi thi van len duoc.
-    ghi_moc({**cu, **{chuan_hoa(t["tieu_de"]): now for t in chon}})
+    write_timestamp({**cu, **{standard_ify(t["tieu_de"]): now for t in chon}})
 
 
 if __name__ == "__main__":

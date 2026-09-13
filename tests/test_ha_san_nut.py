@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Nut "ha san" (imgtiep) khi HET DUONG that su (duyet_bai.py) — sinh sau su co
+"""Nut "ha san" (imgtiep) khi HET DUONG that su (approve_post.py) — sinh sau su co
 08/09/2026: Ong Chu bam "Dre lam voi 4 anh", engine tra loi "chi 4 anh ma can
 toi thieu 5 slide — bam tiep cung khong dung duoc. Chuyen Kite ve vector, hoac
 bo tin" RỒI GỠ LUÔN BÀN PHÍM — không còn nút nào bấm được hai đường vừa nêu,
@@ -19,8 +19,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import duyet_bai as db              # noqa: E402
-import duyet_giao_viec as dgv       # noqa: E402
+import approve_post as db              # noqa: E402
+import approve_dispatch as dgv       # noqa: E402
 
 
 class _CQ(dict):
@@ -49,7 +49,7 @@ def _goi_ha_san(tmp: Path, so_dung_duoc: int, toi_thieu: int, co_kite: bool):
     db.STATE_DIR, dgv.HERMES_HOME = tmp / "state", str(tmp / "home")
     db.call = lambda *a, **k: {"ok": True}
     try:
-        return db._nut_ha_san("tok", "d1", _CQ())
+        return db._button_lower_ready("tok", "d1", _CQ())
     finally:
         db.STATE_DIR, dgv.HERMES_HOME, db.call = cu_state, cu_home, cu_call
 
@@ -72,7 +72,7 @@ def test_het_duong_co_kite_giu_lai_nut_gui_kite_va_bo_han():
 def test_het_duong_khong_co_kite_chi_con_bo_han():
     """Brand chua co Kite (dcgr): KHONG duoc hua nut Gui Kite se chi ra loi
     "khong co profile" — chi con Bo han, dung nguyen tac "khong hua suong" da
-    ap dung o nhanh khong_kite cua _route_thieu_anh (anh_chuan_bi.py)."""
+    ap dung o nhanh khong_kite cua _route_thieu_anh (image_prepare.py)."""
     with tempfile.TemporaryDirectory() as tmp:
         note, kb = _goi_ha_san(Path(tmp), so_dung_duoc=4, toi_thieu=8, co_kite=False)
         assert kb is not None
@@ -85,7 +85,7 @@ def test_het_duong_khong_co_kite_chi_con_bo_han():
 # ----------------------------------------------------- cac nhanh khac giu nguyen
 def test_ha_san_thanh_cong_khong_dinh_ban_phim():
     """so=6 >= san=5, cu=8 > san -> ha san thanh cong, KHONG can ban phim moi
-    (task da co the tiep tuc qua dre_nop.py, khong can bam gi them nua)."""
+    (task da co the tiep tuc qua dre_submit.py, khong can bam gi them nua)."""
     with tempfile.TemporaryDirectory() as tmp:
         note, kb = _goi_ha_san(Path(tmp), so_dung_duoc=6, toi_thieu=8, co_kite=True)
         assert kb is None
@@ -110,7 +110,7 @@ def test_chot_nut_gan_dung_ban_phim_duoc_truyen():
     try:
         msg = {"chat": {"id": 1}, "message_id": 2, "text": "goc"}
         kb_moi = {"inline_keyboard": [[{"text": "x", "callback_data": "imgno:d1"}]]}
-        db._chot_nut("tok", msg, "d1", "note", kb_moi)
+        db._finalize_button("tok", msg, "d1", "note", kb_moi)
         assert goi and goi[0] == kb_moi, f"khong dung keyboard truyen vao: {goi}"
     finally:
         db.call = cu_call
@@ -124,7 +124,7 @@ def test_chot_nut_mac_dinh_van_go_trang():
     db.call = lambda *a, **k: goi.append(k.get("reply_markup")) or {"ok": True}
     try:
         msg = {"chat": {"id": 1}, "message_id": 2, "text": "goc"}
-        db._chot_nut("tok", msg, "d1", "note")
+        db._finalize_button("tok", msg, "d1", "note")
         assert goi and goi[0] == {"inline_keyboard": []}, f"phai go trang nhu cu: {goi}"
     finally:
         db.call = cu_call

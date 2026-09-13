@@ -33,8 +33,8 @@ HERMES_HOME = str(env_load.hermes_home())
 # Dan xuat tu ban dang ky vai.py (audit lượt 2, ADF-r2-2): truoc day la bang 12
 # dong chep tay — them vai o vai.py ma quen day thi chat trong topic cua vai moi
 # roi ve profile mac dinh, IM LANG. tests/test_vai.py giu hai ben khop.
-import vai as _vai                                            # noqa: E402
-TOPIC_PROFILE = {v.slug: v.slug for v in _vai.VAI.values()}
+import role as _vai                                            # noqa: E402
+TOPIC_PROFILE = {v.slug: v.slug for v in _vai.ROLE.values()}
 
 REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
 TIMEOUT_SEC = 600           # agent chay lau; 10 phut la du cho hau het viec
@@ -80,7 +80,7 @@ def route(thread_id, topics: dict) -> tuple:
     # `slug_that` bac cau slug role cu (LOW-14): `state/topics.json` cua che do
     # don con nguyen khoa cu, va khong khop o day la chat roi ve profile mac
     # dinh trong IM LANG — dung cai hong ma khoi comment tren canh bao.
-    profile = TOPIC_PROFILE.get(key) or TOPIC_PROFILE.get(_vai.slug_that(key or ""))
+    profile = TOPIC_PROFILE.get(key) or TOPIC_PROFILE.get(_vai.canonical_slug(key or ""))
     session = f"tele-{key or 'general'}"
     return profile, session
 
@@ -97,7 +97,7 @@ _DONG_RAC = re.compile(r"^\s+[⚠✓↻ℹ]")
 _PHIEN = re.compile(r"(↻ Resumed session[^\n]*|Session \S+ found but has no messages)")
 
 
-def _bo_dong_rac(out: str) -> str:
+def _drop_line_junk(out: str) -> str:
     dong = out.split("\n")
     i = 0
     while i < len(dong) and (not dong[i].strip() or _DONG_RAC.match(dong[i])):
@@ -116,10 +116,10 @@ def _bo_dong_rac(out: str) -> str:
 # loai no. Co key la bo nay thanh BON cong cu.
 # Tuc la vai van tra loi va tra cuu duoc, nhung KHONG chay duoc script, khong
 # sua duoc tep, khong tao duoc task.
-BO_CHI_DOC = "safe"
+DROP_ONLY_READ = "safe"
 
 
-def dung_argv(profile, session, prompt, toolsets=None) -> list:
+def use_argv(profile, session, prompt, toolsets=None) -> list:
     """Dong lenh `hermes chat` cho mot luot. Tach ra de TEST duoc (06/09/2026
     dot 2): day dung la doan da gay su co `-z` nuot `--continue`, va truoc gio
     muon kiem no thi phai chay ca mot tien trinh hermes that.
@@ -166,13 +166,13 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
     import time
     import signal
     try:
-        import ghi_log
-        log = ghi_log.log
+        import write_log
+        log = write_log.log
     except Exception:                                        # noqa: BLE001
         log = lambda a, b: print(f"[{a}] {b}", flush=True)   # noqa: E731
 
     prompt = (chat_hint() + text) if hint else text
-    args = dung_argv(profile, session, prompt, toolsets)
+    args = use_argv(profile, session, prompt, toolsets)
     env = dict(os.environ, HERMES_HOME=HERMES_HOME)
     t0 = time.time()
     log("chat", f"goi agent profile={profile or '-'} session={session} "
@@ -203,7 +203,7 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
                 pass
             out, err = proc.communicate()
     dt = time.time() - t0
-    out = _bo_dong_rac(out or "")
+    out = _drop_line_junk(out or "")
     err = (err or "").strip()
     mp = _PHIEN.search(err)
     log("chat", f"agent xong profile={profile or '-'} rc={proc.returncode} "
@@ -237,4 +237,4 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
 def clean(text: str) -> str:
     """Bo ma mau ANSI. KHONG cat noi dung nua — tin dai duoc `chia_tin` tach
     thanh nhieu tin (xem handle_chat), nen reply khong con bi mat phan cuoi."""
-    return tele_util.bo_ansi(text)
+    return tele_util.drop_ansi(text)

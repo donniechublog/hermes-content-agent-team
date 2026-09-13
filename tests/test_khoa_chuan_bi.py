@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LOW-26 (12/09/2026): khoa `dang_chay.pid` cua engine chuan bi anh.
 
-t_24b214a6: ethan_chuan_bi.py chet SIGSEGV (exit 139) ba lan, khoa nam lai; lan
+t_24b214a6: ethan_prepare.py chet SIGSEGV (exit 139) ba lan, khoa nam lai; lan
 chay dau doi tron 300s (= tran bash tool cua vai) roi bi cat `exit 124`. Test:
   - khoa mo coi (pid chet) -> don NGAY, khong ngu mot giay nao, co dong log;
   - pid con song -> doi toi `cho` roi thoat bang SystemExit, KHONG ghi de khoa;
@@ -19,12 +19,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 
 
 def test_cho_mac_dinh_nho_han_tran_bash_cua_vai():
-    assert cb.CHO_KHOA_GIAY <= 60, cb.CHO_KHOA_GIAY
-    assert cb.chay.__defaults__[2] == cb.CHO_KHOA_GIAY        # (lam_moi, khong_browser, cho, ...)
+    assert cb.WAIT_LOCK_SECONDS <= 60, cb.WAIT_LOCK_SECONDS
+    assert cb.run.__defaults__[2] == cb.WAIT_LOCK_SECONDS        # (lam_moi, khong_browser, cho, ...)
 
 
 def test_khoa_mo_coi_don_ngay_khong_doi():
@@ -34,7 +34,7 @@ def test_khoa_mo_coi_don_ngay_khong_doi():
         ngu = []
         err = io.StringIO()
         with redirect_stderr(err):
-            cb._doi_khoa(khoa, 60, "draft-x", ngu=lambda s: ngu.append(s))
+            cb._handle_lock(khoa, 60, "draft-x", ngu=lambda s: ngu.append(s))
         assert not khoa.exists(), "khoa mo coi phai bi don"
         assert ngu == [], f"khong duoc ngu: {ngu}"
         assert "mo coi" in err.getvalue(), err.getvalue()
@@ -62,7 +62,7 @@ def test_pid_song_thi_doi_roi_thoat_khong_ghi_de():
         try:
             with redirect_stderr(io.StringIO()):
                 try:
-                    cb._doi_khoa(khoa, 7, "draft-x", ngu=_T.sleep)
+                    cb._handle_lock(khoa, 7, "draft-x", ngu=_T.sleep)
                     raise AssertionError("phai thoat bang SystemExit")
                 except SystemExit as e:
                     assert "van dang chuan bi" in str(e), str(e)

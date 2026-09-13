@@ -22,9 +22,9 @@ kiểm spec, render Chromium, gửi album kèm nút duyệt, bàn giao Miles. No
 `[LOI]` kèm cách sửa.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python kite_chuan_bi.py <id>   # 1. đọc brief
+cd /home/donniechu/content-team && venv/bin/python kite_prepare.py <id>   # 1. đọc brief
 # 2. viết spec.json vào đúng đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python kite_nop.py <id>        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
 ```
 
 Gửi đúng một lần: ngoài ba lệnh trên không chạy gì khác, không sinh agent con,

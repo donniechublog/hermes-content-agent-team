@@ -25,11 +25,11 @@ import time
 import httpx
 
 import env_load
-from caption_check import ty_le_dau
+from caption_check import billion_odd_mark
 
 ROUTER = env_load.ROUTER_URL
 
-UNGVIEN = [
+CANDIDATE = [
     "tokenrouter/qwen/qwen3.8-max",
     "tokenrouter/moonshotai/kimi-k3",
     "tokenrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
@@ -55,18 +55,18 @@ TOOLS = [{
 SYS = ("Ban la cay viet tieng Viet cua mot kenh tin AI. "
        "Luon tra loi bang tieng Viet co dau day du.")
 # Doan dem DAI va CO DINH — de lan goi thu hai trung prefix, do duoc cache
-DEM = ("Boi canh bien tap (khong doi): kenh dang tin AI cho doc gia Viet Nam, "
+COUNT = ("Boi canh bien tap (khong doi): kenh dang tin AI cho doc gia Viet Nam, "
        "giong van ngan gon, khong sao roi, khong cuong dieu, uu tien su that "
        "kiem chung duoc. ") * 60
-TIN = "OpenAI vua ra mat mo hinh moi giam 40% chi phi suy luan."
+STORY = "OpenAI vua ra mat mo hinh moi giam 40% chi phi suy luan."
 
 # Nguong dat: van ban tieng Viet co dau that thuong tren 0.15 (caption_check
 # dung 0.12 co chu y — cong chan bai that co nhieu ten rieng tieng Anh).
-NGUONG_DAU = 0.15
+THRESHOLD_MARK = 0.15
 
 
-def goi(model: str, key: str, dung_tool: bool, max_tokens: int) -> dict:
-    nhac = (f"{DEM}\n\nTin: {TIN}\n" + (
+def call(model: str, key: str, dung_tool: bool, max_tokens: int) -> dict:
+    nhac = (f"{COUNT}\n\nTin: {STORY}\n" + (
         "Hay viet caption 3 cau tieng Viet co dau day du, roi GOI TOOL "
         "luu_caption de luu lai." if dung_tool else
         "Viet dung 3 cau tieng Viet co dau day du. Chi tra ve 3 cau."))
@@ -120,20 +120,20 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=2000)
     a = ap.parse_args()
 
-    key = env_load.bat_buoc("OPENAI_API_KEY")
+    key = env_load.required("OPENAI_API_KEY")
     ket_qua = {}
-    for m in (a.models or UNGVIEN):
+    for m in (a.models or CANDIDATE):
         print(f"\n{'=' * 72}\n{m}", flush=True)
-        r1 = goi(m, key, not a.no_tool, a.max_tokens)
+        r1 = call(m, key, not a.no_tool, a.max_tokens)
         if "loi" in r1:
             print(f"  LOI: {r1['loi']}")
             ket_qua[m] = {"dat": False, "vi_sao": r1["loi"]}
             continue
         time.sleep(2)
-        r2 = goi(m, key, not a.no_tool, a.max_tokens)   # y het -> do cache
+        r2 = call(m, key, not a.no_tool, a.max_tokens)   # y het -> do cache
 
         vb = r1["van_ban"]
-        td = ty_le_dau(vb)
+        td = billion_odd_mark(vb)
         co_tool = bool(r1["tool"]) if not a.no_tool else None
         # cached_tokens > 0 o bat ky lan nao => nha cung cap co cache prefix
         cache_ok = bool((r1["cached"] or 0) or (r2.get("cached") or 0))
@@ -143,7 +143,7 @@ def main():
         if not a.no_tool:
             print(f"  goi tool   : {r1['tool'] or 'KHONG — truot'}")
         print(f"  tieng Viet : {len(vb)} ky tu, ty le dau {td:.2f} "
-              f"({'du dau' if td >= NGUONG_DAU else 'MAT DAU — truot'})")
+              f"({'du dau' if td >= THRESHOLD_MARK else 'MAT DAU — truot'})")
         print(f"  suy luan   : {r1['reason_tok']} token")
         print(f"  token      : prompt {r1['prompt_tok']} | out {r1['out_tok']}")
         print(f"  cache      : lan1 {r1['cached']} | lan2 {r2.get('cached')} "
@@ -153,7 +153,7 @@ def main():
         else:
             print("  --- KHONG VIET RA CHU NAO ---")
 
-        dat = td >= NGUONG_DAU and bool(vb) and (a.no_tool or co_tool) and cache_ok
+        dat = td >= THRESHOLD_MARK and bool(vb) and (a.no_tool or co_tool) and cache_ok
         ket_qua[m] = {"dat": dat, "ty_le_dau": round(td, 2), "tool": r1["tool"],
                       "cache": cache_ok, "giay": r1["giay"],
                       "reason_tok": r1["reason_tok"]}

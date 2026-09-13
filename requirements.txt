@@ -9,7 +9,7 @@
 
 httpx>=0.27          # tai trang, goi API, dung o nhieu script
 Pillow>=10           # dung the anh (card.py), xu ly anh
-pymupdf>=1.24        # render trang dau paper arxiv (arxiv_bia.py)
+pymupdf>=1.24        # render trang dau paper arxiv (arxiv_cover.py)
 playwright>=1.40     # render_edu.py (Kite) chup HTML->PNG bang Chromium headless.
 #                    # SAU khi cai package con phai tai browser: `playwright
 #                    # install chromium`. Chi carousel.sli dung; cac vai khac
@@ -42,10 +42,10 @@ opencv-python-headless>=4.9  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx 
 #                       # None va cong mat nguoi TAT IM LANG, khong mot dong bao:
 #                       # dung loai hong ma audit goi la "âm thầm".
 
-# doi_chu_anh.py (Gin) can them torch + LaMa + easyocr, ~2GB — CHI cai tren may
+# swap_image_text.py (Gin) can them torch + LaMa + easyocr, ~2GB — CHI cai tren may
 # local xu ly anh nang, khong dua vao day. Xem requirements-local.txt.
 
-# numpy: gin_chuan_bi.py / doi_chu_anh.py import top-level nhung KHONG khai o
+# numpy: gin_prepare.py / swap_image_text.py import top-level nhung KHONG khai o
 # day — no den theo opencv-python-headless (phu thuoc bat buoc), nen "thieu"
 # chi la ve mat khai bao (audit lượt 2, ADF-r2-13). Ghi ro de doc requirements
 # la biet, khong phai lan theo cay phu thuoc.

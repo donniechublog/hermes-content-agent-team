@@ -1,6 +1,6 @@
 ---
 name: carousel-edu
-description: "Ranh giới ngoại lệ 'không tự vẽ', bảng tone và hero, nhịp feature cho carousel EDU tech × magazine của Kite (role carousel.edu, cả hai brand). Lệnh, khung spec bảy kind kèm giới hạn chữ, hình thật đã chụp và cách sửa lỗi nằm trong brief mà kite_chuan_bi.py in mỗi task và trong báo [LOI] của kite_nop.py; skill này chỉ giữ phần vai phải nghĩ."
+description: "Ranh giới ngoại lệ 'không tự vẽ', bảng tone và hero, nhịp feature cho carousel EDU tech × magazine của Kite (role carousel.edu, cả hai brand). Lệnh, khung spec bảy kind kèm giới hạn chữ, hình thật đã chụp và cách sửa lỗi nằm trong brief mà kite_prepare.py in mỗi task và trong báo [LOI] của kite_submit.py; skill này chỉ giữ phần vai phải nghĩ."
 version: 3.0.0
 author: content-team
 license: internal
@@ -31,9 +31,9 @@ viết chữ**. Chữ thuần là đường cuối: ý nào có hình nói nhanh
 ## Luồng
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python kite_chuan_bi.py <id>   # 1. brief
+cd /home/donniechu/content-team && venv/bin/python kite_prepare.py <id>   # 1. brief
 # 2. viết spec.json vào đường dẫn brief in ra
-cd /home/donniechu/content-team && venv/bin/python kite_nop.py <id>        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python kite_submit.py <id>        # 3. nộp
 ```
 
 Brief in tư liệu, hình thật đã nhìn và liên quan (mã A?), theme/hero gợi ý
@@ -112,7 +112,7 @@ Cách thoát duy nhất trong luật: nộp `kanban_block(kind="needs_input")` k
 (a) mã nào vướng cổng nào và vì sao, (b) bằng chứng đây là đụng TÊN MÃ chứ
 không phải dùng lại ảnh (đối chiếu tệp gốc của bộ trước: `xong.json` +
 `render_edu.spec.json` bên đó, vision `mo_ta`), (c) ảnh thay thế đã tải sẵn.
-Đừng tự sửa `luat_anh.py` hay nhồi mã ngoài `hinh_that` — script sẽ chặn
+Đừng tự sửa `image_rules.py` hay nhồi mã ngoài `hinh_that` — script sẽ chặn
 `image "<mã>" không phải mã hình thật dùng được`.
 
 ## Bug renderer đã biết (tránh ở spec)

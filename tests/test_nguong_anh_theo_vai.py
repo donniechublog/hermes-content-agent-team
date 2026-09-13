@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Nguong "du anh" phai di theo VAI, khong phai theo carousel (su co 10/09/2026).
+"""Nguong "du anh" phai di theo ROLE, khong phai theo carousel (su co 10/09/2026).
 
 Ong Chu bao: "viec cua Ethan la lam single image, sao hom nay Ethan lai bao
 khong tao duoc slide?". Ethan KHONG bi giao nham task — phan cong van dung.
-Sai o cho khac: `anh_chuan_bi.chuan_bi()` chay CHUNG cho ca ba vai dung anh
+Sai o cho khac: `image_prepare.prepare_article()` chay CHUNG cho ca ba vai dung anh
 nhung tinh so anh toi thieu bang `carousel.FLAGSHIP_MIN if flagship else
 carousel.MIN_SLIDE`, tuc luon la 5 (hay 8) — ke ca khi bai la cua Ethan, ma
 card.py chi can DUNG MOT tam anh. Hai bai co 2 anh that hom do bi ket o buoc
@@ -26,8 +26,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import vai                                                    # noqa: E402
-from chuan_bi.manifest import dung_manifest                   # noqa: E402
+import role                                                    # noqa: E402
+from prepare.manifest import build_manifest                   # noqa: E402
 
 
 def _anh(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
@@ -41,17 +41,17 @@ def _anh(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
 def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
     """Manifest that (qua dung_manifest, khong che tay) cho `so_anh` anh dung duoc."""
     with tempfile.TemporaryDirectory() as tmp:
-        return dung_manifest(
+        return build_manifest(
             "d1", {"brand": "donniechublog", "title": "t"}, "t", "http://vi.du/a",
-            {"tieu_de_en": ""}, Path(tmp) / "nguon.json", {}, Path(tmp),
+            {"tieu_de_en": ""}, Path(tmp) / "source.json", {}, Path(tmp),
             [_anh(f"A{i + 1}") for i in range(so_anh)], [], False,
             {"chu": ""}, {}, flagship,
-            vai.so_anh_toi_thieu(vai_anh, flagship), vai_anh=vai_anh)
+            role.min_images(vai_anh, flagship), vai_anh=vai_anh)
 
 
 # ------------------------------------------------ 1. nguong ghi vao manifest
 def test_manifest_ghi_nguong_theo_vai_duoc_giao():
-    """`toi_thieu` va `toi_thieu_co_ban` la cua VAI DUOC GIAO. Truoc 10/09/2026
+    """`toi_thieu` va `toi_thieu_co_ban` la cua ROLE DUOC GIAO. Truoc 10/09/2026
     `toi_thieu_co_ban` go cung `carousel.MIN_SLIDE` cho moi vai, nen nut "ha san"
     cua mot bai Ethan cung lay san 5."""
     m_ethan = _manifest("ethan", 2)
@@ -79,13 +79,13 @@ def test_hai_anh_that_la_DU_cho_ethan_va_THIEU_cho_dre():
 
     Voi Ethan phai la None (khong co gi de hoi) — truoc sua, ham nay tra
     {"so": 2, "toi_thieu": 5} va do la thu keo ca day "thieu anh" chay."""
-    import anh_chuan_bi as cb
-    assert cb._mo_ta_thieu_anh(_manifest("ethan", 2)) is None, \
+    import image_prepare as cb
+    assert cb._description_missing_image(_manifest("ethan", 2)) is None, \
         "2 anh that ma bao Ethan thieu anh — dung loi 10/09/2026"
     import carousel
-    assert cb._mo_ta_thieu_anh(_manifest("dre", 2)) == {"so": 2, "toi_thieu": carousel.MIN_SLIDE}
+    assert cb._description_missing_image(_manifest("dre", 2)) == {"so": 2, "toi_thieu": carousel.MIN_SLIDE}
     # Va khong anh nao thi Ethan cung thieu that (0 < 1) — cong van con.
-    assert cb._mo_ta_thieu_anh(_manifest("ethan", 0)) == {"so": 0, "toi_thieu": 1}
+    assert cb._description_missing_image(_manifest("ethan", 0)) == {"so": 0, "toi_thieu": 1}
 
 
 # ------------------------------------------- 3. tang ghep noi khong hoi oan
@@ -93,32 +93,32 @@ def test_khong_hoi_ong_chu_khi_ethan_du_anh():
     """`sau_chuan_bi` chi hoi khi manifest co `thieu_anh`. Bai cua Ethan voi 2
     anh khong con khoa do -> khong mot tin nao gui len topic, khong nut "Gui
     Kite ve vector" nao moc vao task le ra chay tron."""
-    import route_thieu_anh as rt
+    import route_missing_images as rt
     goi = []
-    cu_gui, cu_drafts = rt._tg_gui, rt.DRAFTS
-    rt._tg_gui = lambda *a, **k: goi.append(a) or True
+    cu_gui, cu_drafts = rt._time_send, rt.DRAFTS
+    rt._time_send = lambda *a, **k: goi.append(a) or True
     try:
         with tempfile.TemporaryDirectory() as tmp:
             rt.DRAFTS = Path(tmp)
             (rt.DRAFTS / "d1.img.json").write_text(
                 json.dumps({"vai_anh": "ethan"}), encoding="utf-8")
             m = _manifest("ethan", 2)
-            import anh_chuan_bi as cb
-            thieu = cb._mo_ta_thieu_anh(m)
+            import image_prepare as cb
+            thieu = cb._description_missing_image(m)
             if thieu:
                 m["thieu_anh"] = thieu
-            rt.sau_chuan_bi("d1", m)
+            rt.after_prepare("d1", m)
     finally:
-        rt._tg_gui, rt.DRAFTS = cu_gui, cu_drafts
+        rt._time_send, rt.DRAFTS = cu_gui, cu_drafts
     assert not goi, f"da hoi Ong Chu du Ethan khong thieu anh: {goi}"
     assert "hoi_kite" not in m and "chuyen_kite" not in m
 
 
 # ------------------------------------------------------ 4. cau chu cua nut
 def _ha_san(tmp: Path, manifest: dict, sidecar: dict | None):
-    """Chay duyet_bai._nut_ha_san voi moi truong gia, tra `note`."""
-    import duyet_bai as db
-    import duyet_giao_viec as dgv
+    """Chay approve_post._button_lower_ready voi moi truong gia, tra `note`."""
+    import approve_post as db
+    import approve_dispatch as dgv
     d = tmp / "state" / "chuan_bi" / "d1"
     d.mkdir(parents=True, exist_ok=True)
     (d / "xong.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -132,7 +132,7 @@ def _ha_san(tmp: Path, manifest: dict, sidecar: dict | None):
     dgv.HERMES_HOME = str(tmp / "home")
     db.call = lambda *a, **k: {"ok": True}
     try:
-        note, _kb = db._nut_ha_san("tok", "d1", {"id": "cbq1"})
+        note, _kb = db._button_lower_ready("tok", "d1", {"id": "cbq1"})
         return note
     finally:
         db.STATE_DIR, db.DRAFTS, dgv.HERMES_HOME, db.call = cu
@@ -171,23 +171,23 @@ def test_nut_ha_san_theo_sidecar_khi_bai_da_chuyen_kite():
 
 # ------------------------------------------- 5. cong chan dung DONG da hong
 def test_engine_lay_nguong_CHAN_tu_ban_dang_ky_vai():
-    """Cong chan o muc MA NGUON, vi dong that su hong nam trong `chuan_bi()` —
+    """Cong chan o muc MA NGUON, vi dong that su hong nam trong `prepare_article()` —
     ham do mo Chromium, tai anh, goi vision, khong unit test duoc.
 
     Dong cu:  toi_thieu = carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE
-    Dong nay: toi_thieu = vai.so_anh_toi_thieu(vai_anh, flagship)
+    Dong nay: toi_thieu = role.min_images(vai_anh, flagship)
 
     Ai do viet lai theo kieu cu thi cac test tren VAN XANH (chung dung thang
-    `vai.so_anh_toi_thieu` de dung manifest) — chi cong nay bat duoc.
+    `role.min_images` de dung manifest) — chi cong nay bat duoc.
 
     Nguong CHAN va cau hoi "con phai di tim nua khong" la HAI thu: cai thu hai
-    nay do `vai.du_nguyen_lieu`, giu o `tests/test_tim_anh_theo_vai.py`."""
+    nay do `role.has_enough_material`, giu o `tests/test_tim_anh_theo_vai.py`."""
     import inspect
     import re
 
-    import anh_chuan_bi as cb
-    src = inspect.getsource(cb.chuan_bi)
-    assert re.search(r"^\s*toi_thieu = vai\.so_anh_toi_thieu\(", src, re.M), \
+    import image_prepare as cb
+    src = inspect.getsource(cb.prepare_article)
+    assert re.search(r"^\s*toi_thieu = role\.min_images\(", src, re.M), \
         ("`toi_thieu` (nguong chan, di vao manifest) khong con lay tu ban dang ky "
          "vai — do la su co 10/09/2026")
 
@@ -201,22 +201,22 @@ def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
     so cua carousel — chinh la thu Ong Chu bac 10/09/2026 ("carousel la nhieu anh
     con Ethan lam single image, nen 'so luong' ko the la thu ap vao duoc"). Nay
     hai duong tach han: `toi_thieu` chi de CHAN, con di tim thi hoi
-    `vai.du_nguyen_lieu` — no doi phai co anh CHINH, khong doi du so tam."""
+    `role.has_enough_material` — no doi phai co anh CHINH, khong doi du so tam."""
     import inspect
 
-    import anh_chuan_bi as cb
-    import vai as vai_mod
-    src = inspect.getsource(cb.chuan_bi)
+    import image_prepare as cb
+    import role as vai_mod
+    src = inspect.getsource(cb.prepare_article)
     for dong in src.splitlines():
         d = dong.strip()
-        if d.startswith("#") or "_vong_tim_rong(" not in d or "=" not in d:
+        if d.startswith("#") or "_round_widen_search(" not in d or "=" not in d:
             continue
-        assert "toi_thieu" not in d.split("_vong_tim_rong(")[0], \
+        assert "toi_thieu" not in d.split("_round_widen_search(")[0], \
             f"vong tim anh dang do bang nguong chan: {d}"
     # Mot tam DUNG DUOC nhung khong lam hero duoc thi chua phai la du.
     a = {"dung": ["ghép dọc với một ảnh ngang cùng tone"], "lien_quan": True,
          "loai": "anh", "ti_le": 1.78, "mat": 0, "alt": ""}
-    assert not vai_mod.du_nguyen_lieu("ethan", [a]), \
+    assert not vai_mod.has_enough_material("ethan", [a]), \
         "engine se ngung tim khi Ethan van chua co tam nao lam nen hero"
 
 
@@ -226,9 +226,9 @@ def test_sidecar_ghi_truoc_khi_engine_chay():
     ghi — truoc gio chi mat tom tat (im lang), tu 10/09/2026 mat ca nguong."""
     import inspect
 
-    import duyet_chon_tin as dct
+    import approve_pick as dct
     src = inspect.getsource(dct.create_pair)
-    assert src.index("_cat_sidecar(") < src.index("_khoi_chay_engine("), \
+    assert src.index("_crop_sidecar(") < src.index("_block_run_engine("), \
         "create_pair chay engine truoc khi ghi sidecar — engine se khong biet vai"
 
 

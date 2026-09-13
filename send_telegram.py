@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Gui anh (mot hoac nhieu — sendPhoto/sendMediaGroup) vao dung topic Telegram
+cua mot vai, va ghi lai nhat ky (message_id, file, mo ta) de sau nay tra loi
+mot yeu cau sua con biet dang noi anh nao.
+
+Dung cho MOI vai dung anh (slug: designer, carousel, gin, itachi...) de
+tu day anh minh vua dung ra topic cua chinh minh — khong phai cho writer viet
+xong roi moi co anh trong bai. Gin/Itachi con duoc goi tu `--gui <vai>` trong
+tao_nen_ai.py, no goi thang ham post() o day.
+
+Khong dung chung tien trinh voi approve_service.py (dich vu duyet bai) — day
+la mot lenh CHAY MOT LAN, khong long-poll, khong dung chung offset Telegram
+voi dich vu kia. An toan goi bao nhieu lan cung duoc.
+
+Dung:
+    venv/bin/python send_telegram.py --vai itachi \\
+      --anh a.png --anh b.png --mo-ta "Doraemon bat tay Conan, lang La"
+    venv/bin/python send_telegram.py --vai itachi --list      # gan day da gui gi
+"""
+import argparse
+import hashlib
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+import httpx
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import env_load
+import role
+
+STATE = env_load.state_dir() / "telegram_sent"
+TOPICS = env_load.topics_path()
+API = "https://api.telegram.org/bot{token}/{method}"
+
+
+class SendError(RuntimeError):
+    """Loi gui anh/topic. La Exception THUONG de nguoi goi thu vien bat duoc —
+    SystemExit lot qua moi `except Exception` (bai hoc o publish.TelegramTuChoi).
+    CLI (main) va cac nop bat loi nay roi thoat gon."""
+
+
+def _topic(vai: str) -> int:
+    m = env_load.topics()
+    if vai not in m:
+        raise SendError(f"Vai '{vai}' chua co topic trong {TOPICS}")
+    return m[vai]
+
+
+def _md5(files) -> list:
+    return [hashlib.md5(Path(f).read_bytes()).hexdigest() for f in files]
+
+
+def _write_journal(vai: str, message_id, files, mo_ta: str) -> None:
+    STATE.mkdir(parents=True, exist_ok=True)
+    dong = {"ts": int(time.time()), "message_id": message_id,
+            "files": [str(f) for f in files], "md5": _md5(files), "mo_ta": mo_ta}
+    with (STATE / f"{vai}.jsonl").open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(dong, ensure_ascii=False) + "\n")
+
+
+def _already_send_near_bottom(vai: str, files, phut: int = 30):
+    """Tra ve ban ghi gan nhat neu CUNG bo file da gui trong `phut` phut.
+
+    So theo NOI DUNG (md5) chu khong chi theo ten (audit 05/09/2026): ban "Lam
+    lai" ghi ra dung ten cu drafts/<id>.png, so ten thi album moi bi coi la
+    trung va KHONG bao gio len topic. Dong cu chua co md5 thi so ten nhu truoc."""
+    import time as _t
+    p = STATE / f"{vai}.jsonl"
+    if not p.exists():
+        return None
+    ten = sorted(Path(f).name for f in files)
+    md5 = sorted(_md5(files))
+    moc = _t.time() - phut * 60
+    for dong in reversed(p.read_text(encoding="utf-8").splitlines()):
+        try:
+            d = json.loads(dong)
+        except Exception:                                    # noqa: BLE001
+            continue
+        if d.get("ts", 0) < moc:
+            break
+        giong = (sorted(d["md5"]) == md5) if d.get("md5") else \
+            (sorted(Path(f).name for f in d.get("files", [])) == ten)
+        if giong:
+            return {"message_id": d.get("message_id"),
+                    "luc": _t.strftime("%H:%M", _t.localtime(d["ts"]))}
+    return None
+
+
+def _kb_approve(draft_id: str) -> dict:
+    """Ba nut cho tam anh (approve_service xu ly callback):
+      imgok   Duyet   -> sinh task viet caption.
+      imgredo Lam lai -> tao lai task anh, designer dung anh khac.
+      imgno   Bo han   -> giet tin, khong viet khong lam lai."""
+    return {"inline_keyboard": [
+        [{"text": "✅ Duyệt ảnh → viết caption", "callback_data": "imgok:" + draft_id}],
+        [{"text": "🔄 Làm lại", "callback_data": "imgredo:" + draft_id},
+         {"text": "🗑 Bỏ hẳn", "callback_data": "imgno:" + draft_id}],
+    ]}
+
+
+def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
+    """Gui 1 hoac nhieu anh (>1 tu dong thanh album) vao topic cua `vai`.
+
+    `reply_to` (message_id, tuy chon): gui thanh REPLY vao dung tin nhan yeu
+    cau — dung khi tra ket qua cho mot yeu cau sua cu the, de Ong Chu thay
+    ngay ket qua nam duoi dung cau hoi cua minh thay vi mot tin roi o cuoi
+    topic. Bo trong thi gui binh thuong (khong reply ai).
+
+    Tra ve response Telegram (list ket qua neu la album, dict neu mot anh).
+    Luon ghi nhat ky sau khi gui thanh cong, de `--list` doc lai duoc.
+    """
+    env_load.load()
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    group = os.environ.get("TELEGRAM_GROUP_ID")
+    if not token or not group:
+        raise SendError("Thieu TELEGRAM_BOT_TOKEN/TELEGRAM_GROUP_ID trong secret.<brand>.env")
+    thread_id = _topic(vai)
+
+    files = [Path(f) for f in files]
+    thieu = [f for f in files if not f.exists()]
+    if thieu:
+        raise SendError(f"Khong thay file: {', '.join(str(f) for f in thieu)}")
+    if len(files) > 10:
+        raise SendError("Toi da 10 anh mot album (gioi han Telegram).")
+
+    # CHONG GUI TRUNG: cung vai + cung bo file trong 30 phut -> khong gui lai.
+    # Su co 04/09/2026: Kite sinh agent con de "kiem tra anh", agent con tu gui
+    # album (msg 301) roi het gio; Kite khong biet nen gui lai (msg 308). Ong
+    # Chu thay mot tin hai album. Ai goi lai cung nhan message_id cu, khong loi.
+    truoc = _already_send_near_bottom(vai, files, phut=30)
+    if truoc:
+        print(f"da gui truoc do luc {truoc['luc']} (message_id={truoc['message_id']}), "
+              f"KHONG gui lai. Muon gui lai that thi doi ten file hoac cho qua 30 phut.")
+        return {"ok": True, "result": {"message_id": truoc["message_id"]}, "trung": True}
+
+    if len(files) == 1:
+        with httpx.Client(timeout=120) as c, open(files[0], "rb") as fh:
+            data = {"chat_id": group, "message_thread_id": str(int(thread_id))}
+            if mo_ta:
+                data["caption"] = mo_ta[:1024]
+            if reply_to:
+                data["reply_to_message_id"] = str(int(reply_to))
+            r = c.post(API.format(token=token, method="sendPhoto"), data=data,
+                       files={"photo": (files[0].name, fh, "image/png")})
+        res = r.json()
+    else:
+        items, filemap = [], {}
+        for i, f in enumerate(files):
+            key = f"file{i}"
+            e = {"type": "photo", "media": f"attach://{key}"}
+            if i == 0 and mo_ta:
+                e["caption"] = mo_ta[:1024]
+            items.append(e)
+            filemap[key] = open(f, "rb")
+        data = {"chat_id": group, "message_thread_id": str(int(thread_id)),
+                "media": json.dumps(items)}
+        if reply_to:
+            data["reply_to_message_id"] = str(int(reply_to))
+        try:
+            with httpx.Client(timeout=180) as c:
+                r = c.post(API.format(token=token, method="sendMediaGroup"),
+                           data=data, files=filemap)
+        finally:
+            for fh in filemap.values():
+                fh.close()
+        res = r.json()
+
+    if not res.get("ok"):
+        raise SendError(f"Gui Telegram loi: {res.get('description')}")
+
+    result = res["result"]
+    last = result[-1] if isinstance(result, list) else result
+    _write_journal(vai, last.get("message_id"), files, mo_ta)
+
+    # Album KHONG gan duoc nut (gioi han Bot API), nen nut Duyet luon nam tren
+    # mot tin nhan chu RIENG ngay duoi anh — dung cho ca anh don lan album.
+    if duyet:
+        with httpx.Client(timeout=60) as c:
+            r2 = c.post(API.format(token=token, method="sendMessage"), data={
+                "chat_id": group, "message_thread_id": str(int(thread_id)),
+                "text": ("Ảnh đã xong. Duyệt để người viết làm caption, "
+                         "hoặc bỏ nếu ảnh chưa đạt."),
+                "reply_markup": json.dumps(_kb_approve(duyet)),
+            })
+        res2 = r2.json()
+        if not res2.get("ok"):
+            # Khong duoc im lang: anh da len nhung nut Duyet khong xuat hien
+            # thi pipeline dung o cong duyet ma khong ai biet. Bao loi ro de
+            # vai/agent gui lai.
+            raise SendError(
+                f"Anh da gui nhung tin nhan nut Duyet LOI: {res2.get('description')}"
+                f" — pipeline se ket neu khong gui lai nut.")
+    return res
+
+
+def near_bottom(vai: str, n: int = 5) -> list:
+    p = STATE / f"{vai}.jsonl"
+    if not p.exists():
+        return []
+    dong = [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines() if x.strip()]
+    return dong[-n:]
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--vai", required=True, type=role.canonical_slug,
+                    help="slug vai — khop key trong topics.<brand>.json (nhan ca slug cu)")
+    ap.add_argument("--anh", action="append", default=[], help="Duong dan PNG, lap lai cho nhieu anh (album)")
+    ap.add_argument("--mo-ta", default="", help="Caption ngan mo ta anh — giup tra loi SAU biet dang noi anh nao")
+    ap.add_argument("--reply-to", type=int, default=None,
+                    help="message_id can reply — ket qua sua theo yeu cau thi reply DUNG tin da yeu cau, "
+                         "khong gui roi o cuoi topic")
+    ap.add_argument("--duyet", default=None, metavar="DRAFT_ID",
+                    help="Gan nut Duyet/Bo cho tam anh (draft_id). Bam Duyet thi "
+                         "approve_service moi sinh task viet caption; khong co co "
+                         "nay thi chi day anh, khong hoi duyet (dung cho chat le).")
+    ap.add_argument("--list", action="store_true", help="In cac lan gui gan day (mac dinh 5) thay vi gui moi")
+    a = ap.parse_args()
+
+    if a.list:
+        for d in near_bottom(a.vai):
+            print(json.dumps(d, ensure_ascii=False))
+        return
+
+    if not a.anh:
+        ap.error("--anh la bat buoc (tru khi dung --list)")
+    try:
+        res = post(a.vai, a.anh, a.mo_ta, reply_to=a.reply_to, duyet=a.duyet)
+    except SendError as e:
+        sys.exit(str(e))
+    result = res["result"]
+    mid = result[-1]["message_id"] if isinstance(result, list) else result["message_id"]
+    print(f"da gui {len(a.anh)} anh vao topic '{a.vai}', message_id={mid}")
+
+
+if __name__ == "__main__":
+    main()

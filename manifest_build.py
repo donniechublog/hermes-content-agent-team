@@ -18,10 +18,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load                                             # noqa: E402
-import bat_buoc                                             # noqa: E402
-import manifest_chung as mc                                 # noqa: E402
+import required                                             # noqa: E402
+import manifest_common as mc                                 # noqa: E402
 
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
@@ -40,13 +40,13 @@ VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BU
 # Brief cua Finn ghi "toi da 8 tin". Truoc 06/09/2026 chi co cau chu do, khong
 # co cong chan: vai nop 12 muc thi ca 12 vao manifest. Muc BAT BUOC khong bi
 # tran nay cat (luat Ong Chu: quet thay la phai dua).
-TOI_DA_PICK = 8
+MAX_PICK = 8
 
 
-_norm = quet_chung.chuan_link          # mot ban duy nhat, xem quet_chung
+_norm = scan_common.standard_link          # mot ban duy nhat, xem quet_chung
 
 
-def _diem(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
+def _score(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
     """Doc mot thanh phan diem cua vai: (diem da cat ve dai 0..hi, da_sua?).
 
     Truoc 06/09/2026: `int(p.get(...))` no thang khi vai ghi "24 diem" hoac
@@ -64,7 +64,7 @@ def _diem(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
     return d, False
 
 
-def _muc_tu_pick(p: dict, c: dict, problems: list) -> dict:
+def _item_from_pick(p: dict, c: dict, problems: list) -> dict:
     """Mot muc danh gia cua Finn + mot ung vien tu candidates.json -> mot muc
     manifest. Khong doc dia, khong ghi gi; moi thu can sua deu ghi vao
     `problems` va deu di kem ten bai de Ong Chu doi chieu duoc tren bao cao."""
@@ -73,8 +73,8 @@ def _muc_tu_pick(p: dict, c: dict, problems: list) -> dict:
     if cat_xau:
         problems.append(f"category khong hop le: {cat!r} -> TOOL (bai: {c['title'][:40]})")
 
-    tech, sua_t = _diem(p.get("score_technical", 0), "score_technical", 30, problems, c["title"])
-    rel, sua_r = _diem(p.get("score_relevance", 0), "score_relevance", 20, problems, c["title"])
+    tech, sua_t = _score(p.get("score_technical", 0), "score_technical", 30, problems, c["title"])
+    rel, sua_r = _score(p.get("score_relevance", 0), "score_relevance", 20, problems, c["title"])
     ghi_chu = p.get("score_reason", "")
     if sua_t or sua_r or cat_xau:
         ghi_chu = (ghi_chu + " | script sua: "
@@ -87,7 +87,7 @@ def _muc_tu_pick(p: dict, c: dict, problems: list) -> dict:
     # headline la thu DUY NHAT Ong Chu doc tren topic, va brief hua "summary_vi
     # mot menh de <= 15 tu". Truoc 06/09/2026 nhanh Finn khong kiem gi — summary
     # dai ba dong len bao cao y nguyen, va em-dash lot xuong tan caption.
-    tom, canh = mc.don_tom_tat(p.get("summary_vi"), f"bai: {c['title'][:40]}")
+    tom, canh = mc.single_summary(p.get("summary_vi"), f"bai: {c['title'][:40]}")
     problems.extend(canh)
 
     return {
@@ -112,7 +112,7 @@ def _muc_tu_pick(p: dict, c: dict, problems: list) -> dict:
     }
 
 
-def gom_muc(picks: list, cands: list) -> tuple:
+def gather_item(picks: list, cands: list) -> tuple:
     """picks cua Finn + candidates -> (items, problems). Ham THUAN."""
     by_link = {_norm(c["link"]): c for c in cands}
     items, problems = [], []
@@ -123,7 +123,7 @@ def gom_muc(picks: list, cands: list) -> tuple:
         # `link` cho tuong thich.
         k = p.get("k") or p.get("stt") or p.get("#")
         if k is not None:
-            c, loi = mc.chon_theo_k(k, cands, "")
+            c, loi = mc.pick_by_k(k, cands, "")
             if not c:
                 problems.append(loi.lstrip(": "))
                 continue
@@ -140,11 +140,11 @@ def gom_muc(picks: list, cands: list) -> tuple:
             problems.append(f"tin trung, bo muc sau: {c['title'][:50]}")
             continue
         da_chon.add(khoa)
-        items.append(_muc_tu_pick(p, c, problems))
+        items.append(_item_from_pick(p, c, problems))
     return items, problems
 
 
-def cat_tran(items: list, bb_link: set, problems: list) -> list:
+def crop_ceiling(items: list, bb_link: set, problems: list) -> list:
     """Tran 8 tin — CHI ap cho tin thuong.
 
     Muc BAT BUOC vai da nop phai o ngoai tran: muc ton tu hom truoc duoc
@@ -153,27 +153,27 @@ def cat_tran(items: list, bb_link: set, problems: list) -> list:
     TRONG (score=0, summary_vi rong, ghi chu "vai bo sot") — bao cao gui Ong Chu
     do oan cho vai la bo sot dung cai tin no vua cham ky, con vai viet bai thi
     mat sach tom tat (06/09/2026)."""
-    la_bb = [it for it in items if bat_buoc.chuan_link(it["link"]) in bb_link]
-    thuong = [it for it in items if bat_buoc.chuan_link(it["link"]) not in bb_link]
-    if len(thuong) > TOI_DA_PICK:
+    la_bb = [it for it in items if required.chuan_link(it["link"]) in bb_link]
+    thuong = [it for it in items if required.chuan_link(it["link"]) not in bb_link]
+    if len(thuong) > MAX_PICK:
         thuong.sort(key=lambda x: x["score"], reverse=True)
-        bo = thuong[TOI_DA_PICK:]
-        thuong = thuong[:TOI_DA_PICK]
-        problems.append(f"vai nop {len(thuong) + len(bo)} tin thuong, tran la {TOI_DA_PICK} — "
-                        f"giu {TOI_DA_PICK} tin diem cao nhat, bo: "
+        bo = thuong[MAX_PICK:]
+        thuong = thuong[:MAX_PICK]
+        problems.append(f"vai nop {len(thuong) + len(bo)} tin thuong, tran la {MAX_PICK} — "
+                        f"giu {MAX_PICK} tin diem cao nhat, bo: "
                         + "; ".join(f"{b['title'][:40]} ({b['score']}d)" for b in bo)
                         + (f" (giu nguyen {len(la_bb)} muc BAT BUOC, khong tinh vao tran)"
                            if la_bb else ""))
     return la_bb + thuong
 
 
-def them_bat_buoc(items: list, cands: list) -> list:
+def extra_required(items: list, cands: list) -> list:
     """Muc BAT BUOC vai bo sot: script TU THEM (diem vai = 0, ghi chu ro tren bao
     cao) thay vi tu choi roi bat vai sua toi da 2 vong (05/09/2026: 4/8 muc, Finn
     mo 18 tool call roi block task). Luat Ong Chu van giu: quet thay la phai dua."""
     by_link = {_norm(c["link"]): c for c in cands}
     da_co = {_norm(it["link"]) for it in items}
-    for v in bat_buoc.kiem("finn", items):
+    for v in required.check("finn", items):
         c = by_link.get(_norm(v.get("link", "")))
         if not c or _norm(c["link"]) in da_co:
             print(f"  [canh bao] muc BAT BUOC khong co trong candidates, khong tu them duoc: "
@@ -216,10 +216,10 @@ def main():
     if isinstance(picks, dict):
         picks = picks.get("picks") or picks.get("items") or []
 
-    items, problems = gom_muc(picks, cands)
-    bb_link = {bat_buoc.chuan_link(v.get("link", "")) for v in bat_buoc.doc("finn").values()
+    items, problems = gather_item(picks, cands)
+    bb_link = {required.chuan_link(v.get("link", "")) for v in required.read("finn").values()
                if v.get("link")}
-    items = cat_tran(items, bb_link, problems)
+    items = crop_ceiling(items, bb_link, problems)
 
     if problems:
         # In ca stdout LAN stderr: quet_nop chi in stdout khi rc=0 nen canh bao
@@ -229,7 +229,7 @@ def main():
             print("  - " + pr)
             print("  - " + pr, file=sys.stderr)
 
-    items = them_bat_buoc(items, cands)
+    items = extra_required(items, cands)
     # CONG RONG — dat NGOAI khoi `if problems`. Truoc 06/09/2026 no nam LOT
     # TRONG khoi do, ma ca hai duong vao deu cho problems RONG: Finn ghi picks
     # la `[]`, hoac ghi dict sai khoa (`{"tin": [...]}` — script chi nhan "picks"
@@ -248,21 +248,21 @@ def main():
                  "quet_nop voi --khong-co.")
 
     items.sort(key=lambda x: x["score"], reverse=True)
-    mc.danh_so(items)
+    mc.list_count(items)
 
     out = Path(a.out)
     # KHONG ghi de manifest da co trong ngay (sua 06/09/2026 dot 2) — cung luat
     # ma manifest_ghi da ap cho Nova/Vera, rieng nhanh Finn thi chua. Ly do day
     # du o `manifest_chung.duong_ra_moi`.
     if out.exists() and not a.ghi_de:
-        moi = mc.duong_ra_moi(out)
+        moi = mc.path_out_new(out)
         print(f"[canh bao] {out.name} da co — ghi ban moi ra {moi.name} de khong "
               "mat co picked/da_giao cua ban dang dung", file=sys.stderr)
         out = moi
-    mc.ghi_manifest(out, "finn", items)
+    mc.write_manifest(out, "finn", items)
     print(f"da ghi {len(items)} muc -> {out}")
-    mc.chot_bat_buoc("finn", items, a.khong_xoa_bat_buoc)
-    mc.viet_bao_cao(a.bao_cao, items, "finn")
+    mc.finalize_required("finn", items, a.khong_xoa_bat_buoc)
+    mc.write_report(a.bao_cao, items, "finn")
     for it in items:
         print(f"  #{it['index']} [{it['score']:3d}] {it['title'][:60]}")
 

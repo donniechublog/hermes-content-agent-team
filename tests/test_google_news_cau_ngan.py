@@ -3,13 +3,13 @@
 (MSN/Sedaily×2/SCMP/CNBC) và hỏi *"thế những hình tìm theo cách thủ công này
 bạn ko tự tìm ra được?"*.
 
-Đo trên máy chủ: `nguon_bai.tim()` chỉ hỏi Google News DUY NHẤT MỘT LẦN bằng
-headline ĐẦY ĐỦ của bài gốc (`tieu_de_tim`, vd "Kimi-maker Moonshot AI targets
+Đo trên máy chủ: `article_sources.find()` chỉ hỏi Google News DUY NHẤT MỘT LẦN bằng
+headline ĐẦY ĐỦ của bài gốc (`title_find`, vd "Kimi-maker Moonshot AI targets
 $2B in annual revenue") — cùng câu, cùng địa chỉ máy chủ, KHÔNG khoá `hl`/`gl`,
-chỉ ra vài miền. Hỏi lại bằng câu NGẮN mà chính `_truy_van_bing` đã sinh ra cho
+chỉ ra vài miền. Hỏi lại bằng câu NGẮN mà chính `_query_bing` đã sinh ra cho
 Bing từ lâu ("Kimi Moonshot AI", "Kimi maker Moonshot AI") ra tới 18-19 miền,
 gồm đúng SCMP/Bloomberg/CNBC/Reuters — y hệt các nguồn Ông Chủ tìm thấy. Cùng
-loại lỗi ĐÃ BIẾT ở Bing (`_truy_van_bing` docstring: "truy vấn đầy đủ -> 1 bài")
+loại lỗi ĐÃ BIẾT ở Bing (`_query_bing` docstring: "truy vấn đầy đủ -> 1 bài")
 nhưng chưa từng áp dụng sang Google News.
 
 Chạy:  venv/bin/python tests/test_google_news_cau_ngan.py
@@ -20,7 +20,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import nguon_bai                                              # noqa: E402
+import article_sources                                              # noqa: E402
 
 
 class _RSS:
@@ -32,16 +32,16 @@ class _RSS:
 
 
 def test_tim_khong_chi_hoi_headline_day_du():
-    """Thân `tim()` phải gọi `_truy_van_bing` để sinh thêm câu ngắn cho GNEWS,
+    """Thân `find()` phải gọi `_query_bing` để sinh thêm câu ngắn cho GNEWS,
     không chỉ hỏi đúng một lần bằng `ten` (headline đầy đủ)."""
-    src = (ROOT / "nguon_bai.py").read_text(encoding="utf-8")
-    than = src[src.index("def tim("):src.index("\ndef main(")]
-    assert "_truy_van_bing(ten)" in than, \
-        "tim() phải thử thêm câu ngắn (_truy_van_bing) cho Google News, không chỉ headline đầy đủ"
+    src = (ROOT / "article_sources.py").read_text(encoding="utf-8")
+    than = src[src.index("def find("):src.index("\ndef main(")]
+    assert "_query_bing(ten)" in than, \
+        "find() phải thử thêm câu ngắn (_query_bing) cho Google News, không chỉ headline đầy đủ"
 
 
 def test_cau_ngan_gop_them_mien_khong_co_o_cau_day_du():
-    """Câu đầy đủ ra 2 miền; một câu ngắn (được `_truy_van_bing` sinh ra) ra
+    """Câu đầy đủ ra 2 miền; một câu ngắn (được `_query_bing` sinh ra) ra
     thêm SCMP/Bloomberg — `trang` cuối cùng phải gồm cả hai, không chỉ câu đầu."""
     goi = []
 
@@ -52,12 +52,12 @@ def test_cau_ngan_gop_them_mien_khong_co_o_cau_day_du():
         return _RSS(["https://techcrunch.com", "https://www.scmp.com",
                      "https://www.bloomberg.com"])            # cau ngan: nhieu mien hon
 
-    with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
-         mock.patch.object(nguon_bai, "tieu_de_tim", return_value="Headline day du cua bai goc ve X"), \
-         mock.patch.object(nguon_bai, "_truy_van_bing", return_value=["X ngan"]), \
-         mock.patch.object(nguon_bai, "giai_ma_gnews", return_value=None), \
+    with mock.patch.object(article_sources, "_download", side_effect=_tai_gia), \
+         mock.patch.object(article_sources, "title_find", return_value="Headline day du cua bai goc ve X"), \
+         mock.patch.object(article_sources, "_query_bing", return_value=["X ngan"]), \
+         mock.patch.object(article_sources, "resolve_code_gnews", return_value=None), \
          mock.patch("httpx.get", side_effect=lambda *a, **k: (_ for _ in ()).throw(OSError("khong mang"))):
-        nguon_bai.tim("Headline day du cua bai goc ve X", "https://baigoc.example/x", so=4)
+        article_sources.find("Headline day du cua bai goc ve X", "https://baigoc.example/x", so=4)
 
     # `_trong_feed` (khong co RSS that trong test, httpx.get bi chan) se khong
     # ra bai nao ca — nen chi kiem duoc so LAN goi _tai: it nhat 2 (headline

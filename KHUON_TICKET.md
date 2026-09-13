@@ -53,7 +53,7 @@ Tên test mới, lệnh chạy, kết quả nguyên văn (fail cũ / pass mới)
 > **Luật cứng (Ông Chủ chốt 12/09/2026).** Máy dev xanh **không phải** là chạy
 > thử. Chỉ số đo lấy từ máy chủ mới được tick mục này.
 
-Chạy thật một lượt, không gửi Telegram: `python <vai>_nop.py --khong-gui --out
+Chạy thật một lượt, không gửi Telegram: `python <vai>_submit.py --khong-gui --out
 /tmp/x` hoặc task kanban mẫu. Ghi **lệnh và kết quả nguyên văn**.
 
 ```bash

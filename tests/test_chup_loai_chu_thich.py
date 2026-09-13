@@ -16,11 +16,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import chup_trang                                              # noqa: E402
+import capture_page                                              # noqa: E402
 
 
 def test_js_lead_chi_do_img_ben_trong_figure_khong_do_ca_figure():
-    js = chup_trang._JS_LEAD
+    js = capture_page._JS_LEAD
     assert "chiAnh" in js, "phải có bước thu hẹp về ảnh bên trong, không dùng thẳng bbox của figure/picture"
     # `el` (bbox dùng để đo) phải đến từ `chiAnh(goc_el)`, không phải chính `goc_el`.
     m = re.search(r"const el = chiAnh\(goc_el\);\s*\n\s*const r = el\.getBoundingClientRect\(\)", js)
@@ -28,7 +28,7 @@ def test_js_lead_chi_do_img_ben_trong_figure_khong_do_ca_figure():
 
 
 def test_chi_anh_uu_tien_img_con_khi_goc_la_figure():
-    js = chup_trang._JS_LEAD
+    js = capture_page._JS_LEAD
     # Hàm chiAnh: figure/picture -> tìm img con; img -> giữ nguyên.
     assert "el.querySelector('img, picture img, picture source')" in js
     assert "if (t === 'img') return el;" in js

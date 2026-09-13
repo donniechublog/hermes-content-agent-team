@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`chuan_bi.tai_loc` không được nuốt lỗi tải im lặng (audit lượt 2, C-r2-2).
+"""`prepare.tai_loc` không được nuốt lỗi tải im lặng (audit lượt 2, C-r2-2).
 
 Trước: `_tai_bytes` → `except Exception: return None` không log, và `tai_va_loc`
 coi `not data` là `continue`. Mất DNS/proxy thì 5 ứng viên hỏng ra 0 dòng
@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import chuan_bi.tai_loc as tl                                 # noqa: E402
+import prepare.download_filter as tl                                 # noqa: E402
 
 
 def _bat_stderr(ham):
@@ -28,7 +28,7 @@ def _bat_stderr(ham):
 
 
 def test_tai_bytes_hong_mang_phai_noi_ra():
-    kq, err = _bat_stderr(lambda: tl._tai_bytes("http://khong-ton-tai.invalid/a.png"))
+    kq, err = _bat_stderr(lambda: tl._download_bytes("http://khong-ton-tai.invalid/a.png"))
     assert kq is None
     assert "[tai]" in err and "khong-ton-tai.invalid" in err, repr(err)
     assert "Error" in err or "error" in err, "phai co ten loi (repr), khong chi None"
@@ -40,7 +40,7 @@ def test_tai_va_loc_tat_ca_hong_thi_co_dong_tong():
     cands = [{"anh": f"http://khong-ton-tai.invalid/{i}.png", "trang": "http://x.invalid/"}
              for i in range(3)]
     with tempfile.TemporaryDirectory() as t:
-        (ra, err) = _bat_stderr(lambda: tl.tai_va_loc(cands, Path(t)))
+        (ra, err) = _bat_stderr(lambda: tl.download_and_filter(cands, Path(t)))
     assert ra == [], ra
     assert "3/3 ung vien KHONG tai duoc" in err and "TAT CA" in err, repr(err)
 

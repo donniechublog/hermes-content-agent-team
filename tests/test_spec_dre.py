@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cong chan spec carousel cua Dre (`dre_nop.giai_spec`).
+"""Cong chan spec carousel cua Dre (`dre_submit.resolve_spec`).
 
 Audit 06/09/2026 do: ham nay 166 dong, 36 nhanh, va gan nhu KHONG co test —
 `test_cong_chan` nhac `bob_nop` 19 lan, `dre_nop` mot lan. No la cho duy nhat
@@ -10,7 +10,7 @@ tone" khoi he thong, xem test_ghep_hai_anh_lech_tone_khong_con_bi_chan.)
 
 Cong nay bao loi THAY VI ve sai, nen no hong theo hai chieu deu dat:
   - bao oan  -> Dre sua kieu gi cung khong nop duoc (da xay ra voi cong xep
-                hang, xem chu thich dai o dre_nop.py:97)
+                hang, xem chu thich dai o dre_submit.py:97)
   - bo sot   -> anh sai len thang Telegram
 
 Chay:  venv/bin/python tests/test_spec_dre.py
@@ -45,7 +45,7 @@ def _ve(w, h, tone=(60, 70, 90)):
 
 def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
     """Mot dong manifest anh, dung cac khoa ma `anh_chuan_bi` that su ghi ra."""
-    import luat_anh
+    import image_rules
     goc = wd / "goc" / f"{ma}.png"
     goc.parent.mkdir(parents=True, exist_ok=True)
     _ve(w, h, tone).save(goc)
@@ -53,7 +53,7 @@ def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
     san.parent.mkdir(parents=True, exist_ok=True)
     _ve(min(w, h), min(w, h), tone).save(san)               # ban da cat san
     a = {"ma": ma, "goc": str(goc), "san": str(san), "w": w, "h": h,
-         "ti_le": round(w / h, 2), "loai": loai, "ngang": w / h >= luat_anh.NGANG_RO,
+         "ti_le": round(w / h, 2), "loai": loai, "ngang": w / h >= image_rules.LANDSCAPE_CLEAR,
          "mat": 0, "lien_quan": True, "mo_ta": f"anh thu {ma}", "alt": "", "dung": []}
     a.update(k)
     return a
@@ -93,8 +93,8 @@ def _du_slide(anh_ma):
 
 
 def _chay(spec, m, wd):
-    import dre_nop
-    return dre_nop.giai_spec(spec, m, Path(wd))
+    import dre_submit
+    return dre_submit.resolve_spec(spec, m, Path(wd))
 
 
 def _co(loi, *manh):
@@ -296,7 +296,7 @@ def test_ghep_ra_ti_le_ngoai_dai_thi_chan():
 
 
 def test_ghep_hai_anh_lech_tone_khong_con_bi_chan():
-    """Ông Chủ 13/09/2026: bỏ `kiem_lech_tone`/`luat_anh.lech_tone` khỏi hệ
+    """Ông Chủ 13/09/2026: bỏ `kiem_lech_tone`/`image_rules.tone_mismatch` khỏi hệ
     thống, mọi vai — ghép hai ảnh lệch tone hẳn (một tối 15/15/20, một sáng
     235/235/240) không còn bị chặn ở slide ghép."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
@@ -384,10 +384,10 @@ def test_nen_hop_le_di_thang_sang_carousel():
     import carousel
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        spec["nen"] = list(carousel.NEN)[0].upper()
+        spec["nen"] = list(carousel.BACKGROUND)[0].upper()
         ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
-        assert ra["nen"] == list(carousel.NEN)[0]
+        assert ra["nen"] == list(carousel.BACKGROUND)[0]
 
 
 def test_flagship_cua_manifest_thanh_tam_co():
@@ -404,10 +404,10 @@ def test_flagship_cua_manifest_thanh_tam_co():
 def test_anh_da_gui_o_bai_khac_thi_chan():
     """Ong Chu chot 06/09: bang tỉ số giải golf lên hai thẻ của hai tin khác
     nhau trong cùng một ngày."""
-    import luat_anh
+    import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        luat_anh.ghi_da_dung(m["anh"][1]["goc"], "tin-khac", "dre",
+        image_rules.record_used(m["anh"][1]["goc"], "tin-khac", "dre",
                              "https://vi.du/mot-tin-khac-han")
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert _co(loi, "slide 2", "TRUNG anh da dung", "tin-khac"), loi
@@ -415,10 +415,10 @@ def test_anh_da_gui_o_bai_khac_thi_chan():
 
 def test_lam_lai_chinh_bai_nay_thi_khong_bi_coi_la_dung_lai():
     """Lam lai mot bai thi duoc giu anh — chan la vai khong bao gio lam lai duoc."""
-    import luat_anh
+    import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        luat_anh.ghi_da_dung(m["anh"][1]["goc"], m["draft_id"], "dre", m["link"])
+        image_rules.record_used(m["anh"][1]["goc"], m["draft_id"], "dre", m["link"])
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
 
@@ -426,10 +426,10 @@ def test_lam_lai_chinh_bai_nay_thi_khong_bi_coi_la_dung_lai():
 def test_cung_tin_nhung_vai_khac_thi_khong_chan():
     """Mot tin giao ca Dre lan Ethan ra hai draft_id nhung dung CHUNG bo anh
     engine tai ve; chan la vai nop sau khong con anh nao (do 06/09/2026)."""
-    import luat_anh
+    import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        luat_anh.ghi_da_dung(m["anh"][1]["goc"], "tin-thu-ethan", "ethan", m["link"])
+        image_rules.record_used(m["anh"][1]["goc"], "tin-thu-ethan", "ethan", m["link"])
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
 
@@ -440,14 +440,14 @@ def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
     dHash cua anh bi che vao img.json["cam_anh_slide"]["3"] luc bam nut; cong
     o day phai chan slide 3 du ma anh doi ten."""
     import shutil
-    import dre_nop
-    import luat_anh
+    import dre_submit
+    import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         with tempfile.TemporaryDirectory() as dr:
-            dre_nop.DRAFTS = Path(dr)
+            dre_submit.DRAFTS = Path(dr)
             try:
-                h = luat_anh.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
+                h = image_rules.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
                 (Path(dr) / f"{m['draft_id']}.img.json").write_text(
                     json.dumps({"cam_anh_slide": {"3": [format(h, "x")]}}),
                     encoding="utf-8")
@@ -459,27 +459,27 @@ def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
                 _ra, loi, _c, _d = _chay(spec, m, wd)
                 assert _co(loi, "slide 3", "đã bị Ông Chủ từ chối"), loi
             finally:
-                dre_nop.DRAFTS = dre_nop.ROOT / "drafts"
+                dre_submit.DRAFTS = dre_submit.ROOT / "drafts"
 
 
 def test_lam_lai_slide_khac_khong_bi_anh_huong():
     """Cam chi ap cho DUNG slide bi neu — cac slide khac trong ban lam lai van
     duoc giu anh cu binh thuong, khong bi chan oan."""
-    import dre_nop
-    import luat_anh
+    import dre_submit
+    import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         with tempfile.TemporaryDirectory() as dr:
-            dre_nop.DRAFTS = Path(dr)
+            dre_submit.DRAFTS = Path(dr)
             try:
-                h = luat_anh.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
+                h = image_rules.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
                 (Path(dr) / f"{m['draft_id']}.img.json").write_text(
                     json.dumps({"cam_anh_slide": {"6": [format(h, "x")]}}),
                     encoding="utf-8")
                 _ra, loi, _c, _d = _chay(spec, m, wd)
                 assert loi == [], loi
             finally:
-                dre_nop.DRAFTS = dre_nop.ROOT / "drafts"
+                dre_submit.DRAFTS = dre_submit.ROOT / "drafts"
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 
 Ông Chủ 12/09/2026: "bạn đâu bị giới hạn bởi cái gì, nếu không thể code nổi một
 đoạn mã tìm kiếm hình ảnh cho model thì tôi cũng không biết nên hiểu thế nào".
-Xem docstring tim_anh_web.py cho bảng đo Google/DDG/Bing/Yandex từ IP máy chủ.
+Xem docstring find_image_web.py cho bảng đo Google/DDG/Bing/Yandex từ IP máy chủ.
 
 Chạy:  venv/bin/python tests/test_tim_anh_web.py
 """
@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import tim_anh_web as tw                                      # noqa: E402
+import find_image_web as tw                                      # noqa: E402
 
 
 def test_bing_murl_hai_dinh_dang_va_unicode():
@@ -35,22 +35,22 @@ def test_loc_bo_stock_thumb_khong_phai_anh_va_trung():
             "https://a.com/page.html",                               # khong phai anh
             "https://cdn.wccftech.com/x.jpg", "https://cdn.wccftech.com/x.jpg",
             "https://b.com/y.webp?w=1"]
-    ra = tw.loc(urls, 10, "web_bing", "q")
+    ra = tw.filter(urls, 10, "web_bing", "q")
     assert [c["anh"] for c in ra] == ["https://cdn.wccftech.com/x.jpg", "https://b.com/y.webp?w=1"]
     assert ra[0]["trang"] == ra[0]["anh"], "trang = chinh anh de qua loc ben thu ba"
-    assert ra[0]["diem"] > tw.loc(urls, 10, "web_yandex", "q")[0]["diem"], "Bing xep truoc Yandex"
+    assert ra[0]["diem"] > tw.filter(urls, 10, "web_yandex", "q")[0]["diem"], "Bing xep truoc Yandex"
     assert ra[0]["diem"] < 42, "web phai xep SAU og:image bao chi (42): web co the lac de ca loat"
-    assert len(tw.loc(urls, 1, "web_bing", "q")) == 1
+    assert len(tw.filter(urls, 1, "web_bing", "q")) == 1
 
 
 def test_yandex_la_nguon_chinh_bing_tat():
-    assert [t for t, _ in tw.NGUON] == ["Yandex"], "Bing lech de 3/5 tu IP may chu (12/09) — khong duoc bat mac dinh"
+    assert [t for t, _ in tw.SOURCE] == ["Yandex"], "Bing lech de 3/5 tu IP may chu (12/09) — khong duoc bat mac dinh"
 
 
 def test_noi_vao_vai_va_engine():
-    assert "tim_anh_web.tim_anh_web(" in (ROOT / "tim_anh_them.py").read_text(encoding="utf-8")
-    src = (ROOT / "chuan_bi" / "vong_bu.py").read_text(encoding="utf-8")
-    assert "tim_anh_web.tim_anh_web(" in src and "anh_bao_thuc_the.anh_bao_thuc_the(" in src, \
+    assert "find_image_web.find_image_web(" in (ROOT / "find_more_images.py").read_text(encoding="utf-8")
+    src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
+    assert "find_image_web.find_image_web(" in src and "press_entity_images.press_entity_images(" in src, \
         "engine phai TU tim web + bao ve thuc the trong vong tim rong, khong doi vai goi"
 
 

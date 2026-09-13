@@ -34,7 +34,7 @@ DUONG_DAN = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|md|sh|json|js|css|yaml))`")
 BO_QUA = ("~", "<", "$", "config.yaml", "jobs.json", "xong.json", "da_dung.json",
           "candidates.json",      # scan_sources sinh ra luc chay (/tmp), khong o repo
           "meta.json", "spec.json", "vung_ocr.json", "nop_lan.json", "img.json",
-          "writer.json", "ban_giao.md", "caption.txt", "brief.md",
+          "writer.json", "handoff.md", "caption.txt", "brief.md",
           "models_seen.json", "AGENTS.md", "package.json", "emoji-map.json",
           "boost.spec.json", "vung.json", "kanban.db", "agent.log", "gateway.log",
           "usageHistory",

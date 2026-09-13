@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""`bang_den.tao_root` ghi `root_task` vào `.meta.json` bằng cách TRỘN, không ghi đè
+"""`blackboard.create_root` ghi `root_task` vào `.meta.json` bằng cách TRỘN, không ghi đè
 (audit lượt 2, C-r2-4).
 
-`.meta.json` là tệp ba tiến trình cùng ghi không khoá chung. `tao_root` đọc meta
+`.meta.json` là tệp ba tiến trình cùng ghi không khoá chung. `create_root` đọc meta
 ở đầu hàm, chạy cả khối kanban (SQLite, write_txn — mất thời gian), rồi mới ghi
-lại: engine (`chuan_bi/nguon.py`) có thể vừa trộn `source_url` thật vào trong
+lại: engine (`prepare/source.py`) có thể vừa trộn `source_url` thật vào trong
 khoảng đó. Ghi đè nguyên dict cũ là xoá của người khác — cùng lỗi d59691c vừa
-sửa ở đầu kia của cùng tệp. Hôm nay chưa mất chỉ vì `create_pair` gọi `tao_root`
+sửa ở đầu kia của cùng tệp. Hôm nay chưa mất chỉ vì `create_pair` gọi `create_root`
 TRƯỚC khi khởi chạy engine — thứ tự tình cờ, không phải bảo vệ.
 
 Chạy:  venv/bin/python tests/test_bang_den.py
@@ -20,12 +20,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import bang_den                                               # noqa: E402
+import blackboard                                               # noqa: E402
 import schema                                                 # noqa: E402
 
 
 class _KbGia:
-    """Dung du API tao_root goi; `luc_tao` la moc de mot tien trinh khac chen vao
+    """Dung du API create_root goi; `luc_tao` la moc de mot tien trinh khac chen vao
     giua luc bang_den dang ban voi kanban."""
     def __init__(self, luc_tao=None):
         self.luc_tao = luc_tao
@@ -60,12 +60,12 @@ class _KsGia:
 
 def _voi_drafts_tam(ham):
     with tempfile.TemporaryDirectory() as t:
-        cu = (bang_den.DRAFTS, bang_den._kb)
-        bang_den.DRAFTS = Path(t)
+        cu = (blackboard.DRAFTS, blackboard._kb)
+        blackboard.DRAFTS = Path(t)
         try:
             return ham(Path(t))
         finally:
-            bang_den.DRAFTS, bang_den._kb = cu
+            blackboard.DRAFTS, blackboard._kb = cu
 
 
 def test_root_task_tron_vao_meta_khong_xoa_cua_nguoi_khac():
@@ -75,11 +75,11 @@ def test_root_task_tron_vao_meta_khong_xoa_cua_nguoi_khac():
 
         def engine_chen_vao():
             # Engine giai xong Google News dung luc bang_den dang trong kanban
-            p.write_text(json.dumps(schema.hop_nhat_meta(
+            p.write_text(json.dumps(schema.merge_meta(
                 json.loads(p.read_text(encoding="utf-8")), {"source_url": "http://that"})),
                 encoding="utf-8")
-        bang_den._kb = lambda: (_KbGia(engine_chen_vao), _KsGia())
-        rid, moi = bang_den.tao_root("d1", "T", "", "test")
+        blackboard._kb = lambda: (_KbGia(engine_chen_vao), _KsGia())
+        rid, moi = blackboard.create_root("d1", "T", "", "test")
         return rid, moi, json.loads(p.read_text(encoding="utf-8"))
     rid, moi, meta = _voi_drafts_tam(_chay)
     assert (rid, moi) == ("t_root", True)
@@ -90,8 +90,8 @@ def test_root_task_tron_vao_meta_khong_xoa_cua_nguoi_khac():
 def test_da_co_root_task_thi_khong_dung_kanban():
     def _chay(d):
         (d / "d2.meta.json").write_text(json.dumps({"root_task": "t_cu"}), encoding="utf-8")
-        bang_den._kb = lambda: (_ for _ in ()).throw(AssertionError("khong duoc goi kanban"))
-        return bang_den.tao_root("d2", "T", "", "test")
+        blackboard._kb = lambda: (_ for _ in ()).throw(AssertionError("khong duoc goi kanban"))
+        return blackboard.create_root("d2", "T", "", "test")
     assert _voi_drafts_tam(_chay) == ("t_cu", False)
 
 

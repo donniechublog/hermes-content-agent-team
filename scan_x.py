@@ -32,33 +32,33 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                             # noqa: E402
-from quet_chung import VN, UA                                # noqa: E402
+from scan_common import VN, UA                                # noqa: E402
 
-env_load.nap()
+env_load.load()
 
 STATE = env_load.state_dir() / "x_seen.json"
-MAC_DINH_URL = "https://webhook-social-publishing.mated.dev"
+DEFAULT_URL = "https://webhook-social-publishing.mated.dev"
 # Crawler quay 15 phut/lan. Qua 3 tieng khong co tweet moi nghia la no dung,
 # khong phai X im — ca home lan list deu khong bao gio vang the lau.
-TRAN_CU_GIO = 3
+CEILING_OLD_HOURS = 3
 # Bo nho da-thay giu 14 ngay: tweet cu hon the ma quay lai thi coi nhu tin moi.
-GIU_NGAY = 14
+KEEP_DATE = 14
 
 # Text ngan hon the ma khong co link ngoai thi khong co gi de doc — mot dong
 # hype ("this is wild"), anh don, hoac quote trong khong.
-TOI_THIEU_KY_TU = 60
+MIN_KY_FROM = 60
 
-LINK_NANG = re.compile(
+LINK_CAPABILITY = re.compile(
     r"https?://(?:www\.)?(?:github\.com|arxiv\.org|huggingface\.co|"
     r"[a-z0-9.-]*\.?(?:dev|docs?\.[a-z]+)|gitlab\.com|news\.ycombinator\.com)",
     re.I,
 )
-LINK_BAT_KY = re.compile(r"https?://\S+", re.I)
+LINK_CATCH_KY = re.compile(r"https?://\S+", re.I)
 
 
-def doc_tweets(gio: int, limit: int) -> dict:
+def read_tweets(gio: int, limit: int) -> dict:
     """GET /tweets — tra nguyen goi {count, freshness, tweets}."""
-    base = (os.environ.get("X_READ_URL") or MAC_DINH_URL).rstrip("/")
+    base = (os.environ.get("X_READ_URL") or DEFAULT_URL).rstrip("/")
     key = os.environ.get("X_READ_KEY") or ""
     if not key:
         sys.exit("[LOI] thieu X_READ_KEY (secret.blog.env) — khong doc duoc /tweets")
@@ -73,14 +73,14 @@ def doc_tweets(gio: int, limit: int) -> dict:
     return r.json()
 
 
-def da_thay() -> dict:
+def already_see() -> dict:
     if not STATE.exists():
         return {}
     d = json.loads(STATE.read_text(encoding="utf-8")).get("khoa", {})
     return d if isinstance(d, dict) else {k: time.time() for k in d}
 
 
-def ghi_moc(khoa: dict) -> None:
+def write_timestamp(khoa: dict) -> None:
     """Giu cac truong khac cua tep, cat bo nho theo THOI GIAN (khong theo ten)."""
     STATE.parent.mkdir(parents=True, exist_ok=True)
     cu = {}
@@ -89,7 +89,7 @@ def ghi_moc(khoa: dict) -> None:
             cu = json.loads(STATE.read_text(encoding="utf-8"))
         except ValueError:
             cu = {}
-    nguong = time.time() - GIU_NGAY * 86400
+    nguong = time.time() - KEEP_DATE * 86400
     cu["khoa"] = {k: v for k, v in khoa.items() if v >= nguong}
     cu["ghi_luc"] = datetime.now(timezone.utc).isoformat()
     tmp = STATE.with_suffix(".tmp")
@@ -97,12 +97,12 @@ def ghi_moc(khoa: dict) -> None:
     tmp.replace(STATE)
 
 
-def mot_dong(text: str, tran: int = 140) -> str:
+def one_line(text: str, tran: int = 140) -> str:
     s = re.sub(r"\s+", " ", (text or "").strip())
     return s[:tran]
 
 
-def diem_co_hoc(t: dict) -> int:
+def score_mechanical(t: dict) -> int:
     """Chi de XEP thu tu Qinn doc. Khong cat tin theo so nay."""
     m = t.get("metrics") or {}
     def so(x):
@@ -116,7 +116,7 @@ def diem_co_hoc(t: dict) -> int:
     d += 2 * math.log10(1 + so(m.get("replies")))
     text = t.get("text") or ""
     d += min(len(text), 1500) / 120.0          # bai dai = co gi de doc
-    if LINK_NANG.search(text):
+    if LINK_CAPABILITY.search(text):
         d += 12                                # github/arxiv/docs: nguon goc
     if t.get("type") in ("thread", "article"):
         d += 6                                 # thread/article = co trien khai
@@ -125,7 +125,7 @@ def diem_co_hoc(t: dict) -> int:
     return round(d)
 
 
-def loc(tweets: list, cu: dict) -> tuple:
+def filter(tweets: list, cu: dict) -> tuple:
     """(giu, bo_dem) — bo_dem noi ro vi sao, de bao cao doi chieu duoc."""
     bo = {"reply": 0, "ngan": 0, "da_thay": 0, "rong": 0}
     giu = []
@@ -141,14 +141,14 @@ def loc(tweets: list, cu: dict) -> tuple:
         if tid in cu:
             bo["da_thay"] += 1
             continue
-        if len(text) < TOI_THIEU_KY_TU and not LINK_BAT_KY.search(text):
+        if len(text) < MIN_KY_FROM and not LINK_CATCH_KY.search(text):
             bo["ngan"] += 1
             continue
         giu.append(t)
     return giu, bo
 
 
-def ra_tin(t: dict) -> dict:
+def out_story(t: dict) -> dict:
     """Mot tweet -> mot muc `tin_moi`, cung hinh dang voi scan_business de
     manifest_ghi --nguon chon duoc bang so thu tu k."""
     ts = t.get("timestamp") or t.get("crawledAt") or ""
@@ -162,7 +162,7 @@ def ra_tin(t: dict) -> dict:
     media = t.get("media") or []
     return {
         "id": t.get("id") or "",
-        "tieu_de": mot_dong(t.get("title") or t.get("text") or ""),
+        "tieu_de": one_line(t.get("title") or t.get("text") or ""),
         "link": t.get("url"),
         "ngay": ngay,
         "toa_soan": handle,
@@ -171,7 +171,7 @@ def ra_tin(t: dict) -> dict:
         "loai": t.get("type") or "tweet",
         "so_lieu": {k: m.get(k) for k in ("views", "likes", "replies", "retweets")},
         "so_anh": len(media),
-        "diem": diem_co_hoc(t),
+        "diem": score_mechanical(t),
         # Qinn doc phan nay de cham diem. Cat 1200 ky tu: du cho mot thread da
         # gop, con prompt thi an theo kich thuoc tep nay.
         "text": (t.get("text") or "")[:1200],
@@ -193,20 +193,20 @@ def main() -> int:
     if a.state:
         STATE = Path(a.state)
 
-    goi = doc_tweets(a.gio, a.limit)
+    goi = read_tweets(a.gio, a.limit)
     tweets = goi.get("tweets") or []
     fresh = goi.get("freshness") or {}
-    cu = da_thay()
+    cu = already_see()
     now = time.time()
 
     if a.lan_dau:
-        ghi_moc({**cu, **{t["id"]: now for t in tweets if t.get("id")}})
+        write_timestamp({**cu, **{t["id"]: now for t in tweets if t.get("id")}})
         print(f"Da ghi moc {len(tweets)} tweet. Lan sau chi bao cai moi.")
         return 0
 
-    giu, bo = loc(tweets, cu)
-    giu.sort(key=diem_co_hoc, reverse=True)
-    chon = [ra_tin(t) for t in giu[: a.top]]
+    giu, bo = filter(tweets, cu)
+    giu.sort(key=score_mechanical, reverse=True)
+    chon = [out_story(t) for t in giu[: a.top]]
 
     # Canh bao tuoi du lieu — thu DUY NHAT phan biet "khong co tin dang" voi
     # "crawler dung". Tinh tu freshness cua server, khong tu so tweet doc duoc.
@@ -221,10 +221,10 @@ def main() -> int:
             tre_gio = None
     if tre_gio is None:
         canh_bao.append("Server khong tra moc crawl nao — DB tin X co the rong.")
-    elif tre_gio > TRAN_CU_GIO:
+    elif tre_gio > CEILING_OLD_HOURS:
         canh_bao.append(
             f"CRAWLER DUNG: tweet moi nhat da {tre_gio:.1f} gio truoc "
-            f"({moc}). Vong quet 15 phut/lan nen qua {TRAN_CU_GIO}h la may crawler "
+            f"({moc}). Vong quet 15 phut/lan nen qua {CEILING_OLD_HOURS}h la may crawler "
             "tat, Chrome mat session X, hoac vong lap bi tat. Bao Ong Chu — "
             "dung ket luan 'hom nay khong co tin'."
         )
@@ -251,7 +251,7 @@ def main() -> int:
 
     # CHI danh dau tin DA DUA cho Qinn. Tin bi --top cat hom nay van con moi
     # cho lan sau — dung bai hoc cua scan_business: danh dau het la may xoa tin.
-    ghi_moc({**cu, **{t["id"]: now for t in chon if t.get("id")}})
+    write_timestamp({**cu, **{t["id"]: now for t in chon if t.get("id")}})
     return 0
 
 

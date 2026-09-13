@@ -20,9 +20,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import xep_hang                                              # noqa: E402
-import anh_thuong_hieu as th                                 # noqa: E402
-from chuan_bi import nguon as cbn, vong_bu                   # noqa: E402
+import ranking                                              # noqa: E402
+import image_brand as th                                 # noqa: E402
+from prepare import source as cbn, fallback_rounds                   # noqa: E402
 
 EN = "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face"
 VI = "DeepSeek-V4.1-Flash thả trọng số: trending 1657, 75.774 lượt tải"
@@ -36,23 +36,23 @@ def _pg(*ten):
 
 # ---------------------------------------------------------------- LOW-34
 def test_tach_model_bo_tien_to_repo_hf():
-    assert xep_hang.tach_model(EN)[0] == "DeepSeek-V4.1-Flash", xep_hang.tach_model(EN)
-    assert th._khoa_model(xep_hang.tach_model(EN))[0] == "deepseek-v4-1-flash"
+    assert ranking.extract_model(EN)[0] == "DeepSeek-V4.1-Flash", ranking.extract_model(EN)
+    assert th._lock_model(ranking.extract_model(EN))[0] == "deepseek-v4-1-flash"
 
 
 def test_them_trang_cong_bo_hoi_voi_ten_dai_nhat_va_khong_co_hugging_face():
     goi = {}
-    cu = th.trang_cong_bo
-    th.trang_cong_bo = lambda hang, models: goi.update(hang=hang, models=models) or None
+    cu = th.announcement_page
+    th.announcement_page = lambda hang, models: goi.update(hang=hang, models=models) or None
     try:
         with tempfile.TemporaryDirectory() as d:
-            p = Path(d) / "nguon.json"
+            p = Path(d) / "source.json"
             ng = {"tieu_de_en": EN, "trang": [{"url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash"}]}
             p.write_text(json.dumps(ng), encoding="utf-8")
             with redirect_stderr(io.StringIO()):
-                vong_bu._them_trang_cong_bo(ng, p, ng["trang"], VI, "")
+                fallback_rounds._extra_announcement_page(ng, p, ng["trang"], VI, "")
     finally:
-        th.trang_cong_bo = cu
+        th.announcement_page = cu
     assert goi.get("models") and goi["models"][0] == "DeepSeek-V4.1-Flash", goi
     assert goi["hang"]["khoa"] == "deepseek", goi
 
@@ -60,7 +60,7 @@ def test_them_trang_cong_bo_hoi_voi_ten_dai_nhat_va_khong_co_hugging_face():
 def test_trang_cong_bo_khong_im_khi_khong_co_khoa():
     err = io.StringIO()
     with redirect_stderr(err):
-        assert th.trang_cong_bo({"khoa": "deepseek", "hang": "DeepSeek"}, ["deepseek"]) is None
+        assert th.announcement_page({"khoa": "deepseek", "hang": "DeepSeek"}, ["deepseek"]) is None
     assert "[cong bo]" in err.getvalue() and "khong ra khoa" in err.getvalue(), err.getvalue()
 
 
@@ -69,25 +69,25 @@ def test_commons_hugging_face_phai_la_cum_lien_nhau():
     pages = _pg("West Lighthouse, Rathlin hugging the cliff face 01.jpg",
                 "Hugging Face headquarters Paris 2025.jpg",
                 "Face hugging octopus.jpg")
-    assert [c["alt"] for c in th.loc_commons(pages, "Hugging Face")] == \
+    assert [c["alt"] for c in th.filter_commons(pages, "Hugging Face")] == \
         ["Commons: Hugging Face headquarters Paris 2025.jpg"]
 
 
 def test_co_cum_ten_mot_tu_nhu_cu():
-    assert th._co_cum(["samsung"], "samsung town seoul.jpg")
-    assert not th._co_cum(["arm"], "harmony hall.jpg")
-    assert th._co_cum(["thinking", "machines"], "thinking machines lab office.jpg")
-    assert not th._co_cum(["thinking", "machines"], "machines for thinking.jpg")
+    assert th._has_phrase(["samsung"], "samsung town seoul.jpg")
+    assert not th._has_phrase(["arm"], "harmony hall.jpg")
+    assert th._has_phrase(["thinking", "machines"], "thinking machines lab office.jpg")
+    assert not th._has_phrase(["thinking", "machines"], "machines for thinking.jpg")
 
 
 def test_ten_rieng_dau_khong_lay_hau_to_site():
-    assert cbn._ten_rieng_dau(EN) == "", cbn._ten_rieng_dau(EN)
-    assert cbn._ten_rieng_dau("Gimlet Labs raises 40M | TechCrunch") == "Gimlet Labs"
+    assert cbn._leading_proper_noun(EN) == "", cbn._leading_proper_noun(EN)
+    assert cbn._leading_proper_noun("Gimlet Labs raises 40M | TechCrunch") == "Gimlet Labs"
 
 
 def test_hang_trong_tin_khong_co_hugging_face_sau_khi_bo_hau_to():
-    import nguon_bai
-    hangs = th.hang_trong_tin(f"{VI} {nguon_bai.bo_hau_to_site(EN)}")
+    import article_sources
+    hangs = th.vendors_in_story(f"{VI} {article_sources.strip_site_suffix(EN)}")
     assert [h["khoa"] for h in hangs] == ["deepseek"], hangs
 
 

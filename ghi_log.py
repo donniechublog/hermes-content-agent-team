@@ -1,74 +1,14 @@
-#!/usr/bin/env python3
-"""Log dung chung cho approve_service / chat_router: ra stdout (journal) VA ra
-tep `state/<brand>/approve.log` (xoay vong, 5 MB x 3).
+"""SHIM tạm (LOW-50): tên cũ của `write_log.py`. Mọi thứ nằm ở `write_log.py`.
 
-Vi sao can: truoc 03/09/2026 approve_service chi in khi loi o vong poll. Tin
-nhan vao, quyet dinh dinh tuyen (chon so / chat / lenh), ket qua goi agent,
-tin gui di — khong dong nao. Khi Ong Chu bao "vai khong tra loi" thi khong co
-gi de doi chieu, phai mo state.db cua tung profile ma doan. Moi tin nhan vao
-gio de lai it nhat mot dong o day, va moi dong co ma tin (update/message id)
-de noi cac buoc lai voi nhau.
-"""
-import logging
-import os
-import sys
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
+Giữ để task kanban đang `ready`, cron và SOUL trên máy chủ gọi tên cũ vẫn chạy
+trong lúc đổi. `sys.modules[__name__] = <module mới>` nên `import ghi_log` và
+`ghi_log.ten` đều trỏ đúng đối tượng thật (kể cả tên `_riêng`). Gỡ sau 1 tuần
+(ticket con của LOW-50)."""
+import sys as _sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load                                              # noqa: E402
+import write_log as _new
 
-_LOG = None
-_KHOA = __import__("threading").Lock()
+_sys.modules[__name__] = _new
 
-
-def _khoi_tao():
-    if _LOG is not None:
-        return _LOG
-    with _KHOA:                      # nhieu thread cung khoi tao -> handler lap 3 lan
-        if _LOG is not None:
-            return _LOG
-        return _khoi_tao_that()
-
-
-def _khoi_tao_that():
-    global _LOG
-    lg = logging.getLogger("approve")
-    lg.setLevel(logging.INFO)
-    lg.propagate = False
-    fmt = logging.Formatter("%(asctime)s %(message)s", "%m-%d %H:%M:%S")
-    ra = logging.StreamHandler(sys.stdout)
-    ra.setFormatter(fmt)
-    lg.addHandler(ra)
-    # Chi ghi ra TEP khi co CT_BRAND, tuc dang chay that trong mot container
-    # (systemd/cron dat san bien nay). Test va script chay tay khong co no, va
-    # truoc 09/09/2026 chung ghi thang vao `state/approve.log` that: mot lan
-    # chay tests/ de lai vai chuc dong lan trong nhat ky cua dich vu that, doc
-    # log su co xong phai loc bo tay. Mat tep log o che do don la chap nhan
-    # duoc — stdout van con nguyen (journald cua systemd bat cai do).
-    if os.environ.get("CT_BRAND", "").strip():
-        try:
-            tep = env_load.state_dir() / "approve.log"
-            fh = RotatingFileHandler(tep, maxBytes=5_000_000, backupCount=3,
-                                     encoding="utf-8")
-            fh.setFormatter(fmt)
-            lg.addHandler(fh)
-        except OSError as e:                 # khong ghi tep duoc thi van con stdout
-            lg.warning("[log] khong mo duoc tep log: %s", e)
-    _LOG = lg
-    return lg
-
-
-def log(nhan: str, noi_dung: str) -> None:
-    """Mot dong log: `[nhan] noi_dung`. Nhan la buoc (vao/route/chat/gui/loi...)."""
-    _khoi_tao().info("[%s] %s", nhan, noi_dung.replace("\n", " ⏎ "))
-
-
-def rut(text, n: int = 90) -> str:
-    """Rut gon chuoi de log, khong log ca bai."""
-    t = (text or "").replace("\n", " ")
-    return t if len(t) <= n else t[: n - 1] + "…"
-
-
-def brand() -> str:
-    return os.environ.get("CT_BRAND", "") or "don"
+if __name__ == "__main__":
+    _sys.exit(_new.main() if hasattr(_new, "main") else 0)

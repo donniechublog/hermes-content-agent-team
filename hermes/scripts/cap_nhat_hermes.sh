@@ -12,14 +12,14 @@
 #   1. CHUA CAP NHAT neu hermes-agent con thay doi chua commit. Do gan nhu luon
 #      la ban va cua doi, va `git reset --hard` o buoc lui se xoa sach chung.
 #      Day la cai chan quan trong nhat — dung cai da mat ba lan.
-#   2. Ghi lai HEAD truoc khi cap nhat, roi chay kiem_hermes.py (cac cho lien
-#      quan ruot hermes) va kiem_moi_truong.py (cv2/Chromium/khoa API).
+#   2. Ghi lai HEAD truoc khi cap nhat, roi chay check_hermes.py (cac cho lien
+#      quan ruot hermes) va check_env.py (cv2/Chromium/khoa API).
 #   3. Kiem hong -> `git reset --hard` ve dung HEAD da ghi, roi kiem lai de xac
 #      nhan da lui sach.
 #
 # GIOI HAN da biet: lui git KHONG phuc hoi duoc goi pip da bi go khoi venv
 # (venv dung chung — xem D1 trong audit, tach venv rieng moi dut diem duoc).
-# Vi vay buoc kiem co chay kiem_moi_truong.py: no noi ro goi nao dang thieu.
+# Vi vay buoc kiem co chay check_env.py: no noi ro goi nao dang thieu.
 #
 # Dung:
 #     hermes/scripts/cap_nhat_hermes.sh            # cap nhat + kiem + tu lui khi hong
@@ -27,16 +27,16 @@
 #     hermes/scripts/cap_nhat_hermes.sh --khong-lui  # hong thi bao, KHONG tu lui
 #
 # Cron sang (audit C2 de nghi): dang ky mot job goi script nay hoac chi rieng
-# `kiem_hermes.py` moi sang. Job cron cua hermes nam trong HOME dang chay
+# `check_hermes.py` moi sang. Job cron cua hermes nam trong HOME dang chay
 # (~/.hermes-<brand>/cron/jobs.json, id do hermes sinh) nen dang ky bang CLI
-# cua hermes chu dung sua tay tep JSON — dong_bo_hermes.py chi CHEP home ve repo.
+# cua hermes chu dung sua tay tep JSON — sync_hermes.py chi CHEP home ve repo.
 set -uo pipefail
 
 CT="$HOME/content-team"
 AGENT="$HOME/hermes-agent"
 AGENT_PY="$AGENT/venv/bin/python"
 # Lenh cap nhat THAT cua doi la `hermes update` (binary wrapper) — moi tai lieu
-# trong repo (hermes/README.md, MEMORY_ARCH.md, nhat_ky.py) deu goi dung chu do.
+# trong repo (hermes/README.md, MEMORY_ARCH.md, journal.py) deu goi dung chu do.
 # Ban dau script nay bia ra `python -m hermes_cli.main update` ma khong co bang
 # chung `update` la mot subcommand Python; voi mot script AN TOAN, lenh mac dinh
 # sai nghia la no vo o buoc 2 moi lan chay va duong cap nhat co kiem khong bao
@@ -62,10 +62,10 @@ kiem() {
   # in ro ca hai ma khong gop lan ket qua.
   local ma_h ma_m
   cd "$CT" || return 1
-  echo "--- kiem_hermes.py ---"
-  venv/bin/python kiem_hermes.py; ma_h=$?
-  echo "--- kiem_moi_truong.py ---"
-  venv/bin/python kiem_moi_truong.py; ma_m=$?
+  echo "--- check_hermes.py ---"
+  venv/bin/python check_hermes.py; ma_h=$?
+  echo "--- check_env.py ---"
+  venv/bin/python check_env.py; ma_m=$?
   [ $ma_h -eq 0 ] && [ $ma_m -eq 0 ]
 }
 
@@ -135,5 +135,5 @@ if kiem; then
 fi
 echo "[LOI] lui roi ma VAN hong — nghia la nguyen nhan khong nam o lan cap nhat" >&2
 echo "nay (rat co the goi pip trong venv dung chung da bi go: xem" >&2
-echo "kiem_moi_truong.py o tren, va D1 trong audit ve venv rieng)." >&2
+echo "check_env.py o tren, va D1 trong audit ve venv rieng)." >&2
 exit 1

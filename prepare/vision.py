@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PHA NHIN: hoi vision tung anh, do hinh hoc, quyet dinh anh dung duoc o dau.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import os
 import re
@@ -11,12 +11,12 @@ from pathlib import Path
 
 from PIL import Image, ImageStat
 
-import luat_anh
+import image_rules
 import env_load
-import vai
+import role
 
-from chuan_bi.nguon import _ten_rieng_dau
-from chuan_bi.tai_loc import _chart_theo_hinh, _luu_crop
+from prepare.source import _leading_proper_noun
+from prepare.download_filter import _chart_by_figure, _save_crop
 
 
 VISION_MODEL = env_load.VISION_MODEL
@@ -30,19 +30,19 @@ VISION_URL = env_load.ROUTER_URL
 # con dong "loading chart...", do hoa "Nvidia Weighs $10B..." chu in chim sau
 # cau quote, tieu de bao Nga RBC — ca ba deu qua cong LIEN_QUAN (dung chu de)
 # nhung nhin roi. Chi con mat moi phan biet duoc anh roi voi anh sach.
-CAU_ROI = ("ROI: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, "
+SENTENCE_FALL = ("ROI: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, "
            "banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu "
            "hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau; khong = anh chup that, "
            "logo, bien hieu, san pham voi MOT chu the ro, hoac bieu do/bang so lieu gon gang)")
 # Ong Chu 13/09/2026, cung ngay, ve CHINH do hoa "Nvidia Weighs $10B": "anh nay
 # xung dang lam hero, the hien duoc day du moi tu khoa quan trong". Roi thi
 # khong uu tien — TRU KHI nhin vao doc ra du tu khoa chinh cua tin.
-CAU_TU_KHOA = ("TU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac "
+SENTENCE_KEYWORD = ("TU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac "
                "cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + "
                "chu IPO; khong = chi thay mot phan, hoac khong doc ra)")
 
 
-def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
+def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
               nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None,
               khai_niem_theo_loai: bool = False, chup_nguon: bool = False,
               ket_qua: dict | None = None) -> tuple:
@@ -94,7 +94,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
     # la ca engine chet giua chung, khong co xong.json, vai chi thay "chua chuan
     # bi" ma khong biet vi sao (06/09/2026). Doc thang bien, khong nem.
-    env_load.nap()
+    env_load.load()
     key = os.environ.get("OPENAI_API_KEY")
     if not key:
         print("[vision] thieu OPENAI_API_KEY -> khong nhin duoc anh, brief se ghi CHUA AI NHIN",
@@ -119,7 +119,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
                "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; "
                "khong = quang cao, widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/"
-               f"chu de khac, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
+               f"chu de khac, {image_rules.IMAGE_PHRASES_SCREENSHOT})")
         if chup_nguon:
             # LA anh cua tin (tu chinh DOM cua bai) — khong hoi lai "co lien
             # quan khong", CHI hoi CHAT LUONG. Tach khoi nhanh mac dinh o tren
@@ -130,19 +130,19 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                    "khong hoi 'co lien quan khong'.\nTra loi DUNG 2 dong:\n"
                    "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                    "LIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; "
-                   f"khong = mo/nhoe, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
+                   f"khong = mo/nhoe, {image_rules.IMAGE_PHRASES_SCREENSHOT})")
         elif khai_niem:
-            import anh_khai_niem
-            hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)
+            import image_concept
+            hoi = image_concept.sentence_ask_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)
         elif thuong_hieu:
             # Cau chung hoi "co phai anh CUA TIN khong" — chan dung nha sang lap
             # va the logo chac chan khong phai, nen bi danh rot dung luc ta can
             # chung nhat (09/09/2026).
-            import anh_thuong_hieu
-            hoi = anh_thuong_hieu.cau_hoi_vision(tieu_de, thuong_hieu)
+            import image_brand
+            hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
         # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem nop_chung.kiem_anh_roi.
-        hoi = hoi.replace("DUNG 2 dong", "DUNG 4 dong") + "\n" + CAU_ROI + "\n" + CAU_TU_KHOA
+        hoi = hoi.replace("DUNG 2 dong", "DUNG 4 dong") + "\n" + SENTENCE_FALL + "\n" + SENTENCE_KEYWORD
         if hoi_them and nhan_them:
             hoi = hoi.replace("DUNG 4 dong", "DUNG 5 dong") + f"\n{nhan_them}: {hoi_them}"
         body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
@@ -153,7 +153,7 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         req = urllib.request.Request(VISION_URL, data=_j.dumps(body).encode(),
                                      headers={"Content-Type": "application/json",
                                               "Authorization": "Bearer " + key})
-        raw = _goi_router(req).read().decode().strip()
+        raw = _call_router(req).read().decode().strip()
         if raw.startswith("data:"):
             raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
         txt = _j.loads(raw)["choices"][0]["message"]["content"]
@@ -238,7 +238,7 @@ _THU_LAI = (429, 502, 503, 504)
 _CHO_THU_LAI = (1, 2, 4)      # giay, tang dan; 3 lan thu lai
 
 
-def _goi_router(req, _ngu=None):
+def _call_router(req, _ngu=None):
     """urlopen co thu lai khi 429/5xx (audit lượt 2, B-r2-2): B2 cho 4 luong ban
     cung luc vao router, gap 429 la anh roi vao "CHUA AI NHIN" va bi loai khoi
     dung_duoc — song song hoa lam 429 de xay ra HON ban tuan tu ma khong co
@@ -258,13 +258,13 @@ def _goi_router(req, _ngu=None):
             ngu(cho)
 
 
-def _phan_loai_an_toan(a: dict, wd: Path, tieu_de: str) -> dict:
+def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
     """phan_loai cho executor.map: mot anh hong (PNG cut, dem_mat/crop nem) KHONG
     duoc lam list(ex.map) nem — ca lo mat, ke ca anh da nhin xong, engine chet
     khong xong.json (audit lượt 2, B-r2-3). Anh hong tro thanh anh "chua nhin"
     co ghi chu, cac anh khac di tiep."""
     try:
-        return phan_loai(a, wd, tieu_de)
+        return classify(a, wd, tieu_de)
     except Exception as e:                                   # noqa: BLE001
         print(f"[vision] {a.get('ma')} {Path(a.get('goc', '?')).name}: HONG khi phan loai — "
               f"{type(e).__name__}: {e!r}", file=sys.stderr)
@@ -275,7 +275,7 @@ def _phan_loai_an_toan(a: dict, wd: Path, tieu_de: str) -> dict:
         return a
 
 
-def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> dict:
+def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> dict:
     """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can.
 
     `chup_nguon` (LOW-45): anh hero chup tu chinh trang nguon — xem
@@ -283,12 +283,12 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
     img = Image.open(a["goc"]).convert("RGB")
     w, h = img.size
     r = w / h
-    la_ct, mo_ta = luat_anh.la_chart(img)
-    phang, _ = luat_anh.do_chart(img)
+    la_ct, mo_ta = image_rules.is_chart(img)
+    phang, _ = image_rules.measure_chart_signal(img)
     # Override chi khi phep do KHONG noi nguoc: chart that phang >= 82%, anh chup
     # 52-77% (do 05/09). Truoc day hint tu alt tu gan de len ca phang 52% -> hinh
     # minh hoa AI thanh "CHART", dan full be ngang, ra hai vung.
-    if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_theo_hinh(img)):
+    if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_by_figure(img)):
         la_ct, mo_ta = True, mo_ta + "; nen trang + canh day / alt-tag chart"
     kn = (a.get("khai_niem") or {}).get("tu_khoa", "")
     # Tu khoa do LOAI TIN ep (loai_tin.py) thi con mat khong duoc tu phan "hop bai".
@@ -297,7 +297,7 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
     # khong phai ten rieng dau tieu de. Tin "Qualcomm ... with Amazon" ma dua
     # "Qualcomm" cho mot tam tru so Amazon thi chot "ten hang trong mo ta" khong
     # bao gio nay, anh that cua Amazon bi vision danh rot (09/09/2026).
-    hang = (a.get("thuong_hieu") or {}).get("hang") or _ten_rieng_dau(tieu_de)
+    hang = (a.get("thuong_hieu") or {}).get("hang") or _leading_proper_noun(tieu_de)
     # HOI LUON co cat_ngang duoc khong (12/09/2026, su co t_a8ffd2f6 lan hai):
     # ngang cao >=700 truoc day duoc dan mac dinh "cat_ngang: true NEU la anh
     # nguoi/san pham KHONG co chu" — mot cau DIEU KIEN, khong ai xac nhan dieu
@@ -309,9 +309,9 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
     # "NEU") lan o dem slide (schema._chi_ghep_duoc). Ket hop voi `chup_nguon`
     # (LOW-45) — hai co so doc lap, mot anh hero chup tu nguon van co the ngang
     # cao va can hoi cat_ngang binh thuong.
-    hoi_cat_ngang = (r >= luat_anh.NGANG_RO and h >= 700 and not la_ct)
+    hoi_cat_ngang = (r >= image_rules.LANDSCAPE_CLEAR and h >= 700 and not la_ct)
     kq = {}
-    ket_qua = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
+    ket_qua = (description_image(a["goc"], tieu_de, hang, khai_niem=kn,
                          khai_niem_theo_loai=kn_theo_loai,
                          thuong_hieu=a.get("thuong_hieu"), chup_nguon=chup_nguon,
                          hoi_them=("Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co "
@@ -340,14 +340,14 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
     # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
     # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua
     # nhau tren mot detector lam 80-95% anh tra None, tat ca thanh "khong mat".
-    mat_tho = luat_anh.dem_mat(a["goc"])
+    mat_tho = image_rules.count_faces(a["goc"])
     mat = mat_tho or 0
     day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
     goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
     a.update({"w": w, "h": h, "ti_le": round(r, 2), "loai": "chart" if la_ct else "anh",
               "do_chart": mo_ta, "mat": mat, "day_sang": round(day),
               "goc_trai_sang": round(goc_trai), "canh_ngan": min(w, h),
-              "ngang": r >= luat_anh.NGANG_RO, "san": None, "dung": [], "ghi_chu": []})
+              "ngang": r >= image_rules.LANDSCAPE_CLEAR, "san": None, "dung": [], "ghi_chu": []})
     if mat_tho is None:
         a["ghi_chu"].append("⚠️ cổng mặt người KHÔNG chạy (thiếu cv2/model hoặc lỗi) — chưa kiểm mặt")
     san = wd / "san" / f"{a['ma']}.png"
@@ -358,8 +358,8 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
             # mat), va no la CHU THE cua tin chu khong phai anh minh hoa.
             a["san"] = a["goc"]
             a["ghi_chu"].append("bảng xếp hạng: giữ nguyên vẹn, dán full bề ngang")
-        elif r < luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE:
-            _luu_crop(img, san, "4:5", cy=0.35)           # chart cao: cat bot day
+        elif r < image_rules.TI_LE_45 - image_rules.TOLERANCE_RATIO:
+            _save_crop(img, san, "4:5", cy=0.35)           # chart cao: cat bot day
             a["san"] = str(san)
             a["ghi_chu"].append("chart cao, đã cắt bớt phần dưới về 4:5")
         else:
@@ -385,7 +385,7 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
                 a["dung"].append("cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ")
         else:
             ten = "1:1" if r > 0.9 else "4:5"
-            _luu_crop(img, san, ten, cy=0.4 if r < 0.7 else 0.5)
+            _save_crop(img, san, ten, cy=0.4 if r < 0.7 else 0.5)
             a["san"] = str(san)
             a["dung"] = ["thân"]
             if not mat and goc_trai < 150:
@@ -396,7 +396,7 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
         # MOT ban regex duy nhat, o ban dang ky vai: cong "mat nguoi phai khai
         # ten" cua `vai.anh_chinh_duoc` phai doc ra dung cai ten ma chu thich
         # duoi day hua la co.
-        ten = vai.ten_nguoi_trong_alt(a.get("alt", "") or "")
+        ten = role.person_names_in_alt(a.get("alt", "") or "")
         if ten:
             a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
                                 "chỉ dùng khi đúng người đó, khai \"nhan_vat\" y hệt")
@@ -416,20 +416,20 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
     if a.get("lien_quan") is False:
         a["dung"] = []
         a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
-    if a["canh_ngan"] < luat_anh.CANH_NGAN_MIN:
+    if a["canh_ngan"] < image_rules.SHORT_SIDE_MIN:
         a["ghi_chu"].append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
-    if day > luat_anh.DAY_SANG_MAX and not la_ct:
+    if day > image_rules.BRIGHT_BOTTOM_MAX and not la_ct:
         a["ghi_chu"].append("đáy sáng, chữ trắng hơi nhạt")
     if a.get("khai_niem"):
-        import anh_khai_niem
-        anh_khai_niem.nhan_khai_niem(a)
+        import image_concept
+        image_concept.label_concept(a)
     if a.get("thuong_hieu"):
-        import anh_thuong_hieu
-        anh_thuong_hieu.nhan_thuong_hieu(a)
+        import image_brand
+        image_brand.label_brand(a)
     return a
 
 
-def _nhin_anh(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
+def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     """Phan loai + vision tung anh; anh XH khong hoi vision. Tra
     (anh, dung_duoc, chua_nhin)."""
     print("[vision] nhin tung anh, hoi co lien quan bai khong...", file=sys.stderr)
@@ -440,8 +440,8 @@ def _nhin_anh(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     # co state dung chung giua cac lan goi -- nen chay song song duoc (8-12 anh/bai,
     # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
     # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
-    with ThreadPoolExecutor(max_workers=env_load.so_luong(4)) as ex:
-        anh = list(ex.map(lambda a: _phan_loai_an_toan(a, wd, "" if a.get("xep_hang")
+    with ThreadPoolExecutor(max_workers=env_load.quantity(4)) as ex:
+        anh = list(ex.map(lambda a: _classify_hide_whole(a, wd, "" if a.get("xep_hang")
                                                        else (nguon.get("tieu_de_en") or title)), anh))
     for a in anh:
         if a.get("xep_hang"):

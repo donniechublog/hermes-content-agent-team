@@ -2,13 +2,13 @@
 """Bảng vai dẫn xuất phải khớp CHÍNH XÁC bảng viết tay cũ (issue A4/F1).
 
 Tri thuc ve vai tung nam rai sau cho trong duyet_giao_viec cong ba map "slug ->
-ten" chep tay o noi khac. `vai.py` gom lai mot cho va sinh lai cac bang do.
+ten" chep tay o noi khac. `role.py` gom lai mot cho va sinh lai cac bang do.
 
 Tep nay giu hai thu:
   1. HOP DONG KHONG DOI: cac bang duoi day duoc chep NGUYEN VAN tu ban viet tay
-     truoc khi gom (git 3a18f79:duyet_giao_viec.py). Bang dan xuat lech mot khoa
-     la mot duong hong THAT — `SLUG_CU` sai thi task khong ai nhan va nam
-     'ready' mai (su co 01/09/2026), `TEN_SANG_CAP` thieu mot chu thi ca lenh
+     truoc khi gom (git 3a18f79:approve_dispatch.py). Bang dan xuat lech mot khoa
+     la mot duong hong THAT — `SLUG_OLD` sai thi task khong ai nhan va nam
+     'ready' mai (su co 01/09/2026), `NAME_BRIGHT_CAP` thieu mot chu thi ca lenh
      chon bi tu choi roi gui nham topic (su co 06/09/2026 voi "kites").
   2. Them mot vai chi ton MOT dong: kiem bang chinh bang dang ky, khong phai
      bang cach doc code.
@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import vai                                                    # noqa: E402
+import role                                                    # noqa: E402
 
 # ---- chep NGUYEN VAN tu ban viet tay truoc khi gom (3a18f79) ----------------
 VAI_ANH_CU = {
@@ -74,7 +74,7 @@ def _ap_doi(cu):
 
 
 def _ap_doi_slug_cu(cu):
-    """SLUG_CU DAO CHIEU chu khong phai doi ten phang: ten nhan vat tu ALIAS
+    """SLUG_OLD DAO CHIEU chu khong phai doi ten phang: ten nhan vat tu ALIAS
     thanh SLUG, con chu role tu SLUG thanh ALIAS. "miles"->"writer" hom nay doc
     nguoc thanh "writer"->"miles". Alias khong phai ten nhan vat ("chad",
     "heller", "jean") thi o nguyen cho, chi doi gia tri."""
@@ -98,63 +98,64 @@ def _khop(ten, moi, cu):
 
 
 def test_VAI_ANH_khop_ban_cu():
-    _khop("VAI_ANH", vai.VAI_ANH, _ap_doi(VAI_ANH_CU))
+    _khop("ROLE_IMAGE", role.ROLE_IMAGE, _ap_doi(VAI_ANH_CU))
 
 
 def test_TEN_SANG_CAP_khop_ban_cu():
     """Thieu mot chu o day la ca lenh chon bi tu choi (su co "kites" 06/09)."""
-    _khop("TEN_SANG_CAP", vai.TEN_SANG_CAP, _ap_doi(TEN_SANG_CAP_CU))
+    _khop("NAME_BRIGHT_CAP", role.NAME_BRIGHT_CAP, _ap_doi(TEN_SANG_CAP_CU))
 
 
 def test_SLUG_CU_khop_ban_cu():
     """Sai o day la task khong ai nhan, nam 'ready' mai (su co 01/09)."""
-    _khop("SLUG_CU", vai.SLUG_CU, _ap_doi_slug_cu(SLUG_CU_CU))
+    _khop("SLUG_OLD", role.SLUG_OLD, _ap_doi_slug_cu(SLUG_CU_CU))
 
 
 def test_TEN_VAI_ANH_va_VIET_khop_ban_cu():
-    _khop("TEN_VAI_ANH", vai.TEN_VAI_ANH, _ap_doi(TEN_VAI_ANH_CU))
-    _khop("TEN_VAI_VIET", vai.TEN_VAI_VIET, _ap_doi(TEN_VAI_VIET_CU))
+    _khop("NAME_ROLE_IMAGE", role.NAME_ROLE_IMAGE, _ap_doi(TEN_VAI_ANH_CU))
+    _khop("NAME_ROLE_WRITE", role.NAME_ROLE_WRITE, _ap_doi(TEN_VAI_VIET_CU))
 
 
 def test_TEN_HIEN_khop_ban_cu():
-    _khop("TEN_HIEN", vai.TEN_HIEN, _ap_doi(TEN_HIEN_CU))
+    _khop("DISPLAY_NAME", role.DISPLAY_NAME, _ap_doi(TEN_HIEN_CU))
 
 
 def test_VAI_CAROUSEL_va_EDU_khop_ban_cu():
-    assert vai.VAI_CAROUSEL == {_ad(s) for s in VAI_CAROUSEL_CU}, vai.VAI_CAROUSEL
-    assert vai.VAI_EDU == {_ad(s) for s in VAI_EDU_CU}, vai.VAI_EDU
+    assert role.ROLE_CAROUSEL == {_ad(s) for s in VAI_CAROUSEL_CU}, role.ROLE_CAROUSEL
+    assert role.ROLE_EDU == {_ad(s) for s in VAI_EDU_CU}, role.ROLE_EDU
 
 
 def test_mac_dinh_khong_doi():
-    assert vai.MAC_DINH_ANH == "ethan" and vai.MAC_DINH_VIET == "miles"
+    assert role.DEFAULT_IMAGE == "ethan" and role.DEFAULT_WRITE == "miles"
 
 
 def test_khong_slug_nao_con_dat_theo_role():
     """LOW-14 — Ong Chu: *"KHONG BAO GIO DAT TEN THEO ROLE"*. Cong nay chan mot
     vai moi lot vao ban dang ky bang chu role, va chan luon viec ai do revert
     tam dong da doi. `slug` chi duoc khac `ten` o chu hoa."""
-    lech = {v.slug: v.ten for v in vai.VAI.values() if v.slug != v.ten.lower()}
+    lech = {v.slug: v.ten for v in role.ROLE.values() if v.slug != v.ten.lower()}
     assert not lech, f"slug khong phai ten nhan vat viet thuong: {lech}"
-    role = sorted(set(DOI_LOW14) & set(vai.VAI))
-    assert not role, f"chu role quay lai lam slug: {role}"
+    # bien cuc bo KHONG duoc ten `role`: tu LOW-50 do la ten module (vai.py -> role.py)
+    slug_role = sorted(set(DOI_LOW14) & set(role.ROLE))
+    assert not slug_role, f"chu role quay lai lam slug: {slug_role}"
 
 
 # ---- tinh chat cua ban dang ky ---------------------------------------------
 def test_slug_that_nhan_ten_cu_va_giu_nguyen_chu_la():
-    assert vai.slug_that("carousel") == "dre", "slug role cu (LOW-14) van phai doc duoc"
-    assert vai.slug_that("Jean") == "cape", "phai khong phan biet hoa thuong"
-    assert vai.slug_that("dre") == "dre", "slug hien tai giu nguyen"
-    assert vai.slug_that("khong-co-that") == "khong-co-that", \
-        "chu la phai tra NGUYEN VAN de chuan_assignee con bao loi tu te"
+    assert role.canonical_slug("carousel") == "dre", "slug role cu (LOW-14) van phai doc duoc"
+    assert role.canonical_slug("Jean") == "cape", "phai khong phan biet hoa thuong"
+    assert role.canonical_slug("dre") == "dre", "slug hien tai giu nguyen"
+    assert role.canonical_slug("khong-co-that") == "khong-co-that", \
+        "chu la phai tra NGUYEN VAN de standard_assignee con bao loi tu te"
 
 
 def test_ten_hien_roi_ve_slug_khi_chua_khai():
-    assert vai.ten_hien("dre") == "Dre"
-    assert vai.ten_hien("chua-khai") == "chua-khai"
+    assert role.display_name("dre") == "Dre"
+    assert role.display_name("chua-khai") == "chua-khai"
 
 
 def test_moi_vai_anh_deu_co_renderer():
-    thieu = [v.slug for v in vai.VAI.values() if v.nhan_anh and not v.renderer]
+    thieu = [v.slug for v in role.ROLE.values() if v.nhan_anh and not v.renderer]
     assert not thieu, f"vai dung anh ma khong khai renderer: {thieu}"
 
 
@@ -162,18 +163,18 @@ def test_khong_alias_nao_dam_len_slug_cua_vai_khac():
     """Mot chu vua la slug cua vai A vua la alias cua vai B thi lookup thanh
     may rui theo thu tu chen — chan tu trong ban dang ky."""
     xau = []
-    for v in vai.VAI.values():
+    for v in role.ROLE.values():
         for chu in v.go + v.slug_cu:
-            if chu in vai.VAI and chu != v.slug:
+            if chu in role.ROLE and chu != v.slug:
                 xau.append(f"{chu!r} la slug cua {chu} nhung lam alias cho {v.slug}")
     assert not xau, xau
 
 
 def test_them_vai_chi_ton_mot_dong():
-    """F1: them mot dong vao VAI la moi bang dan xuat co ngay, khong phai sua
+    """F1: them mot dong vao ROLE la moi bang dan xuat co ngay, khong phai sua
     tam cho. Kiem bang chinh ban dang ky chu khong doc code."""
-    them = vai.Vai("thu_nghiem", "Thu", go=("tn",), renderer="card", nhan_anh=True)
-    v2 = dict(vai.VAI, thu_nghiem=them)
+    them = role.Role("thu_nghiem", "Thu", go=("tn",), renderer="card", nhan_anh=True)
+    v2 = dict(role.ROLE, thu_nghiem=them)
     ten_hien = {v.slug: v.ten for v in v2.values()}
     anh = {}
     for v in v2.values():
@@ -197,86 +198,86 @@ def _bang_vai_trong_readme():
 
 def test_README_goi_dung_ten_vai_nhu_ban_dang_ky():
     """Su co C6: tai lieu con goi Kite/Cape bang ten persona cu (Jean, Heller...)
-    trong khi ma da doi. Ten trong bang README phai khop vai.TEN_HIEN."""
-    lech = {slug: (ten, vai.TEN_HIEN.get(slug))
+    trong khi ma da doi. Ten trong bang README phai khop role.DISPLAY_NAME."""
+    lech = {slug: (ten, role.DISPLAY_NAME.get(slug))
             for slug, ten in _bang_vai_trong_readme().items()
-            if vai.TEN_HIEN.get(slug) != ten}
-    assert not lech, f"README goi ten khac ban dang ky (slug: README vs vai.py): {lech}"
+            if role.DISPLAY_NAME.get(slug) != ten}
+    assert not lech, f"README goi ten khac ban dang ky (slug: README vs role.py): {lech}"
 
 
 def test_moi_vai_trong_ban_dang_ky_deu_co_trong_README():
-    """Them mot dong vao vai.py ma quen ghi vao bang README thi doi khong biet
+    """Them mot dong vao role.py ma quen ghi vao bang README thi doi khong biet
     vai do ton tai — F1 hua 'them vai = mot dong registry', cai gia la phai
     dong bo tai lieu ngay canh."""
-    thieu = sorted(set(vai.VAI) - set(_bang_vai_trong_readme()))
-    assert not thieu, f"co trong vai.py ma khong co trong bang README: {thieu}"
+    thieu = sorted(set(role.ROLE) - set(_bang_vai_trong_readme()))
+    assert not thieu, f"co trong role.py ma khong co trong bang README: {thieu}"
 
 
 def test_khong_vai_la_nao_trong_README():
-    thua = sorted(set(_bang_vai_trong_readme()) - set(vai.VAI))
-    assert not thua, f"README ke vai khong co trong vai.py: {thua}"
+    thua = sorted(set(_bang_vai_trong_readme()) - set(role.ROLE))
+    assert not thua, f"README ke vai khong co trong role.py: {thua}"
 
 
 def test_slug_that_nhan_ten_persona_hien_tai():
     """N-r2-10: "cape" khong co trong go/slug_cu nen tung tra nguyen "cape".
     Sau LOW-14 "cape" la chinh slug, con "teaser" moi la chu phai bac cau."""
-    assert vai.slug_that("cape") == "cape"
-    assert vai.slug_that("Cape") == "cape"
-    assert vai.slug_that("teaser") == "cape", "slug role cu van phai dung"
-    assert vai.slug_that("jean") == "cape", "persona cu van phai dung"
-    assert vai.slug_that("nova") == "nova"
-    assert vai.slug_that("khong-co") == "khong-co", "khong nhan ra thi tra nguyen van"
+    assert role.canonical_slug("cape") == "cape"
+    assert role.canonical_slug("Cape") == "cape"
+    assert role.canonical_slug("teaser") == "cape", "slug role cu van phai dung"
+    assert role.canonical_slug("jean") == "cape", "persona cu van phai dung"
+    assert role.canonical_slug("nova") == "nova"
+    assert role.canonical_slug("khong-co") == "khong-co", "khong nhan ra thi tra nguyen van"
 
 
 def test_chat_router_TOPIC_PROFILE_khop_ban_dang_ky():
     """ADF-r2-2: bang topic->profile cua chat_router tung chep tay 12 dong; thieu
     vai moi thi chat trong topic do roi ve profile mac dinh, im lang."""
     import chat_router
-    assert set(chat_router.TOPIC_PROFILE) == set(vai.VAI), \
-        set(chat_router.TOPIC_PROFILE) ^ set(vai.VAI)
+    assert set(chat_router.TOPIC_PROFILE) == set(role.ROLE), \
+        set(chat_router.TOPIC_PROFILE) ^ set(role.ROLE)
 
 
 def test_duyet_giao_viec_SLUG_CU_la_chinh_ban_cua_vai():
     """ADF-r2-1: bang chep tay tung ghi de ban dan xuat 21 dong sau."""
-    import duyet_giao_viec as dgv
-    assert dgv.SLUG_CU is vai.SLUG_CU
+    import approve_dispatch as dgv
+    assert dgv.SLUG_OLD is role.SLUG_OLD
 
 
 def test_handle_kenh_mot_ban_hai_kieu_khoa():
     """ADF-r2-9: bob (co @) va kite (khong @) tung cho hai ket qua khac nhau
     voi cung 'blog'."""
     import env_load
-    assert env_load.handle_kenh("blog") == "@donniechublog"
-    assert env_load.handle_kenh("donniechublog") == "@donniechublog"
-    assert env_load.handle_kenh("blog", co_a_cong=False) == "donniechublog"
-    assert env_load.handle_kenh("dcgr", co_a_cong=False).startswith("dcgr")
-    assert env_load.handle_kenh("la").startswith("@")
+    assert env_load.handle_channel("blog") == "@donniechublog"
+    assert env_load.handle_channel("donniechublog") == "@donniechublog"
+    assert env_load.handle_channel("blog", co_a_cong=False) == "donniechublog"
+    assert env_load.handle_channel("dcgr", co_a_cong=False).startswith("dcgr")
+    assert env_load.handle_channel("la").startswith("@")
 
 
 def test_nguong_anh_cua_carousel_khong_troi_khoi_carousel_py():
-    """`vai.py` chep 5/8 cua carousel.py de khong phai import carousel (keo theo
+    """`role.py` chep 5/8 cua carousel.py de khong phai import carousel (keo theo
     card + PIL vao mot ban dang ky phai nhe). Chep thi phai co cong giu."""
     import carousel
-    assert vai.VAI["dre"].anh_toi_thieu == carousel.MIN_SLIDE, \
-        f"vai.py ghi {vai.VAI['dre'].anh_toi_thieu}, carousel.MIN_SLIDE={carousel.MIN_SLIDE}"
-    assert vai.VAI["dre"].anh_toi_thieu_flagship == carousel.FLAGSHIP_MIN, \
-        f"vai.py ghi {vai.VAI['dre'].anh_toi_thieu_flagship}, " \
+    assert role.ROLE["dre"].anh_toi_thieu == carousel.MIN_SLIDE, \
+        f"role.py ghi {role.ROLE['dre'].anh_toi_thieu}, carousel.MIN_SLIDE={carousel.MIN_SLIDE}"
+    assert role.ROLE["dre"].anh_toi_thieu_flagship == carousel.FLAGSHIP_MIN, \
+        f"role.py ghi {role.ROLE['dre'].anh_toi_thieu_flagship}, " \
         f"carousel.FLAGSHIP_MIN={carousel.FLAGSHIP_MIN}"
     # Ca hai vai XEP NHIEU ANH deu di tim toi so slide cua carousel: Dre vi moi
     # slide an mot tam that, Kite vi render_edu cung xep nhieu slide.
     for slug in ("dre", "kite"):
-        assert vai.so_anh_muc_tieu_tim(slug) == carousel.MIN_SLIDE
-        assert vai.so_anh_muc_tieu_tim(slug, flagship=True) == carousel.FLAGSHIP_MIN
+        assert role.search_target_for(slug) == carousel.MIN_SLIDE
+        assert role.search_target_for(slug, flagship=True) == carousel.FLAGSHIP_MIN
 
 
 def test_vai_mot_anh_khong_co_so_luong_de_ap():
     """LOW-12 — Ong Chu: *"carousel la nhieu anh con Ethan lam single image, nen
     'so luong' ko the la thu ap vao duoc"*. `anh_muc_tieu_tim` cua Ethan phai la
     0, tuc engine khong duoc dem tam nao ca ma chi hoi da co anh chinh chua."""
-    assert vai.so_anh_muc_tieu_tim("ethan") == 0
-    assert vai.so_anh_muc_tieu_tim("ethan", flagship=True) == 0, \
+    assert role.search_target_for("ethan") == 0
+    assert role.search_target_for("ethan", flagship=True) == 0, \
         "tin flagship KHONG lam the hero cua Ethan can them anh"
-    assert vai.VAI["ethan"].ti_le_don_max == 1.6 and not vai.VAI["ethan"].chart_don
+    assert role.ROLE["ethan"].ti_le_don_max == 1.6 and not role.ROLE["ethan"].chart_don
 
 
 def _a(**doi) -> dict:
@@ -289,46 +290,46 @@ def _a(**doi) -> dict:
 def test_anh_chinh_duoc_hoi_dung_luat_cua_tung_renderer():
     """Cung mot tam anh, hai vai tra loi khac nhau — va khac dung o cho kho anh
     khac nhau, khong phai o tieu chi chat luong (thu do dung chung, chay o
-    luat_anh + phan_loai truoc khi toi day)."""
+    luat_anh + classify truoc khi toi day)."""
     # Ti le 1.5: qua NGANG_RO (1.4) nen phan_loai KHONG dan nhan "bìa" -> Dre
     # khong lam bia duoc; nhung card.py cho toi 1.6 nen Ethan dung lam nen hero.
     ngang_vua = _a(ti_le=1.5, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
-    assert vai.anh_chinh_duoc("ethan", ngang_vua)
-    assert not vai.anh_chinh_duoc("dre", ngang_vua)
+    assert role.can_be_hero("ethan", ngang_vua)
+    assert not role.can_be_hero("dre", ngang_vua)
     # 16:9 thi ca hai deu chiu.
     ngang_han = _a(ti_le=1.78, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
-    assert not vai.anh_chinh_duoc("ethan", ngang_han)
-    assert not vai.anh_chinh_duoc("dre", ngang_han)
+    assert not role.can_be_hero("ethan", ngang_han)
+    assert not role.can_be_hero("dre", ngang_han)
     # Chart: card.py chan di mot minh.
-    assert not vai.anh_chinh_duoc("ethan", _a(loai="chart", ti_le=1.2))
+    assert not role.can_be_hero("ethan", _a(loai="chart", ti_le=1.2))
     # ...tru bang xep hang, la anh chinh BAT BUOC cua tin do.
-    assert vai.anh_chinh_duoc("ethan", _a(loai="chart", ti_le=1.2, xep_hang={"site": "arena"}))
+    assert role.can_be_hero("ethan", _a(loai="chart", ti_le=1.2, xep_hang={"site": "arena"}))
     # Mat nguoi khong ro ai: khai `nhan_vat` la bia, nen khong phai mot duong dung.
-    assert not vai.anh_chinh_duoc("ethan", _a(mat=1))
-    assert vai.anh_chinh_duoc("ethan", _a(mat=1, alt="Jensen Huang on stage"))
-    assert vai.anh_chinh_duoc("ethan", _a(mat=1, thuong_hieu={"nguoi": "Jensen Huang"}))
+    assert not role.can_be_hero("ethan", _a(mat=1))
+    assert role.can_be_hero("ethan", _a(mat=1, alt="Jensen Huang on stage"))
+    assert role.can_be_hero("ethan", _a(mat=1, thuong_hieu={"nguoi": "Jensen Huang"}))
     # Vision danh rot thi khong vai nao dung.
-    assert not vai.anh_chinh_duoc("ethan", _a(lien_quan=False))
+    assert not role.can_be_hero("ethan", _a(lien_quan=False))
 
 
 def test_du_nguyen_lieu_chi_dem_tam_voi_vai_nhieu_anh():
     mot_hero = [_a()]
-    assert vai.du_nguyen_lieu("ethan", mot_hero), \
+    assert role.has_enough_material("ethan", mot_hero), \
         "Ethan co mot tam lam hero duoc la du — the cua anh ta chi dung MOT anh"
-    assert not vai.du_nguyen_lieu("dre", mot_hero), \
+    assert not role.has_enough_material("dre", mot_hero), \
         "Dre co bia nhung moi mot tam: van thieu 4 slide"
     nam_ngang = [_a(ti_le=1.78, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
                  for _ in range(5)]
-    assert not vai.du_nguyen_lieu("ethan", nam_ngang), \
+    assert not role.has_enough_material("ethan", nam_ngang), \
         "5 anh ngang 16:9 khong cho Ethan mot duong nao — dung su co LOW-12"
-    assert not vai.du_nguyen_lieu("dre", nam_ngang), "du 5 tam nhung khong co bia"
-    assert not vai.du_nguyen_lieu("dre", [_a() for _ in range(5)]), "tin thuong can 6 slide (12/09/2026)"
-    assert vai.du_nguyen_lieu("dre", [_a() for _ in range(6)])
-    assert not vai.du_nguyen_lieu("dre", [_a() for _ in range(6)], flagship=True), \
+    assert not role.has_enough_material("dre", nam_ngang), "du 5 tam nhung khong co bia"
+    assert not role.has_enough_material("dre", [_a() for _ in range(5)]), "tin thuong can 6 slide (12/09/2026)"
+    assert role.has_enough_material("dre", [_a() for _ in range(6)])
+    assert not role.has_enough_material("dre", [_a() for _ in range(6)], flagship=True), \
         "tin flagship can 7 slide"
     # Vai la -> luat cua vai anh mac dinh, khong nem.
-    assert vai.du_nguyen_lieu("khong-co-vai-nay", mot_hero) == vai.du_nguyen_lieu(
-        vai.MAC_DINH_ANH, mot_hero)
+    assert role.has_enough_material("khong-co-vai-nay", mot_hero) == role.has_enough_material(
+        role.DEFAULT_IMAGE, mot_hero)
 
 
 def test_so_anh_toi_thieu_theo_tung_vai():
@@ -336,23 +337,23 @@ def test_so_anh_toi_thieu_theo_tung_vai():
     2 anh cua Ethan bi bao thieu anh va Ong Chu doc thay "carousel can toi thieu
     5 slide" tren task cua Ethan. Ethan can DUNG MOT anh (card.py), Kite ve
     vector nen cung mot anh la du; chi Dre moi can 6, va 7 khi tin flagship (12/09/2026)."""
-    assert vai.so_anh_toi_thieu("ethan") == 1
-    assert vai.so_anh_toi_thieu("ethan", flagship=True) == 1, \
+    assert role.min_images("ethan") == 1
+    assert role.min_images("ethan", flagship=True) == 1, \
         "tin flagship KHONG lam the hero cua Ethan can them anh"
-    assert vai.so_anh_toi_thieu("kite") == 1
-    assert vai.so_anh_toi_thieu("dre") == 6, "Ong Chu 12/09/2026: tin thuong 6"
-    assert vai.so_anh_toi_thieu("dre", flagship=True) == 7, "Ong Chu 12/09/2026: flagship 7"
+    assert role.min_images("kite") == 1
+    assert role.min_images("dre") == 6, "Ong Chu 12/09/2026: tin thuong 6"
+    assert role.min_images("dre", flagship=True) == 7, "Ong Chu 12/09/2026: flagship 7"
     # Vai la (sidecar hong, chay tay) -> nguong cua vai anh mac dinh, khong nem.
-    assert vai.so_anh_toi_thieu("") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)
-    assert vai.so_anh_toi_thieu("khong-co-vai-nay") == vai.so_anh_toi_thieu(vai.MAC_DINH_ANH)
+    assert role.min_images("") == role.min_images(role.DEFAULT_IMAGE)
+    assert role.min_images("khong-co-vai-nay") == role.min_images(role.DEFAULT_IMAGE)
 
 
 def test_don_vi_san_goi_dung_ten_san_pham():
     """Goi the don cua Ethan la "slide" chinh la thu doc ra thanh "Ethan khong
     tao duoc slide" (su co 10/09/2026)."""
-    assert vai.don_vi_san("ethan") == "ảnh"
-    assert vai.don_vi_san("dre") == "slide"
-    assert vai.don_vi_san("kite") == "slide"
+    assert role.product_unit_for("ethan") == "ảnh"
+    assert role.product_unit_for("dre") == "slide"
+    assert role.product_unit_for("kite") == "slide"
 
 
 if __name__ == "__main__":
@@ -367,49 +368,49 @@ if __name__ == "__main__":
 
 def test_vai_viet_di_theo_vai_quet():
     """Dieu Ong Chu chot: nguoi viet di theo vai QUET, khong theo vai anh."""
-    assert vai.vai_viet_cua("finn") == "jika", "Finn -> Jika"
-    assert vai.vai_viet_cua("nova") == "jika", "Nova -> Jika"
-    assert vai.vai_viet_cua("vera") == "miles", "Vera -> Miles"
+    assert role.writer_for("finn") == "jika", "Finn -> Jika"
+    assert role.writer_for("nova") == "jika", "Nova -> Jika"
+    assert role.writer_for("vera") == "miles", "Vera -> Miles"
 
 
 def test_vai_viet_theo_brand_khi_khong_biet_vai_quet():
     """Duong `approve_service push` chi co draft_id + category, khong cam vai
     quet — no phai ra dung nguoi viet bang brand."""
     for b in ("blog", "donniechublog"):
-        assert vai.vai_viet_cua(None, b) == "jika", b
+        assert role.writer_for(None, b) == "jika", b
     for b in ("dcgr", "dcgr.tech"):
-        assert vai.vai_viet_cua(None, b) == "miles", b
+        assert role.writer_for(None, b) == "miles", b
 
 
 def test_vai_quet_thang_brand_khi_hai_ben_khac_nhau():
     """Vai quet chinh xac hon brand: no noi ve LINH VUC that cua tin."""
-    assert vai.vai_viet_cua("vera", "blog") == "miles"
-    assert vai.vai_viet_cua("nova", "dcgr") == "jika"
+    assert role.writer_for("vera", "blog") == "miles"
+    assert role.writer_for("nova", "dcgr") == "jika"
 
 
 def test_vai_viet_khong_biet_gi_thi_ve_mac_dinh():
-    assert vai.vai_viet_cua() == vai.MAC_DINH_VIET
-    assert vai.vai_viet_cua("khong-co", "khong-co") == vai.MAC_DINH_VIET
+    assert role.writer_for() == role.DEFAULT_WRITE
+    assert role.writer_for("khong-co", "khong-co") == role.DEFAULT_WRITE
 
 
 def test_moi_nguoi_viet_duoc_tro_toi_deu_co_that_va_la_vai_viet():
     """Go nham slug trong hai bang dinh tuyen = task giao cho profile khong ton
     tai (su co 01/09/2026 nam 'ready' hai ngay)."""
     xau = []
-    for ten, bang in (("VIET_THEO_QUET", vai.VIET_THEO_QUET),
-                      ("VIET_THEO_BRAND", vai.VIET_THEO_BRAND)):
+    for ten, bang in (("WRITE_BY_SCAN", role.WRITE_BY_SCAN),
+                      ("WRITE_BY_BRAND", role.WRITE_BY_BRAND)):
         for khoa, slug in bang.items():
-            v = vai.VAI.get(slug)
+            v = role.ROLE.get(slug)
             if v is None or not v.viet:
                 xau.append(f"{ten}[{khoa!r}] -> {slug!r} khong phai vai viet")
     assert not xau, xau
 
 
 def test_moi_vai_quet_that_deu_co_nguoi_viet():
-    """Vai quet nao co manifest chay that thi phai co ten trong VIET_THEO_QUET,
+    """Vai quet nao co manifest chay that thi phai co ten trong WRITE_BY_SCAN,
     khong duoc roi ve mac dinh im lang."""
-    import duyet_chon_tin
-    thieu = sorted(set(duyet_chon_tin.MANIFEST_THEO_TOPIC) - set(vai.VIET_THEO_QUET))
+    import approve_pick
+    thieu = sorted(set(approve_pick.MANIFEST_BY_TOPIC) - set(role.WRITE_BY_SCAN))
     assert not thieu, f"vai quet khong biet giao cho ai viet: {thieu}"
 
 
@@ -418,14 +419,14 @@ def test_hai_bang_dinh_tuyen_khong_mau_thuan_voi_the_trien_khai_hom_nay():
     ket qua. Lech = mot ben da doi ma ben kia quen (vd chuyen Nova sang dcgr)."""
     brand_cua_quet = {"finn": "blog", "nova": "blog", "vera": "dcgr"}
     for quet, brand in brand_cua_quet.items():
-        assert vai.vai_viet_cua(quet) == vai.vai_viet_cua(None, brand),             f"{quet} ({brand}): bang theo quet va bang theo brand lech nhau"
+        assert role.writer_for(quet) == role.writer_for(None, brand),             f"{quet} ({brand}): bang theo quet va bang theo brand lech nhau"
 
 
 def test_ten_brand_khop_chinh_ta_cua_env_load():
-    """VIET_THEO_BRAND chep chinh ta brand thay vi import env_load (giu ban dang
+    """WRITE_BY_BRAND chep chinh ta brand thay vi import env_load (giu ban dang
     ky nhe). Chep thi phai co cong giu hai ban khong troi khoi nhau."""
     import env_load
-    for ngan, dai in env_load.BRAND_DAI.items():
-        assert ngan in vai.VIET_THEO_BRAND, f"thieu khoa container {ngan!r}"
-        assert dai in vai.VIET_THEO_BRAND, f"thieu slug dai {dai!r}"
-        assert vai.VIET_THEO_BRAND[ngan] == vai.VIET_THEO_BRAND[dai],             f"{ngan!r} va {dai!r} la MOT brand ma tro toi hai nguoi viet"
+    for ngan, dai in env_load.BRAND_LONG.items():
+        assert ngan in role.WRITE_BY_BRAND, f"thieu khoa container {ngan!r}"
+        assert dai in role.WRITE_BY_BRAND, f"thieu slug dai {dai!r}"
+        assert role.WRITE_BY_BRAND[ngan] == role.WRITE_BY_BRAND[dai],             f"{ngan!r} va {dai!r} la MOT brand ma tro toi hai nguoi viet"

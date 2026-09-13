@@ -2,8 +2,8 @@
 """NOI DUY NHAT biet ruot cua hermes-agent: kanban.db va hermes_cli.
 
 Vi sao (audit_content_team C2): truoc 09/09/2026 tri thuc ve kanban.db nam rai
-o nam tep — duyet_giao_viec.py (4 cau SQL), duyet_chat.py, nhat_ky.py,
-ada_chuan_bi.py — moi tep tu mo sqlite, tu viet ten bang va ten cot, tu chiu
+o nam tep — approve_dispatch.py (4 cau SQL), approve_chat.py, journal.py,
+ada_prepare.py — moi tep tu mo sqlite, tu viet ten bang va ten cot, tu chiu
 loi mot kieu. kanban.db la bang cua TIEN TRINH KHAC: hermes co quyen doi schema
 bat cu luc nao, va da doi. Khi do phai di sua nam cho, ma quen mot cho thi cho
 do hong CAM (tra ve rong, khong ai bao) — dung lop loi C1 goi la "hong cam
@@ -33,7 +33,7 @@ def kanban_db() -> Path:
     return Path(env_load.hermes_home()) / "kanban.db"
 
 
-def co_kanban() -> bool:
+def has_kanban() -> bool:
     """Container nay CO kanban khong.
 
     Tach khoi "doc khong duoc": khong co kanban.db la mot cau hinh hop le (brand
@@ -53,7 +53,7 @@ _COT_LAN_CHAY = (("summary", "tom_tat"), ("error", "loi"),
                  ("id", "id_lan_chay"))      # id de bao MOI lan timed_out dung mot lan
 
 
-def _mo(db=None):
+def _open(db=None):
     """Ket noi CHI DOC toi kanban.db, None neu khong mo duoc.
 
     `mode=ro` vi day la DB cua tien trinh khac dang ghi: mo ghi la co nguy co
@@ -70,9 +70,9 @@ def _mo(db=None):
         return None
 
 
-def _hoi(cau: str, tham=(), buoc: str = "doc kanban", db=None):
+def _ask(cau: str, tham=(), buoc: str = "doc kanban", db=None):
     """Chay mot cau SELECT, tra ve list hang tho — None neu khong doc duoc."""
-    con = _mo(db)
+    con = _open(db)
     if con is None:
         return None
     try:
@@ -95,17 +95,17 @@ _COT_DUNG_MODEL = ("model", "api_call_count", "input_tokens", "output_tokens",
 _COT_PHIEN = ("title", "tool_call_count", "input_tokens", "api_call_count", "started_at")
 
 
-def state_db_cac_profile(home=None):
+def state_db_each_profile(home=None):
     """Moi profiles/*/state.db duoi mot HERMES_HOME (mac dinh: container hien tai)."""
     goc = Path(home) if home else Path(env_load.hermes_home())
     return sorted(goc.glob("profiles/*/state.db"))
 
 
-def dung_theo_model(state_db, tu_ts, den_ts):
+def use_by_model(state_db, tu_ts, den_ts):
     """Tong token/api theo model cua mot profile trong [tu_ts, den_ts) —
     list dict {model, api, in, out, cache, reasoning, phien}; [] neu khong co;
     None neu khong doc duoc (C1: hong moi truong phai lo ra, khac voi rong)."""
-    hang = _hoi("select model, sum(api_call_count), sum(input_tokens), sum(output_tokens), "
+    hang = _ask("select model, sum(api_call_count), sum(input_tokens), sum(output_tokens), "
                 "sum(cache_read_tokens), sum(reasoning_tokens), count(distinct session_id) "
                 "from session_model_usage where last_seen >= ? and last_seen < ? group by model",
                 (tu_ts, den_ts), buoc=f"doc session_model_usage {Path(state_db).parent.name}",
@@ -116,16 +116,16 @@ def dung_theo_model(state_db, tu_ts, den_ts):
              "reasoning": r or 0, "phien": p or 0} for m, api, i, o, c, r, p in hang]
 
 
-def tom_tat_phien(state_db, tu_ts, so_top=2):
+def summary_session(state_db, tu_ts, so_top=2):
     """Dem phien cua mot profile tu `tu_ts`: dict {phien, tool, input, api, top}
     (top = [(tieu_de, tool, input)] so_top phien nang nhat); None neu khong doc duoc."""
     ten = Path(state_db).parent.name
-    tong = _hoi("select count(*), coalesce(sum(tool_call_count),0), coalesce(sum(input_tokens),0), "
+    tong = _ask("select count(*), coalesce(sum(tool_call_count),0), coalesce(sum(input_tokens),0), "
                 "coalesce(sum(api_call_count),0) from sessions where started_at>=?",
                 (tu_ts,), buoc=f"doc sessions {ten}", db=state_db)
     if tong is None:
         return None
-    top = _hoi("select coalesce(title,''), tool_call_count, input_tokens from sessions "
+    top = _ask("select coalesce(title,''), tool_call_count, input_tokens from sessions "
                "where started_at>=? order by input_tokens desc limit ?",
                (tu_ts, so_top), buoc=f"doc sessions top {ten}", db=state_db)
     if top is None:
@@ -135,7 +135,7 @@ def tom_tat_phien(state_db, tu_ts, so_top=2):
             "top": [(t[:40], tc, it) for t, tc, it in top]}
 
 
-def tao_task(title, assignee, body, parent=None, max_runtime="25m"):
+def create_task(title, assignee, body, parent=None, max_runtime="25m"):
     """Tao mot task kanban qua CLI cua hermes. Tra (task_id, loi).
 
     Day la noi DUY NHAT biet hinh dang lenh `hermes kanban create` — co nao,
@@ -176,7 +176,7 @@ def tao_task(title, assignee, body, parent=None, max_runtime="25m"):
         return None, r.stdout[-300:]
 
 
-def viec(tu_ts=None, vai=None, so=None, moi_truoc=False):
+def job(tu_ts=None, vai=None, so=None, moi_truoc=False):
     """Danh sach task da chuan hoa; None neu khong doc duoc kanban.db.
 
     tu_ts     chi lay task tao TU moc thoi gian nay (epoch giay)
@@ -198,34 +198,34 @@ def viec(tu_ts=None, vai=None, so=None, moi_truoc=False):
     if so is not None:
         cau += " LIMIT ?"                       # tham so hoa, khong noi chuoi
         tham.append(int(so))
-    hang = _hoi(cau, tuple(tham), "doc danh sach task")
+    hang = _ask(cau, tuple(tham), "doc danh sach task")
     if hang is None:
         return None
     return [dict(zip([k for _, k in _COT_VIEC], h)) for h in hang]
 
 
-def mot_viec(tid):
+def one_job(tid):
     """Task theo id, da chuan hoa. None neu khong doc duoc HOAC khong co."""
-    hang = _hoi("SELECT " + ", ".join(c for c, _ in _COT_VIEC)
+    hang = _ask("SELECT " + ", ".join(c for c, _ in _COT_VIEC)
                 + " FROM tasks WHERE id = ?", (tid,), f"doc task {tid}")
     if not hang:
         return None
     return dict(zip([k for _, k in _COT_VIEC], hang[0]))
 
 
-def trang_thai(tid):
+def status(tid):
     """Trang thai hien tai cua mot task ('' neu khong ro, None neu khong doc
     duoc kanban.db)."""
     if not tid:
         return ""
-    hang = _hoi("SELECT status FROM tasks WHERE id = ?", (tid,),
+    hang = _ask("SELECT status FROM tasks WHERE id = ?", (tid,),
                 f"doc trang thai {tid}")
     if hang is None:
         return None
     return hang[0][0] if hang else ""
 
 
-def dem_dang_chay(tru_tid=None):
+def count_form_run(tru_tid=None):
     """So task dang xep hang / dang chay (de noi "xep hang sau N viec").
 
     None neu khong doc duoc kanban.db — nguoi goi PHAI phan biet voi 0 ("khong
@@ -235,25 +235,25 @@ def dem_dang_chay(tru_tid=None):
     if tru_tid:
         cau += " AND id != ?"
         tham = (tru_tid,)
-    hang = _hoi(cau, tham, "dem viec dang chay")
+    hang = _ask(cau, tham, "dem viec dang chay")
     return None if hang is None else hang[0][0]
 
 
-def lan_chay_cuoi(tid):
+def last_run(tid):
     """Lan chay CUOI CUNG cua mot task, da chuan hoa:
     {tom_tat, loi, trang_thai, metadata} — metadata luon la dict.
     None neu khong doc duoc; {} neu task chua co lan chay nao."""
     if not tid:
         return {}
-    hang = _hoi("SELECT " + ", ".join(c for c, _ in _COT_LAN_CHAY)
+    hang = _ask("SELECT " + ", ".join(c for c, _ in _COT_LAN_CHAY)
                 + " FROM task_runs WHERE task_id = ? ORDER BY id DESC LIMIT 1",
                 (tid,), f"doc lan chay cua {tid}")
     if hang is None:
         return None
-    return _chuan_hoa_lan_chay(hang[0]) if hang else {}
+    return _standard_ify_run(hang[0]) if hang else {}
 
 
-def _chuan_hoa_lan_chay(hang):
+def _standard_ify_run(hang):
     """Mot hang task_runs -> dict cua ta; `metadata` LUON la dict.
 
     hermes ghi metadata la chuoi JSON, nhung da tung ghi ca NULL lan chuoi
@@ -277,10 +277,10 @@ def _chuan_hoa_lan_chay(hang):
 # task_runs cua run dang mo; "con song khong" lay tu last_heartbeat_at/worker_pid
 # — ca hai deu co san trong kanban.db, truoc day khong ai SELECT.
 
-def moc_lan_chay(db=None):
+def run_start(db=None):
     """{task_id: (started_at cua run dang mo, run_id)} cho moi task 'running'.
     {} neu khong co; None neu khong doc duoc."""
-    hang = _hoi("SELECT t.id, r.started_at, r.id FROM tasks t "
+    hang = _ask("SELECT t.id, r.started_at, r.id FROM tasks t "
                 "JOIN task_runs r ON r.id = t.current_run_id "
                 "WHERE t.status = 'running'", (), "doc moc lan chay", db=db)
     if hang is None:
@@ -288,7 +288,7 @@ def moc_lan_chay(db=None):
     return {h[0]: (h[1], h[2]) for h in hang}
 
 
-def nhip_tho(tids, db=None):
+def heartbeat(tids, db=None):
     """{task_id: (last_heartbeat_at, worker_pid)} — {} neu khong co; None neu
     khong doc duoc (kanban.db cu chua co cot thi cung ve None, nguoi goi coi
     nhu 'khong biet', khong phai 'da chet')."""
@@ -298,7 +298,7 @@ def nhip_tho(tids, db=None):
     ra = {}
     for i in range(0, len(tids), 400):
         lo = tids[i:i + 400]
-        hang = _hoi("SELECT id, last_heartbeat_at, worker_pid FROM tasks "
+        hang = _ask("SELECT id, last_heartbeat_at, worker_pid FROM tasks "
                     "WHERE id IN (" + ",".join("?" * len(lo)) + ")",
                     tuple(lo), "doc nhip tho", db=db)
         if hang is None:
@@ -308,7 +308,7 @@ def nhip_tho(tids, db=None):
     return ra
 
 
-def pid_song(pid) -> bool | None:
+def pid_alive(pid) -> bool | None:
     """True/False neu kiem duoc; None neu khong co pid. Cung may voi hermes
     (approve_service chay canh gateway) nen `os.kill(pid, 0)` co nghia."""
     if not pid:
@@ -321,16 +321,16 @@ def pid_song(pid) -> bool | None:
         return True
     return True
 
-def dem_xong_theo_vai(tu_ts, den_ts, db=None):
+def count_done_by_role(tu_ts, den_ts, db=None):
     """{vai: so task 'done' xong trong khoang [tu_ts, den_ts)} — None neu khong
     doc duoc. `db` de doc kanban cua brand KHAC (theo_doi_9router quet ca hai)."""
-    hang = _hoi("SELECT assignee, count(*) FROM tasks WHERE status='done' "
+    hang = _ask("SELECT assignee, count(*) FROM tasks WHERE status='done' "
                 "AND completed_at >= ? AND completed_at < ? GROUP BY assignee",
                 (int(tu_ts), int(den_ts)), "dem task xong theo vai", db=db)
     return None if hang is None else {h[0]: h[1] for h in hang}
 
 
-def lan_chay_cuoi_nhieu(tids):
+def last_run_many(tids):
     """{task_id: lan_chay_cuoi} cho nhieu task trong MOT luot doc.
 
     nhat_ky/ada_chuan_bi duyet hang tram task mot ngay; goi lan_chay_cuoi()
@@ -342,12 +342,12 @@ def lan_chay_cuoi_nhieu(tids):
     for i in range(0, len(tids), 400):          # SQLite gioi han so tham so
         lo = tids[i:i + 400]
         cho = ",".join("?" * len(lo))
-        hang = _hoi(
+        hang = _ask(
             "SELECT task_id, " + ", ".join(c for c, _ in _COT_LAN_CHAY)
             + " FROM task_runs WHERE task_id IN (" + cho + ") "
               "ORDER BY id ASC", tuple(lo), "doc lan chay hang loat")
         if hang is None:
             return None
         for h in hang:                          # ASC nen ban sau de len ban truoc
-            ra[h[0]] = _chuan_hoa_lan_chay(h[1:])
+            ra[h[0]] = _standard_ify_run(h[1:])
     return ra

@@ -2,12 +2,12 @@
 """Duyệt ảnh (imgok) tạo task viết cho Miles/Jika — topic của người viết phải
 biết NGAY, không phải đợi dispatcher (poll 50-60s + hàng đợi).
 
-Đây là lỗ hổng CÙNG LOẠI với LOW-28 (`_bao_da_nhan` ở duyệt chọn số), nhưng ở
-một đường XẢY RA NHIỀU HƠN NHIỀU: mọi tấm ảnh được duyệt đều đi qua `_nut_duyet`,
+Đây là lỗ hổng CÙNG LOẠI với LOW-28 (`_report_already_label` ở duyệt chọn số), nhưng ở
+một đường XẢY RA NHIỀU HƠN NHIỀU: mọi tấm ảnh được duyệt đều đi qua `_button_approve`,
 trong khi lệnh chọn số chỉ xảy ra vài lần một ngày. Ông Chủ 12/09/2026: *"tất cả
 các role đều cần trả lời 'đã gửi [task] cho [name]' và 'đã nhận [task] từ
 [name]', còn khi nào bắt tay vào làm thì sẽ thông báo 'đã bắt đầu ...'"* — vế
-"đã bắt đầu" đã có sẵn (`bao_tien_do_kanban`, dòng ▶️ khi dispatcher chạy thật);
+"đã bắt đầu" đã có sẵn (`report_progress_kanban`, dòng ▶️ khi dispatcher chạy thật);
 vế "đã nhận" ở topic người viết thì thiếu hẳn trên đường này.
 
 Chay:  venv/bin/python tests/test_bao_nhan_viet.py
@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import duyet_bai as db                                          # noqa: E402
+import approve_post as db                                          # noqa: E402
 
 
 def _dung(tmp: Path, *, vai_anh="dre", vai_viet="miles", root_task=None):
@@ -36,7 +36,7 @@ def _dung(tmp: Path, *, vai_anh="dre", vai_viet="miles", root_task=None):
 
 
 def _goi(tmp: Path, *, vai_anh="dre", vai_viet="miles", kanban_loi=None):
-    """Goi that db._nut_duyet(...) voi moi phu thuoc ngoai da thay gia. Tra ve
+    """Goi that db._button_approve(...) voi moi phu thuoc ngoai da thay gia. Tra ve
     (note, cac_lan_goi_bao_nhan, cac_lan_tao_task)."""
     draft_id, wp = _dung(tmp, vai_anh=vai_anh, vai_viet=vai_viet)
     goi_bao_nhan = []
@@ -46,21 +46,21 @@ def _goi(tmp: Path, *, vai_anh="dre", vai_viet="miles", kanban_loi=None):
         goi_tao_task.append((tieu, vai, body, parent))
         return (None, kanban_loi) if kanban_loi else ("t_writer1", None)
 
-    cu = (db.DRAFTS, db.kanban_create, db._bao_nhan_viec, db._trang_thai_task, db.call)
+    cu = (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call)
     db.DRAFTS = tmp
     db.kanban_create = _kanban_gia
-    db._bao_nhan_viec = lambda *a, **k: goi_bao_nhan.append((a, k))
-    db._trang_thai_task = lambda _tid: "done"          # cha coi nhu da xong
+    db._report_receive_job = lambda *a, **k: goi_bao_nhan.append((a, k))
+    db._status_task = lambda _tid: "done"          # cha coi nhu da xong
     db.call = lambda *a, **k: {"ok": True}
     try:
-        note = db._nut_duyet("tok", -100, draft_id, {"id": "cbq1"}, wp)
+        note = db._button_approve("tok", -100, draft_id, {"id": "cbq1"}, wp)
     finally:
-        db.DRAFTS, db.kanban_create, db._bao_nhan_viec, db._trang_thai_task, db.call = cu
+        db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call = cu
     return note, goi_bao_nhan, goi_tao_task
 
 
 def test_duyet_anh_bao_ngay_cho_topic_nguoi_viet():
-    """Cot loi cua ticket: tao task viet thanh cong -> PHAI goi _bao_nhan_viec
+    """Cot loi cua ticket: tao task viet thanh cong -> PHAI goi _report_receive_job
     mot lan, khong duoc im lang cho toi dispatcher."""
     with tempfile.TemporaryDirectory() as t:
         _note, goi_bao_nhan, goi_tao_task = _goi(Path(t))
@@ -82,7 +82,7 @@ def test_bao_nhan_dung_chat_va_vai_viet():
 
 def test_bao_nhan_neu_ro_chuyen_tu_vai_anh():
     """Nguoi viet doc duoc NGAY tu ai chuyen sang — dung 'tu_vai' cua
-    _bao_nhan_viec (da co san co che 'chuyển từ X'), khong phai chuoi rieng."""
+    _report_receive_job (da co san co che 'chuyển từ X'), khong phai chuoi rieng."""
     with tempfile.TemporaryDirectory() as t:
         _note, goi_bao_nhan, _ = _goi(Path(t), vai_anh="dre", vai_viet="miles")
     args, _kw = goi_bao_nhan[0]
@@ -91,15 +91,15 @@ def test_bao_nhan_neu_ro_chuyen_tu_vai_anh():
 
 
 def test_note_noi_da_gui_khong_phai_da_bat_dau():
-    """Ong Chu 12/09/2026: 'gui' va 'bat dau' la HAI moc khac nhau — dispatcher
-    (bao_tien_do_kanban, dong ▶️) moi la nguoi bao 'bat dau' THAT, khi task
+    """Ong Chu 12/09/2026: 'send' va 'bat dau' la HAI moc khac nhau — dispatcher
+    (report_progress_kanban, dong ▶️) moi la nguoi bao 'bat dau' THAT, khi task
     chuyen sang running. Cau tra loi ngay luc duyet khong duoc noi truoc
     'bắt đầu' vi task con dang xep hang, chua chac ai dong cham toi ngay."""
     with tempfile.TemporaryDirectory() as t:
         note, _, _ = _goi(Path(t))
     assert "đã gửi" in note, f"note phai noi 'đã gửi', dang la: {note!r}"
     assert "bắt đầu" not in note, \
-        f"note KHONG duoc noi 'bắt đầu' — do la viec cua bao_tien_do_kanban: {note!r}"
+        f"note KHONG duoc noi 'bắt đầu' — do la viec cua report_progress_kanban: {note!r}"
 
 
 def test_khong_bao_khi_tao_task_that_bai():
@@ -121,16 +121,16 @@ def test_khong_bao_lai_khi_bam_nut_lan_hai():
         wp.write_text(json.dumps(w), encoding="utf-8")
 
         goi_bao_nhan = []
-        cu = (db.DRAFTS, db._bao_nhan_viec, db._trang_thai_task, db.link_ket_qua, db.call)
+        cu = (db.DRAFTS, db._report_receive_job, db._status_task, db.link_result, db.call)
         db.DRAFTS = tmp
-        db._bao_nhan_viec = lambda *a, **k: goi_bao_nhan.append((a, k))
-        db._trang_thai_task = lambda _tid: "running"
-        db.link_ket_qua = lambda _tid: ""
+        db._report_receive_job = lambda *a, **k: goi_bao_nhan.append((a, k))
+        db._status_task = lambda _tid: "running"
+        db.link_result = lambda _tid: ""
         db.call = lambda *a, **k: {"ok": True}
         try:
-            db._nut_duyet("tok", -100, draft_id, {"id": "cbq1"}, wp)
+            db._button_approve("tok", -100, draft_id, {"id": "cbq1"}, wp)
         finally:
-            db.DRAFTS, db._bao_nhan_viec, db._trang_thai_task, db.link_ket_qua, db.call = cu
+            db.DRAFTS, db._report_receive_job, db._status_task, db.link_result, db.call = cu
     assert goi_bao_nhan == [], f"bam lai nut cu KHONG duoc bao nhan lan nua: {goi_bao_nhan}"
 
 
