@@ -121,6 +121,53 @@ def _la_thuoc_tinh(pp, p, t, alias: str, old: str) -> bool:
             and pp.type == tokenize.NAME and pp.string == alias)
 
 
+def _va_fstring(root: Path, mod: str, old: str, new: str) -> int:
+    """rope (1.14, Python 3.12) KHONG doi ten nam TRONG o `{…}` cua f-string
+    (lo 3: `f"… ({CO_MIN}px)"` trong itachi_nop, `{GIONG.get(brand)}` trong
+    miles_chuan_bi -> pyflakes undefined name). Token: NAME==old giua
+    FSTRING_START/END — bare trong chinh module hoac tep co `from mod import new`
+    (rope da doi dong import), hoac `alias.old` voi alias tro toi module."""
+    fs, fe = getattr(tokenize, "FSTRING_START", None), getattr(tokenize, "FSTRING_END", None)
+    if fs is None:
+        return 0
+    base = mod.split(".")[-1]
+    tep_mod = root / (mod.replace(".", "/") + ".py")
+    n = 0
+    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+        s = f.read_text(encoding="utf-8")
+        if old not in s or "f\"" not in s and "f'" not in s:
+            continue
+        alias = _alias_module(s, {base})
+        tu_import = re.search(rf"^\s*from\s+{re.escape(mod)}\s+import\s+\(?[^\n]*\b{re.escape(new)}\b", s, re.M) is not None
+        chinh = f.resolve() == tep_mod.resolve()
+        try:
+            toks = list(tokenize.generate_tokens(iter(s.splitlines(True)).__next__))
+        except (tokenize.TokenError, SyntaxError):
+            continue
+        sau, doi = 0, []
+        for i, t in enumerate(toks):
+            if t.type == fs:
+                sau += 1
+            elif t.type == fe:
+                sau -= 1
+            elif sau > 0 and t.type == tokenize.NAME and t.string == old:
+                p, pp = toks[i - 1], toks[i - 2] if i > 1 else None
+                if p.string == ".":
+                    if pp is not None and pp.type == tokenize.NAME and pp.string in alias:
+                        doi.append(t)
+                elif chinh or tu_import:
+                    doi.append(t)
+        if not doi:
+            continue
+        lines = s.splitlines(True)
+        for t in reversed(doi):
+            (r, c0), c1 = t.start, t.end[1]
+            lines[r - 1] = lines[r - 1][:c0] + new + lines[r - 1][c1:]
+        f.write_text("".join(lines), encoding="utf-8")
+        n += len(doi)
+    return n
+
+
 def _va_ngoai_rope_module(root: Path, mod: str, base_moi: str) -> int:
     """Sau rope doi TEN TEP mod -> base_moi: trong tep ngoai rope, `import mod` va
     `mod.` -> ten moi."""
@@ -474,6 +521,9 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
         thay_dong.append((rf"(patch\([\"']([\w.]*)\.){re.escape(old)}(?=[\"'])", new, re_exp))
     if mod_moi and mc != mm:                   # `modcũ.tên_giữ_nguyên` -> `modmới.tên`
         thay.append((rf"(?<![\w]){re.escape(mc)}(?=\\?\.[A-Za-z_])", mm))
+        # Test chay ma Python trong CHUOI (subprocess -c "import bat_buoc; …") — lo 3.
+        thay.append((rf"(?<![\w.])import {re.escape(mc)}(?![\w])", f"import {mm}"))
+        thay.append((rf"(?<![\w.])from {re.escape(mod_cu)} import(?![\w])", f"from {mod_moi} import"))
     # Tên TRẦN trong ngoặc kép ("du_nguyen_lieu") — test soi AST hỏi tên hàm.
     # CHỈ khi tên đó không phải khoá dict/JSON ở đâu trong mã (m["xep_hang"],
     # .get("xep_hang"), "xep_hang":) — khoá trên đĩa không được đổi.
@@ -587,7 +637,8 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
             _log(f"  !! không tìm thấy định nghĩa {old} — bỏ qua")
             continue
         tep = _rope_rename(proj, res_path, off, new)
-        k = _va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
+        k = (_va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
+             + _va_fstring(root, mod, old, new))
         _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 2) hằng số
     for old, new in consts:
@@ -597,7 +648,8 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
             _log(f"  !! không tìm thấy hằng {old} — bỏ qua")
             continue
         tep = _rope_rename(proj, res_path, off, new)
-        k = _va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
+        k = (_va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
+             + _va_fstring(root, mod, old, new))
         _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 3) tên tệp module (chỉ tên tệp, không đổi thư mục gói ở đây)
     if mod_moi:
