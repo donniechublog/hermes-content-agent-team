@@ -23,7 +23,7 @@ from duyet_co_so import (  # noqa: E402
     BRAND, DRAFTS, ROOT, STATE_DIR, _ghi_json, _gui_chu, _nap_json, _reply_that, call, log,
 )
 from duyet_giao_viec import (  # noqa: E402
-    BANG_DEN_NHAC, MAC_DINH_ANH, MAC_DINH_VIET, TEN_SANG_CAP, TEN_VAI_ANH, VAI_CAROUSEL, VAI_EDU, _bang_den_root, _bao_nhan_viec, chuan_nhan, kanban_create,
+    BANG_DEN_NHAC, MAC_DINH_ANH, TEN_SANG_CAP, TEN_VAI_ANH, VAI_CAROUSEL, VAI_EDU, _bang_den_root, _bao_nhan_viec, chuan_nhan, kanban_create,
 )
 # Khuon body task (van ban dai) tach sang task_bodies.py — xem ghi chu o do.
 import task_bodies                                            # noqa: E402
