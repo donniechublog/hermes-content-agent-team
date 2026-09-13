@@ -461,16 +461,32 @@ def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
     ra = [{"url": link, "loai": "gốc", "tieu_de": tieu_de}]
     # Tim kiem CHI bang tieng Anh (xem luat o tren). `ten` rong -> khong hoi feed nao.
     ten = tieu_de_tim(tieu_de, link)
-    its = []
+    its, co_link_gn = [], set()
     if ten:
-        try:
-            its = ET.fromstring(_tai(GNEWS.format(q=up.quote(ten)), 25).content
-                                ).findall(".//item")
-        except Exception as e:                               # noqa: BLE001
-            print(f"[nguon_bai] google news hong: {type(e).__name__}", file=sys.stderr)
+        # THU CA CAU NGAN, khong chi headline day du (Ong Chu 13/09/2026: do
+        # that Moonshot/Kimi K3 — headline day du cua chinh TechCrunch chi keo
+        # ve mot vai mien; cau ngan "Kimi Moonshot AI"/"Kimi maker Moonshot AI"
+        # (_truy_van_bing sinh ra, von chi dung cho Bing) keo ve them SCMP/
+        # Bloomberg/CNBC/Reuters ma headline day du BO SOT — cung mot dang loi
+        # da biet o Bing (_truy_van_bing doc noi "truy van day du -> 1 bai"),
+        # chua bao gio ap sang Google News. Dung theo THU TU cua ham (dai ->
+        # ngan trong tung bo), dung som khi da du mien de khong hoi qua nhieu.
+        for q in [ten] + _truy_van_bing(ten):
+            try:
+                for it in ET.fromstring(_tai(GNEWS.format(q=up.quote(q)), 25).content
+                                        ).findall(".//item"):
+                    k = it.findtext("link") or ""
+                    if k and k not in co_link_gn:
+                        co_link_gn.add(k)
+                        its.append(it)
+            except Exception as e:                           # noqa: BLE001
+                print(f"[nguon_bai] google news hong ({q!r}): {type(e).__name__}", file=sys.stderr)
+            if len({it.find('source').get('url') for it in its
+                    if it.find('source') is not None}) >= so * 3:
+                break
 
     mien = []
-    for it in its[: so * 3]:
+    for it in its[: so * 6]:
         src = it.find("source")
         u = (src.get("url") if src is not None else "") or ""
         if u:
