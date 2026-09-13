@@ -53,12 +53,112 @@ def _log(*a):
     print("[rename]", *a, file=sys.stderr)
 
 
+# Hai module rope.patchedast KHONG parse duoc (13/09/2026, do bang
+# scratchpad/do_patchedast.py: 195 tep, 2 hong — f-string noi ngam co `{{`/ky tu
+# ngoai ASCII lam patchedast do sai do dai chuoi, sua tung cho thi no hong cho
+# khac). Chung bi loai khoi rope hoan toan; ten trong/ngoai hai tep nay doi bang
+# TOKEN (tokenize) — chinh xac o muc NAME token, khong dung chuoi/chu thich.
+NGOAI_ROPE = {"render_edu", "scan_models"}
+
+
 # ---- rope ------------------------------------------------------------------
 def _project(root: Path):
     from rope.base.project import Project
     return Project(str(root), ropefolder=None, save_objectdb=False,
                    ignored_resources=["venv", "hermes", ".claude", "__pycache__", "drafts",
-                                      "state", "assets", "docs", ".git", "*.pyc"])
+                                      "state", "assets", "docs", ".git", "*.pyc",
+                                      *[f"{m}.py" for m in NGOAI_ROPE]])
+
+
+# ---- doi ten bang TOKEN (cho tep ngoai rope) ------------------------------------
+def _doi_token(path: Path, quy_tac) -> int:
+    """Viet lai tep theo NAME token: `quy_tac(pp, p, tok, nx) -> ten_moi | None`
+    (pp = token truoc-truoc, p = token truoc, nx = token sau). Chi cham token
+    NAME, nen chuoi/chu thich/khoa dict nguyen ven. Tra so lan doi."""
+    src = path.read_text(encoding="utf-8")
+    try:
+        toks = list(tokenize.generate_tokens(iter(src.splitlines(True)).__next__))
+    except (tokenize.TokenError, SyntaxError):
+        return 0
+    lines = src.splitlines(True)
+    n = 0
+    for i in range(len(toks) - 1, -1, -1):
+        t = toks[i]
+        if t.type != tokenize.NAME:
+            continue
+        moi = quy_tac(toks[i - 2] if i > 1 else None, toks[i - 1] if i else None, t,
+                      toks[i + 1] if i + 1 < len(toks) else None)
+        if not moi or moi == t.string:
+            continue
+        (r, c0), c1 = t.start, t.end[1]
+        line = lines[r - 1]
+        lines[r - 1] = line[:c0] + moi + line[c1:]
+        n += 1
+    if n:
+        path.write_text("".join(lines), encoding="utf-8")
+    return n
+
+
+def _tep_ngoai_rope(root: Path) -> list:
+    return [root / f"{m}.py" for m in NGOAI_ROPE if (root / f"{m}.py").exists()]
+
+
+def _va_ngoai_rope_ten(root: Path, mod: str, old: str, new: str) -> int:
+    """Sau MOI rope rename (mod, old->new): trong cac tep ngoai rope, `mod.old` -> `mod.new`
+    (hai tep nay chi dung `import mod` + `mod.ten`, do 13/09)."""
+    alias = mod.split(".")[-1]
+    n = 0
+    for f in _tep_ngoai_rope(root):
+        if alias not in f.read_text(encoding="utf-8"):
+            continue
+        n += _doi_token(f, lambda pp, p, t, nx: new if _la_thuoc_tinh(pp, p, t, alias, old) else None)
+    return n
+
+
+def _la_thuoc_tinh(pp, p, t, alias: str, old: str) -> bool:
+    """`alias.old` — token truoc la `.`, truoc nua la NAME == alias."""
+    return (t.string == old and p is not None and p.string == "." and pp is not None
+            and pp.type == tokenize.NAME and pp.string == alias)
+
+
+def _va_ngoai_rope_module(root: Path, mod: str, base_moi: str) -> int:
+    """Sau rope doi TEN TEP mod -> base_moi: trong tep ngoai rope, `import mod` va
+    `mod.` -> ten moi."""
+    base_cu = mod.split(".")[-1]
+    n = 0
+    for f in _tep_ngoai_rope(root):
+        if base_cu not in f.read_text(encoding="utf-8"):
+            continue
+        n += _doi_token(f, lambda pp, p, t, nx: base_moi if (t.string == base_cu and
+                                                           ((p and p.string in ("import", "from")) or
+                                                            (nx and nx.string == "."))) else None)
+    return n
+
+
+def _doi_module_ngoai_rope(root: Path, mod: str, defs: list, consts: list) -> None:
+    """Module KHONG qua rope: doi dinh nghia + moi tham chieu bang token.
+    Trong tep: moi NAME == old (khong phai sau dau `.` cua module khac).
+    Ngoai tep (.py chinh + tests): `mod.old` -> `mod.new`, va ten trong
+    `from mod import ...` (cung dong)."""
+    bang = {o: nw for o, nw, _k in defs}
+    bang.update({o: nw for o, nw in consts})
+    if not bang:
+        return
+    f = root / f"{mod}.py"
+    k = _doi_token(f, lambda pp, p, t, nx: bang.get(t.string) if not (p and p.string == ".") else None)
+    _log(f"  {mod} (token, trong tệp): {k} chỗ")
+    k2 = 0
+    for g in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+        if g == f or mod not in g.read_text(encoding="utf-8"):
+            continue
+        src = g.read_text(encoding="utf-8")
+        tu_import = set()
+        for m in re.finditer(rf"^\s*from {re.escape(mod)} import ([^\n]+)", src, re.M):
+            tu_import |= {x.strip().split(" as ")[0] for x in m.group(1).strip("()").split(",")}
+        k2 += _doi_token(g, lambda pp, p, t, nx, tu=tu_import: bang.get(t.string)
+                         if (t.string in bang and (_la_thuoc_tinh(pp, p, t, mod, t.string)
+                                                  or t.string in tu)) else None)
+    _log(f"  {mod} (token, tệp khác): {k2} chỗ")
 
 
 def _rope_rename(proj, res_path: str, offset, new_name: str) -> list:
@@ -87,6 +187,7 @@ def _offset_def(text: str, name: str, kind: str):
 
 # ---- vá chuỗi ------------------------------------------------------------------
 _KHOA_DICT_CACHE = {}
+BANG_TOAN_CUC = {}          # old -> new, mọi module (main() nạp từ plan)
 
 
 def _khoa_dict(root: Path) -> set:
@@ -148,6 +249,27 @@ def _thay_trong_chuoi_py(path: Path, thay: list) -> int:
     return n
 
 
+def _thay_dong(src: str, thay_dong: list, mc: str, mm: str):
+    """Ap cac mau co ngu canh (patch.object(X, "cũ")…) khi X tro dung module nay:
+    thanh phan CUOI cua X (sau dau cham cuoi) phai la ten module cu/moi hoac alias
+    `import <mod> as <alias>` trong chinh tep test. Tra (src_moi, so_lan)."""
+    alias = {mc, mm}
+    for m in re.finditer(rf"^\s*import ({re.escape(mc)}|{re.escape(mm)})(?:\s+as\s+(\w+))?", src, re.M):
+        if m.group(2):
+            alias.add(m.group(2))
+    n = 0
+    for pat, new in thay_dong:
+        def _rep(m, new=new):
+            nonlocal n
+            muc_tieu = m.group(2).split(".")[-1] if m.group(2) else ""
+            if muc_tieu not in alias:
+                return m.group(0)
+            n += 1
+            return m.group(1) + new
+        src = re.sub(pat, _rep, src)
+    return src, n
+
+
 def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     """Sau rope: (1) `<cũ>.py` -> `<mới>.py` ở mọi tệp văn bản + string literal
     .py; (2) trong tests: `def cũ(` / `cũ(` trong string literal -> mới (test
@@ -182,12 +304,19 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     # (`mock.patch.object(la, "dem_mat")`, `patch("image_rules.dem_mat")`) —
     # test_anh_roi/test_bao_ve_tu_khoa lo 1 do vi the. Ap cho MOI test, khong
     # can gate read_text, vi ngu canh da noi ro day la ten thuoc tinh.
+    # Mau CO NGU CANH (patch.object(la, "cũ") …) phai chay tren CA DONG, khong phai
+    # tren rieng token chuoi — token chuoi chi la `"cũ"`, khong chua `patch.object(`.
+    thay_dong = []
     for old, new, _kind in defs:
         thay.append((rf"(?<![\w.])def {re.escape(old)}(?=\\?\()", f"def {new}"))
         thay.append((rf"(?<![\w\\]){re.escape(old)}(?=\\?\()", new))    # cả `nc.cũ(` (alias)
         thay.append((rf"(?<![\w]){re.escape(mc)}(\\?\.){re.escape(old)}\b", rf"{mm}\g<1>{new}"))
-        thay.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*[\w.]+\s*,\s*[\"']){re.escape(old)}(?=[\"'])", rf"\g<1>{new}"))
-        thay.append((rf"(patch\([\"'][\w.]*\.){re.escape(old)}(?=[\"'])", rf"\g<1>{new}"))
+        # Doi tuong cua patch.object/setattr PHAI la chinh module nay (hoac alias
+        # cua no trong tep test) — `nap` co o ca nop_chung lan env_load; lo 1 doi
+        # `patch.object(nhin.env_load, "nap")` thanh "load_draft_context" (ten cua
+        # nop_chung.nap) vi khong nhin doi tuong. Kiem bang callable, xem _thay_dong.
+        thay_dong.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*([\w.]+)\s*,\s*[\"']){re.escape(old)}(?=[\"'])", new))
+        thay_dong.append((rf"(patch\([\"']([\w.]*)\.){re.escape(old)}(?=[\"'])", new))
     for old, new in consts:
         # `$` loại trừ biến shell trong chuỗi test ("$VAI" của quet_daily_scan.sh
         # không phải hằng Python — pilot 13/09 đã đổi nhầm thành "$ROLE").
@@ -206,35 +335,50 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     bo = [o for o, _n, _k in defs if o in khoa_json] + [o for o, _n in consts if o in khoa_json]
     if bo:
         _log(f"  (không thay tên trần trong chuỗi vì trùng khoá dict: {', '.join(bo)})")
-    if thay or tran:
+    if thay or tran or thay_dong:
         k2 = 0
         for f in root.glob("tests/*.py"):
             k2 += _thay_trong_chuoi_py(f, thay)
             src = f.read_text(encoding="utf-8")
             if tran and ("read_text(" in src or "ast.parse" in src or "_ten_ham_trong" in src):
                 k2 += _thay_trong_chuoi_py(f, tran)
+            src = f.read_text(encoding="utf-8")
+            moi_src, kk = _thay_dong(src, thay_dong, mc, mm)
+            k2 += kk
+            if moi_src != src:
+                f.write_text(moi_src, encoding="utf-8")
         if k2:
             _log(f"  chuỗi trong tests (def/gọi/hằng): {k2} chỗ")
         tong += k2
-    # (3) __all__ của chính module
-    mod_path = root / (mod_moi or mod_cu).replace(".", "/")
-    mod_path = mod_path.with_suffix(".py")
-    # Tim DUNG cau lenh `__all__ = [` (dau dong), khong phai chu "__all__" trong
-    # chu thich phia tren — lo 1: `s.index("__all__")` trung vao comment, dau `]`
-    # dau tien sau do nam trong "[a-z_]*" cua comment -> khong doi gi ca.
-    m_all = re.search(r"^__all__\s*=\s*\[", mod_path.read_text(encoding="utf-8"), re.M) if mod_path.exists() else None
-    if m_all:
+    # (3) MỌI `__all__` trong mã chính: một mục "cũ" mà tệp không còn bind tên đó
+    # (đã bị rope đổi — định nghĩa tại chỗ HOẶC tên re-export từ module khác như
+    # image_prepare re-export chuan_bi.manifest.bang_anh) thì đổi theo bảng toàn
+    # cục. Tìm ĐÚNG câu `^__all__ = [` (lô 1: s.index trúng chú thích phía trên).
+    bang = dict(BANG_TOAN_CUC)
+    bang.update({o: n for o, n, _k in defs})
+    bang.update(dict(consts))
+    for mod_path in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
         s = mod_path.read_text(encoding="utf-8")
+        m_all = re.search(r"^__all__\s*=\s*\[", s, re.M)
+        if not m_all:
+            continue
         a, b = m_all.start(), s.index("]", m_all.end())
         khoi = s[a:b]
+        # Ten con "bind" trong tep = xuat hien nhu NAME token NGOAI khoi __all__
+        # (khong tinh chuoi: `wd / "bang_anh.png"` van con chu bang_anh trong
+        # chuoi sau khi ham bang_anh da thanh contact_sheet).
+        try:
+            ten_bind = {t.string for t in tokenize.generate_tokens(iter((s[:a] + s[b:]).splitlines(True)).__next__)
+                        if t.type == tokenize.NAME}
+        except (tokenize.TokenError, SyntaxError):
+            ten_bind = set(re.findall(r"[A-Za-z_]\w*", s[:a] + s[b:]))
         moi = khoi
-        for old, new, _k in defs:
-            moi = moi.replace(f'"{old}"', f'"{new}"')
-        for old, new in consts:
-            moi = moi.replace(f'"{old}"', f'"{new}"')
+        for old, new in bang.items():
+            if f'"{old}"' in moi and old not in ten_bind:
+                moi = moi.replace(f'"{old}"', f'"{new}"')
         if moi != khoi:
             mod_path.write_text(s[:a] + moi + s[b:], encoding="utf-8")
-            _log("  __all__ cập nhật")
+            _log(f"  __all__ của {mod_path.name} cập nhật")
     return tong
 
 
@@ -268,6 +412,10 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
         for old, new in consts:
             print(f"   const {old} -> {new}")
         return True
+    if mod in NGOAI_ROPE:                     # render_edu / scan_models: token, khong rope
+        _doi_module_ngoai_rope(root, mod, defs, consts)
+        _va_chuoi(root, mod, None, defs, consts)
+        return True
     if proj is None:
         proj = _project(root)
     # 1) hàm/lớp
@@ -278,7 +426,8 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
             _log(f"  !! không tìm thấy định nghĩa {old} — bỏ qua")
             continue
         tep = _rope_rename(proj, res_path, off, new)
-        _log(f"  {old} -> {new}  ({len(tep)} tệp)")
+        k = _va_ngoai_rope_ten(root, mod, old, new)
+        _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 2) hằng số
     for old, new in consts:
         text = (root / res_path).read_text(encoding="utf-8")
@@ -287,12 +436,14 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
             _log(f"  !! không tìm thấy hằng {old} — bỏ qua")
             continue
         tep = _rope_rename(proj, res_path, off, new)
-        _log(f"  {old} -> {new}  ({len(tep)} tệp)")
+        k = _va_ngoai_rope_ten(root, mod, old, new)
+        _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 3) tên tệp module (chỉ tên tệp, không đổi thư mục gói ở đây)
     if mod_moi:
         base_moi = mod_moi.split(".")[-1]
         tep = _rope_rename(proj, res_path, None, base_moi)
-        _log(f"  module {mod} -> {base_moi}  ({len(tep)} tệp)")
+        k = _va_ngoai_rope_module(root, mod, base_moi)
+        _log(f"  module {mod} -> {base_moi}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
         res_path_moi = "/".join(mod.split(".")[:-1] + [base_moi]) + ".py"
         _va_chuoi(root, mod, ".".join(mod.split(".")[:-1] + [base_moi]), defs, consts)
         shim = root / res_path
@@ -318,6 +469,11 @@ def main() -> int:
     root = Path(a.root).resolve()
     td = TuDien(Path(a.docs))
     plan = bang_doi_ten(td, root)
+    # Bảng toàn cục cũ->mới (mọi module) cho bước vá `__all__` re-export.
+    for _m, ds in plan["defs"].items():
+        BANG_TOAN_CUC.update({o: n for o, n, _k in ds})
+    for _m, cs in plan["consts"].items():
+        BANG_TOAN_CUC.update(dict(cs))
     py = str(root / "venv/bin/python") if (root / "venv/bin/python").exists() else sys.executable
     if a.package:
         moi = td.dich_module(a.package)[0]
