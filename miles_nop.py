@@ -22,9 +22,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import caption_check                                         # noqa: E402
-import nop_chung as nc                                       # noqa: E402
+import submit_common as nc                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -52,13 +52,13 @@ def main() -> int:
     ap.add_argument("--khong-push", action="store_true", help="Thu: kiem + ghi draft vao workdir, khong push")
     a = ap.parse_args()
 
-    meta = cb.nap_meta(a.draft_id)           # dat CT_BRAND theo brand cua draft
+    meta = cb.load_meta(a.draft_id)           # dat CT_BRAND theo brand cua draft
     brand = cb._brand_cua(meta)              # de biet AI viet bai nay (LOW-13)
     import env_load
     wd = cb.workdir(env_load.state_dir(), a.draft_id)
     # Ten tep brief di theo persona: Miles doc brief_miles.md, Jika doc
     # brief_jika.md — hai vai co the cung chay tren mot container khi con bai cu.
-    persona = nc.persona_viet(nc.vai_viet_cua_bai(a.draft_id, brand))
+    persona = nc.writer_persona_name(nc.writer_for_article(a.draft_id, brand))
     p_cap = Path(a.caption) if a.caption else wd / "caption.txt"
     if not p_cap.exists():
         sys.exit(f"Chua co caption: {p_cap} — viet caption theo brief "
@@ -84,7 +84,7 @@ def main() -> int:
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
         # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
         # bao Jika chay miles_nop.py doc ra nhu giao nham nguoi (LOW-13).
-        return nc.dem_vong_loi(wd, loi,
+        return nc.count_round_error(wd, loi,
                                f"venv/bin/python {persona}_nop.py {a.draft_id}")
 
     if a.khong_push:
@@ -117,7 +117,7 @@ def main() -> int:
     # `author` theo NGUOI VIET THAT cua bai, khong go cung "miles" (LOW-13):
     # cung script nay phuc vu ca Miles lan Jika, va bang den la cho Ong Chu doc
     # ra ai lam gi.
-    nc.ghi_bang_den(a.draft_id, "caption", md, persona)
+    nc.write_blackboard(a.draft_id, "caption", md, persona)
     print(f"[xong] caption {tin.get('do_dai')} ký tự, {tin.get('so_cau')} câu, "
           f"{tin.get('so_trong_caption')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))

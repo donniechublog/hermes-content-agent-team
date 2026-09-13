@@ -23,10 +23,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 import caption_check                                         # noqa: E402
-import nop_chung as nc                                        # noqa: E402
+import submit_common as nc                                        # noqa: E402
 
 DRAFTS = cb.DRAFTS
 GIONG = {
@@ -96,11 +96,11 @@ def main() -> int:
     a = ap.parse_args()
     # Engine dung chung: da chay tu luc chon tin (vai anh) -> chi doc; chua co thi
     # chay khong browser (Miles chi can chu).
-    m, wd, meta = cb.chay(a.draft_id, a.lam_moi, khong_browser=True, cho=a.cho,
+    m, wd, meta = cb.run(a.draft_id, a.lam_moi, khong_browser=True, cho=a.cho,
                           sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     # AI viet bai nay (LOW-13): quyet dinh da chot tu luc chon tin, nam trong
     # sidecar writer.json. Ten tep brief va lenh nop in ra deu theo persona do.
-    persona = nc.persona_viet(nc.vai_viet_cua_bai(a.draft_id, cb._brand_cua(meta)))
+    persona = nc.writer_persona_name(nc.writer_for_article(a.draft_id, cb._brand_cua(meta)))
     brief = viet_brief(m, meta, wd, persona)
     (wd / f"brief_{persona}.md").write_text(brief, encoding="utf-8")
     if not a.im:

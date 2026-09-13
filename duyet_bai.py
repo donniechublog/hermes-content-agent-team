@@ -16,7 +16,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
-import luat_anh                                             # noqa: E402
+import image_rules                                             # noqa: E402
 import schema                                               # noqa: E402
 import role                                                  # noqa: E402
 
@@ -268,7 +268,7 @@ def _go_so_anh(draft_id: str, ly_do: str) -> None:
     bao chan chi noi ten bai va cham, KHONG noi bai do da bi bo.
     """
     try:
-        n = luat_anh.xoa_da_dung(draft_id)
+        n = image_rules.remove_used_for_draft(draft_id)
     except Exception as e:                                      # noqa: BLE001
         log("nut", f"go so anh {draft_id} loi: {type(e).__name__}")
         return
@@ -292,7 +292,7 @@ def _tach_ly_do_lam_lai(text):
     lot qua regex cu — "Làm lại slide 3, 6: ..." co CHU "Làm lại" dung truoc
     "slide" (regex cu neo ^ ngay tai "slide"), va "Slide 6 vẫn là hình cũ, ..."
     khong co dau hai cham phan cach (regex cu bat buoc [:\-–—]). Ca hai lan
-    slide roi ve None, cong `kiem_khong_lap_anh_lam_lai` moi (nop_chung.py)
+    slide roi ve None, cong `kiem_khong_lap_anh_lam_lai` moi (submit_common.py)
     khong co gi de chan, nen anh cu lot qua tiep — dung la nguyen nhan that.
 
     Sua: tim "slide/ảnh N[, M...]" O BAT KY DAU trong cau (khong neo ^, cho
@@ -365,7 +365,7 @@ def _ghi_cam_anh_lam_lai(draft_id: str, so_slide: list) -> None:
             if not fp.exists():
                 continue
             try:
-                h = luat_anh.dhash(Image.open(fp).convert("RGB"))
+                h = image_rules.dhash(Image.open(fp).convert("RGB"))
             except (OSError, ValueError):
                 continue
             ds = cam.setdefault(str(n), [])
@@ -589,7 +589,7 @@ def tao_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     # tam) nen body noi "4 anh THAT" trong khi manifest noi 2.
     co, so_that = [], 0
     xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
-    mm = schema.doc_manifest(xong) if xong.exists() else None
+    mm = schema.read_manifest(xong) if xong.exists() else None
     if mm:
         co = [a["ma"] for a in mm.get("anh", []) if a.get("dung") and a.get("lien_quan") is not False]
         so_that = int(mm.get("so_dung_duoc", 0))
@@ -705,7 +705,7 @@ def _nut_ha_san(token, draft_id, cq):
     xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
     # doc_manifest bu so_dung_duoc cho manifest ban 0 (C-r2-5) — doc tho thi
     # so=0 -> "Chi 0 anh that" du co 6 anh.
-    mm = schema.doc_manifest(xong) or {}
+    mm = schema.read_manifest(xong) or {}
     san = int(mm.get("toi_thieu_co_ban", 5))
     so = int(mm.get("so_dung_duoc", 0))
     cu = int(mm.get("toi_thieu", san))

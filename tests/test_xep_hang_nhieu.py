@@ -7,7 +7,7 @@ xếp hạng": *"đã làm social media thì làm gì có chuyện bị giới h
 liệu"*, và hai bảng ví dụ *"một bảng là top model tạo sinh, một bảng là top
 model chỉnh sửa, đâu có trùng lặp"*. `xep_hang.tim_va_chup_nhieu` (test riêng
 ở tests/test_xep_hang.py) lo phần CHỤP; tệp này test phần MANG VÀO MANIFEST —
-`anh_chuan_bi._gom_va_tai_anh` gắn mã XH/XH2, `dung_manifest` gộp vào
+`image_prepare._gom_va_tai_anh` gắn mã XH/XH2, `dung_manifest` gộp vào
 goi_y_bia/so_xep_hang, `dong_brief_xep_hang` nói cho vai biết có tấm thứ hai.
 
 Chay:  venv/bin/python tests/test_xep_hang_nhieu.py
@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb   # noqa: E402
+import image_prepare as cb   # noqa: E402
 
 
 def _xh(bang, model, kieu="bang"):
@@ -76,7 +76,7 @@ def test_dung_manifest_hai_bang_len_ca_hai_ma_goi_y_bia():
     anh = [_a("XH", _xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst")),
            _a("XH2", _xh("Image Edit Arena", "GPT-Image-2.5 Sunburst")),
            _a("A1")]
-    m = cb.dung_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
+    m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), anh, [anh[0]["xep_hang"], anh[1]["xep_hang"]],
                          True, {}, {}, False, 5)
     assert m["goi_y_bia"][:2] == ["XH", "XH2"], m["goi_y_bia"]
@@ -90,7 +90,7 @@ def test_dung_manifest_mot_bang_tuong_thich_nguoc():
     khong co "XH2" nao trong goi_y_bia."""
     xh = _xh("Text Arena", "Kimi-K3")
     anh = [_a("XH", xh)]
-    m = cb.dung_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
+    m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), anh, [xh], True, {}, {}, False, 5)
     assert m["goi_y_bia"] == ["XH"], m["goi_y_bia"]
     assert m["so_xep_hang"] == 1
@@ -100,14 +100,14 @@ def test_dung_manifest_mot_bang_tuong_thich_nguoc():
 def test_dung_manifest_nhan_none_nhu_quy_uoc_cu():
     """Vai/test khac (test_khai_niem.py, test_thuong_hieu.py) van truyen None
     o vi tri nay — KHONG duoc nem TypeError tu len(None)."""
-    m = cb.dung_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
+    m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), [_a("A1", dung=("bìa",))], None, False, {}, {}, False, 5)
     assert m["so_xep_hang"] == 0
     assert m["xep_hang"] is None
 
 
 def test_dung_manifest_khong_bang_thi_khong_dinh_xh_vao_goi_y():
-    m = cb.dung_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
+    m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), [_a("A1", dung=("bìa",))], [], False, {}, {}, False, 5)
     assert "XH" not in m["goi_y_bia"] and m["so_xep_hang"] == 0
 
@@ -119,7 +119,7 @@ def test_brief_noi_ro_co_bang_thu_hai():
                       "model": "GPT-Image-2.5 Sunburst", "hang": 1, "kieu": "bang",
                       "duoc_nhac": True},
          "so_xep_hang": 2}
-    dong = cb.dong_brief_xep_hang(m, "bìa", "dre_nop")
+    dong = cb.ranking_brief_line(m, "bìa", "dre_nop")
     assert "XH2" in dong, dong
     assert "BẮT BUỘC" in dong
 
@@ -129,7 +129,7 @@ def test_brief_mot_bang_khong_nhac_xh2():
          "xep_hang": {"site": "ARENA.AI", "bang": "Text Arena", "model": "Kimi-K3",
                       "hang": 1, "kieu": "bang", "duoc_nhac": True},
          "so_xep_hang": 1}
-    dong = cb.dong_brief_xep_hang(m, "bìa", "dre_nop")
+    dong = cb.ranking_brief_line(m, "bìa", "dre_nop")
     assert "XH2" not in dong, dong
 
 

@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import phien_browser as pb                                    # noqa: E402
+import browser_session as pb                                    # noqa: E402
 
 
 class _BrowserGia:
@@ -91,7 +91,7 @@ def test_mo_luoi_khong_dung_thi_khong_launch():
     """Bai chay --khong-browser khong duoc ton mot tien trinh Chromium nao."""
     pw = _gia()
     try:
-        with pb.PhienBrowser():
+        with pb.BrowserSession():
             pass
         assert pw.da_launch == [], "mo Chromium du khong ai xin"
     finally:
@@ -101,10 +101,10 @@ def test_mo_luoi_khong_dung_thi_khong_launch():
 def test_cung_tham_so_thi_dung_chung_mot_tien_trinh():
     pw = _gia()
     try:
-        with pb.PhienBrowser() as ph:
+        with pb.BrowserSession() as ph:
             a = ph.browser()
             b = ph.browser()
-            c = ph.browser(pb.ARGS_MAC_DINH)
+            c = ph.browser(pb.ARGS_DEFAULT)
         assert a is b is c, "cung bo args ma launch nhieu lan"
         assert len(pw.da_launch) == 1, pw.da_launch
     finally:
@@ -115,8 +115,8 @@ def test_khac_tham_so_thi_tien_trinh_rieng():
     """xep_hang ep srgb — gop chung la lang le doi cach xu ly mau anh chup."""
     pw = _gia()
     try:
-        srgb = tuple(pb.ARGS_MAC_DINH) + ("--force-color-profile=srgb",)
-        with pb.PhienBrowser() as ph:
+        srgb = tuple(pb.ARGS_DEFAULT) + ("--force-color-profile=srgb",)
+        with pb.BrowserSession() as ph:
             a = ph.browser()
             b = ph.browser(srgb)
         assert a is not b, "hai bo args khac nhau ma dung chung mot tien trinh"
@@ -130,7 +130,7 @@ def test_browser_chet_giua_bai_thi_mo_lai_khong_tra_xac():
     """N-r2-1: Chromium crash/OOM giua bai — B4 dung MOT phien cho ca 5 buoc,
     nen tra lai browser da chet la 4 buoc sau deu TargetClosedError. Phai mo lai."""
     pw = _gia()
-    with pb.PhienBrowser() as ph:
+    with pb.BrowserSession() as ph:
         b1 = ph.browser()
         b1.chet = True                       # tien trinh chet, doi tuong van trong cache
         b2 = ph.browser()
@@ -142,7 +142,7 @@ def test_browser_chet_giua_bai_thi_mo_lai_khong_tra_xac():
 def test_ra_khoi_khoi_thi_dong_het():
     pw = _gia()
     try:
-        with pb.PhienBrowser() as ph:
+        with pb.BrowserSession() as ph:
             b = ph.browser()
         assert b.da_dong, "khong dong browser khi ra khoi khoi"
         assert pw.da_dung, "khong dung playwright khi ra khoi khoi"
@@ -153,7 +153,7 @@ def test_ra_khoi_khoi_thi_dong_het():
 def test_trang_dong_context_ngay_de_cach_ly_loi():
     pw = _gia()
     try:
-        with pb.PhienBrowser() as ph:
+        with pb.BrowserSession() as ph:
             with ph.trang(viewport={"width": 100, "height": 100}) as page:
                 assert page.startswith("page-cua-")
             ctx = pw.da_launch[0].context[0]
@@ -166,7 +166,7 @@ def test_trang_dong_context_ngay_de_cach_ly_loi():
 def test_context_dong_ca_khi_than_nem():
     pw = _gia()
     try:
-        with pb.PhienBrowser() as ph:
+        with pb.BrowserSession() as ph:
             try:
                 with ph.trang():
                     raise RuntimeError("vo giua chung")
@@ -181,7 +181,7 @@ def test_context_dong_ca_khi_than_nem():
 def test_khong_truyen_phien_thi_tu_mo_va_TU_DONG():
     _gia()
     try:
-        with pb.phien_hoac_moi(None) as ph:
+        with pb.session_or_new(None) as ph:
             b = ph.browser()
         assert b.da_dong, "phien tu mo ma khong tu dong -> ro ri tien trinh"
     finally:
@@ -193,9 +193,9 @@ def test_muon_phien_thi_KHONG_duoc_dong_cua_nguoi_khac():
     cac buoc sau cua cung bai mat browser giua chung."""
     pw = _gia()
     try:
-        with pb.PhienBrowser() as chung:
+        with pb.BrowserSession() as chung:
             b = chung.browser()
-            with pb.phien_hoac_moi(chung) as ph:
+            with pb.session_or_new(chung) as ph:
                 assert ph is chung
             assert not b.da_dong, "nguoi muon da dong phien cua nguoi khac"
             assert not pw.da_dung

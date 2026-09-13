@@ -12,7 +12,7 @@ dau, ma chet cam lang o GIUA chung, rat xa cho thieu that su:
                              nhung ly do khac (thieu file, khong phai thieu
                              goi cv2).
 - Thieu Chromium          -> moi buoc dung playwright (browser_pass trong
-                             anh_chuan_bi.py, cac buoc trong xep_hang.py,
+                             image_prepare.py, cac buoc trong xep_hang.py,
                              chup_chart.py...) nem exception giua chung,
                              thuong sau khi da ton thoi gian/LLM cho cac buoc
                              truoc do roi.
@@ -68,16 +68,16 @@ def kiem_yunet() -> tuple:
     duoc ly do gi.
     """
     try:
-        import luat_anh
+        import image_rules
     except Exception as e:
         return False, f"khong import duoc luat_anh: {type(e).__name__}: {e}"
 
-    model = Path(luat_anh.__file__).resolve().parent / "assets" / TEN_MODEL_YUNET
+    model = Path(image_rules.__file__).resolve().parent / "assets" / TEN_MODEL_YUNET
     if not model.exists():
         return False, f"khong thay file model: {model}"
 
     try:
-        det = luat_anh._yunet()
+        det = image_rules._load_yunet()
     except Exception as e:
         return False, f"loi khi goi luat_anh._yunet(): {type(e).__name__}: {e}"
     if det is None:
@@ -128,7 +128,7 @@ def kiem_bien_moi_truong(ten: str, ghi_chu: str = "") -> tuple:
 
 
 def kiem_openai_key() -> tuple:
-    """OPENAI_API_KEY -- vision trong anh_chuan_bi.py can bien nay."""
+    """OPENAI_API_KEY -- vision trong image_prepare.py can bien nay."""
     return kiem_bien_moi_truong("OPENAI_API_KEY")
 
 
@@ -171,7 +171,7 @@ def main() -> int:
         except Exception:
             pass
 
-    env_load.nap()
+    env_load.load()
 
     so_ok = 0
     for ten_muc, ham in MUC_KIEM:

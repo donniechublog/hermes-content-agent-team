@@ -34,14 +34,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import nguon_bai                                             # noqa: E402
 import schema                                                # noqa: E402
 import role as vai_mod                                        # noqa: E402
-from phien_browser import PhienBrowser                       # noqa: E402
+from browser_session import BrowserSession                       # noqa: E402
 from chuan_bi.browser import browser_pass                    # noqa: E402
 from chuan_bi.chung import _ghi_json, _mien                  # noqa: E402
-from chuan_bi.manifest import bang_anh, dan_xuat             # noqa: E402
+from chuan_bi.manifest import contact_sheet, compute_derived             # noqa: E402
 from chuan_bi.nhin import _nhin_anh                          # noqa: E402
 from chuan_bi.tai_loc import tai_va_loc                      # noqa: E402
 
@@ -80,9 +80,9 @@ def ung_vien_commons(tu_khoa: str, so: int = SO_COMMONS_MOI_LUOT) -> list:
     """Commons theo tu khoa cua VAI: loc long hon `anh_commons` (khong doi nguyen
     cum trong ten tep) vi vai da chon tu khoa co chu y — dung bo loc cua anh
     khai niem (>= 2 tu dac trung). Tra [] khi hong (da in ly do)."""
-    import quet_chung
+    import scan_common
     import anh_khai_niem
-    pages = quet_chung.hoi_commons(tu_khoa, so=14, loai_logo=False)
+    pages = scan_common.ask_commons(tu_khoa, so=14, loai_logo=False)
     if pages is None:
         print(f"[tim them] Commons '{tu_khoa}': API hong -> bo qua nguon nay", file=sys.stderr)
         return []
@@ -223,10 +223,10 @@ def noi_anh_moi(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
 
 def lam_moi_manifest(m: dict) -> dict:
     """Tinh lai cac gia tri dan xuat sau khi bo anh doi (cung cong thuc voi engine)."""
-    dx = dan_xuat(m["anh"], so_xh=int(m.get("so_xep_hang") or 0))
+    dx = compute_derived(m["anh"], so_xh=int(m.get("so_xep_hang") or 0))
     for k in ("so_mien", "cap_ghep", "goi_y_bia", "so_dung_duoc", "chua_nhin"):
         m[k] = dx[k]
-    thieu = cb._mo_ta_thieu_anh(m)
+    thieu = cb._description_missing_image(m)
     if thieu:
         m["thieu_anh"] = thieu
     else:
@@ -278,10 +278,10 @@ def main() -> int:
     if so_luot["luot"] >= TOI_DA_LUOT:
         sys.exit(f"[DUNG] da het {TOI_DA_LUOT} luot tim them cho bai nay (da thu: "
                  f"{'; '.join(so_luot['da_thu'])}). Van thieu thi kanban_block, ghi ro cac tu khoa da thu.")
-    cb._doi_khoa(khoa, 120, a.draft_id)
+    cb._handle_lock(khoa, 120, a.draft_id)
     khoa.write_text(str(os.getpid()))
     try:
-        m = schema.doc_manifest(xong)
+        m = schema.read_manifest(xong)
         if m is None:
             sys.exit(f"[LOI] khong doc duoc {xong}")
         tieu_de = m.get("tieu_de_en") or m.get("title") or a.draft_id
@@ -295,7 +295,7 @@ def main() -> int:
         wd2.mkdir(parents=True, exist_ok=True)
         cands = []
         t0 = time.time()
-        with PhienBrowser() as phien:
+        with BrowserSession() as phien:
             ph = None if a.khong_browser else phien
             for tk in a.tu_khoa:
                 cands += ung_vien_tu_khoa(tk, wd2, mien_co, phien=ph)
@@ -312,7 +312,7 @@ def main() -> int:
               f"({time.time() - t0:.0f}s)", file=sys.stderr)
         moi = noi_anh_moi(m, bo_sung, wd, tieu_de)
         lam_moi_manifest(m)
-        bang_anh(m["anh"], wd / "bang_anh.png")
+        contact_sheet(m["anh"], wd / "bang_anh.png")
         _ghi_json(xong, m)
         in_ket_qua(m, moi, so_luot, vai_anh)
     finally:

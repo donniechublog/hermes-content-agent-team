@@ -10,7 +10,7 @@ con giu mot nguong tuong phan HARDCODE (116) chi tinh dung cho MOT thuong hieu
 dcgr co FG/BG khac han (trang tuyet doi / den gan tuyet doi) nen nguong dung
 phai khac (~119, khong phai 116).
 
-Dong voi tinh than luat_anh.py: CONG THUC/PHEP DO dung dung cho moi anh thi
+Dong voi tinh than image_rules.py: CONG THUC/PHEP DO dung dung cho moi anh thi
 nam MOT cho; con NGUONG/BIEN DO cu the (bao nhieu do lech la "roi", phu toi da
 bao nhieu, co them bien do an toan hay khong) la lua chon RIENG cua tung vai
 (khac canvas, khac muc chiu rui ro voi anh that) nen o lai file cua vai do.

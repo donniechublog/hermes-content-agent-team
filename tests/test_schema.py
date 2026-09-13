@@ -6,7 +6,7 @@ Ba duong hong CO THAT ma tep nay giu:
   1. `so_dung_duoc` thieu khoa thi BA noi doan ba kieu — dre_chuan_bi dem lai
      bang cong thuc khac nguoi ghi (chum anh khai niem dem thanh nhieu thay vi
      MOT), con duyet_bai/anh_chuan_bi coi la 0 ("khong co anh nao"). Nay ca ba
-     di qua `schema.so_anh_dung_duoc`.
+     di qua `schema.count_image_use_ok`.
   2. Manifest ban cu (truoc 09/09/2026) khong co `phien_ban` va co the thieu
      khoa dan xuat. `doc_manifest` bu lai bang dung cong thuc cua nguoi ghi.
   3. `write_meta` ghi DE ca dict, ma `bang_den` ghi `root_task` vao cung tep tu
@@ -30,37 +30,37 @@ def test_chum_khai_niem_dem_la_mot():
     anh = [{"dung": ["bìa"], "khai_niem": {"tu_khoa": "co"}},
            {"dung": ["bìa"], "khai_niem": {"tu_khoa": "rack"}},
            {"dung": ["thân"]}]
-    assert schema.so_anh_dung_duoc(anh) == 2, \
+    assert schema.count_image_use_ok(anh) == 2, \
         "hai anh khai niem phai dem la MOT (cong thuc cu dem thanh 3)"
 
 
 def test_anh_khong_lien_quan_khong_duoc_tinh():
     anh = [{"dung": ["thân"], "lien_quan": False}, {"dung": ["thân"], "lien_quan": True}]
-    assert schema.so_anh_dung_duoc(anh) == 1
+    assert schema.count_image_use_ok(anh) == 1
 
 
 def test_anh_khong_dung_duoc_o_dau_thi_khong_tinh():
-    assert schema.so_anh_dung_duoc([{"dung": []}, {"dung": ["thân"]}]) == 1
+    assert schema.count_image_use_ok([{"dung": []}, {"dung": ["thân"]}]) == 1
 
 
 def test_danh_sach_rong_va_None_deu_ra_0():
-    assert schema.so_anh_dung_duoc([]) == 0
-    assert schema.so_anh_dung_duoc(None) == 0
+    assert schema.count_image_use_ok([]) == 0
+    assert schema.count_image_use_ok(None) == 0
 
 
 def test_khop_cong_thuc_cua_nguoi_ghi():
-    """Nguoi ghi (`chuan_bi.manifest.dung_manifest`) phai goi CHINH ham nay —
+    """Nguoi ghi (`chuan_bi.manifest.build_manifest`) phai goi CHINH ham nay —
     doc ma nguon de chan viec ai do chep lai cong thuc lan nua."""
     src = (ROOT / "chuan_bi" / "manifest.py").read_text(encoding="utf-8")
-    assert "schema.so_anh_dung_duoc(" in src, "nguoi ghi khong dung cong thuc chung"
+    assert "schema.count_image_use_ok(" in src, "nguoi ghi khong dung cong thuc chung"
     assert "so_rieng = sum(" not in src, "cong thuc cu con nam lai trong nguoi ghi"
 
 
 # ------------------------------------------------------------ doc_manifest
 def test_ban_moi_giu_nguyen_khong_bi_dung_cham():
-    m = {"phien_ban": schema.PHIEN_BAN_MANIFEST, "so_dung_duoc": 99,
+    m = {"phien_ban": schema.VERSION_MANIFEST, "so_dung_duoc": 99,
          "so_xep_hang": 7, "anh": []}
-    assert schema.doc_manifest(m) == m
+    assert schema.read_manifest(m) == m
 
 
 def test_ban_cu_duoc_bu_so_dung_duoc_dung_cong_thuc():
@@ -69,23 +69,23 @@ def test_ban_cu_duoc_bu_so_dung_duoc_dung_cong_thuc():
     cu = {"anh": [{"dung": ["bìa"], "khai_niem": {"tu_khoa": "co"}},
                   {"dung": ["bìa"], "khai_niem": {"tu_khoa": "rack"}},
                   {"dung": ["thân"]}]}
-    ra = schema.doc_manifest(cu)
+    ra = schema.read_manifest(cu)
     assert ra["so_dung_duoc"] == 2, ra
-    assert ra["phien_ban"] == schema.PHIEN_BAN_MANIFEST
+    assert ra["phien_ban"] == schema.VERSION_MANIFEST
 
 
 def test_ban_cu_khong_co_bang_xep_hang_thi_so_xep_hang_la_0():
     """Nguoi doc tung mac dinh 1 ke ca khi khong co bang nao — nguoc y nghia."""
-    assert schema.doc_manifest({"anh": [], "xep_hang": None})["so_xep_hang"] == 0
+    assert schema.read_manifest({"anh": [], "xep_hang": None})["so_xep_hang"] == 0
 
 
 def test_ban_cu_co_bang_thi_so_xep_hang_it_nhat_1():
-    ra = schema.doc_manifest({"anh": [], "xep_hang": {"model": "gpt", "kieu": "bang"}})
+    ra = schema.read_manifest({"anh": [], "xep_hang": {"model": "gpt", "kieu": "bang"}})
     assert ra["so_xep_hang"] == 1, ra
 
 
 def test_khong_ghi_de_khoa_da_co_cua_ban_cu():
-    ra = schema.doc_manifest({"anh": [{"dung": ["thân"]}], "so_dung_duoc": 42})
+    ra = schema.read_manifest({"anh": [{"dung": ["thân"]}], "so_dung_duoc": 42})
     assert ra["so_dung_duoc"] == 42, "bu khoa THIEU, khong duoc sua khoa da co"
 
 
@@ -93,23 +93,23 @@ def test_doc_tu_duong_dan_va_khong_nem_khi_tep_hong():
     with tempfile.TemporaryDirectory() as t:
         p = Path(t) / "xong.json"
         p.write_text(json.dumps({"anh": [], "title": "x"}), encoding="utf-8")
-        assert schema.doc_manifest(p)["title"] == "x"
+        assert schema.read_manifest(p)["title"] == "x"
         p.write_text("{khong phai json", encoding="utf-8")
-        assert schema.doc_manifest(p) is None, "tep hong phai ra None, khong nem"
-        assert schema.doc_manifest(Path(t) / "khong-co.json") is None
+        assert schema.read_manifest(p) is None, "tep hong phai ra None, khong nem"
+        assert schema.read_manifest(Path(t) / "khong-co.json") is None
 
 
 def test_tep_json_khong_phai_dict_cung_ra_None():
     with tempfile.TemporaryDirectory() as t:
         p = Path(t) / "xong.json"
         p.write_text("[1, 2, 3]", encoding="utf-8")
-        assert schema.doc_manifest(p) is None
+        assert schema.read_manifest(p) is None
 
 
 # ------------------------------------------------------------- hop_nhat_meta
 def test_tron_giu_khoa_cu_khong_co_trong_ban_moi():
     """Dung duong da suyt mat: bang_den ghi root_task, write_meta ghi de."""
-    ra = schema.hop_nhat_meta({"root_task": "t_9", "title": "cu"},
+    ra = schema.merge_meta({"root_task": "t_9", "title": "cu"},
                               {"title": "moi", "brand": "dcgr"})
     assert ra.get("root_task") == "t_9", "mat root_task -> the goc bang den mo coi"   # .get: do bang FAIL, khong KeyError (E-r2-7)
     assert ra["title"] == "moi" and ra["brand"] == "dcgr"
@@ -117,17 +117,17 @@ def test_tron_giu_khoa_cu_khong_co_trong_ban_moi():
 
 def test_ban_moi_thang_ke_ca_khi_gia_tri_rong():
     """Rong la Y CUA NGUOI GHI, khong phai 'khong co gi'."""
-    assert schema.hop_nhat_meta({"via": "cu"}, {"via": ""})["via"] == ""
+    assert schema.merge_meta({"via": "cu"}, {"via": ""})["via"] == ""
 
 
 def test_tron_voi_ban_cu_rong_hoac_None():
-    assert schema.hop_nhat_meta(None, {"a": 1}) == {"a": 1}
-    assert schema.hop_nhat_meta({}, {"a": 1}) == {"a": 1}
+    assert schema.merge_meta(None, {"a": 1}) == {"a": 1}
+    assert schema.merge_meta({}, {"a": 1}) == {"a": 1}
 
 
 def test_khong_sua_dict_dau_vao():
     cu = {"root_task": "t_9"}
-    schema.hop_nhat_meta(cu, {"title": "moi"})
+    schema.merge_meta(cu, {"title": "moi"})
     assert cu == {"root_task": "t_9"}, "hop_nhat_meta khong duoc sua ban cu tai cho"
 
 
@@ -157,12 +157,12 @@ def test_moi_khoa_nguoi_ghi_sinh_ra_deu_co_trong_Manifest():
     src = (ROOT / "chuan_bi" / "manifest.py").read_text(encoding="utf-8")
     cay = ast.parse(src)
     ham = next(n for n in ast.walk(cay)
-               if isinstance(n, ast.FunctionDef) and n.name == "dung_manifest")
+               if isinstance(n, ast.FunctionDef) and n.name == "build_manifest")
     gan_m = next(n for n in ast.walk(ham)
                  if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
                  and any(isinstance(t, ast.Name) and t.id == "m" for t in n.targets))
     khoa = {k.value for k in gan_m.value.keys if isinstance(k, ast.Constant)}
-    thieu = sorted(khoa - set(schema._kieu(schema.Manifest)))
+    thieu = sorted(khoa - set(schema._kind(schema.Manifest)))
     assert not thieu, f"dung_manifest sinh khoa chua khai trong schema.Manifest: {thieu}"
 
 
@@ -178,7 +178,7 @@ def test_moi_khoa_write_meta_deu_co_trong_Meta():
                if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
                and any(isinstance(t, ast.Name) and t.id == "meta" for t in n.targets))
     khoa = {k.value for k in gan.value.keys if isinstance(k, ast.Constant)}
-    thieu = sorted(khoa - set(schema._kieu(schema.Meta)))
+    thieu = sorted(khoa - set(schema._kind(schema.Meta)))
     assert not thieu, f"write_meta sinh khoa chua khai trong schema.Meta: {thieu}"
 
 
@@ -186,8 +186,8 @@ def test_doc_manifest_phien_ban_kieu_la_khong_crash():
     """N-r2-7: "1" (chuoi) hay None tung nem TypeError o `<` — ham hua None khi
     khong doc duoc ma lai crash."""
     for pv in ("1", None, "abc", 1.0):
-        m = schema.doc_manifest({"phien_ban": pv, "anh": []})
-        assert m is not None and m["phien_ban"] == schema.PHIEN_BAN_MANIFEST, (pv, m)
+        m = schema.read_manifest({"phien_ban": pv, "anh": []})
+        assert m is not None and m["phien_ban"] == schema.VERSION_MANIFEST, (pv, m)
 
 
 def _khoa_dict_ghi_vao(src: str, ten_tep: str) -> set:
@@ -213,7 +213,7 @@ def test_moi_khoa_writer_json_deu_co_trong_SidecarViet():
     src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
     khoa = _khoa_dict_ghi_vao(src, "writer.json")
     assert khoa, "khong tim thay cho ghi writer.json trong duyet_chon_tin — cong nay mu"
-    thieu = sorted(khoa - set(schema._kieu(schema.SidecarViet)))
+    thieu = sorted(khoa - set(schema._kind(schema.SidecarWrite)))
     assert not thieu, f"writer.json ghi khoa chua khai trong schema.SidecarViet: {thieu}"
 
 
@@ -221,7 +221,7 @@ def test_moi_khoa_img_json_deu_co_trong_SidecarAnh():
     src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
     khoa = _khoa_dict_ghi_vao(src, "img.json")
     assert khoa, "khong tim thay cho ghi img.json trong duyet_chon_tin"
-    thieu = sorted(khoa - set(schema._kieu(schema.SidecarAnh)))
+    thieu = sorted(khoa - set(schema._kind(schema.SidecarImage)))
     assert not thieu, f"img.json ghi khoa chua khai trong schema.SidecarAnh: {thieu}"
 
 
@@ -233,7 +233,7 @@ if __name__ == "__main__":
 # ---------------------------------------- cat_ngang_ok (su co t_a8ffd2f6 lan hai, 12/09)
 def test_ngang_qua_thap_van_chi_ghep_bat_ke_cat_ngang_ok():
     a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 600, "cat_ngang_ok": True}
-    assert schema._chi_ghep_duoc(a), "duoi 700px thi du vision noi 'co' cung khong cat duoc"
+    assert schema._only_stack_ok(a), "duoi 700px thi du vision noi 'co' cung khong cat duoc"
 
 
 def test_ngang_cao_co_chu_khong_dung_mot_minh_duoc():
@@ -241,13 +241,13 @@ def test_ngang_cao_co_chu_khong_dung_mot_minh_duoc():
     cat_ngang_ok=False, truoc day cong thuc chi nhin chieu cao nen dem sai
     la "dung mot minh duoc", thua 2 slide so voi thuc te Dre gap."""
     a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 1067, "cat_ngang_ok": False}
-    assert schema._chi_ghep_duoc(a)
+    assert schema._only_stack_ok(a)
 
 
 def test_ngang_cao_nguoi_san_pham_khong_chu_dung_mot_minh_duoc():
     """A8 tin TSMC: ky thuat vien cam chip, KHONG chu — vision xac nhan True."""
     a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 768, "cat_ngang_ok": True}
-    assert not schema._chi_ghep_duoc(a)
+    assert not schema._only_stack_ok(a)
 
 
 def test_chua_xac_nhan_thi_an_toan_coi_la_chi_ghep():
@@ -255,14 +255,14 @@ def test_chua_xac_nhan_thi_an_toan_coi_la_chi_ghep():
     cau hoi nay) -- None, KHAC voi False nhung van phai xu ly nhu chua dung
     mot minh duoc: dong con hon dem thua roi Dre chet giua chung lan hai."""
     a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 900}
-    assert schema._chi_ghep_duoc(a)
+    assert schema._only_stack_ok(a)
 
 
 def test_chart_ngang_cao_van_dung_mot_minh_du_khong_hoi_cat_ngang():
     """A10/A11: chart dung duoc qua duong rieng 'than, dan full be ngang', khong
     can cat_ngang_ok — cat_ngang_ok=None nhung loai=chart thi van KHONG chi_ghep."""
     a = {"dung": ["x"], "lien_quan": True, "ngang": True, "h": 1628, "loai": "chart"}
-    assert not schema._chi_ghep_duoc(a)
+    assert not schema._only_stack_ok(a)
 
 
 def test_tinh_lai_bo_anh_that_tsmc_lan_hai():
@@ -277,4 +277,4 @@ def test_tinh_lai_bo_anh_that_tsmc_lan_hai():
           _a("A10", True, 1628, loai="chart"), _a("A11", True, 820, loai="chart"),
           _a("A12", True, 853, cat_ngang_ok=False)]
     # rieng khong chi_ghep: A3, A6, A8, A10, A11 = 5. chi_ghep: A5, A7, A12 = 3 -> +1 cap.
-    assert schema.so_anh_dung_duoc(bo) == 6
+    assert schema.count_image_use_ok(bo) == 6

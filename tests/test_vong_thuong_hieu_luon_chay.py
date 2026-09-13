@@ -30,7 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                       # noqa: E402
+import image_prepare as cb                                       # noqa: E402
 import anh_thuong_hieu as th                                    # noqa: E402
 
 
@@ -50,15 +50,15 @@ def _anh(ma: str) -> dict:
             "canh_ngan": 1200, "mien": "vi_du.com", "tu": "bai", "ghi_chu": []}
 
 
-PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
+PHA_NANG = ("BrowserSession", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
             "_lay_tu_browser", "_chup_xep_hang", "_gom_va_tai_anh", "_nhin_anh",
-            "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_tu_lieu_bai",
-            "dung_manifest", "bang_anh")
+            "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_article_material",
+            "build_manifest", "contact_sheet")
 
 
 def _vong_bu_da_chay(so_anh_cua_tin: int,
                      tieu_de="Samsung opens new chip plant in Texas") -> list:
-    """Chay THAT `chuan_bi()` voi moi pha nang thay bang stub, tra ve ten cac vong
+    """Chay THAT `prepare_article()` voi moi pha nang thay bang stub, tra ve ten cac vong
     bu da duoc goi. Khong mang, khong browser, khong vision."""
     goi = []
     anh = [_anh(f"A{i + 1}") for i in range(so_anh_cua_tin)]
@@ -70,7 +70,7 @@ def _vong_bu_da_chay(so_anh_cua_tin: int,
             return a, [x for x in a if x["dung"]], []
         return f
 
-    cb.PhienBrowser = lambda *a, **k: _Phien()
+    cb.BrowserSession = lambda *a, **k: _Phien()
     cb.nap_nguon = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
     cb._tom_tat_tu_img_json = lambda d: {"vai_anh": "dre", "summary": ""}
@@ -84,12 +84,12 @@ def _vong_bu_da_chay(so_anh_cua_tin: int,
     cb._vong_tim_rong = _vong("tim_rong")
     cb._vong_thuong_hieu = _vong("thuong_hieu")
     cb._vong_khai_niem = _vong("khai_niem")
-    cb._tu_lieu_bai = lambda *a, **k: {"cau_co_so": [], "doan_dau": "", "so_nguon": 1}
-    cb.dung_manifest = lambda *a, **k: {"anh": anh}
-    cb.bang_anh = lambda *a, **k: None
+    cb._article_material = lambda *a, **k: {"cau_co_so": [], "doan_dau": "", "so_nguon": 1}
+    cb.build_manifest = lambda *a, **k: {"anh": anh}
+    cb.contact_sheet = lambda *a, **k: None
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            cb.chuan_bi("d1", {"brand": "donniechublog", "title": tieu_de},
+            cb.prepare_article("d1", {"brand": "donniechublog", "title": tieu_de},
                         Path(tmp), Path(tmp), khong_browser=True)
     finally:
         for k, v in cu.items():
@@ -143,9 +143,9 @@ def test_loi_goi_khong_duoc_treo_lai_sau_mot_if():
     "chi khi thieu anh" bang mot bien khac (`toi_thieu`, `muc_tieu_tim`, hay mot
     ten moi) thi stub van chay qua neu con so tinh co thuan. Day bat thang cai
     HINH DANG cua ma: loi goi phai nam o than ham, khong nam trong `if` nao."""
-    goc = ast.parse(textwrap.dedent(inspect.getsource(cb.chuan_bi)))
+    goc = ast.parse(textwrap.dedent(inspect.getsource(cb.prepare_article)))
     trong_if = _goi_nam_trong_if(goc, "_vong_thuong_hieu")
-    assert trong_if, "khong tim thay loi goi _vong_thuong_hieu trong chuan_bi()"
+    assert trong_if, "khong tim thay loi goi _vong_thuong_hieu trong prepare_article()"
     assert not any(trong_if), (
         "vong anh thuong hieu bi treo lai sau mot `if` — do la su co 10/09/2026: "
         "tin du anh se khong bao gio duoc di tim logo/founder/tru so")
@@ -166,7 +166,7 @@ def test_nhan_chan_dung_noi_ten_va_doi_khai_nhan_vat():
 def test_brief_cua_ethan_khong_con_goi_chan_dung_la_tru_so():
     """Ban cu cua `nhan_ethan` dan mot cau "tru so/campus/bien hieu" chung cho
     MOI loai tu lieu, va khong noi TEN nguoi. Ethan vi vay khong co duong nao
-    khai `nhan_vat` dung, ma `nop_chung.kiem_nhan_vat` thi chan anh co mat nguoi
+    khai `nhan_vat` dung, ma `submit_common.check_subject_named` thi chan anh co mat nguoi
     khong khai ten -> Ethan buoc phai bo anh founder."""
     import ethan_chuan_bi
     a = {"ma": "A6", "ti_le": 0.8, "w": 960, "h": 1200, "loai": "anh", "mat": 1,

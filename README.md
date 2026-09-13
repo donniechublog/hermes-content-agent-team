@@ -82,7 +82,7 @@ VIẾT (LLM, một tệp) → NỘP (script)**. Trước đó mỗi task tốn 1
 lớn là việc cơ học: curl tải ảnh, ls/grep dò tệp, tự đếm ký tự, chạy cổng chặn
 nhiều vòng. Giờ mỗi task là **3 lệnh**.
 
-- `anh_chuan_bi.py` — **engine dùng chung** cho mọi vai làm ảnh/chữ từ một tin.
+- `image_prepare.py` — **engine dùng chung** cho mọi vai làm ảnh/chữ từ một tin.
   `approve_service.create_pair` khởi chạy nền (`--im`) ngay lúc Ông Chủ chọn số:
   giải mã link Google News, Bing News RSS tìm báo khác, một phiên chromium (chữ
   bài, img lớn, chụp table/figure/canvas), `anh_bai`, Wikimedia Commons khi < 5
@@ -215,7 +215,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `chup_chart.py` — chụp chart/bảng benchmark theo luật *full chiều rộng trước,
   chiều cao xét sau*: đo `scrollWidth` thật, nới khung cho vừa rồi mới chụp ở
   DPR 2; thiếu bề ngang thì dừng. Cần `playwright` + chromium.
-- `luat_anh.py` + `LUAT_ANH.md` — **một nguồn sự thật** của luật ảnh, dùng chung
+- `image_rules.py` + `LUAT_ANH.md` — **một nguồn sự thật** của luật ảnh, dùng chung
   cho mọi vai TẠO ra ảnh (Ethan, Dre, Kite). Đừng chép luật vào SKILL của vai.
   Gin/Itachi chỉ sửa trên ảnh gốc nên không áp bộ này.
 

@@ -65,7 +65,7 @@ def _ghi_meta(draft_id: str, meta: dict) -> None:
     # approve_service, engine chay nen, va tien trinh hermes chay ham nay — ma
     # khong khoa chung. Ghi bang write_text thang thi mot lan trung thoi diem de
     # lai sidecar cut, va moi nguoi doc sau do nem ValueError.
-    env_load.ghi_json(_meta_path(draft_id), meta)
+    env_load.write_json(_meta_path(draft_id), meta)
 
 
 def _chuan_home(draft_id: str) -> None:
@@ -131,7 +131,7 @@ def tao_root(draft_id: str, title: str, goal: str, author: str) -> tuple:
     # loi d59691c vua sua o dau kia). Hom nay chua mat chi vi create_pair goi
     # ham nay TRUOC khi khoi chay engine — thu tu tinh co, khong phai bao ve.
     import schema
-    _ghi_meta(draft_id, schema.hop_nhat_meta(_meta(draft_id), {"root_task": rid}))
+    _ghi_meta(draft_id, schema.merge_meta(_meta(draft_id), {"root_task": rid}))
     return rid, True
 
 

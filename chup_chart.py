@@ -27,8 +27,8 @@ import argparse
 import sys
 from pathlib import Path
 
-import luat_anh
-import quet_chung
+import image_rules
+import scan_common
 
 
 def _chan_rong(ra):
@@ -38,7 +38,7 @@ def _chan_rong(ra):
     from PIL import Image
     try:
         with Image.open(ra) as im:
-            rong, mo_ta = luat_anh.la_anh_rong(im.convert("RGB"))
+            rong, mo_ta = image_rules.is_blank_image(im.convert("RGB"))
     except Exception:
         return
     if rong:
@@ -83,16 +83,16 @@ def tai_anh(url: str, ra: Path) -> bool:
     import urllib.request
     # urllib nhan MOI scheme, ke ca `file://` — mot duong dan tep dua vao day
     # se duoc "tai" thanh anh. kiem_url chan ca dieu do lan host noi bo.
-    quet_chung.kiem_url(url)
+    scan_common.check_url(url)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=45) as r:      # noqa: S310 — da kiem scheme o tren
-        quet_chung.kiem_url(r.url, "URL sau chuyen huong")
+        scan_common.check_url(r.url, "URL sau chuyen huong")
         data = r.read()
     if not data:
         return False
     ra.parent.mkdir(parents=True, exist_ok=True)
     ra.write_bytes(data)
-    luat_anh.dong_dau_tep(ra, "chup_chart")
+    image_rules.stamp_file(ra, "chup_chart")
     _chan_rong(ra)
     return True
 
@@ -160,11 +160,11 @@ def chup(url: str, ra: Path, chon: str = "", rong_dau: int = RONG_DAU) -> int:
                 el.scroll_into_view_if_needed()
                 page.wait_for_timeout(400)
                 el.screenshot(path=str(ra))
-                luat_anh.dong_dau_tep(ra, "chup_chart")
+                image_rules.stamp_file(ra, "chup_chart")
                 _chan_rong(ra)
             else:
                 page.screenshot(path=str(ra), full_page=True)
-                luat_anh.dong_dau_tep(ra, "chup_chart")
+                image_rules.stamp_file(ra, "chup_chart")
                 _chan_rong(ra)
         finally:
             b.close()

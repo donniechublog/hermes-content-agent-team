@@ -34,9 +34,9 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
-import nop_chung as nc                                       # noqa: E402
+import submit_common as nc                                       # noqa: E402
 import schema                                                # noqa: E402
 
 DRAFTS = ROOT / "drafts"
@@ -55,7 +55,7 @@ class _Boi:
     def __init__(self, m: dict, wd: Path):
         self.m, self.wd = m, wd
         self.anh = {a["ma"]: a for a in m["anh"]}
-        self.chu_bai = nc.chu_bai_cua(m, wd)
+        self.chu_bai = nc.article_text_for(m, wd)
         self.loi = []
         self.da_dung = {}                # ma anh -> nhan slide da dung no
         self.dung_anh = []               # [(nhan slide, [ma...])]
@@ -67,7 +67,7 @@ class _Boi:
         self.da_dung[ma] = nhan
 
     def kiem_lien_quan(self, ma_ds, nhan: str) -> None:
-        rac, mo_ta = nc.anh_khong_lien_quan(self.anh, ma_ds)
+        rac, mo_ta = nc.irrelevant_images(self.anh, ma_ds)
         if rac:
             self.loi.append(
                 f"{nhan}: {', '.join(rac)} bị đánh dấu KHÔNG LIÊN QUAN bài ({mo_ta}) — "
@@ -75,13 +75,13 @@ class _Boi:
 
     def kiem_mat(self, ma_ds, muc: dict, nhan: str) -> None:
         # Cong chan nam o nop_chung de Ethan dung chung dung mot ban (06/09/2026).
-        self.loi.extend(nc.kiem_nhan_vat(self.anh, ma_ds, muc.get("nhan_vat"),
+        self.loi.extend(nc.check_subject_named(self.anh, ma_ds, muc.get("nhan_vat"),
                                          self.chu_bai, f"{nhan}: "))
 
 
 def _giai_ghep(bo: _Boi, ghep, muc: dict, nhan: str) -> dict | None:
     """Nhanh "ghep": hai anh NGANG chong doc thanh mot khung 4:5..1:1."""
-    import luat_anh
+    import image_rules
     if not isinstance(ghep, list) or len(ghep) != 2:
         bo.loi.append(f"{nhan}: \"ghep\" phải là đúng 2 mã ảnh, vd [\"A3\", \"A5\"]")
         return None
@@ -94,8 +94,8 @@ def _giai_ghep(bo: _Boi, ghep, muc: dict, nhan: str) -> dict | None:
     bo.kiem_lien_quan(ghep, nhan)
     ims = [Image.open(bo.anh[x]["goc"]).convert("RGB") for x in ghep]
     rc = 1 / sum(im.height / im.width for im in ims)
-    if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
-            <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
+    if not (image_rules.TI_LE_45 - image_rules.TOLERANCE_RATIO <= rc
+            <= image_rules.TI_LE_11 + image_rules.TOLERANCE_RATIO):
         bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
                       f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
     # Cong lech tone (`luat_anh.lech_tone`) da bo khoi he thong (Ong Chu
@@ -117,12 +117,12 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
     a, ra = bo.anh[ma], {}
     # Dieu kien "tin xep hang ma bia khong phai bang" dung chung voi Ethan
     # (nop_chung.can_anh_xep_hang — xem lich su hoi quy o do).
-    if la_bia and nc.can_anh_xep_hang(m, a):
+    if la_bia and nc.needs_ranking_image(m, a):
         bo.loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
-                      f"Bìa dùng \"anh\": \"XH\" — " + cb.cau_xep_hang(m) + ".")
+                      f"Bìa dùng \"anh\": \"XH\" — " + cb.describe_ranking_image(m) + ".")
     if la_bia:
         # So hang trong hook bia phai la so hang engine khoanh (LOW-24, chung voi Ethan).
-        bo.loi.extend(nc.kiem_hang_tren_the(str(muc.get("hook") or ""), a, "bìa"))
+        bo.loi.extend(nc.check_rank_matches_image(str(muc.get("hook") or ""), a, "bìa"))
     if a["loai"] == "chart" and not a.get("xep_hang"):
         # Do hoa ROI lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
         # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
@@ -143,7 +143,7 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
         if not la_bia:
             ra["chart"] = True
     elif a["ngang"]:
-        if muc.get("cat_ngang") and a["h"] < schema.CAO_TOI_THIEU_CAT_NGANG:
+        if muc.get("cat_ngang") and a["h"] < schema.HEIGHT_MIN_CROP_LANDSCAPE:
             bo.loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
                           "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"ghep\" hoặc bỏ")
             return None
@@ -238,15 +238,15 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
         # Quote con nguyen tieng Anh: cong chan tieng Viet cua card.py chi bat
         # "tieng Viet go mat dau", co y bo qua tieng Anh nen quote chua dich lot
         # thang len Telegram (06/09/2026).
-        loi.extend(nc.kiem_quote_dich(g.get("quote"), f"slide {i}"))
+        loi.extend(nc.check_quote_translated(g.get("quote"), f"slide {i}"))
         # Dan nguon gon: khong "doc bai"/"xem bai", khong duoi ten mien — Ong
         # Chu 13/09/2026, nen tang quet ten mien thanh lien ket, giam hien thi.
-        loi.extend(nc.kiem_dan_nguon_gon(g.get("attrib"), f"slide {i} (attrib)"))
-        loi.extend(nc.kiem_dan_nguon_gon(g.get("text"), f"slide {i} (text)"))
+        loi.extend(nc.check_guide_source_compact(g.get("attrib"), f"slide {i} (attrib)"))
+        loi.extend(nc.check_guide_source_compact(g.get("text"), f"slide {i} (text)"))
         ra["slides"].append(g)
     # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026. Dat SAU
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
-    loi += nc.kiem_da_dung_nhieu(bo.anh, [(f"{n} ({ma})", ma) for ma, n in bo.da_dung.items()], m)
+    loi += nc.check_not_reused_across_runs(bo.anh, [(f"{n} ({ma})", ma) for ma, n in bo.da_dung.items()], m)
     n = len(slides) + 1
     toi_thieu = m.get("toi_thieu", 5)
     if n < toi_thieu:
@@ -261,19 +261,19 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # So tren slide co trong tu lieu khong (chi CANH BAO — doi don vi la thuong).
     chu_slide = " ".join(str(x.get(k) or "") for x in [cover] + list(slides)
                          for k in ("hook", "text", "quote", "label", "attrib"))
-    canh = nc.kiem_so_tren_anh(chu_slide, m, wd)
+    canh = nc.check_numbers_on_card(chu_slide, m, wd)
     # LAM LAI mot slide cu the nhung van ra dung anh cu (Ong Chu 13/09/2026) —
     # dat SAU khi bia + moi slide da giai, luc bo.dung_anh da co du (nhan, ma).
-    loi += nc.kiem_khong_lap_anh_lam_lai(bo.anh, bo.dung_anh, m, DRAFTS)
+    loi += nc.check_no_repeat_image_redo(bo.anh, bo.dung_anh, m, DRAFTS)
     # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
-    loi += nc.kiem_anh_roi(bo.anh, bo.da_dung, m)
+    loi += nc.check_image_fall(bo.anh, bo.da_dung, m)
     return ra, loi, canh, bo.dung_anh
 
 
 def don_slide_cu(stem: Path) -> None:
     """Xoa <id>_2..10.png va *.ghep.png cua lan truoc: draft_write gom
     thanh album, lan lam lai it slide hon se lot slide cu."""
-    for p in list(env_load.album_phu(stem.name, stem.parent)) + \
+    for p in list(env_load.album_secondary(stem.name, stem.parent)) + \
             list(stem.parent.glob(stem.name + "*.ghep.png")):
         p.unlink(missing_ok=True)
 
@@ -316,17 +316,17 @@ def main() -> int:
     ap.add_argument("--out", help="Ghi slide ra cho khac (de thu, khong de len drafts/)")
     a = ap.parse_args()
 
-    meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "dre_chuan_bi.py", "dre_nop.py")
+    meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "dre_chuan_bi.py", "dre_nop.py")
     spec_cs, loi, canh, dung_anh = giai_spec(spec, m, wd)
     for c in canh:
         print(f"[CANH BAO] {c}")
     cover = spec.get("cover") or {}
-    loi = nc.kiem_lam_lai(da_dung, "bìa", cover.get("anh") or "+".join(cover.get("ghep") or []),
+    loi = nc.check_redo_reused(da_dung, "bìa", cover.get("anh") or "+".join(cover.get("ghep") or []),
                           cover.get("hook"), khoa_anh="bia", draft_id=a.draft_id) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        return nc.dem_vong_loi(wd, loi,
+        return nc.count_round_error(wd, loi,
                                f"venv/bin/python dre_nop.py {a.draft_id}")
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
@@ -364,7 +364,7 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
-        mid = nc.gui_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
+        mid = nc.send_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
                            {"bia": cover.get("anh"), "hook": hook,
                             "anh": [ma for _, ds in dung_anh for ma in ds]})
     nguon_anh = sorted({m_["mien"] or m_["tu"] for m_ in m["anh"]
@@ -376,7 +376,7 @@ def main() -> int:
     md = {"slide": n, "hook": hook, "nguon_anh": nguon_anh, "tep": str(out),
           "ban_giao": str(bg_path), "message_id": mid}
     if not a.khong_gui:
-        nc.ghi_bang_den(a.draft_id, "anh", md, "dre")
+        nc.write_blackboard(a.draft_id, "anh", md, "dre")
     print(f"[xong] {n} slide -> {out}" + (f"; da gui topic carousel (message_id={mid}) kem nut duyet"
                                           if mid else "") +
           f"; ban giao cho Miles: {bg_path}")

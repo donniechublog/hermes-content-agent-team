@@ -44,7 +44,7 @@ NHAN_MAC_DINH = {"nova": "MODEL", "qinn": "TOOL"}
 import bat_buoc                                             # noqa: E402
 import tieng_viet                                           # noqa: E402
 import manifest_chung as mc                                 # noqa: E402
-import quet_chung                                           # noqa: E402
+import scan_common                                           # noqa: E402
 
 
 def _so_bao(t: dict) -> str:
@@ -187,7 +187,7 @@ def main():
     # 12/09: bao cao len topic de "Vera — 2026-09-11" cho ban quet ngay 12, va
     # ten tep dung vao ten cua hom truoc (da co) nen manifest roi xuong nhanh
     # `duong_ra_moi` -> `vera_candidates_2026-09-11_t2201.json`.
-    ngay = datetime.now(quet_chung.VN).strftime("%Y-%m-%d")
+    ngay = datetime.now(scan_common.VN).strftime("%Y-%m-%d")
     ten = f"{TIEN_TO[a.vai]}_{ngay}{('_' + a.hau_to) if a.hau_to else ''}.json"
     out = Path(a.out) if a.out else STATE / ten
     # KHONG ghi de manifest da co — ly do day du o `manifest_chung.duong_ra_moi`.

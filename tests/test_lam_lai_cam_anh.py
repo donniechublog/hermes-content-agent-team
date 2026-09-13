@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageDraw  # noqa: E402
 
 import duyet_bai as db  # noqa: E402
-import luat_anh  # noqa: E402
+import image_rules  # noqa: E402
 
 
 def _ve(w, h, tone, seed=7):
@@ -84,8 +84,8 @@ def test_ghi_cam_anh_lam_lai_chup_dung_anh_dang_o_slide_bi_neu():
         try:
             db._ghi_cam_anh_lam_lai("tin-thu", [2])
             im = json.loads((Path(t) / "tin-thu.img.json").read_text(encoding="utf-8"))
-            h_a1 = format(luat_anh.dhash(Image.open(wd / "goc" / "A1.png").convert("RGB")), "x")
-            h_a2 = format(luat_anh.dhash(Image.open(wd / "goc" / "A2.png").convert("RGB")), "x")
+            h_a1 = format(image_rules.dhash(Image.open(wd / "goc" / "A1.png").convert("RGB")), "x")
+            h_a2 = format(image_rules.dhash(Image.open(wd / "goc" / "A2.png").convert("RGB")), "x")
             assert im["cam_anh_slide"]["2"] == [h_a2]
             assert h_a1 not in im["cam_anh_slide"]["2"]
             assert "1" not in im["cam_anh_slide"]           # khong che nham slide khac

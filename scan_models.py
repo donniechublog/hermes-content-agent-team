@@ -37,11 +37,11 @@ from pathlib import Path
 import httpx
 
 import bang_model                                            # noqa: E402
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load
 
 STATE = env_load.state_dir() / "models_seen.json"
-UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
 
 OPENROUTER = "https://openrouter.ai/api/v1/models"
 # CATALOG cua HERMES (tai lieu cua hermes-agent), KHONG phai catalog cua
@@ -96,7 +96,7 @@ HANG_TQ = {"deepseek", "moonshot", "moonshotai", "qwen", "alibaba", "zai", "z-ai
 BIG = 9007199254740991          # arena dung so nay lam "khong xep hang"
 
 
-_get = quet_chung.get                  # mot ban duy nhat, xem quet_chung
+_get = scan_common.get                  # mot ban duy nhat, xem quet_chung
 
 
 def vung_cua(org: str) -> str:
@@ -885,7 +885,7 @@ def fetch_tin_hang(ngay: int) -> list:
             link = _t("link", "a:link") or ""
             if it.find("a:link", ns) is not None:
                 link = it.find("a:link", ns).get("href") or link
-            ts = quet_chung.moc_thoi_gian(ngay_txt or "")   # mot ban (ADF-r2-15)
+            ts = scan_common.timestamp_time(ngay_txt or "")   # mot ban (ADF-r2-15)
             if ts and ts < nguong:
                 continue
             low = tieu_de.lower()
@@ -910,7 +910,7 @@ def fetch_github(ngay: int) -> list:
         except Exception:                                    # noqa: BLE001
             continue
         pub = d.get("published_at") or ""
-        ts = quet_chung.moc_thoi_gian(pub)
+        ts = scan_common.timestamp_time(pub)
         if not ts or ts < nguong:
             continue
         ra.append({"repo": repo, "tag": d.get("tag_name"), "ngay": pub[:10],
@@ -1028,7 +1028,7 @@ def ghi_moc(ids: set, xep_hang: dict, da_bao: dict | None = None):
     # da-thay; con ten tep tam CO DINH (`.json.tmp`, ban truoc 06/09/2026) thi
     # cron va mot lan chay tay `--lam-moi` trung thoi diem se ghi lan vao cung
     # mot tep tam va `replace` ban cut cua nhau.
-    env_load.ghi_json(STATE, {"cap_nhat": datetime.now(timezone.utc).isoformat(),
+    env_load.write_json(STATE, {"cap_nhat": datetime.now(timezone.utc).isoformat(),
                               "ids": sorted(ids), "xep_hang": xep_hang,
                               "aa_da_bao": da_bao})
 
@@ -1146,7 +1146,7 @@ def main():
     # CA qua executor.submit truoc, roi moi .result() theo DUNG THU TU VA CACH
     # GHEP nhu ban tuan tu cu — _thu tu bat het Exception nen .result() o day
     # khong bao gio nem, chi cho toi khi luong cua no xong.
-    with ThreadPoolExecutor(max_workers=env_load.so_luong(8)) as ex:
+    with ThreadPoolExecutor(max_workers=env_load.quantity(8)) as ex:
         f_orouter = ex.submit(_thu, "openrouter", fetch_openrouter, [])
         f_catalog = ex.submit(_thu, "catalog", fetch_catalog, [])
         f_arena = ex.submit(_thu, "arena", fetch_arena, {})

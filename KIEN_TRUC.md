@@ -201,7 +201,7 @@ flowchart TD
     end
 
     subgraph S4["4 · CHUẨN BỊ CHUNG (engine dùng chung)"]
-        prep["anh_chuan_bi.py<br/>giải mã link, research, chụp ảnh,<br/>dHash, phân loại, crop 1:1/4:5"]:::container
+        prep["image_prepare.py<br/>giải mã link, research, chụp ảnh,<br/>dHash, phân loại, crop 1:1/4:5"]:::container
         xong[("state/{brand}/chuan_bi/{id}/<br/>xong.json + bang_anh.png")]:::datastore
         kanban --> prep
         prep --> xong
@@ -264,7 +264,7 @@ trong vài phút — xem chi tiết ở README §"Đội hình"):
   **không qua vòng chọn số** ở stage 2. Gin xoá chữ tiếng Anh trên ảnh nền
   (OCR+LaMa), Itachi dựng lại carousel kiểu editorial-deck (`deck.py`) **từ
   nền sạch của Gin** — quan hệ sinh/tiêu thụ trực tiếp giữa hai vai, tách biệt
-  khỏi engine `anh_chuan_bi.py` dùng chung ở stage 4.
+  khỏi engine `image_prepare.py` dùng chung ở stage 4.
 - **Cape** (teaser; persona cũ tên Jean, `role.py` giữ `slug_cu=("jean",)`) — đọc
   bài **đã duyệt xong** (sau stage 8), ghép teaser cho blog, không tham gia vòng
   duyệt.
@@ -357,8 +357,8 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   engine chỉ mô tả thiếu ảnh, tầng này quyết định hỏi Ông Chủ / chuyển Kite.
   "Thiếu" đo theo ngưỡng của **vai được giao**, nên bài 2 ảnh là đủ với Ethan
   và vẫn thiếu với Dre.
-- `chuan_bi/` — engine `anh_chuan_bi.py` tách thành gói theo pha
-  (`nguon → browser → tai_loc → nhin → vong_bu → manifest`); `anh_chuan_bi.py`
+- `chuan_bi/` — engine `image_prepare.py` tách thành gói theo pha
+  (`nguon → browser → tai_loc → nhin → vong_bu → manifest`); `image_prepare.py`
   còn là mặt tiền + CLI.
 
 ## Bảo trì sơ đồ

@@ -112,7 +112,7 @@ Cách thoát duy nhất trong luật: nộp `kanban_block(kind="needs_input")` k
 (a) mã nào vướng cổng nào và vì sao, (b) bằng chứng đây là đụng TÊN MÃ chứ
 không phải dùng lại ảnh (đối chiếu tệp gốc của bộ trước: `xong.json` +
 `render_edu.spec.json` bên đó, vision `mo_ta`), (c) ảnh thay thế đã tải sẵn.
-Đừng tự sửa `luat_anh.py` hay nhồi mã ngoài `hinh_that` — script sẽ chặn
+Đừng tự sửa `image_rules.py` hay nhồi mã ngoài `hinh_that` — script sẽ chặn
 `image "<mã>" không phải mã hình thật dùng được`.
 
 ## Bug renderer đã biết (tránh ở spec)

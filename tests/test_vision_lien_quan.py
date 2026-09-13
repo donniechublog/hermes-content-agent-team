@@ -114,7 +114,7 @@ def test_thieu_api_key_khong_bi_canh_bao_kep():
             # env_load.nap() dung os.environ.setdefault doc lai secret.*.env that
             # tren may that co cau hinh: pop() khong o lai, nen chan luon nap()
             # trong pham vi test nay de mo phong moi truong THAT SU thieu key.
-            with mock.patch.object(nhin.env_load, "nap", lambda *a, **k: None):
+            with mock.patch.object(nhin.env_load, "load", lambda *a, **k: None):
                 (_, lq), err = _bat_stderr(lambda: nhin.mo_ta_anh(p, "T"))
         finally:
             if cu is not None:

@@ -4,7 +4,7 @@ dọc) mà chưa bao giờ hỏi Commons theo TÊN NGƯỜI để tìm ảnh s�
 
 Ông Chủ 12/09/2026: *"chỉ cần search claude hay anthropic thì cũng ra một rừng
 ảnh rồi, kiếm cái ảnh rõ nét và ratio phù hợp khó thế sao?"* — đúng, đo thật
-bằng chính `quet_chung.hoi_commons`: search "Dario Amodei" ra 9 ảnh họp báo/sự
+bằng chính `scan_common.ask_commons`: search "Dario Amodei" ra 9 ảnh họp báo/sự
 kiện tỉ lệ 1,5 (ngang), điều mà `anh_wikidata` trước đây không bao giờ chạm tới.
 
 Test này KHÔNG gọi mạng thật (mock `_hoi_commons`) để chạy được offline/CI; bằng

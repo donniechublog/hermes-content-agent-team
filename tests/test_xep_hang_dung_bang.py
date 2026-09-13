@@ -39,12 +39,12 @@ def test_duoc_nhac_theo_bang_khong_chi_theo_mien():
 
 def test_canh_bao_bang_khac_no_khi_chup_duoc_bang_code_cho_tin_text():
     """Manifest nhu engine ghi khi (van) chup duoc arena-code: cau brief phai co ⚠️."""
-    from chuan_bi.manifest import cau_xep_hang
+    from chuan_bi.manifest import describe_ranking_image
     ds = {n["ma"]: n for n in xh.goi_y_nguon(TD, LINK, "Arena", CHU)}
     m = {"xep_hang": {"site": "ARENA.AI", "bang": "WebDev / Code Arena", "kieu": "bang",
                       "model": "claude-opus-4-7-high", "hang": 26,
                       "duoc_nhac": ds["arena-code"]["duoc_nhac"]}}
-    assert "BẢNG KHÁC" in cau_xep_hang(m), cau_xep_hang(m)
+    assert "BẢNG KHÁC" in describe_ranking_image(m), describe_ranking_image(m)
 
 
 def test_tin_that_su_ve_code_van_ra_arena_code():

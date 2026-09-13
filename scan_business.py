@@ -31,12 +31,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load
 import bat_buoc
 
 STATE = env_load.state_dir() / "business_seen.json"
-UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
 # Moi dong la mot goc theo doi. Them chu de moi = them mot dong.
@@ -174,10 +174,10 @@ def trong_watchlist(tieu_de: str) -> bool:
 
 
 
-_get = quet_chung.get                  # mot ban duy nhat, xem quet_chung
+_get = scan_common.get                  # mot ban duy nhat, xem quet_chung
 
 
-_ts = quet_chung.moc_thoi_gian          # mot ban (ADF-r2-15): 45e206c them ham chung ma chua ai goi
+_ts = scan_common.timestamp_time          # mot ban (ADF-r2-15): 45e206c them ham chung ma chua ai goi
 
 
 def chuan_hoa(tieu_de: str) -> str:

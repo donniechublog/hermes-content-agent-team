@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PHA TAI & LOC: tai bytes ung vien (song song), loc rac/trung/do hoa, cat san.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import io
 import re
@@ -12,18 +12,18 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-import luat_anh
-import quet_chung
+import image_rules
+import scan_common
 import env_load                                              # noqa: E402
 
 from chuan_bi.chung import TOI_DA_ANH, _goc_mien, _hdr, _mien
 
 
 # Nguong (cung goc voi luat_anh; o day chi la phan CHON anh de tai)
-URL_RAC = luat_anh.RAC                 # mot bo tu vung, xem luat_anh
+URL_RAC = image_rules.JUNK                 # mot bo tu vung, xem luat_anh
 
 
-CANH_NGAN_BO = luat_anh.CANH_NGAN_TAI   # xem luat_anh (ba nguong dat canh nhau)
+CANH_NGAN_BO = image_rules.SHORT_SIDE_DOWNLOAD   # xem luat_anh (ba nguong dat canh nhau)
 
 
 TOI_DA_TAI = 14             # ung vien thu tai (co cai hong/trung)
@@ -38,15 +38,15 @@ def _tai_bytes(url: str) -> bytes | None:
     # kiem — khong phai tu ta. Mot `<img src="http://127.0.0.1:9121/...">` (hay
     # mot 302 tro ve do) truoc 06/09/2026 duoc tai ve, di qua vision, roi vao
     # bang anh cua vai. Kiem CA sau chuyen huong, nhu article_extract.
-    if not quet_chung.url_an_toan(url):
+    if not scan_common.url_hide_whole(url):
         print(f"[tai] bo qua URL noi bo: {str(url)[:80]}", file=sys.stderr)
         return None
     try:
         with httpx.stream("GET", url, headers=_hdr(url), timeout=40,
                           follow_redirects=True) as r:
-            if r.status_code != 200 or not quet_chung.url_an_toan(r.url):
+            if r.status_code != 200 or not scan_common.url_hide_whole(r.url):
                 print(f"[tai] {str(url)[:70]}: HTTP {r.status_code}"
-                      + ("" if quet_chung.url_an_toan(r.url) else " (chuyen huong vao dia chi noi bo)"),
+                      + ("" if scan_common.url_hide_whole(r.url) else " (chuyen huong vao dia chi noi bo)"),
                       file=sys.stderr)
                 return None
             buf = b""
@@ -116,7 +116,7 @@ def tai_va_loc(cands: list, wd: Path) -> list:
     goc_dir = wd / "goc"
     goc_dir.mkdir(parents=True, exist_ok=True)
     ung_vien = cands[:TOI_DA_TAI + 6]
-    with ThreadPoolExecutor(max_workers=env_load.so_luong(6)) as ex:
+    with ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
         tai_truoc = list(ex.map(_tai_ung_vien, ung_vien))
     da_tai = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
     for c, (data, loi) in zip(ung_vien, tai_truoc):
@@ -144,28 +144,28 @@ def tai_va_loc(cands: list, wd: Path) -> list:
                 # cao lot vao tu <img> cua trang, khong phai logo ta co tinh lay.
                 print(f"[tai] bo url/alt rac: {str(c.get('anh'))[-60:]}", file=sys.stderr)
                 continue                                  # placeholder/onboarding/logo/ad
-            if luat_anh.la_anh_rong(im)[0]:
+            if image_rules.is_blank_image(im)[0]:
                 print(f"[tai] bo anh RONG: {str(c.get('anh'))[-60:]}", file=sys.stderr)
                 continue
             if (w, hh) in anh_bai.CO_AI_SINH:
                 continue
             ly_do_do_hoa = anh_bai._do_hoa(im)
-            la_ct, _ = luat_anh.la_chart(im)
+            la_ct, _ = image_rules.is_chart(im)
             if ly_do_do_hoa and not la_ct and not _chart_theo_hinh(im) and not c.get("cho_do_hoa"):
                 continue                                  # logo/wordmark
             # `cho_do_hoa`: ung vien CO CHU Y la do hoa — the logo chinh thuc cua
             # hang (anh_thuong_hieu.the_logo). Cong tren sinh ra de chan logo lot
             # vao tu <img> cua bai bao, khong phai de chan thu ta co tinh dung.
-            h = luat_anh.dhash(im)
+            h = image_rules.dhash(im)
             # Trung gan giong (cung anh o co khac, anh <img> vs figure chup): giu ban LON hon.
             # Nguong theo LOAI anh: voi do hoa (chart/bang) dHash 8x8 chi doc bo
             # xuong bo cuc nen HAI bieu do khac han so lieu chi cach nhau 4-5 bit
             # — nguong chung 6 lam mat mot trong hai chart cua CUNG mot bai. Va
             # phai IN RA: cac nhanh loai bo khac quanh day deu co dong stderr,
             # rieng nhanh nay truoc 06/09/2026 bo im lang.
-            ng = luat_anh.nguong_dhash(im)
+            ng = image_rules.dhash_threshold_for(im)
             trung = next((k for k, (h2, im2, _, _) in enumerate(da_tai)
-                          if luat_anh.gan_giong(h, h2, luat_anh.nguong_dhash(im2, ng))), None)
+                          if image_rules.is_near_duplicate(h, h2, image_rules.dhash_threshold_for(im2, ng))), None)
             if trung is not None:
                 lon_hon = w * hh > da_tai[trung][1].width * da_tai[trung][1].height
                 print(f"[tai] bo ban {'nho' if lon_hon else 'sau'} vi trung gan giong "
@@ -188,7 +188,7 @@ def tai_va_loc(cands: list, wd: Path) -> list:
     for n, (h, im, c, _) in enumerate(da_tai[:TOI_DA_ANH], start=1):
         ma = f"A{n}"
         out = goc_dir / f"{ma}.png"
-        im.save(out, "PNG", pnginfo=luat_anh.dong_dau(
+        im.save(out, "PNG", pnginfo=image_rules.stamp_provenance(
             {"chup": "chup_chart", "arxiv_hinh": "arxiv_hinh"}.get(c.get("tu"), "dre_chuan_bi")))
         # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
         # khong noi len gi (bao boc ca anh minh hoa lan quang cao).

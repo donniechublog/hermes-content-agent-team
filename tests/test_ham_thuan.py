@@ -15,12 +15,12 @@ lo ra khi hong:
   - `gom_trung`      gop nhieu bao dua cung mot su kien. Docstring cua no ke
                      hai lan hoi quy that; ca hai o day thanh test.
   - `chuan_hoa`      khoa dedup ghi vao business_seen.json.
-  - `env_load.brand_dai` doi CT_BRAND (ten NGAN cho state, "blog"/"dcgr") ra slug
+  - `env_load.brand_long` doi CT_BRAND (ten NGAN cho state, "blog"/"dcgr") ra slug
                      thuong hieu DAI ("donniechublog"/"dcgr") ma card.py doi.
                      Sinh 09/09/2026: lan thang CT_BRAND vao card.dat_thuong_hieu
                      lam SystemExit "Khong biet thuong hieu 'blog'", giet ca
-                     `chuan_bi()" — bat HAI cho lam sai giong het nhau trong cung
-                     mot lan chay lai (anh_chuan_bi.py va anh_thuong_hieu.py).
+                     `prepare_article()" — bat HAI cho lam sai giong het nhau trong cung
+                     mot lan chay lai (image_prepare.py va anh_thuong_hieu.py).
 
 Chay:  venv/bin/python tests/test_ham_thuan.py
 """
@@ -42,9 +42,9 @@ def test_brand_dai_doi_dung_ca_hai_chieu():
     cu = os.environ.get("CT_BRAND")
     try:
         os.environ["CT_BRAND"] = "blog"
-        assert env_load.brand_dai() == "donniechublog"
+        assert env_load.brand_long() == "donniechublog"
         os.environ["CT_BRAND"] = "dcgr"
-        assert env_load.brand_dai() == "dcgr"          # trung ca hai chieu, sao cung dung
+        assert env_load.brand_long() == "dcgr"          # trung ca hai chieu, sao cung dung
     finally:
         if cu is None:
             os.environ.pop("CT_BRAND", None)
@@ -58,9 +58,9 @@ def test_brand_dai_khong_biet_thi_ve_mac_dinh():
     cu = os.environ.get("CT_BRAND")
     try:
         os.environ.pop("CT_BRAND", None)
-        assert env_load.brand_dai() == "donniechublog"
+        assert env_load.brand_long() == "donniechublog"
         os.environ["CT_BRAND"] = "khong-ro"
-        assert env_load.brand_dai("dcgr") == "dcgr"
+        assert env_load.brand_long("dcgr") == "dcgr"
     finally:
         if cu is None:
             os.environ.pop("CT_BRAND", None)
@@ -333,14 +333,14 @@ def test_host_noi_bo_bat_ca_dang_viet_rut_gon():
     "2130706433" va "[::1]" thi khong — dung ba cach vong qua ma libc (curl,
     chromium, httpx) van hieu."""
     import quet_chung as qc
-    sot = [h for h in NOI_BO if not qc.host_noi_bo(h)]
+    sot = [h for h in NOI_BO if not qc.host_say_drop(h)]
     assert not sot, f"khong chan: {sot}"
 
 
 def test_host_cong_khai_khong_bi_chan_oan():
     """Chan oan con te hon bo lot: day chuyen se im lang khong tai duoc anh."""
     import quet_chung as qc
-    oan = [h for h in CONG_KHAI if qc.host_noi_bo(h)]
+    oan = [h for h in CONG_KHAI if qc.host_say_drop(h)]
     assert not oan, f"chan oan: {oan}"
 
 
@@ -348,8 +348,8 @@ def test_kiem_url_chan_scheme_khong_phai_http():
     """chup_chart tai bang urllib, ma urllib nhan ca `file://`."""
     import quet_chung as qc
     for u in ["file:///etc/passwd", "ftp://x.com/a", "data:text/html,x", "x"]:
-        assert not qc.url_an_toan(u), u
-    assert qc.url_an_toan("https://openai.com/index/abc")
+        assert not qc.url_hide_whole(u), u
+    assert qc.url_hide_whole("https://openai.com/index/abc")
 
 
 def test_moi_duong_tai_deu_qua_cong():
@@ -365,7 +365,7 @@ def test_moi_duong_tai_deu_qua_cong():
                   if isinstance(n, ast.FunctionDef) and n.name == ham), None)
         assert f, f"{tep}: khong thay ham {ham}"
         goi = {ast.unparse(n.func) for n in ast.walk(f) if isinstance(n, ast.Call)}
-        assert any("kiem_url" in g or "url_an_toan" in g or "_kiem_host" in g
+        assert any("check_url" in g or "url_hide_whole" in g or "_kiem_host" in g
                    for g in goi), f"{tep}:{ham} khong goi cong host"
 
 

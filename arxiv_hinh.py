@@ -331,9 +331,9 @@ def boc(pdf_bytes: bytes, ra_dir, so_trang=SO_TRANG, toi_da=TOI_DA) -> list:
             anh = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
             if not _khong_trang_tron(anh):
                 continue
-            import luat_anh
+            import image_rules
             tep = ra_dir / f"paper_{loai}_{so}.png"
-            anh.save(tep, "PNG", pnginfo=luat_anh.dong_dau(
+            anh.save(tep, "PNG", pnginfo=image_rules.stamp_provenance(
                 "arxiv_hinh", hinh=f"{loai} {so}", trang_pdf=so_t + 1))
             da_co.add((loai, so))
             ra.append({"tep": str(tep), "loai": loai, "so": so, "caption": chu[:300],

@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load                                             # noqa: E402
 import bat_buoc                                             # noqa: E402
 import manifest_chung as mc                                 # noqa: E402
@@ -43,7 +43,7 @@ VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BU
 TOI_DA_PICK = 8
 
 
-_norm = quet_chung.chuan_link          # mot ban duy nhat, xem quet_chung
+_norm = scan_common.standard_link          # mot ban duy nhat, xem quet_chung
 
 
 def _diem(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:

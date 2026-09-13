@@ -25,13 +25,13 @@ from pathlib import Path
 
 import httpx
 
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load
 import bat_buoc
 
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
-UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
 
 MAX_AGE_HOURS = 72
 SUBS = ["MachineLearning", "LocalLLaMA", "singularity", "OpenAI", "StableDiffusion"]
@@ -257,7 +257,7 @@ def fetch_arxiv(max_results=30) -> list:
 
 # Mot ban duy nhat o quet_chung (audit 06/09/2026): ba ban chuan hoa khac nhau
 # nghia la "da thay tin nay chua" tra loi khac nhau tuy ai hoi.
-_norm_url = quet_chung.chuan_link
+_norm_url = scan_common.standard_link
 
 
 def seen_keys() -> set:

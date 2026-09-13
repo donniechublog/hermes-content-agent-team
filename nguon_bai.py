@@ -29,16 +29,16 @@ from pathlib import Path
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
 
-UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 SO_NGUON = 4
 
-TU_RONG = quet_chung.TU_RONG           # mot ban duy nhat, xem quet_chung
-_tu = quet_chung.tu_dac_trung
+TU_RONG = scan_common.FROM_EMPTY           # mot ban duy nhat, xem quet_chung
+_tu = scan_common.from_distinctive
 
 # ---- "CUNG TIN" (LOW-33, 12/09/2026) ------------------------------------------
 # The Ethan "DeepSeek-V4.1-Flash tha trong so" ra anh con vit-robot: `tieu_de_en`
@@ -102,10 +102,10 @@ def giai_ma_gnews(url: str, timeout: int = 30, phien=None) -> str | None:
         pass
     try:
         import time as _t
-        from phien_browser import phien_hoac_moi
+        from browser_session import session_or_new
         # `phien`: dung chung tien trinh Chromium voi cac buoc khac cua cung mot
         # bai (audit B4). Khong truyen thi tu mo, tu dong — y nhu truoc.
-        with phien_hoac_moi(phien) as ph:
+        with session_or_new(phien) as ph:
             with ph.trang(user_agent=UA.replace("compatible; ", "")) as page:
                 page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
                 t0 = _t.time()
@@ -360,13 +360,13 @@ def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10
         except Exception:                                    # noqa: BLE001
             pass
         try:
-            if not quet_chung.url_an_toan(link):
+            if not scan_common.url_hide_whole(link):
                 continue
             rr = httpx.head(link, headers=HDR, timeout=12, follow_redirects=True)
             u = str(rr.url)
             # `u` la dia chi SAU chuyen huong va duoc dung lam nguon that cho
             # bai — mot ket qua tim kiem 302 ve 127.0.0.1 khong duoc di tiep.
-            if rr.status_code != 200 or not quet_chung.url_an_toan(u):
+            if rr.status_code != 200 or not scan_common.url_hide_whole(u):
                 continue
         except Exception:                                    # noqa: BLE001
             continue
@@ -447,11 +447,11 @@ def bao_ve_tu_khoa(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int | N
         except Exception:                                    # noqa: BLE001
             pass
         try:
-            if not quet_chung.url_an_toan(link):
+            if not scan_common.url_hide_whole(link):
                 continue
             rr = httpx.head(link, headers=HDR, timeout=12, follow_redirects=True)
             u = str(rr.url)
-            if rr.status_code != 200 or not quet_chung.url_an_toan(u):
+            if rr.status_code != 200 or not scan_common.url_hide_whole(u):
                 continue
         except Exception:                                    # noqa: BLE001
             continue
@@ -530,7 +530,7 @@ def tim(tieu_de: str, link: str, so=SO_NGUON) -> dict:
         return None
 
     thay = {link}
-    with cf.ThreadPoolExecutor(max_workers=env_load.so_luong(6)) as ex:
+    with cf.ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
         for kq in ex.map(_trong_feed, mien[: so * 3]):
             if kq and kq["url"] and kq["url"] not in thay:
                 thay.add(kq["url"])

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Nen dung chung cho moi pha: hang so, header HTTP, doc/ghi JSON, ten mien.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import json
 import re
@@ -63,7 +63,7 @@ def _doc_json(p: Path, mac_dinh=None):
 
 def _ghi_json(p: Path, d) -> None:
     Path(p).parent.mkdir(parents=True, exist_ok=True)
-    env_load.ghi_json(p, d)
+    env_load.write_json(p, d)
 
 
 def _goc_mien(h: str) -> str:

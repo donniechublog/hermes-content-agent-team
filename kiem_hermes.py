@@ -143,7 +143,7 @@ def main() -> int:
     ap.add_argument("--day-du", action="store_true",
                     help="them mot luot chat that va MOT TASK THAT (ton LLM, tao state)")
     a = ap.parse_args()
-    env_load.nap()
+    env_load.load()
 
     tat_ca = []
     for ten, ham in (("schema kanban.db", kiem_cot),

@@ -7,7 +7,7 @@ duoc ma khong co cap -> thuc te 4 slide. Dre block, Ong Chu phai go tay, va hoi:
 "designer ma khong duoc phep di tim anh, ai nghi ra cai luat thieu nang nay?"
 
 Giu phan dung (engine chuan bi, cong chan cua script), bo phan pha hoai:
-  1. `schema.so_anh_dung_duoc` dem slide dung duoc: anh ngang < 700px chi ghep
+  1. `schema.count_image_use_ok` dem slide dung duoc: anh ngang < 700px chi ghep
      duoc, hai tam moi thanh mot slide, mot tam le = 0;
   2. `role.has_enough_material` hoi cung cong thuc do -> engine di tim tiep;
   3. `tim_anh_them.py`: vai tu tim theo tu khoa tieng Anh / URL, toi da 3 luot;
@@ -49,10 +49,10 @@ def test_anh_ngang_qua_thap_khong_dem_mot_minh():
     # Dung bo anh TSMC: bia A3, A2/A6/A7 ngang cao, A5 900x600 chi ghep.
     bo = [_a(ma="A3", dung=["bìa", "thân"]), _ngang(ma="A2", h=942), _ngang(ma="A6"),
           _ngang(ma="A7"), _ngang(ma="A5", h=600, dung=["ghép dọc với một ảnh ngang cùng tone"])]
-    assert schema.so_anh_dung_duoc(bo) == 4, "A5 le khong co cap -> 4 slide, khong phai 5"
+    assert schema.count_image_use_ok(bo) == 4, "A5 le khong co cap -> 4 slide, khong phai 5"
     bo.append(_ngang(ma="A8", h=650, dung=["ghép dọc với một ảnh ngang cùng tone"]))
-    assert schema.so_anh_dung_duoc(bo) == 5, "hai tam thap ghep thanh MOT slide"
-    assert schema.so_anh_dung_duoc([_ngang(h=0)]) == 1, "khong biet chieu cao thi khong tru"
+    assert schema.count_image_use_ok(bo) == 5, "hai tam thap ghep thanh MOT slide"
+    assert schema.count_image_use_ok([_ngang(h=0)]) == 1, "khong biet chieu cao thi khong tru"
 
 
 def test_engine_phai_tim_tiep_khi_chi_du_tam_ma_thieu_slide():
@@ -60,7 +60,7 @@ def test_engine_phai_tim_tiep_khi_chi_du_tam_ma_thieu_slide():
     # 900x600 chi ghep duoc -> 5 slide -> chua du.
     bo = [_a(ma="A3", dung=["bìa", "thân"]), _ngang(ma="A2", h=942), _ngang(ma="A6"),
           _ngang(ma="A7"), _a(ma="A8"), _ngang(ma="A5", h=600, dung=["ghép dọc với một ảnh ngang cùng tone"])]
-    assert schema.so_anh_dung_duoc(bo) == 5
+    assert schema.count_image_use_ok(bo) == 5
     assert not role.has_enough_material("dre", bo), "6 tam nhung 5 slide: engine CHUA duoc ngung tim"
     bo[-1]["h"] = 1000
     bo[-1]["cat_ngang_ok"] = True   # cao du (>=700) VA vision da xac nhan dung mot minh duoc
@@ -69,15 +69,15 @@ def test_engine_phai_tim_tiep_khi_chi_du_tam_ma_thieu_slide():
 
 def test_dre_nop_dung_cung_nguong_cat_ngang():
     src = (ROOT / "dre_nop.py").read_text(encoding="utf-8")
-    assert "schema.CAO_TOI_THIEU_CAT_NGANG" in src, "dre_nop go cung 700 rieng -> hai nguong lech nhau"
+    assert "schema.HEIGHT_MIN_CROP_LANDSCAPE" in src, "dre_nop go cung 700 rieng -> hai nguong lech nhau"
     assert 'a["h"] < 700' not in src
 
 
 def test_manifest_va_tim_them_dung_mot_cong_thuc_dan_xuat():
-    src = inspect.getsource(manifest.dung_manifest)
-    assert "dan_xuat(" in src
+    src = inspect.getsource(manifest.build_manifest)
+    assert "compute_derived(" in src
     src2 = inspect.getsource(tim_anh_them.lam_moi_manifest)
-    assert "dan_xuat(" in src2
+    assert "compute_derived(" in src2
 
 
 def test_lam_moi_manifest_tinh_lai_thieu_anh():

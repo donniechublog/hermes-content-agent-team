@@ -45,19 +45,19 @@ HERMES_PY = env_load.HERMES_PY
 # Systemd/cron dat san; roi ve ~/.hermes o che do don cu.
 HERMES_HOME = str(env_load.hermes_home())
 
-env_load.nap()                            # nap secret.<brand>.env de co BRAND luc import
+env_load.load()                            # nap secret.<brand>.env de co BRAND luc import
 
 # MOT num brand duy nhat: CT_BRAND ('dcgr'|'blog') la khoa container cua env_load.
 # BRAND (ten content-brand day du) SUY tu CT_BRAND — truoc day la hai bien doc lap
 # voi hai bo gia tri, dat lech mot trong hai la content di nham brand. Van cho
 # BRAND trong env de len (tuong thich nguoc), nhung cau hinh chuan chi can CT_BRAND.
-_TEN_BRAND = env_load.BRAND_DAI        # mot bang, o env_load (ADF-r2-10)
+_TEN_BRAND = env_load.BRAND_LONG        # mot bang, o env_load (ADF-r2-10)
 
 BRAND = (os.environ.get("BRAND")
          or _TEN_BRAND.get(os.environ.get("CT_BRAND", ""), "donniechublog"))
 
 def load_secrets():
-    env_load.nap()
+    env_load.load()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not tok:
         sys.exit("Thieu TELEGRAM_BOT_TOKEN")
@@ -97,7 +97,7 @@ def _ghi_json(path, data, indent=2):
     vao nhau roi ban lai lan do moi la cai duoc replace."""
     # ADF-r2-11: pid+thread va don tmp khi hong nay nam trong env_load.ghi_json
     # (mot ban cho 4 cho tung tu viet). Giu ten ham cho ho duyet_*.
-    env_load.ghi_json(path, data, indent=indent)
+    env_load.write_json(path, data, indent=indent)
 
 _KHOA_DRAFT = {}                       # draft_id -> Lock: hai nut cua CUNG mot bai chay lan luot
 

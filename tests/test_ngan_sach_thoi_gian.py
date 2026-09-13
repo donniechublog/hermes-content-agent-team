@@ -3,7 +3,7 @@
 bat bien "hen gio trong < hen gio ngoai" (INV-4).
 
 Do may chu 14 ngay: dre/kite p95 ~23 phut, sat tran 25m dung chung; ethan <= 8.
-Fail tren code cu (khong co max_runtime_cua / CHO_LUOT_GIAY), pass tren code moi.
+Fail tren code cu (khong co max_runtime_cua / WAIT_SLOT_SECONDS), pass tren code moi.
 
 Chay:  venv/bin/python tests/test_ngan_sach_thoi_gian.py
 """
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import duyet_giao_viec as dg                                 # noqa: E402
 import role                                                   # noqa: E402
 
@@ -48,8 +48,8 @@ def test_kanban_create_truyen_max_runtime_theo_vai():
 
 
 def test_bat_bien_hen_gio_trong_nho_hon_hen_gio_ngoai():
-    assert cb.CHO_KHOA_GIAY < TRAN_BASH_GIAY
-    assert cb.CHO_LUOT_GIAY < TRAN_BASH_GIAY
+    assert cb.WAIT_LOCK_SECONDS < TRAN_BASH_GIAY
+    assert cb.WAIT_SLOT_SECONDS < TRAN_BASH_GIAY
     # canh bao "chay lau" phai den TRUOC khi hermes giet, voi MOI vai
     for slug in role.ROLE:
         assert dg.NGUONG_TREO_PHUT < _phut(role.max_runtime_for(slug)), slug
@@ -61,7 +61,7 @@ def test_cho_luot_het_gio_thi_thoat_co_cau_bao_dinh_ky():
     import fcntl
     thu_muc = cb.ROOT / "state"
     thu_muc.mkdir(parents=True, exist_ok=True)
-    cu = (cb.SO_ENGINE_SONG_SONG, cb.CHO_LUOT_GIAY, cb._ngu, cb.time)
+    cu = (cb.COUNT_ENGINE_PARALLEL, cb.WAIT_SLOT_SECONDS, cb._ngu, cb.time)
     t = [0.0]
     ngu = []
 
@@ -78,15 +78,15 @@ def test_cho_luot_het_gio_thi_thoat_co_cau_bao_dinh_ky():
     fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
     err = io.StringIO()
     try:
-        cb.SO_ENGINE_SONG_SONG, cb.CHO_LUOT_GIAY, cb._ngu, cb.time = 1, 70, _T.sleep, _T
+        cb.COUNT_ENGINE_PARALLEL, cb.WAIT_SLOT_SECONDS, cb._ngu, cb.time = 1, 70, _T.sleep, _T
         with redirect_stderr(err):
             try:
-                with cb._cho_luot():
+                with cb._wait_for_slot():
                     raise AssertionError("khong duoc vao khi het cho")
             except SystemExit as e:
                 assert "chay lai sau" in str(e), str(e)
     finally:
-        cb.SO_ENGINE_SONG_SONG, cb.CHO_LUOT_GIAY, cb._ngu, cb.time = cu
+        cb.COUNT_ENGINE_PARALLEL, cb.WAIT_SLOT_SECONDS, cb._ngu, cb.time = cu
         fcntl.flock(fh, fcntl.LOCK_UN); fh.close()
     bao = [l for l in err.getvalue().splitlines() if "doi toi luot" in l]
     assert len(bao) >= 3, err.getvalue()                  # 0s, 30s, 60s

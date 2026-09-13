@@ -3,7 +3,7 @@
 
 t_24b214a6: SIGSEGV 3 lan, vai tu `rm -f dang_chay.pid` roi goi lai 16 lan trong
 50 phut — khong co gi noi "thoi". Gio `_doi_khoa` bao ve khoa mo coi, `dem_chet`
-dem, `chay()` dung o TOI_DA_CHET va goi `_bao_chet_lap`. Fail tren code cu
+dem, `run()` dung o MAX_CRASH va goi `_bao_chet_lap`. Fail tren code cu
 (chua co dem_chet / _doi_khoa tra None), pass tren code moi.
 
 Chay:  venv/bin/python tests/test_engine_chet_lap.py
@@ -17,48 +17,48 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 
 
 def test_doi_khoa_bao_mo_coi():
     with tempfile.TemporaryDirectory() as tmp:
         khoa = Path(tmp) / "dang_chay.pid"
         with redirect_stderr(io.StringIO()):
-            assert cb._doi_khoa(khoa, 5, "d") is False          # khong co khoa
+            assert cb._handle_lock(khoa, 5, "d") is False          # khong co khoa
             khoa.write_text("999999999")
-            assert cb._doi_khoa(khoa, 5, "d") is True           # mo coi
+            assert cb._handle_lock(khoa, 5, "d") is True           # mo coi
         assert not khoa.exists()
 
 
 def test_dem_chet_tang_theo_mo_coi_va_ve_0_khi_lam_moi():
     with tempfile.TemporaryDirectory() as tmp:
         wd = Path(tmp)
-        assert cb.dem_chet(wd, False) == 0
-        assert cb.dem_chet(wd, True) == 1
-        assert cb.dem_chet(wd, True) == 2
-        assert cb.dem_chet(wd, False) == 2                       # khong mo coi: giu nguyen
-        assert cb.dem_chet(wd, False, lam_moi=True) == 0
-        assert cb.dem_chet(wd, False) == 0
+        assert cb.count_crashes(wd, False) == 0
+        assert cb.count_crashes(wd, True) == 1
+        assert cb.count_crashes(wd, True) == 2
+        assert cb.count_crashes(wd, False) == 2                       # khong mo coi: giu nguyen
+        assert cb.count_crashes(wd, False, lam_moi=True) == 0
+        assert cb.count_crashes(wd, False) == 0
 
 
 def test_toi_da_chet_la_hai():
-    assert cb.TOI_DA_CHET == 2
+    assert cb.MAX_CRASH == 2
 
 
 def test_chay_dung_o_toi_da_va_bao():
-    """Cong o muc ma nguon: `chay()` phai goi dem_chet, so voi TOI_DA_CHET, goi
+    """Cong o muc ma nguon: `run()` phai goi dem_chet, so voi MAX_CRASH, goi
     _bao_chet_lap va sys.exit — khong test duoc bang chay that (can meta draft +
-    browser), nen doc AST cua chay() nhu cong _vong_thuong_hieu (10/09/2026)."""
-    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    browser), nen doc AST cua run() nhu cong _vong_thuong_hieu (10/09/2026)."""
+    src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
     ham = next(n for n in ast.walk(ast.parse(src))
-               if isinstance(n, ast.FunctionDef) and n.name == "chay")
+               if isinstance(n, ast.FunctionDef) and n.name == "run")
     goi = {n.func.id for n in ast.walk(ham)
            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     ten = {n.id for n in ast.walk(ham) if isinstance(n, ast.Name)}
-    assert {"dem_chet", "_bao_chet_lap", "_doi_khoa"} <= goi, goi
-    assert "TOI_DA_CHET" in ten
+    assert {"count_crashes", "_report_crash_loop", "_handle_lock"} <= goi, goi
+    assert "MAX_CRASH" in ten
     assert any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-               and n.func.attr == "exit" for n in ast.walk(ham)), "chay() phai sys.exit khi chet lap"
+               and n.func.attr == "exit" for n in ast.walk(ham)), "run() phai sys.exit khi chet lap"
 
 
 def test_bao_chet_lap_gui_dung_topic_va_khong_nem():
@@ -69,7 +69,7 @@ def test_bao_chet_lap_gui_dung_topic_va_khong_nem():
     publish.gui_topic = lambda text, vai: gui.append((vai, text)) or True
     try:
         with redirect_stderr(io.StringIO()):
-            cb._bao_chet_lap("draft-khong-ton-tai", 2)
+            cb._report_crash_loop("draft-khong-ton-tai", 2)
     finally:
         publish.gui_topic = cu
     assert len(gui) == 1 and gui[0][0] == cb.role.DEFAULT_IMAGE, gui
@@ -78,7 +78,7 @@ def test_bao_chet_lap_gui_dung_topic_va_khong_nem():
     publish.gui_topic = lambda text, vai: (_ for _ in ()).throw(RuntimeError("x"))
     try:
         with redirect_stderr(io.StringIO()):
-            cb._bao_chet_lap("d", 3)
+            cb._report_crash_loop("d", 3)
     finally:
         publish.gui_topic = cu
 

@@ -16,25 +16,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import chup_trang  # noqa: E402
-import luat_anh  # noqa: E402
-import phien_browser  # noqa: E402
+import image_rules  # noqa: E402
+import browser_session  # noqa: E402
 import xep_hang  # noqa: E402
 from chuan_bi import vong_bu  # noqa: E402
 
 
 def test_hang_so_mobile_chi_co_mot_ban():
     """Chép đôi thì một ngày nào đó hai chỗ lệch nhau mà không ai thấy."""
-    assert xep_hang.MOBILE_VIEWPORT is phien_browser.MOBILE_VIEWPORT
-    assert chup_trang.MOBILE_VIEWPORT is phien_browser.MOBILE_VIEWPORT
-    assert phien_browser.MOBILE_VIEWPORT["width"] == 414
-    assert phien_browser.MOBILE_DPR == 3
-    assert "iPhone" in phien_browser.MOBILE_UA
+    assert xep_hang.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
+    assert chup_trang.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
+    assert browser_session.MOBILE_VIEWPORT["width"] == 414
+    assert browser_session.MOBILE_DPR == 3
+    assert "iPhone" in browser_session.MOBILE_UA
 
 
 def test_nac_chup_nguon_dung_TRUOC_nac_khai_niem():
     """Thứ tự là cả nội dung của ticket: khối lead là vật THẬT của tin, ảnh khái
     niệm thì không. Đảo thứ tự là quay về đúng lỗi 12/09."""
-    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
     i_chup = src.index("_vong_chup_nguon(anh")
     i_kn = src.index("_vong_khai_niem(anh")
     assert i_chup < i_kn, "vòng chụp nguồn phải gọi trước vòng khái niệm"
@@ -43,12 +43,12 @@ def test_nac_chup_nguon_dung_TRUOC_nac_khai_niem():
 def test_bi_chan_nhan_ra_tuong_chan_bot():
     """Tường chặn bot vẫn có <h1> và vẫn chụp ra ảnh — không nhận ra thì tấm
     "Let's confirm you are human" của arstechnica lên thẳng bìa (12/09/2026)."""
-    assert phien_browser.bi_chan("Just a moment...")
-    assert phien_browser.bi_chan("", 403)
-    assert phien_browser.bi_chan("", None, "Let's confirm you are human. Begin >")
+    assert browser_session.got_block("Just a moment...")
+    assert browser_session.got_block("", 403)
+    assert browser_session.got_block("", None, "Let's confirm you are human. Begin >")
     # Tiêu đề thật của bài vẫn qua, kể cả bài VIẾT VỀ chặn bot (trang dài).
-    assert not phien_browser.bi_chan("Mecka AI nears $500M valuation", 200)
-    assert not phien_browser.bi_chan("How Cloudflare blocks bots", 200,
+    assert not browser_session.got_block("Mecka AI nears $500M valuation", 200)
+    assert not browser_session.got_block("How Cloudflare blocks bots", 200,
                                      "verify you are human " + "x" * 1300)
 
 
@@ -134,7 +134,7 @@ def test_khoi_tit_la_nac_cuoi_sau_khai_niem():
     """Ông Chủ 12/09/2026 xem bìa tin toán ra toàn chữ: "AI giải toán giỏi hoàn
     toàn có thể dùng hình bảng đen... thiếu idea đến thế à?". Khối tít (trang
     không ảnh hero) chỉ làm bìa khi thực thể + khái niệm đều rỗng."""
-    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
     assert src.index("_vong_khai_niem(anh") < src.index("nang_khoi_tit(anh)")
     a = {"ma": "A1", "kieu": "tit", "dung": [], "lien_quan": True, "ghi_chu": []}
     b = {"ma": "A2", "kieu": "tit", "dung": [], "lien_quan": True, "mat": True, "ghi_chu": []}
@@ -171,7 +171,7 @@ def test_anh_co_mat_khong_len_bia_du_thu_truoc_anh_khong_mat_thu_sau():
         return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
                 "alt": "khối lead", "ly_do": "khối lead của trang nguồn"}
 
-    goc_dem_mat = luat_anh.dem_mat
+    goc_dem_mat = image_rules.count_faces
 
     def dem_mat_gia(path):
         # Trang DAU (vidu.com, thu truoc) CO mat nguoi; trang SAU (bao-khac.com)
@@ -180,14 +180,14 @@ def test_anh_co_mat_khong_len_bia_du_thu_truoc_anh_khong_mat_thu_sau():
         return 1 if "A1" in str(path) else 0
 
     that = chup_trang.chup_lead_mobile
-    chup_trang.chup_lead_mobile, luat_anh.dem_mat = gia, dem_mat_gia
+    chup_trang.chup_lead_mobile, image_rules.count_faces = gia, dem_mat_gia
     try:
         with tempfile.TemporaryDirectory() as d:
             wd = Path(d)
             anh, dung_duoc, _ = vong_bu._vong_chup_nguon(
                 [], "https://vidu.com/bai-toan", [{"url": "https://bao-khac.com/x"}], wd)
     finally:
-        chup_trang.chup_lead_mobile, luat_anh.dem_mat = that, goc_dem_mat
+        chup_trang.chup_lead_mobile, image_rules.count_faces = that, goc_dem_mat
 
     assert thu == ["https://vidu.com/bai-toan", "https://bao-khac.com/x"], thu
     assert len(anh) == 2, anh

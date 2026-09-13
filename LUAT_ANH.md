@@ -6,7 +6,7 @@ Bộ tiêu chí ảnh của cả đội, **một nguồn sự thật duy nhất*
 **Đường cắt — một câu:**
 
 > *"Ảnh này có được dùng không"* → **chung**, nằm ở đây (và thành cổng chặn
-> trong `luat_anh.py`).
+> trong `image_rules.py`).
 > *"Đặt nó lên khung thế nào"* → **riêng** từng vai, nằm trong SKILL của vai đó.
 
 **Ai phải theo:** mọi vai **tạo ra** ảnh mới — Ethan (`hero-image`, `card.py`),
@@ -40,7 +40,7 @@ Bỏ thẳng, không cần cân nhắc:
 ## 1. Tìm ảnh thật
 
 > **AI làm việc này (rõ một lần, 06/09/2026).** Từ 04/09/2026 **vai không đi tìm
-> ảnh nữa** — `anh_chuan_bi.py` tìm sẵn và brief chỉ đưa ra danh sách mã; vai
+> ảnh nữa** — `image_prepare.py` tìm sẵn và brief chỉ đưa ra danh sách mã; vai
 > chọn mã. Nên §1.1 → §1.4 dưới đây là **luật của engine**, và các lệnh CLI in
 > kèm là **công cụ tay** để Ông Chủ hoặc người sửa code chạy lại một bước khi
 > nghi ngờ — **không phải việc giao cho vai**. `task_bodies.py` cấm vai chạy
@@ -84,7 +84,7 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 
 Ông Chủ 05/09/2026: *"designer gần như luôn né tránh việc tìm nguồn ảnh, toàn lấy
 ảnh trong một URL, kể cả banner quảng cáo"*. Từ 04/09 vai không tìm ảnh nữa —
-`anh_chuan_bi.py` tìm, vai chỉ chọn mã — nên luật này là luật của **engine**:
+`image_prepare.py` tìm, vai chỉ chọn mã — nên luật này là luật của **engine**:
 
 - Chỉ lấy ảnh **trong bài** (`article`/`main`); loại quảng cáo, widget, sidebar,
   nav/footer, placeholder, onboarding, logo — theo cả tổ tiên DOM lẫn src/alt.
@@ -160,7 +160,7 @@ toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng má
 qua luôn. Nhắc tới Nhật thì tìm cờ hoặc bản đồ nước Nhật, Nhật đầu tư xây
 compute thì lấy hình datacenter"*. Trước 04/09 Dre tự làm việc này bằng
 web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là luật của
-**engine** (`anh_khai_niem.py`, chạy trong `anh_chuan_bi.py`):
+**engine** (`anh_khai_niem.py`, chạy trong `image_prepare.py`):
 
 - **Khi nào**: sau vòng tìm rộng **và sau nấc chụp trang nguồn (§1.2b2)** mà vẫn
   thiếu ảnh, *hoặc* có ảnh mà không tấm nào làm bìa/hero được. Không chạy khi tin
@@ -493,7 +493,7 @@ trên băng:
 > Không ra output tương tự đồ hoạ tham chiếu (arena.ai) là **fail**.
 
 Từ 06/09 việc này là của **engine**, không phải của vai: `xep_hang.py` chạy
-trong `anh_chuan_bi.py` khi tiêu đề là tin xếp hạng. Nó tách tên model, đi qua
+trong `image_prepare.py` khi tiêu đề là tin xếp hạng. Nó tách tên model, đi qua
 registry nguồn (arena.ai text/code/vision/t2i/**image-edit**/t2v/search,
 artificialanalysis.ai, tbench.ai, swebench.com, livebench.ai, aider — nguồn
 được nhắc trong bài đi trước), mở browser, tìm **hàng** chứa model trong bảng
@@ -521,7 +521,7 @@ Chart đi đâu, theo khung:
 - **Carousel slide thân** — `"chart": true`, dán full bề ngang nguyên vẹn.
 
 Nguồn không có sẵn ảnh chart thì **chụp từ chính trang nguồn**: engine
-`anh_chuan_bi.py` mở browser thật và tự chụp `figure/table/canvas/svg` (mã ảnh
+`image_prepare.py` mở browser thật và tự chụp `figure/table/canvas/svg` (mã ảnh
 loại `chart`, đóng dấu `chup_chart`). Chụp tay thì dùng `chup_chart.py` — full
 chiều rộng trước, chiều cao xét sau (mục 2).
 
@@ -831,7 +831,7 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 
 ---
 
-## 9. Bảng cổng chặn (`luat_anh.py`)
+## 9. Bảng cổng chặn (`image_rules.py`)
 
 | Cổng | Hàm | Chặn hay cảnh báo |
 |---|---|---|

@@ -22,7 +22,7 @@ import cv2                                                   # noqa: E402
 def don(id_: str, wd: Path, spec: dict) -> tuple:
     """Xoá chữ. Trả về (nen_sach, mask_debug, vung_json, số vùng xoá, số vùng giữ)."""
     import doi_chu_anh
-    import luat_anh
+    import image_rules
     d = json.loads((wd / "vung_ocr.json").read_text(encoding="utf-8"))
     anh = Path(d["anh"])
     img = cv2.imread(str(anh))
@@ -52,7 +52,7 @@ def don(id_: str, wd: Path, spec: dict) -> tuple:
     sach = doi_chu_anh.inpaint(img, mask, verbose=False)
     nen = wd / "nen_sach.png"
     cv2.imwrite(str(nen), sach)
-    luat_anh.dong_dau_tep(nen, "doi_chu_anh")
+    image_rules.stamp_file(nen, "doi_chu_anh")
     vis = img.copy()
     vis[mask > 0] = (0, 0, 255)
     vis = cv2.addWeighted(img, 0.5, vis, 0.5, 0)

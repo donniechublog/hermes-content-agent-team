@@ -31,11 +31,11 @@ def _voi_env(ten, gia_tri, ham):
 
 def test_so_luong_chi_ha_khong_nang():
     """B-r2-6: CT_WORKERS la TRAN chung; khong dat thi giu mac dinh cua cho goi."""
-    assert _voi_env("CT_WORKERS", None, lambda: env_load.so_luong(6)) == 6
-    assert _voi_env("CT_WORKERS", "2", lambda: env_load.so_luong(6)) == 2
-    assert _voi_env("CT_WORKERS", "16", lambda: env_load.so_luong(6)) == 6, "khong nang qua mac dinh"
-    assert _voi_env("CT_WORKERS", "0", lambda: env_load.so_luong(6)) == 6
-    assert _voi_env("CT_WORKERS", "xyz", lambda: env_load.so_luong(6)) == 6, "gia tri rac -> mac dinh"
+    assert _voi_env("CT_WORKERS", None, lambda: env_load.quantity(6)) == 6
+    assert _voi_env("CT_WORKERS", "2", lambda: env_load.quantity(6)) == 2
+    assert _voi_env("CT_WORKERS", "16", lambda: env_load.quantity(6)) == 6, "khong nang qua mac dinh"
+    assert _voi_env("CT_WORKERS", "0", lambda: env_load.quantity(6)) == 6
+    assert _voi_env("CT_WORKERS", "xyz", lambda: env_load.quantity(6)) == 6, "gia tri rac -> mac dinh"
 
 
 def test_ghi_json_hong_giua_chung_khong_de_tmp_va_giu_tep_cu():
@@ -43,7 +43,7 @@ def test_ghi_json_hong_giua_chung_khong_de_tmp_va_giu_tep_cu():
     khi hong va khong cham tep cu."""
     with tempfile.TemporaryDirectory() as t:
         p = Path(t) / "a" / "b.json"
-        env_load.ghi_json(p, {"x": 1})                    # tu mkdir
+        env_load.write_json(p, {"x": 1})                    # tu mkdir
         assert json.loads(p.read_text(encoding="utf-8")) == {"x": 1}
         truoc = p.read_bytes()
         import os as _os
@@ -54,7 +54,7 @@ def test_ghi_json_hong_giua_chung_khong_de_tmp_va_giu_tep_cu():
         _os.replace = _no
         try:
             try:
-                env_load.ghi_json(p, {"z": 2})
+                env_load.write_json(p, {"z": 2})
             except OSError:
                 pass
         finally:

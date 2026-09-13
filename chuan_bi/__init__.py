@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Goi `chuan_bi`: engine chuan bi anh/tu lieu, tach theo PHA (audit A1).
 
-anh_chuan_bi.py o goc van la diem vao (chay/CLI) de cron, SOUL va cac vai KHONG
+image_prepare.py o goc van la diem vao (chay/CLI) de cron, SOUL va cac vai KHONG
 phai doi lenh. Thu tu phu thuoc mot chieu:
     chung <- nguon, browser, tai_loc <- nhin <- vong_bu;  manifest <- chung
 """

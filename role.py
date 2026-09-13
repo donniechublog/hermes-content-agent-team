@@ -334,7 +334,7 @@ def has_enough_material(slug: str, dung_duoc: list, flagship: bool = False) -> b
     # 12/09/2026 co 5 tam nhung mot tam 900x600 chi ghep duoc ma khong co cap
     # -> 4 slide, engine van bao "du 5" va ngung tim (t_a8ffd2f6).
     import schema
-    return schema.so_anh_dung_duoc(dung_duoc) >= search_target_for(slug, flagship)
+    return schema.count_image_use_ok(dung_duoc) >= search_target_for(slug, flagship)
 
 
 def product_unit_for(slug: str) -> str:

@@ -286,7 +286,7 @@ def main() -> int:
         print("[LOI] khong gui duoc canh bao cron", file=sys.stderr)
         return 1
 
-    env_load.ghi_json(DAU, {"ngay": hom_nay, "van_de": khoa,
+    env_load.write_json(DAU, {"ngay": hom_nay, "van_de": khoa,
                             "boi": env_load._brand() or "don",
                             "luc": datetime.now().isoformat(timespec="seconds")})
     if not a.im:

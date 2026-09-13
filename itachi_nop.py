@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_chuan_bi as gb                                    # noqa: E402
 import nen_chu                                               # noqa: E402
-import nop_chung as nc                                       # noqa: E402
+import submit_common as nc                                       # noqa: E402
 from card import _f, _wrap                                   # noqa: E402
 from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
 
@@ -244,7 +244,7 @@ def main() -> int:
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        return nc.dem_vong_loi(wd, loi,
+        return nc.count_round_error(wd, loi,
                                f"venv/bin/python itachi_nop.py {a.khoa}")
     if deck_slides:
         p_spec = wd / "deck.spec.json"

@@ -14,8 +14,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from phien_browser import (MOBILE_DPR, MOBILE_UA,             # noqa: E402
-                           MOBILE_VIEWPORT, bi_chan, phien_hoac_moi)
+from browser_session import (MOBILE_DPR, MOBILE_UA,             # noqa: E402
+                           MOBILE_VIEWPORT, got_block, session_or_new)
 
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
@@ -40,7 +40,7 @@ def chup(url: str, ra, phien=None) -> bool:
     ra = Path(ra)
     ra.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with phien_hoac_moi(phien) as ph:
+        with session_or_new(phien) as ph:
             with ph.trang(viewport=KHUNG, device_scale_factor=DPR, user_agent=UA) as page:
                 try:
                     page.goto(url, wait_until="networkidle", timeout=GIO_HAN)
@@ -321,7 +321,7 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
     ra.parent.mkdir(parents=True, exist_ok=True)
     tit_trang = ""
     try:
-        with phien_hoac_moi(phien) as ph:
+        with session_or_new(phien) as ph:
             with ph.trang(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
                           is_mobile=True, has_touch=True, user_agent=MOBILE_UA) as page:
                 resp = None
@@ -352,7 +352,7 @@ def chup_lead_mobile(url: str, ra, phien=None) -> dict | None:
                 # vuot.
                 tit_trang = (page.title() or "")[:200]
                 mau_nen = page.evaluate(_JS_MAU_NEN) or "#ffffff"
-                ly = bi_chan(tit_trang, resp.status if resp else None,
+                ly = got_block(tit_trang, resp.status if resp else None,
                              page.evaluate("document.body ? document.body.innerText : ''") or "")
                 if ly:
                     print(f"[chup_lead] {url[:70]}: trang chặn bot ({ly}), bỏ nguồn này",

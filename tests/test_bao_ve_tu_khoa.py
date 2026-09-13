@@ -70,7 +70,7 @@ def test_bao_ve_tu_khoa_loc_theo_tu_khoa_khong_theo_su_kien_goc():
 
     with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
          mock.patch("httpx.head", side_effect=_head_gia), \
-         mock.patch("quet_chung.url_an_toan", return_value=True):
+         mock.patch("scan_common.url_hide_whole", return_value=True):
         ra = nguon_bai.bao_ve_tu_khoa("Moonshot AI", so=6)
 
     mien = {r["toa_soan"] for r in ra}
@@ -99,7 +99,7 @@ def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
 
     with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
          mock.patch("httpx.head", side_effect=_head_gia), \
-         mock.patch("quet_chung.url_an_toan", return_value=True):
+         mock.patch("scan_common.url_hide_whole", return_value=True):
         ra = nguon_bai.bao_ve_tu_khoa("Anthropic", so=6)
 
     assert {r["toa_soan"] for r in ra} == {"https://en.example"}, ra
@@ -122,7 +122,7 @@ def test_bao_ve_tu_khoa_khong_gioi_han_thoi_gian():
 
     with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
          mock.patch("httpx.head", side_effect=_head_gia), \
-         mock.patch("quet_chung.url_an_toan", return_value=True):
+         mock.patch("scan_common.url_hide_whole", return_value=True):
         ra = nguon_bai.bao_ve_tu_khoa("Moonshot AI", so=6)
 
     assert {r["toa_soan"] for r in ra} == {"https://cu.example"}, ra
@@ -149,7 +149,7 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
                 ra.append(c2)
             return ra
 
-        import luat_anh
+        import image_rules
         with mock.patch("anh_thuong_hieu.hang_trong_tin",
                         return_value=[{"hang": "Moonshot AI", "khoa": "moonshot"}]), \
              mock.patch("anh_thuong_hieu.anh_hang", return_value=[]), \
@@ -161,9 +161,9 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
                               return_value={"cands": [ung_vien], "tieu_de_en": "", "chu": "",
                                            "trang_them": []}), \
              mock.patch.object(vong_bu, "tai_va_loc", side_effect=tai_va_loc_gia), \
-             mock.patch.object(luat_anh, "dem_mat", return_value=0), \
-             mock.patch.object(luat_anh, "la_chart", return_value=(False, "ảnh chụp thật")), \
-             mock.patch.object(luat_anh, "do_chart", return_value=(0.1, 500)), \
+             mock.patch.object(image_rules, "count_faces", return_value=0), \
+             mock.patch.object(image_rules, "is_chart", return_value=(False, "ảnh chụp thật")), \
+             mock.patch.object(image_rules, "measure_chart_signal", return_value=(0.1, 500)), \
              mock.patch.object(vong_bu, "_xep_hang_boi_canh", return_value=None):  # trung mang that
             anh, dung_duoc, _ = vong_bu._vong_thuong_hieu([], "Moonshot AI raises funding", "", wd)
 

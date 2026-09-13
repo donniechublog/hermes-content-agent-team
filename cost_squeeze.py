@@ -167,7 +167,7 @@ def main():
     ap.add_argument("--models", nargs="*", help="Model can thu")
     a = ap.parse_args()
 
-    key = env_load.bat_buoc("OPENAI_API_KEY")
+    key = env_load.required("OPENAI_API_KEY")
     sys_prompt, nhac, (tu_min, tu_max) = VIEC[a.vai]()
 
     them = suy_luan_cua_vai(a.vai)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""dre_chuan_bi.py — BRIEF cho Dre (carousel). Phan co hoc nam o anh_chuan_bi.py
+"""dre_chuan_bi.py — BRIEF cho Dre (carousel). Phan co hoc nam o image_prepare.py
 (engine dung chung); tep nay chi in ban chuan bi theo cach nhin cua Dre: bang
 anh voi ma A1..An va nhan "dung duoc o dau" cho carousel, tu lieu, khung spec.
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import schema                                                # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 
@@ -53,7 +53,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     # Mac dinh bang CUNG cong thuc voi nguoi ghi (schema.so_anh_dung_duoc): ban
     # cu dem `len([a for a in m["anh"] if a["dung"]])` — mot so KHAC, vi chum anh
     # khai niem phai dem la MOT (F2).
-    so_dd = m.get("so_dung_duoc", schema.so_anh_dung_duoc(m.get("anh")))
+    so_dd = m.get("so_dung_duoc", schema.count_image_use_ok(m.get("anh")))
     if m["anh"] and so_dd < m.get("toi_thieu", 5):
         L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} slide dựng được, cần ≥ {m.get('toi_thieu', 5)}. "
                  "KHÔNG nhồi ảnh không liên quan cho đủ. Việc của bạn: TỰ ĐI TÌM — "
@@ -69,7 +69,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
     if m.get("tin_xep_hang"):
-        L.append(cb.dong_brief_xep_hang(m, "bìa ", "dre_nop"))
+        L.append(cb.ranking_brief_line(m, "bìa ", "dre_nop"))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "
@@ -145,7 +145,7 @@ def main() -> int:
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
-    m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
+    m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     da_dung = cb._doc_json(wd / "da_dung.json")
     brief = viet_brief(m, da_dung)

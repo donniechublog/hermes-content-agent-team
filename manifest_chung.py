@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import quet_chung                                           # noqa: E402
+import scan_common                                           # noqa: E402
 
 TOI_DA_TU_TOM_TAT = 15          # brief cua ca ba vai hua "mot menh de <= 15 tu"
 _EM_DASH = re.compile(r"\s*[—–]\s*")
@@ -90,7 +90,7 @@ def duong_ra_moi(goc: Path) -> Path:
     # chay quet_nop cua Vera luc 22:01:10 / 22:01:48 / 22:02 (UTC) deu ghi vao
     # `vera_candidates_2026-09-11_t2201.json`, tuc bao cao dau tien gui len
     # topic tro toi mot tep ma noi dung da bi ban thu ba thay mat.
-    goi = f"{goc.stem}_t{datetime.now(quet_chung.VN).strftime('%H%M%S')}"
+    goi = f"{goc.stem}_t{datetime.now(scan_common.VN).strftime('%H%M%S')}"
     ra = goc.with_name(f"{goi}{goc.suffix}")
     n = 2
     while ra.exists():

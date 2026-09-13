@@ -97,8 +97,8 @@ def test_tran_chup_du_cho_mot_carousel():
 
 def test_chup_nguon_chay_TRUOC_tim_kiem_web():
     """Đường ngắn (chụp báo cùng tin) phải thử trước đường dài (Yandex/og:image)."""
-    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
-    than = src[src.index("def chuan_bi("):src.index("def workdir(")]
+    src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
+    than = src[src.index("def prepare_article("):src.index("def workdir(")]
     assert than.index("_vong_chup_nguon(") < than.index("_vong_tim_rong("), \
         "chup trang nguon phai dung TRUOC vong tim rong"
 

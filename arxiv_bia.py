@@ -39,7 +39,7 @@ RONG = 1200
 TI_LE = 5 / 4                       # cao / rong -> 4:5
 CAO = round(RONG * TI_LE)
 
-UA = env_load.UA_TRINH_DUYET        # mot ban duy nhat, xem env_load (A5)
+UA = env_load.UA_BROWSER        # mot ban duy nhat, xem env_load (A5)
 
 
 def la_arxiv(link: str) -> str | None:

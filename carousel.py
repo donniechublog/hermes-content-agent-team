@@ -59,7 +59,7 @@ from PIL import Image, ImageDraw, ImageFilter
 # Tai dung nguyen xi cac helper da kiem chung cua card.py thay vi viet lai:
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
-import luat_anh
+import image_rules
 from card import (
     _f, _wrap, _fit_cover,
     tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
@@ -634,7 +634,7 @@ def _gate_anh(paths):
         if not Path(p).exists():
             loi.append(f"{nhan}: khong thay tep anh {p}")
             continue
-        if not gom(luat_anh.kiem_trung(nhan, p, da_thay)):
+        if not gom(image_rules.check_duplicate(nhan, p, da_thay)):
             continue
         img = Image.open(p)
         w, h_px = img.size
@@ -643,25 +643,25 @@ def _gate_anh(paths):
 
         # Anh RONG chan TRUOC kiem_chart: anh trang tron duoc do_chart cham la
         # "chart" (phang 100%, 2 mau), de sau thi thong bao thanh "thieu co".
-        if not gom(luat_anh.kiem_anh_rong(nhan, img)):
+        if not gom(image_rules.check_blank_image(nhan, img)):
             continue
-        if not gom(luat_anh.kiem_chart(nhan, img, khai_chart, la_bia)):
+        if not gom(image_rules.check_chart_integrity(nhan, img, khai_chart, la_bia)):
             continue
 
         # RIENG CUA CAROUSEL: slide than khai "chart": true -> nhan ca anh NGANG
         # nguyen ven (_body_image dan full be ngang, khong cat). Bia thi khong,
         # vi hook de len anh; bia chart ngang phai ghep doc "images".
         r = w / h_px
-        if khai_chart and not la_bia and r > luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE:
-            if luat_anh.doc_dau_crop(img):
+        if khai_chart and not la_bia and r > image_rules.TI_LE_11 + image_rules.TOLERANCE_RATIO:
+            if image_rules.read_crop_trace(img):
                 loi.append(f"{nhan}: chart ma van di qua crop_ti_le.py — chart phai "
                            'NGUYEN VEN, dua thang anh goc vao voi "chart": true')
             continue
-        gom(luat_anh.kiem_ti_le(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
+        gom(image_rules.check_aspect_ratio(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
 
-        gom(luat_anh.kiem_crop_ngang(nhan, img, w, h_px, muc.get("crop_ok")))
-        gom(luat_anh.kiem_do_phan_giai(nhan, w, h_px))
-        gom(luat_anh.kiem_mat_nguoi(nhan, p, muc.get("nhan_vat")))
+        gom(image_rules.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
+        gom(image_rules.check_resolution(nhan, w, h_px))
+        gom(image_rules.check_unnamed_face(nhan, p, muc.get("nhan_vat")))
     return loi, canh_bao
 
 

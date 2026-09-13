@@ -2,7 +2,7 @@
 """social_post.py — MOT cua duy nhat doc post X/Instagram/Facebook.
 
 Vi sao tach ra: hai noi can cung mot thu va vi ly do khac nhau —
-`duyet_lenh.py` (/bai) can CHU de lam brief, `anh_chuan_bi.py` can HINH cua
+`duyet_lenh.py` (/bai) can CHU de lam brief, `image_prepare.py` can HINH cua
 chinh post do lam anh that cho slide. Viet hai ban thi mot ban sua, ban kia
 lech; dac biet la luat chuan hoa URL Facebook (xem SKILL.md cua social-crawl)
 von da dat gia moi tim ra.

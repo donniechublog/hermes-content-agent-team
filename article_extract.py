@@ -15,7 +15,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 
 UA = "Mozilla/5.0 (compatible; donniechu-content-bot/1.0)"
 
@@ -30,7 +30,7 @@ UA = "Mozilla/5.0 (compatible; donniechu-content-bot/1.0)"
 # chep ("tep nay chay doc lap trong tien trinh con") khong con dung. Ban chep
 # tay chi so khop CHUOI nen "127.1" va "2130706433" deu lot; ban chung dung
 # `ipaddress` + `inet_aton` va la MOT cho duy nhat cho ca day chuyen.
-_kiem_host = quet_chung.kiem_url
+_kiem_host = scan_common.check_url
 SKIP_IMG_HINTS = ("avatar", "logo", "favicon", "icon-")
 
 

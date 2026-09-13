@@ -33,15 +33,15 @@ import httpx
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 
-UA = quet_chung.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 
 # Anh khong dai dien noi dung — the thuong hieu, logo, avatar...
-import luat_anh                                              # noqa: E402
+import image_rules                                              # noqa: E402
 import env_load                                              # noqa: E402
-RAC = luat_anh.RAC                     # mot bo tu vung, xem luat_anh
+RAC = image_rules.JUNK                     # mot bo tu vung, xem luat_anh
 
 # Ten tep / alt goi y day la bieu do, bang so — thu doc gia muon xem
 QUY = re.compile(
@@ -61,7 +61,7 @@ LA_TIN_MODEL = re.compile(
 
 DAI_TOI_DA = 6          # so bai dua tin lay them
 ANH_MOI_TRANG = 6       # so anh lay toi da moi trang
-DIEN_TICH_TOI_THIEU = luat_anh.DIEN_TICH_TAI   # ~350x350, xem luat_anh
+DIEN_TICH_TOI_THIEU = image_rules.AREA_DOWNLOAD   # ~350x350, xem luat_anh
 
 # Kich thuoc CHINH XAC ma cac model sinh anh hay xuat ra. Anh chup man hinh hay
 # bang so that gan nhu khong bao gio roi dung vao mot trong nhung con so nay —
@@ -80,9 +80,9 @@ CO_AI_SINH = {
 def _tai(url: str, timeout=15):
     # Cong host noi bo cho MOI lan tai cua module nay (trang bai, anh ung vien).
     # URL den tu HTML ben ngoai nen phai kiem ca truoc lan sau chuyen huong.
-    quet_chung.kiem_url(url)
+    scan_common.check_url(url)
     r = httpx.get(url, headers=HDR, timeout=timeout, follow_redirects=True)
-    quet_chung.kiem_url(r.url, "URL sau chuyen huong")
+    scan_common.check_url(r.url, "URL sau chuyen huong")
     return r
 
 
@@ -126,7 +126,7 @@ def anh_trong_trang(url: str) -> list:
     return ra[: ANH_MOI_TRANG * 2]
 
 
-_tu_dac_trung = quet_chung.tu_dac_trung   # mot ban duy nhat, xem quet_chung
+_tu_dac_trung = scan_common.from_distinctive   # mot ban duy nhat, xem quet_chung
 
 
 def bao_khac(tieu_de: str, link: str = "", so=DAI_TOI_DA) -> list:
@@ -287,7 +287,7 @@ def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -
             trang += [(u, "bao khac") for u, _ in bao_khac(tieu_de, link) if u]
 
     ung_vien = []
-    with cf.ThreadPoolExecutor(max_workers=env_load.so_luong(6)) as ex:
+    with cf.ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
         for (u, nguon), ds in zip(trang, ex.map(lambda t: anh_trong_trang(t[0]), trang)):
             for src, alt, og in ds:
                 ung_vien.append({"anh": src, "alt": alt, "og": og,
@@ -308,7 +308,7 @@ def tim(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) -
             theo_goc[k] = c
     loc = list(theo_goc.values())
 
-    with cf.ThreadPoolExecutor(max_workers=env_load.so_luong(8)) as ex:
+    with cf.ThreadPoolExecutor(max_workers=env_load.quantity(8)) as ex:
         for c, kt in zip(loc, ex.map(lambda x: do_anh(x["anh"]), loc)):
             c["rong"], c["cao"], c["byte"], c["do_hoa"] = kt
             c["diem"], c["ly_do"] = cham(c["anh"], c["alt"], c["og"],

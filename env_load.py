@@ -53,7 +53,7 @@ UA_WIKI = "donniechu-content-team/1.0 (https://dcgr.tech)"
 #   UA_WIKI              — Wikimedia DOI ten cong cu + duong lien he (xem tren)
 # Doi mot trong so do sang UA gia trinh duyet la mat tinh thanh that voi trang
 # minh quet; doi UA_WIKI la an 403 (da do).
-UA_TRINH_DUYET = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+UA_BROWSER = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 
 
@@ -98,16 +98,16 @@ def _brand() -> str:
 _BRAND_DAI = {"dcgr": "dcgr", "blog": "donniechublog"}
 # Cong khai (audit lượt 2, ADF-r2-10): bang nay tung chep o 3 tep nua
 # (moat_publish/duyet_co_so/bob_nop `_TEN_BRAND`) — mot brand moi la sua 4 cho.
-BRAND_DAI = _BRAND_DAI
+BRAND_LONG = _BRAND_DAI
 
 
-def brand_dai(mac_dinh: str = "donniechublog") -> str:
+def brand_long(mac_dinh: str = "donniechublog") -> str:
     """Slug thuong hieu DAI ('donniechublog'/'dcgr') tu CT_BRAND hien tai —
     dung cho moi loi goi card.dat_thuong_hieu / anh_thuong_hieu.dat_thuong_hieu."""
     return _BRAND_DAI.get(_brand(), mac_dinh)
 
 
-def so_luong(mac_dinh: int) -> int:
+def quantity(mac_dinh: int) -> int:
     """So worker cho mot ThreadPoolExecutor: min(mac dinh cua cho goi, CT_WORKERS).
 
     7 cho gõ cứng 4/6/8 (audit lượt 2, B-r2-6) — tren server 2 vCPU hay khi
@@ -120,7 +120,7 @@ def so_luong(mac_dinh: int) -> int:
     return max(1, min(mac_dinh, tran)) if tran > 0 else mac_dinh
 
 
-def handle_kenh(brand: str, co_a_cong: bool = True) -> str:
+def handle_channel(brand: str, co_a_cong: bool = True) -> str:
     """Handle hien thi cua brand ("@donniechublog" / "@dcgr.tech"), nhan CA khoa
     container ('blog') lan slug dai ('donniechublog').
 
@@ -137,7 +137,7 @@ def handle_kenh(brand: str, co_a_cong: bool = True) -> str:
     return ("@" + h) if co_a_cong else h
 
 
-def _tep_env() -> tuple:
+def _file_env() -> tuple:
     """Danh sach tep .env theo thu tu uu tien (tep truoc thang qua setdefault)."""
     files = [_BASE / "secret.common.env"]
     key = _brand()
@@ -174,13 +174,13 @@ def topics_path() -> Path:
     return base / f"topics.{key}.json" if key else base / "topics.json"
 
 
-def nap(*them: Path) -> None:
+def load(*them: Path) -> None:
     """Nap cac tep .env vao os.environ.
 
     Khong ghi de bien da co san trong moi truong, va khong bao gio dat mot bien
     thanh chuoi rong.
     """
-    for p in _tep_env() + tuple(them):
+    for p in _file_env() + tuple(them):
         if not p or not p.exists():
             continue
         for dong in p.read_text(encoding="utf-8").splitlines():
@@ -194,7 +194,7 @@ def nap(*them: Path) -> None:
             os.environ.setdefault(k, v)
 
 
-def album_phu(draft_id: str, thu_muc: Path = None) -> list:
+def album_secondary(draft_id: str, thu_muc: Path = None) -> list:
     """Danh sach anh phu <draft_id>_2.png, _3.png... _10.png... sap dung so,
     khong theo thu tu chuoi.
 
@@ -215,9 +215,9 @@ def album_phu(draft_id: str, thu_muc: Path = None) -> list:
     return sorted(ung_vien, key=so)
 
 
-def bat_buoc(ten: str) -> str:
+def required(ten: str) -> str:
     """Nap roi lay mot bien bat buoc; thieu thi dung han voi loi ro rang."""
-    nap()
+    load()
     gt = os.environ.get(ten)
     if not gt:
         raise SystemExit(
@@ -225,7 +225,7 @@ def bat_buoc(ten: str) -> str:
             f"(hoac .secrets.env che do don)")
     return gt
 
-def ghi_json(p, d, indent: int = 2) -> None:
+def write_json(p, d, indent: int = 2) -> None:
     """Ghi mot tep JSON state NGUYEN TU: tmp cung thu muc + os.replace.
 
     Dat o day vi gan nhu moi script deu da import env_load. `write_text` CAT

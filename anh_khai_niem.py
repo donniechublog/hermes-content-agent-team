@@ -198,7 +198,7 @@ def tu_khoa_llm(tieu_de: str, tom_tat: str = "") -> list:
     """Hỏi model text qua router cục bộ thêm 1-3 từ khoá (tiếng Anh, vật thể thật).
     Router tắt / thiếu key / trả rác -> [] , không ném. Cùng model với con mắt
     của engine (flash, rẻ) — không mở thêm model."""
-    env_load.nap()
+    env_load.load()
     import os
     key = os.environ.get("OPENAI_API_KEY")
     if not key or not tieu_de:
@@ -308,8 +308,8 @@ def loc_commons(pages: dict, tu_khoa: str, so: int = 4, canh_ngan_min: int = 700
 def anh_khai_niem(tu_khoa: str, ly_do: str = "", so: int = 4) -> list | None:
     """Ứng viên ảnh khái niệm từ Commons cho một từ khoá. Trả None nếu không gọi
     được API (lỗi mạng/HTTP); [] nếu gọi được nhưng không có ảnh nào khớp."""
-    import quet_chung
-    pages = quet_chung.hoi_commons(tu_khoa)                  # mot ban (ADF-r2-16), None = hong
+    import scan_common
+    pages = scan_common.ask_commons(tu_khoa)                  # mot ban (ADF-r2-16), None = hong
     if pages is None:
         return None
     ra = loc_commons(pages, tu_khoa, so=so)
@@ -342,7 +342,7 @@ def cau_hoi_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> str:
     quy_dinh = (f" Tu khoa \"{tu_khoa}\" do LOAI TIN quy dinh la vat lien quan (bang loai tin cua "
                 "Ong Chu) — KHONG xet no co hop bai hay khong, coi nhu hop; chi xet anh co dung la "
                 "vat do, nhin ra vat chinh." if theo_loai else "")
-    import luat_anh
+    import image_rules
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no duoc tim lam ANH KHAI NIEM "
             f"theo tu khoa \"{tu_khoa}\" de lam anh bia.{quy_dinh}\nTra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
@@ -351,7 +351,7 @@ def cau_hoi_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> str:
             f"tu khoa \"{tu_khoa}\" that su hop chu de bai tren, VA nhin vao la NHAN RA NGAY vat "
             "chinh — vat do lien quan chu de bai; khong = khong phai thu do, so do/icon/clipart/"
             "ban do phang, mo, nhieu chu, logo, co nguoi ro mat, tu khoa lac chu de bai, "
-            f"{luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH}, HOAC anh "
+            f"{image_rules.IMAGE_PHRASES_SCREENSHOT}, HOAC anh "
             "roi/chat chung khong nhan ra vat gi la vat chinh du co dung tu khoa "
             "(khong can dep, chi can NHIN RA va lien quan)")
 

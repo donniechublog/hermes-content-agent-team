@@ -42,7 +42,7 @@ def _tg_gui(vai: str, text: str, kb: dict | None = None) -> bool:
     Telegram tra 400 (HTML sai, topic sai) hay mat mang thi khong log, ma
     sau_chuan_bi van ghi m["hoi_kite"]=True — bai "dang cho Ong Chu chon" trong
     khi Ong Chu chua bao gio nhan cau hoi. Nguoi goi PHAI nhin gia tri tra ve."""
-    env_load.nap()
+    env_load.load()
     token, group = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_GROUP_ID")
     thread = env_load.topics().get(vai)
     if not token or not group or not thread:

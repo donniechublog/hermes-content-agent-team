@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import nguon_bai                                              # noqa: E402
 import xep_hang                                               # noqa: E402
-import nop_chung                                              # noqa: E402
+import submit_common                                              # noqa: E402
 import anh_thuong_hieu as th                                  # noqa: E402
 import chuan_bi.manifest as manifest                          # noqa: E402
 import chuan_bi.vong_bu as vong_bu                            # noqa: E402
@@ -99,18 +99,18 @@ def test_brief_va_cong_nop_coi_bang_chup_that_la_bat_buoc():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "LIVEBENCH.AI", "bang": "LiveBench", "model": "deepseek-v4.1-flash-max",
                       "hang": 6, "kieu": "bang", "duoc_nhac": True}}
-    dong = manifest.dong_brief_xep_hang(m, "bìa ", "dre_nop")
+    dong = manifest.ranking_brief_line(m, "bìa ", "dre_nop")
     assert "BẮT BUỘC" in dong and "THẺ DỰ PHÒNG" not in dong, dong
-    assert nop_chung.can_anh_xep_hang(m, {"ma": "A1"}), "bang chup that ma cong khong ep"
-    assert not nop_chung.can_anh_xep_hang(m, {"ma": "XH", "xep_hang": m["xep_hang"]})
+    assert submit_common.needs_ranking_image(m, {"ma": "A1"}), "bang chup that ma cong khong ep"
+    assert not submit_common.needs_ranking_image(m, {"ma": "XH", "xep_hang": m["xep_hang"]})
     m["xep_hang"]["kieu"] = "the"
-    assert "THẺ DỰ PHÒNG" in manifest.dong_brief_xep_hang(m, "bìa ", "dre_nop")
-    assert not nop_chung.can_anh_xep_hang(m, {"ma": "A1"})
+    assert "THẺ DỰ PHÒNG" in manifest.ranking_brief_line(m, "bìa ", "dre_nop")
+    assert not submit_common.needs_ranking_image(m, {"ma": "A1"})
 
 
 def test_nguoi_doc_kieu_khong_so_chuoi_tay():
     """Cong o muc ma nguon: hai noi doc phai hoi xep_hang.la_chup, khong so chuoi."""
-    for tep in ("chuan_bi/manifest.py", "nop_chung.py"):
+    for tep in ("chuan_bi/manifest.py", "submit_common.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
         assert 'get("kieu") == "chup"' not in src and 'get("kieu") != "chup"' not in src, tep
         assert "xep_hang.la_chup(" in src, f"{tep}: phai dung xep_hang.la_chup"
@@ -236,9 +236,9 @@ def test_browser_tran_anh_trang_cong_bo_bang_bai_goc():
 
 
 def test_engine_noi_trang_cong_bo_truoc_browser():
-    """Cong o muc ma nguon: chuan_bi() goi _them_trang_cong_bo giua _bo_sung_nguon
+    """Cong o muc ma nguon: prepare_article() goi _them_trang_cong_bo giua _bo_sung_nguon
     va _lay_tu_browser — de browser ghe trang do lay chart."""
-    src = (ROOT / "anh_chuan_bi.py").read_text(encoding="utf-8")
+    src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
     a, b, c = src.index("_bo_sung_nguon(nguon"), src.index("_them_trang_cong_bo(nguon"), src.index("_lay_tu_browser(trang")
     assert a < b < c, "thu tu phai la bo_sung_nguon -> them_trang_cong_bo -> lay_tu_browser"
 

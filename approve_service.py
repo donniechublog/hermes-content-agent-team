@@ -38,7 +38,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import ghi_log                                              # noqa: E402
-import nop_chung                                             # noqa: E402
+import submit_common                                             # noqa: E402
 import role as _vai                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
@@ -492,7 +492,7 @@ if __name__ == "__main__":
             if category.upper() == "TEASER":
                 key = "cape"
             else:
-                key = nop_chung.vai_viet_cua_bai(draft_id, env_load.brand_dai())
+                key = submit_common.writer_for_article(draft_id, env_load.brand_long())
             thread = topics.get(key)
         if len(sys.argv) > 3:
             thread = int(sys.argv[3])

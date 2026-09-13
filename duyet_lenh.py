@@ -17,7 +17,7 @@ from html import escape as html_escape
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import quet_chung                                           # noqa: E402
+import scan_common                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     BRAND, STATE_DIR, _ghi_json, _nap_json, call, la_ong_chu, log,
@@ -67,7 +67,7 @@ def _url_hop_le(url):
     # `quet_chung.host_noi_bo` la MOT cong cho ca day chuyen: `_HOST_CAM` o tren
     # chi so khop chuoi nen bo lot "127.1", "2130706433" va "[::1]". Giu ca hai
     # cho ro y dinh; ban chung moi la ban quyet dinh.
-    if _HOST_CAM.search(p.hostname) or quet_chung.host_noi_bo(p.hostname):
+    if _HOST_CAM.search(p.hostname) or scan_common.host_say_drop(p.hostname):
         return "Host này là địa chỉ nội bộ — không nhận."
     return None
 
@@ -119,7 +119,7 @@ def _doc_social(url):
     khi khong lay duoc — goi la de goi y roi ve _doc_trang, khong chan lenh.
 
     Khong tai anh ve o buoc nay: /bai chi can mot link de dien vao the. Anh that
-    cho slide do anh_chuan_bi.py tai (`ung_vien_social`) khi dung brief, boi luc
+    cho slide do image_prepare.py tai (`ung_vien_social`) khi dung brief, boi luc
     do moi co thu muc lam viec cua draft."""
     import social_post
     d = social_post.doc(url, in_log=lambda t: log("bai", t))

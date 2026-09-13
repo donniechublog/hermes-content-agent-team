@@ -20,9 +20,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import ethan_chuan_bi as eb                                  # noqa: E402
-import nop_chung as nc                                       # noqa: E402
+import submit_common as nc                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -84,14 +84,14 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     a = anh[ma]
     # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH),
     # nhung CHI khi engine da CHUP duoc bang — xem nop_chung.can_anh_xep_hang.
-    if nc.can_anh_xep_hang(m, a):
+    if nc.needs_ranking_image(m, a):
         loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
-                   + cb.cau_xep_hang(m) + ".")
+                   + cb.describe_ranking_image(m) + ".")
     _kiem_ghep(a, ma, ma2, anh, m, loi)
     # ẢNH KHÔNG LIÊN QUAN BÀI (Ông Chủ bắt lỗi 06/09/2026) — điều kiện dùng chung
     # với Dre (nop_chung.anh_khong_lien_quan), câu báo của Ethan dài hơn vì Ethan
     # hay đi tìm ảnh khác khi chart bị chặn một mình.
-    rac, mo_ta = nc.anh_khong_lien_quan(anh, (ma, ma2))
+    rac, mo_ta = nc.irrelevant_images(anh, (ma, ma2))
     if rac:
         loi.append(f"{', '.join(rac)} bị vision đánh dấu KHÔNG LIÊN QUAN bài ({mo_ta}) — "
                    "không dùng. Tin xếp hạng/benchmark thì ẢNH ĐÚNG chính là bảng "
@@ -100,22 +100,22 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
                    "khác chỉ vì chart bị chặn khi đi một mình.")
 
     # Mat nguoi: dung CHUNG cong chan voi Dre (nop_chung.kiem_nhan_vat, 06/09/2026).
-    loi.extend(nc.kiem_nhan_vat(anh, [ma, ma2], spec.get("nhan_vat"),
-                                nc.chu_bai_cua(m, wd), ""))
+    loi.extend(nc.check_subject_named(anh, [ma, ma2], spec.get("nhan_vat"),
+                                nc.article_text_for(m, wd), ""))
     _kiem_chu(spec, kieu, loi)
-    loi += nc.kiem_da_dung_nhieu(anh, [(x, x) for x in (ma, ma2) if x], m)
-    loi += nc.kiem_anh_roi(anh, {x: n for x, n in ((ma, "anh"), (ma2, "anh2")) if x}, m)
+    loi += nc.check_not_reused_across_runs(anh, [(x, x) for x in (ma, ma2) if x], m)
+    loi += nc.check_image_fall(anh, {x: n for x, n in ((ma, "anh"), (ma2, "anh2")) if x}, m)
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
     # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
     hook_hay_title = str(spec.get("hook") or spec.get("title") or "")
-    loi.extend(nc.kiem_quote_dich(hook_hay_title, "hook"))
+    loi.extend(nc.check_quote_translated(hook_hay_title, "hook"))
     # So hang tren the phai la so hang trong anh (LOW-24) — dung chung voi bia Dre.
-    loi.extend(nc.kiem_hang_tren_the(hook_hay_title, a, "hook"))
+    loi.extend(nc.check_rank_matches_image(hook_hay_title, a, "hook"))
     # Dan nguon gon: khong "doc bai"/"xem bai", khong duoi ten mien — Ong Chu
     # 13/09/2026, dung chung voi Dre (nop_chung.kiem_dan_nguon_gon).
-    loi.extend(nc.kiem_dan_nguon_gon(spec.get("attrib"), "attrib"))
-    loi.extend(nc.kiem_dan_nguon_gon(hook_hay_title, "hook" if kieu == "quote" else "title"))
-    canh = nc.kiem_so_tren_anh(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)
+    loi.extend(nc.check_guide_source_compact(spec.get("attrib"), "attrib"))
+    loi.extend(nc.check_guide_source_compact(hook_hay_title, "hook" if kieu == "quote" else "title"))
+    canh = nc.check_numbers_on_card(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)
     if loi:
         return None, loi, canh
     return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None,
@@ -131,16 +131,16 @@ def main() -> int:
     ap.add_argument("--out")
     a = ap.parse_args()
 
-    meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "ethan_chuan_bi.py", "ethan_nop.py")
+    meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "ethan_chuan_bi.py", "ethan_nop.py")
     kq, loi, canh = giai_spec(spec, m, wd)
     for c in canh:
         print(f"[CANH BAO] {c}")
-    loi = nc.kiem_lam_lai(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title"),
+    loi = nc.check_redo_reused(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title"),
                           draft_id=a.draft_id) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        return nc.dem_vong_loi(wd, loi,
+        return nc.count_round_error(wd, loi,
                                f"venv/bin/python ethan_nop.py {a.draft_id}")
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
@@ -191,7 +191,7 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). The o {out}")
     else:
-        mid = nc.gui_album("ethan", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
+        mid = nc.send_album("ethan", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
                            {"anh": kq["anh"]["ma"], "hook": hook,
                             # anh2 (ghep doc) cung phai bi danh dau da dung —
                             # thieu no thi bai sau dung lai duoc (06/09/2026).

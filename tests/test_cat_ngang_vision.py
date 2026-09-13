@@ -30,7 +30,7 @@ def _bat_stderr(ham):
 
 
 def _anh(tmp: Path, w=1600, h=1000) -> dict:
-    """Anh chup GIA co van (khong phang 1 mau) -- anh mot mau bi `luat_anh.la_chart`
+    """Anh chup GIA co van (khong phang 1 mau) -- anh mot mau bi `image_rules.is_chart`
     nhan la chart 100%, khien nhanh CHART chay thay vi nhanh anh chup thuong."""
     import random
     from PIL import Image
@@ -91,7 +91,7 @@ def test_vision_noi_bieu_do_ma_pixel_bo_lo_thi_sua_lai_thanh_chart():
     """A11 that (12/09): pixel do 'la_chart' False nhung mo_ta ro rang la
     bieu do -- phai tin mo_ta, khong con hoi CAT_NGANG mot cach vo nghia."""
     with tempfile.TemporaryDirectory() as tmp, mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}), \
-         mock.patch("luat_anh.la_chart", return_value=(False, "khong phai chart (pixel)")):
+         mock.patch("image_rules.is_chart", return_value=(False, "khong phai chart (pixel)")):
         a = _anh(Path(tmp), 1600, 1000)
         with _goi_thu("MO_TA: Biểu đồ tròn thể hiện tỷ trọng doanh thu.\nLIEN_QUAN: co\nCAT_NGANG: khong"):
             phan_loai(a, wd=Path(tmp), tieu_de="T")
@@ -107,7 +107,7 @@ def test_hong_vision_giu_cau_dieu_kien_cu_khong_chan_writer():
             import os
             cu = os.environ.pop("OPENAI_API_KEY", None)
             try:
-                with mock.patch.object(nhin.env_load, "nap", lambda *a, **k: None):
+                with mock.patch.object(nhin.env_load, "load", lambda *a, **k: None):
                     phan_loai(a, wd=Path(tmp), tieu_de="T")
             finally:
                 if cu is not None:

@@ -22,11 +22,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import kite_chuan_bi as kb                                   # noqa: E402
-import luat_anh                                              # noqa: E402
-import nop_chung as nc                                       # noqa: E402
+import image_rules                                              # noqa: E402
+import submit_common as nc                                       # noqa: E402
 import render_edu                                            # noqa: E402
 
 DRAFTS = cb.DRAFTS
@@ -73,7 +73,7 @@ def _kiem_hinh_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
 
-            l, _ = luat_anh.kiem_da_dung(f"slide {i} ({img})", hinh[img]["goc"],
+            l, _ = image_rules.check_not_reused(f"slide {i} ({img})", hinh[img]["goc"],
 
                                          m.get("draft_id", ""), m.get("link", ""))
 
@@ -91,7 +91,7 @@ def _kiem_hinh_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             nhan = f"slide {i} ({img})"
 
-            l, c = luat_anh.kiem_trung(nhan, hinh[img]["goc"], da_thay)
+            l, c = image_rules.check_duplicate(nhan, hinh[img]["goc"], da_thay)
 
             loi += l
 
@@ -103,13 +103,13 @@ def _kiem_hinh_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 with _Im.open(hinh[img]["goc"]) as _im:
 
-                    l, c = luat_anh.kiem_anh_rong(nhan, _im)
+                    l, c = image_rules.check_blank_image(nhan, _im)
 
                     loi += l
 
                     canh += c
 
-                    l, c = luat_anh.kiem_do_phan_giai(nhan, _im.width, _im.height)
+                    l, c = image_rules.check_resolution(nhan, _im.width, _im.height)
 
                     loi += l
 
@@ -125,7 +125,7 @@ def _kiem_hinh_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # khoa het anh su kien ma vai khong co cach nao khai.
 
-            l, c = luat_anh.kiem_mat_nguoi(nhan, hinh[img]["goc"])
+            l, c = image_rules.check_unnamed_face(nhan, hinh[img]["goc"])
 
             canh += [d + " — Kite chưa có trường nhan_vat, tự soi xem "
 
@@ -408,7 +408,7 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
         canh.append(f"vision chưa nhìn {', '.join(chua_nhin)} (router tắt/thiếu khoá) — "
                     "hình thật CHƯA được kiểm nội dung, chỉ dùng khi bạn tự tin nó đúng bài")
     chu = " ".join(str(v) for sl in slides for v in sl.values() if isinstance(v, str))
-    canh.extend(nc.kiem_so_tren_anh(chu, m, wd))
+    canh.extend(nc.check_numbers_on_card(chu, m, wd))
     return ra, loi, canh
 
 
@@ -421,26 +421,26 @@ def main() -> int:
     ap.add_argument("--out")
     a = ap.parse_args()
 
-    meta, brand, wd, m, spec, spec_path, da_dung = nc.nap(a.draft_id, a.spec, "kite_chuan_bi.py", "kite_nop.py")
+    meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "kite_chuan_bi.py", "kite_nop.py")
     spec_r, loi, canh = giai_spec(spec, m, wd)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
     if da_dung:
         if (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):
             loi.append("LÀM LẠI: theme và hero trùng lần trước — đổi ít nhất một")
-        if nc.chuan(hook) == nc.chuan(da_dung.get("hook")):
+        if nc.normalize(hook) == nc.normalize(da_dung.get("hook")):
             loi.append("LÀM LẠI: hook bìa giống lần trước — viết khác")
     for c in canh:
         print(f"[CANH BAO] {c}")
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        return nc.dem_vong_loi(wd, loi,
+        return nc.count_round_error(wd, loi,
                                f"venv/bin/python kite_nop.py {a.draft_id}")
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)
     stem = out.with_suffix("")
-    for p in env_load.album_phu(stem.name, stem.parent):
+    for p in env_load.album_secondary(stem.name, stem.parent):
         p.unlink(missing_ok=True)
     p_spec = wd / "render_edu.spec.json"
     p_spec.write_text(json.dumps(spec_r, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -477,7 +477,7 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
-        mid = nc.gui_album("kite", files, f"Carousel edu {n} slide: {hook}", a.draft_id, wd, da_dung,
+        mid = nc.send_album("kite", files, f"Carousel edu {n} slide: {hook}", a.draft_id, wd, da_dung,
                            {"theme": theme, "hero": hero, "hook": hook,
                             # ma hinh THAT da dat len slide — de bai sau (ke ca
                             # cua Dre/Ethan) khong dung lai (06/09/2026).
@@ -489,7 +489,7 @@ def main() -> int:
     md = {"slide": n, "hook": hook, "theme": theme, "hero": hero, "hinh_that": hinh,
           "tep": str(out), "ban_giao": str(bg_path), "message_id": mid, "vai": "kite"}
     if not a.khong_gui:
-        nc.ghi_bang_den(a.draft_id, "anh", md, "kite")
+        nc.write_blackboard(a.draft_id, "anh", md, "kite")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))
     print(f"[xong] {n} slide -> {out}; theme={theme} hero={hero}"
           + (f"; da gui topic carousel-edu (message_id={mid}) kem nut duyet" if mid else "")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ethan_chuan_bi.py — BRIEF cho Ethan (designer, hero card `card.py`).
 
-Phan co hoc (nguon, anh, do, cat, tu lieu) nam o anh_chuan_bi.py — dung chung
+Phan co hoc (nguon, anh, do, cat, tu lieu) nam o image_prepare.py — dung chung
 voi Dre. Tep nay chi in ban chuan bi theo cach nhin cua HERO CARD: mot tam anh
 lam nen, mot cau hook de len (kieu `quote`, mac dinh) hoac mot tieu de + kicker
 (kieu `tran`). Nhan "dung duoc o dau" khac Dre vi card.py khoa kho 4:5:
@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 import role                                                   # noqa: E402
 
@@ -110,7 +110,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
     goi_y = []
     if m.get("tin_xep_hang"):
-        L.append(cb.dong_brief_xep_hang(m, "", "ethan_nop"))
+        L.append(cb.ranking_brief_line(m, "", "ethan_nop"))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "
@@ -169,7 +169,7 @@ def main() -> int:
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
-    m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
+    m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     brief = viet_brief(m, cb._doc_json(wd / "da_dung.json"))
     (wd / "brief.md").write_text(brief, encoding="utf-8")

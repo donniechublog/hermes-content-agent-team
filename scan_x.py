@@ -32,9 +32,9 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                             # noqa: E402
-from quet_chung import VN, UA                                # noqa: E402
+from scan_common import VN, UA                                # noqa: E402
 
-env_load.nap()
+env_load.load()
 
 STATE = env_load.state_dir() / "x_seen.json"
 MAC_DINH_URL = "https://webhook-social-publishing.mated.dev"

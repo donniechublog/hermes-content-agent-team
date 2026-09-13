@@ -26,7 +26,7 @@ TI_LE = {"1:1": 1.0, "4:5": 0.8}          # rong/cao
 # Lay tu luat_anh.py — MOT nguon su that. Truoc day so 1.4 nam ca o day lan
 # trong cong chan, hai ban co the troi khac nhau ma khong ai biet (dung cai
 # benh ma LUAT_ANH.md sinh ra de chan).
-from luat_anh import NGANG_RO as NGANG
+from image_rules import LANDSCAPE_CLEAR as NGANG
 
 
 def cat(img, ratio, cx=0.5, cy=0.5, cat_ngang=False):

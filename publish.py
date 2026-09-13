@@ -21,7 +21,7 @@ CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
 
 
 def load_secrets():
-    env_load.nap()
+    env_load.load()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat = os.environ.get("TELEGRAM_CHANNEL_ID")
     if not tok:
@@ -205,7 +205,7 @@ def gui_topic(text: str, vai: str) -> bool:
     group thi in ra man hinh; loi Telegram thi in canh bao — KHONG nem, vi day la
     ham cua script cron (model_watch, nhat_ky_daily, theo_doi_9router).
     Truoc 05/09/2026 sau tep tu viet lai doan nay moi tep mot kieu."""
-    env_load.nap()
+    env_load.load()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat = os.environ.get("TELEGRAM_GROUP_ID") or os.environ.get("TELEGRAM_CHANNEL_ID")
     if not (tok and chat):

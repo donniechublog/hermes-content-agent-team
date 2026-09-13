@@ -55,7 +55,7 @@ def handle_kenh(brand: str) -> str:
     Su co 06/09/2026 giu lai lam ly do ham nay LUON co "@": CT_BRAND='blog'
     khong co trong card.THUONG_HIEU nen tung roi ve chuoi 'blog' — watermark tren
     MOI anh Bob dong khung in dung chu "blog"."""
-    return env_load.handle_kenh(brand, co_a_cong=True)
+    return env_load.handle_channel(brand, co_a_cong=True)
 
 
 def bang_mood() -> dict:
@@ -175,7 +175,7 @@ def main() -> int:
     if not (SKILL / "assets" / "avatars").is_dir():
         sys.exit(f"[LOI] khong thay assets cua skill url-mascot-frame o {SKILL}")
 
-    env_load.nap()
+    env_load.load()
     brand = os.environ.get("CT_BRAND", "").strip() or "donniechublog"
     handle = handle_kenh(brand)
 

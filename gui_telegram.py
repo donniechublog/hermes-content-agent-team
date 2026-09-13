@@ -112,7 +112,7 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
     Tra ve response Telegram (list ket qua neu la album, dict neu mot anh).
     Luon ghi nhat ky sau khi gui thanh cong, de `--list` doc lai duoc.
     """
-    env_load.nap()
+    env_load.load()
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     group = os.environ.get("TELEGRAM_GROUP_ID")
     if not token or not group:

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """PHA VONG BU: kho mong thi di tim them — bao khac, bang xep hang, thuong hieu, khai niem.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import sys
 from pathlib import Path
 
 from PIL import Image
 
-import luat_anh
+import image_rules
 import env_load
 import xep_hang
 
@@ -216,7 +216,7 @@ def _gom_va_tai_anh(title: str, link: str, nguon_path: Path, nguon: dict, trang:
             bia = arxiv_bia.chup_bia(data) if data else None
             if bia is not None:
                 out.parent.mkdir(parents=True, exist_ok=True)
-                bia.save(out, "PNG", pnginfo=luat_anh.dong_dau("arxiv_bia"))
+                bia.save(out, "PNG", pnginfo=image_rules.stamp_provenance("arxiv_bia"))
                 cands.append({"anh": str(out), "tep": str(out), "alt": "trang bia paper",
                               "tu": "arxiv_bia", "trang": link, "diem": 60})
     cands.sort(key=lambda c: -c.get("diem", 0))
@@ -491,7 +491,7 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         # "gpt-image-2.5-sunburst...": truyen thang CT_BRAND nem SystemExit
         # "Khong biet thuong hieu 'blog'", giet ca `chuan_bi()`. Cung mot loi
         # lap lai o anh_thuong_hieu.py, sua chung mot cho o env_load.brand_dai().
-        c = _xep_hang_boi_canh(hangs, wd4, env_load.brand_dai(), phien=phien)
+        c = _xep_hang_boi_canh(hangs, wd4, env_load.brand_long(), phien=phien)
         if c:
             them = tai_va_loc([c], wd4 / "bang")
             for a in them[:1]:
@@ -579,7 +579,7 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     da_hash = []
     for a0 in anh:
         try:
-            da_hash.append(luat_anh.dhash(Image.open(a0["goc"]).convert("RGB")))
+            da_hash.append(image_rules.dhash(Image.open(a0["goc"]).convert("RGB")))
         except Exception:                                    # noqa: BLE001
             pass
     for u in urls[:TOI_DA_TRANG_CHUP]:
@@ -600,11 +600,11 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
                 Path(tam).unlink(missing_ok=True)
                 continue
         try:
-            h = luat_anh.dhash(Image.open(tam).convert("RGB"))
+            h = image_rules.dhash(Image.open(tam).convert("RGB"))
         except Exception:                                    # noqa: BLE001
             h = None
         if h is not None:
-            trung = next((h2 for h2 in da_hash if luat_anh.gan_giong(h, h2)), None)
+            trung = next((h2 for h2 in da_hash if image_rules.is_near_duplicate(h, h2)), None)
             if trung is not None:
                 print(f"[chup nguon] {_mien(u)}: TRÙNG ảnh đã có (cùng photo-wire, "
                       f"lệch {bin(h ^ trung).count('1')} bit) — bỏ", file=sys.stderr)

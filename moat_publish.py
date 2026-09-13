@@ -104,7 +104,7 @@ def load_secrets():
     duong vao cung mot module ma ra hai ket qua khac nhau, va brand dcgr thi
     khong duong nao thay khoa ca. Mot cua nap duy nhat de het lech.
     """
-    env_load.nap()
+    env_load.load()
 
 
 def _cho_trong(v):
@@ -132,7 +132,7 @@ def ten_khoa(brand=None):
 
 # CUNG quy uoc voi approve_service: CT_BRAND ('blog'|'dcgr') la khoa container,
 # BRAND (ten content-brand day du) suy tu no va van cho env de len.
-_TEN_BRAND = env_load.BRAND_DAI        # mot bang, o env_load (ADF-r2-10)
+_TEN_BRAND = env_load.BRAND_LONG        # mot bang, o env_load (ADF-r2-10)
 
 
 def brand_container():
@@ -183,7 +183,7 @@ def _ghi_json(path, data):
     # ADF-r2-11: mot ban o env_load.ghi_json (tmp co pid+thread, mkdir, don tmp
     # khi hong) — ban cu o day dung ten tmp co dinh nen hai tien trinh cung ghi
     # mot draft la lan vao nhau.
-    env_load.ghi_json(path, data)
+    env_load.write_json(path, data)
 
 
 def write_draft(draft_id, data):
@@ -711,7 +711,7 @@ def bao_the(draft_id, text, nut=None):
     # Nap secret nhu config() lam: chay tu CLI thi TELEGRAM_GROUP_ID chua co
     # trong moi truong (systemd moi dat san cho dich vu), va thieu no thi ham
     # nay im lang khong gui gi -- dung kieu loi ma co che nay sinh ra de chua.
-    env_load.nap()
+    env_load.load()
     group = os.environ.get("TELEGRAM_GROUP_ID")
     if not group:
         print("khong bao duoc the: thieu TELEGRAM_GROUP_ID")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Engine chỉ MÔ TẢ thiếu ảnh, tầng ghép nối mới QUYẾT ĐỊNH (issue A1).
 
-Truoc 09/09/2026 `anh_chuan_bi._route_thieu_anh` gui Telegram va tao task Kite
+Truoc 09/09/2026 `image_prepare._route_thieu_anh` gui Telegram va tao task Kite
 ngay trong engine, nen engine phai `from duyet_giao_viec import chuan_assignee`
 va `from duyet_bai import tao_task_kite`: lop CHUAN BI goi NGUOC len lop dieu
 phoi. Nay engine ghi `xong.json["thieu_anh"] = {"so": .., "toi_thieu": ..}` va
@@ -23,36 +23,36 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                     # noqa: E402
+import image_prepare as cb                                     # noqa: E402
 import route_thieu_anh as rt                                  # noqa: E402
 
 
 # --------------------------------------------------------------- engine mô tả
 def test_mo_ta_thieu_anh_du_thi_None():
-    assert cb._mo_ta_thieu_anh({"so_dung_duoc": 5, "toi_thieu": 5}) is None
-    assert cb._mo_ta_thieu_anh({"so_dung_duoc": 9, "toi_thieu": 5}) is None
+    assert cb._description_missing_image({"so_dung_duoc": 5, "toi_thieu": 5}) is None
+    assert cb._description_missing_image({"so_dung_duoc": 9, "toi_thieu": 5}) is None
 
 
 def test_mo_ta_thieu_anh_thieu_thi_ta_ro_so():
-    assert cb._mo_ta_thieu_anh({"so_dung_duoc": 2, "toi_thieu": 5}) == {"so": 2, "toi_thieu": 5}
+    assert cb._description_missing_image({"so_dung_duoc": 2, "toi_thieu": 5}) == {"so": 2, "toi_thieu": 5}
 
 
 def _chay_gia(tmp, m_engine, sau_chuan_bi=None):
-    """Chay cb.chay() voi engine gia (khong browser/mang), tra (m, wd)."""
+    """Chay cb.run() voi engine gia (khong browser/mang), tra (m, wd)."""
     wd = Path(tmp) / "wd"
     wd.mkdir(parents=True, exist_ok=True)
     # Dung `_cho_luot` THAT: tu khi C3 them fallback khi thieu fcntl, no chay
     # duoc ca tren Windows (khong khoa, co canh bao) nen test khong con phai
     # thay bang no-op de lach nua.
-    cu = (cb.chuan_bi, cb.nap_meta, cb.workdir)
-    cb.chuan_bi = lambda *a, **k: dict(m_engine)
-    cb.nap_meta = lambda d: {}
+    cu = (cb.prepare_article, cb.load_meta, cb.workdir)
+    cb.prepare_article = lambda *a, **k: dict(m_engine)
+    cb.load_meta = lambda d: {}
     cb.workdir = lambda state, d: wd
     try:
-        m, wd2, _ = cb.chay("d1", sau_chuan_bi=sau_chuan_bi)
+        m, wd2, _ = cb.run("d1", sau_chuan_bi=sau_chuan_bi)
         return m, wd2
     finally:
-        cb.chuan_bi, cb.nap_meta, cb.workdir = cu
+        cb.prepare_article, cb.load_meta, cb.workdir = cu
 
 
 def test_chay_ghi_co_thieu_anh_vao_xong_json():

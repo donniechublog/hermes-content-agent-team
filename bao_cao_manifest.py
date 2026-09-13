@@ -14,12 +14,12 @@ from datetime import datetime
 from pathlib import Path as _Path
 
 sys.path.insert(0, str(_Path(__file__).resolve().parent))
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 
 # Mot ban duy nhat cho ca doi — xem quet_chung. Truoc 06/09/2026 moi tep tu khai
 # lai mui gio VN va bang ten vai, nen sua mot cho la phai nho sua ca cum.
-VN = quet_chung.VN
-TEN_VAI = quet_chung.TEN_VAI
+VN = scan_common.VN
+TEN_VAI = scan_common.NAME_ROLE
 
 NHAC = ("Trả lời số thứ tự để tạo bài. Thêm tên vai dựng ảnh nếu muốn:\n"
         "<code>1</code> · <code>1, 2</code> · <code>1, 2 - Ethan</code>")

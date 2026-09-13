@@ -25,19 +25,19 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import luat_anh                                              # noqa: E402
+import image_rules                                              # noqa: E402
 import env_load                                              # noqa: E402
 
 DPR = 2
-UA = env_load.UA_TRINH_DUYET        # mot ban duy nhat, xem env_load (A5)
+UA = env_load.UA_BROWSER        # mot ban duy nhat, xem env_load (A5)
 # Khung MOBILE — thu TRUOC cho MOI nguon. Hang so nam o `phien_browser` (dung
 # chung voi chup_trang.py tu 12/09/2026); o day chi giu PHEP DO rieng cua trang
 # xep hang. Do 06/09: 12/18 nguon co layout mobile that (arena x6, aa-models,
 # livebench, aider, livecodebench, hle, vellum); 6 nguon con lai (tbench,
 # swebench, bfcl, gaia, opencompass, openrouter) giu bang rong 892-1878px trong
 # khung cuon ngang nen tu dong lui ve desktop.
-from phien_browser import (MOBILE_DPR, MOBILE_UA,            # noqa: E402
-                           MOBILE_VIEWPORT, bi_chan)
+from browser_session import (MOBILE_DPR, MOBILE_UA,            # noqa: E402
+                           MOBILE_VIEWPORT, got_block)
 VANG = (245, 197, 24)          # màu khoanh — cùng gam với đồ hoạ tham chiếu của arena.ai
 TOP_MAC_DINH = 10              # ít nhất top-N khi model nằm trong top
 TREN_MODEL = 2                 # model nằm sâu: giữ 2 hàng phía trên, kéo dài xuống dưới
@@ -328,7 +328,7 @@ def goi_y_nguon(tieu_de: str = "", link: str = "", via: str = "", chu: str = "")
     Mỗi mục trả về mang thêm `duoc_nhac`: True khi CHÍNH TIN nhắc tới nguồn đó.
     Chụp được từ nguồn `duoc_nhac=False` nghĩa là ảnh nói về MỘT BẢNG KHÁC với
     bảng trong tiêu đề — vẫn dùng được nhưng phải cảnh báo, xem `cau_xep_hang`
-    trong anh_chuan_bi.py.
+    trong image_prepare.py.
 
     Mỗi mục còn giữ nguyên `doc_lap` nếu có (spread từ NGUON) — `tim_va_chup_nhieu`
     đọc khoá này để biết nguồn nào đo NĂNG LỰC RIÊNG, không phải cách đo khác
@@ -971,7 +971,7 @@ def the_du_phong(model: str, hang, site: str, bang: str, out: Path, brand: str =
     d.text((w // 2 - d.textlength(handle, font=f_nho) / 2, h - 110), handle, font=f_nho, fill=card.MUTED)
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, "PNG")
-    luat_anh.dong_dau_tep(out, "the_xep_hang", model=model, hang=hang, nguon=site, bang=bang)
+    image_rules.stamp_file(out, "the_xep_hang", model=model, hang=hang, nguon=site, bang=bang)
     return out
 
 
@@ -1033,7 +1033,7 @@ def _thu_nguon(phien: _PhienChup, n: dict, models: list, out: Path, in_log):
         pg.wait_for_timeout(800)
         # Phep thu nam o `phien_browser.bi_chan` tu 12/09/2026: `chup_trang` chup
         # khoi lead cung hoi dung cau nay, chep doi thi mot ben vá mà bên kia không.
-        ly = bi_chan(pg.title() or "", resp.status if resp else None)
+        ly = got_block(pg.title() or "", resp.status if resp else None)
         if ly:
             in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({ly}), bỏ qua")
             return None, None, pg
@@ -1072,7 +1072,7 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
     nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (tep, kieu, nguon,
     site, bang, hang, model, url). `models` phải khác rỗng."""
-    from phien_browser import phien_hoac_moi
+    from browser_session import session_or_new
     t0 = time.time()
     logo = None
     kq_cuoi = None
@@ -1080,7 +1080,7 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
     # browser tren duong THANH CONG, nen mot ngoai le giua chung (mot nguon doi
     # DOM, mot `page.evaluate` nem) de lai tien trinh chromium song. Chay 7 tin
     # mot sang la 7 lan nhu vay.
-    with phien_hoac_moi(phien_browser) as _ph:
+    with session_or_new(phien_browser) as _ph:
         phien = _PhienChup(_ph.browser(ARGS_CHUP))
         for n in nguon_ds:
             if time.time() - t0 > GIO_HAN:
@@ -1097,7 +1097,7 @@ def tim_va_chup(models: list, nguon_ds: list, out_dir: Path, brand: str = "donni
                     logo = chup_logo(pg, out_dir / "xep_hang_logo.png")
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
-            luat_anh.dong_dau_tep(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
+            image_rules.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
                                   site=n["site"], bang=n["bang"], hang=kq.get("hang"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "
@@ -1164,12 +1164,12 @@ def tim_va_chup_nhieu(models: list, nguon_ds: list, out_dir: Path, brand: str = 
 
     Tra danh sach KHONG RONG — thẻ dự phòng (1 phan tu) khi khong nguon nao
     chup duoc."""
-    from phien_browser import phien_hoac_moi
+    from browser_session import session_or_new
     t0 = time.time()
     logo = None
     ket_qua: list = []
     da_chup_thuong = False
-    with phien_hoac_moi(phien_browser) as _ph:
+    with session_or_new(phien_browser) as _ph:
         phien = _PhienChup(_ph.browser(ARGS_CHUP))
         for n in nguon_ds:
             if len(ket_qua) >= toi_da:
@@ -1189,7 +1189,7 @@ def tim_va_chup_nhieu(models: list, nguon_ds: list, out_dir: Path, brand: str = 
                     logo = chup_logo(pg, out_dir / "xep_hang_logo.png")
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
-            luat_anh.dong_dau_tep(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
+            image_rules.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
                                   site=n["site"], bang=n["bang"], hang=kq.get("hang"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "

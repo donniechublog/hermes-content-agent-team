@@ -5,7 +5,7 @@ khảo sát ngoài phạm vi của audit).
 
 `.meta.json` là tệp BA TIẾN TRÌNH cùng ghi không khoá chung (approve_service,
 engine nền, và `bang_den` của hermes ghi riêng `root_task` — xem docstring
-`env_load.ghi_json`). `duyet_chon_tin.py` đã né việc này bằng `schema.hop_nhat_meta`
+`env_load.write_json`). `duyet_chon_tin.py` đã né việc này bằng `schema.merge_meta`
 (merge, không ghi đè) đúng cho trường hợp NÓ tự nêu ra trong docstring: "write_meta
 chạy hai lần cho một bài — lúc chọn tin, RỒI LÚC GIẢI XONG LINK GOOGLE NEWS". Vế
 sau chính là lệnh gọi trong `chuan_bi/nguon.py`, nhưng cho tới trước bản sửa này

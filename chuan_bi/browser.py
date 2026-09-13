@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PHA BROWSER: mo trang bang Playwright, boc anh trong trang, giai chuyen huong Google News.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import re
 import sys
@@ -9,9 +9,9 @@ import time
 from pathlib import Path
 
 
-import luat_anh
+import image_rules
 import env_load
-from phien_browser import phien_hoac_moi
+from browser_session import session_or_new
 
 from chuan_bi.chung import GNEWS, _mien
 
@@ -29,8 +29,8 @@ def _js_browser() -> dict:
     # tien la ad/aside/nav/related/promo; src/class/id/alt mang tu quang cao;
     # va phan tu cao hon 75% trang (chup ca trang chu).
     JS_LOAI = """
-        const XAU_DOM = """ + luat_anh.js_rac_dom() + """;
-        const XAU_URL = """ + luat_anh.js_rac_url() + """;
+        const XAU_DOM = """ + image_rules.js_junk_dom_pattern() + """;
+        const XAU_URL = """ + image_rules.js_junk_url_pattern() + """;
         const trongBai = (el) => { const a = document.querySelector('article') || document.querySelector('main');
             return !a || a.contains(el); };
         const xau = (el) => { for (let e = el; e; e = e.parentElement) {
@@ -41,7 +41,7 @@ def _js_browser() -> dict:
         const caoQua = (r) => r.height > Math.max(900, 0.75 * document.documentElement.scrollHeight);
     """
     JS_IMG = JS_LOAI + """() => Array.from(document.images)
-        .filter(i => i.naturalWidth >= """ + str(luat_anh.TAI_W_MIN) + """ && i.naturalHeight >= """ + str(luat_anh.TAI_H_MIN) + """)
+        .filter(i => i.naturalWidth >= """ + str(image_rules.TAI_W_MIN) + """ && i.naturalHeight >= """ + str(image_rules.TAI_H_MIN) + """)
         .filter(i => trongBai(i) && !xau(i) && !XAU_URL.test((i.currentSrc||i.src||'').replace(/[-_]/g,' '))
                      && !XAU_URL.test((i.alt||'').replace(/[-_]/g,' ')))
         .map(i => ({src: i.currentSrc || i.src, alt: i.alt || '',
@@ -95,7 +95,7 @@ def _lay_anh_trang(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
             el.screenshot(path=str(out))
         except Exception:                                # noqa: BLE001
             continue
-        luat_anh.dong_dau_tep(out, "chup_chart")
+        image_rules.stamp_file(out, "chup_chart")
         # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
         # anh_bai -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
         ra["cands"].append({"anh": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
@@ -187,9 +187,9 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
         return time.time() - t0 > gio_han
 
     try:
-        with phien_hoac_moi(phien) as ph:
+        with session_or_new(phien) as ph:
             with ph.trang(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
-                          user_agent=env_load.UA_TRINH_DUYET) as page:
+                          user_agent=env_load.UA_BROWSER) as page:
                 # 1) trang goc
                 if goc and goc.startswith("http") and GNEWS not in goc:
                     try:

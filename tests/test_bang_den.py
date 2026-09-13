@@ -75,7 +75,7 @@ def test_root_task_tron_vao_meta_khong_xoa_cua_nguoi_khac():
 
         def engine_chen_vao():
             # Engine giai xong Google News dung luc bang_den dang trong kanban
-            p.write_text(json.dumps(schema.hop_nhat_meta(
+            p.write_text(json.dumps(schema.merge_meta(
                 json.loads(p.read_text(encoding="utf-8")), {"source_url": "http://that"})),
                 encoding="utf-8")
         bang_den._kb = lambda: (_KbGia(engine_chen_vao), _KsGia())

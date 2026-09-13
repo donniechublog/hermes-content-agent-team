@@ -72,7 +72,7 @@ def test_het_duong_co_kite_giu_lai_nut_gui_kite_va_bo_han():
 def test_het_duong_khong_co_kite_chi_con_bo_han():
     """Brand chua co Kite (dcgr): KHONG duoc hua nut Gui Kite se chi ra loi
     "khong co profile" — chi con Bo han, dung nguyen tac "khong hua suong" da
-    ap dung o nhanh khong_kite cua _route_thieu_anh (anh_chuan_bi.py)."""
+    ap dung o nhanh khong_kite cua _route_thieu_anh (image_prepare.py)."""
     with tempfile.TemporaryDirectory() as tmp:
         note, kb = _goi_ha_san(Path(tmp), so_dung_duoc=4, toi_thieu=8, co_kite=False)
         assert kb is not None

@@ -95,9 +95,9 @@ def test_ghep_hai_hang_chi_khi_ma():
             "thuong_hieu": {"khoa": "hugging face", "loai": "logo"}},
            {"ma": "A3", "dung": ["thân"], "lien_quan": True,
             "thuong_hieu": {"khoa": "nvidia", "loai": "nguoi"}}]
-    assert manifest.ghep_hai_hang(anh, "M&A") == [["A1", "A2"]]
-    assert manifest.ghep_hai_hang(anh, "MODEL") == []
-    assert manifest.ghep_hai_hang(anh[:1], "M&A") == []
+    assert manifest.pair_two_vendor_images(anh, "M&A") == [["A1", "A2"]]
+    assert manifest.pair_two_vendor_images(anh, "MODEL") == []
+    assert manifest.pair_two_vendor_images(anh[:1], "M&A") == []
 
 
 if __name__ == "__main__":

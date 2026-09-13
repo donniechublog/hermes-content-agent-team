@@ -191,7 +191,7 @@ def write_meta(draft_id, item, out_png, brand="donniechublog"):
     # News. Ghi de ca dict thi ai ghi sau xoa cua ai ghi truoc — hom nay chua
     # mat chi vi thu tu goi tinh co dung (F2).
     p_meta = DRAFTS / (draft_id + ".meta.json")
-    _ghi_json(p_meta, schema.hop_nhat_meta(_nap_json(p_meta, {}), meta))
+    _ghi_json(p_meta, schema.merge_meta(_nap_json(p_meta, {}), meta))
 
 def _draft_id(item, brand, vai_anh):
     """Khoa draft DUY NHAT theo (tin, brand, role lam anh).
@@ -257,7 +257,7 @@ def _research_nguon(item, draft_id, out_png, brand):
 
 
 def _khoi_chay_engine(draft_id):
-    """Chay NEN anh_chuan_bi.py ngay khi Ong Chu chon tin — toi luc vai nhan
+    """Chay NEN image_prepare.py ngay khi Ong Chu chon tin — toi luc vai nhan
     viec thi brief da san. Khong chan reply cho Ong Chu."""
     # Phan CO HOC cua vai anh (nguon, tai/do/cat anh, tu lieu) chay NEN ngay bay
     # gio bang engine dung chung anh_chuan_bi.py — toi luc Dre/Ethan/Kite nhan
@@ -267,7 +267,7 @@ def _khoi_chay_engine(draft_id):
         _wd = STATE_DIR / "chuan_bi" / draft_id
         _wd.mkdir(parents=True, exist_ok=True)
         subprocess.Popen(
-            [str(ROOT / "venv/bin/python"), str(ROOT / "anh_chuan_bi.py"), draft_id, "--im"],
+            [str(ROOT / "venv/bin/python"), str(ROOT / "image_prepare.py"), draft_id, "--im"],
             cwd=str(ROOT), stdout=open(_wd / "chuan_bi.log", "ab"),
             stderr=subprocess.STDOUT, start_new_session=True)
     except Exception as e:                                   # noqa: BLE001

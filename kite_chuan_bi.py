@@ -3,7 +3,7 @@
 
 Kite dung art vector goc, KHONG anh that — tru bieu do/bang co that trong bai
 (kind `figure`, hoac bia co `image`). Phan co hoc (nguon, chu bai, chup bang/
-figure, tu lieu) nam o anh_chuan_bi.py dung chung; tep nay in brief theo cach
+figure, tu lieu) nam o image_prepare.py dung chung; tep nay in brief theo cach
 nhin cua Kite: tu lieu de dien dat lai paper, danh sach HINH THAT la chart
 (>= 800px) dung duoc cho `figure`, theme/hero goi y (khong trung bo gan day),
 va khung spec 7 kind voi gioi han do dai tung truong (do theo co chu trong
@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                    # noqa: E402
+import image_prepare as cb                                    # noqa: E402
 import role as vai_mod                                        # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 
@@ -33,7 +33,7 @@ def handle_kenh(brand: str) -> str:
     slug). Mot ban o env_load.handle_kenh (ADF-r2-9) — truoc day ban nay khong
     doi 'blog' -> 'donniechublog' nhu bob_nop."""
     import env_load
-    return env_load.handle_kenh(brand, co_a_cong=False)
+    return env_load.handle_channel(brand, co_a_cong=False)
 
 
 FIG_RONG_TOI_THIEU = 800
@@ -233,7 +233,7 @@ def bao_dam_co_bia(draft_id: str, m: dict, wd, khong_browser: bool, cho: int,
     print("[kite] khong co tam nao len bia duoc -> CHAY LAI vong tim anh "
           "(anh thuong hieu + anh khai niem), khong thua ke ket qua cua vai cu.",
           file=sys.stderr)
-    m2, wd2, _ = cb.chay(draft_id, True, khong_browser, cho,
+    m2, wd2, _ = cb.run(draft_id, True, khong_browser, cho,
                          sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     h = hinh_hero(m2)
     print(f"[kite] sau khi tim lai: {'bia = ' + h['ma'] if h else 'VAN CHUA co tam nao len bia duoc'}",
@@ -401,7 +401,7 @@ def main() -> int:
     ap.add_argument("--khong-browser", action="store_true")
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
-    m, wd, _ = cb.chay(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
+    m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     # Bia BAT BUOC co anh that (§1.2f) — thieu thi tim lai, dung bao hong.
     m, wd = bao_dam_co_bia(a.draft_id, m, wd, a.khong_browser, a.cho, a.lam_moi)

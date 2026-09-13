@@ -187,7 +187,7 @@ def test_ca_ba_bang_anh_cua_gpt_image_2_5():
 
 def test_khong_doi_hop_dong_tim_va_chup_cu():
     """`tim_va_chup` (so, khong "_nhieu") phai con nguyen — `_xep_hang_boi_canh`
-    trong anh_chuan_bi.py va CLI main() van goi ham nay, doi dung MOT dict."""
+    trong image_prepare.py va CLI main() van goi ham nay, doi dung MOT dict."""
     import inspect
     sig = inspect.signature(xh.tim_va_chup)
     assert "toi_da" not in sig.parameters, "tim_va_chup bi doi hop dong, se vo hieu _xep_hang_boi_canh"

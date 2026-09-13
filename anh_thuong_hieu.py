@@ -428,10 +428,10 @@ def _tai_html(url: str, timeout: int = 15, feed: bool = False) -> str:
     """HTML (hoặc RSS khi `feed`) của một trang, UA trình duyệt — trang hãng hay
     chặn UA bot. '' nếu hỏng hay sai loại nội dung."""
     import httpx
-    import quet_chung
+    import scan_common
     try:
-        quet_chung.kiem_url(url)
-        r = httpx.get(url, headers={"User-Agent": env_load.UA_TRINH_DUYET,
+        scan_common.check_url(url)
+        r = httpx.get(url, headers={"User-Agent": env_load.UA_BROWSER,
                                     "Accept-Encoding": "gzip, deflate"},
                       timeout=timeout, follow_redirects=True)
         loai = r.headers.get("content-type", "")
@@ -536,9 +536,9 @@ def the_logo(tep_logo, out, brand: str = "donniechublog"):
     lg = lg.resize((rong, cao), Image.LANCZOS)
     hop = ((w - rong) // 2, int(h * 0.30) - cao // 2)
     im.paste(lg, hop, lg if lg.mode == "RGBA" else None)
-    import luat_anh
+    import image_rules
     Path(out).parent.mkdir(parents=True, exist_ok=True)
-    im.save(out, "PNG", pnginfo=luat_anh.dong_dau("the_logo"))
+    im.save(out, "PNG", pnginfo=image_rules.stamp_provenance("the_logo"))
     return out, ("sáng" if sang < 110 else "tối")
 
 
@@ -603,7 +603,7 @@ def anh_wikidata(hang, wd=None) -> list:
             import httpx
             goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
                                       timeout=30, follow_redirects=True).content)
-            the, nen = the_logo(goc, Path(wd) / "the_logo.png", env_load.brand_dai())
+            the, nen = the_logo(goc, Path(wd) / "the_logo.png", env_load.brand_long())
         except Exception as e:                               # noqa: BLE001
             print(f"[thuong_hieu] the logo hong: {type(e).__name__}", file=sys.stderr)
             continue
@@ -699,15 +699,15 @@ def anh_co_phieu(hang, wd, phien=None) -> list:
     ra = _P(wd) / f"co_phieu_{khoa.replace(' ', '_')}.png"
     ra.parent.mkdir(parents=True, exist_ok=True)
     try:
-        from phien_browser import (MOBILE_DPR, MOBILE_UA, MOBILE_VIEWPORT, bi_chan,
-                                   phien_hoac_moi)
-        with phien_hoac_moi(phien) as ph:
+        from browser_session import (MOBILE_DPR, MOBILE_UA, MOBILE_VIEWPORT, got_block,
+                                   session_or_new)
+        with session_or_new(phien) as ph:
             with ph.trang(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
                           is_mobile=True, has_touch=True, user_agent=MOBILE_UA) as page:
                 resp = page.goto(CO_PHIEU_URL.format(ma=ma), wait_until="domcontentloaded",
                                  timeout=40000)
                 page.wait_for_timeout(CO_PHIEU_CHO)
-                ly = bi_chan(page.title() or "", resp.status if resp else None,
+                ly = got_block(page.title() or "", resp.status if resp else None,
                              page.evaluate("document.body ? document.body.innerText : ''") or "")
                 if ly:
                     print(f"[co_phieu] {ma}: trang chặn ({ly}), bỏ", file=sys.stderr)
@@ -808,7 +808,7 @@ def cau_hoi_vision(tieu_de: str, th: dict) -> str:
     `_lay_anh_trang`/`_vong_chup_nguon`) lọt qua ĐÚNG nhánh "anh" ở đây khi tìm
     thấy qua một đường khác (`_bao_thuong_hieu_rong`) — nhánh này TỪNG chỉ có
     "quá mờ" chung chung, không đủ chặn ảnh nét-ở-tiền-cảnh/mờ-ở-hậu-cảnh."""
-    import luat_anh
+    import image_rules
     hang, loai = th.get("hang", "hãng"), th.get("loai", "anh")
     if loai == "nguoi":
         ai = th.get("nguoi", "")
@@ -818,20 +818,20 @@ def cau_hoi_vision(tieu_de: str, th: dict) -> str:
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                 f"LIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan "
                 f"dung cho {hang}; khong = do hoa/tranh ve, anh nhom dong nguoi, qua mo, "
-                f"{luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH}, hoac ro rang khong phai anh chan dung)")
+                f"{image_rules.IMAGE_PHRASES_SCREENSHOT}, hoac ro rang khong phai anh chan dung)")
     if loai == "logo":
         return (f"Bai bao: \"{tieu_de}\". Anh nay la THE LOGO: logo chinh thuc cua {hang} dat "
                 "tren nen tron.\nTra loi DUNG 2 dong:\n"
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                 f"LIEN_QUAN: co | khong  (co = doc duoc ro logo/ten {hang}, khong be xiu, khong "
                 f"meo, khong lan mau nen; khong = logo hang KHAC, chu bi cat, qua nho, trong, "
-                f"{luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
+                f"{image_rules.IMAGE_PHRASES_SCREENSHOT})")
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua su viec trong tin; no duoc tim "
             f"lam ANH BOI CANH cua {hang} (tru so, campus, bien hieu, nha may, san pham).\n"
             "Tra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
             f"LIEN_QUAN: co | khong  (co = anh CHUP THAT dung la co so/san pham cua {hang}; "
-            f"khong = hang khac, do hoa/ban ve, anh mit tinh/bieu tinh, qua mo, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH}, "
+            f"khong = hang khac, do hoa/ban ve, anh mit tinh/bieu tinh, qua mo, {image_rules.IMAGE_PHRASES_SCREENSHOT}, "
             "hoac chi la anh "
             "minh hoa chung chung)")
 
@@ -840,8 +840,8 @@ def _hoi_commons(cau: str):
     """`query.pages` cua Commons, hoac None khi hong moi truong (C1). Mot ban o
     quet_chung.hoi_commons (ADF-r2-16) — truoc day ban nay tra {} va log khong
     repr, nen mat mang trong y het "hang khong co anh"."""
-    import quet_chung
-    return quet_chung.hoi_commons(cau)
+    import scan_common
+    return scan_common.ask_commons(cau)
 
 
 def nhan_theo_loai(th: dict) -> str:

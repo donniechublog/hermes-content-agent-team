@@ -24,7 +24,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
-import luat_anh
+import image_rules
 import nen_chu
 
 ASSETS = Path(__file__).resolve().parent / "assets"
@@ -581,10 +581,10 @@ def _chan_chuan_anh(src, nhan_vat=""):
         with Image.open(q) as im:
             w, h = im.size
             rgb = im.convert("RGB")
-            for l, c in (luat_anh.kiem_anh_rong(nhan, rgb),
-                         luat_anh.kiem_do_phan_giai(nhan, w, h),
-                         luat_anh.kiem_mat_nguoi(nhan, q, nhan_vat),
-                         luat_anh.kiem_trung(nhan, q, da_thay)):
+            for l, c in (image_rules.check_blank_image(nhan, rgb),
+                         image_rules.check_resolution(nhan, w, h),
+                         image_rules.check_unnamed_face(nhan, q, nhan_vat),
+                         image_rules.check_duplicate(nhan, q, da_thay)):
                 loi += l
                 canh_bao += c
     for c in canh_bao:
@@ -603,7 +603,7 @@ def _chan_chart(src):
     da_ghep = isinstance(src, (list, tuple)) and len([q for q in src if q]) >= 2
     q = src[0] if isinstance(src, (list, tuple)) else src
     with Image.open(q) as im:
-        loi, _ = luat_anh.kiem_chart_mot_minh(str(q), im.convert("RGB"), da_ghep)
+        loi, _ = image_rules.check_chart_standalone(str(q), im.convert("RGB"), da_ghep)
     if loi:
         raise SystemExit("CHART DI MOT MINH VAO HERO — " + "\n  ".join(loi) +
                          "\n  (Chac chan muon chart mot minh thi --bo-qua-anh)")
@@ -620,7 +620,7 @@ def _chan_crop(src):
             continue
         with Image.open(q) as im:
             w, h = im.size
-            loi, _ = luat_anh.kiem_crop_ngang(str(q), im, w, h)
+            loi, _ = image_rules.check_crop_landscape(str(q), im, w, h)
         if loi:
             raise SystemExit(
                 "ANH BI CAT BE NGANG — " + "\n  ".join(loi) +

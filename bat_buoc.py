@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bang_model                                            # noqa: E402
-import quet_chung                                            # noqa: E402
+import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
 
 
@@ -66,7 +66,7 @@ def _ghi(vai: str, bb: dict) -> None:
     # dinh, ma tep nay co it nhat hai nguoi ghi (script quet gieo muc,
     # manifest_* xoa muc da dua) — hai tien trinh trung thoi diem thi ghi lan
     # vao cung mot tep tam va `replace` ban cut cua nhau.
-    env_load.ghi_json(p, bb)
+    env_load.write_json(p, bb)
 
 
 def them(vai: str, khoa: str, ten: str, loai: str, ghi_chu: str = "",
@@ -99,7 +99,7 @@ def them_nhieu(vai: str, muc: list) -> int:
     return moi
 
 
-chuan_link = quet_chung.chuan_link     # mot ban duy nhat, xem quet_chung
+chuan_link = scan_common.standard_link     # mot ban duy nhat, xem quet_chung
 
 
 def _chuan(t: str) -> str:

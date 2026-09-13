@@ -36,7 +36,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_chuan_bi as cb                                       # noqa: E402
+import image_prepare as cb                                       # noqa: E402
 
 
 # ------------------------------------------------------------------ do dac that
@@ -66,7 +66,7 @@ def _anh_ngang(ma: str) -> dict:
 
 
 def _anh_ngang_vua(ma: str) -> dict:
-    """1.5: qua NGANG_RO (1.4) nen KHONG co nhan "bìa" cua carousel, nhung card.py
+    """1.5: qua LANDSCAPE_CLEAR (1.4) nen KHONG co nhan "bìa" cua carousel, nhung card.py
     cho toi 1.6 — day dung la cho luat cua carousel bat Ethan di tim vo ich."""
     return _anh(ma, ti_le=1.5, w=1500, h=1000, ngang=True, canh_ngan=1000,
                 dung=["ghép dọc với một ảnh ngang cùng tone"])
@@ -77,16 +77,16 @@ def _anh_chart(ma: str) -> dict:
                 goc_trai_sang=200, dung=["thân (chart, dán full bề ngang nguyên vẹn)"])
 
 
-PHA_NANG = ("PhienBrowser", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
+PHA_NANG = ("BrowserSession", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
             "_lay_tu_browser", "_chup_xep_hang", "_gom_va_tai_anh", "_nhin_anh",
             "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_vong_chup_nguon",
-            "_vong_thuc_the", "_tu_lieu_bai",
-            "dung_manifest", "bang_anh")
+            "_vong_thuc_the", "_article_material",
+            "build_manifest", "contact_sheet")
 
 
 def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
                      tieu_de="OpenAI ships new image model for developers") -> list:
-    """Chay THAT `chuan_bi()` voi moi pha nang thay bang stub, tra ve ten cac vong
+    """Chay THAT `prepare_article()` voi moi pha nang thay bang stub, tra ve ten cac vong
     bu da duoc goi. Khong mang, khong browser, khong vision."""
     goi = []
     cu = {k: getattr(cb, k) for k in PHA_NANG}
@@ -97,7 +97,7 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
             return a, [x for x in a if x["dung"]], []
         return f
 
-    cb.PhienBrowser = lambda *a, **k: _Phien()
+    cb.BrowserSession = lambda *a, **k: _Phien()
     cb.nap_nguon = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
     cb._tom_tat_tu_img_json = lambda d: {"vai_anh": vai_anh, "summary": ""}
@@ -122,12 +122,12 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
     # `_vong_thuc_the` (Wikipedia pageimages) cung goi mang THAT, lam tep test
     # "khong mang" nay ton 6 phut 34 (do 13/09/2026) thay vi vai giay.
     cb._vong_thuc_the = _vong("thuc_the")
-    cb._tu_lieu_bai = lambda *a, **k: {"cau_co_so": [], "doan_dau": "", "so_nguon": 1}
-    cb.dung_manifest = lambda *a, **k: {"anh": anh_bai}
-    cb.bang_anh = lambda *a, **k: None
+    cb._article_material = lambda *a, **k: {"cau_co_so": [], "doan_dau": "", "so_nguon": 1}
+    cb.build_manifest = lambda *a, **k: {"anh": anh_bai}
+    cb.contact_sheet = lambda *a, **k: None
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            cb.chuan_bi("d1", {"brand": "donniechublog", "title": tieu_de},
+            cb.prepare_article("d1", {"brand": "donniechublog", "title": tieu_de},
                         Path(tmp), Path(tmp), khong_browser=khong_browser)
     finally:
         for k, v in cu.items():
@@ -148,7 +148,7 @@ def test_bai_du_anh_ma_khong_tam_nao_len_hero_thi_van_di_tim():
 
 
 def test_mat_nguoi_khong_ro_ai_khong_tinh_la_hero():
-    """`nop_chung.kiem_nhan_vat` chan anh co mat ma khong khai `nhan_vat`, va vai
+    """`submit_common.check_subject_named` chan anh co mat ma khong khai `nhan_vat`, va vai
     khong duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc."""
     assert "tim_rong" in _vong_bu_da_chay([_anh(f"A{i + 1}", mat=1) for i in range(5)])
     assert "tim_rong" not in _vong_bu_da_chay(
@@ -164,7 +164,7 @@ def test_MOT_tam_hero_la_du_cho_the_don():
 
 
 def test_luat_ti_le_phai_la_cua_card_khong_phai_cua_carousel():
-    """Anh 1.5: carousel khong goi la "bìa" (qua NGANG_RO 1.4) nhung card.py cho
+    """Anh 1.5: carousel khong goi la "bìa" (qua LANDSCAPE_CLEAR 1.4) nhung card.py cho
     toi 1.6. Do bang nhan cua carousel la Ethan di tim mot cach vo ich."""
     assert "tim_rong" not in _vong_bu_da_chay([_anh_ngang_vua("A1")]), \
         "do anh cua Ethan bang nguong 1.4 cua carousel thay vi 1.6 cua card.py"
@@ -232,7 +232,7 @@ def test_hai_vong_bu_phai_hoi_ban_dang_ky_vai():
     """Cong chong troi: cac test tren dung stub, nen ai do do lai bang mot phep
     dem khac van co the vo tinh xanh khi con so tinh co thuan. Day bat thang
     HINH DANG cua ma."""
-    goc = ast.parse(textwrap.dedent(inspect.getsource(cb.chuan_bi)))
+    goc = ast.parse(textwrap.dedent(inspect.getsource(cb.prepare_article)))
     for ten_vong in ("_vong_tim_rong", "_vong_khai_niem"):
         ifs = _if_boc_loi_goi(goc, ten_vong)
         assert ifs, f"khong tim thay loi goi {ten_vong} trong mot `if` cua chuan_bi()"
@@ -243,9 +243,9 @@ def test_hai_vong_bu_phai_hoi_ban_dang_ky_vai():
 
 
 def test_khong_con_so_nao_cua_carousel_trong_duong_di_tim():
-    """`chuan_bi()` chay chung cho ca ba vai, nen mot hang so cua carousel nam
+    """`prepare_article()` chay chung cho ca ba vai, nen mot hang so cua carousel nam
     trong do la ap luat cua Dre len Ethan (Ong Chu 10/09/2026)."""
-    src = textwrap.dedent(inspect.getsource(cb.chuan_bi))
+    src = textwrap.dedent(inspect.getsource(cb.prepare_article))
     for cam in ("MIN_SLIDE", "FLAGSHIP_MIN"):
         for dong in src.splitlines():
             d = dong.strip()

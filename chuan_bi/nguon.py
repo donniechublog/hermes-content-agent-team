@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PHA NGUON: nap tu lieu bai goc, ung vien anh tinh/social, ten rieng, Commons.
 
-Tach tu anh_chuan_bi.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
+Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
 import re
 import sys
@@ -62,7 +62,7 @@ def nap_nguon(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
                 # ghi de mat `root_task` neu bang_den vua ghi xong trong luc
                 # tien trinh nay con dang giai ma Google News.
                 p_meta = DRAFTS / f"{draft_id}.meta.json"
-                _ghi_json(p_meta, schema.hop_nhat_meta(
+                _ghi_json(p_meta, schema.merge_meta(
                     _doc_json(p_meta, {}), {"source_url": that}))
     # Tieu de TIENG ANH cua bai that: tin cua Vera/Nova mang tieu de tieng Viet,
     # tim Google News/RSS bang tieu de do ra rong. Lay <title>/og:title cua trang
@@ -127,8 +127,8 @@ def anh_commons(tu_khoa: str, so: int = 4) -> list | None:
     Tra None khi HONG VI MOI TRUONG (mang, API loi) — KHAC voi [] (da chay het,
     khong ra anh nao). Nguoi goi phai tu phan biet hai truong hop nay (quy uoc
     "hong phai lo", audit_content_team C1)."""
-    import quet_chung
-    pages = quet_chung.hoi_commons(tu_khoa, so=14, loai_logo=False)   # mot ban (ADF-r2-16)
+    import scan_common
+    pages = scan_common.ask_commons(tu_khoa, so=14, loai_logo=False)   # mot ban (ADF-r2-16)
     if pages is None:
         return None
     ra = []

@@ -247,11 +247,11 @@ def test_handle_kenh_mot_ban_hai_kieu_khoa():
     """ADF-r2-9: bob (co @) va kite (khong @) tung cho hai ket qua khac nhau
     voi cung 'blog'."""
     import env_load
-    assert env_load.handle_kenh("blog") == "@donniechublog"
-    assert env_load.handle_kenh("donniechublog") == "@donniechublog"
-    assert env_load.handle_kenh("blog", co_a_cong=False) == "donniechublog"
-    assert env_load.handle_kenh("dcgr", co_a_cong=False).startswith("dcgr")
-    assert env_load.handle_kenh("la").startswith("@")
+    assert env_load.handle_channel("blog") == "@donniechublog"
+    assert env_load.handle_channel("donniechublog") == "@donniechublog"
+    assert env_load.handle_channel("blog", co_a_cong=False) == "donniechublog"
+    assert env_load.handle_channel("dcgr", co_a_cong=False).startswith("dcgr")
+    assert env_load.handle_channel("la").startswith("@")
 
 
 def test_nguong_anh_cua_carousel_khong_troi_khoi_carousel_py():
@@ -426,7 +426,7 @@ def test_ten_brand_khop_chinh_ta_cua_env_load():
     """WRITE_BY_BRAND chep chinh ta brand thay vi import env_load (giu ban dang
     ky nhe). Chep thi phai co cong giu hai ban khong troi khoi nhau."""
     import env_load
-    for ngan, dai in env_load.BRAND_DAI.items():
+    for ngan, dai in env_load.BRAND_LONG.items():
         assert ngan in role.WRITE_BY_BRAND, f"thieu khoa container {ngan!r}"
         assert dai in role.WRITE_BY_BRAND, f"thieu slug dai {dai!r}"
         assert role.WRITE_BY_BRAND[ngan] == role.WRITE_BY_BRAND[dai],             f"{ngan!r} va {dai!r} la MOT brand ma tro toi hai nguoi viet"

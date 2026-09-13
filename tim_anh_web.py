@@ -98,9 +98,9 @@ NGUON = (("Yandex", lambda page, q, so: _yandex(page, q, so)),)
 
 def tim_anh_web(q: str, so: int = 16, phien=None) -> list:
     """Ứng viên ảnh web cho một truy vấn TIẾNG ANH. [] khi hỏng (đã in lý do)."""
-    from phien_browser import phien_hoac_moi
+    from browser_session import session_or_new
     ra = []
-    with phien_hoac_moi(phien) as ph:
+    with session_or_new(phien) as ph:
         with ph.trang(user_agent=UA, locale="en-US", viewport={"width": 1366, "height": 900}) as page:
             for ten, ham in NGUON:
                 try:

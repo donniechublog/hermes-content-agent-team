@@ -159,7 +159,7 @@ def test_manifest_dem_chum_khai_niem_la_mot():
                 "goc_trai_sang": 50, "canh_ngan": 1000, "ngang": False, "loai": "anh",
                 **({"khai_niem": {"tu_khoa": "flag of Japan"}} if kn else {})}
     anh = [_a("A1"), _a("A2", True), _a("A3", True), _a("A4", True)]
-    m = cb.dung_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {}, Path("/tmp"),
+    m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {}, Path("/tmp"),
                          anh, None, False, {}, {}, False, 5)
     assert m["so_dung_duoc"] == 2, m["so_dung_duoc"]
     assert m["goi_y_bia"][0] == "A1", m["goi_y_bia"]

@@ -120,7 +120,7 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=2000)
     a = ap.parse_args()
 
-    key = env_load.bat_buoc("OPENAI_API_KEY")
+    key = env_load.required("OPENAI_API_KEY")
     ket_qua = {}
     for m in (a.models or UNGVIEN):
         print(f"\n{'=' * 72}\n{m}", flush=True)

@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 
 import nguon_bai
-import quet_chung
+import scan_common
 from chuan_bi.chung import _mien
 
 BING_RSS = "https://www.bing.com/news/search?q={q}&format=rss&mkt={mkt}"
@@ -92,7 +92,7 @@ def og_tu_html(html: str, url_bai: str) -> str | None:
 
 def _og(bai: dict) -> dict | None:
     u = bai["url"]
-    if not quet_chung.url_an_toan(u):
+    if not scan_common.url_hide_whole(u):
         return None
     try:
         r = httpx.get(u, headers=nguon_bai.HDR, timeout=12, follow_redirects=True)
@@ -100,7 +100,7 @@ def _og(bai: dict) -> dict | None:
             print(f"[bao thuc the] {bai['mien']}: HTTP {r.status_code}", file=sys.stderr)
             return None
         im = og_tu_html(r.text[:400_000], str(r.url))
-        if not im or not quet_chung.url_an_toan(im):
+        if not im or not scan_common.url_hide_whole(im):
             return None
         return {"anh": im, "alt": bai["tieu_de"], "og": True, "tu": "bao_thuc_the",
                 # `trang` = chính ảnh: og:image gần như luôn nằm trên CDN khác

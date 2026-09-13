@@ -74,13 +74,13 @@ def _du_bia(wd, **mk):
 def _khong_soi_mat():
     """YuNet (dem mat) can tep model va ton thoi gian; cong mat nguoi cua Kite
     chi CANH BAO nen tat no trong test, TRA LAI sau."""
-    import luat_anh
-    cu = luat_anh.kiem_mat_nguoi
-    luat_anh.kiem_mat_nguoi = lambda nhan, path, nhan_vat=None: ([], [])
+    import image_rules
+    cu = image_rules.check_unnamed_face
+    image_rules.check_unnamed_face = lambda nhan, path, nhan_vat=None: ([], [])
     try:
         yield
     finally:
-        luat_anh.kiem_mat_nguoi = cu
+        image_rules.check_unnamed_face = cu
 
 
 def _chay(slides, m, wd, **spec):
@@ -441,7 +441,7 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
     """Ông Chủ 10/09/2026: *"Dre tìm được ảnh đúng, nên kỹ năng tìm ảnh đó dùng
     được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
 
-    `anh_chuan_bi.chay` trả thẳng `xong.json` cũ khi tệp đã có, và task body
+    `image_prepare.run` trả thẳng `xong.json` cũ khi tệp đã có, và task body
     giao cho Kite chạy `kite_chuan_bi.py <id>` KHÔNG kèm `--lam-moi` — nên Kite
     đọc lại đúng kết quả đã thất bại của vai cũ, vòng tìm ảnh không bao giờ
     chạy lần nữa. Hai vai dừng ở hai ngưỡng khác nhau: vai cũ cần ~5 ảnh, Kite
@@ -457,7 +457,7 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
             goi.append(lam_moi)
             return sau, wd, {}
 
-        cu, cb.chay = cb.chay, gia_chay
+        cu, cb.run = cb.run, gia_chay
         try:
             # 1) thua ke bo TRANG -> phai chay lai, va chay voi lam_moi=True
             m2, _w = kb.bao_dam_co_bia("d1", _m(wd), wd, False, 30)
@@ -472,7 +472,7 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
             kb.bao_dam_co_bia("d1", _m(wd), wd, False, 30, da_lam_moi=True)
             assert goi == [], goi
         finally:
-            cb.chay = cu
+            cb.run = cu
 
 
 def test_task_body_khong_con_bao_kite_ve_vector_hoan_toan():
@@ -573,7 +573,7 @@ def test_brief_noi_ro_anh_khai_niem_chi_dung_o_bia():
 
 
 def test_khung_spec_khong_in_ma_cua_bia_lai_o_figure():
-    """Cùng một mã ở cả cover lẫn `figure` là `luat_anh.kiem_trung` chặn — khung
+    """Cùng một mã ở cả cover lẫn `figure` là `image_rules.check_duplicate` chặn — khung
     mẫu không được đẩy vai vào cổng."""
     import kite_chuan_bi as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
@@ -636,11 +636,11 @@ def test_image_hop_le_doi_thanh_duong_dan_tep():
 def test_hinh_da_dung_o_tin_khac_thi_chan():
     """Dre va Ethan co cong nay tu dau; Kite thi khong — bang benchmark Dre dung
     hom qua van len bo cua Kite hom nay (06/09/2026)."""
-    import luat_anh
+    import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         h = _hinh(wd)
-        luat_anh.ghi_da_dung(h["goc"], "tin-khac", "dre", "https://vi.du/khac")
+        image_rules.record_used(h["goc"], "tin-khac", "dre", "https://vi.du/khac")
         sl = _du(); sl[1] = _statement(image="H1", caption="x · via AA")
         _r, loi, _c = _chay(sl, _m(wd, [h]), wd)
         assert _co(loi, "slide 2", "TRUNG anh da dung"), loi
