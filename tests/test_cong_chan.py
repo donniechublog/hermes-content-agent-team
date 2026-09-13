@@ -786,7 +786,7 @@ def _anh_hai_tone(w, h, ra, ranh):
 def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
     """Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong (anh chup co hero
     toi tren, bang trang duoi; anh ghep doc hai tam khac tone). Truoc 06/09/2026
-    `_color_change_background` lay MOT mean cho ca khoi: trung binh 136 -> chon chu TRANG
+    mau chu do MOT mean cho CA KHOI: trung binh 136 -> chon chu TRANG
     trong khi nua duoi khoi la nen 243-250, may dong cuoi la trang tren trang.
     Loi DOI XUNG o chieu kia: trung binh 142 -> chu toi, nua tren thanh
     den-tren-den. Do tung dai dong thi moi dong deu phai doc duoc."""

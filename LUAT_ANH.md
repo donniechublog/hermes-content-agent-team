@@ -737,7 +737,9 @@ mảng nhìn tách rời:
   - **Hero cả hai kiểu** `quote` (06/09/2026) và `tran` (07/09/2026): không còn
     TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_mo_vung_chu`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
-    đã mờ đó (`_mau_doi_nen`). Phần ảnh phía trên dải chữ giữ nguyên sắc nét 100%.
+    đã mờ đó (`_mau_doi_nen_an_toan`, đo qua `_can_bang_dong` nên một mảng sáng cục
+    bộ trong dải chữ không làm chọn sai màu). Phần ảnh phía trên dải chữ giữ nguyên
+    sắc nét 100%.
   - **Carousel-edu (Kite)**: màu chữ đổi theo **từng dải dòng** (eyebrow, tiêu
     đề, accent, standfirst, caption, card, byline — không dồn vào một chỗ như
     Dre/Ethan, vì Kite chữ nhiều và đa dạng hơn hẳn nên không thể fix một màu
