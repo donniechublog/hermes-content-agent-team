@@ -260,11 +260,8 @@ def _ghep_neu_can(muc, nhan, stem):
     for q in ds:
         if not Path(q).exists():
             sys.exit(f"{nhan}: khong thay tep anh {q}")
-    # CONG CHAN tone: tieu chi o `luat_anh.kiem_lech_tone`, cung mot cho voi
-    # card.py — day la cau hoi "hai anh nay co ghep duoc khong", tuc la do chung.
-    loi_tone, _ = luat_anh.kiem_lech_tone(nhan, [Image.open(q).convert("RGB") for q in ds])
-    if loi_tone:
-        sys.exit("; ".join(loi_tone))
+    # Cong lech tone (`luat_anh.kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
+    # cam doan ve nguon/chat luong nay khoi he thong, moi vai).
     ra = Path(f"{stem}.ghep.png")
     ra.parent.mkdir(parents=True, exist_ok=True)
     # Dong dau XUAT XU (xem cong 2c): anh ghep co the roi dung 4:5 chan (vd hai
@@ -625,9 +622,7 @@ def _gate_anh(paths):
         gom(luat_anh.kiem_ti_le(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
 
         gom(luat_anh.kiem_crop_ngang(nhan, img, w, h_px, muc.get("crop_ok")))
-        gom(luat_anh.kiem_xuat_xu(nhan, img, w, h_px))
         gom(luat_anh.kiem_do_phan_giai(nhan, w, h_px))
-        gom(luat_anh.kiem_day_sang(nhan, img))
         gom(luat_anh.kiem_mat_nguoi(nhan, p, muc.get("nhan_vat")))
     return loi, canh_bao
 

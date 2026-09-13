@@ -4,8 +4,9 @@
 Audit 06/09/2026 do: ham nay 166 dong, 36 nhanh, va gan nhu KHONG co test —
 `test_cong_chan` nhac `bob_nop` 19 lan, `dre_nop` mot lan. No la cho duy nhat
 kiem spec cua Dre truoc khi ve, va phan lon luat trong do la luat Ong Chu tu
-dat sau mot su co that: khong dung lai anh, khong ghep hai anh lech tone,
-khong lay chart lam bia, mat nguoi phai khai ten co trong bai.
+dat sau mot su co that: khong dung lai anh, khong lay chart lam bia, mat nguoi
+phai khai ten co trong bai. (13/09/2026: bo cong "khong ghep hai anh lech
+tone" khoi he thong, xem test_ghep_hai_anh_lech_tone_khong_con_bi_chan.)
 
 Cong nay bao loi THAY VI ve sai, nen no hong theo hai chieu deu dat:
   - bao oan  -> Dre sua kieu gi cung khong nop duoc (da xay ra voi cong xep
@@ -293,8 +294,10 @@ def test_ghep_ra_ti_le_ngoai_dai_thi_chan():
         assert _co(loi, "slide 2", "ngoài dải 4:5..1:1"), loi
 
 
-def test_ghep_hai_anh_lech_tone_thi_chan():
-    """Ong Chu chot 03/09: ghep lech tone doc ra hai vung rieng biet."""
+def test_ghep_hai_anh_lech_tone_khong_con_bi_chan():
+    """Ông Chủ 13/09/2026: bỏ `kiem_lech_tone`/`luat_anh.lech_tone` khỏi hệ
+    thống, mọi vai — ghép hai ảnh lệch tone hẳn (một tối 15/15/20, một sáng
+    235/235/240) không còn bị chặn ở slide ghép."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "A1", 1000, 1250)] + \
@@ -305,7 +308,7 @@ def test_ghep_hai_anh_lech_tone_thi_chan():
                                   _slide("A4", quote="Câu hai", attrib="Y"),
                                   _slide("A5"), _slide("A6")])
         _ra, loi, _c, _d = _chay(spec, _m(wd, anh), wd)
-        assert _co(loi, "slide 2", "lệch tone"), loi
+        assert not _co(loi, "lệch tone"), loi
 
 
 def test_ghep_dung_lai_anh_da_dung_o_slide_khac():

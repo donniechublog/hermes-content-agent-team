@@ -30,19 +30,18 @@ DRAFTS = cb.DRAFTS
 def _kiem_ghep(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
     """Anh di mot minh duoc khong, va ghep voi "anh2" co hop le khong.
 
-    Anh xep hang la chu the: khong bat ghep chi vi no la chart; chi bat khi qua
-    ngang. Nguong ngang la cua card.py (`eb.TI_LE_HERO_MAX`)."""
-    can_ghep = (a["loai"] == "chart" and not a.get("xep_hang")) or a["ti_le"] > eb.TI_LE_HERO_MAX
+    (13/09/2026: bo dieu kien "anh qua ngang phai ghep"/"ghep roi van qua
+    ngang" — tuong duong `luat_anh.kiem_anh_thap`, da bo khoi he thong, moi
+    vai. Chi con giu: chart la chu the (khong bi keo di ghep NEU la xep hang),
+    va ghep doc chi hop khi CA HAI anh deu ngang (rang buoc cau truc cua chinh
+    co che ghep, khong phai cam doan ve chat luong/nguon)."""
+    can_ghep = a["loai"] == "chart" and not a.get("xep_hang")
     if can_ghep and not ma2:
         cap = eb.cap_ghep_hero(m)
-        loi.append(f"{ma} là {'CHART' if a['loai'] == 'chart' else 'ảnh NGANG ' + str(a['ti_le'])} — "
-                   f"card.py chặn một mình. Thêm \"anh2\" cùng tone (cặp gợi ý: {cap or 'không có'}) "
-                   "hoặc chọn ảnh khác")
+        loi.append(f"{ma} là CHART — card.py chặn một mình. Thêm \"anh2\" (cặp gợi ý: "
+                   f"{cap or 'không có'}) hoặc chọn ảnh khác")
     if ma2:
         b = anh[ma2]
-        rc = 1 / (1 / a["ti_le"] + 1 / b["ti_le"])
-        if rc > eb.TI_LE_HERO_MAX:
-            loi.append(f"ghép {ma}+{ma2} vẫn quá ngang ({rc:.2f} > {eb.TI_LE_HERO_MAX}) — chọn cặp khác")
         if b["ti_le"] < 1.2 or a["ti_le"] < 1.2:
             loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ti_le']}, {ma2}={b['ti_le']}")
 

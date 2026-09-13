@@ -548,12 +548,8 @@ def ghep_doc(paths, gap=0, nen=(0, 0, 0)):
     ims = [Image.open(q).convert("RGB") for q in paths]
     if len(ims) == 1:
         return ims[0]
-    # DUNG han, khong chi canh bao (Ong Chu 04/09/2026). Tieu chi o
-    # `luat_anh.kiem_lech_tone` — cung mot cho voi carousel: day la cau hoi
-    # "hai anh nay co ghep duoc khong", tuc la do dung chung.
-    loi, _ = luat_anh.kiem_lech_tone("ghep anh", ims)
-    if loi:
-        raise SystemExit("GHEP ANH LECH TONE — " + "\n  ".join(loi))
+    # Cong lech tone (`luat_anh.kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
+    # cam doan ve nguon/chat luong nay khoi he thong, moi vai).
     w = max(im.width for im in ims)
     ims = [im.resize((w, round(im.height * w / im.width)), Image.LANCZOS) for im in ims]
     h = sum(im.height for im in ims) + gap * (len(ims) - 1)
@@ -565,35 +561,15 @@ def ghep_doc(paths, gap=0, nen=(0, 0, 0)):
     return out
 
 
-def _chan_anh_thap(src, ratio):
-    """Anh qua ngang di MOT MINH vao kieu quote thi DUNG.
-
-    Tieu chi va nguong nam o `luat_anh.kiem_anh_thap` — do la cau hoi "anh nay
-    co dung duoc khong", tuc la do dung chung cho moi vai lam anh. O day chi con
-    phan RIENG cua card.py: kieu nao khoa kho (quote khoa theo RATIOS, con
-    `dai`/`tran` thi khong nen khong goi cong nay), va cach bao loi (dung han
-    thay vi gop danh sach nhu carousel).
-    """
-    if isinstance(src, (list, tuple)) and len([q for q in src if q]) >= 2:
-        return                                   # ghep doc: chinh la duong ra
-    H = RATIOS.get(ratio) or RATIOS["4:5"]
-    q = src[0] if isinstance(src, (list, tuple)) else src
-    with Image.open(q) as im:
-        w_anh, h_anh = im.size
-    loi, _ = luat_anh.kiem_anh_thap(str(q), w_anh, h_anh, W, H)
-    if loi:
-        raise SystemExit("ANH QUA NGANG CHO KIEU QUOTE — " + "\n  ".join(loi) +
-                         "\n  (Khong co anh thu hai va van muon dung thi --bo-qua-anh)")
-
-
 def _chan_chuan_anh(src, nhan_vat=""):
     """Bo cong CHUAN ANH dung chung — Ethan chiu dung tieu chuan nhu Dre.
 
     Ong Chu chot 04/09/2026: "anh do ai lam ma cha phai dat tieu chuan". Truoc
     do bang trong docstring cua `luat_anh` ghi thang ra chenh lech: mat nguoi,
-    dau vet crop, anh trung, do phan giai — carousel.py CO, card.py KHONG. Bon
-    cong do khong co gi rieng cua carousel ca, chung chi tinh co duoc viet o do
-    vi do la cho Ong Chu bat loi truoc.
+    anh trung, do phan giai — carousel.py CO, card.py KHONG. Cac cong do khong
+    co gi rieng cua carousel ca, chung chi tinh co duoc viet o do vi do la cho
+    Ong Chu bat loi truoc. (13/09/2026: bo `kiem_xuat_xu`/`kiem_day_sang` khoi
+    danh sach — hai cong nay da bo khoi he thong, moi vai.)
 
     Gom het loi roi bao MOT LAN (nhu carousel) thay vi dung o cai dau tien: sua
     mot vong con hon chay lai bon lan.
@@ -606,9 +582,7 @@ def _chan_chuan_anh(src, nhan_vat=""):
             w, h = im.size
             rgb = im.convert("RGB")
             for l, c in (luat_anh.kiem_anh_rong(nhan, rgb),
-                         luat_anh.kiem_xuat_xu(nhan, im, w, h),
                          luat_anh.kiem_do_phan_giai(nhan, w, h),
-                         luat_anh.kiem_day_sang(nhan, rgb),
                          luat_anh.kiem_mat_nguoi(nhan, q, nhan_vat),
                          luat_anh.kiem_trung(nhan, q, da_thay)):
                 loi += l
@@ -1125,10 +1099,8 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
         raise SystemExit(f"--kieu phai la quote hoac tran, nhan {kieu!r}")
     _chan_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu
     if not bo_qua_anh:
-        _chan_chuan_anh(src, nhan_vat)   # chuan anh chung: xuat xu, do net, mat nguoi, trung
+        _chan_chuan_anh(src, nhan_vat)   # chuan anh chung: do net, mat nguoi, trung
         _chan_chart(src)     # chart di mot minh vao hero: ep sang --image2/carousel
-    if kieu == "quote" and not bo_qua_anh:
-        _chan_anh_thap(src, ratio)   # anh qua ngang: nua the se bo trong
     # Moi kieu the mot ham ve rieng; `build` chi con la cong chan + re nhanh.
     if kieu == "quote":
         return _render_quote(src, title, attrib, out, handle, ratio, tagline)

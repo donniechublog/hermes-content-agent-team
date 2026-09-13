@@ -641,23 +641,14 @@ luôn là **ghép dọc** hoặc `"chart": true`, không phải crop.
 Ảnh gốc rõ ràng **ngang** (tỉ lệ ≥1.4) mà đi qua crop thì bị chặn, trừ khi khai
 `"crop_ok": "<lý do>"` — chỉ dành cho ảnh chụp người/sản phẩm không có chữ.
 
-### 4.2 Dấu xuất xứ — vì sao không được cắt tay
+### 4.2 Dấu xuất xứ — ĐÃ BỎ (13/09/2026)
 
-Mọi công cụ sinh ảnh của đội **tự đóng dấu vào PNG**: `crop_ti_le.py`,
-`arxiv_hinh.py`, `arxiv_bia.py`, `chup_chart.py`, `doi_chu_anh.py`, và ảnh ghép dọc.
-
-Trước 04/09/2026, cổng crop chỉ đọc dấu của `crop_ti_le.py`. Vai cắt bằng
-PIL/cv2/ImageMagick thì không để lại dấu, cổng không thấy gì để chặn — tức cổng
-**phạt người làm đúng và tha người lách**. Cả 7 ảnh bộ K2 Horizon đều đúng khít
-4:5 (0.7996–0.8004) mà không ảnh nào có dấu.
-
-Nay: **ảnh đúng khít 4:5 hoặc 1:1 mà không có dấu xuất xứ nào → CHẶN.** Ảnh thật
-tải về gần như không bao giờ đúng khít (đo trên kho ảnh của đội: 1.16, 1.50,
-1.78, 1.91…). **Không cờ nào miễn trừ, kể cả `crop_ok`** — `crop_ok` nói "tôi cố
-ý crop", cổng này nói "crop bằng gì thì không ai biết".
-
-Đường thoát rẻ: ảnh gốc **vốn đã** 4:5/1:1 thì vẫn chạy qua `crop_ti_le.py` một
-lần để đóng dấu — cắt 0, không mất gì.
+Cổng này (`luat_anh.kiem_xuat_xu`: ảnh đúng khít 4:5/1:1 mà không có dấu vết
+`crop_ti_le.py` → chặn) đã bỏ khỏi hệ thống, mọi vai (Ông Chủ 13/09/2026: bỏ
+cấm đoán này cùng đợt với `kiem_day_sang`/`kiem_lech_tone`/`kiem_anh_thap`).
+`crop_ti_le.py` vẫn là công cụ crop chuẩn, chỉ là không còn cổng nào ép dùng nó
+thay vì công cụ khác. `crop_ti_le.py`/`arxiv_hinh.py`/`chup_chart.py` vẫn tự
+đóng dấu như cũ — chỉ không ai đọc dấu đó để chặn nữa.
 
 ---
 
@@ -679,11 +670,11 @@ lên ảnh dưới — quote thì chỉ làm mờ cục bộ đúng vùng chữ 
 xem mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặt **ảnh quan
 trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/màn tối chia sẻ.
 
-**Điều kiện duy nhất: hai hình không được quá khác tone.** Lệch tone (một nền
-trắng một nền đen, gam màu khác hẳn) đọc ra như hai vùng riêng biệt. Ưu tiên
-cùng nền sáng/tối, cùng gam màu, tốt nhất là hai slide cùng một bộ. Từ 04/09
-đây là **cổng chặn dừng hẳn** ở cả hero lẫn carousel (trước chỉ cảnh báo nên vai
-cứ cho qua). Bị chặn thì **đổi ảnh** — không có cờ nào để lách.
+**Cổng "không được lệch tone" ĐÃ BỎ (13/09/2026)** — `luat_anh.kiem_lech_tone`
+(và bản dùng trực tiếp `luat_anh.lech_tone` trong `dre_nop.py`) không còn chặn
+gì, ở mọi vai. Ghép hai ảnh dù khác tone hẳn (một nền trắng một nền đen) vẫn
+qua được cổng; `chuan_bi/manifest.py::cap_ghep` cũng không còn loại cặp lệch
+tone khỏi gợi ý. Việc chọn cặp cùng tone cho đẹp giờ là **gu**, không phải luật.
 
 ---
 
@@ -794,18 +785,20 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 | Chart/screenshot thiếu `chart: true` | `kiem_chart` | chặn |
 | Khai `chart: true` mà máy không nhận ra chart | `kiem_chart` | **chỉ cảnh báo** (mục 3) |
 | Ảnh gốc ngang đã crop, không khai `crop_ok` | `kiem_crop_ngang` | chặn |
-| Ảnh đúng khít 4:5/1:1 mà không có dấu xuất xứ | `kiem_xuat_xu` | chặn |
-| Ghép hai ảnh quá khác tone | `kiem_lech_tone` | chặn |
 | Mặt người mà không khai `nhan_vat` | `kiem_mat_nguoi` | chặn |
 | Sai dải tỉ lệ của khung | `kiem_ti_le` | chặn |
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
-| Ảnh quá ngang so với khung khoá khổ (<50%) | `kiem_anh_thap` | chặn |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
 | Bìa Kite không có `image` — mọi trường hợp, kể cả 0 ảnh (§1.2f) | `kite_nop` | chặn |
 | Ảnh khái niệm đặt ở slide **thân** của Kite (§1.2c) | `kite_nop` | chặn |
 | Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
 | Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
-| Đáy ảnh quá sáng | `kiem_day_sang` | cảnh báo |
+
+**Đã bỏ khỏi bảng này (13/09/2026, Ông Chủ: bỏ cấm đoán, mọi vai):**
+`kiem_xuat_xu` (đúng khít 4:5/1:1 không dấu xuất xứ), `kiem_lech_tone` (ghép
+lệch tone), `kiem_anh_thap` (ảnh quá ngang so với khung khoá khổ),
+`kiem_day_sang` (đáy ảnh quá sáng — vốn chỉ cảnh báo, chưa từng chặn). Xem
+§4.2 và §5.
 
 Mỗi hàm trả về `(lỗi, cảnh báo)` và **không hàm nào biết đến canvas**, nên vai
 nào cũng gọi được. Vai tự chọn cổng nào hợp với khung của mình rồi gộp lại.
@@ -821,14 +814,15 @@ mà chả phải đạt tiêu chuẩn"*):
 | | Ethan (`card.py`) | Dre (`carousel.py`) | Kite (`render_edu.py`) | Itachi (`deck.py`) |
 |---|:--:|:--:|:--:|:--:|
 | ảnh rỗng · trùng trong bộ · độ nét | ✅ | ✅ | ✅ | ❌ |
-| xuất xứ · đáy sáng | ✅ | ✅ | – | ❌ |
 | mặt người | ✅ | ✅ | ⚠️ | ❌ |
 | trùng liên phiên (14 ngày) | ✅ | ✅ | ✅ | ❌ |
 | tin xếp hạng → ảnh xếp hạng | ✅ | ✅ | – | ❌ |
-| crop ngang · lệch tone | ✅ | ✅ | – | ❌ |
+| crop ngang | ✅ | ✅ | – | ❌ |
 | chart một mình | ✅ | – | – | ❌ |
-| ảnh quá ngang | ✅ | – | – | ❌ |
 | `chart: true` · dải tỉ lệ | – | ✅ | – | ❌ |
+
+(Hàng "xuất xứ · đáy sáng", "lệch tone" trong cột crop ngang, và "ảnh quá
+ngang" đã bỏ 13/09/2026 — xem ghi chú dưới bảng cổng chặn ở trên.)
 
 Dấu `–` là **không áp dụng cho khung đó**, khác hẳn `❌` là **chưa đấu**. Cột
 Itachi còn trống nguyên.

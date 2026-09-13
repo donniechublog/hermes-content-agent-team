@@ -97,9 +97,8 @@ def _giai_ghep(bo: _Boi, ghep, muc: dict, nhan: str) -> dict | None:
             <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
         bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
                       f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
-    if luat_anh.lech_tone(ims):
-        bo.loi.append(f"{nhan}: {ghep[0]} và {ghep[1]} lệch tone, ghép sẽ ra hai vùng — "
-                      f"chọn cặp gợi ý: {bo.m.get('cap_ghep')}")
+    # Cong lech tone (`luat_anh.lech_tone`) da bo khoi he thong (Ong Chu
+    # 13/09/2026): bo cam doan ve nguon/chat luong nay, moi vai.
     bo.kiem_mat(ghep, muc, nhan)
     bo.dung_anh.append((nhan, list(ghep)))
     return {"images": [bo.anh[x]["goc"] for x in ghep]}
