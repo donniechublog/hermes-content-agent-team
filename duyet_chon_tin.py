@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ghi_log                                              # noqa: E402
 import schema                                                # noqa: E402
-import vai as _vai                                           # noqa: E402
+import role as _vai                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     BRAND, DRAFTS, ROOT, STATE_DIR, _ghi_json, _gui_chu, _nap_json, _reply_that, call, log,
@@ -299,13 +299,13 @@ def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
     # go cung "Finn" cho MOI tin co diem — dung tinh co, vi chi Finn cham diem;
     # nhung neu mai Nova/Vera co bo cham thi dong nay noi sai ten ma khong ai
     # thay. Khong biet vai quet (lenh /bai dat tay) thi giu chu chung nhu cu.
-    ten_quet = _vai.ten_hien(vai_quet) if vai_quet else "Finn"
+    ten_quet = _vai.display_name(vai_quet) if vai_quet else "Finn"
     # AI VIET BAI NAY (LOW-13, 10/09/2026). Truoc day la hang so MAC_DINH_VIET:
     # mot nguoi viet cho ca hai brand. Gio hoi ban dang ky — vai quet truoc,
     # brand lam luoi. `brand` o day luon co that (create_pair nhan mac dinh
     # "donniechublog"), nen ke ca lenh /bai dat tay khong biet vai quet van ra
     # dung nguoi cua container, khong roi ve Miles im lang.
-    vai_viet = _vai.vai_viet_cua(vai_quet, brand)
+    vai_viet = _vai.writer_for(vai_quet, brand)
     writer_body = WRITER_BODY.format(
         title=item["title"], link=item["link"],
         source_note=item.get("source_note", ""), via=item.get("via", ""),
@@ -314,7 +314,7 @@ def _cat_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
         score=f"{diem}/100" if isinstance(diem, (int, float)) else "khong cham diem",
         score_reason=item.get("score_reason", "") or "(khong co)",
         draft_id=draft_id, brand=brand, goc=str(ROOT),
-        persona=_vai.ten_hien(vai_viet).lower())
+        persona=_vai.display_name(vai_viet).lower())
     _ghi_json(DRAFTS / (draft_id + ".writer.json"),
               {"vai_viet": vai_viet, "title": item["title"],
                "body": writer_body, "created": False,
@@ -357,7 +357,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     # `MAC_DINH_VIET` (LOW-13): the goc la thu Ong Chu doc de biet ai lam gi.
     root_id = _bang_den_root(draft_id, item["title"],
                              goal=f"{item['title']} — {brand}: {vai_anh} dung anh, "
-                                  f"{_vai.vai_viet_cua(vai_quet, brand)} viet caption "
+                                  f"{_vai.writer_for(vai_quet, brand)} viet caption "
                                   f"sau khi Ong Chu duyet anh.")
     if root_id:
         illu_body += BANG_DEN_NHAC.format(root=root_id)

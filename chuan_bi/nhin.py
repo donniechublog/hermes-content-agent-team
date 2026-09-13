@@ -13,7 +13,7 @@ from PIL import Image, ImageStat
 
 import luat_anh
 import env_load
-import vai
+import role
 
 from chuan_bi.nguon import _ten_rieng_dau
 from chuan_bi.tai_loc import _chart_theo_hinh, _luu_crop
@@ -396,7 +396,7 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) ->
         # MOT ban regex duy nhat, o ban dang ky vai: cong "mat nguoi phai khai
         # ten" cua `vai.anh_chinh_duoc` phai doc ra dung cai ten ma chu thich
         # duoi day hua la co.
-        ten = vai.ten_nguoi_trong_alt(a.get("alt", "") or "")
+        ten = role.person_names_in_alt(a.get("alt", "") or "")
         if ten:
             a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
                                 "chỉ dùng khi đúng người đó, khai \"nhan_vat\" y hệt")

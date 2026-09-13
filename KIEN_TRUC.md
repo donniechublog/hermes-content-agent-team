@@ -265,7 +265,7 @@ trong vài phút — xem chi tiết ở README §"Đội hình"):
   (OCR+LaMa), Itachi dựng lại carousel kiểu editorial-deck (`deck.py`) **từ
   nền sạch của Gin** — quan hệ sinh/tiêu thụ trực tiếp giữa hai vai, tách biệt
   khỏi engine `anh_chuan_bi.py` dùng chung ở stage 4.
-- **Cape** (teaser; persona cũ tên Jean, `vai.py` giữ `slug_cu=("jean",)`) — đọc
+- **Cape** (teaser; persona cũ tên Jean, `role.py` giữ `slug_cu=("jean",)`) — đọc
   bài **đã duyệt xong** (sau stage 8), ghép teaser cho blog, không tham gia vòng
   duyệt.
 - **Ada** (analyst) — đọc log **sau khi** bài đã đăng/bỏ, đối chiếu điểm chấm
@@ -335,7 +335,7 @@ sequenceDiagram
 Sơ đồ trên vẽ trước đợt sửa 09/09. Năm khối mới nằm **giữa** các stage, không
 thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương ứng:
 
-- `vai.py` — bản đăng ký vai duy nhất; mọi bảng cũ (`VAI_ANH`, `SLUG_CU`,
+- `role.py` — bản đăng ký vai duy nhất; mọi bảng cũ (`VAI_ANH`, `SLUG_CU`,
   `TEN_HIEN`, `chat_router.TOPIC_PROFILE`…) là view dẫn xuất. Giữ cả **luật
   riêng của vai**, không chỉ tên: `so_anh_toi_thieu(slug, flagship)` là số ảnh
   thật tối thiểu để vai dựng được (Ethan 1, Dre 5/8, Kite 1) — engine ảnh dùng

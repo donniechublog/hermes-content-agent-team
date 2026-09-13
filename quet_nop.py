@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT))
 import quet_chung                                            # noqa: E402
 import env_load                                              # noqa: E402
 import quet_chuan_bi as qb                                   # noqa: E402
-import vai                                                   # noqa: E402
+import role                                                   # noqa: E402
 
 TEN = quet_chung.TEN_VAI       # mot ban duy nhat, xem quet_chung
 
@@ -134,7 +134,7 @@ def gui(vai: str, tep: Path, thu: bool, manifest: Path = None) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop cho vai di tim tin")
-    ap.add_argument("--vai", required=True, type=vai.slug_that, choices=list(qb.TOPIC))
+    ap.add_argument("--vai", required=True, type=role.canonical_slug, choices=list(qb.TOPIC))
     ap.add_argument("--khong-co", action="store_true")
     ap.add_argument("--thu", action="store_true")
     a = ap.parse_args()

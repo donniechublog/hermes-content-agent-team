@@ -37,7 +37,7 @@ import env_load                                              # noqa: E402
 import anh_chuan_bi as cb                                    # noqa: E402
 import nguon_bai                                             # noqa: E402
 import schema                                                # noqa: E402
-import vai as vai_mod                                        # noqa: E402
+import role as vai_mod                                        # noqa: E402
 from phien_browser import PhienBrowser                       # noqa: E402
 from chuan_bi.browser import browser_pass                    # noqa: E402
 from chuan_bi.chung import _ghi_json, _mien                  # noqa: E402
@@ -285,7 +285,7 @@ def main() -> int:
         if m is None:
             sys.exit(f"[LOI] khong doc duoc {xong}")
         tieu_de = m.get("tieu_de_en") or m.get("title") or a.draft_id
-        vai_anh = vai_mod.slug_that(m.get("vai_anh") or "") or vai_mod.MAC_DINH_ANH
+        vai_anh = vai_mod.canonical_slug(m.get("vai_anh") or "") or vai_mod.DEFAULT_IMAGE
         so_luot["luot"] += 1
         so_luot["da_thu"] += a.tu_khoa + a.url
         _ghi_json(wd / "tim_them.json", so_luot)

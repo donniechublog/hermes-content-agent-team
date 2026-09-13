@@ -137,14 +137,14 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 Trước 09/09/2026 việc này đụng tám chỗ và quên một chỗ là hỏng **câm**: "kites"
 thiếu trong `TEN_SANG_CAP` làm cả lệnh chọn bị từ chối rồi gửi nhầm cho Finn
 (06/09), sidecar ghi slug cũ làm task nằm `ready` hai ngày (01/09). Từ khi có
-`vai.py` thì còn **ba bước mã** (dưới) cộng **ba bước cấu hình** không dẫn xuất
+`role.py` thì còn **ba bước mã** (dưới) cộng **ba bước cấu hình** không dẫn xuất
 được từ mã: `hermes/profiles/<brand>/<slug>.SOUL.md`, một khoá trong
 `state/topics.<brand>.json` (id topic Telegram), và `hermes/profiles/cau_hinh_that.yaml`.
-`chat_router.TOPIC_PROFILE` tự dẫn xuất từ `vai.py` (từ 09/09/2026, audit lượt 2),
+`chat_router.TOPIC_PROFILE` tự dẫn xuất từ `role.py` (từ 09/09/2026, audit lượt 2),
 và `tests/test_vai.py` giữ mọi bảng dẫn xuất khớp bản đăng ký. Bước 1 sinh lại
 mọi bảng cũ:
 
-1. **Một dòng trong `vai.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
+1. **Một dòng trong `role.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
    nhan_anh=…, viet=…, anh_toi_thieu=…)`. `slug` phải trùng **tên thư mục
    profile thật** trong `HERMES_HOME`, nếu không `chuan_assignee` từ chối tạo
    task. `go` là mọi chữ Ông Chủ có thể gõ khi chọn tin (kể cả số nhiều kiểu

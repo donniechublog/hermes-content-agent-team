@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Nguong "du anh" phai di theo VAI, khong phai theo carousel (su co 10/09/2026).
+"""Nguong "du anh" phai di theo ROLE, khong phai theo carousel (su co 10/09/2026).
 
 Ong Chu bao: "viec cua Ethan la lam single image, sao hom nay Ethan lai bao
 khong tao duoc slide?". Ethan KHONG bi giao nham task — phan cong van dung.
@@ -26,7 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import vai                                                    # noqa: E402
+import role                                                    # noqa: E402
 from chuan_bi.manifest import dung_manifest                   # noqa: E402
 
 
@@ -46,12 +46,12 @@ def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
             {"tieu_de_en": ""}, Path(tmp) / "nguon.json", {}, Path(tmp),
             [_anh(f"A{i + 1}") for i in range(so_anh)], [], False,
             {"chu": ""}, {}, flagship,
-            vai.so_anh_toi_thieu(vai_anh, flagship), vai_anh=vai_anh)
+            role.min_images(vai_anh, flagship), vai_anh=vai_anh)
 
 
 # ------------------------------------------------ 1. nguong ghi vao manifest
 def test_manifest_ghi_nguong_theo_vai_duoc_giao():
-    """`toi_thieu` va `toi_thieu_co_ban` la cua VAI DUOC GIAO. Truoc 10/09/2026
+    """`toi_thieu` va `toi_thieu_co_ban` la cua ROLE DUOC GIAO. Truoc 10/09/2026
     `toi_thieu_co_ban` go cung `carousel.MIN_SLIDE` cho moi vai, nen nut "ha san"
     cua mot bai Ethan cung lay san 5."""
     m_ethan = _manifest("ethan", 2)
@@ -175,19 +175,19 @@ def test_engine_lay_nguong_CHAN_tu_ban_dang_ky_vai():
     ham do mo Chromium, tai anh, goi vision, khong unit test duoc.
 
     Dong cu:  toi_thieu = carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE
-    Dong nay: toi_thieu = vai.so_anh_toi_thieu(vai_anh, flagship)
+    Dong nay: toi_thieu = role.min_images(vai_anh, flagship)
 
     Ai do viet lai theo kieu cu thi cac test tren VAN XANH (chung dung thang
-    `vai.so_anh_toi_thieu` de dung manifest) — chi cong nay bat duoc.
+    `role.min_images` de dung manifest) — chi cong nay bat duoc.
 
     Nguong CHAN va cau hoi "con phai di tim nua khong" la HAI thu: cai thu hai
-    nay do `vai.du_nguyen_lieu`, giu o `tests/test_tim_anh_theo_vai.py`."""
+    nay do `role.has_enough_material`, giu o `tests/test_tim_anh_theo_vai.py`."""
     import inspect
     import re
 
     import anh_chuan_bi as cb
     src = inspect.getsource(cb.chuan_bi)
-    assert re.search(r"^\s*toi_thieu = vai\.so_anh_toi_thieu\(", src, re.M), \
+    assert re.search(r"^\s*toi_thieu = role\.min_images\(", src, re.M), \
         ("`toi_thieu` (nguong chan, di vao manifest) khong con lay tu ban dang ky "
          "vai — do la su co 10/09/2026")
 
@@ -201,11 +201,11 @@ def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
     so cua carousel — chinh la thu Ong Chu bac 10/09/2026 ("carousel la nhieu anh
     con Ethan lam single image, nen 'so luong' ko the la thu ap vao duoc"). Nay
     hai duong tach han: `toi_thieu` chi de CHAN, con di tim thi hoi
-    `vai.du_nguyen_lieu` — no doi phai co anh CHINH, khong doi du so tam."""
+    `role.has_enough_material` — no doi phai co anh CHINH, khong doi du so tam."""
     import inspect
 
     import anh_chuan_bi as cb
-    import vai as vai_mod
+    import role as vai_mod
     src = inspect.getsource(cb.chuan_bi)
     for dong in src.splitlines():
         d = dong.strip()
@@ -216,7 +216,7 @@ def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
     # Mot tam DUNG DUOC nhung khong lam hero duoc thi chua phai la du.
     a = {"dung": ["ghép dọc với một ảnh ngang cùng tone"], "lien_quan": True,
          "loai": "anh", "ti_le": 1.78, "mat": 0, "alt": ""}
-    assert not vai_mod.du_nguyen_lieu("ethan", [a]), \
+    assert not vai_mod.has_enough_material("ethan", [a]), \
         "engine se ngung tim khi Ethan van chua co tam nao lam nen hero"
 
 

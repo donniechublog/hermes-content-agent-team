@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 import ghi_log                                              # noqa: E402
 import nop_chung                                             # noqa: E402
-import vai as _vai                                           # noqa: E402
+import role as _vai                                           # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _chay_nen, _ghi_json, _gui_chu, _reply_that, call, la_ong_chu, load_secrets, log, rut,
@@ -148,7 +148,7 @@ def _bao_khong_phai_reply(token, group, thread_id, vai, rt_that):
              else "tin này Reply vào một bản báo cáo cũ")
     _gui_chu(token, group,
              f"⚠️ Chưa tạo bài: lệnh chọn số phải Reply đúng vào báo cáo MỚI NHẤT "
-             f"của {_vai.ten_hien(vai)} — {ly_do}.\n"
+             f"của {_vai.display_name(vai)} — {ly_do}.\n"
              f"Bấm Reply vào báo cáo cuối cùng trong topic rồi gửi lại đúng dòng vừa gõ.",
              thread=thread_id)
 

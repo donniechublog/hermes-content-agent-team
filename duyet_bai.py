@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
 import luat_anh                                             # noqa: E402
 import schema                                               # noqa: E402
-import vai                                                  # noqa: E402
+import role                                                  # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     API, DRAFTS, ONG_CHU_IDS, ROOT, STATE_DIR, _boc_dong, _chay_nen, _ghi_json, _gui_chu, _khoa_cua, _nap_json, _reply_that, call, la_ong_chu, log,
@@ -715,7 +715,7 @@ def _nut_ha_san(token, draft_id, cq):
     # (truoc 10/09/2026) khong co khoa nay -> giu nguyen chu "slide" nhu truoc.
     _im = _nap_json(DRAFTS / (draft_id + ".img.json"), {})
     _vai_anh = _im.get("vai_anh") or mm.get("vai_anh") or ""
-    don_vi = vai.don_vi_san(vai.slug_that(_vai_anh)) if _vai_anh else "slide"
+    don_vi = role.product_unit_for(role.canonical_slug(_vai_anh)) if _vai_anh else "slide"
     keyboard = None
     if not mm:
         note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""VAI LAM ANH DUOC DI TIM ANH; engine dem SLIDE dung duoc, khong dem TAM.
+"""ROLE LAM ANH DUOC DI TIM ANH; engine dem SLIDE dung duoc, khong dem TAM.
 
 Su co 12/09/2026, tin TSMC (t_a8ffd2f6): engine tai 7 anh, dem "5 dung duoc /
 toi thieu 5" roi NGUNG TIM. Nhung A5 900x600 la anh ngang qua thap, chi "ghep"
@@ -9,7 +9,7 @@ duoc ma khong co cap -> thuc te 4 slide. Dre block, Ong Chu phai go tay, va hoi:
 Giu phan dung (engine chuan bi, cong chan cua script), bo phan pha hoai:
   1. `schema.so_anh_dung_duoc` dem slide dung duoc: anh ngang < 700px chi ghep
      duoc, hai tam moi thanh mot slide, mot tam le = 0;
-  2. `vai.du_nguyen_lieu` hoi cung cong thuc do -> engine di tim tiep;
+  2. `role.has_enough_material` hoi cung cong thuc do -> engine di tim tiep;
   3. `tim_anh_them.py`: vai tu tim theo tu khoa tieng Anh / URL, toi da 3 luot;
      body task va brief Dre tro toi lenh nay TRUOC khi cho phep kanban_block.
 
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import schema                                                 # noqa: E402
 import task_bodies                                            # noqa: E402
-import vai                                                    # noqa: E402
+import role                                                    # noqa: E402
 import tim_anh_them                                           # noqa: E402
 from chuan_bi import manifest                                 # noqa: E402
 
@@ -61,10 +61,10 @@ def test_engine_phai_tim_tiep_khi_chi_du_tam_ma_thieu_slide():
     bo = [_a(ma="A3", dung=["bìa", "thân"]), _ngang(ma="A2", h=942), _ngang(ma="A6"),
           _ngang(ma="A7"), _a(ma="A8"), _ngang(ma="A5", h=600, dung=["ghép dọc với một ảnh ngang cùng tone"])]
     assert schema.so_anh_dung_duoc(bo) == 5
-    assert not vai.du_nguyen_lieu("dre", bo), "6 tam nhung 5 slide: engine CHUA duoc ngung tim"
+    assert not role.has_enough_material("dre", bo), "6 tam nhung 5 slide: engine CHUA duoc ngung tim"
     bo[-1]["h"] = 1000
     bo[-1]["cat_ngang_ok"] = True   # cao du (>=700) VA vision da xac nhan dung mot minh duoc
-    assert vai.du_nguyen_lieu("dre", bo)
+    assert role.has_enough_material("dre", bo)
 
 
 def test_dre_nop_dung_cung_nguong_cat_ngang():

@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
-import vai as vai_mod                                        # noqa: E402
+import role as vai_mod                                        # noqa: E402
 import route_thieu_anh                                       # noqa: E402
 
 
@@ -53,7 +53,7 @@ def chuyen_tu_vai(m: dict) -> str:
     im = cb._doc_json(cb.DRAFTS / (str(m.get("draft_id", "")) + ".img.json"), {}) or {}
     tu = im.get("chuyen_tu") or ""
     if tu:
-        return vai_mod.ten_hien(tu)      # ban dang ky: vai.py (audit A4)
+        return vai_mod.display_name(tu)      # ban dang ky: vai.py (audit A4)
     return "vai ảnh" if (m.get("chuyen_kite") or im.get("chuyen_kite")) else ""
 
 

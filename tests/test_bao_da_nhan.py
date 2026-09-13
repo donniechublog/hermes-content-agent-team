@@ -3,7 +3,7 @@
 
 Đo thật trên `state/dcgr/approve.log` ngày 11/09/2026: lệnh vào lúc 04:22:43,
 dòng `[chon] xong sau 157s` lúc 04:25:20 — **157 giây** topic không có gì. Có
-`_bao_nhan_viec`, nhưng nó gửi vào topic CỦA VAI NHẬN (Dre), không phải topic
+`_bao_nhan_viec`, nhưng nó gửi vào topic CỦA ROLE NHẬN (Dre), không phải topic
 quét Ông Chủ đang nhìn; nên ở bên này im lặng y hệt lúc lệnh bị nuốt.
 
 Luật Ông Chủ 12/09/2026: *"phải có phản hồi 'đang gửi cho Dre' ngay sau khi

@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import duyet_giao_viec as dg                                 # noqa: E402
-import vai                                                   # noqa: E402
+import role                                                   # noqa: E402
 
 TRAN_BASH_GIAY = 300          # bash tool cua hermes cat o ~300s (t_24b214a6: exit 124)
 
@@ -26,12 +26,12 @@ def _phut(s: str) -> int:
 
 
 def test_vai_anh_40m_vai_khac_25m():
-    assert vai.max_runtime_cua("ethan") == "40m"
-    assert vai.max_runtime_cua("dre") == "40m"
-    assert vai.max_runtime_cua("kite") == "40m"
-    assert vai.max_runtime_cua("miles") == "25m"
-    assert vai.max_runtime_cua("designer") == "40m"      # slug cu cung ra dung vai
-    assert vai.max_runtime_cua("khong-ton-tai") == "25m"
+    assert role.max_runtime_for("ethan") == "40m"
+    assert role.max_runtime_for("dre") == "40m"
+    assert role.max_runtime_for("kite") == "40m"
+    assert role.max_runtime_for("miles") == "25m"
+    assert role.max_runtime_for("designer") == "40m"      # slug cu cung ra dung vai
+    assert role.max_runtime_for("khong-ton-tai") == "25m"
 
 
 def test_kanban_create_truyen_max_runtime_theo_vai():
@@ -51,8 +51,8 @@ def test_bat_bien_hen_gio_trong_nho_hon_hen_gio_ngoai():
     assert cb.CHO_KHOA_GIAY < TRAN_BASH_GIAY
     assert cb.CHO_LUOT_GIAY < TRAN_BASH_GIAY
     # canh bao "chay lau" phai den TRUOC khi hermes giet, voi MOI vai
-    for slug in vai.VAI:
-        assert dg.NGUONG_TREO_PHUT < _phut(vai.max_runtime_cua(slug)), slug
+    for slug in role.ROLE:
+        assert dg.NGUONG_TREO_PHUT < _phut(role.max_runtime_for(slug)), slug
 
 
 def test_cho_luot_het_gio_thi_thoat_co_cau_bao_dinh_ky():

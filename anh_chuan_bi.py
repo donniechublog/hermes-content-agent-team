@@ -67,7 +67,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 from phien_browser import PhienBrowser                       # noqa: E402
 import schema                                                # noqa: E402
-import vai                                                   # noqa: E402
+import role                                                   # noqa: E402
 
 from chuan_bi.chung import (  # noqa: E402
     DRAFTS, ROOT, UA, _brand_cua, _doc_json, _ghi_json, _hdr,
@@ -138,15 +138,15 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # cung bi doi 5 anh, roi ca day "thieu anh" ban cho Ethan cau hoi cua
         # carousel. `tom["vai_anh"]` da co san tu sidecar .img.json ngay tren
         # (`_tom_tat_tu_img_json`), chi la truoc gio khong ai dung toi.
-        vai_anh = vai.slug_that(tom.get("vai_anh") or "")
-        if vai_anh not in vai.VAI:
+        vai_anh = role.canonical_slug(tom.get("vai_anh") or "")
+        if vai_anh not in role.ROLE:
             # Chay tay, hoac sidecar mat/chua kip ghi. Khong im: nguong sai lam
             # lech ca `thieu_anh` o manifest lan cau bao gui Ong Chu.
             print(f"[chuan bi] khong biet vai cua {draft_id} "
                   f"(vai_anh={tom.get('vai_anh')!r}) -> dung nguong cua "
-                  f"{vai.MAC_DINH_ANH}", file=sys.stderr)
-            vai_anh = vai.MAC_DINH_ANH
-        toi_thieu = vai.so_anh_toi_thieu(vai_anh, flagship)
+                  f"{role.DEFAULT_IMAGE}", file=sys.stderr)
+            vai_anh = role.DEFAULT_IMAGE
+        toi_thieu = role.min_images(vai_anh, flagship)
         # HAI CAU HOI KHAC NHAU, dung lan nhau la hong ca hai chieu:
         #   `toi_thieu`             — nguong CHAN: duoi no thi bai bi coi la
         #                             thieu anh, Ong Chu bi hoi, bai co the bi
@@ -169,11 +169,11 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # dung chu de san — chup ve roi dem nen la co slide, khong phai doan xem
         # mot tam anh la tren mang co dinh dang gi. Truoc do `_vong_tim_rong`
         # (Yandex + og:image) chay truoc, la duong dai va de lac de hon han.
-        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+        if not role.has_enough_material(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_chup_nguon(anh, link, trang, wd,
                                                          khong_browser, phien=phien,
                                                          tieu_de=tieu_de_nhin)
-        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship) and not khong_browser:
+        if not role.has_enough_material(vai_anh, dung_duoc, flagship) and not khong_browser:
             anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, toi_thieu,
                                                        dung_duoc, wd, phien=phien)
         # ANH CUA CHINH HANG trong tin (logo, chan dung founder/CEO, tru so,
@@ -194,7 +194,7 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # toi 12/09/2026 engine anh chua doc no o dau (loai_tin.py).
         category = meta.get("category", "")
         anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
-                                                      wd, vai.so_anh_muc_tieu_tim(vai_anh, flagship),
+                                                      wd, role.search_target_for(vai_anh, flagship),
                                                       khong_browser, phien=phien,
                                                       category=category)
         # (Vong chup trang nguon da chay o TREN — xem ghi chu thu tu 13/09/2026.)
@@ -205,14 +205,14 @@ def chuan_bi(draft_id: str, meta: dict, state: Path, wd: Path, khong_browser=Fal
         # chinh thuc the trong tieu de (Wikipedia/Commons) chac hon tu khoa LLM — do tren
         # may chu: khai niem nhan bua "computer server room" cho tin toan, the can cuoc
         # Quoc xa cho tin xac minh tuoi. Khai niem chi con la nac CUOI CUNG.
-        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+        if not role.has_enough_material(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_thuc_the(anh, tieu_de_nhin, wd)
-        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+        if not role.has_enough_material(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd,
                                                         category=category)
         # Khoi tit chup tu trang nguon (bai khong anh hero) la NAC CUOI CUNG:
         # chi lam bia khi thuc the + khai niem deu rong (12/09/2026).
-        if not vai.du_nguyen_lieu(vai_anh, dung_duoc, flagship):
+        if not role.has_enough_material(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = nang_khoi_tit(anh)
         tl = _tu_lieu_bai(title, link, nguon_path, wd, nguon, bp)
         m = dung_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
@@ -394,7 +394,7 @@ def _bao_chet_lap(draft_id: str, so_chet: int) -> None:
     try:
         import publish
         tom = _tom_tat_tu_img_json(draft_id)
-        slug = vai.slug_that(tom.get("vai_anh") or "") or vai.MAC_DINH_ANH
+        slug = role.canonical_slug(tom.get("vai_anh") or "") or role.DEFAULT_IMAGE
         publish.gui_topic(
             f"⛔ Engine chuẩn bị ảnh chết bất thường <b>{so_chet} lần liên tiếp</b> trên draft "
             f"<code>{draft_id}</code> — đã DỪNG, không chạy lại. Xem "

@@ -64,7 +64,7 @@ def test_nac_chi_chay_khi_con_thieu():
     # 1c02bba: thuc the TRUOC khai niem — khai niem (tu khoa LLM) la nac CUOI CUNG
     # vi do tren may chu no la nac duy nhat sinh duong tinh gia.
     assert i_cn < i_tt < i_kn, "thu tu phai: chup nguon -> thuc the -> khai niem"
-    assert "du_nguyen_lieu(vai_anh, dung_duoc, flagship):\n            anh, dung_duoc, chua_nhin = _vong_thuc_the" in src
+    assert "has_enough_material(vai_anh, dung_duoc, flagship):\n            anh, dung_duoc, chua_nhin = _vong_thuc_the" in src
 
 def test_vong_thuc_the_hoi_cau_khai_niem_khong_hoi_anh_cua_su_viec():
     """Đo trên máy chủ 12/09/2026: ảnh Wikipedia của Anthropic bị vision từ chối vì

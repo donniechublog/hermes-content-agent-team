@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 import anh_chuan_bi as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import schema                                                # noqa: E402
-import vai as _vai                                           # noqa: E402
+import role as _vai                                           # noqa: E402
 
 
 def chuan(t) -> str:
@@ -62,9 +62,9 @@ def vai_viet_cua_bai(draft_id: str, brand: str = "") -> str:
     khoa `vai_viet`, hoac ghi mot slug la -> hoi lai ban dang ky theo brand."""
     d = cb._doc_json(cb.DRAFTS / f"{draft_id}.writer.json", {}) or {}
     slug = str(d.get("vai_viet") or "")
-    if slug in _vai.VAI:
+    if slug in _vai.ROLE:
         return slug
-    return _vai.vai_viet_cua(None, brand)
+    return _vai.writer_for(None, brand)
 
 
 def persona_viet(slug: str) -> str:
@@ -72,7 +72,7 @@ def persona_viet(slug: str) -> str:
     "jika"). Lay tu ban dang ky chu khong chep bang thu hai: cac cap script deu
     dat theo ten nhan vat (miles_nop, dre_nop, kite_nop...), nen ten persona
     viet thuong CHINH LA tien to script."""
-    return _vai.ten_hien(slug).lower()
+    return _vai.display_name(slug).lower()
 
 
 def so_lan_lam_lai(draft_id: str) -> int:

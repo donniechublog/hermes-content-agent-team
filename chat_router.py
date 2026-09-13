@@ -33,8 +33,8 @@ HERMES_HOME = str(env_load.hermes_home())
 # Dan xuat tu ban dang ky vai.py (audit lượt 2, ADF-r2-2): truoc day la bang 12
 # dong chep tay — them vai o vai.py ma quen day thi chat trong topic cua vai moi
 # roi ve profile mac dinh, IM LANG. tests/test_vai.py giu hai ben khop.
-import vai as _vai                                            # noqa: E402
-TOPIC_PROFILE = {v.slug: v.slug for v in _vai.VAI.values()}
+import role as _vai                                            # noqa: E402
+TOPIC_PROFILE = {v.slug: v.slug for v in _vai.ROLE.values()}
 
 REPLY_LIMIT = 4000          # chua toi 4096 cua Telegram, chua cho phan hau to
 TIMEOUT_SEC = 600           # agent chay lau; 10 phut la du cho hau het viec
@@ -80,7 +80,7 @@ def route(thread_id, topics: dict) -> tuple:
     # `slug_that` bac cau slug role cu (LOW-14): `state/topics.json` cua che do
     # don con nguyen khoa cu, va khong khop o day la chat roi ve profile mac
     # dinh trong IM LANG — dung cai hong ma khoi comment tren canh bao.
-    profile = TOPIC_PROFILE.get(key) or TOPIC_PROFILE.get(_vai.slug_that(key or ""))
+    profile = TOPIC_PROFILE.get(key) or TOPIC_PROFILE.get(_vai.canonical_slug(key or ""))
     session = f"tele-{key or 'general'}"
     return profile, session
 

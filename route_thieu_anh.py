@@ -29,7 +29,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
-import vai as vai_mod                                        # noqa: E402
+import role as vai_mod                                        # noqa: E402
 
 DRAFTS = env_load.ROOT / "drafts"
 
@@ -82,11 +82,11 @@ def sau_chuan_bi(draft_id: str, m: dict) -> None:
     im = json.loads(ip.read_text(encoding="utf-8"))
     # slug_that: sidecar cu con ghi ten persona ("dre", "miles") — chinh ly do
     # vai.py ton tai. Dung tho thi topics().get("dre") miss -> khong gui gi.
-    vai = vai_mod.slug_that(im.get("vai_anh", ""))
+    vai = vai_mod.canonical_slug(im.get("vai_anh", ""))
     if vai == "kite" or im.get("chuyen_kite"):
         return                                     # da la Kite / da chuyen roi
     so, tt = int(thieu.get("so", 0)), int(thieu.get("toi_thieu", 5))
-    ten = vai_mod.ten_hien(vai)      # ban dang ky: vai.py (audit A4)
+    ten = vai_mod.display_name(vai)      # ban dang ky: vai.py (audit A4)
     tieu = m.get("title", draft_id)
     from duyet_giao_viec import chuan_assignee
     from duyet_bai import tao_task_kite

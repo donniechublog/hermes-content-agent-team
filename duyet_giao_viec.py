@@ -19,7 +19,7 @@ import env_load                                              # noqa: E402
 import bang_den                                              # noqa: E402
 import ghi_log                                              # noqa: E402
 import hermes_adapter                                        # noqa: E402
-import vai                                                   # noqa: E402
+import role                                                   # noqa: E402
 
 from duyet_co_so import (  # noqa: E402
     HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _ghi_json, call, log,
@@ -60,15 +60,15 @@ def _bao_nhan_viec(token, group, vai, tu_vai, title, tid, ly_do=""):
 # do, khong phai sua sau cho nhu truoc. Cac ten duoi day giu nguyen la MAT TIEN
 # cho ho duyet_* (duyet_lenh/duyet_chon_tin/duyet_bai) va test dang goi qua
 # `duyet_giao_viec.X`; ly do ton tai cua tung bang nam trong vai.py.
-VAI_ANH = vai.VAI_ANH
-VAI_CAROUSEL = vai.VAI_CAROUSEL
-VAI_EDU = vai.VAI_EDU
-TEN_SANG_CAP = vai.TEN_SANG_CAP
-TEN_VAI_ANH = vai.TEN_VAI_ANH
-TEN_VAI_VIET = vai.TEN_VAI_VIET
-SLUG_CU = vai.SLUG_CU
-MAC_DINH_ANH = vai.MAC_DINH_ANH
-MAC_DINH_VIET = vai.MAC_DINH_VIET
+VAI_ANH = role.ROLE_IMAGE
+VAI_CAROUSEL = role.ROLE_CAROUSEL
+VAI_EDU = role.ROLE_EDU
+TEN_SANG_CAP = role.NAME_BRIGHT_CAP
+TEN_VAI_ANH = role.NAME_ROLE_IMAGE
+TEN_VAI_VIET = role.NAME_ROLE_WRITE
+SLUG_CU = role.SLUG_OLD
+MAC_DINH_ANH = role.DEFAULT_IMAGE
+MAC_DINH_VIET = role.DEFAULT_WRITE
 
 def vai_cua_topic(thread_id):
     """Topic id -> ten vai, doc tu state/topics.json."""
@@ -91,7 +91,7 @@ def vai_cua_topic(thread_id):
 
 def chuan_assignee(assignee):
     """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""
-    slug = vai.slug_that(assignee)
+    slug = role.canonical_slug(assignee)
     co = Path(HERMES_HOME) / "profiles" / slug
     if not co.is_dir():
         return None, (f"không có profile '{slug}' trong {Path(HERMES_HOME).name} "
@@ -109,7 +109,7 @@ def kanban_create(title, assignee, body, parent=None):
         log("kanban", f"tu choi tao '{title[:60]}': {loi}")
         return None, loi
     tid, loi = hermes_adapter.tao_task(title, assignee, body, parent=parent,
-                                       max_runtime=vai.max_runtime_cua(assignee))
+                                       max_runtime=role.max_runtime_for(assignee))
     if loi:
         log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {loi[:200]}")
         return None, loi
@@ -158,7 +158,7 @@ def cau_bi_dung(ten: str, title: str, tid: str, troi, tran, st: str) -> str:
     sau = "đang chạy lại" if st == "running" else "đã xếp lại hàng, sẽ chạy lại"
     return f"⏱ <b>{ten}</b> bị hermes dừng sau {phut}{tran_}, {sau}: {bai}"
 
-_TEN_HIEN = vai.TEN_HIEN            # xem vai.py
+_TEN_HIEN = role.DISPLAY_NAME            # xem vai.py
 
 # Moi bai mot the goc (bang_den.py), Dre/Miles/Ada la con cua no. Ly do va so do
 # o dau bang_den.py. O day chi co ba mieng noi vao luong san:

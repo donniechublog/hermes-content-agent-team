@@ -72,7 +72,7 @@ def test_bao_chet_lap_gui_dung_topic_va_khong_nem():
             cb._bao_chet_lap("draft-khong-ton-tai", 2)
     finally:
         publish.gui_topic = cu
-    assert len(gui) == 1 and gui[0][0] == cb.vai.MAC_DINH_ANH, gui
+    assert len(gui) == 1 and gui[0][0] == cb.role.DEFAULT_IMAGE, gui
     assert "2 lần" in gui[0][1] and "draft-khong-ton-tai" in gui[0][1], gui
     # gui_topic nem thi _bao_chet_lap van khong nem
     publish.gui_topic = lambda text, vai: (_ for _ in ()).throw(RuntimeError("x"))

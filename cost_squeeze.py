@@ -28,7 +28,7 @@ from pathlib import Path
 import httpx
 
 import env_load
-import vai
+import role
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teaser_assemble import DAI_HONG, tim_giong_tuong_thuat  # noqa: E402
@@ -162,7 +162,7 @@ def chay(model, key, sys_prompt, nhac, max_tokens=4000, extra=None):
 
 def main():
     ap = argparse.ArgumentParser(description="Ep chi phi ma van giu on dinh")
-    ap.add_argument("--vai", required=True, type=vai.slug_that, choices=sorted(VIEC))
+    ap.add_argument("--vai", required=True, type=role.canonical_slug, choices=sorted(VIEC))
     ap.add_argument("-n", type=int, default=5, help="So lan chay moi model")
     ap.add_argument("--models", nargs="*", help="Model can thu")
     a = ap.parse_args()

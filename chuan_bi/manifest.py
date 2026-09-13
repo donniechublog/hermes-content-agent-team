@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw
 
 import luat_anh
 import schema
-import vai as vai_mod                 # `vai` la ten tham so o vai ham duoi
+import role as vai_mod                 # `vai` la ten tham so o vai ham duoi
 
 from chuan_bi.chung import ROOT, _brand_cua
 
@@ -228,7 +228,7 @@ def dan_xuat(anh: list, so_xh: int = 0) -> dict:
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
     # hang trong tin, 09/09/2026) -> anh KHAI NIEM (co, rack, chung chung; 07/09).
     goi_y_bia = [a["ma"] for a in sorted(
-        (a for a in anh if vai_mod.co_nhan_bia(a["dung"]) and a.get("lien_quan") is not False),
+        (a for a in anh if vai_mod.has_label_cover(a["dung"]) and a.get("lien_quan") is not False),
         key=lambda a: (bool(a.get("khai_niem")), bool(a.get("thuong_hieu")),
                        a["goc_trai_sang"], -a["canh_ngan"]))][:3]
     # `xhs` co the co NHIEU HON MOT (bang xep hang do nang luc khac nhau, xem
@@ -263,7 +263,7 @@ def dung_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict,
          # Chu bam "lam voi N anh" (imgtiep) thi approve_service ha `toi_thieu`
          # ve day, khong ha thap hon duoc. Truoc 10/09/2026 cho nay go cung
          # carousel.MIN_SLIDE cho moi vai, nen bai cua Ethan bi doi 5 anh.
-         "toi_thieu_co_ban": vai_mod.so_anh_toi_thieu(vai_anh), "so_mien": so_mien,
+         "toi_thieu_co_ban": vai_mod.min_images(vai_anh), "so_mien": so_mien,
          "anh": anh, "cap_ghep": dx["cap_ghep"], "goi_y_bia": goi_y_bia, "tu_lieu": tl,
          "ghep_hai_hang": ghep_hai_hang(anh, meta.get("category", "")),
          "thu_tu_anh_theo_loai": list(__import__("loai_tin").thu_tu_anh(meta.get("category", ""))),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ENGINE CON PHAI DI TIM ANH NUA KHONG — hoi theo VAI, khong do bang so cua
+"""ENGINE CON PHAI DI TIM ANH NUA KHONG — hoi theo ROLE, khong do bang so cua
 carousel (LOW-12, 10/09/2026).
 
 Ong Chu: *"Ethan khong tu di tim anh lien quan tren mang ma chi tim anh co trong
@@ -21,7 +21,7 @@ Tin co 5 anh ngang 16:9 (hinh dang thuong gap nhat cua anh bao) dem ra "du 5"
 nen engine ngung tim; nhung card.py chan anh ngang >1.6 lan chart di mot minh,
 tuc Ethan con 0 duong dung, ma brief cam vai tu tai them ("chi dung MA ANH").
 
-Nay `vai.du_nguyen_lieu` tra loi: MOI vai deu phai co mot tam lam anh chinh,
+Nay `role.has_enough_material` tra loi: MOI vai deu phai co mot tam lam anh chinh,
 rieng SO LUONG thi chi vai xep nhieu anh moi bi dem. Tieu chi CHAT LUONG van
 dung chung o luat_anh + phan_loai, khong dong toi.
 
@@ -237,8 +237,8 @@ def test_hai_vong_bu_phai_hoi_ban_dang_ky_vai():
         ifs = _if_boc_loi_goi(goc, ten_vong)
         assert ifs, f"khong tim thay loi goi {ten_vong} trong mot `if` cua chuan_bi()"
         for nut in ifs:
-            assert "du_nguyen_lieu" in _ten_ham_trong(nut.test), (
-                f"dieu kien mo {ten_vong} khong con hoi `vai.du_nguyen_lieu` — do la "
+            assert "has_enough_material" in _ten_ham_trong(nut.test), (
+                f"dieu kien mo {ten_vong} khong con hoi `role.has_enough_material` — do la "
                 "LOW-12: no se lai do bo anh cua Ethan bang so slide cua carousel")
 
 

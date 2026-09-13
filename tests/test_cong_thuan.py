@@ -35,7 +35,7 @@ def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
 
 def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
     """Su co 06/09/2026: "3, 4 - Kites" (Ong Chu go so nhieu) bi doc_lenh_chon tu
-    choi CA lenh vi "kites" khong khop TEN_SANG_CAP -> roi ve hoi thoai, gui
+    choi CA lenh vi "kites" khong khop NAME_BRIGHT_CAP -> roi ve hoi thoai, gui
     nham cho Finn (topic scout) thay vi tao task cho Kite."""
     from duyet_chon_tin import doc_lenh_chon
     ra = doc_lenh_chon("1 - Ethan 3, 4 - Kites")

@@ -29,7 +29,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load
-import vai
+import role
 
 STATE = env_load.state_dir() / "telegram_sent"
 TOPICS = env_load.topics_path()
@@ -206,7 +206,7 @@ def gan_day(vai: str, n: int = 5) -> list:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--vai", required=True, type=vai.slug_that,
+    ap.add_argument("--vai", required=True, type=role.canonical_slug,
                     help="slug vai — khop key trong topics.<brand>.json (nhan ca slug cu)")
     ap.add_argument("--anh", action="append", default=[], help="Duong dan PNG, lap lai cho nhieu anh (album)")
     ap.add_argument("--mo-ta", default="", help="Caption ngan mo ta anh — giup tra loi SAU biet dang noi anh nao")
