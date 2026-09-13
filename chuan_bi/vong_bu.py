@@ -532,14 +532,19 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
              "mien": _mien(u), "diem": 0, "hint_chart": False, **c}
         moi = wd / "goc" / f"{a['ma']}.png"
         moi.parent.mkdir(parents=True, exist_ok=True)
-        # DEM NEN CUNG MAU TRANG GOC (Ong Chu 13/09/2026) truoc khi vao `phan_loai`:
-        # tam chup khoi lead thuong la anh NGANG, de nguyen thi dinh luat "ngang
-        # phai ghep doi hoac cat_ngang" va thanh tam le khong dung duoc. Dem xong
-        # no la 4:5 dung, dung MOT MINH lam mot slide.
+        # DEM NEN DEN (Ong Chu 13/09/2026, sua lai cung ngay): tam chup khoi lead
+        # thuong la anh NGANG, de nguyen thi dinh luat "ngang phai ghep doi hoac
+        # cat_ngang" va thanh tam le khong dung duoc. Dem xong no la 4:5 dung,
+        # dung MOT MINH lam mot slide. Mau dem la DEN co dinh (khong sample mau
+        # nen trang cua trang nguon) - carousel toi dung nen den + chu trang, dem
+        # trang tao khoang trang lac long giua anh va khung, buoc carousel.py
+        # phai phu them lop mo (_lop_neu_can) len tren de chu doc duoc ("vet
+        # nhat"). Dem den tu dau: khop luon voi nen anh, khong con khoang trang,
+        # khong can lop phu nua.
         try:
-            chup_trang.dem_nen(tam, moi, c.get("mau_nen") or "#ffffff")
+            chup_trang.dem_nen(tam, moi, "#000000")
             Path(tam).unlink(missing_ok=True)
-            a["dem_nen"] = c.get("mau_nen")
+            a["dem_nen"] = "#000000"
         except Exception as e:                               # noqa: BLE001
             print(f"[chup nguon] {_mien(u)}: dem nen hong ({type(e).__name__}), giu tam goc",
                   file=sys.stderr)
