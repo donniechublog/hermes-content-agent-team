@@ -100,9 +100,9 @@ def test_nhan_vat_ba_lop():
 # ------------------------------------------------------------------- số lạ
 def test_so_la_doi_don_vi_khong_bi_bao():
     tl = "- Model dat 82,5 diem MMLU, gia 3 USD moi trieu token.\n- Huy dong 500 trieu USD."
-    assert cc.so_la("Model dat 82,5 diem", tl) == []
-    assert cc.so_la("chi 5 cai", tl) == []                    # 1 chữ số: bỏ qua
-    assert cc.so_la("dat 99,9 diem va 1234 ty", tl) == ["99,9", "1234"]
+    assert cc.count_is("Model dat 82,5 diem", tl) == []
+    assert cc.count_is("chi 5 cai", tl) == []                    # 1 chữ số: bỏ qua
+    assert cc.count_is("dat 99,9 diem va 1234 ty", tl) == ["99,9", "1234"]
 
 
 # ------------------------------------------------------------ bắt buộc khớp
@@ -470,7 +470,7 @@ def test_anh_xep_hang_mien_cong_dung_lai():
 
 # ------------------------------------------------- watermark cua Bob (@handle)
 def test_handle_bob_luon_co_cong_va_nhan_ca_hai_kieu_khoa():
-    """CT_BRAND la khoa CONTAINER ('blog'), card.THUONG_HIEU khoa theo TEN brand
+    """CT_BRAND la khoa CONTAINER ('blog'), card.BRAND khoa theo TEN brand
     ('donniechublog'). Truoc 06/09/2026 `handle_channel` tra thang gia tri tra cuu
     nen tren container blog no roi ve chinh chuoi 'blog': MOI anh Bob dong khung
     in watermark "blog" thay vi "@donniechublog"."""
@@ -551,8 +551,8 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
 
 # ------------------------------------------------------------ the quote (card)
 def _anh_van(w, h, ra, dai_toi=None, sang=False):
-    """Anh thu co VAN DAY (khong bi `_chan_chart` bat nham la bieu do) va mot dai
-    toi tuy chon. Kich thuoc tranh khit 4:5 vi cong `_chan_chuan_anh` doi dau vet
+    """Anh thu co VAN DAY (khong bi `_block_chart` bat nham la bieu do) va mot dai
+    toi tuy chon. Kich thuoc tranh khit 4:5 vi cong `_block_standard_image` doi dau vet
     crop_ratio.py voi anh dung khit ti le."""
     from PIL import Image, ImageDraw
     goc = (250, 250, 250) if sang else (240, 240, 240)
@@ -575,7 +575,7 @@ def _anh_van(w, h, ra, dai_toi=None, sang=False):
 
 def _dung_the(src, ra, tmp):
     import card
-    card.dat_thuong_hieu("donniechublog")
+    card.set_brand("donniechublog")
     card.build(str(src), "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified",
                str(ra), handle="@donniechublog", ratio="4:5",
                attrib="Đọc bài đầy đủ tại donniechublog - Hacker News")
@@ -765,7 +765,7 @@ def _cr(a, b):
 
 def _anh_hai_tone(w, h, ra, ranh):
     """Nua TREN toi, nua DUOI sang, ranh o `ranh` (ti le chieu cao). Van day de
-    khong bi `_chan_chart` bat nham la bieu do."""
+    khong bi `_block_chart` bat nham la bieu do."""
     from PIL import Image, ImageDraw
     im = Image.new("RGB", (w, h), (250, 250, 250))
     d = ImageDraw.Draw(im)
@@ -786,7 +786,7 @@ def _anh_hai_tone(w, h, ra, ranh):
 def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
     """Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong (anh chup co hero
     toi tren, bang trang duoi; anh ghep doc hai tam khac tone). Truoc 06/09/2026
-    `_mau_doi_nen` lay MOT mean cho ca khoi: trung binh 136 -> chon chu TRANG
+    `_color_change_background` lay MOT mean cho ca khoi: trung binh 136 -> chon chu TRANG
     trong khi nua duoi khoi la nen 243-250, may dong cuoi la trang tren trang.
     Loi DOI XUNG o chieu kia: trung binh 142 -> chu toi, nua tren thanh
     den-tren-den. Do tung dai dong thi moi dong deu phai doc duoc."""
@@ -794,7 +794,7 @@ def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
     import card
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
-        card.dat_thuong_hieu("donniechublog")
+        card.set_brand("donniechublog")
         ve_goc = ImageDraw.ImageDraw.text
         da_ve = []
 
@@ -852,9 +852,9 @@ def test_moi_dong_quote_doc_duoc_khi_co_mang_sang_doc():
 
     Do tung dai (test tren) chi xu duoc ranh NGANG. Mang sang DOC thi trung binh
     ca dai van thien dung phe — mean 95 chon chu trang — nhung stddev 84 va nen
-    cuc bo tai mang sang la 217: CR 1.19, mat chu dung chuong do. `_can_bang_dong`
+    cuc bo tai mang sang la 217: CR 1.19, mat chu dung chuong do. `_can_board_line`
     sinh ra cho ca nay, nhung toi 07/09/2026 moi chi noi vao kieu `tran`; kieu
-    `quote` con dung `_sang_vung` truc tiep.
+    `quote` con dung `_bright_region` truc tiep.
 
     Cham bang CUA SO TRUOT doc dai, KHONG phai median ca dai: median cua chinh ca
     nay van cho CR 5.57 nen gate cu bao xanh trong khi chu da chim."""
@@ -862,7 +862,7 @@ def test_moi_dong_quote_doc_duoc_khi_co_mang_sang_doc():
     import card
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
-        card.dat_thuong_hieu("donniechublog")
+        card.set_brand("donniechublog")
         ve_goc = ImageDraw.ImageDraw.text
         da_ve = []
 
@@ -901,13 +901,13 @@ def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
     """Net khung + hai dau " 210px la vat nhan dien cua kieu pull-quote. Truoc
     06/09/2026 net khung la CYAN CUNG, khong nhanh nao doi: tren anh nen sang,
     CYAN cua dcgr (trang thuan) cho CR 1.04 — bien mat sach; cua donniechublog
-    cho 1.88, nhat han. Dau ngoac con te hon: `_du_sang` keo mau hang SANG THEM,
+    cho 1.88, nhat han. Dau ngoac con te hon: `_enough_bright` keo mau hang SANG THEM,
     dung luat danh cho nen toi, tuc sai chieu."""
     import card
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
         for brand in ("donniechublog", "dcgr"):
-            card.dat_thuong_hieu(brand)
+            card.set_brand(brand)
             goc = card._quote_frame
             ghi = {}
 
@@ -928,7 +928,7 @@ def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
                 cr = _cr(ghi[ten], (250, 250, 250))
                 assert cr >= 3.0, (f"{brand}: {ten} khung {ghi[ten]} tren nen sang "
                                    f"chi CR {cr:.2f} — chim")
-        card.dat_thuong_hieu("donniechublog")
+        card.set_brand("donniechublog")
 
 # ------------------------------------------- so "anh da dung": nguong theo loai
 def _bieu_do(ra, gia_tri, mau=(40, 90, 200)):
@@ -994,13 +994,13 @@ def test_gia_tri_bars_doc_dung_cham_hang_nghin():
     float("1.200") = 1.2: cot "1.200 tac vu" ve rong 0.1% con cot "900" ve rong
     100%, bieu do noi NGUOC han so lieu ma chu tren cot van ghi dung."""
     import render_edu as re_
-    assert re_._gia_tri("1.200") == 1200.0
-    assert re_._gia_tri("12.345") == 12345.0
-    assert re_._gia_tri("1.200,50") == 1200.5      # cham nghin + phay thap phan
-    assert re_._gia_tri("2,75") == 2.75            # phay thap phan kieu Viet
-    assert re_._gia_tri("2.75") == 2.75            # cham thap phan kieu Anh
-    assert re_._gia_tri(900) == 900.0
-    vals = [re_._gia_tri("1.200"), re_._gia_tri(900)]
+    assert re_._value("1.200") == 1200.0
+    assert re_._value("12.345") == 12345.0
+    assert re_._value("1.200,50") == 1200.5      # cham nghin + phay thap phan
+    assert re_._value("2,75") == 2.75            # phay thap phan kieu Viet
+    assert re_._value("2.75") == 2.75            # cham thap phan kieu Anh
+    assert re_._value(900) == 900.0
+    vals = [re_._value("1.200"), re_._value(900)]
     ti_le = [round(v / max(vals) * 100, 1) for v in vals]
     assert ti_le == [100.0, 75.0], f"ti le cot sai: {ti_le}"
 
@@ -1154,10 +1154,10 @@ def test_teaser_nhac_muc_dan_y_bi_bo():
              {"level": "h3", "text": "mục h3 không xét"}]
     doan = ["Con số chi phí gây bất ngờ: 2,75 USD mỗi task, rẻ hơn bản trước.",
             "Đổi lại là chất lượng giữ nguyên trên bộ đo nội bộ."]
-    assert ta._muc_khong_duoc_nhac(dan_y, doan) == ["Độ trễ khi tải cao"]
+    assert ta._item_no_ok_mention(dan_y, doan) == ["Độ trễ khi tải cao"]
     du = doan + ["Độ trễ khi tải cao vẫn nằm trong ngưỡng chịu được."]
-    assert ta._muc_khong_duoc_nhac(dan_y, du) == []
-    assert ta._muc_khong_duoc_nhac(None, doan) == []
+    assert ta._item_no_ok_mention(dan_y, du) == []
+    assert ta._item_no_ok_mention(None, doan) == []
 
 # ------------------------------------------------- duong bao loi cua miles_nop
 def test_miles_nop_bao_loi_thay_vi_no():

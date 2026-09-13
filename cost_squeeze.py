@@ -31,8 +31,8 @@ import env_load
 import role
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from teaser_assemble import DAI_HONG, tim_giong_tuong_thuat  # noqa: E402
-from caption_check import ty_le_dau                          # noqa: E402
+from teaser_assemble import LONG_BROKEN, find_voice_wall_technique  # noqa: E402
+from caption_check import billion_odd_mark                          # noqa: E402
 
 ROOT = env_load.ROOT
 HERMES = env_load.hermes_home()          # per-brand, roi ve ~/.hermes
@@ -93,7 +93,7 @@ def job_teaser():
     nhac = (f"Du lieu bai goc:\n{json.dumps(art, ensure_ascii=False)[:60000]}\n\n"
             "Viet tieu de va cac doan van thuan theo dung huong dan. "
             'Tra ve JSON: {"title": str, "paragraphs": [str, ...]}')
-    return soul("cape"), nhac, DAI_HONG
+    return soul("cape"), nhac, LONG_BROKEN
 
 
 # Nhieu tin khac nhau, KHONG lap mot tin. Lap mot tin lam bo do mu: v4-flash
@@ -196,9 +196,9 @@ def main():
             if not van:
                 sai.append("rong")
             else:
-                if ty_le_dau(van) < 0.15:
+                if billion_odd_mark(van) < 0.15:
                     sai.append("mat dau")
-                if tim_giong_tuong_thuat("", van.split("\n\n")):
+                if find_voice_wall_technique("", van.split("\n\n")):
                     sai.append("giong tuong thuat")
                 sotu = len(van.split()); tu.append(sotu)
                 if sotu < tu_min:

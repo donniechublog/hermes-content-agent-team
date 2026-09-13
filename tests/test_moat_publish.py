@@ -273,7 +273,7 @@ def test_poll_bo_qua_file_meta_json_khong_parse_thanh_draft():
     MOI loi parse du dong 428 co ton tai hay khong, nen JSON loi khong phan
     biet duoc "bi bo qua dung cho" voi "vo tinh parse hong roi cung bi nuot".
     JSON hop le nhung sai kieu thi khac: neu dong 428 bi go/hong, file se lot
-    qua json.loads (khong loi), roi bay thang vao _poll_mot_bai(path, d, ...)
+    qua json.loads (khong loi), roi bay thang vao _poll_one_article(path, d, ...)
     voi d la list -- d.get("moat") nem AttributeError NGAY, ma khong try/except
     nao trong poll() bao boc loi nay ca (try/except o do chi quanh rieng
     json.loads). Poll() chay xong khong crash tuc la dong 428 that su chay."""

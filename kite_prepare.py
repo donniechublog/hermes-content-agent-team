@@ -244,9 +244,9 @@ def ensure_has_cover(draft_id: str, m: dict, wd, khong_browser: bool, cho: int,
 def call_y_tone(title: str) -> tuple:
     """(theme, hero, gan_day) — chon cai chua dung gan day, xoay theo tieu de."""
     import render_edu
-    gan = render_edu._theme_gan_day(4)
+    gan = render_edu._theme_near_bottom(4)
     try:
-        theme, hero = render_edu.chon_theme_tu_dong({"folio": title}, False)
+        theme, hero = render_edu.pick_theme_auto({"folio": title}, False)
     except SystemExit:
         theme, hero = "orbit", "orbit"
     return theme, hero, gan

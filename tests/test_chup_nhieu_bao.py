@@ -78,7 +78,7 @@ def test_vong_chup_giu_moi_tam_khong_dung_o_tam_dau():
 def test_dem_nen_chup_nguon_la_den_khong_lay_mau_trang_nguon():
     """Ong Chu 13/09/2026: dem bang mau trang cua trang nguon tao khoang trang
     lac long voi anh chinh (nhieu anh nguon nen toi/den), buoc carousel.py phu
-    them lop mo (_lop_neu_can) len tren de chu doc duoc - chinh la "vet nhat".
+    them lop mo (_layer_if_can) len tren de chu doc duoc - chinh la "vet nhat".
     Dem DEN co dinh: khop voi nen toi cua carousel va voi nen anh, khong con
     khoang trang, khong can lop phu."""
     src = (ROOT / "chuan_bi" / "fallback_rounds.py").read_text(encoding="utf-8")

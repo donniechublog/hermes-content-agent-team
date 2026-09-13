@@ -115,7 +115,7 @@ def main() -> int:
             if isinstance(x, dict) else str(x)
             for k in ("nhan_xet", "de_xuat_rubric", "token", "router", "ket_luan")
             for x in (spec.get(k) if isinstance(spec.get(k), list) else [spec.get(k) or ""]))
-        la = cc.so_la(chuoi, brief)
+        la = cc.count_is(chuoi, brief)
         if la:
             canh.append("số không có trong brief: " + ", ".join(la[:6])
                         + " — Ada chỉ được dùng số của brief, không tự tính lại "

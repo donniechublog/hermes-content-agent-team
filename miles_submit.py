@@ -70,7 +70,7 @@ def main() -> int:
 
     p_tl = wd / "tu_lieu.md"
     tl = p_tl.read_text(encoding="utf-8") if p_tl.exists() else ""
-    loi, canh, tin = caption_check.kiem(cap, tl)
+    loi, canh, tin = caption_check.check(cap, tl)
     print(f"[do] {tin.get('do_dai', 0)} ký tự | {tin.get('so_cau', 0)} câu | {tin.get('so_trong_caption', 0)} chỗ có số"
           f" | tỉ lệ dấu {tin.get('ty_le_dau', 0):.2f}"
           + (f" | nguồn có {tin['cau_so_trong_nguon']} câu số liệu" if "cau_so_trong_nguon" in tin else ""))
@@ -79,8 +79,8 @@ def main() -> int:
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        if tin.get("do_dai", 0) > caption_check.GIOI_HAN:
-            print(f"[LOI] cần cắt ít nhất {tin['do_dai'] - caption_check.GIOI_HAN} ký tự "
+        if tin.get("do_dai", 0) > caption_check.LIMIT:
+            print(f"[LOI] cần cắt ít nhất {tin['do_dai'] - caption_check.LIMIT} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
         # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
         # bao Jika chay miles_nop.py doc ra nhu giao nham nguoi (LOW-13).

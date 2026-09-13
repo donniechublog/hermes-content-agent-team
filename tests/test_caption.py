@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cong chan caption cua Miles (`caption_check.kiem`).
+"""Cong chan caption cua Miles (`caption_check.check`).
 
 Day la cong CUOI CUNG truoc khi mot bai vao hang duyet, va la thu Ong Chu doc
 tren kenh. 103 dong, 14 cong, thuan (chuoi vao, bo ba ra) — ma truoc 07/09/2026
@@ -33,7 +33,7 @@ TU_LIEU = """# Tư liệu
 
 
 def _kiem(caption=CHUAN, tu_lieu=TU_LIEU):
-    return cc.kiem(caption, tu_lieu)
+    return cc.check(caption, tu_lieu)
 
 
 def _co(ds, *manh):
@@ -50,7 +50,7 @@ def test_caption_chuan_khong_loi():
 
 
 def test_caption_rong_la_loi_duy_nhat():
-    assert cc.kiem("   \n ", TU_LIEU) == (["Caption rỗng."], [], {})
+    assert cc.check("   \n ", TU_LIEU) == (["Caption rỗng."], [], {})
 
 
 # ---------------------------------------------------------------- dau tieng Viet
@@ -60,13 +60,13 @@ def test_mat_dau_la_loi_nang():
     khong_dau = "Nvidia mo kho mo hinh Nemotron cho moi nha phat trien.\nBan lon nhat co 340 ty tham so.\nDieu nay thu hep khoang cach."
     loi, _c, tin = _kiem(khong_dau)
     assert _co(loi, "MAT DAU"), loi
-    assert tin["ty_le_dau"] < cc.NGUONG_DAU
+    assert tin["ty_le_dau"] < cc.THRESHOLD_MARK
 
 
 def test_nguong_dau_thap_hon_audition_co_y():
     """0.12 thap hon 0.15 cua model_audition: caption nhieu ten rieng tieng Anh
     keo ty le xuong. Hai nguong khac nhau la chu dich."""
-    assert cc.NGUONG_DAU == 0.12
+    assert cc.THRESHOLD_MARK == 0.12
 
 
 def test_ty_le_dau_khong_tinh_the_html():
@@ -123,7 +123,7 @@ def test_so_thap_phan_va_phien_ban_khong_bi_coi_la_link():
 
 # ---------------------------------------------------------------- van phong
 def test_cum_sao_rong_bi_cam():
-    for cum in cc.SAO_RONG:
+    for cum in cc.STAR_EMPTY:
         loi, _c, _t = _kiem(CHUAN + f"\nĐây là điều {cum}.")
         assert _co(loi, "sáo rỗng", cum), (cum, loi)
 
@@ -150,7 +150,7 @@ def test_nhieu_cau_mot_dong_chi_nhac():
 def test_the_html_la_bi_chan_the_cho_phep_thi_khong():
     loi, _c, _t = _kiem(CHUAN.replace("Nvidia", "<div>Nvidia</div>"))
     assert _co(loi, "Thẻ HTML", "div"), loi
-    for the in sorted(cc.THE_CHO_PHEP):
+    for the in sorted(cc.CARD_ALLOW):
         loi, _c, _t = _kiem(CHUAN.replace("Nvidia", f"<{the}>Nvidia</{the}>"))
         assert not _co(loi, "Thẻ HTML"), (the, loi)
 
@@ -178,7 +178,7 @@ def test_caption_mot_so_thi_chi_nhac_them():
 
 def test_khong_co_tu_lieu_va_khong_so_thi_chi_nhac():
     khong_so = "Nvidia mở kho mô hình.\nBản lớn nhất rất mạnh, theo hãng.\nĐiều này thu hẹp khoảng cách.\nDùng được ngay."
-    loi, canh, _t = cc.kiem(khong_so, "")
+    loi, canh, _t = cc.check(khong_so, "")
     assert loi == [] and _co(canh, "không có con số"), (loi, canh)
 
 

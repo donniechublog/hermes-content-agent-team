@@ -384,10 +384,10 @@ def test_nen_hop_le_di_thang_sang_carousel():
     import carousel
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        spec["nen"] = list(carousel.NEN)[0].upper()
+        spec["nen"] = list(carousel.BACKGROUND)[0].upper()
         ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
-        assert ra["nen"] == list(carousel.NEN)[0]
+        assert ra["nen"] == list(carousel.BACKGROUND)[0]
 
 
 def test_flagship_cua_manifest_thanh_tam_co():

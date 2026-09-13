@@ -473,9 +473,9 @@ def hero_svg(name, th):
 # chu khong phai thieu mot ti. Nen anh LUON trai het 1080px, khong bao gio cat
 # hai ben. Chieu cao thi cat duoc: cao qua tran thi giu mep tren, phan con lai
 # cua chieu cao slide moi den luot chu minh hoa.
-ANH_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+IMAGE_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
             ".webp": "image/webp", ".gif": "image/gif"}
-FIG_RONG_TOI_THIEU = 800    # hep hon the ma keo len 1080 thi be nat
+FIG_EMPTY_MIN = 800    # hep hon the ma keo len 1080 thi be nat
 
 # Bo so lay NGUYEN cua carousel.py (vai Dre) de hai vai noi cung mot thu tieng.
                        # khong thi cho nao lop sac khong phu se lo mot BAN SAO
@@ -498,14 +498,14 @@ FIG_RONG_TOI_THIEU = 800    # hep hon the ma keo len 1080 thi be nat
 # alpha-blend.
 _MAU_CHU_SANG_RGB = tuple(int(WHITE.lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
 _MAU_CHU_TOI_HIEU_DUNG = (38, 38, 38)  # xap xi 0.15 x nen sang (rgba đen 0.85)
-NGUONG_SANG_CHU_TOI = round(text_bg.threshold_wall_part(_MAU_CHU_SANG_RGB, _MAU_CHU_TOI_HIEU_DUNG))
-FIG_TIEU_DE_DONG = 2   # slide co anh: tieu de toi da bay nhieu dong
-FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
-FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
+THRESHOLD_BRIGHT_TEXT_DARK = round(text_bg.threshold_wall_part(_MAU_CHU_SANG_RGB, _MAU_CHU_TOI_HIEU_DUNG))
+FIG_TITLE_LINE = 2   # slide co anh: tieu de toi da bay nhieu dong
+FIG_FIXED = 150         # chua masthead: anh khong bao gio tran len day
+FIG_BOTTOM_FLAT = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
 # Lop mo CHI cho phan anh chom xuong vung chu (anh doc keo dai: bang xep hang).
 # 955f33b don xac co che nay; dua lai 12/09/2026 sau khi Ong Chu tach hai viec:
 # blur ca anh lam nen = KHONG BAO GIO, mo phan anh nam duoi tit/subtitle = CO.
-TOI_TOI_DA_MO = 0.93   # do dac toi da cua lop tint mau theme phu len phan mo
+DARK_MAX_OPEN = 0.93   # do dac toi da cua lop tint mau theme phu len phan mo
 VEIL_SPAN = 64         # px: be day duong cong chuyen tiep, bat dau NGAY tai dong chu dau
 
 
@@ -515,45 +515,45 @@ VEIL_SPAN = 64         # px: be day duong cong chuyen tiep, bat dau NGAY tai don
 _NHO_ANH = {}
 
 
-def _nho(khoa, lam):
+def _small(khoa, lam):
     if khoa not in _NHO_ANH:
         _NHO_ANH[khoa] = lam()
     return _NHO_ANH[khoa]
 
 
-def _do_anh(duong_dan):
+def _measure_image(duong_dan):
     """-> (Path, rong, cao). Duong dan tuong doi tinh theo CWD truoc, roi ROOT."""
-    return _nho(("do", str(duong_dan)), lambda: _do_anh_that(duong_dan))
+    return _small(("do", str(duong_dan)), lambda: _measure_image_real(duong_dan))
 
 
-def _do_anh_that(duong_dan):
+def _measure_image_real(duong_dan):
     p = Path(duong_dan)
     if not p.exists() and not p.is_absolute():
         p = ROOT / duong_dan
     if not p.exists():
         raise FileNotFoundError(f"khong thay anh '{duong_dan}'")
-    if p.suffix.lower() not in ANH_MIME:
+    if p.suffix.lower() not in IMAGE_MIME:
         raise ValueError(f"anh '{p.name}' duoi la {p.suffix} — "
-                         f"chi nhan {', '.join(sorted(ANH_MIME))}")
+                         f"chi nhan {', '.join(sorted(IMAGE_MIME))}")
     from PIL import Image
     with Image.open(p) as im:
         return p, im.width, im.height
 
 
-def _anh_data_uri(p):
+def _image_data_uri(p):
     """Nhung base64: Chromium doc HTML tu chuoi nen khong co URL goc de giai
     duong dan tuong doi (giong ly do font phai nhung)."""
     def lam():
         b64 = base64.b64encode(p.read_bytes()).decode("ascii")
-        return f"data:{ANH_MIME[p.suffix.lower()]};base64,{b64}"
-    return _nho(("uri", str(p)), lam)
+        return f"data:{IMAGE_MIME[p.suffix.lower()]};base64,{b64}"
+    return _small(("uri", str(p)), lam)
 
 
-def _sang(rgb):
+def _bright(rgb):
     return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
 
 
-def doc_nen(p):
+def read_background(p):
     """Nen quanh lop sac phai LIEN voi no, khong bao gio la mot mang khac tone.
 
     Dre lam nen bang chinh tam anh phong to + lam mo — dung cho ANH CHUP. Nhung
@@ -564,14 +564,14 @@ def doc_nen(p):
 
     -> (kieu, mau nen, nen co sang khong)
     """
-    return _nho(("nen", str(p)), lambda: _doc_nen_that(p))
+    return _small(("nen", str(p)), lambda: _read_background_real(p))
 
 
-NGUONG_LECH_VIEN = 20        # +-do lech mau (tung kenh) con tinh la "gan mau nen"
-TI_LE_PHANG_TOI_THIEU = 0.85  # ti le pixel vien phai gan mau nen moi goi la phang
+THRESHOLD_OFFSET_BORDER = 20        # +-do lech mau (tung kenh) con tinh la "gan mau nen"
+RATIO_FLAT_MIN = 0.85  # ti le pixel vien phai gan mau nen moi goi la phang
 
 
-def _doc_nen_that(p):
+def _read_background_real(p):
     from PIL import Image, ImageStat
     with Image.open(p) as im:
         im = im.convert("RGB")
@@ -593,20 +593,20 @@ def _doc_nen_that(p):
             med = [int(round(x)) for x in st.median]
             tb.append(med)
             for k in range(3):
-                lo, hi = max(0, med[k] - NGUONG_LECH_VIEN), min(255, med[k] + NGUONG_LECH_VIEN)
+                lo, hi = max(0, med[k] - THRESHOLD_OFFSET_BORDER), min(255, med[k] + THRESHOLD_OFFSET_BORDER)
                 ti_le.append(sum(st.h[k * 256:k * 256 + 256][lo:hi + 1]) / st.count[k])
         toan = ImageStat.Stat(im).mean[:3]
     khac = max(abs(a[k] - b[k]) for a in tb for b in tb for k in range(3))
-    phang = min(ti_le) >= TI_LE_PHANG_TOI_THIEU and khac < 16
+    phang = min(ti_le) >= RATIO_FLAT_MIN and khac < 16
     mau = tuple(int(sum(t[k] for t in tb) / 4) for k in range(3))
     # Dinh the luon la NEN (anh khong tran len FIG_DINH), nen do sang o dinh la
     # do sang cua nen: mau phang, hoac mau trung binh cua ban lam mo.
     return ("phang" if phang else "mo",
             "#%02X%02X%02X" % mau,
-            _sang(mau if phang else toan) > NGUONG_SANG_CHU_TOI)
+            _bright(mau if phang else toan) > THRESHOLD_BRIGHT_TEXT_DARK)
 
 
-def dat_anh(rong, cao, phang):
+def set_image(rong, cao, phang):
     """Cho anh trai HET be ngang slide roi tra ve (cao hien, y0, cao ti le).
 
     Nen tang lay cua _body_image trong carousel.py, chinh hai cho cho khung edu:
@@ -626,10 +626,10 @@ def dat_anh(rong, cao, phang):
         duoi chip, phan trong con lai don het xuong duoi khoi chu.
     """
     cao_that = max(1, round(W * cao / rong))
-    day = int(H * FIG_DAY_PHANG) if phang else H
-    tran = day - FIG_DINH
+    day = int(H * FIG_BOTTOM_FLAT) if phang else H
+    tran = day - FIG_FIXED
     cao_hien = min(cao_that, tran)
-    return cao_hien, FIG_DINH, cao_that
+    return cao_hien, FIG_FIXED, cao_that
 
 
 # ---- helpers --------------------------------------------------------------
@@ -679,7 +679,7 @@ def s_cover(sl, th):
     chim vao no, thay vi mot so do tu ve. Hinh that bao gio cung noi duoc nhieu
     hon mot so do trang tri."""
     if sl.get("image"):
-        return _cover_anh(sl, th)
+        return _cover_image(sl, th)
     by = sl.get("byline", [])
     bits = []
     for i, b in enumerate(by):
@@ -703,9 +703,9 @@ def s_cover(sl, th):
     return g + hero + head
 
 
-def _cover_anh(sl, th):
+def _cover_image(sl, th):
     """Bia lay anh that lam hero — anh vao dong, khoi chu nam duoi mep anh."""
-    nen, anh = anh_lam_nen(sl, th, "bia")
+    nen, anh = image_make_background(sl, th, "bia")
     by = sl.get("byline", [])
     bits = []
     for i, b in enumerate(by):
@@ -800,14 +800,14 @@ def s_loop(sl, th):
     return g + body
 
 
-def _mau_toi(th):
+def _color_dark(th):
     """Ma hex CYAN nhan dien cua theme, ep toi 42% — van ra dung mau nhung doc
     duoc tren nen sang. Dung cho eyebrow/accent khi chu phai doi sang TOI."""
     a = [int(th["a"].lstrip("#")[k:k + 2], 16) for k in (0, 2, 4)]
     return "#%02X%02X%02X" % tuple(int(c * 0.42) for c in a)
 
 
-def _css_mast_toi():
+def _css_mast_dark():
     """Masthead (ten kenh trai, section phai, gach ngang) doi sang TOI — dung
     khi DINH the (o tren, sau masthead) la nen sang: mot man toi rieng dat len
     tren se ve ra mot dai band vat ngang, dung cai dang tranh."""
@@ -815,13 +815,13 @@ def _css_mast_toi():
             '.rule{background:rgba(0,0,0,0.16);}</style>')
 
 
-def _css_chu_toi_vung(scope, th):
+def _css_text_dark_region(scope, th):
     """<style> lat toan bo mau chu trong `scope` (vd '#figtxt') sang TOI — dung
     khi vung ngay duoi khoi chu do la SANG. Ap dung het: eyebrow, tieu de,
     accent, standfirst, caption, card, byline — khong chi rieng eyebrow nhu
     truoc (Ong Chu chot 08/09/2026: doi mau chu la cach chinh, khong phai
     phu them nen)."""
-    a_toi = _mau_toi(th)
+    a_toi = _color_dark(th)
     return (f'<style>{scope} .eyebrow-txt{{color:{a_toi};}}'
             f'{scope} .eyebrow-bar{{background:{a_toi};}}'
             f'{scope} .fig-bar{{background:{a_toi};}}'
@@ -836,7 +836,7 @@ def _css_chu_toi_vung(scope, th):
             f'{scope} .dot{{background:rgba(0,0,0,0.4);}}</style>')
 
 
-def anh_lam_nen(sl, th, ten):
+def image_make_background(sl, th, ten):
     """Dung ANH THAT thanh nen ca the. Dung chung cho slide `figure` va cho
     bia khi bia co anh. -> (html nen, html anh trong dong). Khoi chu goi
     rieng, id="figtxt".
@@ -859,9 +859,9 @@ def anh_lam_nen(sl, th, ten):
       la mot hop den dat canh anh. LOP SAC trai full be ngang, KHONG cat hai
       canh.
     """
-    p, iw, ih = _do_anh(sl["image"])
-    kieu, mau_nen, nen_sang = doc_nen(p)
-    cao, y0, cao_that = dat_anh(iw, ih, kieu == "phang")
+    p, iw, ih = _measure_image(sl["image"])
+    kieu, mau_nen, nen_sang = read_background(p)
+    cao, y0, cao_that = set_image(iw, ih, kieu == "phang")
     if cao_that > cao and ("bao", str(p), cao) not in _NHO_ANH:
         # Bao ra de Kite biet mat bao nhieu: neu phan mat la phan dang noi toi
         # thi phai tu cat lai cho dung truoc khi dua vao day. Chi bao MOT lan:
@@ -870,7 +870,7 @@ def anh_lam_nen(sl, th, ten):
         _NHO_ANH[("bao", str(p), cao)] = True
         print(f"{ten} {p.name}: {iw}x{ih}, cao {cao_that}px -> con {cao}px "
               f"(giu mep tren, mat {cao_that - cao}px duoi)", file=sys.stderr)
-    uri = _anh_data_uri(p)
+    uri = _image_data_uri(p)
     # Bi cat thi cho phan cuoi TAN vao nen thay vi dut ngang: nen cung mau nen
     # anh chi viec loang ra, doc thanh "con nua o duoi" chu khong phai "bi xen".
     mo_day = ('' if cao_that <= cao else
@@ -887,7 +887,7 @@ def anh_lam_nen(sl, th, ten):
                f'style="top:{y0}px;height:{cao}px;object-position:top;{mo_day}">'
                f'</div>')
         if nen_sang:
-            nen += _css_mast_toi() + _css_chu_toi_vung("#figtxt", th)
+            nen += _css_mast_dark() + _css_text_dark_region("#figtxt", th)
         return nen, ""
 
     # kieu == "mo" — ANH CHUP. Ong Chu chot lai 12/09/2026, nguyen van ba y:
@@ -912,7 +912,7 @@ def anh_lam_nen(sl, th, ten):
            f'object-fit:cover;object-position:top;"></div>'
            f'<div class="fig-man" id="figman" style="display:none"></div></div>'
            f'<script>window.__datMan=function(){{'
-           f'var H={H},Y0={y0},CAO={cao},MAX={TOI_TOI_DA_MO:.3f};'
+           f'var H={H},Y0={y0},CAO={cao},MAX={DARK_MAX_OPEN:.3f};'
            f'var v=document.getElementById("figman"),m=document.getElementById("figmo");'
            f'if(!v||!m)return;'
            f'var t=document.getElementById("figtxt");'
@@ -926,7 +926,7 @@ def anh_lam_nen(sl, th, ten):
            f'pc=((y-tren)/span*100).toFixed(2);'
            f'st.push("rgba({r},{g},{b},"+(MAX*ss).toFixed(3)+") "+pc+"%");'
            f'sm.push("rgba(0,0,0,"+(0.85*ss*ss).toFixed(3)+") "+(y/H*100).toFixed(2)+"%");}}'
-           f'st.push("rgba({r},{g},{b},{TOI_TOI_DA_MO:.3f}) 100%");'
+           f'st.push("rgba({r},{g},{b},{DARK_MAX_OPEN:.3f}) 100%");'
            f'sm.unshift("rgba(0,0,0,0) 0%");sm.push("rgba(0,0,0,0.85) 100%");'
            f'var gr="linear-gradient(to bottom,"+sm.join(",")+")";'
            f'm.style.webkitMaskImage=gr;m.style.maskImage=gr;'
@@ -938,7 +938,7 @@ def anh_lam_nen(sl, th, ten):
 
 def s_figure(sl, th):
     """Hinh that trai het be ngang, chu chim vao anh o duoi."""
-    nen, anh = anh_lam_nen(sl, th, "figure")
+    nen, anh = image_make_background(sl, th, "figure")
     chu = (f'{eyebrow(sl["eyebrow"])}'
            f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
            f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
@@ -958,7 +958,7 @@ def s_figure(sl, th):
             + f'<div class="mid" id="figtxt">{chu}</div>')
 
 
-def _so(v):
+def _count(v):
     """2.75 -> '2,75'; 3.0 -> '3' (kieu Viet, dung khi slide khong ghi 'text')."""
     f = float(v)
     return str(int(f)) if f == int(f) else f"{f:.2f}".rstrip("0").rstrip(".").replace(".", ",")
@@ -968,7 +968,7 @@ _SO_TRONG_CHU = re.compile(r"\d[\d.,]*")
 _CHAM_NGHIN = re.compile(r"^\d{1,3}(\.\d{3})+$")
 
 
-def _gia_tri(v):
+def _value(v):
     """value cua bars: so, hoac chuoi so kieu Viet ('2,75' thap phan, '1.200'
     hang nghin).
 
@@ -1000,7 +1000,7 @@ def s_bars(sl, th):
     theo cot lon nhat; cot co 'nhan': true (mac dinh cot dau) mau chinh, con
     lai mau phu. Khong co truc/luoi: 2..6 cot, doc trong 3 giay."""
     items = sl.get("bars", [])
-    vals = [_gia_tri(b["value"]) for b in items]
+    vals = [_value(b["value"]) for b in items]
     vmax = max(vals, default=0.0) or 1.0
     co_nhan = any(b.get("nhan") for b in items)
     rows = ""
@@ -1009,7 +1009,7 @@ def s_bars(sl, th):
         cls = "bar-fill nhan" if (b.get("nhan") or (i == 0 and not co_nhan)) else "bar-fill"
         rows += (f'<div class="bar"><span class="bar-l">{esc(b["label"])}</span>'
                  f'<span class="bar-track"><span class="{cls}" style="width:{pct:.1f}%;"></span></span>'
-                 f'<span class="bar-v">{esc(b.get("text") or _so(v))}</span></div>')
+                 f'<span class="bar-v">{esc(b.get("text") or _count(v))}</span></div>')
     cap = (f'<div class="fig-cap" style="margin-top:28px;"><span class="fig-bar"></span>'
            f'<span>{esc(sl["caption"])}</span></div>') if sl.get("caption") else ""
     stand = (f'<p class="standfirst" style="font-size:34px;max-width:900px;margin-top:30px;">'
@@ -1056,7 +1056,7 @@ BUILDERS = {
 }
 
 
-def slide_doc(sl, idx, total, brand, section, folio_left, font_css, th):
+def slide_read(sl, idx, total, brand, section, folio_left, font_css, th):
     kind = sl.get("kind")
     if kind not in BUILDERS:
         raise SystemExit(f"slide {idx}: kind khong hop le '{kind}' "
@@ -1094,7 +1094,7 @@ _DAN_NGUON_SAI = re.compile(
 # render_edu, `--spec -`) thi truoc gio khong co cong nao.
 #
 # `long`: (ten danh sach, cac khoa moi phan tu phai co).
-BAT_BUOC_KIND = {
+REQUIRED_KIND = {
     "cover":     {"truong": ("eyebrow", "title", "standfirst")},
     "statement": {"truong": ("eyebrow", "title", "standfirst"),
                   "long": ("cards", ("num", "text"))},
@@ -1109,7 +1109,7 @@ BAT_BUOC_KIND = {
 }
 
 
-def kiem_truong(slides) -> list:
+def check_field(slides) -> list:
     """Thieu truong bat buoc / kind la — bat o day, khong de builder nem."""
     loi = []
     for i, sl in enumerate(slides, 1):
@@ -1118,7 +1118,7 @@ def kiem_truong(slides) -> list:
             loi.append(f"slide {i}: kind {kind!r} khong co — chon mot trong "
                        + ", ".join(sorted(BUILDERS)))
             continue
-        q = BAT_BUOC_KIND.get(kind, {})
+        q = REQUIRED_KIND.get(kind, {})
         for k in q.get("truong", ()):
             if not sl.get(k):
                 loi.append(f"slide {i} [{kind}]: thieu '{k}'")
@@ -1146,18 +1146,18 @@ def gate_slides(slides, bo_qua_dau):
     # nhan DU loi trong mot lan thay vi sua ba vong. Cac cong duoi doc bang
     # `.get` nen thieu truong khong lam chung nem — con neu co gi nem that thi
     # bat lai o duoi, danh sach loi da co van duoc tra ve.
-    loi = kiem_truong(slides)
+    loi = check_field(slides)
     if any("kind" in d and "khong co" in d for d in loi):
         return loi
     try:
-        loi += _gate_noi_dung(slides, bo_qua_dau)
+        loi += _gate_content(slides, bo_qua_dau)
     except Exception as e:                                   # noqa: BLE001
         loi.append(f"[cong noi dung dung giua chung: {type(e).__name__}: {e} — "
                    "sua cac loi tren truoc roi chay lai]")
     return loi
 
 
-def _gate_noi_dung(slides, bo_qua_dau):
+def _gate_content(slides, bo_qua_dau):
     loi = []
     n = len(slides)
     if n < 6:
@@ -1182,11 +1182,11 @@ def _gate_noi_dung(slides, bo_qua_dau):
         if not sl.get("image"):        # bia thi anh la tuy chon
             continue
         try:
-            _, rong, cao = _do_anh(sl["image"])
+            _, rong, cao = _measure_image(sl["image"])
         except (FileNotFoundError, ValueError) as e:
             loi.append(f"slide {i}: {e}")
             continue
-        if rong < FIG_RONG_TOI_THIEU:
+        if rong < FIG_EMPTY_MIN:
             loi.append(f"slide {i}: anh rong {rong}px, keo len {W}px la be nat. "
                        f"Chup lai bang capture_chart.py (DPR 2) hoac xin ban goc.")
         if not sl.get("caption"):
@@ -1207,7 +1207,7 @@ def _gate_noi_dung(slides, bo_qua_dau):
             if len(b["label"]) > 28:
                 loi.append(f"slide {i}: cot {j} label {len(b['label'])} ky tu, toi da 28")
             try:
-                gt = _gia_tri(b.get("value"))
+                gt = _value(b.get("value"))
                 if gt < 0:
                     raise ValueError
             except (ValueError, TypeError):
@@ -1219,7 +1219,7 @@ def _gate_noi_dung(slides, bo_qua_dau):
             so_text = _SO_TRONG_CHU.search(str(b.get("text") or ""))
             if so_text:
                 try:
-                    gt_text = _gia_tri(so_text.group(0))
+                    gt_text = _value(so_text.group(0))
                 except (ValueError, TypeError):
                     gt_text = None
                 if gt_text is not None and abs(gt_text - gt) > max(0.01, abs(gt) * 0.01):
@@ -1269,7 +1269,7 @@ def _texts(sl):
 
 
 # ---- chon theme / hero ------------------------------------------------------
-def _nhat_ky_theme() -> Path:
+def _journal_theme() -> Path:
     """state/<brand>/edu_theme_da_dung.jsonl — so theme/hero da dung gan day.
 
     Truoc 06/09/2026 tep nay nam o `state/` GOC, tuc dung chung cho ca hai
@@ -1284,12 +1284,12 @@ def _nhat_ky_theme() -> Path:
     return env_load.state_dir() / "edu_theme_da_dung.jsonl"
 
 
-def _theme_gan_day(n=4):
+def _theme_near_bottom(n=4):
     """[(theme, hero)] cua n bo gan nhat, moi nhat truoc."""
-    if not _nhat_ky_theme().exists():
+    if not _journal_theme().exists():
         return []
     rows = []
-    for line in _nhat_ky_theme().read_text("utf-8").splitlines():
+    for line in _journal_theme().read_text("utf-8").splitlines():
         try:
             d = json.loads(line)
             rows.append((d.get("theme"), d.get("hero")))
@@ -1298,22 +1298,22 @@ def _theme_gan_day(n=4):
     return rows[::-1][:n]
 
 
-def _ghi_theme(out, theme, hero):
+def _write_theme(out, theme, hero):
     try:
-        _nhat_ky_theme().parent.mkdir(parents=True, exist_ok=True)
-        with open(_nhat_ky_theme(), "a", encoding="utf-8") as f:
+        _journal_theme().parent.mkdir(parents=True, exist_ok=True)
+        with open(_journal_theme(), "a", encoding="utf-8") as f:
             f.write(json.dumps({"out": str(out), "theme": theme, "hero": hero},
                                ensure_ascii=False) + "\n")
     except OSError:
         pass
 
 
-NGUONG_HUE_LECH_MAU = 0.28    # >nguong nay (vong tron hue, 0..0.5) la LECH TONG
-TI_LE_ANH_CO_MAU = 0.01       # duoi muc nay pixel co mau tren CA TAM -> anh coi nhu khong mau
-TI_LE_MAU_AP_DAO = 0.05       # mau noi bat phai chiem tung nay so pixel DA LOC
+THRESHOLD_HUE_OFFSET_COLOR = 0.28    # >nguong nay (vong tron hue, 0..0.5) la LECH TONG
+RATIO_IMAGE_HAS_COLOR = 0.01       # duoi muc nay pixel co mau tren CA TAM -> anh coi nhu khong mau
+RATIO_COLOR_APPLY_INVERT = 0.05       # mau noi bat phai chiem tung nay so pixel DA LOC
 
 
-def mau_noi_bat(path) -> tuple | None:
+def color_say_catch(path) -> tuple | None:
     """Mau NOI BAT nhat trong mot anh that (bia/hero) — hue HSV pho bien nhat
     trong vung du bao hoa, bo qua nen trang/den/xam. None neu anh khong co mau
     ro net nao (vd anh den-trang, anh gan nhu khong con pixel mau nao sau khi
@@ -1355,13 +1355,13 @@ def mau_noi_bat(path) -> tuple | None:
     # "khong co mau" — DeepSeek (xanh #4D6CF7) roi ve vong xoay mu mau, ra theme
     # moss xanh la (LOW-11). Sang TI_LE_ANH_CO_MAU giu cho vai pixel nhieu le
     # khong tu quyet theme cho ca bo.
-    if tong_loc / n < TI_LE_ANH_CO_MAU or dinh / tong_loc < TI_LE_MAU_AP_DAO:
+    if tong_loc / n < RATIO_IMAGE_HAS_COLOR or dinh / tong_loc < RATIO_COLOR_APPLY_INVERT:
         return None
     r, g, b = colorsys.hsv_to_rgb(bucket / 24, 0.65, 0.85)
     return (round(r * 255), round(g * 255), round(b * 255))
 
 
-def lech_hue(rgb, ten: str) -> float:
+def offset_hue(rgb, ten: str) -> float:
     """Khoang cach hue (vong tron, 0..0.5) giua `rgb` va accent chinh cua theme."""
     import colorsys
     h0, _, _ = colorsys.rgb_to_hsv(*(c / 255 for c in rgb))
@@ -1372,15 +1372,15 @@ def lech_hue(rgb, ten: str) -> float:
     return min(d, 1 - d)
 
 
-def theme_gan_mau(rgb) -> str | None:
+def theme_near_color(rgb) -> str | None:
     """Ten THEME co mau `a` (accent chinh) GAN NHAT voi `rgb` theo khoang cach
     hue tren vong tron mau. None neu rgb la None (anh khong co mau ro ret)."""
     if rgb is None:
         return None
-    return min(THEMES, key=lambda ten: lech_hue(rgb, ten))
+    return min(THEMES, key=lambda ten: offset_hue(rgb, ten))
 
 
-def mau_hang_trong_spec(spec) -> tuple | None:
+def color_rank_within_spec(spec) -> tuple | None:
     """Mau nhan dien cua hang duoc nhac toi trong spec, hoac None.
 
     Tra cuu CUNG mot bang voi cho to ten hang trong tieu de cua Ethan
@@ -1393,13 +1393,13 @@ def mau_hang_trong_spec(spec) -> tuple | None:
     import card
     bia = (spec.get("slides") or [{}])[0]
     for text in (spec.get("folio"), bia.get("eyebrow"), bia.get("title")):
-        mau = card._mau_hang_trong(text or "")
+        mau = card._color_rank_within(text or "")
         if mau:
             return mau
     return None
 
 
-def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
+def pick_theme_auto(spec, bia_anh=False, anh_mau=None):
     """Spec khong ghi theme/hero -> chon cai IT DUNG NHAT gan day, va khong bao
     gio trung voi bo vua dung truoc. Ghi ro thi ton trong, nhung neu trung
     het ca theme lan hero voi bo ngay truoc thi bao de Kite biet (khong chan:
@@ -1418,7 +1418,7 @@ def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
          cua slide di cung mau brand, giong cho to ten hang cua Ethan;
       3. xoay vong cho khoi lap bo truoc — chi khi ca hai tren deu khong co.
     Nen mot loat tin cung hang se cung tone: do la y muon, khong phai trui."""
-    gan = _theme_gan_day()
+    gan = _theme_near_bottom()
     theme, hero = spec.get("theme"), spec.get("hero")
     if theme and theme not in THEMES:
         raise SystemExit(f"theme '{theme}' khong co (chon: {', '.join(THEMES)})")
@@ -1438,7 +1438,7 @@ def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
             return chua[xoay % len(chua)]
         return sorted(ung_vien, key=lambda x: -thu_tu[x])[0]
 
-    rgb = mau_noi_bat(anh_mau) if (bia_anh and anh_mau) else None
+    rgb = color_say_catch(anh_mau) if (bia_anh and anh_mau) else None
     nguon = "anh bia"
     if rgb is None:
         # Anh bia khong co mau ro ret (hoac bia ve vector): bam MAU NHAN DIEN
@@ -1446,12 +1446,12 @@ def chon_theme_tu_dong(spec, bia_anh=False, anh_mau=None):
         # #4D6CF7) tung ra slide theme moss xanh la (LOW-11). Tang nay chi do
         # cho cho VONG XOAY, khong dung tren mau anh that: luat 09/09/2026
         # "anh that mau co san, theme phai chay theo anh" van thang.
-        rgb = mau_hang_trong_spec(spec)
+        rgb = color_rank_within_spec(spec)
         nguon = "mau hang nhac trong spec"
-    theme_khop_mau = theme_gan_mau(rgb)
+    theme_khop_mau = theme_near_color(rgb)
     if not theme:
         theme = theme_khop_mau or it_dung_nhat(list(THEMES), [t for t, _ in gan], seed)
-    elif theme_khop_mau and theme != theme_khop_mau and lech_hue(rgb, theme) > NGUONG_HUE_LECH_MAU:
+    elif theme_khop_mau and theme != theme_khop_mau and offset_hue(rgb, theme) > THRESHOLD_HUE_OFFSET_COLOR:
         # R-r2-3: chi bao khi theme DA CHON lech tong ro (qua nguong), khong
         # phai moi khi no khac theme gan nhat — moss (0.37) vs orbit (0.51)
         # lech 0,08 la cung tong, bao la nhieu.
@@ -1494,7 +1494,7 @@ def _route_font(page) -> dict:
     return dem
 
 
-def _kiem_tieu_de_dong(page, browser, slides, dung_doc):
+def _check_title_line(page, browser, slides, dung_doc):
     """Cong chan DO THAT: tieu de tren slide co anh toi da FIG_TIEU_DE_DONG dong,
     do bang chinh Chromium. Chay het mot luot TRUOC khi chup — hong thi khong de
     lai nua album trong drafts/ cho Kite tuong la xong."""
@@ -1513,10 +1513,10 @@ def _kiem_tieu_de_dong(page, browser, slides, dung_doc):
             "if(!h) return 0;"
             "const lh=parseFloat(getComputedStyle(h).lineHeight);"
             "return Math.round(h.getBoundingClientRect().height/lh);}")
-        if n > FIG_TIEU_DE_DONG:
+        if n > FIG_TITLE_LINE:
             loi_dong.append(
                 f"slide {i}: tieu de {n} dong — slide co anh chi cho "
-                f"{FIG_TIEU_DE_DONG} dong. Anh da noi phan viec cua no roi, "
+                f"{FIG_TITLE_LINE} dong. Anh da noi phan viec cua no roi, "
                 f"tieu de dai them la giam cua nhau. Cat ngan tieu de lai.")
     if loi_dong:
         browser.close()
@@ -1526,7 +1526,7 @@ def _kiem_tieu_de_dong(page, browser, slides, dung_doc):
         raise SystemExit(1)
 
 
-def _chup_cac_slide(page, slides, dung_doc, out, stem):
+def _capture_each_slide(page, slides, dung_doc, out, stem):
     """Chup tung slide ra PNG; slide 1 la `out`, con lai `<stem>_<i>.png`."""
     outs = []
     for i, sl in enumerate(slides, start=1):
@@ -1564,7 +1564,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
     # van ghi hero vao nhat ky la lan sau no tranh mot hero chua tung xuat hien,
     # xoay sai. Ghi None cho dung.
     bia_anh = bool(slides and slides[0].get("image"))
-    theme, hero = chon_theme_tu_dong(spec, bia_anh, slides[0].get("image") if bia_anh else None)
+    theme, hero = pick_theme_auto(spec, bia_anh, slides[0].get("image") if bia_anh else None)
     th = dict(THEMES[theme], hero=hero)
     print(f"theme={theme} hero=" + (hero or "- (bia dung anh that)"))
 
@@ -1587,10 +1587,10 @@ def render(spec, out, brand, bo_qua_dau, scale):
         dem_font = _route_font(page)
 
         def dung_doc(sl, i):
-            return slide_doc(sl, i, total, brand, section, folio_left, font_css, th)
+            return slide_read(sl, i, total, brand, section, folio_left, font_css, th)
 
-        _kiem_tieu_de_dong(page, browser, slides, dung_doc)
-        outs = _chup_cac_slide(page, slides, dung_doc, out, stem)
+        _check_title_line(page, browser, slides, dung_doc)
+        outs = _capture_each_slide(page, slides, dung_doc, out, stem)
         # Font phuc vu qua route thi PHAI co it nhat mot luot. Zero nghia la
         # Chromium da roi ve font he thong: album van ra anh, chi la sai chu —
         # dung loai hong ma nhin anh moi biet, nen chan o day.
@@ -1600,7 +1600,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
                 "KHONG font nao duoc nap qua page.route — album se sai chu.\n"
                 f"Kiem assets/fonts va FONT_URL ({FONT_URL}) trong render_edu.py.")
         browser.close()
-    _ghi_theme(out, theme, hero)   # hero=None khi bia dung anh that
+    _write_theme(out, theme, hero)   # hero=None khi bia dung anh that
     return outs
 
 

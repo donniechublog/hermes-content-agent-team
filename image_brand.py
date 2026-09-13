@@ -212,7 +212,7 @@ def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
         m = re.search(r"(?<!\w)" + re.escape(t) + r"(?!\w)", vb)
         if not m:
             continue
-        khoa = NAME_EXTRA.get(t) or scan_business.HANG_CUA_TEN.get(ten, ten).strip()
+        khoa = NAME_EXTRA.get(t) or scan_business.RANK_OF_NAME.get(ten, ten).strip()
         if khoa not in vi_tri or m.start() < vi_tri[khoa]:
             vi_tri[khoa] = m.start()
     ra = [{"khoa": k, "hang": DISPLAY_NAME.get(k, (k.title(),))[0]}
@@ -519,7 +519,7 @@ def card_logo(tep_logo, out, brand: str = "donniechublog"):
     chính logo."""
     import card
     from PIL import Image
-    card.dat_thuong_hieu(brand)
+    card.set_brand(brand)
     w, h = 1200, 1500
     lg = Image.open(tep_logo)
     lg = lg.convert("RGBA") if lg.mode in ("RGBA", "LA", "P") else lg.convert("RGB")
@@ -792,7 +792,7 @@ def rank_has_model(khoa: str) -> bool:
     """Hãng này có model nằm trên bảng xếp hạng không — mới đáng mở browser đi
     chụp bảng. Qualcomm/TSMC không làm LLM nên không bao giờ khớp hàng nào."""
     import scan_business
-    return khoa in set(scan_business.HANG_CUA_TEN.values()) | {
+    return khoa in set(scan_business.RANK_OF_NAME.values()) | {
         "openai", "anthropic", "deepseek", "mistral", "xai", "cohere", "moonshot",
         "zhipu", "minimax", "01.ai", "stability ai", "black forest", "midjourney",
         "perplexity", "nvidia", "microsoft", "amazon", "meta", "google deepmind"}

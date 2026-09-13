@@ -29,26 +29,26 @@ from pathlib import Path
 # 1024 la gioi han CHU THICH ANH cua Telegram. Vua trong muc do thi anh va chu
 # di chung mot tin nhan; vuot qua la Telegram tach lam hai, anh mot noi chu mot
 # noi. Nen day vua la tran vua la muc tieu nen tan dung.
-GIOI_HAN = 1024
+LIMIT = 1024
 # Tran cung cho moi nen tang. Ong Chu chot: viet duoi 2.200 o moi noi thi moat
 # khong phai can thiep gi, khong can caption rieng theo nen tang. Con so nay la
 # gioi han caption cua Instagram va TikTok (theo tri nho, chua xac nhan duoc tu
 # tai lieu vi trang cua ho la SPA) — de thap hon that mot chut thi an toan.
 # Caption thuong hien trung binh 962 ky tu nen tran nay khong vuong gi.
-TRAN_NEN_TANG = 2200
-NEN_DAT = 700          # duoi muc nay thi nhac: con nhieu cho ma chua dung het
-THE_CHO_PHEP = {"b", "i", "code", "strong", "em", "a"}
+CEILING_BACKGROUND_LAYER = 2200
+BACKGROUND_SET = 700          # duoi muc nay thi nhac: con nhieu cho ma chua dung het
+CARD_ALLOW = {"b", "i", "code", "strong", "em", "a"}
 
-THOI_PHONG = ("gây chấn động", "thay đổi mọi thứ", "cuộc cách mạng", "đột phá",
+TIME_ROOM = ("gây chấn động", "thay đổi mọi thứ", "cuộc cách mạng", "đột phá",
               "kinh hoàng", "không tưởng", "vô địch", "bá đạo", "cực kỳ ấn tượng",
               "thần thánh", "khủng khiếp", "chấn động")
 
-TU_CONG_BO = ("tự công bố", "hãng công bố", "theo công bố", "chưa kiểm chứng",
+FROM_ANNOUNCEMENT = ("tự công bố", "hãng công bố", "theo công bố", "chưa kiểm chứng",
               "chưa có kiểm chứng", "nội bộ", "tự đo", "theo hãng", "công ty công bố")
 
 # Cum sao rong bi cam (tieu chuan bien tap): noi thang y nghia bang thong tin cu
 # the, dung dan bang "dang chu y / dang quan tam".
-SAO_RONG = ("đáng chú ý", "đáng quan tâm")
+STAR_EMPTY = ("đáng chú ý", "đáng quan tâm")
 
 # Bat URL/link SONG trong caption. Ngoai http/www con bat DOMAIN TRAN (vd z.ai,
 # openai.com) — truoc day lot vi khong co scheme. Chi bat khi dau cham DINH LIEN;
@@ -66,35 +66,35 @@ _LINK_SONG = re.compile(
 # nang hon thieu so — vi bai khong dang duoc. Da gap that: Miles viet ca caption
 # 802 ky tu khong mot dau nao sau khi doi sang provider moi, va khong ai phat
 # hien cho toi khi doc ky.
-DAU = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"
+MARK = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợ"
           "ùúủũụưừứửữựỳýỷỹỵđ")
 # 0.12 CO Y thap hon 0.15 cua model_audition: day la cong chan bai that (caption
 # nhieu ten rieng/thuat ngu tieng Anh keo ty le xuong), con audition do van mau
 # thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. DAU/ty_le_dau
 # chi co MOT ban o day; model_audition va cost_squeeze import tu day.
-NGUONG_DAU = 0.12          # van ban tieng Viet that thuong tren 0.15
+THRESHOLD_MARK = 0.12          # van ban tieng Viet that thuong tren 0.15
 
 
-def ty_le_dau(t: str) -> float:
+def billion_odd_mark(t: str) -> float:
     chu = [c for c in t.lower() if c.isalpha()]
-    return sum(1 for c in chu if c in DAU) / len(chu) if chu else 0.0
+    return sum(1 for c in chu if c in MARK) / len(chu) if chu else 0.0
 
 
-SO = re.compile(r"\d")
-CUM_SO = re.compile(r"\d+(?:[.,]\d+)?\s*(?:%|tỷ|triệu|nghìn|token|USD|\$|B\b|M\b|ms\b|GB\b|MiB\b|điểm)?")
+COUNT = re.compile(r"\d")
+PHRASE_COUNT = re.compile(r"\d+(?:[.,]\d+)?\s*(?:%|tỷ|triệu|nghìn|token|USD|\$|B\b|M\b|ms\b|GB\b|MiB\b|điểm)?")
 
 
-def _bo_the(t: str) -> str:
+def _drop_card(t: str) -> str:
     return re.sub(r"<[^>]+>", " ", t)
 
 
-def _tu(t: str) -> list:
-    return re.sub(r"[^\w\s]", " ", _bo_the(t).lower()).split()
+def _words(t: str) -> list:
+    return re.sub(r"[^\w\s]", " ", _drop_card(t).lower()).split()
 
 
-def lap_cum(t: str, n=6) -> list:
+def repeat_phrase(t: str, n=6) -> list:
     """Cum n tu xuat hien tu hai lan tro len."""
-    tu = _tu(t)
+    tu = _words(t)
     dem = {}
     for i in range(len(tu) - n + 1):
         k = " ".join(tu[i:i + n])
@@ -102,11 +102,11 @@ def lap_cum(t: str, n=6) -> list:
     return [k for k, v in dem.items() if v > 1]
 
 
-def so_trong(t: str) -> list:
-    return [m.group(0).strip() for m in CUM_SO.finditer(_bo_the(t)) if m.group(0).strip()]
+def count_within(t: str) -> list:
+    return [m.group(0).strip() for m in PHRASE_COUNT.finditer(_drop_card(t)) if m.group(0).strip()]
 
 
-def so_la(chu: str, tu_lieu: str) -> list:
+def count_is(chu: str, tu_lieu: str) -> list:
     """Cac con so trong `chu` KHONG tim thay trong `tu_lieu`.
 
     So sanh theo chuoi chu so (bo dau . , cach) vi hai ben viet khac nhau
@@ -118,30 +118,30 @@ def so_la(chu: str, tu_lieu: str) -> list:
         return []
     so_tl = {re.sub(r"[.,\s]", "", m) for m in re.findall(r"\d[\d.,]*", tu_lieu)}
     la = []
-    for m in re.findall(r"\d[\d.,]*", _bo_the(chu)):
+    for m in re.findall(r"\d[\d.,]*", _drop_card(chu)):
         k = re.sub(r"[.,\s]", "", m)
         if len(k) >= 2 and k not in so_tl and not any(k in x for x in so_tl):
             la.append(m)
     return list(dict.fromkeys(la))
 
 
-def _kiem_do_dai(caption: str) -> tuple:
+def _check_measure_long(caption: str) -> tuple:
     """Ba nguong do dai: tran nen tang (loi), gioi han chu thich anh (loi),
     muc nen dat (chi nhac)."""
     loi, canh = [], []
-    if len(caption) > TRAN_NEN_TANG:
-        loi.append(f"Dài {len(caption)} ký tự, vượt trần {TRAN_NEN_TANG} của "
+    if len(caption) > CEILING_BACKGROUND_LAYER:
+        loi.append(f"Dài {len(caption)} ký tự, vượt trần {CEILING_BACKGROUND_LAYER} của "
                    "Instagram và TikTok. Bài sẽ bị cắt hoặc từ chối khi moat đẩy đi.")
-    elif len(caption) > GIOI_HAN:
-        loi.append(f"Dài {len(caption)} ký tự, vượt giới hạn {GIOI_HAN}.")
-    elif len(caption) < NEN_DAT:
-        canh.append(f"{len(caption)} ký tự, còn {GIOI_HAN - len(caption)} ký tự "
+    elif len(caption) > LIMIT:
+        loi.append(f"Dài {len(caption)} ký tự, vượt giới hạn {LIMIT}.")
+    elif len(caption) < BACKGROUND_SET:
+        canh.append(f"{len(caption)} ký tự, còn {LIMIT - len(caption)} ký tự "
                     "chưa dùng trong giới hạn chú thích ảnh. Khai thác thêm số "
                     "liệu hoặc bối cảnh từ tư liệu.")
     return loi, canh
 
 
-def _kiem_van_phong(caption: str, tran: str) -> tuple:
+def _check_still_room(caption: str, tran: str) -> tuple:
     """Nhung thu SOUL da cam va tieu chuan bien tap: em-dash, link song, cum sao
     rong, moi cau mot dong, the HTML la, tu thoi phong, lap y. `tran` la
     caption da bo the."""
@@ -159,7 +159,7 @@ def _kiem_van_phong(caption: str, tran: str) -> tuple:
                    'bỏ ra còm, không đặt trong caption. Nếu buộc phải nhắc tên miền '
                    'thì viết dấu chấm thành " . " (vd z . ai) để không thành link.')
 
-    sao = [p for p in SAO_RONG if p in tran.lower()]
+    sao = [p for p in STAR_EMPTY if p in tran.lower()]
     if sao:
         loi.append("Cụm sáo rỗng bị cấm: " + ", ".join(f'"{p}"' for p in sao)
                    + '. Nói thẳng vì sao quan trọng bằng thông tin cụ thể, '
@@ -174,32 +174,32 @@ def _kiem_van_phong(caption: str, tran: str) -> tuple:
                     f"(tiêu chuẩn biên tập). Dòng gộp nhiều câu: “{dong_gop[0][:50]}…”")
 
     the_la = {m.group(1).lower() for m in re.finditer(r"</?([a-zA-Z][\w-]*)", caption)}
-    xau = the_la - THE_CHO_PHEP
+    xau = the_la - CARD_ALLOW
     if xau:
         loi.append(f"Thẻ HTML không được phép: {', '.join(sorted(xau))}. "
-                   f"Telegram chỉ hiểu {', '.join(sorted(THE_CHO_PHEP))}.")
+                   f"Telegram chỉ hiểu {', '.join(sorted(CARD_ALLOW))}.")
 
-    thay_phong = [w for w in THOI_PHONG if w in tran.lower()]
+    thay_phong = [w for w in TIME_ROOM if w in tran.lower()]
     if thay_phong:
         loi.append(f"Từ thổi phồng: {', '.join(thay_phong)}.")
 
-    lap = lap_cum(caption)
+    lap = repeat_phrase(caption)
     if lap:
         loi.append("Lặp ý — cụm sau xuất hiện hai lần: "
                    + "; ".join(f'"{c}"' for c in lap[:3]))
     return loi, canh
 
 
-def _kiem_so_lieu(caption: str, tran: str, tu_lieu: str, tin: dict) -> tuple:
+def _check_figures(caption: str, tran: str, tu_lieu: str, tin: dict) -> tuple:
     """So lieu: nguon co so ma caption khong co (loi), so khong co trong tu lieu
     (nhac), co so ma khong ghi tu cong bo (nhac). Ghi them vao `tin`."""
     loi, canh = [], []
-    so_cap = so_trong(caption)
+    so_cap = count_within(caption)
     tin["so_trong_caption"] = len(so_cap)
 
     if tu_lieu:
         cau_nguon = [l[2:].strip() for l in tu_lieu.splitlines()
-                     if l.startswith("- ") and SO.search(l)]
+                     if l.startswith("- ") and COUNT.search(l)]
         tin["cau_so_trong_nguon"] = len(cau_nguon)
         if cau_nguon and not so_cap:
             loi.append(f"Nguồn có {len(cau_nguon)} câu mang số liệu nhưng caption "
@@ -215,39 +215,39 @@ def _kiem_so_lieu(caption: str, tran: str, tu_lieu: str, tin: dict) -> tuple:
     # ben viet so khac nhau (2,5 ti / 2.5B / 2500 trieu) — chan cung se chan oan.
     # Day la diem soat so lieu ma truoc phai nho Ada (LLM) doc lai (05/09/2026).
     if tu_lieu:
-        la = so_la(tran, tu_lieu)
+        la = count_is(tran, tu_lieu)
         if la:
             canh.append("Số trong caption KHÔNG thấy trong tư liệu: "
                         + ", ".join(la) + " — kiểm lại nguồn, số không có trong "
                         "tư liệu là bịa (trừ khi anh đổi đơn vị).")
 
     # So benchmark ma khong ghi ro tu cong bo
-    if so_cap and not any(k in tran.lower() for k in TU_CONG_BO):
+    if so_cap and not any(k in tran.lower() for k in FROM_ANNOUNCEMENT):
         canh.append("Có số liệu nhưng chưa ghi rõ là hãng tự công bố hay đã kiểm "
                     "chứng độc lập.")
     return loi, canh
 
 
-def kiem(caption: str, tu_lieu: str = "") -> tuple:
+def check(caption: str, tu_lieu: str = "") -> tuple:
     """Tra ve (loi, canh_bao, thong_tin). Co loi thi khong duoc luu draft.
 
     Tach thanh ba nhom 07/09/2026 (do dai / van phong / so lieu) — ban cu la
     103 dong voi 14 cong noi tiep trong mot ham; thu tu ghi vao `loi` va `canh`
     giu nguyen (moi nhom chi ghi vao hai danh sach do theo dung thu tu cu)."""
     loi, canh, tin = [], [], {}
-    tran = _bo_the(caption)
+    tran = _drop_card(caption)
 
     if not caption.strip():
         return (["Caption rỗng."], [], {})
 
-    td = ty_le_dau(tran)
+    td = billion_odd_mark(tran)
     tin["ty_le_dau"] = round(td, 3)
-    if td < NGUONG_DAU:
+    if td < THRESHOLD_MARK:
         loi.append(f"MAT DAU tieng Viet — ty le dau {td:.2f}, duoi nguong "
-                   f"{NGUONG_DAU}. Bai khong co dau la khong dang duoc.")
+                   f"{THRESHOLD_MARK}. Bai khong co dau la khong dang duoc.")
 
-    for l, c in (_kiem_do_dai(caption), _kiem_van_phong(caption, tran),
-                 _kiem_so_lieu(caption, tran, tu_lieu, tin)):
+    for l, c in (_check_measure_long(caption), _check_still_room(caption, tran),
+                 _check_figures(caption, tran, tu_lieu, tin)):
         loi += l
         canh += c
 
@@ -267,7 +267,7 @@ def main():
 
     cap = Path(a.caption_file).read_text(encoding="utf-8")
     tl = Path(a.tu_lieu).read_text(encoding="utf-8") if a.tu_lieu and Path(a.tu_lieu).exists() else ""
-    loi, canh, tin = kiem(cap, tl)
+    loi, canh, tin = check(cap, tl)
 
     print(f"  {tin.get('do_dai', 0)} ký tự | {tin.get('so_cau', 0)} câu | "
           f"{tin.get('so_trong_caption', 0)} chỗ có số | dấu {tin.get('ty_le_dau', 0):.2f}"

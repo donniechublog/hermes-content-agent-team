@@ -103,7 +103,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         "tam_co": "flagship" if m["flagship"] else "thuong",
         "nen": "<toi | sang — cả bộ một nền; toi: màn tối chữ trắng, sang: màn sáng chữ đen; chọn theo ảnh, mặc định toi>",
         "cover": {"anh": (m.get("goi_y_bia") or ["A?"])[0], "hook": "<một câu giật, ≤ 90 ký tự, có dấu>",
-                  "category": "<" + " | ".join(carousel.CATEGORY_GOI_Y) + " | EARNINGS | M&A>",
+                  "category": "<" + " | ".join(carousel.CATEGORY_CALL_Y) + " | EARNINGS | M&A>",
                   "label": "<TÊN MODEL / HÃNG, VIẾT HOA>"},
         "slides": [
             {"anh": "A?", "text": "<đoạn 1.\\n\\nđoạn 2 — tổng ≤ 240 ký tự>"},

@@ -22,7 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from scan_sources import nguon_goc                          # noqa: E402
+from scan_sources import source_original                          # noqa: E402
 
 import env_load                                             # noqa: E402
 
@@ -107,7 +107,7 @@ def _item_from_submit(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> d
         "title": it["title"],
         "link": link,
         # via = NGUON TIN, suy tu ten mien. Khong phai kenh phat hien.
-        "via": it.get("via") or nguon_goc(link) or "",
+        "via": it.get("via") or source_original(link) or "",
         "source_note": it.get("source_note") or "",
         "summary_vi": tom,
         "score": it.get("score"),
@@ -133,7 +133,7 @@ def extra_required(items: list, nguon: list, vai: str, vai_bb: str) -> list:
         t = next((x for x in nguon
                   if required.chuan_link(x.get("link", "")) == required.chuan_link(link)), None)
         items.append({
-            "title": title, "link": link, "via": nguon_goc(link) or "",
+            "title": title, "link": link, "via": source_original(link) or "",
             "source_note": _count_report(t) if t else (v.get("ghi_chu") or ""),
             "summary_vi": "", "score": None,
             "score_reason": "BAT BUOC, vai bo sot — script tu them",

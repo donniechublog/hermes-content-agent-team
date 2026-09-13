@@ -1086,7 +1086,7 @@ def _bottom_again_moat(token, action, draft_id, cq):
                 why = nhan + ": " + why
         except Exception as e:                               # noqa: BLE001
             ok, why = False, type(e).__name__ + ": " + str(e)
-        txt = ("✅ Đã đẩy lại: " if ok else "⚠️ Đẩy lại vẫn lỗi: ") + moat_publish._thoat(why)
+        txt = ("✅ Đã đẩy lại: " if ok else "⚠️ Đẩy lại vẫn lỗi: ") + moat_publish._exit(why)
         # Sua chinh tin nhan co nut: bam xong thay ket qua ngay tai do. Con
         # loi thi giu nut lai de bam tiep.
         if msg.get("message_id"):
@@ -1129,9 +1129,9 @@ def _form_background(token, channel, draft_id, msg):
             # co the cung bo cuoc sau 2 ngay. Reply mot tin RIENG co nut de
             # con nguoi ra tay bat cu luc nao.
             if not pushed:
-                moat_publish.bao_the(
+                moat_publish.report_card(
                     draft_id,
-                    "⚠️ Chưa đẩy được sang moat: " + moat_publish._thoat(why)
+                    "⚠️ Chưa đẩy được sang moat: " + moat_publish._exit(why)
                     + "\nĐang tự thử lại theo lịch lùi; bấm nút để thử ngay.",
                     [{"text": "🔁 Đẩy lại moat", "callback_data": "mlai:" + draft_id}])
     except Exception as e:                                   # noqa: BLE001

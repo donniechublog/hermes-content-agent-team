@@ -69,7 +69,7 @@ def test_anh_lam_nen_tra_ve_tuple_khong_phai_none():
     """
     import render_edu as re_
     p = _anh_chup_roi()
-    ra = re_.anh_lam_nen({"image": str(p)}, TH, "figure")
+    ra = re_.image_make_background({"image": str(p)}, TH, "figure")
     assert ra is not None, "anh_lam_nen tra None — mat return cuoi ham"
     assert isinstance(ra, tuple) and len(ra) == 2, \
         f"phai la (nen, anh), duoc tuple {len(ra) if isinstance(ra, tuple) else type(ra).__name__}"
@@ -140,7 +140,7 @@ def test_anh_gan_nguong_khong_con_lop_mo_che_chu():
     doc duoc: 'lop mo che chu' cu (che ca anh) van khong duoc quay lai."""
     import render_edu as re_
     p = _anh_bang_xep_hang()
-    nen, anh = re_.anh_lam_nen({"image": str(p)}, TH, "bia")
+    nen, anh = re_.image_make_background({"image": str(p)}, TH, "bia")
     assert "fig-nen" not in nen, "con blur ca anh lam nen"
     for dau in ("fig-molop", "fig-man", "__datMan", "MAX="):
         assert dau in nen, f"thieu manh cua lop mo phan duoi chu: {dau}"
@@ -165,9 +165,9 @@ def _anh_mot_mau(rgb, w=600, h=800):
 def test_mau_noi_bat_doc_dung_mau_chu_dao():
     import render_edu as re_
     p = _anh_mot_mau((76, 217, 111))          # xanh la — trung mau bang Arena that
-    rgb = re_.mau_noi_bat(p)
+    rgb = re_.color_say_catch(p)
     assert rgb is not None
-    assert re_.theme_gan_mau(rgb) == "moss", f"mau {rgb} phai khop 'moss', duoc khac"
+    assert re_.theme_near_color(rgb) == "moss", f"mau {rgb} phai khop 'moss', duoc khac"
 
 
 def test_mau_noi_bat_bo_qua_anh_xam_trang_den():
@@ -175,8 +175,8 @@ def test_mau_noi_bat_bo_qua_anh_xam_trang_den():
     import render_edu as re_
     for rgb in [(255, 255, 255), (10, 10, 10), (140, 140, 140)]:
         p = _anh_mot_mau(rgb)
-        assert re_.mau_noi_bat(p) is None, f"{rgb} phai la None (khong co mau ro)"
-    assert re_.theme_gan_mau(None) is None
+        assert re_.color_say_catch(p) is None, f"{rgb} phai la None (khong co mau ro)"
+    assert re_.theme_near_color(None) is None
 
 
 def test_theme_gan_mau_ca_5_theme_dung_huong():
@@ -186,7 +186,7 @@ def test_theme_gan_mau_ca_5_theme_dung_huong():
     ca = {"orbit": (47, 212, 225), "ember": (255, 180, 84), "moss": (123, 228, 149),
           "ink": (143, 179, 255), "rose": (255, 126, 182)}
     for ten, rgb in ca.items():
-        assert re_.theme_gan_mau(rgb) == ten, f"{rgb} phai khop chinh theme {ten}"
+        assert re_.theme_near_color(rgb) == ten, f"{rgb} phai khop chinh theme {ten}"
 
 
 def test_chon_theme_tu_dong_uu_tien_khop_mau_khi_chua_ghi_theme():
@@ -194,7 +194,7 @@ def test_chon_theme_tu_dong_uu_tien_khop_mau_khi_chua_ghi_theme():
     khong xoay vong nhu truoc (truoc day chon theo lich su gan day, mu mau)."""
     import render_edu as re_
     p = _anh_mot_mau((76, 217, 111))
-    theme, hero = re_.chon_theme_tu_dong({"folio": "test"}, bia_anh=True, anh_mau=str(p))
+    theme, hero = re_.pick_theme_auto({"folio": "test"}, bia_anh=True, anh_mau=str(p))
     assert theme == "moss", theme
     assert hero is None                       # bia_anh=True luon bo hero
 
@@ -209,7 +209,7 @@ def test_chon_theme_tu_dong_canh_bao_khi_theme_da_ghi_lech_mau():
     p = _anh_mot_mau((76, 217, 111))
     buf = io.StringIO()
     with contextlib.redirect_stderr(buf):
-        theme, _hero = re_.chon_theme_tu_dong(
+        theme, _hero = re_.pick_theme_auto(
             {"folio": "test", "theme": "rose"}, bia_anh=True, anh_mau=str(p))
     assert theme == "rose", "theme da ghi trong spec khong bi tu doi"
     assert "LECH MAU" in buf.getvalue(), f"khong canh bao lech mau: {buf.getvalue()!r}"
@@ -234,9 +234,9 @@ def test_mau_bao_hoa_thuan_khong_bi_loai():
     import tempfile
     with tempfile.TemporaryDirectory() as t:
         t = Path(t)
-        assert re_.mau_noi_bat(_anh_mau(t, "do", lambda x, y: (255, 0, 0))) is not None
-        assert re_.mau_noi_bat(_anh_mau(t, "ember", lambda x, y: (255, 180, 84))) is not None
-        assert re_.mau_noi_bat(_anh_mau(t, "trang", lambda x, y: (250, 250, 250))) is None, "trang van phai bi loai"
+        assert re_.color_say_catch(_anh_mau(t, "do", lambda x, y: (255, 0, 0))) is not None
+        assert re_.color_say_catch(_anh_mau(t, "ember", lambda x, y: (255, 180, 84))) is not None
+        assert re_.color_say_catch(_anh_mau(t, "trang", lambda x, y: (250, 250, 250))) is None, "trang van phai bi loai"
 
 
 def test_hue_do_hai_ben_diem_0_gop_thanh_mot():
@@ -246,16 +246,16 @@ def test_hue_do_hai_ben_diem_0_gop_thanh_mot():
     with tempfile.TemporaryDirectory() as t:
         t = Path(t)
         p = _anh_mau(t, "do60", lambda x, y: (230, 30, 40) if x < 30 else ((230, 30, 20) if x < 60 else (40, 60, 230)))
-        rgb = re_.mau_noi_bat(p)
+        rgb = re_.color_say_catch(p)
         assert rgb is not None and rgb[0] > rgb[2], f"mau noi bat phai la DO, ra {rgb}"
 
 
 def test_canh_bao_lech_mau_chi_khi_qua_nguong():
     """R-r2-3: NGUONG_HUE_LECH_MAU tung khai bao ma khong dung."""
-    gan = re_.theme_gan_mau((0, 200, 180))
-    assert re_.lech_hue((0, 200, 180), gan) <= re_.NGUONG_HUE_LECH_MAU
-    xa = max(re_.THEMES, key=lambda ten: re_.lech_hue((0, 200, 180), ten))
-    assert re_.lech_hue((0, 200, 180), xa) > re_.NGUONG_HUE_LECH_MAU, "phai co theme lech qua nguong de test co nghia"
+    gan = re_.theme_near_color((0, 200, 180))
+    assert re_.offset_hue((0, 200, 180), gan) <= re_.THRESHOLD_HUE_OFFSET_COLOR
+    xa = max(re_.THEMES, key=lambda ten: re_.offset_hue((0, 200, 180), ten))
+    assert re_.offset_hue((0, 200, 180), xa) > re_.THRESHOLD_HUE_OFFSET_COLOR, "phai co theme lech qua nguong de test co nghia"
 
 
 def test_logo_hang_tren_nen_sang_van_ra_dung_mau():
@@ -270,11 +270,11 @@ def test_logo_hang_tren_nen_sang_van_ra_dung_mau():
         ds = (77, 108, 247)                   # card.MAU_HANG["DEEPSEEK"] = #4D6CF7
         p = _anh_mau(t, "logo_ds",            # logo ~4% dien tich, con lai trang
                      lambda x, y: ds if y >= 96 else (255, 255, 255))
-        rgb = re_.mau_noi_bat(p)
+        rgb = re_.color_say_catch(p)
         assert rgb is not None, "logo mau ro tren nen trang khong phai 'anh khong co mau'"
-        assert re_.theme_gan_mau(rgb) == "ink", (
+        assert re_.theme_near_color(rgb) == "ink", (
             f"xanh DeepSeek phai khop theme 'ink', mau noi bat doc duoc {rgb} "
-            f"-> {re_.theme_gan_mau(rgb)}")
+            f"-> {re_.theme_near_color(rgb)}")
 
 
 def test_dam_nhieu_ti_hon_khong_tu_quyet_theme():
@@ -285,7 +285,7 @@ def test_dam_nhieu_ti_hon_khong_tu_quyet_theme():
         t = Path(t)
         p = _anh_mau(t, "nhieu",              # 0,25% dien tich la mau
                      lambda x, y: (255, 0, 0) if (x < 5 and y < 5) else (250, 250, 250))
-        assert re_.mau_noi_bat(p) is None, "dam nhieu 0,25% khong duoc quyet theme ca bo"
+        assert re_.color_say_catch(p) is None, "dam nhieu 0,25% khong duoc quyet theme ca bo"
 
 
 def test_theme_bam_mau_hang_khi_anh_khong_co_mau():
@@ -293,7 +293,7 @@ def test_theme_bam_mau_hang_khi_anh_khong_co_mau():
     brand. Bia ve vector (khong co anh mau) thi theme bam MAU NHAN DIEN CUA
     HANG chu khong xoay vong mu mau — tin DeepSeek (xanh duong #4D6CF7) ra
     'ink', khong duoc ra 'moss' xanh la nua."""
-    theme, _hero = re_.chon_theme_tu_dong({"folio": "DEEPSEEK V4"}, bia_anh=False)
+    theme, _hero = re_.pick_theme_auto({"folio": "DEEPSEEK V4"}, bia_anh=False)
     assert theme == "ink", f"tin DeepSeek phai ra theme 'ink', ra {theme}"
 
 
@@ -302,17 +302,17 @@ def test_mau_anh_that_van_thang_mau_hang():
     van thang mau hang. Tin DeepSeek (xanh duong) ma bia la anh xanh la ro ret
     thi theme chay theo ANH, ra 'moss'."""
     p = _anh_mot_mau((76, 217, 111))
-    theme, _hero = re_.chon_theme_tu_dong(
+    theme, _hero = re_.pick_theme_auto(
         {"folio": "DEEPSEEK V4"}, bia_anh=True, anh_mau=str(p))
     assert theme == "moss", f"mau anh that phai thang mau hang, ra {theme}"
 
 
 def test_mau_hang_trong_spec_chiu_duoc_spec_khong_co_slides():
-    """`kite_prepare.py` goi `chon_theme_tu_dong({"folio": title})` — spec
+    """`kite_prepare.py` goi `pick_theme_auto({"folio": title})` — spec
     KHONG co khoa "slides". Duong that dang chay, khong duoc nem."""
-    assert re_.mau_hang_trong_spec({"folio": "DEEPSEEK V4"}) == (77, 108, 247)
-    assert re_.mau_hang_trong_spec({}) is None
-    assert re_.mau_hang_trong_spec({"folio": "MOT CHU DE KHONG NHAC HANG NAO"}) is None
+    assert re_.color_rank_within_spec({"folio": "DEEPSEEK V4"}) == (77, 108, 247)
+    assert re_.color_rank_within_spec({}) is None
+    assert re_.color_rank_within_spec({"folio": "MOT CHU DE KHONG NHAC HANG NAO"}) is None
 
 
 if __name__ == "__main__":

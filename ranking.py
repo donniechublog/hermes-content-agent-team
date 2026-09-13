@@ -927,7 +927,7 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     thẻ này là `--image` của card.py, hook sẽ đè lên nửa dưới qua màn tối."""
     import card
     w, h = 1200, 1500
-    b = card.dat_thuong_hieu(brand)
+    b = card.set_brand(brand)
     im = Image.new("RGB", (w, h), card.BG)
     d = ImageDraw.Draw(im)
     f_nho = card._f(card.F_MONO, 30)

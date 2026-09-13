@@ -216,8 +216,8 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     nen = str(spec.get("nen") or "").strip().lower()
     if nen:
         import carousel
-        if nen not in carousel.NEN:
-            loi.append(f"\"nen\": \"{nen}\" không hợp lệ — chọn {' | '.join(carousel.NEN)}")
+        if nen not in carousel.BACKGROUND:
+            loi.append(f"\"nen\": \"{nen}\" không hợp lệ — chọn {' | '.join(carousel.BACKGROUND)}")
         else:
             ra["nen"] = nen
     c = _resolve_item(bo, cover, "bìa", True) if cover else None

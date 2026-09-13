@@ -34,7 +34,7 @@ DRAFTS = cb.DRAFTS
 # kia thieu vai truong ma builder that su doc cung (`callout` cua loop,
 # `standfirst` cua figure/bars, cac khoa long trong cards/steps/bars), va no chi
 # chay khi di qua nop — goi thang render_edu.py thi khong co cong nao.
-REQUIRED = {k: v["truong"] for k, v in render_edu.BAT_BUOC_KIND.items()}
+REQUIRED = {k: v["truong"] for k, v in render_edu.REQUIRED_KIND.items()}
 LIMIT = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
 # LOW-45 (Ong Chu 12/09/2026): "bài có 8 slide thì tối thiểu phải có 3 hình
 # thật" — 1 ảnh thật KHÁC NHAU cho mỗi 3 slide, làm tròn LÊN (8 -> 3, 6 -> 2,
@@ -189,7 +189,7 @@ def _resolve_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
 
     loi += [d.replace(f"slide 1 [{k}]", f"slide {i} ({k})")
 
-            for d in render_edu.kiem_truong([sl])
+            for d in render_edu.check_field([sl])
 
             if "[" in d and "thieu" in d and "]:" in d and
 
@@ -239,7 +239,7 @@ def _resolve_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
 
             try:
 
-                render_edu._gia_tri(b.get("value"))
+                render_edu._value(b.get("value"))
 
             except (ValueError, TypeError):
 

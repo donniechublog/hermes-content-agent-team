@@ -62,7 +62,7 @@ import card
 import image_rules
 from card import (
     _f, _wrap, _fit_cover,
-    find_face_mark, drop_mark_forbid, dat_thuong_hieu, THUONG_HIEU,
+    find_face_mark, drop_mark_forbid, set_brand, BRAND,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
     FONTS,                       # thu muc font
     F_QUOTE, F_QUOTE_REG,        # kieu quote — cung dinh nghia font voi card.py
@@ -75,21 +75,21 @@ PAD = 84                         # le trai/phai cua chu, do tu mau tham chieu
 # anh, den va trang la hai mau uu tien). "toi" = anh phu kin + man toi lien mach
 # + chu trang (mac dinh); "sang" = cung bo cuc, man SANG lien mach + chu den.
 # Spec khai "nen": "sang" (hoac --nen sang). Moi bo carousel MOT nen.
-NEN = {"toi": {"bg": (0, 0, 0), "fg": (255, 255, 255), "mo": (190, 190, 190)},
+BACKGROUND = {"toi": {"bg": (0, 0, 0), "fg": (255, 255, 255), "mo": (190, 190, 190)},
        "sang": {"bg": (255, 255, 255), "fg": (0, 0, 0), "mo": (80, 80, 80)}}
-NEN_HIEN = "toi"
+BACKGROUND_SHOW = "toi"
 BG = (0, 0, 0)                   # nen/man phu (dat lai qua dat_nen)
 FG = (255, 255, 255)            # chu chinh (dat lai qua dat_nen)
-MO = (190, 190, 190)            # chu phu (dong nguon quote)
+OPEN = (190, 190, 190)            # chu phu (dong nguon quote)
 
 
-def dat_nen(ten):
+def set_background(ten):
     """Chon bien the nen cho ca bo. Goi truoc khi dung slide nao."""
-    global NEN_HIEN, BG, FG, MO
-    if ten not in NEN:
-        raise ValueError(f"nen phai la mot trong: {', '.join(NEN)} (co: {ten!r})")
-    NEN_HIEN = ten
-    BG, FG, MO = NEN[ten]["bg"], NEN[ten]["fg"], NEN[ten]["mo"]
+    global BACKGROUND_SHOW, BG, FG, OPEN
+    if ten not in BACKGROUND:
+        raise ValueError(f"nen phai la mot trong: {', '.join(BACKGROUND)} (co: {ten!r})")
+    BACKGROUND_SHOW = ten
+    BG, FG, OPEN = BACKGROUND[ten]["bg"], BACKGROUND[ten]["fg"], BACKGROUND[ten]["mo"]
 # Watermark ten kenh: MOT mau xanh co dinh (xanh nhu icon Finder cua macOS),
 # KHONG doi theo brand nua.
 WM = (10, 132, 255)             # #0A84FF — mau du phong neu chua nap thuong hieu
@@ -114,10 +114,10 @@ BLUR_RADIUS = 14                 # mo NHE thoi — du diu chi tiet sau chu, khon
 BG_BLUR = 44                     # mo MANH ban cover lam nen: phai xoa het chi tiet doc duoc,
                                  # neu khong cho nao lop sac khong phu se lo mot BAN SAO
                                  # phong to cua chinh tam anh -> mat doc ra HAI VUNG
-NGUONG_SANG_TOI = 130    # nen "toi" (FG trang): sang trung binh duoi chu phai <= muc nay
-NGUONG_SANG_SANG = 130   # nen "sang" (FG den): (255 - sang) duoi chu phai <= muc nay
-NGUONG_ROI_CAN_LOP = 26  # do lech mau (stddev xam) duoi chu vuot muc nay moi can lop
-TOI_TOI_DA = 140         # tran cua lop (0..255, ~55%) — "vua du", khong phu ca mang
+THRESHOLD_BRIGHT_DARK = 130    # nen "toi" (FG trang): sang trung binh duoi chu phai <= muc nay
+THRESHOLD_BRIGHT_BRIGHT = 130   # nen "sang" (FG den): (255 - sang) duoi chu phai <= muc nay
+THRESHOLD_FALL_CAN_LAYER = 26  # do lech mau (stddev xam) duoi chu vuot muc nay moi can lop
+DARK_MAX = 140         # tran cua lop (0..255, ~55%) — "vua du", khong phu ca mang
 VEIL_SPAN = 70           # px duong cong chuyen tiep — bat dau NGAY tai dong chu dau
 VEIL_EASE = 1.3          # duong cong: nhat luc bat dau, dam dan trong VEIL_SPAN roi giu
 TEXT_BASE = 1230                 # day khoi chu; dai 1230..H chua chip ten kenh (goc duoi-trai)
@@ -188,19 +188,19 @@ def _net():
     """Mau NET (khung quote): CYAN nhan dien, nhung tren nen SANG mau gan trang
     (dcgr) thi khong thay — doi sang den. Chip van giu CYAN vi co vien den."""
     c = _cyan()
-    if NEN_HIEN == "sang" and card._do_sang(c) > 0.85:
+    if BACKGROUND_SHOW == "sang" and card._measure_bright(c) > 0.85:
         return (0, 0, 0)
     return c
 
 
-def _mau_dau(mau_hang):
+def _color_mark(mau_hang):
     """Mau dau " theo hang: nen toi keo sang cho doc duoc; nen sang giu nguyen
     (mau hang thuong dam, doc ro tren trang), tru khi qua nhat thi ve _net()."""
     if not mau_hang:
         return _net()
-    if NEN_HIEN == "sang":
-        return _net() if card._do_sang(tuple(mau_hang[:3])) > 0.85 else tuple(mau_hang[:3])
-    return card._du_sang(mau_hang)
+    if BACKGROUND_SHOW == "sang":
+        return _net() if card._measure_bright(tuple(mau_hang[:3])) > 0.85 else tuple(mau_hang[:3])
+    return card._enough_bright(mau_hang)
 
 
 def _chip_neo(d, txt, font, x, y, fill, fg=(0, 0, 0), anchor="l",
@@ -245,7 +245,7 @@ def _open(path):
     return img
 
 
-def _ghep_neu_can(muc, nhan, stem):
+def _stack_if_can(muc, nhan, stem):
     """Slide/bia co "images": [a, b] (hai anh NGANG) -> ghep doc thanh mot anh
     (card.ghep_doc), ghi ra `<stem>.ghep.png` va gan vao muc["image"] de moi
     cong chan + builder phia sau dung nhu anh thuong. Xem ghi chu trong
@@ -269,7 +269,7 @@ def _ghep_neu_can(muc, nhan, stem):
     from PIL.PngImagePlugin import PngInfo
     _meta = PngInfo()
     _meta.add_text("nguon_dung", "ghep_doc")
-    card.ghep_doc(ds).save(ra, "PNG", pnginfo=_meta)
+    card.stack_read(ds).save(ra, "PNG", pnginfo=_meta)
     muc["image"] = str(ra)
 
 
@@ -290,7 +290,7 @@ def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
     return m.resize((W, H))
 
 
-def _do_vung_chu(canvas, y0, y1):
+def _measure_region_text(canvas, y0, y1):
     """Do sang trung binh + do roi (stddev xam) cua DUNG vung pixel WYSIWYG se
     nam duoi chu — doc thang tren canvas HIEN TAI (sau khi da dan anh, truoc
     khi ve chu), khong doan qua toa do nguon. -> (sang 0..255, roi 0..255)."""
@@ -303,11 +303,11 @@ def _do_vung_chu(canvas, y0, y1):
     return st.mean[0], st.stddev[0]
 
 
-NEN_ROI_LE = 40          # nen dac bat dau cach dong chu dau bao nhieu px phia tren
-NEN_ROI_TAN = 180        # dai smoothstep toi da tu anh sang nen dac
+BACKGROUND_FALL_ODD = 40          # nen dac bat dau cach dong chu dau bao nhieu px phia tren
+BACKGROUND_FALL_SPREAD = 180        # dai smoothstep toi da tu anh sang nen dac
 
 
-def _nen_dac_duoi_chu(canvas, text_top):
+def _background_solid_below_text(canvas, text_top):
     """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
     cua text phai lam cho nghiem chinh, dung nham nho"). Lop mo+tinh cua
     `_lop_neu_can` bi tran TOI_TOI_DA (~55%) va chi mo ban kinh BLUR_RADIUS —
@@ -316,7 +316,7 @@ def _nen_dac_duoi_chu(canvas, text_top):
     phia tren dong chu (`card._moc_nen_dac`, dung chung voi the Ethan) xuong
     day; dai smoothstep nam trong khoang lang nen khong cat ngang dong chu in
     san nao, khong co duong ke ngang (LUAT_ANH muc 7.1)."""
-    dac, top = card._moc_nen_dac(canvas, text_top - NEN_ROI_LE, NEN_ROI_TAN)
+    dac, top = card._timestamp_background_solid(canvas, text_top - BACKGROUND_FALL_ODD, BACKGROUND_FALL_SPREAD)
     m = Image.new("L", (1, H), 0)
     for y in range(H):
         if y >= dac:
@@ -330,7 +330,7 @@ def _nen_dac_duoi_chu(canvas, text_top):
     canvas.paste(Image.new("RGB", (W, H), BG), (0, 0), m.resize((W, H)))
 
 
-def _lop_neu_can(canvas, base, text_top, text_bottom, anh_roi=False):
+def _layer_if_can(canvas, base, text_top, text_bottom, anh_roi=False):
     """Them mot lop mo+tinh NGAY TAI text_top — CHI KHI can (xem nguyen tac o
     dau file). Mac dinh khong lam gi: FG (co dinh theo NEN ca bo) da du tuong
     phan thi giu nguyen anh.
@@ -341,17 +341,17 @@ def _lop_neu_can(canvas, base, text_top, text_bottom, anh_roi=False):
     luon giu phang tu `text_top + VEIL_SPAN` tro xuong H, khong phu thuoc
     `text_bottom`."""
     if anh_roi:
-        _nen_dac_duoi_chu(canvas, text_top)
+        _background_solid_below_text(canvas, text_top)
         return
-    sang, roi = _do_vung_chu(canvas, text_top, text_bottom)
+    sang, roi = _measure_region_text(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
-        thieu = max(0.0, sang - NGUONG_SANG_TOI)          # nen "toi": qua sang la thieu
+        thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "toi": qua sang la thieu
     else:
-        thieu = max(0.0, (255 - sang) - NGUONG_SANG_SANG)  # nen "sang": qua toi la thieu
-    roi_du = max(0.0, roi - NGUONG_ROI_CAN_LOP)
+        thieu = max(0.0, (255 - sang) - THRESHOLD_BRIGHT_BRIGHT)  # nen "sang": qua toi la thieu
+    roi_du = max(0.0, roi - THRESHOLD_FALL_CAN_LAYER)
     if thieu <= 0 and roi_du <= 0:
         return                       # da du tuong phan tren pixel that — khong phu gi
-    do = min(TOI_TOI_DA, max(40.0, thieu * 1.8, roi_du * 2.2))
+    do = min(DARK_MAX, max(40.0, thieu * 1.8, roi_du * 2.2))
     top_y = max(0, int(text_top))
     full_y = min(H, top_y + VEIL_SPAN)
     blurred = base.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
@@ -418,7 +418,7 @@ def build_body(img_path, text, handle, out, roi=False):
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
     # phan voi FG — xem _lop_neu_can. Khong bao gio bat dau truoc text_top.
-    _lop_neu_can(canvas, base, text_top, TEXT_BASE, anh_roi=roi)
+    _layer_if_can(canvas, base, text_top, TEXT_BASE, anh_roi=roi)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
@@ -456,7 +456,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
 
     f_q, q_lines = card._fit_text(d, quote, avail, max_lines=Q_LINES,
                                   hi=Q_HI, lo=Q_LO, path=F_QUOTE)
-    buoc, tren = card._buoc_dong(f_q, q_lines, Q_LEAD)
+    buoc, tren = card._step_line(f_q, q_lines, Q_LEAD)
     quote_h = buoc * len(q_lines)
 
     f_at = _f(F_QUOTE_REG, 26)
@@ -480,7 +480,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
 
     # Chi them lop khi do THAT can (xem _lop_neu_can) — neo dung tai dinh khung,
     # khong con chom truoc 24px nhu ban cu.
-    _lop_neu_can(canvas, base, max(0, frame_top), H, anh_roi=roi)
+    _layer_if_can(canvas, base, max(0, frame_top), H, anh_roi=roi)
 
     # Cac dong quote.
     qy = first_line_top
@@ -489,8 +489,8 @@ def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
         qy += buoc
 
     # Net khung xanh Apple (WM) co dinh; dau " theo hang nhac trong quote/nguon.
-    mau_hang = card._mau_hang_trong(quote) or card._mau_hang_trong(attrib)
-    mark_col = _mau_dau(mau_hang)
+    mau_hang = card._color_rank_within(quote) or card._color_rank_within(attrib)
+    mark_col = _color_mark(mau_hang)
     card._quote_frame(d, FRAME_X, frame_top, W - FRAME_X, frame_bottom, _net(), mark_col)
 
     # Chip ten kenh goc TREN-PHAI khung, tam chip ngang muc net ngang tren.
@@ -505,12 +505,12 @@ def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
     ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
-        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=MO)
+        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=OPEN)
         ay += at_lh
     canvas.convert("RGB").save(out, "PNG")
 
 
-CATEGORY_GOI_Y = ["MODEL RELEASE", "MODEL UPDATE", "PRODUCT", "RESEARCH",
+CATEGORY_CALL_Y = ["MODEL RELEASE", "MODEL UPDATE", "PRODUCT", "RESEARCH",
                   "FUNDING", "POLICY", "OPINION"]
 
 
@@ -550,7 +550,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem
     # _lop_neu_can) — the tich category/label o duoi la chip dac, tu doc duoc,
     # khong can lop bao ve.
-    _lop_neu_can(canvas, cover, y, H, anh_roi=roi)
+    _layer_if_can(canvas, cover, y, H, anh_roi=roi)
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
@@ -578,7 +578,7 @@ _FLAGSHIP_RE = re.compile(
     r"Grok|DeepSeek|Qwen|Kimi|GLM|MiniMax|Doubao|Mistral Large|Nova Premier)\b", re.I)
 
 
-def _la_flagship(spec, cover, slides):
+def _is_flagship(spec, cover, slides):
     """Tin flagship = spec khai "tam_co": "flagship", HOAC hook/label/chu nhac
     ten ho model frontier (tu dong, de vai khong "quen" khai). Khai
     "tam_co": "thuong" thi tat tu dong (chi khi Ong Chu noi ro)."""
@@ -610,7 +610,7 @@ def _gate_text(chunks, bo_qua_dau):
 # Cac luat nay Ong Chu da chot va truoc day chi nam trong SKILL.md — tuc trong
 # cho vai NHO va TUAN THU. Chuyen thanh cong chan cung: vi pham la dung han,
 # in ro cach sua. Vai chi con hai viec khong the code: viet copy va chon anh.
-def _gate_anh(paths):
+def _gate_image(paths):
     """paths: [(nhan, duong_dan, muc)] — muc la dict cover/slide trong spec.
 
     Chi PHAN HOP cac cong chan cua `luat_anh` theo dung thu tu cua khung
@@ -665,7 +665,7 @@ def _gate_anh(paths):
     return loi, canh_bao
 
 
-def _gate_chu(slides):
+def _gate_overflow(slides):
     """Chan copy DAI qua vung chu 30%: o co chu NHO NHAT ma khoi chu van cao
     hon TEXT_MAX_H thi truoc day no lang le tran len tren — vi pham luat 30%.
     Gio dung han va bao thua bao nhieu de vai cat bot loi."""
@@ -701,7 +701,7 @@ def main():
     ap.add_argument("--brand", default="donniechublog",
                     help="donniechublog | dcgr — quyet dinh handle mac dinh")
     ap.add_argument("--handle", help="Ghi de watermark (mac dinh lay theo brand)")
-    ap.add_argument("--nen", choices=list(NEN),
+    ap.add_argument("--nen", choices=list(BACKGROUND),
                     help="Bien the nen: toi (mac dinh) | sang. Ghi de spec.nen")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Tat cong chan tieng Viet (chi khi chu THAT SU la tieng Anh)")
@@ -710,22 +710,22 @@ def main():
     raw = sys.stdin.read() if a.spec == "-" else Path(a.spec).read_text("utf-8")
     spec = json.loads(raw)
 
-    if a.brand not in THUONG_HIEU:
+    if a.brand not in BRAND:
         sys.exit(f"Thuong hieu khong nhan ra: {a.brand}")
-    b = dat_thuong_hieu(a.brand)
+    b = set_brand(a.brand)
     handle = a.handle or spec.get("handle") or b["handle"]
     nen = a.nen or str(spec.get("nen") or "toi").strip().lower()
     try:
-        dat_nen(nen)
+        set_background(nen)
     except ValueError as e:
         sys.exit(f"{e}")
 
     cover = spec.get("cover") or {}
     slides = spec.get("slides") or []
     _stem0 = Path(a.out).with_suffix("")
-    _ghep_neu_can(cover, "bia", f"{_stem0}")
+    _stack_if_can(cover, "bia", f"{_stem0}")
     for i, s in enumerate(slides, start=2):
-        _ghep_neu_can(s, f"slide {i}", f"{_stem0}_{i}")
+        _stack_if_can(s, f"slide {i}", f"{_stem0}_{i}")
     if not cover.get("image") or not cover.get("hook"):
         sys.exit("Thieu cover.image hoac cover.hook trong spec.")
     if not slides:
@@ -740,7 +740,7 @@ def main():
     # Ong Chu bat loi 03/09/2026: GPT-6 Astra (flagship OpenAI) ma chi 5 slide.
     # Tin model ra mat cua hang frontier phai 7-10 slide: bang benchmark, chart,
     # gia, context, so voi doi thu, phat bieu, cai can theo doi... du nhieu tang.
-    if _la_flagship(spec, cover, slides) and len(slides) + 1 < FLAGSHIP_MIN:
+    if _is_flagship(spec, cover, slides) and len(slides) + 1 < FLAGSHIP_MIN:
         sys.exit(f"Tin FLAGSHIP (model ra mat cua hang frontier) can IT NHAT "
                  f"{FLAGSHIP_MIN} slide ke ca bia (hien {len(slides)+1}). Dao them tang: "
                  "bang benchmark nguyen ven, chart, gia/context/toc do, so voi doi thu, "
@@ -754,7 +754,7 @@ def main():
     cover["category"] = str(cover.get("category") or "").strip().upper()
     if not cover["category"]:
         sys.exit("Bia thieu cover.category — chip cyan tren bia la CATEGORY, khong "
-                 "phai ten kenh. Goi y: " + ", ".join(CATEGORY_GOI_Y) +
+                 "phai ten kenh. Goi y: " + ", ".join(CATEGORY_CALL_Y) +
                  ". Vd: {\"category\": \"MODEL RELEASE\", \"label\": \"QWEN 3.8 27B\"}")
     chunks = [("bia/hook", cover["hook"])]
     for i, s in enumerate(slides, start=2):
@@ -792,8 +792,8 @@ def main():
     # Cong chan anh (trung / ti le / phan giai / day sang) va copy tran 30%.
     anh = [("bia", cover["image"], cover)] + \
           [(f"slide {i}", s["image"], s) for i, s in enumerate(slides, start=2)]
-    loi_anh, canh_bao = _gate_anh(anh)
-    loi_chu = _gate_chu(slides)
+    loi_anh, canh_bao = _gate_image(anh)
+    loi_chu = _gate_overflow(slides)
     for c in canh_bao:
         print(f"[CANH BAO] {c}", file=sys.stderr)
     if loi_anh or loi_chu:

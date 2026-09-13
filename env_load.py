@@ -132,7 +132,7 @@ def handle_channel(brand: str, co_a_cong: bool = True) -> str:
     import card
     b = (brand or "").strip()
     b = _BRAND_DAI.get(b, b)
-    h = (getattr(card, "THUONG_HIEU", {}).get(b) or {}).get("handle") or b
+    h = (getattr(card, "BRAND", {}).get(b) or {}).get("handle") or b
     h = h.lstrip("@")
     return ("@" + h) if co_a_cong else h
 

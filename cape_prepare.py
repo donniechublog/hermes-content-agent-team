@@ -66,10 +66,10 @@ def write_brief(url: str, d: dict, wd: Path) -> str:
     L += ["", f"## Viết spec vào: {wd}/spec.json",
           json.dumps({"title": "<tiêu đề, hoa hay thường tuỳ, script tự viết hoa>",
                       "paragraphs": ["<đoạn 1, chữ thuần>", "<đoạn 2>", "<…>"]}, ensure_ascii=False, indent=1),
-          f"Luật: {teaser_assemble.DAI_MONG_MUON[0]}–{teaser_assemble.DAI_MONG_MUON[1]} từ mong muốn "
-          f"(chặn cứng dưới {teaser_assemble.DAI_HONG[0]} hoặc trên {teaser_assemble.DAI_HONG[1]}). Giọng MỜI "
+          f"Luật: {teaser_assemble.LONG_THIN_LATE[0]}–{teaser_assemble.LONG_THIN_LATE[1]} từ mong muốn "
+          f"(chặn cứng dưới {teaser_assemble.LONG_BROKEN[0]} hoặc trên {teaser_assemble.LONG_BROKEN[1]}). Giọng MỜI "
           "đọc, nói thẳng vào nội dung như chuyện của mình; CẤM giọng tường thuật: "
-          + ", ".join(f"\"{c}\"" for c in teaser_assemble.CUM_TUONG_THUAT[:10]) + "… (script chặn). "
+          + ", ".join(f"\"{c}\"" for c in teaser_assemble.PHRASE_WALL_TECHNIQUE[:10]) + "… (script chặn). "
           "Không bịa ngoài bài, không URL, không emoji, không đánh số, không câu kết (script tự thêm). "
           "Mỗi đoạn là một chuỗi riêng. Tiếng Việt có dấu, không em-dash.",
           "", "## Rồi chạy đúng MỘT lệnh:",

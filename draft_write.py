@@ -55,7 +55,7 @@ def main():
     tl = ""
     if a.tu_lieu and Path(a.tu_lieu).exists():
         tl = Path(a.tu_lieu).read_text(encoding="utf-8")
-    loi, canh, tin = caption_check.kiem(caption, tl)
+    loi, canh, tin = caption_check.check(caption, tl)
     for c in canh:
         print(f"[nhac] {c}", file=sys.stderr)
     if loi and not a.bo_qua_kiem:

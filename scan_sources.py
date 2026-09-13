@@ -53,7 +53,7 @@ AI_HINTS = (
 # Ten to chuc theo ten mien. `via` phai ghi NGUON TIN, khong phai kenh phat hien.
 # Truoc day HN dat via="@nguoi_dang", nguoi do chi bam nut submit, con tin la cua
 # hang lam ra no. Ai dua tin ve DeepSeek cung phai lay tu DeepSeek.
-TEN_TO_CHUC = {
+NAME_ORGANIZATION = {
     "deepseek.com": "DeepSeek", "openai.com": "OpenAI",
     "anthropic.com": "Anthropic", "ai.meta.com": "Meta AI", "meta.com": "Meta",
     "deepmind.google": "Google DeepMind", "blog.google": "Google",
@@ -70,7 +70,7 @@ TEN_TO_CHUC = {
 }
 
 
-def nguon_goc(url: str) -> str:
+def source_original(url: str) -> str:
     """Ten nguon tin, suy tu ten mien cua link."""
     try:
         from urllib.parse import urlparse
@@ -79,7 +79,7 @@ def nguon_goc(url: str) -> str:
         return ""
     if not host:
         return ""
-    for mien, ten in TEN_TO_CHUC.items():
+    for mien, ten in NAME_ORGANIZATION.items():
         if host == mien or host.endswith("." + mien):
             return ten
     goc = host.split(".")
@@ -99,14 +99,14 @@ def _age_hours(ts_epoch: float) -> float:
     return (time.time() - ts_epoch) / 3600.0
 
 
-HANG_FRONTIER = re.compile(
+RANK_FRONTIER = re.compile(
     r"\b(OpenAI|GPT-?\d|Anthropic|Claude|Google|Gemini|DeepMind|Meta|Llama|Muse Spark|"
     r"xAI|Grok|DeepSeek|Qwen|Alibaba|Kimi|Moonshot|GLM|Zhipu|MiniMax|Mistral|Nvidia|Apple)\b",
     re.I)
 
 
 # Bai HN "nong" chi bat buoc khi tieu de co dau hieu AI — HN co ca may bay dien.
-TU_KHOA_AI = re.compile(
+KEYWORD_AI = re.compile(
     r"\b(AI|LLMs?|GPT|agents?|agentic|model|neural|transformer|diffusion|RAG|"
     r"inference|fine-?tun\w*|benchmark|copilot|chatbot|machine learning|deep learning|"
     r"reasoning|multimodal|token|embedding|MoE|open[- ]weights?|vibe[- ]cod\w*)\b", re.I)
@@ -164,7 +164,7 @@ def fetch_hn(limit=40) -> list:
                 "discussion": f"https://news.ycombinator.com/item?id={sid}",
                 "points": it.get("score", 0),
                 "comments": it.get("descendants", 0),
-                "via": nguon_goc(it.get("url") or "") or "HackerNews",
+                "via": source_original(it.get("url") or "") or "HackerNews",
                 "nguoi_dang": "@" + it.get("by", "hn"),
                 "age_hours": round(age, 1),
             })
@@ -209,7 +209,7 @@ def fetch_reddit(limit_per_sub=25) -> list:
                     "discussion": "https://www.reddit.com" + d.get("permalink", ""),
                     "points": d.get("score", 0),
                     "comments": d.get("num_comments", 0),
-                    "via": nguon_goc(d.get("url") or "") or ("r/" + sub),
+                    "via": source_original(d.get("url") or "") or ("r/" + sub),
                     "nguoi_dang": "r/" + sub,
                     "age_hours": round(age, 1),
                 })
@@ -293,22 +293,22 @@ def seen_keys() -> set:
 # ---------- anh minh hoa ----------
 
 # Nhung duong khong bao gio co anh dung duoc — khoi mat mot luot tai
-KHONG_CO_ANH = re.compile(r"\.pdf($|\?)|arxiv\.org/(abs|pdf)/|news\.ycombinator\.com/item", re.I)
+NO_HAS_IMAGE = re.compile(r"\.pdf($|\?)|arxiv\.org/(abs|pdf)/|news\.ycombinator\.com/item", re.I)
 
 # Anh mac dinh cua nen tang, khong dai dien noi dung bai — lay ve chi to giong nhau
-ANH_RAC = re.compile(
+IMAGE_JUNK = re.compile(
     r"(logo|favicon|default[-_]?og|placeholder|avatar|sprite|1x1|pixel|"
     r"twitter[-_]card[-_]default|social[-_]?default)", re.I)
 
 
-def _anh_cua(url: str, timeout=8) -> str:
+def _image_of(url: str, timeout=8) -> str:
     """Lay og:image (hoac twitter:image) cua mot bai. Hong thi tra chuoi rong.
 
     Vi sao can: truoc day khong co buoc nay, `image_url` LUON None, nen vai dung anh
     lan nao cung phai tu ve SVG — moi the anh nhin giong het nhau. Da kiem 23/23
     tin trong ba ngay deu khong co anh.
     """
-    if not url or KHONG_CO_ANH.search(url):
+    if not url or NO_HAS_IMAGE.search(url):
         return ""
     try:
         r = httpx.get(url, timeout=timeout, follow_redirects=True,
@@ -332,15 +332,15 @@ def _anh_cua(url: str, timeout=8) -> str:
             src = m.group(1).strip()
             if src.startswith("//"):
                 src = "https:" + src
-            if src.startswith("http") and not ANH_RAC.search(src):
+            if src.startswith("http") and not IMAGE_JUNK.search(src):
                 return src
     return ""
 
 
-def gan_anh(items: list, workers=8) -> int:
+def near_image(items: list, workers=8) -> int:
     """Gan image_url cho tung ung vien, tai song song. Tra ve so bai co anh."""
     with cf.ThreadPoolExecutor(max_workers=workers) as ex:
-        for it, anh in zip(items, ex.map(lambda i: _anh_cua(i.get("link", "")), items)):
+        for it, anh in zip(items, ex.map(lambda i: _image_of(i.get("link", "")), items)):
             it["image_url"] = anh or None
     return sum(1 for i in items if i.get("image_url"))
 
@@ -409,9 +409,9 @@ def main():
     # nhung khong duoc bo. Tich luy sang hom sau neu sot (xem bat_buoc.py).
     muc = []
     for it in fresh:
-        hang = HANG_FRONTIER.search(it["title"] or "")
+        hang = RANK_FRONTIER.search(it["title"] or "")
         nong = (it["source"] != "arxiv" and (it.get("points") or 0) >= 150
-                and TU_KHOA_AI.search(it["title"] or ""))
+                and KEYWORD_AI.search(it["title"] or ""))
         if hang or nong:
             loai = "frontier" if hang else "nong"
             muc.append((f"link|{required.chuan_link(it['link'])}", it["title"], loai,
@@ -423,7 +423,7 @@ def main():
 
     if not a.khong_lay_anh:
         t0 = time.time()
-        co = gan_anh(fresh)
+        co = near_image(fresh)
         print(f"  anh minh hoa: {co}/{len(fresh)} bai co og:image "
               f"({time.time() - t0:.0f}s)", file=sys.stderr)
     else:

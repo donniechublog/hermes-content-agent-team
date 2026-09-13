@@ -261,7 +261,7 @@ def check_numbers_on_card(chu: str, m: dict, wd: Path) -> list:
     truoc 06/09/2026 khong vai lam anh nao goi — so bia tren slide di thang len
     Telegram. Chi CANH BAO vi doi don vi (2,5 ti / 2.5B) la chuyen binh thuong."""
     import caption_check
-    la = caption_check.so_la(chu, article_text_for(m, wd))
+    la = caption_check.count_is(chu, article_text_for(m, wd))
     if not la:
         return []
     return [f"số trên slide KHÔNG thấy trong tư liệu: {', '.join(la[:8])} — "
@@ -383,7 +383,7 @@ def check_quote_translated(chu: str, nhan: str) -> list:
     if len(t) < 25:
         return []
     import caption_check
-    if caption_check.ty_le_dau(t) >= 0.02:
+    if caption_check.billion_odd_mark(t) >= 0.02:
         return []
     tu = re.findall(r"[A-Za-z']+", t.lower())
     if sum(1 for w in tu if w in _TU_ANH) < 2:

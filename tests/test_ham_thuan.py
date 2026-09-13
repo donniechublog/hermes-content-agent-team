@@ -12,12 +12,12 @@ lo ra khi hong:
   - `route`          topic nao thi vai nao tra loi.
   - `_HangFIFO`      thu tu tra loi chat trong mot phien; cau truc dong bo tu
                      viet, sinh ra sau su co 04/09 (Itachi doi Gin 108 giay).
-  - `gom_trung`      gop nhieu bao dua cung mot su kien. Docstring cua no ke
+  - `gather_duplicate`      gop nhieu bao dua cung mot su kien. Docstring cua no ke
                      hai lan hoi quy that; ca hai o day thanh test.
   - `standard_ify`      khoa dedup ghi vao business_seen.json.
   - `env_load.brand_long` doi CT_BRAND (ten NGAN cho state, "blog"/"dcgr") ra slug
                      thuong hieu DAI ("donniechublog"/"dcgr") ma card.py doi.
-                     Sinh 09/09/2026: lan thang CT_BRAND vao card.dat_thuong_hieu
+                     Sinh 09/09/2026: lan thang CT_BRAND vao card.set_brand
                      lam SystemExit "Khong biet thuong hieu 'blog'", giet ca
                      `prepare_article()" — bat HAI cho lam sai giong het nhau trong cung
                      mot lan chay lai (image_prepare.py va image_brand.py).
@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT))
 # ------------------------------------------------------------- env_load.brand_dai
 def test_brand_dai_doi_dung_ca_hai_chieu():
     """CT_BRAND ('blog') phai ra 'donniechublog' — chinh loi bat 09/09/2026 (hai
-    cho trong image_brand.py truyen thang CT_BRAND vao card.dat_thuong_hieu,
+    cho trong image_brand.py truyen thang CT_BRAND vao card.set_brand,
     nem 'Khong biet thuong hieu blog' vi card.py chi biet slug DAI)."""
     import env_load
     cu = os.environ.get("CT_BRAND")
@@ -188,12 +188,12 @@ def _tin(td, ts, toa="x"):
 
 
 def test_gom_trung_gop_cung_su_kien_khac_dong_tu():
-    """Ca Cloverleaf kinh dien trong docstring cua gom_trung: Reuters viet
+    """Ca Cloverleaf kinh dien trong docstring cua gather_duplicate: Reuters viet
     'invests in', TechCrunch viet 'partners with' — mot su kien."""
     import scan_business as sb
     tin = [_tin("Nvidia invests in data center developer Cloverleaf Infrastructure", 100, "reuters"),
            _tin("Nvidia partners with data center developer Cloverleaf", 200, "techcrunch")]
-    ra = sb.gom_trung(tin)
+    ra = sb.gather_duplicate(tin)
     assert len(ra) == 1, [t["tieu_de"] for t in ra]
     assert ra[0]["so_bao"] == 2
     assert ra[0]["ts"] == 100, "phai giu ban som nhat"
@@ -206,24 +206,24 @@ def test_gom_trung_khong_gop_hai_tin_nguoc_nhau():
     import scan_business as sb
     tin = [_tin("Nvidia stock jumps", 100),
            _tin("Nvidia stock slides after Beijing bans chip purchases", 200)]
-    ra = sb.gom_trung(tin)
+    ra = sb.gather_duplicate(tin)
     assert len(ra) == 2, f"gop nham hai tin nguoc nhau: {[t['tieu_de'] for t in ra]}"
 
 
 def test_chuan_hoa_lam_khoa_dedup_on_dinh():
     import scan_business as sb
-    a = sb.chuan_hoa("Nvidia's Q3 Revenue Jumps 34%!")
-    b = sb.chuan_hoa("nvidia's  q3 revenue jumps 34%")
+    a = sb.standard_ify("Nvidia's Q3 Revenue Jumps 34%!")
+    b = sb.standard_ify("nvidia's  q3 revenue jumps 34%")
     assert a == b, f"{a!r} != {b!r}"
     assert a, "chuoi rong -> moi tin cung mot khoa"
-    assert sb.chuan_hoa("Nvidia buys X") != sb.chuan_hoa("Nvidia sells X")
+    assert sb.standard_ify("Nvidia buys X") != sb.standard_ify("Nvidia sells X")
 
 
 def test_ten_watchlist_theo_bien_gioi_tu():
     """Docstring khai 'arm' khong duoc khop 'harm'."""
     import scan_business as sb
-    assert sb.ten_watchlist("Arm raises guidance") is not None
-    assert sb.ten_watchlist("New harm reduction policy for AI") is None
+    assert sb.name_watchlist("Arm raises guidance") is not None
+    assert sb.name_watchlist("New harm reduction policy for AI") is None
 
 
 # ------------------------------------------------------------- cap_fallback

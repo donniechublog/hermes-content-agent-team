@@ -259,9 +259,9 @@ def test_nguong_phan_biet_chu_in_san_voi_anh_chup():
     """Hai loại dải giả phải rơi đúng hai phía ngưỡng NEN_ROI_CHU, không thì
     các test dưới đo sai thứ."""
     import card
-    e = card._nang_luong_hang(_canvas_vung(1080, 400, [(0, 199, "chu"), (200, 399, "anh")]))
-    assert min(e[20:180]) >= card.NEN_ROI_CHU, min(e[20:180])
-    assert card.NEN_ROI_LANG <= max(e[220:380]) < card.NEN_ROI_CHU, max(e[220:380])
+    e = card._capability_flow_rank(_canvas_vung(1080, 400, [(0, 199, "chu"), (200, 399, "anh")]))
+    assert min(e[20:180]) >= card.BACKGROUND_FALL_TEXT, min(e[20:180])
+    assert card.BACKGROUND_FALL_LANG <= max(e[220:380]) < card.BACKGROUND_FALL_TEXT, max(e[220:380])
 
 
 def test_moc_nen_dac_leo_len_khoang_lang_tren_chu_in_san():
@@ -269,7 +269,7 @@ def test_moc_nen_dac_leo_len_khoang_lang_tren_chu_in_san():
     ảnh chụp. Nền đặc phủ trọn chữ in sẵn, dải chuyển nằm trong khe lặng."""
     import card
     cv = _canvas_vung(1080, 1350, [(0, 600, "anh"), (700, 980, "chu")])
-    dac, top = card._moc_nen_dac(cv, 990)
+    dac, top = card._timestamp_background_solid(cv, 990)
     assert 690 <= dac <= 700, dac
     assert 600 <= top < dac, (top, dac)
 
@@ -279,7 +279,7 @@ def test_moc_nen_dac_khe_hep_ngay_duoi_chu_in_san_khong_duoc_dung():
     của ta. Dừng ở khe đó là tiêu đề in sẵn lộ nguyên — phải leo qua."""
     import card
     cv = _canvas_vung(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
-    dac, top = card._moc_nen_dac(cv, 1136)
+    dac, top = card._timestamp_background_solid(cv, 1136)
     assert 770 <= dac <= 780, dac
 
 
@@ -289,7 +289,7 @@ def test_moc_nen_dac_cham_tran_thi_ve_khoang_lang_khong_cat_chu_in_san():
     dải chuyển cắt nửa chữ — phải quay về khe lặng cao nhất đã gặp."""
     import card
     cv = _canvas_vung(1080, 1350, [(0, 480, "anh"), (500, 560, "chu"), (690, 980, "chu")])
-    dac, top = card._moc_nen_dac(cv, 650)
+    dac, top = card._timestamp_background_solid(cv, 650)
     assert dac == 650, dac
     assert 561 <= top < dac, (top, dac)                  # dai chuyen khong cham dai chu 500-560
 
@@ -297,24 +297,24 @@ def test_moc_nen_dac_cham_tran_thi_ve_khoang_lang_khong_cat_chu_in_san():
 def test_moc_nen_dac_chu_ta_nam_duoi_khoang_lang_rong_thi_giu_nguyen_vi_tri():
     import card
     cv = _canvas_vung(1080, 1350, [(0, 500, "anh")])
-    dac, top = card._moc_nen_dac(cv, 990)
-    assert dac == 990 and 990 - card.NEN_ROI_TAN <= top < 990, (dac, top)
+    dac, top = card._timestamp_background_solid(cv, 990)
+    assert dac == 990 and 990 - card.BACKGROUND_FALL_SPREAD <= top < 990, (dac, top)
 
 
 def test_moc_nen_dac_khong_co_khoang_lang_thi_dung_o_tran_40_phan_tram():
     import card
     cv = _canvas_vung(1080, 1350, [(0, 1349, "chu")])
-    dac, top = card._moc_nen_dac(cv, 990)
-    assert dac == int(1350 * card.NEN_ROI_TRAN), dac
-    assert top == dac - card.NEN_ROI_TAN_CUNG, top
+    dac, top = card._timestamp_background_solid(cv, 990)
+    assert dac == int(1350 * card.BACKGROUND_FALL_CEILING), dac
+    assert top == dac - card.BACKGROUND_FALL_SPREAD_SAME, top
 
 
 def test_carousel_anh_roi_phu_tron_chu_in_san_giu_anh_phia_tren():
     import carousel
-    carousel.dat_nen("toi")
+    carousel.set_background("toi")
     cv = _canvas_vung(carousel.W, carousel.H, [(0, 600, "anh"), (700, 980, "chu")])
     truoc = cv.copy()
-    carousel._lop_neu_can(cv, cv.convert("RGB"), 1030, carousel.H, anh_roi=True)
+    carousel._layer_if_can(cv, cv.convert("RGB"), 1030, carousel.H, anh_roi=True)
     for y in (705, 800, 975, 1100, carousel.H - 1):
         assert _la_nen(cv, y, carousel.BG), (y, cv.getpixel((0, y)))
     assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300)), "anh phia tren khong duoc dong"
@@ -324,19 +324,19 @@ def test_carousel_anh_roi_phu_tron_chu_in_san_giu_anh_phia_tren():
 
 def test_carousel_anh_sach_giu_nguyen_lop_mo_cu():
     import carousel
-    carousel.dat_nen("toi")
+    carousel.set_background("toi")
     canvas = Image.new("RGBA", (carousel.W, carousel.H), (10, 10, 10, 255))
     truoc = canvas.copy()
-    carousel._lop_neu_can(canvas, canvas.convert("RGB"), 1000, carousel.H)
+    carousel._layer_if_can(canvas, canvas.convert("RGB"), 1000, carousel.H)
     assert canvas.tobytes() == truoc.tobytes(), "nen toi deu du tuong phan -> khong phu gi"
 
 
 def test_card_nen_chu_nghiem_phu_tron_chu_in_san():
     import card
-    card.dat_thuong_hieu("dcgr")
+    card.set_brand("dcgr")
     cv = _canvas_vung(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
     truoc = cv.copy()
-    card._nen_chu_nghiem(cv, 1160)
+    card._text_bg_strict(cv, 1160)
     for y in (790, 1000, 1499):
         assert _la_nen(cv, y, card.BG), (y, cv.getpixel((0, y)))
     assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300))

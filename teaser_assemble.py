@@ -43,10 +43,10 @@ CLOSING = ("Xem bài chi tiết ở còm, nếu không thấy còm vui lòng và
 # Do dai khong phai thuoc do chat luong: 300 tu dien dat dung va du thi tot hon
 # 700 tu lan man. Nen khoang mong muon chi la loi NHAC o stderr, script chi chan
 # khi hong that.
-DAI_MONG_MUON = (500, 800)
-DAI_HONG = (200, 2000)
+LONG_THIN_LATE = (500, 800)
+LONG_BROKEN = (200, 2000)
 
-CUM_TUONG_THUAT = [
+PHRASE_WALL_TECHNIQUE = [
     "bai viet", "bai bao", "bai nay", "bai cung", "bai con", "bai chi ra",
     "bai nhan manh", "bai de cap", "bai phan tich", "bai liet ke",
     "trong bai", "cua bai", "o bai", "theo bai",
@@ -57,14 +57,14 @@ CUM_TUONG_THUAT = [
 ]
 
 
-def _bo_dau(text: str) -> str:
+def _drop_mark(text: str) -> str:
     """Bo dau tieng Viet de so khop khong phu thuoc dau va chu hoa."""
     text = text.replace("đ", "d").replace("Đ", "D")
     nfd = unicodedata.normalize("NFD", text)
     return "".join(c for c in nfd if unicodedata.category(c) != "Mn").lower()
 
 
-def tim_giong_tuong_thuat(title: str, paragraphs: list) -> list:
+def find_voice_wall_technique(title: str, paragraphs: list) -> list:
     """Tra ve [(vi tri, cum tu, trich doan)] cho moi cho dinh giong tuong thuat.
 
     Chi soi tieu de va cac doan Cape viet — KHONG soi CLOSING, vi cau ket co
@@ -73,8 +73,8 @@ def tim_giong_tuong_thuat(title: str, paragraphs: list) -> list:
     loi = []
     muc = [("tieu de", title)] + [(f"doan {i}", p) for i, p in enumerate(paragraphs, 1)]
     for vi_tri, van in muc:
-        phang = _bo_dau(van or "")
-        for cum in CUM_TUONG_THUAT:
+        phang = _drop_mark(van or "")
+        for cum in PHRASE_WALL_TECHNIQUE:
             for m in re.finditer(r"\b" + re.escape(cum) + r"\b", phang):
                 a = max(m.start() - 30, 0)
                 loi.append((vi_tri, cum, "..." + (van or "")[a:m.end() + 30] + "..."))
@@ -89,20 +89,20 @@ _TU_CHUNG = {"cua", "va", "voi", "cho", "the", "nhu", "khi", "mot", "cac", "nay"
              "the", "moi", "tai", "tu", "den", "ra", "vao", "la", "co"}
 
 
-def _muc_khong_duoc_nhac(outline: list, paragraphs: list) -> list:
+def _item_no_ok_mention(outline: list, paragraphs: list) -> list:
     """Cac muc h2 cua dan y ma teaser khong nhac lay mot tu dac trung nao."""
     if not outline:
         return []
     # So theo TU NGUYEN VEN, khong phai chuoi con: tieng Viet phan lon la am
     # tiet 2-4 ky tu nen so chuoi con thi "tre" trung vao "truoc", "tai" trung
     # vao "lai" — cong se im lang du muc that su bi bo.
-    than = set(re.findall(r"[a-z0-9]+", _bo_dau(" ".join(paragraphs))))
+    than = set(re.findall(r"[a-z0-9]+", _drop_mark(" ".join(paragraphs))))
     ra = []
     for o in outline:
         if (o or {}).get("level") != "h2":
             continue
         chu = str(o.get("text") or "").strip()
-        neo_tu = [w for w in re.findall(r"[a-z0-9]+", _bo_dau(chu))
+        neo_tu = [w for w in re.findall(r"[a-z0-9]+", _drop_mark(chu))
                   if len(w) >= 3 and w not in _TU_CHUNG]
         if neo_tu and not any(w in than for w in neo_tu):
             ra.append(chu[:70])
@@ -127,22 +127,22 @@ def assemble(title: str, paragraphs: list, images: list,
         raise ValueError("Can it nhat 1 doan van")
     sotu = sum(len(p.split()) for p in paragraphs)
     if not bo_qua_kiem_tra:
-        if sotu < DAI_HONG[0]:
+        if sotu < LONG_BROKEN[0]:
             raise ValueError(
                 f"Chi {sotu} tu — qua mong de phu het cac muc trong outline.\n"
                 "  Doc lai outline va trien khai nhung y con thieu.\n"
                 "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
-        if sotu > DAI_HONG[1]:
+        if sotu > LONG_BROKEN[1]:
             raise ValueError(
                 f"Toi {sotu} tu — dang ke lai ca bai chu khong con la loi moi doc.\n"
                 "  Cat bot dien giai, giu so lieu va y chinh.\n"
                 "(Neu that su can giu, chay lai voi --bo-qua-kiem-tra)")
-        if not (DAI_MONG_MUON[0] <= sotu <= DAI_MONG_MUON[1]):
-            print(f"[nhac] {sotu} tu, ngoai khoang mong muon {DAI_MONG_MUON[0]}-"
-                  f"{DAI_MONG_MUON[1]} — khong sao neu dien dat dung va du.",
+        if not (LONG_THIN_LATE[0] <= sotu <= LONG_THIN_LATE[1]):
+            print(f"[nhac] {sotu} tu, ngoai khoang mong muon {LONG_THIN_LATE[0]}-"
+                  f"{LONG_THIN_LATE[1]} — khong sao neu dien dat dung va du.",
                   file=sys.stderr)
     if not bo_qua_kiem_tra:
-        loi = tim_giong_tuong_thuat(title, paragraphs)
+        loi = find_voice_wall_technique(title, paragraphs)
         if loi:
             chi_tiet = "\n".join(
                 f"  - {vi_tri}: cum \"{cum}\"\n      {trich}" for vi_tri, cum, trich in loi)
@@ -176,7 +176,7 @@ def assemble(title: str, paragraphs: list, images: list,
         # truoc 06/09/2026 khong cong nao doi chieu — teaser dai dung so tu ma
         # bo han mot nua bai van qua sach. CHI NHAC, khong chan: mot muc h2 co
         # the duoc dien dat bang tu khac han, chan cung se chan oan.
-        bo_sot = _muc_khong_duoc_nhac(outline, paragraphs)
+        bo_sot = _item_no_ok_mention(outline, paragraphs)
         if bo_sot:
             print("[nhac] dan y co muc chua thay nhac toi trong teaser:\n  - "
                   + "\n  - ".join(bo_sot[:5])
