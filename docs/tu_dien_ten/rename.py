@@ -226,6 +226,56 @@ def _va_re_export(root: Path, mod_full: str, old: str, new: str) -> int:
     return n
 
 
+BANG_MODULE = {}            # base cũ -> base mới của MỌI module đã/đang đổi (import cục bộ còn tên cũ)
+
+
+def _va_import_cu(root: Path, cu_full: str, moi_full: str) -> int:
+    """rope bo sot `import <cũ>` NAM TRONG HAM (test_cong_chan: `import anh_chuan_bi
+    as cb` o 3 ham, lo 1) — chay duoc nho shim nhung patch.object/alias khong con
+    nhan ra module. Doi bang token trong moi tep co cau import tro toi ten cu:
+    NAME==base_cu khong sau dau cham (`import cũ`, `from chuan_bi import cũ`, `cũ.x`),
+    hoac sau `.` ma truoc nua la ten goi (`chuan_bi.cũ`)."""
+    cu_b, moi_b = cu_full.split(".")[-1], moi_full.split(".")[-1]
+    goi = cu_full.split(".")[0] if "." in cu_full else None
+    if cu_b == moi_b:
+        return 0
+    n = 0
+    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+        if f.stem == cu_b:                                   # chinh shim
+            continue
+        s = f.read_text(encoding="utf-8")
+        # Chi xet PHAN MA cua dong import (bo chu thich: test_phien_browser co
+        # `from tam import x  # runner chung` + bien `with … as chung` -> doi nham).
+        dong = s.splitlines()
+        cau_import = [re.sub(r"#.*", "", d) for d in dong if re.match(r"\s*(?:import|from)\b", d)]
+        if not any(re.search(rf"\b{re.escape(cu_b)}\b", d) for d in cau_import):
+            continue
+        # Ten TRAN `cũ` chi duoc coi la module khi co import RANG BUOC ten do
+        # (`import cũ`, `from goi import cũ` — khong `as`); con lai chi doi trong cau import.
+        rang_buoc = False
+        for d in cau_import:
+            m = (re.match(r"\s*import\s+(.*)$", d) if not goi
+                 else re.match(rf"\s*from\s+{re.escape(goi)}\s+import\s+\(?(.*?)\)?\s*$", d))
+            if m and any(p.strip() == cu_b for p in m.group(1).split(",")):
+                rang_buoc = True
+
+        def _qt(pp, p, t, nx):
+            # Chi dung import hoac dung `cũ.x` — KHONG dung tham so/kwarg trung ten
+            # (`vai="ethan"` la NAME token nhung khong phai module).
+            if t.string != cu_b:
+                return None
+            la_import = re.match(r"\s*(?:import|from)\b", dong[t.start[0] - 1]) is not None
+            if not la_import and not (rang_buoc and nx is not None and nx.string == "."):
+                return None
+            if p is None or p.string != ".":
+                return moi_b
+            if goi and pp is not None and pp.string == goi:
+                return moi_b
+            return None
+        n += _doi_token(f, _qt)
+    return n
+
+
 def _khoa_dict_thuan(root: Path) -> set:
     """Chi cac khoa dict/JSON that (m["x"], .get("x"), "x":), KHONG gom ten module —
     dung de quyet doi `"ten_module_cu"` tran trong tests (lo 2: task body co
@@ -270,8 +320,23 @@ def _thay_trong_chuoi_py(path: Path, thay: list) -> int:
         return 0
     lines = src.splitlines(True)
     n = 0
+    fmid = getattr(tokenize, "FSTRING_MIDDLE", None)     # Python >= 3.12: f-string tach token
     # duyệt ngược để offset không trôi
     for t in reversed(toks):
+        if t.type == fmid:
+            # Phan chu cua f-string (dre_chuan_bi: f"… tim_anh_them.py {id}" — lo 2 bo sot).
+            # Vi tri token sai khi co `{{`/`}}` (cpython#104825): chi doi khi lat cat
+            # tren dong khop dung chuoi token, khong thi bo qua.
+            (r0, c0), (r1, c1) = t.start, t.end
+            if r0 != r1 or lines[r0 - 1][c0:c1] != t.string:
+                continue
+            moi = t.string
+            for pat, rep in thay:
+                moi, k = re.subn(pat, rep, moi)
+                n += k
+            if moi != t.string:
+                lines[r0 - 1] = lines[r0 - 1][:c0] + moi + lines[r0 - 1][c1:]
+            continue
         if t.type != tokenize.STRING:
             continue
         (r0, c0), (r1, c1) = t.start, t.end
@@ -303,6 +368,9 @@ def _alias_module(src: str, ten_mod: set) -> set:
     chinh ten do, `import X as Y`, `from pkg import X [as Y]` (lo 2:
     patch.object(vong_bu, "tai_va_loc") khong duoc doi vi chi biet `import X as Y`)."""
     alias = set(ten_mod)
+    # Ten CU cua module (import cuc bo rope bo sot, xem _va_import_cu) cung la alias.
+    ten_mod = set(ten_mod) | {cu for cu, moi in BANG_MODULE.items() if moi in ten_mod}
+    alias |= ten_mod
     for M in ten_mod:
         for m in re.finditer(rf"^\s*import\s+(?:[\w.]+\.)?{re.escape(M)}(?:\s+as\s+(\w+))?\s*(?:#.*)?$", src, re.M):
             if m.group(1):
@@ -386,6 +454,11 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
         thay_dong.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*([\w.]+)\s*,\s*[\"']){re.escape(old)}(?=[\"'])", new, re_exp))
         thay_dong.append((rf"(patch\([\"']([\w.]*)\.){re.escape(old)}(?=[\"'])", new, re_exp))
     hang_tran = []
+    for old, new, _kind in defs:
+        # Ten ham NHIEU TU (`_vong_thuc_the`) dung tran o cuoi chuoi soi nguon
+        # (`= _vong_thuc_the"` — khong co ngoac): doi trong test soi nguon.
+        if "_" in old.strip("_"):
+            hang_tran.append((rf"(?<![\w$]){re.escape(old)}(?![\w])", new))
     for old, new in consts:
         # `$` loại trừ biến shell trong chuỗi test ("$VAI" của quet_daily_scan.sh
         # không phải hằng Python — pilot 13/09 đã đổi nhầm thành "$ROLE").
@@ -533,6 +606,10 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
         k = _va_ngoai_rope_module(root, mod, base_moi)
         _log(f"  module {mod} -> {base_moi}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
         res_path_moi = "/".join(mod.split(".")[:-1] + [base_moi]) + ".py"
+        BANG_MODULE[mod.split(".")[-1]] = base_moi
+        k = _va_import_cu(root, mod, ".".join(mod.split(".")[:-1] + [base_moi]))
+        if k:
+            _log(f"  import cục bộ còn tên cũ: {k} chỗ")
         _va_chuoi(root, mod, ".".join(mod.split(".")[:-1] + [base_moi]), defs, consts)
         shim = root / res_path
         if not shim.exists():
@@ -566,7 +643,12 @@ def main() -> int:
         BANG_TOAN_CUC.update({o: n for o, n, _k in ds})
     for _m, cs in plan["consts"].items():
         BANG_TOAN_CUC.update(dict(cs))
-    py = str(root / "venv/bin/python") if (root / "venv/bin/python").exists() else sys.executable
+    # Module da doi o lo truoc: shim `<cũ>.py` ghi "tên cũ của `<mới>.py`".
+    for shim in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+        m = re.match(r'"""SHIM tạm \(LOW-50\): tên cũ của `(\w+)\.py`', shim.read_text(encoding="utf-8"))
+        if m:
+            BANG_MODULE[shim.stem] = m.group(1)
+    py =str(root / "venv/bin/python") if (root / "venv/bin/python").exists() else sys.executable
     if a.package:
         moi = td.dich_module(a.package)[0]
         _log(f"== gói {a.package} -> {moi}")

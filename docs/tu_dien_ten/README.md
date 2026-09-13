@@ -40,6 +40,34 @@ module mới (`role = sorted(...)` trong test_vai) → **mục F2**; `"$VAI"` bi
 bị đổi thành `"$ROLE"` → lookbehind `$`; test viết regex `vai\.so_anh_toi_thieu\(`
 → chấp nhận `\.`/`\(`.
 
+Lô 1 (8 module lõi, 126 tệp) và lô 2 (26 module ảnh/nguồn, gồm 5 module con
+`chuan_bi/`) — mỗi lô vài vòng vá công cụ trước khi xanh 84/84. Quy tắc mới đã
+vào `rename.py`, mỗi cái là một ca đo được:
+
+- **rope bỏ sót `import cũ` nằm trong hàm** (`import anh_chuan_bi as cb` ở 3 hàm
+  test_cong_chan) — chạy được nhờ shim, nhưng `patch.object(cb, …)` không nhận
+  ra module → `_va_import_cu`: đổi bằng token, chỉ trên dòng import hoặc `cũ.x`
+  khi tệp có import ràng buộc tên trần đó (không đụng kwarg `vai="ethan"`, không
+  đụng `with … as chung` — chú thích trên dòng import bị bỏ trước khi xét).
+- **Module RE-EXPORT** (`image_prepare` re-export `_luu_crop` của
+  `chuan_bi.tai_loc`, `vong_bu` re-export `tai_va_loc`): rope không đổi
+  `cb._luu_crop` trong test → `_va_re_export` (token qua alias của module
+  re-export) + `patch.object(vong_bu, "…")` nhận module re-export làm đối tượng.
+- **Hằng MỘT TỪ không đổi trần trong chuỗi** — `CAO`/`NGUON`/`RONG` là chữ Việt
+  thường gặp (`"BAO CAO BI CAT"`, `"NGUON KHONG LAY DUOC"`, JS `Y0+CAO`); lô 2
+  đổi bừa làm test_bang_nova/test_render_edu đỏ. Hằng có `_` chỉ đổi trần trong
+  test soi nguồn; còn lại phải có `mod.` phía trước.
+- **f-string tách token ở Python 3.12** (`FSTRING_MIDDLE`) — `f"… tim_anh_them.py
+  {id}"` trong dre_chuan_bi bị bỏ sót; chỉ đổi khi lát cắt trên dòng khớp đúng
+  chuỗi token (vị trí sai khi có `{{`, cpython#104825).
+- `__import__("loai_tin")` rope không nhìn thấy → đổi tay thành import tĩnh
+  TRƯỚC khi chạy lô (28d2d24); `grep __import__(` trước mỗi lô.
+- Chuỗi soi nguồn không ngoặc: `src.index("def _vong_thuc_the")`, `= _vong_thuc_the"`
+  → mẫu `def cũ\b` và tên nhiều từ trần (có `_`) trong test soi nguồn/thân task.
+- Bẫy git: rope tự `git mv` (đã stage) → `git commit` chỉ định tệp docs vẫn kéo
+  theo 26 rename đang stage. Trước khi commit công cụ giữa lô: `git reset` hoặc
+  `git commit -- <đường dẫn>` tường minh.
+
 `tudien.py` là thư viện chung của `gen.py` và `rename.py` — bảng in ra và cái sẽ
 đổi luôn là một bộ. Tên module mới hết shadow được kiểm ở **F2** (tên biến/tham
 số/def/alias trùng tên tệp mới trong tệp có import module đó).
