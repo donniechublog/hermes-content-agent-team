@@ -496,7 +496,8 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     if mod_moi and mod_moi != mod_cu:
         cu_py = mod_cu.split(".")[-1] + ".py"
         moi_py = mod_moi.split(".")[-1] + ".py"
-        pat = [(rf"(?<![\w/])(?:{re.escape(mod_cu.split('.')[-1])})\.py\b", moi_py)]
+        # Cho phep `/` truoc ten: systemd `%h/content-team/nhat_ky_web.py` (lo 4 bo sot).
+        pat = [(rf"(?<![\w])(?:{re.escape(mod_cu.split('.')[-1])})\.py\b", moi_py)]
         for duoi in DUOI_VAN_BAN:
             for f in root.rglob(duoi):
                 r = str(f.relative_to(root))
