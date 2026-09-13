@@ -77,6 +77,34 @@ def test_bao_ve_tu_khoa_loc_theo_tu_khoa_khong_theo_su_kien_goc():
     assert mien == {"https://a.example", "https://c.example"}, ra
 
 
+def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
+    """Đo thật 13/09/2026 (test thử Kite trên tin Anthropic/Moonshot): query
+    "Anthropic" — dù chỉ là tên hãng tiếng Anh, không có dấu — vẫn khiến Bing
+    News trả về CẢ báo tiếng Việt (cafebiz.vn, thanhnien.vn...) vì đủ từ khoá
+    khớp tiêu đề. `co_tieng_viet(tu_khoa)` ở đầu hàm chỉ chặn được TỪ KHOÁ đầu
+    vào — không chặn được đây. LUAT_ANH §1.2d: "tìm kiếm bằng tiếng Anh hoặc
+    tiếng Trung, tuyệt đối ko được dùng ngôn ngữ khác" — phải lọc trên chính
+    TIÊU ĐỀ bài trả về."""
+    items = [
+        ("https://en.example/1", "Anthropic accuses Moonshot of routing requests to Claude"),
+        ("https://vn.example/2", "Anthropic tố Moonshot định tuyến yêu cầu qua Claude"),
+    ]
+
+    def _tai_gia(url, timeout=20):
+        return _RSS(items)
+
+    def _head_gia(url, headers=None, timeout=None, follow_redirects=None):
+        import types
+        return types.SimpleNamespace(status_code=200, url=url)
+
+    with mock.patch.object(nguon_bai, "_tai", side_effect=_tai_gia), \
+         mock.patch("httpx.head", side_effect=_head_gia), \
+         mock.patch("quet_chung.url_an_toan", return_value=True):
+        ra = nguon_bai.bao_ve_tu_khoa("Anthropic", so=6)
+
+    assert {r["toa_soan"] for r in ra} == {"https://en.example"}, ra
+
+
 def test_bao_ve_tu_khoa_khong_gioi_han_thoi_gian():
     """LUAT_ANH §1.2d (13/09/2026): "được tìm không giới hạn thời gian, sự
     kiện". Một bài rất CŨ (2019) về đúng từ khoá vẫn phải được nhận — mặc định
