@@ -29,7 +29,8 @@ from tudien import TuDien, bang_doi_ten                      # noqa: E402
 
 # Tệp ngoài .py được vá `<cũ>.py` -> `<mới>.py`. KHÔNG vá lịch sử (nhat_ky/,
 # NHAT_KY_SU_CO.md) và không vá chính từ điển.
-DUOI_VAN_BAN = ("*.md", "*.json", "*.sh", "*.yml", "*.yaml", "*.txt")
+DUOI_VAN_BAN = ("*.md", "*.json", "*.sh", "*.yml", "*.yaml", "*.txt",
+                "*.service", "*.timer")        # systemd trong repo (lô 4: duyet_giao_viec.service)
 BO_VA = ("nhat_ky/", "NHAT_KY_SU_CO.md", "docs/tu_dien_ten/", "hermes-agent/", ".git/", "venv/")
 
 SHIM = '''"""SHIM tạm (LOW-50): tên cũ của `{new}.py`. Mọi thứ nằm ở `{new}.py`.
