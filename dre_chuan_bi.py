@@ -111,7 +111,9 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     L.append("Luật điền: mỗi slide MỘT ảnh, MỘT ý; `text` HOẶC `quote`+`attrib`; mỗi mã ảnh dùng đúng "
              "một lần; chart chỉ ở slide thân (script tự dán full bề ngang); ảnh NGANG phải `ghep` "
              "hoặc `cat_ngang`; ảnh có mặt phải có `nhan_vat`; `nen` sang khi đa số ảnh sáng/nền trắng (ảnh nổi hơn trên màn sáng), toi khi ảnh tối hoặc lẫn lộn. Tiếng Việt có dấu, không em-dash, "
-             "câu quote phải DỊCH. Bỏ các slide mẫu không dùng — khung trên chỉ minh hoạ cú pháp.")
+             "câu quote phải DỊCH. Ảnh ⚠️ RỐI (chữ in sẵn, đồ hoạ nhồi, cắt ghép) chỉ dùng khi HẾT "
+             "ảnh sạch — cổng chặn bắt đổi nếu còn ảnh sạch chưa dùng. Bỏ các slide mẫu không "
+             "dùng — khung trên chỉ minh hoạ cú pháp.")
     L.append("Khung kể: bìa HOOK (nghịch lý/con số) → chuyện gì vừa xảy ra → con số gây sốc → "
              "ý nghĩa thật → đối thủ/diễn biến → cái cần theo dõi (không chốt cụt).")
     L.append("")

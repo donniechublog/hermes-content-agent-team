@@ -104,6 +104,7 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
                                 nc.chu_bai_cua(m, wd), ""))
     _kiem_chu(spec, kieu, loi)
     loi += nc.kiem_da_dung_nhieu(anh, [(x, x) for x in (ma, ma2) if x], m)
+    loi += nc.kiem_anh_roi(anh, {x: n for x, n in ((ma, "anh"), (ma2, "anh2")) if x}, m)
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
     # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
     hook_hay_title = str(spec.get("hook") or spec.get("title") or "")
@@ -113,7 +114,8 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     canh = nc.kiem_so_tren_anh(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)
     if loi:
         return None, loi, canh
-    return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None}, [], canh
+    return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None,
+            "roi": bool(a.get("roi") or (ma2 and anh[ma2].get("roi")))}, [], canh
 
 
 def main() -> int:
@@ -147,6 +149,8 @@ def main() -> int:
         args += ["--nhan-vat", str(spec["nhan_vat"])]
     if a.bo_qua_dau:
         args.append("--bo-qua-dau")
+    if kq.get("roi"):
+        args.append("--roi")
     if kq["kieu"] == "quote":
         hook = str(spec["hook"]).strip()
         args += ["--ratio", "4:5", "--title", hook, "--tagline", str(spec["tagline"]).strip().upper(),

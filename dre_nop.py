@@ -176,6 +176,9 @@ def _giai_muc(bo: _Boi, muc: dict, nhan: str, la_bia: bool) -> dict | None:
         return None
     if ra is None:
         return None
+    # Anh roi buoc phai dung: carousel.py dat nen chu dac thay lop mo (LOW-47).
+    if any((bo.anh.get(x) or {}).get("roi") for x in (list(ghep) if ghep else [ma])):
+        ra["roi"] = True
     for k in CHU_GIU:
         if muc.get(k) is not None:
             ra[k] = muc[k]
@@ -249,6 +252,8 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     chu_slide = " ".join(str(x.get(k) or "") for x in [cover] + list(slides)
                          for k in ("hook", "text", "quote", "label", "attrib"))
     canh = nc.kiem_so_tren_anh(chu_slide, m, wd)
+    # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
+    loi += nc.kiem_anh_roi(bo.anh, bo.da_dung, m)
     return ra, loi, canh, bo.dung_anh
 
 
