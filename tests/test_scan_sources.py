@@ -2,7 +2,7 @@
 """`scan_sources.seen_keys()` — URL nào coi là "đã dùng", không được gợi ý lại.
 
 Audit F2 (survey ngoài phạm vi) nêu: `(ROOT / "drafts").glob("*.json")` khớp cả
-`<id>.meta.json` lẫn `<id>.json`, trong khi những chỗ khác (theo_doi_9router.py,
+`<id>.meta.json` lẫn `<id>.json`, trong khi những chỗ khác (monitor_9router.py,
 ada_prepare.py, approve_service.py) đều LỌC BỎ `.meta.json`/`.img.json`/
 `.writer.json` khi quét `drafts/`. Nhìn thoáng qua giống một glob quên lọc.
 
@@ -54,7 +54,7 @@ def _voi_moi_truong(tmp, ham):
 
 
 def test_task_dang_giao_chi_co_meta_json_van_tinh_la_da_dung():
-    """.meta.json duoc ghi NGAY luc giao task (duyet_chon_tin.write_meta), TRUOC
+    """.meta.json duoc ghi NGAY luc giao task (approve_pick.write_meta), TRUOC
     khi vai viet xong caption (.json). URL cua no PHAI bi coi la da dung — day
     la ly do that scan_sources khong loc .meta.json ra khoi glob."""
     def _chay(drafts, state):

@@ -479,9 +479,9 @@ def test_task_body_khong_con_bao_kite_ve_vector_hoan_toan():
     """Câu "ve vector hoan toan" trong task body là CHÍNH HỆ THỐNG bảo vai làm
     đúng thứ §1.2f cấm: vai đọc body TRƯỚC khi chạy `kite_prepare.py`, nên nó
     vào vòng với định kiến "bộ này không có ảnh" dù brief tìm lại được."""
-    import duyet_bai
-    src = pathlib.Path(duyet_bai.__file__).read_text(encoding="utf-8")
-    than = src[src.index("def tao_task_kite"):][:3500]
+    import approve_post
+    src = pathlib.Path(approve_post.__file__).read_text(encoding="utf-8")
+    than = src[src.index("def create_task_kite"):][:3500]
     assert "ve vector hoan toan" not in than, "task body van bao Kite ve vector"
     assert "CHAY LAI vong tim" in than, than[-600:]
 

@@ -163,7 +163,7 @@ def main():
     else:
         lines.append(f"<i>Cả {len(now)} model đều khỏe.</i>")
 
-    publish.gui_topic("\n".join(lines), "ada")
+    publish.send_topic("\n".join(lines), "ada")
     if not a.quiet:
         print(f"\nDa gui canh bao: {len(changes)} thay doi.")
 

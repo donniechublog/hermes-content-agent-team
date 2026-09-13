@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
-import duyet_giao_viec as dg                                 # noqa: E402
+import approve_dispatch as dg                                 # noqa: E402
 import role                                                   # noqa: E402
 
 TRAN_BASH_GIAY = 300          # bash tool cua hermes cat o ~300s (t_24b214a6: exit 124)
@@ -36,13 +36,13 @@ def test_vai_anh_40m_vai_khac_25m():
 
 def test_kanban_create_truyen_max_runtime_theo_vai():
     goi = {}
-    cu = (dg.hermes_adapter.tao_task, dg.chuan_assignee)
-    dg.hermes_adapter.tao_task = lambda *a, **k: (goi.update(k) or ("t_x", None))
-    dg.chuan_assignee = lambda a: (a, None)               # khong can profile that
+    cu = (dg.hermes_adapter.create_task, dg.standard_assignee)
+    dg.hermes_adapter.create_task = lambda *a, **k: (goi.update(k) or ("t_x", None))
+    dg.standard_assignee = lambda a: (a, None)               # khong can profile that
     try:
         tid, loi = dg.kanban_create("Anh: tin X", "ethan", "than")
     finally:
-        dg.hermes_adapter.tao_task, dg.chuan_assignee = cu
+        dg.hermes_adapter.create_task, dg.standard_assignee = cu
     assert tid == "t_x" and loi is None, (tid, loi)
     assert goi.get("max_runtime") == "40m", goi
 
@@ -52,7 +52,7 @@ def test_bat_bien_hen_gio_trong_nho_hon_hen_gio_ngoai():
     assert cb.WAIT_SLOT_SECONDS < TRAN_BASH_GIAY
     # canh bao "chay lau" phai den TRUOC khi hermes giet, voi MOI vai
     for slug in role.ROLE:
-        assert dg.NGUONG_TREO_PHUT < _phut(role.max_runtime_for(slug)), slug
+        assert dg.THRESHOLD_STALLED_MINUTES < _phut(role.max_runtime_for(slug)), slug
 
 
 def test_cho_luot_het_gio_thi_thoat_co_cau_bao_dinh_ky():

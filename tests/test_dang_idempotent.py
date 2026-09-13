@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """`publish()` khong duoc dang MOT PHAN NAO len channel hai lan (issue E5).
 
-Su co goc: `_dang_nen` goi `publish()` roi MOI `mark_draft("published")`. Tien
+Su co goc: `_form_background` goi `publish()` roi MOI `mark_draft("published")`. Tien
 trinh chet giua hai buoc do (systemd Restart=always, thread daemon bi SIGTERM)
-thi bai ket o "publishing"; `_cuu_bai_ket_publishing` ha ve "publish_failed" va
+thi bai ket o "publishing"; `_rescue_article_end_publishing` ha ve "publish_failed" va
 moi bam Duyet lai -> `publish()` chay lai tu dau -> bai len channel LAN THU HAI.
 Doc gia thay hai bai giong het nhau.
 
@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import duyet_bai as db                                        # noqa: E402
+import approve_post as db                                        # noqa: E402
 
 
 class _FakeHttpx:
@@ -67,18 +67,18 @@ def _draft(tmp, **truong):
 
 
 def _chay(tmp, res_http=None):
-    """Goi publish() voi DRAFTS + httpx + _gui_chu gia. Tra (res, httpx, chu)."""
+    """Goi publish() voi DRAFTS + httpx + _send_text gia. Tra (res, httpx, chu)."""
     fake = _FakeHttpx(res_http or {"ok": True, "result": [{"message_id": 111}]})
     chu = []
-    cu_drafts, cu_httpx, cu_chu = db.DRAFTS, db.httpx, db._gui_chu
+    cu_drafts, cu_httpx, cu_chu = db.DRAFTS, db.httpx, db._send_text
     db.DRAFTS = Path(tmp)
     db.httpx = fake
-    db._gui_chu = lambda *a, **k: (chu.append(a) or
+    db._send_text = lambda *a, **k: (chu.append(a) or
                                    {"ok": True, "result": {"message_id": 222}})
     try:
         return db.publish("tok", "@kenh", "d1"), fake, chu
     finally:
-        db.DRAFTS, db.httpx, db._gui_chu = cu_drafts, cu_httpx, cu_chu
+        db.DRAFTS, db.httpx, db._send_text = cu_drafts, cu_httpx, cu_chu
 
 
 # ------------------------------------------------- chan CHU (bai chi co chu)

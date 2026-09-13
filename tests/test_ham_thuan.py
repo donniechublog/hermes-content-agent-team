@@ -8,7 +8,7 @@ lo ra khi hong:
   - `has_vietnamese`  quyet dinh co nem tieu de Viet vao Google News/Bing khong
                      (luat Ong Chu 05/09). Hong = hai tieng tim kiem vo ich va
                      Dre bo cuoc vi khong co anh.
-  - `_url_hop_le`    cong chan URL noi bo cho lenh /bai.
+  - `_url_valid`    cong chan URL noi bo cho lenh /bai.
   - `route`          topic nao thi vai nao tra loi.
   - `_HangFIFO`      thu tu tra loi chat trong mot phien; cau truc dong bo tu
                      viet, sinh ra sau su co 04/09 (Itachi doi Gin 108 giay).
@@ -92,31 +92,31 @@ def test_truy_van_bing_tu_choi_tieng_viet():
 
 # -------------------------------------------------------------- _url_hop_le
 def test_url_hop_le_chan_host_noi_bo():
-    import duyet_lenh as dl
+    import approve_command as dl
     for u in ["http://localhost:9130/", "http://127.0.0.1:9121/x",
               "http://10.0.0.5/", "http://192.168.1.61:20128/v1",
               "http://169.254.169.254/latest/meta-data/",
               "http://172.16.0.1/", "http://172.31.255.1/",
               "http://may.local/", "http://x.internal/"]:
-        assert dl._url_hop_le(u), f"khong chan host noi bo: {u}"
+        assert dl._url_valid(u), f"khong chan host noi bo: {u}"
 
 
 def test_url_hop_le_nhan_url_that_va_chan_scheme_la():
-    import duyet_lenh as dl
-    assert dl._url_hop_le("https://openai.com/index/abc") is None
-    assert dl._url_hop_le("http://vnexpress.net/bai-1.html") is None
+    import approve_command as dl
+    assert dl._url_valid("https://openai.com/index/abc") is None
+    assert dl._url_valid("http://vnexpress.net/bai-1.html") is None
     # 172.32 KHONG thuoc dai rieng (dai la 172.16-172.31)
-    assert dl._url_hop_le("http://172.32.0.1/") is None
+    assert dl._url_valid("http://172.32.0.1/") is None
     for u in ["file:///etc/passwd", "ftp://x.com/a", "khong-phai-url",
               "https://", "javascript:alert(1)"]:
-        assert dl._url_hop_le(u), f"khong chan scheme/URL la: {u}"
+        assert dl._url_valid(u), f"khong chan scheme/URL la: {u}"
 
 
 def test_chuan_hoa_url_bo_tracking_giu_phan_con_lai():
-    import duyet_lenh as dl
-    assert (dl._chuan_hoa_url("https://X.com/Bai?utm_source=a&id=7#doan2")
+    import approve_command as dl
+    assert (dl._standard_ify_url("https://X.com/Bai?utm_source=a&id=7#doan2")
             == "https://x.com/Bai?id=7")
-    assert (dl._chuan_hoa_url("https://x.com/a/") == dl._chuan_hoa_url("https://x.com/a"))
+    assert (dl._standard_ify_url("https://x.com/a/") == dl._standard_ify_url("https://x.com/a"))
 
 
 # -------------------------------------------------------------------- route
@@ -138,8 +138,8 @@ def test_route_topic_la_khong_ra_profile_nhung_van_co_phien():
 
 # ---------------------------------------------------------------- _HangFIFO
 def test_hang_fifo_dung_thu_tu_duoi_nhieu_luong():
-    import duyet_chat as dc
-    h = dc._HangFIFO()
+    import approve_chat as dc
+    h = dc.RankFIFCell()
     ra, khoa = [], threading.Lock()
 
     # lay so TUAN TU (dung nhu vong poll: mot thread nhan tin), roi tha ra
@@ -151,7 +151,7 @@ def test_hang_fifo_dung_thu_tu_duoi_nhieu_luong():
     for _ in range(5):
         h.release()
 
-    h2 = dc._HangFIFO()
+    h2 = dc.RankFIFCell()
     ts = []
     for i in range(5):
         so, _ = h2.lay_so()               # lay so trong thread chinh -> thu tu chac chan
@@ -173,8 +173,8 @@ def _phuc_vu(h, so, i, ra, khoa):
 
 def test_hang_fifo_bao_dung_so_nguoi_dang_doi():
     """Con so nay di thang vao tin 'dang tra loi N tin truoc' gui cho Ong Chu."""
-    import duyet_chat as dc
-    h = dc._HangFIFO()
+    import approve_chat as dc
+    h = dc.RankFIFCell()
     assert h.lay_so() == (0, 0)           # nguoi dau: khong ai truoc
     assert h.lay_so() == (1, 1)
     assert h.lay_so() == (2, 2)
@@ -228,11 +228,11 @@ def test_ten_watchlist_theo_bien_gioi_tu():
 
 # ------------------------------------------------------------- cap_fallback
 def test_cap_fallback_doc_tu_config_dang_chay():
-    """Hang so `FALLBACK_THAT` chi co cap (v4-flash -> deepseek-chat), von khong
+    """Hang so `FALLBACK_REAL` chi co cap (v4-flash -> deepseek-chat), von khong
     con profile nao dung tu khi doi combo 05/09/2026 — nen `m["fallback"]` luon
-    0 va `van_de()` khong bao gio danh thuc ai. Cap phai duoc dung TU config."""
+    0 va `still_for()` khong bao gio danh thuc ai. Cap phai duoc dung TU config."""
     import tempfile
-    import theo_doi_9router as t
+    import monitor_9router as t
     with tempfile.TemporaryDirectory() as tmp:
         home = Path(tmp) / ".hermes-blog"
         (home / "profiles" / "miles").mkdir(parents=True)
@@ -255,7 +255,7 @@ def test_cap_fallback_bo_qua_chuoi_trung_ten():
     """Combo lat giua ba route CUNG mot model khong phai fallback — usage ghi
     cung mot `model` nen dem vao la bao dong gia moi ngay."""
     import tempfile
-    import theo_doi_9router as t
+    import monitor_9router as t
     with tempfile.TemporaryDirectory() as tmp:
         home = Path(tmp) / ".hermes-dcgr"
         home.mkdir(parents=True)
@@ -268,7 +268,7 @@ def test_cap_fallback_bo_qua_chuoi_trung_ten():
             cap = t.cap_fallback()
         finally:
             t.HERMES_HOMES = cu
-    assert cap == set(t.FALLBACK_THAT), f"them cap trung ten: {sorted(cap)}"
+    assert cap == set(t.FALLBACK_REAL), f"them cap trung ten: {sorted(cap)}"
 
 
 # --------------------------------------------------- allowlist va ma bai
@@ -276,39 +276,39 @@ def test_la_ong_chu_khong_co_tep_thi_cho_qua():
     """Chua co state/ong_chu.json = giu hanh vi cu (group rieng). Neu doi thanh
     "chan het" thi bat cai nay len la khoa chet may dang chay."""
     import tempfile
-    import duyet_co_so as cs
+    import approve_base as cs
     with tempfile.TemporaryDirectory() as tmp:
-        cu = cs.ONG_CHU_IDS
-        cs.ONG_CHU_IDS = Path(tmp) / "khong-co.json"
+        cu = cs.BOSS_IDS
+        cs.BOSS_IDS = Path(tmp) / "khong-co.json"
         try:
-            assert cs.la_ong_chu({"from": {"id": 999}}) is True
+            assert cs.is_boss({"from": {"id": 999}}) is True
         finally:
-            cs.ONG_CHU_IDS = cu
+            cs.BOSS_IDS = cu
 
 
 def test_la_ong_chu_co_tep_thi_chan_nguoi_la():
     import json as _j
     import tempfile
-    import duyet_co_so as cs
+    import approve_base as cs
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp) / "ong_chu.json"
         p.write_text(_j.dumps([8112291996]), encoding="utf-8")
-        cu = cs.ONG_CHU_IDS
-        cs.ONG_CHU_IDS = p
+        cu = cs.BOSS_IDS
+        cs.BOSS_IDS = p
         try:
-            assert cs.la_ong_chu({"from": {"id": 8112291996}}) is True
-            assert cs.la_ong_chu({"from": {"id": 12345}}) is False
-            assert cs.la_ong_chu({}) is False          # nut khong co `from`
-            assert cs.la_ong_chu(None) is False
+            assert cs.is_boss({"from": {"id": 8112291996}}) is True
+            assert cs.is_boss({"from": {"id": 12345}}) is False
+            assert cs.is_boss({}) is False          # nut khong co `from`
+            assert cs.is_boss(None) is False
         finally:
-            cs.ONG_CHU_IDS = cu
+            cs.BOSS_IDS = cu
 
 
 def test_ma_bai_tu_nut_phai_khop_mau():
     """`draft_id` trong callback_data den tu client va di THANG vao duong dan
     tep. `_draft_id` sinh no bang slugify nen moi id that deu khop mau nay."""
-    import duyet_bai as db
-    import duyet_chon_tin as dct
+    import approve_post as db
+    import approve_pick as dct
     hop_le = db._DRAFT_ID_HOP_LE
     # id that do chinh he thong sinh ra phai qua duoc
     tin = {"title": "Nvidia đàm phán rót 2,5 tỷ USD vào Thinking Machines", "index": 3}
@@ -376,7 +376,7 @@ def test_argv_chat_khong_bao_gio_co_z():
     nao cung "khong nho gi". Truoc day muon kiem dong lenh nay phai chay ca mot
     tien trinh hermes that."""
     import chat_router as cr
-    a = cr.dung_argv("miles", "tele-writer", "xin chao", "safe")
+    a = cr.use_argv("miles", "tele-writer", "xin chao", "safe")
     assert "-z" not in a, a
     assert a[a.index("chat") + 1:a.index("chat") + 3] == ["-c", "tele-writer"]
     for co in ("--create-if-missing", "--no-restore-cwd", "-Q", "-q"):
@@ -387,20 +387,20 @@ def test_argv_chat_khong_bao_gio_co_z():
 
 def test_argv_khong_profile_thi_khong_co_co_p():
     import chat_router as cr
-    a = cr.dung_argv(None, "tele-general", "x")
+    a = cr.use_argv(None, "tele-general", "x")
     assert "-p" not in a, a
     assert "--toolsets" not in a
 
 
 def test_argv_khop_ban_ke_khai_cua_kiem_hermes():
-    """`kiem_hermes.CO_CHAT` la danh sach co ma script kiem sau moi
+    """`check_hermes.HAS_CHAT` la danh sach co ma script kiem sau moi
     `hermes update`. Hai ban ke khai nay phai khop, khong thi kiem_hermes bao
     xanh cho mot dong lenh khong con dung."""
     import chat_router as cr
-    import kiem_hermes as kh
-    a = set(cr.dung_argv("miles", "tele-writer", "x"))
-    thieu = [c for c in kh.CO_CHAT if c not in a]
-    assert not thieu, f"kiem_hermes doi co {thieu} ma dung_argv khong sinh ra"
+    import check_hermes as kh
+    a = set(cr.use_argv("miles", "tele-writer", "x"))
+    thieu = [c for c in kh.HAS_CHAT if c not in a]
+    assert not thieu, f"kiem_hermes doi co {thieu} ma use_argv khong sinh ra"
 
 
 # ------------------------------------------------------------ tong_hop (9router)
@@ -410,7 +410,7 @@ def test_argv_khop_ban_ke_khai_cua_kiem_hermes():
 # goi la "tra rong".
 def _dong(giay, model="ds/deepseek-v4-pro", cid="c1", ak="sk-abcd1234efgh",
           status=None, ptok=2000, ctok=500, cost=0.01, cache=0):
-    """Mot dong usageHistory, dung thu tu SELECT cua doc_ngay."""
+    """Mot dong usageHistory, dung thu tu SELECT cua read_date."""
     import json as _j
     from datetime import datetime, timedelta, timezone
     ts = (datetime(2026, 9, 5, 17, 0, tzinfo=timezone.utc)
@@ -422,75 +422,75 @@ def _dong(giay, model="ds/deepseek-v4-pro", cid="c1", ak="sk-abcd1234efgh",
 def test_tong_hop_khong_bao_gio_ghi_khoa_api_tho():
     """Khoa da xoay khong con trong bang `apiKeys` — ban truoc 06/09/2026 lay
     CHINH CHUOI KHOA lam nhan, roi nhan do di vao json/md va ra trang HTTP."""
-    import theo_doi_9router as tr
-    d, _ = tr.tong_hop([_dong(0, ak="sk-SIEU-BI-MAT-9999")], cap_fb=set())
+    import monitor_9router as tr
+    d, _ = tr.aggregate([_dong(0, ak="sk-SIEU-BI-MAT-9999")], cap_fb=set())
     nhan = list(d["theo_khoa"])
     assert nhan == ["khoa la …9999"], nhan
     assert "SIEU-BI-MAT" not in repr(d), "khoa tho lot vao bao cao"
 
 
 def test_tong_hop_lay_ten_khoa_khi_con_trong_bang():
-    import theo_doi_9router as tr
-    d, _ = tr.tong_hop([_dong(0, ak="sk-x1")], {"sk-x1": "blog"}, cap_fb=set())
+    import monitor_9router as tr
+    d, _ = tr.aggregate([_dong(0, ak="sk-x1")], {"sk-x1": "blog"}, cap_fb=set())
     assert list(d["theo_khoa"]) == ["blog"]
 
 
 def test_tong_hop_dem_lat_model_trong_nguong_va_bo_qua_ngoai_nguong():
-    """Lat model = hai lan goi LIEN TIEP khac model, cach nhau <= GIAY_LAT."""
-    import theo_doi_9router as tr
-    gan = [_dong(0, "a"), _dong(tr.GIAY_LAT - 1, "b")]
-    xa = [_dong(0, "a"), _dong(tr.GIAY_LAT + 1, "b")]
+    """Lat model = hai lan goi LIEN TIEP khac model, cach nhau <= SECONDS_FLIP."""
+    import monitor_9router as tr
+    gan = [_dong(0, "a"), _dong(tr.SECONDS_FLIP - 1, "b")]
+    xa = [_dong(0, "a"), _dong(tr.SECONDS_FLIP + 1, "b")]
     lap = [_dong(0, "a"), _dong(10, "a")]
-    assert tr.tong_hop(gan, cap_fb=set())[0]["lat_model"] == {"a → b": 1}
-    assert tr.tong_hop(xa, cap_fb=set())[0]["lat_model"] == {}
-    assert tr.tong_hop(lap, cap_fb=set())[0]["lat_model"] == {}
+    assert tr.aggregate(gan, cap_fb=set())[0]["lat_model"] == {"a → b": 1}
+    assert tr.aggregate(xa, cap_fb=set())[0]["lat_model"] == {}
+    assert tr.aggregate(lap, cap_fb=set())[0]["lat_model"] == {}
 
 
 def test_tong_hop_chi_dem_fallback_dung_cap_duoc_khai():
     """`fallback` la con so Ong Chu doc de biet model chinh co dang chet khong.
     Dem moi lan lat vao day la bao dong gia moi ngay."""
-    import theo_doi_9router as tr
+    import monitor_9router as tr
     rows = [_dong(0, "chinh"), _dong(5, "phu"), _dong(200, "chinh"), _dong(205, "la")]
-    d, _ = tr.tong_hop(rows, cap_fb={("chinh", "phu")})
+    d, _ = tr.aggregate(rows, cap_fb={("chinh", "phu")})
     assert d["fallback"] == 1, d["lat_model"]
-    assert tr.tong_hop(rows, cap_fb=set())[0]["fallback"] == 0
+    assert tr.aggregate(rows, cap_fb=set())[0]["fallback"] == 0
 
 
 def test_tong_hop_bat_tra_loi_rong_va_khong_bat_lan_bao_loi():
     """Prompt to ma out ~0 nhung status ok = model nuot tien khong tra gi. Lan
     BAO LOI thi da co muc `loi` roi, dem hai lan la doc ra hai su co."""
-    import theo_doi_9router as tr
-    rows = [_dong(0, "a", ptok=tr.RONG_PROMPT_MIN, ctok=tr.RONG_OUT_MAX),
-            _dong(300, "b", ptok=tr.RONG_PROMPT_MIN, ctok=tr.RONG_OUT_MAX + 1),
-            _dong(600, "c", ptok=tr.RONG_PROMPT_MIN - 1, ctok=0),
+    import monitor_9router as tr
+    rows = [_dong(0, "a", ptok=tr.EMPTY_PROMPT_MIN, ctok=tr.EMPTY_OUT_MAX),
+            _dong(300, "b", ptok=tr.EMPTY_PROMPT_MIN, ctok=tr.EMPTY_OUT_MAX + 1),
+            _dong(600, "c", ptok=tr.EMPTY_PROMPT_MIN - 1, ctok=0),
             _dong(900, "d", ptok=99999, ctok=0, status="error 429")]
-    d, _ = tr.tong_hop(rows, cap_fb=set())
+    d, _ = tr.aggregate(rows, cap_fb=set())
     assert d["rong"] == {"a": 1}, d["rong"]
     assert d["loi"] == {"d: error 429": 1}, d["loi"]
     assert d["tong"]["loi"] == 1
 
 
 def test_tong_hop_cache_pct_va_tong_tien():
-    import theo_doi_9router as tr
+    import monitor_9router as tr
     rows = [_dong(0, ptok=1000, cache=250, cost=0.5),
             _dong(300, ptok=3000, cache=750, cost=0.25)]
-    d, tho = tr.tong_hop(rows, cap_fb=set())
+    d, tho = tr.aggregate(rows, cap_fb=set())
     assert d["tong"]["cache_pct"] == 25.0, d["tong"]
     assert d["tong"]["usd"] == 0.75
     assert tho["tong"]["usd"] == 0.75, "tho phai la ban CHUA lam tron"
 
 
 def test_tong_hop_top_prompt_lay_5_lan_ton_nhat():
-    import theo_doi_9router as tr
+    import monitor_9router as tr
     rows = [_dong(i * 300, ptok=(i + 1) * 1000) for i in range(8)]
-    d, _ = tr.tong_hop(rows, cap_fb=set())
+    d, _ = tr.aggregate(rows, cap_fb=set())
     assert [x["prompt"] for x in d["top_prompt"]] == [8000, 7000, 6000, 5000, 4000]
 
 
 def test_tong_hop_ngay_rong_khong_no():
     """Ngay khong co luot goi nao (9router vua restart) van phai ra bao cao."""
-    import theo_doi_9router as tr
-    d, tho = tr.tong_hop([], cap_fb=set())
+    import monitor_9router as tr
+    d, tho = tr.aggregate([], cap_fb=set())
     assert d["tong"]["req"] == 0 and d["tong"]["cache_pct"] == 0.0
     assert d["theo_model"] == {} and d["top_prompt"] == []
     assert tho["tong"]["prompt"] == 0
@@ -499,15 +499,15 @@ def test_tong_hop_ngay_rong_khong_no():
 def test_tong_hop_khong_cham_vao_dia():
     """Ham THUAN — no khong duoc mo CSDL hay doc config. Neu mot ban sau lai
     goi `cap_fallback()` vo dieu kien thi test nay do (cap_fb da truyen vao)."""
-    import theo_doi_9router as tr
+    import monitor_9router as tr
     goi = []
     that = tr.cap_fallback
     tr.cap_fallback = lambda: goi.append(1) or set()
     try:
-        tr.tong_hop([_dong(0)], cap_fb=set())
+        tr.aggregate([_dong(0)], cap_fb=set())
     finally:
         tr.cap_fallback = that
-    assert goi == [], "tong_hop van tu doc config du da duoc truyen cap_fb"
+    assert goi == [], "aggregate van tu doc config du da duoc truyen cap_fb"
 
 
 if __name__ == "__main__":

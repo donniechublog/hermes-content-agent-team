@@ -1,6 +1,6 @@
 # Kiến trúc Memory — v0
 
-Bản ghi quyết định cho hệ memory của đội (dcgr.tech + donniechublog). Bản CHẠY THẬT ở `~/.hermes-<brand>/` (mỗi brand một home từ 09/2026); thư mục `hermes/` trong repo là bản chép để có lịch sử (xem `dong_bo_hermes.py`).
+Bản ghi quyết định cho hệ memory của đội (dcgr.tech + donniechublog). Bản CHẠY THẬT ở `~/.hermes-<brand>/` (mỗi brand một home từ 09/2026); thư mục `hermes/` trong repo là bản chép để có lịch sử (xem `sync_hermes.py`).
 
 ## Ba lớp
 
@@ -44,7 +44,7 @@ done
 
 `db_path` phải là **đường dẫn tuyệt đối** — nếu để `$HERMES_HOME/...` thì mỗi profile sẽ ra 1 DB riêng (không còn chung não).
 
-Khôi phục nội dung MEMORY.md/USER.md: `dong_bo_hermes.py --ra-hermes` (repo → ~/.hermes).
+Khôi phục nội dung MEMORY.md/USER.md: `sync_hermes.py --ra-hermes` (repo → ~/.hermes).
 
 ## Giới hạn đã biết
 
@@ -55,4 +55,4 @@ Khôi phục nội dung MEMORY.md/USER.md: `dong_bo_hermes.py --ra-hermes` (repo
 
 ## Đồng bộ & version
 
-`dong_bo_hermes.py` đã mở rộng để đồng bộ thêm `MEMORY.md` (13 vai + mặc định) và `USER.md` mặc định. **USER.md riêng từng vai KHÔNG** đồng bộ (có thể chứa dữ liệu cá nhân). `memory_store.db` KHÔNG vào git (dữ liệu chạy, tự sinh lại). Lệnh: `--vao-repo` (trước commit) / `--ra-hermes` (sau update).
+`sync_hermes.py` đã mở rộng để đồng bộ thêm `MEMORY.md` (13 vai + mặc định) và `USER.md` mặc định. **USER.md riêng từng vai KHÔNG** đồng bộ (có thể chứa dữ liệu cá nhân). `memory_store.db` KHÔNG vào git (dữ liệu chạy, tự sinh lại). Lệnh: `--vao-repo` (trước commit) / `--ra-hermes` (sau update).

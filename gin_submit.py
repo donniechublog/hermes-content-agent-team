@@ -89,11 +89,11 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] không gửi. {nen} | {mask_dbg} | {vung_json}")
     else:
-        import gui_telegram
+        import send_telegram
         reply = int(a.id) if str(a.id).isdigit() else None
         try:
-            res = gui_telegram.post("gin", [str(nen), str(mask_dbg)], mo_ta[:1000], reply_to=reply)
-        except gui_telegram.GuiLoi as e:
+            res = send_telegram.post("gin", [str(nen), str(mask_dbg)], mo_ta[:1000], reply_to=reply)
+        except send_telegram.SendError as e:
             sys.exit(f"[LOI] {e}")
         rr = res.get("result")
         mid = (rr[-1] if isinstance(rr, list) else rr or {}).get("message_id")

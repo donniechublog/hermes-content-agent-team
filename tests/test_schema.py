@@ -133,7 +133,7 @@ def test_khong_sua_dict_dau_vao():
 
 def test_write_meta_that_su_tron_chu_khong_ghi_de():
     """Chay ham THAT, khong mo phong: day la cho da suyt mat root_task."""
-    import duyet_chon_tin as dct
+    import approve_pick as dct
     with tempfile.TemporaryDirectory() as t:
         d = Path(t)
         cu = dct.DRAFTS
@@ -168,7 +168,7 @@ def test_moi_khoa_nguoi_ghi_sinh_ra_deu_co_trong_Manifest():
 
 def test_moi_khoa_write_meta_deu_co_trong_Meta():
     import ast
-    src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
+    src = (ROOT / "approve_pick.py").read_text(encoding="utf-8")
     cay = ast.parse(src)
     ham = next(n for n in ast.walk(cay)
                if isinstance(n, ast.FunctionDef) and n.name == "write_meta")
@@ -210,7 +210,7 @@ def _khoa_dict_ghi_vao(src: str, ten_tep: str) -> set:
 
 def test_moi_khoa_writer_json_deu_co_trong_SidecarViet():
     """ADF-r2-5: .writer.json truoc day khong co TypedDict nao."""
-    src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
+    src = (ROOT / "approve_pick.py").read_text(encoding="utf-8")
     khoa = _khoa_dict_ghi_vao(src, "writer.json")
     assert khoa, "khong tim thay cho ghi writer.json trong duyet_chon_tin — cong nay mu"
     thieu = sorted(khoa - set(schema._kind(schema.SidecarWrite)))
@@ -218,7 +218,7 @@ def test_moi_khoa_writer_json_deu_co_trong_SidecarViet():
 
 
 def test_moi_khoa_img_json_deu_co_trong_SidecarAnh():
-    src = (ROOT / "duyet_chon_tin.py").read_text(encoding="utf-8")
+    src = (ROOT / "approve_pick.py").read_text(encoding="utf-8")
     khoa = _khoa_dict_ghi_vao(src, "img.json")
     assert khoa, "khong tim thay cho ghi img.json trong duyet_chon_tin"
     thieu = sorted(khoa - set(schema._kind(schema.SidecarImage)))

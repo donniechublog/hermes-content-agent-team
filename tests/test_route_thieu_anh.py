@@ -2,8 +2,8 @@
 """Engine chỉ MÔ TẢ thiếu ảnh, tầng ghép nối mới QUYẾT ĐỊNH (issue A1).
 
 Truoc 09/09/2026 `image_prepare._route_thieu_anh` gui Telegram va tao task Kite
-ngay trong engine, nen engine phai `from duyet_giao_viec import chuan_assignee`
-va `from duyet_bai import tao_task_kite`: lop CHUAN BI goi NGUOC len lop dieu
+ngay trong engine, nen engine phai `from approve_dispatch import standard_assignee`
+va `from approve_post import create_task_kite`: lop CHUAN BI goi NGUOC len lop dieu
 phoi. Nay engine ghi `xong.json["thieu_anh"] = {"so": .., "toi_thieu": ..}` va
 nhan mot moc `after_prepare`; `route_missing_images.py` la noi duy nhat biet ca hai phia.
 
@@ -109,26 +109,26 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
     """Goi rt.after_prepare voi sidecar gia. Tra (m, cac tin da gui).
 
     `gui_ok=False` gia lap Telegram tu choi (400) — _time_send tra False."""
-    import duyet_giao_viec as dgv
-    import duyet_bai as db
+    import approve_dispatch as dgv
+    import approve_post as db
     drafts = Path(tmp) / "drafts"
     drafts.mkdir(parents=True, exist_ok=True)
     (drafts / "d1.img.json").write_text(json.dumps(im), encoding="utf-8")
     tin = []
-    cu = (rt.DRAFTS, rt._time_send, dgv.chuan_assignee, db.tao_task_kite)
+    cu = (rt.DRAFTS, rt._time_send, dgv.standard_assignee, db.create_task_kite)
     rt.DRAFTS = drafts
 
     def _gui(vai, text, kb=None):
         tin.append((vai, text, kb))
         return gui_ok
     rt._time_send = _gui
-    dgv.chuan_assignee = lambda v: (v, not kite_co)
-    db.tao_task_kite = lambda *a, **k: tao_kite
+    dgv.standard_assignee = lambda v: (v, not kite_co)
+    db.create_task_kite = lambda *a, **k: tao_kite
     try:
         rt.after_prepare("d1", m)
         return m, tin
     finally:
-        rt.DRAFTS, rt._time_send, dgv.chuan_assignee, db.tao_task_kite = cu
+        rt.DRAFTS, rt._time_send, dgv.standard_assignee, db.create_task_kite = cu
 
 
 def test_telegram_tu_choi_thi_KHONG_danh_dau_da_hoi():

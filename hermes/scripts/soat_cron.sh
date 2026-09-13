@@ -7,7 +7,7 @@
 #
 # CHAY O CA HAI CONTAINER (blog + dcgr), lech nhau 10 phut. Dat mot ban thi
 # ngay container do chet la khong con ai bao — dung cai lo hong can bit. Hai
-# lan chay khong sinh hai tin: soat_cron.py doc state/soat_cron.json, thay bo
+# lan chay khong sinh hai tin: audit_cron.py doc state/soat_cron.json, thay bo
 # van de y het da bao trong ngay thi im.
 #
 # KHONG dung --im: `deliver: local` nghia la stdout roi vao
@@ -15,4 +15,4 @@
 # khi Telegram khong gui duoc.
 set -uo pipefail
 cd "$HOME/content-team" || exit 1
-exec venv/bin/python soat_cron.py
+exec venv/bin/python audit_cron.py

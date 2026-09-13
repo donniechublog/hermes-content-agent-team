@@ -18,23 +18,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import hermes_adapter as ha                                   # noqa: E402
-import nhat_ky as nk                                          # noqa: E402
+import journal as nk                                          # noqa: E402
 
 _TS = 1_757_400_000                       # mot moc epoch bat ky trong 09/2026
-_NGAY = nk._gio_vn(_TS).strftime("%Y-%m-%d")
+_NGAY = nk._hours_vn(_TS).strftime("%Y-%m-%d")
 
 
 def _chay(viec, runs=None):
     """Goi phan_kanban voi adapter gia; tra (ket_qua, LOI_DOC sau khi goi)."""
-    cu = (ha.viec, ha.lan_chay_cuoi_nhieu)
-    ha.viec = lambda *a, **k: viec
-    ha.lan_chay_cuoi_nhieu = lambda tids: runs
-    nk.LOI_DOC.clear()
+    cu = (ha.job, ha.last_run_many)
+    ha.job = lambda *a, **k: viec
+    ha.last_run_many = lambda tids: runs
+    nk.ERROR_READ.clear()
     try:
-        return nk.phan_kanban(_NGAY), list(nk.LOI_DOC)
+        return nk.part_kanban(_NGAY), list(nk.ERROR_READ)
     finally:
-        ha.viec, ha.lan_chay_cuoi_nhieu = cu
-        nk.LOI_DOC.clear()
+        ha.job, ha.last_run_many = cu
+        nk.ERROR_READ.clear()
 
 
 def test_kanban_khong_doc_duoc_thi_LOI_DOC_phai_co_dong():

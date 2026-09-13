@@ -990,7 +990,7 @@ def test_bo_bai_thi_go_anh_khoi_so():
 # ------------------------------------------------ bars: so kieu Viet, va cong text
 def test_gia_tri_bars_doc_dung_cham_hang_nghin():
     """Kite viet "1.200" (mot nghin hai tram) — dung kieu Viet, dung cai docstring
-    noi la chap nhan. Truoc 06/09/2026 `_gia_tri` chi doi ',' thanh '.', nen
+    noi la chap nhan. Truoc 06/09/2026 `_value` chi doi ',' thanh '.', nen
     float("1.200") = 1.2: cot "1.200 tac vu" ve rong 0.1% con cot "900" ve rong
     100%, bieu do noi NGUOC han so lieu ma chu tren cot van ghi dung."""
     import render_edu as re_
@@ -1267,13 +1267,13 @@ def test_publish_khong_dang_album_lan_hai():
     """Caption dai: album len truoc, tin chu gui sau. Tin chu hong -> bai thanh
     publish_failed -> Ong Chu bam ✅ lai -> ban cu dang album LAN HAI."""
     import json as _j
-    import duyet_bai as db
+    import approve_post as db
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
-        cu_drafts, cu_gui = db.DRAFTS, db._gui_chu
+        cu_drafts, cu_gui = db.DRAFTS, db._send_text
         db.DRAFTS = d
         goi = []
-        db._gui_chu = lambda *a, **k: goi.append("chu") or {"ok": True}
+        db._send_text = lambda *a, **k: goi.append("chu") or {"ok": True}
         try:
             (d / "b.json").write_text(_j.dumps({
                 "caption": "x" * (db.CAPTION_LIMIT + 10),
@@ -1283,7 +1283,7 @@ def test_publish_khong_dang_album_lan_hai():
             assert res.get("ok"), res
             assert goi == ["chu"], f"phai gui MOI tin chu, khong gui lai album: {goi}"
         finally:
-            db.DRAFTS, db._gui_chu = cu_drafts, cu_gui
+            db.DRAFTS, db._send_text = cu_drafts, cu_gui
 
 
 if __name__ == "__main__":

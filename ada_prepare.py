@@ -11,7 +11,7 @@ kanban.db/state.db, ls drafts, đọc manifest từng tệp. Giờ script gom:
   - Kanban: task theo vai, done/blocked/failed, thời gian chạy, lỗi cuối.
   - Token: tool call, input token, api call theo vai (profiles/*/state.db) +
     chi phí thật 9router N ngày (từ nhật ký ngày của theo_doi_9router).
-  - 9router theo NGÀY (theo_doi_9router.py): req/$/cache%/lật model/lỗi/khoá
+  - 9router theo NGÀY (monitor_9router.py): req/$/cache%/lật model/lỗi/khoá
     API/IP máy gọi từng ngày, để so ngày này với ngày trước thay vì một số gộp.
 
 Ada chỉ viết nhận xét + đề xuất rubric có bằng chứng vào spec.json, rồi
@@ -115,7 +115,7 @@ def gather_draft(ngay: int) -> dict:
 def gather_kanban(ngay: int) -> dict:
     # Doc qua hermes_adapter (C2) — kanban.db la bang cua hermes-agent, chi mot
     # tep duoc biet schema cua no.
-    viec = hermes_adapter.viec(tu_ts=int(time.time() - ngay * 86400))
+    viec = hermes_adapter.job(tu_ts=int(time.time() - ngay * 86400))
     if viec is None:
         return {}
     theo_vai = collections.defaultdict(collections.Counter)
@@ -139,11 +139,11 @@ def gather_token(ngay: int) -> dict:
     ra = {}
     moc = int(time.time() - ngay * 86400)
     loi_doc = []
-    for p in hermes_adapter.state_db_cac_profile(HERMES):
+    for p in hermes_adapter.state_db_each_profile(HERMES):
         prof = p.parent.name
         # Qua adapter (ADF-r2-3), va None (khong doc duoc) phai LO ra trong brief
         # thay vi `continue` cam — Ada tuong vai do khong lam gi ca tuan.
-        tt = hermes_adapter.tom_tat_phien(p, moc)
+        tt = hermes_adapter.summary_session(p, moc)
         if tt is None:
             loi_doc.append(prof)
             continue
@@ -158,7 +158,7 @@ def gather_9router(ngay: int) -> dict:
     """N ngày gần nhất từ nhật ký 9router (chốt sẵn bởi cron; thiếu thì dựng tại
     chỗ, chỉ đọc sqlite). Gọn: mỗi ngày một dòng + gộp lật model/lỗi/IP."""
     try:
-        import theo_doi_9router as tdr
+        import monitor_9router as tdr
     except Exception:                                        # noqa: BLE001
         return {}
     hom_nay = datetime.now(VN).date()
@@ -166,7 +166,7 @@ def gather_9router(ngay: int) -> dict:
     vai, brand, rong, loi_kn, chi_phi = {}, {}, collections.Counter(), [], {}
     for i in range(ngay, -1, -1):
         d = (hom_nay - timedelta(days=i)).strftime("%Y-%m-%d")
-        m = tdr.tai(d, lam_moi=(i == 0))
+        m = tdr.download(d, lam_moi=(i == 0))
         if not m or m.get("loi_doc"):
             continue
         t = m["tong"]

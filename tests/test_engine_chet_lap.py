@@ -62,25 +62,25 @@ def test_chay_dung_o_toi_da_va_bao():
 
 
 def test_bao_chet_lap_gui_dung_topic_va_khong_nem():
-    """Stub publish.gui_topic: test KHONG duoc gui Telegram that (tren may chu co token)."""
+    """Stub publish.send_topic: test KHONG duoc gui Telegram that (tren may chu co token)."""
     import publish
     gui = []
-    cu = publish.gui_topic
-    publish.gui_topic = lambda text, vai: gui.append((vai, text)) or True
+    cu = publish.send_topic
+    publish.send_topic = lambda text, vai: gui.append((vai, text)) or True
     try:
         with redirect_stderr(io.StringIO()):
             cb._report_crash_loop("draft-khong-ton-tai", 2)
     finally:
-        publish.gui_topic = cu
+        publish.send_topic = cu
     assert len(gui) == 1 and gui[0][0] == cb.role.DEFAULT_IMAGE, gui
     assert "2 lần" in gui[0][1] and "draft-khong-ton-tai" in gui[0][1], gui
     # gui_topic nem thi _bao_chet_lap van khong nem
-    publish.gui_topic = lambda text, vai: (_ for _ in ()).throw(RuntimeError("x"))
+    publish.send_topic = lambda text, vai: (_ for _ in ()).throw(RuntimeError("x"))
     try:
         with redirect_stderr(io.StringIO()):
             cb._report_crash_loop("d", 3)
     finally:
-        publish.gui_topic = cu
+        publish.send_topic = cu
 
 
 if __name__ == "__main__":

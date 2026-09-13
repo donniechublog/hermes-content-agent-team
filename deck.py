@@ -108,7 +108,7 @@ def _open_bg(layout):
 
 
 # ---- cac layout -----------------------------------------------------------
-def lay_statement(s):
+def take_statement(s):
     """Cau tuyen bo lon + 1-2 dong phu. Slide dau/loi keu."""
     canvas, fg, _ = _open_bg(s)
     d = ImageDraw.Draw(canvas)
@@ -139,7 +139,7 @@ def lay_statement(s):
     return canvas
 
 
-def lay_list_steps(s):
+def take_list_steps(s):
     """Danh sach 'Slide X: ...' co ngoac trai — kieu Value Escalation."""
     canvas, fg, _ = _open_bg(s)
     d = ImageDraw.Draw(canvas)
@@ -168,7 +168,7 @@ def lay_list_steps(s):
     return canvas
 
 
-def lay_checklist(s):
+def take_checklist(s):
     """Tieu de hai mau + checklist o vuong + footer."""
     canvas, fg, _ = _open_bg(s)
     d = ImageDraw.Draw(canvas)
@@ -198,7 +198,7 @@ def lay_checklist(s):
     return canvas
 
 
-def lay_grid3(s):
+def take_grid3(s):
     """Badge + tieu de hai tang + nhan chu dat duoi cac anh nho co san TRONG
     bg_anh (grid mockup) — layout KHONG tu ve anh grid, chi dinh vi chu that
     duoi anh that. Dung khi remake slide 'STEP...' co san 2-3 anh minh hoa
@@ -222,7 +222,7 @@ def lay_grid3(s):
     return canvas
 
 
-def lay_cover(s):
+def take_cover(s):
     """Tieu de khong lo xep tang (moi dong/tier tu no rieng) de len ANH THAT
     (bg_anh) — kieu bia carousel remake. Tuy chon mot doan chu nghieng nho o
     goc, kieu ghi chu tay dinh kem. `tiers`: [[[dong,...], co_cao, co_thap], ...]
@@ -309,11 +309,11 @@ def _burst(d, cx, cy, col, r):
 
 
 LAYOUTS = {
-    "statement": lay_statement,
-    "list_steps": lay_list_steps,
-    "checklist": lay_checklist,
-    "grid3": lay_grid3,
-    "cover": lay_cover,
+    "statement": take_statement,
+    "list_steps": take_list_steps,
+    "checklist": take_checklist,
+    "grid3": take_grid3,
+    "cover": take_cover,
 }
 
 

@@ -538,7 +538,7 @@ def _recently_posted(vai: str, files, phut: int = MINUTES_ALBUM_FIT_LEN) -> bool
 def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi: dict):
     """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi da_dung.json
     (`ghi` = cac truong rieng cua vai: bia/anh/hook/theme...). Tra ve message_id."""
-    import gui_telegram
+    import send_telegram
     xong = schema.read_manifest(wd / "xong.json") or {}
 
     def _ghi_so(mid=None):
@@ -571,8 +571,8 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
     # la lan=3 NGAY LUOT DAU: [DUNG] va bao goi kanban_block.
     (wd / "nop_lan.json").unlink(missing_ok=True)
     try:
-        res = gui_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)
-    except gui_telegram.GuiLoi as e:
+        res = send_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)
+    except send_telegram.SendError as e:
         # Album co the DA len roi ma rieng buoc gui nut Duyet moi hong (429 flood
         # control chang han). Truoc 06/09/2026 nhanh nay thoat ngay, so trong ron
         # trong khi anh da nam tren topic.
@@ -597,7 +597,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
 def write_blackboard(draft_id: str, key: str, value, author: str) -> None:
     """Ghi ban giao co cau truc len the goc (kanban swarm). Best-effort: hong thi
     in mot dong canh bao, khong lam hong bai."""
-    import bang_den
-    ok, loi = bang_den.ghi_nen(draft_id, key, value, author)
+    import blackboard
+    ok, loi = blackboard.write_background(draft_id, key, value, author)
     if not ok:
         print(f"[CANH BAO] bang den: {loi}")

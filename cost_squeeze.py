@@ -43,7 +43,7 @@ ROUTER = env_load.ROUTER_URL
 # gia cua provider truoc khi tin ket luan "re nhat". Model KHONG co trong bang
 # se bi bao ro va loai khoi xep hang gia — truoc day am tham tinh $0.00 va
 # "thang" giai re nhat, sai dung cai script nay sinh ra de do.
-GIA = {
+FAKE = {
     "ds/deepseek-chat":      (0.14,  0.28, 0.0028),
     "ds/deepseek-v4-flash":  (0.14,  0.28, 0.0028),
     "ds/deepseek-v4-pro":    (0.435, 0.87, 0.003625),
@@ -51,10 +51,10 @@ GIA = {
     "tokenrouter/moonshotai/kimi-k3": (3.0, 15.0, 0.3),
 }
 
-UNG_VIEN = ["ds/deepseek-chat", "ds/deepseek-v4-flash",
+CANDIDATE = ["ds/deepseek-chat", "ds/deepseek-v4-flash",
             "mimo/mimo-v2.5-pro", "ds/deepseek-v4-pro"]
 
-def suy_luan_cua_vai(vai: str) -> dict:
+def reasoning_of_role(vai: str) -> dict:
     """Doc dung cau hinh suy luan ma production dang chay cho vai nay.
 
     Neu khong doc theo, phep do se sai lech: Miles chay reasoning_effort=none
@@ -80,7 +80,7 @@ def soul(vai: str) -> str:
     return (HERMES / "profiles" / vai / "SOUL.md").read_text(encoding="utf-8")
 
 
-def viec_teaser():
+def job_teaser():
     """Viec that cua Cape: tu du lieu bai goc, viet tieu de + doan van 500-800 tu."""
     # KHONG doc tu state/ — thu muc do bi gitignore, ban sao moi se khong co tep.
     # Trich thang tu bai that, va noi ro cach tao lai neu thieu mang.
@@ -99,7 +99,7 @@ def viec_teaser():
 # Nhieu tin khac nhau, KHONG lap mot tin. Lap mot tin lam bo do mu: v4-flash
 # tung sach 5/5 khi lap mot tin, nhung khi doi tin that thi rong mot bai va mat
 # sach dau mot bai. Xoay tin moi lo ra duoc nhung loi phu thuoc noi dung.
-TIN_WRITER = [
+STORY_WRITER = [
     "Anthropic cong bo Claude co the dieu khien may tinh, nhung ty le thanh cong "
     "tren cac tac vu van phong thuc te moi dat khoang 60 phan tram.",
     "Mot nhom nghien cuu chi ra co the trich xuat chuoi suy luan an tu API cua "
@@ -113,19 +113,19 @@ TIN_WRITER = [
 ]
 
 
-def viec_writer():
+def job_writer():
     """Viec that cua Miles: viet caption tieng Viet, moi lan mot tin KHAC nhau."""
     def nhac(i):
-        tin = TIN_WRITER[i % len(TIN_WRITER)]
+        tin = STORY_WRITER[i % len(STORY_WRITER)]
         return (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh "
                 "Telegram, 3 den 5 cau. Chi tra ve caption, khong giai thich.")
     return soul("miles"), nhac, (15, 400)
 
 
-VIEC = {"cape": viec_teaser, "miles": viec_writer}
+JOB = {"cape": job_teaser, "miles": job_writer}
 
 
-def rut_van(noi_dung: str) -> str:
+def shorten_text(noi_dung: str) -> str:
     """Model co the tra JSON hoac van xuoi — lay ra phan chu de cham."""
     t = noi_dung.strip()
     if "{" in t:
@@ -140,7 +140,7 @@ def rut_van(noi_dung: str) -> str:
     return t
 
 
-def chay(model, key, sys_prompt, nhac, max_tokens=4000, extra=None):
+def run(model, key, sys_prompt, nhac, max_tokens=4000, extra=None):
     body = {"model": model, "temperature": 0.4, "max_tokens": max_tokens,
             "messages": [{"role": "system", "content": sys_prompt},
                          {"role": "user", "content": nhac}]}
@@ -162,29 +162,29 @@ def chay(model, key, sys_prompt, nhac, max_tokens=4000, extra=None):
 
 def main():
     ap = argparse.ArgumentParser(description="Ep chi phi ma van giu on dinh")
-    ap.add_argument("--vai", required=True, type=role.canonical_slug, choices=sorted(VIEC))
+    ap.add_argument("--vai", required=True, type=role.canonical_slug, choices=sorted(JOB))
     ap.add_argument("-n", type=int, default=5, help="So lan chay moi model")
     ap.add_argument("--models", nargs="*", help="Model can thu")
     a = ap.parse_args()
 
     key = env_load.required("OPENAI_API_KEY")
-    sys_prompt, nhac, (tu_min, tu_max) = VIEC[a.vai]()
+    sys_prompt, nhac, (tu_min, tu_max) = JOB[a.vai]()
 
-    them = suy_luan_cua_vai(a.vai)
+    them = reasoning_of_role(a.vai)
     print(f"Vai: {a.vai} | {a.n} lan/model | chan do dai ngoai {tu_min}-{tu_max} tu"
           f"{' | suy luan TAT (theo production)' if them else ''}\n")
     hang = []
-    for model in (a.models or UNG_VIEN):
+    for model in (a.models or CANDIDATE):
         truot, ly_do, usd, tu = 0, [], [], []
         for i in range(a.n):
             nhac_i = nhac(i) if callable(nhac) else nhac
-            d, loi = chay(model, key, sys_prompt, nhac_i, extra=them)
+            d, loi = run(model, key, sys_prompt, nhac_i, extra=them)
             if loi:
                 truot += 1; ly_do.append(loi); continue
             msg = (d["choices"][0].get("message") or {})
-            van = rut_van(msg.get("content") or "")
+            van = shorten_text(msg.get("content") or "")
             u = d.get("usage") or {}
-            gia = GIA.get(model)
+            gia = FAKE.get(model)
             if gia:
                 pin, pout, pc = gia
                 cached = (u.get("prompt_tokens_details") or {}).get("cached_tokens") or 0
@@ -208,7 +208,7 @@ def main():
             if sai:
                 truot += 1; ly_do.append("+".join(sai))
 
-        co_gia = model in GIA
+        co_gia = model in FAKE
         gia1000 = st.mean(usd) * 1000 if (usd and co_gia) else float("nan")
         hang.append((model, truot, a.n, gia1000, ly_do, tu))
         do_dai = f"  tu tb {st.mean(tu):.0f}" if tu else ""

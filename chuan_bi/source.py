@@ -90,9 +90,9 @@ def candidate_social(link: str, wd: Path) -> list:
     Tai han ve dia thay vi giu link CDN: link CDN co tham so het han (`oe=`).
     """
     import social_post
-    if not social_post.la_social(link):
+    if not social_post.is_social(link):
         return []
-    d = social_post.doc(link, tai_ve=wd / "social",
+    d = social_post.read(link, tai_ve=wd / "social",
                         in_log=lambda t: print(f"[social] {t}", file=sys.stderr))
     if not d:
         return []

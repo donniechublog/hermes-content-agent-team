@@ -3,7 +3,7 @@
 (audit lượt 2, C-r2-5 / ADF-r2-6).
 
 F2 (8ae13cf) đưa upgrade-on-read vào schema nhưng chỉ anh_chuan_bi dùng; 4 vai
-*_nop (nop_chung), tao_task_kite và nút hạ sàn (duyet_bai) đọc thô — manifest
+*_nop (nop_chung), create_task_kite và nút hạ sàn (duyet_bai) đọc thô — manifest
 bản 0 thiếu so_dung_duoc thì hạ sàn báo "Chỉ 0 ảnh thật" dù có 6, và body Kite
 tự đếm ra 4 trong khi schema đếm 2 (khái niệm là một chùm).
 
@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-NGUOI_DOC_ENGINE = ["submit_common.py", "duyet_bai.py", "image_prepare.py", "dre_prepare.py",
+NGUOI_DOC_ENGINE = ["submit_common.py", "approve_post.py", "image_prepare.py", "dre_prepare.py",
                     "ethan_prepare.py", "kite_prepare.py", "miles_prepare.py", "route_missing_images.py",
                     "dre_submit.py", "ethan_submit.py", "kite_submit.py", "miles_submit.py"]
 
@@ -42,7 +42,7 @@ def _doc_tho(src: str):
         if not isinstance(n, ast.Call):
             continue
         ten = _ten_goi(n)
-        if ten in ("loads", "_read_json", "read_text", "_nap_json", "doc_json") and _co_xong_json(n):
+        if ten in ("loads", "_read_json", "read_text", "_load_json", "doc_json") and _co_xong_json(n):
             xau.append((n.lineno, ten))
     return xau
 

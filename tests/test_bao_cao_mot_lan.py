@@ -6,14 +6,14 @@ lan — lan 1 ghi `k` sai dinh dang nen 20/27 muc bi bo, lan 2 viet tieu de ASCI
 mat dau, lan 3 sach — va CA BA lan deu gui mot bao cao len topic. Ong Chu thay
 ba ban gan giong nhau, reply "1, 7 - Dre" vao ban thu hai (msg 2004) va khong
 nhan duoc gi ca: `--luu-mid` chi giu mid cua ban CUOI (2005) nen cong
-`_la_reply_bao_cao` tra False, tin roi xuong hoi thoai, ma hoi thoai tren dcgr
+`_is_reply_report` tra False, tin roi xuong hoi thoai, ma hoi thoai tren dcgr
 lai nhuong cho gateway dang dat `require_mention: true` — khong ai tra loi.
 
 Bon cong trong tep nay, theo dung thu tu chung da hong hom do:
   1. `scan_submit.error_block_send`  — ban hong thi KHONG gui (het canh ba bao cao).
   2. `publish --luu-mid`      — nho mid cua MOI manh, khong chi manh cuoi.
-  3. `_la_reply_bao_cao`      — reply vao manh dau van tinh la lenh.
-  4. `manifest_da_gui`        — so thu tu doc tren ban DA GUI, khong phai ban
+  3. `_is_reply_report`      — reply vao manh dau van tinh la lenh.
+  4. `manifest_already_send`        — so thu tu doc tren ban DA GUI, khong phai ban
                                 moi nhat theo mtime (hai thu do tach nhau ke tu
                                 khi cong 1 chan gui ma van ghi manifest).
 
@@ -183,7 +183,7 @@ def test_luu_mid_nho_moi_manh_cua_bao_cao_dai():
 # ====================================== 3 + 4. cong reply va manifest da gui
 def _dat_mid(tmp, **noi_dung):
     """Ghi bao_cao_mid.vera.json va tro STATE_DIR cua duyet_chon_tin vao tmp."""
-    import duyet_chon_tin as dct
+    import approve_pick as dct
     d = Path(tmp)
     (d / "bao_cao_mid.vera.json").write_text(json.dumps(noi_dung), encoding="utf-8")
     dct.STATE_DIR = d
@@ -192,7 +192,7 @@ def _dat_mid(tmp, **noi_dung):
 
 def _tin(reply_mid):
     """Tin trong topic: Telegram luon gan san reply_to_message = tin goc topic,
-    nen day dung payload that (xem _reply_that)."""
+    nen day dung payload that (xem _reply_real)."""
     return {"message_id": 2007, "message_thread_id": 83,
             "text": "1, 7 - Dre",
             "reply_to_message": {"message_id": reply_mid, "message_thread_id": 83,
@@ -203,9 +203,9 @@ def test_reply_vao_manh_dau_van_la_lenh_chon():
     with tempfile.TemporaryDirectory() as t:
         dct = _dat_mid(t, message_id=2005, message_ids=[2004, 2005])
         try:
-            assert dct._la_reply_bao_cao("vera", _tin(2004)), \
+            assert dct._is_reply_report("vera", _tin(2004)), \
                 "reply vao manh DAU cua chinh bao cao do phai tinh la lenh"
-            assert dct._la_reply_bao_cao("vera", _tin(2005))
+            assert dct._is_reply_report("vera", _tin(2005))
         finally:
             dct.STATE_DIR = Path(t)
 
@@ -214,7 +214,7 @@ def test_reply_vao_bao_cao_cu_van_bi_tu_choi():
     """Cong 06/09/2026 phai giu nguyen: bao cao CU co so thu tu khac."""
     with tempfile.TemporaryDirectory() as t:
         dct = _dat_mid(t, message_id=2005, message_ids=[2004, 2005])
-        assert not dct._la_reply_bao_cao("vera", _tin(1976))
+        assert not dct._is_reply_report("vera", _tin(1976))
 
 
 def test_go_troi_khong_phai_lenh():
@@ -226,7 +226,7 @@ def test_go_troi_khong_phai_lenh():
                "reply_to_message": {"message_id": 83, "message_thread_id": 83,
                                     "forum_topic_created": {"name": "vera"},
                                     "from": {"id": 1, "is_bot": True}}}
-        assert not dct._la_reply_bao_cao("vera", msg)
+        assert not dct._is_reply_report("vera", msg)
 
 
 def test_manifest_da_gui_thang_ban_moi_nhat_theo_mtime():
@@ -242,16 +242,16 @@ def test_manifest_da_gui_thang_ban_moi_nhat_theo_mtime():
         os.utime(da_gui, (10**9, 10**9))
         dct = _dat_mid(t, message_id=2005, message_ids=[2005], manifest=str(da_gui))
         assert dct.latest_manifest("vera") == moi_hon, "test hong: mtime phai lech"
-        assert dct.manifest_da_gui("vera") == da_gui
+        assert dct.manifest_already_send("vera") == da_gui
 
 
 def test_manifest_da_gui_tra_none_khi_chua_ghim():
     """Bao cao gui truoc khi co co che ghim -> nguoi goi lui ve latest_manifest."""
     with tempfile.TemporaryDirectory() as t:
         dct = _dat_mid(t, message_id=2005)
-        assert dct.manifest_da_gui("vera") is None
+        assert dct.manifest_already_send("vera") is None
         dct2 = _dat_mid(t, message_id=2005, manifest=str(Path(t) / "da-xoa.json"))
-        assert dct2.manifest_da_gui("vera") is None, "tep khong con thi khong ghim"
+        assert dct2.manifest_already_send("vera") is None, "tep khong con thi khong ghim"
 
 
 # ================================================== ngay VN, khong phai UTC

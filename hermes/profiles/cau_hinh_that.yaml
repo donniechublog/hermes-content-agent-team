@@ -1,5 +1,5 @@
 # CAC KHOA CAU HINH QUYET DINH PROMPT — ban chup, TEP DO MAY GHI.
-# Sinh bang: venv/bin/python dong_bo_hermes.py --chup-cau-hinh
+# Sinh bang: venv/bin/python sync_hermes.py --chup-cau-hinh
 # Doc de biet vai dang chay model nao, thay duoc skill nao, chay duoc
 # lenh nao. KHONG dung de trien khai nguoc: doi cau hinh that thi sua
 # tren may chu roi chup lai trong cung mot commit.

@@ -116,9 +116,9 @@ def test_khong_hoi_ong_chu_khi_ethan_du_anh():
 
 # ------------------------------------------------------ 4. cau chu cua nut
 def _ha_san(tmp: Path, manifest: dict, sidecar: dict | None):
-    """Chay duyet_bai._nut_ha_san voi moi truong gia, tra `note`."""
-    import duyet_bai as db
-    import duyet_giao_viec as dgv
+    """Chay approve_post._button_lower_ready voi moi truong gia, tra `note`."""
+    import approve_post as db
+    import approve_dispatch as dgv
     d = tmp / "state" / "chuan_bi" / "d1"
     d.mkdir(parents=True, exist_ok=True)
     (d / "xong.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -132,7 +132,7 @@ def _ha_san(tmp: Path, manifest: dict, sidecar: dict | None):
     dgv.HERMES_HOME = str(tmp / "home")
     db.call = lambda *a, **k: {"ok": True}
     try:
-        note, _kb = db._nut_ha_san("tok", "d1", {"id": "cbq1"})
+        note, _kb = db._button_lower_ready("tok", "d1", {"id": "cbq1"})
         return note
     finally:
         db.STATE_DIR, db.DRAFTS, dgv.HERMES_HOME, db.call = cu
@@ -226,9 +226,9 @@ def test_sidecar_ghi_truoc_khi_engine_chay():
     ghi — truoc gio chi mat tom tat (im lang), tu 10/09/2026 mat ca nguong."""
     import inspect
 
-    import duyet_chon_tin as dct
+    import approve_pick as dct
     src = inspect.getsource(dct.create_pair)
-    assert src.index("_cat_sidecar(") < src.index("_khoi_chay_engine("), \
+    assert src.index("_crop_sidecar(") < src.index("_block_run_engine("), \
         "create_pair chay engine truoc khi ghi sidecar — engine se khong biet vai"
 
 

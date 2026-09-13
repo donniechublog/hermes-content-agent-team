@@ -269,11 +269,11 @@ def main() -> int:
     if a.khong_gui:
         print(f"[thu] không gửi. {[str(f) for f in files]}")
     else:
-        import gui_telegram
+        import send_telegram
         reply = int(a.khoa) if str(a.khoa).isdigit() else None
         try:
-            res = gui_telegram.post("itachi", [str(f) for f in files], mo_ta, reply_to=reply)
-        except gui_telegram.GuiLoi as e:
+            res = send_telegram.post("itachi", [str(f) for f in files], mo_ta, reply_to=reply)
+        except send_telegram.SendError as e:
             sys.exit(f"[LOI] {e}")
         rr = res.get("result")
         mid = (rr[-1] if isinstance(rr, list) else rr or {}).get("message_id")

@@ -157,7 +157,7 @@ mọi bảng cũ:
    `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
    (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).
 3. **Một SOUL** trong `hermes/profiles/<brand>/<slug>.SOUL.md` (hoặc `shared/`
-   nếu dùng chung cả hai brand), rồi `dong_bo_hermes.py --ra-hermes` đẩy sang
+   nếu dùng chung cả hai brand), rồi `sync_hermes.py --ra-hermes` đẩy sang
    home đang chạy.
 
 Còn phải làm tay: một topic trong `state/topics.json` (id do Telegram cấp) và
@@ -225,7 +225,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   tin; tự giải mã link Google News (`giai_ma_gnews`).
 - `scan_models.py` — quét của Nova: 23 bảng xếp hạng, mục "RA MẮT THEO BẢNG CHẤM
   ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
-  **Bảng đăng ký ở `bang_model.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
+  **Bảng đăng ký ở `model_boards.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
   đề in, link, lấy hàng từ đâu). Trước 07/09/2026 thêm một bảng phải khai ở
   **sáu** chỗ trong hai tệp; quên một chỗ là loại lỗi không báo gì cả (mất bảng
   trong báo cáo, hoặc mục bắt buộc ra link rỗng). Nay năm chỗ dẫn xuất từ đó;
@@ -261,16 +261,16 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `draft_write.py` — ghi bản nháp + album đúng khuôn tên tệp.
 - `publish.py` — gửi text/ảnh lên Telegram, hỗ trợ topic.
 - `moat_publish.py` — đẩy bài đã duyệt sang moat và hỏi trạng thái đăng social.
-- `bang_den.py` — bảng đen kanban (xem dưới).
-- `ghi_log.py`, `env_load.py` — log và nạp môi trường dùng chung.
+- `blackboard.py` — bảng đen kanban (xem dưới).
+- `write_log.py`, `env_load.py` — log và nạp môi trường dùng chung.
 
 **Đo đạc**
 
-- `theo_doi_9router.py` — nhật ký 9router theo ngày
+- `monitor_9router.py` — nhật ký 9router theo ngày
   (`state/9router/nhat_ky/9router_<ngày>.md|json`): req/prompt/cache%/$ theo model,
   theo khoá API, theo giờ VN, model lạ, cache thấp, fallback thật, lỗi, phiên
   rỗng, **$ theo vai** và $/bài theo brand. Ada đọc qua `tai(ngày)`.
-- `nhat_ky.py` + `nhat_ky_web.py` — nhật ký ngày và trang web cổng 9130.
+- `journal.py` + `journal_web.py` — nhật ký ngày và trang web cổng 9130.
 - `model_watch.py` — dò sức khoẻ model, báo Telegram khi trạng thái đổi.
 - `model_audition.py`, `cost_squeeze.py` — thử model trên việc thật.
 
@@ -284,7 +284,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `inplace-translate` (Gin/Itachi), `social-crawl` (bóc media từ post mạng xã hội),
   `ai-background` (sinh nền — **chờ GPU**).
 - `hermes/profiles/` — SOUL/MEMORY của các vai; `shared/` áp cho cả hai home.
-  Đồng bộ bằng `dong_bo_hermes.py` (`--ra-hermes` / `--ve-git`).
+  Đồng bộ bằng `sync_hermes.py` (`--ra-hermes` / `--ve-git`).
 - `tests/` — chạy thẳng, không cần mạng: **`tests/chay.sh`** (thoát khác 0 nếu
   bất kỳ tệp nào hỏng; `tests/chay.sh cong_chan` để lọc). Đừng dùng vòng
   `for f in tests/*.py; do …; done` nữa: nó trả mã thoát của tệp **cuối cùng**,
@@ -328,16 +328,16 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   bước) — nay truyền `lay_emoji=`; và `luat_anh._so_da_dung` bị gán đè không trả
   lại, khiến `kiem_da_dung` trả rỗng vô điều kiện trong mọi test sau đó — nay
   qua `_so_tam()`. Thêm test mới thì giữ đúng hai lối này.
-- `kiem_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
+- `check_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.
 - `cai_dat.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
-  (pip, `playwright install chromium`) rồi kết thúc bằng `kiem_moi_truong.py`.
+  (pip, `playwright install chromium`) rồi kết thúc bằng `check_env.py`.
   Trước đây các bước này nằm rải trong comment của `requirements.txt` và
   `bob_submit.py`, thiếu một bước là hỏng **câm** (thiếu cv2 → cổng mặt người tự
   tắt). Font và model YuNet đã nằm trong git, không phải tải. `--thu` xem trước,
   không cài gì. **Không còn bước Node nào** từ 09/09/2026 (A6).
-- `kiem_moi_truong.py` — chặn đầu: cv2, model YuNet, Chromium, `OPENAI_API_KEY`,
+- `check_env.py` — chặn đầu: cv2, model YuNet, Chromium, `OPENAI_API_KEY`,
   `TELEGRAM_BOT_TOKEN`. Mỗi mục tự bọc lỗi nên một mục hỏng không giết cả script.
 
 ## Chạy tuần tự, không song song
@@ -375,7 +375,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 Hermes; đội chọn **kanban swarm** vì hai cách kia (mỗi vai một bot Telegram, hoặc `delegate_task`
 sinh agent con) hoặc tốn 8 bot hoặc không phải vai thật. Không dùng `create_swarm()` nguyên khối
 vì nó chạy thẳng worker → verifier → synthesizer, không có chỗ cho cổng **Ông Chủ duyệt ảnh**.
-`bang_den.py` dùng đúng các viên gạch của nó và dựng đồ thị theo tiến trình thật của bài:
+`blackboard.py` dùng đúng các viên gạch của nó và dựng đồ thị theo tiến trình thật của bài:
 
 ```
 thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nhận việc; là bảng đen)
@@ -393,7 +393,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
   để Ada đối chiếu bài với thẻ khi phân tích.
 - Nhìn toàn chuỗi: `hermes kanban show <thẻ gốc>` hoặc dashboard — quan hệ cha-con nằm trong
   `task_links`, bàn giao trong `task_comments`/`task_runs`, không trôi như chat.
-- Bảng đen là lớp thêm, **best-effort**: `bang_den.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
+- Bảng đen là lớp thêm, **best-effort**: `blackboard.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
   đen.
 - Bật theo `CT_BANG_DEN` (mặc định `dcgr`). **Blog bật từ 05/09/2026 chiều** qua drop-in
   `hermes-approve@blog.service.d/override.conf` (`Environment=CT_BANG_DEN=dcgr,blog`); đã thử thẻ gốc
@@ -409,7 +409,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 - `hermes-approve@blog` / `hermes-approve@dcgr` — dịch vụ duyệt bài.
 - `hermes-dashboard-blog` — cổng **9120**; `hermes-dashboard-dcgr` — cổng **9121**
   (đều bind 127.0.0.1).
-- `nhat-ky-web` — `nhat_ky_web.py` cổng **9130**: `/` danh sách ngày,
+- `nhat-ky-web` — `journal_web.py` cổng **9130**: `/` danh sách ngày,
   `/9router/<ngày>` bảng đầy đủ, `.json` số thô. Tin Telegram 6h sáng (chỉ brand
   blog gửi, tránh trùng) là tóm tắt req · $ · cache% · fallback + $/bài + link.
 
@@ -425,7 +425,7 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
   `hermes/scripts/quet_daily_scan.sh <vai>`; `finn_daily_scan.sh` và hai tệp kia
   chỉ còn 7 dòng gọi sang đó, giữ tên cũ để khỏi phải sửa job cron trên máy chủ.
 - `daily-log` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router
-  (`theo_doi_9router.py --gui` → topic `ada`).
+  (`monitor_9router.py --gui` → topic `ada`).
 - `model-watch` — `*/30 0,4,5,10-23 * * *`, tức **tắt 08:00–10:59 và
   13:00–16:59 VN**, đúng khung giờ chọn số buổi sáng. Model chết lúc 8h thì 11h
   mới có cảnh báo. Nếu không cố ý thì đổi về `*/30 * * * *` trên máy chủ
@@ -445,7 +445,7 @@ tuần vẫn hiện `last_status: ok`, `failure_streak: 0`. Nay cả bốn scrip
 khác 0 khi hỏng, nên `failure_streak` trong `~/.hermes-<brand>/cron/jobs.json`
 và dashboard là chỗ đối chiếu thật.
 
-**Ai đọc con số đó.** `soat_cron.py` (Ông Chủ chốt 07/09/2026), chạy 07:00 VN.
+**Ai đọc con số đó.** `audit_cron.py` (Ông Chủ chốt 07/09/2026), chạy 07:00 VN.
 Nó không đổi `deliver` — đổi `deliver` là đổi cả đường ra của lần chạy **thành
 công**, mà `moat-publish-watch` chạy 288 lần/ngày. Nó đọc thẳng
 `<home>/cron/jobs.json` của **cả hai brand** rồi nhắn vào topic `ada` khi
@@ -530,13 +530,13 @@ private của `kanban_swarm`. Chúng đổi lúc nào cũng được, và đổi
 ngày mới lộ ra. Chạy ngay sau khi cập nhật:
 
 ```bash
-venv/bin/python kiem_hermes.py
+venv/bin/python check_hermes.py
 ```
 
 Chỉ đọc, không tạo gì. Thêm `--day-du` nếu muốn một lượt chat thật (tốn LLM).
 Kèm theo: `venv/bin/pip install -r requirements.txt` (venv dùng chung nên
 `hermes update` có thể làm mất pymupdf), và
-`venv/bin/python dong_bo_hermes.py --kiem-upstream` để xem hermes đổi gì trong
+`venv/bin/python sync_hermes.py --kiem-upstream` để xem hermes đổi gì trong
 plugin kanban kể từ lần port cuối.
 
 ## Model
@@ -562,7 +562,7 @@ này. Lịch sử đổi model, số đo giá, và ba điểm mù của 9router:
 1. **Phải có giám sát model.** Hermes fallback im lặng hoàn toàn — đặt model
    chính thành model chết, agent vẫn trả lời bình thường, không một dòng báo.
    Cần cả hai lớp: `model_watch.py` (model còn sống không) và
-   `theo_doi_9router.py` (model nào **thật sự** được gọi).
+   `monitor_9router.py` (model nào **thật sự** được gọi).
 2. **Ghim mỗi hội thoại vào một model; chuyển tầng thì chuyển ở ranh giới task.**
    Cache là per-model, mỗi lần lật là mất sạch prefix đã cache. Cột `cache%`
    trong nhật ký ngày chính là thước đo: tụt cache nghĩa là đang lật model.

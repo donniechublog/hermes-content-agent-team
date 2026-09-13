@@ -15,12 +15,12 @@ update cua nhau. Vi vay dich vu nay xu ly ca hai luong trong cung mot vong lap:
 
 Tu 06/09/2026 tep nay CHI con vong poll + dieu phoi tin nhan (handle_message) + CLI
 `push`. Phan con lai tach theo trach nhiem, di chuyen thuan (than ham y nguyen):
-  duyet_co_so.py     nen: hang so, call, ghi JSON nguyen tu, khoa draft, chay nen
-  duyet_giao_viec.py bang vai, kanban_create, doc kanban.db, bang den, bao tien do
-  duyet_chon_tin.py  reply so -> manifest -> create_pair (khoa theo manifest)
-  duyet_bai.py       nut Duyet/Bo/Lam lai, chuyen Kite, dang kenh, day hang duyet
-  duyet_chat.py      chat theo topic: FIFO moi vai + semaphore
-  duyet_lenh.py      lenh slash /bai /vai /hd
+  approve_base.py     nen: hang so, call, ghi JSON nguyen tu, khoa draft, chay nen
+  approve_dispatch.py bang vai, kanban_create, doc kanban.db, bang den, bao tien do
+  approve_pick.py  reply so -> manifest -> create_pair (khoa theo manifest)
+  approve_post.py       nut Duyet/Bo/Lam lai, chuyen Kite, dang kenh, day hang duyet
+  approve_chat.py      chat theo topic: FIFO moi vai + semaphore
+  approve_command.py      lenh slash /bai /vai /hd
 Khong con re-export names tu day (sua 09/09/2026): anh_chuan_bi va cac kich ban
 thu goi duyet_* truc tiep neu can.
 """
@@ -37,31 +37,31 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
-import ghi_log                                              # noqa: E402
+import write_log                                              # noqa: E402
 import submit_common                                             # noqa: E402
 import role as _vai                                           # noqa: E402
 
-from duyet_co_so import (  # noqa: E402
-    DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _chay_nen, _ghi_json, _gui_chu, _reply_that, call, la_ong_chu, load_secrets, log, rut,
+from approve_base import (  # noqa: E402
+    DRAFTS, HERMES_HOME, OFFSET, STATE_DIR, TELEGRAM_INCOMING, _run_background, _write_json, _send_text, _reply_real, call, is_boss, load_secrets, log, rut,
 )
-from duyet_giao_viec import (  # noqa: E402
-    bao_tien_do_kanban, vai_cua_topic,
+from approve_dispatch import (  # noqa: E402
+    report_progress_kanban, role_of_topic,
 )
-from duyet_chon_tin import (  # noqa: E402
-    MANIFEST_THEO_TOPIC, _la_reply_bao_cao, doc_lenh_chon, _xu_ly_chon,
+from approve_pick import (  # noqa: E402
+    MANIFEST_BY_TOPIC, _is_reply_report, read_pick_command, _process_pick,
 )
-from duyet_bai import (  # noqa: E402
-    _lam_lai_het_han, _nhan_ly_do_lam_lai, _xu_ly_nut, da_len_channel, draft_push,
+from approve_post import (  # noqa: E402
+    _redo_all_done_limit, _label_reason_redo, _process_button, already_len_channel, draft_push,
 )
-from duyet_chat import (  # noqa: E402
+from approve_chat import (  # noqa: E402
     handle_chat,
 )
-from duyet_lenh import (  # noqa: E402
+from approve_command import (  # noqa: E402
     handle_command,
 )
 
 
-def _tai_anh_dinh_kem(token, msg):
+def _download_image_fixed_with(token, msg):
     """Tai anh dinh kem (photo hoac document anh) cua tin nhan ve dia, tra ve
     duong dan cuc bo hoac None neu tin khong co anh.
 
@@ -101,7 +101,7 @@ def _tai_anh_dinh_kem(token, msg):
     out.write_bytes(data)
     return str(out)
 
-def _bao_khong_ho_tro(token, group, thread_id, msg, mid):
+def _report_no_family_point(token, group, thread_id, msg, mid):
     """Sticker, voice, video, file khong phai anh... — khong hieu duoc thi noi
     ro, khong im lang (im lang = "khong phan hoi" trong mat Ong Chu)."""
     loai = next((k for k in ("sticker", "voice", "video", "audio", "document",
@@ -113,28 +113,28 @@ def _bao_khong_ho_tro(token, group, thread_id, msg, mid):
          text=f"Tin dạng {loai} chưa hỗ trợ — chỉ nhận chữ và ảnh (photo hoặc file ảnh).")
 
 
-def _lenh_chon_neu_co(token, group, msg, thread_id, text, mid):
+def _pick_command_if_has(token, group, msg, thread_id, text, mid):
     """So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
     REPLY dung vao bao cao (xem _la_reply_bao_cao). Tra (vai, lenh); lenh None
     la hoi thoai. Ghi lai quyet dinh cong reply: khi Ong Chu bao "go so ma
     khong ra bai" thi mot dong log du de biet cong da xu ra sao."""
-    vai = vai_cua_topic(thread_id)
-    lenh = doc_lenh_chon(text) if vai in MANIFEST_THEO_TOPIC else None
+    vai = role_of_topic(thread_id)
+    lenh = read_pick_command(text) if vai in MANIFEST_BY_TOPIC else None
     if lenh is not None:
-        rt_that = _reply_that(msg)
-        la_reply = _la_reply_bao_cao(vai, msg)
+        rt_that = _reply_real(msg)
+        la_reply = _is_reply_report(vai, msg)
         log("route", f"msg={mid} ung-vien-chon vai={vai} "
                      f"reply_that={rt_that.get('message_id') if rt_that else None} "
                      f"la_reply_bao_cao={la_reply}")
         if not la_reply:
             log("route", f"msg={mid} giong lenh chon nhung khong phai reply bao cao "
                          f"vai={vai} -> coi la hoi thoai")
-            _bao_khong_phai_reply(token, group, thread_id, vai, rt_that)
+            _report_no_right_reply(token, group, thread_id, vai, rt_that)
             lenh = None
     return vai, lenh
 
 
-def _bao_khong_phai_reply(token, group, thread_id, vai, rt_that):
+def _report_no_right_reply(token, group, thread_id, vai, rt_that):
     """Noi ro VI SAO lenh chon so khong chay, thay vi im lang.
 
     Cong reply (06/09/2026) ha moi tin khong-phai-reply xuong hoi thoai. Nhung
@@ -146,7 +146,7 @@ def _bao_khong_phai_reply(token, group, thread_id, vai, rt_that):
     dong. Im lang la trang thai te nhat — no giong het luc bot chet."""
     ly_do = ("tin này không bấm Reply" if not rt_that
              else "tin này Reply vào một bản báo cáo cũ")
-    _gui_chu(token, group,
+    _send_text(token, group,
              f"⚠️ Chưa tạo bài: lệnh chọn số phải Reply đúng vào báo cáo MỚI NHẤT "
              f"của {_vai.display_name(vai)} — {ly_do}.\n"
              f"Bấm Reply vào báo cáo cuối cùng trong topic rồi gửi lại đúng dòng vừa gõ.",
@@ -169,7 +169,7 @@ def handle_message(token, group, msg):
     text = (msg.get("text") or msg.get("caption") or "").strip()
 
     thread_id = msg.get("message_thread_id")
-    log("vao", f"msg={mid} thread={thread_id} vai={vai_cua_topic(thread_id)} "
+    log("vao", f"msg={mid} thread={thread_id} vai={role_of_topic(thread_id)} "
                f"from={msg.get('from', {}).get('id')} text={rut(text)}")
 
     # ALLOWLIST cho MOI tin, khong chi lenh slash. Truoc 06/09/2026 chi
@@ -178,7 +178,7 @@ def handle_message(token, group, msg):
     # tao duoc cap task ton LLM, con reply kem URL la agent chay voi bo cong cu
     # day du. Khong co tep ong_chu.json thi giu nguyen hanh vi cu (xem
     # `la_ong_chu`), nen bat cai nay khong lam ket chet may dang chay.
-    if not la_ong_chu(msg):
+    if not is_boss(msg):
         uid = msg.get("from", {}).get("id")
         log("vao", f"msg={mid} TU CHOI: {uid} khong co trong ong_chu.json")
         call(token, "sendMessage", chat_id=group,
@@ -196,12 +196,12 @@ def handle_message(token, group, msg):
     # (`state/<brand>/telegram_incoming/`) va truoc 06/09/2026 no chay o dong
     # dau tien cua handle_message — nguoi la trong group ghi duoc tep vao may
     # ma khong qua mot cong nao.
-    anh_path = _tai_anh_dinh_kem(token, msg)
+    anh_path = _download_image_fixed_with(token, msg)
     if anh_path:
         text = f"[Ảnh đính kèm đã tải về: {anh_path}]\n" + (text or "(không có chú thích kèm theo)")
 
     if not text:
-        _bao_khong_ho_tro(token, group, thread_id, msg, mid)
+        _report_no_family_point(token, group, thread_id, msg, mid)
         return
 
     # Dau "/" = LENH, o bat ky topic nao — xu ly rieng, khong bao gio roi ve
@@ -210,21 +210,21 @@ def handle_message(token, group, msg):
     # khong duoc nghen vong poll — cung ly do voi handle_chat ben duoi.
     if text.startswith("/"):
         log("route", f"msg={mid} lenh slash")
-        _chay_nen("lenh", handle_command, token, group, thread_id,
+        _run_background("lenh", handle_command, token, group, thread_id,
                   token, group, msg, thread_id, text)
         return
 
     # Topic nay dang CHO ly do "lam lai" (Ong Chu vua bam nut)? Nuot tin nay
     # lam ly do, giao task, xong. Dat TRUOC "chon so": mot dong "4: chart bi
     # cat" ma roi vao topic chon tin se bi hieu nham thanh chon bai so 4.
-    if _nhan_ly_do_lam_lai(token, group, msg, thread_id, text):
+    if _label_reason_redo(token, group, msg, thread_id, text):
         return
 
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
     # REPLY dung vao bao cao (xem _la_reply_bao_cao). Moi thu khac (ke ca dung
     # so nhung go troi, khong bam Reply) la hoi thoai. Finn, Nova, Vera deu
     # duoc — cung mot cach tra loi.
-    vai, lenh = _lenh_chon_neu_co(token, group, msg, thread_id, text, mid)
+    vai, lenh = _pick_command_if_has(token, group, msg, thread_id, text, mid)
     is_pick = lenh is not None
     if not is_pick:
         # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot
@@ -236,15 +236,15 @@ def handle_message(token, group, msg):
             return
         # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
         # vong lap poll (nut Duyet/Bo phai bam duoc bat cu luc nao).
-        _chay_nen("chat", handle_chat, token, group, thread_id,
+        _run_background("chat", handle_chat, token, group, thread_id,
                   token, group, msg, thread_id, text)
         return
 
     log("route", f"msg={mid} chon so vai={vai} lenh={lenh}")
-    _chay_nen("chon", _xu_ly_chon, token, group, thread_id,
+    _run_background("chon", _process_pick, token, group, thread_id,
               token, group, thread_id, vai, lenh)
 
-def _ghi_offset(offset: int):
+def _write_offset(offset: int):
     """Ghi offset NGUYEN TU. Chet giua luc ghi khong duoc de lai file cut:
     int() doc file cut se nem ValueError ngay khoi dong -> systemd restart ->
     crash-loop im lang, va kenh bao dong duy nhat (Telegram) thi can offset."""
@@ -253,7 +253,7 @@ def _ghi_offset(offset: int):
     tmp.write_text(str(offset))
     os.replace(tmp, OFFSET)
 
-def _doc_offset() -> int:
+def _read_offset() -> int:
     """File hong (cut nua chung, rac) thi ve 0 va bao — con hon chet han.
     offset=0 lam Telegram tra lai cac update con giu (toi da 24h), nhung
     handle_callback da co chot trang thai nen bai da xu ly khong dang lai."""
@@ -265,7 +265,7 @@ def _doc_offset() -> int:
         print(f"[approve_service] offset.txt hong ({e}), ve 0", flush=True)
         return 0
 
-def _soat_tirith():
+def _audit_tirith():
     """Bao neu bo quet prompt-injection duoc KHAI la bat nhung khong chay duoc.
 
     Phat hien 06/09/2026: moi config deu co tirith_enabled: true, tirith_path:
@@ -294,10 +294,10 @@ def _soat_tirith():
                  + (" (fail_open: true nen lenh van chay tiep)" if mo else ""))
 
 
-KET_PUBLISHING_GIAY = 15 * 60          # qua ngan nay ma con "publishing" = ket
+END_PUBLISHING_SECONDS = 15 * 60          # qua ngan nay ma con "publishing" = ket
 
 
-def _cuu_bai_ket_publishing(token, group):
+def _rescue_article_end_publishing(token, group):
     """Bai ket vinh vien o trang thai `publishing` sau khi dich vu khoi dong lai.
 
     `handle_callback` ghi `publishing` roi dang o mot thread DAEMON. Unit co
@@ -327,14 +327,14 @@ def _cuu_bai_ket_publishing(token, group):
             continue
         if d.get("status") != "publishing":
             continue
-        if gio - int(d.get("decided_at") or 0) < KET_PUBLISHING_GIAY:
+        if gio - int(d.get("decided_at") or 0) < END_PUBLISHING_SECONDS:
             continue                    # co the mot tien trinh khac dang dang that
         # CO DAU len channel = Telegram DA nhan bai nay (`publish` ghi dau ngay
         # khi tra ok, truoc moi viec khac). Tien trinh chet sau do la chet o
         # buoc GHI TRANG THAI, khong phai o buoc dang. Ha ve publish_failed luc
         # nay la moi Ong Chu bam Duyet lai mot bai DA len channel — dung duong
         # sinh ra "dang trung" ma E5 di dong.
-        if da_len_channel(d):
+        if already_len_channel(d):
             d["status"] = "published"
             d["ghi_chu_cuu"] = (f"dich vu khoi dong lai luc {gio}; bai DA len channel "
                                 "(co dau channel_*_mid) nen danh dau published")
@@ -344,7 +344,7 @@ def _cuu_bai_ket_publishing(token, group):
             d["ghi_chu_cuu"] = f"dich vu khoi dong lai luc {gio}, bo trang thai publishing"
             dich = cuu
         try:
-            _ghi_json(p, d)
+            _write_json(p, d)
         except OSError:
             continue
         dich.append(p.stem)
@@ -370,13 +370,13 @@ def _cuu_bai_ket_publishing(token, group):
 
 def loop():
     token, channel, group = load_secrets()
-    offset = _doc_offset()
+    offset = _read_offset()
     tp = env_load.topics_path()
-    log("start", f"brand={ghi_log.brand()} group={group} state={STATE_DIR} "
+    log("start", f"brand={write_log.brand()} group={group} state={STATE_DIR} "
                  f"topics={tp.name}({'co' if tp.exists() else 'THIEU'}) "
                  f"hermes_home={HERMES_HOME} offset={offset}")
-    _soat_tirith()
-    _cuu_bai_ket_publishing(token, group)
+    _audit_tirith()
+    _rescue_article_end_publishing(token, group)
     loi_lien_tiep = 0
     mat_ket_noi_tu = None       # epoch luc bat dau chuoi loi hien tai, None = dang on
     loai_loi_dang_bao = None    # loai loi (409/429/ten exception) da bao — chi bao 1 lan/loai
@@ -428,7 +428,7 @@ def loop():
                 # bai, mat mot lenh (Ong Chu bam lai duoc) re hon dang trung
                 # (doc gia thay hai bai giong het nhau tren channel).
                 offset = u["update_id"] + 1
-                _ghi_offset(offset)
+                _write_offset(offset)
                 # Boc TUNG update: mot update hong khong duoc keo ca lo con
                 # lai xuong except ngoai (bi bo qua im lang), va nut bam hong
                 # thi Ong Chu phai thay nut ngung quay kem ly do.
@@ -438,7 +438,7 @@ def loop():
                         log("vao", f"callback data={cq.get('data')} "
                                    f"from={cq.get('from', {}).get('id')}")
                         # Chay nen: tao task/ghi bang den toi 2 phut, khong nghen poll.
-                        _chay_nen("nut", _xu_ly_nut, token, group,
+                        _run_background("nut", _process_button, token, group,
                                   (cq.get("message") or {}).get("message_thread_id"),
                                   token, channel, cq)
                     elif "message" in u:
@@ -449,8 +449,8 @@ def loop():
                                f"{type(e).__name__}: {e}\n{traceback.format_exc()}")
             # getUpdates cho toi 50 giay moi luot, nen goi moi vong la du thua
             # cho viec nay: no chi doc mot cau SQL va thuong khong gui gi.
-            _lam_lai_het_han(token, group)
-            bao_tien_do_kanban(token, group)
+            _redo_all_done_limit(token, group)
+            report_progress_kanban(token, group)
             loi_lien_tiep = 0
         except Exception as e:                              # noqa: BLE001
             loi_lien_tiep += 1
@@ -503,7 +503,7 @@ if __name__ == "__main__":
                 _dp = DRAFTS / (draft_id + ".json")
                 _d = json.loads(_dp.read_text(encoding="utf-8"))
                 _d["tg_card_message_id"] = _mid
-                _ghi_json(_dp, _d)
+                _write_json(_dp, _d)
         except Exception as _e:                              # noqa: BLE001
             print(f"[push] khong luu message_id: {type(_e).__name__}: {_e}")
         print("day ban nhap -> topic " + str(thread) + " | " +

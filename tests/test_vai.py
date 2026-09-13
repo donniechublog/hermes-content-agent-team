@@ -6,7 +6,7 @@ ten" chep tay o noi khac. `role.py` gom lai mot cho va sinh lai cac bang do.
 
 Tep nay giu hai thu:
   1. HOP DONG KHONG DOI: cac bang duoi day duoc chep NGUYEN VAN tu ban viet tay
-     truoc khi gom (git 3a18f79:duyet_giao_viec.py). Bang dan xuat lech mot khoa
+     truoc khi gom (git 3a18f79:approve_dispatch.py). Bang dan xuat lech mot khoa
      la mot duong hong THAT — `SLUG_OLD` sai thi task khong ai nhan va nam
      'ready' mai (su co 01/09/2026), `NAME_BRIGHT_CAP` thieu mot chu thi ca lenh
      chon bi tu choi roi gui nham topic (su co 06/09/2026 voi "kites").
@@ -146,7 +146,7 @@ def test_slug_that_nhan_ten_cu_va_giu_nguyen_chu_la():
     assert role.canonical_slug("Jean") == "cape", "phai khong phan biet hoa thuong"
     assert role.canonical_slug("dre") == "dre", "slug hien tai giu nguyen"
     assert role.canonical_slug("khong-co-that") == "khong-co-that", \
-        "chu la phai tra NGUYEN VAN de chuan_assignee con bao loi tu te"
+        "chu la phai tra NGUYEN VAN de standard_assignee con bao loi tu te"
 
 
 def test_ten_hien_roi_ve_slug_khi_chua_khai():
@@ -239,8 +239,8 @@ def test_chat_router_TOPIC_PROFILE_khop_ban_dang_ky():
 
 def test_duyet_giao_viec_SLUG_CU_la_chinh_ban_cua_vai():
     """ADF-r2-1: bang chep tay tung ghi de ban dan xuat 21 dong sau."""
-    import duyet_giao_viec as dgv
-    assert dgv.SLUG_CU is role.SLUG_OLD
+    import approve_dispatch as dgv
+    assert dgv.SLUG_OLD is role.SLUG_OLD
 
 
 def test_handle_kenh_mot_ban_hai_kieu_khoa():
@@ -409,8 +409,8 @@ def test_moi_nguoi_viet_duoc_tro_toi_deu_co_that_va_la_vai_viet():
 def test_moi_vai_quet_that_deu_co_nguoi_viet():
     """Vai quet nao co manifest chay that thi phai co ten trong WRITE_BY_SCAN,
     khong duoc roi ve mac dinh im lang."""
-    import duyet_chon_tin
-    thieu = sorted(set(duyet_chon_tin.MANIFEST_THEO_TOPIC) - set(role.WRITE_BY_SCAN))
+    import approve_pick
+    thieu = sorted(set(approve_pick.MANIFEST_BY_TOPIC) - set(role.WRITE_BY_SCAN))
     assert not thieu, f"vai quet khong biet giao cho ai viet: {thieu}"
 
 

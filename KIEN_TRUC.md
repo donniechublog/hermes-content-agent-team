@@ -186,7 +186,7 @@ flowchart TD
 
     subgraph S2["2 · CHỌN"]
         ocnu1(["Ông Chủ<br/>trả lời số thứ tự"]):::actor
-        chontin["duyet_chon_tin.py<br/>(trong approve_service)"]:::container
+        chontin["approve_pick.py<br/>(trong approve_service)"]:::container
         tg1 -->|"số đã chọn"| ocnu1
         ocnu1 -->|"vd '1,3-Ethan, 2-Dre'"| chontin
     end
@@ -194,7 +194,7 @@ flowchart TD
     subgraph S3["3 · TẠO CẶP TASK"]
         pair["duyet_chon_tin.create_pair<br/>chạy nền anh_chuan_bi --im"]:::container
         kanban["Kanban swarm (Hermes)<br/>task ảnh → task viết (chờ ảnh)"]:::external
-        blackboard["bang_den.py<br/>ghi bảng đen (tao_root/ghi_nen)"]:::container
+        blackboard["blackboard.py<br/>ghi bảng đen (tao_root/ghi_nen)"]:::container
         chontin --> pair
         pair --> kanban
         pair --> blackboard
@@ -229,7 +229,7 @@ flowchart TD
     subgraph S7["7 · DUYỆT"]
         sendcard["gửi thẻ + bản nháp kèm nút ✅/❌<br/>(topic của vai viết)"]:::container
         ocnu2(["Ông Chủ bấm ✅ / ❌"]):::actor
-        duyetbai["duyet_bai.py"]:::container
+        duyetbai["approve_post.py"]:::container
         tg2["Telegram: topic vai viết"]:::external
         capDraft --> sendcard
         sendcard ==> tg2

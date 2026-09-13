@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import bang_model                                            # noqa: E402
+import model_boards                                            # noqa: E402
 import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
 
@@ -169,7 +169,7 @@ def match(muc: dict, item: dict) -> bool:
 # Bang thi doc tu BAN DANG KY (bang_model): truoc 07/09/2026 danh sach nay la
 # ban chep tay thu SAU cua cung mot bo bang, va `test_bang_nova` sinh ra chinh
 # vi mot lan them bang ma quen khai o day -> muc BAT BUOC ra link RONG.
-LINK_BOARD = dict(bang_model.LINK_BANG)
+LINK_BOARD = dict(model_boards.LINK_BOARD)
 # `ra_mat` KHONG phai mot bang: no la `loai` cua muc BAT BUOC sinh tu "ra mat
 # theo bang cham diem", tro ve trang tong cua artificialanalysis.
 LINK_BOARD["ra_mat"] = "https://artificialanalysis.ai/leaderboards/models"

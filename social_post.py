@@ -2,7 +2,7 @@
 """social_post.py — MOT cua duy nhat doc post X/Instagram/Facebook.
 
 Vi sao tach ra: hai noi can cung mot thu va vi ly do khac nhau —
-`duyet_lenh.py` (/bai) can CHU de lam brief, `image_prepare.py` can HINH cua
+`approve_command.py` (/bai) can CHU de lam brief, `image_prepare.py` can HINH cua
 chinh post do lam anh that cho slide. Viet hai ban thi mot ban sua, ban kia
 lech; dac biet la luat chuan hoa URL Facebook (xem SKILL.md cua social-crawl)
 von da dat gia moi tim ra.
@@ -24,7 +24,7 @@ HOSTS = {"x.com", "twitter.com", "mobile.twitter.com", "instagram.com",
          "mbasic.facebook.com", "fb.com", "fb.watch"}
 
 
-def la_social(url: str) -> bool:
+def is_social(url: str) -> bool:
     """URL nay co phai post mang xa hoi (crawl duoc toan van + anh) khong."""
     try:
         return urlsplit(url or "").netloc.lower().removeprefix("www.") in HOSTS
@@ -32,7 +32,7 @@ def la_social(url: str) -> bool:
         return False
 
 
-def tieu_de_tu_text(text: str, gioi_han: int = 100) -> str:
+def title_from_text(text: str, gioi_han: int = 100) -> str:
     """Cau dau tien lam tieu de: post khong co tieu de nhu bai bao, va dong dau
     thuong chinh la cau chot. Cat o ranh gioi tu, khong cat giua chu."""
     import re
@@ -43,7 +43,7 @@ def tieu_de_tu_text(text: str, gioi_han: int = 100) -> str:
     return cau
 
 
-def doc(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
+def read(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
         in_log=lambda t: None) -> dict | None:
     """Doc mot post. Tra ve dict da don:
 
@@ -94,5 +94,5 @@ def doc(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
         media.append({"type": m.get("type") or "image", "url": m["url"], "tep": tep})
 
     in_log(f"social_fetch OK: {len(text)}c, {len(media)} media, tac gia {tac_gia!r}")
-    return {"title": tieu_de_tu_text(text), "text": text, "author": tac_gia,
+    return {"title": title_from_text(text), "text": text, "author": tac_gia,
             "link": d.get("url") or tw.get("url") or url, "media": media}

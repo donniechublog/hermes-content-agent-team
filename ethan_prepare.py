@@ -157,7 +157,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
           f"cd {ROOT} && venv/bin/python ethan_submit.py {m['draft_id']}",
           "Script tự ghép/cắt, chạy mọi cổng chặn của card.py, dựng thẻ, gửi lên topic kèm nút duyệt, ghi bàn "
           "giao cho Miles. Báo [LOI] thì sửa đúng chỗ đó trong spec.json rồi chạy lại đúng lệnh này. KHÔNG "
-          "curl, KHÔNG ls, KHÔNG mở từng ảnh, KHÔNG chạy card.py hay gui_telegram.py tay."]
+          "curl, KHÔNG ls, KHÔNG mở từng ảnh, KHÔNG chạy card.py hay send_telegram.py tay."]
     return "\n".join(L)
 
 

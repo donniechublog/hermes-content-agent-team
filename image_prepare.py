@@ -395,7 +395,7 @@ def _report_crash_loop(draft_id: str, so_chet: int) -> None:
         import publish
         tom = _summary_from_img_json(draft_id)
         slug = role.canonical_slug(tom.get("vai_anh") or "") or role.DEFAULT_IMAGE
-        publish.gui_topic(
+        publish.send_topic(
             f"⛔ Engine chuẩn bị ảnh chết bất thường <b>{so_chet} lần liên tiếp</b> trên draft "
             f"<code>{draft_id}</code> — đã DỪNG, không chạy lại. Xem "
             f"<code>state/&lt;brand&gt;/chuan_bi/{draft_id}/chuan_bi.log</code> (faulthandler in "

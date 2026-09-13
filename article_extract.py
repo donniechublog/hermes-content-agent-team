@@ -48,7 +48,7 @@ def fetch(url: str) -> str:
 def _parser() -> str:
     """Ten parser cho BeautifulSoup: lxml neu co, khong thi html.parser + KEU.
 
-    Audit D2 de nghi bo han lxml va dung html.parser (duyet_lenh.py dung parser
+    Audit D2 de nghi bo han lxml va dung html.parser (approve_command.py dung parser
     do tu lau). Do KHONG mien phi, da thu: hai parser cho ket qua y het tren HTML
     dong the day du, nhung voi `<p>` KHONG DONG — hop le trong HTML va rat pho
     bien tren bao that — lxml tu dong the con html.parser long doan sau vao doan

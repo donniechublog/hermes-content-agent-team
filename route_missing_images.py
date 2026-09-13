@@ -88,9 +88,9 @@ def after_prepare(draft_id: str, m: dict) -> None:
     so, tt = int(thieu.get("so", 0)), int(thieu.get("toi_thieu", 5))
     ten = vai_mod.display_name(vai)      # ban dang ky: vai.py (audit A4)
     tieu = m.get("title", draft_id)
-    from duyet_giao_viec import chuan_assignee
-    from duyet_bai import tao_task_kite
-    _, khong_kite = chuan_assignee("kite")
+    from approve_dispatch import standard_assignee
+    from approve_post import create_task_kite
+    _, khong_kite = standard_assignee("kite")
 
     def _hoi(co: str, text: str, kb=None) -> None:
         # Chi dat co "da hoi/da bao" khi Telegram THAT SU nhan. Khong thi ghi
@@ -112,7 +112,7 @@ def after_prepare(draft_id: str, m: dict) -> None:
             _hoi("hoi_kite", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được; brand này chưa có Kite. Chọn:", kb)
         return
     if so == 0:
-        rid, loi = tao_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
+        rid, loi = create_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
         if loi:
             _time_send(vai, f"🖼 <b>{tieu}</b>: 0 ảnh thật dùng được, chuyển Kite <b>lỗi</b>: {loi}")
             return

@@ -131,7 +131,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     L.append("Script tự cắt/ghép ảnh theo spec, chạy cổng chặn, dựng slide, gửi album lên topic kèm nút "
              "duyệt, ghi bàn giao cho Miles. Báo [LOI] thì sửa đúng chỗ đó trong spec.json rồi chạy "
              "lại đúng lệnh này. KHÔNG curl, KHÔNG ls, KHÔNG mở từng ảnh, KHÔNG chạy carousel.py hay "
-             "gui_telegram.py tay.")
+             "send_telegram.py tay.")
     return "\n".join(L)
 
 

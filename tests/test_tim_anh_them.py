@@ -99,13 +99,13 @@ def test_tu_khoa_phai_tieng_anh_va_ngan():
 
 
 def test_body_task_bao_vai_tu_tim_truoc_khi_block():
-    kt = task_bodies.ket_thuc_vai_anh("/goc", "draft-1")
+    kt = task_bodies.end_role_image("/goc", "draft-1")
     assert "find_more_images.py draft-1" in kt and "/goc" in kt, "duong dan phai duoc dien, khong con {goc}"
     assert "{goc}" not in kt and "{draft_id}" not in kt
     assert kt.index("find_more_images") < kt.index("kanban_block"), "tim TRUOC, block SAU"
-    for f in ("duyet_chon_tin.py", "duyet_bai.py"):
+    for f in ("approve_pick.py", "approve_post.py"):
         src = (ROOT / f).read_text(encoding="utf-8")
-        assert "task_bodies.ket_thuc_vai_anh(" in src, f"{f} van dien KET_THUC_VAI_ANH tho (con {{goc}})"
+        assert "task_bodies.end_role_image(" in src, f"{f} van dien END_ROLE_IMAGE tho (con {{goc}})"
     body = task_bodies.CAROUSEL_BODY.format(source_note="", link="", title="", summary="", draft_id="d",
                                             brand="b", goc="/g", ket_thuc=kt)
     assert "find_more_images.py draft-1" in body

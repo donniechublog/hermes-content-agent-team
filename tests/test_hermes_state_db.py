@@ -6,7 +6,7 @@ Trước đây theo_doi_9router (bảng `session_model_usage`) và ada_chuan_bi 
 `sessions`) đọc thẳng bằng SQL thô, `except: continue` — hermes đổi một cột là
 nhật ký và brief của Ada hỏng câm sau `hermes update`. Nay hai câu SELECT nằm
 trong adapter, cột dùng khai ở `_COT_DUNG_MODEL`/`_COT_PHIEN`, và
-`kiem_hermes.COT_CAN_STATE` phải KHỚP — test cuối giữ hai bảng đó không lệch.
+`check_hermes.COLUMN_CAN_STATE` phải KHỚP — test cuối giữ hai bảng đó không lệch.
 
 Chạy:  venv/bin/python tests/test_hermes_state_db.py
 """
@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import hermes_adapter as ha                                   # noqa: E402
-import kiem_hermes                                            # noqa: E402
+import check_hermes                                            # noqa: E402
 
 
 def _state_db(tmp):
@@ -47,7 +47,7 @@ def _state_db(tmp):
 def test_dung_theo_model_gop_theo_model_trong_cua_so():
     with tempfile.TemporaryDirectory() as t:
         p = _state_db(t)
-        ra = ha.dung_theo_model(p, 1000, 2000)          # s4 (5000) nam ngoai
+        ra = ha.use_by_model(p, 1000, 2000)          # s4 (5000) nam ngoai
         assert ra is not None
         theo = {r["model"]: r for r in ra}
         assert theo["gpt-5"]["api"] == 5 and theo["gpt-5"]["in"] == 1500, theo
@@ -57,7 +57,7 @@ def test_dung_theo_model_gop_theo_model_trong_cua_so():
 def test_tom_tat_phien_dem_va_top():
     with tempfile.TemporaryDirectory() as t:
         p = _state_db(t)
-        tt = ha.tom_tat_phien(p, 100)                    # s0 (10) bi loai
+        tt = ha.summary_session(p, 100)                    # s0 (10) bi loai
         assert tt == {"phien": 2, "tool": 16, "input": 1500, "api": 5,
                       "top": [("viet bai A", 12, 1000), ("viet bai B", 4, 500)]}, tt
 
@@ -68,30 +68,30 @@ def test_state_db_hong_thi_None_khong_phai_rong():
     with tempfile.TemporaryDirectory() as t:
         p = Path(t) / "state.db"
         p.write_bytes(b"khong phai sqlite")
-        assert ha.dung_theo_model(p, 0, 9) is None
-        assert ha.tom_tat_phien(p, 0) is None
-        assert ha.dung_theo_model(Path(t) / "khong_co.db", 0, 9) is None
+        assert ha.use_by_model(p, 0, 9) is None
+        assert ha.summary_session(p, 0) is None
+        assert ha.use_by_model(Path(t) / "khong_co.db", 0, 9) is None
 
 
 def test_state_db_cac_profile_liet_ke_dung_home():
     with tempfile.TemporaryDirectory() as t:
         p = _state_db(t)
-        assert ha.state_db_cac_profile(t) == [p]
-        assert ha.state_db_cac_profile(Path(t) / "rong") == []
+        assert ha.state_db_each_profile(t) == [p]
+        assert ha.state_db_each_profile(Path(t) / "rong") == []
 
 
 def test_cot_adapter_khop_kiem_hermes():
     """Adapter va kiem_hermes la HAI bang chep tay — lech nhau la kiem_hermes
     xanh tren server ma adapter vo (dung loi review Fable bat o C2)."""
-    assert set(ha._COT_DUNG_MODEL) == set(kiem_hermes.COT_CAN_STATE["session_model_usage"])
-    assert set(ha._COT_PHIEN) == set(kiem_hermes.COT_CAN_STATE["sessions"])
+    assert set(ha._COT_DUNG_MODEL) == set(check_hermes.COLUMN_CAN_STATE["session_model_usage"])
+    assert set(ha._COT_PHIEN) == set(check_hermes.COLUMN_CAN_STATE["sessions"])
 
 
 def test_kiem_bang_bat_duoc_cot_thieu():
     with tempfile.TemporaryDirectory() as t:
         p = _state_db(t)
-        assert kiem_hermes._kiem_bang("thu", p, kiem_hermes.COT_CAN_STATE) == []
-        loi = kiem_hermes._kiem_bang("thu", p, {"sessions": ["title", "cot_khong_co"]})
+        assert check_hermes._check_board("thu", p, check_hermes.COLUMN_CAN_STATE) == []
+        loi = check_hermes._check_board("thu", p, {"sessions": ["title", "cot_khong_co"]})
         assert loi and "cot_khong_co" in loi[0], loi
 
 

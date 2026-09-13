@@ -76,7 +76,7 @@ venv/bin/python tao_nen_ai.py \
   --gui itachi --mo-ta "Doraemon bắt tay Conan, bối cảnh làng Lá"
 ```
 
-Cờ này gọi `gui_telegram.py` ngay sau khi sinh xong, gửi PNG vào đúng topic
+Cờ này gọi `send_telegram.py` ngay sau khi sinh xong, gửi PNG vào đúng topic
 của bạn (tra `state/topics.json`: `gin`=289, `itachi`=291) và **ghi lại nhật
 ký** ở `state/telegram_sent/<vai>.jsonl` — mỗi dòng là `{message_id, files,
 mo_ta, ts}`. Nhật ký này là chỗ bạn tra lại khi cần, đừng chỉ dựa trí nhớ hội
@@ -84,11 +84,11 @@ thoại (phiên có thể bị tóm tắt/rớt ngữ cảnh qua nhiều lượt
 
 Sinh **nhiều ảnh cùng lúc** (vài phương án, hoặc nhiều slide) thì gọi
 `tao_nen_ai.py` nhiều lần lấy nhiều file, rồi gửi chung một album bằng
-`gui_telegram.py` trực tiếp (không qua `--gui` của `tao_nen_ai.py`, cờ đó chỉ
+`send_telegram.py` trực tiếp (không qua `--gui` của `tao_nen_ai.py`, cờ đó chỉ
 gửi một ảnh):
 
 ```bash
-venv/bin/python gui_telegram.py --vai itachi \
+venv/bin/python send_telegram.py --vai itachi \
   --anh /tmp/anh_1.png --anh /tmp/anh_2.png --anh /tmp/anh_3.png \
   --mo-ta "3 phương án nền cho carousel <id>"
 ```
@@ -101,7 +101,7 @@ làm lại đậm màu hơn". Việc của bạn:
 
 1. **Chưa chắc nhớ chính xác** đã gửi ảnh nào, prompt gì → tra lại:
    ```bash
-   venv/bin/python gui_telegram.py --vai itachi --list
+   venv/bin/python send_telegram.py --vai itachi --list
    ```
    In ra vài lần gửi gần nhất (mặc định 5) kèm `mo_ta` và đường dẫn file gốc
    — đối chiếu với text Ông Chủ vừa reply để xác định ĐÚNG ảnh nào đang được
@@ -118,7 +118,7 @@ làm lại đậm màu hơn". Việc của bạn:
 2. **Sinh lại bằng `tao_nen_ai.py`** với prompt đã chỉnh theo đúng yêu cầu
    (giữ nguyên phần Ông Chủ không yêu cầu đổi, chỉ sửa đúng phần được nhắc —
    đọc lại `mo_ta`/prompt cũ trong nhật ký để biết cái gì đang giữ nguyên).
-3. **Gửi lại bằng `--gui`/`gui_telegram.py` như một tin MỚI**, không sửa đè
+3. **Gửi lại bằng `--gui`/`send_telegram.py` như một tin MỚI**, không sửa đè
    lên tin cũ (Telegram Bot API không cho sửa ảnh đã gửi) — ghi rõ trong
    `--mo-ta` đây là bản sửa của ảnh nào, để lần reply sau còn tra lại được.
 
@@ -158,7 +158,7 @@ thay vì ảnh (lỗi hay gặp, không phải bug của bạn). Lỗi khác (m�
 trong `.secrets.env`) dừng ngay với thông báo rõ — đọc `stderr`, đừng thử lại
 tay nhiều lần trước khi biết lý do.
 
-`gui_telegram.py` dừng hẳn nếu thiếu `TELEGRAM_BOT_TOKEN`/`TELEGRAM_GROUP_ID`
+`send_telegram.py` dừng hẳn nếu thiếu `TELEGRAM_BOT_TOKEN`/`TELEGRAM_GROUP_ID`
 trong `.secrets.env`, nếu vai không có topic trong `state/topics.json`, hoặc
 nếu Telegram trả lỗi (token sai, bot bị kick khỏi group...) — không nuốt lỗi
 âm thầm, vì mất một lần gửi mà không ai biết là mất niềm tin vào cả luồng.

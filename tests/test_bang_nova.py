@@ -5,7 +5,7 @@ Vi sao co tep nay: 06/09/2026 mo tu 12 len 20 bang. Ba loi ben duoi deu la loai
 KHONG BAO GI CA — script van chay, bao cao van in, chi la Nova mat tin hoac mat
 link, va phai vai ngay sau moi co nguoi de y:
 
-  1. Them bang ma quen khai NHAN_BANG  -> muc "leo hang" in ra ma khoa tho
+  1. Them bang ma quen khai LABEL_BOARD  -> muc "leo hang" in ra ma khoa tho
   2. Them bang ma quen khai LINK_BOARD  -> muc BAT BUOC ra link RONG, vai nop
      tin khong co nguon
   3. In danh sach BAT BUOC hai lan     -> ton 5.600 ky tu o cuoi bao cao, dung
@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT))
 import required                                             # noqa: E402
 import scan_models as s                                     # noqa: E402
 
-KHOA_BANG = s.KHOA_BANG
+KHOA_BANG = s.LOCK_BOARD
 
 qua = loi = 0
 
@@ -38,9 +38,9 @@ def kiem(ten, dieu_kien, ghi_chu=""):
 
 
 def test_moi_bang_co_nhan():
-    thieu = [k for k in KHOA_BANG if k not in s.NHAN_BANG]
+    thieu = [k for k in KHOA_BANG if k not in s.LABEL_BOARD]
     kiem("test_moi_bang_co_nhan", not thieu,
-         f"thieu NHAN_BANG cho: {thieu}")
+         f"thieu LABEL_BOARD cho: {thieu}")
 
 
 def test_moi_bang_co_link():
@@ -63,18 +63,18 @@ def test_muc_hf_co_link_rieng():
 
 
 def test_so_bang_khop_ban_ke_khai():
-    kiem("test_so_bang_khop_ban_ke_khai", s.SO_BANG == len(KHOA_BANG),
-         f"SO_BANG={s.SO_BANG} nhung ke khai {len(KHOA_BANG)} bang")
+    kiem("test_so_bang_khop_ban_ke_khai", s.COUNT_BOARD == len(KHOA_BANG),
+         f"COUNT_BOARD={s.COUNT_BOARD} nhung ke khai {len(KHOA_BANG)} bang")
     kiem("test_khong_trung_khoa_bang", len(set(KHOA_BANG)) == len(KHOA_BANG),
          "co khoa bang bi khai hai lan")
 
 
 def test_main_kiem_lech_ban_ke_khai():
-    """main() phai tu doi chieu bang_so voi KHOA_BANG — them bang ma quen khai
+    """main() phai tu doi chieu bang_so voi LOCK_BOARD — them bang ma quen khai
     thi state khong co moc, va 'leo hang' cua bang do im lang mai mai."""
     src = Path(s.__file__).read_text(encoding="utf-8")
     kiem("test_main_kiem_lech_ban_ke_khai",
-         "set(bang_so) ^ set(KHOA_BANG)" in src)
+         "set(bang_so) ^ set(LOCK_BOARD)" in src)
 
 
 def test_khong_in_bat_buoc_hai_lan():
@@ -104,7 +104,7 @@ def test_tran_in_an_co_can_tren():
     """Ba muc nay truoc 06/09 khong co `[:n]`, mot ngay xau nuot sach phan duoi."""
     kiem("test_tran_in_an_co_can_tren",
          all(isinstance(v, int) and 0 < v < 100
-             for v in (s.TRAN_MOI, s.TRAN_BM, s.TRAN_GH, s.TRAN_HF, s.TRAN_BANG)))
+             for v in (s.CEILING_NEW, s.CEILING_BM, s.CEILING_GH, s.CEILING_HF, s.CEILING_BOARD)))
 
 
 def test_bang_hong_thi_noi_ra():
@@ -115,19 +115,19 @@ def test_bang_hong_thi_noi_ra():
     import io as _io
     b = _io.StringIO()
     with contextlib.redirect_stdout(b):
-        s._in_bao_cao({"model_moi": [], "bang_hong": ["tbench", "hle"]}, 7)
+        s._in_report({"model_moi": [], "bang_hong": ["tbench", "hle"]}, 7)
     ra = b.getvalue()
     kiem("test_bang_hong_thi_noi_ra",
          "NGUON KHONG LAY DUOC" in ra and "Terminal-B" in ra and "HLE" in ra,
          "khong bao ten bang hong -> vai tuong la bang do khong co tin")
     b2 = _io.StringIO()
     with contextlib.redirect_stdout(b2):
-        s._in_bao_cao({"model_moi": [], "bang_hong": []}, 7)
+        s._in_report({"model_moi": [], "bang_hong": []}, 7)
     kiem("test_khong_hong_thi_im", "NGUON KHONG LAY DUOC" not in b2.getvalue())
 
 
 def test_diem_cao_hon_la_tot_hon():
-    """so_hang() gia dinh hang 1 = tot nhat. Bang STT cua AA cho ti le LOI (WER,
+    """count_rank() gia dinh hang 1 = tot nhat. Bang STT cua AA cho ti le LOI (WER,
     THAP hon la tot hon) nen fetch_aa_media phai doi thanh do chinh xac; quen
     doi thi bang xep nguoc ma khong co gi bao."""
     src = s.__file__ and Path(s.__file__).read_text(encoding="utf-8")
@@ -149,11 +149,11 @@ def test_hang_rao_khong_de_mot_nguon_giet_ca_luot():
     try:
         def nem():
             raise KeyError("date")
-        kiem("test_hang_rao_nguon_nem", s._thu("nguon-x", nem, ([], None)) == ([], None),
+        kiem("test_hang_rao_nguon_nem", s._try("nguon-x", nem, ([], None)) == ([], None),
              "nguon nem phai tra ve gia tri rong dung hinh, khong nem tiep")
         kiem("test_hang_rao_ghi_ten", "nguon-x" in s._HONG_KHAC,
              "nguon hong phai duoc ghi ten de in vao muc NGUON KHONG LAY DUOC")
-        kiem("test_hang_rao_nguon_lanh", s._thu("nguon-y", lambda: [1, 2], []) == [1, 2]
+        kiem("test_hang_rao_nguon_lanh", s._try("nguon-y", lambda: [1, 2], []) == [1, 2]
              and "nguon-y" not in s._HONG_KHAC, "nguon chay duoc khong duoc bao hong")
     finally:
         s._HONG_KHAC[:] = cu
@@ -161,11 +161,11 @@ def test_hang_rao_khong_de_mot_nguon_giet_ca_luot():
 
 def test_moi_fetcher_trong_main_deu_qua_hang_rao():
     """Doc bang AST, khong grep chuoi: trong than `main`, moi loi goi `fetch_*`
-    phai nam BEN TRONG mot loi goi `_thu(...)`. Them nguon moi ma goi thang la
+    phai nam BEN TRONG mot loi goi `_try(...)`. Them nguon moi ma goi thang la
     mo lai dung cai cua da dong.
 
     Nhan HAI hinh dang (tu 09/09/2026, khi cac nguon chay song song):
-      _thu("ten", fn, mac_dinh)             — goi thang
+      _try("ten", fn, mac_dinh)             — goi thang
       ex.submit(_thu, "ten", fn, mac_dinh)  — nop vao ThreadPoolExecutor
     Hinh thu hai VAN qua hang rao: submit goi chinh `_thu` trong luong con. Doi
     HOI `_thu` la tham so DAU tien, nen `ex.submit(fetch_x, ...)` — bo qua hang
@@ -178,11 +178,11 @@ def test_moi_fetcher_trong_main_deu_qua_hang_rao():
     def qua_hang_rao(n):
         if not isinstance(n, ast.Call):
             return False
-        if isinstance(n.func, ast.Name) and n.func.id == "_thu":
+        if isinstance(n.func, ast.Name) and n.func.id == "_try":
             return True
         return (isinstance(n.func, ast.Attribute) and n.func.attr == "submit"
                 and bool(n.args) and isinstance(n.args[0], ast.Name)
-                and n.args[0].id == "_thu")
+                and n.args[0].id == "_try")
 
     trong_thu = set()
     ten_qua = set()                 # ham con trong main duoc DUA vao _thu theo ten
@@ -211,53 +211,53 @@ def test_moi_fetcher_trong_main_deu_qua_hang_rao():
 # bang_model.BANG. Ba test dau cua tep nay gio la hien nhien — giu lai lam
 # cong, nhung cai can canh chuyen sang chinh ban dang ky.
 def test_ban_dang_ky_moi_bang_du_truong():
-    import bang_model as bm
-    xau = [b.khoa for b in bm.BANG
+    import model_boards as bm
+    xau = [b.khoa for b in bm.BOARD
            if not (b.khoa and b.nhan and b.tieu_de and b.link.startswith("https://")
                    and b.nguon in ("arena", "aa", "media", "top"))]
     kiem("test_ban_dang_ky_moi_bang_du_truong", not xau, f"thieu truong: {xau}")
     kiem("test_ban_dang_ky_arena_co_duong_dan",
-         all(b.duong_dan for b in bm.BANG if b.nguon == "arena"),
+         all(b.duong_dan for b in bm.BOARD if b.nguon == "arena"),
          "bang arena khong co duong dan API thi fetch_arena bo qua no")
     kiem("test_ban_dang_ky_khong_trung_khoa",
-         len({b.khoa for b in bm.BANG}) == len(bm.BANG))
+         len({b.khoa for b in bm.BOARD}) == len(bm.BOARD))
 
 
 def test_ban_dang_ky_dung_hai_bang_in_rieng():
     """coding AA (da co muc TOP CODING) va openrouter usage (co cot token/ngay)
     in theo khuon rieng. Them mot bang `in_bang=False` nua ma khong viet khoi
     in rieng cho no la bang do bien mat khoi bao cao."""
-    import bang_model as bm
-    rieng = sorted(b.khoa for b in bm.BANG if not b.in_bang)
+    import model_boards as bm
+    rieng = sorted(b.khoa for b in bm.BOARD if not b.in_bang)
     kiem("test_ban_dang_ky_dung_hai_bang_in_rieng", rieng == ["coding", "openrouter"],
          f"bang in rieng: {rieng}")
     src = Path(s.__file__).read_text(encoding="utf-8")
-    i = src.find("def _in_bao_cao")
+    i = src.find("def _in_report")
     kiem("test_openrouter_usage_co_khoi_in_rieng",
-         "OPENROUTER USAGE" in src[i:] and "for b in bang_model.BANG" in src[i:],
-         "_in_bao_cao phai in bang qua ban dang ky VA co khoi rieng cho openrouter")
+         "OPENROUTER USAGE" in src[i:] and "for b in model_boards.BOARD" in src[i:],
+         "_in_report phai in bang qua ban dang ky VA co khoi rieng cho openrouter")
 
 
 def test_hang_va_ngay_doc_dung_bon_hinh():
     """Bon nguon, bon cho nam trong tep ket qua. Doc sai mot hinh la bang do in
     rong ma `hong` khong bao (bang_so van co no)."""
-    import bang_model as bm
+    import model_boards as bm
     ket = {"bang_xep_hang": {"text": [{"ten": "a"}]},
            "cham_diem": {"bang_tri_tue_goc": [{"ten": "b"}]},
            "media": {"tts": [{"ten": "c"}]},
            "tbench": {"rows": [{"ten": "d"}], "ngay": "2026-09-01"},
            "openrouter_usage": {"rows": [{"ten": "e"}], "ngay": "2026-09-02"}}
-    lay = {b.khoa: b for b in bm.BANG}
-    kiem("test_hang_va_ngay_arena", bm.hang_va_ngay(ket, lay["text"]) == ([{"ten": "a"}], None))
-    kiem("test_hang_va_ngay_aa", bm.hang_va_ngay(ket, lay["tri_tue"]) == ([{"ten": "b"}], None))
-    kiem("test_hang_va_ngay_media", bm.hang_va_ngay(ket, lay["tts"]) == ([{"ten": "c"}], None))
+    lay = {b.khoa: b for b in bm.BOARD}
+    kiem("test_hang_va_ngay_arena", bm.rank_and_date(ket, lay["text"]) == ([{"ten": "a"}], None))
+    kiem("test_hang_va_ngay_aa", bm.rank_and_date(ket, lay["tri_tue"]) == ([{"ten": "b"}], None))
+    kiem("test_hang_va_ngay_media", bm.rank_and_date(ket, lay["tts"]) == ([{"ten": "c"}], None))
     kiem("test_hang_va_ngay_top",
-         bm.hang_va_ngay(ket, lay["tbench"]) == ([{"ten": "d"}], "2026-09-01"))
+         bm.rank_and_date(ket, lay["tbench"]) == ([{"ten": "d"}], "2026-09-01"))
     kiem("test_hang_va_ngay_ket_khoa",
-         bm.hang_va_ngay(ket, lay["openrouter"]) == ([{"ten": "e"}], "2026-09-02"),
+         bm.rank_and_date(ket, lay["openrouter"]) == ([{"ten": "e"}], "2026-09-02"),
          "openrouter nam o khoa `openrouter_usage` trong ket")
     kiem("test_hang_va_ngay_thieu_thi_None",
-         bm.hang_va_ngay({}, lay["hle"]) == (None, None))
+         bm.rank_and_date({}, lay["hle"]) == (None, None))
 
 
 def test_ket_cua_main_co_du_bang_top():
@@ -266,13 +266,13 @@ def test_ket_cua_main_co_du_bang_top():
     src = Path(s.__file__).read_text(encoding="utf-8")
     i = src.find("def main")
     kiem("test_ket_cua_main_co_du_bang_top",
-         'for b in bang_model.BANG if b.nguon == "top"' in src[i:],
+         'for b in model_boards.BOARD if b.nguon == "top"' in src[i:],
          "phan bang top cua `ket` phai dan xuat tu ban dang ky")
 
 
 def test_link_bat_buoc_dan_tu_ban_dang_ky():
-    import bang_model as bm
-    lech = [k for k, v in bm.LINK_BANG.items() if required.LINK_BOARD.get(k) != v]
+    import model_boards as bm
+    lech = [k for k, v in bm.LINK_BOARD.items() if required.LINK_BOARD.get(k) != v]
     kiem("test_link_bat_buoc_dan_tu_ban_dang_ky", not lech, f"lech: {lech}")
     kiem("test_link_ra_mat_van_con", required.LINK_BOARD.get("ra_mat", "").startswith("https://"),
          "`ra_mat` khong phai bang nhung muc BAT BUOC ra mat can link")
