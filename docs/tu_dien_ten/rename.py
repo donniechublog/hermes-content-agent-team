@@ -190,6 +190,55 @@ _KHOA_DICT_CACHE = {}
 BANG_TOAN_CUC = {}          # old -> new, mọi module (main() nạp từ plan)
 
 
+def _modules_re_export(root: Path, mod_full: str, new: str) -> set:
+    """Cac module M co `from <mod_full> import … new …` (sau rope) — chung
+    RE-EXPORT ten do (image_prepare re-export _luu_crop cua chuan_bi.tai_loc;
+    vong_bu re-export tai_va_loc). Tra ten base cua M."""
+    ra = set()
+    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+        s = f.read_text(encoding="utf-8")
+        if re.search(rf"^\s*from\s+{re.escape(mod_full)}\s+import\s*\(?[^\n]*\b{re.escape(new)}\b", s, re.M) or \
+           re.search(rf"^\s*from\s+{re.escape(mod_full)}\s+import\s*\((?:[^)]*\n)*?[^)]*\b{re.escape(new)}\b", s, re.M):
+            ra.add(f.stem)
+    return ra
+
+
+def _va_re_export(root: Path, mod_full: str, old: str, new: str) -> int:
+    """rope KHONG doi `cb._luu_crop` khi cb la module RE-EXPORT (`from chuan_bi.tai_loc
+    import _luu_crop` trong image_prepare) — lo 2: test_cong_chan goi
+    image_prepare._luu_crop/mo_ta_anh. Doi bang token: NAME==old, truoc la `.`,
+    truoc nua la alias cua mot module re-export (trong tep do: `import M [as a]`,
+    `from pkg import M [as a]`)."""
+    Ms = _modules_re_export(root, mod_full, new)
+    if not Ms:
+        return 0
+    n = 0
+    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+        s = f.read_text(encoding="utf-8")
+        if old not in s:
+            continue
+        alias = _alias_module(s, Ms)
+        if not any(re.search(rf"^\s*(?:import|from)\b.*\b{re.escape(M)}\b", s, re.M) for M in Ms):
+            continue                          # tep khong import module re-export nao
+        n += _doi_token(f, lambda pp, p, t, nx, al=alias: new if (t.string == old and p is not None
+                                                                   and p.string == "." and pp is not None
+                                                                   and pp.string in al) else None)
+    return n
+
+
+def _khoa_dict_thuan(root: Path) -> set:
+    """Chi cac khoa dict/JSON that (m["x"], .get("x"), "x":), KHONG gom ten module —
+    dung de quyet doi `"ten_module_cu"` tran trong tests (lo 2: task body co
+    "tim_anh_them" tran, test soi `kt.index("tim_anh_them")`)."""
+    pat = re.compile(r'\[\s*["\']([A-Za-z_][\w]*)["\']\s*\]|\.get\(\s*["\']([A-Za-z_][\w]*)["\']|["\']([A-Za-z_][\w]*)["\']\s*:')
+    ra = set()
+    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+        for m in pat.finditer(f.read_text(encoding="utf-8")):
+            ra.add(next(g for g in m.groups() if g))
+    ra |= {p.name for p in root.iterdir() if p.is_dir()}      # ten thu muc = duong dan tren dia
+    return ra
+
+
 def _khoa_dict(root: Path) -> set:
     """Mọi tên đang dùng làm KHOÁ dict/JSON trong mã chính: m["x"], .get("x"), "x":.
     Đây là hợp đồng dữ liệu trên đĩa — tuyệt đối không đổi (luật LOW-49)."""
@@ -249,17 +298,33 @@ def _thay_trong_chuoi_py(path: Path, thay: list) -> int:
     return n
 
 
+def _alias_module(src: str, ten_mod: set) -> set:
+    """Moi ten ma tep `src` dung de tro toi mot trong cac module `ten_mod` (ten base):
+    chinh ten do, `import X as Y`, `from pkg import X [as Y]` (lo 2:
+    patch.object(vong_bu, "tai_va_loc") khong duoc doi vi chi biet `import X as Y`)."""
+    alias = set(ten_mod)
+    for M in ten_mod:
+        for m in re.finditer(rf"^\s*import\s+(?:[\w.]+\.)?{re.escape(M)}(?:\s+as\s+(\w+))?\s*(?:#.*)?$", src, re.M):
+            if m.group(1):
+                alias.add(m.group(1))
+        for m in re.finditer(rf"^\s*from\s+[\w.]+\s+import\s+([^\n]*\b{re.escape(M)}\b[^\n]*)", src, re.M):
+            for phan in m.group(1).split(","):
+                ten = phan.strip().split(" as ")
+                if ten[0].strip() == M:
+                    alias.add(ten[-1].strip())
+    return alias
+
+
 def _thay_dong(src: str, thay_dong: list, mc: str, mm: str):
-    """Ap cac mau co ngu canh (patch.object(X, "cũ")…) khi X tro dung module nay:
-    thanh phan CUOI cua X (sau dau cham cuoi) phai la ten module cu/moi hoac alias
-    `import <mod> as <alias>` trong chinh tep test. Tra (src_moi, so_lan)."""
-    alias = {mc, mm}
-    for m in re.finditer(rf"^\s*import ({re.escape(mc)}|{re.escape(mm)})(?:\s+as\s+(\w+))?", src, re.M):
-        if m.group(2):
-            alias.add(m.group(2))
+    """Ap cac mau co ngu canh (patch.object(X, "cũ")…) khi X tro dung module nay
+    (hoac mot module RE-EXPORT ten do — phan tu thu 3 cua moi mau): thanh phan
+    CUOI cua X (sau dau cham cuoi) phai la ten module cu/moi hoac alias cua no
+    trong chinh tep test. Tra (src_moi, so_lan)."""
     n = 0
-    for pat, new in thay_dong:
-        def _rep(m, new=new):
+    for pat, new, them in thay_dong:
+        alias = _alias_module(src, {mc, mm} | set(them))
+
+        def _rep(m, new=new, alias=alias):
             nonlocal n
             muc_tieu = m.group(2).split(".")[-1] if m.group(2) else ""
             if muc_tieu not in alias:
@@ -307,21 +372,33 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     # Mau CO NGU CANH (patch.object(la, "cũ") …) phai chay tren CA DONG, khong phai
     # tren rieng token chuoi — token chuoi chi la `"cũ"`, khong chua `patch.object(`.
     thay_dong = []
+    mod_hien = mod_moi or mod_cu             # duong dan module SAU rope (import da doi theo)
     for old, new, _kind in defs:
-        thay.append((rf"(?<![\w.])def {re.escape(old)}(?=\\?\()", f"def {new}"))
+        thay.append((rf"(?<![\w.])def {re.escape(old)}(?![\w])", f"def {new}"))   # cả "def cũ" không ngoặc
         thay.append((rf"(?<![\w\\]){re.escape(old)}(?=\\?\()", new))    # cả `nc.cũ(` (alias)
         thay.append((rf"(?<![\w]){re.escape(mc)}(\\?\.){re.escape(old)}\b", rf"{mm}\g<1>{new}"))
         # Doi tuong cua patch.object/setattr PHAI la chinh module nay (hoac alias
         # cua no trong tep test) — `nap` co o ca nop_chung lan env_load; lo 1 doi
         # `patch.object(nhin.env_load, "nap")` thanh "load_draft_context" (ten cua
         # nop_chung.nap) vi khong nhin doi tuong. Kiem bang callable, xem _thay_dong.
-        thay_dong.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*([\w.]+)\s*,\s*[\"']){re.escape(old)}(?=[\"'])", new))
-        thay_dong.append((rf"(patch\([\"']([\w.]*)\.){re.escape(old)}(?=[\"'])", new))
+        # Module RE-EXPORT ten nay (vong_bu re-export tai_va_loc) cung la doi tuong hop le.
+        re_exp = _modules_re_export(root, mod_hien, new)
+        thay_dong.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*([\w.]+)\s*,\s*[\"']){re.escape(old)}(?=[\"'])", new, re_exp))
+        thay_dong.append((rf"(patch\([\"']([\w.]*)\.){re.escape(old)}(?=[\"'])", new, re_exp))
+    hang_tran = []
     for old, new in consts:
         # `$` loại trừ biến shell trong chuỗi test ("$VAI" của quet_daily_scan.sh
         # không phải hằng Python — pilot 13/09 đã đổi nhầm thành "$ROLE").
-        thay.append((rf"(?<![\w.$]){re.escape(old)}\b", new))
+        # Hang MOT TU (CAO, NGUON, RONG) la chu tieng Viet thuong gap trong chuoi
+        # ("BAO CAO BI CAT", "NGUON KHONG LAY DUOC", JS `Y0+CAO`) — lo 2 doi bua
+        # lam test_bang_nova/test_render_edu do. Chi doi tran khi ten co `_`,
+        # va chi trong test SOI NGUON; con lai phai co `mod.` phia truoc.
+        if "_" in old:
+            hang_tran.append((rf"(?<![\w.$]){re.escape(old)}\b", new))
         thay.append((rf"(?<![\w]){re.escape(mc)}(\\?\.){re.escape(old)}\b", rf"{mm}\g<1>{new}"))
+        re_exp = _modules_re_export(root, mod_hien, new)
+        thay_dong.append((rf"((?:patch\.object|setattr|getattr|hasattr|monkeypatch\.setattr)\(\s*([\w.]+)\s*,\s*[\"']){re.escape(old)}(?=[\"'])", new, re_exp))
+        thay_dong.append((rf"(patch\([\"']([\w.]*)\.){re.escape(old)}(?=[\"'])", new, re_exp))
     if mod_moi and mc != mm:                   # `modcũ.tên_giữ_nguyên` -> `modmới.tên`
         thay.append((rf"(?<![\w]){re.escape(mc)}(?=\\?\.[A-Za-z_])", mm))
     # Tên TRẦN trong ngoặc kép ("du_nguyen_lieu") — test soi AST hỏi tên hàm.
@@ -332,15 +409,26 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
             for old, new, _k in defs if old not in khoa_json]
     tran += [(rf'(["\']){re.escape(old)}\1', rf"\g<1>{new}\g<1>")
              for old, new in consts if old not in khoa_json]
+    tran += hang_tran
     bo = [o for o, _n, _k in defs if o in khoa_json] + [o for o, _n in consts if o in khoa_json]
     if bo:
         _log(f"  (không thay tên trần trong chuỗi vì trùng khoá dict: {', '.join(bo)})")
+    # Ten MODULE tran trong tests ("tim_anh_them" trong task body) — chi khi khong
+    # phai khoa dict that / ten thu muc (khoa tren dia).
+    if mod_moi and mc != mm:
+        if mc in _khoa_dict_thuan(root):
+            _log(f"  (không thay tên module trần \"{mc}\" trong tests: trùng khoá dict/thư mục)")
+        else:
+            tran.append((rf'(["\']){re.escape(mc)}\1', rf"\g<1>{mm}\g<1>"))
     if thay or tran or thay_dong:
         k2 = 0
         for f in root.glob("tests/*.py"):
             k2 += _thay_trong_chuoi_py(f, thay)
             src = f.read_text(encoding="utf-8")
-            if tran and ("read_text(" in src or "ast.parse" in src or "_ten_ham_trong" in src):
+            # Test soi NGUON (read_text/ast) hoac soi THAN TASK (task_bodies -> chuoi
+            # co ten module/ham) moi duoc doi ten tran.
+            if tran and ("read_text(" in src or "ast.parse" in src or "_ten_ham_trong" in src
+                         or "task_bodies" in src or "than_task" in src):
                 k2 += _thay_trong_chuoi_py(f, tran)
             src = f.read_text(encoding="utf-8")
             moi_src, kk = _thay_dong(src, thay_dong, mc, mm)
@@ -426,7 +514,7 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
             _log(f"  !! không tìm thấy định nghĩa {old} — bỏ qua")
             continue
         tep = _rope_rename(proj, res_path, off, new)
-        k = _va_ngoai_rope_ten(root, mod, old, new)
+        k = _va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
         _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 2) hằng số
     for old, new in consts:
@@ -436,7 +524,7 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
             _log(f"  !! không tìm thấy hằng {old} — bỏ qua")
             continue
         tep = _rope_rename(proj, res_path, off, new)
-        k = _va_ngoai_rope_ten(root, mod, old, new)
+        k = _va_ngoai_rope_ten(root, mod, old, new) + _va_re_export(root, mod, old, new)
         _log(f"  {old} -> {new}  ({len(tep)} tệp{f', +{k} ngoài rope' if k else ''})")
     # 3) tên tệp module (chỉ tên tệp, không đổi thư mục gói ở đây)
     if mod_moi:
@@ -448,8 +536,12 @@ def doi_mot_module(root: Path, td: TuDien, plan: dict, mod: str, doi_tep: bool, 
         _va_chuoi(root, mod, ".".join(mod.split(".")[:-1] + [base_moi]), defs, consts)
         shim = root / res_path
         if not shim.exists():
-            shim.write_text(SHIM.format(old=mod.split(".")[-1], new=base_moi), encoding="utf-8")
-            _log(f"  shim {shim.name} -> {base_moi}")
+            # Module con trong goi: import theo duong DAY DU (chuan_bi.vision), khong
+            # phai ten tran `vision` — lo 2: shim chuan_bi/nhin.py `import vision`
+            # -> ModuleNotFoundError o moi tep con import ten cu.
+            new_full = ".".join(mod.split(".")[:-1] + [base_moi])
+            shim.write_text(SHIM.format(old=mod.split(".")[-1], new=new_full), encoding="utf-8")
+            _log(f"  shim {shim.name} -> {new_full}")
         assert (root / res_path_moi).exists()
     else:
         _va_chuoi(root, mod, None, defs, consts)
