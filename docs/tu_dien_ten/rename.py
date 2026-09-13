@@ -343,7 +343,10 @@ def _va_chu_thich_kieu(root: Path, old: str, new: str) -> int:
     rope docs=False khong doi (lo 4: pyflakes undefined name '_HangFIFO')."""
     pats = [(rf'(->\s*)(["\']){re.escape(old)}\2', rf"\g<1>\g<2>{new}\g<2>"),
             (rf'(\w+:\s*)(["\']){re.escape(old)}\2(?=\s*[,)=\]])', rf"\g<1>\g<2>{new}\g<2>"),
-            (rf'(\[)(["\']){re.escape(old)}\2(?=\])', rf"\g<1>\g<2>{new}\g<2>")]
+            # CHI trong ngoac cua kieu generic — `a["dung"]` la SUBSCRIPT khoa dict,
+            # lo 4 lan 2 doi thanh a["use"] o 85 tep -> KeyError khap noi.
+            (rf'((?:list|dict|set|tuple|type|Optional|Iterable|Sequence|Callable)\[[^\]]*?)(["\']){re.escape(old)}\2(?=[\],])',
+             rf"\g<1>\g<2>{new}\g<2>")]
     n = 0
     for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
         s = f.read_text(encoding="utf-8")
