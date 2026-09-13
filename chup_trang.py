@@ -124,7 +124,20 @@ _JS_LEAD = """() => {
   // Tim trong CA TRANG, khong chi trong `goc`: techcrunch dat anh hero NGOAI
   // <main>, loc theo `goc` thi khoi lead mat anh (do that 12/09/2026). Cai giu
   // cho khoi khop nham logo/quang cao la hai dieu kien duoi: du to, va dinh tit.
-  for (const el of document.querySelectorAll('figure, picture, img')) {
+  // Chi lay bo dam anh (img/picture) BEN TRONG figure, KHONG lay ca <figure>:
+  // <figure><img>...</img><figcaption>Photo: Ann Wang/Reuters</figcaption></figure>
+  // la khuon HTML pho bien — lay r cua ca figure keo theo chu chu thich nguon
+  // anh, chong len chinh dong tieu de/quote ta ve sau (do that 13/09/2026, tin
+  // TSMC: "gorodenkoff / Getty Images", "(Photo: Ann Wang/Reuters/file photo)"
+  // deu la NOI DUNG cua trang, khong phai chu cua ta, van con trong tam chup).
+  const chiAnh = (el) => {
+    const t = (el.tagName || '').toLowerCase();
+    if (t === 'img') return el;
+    const img = el.querySelector('img, picture img, picture source');
+    return img || el;
+  };
+  for (const goc_el of document.querySelectorAll('figure, picture, img')) {
+    const el = chiAnh(goc_el);
     const r = el.getBoundingClientRect();
     if (r.width < W * 0.6 || r.height < 120) continue;       // qua nho: khong phai anh lead
     if (r.bottom <= 0 || r.top > H * 3) continue;            // o ngoai man (slot an, lazy chua dat cho)
