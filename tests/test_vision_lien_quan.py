@@ -21,7 +21,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from chuan_bi import nhin                                      # noqa: E402
+from chuan_bi import vision                                      # noqa: E402
 
 
 def _bat_stderr(ham):
@@ -49,7 +49,7 @@ class _Res:
 
 
 def _goi(content: str):
-    return mock.patch.object(nhin, "_goi_router", return_value=_Res(content.encode()))
+    return mock.patch.object(vision, "_call_router", return_value=_Res(content.encode()))
 
 
 def _body(txt: str) -> str:
@@ -62,7 +62,7 @@ def test_lien_quan_co_dau_tren_chu_lien_van_parse_duoc():
          mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
         p = _anh_1x1(Path(tmp))
         with _goi(_body("MO_TA: widget giá cổ phiếu.\nLIÊN_QUAN: không")):
-            (mt, lq), err = _bat_stderr(lambda: nhin.mo_ta_anh(p, "TSMC ...", hang="TSMC"))
+            (mt, lq), err = _bat_stderr(lambda: vision.description_image(p, "TSMC ...", hang="TSMC"))
         assert lq is False, f"LIÊN_QUAN có dấu vẫn phải parse ra False, được {lq!r}"
         assert "widget" in mt
         assert "khong parse duoc" not in err
@@ -73,7 +73,7 @@ def test_lien_quan_khong_dau_van_parse_nhu_cu():
          mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
         p = _anh_1x1(Path(tmp))
         with _goi(_body("MO_TA: trụ sở TSMC.\nLIEN_QUAN: co")):
-            mt, lq = nhin.mo_ta_anh(p, "TSMC ...")
+            mt, lq = vision.description_image(p, "TSMC ...")
         assert lq is True
 
 
@@ -82,7 +82,7 @@ def test_lien_quan_hoa_thuong_deu_khop():
          mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
         p = _anh_1x1(Path(tmp))
         with _goi(_body("MO_TA: x.\nliên_quan: Không")):
-            _, lq = nhin.mo_ta_anh(p, "T")
+            _, lq = vision.description_image(p, "T")
         assert lq is False
 
 
@@ -99,7 +99,7 @@ def test_parse_that_hong_van_bao_ra_stderr_khong_im_lang():
          mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
         p = _anh_1x1(Path(tmp))
         with _goi(_body("MO_TA: x.\nkhông biết có liên quan hay không")):
-            (_, lq), err = _bat_stderr(lambda: nhin.mo_ta_anh(p, "T"))
+            (_, lq), err = _bat_stderr(lambda: vision.description_image(p, "T"))
         assert lq is False
         assert "khong parse duoc dong LIEN_QUAN" in err, repr(err)
         assert "COI LA ROT" in err, repr(err)
@@ -114,8 +114,8 @@ def test_thieu_api_key_khong_bi_canh_bao_kep():
             # env_load.nap() dung os.environ.setdefault doc lai secret.*.env that
             # tren may that co cau hinh: pop() khong o lai, nen chan luon nap()
             # trong pham vi test nay de mo phong moi truong THAT SU thieu key.
-            with mock.patch.object(nhin.env_load, "load", lambda *a, **k: None):
-                (_, lq), err = _bat_stderr(lambda: nhin.mo_ta_anh(p, "T"))
+            with mock.patch.object(vision.env_load, "load", lambda *a, **k: None):
+                (_, lq), err = _bat_stderr(lambda: vision.description_image(p, "T"))
         finally:
             if cu is not None:
                 os.environ["OPENAI_API_KEY"] = cu
@@ -133,7 +133,7 @@ def test_hoi_cat_ngang_khi_ngang_cao_khong_phai_chart():
         p = _anh_1x1(Path(tmp))
         body = _body("MO_TA: bien hieu logo cong ty.\nLIEN_QUAN: co\nCAT_NGANG: khong")
         with _goi(body):
-            mt, lq, cn = nhin.mo_ta_anh(p, "T", hoi_them="co phai nguoi/san pham khong chu?",
+            mt, lq, cn = vision.description_image(p, "T", hoi_them="co phai nguoi/san pham khong chu?",
                                         nhan_them="CAT_NGANG")
         assert lq is True and cn.lower().startswith("kh")
 

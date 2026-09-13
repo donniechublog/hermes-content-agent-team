@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`chuan_bi.nhin.phan_loai` phai HOI vision cat_ngang_ok cho anh ngang cao,
+"""`chuan_bi.vision.classify` phai HOI vision cat_ngang_ok cho anh ngang cao,
 khong lai de "NEU" mo ho cho writer doan (su co 12/09/2026, t_a8ffd2f6 lan hai).
 
 Dre chay that voi bo anh da co du 8 tam ("du 6 slide" theo cong thuc cu), nhung
@@ -18,7 +18,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from chuan_bi import nhin                                     # noqa: E402
+from chuan_bi import vision                                     # noqa: E402
 
 
 def _bat_stderr(ham):
@@ -54,14 +54,14 @@ class _Res:
 def _goi_thu(txt: str):
     import json
     body = json.dumps({"choices": [{"message": {"content": txt}}]}).encode()
-    return mock.patch.object(nhin, "_goi_router", return_value=_Res(body))
+    return mock.patch.object(vision, "_call_router", return_value=_Res(body))
 
 
 def test_ngang_cao_khong_phai_chart_thi_hoi_cat_ngang_va_luu_ket_qua():
     with tempfile.TemporaryDirectory() as tmp, mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
         a = _anh(Path(tmp), 1600, 1000)      # ngang ro, cao 1000 >=700
         with _goi_thu("MO_TA: nguoi cam san pham.\nLIEN_QUAN: co\nCAT_NGANG: co"):
-            phan_loai(a := a, wd=Path(tmp), tieu_de="T")
+            classify(a := a, wd=Path(tmp), tieu_de="T")
         assert a["cat_ngang_ok"] is True
         assert any("vision đã xác nhận" in d for d in a["dung"]), a["dung"]
         assert not any("NẾU" in d for d in a["dung"]), "khong con cau NEU mo ho khi da xac nhan duoc"
@@ -71,7 +71,7 @@ def test_ngang_cao_co_chu_thi_khong_offer_cat_ngang():
     with tempfile.TemporaryDirectory() as tmp, mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
         a = _anh(Path(tmp), 1600, 1000)
         with _goi_thu("MO_TA: bien hieu logo cong ty tren tuong.\nLIEN_QUAN: co\nCAT_NGANG: khong"):
-            phan_loai(a, wd=Path(tmp), tieu_de="T")
+            classify(a, wd=Path(tmp), tieu_de="T")
         assert a["cat_ngang_ok"] is False
         assert not any("cat_ngang" in d and "NẾU" not in d and "false" not in d.lower()
                        for d in a["dung"] if "true (" in d)
@@ -82,7 +82,7 @@ def test_ngang_qua_thap_khong_hoi_cat_ngang_gi_ca():
     with tempfile.TemporaryDirectory() as tmp, mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
         a = _anh(Path(tmp), 1600, 600)       # ngang, cao < 700
         with _goi_thu("MO_TA: x.\nLIEN_QUAN: co"):
-            phan_loai(a, wd=Path(tmp), tieu_de="T")
+            classify(a, wd=Path(tmp), tieu_de="T")
         assert a["cat_ngang_ok"] is None
         assert "quá thấp để cắt dọc, chỉ ghép" in a["ghi_chu"]
 
@@ -94,7 +94,7 @@ def test_vision_noi_bieu_do_ma_pixel_bo_lo_thi_sua_lai_thanh_chart():
          mock.patch("image_rules.is_chart", return_value=(False, "khong phai chart (pixel)")):
         a = _anh(Path(tmp), 1600, 1000)
         with _goi_thu("MO_TA: Biểu đồ tròn thể hiện tỷ trọng doanh thu.\nLIEN_QUAN: co\nCAT_NGANG: khong"):
-            phan_loai(a, wd=Path(tmp), tieu_de="T")
+            classify(a, wd=Path(tmp), tieu_de="T")
         assert a["loai"] == "chart", "mo_ta noi bieu do thi phai sua lai la chart du pixel bo lo"
         assert a["cat_ngang_ok"] is None
         assert any("chart" in d for d in a["dung"])
@@ -107,8 +107,8 @@ def test_hong_vision_giu_cau_dieu_kien_cu_khong_chan_writer():
             import os
             cu = os.environ.pop("OPENAI_API_KEY", None)
             try:
-                with mock.patch.object(nhin.env_load, "load", lambda *a, **k: None):
-                    phan_loai(a, wd=Path(tmp), tieu_de="T")
+                with mock.patch.object(vision.env_load, "load", lambda *a, **k: None):
+                    classify(a, wd=Path(tmp), tieu_de="T")
             finally:
                 if cu is not None:
                     os.environ["OPENAI_API_KEY"] = cu
@@ -116,7 +116,7 @@ def test_hong_vision_giu_cau_dieu_kien_cu_khong_chan_writer():
         assert any("NẾU" in d for d in a["dung"]), "vision hong thi giu cau dieu kien cu, khong tu quyet dinh thay writer"
 
 
-from chuan_bi.nhin import phan_loai  # noqa: E402  (import sau de mock luat_anh o test rieng khong dinh)
+from chuan_bi.vision import classify  # noqa: E402  (import sau de mock luat_anh o test rieng khong dinh)
 
 
 if __name__ == "__main__":

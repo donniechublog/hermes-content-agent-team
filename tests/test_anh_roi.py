@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PIL import Image, ImageDraw  # noqa: E402
 
-import chuan_bi.nhin as nhin  # noqa: E402
+import chuan_bi.vision as vision  # noqa: E402
 from tam import so_tam  # noqa: E402
 
 
@@ -64,9 +64,9 @@ def _hoi_vision(tra_loi, **k):
     kq = {}
     with tempfile.TemporaryDirectory() as t, \
             mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}), \
-            mock.patch.object(nhin, "_goi_router", side_effect=_goi):
+            mock.patch.object(vision, "_call_router", side_effect=_goi):
         p = _anh_tam(t)
-        ra = nhin.mo_ta_anh(str(p), "Nvidia rót 10 tỷ USD vào IPO Anthropic", ket_qua=kq, **k)
+        ra = vision.description_image(str(p), "Nvidia rót 10 tỷ USD vào IPO Anthropic", ket_qua=kq, **k)
     return ra, kq, gui.get("hoi", "")
 
 
@@ -111,9 +111,9 @@ def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
     with tempfile.TemporaryDirectory() as t:
         p = _anh_tam(t, tone=(20, 20, 25))                  # toi, doc: binh thuong duoc goi y bia
         a = {"ma": "A1", "goc": str(p)}
-        with mock.patch.object(nhin, "mo_ta_anh", side_effect=_gia), \
-                mock.patch.object(nhin.image_rules, "count_faces", return_value=0):
-            nhin.phan_loai(a, Path(t), "Tin gì đó")
+        with mock.patch.object(vision, "description_image", side_effect=_gia), \
+                mock.patch.object(vision.image_rules, "count_faces", return_value=0):
+            vision.classify(a, Path(t), "Tin gì đó")
     assert a["roi"] is True
     assert not any(str(d).startswith("bìa") for d in a["dung"]), a["dung"]
     assert a["dung"], "anh roi van dung duoc lam than khi het anh sach"
@@ -129,7 +129,7 @@ def _muc(tmp, ma, seed, **k):
 
 
 def test_con_anh_sach_chua_dung_thi_chan_anh_roi():
-    import nop_chung as nc
+    import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, roi=True), "A2": _muc(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y"})
@@ -138,7 +138,7 @@ def test_con_anh_sach_chua_dung_thi_chan_anh_roi():
 
 def test_anh_roi_du_tu_khoa_duoc_mien_cong():
     """Ông Chủ chọn chính đồ hoạ rối "Nvidia Weighs $10B" làm hero vì đủ từ khoá."""
-    import nop_chung as nc
+    import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, roi=True, du_tu_khoa=True), "A2": _muc(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y"})
@@ -153,9 +153,9 @@ def test_phan_loai_roi_du_tu_khoa_giu_bia_va_ghi_chu_sao():
     with tempfile.TemporaryDirectory() as t:
         p = _anh_tam(t, tone=(20, 20, 25))
         a = {"ma": "A1", "goc": str(p)}
-        with mock.patch.object(nhin, "mo_ta_anh", side_effect=_gia), \
-                mock.patch.object(nhin.image_rules, "count_faces", return_value=0):
-            nhin.phan_loai(a, Path(t), "Tin gì đó")
+        with mock.patch.object(vision, "description_image", side_effect=_gia), \
+                mock.patch.object(vision.image_rules, "count_faces", return_value=0):
+            vision.classify(a, Path(t), "Tin gì đó")
     assert a["du_tu_khoa"] is True
     assert a["ghi_chu"][0].startswith("⭐"), a["ghi_chu"]
     assert not a["ghi_chu"][0].startswith("⚠️")
@@ -175,7 +175,7 @@ def test_dre_nop_do_hoa_roi_chart_lam_bia_duoc():
 
 
 def test_het_anh_sach_thi_duoc_dung_anh_roi():
-    import nop_chung as nc
+    import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, roi=True), "A2": _muc(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5", "A2": "slide 6"},
@@ -185,7 +185,7 @@ def test_het_anh_sach_thi_duoc_dung_anh_roi():
 
 def test_khong_tinh_la_sach_neu_khong_the_dung_mot_minh():
     """Chặn oan là vai kẹt vòng: ứng viên phải thật sự thay được, không cần khai thêm."""
-    import nop_chung as nc
+    import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, roi=True),
                "A2": _muc(t, "A2", 2, roi=None),                       # chua ai noi la sach
@@ -200,7 +200,7 @@ def test_khong_tinh_la_sach_neu_khong_the_dung_mot_minh():
 
 
 def test_anh_ngang_cat_doc_duoc_la_anh_sach_thay_duoc():
-    import nop_chung as nc
+    import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, roi=True),
                "A2": _muc(t, "A2", 2, ngang=True, h=1000, cat_ngang_ok=True)}
@@ -210,7 +210,7 @@ def test_anh_ngang_cat_doc_duoc_la_anh_sach_thay_duoc():
 
 def test_anh_sach_da_len_bai_khac_khong_tinh():
     import image_rules
-    import nop_chung as nc
+    import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, roi=True), "A2": _muc(t, "A2", 2)}
         image_rules.record_used(anh["A2"]["goc"], "tin-khac", "dre", "https://x/khac")

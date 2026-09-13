@@ -11,7 +11,7 @@ Bộ tiêu chí ảnh của cả đội, **một nguồn sự thật duy nhất*
 
 **Ai phải theo:** mọi vai **tạo ra** ảnh mới — Ethan (`hero-image`, `card.py`),
 Dre (`carousel`, `carousel.py`), Kite (`carousel-edu`, `render_edu.py`). Gin và
-Itachi **không tạo ảnh**, chỉ chỉnh sửa trên ảnh gốc có sẵn (`doi_chu_anh.py` →
+Itachi **không tạo ảnh**, chỉ chỉnh sửa trên ảnh gốc có sẵn (`swap_image_text.py` →
 `deck.py`), nên không áp bộ này — họ có tiêu chí riêng của việc remake.
 
 **Vì sao phải chung.** Đo thật trong repo trước khi gom (04/09/2026): cổng mặt
@@ -48,12 +48,12 @@ Bỏ thẳng, không cần cân nhắc:
 >
 > Đọc §1.2b trước nếu chỉ có thời gian đọc một mục: đó là hợp đồng thật đang chạy.
 
-### 1.1 Luôn chạy `anh_bai.py` trước
+### 1.1 Luôn chạy `article_images.py` trước
 
 Đừng tự đoán từ `image_url` trong task.
 
 ```bash
-venv/bin/python anh_bai.py --tieu-de "<tiêu đề tin>" --link "<link gốc>" --json
+venv/bin/python article_images.py --tieu-de "<tiêu đề tin>" --link "<link gốc>" --json
 ```
 
 Script lấy ảnh từ link gốc **và** từ các báo khác đưa cùng tin, lọc bỏ
@@ -65,7 +65,7 @@ nó là thẻ thương hiệu chung. Ví dụ thật: `api-docs.deepseek.com` tr
 
 ### 1.2 Trộn hai nguồn: official site + magazine
 
-`anh_bai.py` fetch **tĩnh** — trang sản phẩm hiện đại (JS render) nó chỉ nhặt
+`article_images.py` fetch **tĩnh** — trang sản phẩm hiện đại (JS render) nó chỉ nhặt
 được `og:image`, **bỏ sót hết screenshot UI thật**. Đừng kết luận "bài không có
 ảnh" từ một lần chạy.
 
@@ -125,7 +125,7 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
 
 Ông Chủ 06/09/2026, nhắc lại 12/09: *"vào trang nào chụp thì cũng hay duyệt theo
 kích thước mobile, vì hình luôn đang ở ratio 4:5"* và *"có thể capture màn hình
-mobile source gốc mà?"*. Trước 12/09 luật này chỉ sống trong `xep_hang.py` (trang
+mobile source gốc mà?"*. Trước 12/09 luật này chỉ sống trong `ranking.py` (trang
 bảng xếp hạng) và §1.3 (tin model/xếp hạng), nên đường ảnh của **tin thường**
 nhảy thẳng từ ảnh thương hiệu xuống ảnh khái niệm — tin *"AI giải toán giỏi, nền
 toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng máy.
@@ -160,7 +160,7 @@ toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng má
 qua luôn. Nhắc tới Nhật thì tìm cờ hoặc bản đồ nước Nhật, Nhật đầu tư xây
 compute thì lấy hình datacenter"*. Trước 04/09 Dre tự làm việc này bằng
 web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là luật của
-**engine** (`anh_khai_niem.py`, chạy trong `image_prepare.py`):
+**engine** (`image_concept.py`, chạy trong `image_prepare.py`):
 
 - **Khi nào**: sau vòng tìm rộng **và sau nấc chụp trang nguồn (§1.2b2)** mà vẫn
   thiếu ảnh, *hoặc* có ảnh mà không tấm nào làm bìa/hero được. Không chạy khi tin
@@ -200,7 +200,7 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   lên bìa, tức mất cả tác dụng của §1.2c.
 - **§1.2e không được ép nó xuống thân**: xem chỗ `hinh_phai_dung` ở mục đó.
 
-### 1.2e Vai TỰ ĐI TÌM khi ban chuẩn bị thiếu — `tim_anh_them.py`
+### 1.2e Vai TỰ ĐI TÌM khi ban chuẩn bị thiếu — `find_more_images.py`
 
 Ông Chủ 12/09/2026 (tin TSMC t_a8ffd2f6): *"designer mà không được phép đi tìm
 ảnh, ai nghĩ ra cái luật thiểu năng này?"*. Luật 04/09 "vai chỉ chọn mã" cắt cả
@@ -210,7 +210,7 @@ chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là d�
 - **Giữ**: engine vẫn chuẩn bị, cổng chặn vẫn của script, vai vẫn không tự
   curl/crop/mở ảnh.
 - **Bỏ**: thiếu ảnh không còn là "block ngay". Vai chạy
-  `tim_anh_them.py <id> --tu-khoa "<tiếng Anh cụ thể>"` (hãng, sản phẩm, nhà
+  `find_more_images.py <id> --tu-khoa "<tiếng Anh cụ thể>"` (hãng, sản phẩm, nhà
   máy, sự kiện, người trong bài; hoặc `--url` trang/ảnh vai biết). Script hỏi
   Bing News + Wikimedia Commons + **Openverse** (ảnh CC: Wikimedia, Flickr CC…;
   chỉ giấy phép by / by-sa / cc0 / pdm, cạnh ngắn ≥ 700), mở trang, tải, **nhìn**,
@@ -260,7 +260,7 @@ chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là d�
 dung có Big Brand"*. Sáng hôm đó năm tin liên tiếp (Qualcomm × Amazon, xưởng
 Samsung, kiện Anthropic, DeepSeek gọi vốn, Philippines) đều dừng ở nút *"chỉ 2/5
 ảnh thật dùng được — Kite vẽ vector / Dre làm với N ảnh"*, toàn hãng mà Commons
-có hàng trăm ảnh thật. Luật của **engine** (`anh_thuong_hieu.py`):
+có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
 
 - **Khi nào**: **mọi tin nhắc tới một hãng trong watchlist**, kể cả khi bài gốc
   đã đủ ảnh — chạy sau vòng tìm rộng, **trước** ảnh khái niệm. Ông Chủ
@@ -294,7 +294,7 @@ có hàng trăm ảnh thật. Luật của **engine** (`anh_thuong_hieu.py`):
      mặt vô danh. Bỏ người **đã thôi chức** (qualifier `P582`) — hỏi CEO OpenAI
      mà không lọc thì Wikidata trả cả CEO tạm quyền cũ, brief ghi sai tên.
      Brief vẫn dặn: **bài không nhắc tên người này thì bỏ**.
-  3. 📊 **bảng xếp hạng có model của hãng** — mượn `xep_hang.py` chụp bảng, chỉ
+  3. 📊 **bảng xếp hạng có model của hãng** — mượn `ranking.py` chụp bảng, chỉ
      cho hãng **có làm model** (`hang_co_model`; Qualcomm/TSMC không khớp hàng
      nào). **Chỉ nhận ảnh chụp thật**: hết đường thì `tim_va_chup` tự dựng *thẻ
      dự phòng* "`<model> #<hạng>`" — thẻ đó cho một tin KHÔNG PHẢI tin xếp hạng
@@ -492,7 +492,7 @@ trên băng:
 > capture được thì ảnh = tên model + thứ hạng + logo model + site đánh giá.
 > Không ra output tương tự đồ hoạ tham chiếu (arena.ai) là **fail**.
 
-Từ 06/09 việc này là của **engine**, không phải của vai: `xep_hang.py` chạy
+Từ 06/09 việc này là của **engine**, không phải của vai: `ranking.py` chạy
 trong `image_prepare.py` khi tiêu đề là tin xếp hạng. Nó tách tên model, đi qua
 registry nguồn (arena.ai text/code/vision/t2i/**image-edit**/t2v/search,
 artificialanalysis.ai, tbench.ai, swebench.com, livebench.ai, aider — nguồn
@@ -522,7 +522,7 @@ Chart đi đâu, theo khung:
 
 Nguồn không có sẵn ảnh chart thì **chụp từ chính trang nguồn**: engine
 `image_prepare.py` mở browser thật và tự chụp `figure/table/canvas/svg` (mã ảnh
-loại `chart`, đóng dấu `chup_chart`). Chụp tay thì dùng `chup_chart.py` — full
+loại `chart`, đóng dấu `chup_chart`). Chụp tay thì dùng `capture_chart.py` — full
 chiều rộng trước, chiều cao xét sau (mục 2).
 
 ### 1.4 Bài arxiv: hình trong paper trước, trang bìa sau
@@ -533,7 +533,7 @@ nào của tin đó đúng hơn được nữa. Engine bóc thẳng từ PDF, t�
 arxiv/PDF; chạy tay thì:
 
 ```bash
-venv/bin/python arxiv_hinh.py --link "<link arxiv>" --ra /tmp/hinh
+venv/bin/python arxiv_figures.py --link "<link arxiv>" --ra /tmp/hinh
 ```
 
 **Figure 1 là hero.** Kite đặt nó vào `image` của slide `cover`, kèm caption
@@ -550,7 +550,7 @@ Không bóc được hình nào (paper ảnh scan, PDF hỏng) thì mới tới 
 paper — ngoại lệ duy nhất của luật "không tự vẽ":
 
 ```bash
-venv/bin/python arxiv_bia.py --link "<link arxiv>" --out /tmp/src_bia.png
+venv/bin/python arxiv_cover.py --link "<link arxiv>" --out /tmp/src_bia.png
 ```
 
 ---
@@ -563,14 +563,14 @@ một phần bề ngang thì thứ còn lại không phải thiếu một tí �
 Chiều cao thì khác: cắt bớt mép trên/dưới thường chỉ mất khoảng thở.
 
 Đừng chụp bằng khung mặc định của công cụ nào. Khung mặc định luôn hẹp
-(`chup_trang.py` trong repo này đặt 820px), và một chart rộng 1400px trong khung
+(`capture_page.py` trong repo này đặt 820px), và một chart rộng 1400px trong khung
 đó thì hoặc bị cắt, hoặc bị trang reflow xuống bố cục điện thoại — lúc đó có
 chụp đủ bề ngang cũng không còn là cái chart trên desktop nữa.
 
 ```bash
-venv/bin/python chup_chart.py --url "<trang có chart>" --ra chart.png
-venv/bin/python chup_chart.py --url "<trang>" --chon "figure.chart" --ra chart.png
-venv/bin/python chup_chart.py --url "<link ảnh trực tiếp>" --ra chart.png
+venv/bin/python capture_chart.py --url "<trang có chart>" --ra chart.png
+venv/bin/python capture_chart.py --url "<trang>" --chon "figure.chart" --ra chart.png
+venv/bin/python capture_chart.py --url "<link ảnh trực tiếp>" --ra chart.png
 ```
 
 Script mở ở khung 1920px, **đo bề ngang thật** của phần tử (`scrollWidth`, bắt
@@ -642,12 +642,12 @@ chữ không hề bị ảnh hưởng. Kiểu `tran` vẫn còn màn tối riên
 
 ## 4. Tỉ lệ và crop
 
-### 4.1 Crop chỉ được làm qua `crop_ti_le.py`
+### 4.1 Crop chỉ được làm qua `crop_ratio.py`
 
 ```bash
-venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png              # 1:1, giữa
-venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --ti-le 4:5  # 4:5
-venv/bin/python crop_ti_le.py --anh vao.jpg --ra ra.png --cx 0.62    # tâm lệch phải
+venv/bin/python crop_ratio.py --anh vao.jpg --ra ra.png              # 1:1, giữa
+venv/bin/python crop_ratio.py --anh vao.jpg --ra ra.png --ti-le 4:5  # 4:5
+venv/bin/python crop_ratio.py --anh vao.jpg --ra ra.png --cx 0.62    # tâm lệch phải
 ```
 
 Crop là **chọn khung ảnh thật**, không phải bịa ảnh — vẫn đúng luật "không tự
@@ -656,7 +656,7 @@ vẽ". Chọn `--cx/--cy` để ôm đúng chủ thể vào khung.
 **Chỉ crop ảnh chụp KHÔNG có chữ** (sản phẩm, sự kiện, trụ sở). Ảnh có chữ
 (chart, bảng, slide, banner, screenshot UI có tiêu đề) **không crop** — ghép dọc.
 
-**`crop_ti_le.py` tự chặn ở đầu kia:** mặc định nó **chỉ cắt chiều cao**. Ảnh gốc
+**`crop_ratio.py` tự chặn ở đầu kia:** mặc định nó **chỉ cắt chiều cao**. Ảnh gốc
 ngang (tỉ lệ ≥1.4) mà đòi cắt bề ngang thì script dừng — bề ngang của chart/bảng
 là nội dung. Muốn cắt bề ngang phải thêm `--cat-ngang`, và **chỉ được dùng cho
 ảnh chụp người/sản phẩm không có chữ**. Nên với ảnh ngang, đường đúng gần như
@@ -668,10 +668,10 @@ luôn là **ghép dọc** hoặc `"chart": true`, không phải crop.
 ### 4.2 Dấu xuất xứ — ĐÃ BỎ (13/09/2026)
 
 Cổng này (`luat_anh.kiem_xuat_xu`: ảnh đúng khít 4:5/1:1 mà không có dấu vết
-`crop_ti_le.py` → chặn) đã bỏ khỏi hệ thống, mọi vai (Ông Chủ 13/09/2026: bỏ
+`crop_ratio.py` → chặn) đã bỏ khỏi hệ thống, mọi vai (Ông Chủ 13/09/2026: bỏ
 cấm đoán này cùng đợt với `kiem_day_sang`/`kiem_lech_tone`/`kiem_anh_thap`).
-`crop_ti_le.py` vẫn là công cụ crop chuẩn, chỉ là không còn cổng nào ép dùng nó
-thay vì công cụ khác. `crop_ti_le.py`/`arxiv_hinh.py`/`chup_chart.py` vẫn tự
+`crop_ratio.py` vẫn là công cụ crop chuẩn, chỉ là không còn cổng nào ép dùng nó
+thay vì công cụ khác. `crop_ratio.py`/`arxiv_figures.py`/`capture_chart.py` vẫn tự
 đóng dấu như cũ — chỉ không ai đọc dấu đó để chặn nữa.
 
 ---
@@ -825,7 +825,7 @@ trừ trải nghiệm rõ rệt.
 trớ trêu là ảnh trắng lại là thứ "giống chart" nhất theo phép đo, nên cổng chart
 cho qua ngay. Đo trên 76 ảnh trong kho: ảnh rỗng = 2 màu, ảnh thật ít màu nhất
 = 40 màu — cách nhau 20 lần nên chặn được chắc (khác các phép đo "slide trống"
-đã thử và bỏ vì chồng lấn với chart sạch). `chup_chart.py` nay tự dừng ngay khi
+đã thử và bỏ vì chồng lấn với chart sạch). `capture_chart.py` nay tự dừng ngay khi
 chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. **Vẫn phải mở
 ảnh ra xem trước khi ghi vào spec** — tên tệp không nói ảnh có gì.
 
@@ -859,7 +859,7 @@ Mỗi hàm trả về `(lỗi, cảnh báo)` và **không hàm nào biết đế
 nào cũng gọi được. Vai tự chọn cổng nào hợp với khung của mình rồi gộp lại.
 
 Uỷ quyền crop bề ngang có **hai** đường, cổng nhận cả hai: khai `crop_ok` trong
-spec, hoặc cắt bằng `crop_ti_le.py --cat-ngang` (cờ đó đóng dấu vào PNG, đọc
+spec, hoặc cắt bằng `crop_ratio.py --cat-ngang` (cờ đó đóng dấu vào PNG, đọc
 bằng `doc_cat_ngang`). Trước 04/09 chỉ card.py đọc dấu thứ hai nên carousel vẫn
 chặn oan một tấm đã được cho phép cắt.
 

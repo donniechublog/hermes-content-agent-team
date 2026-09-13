@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import cape_chuan_bi as jb                                   # noqa: E402
 import teaser_assemble                                       # noqa: E402
-from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
+from vietnamese import find_face_mark, drop_mark_forbid               # noqa: E402
 
 
 def main() -> int:
@@ -36,13 +36,13 @@ def main() -> int:
         spec = json.loads((wd / "spec.json").read_text(encoding="utf-8"))
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] spec.json không phải JSON hợp lệ: {type(e).__name__}: {e}")
-    title = bo_dau_cam(str(spec.get("title") or "").strip())
-    paras = [bo_dau_cam(str(p).strip()) for p in (spec.get("paragraphs") or []) if str(p).strip()]
+    title = drop_mark_forbid(str(spec.get("title") or "").strip())
+    paras = [drop_mark_forbid(str(p).strip()) for p in (spec.get("paragraphs") or []) if str(p).strip()]
     loi = []
     if not title:
         loi.append("thiếu title")
     for i, p in enumerate([title] + paras):
-        mat = tim_mat_dau(p)
+        mat = find_face_mark(p)
         if mat:
             loi.append(f"{'title' if i == 0 else 'đoạn ' + str(i)}: tiếng Việt mất dấu ({', '.join(mat)})")
     if loi:

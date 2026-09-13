@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 import ada_chuan_bi as ab                                    # noqa: E402
 import caption_check as cc                                   # noqa: E402
 import env_load                                              # noqa: E402
-from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
+from vietnamese import find_face_mark, drop_mark_forbid               # noqa: E402
 
 
 def dung_bao_cao(m: dict, spec: dict) -> str:
@@ -33,15 +33,15 @@ def dung_bao_cao(m: dict, spec: dict) -> str:
         L.append("<b>Token nặng nhất:</b> " + "; ".join(f"{k} {v['input']:,} input / {v['tool']} tool" for k, v in vai_nang) + ".")
     L += ["", "<b>Nhận xét</b>"]
     for x in spec.get("nhan_xet") or []:
-        L.append(f"• {bo_dau_cam(str(x))}")
+        L.append(f"• {drop_mark_forbid(str(x))}")
     L += ["", "<b>Đề xuất chỉnh rubric</b>"]
     dx = spec.get("de_xuat_rubric") or []
     if not dx:
         L.append("Không có gì đáng chỉnh.")
     for x in dx:
-        L.append(f"• {bo_dau_cam(str(x.get('thay_doi', '')))} — bằng chứng: {bo_dau_cam(str(x.get('bang_chung', '')))}")
+        L.append(f"• {drop_mark_forbid(str(x.get('thay_doi', '')))} — bằng chứng: {drop_mark_forbid(str(x.get('bang_chung', '')))}")
     if spec.get("token"):
-        L += ["", f"<b>Token:</b> {bo_dau_cam(str(spec['token']))}"]
+        L += ["", f"<b>Token:</b> {drop_mark_forbid(str(spec['token']))}"]
     nk = tk.get("nhat_ky_9router") or {}
     if nk.get("theo_ngay"):
         L += ["", "<b>9router theo ngày</b> (req / $ / cache% / fallback / lỗi)"]
@@ -54,9 +54,9 @@ def dung_bao_cao(m: dict, spec: dict) -> str:
             f"{b} {('$' + str(t['usd_bai'])) if t['usd_bai'] is not None else 'chưa có bài'} ({t['bai']} bài)"
             for b, t in nk["brand"].items()) + ".")
     if spec.get("router"):
-        L += ["", f"<b>Router:</b> {bo_dau_cam(str(spec['router']))}"]
+        L += ["", f"<b>Router:</b> {drop_mark_forbid(str(spec['router']))}"]
     if spec.get("ket_luan"):
-        L += ["", f"<b>Kết luận:</b> {bo_dau_cam(str(spec['ket_luan']))}"]
+        L += ["", f"<b>Kết luận:</b> {drop_mark_forbid(str(spec['ket_luan']))}"]
     return "\n".join(L)
 
 
@@ -79,7 +79,7 @@ def main() -> int:
         v = spec.get(k)
         chuoi = " ".join(str(x.get("thay_doi", "")) + " " + str(x.get("bang_chung", "")) if isinstance(x, dict) else str(x)
                          for x in (v if isinstance(v, list) else [v or ""]))
-        mat = tim_mat_dau(chuoi)
+        mat = find_face_mark(chuoi)
         if mat:
             loi.append(f"{k}: tiếng Việt mất dấu ({', '.join(mat)})")
     if not spec.get("nhan_xet"):

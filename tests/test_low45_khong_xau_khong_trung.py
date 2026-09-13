@@ -30,7 +30,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import chuan_bi.browser as browser                             # noqa: E402
-import chuan_bi.nhin as nhin                                   # noqa: E402
+import chuan_bi.vision as vision                                   # noqa: E402
 from tam import so_tam                                         # noqa: E402
 from test_spec_kite import _cover, _statement, _hinh, _m, _chay  # noqa: E402
 
@@ -59,7 +59,7 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
     13/09/2026: cụm "chụp lại màn hình" gộp thành `image_rules.IMAGE_PHRASES_SCREENSHOT`
     dùng chung (xem `test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi` bên dưới)."""
     import inspect
-    src = inspect.getsource(nhin.mo_ta_anh)
+    src = inspect.getsource(vision.description_image)
     # Cụm phải nằm trong nhánh MẶC ĐỊNH (trước dòng gán `hoi` của khai_niem),
     # không phải chỉ tồn tại đâu đó trong tệp.
     i_hoi_mac_dinh = src.index('hoi = (f"Bai bao: \\"{tieu_de}\\".')
@@ -72,7 +72,7 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
 def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
     """LOW-45 (13/09/2026) — đúng ảnh Getty chụp nghiêng App Store của Kimi K3
     (đã chặn ở JS_FIG + _vong_chup_nguon) lọt qua LẦN THỨ BA qua một đường khác
-    hẳn: nhánh "anh bối cảnh" của `anh_thuong_hieu.cau_hoi_vision` (dùng khi
+    hẳn: nhánh "anh bối cảnh" của `image_brand.sentence_ask_vision` (dùng khi
     Commons/Wikidata rỗng, `_bao_thuong_hieu_rong` tìm ảnh qua báo) chưa từng
     có cụm này. Một hằng số dùng chung (`image_rules.IMAGE_PHRASES_SCREENSHOT`),
     mọi câu hỏi con mắt đều chèn — đóng cả lớp thay vì vá từng đường một."""
@@ -80,15 +80,15 @@ def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
     assert hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
     assert "man hinh" in image_rules.IMAGE_PHRASES_SCREENSHOT.lower()
 
-    import anh_thuong_hieu as th
+    import image_brand as th
     for loai, th_dict in (("nguoi", {"hang": "X", "loai": "nguoi", "nguoi": "A", "vai": "CEO"}),
                          ("logo", {"hang": "X", "loai": "logo"}),
                          ("anh", {"hang": "X", "loai": "anh"})):
-        c = th.cau_hoi_vision("tin gi do", th_dict)
+        c = th.sentence_ask_vision("tin gi do", th_dict)
         assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, (loai, c)
 
-    import anh_khai_niem as kn
-    c = kn.cau_hoi_vision("tin gi do", "tu khoa x")
+    import image_concept as kn
+    c = kn.sentence_ask_vision("tin gi do", "tu khoa x")
     assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, c
 
 

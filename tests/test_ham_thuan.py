@@ -5,7 +5,7 @@ Audit 06/09/2026: nhung ham duoi day khong goi mang, khong doc dia, khong can
 Hermes — nhung khong ham nao co test, va phan lon quyet dinh nhung viec khong
 lo ra khi hong:
 
-  - `co_tieng_viet`  quyet dinh co nem tieu de Viet vao Google News/Bing khong
+  - `has_vietnamese`  quyet dinh co nem tieu de Viet vao Google News/Bing khong
                      (luat Ong Chu 05/09). Hong = hai tieng tim kiem vo ich va
                      Dre bo cuoc vi khong co anh.
   - `_url_hop_le`    cong chan URL noi bo cho lenh /bai.
@@ -20,7 +20,7 @@ lo ra khi hong:
                      Sinh 09/09/2026: lan thang CT_BRAND vao card.dat_thuong_hieu
                      lam SystemExit "Khong biet thuong hieu 'blog'", giet ca
                      `prepare_article()" — bat HAI cho lam sai giong het nhau trong cung
-                     mot lan chay lai (image_prepare.py va anh_thuong_hieu.py).
+                     mot lan chay lai (image_prepare.py va image_brand.py).
 
 Chay:  venv/bin/python tests/test_ham_thuan.py
 """
@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT))
 # ------------------------------------------------------------- env_load.brand_dai
 def test_brand_dai_doi_dung_ca_hai_chieu():
     """CT_BRAND ('blog') phai ra 'donniechublog' — chinh loi bat 09/09/2026 (hai
-    cho trong anh_thuong_hieu.py truyen thang CT_BRAND vao card.dat_thuong_hieu,
+    cho trong image_brand.py truyen thang CT_BRAND vao card.dat_thuong_hieu,
     nem 'Khong biet thuong hieu blog' vi card.py chi biet slug DAI)."""
     import env_load
     cu = os.environ.get("CT_BRAND")
@@ -70,24 +70,24 @@ def test_brand_dai_khong_biet_thi_ve_mac_dinh():
 
 # ------------------------------------------------------------ co_tieng_viet
 def test_co_tieng_viet_bat_dau_khong_bat_ascii():
-    import nguon_bai as nb
+    import article_sources as nb
     for t in ["Nvidia đàm phán rót 2,5 tỷ USD", "Mô hình mở", "đ", "Ý"]:
-        assert nb.co_tieng_viet(t), f"bo sot dau: {t!r}"
+        assert nb.has_vietnamese(t), f"bo sot dau: {t!r}"
     for t in ["Nvidia in talks to invest $2.5B", "GPT-5 Codex Max", "",
               "Qwen3-Max: 1 trieu token context"]:
-        assert not nb.co_tieng_viet(t), f"bao nham co dau: {t!r}"
+        assert not nb.has_vietnamese(t), f"bao nham co dau: {t!r}"
 
 
 def test_co_tieng_viet_nhan_none():
-    import nguon_bai as nb
-    assert nb.co_tieng_viet(None) is False
+    import article_sources as nb
+    assert nb.has_vietnamese(None) is False
 
 
 def test_truy_van_bing_tu_choi_tieng_viet():
     """Chan cung, khong phai loi khuyen: tieu de Viet -> khong sinh truy van."""
-    import nguon_bai as nb
-    assert nb._truy_van_bing("Nvidia đàm phán rót 2,5 tỷ USD") == []
-    assert nb._truy_van_bing("Nvidia in talks to invest $2.5B") != []
+    import article_sources as nb
+    assert nb._query_bing("Nvidia đàm phán rót 2,5 tỷ USD") == []
+    assert nb._query_bing("Nvidia in talks to invest $2.5B") != []
 
 
 # -------------------------------------------------------------- _url_hop_le
@@ -332,21 +332,21 @@ def test_host_noi_bo_bat_ca_dang_viet_rut_gon():
     """Cong cu chi so khop CHUOI nen "127.0.0.1" bi chan con "127.1",
     "2130706433" va "[::1]" thi khong — dung ba cach vong qua ma libc (curl,
     chromium, httpx) van hieu."""
-    import quet_chung as qc
+    import scan_common as qc
     sot = [h for h in NOI_BO if not qc.host_say_drop(h)]
     assert not sot, f"khong chan: {sot}"
 
 
 def test_host_cong_khai_khong_bi_chan_oan():
     """Chan oan con te hon bo lot: day chuyen se im lang khong tai duoc anh."""
-    import quet_chung as qc
+    import scan_common as qc
     oan = [h for h in CONG_KHAI if qc.host_say_drop(h)]
     assert not oan, f"chan oan: {oan}"
 
 
 def test_kiem_url_chan_scheme_khong_phai_http():
     """chup_chart tai bang urllib, ma urllib nhan ca `file://`."""
-    import quet_chung as qc
+    import scan_common as qc
     for u in ["file:///etc/passwd", "ftp://x.com/a", "data:text/html,x", "x"]:
         assert not qc.url_hide_whole(u), u
     assert qc.url_hide_whole("https://openai.com/index/abc")
@@ -358,8 +358,8 @@ def test_moi_duong_tai_deu_qua_cong():
     import ast
     # `_tai_bytes` sang chuan_bi/tai_loc.py khi tach goi 09/09/2026 (audit A1) —
     # cong host van phai duoc goi y nhu cu, chi doi cho tim.
-    for tep, ham in [("chuan_bi/tai_loc.py", "_tai_bytes"), ("anh_bai.py", "_tai"),
-                     ("chup_chart.py", "tai_anh"), ("article_extract.py", "fetch")]:
+    for tep, ham in [("chuan_bi/download_filter.py", "_download_bytes"), ("article_images.py", "_download"),
+                     ("capture_chart.py", "download_image"), ("article_extract.py", "fetch")]:
         cay = ast.parse((ROOT / tep).read_text(encoding="utf-8"))
         f = next((n for n in ast.walk(cay)
                   if isinstance(n, ast.FunctionDef) and n.name == ham), None)

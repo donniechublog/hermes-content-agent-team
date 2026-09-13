@@ -258,7 +258,7 @@ def _figure(ma, **k):
 def test_chuyen_tu_vai_doc_img_json():
     """Nút "Gửi Kite" của Ông Chủ chỉ ghi `chuyen_tu` vào img.json, xong.json
     không có — đọc nhầm chỗ là cổng dưới không bao giờ bật."""
-    import anh_chuan_bi as cb
+    import image_prepare as cb
     import kite_chuan_bi as kb
     import json as _j
     with tempfile.TemporaryDirectory() as t:
@@ -447,7 +447,7 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
     chạy lần nữa. Hai vai dừng ở hai ngưỡng khác nhau: vai cũ cần ~5 ảnh, Kite
     chỉ cần MỘT tấm lên bìa."""
     import kite_chuan_bi as kb
-    import anh_chuan_bi as cb
+    import image_prepare as cb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         goi = []
@@ -489,7 +489,7 @@ def test_task_body_khong_con_bao_kite_ve_vector_hoan_toan():
 
 # ---- ANH KHAI NIEM chi duoc dung o bia (LUAT_ANH §1.2c) -------------------
 def _khai_niem(wd, ma="K1", tu_khoa="Japan flag", **k):
-    """Anh khai niem cua `anh_khai_niem.py`: co nuoc / day rack datacenter lay
+    """Anh khai niem cua `image_concept.py`: co nuoc / day rack datacenter lay
     tu Wikimedia Commons khi tin khong co anh rieng. La ANH CHUP THAT nen no di
     qua moi cong ky thuat — chi cho dung cua no la bi gioi han."""
     return _hinh(wd, ma=ma, loai="anh",

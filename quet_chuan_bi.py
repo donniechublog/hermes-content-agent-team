@@ -236,7 +236,7 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python quet_nop.py --vai nova",
           "Script tự ghi manifest đánh số, kiểm mục bắt buộc, viết báo cáo, gửi topic. Báo [LOI] thì sửa ds.json "
-          "rồi chạy lại. KHÔNG chạy nguon_bai.py (approve_service làm lúc Ông Chủ chọn), KHÔNG tạo task."]
+          "rồi chạy lại. KHÔNG chạy article_sources.py (approve_service làm lúc Ông Chủ chọn), KHÔNG tạo task."]
     return "\n".join(L)
 
 
@@ -268,7 +268,7 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python quet_nop.py --vai market",
           "Script tự ghi manifest đánh số, tự thêm mục bắt buộc còn thiếu, viết báo cáo, gửi topic. Báo [LOI] thì "
-          "sửa ds.json rồi chạy lại. KHÔNG chạy nguon_bai.py, KHÔNG web_search, KHÔNG tạo task."]
+          "sửa ds.json rồi chạy lại. KHÔNG chạy article_sources.py, KHÔNG web_search, KHÔNG tạo task."]
     return "\n".join(L)
 
 
@@ -327,7 +327,7 @@ def brief_qinn(wd: Path, lam_moi: bool) -> str:
           "", "## Roi chay dung MOT lenh:",
           f"cd {ROOT} && venv/bin/python quet_nop.py --vai qinn",
           "Script tu ghi manifest danh so, viet bao cao, gui topic. Bao [LOI] thi sua ds.json roi "
-          "chay lai. KHONG chay nguon_bai.py, KHONG web_search, KHONG tao task."]
+          "chay lai. KHONG chay article_sources.py, KHONG web_search, KHONG tao task."]
     return "\n".join(L)
 
 

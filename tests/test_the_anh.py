@@ -155,7 +155,7 @@ def test_ten_hang_tren_nen_sang_keo_ve_phia_toi():
 # --------------------------------------------------- the tran dung du
 def _dung_the(tmp, ten_anh, title, **k):
     import card
-    src = Path(tmp) / "nguon.png"
+    src = Path(tmp) / "source.png"
     _anh_that(*ten_anh, sang=k.pop("sang", False)).save(src)
     out = Path(tmp) / "the.png"
     card.build(str(src), title, str(out), kieu="tran", ratio="4:5",

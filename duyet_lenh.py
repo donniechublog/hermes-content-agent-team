@@ -73,7 +73,7 @@ def _url_hop_le(url):
 
 def _doc_trang(url):
     """Lay title + anh og:image de dien khuon task. Chi can THE, khong can
-    sach: vai duoc giao van tu doc bai goc va chay research (nguon_bai.py)
+    sach: vai duoc giao van tu doc bai goc va chay research (article_sources.py)
     nhu moi bai Finn quet. Tra (title|None, image_url, ghi_chu) — title None
     nghia la khong ket noi duoc (URL chet), con trang tra loi loi HTTP
     (paywall 403...) van tien hanh duoc, chi kem ghi chu."""

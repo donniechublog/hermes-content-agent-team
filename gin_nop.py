@@ -21,7 +21,7 @@ import cv2                                                   # noqa: E402
 
 def don(id_: str, wd: Path, spec: dict) -> tuple:
     """Xoá chữ. Trả về (nen_sach, mask_debug, vung_json, số vùng xoá, số vùng giữ)."""
-    import doi_chu_anh
+    import swap_image_text
     import image_rules
     d = json.loads((wd / "vung_ocr.json").read_text(encoding="utf-8"))
     anh = Path(d["anh"])
@@ -44,12 +44,12 @@ def don(id_: str, wd: Path, spec: dict) -> tuple:
         except (TypeError, ValueError):
             continue
     boxes = [(v["box"], v["text"], v["conf"]) for v in d["vung"]]
-    mask = doi_chu_anh.dung_mask(img, boxes, giu_list, verbose=False)
+    mask = swap_image_text.use_mask(img, boxes, giu_list, verbose=False)
     for x, y, w, h in xoa_them:
         mask[y:y + h, x:x + w] = 255
     if not mask.any():
         sys.exit("[LOI] Không có vùng nào để xoá (mọi vùng đều nằm trong `giu`, hoặc OCR không thấy chữ).")
-    sach = doi_chu_anh.inpaint(img, mask, verbose=False)
+    sach = swap_image_text.inpaint(img, mask, verbose=False)
     nen = wd / "nen_sach.png"
     cv2.imwrite(str(nen), sach)
     image_rules.stamp_file(nen, "doi_chu_anh")

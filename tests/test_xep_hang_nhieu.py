@@ -5,7 +5,7 @@ Sau khi vá xong "Image Edit Arena" thiếu và tên mã biến thể bị nuố
 (tests/test_xep_hang.py), Ông Chủ bác luôn cả tiền đề "mỗi tin chỉ mang một ảnh
 xếp hạng": *"đã làm social media thì làm gì có chuyện bị giới hạn ở nguồn tư
 liệu"*, và hai bảng ví dụ *"một bảng là top model tạo sinh, một bảng là top
-model chỉnh sửa, đâu có trùng lặp"*. `xep_hang.tim_va_chup_nhieu` (test riêng
+model chỉnh sửa, đâu có trùng lặp"*. `ranking.find_and_capture_many` (test riêng
 ở tests/test_xep_hang.py) lo phần CHỤP; tệp này test phần MANG VÀO MANIFEST —
 `image_prepare._gom_va_tai_anh` gắn mã XH/XH2, `dung_manifest` gộp vào
 goi_y_bia/so_xep_hang, `dong_brief_xep_hang` nói cho vai biết có tấm thứ hai.
@@ -48,7 +48,7 @@ def test_anh_muc_xep_hang_danh_ma_dung_theo_vi_tri():
     nhau la mat mot trong hai)."""
     xhs = [_xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst"),
            _xh("Image Edit Arena", "GPT-Image-2.5 Sunburst")]
-    muc = [cb._anh_muc_xep_hang(i, xh) for i, xh in enumerate(xhs)]
+    muc = [cb._image_item_ranking(i, xh) for i, xh in enumerate(xhs)]
     assert [m["ma"] for m in muc] == ["XH", "XH2"], [m["ma"] for m in muc]
     assert {m["ma"]: m["xep_hang"]["bang"] for m in muc} == \
         {"XH": "Text-to-Image Arena", "XH2": "Image Edit Arena"}
@@ -57,7 +57,7 @@ def test_anh_muc_xep_hang_danh_ma_dung_theo_vi_tri():
 def test_anh_muc_xep_hang_mot_ket_qua_van_la_xh_tran():
     """CHI mot bang (truong hop thuong, khong doi hanh vi cu): ma van la 'XH'
     tran, khong phai 'XH1'."""
-    muc = cb._anh_muc_xep_hang(0, _xh("Text Arena", "Kimi-K3"))
+    muc = cb._image_item_ranking(0, _xh("Text Arena", "Kimi-K3"))
     assert muc["ma"] == "XH", muc["ma"]
 
 
@@ -66,7 +66,7 @@ def test_anh_muc_xep_hang_moi_tam_giu_rieng_bang_cua_no():
     len — day la du lieu ca_xep_hang()/dong_brief_xep_hang doc de ta dung bang."""
     xhs = [_xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst"),
            _xh("Image Edit Arena", "GPT-Image-2.5 Flare")]
-    muc = [cb._anh_muc_xep_hang(i, xh) for i, xh in enumerate(xhs)]
+    muc = [cb._image_item_ranking(i, xh) for i, xh in enumerate(xhs)]
     assert muc[0]["xep_hang"]["model"] == "GPT-Image-2.5 Sunburst"
     assert muc[1]["xep_hang"]["model"] == "GPT-Image-2.5 Flare"
 

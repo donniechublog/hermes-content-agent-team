@@ -2,7 +2,7 @@
 """Nấc CHỤP TRANG NGUỒN ở khung mobile (LOW-22, Ông Chủ 06/09/2026 → 12/09/2026).
 
 Luật "vào trang nào chụp thì cũng duyệt theo kích thước mobile, vì hình luôn đang
-ở ratio 4:5" chốt từ 06/09 nhưng chỉ sống trong `xep_hang.py`; thang ảnh của tin
+ở ratio 4:5" chốt từ 06/09 nhưng chỉ sống trong `ranking.py`; thang ảnh của tin
 thường nhảy thẳng từ ảnh thương hiệu xuống ảnh khái niệm Commons. Tệp này khoá ba
 thứ: hằng số mobile chỉ có MỘT bản, nấc mới đứng TRƯỚC nấc khái niệm, và ảnh chụp
 được phép làm bìa (Ông Chủ 12/09: "cắt lấy khối lead rồi làm bìa").
@@ -15,17 +15,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import chup_trang  # noqa: E402
+import capture_page  # noqa: E402
 import image_rules  # noqa: E402
 import browser_session  # noqa: E402
-import xep_hang  # noqa: E402
-from chuan_bi import vong_bu  # noqa: E402
+import ranking  # noqa: E402
+from chuan_bi import fallback_rounds  # noqa: E402
 
 
 def test_hang_so_mobile_chi_co_mot_ban():
     """Chép đôi thì một ngày nào đó hai chỗ lệch nhau mà không ai thấy."""
-    assert xep_hang.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
-    assert chup_trang.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
+    assert ranking.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
+    assert capture_page.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
     assert browser_session.MOBILE_VIEWPORT["width"] == 414
     assert browser_session.MOBILE_DPR == 3
     assert "iPhone" in browser_session.MOBILE_UA
@@ -35,8 +35,8 @@ def test_nac_chup_nguon_dung_TRUOC_nac_khai_niem():
     """Thứ tự là cả nội dung của ticket: khối lead là vật THẬT của tin, ảnh khái
     niệm thì không. Đảo thứ tự là quay về đúng lỗi 12/09."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
-    i_chup = src.index("_vong_chup_nguon(anh")
-    i_kn = src.index("_vong_khai_niem(anh")
+    i_chup = src.index("_round_capture_source(anh")
+    i_kn = src.index("_round_concept(anh")
     assert i_chup < i_kn, "vòng chụp nguồn phải gọi trước vòng khái niệm"
 
 
@@ -53,8 +53,8 @@ def test_bi_chan_nhan_ra_tuong_chan_bot():
 
 
 def _anh_gia(path: Path, seed: int = 0):
-    """Một PNG dọc có vân — `phan_loai` đọc được, không phải ảnh rỗng.
-    `seed` (13/09/2026, sau khi thêm loại trùng dHash vào `_vong_chup_nguon`):
+    """Một PNG dọc có vân — `classify` đọc được, không phải ảnh rỗng.
+    `seed` (13/09/2026, sau khi thêm loại trùng dHash vào `_round_capture_source`):
     lệch pha hoạ tiết để hai lần gọi khác seed ra ảnh THẬT SỰ khác nhau, không
     bị chính cổng loại trùng mới coi là cùng một tấm."""
     from PIL import Image
@@ -73,7 +73,7 @@ def _anh_gia(path: Path, seed: int = 0):
 
 
 def test_anh_chup_duoc_phep_lam_bia_va_khong_hoi_vision():
-    """`phan_loai` đọc ảnh chụp trang là "chart/screenshot" rồi dán KHÔNG LÀM BÌA.
+    """`classify` đọc ảnh chụp trang là "chart/screenshot" rồi dán KHÔNG LÀM BÌA.
     Đúng cho chart của người khác, sai cho khối lead của chính bài.
 
     LOW-45 (13/09/2026): vòng THỬ HẾT các URL thay vì dừng ở trang đầu — cả
@@ -87,15 +87,15 @@ def test_anh_chup_duoc_phep_lam_bia_va_khong_hoi_vision():
         return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
                 "alt": "khối lead", "ly_do": "khối lead của trang nguồn"}
 
-    that = chup_trang.chup_lead_mobile
-    chup_trang.chup_lead_mobile = gia
+    that = capture_page.capture_lead_mobile
+    capture_page.capture_lead_mobile = gia
     try:
         with tempfile.TemporaryDirectory() as d:
             wd = Path(d)
-            anh, dung_duoc, _ = vong_bu._vong_chup_nguon(
+            anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://vidu.com/bai-toan", [{"url": "https://bao-khac.com/x"}], wd)
     finally:
-        chup_trang.chup_lead_mobile = that
+        capture_page.capture_lead_mobile = that
 
     assert goi[0] == "https://vidu.com/bai-toan", "phải thử bài gốc trước"
     assert goi == ["https://vidu.com/bai-toan", "https://bao-khac.com/x"], \
@@ -115,7 +115,7 @@ def test_anh_chup_duoc_phep_lam_bia_va_khong_hoi_vision():
 def test_khong_browser_thi_bo_qua_nac_nay():
     """Nấc này cần Chromium; `--khong-browser` phải đi qua mà không nổ."""
     with tempfile.TemporaryDirectory() as d:
-        anh, dung_duoc, chua_nhin = vong_bu._vong_chup_nguon(
+        anh, dung_duoc, chua_nhin = fallback_rounds._round_capture_source(
             [], "https://vidu.com/x", [], Path(d), khong_browser=True)
     assert anh == [] and dung_duoc == [] and chua_nhin == []
 
@@ -124,7 +124,7 @@ def test_khong_co_anh_hero_thi_chup_khoi_tit():
     nói rồi sao?" — bài tiểu luận không ảnh hero KHÔNG được trả rỗng rồi rơi
     xuống khái niệm (nơi con mắt nhận bừa phòng máy cho tin toán). Phải chụp
     khối tít ở khung điện thoại."""
-    src = (ROOT / "chup_trang.py").read_text(encoding="utf-8")
+    src = (ROOT / "capture_page.py").read_text(encoding="utf-8")
     assert "co_anh: false" in src, "JS phai tra khoi tit khi khong co anh hero"
     assert 'clip = {"x": 0, "y": max(0, r["top"]), "width": r["w"], "height": r["w"]}' in src
     assert '"kieu": "hero" if r["co_anh"] else "tit"' in src
@@ -135,22 +135,22 @@ def test_khoi_tit_la_nac_cuoi_sau_khai_niem():
     toàn có thể dùng hình bảng đen... thiếu idea đến thế à?". Khối tít (trang
     không ảnh hero) chỉ làm bìa khi thực thể + khái niệm đều rỗng."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
-    assert src.index("_vong_khai_niem(anh") < src.index("nang_khoi_tit(anh)")
+    assert src.index("_round_concept(anh") < src.index("capability_block_headline(anh)")
     a = {"ma": "A1", "kieu": "tit", "dung": [], "lien_quan": True, "ghi_chu": []}
     b = {"ma": "A2", "kieu": "tit", "dung": [], "lien_quan": True, "mat": True, "ghi_chu": []}
-    anh, dung, _ = vong_bu.nang_khoi_tit([b, a])
+    anh, dung, _ = fallback_rounds.capability_block_headline([b, a])
     assert dung == [a] and a["dung"][0].startswith("bìa"), (a, b)
     assert b["dung"] == [], "co mat nguoi thi khong len bia"
 
 
 def test_bang_khai_niem_co_toan_khoa_hoc_lop_hoc():
-    import anh_khai_niem
-    tk = [x["tu_khoa"] for x in anh_khai_niem.tu_khoa_heuristic(
+    import image_concept
+    tk = [x["tu_khoa"] for x in image_concept.keyword_heuristic(
         "AI is getting good at math. Mathematicians worry about what that means")]
     assert "blackboard mathematical formulas" in tk, tk
-    tk = [x["tu_khoa"] for x in anh_khai_niem.tu_khoa_heuristic("AlphaFold predicts new protein structures")]
+    tk = [x["tu_khoa"] for x in image_concept.keyword_heuristic("AlphaFold predicts new protein structures")]
     assert "laboratory bench scientist" in tk, tk
-    tk = [x["tu_khoa"] for x in anh_khai_niem.tu_khoa_heuristic("Students use ChatGPT for homework")]
+    tk = [x["tu_khoa"] for x in image_concept.keyword_heuristic("Students use ChatGPT for homework")]
     assert "classroom students" in tk, tk
 
 
@@ -179,15 +179,15 @@ def test_anh_co_mat_khong_len_bia_du_thu_truoc_anh_khong_mat_thu_sau():
         # phai chi trung hop do thu tu.
         return 1 if "A1" in str(path) else 0
 
-    that = chup_trang.chup_lead_mobile
-    chup_trang.chup_lead_mobile, image_rules.count_faces = gia, dem_mat_gia
+    that = capture_page.capture_lead_mobile
+    capture_page.capture_lead_mobile, image_rules.count_faces = gia, dem_mat_gia
     try:
         with tempfile.TemporaryDirectory() as d:
             wd = Path(d)
-            anh, dung_duoc, _ = vong_bu._vong_chup_nguon(
+            anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://vidu.com/bai-toan", [{"url": "https://bao-khac.com/x"}], wd)
     finally:
-        chup_trang.chup_lead_mobile, image_rules.count_faces = that, goc_dem_mat
+        capture_page.capture_lead_mobile, image_rules.count_faces = that, goc_dem_mat
 
     assert thu == ["https://vidu.com/bai-toan", "https://bao-khac.com/x"], thu
     assert len(anh) == 2, anh

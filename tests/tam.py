@@ -61,7 +61,7 @@ def so_tam(tmp):
 
     Emoji cung mot bai hoc, xem `lay_emoji` cua teaser_assemble.assemble.
     """
-    import luat_anh as la
+    import image_rules as la
     cu = la._used_images_log
     d = Path(tmp)
     # Ten tep giu nguyen "s.jsonl" cua ban cu: co test doc thang ten do.

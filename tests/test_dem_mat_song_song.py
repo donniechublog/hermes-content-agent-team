@@ -5,7 +5,7 @@ B2 (ca167c3) đưa `phan_loai` vào ThreadPoolExecutor 4 luồng, và khoá `_YU
 chỉ bảo vệ lúc NẠP model. Một `cv2.FaceDetectorYN` dùng chung thì không
 thread-safe khi DÙNG: `setInputSize` của luồng này chen giữa `setInputSize` và
 `detect` của luồng kia → cv2 ném → `None`. Đo 09/09/2026 với 24 ảnh KHÁC CỠ, 4
-luồng: tuần tự 0/24 None, song song 22–23/24. `nhin.py` làm `or 0` nên cổng mặt
+luồng: tuần tự 0/24 None, song song 22–23/24. `vision.py` làm `or 0` nên cổng mặt
 người (LUẬT ẢNH §6) tắt câm cho gần hết ảnh trong sản xuất.
 
 Ảnh khác cỡ là điều kiện bắt buộc để tái hiện: cùng cỡ thì setInputSize
@@ -51,7 +51,7 @@ def test_song_song_khong_mat_ket_qua_nao():
 
 def test_nhin_ghi_chu_khi_cong_mat_khong_chay():
     """None (khong chay) phai LO ra o ghi_chu, khong lang le thanh 0 mat (C1)."""
-    import chuan_bi.nhin as nhin
+    import chuan_bi.vision as vision
     cu = image_rules.count_faces
     image_rules.count_faces = lambda p: None
     try:
@@ -59,7 +59,7 @@ def test_nhin_ghi_chu_khi_cong_mat_khong_chay():
             p = Path(t) / "x.png"
             Image.new("RGB", (900, 700), (200, 200, 200)).save(p)
             a = {"ma": "X", "goc": str(p)}
-            nhin.phan_loai(a, Path(t), "")       # tieu_de rong -> khong goi vision
+            vision.classify(a, Path(t), "")       # tieu_de rong -> khong goi vision
     finally:
         image_rules.count_faces = cu
     assert a["mat"] == 0

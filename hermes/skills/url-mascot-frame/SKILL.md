@@ -24,7 +24,7 @@ ratio.
 
 1. **Get the source image onto disk** (from the URL).
 2. **Judge the vibe** of that image and pick one matching mascot emoji.
-3. **Run `khung_anh.py`** (repo root) to composite the frame + watermark.
+3. **Run `image_frame.py`** (repo root) to composite the frame + watermark.
 4. **Show the result** to the user.
 
 ---
@@ -104,7 +104,7 @@ tight set of reaction faces:
 
 The full machine-readable list is in [assets/mood-palette.json](assets/mood-palette.json),
 and [assets/mood-palette-sheet.png](assets/mood-palette-sheet.png) shows what each
-one looks like. `khung_anh.py` resolves the emoji → an actual mascot PNG from
+one looks like. `image_frame.py` resolves the emoji → an actual mascot PNG from
 that palette on its own; you only choose the emoji.
 
 If you cannot place the mood in the image, use 🙄 (eyeroll). It is the one
@@ -125,7 +125,7 @@ venv/bin/python ~/content-team/khung_anh.py \
 ```
 
 > Was `node scripts/frame.js` until 09/09/2026. Compositing is now pure Python
-> (Pillow) in `khung_anh.py` — same flags, same geometry, verified against the
+> (Pillow) in `image_frame.py` — same flags, same geometry, verified against the
 > Node output pixel by pixel. This skill needs no Node and no `npm install`
 > (audit A6).
 
@@ -153,7 +153,7 @@ on the top layer so nothing clips it.
 
 Prints a JSON summary (output path, canvas size, which avatar it used).
 
-**Footer line is per brand.** `khung_anh.py` keys it off `--handle` via a small
+**Footer line is per brand.** `image_frame.py` keys it off `--handle` via a small
 `FOOTER` table. `@donniechublog` has its site tagline; an unknown handle renders
 **no footer** and says so on stderr, rather than stamping another brand's copy on
 the image. Pass `--footer "<line>"` to override, or add the brand to that table.
@@ -169,7 +169,7 @@ exist, so every run stat()'d a dead path. Pass `--avatar <file.png>` if you ever
 need one outside the palette.
 
 **Screenshot fallback:** `get_source.py` only needs the browser for the rare case
-where the URL is a page, not an image — it calls `chup_trang.py` (Python
+where the URL is a page, not an image — it calls `capture_page.py` (Python
 Playwright, deviceScaleFactor 3 for a sharp capture). Chromium comes from the
 project's own install step:
 

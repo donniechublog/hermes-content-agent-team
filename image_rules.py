@@ -74,8 +74,8 @@ def stamp_provenance(xuat_xu, **them):
     Ten tham so la `xuat_xu` chu khong phai `nguon`: `nguon` la mot trong nhung
     khoa phu hay dung nhat (nguon=ARENA.AI), de trung ten thi vo TypeError.
 
-    Moi cong cu trong doi sinh ra anh PHAI dong dau: crop_ti_le.py, arxiv_bia.py,
-    ghep doc cua carousel.py, chup_chart.py. Cong `kiem_xuat_xu` dua vao dau nay
+    Moi cong cu trong doi sinh ra anh PHAI dong dau: crop_ratio.py, arxiv_cover.py,
+    ghep doc cua carousel.py, capture_chart.py. Cong `kiem_xuat_xu` dua vao dau nay
     de phan biet "anh do doi dung ra" voi "anh cat tay bang cong cu ngoai".
     """
     from PIL.PngImagePlugin import PngInfo
@@ -111,7 +111,7 @@ def _text(img):
 
 
 def read_crop_trace(img):
-    """Dau vet crop_ti_le.py -> (w_goc, h_goc), hoac None."""
+    """Dau vet crop_ratio.py -> (w_goc, h_goc), hoac None."""
     m = _text(img).get("crop_ti_le")
     if not m:
         return None
@@ -124,7 +124,7 @@ def read_crop_trace(img):
 
 
 def allows_landscape_crop(img):
-    """crop_ti_le.py co duoc phep cat BE NGANG tam nay khong (co --cat-ngang)?
+    """crop_ratio.py co duoc phep cat BE NGANG tam nay khong (co --cat-ngang)?
 
     Day la mot UY QUYEN da ghi lai luc cat, tuong duong `crop_ok` khai trong
     spec — chi khac la no duoc dong dau ngay tai cho cat nen khong khai lai
@@ -133,7 +133,7 @@ def allows_landscape_crop(img):
 
 
 def is_ranking_image(img):
-    """Anh do xep_hang.py dung: bang xep hang chup tu nguon (co khoanh model) hoac
+    """Anh do ranking.py dung: bang xep hang chup tu nguon (co khoanh model) hoac
     the du phong. Voi tin xep hang thi DAY LA CHU THE cua tin (Ong Chu 06/09/2026),
     nen no duoc mien hai cong von cam chart len bia/hero."""
     return _text(img).get("nguon_dung") in ("chup_xep_hang", "the_xep_hang")
@@ -504,7 +504,7 @@ def count_faces(path):
     thi khong thread-safe khi DUNG — luong A vua setInputSize((w1,h1)) thi luong
     B setInputSize((w2,h2)) roi A detect() voi kich thuoc sai -> cv2 nem -> None.
     Do duoc voi 24 anh khac co, 4 luong: tuan tu 0/24 None, song song 22-23/24;
-    nhin.py lam `or 0` nen 80-95% anh bi coi la KHONG co mat — cong mat nguoi
+    vision.py lam `or 0` nen 80-95% anh bi coi la KHONG co mat — cong mat nguoi
     (LUAT_ANH §6) tat cam. detect() nhanh (vai ms), khong can song song.
     """
     det = _load_yunet()
@@ -561,7 +561,7 @@ def check_blank_image(nhan, img):
         return [f"{nhan}: anh RONG ({mo_ta}) — khong co noi dung nao de hien. "
                 "Thuong la buoc chup tra ve trang trang (trang chua render, "
                 "selector bat nham phan tu rong, hoac tai ve tep hong). Mo anh "
-                "ra XEM truoc khi ghi vao spec; chup lai bang chup_chart.py "
+                "ra XEM truoc khi ghi vao spec; chup lai bang capture_chart.py "
                 "hoac chon anh khac."], []
     return [], []
 
@@ -654,19 +654,19 @@ def check_aspect_ratio(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=TOLERAN
                 f'tone roi ghep doc, ghi "images": [a, b]; hoac (b) chart/bang '
                 f'benchmark thi ghi "chart": true de hien full be ngang nguyen ven '
                 f"(slide than). Chi khi la anh chup nguoi/san pham KHONG co chu moi "
-                f"duoc cat be ngang: crop_ti_le.py --anh {p} --ra <ra.png> "
+                f"duoc cat be ngang: crop_ratio.py --anh {p} --ra <ra.png> "
                 f"--ti-le 4:5 --cat-ngang"], []
     return [f"{nhan}: ti le {w}x{h} ({r:.2f}) khong nam trong 4:5..1:1 — cat "
-            f"truoc: venv/bin/python crop_ti_le.py --anh {p} --ra <ra.png> "
+            f"truoc: venv/bin/python crop_ratio.py --anh {p} --ra <ra.png> "
             f"[--ti-le 4:5] [--cx/--cy]"], []
 
 
 def check_crop_landscape(nhan, img, w, h, crop_ok=None):
-    """Anh goc NGANG ma di qua crop_ti_le.py -> CHAN (Ong Chu bat loi 03/09/2026).
+    """Anh goc NGANG ma di qua crop_ratio.py -> CHAN (Ong Chu bat loi 03/09/2026).
 
     Chart / bang / slide bi crop ve 4:5 la mat tieu de, mat truc, doc ra vo nghia.
     Chi anh chup nguoi/san pham KHONG co chu moi duoc crop, va co hai cach uy
-    quyen: khai "crop_ok" trong spec, HOAC cat bang `crop_ti_le.py --cat-ngang`
+    quyen: khai "crop_ok" trong spec, HOAC cat bang `crop_ratio.py --cat-ngang`
     (co do dong dau vao PNG, xem `doc_cat_ngang`).
     """
     goc = read_crop_trace(img)

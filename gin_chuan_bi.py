@@ -72,11 +72,11 @@ def mau_chu(img_bgr, box) -> list:
 def ocr_vung(anh: Path) -> tuple:
     """(img_bgr, [vùng]) — vùng: {stt, box, x, y, w, h, text, conf, color_rgb},
     sắp trên→dưới, trái→phải."""
-    import doi_chu_anh
+    import swap_image_text
     img = cv2.imread(str(anh))
     if img is None:
         sys.exit(f"Không đọc được ảnh: {anh}")
-    res = doi_chu_anh.tim_vung_chu(img, verbose=False)
+    res = swap_image_text.find_region_text(img, verbose=False)
     vung = []
     for box, text, conf in res:
         pts = np.array(box, dtype=np.int32)
@@ -122,7 +122,7 @@ def viet_brief(id_: str, anh: Path, img, vung: list, wd: Path) -> str:
           f"cd {ROOT} && venv/bin/python gin_nop.py {id_}",
           "Script xoá chữ bằng LaMa (~30s lần đầu nạp model, ~5s/ảnh sau đó), ghi nen_sach.png + mask_debug.png "
           "+ vung.json (vị trí + màu chữ cho Itachi), gửi cả hai ảnh trả lời đúng tin nhắn. KHÔNG df/ls/pip, "
-          "KHÔNG viết PIL script, KHÔNG vision_analyze từng ảnh, KHÔNG chạy doi_chu_anh.py/gui_telegram.py tay."]
+          "KHÔNG viết PIL script, KHÔNG vision_analyze từng ảnh, KHÔNG chạy swap_image_text.py/gui_telegram.py tay."]
     return "\n".join(L)
 
 

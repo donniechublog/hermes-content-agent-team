@@ -48,7 +48,7 @@ def test_toi_da_chet_la_hai():
 def test_chay_dung_o_toi_da_va_bao():
     """Cong o muc ma nguon: `run()` phai goi dem_chet, so voi MAX_CRASH, goi
     _bao_chet_lap va sys.exit — khong test duoc bang chay that (can meta draft +
-    browser), nen doc AST cua run() nhu cong _vong_thuong_hieu (10/09/2026)."""
+    browser), nen doc AST cua run() nhu cong _round_brand (10/09/2026)."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
     ham = next(n for n in ast.walk(ast.parse(src))
                if isinstance(n, ast.FunctionDef) and n.name == "run")

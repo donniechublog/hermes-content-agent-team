@@ -18,7 +18,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from card import _f, _wrap, tim_mat_dau
+from card import _f, _wrap, find_face_mark
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 FONTS = ASSETS / "fonts"
@@ -90,7 +90,7 @@ def _two_tone_title(d, x, y, serif_text, sans_text, max_w,
 
 
 def _open_bg(layout):
-    """Nen mot slide: mau phang (mac dinh) hoac ANH THAT da qua doi_chu_anh.py
+    """Nen mot slide: mau phang (mac dinh) hoac ANH THAT da qua swap_image_text.py
     (chu tieng Anh da xoa sach). `bg_anh` la duong dan anh — dung khi remake
     mot carousel co san, giu nguyen anh nguon, chi thay chu."""
     if layout.get("bg_anh"):
@@ -334,7 +334,7 @@ def _gate(slides, bo_qua_dau):
             blob += " " + " ".join(lines)
         if s.get("ghi_chu"):
             blob += " " + s["ghi_chu"].get("text", "")
-        mat = tim_mat_dau(blob)
+        mat = find_face_mark(blob)
         if mat:
             loi.append(f"slide {i}: tieng Viet mat dau ({', '.join(mat)})")
     return loi

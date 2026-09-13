@@ -22,7 +22,7 @@ Dòng `[khung]` script in ra nói rõ mood nào được chọn và vì sao. Kh�
 `[Ảnh đính kèm đã tải về: …]`; đưa đúng đường dẫn đó vào lệnh thay cho URL.
 
 Ngoài lệnh trên không chạy gì khác: không `curl`, không tự gọi `get_source.py`
-hay `khung_anh.py` hay `publish.py`, không mở trình duyệt. Kết thúc task bằng dòng
+hay `image_frame.py` hay `publish.py`, không mở trình duyệt. Kết thúc task bằng dòng
 "Kết quả task" script in ra.
 
 ## Điều script không làm thay bạn

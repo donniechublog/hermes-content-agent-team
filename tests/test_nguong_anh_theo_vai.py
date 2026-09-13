@@ -43,7 +43,7 @@ def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         return build_manifest(
             "d1", {"brand": "donniechublog", "title": "t"}, "t", "http://vi.du/a",
-            {"tieu_de_en": ""}, Path(tmp) / "nguon.json", {}, Path(tmp),
+            {"tieu_de_en": ""}, Path(tmp) / "source.json", {}, Path(tmp),
             [_anh(f"A{i + 1}") for i in range(so_anh)], [], False,
             {"chu": ""}, {}, flagship,
             role.min_images(vai_anh, flagship), vai_anh=vai_anh)
@@ -79,7 +79,7 @@ def test_hai_anh_that_la_DU_cho_ethan_va_THIEU_cho_dre():
 
     Voi Ethan phai la None (khong co gi de hoi) — truoc sua, ham nay tra
     {"so": 2, "toi_thieu": 5} va do la thu keo ca day "thieu anh" chay."""
-    import anh_chuan_bi as cb
+    import image_prepare as cb
     assert cb._description_missing_image(_manifest("ethan", 2)) is None, \
         "2 anh that ma bao Ethan thieu anh — dung loi 10/09/2026"
     import carousel
@@ -103,7 +103,7 @@ def test_khong_hoi_ong_chu_khi_ethan_du_anh():
             (rt.DRAFTS / "d1.img.json").write_text(
                 json.dumps({"vai_anh": "ethan"}), encoding="utf-8")
             m = _manifest("ethan", 2)
-            import anh_chuan_bi as cb
+            import image_prepare as cb
             thieu = cb._description_missing_image(m)
             if thieu:
                 m["thieu_anh"] = thieu
@@ -185,7 +185,7 @@ def test_engine_lay_nguong_CHAN_tu_ban_dang_ky_vai():
     import inspect
     import re
 
-    import anh_chuan_bi as cb
+    import image_prepare as cb
     src = inspect.getsource(cb.prepare_article)
     assert re.search(r"^\s*toi_thieu = role\.min_images\(", src, re.M), \
         ("`toi_thieu` (nguong chan, di vao manifest) khong con lay tu ban dang ky "
@@ -204,14 +204,14 @@ def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
     `role.has_enough_material` — no doi phai co anh CHINH, khong doi du so tam."""
     import inspect
 
-    import anh_chuan_bi as cb
+    import image_prepare as cb
     import role as vai_mod
     src = inspect.getsource(cb.prepare_article)
     for dong in src.splitlines():
         d = dong.strip()
-        if d.startswith("#") or "_vong_tim_rong(" not in d or "=" not in d:
+        if d.startswith("#") or "_round_widen_search(" not in d or "=" not in d:
             continue
-        assert "toi_thieu" not in d.split("_vong_tim_rong(")[0], \
+        assert "toi_thieu" not in d.split("_round_widen_search(")[0], \
             f"vong tim anh dang do bang nguong chan: {d}"
     # Mot tam DUNG DUOC nhung khong lam hero duoc thi chua phai la du.
     a = {"dung": ["ghép dọc với một ảnh ngang cùng tone"], "lien_quan": True,

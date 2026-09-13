@@ -22,16 +22,16 @@ KHONG DOI DUOC TU XA. Ghi lai day de lan sau khoi soi lai, va de khong ai bien
 mot cho `settle` thanh cho doi selector roi lam anh chup vo:
 
   1. SETTLE sau cuon/resize/animation, TRUOC khi do hoac chup (13 cho):
-     browser.py:82,100 · chup_chart.py:141,155,161 · render_edu.py:1414 ·
-     xep_hang.py:522,538,567,615,809,812,857. Khong co dieu kien DOM nao de
+     browser.py:82,100 · capture_chart.py:141,155,161 · render_edu.py:1414 ·
+     ranking.py:522,538,567,615,809,812,857. Khong co dieu kien DOM nao de
      doi — cai dang doi la layout/font/animation da yen chua, ma chuyen do chi
      nhin trang THAT moi biet. Audit cung noi "chi giu wait_for_timeout o noi
      co animation chart".
   2. NHIP POLL trong mot vong da doi theo dieu kien (3 cho): browser.py:126 ·
-     nguon_bai.py (vong doi Google News nha URL) · xep_hang.py:468. O day
+     article_sources.py (vong doi Google News nha URL) · ranking.py:468. O day
      `wait_for_timeout` la khoang cach giua hai lan kiem — dung nhu vay roi.
   3. Cho Cloudflare/interstitial kip hien de doc `page.title()` (2 cho):
-     xep_hang.py:994,1015. Doi mot dieu kien o day la doi chinh cai minh dang
+     ranking.py:994,1015. Doi mot dieu kien o day la doi chinh cai minh dang
      dinh phat hien.
   4. `xep_hang._doi_bang:457` nhin thi tuong thay duoc bang `wait_for_selector`
      theo dung selector o dong 461 — nhung 1200ms do la settle TRUOC khi bat

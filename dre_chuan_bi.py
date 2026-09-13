@@ -57,7 +57,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if m["anh"] and so_dd < m.get("toi_thieu", 5):
         L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} slide dựng được, cần ≥ {m.get('toi_thieu', 5)}. "
                  "KHÔNG nhồi ảnh không liên quan cho đủ. Việc của bạn: TỰ ĐI TÌM — "
-                 f"`cd {ROOT} && venv/bin/python tim_anh_them.py {m['draft_id']} --tu-khoa \"<từ khoá "
+                 f"`cd {ROOT} && venv/bin/python find_more_images.py {m['draft_id']} --tu-khoa \"<từ khoá "
                  "TIẾNG ANH cụ thể>\"` (hãng, sản phẩm, nhà máy, sự kiện, người trong bài; có URL "
                  "trang/ảnh thì `--url`), tối đa 3 lượt, rồi chạy lại lệnh brief này. Hết 3 lượt "
                  "vẫn thiếu mới kanban_block, kể rõ từ khoá đã thử.")
@@ -90,8 +90,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if m.get("cap_ghep"):
         L.append("Cặp ảnh ngang ghép dọc được (cùng tone): " +
                  ", ".join("+".join(c) for c in m["cap_ghep"]))
-    import loai_tin
-    L += loai_tin.dong_brief(m)
+    import story_type
+    L += story_type.line_brief(m)
     L.append("Ảnh CHỤP (trụ sở, nhà máy, người, sản phẩm) có biển hiệu, số nhà, logo trên tường "
              "VẪN LÀ ẢNH CHỤP — cắt dọc (cat_ngang) được. \"Có chữ\" cấm crop chỉ là chart, bảng, "
              "slide, banner, ảnh chụp màn hình có tiêu đề.")
@@ -147,7 +147,7 @@ def main() -> int:
     a = ap.parse_args()
     m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
-    da_dung = cb._doc_json(wd / "da_dung.json")
+    da_dung = cb._read_json(wd / "da_dung.json")
     brief = viet_brief(m, da_dung)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:

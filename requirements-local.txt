@@ -1,4 +1,4 @@
-# Phu thuoc CHI CAN TREN MAY LOCAL xu ly anh nang (doi_chu_anh.py / Gin).
+# Phu thuoc CHI CAN TREN MAY LOCAL xu ly anh nang (swap_image_text.py / Gin).
 #
 # KHONG dua vao requirements.txt: file do phuc vu venv CHUNG voi hermes tren
 # server (xem dau file), va torch + simple-lama-inpainting nang ~2GB — chinh

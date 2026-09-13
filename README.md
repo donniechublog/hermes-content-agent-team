@@ -37,7 +37,7 @@ lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin
 | Ethan | `ethan` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
 | Dre | `dre` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
 | Kite | `kite` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
-| Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `doi_chu_anh.py`), trả nền sạch cho Itachi |
+| Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `swap_image_text.py`), trả nền sạch cho Itachi |
 | Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
 | Miles | `miles` | writer | Viết caption tiếng Việt cho tin **kinh doanh, đầu tư** của **dcgr.tech** (từ 10/09/2026, LOW-13; trước đó viết cả hai brand). Profile `miles` bên blog **giữ lại cho việc còn tồn**, không nhận việc mới |
 | Jika | `jika` | writer | Viết caption tiếng Việt cho tin **model mới, arXiv/Hacker News** — **chỉ donniechublog** (từ 10/09/2026, LOW-13). Cùng script, cùng luật caption như Miles; khác ở người đọc và ở MEMORY riêng |
@@ -87,9 +87,9 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   giải mã link Google News, Bing News RSS tìm báo khác, một phiên chromium (chữ
   bài, img lớn, chụp table/figure/canvas), `anh_bai`, Wikimedia Commons khi < 5
   ảnh; vẫn thiếu hoặc không tấm nào làm bìa được thì hai vòng bù theo độ liên
-  quan giảm dần — `anh_thuong_hieu.py` tìm **ảnh thương hiệu** (trụ sở/campus của
+  quan giảm dần — `image_brand.py` tìm **ảnh thương hiệu** (trụ sở/campus của
   chính hãng trong tin, LUAT_ANH §1.2d, vào được slide thân), rồi
-  `anh_khai_niem.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
+  `image_concept.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
   LUAT_ANH §1.2c, chỉ bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
   `crop_ti_le`; cặp ghép cùng tone; tư liệu. Kết quả
   `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
@@ -184,35 +184,35 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `cover` / `statement` / `steps` / `loop` / `figure` / `bars` / `cta`. Không ảnh
   thật. Cần `playwright install chromium`.
 - `deck.py` — editorial-deck của Itachi, dựng lại carousel nguồn sang tiếng Việt.
-- `crop_ti_le.py` — cắt ảnh về **1:1 hoặc 4:5**. Chỉ cắt chiều cao; ảnh gốc ngang
+- `crop_ratio.py` — cắt ảnh về **1:1 hoặc 4:5**. Chỉ cắt chiều cao; ảnh gốc ngang
   (≥1.4) đòi cắt bề ngang thì dừng, vì bề ngang của chart/bảng là nội dung. Ép
   bằng `--cat-ngang`, chỉ cho ảnh người/sản phẩm không có chữ.
-- `arxiv_hinh.py` — bóc **hình thật trong paper** (Figure 1, 2…) thẳng từ PDF:
+- `arxiv_figures.py` — bóc **hình thật trong paper** (Figure 1, 2…) thẳng từ PDF:
   định vị khối chữ `Figure N:`, lấy vùng đồ hoạ ngay trên nó, render nét ở
   ~2200px. Chạy cho mọi tin arxiv/PDF, ảnh mã cao điểm nhất — Figure 1 là tấm để
   Kite làm **hero bìa**. Chỉ hình, **không bảng** (xem `§BẢNG` đầu tệp).
   Cần `pymupdf`.
-- `arxiv_bia.py` — đường cuối cho bài arxiv: không còn ứng viên ảnh nào thì chụp
+- `arxiv_cover.py` — đường cuối cho bài arxiv: không còn ứng viên ảnh nào thì chụp
   trang đầu paper (tên công trình + tác giả). Cần `pymupdf`.
-- `anh_thuong_hieu.py` — tin về **hãng lớn** mà kho ảnh mỏng thì đi lấy tư liệu
+- `image_brand.py` — tin về **hãng lớn** mà kho ảnh mỏng thì đi lấy tư liệu
   của chính hãng, bốn loại theo độ "là ảnh chụp thật" giảm dần: 🏢 **cơ sở**
   (tìm tên tệp Commons + `P18` Wikidata), 👤 **chân dung founder/CEO**
   (`P112`/`P169`, kèm tên nên khai được `nhan_vat`, bỏ người đã thôi chức),
-  📊 **bảng xếp hạng** có model của hãng (mượn `xep_hang.py`, chỉ nhận ảnh chụp
+  📊 **bảng xếp hạng** có model của hãng (mượn `ranking.py`, chỉ nhận ảnh chụp
   thật), 🔖 **thẻ logo** (`P154` trên nền trơn, đường cuối). Lấy **mọi** hãng
   watchlist tin nhắc tới (tối đa 3), không phải chỉ tên riêng đầu tiêu đề. Lọc
   theo biên giới từ + bảng nhiễu (Amazon → rừng, Apple → quả táo). Vào được
   slide thân và đếm đủ — khác ảnh khái niệm. LUAT_ANH §1.2d.
-- `anh_khai_niem.py` — tin không có ảnh riêng thì tìm **ảnh khái niệm** trên
+- `image_concept.py` — tin không có ảnh riêng thì tìm **ảnh khái niệm** trên
   Commons theo nước/chủ đề (cờ, rack datacenter, wafer, toà án). Nhãn 🧭, chỉ
   bìa/hero, cả chùm đếm là một. LUAT_ANH §1.2c.
-- `xep_hang.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
+- `ranking.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
   registry **19 nguồn**, mở browser tìm hàng chứa model, chụp cửa sổ top-N,
   khoanh vàng hàng đó, đọc thứ hạng. Chụp bằng **khung mobile trước** (414px ×
   DPR 3 ≈ khổ thẻ 1200px nên chữ gần như không co); 8 nguồn đã đo là mobile
   không dùng được thì mang `khung: "desktop"` kèm lý do ngay trong `NGUON`.
   Không ra thì thẻ dự phòng. Ảnh mang mã `XH`.
-- `chup_chart.py` — chụp chart/bảng benchmark theo luật *full chiều rộng trước,
+- `capture_chart.py` — chụp chart/bảng benchmark theo luật *full chiều rộng trước,
   chiều cao xét sau*: đo `scrollWidth` thật, nới khung cho vừa rồi mới chụp ở
   DPR 2; thiếu bề ngang thì dừng. Cần `playwright` + chromium.
 - `image_rules.py` + `LUAT_ANH.md` — **một nguồn sự thật** của luật ảnh, dùng chung
@@ -221,7 +221,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 
 **Đi tìm tin**
 
-- `scan_sources.py` / `nguon_bai.py` — quét nguồn của Finn và research lúc chọn
+- `scan_sources.py` / `article_sources.py` — quét nguồn của Finn và research lúc chọn
   tin; tự giải mã link Google News (`giai_ma_gnews`).
 - `scan_models.py` — quét của Nova: 23 bảng xếp hạng, mục "RA MẮT THEO BẢNG CHẤM
   ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
@@ -245,7 +245,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `bat_buoc.py` — **danh sách BẮT BUỘC**: script quét thấy là phải đưa, vai không
   có quyền bỏ. Script ghi manifest tự thêm mục thiếu kèm ghi chú "vai bỏ sót" và
   xoá mục đã đưa. Finn và Vera chọn tin bằng **số thứ tự `k`**, không chép URL.
-- `tu_lieu.py` — bóc chữ bài để đối chiếu số liệu và tên người vai khai.
+- `material.py` — bóc chữ bài để đối chiếu số liệu và tên người vai khai.
 
 **Duyệt và đăng**
 

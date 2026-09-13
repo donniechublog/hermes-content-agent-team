@@ -50,7 +50,7 @@ def chuyen_tu_vai(m: dict) -> str:
     ảnh. Cả hai đều đi qua `tao_task_kite`, nơi ghi `chuyen_tu` vào img.json —
     xong.json thì KHÔNG có (nút của Ông Chủ bấm sau khi engine đã ghi xong).
     """
-    im = cb._doc_json(cb.DRAFTS / (str(m.get("draft_id", "")) + ".img.json"), {}) or {}
+    im = cb._read_json(cb.DRAFTS / (str(m.get("draft_id", "")) + ".img.json"), {}) or {}
     tu = im.get("chuyen_tu") or ""
     if tu:
         return vai_mod.display_name(tu)      # ban dang ky: vai.py (audit A4)
@@ -338,8 +338,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
                  + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
     L += dong_hero(m)
-    import loai_tin
-    L += loai_tin.dong_brief(m)
+    import story_type
+    L += story_type.line_brief(m)
     rac = [a["ma"] for a in m["anh"] if a.get("lien_quan") is False]
     if rac:
         L.append(f"Không dùng (engine đánh dấu không liên quan): {', '.join(rac)}")
@@ -405,7 +405,7 @@ def main() -> int:
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     # Bia BAT BUOC co anh that (§1.2f) — thieu thi tim lai, dung bao hong.
     m, wd = bao_dam_co_bia(a.draft_id, m, wd, a.khong_browser, a.cho, a.lam_moi)
-    brief = viet_brief(m, cb._doc_json(wd / "da_dung.json"))
+    brief = viet_brief(m, cb._read_json(wd / "da_dung.json"))
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)

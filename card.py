@@ -25,7 +25,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import image_rules
-import nen_chu
+import text_bg
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 FONTS = ASSETS / "fonts"
@@ -126,7 +126,7 @@ def dat_thuong_hieu(ten: str):
     # tinh theo dung cap mau CUA THUONG HIEU NAY (nen_chu.nguong_tuong_phan), vi
     # mot con so co dinh (116, tinh rieng cho FG/BG cua donniechublog) se sai
     # nguong voi dcgr (FG/BG gan nhu trang tuyet doi / den tuyet doi).
-    NGUONG_NEN_SANG = nen_chu.nguong_tuong_phan(FG, BG)
+    NGUONG_NEN_SANG = text_bg.threshold_wall_part(FG, BG)
     return b
 
 TITLE_SIZE_HI, TITLE_SIZE_LO = 56, 38
@@ -1158,12 +1158,12 @@ def _pha(mau, do_sang: float, nen=None):
 # song o day bat manifest_ghi/ada_nop/jean_nop/itachi_nop/render_edu phai keo ca
 # PIL vao chi de hoi "chuoi nay co mat dau khong". Re-export de moi loi goi cu
 # (`card.tim_mat_dau`, `card.bo_dau_cam`, `card.DAU_CAM`...) giu nguyen.
-from tieng_viet import (  # noqa: E402
-    AM_MAT_DAU, CUM_MAT_DAU, DAU_CAM, bo_dau_cam, tim_mat_dau,
+from vietnamese import (  # noqa: E402
+    NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID, drop_mark_forbid, find_face_mark,
 )
 # pyflakes khong hieu `# noqa` (chi flake8 hieu) nen ba ten re-export tren bao
 # "imported but unused" o moi lan lint — cham vao de cong pyflakes (CI) sach.
-_RE_EXPORT = (AM_MAT_DAU, CUM_MAT_DAU, DAU_CAM)
+_RE_EXPORT = (NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID)
 
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
@@ -1175,12 +1175,12 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
     # module, chua nap thi chung con la None.
     b = dat_thuong_hieu(brand)
     handle = handle or b["handle"]
-    title, attrib = bo_dau_cam(title), bo_dau_cam(attrib)
+    title, attrib = drop_mark_forbid(title), drop_mark_forbid(attrib)
 
     # Chan tieng Viet khong dau TRUOC khi ve, o moi cho chu hien len the.
     loi = {}
     for ten, gt in (("tieu de", title), ("nguon", attrib)):
-        m = tim_mat_dau(gt or "")
+        m = find_face_mark(gt or "")
         if m:
             loi[ten] = m
     if loi and not bo_qua_dau:

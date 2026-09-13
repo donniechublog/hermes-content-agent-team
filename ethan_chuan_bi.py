@@ -68,8 +68,8 @@ def nhan_ethan(a: dict) -> tuple:
         # founder tới tay Ethan không có cái tên để khai `nhan_vat` — mà cổng
         # `kiem_nhan_vat` chặn mặt người không khai tên, tức Ethan buộc phải bỏ
         # ảnh founder (Ông Chủ 10/09/2026).
-        import anh_thuong_hieu
-        ghi.append(anh_thuong_hieu.nhan_theo_loai(a["thuong_hieu"]))
+        import image_brand
+        ghi.append(image_brand.label_by_type(a["thuong_hieu"]))
     if a.get("khai_niem"):
         kn = a["khai_niem"]
         ghi.append(f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{kn.get('tu_khoa')}\"" + (f": {kn['ly_do']}" if kn.get("ly_do") else "")
@@ -132,8 +132,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
     if goi_y:
         L.append("Gợi ý nền hero (không chart, không mặt, nửa dưới tối trước): " + ", ".join(g[2] for g in goi_y[:3]))
     cap = cap_ghep_hero(m)
-    import loai_tin
-    L += loai_tin.dong_brief(m)
+    import story_type
+    L += story_type.line_brief(m)
     if cap:
         L.append("Cặp ghép dọc được (cùng tone, dùng \"anh\"+\"anh2\"): " + ", ".join("+".join(c) for c in cap))
     L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/bang_anh.png (mở tối đa một lần, khi thật cần).")
@@ -171,7 +171,7 @@ def main() -> int:
     a = ap.parse_args()
     m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
-    brief = viet_brief(m, cb._doc_json(wd / "da_dung.json"))
+    brief = viet_brief(m, cb._read_json(wd / "da_dung.json"))
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)

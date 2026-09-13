@@ -12,8 +12,8 @@ dau, ma chet cam lang o GIUA chung, rat xa cho thieu that su:
                              nhung ly do khac (thieu file, khong phai thieu
                              goi cv2).
 - Thieu Chromium          -> moi buoc dung playwright (browser_pass trong
-                             image_prepare.py, cac buoc trong xep_hang.py,
-                             chup_chart.py...) nem exception giua chung,
+                             image_prepare.py, cac buoc trong ranking.py,
+                             capture_chart.py...) nem exception giua chung,
                              thuong sau khi da ton thoi gian/LLM cho cac buoc
                              truoc do roi.
 - Thieu OPENAI_API_KEY    -> vision (anh_chuan_bi._nhin_anh) tu tat, brief

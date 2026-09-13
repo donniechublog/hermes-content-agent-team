@@ -29,8 +29,8 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import khung_anh                                             # noqa: E402
-import chup_trang                                            # noqa: E402
+import image_frame                                             # noqa: E402
+import capture_page                                            # noqa: E402
 import env_load                                              # noqa: E402
 
 # Skill nam trong repo (profile tro vao qua skills.external_dirs), khong phai
@@ -111,7 +111,7 @@ def lay_anh(nguon: str, ra: Path) -> str:
                  + (cuoi[-1][:200] if cuoi else "khong co stderr"))
 
     # Trang khong co anh don (tweet toan chu, bai bao) -> chup man hinh DPR cao.
-    if not chup_trang.chup(nguon, ra):
+    if not capture_page.capture(nguon, ra):
         sys.exit("[LOI] khong lay duoc anh lan chup man hinh (xem stderr o tren)")
     return "chup man hinh (trang khong co anh don)"
 
@@ -122,7 +122,7 @@ def dong_khung(src: Path, ra: Path, emoji: str, handle: str) -> None:
     Het mot lop subprocess nghia la loi hien nguyen van (traceback that) chu
     khong con phai doan tu vai dong stderr cuoi cua Node."""
     try:
-        khung_anh.dong_khung(src, ra, emoji=emoji, handle=handle)
+        image_frame.line_frame(src, ra, emoji=emoji, handle=handle)
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] khong dong duoc khung: {type(e).__name__}: {e}")
     if not Path(ra).exists():
@@ -196,8 +196,8 @@ def main() -> int:
     emoji, vi_sao = a.emoji, "Ông Chủ chỉ định"
     if not a.khong_nhin:
         try:
-            import anh_chuan_bi as cb
-            mo_ta, _, mood = cb.mo_ta_anh(
+            import image_prepare as cb
+            mo_ta, _, mood = cb.description_image(
                 src, "anh gui cho kenh de dong khung",
                 hoi_them="<DUNG MOT emoji trong bang: " + " ".join(bang_mood()) + ">",
                 nhan_them="MOOD")

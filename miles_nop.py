@@ -53,7 +53,7 @@ def main() -> int:
     a = ap.parse_args()
 
     meta = cb.load_meta(a.draft_id)           # dat CT_BRAND theo brand cua draft
-    brand = cb._brand_cua(meta)              # de biet AI viet bai nay (LOW-13)
+    brand = cb._brand_of(meta)              # de biet AI viet bai nay (LOW-13)
     import env_load
     wd = cb.workdir(env_load.state_dir(), a.draft_id)
     # Ten tep brief di theo persona: Miles doc brief_miles.md, Jika doc

@@ -40,7 +40,7 @@ GIONG = {
 
 
 def viet_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
-    brand = cb._brand_cua(meta)
+    brand = cb._brand_of(meta)
     # Diem va ly do cham nam san trong meta.json (approve_service.write_meta).
     # Truoc day boc bang regex tu VAN BAN body task: doi mot chu trong mau la
     # regex chet im (regex tom tat da chet nhu the, audit 05/09/2026).
@@ -100,7 +100,7 @@ def main() -> int:
                           sau_chuan_bi=route_thieu_anh.sau_chuan_bi)
     # AI viet bai nay (LOW-13): quyet dinh da chot tu luc chon tin, nam trong
     # sidecar writer.json. Ten tep brief va lenh nop in ra deu theo persona do.
-    persona = nc.writer_persona_name(nc.writer_for_article(a.draft_id, cb._brand_cua(meta)))
+    persona = nc.writer_persona_name(nc.writer_for_article(a.draft_id, cb._brand_of(meta)))
     brief = viet_brief(m, meta, wd, persona)
     (wd / f"brief_{persona}.md").write_text(brief, encoding="utf-8")
     if not a.im:

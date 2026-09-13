@@ -7,7 +7,7 @@ Anthropic đều lọt bìa dù router ĐÃ TRẢ LỜI — chỉ là câu trả
 được dòng LIEN_QUAN, và mọi nơi lọc `dung_duoc` viết `lien_quan is not False`
 nên None trôi qua như đã duyệt.
 
-Luật mới trong `chuan_bi.nhin.mo_ta_anh`:
+Luật mới trong `chuan_bi.vision.description_image`:
   - HỎI ĐƯỢC nhưng không đọc ra LIEN_QUAN -> hỏi lại ĐÚNG 1 LẦN; vẫn không đọc
     ra thì COI LÀ RỚT (`False`), không còn là `None`.
   - KHÔNG HỎI ĐƯỢC (thiếu key, hoặc mạng/router hỏng ngay từ lần đầu) -> giữ
@@ -23,7 +23,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import chuan_bi.nhin as nhin                                   # noqa: E402
+import chuan_bi.vision as vision                                   # noqa: E402
 
 _TAM = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
 _TAM.write(b"\x89PNG\r\n\x1a\n" + b"\0" * 32)
@@ -61,8 +61,8 @@ def test_doc_ra_ngay_thi_khong_hoi_lai():
         goi["n"] += 1
         return _Resp(LEN_XEP)
 
-    with mock.patch.object(nhin, "_goi_router", side_effect=_goi):
-        mt, lq = nhin.mo_ta_anh(ANH, "Tin gì đó")
+    with mock.patch.object(vision, "_call_router", side_effect=_goi):
+        mt, lq = vision.description_image(ANH, "Tin gì đó")
     assert lq is False and goi["n"] == 1, (lq, goi["n"])
 
 
@@ -76,8 +76,8 @@ def test_lech_dinh_dang_lan_1_doc_duoc_lan_2_thi_dung_cau_tra_loi_lan_2():
         goi["n"] += 1
         return _Resp(LECH_DINH_DANG if goi["n"] == 1 else LEN_XEP)
 
-    with mock.patch.object(nhin, "_goi_router", side_effect=_goi):
-        mt, lq = nhin.mo_ta_anh(ANH, "Tin gì đó")
+    with mock.patch.object(vision, "_call_router", side_effect=_goi):
+        mt, lq = vision.description_image(ANH, "Tin gì đó")
     assert lq is False and goi["n"] == 2, (lq, goi["n"])
 
 
@@ -91,8 +91,8 @@ def test_lech_dinh_dang_ca_hai_lan_thi_rot_khong_phai_none():
         goi["n"] += 1
         return _Resp(LECH_DINH_DANG)
 
-    with mock.patch.object(nhin, "_goi_router", side_effect=_goi):
-        mt, lq = nhin.mo_ta_anh(ANH, "Tin gì đó")
+    with mock.patch.object(vision, "_call_router", side_effect=_goi):
+        mt, lq = vision.description_image(ANH, "Tin gì đó")
     assert lq is False, "hỏi được 2 lần mà không đọc ra LIEN_QUAN lần nào -> phải RỚT, không phải None"
     assert goi["n"] == 2, "phải hỏi lại đúng 1 lần (tổng 2 lần gọi), không hơn"
 
@@ -101,8 +101,8 @@ def test_thieu_key_van_giu_none_khong_hoi_lai():
     """'Vision tắt' (thiếu OPENAI_API_KEY) là ca có chủ đích ở nơi khác
     (kite_nop.py) — KHÔNG đóng, và không tốn thêm lượt hỏi nào."""
     with mock.patch.dict("os.environ", {}, clear=True), \
-         mock.patch.object(nhin, "_goi_router") as m:
-        mt, lq = nhin.mo_ta_anh(ANH, "Tin gì đó")
+         mock.patch.object(vision, "_call_router") as m:
+        mt, lq = vision.description_image(ANH, "Tin gì đó")
     assert lq is None and m.call_count == 0, (lq, m.call_count)
 
 
@@ -113,8 +113,8 @@ def test_mang_hong_ngay_lan_dau_van_giu_none_khong_ep_rot():
     def _goi(req, _ngu=None):
         raise TimeoutError("router khong phan hoi")
 
-    with mock.patch.object(nhin, "_goi_router", side_effect=_goi):
-        mt, lq = nhin.mo_ta_anh(ANH, "Tin gì đó")
+    with mock.patch.object(vision, "_call_router", side_effect=_goi):
+        mt, lq = vision.description_image(ANH, "Tin gì đó")
     assert lq is None, lq
 
 

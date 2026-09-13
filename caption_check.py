@@ -262,7 +262,7 @@ def kiem(caption: str, tu_lieu: str = "") -> tuple:
 def main():
     ap = argparse.ArgumentParser(description="Kiem caption truoc khi vao hang duyet")
     ap.add_argument("--caption-file", required=True)
-    ap.add_argument("--tu-lieu", help="Tep tu lieu do tu_lieu.py sinh ra")
+    ap.add_argument("--tu-lieu", help="Tep tu lieu do material.py sinh ra")
     a = ap.parse_args()
 
     cap = Path(a.caption_file).read_text(encoding="utf-8")

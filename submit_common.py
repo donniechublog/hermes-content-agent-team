@@ -30,7 +30,7 @@ def load_draft_context(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) ->
     """(meta, brand, wd, m, spec, spec_path, da_dung) cho mot draft. Thieu gi thi
     dung han voi cau chi dan cho vai (sys.exit) — nop la CLI, vai doc stdout."""
     meta = cb.load_meta(draft_id)               # dat CT_BRAND theo brand cua draft
-    brand = cb._brand_cua(meta)
+    brand = cb._brand_of(meta)
     wd = cb.workdir(env_load.state_dir(), draft_id)
     m = schema.read_manifest(wd / "xong.json")   # bu khoa dan xuat cho ban cu (C-r2-5)
     if not m:
@@ -43,7 +43,7 @@ def load_draft_context(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) ->
         spec = json.loads(spec_path.read_text(encoding="utf-8"))
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] spec.json khong phai JSON hop le: {type(e).__name__}: {e}")
-    return meta, brand, wd, m, spec, spec_path, cb._doc_json(wd / "da_dung.json")
+    return meta, brand, wd, m, spec, spec_path, cb._read_json(wd / "da_dung.json")
 
 
 # ---- ai viet bai nay, va lenh cua nguoi do (LOW-13, 10/09/2026) -------------
@@ -60,7 +60,7 @@ def writer_for_article(draft_id: str, brand: str = "") -> str:
     nguoi viet NGAY luc chon tin (luc do con biet vai quet), con luc nop thi
     vai quet da khong con trong tam tay. Sidecar cu (ghi truoc LOW-13) khong co
     khoa `vai_viet`, hoac ghi mot slug la -> hoi lai ban dang ky theo brand."""
-    d = cb._doc_json(cb.DRAFTS / f"{draft_id}.writer.json", {}) or {}
+    d = cb._read_json(cb.DRAFTS / f"{draft_id}.writer.json", {}) or {}
     slug = str(d.get("vai_viet") or "")
     if slug in _vai.ROLE:
         return slug
@@ -77,7 +77,7 @@ def writer_persona_name(slug: str) -> str:
 
 def count_of_redo(draft_id: str) -> int:
     """So lan Ong Chu da bam "Lam lai" cho bai nay (drafts/<id>.img.json)."""
-    d = cb._doc_json(cb.DRAFTS / f"{draft_id}.img.json", {}) or {}
+    d = cb._read_json(cb.DRAFTS / f"{draft_id}.img.json", {}) or {}
     return int(d.get("remakes", 0) or 0)
 
 
@@ -293,9 +293,9 @@ def needs_ranking_image(m: dict, a: dict) -> bool:
     rong (tin xep hang KHONG neu ten model), hoac tim_va_chup nem. The DU PHONG
     (kieu="the") cung khong ep: no la anh engine tu dung, chua he doc bang that.
     Dre va Ethan tung moi ben mot ban cua dieu kien nay (07/09/2026 gom lai)."""
-    import xep_hang
+    import ranking
     return bool(m.get("tin_xep_hang")
-                and xep_hang.la_chup((m.get("xep_hang") or {}).get("kieu"))
+                and ranking.is_capture((m.get("xep_hang") or {}).get("kieu"))
                 and not a.get("xep_hang"))
 
 
@@ -482,11 +482,11 @@ def check_rank_matches_image(chu: str, a: dict, nhan: str = "hook") -> list:
     "the") in hang tu tieu de nen khong doi chieu. Chu khong noi hang -> khong
     chan (khong bat vai phai nhac hang). `tach_hang` hieu "dẫn đầu" = 1 va bo
     "top 10" kieu kich co danh sach — cung bo doc voi engine, khong doc rieng."""
-    import xep_hang
+    import ranking
     xh = (a or {}).get("xep_hang") or {}
-    if not xh.get("hang") or not xep_hang.la_chup(xh.get("kieu")):
+    if not xh.get("hang") or not ranking.is_capture(xh.get("kieu")):
         return []
-    hang_chu = xep_hang.tach_hang(chu or "", xh.get("model") or "")
+    hang_chu = ranking.extract_rank(chu or "", xh.get("model") or "")
     if hang_chu is None or int(hang_chu) == int(xh["hang"]):
         return []
     return [f"{nhan}: viết #{hang_chu} nhưng ảnh {a.get('ma', 'XH')} khoanh hàng "
@@ -546,7 +546,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
         ca khi buoc gui nut Duyet loi ngay sau do: anh da nam tren Telegram thi
         so PHAI co dong tuong ung, khong thi bai sau dung lai dung tam vua dang —
         chinh thu luat nay sinh ra de chan (do 06/09/2026)."""
-        cb._ghi_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
+        cb._write_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
                                            "lan": int((da_dung or {}).get("lan", 0)) + 1,
                                            # Moc de phan biet "Ong Chu bam Lam lai"
                                            # voi "vai chay lai" — xem kiem_lam_lai.

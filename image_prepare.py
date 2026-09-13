@@ -15,9 +15,9 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
   2. ANH: mot phien chromium (chu bai, <img> lon, chup table/figure/canvas full
      be ngang) + anh_bai (tinh) + Wikimedia Commons khi < 5 anh. Thieu thi tim
      rong sang bao khac cung tin (_vong_tim_rong). Anh THAT cua chinh hang trong
-     tin (anh_thuong_hieu.py: logo, chan dung founder/CEO, tru so, campus) chay
+     tin (image_brand.py: logo, chan dung founder/CEO, tru so, campus) chay
      cho MOI tin co hang trong watchlist — du anh hay khong (10/09/2026). Van
-     thieu nua thi anh khai niem cua chu de (anh_khai_niem.py: co nuoc, rack).
+     thieu nua thi anh khai niem cua chu de (image_concept.py: co nuoc, rack).
      Tai ve, bo trung (dHash), bo anh be, logo, co anh AI sinh.
   3. DO va PHAN LOAI bang `luat_anh` + luat bo sung (nen trang >=45% & canh
      >=8% -> chart): chart/anh chup, ti le, mat nguoi, day sang. Cat san
@@ -69,20 +69,20 @@ from browser_session import BrowserSession                       # noqa: E402
 import schema                                                # noqa: E402
 import role                                                   # noqa: E402
 
-from chuan_bi.chung import (  # noqa: E402
-    DRAFTS, ROOT, UA, _brand_cua, _doc_json, _ghi_json, _hdr,
+from chuan_bi.common import (  # noqa: E402
+    DRAFTS, ROOT, UA, _brand_of, _read_json, _write_json, _hdr,
 )
 from chuan_bi.manifest import (  # noqa: E402
     _article_material, contact_sheet, describe_ranking_image, ranking_brief_line, build_manifest,
 )
-from chuan_bi.nguon import _tom_tat_tu_img_json, nap_nguon      # noqa: E402
-from chuan_bi.nhin import _nhin_anh, mo_ta_anh                  # noqa: E402
-from chuan_bi.tai_loc import _luu_crop                          # noqa: E402
-from chuan_bi.vong_bu import (  # noqa: E402
-    _anh_muc_xep_hang, _bo_sung_nguon, _chup_xep_hang, _gom_va_tai_anh,
-    _lay_tu_browser, _them_trang_cong_bo, _vong_chup_nguon, _vong_khai_niem, _vong_thuc_the,
-    nang_khoi_tit,
-    _vong_thuong_hieu, _vong_tim_rong,
+from chuan_bi.source import _summary_from_img_json, load_source      # noqa: E402
+from chuan_bi.vision import _seen_image, description_image                  # noqa: E402
+from chuan_bi.download_filter import _save_crop                          # noqa: E402
+from chuan_bi.fallback_rounds import (  # noqa: E402
+    _image_item_ranking, _supplement_source, _capture_ranking, _gather_and_download_image,
+    _take_from_browser, _extra_announcement_page, _round_capture_source, _round_concept, _round_entity,
+    capability_block_headline,
+    _round_brand, _round_widen_search,
 )
 
 # MAT TIEN cua goi `chuan_bi`: nhung ten ma cac vai/test VAN goi qua
@@ -94,11 +94,11 @@ from chuan_bi.vong_bu import (  # noqa: E402
 # nguoi goi that (do bang `grep -o "cb\.[a-z_]*"` trong repo), khong phai keo
 # ca module sang cho co.
 __all__ = [
-    "DRAFTS", "ROOT", "UA", "_anh_muc_xep_hang", "_brand_cua", "_wait_for_slot",
-    "_doc_json", "_ghi_json", "_gom_va_tai_anh", "_hdr", "_luu_crop",
-    "_description_missing_image", "_nhin_anh", "contact_sheet", "describe_ranking_image", "run",
-    "prepare_article", "ranking_brief_line", "build_manifest", "mo_ta_anh",
-    "load_meta", "nap_nguon", "workdir",
+    "DRAFTS", "ROOT", "UA", "_image_item_ranking", "_brand_of", "_wait_for_slot",
+    "_read_json", "_write_json", "_gather_and_download_image", "_hdr", "_save_crop",
+    "_description_missing_image", "_seen_image", "contact_sheet", "describe_ranking_image", "run",
+    "prepare_article", "ranking_brief_line", "build_manifest", "description_image",
+    "load_meta", "load_source", "workdir",
 ]
 
 NAME_CT = {"dcgr": "dcgr", "donniechublog": "blog"}      # brand -> CT_BRAND
@@ -116,21 +116,21 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     # tien trinh nao, va giu tien trinh RIENG cho moi bo tham so (xep_hang ep
     # srgb) de khong lang le doi cach xu ly mau anh chup.
     with BrowserSession() as phien:
-        nguon, nguon_path, link = nap_nguon(draft_id, meta, state, phien=phien)
+        nguon, nguon_path, link = load_source(draft_id, meta, state, phien=phien)
         trang = nguon.get("trang", [])
-        tom = _tom_tat_tu_img_json(draft_id)
+        tom = _summary_from_img_json(draft_id)
 
-        trang = _bo_sung_nguon(nguon, nguon_path, trang, link)
+        trang = _supplement_source(nguon, nguon_path, trang, link)
         # Trang cong bo CHINH CHU cua model (LOW-21): chay cho moi tin nhac model
         # cua hang trong watchlist, TRUOC browser de browser ghe lay chart.
-        trang = _them_trang_cong_bo(nguon, nguon_path, trang, title, tom.get("summary", ""))
+        trang = _extra_announcement_page(nguon, nguon_path, trang, title, tom.get("summary", ""))
         bp = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
         if not khong_browser:
-            bp, trang = _lay_tu_browser(trang, wd, nguon, nguon_path, phien=phien)
-        xhs, tin_xep_hang = _chup_xep_hang(title, nguon, tom, link, meta, bp, wd,
+            bp, trang = _take_from_browser(trang, wd, nguon, nguon_path, phien=phien)
+        xhs, tin_xep_hang = _capture_ranking(title, nguon, tom, link, meta, bp, wd,
                                            khong_browser, phien=phien)
-        anh = _gom_va_tai_anh(title, link, nguon_path, nguon, trang, bp, wd, xhs)
-        anh, dung_duoc, chua_nhin = _nhin_anh(anh, nguon, title, wd)
+        anh = _gather_and_download_image(title, link, nguon_path, nguon, trang, bp, wd, xhs)
+        anh, dung_duoc, chua_nhin = _seen_image(anh, nguon, title, wd)
         flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
         # NGUONG DI THEO VAI (su co 10/09/2026). Truoc day dong nay la
         # `carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE` — engine
@@ -162,19 +162,19 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # `luat_anh` + `phan_loai` cho ca ba.
         # Bo hau to site khoi tieu de dung de NHIN/tim hang (LOW-35): " · Hugging
         # Face" tung lam Hugging Face thanh "hang trong tin" cua mot tin DeepSeek.
-        import nguon_bai
-        tieu_de_nhin = nguon_bai.bo_hau_to_site(nguon.get("tieu_de_en") or "") or title
+        import article_sources
+        tieu_de_nhin = article_sources.strip_site_suffix(nguon.get("tieu_de_en") or "") or title
         # THU TU (Ong Chu 13/09/2026): CHUP MAN HINH BAO CUNG TIN TRUOC, tim kiem
         # anh tren web sau. Mot tin hot co hang tram bao dua, moi bao mot anh hero
         # dung chu de san — chup ve roi dem nen la co slide, khong phai doan xem
         # mot tam anh la tren mang co dinh dang gi. Truoc do `_vong_tim_rong`
         # (Yandex + og:image) chay truoc, la duong dai va de lac de hon han.
         if not role.has_enough_material(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = _vong_chup_nguon(anh, link, trang, wd,
+            anh, dung_duoc, chua_nhin = _round_capture_source(anh, link, trang, wd,
                                                          khong_browser, phien=phien,
                                                          tieu_de=tieu_de_nhin)
         if not role.has_enough_material(vai_anh, dung_duoc, flagship) and not khong_browser:
-            anh, dung_duoc, chua_nhin = _vong_tim_rong(anh, trang, tieu_de_nhin, toi_thieu,
+            anh, dung_duoc, chua_nhin = _round_widen_search(anh, trang, tieu_de_nhin, toi_thieu,
                                                        dung_duoc, wd, phien=phien)
         # ANH CUA CHINH HANG trong tin (logo, chan dung founder/CEO, tru so,
         # campus): chay cho MOI tin nhac toi mot hang trong watchlist, KHONG doi
@@ -193,7 +193,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # `category` da duoc Finn/Vera gan tu luc quet va nam san trong meta —
         # toi 12/09/2026 engine anh chua doc no o dau (loai_tin.py).
         category = meta.get("category", "")
-        anh, dung_duoc, chua_nhin = _vong_thuong_hieu(anh, tieu_de_nhin, tom.get("summary", ""),
+        anh, dung_duoc, chua_nhin = _round_brand(anh, tieu_de_nhin, tom.get("summary", ""),
                                                       wd, role.search_target_for(vai_anh, flagship),
                                                       khong_browser, phien=phien,
                                                       category=category)
@@ -206,14 +206,14 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # may chu: khai niem nhan bua "computer server room" cho tin toan, the can cuoc
         # Quoc xa cho tin xac minh tuoi. Khai niem chi con la nac CUOI CUNG.
         if not role.has_enough_material(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = _vong_thuc_the(anh, tieu_de_nhin, wd)
+            anh, dung_duoc, chua_nhin = _round_entity(anh, tieu_de_nhin, wd)
         if not role.has_enough_material(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = _vong_khai_niem(anh, tieu_de_nhin, tom.get("summary", ""), wd,
+            anh, dung_duoc, chua_nhin = _round_concept(anh, tieu_de_nhin, tom.get("summary", ""), wd,
                                                         category=category)
         # Khoi tit chup tu trang nguon (bai khong anh hero) la NAC CUOI CUNG:
         # chi lam bia khi thuc the + khai niem deu rong (12/09/2026).
         if not role.has_enough_material(vai_anh, dung_duoc, flagship):
-            anh, dung_duoc, chua_nhin = nang_khoi_tit(anh)
+            anh, dung_duoc, chua_nhin = capability_block_headline(anh)
         tl = _article_material(title, link, nguon_path, wd, nguon, bp)
         m = build_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
                           tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh)
@@ -226,10 +226,10 @@ def workdir(state: Path, draft_id: str) -> Path:
     return state / "chuan_bi" / draft_id
 
 def load_meta(draft_id: str) -> dict:
-    meta = _doc_json(DRAFTS / f"{draft_id}.meta.json")
+    meta = _read_json(DRAFTS / f"{draft_id}.meta.json")
     if not meta:
         sys.exit(f"Khong thay drafts/{draft_id}.meta.json — task nay khong do approve_service tao?")
-    os.environ.setdefault("CT_BRAND", NAME_CT.get(_brand_cua(meta), "blog"))
+    os.environ.setdefault("CT_BRAND", NAME_CT.get(_brand_of(meta), "blog"))
     return meta
 
 
@@ -379,12 +379,12 @@ def count_crashes(wd: Path, mo_coi: bool, lam_moi: bool = False) -> int:
     n = 0
     if not lam_moi:
         try:
-            n = int(_doc_json(tep).get("n", 0)) if tep.exists() else 0
+            n = int(_read_json(tep).get("n", 0)) if tep.exists() else 0
         except Exception:                                    # noqa: BLE001
             n = 0
         if mo_coi:
             n += 1
-    _ghi_json(tep, {"n": n})
+    _write_json(tep, {"n": n})
     return n
 
 
@@ -393,7 +393,7 @@ def _report_crash_loop(draft_id: str, so_chet: int) -> None:
     cai da khien 50 phut cua t_24b214a6 khong ai thay (INV-3)."""
     try:
         import publish
-        tom = _tom_tat_tu_img_json(draft_id)
+        tom = _summary_from_img_json(draft_id)
         slug = role.canonical_slug(tom.get("vai_anh") or "") or role.DEFAULT_IMAGE
         publish.gui_topic(
             f"⛔ Engine chuẩn bị ảnh chết bất thường <b>{so_chet} lần liên tiếp</b> trên draft "
@@ -456,7 +456,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
             if giay > 10:
                 print(f"[route] mat {giay:.0f}s — khoa draft bi giu suot thoi gian do",
                       file=sys.stderr)
-        _ghi_json(xong, m)
+        _write_json(xong, m)
         count_crashes(wd, False, lam_moi=True)     # di toi cuoi -> xoa bo dem chet
     finally:
         khoa.unlink(missing_ok=True)

@@ -16,7 +16,7 @@ dien qua khoa `{ket_thuc}`; dung chep no vao tung body nua.
 # 06/09/2026 no duoc chep NGUYEN VAN ba lan, nen mot lan sua luat "abort =
 # kanban_block" phai nho sua ca ba — va da co lan chi sua hai.
 KET_THUC_VAI_ANH = """THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): BAN TU DI TIM — chay
-cd {goc} && venv/bin/python tim_anh_them.py {draft_id} --tu-khoa "<tu khoa TIENG ANH cu the>"
+cd {goc} && venv/bin/python find_more_images.py {draft_id} --tu-khoa "<tu khoa TIENG ANH cu the>"
 (hang, san pham, nha may, su kien, nguoi trong bai; lap --tu-khoa duoc; co URL trang/anh thi
 --url). Script tai, nhin, do, cat san roi in anh moi; chay lai BUOC 1 de doc brief moi.
 Toi da 3 luot, moi luot doi tu khoa khac han. HET 3 LUOT ma van thieu moi goi tool
@@ -51,7 +51,7 @@ cd {goc} && venv/bin/python ethan_chuan_bi.py {draft_id}
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chi
 dien MA ANH (A1, A2...) va CHU (hook, tagline, attrib; hoac title+kicker cho
 kieu tran). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
-anh_bai.py/card.py/gui_telegram.py tay. Chu tieng Viet co dau.
+article_images.py/card.py/gui_telegram.py tay. Chu tieng Viet co dau.
 
 BUOC 3 — nop:
 cd {goc} && venv/bin/python ethan_nop.py {draft_id}
@@ -84,7 +84,7 @@ bao dang chuan bi thi no tu doi, ban khong lam gi them.)
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1, theo
 khung o do. Chi dien CHU (hook, category, label, text/quote/attrib) va MA ANH
 (A1, A2...). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
-anh_bai.py/carousel.py/gui_telegram.py bang tay. Muon nhin anh thi mo DUNG MOT
+article_images.py/carousel.py/gui_telegram.py bang tay. Muon nhin anh thi mo DUNG MOT
 tam bang_anh.png. Chu tieng Viet co dau, cau quote DICH sang tieng Viet.
 
 BUOC 3 — nop:

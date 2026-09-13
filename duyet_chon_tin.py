@@ -211,7 +211,7 @@ def _draft_id(item, brand, vai_anh):
     return f"{base}-{khoa}"
 
 def _research_nguon(item, draft_id, out_png, brand):
-    """Tim nguon cho bai (nguon_bai.py) va doi link chuyen huong Google News
+    """Tim nguon cho bai (article_sources.py) va doi link chuyen huong Google News
     thanh link that; ghi lai meta neu link doi. Mot lan o day cho ca vai anh
     lan vai viet."""
     # BUOC RESEARCH — thuoc khau cua Finn, chay ngay khi Ong Chu chon tin.
@@ -228,7 +228,7 @@ def _research_nguon(item, draft_id, out_png, brand):
     loi = None
     try:
         r = subprocess.run(
-            [sys.executable, str(ROOT / "nguon_bai.py"),
+            [sys.executable, str(ROOT / "article_sources.py"),
              "--tieu-de", item["title"], "--link", item["link"],
              "--out", str(nguon_path)],
             capture_output=True, text=True, timeout=180, cwd=str(ROOT))

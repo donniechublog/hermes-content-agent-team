@@ -13,7 +13,7 @@ import image_rules
 import env_load
 from browser_session import session_or_new
 
-from chuan_bi.chung import GNEWS, _mien
+from chuan_bi.common import GNEWS, _domain
 
 
 def _js_browser() -> dict:
@@ -73,7 +73,7 @@ def _js_browser() -> dict:
     return {"TITLE": JS_TITLE, "TEXT": JS_TEXT, "IMG": JS_IMG, "FIG": JS_FIG, "GNEWS": JS_GNEWS}
 
 
-def _lay_anh_trang(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
+def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
     """Anh <img> lon + figure/table/canvas/svg cua MOT trang, ghi vao ra['cands']."""
     # Tran moi trang: goc <= 4 anh, bao khac <= 3. Truoc day vet toi 12 anh
     # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026). Trang CONG BO chinh
@@ -103,7 +103,7 @@ def _lay_anh_trang(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
                             "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "diem": 50})
 
 
-def _mo_trang(page, url, cho_yen=12000):
+def _open_page(page, url, cho_yen=12000):
     page.goto(url, wait_until="domcontentloaded", timeout=30000)
     try:
         page.wait_for_load_state("networkidle", timeout=cho_yen)
@@ -112,7 +112,7 @@ def _mo_trang(page, url, cho_yen=12000):
     page.wait_for_timeout(700)
 
 
-def _tim_bao_gnews(page, ra, mien_goc, het_gio, JS):
+def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
     """Bo nguon mong: tim bao khac tren Google News theo tieu de tieng Anh, di
     theo chuyen huong tung link /read/, giu toi da 3 bao lien quan."""
     import urllib.parse as up
@@ -120,7 +120,7 @@ def _tim_bao_gnews(page, ra, mien_goc, het_gio, JS):
     if True:
         try:
             q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["tieu_de_en"])[:120]
-            _mo_trang(page, "https://news.google.com/search?q=" + up.quote(q)
+            _open_page(page, "https://news.google.com/search?q=" + up.quote(q)
                + "&hl=en-US&gl=US&ceid=US:en", cho_yen=6000)
             links, thay = [], set()
             for h in page.evaluate(JS["GNEWS"]) or []:
@@ -137,20 +137,20 @@ def _tim_bao_gnews(page, ra, mien_goc, het_gio, JS):
                     while "news.google.com" in page.url and time.time() - t1 < 12:
                         page.wait_for_timeout(500)
                     u = page.url
-                    if "news.google.com" in u or _mien(u) == mien_goc \
-                            or any(_mien(u) == _mien(x["url"]) for x in ra["trang_them"]):
+                    if "news.google.com" in u or _domain(u) == mien_goc \
+                            or any(_domain(u) == _domain(x["url"]) for x in ra["trang_them"]):
                         continue
                     td = (page.title() or "")[:160]
                     # Google News tra ca bai KHONG lien quan (cung tu "AI"):
                     # bai benh than, letsdatascience (Gimlet 05/09). Phai
                     # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
-                    import anh_bai as _ab
+                    import article_images as _ab
                     if len(_ab._tu_dac_trung(ra["tieu_de_en"]) & _ab._tu_dac_trung(td)) < 2:
                         print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
                         continue
                     ra["trang_them"].append({"url": u, "loai": "báo",
                                              "tieu_de": td,
-                                             "toa_soan": "https://" + _mien(u)})
+                                             "toa_soan": "https://" + _domain(u)})
                 except Exception:                # noqa: BLE001
                     continue
         except Exception as e:                   # noqa: BLE001
@@ -181,7 +181,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
     t0 = time.time()
     goc = next((t.get("url") for t in trang if t.get("loai") == "gốc" and t.get("url")), None) \
         or (trang[0].get("url") if trang else "")
-    mien_goc = _mien(goc)
+    mien_goc = _domain(goc)
 
     def het_gio():
         return time.time() - t0 > gio_han
@@ -193,16 +193,16 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                 # 1) trang goc
                 if goc and goc.startswith("http") and GNEWS not in goc:
                     try:
-                        _mo_trang(page, goc)
+                        _open_page(page, goc)
                         ra["tieu_de_en"] = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "",
                                                   (page.evaluate(JS["TITLE"]) or "").strip())
                         ra["chu"] = page.evaluate(JS["TEXT"]) or ""
-                        _lay_anh_trang(page, goc, 0, wd, ra, JS)
+                        _take_image_page(page, goc, 0, wd, ra, JS)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] goc {goc[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
                 # 2) tim bao khac (bo nguon mong)
                 if tim_them and ra["tieu_de_en"] and not het_gio():
-                    _tim_bao_gnews(page, ra, mien_goc, het_gio, JS)
+                    _find_report_gnews(page, ra, mien_goc, het_gio, JS)
                 # 3) bao khac (co san trong nguon + vua tim): lay anh, toi da 2 trang
                 khac = [t for t in trang if t.get("url") and t.get("url") != goc and GNEWS not in t["url"]]
                 khac += ra["trang_them"]
@@ -213,8 +213,8 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                     if het_gio():
                         break
                     try:
-                        _mo_trang(page, t["url"], cho_yen=8000)
-                        _lay_anh_trang(page, t["url"], i, wd, ra, JS,
+                        _open_page(page, t["url"], cho_yen=8000)
+                        _take_image_page(page, t["url"], i, wd, ra, JS,
                                        tran=4 if t.get("loai") == "công bố" else None)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] {t['url'][:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)

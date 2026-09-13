@@ -4,7 +4,7 @@
 
 `.meta.json` là tệp ba tiến trình cùng ghi không khoá chung. `tao_root` đọc meta
 ở đầu hàm, chạy cả khối kanban (SQLite, write_txn — mất thời gian), rồi mới ghi
-lại: engine (`chuan_bi/nguon.py`) có thể vừa trộn `source_url` thật vào trong
+lại: engine (`chuan_bi/source.py`) có thể vừa trộn `source_url` thật vào trong
 khoảng đó. Ghi đè nguyên dict cũ là xoá của người khác — cùng lỗi d59691c vừa
 sửa ở đầu kia của cùng tệp. Hôm nay chưa mất chỉ vì `create_pair` gọi `tao_root`
 TRƯỚC khi khởi chạy engine — thứ tự tình cờ, không phải bảo vệ.

@@ -1,6 +1,6 @@
 ---
 name: ai-background
-description: "Sinh nền AI cho carousel slide-thiết-kế bằng tao_nen_ai.py, tự động gửi vào topic Telegram của bạn (--gui), và sửa lại theo yêu cầu reply — dùng khi làm carousel GỐC của đội, không có ảnh thật nào để remake. Không khoá cứng vào một nhà cung cấp AI: codex-imagen là backend hiện có, đổi/thêm backend khác không đụng tới cách Gin/Itachi dùng công cụ. Cách viết prompt, ràng buộc không-chữ, cách xác định đúng ảnh cần sửa từ text reply, và ranh giới với doi_chu_anh.py / nền màu phẳng."
+description: "Sinh nền AI cho carousel slide-thiết-kế bằng tao_nen_ai.py, tự động gửi vào topic Telegram của bạn (--gui), và sửa lại theo yêu cầu reply — dùng khi làm carousel GỐC của đội, không có ảnh thật nào để remake. Không khoá cứng vào một nhà cung cấp AI: codex-imagen là backend hiện có, đổi/thêm backend khác không đụng tới cách Gin/Itachi dùng công cụ. Cách viết prompt, ràng buộc không-chữ, cách xác định đúng ảnh cần sửa từ text reply, và ranh giới với swap_image_text.py / nền màu phẳng."
 version: 1.1.0
 author: content-team
 license: internal
@@ -21,7 +21,7 @@ metadata:
 # ai-background — nền sinh bằng AI cho carousel gốc
 
 Nguồn nền thứ ba của `deck.py`, bên cạnh nền màu phẳng (`"bg": "cream"` mặc
-định đen) và nền ảnh thật đã dọn chữ (`doi_chu_anh.py` của Gin). Dùng khi
+định đen) và nền ảnh thật đã dọn chữ (`swap_image_text.py` của Gin). Dùng khi
 carousel là **của chính đội, không remake ai** — không có ảnh thật nào tồn
 tại để chọn hay để dọn, vì nội dung là gốc.
 
@@ -148,7 +148,7 @@ Hai ranh giới cứng đi kèm ngoại lệ này:
 1. **Đừng suy rộng sang vai khác.** Ethan/Dre vẫn phải dùng ảnh
    thật, không có ngoại lệ nào cho họ.
 2. **Đừng dùng AI generate khi đang REMAKE một carousel có ảnh thật sẵn.**
-   Case đó vẫn của Gin/`doi_chu_anh.py` như cũ — xoá chữ khỏi ảnh thật, không
+   Case đó vẫn của Gin/`swap_image_text.py` như cũ — xoá chữ khỏi ảnh thật, không
    thay ảnh thật bằng ảnh AI.
 
 ## Khi lỗi

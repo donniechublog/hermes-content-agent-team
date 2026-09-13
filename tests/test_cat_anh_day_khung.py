@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import chup_trang                                              # noqa: E402
+import capture_page                                              # noqa: E402
 
 
 def _anh_don_sac(tmp: Path, w, h, nen=(10, 10, 12), chu_the=(220, 30, 30),
@@ -51,12 +51,12 @@ def test_cat_can_giua_hinh_hoc_se_dut_nhung_bien_that_thi_khong():
         # Chu the tran gan het be ngang (nhu "tsmc" that) — cat theo trong tam/
         # tam hinh hoc deu se dut, chi bien That moi giu tron.
         p = _anh_don_sac(tmp, 1242, 828)
-        bien = chup_trang._bien_chu_the_x(__import__("PIL.Image", fromlist=["Image"]).open(p))
+        bien = capture_page._variable_text_card_x(__import__("PIL.Image", fromlist=["Image"]).open(p))
         assert bien is not None
         trai_px, phai_px = round(bien[0] * 1241), round(bien[1] * 1241)
         assert trai_px <= int(1242 * 0.03) + 2 and phai_px >= int(1242 * 0.94) - 2, bien
         ra = tmp / "out.png"
-        w, h = chup_trang.dem_nen(p, ra, "rgb(10,10,12)")
+        w, h = capture_page.count_background(p, ra, "rgb(10,10,12)")
         assert abs(w / h - 0.8) < 0.01
         from PIL import Image
         im = Image.open(ra).convert("RGB")
@@ -82,7 +82,7 @@ def test_anh_sau_khi_cat_duoc_phong_len_gan_day_khung_khong_con_nho_giua_nen():
         tmp = Path(t)
         p = _anh_don_sac(tmp, 1600, 900, x0=700, x1=900)  # ngang manh + chu the hep, GIUA khung
         ra = tmp / "out.png"
-        w, h = chup_trang.dem_nen(p, ra, "#ffffff")
+        w, h = capture_page.count_background(p, ra, "#ffffff")
         assert (w, h) == (1080, 1350)
         from PIL import Image
         im = Image.open(ra).convert("RGB")
@@ -101,7 +101,7 @@ def test_khong_lap_day_100_phan_tram_de_lai_nen_phang_cho_tieu_de():
         tmp = Path(t)
         p = _anh_don_sac(tmp, 1600, 900, nen=(5, 5, 5))
         ra = tmp / "out.png"
-        w, h = chup_trang.dem_nen(p, ra, "#ffffff")
+        w, h = capture_page.count_background(p, ra, "#ffffff")
         from PIL import Image
         im = Image.open(ra).convert("RGB")
         # Vung gan DAY canvas (noi tieu de/chip se nam) phai la MAU NEN (trang),
@@ -121,7 +121,7 @@ def test_du_nguyen_lieu_khong_can_cat_khi_anh_da_du_dung():
         p = tmp / "in.png"
         Image.new("RGB", (900, 1125), (30, 30, 200)).save(p)   # 0.8, dung 4:5 roi
         ra = tmp / "out.png"
-        chup_trang.dem_nen(p, ra, "#ffffff")
+        capture_page.count_background(p, ra, "#ffffff")
         im = Image.open(ra).convert("RGB")
         w_c, h_c = im.size
 

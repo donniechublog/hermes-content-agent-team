@@ -192,7 +192,7 @@ def test_doc_manifest_phien_ban_kieu_la_khong_crash():
 
 def _khoa_dict_ghi_vao(src: str, ten_tep: str) -> set:
     """Khoa cua dict literal duoc ghi vao tep co ten chua `ten_tep` (qua
-    _ghi_json/ghi_json/write_text) — doc bang ast, comment khong tinh."""
+    _write_json/ghi_json/write_text) — doc bang ast, comment khong tinh."""
     import ast
     ra = set()
     for n in ast.walk(ast.parse(src)):

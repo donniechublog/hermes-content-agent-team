@@ -13,13 +13,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import anh_khai_niem as k  # noqa: E402
+import image_concept as k  # noqa: E402
 
 TIN_TOAN = "AI is getting good at math. Mathematicians worry about what that means"
 
 
 def _tk(tieu_de, tom=""):
-    return [x["tu_khoa"] for x in k.tu_khoa_heuristic(tieu_de, tom)]
+    return [x["tu_khoa"] for x in k.keyword_heuristic(tieu_de, tom)]
 
 
 def test_reward_hacking_khong_thanh_tin_an_ninh_mang():
@@ -51,7 +51,7 @@ def test_tin_toan_hoc_ra_bang_den_khong_ra_phong_may():
 def test_cau_hoi_vision_hoi_ca_TU_KHOA_CO_HOP_BAI():
     """Cổng `lien_quan` cho ảnh khái niệm chỉ hỏi "có đúng là <từ khoá>" nên một
     từ khoá sai được chính cổng hợp thức hoá. Phải hỏi thêm chiều hợp bài."""
-    c = k.cau_hoi_vision(TIN_TOAN, "server room cables")
+    c = k.sentence_ask_vision(TIN_TOAN, "server room cables")
     assert "hop chu de bai" in c, c
     assert "lac chu de bai" in c, c
 
@@ -63,7 +63,7 @@ def test_cau_hoi_vision_hoi_ca_NHIN_RA_VAT_CHINH():
     vật đó liên quan topic. Chặn ca từ khoá ĐÚNG mà ảnh vẫn vô dụng — búi dây
     chằng chịt cho từ khoá "data center server racks" thì đúng từ khoá nhưng
     không nhận ra rack nào."""
-    c = k.cau_hoi_vision(TIN_TOAN, "data center server racks")
+    c = k.sentence_ask_vision(TIN_TOAN, "data center server racks")
     assert "NHAN RA NGAY vat chinh" in c, c
     assert "roi/chat chung khong nhan ra vat gi" in c, c
     # Khong duoc bien thanh thang tham my: phai noi ro khong can dep.
@@ -74,7 +74,7 @@ def test_prompt_llm_khong_lay_vat_nganh_AI_lam_vi_du():
     center" chỉ vì prompt lấy "server racks" làm ví dụ. Ví dụ không được là một
     vật của ngành AI, không thì mọi tin AI đều bị kéo về phòng máy."""
     import inspect
-    src = inspect.getsource(k.tu_khoa_llm)
+    src = inspect.getsource(k.keyword_llm)
     assert "server racks, a product" not in src, "vi du 'server racks' con trong prompt"
     # Bo vi du chua du: do 12/09 lan 2, model VAN de "computer server rack" cho tin
     # toan. Prompt phai CAM THANG phan cung nganh AI trong khi tin khong noi ve no.
@@ -87,10 +87,10 @@ def test_minh_hoa_bien_tap_duoc_dung_nhu_anh_chup():
     và câu hỏi con mắt không được gạt illustration/drawing; icon/clipart/sơ đồ
     vẫn gạt."""
     for ten in ("Mathematics illustration.jpg", "Drawing of a classroom.jpg", "Poster of geometry.jpg"):
-        assert not k.TEN_LOAI.search(ten.lower()), ten
+        assert not k.NAME_TYPE.search(ten.lower()), ten
     for ten in ("Math icon.svg", "Clipart abacus.png", "Diagram of proof.png", "Bar chart.png"):
-        assert k.TEN_LOAI.search(ten.lower()), ten
-    c = k.cau_hoi_vision(TIN_TOAN, "blackboard mathematical formulas")
+        assert k.NAME_TYPE.search(ten.lower()), ten
+    c = k.sentence_ask_vision(TIN_TOAN, "blackboard mathematical formulas")
     assert "minh hoa bien tap" in c and "anh CHUP THAT" not in c, c
 
 
@@ -98,9 +98,9 @@ def test_cau_hoi_vision_theo_loai_khong_xet_hop_bai():
     """Từ khoá do LOẠI TIN ép (cờ nước của hãng cho tin LAB) — con mắt không được
     tự phán "cờ thì liên quan gì xác minh tuổi". Đo trên máy chủ 12/09: cờ Mỹ bị
     từ chối cho tin Anthropic dù bảng loại tin (Ông Chủ) coi cờ là vật liên quan."""
-    c = k.cau_hoi_vision("Claude is only for people over 18", "flag of United States", theo_loai=True)
+    c = k.sentence_ask_vision("Claude is only for people over 18", "flag of United States", theo_loai=True)
     assert "do LOAI TIN quy dinh" in c and "KHONG xet no co hop bai" in c, c
-    c0 = k.cau_hoi_vision("Claude is only for people over 18", "flag of United States")
+    c0 = k.sentence_ask_vision("Claude is only for people over 18", "flag of United States")
     assert "do LOAI TIN quy dinh" not in c0
 
 
@@ -109,8 +109,8 @@ def test_loc_commons_tu_khoa_dai_mot_tu_khop_la_du():
     tệp — đo 12/09: 0 ảnh cho cả hai từ khoá toán. Từ khoá ≥3 từ: 1 từ khớp đủ."""
     pg = {"1": {"title": "File:Blackboard with proof.jpg",
                 "imageinfo": [{"width": 2000, "height": 1500, "mime": "image/jpeg", "thumburl": "u"}]}}
-    assert k.loc_commons(pg, "mathematics blackboard equations"), "phai nhan khi 1/3 tu khop"
-    assert not k.loc_commons(pg, "data center racks"), "tu khoa ngan van doi 2 tu"
+    assert k.filter_commons(pg, "mathematics blackboard equations"), "phai nhan khi 1/3 tu khop"
+    assert not k.filter_commons(pg, "data center racks"), "tu khoa ngan van doi 2 tu"
 
 
 if __name__ == "__main__":

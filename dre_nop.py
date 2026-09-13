@@ -150,7 +150,7 @@ def _giai_don(bo: _Boi, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | N
         if muc.get("cat_ngang"):
             tam = muc.get("tam") or [0.5, 0.5]
             out = bo.wd / "san" / f"{ma}.ngang.png"
-            cb._luu_crop(Image.open(a["goc"]).convert("RGB"), out, "4:5",
+            cb._save_crop(Image.open(a["goc"]).convert("RGB"), out, "4:5",
                          float(tam[0]), float(tam[1]), cat_ngang=True)
             ra["image"] = str(out)
         else:

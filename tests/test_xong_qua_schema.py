@@ -8,7 +8,7 @@ bản 0 thiếu so_dung_duoc thì hạ sàn báo "Chỉ 0 ảnh thật" dù có 
 tự đếm ra 4 trong khi schema đếm 2 (khái niệm là một chùm).
 
 Cổng quét bằng ast, không quét chuỗi (E-r2-4): chỉ bắt lời gọi json.loads /
-_doc_json / read_text mà đối số có literal "xong.json" — comment nhắc tới tên
+_read_json / read_text mà đối số có literal "xong.json" — comment nhắc tới tên
 tệp không tính. Ada/Itachi có xong.json RIÊNG (không phải manifest engine, không
 có `anh`) nên không nằm trong cổng này.
 
@@ -42,7 +42,7 @@ def _doc_tho(src: str):
         if not isinstance(n, ast.Call):
             continue
         ten = _ten_goi(n)
-        if ten in ("loads", "_doc_json", "read_text", "_nap_json", "doc_json") and _co_xong_json(n):
+        if ten in ("loads", "_read_json", "read_text", "_nap_json", "doc_json") and _co_xong_json(n):
             xau.append((n.lineno, ten))
     return xau
 
@@ -60,7 +60,7 @@ def test_khong_ai_doc_xong_json_tho():
 
 def test_cong_bat_duoc_doc_tho_va_bo_qua_comment():
     assert _doc_tho('m = json.loads((wd / "xong.json").read_text())') == [(1, "loads"), (1, "read_text")]
-    assert _doc_tho('x = cb._doc_json(wd / "xong.json")') == [(1, "_doc_json")]
+    assert _doc_tho('x = cb._read_json(wd / "xong.json")') == [(1, "_read_json")]
     assert _doc_tho('# doc xong.json o day\nm = schema.read_manifest(wd / "xong.json")') == []
 
 

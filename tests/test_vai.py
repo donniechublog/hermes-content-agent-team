@@ -290,7 +290,7 @@ def _a(**doi) -> dict:
 def test_anh_chinh_duoc_hoi_dung_luat_cua_tung_renderer():
     """Cung mot tam anh, hai vai tra loi khac nhau — va khac dung o cho kho anh
     khac nhau, khong phai o tieu chi chat luong (thu do dung chung, chay o
-    luat_anh + phan_loai truoc khi toi day)."""
+    luat_anh + classify truoc khi toi day)."""
     # Ti le 1.5: qua NGANG_RO (1.4) nen phan_loai KHONG dan nhan "bìa" -> Dre
     # khong lam bia duoc; nhung card.py cho toi 1.6 nen Ethan dung lam nen hero.
     ngang_vua = _a(ti_le=1.5, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])

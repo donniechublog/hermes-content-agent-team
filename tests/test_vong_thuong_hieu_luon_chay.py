@@ -4,11 +4,11 @@
 
 Ong Chu, kem hai link task: *"Dre van ko chiu di tim cac hinh lien quan nhu logo,
 brand, founder, tru so... cua chu de duoc nhac toi"*. Ban 09/09 da dung du may
-moc (anh_thuong_hieu.py: Commons + Wikidata P18/P154/P112, cau hoi vision rieng
+moc (image_brand.py: Commons + Wikidata P18/P154/P112, cau hoi vision rieng
 cho tung loai tu lieu), nhung noi vao day chuyen nhu mot VONG BU:
 
     if len(dung_duoc) < muc_tieu_tim or not _co_bia(dung_duoc):
-        anh, dung_duoc, chua_nhin = _vong_thuong_hieu(...)
+        anh, dung_duoc, chua_nhin = _round_brand(...)
 
 nen tin nao bai goc du anh (Dre 5, flagship 8) la khong bao gio hoi toi
 Commons/Wikidata. Vai khong "khong chiu di tim": brief cam vai tu tai them ("chi
@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                       # noqa: E402
-import anh_thuong_hieu as th                                    # noqa: E402
+import image_brand as th                                    # noqa: E402
 
 
 # ------------------------------------------------------------------ do dac that
@@ -50,9 +50,9 @@ def _anh(ma: str) -> dict:
             "canh_ngan": 1200, "mien": "vi_du.com", "tu": "bai", "ghi_chu": []}
 
 
-PHA_NANG = ("BrowserSession", "nap_nguon", "_tom_tat_tu_img_json", "_bo_sung_nguon", "_them_trang_cong_bo",
-            "_lay_tu_browser", "_chup_xep_hang", "_gom_va_tai_anh", "_nhin_anh",
-            "_vong_tim_rong", "_vong_thuong_hieu", "_vong_khai_niem", "_article_material",
+PHA_NANG = ("BrowserSession", "load_source", "_summary_from_img_json", "_supplement_source", "_extra_announcement_page",
+            "_take_from_browser", "_capture_ranking", "_gather_and_download_image", "_seen_image",
+            "_round_widen_search", "_round_brand", "_round_concept", "_article_material",
             "build_manifest", "contact_sheet")
 
 
@@ -71,20 +71,20 @@ def _vong_bu_da_chay(so_anh_cua_tin: int,
         return f
 
     cb.BrowserSession = lambda *a, **k: _Phien()
-    cb.nap_nguon = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
+    cb.load_source = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
-    cb._tom_tat_tu_img_json = lambda d: {"vai_anh": "dre", "summary": ""}
-    cb._bo_sung_nguon = lambda *a, **k: []
-    cb._them_trang_cong_bo = lambda n, p, trang, *a, **k: trang
-    cb._lay_tu_browser = lambda trang, *a, **k: (
+    cb._summary_from_img_json = lambda d: {"vai_anh": "dre", "summary": ""}
+    cb._supplement_source = lambda *a, **k: []
+    cb._extra_announcement_page = lambda n, p, trang, *a, **k: trang
+    cb._take_from_browser = lambda trang, *a, **k: (
         {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)
-    cb._chup_xep_hang = lambda *a, **k: ([], False)
-    cb._gom_va_tai_anh = lambda *a, **k: anh
-    cb._nhin_anh = lambda a, nguon, tieu_de_, wd: (a, [x for x in a if x["dung"]], [])
-    cb._vong_tim_rong = _vong("tim_rong")
-    cb._vong_thuong_hieu = _vong("thuong_hieu")
-    cb._vong_khai_niem = _vong("khai_niem")
-    cb._article_material = lambda *a, **k: {"cau_co_so": [], "doan_dau": "", "so_nguon": 1}
+    cb._capture_ranking = lambda *a, **k: ([], False)
+    cb._gather_and_download_image = lambda *a, **k: anh
+    cb._seen_image = lambda a, nguon, tieu_de_, wd: (a, [x for x in a if x["dung"]], [])
+    cb._round_widen_search = _vong("tim_rong")
+    cb._round_brand = _vong("thuong_hieu")
+    cb._round_concept = _vong("khai_niem")
+    cb._article_material = lambda *a, **k: {"sentence_has_count": [], "doan_dau": "", "so_nguon": 1}
     cb.build_manifest = lambda *a, **k: {"anh": anh}
     cb.contact_sheet = lambda *a, **k: None
     try:
@@ -144,12 +144,12 @@ def test_loi_goi_khong_duoc_treo_lai_sau_mot_if():
     ten moi) thi stub van chay qua neu con so tinh co thuan. Day bat thang cai
     HINH DANG cua ma: loi goi phai nam o than ham, khong nam trong `if` nao."""
     goc = ast.parse(textwrap.dedent(inspect.getsource(cb.prepare_article)))
-    trong_if = _goi_nam_trong_if(goc, "_vong_thuong_hieu")
-    assert trong_if, "khong tim thay loi goi _vong_thuong_hieu trong prepare_article()"
+    trong_if = _goi_nam_trong_if(goc, "_round_brand")
+    assert trong_if, "khong tim thay loi goi _round_brand trong prepare_article()"
     assert not any(trong_if), (
         "vong anh thuong hieu bi treo lai sau mot `if` — do la su co 10/09/2026: "
         "tin du anh se khong bao gio duoc di tim logo/founder/tru so")
-    assert any(_goi_nam_trong_if(goc, "_vong_khai_niem")), \
+    assert any(_goi_nam_trong_if(goc, "_round_concept")), \
         "vong anh khai niem phai VAN nam trong `if` (chi chay khi thieu anh)"
 
 
@@ -159,7 +159,7 @@ _TH_NGUOI = {"hang": "Nvidia", "khoa": "nvidia", "loai": "nguoi",
 
 
 def test_nhan_chan_dung_noi_ten_va_doi_khai_nhan_vat():
-    n = th.nhan_theo_loai(_TH_NGUOI)
+    n = th.label_by_type(_TH_NGUOI)
     assert "Jensen Huang" in n and "nhan_vat" in n and n.startswith("👤")
 
 

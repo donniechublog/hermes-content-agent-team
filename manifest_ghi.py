@@ -42,7 +42,7 @@ NHAN_MAC_DINH = {"nova": "MODEL", "qinn": "TOOL"}
 
 
 import bat_buoc                                             # noqa: E402
-import tieng_viet                                           # noqa: E402
+import vietnamese                                           # noqa: E402
 import manifest_chung as mc                                 # noqa: E402
 import scan_common                                           # noqa: E402
 
@@ -96,7 +96,7 @@ def _muc_tu_nop(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> dict | 
         return None
     # Headline la thu DUY NHAT Ong Chu doc tren topic, va brief hua "tieng
     # Viet co dau". Chi CANH BAO (khong bo tin) — tin van co gia tri.
-    mat_dau = tieng_viet.tim_mat_dau(it["title"])
+    mat_dau = vietnamese.find_face_mark(it["title"])
     if mat_dau:
         print(f"[canh bao] muc {i} title tieng Viet mat dau ({', '.join(mat_dau[:3])}): "
               f"{it['title'][:60]}", file=sys.stderr)

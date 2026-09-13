@@ -11,7 +11,7 @@ cao (≥4.5% ảnh → bold, không thì regular) trừ khi spec ghi `font`; `go
 Màu chữ MẶC ĐỊNH giữ nguyên màu đo được lúc OCR (gin_chuan_bi.mau_chu, đo
 TRÊN ẢNH GỐC, trước khi xoá) — giữ đúng thiết kế gốc. Nhưng nền dưới đó là
 NỀN ĐÃ XOÁ/VẼ LẠI (LaMa), có thể lệch tông so với lúc đo màu chữ; script tự
-đo lại độ tương phản THẬT giữa màu đó và nền hiện tại (`nen_chu.py`, dùng
+đo lại độ tương phản THẬT giữa màu đó và nền hiện tại (`text_bg.py`, dùng
 chung với card.py/carousel.py/render_edu.py) ngay trước khi vẽ — chỉ khi
 KHÔNG đủ mới đổi sang màu an toàn (trắng/đen tuỳ nền), xem `_mau_an_toan`.
 
@@ -30,10 +30,10 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_chuan_bi as gb                                    # noqa: E402
-import nen_chu                                               # noqa: E402
+import text_bg                                               # noqa: E402
 import submit_common as nc                                       # noqa: E402
 from card import _f, _wrap                                   # noqa: E402
-from tieng_viet import tim_mat_dau, bo_dau_cam               # noqa: E402
+from vietnamese import find_face_mark, drop_mark_forbid               # noqa: E402
 
 FONTS = ROOT / "assets" / "fonts"
 FONT = {"bold": FONTS / "BeVietnamPro-Bold.ttf", "regular": FONTS / "BeVietnamPro-Regular.ttf",
@@ -103,17 +103,17 @@ def _mau(c):
 def _mau_an_toan(color_rgb, nen_vung) -> tuple:
     """Mau chu OCR do tren anh GOC (truoc khi xoa) co con du tuong phan voi
     NEN THAT sau khi da xoa/ve lai (LaMa) khong — do thang tren pixel
-    (nen_chu.py), khong doan. Du roi thi GIU NGUYEN mau goc (mac dinh khong
+    (text_bg.py), khong doan. Du roi thi GIU NGUYEN mau goc (mac dinh khong
     doi gi). Khong du (nen sau khi xoa lech tong so voi luc do mau chu) moi
     doi sang mau AN TOAN — trang tren nen toi, den tren nen sang.
 
     -> (mau_dung, co_doi_khong)."""
     if nen_vung.width < 1 or nen_vung.height < 1:
         return color_rgb, False
-    mau_nen = nen_chu.mau_trung_binh(nen_vung)
-    if nen_chu.ti_le_tuong_phan(color_rgb, mau_nen) >= NGUONG_TUONG_PHAN:
+    mau_nen = text_bg.color_average(nen_vung)
+    if text_bg.ratio_wall_part(color_rgb, mau_nen) >= NGUONG_TUONG_PHAN:
         return color_rgb, False
-    sang, _ = nen_chu.do_sang_lech(nen_vung)
+    sang, _ = text_bg.measure_bright_offset(nen_vung)
     return ((255, 255, 255) if sang < 128 else (0, 0, 0)), True
 
 
@@ -169,8 +169,8 @@ def ve_tai_cho(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list:
                    "chưa khai trong spec — dịch thì ghi bản dịch, cố ý bỏ trống "
                    "thì ghi null (chữ gốc đã bị xoá, không khai là mất hẳn)")
     for kh in khoi:
-        kh["text"] = bo_dau_cam(kh["text"])
-        if not bo_qua_dau and tim_mat_dau(kh["text"]):
+        kh["text"] = drop_mark_forbid(kh["text"])
+        if not bo_qua_dau and find_face_mark(kh["text"]):
             loi.append(f"slide {s['id']}: tiếng Việt mất dấu: {kh['text'][:50]!r}")
         tran = _tran_hop(d, kh["text"], kh["w"], kh["h"],
                          kh["font"] or _font_mac_dinh(kh["h_dong"], s["h"]))

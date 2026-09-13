@@ -9,7 +9,7 @@ chat cua phien dung chung:
   2. Cung bo tham so thi DUNG CHUNG mot tien trinh; khac bo tham so thi rieng
      (xep_hang ep --force-color-profile=srgb, gop bua la doi cach xu ly mau).
   3. Nguoi MUON phien khong duoc dong no — chi nguoi mo moi dong. Ro ri tien
-     trinh chromium dung la su co da ghi trong xep_hang.py.
+     trinh chromium dung la su co da ghi trong ranking.py.
 
 Khong can playwright that: thay `sync_playwright` bang ban gia.
 

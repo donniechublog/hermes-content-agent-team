@@ -58,7 +58,7 @@ Spec JSON:
 
     {"kind": "figure", "eyebrow": "SỐ LIỆU",
      "title": "Điểm số dựng lại trên SWE-bench", "accent": "SWE-bench",
-     "image": "drafts/chart_swebench.png",   # chụp bằng chup_chart.py
+     "image": "drafts/chart_swebench.png",   # chụp bằng capture_chart.py
      "caption": "Biểu đồ trong bài công bố · via Google DeepMind",
      "standfirst": "Chữ minh hoạ cho phần chiều cao còn thừa dưới hình.",
      "cards": [{"num": "01", "text": "..."}]},
@@ -91,7 +91,7 @@ màu chữ (sáng/tối) tương phản với đúng vùng ảnh nằm dưới c
 thêm khi vùng đó thật sự rối (đo trực tiếp trên pixel), và khi thêm thì cũng
 chỉ vừa đủ — không bao giờ tối hơn mức cần, và ranh giới trên không vượt quá
 dòng chữ đầu tiên (không có khoảng đệm để trống phía trên chữ). Bắt buộc có
-"caption" ghi "via <ai>", và ảnh phải rộng >= 800px (chụp bằng chup_chart.py).
+"caption" ghi "via <ai>", và ảnh phải rộng >= 800px (chụp bằng capture_chart.py).
 Vẫn cấm: ảnh minh hoạ AI, screenshot dựng lại, logo hãng, số liệu tự bịa.
 """
 
@@ -104,9 +104,9 @@ import sys
 from pathlib import Path
 
 # tái dùng cổng chặn tiếng Việt của cả đội
-import tieng_viet  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
+import vietnamese  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
 # đo tương phản WCAG dùng CHUNG với card.py/Ethan + itachi_nop.py — xem LOW-9
-import nen_chu  # noqa: E402
+import text_bg  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 FONTS_DIR = ROOT / "assets" / "fonts"
@@ -498,7 +498,7 @@ FIG_RONG_TOI_THIEU = 800    # hep hon the ma keo len 1080 thi be nat
 # alpha-blend.
 _MAU_CHU_SANG_RGB = tuple(int(WHITE.lstrip("#")[k:k + 2], 16) for k in (0, 2, 4))
 _MAU_CHU_TOI_HIEU_DUNG = (38, 38, 38)  # xap xi 0.15 x nen sang (rgba đen 0.85)
-NGUONG_SANG_CHU_TOI = round(nen_chu.nguong_tuong_phan(_MAU_CHU_SANG_RGB, _MAU_CHU_TOI_HIEU_DUNG))
+NGUONG_SANG_CHU_TOI = round(text_bg.threshold_wall_part(_MAU_CHU_SANG_RGB, _MAU_CHU_TOI_HIEU_DUNG))
 FIG_TIEU_DE_DONG = 2   # slide co anh: tieu de toi da bay nhieu dong
 FIG_DINH = 150         # chua masthead: anh khong bao gio tran len day
 FIG_DAY_PHANG = 0.63   # anh nen PHANG dung o day; duoi la mat phang sach cho chu
@@ -1169,7 +1169,7 @@ def _gate_noi_dung(slides, bo_qua_dau):
     if not bo_qua_dau:
         for i, sl in enumerate(slides, 1):
             for nhan, t in _texts(sl):
-                mat = tieng_viet.tim_mat_dau(t)
+                mat = vietnamese.find_face_mark(t)
                 if mat:
                     loi.append(f"slide {i} [{nhan}]: tieng Viet mat dau ({', '.join(mat)})")
     # slide figure: anh phai co that va phai du to. Anh 600px keo len 1080px
@@ -1188,7 +1188,7 @@ def _gate_noi_dung(slides, bo_qua_dau):
             continue
         if rong < FIG_RONG_TOI_THIEU:
             loi.append(f"slide {i}: anh rong {rong}px, keo len {W}px la be nat. "
-                       f"Chup lai bang chup_chart.py (DPR 2) hoac xin ban goc.")
+                       f"Chup lai bang capture_chart.py (DPR 2) hoac xin ban goc.")
         if not sl.get("caption"):
             loi.append(f"slide {i}: slide co anh phai co 'caption' — hinh muon "
                        f"cua nguoi ta thi phai ghi 'via <ai>'.")

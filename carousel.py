@@ -62,7 +62,7 @@ import card
 import image_rules
 from card import (
     _f, _wrap, _fit_cover,
-    tim_mat_dau, bo_dau_cam, dat_thuong_hieu, THUONG_HIEU,
+    find_face_mark, drop_mark_forbid, dat_thuong_hieu, THUONG_HIEU,
     F_REG,                       # Inter — sans khong chan, doc ra "bao" khong ra "code"
     FONTS,                       # thu muc font
     F_QUOTE, F_QUOTE_REG,        # kieu quote — cung dinh nghia font voi card.py
@@ -381,7 +381,7 @@ def _body_image(canvas, img):
         luon (nen khong lo ra ti nao); anh 1:1 phu 0..~1080, phan duoi la nen.
 
     Tra ve ban COVER SAC (de _lop_neu_can dung lam nguon mo neu can).
-    (Luat: anh dua vao carousel da la 1:1 hoac 4:5 — xem crop_ti_le.py; nen
+    (Luat: anh dua vao carousel da la 1:1 hoac 4:5 — xem crop_ratio.py; nen
     luon cham du sau.)"""
     cover = _fit_cover(img, W, H).convert("RGB")
     # Nen phu kin, khong cho nao den — va lam mo de khong lo ban sao sac net.
@@ -600,7 +600,7 @@ def _gate_text(chunks, bo_qua_dau):
     if bo_qua_dau:
         return loi
     for nhan, t in chunks:
-        mat = tim_mat_dau(t)
+        mat = find_face_mark(t)
         if mat:
             loi.append(f"{nhan}: tieng Viet mat dau ({', '.join(mat)})")
     return loi
@@ -654,7 +654,7 @@ def _gate_anh(paths):
         r = w / h_px
         if khai_chart and not la_bia and r > image_rules.TI_LE_11 + image_rules.TOLERANCE_RATIO:
             if image_rules.read_crop_trace(img):
-                loi.append(f"{nhan}: chart ma van di qua crop_ti_le.py — chart phai "
+                loi.append(f"{nhan}: chart ma van di qua crop_ratio.py — chart phai "
                            'NGUYEN VEN, dua thang anh goc vao voi "chart": true')
             continue
         gom(image_rules.check_aspect_ratio(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
@@ -748,8 +748,8 @@ def main():
                  "noi ro tin nho moi duoc ghi \"tam_co\": \"thuong\" de bo qua.")
 
     # Chuan hoa em-dash + chan tieng Viet mat dau truoc khi ve bat cu gi.
-    cover["hook"] = bo_dau_cam(cover["hook"])
-    cover["label"] = bo_dau_cam(cover.get("label", ""))
+    cover["hook"] = drop_mark_forbid(cover["hook"])
+    cover["label"] = drop_mark_forbid(cover.get("label", ""))
     # Bia phai co "category" (chip cyan thay ten kenh — Ong Chu chot 03/09/2026).
     cover["category"] = str(cover.get("category") or "").strip().upper()
     if not cover["category"]:
@@ -763,13 +763,13 @@ def main():
         # Moi slide than la MOT trong hai: doan van ke ("text") HOAC cau trich
         # dan ("quote", kem "attrib" tuy chon). Thieu ca hai la loi.
         if s.get("quote"):
-            s["quote"] = bo_dau_cam(s["quote"])
-            s["attrib"] = bo_dau_cam(s.get("attrib", ""))
+            s["quote"] = drop_mark_forbid(s["quote"])
+            s["attrib"] = drop_mark_forbid(s.get("attrib", ""))
             chunks.append((f"slide {i}", s["quote"]))
             if s["attrib"]:
                 chunks.append((f"slide {i}/nguon", s["attrib"]))
         elif s.get("text"):
-            s["text"] = bo_dau_cam(s["text"])
+            s["text"] = drop_mark_forbid(s["text"])
             chunks.append((f"slide {i}", s["text"]))
         else:
             sys.exit(f"Slide {i} thieu 'text' (doan van) hoac 'quote' (cau trich dan).")
