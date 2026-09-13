@@ -32,7 +32,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import chuan_bi.browser as browser                             # noqa: E402
 import chuan_bi.nhin as nhin                                   # noqa: E402
 from tam import so_tam                                         # noqa: E402
-from test_spec_dre import _ve                                  # noqa: E402
 from test_spec_kite import _cover, _statement, _hinh, _m, _chay  # noqa: E402
 
 

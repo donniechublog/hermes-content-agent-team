@@ -397,8 +397,10 @@ def bao_ve_tu_khoa(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int | N
     hãng/sản phẩm (như ảnh khái niệm), không phải bằng chứng của một tin riêng.
     Cùng hạ tầng với `bao_khac_bing`: giải chuyển hướng HTTP, chặn SSRF
     (`quet_chung.url_an_toan`), bỏ trang tổng hợp/`bo_mien`. Ngôn ngữ: chỉ Anh
-    hoặc Trung (LUAT_ANH §1.2d) — `co_tieng_viet` chặn tiếng Việt; tiếng Trung
-    không bị chặn ở đây (không có dấu tiếng Việt để nhận nhầm)."""
+    hoặc Trung (LUAT_ANH §1.2d) — `co_tieng_viet` chặn CẢ từ khoá đầu vào LẪN
+    tiêu đề từng bài Bing trả về (test thật 13/09/2026: query "Anthropic" vẫn
+    lẫn cafebiz.vn/thanhnien.vn nếu chỉ chặn từ khoá); tiếng Trung không bị
+    chặn ở đây (không có dấu tiếng Việt để nhận nhầm)."""
     if co_tieng_viet(tu_khoa):
         print("[nguon_bai] TU CHOI bao_ve_tu_khoa bang tieng Viet", file=sys.stderr)
         return []
@@ -428,6 +430,15 @@ def bao_ve_tu_khoa(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int | N
         # Chi doi bai NOI VE tu khoa (het cac tu cua chinh no co mat), khong
         # doi CUNG MOT su kien nhu `bao_khac_bing` (`cung_tin`/`goc & ...`).
         if not link or not can <= tu_cung_tin(td):
+            continue
+        # `co_tieng_viet(tu_khoa)` o dau ham chi chan TU KHOA dau vao (ten
+        # hang luon la tieng Anh) — KHONG chan duoc bao TIENG VIET Bing tra ve
+        # (vd "Anthropic" van khop tieu de mot bai cafebiz.vn/thanhnien.vn).
+        # Do that 13/09/2026: query "Anthropic" tra ca cafebiz.vn, vietnam.vn,
+        # trithucvn2.net, thanhnien.vn lan vao ket qua. LUAT_ANH §1.2d doi
+        # "chi Anh hoac Trung" cho ca NGUON, khong chi cau hoi — phai loc lai
+        # o day, tren chinh tieu de bai tra ve.
+        if co_tieng_viet(td):
             continue
         try:
             ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
