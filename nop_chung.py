@@ -357,6 +357,52 @@ _DOMAIN = re.compile(
     re.IGNORECASE)
 
 
+def kiem_khong_lap_anh_lam_lai(anh: dict, dung_anh: list, m: dict, drafts_dir) -> list:
+    """LAM LAI mot slide cu the nhung ban moi van la CUNG MOT anh cu, chi doi
+    ten ma (Ong Chu 13/09/2026, Anthropic/Nvidia IPO: bam Lam lai chi ro slide
+    6 hai lan lien, ca hai lan spec moi deu chon lai dung anh cu). Dong "DUNG
+    lap lai anh cu" trong task chi la loi mem — cong nay la loi cung: so theo
+    dHash (khong theo ma anh) cac anh GOC dang dung o tung slide voi danh sach
+    dHash da bi che ghi trong drafts/<id>.img.json (duyet_bai._ghi_cam_anh_lam_lai
+    ghi luc bam nut Lam lai). Chi chan DUNG slide bi Ong Chu neu ten — cac slide
+    khac trong ban lam lai duoc giu nguyen anh cu binh thuong."""
+    draft_id = m.get("draft_id")
+    if not draft_id:
+        return []
+    ip = Path(drafts_dir) / f"{draft_id}.img.json"
+    if not ip.exists():
+        return []
+    try:
+        im = json.loads(ip.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    cam = im.get("cam_anh_slide") or {}
+    if not cam:
+        return []
+    import luat_anh
+    from PIL import Image
+    loi = []
+    for nhan, ma_list in dung_anh:
+        mo = re.search(r"slide (\d+)", nhan)
+        so = "1" if nhan == "bìa" else (mo.group(1) if mo else None)
+        ds = cam.get(so) if so else None
+        if not ds:
+            continue
+        for ma in ma_list:
+            fp = anh.get(ma, {}).get("goc")
+            if not fp:
+                continue
+            try:
+                h = luat_anh.dhash(Image.open(fp).convert("RGB"))
+            except (OSError, ValueError):
+                continue
+            if any(luat_anh.gan_giong(h, int(c, 16)) for c in ds):
+                loi.append(f"{nhan}: {ma} vẫn là ảnh đã bị Ông Chủ từ chối lúc làm lại trước "
+                           "— chọn ảnh THẬT SỰ khác (khác nguồn, khác góc), không chỉ đổi mã")
+                break
+    return loi
+
+
 def kiem_dan_nguon_gon(chu: str, nhan: str) -> list:
     """Dan nguon KHONG duoc co "đọc bài"/"xem bài"... (Ong Chu 13/09/2026: thua,
     carousel da co dau doc bai chinh la cai slide) va KHONG duoc co ten mien

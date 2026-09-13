@@ -255,6 +255,9 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     chu_slide = " ".join(str(x.get(k) or "") for x in [cover] + list(slides)
                          for k in ("hook", "text", "quote", "label", "attrib"))
     canh = nc.kiem_so_tren_anh(chu_slide, m, wd)
+    # LAM LAI mot slide cu the nhung van ra dung anh cu (Ong Chu 13/09/2026) —
+    # dat SAU khi bia + moi slide da giai, luc bo.dung_anh da co du (nhan, ma).
+    loi += nc.kiem_khong_lap_anh_lam_lai(bo.anh, bo.dung_anh, m, DRAFTS)
     return ra, loi, canh, bo.dung_anh
 
 

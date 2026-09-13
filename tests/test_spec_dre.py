@@ -14,6 +14,7 @@ Cong nay bao loi THAY VI ve sai, nen no hong theo hai chieu deu dat:
 
 Chay:  venv/bin/python tests/test_spec_dre.py
 """
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -428,6 +429,54 @@ def test_cung_tin_nhung_vai_khac_thi_khong_chan():
         luat_anh.ghi_da_dung(m["anh"][1]["goc"], "tin-thu-ethan", "ethan", m["link"])
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
+
+
+def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
+    """Ong Chu 13/09/2026 (Anthropic/Nvidia IPO): bam Lam lai chi ro slide, ban
+    moi van la CUNG MOT anh (chi doi ma A3 -> A5, cung file). duyet_bai da chup
+    dHash cua anh bi che vao img.json["cam_anh_slide"]["3"] luc bam nut; cong
+    o day phai chan slide 3 du ma anh doi ten."""
+    import shutil
+    import dre_nop
+    import luat_anh
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _du(t)
+        with tempfile.TemporaryDirectory() as dr:
+            dre_nop.DRAFTS = Path(dr)
+            try:
+                h = luat_anh.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
+                (Path(dr) / f"{m['draft_id']}.img.json").write_text(
+                    json.dumps({"cam_anh_slide": {"3": [format(h, "x")]}}),
+                    encoding="utf-8")
+                # A3 la anh o slide 3; sao chep chinh no thanh "A5" (doi ten
+                # ma, GIU NGUYEN noi dung file) roi dat vao slide 3 thay A3.
+                a5 = next(a for a in m["anh"] if a["ma"] == "A5")
+                shutil.copyfile(m["anh"][1]["goc"], a5["goc"])
+                spec["slides"][1]["anh"] = "A5"
+                _ra, loi, _c, _d = _chay(spec, m, wd)
+                assert _co(loi, "slide 3", "đã bị Ông Chủ từ chối"), loi
+            finally:
+                dre_nop.DRAFTS = dre_nop.ROOT / "drafts"
+
+
+def test_lam_lai_slide_khac_khong_bi_anh_huong():
+    """Cam chi ap cho DUNG slide bi neu — cac slide khac trong ban lam lai van
+    duoc giu anh cu binh thuong, khong bi chan oan."""
+    import dre_nop
+    import luat_anh
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _du(t)
+        with tempfile.TemporaryDirectory() as dr:
+            dre_nop.DRAFTS = Path(dr)
+            try:
+                h = luat_anh.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
+                (Path(dr) / f"{m['draft_id']}.img.json").write_text(
+                    json.dumps({"cam_anh_slide": {"6": [format(h, "x")]}}),
+                    encoding="utf-8")
+                _ra, loi, _c, _d = _chay(spec, m, wd)
+                assert loi == [], loi
+            finally:
+                dre_nop.DRAFTS = dre_nop.ROOT / "drafts"
 
 
 if __name__ == "__main__":
