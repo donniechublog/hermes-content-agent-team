@@ -341,7 +341,10 @@ def kiem_anh_roi(anh: dict, dung: dict, m: dict) -> list:
     Khong cam han: tin it anh thi anh roi van la anh that cua tin, va carousel/
     card tu dat nen chu dac khi buoc dung. Chi chan khi con anh sach CHUA dung
     va CHUA len bai khac (kiem_da_dung) — de vai doi duoc that, khong ket."""
-    roi = [(nhan, ma) for ma, nhan in dung.items() if ma and (anh.get(ma) or {}).get("roi")]
+    # Roi ma DU TU KHOA chinh cua tin (vision TU_KHOA) thi mien — Ong Chu 13/09
+    # chon chinh mot do hoa roi nhu vay lam hero.
+    roi = [(nhan, ma) for ma, nhan in dung.items()
+           if ma and (anh.get(ma) or {}).get("roi") and not (anh.get(ma) or {}).get("du_tu_khoa")]
     if not roi:
         return []
     import luat_anh

@@ -73,7 +73,7 @@ def _hoi_vision(tra_loi, **k):
 # ---------------------------------------------------------------- 1. vision
 def test_vision_hoi_them_dong_roi_va_doc_ra():
     ra, kq, hoi = _hoi_vision("MO_TA: đồ hoạ tin tức nhiều chữ.\nLIEN_QUAN: co\nROI: co")
-    assert "DUNG 3 dong" in hoi and "ROI:" in hoi, hoi
+    assert "DUNG 4 dong" in hoi and "ROI:" in hoi and "TU_KHOA:" in hoi, hoi
     assert ra == ("đồ hoạ tin tức nhiều chữ.", True)       # tuple van 2 phan tu
     assert kq["roi"] is True
 
@@ -83,15 +83,21 @@ def test_vision_anh_sach_la_false():
     assert kq["roi"] is False
 
 
+def test_vision_doc_ra_du_tu_khoa():
+    _ra, kq, _hoi = _hoi_vision("MO_TA: đồ hoạ Nvidia Anthropic $10B IPO.\nLIEN_QUAN: co\n"
+                                "ROI: co\nTỪ_KHOÁ: có")
+    assert kq["roi"] is True and kq["du_tu_khoa"] is True, kq
+
+
 def test_vision_khong_tra_dong_roi_thi_none_khong_doan():
     _ra, kq, _hoi = _hoi_vision("MO_TA: ảnh.\nLIEN_QUAN: co")
-    assert kq["roi"] is None
+    assert kq["roi"] is None and kq["du_tu_khoa"] is None
 
 
 def test_vision_hoi_them_cua_bob_van_ba_phan_tu():
     ra, kq, hoi = _hoi_vision("MO_TA: ảnh.\nLIEN_QUAN: co\nROI: khong\nMOOD: vui",
                               hoi_them="tâm trạng ảnh", nhan_them="MOOD")
-    assert "DUNG 4 dong" in hoi, hoi
+    assert "DUNG 5 dong" in hoi, hoi
     assert ra == ("ảnh.", True, "vui")
     assert kq["roi"] is False
 
@@ -128,6 +134,44 @@ def test_con_anh_sach_chua_dung_thi_chan_anh_roi():
         anh = {"A1": _muc(t, "A1", 1, roi=True), "A2": _muc(t, "A2", 2)}
         loi = nc.kiem_anh_roi(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y"})
     assert loi and "slide 5" in loi[0] and "A2" in loi[0], loi
+
+
+def test_anh_roi_du_tu_khoa_duoc_mien_cong():
+    """Ông Chủ chọn chính đồ hoạ rối "Nvidia Weighs $10B" làm hero vì đủ từ khoá."""
+    import nop_chung as nc
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        anh = {"A1": _muc(t, "A1", 1, roi=True, du_tu_khoa=True), "A2": _muc(t, "A2", 2)}
+        loi = nc.kiem_anh_roi(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y"})
+    assert loi == [], loi
+
+
+def test_phan_loai_roi_du_tu_khoa_giu_bia_va_ghi_chu_sao():
+    def _gia(path, tieu_de, hang="", **k):
+        k["ket_qua"].update({"roi": True, "du_tu_khoa": True})
+        return ("đồ hoạ đủ từ khoá", True)
+
+    with tempfile.TemporaryDirectory() as t:
+        p = _anh_tam(t, tone=(20, 20, 25))
+        a = {"ma": "A1", "goc": str(p)}
+        with mock.patch.object(nhin, "mo_ta_anh", side_effect=_gia), \
+                mock.patch.object(nhin.luat_anh, "dem_mat", return_value=0):
+            nhin.phan_loai(a, Path(t), "Tin gì đó")
+    assert a["du_tu_khoa"] is True
+    assert a["ghi_chu"][0].startswith("⭐"), a["ghi_chu"]
+    assert not a["ghi_chu"][0].startswith("⚠️")
+
+
+def test_dre_nop_do_hoa_roi_chart_lam_bia_duoc():
+    import test_spec_dre as ts
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = ts._du(t)
+        m["anh"][0].update({"loai": "chart", "roi": True, "du_tu_khoa": True})      # A1 la bia
+        ra, loi, _c, _d = ts._chay(spec, m, wd)
+        assert not ts._co(loi, "bìa", "CHART"), loi
+        assert ra["cover"].get("roi") is True and ra["cover"]["image"] == m["anh"][0]["goc"]
+        m["anh"][0]["roi"] = False                                                 # chart that
+        _ra, loi, _c, _d = ts._chay(spec, m, wd)
+        assert ts._co(loi, "bìa", "CHART"), loi
 
 
 def test_het_anh_sach_thi_duoc_dung_anh_roi():

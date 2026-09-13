@@ -520,8 +520,14 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     'MODEL RELEASE' / 'MODEL UPDATE'...) + chip label trang (ten model/hang).
     Ten kenh chi xuat hien tren cac slide than."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    cover = _fit_cover(_open(img_path), W, H).convert("RGB")
-    canvas.paste(cover, (0, 0))
+    if roi:
+        # Anh roi lam bia (LOW-47): KHONG cover-crop — cat hai canh la mat chu
+        # khoa o mep (do that A9: "NVIDIA" cut). Hien NGUYEN be ngang nhu slide
+        # than; nen dac duoi hook tu dat o khoang lang (_nen_dac_duoi_chu).
+        cover = _body_image(canvas, _open(img_path))
+    else:
+        cover = _fit_cover(_open(img_path), W, H).convert("RGB")
+        canvas.paste(cover, (0, 0))
     d = ImageDraw.Draw(canvas)
     # Nhan nho o duoi cung; hook nam ngay tren nhan.
     label = (label or "").strip().upper()          # category -> chip, viet hoa

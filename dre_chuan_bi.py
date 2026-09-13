@@ -107,7 +107,7 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
                   "label": "<TÊN MODEL / HÃNG, VIẾT HOA>"},
         "slides": [
             {"anh": "A?", "text": "<đoạn 1.\\n\\nđoạn 2 — tổng ≤ 240 ký tự>"},
-            {"anh": "A?", "quote": "<câu đắt nhất, DỊCH tiếng Việt, ≤ 150 ký tự>", "attrib": "<Ai nói, hoặc \"theo <tên báo>\" — KHÔNG \"đọc/xem bài\", KHÔNG đuôi tên miền>"},
+            {"anh": "A?", "quote": "<câu đắt nhất, DỊCH tiếng Việt, ≤ 150 ký tự>", "attrib": "<'via <tên báo>', hoặc tên người nói — không 'đọc/xem bài', không đuôi tên miền>"},
             {"ghep": ["A?", "A?"], "text": "<hai ảnh ngang cùng tone xếp dọc>"},
             {"anh": "A?", "nhan_vat": "<tên người trong bài>", "quote": "…", "attrib": "…"},
             {"anh": "A?", "cat_ngang": True, "text": "<chỉ cho ảnh NGANG là người/sản phẩm không chữ>"},
@@ -121,7 +121,8 @@ def viet_brief(m: dict, da_dung: dict | None) -> str:
              "chỗ đọc rồi), KHÔNG đuôi tên miền (.com/.net/...) — nền tảng quét thành liên kết, "
              "giảm hiển thị cả bài; chỉ \"via <tên báo>\" hoặc tên người nói. Ảnh ⚠️ RỐI (chữ in "
              "sẵn, đồ hoạ nhồi, cắt ghép) chỉ dùng khi HẾT ảnh sạch — cổng chặn bắt đổi nếu còn "
-             "ảnh sạch chưa dùng. Bỏ các slide mẫu không dùng — khung trên chỉ minh hoạ cú pháp.")
+             "ảnh sạch chưa dùng; ảnh ⭐ RỐI NHƯNG ĐỦ TỪ KHOÁ thì dùng thoải mái, hợp làm bìa. "
+             "Bỏ các slide mẫu không dùng — khung trên chỉ minh hoạ cú pháp.")
     L.append("Khung kể: bìa HOOK (nghịch lý/con số) → chuyện gì vừa xảy ra → con số gây sốc → "
              "ý nghĩa thật → đối thủ/diễn biến → cái cần theo dõi (không chốt cụt).")
     L.append("")

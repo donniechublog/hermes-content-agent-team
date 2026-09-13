@@ -783,6 +783,13 @@ cho nghiêm chỉnh, đừng nham nhở"*.
 - **Không ưu tiên:** ảnh rối không bao giờ là bìa. Làm thân chỉ khi **hết ảnh
   sạch** — `nop_chung.kiem_anh_roi` chặn Dre và Ethan nếu còn ảnh sạch dùng
   một mình được mà chưa dùng, chưa lên bài khác.
+- **Rối nhưng đủ từ khoá thì được, và hợp làm bìa.** Ông Chủ cùng ngày, về
+  chính đồ hoạ "Nvidia Weighs $10B...": *"ảnh này xứng đáng làm hero, thể hiện
+  được đầy đủ mọi từ khoá quan trọng"*. Vision trả thêm dòng `TU_KHOA` (đọc ra
+  đủ tên các hãng/nhân vật chính VÀ con số/sự kiện chính) → manifest
+  `du_tu_khoa`; ảnh rối có cờ này được miễn `kiem_anh_roi`, được làm bìa (kể cả
+  khi đo ra là chart), và bìa hiện **nguyên bề ngang** như slide thân —
+  cover-crop cắt hai mép là mất chữ khoá ở mép.
 - **Buộc dùng thì nền chữ đặc**, không phải lớp mờ 55% như mặc định: chữ in sẵn
   trong ảnh vẫn lộ lem nhem qua lớp mờ. Carousel `_nen_dac_duoi_chu`, thẻ
   Ethan `_nen_chu_nghiem`: nền đặc bắt đầu ở **khoảng lặng gần nhất phía trên
