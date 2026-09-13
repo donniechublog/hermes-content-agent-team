@@ -52,6 +52,7 @@ def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
                    return_value=[{"hang": "HangA", "khoa": "hanga"},
                                  {"hang": "HangB", "khoa": "hangb"}]), \
          mock.patch("anh_thuong_hieu.anh_hang", side_effect=anh_hang_gia), \
+         mock.patch.object(vong_bu, "_bao_thuong_hieu_rong", return_value=[]), \
          mock.patch.object(vong_bu, "tai_va_loc", side_effect=tai_va_loc_gia):
         vong_bu._vong_thuong_hieu([], "Qualcomm partners with HangB on chips", "", Path(d))
 

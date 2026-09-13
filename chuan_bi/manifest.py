@@ -99,10 +99,10 @@ def ghep_hai_hang(anh: list, category) -> list:
 
 
 def cap_ghep(anh: list) -> list:
-    """Cac cap anh NGANG ghep doc duoc: cung tone (luat_anh.lech_tone) va ti le
-    sau ghep nam trong dai carousel chap nhan."""
+    """Cac cap anh NGANG ghep doc duoc: ti le sau ghep nam trong dai carousel
+    chap nhan. (13/09/2026: bo dieu kien "cung tone" — luat_anh.lech_tone
+    khong con la cam doan ve chat luong/nguon, moi vai.)"""
     ngang = [a for a in anh if a["ti_le"] >= 1.3]
-    ims = {a["ma"]: Image.open(a["goc"]).convert("RGB") for a in ngang}
     ra = []
     for i in range(len(ngang)):
         for j in range(i + 1, len(ngang)):
@@ -110,8 +110,6 @@ def cap_ghep(anh: list) -> list:
             rc = 1 / (1 / x["ti_le"] + 1 / y["ti_le"])
             if not (luat_anh.TI_LE_45 - luat_anh.DUNG_SAI_TI_LE <= rc
                     <= luat_anh.TI_LE_11 + luat_anh.DUNG_SAI_TI_LE):
-                continue
-            if luat_anh.lech_tone([ims[x["ma"]], ims[y["ma"]]]):
                 continue
             ra.append([x["ma"], y["ma"]])
     return ra

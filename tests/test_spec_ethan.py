@@ -120,14 +120,17 @@ def test_chart_di_mot_minh_thi_doi_anh2():
         assert _co(loi, "C1", "CHART", "anh2"), loi
 
 
-def test_anh_ngang_qua_nguong_thi_doi_anh2():
+def test_anh_ngang_qua_nguong_khong_con_bi_ep_doi_anh2():
+    """13/09/2026: bỏ điều kiện "ảnh quá ngang phải ghép" (tương đương
+    `luat_anh.kiem_anh_thap`, đã bỏ khỏi hệ thống, mọi vai) — ảnh ngang dù vượt
+    ngưỡng cũ vẫn được đứng một mình, không còn bị ép thêm "anh2"."""
     import ethan_chuan_bi as eb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "A1", 1000, 1250), _anh(wd, "N1", 1920, 1080)]
         assert 1920 / 1080 > eb.TI_LE_HERO_MAX
         _kq, loi, _c = _chay(_spec("N1"), _m(wd, anh), wd)
-        assert _co(loi, "N1", "NGANG", "anh2"), loi
+        assert loi == [], loi
 
 
 def test_anh_ngang_duoi_nguong_thi_di_mot_minh_duoc():
@@ -149,14 +152,15 @@ def test_ghep_hai_anh_ngang_hop_le():
         assert kq["anh2"]["ma"] == "N2"
 
 
-def test_ghep_van_qua_ngang_thi_bao():
-    """Hai anh 16:9 ghep doc ra ~0.89 — duoc. Hai anh 3:1 ghep doc ra 1.5 —
-    van qua nguong 1.6? Khong: 1/(1/3+1/3)=1.5. Dung 4:1 -> 2.0 > 1.6."""
+def test_ghep_qua_ngang_khong_con_bi_chan():
+    """Ông Chủ 13/09/2026: bỏ `kiem_anh_thap` khỏi hệ thống, mọi vai — ghép hai
+    ảnh cực ngang (4:1 mỗi ảnh, ghép ra 2.0, trước đây > ngưỡng 1.6 nên bị
+    chặn) giờ không còn báo lỗi nào về việc này."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "N1", 4000, 1000), _anh(wd, "N2", 4000, 1000)]
         _kq, loi, _c = _chay(_spec("N1", anh2="N2"), _m(wd, anh), wd)
-        assert _co(loi, "vẫn quá ngang"), loi
+        assert not _co(loi, "quá ngang"), loi
 
 
 def test_ghep_doc_chi_cho_hai_anh_ngang():

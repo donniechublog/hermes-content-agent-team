@@ -39,10 +39,13 @@ def test_tin_an_ninh_mang_that_van_ra_dung_ro():
         assert "server room cables" in _tk(tieu_de), tieu_de
 
 
-def test_tin_toan_hoc_thuan_khong_ra_tu_khoa_nao():
-    """Không có từ khoá còn hơn có từ khoá sai: rỗng thì vòng khái niệm thoát
-    ngay và nấc chụp trang nguồn (LOW-22) lo phần ảnh."""
-    assert _tk(TIN_TOAN, "The Erdos problems are a lighthouse for deeper understanding") == []
+def test_tin_toan_hoc_ra_bang_den_khong_ra_phong_may():
+    """Trước 12/09 test này đòi RỖNG ("không từ khoá còn hơn từ khoá sai"). Ông
+    Chủ xem bìa toán toàn chữ: "hoàn toàn có thể dùng hình bảng đen công thức
+    làm hero, thiếu idea đến thế à?" — nên tin toán phải ra bảng đen, và vẫn
+    KHÔNG được ra phòng máy."""
+    tk = _tk(TIN_TOAN, "The Erdos problems are a lighthouse for deeper understanding")
+    assert tk == ["blackboard mathematical formulas"], tk
 
 
 def test_cau_hoi_vision_hoi_ca_TU_KHOA_CO_HOP_BAI():
@@ -65,6 +68,49 @@ def test_cau_hoi_vision_hoi_ca_NHIN_RA_VAT_CHINH():
     assert "roi/chat chung khong nhan ra vat gi" in c, c
     # Khong duoc bien thanh thang tham my: phai noi ro khong can dep.
     assert "khong can dep" in c, c
+
+def test_prompt_llm_khong_lay_vat_nganh_AI_lam_vi_du():
+    """Đo trên máy chủ 12/09/2026: tin TOÁN HỌC ra từ khoá "server racks data
+    center" chỉ vì prompt lấy "server racks" làm ví dụ. Ví dụ không được là một
+    vật của ngành AI, không thì mọi tin AI đều bị kéo về phòng máy."""
+    import inspect
+    src = inspect.getsource(k.tu_khoa_llm)
+    assert "server racks, a product" not in src, "vi du 'server racks' con trong prompt"
+    # Bo vi du chua du: do 12/09 lan 2, model VAN de "computer server rack" cho tin
+    # toan. Prompt phai CAM THANG phan cung nganh AI trong khi tin khong noi ve no.
+    assert "do NOT suggest AI-industry hardware" in src and "server racks, data center, GPU" in src
+
+
+def test_minh_hoa_bien_tap_duoc_dung_nhu_anh_chup():
+    """Ông Chủ 12/09/2026: "ảnh illustration cũng chả sao cả, The Economist còn
+    dùng". LUAT_ANH §0 cấm TỰ VẼ, không cấm DÙNG minh hoạ có sẵn. Bộ lọc tên tệp
+    và câu hỏi con mắt không được gạt illustration/drawing; icon/clipart/sơ đồ
+    vẫn gạt."""
+    for ten in ("Mathematics illustration.jpg", "Drawing of a classroom.jpg", "Poster of geometry.jpg"):
+        assert not k.TEN_LOAI.search(ten.lower()), ten
+    for ten in ("Math icon.svg", "Clipart abacus.png", "Diagram of proof.png", "Bar chart.png"):
+        assert k.TEN_LOAI.search(ten.lower()), ten
+    c = k.cau_hoi_vision(TIN_TOAN, "blackboard mathematical formulas")
+    assert "minh hoa bien tap" in c and "anh CHUP THAT" not in c, c
+
+
+def test_cau_hoi_vision_theo_loai_khong_xet_hop_bai():
+    """Từ khoá do LOẠI TIN ép (cờ nước của hãng cho tin LAB) — con mắt không được
+    tự phán "cờ thì liên quan gì xác minh tuổi". Đo trên máy chủ 12/09: cờ Mỹ bị
+    từ chối cho tin Anthropic dù bảng loại tin (Ông Chủ) coi cờ là vật liên quan."""
+    c = k.cau_hoi_vision("Claude is only for people over 18", "flag of United States", theo_loai=True)
+    assert "do LOAI TIN quy dinh" in c and "KHONG xet no co hop bai" in c, c
+    c0 = k.cau_hoi_vision("Claude is only for people over 18", "flag of United States")
+    assert "do LOAI TIN quy dinh" not in c0
+
+
+def test_loc_commons_tu_khoa_dai_mot_tu_khop_la_du():
+    """"mathematics blackboard equations" (3 từ) hiếm khi có 2 từ cùng trong tên
+    tệp — đo 12/09: 0 ảnh cho cả hai từ khoá toán. Từ khoá ≥3 từ: 1 từ khớp đủ."""
+    pg = {"1": {"title": "File:Blackboard with proof.jpg",
+                "imageinfo": [{"width": 2000, "height": 1500, "mime": "image/jpeg", "thumburl": "u"}]}}
+    assert k.loc_commons(pg, "mathematics blackboard equations"), "phai nhan khi 1/3 tu khop"
+    assert not k.loc_commons(pg, "data center racks"), "tu khoa ngan van doi 2 tu"
 
 
 if __name__ == "__main__":

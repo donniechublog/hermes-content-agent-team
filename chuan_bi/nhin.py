@@ -26,10 +26,23 @@ VISION_URL = env_load.ROUTER_URL
 
 
 def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
-              nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None) -> tuple:
+              nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None,
+              khai_niem_theo_loai: bool = False, chup_nguon: bool = False) -> tuple:
     """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
-    theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu khong goi
-    duoc (router tat, thieu key): luc do brief noi ro la CHUA ai nhin.
+    theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu KHONG HOI
+    DUOC (thieu key, router hong ca hai lan thu lai cua `_goi_router`): luc do
+    brief noi ro la CHUA ai nhin, dung y nhu tu truoc.
+
+    Ong Chu 12/09/2026, dong CONG FAIL-OPEN: truoc day router TRA LOI duoc
+    nhung dong LIEN_QUAN khong doc ra duoc (model lech dinh dang) cung thanh
+    None — ma moi noi loc `dung_duoc` deu viet `lien_quan is not False`, tuc
+    None DUOC COI LA DUYET. Do that 12/09 tren may chu: anh Tesla (Terafab) va
+    logo Anthropic (truoc khi sua ca thanh cong 32 diem) deu lot bia qua duong
+    nay — router CO tra loi, chi la khong parse duoc. Phan biet ro hai ca:
+      - KHONG HOI DUOC (thieu key / het luot thu 429-5xx / loi mang) -> giu
+        nguyen None, KHONG hoi lai o day (da co backoff rieng o _goi_router).
+      - HOI DUOC nhung khong doc ra LIEN_QUAN -> HOI LAI DUNG 1 LAN; van khong
+        doc ra thi COI LA ROT (lqv=False), khong con la None nua.
 
     Do 05/09/2026 tren bo Broadcom: widget linh kien / bang Fear&Greed / logo bao /
     nguoi dan ong G20 -> khong; ~2s moi anh. Khong heuristic nao bat duoc "widget
@@ -43,7 +56,18 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
 
     `khai_niem` (07/09/2026): anh tim theo tu khoa (co, datacenter) chu khong phai
     anh cua tin — hoi cau khac (anh_khai_niem.cau_hoi_vision), khong hoi "co phai
-    anh cua tin" vi chac chan khong, va khong ap override "ten hang trong mo ta"."""
+    anh cua tin" vi chac chan khong, va khong ap override "ten hang trong mo ta".
+
+    `chup_nguon` (LOW-45, 12/09/2026): anh hero CHUP TU CHINH TRANG NGUON
+    (`vong_bu._vong_chup_nguon`) — LA anh cua tin, cau hoi khong hoi lai "co
+    lien quan khong" nua (chac chan co, tu DOM cua chinh bai), CHI hoi CHAT
+    LUONG (ro net, khong phai anh bao chup lai mot man hinh khac). Truoc ticket
+    nay nhanh `_vong_chup_nguon` bo qua vision HOAN TOAN, ep `lien_quan = True`
+    thang — do that 12/09: anh hero that cua bai Moonshot/Kimi K3 la mot anh
+    bao Getty chup nghieng man hinh App Store, van bi ep True du xau, roi
+    tam ngang do LAI bi mot vong khac (`_lay_anh_trang`, da chan o LOW-45 phan
+    1) chup lai lan nua thanh mot tam khac — ca hai deu khong qua cong chat
+    luong nao. Nhanh nay dong no lai."""
     import base64, json as _j, urllib.request
     # env_load.bat_buoc nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
@@ -55,17 +79,40 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         print("[vision] thieu OPENAI_API_KEY -> khong nhin duoc anh, brief se ghi CHUA AI NHIN",
               file=sys.stderr)
         return ("", None, "") if (hoi_them and nhan_them) else ("", None)
-    try:
+
+    def _mot_lan():
+        """Mot lan hoi + parse. Nem exception khi KHONG HOI DUOC (mang/router/
+        JSON hong); tra (mo_ta, lien_quan, them) khi hoi duoc — lien_quan van
+        co the None o day, nghia la HOI DUOC nhung khong doc ra LIEN_QUAN."""
         b64 = base64.b64encode(Path(path).read_bytes()).decode()
+        # Dieu kien RO NET (LOW-45, 12/09/2026, Ong Chu: "chi can dung lay anh
+        # xau"): truoc day cau hoi mac dinh (duong "anh rieng cua tin", pho bien
+        # nhat) chi hoi "co lien quan bai khong", KHONG hoi ve do net/goc chup —
+        # khac han hai nhanh khai_niem/thuong_hieu ben duoi da co san cum "qua
+        # mo" tu lau. Anh bao chup nghieng mot man hinh (vd App Store cua Kimi
+        # K3, do that tren dcgr) lot qua de dang vi dung chu de nhung mo/nghieng
+        # — them dung mot dieu kien nhu hai nhanh kia, khong mo cau hoi rieng.
         hoi = (f"Bai bao: \"{tieu_de}\"." + (f" Cong ty/san pham chinh: {hang}." if hang else "")
                + "\nTra loi DUNG 2 dong:\n"
                "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
-               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai; khong = quang cao, "
-               "widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/chu de khac)")
-        if khai_niem:
+               "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; "
+               "khong = quang cao, widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/"
+               f"chu de khac, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
+        if chup_nguon:
+            # LA anh cua tin (tu chinh DOM cua bai) — khong hoi lai "co lien
+            # quan khong", CHI hoi CHAT LUONG. Tach khoi nhanh mac dinh o tren
+            # vi cau do con hoi ca "co dung chu de" — cau hoi thua, va vo tinh
+            # cho phep mot cau tra loi "khong" vi LY DO CHU DE (hiem gap that
+            # nhung ve mat logic van sai) lam rot mot anh chac chan la hero.
+            hoi = (f"Day la ANH HERO cua chinh bai bao: \"{tieu_de}\" — CHAC CHAN la anh cua tin, "
+                   "khong hoi 'co lien quan khong'.\nTra loi DUNG 2 dong:\n"
+                   "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
+                   "LIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; "
+                   f"khong = mo/nhoe, {luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH})")
+        elif khai_niem:
             import anh_khai_niem
-            hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem)
+            hoi = anh_khai_niem.cau_hoi_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)
         elif thuong_hieu:
             # Cau chung hoi "co phai anh CUA TIN khong" — chan dung nha sang lap
             # va the logo chac chan khong phai, nen bi danh rot dung luc ta can
@@ -99,19 +146,46 @@ def mo_ta_anh(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                               r"headquarters|office|building|product|device|event", re.I)
         KHONG = re.compile(r"m[aà]n h[iì]nh|giao di[eệ]n|c[uử]a s[oổ]|driver|ph[aầ]n m[eề]m|screenshot|"
                            r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
-        if khai_niem or thuong_hieu:
+        if khai_niem or thuong_hieu or chup_nguon:
             pass                                   # tin cau tra loi, khong override theo ten hang
         elif hang and lqv is False and hang.lower() in mt.lower() and BOI_CANH.search(mt) and not KHONG.search(mt):
             lqv = True
         elif lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt):
             lqv = False
+        them = ""
         if hoi_them and nhan_them:
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
-            return mt, lqv, (t.group(1).strip()[:120] if t else "")
-        return mt, lqv
+            them = t.group(1).strip()[:120] if t else ""
+        return mt, lqv, them
+
+    try:
+        mt, lqv, them = _mot_lan()
     except Exception as e:                                   # noqa: BLE001
         print(f"[vision] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return ("", None, "") if (hoi_them and nhan_them) else ("", None)
+
+    if lqv is None:
+        # HOI DUOC (khong nem o tren) nhung khong doc ra LIEN_QUAN — hoi lai
+        # DUNG MOT LAN truoc khi ket luan. Loi lan 2 (mang/router) van la
+        # "khong hoi duoc", khong phai co so de ROT — nhung da co MOT cau tra
+        # loi that (lan 1) ma van khong parse duoc lan nao thi khong the tiep
+        # tuc coi la "chua ai nhin": dong lai thanh ROT.
+        print(f"[vision] {Path(path).name}: khong doc duoc LIEN_QUAN, hoi lai 1 lan", file=sys.stderr)
+        try:
+            mt2, lqv2, them2 = _mot_lan()
+        except Exception as e:                               # noqa: BLE001
+            print(f"[vision] {Path(path).name}: lan 2 hong: {type(e).__name__}: {e!r}", file=sys.stderr)
+            mt2, lqv2, them2 = mt, None, them
+        if lqv2 is None:
+            print(f"[vision] {Path(path).name}: van khong doc duoc sau 2 lan hoi -> COI LA ROT "
+                  "(khong con fail-open)", file=sys.stderr)
+            mt, lqv, them = (mt2 or mt), False, (them2 or them)
+        else:
+            mt, lqv, them = mt2, lqv2, them2
+
+    if hoi_them and nhan_them:
+        return mt, lqv, them
+    return mt, lqv
 
 
 # Ma HTTP dang thu lai: router qua tai / gateway. 401/400 thi khong (thu lai vo ich).
@@ -156,8 +230,11 @@ def _phan_loai_an_toan(a: dict, wd: Path, tieu_de: str) -> dict:
         return a
 
 
-def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
-    """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can."""
+def phan_loai(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> dict:
+    """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can.
+
+    `chup_nguon` (LOW-45): anh hero chup tu chinh trang nguon — xem
+    `mo_ta_anh(..., chup_nguon=True)`."""
     img = Image.open(a["goc"]).convert("RGB")
     w, h = img.size
     r = w / h
@@ -169,13 +246,17 @@ def phan_loai(a: dict, wd: Path, tieu_de: str = "") -> dict:
     if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_theo_hinh(img)):
         la_ct, mo_ta = True, mo_ta + "; nen trang + canh day / alt-tag chart"
     kn = (a.get("khai_niem") or {}).get("tu_khoa", "")
+    # Tu khoa do LOAI TIN ep (loai_tin.py) thi con mat khong duoc tu phan "hop bai".
+    kn_theo_loai = (a.get("khai_niem") or {}).get("ly_do", "") == "theo loại tin"
     # Hang de con mat doi chieu: voi anh THUONG HIEU la hang cua chinh tam anh do,
     # khong phai ten rieng dau tieu de. Tin "Qualcomm ... with Amazon" ma dua
     # "Qualcomm" cho mot tam tru so Amazon thi chot "ten hang trong mo ta" khong
     # bao gio nay, anh that cua Amazon bi vision danh rot (09/09/2026).
     hang = (a.get("thuong_hieu") or {}).get("hang") or _ten_rieng_dau(tieu_de)
     a["mo_ta"], a["lien_quan"] = (mo_ta_anh(a["goc"], tieu_de, hang, khai_niem=kn,
-                                            thuong_hieu=a.get("thuong_hieu"))
+                                            khai_niem_theo_loai=kn_theo_loai,
+                                            thuong_hieu=a.get("thuong_hieu"),
+                                            chup_nguon=chup_nguon)
                                   if tieu_de else ("", None))
     # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
     # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua

@@ -18,9 +18,21 @@ from chuan_bi.nhin import phan_loai
 from chuan_bi.tai_loc import tai_va_loc
 
 
+TOI_DA_NGUON_BAI = 6           # tran nguon bai gop (Google News + Bing News) truoc khi chup
+
 def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> list:
-    """Tieu de tieng Anh (mot fetch) va, khi bo nguon mong, them bao tu Bing —
-    lam TRUOC khi mo browser de browser ghe luon cac trang do. Tra `trang`."""
+    """Tieu de tieng Anh (mot fetch) va, khi con MONG hon `TOI_DA_NGUON_BAI`, them
+    bao tu Bing — lam TRUOC khi mo browser de browser ghe luon cac trang do. Tra
+    `trang`.
+
+    Ong Chu 13/09/2026: "cần kết hợp với bing news, vì thường những chủ đề nóng
+    có rất nhiều tạp chí đưa tin, chỉ cần lấy hình từ các article đó ra, mỗi tạp
+    chí một hình cũng dư material" — truoc day nguong la `< 3` (chi bu khi CON
+    THIEU), qua thap voi tin nong: Google News thuong da co san 2-3 bao la dung
+    nguong, Bing khong bao gio duoc hoi them dai co the CO NHIEU tap chi hon,
+    va `_vong_chup_nguon` (LOW-45) chi thu duoc bao nhieu trang thi `trang` co
+    bay nhieu. Nang nguong + so luong hoi Bing de co NHIEU tap chi hon lam vat
+    lieu, khong chi bu cho du."""
     # Tieu de TIENG ANH cua bai that (tin Vera/Nova mang tieu de tieng Viet):
     # mot fetch httpx; khong ra thi browser lay og:title sau.
     if not nguon.get("tieu_de_en"):
@@ -29,11 +41,11 @@ def _bo_sung_nguon(nguon: dict, nguon_path: Path, trang: list, link: str) -> lis
     # Bo nguon mong -> Bing News RSS bang tieu de tieng Anh (link chuyen huong HTTP
     # thuong, khong can browser). Lam TRUOC khi mo browser de browser ghe luon
     # cac trang bao nay lay anh. Ghi vao nguon json de tu_lieu (Miles) cung dung.
-    if len(trang) < 3 and nguon.get("tieu_de_en"):
+    if len(trang) < TOI_DA_NGUON_BAI and nguon.get("tieu_de_en"):
         import nguon_bai
         co = {t.get("url") for t in trang}
         mien_co = {_mien(t.get("url", "")) for t in trang}
-        them = nguon_bai.bao_khac_bing(nguon["tieu_de_en"], so=4, bo_mien=tuple(mien_co))
+        them = nguon_bai.bao_khac_bing(nguon["tieu_de_en"], so=TOI_DA_NGUON_BAI, bo_mien=tuple(mien_co))
         for t in them:
             if t["url"] not in co:
                 nguon["trang"].append(t)
@@ -329,6 +341,38 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
                             "site": kq["site"], "bang": kq["bang"], "tu_khoa": kq["model"]}}
 
 
+def _bao_thuong_hieu_rong(h: dict, wd: Path, phien=None) -> list:
+    """Tìm BÁO THẬT theo tên hãng qua `nguon_bai.bao_ve_tu_khoa` (không đòi
+    "cùng một sự kiện" như `bao_khac_bing`, KHÔNG giới hạn thời gian) rồi quét
+    ảnh như `_vong_tim_rong` (`browser_pass`, đã sửa LOW-45 phần 1 nên không
+    còn vớ nhầm `<figure>` là chart).
+
+    Nguyên tắc nguồn chốt 13/09/2026 (LUAT_ANH §1.2d): CHẠY LUÔN cho mọi hãng
+    tin nhắc tới, SONG SONG với Commons/Wikidata — không còn là phương án cuối
+    khi Commons rỗng. "Không có bất kỳ cấm đoán nào về nguồn" ngoài ba điều đã
+    ghi (không giới hạn thời gian/sự kiện, không giới hạn định dạng miễn rõ
+    nét, chỉ tiếng Anh/Trung); Commons chỉ còn là MỘT trong nhiều nguồn, không
+    còn được hỏi trước/độc quyền. Đo thật: Moonshot AI (QID Wikidata trống,
+    0 ảnh) → tìm "Moonshot AI" ra báo thật, quét ra ảnh minh hoạ/logo dùng được.
+
+    Gắn `thuong_hieu` cho từng ứng viên để đi qua đúng câu hỏi con mắt và điểm
+    theo loại tin như ảnh Commons/Wikidata. Không mạng/router → []."""
+    import nguon_bai
+    bao = nguon_bai.bao_ve_tu_khoa(h["hang"], so=4)
+    if not bao:
+        print(f"[thuong hieu] {h['khoa']}: khong tim duoc bao ve \"{h['hang']}\"", file=sys.stderr)
+        return []
+    print(f"[thuong hieu] {h['khoa']}: Commons/Wikidata rong, thu {len(bao)} bao "
+          f"({', '.join(_mien(b['url']) for b in bao)})", file=sys.stderr)
+    bp = browser_pass([{"url": b["url"], "loai": "báo"} for b in bao], wd, tim_them=False, phien=phien)
+    ra = []
+    for c in bp["cands"]:
+        c["thuong_hieu"] = {"hang": h["hang"], "khoa": h["khoa"], "loai": "anh",
+                            "tu_khoa": f"báo về {h['hang']}"}
+        ra.append(c)
+    return ra
+
+
 def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                       toi_thieu: int = 5, khong_browser: bool = False, phien=None,
                       category: str = "") -> tuple:
@@ -357,7 +401,16 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     import loai_tin
     cands = []
     for h in hangs:
-        cands += th.anh_hang(h, wd=wd4 / h["khoa"])
+        cands_h = th.anh_hang(h, wd=wd4 / h["khoa"])
+        if not khong_browser:
+            # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
+            # Wikidata — khong con doi Commons rong moi chay (Ong Chu
+            # 13/09/2026, chot nguyen tac nguon o LUAT_ANH §1.2d: "ngoai
+            # nguyen tac [khong gioi han thoi gian/su kien/nguon, chi tieng
+            # Anh-Trung], khong co bat ky cam doan nao ve nguon anh" — Commons
+            # chi con la MOT nguon, khong con doc quyen/duoc hoi truoc).
+            cands_h = cands_h + _bao_thuong_hieu_rong(h, wd4 / h["khoa"], phien=phien)
+        cands += cands_h
         # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
         if loai_tin.muon(category, "co_phieu") and not khong_browser:
             cands += th.anh_co_phieu(h, wd4 / h["khoa"], phien=phien)
@@ -411,7 +464,13 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     return anh, dung_duoc, chua_nhin
 
 
-TOI_DA_TRANG_CHUP = 3          # thu toi da 3 trang: bai goc roi hai bao khac
+TOI_DA_TRANG_CHUP = 6          # thu toi da 6 trang (Ong Chu 13/09/2026: "nhiều tạp
+# chí đưa tin, mỗi tạp chí một hình cũng dư material") — bai goc + toi da 5 bao
+# khac (`_bo_sung_nguon` da gop Google News + Bing len TOI_DA_NGUON_BAI=6 trang).
+# Vong nay THU HET (LOW-45), khong dung o trang dau qua cong, nen tran cao hon
+# cham vao thoi gian chay that: moi trang la 1 Playwright screenshot + toi da
+# 2 luot hoi vision (~5-10s) — chap nhan duoc vi vong nay chi chay khi tin con
+# thieu anh, khong phai moi tin.
 
 
 def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
@@ -427,8 +486,16 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
     chi song trong `xep_hang.py` (trang bang xep hang), khong ai bac sang duong
     anh cua tin thuong.
 
-    Mot vong, toi da `TOI_DA_TRANG_CHUP` trang, lay tam DAU TIEN chup duoc.
-    Tra (anh, dung_duoc, chua_nhin)."""
+    Mot vong, toi da `TOI_DA_TRANG_CHUP` trang — THU HET, khong dung o trang
+    DAU TIEN qua duoc cong nua (LOW-45, Ong Chu 13/09/2026: do that ca Moonshot/
+    Kimi K3, TechCrunch rot chat luong nhung trang thu hai qua cong ngay la mot
+    anh minh hoa chung chung, trong khi cac trang con lai trong `trang` — bao
+    khac cung tin, LOW-33 — rat co the co anh that cua nguoi sang lap ma vong cu
+    CHUA BAO GIO thu toi vi da dung o trang thu hai). Sau khi thu het, chon BIA
+    la ung vien qua cong DAU TIEN theo thu tu ma KHONG CO MAT NGUOI — anh co mat
+    van qua cong nhung khong len duoc bia (LUAT_ANH §6 doi khai "nhan_vat" ma
+    Kite chua co truong do), giu lam `than` thay vi bo phi. Tra (anh, dung_duoc,
+    chua_nhin)."""
     def _ra():
         return anh, [a for a in anh if a["dung"] and a.get("lien_quan") is not False], \
             [a["ma"] for a in anh if a.get("lien_quan") is None]
@@ -466,28 +533,86 @@ def _vong_chup_nguon(anh: list, link: str, trang: list, wd: Path,
         moi.parent.mkdir(parents=True, exist_ok=True)
         Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
-        # tieu_de rong = KHONG hoi vision, dung nhu anh xep hang: day la trang
-        # cua CHINH tin, "co lien quan bai khong" thi khong phai cau hoi.
-        a = phan_loai(a, wd, "")
-        a["lien_quan"] = True
-        a["mo_ta"] = "ảnh hero của chính bài gốc, chụp ở khung điện thoại"
+        # Hoi CHAT LUONG, khong hoi lai "co lien quan" (LOW-45, 12/09/2026):
+        # truoc day tieu_de rong = KHONG hoi vision, ep thang lien_quan=True vi
+        # "day la trang cua CHINH tin". Dung ve TOPIC, nhung bo qua het CHAT
+        # LUONG — do that 12/09: anh hero that cua bai Moonshot/Kimi K3 la mot
+        # anh bao Getty chup nghieng man hinh App Store, van len bia du xau.
+        # `chup_nguon=True` doi mo_ta_anh hoi CAU RIENG (chi chat luong, xem
+        # docstring), khong dung cau mac dinh (se hoi lai ca "co dung chu de"
+        # — thua, va co the rot vi ly do sai). Rong tieu_de (hiem, ca xep_hang
+        # cu) van skip vision nhu cu.
+        a = phan_loai(a, wd, tieu_de, chup_nguon=True) if tieu_de else phan_loai(a, wd, "")
+        if a.get("lien_quan") is None:
+            a["lien_quan"] = True          # khong hoi duoc (rong/router hong) -> giu y cu, khong chan oan
+        a["mo_ta"] = a.get("mo_ta") or "ảnh hero của chính bài gốc, chụp ở khung điện thoại"
         # `phan_loai` doc mot anh chup trang la "chart/screenshot" (nen trang,
         # nhieu chu) roi dan nhan KHONG LAM BIA — dung cho chart cua nguoi khac,
         # sai cho tam nay: Ong Chu 12/09/2026 chot "cat lay khoi lead roi lam
         # bia". Mo lai dung bia, TRU khi co mat nguoi: cong mat (LUAT_ANH §6)
         # doi khai `nhan_vat`, ma spec cua Kite khong co truong do.
         a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG làm bìa" not in g]
-        if not a.get("mat"):
-            a["dung"] = ["bìa (ảnh hero của chính bài gốc)", "thân"]
+        # KHOI TIT (trang khong co anh hero) la NAC CUOI, sau khai niem (Ong Chu
+        # 12/09/2026 xem bia toan chu-de-chu: "thieu idea den the a?"). Giu anh
+        # trong `anh` nhung KHONG tinh la dung duoc; `nang_khoi_tit` mo lai lam
+        # bia chi khi khai niem cung rong.
+        if a.get("kieu") == "tit":
+            a["dung"] = []
+            a["ghi_chu"].insert(0, "📰 KHỐI TÍT CHỤP TỪ TRANG NGUỒN (trang không có ảnh hero) — "
+                                   "chỉ làm bìa khi không còn ảnh nào khác")
+            anh.append(a)
+            print(f"[chup nguon] {a['ma']} <- {a['mien']} khoi tit ({a['w']}x{a['h']}), de dau",
+                  file=sys.stderr)
+            break
         a["ghi_chu"].insert(0, "📰 ẢNH HERO CHỤP TỪ TRANG NGUỒN — ảnh chính của bài trên "
                                f"{a['mien']}, chụp ở khung điện thoại; caption ghi "
                                f"\"… · via {a['mien']}\"")
         anh.append(a)
-        print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']})", file=sys.stderr)
-        break
-    else:
+        # ROT chat luong (LOW-45) hoac CO MAT NGUOI (LUAT_ANH §6, xem duoi) deu
+        # KHONG dung lai o day: THU HET moi URL (khong dung o trang DAU TIEN qua
+        # cong nua, LOW-45 phan 2) roi moi chon anh nao len BIA sau vong lap —
+        # giu chua tam nay lai, gan tam "than" tam thoi, roi quyet dinh that o
+        # duoi khi da biet toan bo ung vien.
+        a["dung"] = [] if a.get("lien_quan") is False else ["thân"]
+        if a.get("lien_quan") is False:
+            print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']}) RỚT chất lượng "
+                  f"({a.get('mo_ta', '')[:60]!r}), thử URL khác", file=sys.stderr)
+        else:
+            print(f"[chup nguon] {a['ma']} <- {a['mien']} ({a['w']}x{a['h']}) qua cổng"
+                  + (", CÓ mặt người" if a.get("mat") else "") + ", thử thêm để so ảnh",
+                  file=sys.stderr)
+    # CHON BIA sau khi da thu HET cac URL (LOW-45, Ong Chu 13/09/2026): trong so
+    # cac ung vien QUA CONG (lien_quan True, khong phai khoi tit), uu tien tam
+    # KHONG CO MAT NGUOI dau tien theo thu tu thu — tam co mat khong len bia
+    # duoc vi cong mat (LUAT_ANH §6) doi khai "nhan_vat" ma Kite chua co truong
+    # do, nhung VAN giu lai lam `than` thay vi bo phi (do that: anh founder that
+    # cua Yang Zhilin tren cac bao khac ve Moonshot/Kimi K3 rat co the nam trong
+    # so nay — truoc ban va nay bi bo qua hoan toan vi vong lap dung som).
+    ung_vien = [a for a in anh if a.get("tu") == "chup_nguon" and a.get("kieu") != "tit"
+                and a.get("lien_quan") is True]
+    khong_mat = [a for a in ung_vien if not a.get("mat")]
+    if khong_mat:
+        bia = khong_mat[0]
+        bia["dung"] = ["bìa (ảnh hero của chính bài gốc)", "thân"]
+        print(f"[chup nguon] {bia['ma']} <- {bia['mien']} lên BÌA (không mặt người)", file=sys.stderr)
+    elif ung_vien:
+        print(f"[chup nguon] {len(ung_vien)} ảnh qua cổng đều CÓ mặt người vô danh với Kite "
+              "(thiếu \"nhan_vat\") — không tấm nào lên bìa, giữ làm thân", file=sys.stderr)
+    if not any(a.get("kieu") == "tit" for a in anh) and not ung_vien:
         print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
     return _ra()
+
+
+def nang_khoi_tit(anh: list) -> tuple:
+    """Nấc cuối cùng: mở khối tít đã chụp (`kieu == "tit"`) làm bìa khi thực thể
+    và khái niệm đều rỗng. Thuần. Trả (anh, dung_duoc, chua_nhin)."""
+    for a in anh:
+        if a.get("kieu") == "tit" and not a["dung"] and not a.get("mat"):
+            a["dung"] = ["bìa (khối tít của bài gốc — không còn ảnh nào khác)", "thân"]
+            print(f"[chup nguon] {a['ma']}: nang khoi tit lam bia (nac cuoi)", file=sys.stderr)
+            break
+    return anh, [a for a in anh if a["dung"] and a.get("lien_quan") is not False], \
+        [a["ma"] for a in anh if a.get("lien_quan") is None]
 
 
 def _vong_khai_niem(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
@@ -571,6 +696,11 @@ def _vong_thuc_the(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
         moi.parent.mkdir(parents=True, exist_ok=True)
         Path(a["goc"]).replace(moi)
         a["goc"] = str(moi)
+        # Hoi con mat cau cua ANH KHAI NIEM ("co dung la <ten>, chup that, hop bia"),
+        # KHONG hoi "co phai anh cua su viec" — do that tren may chu 12/09/2026: anh
+        # Wikipedia cua Anthropic 2865x2952 bi tu choi vi cau mac dinh hoi sai. Cung
+        # bay ma anh khai niem da tranh tu 07/09 (docstring mo_ta_anh).
+        a["khai_niem"] = {"tu_khoa": a["thuc_the"]["ten"], "ly_do": "thực thể trong tiêu đề"}
         a = phan_loai(a, wd, tieu_de_nhin)
         anh.append(anh_thuc_the.nhan_thuc_the(a))
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]

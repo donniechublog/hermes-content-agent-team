@@ -50,6 +50,16 @@ def _js_browser() -> dict:
         for (const s of ['table', 'canvas', 'svg', 'figure']) {
           for (const el of document.querySelectorAll(s)) {
             if (!trongBai(el) || xau(el)) continue;
+            // <figure> la khung CHUNG cho ca chart LAN anh bien tap (photo +
+            // figcaption) — LOW-45 (12/09/2026): TechCrunch boc dung anh hero
+            // cua bai trong <figure>, code cu chup nguyen khoi coi la "chart",
+            // dinh ca dai credit, roi vong chup nguon (LOW-22) lai tu tim ra
+            // DUNG anh hero do lan nua — cung mot anh len ca bia lan slide
+            // than. Chi coi <figure> la ung vien chart khi no THAT SU boc mot
+            // bang/do thi (co canvas/svg/table ben trong); <figure><img> thuan
+            // (anh bao + caption) thi bo qua o day — da co JS_IMG quet <img>
+            // rieng, va vong chup nguon se tu tim hero neu con thieu.
+            if (s === 'figure' && !el.querySelector('canvas, svg, table')) continue;
             const r = el.getBoundingClientRect();
             const w = Math.max(el.scrollWidth || 0, r.width), h = Math.max(el.scrollHeight || 0, r.height);
             if (w < 600 || h < 300 || w > 4000 || h > 6000 || caoQua(r)) continue;

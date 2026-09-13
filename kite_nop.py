@@ -36,6 +36,10 @@ DRAFTS = cb.DRAFTS
 # chay khi di qua nop — goi thang render_edu.py thi khong co cong nao.
 BAT_BUOC = {k: v["truong"] for k, v in render_edu.BAT_BUOC_KIND.items()}
 GIOI_HAN = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
+# LOW-45 (Ong Chu 12/09/2026): "bài có 8 slide thì tối thiểu phải có 3 hình
+# thật" — 1 ảnh thật KHÁC NHAU cho mỗi 3 slide, làm tròn LÊN (8 -> 3, 6 -> 2,
+# 10 -> 4). Chi ap dung khi vong tim đủ nguồn (xem `giai_spec`).
+SLIDE_MOI_ANH_THAT = 3
 # Chi bat dang DAN NGUON ro rang ("theo nguồn", "nguồn:") — KHONG bat blunt
 # nhu caption/readmore ben duoi, vi standfirst la van xuoi tu do (dung o ca 5
 # kind) va co the hop le chua "nguồn" theo nghia thuong ("nguồn cung", "nguồn
@@ -345,6 +349,29 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
         loi.append(f"có {len(da_nhin)} hình thật dùng được ({', '.join(da_nhin)}) mà không slide nào dùng — "
                    "BẮT BUỘC dùng ít nhất một: `figure` cho chart/bảng, hoặc image ở bìa. "
                    "Vẽ vector hết trong khi có hình thật là bỏ phí bằng chứng của bài.")
+    # SO ANH THAT toi thieu theo SO SLIDE (LOW-45, Ong Chu 12/09/2026: "bài có 8
+    # slide thì tối thiểu phải có 3 hình thật") — khac han cong "it nhat mot" o
+    # tren: cong do chi doi KHONG VE VECTOR HET khi co anh, cong nay doi DIEN
+    # RONG hon cho bo nhieu slide, tranh ca dcgr Moonshot 12/09: engine tim ra 6
+    # anh that (A1..A6) ma bo 8 slide chi dung DUNG MOT anh, lap lai o ca bia
+    # lan than. Dem theo MA KHAC NHAU tren slide (khong theo so slide co anh) vi
+    # dung lai cung mot ma o hai slide da bi `kiem_trung` (§8) chan rieng.
+    # CHI chan cung khi NGUON DU (du_nhin >= muc can) — thieu nguon that thi chi
+    # canh bao, khong bay ra thu Kite khong the co.
+    so_slide_moi_anh = len(slides)
+    can_toi_thieu = -(-so_slide_moi_anh // SLIDE_MOI_ANH_THAT)     # ceil khong import math
+    ma_da_len_slide = {sl.get("image") for sl in slides if sl.get("image")}
+    if len(ma_da_len_slide) < can_toi_thieu:
+        thong_diep = (f"{so_slide_moi_anh} slide cần tối thiểu {can_toi_thieu} ảnh thật KHÁC NHAU "
+                     f"(1 ảnh thật / {SLIDE_MOI_ANH_THAT} slide, Ông Chủ 12/09/2026) — hiện chỉ "
+                     f"{len(ma_da_len_slide)} mã lên slide ({', '.join(sorted(ma_da_len_slide)) or 'không có'}).")
+        if len(da_nhin) >= can_toi_thieu:
+            loi.append(thong_diep + f" Vòng tìm đã có {len(da_nhin)} ảnh thật dùng được "
+                       f"({', '.join(da_nhin)}) — dùng thêm ảnh KHÁC nhau cho các slide `figure`, "
+                       "đừng lặp một tấm ở nhiều slide.")
+        else:
+            canh.append(thong_diep + f" Vòng tìm chỉ ra {len(da_nhin)} ảnh dùng được — không đủ "
+                       "nguồn nên không chặn cứng, nhưng nên tìm thêm nếu còn thời gian.")
     # TIN CHUYEN TU DRE/ETHAN vi thieu anh: sieu chat hon mot bac (Ong Chu
     # 09/09/2026: "sau khi tim duoc hinh tot ma van ko du de lam va pass qua cho
     # Kite thi Kite cung phai dung nhung hinh do trong body"). Cong "it nhat
