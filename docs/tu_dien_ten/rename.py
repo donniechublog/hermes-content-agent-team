@@ -616,7 +616,10 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     # Ten MODULE tran trong tests ("tim_anh_them" trong task body) — chi khi khong
     # phai khoa dict that / ten thu muc (khoa tren dia).
     if mod_moi and mc != mm:
-        if mc in _khoa_dict_thuan(root):
+        # Goi (--package): thu muc cu da bi rope doi ten nen khong con trong
+        # _khoa_dict_thuan, nhung `"chuan_bi"` tran van la thu muc STATE tren dia
+        # (test_lam_lai_cam_anh: Path(t) / "chuan_bi" / "tin-thu") — khong bao gio doi.
+        if "." not in mod_cu and (root / mod_moi).is_dir() or mc in _khoa_dict_thuan(root):
             _log(f"  (không thay tên module trần \"{mc}\" trong tests: trùng khoá dict/thư mục)")
         else:
             tran.append((rf'(["\']){re.escape(mc)}\1', rf"\g<1>{mm}\g<1>"))
