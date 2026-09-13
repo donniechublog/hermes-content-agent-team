@@ -111,6 +111,10 @@ def giai_spec(spec: dict, m: dict, wd) -> tuple:
     loi.extend(nc.kiem_quote_dich(hook_hay_title, "hook"))
     # So hang tren the phai la so hang trong anh (LOW-24) — dung chung voi bia Dre.
     loi.extend(nc.kiem_hang_tren_the(hook_hay_title, a, "hook"))
+    # Dan nguon gon: khong "doc bai"/"xem bai", khong duoi ten mien — Ong Chu
+    # 13/09/2026, dung chung voi Dre (nop_chung.kiem_dan_nguon_gon).
+    loi.extend(nc.kiem_dan_nguon_gon(spec.get("attrib"), "attrib"))
+    loi.extend(nc.kiem_dan_nguon_gon(hook_hay_title, "hook" if kieu == "quote" else "title"))
     canh = nc.kiem_so_tren_anh(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)
     if loi:
         return None, loi, canh

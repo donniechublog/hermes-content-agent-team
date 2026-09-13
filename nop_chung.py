@@ -348,6 +348,38 @@ def kiem_quote_dich(chu: str, nhan: str) -> list:
             "tiếng Việt (giữ nguyên tên riêng, thuật ngữ)"]
 
 
+_CUM_DAN_THUA = ("đọc bài", "xem bài", "đọc thêm", "xem thêm", "nguồn:", "link:")
+# Domain that ke ca khong http(s):// van bi Facebook/Instagram/Telegram quet
+# thanh lien ket va giam hien thi bai dang — bat theo dang "tu.tld" bat ke hoa
+# thuong, khong bat nham so thap phan ("16,35" khong co chu cai truoc dau cham).
+_DOMAIN = re.compile(
+    r"\b[a-zA-Z][a-zA-Z0-9-]*\.(?:com|net|org|vn|io|co|xyz|info|news|me|ai)\b",
+    re.IGNORECASE)
+
+
+def kiem_dan_nguon_gon(chu: str, nhan: str) -> list:
+    """Dan nguon KHONG duoc co "đọc bài"/"xem bài"... (Ong Chu 13/09/2026: thua,
+    carousel da co dau doc bai chinh la cai slide) va KHONG duoc co ten mien
+    dang "tenbao.com" — nen tang (FB/IG/Telegram) quet chu do la lien ket va
+    giam hien thi ca bai. Dan nguon chi can "theo <ten bao>" hoac ten nguoi noi,
+    khong can dong tu "doc/xem" va khong can duoi ten mien."""
+    t = (chu or "").strip()
+    if not t:
+        return []
+    loi = []
+    thap = t.lower()
+    cum = next((c for c in _CUM_DAN_THUA if c in thap), None)
+    if cum:
+        loi.append(f"{nhan}: \"{t[:60]}\" có cụm \"{cum}\" — thừa, bỏ đi, dẫn nguồn "
+                   "chỉ cần \"theo <tên báo>\" hoặc tên người nói")
+    mien = _DOMAIN.search(t)
+    if mien:
+        loi.append(f"{nhan}: \"{t[:60]}\" có tên miền \"{mien.group(0)}\" — nền tảng quét "
+                   "thành liên kết, giảm hiển thị cả bài. Bỏ đuôi miền, chỉ giữ tên báo "
+                   "(vd \"theo BusinessTimes\" thay vì \"theo businesstimes.com\")")
+    return loi
+
+
 def kiem_hang_tren_the(chu: str, a: dict, nhan: str = "hook") -> list:
     """THU HANG vai viet len the phai TRUNG hang engine KHOANH trong anh (LOW-24).
 

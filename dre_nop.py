@@ -232,6 +232,10 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
         # "tieng Viet go mat dau", co y bo qua tieng Anh nen quote chua dich lot
         # thang len Telegram (06/09/2026).
         loi.extend(nc.kiem_quote_dich(g.get("quote"), f"slide {i}"))
+        # Dan nguon gon: khong "doc bai"/"xem bai", khong duoi ten mien — Ong
+        # Chu 13/09/2026, nen tang quet ten mien thanh lien ket, giam hien thi.
+        loi.extend(nc.kiem_dan_nguon_gon(g.get("attrib"), f"slide {i} (attrib)"))
+        loi.extend(nc.kiem_dan_nguon_gon(g.get("text"), f"slide {i} (text)"))
         ra["slides"].append(g)
     # KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026. Dat SAU
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
