@@ -342,12 +342,18 @@ def _xep_hang_boi_canh(hangs: list, wd: Path, brand: str, phien=None):
 
 
 def _bao_thuong_hieu_rong(h: dict, wd: Path, phien=None) -> list:
-    """Commons/Wikidata RỖNG cho một hãng (LOW-45, 13/09/2026) — tìm BÁO THẬT
-    theo tên hãng qua `nguon_bai.bao_ve_tu_khoa` (không đòi "cùng một sự kiện"
-    như `bao_khac_bing`, chỉ cần bài NÓI VỀ hãng) rồi quét ảnh như
-    `_vong_tim_rong` (`browser_pass`, đã sửa LOW-45 phần 1 nên không còn vớ
-    nhầm `<figure>` là chart). Đo thật: Moonshot AI (QID Wikidata trống, 0 ảnh)
-    → tìm "Moonshot AI" ra báo thật, quét ra ảnh minh hoạ/logo dùng được.
+    """Tìm BÁO THẬT theo tên hãng qua `nguon_bai.bao_ve_tu_khoa` (không đòi
+    "cùng một sự kiện" như `bao_khac_bing`, KHÔNG giới hạn thời gian) rồi quét
+    ảnh như `_vong_tim_rong` (`browser_pass`, đã sửa LOW-45 phần 1 nên không
+    còn vớ nhầm `<figure>` là chart).
+
+    Nguyên tắc nguồn chốt 13/09/2026 (LUAT_ANH §1.2d): CHẠY LUÔN cho mọi hãng
+    tin nhắc tới, SONG SONG với Commons/Wikidata — không còn là phương án cuối
+    khi Commons rỗng. "Không có bất kỳ cấm đoán nào về nguồn" ngoài ba điều đã
+    ghi (không giới hạn thời gian/sự kiện, không giới hạn định dạng miễn rõ
+    nét, chỉ tiếng Anh/Trung); Commons chỉ còn là MỘT trong nhiều nguồn, không
+    còn được hỏi trước/độc quyền. Đo thật: Moonshot AI (QID Wikidata trống,
+    0 ảnh) → tìm "Moonshot AI" ra báo thật, quét ra ảnh minh hoạ/logo dùng được.
 
     Gắn `thuong_hieu` cho từng ứng viên để đi qua đúng câu hỏi con mắt và điểm
     theo loại tin như ảnh Commons/Wikidata. Không mạng/router → []."""
@@ -396,14 +402,14 @@ def _vong_thuong_hieu(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     cands = []
     for h in hangs:
         cands_h = th.anh_hang(h, wd=wd4 / h["khoa"])
-        if not cands_h and not khong_browser:
-            # Commons/Wikidata RONG (hang tre/tu nhan, LOW-45 do that voi Moonshot
-            # AI: QID trong, 0 anh cong ty/logo/founder). Ong Chu 13/09/2026:
-            # "đâu cần tìm đúng tin về việc raise, chỉ cần search tin tức theo
-            # từ khóa kimi/moonshot... là cũng đầy article có ảnh dùng được" —
-            # tim BAO THAT theo tu khoa hang (khong doi cung mot su kien) roi
-            # quet anh nhu vong_tim_rong.
-            cands_h = _bao_thuong_hieu_rong(h, wd4 / h["khoa"], phien=phien)
+        if not khong_browser:
+            # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
+            # Wikidata — khong con doi Commons rong moi chay (Ong Chu
+            # 13/09/2026, chot nguyen tac nguon o LUAT_ANH §1.2d: "ngoai
+            # nguyen tac [khong gioi han thoi gian/su kien/nguon, chi tieng
+            # Anh-Trung], khong co bat ky cam doan nao ve nguon anh" — Commons
+            # chi con la MOT nguon, khong con doc quyen/duoc hoi truoc).
+            cands_h = cands_h + _bao_thuong_hieu_rong(h, wd4 / h["khoa"], phien=phien)
         cands += cands_h
         # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
         if loai_tin.muon(category, "co_phieu") and not khong_browser:

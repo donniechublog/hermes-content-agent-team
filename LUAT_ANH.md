@@ -169,7 +169,6 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
 - **Từ khoá**: nước/khối được nhắc → cờ đang bay; chủ đề → vật thể **chụp được**
   (data center → dãy rack, chip → wafer, chứng khoán → sàn giao dịch, chính
   sách → toà nhà quốc hội…). Bảng cố định trước, model text bù tới 3 từ khoá.
-  Không tìm khái niệm trừu tượng (funding, partnership): Commons chỉ trả minh hoạ tệ.
   Minh hoạ biên tập CÓ SẴN (vẽ tay/digital, kiểu The Economist) được dùng như ảnh
   chụp — §0 cấm *tự vẽ*, không cấm *dùng*; vẫn gạt icon/clipart/sơ đồ/logo (Ông
   Chủ 12/09/2026). Từ khoá LLM bị CẤM đề xuất phần cứng ngành AI (rack, datacenter,
@@ -177,7 +176,12 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   lý do ra phòng máy.
 - **Nguồn**: chỉ Wikimedia Commons, chỉ JPEG/PNG cạnh ngắn ≥ 700, tên tệp phải
   chứa ≥ 2 từ đặc trưng của từ khoá và không phải logo/CGI/variant/bản đồ phẳng.
-  Đây là **ảnh thật** — cờ thật, toà nhà thật — nên không vi phạm §0.
+  Đây là **ảnh thật** — cờ thật, toà nhà thật — nên không vi phạm §0. **Giới hạn
+  này CHỈ áp dụng khi tin không nhắc tên hãng nào** (cờ nước, ngành chung chung
+  không gắn với một hãng cụ thể) — tin CÓ tên hãng thì đi theo nguyên tắc nguồn
+  mở ở đầu §1.2d (13/09/2026: không giới hạn thời gian/sự kiện/nguồn, chỉ giữ
+  Anh/Trung), kể cả khi khái niệm đó nghe trừu tượng (funding, partnership) —
+  hễ có tên hãng là có thể tìm được ảnh thật/minh hoạ rõ nét về đúng hãng đó.
 - **Nhìn**: vision được hỏi câu riêng ("có đúng là *cờ Nhật* chụp thật, hợp làm
   bìa không"), không hỏi "có phải ảnh của tin" vì chắc chắn không phải. Ảnh có
   mặt người hay là đồ hoạ → bỏ.
@@ -197,6 +201,36 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
 - **§1.2e không được ép nó xuống thân**: xem chỗ `hinh_phai_dung` ở mục đó.
 
 ### 1.2d Ảnh thương hiệu: tin về hãng lớn thì tìm trụ sở của chính hãng đó
+
+> **Nguyên tắc nguồn, chốt lại 13/09/2026 — thay cho mọi giới hạn về nguồn bên
+> dưới.** Ông Chủ: *"thay vì quá nhiều rule cấm về phần nguồn, loại bỏ toàn bộ
+> các yêu cầu cấm"*. Khi tin đã nhắc tới TÊN một hãng cụ thể (TSMC, Moonshot
+> AI...), tìm ảnh của hãng đó — logo, nhà máy/trụ sở, biểu đồ giá cổ phiếu, sản
+> phẩm — theo đúng MỘT nguyên tắc:
+>
+> - **Không giới hạn thời gian, không đòi cùng một sự kiện.** Bài gốc là "TSMC
+>   tăng doanh thu 53% trong Q3 2026" thì KHÔNG cần ảnh từ đúng bài nói về việc
+>   tăng doanh thu đó — chỉ cần bài có NHẮC TỚI TSMC, tìm ở bất cứ đâu và bất cứ
+>   lúc nào: Bing News, Google News, RSS của chính hãng, trang tin bất kỳ.
+> - **Không giới hạn nguồn/định dạng** — ảnh chụp thật hay **minh hoạ biên tập**
+>   (illustration, kiểu The Economist) đều được, miễn RÕ NÉT và đúng là hãng đó
+>   (logo/nhà máy/biểu đồ/sản phẩm), không riêng gì Wikimedia Commons.
+> - **Ngôn ngữ truy vấn: chỉ tiếng Anh hoặc tiếng Trung** — tuyệt đối không dùng
+>   ngôn ngữ khác (kể cả tiếng Việt, xem quy tắc "Tìm kiếm chỉ tiếng Anh" đã có
+>   từ 05/09 — nay mở thêm tiếng Trung cho các hãng Trung Quốc, TUYỆT ĐỐI không
+>   mở thêm ngôn ngữ nào khác).
+> - **Ngoài ba điều trên, không còn cấm đoán nào khác về nguồn ảnh** — các mục
+>   "Nguồn: chỉ Wikimedia Commons", "không tìm khái niệm trừu tượng" ghi ở nơi
+>   khác trong tài liệu này chỉ còn áp dụng cho ca KHÔNG có tên hãng nào được
+>   nhắc (§1.2c thuần khái niệm — cờ nước, ngành chung chung); một khi CÓ tên
+>   hãng, nguyên tắc ở đây thắng. Vẫn phải qua đủ mọi cổng chặn khác không đổi
+>   (mặt người vô danh §6, ảnh trùng, chất lượng nhìn thấy — mờ/chụp lại màn
+>   hình — vẫn CẤM như cũ, đây là luật về CHẤT LƯỢNG chứ không phải về NGUỒN).
+>
+> Cài đặt: `nguon_bai.bao_ve_tu_khoa` (tìm theo tên hãng, không đòi cùng sự
+> kiện) + `chuan_bi.vong_bu._bao_thuong_hieu_rong` (quét ảnh từ các bài tìm
+> được) — trước 13/09/2026 chỉ chạy khi Commons/Wikidata RỖNG; nay chạy
+> **song song, luôn luôn**, không còn là phương án cuối.
 
 Ông Chủ 09/09/2026: *"Dre vẫn chưa tự tìm thêm hình liên quan khi làm các nội
 dung có Big Brand"*. Sáng hôm đó năm tin liên tiếp (Qualcomm × Amazon, xưởng

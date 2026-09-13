@@ -381,20 +381,24 @@ def bao_khac_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10
     return ra
 
 
-def bao_ve_tu_khoa(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int = 20) -> list:
+def bao_ve_tu_khoa(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int | None = None) -> list:
     """Bao THẬT về một TỪ KHOÁ (tên hãng/sản phẩm) qua Bing News RSS — KHÁC
-    `bao_khac_bing`: không đòi "cùng một sự kiện" với một tiêu đề gốc (đo LOW-45,
-    Ông Chủ 13/09/2026: *"đâu cần tìm đúng tin về việc raise, chỉ cần search tin
-    tức theo từ khóa kimi/moonshot... là cũng đầy article có ảnh dùng được, đã
-    là ảnh khái niệm thì cần gì phải cầu kỳ"*). Dùng khi Commons/Wikidata của
-    một hãng RỖNG (`anh_thuong_hieu.anh_hang`/`anh_wikidata` không ra gì) — hãng
-    trẻ/tư nhân thường không có ảnh trên Wikimedia nhưng có thật trên báo.
+    `bao_khac_bing`: không đòi "cùng một sự kiện" với một tiêu đề gốc, VÀ
+    KHÔNG GIỚI HẠN THỜI GIAN (Ông Chủ 13/09/2026, chốt nguyên tắc nguồn ở
+    LUAT_ANH.md §1.2d: *"được tìm không giới hạn thời gian, sự kiện. miễn là
+    trong article có nhắc tới tên brand... ngoài nguyên tắc này, không có bất
+    kỳ một cấm đoán nào về nguồn ảnh"*). Trước đó (LOW-45, 13/09 sáng) còn giới
+    hạn 20 ngày và chỉ coi là phương án khi Commons/Wikidata RỖNG — hai giới
+    hạn đó đã bỏ theo đúng luật mới; `ngay` giữ lại làm tham số CHO PHÉP hẹp
+    lại nếu một lần gọi cụ thể cần, mặc định là KHÔNG giới hạn.
 
     Lọc nhẹ hơn `bao_khac_bing`: chỉ đòi tiêu đề bài chứa lại chính TỪ KHOÁ
     (không đòi khớp với MỘT sự kiện cụ thể nào) — vì mục đích là ảnh MINH HOẠ
     hãng/sản phẩm (như ảnh khái niệm), không phải bằng chứng của một tin riêng.
     Cùng hạ tầng với `bao_khac_bing`: giải chuyển hướng HTTP, chặn SSRF
-    (`quet_chung.url_an_toan`), lọc theo ngày, bỏ trang tổng hợp/`bo_mien`."""
+    (`quet_chung.url_an_toan`), bỏ trang tổng hợp/`bo_mien`. Ngôn ngữ: chỉ Anh
+    hoặc Trung (LUAT_ANH §1.2d) — `co_tieng_viet` chặn tiếng Việt; tiếng Trung
+    không bị chặn ở đây (không có dấu tiếng Việt để nhận nhầm)."""
     if co_tieng_viet(tu_khoa):
         print("[nguon_bai] TU CHOI bao_ve_tu_khoa bang tieng Viet", file=sys.stderr)
         return []
@@ -403,7 +407,7 @@ def bao_ve_tu_khoa(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int = 2
     can = tu_cung_tin(tu_khoa)
     if not can:
         return []
-    moc = _t.time() - ngay * 86400
+    moc = (_t.time() - ngay * 86400) if ngay is not None else 0
     its, co_link = [], set()
     for q in _truy_van_bing(tu_khoa) or [tu_khoa]:
         try:
