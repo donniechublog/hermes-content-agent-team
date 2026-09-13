@@ -8,7 +8,7 @@
 #   git -C ~/hermes-agent diff d4ded0235a05ed8c50aafd8f1b39aba543fcf0b5..HEAD -- plugins/kanban/dashboard
 #   # xem upstream đổi gì, vá lại ba bản vá lên bản mới, chạy --vao-repo
 #
-# Dòng `commit:` được `dong_bo_hermes.py --vao-repo` ghi lại mỗi lần kéo bản
+# Dòng `commit:` được `sync_hermes.py --vao-repo` ghi lại mỗi lần kéo bản
 # cài về repo.
 
 commit: d4ded0235a05ed8c50aafd8f1b39aba543fcf0b5

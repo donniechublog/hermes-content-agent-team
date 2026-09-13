@@ -250,8 +250,8 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 **Duyệt và đăng**
 
 - `approve_service.py` — dịch vụ nền nghe nút duyệt và lệnh chọn số. Mặt tiền
-  mỏng; phần thân nằm ở `duyet_co_so` / `duyet_giao_viec` / `duyet_chon_tin` /
-  `duyet_bai` / `duyet_chat` / `duyet_lenh`. Mọi tin nhắn vào đều có log
+  mỏng; phần thân nằm ở `approve_base` / `approve_dispatch` / `approve_pick` /
+  `approve_post` / `approve_chat` / `approve_command`. Mọi tin nhắn vào đều có log
   (`state/<brand>/approve.log`, xoay vòng 5 MB×3) theo nhãn
   `vao → route → chat/chon/lenh → tele`, và mọi nhánh kết thúc bằng một tin trả về.
   Lệnh chọn số còn báo **ngay khi nhận** (`_bao_da_nhan`, kèm tiêu đề từng số)

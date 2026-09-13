@@ -13,7 +13,7 @@ WorkingDirectory=%h/content-team
 # Muon mo cho dien thoai thi dat dia chi netbird o day, dung 0.0.0.0.
 Environment=NHAT_KY_HOST=127.0.0.1
 Environment=NHAT_KY_PORT=9130
-ExecStart=%h/content-team/venv/bin/python %h/content-team/nhat_ky_web.py
+ExecStart=%h/content-team/venv/bin/python %h/content-team/journal_web.py
 Restart=always
 RestartSec=5
 
