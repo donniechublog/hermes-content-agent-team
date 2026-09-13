@@ -100,6 +100,22 @@ tên tệp) và bước `--package chuan_bi → prepare` — thêm các quy tắ
   test đổi theo; `STATE_DIR / "chuan_bi"` và `"chuan_bi"` trần **không bao giờ đổi**
   (thư mục state trên đĩa). Shim `chuan_bi/__init__.py` → `prepare`.
 
+## Cổng CI sau refactor (LOW-53) — `tests/test_ten_english.py`
+
+Chạy trong `tests/chay.sh` (CI `kiem`): `bang_doi_ten()` trên cây hiện tại phải
+**rỗng**. Còn tên top-level nào từ điển vẫn dịch ra tên khác thì đỏ và in
+`module.tên → tên_đề_xuất`. Hai cách sửa, theo đúng thứ tự:
+
+1. Tên đó là tiếng Việt → đổi sang tên đề xuất (hoặc tên English khác, miễn
+   không trùng trong module).
+2. Tên đó là English/tên riêng/benchmark bị nhận nhầm (vd `gap`, `cap`) → thêm
+   token vào `them.json` mục `PASS`, chạy lại `python3 gen.py .` để chắc không
+   sinh va chạm mới.
+
+Test thứ hai trong tệp tự trồng `def tim_anh_moi()` vào thư mục tạm để chứng
+minh cổng còn sống (từ điển nạp được, quét được). Phạm vi = phạm vi LOW-50:
+tên top-level; tham số/biến cục bộ không xét.
+
 `tudien.py` là thư viện chung của `gen.py` và `rename.py` — bảng in ra và cái sẽ
 đổi luôn là một bộ. Tên module mới hết shadow được kiểm ở **F2** (tên biến/tham
 số/def/alias trùng tên tệp mới trong tệp có import module đó).
