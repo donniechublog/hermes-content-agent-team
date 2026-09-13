@@ -1,5 +1,6 @@
 {
  "anh_bai": "article_images",
+ "anh_bao_thuc_the": "press_entity_images",
  "anh_chuan_bi": "image_prepare",
  "anh_commons": "commons_images",
  "anh_hang": "vendor_images",
@@ -331,6 +332,7 @@
  "thu_muc": "directory",
  "thu_tu": "order",
  "thuat_ngu": "term",
+ "thuc_the": "entity",
  "thuong_hieu": "brand",
  "ti_le": "ratio",
  "ti_le_phan_tram": "percentage",

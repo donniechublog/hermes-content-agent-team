@@ -9,6 +9,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | Việt | English |
 |---|---|
 | `anh_bai` | `article_images` |
+| `anh_bao_thuc_the` | `press_entity_images` |
 | `anh_chuan_bi` | `image_prepare` |
 | `anh_commons` | `commons_images` |
 | `anh_hang` | `vendor_images` |
@@ -339,6 +340,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `thu_muc` | `directory` |
 | `thu_tu` | `order` |
 | `thuat_ngu` | `term` |
+| `thuc_the` | `entity` |
 | `thuong_hieu` | `brand` |
 | `ti_le` | `ratio` |
 | `ti_le_phan_tram` | `percentage` |
@@ -781,7 +783,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ada_chuan_bi` | `ada_prepare` |  |
 | `ada_nop` | `ada_submit` |  |
 | `anh_bai` | `article_images` |  |
-| `anh_bao_thuc_the` | `image_report_actual_card` | ⚠️ the |
+| `anh_bao_thuc_the` | `press_entity_images` |  |
 | `anh_chuan_bi` | `image_prepare` |  |
 | `anh_khai_niem` | `image_concept` |  |
 | `anh_thuc_the` | `entity_images` |  |
@@ -930,7 +932,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `bao_ve` | `report_about` |  |
 | `og_tu_html` | `og_from_html` | ⚠️ tu |
 | `_og` | `_og` |  |
-| `anh_bao_thuc_the` | `image_report_actual_card` | ⚠️ the |
+| `anh_bao_thuc_the` | `press_entity_images` |  |
 
 ### `anh_chuan_bi`
 
@@ -965,11 +967,11 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `thuc_the_trong_tieu_de` | `actual_card_within_title` | ⚠️ the |
+| `thuc_the_trong_tieu_de` | `entity_within_title` |  |
 | `pageimages` | `pageimages` |  |
 | `commons_theo_cum` | `commons_by_phrase` |  |
 | `anh_thuc_the` | `entity_images` |  |
-| `nhan_thuc_the` | `label_actual_card` | ⚠️ nhan the |
+| `nhan_thuc_the` | `label_entity` | ⚠️ nhan |
 
 ### `anh_thuong_hieu`
 
@@ -1326,7 +1328,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_vong_chup_nguon` | `_round_capture_source` |  |
 | `_ra` | `_out` |  |
 | `_vong_khai_niem` | `_round_concept` |  |
-| `_vong_thuc_the` | `_round_actual_card` | ⚠️ the |
+| `_vong_thuc_the` | `_round_entity` |  |
 
 ### `chup_chart`
 
@@ -2458,8 +2460,8 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `anh_khai_niem` | `TU_BO` | `FROM_DROP` | ⚠️ bo tu |
 | `anh_khai_niem` | `UA` | `UA` |  |
 | `anh_thuc_the` | `CANH_NGAN_MIN` | `SHORT_SIDE_MIN` |  |
-| `anh_thuc_the` | `TOI_DA_MOI_THUC_THE` | `MAX_NEW_ACTUAL_CARD` | ⚠️ moi the |
-| `anh_thuc_the` | `TOI_DA_THUC_THE` | `MAX_ACTUAL_CARD` | ⚠️ the |
+| `anh_thuc_the` | `TOI_DA_MOI_THUC_THE` | `MAX_NEW_ENTITY` | ⚠️ moi |
+| `anh_thuc_the` | `TOI_DA_THUC_THE` | `MAX_ENTITY` |  |
 | `anh_thuc_the` | `WIKI_API` | `WIKI_API` |  |
 | `anh_thuong_hieu` | `CANH_NGAN_MIN` | `SHORT_SIDE_MIN` |  |
 | `anh_thuong_hieu` | `COMMONS` | `COMMONS` |  |
