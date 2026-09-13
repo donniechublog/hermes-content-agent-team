@@ -177,6 +177,9 @@ def _giai_muc(bo: _Boi, muc: dict, nhan: str, la_bia: bool) -> dict | None:
         return None
     if ra is None:
         return None
+    # Anh roi buoc phai dung: carousel.py dat nen chu dac thay lop mo (LOW-47).
+    if any((bo.anh.get(x) or {}).get("roi") for x in (list(ghep) if ghep else [ma])):
+        ra["roi"] = True
     for k in CHU_GIU:
         if muc.get(k) is not None:
             ra[k] = muc[k]
@@ -257,6 +260,8 @@ def giai_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # LAM LAI mot slide cu the nhung van ra dung anh cu (Ong Chu 13/09/2026) —
     # dat SAU khi bia + moi slide da giai, luc bo.dung_anh da co du (nhan, ma).
     loi += nc.kiem_khong_lap_anh_lam_lai(bo.anh, bo.dung_anh, m, DRAFTS)
+    # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
+    loi += nc.kiem_anh_roi(bo.anh, bo.da_dung, m)
     return ra, loi, canh, bo.dung_anh
 
 

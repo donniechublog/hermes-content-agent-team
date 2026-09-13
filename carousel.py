@@ -303,7 +303,34 @@ def _do_vung_chu(canvas, y0, y1):
     return st.mean[0], st.stddev[0]
 
 
-def _lop_neu_can(canvas, base, text_top, text_bottom):
+NEN_ROI_LE = 40          # nen dac bat dau cach dong chu dau bao nhieu px phia tren
+NEN_ROI_TAN = 180        # dai smoothstep toi da tu anh sang nen dac
+
+
+def _nen_dac_duoi_chu(canvas, text_top):
+    """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
+    cua text phai lam cho nghiem chinh, dung nham nho"). Lop mo+tinh cua
+    `_lop_neu_can` bi tran TOI_TOI_DA (~55%) va chi mo ban kinh BLUR_RADIUS —
+    tren anh co chu in san (do that: do hoa "Nvidia Weighs $10B...") chu cu van
+    lo lem nhem sau cau quote. O day: nen DAC mau BG tu khoang lang gan nhat
+    phia tren dong chu (`card._moc_nen_dac`, dung chung voi the Ethan) xuong
+    day; dai smoothstep nam trong khoang lang nen khong cat ngang dong chu in
+    san nao, khong co duong ke ngang (LUAT_ANH muc 7.1)."""
+    dac, top = card._moc_nen_dac(canvas, text_top - NEN_ROI_LE, NEN_ROI_TAN)
+    m = Image.new("L", (1, H), 0)
+    for y in range(H):
+        if y >= dac:
+            a = 255
+        elif y > top:
+            t = (y - top) / max(1, dac - top)
+            a = 255 * t * t * (3 - 2 * t)
+        else:
+            a = 0
+        m.putpixel((0, y), int(a))
+    canvas.paste(Image.new("RGB", (W, H), BG), (0, 0), m.resize((W, H)))
+
+
+def _lop_neu_can(canvas, base, text_top, text_bottom, anh_roi=False):
     """Them mot lop mo+tinh NGAY TAI text_top — CHI KHI can (xem nguyen tac o
     dau file). Mac dinh khong lam gi: FG (co dinh theo NEN ca bo) da du tuong
     phan thi giu nguyen anh.
@@ -313,6 +340,9 @@ def _lop_neu_can(canvas, base, text_top, text_bottom):
     `text_bottom` la vung se do de QUYET DINH co can lop khong; mat na ve ra
     luon giu phang tu `text_top + VEIL_SPAN` tro xuong H, khong phu thuoc
     `text_bottom`."""
+    if anh_roi:
+        _nen_dac_duoi_chu(canvas, text_top)
+        return
     sang, roi = _do_vung_chu(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
         thieu = max(0.0, sang - NGUONG_SANG_TOI)          # nen "toi": qua sang la thieu
@@ -372,7 +402,7 @@ def _body_image(canvas, img):
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out):
+def build_body(img_path, text, handle, out, roi=False):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
 
@@ -388,7 +418,7 @@ def build_body(img_path, text, handle, out):
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
     # phan voi FG — xem _lop_neu_can. Khong bao gio bat dau truoc text_top.
-    _lop_neu_can(canvas, base, text_top, TEXT_BASE)
+    _lop_neu_can(canvas, base, text_top, TEXT_BASE, anh_roi=roi)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
@@ -414,7 +444,7 @@ Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
 Q_BOTTOM = 1150                  # day cum quote
 
 
-def build_body_quote(img_path, quote, attrib, handle, out):
+def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
     """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
@@ -450,7 +480,7 @@ def build_body_quote(img_path, quote, attrib, handle, out):
 
     # Chi them lop khi do THAT can (xem _lop_neu_can) — neo dung tai dinh khung,
     # khong con chom truoc 24px nhu ban cu.
-    _lop_neu_can(canvas, base, max(0, frame_top), H)
+    _lop_neu_can(canvas, base, max(0, frame_top), H, anh_roi=roi)
 
     # Cac dong quote.
     qy = first_line_top
@@ -484,7 +514,7 @@ CATEGORY_GOI_Y = ["MODEL RELEASE", "MODEL UPDATE", "PRODUCT", "RESEARCH",
                   "FUNDING", "POLICY", "OPINION"]
 
 
-def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"):
+def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE", roi=False):
     """Bia: hang chip duoi cung = chip CATEGORY (cyan, thay cho ten kenh — Ong
     Chu chot 03/09/2026: hero slide KHONG dung chip 'donniechublog', phai la
     'MODEL RELEASE' / 'MODEL UPDATE'...) + chip label trang (ten model/hang).
@@ -514,7 +544,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem
     # _lop_neu_can) — the tich category/label o duoi la chip dac, tu doc duoc,
     # khong can lop bao ve.
-    _lop_neu_can(canvas, cover, y, H)
+    _lop_neu_can(canvas, cover, y, H, anh_roi=roi)
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
@@ -770,14 +800,15 @@ def main():
     stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
 
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
-                category=cover["category"])
+                category=cover["category"], roi=bool(cover.get("roi")))
     paths = [str(out)]
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
         if s.get("quote"):
-            build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p)
+            build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,
+                             roi=bool(s.get("roi")))
         else:
-            build_body(s["image"], s["text"], handle, p)
+            build_body(s["image"], s["text"], handle, p, roi=bool(s.get("roi")))
         paths.append(p)
 
     print(f"da dung {len(paths)} slide:")

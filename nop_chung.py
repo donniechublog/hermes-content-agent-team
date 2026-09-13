@@ -322,6 +322,43 @@ def kiem_da_dung_nhieu(anh: dict, cap, m: dict) -> list:
     return loi
 
 
+def _sach_dung_mot_minh(a: dict) -> bool:
+    """Anh SACH dung mot minh duoc cho mot slide/the, khong can vai khai them gi:
+    vision da noi ro "khong roi", lien quan, anh chup (khong chart), khong mat
+    nguoi (mat nguoi con phu thuoc ten co trong bai), khong ngang (anh ngang
+    con phai ghep hoac cat doc — chua chac lam duoc). Thieu dieu kien nao cung
+    khong tinh — cong kiem_anh_roi chi duoc bat vai doi anh khi THAT SU co cho
+    doi, khong duoc de vai ket vong."""
+    if not a.get("dung") or a.get("lien_quan") is False or a.get("roi") is not False:
+        return False
+    return not (a.get("loai") != "anh" or a.get("xep_hang") or a.get("mat") or a.get("ngang"))
+
+
+def kiem_anh_roi(anh: dict, dung: dict, m: dict) -> list:
+    """ANH ROI chi dung khi HET anh sach (LOW-47, Ong Chu 13/09/2026: "khong uu
+    tien su dung tat ca nhung anh nhin roi"). `dung`: {ma: nhan slide}.
+
+    Khong cam han: tin it anh thi anh roi van la anh that cua tin, va carousel/
+    card tu dat nen chu dac khi buoc dung. Chi chan khi con anh sach CHUA dung
+    va CHUA len bai khac (kiem_da_dung) — de vai doi duoc that, khong ket."""
+    roi = [(nhan, ma) for ma, nhan in dung.items() if ma and (anh.get(ma) or {}).get("roi")]
+    if not roi:
+        return []
+    import luat_anh
+    sach = []
+    for ma, a in anh.items():
+        if ma in dung or not _sach_dung_mot_minh(a):
+            continue
+        l, _ = luat_anh.kiem_da_dung(ma, a["goc"], m.get("draft_id", ""), m.get("link", ""))
+        if not l:
+            sach.append(ma)
+    if not sach:
+        return []
+    return [f"{nhan}: {ma} là ảnh RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) mà vẫn còn ảnh sạch "
+            f"chưa dùng: {', '.join(sach[:6])} — đổi sang ảnh sạch, ảnh rối chỉ dùng khi hết ảnh sạch"
+            for nhan, ma in roi]
+
+
 def kiem_quote_dich(chu: str, nhan: str) -> list:
     """Quote/hook CON NGUYEN TIENG ANH -> loi. Luat "quote phai DICH sang tieng
     Viet" tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).
