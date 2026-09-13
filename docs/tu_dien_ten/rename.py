@@ -54,6 +54,11 @@ def _log(*a):
     print("[rename]", *a, file=sys.stderr)
 
 
+def _py_goi(root: Path) -> list:
+    """Tep .py trong goi engine — ten cu `chuan_bi/` va ten moi `prepare/` (sau --package)."""
+    return list(root.glob("chuan_bi/*.py")) + list(root.glob("prepare/*.py"))
+
+
 # Hai module rope.patchedast KHONG parse duoc (13/09/2026, do bang
 # scratchpad/do_patchedast.py: 195 tep, 2 hong — f-string noi ngam co `{{`/ky tu
 # ngoai ASCII lam patchedast do sai do dai chuoi, sua tung cho thi no hong cho
@@ -134,7 +139,7 @@ def _va_fstring(root: Path, mod: str, old: str, new: str) -> int:
     base = mod.split(".")[-1]
     tep_mod = root / (mod.replace(".", "/") + ".py")
     n = 0
-    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+    for f in list(root.glob("*.py")) + _py_goi(root) + list(root.glob("tests/*.py")):
         s = f.read_text(encoding="utf-8")
         if old not in s or "f\"" not in s and "f'" not in s:
             continue
@@ -197,7 +202,7 @@ def _doi_module_ngoai_rope(root: Path, mod: str, defs: list, consts: list) -> No
     k = _doi_token(f, lambda pp, p, t, nx: bang.get(t.string) if not (p and p.string == ".") else None)
     _log(f"  {mod} (token, trong tệp): {k} chỗ")
     k2 = 0
-    for g in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+    for g in list(root.glob("*.py")) + _py_goi(root) + list(root.glob("tests/*.py")):
         if g == f or mod not in g.read_text(encoding="utf-8"):
             continue
         src = g.read_text(encoding="utf-8")
@@ -247,7 +252,7 @@ def _modules_re_export(root: Path, mod_full: str, new: str) -> set:
     RE-EXPORT ten do (image_prepare re-export _luu_crop cua chuan_bi.tai_loc;
     vong_bu re-export tai_va_loc). Tra ten base cua M."""
     ra = set()
-    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+    for f in list(root.glob("*.py")) + _py_goi(root):
         s = f.read_text(encoding="utf-8")
         if re.search(rf"^\s*from\s+{re.escape(mod_full)}\s+import\s*\(?[^\n]*\b{re.escape(new)}\b", s, re.M) or \
            re.search(rf"^\s*from\s+{re.escape(mod_full)}\s+import\s*\((?:[^)]*\n)*?[^)]*\b{re.escape(new)}\b", s, re.M):
@@ -266,7 +271,7 @@ def _va_re_export(root: Path, mod_full: str, old: str, new: str) -> int:
     # trong test khong duoc doi). Quet token `alias.old` la luoi an toan.
     Ms = _modules_re_export(root, mod_full, new) | {mod_full.split(".")[-1]}
     n = 0
-    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+    for f in list(root.glob("*.py")) + _py_goi(root) + list(root.glob("tests/*.py")):
         s = f.read_text(encoding="utf-8")
         if old not in s:
             continue
@@ -293,7 +298,7 @@ def _va_import_cu(root: Path, cu_full: str, moi_full: str) -> int:
     if cu_b == moi_b:
         return 0
     n = 0
-    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+    for f in list(root.glob("*.py")) + _py_goi(root) + list(root.glob("tests/*.py")):
         if f.stem == cu_b:                                   # chinh shim
             continue
         s = f.read_text(encoding="utf-8")
@@ -353,7 +358,7 @@ def _va_chu_thich_kieu(root: Path, old: str, new: str) -> int:
             (rf'((?:list|dict|set|tuple|type|Optional|Iterable|Sequence|Callable)\[[^\]]*?)(["\']){re.escape(old)}\2(?=[\],])',
              rf"\g<1>\g<2>{new}\g<2>")]
     n = 0
-    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+    for f in list(root.glob("*.py")) + _py_goi(root) + list(root.glob("tests/*.py")):
         s = f.read_text(encoding="utf-8")
         if old not in s:
             continue
@@ -371,7 +376,7 @@ def _khoa_dict_thuan(root: Path) -> set:
     dung de quyet doi `"ten_module_cu"` tran trong tests (lo 2: task body co
     "tim_anh_them" tran, test soi `kt.index("tim_anh_them")`)."""
     ra = set()
-    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+    for f in list(root.glob("*.py")) + _py_goi(root):
         ra |= _khoa_trong(f.read_text(encoding="utf-8"))
     ra |= {p.name for p in root.iterdir() if p.is_dir()}      # ten thu muc = duong dan tren dia
     return ra
@@ -384,7 +389,7 @@ def _khoa_dict(root: Path) -> set:
     if k in _KHOA_DICT_CACHE:
         return _KHOA_DICT_CACHE[k]
     ra = set()
-    for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+    for f in list(root.glob("*.py")) + _py_goi(root):
         ra |= _khoa_trong(f.read_text(encoding="utf-8"))
     # Ten MODULE/GOI/THU MUC cung la chuoi tren dia (`ROOT / "chuan_bi" / "nhin.py"`,
     # `state/<brand>/chuan_bi/`): lo 1 doi `"chuan_bi"` -> `"prepare_article"` vi
@@ -509,9 +514,35 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
                 if k:
                     f.write_text(moi, encoding="utf-8")
                     tong += k
-        for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")) + list(root.glob("tests/*.py")):
+        for f in list(root.glob("*.py")) + _py_goi(root) + list(root.glob("tests/*.py")):
             tong += _thay_trong_chuoi_py(f, pat)
         _log(f"  chuỗi `{cu_py}` -> `{moi_py}`: {tong} chỗ")
+        # GOI (--package chuan_bi -> prepare): duong dan NGUON `chuan_bi/x.py` trong tai
+        # lieu/chuoi va `ROOT / "chuan_bi" / "x.py"` trong test. KHONG dong
+        # `STATE_DIR / "chuan_bi"` — do la thu muc state tren dia (luat LOW-49).
+        if "." not in mod_cu and (root / mod_moi).is_dir():
+            kg = 0
+            pat_g = (rf"(?<![\w/]){re.escape(mod_cu)}/(?=\w+\.py\b)", f"{mod_moi}/")
+            for duoi in DUOI_VAN_BAN:
+                for f in root.rglob(duoi):
+                    r = str(f.relative_to(root))
+                    if any(b in r for b in BO_VA):
+                        continue
+                    s = f.read_text(encoding="utf-8", errors="ignore")
+                    moi, k = re.subn(pat_g[0], pat_g[1], s)
+                    if k:
+                        f.write_text(moi, encoding="utf-8")
+                        kg += k
+            for f in list(root.glob("*.py")) + _py_goi(root) + list(root.glob("tests/*.py")):
+                kg += _thay_trong_chuoi_py(f, [pat_g])
+            for f in root.glob("tests/*.py"):
+                s = f.read_text(encoding="utf-8")
+                moi, k = re.subn(rf'(["\']){re.escape(mod_cu)}\1(?=\s*/\s*["\']\w+\.py\b)', rf"\g<1>{mod_moi}\g<1>", s)
+                if k:
+                    f.write_text(moi, encoding="utf-8")
+                    kg += k
+            _log(f"  đường dẫn nguồn `{mod_cu}/…py`: {kg} chỗ")
+            tong += kg
     # (2) test đọc văn bản nguồn: `def cũ(`, `cũ(`, và `modcũ.cũ` (test_tim_anh_theo_vai
     # tìm chuỗi "vai.du_nguyen_lieu" trong nguồn anh_chuan_bi). Thay theo CẶP
     # (module, tên) nên không đụng khoá JSON kiểu "vai" trần.
@@ -606,7 +637,7 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
                 f.write_text(moi_src, encoding="utf-8")
         # getattr/setattr/hasattr(mod, "tên") trong MA CHINH cung la tham chieu
         # (lo 5: env_load `getattr(card, "THUONG_HIEU", {})` -> masthead in slug).
-        for f in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+        for f in list(root.glob("*.py")) + _py_goi(root):
             src = f.read_text(encoding="utf-8")
             if not any(o in src for o, _n, _k in defs) and not any(o in src for o, _n in consts):
                 continue
@@ -624,7 +655,7 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
     bang = dict(BANG_TOAN_CUC)
     bang.update({o: n for o, n, _k in defs})
     bang.update(dict(consts))
-    for mod_path in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+    for mod_path in list(root.glob("*.py")) + _py_goi(root):
         s = mod_path.read_text(encoding="utf-8")
         m_all = re.search(r"^__all__\s*=\s*\[", s, re.M)
         if not m_all:
@@ -756,7 +787,7 @@ def main() -> int:
     for _m, cs in plan["consts"].items():
         BANG_TOAN_CUC.update(dict(cs))
     # Module da doi o lo truoc: shim `<cũ>.py` ghi "tên cũ của `<mới>.py`".
-    for shim in list(root.glob("*.py")) + list(root.glob("chuan_bi/*.py")):
+    for shim in list(root.glob("*.py")) + _py_goi(root):
         m = re.match(r'"""SHIM tạm \(LOW-50\): tên cũ của `(\w+)\.py`', shim.read_text(encoding="utf-8"))
         if m:
             BANG_MODULE[shim.stem] = m.group(1)
@@ -774,7 +805,8 @@ def main() -> int:
         if not a.dry_run:
             proj = _project(root)
             tep = _rope_rename(proj, a.package, None, moi)
-            _log(f"  ({len(tep)} tệp)")
+            k = _va_import_cu(root, a.package, moi)        # import cuc bo rope bo sot
+            _log(f"  ({len(tep)} tệp{f', +{k} import cục bộ' if k else ''})")
             _va_chuoi(root, a.package, moi, [], [])
             (root / a.package).mkdir(exist_ok=True)
             (root / a.package / "__init__.py").write_text(
