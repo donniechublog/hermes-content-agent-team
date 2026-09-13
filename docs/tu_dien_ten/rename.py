@@ -217,9 +217,9 @@ def _va_re_export(root: Path, mod_full: str, old: str, new: str) -> int:
         s = f.read_text(encoding="utf-8")
         if old not in s:
             continue
+        # _alias_module da gom ca TEN CU cua module re-export (`import anh_chuan_bi as cb`
+        # con sot lai tu lo truoc, BANG_MODULE) — khong loc tep theo ten moi o day.
         alias = _alias_module(s, Ms)
-        if not any(re.search(rf"^\s*(?:import|from)\b.*\b{re.escape(M)}\b", s, re.M) for M in Ms):
-            continue                          # tep khong import module re-export nao
         n += _doi_token(f, lambda pp, p, t, nx, al=alias: new if (t.string == old and p is not None
                                                                    and p.string == "." and pp is not None
                                                                    and pp.string in al) else None)
@@ -648,7 +648,14 @@ def main() -> int:
         m = re.match(r'"""SHIM tạm \(LOW-50\): tên cũ của `(\w+)\.py`', shim.read_text(encoding="utf-8"))
         if m:
             BANG_MODULE[shim.stem] = m.group(1)
-    py =str(root / "venv/bin/python") if (root / "venv/bin/python").exists() else sys.executable
+            if not a.dry_run:
+                # Import cuc bo con ten cu tu lo truoc (rope bo sot) — va truoc khi
+                # chay lo nay, de patch.object/alias trong test nhin dung module.
+                tien_to = "chuan_bi." if shim.parent.name == "chuan_bi" else ""
+                k = _va_import_cu(root, tien_to + shim.stem, tien_to + m.group(1))
+                if k:
+                    _log(f"  import cục bộ còn tên cũ `{shim.stem}` (lô trước): {k} chỗ")
+    py = str(root / "venv/bin/python") if (root / "venv/bin/python").exists() else sys.executable
     if a.package:
         moi = td.dich_module(a.package)[0]
         _log(f"== gói {a.package} -> {moi}")
