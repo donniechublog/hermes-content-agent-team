@@ -86,7 +86,14 @@ cd \$HOME/content-team && venv/bin/python quet_nop.py --vai $VAI
 Khong tin nao dat nguong thi chay: quet_nop.py --vai $VAI --khong-co (script gui dong
 'hom nay khong co gi' kem so tin da quet — Ong Chu can phan biet voi 'co gi do hong').
 Script bao [LOI] thi sua tep JSON roi chay lai DUNG lenh (toi da 2 lan). Xong: ket
-thuc task bang dong 'Ket qua task' script in ra. KHONG tao task kanban nao."
+thuc task bang dong 'Ket qua task' script in ra. KHONG tao task kanban nao.
+
+TUYET DOI KHONG DOI \`--vai\`. Script tu choi \`--vai\` cua ban (invalid choice, exit 2)
+thi day la SU CO TRIEN KHAI: DUNG LAI, ket thuc task bang dong bao dung loi do.
+Khong chay \`--vai\` cua vai khac, khong nop ho vai khac. Sang 13/09/2026 da co
+mot lan lam dung the: \`--vai qinn\` bao exit 2, vai tu chay \`--vai finn\` roi nop
+\`--vai scout\` — ghi de manifest cua Finn va gui bao cao thu hai vao topic Finn,
+con Ong Chu thi khong thay tin nao o topic cua minh."
 
 OUT=$($H -m hermes_cli.main kanban create "$TIEU_DE $DAY" \
   --assignee "$VAI" --max-runtime 20m \

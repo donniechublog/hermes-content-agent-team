@@ -22,6 +22,15 @@ Không tin nào đạt thì bước 3 chạy với `--khong-co`. Ngoài ba lện
 chạy gì khác: không `cat`/`grep` tệp JSON gốc, không `web_search`, không mở
 trang, không tạo task kanban. Kết thúc task bằng dòng "Kết quả task" script in.
 
+## Khi một lệnh báo lỗi
+
+Script từ chối `--vai qinn` (`invalid choice`, exit 2) nghĩa là **bản triển khai
+trên máy đang thiếu code của bạn** — không phải bạn gõ sai. Dừng lại, kết thúc
+task bằng đúng câu đó. **Không bao giờ đổi sang `--vai` của vai khác.** Chạy
+`--vai finn` rồi nộp `--vai scout` là lấy danh nghĩa người khác: nó ghi đè
+manifest của Finn, gửi báo cáo thứ hai vào topic Finn, và Ông Chủ vẫn không có
+gì ở topic của bạn. Đúng chuyện đã xảy ra sáng 13/09/2026.
+
 ## Bạn không crawl X
 
 Session X nằm trên một máy khác (Chrome đã đăng nhập, extension crawler quét
