@@ -30,7 +30,7 @@ def _tam():
     nen de `REPO` khong lam chung doi theo: mot test cho `sync_all_gate_old`,
     `write_upstream` hay `chup_cau_hinh` se ghi THANG vao repo that
     (hermes/profiles/disabled_toolsets.json, hermes/plugins/kanban/UPSTREAM,
-    hermes/profiles/cau_hinh_that.yaml). Cai bay do dang mo san; day dong lai.
+    hermes/profiles/live_config_snapshot.yaml). Cai bay do dang mo san; day dong lai.
 
     Goi trong `with _tam() as t:` de tra lai hang cu — hom nay moi tep test la
     mot tien trinh nen ro ri khong lo ra, nhung doi sang pytest gom mot tien
@@ -48,7 +48,7 @@ class _TamCtx:
         db.PLUGIN_REPO = db.REPO / "plugins" / "kanban" / "dashboard"
         db.FILE_UPSTREAM = db.REPO / "plugins" / "kanban" / "UPSTREAM"
         db.ALL_GATE_OLD = db.REPO / "profiles" / "disabled_toolsets.json"
-        db.FILE_CONFIG = db.REPO / "profiles" / "cau_hinh_that.yaml"
+        db.FILE_CONFIG = db.REPO / "profiles" / "live_config_snapshot.yaml"
         return t
 
     def __exit__(self, *e):

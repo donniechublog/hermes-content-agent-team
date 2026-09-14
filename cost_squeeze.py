@@ -84,7 +84,7 @@ def job_teaser():
     """Viec that cua Cape: tu du lieu bai goc, viet tieu de + doan van 500-800 tu."""
     # KHONG doc tu state/ — thu muc do bi gitignore, ban sao moi se khong co tep.
     # Trich thang tu bai that, va noi ro cach tao lai neu thieu mang.
-    mau = ROOT / "mau_bai_goc.json"
+    mau = ROOT / "original_post_template.json"
     if not mau.exists():
         raise SystemExit(
             f"Thieu {mau}. Tao bang:\n"

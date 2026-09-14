@@ -8,7 +8,7 @@
 # dau lech: audit 05/09 do trung ~50%, den 06/09 la ~90% vi BODY duoc mo rong
 # giong nhau o ca ba ban. Sua mot cho ma quen hai cho kia la chuyen da xay ra.
 #
-# Dung:  quet_daily_scan.sh finn|nova|vera
+# Dung:  daily_scan.sh finn|nova|vera
 #
 # Tham so la SLUG PROFILE (ten nhan vat, LOW-14), va chinh no la assignee.
 # Truoc LOW-20 tham so la role cu (scout|market) va assignee di theo no: sang

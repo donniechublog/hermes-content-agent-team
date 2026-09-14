@@ -152,6 +152,21 @@ Không đổi trong `nhat_ky/` (lịch sử) và trong chính thư mục này.
 `skill_lesson_filter.SOURCE_OF_TRUTH` khớp **cả hai** tên vì bài học cũ vẫn ghi
 `LUAT_ANH`.
 
+## Script/cấu hình không phải `.md` (LOW-151, 14/09/2026)
+
+Cùng lý do trên — không phải mã, `rename.py`/`test_ten_english.py` không xét.
+
+| Tên cũ | Tên mới | Ghi chú |
+|---|---|---|
+| `hermes/scripts/cap_nhat_hermes.sh` | `hermes/scripts/update_hermes.sh` | chỉ tự nhắc chính nó |
+| `mau_bai_goc.json` | `original_post_template.json` | dữ liệu mẫu cho `cost_squeeze.py`, có tracked trong git |
+| `hermes/scripts/quet_daily_scan.sh` | `hermes/scripts/daily_scan.sh` | 4 wrapper (`finn_daily_scan.sh`, `nova_daily_scan.sh`, `vera_daily_scan.sh`, `qinn_scan.sh`) gọi qua đường dẫn tương đối, **giữ nguyên tên wrapper** (README: để khỏi sửa job cron trên máy chủ); `sync_hermes.SCRIPT` phải sửa theo, deploy xong nhớ `--ra-hermes` |
+| `hermes/profiles/cau_hinh_that.yaml` | `hermes/profiles/live_config_snapshot.yaml` | tệp do máy sinh (`sync_hermes.py --chup-cau-hinh`, tên cờ chưa đổi — ngoài phạm vi) |
+
+`hermes/scripts/nhat_ky_daily.sh` và `hermes/systemd/nhat-ky-web.service` **chưa đổi**
+trong đợt này: tên đang nằm thẳng trong job cron/unit systemd đang chạy thật trên
+máy chủ, đổi cần thêm bước sửa tay ngoài git — xem LOW-151.
+
 ## Thứ tự ưu tiên khi dịch một tên (`gen.py`)
 
 1. `overrides.json` khớp `module.tên_gốc` → dùng ngay, bỏ qua mọi bước dưới.

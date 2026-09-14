@@ -581,7 +581,7 @@ def _va_chuoi(root: Path, mod_cu: str, mod_moi, defs: list, consts: list):
         if "_" in old.strip("_") and old not in khoa_json:
             hang_tran.append((rf"(?<![\w$]){re.escape(old)}(?![\w])", new))
     for old, new in consts:
-        # `$` loại trừ biến shell trong chuỗi test ("$VAI" của quet_daily_scan.sh
+        # `$` loại trừ biến shell trong chuỗi test ("$VAI" của daily_scan.sh
         # không phải hằng Python — pilot 13/09 đã đổi nhầm thành "$ROLE").
         # Hang MOT TU (CAO, NGUON, RONG) la chu tieng Viet thuong gap trong chuoi
         # ("BAO CAO BI CAT", "NGUON KHONG LAY DUOC", JS `Y0+CAO`) — lo 2 doi bua

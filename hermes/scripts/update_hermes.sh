@@ -1,5 +1,5 @@
 #!/bin/bash
-# cap_nhat_hermes.sh — cap nhat hermes-agent AN TOAN: kiem truoc, kiem sau,
+# update_hermes.sh — cap nhat hermes-agent AN TOAN: kiem truoc, kiem sau,
 # hong thi LUI LAI dung commit cu (audit_content_team C2).
 #
 # Vi sao can (nhat ky su co): content-team dung RUOT cua hermes-agent — import
@@ -22,9 +22,9 @@
 # Vi vay buoc kiem co chay check_env.py: no noi ro goi nao dang thieu.
 #
 # Dung:
-#     hermes/scripts/cap_nhat_hermes.sh            # cap nhat + kiem + tu lui khi hong
-#     hermes/scripts/cap_nhat_hermes.sh --thu      # chi kiem hien trang, KHONG cap nhat
-#     hermes/scripts/cap_nhat_hermes.sh --khong-lui  # hong thi bao, KHONG tu lui
+#     hermes/scripts/update_hermes.sh            # cap nhat + kiem + tu lui khi hong
+#     hermes/scripts/update_hermes.sh --thu      # chi kiem hien trang, KHONG cap nhat
+#     hermes/scripts/update_hermes.sh --khong-lui  # hong thi bao, KHONG tu lui
 #
 # Cron sang (audit C2 de nghi): dang ky mot job goi script nay hoac chi rieng
 # `check_hermes.py` moi sang. Job cron cua hermes nam trong HOME dang chay

@@ -72,7 +72,7 @@ FILE_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
 # KHONG tao (ton trong phan chia job per-brand trong jobs.json). "moat_publish_
 # watch" tung nam ngoai danh sach du la job chay DAY NHAT (moi phut) co ca
 # find -delete — mot script hong ngoai git la dung kich ban 22/08.
-SCRIPT = ["quet_daily_scan",                              # than chung cua ba vai quet
+SCRIPT = ["daily_scan",                              # than chung cua ba vai quet
           "finn_daily_scan", "nova_daily_scan", "vera_daily_scan",   # vo mong, giu ten cho cron
           "model_watch", "nhat_ky_daily", "moat_publish_watch",
           "audit_cron",                                   # chay o CA HAI home
@@ -515,7 +515,7 @@ def _filter_secret(v):
     if isinstance(v, list):
         return [_filter_secret(x) for x in v]
     return v
-FILE_CONFIG = REPO / "profiles" / "cau_hinh_that.yaml"
+FILE_CONFIG = REPO / "profiles" / "live_config_snapshot.yaml"
 
 
 def _take(d, duong):
