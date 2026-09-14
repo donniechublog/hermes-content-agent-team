@@ -1,6 +1,6 @@
 # Bản chụp cấu hình chạy thật (systemd user units)
 
-Chụp từ máy chủ ngày 06/09/2026. Trước đó **chỉ có `nhat-ky-web.service`** nằm
+Chụp từ máy chủ ngày 06/09/2026. Trước đó **chỉ có `journal-web.service`** nằm
 trong git, còn unit template `hermes-approve@.service` — nơi đặt `CT_BRAND`,
 `HERMES_HOME`, và các drop-in đặt `CT_BANG_DEN` — thì không. Nghĩa là prompt và
 hành vi thật của đội phụ thuộc vào những tệp không ai theo dõi được: cài lại máy

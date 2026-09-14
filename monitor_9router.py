@@ -6,7 +6,7 @@ analyst (kèm link journal_web).
 
 Đọc usageHistory của 9router CHỈ ĐỌC → state/9router/nhat_ky/9router_<ngày>.json
 + .md. Chạy lại bao nhiêu lần cũng ra y hệt (idempotent), nên cả hai brand gọi
-từ nhat_ky_daily.sh đều được.
+từ journal_daily.sh đều được.
 
 9router KHÔNG ghi IP máy gọi (usageHistory.meta luôn {}). Watcher socket từng
 bù chỗ đó (--canh) đã bỏ 05/09/2026 chiều: cách đúng là bind 9router về

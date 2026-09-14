@@ -13,7 +13,7 @@ nào — bảng .md tự dựng thành HTML bằng `md_bright_html` (bỏ `markd
     /9router/<ngày>         bản .md của ngày render thành HTML (bảng thật)
     /9router/<ngày>.json    số liệu thô (cho ai muốn vẽ thêm)
 
-Chạy dưới systemd user `nhat-ky-web` (hermes/systemd/). Cổng NHAT_KY_PORT
+Chạy dưới systemd user `journal-web` (hermes/systemd/). Cổng NHAT_KY_PORT
 (mặc định 9130), host NHAT_KY_HOST (mặc định 0.0.0.0 để đi qua netbird
 100.87.121.46). Không có gì bí mật trong nhật ký (tên connection, model, tiền),
 không có khoá.

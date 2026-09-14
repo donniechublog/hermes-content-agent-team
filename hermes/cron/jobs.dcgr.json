@@ -161,7 +161,7 @@
       "provider_snapshot": null,
       "model_snapshot": null,
       "base_url": null,
-      "script": "nhat_ky_daily.sh",
+      "script": "journal_daily.sh",
       "no_agent": true,
       "monitor_script": null,
       "monitor_url": null,

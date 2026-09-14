@@ -164,10 +164,12 @@ Cùng lý do trên — không phải mã, `rename.py`/`test_ten_english.py` khô
 | `hermes/profiles/cau_hinh_that.yaml` | `hermes/profiles/live_config_snapshot.yaml` | tệp do máy sinh (`sync_hermes.py --chup-cau-hinh`, tên cờ chưa đổi — ngoài phạm vi) |
 | `tests/chay.sh` | `tests/run.sh` | LOW-152. **Rủi ro cao nhất trong đợt**: CI thật (`.github/workflows/ci.yml`) và chính `rename.py:693` gọi thẳng tên này — sửa CI TRƯỚC KHI push, không sau |
 | `cai_dat.sh` | `setup.sh` | LOW-153. `cai_dat` → `setup` đã có sẵn trong `cum.json`. Một SKILL (`url-mascot-frame`) nhắc tên này — vai đọc lúc chạy |
+| `hermes/scripts/nhat_ky_daily.sh` | `hermes/scripts/journal_daily.sh` | LOW-151, đợt 2. Tên nằm trong trường `"script"` của job cron `daily-log` (id `1d476e2f3a8f`, cùng id ở cả hai home) — **deploy phải kèm** `hermes cron edit <id> --script journal_daily.sh` cho CẢ HAI home, và chép tệp mới sang home trước (sync không tự tạo tệp mới) |
+| `hermes/systemd/nhat-ky-web.service` | `hermes/systemd/journal-web.service` | LOW-151, đợt 2. Unit đang chạy thật — deploy phải kèm: cp unit mới → `daemon-reload` → `disable --now nhat-ky-web` → `enable --now journal-web` → kiểm cổng 9130 → xoá unit cũ |
 
-`hermes/scripts/nhat_ky_daily.sh` và `hermes/systemd/nhat-ky-web.service` **chưa đổi**
-trong đợt này: tên đang nằm thẳng trong job cron/unit systemd đang chạy thật trên
-máy chủ, đổi cần thêm bước sửa tay ngoài git — xem LOW-151.
+**Không đổi** (ngoài phạm vi "tên tệp"): đường dẫn dữ liệu trên đĩa
+`state/9router/nhat_ky`, thư mục `nhat_ky/`, và biến môi trường
+`NHAT_KY_HOST`/`NHAT_KY_PORT` của `journal_web.py`.
 
 ## Thứ tự ưu tiên khi dịch một tên (`gen.py`)
 

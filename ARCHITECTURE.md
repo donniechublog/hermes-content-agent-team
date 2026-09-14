@@ -124,7 +124,7 @@ flowchart TB
     subgraph SHARED["Dùng chung giữa 2 brand"]
         drafts[("drafts/{id}.*.json<br/>brand nằm trong sidecar,<br/>không tách thư mục")]:::datastore
         stateCommon[("state/9router/<br/>state/cron_audit.json")]:::datastore
-        nhatky["nhat-ky-web :9130"]:::container
+        nhatky["journal-web :9130"]:::container
     end
 
     ocnu <-->|"chat / chọn số / duyệt"| telegram
@@ -157,7 +157,7 @@ thành **hai container hoàn toàn tách biệt** — mỗi bên một bộ syst
 `state/<brand>/` riêng, một cấu hình cron riêng, chạy **tuần tự** trong nội bộ
 brand (`kanban.max_in_progress: 1`) nhưng **độc lập song song** giữa hai
 brand. Chỉ `drafts/`, `state/9router/`, `state/cron_audit.json` và
-`nhat-ky-web` là dùng chung.
+`journal-web` là dùng chung.
 
 ## Cấp 3 — Sơ đồ luồng pipeline nội dung (Component / data flow)
 
