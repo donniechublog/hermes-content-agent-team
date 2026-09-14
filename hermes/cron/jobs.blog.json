@@ -75,15 +75,15 @@
       "schedule_display": "*/30 0,4,5,10-23 * * *",
       "repeat": {
         "times": null,
-        "completed": 440
+        "completed": 443
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-08-21T03:34:42.009647+00:00",
-      "next_run_at": "2026-09-14T11:30:00+00:00",
-      "last_run_at": "2026-09-14T11:00:45.720451+00:00",
+      "next_run_at": "2026-09-14T13:00:00+00:00",
+      "last_run_at": "2026-09-14T12:30:53.069848+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -94,9 +94,9 @@
       "workdir": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-09-14T11:00:00+00:00",
-        "dispatched_at": "2026-09-14T11:00:39.626179+00:00",
-        "lateness_seconds": 39.6,
+        "scheduled_at": "2026-09-14T12:30:00+00:00",
+        "dispatched_at": "2026-09-14T12:30:48.516973+00:00",
+        "lateness_seconds": 48.5,
         "kind": "on_time"
       }
     },
@@ -125,15 +125,15 @@
       "schedule_display": "* * * * *",
       "repeat": {
         "times": null,
-        "completed": 4228
+        "completed": 4247
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-08-21T08:53:22.731178+00:00",
-      "next_run_at": "2026-09-14T11:15:00+00:00",
-      "last_run_at": "2026-09-14T11:10:42.052643+00:00",
+      "next_run_at": "2026-09-14T12:50:00+00:00",
+      "last_run_at": "2026-09-14T12:46:00.601251+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -144,59 +144,9 @@
       "workdir": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-09-14T11:10:00+00:00",
-        "dispatched_at": "2026-09-14T11:10:40.530061+00:00",
-        "lateness_seconds": 40.5,
-        "kind": "on_time"
-      }
-    },
-    {
-      "id": "c1c7d4ec923b",
-      "name": "nova-daily-scan",
-      "prompt": "",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "nova_daily_scan.sh",
-      "no_agent": true,
-      "monitor_script": null,
-      "monitor_url": null,
-      "monitor_state": null,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 22 * * *",
-        "display": "0 22 * * *"
-      },
-      "schedule_display": "0 22 * * *",
-      "repeat": {
-        "times": null,
-        "completed": 13
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-08-22T07:22:03.602791+00:00",
-      "next_run_at": "2026-09-14T22:00:00+00:00",
-      "last_run_at": "2026-09-13T22:00:19.989928+00:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "failure_streak": 0,
-      "deliver": "local",
-      "origin": null,
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null,
-      "last_dispatch": {
-        "scheduled_at": "2026-09-13T22:00:00+00:00",
-        "dispatched_at": "2026-09-13T22:00:18.420245+00:00",
-        "lateness_seconds": 18.4,
+        "scheduled_at": "2026-09-14T12:45:00+00:00",
+        "dispatched_at": "2026-09-14T12:45:55.442028+00:00",
+        "lateness_seconds": 55.4,
         "kind": "on_time"
       }
     },
@@ -326,15 +276,15 @@
       "schedule_display": "20 * * * *",
       "repeat": {
         "times": null,
-        "completed": 5
+        "completed": 7
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-09-14T05:35:14.866407+00:00",
-      "next_run_at": "2026-09-14T11:20:00+00:00",
-      "last_run_at": "2026-09-14T10:20:36.913873+00:00",
+      "next_run_at": "2026-09-14T13:20:00+00:00",
+      "last_run_at": "2026-09-14T12:20:48.473151+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -345,13 +295,57 @@
       "enabled_toolsets": null,
       "workdir": null,
       "last_dispatch": {
-        "scheduled_at": "2026-09-14T10:20:00+00:00",
-        "dispatched_at": "2026-09-14T10:20:36.057942+00:00",
-        "lateness_seconds": 36.1,
+        "scheduled_at": "2026-09-14T12:20:00+00:00",
+        "dispatched_at": "2026-09-14T12:20:47.491458+00:00",
+        "lateness_seconds": 47.5,
         "kind": "on_time"
       },
       "fire_claim": null
+    },
+    {
+      "id": "db1ecd28f1f1",
+      "name": "audit-cron",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "audit_cron.sh",
+      "no_agent": true,
+      "monitor_script": null,
+      "monitor_url": null,
+      "monitor_state": null,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 0 * * *",
+        "display": "0 0 * * *"
+      },
+      "schedule_display": "0 0 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-09-14T11:50:09.642993+00:00",
+      "next_run_at": "2026-09-15T00:00:00+00:00",
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "last_delivery_unverified": null,
+      "failure_streak": 0,
+      "deliver": "local",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null
     }
   ],
-  "updated_at": "2026-09-14T11:10:42.078626+00:00"
+  "updated_at": "2026-09-14T12:46:00.630176+00:00"
 }

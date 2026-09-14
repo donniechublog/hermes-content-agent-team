@@ -152,12 +152,14 @@ DEFAULT_WRITE = "miles"
 #      vai quet". Biet vai quet la biet linh vuc that cua tin.
 #   2. BRAND — luoi an toan cho cac duong khong cam theo vai quet (vd
 #      `approve_service push` chi co draft_id + category). Hom nay hai bang cho
-#      CUNG ket qua vi finn/nova nam ca o blog con vera o dcgr; giu ca hai la
-#      de hom nao mot vai quet doi container thi ve (1) van dung ngay.
+#      CUNG ket qua vi finn/qinn nam o blog con vera/nova o dcgr (Nova chuyen
+#      sang dcgr 14/09/2026, LOW-135); giu ca hai la de hom nao mot vai quet doi
+#      container thi ve (1) van dung ngay. Ca hai chi la nguoi viet TAM: brand
+#      nao cung co Miles + Jika chia viec theo hang cho (WRITERS_BY_BRAND).
 WRITE_BY_SCAN = {
     "finn": "jika",                # Finn — HN/Reddit/arXiv
     "qinn": "jika",                # Qinn — X (tin ky thuat, cung nguoi doc voi Finn)
-    "nova": "jika",                # Nova — model moi ra mat
+    "nova": "miles",               # Nova — model moi ra mat (dcgr tu LOW-135)
     "vera": "miles",               # Vera — kinh doanh, dau tu
 }
 

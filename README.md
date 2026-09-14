@@ -43,7 +43,7 @@ người đang ít việc chờ hơn trong `role.WRITERS_BY_BRAND`. Vai **ảnh*
 | Miles | `miles` | writer | Viết caption tiếng Việt — **cả hai brand**, mỗi brand **chia việc với Jika** theo hàng chờ (blog từ 14/09/2026 LOW-123, dcgr từ 14/09/2026 LOW-136). Cùng script, cùng luật caption; khác Jika ở giọng viết |
 | Jika | `jika` | writer | Viết caption tiếng Việt — **cả hai brand**, chia việc với Miles (blog từ 10/09/2026 LOW-13, dcgr từ 14/09/2026 LOW-136). Mỗi brand một profile, SOUL/MEMORY riêng theo người đọc của brand |
 | Qinn | `qinn` | scout.x | Đọc tin kỹ thuật trên X (home timeline + các X List) qua cổng đọc của social-publishing, **2 lượt/ngày** (05:00 và 17:00 VN), cửa sổ 12h mỗi lượt — **chỉ donniechublog**, tin đi sang Jika. Không tự crawl X: session X nằm trên máy crawler, `scan_x.py` chỉ đọc lại (từ 12/09/2026) |
-| Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý |
+| Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý — **chạy ở dcgr.tech** (cron + topic từ 14/09/2026, LOW-135). Profile `nova` bên blog còn giữ lại (không cron, không topic) |
 | Vera | `vera` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
 | Ada | `ada` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
 | Cape | `cape` | teaser | Ghép teaser từ bài đã duyệt — blog only |
@@ -427,14 +427,14 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 ## Cron
 
 Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` gộp chung:
-`~/.hermes-blog/cron/jobs.json` (7 job) và `~/.hermes-dcgr/cron/jobs.json` (5 job)
-— đếm trên máy chủ 14/09/2026. `qinn-scan` (blog, `0 22,10 * * *`) có trên máy chủ
-nhưng chưa có mục riêng dưới đây.
+`~/.hermes-blog/cron/jobs.json` (7 job) và `~/.hermes-dcgr/cron/jobs.json` (7 job)
+— đếm trên máy chủ 14/09/2026 sau LOW-135. `qinn-scan` (blog, `0 22,10 * * *`) có
+trên máy chủ nhưng chưa có mục riêng dưới đây.
 
-- `finn-daily-scan` (blog), `nova-daily-scan` (blog), `vera-daily-scan` (dcgr)
-  — **05:00 VN** (22:00 UTC). Ba job này nằm ở **hai container khác nhau**, nên
-  chỉ finn và nova là nối tiếp nhau (`max_in_progress: 1` của blog); vera chạy
-  song song ở dcgr. Thân ba script là **một** tệp
+- `finn-daily-scan` (blog), `nova-daily-scan` (**dcgr** từ 14/09/2026, LOW-135),
+  `vera-daily-scan` (dcgr) — **05:00 VN** (22:00 UTC). Ba job này nằm ở **hai
+  container khác nhau**; nova và vera cùng ở dcgr nhưng là hai profile khác nhau
+  nên chạy song song (`max_in_progress: 3`, mỗi profile 1). Thân ba script là **một** tệp
   `hermes/scripts/quet_daily_scan.sh <vai>`; `finn_daily_scan.sh` và hai tệp kia
   chỉ còn 7 dòng gọi sang đó, giữ tên cũ để khỏi phải sửa job cron trên máy chủ.
 - `daily-log` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router
