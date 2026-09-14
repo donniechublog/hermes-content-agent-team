@@ -3,7 +3,7 @@
 # Hai cổng, đúng hai cổng dùng tay từ trước: pyflakes (lint) và tests/run.sh
 # (37+ tệp test, harness riêng, không pytest). run.sh tự đặt CT_STATE_DIR nên
 # không ghi vào state/ của repo. Chromium cần cho vài test render — cài như
-# cai_dat.sh làm trên server.
+# setup.sh làm trên server.
 #
 # Vì sao giờ mới có: lượt 1 lẫn lượt 2 audit đều thấy "xanh 37/37" mà một trong
 # hai lần là xanh giả (không cách ly). Không có CI thì lượt audit 3 sẽ lặp lại

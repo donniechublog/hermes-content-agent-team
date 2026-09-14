@@ -53,4 +53,4 @@ opencv-python-headless>=4.9  # cong chan MAT NGUOI (image_rules._load_yunet, YuN
 # Ghim ban (audit D1/ADF-r2-13): khong ghim cung o day vi venv dung chung voi
 # hermes — `hermes update` co the nang bat cu goi nao. Khi co venv rieng (D1):
 #     venv/bin/pip freeze > requirements.lock   (tren SERVER, sau khi da chay on)
-# roi cai_dat.sh dung tep lock do.
+# roi setup.sh dung tep lock do.

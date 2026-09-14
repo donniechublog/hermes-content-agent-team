@@ -336,7 +336,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `check_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.
-- `cai_dat.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
+- `setup.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
   (pip, `playwright install chromium`) rồi kết thúc bằng `check_env.py`.
   Trước đây các bước này nằm rải trong comment của `requirements.txt` và
   `bob_submit.py`, thiếu một bước là hỏng **câm** (thiếu cv2 → cổng mặt người tự
