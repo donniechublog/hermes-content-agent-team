@@ -79,8 +79,6 @@ dưới. Khác hero (một tiêu đề bao quát tin) và khác carousel (nhiề
 6. **Hai chip neobrutalism** (khối đặc, viền đen 4px, bóng cứng lệch, chữ mono):
    tên kênh góc trên-phải khung, tagline góc dưới-trái, tâm chip ngang mức nét
    khung. Chip **không** đặt ở góc thẻ — ở đó nó đè lên tiêu đề của ảnh nguồn.
-7. Ảnh thấp hơn 50% khổ thẻ bị chặn hẳn (`kiem_anh_thap`): nửa thẻ bỏ
-   trống. Đường ra là ghép dọc `--image2`.
 
 ## Bố cục kiểu `tran` — vai designer Ethan (cả hai brand)
 
