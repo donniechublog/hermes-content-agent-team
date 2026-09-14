@@ -99,6 +99,11 @@ hình thật, không thì `bars` từ số trong bài, không có số thì bỏ
 ý mới; bìa giật, slide cuối để lại câu hỏi hay mốc. Tiếng Việt có dấu, câu ngắn
 chủ động, không em-dash, không số ngoài tư liệu, dẫn nguồn ghi "via".
 
+Bài không có số nhưng vẫn phải đưa nhiều hình thật lên slide (cổng ảnh bên dưới
+ép mỗi mã một `figure`): mỗi hình một `figure` có tiêu đề là một mệnh đề đọc
+được, phần nhịp còn lại lấp bằng `statement` và `loop` thuần chữ. Không dựng
+`bars` khi bài không có số (gặp thật 14/09/2026, tin Intel và Apple).
+
 ## Cổng ảnh có thể ĐÁ NHAU (gặp thật 10/09/2026)
 
 Tin chuyển sang Kite vì thiếu ảnh thì `kite_submit.py` ép **mọi** mã trong
