@@ -82,7 +82,7 @@ def count_of_redo(draft_id: str) -> int:
 
 
 def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "anh",
-                 draft_id: str = "") -> list:
+                 draft_id: str = "", anh_bat_buoc: bool = False) -> list:
     """Lam lai ma van giu anh/hook cua lan truoc -> loi. `khoa_anh` la khoa trong
     da_dung.json ("bia" voi carousel, "anh" voi hero).
 
@@ -96,6 +96,14 @@ def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str =
 
     Moc so sanh la `remakes` trong img.json — chinh con so approve_post tang moi
     lan bam nut.
+
+    `anh_bat_buoc`: anh/bia hien tai la LUA CHON DUY NHAT hop le theo mot cong
+    khac (vd needs_ranking_image voi tin chi co dung mot anh xep hang — xem
+    only_ranking_choice, LOW-146). Cong nay tung khoa cung voi cong do: tin xep
+    hang bat bia PHAI la anh xep hang, con day cam dung lai anh cua lan truoc —
+    chi co MOT anh xep hang va no da la bia lan truoc thi khong con duong nop
+    hop le. Khi bat_buoc, bo qua rieng phan sanh anh, van giu cong hook (vai
+    van phai doi cach dien dat, chi khong bi ep doi anh khong the doi).
     """
     if not da_dung:
         return []
@@ -103,7 +111,7 @@ def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str =
         return []                    # chay lai, KHONG phai Ong Chu bam lam lai
     loi = []
     cu = da_dung.get(khoa_anh)
-    if anh_moi and cu and anh_moi == cu:
+    if anh_moi and cu and anh_moi == cu and not anh_bat_buoc:
         loi.append(f"LÀM LẠI: {nhan_anh} vẫn là {cu} như lần trước — Ông Chủ bấm làm lại "
                    f"nghĩa là {nhan_anh} chưa đạt, đổi {nhan_anh} khác")
     if normalize(hook_moi) == normalize(da_dung.get("hook")):
@@ -297,6 +305,24 @@ def needs_ranking_image(m: dict, a: dict) -> bool:
     return bool(m.get("tin_xep_hang")
                 and ranking.is_capture((m.get("xep_hang") or {}).get("kieu"))
                 and not a.get("xep_hang"))
+
+
+def only_ranking_choice(m: dict) -> str | None:
+    """Ma anh xep hang DUY NHAT cua bai, neu needs_ranking_image dang ep dung no —
+    None neu bai khong phai tin xep hang, engine chua chup duoc bang, hoac co tu
+    hai anh xep hang tro len (con duong khac de chon).
+
+    Dung de goi check_redo_reused(anh_bat_buoc=...) (LOW-146): khi CHI CO MOT anh
+    xep hang, needs_ranking_image bat bia/anh phai la no, con check_redo_reused
+    cam dung lai anh cua lan truoc — neu anh do da la lua chon lan truoc, hai cong
+    khoa nhau, bo khong con duong nop hop le du sua gi khac."""
+    if not m.get("tin_xep_hang"):
+        return None
+    import ranking
+    if not ranking.is_capture((m.get("xep_hang") or {}).get("kieu")):
+        return None
+    ma_xh = [a["ma"] for a in (m.get("anh") or []) if a.get("xep_hang")]
+    return ma_xh[0] if len(ma_xh) == 1 else None
 
 
 def irrelevant_images(anh: dict, ma_ds) -> tuple:

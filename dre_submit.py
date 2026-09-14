@@ -321,8 +321,13 @@ def main() -> int:
     for c in canh:
         print(f"[CANH BAO] {c}")
     cover = spec.get("cover") or {}
+    # LOW-146: khi bai chi co DUNG MOT anh xep hang va needs_ranking_image dang ep
+    # bia phai la no, khong bao "lam lai ma van giu bia cu" — khong con anh nao
+    # khac de doi (xem submit_common.only_ranking_choice).
+    bat_buoc = cover.get("anh") is not None and cover.get("anh") == nc.only_ranking_choice(m)
     loi = nc.check_redo_reused(da_dung, "bìa", cover.get("anh") or "+".join(cover.get("ghep") or []),
-                          cover.get("hook"), khoa_anh="bia", draft_id=a.draft_id) + loi
+                          cover.get("hook"), khoa_anh="bia", draft_id=a.draft_id,
+                          anh_bat_buoc=bat_buoc) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
