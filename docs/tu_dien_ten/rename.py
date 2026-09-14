@@ -4,7 +4,7 @@
 Mỗi module là một đơn vị: đổi hàm/lớp top-level → hằng số → (tuỳ chọn) tên tệp
 module, rồi vá chuỗi tham chiếu mà rope không thấy (test đọc văn bản nguồn,
 `__all__`, SOUL/skill/cron nhắc `<tên>.py`), tạo shim cho tên tệp cũ, chạy
-pyflakes + tests/chay.sh. Đỏ là dừng, để nguyên thay đổi cho người xem.
+pyflakes + tests/run.sh. Đỏ là dừng, để nguyên thay đổi cho người xem.
 
     venv/bin/python docs/tu_dien_ten/rename.py . vai [luat_anh ...]   # theo lô
     venv/bin/python docs/tu_dien_ten/rename.py . vai --dry-run        # chỉ in kế hoạch
@@ -690,7 +690,7 @@ def _kiem(root: Path, py: str) -> bool:
     if r.returncode:
         _log("pyflakes ĐỎ:\n" + r.stdout[-3000:])
         return False
-    r = subprocess.run(["bash", "tests/chay.sh"], cwd=str(root), capture_output=True, text=True,
+    r = subprocess.run(["bash", "tests/run.sh"], cwd=str(root), capture_output=True, text=True,
                        env={**__import__("os").environ, "PY": py})
     tail = r.stdout.strip().splitlines()[-2:]
     _log("tests:", " | ".join(tail))

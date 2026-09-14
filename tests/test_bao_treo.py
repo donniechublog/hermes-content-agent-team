@@ -174,6 +174,6 @@ def test_treo_duoc_xoa_khi_task_het_running():
 
 if __name__ == "__main__":
     # Truoc E-r2-2: vong `fn(); print("OK")` khong try/except, khong tong ket —
-    # dung o test dau hong, va chay.sh in "OK" khi qua vi khong thay dong N/M.
+    # dung o test dau hong, va run.sh in "OK" khi qua vi khong thay dong N/M.
     from tam import chay_tat_ca
     chay_tat_ca(globals())

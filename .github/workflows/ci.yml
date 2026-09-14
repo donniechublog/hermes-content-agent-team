@@ -1,7 +1,7 @@
 # CI cho content-team (audit lượt 2, E-r2-8 / ADF-r2-13).
 #
-# Hai cổng, đúng hai cổng dùng tay từ trước: pyflakes (lint) và tests/chay.sh
-# (37+ tệp test, harness riêng, không pytest). chay.sh tự đặt CT_STATE_DIR nên
+# Hai cổng, đúng hai cổng dùng tay từ trước: pyflakes (lint) và tests/run.sh
+# (37+ tệp test, harness riêng, không pytest). run.sh tự đặt CT_STATE_DIR nên
 # không ghi vào state/ của repo. Chromium cần cho vài test render — cài như
 # cai_dat.sh làm trên server.
 #
@@ -38,8 +38,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: pyflakes
         run: python -m pyflakes *.py prepare/*.py tests/*.py hermes/skills/url-mascot-frame/scripts/*.py
-      - name: tests/chay.sh
+      - name: tests/run.sh
         env:
           PY: python
           PYTHONUTF8: "1"
-        run: bash tests/chay.sh
+        run: bash tests/run.sh

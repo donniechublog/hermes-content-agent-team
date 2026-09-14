@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Do dung chung cua cac tep test — KHONG phai mot tep test (chay.sh chi chay
+"""Do dung chung cua cac tep test — KHONG phai mot tep test (run.sh chi chay
 `test_*.py`).
 
 Vi sao co tep nay: `_so_tam` da duoc chep sang tep test thu hai (07/09/2026).
@@ -20,14 +20,14 @@ def chay_tat_ca(ns: dict) -> None:
 
     Truoc day 35 tep chep cung mot khoi `except AssertionError` — tuc mot loi
     KHONG phai AssertionError (TypeError, KeyError, JSONDecodeError...) giet ca
-    tep: rc=1 nhung khong dong "N/M test qua", cac test sau khong chay, chay.sh
+    tep: rc=1 nhung khong dong "N/M test qua", cac test sau khong chay, run.sh
     chi hien "HONG (ma 1)". Gap 3 lan khi mutation va 1 lan that o HEAD. Day la
     dieu lượt 1 xep "lam ngay" ma chua lam.
 
     Dung:  if __name__ == "__main__": chay_tat_ca(globals())
     - test_* chay theo thu tu dinh nghia; AssertionError -> FAIL; loi khac -> ERR
       kem ten loi (van dem la hong, van chay tiep);
-    - luon in "N/M test qua" va thoat 1 neu co hong, de chay.sh doc duoc."""
+    - luon in "N/M test qua" va thoat 1 neu co hong, de run.sh doc duoc."""
     import traceback
     ham = [v for k, v in list(ns.items()) if k.startswith("test_") and callable(v)]
     hong = 0

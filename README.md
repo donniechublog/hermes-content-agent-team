@@ -290,8 +290,8 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `ai-background` (sinh nền — **chờ GPU**).
 - `hermes/profiles/` — SOUL/MEMORY của các vai; `shared/` áp cho cả hai home.
   Đồng bộ bằng `sync_hermes.py` (`--ra-hermes` / `--ve-git`).
-- `tests/` — chạy thẳng, không cần mạng: **`tests/chay.sh`** (thoát khác 0 nếu
-  bất kỳ tệp nào hỏng; `tests/chay.sh cong_chan` để lọc). Đừng dùng vòng
+- `tests/` — chạy thẳng, không cần mạng: **`tests/run.sh`** (thoát khác 0 nếu
+  bất kỳ tệp nào hỏng; `tests/run.sh cong_chan` để lọc). Đừng dùng vòng
   `for f in tests/*.py; do …; done` nữa: nó trả mã thoát của tệp **cuối cùng**,
   nên một tệp hỏng ở giữa vẫn "thành công".
   `test_cong_chan` giữ các cổng chặn và đường báo lỗi của nop, `test_cong_thuan`
@@ -315,7 +315,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   07/09/2026 mỗi vai một bản, và đã lệch một lần (Ethan không đọc cờ
   `lien_quan`).
   Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
-  `chay.sh` chỉ chạy `test_*.py`.
+  `run.sh` chỉ chạy `test_*.py`.
 
   **Hàm chạy thật thì đối chiếu bằng VẾT.** Bảy hàm không chạy offline được
   (duyệt ảnh, router Telegram, tạo cặp task, moat, và ba hàm lái Chromium) đã
