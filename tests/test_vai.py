@@ -422,12 +422,10 @@ def test_hai_bang_dinh_tuyen_khong_mau_thuan_voi_the_trien_khai_hom_nay():
         assert role.writer_for(quet) == role.writer_for(None, brand),             f"{quet} ({brand}): bang theo quet va bang theo brand lech nhau"
 
 
-def test_blog_shares_writing_between_miles_and_jika():
-    """LOW-123: blog has two writers sharing the work, dcgr only has Miles."""
-    for brand in ("blog", "donniechublog"):
+def test_both_brands_share_writing_between_miles_and_jika():
+    """LOW-123 (blog) + LOW-136 (dcgr): each brand has two writers sharing the work."""
+    for brand in ("blog", "donniechublog", "dcgr", "dcgr.tech"):
         assert set(role.writers_for_brand(brand)) == {"miles", "jika"}, brand
-    for brand in ("dcgr", "dcgr.tech"):
-        assert role.writers_for_brand(brand) == ("miles",), brand
     assert role.writers_for_brand("unknown") == ()
 
 

@@ -25,11 +25,12 @@ không còn hậu tố `.blog`/`.dcgr`. Slug **Profile hermes** là định danh
 Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `submit_common.load_draft_context`
 đọc ra từ `drafts/<id>.*.json`. Cùng một script phục vụ cả hai brand.
 
-**Hai người viết, cắt theo vai quét** (LOW-13, 10/09/2026): Finn và Nova → **Jika**
-(`jika`, donniechublog); Vera → **Miles** (`writer`, dcgr.tech). Quyết định chốt
-ngay lúc chọn tin và nằm trong `drafts/<id>.writer.json`; mọi bước sau đọc lại chỗ đó
-thay vì đoán lại. Bảng định tuyến ở `role.writer_for` — hỏi vai quét trước, brand làm
-lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin.
+**Hai người viết mỗi brand, chia theo hàng chờ** (LOW-123 blog, LOW-136 dcgr,
+14/09/2026): cả hai brand đều có **Miles** và **Jika**, chỉ khác giọng viết. Lúc chọn
+tin, `role.writer_for` ghi một người viết **tạm** vào `drafts/<id>.writer.json` (hỏi vai
+quét trước, brand làm lưới); lúc Ông Chủ duyệt ảnh, `approve_post` giao task viết cho
+người đang ít việc chờ hơn trong `role.WRITERS_BY_BRAND`. Vai **ảnh** không đổi: vẫn do
+Ông Chủ chọn theo từng tin.
 
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
@@ -39,8 +40,8 @@ lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin
 | Kite | `kite` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
 | Gin | `gin` | clean | Thay chữ Anh bằng chữ Việt trên **thẻ/dải nền phẳng**, tự tải ảnh từ link IG/X (`gin_prepare.py` → `gin_submit.py`) |
 | Itachi | `itachi` | carousel.rep | Thay chữ ở **mọi chỗ** trên ảnh, kể cả đè lên ảnh thật (OCR+LaMa, `swap_image_text.py`); hoặc dựng lại kiểu **editorial-deck** (`deck.py`) |
-| Miles | `miles` | writer | Viết caption tiếng Việt cho tin **kinh doanh, đầu tư** của **dcgr.tech** (từ 10/09/2026, LOW-13; trước đó viết cả hai brand). Profile `miles` bên blog **giữ lại cho việc còn tồn**, không nhận việc mới |
-| Jika | `jika` | writer | Viết caption tiếng Việt cho tin **model mới, arXiv/Hacker News** — **chỉ donniechublog** (từ 10/09/2026, LOW-13). Cùng script, cùng luật caption như Miles; khác ở người đọc và ở MEMORY riêng |
+| Miles | `miles` | writer | Viết caption tiếng Việt — **cả hai brand**, mỗi brand **chia việc với Jika** theo hàng chờ (blog từ 14/09/2026 LOW-123, dcgr từ 14/09/2026 LOW-136). Cùng script, cùng luật caption; khác Jika ở giọng viết |
+| Jika | `jika` | writer | Viết caption tiếng Việt — **cả hai brand**, chia việc với Miles (blog từ 10/09/2026 LOW-13, dcgr từ 14/09/2026 LOW-136). Mỗi brand một profile, SOUL/MEMORY riêng theo người đọc của brand |
 | Qinn | `qinn` | scout.x | Đọc tin kỹ thuật trên X (home timeline + các X List) qua cổng đọc của social-publishing, **2 lượt/ngày** (05:00 và 17:00 VN), cửa sổ 12h mỗi lượt — **chỉ donniechublog**, tin đi sang Jika. Không tự crawl X: session X nằm trên máy crawler, `scan_x.py` chỉ đọc lại (từ 12/09/2026) |
 | Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý |
 | Vera | `vera` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
