@@ -4,7 +4,7 @@
 Ca that: the Ethan "claude-opus-4-7-high leo lên #3 bảng văn bản Arena, chốt
 1501.8 điểm Elo" di kem anh khoanh hang #26 — la bang WebDev/Code Arena, khong
 phai Text Arena. Hai lo:
-  1. CHU_DE khong co muc nao cho bang text, nen mot chu "code" trong than bai
+  1. TOPIC khong co muc nao cho bang text, nen mot chu "code" trong than bai
      goc day arena-code (+200) len tren arena-text.
   2. `duoc_nhac` so theo TEN MIEN; bay bang arena chung mot mien nen tin co link
      arena.ai lam ca 7 bang deu "duoc nhac" -> canh bao "BANG KHAC" khong no.

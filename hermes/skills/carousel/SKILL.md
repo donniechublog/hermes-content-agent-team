@@ -47,7 +47,7 @@ brief xong phải tự đếm trước khi viết spec**:
 - Ảnh NGANG chỉ có hai đường: `ghep` với ảnh ngang **cùng tone**, hoặc
   `cat_ngang` khi là người/sản phẩm KHÔNG có chữ. Ảnh ngang có chữ (logo trên
   màn hình, screenshot) và cao dưới 700px thì `cat_ngang` bị chặn luôn vì nhoè.
-- Cặp ghép phải cùng tone: kiểm bằng `luat_anh.lech_tone` trước, đừng đoán theo
+- Cặp ghép phải cùng tone: kiểm bằng `image_rules.tone_mismatch` trước, đừng đoán theo
   mã; hai ảnh cùng nền tối vẫn có thể lệch (nền xanh đậm vs nền xám).
 
 Số slide thân khả dụng = số mã còn lại SAU khi trừ ảnh khái niệm, ảnh mặt không

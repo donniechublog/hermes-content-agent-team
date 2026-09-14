@@ -8,7 +8,7 @@
 # loi khi returncode != 0. Ban truoc:
 #   - hai lenh journal.py khong ai xem ma thoat;
 #   - lenh cuoi la `... | tail -3`, ma mac dinh bash tra ve ma cua `tail`, tuc
-#     LUON 0 du theo_doi_9router chet;
+#     LUON 0 du monitor_9router chet;
 #   - va `echo` cuoi cung lai reset ma thoat ve 0 mot lan nua.
 # Ket qua: nhat ky chet ca tuan van hien last_status "ok", failure_streak 0.
 set -uo pipefail
@@ -25,7 +25,7 @@ venv/bin/python journal.py --ngay "$HOM_QUA" >/dev/null || { echo "LOI: journal.
 venv/bin/python journal.py --ngay "$HOM_NAY" >/dev/null || { echo "LOI: journal.py $HOM_NAY"; loi=1; }
 
 # Nhat ky 9router (model/token/$/lat model/model la/cache thap) cua hom qua: chung cho moi brand,
-# idempotent nen hai brand cung goi khong sao. --gui: tom tat + link (nhat_ky_web) -> analyst,
+# idempotent nen hai brand cung goi khong sao. --gui: tom tat + link (journal_web) -> analyst,
 # CHI brand blog gui de khoi trung tin (9router chung, so lieu y het).
 if [ "${CT_BRAND:-blog}" = "blog" ]; then GUI=--gui; else GUI=; fi
 # `| tail -3` che ma thoat, nen lay ma cua chinh python qua PIPESTATUS.

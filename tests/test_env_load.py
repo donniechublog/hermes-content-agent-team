@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vài hàm nhỏ của env_load thêm ở đợt 6 (audit lượt 2): so_luong, ghi_json.
+"""Vài hàm nhỏ của env_load thêm ở đợt 6 (audit lượt 2): quantity, ghi_json.
 
 Chạy:  venv/bin/python tests/test_env_load.py
 """

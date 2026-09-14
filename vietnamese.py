@@ -3,7 +3,7 @@
 
 Tách khỏi `card.py` ngày 06/09/2026 (audit đợt 2). Hai hàm dưới đây là cổng
 chặn CHỮ, không liên quan gì tới vẽ ảnh, nhưng vì chúng sống trong module vẽ
-thẻ nên `manifest_ghi`, `ada_nop`, `jean_nop`, `itachi_nop` và cả `render_edu`
+thẻ nên `manifest_write`, `ada_submit`, `cape_submit`, `itachi_submit` và cả `render_edu`
 (renderer HTML) đều phải `import card` — kéo theo PIL và 1.347 dòng dựng ảnh
 chỉ để hỏi "chuỗi này có bị gõ mất dấu không". Sửa `card.py` là đụng luôn cả
 Nova, Ada, Jean.

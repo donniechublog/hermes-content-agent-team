@@ -3,7 +3,7 @@
 
 Đo thật trên `state/dcgr/approve.log` ngày 11/09/2026: lệnh vào lúc 04:22:43,
 dòng `[chon] xong sau 157s` lúc 04:25:20 — **157 giây** topic không có gì. Có
-`_bao_nhan_viec`, nhưng nó gửi vào topic CỦA ROLE NHẬN (Dre), không phải topic
+`_report_receive_job`, nhưng nó gửi vào topic CỦA ROLE NHẬN (Dre), không phải topic
 quét Ông Chủ đang nhìn; nên ở bên này im lặng y hệt lúc lệnh bị nuốt.
 
 Luật Ông Chủ 12/09/2026: *"phải có phản hồi 'đang gửi cho Dre' ngay sau khi
@@ -52,10 +52,10 @@ class _Ghi:
 
 def _chay(manifest_path, lenh):
     g = _Ghi()
-    # Chi va `latest_manifest`, KHONG dung toi `manifest_da_gui`: tep test nay
+    # Chi va `latest_manifest`, KHONG dung toi `manifest_already_send`: tep test nay
     # phai fail tren code cu vi THIEU DONG BAO, khong phai vi thieu mot ham cua
     # ticket khac (luat LOW-17 — test fail dung ly do). Tren code moi,
-    # `manifest_da_gui` doc tep mid trong CT_STATE_DIR tam, khong co nen tra
+    # `manifest_already_send` doc tep mid trong CT_STATE_DIR tam, khong co nen tra
     # None va roi ve `latest_manifest` da va.
     cu = (dct._send_text, dct.create_pair, dct._report_receive_job, dct._write_json,
           dct.latest_manifest, dct.call)
@@ -86,7 +86,7 @@ def test_bao_da_nhan_di_truoc_moi_viec():
 
 
 def test_bao_dung_topic_ong_chu_vua_go():
-    """`_bao_nhan_viec` bắn vào topic của Dre; dòng này phải ở lại topic quét."""
+    """`_report_receive_job` bắn vào topic của Dre; dòng này phải ở lại topic quét."""
     with tempfile.TemporaryDirectory() as t:
         moc = _chay(_manifest(Path(t)), [(1, "dre", "dcgr")])
     assert moc[0][1] == THREAD_VERA, f"gửi nhầm thread {moc[0][1]}"

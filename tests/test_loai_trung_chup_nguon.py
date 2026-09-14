@@ -4,7 +4,7 @@ thuong), khong duoc them thang vao carousel.
 
 Ong Chu 13/09/2026, xem carousel that: *"có đến 3 ảnh giống hệt nhau về nội
 dung, góc máy, bố cục. việc này ko được phép"*. Nhieu bao dung CHUNG mot anh
-photo-wire (AP/Reuters/Getty) cho cung mot tin bao; `_vong_chup_nguon` chup
+photo-wire (AP/Reuters/Getty) cho cung mot tin bao; `_round_capture_source` chup
 tung trang RIENG LE, khong di qua `prepare.download_filter.download_and_filter` (noi CO san
 co che so dHash) nen chua bao gio duoc so trung.
 

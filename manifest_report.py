@@ -16,7 +16,7 @@ from pathlib import Path as _Path
 sys.path.insert(0, str(_Path(__file__).resolve().parent))
 import scan_common                                            # noqa: E402
 
-# Mot ban duy nhat cho ca doi — xem quet_chung. Truoc 06/09/2026 moi tep tu khai
+# Mot ban duy nhat cho ca doi — xem scan_common. Truoc 06/09/2026 moi tep tu khai
 # lai mui gio VN va bang ten vai, nen sua mot cho la phai nho sua ca cum.
 VN = scan_common.VN
 NAME_ROLE = scan_common.NAME_ROLE

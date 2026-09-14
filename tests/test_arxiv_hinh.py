@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Boc hinh that trong paper (arxiv_figures.py) — cac ham THUAN, khong PDF khong mang.
 
-Vi sao co tep nay: `vung_hinh` la mot chuoi luat hinh hoc, moi luat sinh ra tu
+Vi sao co tep nay: `region_figure` la mot chuoi luat hinh hoc, moi luat sinh ra tu
 MOT paper that lam hong ban truoc do (ACE, BERT, DeepSeek-R1, Attention). Hong
 o day thi khong ai thay: engine van chay, van ra anh, chi la anh cat sai — nua
 dong chay dau trang, cut mat ten bieu do, hoac nguyen mot trang chu hai cot.
@@ -28,7 +28,7 @@ def _k(x0, y0, x1, y1, text=""):
 DOAN = "x" * 200                          # khoi chu chac chan la than bai
 
 
-# ------------------------------------------------------------- la_chu_thich
+# ------------------------------------------------------------- is_annotation
 def test_nhan_dung_cac_kieu_chu_thich():
     import arxiv_figures as ah
     assert ah.is_annotation("Figure 1: Overall Performance Results.")[:2] == ("figure", 1)
@@ -49,7 +49,7 @@ def test_khong_nham_cau_than_bai_nhac_toi_hinh():
         assert ah.is_annotation(t) is None, f"nhan nham: {t!r}"
 
 
-# --------------------------------------------------------- chu_thich_du_dong
+# --------------------------------------------------------- annotation_enough_line
 def test_gom_du_cac_dong_chu_thich_khi_pdf_cat_tung_dong():
     """DeepSeek-R1: MuPDF tra MOI DONG mot khoi. Khong gom thi anh cut mat cac
     dong sau cua chu thich."""
@@ -71,7 +71,7 @@ def test_khong_nuot_doan_than_bai_ngay_duoi_chu_thich():
     assert ah.annotation_enough_line(cap, khoi)[3] == 150
 
 
-# ----------------------------------------------------------------- vung_hinh
+# ----------------------------------------------------------------- region_figure
 def test_cat_dung_hinh_va_chu_thich():
     import arxiv_figures as ah
     cap = _k(108, 652, 504, 673, "Figure 1: Overall Performance Results.")
@@ -153,7 +153,7 @@ def test_bo_qua_do_hoa_cot_khac_trong_bo_cuc_hai_cot():
     assert hop[2] < 300, f"nuot ca cot ben kia: {hop}"
 
 
-# --------------------------------------------------------------- pdf_cua_link
+# --------------------------------------------------------------- pdf_of_link
 def test_nhan_link_paper():
     import arxiv_figures as ah
     for u in ["https://arxiv.org/abs/2510.04618", "https://arxiv.org/pdf/2510.04618v3",

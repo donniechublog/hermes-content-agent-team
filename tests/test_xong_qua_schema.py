@@ -2,8 +2,8 @@
 """Mọi người đọc manifest engine (`xong.json`) phải đi qua `schema.read_manifest`
 (audit lượt 2, C-r2-5 / ADF-r2-6).
 
-F2 (8ae13cf) đưa upgrade-on-read vào schema nhưng chỉ anh_chuan_bi dùng; 4 vai
-*_nop (nop_chung), create_task_kite và nút hạ sàn (duyet_bai) đọc thô — manifest
+F2 (8ae13cf) đưa upgrade-on-read vào schema nhưng chỉ image_prepare dùng; 4 vai
+*_submit (submit_common), create_task_kite và nút hạ sàn (approve_post) đọc thô — manifest
 bản 0 thiếu so_dung_duoc thì hạ sàn báo "Chỉ 0 ảnh thật" dù có 6, và body Kite
 tự đếm ra 4 trong khi schema đếm 2 (khái niệm là một chùm).
 
@@ -36,7 +36,7 @@ def _ten_goi(call: ast.Call) -> str:
 
 
 def _doc_tho(src: str):
-    """Cac lenh doc xong.json khong qua doc_manifest: [(dong, ten ham)]."""
+    """Cac lenh doc xong.json khong qua read_manifest: [(dong, ten ham)]."""
     xau = []
     for n in ast.walk(ast.parse(src)):
         if not isinstance(n, ast.Call):

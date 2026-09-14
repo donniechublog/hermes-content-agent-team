@@ -11,7 +11,7 @@ RO slide 6 hai lan lien tiep, nhung ca hai ban moi cua Dre deu ra dung anh cu
      dong "DUNG lap lai anh cu" trong task chi la chu, khong ai bat buoc theo.
 
 Tep nay kiem phan (1) o approve_post._extract_reason_redo va phan ghi-doc dHash cua
-approve_post._write_forbid_image_redo; cong chan o dre_nop/nop_chung da co test rieng
+approve_post._write_forbid_image_redo; cong chan o dre_submit/submit_common da co test rieng
 trong test_spec_dre.py.
 
 Chay:  venv/bin/python tests/test_lam_lai_cam_anh.py

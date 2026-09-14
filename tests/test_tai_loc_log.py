@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""`prepare.tai_loc` không được nuốt lỗi tải im lặng (audit lượt 2, C-r2-2).
+"""`prepare.download_filter` không được nuốt lỗi tải im lặng (audit lượt 2, C-r2-2).
 
-Trước: `_tai_bytes` → `except Exception: return None` không log, và `tai_va_loc`
+Trước: `_download_bytes` → `except Exception: return None` không log, và `download_and_filter`
 coi `not data` là `continue`. Mất DNS/proxy thì 5 ứng viên hỏng ra 0 dòng
 stderr, engine kết luận "tải được 0 ảnh" → so_dung_duoc=0 → tự chuyển Kite,
 không dấu vết lỗi môi trường nào.

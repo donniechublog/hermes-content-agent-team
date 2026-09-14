@@ -3,11 +3,11 @@
 08/09/2026: Ong Chu bam "Dre lam voi 4 anh", engine tra loi "chi 4 anh ma can
 toi thieu 5 slide — bam tiep cung khong dung duoc. Chuyen Kite ve vector, hoac
 bo tin" RỒI GỠ LUÔN BÀN PHÍM — không còn nút nào bấm được hai đường vừa nêu,
-phải tự gõ lệnh. `_chot_nut` trước đó gỡ bàn phím vô điều kiện bất kể nút nào
+phải tự gõ lệnh. `_finalize_button` trước đó gỡ bàn phím vô điều kiện bất kể nút nào
 vừa bấm ra kết quả gì.
 
-Sua: `_nut_ha_san` het duong thi tra ve mot ban phim moi (Gui Kite + Bo han,
-hoac chi Bo han neu brand khong co Kite) thay vi None; `_chot_nut` gan lai dung
+Sua: `_button_lower_ready` het duong thi tra ve mot ban phim moi (Gui Kite + Bo han,
+hoac chi Bo han neu brand khong co Kite) thay vi None; `_finalize_button` gan lai dung
 ban phim do thay vi go trang.
 
 Chay:  venv/bin/python tests/test_ha_san_nut.py
@@ -39,12 +39,12 @@ def _xong_json(tmp: Path, so_dung_duoc: int, toi_thieu: int, toi_thieu_co_ban=5)
 
 
 def _goi_ha_san(tmp: Path, so_dung_duoc: int, toi_thieu: int, co_kite: bool):
-    """Chay _nut_ha_san voi moi truong gia, tra (note, keyboard)."""
+    """Chay _button_lower_ready voi moi truong gia, tra (note, keyboard)."""
     _xong_json(tmp, so_dung_duoc, toi_thieu)
     profiles = tmp / "home" / "profiles"
     profiles.mkdir(parents=True, exist_ok=True)
     if co_kite:
-        (profiles / "kite").mkdir(exist_ok=True)   # slug THAT (SLUG_CU anh xa "kite"-> day)
+        (profiles / "kite").mkdir(exist_ok=True)   # slug THAT (SLUG_OLD anh xa "kite"-> day)
     cu_state, cu_home, cu_call = db.STATE_DIR, dgv.HERMES_HOME, db.call
     db.STATE_DIR, dgv.HERMES_HOME = tmp / "state", str(tmp / "home")
     db.call = lambda *a, **k: {"ok": True}
@@ -58,7 +58,7 @@ def _goi_ha_san(tmp: Path, so_dung_duoc: int, toi_thieu: int, co_kite: bool):
 def test_het_duong_co_kite_giu_lai_nut_gui_kite_va_bo_han():
     """so=4 < san=5 (carousel.MIN_SLIDE), brand CO Kite -> ban phim phai con
     du hai nut: Gui Kite (imgkite) va Bo han (imgno). Truoc sua: keyboard=None
-    -> _chot_nut go trang, ca hai duong noi trong `note` deu khong bam duoc."""
+    -> _finalize_button go trang, ca hai duong noi trong `note` deu khong bam duoc."""
     with tempfile.TemporaryDirectory() as tmp:
         note, kb = _goi_ha_san(Path(tmp), so_dung_duoc=4, toi_thieu=8, co_kite=True)
         assert kb is not None, "khong con ban phim nao — dung loai bug 08/09/2026"
@@ -72,7 +72,7 @@ def test_het_duong_co_kite_giu_lai_nut_gui_kite_va_bo_han():
 def test_het_duong_khong_co_kite_chi_con_bo_han():
     """Brand chua co Kite (dcgr): KHONG duoc hua nut Gui Kite se chi ra loi
     "khong co profile" — chi con Bo han, dung nguyen tac "khong hua suong" da
-    ap dung o nhanh khong_kite cua _route_thieu_anh (image_prepare.py)."""
+    ap dung o nhanh khong_kite cua route_missing_images.after_prepare."""
     with tempfile.TemporaryDirectory() as tmp:
         note, kb = _goi_ha_san(Path(tmp), so_dung_duoc=4, toi_thieu=8, co_kite=False)
         assert kb is not None
@@ -101,9 +101,9 @@ def test_da_o_san_toi_thieu_khong_dinh_ban_phim():
         assert "Sàn đã ở mức tối thiểu" in note
 
 
-# --------------------------------------------------------------- _chot_nut
+# --------------------------------------------------------------- _finalize_button
 def test_chot_nut_gan_dung_ban_phim_duoc_truyen():
-    """_chot_nut phai dung keyboard duoc truyen vao, khong go trang nhu mac dinh."""
+    """_finalize_button phai dung keyboard duoc truyen vao, khong go trang nhu mac dinh."""
     goi = []
     cu_call = db.call
     db.call = lambda *a, **k: goi.append(k.get("reply_markup")) or {"ok": True}

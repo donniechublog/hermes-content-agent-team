@@ -48,7 +48,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
               ket_qua: dict | None = None) -> tuple:
     """Con mat cua day chuyen. Hoi vision local: MOT cau mo ta + LIEN_QUAN co/khong
     theo tieu de bai. Tra ve (mo_ta, lien_quan) — lien_quan None neu KHONG HOI
-    DUOC (thieu key, router hong ca hai lan thu lai cua `_goi_router`): luc do
+    DUOC (thieu key, router hong ca hai lan thu lai cua `_call_router`): luc do
     brief noi ro la CHUA ai nhin, dung y nhu tu truoc.
 
     Ong Chu 12/09/2026, dong CONG FAIL-OPEN: truoc day router TRA LOI duoc
@@ -58,7 +58,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     logo Anthropic (truoc khi sua ca thanh cong 32 diem) deu lot bia qua duong
     nay — router CO tra loi, chi la khong parse duoc. Phan biet ro hai ca:
       - KHONG HOI DUOC (thieu key / het luot thu 429-5xx / loi mang) -> giu
-        nguyen None, KHONG hoi lai o day (da co backoff rieng o _goi_router).
+        nguyen None, KHONG hoi lai o day (da co backoff rieng o _call_router).
       - HOI DUOC nhung khong doc ra LIEN_QUAN -> HOI LAI DUNG 1 LAN; van khong
         doc ra thi COI LA ROT (lqv=False), khong con la None nua.
 
@@ -73,24 +73,24 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     truyen thi hanh vi va gia tri tra ve giu nguyen y cu.
 
     `khai_niem` (07/09/2026): anh tim theo tu khoa (co, datacenter) chu khong phai
-    anh cua tin — hoi cau khac (anh_khai_niem.cau_hoi_vision), khong hoi "co phai
+    anh cua tin — hoi cau khac (image_concept.sentence_ask_vision), khong hoi "co phai
     anh cua tin" vi chac chan khong, va khong ap override "ten hang trong mo ta".
 
     `chup_nguon` (LOW-45, 12/09/2026): anh hero CHUP TU CHINH TRANG NGUON
-    (`vong_bu._vong_chup_nguon`) — LA anh cua tin, cau hoi khong hoi lai "co
+    (`fallback_rounds._round_capture_source`) — LA anh cua tin, cau hoi khong hoi lai "co
     lien quan khong" nua (chac chan co, tu DOM cua chinh bai), CHI hoi CHAT
     LUONG (ro net, khong phai anh bao chup lai mot man hinh khac). Truoc ticket
-    nay nhanh `_vong_chup_nguon` bo qua vision HOAN TOAN, ep `lien_quan = True`
+    nay nhanh `_round_capture_source` bo qua vision HOAN TOAN, ep `lien_quan = True`
     thang — do that 12/09: anh hero that cua bai Moonshot/Kimi K3 la mot anh
     bao Getty chup nghieng man hinh App Store, van bi ep True du xau, roi
-    tam ngang do LAI bi mot vong khac (`_lay_anh_trang`, da chan o LOW-45 phan
+    tam ngang do LAI bi mot vong khac (`_take_image_page`, da chan o LOW-45 phan
     1) chup lai lan nua thanh mot tam khac — ca hai deu khong qua cong chat
     luong nao. Nhanh nay dong no lai."""
     import base64, json as _j, urllib.request
     # `ket_qua` (LOW-47, 13/09/2026): dict nguoi goi truyen vao de nhan them
     # co "roi" (anh nhin roi) ma KHONG doi so phan tu tuple tra ve — Bob va
     # test deu mo goi 2/3 phan tu.
-    # env_load.bat_buoc nem SystemExit, ma SystemExit KHONG phai con cua
+    # env_load.required nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
     # la ca engine chet giua chung, khong co xong.json, vai chi thay "chua chuan
     # bi" ma khong biet vi sao (06/09/2026). Doc thang bien, khong nem.
@@ -141,7 +141,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             import image_brand
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
         # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
-        # xuong cuoi hang uu tien — xem nop_chung.kiem_anh_roi.
+        # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
         hoi = hoi.replace("DUNG 2 dong", "DUNG 4 dong") + "\n" + SENTENCE_FALL + "\n" + SENTENCE_KEYWORD
         if hoi_them and nhan_them:
             hoi = hoi.replace("DUNG 4 dong", "DUNG 5 dong") + f"\n{nhan_them}: {hoi_them}"
@@ -259,7 +259,7 @@ def _call_router(req, _ngu=None):
 
 
 def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
-    """phan_loai cho executor.map: mot anh hong (PNG cut, dem_mat/crop nem) KHONG
+    """classify cho executor.map: mot anh hong (PNG cut, count_faces/crop nem) KHONG
     duoc lam list(ex.map) nem — ca lo mat, ke ca anh da nhin xong, engine chet
     khong xong.json (audit lượt 2, B-r2-3). Anh hong tro thanh anh "chua nhin"
     co ghi chu, cac anh khac di tiep."""
@@ -276,10 +276,10 @@ def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
 
 
 def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> dict:
-    """Do mot anh bang luat_anh, quyet dinh no DUNG DUOC O DAU, cat san neu can.
+    """Do mot anh bang image_rules, quyet dinh no DUNG DUOC O DAU, cat san neu can.
 
     `chup_nguon` (LOW-45): anh hero chup tu chinh trang nguon — xem
-    `mo_ta_anh(..., chup_nguon=True)`."""
+    `description_image(..., chup_nguon=True)`."""
     img = Image.open(a["goc"]).convert("RGB")
     w, h = img.size
     r = w / h
@@ -291,7 +291,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_by_figure(img)):
         la_ct, mo_ta = True, mo_ta + "; nen trang + canh day / alt-tag chart"
     kn = (a.get("khai_niem") or {}).get("tu_khoa", "")
-    # Tu khoa do LOAI TIN ep (loai_tin.py) thi con mat khong duoc tu phan "hop bai".
+    # Tu khoa do LOAI TIN ep (story_type.py) thi con mat khong duoc tu phan "hop bai".
     kn_theo_loai = (a.get("khai_niem") or {}).get("ly_do", "") == "theo loại tin"
     # Hang de con mat doi chieu: voi anh THUONG HIEU la hang cua chinh tam anh do,
     # khong phai ten rieng dau tieu de. Tin "Qualcomm ... with Amazon" ma dua
@@ -306,7 +306,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # nguoi/san pham that — dem sai 2 slide. Hoi CHUNG mot luot voi mo_ta/lien_quan
     # (khong ton them HTTP), luu vao `a["cat_ngang_ok"]` (True/False/None =
     # khong hoi/khong parse duoc), dung ca o dung[] (cau chu dinh, khong con
-    # "NEU") lan o dem slide (schema._chi_ghep_duoc). Ket hop voi `chup_nguon`
+    # "NEU") lan o dem slide (schema._only_stack_ok). Ket hop voi `chup_nguon`
     # (LOW-45) — hai co so doc lap, mot anh hero chup tu nguon van co the ngang
     # cao va can hoi cat_ngang binh thuong.
     hoi_cat_ngang = (r >= image_rules.LANDSCAPE_CLEAR and h >= 700 and not la_ct)
@@ -394,7 +394,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         a["ghi_chu"].append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin — hợp bìa/slide bối cảnh")
     if mat:
         # MOT ban regex duy nhat, o ban dang ky vai: cong "mat nguoi phai khai
-        # ten" cua `vai.anh_chinh_duoc` phai doc ra dung cai ten ma chu thich
+        # ten" cua `role.can_be_hero` phai doc ra dung cai ten ma chu thich
         # duoi day hua la co.
         ten = role.person_names_in_alt(a.get("alt", "") or "")
         if ten:
@@ -409,7 +409,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
                                "BÌA; script tự hiện nguyên bề ngang + đặt nền chữ đặc")
     elif a.get("roi"):
         # Anh roi khong du tu khoa: khong la bia; lam than chi khi het anh sach
-        # (nop_chung.kiem_anh_roi), va script tu dat nen chu dac (LOW-47).
+        # (submit_common.check_image_fall), va script tu dat nen chu dac (LOW-47).
         a["dung"] = [d for d in a["dung"] if not str(d).startswith("bìa")]
         a["ghi_chu"].insert(0, "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT "
                                "ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc")
@@ -435,8 +435,8 @@ def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     print("[vision] nhin tung anh, hoi co lien quan bai khong...", file=sys.stderr)
     # Anh XH khong hoi vision (tham so tieu_de rong): no la anh do chinh engine chup
     # tu trang xep hang, da biet chac lien quan — hoi chi ton them mot luot LLM roi
-    # ghi de ket qua ngay duoi. Van qua phan_loai de co do hinh hoc (w/h/ti_le/san).
-    # `phan_loai` chi doc/ghi vao chinh dict `a` va duong dan rieng cua no -- khong
+    # ghi de ket qua ngay duoi. Van qua classify de co do hinh hoc (w/h/ti_le/san).
+    # `classify` chi doc/ghi vao chinh dict `a` va duong dan rieng cua no -- khong
     # co state dung chung giua cac lan goi -- nen chay song song duoc (8-12 anh/bai,
     # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
     # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.

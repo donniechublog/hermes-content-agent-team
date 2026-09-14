@@ -3,9 +3,9 @@
 compute thì tìm datacenter" mà Dre từng tự làm, nay engine làm thay (07/09/2026).
 
 Ba hàm thuần, không mạng:
-  - tu_khoa_heuristic  tiêu đề -> từ khoá; hỏng = tin không ảnh lại đi thẳng Kite.
-  - loc_commons        lọc trang API Commons; hỏng = cờ vẽ CGI / logo lọt vào bìa.
-  - nhan_khai_niem     siết nhãn; hỏng = ảnh cờ chui vào slide thân như ảnh của tin.
+  - keyword_heuristic  tiêu đề -> từ khoá; hỏng = tin không ảnh lại đi thẳng Kite.
+  - filter_commons        lọc trang API Commons; hỏng = cờ vẽ CGI / logo lọt vào bìa.
+  - label_concept     siết nhãn; hỏng = ảnh cờ chui vào slide thân như ảnh của tin.
 
 Chạy:  venv/bin/python tests/test_khai_niem.py
 """

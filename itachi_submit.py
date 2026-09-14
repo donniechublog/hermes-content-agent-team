@@ -8,12 +8,12 @@ lớn nhất còn vừa bề ngang và chiều cao box (tối thiểu 16px), fon
 cao (≥4.5% ảnh → bold, không thì regular) trừ khi spec ghi `font`; `gop`
 [a, b, text] gộp dải vùng a..b thành một khối, wrap nhiều dòng trong khối đó.
 
-Màu chữ MẶC ĐỊNH giữ nguyên màu đo được lúc OCR (gin_chuan_bi.mau_chu, đo
+Màu chữ MẶC ĐỊNH giữ nguyên màu đo được lúc OCR (gin_prepare.color_text, đo
 TRÊN ẢNH GỐC, trước khi xoá) — giữ đúng thiết kế gốc. Nhưng nền dưới đó là
 NỀN ĐÃ XOÁ/VẼ LẠI (LaMa), có thể lệch tông so với lúc đo màu chữ; script tự
 đo lại độ tương phản THẬT giữa màu đó và nền hiện tại (`text_bg.py`, dùng
 chung với card.py/carousel.py/render_edu.py) ngay trước khi vẽ — chỉ khi
-KHÔNG đủ mới đổi sang màu an toàn (trắng/đen tuỳ nền), xem `_mau_an_toan`.
+KHÔNG đủ mới đổi sang màu an toàn (trắng/đen tuỳ nền), xem `_color_hide_whole`.
 
 Dùng:
     venv/bin/python itachi_submit.py 338              # spec ở state/<brand>/chuan_bi/itachi_338/spec.json
@@ -43,7 +43,7 @@ from about_text import HAS_MIN                                    # noqa: E402  
 THRESHOLD_WALL_PART = 3.0
 
 # Luat VE (font, co chu, mau, cong tran hop) da chuyen sang about_text.py (ten cu
-# ve_chu.py, 07/09/2026) de Gin dung chung. Bon ten duoi la loi vao cu, giu
+# about_text.py, 07/09/2026) de Gin dung chung. Bon ten duoi la loi vao cu, giu
 # nguyen cach goi (LOW-56: ghep nhanh rename/jean-to-cape len main da doi ten).
 _font_default = about_text.font_default
 _about_block = about_text.about_block

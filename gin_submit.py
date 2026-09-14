@@ -146,7 +146,7 @@ def _box_translate(d: dict, spec: dict) -> tuple:
         # dau ra "left" va ca doan lech (carousel TECHS 07/09/2026). Cung khong
         # so tam hop gop voi tam anh: mot doan CAN TRAI dai gan het be ngang thi
         # tam no cung trung tam anh, va ca doan bi thut vao giua (slide Hello
-        # Kitty). `_doc_can_le` da doc cot le trai chung cua ca the roi.
+        # Kitty). `_read_can_odd` da doc cot le trai chung cua ca the roi.
         cans = [v.get("can") or "left" for v in ds]
         can = max(set(cans), key=cans.count)
         fonts = [v.get("font") or "regular" for v in ds]
@@ -265,7 +265,7 @@ def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
             # the quote thuong co vien/bong toi phia sau de noi len khoi anh;
             # Otsu chi bat duoc NET SANG, vien toi bi coi la nen va o lai —
             # xoa xong con nguyen bong ma den hinh chu (anh TECHS 07/09/2026,
-            # tieu de cao 132px, vien day hon 10px mac dinh cua doi_chu_anh).
+            # tieu de cao 132px, vien day hon 10px mac dinh cua swap_image_text).
             # Vung nen phang thi no rong khong mat gi: cho nao thua cung chi to
             # lai dung mau nen.
             no = max(swap_image_text.DILATE_PX, int((v.get("cao_net") or v["h"]) * 0.15))

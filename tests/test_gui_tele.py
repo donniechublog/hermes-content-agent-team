@@ -28,7 +28,7 @@ import approve_base                  # noqa: E402
 import tele_util                    # noqa: E402
 
 
-# ============================================================ duyet_co_so.call
+# ============================================================ approve_base.call
 def _goi_voi_mock_transport(handler, token, method, **kw):
     """Goi approve_base.call(token, method, **kw) nhung ep httpx.Client() O BEN
     TRONG no dung MockTransport(handler) thay vi mang that, roi phuc hoi lai.
@@ -102,7 +102,7 @@ def test_call_thanh_cong_tra_dung_json_cua_response():
     assert "/sendMessage" in str(goi[0].url), f"sai URL goi Bot API: {goi[0].url}"
 
 
-# ============================================================ tele_util.chia_tin
+# ============================================================ tele_util.split_message
 def test_chia_tin_ngan_hon_gioi_han_giu_nguyen_mot_phan():
     """Text ngan hon gioi han: KHONG chia, tra ve dung 1 phan tu = text.rstrip()
     (ham luon rstrip() truoc, xem dong dau cua split_message())."""

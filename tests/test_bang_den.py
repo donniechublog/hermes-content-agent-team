@@ -26,7 +26,7 @@ import schema                                                 # noqa: E402
 
 class _KbGia:
     """Dung du API create_root goi; `luc_tao` la moc de mot tien trinh khac chen vao
-    giua luc bang_den dang ban voi kanban."""
+    giua luc blackboard dang ban voi kanban."""
     def __init__(self, luc_tao=None):
         self.luc_tao = luc_tao
 
@@ -74,7 +74,7 @@ def test_root_task_tron_vao_meta_khong_xoa_cua_nguoi_khac():
         p.write_text(json.dumps({"source_url": "http://gnews", "title": "T"}), encoding="utf-8")
 
         def engine_chen_vao():
-            # Engine giai xong Google News dung luc bang_den dang trong kanban
+            # Engine giai xong Google News dung luc blackboard dang trong kanban
             p.write_text(json.dumps(schema.merge_meta(
                 json.loads(p.read_text(encoding="utf-8")), {"source_url": "http://that"})),
                 encoding="utf-8")

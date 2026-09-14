@@ -32,12 +32,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
 
-UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 COUNT_SOURCE = 4
 
-FROM_EMPTY = scan_common.FROM_EMPTY           # mot ban duy nhat, xem quet_chung
+FROM_EMPTY = scan_common.FROM_EMPTY           # mot ban duy nhat, xem scan_common
 _tu = scan_common.from_distinctive
 
 # ---- "CUNG TIN" (LOW-33, 12/09/2026) ------------------------------------------
@@ -48,7 +48,7 @@ _tu = scan_common.from_distinctive
 # "Hugging Face robot duck is already a hit" va no thanh "bao khac cung tin".
 # Ba lop sua: boc hau to voi ca `·`/`»`; ten nen tang (HuggingFace, GitHub,
 # arXiv...) KHONG duoc tinh la tu dac trung; va moi cho quyet "cung tin" di qua
-# MOT ham `cung_tin` — ke ca vong chup trang nguon, truoc day mien kiem.
+# MOT ham `same_story` — ke ca vong chup trang nguon, truoc day mien kiem.
 _HAU_TO_SITE = re.compile(r"\s+[|\-–—·»]\s+[^|\-–—·»]{2,40}$|\s+::\s+[^:]{2,40}$")
 _TU_NEN = {"hugging", "face", "huggingface", "github", "arxiv", "reddit", "medium",
            "substack", "youtube", "twitter", "linkedin", "wikipedia", "hacker", "news"}
@@ -81,7 +81,7 @@ def resolve_code_gnews(url: str, timeout: int = 30, phien=None) -> str | None:
     """Link Google News (news.google.com/rss/articles/CBMi...) -> URL bai THAT.
 
     Tin cua Vera (scan_business doc RSS Google News) luon mang link dang nay.
-    Fetch tinh chi ra mot trang chuyen huong chay bang JS, nen anh_bai/tu_lieu
+    Fetch tinh chi ra mot trang chuyen huong chay bang JS, nen article_images/material
     doc ra RONG — Dre/Miles phai tu web_search lai tin (do that 04/09/2026:
     web_search 11 lan, curl 38 lan trong 4 task carousel dcgr). Giai ma MOT LAN
     o day, ngay luc Ong Chu chon tin, roi moi vai sau dung link that.
@@ -319,7 +319,7 @@ def _query_bing(tieu_de: str) -> list:
 
 def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10) -> list:
     if has_vietnamese(tieu_de):
-        print("[nguon_bai] TU CHOI bao_khac_bing bang tieng Viet", file=sys.stderr)
+        print("[nguon_bai] TU CHOI other_outlets_bing bang tieng Viet", file=sys.stderr)
         return []
     """Bao khac dua cung tin qua Bing News RSS. Khac Google News, link cua Bing
     la chuyen huong HTTP thuong (apiclick.aspx) -> di theo redirect la ra URL
@@ -383,7 +383,7 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
 
 def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: int | None = None) -> list:
     """Bao THẬT về một TỪ KHOÁ (tên hãng/sản phẩm) qua Bing News RSS — KHÁC
-    `bao_khac_bing`: không đòi "cùng một sự kiện" với một tiêu đề gốc, VÀ
+    `other_outlets_bing`: không đòi "cùng một sự kiện" với một tiêu đề gốc, VÀ
     KHÔNG GIỚI HẠN THỜI GIAN (Ông Chủ 13/09/2026, chốt nguyên tắc nguồn ở
     LUAT_ANH.md §1.2d: *"được tìm không giới hạn thời gian, sự kiện. miễn là
     trong article có nhắc tới tên brand... ngoài nguyên tắc này, không có bất
@@ -392,17 +392,17 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
     hạn đó đã bỏ theo đúng luật mới; `ngay` giữ lại làm tham số CHO PHÉP hẹp
     lại nếu một lần gọi cụ thể cần, mặc định là KHÔNG giới hạn.
 
-    Lọc nhẹ hơn `bao_khac_bing`: chỉ đòi tiêu đề bài chứa lại chính TỪ KHOÁ
+    Lọc nhẹ hơn `other_outlets_bing`: chỉ đòi tiêu đề bài chứa lại chính TỪ KHOÁ
     (không đòi khớp với MỘT sự kiện cụ thể nào) — vì mục đích là ảnh MINH HOẠ
     hãng/sản phẩm (như ảnh khái niệm), không phải bằng chứng của một tin riêng.
-    Cùng hạ tầng với `bao_khac_bing`: giải chuyển hướng HTTP, chặn SSRF
-    (`quet_chung.url_an_toan`), bỏ trang tổng hợp/`bo_mien`. Ngôn ngữ: chỉ Anh
-    hoặc Trung (LUAT_ANH §1.2d) — `co_tieng_viet` chặn CẢ từ khoá đầu vào LẪN
+    Cùng hạ tầng với `other_outlets_bing`: giải chuyển hướng HTTP, chặn SSRF
+    (`scan_common.url_hide_whole`), bỏ trang tổng hợp/`bo_mien`. Ngôn ngữ: chỉ Anh
+    hoặc Trung (LUAT_ANH §1.2d) — `has_vietnamese` chặn CẢ từ khoá đầu vào LẪN
     tiêu đề từng bài Bing trả về (test thật 13/09/2026: query "Anthropic" vẫn
     lẫn cafebiz.vn/thanhnien.vn nếu chỉ chặn từ khoá); tiếng Trung không bị
     chặn ở đây (không có dấu tiếng Việt để nhận nhầm)."""
     if has_vietnamese(tu_khoa):
-        print("[nguon_bai] TU CHOI bao_ve_tu_khoa bang tieng Viet", file=sys.stderr)
+        print("[nguon_bai] TU CHOI report_about_keyword bang tieng Viet", file=sys.stderr)
         return []
     import email.utils as eu
     import time as _t
@@ -428,10 +428,10 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
         link = it.findtext("link") or ""
         td = it.findtext("title") or ""
         # Chi doi bai NOI VE tu khoa (het cac tu cua chinh no co mat), khong
-        # doi CUNG MOT su kien nhu `bao_khac_bing` (`cung_tin`/`goc & ...`).
+        # doi CUNG MOT su kien nhu `other_outlets_bing` (`same_story`/`goc & ...`).
         if not link or not can <= story_tokens(td):
             continue
-        # `co_tieng_viet(tu_khoa)` o dau ham chi chan TU KHOA dau vao (ten
+        # `has_vietnamese(tu_khoa)` o dau ham chi chan TU KHOA dau vao (ten
         # hang luon la tieng Anh) — KHONG chan duoc bao TIENG VIET Bing tra ve
         # (vd "Anthropic" van khop tieu de mot bai cafebiz.vn/thanhnien.vn).
         # Do that 13/09/2026: query "Anthropic" tra ca cafebiz.vn, vietnam.vn,
@@ -481,9 +481,9 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
         # THU CA CAU NGAN, khong chi headline day du (Ong Chu 13/09/2026: do
         # that Moonshot/Kimi K3 — headline day du cua chinh TechCrunch chi keo
         # ve mot vai mien; cau ngan "Kimi Moonshot AI"/"Kimi maker Moonshot AI"
-        # (_truy_van_bing sinh ra, von chi dung cho Bing) keo ve them SCMP/
+        # (_query_bing sinh ra, von chi dung cho Bing) keo ve them SCMP/
         # Bloomberg/CNBC/Reuters ma headline day du BO SOT — cung mot dang loi
-        # da biet o Bing (_truy_van_bing doc noi "truy van day du -> 1 bai"),
+        # da biet o Bing (_query_bing doc noi "truy van day du -> 1 bai"),
         # chua bao gio ap sang Google News. Dung theo THU TU cua ham (dai ->
         # ngan trong tung bo), dung som khi da du mien de khong hoi qua nhieu.
         for q in [ten] + _query_bing(ten):

@@ -50,7 +50,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  "KHÔNG viết spec, KHÔNG dựng. Kết thúc task ngay bằng một câu: "
                  "\"Đã chuyển Kite vì không có ảnh thật\".")
         return "\n".join(L)
-    # Mac dinh bang CUNG cong thuc voi nguoi ghi (schema.so_anh_dung_duoc): ban
+    # Mac dinh bang CUNG cong thuc voi nguoi ghi (schema.count_image_use_ok): ban
     # cu dem `len([a for a in m["anh"] if a["dung"]])` — mot so KHAC, vi chum anh
     # khai niem phai dem la MOT (F2).
     so_dd = m.get("so_dung_duoc", schema.count_image_use_ok(m.get("anh")))
@@ -69,7 +69,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
     if m.get("tin_xep_hang"):
-        L.append(cb.ranking_brief_line(m, "bìa ", "dre_nop"))
+        L.append(cb.ranking_brief_line(m, "bìa ", "dre_submit"))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "

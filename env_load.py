@@ -30,7 +30,7 @@ ROOT = _BASE
 HERMES_DIR = Path.home() / "hermes-agent"
 HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
 ROUTER_URL = "http://127.0.0.1:20128/v1/chat/completions"   # 9router cuc bo, chung hai brand
-VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine anh (anh_chuan_bi)
+VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine anh (image_prepare)
 
 # User-Agent RIENG cho moi thu goi Wikimedia (API commons + tai anh tu
 # upload.wikimedia.org). Robot policy cua Wikimedia doi UA co TEN cong cu va
@@ -41,13 +41,13 @@ VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine
 UA_WIKI = "donniechu-content-team/1.0 (https://dcgr.tech)"
 
 # UA GIA TRINH DUYET, dung cho trang CHAN BOT (bang xep hang, arxiv). Truoc
-# 09/09/2026 chuoi nay duoc chep tay o BA cho — xep_hang.py, arxiv_bia.py va
-# chuan_bi/browser.py — chi khac cho xuong dong; nang phien ban Chrome thi phai
+# 09/09/2026 chuoi nay duoc chep tay o BA cho — ranking.py, arxiv_cover.py va
+# prepare/browser.py — chi khac cho xuong dong; nang phien ban Chrome thi phai
 # sua ba noi (audit A5).
 #
 # KHONG gop cac UA khac vao day, chung khac nhau CO CHU DICH:
-#   quet_chung.UA        "donniechu-scout/1.0"        — bot thanh that khi di quet
-#   chuan_bi/chung.UA    "donniechu-dre/1.0"          — engine anh, danh rieng de
+#   scan_common.UA        "donniechu-scout/1.0"        — bot thanh that khi di quet
+#   prepare/common.UA    "donniechu-dre/1.0"          — engine anh, danh rieng de
 #                                                       doc log ben kia biet ai goi
 #   article_extract.UA   "donniechu-content-bot/1.0"  — boc bai
 #   UA_WIKI              — Wikimedia DOI ten cong cu + duong lien he (xem tren)
@@ -66,8 +66,8 @@ def hermes_home() -> Path:
 def hermes_homes() -> dict:
     """Anh xa brand -> HERMES_HOME cua brand do, cho MOI brand chay tren may nay.
 
-    Vi sao o day chu khong o dong_bo_hermes: tu 07/09/2026 co hai nguoi dung —
-    `dong_bo_hermes` (dong bo SOUL/script) va `soat_cron` (soat cron ca hai home
+    Vi sao o day chu khong o sync_hermes: tu 07/09/2026 co hai nguoi dung —
+    `sync_hermes` (dong bo SOUL/script) va `audit_cron` (soat cron ca hai home
     moi sang). Hai ban sao cua cung mot dict thi them mot brand la sua hai cho,
     va cho nao quen thi im lang bo sot ca mot brand — dung kieu loi tep nay sinh
     ra de chan. Them brand = them MOT dong o day."""
@@ -89,21 +89,21 @@ def _brand() -> str:
 
 
 # CT_BRAND ('dcgr'|'blog', tren) la ten NGAN dung cho thu muc state — KHAC voi
-# slug thuong hieu DAI ('dcgr'|'donniechublog') ma card.py/anh_thuong_hieu.py
+# slug thuong hieu DAI ('dcgr'|'donniechublog') ma card.py/image_brand.py
 # doi ("dcgr" trung ca hai nen an; "blog" != "donniechublog" thi lo ra ngay).
-# anh_chuan_bi.TEN_CT giu chieu nguoc (dai -> ngan); giu them ban nay o day
-# (khong import duoc anh_chuan_bi vi vong lap) de moi noi doi slug dai deu goi
+# image_prepare.NAME_CT giu chieu nguoc (dai -> ngan); giu them ban nay o day
+# (khong import duoc image_prepare vi vong lap) de moi noi doi slug dai deu goi
 # CUNG mot ham, khong tu viet lai phep tra nguoc roi quen mot cho (bat
-# 09/09/2026: anh_thuong_hieu.py co HAI cho lam sai giong het nhau).
+# 09/09/2026: image_brand.py co HAI cho lam sai giong het nhau).
 _BRAND_DAI = {"dcgr": "dcgr", "blog": "donniechublog"}
 # Cong khai (audit lượt 2, ADF-r2-10): bang nay tung chep o 3 tep nua
-# (moat_publish/duyet_co_so/bob_nop `_TEN_BRAND`) — mot brand moi la sua 4 cho.
+# (moat_publish/approve_base/bob_submit `_TEN_BRAND`) — mot brand moi la sua 4 cho.
 BRAND_LONG = _BRAND_DAI
 
 
 def brand_long(mac_dinh: str = "donniechublog") -> str:
     """Slug thuong hieu DAI ('donniechublog'/'dcgr') tu CT_BRAND hien tai —
-    dung cho moi loi goi card.dat_thuong_hieu / anh_thuong_hieu.dat_thuong_hieu."""
+    dung cho moi loi goi card.set_brand (goi tu card.py va image_brand.py)."""
     return _BRAND_DAI.get(_brand(), mac_dinh)
 
 
@@ -124,10 +124,10 @@ def handle_channel(brand: str, co_a_cong: bool = True) -> str:
     """Handle hien thi cua brand ("@donniechublog" / "@dcgr.tech"), nhan CA khoa
     container ('blog') lan slug dai ('donniechublog').
 
-    MOT ban (audit lượt 2, ADF-r2-9): truoc day bob_nop.handle_kenh luon them "@"
-    va doi 'blog', con kite_chuan_bi.handle_kenh tra nguyen 'donniechublog'
+    MOT ban (audit lượt 2, ADF-r2-9): truoc day bob_submit.handle_channel luon them "@"
+    va doi 'blog', con kite_prepare.handle_channel tra nguyen 'donniechublog'
     khong "@" va khong doi 'blog' — cung ten ham, hai ket qua. Nguon su that
-    van la card.THUONG_HIEU (import tai cho de tranh vong: card import env_load).
+    van la card.BRAND (import tai cho de tranh vong: card import env_load).
     `co_a_cong=False` cho cho tu ghep "@" vao chu (slide cuoi cua Kite)."""
     import card
     b = (brand or "").strip()
@@ -198,7 +198,7 @@ def album_secondary(draft_id: str, thu_muc: Path = None) -> list:
     """Danh sach anh phu <draft_id>_2.png, _3.png... _10.png... sap dung so,
     khong theo thu tu chuoi.
 
-    Truoc day 3 noi (draft_write, dre_nop, kite_nop) tu glob rieng bang mau
+    Truoc day 3 noi (draft_write, dre_submit, kite_submit) tu glob rieng bang mau
     `_[0-9].png` — chi khop MOT chu so nen bo sot slide thu 10 tro len. Bug
     that: Ong Chu duyet du 10 slide tren Telegram nhung album dang kenh chi
     con 9, vi draft_write doc thieu slide cuoi (audit 06/09/2026). Gom mot cho
@@ -244,7 +244,7 @@ def write_json(p, d, indent: int = 2) -> None:
     import threading as _th
     p = Path(p)
     p.parent.mkdir(parents=True, exist_ok=True)
-    # pid + thread id (ADF-r2-11, lay tu duyet_co_so._ghi_json): approve_service
+    # pid + thread id (ADF-r2-11, lay tu approve_base._write_json): approve_service
     # ghi cung mot tep state tu nhieu thread (nut chay nen, vong poll) — chung
     # mot ten tmp thi hai ban ghi lan vao nhau roi ban lai lan moi la cai replace.
     tmp = p.with_name(f"{p.name}.tmp.{_os.getpid()}.{_th.get_ident()}")

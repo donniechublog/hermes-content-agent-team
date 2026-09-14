@@ -29,15 +29,15 @@ lxml>=5
 
 # Cung dang "co san nho phu thuoc bac cau" nhu bs4/lxml — ghi ro de venv rieng
 # khong bi ImportError (audit 06/09/2026):
-pyyaml>=6           # doc config.yaml cua hermes: model_watch, theo_doi_9router, cost_squeeze
-# markdown: DA BO 09/09/2026 (audit D2). nhat_ky_web tu dung HTML tu .md bang
-# `md_sang_html` — lam duoc vi chinh theo_doi_9router sinh ra tep .md do nen tap
+pyyaml>=6           # doc config.yaml cua hermes: model_watch, monitor_9router, cost_squeeze
+# markdown: DA BO 09/09/2026 (audit D2). journal_web tu dung HTML tu .md bang
+# `md_bright_html` — lam duoc vi chinh monitor_9router sinh ra tep .md do nen tap
 # cu phap dong (`#`/`##`, bang `|`, muc `- `, `**dam**`), kiem trong
 # tests/test_nhat_ky_web.py.
 
-opencv-python-headless>=4.9  # cong chan MAT NGUOI (luat_anh._yunet, YuNet onnx trong
+opencv-python-headless>=4.9  # cong chan MAT NGUOI (image_rules._load_yunet, YuNet onnx trong
 #                       # assets/). Truoc 06/09/2026 chi ghi o requirements-local
-#                       # nhu thu "may local moi can" — nhung luat_anh chay tren
+#                       # nhu thu "may local moi can" — nhung image_rules chay tren
 #                       # SERVER cho moi vai lam anh. Thieu no thi `_yunet()` tra
 #                       # None va cong mat nguoi TAT IM LANG, khong mot dong bao:
 #                       # dung loai hong ma audit goi la "âm thầm".

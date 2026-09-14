@@ -2,8 +2,8 @@
 """LOW-34 + LOW-35 (12/09/2026): trang cong bo chinh chu phai duoc hoi, va Commons
 phai khop THUC THE (cum ten lien nhau), khong khop chu roi.
 
-LOW-34: <title> HF "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face" -> tach_model
-ra ['deepseek'] (tien to repo) -> _khoa_model rong -> trang_cong_bo tra None IM
+LOW-34: <title> HF "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face" -> extract_model
+ra ['deepseek'] (tien to repo) -> _lock_model rong -> announcement_page tra None IM
 LANG -> deepseek.com/en/news/deepseek-v4-1-flash/ (4 chart) khong bao gio duoc hoi.
 LOW-35: "Hugging Face" (tu hau to site) thanh hang trong tin + tu khoa Commons ->
 "Octopus' Hugging Face.jpg", "West Lighthouse, Rathlin hugging the cliff face".

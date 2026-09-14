@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """brief_common.py — khung chung cua brief bon vai doc `xong.json`.
 
-Vi sao (audit dot 1, 06/09/2026): `dre_chuan_bi`, `ethan_chuan_bi`,
-`kite_chuan_bi`, `miles_chuan_bi` deu mo brief bang cung mot khung — dong tieu
+Vi sao (audit dot 1, 06/09/2026): `dre_prepare`, `ethan_prepare`,
+`kite_prepare`, `miles_prepare` deu mo brief bang cung mot khung — dong tieu
 de, dong Brand/draft, Link goc, "Tieu de bai goc", khoi LAM LAI, khoi "## Tu
 lieu" — chep ~30 dong bon lan. Chung da bat dau lech: cho ghi "Tom tat (Finn)",
 cho ghi "Tom tat (Finn/Vera)"; cho cat 15 cau co so, cho cat 25; ba trong bon co

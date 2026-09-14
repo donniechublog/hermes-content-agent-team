@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 import approve_dispatch as dg                                  # noqa: E402
 
 
-# --------------------------------------------------------------- link_ket_qua
+# --------------------------------------------------------------- link_result
 def test_link_ket_qua_chua_co_thi_none():
     with tempfile.TemporaryDirectory() as tmp:
         cu = dg.STORY_RESULT
@@ -68,7 +68,7 @@ def test_link_ket_qua_dm_khong_phai_supergroup_thi_none():
             dg.STORY_RESULT = cu
 
 
-# --------------------------------------------------------------------- ly_do_task
+# --------------------------------------------------------------------- reason_task
 def test_ly_do_task_lay_tu_lan_chay_cuoi():
     cu = dg.hermes_adapter.last_run
     dg.hermes_adapter.last_run = lambda tid: {"tom_tat": None, "loi": "thieu anh that", "metadata": {}}
@@ -144,7 +144,7 @@ def test_treo_khong_bao_lap_trong_cua_so_lai_bao():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
         state = Path(tmp)
-        # Da bao "treo" 5 phut truoc — con trong cua so LAI_BAO_TREO_PHUT (30p).
+        # Da bao "treo" 5 phut truoc — con trong cua so AGAIN_REPORT_STALLED_MINUTES (30p).
         (state / "da_bao_treo.json").write_text(
             json.dumps({"t_1": now - 5 * 60}), encoding="utf-8")
         rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",

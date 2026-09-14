@@ -119,6 +119,6 @@ phải trả lời** và **một lỗi hay mắc**; khi mở hoặc đóng ticke
 | 2. Chuyển thành roadmap | Cần khám phá thêm hay đủ rõ để làm? | Bỏ qua xác thực, xây sai thứ | Chưa rõ thì ticket dừng ở mục 2 (Bối cảnh) với lệnh đo, không viết mục 3. Xem nhật ký 10/09 Dre: sửa đúng chỗ nhưng nối sai |
 | 3. Thực thi | Đủ nhỏ để giao Vòng 1 chưa? | Việc quá to, bị kẹt thay vì chia nhỏ | Quá 30 phút thì tách ticket con **trước** khi làm (LOW-16 → LOW-17/18/19) |
 | 4. Vận hành & theo dõi | Theo dõi tín hiệu gì khi lên production? | Không định nghĩa giám sát cho tới khi có sự cố | Mục 6 (Chạy thử) chạy **trên máy chủ** (luật cứng 12/09/2026) và phải ghi **cái nhìn ở đâu sau khi deploy**: topic Telegram nào, cột nào trong nhật ký ngày, cron nào |
-| 5. Phát hiện vấn đề | Gì báo hiệu trước khi khách phàn nàn? | Vấn đề chỉ lộ ra qua khiếu nại | Cổng chặn ở `*_nop.py`, `kanban_block`, nhật ký 9router. Ticket sửa lỗi phải trả lời: cổng nào lẽ ra phải chặn |
+| 5. Phát hiện vấn đề | Gì báo hiệu trước khi khách phàn nàn? | Vấn đề chỉ lộ ra qua khiếu nại | Cổng chặn ở `*_submit.py`, `kanban_block`, nhật ký 9router. Ticket sửa lỗi phải trả lời: cổng nào lẽ ra phải chặn |
 | 6. Phòng ngừa vấn đề | Guardrail nào ngăn được việc tái diễn? | Cùng loại lỗi lặp lại nhiều lần | Test mới fail-trên-code-cũ (mục 3, 5). Lỗi lặp lần hai thì mở ticket cho guardrail, không chỉ vá |
 | 7. Sửa vấn đề (quay lại 1) | Cần cập nhật đặc tả/backlog không? | Sửa xong nhưng không cập nhật gốc gây lỗi | Mục 7 (Backlog) + README/LUAT_ANH sửa cùng commit; nhật ký sự cố ghi "ticket theo dõi" (LOW-19) |

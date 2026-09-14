@@ -23,7 +23,7 @@ tuc Ethan con 0 duong dung, ma brief cam vai tu tai them ("chi dung MA ANH").
 
 Nay `role.has_enough_material` tra loi: MOI vai deu phai co mot tam lam anh chinh,
 rieng SO LUONG thi chi vai xep nhieu anh moi bi dem. Tieu chi CHAT LUONG van
-dung chung o luat_anh + classify, khong dong toi.
+dung chung o image_rules + classify, khong dong toi.
 
 Chay:  venv/bin/python tests/test_tim_anh_theo_vai.py
 """
@@ -111,7 +111,7 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
     cb._round_widen_search = _vong("tim_rong")
     cb._round_brand = _vong("thuong_hieu")
     cb._round_concept = _vong("khai_niem")
-    # `_vong_chup_nguon` PHAI thay bang gia nhu moi vong khac: truoc 13/09/2026
+    # `_round_capture_source` PHAI thay bang gia nhu moi vong khac: truoc 13/09/2026
     # no bi bo quen, nen test "khong mang, khong browser" van goi that vao no —
     # thay bang mot dong "[chup_lead] ... AttributeError '_Phien' object has no
     # attribute 'trang'" o moi luot chay, va tu khi vong nay tu hoi them bao
@@ -119,7 +119,7 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
     cb._round_capture_source = _vong("chup_nguon")
     # Nac thuc the (3a3cda5) cung la pha nang (Wikipedia/Commons) — khong stub thi
     # no chay mang that va co the tra du anh, khai niem khong bao gio toi luot.
-    # `_vong_thuc_the` (Wikipedia pageimages) cung goi mang THAT, lam tep test
+    # `_round_entity` (Wikipedia pageimages) cung goi mang THAT, lam tep test
     # "khong mang" nay ton 6 phut 34 (do 13/09/2026) thay vi vai giay.
     cb._round_entity = _vong("thuc_the")
     cb._article_material = lambda *a, **k: {"sentence_has_count": [], "doan_dau": "", "so_nguon": 1}

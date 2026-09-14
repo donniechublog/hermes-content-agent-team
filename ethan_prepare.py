@@ -66,7 +66,7 @@ def label_ethan(a: dict) -> tuple:
         # hạng / ảnh cơ sở), một bản dùng chung với brief của Dre. Bản cũ ở đây
         # dán một câu "trụ sở/campus/biển hiệu" cho MỌI loại, nên chân dung
         # founder tới tay Ethan không có cái tên để khai `nhan_vat` — mà cổng
-        # `kiem_nhan_vat` chặn mặt người không khai tên, tức Ethan buộc phải bỏ
+        # `check_subject_named` chặn mặt người không khai tên, tức Ethan buộc phải bỏ
         # ảnh founder (Ông Chủ 10/09/2026).
         import image_brand
         ghi.append(image_brand.label_by_type(a["thuong_hieu"]))
@@ -103,14 +103,14 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng thẻ, không vẽ. Kết thúc task bằng "
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
     # Nhan cua vision (06/09/2026): truoc day brief cua Ethan khong in co
-    # `lien_quan` lan mo ta, nen vai chon phai anh ❌ roi bi ethan_nop doi lai —
+    # `lien_quan` lan mo ta, nen vai chon phai anh ❌ roi bi ethan_submit doi lai —
     # mat mot vong ma vai khong hieu vi sao. Dre da in day du tu truoc.
     if m.get("chua_nhin"):
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
     goi_y = []
     if m.get("tin_xep_hang"):
-        L.append(cb.ranking_brief_line(m, "", "ethan_nop"))
+        L.append(cb.ranking_brief_line(m, "", "ethan_submit"))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "

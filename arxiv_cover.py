@@ -101,7 +101,7 @@ def capture_cover(pdf_bytes: bytes) -> Image.Image | None:
 # den dcgr deu rat toi), nen nuong san mau nay vao thi lop card ve tiep len tren
 # lien mach, khong lo mot duong noi.
 DARK = (10, 12, 16)
-# Vung headline luon nam o 40% duoi (card.TRAN_TEXTBOX). Nen lop toi phai gan
+# Vung headline luon nam o 40% duoi (card.CEILING_TEXTBOX). Nen lop toi phai gan
 # nhu DAC han o do de chu bai bien mat, chu khong toi dan nhe. Trong: bat dau
 # toi tu 0.40, len gan dac o 0.60, roi giu dac toi day.
 START_DARK = 0.40
@@ -156,7 +156,7 @@ def main():
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     # Dong dau XUAT XU: anh nay ra dung 1200x1500 (4:5 chan) ma khong qua
-    # crop_ti_le.py — carousel.py chan anh 4:5/1:1 "chan" khong co dau vet vi do
+    # crop_ratio.py — carousel.py chan anh 4:5/1:1 "chan" khong co dau vet vi do
     # la dau hieu cat tay ne cong (Ong Chu bat loi 04/09/2026). Dau nay cho cong
     # biet chinh cong cu cua doi dung ra anh, khong phai cat lui.
     from PIL.PngImagePlugin import PngInfo

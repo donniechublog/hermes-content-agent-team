@@ -9,13 +9,13 @@ của thế giới. Nấc này bảo đảm thang không rỗng, bằng hai ngu�
   1. Wikipedia `pageimages`: ảnh đại diện của BÀI về thực thể (hãng, model,
      người, sự kiện) — Anthropic ra 2865x2952 (đo 12/09). Khác search tên tệp
      Commons: đây là ảnh mà cộng đồng đã CHỌN làm đại diện cho thực thể đó.
-  2. Commons full-text theo CỤM tên riêng (`_co_cum`, LOW-36) — mở rộng cái đã
+  2. Commons full-text theo CỤM tên riêng (`_has_phrase`, LOW-36) — mở rộng cái đã
      làm cho tên người sang mọi cụm viết hoa trong tiêu đề và tên model.
 
 Đo trước khi viết: pageimages KHÔNG phải lúc nào cũng có (DeepSeek, "Claude
 (AI)", "Age verification" trả rỗng; Paul Erdős chỉ 324x430) — nên cần cả hai,
-và cả hai vẫn qua `phan_loai` + con mắt như mọi ảnh khác. Thuần phần lọc để
-test được; mạng chỉ ở `pageimages` và `_hoi_commons`.
+và cả hai vẫn qua `classify` + con mắt như mọi ảnh khác. Thuần phần lọc để
+test được; mạng chỉ ở `pageimages` và `_ask_commons`.
 """
 import re
 import sys
@@ -57,8 +57,8 @@ def entity_within_title(tieu_de: str, models: list | None = None) -> list:
         ra.insert(0, dau)
     # MOT TU viet hoa dung mot minh ("Claude", "Flash", "Mathematicians") la bay
     # dong am — do that 12/09: "Claude" tren Commons ra tranh Claude Lorrain. Chi
-    # giu tu don khi no la TEN HANG da biet (anh_thuong_hieu.TEN_HIEN); cum >= 2
-    # tu thi giu (co `_co_cum` lam bien).
+    # giu tu don khi no la TEN HANG da biet (image_brand.DISPLAY_NAME); cum >= 2
+    # tu thi giu (co `_has_phrase` lam bien).
     import image_brand as th
     ra = [c for c in ra if len(c.split()) >= 2 or c.lower() in th.DISPLAY_NAME]
     return ra[:MAX_ENTITY]
@@ -87,7 +87,7 @@ def pageimages(ten: str) -> dict | None:
 
 
 def commons_by_phrase(ten: str, so: int = MAX_NEW_ENTITY) -> list:
-    """Commons full-text theo CỤM tên riêng, lọc `_co_cum` như LOW-36 (liền nhau,
+    """Commons full-text theo CỤM tên riêng, lọc `_has_phrase` như LOW-36 (liền nhau,
     đúng thứ tự, biên giới từ) — không phải mỗi từ có mặt đâu đó."""
     import image_concept
     import image_brand as th
