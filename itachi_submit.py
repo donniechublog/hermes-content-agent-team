@@ -32,72 +32,23 @@ sys.path.insert(0, str(ROOT))
 import gin_prepare as gb                                    # noqa: E402
 import text_bg                                               # noqa: E402
 import submit_common as nc                                       # noqa: E402
-from card import _f, _wrap                                   # noqa: E402
 from vietnamese import find_face_mark, drop_mark_forbid               # noqa: E402
+import about_text                                                # noqa: E402
+from about_text import HAS_MIN                                    # noqa: E402  (giu ten cu cho phan duoi)
 
-FONTS = ROOT / "assets" / "fonts"
-FONT = {"bold": FONTS / "BeVietnamPro-Bold.ttf", "regular": FONTS / "BeVietnamPro-Regular.ttf",
-        "serif": FONTS / "NotoSerifDisplay.ttf", "condensed": FONTS / "Oswald.ttf",
-        "mono": FONTS / "JetBrainsMono-Bold.ttf"}
-HAS_MIN = 16
 # Ti le tuong phan toi thieu (WCAG) giua mau chu va nen — muc "chu lon/dam"
 # (3.0) chu khong phai muc "chu thuong" (4.5): chu dich luon to/dam het co
-# theo _ve_khoi. Duoi muc nay moi doi mau, dung "mac dinh khong doi gi neu
+# theo _about_block. Duoi muc nay moi doi mau, dung "mac dinh khong doi gi neu
 # khong can" — giu dung thiet ke goc khi van con doc duoc.
 THRESHOLD_WALL_PART = 3.0
 
-
-def _font_default(h_vung: int, h_anh: int) -> str:
-    return "bold" if h_vung >= 0.045 * h_anh else "regular"
-
-
-def _about_block(d: ImageDraw.ImageDraw, text: str, x: int, y: int, w: int, h: int, font_key: str,
-             color, align: str) -> None:
-    path = str(FONT.get(font_key) or FONT["regular"])
-    size = max(HAS_MIN, int(h * 0.82))
-    while size > HAS_MIN:
-        f = _f(path, size)
-        lines = _wrap(d, text, f, w)
-        lh = int((f.getbbox("ÂgqĐ")[3] - f.getbbox("ÂgqĐ")[1]) * 1.12)
-        if lh * len(lines) <= h * 1.05:
-            break
-        size -= 2
-    f = _f(path, size)
-    lines = _wrap(d, text, f, w)
-    lh = int((f.getbbox("ÂgqĐ")[3] - f.getbbox("ÂgqĐ")[1]) * 1.12)
-    yy = y + max(0, (h - lh * len(lines)) // 2)
-    for ln in lines:
-        tw = d.textlength(ln, font=f)
-        xx = x + (w - tw) / 2 if align == "center" else x
-        d.text((xx, yy), ln, font=f, fill=_color(color))
-        yy += lh
-
-
-def _ceiling_box(d: ImageDraw.ImageDraw, text: str, w: int, h: int, font_key: str) -> int:
-    """So pixel chieu cao BI TRAN ra ngoai hop khi da co chu nho het muc.
-
-    `_ve_khoi` co lai co chu toi CO_MIN roi VE BAT KE — vong while thoat vi
-    `size > CO_MIN` la sai, khong phai vi chu da vua. Cau dich dai gap doi cau
-    goc thi chu tran de len phan anh ben duoi va khong cong nao bao (06/09/2026).
-    """
-    path = str(FONT.get(font_key) or FONT["regular"])
-    f = _f(path, HAS_MIN)
-    lines = _wrap(d, text, f, w)
-    lh = int((f.getbbox("ÂgqĐ")[3] - f.getbbox("ÂgqĐ")[1]) * 1.12)
-    return max(0, lh * len(lines) - int(h * 1.05))
-
-
-def _color(c):
-    """color_rgb -> tuple 3 so 0-255. Spec cua vai co the ghi bat cu thu gi;
-    truoc 06/09/2026 `tuple(color)` nem TypeError giua chung buoi ve, mat ca
-    slide va vai chi thay traceback."""
-    try:
-        t = tuple(int(x) for x in list(c)[:3])
-    except (TypeError, ValueError):
-        return (20, 20, 20)
-    if len(t) != 3 or any(not 0 <= x <= 255 for x in t):
-        return (20, 20, 20)
-    return t
+# Luat VE (font, co chu, mau, cong tran hop) da chuyen sang about_text.py (ten cu
+# ve_chu.py, 07/09/2026) de Gin dung chung. Bon ten duoi la loi vao cu, giu
+# nguyen cach goi (LOW-56: ghep nhanh rename/jean-to-cape len main da doi ten).
+_font_default = about_text.font_default
+_about_block = about_text.about_block
+_ceiling_box = about_text.ceiling_box
+_color = about_text.to_color
 
 
 def _color_hide_whole(color_rgb, nen_vung) -> tuple:

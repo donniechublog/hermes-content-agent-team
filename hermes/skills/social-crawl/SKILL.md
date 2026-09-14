@@ -39,6 +39,19 @@ link CDN; với Facebook có `text` (TOÀN VĂN post), `author`, `postId`, `medi
 và `metrics` (reactions/comments/shares). Thêm `--tries N` nếu muốn kiên nhẫn hơn
 mặc định 6 lần.
 
+## Lấy chính tấm ảnh về máy
+
+`--download <thư mục>` tải luôn `media[]` xuống, đặt tên `01.jpg`, `02.jpg`… đúng
+thứ tự slide trong carousel (video ra `NN.mp4` kèm `NN-thumb.jpg`):
+
+```bash
+/home/donniechu/content-team/venv/bin/python /home/donniechu/content-team/hermes/skills/social-crawl/scripts/social_fetch.py "<url>" --download "<thư mục>"
+```
+
+`?img_index=N` trong link Instagram là **slide thứ N** của carousel, ứng với tệp
+`NN.jpg`. Gin không phải chạy lệnh này tay: `gin_prepare.py "<link>"` gọi nó
+sẵn rồi chọn đúng slide.
+
 ## Những chỗ đã trả giá, đừng "sửa" lại
 
 - **Endpoint chạy bất đồng bộ và có warm-up.** Lần gọi đầu cho một link chưa
@@ -48,8 +61,12 @@ mặc định 6 lần.
 - **Mỗi lần gọi là một lượt crawl SỐNG, mất 10–40 giây.** Bình thường, không
   phải treo. Đừng bấm lại chồng lên.
 - **Post ảnh trên X thường trả `media[]` RỖNG.** Đó là giới hạn đã biết của
-  crawler, không phải link hỏng. Cần chính tấm ảnh thì đó là việc của Bob
-  (`url-mascot-frame`), không phải skill này.
+  crawler, không phải link hỏng — và `--download` khi đó cũng không có gì để
+  tải. Instagram thì trả đủ. Cần ảnh của một post X mà `media[]` rỗng thì đó là
+  việc của Bob (`url-mascot-frame`).
+  (Trước 07/09/2026 mục này ghi mọi việc lấy ảnh đều là của Bob, viết từ hồi
+  script chưa có `--download`. Gin đọc đúng câu đó rồi kết luận mình không lấy
+  được ảnh từ link, và tắc — 07/09 msg 810.)
 - **Không bao giờ dùng `localPath`/`mediaPath` trong kết quả** — đường dẫn đó
   nằm trong container của dịch vụ crawl, máy này không với tới. Muốn file thật
   thì tải lại từ `media[].url`.
