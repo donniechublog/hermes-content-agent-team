@@ -135,6 +135,21 @@ số/def/alias trùng tên tệp mới trong tệp có import module đó).
 | `rename.py` | Thực thi (LOW-50): rope + vá chuỗi + shim + pyflakes/tests theo lô |
 | `SOAT_NGU_NGHIA_5_module.md` | Lượt soát tay 86 hàm theo hành vi thật (tham khảo; 60 tên đã đưa vào `overrides.json`) |
 
+## Tài liệu `.md` ở gốc repo (LOW-142, 14/09/2026)
+
+Từ điển và `rename.py` chỉ xét tên **mã** (module/hàm/hằng), nên LOW-50 đổi
+`luat_anh.py` → `image_rules.py` mà sót tài liệu cùng tên. Đổi tay, ghi ở đây để
+lần sau tra:
+
+| Tên cũ | Tên mới | Ghi chú |
+|---|---|---|
+| `KIEN_TRUC.md` | `ARCHITECTURE.md` | |
+| `LUAT_ANH.md` | `IMAGE_RULES.md` | khớp module `image_rules.py`; tham chiếu mục `LUAT_ANH §1.2d` → `IMAGE_RULES §1.2d`, giữ số mục |
+
+Không đổi trong `nhat_ky/` (lịch sử) và trong chính thư mục này.
+`skill_lesson_filter.SOURCE_OF_TRUTH` khớp **cả hai** tên vì bài học cũ vẫn ghi
+`LUAT_ANH`. Tên tài liệu Việt không dấu còn lại (vd `KHUON_TICKET.md`) chưa đổi.
+
 ## Thứ tự ưu tiên khi dịch một tên (`gen.py`)
 
 1. `overrides.json` khớp `module.tên_gốc` → dùng ngay, bỏ qua mọi bước dưới.

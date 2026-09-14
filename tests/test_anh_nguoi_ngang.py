@@ -50,7 +50,7 @@ def test_hai_nguoi_khac_ghep_ten_khong_duoc_lot():
 
     Bản lỏng `all(_has_word(...))` cho "dario rossi meets luca amodei in rome" đi
     qua: ảnh HAI NGƯỜI KHÁC, mà caption lại khai `nhan_vat: "Dario Amodei"` —
-    bịa mặt người, đúng thứ LUAT_ANH §0/§6 sinh ra để chặn. Cùng lớp lỗi mà
+    bịa mặt người, đúng thứ IMAGE_RULES §0/§6 sinh ra để chặn. Cùng lớp lỗi mà
     `filter_commons` bị siết ngày 12/09/2026 ("Hugging Face" khớp "Rathlin hugging
     the cliff face"), bản vá đó không lan sang đây."""
     pages = {

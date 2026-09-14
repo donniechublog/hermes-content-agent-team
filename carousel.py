@@ -4,7 +4,7 @@ goc duoi-trai. Khac han card.py (mot the bia kieu tran): day la mot bo N slide
 ke chuyen, dung cho Dre.
 
 LUAT TREN HET (Ong Chu chot 04/09/2026, cap nhat 08/09/2026, CHUNG voi Kite
-— xem LUAT_ANH.md muc 7): moi slide la MOT MAT PHANG LIEN. Khong
+— xem IMAGE_RULES.md muc 7): moi slide la MOT MAT PHANG LIEN. Khong
 vien, khong vach, khong vung den rieng, khong hai vung tach roi. Chu de len
 anh: MAC DINH KHONG PHU LOP NAO — FG (trang/den, co dinh theo NEN ca bo) tu no
 da tuong phan voi hau het anh. Chi khi do that tren pixel thay vung duoi chu
@@ -102,7 +102,7 @@ F_MONO_CH = str(FONTS / "JetBrainsMono-Regular.ttf")   # chip ten kenh (khong da
 F_UI_CH = str(FONTS / "JetBrainsMono-Bold.ttf")        # chip category (dam)
 
 # NEN CHO CHU O SLIDE THAN (Ong Chu chot 08/09/2026, nhac lai nhieu lan, CUNG
-# luc voi Kite — xem LUAT_ANH.md muc 7): FG la mot mau CO DINH theo NEN
+# luc voi Kite — xem IMAGE_RULES.md muc 7): FG la mot mau CO DINH theo NEN
 # ca bo (trang tren "toi", den tren "sang") — KHONG mac dinh phu lop nao len
 # anh de dat chu. Chi khi do THAT SU tren pixel WYSIWYG (sau khi da dan anh,
 # truoc khi ve chu) thay vung ngay duoi chu khong du tuong phan voi FG (qua
@@ -271,7 +271,7 @@ def _stack_if_can(muc, nhan, stem):
     for q in ds:
         if not Path(q).exists():
             sys.exit(f"{nhan}: khong thay tep anh {q}")
-    # Cong lech tone (`luat_anh.kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
+    # Cong lech tone (`kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
     # cam doan ve nguon/chat luong nay khoi he thong, moi vai).
     ra = Path(f"{stem}.ghep.png")
     ra.parent.mkdir(parents=True, exist_ok=True)
@@ -323,7 +323,7 @@ def _background_solid_below_text(canvas, text_top):
     lo lem nhem sau cau quote. O day: nen DAC mau BG tu khoang lang gan nhat
     phia tren dong chu (`card._timestamp_background_solid`, dung chung voi the Ethan) xuong
     day; dai smoothstep nam trong khoang lang nen khong cat ngang dong chu in
-    san nao, khong co duong ke ngang (LUAT_ANH muc 7.1)."""
+    san nao, khong co duong ke ngang (IMAGE_RULES muc 7.1)."""
     dac, top = card._timestamp_background_solid(canvas, text_top - BACKGROUND_FALL_ODD, BACKGROUND_FALL_SPREAD)
     m = Image.new("L", (1, H), 0)
     for y in range(H):

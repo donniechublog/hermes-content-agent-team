@@ -82,7 +82,7 @@ def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
     "Anthropic" — dù chỉ là tên hãng tiếng Anh, không có dấu — vẫn khiến Bing
     News trả về CẢ báo tiếng Việt (cafebiz.vn, thanhnien.vn...) vì đủ từ khoá
     khớp tiêu đề. `has_vietnamese(tu_khoa)` ở đầu hàm chỉ chặn được TỪ KHOÁ đầu
-    vào — không chặn được đây. LUAT_ANH §1.2d: "tìm kiếm bằng tiếng Anh hoặc
+    vào — không chặn được đây. IMAGE_RULES §1.2d: "tìm kiếm bằng tiếng Anh hoặc
     tiếng Trung, tuyệt đối ko được dùng ngôn ngữ khác" — phải lọc trên chính
     TIÊU ĐỀ bài trả về."""
     items = [
@@ -106,7 +106,7 @@ def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
 
 
 def test_bao_ve_tu_khoa_khong_gioi_han_thoi_gian():
-    """LUAT_ANH §1.2d (13/09/2026): "được tìm không giới hạn thời gian, sự
+    """IMAGE_RULES §1.2d (13/09/2026): "được tìm không giới hạn thời gian, sự
     kiện". Một bài rất CŨ (2019) về đúng từ khoá vẫn phải được nhận — mặc định
     `ngay=None` nghĩa là KHÔNG lọc theo ngày (khác `other_outlets_bing`, vẫn lọc
     ngày vì nó tìm 'báo khác CÙNG một sự kiện' — sự kiện thì có mốc thời gian
@@ -183,7 +183,7 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
 
 
 def test_tim_bao_chay_song_song_ke_ca_khi_commons_co_anh():
-    """LUAT_ANH §1.2d (13/09/2026, Ông Chủ chốt nguyên tắc nguồn): tìm báo theo
+    """IMAGE_RULES §1.2d (13/09/2026, Ông Chủ chốt nguyên tắc nguồn): tìm báo theo
     từ khoá KHÔNG còn là phương án cuối khi Commons rỗng — chạy SONG SONG với
     Commons cho MỌI hãng, kể cả khi Commons ĐÃ có ảnh. Fail trên code cũ (nhánh
     `if not cands_h`): `report_about_keyword` không được gọi vì Commons đã có 1 ảnh."""

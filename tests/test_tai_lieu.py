@@ -16,11 +16,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-# KIEN_TRUC.md va hermes/README.md them o audit lượt 2 (ADF-r2-7): KIEN_TRUC.md
+# ARCHITECTURE.md va hermes/README.md them o audit lượt 2 (ADF-r2-7): ARCHITECTURE.md
 # lech ngay truoc khi vao git (Jean/Cape, create_pair o sai module). SKILL.md
 # va SOUL.md CHUA vao day: chung nhac duong dan tuong doi trong thu muc skill
 # va lenh chay tren server, cong nay se bao oan — can mot cong rieng.
-TAI_LIEU = ["README.md", "LUAT_ANH.md", "STYLE_TEXT_SPEC.md", "KIEN_TRUC.md", "hermes/README.md"]
+TAI_LIEU = ["README.md", "IMAGE_RULES.md", "STYLE_TEXT_SPEC.md", "ARCHITECTURE.md", "hermes/README.md"]
 
 # NHAT_KY_SU_CO.md va nhat_ky/*.md CO CHU DICH nam ngoai cong nay: chung la NHAT
 # KY, nen viec chung nhac toi script da xoa (`usage_audit.py`, `doi_model_combo.py`)

@@ -121,7 +121,7 @@ def candidate_static(title: str, link: str, nguon_path: Path, title_en: str = ""
 
 def commons_images(tu_khoa: str, so: int = 4) -> list | None:
     """Anh that tren Wikimedia Commons (tru so, san pham, su kien) cho tin mong
-    anh — LUAT_ANH muc 1.2 ke Commons la nguon hop le. Chi goi khi bai + bao khac
+    anh — IMAGE_RULES muc 1.2 ke Commons la nguon hop le. Chi goi khi bai + bao khac
     khong du 5 anh. Loai SVG/logo (mime + _graphic o buoc tai).
 
     Tra None khi HONG VI MOI TRUONG (mang, API loi) — KHAC voi [] (da chay het,

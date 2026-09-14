@@ -667,7 +667,7 @@ luôn là **ghép dọc** hoặc `"chart": true`, không phải crop.
 
 ### 4.2 Dấu xuất xứ — ĐÃ BỎ (13/09/2026)
 
-Cổng này (`luat_anh.kiem_xuat_xu`: ảnh đúng khít 4:5/1:1 mà không có dấu vết
+Cổng này (`kiem_xuat_xu`: ảnh đúng khít 4:5/1:1 mà không có dấu vết
 `crop_ratio.py` → chặn) đã bỏ khỏi hệ thống, mọi vai (Ông Chủ 13/09/2026: bỏ
 cấm đoán này cùng đợt với `kiem_day_sang`/`kiem_lech_tone`/`kiem_anh_thap`).
 `crop_ratio.py` vẫn là công cụ crop chuẩn, chỉ là không còn cổng nào ép dùng nó
@@ -694,7 +694,7 @@ lên ảnh dưới — quote thì chỉ làm mờ cục bộ đúng vùng chữ 
 xem mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặt **ảnh quan
 trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/màn tối chia sẻ.
 
-**Cổng "không được lệch tone" ĐÃ BỎ (13/09/2026)** — `luat_anh.kiem_lech_tone`
+**Cổng "không được lệch tone" ĐÃ BỎ (13/09/2026)** — `kiem_lech_tone`
 (và bản dùng trực tiếp `image_rules.tone_mismatch` trong `dre_submit.py`) không còn chặn
 gì, ở mọi vai. Ghép hai ảnh dù khác tone hẳn (một nền trắng một nền đen) vẫn
 qua được cổng; `prepare/manifest.py::cap_ghep` cũng không còn loại cặp lệch

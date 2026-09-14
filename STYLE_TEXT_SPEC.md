@@ -7,7 +7,7 @@ Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh 
 thẻ. Kiểu `dai` đã bỏ khỏi mã 05/09/2026; bản mô tả thiết kế của nó chuyển sang
 [NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md).
 
-Luật *"ảnh này có được dùng không"* nằm ở [LUAT_ANH.md](LUAT_ANH.md); tệp này chỉ
+Luật *"ảnh này có được dùng không"* nằm ở [IMAGE_RULES.md](IMAGE_RULES.md); tệp này chỉ
 nói *"đặt chữ lên khung thế nào"*.
 
 ## Hệ chữ — kiểu `quote`
@@ -79,7 +79,7 @@ dưới. Khác hero (một tiêu đề bao quát tin) và khác carousel (nhiề
 6. **Hai chip neobrutalism** (khối đặc, viền đen 4px, bóng cứng lệch, chữ mono):
    tên kênh góc trên-phải khung, tagline góc dưới-trái, tâm chip ngang mức nét
    khung. Chip **không** đặt ở góc thẻ — ở đó nó đè lên tiêu đề của ảnh nguồn.
-7. Ảnh thấp hơn 50% khổ thẻ bị chặn hẳn (`luat_anh.kiem_anh_thap`): nửa thẻ bỏ
+7. Ảnh thấp hơn 50% khổ thẻ bị chặn hẳn (`kiem_anh_thap`): nửa thẻ bỏ
    trống. Đường ra là ghép dọc `--image2`.
 
 ## Bố cục kiểu `tran` — vai designer Ethan (cả hai brand)
@@ -90,7 +90,7 @@ nét nào" trước đó. Ba thứ đổi: bỏ nền đặc, chữ tự đổi 
 Khác quote đúng một chỗ: không có dấu ngoặc kép, vì đây là tiêu đề chứ không
 phải câu trích dẫn — nên bốn nét khép kín thay cho hai góc ngoặc đối nhau.
 
-Vì sao khung không phá luật "một mặt phẳng liền" (LUAT_ANH mục 7): thứ bị cấm là
+Vì sao khung không phá luật "một mặt phẳng liền" (IMAGE_RULES mục 7): thứ bị cấm là
 **đường cắt ngang chia thẻ làm hai**. Một khung khép kín bao quanh khối chữ là
 một vật nằm TRÊN mặt phẳng ảnh, không cắt mặt phẳng đó ra — đúng như khung của
 kiểu `quote` vẫn làm từ trước.
@@ -101,7 +101,7 @@ kiểu `quote` vẫn làm từ trước.
    chiều dọc, ảnh thấp hơn thì mép dưới của lớp sắc **tan dần** vào lớp nền mờ
    qua một dải smoothstep. **Không còn nhánh "ảnh thấp → nền màu đặc"**: trước
    07/09/2026 ảnh 16:9 trên khổ 4:5 để lại hơn **một nửa thẻ** là màu nền của bộ
-   nhận diện — đúng "vùng thứ hai" mà LUAT_ANH mục 7 cấm, và cũng trái với chính
+   nhận diện — đúng "vùng thứ hai" mà IMAGE_RULES mục 7 cấm, và cũng trái với chính
    mục 1 này. Hai kiểu thẻ dùng chung một hàm nên không lệch nhau được nữa.
 2. **KHÔNG CÓ MÀN TỐI** — giống kiểu `quote` từ 06/09/2026. Chỉ **làm mờ cục bộ**
    dải chữ đè lên (`_open_region_text`), ảnh phía trên khối chữ giữ nguyên 100% sắc

@@ -7,7 +7,7 @@ Bốn hàm thuần, không mạng:
   - vendors_in_story    tiêu đề -> hãng; hỏng = tin hai hãng chỉ hỏi được một.
   - truy_van          hãng -> câu hỏi Commons; hỏng = hỏi tên trần, ra ảnh hội thảo mờ.
   - filter_commons       lọc trang API; hỏng = rừng Amazon / quả táo lọt vào bộ.
-  - label_brand  siết nhãn; hỏng = mặt người vô danh lên bìa (LUAT_ANH §6).
+  - label_brand  siết nhãn; hỏng = mặt người vô danh lên bìa (IMAGE_RULES §6).
 
 Chạy:  venv/bin/python tests/test_thuong_hieu.py
 """
@@ -248,7 +248,7 @@ def test_nhan_chan_dung_doi_khai_dung_ten():
 
 
 def test_nhan_chan_dung_khong_chan_theo_mat():
-    """`count_faces` trả None (-> 0) khi thiếu cv2, mà LUAT_ANH §6 cho phép cổng mặt
+    """`count_faces` trả None (-> 0) khi thiếu cv2, mà IMAGE_RULES §6 cho phép cổng mặt
     tự tắt. Lấy mat==0 làm "không phải chân dung" là bỏ câm lặng mọi chân dung."""
     a = th.label_brand(_anh(thuong_hieu={"hang": "Anthropic", "loai": "nguoi",
                                               "nguoi": "Dario Amodei", "vai": "CEO"}, mat=0))

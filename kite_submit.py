@@ -79,7 +79,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             loi += l
 
-            # LUAT_ANH.md:12 tuyen bo Kite "phai theo" luat anh, nhung bang
+            # IMAGE_RULES.md:12 tuyen bo Kite "phai theo" luat anh, nhung bang
 
             # cong chan §9 khong co cot Kite va chuoi kite_* khong goi cong
 
@@ -137,7 +137,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
 
-            # ANH KHAI NIEM chi duoc dung o BIA (LUAT_ANH §1.2c "Cho dung:
+            # ANH KHAI NIEM chi duoc dung o BIA (IMAGE_RULES §1.2c "Cho dung:
             # nhan 🧭 ANH KHAI NIEM, chi bia/hero, khong vao slide than"). No
             # la anh chup that — co nuoc, day rack datacenter tu Wikimedia
             # Commons — nen di qua sach moi cong ky thuat; cai sai la CHO
