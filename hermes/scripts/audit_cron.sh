@@ -7,7 +7,7 @@
 #
 # CHAY O CA HAI CONTAINER (blog + dcgr), lech nhau 10 phut. Dat mot ban thi
 # ngay container do chet la khong con ai bao — dung cai lo hong can bit. Hai
-# lan chay khong sinh hai tin: audit_cron.py doc state/soat_cron.json, thay bo
+# lan chay khong sinh hai tin: audit_cron.py doc state/cron_audit.json, thay bo
 # van de y het da bao trong ngay thi im.
 #
 # KHONG dung --im: `deliver: local` nghia la stdout roi vao

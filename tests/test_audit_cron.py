@@ -7,7 +7,7 @@ nang nhat (ticker dung, job bi pause, job bi tat) khong sinh mot lan chay nao,
 tuc `failure_streak` van bang 0 — chung chi bi bat neu chinh cac phep so o day
 dung.
 
-Chay:  venv/bin/python tests/test_soat_cron.py
+Chay:  venv/bin/python tests/test_audit_cron.py
 """
 import json
 import sys

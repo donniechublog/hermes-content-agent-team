@@ -109,7 +109,7 @@ flowchart TB
         gwB["hermes-gateway@blog<br/>chat routing + kanban dispatcher<br/>max_in_progress: 1"]:::container
         apB["hermes-approve@blog<br/>approve_service + duyet_*"]:::container
         dashB["hermes-dashboard-blog :9120"]:::container
-        cronB{{"cron: finn-scan, nova-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · soat-cron @07:00"}}:::cron
+        cronB{{"cron: finn-scan, nova-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
         stateB[("state/blog/<br/>candidates · chuan_bi/ · bat_buoc ·<br/>anh_da_dung.jsonl")]:::datastore
     end
 
@@ -117,13 +117,13 @@ flowchart TB
         gwD["hermes-gateway@dcgr<br/>+ multiplex 8 profile_routes"]:::container
         apD["hermes-approve@dcgr<br/>approve_service — cùng mã nguồn"]:::container
         dashD["hermes-dashboard-dcgr :9121"]:::container
-        cronD{{"cron: vera-scan @05:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · soat-cron @07:10"}}:::cron
+        cronD{{"cron: vera-scan @05:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:10"}}:::cron
         stateD[("state/dcgr/")]:::datastore
     end
 
     subgraph SHARED["Dùng chung giữa 2 brand"]
         drafts[("drafts/{id}.*.json<br/>brand nằm trong sidecar,<br/>không tách thư mục")]:::datastore
-        stateCommon[("state/9router/<br/>state/soat_cron.json")]:::datastore
+        stateCommon[("state/9router/<br/>state/cron_audit.json")]:::datastore
         nhatky["nhat-ky-web :9130"]:::container
     end
 
@@ -156,7 +156,7 @@ script Python duy nhất ("Cùng một script phục vụ cả hai brand"), như
 thành **hai container hoàn toàn tách biệt** — mỗi bên một bộ systemd unit, một
 `state/<brand>/` riêng, một cấu hình cron riêng, chạy **tuần tự** trong nội bộ
 brand (`kanban.max_in_progress: 1`) nhưng **độc lập song song** giữa hai
-brand. Chỉ `drafts/`, `state/9router/`, `state/soat_cron.json` và
+brand. Chỉ `drafts/`, `state/9router/`, `state/cron_audit.json` và
 `nhat-ky-web` là dùng chung.
 
 ## Cấp 3 — Sơ đồ luồng pipeline nội dung (Component / data flow)

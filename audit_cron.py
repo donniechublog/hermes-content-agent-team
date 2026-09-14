@@ -16,7 +16,7 @@ ticker chet, job bi pause, job bi tat. Chi co mot lan soat dinh ky moi thay.
 
 CHAY O CA HAI CONTAINER, va moi lan chay soat CA HAI home. Neu chi dat o blog
 thi ngay blog chet la khong con ai bao — dung cai lo hong job nay sinh ra de
-bit. Hai lan chay khong sinh hai tin: lan sau doc `state/soat_cron.json` thay
+bit. Hai lan chay khong sinh hai tin: lan sau doc `state/cron_audit.json` thay
 cung mot bo van de da bao trong ngay thi im.
 
 Dung:
@@ -48,7 +48,7 @@ LATE_SECONDS = 15 * 60
 
 # Tep danh dau "hom nay ai da bao gi" — dung chung ca hai brand nen nam o
 # `state/` GOC, khong phai `state/<brand>/` (quy uoc trong README, muc State).
-MARK = env_load.ROOT / "state" / "soat_cron.json"
+MARK = env_load.ROOT / "state" / "cron_audit.json"
 
 ITEM = {"HONG": "🔴", "KET": "🟠", "TAT": "⚪"}
 
