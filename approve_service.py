@@ -52,6 +52,7 @@ from approve_pick import (  # noqa: E402
 )
 from approve_post import (  # noqa: E402
     _redo_all_done_limit, _label_reason_redo, _process_button, already_len_channel, draft_push,
+    handle_reply_approval,
 )
 from approve_chat import (  # noqa: E402
     handle_chat,
@@ -218,6 +219,12 @@ def handle_message(token, group, msg):
     # lam ly do, giao task, xong. Dat TRUOC "chon so": mot dong "4: chart bi
     # cat" ma roi vao topic chon tin se bi hieu nham thanh chon bai so 4.
     if _label_reason_redo(token, group, msg, thread_id, text):
+        return
+
+    # Reply vao album anh "gửi cho Miles" / "duyệt" = bam ✅ Duyet (LOW-134): duong
+    # du phong khi tin nut khong len vi mang loi. Chi an khi reply DUNG mot album
+    # co trong so gui anh — con lai di tiep nhu cu.
+    if handle_reply_approval(token, group, msg, thread_id, text):
         return
 
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la

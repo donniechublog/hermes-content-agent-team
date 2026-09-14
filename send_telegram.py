@@ -53,12 +53,90 @@ def _md5(files) -> list:
     return [hashlib.md5(Path(f).read_bytes()).hexdigest() for f in files]
 
 
-def _write_journal(vai: str, message_id, files, mo_ta: str) -> None:
+# Nghi giua cac lan thu lai khi mang loi (LOW-134). Test dat ve 0.
+RETRY_DELAYS = (2, 5, 15)
+
+
+def _telegram_post(token: str, method: str, data: dict, open_files=None,
+                   timeout: int = 60, retry_all: bool = False) -> dict:
+    """Goi Bot API, thu lai khi MANG loi; het luot thi nem SendError — khong de
+    httpx.* lot ra ngoai. Su co 14/09/2026 (LOW-134): ConnectError o tin nut Duyet
+    khong phai SendError nen nhanh cuu cua submit_common khong chay, vai chi thay
+    traceback tran.
+
+    Mac dinh chi thu lai loi CHUA GUI DI (ConnectError/ConnectTimeout): ReadTimeout
+    o sendMediaGroup co the album DA len, gui lai la trung album. `retry_all` danh
+    cho tin nut — trung mot tin nut con hon mat nut.
+    `open_files()` mo lai tep MOI lan thu (handle da doc het sau lan dau)."""
+    err = None
+    for attempt in range(len(RETRY_DELAYS) + 1):
+        handles = open_files() if open_files else None
+        try:
+            with httpx.Client(timeout=timeout) as c:
+                r = c.post(API.format(token=token, method=method), data=data, files=handles)
+            return r.json()
+        except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+            err = e
+        except httpx.TransportError as e:
+            if not retry_all:
+                raise SendError(f"Mang loi khi {method}: {type(e).__name__}: {e}") from e
+            err = e
+        except ValueError as e:
+            raise SendError(f"Telegram tra ve khong phai JSON ({method}): {e}") from e
+        finally:
+            for fh in (handles or {}).values():
+                (fh[1] if isinstance(fh, tuple) else fh).close()
+        if attempt < len(RETRY_DELAYS):
+            print(f"[mang] {method} loi {type(err).__name__}, thu lai sau {RETRY_DELAYS[attempt]}s",
+                  file=sys.stderr)
+            time.sleep(RETRY_DELAYS[attempt])
+    raise SendError(f"Mang loi khi {method} sau {len(RETRY_DELAYS) + 1} lan thu: "
+                    f"{type(err).__name__}: {err}")
+
+
+def _write_journal(vai: str, message_ids, files, mo_ta: str, button_draft=None) -> None:
+    """`message_ids` = MOI tin cua album (LOW-134): Ong Chu reply vao anh nao cung
+    tra ra dung draft. Co `button_draft` thi ghi `button_message_id` = None cho toi
+    khi tin nut len that (_mark_button_sent) — lan chay lai nho do biet gui bu nut."""
     STATE.mkdir(parents=True, exist_ok=True)
-    dong = {"ts": int(time.time()), "message_id": message_id,
+    dong = {"ts": int(time.time()), "message_id": message_ids[-1], "message_ids": list(message_ids),
             "files": [str(f) for f in files], "md5": _md5(files), "mo_ta": mo_ta}
+    if button_draft:
+        dong["button_draft"], dong["button_message_id"] = button_draft, None
     with (STATE / f"{vai}.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(dong, ensure_ascii=False) + "\n")
+
+
+def _mark_button_sent(vai: str, album_message_id, button_message_id) -> None:
+    """Ghi `button_message_id` vao dong cua album trong so (ghi nguyen tu)."""
+    p = STATE / f"{vai}.jsonl"
+    dong = p.read_text(encoding="utf-8").splitlines()
+    for i in range(len(dong) - 1, -1, -1):
+        try:
+            d = json.loads(dong[i])
+        except ValueError:
+            continue
+        if d.get("message_id") == album_message_id:
+            d["button_message_id"] = button_message_id
+            dong[i] = json.dumps(d, ensure_ascii=False)
+            tmp = p.with_suffix(".jsonl.tmp")
+            tmp.write_text("\n".join(dong) + "\n", encoding="utf-8")
+            os.replace(tmp, p)
+            return
+
+
+def _send_button(token: str, group: str, thread_id: int, draft_id: str, album_message_id) -> int:
+    """Gui tin nut Duyet/Lam lai/Bo (reply vao album), tra message_id; hong thi SendError."""
+    res = _telegram_post(token, "sendMessage", {
+        "chat_id": group, "message_thread_id": str(int(thread_id)),
+        "text": "Ảnh đã xong. Duyệt để người viết làm caption, hoặc bỏ nếu ảnh chưa đạt.",
+        "reply_markup": json.dumps(_kb_approve(draft_id)),
+        "reply_to_message_id": str(int(album_message_id)),
+        "allow_sending_without_reply": "true",
+    }, retry_all=True)
+    if not res.get("ok"):
+        raise SendError(f"Telegram tu choi tin nut Duyet: {res.get('description')}")
+    return res["result"]["message_id"]
 
 
 def _already_send_near_bottom(vai: str, files, phut: int = 30):
@@ -84,8 +162,11 @@ def _already_send_near_bottom(vai: str, files, phut: int = 30):
         giong = (sorted(d["md5"]) == md5) if d.get("md5") else \
             (sorted(Path(f).name for f in d.get("files", [])) == ten)
         if giong:
-            return {"message_id": d.get("message_id"),
-                    "luc": _t.strftime("%H:%M", _t.localtime(d["ts"]))}
+            rec = {"message_id": d.get("message_id"),
+                   "luc": _t.strftime("%H:%M", _t.localtime(d["ts"]))}
+            if "button_message_id" in d:            # dong cu (truoc LOW-134) khong co
+                rec["button_message_id"] = d["button_message_id"]
+            return rec
     return None
 
 
@@ -134,65 +215,59 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
     if truoc:
         print(f"da gui truoc do luc {truoc['luc']} (message_id={truoc['message_id']}), "
               f"KHONG gui lai. Muon gui lai that thi doi ten file hoac cho qua 30 phut.")
-        return {"ok": True, "result": {"message_id": truoc["message_id"]}, "trung": True}
+        out = {"ok": True, "result": {"message_id": truoc["message_id"]}, "trung": True,
+               "button_state": "unknown"}
+        if duyet and "button_message_id" in truoc:
+            if truoc["button_message_id"]:
+                out["button_state"], out["button_message_id"] = "sent", truoc["button_message_id"]
+            else:
+                # Lan truoc album len nhung tin nut hong (LOW-134). Truoc day nhanh
+                # nay return luon: chay lai bao nhieu lan cung KHONG BAO GIO co nut.
+                bid = _send_button(token, group, thread_id, duyet, truoc["message_id"])
+                _mark_button_sent(vai, truoc["message_id"], bid)
+                print(f"da gui BU nut Duyet (message_id={bid}) cho album cu.")
+                out["button_state"], out["button_message_id"] = "resent", bid
+        return out
 
+    data = {"chat_id": group, "message_thread_id": str(int(thread_id))}
+    if reply_to:
+        data["reply_to_message_id"] = str(int(reply_to))
     if len(files) == 1:
-        with httpx.Client(timeout=120) as c, open(files[0], "rb") as fh:
-            data = {"chat_id": group, "message_thread_id": str(int(thread_id))}
-            if mo_ta:
-                data["caption"] = mo_ta[:1024]
-            if reply_to:
-                data["reply_to_message_id"] = str(int(reply_to))
-            r = c.post(API.format(token=token, method="sendPhoto"), data=data,
-                       files={"photo": (files[0].name, fh, "image/png")})
-        res = r.json()
+        if mo_ta:
+            data["caption"] = mo_ta[:1024]
+        res = _telegram_post(token, "sendPhoto", data, timeout=120, open_files=lambda: {
+            "photo": (files[0].name, open(files[0], "rb"), "image/png")})
     else:
-        items, filemap = [], {}
-        for i, f in enumerate(files):
-            key = f"file{i}"
-            e = {"type": "photo", "media": f"attach://{key}"}
+        items = []
+        for i in range(len(files)):
+            e = {"type": "photo", "media": f"attach://file{i}"}
             if i == 0 and mo_ta:
                 e["caption"] = mo_ta[:1024]
             items.append(e)
-            filemap[key] = open(f, "rb")
-        data = {"chat_id": group, "message_thread_id": str(int(thread_id)),
-                "media": json.dumps(items)}
-        if reply_to:
-            data["reply_to_message_id"] = str(int(reply_to))
-        try:
-            with httpx.Client(timeout=180) as c:
-                r = c.post(API.format(token=token, method="sendMediaGroup"),
-                           data=data, files=filemap)
-        finally:
-            for fh in filemap.values():
-                fh.close()
-        res = r.json()
+        data["media"] = json.dumps(items)
+        res = _telegram_post(token, "sendMediaGroup", data, timeout=180, open_files=lambda: {
+            f"file{i}": open(f, "rb") for i, f in enumerate(files)})
 
     if not res.get("ok"):
         raise SendError(f"Gui Telegram loi: {res.get('description')}")
 
     result = res["result"]
-    last = result[-1] if isinstance(result, list) else result
-    _write_journal(vai, last.get("message_id"), files, mo_ta)
+    ids = [m.get("message_id") for m in (result if isinstance(result, list) else [result])]
+    _write_journal(vai, ids, files, mo_ta, button_draft=duyet)
 
     # Album KHONG gan duoc nut (gioi han Bot API), nen nut Duyet luon nam tren
     # mot tin nhan chu RIENG ngay duoi anh — dung cho ca anh don lan album.
     if duyet:
-        with httpx.Client(timeout=60) as c:
-            r2 = c.post(API.format(token=token, method="sendMessage"), data={
-                "chat_id": group, "message_thread_id": str(int(thread_id)),
-                "text": ("Ảnh đã xong. Duyệt để người viết làm caption, "
-                         "hoặc bỏ nếu ảnh chưa đạt."),
-                "reply_markup": json.dumps(_kb_approve(duyet)),
-            })
-        res2 = r2.json()
-        if not res2.get("ok"):
-            # Khong duoc im lang: anh da len nhung nut Duyet khong xuat hien
-            # thi pipeline dung o cong duyet ma khong ai biet. Bao loi ro de
-            # vai/agent gui lai.
-            raise SendError(
-                f"Anh da gui nhung tin nhan nut Duyet LOI: {res2.get('description')}"
-                f" — pipeline se ket neu khong gui lai nut.")
+        try:
+            bid = _send_button(token, group, thread_id, duyet, ids[0])
+        except SendError as e:
+            # Khong duoc im lang: anh da len nhung nut Duyet khong xuat hien thi
+            # pipeline dung o cong duyet ma khong ai biet. So da ghi
+            # button_message_id=None nen chay lai se CHI gui bu nut.
+            raise SendError(f"Anh da gui nhung tin nhan nut Duyet LOI: {e} — chay lai DUNG "
+                            f"lenh nop se chi gui bu nut, khong trung album.") from e
+        _mark_button_sent(vai, ids[-1], bid)
+        res["button_state"], res["button_message_id"] = "sent", bid
     return res
 
 
