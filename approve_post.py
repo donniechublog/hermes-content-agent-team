@@ -6,6 +6,7 @@ hang duyet. Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 import json
 import re
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -13,6 +14,7 @@ from pathlib import Path
 from html import escape as html_escape
 
 import httpx
+from PIL import Image
 
 # Tach rieng khoi ten `httpx` o duoi: test_dang_idempotent.py thay `db.httpx`
 # bang mot doi tuong gia CHI co .Client (de dem so lan goi that), nen tra qua
@@ -29,7 +31,7 @@ import skill_lesson_approve                                  # noqa: E402
 import role                                                  # noqa: E402
 
 from approve_base import (  # noqa: E402
-    API, DRAFTS, BOSS_IDS, ROOT, STATE_DIR, _extract_line, _run_background, _write_json, _send_text, _lock_of, _load_json, _reply_real, call, is_boss, log,
+    API, DRAFTS, BOSS_IDS, ROOT, STATE_DIR, _extract_line, _run_background, _write_json, _send_text, _lock_of, _load_json, _reply_real, call, call_upload, is_boss, log,
 )
 from approve_dispatch import (  # noqa: E402
     BLACKBOARD_MENTION, NAME_ROLE_IMAGE, NAME_ROLE_WRITE, _blackboard_write, _report_receive_job, _status_task,
@@ -58,17 +60,70 @@ def keyboard(draft_id):
         {"text": "❌ Bỏ", "callback_data": "no:" + draft_id},
     ]]}
 
-def _media_timeout(total_bytes):
-    """Timeout cho request upload anh len Telegram, gian theo dung luong.
+# Anh XEM TRUOC (hang duyet), khong phai anh dang kenh — publish() doc thang
+# tu draft, khong qua ham nen nay. Muc tieu chon 14/09/2026 (LOW-155):
+PREVIEW_MAX_DIM = 1440         # canh dai toi da, van doc duoc chu tren dien thoai
+PREVIEW_MAX_BYTES = 280_000    # ~280 KB/anh — album 7-10 anh van nam trong ngan sach ghi ben duoi
 
-    Bang thong GHI thuc te tu may chu toi Telegram co luc rat cham (~25 KB/s,
-    do duoc 14/09/2026 khi album 7 anh/~11,7 MB chet o mot moc timeout co dinh
-    120s — xem LOW-150). MIN_BYTES_PER_SEC thap hon muc do duoc de con du du;
-    ap dung cho ca read vi Telegram cung can thoi gian xu ly album lon sau khi
+# Do duoc thuc te (14/09/2026, khong phai suy doan): duong truyen may chu nay
+# toi api.telegram.org ~28 KB/s khi upload anh (curl toi dich khac van ~7 MB/s,
+# nen KHONG phai bang thong chung cua may — rieng duong toi Telegram). Dung cho
+# hang duyet (_send_media_group, anh don trong draft_push) THAY `_media_timeout`
+# cua LOW-150 o hai cho do: `_media_timeout` chi gian timeout theo dung luong
+# GOC (album 7 anh/~11,7 MB ra ngan sach ~615s, vuot ca subprocess.run(timeout=
+# 300) cua miles_submit.py nen van bi giet giua chung) — o day nen anh TRUOC
+# (xem _compress_preview) roi moi tinh ngan sach tren dung luong DA NEN. Ngan
+# sach ghi tinh theo muc XAU HON so do duoc that (15 KB/s) de con du; connect
+# tach rieng 30s de loi ket noi (call_upload retry duoc) khong ngoi het ngan
+# sach ghi. Tran 200s de miles_submit.py con kip nhan ket qua thay vi bi giet
+# giua chung. `_media_timeout` GIU NGUYEN cho publish() (dang kenh sau khi
+# duyet) — anh dang kenh la BAN GOC, khong nen duoc.
+UPLOAD_BASE_SECONDS = 30
+UPLOAD_FLOOR_BYTES_PER_SEC = 15 * 1024
+UPLOAD_WRITE_CEILING = 200
+
+
+def _upload_timeout(total_bytes: int) -> "httpx.Timeout":
+    write = min(UPLOAD_WRITE_CEILING,
+                max(60, UPLOAD_BASE_SECONDS + total_bytes / UPLOAD_FLOOR_BYTES_PER_SEC))
+    return _HttpxTimeout(connect=30.0, write=write, read=60.0, pool=30.0)
+
+
+def _media_timeout(total_bytes):
+    """Timeout cho request upload anh len Telegram, gian theo dung luong (LOW-150).
+
+    Con lai CHI cho publish() (dang kenh) — anh dang kenh la ban goc, khong qua
+    _compress_preview duoc, nen phai chiu ngan sach lon hon la duong duy nhat.
+    Bang thong GHI thuc te tu may chu toi Telegram co luc rat cham (~25-28 KB/s,
+    do duoc 14/09/2026). MIN_BYTES_PER_SEC thap hon muc do duoc de con du du; ap
+    dung cho ca read vi Telegram cung can thoi gian xu ly album lon sau khi
     nhan xong."""
     MIN_BYTES_PER_SEC = 20_000
     write = max(60.0, 30.0 + total_bytes / MIN_BYTES_PER_SEC)
     return _HttpxTimeout(connect=30.0, read=write, write=write, pool=30.0)
+
+
+def _compress_preview(src: Path, tmp_dir: Path) -> Path:
+    """Nen MOT anh xem truoc sang JPEG, gioi han canh dai + dung luong — anh da
+    du nho (kich thuoc VA canh) thi giu nguyen (PNG net chu hon JPEG, khong nen
+    khi khong can). Nen loi (PIL thieu codec, anh hong...) thi tra ve chinh anh
+    goc — tha mot lan gui cham/loi con hon khong gui gi."""
+    try:
+        with Image.open(src) as im:
+            if src.stat().st_size <= PREVIEW_MAX_BYTES and max(im.size) <= PREVIEW_MAX_DIM:
+                return src
+            im = im.convert("RGB")
+            if max(im.size) > PREVIEW_MAX_DIM:
+                im.thumbnail((PREVIEW_MAX_DIM, PREVIEW_MAX_DIM))
+            out = tmp_dir / (src.stem + ".jpg")
+            quality = 85
+            im.save(out, "JPEG", quality=quality)
+            while out.stat().st_size > PREVIEW_MAX_BYTES and quality > 35:
+                quality -= 10
+                im.save(out, "JPEG", quality=quality)
+        return out
+    except Exception:                                            # noqa: BLE001
+        return src
 
 def _send_media_group(token, chat, media, thread_id=None):
     """Gui album anh xem truoc. Album KHONG the gan nut bam -- gioi han Bot API.
@@ -77,39 +132,38 @@ def _send_media_group(token, chat, media, thread_id=None):
     nay) nen phai upload bang attach:// nhu publish() lam. Truoc day gui thang
     chuoi duong dan cho Telegram — Telegram khong doc duoc may minh, album KHONG
     BAO GIO hien, va gia tri tra ve bi vut nen loi im lang: Ong Chu duyet mu moi
-    bai nhieu anh tu ngay dau."""
-    items, files = [], {}
-    total_bytes = 0
-    for i, m in enumerate(media):
-        m = str(m)
-        if m.startswith("http://") or m.startswith("https://"):
-            items.append({"type": "photo", "media": m})
-        else:
-            if not Path(m).exists():
+    bai nhieu anh tu ngay dau.
+
+    LOW-155 (14/09/2026, sau LOW-150): moi anh CUC BO di qua `_compress_preview`
+    truoc khi gui — ban goc PNG cua carousel toi 1-2 MB/tam, album 7 anh ~11,8 MB
+    se can hang phut o toc do do duoc thuc te (~28 KB/s toi Telegram), vuot ca
+    subprocess.run(timeout=300) cua miles_submit.py. `call_upload` (approve_base,
+    thay cho try/except _HttpxError cua LOW-150 — khong bao gio nem, khong can
+    boc them o day) thu lai loi ket noi, KHONG thu lai WriteTimeout/ReadTimeout
+    mu (co the da gui mot phan)."""
+    with tempfile.TemporaryDirectory(prefix="tg_preview_") as tmp:
+        tmp_dir = Path(tmp)
+        items, paths = [], {}
+        for i, m in enumerate(media):
+            m = str(m)
+            if m.startswith("http://") or m.startswith("https://"):
+                items.append({"type": "photo", "media": m})
+                continue
+            p = Path(m)
+            if not p.exists():
                 continue
             key = f"file{i}"
             items.append({"type": "photo", "media": f"attach://{key}"})
-            files[key] = open(m, "rb")
-            total_bytes += Path(m).stat().st_size
-    if not items:
-        return {"ok": False, "description": "khong co anh nao ton tai"}
-    data = {"chat_id": chat, "media": json.dumps(items)}
-    if thread_id:
-        data["message_thread_id"] = str(int(thread_id))
-    try:
-        with httpx.Client(timeout=_media_timeout(total_bytes)) as c:
-            r = c.post(API.format(token=token, method="sendMediaGroup"),
-                       data=data, files=files or None)
-    except _HttpxError as e:
-        # KHONG de loi mang lam chet ca draft_push (LOW-150: truoc day
-        # WriteTimeout roi thang ra ngoai, ca script `approve_post.py push`
-        # crash). Goi noi (draft_push) da san sang nhan {"ok": False} de
-        # fallback sang gui rieng phan chu kem canh bao.
-        return {"ok": False, "description": f"{type(e).__name__}: {e}"}
-    finally:
-        for fh in files.values():
-            fh.close()
-    return r.json()
+            paths[key] = _compress_preview(p, tmp_dir)
+        if not items:
+            return {"ok": False, "description": "khong co anh nao ton tai"}
+        data = {"chat_id": chat, "media": json.dumps(items)}
+        if thread_id:
+            data["message_thread_id"] = str(int(thread_id))
+        total_bytes = sum(p.stat().st_size for p in paths.values())
+        return call_upload(token, "sendMediaGroup", data,
+                           lambda: {k: open(v, "rb") for k, v in paths.items()},
+                           timeout=_upload_timeout(total_bytes))
 
 def draft_push(token, group, draft_id, thread_id=None):
     d = json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
@@ -136,12 +190,15 @@ def draft_push(token, group, draft_id, thread_id=None):
 
     img = d.get("image")
     if img and Path(img).exists():
-        with httpx.Client(timeout=_media_timeout(Path(img).stat().st_size)) as c, open(img, "rb") as fh:
-            r = c.post(API.format(token=token, method="sendPhoto"),
-                       data={k: (json.dumps(v) if k == "reply_markup" else v)
-                             for k, v in payload.items()},
-                       files={"photo": (Path(img).name, fh, "image/png")})
-        return r.json()
+        # LOW-155: cung nen + retry nhu album (xem _send_media_group).
+        with tempfile.TemporaryDirectory(prefix="tg_preview_") as tmp:
+            local = _compress_preview(Path(img), Path(tmp))
+            form = {k: (json.dumps(v) if k == "reply_markup" else v)
+                    for k, v in payload.items()}
+            mime = "image/jpeg" if local.suffix == ".jpg" else "image/png"
+            return call_upload(token, "sendPhoto", form,
+                               lambda: {"photo": (local.name, open(local, "rb"), mime)},
+                               timeout=_upload_timeout(local.stat().st_size))
     payload["text"] = payload.pop("caption")
     return call(token, "sendMessage", **payload)
 

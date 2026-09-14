@@ -101,8 +101,13 @@ def main() -> int:
             print(f"[LOI] {d}")
         return 1
     print((r.stdout or "").strip())
+    # timeout=300 (truoc 180, LOW-155): _send_media_group co the can toi ~200s
+    # ghi + thu lai khi duong truyen toi Telegram cham (~28 KB/s do duoc thuc
+    # te 14/09/2026) — 180s giet tien trinh con GIUA CHUNG truoc khi kip bao
+    # loi ro, con 300s du cho ca nhanh xau nhat (2 lan loi ket noi + 1 lan ghi
+    # het ngan sach) ket thuc sach.
     r2 = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "approve_service.py"), "push", a.draft_id],
-                        cwd=str(ROOT), capture_output=True, text=True, timeout=180)
+                        cwd=str(ROOT), capture_output=True, text=True, timeout=300)
     if r2.returncode != 0:
         for d in ((r2.stderr or "") + "\n" + (r2.stdout or "")).strip().splitlines()[-6:]:
             print(f"[LOI] push: {d}")
