@@ -298,7 +298,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   cắt tin nhắn dài), `test_ham_thuan` giữ các hàm không ai canh mà quyết định
   nhiều (`has_vietnamese`, `_url_valid`, `route`, `_HangFIFO`, `gather_duplicate`,
   `aggregate` của nhật ký 9router),
-  `test_soat_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
+  `test_audit_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
   còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
   giống hệt nhau, đếm được), `test_spec_dre` giữ cổng spec carousel của Dre
   (36 nhánh, phần lớn là luật Ông Chủ đặt sau một sự cố thật),
@@ -449,11 +449,11 @@ nhưng chưa có mục riêng dưới đây.
   `<home>/profiles/<vai>/pending/skills/`, ghi verdict vào
   `state/skill_lessons/verdicts/`, báo bài bị cờ vào topic `ada`. Chạy ở cả hai
   container; khoá tệp + verdict giữ mỗi bài một tin.
-- `soat-cron` — **07:00 VN** ở blog (`0 0 * * *`), **07:10 VN** ở dcgr
+- `audit-cron` — **07:00 VN** ở blog (`0 0 * * *`), **07:10 VN** ở dcgr
   (`10 0 * * *`). Chạy sau ba job quét và `daily-log` nên soi được kết quả buổi
   sáng đó. Mỗi lần chạy soát **cả hai home**, không chỉ home của mình — xem mục
-  dưới. **Đo 14/09/2026: chưa đăng ký trên máy chủ** (không có trong
-  `jobs.json` của home hay profile nào, không có `state/soat_cron.json`).
+  dưới. Trước 14/09/2026 job này (tên cũ `soat-cron`) **chưa từng được đăng
+  ký** trên máy chủ; đổi tên và đăng ký ở LOW-131.
 
 **Job hỏng thì biết bằng cách nào.** Hermes chỉ coi một job là lỗi khi script
 thoát khác 0. Trước 06/09/2026 mọi script đều thoát 0 kể cả khi hỏng: ba script
@@ -484,7 +484,7 @@ chạy thấy được.
 
 Chạy ở **cả hai container** (lệch 10 phút) — đặt một bản thì ngày container đó
 chết là không còn ai báo, đúng cái lỗ hổng cần bịt. Hai lần chạy không sinh hai
-tin: `state/soat_cron.json` (gốc `state/`, dùng chung) ghi bộ vấn đề đã báo
+tin: `state/cron_audit.json` (gốc `state/`, dùng chung) ghi bộ vấn đề đã báo
 trong ngày, container thứ hai thấy y hệt thì im. Hết vấn đề sau một ngày có
 vấn đề thì báo **một** dòng "cron sạch" rồi thôi.
 
@@ -493,16 +493,16 @@ không tạo được job):
 
 ```bash
 HERMES_HOME=$HOME/.hermes-blog ~/hermes-agent/venv/bin/python -m hermes_cli.main \
-  cron create "0 0 * * *" --name soat-cron --script soat_cron.sh --no-agent --deliver local
+  cron create "0 0 * * *" --name audit-cron --script audit_cron.sh --no-agent --deliver local
 HERMES_HOME=$HOME/.hermes-dcgr ~/hermes-agent/venv/bin/python -m hermes_cli.main \
-  cron create "10 0 * * *" --name soat-cron --script soat_cron.sh --no-agent --deliver local
+  cron create "10 0 * * *" --name audit-cron --script audit_cron.sh --no-agent --deliver local
 ```
 
 **Bổ trợ, chưa bật:** hermes có `--failure-deliver` — đường ra **chỉ dùng cho
 thông báo hỏng**, cùng ngữ pháp với `--deliver` và nhận cả
 `telegram:<chat_id>:<thread_id>`, tức bắn được thẳng vào một topic. Đặt nó cho
 ba job quét sẽ cho cảnh báo **tức thì** mà lần chạy thành công vẫn im. Nó không
-thay được `soat-cron` (nó chỉ báo được những lần thật sự có chạy), mà đi cùng.
+thay được `audit-cron` (nó chỉ báo được những lần thật sự có chạy), mà đi cùng.
 
 ## State: tệp nào của ai
 
@@ -522,7 +522,7 @@ có bảng này thì không ai biết sửa một tệp sẽ đụng vào ai.
 | `state/<brand>/bat_buoc_<vai>.json` | script quét | `manifest_write` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
 | `state/<brand>/<vai>_candidates_*.json` | `manifest_*` | — | `approve_pick` (chọn theo mtime) |
 | `state/9router/` | `monitor_9router` | — | `journal_web`, Ada |
-| `state/soat_cron.json` | `audit_cron` (brand nào chạy trước) | brand kia | `audit_cron` của brand kia |
+| `state/cron_audit.json` | `audit_cron` (brand nào chạy trước) | brand kia | `audit_cron` của brand kia |
 
 **Quy ước gốc state:** `state/<brand>/` cho mọi thứ thuộc về một brand;
 `state/` gốc **chỉ** cho thứ chung cả máy (nhật ký 9router, khoá). Sổ theme của
