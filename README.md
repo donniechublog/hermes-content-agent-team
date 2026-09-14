@@ -426,7 +426,9 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 ## Cron
 
 Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` gộp chung:
-`~/.hermes-blog/cron/jobs.json` (6 job) và `~/.hermes-dcgr/cron/jobs.json` (5 job).
+`~/.hermes-blog/cron/jobs.json` (7 job) và `~/.hermes-dcgr/cron/jobs.json` (5 job)
+— đếm trên máy chủ 14/09/2026. `qinn-scan` (blog, `0 22,10 * * *`) có trên máy chủ
+nhưng chưa có mục riêng dưới đây.
 
 - `finn-daily-scan` (blog), `nova-daily-scan` (blog), `vera-daily-scan` (dcgr)
   — **05:00 VN** (22:00 UTC). Ba job này nằm ở **hai container khác nhau**, nên
@@ -442,10 +444,16 @@ Mỗi brand một tệp riêng — **không** còn `~/.hermes/cron/jobs.json` g�
   (`hermes cron`), tệp `hermes/cron/jobs.*.json` chỉ là bản chụp.
 - `moat-publish-watch` — 5 phút/lần, hỏi moat xem bài đã lên social chưa; im
   lặng khi không có gì mới, bỏ theo dõi một bài sau 7 ngày.
+- `skill-lesson-filter` — mỗi giờ, phút 20 ở blog, phút 50 ở dcgr (LOW-119).
+  Chấm các bài học skill vai tự ghi vào hàng chờ
+  `<home>/profiles/<vai>/pending/skills/`, ghi verdict vào
+  `state/skill_lessons/verdicts/`, báo bài bị cờ vào topic `ada`. Chạy ở cả hai
+  container; khoá tệp + verdict giữ mỗi bài một tin.
 - `soat-cron` — **07:00 VN** ở blog (`0 0 * * *`), **07:10 VN** ở dcgr
   (`10 0 * * *`). Chạy sau ba job quét và `daily-log` nên soi được kết quả buổi
   sáng đó. Mỗi lần chạy soát **cả hai home**, không chỉ home của mình — xem mục
-  dưới.
+  dưới. **Đo 14/09/2026: chưa đăng ký trên máy chủ** (không có trong
+  `jobs.json` của home hay profile nào, không có `state/soat_cron.json`).
 
 **Job hỏng thì biết bằng cách nào.** Hermes chỉ coi một job là lỗi khi script
 thoát khác 0. Trước 06/09/2026 mọi script đều thoát 0 kể cả khi hỏng: ba script
