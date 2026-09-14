@@ -134,6 +134,60 @@ def test_khong_bao_lai_khi_bam_nut_lan_hai():
     assert goi_bao_nhan == [], f"bam lai nut cu KHONG duoc bao nhan lan nua: {goi_bao_nhan}"
 
 
+def _goi_hang_cho(tmp: Path, *, vai_viet, brand, hang_cho):
+    """imgok voi meta brand + hang cho nguoi viet gia. Tra ve (cac_lan_tao_task,
+    sidecar sau khi bam)."""
+    import hermes_adapter
+    draft_id, wp = _dung(tmp, vai_viet=vai_viet)
+    (tmp / f"{draft_id}.meta.json").write_text(json.dumps({"brand": brand}), encoding="utf-8")
+    w = json.loads(wp.read_text(encoding="utf-8"))
+    w["body"] = (f"cd /r && venv/bin/python {vai_viet}_prepare.py {draft_id}\n"
+                 f"cd /r && venv/bin/python {vai_viet}_submit.py {draft_id}")
+    wp.write_text(json.dumps(w), encoding="utf-8")
+    tao = []
+    cu = (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call,
+          hermes_adapter.writer_queue)
+    db.DRAFTS = tmp
+    db.kanban_create = lambda tieu, vai, body, parent=None: (tao.append((vai, body)) or ("t_writer1", None))
+    db._report_receive_job = lambda *a, **k: None
+    db._status_task = lambda _tid: "done"
+    db.call = lambda *a, **k: {"ok": True}
+    hermes_adapter.writer_queue = hang_cho
+    try:
+        db._button_approve("tok", -100, draft_id, {"id": "cbq1"}, wp)
+    finally:
+        (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call,
+         hermes_adapter.writer_queue) = cu
+    return tao, json.loads(wp.read_text(encoding="utf-8"))
+
+
+def test_blog_giao_nguoi_viet_it_viec_cho_hon():
+    """LOW-123: nguoi viet tam la Jika nhung Jika dang co 2 task cho, Miles trong
+    -> task giao Miles, hai lenh script trong body va sidecar doi theo."""
+    with tempfile.TemporaryDirectory() as t:
+        tao, w = _goi_hang_cho(Path(t), vai_viet="jika", brand="donniechublog",
+                               hang_cho=lambda s: {"miles": (0, None), "jika": (2, 100)})
+    vai, body = tao[0]
+    assert vai == "miles", f"phai giao Miles (hang cho trong), duoc {vai}"
+    assert "miles_prepare.py" in body and "miles_submit.py" in body and "jika_" not in body, body
+    assert w["vai_viet"] == "miles", "sidecar phai ghi nguoi viet that de prepare/submit/topic doc dung"
+
+
+def test_khong_doc_duoc_kanban_thi_giu_nguoi_viet_tam():
+    with tempfile.TemporaryDirectory() as t:
+        tao, w = _goi_hang_cho(Path(t), vai_viet="jika", brand="donniechublog",
+                               hang_cho=lambda s: None)
+    assert tao[0][0] == "jika" and w["vai_viet"] == "jika"
+
+
+def test_dcgr_mot_nguoi_viet_khong_hoi_hang_cho():
+    def _cam(_s):
+        raise AssertionError("dcgr chi co Miles, khong duoc doc hang cho")
+    with tempfile.TemporaryDirectory() as t:
+        tao, _w = _goi_hang_cho(Path(t), vai_viet="miles", brand="dcgr.tech", hang_cho=_cam)
+    assert tao[0][0] == "miles"
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bắt cả Exception, luôn in N/M
     chay_tat_ca(globals())

@@ -281,7 +281,8 @@ def handle_command(token, group, msg, thread_id, text):
                     else "carousel" if va in ROLE_CAROUSEL else "thẻ bìa")
             dong.append(f"  <code>{ten}</code> → {va} ({kieu})")
         viet = ", ".join(f"<code>{s}</code>" for s in sorted(NAME_ROLE_WRITE))
-        dong.append(f"<b>Vai viết</b>: {viet} — một người viết cho container này.")
+        dong.append(f"<b>Vai viết</b>: {viet} — duyệt ảnh xong thì giao cho người viết "
+                    "đang ít việc chờ hơn (blog: Miles/Jika, dcgr: Miles).")
         tra_loi("\n".join(dong))
     elif lenh == "/bai":
         with _KHOA_DAT_BAI:

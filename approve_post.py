@@ -870,6 +870,12 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
             # Ban giao tu vai anh (dre_nop.py ghi: link that, nguon tung anh)
             # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
             # phai "nhan Miles".
+            _moi = _writer_by_queue(draft_id, w)
+            if _moi != w.get("vai_viet"):
+                log("nut", f"imgok draft={draft_id}: giao {_moi} thay {w.get('vai_viet')} "
+                           "(it viec dang cho hon, LOW-123)")
+                w["body"] = retarget_writer_body(w["body"], w.get("vai_viet"), _moi)
+                w["vai_viet"] = _moi
             _body = w["body"]
             _bg = DRAFTS / (draft_id + ".ban_giao.md")
             if _bg.exists():
@@ -916,6 +922,29 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
                 _report_receive_job(token, chat_id, w["vai_viet"], _vai_anh_cu,
                                w.get("title", draft_id), wid)
     return note
+
+
+def _writer_by_queue(draft_id, w):
+    """Nguoi viet THAT cua bai (LOW-123): trong nhom nguoi viet cua brand, ai it
+    task dang cho hon thi nhan. Brand chi co mot nguoi, hoac khong doc duoc
+    kanban, thi giu nguoi viet tam ghi luc chon tin."""
+    cu = w.get("vai_viet")
+    brand = (_load_json(DRAFTS / (draft_id + ".meta.json"), {}) or {}).get("brand", "")
+    nhom = role.writers_for_brand(brand)
+    if len(nhom) < 2:
+        return cu
+    import hermes_adapter
+    q = hermes_adapter.writer_queue(nhom)
+    if q is None:
+        return cu
+    return role.pick_by_queue(nhom, {s: q[s][0] for s in nhom}, {s: q[s][1] for s in nhom})
+
+
+def retarget_writer_body(body, cu, moi):
+    """Doi hai lenh script cua WRITER_BODY sang nguoi viet moi."""
+    for duoi in ("_prepare.py", "_submit.py"):
+        body = body.replace(f"venv/bin/python {cu}{duoi}", f"venv/bin/python {moi}{duoi}")
+    return body
 
 
 def _finalize_button(token, msg, draft_id, note, keyboard=None):

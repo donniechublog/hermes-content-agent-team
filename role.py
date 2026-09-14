@@ -114,11 +114,10 @@ ROLE = {v.slug: v for v in [
     Role("kite", "Kite", go=("edu", "kites"), slug_cu=("carousel-edu",),
         renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
         anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
-    # --- vai VIET: MOI BRAND MOT NGUOI VIET (LOW-13, 10/09/2026) ---
-    # Hai vai viet KHONG bao gio cung nam trong mot container, dung nhu `finn`
-    # (chi blog) va `vera` (chi dcgr) — nen ban dang ky giu ca hai,
-    # con moi home chi deploy mot. Ly do tach: nguoi doc hai brand hoi hai cau
-    # khac han nhau (xem GIONG trong miles_chuan_bi), va MEMORY da tach theo
+    # --- vai VIET (LOW-13 10/09/2026, LOW-123 14/09/2026) ---
+    # dcgr chi co Miles; blog co CA Miles lan Jika chia viec theo hang cho
+    # (WRITERS_BY_BRAND), hai nguoi chi khac giong viet. Nguoi doc hai brand hoi
+    # hai cau khac han nhau (xem VOICE trong miles_prepare), va MEMORY tach theo
     # brand tu 05/09/2026 — bai hoc "bot so lieu, noi tien" cua tin kinh doanh
     # tung ro sang tin model, noi phai giu nguyen tham so va benchmark.
     Role("miles", "Miles", go=("cap",), slug_cu=("writer",), viet=True),
@@ -172,6 +171,28 @@ WRITE_BY_BRAND = {
     "dcgr": "miles",
     "dcgr.tech": "miles",
 }
+
+# Nhom nguoi viet CHIA VIEC o moi brand (LOW-123, 14/09/2026): blog co Miles va
+# Jika, chi khac giong viet. `writer_for` chi cho nguoi viet TAM luc chon tin;
+# nguoi viet that chot luc Ong Chu bam Duyet anh (approve_post), theo hang cho.
+WRITERS_BY_BRAND = {
+    "blog": ("miles", "jika"),
+    "donniechublog": ("miles", "jika"),
+    "dcgr": ("miles",),
+    "dcgr.tech": ("miles",),
+}
+
+
+def writers_for_brand(brand) -> tuple:
+    """Slug cac nguoi viet chia viec o brand nay; rong neu khong nhan ra brand."""
+    return WRITERS_BY_BRAND.get(str(brand or "").lower(), ())
+
+
+def pick_by_queue(candidates, waiting: dict, last_assigned: dict) -> str:
+    """Nguoi it task dang cho nhat; hoa thi nguoi lau chua duoc giao nhat, roi
+    theo thu tu trong `candidates`."""
+    return min(candidates, key=lambda s: (waiting.get(s, 0), last_assigned.get(s) or 0,
+                                          candidates.index(s)))
 
 
 def writer_for(vai_quet=None, brand=None) -> str:

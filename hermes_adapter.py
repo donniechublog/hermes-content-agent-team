@@ -239,6 +239,24 @@ def count_form_run(tru_tid=None):
     return None if hang is None else hang[0][0]
 
 
+def writer_queue(slugs):
+    """{slug: (so task dang cho hoac dang chay, created_at task moi nhat)}; None neu
+    khong doc duoc kanban.db. `blocked` khong tinh: task do cho Ong Chu, khong giu
+    luot cua vai."""
+    slugs = tuple(slugs)
+    if not slugs:
+        return {}
+    cau = ("SELECT assignee, SUM(CASE WHEN status IN ('todo','scheduled','ready','running') "
+           "THEN 1 ELSE 0 END), MAX(created_at) FROM tasks WHERE assignee IN ("
+           + ",".join("?" * len(slugs)) + ") GROUP BY assignee")
+    hang = _ask(cau, slugs, "dem hang cho nguoi viet")
+    if hang is None:
+        return None
+    ra = {s: (0, None) for s in slugs}
+    ra.update({a: (int(n or 0), t) for a, n, t in hang})
+    return ra
+
+
 def last_run(tid):
     """Lan chay CUOI CUNG cua mot task, da chuan hoa:
     {tom_tat, loi, trang_thai, metadata} — metadata luon la dict.
