@@ -31,7 +31,7 @@ from pathlib import Path
 
 import hermes_adapter as ha
 
-MAU_SCOPE = re.compile(r"^hermes-worker-kanban-(t_[0-9a-f]+)-run-(\d+)\.scope$")
+SCOPE_PATTERN = re.compile(r"^hermes-worker-kanban-(t_[0-9a-f]+)-run-(\d+)\.scope$")
 
 
 def kanban_homes():
@@ -56,7 +56,7 @@ def list_scopes(run=subprocess.run):
     ra = []
     for dong in r.stdout.splitlines():
         unit = dong.split()[0] if dong.split() else ""
-        m = MAU_SCOPE.match(unit)
+        m = SCOPE_PATTERN.match(unit)
         if m:
             ra.append((unit, m.group(1), int(m.group(2))))
     return ra
