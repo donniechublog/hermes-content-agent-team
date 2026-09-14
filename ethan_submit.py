@@ -31,7 +31,7 @@ def _check_stack(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
     """Anh di mot minh duoc khong, va ghep voi "anh2" co hop le khong.
 
     (13/09/2026: bo dieu kien "anh qua ngang phai ghep"/"ghep roi van qua
-    ngang" — tuong duong `luat_anh.kiem_anh_thap`, da bo khoi he thong, moi
+    ngang" — tuong duong `kiem_anh_thap`, da bo khoi he thong, moi
     vai. Chi con giu: chart la chu the (khong bi keo di ghep NEU la xep hang),
     va ghep doc chi hop khi CA HAI anh deu ngang (rang buoc cau truc cua chinh
     co che ghep, khong phai cam doan ve chat luong/nguon)."""

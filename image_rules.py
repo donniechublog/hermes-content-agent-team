@@ -488,7 +488,7 @@ def _load_yunet():
     `import cv2` va doc file .onnx o giua co the nha GIL — nen luong B doc co
     thay True nhung _YUNET con None, tra ve None nham nhu may thieu cv2/model
     du thuc ra co day du. Hau qua im lang: count_faces() bao 0 mat, cong mat nguoi
-    (LUAT_ANH §6) tu tat theo may rui thu tu luong thay vi theo may that su co
+    (IMAGE_RULES §6) tu tat theo may rui thu tu luong thay vi theo may that su co
     cv2 hay khong.
     """
     global _YUNET, _YUNET_DA_THU
@@ -521,7 +521,7 @@ def count_faces(path):
     B setInputSize((w2,h2)) roi A detect() voi kich thuoc sai -> cv2 nem -> None.
     Do duoc voi 24 anh khac co, 4 luong: tuan tu 0/24 None, song song 22-23/24;
     vision.py lam `or 0` nen 80-95% anh bi coi la KHONG co mat — cong mat nguoi
-    (LUAT_ANH §6) tat cam. detect() nhanh (vai ms), khong can song song.
+    (IMAGE_RULES §6) tat cam. detect() nhanh (vai ms), khong can song song.
     """
     det = _load_yunet()
     if det is None:

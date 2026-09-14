@@ -403,7 +403,7 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
             "- Carousel: dung lai spec cu, chi thay anh/copy cua slide da neu (cac "
             "slide khac giu nguyen), roi chay lai carousel.py de ra CA BO (album "
             "phai du slide).\n"
-            "- Doc lai LUAT_ANH.md truoc khi chon anh moi: ly do o tren thuong "
+            "- Doc lai IMAGE_RULES.md truoc khi chon anh moi: ly do o tren thuong "
             "tuong ung mot cong o do (chart nguyen ven, mat nguoi, hai vung...).\n"
             f"Van day len kem nut duyet nhu cu (--duyet {draft_id}).")
     else:

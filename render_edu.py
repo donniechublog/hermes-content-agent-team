@@ -842,7 +842,7 @@ def image_make_background(sl, th, ten):
     rieng, id="figtxt".
 
     Nguyen tac (Ong Chu chot 08/09/2026, `e883880`, CUNG luc voi Dre/carousel.py
-    — xem LUAT_ANH.md muc 7 — nhac lai nhieu lan; day la nguyen tac SAU hon ban
+    — xem IMAGE_RULES.md muc 7 — nhac lai nhieu lan; day la nguyen tac SAU hon ban
     cu "man toi lien mach"). Kite doi mau theo TUNG DAI DONG (_css_chu_toi_vung,
     ham tren) thay vi mot FG co dinh ca bo nhu carousel.py, vi chu Kite nhieu va
     da dang hon han — hai co che khac nhau cho cung mot ket luan, dung suy

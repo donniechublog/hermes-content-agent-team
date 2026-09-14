@@ -6,7 +6,7 @@
   - `tran`: ảnh full bề ngang, tiêu đề MỘT câu đè lên qua khung chữ nhật nét,
     kicker ngắn phía trên, tên kênh canh giữa ở đáy.
 
-Bề ngang cố định 1200px; ảnh không bao giờ bị cắt bề ngang (luật LUAT_ANH.md).
+Bề ngang cố định 1200px; ảnh không bao giờ bị cắt bề ngang (luật IMAGE_RULES.md).
 Kiểu `dai` cũ (ảnh trên, textbox riêng dưới, nhãn category, hàng icon social,
 mascot) đã bỏ 05/09/2026: từ khi cả đội chuyển sang một kiểu ảnh duy nhất,
 không vai nào gọi tới nó nữa.
@@ -551,7 +551,7 @@ def stack_read(paths, gap=0, nen=(0, 0, 0)):
     ims = [Image.open(q).convert("RGB") for q in paths]
     if len(ims) == 1:
         return ims[0]
-    # Cong lech tone (`luat_anh.kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
+    # Cong lech tone (`kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
     # cam doan ve nguon/chat luong nay khoi he thong, moi vai).
     w = max(im.width for im in ims)
     ims = [im.resize((w, round(im.height * w / im.width)), Image.LANCZOS) for im in ims]
@@ -678,7 +678,7 @@ def _layer_image(canvas, src_img, H) -> int:
 
     Tu 07/09/2026 kieu `tran` cung di duong nay. Truoc do no co duong rieng
     (`_tran_anh`): anh thap hon the thi phan duoi la mot mang MAU NEN DAC cua bo
-    nhan dien — dung cai "vung thu hai" ma LUAT_ANH muc 7 cam, va chinh spec cua
+    nhan dien — dung cai "vung thu hai" ma IMAGE_RULES muc 7 cam, va chinh spec cua
     kieu tran cung da ghi la phai dung nen mo. Hai duong ve cho cung mot viec la
     cach mot ban sua duoc mot nua.
 
@@ -1314,7 +1314,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
     # ---- KHUNG + MAU CHU (Ong Chu chot 07/09/2026) --------------------------
     # Truoc do kieu tran doc duoc nho MOT MAN TOI dai phu ca vung chu, va chu
     # luon la FG. Man toi do chinh la thu bien vung chu thanh mot mang thu hai,
-    # va o anh thap thi phan duoi con la MAU NEN DAC — dung cai LUAT_ANH muc 7
+    # va o anh thap thi phan duoi con la MAU NEN DAC — dung cai IMAGE_RULES muc 7
     # cam. Nay di dung duong cua kieu quote: khong man toi, chi LAM MO CUC BO
     # dai chu, roi mau chu do theo chinh vung da mo.
     bottom_y = H - g4 - via_h

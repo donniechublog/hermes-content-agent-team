@@ -152,7 +152,7 @@ TOPIC = [
 NAME_TYPE = re.compile(r"logo|\bicons?\b|emblem|coat of arms|\bseal\b|\bsvg\b|diagram|"
                       r"\bcharts?\b|\bgraphs?\b|"
                       # poster|drawing|illustration TUNG bi loai o day. Ong Chu 12/09/2026:
-                      # "ảnh illustration cũng chả sao, The Economist còn dùng" — LUAT_ANH §0
+                      # "ảnh illustration cũng chả sao, The Economist còn dùng" — IMAGE_RULES §0
                       # cam TU VE, khong cam DUNG minh hoa co san. Van loai clipart/icon/so do.
                       r"screenshot|clipart|banner|badge|stamp|"
                       r"sticker|infographic|\bmap of\b(?!.*(satellite|relief))|locator map|"

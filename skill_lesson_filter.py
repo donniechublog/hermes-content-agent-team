@@ -55,7 +55,10 @@ BUG_WORDS = re.compile(r"\b(bug|lỗi|crash|traceback|exception|typeerror|keyerr
                        r"|thiếu `?return|không có `return`", re.I)
 AVOID_WORDS = re.compile(r"\b(né|tránh|workaround|bypass)\b|đi vòng", re.I)
 BRAND_WORDS = re.compile(r"donniechublog|dcgr", re.I)
-SOURCE_OF_TRUTH = re.compile(r"LUAT_ANH|§|LUẬT CỨNG", re.I)
+# IMAGE_RULES = ten moi cua LUAT_ANH (LOW-142); bai hoc cu van ghi ten cu nen khop ca hai.
+# IMAGE_RULES khop PHAN BIET hoa thuong `(?-i:...)`: ten module `image_rules.check_*`
+# xuat hien trong bai hoc sach, khong phai nhac tai lieu nguon su that.
+SOURCE_OF_TRUTH = re.compile(r"(?-i:IMAGE_RULES)|LUAT_ANH|§|LUẬT CỨNG", re.I)
 BACKTICK = re.compile(r"`([^`\n]+)`")
 DOTTED = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+$")
 PY_FILE = re.compile(r"^[\w/.-]+\.py$")
@@ -246,7 +249,7 @@ def judge(record: dict, *, brand: str, profile: str, index: RepoIndex) -> dict:
     if removed_guidance:
         flag("rewrites_guidance", f"xoá/sửa {len(removed_guidance)} dòng đang có, vd: {removed_guidance[0][:80]}")
     if SOURCE_OF_TRUTH.search(added_text):
-        flag("source_of_truth", "bài nhắc LUAT_ANH / § / LUẬT CỨNG — người đối chiếu nguồn sự thật")
+        flag("source_of_truth", "bài nhắc IMAGE_RULES (LUAT_ANH) / § / LUẬT CỨNG — người đối chiếu nguồn sự thật")
 
     brand_hit = BRAND_WORDS.search(added_text)
     if brand_hit:

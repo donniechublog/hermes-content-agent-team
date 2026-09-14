@@ -6,7 +6,7 @@ Vi sao (audit C1 diem 4): thieu tung thu nay khong lam engine crash NGAY o
 dau, ma chet cam lang o GIUA chung, rat xa cho thieu that su:
 - Thieu cv2               -> image_rules._load_yunet() tra ve None, count_faces()/
                              check_unnamed_face() lang le bao "khong kiem duoc",
-                             cong mat nguoi (LUAT_ANH SS6) tu tat ma khong ai
+                             cong mat nguoi (IMAGE_RULES SS6) tu tat ma khong ai
                              biet.
 - Thieu file model .onnx  -> giong het thieu cv2 (_yunet() cung tra None),
                              nhung ly do khac (thieu file, khong phai thieu

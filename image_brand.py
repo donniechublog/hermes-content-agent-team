@@ -19,7 +19,7 @@ nào cũng có ảnh: trụ sở / toà nhà / campus.
 Khác `image_concept.py` ở CHỖ ĐỨNG, không chỉ ở từ khoá. Ảnh khái niệm (cờ Nhật,
 rack datacenter) là ảnh MINH HOẠ chủ đề: chỉ được làm bìa, và cả chùm chỉ đếm là
 MỘT khi xét đủ/thiếu. Ảnh thương hiệu là ảnh thật CỦA CHÍNH hãng đang nói trong
-bài — đúng loại "trụ sở/sản phẩm" mà LUAT_ANH §1.2 vẫn kể là ảnh liên quan — nên
+bài — đúng loại "trụ sở/sản phẩm" mà IMAGE_RULES §1.2 vẫn kể là ảnh liên quan — nên
 nó vào được slide thân và đếm đủ. Thứ tự vì thế là: ảnh riêng của tin → ảnh
 thương hiệu → ảnh khái niệm.
 
@@ -29,7 +29,7 @@ các bảng xếp hạng của model... có thiếu tư liệu đâu?"*):
 
   1. 🏢 **cơ sở**   — trụ sở/campus: tìm tên tệp Commons + `P18` của Wikidata.
   2. 👤 **chân dung** — founder/CEO (`P112`/`P169` -> `P18` của họ). Đi KÈM TÊN,
-     nên khai được `nhan_vat` — đúng ngoại lệ của LUAT_ANH §6.
+     nên khai được `nhan_vat` — đúng ngoại lệ của IMAGE_RULES §6.
   3. 📊 **bảng xếp hạng** — `prepare.fallback_rounds._ranking_context_edge` mượn `ranking.py`
      chụp bảng có model của hãng. Chỉ nhận ảnh chụp thật, không nhận thẻ dự phòng.
   4. 🔖 **thẻ logo** — logo chính thức (`P154`) đặt trên nền trơn. Đường CUỐI.
@@ -638,7 +638,7 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
     Search "Anthropic"/"Claude AI" một mình thì nhiễu thật (khảo cổ, hội hoạ,
     từ điển — xem `NHIEU`), nhưng TÊN NGƯỜI ĐẦY ĐỦ hiếm khi trùng nghĩa khác;
     dùng lại đúng `_tu_dac_trung`/`_has_phrase` đã có cho tên hãng: các từ của tên
-    phải nằm LIỀN NHAU, đúng thứ tự, theo biên giới từ. Vẫn cùng cổng LUAT_ANH §6 với chân
+    phải nằm LIỀN NHAU, đúng thứ tự, theo biên giới từ. Vẫn cùng cổng IMAGE_RULES §6 với chân
     dung (khai `nhan_vat`) — chỉ khác đủ ngang để không teo khi lên bìa."""
     import image_concept
     pages = _ask_commons(f'"{ten}"')
@@ -658,7 +658,7 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
         # `_has_phrase` chu KHONG `all(_has_word(...))` (12/09/2026): ban long chi doi
         # MOI tu co mat dau do nen "Dario Amodei" khop ca "dario rossi meets luca
         # amodei in rome" — anh HAI NGUOI KHAC, ma caption lai khai
-        # `nhan_vat: "Dario Amodei"`, tuc bia mat nguoi (LUAT_ANH §0/§6). Cung
+        # `nhan_vat: "Dario Amodei"`, tuc bia mat nguoi (IMAGE_RULES §0/§6). Cung
         # lop loi ma `filter_commons` vua duoc siet o cung ngay ("Hugging Face" khop
         # "Rathlin hugging the cliff face"); ban va do khong lan sang day.
         if image_concept.NAME_TYPE.search(thap) or not _has_phrase(dac_trung, thap):
@@ -858,7 +858,7 @@ def label_by_type(th: dict) -> str:
         ai, vai = th.get("nguoi", "?"), th.get("vai", "lãnh đạo")
         return (f"👤 CHÂN DUNG {vai.upper()} — {ai}, {vai} {hang} (Wikidata/Commons). "
                 f"Chỉ dùng khi BÀI CÓ NHẮC {ai}, và phải khai \"nhan_vat\": \"{ai}\" "
-                "y hệt. Bài không nhắc tên người này thì bỏ (LUAT_ANH §6).")
+                "y hệt. Bài không nhắc tên người này thì bỏ (IMAGE_RULES §6).")
     if loai == "logo":
         return (f"🔖 THẺ LOGO {hang} — logo chính thức đặt trên nền trơn, dồn lên "
                 f"nửa trên để hook đè nửa dưới. Nền {th.get('nen', 'tối')} → khai "
@@ -885,7 +885,7 @@ def label_brand(a: dict) -> dict:
 
     Khác ảnh khái niệm: ảnh này ĐƯỢC vào slide thân (nó là ảnh thật của chính
     hãng trong tin). Giống ảnh khái niệm ở hai chỗ chặn: không phải chart của
-    tin, và có mặt người thì bỏ — LUAT_ANH §6 "không gọi được tên thì không được
+    tin, và có mặt người thì bỏ — IMAGE_RULES §6 "không gọi được tên thì không được
     dùng", mà người đứng trước cửa hàng Samsung trên Commons thì không ai gọi
     được tên."""
     th = a.get("thuong_hieu") or {}
@@ -896,10 +896,10 @@ def label_brand(a: dict) -> dict:
 
     if loai == "nguoi":
         # Mặt người ở đây là CÓ CHỦ Ý và GỌI ĐƯỢC TÊN — đúng ngoại lệ của
-        # LUAT_ANH §6 ("trừ khi khai nhan_vat"), khác hẳn mặt vô danh.
+        # IMAGE_RULES §6 ("trừ khi khai nhan_vat"), khác hẳn mặt vô danh.
         #
         # KHÔNG chặn theo `mat` ở đây: `image_rules.count_faces` trả None (-> 0) khi
-        # thiếu cv2/model, và LUAT_ANH §6 nói rõ cổng mặt được phép tự tắt. Lấy
+        # thiếu cv2/model, và IMAGE_RULES §6 nói rõ cổng mặt được phép tự tắt. Lấy
         # `mat == 0` làm "không phải chân dung" thì trên máy thiếu cv2 MỌI chân
         # dung đều bị bỏ câm lặng. Ảnh này là P18 của chính người đó trên
         # Wikidata; đúng/sai để con mắt (sentence_ask_vision) phán.
@@ -933,7 +933,7 @@ def label_brand(a: dict) -> dict:
     if a.get("mat"):
         a["dung"] = []
         a["ghi_chu"].insert(0, f"❌ ảnh thương hiệu có {a['mat']} mặt người vô danh → KHÔNG DÙNG "
-                               "(LUAT_ANH §6)")
+                               "(IMAGE_RULES §6)")
         return a
     a["ghi_chu"].insert(0, label_by_type(th))
     return a

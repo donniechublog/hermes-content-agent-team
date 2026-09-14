@@ -366,7 +366,7 @@ def test_hinh_chua_nhin_khong_bi_ep_len_bia():
 
 
 def test_hinh_paper_van_len_bia_du_vision_tat():
-    """Hình paper bóc thẳng từ PDF nên không thể là quảng cáo — LUAT_ANH §1.4
+    """Hình paper bóc thẳng từ PDF nên không thể là quảng cáo — IMAGE_RULES §1.4
     "Figure 1 là hero" không phụ thuộc vision."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
@@ -421,7 +421,7 @@ def test_hero_khong_bao_gio_None_khi_con_mot_anh_da_nhin():
 
 
 def test_hero_uu_tien_paper_roi_anh_rieng_roi_anh_bu():
-    """LUAT_ANH §1.2c/§1.2d: gợi ý bìa xếp SAU mọi ảnh riêng của tin."""
+    """IMAGE_RULES §1.2c/§1.2d: gợi ý bìa xếp SAU mọi ảnh riêng của tin."""
     import kite_prepare as kb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
@@ -487,7 +487,7 @@ def test_task_body_khong_con_bao_kite_ve_vector_hoan_toan():
 
 
 
-# ---- ANH KHAI NIEM chi duoc dung o bia (LUAT_ANH §1.2c) -------------------
+# ---- ANH KHAI NIEM chi duoc dung o bia (IMAGE_RULES §1.2c) -------------------
 def _khai_niem(wd, ma="K1", tu_khoa="Japan flag", **k):
     """Anh khai niem cua `image_concept.py`: co nuoc / day rack datacenter lay
     tu Wikimedia Commons khi tin khong co anh rieng. La ANH CHUP THAT nen no di

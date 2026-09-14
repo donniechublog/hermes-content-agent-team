@@ -3,7 +3,7 @@
 
 Audit 06/09/2026 bat mot loi ma khong cong nao chan: kieu `tran`, khi anh thap
 hon the, lay MAU NEN DAC cua bo nhan dien lam nen cho phan thieu. Do dung la
-"hai vung rieng biet" ma LUAT_ANH muc 7 cam, va chinh spec cua kieu tran cung
+"hai vung rieng biet" ma IMAGE_RULES muc 7 cam, va chinh spec cua kieu tran cung
 da ghi la phai dung nen mo — ma khong ai doi chieu spec voi ma. Ong Chu chot
 07/09/2026: bo nen dac, chu dat thang len anh voi mau tuong phan, bao quanh
 bang mot khung chu nhat net.
@@ -27,7 +27,7 @@ def _anh_that(w, h, sang=False):
     """Mot tam anh co van — anh phang bi cong `check_blank_image` chan dung.
 
     `sang=True`: anh NEN TRANG co van, dung dang mot bang benchmark hay mot
-    trang web chup lai — ca LUAT_ANH lan cac su co da ghi deu noi day la loai
+    trang web chup lai — ca IMAGE_RULES lan cac su co da ghi deu noi day la loai
     anh hay gap nhat, va la loai lam mat chu trang."""
     im = Image.new("RGB", (w, h))
     d = ImageDraw.Draw(im)

@@ -162,7 +162,7 @@ def test_anh_co_mat_khong_len_bia_du_thu_truoc_anh_khong_mat_thu_sau():
     thật). Vòng mới: thử HẾT, và trong các ảnh qua cổng, ảnh KHÔNG MẶT NGƯỜI
     được ưu tiên lên bìa dù được thử SAU — ảnh có mặt (founder vô danh với
     Kite, thiếu "nhan_vat") giữ làm thân thay vì bị bỏ phí hay ép lên bìa sai
-    luật (LUAT_ANH §6)."""
+    luật (IMAGE_RULES §6)."""
     thu = []
 
     def gia(url, ra, phien=None):

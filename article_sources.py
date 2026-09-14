@@ -385,7 +385,7 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
     """Bao THẬT về một TỪ KHOÁ (tên hãng/sản phẩm) qua Bing News RSS — KHÁC
     `other_outlets_bing`: không đòi "cùng một sự kiện" với một tiêu đề gốc, VÀ
     KHÔNG GIỚI HẠN THỜI GIAN (Ông Chủ 13/09/2026, chốt nguyên tắc nguồn ở
-    LUAT_ANH.md §1.2d: *"được tìm không giới hạn thời gian, sự kiện. miễn là
+    IMAGE_RULES.md §1.2d: *"được tìm không giới hạn thời gian, sự kiện. miễn là
     trong article có nhắc tới tên brand... ngoài nguyên tắc này, không có bất
     kỳ một cấm đoán nào về nguồn ảnh"*). Trước đó (LOW-45, 13/09 sáng) còn giới
     hạn 20 ngày và chỉ coi là phương án khi Commons/Wikidata RỖNG — hai giới
@@ -397,7 +397,7 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
     hãng/sản phẩm (như ảnh khái niệm), không phải bằng chứng của một tin riêng.
     Cùng hạ tầng với `other_outlets_bing`: giải chuyển hướng HTTP, chặn SSRF
     (`scan_common.url_hide_whole`), bỏ trang tổng hợp/`bo_mien`. Ngôn ngữ: chỉ Anh
-    hoặc Trung (LUAT_ANH §1.2d) — `has_vietnamese` chặn CẢ từ khoá đầu vào LẪN
+    hoặc Trung (IMAGE_RULES §1.2d) — `has_vietnamese` chặn CẢ từ khoá đầu vào LẪN
     tiêu đề từng bài Bing trả về (test thật 13/09/2026: query "Anthropic" vẫn
     lẫn cafebiz.vn/thanhnien.vn nếu chỉ chặn từ khoá); tiếng Trung không bị
     chặn ở đây (không có dấu tiếng Việt để nhận nhầm)."""
@@ -435,7 +435,7 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
         # hang luon la tieng Anh) — KHONG chan duoc bao TIENG VIET Bing tra ve
         # (vd "Anthropic" van khop tieu de mot bai cafebiz.vn/thanhnien.vn).
         # Do that 13/09/2026: query "Anthropic" tra ca cafebiz.vn, vietnam.vn,
-        # trithucvn2.net, thanhnien.vn lan vao ket qua. LUAT_ANH §1.2d doi
+        # trithucvn2.net, thanhnien.vn lan vao ket qua. IMAGE_RULES §1.2d doi
         # "chi Anh hoac Trung" cho ca NGUON, khong chi cau hoi — phai loc lai
         # o day, tren chinh tieu de bai tra ve.
         if has_vietnamese(td):

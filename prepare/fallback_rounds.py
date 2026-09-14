@@ -368,7 +368,7 @@ def _report_brand_empty(h: dict, wd: Path, phien=None) -> list:
     ảnh như `_round_widen_search` (`browser_pass`, đã sửa LOW-45 phần 1 nên không
     còn vớ nhầm `<figure>` là chart).
 
-    Nguyên tắc nguồn chốt 13/09/2026 (LUAT_ANH §1.2d): CHẠY LUÔN cho mọi hãng
+    Nguyên tắc nguồn chốt 13/09/2026 (IMAGE_RULES §1.2d): CHẠY LUÔN cho mọi hãng
     tin nhắc tới, SONG SONG với Commons/Wikidata — không còn là phương án cuối
     khi Commons rỗng. "Không có bất kỳ cấm đoán nào về nguồn" ngoài ba điều đã
     ghi (không giới hạn thời gian/sự kiện, không giới hạn định dạng miễn rõ
@@ -426,7 +426,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         if not khong_browser:
             # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
             # Wikidata — khong con doi Commons rong moi chay (Ong Chu
-            # 13/09/2026, chot nguyen tac nguon o LUAT_ANH §1.2d: "ngoai
+            # 13/09/2026, chot nguyen tac nguon o IMAGE_RULES §1.2d: "ngoai
             # nguyen tac [khong gioi han thoi gian/su kien/nguon, chi tieng
             # Anh-Trung], khong co bat ky cam doan nao ve nguon anh" — Commons
             # chi con la MOT nguon, khong con doc quyen/duoc hoi truoc).
@@ -539,7 +539,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
     khac cung tin, LOW-33 — rat co the co anh that cua nguoi sang lap ma vong cu
     CHUA BAO GIO thu toi vi da dung o trang thu hai). Sau khi thu het, chon BIA
     la ung vien qua cong DAU TIEN theo thu tu ma KHONG CO MAT NGUOI — anh co mat
-    van qua cong nhung khong len duoc bia (LUAT_ANH §6 doi khai "nhan_vat" ma
+    van qua cong nhung khong len duoc bia (IMAGE_RULES §6 doi khai "nhan_vat" ma
     Kite chua co truong do), giu lam `than` thay vi bo phi. Tra (anh, dung_duoc,
     chua_nhin)."""
     def _ra():
@@ -649,7 +649,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         # `classify` doc mot anh chup trang la "chart/screenshot" (nen trang,
         # nhieu chu) roi dan nhan KHONG LAM BIA — dung cho chart cua nguoi khac,
         # sai cho tam nay: Ong Chu 12/09/2026 chot "cat lay khoi lead roi lam
-        # bia". Mo lai dung bia, TRU khi co mat nguoi: cong mat (LUAT_ANH §6)
+        # bia". Mo lai dung bia, TRU khi co mat nguoi: cong mat (IMAGE_RULES §6)
         # doi khai `nhan_vat`, ma spec cua Kite khong co truong do.
         a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG làm bìa" not in g]
         # KHOI TIT (trang khong co anh hero) la NAC CUOI, sau khai niem (Ong Chu
@@ -668,7 +668,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
                                f"{a['mien']}, chụp ở khung điện thoại; caption ghi "
                                f"\"… · via {a['mien']}\"")
         anh.append(a)
-        # ROT chat luong (LOW-45) hoac CO MAT NGUOI (LUAT_ANH §6, xem duoi) deu
+        # ROT chat luong (LOW-45) hoac CO MAT NGUOI (IMAGE_RULES §6, xem duoi) deu
         # KHONG dung lai o day: THU HET moi URL (khong dung o trang DAU TIEN qua
         # cong nua, LOW-45 phan 2) roi moi chon anh nao len BIA sau vong lap —
         # giu chua tam nay lai, gan tam "than" tam thoi, roi quyet dinh that o
@@ -687,7 +687,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
     # CHON BIA sau khi da thu HET cac URL (LOW-45, Ong Chu 13/09/2026): trong so
     # cac ung vien QUA CONG (lien_quan True, khong phai khoi tit), uu tien tam
     # KHONG CO MAT NGUOI dau tien theo thu tu thu — tam co mat khong len bia
-    # duoc vi cong mat (LUAT_ANH §6) doi khai "nhan_vat" ma Kite chua co truong
+    # duoc vi cong mat (IMAGE_RULES §6) doi khai "nhan_vat" ma Kite chua co truong
     # do, nhung VAN giu lai lam `than` thay vi bo phi (do that: anh founder that
     # cua Yang Zhilin tren cac bao khac ve Moonshot/Kimi K3 rat co the nam trong
     # so nay — truoc ban va nay bi bo qua hoan toan vi vong lap dung som).

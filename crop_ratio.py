@@ -25,7 +25,7 @@ RATIO = {"1:1": 1.0, "4:5": 0.8}          # rong/cao
 #
 # Lay tu image_rules.py — MOT nguon su that. Truoc day so 1.4 nam ca o day lan
 # trong cong chan, hai ban co the troi khac nhau ma khong ai biet (dung cai
-# benh ma LUAT_ANH.md sinh ra de chan).
+# benh ma IMAGE_RULES.md sinh ra de chan).
 from image_rules import LANDSCAPE_CLEAR as NGANG
 
 

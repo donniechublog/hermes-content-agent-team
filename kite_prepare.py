@@ -89,7 +89,7 @@ def figure_hero(m: dict) -> dict | None:
     "bia `image` HOAC `figure`" (tuy chon) va cong chi doi "dung it nhat mot anh
     o dau do", nen dat het vao `figure` than roi ve hero vector la HOP LE.
 
-    Thu tu theo LUAT_ANH: hinh paper (§1.4 "Figure 1 la hero") -> anh rieng cua
+    Thu tu theo IMAGE_RULES: hinh paper (§1.4 "Figure 1 la hero") -> anh rieng cua
     tin -> anh thuong hieu (§1.2d) -> anh khai niem (§1.2c); hai loai bu xep sau
     moi anh rieng cua tin, dung nhu tai lieu ghi.
 

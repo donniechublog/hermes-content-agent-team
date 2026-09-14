@@ -4,10 +4,10 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 
 Tệp này chỉ mô tả **hiện trạng**. Chẩn đoán, số đo một lần và bài học rút ra
 nằm ở [NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md). Luật ảnh dùng chung ở
-[LUAT_ANH.md](LUAT_ANH.md); khuôn ticket Linear 7 bước ở
+[IMAGE_RULES.md](IMAGE_RULES.md); khuôn ticket Linear 7 bước ở
 [KHUON_TICKET.md](KHUON_TICKET.md); spec chữ trên thẻ ở
 [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md). Sơ đồ kiến trúc (Mermaid, theo mô
-hình C4) ở [KIEN_TRUC.md](KIEN_TRUC.md).
+hình C4) ở [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Nguồn sự thật của cấu hình là chính máy chủ, không phải tệp này:
 
@@ -89,18 +89,18 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   bài, img lớn, chụp table/figure/canvas), `article_images`, Wikimedia Commons khi < 5
   ảnh; vẫn thiếu hoặc không tấm nào làm bìa được thì hai vòng bù theo độ liên
   quan giảm dần — `image_brand.py` tìm **ảnh thương hiệu** (trụ sở/campus của
-  chính hãng trong tin, LUAT_ANH §1.2d, vào được slide thân), rồi
+  chính hãng trong tin, IMAGE_RULES §1.2d, vào được slide thân), rồi
   `image_concept.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
-  LUAT_ANH §1.2c, chỉ bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
+  IMAGE_RULES §1.2c, chỉ bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
   `crop_ratio`; cặp ghép cùng tone; tư liệu. Kết quả
   `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
 - Tin **chuyển sang Kite vì thiếu ảnh** (engine tự chuyển khi 0 ảnh, hoặc Ông Chủ
   bấm "Gửi Kite"): những ảnh thật engine đã tìm được **vẫn phải vào bộ của Kite,
   và phải có ở body** — `kite_prepare.figure_right_use` là một nguồn cho cả brief
-  lẫn cổng `kite_submit` (LUAT_ANH §1.2e). Trừ **ảnh khái niệm**: §1.2c cấm nó ở
+  lẫn cổng `kite_submit` (IMAGE_RULES §1.2e). Trừ **ảnh khái niệm**: §1.2c cấm nó ở
   slide thân, nên ép nó vào body là hai cổng đá nhau — nó về bìa qua
   `figure_hero`, và `kite_submit` chặn nếu nó xuất hiện ở slide khác slide 1.
-- **Bìa của Kite luôn phải là ảnh thật** (LUAT_ANH §1.2f, Ông Chủ 10/09/2026:
+- **Bìa của Kite luôn phải là ảnh thật** (IMAGE_RULES §1.2f, Ông Chủ 10/09/2026:
   *"không chấp nhận việc dùng vector ở hero slide"*). Slide 1 không có `image`
   là `kite_submit` chặn — **kể cả khi engine giao 0 ảnh**: "không có ảnh" là thất
   bại của vòng tìm ảnh, không phải một trạng thái hợp lệ của tin, nên nó phải
@@ -207,10 +207,10 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   thật), 🔖 **thẻ logo** (`P154` trên nền trơn, đường cuối). Lấy **mọi** hãng
   watchlist tin nhắc tới (tối đa 3), không phải chỉ tên riêng đầu tiêu đề. Lọc
   theo biên giới từ + bảng nhiễu (Amazon → rừng, Apple → quả táo). Vào được
-  slide thân và đếm đủ — khác ảnh khái niệm. LUAT_ANH §1.2d.
+  slide thân và đếm đủ — khác ảnh khái niệm. IMAGE_RULES §1.2d.
 - `image_concept.py` — tin không có ảnh riêng thì tìm **ảnh khái niệm** trên
   Commons theo nước/chủ đề (cờ, rack datacenter, wafer, toà án). Nhãn 🧭, chỉ
-  bìa/hero, cả chùm đếm là một. LUAT_ANH §1.2c.
+  bìa/hero, cả chùm đếm là một. IMAGE_RULES §1.2c.
 - `ranking.py` — ảnh cho **tin xếp hạng**: tách tên model từ tiêu đề, đi qua
   registry **19 nguồn**, mở browser tìm hàng chứa model, chụp cửa sổ top-N,
   khoanh vàng hàng đó, đọc thứ hạng. Chụp bằng **khung mobile trước** (414px ×
@@ -220,7 +220,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `capture_chart.py` — chụp chart/bảng benchmark theo luật *full chiều rộng trước,
   chiều cao xét sau*: đo `scrollWidth` thật, nới khung cho vừa rồi mới chụp ở
   DPR 2; thiếu bề ngang thì dừng. Cần `playwright` + chromium.
-- `image_rules.py` + `LUAT_ANH.md` — **một nguồn sự thật** của luật ảnh, dùng chung
+- `image_rules.py` + `IMAGE_RULES.md` — **một nguồn sự thật** của luật ảnh, dùng chung
   cho mọi vai TẠO ra ảnh (Ethan, Dre, Kite). Đừng chép luật vào SKILL của vai.
   Gin/Itachi chỉ sửa trên ảnh gốc nên không áp bộ này.
 
