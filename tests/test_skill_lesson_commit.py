@@ -45,7 +45,7 @@ def _repo(tmp: Path) -> Path:
 LESSON = "## Hình thật trùng bộ trước\n\nMã đã báo TRUNG thì đổi sang hình khác trong brief.\n\n"
 
 
-def _stage(tmp: Path, *, verdict_status="accepted", old=ANCHOR, session_id="s1") -> tuple:
+def _stage(tmp: Path, *, verdict_status="accepted", old=ANCHOR, session_id="s1", boss_decision=None) -> tuple:
     """Write a pending record + its layer-2 verdict, as skill_lesson_filter would."""
     pending = tmp / "pending.json"
     pending.write_text(json.dumps({
@@ -56,13 +56,16 @@ def _stage(tmp: Path, *, verdict_status="accepted", old=ANCHOR, session_id="s1")
     verdicts = tmp / "state" / "verdicts"
     verdicts.mkdir(parents=True, exist_ok=True)
     verdict_path = verdicts / "blog__kite__eb4b1c1f.json"
-    verdict_path.write_text(json.dumps({
+    record = {
         "id": "eb4b1c1f", "brand": "blog", "profile": "kite", "skill": "carousel-edu",
         "action": "patch", "file_path": "SKILL.md", "created_at": time.time(),
         "task": "t_kite1", "verdict": verdict_status, "flags": [],
         "added": [l for l in LESSON.splitlines() if l.strip()], "removed": [],
         "pending_path": str(pending),
-    }, ensure_ascii=False), encoding="utf-8")
+    }
+    if boss_decision:
+        record["boss_decision"] = boss_decision
+    verdict_path.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
     return pending, verdict_path
 
 
@@ -178,6 +181,43 @@ def test_closed_without_merge_is_recorded_and_pending_kept():
     assert report["closed_without_merge"] == 1
     assert verdict["commit_status"] == "closed_without_merge"
     assert calls["discard"] == []
+
+
+def test_boss_approved_lesson_goes_through_the_same_pr_path_as_accepted():
+    """LOW-154: a flagged lesson the boss pressed ✅ on is treated exactly like
+    a clean, machine-accepted one — same worktree/commit/PR/auto-merge path."""
+    with tempfile.TemporaryDirectory() as t:
+        tmp = Path(t)
+        repo = _repo(tmp)
+        _stage(tmp, verdict_status="flagged", boss_decision="approved")
+        calls, fakes = _fakes()
+        report = slc.run(repo=repo, state=tmp / "state", **fakes)
+        verdict = json.loads(next((tmp / "state" / "verdicts").glob("*.json")).read_text(encoding="utf-8"))
+    assert report["opened"] == 1 and len(calls["open_pr"]) == 1
+    assert verdict["commit_status"] == "pr_open"
+
+
+def test_boss_rejected_lesson_is_marked_rejected_and_pending_discarded():
+    with tempfile.TemporaryDirectory() as t:
+        tmp = Path(t)
+        repo = _repo(tmp)
+        _stage(tmp, verdict_status="flagged", boss_decision="rejected")
+        calls, fakes = _fakes()
+        report = slc.run(repo=repo, state=tmp / "state", **fakes)
+        verdict = json.loads(next((tmp / "state" / "verdicts").glob("*.json")).read_text(encoding="utf-8"))
+    assert report["rejected"] == 1 and calls["open_pr"] == []
+    assert verdict["commit_status"] == "rejected" and "Ông Chủ" in verdict["reject_reason"]
+    assert calls["discard"] == ["eb4b1c1f"]
+
+
+def test_flagged_verdict_awaiting_a_decision_is_still_never_touched():
+    with tempfile.TemporaryDirectory() as t:
+        tmp = Path(t)
+        repo = _repo(tmp)
+        _stage(tmp, verdict_status="flagged")  # no boss_decision at all
+        calls, fakes = _fakes()
+        report = slc.run(repo=repo, state=tmp / "state", **fakes)
+    assert report["opened"] == 0 and report["rejected"] == 0 and calls["open_pr"] == []
 
 
 def test_merged_and_rejected_are_never_reprocessed():

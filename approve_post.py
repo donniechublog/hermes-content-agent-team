@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
 import image_rules                                             # noqa: E402
 import schema                                               # noqa: E402
+import skill_lesson_approve                                  # noqa: E402
 import role                                                  # noqa: E402
 
 from approve_base import (  # noqa: E402
@@ -1160,6 +1161,14 @@ def handle_callback(token, channel, cq):
     # (<draft>.json) chua ton tai, nhanh duoi se bao "khong tim thay ban nhap".
     if action in ("imgok", "imgno", "imgredo", "imgkite", "imgtiep"):
         handle_img_approval(token, action, draft_id, cq)
+        return
+
+    # Duyet/tu choi BAI HOC SKILL bi co (LOW-154) — "draft_id" o day thuc ra la
+    # khoa verdict "<brand>__<profile>__<id>", khong phai ten tep DRAFTS; xu ly
+    # SOM cung ly do voi imgok, cong them skill_lesson_approve tu kiem dinh dang
+    # khoa (chuoi do client Telegram gui len, khong tin cay san).
+    if action in ("skillok", "skillno"):
+        skill_lesson_approve.handle_button(token, action, draft_id, cq)
         return
 
     p = DRAFTS / (draft_id + ".json")

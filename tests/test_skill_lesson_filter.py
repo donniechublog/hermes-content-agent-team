@@ -152,15 +152,20 @@ def test_run_notifies_each_flagged_lesson_once_with_task():
         repo = _repo(tmp)
         home = _home_with_pending(tmp, _record(BUG_LESSON, created_at=1_700_000_000))
         sent = []
-        send = lambda text, role: sent.append((text, role)) or True             # noqa: E731
+        send = lambda text, role, kb: sent.append((text, role, kb)) or {"message_id": 42, "chat": {"id": -100}}  # noqa: E731,E501
         first = slf.run(homes={"blog": home}, repo=repo, state=tmp / "state", send=send)
         second = slf.run(homes={"blog": home}, repo=repo, state=tmp / "state", send=send)
-        verdict = json.loads(next((tmp / "state" / "verdicts").glob("*.json")).read_text(encoding="utf-8"))
+        verdict_path = next((tmp / "state" / "verdicts").glob("*.json"))
+        verdict = json.loads(verdict_path.read_text(encoding="utf-8"))
     assert first["flagged"] == 1 and second["new"] == 0, (first, second)
     assert len(sent) == 1, f"one message per flagged lesson, got {len(sent)}"
-    text, role = sent[0]
+    text, role, keyboard = sent[0]
     assert role == "ada" and "t_kite1" in text and "Lỗi thời" in text, text
+    buttons = keyboard["inline_keyboard"][0]
+    key = verdict_path.stem
+    assert buttons[0]["callback_data"] == f"skillok:{key}" and buttons[1]["callback_data"] == f"skillno:{key}"
     assert verdict["task"] == "t_kite1" and verdict["notified"] is True
+    assert verdict["telegram_chat_id"] == -100 and verdict["telegram_message_id"] == 42
 
 
 def test_failed_send_is_retried_next_run():
@@ -169,8 +174,8 @@ def test_failed_send_is_retried_next_run():
         repo = _repo(tmp)
         home = _home_with_pending(tmp, _record(BUG_LESSON, created_at=1_700_000_000))
         attempts = []
-        failing = lambda text, role: attempts.append(role) and False            # noqa: E731
-        working = lambda text, role: attempts.append(role) or True              # noqa: E731
+        failing = lambda text, role, kb: attempts.append(role) and False        # noqa: E731
+        working = lambda text, role, kb: attempts.append(role) or True          # noqa: E731
         first = slf.run(homes={"blog": home}, repo=repo, state=tmp / "state", send=failing)
         second = slf.run(homes={"blog": home}, repo=repo, state=tmp / "state", send=working)
     assert first["notified_ok"] is False and second["notified"] == 1, (first, second)
@@ -199,7 +204,7 @@ def test_accepted_lesson_sends_nothing():
         home = _home_with_pending(tmp, _record(CLEAN_LESSON, created_at=time.time() + 3600))
         sent = []
         report = slf.run(homes={"blog": home}, repo=repo, state=tmp / "state",
-                         send=lambda text, role: sent.append(text) or True)
+                         send=lambda text, role, kb: sent.append(text) or True)
     assert report["accepted"] == 1 and sent == [], (report, sent)
 
 
