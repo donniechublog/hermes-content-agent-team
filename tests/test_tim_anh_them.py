@@ -42,7 +42,8 @@ def _ngang(h=1280, cat_ngang_ok=True, **k):
     # san pham. Test rieng ve noi dung (chart/co chu) nam o tests/test_schema.py.
     k.setdefault("dung", ["ghép dọc với một ảnh ngang cùng tone",
                           "cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ"])
-    return _a(ngang=True, h=h, ti_le=1.5, cat_ngang_ok=cat_ngang_ok, **k)
+    k.setdefault("ti_le", 1.5)
+    return _a(ngang=True, h=h, cat_ngang_ok=cat_ngang_ok, **k)
 
 
 def test_anh_ngang_qua_thap_khong_dem_mot_minh():
@@ -51,7 +52,10 @@ def test_anh_ngang_qua_thap_khong_dem_mot_minh():
           _ngang(ma="A7"), _ngang(ma="A5", h=600, dung=["ghép dọc với một ảnh ngang cùng tone"])]
     assert schema.count_image_use_ok(bo) == 4, "A5 le khong co cap -> 4 slide, khong phai 5"
     bo.append(_ngang(ma="A8", h=650, dung=["ghép dọc với một ảnh ngang cùng tone"]))
-    assert schema.count_image_use_ok(bo) == 5, "hai tam thap ghep thanh MOT slide"
+    assert schema.count_image_use_ok(bo) == 4, \
+        "hai tam 3:2 ghep ra 0.75, ngoai dai 4:5..1:1 — dre_nop chan, khong duoc dem (LOW-46)"
+    bo[-2]["ti_le"] = bo[-1]["ti_le"] = 1.78
+    assert schema.count_image_use_ok(bo) == 5, "hai tam 16:9 thap ghep thanh MOT slide"
     assert schema.count_image_use_ok([_ngang(h=0)]) == 1, "khong biet chieu cao thi khong tru"
 
 
