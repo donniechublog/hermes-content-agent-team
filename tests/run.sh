@@ -21,7 +21,7 @@ if [ -z "$PY" ]; then
   for ung in venv/bin/python python3 python; do
     if "$ung" -c "import httpx, PIL" >/dev/null 2>&1; then PY=$ung; break; fi
   done
-  [ -n "$PY" ] || { echo "[LOI] khong tim thay Python nao co httpx+PIL (chay cai_dat.sh?)" >&2; exit 2; }
+  [ -n "$PY" ] || { echo "[LOI] khong tim thay Python nao co httpx+PIL (chay setup.sh?)" >&2; exit 2; }
 fi
 LOC="${1:-}"
 

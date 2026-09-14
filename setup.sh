@@ -1,5 +1,5 @@
 #!/bin/bash
-# cai_dat.sh — dung moi truong cho content-team tren mot may moi, CHAY LAI DUOC
+# setup.sh — dung moi truong cho content-team tren mot may moi, CHAY LAI DUOC
 # bao nhieu lan cung khong sao (audit_content_team D3).
 #
 # Vi sao can: cac buoc cai dat truoc gio nam rai trong comment — requirements.txt
@@ -16,8 +16,8 @@
 # Ket thuc bang check_env.py — no moi la cho noi that may nay da san sang chua.
 #
 # Dung:
-#     hermes/scripts/../cai_dat.sh          # hoac: bash cai_dat.sh
-#     bash cai_dat.sh --thu                 # chi xem se lam gi, khong cai
+#     hermes/scripts/../setup.sh          # hoac: bash setup.sh
+#     bash setup.sh --thu                 # chi xem se lam gi, khong cai
 set -uo pipefail
 cd "$(dirname "$0")" || exit 2
 

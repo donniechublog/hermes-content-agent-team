@@ -174,7 +174,7 @@ Playwright, deviceScaleFactor 3 for a sharp capture). Chromium comes from the
 project's own install step:
 
 ```bash
-bash ~/content-team/cai_dat.sh
+bash ~/content-team/setup.sh
 ```
 
 If Playwright/Chromium is absent, direct-image and social-media resolution still

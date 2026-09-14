@@ -163,6 +163,7 @@ Cùng lý do trên — không phải mã, `rename.py`/`test_ten_english.py` khô
 | `hermes/scripts/quet_daily_scan.sh` | `hermes/scripts/daily_scan.sh` | 4 wrapper (`finn_daily_scan.sh`, `nova_daily_scan.sh`, `vera_daily_scan.sh`, `qinn_scan.sh`) gọi qua đường dẫn tương đối, **giữ nguyên tên wrapper** (README: để khỏi sửa job cron trên máy chủ); `sync_hermes.SCRIPT` phải sửa theo, deploy xong nhớ `--ra-hermes` |
 | `hermes/profiles/cau_hinh_that.yaml` | `hermes/profiles/live_config_snapshot.yaml` | tệp do máy sinh (`sync_hermes.py --chup-cau-hinh`, tên cờ chưa đổi — ngoài phạm vi) |
 | `tests/chay.sh` | `tests/run.sh` | LOW-152. **Rủi ro cao nhất trong đợt**: CI thật (`.github/workflows/ci.yml`) và chính `rename.py:693` gọi thẳng tên này — sửa CI TRƯỚC KHI push, không sau |
+| `cai_dat.sh` | `setup.sh` | LOW-153. `cai_dat` → `setup` đã có sẵn trong `cum.json`. Một SKILL (`url-mascot-frame`) nhắc tên này — vai đọc lúc chạy |
 
 `hermes/scripts/nhat_ky_daily.sh` và `hermes/systemd/nhat-ky-web.service` **chưa đổi**
 trong đợt này: tên đang nằm thẳng trong job cron/unit systemd đang chạy thật trên
