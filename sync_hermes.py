@@ -74,6 +74,7 @@ FILE_UPSTREAM = REPO / "plugins" / "kanban" / "UPSTREAM"
 # find -delete — mot script hong ngoai git la dung kich ban 22/08.
 SCRIPT = ["daily_scan",                              # than chung cua ba vai quet
           "finn_daily_scan", "nova_daily_scan", "vera_daily_scan",   # vo mong, giu ten cho cron
+          "qinn_scan",                                    # chi blog (LOW-156: thieu tu truoc, phat hien 14/09)
           "model_watch", "journal_daily", "moat_publish_watch",
           "audit_cron",                                   # chay o CA HAI home
           "skill_lesson_filter",                          # both homes (LOW-119)
