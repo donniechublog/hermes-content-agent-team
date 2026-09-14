@@ -369,7 +369,7 @@ if __name__ == "__main__":
 def test_vai_viet_di_theo_vai_quet():
     """Dieu Ong Chu chot: nguoi viet di theo vai QUET, khong theo vai anh."""
     assert role.writer_for("finn") == "jika", "Finn -> Jika"
-    assert role.writer_for("nova") == "jika", "Nova -> Jika"
+    assert role.writer_for("nova") == "miles", "Nova -> Miles (dcgr tu LOW-135)"
     assert role.writer_for("vera") == "miles", "Vera -> Miles"
 
 
@@ -385,7 +385,7 @@ def test_vai_viet_theo_brand_khi_khong_biet_vai_quet():
 def test_vai_quet_thang_brand_khi_hai_ben_khac_nhau():
     """Vai quet chinh xac hon brand: no noi ve LINH VUC that cua tin."""
     assert role.writer_for("vera", "blog") == "miles"
-    assert role.writer_for("nova", "dcgr") == "jika"
+    assert role.writer_for("finn", "dcgr") == "jika"
 
 
 def test_vai_viet_khong_biet_gi_thi_ve_mac_dinh():
@@ -417,7 +417,7 @@ def test_moi_vai_quet_that_deu_co_nguoi_viet():
 def test_hai_bang_dinh_tuyen_khong_mau_thuan_voi_the_trien_khai_hom_nay():
     """Hom nay moi vai quet nam GON trong mot brand, nen hai duong phai cho cung
     ket qua. Lech = mot ben da doi ma ben kia quen (vd chuyen Nova sang dcgr)."""
-    brand_cua_quet = {"finn": "blog", "nova": "blog", "vera": "dcgr"}
+    brand_cua_quet = {"finn": "blog", "qinn": "blog", "nova": "dcgr", "vera": "dcgr"}
     for quet, brand in brand_cua_quet.items():
         assert role.writer_for(quet) == role.writer_for(None, brand),             f"{quet} ({brand}): bang theo quet va bang theo brand lech nhau"
 

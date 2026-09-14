@@ -109,7 +109,7 @@ flowchart TB
         gwB["hermes-gateway@blog<br/>chat routing + kanban dispatcher<br/>max_in_progress: 1"]:::container
         apB["hermes-approve@blog<br/>approve_service + duyet_*"]:::container
         dashB["hermes-dashboard-blog :9120"]:::container
-        cronB{{"cron: finn-scan, nova-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
+        cronB{{"cron: finn-scan, qinn-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
         stateB[("state/blog/<br/>candidates · chuan_bi/ · bat_buoc ·<br/>anh_da_dung.jsonl")]:::datastore
     end
 
@@ -117,7 +117,7 @@ flowchart TB
         gwD["hermes-gateway@dcgr<br/>+ multiplex 8 profile_routes"]:::container
         apD["hermes-approve@dcgr<br/>approve_service — cùng mã nguồn"]:::container
         dashD["hermes-dashboard-dcgr :9121"]:::container
-        cronD{{"cron: vera-scan @05:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:10"}}:::cron
+        cronD{{"cron: vera-scan, nova-scan @05:00<br/>daily-log · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:10"}}:::cron
         stateD[("state/dcgr/")]:::datastore
     end
 
@@ -341,8 +341,9 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   thật tối thiểu để vai dựng được (Ethan 1, Dre 5/8, Kite 1) — engine ảnh dùng
   chung phải hỏi ở đây, mượn thẳng `carousel.MIN_SLIDE` là sự cố 10/09/2026.
   Từ 10/09/2026 (LOW-13) còn giữ **ai viết tin nào**: `writer_for(vai_quet,
-  brand)` hỏi vai quét trước rồi mới tới brand — Finn/Nova → Jika
-  (`jika`), Vera → Miles (`miles`) — đó là người viết **tạm**. Từ 14/09/2026
+  brand)` hỏi vai quét trước rồi mới tới brand — Finn/Qinn → Jika
+  (`jika`, blog), Vera/Nova → Miles (`miles`, dcgr; Nova sang dcgr từ 14/09/2026,
+  LOW-135) — đó là người viết **tạm**. Từ 14/09/2026
   (LOW-123 blog, LOW-136 dcgr) **mỗi container có cả Miles lẫn Jika**
   (`WRITERS_BY_BRAND`): lúc duyệt ảnh `approve_post` giao cho người ít việc chờ hơn.
   Quyết định chốt **một lần** lúc chọn tin và nằm trong `drafts/{id}.writer.json`;
