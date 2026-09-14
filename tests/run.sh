@@ -8,8 +8,8 @@
 # cong chan sinh ra de chan. Khong CI, khong pytest, nen day la luoi duy nhat.
 #
 # Dung:
-#     tests/chay.sh              # tat ca
-#     tests/chay.sh cong_chan    # chi cac tep khop chuoi
+#     tests/run.sh              # tat ca
+#     tests/run.sh cong_chan    # chi cac tep khop chuoi
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 

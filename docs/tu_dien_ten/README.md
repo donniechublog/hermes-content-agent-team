@@ -8,7 +8,7 @@ nhằng, nhưng đổi ngay là refactor giữa lúc nhiều nhánh đang hoạt
 **Trạng thái (13/09/2026): từ điển v0 đã duyệt (LOW-49). Refactor thật LOW-50 ĐÃ CHẠY
 HẾT trên nhánh `rename/viet-to-english`: 5 lô + đổi gói `chuan_bi/ → prepare/`,
 mọi module/hàm/hằng top-level đã mang tên English; tên tệp cũ là shim (gỡ sau 1 tuần).
-pyflakes 0, `tests/chay.sh` 84/84 sau mỗi lô.**
+pyflakes 0, `tests/run.sh` 84/84 sau mỗi lô.**
 
 ## Tiêu chí chốt (Ông Chủ 12/09/2026)
 
@@ -34,7 +34,7 @@ gọi, `docs=False` nên **không đụng chuỗi** → khoá JSON/đường d�
 → vá chuỗi có quy tắc hẹp (`<cũ>.py` → `<mới>.py` trong .py/.md/.json/.sh trừ lịch
 sử; trong `tests/` chỉ `def cũ(`, `cũ(`, `modcũ.cũ`, tên trần trong ngoặc kép **nếu
 không phải khoá dict**; `__all__`) → shim `<cũ>.py` (`sys.modules[__name__] = <mới>`,
-chạy được cả dạng script) → `pyflakes` + `tests/chay.sh`. Đỏ là dừng.
+chạy được cả dạng script) → `pyflakes` + `tests/run.sh`. Đỏ là dừng.
 
 Pilot `vai.py → role.py` (13/09/2026): 13 hàm/lớp + 14 hằng + module qua 36 tệp,
 xanh sau 3 vòng vá công cụ — ba ca thật đã thành quy tắc: biến cục bộ trùng tên
@@ -102,7 +102,7 @@ tên tệp) và bước `--package chuan_bi → prepare` — thêm các quy tắ
 
 ## Cổng CI sau refactor (LOW-53) — `tests/test_ten_english.py`
 
-Chạy trong `tests/chay.sh` (CI `kiem`): `bang_doi_ten()` trên cây hiện tại phải
+Chạy trong `tests/run.sh` (CI `kiem`): `bang_doi_ten()` trên cây hiện tại phải
 **rỗng**. Còn tên top-level nào từ điển vẫn dịch ra tên khác thì đỏ và in
 `module.tên → tên_đề_xuất`. Hai cách sửa, theo đúng thứ tự:
 
@@ -152,7 +152,7 @@ Không đổi trong `nhat_ky/` (lịch sử) và trong chính thư mục này.
 `skill_lesson_filter.SOURCE_OF_TRUTH` khớp **cả hai** tên vì bài học cũ vẫn ghi
 `LUAT_ANH`.
 
-## Script/cấu hình không phải `.md` (LOW-151, 14/09/2026)
+## Script/cấu hình không phải `.md` (LOW-151/152, 14/09/2026)
 
 Cùng lý do trên — không phải mã, `rename.py`/`test_ten_english.py` không xét.
 
@@ -162,6 +162,7 @@ Cùng lý do trên — không phải mã, `rename.py`/`test_ten_english.py` khô
 | `mau_bai_goc.json` | `original_post_template.json` | dữ liệu mẫu cho `cost_squeeze.py`, có tracked trong git |
 | `hermes/scripts/quet_daily_scan.sh` | `hermes/scripts/daily_scan.sh` | 4 wrapper (`finn_daily_scan.sh`, `nova_daily_scan.sh`, `vera_daily_scan.sh`, `qinn_scan.sh`) gọi qua đường dẫn tương đối, **giữ nguyên tên wrapper** (README: để khỏi sửa job cron trên máy chủ); `sync_hermes.SCRIPT` phải sửa theo, deploy xong nhớ `--ra-hermes` |
 | `hermes/profiles/cau_hinh_that.yaml` | `hermes/profiles/live_config_snapshot.yaml` | tệp do máy sinh (`sync_hermes.py --chup-cau-hinh`, tên cờ chưa đổi — ngoài phạm vi) |
+| `tests/chay.sh` | `tests/run.sh` | LOW-152. **Rủi ro cao nhất trong đợt**: CI thật (`.github/workflows/ci.yml`) và chính `rename.py:693` gọi thẳng tên này — sửa CI TRƯỚC KHI push, không sau |
 
 `hermes/scripts/nhat_ky_daily.sh` và `hermes/systemd/nhat-ky-web.service` **chưa đổi**
 trong đợt này: tên đang nằm thẳng trong job cron/unit systemd đang chạy thật trên
