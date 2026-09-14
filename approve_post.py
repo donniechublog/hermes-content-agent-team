@@ -14,6 +14,13 @@ from html import escape as html_escape
 
 import httpx
 
+# Tach rieng khoi ten `httpx` o duoi: test_dang_idempotent.py thay `db.httpx`
+# bang mot doi tuong gia CHI co .Client (de dem so lan goi that), nen tra qua
+# `httpx.Timeout`/`httpx.HTTPError` luc chay se AttributeError tren doi tuong
+# gia do. Giu rieng tham chieu that lay TRUOC moi lan monkeypatch.
+_HttpxTimeout = httpx.Timeout
+_HttpxError = httpx.HTTPError
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
 import image_rules                                             # noqa: E402
@@ -50,6 +57,18 @@ def keyboard(draft_id):
         {"text": "❌ Bỏ", "callback_data": "no:" + draft_id},
     ]]}
 
+def _media_timeout(total_bytes):
+    """Timeout cho request upload anh len Telegram, gian theo dung luong.
+
+    Bang thong GHI thuc te tu may chu toi Telegram co luc rat cham (~25 KB/s,
+    do duoc 14/09/2026 khi album 7 anh/~11,7 MB chet o mot moc timeout co dinh
+    120s — xem LOW-150). MIN_BYTES_PER_SEC thap hon muc do duoc de con du du;
+    ap dung cho ca read vi Telegram cung can thoi gian xu ly album lon sau khi
+    nhan xong."""
+    MIN_BYTES_PER_SEC = 20_000
+    write = max(60.0, 30.0 + total_bytes / MIN_BYTES_PER_SEC)
+    return _HttpxTimeout(connect=30.0, read=write, write=write, pool=30.0)
+
 def _send_media_group(token, chat, media, thread_id=None):
     """Gui album anh xem truoc. Album KHONG the gan nut bam -- gioi han Bot API.
 
@@ -59,6 +78,7 @@ def _send_media_group(token, chat, media, thread_id=None):
     BAO GIO hien, va gia tri tra ve bi vut nen loi im lang: Ong Chu duyet mu moi
     bai nhieu anh tu ngay dau."""
     items, files = [], {}
+    total_bytes = 0
     for i, m in enumerate(media):
         m = str(m)
         if m.startswith("http://") or m.startswith("https://"):
@@ -69,15 +89,22 @@ def _send_media_group(token, chat, media, thread_id=None):
             key = f"file{i}"
             items.append({"type": "photo", "media": f"attach://{key}"})
             files[key] = open(m, "rb")
+            total_bytes += Path(m).stat().st_size
     if not items:
         return {"ok": False, "description": "khong co anh nao ton tai"}
     data = {"chat_id": chat, "media": json.dumps(items)}
     if thread_id:
         data["message_thread_id"] = str(int(thread_id))
     try:
-        with httpx.Client(timeout=120) as c:
+        with httpx.Client(timeout=_media_timeout(total_bytes)) as c:
             r = c.post(API.format(token=token, method="sendMediaGroup"),
                        data=data, files=files or None)
+    except _HttpxError as e:
+        # KHONG de loi mang lam chet ca draft_push (LOW-150: truoc day
+        # WriteTimeout roi thang ra ngoai, ca script `approve_post.py push`
+        # crash). Goi noi (draft_push) da san sang nhan {"ok": False} de
+        # fallback sang gui rieng phan chu kem canh bao.
+        return {"ok": False, "description": f"{type(e).__name__}: {e}"}
     finally:
         for fh in files.values():
             fh.close()
@@ -108,7 +135,7 @@ def draft_push(token, group, draft_id, thread_id=None):
 
     img = d.get("image")
     if img and Path(img).exists():
-        with httpx.Client(timeout=120) as c, open(img, "rb") as fh:
+        with httpx.Client(timeout=_media_timeout(Path(img).stat().st_size)) as c, open(img, "rb") as fh:
             r = c.post(API.format(token=token, method="sendPhoto"),
                        data={k: (json.dumps(v) if k == "reply_markup" else v)
                              for k, v in payload.items()},
@@ -217,7 +244,8 @@ def publish(token, channel, draft_id):
                 e["caption"] = caption
                 e["parse_mode"] = "HTML"
             items.append(e)
-        with httpx.Client(timeout=180) as c:
+        total_bytes = sum(len(v[1]) for v in files.values())
+        with httpx.Client(timeout=_media_timeout(total_bytes)) as c:
             r = c.post(API.format(token=token, method="sendMediaGroup"),
                        data={"chat_id": channel, "media": json.dumps(items)},
                        files=files or None)
@@ -240,7 +268,7 @@ def publish(token, channel, draft_id):
                   f"(mid={d['channel_anh_mid']}) — khong gui lai", file=sys.stderr)
             return (_text_one_attempt(token, channel, caption, p_draft, d, draft_id)
                     if long_caption else {"ok": True})
-        with httpx.Client(timeout=120) as c, open(img, "rb") as fh:
+        with httpx.Client(timeout=_media_timeout(Path(img).stat().st_size)) as c, open(img, "rb") as fh:
             data = {"chat_id": channel, "parse_mode": "HTML"}
             if not long_caption:
                 data["caption"] = caption
