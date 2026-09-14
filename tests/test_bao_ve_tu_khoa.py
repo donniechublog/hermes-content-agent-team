@@ -149,8 +149,17 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
                 ra.append(c2)
             return ra
 
+        import os
+        import env_load
         import image_rules
-        with mock.patch("image_brand.vendors_in_story",
+        # LOW-127: test nay kiem luong TIM ANH QUA BAO, khong kiem vision. May chu co
+        # secret.*.env that -> env_load.load() nap lai OPENAI_API_KEY -> vision THAT cham
+        # anh nhieu tu ve la khong lien quan -> anh khong vao dung_duoc (do tren may chu).
+        # Tat vision dung nhu tren CI: bo key va chan nap tep secret.
+        env_khong_key = {k: v for k, v in os.environ.items() if k != "OPENAI_API_KEY"}
+        with mock.patch.dict("os.environ", env_khong_key, clear=True), \
+             mock.patch.object(env_load, "load", lambda *a, **k: None), \
+             mock.patch("image_brand.vendors_in_story",
                         return_value=[{"hang": "Moonshot AI", "khoa": "moonshot"}]), \
              mock.patch("image_brand.vendor_images", return_value=[]), \
              mock.patch.object(article_sources, "report_about_keyword",
