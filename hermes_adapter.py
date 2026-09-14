@@ -339,6 +339,22 @@ def pid_alive(pid) -> bool | None:
         return True
     return True
 
+def worker_run_state(tid, run_id, db=None):
+    """Trang thai de biet scope worker `hermes-worker-kanban-<tid>-run-<run_id>`
+    con viec khong (LOW-126): {trang_thai, run_hien_tai, run_ket_thuc} —
+    run_ket_thuc la ended_at cua DUNG run do (None neu run chua dong).
+    {} neu task khong co trong kanban.db nay; None neu khong doc duoc."""
+    hang = _ask("SELECT t.status, t.current_run_id, r.ended_at FROM tasks t "
+                "LEFT JOIN task_runs r ON r.id = ? AND r.task_id = t.id "
+                "WHERE t.id = ?", (int(run_id), tid), f"doc run {tid}/{run_id}", db=db)
+    if hang is None:
+        return None
+    if not hang:
+        return {}
+    st, cur, ended = hang[0]
+    return {"trang_thai": st, "run_hien_tai": cur, "run_ket_thuc": ended}
+
+
 def count_done_by_role(tu_ts, den_ts, db=None):
     """{vai: so task 'done' xong trong khoang [tu_ts, den_ts)} — None neu khong
     doc duoc. `db` de doc kanban cua brand KHAC (monitor_9router quet ca hai)."""

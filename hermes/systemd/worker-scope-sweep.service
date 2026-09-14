@@ -1,0 +1,8 @@
+# Stop scope worker kanban mo coi (LOW-126) — chay boi worker-scope-sweep.timer.
+[Unit]
+Description=Hermes Content Team - stop scope worker kanban mo coi
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/content-team
+ExecStart=%h/content-team/venv/bin/python %h/content-team/worker_scope_sweep.py
