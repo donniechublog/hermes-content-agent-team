@@ -100,7 +100,10 @@ def test_lech_dinh_dang_ca_hai_lan_thi_rot_khong_phai_none():
 def test_thieu_key_van_giu_none_khong_hoi_lai():
     """'Vision tắt' (thiếu OPENAI_API_KEY) là ca có chủ đích ở nơi khác
     (kite_submit.py) — KHÔNG đóng, và không tốn thêm lượt hỏi nào."""
+    # LOW-127: description_image tu goi env_load.load() — may chu co secret.*.env that
+    # nen xoa os.environ khong du, key bi nap lai va router bi goi (do: (None, 1)).
     with mock.patch.dict("os.environ", {}, clear=True), \
+         mock.patch.object(vision.env_load, "load", lambda *a, **k: None), \
          mock.patch.object(vision, "_call_router") as m:
         mt, lq = vision.description_image(ANH, "Tin gì đó")
     assert lq is None and m.call_count == 0, (lq, m.call_count)
