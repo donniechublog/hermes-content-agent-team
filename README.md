@@ -3,7 +3,7 @@
 Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes-agent.
 
 Tệp này chỉ mô tả **hiện trạng**. Chẩn đoán, số đo một lần và bài học rút ra
-nằm ở [NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md). Luật ảnh dùng chung ở
+nằm ở [INCIDENT_LOG.md](INCIDENT_LOG.md). Luật ảnh dùng chung ở
 [IMAGE_RULES.md](IMAGE_RULES.md); khuôn ticket Linear 7 bước ở
 [TICKET_TEMPLATE.md](TICKET_TEMPLATE.md); spec chữ trên thẻ ở
 [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md). Sơ đồ kiến trúc (Mermaid, theo mô
@@ -574,7 +574,7 @@ Hai ngoại lệ: **Bob** đặt `medium` (việc duy nhất là nhìn một ả
 
 Đừng tin bảng model chép trong tài liệu — hỏi thẳng máy chủ bằng lệnh ở đầu tệp
 này. Lịch sử đổi model, số đo giá, và ba điểm mù của 9router: xem
-[NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md).
+[INCIDENT_LOG.md](INCIDENT_LOG.md).
 
 **Hai nguyên tắc bắt buộc khi dùng nhiều model:**
 

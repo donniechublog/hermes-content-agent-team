@@ -146,6 +146,7 @@ lần sau tra:
 | `KIEN_TRUC.md` | `ARCHITECTURE.md` | |
 | `LUAT_ANH.md` | `IMAGE_RULES.md` | khớp module `image_rules.py`; tham chiếu mục `LUAT_ANH §1.2d` → `IMAGE_RULES §1.2d`, giữ số mục |
 | `KHUON_TICKET.md` | `TICKET_TEMPLATE.md` | LOW-148, 14/09/2026 |
+| `NHAT_KY_SU_CO.md` | `INCIDENT_LOG.md` | LOW-149, 14/09/2026. Chỉ đổi TÊN TỆP + đường dẫn tham chiếu; không đổi tên trong `nhat_ky/*.md` (thuần lịch sử) và không đụng câu đo commit cũ bên trong chính tệp nếu câu đó nhắc TÊN CŨ như một số đo lịch sử |
 
 Không đổi trong `nhat_ky/` (lịch sử) và trong chính thư mục này.
 `skill_lesson_filter.SOURCE_OF_TRUTH` khớp **cả hai** tên vì bài học cũ vẫn ghi

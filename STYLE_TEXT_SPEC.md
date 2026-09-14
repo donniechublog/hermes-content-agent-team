@@ -5,7 +5,7 @@ Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh 
 `card.py` có **hai** kiểu thẻ, và **mặc định là `quote`** (`card.build(kieu="quote")`,
 `ethan_submit` cũng vậy). `--kieu tran` là lựa chọn có chủ đích khi muốn ảnh phủ kín
 thẻ. Kiểu `dai` đã bỏ khỏi mã 05/09/2026; bản mô tả thiết kế của nó chuyển sang
-[NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md).
+[INCIDENT_LOG.md](INCIDENT_LOG.md).
 
 Luật *"ảnh này có được dùng không"* nằm ở [IMAGE_RULES.md](IMAGE_RULES.md); tệp này chỉ
 nói *"đặt chữ lên khung thế nào"*.
