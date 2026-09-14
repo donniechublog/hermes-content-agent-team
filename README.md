@@ -420,7 +420,7 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
 - `hermes-approve@blog` / `hermes-approve@dcgr` — dịch vụ duyệt bài.
 - `hermes-dashboard-blog` — cổng **9120**; `hermes-dashboard-dcgr` — cổng **9121**
   (đều bind 127.0.0.1).
-- `nhat-ky-web` — `journal_web.py` cổng **9130**: `/` danh sách ngày,
+- `journal-web` — `journal_web.py` cổng **9130**: `/` danh sách ngày,
   `/9router/<ngày>` bảng đầy đủ, `.json` số thô. Tin Telegram 6h sáng (chỉ brand
   blog gửi, tránh trùng) là tóm tắt req · $ · cache% · fallback + $/bài + link.
 
@@ -458,7 +458,7 @@ trên máy chủ nhưng chưa có mục riêng dưới đây.
 
 **Job hỏng thì biết bằng cách nào.** Hermes chỉ coi một job là lỗi khi script
 thoát khác 0. Trước 06/09/2026 mọi script đều thoát 0 kể cả khi hỏng: ba script
-quét in `LOI`/`CANH BAO` rồi kết thúc bình thường, còn `nhat_ky_daily.sh` kết
+quét in `LOI`/`CANH BAO` rồi kết thúc bình thường, còn `journal_daily.sh` kết
 bằng `| tail -3` (trả mã của `tail`) và một `echo`. Nghĩa là nhật ký chết cả
 tuần vẫn hiện `last_status: ok`, `failure_streak: 0`. Nay cả bốn script thoát
 khác 0 khi hỏng, nên `failure_streak` trong `~/.hermes-<brand>/cron/jobs.json`

@@ -1,7 +1,7 @@
 # Trang web nhật ký 9router (journal_web.py) — Telegram gửi link tới đây.
 # Cài (user donniechu, không root):
-#   cp ~/content-team/hermes/systemd/nhat-ky-web.service ~/.config/systemd/user/
-#   systemctl --user daemon-reload && systemctl --user enable --now nhat-ky-web
+#   cp ~/content-team/hermes/systemd/journal-web.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now journal-web
 [Unit]
 Description=Hermes Content Team - web nhat ky 9router (cong 9130)
 After=network-online.target
