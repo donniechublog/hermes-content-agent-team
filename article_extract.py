@@ -19,14 +19,14 @@ import scan_common                                            # noqa: E402
 
 UA = "Mozilla/5.0 (compatible; donniechu-content-bot/1.0)"
 
-# Chan host noi bo. URL toi day KHONG phai luon tin duoc: cape_chuan_bi.py boc
-# dung URL Ong Chu dan vao chat, tu_lieu.py boc link nguon cac vai quet ve tu
+# Chan host noi bo. URL toi day KHONG phai luon tin duoc: cape_prepare.py boc
+# dung URL Ong Chu dan vao chat, material.py boc link nguon cac vai quet ve tu
 # web. Bot lai chay ngay tren server cung 9router (127.0.0.1:20128), dashboard
 # (9130) va tunnel — nen mot URL tro nguoc vao trong la fetch thang vao ruot he
-# thong. Cong /bai da chan viec nay tu lau (duyet_lenh._HOST_CAM); duong nay thi
+# thong. Cong /bai da chan viec nay tu lau (approve_command._HOST_CAM); duong nay thi
 # chua, phat hien 06/09/2026.
-# Lay cong tu `quet_chung` chu khong chep lai regex (doi 06/09/2026 dot 2).
-# `quet_chung` la module thuan, khong keo approve_service vao — nen li do cu de
+# Lay cong tu `scan_common` chu khong chep lai regex (doi 06/09/2026 dot 2).
+# `scan_common` la module thuan, khong keo approve_service vao — nen li do cu de
 # chep ("tep nay chay doc lap trong tien trinh con") khong con dung. Ban chep
 # tay chi so khop CHUOI nen "127.1" va "2130706433" deu lot; ban chung dung
 # `ipaddress` + `inet_aton` va la MOT cho duy nhat cho ca day chuyen.

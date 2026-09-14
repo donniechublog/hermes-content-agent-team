@@ -57,7 +57,7 @@ done
 [ -x "$AGENT_PY" ] || { echo "[LOI] khong thay python cua hermes: $AGENT_PY" >&2; exit 2; }
 
 kiem() {
-  # Tra 0 khi CA HAI buoc kiem deu qua. kiem_moi_truong co the bao THIEU vi ly
+  # Tra 0 khi CA HAI buoc kiem deu qua. check_env co the bao THIEU vi ly
   # do khong lien quan lan cap nhat nay (vd chua dat khoa API tren may moi) nen
   # in ro ca hai ma khong gop lan ket qua.
   local ma_h ma_m

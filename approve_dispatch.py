@@ -56,10 +56,10 @@ def _report_receive_job(token, group, vai, tu_vai, title, tid, ly_do=""):
          text=text, parse_mode="HTML")
     log("route", f"bao {vai} nhan viec tu {tu_vai or 'Ong Chu'}: {tid} (truoc={truoc})")
 
-# BANG VAI da gom vao `vai.py` (audit A4/F1) — them mot vai = them MOT dong o
+# BANG VAI da gom vao `role.py` (audit A4/F1) — them mot vai = them MOT dong o
 # do, khong phai sua sau cho nhu truoc. Cac ten duoi day giu nguyen la MAT TIEN
-# cho ho duyet_* (duyet_lenh/duyet_chon_tin/duyet_bai) va test dang goi qua
-# `duyet_giao_viec.X`; ly do ton tai cua tung bang nam trong vai.py.
+# cho ho approve_* (approve_command/approve_pick/approve_post) va test dang goi qua
+# `approve_dispatch.X`; ly do ton tai cua tung bang nam trong role.py.
 ROLE_IMAGE = role.ROLE_IMAGE
 ROLE_CAROUSEL = role.ROLE_CAROUSEL
 ROLE_EDU = role.ROLE_EDU
@@ -84,10 +84,10 @@ def role_of_topic(thread_id):
             return ten
     return None
 
-# SLUG_CU (slug cu -> slug profile; su co 01/09/2026 hai bai dcgr ket 2 ngay vi
-# sidecar ghi "dre"/"miles") nay la VIEW cua vai.py — dong 69 o tren. Truoc audit
+# SLUG_OLD (slug cu -> slug profile; su co 01/09/2026 hai bai dcgr ket 2 ngay vi
+# sidecar ghi "dre"/"miles") nay la VIEW cua role.py — dong 69 o tren. Truoc audit
 # lượt 2 (ADF-r2-1) mot bang chep tay o day ghi de no 21 dong sau khi gan, nen
-# them slug_cu vao vai.py KHONG toi duoc day (chua lo chi vi hai bang dang trung).
+# them slug_cu vao role.py KHONG toi duoc day (chua lo chi vi hai bang dang trung).
 
 def standard_assignee(assignee):
     """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""
@@ -117,21 +117,21 @@ def kanban_create(title, assignee, body, parent=None):
     return tid, None
 
 # Kanban cua home container hien tai. Viec bi chan/that bai duoc bao qua
-# bao_tien_do_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
+# report_progress_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
 # viec voi no va bo sot Kite, da bo 05/09/2026.
 ALREADY_REPORT_PROGRESS = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
 STORY_RESULT = STATE_DIR / "tin_ket_qua_task.json"    # {task_id: {chat,thread,mid}}
 ALREADY_REPORT_STALLED = STATE_DIR / "da_bao_treo.json"         # {task_id: epoch lan bao "treo" cuoi}
-THRESHOLD_STALLED_MINUTES = 20          # lan chay hien tai lau hon nay -> bao (xem cau_chay_lau)
+THRESHOLD_STALLED_MINUTES = 20          # lan chay hien tai lau hon nay -> bao (xem long_run_message)
 AGAIN_REPORT_STALLED_MINUTES = 30         # con chay thi nhac lai sau moi khoang nay
 BEAT_SILENT_MINUTES = 5               # khong co heartbeat lau hon nay -> goi la "im lang"
 
 
 def long_run_message(ten: str, title: str, tid: str, phut: float, nhip_cuoi, pid, now) -> str:
-    """Cau bao khi mot lan chay keo dai qua NGUONG_TREO_PHUT — noi DUNG cai do duoc.
+    """Cau bao khi mot lan chay keo dai qua THRESHOLD_STALLED_MINUTES — noi DUNG cai do duoc.
 
     Ba trang thai khac han nhau ma cau cu "khong phan hoi hon N phut" gop lam mot
-    (LOW-23): (a) worker da CHET, (b) im lang that (khong heartbeat qua NHIP_IM_PHUT),
+    (LOW-23): (a) worker da CHET, (b) im lang that (khong heartbeat qua BEAT_SILENT_MINUTES),
     (c) van dang lam, chi la lau. Khong doc duoc nhip/pid thi noi la khong biet."""
     bai = f"<i>{html_escape(title[:80])}</i> (task {tid})"
     song = hermes_adapter.pid_alive(pid)
@@ -158,10 +158,10 @@ def killed_message(ten: str, title: str, tid: str, troi, tran, st: str) -> str:
     sau = "đang chạy lại" if st == "running" else "đã xếp lại hàng, sẽ chạy lại"
     return f"⏱ <b>{ten}</b> bị hermes dừng sau {phut}{tran_}, {sau}: {bai}"
 
-_TEN_HIEN = role.DISPLAY_NAME            # xem vai.py
+_TEN_HIEN = role.DISPLAY_NAME            # xem role.py
 
-# Moi bai mot the goc (bang_den.py), Dre/Miles/Ada la con cua no. Ly do va so do
-# o dau bang_den.py. O day chi co ba mieng noi vao luong san:
+# Moi bai mot the goc (blackboard.py), Dre/Miles/Ada la con cua no. Ly do va so do
+# o dau blackboard.py. O day chi co ba mieng noi vao luong san:
 #   create_pair  -> tao the goc, task Dre parent=goc
 #   imgok        -> task Miles parent=[Dre, goc]  (cong "Ong Chu duyet anh" giu nguyen)
 #   tien do      -> ban giao cua Miles da nam tren bang den qua kanban_complete.
@@ -172,7 +172,7 @@ _TEN_HIEN = role.DISPLAY_NAME            # xem vai.py
 # hanh vi blog phai y nguyen. Bat blog: Environment=CT_BANG_DEN=dcgr,blog trong unit.
 BLACKBOARD_BRANDS = {b.strip() for b in os.environ.get("CT_BANG_DEN", "dcgr").split(",") if b.strip()}
 
-BLACKBOARD_ASSIGNEE = "ban_bien_tap"     # trung voi bang_den.ROOT_ASSIGNEE
+BLACKBOARD_ASSIGNEE = "ban_bien_tap"     # trung voi blackboard.ROOT_ASSIGNEE
 
 BLACKBOARD_MENTION = """
 
@@ -207,7 +207,7 @@ def _blackboard_root(draft_id, title, goal=""):
         return None
 
 def _blackboard_write(draft_id, key, value):
-    """Ghi mot muc len bang den qua bang_den.ghi_nen (python cua hermes, tien
+    """Ghi mot muc len bang den qua blackboard.write_background (python cua hermes, tien
     trinh con). Best-effort, khong nem."""
     ok, loi = blackboard.write_background(draft_id, key, value, "approve_service", hermes_home=HERMES_HOME)
     if not ok:
@@ -236,7 +236,7 @@ def _summary_run(tid):
     return (tom or ""), run.get("metadata") or {}
 
 def reason_task(tid):
-    """Ban cong khai cua _tom_tat_run: chi can cau ly do, khong can metadata —
+    """Ban cong khai cua _summary_run: chi can cau ly do, khong can metadata —
     dung khi tra loi lai nut bam (approve_post.py) ve mot task da blocked/failed."""
     tom_tat, _md = _summary_run(tid)
     return tom_tat
@@ -244,7 +244,7 @@ def reason_task(tid):
 def link_result(tid):
     """Link Telegram toi dong tien do (start/done/blocked...) da gui cho task
     nay, hoac None neu chua co (chua bao lan nao, hoac gui trong DM khong lam
-    duoc deep-link). Ghi boi bao_tien_do_kanban() moi khi gui mot dong."""
+    duoc deep-link). Ghi boi report_progress_kanban() moi khi gui mot dong."""
     if not tid:
         return None
     try:
@@ -295,7 +295,7 @@ def report_progress_kanban(token, group):
     """Bao TIEN DO hang doi kanban ve Telegram: task bat dau -> mot dong vao
     topic cua vai kem so viec con xep hang; task xong/hong -> mot dong nua;
     task chay QUA LAU ma khong doi trang thai (worker treo/chet) -> canh bao
-    rieng, nhac lai moi LAI_BAO_TREO_PHUT toi khi het treo.
+    rieng, nhac lai moi AGAIN_REPORT_STALLED_MINUTES toi khi het treo.
 
     Vi sao: tu 03/09/2026 moi container chay MOT task mot luc. Sang 04/09 Ong
     Chu chon 7 bai luc 05:33, Dre lam bai 1, sau bai kia + Nova xep hang ca
@@ -420,7 +420,7 @@ def report_progress_kanban(token, group):
         doi = True
     # Chi giu task 24h gan nhat cho ba tep khong phinh (da bao dung `r["id"]`:
     # tung la `r[0]` — rows la dict, luon nem KeyError, chan MOI lan ghi ke tu
-    # do; sua kem trong doi nay vi TIN_KET_QUA/DA_BAO_TREO moi cung se hong theo).
+    # do; sua kem trong doi nay vi STORY_RESULT/ALREADY_REPORT_STALLED moi cung se hong theo).
     song = {r["id"] for r in rows}
     if doi:
         # khoa "tid:timed_out:<run>" cung song theo task cua no

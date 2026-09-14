@@ -2,9 +2,9 @@
 """LOW-28 (12/09/2026): engine chet bat thuong lap tren MOT draft thi DUNG va bao.
 
 t_24b214a6: SIGSEGV 3 lan, vai tu `rm -f dang_chay.pid` roi goi lai 16 lan trong
-50 phut — khong co gi noi "thoi". Gio `_doi_khoa` bao ve khoa mo coi, `dem_chet`
-dem, `run()` dung o MAX_CRASH va goi `_bao_chet_lap`. Fail tren code cu
-(chua co dem_chet / _doi_khoa tra None), pass tren code moi.
+50 phut — khong co gi noi "thoi". Gio `_handle_lock` bao ve khoa mo coi, `count_crashes`
+dem, `run()` dung o MAX_CRASH va goi `_report_crash_loop`. Fail tren code cu
+(chua co count_crashes / _handle_lock tra None), pass tren code moi.
 
 Chay:  venv/bin/python tests/test_engine_chet_lap.py
 """
@@ -46,8 +46,8 @@ def test_toi_da_chet_la_hai():
 
 
 def test_chay_dung_o_toi_da_va_bao():
-    """Cong o muc ma nguon: `run()` phai goi dem_chet, so voi MAX_CRASH, goi
-    _bao_chet_lap va sys.exit — khong test duoc bang chay that (can meta draft +
+    """Cong o muc ma nguon: `run()` phai goi count_crashes, so voi MAX_CRASH, goi
+    _report_crash_loop va sys.exit — khong test duoc bang chay that (can meta draft +
     browser), nen doc AST cua run() nhu cong _round_brand (10/09/2026)."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
     ham = next(n for n in ast.walk(ast.parse(src))
@@ -74,7 +74,7 @@ def test_bao_chet_lap_gui_dung_topic_va_khong_nem():
         publish.send_topic = cu
     assert len(gui) == 1 and gui[0][0] == cb.role.DEFAULT_IMAGE, gui
     assert "2 lần" in gui[0][1] and "draft-khong-ton-tai" in gui[0][1], gui
-    # gui_topic nem thi _bao_chet_lap van khong nem
+    # send_topic nem thi _report_crash_loop van khong nem
     publish.send_topic = lambda text, vai: (_ for _ in ()).throw(RuntimeError("x"))
     try:
         with redirect_stderr(io.StringIO()):

@@ -11,8 +11,8 @@ Amazon, xưởng Samsung, kiện tập thể Anthropic, DeepSeek gọi vốn, Ph
 hàng trăm ảnh thật.
 
 Chỗ hụt nằm ở ENGINE chứ không ở vai (từ 04/09 vai không còn công cụ tìm ảnh):
-`anh_chuan_bi.anh_commons` chỉ tìm theo MỘT cụm — cụm tên riêng ĐẦU tiêu đề
-(`_ten_rieng_dau`) — nên tin "Qualcomm ... with Amazon" không bao giờ hỏi tới
+`scan_common.ask_commons` chỉ tìm theo MỘT cụm — cụm tên riêng ĐẦU tiêu đề
+(`_leading_proper_noun`) — nên tin "Qualcomm ... with Amazon" không bao giờ hỏi tới
 Amazon; và nó hỏi bằng đúng tên trần ("Qualcomm"), không hỏi thẳng cái mà hãng
 nào cũng có ảnh: trụ sở / toà nhà / campus.
 
@@ -30,7 +30,7 @@ các bảng xếp hạng của model... có thiếu tư liệu đâu?"*):
   1. 🏢 **cơ sở**   — trụ sở/campus: tìm tên tệp Commons + `P18` của Wikidata.
   2. 👤 **chân dung** — founder/CEO (`P112`/`P169` -> `P18` của họ). Đi KÈM TÊN,
      nên khai được `nhan_vat` — đúng ngoại lệ của LUAT_ANH §6.
-  3. 📊 **bảng xếp hạng** — `anh_chuan_bi._xep_hang_boi_canh` mượn `ranking.py`
+  3. 📊 **bảng xếp hạng** — `prepare.fallback_rounds._ranking_context_edge` mượn `ranking.py`
      chụp bảng có model của hãng. Chỉ nhận ảnh chụp thật, không nhận thẻ dự phòng.
   4. 🔖 **thẻ logo** — logo chính thức (`P154`) đặt trên nền trơn. Đường CUỐI.
 
@@ -40,14 +40,14 @@ tệp nào tên "<hãng> headquarters" — mà trụ sở OpenAI trên Commons l
 thẳng tới nó. Và tìm tên tệp thì không đời nào với tới chân dung Dario Amodei.
 
 Hàm thuần (test được, không mạng) + hàm chạm mạng:
-  - `hang_trong_tin`   tiêu đề (+ tóm tắt) -> các hãng lớn được nhắc, ≤ 3.
+  - `vendors_in_story`   tiêu đề (+ tóm tắt) -> các hãng lớn được nhắc, ≤ 3.
   - `truy_van`         một hãng -> các câu hỏi Commons [(tên, câu)].
-  - `loc_commons`      lọc `query.pages` theo tên hãng + bảng nhiễu.
+  - `filter_commons`      lọc `query.pages` theo tên hãng + bảng nhiễu.
   - `_qid_claim`       bóc người từ claim, BỎ người đã thôi chức (P582).
-  - `hang_co_model`    hãng này có model trên bảng xếp hạng không.
-  - `cau_hoi_vision`   câu hỏi riêng cho từng loại tư liệu.
-  - `nhan_thuong_hieu` siết nhãn của một ảnh đã qua `phan_loai`.
-  - `tu_lieu_wikidata` / `url_commons` / `the_logo` / `anh_hang`  (mạng/ảnh).
+  - `rank_has_model`    hãng này có model trên bảng xếp hạng không.
+  - `sentence_ask_vision`   câu hỏi riêng cho từng loại tư liệu.
+  - `label_brand` siết nhãn của một ảnh đã qua `classify`.
+  - `material_wikidata` / `commons_urls` / `card_logo` / `vendor_images`  (mạng/ảnh).
 """
 import re
 import sys
@@ -60,7 +60,7 @@ MAX_NEW_RANK = 2        # ảnh mỗi hãng — để một bộ không thành a
 SHORT_SIDE_MIN = 700
 
 # Tên đi tìm trên Commons cho từng hãng (khoá = tên hãng chuẩn của
-# `scan_business.HANG_CUA_TEN`). Nhiều tên khi tên trên biển hiệu khác tên pháp
+# `scan_business.RANK_OF_NAME`). Nhiều tên khi tên trên biển hiệu khác tên pháp
 # lý (Meta -> Facebook) hoặc khi hãng con nằm trong khuôn viên hãng mẹ
 # (DeepMind -> Google). Tên đầu là tên hiện trong brief.
 DISPLAY_NAME = {
@@ -120,7 +120,7 @@ NAME_EXTRA = {
 }
 
 # Hậu tố hỏi Commons. Chỉ thứ hãng nào cũng có ảnh chụp thật, không hỏi thứ
-# trừu tượng (partnership, funding) — Commons trả minh hoạ tệ, xem anh_khai_niem.
+# trừu tượng (partnership, funding) — Commons trả minh hoạ tệ, xem image_concept.
 SUFFIX = ("headquarters", "building", "campus")
 MAX_QUERY = 4
 
@@ -156,7 +156,7 @@ _NHIEU_BIEN: dict = {}
 # cảnh của hãng. Đo thật 09/09/2026: câu "Amazon building" trả về hai tấm
 # "International Day of Solidarity With Alabama Amazon Workers" — ảnh mít tinh
 # công đoàn, đúng chữ "Amazon" mà sai hẳn loại ảnh cho một tin ký hợp đồng chip.
-# `TEN_LOAI` của anh_khai_niem có "protest" nhưng tên tệp này không có chữ đó.
+# `NAME_TYPE` của image_concept có "protest" nhưng tên tệp này không có chữ đó.
 # Không đưa "march" vào (trùng tháng Ba) hay "union" trần (trùng Union Square).
 MANY_COMMON = re.compile(
     r"solidarity|rall(y|ies)|\bstrikes?\b|striking|picket|protest|demonstrat|"
@@ -195,11 +195,11 @@ def _many(ten: str):
 
 
 def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
-    """Các hãng lớn tin này nói tới, theo thứ tự xuất hiện, tối đa `TOI_DA_HANG`.
+    """Các hãng lớn tin này nói tới, theo thứ tự xuất hiện, tối đa `MAX_RANK`.
 
     Dùng chung WATCHLIST của `scan_business` — cùng một danh sách "tên trong
     ngành phải theo sát", không chép lại ở đây. Tên model/chip quy về hãng chủ
-    qua HANG_CUA_TEN, nên "Claude Opus 5" ra Anthropic, "Xring O3" ra Xiaomi.
+    qua RANK_OF_NAME, nên "Claude Opus 5" ra Anthropic, "Xring O3" ra Xiaomi.
     Trả [{"khoa": "qualcomm", "hang": "Qualcomm"}].
     """
     import scan_business
@@ -236,7 +236,7 @@ def query(khoa: str) -> list:
 def filter_commons(pages: dict, ten: str, so: int = 4, canh_ngan_min: int = SHORT_SIDE_MIN) -> list:
     """Lọc `query.pages` của API Commons cho một tên hãng: bitmap đủ lớn, tên tệp
     có ĐỦ các từ đặc trưng của tên hãng (theo biên giới từ), không phải đồ hoạ
-    (`anh_khai_niem.TEN_LOAI`), không dính bảng nhiễu. JPEG trước, ảnh to trước."""
+    (`image_concept.NAME_TYPE`), không dính bảng nhiễu. JPEG trước, ảnh to trước."""
     import image_concept
     dac_trung = _from_distinctive(ten)
     nhieu = _many(ten)
@@ -258,7 +258,7 @@ def filter_commons(pages: dict, ten: str, so: int = 4, canh_ngan_min: int = SHOR
                    "og": False, "mime": ii.get("mime"), "tu": "thuong_hieu",
                    "trang": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
                    "rong": w, "cao": h, "diem": 25})
-    # JPEG trước PNG: ảnh chụp thật gần như luôn là JPEG (xem anh_khai_niem).
+    # JPEG trước PNG: ảnh chụp thật gần như luôn là JPEG (xem image_concept).
     ra.sort(key=lambda c: (c["mime"] != "image/jpeg", -(c["rong"] * c["cao"])))
     return ra[:so]
 
@@ -325,7 +325,7 @@ def qid_rank(hang: str) -> tuple:
     r = _ask_api(WIKIDATA, action="wbsearchentities", search=hang, language="en",
                  type="item", limit=5)
     if r is None:
-        print(f"[thuong_hieu] qid_hang({hang!r}): khong goi duoc Wikidata (wbsearchentities), bo qua",
+        print(f"[thuong_hieu] qid_rank({hang!r}): khong goi duoc Wikidata (wbsearchentities), bo qua",
               file=sys.stderr)
         return None, {}
     ids = [x["id"] for x in r.get("search", []) if x.get("id")]
@@ -333,7 +333,7 @@ def qid_rank(hang: str) -> tuple:
         return None, {}
     ent = _ask_api(WIKIDATA, action="wbgetentities", ids="|".join(ids), props="claims")
     if ent is None:
-        print(f"[thuong_hieu] qid_hang({hang!r}): khong goi duoc Wikidata (wbgetentities), bo qua",
+        print(f"[thuong_hieu] qid_rank({hang!r}): khong goi duoc Wikidata (wbgetentities), bo qua",
               file=sys.stderr)
         return None, {}
     ent = ent.get("entities", {})
@@ -358,7 +358,7 @@ def material_wikidata(hang: str) -> dict:
         ent = _ask_api(WIKIDATA, action="wbgetentities", ids="|".join(ids),
                        props="claims|labels", languages="en")
         if ent is None:
-            print(f"[thuong_hieu] tu_lieu_wikidata({hang!r}): khong goi duoc Wikidata "
+            print(f"[thuong_hieu] material_wikidata({hang!r}): khong goi duoc Wikidata "
                   "(nguoi/CEO), bo qua", file=sys.stderr)
             ent = {}
         else:
@@ -383,11 +383,11 @@ def material_wikidata(hang: str) -> dict:
 # nhưng Google News không index nó và 13/14 báo không link sang, nên engine
 # không có đường nào tới. Đường ở đây: Wikidata P856 (website chính thức) ->
 # trang danh sách tin của hãng -> khớp tên model (đã tách bằng
-# xep_hang.tach_model) trong slug link. Chỉ mạng tĩnh, ≤ 1 + len(DUONG_TIN) fetch.
+# ranking.extract_model) trong slug link. Chỉ mạng tĩnh, ≤ 1 + len(PATH_STORY) fetch.
 P_WEBSITE = "P856"
 PATH_STORY = ("/news/", "/en/news/", "/blog/", "/news", "/blog", "/research/")
 # Trang HTML bị chặn bot (openai.com trả 0 byte cho httpx, đo 11/09/2026) thì
-# RSS công khai vẫn mở — cùng bài học với `nguon_bai._tieu_de_rss` (Economist).
+# RSS công khai vẫn mở — cùng bài học với `article_sources._title_rss` (Economist).
 PATH_FEED = ("/news/rss.xml", "/rss.xml", "/blog/rss.xml", "/blog/feed.xml", "/feed.xml")
 MAX_ANNOUNCEMENT_PAGE = 1
 
@@ -444,8 +444,8 @@ def _download_html(url: str, timeout: int = 15, feed: bool = False) -> str:
 
 def announcement_page(hang: dict, models: list) -> dict | None:
     """Trang công bố CHÍNH CHỦ của model trong tin: {"url", "tieu_de", "toa_soan"}
-    hoặc None. `hang` là một mục của `hang_trong_tin`, `models` từ
-    `xep_hang.tach_model`. Không hỏi gì khi thiếu một trong hai."""
+    hoặc None. `hang` là một mục của `vendors_in_story`, `models` từ
+    `ranking.extract_model`. Không hỏi gì khi thiếu một trong hai."""
     from urllib.parse import urljoin
     khoa = _lock_model(models)
     if not hang or not khoa:
@@ -495,7 +495,7 @@ def commons_urls(tens: list) -> dict:
     r = _ask_api(COMMONS, action="query", titles="|".join("File:" + t for t in tens),
                  prop="imageinfo", iiprop="url|size|mime", iiurlwidth=1800)
     if r is None:
-        print("[thuong_hieu] url_commons: khong goi duoc Commons API, bo qua", file=sys.stderr)
+        print("[thuong_hieu] commons_urls: khong goi duoc Commons API, bo qua", file=sys.stderr)
         return {}
     ra = {}
     for pg in ((r.get("query") or {}).get("pages") or {}).values():
@@ -512,7 +512,7 @@ def commons_urls(tens: list) -> dict:
 def card_logo(tep_logo, out, brand: str = "donniechublog"):
     """Đặt LOGO THẬT của hãng lên nền thương hiệu, dồn lên NỬA TRÊN để hook đè
     được nửa dưới. Không phải minh hoạ — cùng nguyên tắc với thẻ dự phòng của
-    `xep_hang.the_du_phong`: không thêm một nét nào của ta, chỉ là chỗ đặt.
+    `ranking.fallback_card`: không thêm một nét nào của ta, chỉ là chỗ đặt.
 
     Logo Commons hay là PNG trong suốt / SVG render nền trong; dán thẳng lên nền
     tối thì chữ đen của wordmark biến mất, nên nền được chọn theo độ sáng của
@@ -587,10 +587,10 @@ def image_wikidata(hang, wd=None) -> list:
         # Wikidata P18 chi giu DUNG MOT anh (thuong la chan dung studio, doc) —
         # chua bao gio hoi Commons theo TEN NGUOI. Do that 12/09: search "Dario
         # Amodei" ra 9 anh su kien/hop bao 4000x2667..8192x5464, ti le 1.5, ma
-        # pipeline chua bao gio cham toi vi HAU_TO chi khop "headquarters/
+        # pipeline chua bao gio cham toi vi SUFFIX chi khop "headquarters/
         # building/campus". Ten day du it dung hang nhu ten hang (khong nhu
         # "Anthropic" trung khao co, "Claude" trung hoi hoa) nen dung lai
-        # `_tu_dac_trung`/`_co_cum` cua chinh module nay, khong can bang NHIEU.
+        # `_tu_dac_trung`/`_has_phrase` cua chinh module nay, khong can bang NHIEU.
         for c in image_person_landscape(n["ten"], n["vai"], ten_chinh, khoa):
             ra.append(c)
     for t in tl["logo"]:
@@ -632,12 +632,12 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
     Ông Chủ 12/09/2026: *"chỉ cần search claude hay anthropic thì cũng ra một
     rừng ảnh rồi, kiếm cái ảnh rõ nét và ratio phù hợp khó thế sao?"* — đúng, đo
     thật: search "Dario Amodei" ra 9 ảnh họp báo/sự kiện 4000x2667..8192x5464,
-    tỉ lệ 1,5 (ngang), mà `anh_wikidata` trước đây CHƯA BAO GIỜ hỏi Commons theo
+    tỉ lệ 1,5 (ngang), mà `image_wikidata` trước đây CHƯA BAO GIỜ hỏi Commons theo
     TÊN NGƯỜI — chỉ lấy đúng một ảnh P18 (thường là chân dung studio, dọc).
 
     Search "Anthropic"/"Claude AI" một mình thì nhiễu thật (khảo cổ, hội hoạ,
     từ điển — xem `NHIEU`), nhưng TÊN NGƯỜI ĐẦY ĐỦ hiếm khi trùng nghĩa khác;
-    dùng lại đúng `_tu_dac_trung`/`_co_cum` đã có cho tên hãng: các từ của tên
+    dùng lại đúng `_tu_dac_trung`/`_has_phrase` đã có cho tên hãng: các từ của tên
     phải nằm LIỀN NHAU, đúng thứ tự, theo biên giới từ. Vẫn cùng cổng LUAT_ANH §6 với chân
     dung (khai `nhan_vat`) — chỉ khác đủ ngang để không teo khi lên bìa."""
     import image_concept
@@ -655,11 +655,11 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
             continue
         ten_tep = (pg.get("title") or "").replace("File:", "")
         thap = ten_tep.lower()
-        # `_co_cum` chu KHONG `all(_co_tu(...))` (12/09/2026): ban long chi doi
+        # `_has_phrase` chu KHONG `all(_has_word(...))` (12/09/2026): ban long chi doi
         # MOI tu co mat dau do nen "Dario Amodei" khop ca "dario rossi meets luca
         # amodei in rome" — anh HAI NGUOI KHAC, ma caption lai khai
         # `nhan_vat: "Dario Amodei"`, tuc bia mat nguoi (LUAT_ANH §0/§6). Cung
-        # lop loi ma `loc_commons` vua duoc siet o cung ngay ("Hugging Face" khop
+        # lop loi ma `filter_commons` vua duoc siet o cung ngay ("Hugging Face" khop
         # "Rathlin hugging the cliff face"); ban va do khong lan sang day.
         if image_concept.NAME_TYPE.search(thap) or not _has_phrase(dac_trung, thap):
             continue
@@ -685,10 +685,10 @@ def image_has_ballot(hang, wd, phien=None) -> list:
     """Biểu đồ giá cổ phiếu của hãng — chụp trang Google Finance ở khung mobile.
 
     Bảng loại tin (`story_type.py`, Ông Chủ 12/09/2026): tin BUSINESS/M&A thì "mã
-    cổ phiếu" là một vật liên quan. Chỉ hãng có trong `loai_tin.MA_CO_PHIEU`
+    cổ phiếu" là một vật liên quan. Chỉ hãng có trong `story_type.CODE_HAS_BALLOT`
     (niêm yết); hãng tư nhân trả [] ngay, không đoán. Tường chặn bot -> [] (dùng
-    chung `phien_browser.bi_chan`). Là đồ hoạ có chủ ý (`cho_do_hoa`, như thẻ
-    logo) nên `tai_va_loc` không loại nó như logo báo lọt."""
+    chung `browser_session.got_block`). Là đồ hoạ có chủ ý (`cho_do_hoa`, như thẻ
+    logo) nên `download_and_filter` không loại nó như logo báo lọt."""
     import story_type
     from pathlib import Path as _P
     khoa = hang["khoa"] if isinstance(hang, dict) else hang
@@ -775,7 +775,7 @@ def vendor_images(hang, so: int = MAX_NEW_RANK, wd=None) -> list:
             if len(ra) >= so:
                 break
     if hong and not ra:
-        # ADF-r2-16: truoc day {} cua _hoi_commons di thang vao loc_commons nen
+        # ADF-r2-16: truoc day {} cua _ask_commons di thang vao filter_commons nen
         # mat mang == hang khong co anh. Giu hop dong tra [] cua ham, nhung noi
         # ro de brief/nhat ky khong ket luan sai ve hang.
         print(f"[thuong_hieu] {khoa}: {hong} truy van Commons HONG (mang/API) — "
@@ -803,10 +803,10 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
     không" — chân dung nhà sáng lập và logo chắc chắn không phải, nên bị đánh
     rớt dù đó đúng là thứ ta đi tìm (09/09/2026).
 
-    Cả ba nhánh chèn `luat_anh.CUM_ANH_CHUP_LAI_MAN_HINH` (LOW-45, 13/09/2026):
+    Cả ba nhánh chèn `image_rules.IMAGE_PHRASES_SCREENSHOT` (LOW-45, 13/09/2026):
     đo thật, đúng ảnh Getty chụp nghiêng App Store của Kimi K3 (đã chặn ở
-    `_lay_anh_trang`/`_vong_chup_nguon`) lọt qua ĐÚNG nhánh "anh" ở đây khi tìm
-    thấy qua một đường khác (`_bao_thuong_hieu_rong`) — nhánh này TỪNG chỉ có
+    `_take_image_page`/`_round_capture_source`) lọt qua ĐÚNG nhánh "anh" ở đây khi tìm
+    thấy qua một đường khác (`_report_brand_empty`) — nhánh này TỪNG chỉ có
     "quá mờ" chung chung, không đủ chặn ảnh nét-ở-tiền-cảnh/mờ-ở-hậu-cảnh."""
     import image_rules
     hang, loai = th.get("hang", "hãng"), th.get("loai", "anh")
@@ -838,7 +838,7 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
 
 def _ask_commons(cau: str):
     """`query.pages` cua Commons, hoac None khi hong moi truong (C1). Mot ban o
-    quet_chung.hoi_commons (ADF-r2-16) — truoc day ban nay tra {} va log khong
+    scan_common.ask_commons (ADF-r2-16) — truoc day ban nay tra {} va log khong
     repr, nen mat mang trong y het "hang khong co anh"."""
     import scan_common
     return scan_common.ask_commons(cau)
@@ -847,10 +847,10 @@ def _ask_commons(cau: str):
 def label_by_type(th: dict) -> str:
     """Câu nhãn cho MỘT ảnh thương hiệu, theo LOẠI tư liệu. Thuần.
 
-    Tách khỏi `nhan_thuong_hieu` 10/09/2026 để brief nào cũng dùng đúng một bản:
-    `ethan_chuan_bi.nhan_ethan` dựng lại `ghi_chu` từ đầu nên tự viết một câu
+    Tách khỏi `label_brand` 10/09/2026 để brief nào cũng dùng đúng một bản:
+    `ethan_prepare.label_ethan` dựng lại `ghi_chu` từ đầu nên tự viết một câu
     "trụ sở/campus/biển hiệu" chung cho MỌI loại — một tấm chân dung founder tới
-    tay Ethan mất luôn cái TÊN để khai `nhan_vat`, mà `nop_chung.kiem_nhan_vat`
+    tay Ethan mất luôn cái TÊN để khai `nhan_vat`, mà `submit_common.check_subject_named`
     chặn ảnh có mặt người không khai tên. Tức Ethan buộc phải bỏ ảnh founder,
     đúng cái Ông Chủ hỏi ("task này thì ko chịu dùng hình của Founder")."""
     hang, loai = th.get("hang", "?"), th.get("loai", "anh")
@@ -881,7 +881,7 @@ def label_by_type(th: dict) -> str:
 
 
 def label_brand(a: dict) -> dict:
-    """Siết nhãn một ảnh thương hiệu ĐÃ qua `phan_loai`. Thuần.
+    """Siết nhãn một ảnh thương hiệu ĐÃ qua `classify`. Thuần.
 
     Khác ảnh khái niệm: ảnh này ĐƯỢC vào slide thân (nó là ảnh thật của chính
     hãng trong tin). Giống ảnh khái niệm ở hai chỗ chặn: không phải chart của
@@ -891,23 +891,23 @@ def label_brand(a: dict) -> dict:
     th = a.get("thuong_hieu") or {}
     loai = th.get("loai", "anh")
     if a.get("lien_quan") is False:
-        return a                                  # phan_loai đã xoá dung + ghi ❌
+        return a                                  # classify đã xoá dung + ghi ❌
     a["ghi_chu"] = [g for g in a["ghi_chu"] if "Wikimedia Commons" not in g]
 
     if loai == "nguoi":
         # Mặt người ở đây là CÓ CHỦ Ý và GỌI ĐƯỢC TÊN — đúng ngoại lệ của
         # LUAT_ANH §6 ("trừ khi khai nhan_vat"), khác hẳn mặt vô danh.
         #
-        # KHÔNG chặn theo `mat` ở đây: `luat_anh.dem_mat` trả None (-> 0) khi
+        # KHÔNG chặn theo `mat` ở đây: `image_rules.count_faces` trả None (-> 0) khi
         # thiếu cv2/model, và LUAT_ANH §6 nói rõ cổng mặt được phép tự tắt. Lấy
         # `mat == 0` làm "không phải chân dung" thì trên máy thiếu cv2 MỌI chân
         # dung đều bị bỏ câm lặng. Ảnh này là P18 của chính người đó trên
-        # Wikidata; đúng/sai để con mắt (cau_hoi_vision) phán.
+        # Wikidata; đúng/sai để con mắt (sentence_ask_vision) phán.
         a["ghi_chu"].insert(0, label_by_type(th))
         return a
 
     if loai == "logo":
-        # Thẻ logo là nền trơn + chữ nên `phan_loai` đọc ra "chart" và dán kèm
+        # Thẻ logo là nền trơn + chữ nên `classify` đọc ra "chart" và dán kèm
         # "KHÔNG làm bìa" — ngược hẳn công dụng của nó. Gỡ ghi chú đó, đừng để
         # brief tự mâu thuẫn với chính mình.
         a["dung"] = ["bìa"]

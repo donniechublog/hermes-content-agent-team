@@ -2,7 +2,7 @@
 """Cong chan spec carousel cua Dre (`dre_submit.resolve_spec`).
 
 Audit 06/09/2026 do: ham nay 166 dong, 36 nhanh, va gan nhu KHONG co test —
-`test_cong_chan` nhac `bob_nop` 19 lan, `dre_nop` mot lan. No la cho duy nhat
+`test_cong_chan` nhac `bob_submit` 19 lan, `dre_submit` mot lan. No la cho duy nhat
 kiem spec cua Dre truoc khi ve, va phan lon luat trong do la luat Ong Chu tu
 dat sau mot su co that: khong dung lai anh, khong lay chart lam bia, mat nguoi
 phai khai ten co trong bai. (13/09/2026: bo cong "khong ghep hai anh lech
@@ -31,7 +31,7 @@ from tam import so_tam  # noqa: E402
 
 # ------------------------------------------------------------------ do gia
 def _ve(w, h, tone=(60, 70, 90)):
-    """Anh co van, tone chi dinh — `lech_tone` do do sang va mau trung binh."""
+    """Anh co van, tone chi dinh — `tone_mismatch` do do sang va mau trung binh."""
     im = Image.new("RGB", (w, h), tone)
     d = ImageDraw.Draw(im)
     b = 7
@@ -44,7 +44,7 @@ def _ve(w, h, tone=(60, 70, 90)):
 
 
 def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
-    """Mot dong manifest anh, dung cac khoa ma `anh_chuan_bi` that su ghi ra."""
+    """Mot dong manifest anh, dung cac khoa ma `image_prepare` that su ghi ra."""
     import image_rules
     goc = wd / "goc" / f"{ma}.png"
     goc.parent.mkdir(parents=True, exist_ok=True)
@@ -361,7 +361,7 @@ def test_duoi_hai_quote_thi_chan():
 
 
 def test_quote_con_nguyen_tieng_anh_thi_chan():
-    """card.tim_mat_dau CO Y bo qua tieng Anh, nen quote chua dich lot thang
+    """card.find_face_mark CO Y bo qua tieng Anh, nen quote chua dich lot thang
     len Telegram neu cong nay khong bat (06/09/2026)."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
@@ -436,7 +436,7 @@ def test_cung_tin_nhung_vai_khac_thi_khong_chan():
 
 def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
     """Ong Chu 13/09/2026 (Anthropic/Nvidia IPO): bam Lam lai chi ro slide, ban
-    moi van la CUNG MOT anh (chi doi ma A3 -> A5, cung file). duyet_bai da chup
+    moi van la CUNG MOT anh (chi doi ma A3 -> A5, cung file). approve_post da chup
     dHash cua anh bi che vao img.json["cam_anh_slide"]["3"] luc bam nut; cong
     o day phai chan slide 3 du ma anh doi ten."""
     import shutil

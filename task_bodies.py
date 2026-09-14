@@ -8,7 +8,7 @@ Duong dan may chu KHONG hardcode: `{goc}` (thu muc content-team) duoc dien luc
 .format() tu ROOT cua approve_service — doi ten user Unix khong con lam gay
 template im lang.
 
-Doan ket thuc dung chung cua ba vai lam anh nam o `KET_THUC_VAI_ANH` va duoc
+Doan ket thuc dung chung cua ba vai lam anh nam o `END_ROLE_IMAGE` va duoc
 dien qua khoa `{ket_thuc}`; dung chep no vao tung body nua.
 """
 
@@ -28,7 +28,7 @@ dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban)."""
 
 
 def end_role_image(goc, draft_id: str) -> str:
-    """KET_THUC_VAI_ANH da dien duong dan: `str.format` cua body KHONG dien de quy
+    """END_ROLE_IMAGE da dien duong dan: `str.format` cua body KHONG dien de quy
     vao gia tri `{ket_thuc}`, nen `{goc}`/`{draft_id}` trong doan ket thuc phai
     dien o day truoc (12/09/2026, khi doan nay bat dau mang mot dong lenh)."""
     return END_ROLE_IMAGE.format(goc=str(goc), draft_id=draft_id)
@@ -51,7 +51,7 @@ cd {goc} && venv/bin/python ethan_prepare.py {draft_id}
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chi
 dien MA ANH (A1, A2...) va CHU (hook, tagline, attrib; hoac title+kicker cho
 kieu tran). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
-article_images.py/card.py/gui_telegram.py tay. Chu tieng Viet co dau.
+article_images.py/card.py/send_telegram.py tay. Chu tieng Viet co dau.
 
 BUOC 3 — nop:
 cd {goc} && venv/bin/python ethan_submit.py {draft_id}
@@ -63,8 +63,8 @@ Ban chuan bi noi KHONG CO anh that nao: kanban_block ngay, KHONG tao the, KHONG 
 
 
 # Body cho Dre — CAROUSEL. Tu 04/09/2026 phan CO HOC (tim/tai/do/cat/ghep anh,
-# cong chan, dung slide, gui Telegram, ban giao) nam het trong dre_chuan_bi.py
-# va dre_nop.py; vai chi CHIA SLIDE + VIET COPY vao mot tep JSON. Truoc do moi
+# cong chan, dung slide, gui Telegram, ban giao) nam het trong dre_prepare.py
+# va dre_submit.py; vai chi CHIA SLIDE + VIET COPY vao mot tep JSON. Truoc do moi
 # task Dre ton 51-60 tool call (curl/ls/grep/write_file), gio con ~4.
 CAROUSEL_BODY = """Nguon: {source_note}
 Link: {link}
@@ -84,7 +84,7 @@ bao dang chuan bi thi no tu doi, ban khong lam gi them.)
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1, theo
 khung o do. Chi dien CHU (hook, category, label, text/quote/attrib) va MA ANH
 (A1, A2...). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
-article_images.py/carousel.py/gui_telegram.py bang tay. Muon nhin anh thi mo DUNG MOT
+article_images.py/carousel.py/send_telegram.py bang tay. Muon nhin anh thi mo DUNG MOT
 tam bang_anh.png. Chu tieng Viet co dau, cau quote DICH sang tieng Viet.
 
 BUOC 3 — nop:
@@ -115,7 +115,7 @@ cd {goc} && venv/bin/python kite_prepare.py {draft_id}
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1 (6..10
 slide, slide 1 la cover, 6 kind: cover/statement/steps/loop/figure/cta). Chi
 dien CHU + theme/hero + ma hinh that (neu dung). KHONG mo tung slide ra xem,
-KHONG doc reference, KHONG chay render_edu.py/gui_telegram.py tay.
+KHONG doc reference, KHONG chay render_edu.py/send_telegram.py tay.
 
 BUOC 3 — nop:
 cd {goc} && venv/bin/python kite_submit.py {draft_id}
@@ -126,7 +126,7 @@ chay lai DUNG lenh nay (toi da 2 lan). {ket_thuc} GUI DUNG MOT LAN: khong sinh a
 
 # {persona} = ten script cua NGUOI VIET bai nay ("miles" | "jika") — tu 10/09/2026
 # co hai vai viet (LOW-13), nen hai dong lenh trong body khong con go cung ten
-# Miles duoc nua. duyet_chon_tin dien khoa nay tu slug vai viet da chot.
+# Miles duoc nua. approve_pick dien khoa nay tu slug vai viet da chot.
 WRITER_BODY = """Bai goc: {title}
 Link: {link}
 Nguon: {source_note}

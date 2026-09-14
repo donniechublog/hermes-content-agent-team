@@ -18,7 +18,7 @@ from prepare.common import GNEWS, _domain
 
 def _js_browser() -> dict:
     """Cac doan JS chay trong trang. Dung ham (khong phai hang module) vi chung
-    ghep nguong/regex cua luat_anh tai thoi diem goi — doi luat_anh la doi JS."""
+    ghep nguong/regex cua image_rules tai thoi diem goi — doi image_rules la doi JS."""
     JS_TITLE = """() => ((document.querySelector('meta[property="og:title"]')||{}).content
                     || document.title || '')"""
     JS_TEXT = """() => ((document.querySelector('article') || document.querySelector('main')
@@ -97,7 +97,7 @@ def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
             continue
         image_rules.stamp_file(out, "chup_chart")
         # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
-        # anh_bai -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
+        # article_images -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
         ra["cands"].append({"anh": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
                             "og": False, "tu": "chup", "the": f["tag"], "trang": url,
                             "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "diem": 50})

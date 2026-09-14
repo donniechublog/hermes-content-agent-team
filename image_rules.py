@@ -39,8 +39,8 @@ from PIL import Image, ImageOps, ImageStat
 # Ong Chu: "bộ logo của Moonshot hay hình ảnh nhà sáng lập khó kiếm lắm hay sao
 # mà phải dùng cờ China?" — do that: mot anh bao Getty chup nghieng man hinh
 # App Store cua Kimi K3 (nen mo/bokeh, chu net) lot qua BA duong khac nhau
-# (`_lay_anh_trang`'s JS_FIG, `_vong_chup_nguon`, VA `anh_thuong_hieu.
-# cau_hoi_vision` nhanh "anh bo canh") truoc khi bi chan dung ca ba — vi moi
+# (`_take_image_page`'s JS_FIG, `_round_capture_source`, VA `image_brand.
+# sentence_ask_vision` nhanh "anh bo canh") truoc khi bi chan dung ca ba — vi moi
 # nhanh tu viet lai dieu kien "khong mo/nhoe" theo cach rieng, khong dong bo.
 # MOT cum duy nhat, moi cau hoi con mat chen vao ve "khong =" cua no.
 IMAGE_PHRASES_SCREENSHOT = (
@@ -64,16 +64,16 @@ def ratio_after_stack(r1: float, r2: float) -> float:
 
 def stack_fit_frame(r1, r2) -> bool:
     """Hai anh ti le rong/cao r1, r2 chong doc co ra khung 4:5..1:1 (nong
-    DUNG_SAI_TI_LE) khong. MOT ban cho ca ba noi truoc day tu tinh rieng: goi y
-    cap (`chuan_bi.manifest.cap_ghep`), cong chan (`dre_nop._giai_ghep`) va nguoi
-    dem slide (`schema.so_anh_dung_duoc`, LOW-46). Thieu ti le = khong ghep duoc."""
+    TOLERANCE_RATIO) khong. MOT ban cho ca ba noi truoc day tu tinh rieng: goi y
+    cap (`prepare.manifest.stackable_pairs`), cong chan (`dre_submit._resolve_stack`) va nguoi
+    dem slide (`schema.count_image_use_ok`, LOW-46). Thieu ti le = khong ghep duoc."""
     r1, r2 = float(r1 or 0), float(r2 or 0)
     if r1 <= 0 or r2 <= 0:
         return False
     return TI_LE_45 - TOLERANCE_RATIO <= ratio_after_stack(r1, r2) <= TI_LE_11 + TOLERANCE_RATIO
 SHORT_SIDE_MIN = 1000             # duoi nguong nay phong len 1080 se mem
 BRIGHT_BOTTOM_MAX = 150               # do sang trung binh 25% duoi anh (chi con dung
-                                 # lam ghi chu tham khao trong chuan_bi/nhin.py,
+                                 # lam ghi chu tham khao trong prepare/vision.py,
                                  # khong con la cong chan — kiem_day_sang da bo)
 CHART_FLAT = 0.85
 CHART_COUNT_COLOR = 220
@@ -144,7 +144,7 @@ def allows_landscape_crop(img):
 
     Day la mot UY QUYEN da ghi lai luc cat, tuong duong `crop_ok` khai trong
     spec — chi khac la no duoc dong dau ngay tai cho cat nen khong khai lai
-    duoc. `kiem_crop_ngang` nhan ca hai."""
+    duoc. `check_crop_landscape` nhan ca hai."""
     return _text(img).get("crop_ti_le", "").find("cat_ngang=1") >= 0
 
 
@@ -200,7 +200,7 @@ def is_chart(img):
     UOC LUONG, khong phai su that. Do thuc 04/09/2026 cho thay no BO SOT chart
     co duong mau khu rang cua: training-losses.png cua K2 Horizon ra 1176 mau
     nen bi cham la "khong phai chart", trong khi do dung la chart gay ra su co.
-    Vi vay `kiem_chart` chi dung ket qua nay theo MOT CHIEU — xem chu thich o do.
+    Vi vay `check_chart_integrity` chi dung ket qua nay theo MOT CHIEU — xem chu thich o do.
     """
     phang, so_mau = measure_chart_signal(img)
     return (phang >= CHART_FLAT and so_mau <= CHART_COUNT_COLOR), \
@@ -210,14 +210,14 @@ def is_chart(img):
 # ---- ANH RAC: MOT bo tu vung cho ca ba cho -----------------------------------
 #
 # Truoc 06/09/2026 co BA bo tu vung "anh rac" chong lan nhau ma khac han nhau:
-# `anh_bai.RAC` (favicon/avatar/1x1/gravatar/author...), `anh_chuan_bi.URL_RAC`
+# `article_images.JUNK` (favicon/avatar/1x1/gravatar/author...), `prepare.download_filter.URL_JUNK`
 # (quang cao/newsletter/wordmark...), va chuoi JS `XAU` chay trong browser. Anh
 # bi mot bo bat con hai bo kia cho qua, tuy no di duong nao vao — ma ba duong
 # deu do vao cung mot ho anh. Gio mot bo, ba noi dung chung.
 #
 # Tach lam hai vi chung tra loi hai cau hoi khac nhau:
-#   TU_RAC_URL  — "URL hay alt nay noi day la do trang tri" (dung o moi noi)
-#   TU_RAC_DOM  — them, chi co nghia khi soi VI TRI trong DOM (class/to tien):
+#   JUNK_WORDS_URL  — "URL hay alt nay noi day la do trang tri" (dung o moi noi)
+#   JUNK_WORDS_DOM  — them, chi co nghia khi soi VI TRI trong DOM (class/to tien):
 #                 mot tu nhu "header" trong URL khong noi len gi.
 JUNK_WORDS_URL = [
     # do trang tri cua trang
@@ -262,7 +262,7 @@ def js_junk_url_pattern() -> str:
 def js_junk_dom_pattern() -> str:
     """Regex JS cho CLASS/ID va to tien — tu vung URL cong tu vung DOM.
 
-    Tach khoi `js_rac_url` (06/09/2026) vi ban cu ap CUNG mot bo cho ca hai, ma
+    Tach khoi `js_junk_url_pattern` (06/09/2026) vi ban cu ap CUNG mot bo cho ca hai, ma
     bo do chua "gpt" (Google Publisher Tag) va "icon" — nen moi anh co "gpt"
     trong URL bi bo, tuc DUNG cac anh ve GPT-4/GPT-5, va "silicon" dinh "icon".
     Trong class cua mot the div thi "gpt" van la quang cao; trong ten tep anh
@@ -273,10 +273,10 @@ def js_junk_dom_pattern() -> str:
 
 # ---- NGUONG CHON/TAI ANH -----------------------------------------------------
 # Ba con so cho ba buoc KHAC NHAU, de canh nhau cho khoi tuong chung mau thuan:
-SHORT_SIDE_DOWNLOAD = 500        # buoc TAI (anh_chuan_bi): duoi muc nay khong buon tai
-AREA_DOWNLOAD = 120_000    # buoc XEP HANG ung vien (anh_bai): ~350x350
+SHORT_SIDE_DOWNLOAD = 500        # buoc TAI (image_prepare): duoi muc nay khong buon tai
+AREA_DOWNLOAD = 120_000    # buoc XEP HANG ung vien (article_images): ~350x350
 TAI_W_MIN, TAI_H_MIN = 600, 350   # buoc DOC DOM: bo anh nho ngay trong trang
-# CANH_NGAN_MIN (o duoi) la nguong CANH BAO luc NOP, khong phai luc tai: anh 700px
+# SHORT_SIDE_MIN (o duoi) la nguong CANH BAO luc NOP, khong phai luc tai: anh 700px
 # van co the la tam duy nhat co that, chan cung se mat tin.
 
 
@@ -320,15 +320,15 @@ def _file_md5(duong_dan) -> str:
 
 def dhash_threshold_for(im, nguong=6) -> int:
     """Nguong dHash hop voi LOAI anh: do hoa thi phai chat hon nhieu (xem
-    NGUONG_DO_HOA). Dung chung o buoc NOP (kiem_da_dung) va buoc TAI
-    (anh_chuan_bi khu trung ung vien)."""
+    THRESHOLD_GRAPHIC). Dung chung o buoc NOP (check_not_reused) va buoc TAI
+    (image_prepare khu trung ung vien)."""
     try:
         return THRESHOLD_GRAPHIC if is_chart(im)[0] else nguong
     except Exception:                                        # noqa: BLE001
         return nguong
 
 
-DATE_SMALL_IMAGE = 14      # cua so nho anh da dung, xem kiem_da_dung
+DATE_SMALL_IMAGE = 14      # cua so nho anh da dung, xem check_not_reused
 
 
 def _used_images_log():
@@ -342,7 +342,7 @@ def story_key(link: str) -> str:
     """Khoa on dinh cua MOT TIN (khong phai mot draft).
 
     Cung mot tin giao cho Dre roi giao cho Ethan ra HAI draft_id khac nhau
-    (duyet_chon_tin._draft_id ghep them vai-brand) nhung van la MOT tin va dung
+    (approve_pick._draft_id ghep them vai-brand) nhung van la MOT tin va dung
     CHUNG bo anh engine tai ve. So "anh da dung" khoa theo draft thi vai nop sau
     bi chan sach anh cua vai truoc — do 06/09/2026: Ethan mat toan bo 5-6 ma Dre
     da dung, khong nop duoc the nao."""
@@ -401,7 +401,7 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
 
     So theo dHash (gan giong <= 6 bit) chu khong theo ten/byte, vi cung mot tam
     tai lai tu bao khac se khac byte. Bo qua chinh draft nay (lam lai mot bai thi
-    duoc giu anh). Cua so NGAY_NHO_ANH — "trong phien" hieu la vai tuan gan day:
+    duoc giu anh). Cua so DATE_SMALL_IMAGE — "trong phien" hieu la vai tuan gan day:
     nguoi doc kenh nho anh lau hon mot ngay.
     """
     import json, time
@@ -416,7 +416,7 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
     # MIEN TRU ANH XEP HANG. Voi tin xep hang, BANG chinh la chu the: hai bai ve
     # hai model cung nam trong top mot bang se chup dung dai hang do, chi khac
     # khung khoanh vang — dHash coi la trung. Luc do cong nay chan anh XH, con
-    # cong "TIN XEP HANG phai dung anh XH" o dre_nop/ethan_nop lai chan moi anh
+    # cong "TIN XEP HANG phai dung anh XH" o dre_submit/ethan_submit lai chan moi anh
     # KHAC: hai loi loai tru nhau, vai sua kieu gi cung sai roi tac (do
     # 06/09/2026). Lap lai bang xep hang la DUNG, khong phai loi.
     try:
@@ -427,7 +427,7 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
         pass
     moc = time.time() - DATE_SMALL_IMAGE * 86400
     tin = story_key(link)
-    # Nguong theo LOAI anh (xem NGUONG_DO_HOA). md5 van chan tuyet doi: cung
+    # Nguong theo LOAI anh (xem THRESHOLD_GRAPHIC). md5 van chan tuyet doi: cung
     # mot tap tin thi trung that, khong can doan theo hinh.
     try:
         with Image.open(duong_dan) as _im:
@@ -482,12 +482,12 @@ FACE_EDGE_MAX = 1600            # canh dai nhat dua vao YuNet; lon hon thi thu n
 def _load_yunet():
     """Nap lazy model YuNet, dung mot lan cho ca doi tien trinh.
 
-    Khoa bang _YUNET_LOCK (audit_content_team B2): `phan_loai` gio duoc
-    anh_chuan_bi._nhin_anh goi tu nhieu luong cung luc qua ThreadPoolExecutor.
+    Khoa bang _YUNET_LOCK (audit_content_team B2): `classify` gio duoc
+    prepare.vision._seen_image goi tu nhieu luong cung luc qua ThreadPoolExecutor.
     Khong khoa thi luong A dat _YUNET_DA_THU=True TRUOC khi gan xong _YUNET —
     `import cv2` va doc file .onnx o giua co the nha GIL — nen luong B doc co
     thay True nhung _YUNET con None, tra ve None nham nhu may thieu cv2/model
-    du thuc ra co day du. Hau qua im lang: dem_mat() bao 0 mat, cong mat nguoi
+    du thuc ra co day du. Hau qua im lang: count_faces() bao 0 mat, cong mat nguoi
     (LUAT_ANH §6) tu tat theo may rui thu tu luong thay vi theo may that su co
     cv2 hay khong.
     """
@@ -536,7 +536,7 @@ def count_faces(path):
         # ngoai le Python nao bat duoc) voi anh 9440x5310 — do tung anh trong tien
         # trinh rieng tren may chu: 7/8 anh cua draft t_24b214a6 ok, A2.png 50MP
         # chet -11 ngay ca khi chay MOT MINH. Tu do ca engine chet, khoa mo coi,
-        # vai chay lai 16 lan. Model dung o 320px nen thu ve MAT_CANH_MAX khong
+        # vai chay lai 16 lan. Model dung o 320px nen thu ve FACE_EDGE_MAX khong
         # mat mat nao dang ke; INTER_AREA de thu nho khong ra rang cua.
         if max(h, w) > FACE_EDGE_MAX:
             ty = FACE_EDGE_MAX / max(h, w)
@@ -570,7 +570,7 @@ def is_blank_image(img):
 
 
 def check_blank_image(nhan, img):
-    """Anh rong (trang tron / mot mau) -> CHAN. Goi TRUOC kiem_chart, neu khong
+    """Anh rong (trang tron / mot mau) -> CHAN. Goi TRUOC check_chart_integrity, neu khong
     thong bao se la "chart thieu co" thay vi "anh khong co gi"."""
     rong, mo_ta = is_blank_image(img)
     if rong:
@@ -624,7 +624,7 @@ def check_chart_integrity(nhan, img, khai_chart, la_bia=False):
 def check_chart_standalone(nhan, img, da_ghep=False):
     """Chart di MOT MINH vao mot khung dat CHU DE LEN anh phu kin -> CHAN.
 
-    Khac `kiem_chart` (do la chuyen khai co "chart": true cho slide than). Cong
+    Khac `check_chart_integrity` (do la chuyen khai co "chart": true cho slide than). Cong
     nay danh cho khung kieu hero/bia: anh phu kin va mot man toi an ~40% day de
     chu doc duoc. Chart nam mot minh o do la mat nua duoi cua chinh no — truc x,
     chu thich, dong nguon. Chart phai NGUYEN VEN va TRAI FULL BE NGANG.
@@ -650,10 +650,10 @@ def check_chart_standalone(nhan, img, da_ghep=False):
 def check_aspect_ratio(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=TOLERANCE_RATIO, img=None):
     """Anh phai nam trong dai 4:5..1:1 (anh ghep doc roi vao giua dai nay).
 
-    MIEN TRU anh xep hang, y nhu kiem_chart/kiem_chart_mot_minh da mien: voi tin
+    MIEN TRU anh xep hang, y nhu check_chart_integrity/check_chart_standalone da mien: voi tin
     xep hang thi bang la CHU THE cua tin, duoc dan full be ngang nguyen ven ke ca
     o bia. Truoc 06/09/2026 cong nay khong mien, nen Dre ket hai dau: cong cua
-    dre_nop BAT BUOC bia la anh XH, con carousel lai chan chinh anh do vi ti le
+    dre_submit BAT BUOC bia la anh XH, con carousel lai chan chinh anh do vi ti le
     (bang desktop hay ra 1.1-1.5, bang chup khung mobile ra 0.3-0.5; ca hai deu
     ngoai dai 4:5..1:1). Tro treu la chi THE DU PHONG (1200x1500 = 0.8) lot qua."""
     r = w / h
@@ -662,7 +662,7 @@ def check_aspect_ratio(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=TOLERAN
     if img is not None and is_ranking_image(img):
         return [], []
     if r >= LANDSCAPE_CLEAR:
-        # Anh NGANG: crop_ti_le tu choi cat be ngang (can --cat-ngang), va cat
+        # Anh NGANG: crop_ratio tu choi cat be ngang (can --cat-ngang), va cat
         # be ngang cung la sai huong — mat truc/nhan/cot cuoi. Dan thang sang
         # hai duong dung, dung goi y crop truoc.
         return [f"{nhan}: ti le {w}x{h} ({r:.2f}) khong nam trong 4:5..1:1. Anh "
@@ -683,7 +683,7 @@ def check_crop_landscape(nhan, img, w, h, crop_ok=None):
     Chart / bang / slide bi crop ve 4:5 la mat tieu de, mat truc, doc ra vo nghia.
     Chi anh chup nguoi/san pham KHONG co chu moi duoc crop, va co hai cach uy
     quyen: khai "crop_ok" trong spec, HOAC cat bang `crop_ratio.py --cat-ngang`
-    (co do dong dau vao PNG, xem `doc_cat_ngang`).
+    (co do dong dau vao PNG, xem `allows_landscape_crop`).
     """
     goc = read_crop_trace(img)
     if goc and goc[0] / goc[1] >= LANDSCAPE_CLEAR and not crop_ok and not allows_landscape_crop(img):

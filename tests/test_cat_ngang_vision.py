@@ -116,7 +116,7 @@ def test_hong_vision_giu_cau_dieu_kien_cu_khong_chan_writer():
         assert any("NẾU" in d for d in a["dung"]), "vision hong thi giu cau dieu kien cu, khong tu quyet dinh thay writer"
 
 
-from prepare.vision import classify  # noqa: E402  (import sau de mock luat_anh o test rieng khong dinh)
+from prepare.vision import classify  # noqa: E402  (import sau de mock image_rules o test rieng khong dinh)
 
 
 if __name__ == "__main__":

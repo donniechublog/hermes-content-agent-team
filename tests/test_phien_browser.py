@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Một phiên Chromium dùng chung cho cả một bài (issue B4).
 
-Truoc 09/09/2026 mot bai co the mo toi BON tien trinh Chromium: nap_nguon (giai
+Truoc 09/09/2026 mot bai co the mo toi BON tien trinh Chromium: load_source (giai
 link Google News), browser_pass, va xep_hang chup hai lan. Tep nay giu ba tinh
 chat cua phien dung chung:
 
@@ -177,7 +177,7 @@ def test_context_dong_ca_khi_than_nem():
         _go()
 
 
-# ------------------------------------------------------------ phien_hoac_moi
+# ------------------------------------------------------------ session_or_new
 def test_khong_truyen_phien_thi_tu_mo_va_TU_DONG():
     _gia()
     try:

@@ -37,7 +37,7 @@ import scan_submit                                              # noqa: E402
 from tam import bat_buoc_tam                                 # noqa: E402
 
 
-# Nguyen van stderr cua manifest_ghi trong su co 12/09/2026 (rut gon).
+# Nguyen van stderr cua manifest_write trong su co 12/09/2026 (rut gon).
 CANH_MAT_TIN = "[bo qua] muc 1: k=#15 ngoai danh sach 1..80"
 CANH_MAT_DAU = ("[canh bao] muc 1 title tieng Viet mat dau (AI, dat, doanh): "
                 "Moonshot AI (Kimi) dat muc tieu 2 ty USD doanh thu nam")
@@ -63,14 +63,14 @@ def test_loi_chan_gui_khong_chan_canh_bao_script_da_tu_xu():
 
 
 class _KetQua:
-    """Gia lap CompletedProcess cua manifest_ghi/manifest_build."""
+    """Gia lap CompletedProcess cua manifest_write/manifest_build."""
 
     def __init__(self, stdout="", stderr="", returncode=0):
         self.stdout, self.stderr, self.returncode = stdout, stderr, returncode
 
 
 def _chay_main(tmp, stderr, stdout=None, manifest=None):
-    """Chay scan_submit.main() cho Vera voi ket qua manifest_ghi gia lap.
+    """Chay scan_submit.main() cho Vera voi ket qua manifest_write gia lap.
 
     Tra ve (ma thoat, danh sach lan goi gui). `gui` bi thay bang ban ghi nhan
     de test khong dung toi Telegram."""
@@ -119,7 +119,7 @@ def test_quet_nop_van_gui_khi_chi_co_canh_bao_nhe():
 
 
 def test_quet_nop_ghim_manifest_vua_gui():
-    """Ghim de duyet_chon_tin doc so thu tu tren dung ban da gui."""
+    """Ghim de approve_pick doc so thu tu tren dung ban da gui."""
     with tempfile.TemporaryDirectory() as t:
         man = Path(t) / "vera_candidates_2026-09-12.json"
         man.write_text("{}", encoding="utf-8")
@@ -130,7 +130,7 @@ def test_quet_nop_ghim_manifest_vua_gui():
 
 
 def test_duong_manifest_doc_duoc_ca_hai_kieu_stdout():
-    """manifest_ghi in `<duong dan>`, manifest_build in `da ghi N muc -> <...>`."""
+    """manifest_write in `<duong dan>`, manifest_build in `da ghi N muc -> <...>`."""
     with tempfile.TemporaryDirectory() as t:
         man = Path(t) / "nova_candidates_2026-09-12.json"
         man.write_text("{}", encoding="utf-8")
@@ -182,7 +182,7 @@ def test_luu_mid_nho_moi_manh_cua_bao_cao_dai():
 
 # ====================================== 3 + 4. cong reply va manifest da gui
 def _dat_mid(tmp, **noi_dung):
-    """Ghi bao_cao_mid.vera.json va tro STATE_DIR cua duyet_chon_tin vao tmp."""
+    """Ghi bao_cao_mid.vera.json va tro STATE_DIR cua approve_pick vao tmp."""
     import approve_pick as dct
     d = Path(tmp)
     (d / "bao_cao_mid.vera.json").write_text(json.dumps(noi_dung), encoding="utf-8")

@@ -2,7 +2,7 @@
 """`hermes_adapter` đọc profiles/<vai>/state.db — mặt ghép nối thứ 6 với hermes
 (audit lượt 2, ADF-r2-3).
 
-Trước đây theo_doi_9router (bảng `session_model_usage`) và ada_chuan_bi (bảng
+Trước đây monitor_9router (bảng `session_model_usage`) và ada_prepare (bảng
 `sessions`) đọc thẳng bằng SQL thô, `except: continue` — hermes đổi một cột là
 nhật ký và brief của Ada hỏng câm sau `hermes update`. Nay hai câu SELECT nằm
 trong adapter, cột dùng khai ở `_COT_DUNG_MODEL`/`_COT_PHIEN`, và
@@ -81,7 +81,7 @@ def test_state_db_cac_profile_liet_ke_dung_home():
 
 
 def test_cot_adapter_khop_kiem_hermes():
-    """Adapter va kiem_hermes la HAI bang chep tay — lech nhau la kiem_hermes
+    """Adapter va check_hermes la HAI bang chep tay — lech nhau la check_hermes
     xanh tren server ma adapter vo (dung loi review Fable bat o C2)."""
     assert set(ha._COT_DUNG_MODEL) == set(check_hermes.COLUMN_CAN_STATE["session_model_usage"])
     assert set(ha._COT_PHIEN) == set(check_hermes.COLUMN_CAN_STATE["sessions"])

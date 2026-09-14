@@ -30,8 +30,8 @@ HERMES_HOME = str(env_load.hermes_home())
 # Nhan ngoai cac topic nay (vd General) di vao profile mac dinh. Phai co du cho
 # MOI topic trong state/topics.<brand>.json; thieu mot cai thi chat trong topic
 # do roi ve profile mac dinh.
-# Dan xuat tu ban dang ky vai.py (audit lượt 2, ADF-r2-2): truoc day la bang 12
-# dong chep tay — them vai o vai.py ma quen day thi chat trong topic cua vai moi
+# Dan xuat tu ban dang ky role.py (audit lượt 2, ADF-r2-2): truoc day la bang 12
+# dong chep tay — them vai o role.py ma quen day thi chat trong topic cua vai moi
 # roi ve profile mac dinh, IM LANG. tests/test_vai.py giu hai ben khop.
 import role as _vai                                            # noqa: E402
 TOPIC_PROFILE = {v.slug: v.slug for v in _vai.ROLE.values()}
@@ -77,7 +77,7 @@ def route(thread_id, topics: dict) -> tuple:
     """Tra ve (profile, ten_phien) cho topic nay."""
     by_id = {v: k for k, v in topics.items()}
     key = by_id.get(thread_id)
-    # `slug_that` bac cau slug role cu (LOW-14): `state/topics.json` cua che do
+    # `canonical_slug` bac cau slug role cu (LOW-14): `state/topics.json` cua che do
     # don con nguyen khoa cu, va khong khop o day la chat roi ve profile mac
     # dinh trong IM LANG — dung cai hong ma khoi comment tren canh bao.
     profile = TOPIC_PROFILE.get(key) or TOPIC_PROFILE.get(_vai.canonical_slug(key or ""))
@@ -235,6 +235,6 @@ def ask(profile, session, text, timeout=TIMEOUT_SEC, hint=True, thu_lai=2,
 
 
 def clean(text: str) -> str:
-    """Bo ma mau ANSI. KHONG cat noi dung nua — tin dai duoc `chia_tin` tach
+    """Bo ma mau ANSI. KHONG cat noi dung nua — tin dai duoc `split_message` tach
     thanh nhieu tin (xem handle_chat), nen reply khong con bi mat phan cuoi."""
     return tele_util.drop_ansi(text)

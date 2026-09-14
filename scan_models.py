@@ -41,7 +41,7 @@ import scan_common                                            # noqa: E402
 import env_load
 
 STATE = env_load.state_dir() / "models_seen.json"
-UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 
 OPENROUTER = "https://openrouter.ai/api/v1/models"
 # CATALOG cua HERMES (tai lieu cua hermes-agent), KHONG phai catalog cua
@@ -96,7 +96,7 @@ RANK_CHINA = {"deepseek", "moonshot", "moonshotai", "qwen", "alibaba", "zai", "z
 BIG = 9007199254740991          # arena dung so nay lam "khong xep hang"
 
 
-_get = scan_common.get                  # mot ban duy nhat, xem quet_chung
+_get = scan_common.get                  # mot ban duy nhat, xem scan_common
 
 
 def region_of(org: str) -> str:
@@ -189,8 +189,8 @@ def fetch_catalog() -> list:
 
 # ---------- nguon 3: bang xep hang arena ----------
 
-# Bang arena doc tu BAN DANG KY dung chung (bang_model): khoa, duong dan API,
-# nhan in. Xem bang_model.py cho ly do gom.
+# Bang arena doc tu BAN DANG KY dung chung (model_boards): khoa, duong dan API,
+# nhan in. Xem model_boards.py cho ly do gom.
 ARENA_BOARDS = model_boards.ARENA_BOARDS
 
 
@@ -1134,7 +1134,7 @@ def main():
     ap.add_argument("--out", help="Ghi JSON ra tep thay vi in ra man hinh")
     ap.add_argument("--khong-bat-buoc", action="store_true",
                     help="Van GIEO muc bat buoc, chi khong IN lai o cuoi bao cao. "
-                         "quet_chuan_bi dung co nay vi brief da in danh sach do "
+                         "scan_prepare dung co nay vi brief da in danh sach do "
                          "mot lan roi (ngoai vung cat) — in hai lan ton 5.600 ky "
                          "tu dung o duoi day, tuc chinh no bi cat truoc tien.")
     a = ap.parse_args()
@@ -1156,7 +1156,7 @@ def main():
             _try, "anthropic", lambda: fetch_anthropic(a.ngay), [])
         f_gh = ex.submit(_try, "github", lambda: fetch_github(a.ngay), [])
         # Cac bang tra (rows, ngay): gom MOT dict, khoa = khoa trong ban dang ky
-        # (bang_model). Truoc 07/09/2026 moi bang la mot cap bien rieng (`lb,
+        # (model_boards). Truoc 07/09/2026 moi bang la mot cap bien rieng (`lb,
         # lb_ngay`...) roi duoc chep tay vao `bang_so` va `ket` — them bang o day
         # ma quen `ket` thi bao cao im lang thieu bang do, va `hong` khong bat vi
         # `bang_so` van co no.
@@ -1297,7 +1297,7 @@ def main():
     write_timestamp(tat_ca | cu, hang_moi, da_bao)
     write_required(ra_mat_aa, leo_hang, moi, hf)
     if not a.khong_bat_buoc:
-        # In ra STDERR, khong phai stdout: `quet_chuan_bi` chep nguyen stdout vao
+        # In ra STDERR, khong phai stdout: `scan_prepare` chep nguyen stdout vao
         # brief roi TU in danh sach bat buoc mot lan nua — Nova doc hai ban cua
         # cung mot danh sach, va ban in tu day con mang cau luat CU ("script ghi
         # manifest se tu choi neu thieu") mau thuan voi luat that tu 05/09
@@ -1314,7 +1314,7 @@ LABEL_BOARD = model_boards.LABEL_BOARD
 
 
 # Tran in an. Do 06/09/2026: o trang thai production (arena song + co moc cu de
-# so hang) bao cao ra 13.635 ky tu, trong khi brief cua quet_chuan_bi cat o
+# so hang) bao cao ra 13.635 ky tu, trong khi brief cua scan_prepare cat o
 # 12.000 — tuc LIVEBENCH va OPENROUTER USAGE bi nuot mat truoc khi Nova nhin
 # thay, va khong co dau hieu nao bao la da cut. Ba muc duoi day truoc do KHONG
 # CO CAN TREN, mot ngay xau la nuot sach phan duoi bao cao.
@@ -1447,12 +1447,12 @@ def _in_report(k: dict, ngay: int):
 
     # ---- Bang xep hang: tu day tro xuong la BOI CANH, khong phai tin moi. Giu
     # 5 dong/bang co chu dich — muc tren (ra mat / leo hang) moi la thu Nova
-    # phai dua, va bao cao co TRAN 12.000 ky tu o brief cua quet_chuan_bi.
+    # phai dua, va bao cao co TRAN 12.000 ky tu o brief cua scan_prepare.
     print(f"\n\n########## BANG XEP HANG — {COUNT_BOARD} bang, top {CEILING_BOARD} "
           "moi bang (boi canh de xep thu tu, khong phai tin) ##########")
 
     # MOT vong cho ca 21 bang in theo khuon chung, doc tu ban dang ky
-    # (`bang_model.BANG`, thu tu trong do CHINH LA thu tu in). Truoc 07/09/2026
+    # (`model_boards.BOARD`, thu tu trong do CHINH LA thu tu in). Truoc 07/09/2026
     # day la 21 loi goi viet tay, moi cai tu ghi lai tieu de, hau to diem va cot
     # phu — them mot bang la them mot doan lap va mot co hoi lech dinh dang.
     for b in model_boards.BOARD:

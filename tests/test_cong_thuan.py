@@ -34,7 +34,7 @@ def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
 
 
 def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
-    """Su co 06/09/2026: "3, 4 - Kites" (Ong Chu go so nhieu) bi doc_lenh_chon tu
+    """Su co 06/09/2026: "3, 4 - Kites" (Ong Chu go so nhieu) bi read_pick_command tu
     choi CA lenh vi "kites" khong khop NAME_BRIGHT_CAP -> roi ve hoi thoai, gui
     nham cho Finn (topic scout) thay vi tao task cho Kite."""
     from approve_pick import read_pick_command

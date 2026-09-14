@@ -3,7 +3,7 @@
 
 Trước: readlines() cả tệp (500 MB → ~650 MB peak), rồi open('w') cắt tệp về 0
 trước khi ghi lại — chết giữa chừng (hết đĩa, kill) là MẤT SẠCH nhật ký, trong
-khi luat_anh/gui_telegram đang append vào chính tệp đó từ tiến trình khác.
+khi image_rules/send_telegram đang append vào chính tệp đó từ tiến trình khác.
 `--keep-lines 0` thì lines[-0:] là cả tệp: không xoá gì mà vẫn báo "xóa N dòng".
 
 Chạy:  venv/bin/python tests/test_cleanup.py

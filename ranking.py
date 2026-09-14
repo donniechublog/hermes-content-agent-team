@@ -30,8 +30,8 @@ import env_load                                              # noqa: E402
 
 DPR = 2
 UA = env_load.UA_BROWSER        # mot ban duy nhat, xem env_load (A5)
-# Khung MOBILE — thu TRUOC cho MOI nguon. Hang so nam o `phien_browser` (dung
-# chung voi chup_trang.py tu 12/09/2026); o day chi giu PHEP DO rieng cua trang
+# Khung MOBILE — thu TRUOC cho MOI nguon. Hang so nam o `browser_session` (dung
+# chung voi capture_page.py tu 12/09/2026); o day chi giu PHEP DO rieng cua trang
 # xep hang. Do 06/09: 12/18 nguon co layout mobile that (arena x6, aa-models,
 # livebench, aider, livecodebench, hle, vellum); 6 nguon con lai (tbench,
 # swebench, bfcl, gaia, opencompass, openrouter) giu bang rong 892-1878px trong
@@ -48,7 +48,7 @@ TIME_LIMIT = 150                  # trần thời gian đi hết các nguồn (g
 RATIO_FIT = 1.5
 
 # ---- Registry nguồn xếp hạng --------------------------------------------------
-# Thu tu trong danh sach = uu tien khi tin khong goi y gi; `goi_y_nguon` chi xep
+# Thu tu trong danh sach = uu tien khi tin khong goi y gi; `suggest_sources` chi xep
 # lai thu tu nay, khong them nguon la.
 SOURCE = [
     {"ma": "arena-text",     "site": "ARENA.AI",  "bang": "Text Arena",
@@ -63,7 +63,7 @@ SOURCE = [
     # `doc_lap` (09/09/2026): bang nay do NANG LUC RIENG, khong phai mot cach do
     # khac cua cung mot thu — model tao anh gioi va model sua anh gioi la HAI
     # bang xep hang khac han (Ong Chu: "một bảng là top model tạo sinh, một bảng
-    # là top model chỉnh sửa, đâu có trùng lặp"). `tim_va_chup_nhieu` doc co nay
+    # là top model chỉnh sửa, đâu có trùng lặp"). `find_and_capture_many` doc co nay
     # de KHONG dung lai sau khi da chup duoc mot bang doc_lap khac — khac voi vi
     # du arena-code/swebench/aider/livecodebench duoi day: bon cai do la BON CACH
     # DO CUNG MOT NANG LUC (code), chup mot cai la du, chup them chi lap lai.
@@ -191,12 +191,12 @@ TOPIC = [
 # nhung chu co trong hau het tom tat cua Finn/Nova/Vera. Do that: 6/6 tieu de
 # goi von / doanh thu / gia chip deu bi dong dau TIN XEP HANG ("Reflection gọi
 # vốn 2 tỷ USD, vòng seed do Nvidia dẫn đầu"), keo theo ca chuoi hong ben duoi.
-# Gia tri `kieu` ma tim_va_chup / tim_va_chup_nhieu PHAT RA khi CHUP DUOC bang
+# Gia tri `kieu` ma find_and_capture / find_and_capture_many PHAT RA khi CHUP DUOC bang
 # that (bang, hai bang ghep, danh sach hang-the, nhan SVG). Chi "the" la the du
-# phong engine tu dung. LOW-21 (11/09/2026): manifest va nop_chung tung doi
+# phong engine tu dung. LOW-21 (11/09/2026): manifest va submit_common tung doi
 # `kieu == "chup"` — gia tri KHONG MOT nhanh nao o day phat ra — nen moi tin xep
 # hang deu bi brief goi la "THE DU PHONG" va cong ep bia XH chua tung chay; test
-# thi stub "chup" nen xanh gia. Nguoi doc hoi qua `la_chup`, khong so chuoi.
+# thi stub "chup" nen xanh gia. Nguoi doc hoi qua `is_capture`, khong so chuoi.
 KIND_CAPTURE = frozenset({"bang", "bang-ghep", "danh-sach", "danh-sach-ghep", "svg"})
 
 
@@ -235,7 +235,7 @@ _DUOI = (r"(?:Astra|Flash|Pro|Max|Mini|Nano|Ultra|Sol|Sonnet|Opus|Haiku|Fable|Th
          r"High|Low|Medium|XHigh|Vision|Code|Omni|Deep|Research|Horizon|Build|Experimental|Exp|"
          # Ten ma cua CAC BIEN THE cung ho hien tren mot bang xep hang (09/09/2026:
          # GPT-Image-2.5 Sunburst #1 va GPT-Image-2.5 Flare #2, CUNG mot bang Image
-         # Edit Arena). Thieu duoi nay thi tach_model dung o "GPT Image 2.5", khop
+         # Edit Arena). Thieu duoi nay thi extract_model dung o "GPT Image 2.5", khop
          # NHAP NHANG ca hai hang — khoanh dai dung hang nao tim thay truoc, sai
          # tin khi tin noi ve Flare ma engine khoanh Sunburst.
          r"Sunburst|Flare|"
@@ -266,7 +266,7 @@ def extract_model(tieu_de: str) -> list:
     "GPT-6 Astra (max) 55 điểm" -> ["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"]."""
     # Tieu de trang HuggingFace la "org/Model · Hugging Face": "deepseek-ai/"
     # dung truoc nen _MODEL bat "deepseek" (khong so, khong duoi) roi dung —
-    # _khoa_model ra rong va trang cong bo chinh chu KHONG BAO GIO duoc hoi
+    # _lock_model ra rong va trang cong bo chinh chu KHONG BAO GIO duoc hoi
     # (LOW-34, 12/09/2026: the DeepSeek-V4.1-Flash khong co anh tu deepseek.com).
     # Bo tien to repo truoc khi tim.
     tieu_de = re.sub(r"^\s*[\w.-]+/(?=[A-Za-z])", "", tieu_de or "")
@@ -327,10 +327,10 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
 
     Mỗi mục trả về mang thêm `duoc_nhac`: True khi CHÍNH TIN nhắc tới nguồn đó.
     Chụp được từ nguồn `duoc_nhac=False` nghĩa là ảnh nói về MỘT BẢNG KHÁC với
-    bảng trong tiêu đề — vẫn dùng được nhưng phải cảnh báo, xem `cau_xep_hang`
+    bảng trong tiêu đề — vẫn dùng được nhưng phải cảnh báo, xem `describe_ranking_image`
     trong image_prepare.py.
 
-    Mỗi mục còn giữ nguyên `doc_lap` nếu có (spread từ NGUON) — `tim_va_chup_nhieu`
+    Mỗi mục còn giữ nguyên `doc_lap` nếu có (spread từ NGUON) — `find_and_capture_many`
     đọc khoá này để biết nguồn nào đo NĂNG LỰC RIÊNG, không phải cách đo khác
     của cùng một thứ, nên cố lấy hết thay vì dừng ở thành công đầu tiên."""
     # Tieu de NAM TRONG chuoi do "nguon duoc nhac": tin hay goi thang ten trang
@@ -340,7 +340,7 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
     # BANG nao duoc nhac thi doc o TIEU DE / LINK / VIA — KHONG doc o than bai
     # (LOW-22): than bai ve mot model text hau nhu luon co chu "code", ma bay bang
     # arena chung mot ten mien nen truoc 12/09/2026 `duoc_nhac` = "co arena.ai
-    # o dau do" — ca 7 bang deu True, canh bao "BANG KHAC" trong cau_xep_hang
+    # o dau do" — ca 7 bang deu True, canh bao "BANG KHAC" trong describe_ranking_image
     # khong bao gio no. Nguon co `bang_re` thi phai KHOP bang moi la duoc nhac.
     nhac_bang = f"{tieu_de} {link} {via}".lower()
     diem, ra = {}, []
@@ -537,7 +537,7 @@ def _highlight(png: Path, x: float, y: float, w: float, h: float, dpr: int = DPR
 
 def _of_count(rows: list, idx: int, hdr_h: float) -> tuple:
     """[dau, cuoi] hàng đưa vào ảnh: trong top → từ hàng 1, sâu → từ idx-2, rồi
-    kéo xuống hết CAO_TOI_DA_CSS. Ông Chủ 06/09/2026: "chụp full chiều dài cũng
+    kéo xuống hết HEIGHT_MAX_CSS. Ông Chủ 06/09/2026: "chụp full chiều dài cũng
     chả vấn đề" — càng nhiều hàng quanh model càng tốt, chỉ chặn ở trần vì thẻ
     cao bấy nhiêu, chụp thêm cũng bị cắt."""
     n = len(rows)
@@ -619,7 +619,7 @@ def _capture_one_board(page, tim: dict, out: Path, dpr: int = DPR):
 
 def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool = False):
     """Chụp bảng chứa model, chọn bảng VỪA KHỔ nhất trang. Thử tối đa 3 bảng theo
-    thứ tự vừa khổ → nhiều hàng → hẹp, lấy bảng đầu ra rộng/cao ≤ TI_LE_VUA.
+    thứ tự vừa khổ → nhiều hàng → hẹp, lấy bảng đầu ra rộng/cao ≤ RATIO_FIT.
     Vẫn quá ngang thì thu hẹp cửa sổ trình duyệt cho bảng tự dồn cột (tbench ra
     3.2 nếu không làm)."""
     ung = page.evaluate(_JS_TIM, [models, HEIGHT_MAX_CSS, RATIO_FIT, vua_khung])
@@ -699,7 +699,7 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
 #      `.scrollTop` lẫn `mouse.wheel()` thật, chờ tới 3.6s mỗi lần, nội dung không
 #      đổi. (Có ô tìm kiếm riêng để nhảy tới model sâu, nhưng lái nó qua Playwright
 #      không ổn định giữa các lần tải.) Nên: model không có trong danh sách đầu thì
-#      trả None, `tim_va_chup` rơi về bảng desktop — tìm được ở bất kỳ hạng nào.
+#      trả None, `find_and_capture` rơi về bảng desktop — tìm được ở bất kỳ hạng nào.
 #   2. Không có thẻ ngữ nghĩa (không <tr>, không role=row), chỉ là <div> + class
 #      Tailwind. Nhận diện TỔNG QUÁT (nhóm anh em cùng cha cùng chuỗi class, >=5
 #      phần tử, kích thước dạng một hàng) thay vì khoá cứng một chuỗi class — đo
@@ -770,7 +770,7 @@ const khungCuonDs = el => { for (let e = el; e; e = e.parentElement) {
 
 # `cuon=true`: dua hang model vao giua khung nhin roi do; `false`: chi do lai.
 # `cot`: -1 = nhom chua model; >=0 = nhom thu may trong cac nhom CUNG DANG (dung
-# de lay not cac cot con lai roi ghep doc, xem `chup_danh_sach`).
+# de lay not cac cot con lai roi ghep doc, xem `capture_list_clean`).
 _JS_DS = _JS_NORM_DS + """
 ([models, cuon, cot]) => {
   const els = cot >= 0 ? (nhomCungDang(models)[cot] || null) : timDanhSach(models);
@@ -832,7 +832,7 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
 
     Chụp dải hàng quanh model, khoanh hàng model. Cột quá ngang mà trang còn cột
     CÙNG DẠNG (openrouter dàn top-10 thành hai `<ol>` 5 hàng cạnh nhau, một cột
-    rộng/cao ~1.75) thì GHÉP DỌC các cột lại — cùng một cách `chup_bang` ghép hai
+    rộng/cao ~1.75) thì GHÉP DỌC các cột lại — cùng một cách `capture_board` ghép hai
     bảng, để ra khối dọc vừa khổ hero thay vì dải ngang."""
     # Trang KHONG co danh sach hang-the nao (tbench/swebench/gaia/opencompass chi
     # co <table>): ve NGAY. Khong bail som thi moi nguon nhu vay ngon tron 12s poll
@@ -980,7 +980,7 @@ class SessionCapture:
     """Mot phien chromium cho ca luot di nguon: hai context (mobile thu truoc, desktop
     lui ve) tao LAZY va dung lai giua cac nguon. Viewport desktop cao san bang
     tran cua so chup: khong doi kich thuoc giua chung, doi la trang reflow, bbox
-    do truoc do lech. Tach khoi tim_va_chup 07/09/2026 (118 dong, ba closure)."""
+    do truoc do lech. Tach khoi find_and_capture 07/09/2026 (118 dong, ba closure)."""
 
     def __init__(self, br):
         self.br = br
@@ -1031,7 +1031,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
         # (arena.ai tra 429 "Just a moment..." sau ~25 luot thu tu mot IP trong
         # mot gio — may local luc dev; server moi bai goi mot lan.)
         pg.wait_for_timeout(800)
-        # Phep thu nam o `phien_browser.bi_chan` tu 12/09/2026: `chup_trang` chup
+        # Phep thu nam o `browser_session.got_block` tu 12/09/2026: `capture_page` chup
         # khoi lead cung hoi dung cau nay, chep doi thi mot ben vá mà bên kia không.
         ly = got_block(pg.title() or "", resp.status if resp else None)
         if ly:
@@ -1063,7 +1063,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
 
 # Chup bang xep hang ep srgb de mau tat dinh giua cac lan chup — KHAC bo args
 # cua browser_pass/gnews, nen `PhienBrowser` giu tien trinh rieng cho bo nay
-# (xem phien_browser.py). Gop lam mot phai co y chot srgb cho ca engine.
+# (xem browser_session.py). Gop lam mot phai co y chot srgb cho ca engine.
 ARGS_CAPTURE = ("--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb")
 
 
@@ -1137,7 +1137,7 @@ def _skip_source(n: dict, da_chup_thuong: bool) -> bool:
     """Ham THUAN: co bo qua nguon `n` khong, khi DA co it nhat mot anh "thuong"?
 
     Tach rieng de test khong can Playwright — day la toan bo "luat chon" cua
-    `tim_va_chup_nhieu` (tran so luong `toi_da` va het gio nam o vong lap goi
+    `find_and_capture_many` (tran so luong `toi_da` va het gio nam o vong lap goi
     ham nay, khong phai o day). Nguon doc_lap khong bao gio bi luat nay chan —
     no do NANG LUC RIENG, thanh cong o nguon khac khong lam no "du roi".
     """
@@ -1146,7 +1146,7 @@ def _skip_source(n: dict, da_chup_thuong: bool) -> bool:
 
 def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                       hang_goi_y=None, in_log=print, toi_da: int = MAX_XH, phien_browser=None) -> list:
-    """Nhu `tim_va_chup`, nhung KHONG dung o thanh cong dau tien: nguon mang
+    """Nhu `find_and_capture`, nhung KHONG dung o thanh cong dau tien: nguon mang
     `doc_lap: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
     lay CA nguon do lan mot nguon "thuong" khac, khong coi thanh cong o nguon nay
     la "du roi". Nguon thuong (khong doc_lap) van dung o thanh cong dau tien nhu
@@ -1159,8 +1159,8 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
     bảng là top model tạo sinh, một bảng là top model chỉnh sửa, đâu có trùng
     lặp"*. Dung y: khong tu gioi han khi cac nguon KHONG trung nhau.
 
-    Ham nay TACH KHOI `tim_va_chup` (khong sua ham do) de khong doi hop dong tra
-    ve dict don cua cac noi da goi no (`_xep_hang_boi_canh`, CLI `main()`).
+    Ham nay TACH KHOI `find_and_capture` (khong sua ham do) de khong doi hop dong tra
+    ve dict don cua cac noi da goi no (`_ranking_context_edge`, CLI `main()`).
 
     Tra danh sach KHONG RONG — thẻ dự phòng (1 phan tu) khi khong nguon nao
     chup duoc."""

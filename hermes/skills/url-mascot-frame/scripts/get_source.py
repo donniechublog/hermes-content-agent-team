@@ -140,17 +140,17 @@ def screenshot(url: str, out: str) -> bool:
     """High-DPR (Retina) screenshot fallback for pages that are not a single
     image. Returns True if it produced a non-empty file.
 
-    Was `node screenshot.js`; now `chup_trang.py` (Playwright via Python) so the
+    Was `node screenshot.js`; now `capture_page.py` (Playwright via Python) so the
     server needs no Node runtime at all — audit A6."""
     try:
         if str(GOC_REPO) not in sys.path:
             sys.path.insert(0, str(GOC_REPO))
-        import chup_trang
+        import capture_page
     except Exception as e:                                   # noqa: BLE001
-        print(f"[get_source] khong nap duoc chup_trang: {type(e).__name__}: {e!r}",
+        print(f"[get_source] khong nap duoc capture_page: {type(e).__name__}: {e!r}",
               file=sys.stderr)
         return False
-    return chup_trang.chup(url, out)
+    return capture_page.capture(url, out)
 
 
 def _og_image_url(page_html: str, base: str):

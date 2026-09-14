@@ -7,8 +7,8 @@ xếp hạng": *"đã làm social media thì làm gì có chuyện bị giới h
 liệu"*, và hai bảng ví dụ *"một bảng là top model tạo sinh, một bảng là top
 model chỉnh sửa, đâu có trùng lặp"*. `ranking.find_and_capture_many` (test riêng
 ở tests/test_xep_hang.py) lo phần CHỤP; tệp này test phần MANG VÀO MANIFEST —
-`image_prepare._gom_va_tai_anh` gắn mã XH/XH2, `dung_manifest` gộp vào
-goi_y_bia/so_xep_hang, `dong_brief_xep_hang` nói cho vai biết có tấm thứ hai.
+`image_prepare._gather_and_download_image` gắn mã XH/XH2, `build_manifest` gộp vào
+goi_y_bia/so_xep_hang, `ranking_brief_line` nói cho vai biết có tấm thứ hai.
 
 Chay:  venv/bin/python tests/test_xep_hang_nhieu.py
 """
@@ -27,7 +27,7 @@ def _xh(bang, model, kieu="bang"):
 
 
 def _a(ma, xep_hang=None, dung=None, ti_le=0.8):
-    # Anh xep hang THAT (qua _nhin_anh) mang dung=["HERO / BÌA (...)", "thân
+    # Anh xep hang THAT (qua _seen_image) mang dung=["HERO / BÌA (...)", "thân
     # (chart)"] — CHU KHONG PHAI "bìa" tran. Neu de tran "bìa" thi comprehension
     # goi_y_bia (khop CHINH XAC phan tu list) doc trung no VOI ca prepend rieng
     # cho xhs, dem trung XH hai lan trong mot test bia dat sai gia dinh nay.
@@ -38,10 +38,10 @@ def _a(ma, xep_hang=None, dung=None, ti_le=0.8):
             **({"xep_hang": xep_hang} if xep_hang else {})}
 
 
-# -------------------------------------------------- _anh_muc_xep_hang: gan ma
-# `_gom_va_tai_anh` goi mang that (anh_bai, arxiv_hinh...) nen khong goi thang o
+# -------------------------------------------------- _image_item_ranking: gan ma
+# `_gather_and_download_image` goi mang that (article_images, arxiv_figures...) nen khong goi thang o
 # day — no chi la mot vong lap `for i, xh in enumerate(xhs): anh.insert(i,
-# _anh_muc_xep_hang(i, xh))` quanh ham thuan duoi, test dung ham thuan la du.
+# _image_item_ranking(i, xh))` quanh ham thuan duoi, test dung ham thuan la du.
 def test_anh_muc_xep_hang_danh_ma_dung_theo_vi_tri():
     """Ket qua dau (i=0) la 'XH' tran; cac ket qua sau danh so XH2, XH3... —
     khong duoc trung ma (tao anh + sua anh la hai bang KHAC nhau, ghi de len
@@ -71,7 +71,7 @@ def test_anh_muc_xep_hang_moi_tam_giu_rieng_bang_cua_no():
     assert muc[1]["xep_hang"]["model"] == "GPT-Image-2.5 Flare"
 
 
-# --------------------------------------------------------- dung_manifest
+# --------------------------------------------------------- build_manifest
 def test_dung_manifest_hai_bang_len_ca_hai_ma_goi_y_bia():
     anh = [_a("XH", _xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst")),
            _a("XH2", _xh("Image Edit Arena", "GPT-Image-2.5 Sunburst")),
@@ -81,7 +81,7 @@ def test_dung_manifest_hai_bang_len_ca_hai_ma_goi_y_bia():
                          True, {}, {}, False, 5)
     assert m["goi_y_bia"][:2] == ["XH", "XH2"], m["goi_y_bia"]
     assert m["so_xep_hang"] == 2, m["so_xep_hang"]
-    # m["xep_hang"] (so, dung boi cong chan can_anh_xep_hang) la bang DAU TIEN
+    # m["xep_hang"] (so, dung boi cong chan needs_ranking_image) la bang DAU TIEN
     assert m["xep_hang"]["bang"] == "Text-to-Image Arena", m["xep_hang"]
 
 
@@ -112,14 +112,14 @@ def test_dung_manifest_khong_bang_thi_khong_dinh_xh_vao_goi_y():
     assert "XH" not in m["goi_y_bia"] and m["so_xep_hang"] == 0
 
 
-# ------------------------------------------------------- dong_brief_xep_hang
+# ------------------------------------------------------- ranking_brief_line
 def test_brief_noi_ro_co_bang_thu_hai():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "ARENA.AI", "bang": "Text-to-Image Arena",
                       "model": "GPT-Image-2.5 Sunburst", "hang": 1, "kieu": "bang",
                       "duoc_nhac": True},
          "so_xep_hang": 2}
-    dong = cb.ranking_brief_line(m, "bìa", "dre_nop")
+    dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
     assert "XH2" in dong, dong
     assert "BẮT BUỘC" in dong
 
@@ -129,7 +129,7 @@ def test_brief_mot_bang_khong_nhac_xh2():
          "xep_hang": {"site": "ARENA.AI", "bang": "Text Arena", "model": "Kimi-K3",
                       "hang": 1, "kieu": "bang", "duoc_nhac": True},
          "so_xep_hang": 1}
-    dong = cb.ranking_brief_line(m, "bìa", "dre_nop")
+    dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
     assert "XH2" not in dong, dong
 
 

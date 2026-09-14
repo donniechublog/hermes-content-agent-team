@@ -39,19 +39,19 @@ import sys
 from pathlib import Path
 
 # ---- kho ra -----------------------------------------------------------------
-# Vector trong PDF phong to khong vo, nen cu render du to. RONG_MUC vuot 2160 =
+# Vector trong PDF phong to khong vo, nen cu render du to. EMPTY_ITEM vuot 2160 =
 # be ngang slide cua render_edu (1080) nhan DPR 2 luc chup, nen hinh khong bao
-# gio phai phong len. CANH_NGAN_MUC vuot luat_anh.CANH_NGAN_MIN (1000) de khoi
+# gio phai phong len. SHORT_SIDE_ITEM vuot image_rules.SHORT_SIDE_MIN (1000) de khoi
 # dinh canh bao "canh ngan, phong len se mem" luc nop — va bo xa hai nguong duoi
-# no: luat_anh.CANH_NGAN_TAI (500, duoi do anh_chuan_bi khong buon tai) va
-# render_edu.FIG_RONG_TOI_THIEU (800).
+# no: image_rules.SHORT_SIDE_DOWNLOAD (500, duoi do image_prepare khong buon tai) va
+# render_edu.FIG_EMPTY_MIN (800).
 EMPTY_ITEM = 2200
 SHORT_SIDE_ITEM = 1000
 ZOOM_MAX = 12.0
 ZOOM_MIN = 1.5
 # Bang ba dong rong het cot (Attention: 406x52pt = 7.8:1) dan len slide 4:5 chi
 # con mot vet ngang — dung duoc thi cung khong ai doc noi. Bo o day, dung de
-# buoc tai cua anh_chuan_bi lang le vut (canh ngan < 500).
+# buoc tai cua image_prepare lang le vut (canh ngan < 500).
 RATIO_MAX = 5.0
 
 COUNT_PAGE = 8                     # chi quet phan dau bai; phu luc toan prompt/bang phu
@@ -203,7 +203,7 @@ def region_figure(cap_khoi: tuple, khoi: list, ve: list, trang: tuple) -> tuple 
     # Cac moc chan co the: day cua tung khoi "than bai" phia tren chu thich, gan
     # nhat truoc. Thu lan luot chu khong chot ngay moc dau: so do hoa trong hinh
     # thuong co dong chu trai rong bang cot (hang o token cua BERT hinh 1) va
-    # cong `la_than_bai` cham nham no la than bai — chot ngay moc do thi anh chi
+    # cong `is_body_article` cham nham no la than bai — chot ngay moc do thi anh chi
     # con mot vet duoi cung cua hinh. Hinh nao con cham tran dai thi noi dai len.
     mocs = sorted({k[3] for k in khoi
                    if (is_annotation(k[4]) is not None
@@ -349,7 +349,7 @@ def download_pdf(url: str, timeout=40) -> bytes | None:
 
 
 def candidate(link: str, ra_dir) -> list:
-    """Hinh cua paper duoi dang UNG VIEN cua anh_chuan_bi (`tep` + `diem` + `alt`).
+    """Hinh cua paper duoi dang UNG VIEN cua image_prepare (`tep` + `diem` + `alt`).
 
     Diem cao hon moi ung vien khac (og:image ~90, chup figure 50, browser 45):
     hinh cua CHINH bai la bang chung goc, khong phai anh minh hoa muon o dau.
@@ -357,10 +357,10 @@ def candidate(link: str, ra_dir) -> list:
     tam dung lam hero.
 
     KHONG BAO GIO NEM: ham nay chay tren MOI tin arxiv/PDF, ngay giua
-    `chuan_bi()`. Nem la mat luon xong.json cua ca bai — dung loai su co da
-    xay ra voi `xep_hang.tim_va_chup` (05/09/2026) va rat de xay ra lai o day:
+    `prepare_article()`. Nem la mat luon xong.json cua ca bai — dung loai su co da
+    xay ra voi `ranking.find_and_capture` (05/09/2026) va rat de xay ra lai o day:
     `hermes update` dung lai venv chung tung lam mat `pymupdf` khoi no, ma
-    `boc()` va `arxiv_bia` deu import pymupdf.
+    `boc()` va `arxiv_cover` deu import pymupdf.
     """
     pdf_url = pdf_of_link(link)
     if not pdf_url:

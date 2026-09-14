@@ -4,8 +4,8 @@ YuNet, Playwright/Chromium, OPENAI_API_KEY, TELEGRAM_BOT_TOKEN hay khong.
 
 Vi sao (audit C1 diem 4): thieu tung thu nay khong lam engine crash NGAY o
 dau, ma chet cam lang o GIUA chung, rat xa cho thieu that su:
-- Thieu cv2               -> luat_anh._yunet() tra ve None, dem_mat()/
-                             kiem_mat_nguoi() lang le bao "khong kiem duoc",
+- Thieu cv2               -> image_rules._load_yunet() tra ve None, count_faces()/
+                             check_unnamed_face() lang le bao "khong kiem duoc",
                              cong mat nguoi (LUAT_ANH SS6) tu tat ma khong ai
                              biet.
 - Thieu file model .onnx  -> giong het thieu cv2 (_yunet() cung tra None),
@@ -16,7 +16,7 @@ dau, ma chet cam lang o GIUA chung, rat xa cho thieu that su:
                              capture_chart.py...) nem exception giua chung,
                              thuong sau khi da ton thoi gian/LLM cho cac buoc
                              truoc do roi.
-- Thieu OPENAI_API_KEY    -> vision (anh_chuan_bi._nhin_anh) tu tat, brief
+- Thieu OPENAI_API_KEY    -> vision (prepare.vision._seen_image) tu tat, brief
                              ghi "CHUA AI NHIN" ma khong dung engine lai.
 - Thieu TELEGRAM_BOT_TOKEN -> gui/duyet qua Telegram im lang khong gui duoc
                              (tru profile Bob, noi bien nay RONG la CO Y --
@@ -39,14 +39,14 @@ from pathlib import Path
 
 import env_load
 
-# Ten model YuNet phai KHOP CHINH XAC voi cai luat_anh._yunet() dung. Duong
-# dan thuc te lay tu luat_anh.__file__ trong kiem_yunet() (khong hardcode lai
-# ROOT o day) de khong bao gio lech neu luat_anh.py doi vi tri.
+# Ten model YuNet phai KHOP CHINH XAC voi cai image_rules._load_yunet() dung. Duong
+# dan thuc te lay tu image_rules.__file__ trong check_yunet() (khong hardcode lai
+# ROOT o day) de khong bao gio lech neu image_rules.py doi vi tri.
 NAME_MODEL_YUNET = "face_detection_yunet_2023mar.onnx"
 
 
 def check_cv2() -> tuple:
-    """`import cv2` co thanh cong khong -- luat_anh.dem_mat/kiem_mat_nguoi can no."""
+    """`import cv2` co thanh cong khong -- image_rules.count_faces/check_unnamed_face can no."""
     try:
         import cv2
     except Exception as e:
@@ -58,10 +58,10 @@ def check_cv2() -> tuple:
 
 
 def check_yunet() -> tuple:
-    """Model YuNet ma luat_anh._yunet() dung co nap duoc khong.
+    """Model YuNet ma image_rules._load_yunet() dung co nap duoc khong.
 
-    Goi THANG luat_anh._yunet() -- ham co gach duoi nhung Python khong chan
-    goi tu ngoai, va day la duong CHINH XAC ma dem_mat()/kiem_mat_nguoi() di
+    Goi THANG image_rules._load_yunet() -- ham co gach duoi nhung Python khong chan
+    goi tu ngoai, va day la duong CHINH XAC ma count_faces()/check_unnamed_face() di
     qua (khong mo phong lai logic, tranh lech nhau ve sau). Kiem file .onnx
     truoc de tach ro ly do: thieu FILE khac voi thieu cv2 (da co muc rieng o
     tren) -- ca hai deu lam _yunet() tra ve None nhu nhau nen tu no khong noi
@@ -70,7 +70,7 @@ def check_yunet() -> tuple:
     try:
         import image_rules
     except Exception as e:
-        return False, f"khong import duoc luat_anh: {type(e).__name__}: {e}"
+        return False, f"khong import duoc image_rules: {type(e).__name__}: {e}"
 
     model = Path(image_rules.__file__).resolve().parent / "assets" / NAME_MODEL_YUNET
     if not model.exists():
@@ -79,9 +79,9 @@ def check_yunet() -> tuple:
     try:
         det = image_rules._load_yunet()
     except Exception as e:
-        return False, f"loi khi goi luat_anh._yunet(): {type(e).__name__}: {e}"
+        return False, f"loi khi goi image_rules._load_yunet(): {type(e).__name__}: {e}"
     if det is None:
-        return False, ("luat_anh._yunet() tra ve None du file model co ton tai "
+        return False, ("image_rules._load_yunet() tra ve None du file model co ton tai "
                         "-- xem muc cv2 o tren")
     return True, ""
 
@@ -146,7 +146,7 @@ def check_telegram_token() -> tuple:
 
 ITEM_CHECK = [
     ("cv2 (opencv)", check_cv2),
-    ("model YuNet (luat_anh)", check_yunet),
+    ("model YuNet (image_rules)", check_yunet),
     ("Playwright + Chromium", check_chromium),
     ("OPENAI_API_KEY", check_openai_key),
     ("TELEGRAM_BOT_TOKEN", check_telegram_token),

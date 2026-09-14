@@ -24,8 +24,8 @@ def test_link_bing_rss_giai_ra_url_that():
 
 def test_loc_bai_bo_trung_bo_tong_hop_toi_da_moi_mien():
     items = [
-        ("https://www.msn.com/en-us/x", "msn tong hop"),                       # BO_MIEN
-        ("https://seekingalpha.com/news/1", "chan bot"),                       # BO_MIEN
+        ("https://www.msn.com/en-us/x", "msn tong hop"),                       # DROP_DOMAIN
+        ("https://seekingalpha.com/news/1", "chan bot"),                       # DROP_DOMAIN
         ("https://247wallst.com/a", "a"), ("https://247wallst.com/a", "a lap"),
         ("https://247wallst.com/b", "b"), ("https://247wallst.com/c", "c"),    # mien thu 3 -> bo
         ("https://www.engadget.com/x", "e"),
@@ -45,7 +45,7 @@ def test_og_tu_html_hai_thu_tu_thuoc_tinh_va_twitter():
 
 
 def test_ung_vien_dat_trang_bang_chinh_anh_de_qua_loc_ben_thu_ba():
-    """og:image gần như luôn trên CDN khác miền bài; tai_loc coi khác miền là
+    """og:image gần như luôn trên CDN khác miền bài; download_filter coi khác miền là
     quảng cáo. Ứng viên phải mang trang=ảnh và giữ bài gốc ở `bai`."""
     src = inspect.getsource(bt._og)
     assert '"trang": im' in src and '"bai": u' in src

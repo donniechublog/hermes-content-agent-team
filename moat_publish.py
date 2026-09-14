@@ -67,7 +67,7 @@ MAX_IMAGE = 10                # tran so anh mot bai cua moat
 
 # Nen anh truoc khi day. Uplink cua may nay ~50 KB/s, ma Cloudflare dung truoc
 # moat cat request sau 100 giay (loi 524) -- KHONG phai timeout cua httpx, nen
-# noi TIMEOUT_DAY bao nhieu cung vo ich: body chua di het thi ket noi da dut.
+# noi TIMEOUT_BOTTOM bao nhieu cung vo ich: body chua di het thi ket noi da dut.
 # Mot carousel 5 the PNG la ~7 MB (base64 ~9.7 MB, ~180 giay) => luon 524.
 # Cung bo the do sang WebP q90 con ~1.1 MB (~29 giay), qua duoi tran.
 # Chi nen the nao VUOT nguong; the nho de nguyen. Tat bang MOAT_NEN_ANH=0.

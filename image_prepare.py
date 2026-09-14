@@ -13,34 +13,34 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
      giai ma link Google News, lay tieu de tieng Anh, hoi Bing News RSS tim bao
      khac khi nguon mong (ghi nguoc vao nguon json de moi vai sau cung dung).
   2. ANH: mot phien chromium (chu bai, <img> lon, chup table/figure/canvas full
-     be ngang) + anh_bai (tinh) + Wikimedia Commons khi < 5 anh. Thieu thi tim
-     rong sang bao khac cung tin (_vong_tim_rong). Anh THAT cua chinh hang trong
+     be ngang) + article_images (tinh) + Wikimedia Commons khi < 5 anh. Thieu thi tim
+     rong sang bao khac cung tin (_round_widen_search). Anh THAT cua chinh hang trong
      tin (image_brand.py: logo, chan dung founder/CEO, tru so, campus) chay
      cho MOI tin co hang trong watchlist — du anh hay khong (10/09/2026). Van
      thieu nua thi anh khai niem cua chu de (image_concept.py: co nuoc, rack).
      Tai ve, bo trung (dHash), bo anh be, logo, co anh AI sinh.
-  3. DO va PHAN LOAI bang `luat_anh` + luat bo sung (nen trang >=45% & canh
+  3. DO va PHAN LOAI bang `image_rules` + luat bo sung (nen trang >=45% & canh
      >=8% -> chart): chart/anh chup, ti le, mat nguoi, day sang. Cat san
-     1:1/4:5 qua crop_ti_le (co dau vet), cap anh ngang ghep duoc (cung tone),
+     1:1/4:5 qua crop_ratio (co dau vet), cap anh ngang ghep duoc (cung tone),
      bang anh thu nho `bang_anh.png`.
-  4. TU LIEU: tu_lieu.gom (fallback chu tu browser cho trang JS) -> cau co so.
+  4. TU LIEU: material.gather (fallback chu tu browser cho trang JS) -> cau co so.
   5. Ghi `xong.json` (manifest role-neutral). Moi vai co tep rieng in BRIEF theo
      cach nhin cua vai do: dre_prepare.py, ethan_prepare.py, kite_prepare.py,
      miles_prepare.py — deu doc chung xong.json nay, khong lam lai.
 
-Tu 09/09/2026 (audit A1) than engine nam trong goi `chuan_bi/`, tach theo PHA;
-tep nay chi con `chuan_bi()` (noi 9 pha), `chay()` (khoa + idempotent) va CLI —
+Tu 09/09/2026 (audit A1) than engine nam trong goi `prepare/`, tach theo PHA;
+tep nay chi con `prepare_article()` (noi 9 pha), `run()` (khoa + idempotent) va CLI —
 nen cron, SOUL va cac vai KHONG phai doi lenh. Phu thuoc mot chieu:
 
-    chung  <- nguon, browser, tai_loc <- nhin <- vong_bu ;  manifest <- chung
+    common  <- source, browser, download_filter <- vision <- fallback_rounds ;  manifest <- common
 
-  prepare/chung.py     hang so, header HTTP, doc/ghi JSON, ten mien
-  prepare/nguon.py     nap nguon Finn/Vera, ung vien tinh/social, Commons
-  prepare/browser.py   phien Chromium, boc anh trong trang, giai link Google News
-  prepare/tai_loc.py   tai song song + loc rac/trung/do hoa, cat san
-  prepare/nhin.py      vision tung anh, do hinh hoc, quyet dinh dung o dau
-  prepare/vong_bu.py   ba vong bu khi kho mong (bao khac, xep hang, thuong hieu, khai niem)
-  prepare/manifest.py  bang anh, cau tu lieu, brief
+  prepare/common.py            hang so, header HTTP, doc/ghi JSON, ten mien
+  prepare/source.py            nap nguon Finn/Vera, ung vien tinh/social, Commons
+  prepare/browser.py           phien Chromium, boc anh trong trang, giai link Google News
+  prepare/download_filter.py   tai song song + loc rac/trung/do hoa, cat san
+  prepare/vision.py            vision tung anh, do hinh hoc, quyet dinh dung o dau
+  prepare/fallback_rounds.py   ba vong bu khi kho mong (bao khac, xep hang, thuong hieu, khai niem)
+  prepare/manifest.py          bang anh, cau tu lieu, brief
 
 Idempotent + khoa: `state/<brand>/chuan_bi/<draft_id>/` (xong.json, dang_chay.pid).
 `--lam-moi` de lam lai tu dau.
@@ -59,7 +59,7 @@ from pathlib import Path
 
 try:
     import fcntl                 # POSIX (server) — khoa tep that
-except ImportError:              # Windows (chay tay/test): xem `_cho_luot`
+except ImportError:              # Windows (chay tay/test): xem `_wait_for_slot`
     fcntl = None
 
 
@@ -85,8 +85,8 @@ from prepare.fallback_rounds import (  # noqa: E402
     _round_brand, _round_widen_search,
 )
 
-# MAT TIEN cua goi `chuan_bi`: nhung ten ma cac vai/test VAN goi qua
-# `anh_chuan_bi.X` sau khi tach goi (audit A1). Khai bao __all__ chu khong de
+# MAT TIEN cua goi `prepare`: nhung ten ma cac vai/test VAN goi qua
+# `image_prepare.X` sau khi tach goi (audit A1). Khai bao __all__ chu khong de
 # import "thua" lang le: pyflakes ton trong __all__, va danh sach nay chinh la
 # hop dong cong khai — them/bot o day la co y, khong phai vo tinh.
 #
@@ -110,7 +110,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     dong; doi chieu bang vet voi moi ham anh em thay bang ban gia (13 kich ban)."""
     import carousel
     title = meta.get("title", draft_id)
-    # MOT phien Chromium cho ca bai (audit B4): truoc day nap_nguon (giai link
+    # MOT phien Chromium cho ca bai (audit B4): truoc day load_source (giai link
     # Google News), browser_pass va xep_hang moi cho tu launch mot tien trinh —
     # toi BON lan cho mot bai. Phien mo LUOI nen `--khong-browser` khong ton
     # tien trinh nao, va giu tien trinh RIENG cho moi bo tham so (xep_hang ep
@@ -137,7 +137,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # chay chung cho ca ba vai dung anh nen Ethan (card.py, MOT anh la du)
         # cung bi doi 5 anh, roi ca day "thieu anh" ban cho Ethan cau hoi cua
         # carousel. `tom["vai_anh"]` da co san tu sidecar .img.json ngay tren
-        # (`_tom_tat_tu_img_json`), chi la truoc gio khong ai dung toi.
+        # (`_summary_from_img_json`), chi la truoc gio khong ai dung toi.
         vai_anh = role.canonical_slug(tom.get("vai_anh") or "")
         if vai_anh not in role.ROLE:
             # Chay tay, hoac sidecar mat/chua kip ghi. Khong im: nguong sai lam
@@ -151,7 +151,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         #   `toi_thieu`             — nguong CHAN: duoi no thi bai bi coi la
         #                             thieu anh, Ong Chu bi hoi, bai co the bi
         #                             day sang Kite.
-        #   `vai.du_nguyen_lieu()`  — CON PHAI DI TIM NUA KHONG.
+        #   `role.has_enough_material()`  — CON PHAI DI TIM NUA KHONG.
         # Cau thu hai truoc LOW-12 do bang so cua carousel (5, hay 8 voi tin
         # flagship) cho CA BA vai. Ong Chu 10/09/2026: *"cach lam anh cua Ethan
         # dau phai la carousel? nhung gi thuoc ve carousel ma lien quan toi Ethan
@@ -159,7 +159,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # image, nen 'so luong' ko the la thu ap vao duoc"*. Nay ban dang ky vai
         # tra loi: vai xep nhieu anh moi dem tam, vai mot anh chi hoi da co tam
         # nao dung lam anh chinh chua — tieu chi CHAT LUONG thi van dung chung o
-        # `luat_anh` + `phan_loai` cho ca ba.
+        # `image_rules` + `classify` cho ca ba.
         # Bo hau to site khoi tieu de dung de NHIN/tim hang (LOW-35): " · Hugging
         # Face" tung lam Hugging Face thanh "hang trong tin" cua mot tin DeepSeek.
         import article_sources
@@ -167,7 +167,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # THU TU (Ong Chu 13/09/2026): CHUP MAN HINH BAO CUNG TIN TRUOC, tim kiem
         # anh tren web sau. Mot tin hot co hang tram bao dua, moi bao mot anh hero
         # dung chu de san — chup ve roi dem nen la co slide, khong phai doan xem
-        # mot tam anh la tren mang co dinh dang gi. Truoc do `_vong_tim_rong`
+        # mot tam anh la tren mang co dinh dang gi. Truoc do `_round_widen_search`
         # (Yandex + og:image) chay truoc, la duong dai va de lac de hon han.
         if not role.has_enough_material(vai_anh, dung_duoc, flagship):
             anh, dung_duoc, chua_nhin = _round_capture_source(anh, link, trang, wd,
@@ -184,14 +184,14 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # kien thieu anh, nen tin nao bai goc du anh la khong bao gio hoi toi
         # Commons/Wikidata — ma vai bi cam tu tai them ("chi dung MA ANH"), nen bo
         # anh giao cho Dre trang tron du may moc da san. Tin khong nhac hang nao:
-        # `hang_trong_tin` tra rong va vong thoat ngay, khong mot request nao.
+        # `vendors_in_story` tra rong va vong thoat ngay, khong mot request nao.
         # Chi mang, chay ca khi --khong-browser; tran +4 anh nam trong vong.
         # So truyen vao chi dieu khien MOT thu trong vong do: nhanh mo browser di
         # chup bang xep hang lam boi canh. Voi vai mot anh no la 0 — mot cai chart
         # khong bao gio la nen hero duoc, di chup la tra tien browser lay mot tam
         # Ethan khong dung duoc.
         # `category` da duoc Finn/Vera gan tu luc quet va nam san trong meta —
-        # toi 12/09/2026 engine anh chua doc no o dau (loai_tin.py).
+        # toi 12/09/2026 engine anh chua doc no o dau (story_type.py).
         category = meta.get("category", "")
         anh, dung_duoc, chua_nhin = _round_brand(anh, tieu_de_nhin, tom.get("summary", ""),
                                                       wd, role.search_target_for(vai_anh, flagship),
@@ -245,7 +245,7 @@ COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") 
 # het gio engine con kip thoat bang mot cau vai doc duoc.
 WAIT_LOCK_SECONDS = 60
 # Doi CHO TRONG trong tran engine song song toi da bay nhieu giay (LOW-25). Cung
-# ly do voi CHO_KHOA_GIAY: phai nho hon tran bash tool (~300s) de khi het gio
+# ly do voi WAIT_LOCK_SECONDS: phai nho hon tran bash tool (~300s) de khi het gio
 # engine tu noi ra thay vi bi cat cau. `_ngu` tach ra de test khong ngu that.
 WAIT_SLOT_SECONDS = 240
 _ngu = time.sleep
@@ -314,7 +314,7 @@ def _description_missing_image(m: dict) -> dict | None:
     """Bai nay co THIEU anh that khong, thieu bao nhieu — None neu du.
 
     Engine chi MO TA, khong quyet dinh (audit A1): hoi Ong Chu hay chuyen Kite
-    la viec cua tang dieu phoi, xem `route_thieu_anh.sau_chuan_bi`."""
+    la viec cua tang dieu phoi, xem `route_missing_images.after_prepare`."""
     so, tt = int(m.get("so_dung_duoc", 0)), int(m.get("toi_thieu", 5))
     return None if so >= tt else {"so": so, "toi_thieu": tt}
 
@@ -410,11 +410,11 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
     Tra ve (manifest, workdir, meta).
 
     `cho`: so giay toi da doi mot engine KHAC dang giu `dang_chay.pid` con song.
-    Mac dinh CHO_KHOA_GIAY (60) — xem chu thich o hang so do: 300 bang dung tran
+    Mac dinh WAIT_LOCK_SECONDS (60) — xem chu thich o hang so do: 300 bang dung tran
     bash tool cua vai nen "doi het khoa" chua bao gio thanh cong tu trong tay vai.
 
     `sau_chuan_bi(draft_id, m)`: moc cho tang GHEP NOI xu ly `m["thieu_anh"]`
-    (hoi Ong Chu / chuyen Kite) — truyen `route_thieu_anh.sau_chuan_bi` vao.
+    (hoi Ong Chu / chuyen Kite) — truyen `route_missing_images.after_prepare` vao.
     Engine khong tu import cai do: lam vay la lop CHUAN BI goi nguoc len lop
     dieu phoi (audit A1). Goi TRONG khoa va TRUOC khi ghi `xong.json`, nen moi
     nguoi doc `xong.json` deu thay quyet dinh da chot — day la ly do no la moc
@@ -432,7 +432,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
                  "— DUNG, KHONG chay lai. Da bao Ong Chu. Chi chay lai voi `--lam-moi` "
                  "sau khi sua nguyen nhan (xem chuan_bi.log).")
     if xong.exists() and not lam_moi:
-        # doc_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
+        # read_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
         # thay cung mot so, khong ai phai tu doan nua.
         return schema.read_manifest(xong), wd, meta
     khoa.write_text(str(os.getpid()))
@@ -447,7 +447,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
             try:
                 sau_chuan_bi(draft_id, m)
             except (Exception, SystemExit) as e:             # noqa: BLE001
-                # SystemExit cung phai bat: vai ham thu vien (gui_telegram, crop_ti_le)
+                # SystemExit cung phai bat: vai ham thu vien (send_telegram, crop_ratio)
                 # bao loi bang sys.exit, lot qua thi mat luon xong.json (audit 05/09).
                 print(f"[route] {type(e).__name__}: {e}", file=sys.stderr)
             giay = time.time() - t_route
@@ -472,8 +472,8 @@ def main() -> int:
     ap.add_argument("--cho", type=int, default=300)
     a = ap.parse_args()
     # Import o DAY chu khong o dau tep: `main()` la diem vao CLI, tuc cho ghep
-    # noi — con than module `anh_chuan_bi` phai sach bong tang dieu phoi (audit
-    # A1). Dat import nay len dau tep la keo duyet_giao_viec/duyet_bai vao lai
+    # noi — con than module `image_prepare` phai sach bong tang dieu phoi (audit
+    # A1). Dat import nay len dau tep la keo approve_dispatch/approve_post vao lai
     # dung cai vua go ra.
     import route_missing_images
     m, wd, _ = run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,

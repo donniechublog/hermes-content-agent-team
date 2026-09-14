@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""render_edu.py — hop dong tra ve cua `anh_lam_nen` + chon theme theo mau anh.
+"""render_edu.py — hop dong tra ve cua `image_make_background` + chon theme theo mau anh.
 
 HAI LOP GUARDRAIL chong len nhau o day, de rieng vi hai doi lan khac nhau:
 
-1. `anh_lam_nen` phai RETURN o moi nhanh (09/09/2026). Commit e883880 viet lai
+1. `image_make_background` phai RETURN o moi nhanh (09/09/2026). Commit e883880 viet lai
    ham nay nhung lam ROI cau `return` cuoi cung — nhanh "anh chup ma vung duoi
    chu THAT SU roi" build xong roi RA KHOI HAM khong return, Python tra ve None
-   ngam. Moi noi goi (`_cover_anh`, `s_figure`) deu unpack; gap None thi
+   ngam. Moi noi goi (`_cover_image`, `s_figure`) deu unpack; gap None thi
    `TypeError: cannot unpack non-iterable NoneType object` — sap tat ca cong
    chan roi den thang Chromium trong `render()`. Khong ai bat duoc vi hai nhanh
    con lai co return rieng ngay tai cho, chi nhanh "mo VA roi" (dung loai anh
@@ -97,7 +97,7 @@ def test_s_figure_khong_nem_khi_dung_anh_roi():
 def _anh_bang_xep_hang(w=1188, h=1524):
     """Mo phong DUNG dac diem lam sai lop mo (09/09/2026): nen TRANG chiem gan
     het vung duoi, chi vai dong chu/so MONG xen vao — do that tren anh XH cua
-    bo GPT-Image-2.5: roi_duoi=29.2, vua qua NGUONG_ROI_CAN_LOP=26 mot chut,
+    bo GPT-Image-2.5: roi_duoi=29.2, vua qua THRESHOLD_FALL_CAN_LAYER=26 mot chut,
     dan toi max_toi=0.036 (gan nhu khong toi) truoc khi sua. Anh chup THAT (noise
     day dac ca vung, xem `_anh_chup_roi`) khong tai hien duoc ca nay — do ro
     "roi VUA DU de kich hoat, nhung con qua yeu de che het chu" phai la mot anh
@@ -267,7 +267,7 @@ def test_logo_hang_tren_nen_sang_van_ra_dung_mau():
     tin, du dien tich nho."""
     with tempfile.TemporaryDirectory() as t:
         t = Path(t)
-        ds = (77, 108, 247)                   # card.MAU_HANG["DEEPSEEK"] = #4D6CF7
+        ds = (77, 108, 247)                   # card.COLOR_RANK["DEEPSEEK"] = #4D6CF7
         p = _anh_mau(t, "logo_ds",            # logo ~4% dien tich, con lai trang
                      lambda x, y: ds if y >= 96 else (255, 255, 255))
         rgb = re_.color_say_catch(p)

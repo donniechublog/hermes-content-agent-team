@@ -9,7 +9,7 @@ toi benchmark cua model"*. Lan thu ba cua cung hinh dang loi (LOW-10, LOW-12).
 Ba loi do duoc, moi loi mot nhom test FAIL TREN CODE CU:
   1. `article_sources._name_own_no_mark` xoa gach noi truoc khi tach tu -> ten model
      `deepseek-v4.1-flash-max` vo, mat chu `deepseek`, truy van Bing ra 0 bao.
-  2. `manifest`/`nop_chung` doi `kieu == "chup"` — gia tri xep_hang chua bao gio
+  2. `manifest`/`submit_common` doi `kieu == "chup"` — gia tri xep_hang chua bao gio
      phat ra; moi test cu stub "chup" nen xanh gia. Cong o muc MA NGUON: tap
      `kieu` xep_hang phat ra phai duoc nguoi doc coi la "chup that".
   3. Khong co duong nao toi trang cong bo chinh chu cua model

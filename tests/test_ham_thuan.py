@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 
-# ------------------------------------------------------------- env_load.brand_dai
+# ------------------------------------------------------------- env_load.brand_long
 def test_brand_dai_doi_dung_ca_hai_chieu():
     """CT_BRAND ('blog') phai ra 'donniechublog' — chinh loi bat 09/09/2026 (hai
     cho trong image_brand.py truyen thang CT_BRAND vao card.set_brand,
@@ -68,7 +68,7 @@ def test_brand_dai_khong_biet_thi_ve_mac_dinh():
             os.environ["CT_BRAND"] = cu
 
 
-# ------------------------------------------------------------ co_tieng_viet
+# ------------------------------------------------------------ has_vietnamese
 def test_co_tieng_viet_bat_dau_khong_bat_ascii():
     import article_sources as nb
     for t in ["Nvidia đàm phán rót 2,5 tỷ USD", "Mô hình mở", "đ", "Ý"]:
@@ -90,7 +90,7 @@ def test_truy_van_bing_tu_choi_tieng_viet():
     assert nb._query_bing("Nvidia in talks to invest $2.5B") != []
 
 
-# -------------------------------------------------------------- _url_hop_le
+# -------------------------------------------------------------- _url_valid
 def test_url_hop_le_chan_host_noi_bo():
     import approve_command as dl
     for u in ["http://localhost:9130/", "http://127.0.0.1:9121/x",
@@ -182,7 +182,7 @@ def test_hang_fifo_bao_dung_so_nguoi_dang_doi():
     assert h.lay_so() == (3, 2)           # con 2 nguoi truoc, khong phai 3
 
 
-# ------------------------------------------------------- gom_trung / chuan_hoa
+# ------------------------------------------------------- gather_duplicate / standard_ify
 def _tin(td, ts, toa="x"):
     return {"tieu_de": td, "ts": ts, "toa_soan": toa, "link": "", "goc": "g"}
 
@@ -345,7 +345,7 @@ def test_host_cong_khai_khong_bi_chan_oan():
 
 
 def test_kiem_url_chan_scheme_khong_phai_http():
-    """chup_chart tai bang urllib, ma urllib nhan ca `file://`."""
+    """capture_chart tai bang urllib, ma urllib nhan ca `file://`."""
     import scan_common as qc
     for u in ["file:///etc/passwd", "ftp://x.com/a", "data:text/html,x", "x"]:
         assert not qc.url_hide_whole(u), u
@@ -356,7 +356,7 @@ def test_moi_duong_tai_deu_qua_cong():
     """Doc bang AST: cac ham tai da duoc noi vao cong. Them mot duong tai moi
     ma quen goi cong la mo lai cua da dong."""
     import ast
-    # `_tai_bytes` sang chuan_bi/tai_loc.py khi tach goi 09/09/2026 (audit A1) —
+    # `_download_bytes` sang prepare/download_filter.py khi tach goi 09/09/2026 (audit A1) —
     # cong host van phai duoc goi y nhu cu, chi doi cho tim.
     for tep, ham in [("prepare/download_filter.py", "_download_bytes"), ("article_images.py", "_download"),
                      ("capture_chart.py", "download_image"), ("article_extract.py", "fetch")]:
@@ -369,7 +369,7 @@ def test_moi_duong_tai_deu_qua_cong():
                    for g in goi), f"{tep}:{ham} khong goi cong host"
 
 
-# --------------------------------------------------------- dung_argv (chat)
+# --------------------------------------------------------- use_argv (chat)
 def test_argv_chat_khong_bao_gio_co_z():
     """Dung doan da gay su co 04/09: `-z` duoc hermes_cli xu ly TRUOC va thoat
     ngay, nen `--continue` bi bo qua IM LANG va MOI tin mo mot phien moi — vai
@@ -394,19 +394,19 @@ def test_argv_khong_profile_thi_khong_co_co_p():
 
 def test_argv_khop_ban_ke_khai_cua_kiem_hermes():
     """`check_hermes.HAS_CHAT` la danh sach co ma script kiem sau moi
-    `hermes update`. Hai ban ke khai nay phai khop, khong thi kiem_hermes bao
+    `hermes update`. Hai ban ke khai nay phai khop, khong thi check_hermes bao
     xanh cho mot dong lenh khong con dung."""
     import chat_router as cr
     import check_hermes as kh
     a = set(cr.use_argv("miles", "tele-writer", "x"))
     thieu = [c for c in kh.HAS_CHAT if c not in a]
-    assert not thieu, f"kiem_hermes doi co {thieu} ma use_argv khong sinh ra"
+    assert not thieu, f"check_hermes doi co {thieu} ma use_argv khong sinh ra"
 
 
-# ------------------------------------------------------------ tong_hop (9router)
-# Tach khoi `doc_ngay` 07/09/2026. Phep dem o day quyet dinh nhung thu khong lo
+# ------------------------------------------------------------ aggregate (9router)
+# Tach khoi `read_date` 07/09/2026. Phep dem o day quyet dinh nhung thu khong lo
 # ra khi sai: nhan khoa API (chi duoc 4 ky tu cuoi — bao cao nay duoc ghi ra dia
-# VA phuc vu qua nhat_ky_web), cap lat model nao tinh la fallback, model nao bi
+# VA phuc vu qua journal_web), cap lat model nao tinh la fallback, model nao bi
 # goi la "tra rong".
 def _dong(giay, model="ds/deepseek-v4-pro", cid="c1", ak="sk-abcd1234efgh",
           status=None, ptok=2000, ctok=500, cost=0.01, cache=0):

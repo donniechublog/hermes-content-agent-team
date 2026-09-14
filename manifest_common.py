@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Phan CHUNG cua hai script ghi manifest: `manifest_build` (Finn) va
-`manifest_ghi` (Nova/Vera).
+`manifest_write` (Nova/Vera).
 
 Hai script viet CUNG mot dinh dang cho CUNG mot nguoi doc, va cung mot chuoi
 viec co hoc: chon muc theo so thu tu `k`, don tom tat cua vai, tu them muc BAT
@@ -11,7 +11,7 @@ buoc, dung bao cao. Truoc 07/09/2026 moi script tu viet lai het, va DA LECH:
     "em-dash lot xuong tan caption" — dieu do dung y het voi caption cua Nova
     va Vera, nhung nhanh kia khong co.
   - `manifest_build.main` co mot chu thich noi ro "cung mot bo kiem nhu
-    manifest_ghi", ma bo kiem do da khong con giong.
+    manifest_write", ma bo kiem do da khong con giong.
 
 Cai KHONG gom vao day: cong bao title tieng Viet mat dau. O nhanh Nova/Vera
 title do CHINH VAI viet bang tieng Viet; o nhanh Finn title lay tu
@@ -80,14 +80,14 @@ def path_out_new(goc: Path) -> Path:
     """Ten khac cho ban ghi LAI trong ngay: `<goc>_tHHMMSS.<duoi>` (gio VN).
 
     KHONG ghi de ban da co: ghi de la mat co `picked`/`da_giao` ma
-    `duyet_chon_tin` ghi nguoc vao chinh tep do, va TE HON la doi nghia so thu
+    `approve_pick` ghi nguoc vao chinh tep do, va TE HON la doi nghia so thu
     tu — muc "2" cua ban moi khac muc "2" ma Ong Chu dang nhin, tra loi "2" luc
     do ra dung bai khac.
     """
     # Den GIAY, va van kiem lai: ban cu lay UTC theo PHUT, nen hai lan chay
     # trong cung mot phut ra CUNG mot ten va ban sau DE LEN ban truoc — dung
     # cai ma docstring nay hua la khong lam. Da xay ra that 12/09/2026: ba lan
-    # chay quet_nop cua Vera luc 22:01:10 / 22:01:48 / 22:02 (UTC) deu ghi vao
+    # chay scan_submit cua Vera luc 22:01:10 / 22:01:48 / 22:02 (UTC) deu ghi vao
     # `vera_candidates_2026-09-11_t2201.json`, tuc bao cao dau tien gui len
     # topic tro toi mot tep ma noi dung da bi ban thu ba thay mat.
     goi = f"{goc.stem}_t{datetime.now(scan_common.VN).strftime('%H%M%S')}"

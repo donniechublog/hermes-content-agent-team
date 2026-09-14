@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Nhật ký không được IM LẶNG khi đọc kanban.db hỏng (hồi quy review Fable, C2).
 
-Lich su: 06/09/2026 doi them `_chiu_loi_db` vi mot lan `hermes update` doi ten
+Lich su: 06/09/2026 doi them `_bear_error_db` vi mot lan `hermes update` doi ten
 cot lam nhat_ky chet im — cron chay `>/dev/null 2>&1`, khong trang, khong dong
 log. Decorator do bat sqlite3.Error va day vao LOI_DOC, in o CUOI TRANG.
 
-09/09/2026 C2 chuyen phan_kanban sang hermes_adapter. Adapter NUOT sqlite3.Error
+09/09/2026 C2 chuyen part_kanban sang hermes_adapter. Adapter NUOT sqlite3.Error
 va tra None, nen decorator khong con bat duoc gi — ban dau tien cua doan nay tra
 [] im lang: trang nhat ky hien "hom nay khong co task" trong khi thuc ra la doc
 DB loi. Dung su co 06/09 lam lai. Test nay giu cho no khong quay lai.
@@ -25,7 +25,7 @@ _NGAY = nk._hours_vn(_TS).strftime("%Y-%m-%d")
 
 
 def _chay(viec, runs=None):
-    """Goi phan_kanban voi adapter gia; tra (ket_qua, LOI_DOC sau khi goi)."""
+    """Goi part_kanban voi adapter gia; tra (ket_qua, LOI_DOC sau khi goi)."""
     cu = (ha.job, ha.last_run_many)
     ha.job = lambda *a, **k: viec
     ha.last_run_many = lambda tids: runs
@@ -41,7 +41,7 @@ def test_kanban_khong_doc_duoc_thi_LOI_DOC_phai_co_dong():
     """None tu adapter = doc DB hong. Phai len LOI_DOC de in cuoi trang."""
     ra, loi = _chay(None)
     assert ra == [], ra
-    assert any("phan_kanban" in d for d in loi), \
+    assert any("part_kanban" in d for d in loi), \
         f"doc kanban hong ma LOI_DOC rong -> trang nhat ky im lang, dung su co 06/09: {loi}"
 
 

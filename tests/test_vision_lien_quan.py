@@ -8,7 +8,7 @@ tính năng tự tìm ảnh — engine báo "đủ 6 slide dựng được" như
 về "LIÊN_QUAN: không" (dấu trên chữ Ê), regex cũ chỉ khớp "LIEN_QUAN" (không
 dấu) như đề bài yêu cầu. A1/A4 là hai widget giá cổ phiếu — lần chạy TRƯỚC
 vision nói đúng "không", lần này parse hỏng nên lqv=None, mà công thức
-so_anh_dung_duoc coi None là "chưa False" tức DÙNG ĐƯỢC — hai ảnh KHÔNG liên
+count_image_use_ok coi None là "chưa False" tức DÙNG ĐƯỢC — hai ảnh KHÔNG liên
 quan xuyên thẳng qua cổng chặn.
 
 Chạy:  venv/bin/python tests/test_vision_lien_quan.py

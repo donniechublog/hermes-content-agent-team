@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phan co hoc cua hai script ghi manifest — `manifest_chung` va cac ham da
+"""Phan co hoc cua hai script ghi manifest — `manifest_common` va cac ham da
 tach khoi `manifest_build.main` / `manifest_write.main`.
 
 Vi sao dang o day: manifest la thu Ong Chu doc roi TRA LOI BANG SO. Sai o day
@@ -138,7 +138,7 @@ def test_gom_muc_van_nhan_link_cho_tuong_thich():
 
 def test_gom_muc_cat_diem_ngoai_dai_va_ghi_ro_da_sua():
     """Truoc 06/09/2026 diem ngoai dai chi ghi mot dong stderr roi VAN vao
-    manifest, ma quet_nop nuot stderr khi rc=0 nen khong ai thay."""
+    manifest, ma scan_submit nuot stderr khi rc=0 nen khong ai thay."""
     import manifest_build as mb
     cands = [_c("https://a.vn/1", "Tin một")]
     items, loi = mb.gather_item([_p(k=1, score_technical=99, score_relevance=-5)], cands)
@@ -203,7 +203,7 @@ def test_cat_tran_khong_tinh_muc_BAT_BUOC_vao_tran():
     assert ra[0]["link"] == "https://a.vn/1", "muc BAT BUOC phai con"
 
 
-# ------------------------------------------------------------ manifest_ghi
+# ------------------------------------------------------------ manifest_write
 def test_muc_tu_nop_chan_link_khong_phai_URL():
     """Ngay 24/08 ca nam tin cua Vera deu la "blank": manifest nhin binh thuong,
     Ong Chu chon tin, roi vai dung anh moi phat hien khong co gi de tai."""
