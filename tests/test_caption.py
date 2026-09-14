@@ -76,18 +76,55 @@ def test_ty_le_dau_khong_tinh_the_html():
 
 
 # ---------------------------------------------------------------- do dai
-def test_qua_1024_la_loi_vi_telegram_tach_anh_khoi_chu():
-    dai = CHUAN + "\n" + ("Thêm một câu nữa để kéo dài caption ra. " * 18)
+# Cau don le KHAC NHAU tung cau (khong lap cum 6 tu) de khong tu dinh vao loi
+# LAP Y khi noi voi CHUAN de keo dai — moi cau mot chu de rieng.
+_CAU_KHAC_NHAU = [
+    "Một trung tâm dữ liệu mới ở Malaysia vừa ký hợp đồng thuê chip trong ba năm tới.",
+    "Giá pin lithium giảm 12% theo báo cáo quý này từ một hãng phân tích độc lập.",
+    "Startup robot hút bụi tại Hàn Quốc huy động thêm vòng vốn Series B tuần trước.",
+    "Một đại học ở Nhật công bố chip quang học tiêu thụ điện thấp hơn hẳn bản cũ.",
+    "Hãng viễn thông châu Âu bắt đầu thử nghiệm mạng vệ tinh cho vùng núi hẻo lánh.",
+    "Nhóm nghiên cứu Canada công bố phương pháp làm mát chip bằng chất lỏng vi kênh.",
+    "Một sàn thương mại điện tử Đông Nam Á mở kho hàng tự động đầu tiên trong khu vực.",
+    "Chính phủ Đức công bố gói hỗ trợ cho ngành bán dẫn nội địa trong năm tới.",
+    "Một công ty xe điện Trung Quốc giới thiệu pin thể rắn cho dòng xe phổ thông.",
+    "Nhà sản xuất máy chủ tại Đài Loan tăng công suất nhà máy thêm một phần ba.",
+    "Một tạp chí khoa học công bố nghiên cứu về vật liệu bán dẫn thế hệ mới.",
+    "Hãng hàng không thử nghiệm nhiên liệu sinh học cho các chuyến bay nội địa ngắn.",
+    "Một quỹ đầu tư mạo hiểm tại Singapore rót vốn vào chuỗi cung ứng linh kiện quang học.",
+    "Nhóm kỹ sư Ấn Độ phát triển cảm biến giá rẻ cho nông nghiệp chính xác.",
+    "Một thành phố tại Bắc Âu thử nghiệm lưới điện thông minh quy mô toàn khu dân cư.",
+    "Hãng bảo hiểm tại Anh bắt đầu dùng mô hình dự báo rủi ro thiên tai theo vùng.",
+    "Một trường đại học Úc mở phòng thí nghiệm chung với ngành công nghiệp bán dẫn.",
+    "Nhóm phát triển game độc lập tại Brazil ra mắt bản demo chạy trên phần cứng yếu.",
+    "Một hãng dược tại Thụy Sĩ công bố kết quả thử nghiệm giai đoạn hai cho thuốc mới.",
+    "Nhà máy thép tại Việt Nam lắp đặt hệ thống giám sát khí thải theo thời gian thực.",
+    "Một liên minh ngân hàng châu Á thống nhất chuẩn thanh toán xuyên biên giới mới.",
+    "Nhóm nghiên cứu tại Phần Lan công bố pin mặt trời trong suốt gắn trên kính cửa sổ.",
+    "Một hãng logistics tại Mỹ mở rộng đội xe tải tự hành cho tuyến đường cao tốc.",
+    "Nhà xuất bản tại Pháp thử nghiệm mô hình dịch thuật cho sách văn học cổ điển.",
+]
+
+
+def test_qua_1024_chi_la_nhac_vi_publish_tu_tach_lam_hai(): # LOW-157
+    """Truoc 15/09/2026 vuot 1024 la loi chan nop. Nay publish() tu tach caption
+    thanh phan 1 (<=1024, gan lam caption that cua anh) + phan 2 (tin rieng) —
+    xem approve_post._split_caption_html — nen chi con CANH, khong chan nua."""
+    dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU[:12])
     assert 1024 < len(dai) <= 2200, len(dai)
-    loi, _c, _t = _kiem(dai)
-    assert _co(loi, "vượt giới hạn 1024"), loi
+    loi, canh, _t = _kiem(dai)
+    assert loi == [], loi
+    assert _co(canh, "giới hạn", "1024"), canh
 
 
-def test_qua_2200_bao_tran_nen_tang_chu_khong_phai_1024():
-    dai = CHUAN + "\n" + ("Thêm một câu nữa để kéo dài caption ra. " * 50)
-    assert len(dai) > 2200
-    loi, _c, _t = _kiem(dai)
-    assert _co(loi, "2200") and not _co(loi, "vượt giới hạn 1024"), loi
+def test_qua_2200_van_la_loi_tran_nen_tang():
+    """2200 la gioi han Instagram/TikTok phia moat, khong lien quan viec Telegram
+    tach caption — LOW-157 khong dong den nhanh nay, van chan nop."""
+    dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU)
+    assert len(dai) > 2200, len(dai)
+    loi, canh, _t = _kiem(dai)
+    assert _co(loi, "2200"), loi
+    assert not _co(canh, "giới hạn", "1024"), canh
 
 
 def test_duoi_700_chi_nhac_con_cho():

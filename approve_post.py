@@ -147,6 +147,46 @@ def draft_push(token, group, draft_id, thread_id=None):
 
 CAPTION_LIMIT = 1024      # gioi han caption cua sendPhoto / sendMediaGroup
 
+_TAG_RE = re.compile(r"<(/?)([a-zA-Z][\w-]*)((?:\s+[^<>]*)?)>")
+
+
+def _split_caption_html(caption, limit=CAPTION_LIMIT):
+    """Tach `caption` thanh (phan1<=limit, phan2) — LOW-157: khi caption vuot
+    gioi han chu thich anh cua Telegram, gan phan1 lam caption THAT cua anh
+    thay vi gui anh tron roi day toan bo caption thanh tin rieng.
+
+    Cat tai ranh gioi doan/cau gan `limit` nhat (uu tien \\n\\n, roi ". "/"! "/
+    "? ", roi \\n, roi khoang trang — lui dan de khong cat giua tu). The HTML
+    (b/i/code/strong/em/a, xem caption_check.CARD_ALLOW) con mo tai diem cat
+    duoc DONG lai o cuoi phan1 va MO LAI o dau phan2, khong thi Telegram tu
+    choi 400 vi parse_mode=HTML nhan the khong khep."""
+    if len(caption) <= limit:
+        return caption, ""
+
+    cut = -1
+    for pat in ("\n\n", ". ", "! ", "? ", "\n", " "):
+        idx = caption.rfind(pat, 0, limit)
+        if idx > 0:
+            cut = idx + len(pat)
+            break
+    if cut < 0:
+        cut = limit
+    head, tail = caption[:cut], caption[cut:]
+
+    open_stack = []
+    for m in _TAG_RE.finditer(head):
+        closing, name, attrs = m.group(1), m.group(2).lower(), m.group(3)
+        if closing:
+            if open_stack and open_stack[-1][0] == name:
+                open_stack.pop()
+        else:
+            open_stack.append((name, attrs))
+
+    close_suffix = "".join(f"</{name}>" for name, _ in reversed(open_stack))
+    open_prefix = "".join(f"<{name}{attrs}>" for name, attrs in open_stack)
+    return head.rstrip() + close_suffix, open_prefix + tail.lstrip()
+
+
 # Cac dau "phan nay CUA DRAFT DA LEN CHANNEL ROI", ghi vao draft NGAY khi
 # Telegram tra ok — truoc moi viec khac. Moi chan cua `publish` mot dau:
 #   channel_album_mid — album sendMediaGroup   (co tu 06/09/2026)
@@ -200,14 +240,16 @@ def _text_one_attempt(token, channel, caption, p_draft, d, draft_id):
 def publish(token, channel, draft_id):
     """Dang draft len channel.
 
-    Caption dai (teaser thuong 3000+ ky tu) VUOT gioi han 1024 cua caption anh.
-    Truong hop do: gui anh truoc khong caption, roi gui chu rieng — thay vi de
-    Telegram tu choi ca bai.
+    Caption dai (teaser thuong 3000+ ky tu, hoac bai nhieu thuat ngu khong cat
+    duoc) VUOT gioi han 1024 cua caption anh. Truong hop do (LOW-157): gan
+    PHAN 1 (<=1024) lam caption that cua anh, roi gui PHAN 2 (con lai) thanh
+    tin nhan rieng — khong con gui anh tron/khong caption nhu truoc 15/09/2026.
     """
     p_draft = DRAFTS / (draft_id + ".json")
     d = json.loads(p_draft.read_text(encoding="utf-8"))
     caption = d["caption"]
     long_caption = len(caption) > CAPTION_LIMIT
+    part1, part2 = _split_caption_html(caption, CAPTION_LIMIT) if long_caption else (caption, "")
 
     images = d.get("images")
     # ALBUM DA LEN CHANNEL ROI THI DUNG GUI LAI (sua 06/09/2026 dot 2).
@@ -222,7 +264,7 @@ def publish(token, channel, draft_id):
         print(f"[publish] album cua {draft_id} da len channel truoc do "
               f"(mid={d['channel_album_mid']}) — chi gui lai phan chu",
               file=sys.stderr)
-        return (_text_one_attempt(token, channel, caption, p_draft, d, draft_id)
+        return (_text_one_attempt(token, channel, part2, p_draft, d, draft_id)
                 if long_caption else {"ok": True})
 
     if images:
@@ -241,8 +283,8 @@ def publish(token, channel, draft_id):
                 khoa = f"anh{i}"
                 e["media"] = f"attach://{khoa}"
                 files[khoa] = (pth.name, pth.read_bytes(), "image/png")
-            if not items and not long_caption:
-                e["caption"] = caption
+            if not items:
+                e["caption"] = part1
                 e["parse_mode"] = "HTML"
             items.append(e)
         total_bytes = sum(len(v[1]) for v in files.values())
@@ -257,7 +299,7 @@ def publish(token, channel, draft_id):
             _write_mark(p_draft, d, "channel_album_mid",
                      (res.get("result") or [{}])[0].get("message_id"))
         if long_caption and res.get("ok"):
-            return _text_one_attempt(token, channel, caption, p_draft, d, draft_id)
+            return _text_one_attempt(token, channel, part2, p_draft, d, draft_id)
         return res
 
     img = d.get("image")
@@ -267,12 +309,10 @@ def publish(token, channel, draft_id):
         if d.get("channel_anh_mid"):
             print(f"[publish] anh cua {draft_id} da len channel truoc do "
                   f"(mid={d['channel_anh_mid']}) — khong gui lai", file=sys.stderr)
-            return (_text_one_attempt(token, channel, caption, p_draft, d, draft_id)
+            return (_text_one_attempt(token, channel, part2, p_draft, d, draft_id)
                     if long_caption else {"ok": True})
         with httpx.Client(timeout=_media_timeout(Path(img).stat().st_size)) as c, open(img, "rb") as fh:
-            data = {"chat_id": channel, "parse_mode": "HTML"}
-            if not long_caption:
-                data["caption"] = caption
+            data = {"chat_id": channel, "parse_mode": "HTML", "caption": part1}
             r = c.post(API.format(token=token, method="sendPhoto"),
                        data=data,
                        files={"photo": (Path(img).name, fh, "image/png")})
@@ -281,7 +321,7 @@ def publish(token, channel, draft_id):
             _write_mark(p_draft, d, "channel_anh_mid",
                      (res.get("result") or {}).get("message_id"))
         if long_caption and res.get("ok"):
-            return _text_one_attempt(token, channel, caption, p_draft, d, draft_id)
+            return _text_one_attempt(token, channel, part2, p_draft, d, draft_id)
         return res
     return _text_one_attempt(token, channel, caption, p_draft, d, draft_id)
 
