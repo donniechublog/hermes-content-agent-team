@@ -1,0 +1,11 @@
+# LOW-133: default OpenSSL 3.5 groups (ML-KEM hybrids) fail ~50% of TLS handshakes to api.telegram.org from this server
+openssl_conf = openssl_init
+
+[openssl_init]
+ssl_conf = ssl_sect
+
+[ssl_sect]
+system_default = system_default_sect
+
+[system_default_sect]
+Groups = X25519:prime256v1:secp384r1
