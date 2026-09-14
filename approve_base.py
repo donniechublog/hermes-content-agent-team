@@ -82,6 +82,47 @@ def call(token, method, **kw):
                     f"thread={kw.get('message_thread_id')} text={rut(kw.get('text'), 60)}")
     return res
 
+# Nghi giua cac lan thu lai khi upload anh loi (LOW-155). Test dat ve rong.
+UPLOAD_RETRY_DELAYS = (5, 15)
+
+
+def call_upload(token, method, data, open_files, *, timeout=180):
+    """Goi Bot API co dinh kem tep (sendPhoto/sendMediaGroup). Cung nguyen tac voi
+    call(): LUON tra ve dict, khong bao gio nem httpx.* ra ngoai.
+
+    Chi thu lai loi CHUA CHAC gui di (ConnectError/ConnectTimeout — chua mo duoc
+    ket noi nen chua goi gi ca). WriteTimeout/ReadTimeout co the da gui MOT PHAN
+    hoac toan bo du lieu; thu lai mu co nguy co gui trung anh — tra loi ro thay
+    vi doan (sinh 14/09/2026, LOW-155: do duoc duong truyen may chu nay toi
+    api.telegram.org rat cham, ~28 KB/s thuc do — khong phai suy doan — khien
+    anh vai MB de WriteTimeout dung timeout co dinh 120s cu).
+
+    `open_files()` phai mo LAI tay cam MOI LAN thu — handle da doc mot phan sau
+    lan thu hong khong dung lai duoc. `timeout` nhan ca so (giay) lan
+    `httpx.Timeout` (de tach rieng ngan sach ket noi/ghi)."""
+    err = None
+    for attempt in range(len(UPLOAD_RETRY_DELAYS) + 1):
+        handles = open_files()
+        try:
+            with httpx.Client(timeout=timeout) as c:
+                r = c.post(API.format(token=token, method=method), data=data,
+                           files=handles or None)
+            return r.json()
+        except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+            err = e
+        except Exception as e:                                   # noqa: BLE001
+            return {"ok": False, "description": f"{type(e).__name__}: {e}"}
+        finally:
+            for fh in handles.values():
+                (fh[1] if isinstance(fh, tuple) else fh).close()
+        if attempt < len(UPLOAD_RETRY_DELAYS):
+            log("tele", f"{method} loi ket noi (lan {attempt + 1}), thu lai sau "
+                        f"{UPLOAD_RETRY_DELAYS[attempt]}s: {type(err).__name__}")
+            time.sleep(UPLOAD_RETRY_DELAYS[attempt])
+    return {"ok": False, "description": f"Mang loi khi {method} sau "
+                                        f"{len(UPLOAD_RETRY_DELAYS) + 1} lan thu: "
+                                        f"{type(err).__name__}: {err}"}
+
 def _write_json(path, data, indent=2):
     """Ghi mot tep state JSON NGUYEN TU: tmp cung thu muc + os.replace.
 
