@@ -5,6 +5,8 @@ Chạy:  venv/bin/python tests/test_env_load.py
 """
 import json
 import os
+import re
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -12,6 +14,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import env_load                                               # noqa: E402
+
+# Tep goi Telegram truc tiep: cong nay giu chung dung thu tu, khong duoc trom
+# cua nhau. Cap nhat danh sach khi them tep goi Telegram moi.
+TEP_GOI_TELEGRAM = ["send_telegram.py", "publish.py", "approve_service.py",
+                    "route_missing_images.py", "approve_base.py"]
 
 
 def _voi_env(ten, gia_tri, ham):
@@ -61,6 +68,43 @@ def test_ghi_json_hong_giua_chung_khong_de_tmp_va_giu_tep_cu():
             _os.replace = cu
         assert not list((Path(t) / "a").glob("*.tmp.*")), "tmp con sot lai sau khi hong"
         assert p.read_bytes() == truoc, "tep cu bi dong vao khi ghi hong"
+
+
+def test_openssl_conf_dat_khi_import_va_khong_de_len_gia_tri_co_san():
+    """LOW-159: chi import env_load (chua goi load()) phai dat OPENSSL_CONF tro
+    dung tep .cnf trong git, tru khi tien trinh da tu dat gia tri khac truoc do
+    (setdefault, khong de len)."""
+    kw_dep = str(ROOT / "hermes" / "systemd" / "openssl" / "hermes-groups.cnf")
+    env_rong = {k: v for k, v in os.environ.items() if k != "OPENSSL_CONF"}
+
+    r = subprocess.run([sys.executable, "-c", "import env_load, os; print(os.environ.get('OPENSSL_CONF'))"],
+                       cwd=str(ROOT), capture_output=True, text=True, env=env_rong)
+    assert r.returncode == 0, r.stderr
+    assert r.stdout.strip() == kw_dep, f"import env_load khong dat OPENSSL_CONF dung tep: {r.stdout!r}\n{r.stderr}"
+
+    r2 = subprocess.run([sys.executable, "-c", "import env_load, os; print(os.environ.get('OPENSSL_CONF'))"],
+                        cwd=str(ROOT), capture_output=True, text=True,
+                        env={**os.environ, "OPENSSL_CONF": "/da/tu/dat"})
+    assert r2.returncode == 0, r2.stderr
+    assert r2.stdout.strip() == "/da/tu/dat", "setdefault phai giu gia tri da co, khong de len"
+
+
+def test_tep_goi_telegram_nap_env_load_truoc_httpx():
+    """LOW-159: OPENSSL_CONF phai dat TRUOC `import httpx` moi co tac dung (do
+    truc tiep tren may chu 14/09: set SAU khong sua duoc handshake da hong).
+    Sap xep lai thu tu import trong tuong lai ma quen dieu nay se tai dien
+    dung sy co Nova bi block 15/09 (httpx.ConnectTimeout luc bat tay TLS)."""
+    mau_env_load = re.compile(r"^\s*import\s+env_load\b", re.M)
+    mau_httpx = re.compile(r"^\s*import\s+httpx\b", re.M)
+    loi = []
+    for ten in TEP_GOI_TELEGRAM:
+        s = (ROOT / ten).read_text(encoding="utf-8")
+        m_env, m_httpx = mau_env_load.search(s), mau_httpx.search(s)
+        if not (m_env and m_httpx):
+            loi.append(f"{ten}: khong tim thay ca hai dong import (kiem tra tay)")
+        elif m_env.start() > m_httpx.start():
+            loi.append(f"{ten}: `import httpx` dung TRUOC `import env_load` — OPENSSL_CONF se khong kip dat")
+    assert not loi, "\n".join(loi)
 
 
 if __name__ == "__main__":

@@ -12,9 +12,10 @@ import sys
 import time
 from pathlib import Path
 
+import env_load  # LOW-159: phai nap TRUOC httpx de dat OPENSSL_CONF kip
+
 import httpx
 
-import env_load
 import tele_util
 API = "https://api.telegram.org/bot{token}/{method}"
 CAPTION_LIMIT = 1024          # gioi han caption cua Telegram
