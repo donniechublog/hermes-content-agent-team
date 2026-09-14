@@ -422,29 +422,29 @@ def test_hai_bang_dinh_tuyen_khong_mau_thuan_voi_the_trien_khai_hom_nay():
         assert role.writer_for(quet) == role.writer_for(None, brand),             f"{quet} ({brand}): bang theo quet va bang theo brand lech nhau"
 
 
-def test_blog_chia_viec_cho_miles_va_jika():
-    """LOW-123: blog co hai nguoi viet chia viec, dcgr chi co Miles."""
-    for b in ("blog", "donniechublog"):
-        assert set(role.writers_for_brand(b)) == {"miles", "jika"}, b
-    for b in ("dcgr", "dcgr.tech"):
-        assert role.writers_for_brand(b) == ("miles",), b
-    assert role.writers_for_brand("khong-co") == ()
+def test_blog_shares_writing_between_miles_and_jika():
+    """LOW-123: blog has two writers sharing the work, dcgr only has Miles."""
+    for brand in ("blog", "donniechublog"):
+        assert set(role.writers_for_brand(brand)) == {"miles", "jika"}, brand
+    for brand in ("dcgr", "dcgr.tech"):
+        assert role.writers_for_brand(brand) == ("miles",), brand
+    assert role.writers_for_brand("unknown") == ()
 
 
-def test_nhom_nguoi_viet_deu_la_vai_viet_va_chua_nguoi_viet_tam():
-    for b, nhom in role.WRITERS_BY_BRAND.items():
-        for s in nhom:
-            assert s in role.ROLE and role.ROLE[s].viet, (b, s)
-        assert role.WRITE_BY_BRAND[b] in nhom, f"{b}: nguoi viet tam khong nam trong nhom"
+def test_writer_groups_are_writers_and_include_tentative_writer():
+    for brand, group in role.WRITERS_BY_BRAND.items():
+        for slug in group:
+            assert slug in role.ROLE and role.ROLE[slug].viet, (brand, slug)
+        assert role.WRITE_BY_BRAND[brand] in group, f"{brand}: tentative writer is not in the group"
 
 
-def test_chon_nguoi_it_viec_cho_hon():
-    nhom = ("miles", "jika")
-    assert role.pick_by_queue(nhom, {"miles": 3, "jika": 1}, {}) == "jika"
-    assert role.pick_by_queue(nhom, {"miles": 0, "jika": 1}, {}) == "miles"
-    assert role.pick_by_queue(nhom, {"miles": 1, "jika": 1},
-                              {"miles": 200, "jika": 100}) == "jika", "hoa -> nguoi lau chua duoc giao"
-    assert role.pick_by_queue(nhom, {}, {}) == "miles"
+def test_pick_by_queue_prefers_shorter_queue():
+    group = ("miles", "jika")
+    assert role.pick_by_queue(group, {"miles": 3, "jika": 1}, {}) == "jika"
+    assert role.pick_by_queue(group, {"miles": 0, "jika": 1}, {}) == "miles"
+    assert role.pick_by_queue(group, {"miles": 1, "jika": 1},
+                              {"miles": 200, "jika": 100}) == "jika", "tie -> least recently assigned"
+    assert role.pick_by_queue(group, {}, {}) == "miles"
 
 
 def test_ten_brand_khop_chinh_ta_cua_env_load():

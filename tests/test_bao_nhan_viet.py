@@ -134,58 +134,61 @@ def test_khong_bao_lai_khi_bam_nut_lan_hai():
     assert goi_bao_nhan == [], f"bam lai nut cu KHONG duoc bao nhan lan nua: {goi_bao_nhan}"
 
 
-def _goi_hang_cho(tmp: Path, *, vai_viet, brand, hang_cho):
-    """imgok voi meta brand + hang cho nguoi viet gia. Tra ve (cac_lan_tao_task,
-    sidecar sau khi bam)."""
+def _approve_with_queue(tmp: Path, *, writer, brand, queue):
+    """Press imgok with a brand in the draft meta and a fake writer queue. Returns
+    (created tasks as (assignee, body), sidecar after the press)."""
     import hermes_adapter
-    draft_id, wp = _dung(tmp, vai_viet=vai_viet)
+    draft_id, wp = _dung(tmp, vai_viet=writer)
     (tmp / f"{draft_id}.meta.json").write_text(json.dumps({"brand": brand}), encoding="utf-8")
-    w = json.loads(wp.read_text(encoding="utf-8"))
-    w["body"] = (f"cd /r && venv/bin/python {vai_viet}_prepare.py {draft_id}\n"
-                 f"cd /r && venv/bin/python {vai_viet}_submit.py {draft_id}")
-    wp.write_text(json.dumps(w), encoding="utf-8")
-    tao = []
-    cu = (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call,
-          hermes_adapter.writer_queue)
+    sidecar = json.loads(wp.read_text(encoding="utf-8"))
+    sidecar["body"] = (f"cd /r && venv/bin/python {writer}_prepare.py {draft_id}\n"
+                       f"cd /r && venv/bin/python {writer}_submit.py {draft_id}")
+    wp.write_text(json.dumps(sidecar), encoding="utf-8")
+    created = []
+    saved = (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call,
+             hermes_adapter.writer_queue)
     db.DRAFTS = tmp
-    db.kanban_create = lambda tieu, vai, body, parent=None: (tao.append((vai, body)) or ("t_writer1", None))
+    db.kanban_create = lambda title, assignee, body, parent=None: (
+        created.append((assignee, body)) or ("t_writer1", None))
     db._report_receive_job = lambda *a, **k: None
     db._status_task = lambda _tid: "done"
     db.call = lambda *a, **k: {"ok": True}
-    hermes_adapter.writer_queue = hang_cho
+    hermes_adapter.writer_queue = queue
     try:
         db._button_approve("tok", -100, draft_id, {"id": "cbq1"}, wp)
     finally:
         (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call,
-         hermes_adapter.writer_queue) = cu
-    return tao, json.loads(wp.read_text(encoding="utf-8"))
+         hermes_adapter.writer_queue) = saved
+    return created, json.loads(wp.read_text(encoding="utf-8"))
 
 
-def test_blog_giao_nguoi_viet_it_viec_cho_hon():
-    """LOW-123: nguoi viet tam la Jika nhung Jika dang co 2 task cho, Miles trong
-    -> task giao Miles, hai lenh script trong body va sidecar doi theo."""
+def test_blog_assigns_writer_with_shorter_queue():
+    """LOW-123: the tentative writer is Jika but Jika has 2 waiting tasks and Miles
+    is free -> the task goes to Miles, and both script commands and the sidecar follow."""
     with tempfile.TemporaryDirectory() as t:
-        tao, w = _goi_hang_cho(Path(t), vai_viet="jika", brand="donniechublog",
-                               hang_cho=lambda s: {"miles": (0, None), "jika": (2, 100)})
-    vai, body = tao[0]
-    assert vai == "miles", f"phai giao Miles (hang cho trong), duoc {vai}"
+        created, sidecar = _approve_with_queue(
+            Path(t), writer="jika", brand="donniechublog",
+            queue=lambda slugs: {"miles": (0, None), "jika": (2, 100)})
+    assignee, body = created[0]
+    assert assignee == "miles", f"should assign Miles (empty queue), got {assignee}"
     assert "miles_prepare.py" in body and "miles_submit.py" in body and "jika_" not in body, body
-    assert w["vai_viet"] == "miles", "sidecar phai ghi nguoi viet that de prepare/submit/topic doc dung"
+    assert sidecar["vai_viet"] == "miles", "sidecar must record the real writer for prepare/submit/topic"
 
 
-def test_khong_doc_duoc_kanban_thi_giu_nguoi_viet_tam():
+def test_unreadable_kanban_keeps_tentative_writer():
     with tempfile.TemporaryDirectory() as t:
-        tao, w = _goi_hang_cho(Path(t), vai_viet="jika", brand="donniechublog",
-                               hang_cho=lambda s: None)
-    assert tao[0][0] == "jika" and w["vai_viet"] == "jika"
+        created, sidecar = _approve_with_queue(Path(t), writer="jika", brand="donniechublog",
+                                               queue=lambda slugs: None)
+    assert created[0][0] == "jika" and sidecar["vai_viet"] == "jika"
 
 
-def test_dcgr_mot_nguoi_viet_khong_hoi_hang_cho():
-    def _cam(_s):
-        raise AssertionError("dcgr chi co Miles, khong duoc doc hang cho")
+def test_dcgr_single_writer_skips_queue_lookup():
+    def _forbidden_queue(_slugs):
+        raise AssertionError("dcgr only has Miles, the queue must not be read")
     with tempfile.TemporaryDirectory() as t:
-        tao, _w = _goi_hang_cho(Path(t), vai_viet="miles", brand="dcgr.tech", hang_cho=_cam)
-    assert tao[0][0] == "miles"
+        created, _sidecar = _approve_with_queue(Path(t), writer="miles", brand="dcgr.tech",
+                                                queue=_forbidden_queue)
+    assert created[0][0] == "miles"
 
 
 if __name__ == "__main__":

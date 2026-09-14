@@ -870,12 +870,12 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
             # Ban giao tu vai anh (dre_nop.py ghi: link that, nguon tung anh)
             # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
             # phai "nhan Miles".
-            _moi = _writer_by_queue(draft_id, w)
-            if _moi != w.get("vai_viet"):
-                log("nut", f"imgok draft={draft_id}: giao {_moi} thay {w.get('vai_viet')} "
-                           "(it viec dang cho hon, LOW-123)")
-                w["body"] = retarget_writer_body(w["body"], w.get("vai_viet"), _moi)
-                w["vai_viet"] = _moi
+            chosen_writer = _writer_by_queue(draft_id, w)
+            if chosen_writer != w.get("vai_viet"):
+                log("nut", f"imgok draft={draft_id}: assigned {chosen_writer} instead of "
+                           f"{w.get('vai_viet')} (shorter queue, LOW-123)")
+                w["body"] = retarget_writer_body(w["body"], w.get("vai_viet"), chosen_writer)
+                w["vai_viet"] = chosen_writer
             _body = w["body"]
             _bg = DRAFTS / (draft_id + ".ban_giao.md")
             if _bg.exists():
@@ -924,26 +924,28 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
     return note
 
 
-def _writer_by_queue(draft_id, w):
-    """Nguoi viet THAT cua bai (LOW-123): trong nhom nguoi viet cua brand, ai it
-    task dang cho hon thi nhan. Brand chi co mot nguoi, hoac khong doc duoc
-    kanban, thi giu nguoi viet tam ghi luc chon tin."""
-    cu = w.get("vai_viet")
+def _writer_by_queue(draft_id, sidecar):
+    """The REAL writer of the article (LOW-123): within the brand's writer group, the
+    one with fewer waiting tasks. A single-writer brand or an unreadable kanban keeps
+    the tentative writer recorded at pick time."""
+    tentative = sidecar.get("vai_viet")
     brand = (_load_json(DRAFTS / (draft_id + ".meta.json"), {}) or {}).get("brand", "")
-    nhom = role.writers_for_brand(brand)
-    if len(nhom) < 2:
-        return cu
+    group = role.writers_for_brand(brand)
+    if len(group) < 2:
+        return tentative
     import hermes_adapter
-    q = hermes_adapter.writer_queue(nhom)
-    if q is None:
-        return cu
-    return role.pick_by_queue(nhom, {s: q[s][0] for s in nhom}, {s: q[s][1] for s in nhom})
+    queue = hermes_adapter.writer_queue(group)
+    if queue is None:
+        return tentative
+    return role.pick_by_queue(group, {slug: queue[slug][0] for slug in group},
+                              {slug: queue[slug][1] for slug in group})
 
 
-def retarget_writer_body(body, cu, moi):
-    """Doi hai lenh script cua WRITER_BODY sang nguoi viet moi."""
-    for duoi in ("_prepare.py", "_submit.py"):
-        body = body.replace(f"venv/bin/python {cu}{duoi}", f"venv/bin/python {moi}{duoi}")
+def retarget_writer_body(body, old_writer, new_writer):
+    """Point both WRITER_BODY script commands at the new writer."""
+    for suffix in ("_prepare.py", "_submit.py"):
+        body = body.replace(f"venv/bin/python {old_writer}{suffix}",
+                            f"venv/bin/python {new_writer}{suffix}")
     return body
 
 

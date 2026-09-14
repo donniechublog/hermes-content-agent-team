@@ -240,21 +240,21 @@ def count_form_run(tru_tid=None):
 
 
 def writer_queue(slugs):
-    """{slug: (so task dang cho hoac dang chay, created_at task moi nhat)}; None neu
-    khong doc duoc kanban.db. `blocked` khong tinh: task do cho Ong Chu, khong giu
-    luot cua vai."""
+    """{slug: (waiting or running task count, created_at of the newest task)}; None
+    when kanban.db is unreadable. `blocked` is not counted: such a task waits on the
+    boss and does not hold the role's slot."""
     slugs = tuple(slugs)
     if not slugs:
         return {}
-    cau = ("SELECT assignee, SUM(CASE WHEN status IN ('todo','scheduled','ready','running') "
+    sql = ("SELECT assignee, SUM(CASE WHEN status IN ('todo','scheduled','ready','running') "
            "THEN 1 ELSE 0 END), MAX(created_at) FROM tasks WHERE assignee IN ("
            + ",".join("?" * len(slugs)) + ") GROUP BY assignee")
-    hang = _ask(cau, slugs, "dem hang cho nguoi viet")
-    if hang is None:
+    rows = _ask(sql, slugs, "count writer queue")
+    if rows is None:
         return None
-    ra = {s: (0, None) for s in slugs}
-    ra.update({a: (int(n or 0), t) for a, n, t in hang})
-    return ra
+    queue = {slug: (0, None) for slug in slugs}
+    queue.update({assignee: (int(count or 0), newest) for assignee, count, newest in rows})
+    return queue
 
 
 def last_run(tid):
