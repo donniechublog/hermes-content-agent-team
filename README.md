@@ -37,8 +37,8 @@ lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin
 | Ethan | `ethan` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
 | Dre | `dre` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
 | Kite | `kite` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
-| Gin | `gin` | clean | Xoá chữ tiếng Anh trên ảnh nền (OCR+LaMa, `swap_image_text.py`), trả nền sạch cho Itachi |
-| Itachi | `itachi` | carousel.rep | Dựng lại carousel kiểu **editorial-deck** (`deck.py`) từ nền sạch của Gin |
+| Gin | `gin` | clean | Thay chữ Anh bằng chữ Việt trên **thẻ/dải nền phẳng**, tự tải ảnh từ link IG/X (`gin_prepare.py` → `gin_submit.py`) |
+| Itachi | `itachi` | carousel.rep | Thay chữ ở **mọi chỗ** trên ảnh, kể cả đè lên ảnh thật (OCR+LaMa, `swap_image_text.py`); hoặc dựng lại kiểu **editorial-deck** (`deck.py`) |
 | Miles | `miles` | writer | Viết caption tiếng Việt cho tin **kinh doanh, đầu tư** của **dcgr.tech** (từ 10/09/2026, LOW-13; trước đó viết cả hai brand). Profile `miles` bên blog **giữ lại cho việc còn tồn**, không nhận việc mới |
 | Jika | `jika` | writer | Viết caption tiếng Việt cho tin **model mới, arXiv/Hacker News** — **chỉ donniechublog** (từ 10/09/2026, LOW-13). Cùng script, cùng luật caption như Miles; khác ở người đọc và ở MEMORY riêng |
 | Qinn | `qinn` | scout.x | Đọc tin kỹ thuật trên X (home timeline + các X List) qua cổng đọc của social-publishing, **2 lượt/ngày** (05:00 và 17:00 VN), cửa sổ 12h mỗi lượt — **chỉ donniechublog**, tin đi sang Jika. Không tự crawl X: session X nằm trên máy crawler, `scan_x.py` chỉ đọc lại (từ 12/09/2026) |
@@ -184,6 +184,10 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `cover` / `statement` / `steps` / `loop` / `figure` / `bars` / `cta`. Không ảnh
   thật. Cần `playwright install chromium`.
 - `deck.py` — editorial-deck của Itachi, dựng lại carousel nguồn sang tiếng Việt.
+- `swap_image_text.py` — xoá chữ khỏi ảnh nền: OCR định vị (EasyOCR) + mask ôm sát nét
+  + inpaint LaMa. Đường của Itachi, chỗ nền là ảnh thật.
+- `about_text.py` — luật VẼ chữ Việt lên ảnh dùng chung cho Gin và Itachi: chọn font,
+  cỡ chữ theo chiều cao mực đo được từ chữ gốc, màu, cổng chặn chữ tràn hộp.
 - `crop_ratio.py` — cắt ảnh về **1:1 hoặc 4:5**. Chỉ cắt chiều cao; ảnh gốc ngang
   (≥1.4) đòi cắt bề ngang thì dừng, vì bề ngang của chart/bảng là nội dung. Ép
   bằng `--cat-ngang`, chỉ cho ảnh người/sản phẩm không có chữ.
@@ -353,7 +357,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   Ngày 04/09 Ông Chủ chọn 7 bài lúc 05:33, Nova xếp thứ 8, im lặng cả tiếng trông
   như hệ thống đứng — nên có mục này.
 - Chat Telegram (đổi 04/09): **không còn một hàng chung cho cả 12 vai** — với khoá
-  chung, Gin xoá chữ 2 phút là hỏi Miles/Ethan gì cũng đứng im theo (Itachi đợi Gin
+  chung, Itachi xoá chữ 2 phút là hỏi Miles/Ethan gì cũng đứng im theo (vai đợi LaMa
   108 s chỉ để trả lời "xác nhận"). Giờ hai tầng trong `approve_service.py`:
   - mỗi phiên `tele-<vai>` một hàng FIFO (`_HangFIFO`) — cùng vai không chạy hai lượt
     cùng lúc, tin trước trả lời trước, có báo "đang trả lời N tin trước";
@@ -362,6 +366,12 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
     hỏi quá 3–4 vai cùng lúc; đặt `=1` trong unit systemd là về hành vi cũ.
   - **Nguyên tắc (Ông Chủ, 04/09): task làm lần lượt được, reply phải song song và
     nhanh** — reply đơ là công việc treo theo hết. Task kanban vẫn `max_in_progress: 1`.
+  - **Nguyên tắc (Ông Chủ, 08/09): vai cần phản hồi ngay khi được giao task là đã
+    nhận task** — trước đó `_bao_nhan_viec` chỉ bắn khi việc CHUYỂN giữa hai vai
+    (Dre→Miles, →Kite); task MỚI tạo trong `approve_pick.py` (Ông Chủ chọn tin) thì
+    im lặng cho tới khi dispatcher thực sự chạy (tới 1 phút). Nay `_xu_ly_chon` gọi
+    `_bao_nhan_viec(..., tu_vai=None, ...)` ngay sau `create_pair` nên vai luôn được
+    báo "đã nhận task" tức thì, không đợi dispatcher.
 - Chat giữ mạch bằng `hermes chat -c tele-<vai> --create-if-missing -Q -q` (`chat_router.py`).
   Trước 04/09 dùng `--continue … -z`: `-z` được xử lý trước và thoát luôn nên `--continue`
   bị bỏ qua im lặng — **mọi** tin của **mọi** vai đều mở phiên trắng, vai nào cũng
