@@ -169,20 +169,6 @@ blog/miles:
   model/provider: custom
   toolsets:
   - hermes-cli
-blog/nova:
-  agent/reasoning_effort: none
-  auxiliary/title_generation/enabled: false
-  fallback_providers:
-  - api_key: <da bo>
-    base_url: http://127.0.0.1:20128/v1
-    model: ds/deepseek-v4-flash
-    provider: custom
-  model/base_url: http://127.0.0.1:20128/v1
-  model/default: DS-v4Flash
-  model/provider: custom
-  toolsets:
-  - hermes-cli
-  - kanban
 blog/qinn:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false

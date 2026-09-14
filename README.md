@@ -43,7 +43,7 @@ người đang ít việc chờ hơn trong `role.WRITERS_BY_BRAND`. Vai **ảnh*
 | Miles | `miles` | writer | Viết caption tiếng Việt — **cả hai brand**, mỗi brand **chia việc với Jika** theo hàng chờ (blog từ 14/09/2026 LOW-123, dcgr từ 14/09/2026 LOW-136). Cùng script, cùng luật caption; khác Jika ở giọng viết |
 | Jika | `jika` | writer | Viết caption tiếng Việt — **cả hai brand**, chia việc với Miles (blog từ 10/09/2026 LOW-13, dcgr từ 14/09/2026 LOW-136). Mỗi brand một profile, SOUL/MEMORY riêng theo người đọc của brand |
 | Qinn | `qinn` | scout.x | Đọc tin kỹ thuật trên X (home timeline + các X List) qua cổng đọc của social-publishing, **2 lượt/ngày** (05:00 và 17:00 VN), cửa sổ 12h mỗi lượt — **chỉ donniechublog**, tin đi sang Jika. Không tự crawl X: session X nằm trên máy crawler, `scan_x.py` chỉ đọc lại (từ 12/09/2026) |
-| Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý — **chạy ở dcgr.tech** (cron + topic từ 14/09/2026, LOW-135). Profile `nova` bên blog còn giữ lại (không cron, không topic) |
+| Nova | `nova` | model | Quét 23 bảng xếp hạng model, báo cái đáng chú ý — **chỉ dcgr.tech** (từ 14/09/2026, LOW-135; profile, cron, topic bên blog đã gỡ) |
 | Vera | `vera` | market | Quét tin kinh doanh/đầu tư quanh AI (Google News + feed báo) |
 | Ada | `ada` | analyst | Đo phản hồi, đối chiếu điểm chấm với lựa chọn thực tế |
 | Cape | `cape` | teaser | Ghép teaser từ bài đã duyệt — blog only |
