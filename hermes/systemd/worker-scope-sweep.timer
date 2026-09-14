@@ -1,0 +1,12 @@
+# Cài (user donniechu, không root):
+#   cp ~/content-team/hermes/systemd/worker-scope-sweep.{service,timer} ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now worker-scope-sweep.timer
+[Unit]
+Description=Hermes Content Team - quet scope worker kanban mo coi moi 5 phut
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

@@ -19,6 +19,8 @@ systemctl --user daemon-reload
 systemctl --user enable --now hermes-approve@blog hermes-approve@dcgr
 ```
 
+`worker-scope-sweep.timer` (LOW-126) cài riêng — xem chú thích đầu tệp timer.
+
 ## Thứ KHÔNG nằm ở đây
 
 - `HERMES_DASHBOARD_SESSION_TOKEN` trong hai unit dashboard đã được **che**.
