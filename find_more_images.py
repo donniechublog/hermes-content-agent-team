@@ -15,7 +15,7 @@ Nay giu phan dung, bo phan pha hoai:
     biet). Script di hoi Bing News + Wikimedia Commons, mo trang bang browser,
     tai, nhin (vision), do, cat san — y het engine — roi noi vao xong.json va
     in ra anh moi. Vai chon, may van xu ly.
-  - toi da TOI_DA_LUOT luot mot bai, de khong quay lai 60 tool call/task;
+  - toi da MAX_TURN luot mot bai, de khong quay lai 60 tool call/task;
   - het luot ma van thieu moi kanban_block, va cau block PHAI ke tu khoa da thu.
 
 Dung:

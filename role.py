@@ -2,10 +2,10 @@
 """BẢN ĐĂNG KÝ VAI — một nguồn sự thật cho slug, tên hiển thị và alias.
 
 Vi sao (audit_content_team A4/F1): tri thuc ve vai nam rai it nhat sau cho —
-VAI_ANH / TEN_SANG_CAP / TEN_VAI_ANH / VAI_CAROUSEL / VAI_EDU / SLUG_CU /
+ROLE_IMAGE / NAME_BRIGHT_CAP / NAME_ROLE_IMAGE / ROLE_CAROUSEL / ROLE_EDU / SLUG_OLD /
 _TEN_HIEN trong approve_dispatch, cong map "slug -> ten" chep tay lai o
 kite_prepare va route_missing_images. Them mot vai phai dung tam cho; quen mot cho
-thi hong CAM: su co 06/09/2026 "kites" khong khop TEN_SANG_CAP nen lenh chon roi
+thi hong CAM: su co 06/09/2026 "kites" khong khop NAME_BRIGHT_CAP nen lenh chon roi
 ve hoi thoai va gui nham cho Finn, con su co 01/09/2026 sidecar ghi slug cu
 ("dre") lam task nam 'ready' hai ngay vi khong profile nao ten vay.
 
@@ -144,7 +144,7 @@ DEFAULT_IMAGE = "ethan"
 DEFAULT_WRITE = "miles"
 
 # --- AI VIET TIN NAY (LOW-13) -----------------------------------------------
-# Truoc 10/09/2026 chi co MOT nguoi viet, nen `MAC_DINH_VIET` la hang so va moi
+# Truoc 10/09/2026 chi co MOT nguoi viet, nen `DEFAULT_WRITE` la hang so va moi
 # cho cu goi thang no. Gio co hai, va cau tra loi phu thuoc TIN — nen phai hoi
 # qua `writer_for`, dung doc hang so.
 #
@@ -177,10 +177,10 @@ WRITE_BY_BRAND = {
 def writer_for(vai_quet=None, brand=None) -> str:
     """Slug nguoi viet cho mot tin: hoi VAI QUET truoc, roi toi BRAND.
 
-    Khong nhan ra ca hai -> `MAC_DINH_VIET`. Nguoi goi nen keu mot dong khi roi
+    Khong nhan ra ca hai -> `DEFAULT_WRITE`. Nguoi goi nen keu mot dong khi roi
     vao day: mot tin khong biet ai quet lan thuoc brand nao la mot chuyen khac,
     va im lang o day thi bai cua blog roi vao topic cua Miles ma khong ai hay."""
-    # slug_that: sidecar cu ghi `vai_quet: "scout"` (LOW-14) — khong bac cau thi
+    # canonical_slug: sidecar cu ghi `vai_quet: "scout"` (LOW-14) — khong bac cau thi
     # duong chinh xac nhat cua tin blog tu roi xuong luoi brand ma khong ai hay.
     q = WRITE_BY_SCAN.get(canonical_slug(vai_quet or "").lower())
     if q:
@@ -206,22 +206,22 @@ def display_name(slug: str) -> str:
 def canonical_slug(chu: str) -> str:
     """Chu bat ky (ten cu trong sidecar, ten persona) -> slug profile hien tai.
 
-    Khong nhan ra thi TRA LAI NGUYEN VAN — nguoi goi (chuan_assignee) con kiem
+    Khong nhan ra thi TRA LAI NGUYEN VAN — nguoi goi (standard_assignee) con kiem
     profile co that khong roi bao loi tu te, dung nuot o day."""
     c = str(chu).lower()
     # Ten persona hien tai (Cape, Nova...) cung la mot cach goi hop le — N-r2-10:
-    # "cape" khong co trong go/slug_cu nen tung tra nguyen "cape", chuan_assignee
+    # "cape" khong co trong go/slug_cu nen tung tra nguyen "cape", standard_assignee
     # bao "khong co profile cape" trong khi moi persona khac deu tu resolve.
     return _SLUG_CU.get(c) or _TEN_THUONG.get(c, chu)
 
 
 # ---- NGAN SACH THOI GIAN mot lan chay (LOW-25, 12/09/2026) ----------------------
-# Truoc do moi task tao voi "25m" cung mot gia tri (hermes_adapter.tao_task mac
+# Truoc do moi task tao voi "25m" cung mot gia tri (hermes_adapter.create_task mac
 # dinh, khong call site nao override). Do tren kanban.db may chu 14 ngay
 # (run completed, phut): dre median 3.0 / p95 22.9, kite p95 17.8 / max 22.9,
 # ethan p95 2.3 (blog) 7.6 (dcgr); vai viet/quet p95 <= 8.6. Vai anh mo
 # Chromium + vision tung anh nen 25m la sat tran; vai viet thi 25m thua.
-# Canh bao "chay lau" o approve_dispatch (NGUONG_TREO_PHUT=20) phai NHO HON ca
+# Canh bao "chay lau" o approve_dispatch (THRESHOLD_STALLED_MINUTES=20) phai NHO HON ca
 # hai con so nay — test_ngan_sach_thoi_gian giu bat bien do.
 MAX_RUNTIME = "25m"
 MAX_RUNTIME_IMAGE = "40m"
@@ -280,7 +280,7 @@ def face_no_clear_ai(a: dict) -> bool:
     """Tam co mat nguoi ma khong biet la ai — thuong hieu khong gan ten nguoi,
     alt/caption khong neu ten. `submit_common.check_subject_named` chan tam nhu the, vai
     khong duoc bia ten cho qua cong, nen no KHONG phai mot duong dung duoc: ca
-    `can_be_hero` lan nguoi dem slide (`schema.so_anh_dung_duoc`, LOW-46) hoi
+    `can_be_hero` lan nguoi dem slide (`schema.count_image_use_ok`, LOW-46) hoi
     CHINH ham nay, khong moi noi mot dieu kien."""
     return bool(a.get("mat")) and not ((a.get("thuong_hieu") or {}).get("nguoi")
                                        or person_names_in_alt(a.get("alt") or ""))
@@ -299,7 +299,7 @@ def can_be_hero(slug: str, a: dict) -> bool:
     if a.get("xep_hang"):
         return True                            # anh chinh BAT BUOC cua tin xep hang
     if not v.ti_le_don_max:
-        # Vai xep NHIEU anh: "anh chinh" la tam lam BIA, nhan do phan_loai dan.
+        # Vai xep NHIEU anh: "anh chinh" la tam lam BIA, nhan do classify dan.
         return has_label_cover(a.get("dung"))
     if a.get("loai") == "chart" and not v.chart_don:
         return False
@@ -339,7 +339,7 @@ def has_enough_material(slug: str, dung_duoc: list, flagship: bool = False) -> b
     if not any(can_be_hero(slug, a) for a in dung_duoc):
         return False
     # muc = 0 (vai mot anh): ve nay luon dung, tuc chi con ve thu nhat.
-    # Dem SLIDE dung duoc (schema.so_anh_dung_duoc), khong dem TAM: tin TSMC
+    # Dem SLIDE dung duoc (schema.count_image_use_ok), khong dem TAM: tin TSMC
     # 12/09/2026 co 5 tam nhung mot tam 900x600 chi ghep duoc ma khong co cap
     # -> 4 slide, engine van bao "du 5" va ngung tim (t_a8ffd2f6).
     import schema

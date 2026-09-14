@@ -72,8 +72,8 @@ def test_anh_wikidata_uu_tien_ngang_hon_chan_dung_doc_sau_khi_sap():
     pages_ngang = {"e": _trang_commons(4000, 2667, "Dario Amodei at TechCrunch Disrupt 2023 01.jpg")}
 
     def hoi_commons_gia(cau):
-        # url_commons goi _hoi_commons(...) mot lan cho danh sach ten tep P18;
-        # anh_nguoi_ngang goi rieng mot lan voi cau la ten nguoi trong ngoac kep.
+        # commons_urls goi _ask_commons(...) mot lan cho danh sach ten tep P18;
+        # image_person_landscape goi rieng mot lan voi cau la ten nguoi trong ngoac kep.
         return pages_ngang if cau.startswith('"Dario') else pages_p18
 
     with mock.patch.object(th, "material_wikidata", return_value=tl), \

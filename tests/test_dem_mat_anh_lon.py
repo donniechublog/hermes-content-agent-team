@@ -49,7 +49,7 @@ def _voi_det_gia(path):
 
 def test_anh_50mp_duoc_thu_ve_duoi_tran():
     if importlib.util.find_spec("cv2") is None:
-        return                                            # may khong co cv2: dem_mat ve None
+        return                                            # may khong co cv2: count_faces ve None
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp) / "a2.png"
         Image.new("RGB", (9440, 5310), (30, 30, 30)).save(p, compress_level=1)
@@ -62,7 +62,7 @@ def test_anh_50mp_duoc_thu_ve_duoi_tran():
 
 def test_anh_nho_giu_nguyen_kich_thuoc():
     if importlib.util.find_spec("cv2") is None:
-        return                                            # may khong co cv2: dem_mat ve None
+        return                                            # may khong co cv2: count_faces ve None
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp) / "a.png"
         Image.new("RGB", (1200, 675), (200, 200, 200)).save(p)

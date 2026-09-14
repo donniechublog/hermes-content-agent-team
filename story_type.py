@@ -13,13 +13,13 @@ khó, hoàn toàn xây dựng logic định lượng được"*. Nguyên văn b�
 Đo trước khi viết (12/09): `category` của mỗi tin đã được Finn/Vera gán từ lúc
 quét (`manifest_build.VALID_CATEGORIES`), `approve_pick` ghi vào draft,
 `prepare/manifest.py` chép vào `xong.json` — nhưng engine ảnh (`image_prepare`,
-`image_concept`, `image_brand`, `chuan_bi/*`) KHÔNG đọc nó ở đâu cả. Bộ phân
-loại đã chạy, bảng vật thể đã có (Wikidata P154/P112/P169, `HAU_TO`, `CHU_DE`,
+`image_concept`, `image_brand`, `prepare/*`) KHÔNG đọc nó ở đâu cả. Bộ phân
+loại đã chạy, bảng vật thể đã có (Wikidata P154/P112/P169, `SUFFIX`, `TOPIC`,
 `NUOC`, `xep_hang`), chỉ thiếu dây nối. Tệp này là dây nối.
 
-Hai bảng dữ liệu mới (chưa có ở đâu trong repo): `NUOC_CUA_HANG` — hãng thuộc
+Hai bảng dữ liệu mới (chưa có ở đâu trong repo): `COUNTRY_OF_RANK` — hãng thuộc
 nước nào (trước đây cờ chỉ ra khi TIÊU ĐỀ nhắc tên nước, nên tin Samsung không
-bao giờ ra cờ Hàn) — và `MA_CO_PHIEU` — mã niêm yết để chụp biểu đồ giá.
+bao giờ ra cờ Hàn) — và `CODE_HAS_BALLOT` — mã niêm yết để chụp biểu đồ giá.
 
 Thuần để test được. Không import module nào của engine.
 """
@@ -51,12 +51,12 @@ def standard_type(category) -> str:
 # Tên vật là tên NHÁNH TÌM đã có trong engine, không phải mô tả:
 #   ghep_hai_hang  ảnh của CẢ HAI hãng trong tin, để vai ghép (thương vụ)
 #   xep_hang       bảng benchmark chụp từ trang xếp hạng (ranking.py)
-#   chart_cong_bo  chart trong trang công bố chính chủ (_them_trang_cong_bo)
-#   logo/tru_so/founder   image_brand: Wikidata P154 / HAU_TO / P112-P169
-#   co_phieu       biểu đồ giá theo MA_CO_PHIEU (image_brand.image_has_ballot)
-#   san_giao_dich  CHU_DE "stock exchange trading floor"
-#   co_nuoc_hang   cờ nước của hãng (NUOC_CUA_HANG -> image_concept "flag of")
-#   khai_niem      bảng CHU_DE theo chữ trong tiêu đề (đường cũ)
+#   chart_cong_bo  chart trong trang công bố chính chủ (_extra_announcement_page)
+#   logo/tru_so/founder   image_brand: Wikidata P154 / SUFFIX / P112-P169
+#   co_phieu       biểu đồ giá theo CODE_HAS_BALLOT (image_brand.image_has_ballot)
+#   san_giao_dich  TOPIC "stock exchange trading floor"
+#   co_nuoc_hang   cờ nước của hãng (COUNTRY_OF_RANK -> image_concept "flag of")
+#   khai_niem      bảng TOPIC theo chữ trong tiêu đề (đường cũ)
 BOARD_IMAGE_BY_TYPE = {
     "M&A":       ("ghep_hai_hang", "logo", "tru_so", "founder", "co_phieu"),
     "MODEL":     ("xep_hang", "chart_cong_bo", "logo", "founder", "khai_niem"),
@@ -142,7 +142,7 @@ def code_has_ballot(khoa: str) -> str:
     return CODE_HAS_BALLOT.get((khoa or "").lower(), "")
 
 
-# ---- hạ tầng: từ khoá ép khi category = INFRA mà tiêu đề không khớp CHU_DE ------
+# ---- hạ tầng: từ khoá ép khi category = INFRA mà tiêu đề không khớp TOPIC ------
 KEYWORD_LOWER_LAYER = ("data center server racks", "factory assembly line")
 
 

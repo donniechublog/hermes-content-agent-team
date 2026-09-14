@@ -71,7 +71,7 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
 
 def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
     """LOW-45 (13/09/2026) — đúng ảnh Getty chụp nghiêng App Store của Kimi K3
-    (đã chặn ở JS_FIG + _vong_chup_nguon) lọt qua LẦN THỨ BA qua một đường khác
+    (đã chặn ở JS_FIG + _round_capture_source) lọt qua LẦN THỨ BA qua một đường khác
     hẳn: nhánh "anh bối cảnh" của `image_brand.sentence_ask_vision` (dùng khi
     Commons/Wikidata rỗng, `_report_brand_empty` tìm ảnh qua báo) chưa từng
     có cụm này. Một hằng số dùng chung (`image_rules.IMAGE_PHRASES_SCREENSHOT`),

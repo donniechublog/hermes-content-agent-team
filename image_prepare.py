@@ -14,7 +14,7 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
      khac khi nguon mong (ghi nguoc vao nguon json de moi vai sau cung dung).
   2. ANH: mot phien chromium (chu bai, <img> lon, chup table/figure/canvas full
      be ngang) + article_images (tinh) + Wikimedia Commons khi < 5 anh. Thieu thi tim
-     rong sang bao khac cung tin (_vong_tim_rong). Anh THAT cua chinh hang trong
+     rong sang bao khac cung tin (_round_widen_search). Anh THAT cua chinh hang trong
      tin (image_brand.py: logo, chan dung founder/CEO, tru so, campus) chay
      cho MOI tin co hang trong watchlist — du anh hay khong (10/09/2026). Van
      thieu nua thi anh khai niem cua chu de (image_concept.py: co nuoc, rack).
@@ -29,18 +29,18 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
      miles_prepare.py — deu doc chung xong.json nay, khong lam lai.
 
 Tu 09/09/2026 (audit A1) than engine nam trong goi `prepare/`, tach theo PHA;
-tep nay chi con `prepare_article()` (noi 9 pha), `chay()` (khoa + idempotent) va CLI —
+tep nay chi con `prepare_article()` (noi 9 pha), `run()` (khoa + idempotent) va CLI —
 nen cron, SOUL va cac vai KHONG phai doi lenh. Phu thuoc mot chieu:
 
-    chung  <- nguon, browser, download_filter <- nhin <- fallback_rounds ;  manifest <- chung
+    common  <- source, browser, download_filter <- vision <- fallback_rounds ;  manifest <- common
 
-  prepare/chung.py     hang so, header HTTP, doc/ghi JSON, ten mien
-  prepare/nguon.py     nap nguon Finn/Vera, ung vien tinh/social, Commons
-  prepare/browser.py   phien Chromium, boc anh trong trang, giai link Google News
-  prepare/tai_loc.py   tai song song + loc rac/trung/do hoa, cat san
-  prepare/nhin.py      vision tung anh, do hinh hoc, quyet dinh dung o dau
-  prepare/vong_bu.py   ba vong bu khi kho mong (bao khac, xep hang, thuong hieu, khai niem)
-  prepare/manifest.py  bang anh, cau tu lieu, brief
+  prepare/common.py            hang so, header HTTP, doc/ghi JSON, ten mien
+  prepare/source.py            nap nguon Finn/Vera, ung vien tinh/social, Commons
+  prepare/browser.py           phien Chromium, boc anh trong trang, giai link Google News
+  prepare/download_filter.py   tai song song + loc rac/trung/do hoa, cat san
+  prepare/vision.py            vision tung anh, do hinh hoc, quyet dinh dung o dau
+  prepare/fallback_rounds.py   ba vong bu khi kho mong (bao khac, xep hang, thuong hieu, khai niem)
+  prepare/manifest.py          bang anh, cau tu lieu, brief
 
 Idempotent + khoa: `state/<brand>/chuan_bi/<draft_id>/` (xong.json, dang_chay.pid).
 `--lam-moi` de lam lai tu dau.
@@ -110,7 +110,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     dong; doi chieu bang vet voi moi ham anh em thay bang ban gia (13 kich ban)."""
     import carousel
     title = meta.get("title", draft_id)
-    # MOT phien Chromium cho ca bai (audit B4): truoc day nap_nguon (giai link
+    # MOT phien Chromium cho ca bai (audit B4): truoc day load_source (giai link
     # Google News), browser_pass va xep_hang moi cho tu launch mot tien trinh —
     # toi BON lan cho mot bai. Phien mo LUOI nen `--khong-browser` khong ton
     # tien trinh nao, va giu tien trinh RIENG cho moi bo tham so (xep_hang ep
@@ -245,7 +245,7 @@ COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") 
 # het gio engine con kip thoat bang mot cau vai doc duoc.
 WAIT_LOCK_SECONDS = 60
 # Doi CHO TRONG trong tran engine song song toi da bay nhieu giay (LOW-25). Cung
-# ly do voi CHO_KHOA_GIAY: phai nho hon tran bash tool (~300s) de khi het gio
+# ly do voi WAIT_LOCK_SECONDS: phai nho hon tran bash tool (~300s) de khi het gio
 # engine tu noi ra thay vi bi cat cau. `_ngu` tach ra de test khong ngu that.
 WAIT_SLOT_SECONDS = 240
 _ngu = time.sleep
@@ -410,7 +410,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
     Tra ve (manifest, workdir, meta).
 
     `cho`: so giay toi da doi mot engine KHAC dang giu `dang_chay.pid` con song.
-    Mac dinh CHO_KHOA_GIAY (60) — xem chu thich o hang so do: 300 bang dung tran
+    Mac dinh WAIT_LOCK_SECONDS (60) — xem chu thich o hang so do: 300 bang dung tran
     bash tool cua vai nen "doi het khoa" chua bao gio thanh cong tu trong tay vai.
 
     `sau_chuan_bi(draft_id, m)`: moc cho tang GHEP NOI xu ly `m["thieu_anh"]`
@@ -432,7 +432,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
                  "— DUNG, KHONG chay lai. Da bao Ong Chu. Chi chay lai voi `--lam-moi` "
                  "sau khi sua nguyen nhan (xem chuan_bi.log).")
     if xong.exists() and not lam_moi:
-        # doc_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
+        # read_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
         # thay cung mot so, khong ai phai tu doan nua.
         return schema.read_manifest(xong), wd, meta
     khoa.write_text(str(os.getpid()))

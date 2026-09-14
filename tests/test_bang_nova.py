@@ -206,7 +206,7 @@ def test_moi_fetcher_trong_main_deu_qua_hang_rao():
 
 
 # ---------------------------------------------------------------- ban dang ky
-# Tu 07/09/2026 sau cho khai bang (ARENA_BOARDS, KHOA_BANG, NHAN_BANG, LINK_BANG,
+# Tu 07/09/2026 sau cho khai bang (ARENA_BOARDS, KHOA_BANG, LABEL_BOARD, LINK_BOARD,
 # khoi in trong _in_bao_cao, phan `ket` cua cac bang top) deu dan xuat tu
 # model_boards.BOARD. Ba test dau cua tep nay gio la hien nhien — giu lai lam
 # cong, nhung cai can canh chuyen sang chinh ban dang ky.

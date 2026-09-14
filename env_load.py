@@ -127,7 +127,7 @@ def handle_channel(brand: str, co_a_cong: bool = True) -> str:
     MOT ban (audit lượt 2, ADF-r2-9): truoc day bob_submit.handle_channel luon them "@"
     va doi 'blog', con kite_prepare.handle_channel tra nguyen 'donniechublog'
     khong "@" va khong doi 'blog' — cung ten ham, hai ket qua. Nguon su that
-    van la card.THUONG_HIEU (import tai cho de tranh vong: card import env_load).
+    van la card.BRAND (import tai cho de tranh vong: card import env_load).
     `co_a_cong=False` cho cho tu ghep "@" vao chu (slide cuoi cua Kite)."""
     import card
     b = (brand or "").strip()

@@ -116,7 +116,7 @@ def _read_page(url):
 
 def _read_social(url):
     """Toan van post. Tra (title, summary, image_url, link, ghi_chu) hoac None
-    khi khong lay duoc — goi la de goi y roi ve _doc_trang, khong chan lenh.
+    khi khong lay duoc — goi la de goi y roi ve _read_page, khong chan lenh.
 
     Khong tai anh ve o buoc nay: /bai chi can mot link de dien vao the. Anh that
     cho slide do image_prepare.py tai (`candidate_social`) khi dung brief, boi luc
@@ -130,7 +130,7 @@ def _read_social(url):
     return d["title"], d["text"], img, d["link"], ghi_chu
 
 
-# Danh sach vai sinh tu VAI_ANH chu khong go tay: truoc 08/09/2026 dong nay ke
+# Danh sach vai sinh tu ROLE_IMAGE chu khong go tay: truoc 08/09/2026 dong nay ke
 # "designer hoac carousel" trong khi ma da nhan them kite/edu tu 05/09 — Ong Chu
 # doc /hd thi tuong khong giao duoc cho Kite.
 def _line_role_help():

@@ -161,7 +161,7 @@ class LineImageUsed(TypedDict):
 # ---------------------------------------------------------------- dan xuat
 # Anh NGANG thap hon nguong nay khong cat doc 4:5 duoc (con ~80% chieu cao roi
 # phong len 1080 se nhoe) — chi con duong "ghep" voi mot anh ngang khac. MOT ban
-# cho ca nguoi dem (so_anh_dung_duoc) lan cong chan (dre_submit): truoc 12/09/2026
+# cho ca nguoi dem (count_image_use_ok) lan cong chan (dre_submit): truoc 12/09/2026
 # dre_submit go cung 700 con nguoi dem thi khong biet, nen A5 900x600 cua tin TSMC
 # duoc dem la mot slide trong khi khong ai dung no mot minh duoc.
 HEIGHT_MIN_CROP_LANDSCAPE = 700
@@ -170,7 +170,7 @@ HEIGHT_MIN_CROP_LANDSCAPE = 700
 def _only_stack_ok(a: dict) -> bool:
     """Tam nay CHI dung duoc qua "ghep" — khong dung MOT MINH duoc, vi mot
     trong hai ly do:
-      1. qua thap de cat doc (`h < CAO_TOI_THIEU_CAT_NGANG`), hoac
+      1. qua thap de cat doc (`h < HEIGHT_MIN_CROP_LANDSCAPE`), hoac
       2. la anh chup NGANG co chu/logo/so lieu de len (`cat_ngang_ok is False`
          — vision xac nhan, xem prepare.vision.classify) nen image_rules cam crop.
     Su co 12/09/2026 lan hai (t_a8ffd2f6): Dre chay that, 4/5 anh ngang cao

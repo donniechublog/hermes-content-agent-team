@@ -56,7 +56,7 @@ def test_khop_cong_thuc_cua_nguoi_ghi():
     assert "so_rieng = sum(" not in src, "cong thuc cu con nam lai trong nguoi ghi"
 
 
-# ------------------------------------------------------------ doc_manifest
+# ------------------------------------------------------------ read_manifest
 def test_ban_moi_giu_nguyen_khong_bi_dung_cham():
     m = {"phien_ban": schema.VERSION_MANIFEST, "so_dung_duoc": 99,
          "so_xep_hang": 7, "anh": []}
@@ -106,7 +106,7 @@ def test_tep_json_khong_phai_dict_cung_ra_None():
         assert schema.read_manifest(p) is None
 
 
-# ------------------------------------------------------------- hop_nhat_meta
+# ------------------------------------------------------------- merge_meta
 def test_tron_giu_khoa_cu_khong_co_trong_ban_moi():
     """Dung duong da suyt mat: blackboard ghi root_task, write_meta ghi de."""
     ra = schema.merge_meta({"root_task": "t_9", "title": "cu"},
@@ -151,7 +151,7 @@ def test_write_meta_that_su_tron_chu_khong_ghi_de():
 
 # --------------------------------------------------- khai bao khop thuc te
 def test_moi_khoa_nguoi_ghi_sinh_ra_deu_co_trong_Manifest():
-    """Them khoa vao dung_manifest ma quen khai o schema.Manifest thi bang khai
+    """Them khoa vao build_manifest ma quen khai o schema.Manifest thi bang khai
     bao thanh vo dung — chan tu day."""
     import ast
     src = (ROOT / "prepare" / "manifest.py").read_text(encoding="utf-8")
@@ -172,7 +172,7 @@ def test_moi_khoa_write_meta_deu_co_trong_Meta():
     cay = ast.parse(src)
     ham = next(n for n in ast.walk(cay)
                if isinstance(n, ast.FunctionDef) and n.name == "write_meta")
-    # Loc theo TEN bien `meta` nhu test dung_manifest (E-r2-6): lay dict Assign
+    # Loc theo TEN bien `meta` nhu test build_manifest (E-r2-6): lay dict Assign
     # DAU TIEN thi mot dict phu dat truoc `meta = {...}` la bao hong oan.
     gan = next(n for n in ast.walk(ham)
                if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)

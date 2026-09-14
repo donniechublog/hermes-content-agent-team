@@ -8,7 +8,7 @@ Viec cua Vera (profile market). Khac hai vai kia:
     nghe nao sap mat viec.
 
 Xuong song la Google News RSS: mien phi, khong khoa, va quan trong nhat la
-TRUY VAN TU DO — muon theo doi chu de moi thi them mot dong vao TRUY_VAN, khong
+TRUY VAN TU DO — muon theo doi chu de moi thi them mot dong vao QUERY, khong
 phai di tim nguon moi. Da do song: 'Anthropic IPO' ra 92 bai, 'AI acquisition'
 ra 100 bai trong do co dung tin Stripe mua OpenRouter.
 
@@ -157,7 +157,7 @@ def name_watchlist(tieu_de: str) -> str | None:
 
     So theo BIEN GIOI TU de "arm" khong khop "harm", "yi" khong khop "yield".
     Ten model/chip (MiMo, Gemini...) duoc quy ve hang chu (Xiaomi, Google) qua
-    HANG_CUA_TEN, de khau "cuu" dam bao du HANG chu khong trung mot hang nhieu lan.
+    RANK_OF_NAME, de khau "cuu" dam bao du HANG chu khong trung mot hang nhieu lan.
     """
     td = " " + tieu_de.lower() + " "
     for ten in WATCHLIST:
@@ -388,7 +388,7 @@ def main():
 
     moi = [t for t in tin if standard_ify(t["tieu_de"]) not in cu]
     for t in moi:
-        # hang_watch da duoc gom_trung tinh tren TUNG bien the truoc khi gop.
+        # hang_watch da duoc gather_duplicate tinh tren TUNG bien the truoc khi gop.
         t["watchlist"] = bool(t.get("hang_watch"))
 
     # KHONG cham diem, KHONG cat theo do quan trong. Cach cham cu xep theo "nhieu
@@ -411,7 +411,7 @@ def main():
     # Gon tung item truoc khi ghi tep cho Vera — prompt cua no an theo kich
     # thuoc tep nay (audit 01/09). `so_bao` du de danh gia do nong; danh sach
     # ten bao cap 3 (du cho source_note); `hang_watch` trung y voi `watchlist`
-    # thi bo. `chon` goc van dung nguyen cho ghi_moc ben duoi.
+    # thi bo. `chon` goc van dung nguyen cho write_timestamp ben duoi.
     xuat = []
     for t in chon:
         t2 = {k: v for k, v in t.items() if k != "hang_watch"}
@@ -432,7 +432,7 @@ def main():
                 continue
             k = f"hang|{hang}|{t['ngay']}"
             # KHONG dung ten `cu`: do la bo nho da-thay (da_thay()) dung o cuoi
-            # main cho ghi_moc. Ghi de no o day lam ghi_moc nhan None -> crash
+            # main cho write_timestamp. Ghi de no o day lam write_timestamp nhan None -> crash
             # sau khi da ghi --out, tuc Vera co tep ma moc khong duoc cap nhat
             # (tin bao lai hom sau). Bat 04/09/2026 khi chay thu scan_prepare.
             cu_nhom = nhom.get(k)

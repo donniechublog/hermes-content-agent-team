@@ -101,7 +101,7 @@ def capture_cover(pdf_bytes: bytes) -> Image.Image | None:
 # den dcgr deu rat toi), nen nuong san mau nay vao thi lop card ve tiep len tren
 # lien mach, khong lo mot duong noi.
 DARK = (10, 12, 16)
-# Vung headline luon nam o 40% duoi (card.TRAN_TEXTBOX). Nen lop toi phai gan
+# Vung headline luon nam o 40% duoi (card.CEILING_TEXTBOX). Nen lop toi phai gan
 # nhu DAC han o do de chu bai bien mat, chu khong toi dan nhe. Trong: bat dau
 # toi tu 0.40, len gan dac o 0.60, roi giu dac toi day.
 START_DARK = 0.40

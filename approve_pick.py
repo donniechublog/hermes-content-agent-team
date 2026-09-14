@@ -82,15 +82,15 @@ def manifest_already_send(vai: str):
 def _is_reply_report(vai: str, msg: dict) -> bool:
     """Tin nay co phai REPLY dung vao bao cao danh so MOI NHAT cua `vai` khong
     (Ong Chu 06/09/2026: chi tin REPLY moi tinh la lenh, go troi trong topic la
-    hoi thoai — du co dung so). Cung nguyen tac voi _nhan_ly_do_lam_lai o tren,
+    hoi thoai — du co dung so). Cung nguyen tac voi _label_reason_redo o tren,
     va giai luon mot ke ho khac: truoc day tra loi mot bao cao CU van bi hieu
-    la chon tu manifest MOI NHAT (_xu_ly_chon luon doc latest_manifest), sai bai
+    la chon tu manifest MOI NHAT (_process_pick luon doc latest_manifest), sai bai
     ma khong ai biet. Gio reply phai khop dung mid bao cao gan nhat moi qua.
 
     scan_submit.py ghi mid nay qua `publish.py --luu-mid` ngay khi gui bao cao.
     Chua co tep (bao cao gui truoc khi co co che nay, hoac ghi loi) thi lui ve
     kiem "co phai reply toi mot tin CUA BOT" — long hon nhung van chan duoc
-    hoi thoai thuong. Phai loc qua _reply_that truoc: trong topic, Telegram tu
+    hoi thoai thuong. Phai loc qua _reply_real truoc: trong topic, Telegram tu
     gan reply_to_message = tin goc topic (do bot tao) cho MOI tin, nen thieu
     buoc loc do thi ca hai nhanh deu luon dung — dung bug 06/09/2026."""
     rt = _reply_real(msg)
@@ -300,7 +300,7 @@ def _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu
     # nhung neu mai Nova/Vera co bo cham thi dong nay noi sai ten ma khong ai
     # thay. Khong biet vai quet (lenh /bai dat tay) thi giu chu chung nhu cu.
     ten_quet = _vai.display_name(vai_quet) if vai_quet else "Finn"
-    # AI VIET BAI NAY (LOW-13, 10/09/2026). Truoc day la hang so MAC_DINH_VIET:
+    # AI VIET BAI NAY (LOW-13, 10/09/2026). Truoc day la hang so DEFAULT_WRITE:
     # mot nguoi viet cho ca hai brand. Gio hoi ban dang ky — vai quet truoc,
     # brand lam luoi. `brand` o day luon co that (create_pair nhan mac dinh
     # "donniechublog"), nen ke ca lenh /bai dat tay khong biet vai quet van ra
@@ -327,7 +327,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     out_png = str(DRAFTS / (draft_id + ".png"))
     write_meta(draft_id, item, out_png, brand)
 
-    # Loi research ghi vao item de nguoi goi (_xu_ly_chon) dua len dong tra loi
+    # Loi research ghi vao item de nguoi goi (_process_pick) dua len dong tra loi
     # Ong Chu — khong chi nam trong log (C-r2-6).
     loi_nguon = _research_source(item, draft_id, out_png, brand)
     if loi_nguon:
@@ -354,7 +354,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     # Bang den: the goc cua bai truoc, task anh la con cua no. Khong co goc
     # (loi) thi van tao task nhu cu — bang den la lop them, khong phai dieu kien.
     # Muc tieu tren the goc goi TEN NGUOI VIET THAT cua bai, khong phai hang so
-    # `MAC_DINH_VIET` (LOW-13): the goc la thu Ong Chu doc de biet ai lam gi.
+    # `DEFAULT_WRITE` (LOW-13): the goc la thu Ong Chu doc de biet ai lam gi.
     root_id = _blackboard_root(draft_id, item["title"],
                              goal=f"{item['title']} — {brand}: {vai_anh} dung anh, "
                                   f"{_vai.writer_for(vai_quet, brand)} viet caption "
@@ -370,7 +370,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     # `vai_anh` de biet can bao nhieu anh that. Chay engine truoc la de no doc
     # mot tep chua ai ghi: truoc gio chi mat tom tat (im lang), nay con mat ca
     # nguong nen Ethan lai bi doi du anh cho carousel. Doi cho hai dong nay la
-    # du — _cat_sidecar khong can gi tu engine.
+    # du — _crop_sidecar khong can gi tu engine.
     vai_viet = _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu,
                             root_id, illu_id, vai_quet=vai_quet)
     _block_run_engine(draft_id)
@@ -420,7 +420,7 @@ def _report_already_label(token, group, thread_id, manifest_path, lenh):
 
 
 def _process_pick(token, group, thread_id, vai, lenh):
-    """Tao cap task tu lenh chon so. Chay nen qua _chay_nen."""
+    """Tao cap task tu lenh chon so. Chay nen qua _run_background."""
     manifest_path = manifest_already_send(vai) or latest_manifest(vai)
     if not manifest_path:
         mau = MANIFEST_BY_TOPIC.get(vai, "?")
@@ -440,11 +440,11 @@ def _process_pick(token, group, thread_id, vai, lenh):
     lenh = sorted(lenh, key=lambda x: thu_tu_vai.index(x[1]))
 
     # Bao da nhan TRUOC khi vao khoa va truoc create_pair (toi 180s moi tin):
-    # dong nay phai toi Ong Chu ngay, khong xep sau viec. Xem _bao_da_nhan.
+    # dong nay phai toi Ong Chu ngay, khong xep sau viec. Xem _report_already_label.
     _report_already_label(token, group, thread_id, manifest_path, lenh)
 
     # KHOA THEO MANIFEST, om CA vong tao task. Vi sao 06/09/2026: moi lenh chon
-    # chay mot thread rieng (_chay_nen), ma ca ba buoc "doc ca manifest ->
+    # chay mot thread rieng (_run_background), ma ca ba buoc "doc ca manifest ->
     # create_pair (toi 180s moi tin vi article_sources chay dong bo) -> ghi lai ca
     # manifest" deu khong khoa. Lenh thu hai doc ban CU roi ghi de, nuot mat
     # `da_giao`/`picked` cua lenh truoc — ma chinh `da_giao` la cong chan giao
@@ -494,7 +494,7 @@ def _process_pick(token, group, thread_id, vai, lenh):
                 lines.append(f"   ⚠️ không tìm được nguồn cho #{n}: {it['nguon_loi'][:160]}")
             # Ong Chu 08/09/2026: "cac vai can phan hoi ngay khi duoc giao task la da
             # nhan task" — truoc day chi hang CHUYEN (Dre->Miles, ->Kite) duoc bao
-            # ngay qua _bao_nhan_viec, con task MOI tao o day thi im lang cho toi khi
+            # ngay qua _report_receive_job, con task MOI tao o day thi im lang cho toi khi
             # dispatcher thuc su chay (co the toi 1 phut). Bao luon cho vai_anh o day.
             _report_receive_job(token, group, vai_anh, None, it["title"], tid)
             # Ghi NGAY sau TUNG tin (create_pair da danh dau vao `it`), khong doi

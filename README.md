@@ -135,7 +135,7 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 ### Thêm một vai mới
 
 Trước 09/09/2026 việc này đụng tám chỗ và quên một chỗ là hỏng **câm**: "kites"
-thiếu trong `TEN_SANG_CAP` làm cả lệnh chọn bị từ chối rồi gửi nhầm cho Finn
+thiếu trong `NAME_BRIGHT_CAP` làm cả lệnh chọn bị từ chối rồi gửi nhầm cho Finn
 (06/09), sidecar ghi slug cũ làm task nằm `ready` hai ngày (01/09). Từ khi có
 `role.py` thì còn **ba bước mã** (dưới) cộng **ba bước cấu hình** không dẫn xuất
 được từ mã: `hermes/profiles/<brand>/<slug>.SOUL.md`, một khoá trong
@@ -151,8 +151,8 @@ mọi bảng cũ:
    "kites"); `slug_cu` chỉ dành cho slug cũ còn nằm trong sidecar trên đĩa.
    `anh_toi_thieu` là số ảnh thật tối thiểu để vai dựng được sản phẩm — engine
    ảnh dùng chung đọc nó qua `min_images()`, đặt sai thì bài bị báo thiếu
-   ảnh oan (sự cố 10/09/2026). `VAI_ANH`, `TEN_SANG_CAP`, `TEN_VAI_ANH`,
-   `VAI_CAROUSEL`, `VAI_EDU`, `SLUG_CU`, `TEN_HIEN` tự có theo.
+   ảnh oan (sự cố 10/09/2026). `ROLE_IMAGE`, `NAME_BRIGHT_CAP`, `NAME_ROLE_IMAGE`,
+   `ROLE_CAROUSEL`, `ROLE_EDU`, `SLUG_OLD`, `DISPLAY_NAME` tự có theo.
 2. **Một cặp `<vai>_prepare.py` / `<vai>_submit.py`** — cả hai đọc chung
    `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
    (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).
@@ -370,7 +370,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
     nhận task** — trước đó `_report_receive_job` chỉ bắn khi việc CHUYỂN giữa hai vai
     (Dre→Miles, →Kite); task MỚI tạo trong `approve_pick.py` (Ông Chủ chọn tin) thì
     im lặng cho tới khi dispatcher thực sự chạy (tới 1 phút). Nay `_process_pick` gọi
-    `_bao_nhan_viec(..., tu_vai=None, ...)` ngay sau `create_pair` nên vai luôn được
+    `_report_receive_job(..., tu_vai=None, ...)` ngay sau `create_pair` nên vai luôn được
     báo "đã nhận task" tức thì, không đợi dispatcher.
 - Chat giữ mạch bằng `hermes chat -c tele-<vai> --create-if-missing -Q -q` (`chat_router.py`).
   Trước 04/09 dùng `--continue … -z`: `-z` được xử lý trước và thoát luôn nên `--continue`

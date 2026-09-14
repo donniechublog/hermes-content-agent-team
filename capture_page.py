@@ -247,7 +247,7 @@ def _variable_text_card_x(im):
 def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: float = 0.15,
            lap_day: float = 0.78):
     """Dat anh chup vao khung `ti_le` (4:5) — CAT BOT HAI BEN neu anh qua ngang
-    (quanh tam THI GIAC cua chu the — xem `_tam_chu_the_x` — toi da `CAT_TOI_DA`
+    (quanh tam THI GIAC cua chu the — xem `_tam_chu_the_x` — toi da `CROP_MAX`
     be ngang) roi PHONG LEN cho day khung (contain-fit, co the phong to hon anh
     goc), phan con lai (neu con) to MAU NEN cua chinh trang do. Ra mot tam dung
     mot minh lam slide duoc, khong ghep cap.
@@ -266,7 +266,7 @@ def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: fl
         bien = _variable_text_card_x(im)
         if bien is not None:
             # KHONG BAO GIO cat vao trong bien chu the that (do bang do-lech-mau-
-            # nen, xem _bien_chu_the_x) — chu the rong hon `w_dich` thi NOI RONG
+            # nen, xem _variable_text_card_x) — chu the rong hon `w_dich` thi NOI RONG
             # cua so cat ra du chua tron no, chap nhan giam bot muc dem thay vi
             # lam dut chu (su co 13/09/2026: logo "tsmc" trai het chieu ngang,
             # cat theo trong tam van dut chu "t").
@@ -285,7 +285,7 @@ def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: fl
     # nhu ban cu (do la nguyen nhan anh da cat gon van nho giua khung thay vi
     # day no ra). KHONG lap day 100% chieu cao (Ong Chu 13/09/2026, sau khi cat
     # gan day khung: chu tieu de de thang len anh, cong bao ve tuong phan cua
-    # carousel.py (_lop_neu_can) phai phu mot dai xam day de chu den doc duoc —
+    # carousel.py (_layer_if_can) phai phu mot dai xam day de chu den doc duoc —
     # chinh la "vet nhat" — vi khong con mieng nen PHANG nao ngay tren cho chu
     # se nam de cong do tu bo qua. Chua het khung: `lap_day` (0.78) danh lai
     # mot dai phang o duoi (via `cao_tren` thap, phan lon roi ve duoi) lam nen

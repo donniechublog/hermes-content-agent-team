@@ -150,7 +150,7 @@ def write_background(draft_id: str, key: str, value, author: str = "script", her
     """Ghi mot muc len bang den bang PYTHON CUA HERMES trong tien trinh con — de
     script chay trong venv content-team (khong co hermes_cli) goi duoc.
     Best-effort: tra ve (ok, thong_bao), khong nem. `hermes_home` None = thua ke
-    moi truong (dispatcher/systemd da dat, hoac _chuan_home suy tu brand);
+    moi truong (dispatcher/systemd da dat, hoac _standard_home suy tu brand);
     dat gia tri thi ep HERMES_HOME cho tien trinh con.
     Truoc 05/09/2026 doan nay chep bon ban o dre_submit/kite_submit/miles_submit/approve_service."""
     import subprocess

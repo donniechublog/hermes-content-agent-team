@@ -45,7 +45,7 @@ def test_khong_trung_ma_nguon():
     assert len(ma) == len(set(ma)), f"trung ma nguon: {ma}"
 
 
-# ----------------------------------------------------------------- tach_model
+# ----------------------------------------------------------------- extract_model
 def test_tach_model_giu_ten_ma_bien_the():
     """Sunburst/Flare la ten ma CUA CHINH HAI HANG dang xep #1 va #2 tren cung
     mot bang (Image Edit Arena, du lieu that 09/09/2026). Mat ten ma thi ca hai
@@ -82,7 +82,7 @@ def test_tach_model_khong_doi_hanh_vi_cu():
     assert xh.extract_model("vong seed do Nvidia dan dau") == []
 
 
-# --------------------------------------------------------------- goi_y_nguon
+# --------------------------------------------------------------- suggest_sources
 def test_link_image_edit_uu_tien_dung_bang_do():
     """Tin CO LINK toi image-edit thi nguon do phai len DAU danh sach (nhac
     truc tiep, +500 diem) — khong bi bang t2i chen truoc chi vi dung tu 'image'."""
@@ -96,7 +96,7 @@ def test_tin_tao_anh_chung_chung_van_xet_ca_hai_bang():
     """Tin ve tao anh (khong noi ro edit) khong co link: arena-t2i va
     arena-image-edit phai CUNG nam trong top nguon thu — mot model tao anh manh
     thuong len ca hai bang (du lieu that: GPT-Image-2.5 #1&#2 CA HAI bang cung
-    luc), tim_va_chup se lan luot thu tung nguon."""
+    luc), find_and_capture se lan luot thu tung nguon."""
     ds = xh.suggest_sources("GPT Image 2.5 dan dau bang tao anh AI", "", "", "")
     top5 = [n["ma"] for n in ds[:5]]
     assert "arena-t2i" in top5 and "arena-image-edit" in top5, top5
@@ -113,7 +113,7 @@ def test_tin_chinh_sua_anh_uu_tien_bang_edit_hon_t2i():
     assert ma_thu_tu.index("arena-image-edit") < ma_thu_tu.index("arena-t2i"), ma_thu_tu[:5]
 
 
-# ------------------------------------------------------- doc_lap / _bo_qua_nguon
+# ------------------------------------------------------- doc_lap / _skip_source
 def test_hai_nguon_doc_lap_khong_chan_nhau():
     """Ca hai bang GPT-Image-2.5 dung dau (tao anh, sua anh) deu doc_lap: da
     chup duoc mot cai KHONG duoc chan cai kia — dung yeu cau cua Ong Chu 09/09."""
@@ -137,7 +137,7 @@ def test_nguon_thuong_dung_sau_thanh_cong_dau_tien():
 
 
 def test_kich_ban_that_gpt_image_2_5_lay_ca_hai_bang():
-    """Mo phong DUNG trinh tu quyet dinh cua vong lap trong tim_va_chup_nhieu
+    """Mo phong DUNG trinh tu quyet dinh cua vong lap trong find_and_capture_many
     (khong dung Playwright that) cho ca that: tieu de nhac thang link Image Edit
     Arena — arena-image-edit len dau danh sach, arena-t2i theo sau, roi cac bang
     khong lien quan (arena-text...). Ket qua ca hai bang GPT-Image-2.5 deu duoc
@@ -169,7 +169,7 @@ def test_kich_ban_that_gpt_image_2_5_lay_ca_hai_bang():
 def test_ca_ba_bang_anh_cua_gpt_image_2_5():
     """Ca that dung tieu de draft (09/09/2026): tweet cong bo cua @arena xep
     gpt-image-2.5-sunburst #1 CA BA bang — Text-to-Image, Image Edit, Multi-Image
-    Edit — trong cung mot tweet. Mo phong voi tran TOI_DA_XH nhu vong lap that."""
+    Edit — trong cung mot tweet. Mo phong voi tran MAX_XH nhu vong lap that."""
     ds = xh.suggest_sources(
         "gpt-image-2.5-sunburst mới vào arena, giữ #1 cả bảng tạo ảnh lẫn sửa ảnh",
         "https://arena.ai/leaderboard/text-to-image", "", "")

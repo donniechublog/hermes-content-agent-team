@@ -47,7 +47,7 @@ LABEL_WARNING = ("[canh bao]", "[tu them]", "[bo qua]", "[LOI]")
 # Truoc day hai loai nay chi duoc IN ra roi van gui, rc=0. Vai doc canh bao, sua
 # ds.json, chay lai — va moi lan chay lai la MOT bao cao nua vao topic. Sang hom
 # do Ong Chu nhan BA ban gan giong nhau; reply vao ban thu hai thi khong co gi
-# xay ra, vi `--luu-mid` chi giu mid cua ban CUOI (xem _la_reply_bao_cao).
+# xay ra, vi `--luu-mid` chi giu mid cua ban CUOI (xem _is_reply_report).
 # Chan o day thi chi ban sach moi len topic: mot lan quet, mot bao cao.
 BLOCK_SEND = ("[bo qua]", "title tieng Viet mat dau")
 
@@ -79,7 +79,7 @@ def pin_manifest(mid_tep: Path, manifest: Path) -> None:
 
     Vi sao can ghim: approve_pick truoc day tu doan bang `latest_manifest`
     (ban moi nhat theo mtime). Dieu do chi dung khi moi lan ghi manifest deu
-    ket thuc bang mot lan GUI — tu khi co cong CHAN_GUI thi khong con: lan chay
+    ket thuc bang mot lan GUI — tu khi co cong BLOCK_SEND thi khong con: lan chay
     bi chan van ghi manifest moi, roi Ong Chu tra loi so tren bao cao CU (mid cu
     van khop) va so do tro vao mot ban CHUA AI NHIN THAY. Ghim thi so thu tu
     luon doc tren dung ban da gui.
@@ -118,7 +118,7 @@ def send(vai: str, tep: Path, thu: bool, manifest: Path = None) -> bool:
         print(f"[thu] khong gui. Noi dung {tep}:\n" + tep.read_text(encoding="utf-8")[:1500])
         return True
     # --luu-mid: approve_service doi chieu REPLY cua Ong Chu dung vao MID nay
-    # truoc khi coi la lenh chon so — xem ghi chu o _la_reply_bao_cao.
+    # truoc khi coi la lenh chon so — xem ghi chu o _is_reply_report.
     mid_tep = env_load.state_dir() / f"bao_cao_mid.{vai}.json"
     r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "publish.py"), "--to-env", "TELEGRAM_GROUP_ID",
                         "--thread-name", qb.TOPIC[vai], "--file", str(tep),

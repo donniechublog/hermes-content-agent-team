@@ -80,7 +80,7 @@ def after_prepare(draft_id: str, m: dict) -> None:
     if not ip.exists():
         return
     im = json.loads(ip.read_text(encoding="utf-8"))
-    # slug_that: sidecar cu con ghi ten persona ("dre", "miles") — chinh ly do
+    # canonical_slug: sidecar cu con ghi ten persona ("dre", "miles") — chinh ly do
     # role.py ton tai. Dung tho thi topics().get("dre") miss -> khong gui gi.
     vai = vai_mod.canonical_slug(im.get("vai_anh", ""))
     if vai == "kite" or im.get("chuyen_kite"):

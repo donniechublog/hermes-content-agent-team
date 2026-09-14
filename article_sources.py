@@ -319,7 +319,7 @@ def _query_bing(tieu_de: str) -> list:
 
 def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int = 10) -> list:
     if has_vietnamese(tieu_de):
-        print("[nguon_bai] TU CHOI bao_khac_bing bang tieng Viet", file=sys.stderr)
+        print("[nguon_bai] TU CHOI other_outlets_bing bang tieng Viet", file=sys.stderr)
         return []
     """Bao khac dua cung tin qua Bing News RSS. Khac Google News, link cua Bing
     la chuyen huong HTTP thuong (apiclick.aspx) -> di theo redirect la ra URL
@@ -402,7 +402,7 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
     lẫn cafebiz.vn/thanhnien.vn nếu chỉ chặn từ khoá); tiếng Trung không bị
     chặn ở đây (không có dấu tiếng Việt để nhận nhầm)."""
     if has_vietnamese(tu_khoa):
-        print("[nguon_bai] TU CHOI bao_ve_tu_khoa bang tieng Viet", file=sys.stderr)
+        print("[nguon_bai] TU CHOI report_about_keyword bang tieng Viet", file=sys.stderr)
         return []
     import email.utils as eu
     import time as _t
@@ -431,7 +431,7 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
         # doi CUNG MOT su kien nhu `other_outlets_bing` (`same_story`/`goc & ...`).
         if not link or not can <= story_tokens(td):
             continue
-        # `co_tieng_viet(tu_khoa)` o dau ham chi chan TU KHOA dau vao (ten
+        # `has_vietnamese(tu_khoa)` o dau ham chi chan TU KHOA dau vao (ten
         # hang luon la tieng Anh) — KHONG chan duoc bao TIENG VIET Bing tra ve
         # (vd "Anthropic" van khop tieu de mot bai cafebiz.vn/thanhnien.vn).
         # Do that 13/09/2026: query "Anthropic" tra ca cafebiz.vn, vietnam.vn,
@@ -481,9 +481,9 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
         # THU CA CAU NGAN, khong chi headline day du (Ong Chu 13/09/2026: do
         # that Moonshot/Kimi K3 — headline day du cua chinh TechCrunch chi keo
         # ve mot vai mien; cau ngan "Kimi Moonshot AI"/"Kimi maker Moonshot AI"
-        # (_truy_van_bing sinh ra, von chi dung cho Bing) keo ve them SCMP/
+        # (_query_bing sinh ra, von chi dung cho Bing) keo ve them SCMP/
         # Bloomberg/CNBC/Reuters ma headline day du BO SOT — cung mot dang loi
-        # da biet o Bing (_truy_van_bing doc noi "truy van day du -> 1 bai"),
+        # da biet o Bing (_query_bing doc noi "truy van day du -> 1 bai"),
         # chua bao gio ap sang Google News. Dung theo THU TU cua ham (dai ->
         # ngan trong tung bo), dung som khi da du mien de khong hoi qua nhieu.
         for q in [ten] + _query_bing(ten):

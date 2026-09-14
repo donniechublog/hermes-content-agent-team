@@ -82,7 +82,7 @@ def _ap_doi_slug_cu(cu):
     for alias, slug in cu.items():
         moi = _ad(slug)
         ra[slug if alias == moi else alias] = moi
-    # "teaser" chua bao gio nam trong SLUG_CU (Cape hoi do resolve qua ten
+    # "teaser" chua bao gio nam trong SLUG_OLD (Cape hoi do resolve qua ten
     # persona o `_TEN_THUONG`, xem N-r2-10). Doi xong thi no la slug CU that —
     # 11 topic/task tren dia con ghi chu do — nen phai khai them.
     ra["teaser"] = "cape"
@@ -291,7 +291,7 @@ def test_anh_chinh_duoc_hoi_dung_luat_cua_tung_renderer():
     """Cung mot tam anh, hai vai tra loi khac nhau — va khac dung o cho kho anh
     khac nhau, khong phai o tieu chi chat luong (thu do dung chung, chay o
     image_rules + classify truoc khi toi day)."""
-    # Ti le 1.5: qua NGANG_RO (1.4) nen phan_loai KHONG dan nhan "bìa" -> Dre
+    # Ti le 1.5: qua LANDSCAPE_CLEAR (1.4) nen classify KHONG dan nhan "bìa" -> Dre
     # khong lam bia duoc; nhung card.py cho toi 1.6 nen Ethan dung lam nen hero.
     ngang_vua = _a(ti_le=1.5, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
     assert role.can_be_hero("ethan", ngang_vua)

@@ -26,7 +26,7 @@ import manifest_common as mc                                 # noqa: E402
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
 
-# Nhan chuan la TIENG ANH (approve_service.NHAN_CHUAN) — SOUL/brief cua Finn ke
+# Nhan chuan la TIENG ANH (approve_service.LABEL_STANDARD) — SOUL/brief cua Finn ke
 # ARXIV / MODEL / LAB / INFRA / TOOL / ENGINEERING / BUSINESS / RESEARCH /
 # SECURITY. Bang cu chi co ban tieng Viet nen moi lan Finn nop deu bi bao
 # "category khong hop le" (thay 04/09/2026 khi chay thu scan_submit). Nhan ca hai.

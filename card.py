@@ -110,7 +110,7 @@ BRAND = {
 
 # Gia tri mac dinh; build() ghi de theo --brand
 BG = BG_CARD = FG = MUTED = ACCENT = ACCENT_DIM = CYAN = LINE = None
-THRESHOLD_BACKGROUND_BRIGHT = None    # diem sang nen (0..255) FG/BG hoa nhau — dat qua dat_thuong_hieu
+THRESHOLD_BACKGROUND_BRIGHT = None    # diem sang nen (0..255) FG/BG hoa nhau — dat qua set_brand
 
 
 def set_brand(ten: str):
@@ -326,7 +326,7 @@ def _enough_bright(mau, toi_thieu=0.42):
 
 
 def _enough_dark(mau, toi_da=0.42):
-    """Keo mau ve phia den cho toi khi doc duoc tren nen SANG — anh cua _du_sang.
+    """Keo mau ve phia den cho toi khi doc duoc tren nen SANG — anh cua _enough_bright.
 
     Can thiet vi nguyen bo nhan dien duoc dinh nghia cho NEN TOI: CYAN cua dcgr
     la trang thuan, dat len anh nen trang thi CR 1.04, bien mat hoan toan.
@@ -362,10 +362,10 @@ def _extract_label(dong: str):
     So khop KHONG PHAN BIET HOA/THUONG: tieu de the tin (noi ham nay ra doi)
     luon viet hoa toan bo nen truoc day so thang khong sao — nhung van xuoi
     thuong (vd chu than carousel.py) viet ten hang kieu "Nvidia" binh thuong,
-    so thang voi BRAND_TU ("NVIDIA") thi trat, lai vo tinh trung mot tu VIET
+    so thang voi BRAND_FROM ("NVIDIA") thi trat, lai vo tinh trung mot tu VIET
     TAT tinh co da hoa san (vd "AMD") thay vi dung hang dang noi toi. Chi
-    UPPER() luc SO KHOP; `khoa` van tra ve dang chuan hoa (hoa) vi MAU_HANG/
-    BRAND_TU luu key hoa — khong lien quan gi toi `tu` goc dung de ve.
+    UPPER() luc SO KHOP; `khoa` van tra ve dang chuan hoa (hoa) vi COLOR_RANK/
+    BRAND_FROM luu key hoa — khong lien quan gi toi `tu` goc dung de ve.
     """
     tu = dong.split(" ")
     sach = [t.strip(_RIA).upper() for t in tu]
@@ -747,7 +747,7 @@ def _capability_flow_rank(canvas) -> list:
 
 def _timestamp_background_solid(canvas, y0, tan=BACKGROUND_FALL_SPREAD):
     """Tu `y0` (ngay tren chu cua ta) DI NGUOC LEN tim KHOANG LANG dau tien —
-    NEN_ROI_DAI_LANG hang lien nhau khong chi tiet. Tra (dac, top): nen dac tu
+    BACKGROUND_FALL_LONG_LANG hang lien nhau khong chi tiet. Tra (dac, top): nen dac tu
     `dac` xuong day, dai chuyen smoothstep tu `top` toi `dac` nam TRONG khoang
     lang do.
 
@@ -756,7 +756,7 @@ def _timestamp_background_solid(canvas, y0, tan=BACKGROUND_FALL_SPREAD):
     (hang 690-989) van nam phia tren, va dai chuyen 180px cat ngang dong chu
     in san — nua dong mo nua dong ro, dung chu "nham nho". Khoang lang gan
     nhat phia tren (hang 630-689, nang luong 4-5) moi la cho dai chuyen duoc
-    nam. Cham NEN_ROI_TRAN ma chua co khoang lang sach thi quay ve khoang lang
+    nam. Cham BACKGROUND_FALL_CEILING ma chua co khoang lang sach thi quay ve khoang lang
     cao nhat da gap; khong gap khoang lang nao moi phu tu tran."""
     H_ = canvas.size[1]
     e = _capability_flow_rank(canvas)
@@ -841,7 +841,7 @@ def _open_region_text(canvas, frame_top):
 
 
 # Nguong quyet dinh chu SANG hay chu TOI tren mot vung nen: diem sang xam noi
-# CR(chu trang) = CR(chu toi) — dat qua dat_thuong_hieu (text_bg.threshold_wall_part)
+# CR(chu trang) = CR(chu toi) — dat qua set_brand (text_bg.threshold_wall_part)
 # theo dung cap mau CUA THUONG HIEU DANG NAP, khong con la mot con so co dinh
 # (116, tinh rieng cho FG/BG cua donniechublog) dung nham sang ca dcgr. Truoc
 # 06/09/2026 con so nay la 140, go tay: sai phe tren ca dai nen 116..140 (dai
@@ -873,7 +873,7 @@ def _bright_region(canvas, box) -> float:
 # Mot dai chu rong (gan het be ngang the) rat de vua co mang toi vua co mang
 # sang cuc bo (vd hero portrait: co ao trang canh vung toi) — TRUNG BINH ca
 # dai van thien dung mot phe, nhung diem sang/toi cuc bo do van lo ra thanh
-# mot "vet sang" duoi chu, du _mo_vung_chu da mo. Do o day THEO ANH THAT (anh
+# mot "vet sang" duoi chu, du _open_region_text da mo. Do o day THEO ANH THAT (anh
 # Trump 08/09/2026: dai "HON 40 PHAN TRAM" mean=54.6 — chon dung chu trang —
 # nhung std=49.7: mot mang co ao trang lam ho mot khoang du sang de chu trang
 # mat tuong phan tai dung cho do).
@@ -890,7 +890,7 @@ def _can_board_line(canvas, box):
     gi, giu nguyen tinh than 'khong phu lop nao neu khong can'.
 
     Tinh mot mau PHANG vao vung giam do lech THEO TI LE (1-alpha) — muon do
-    lech con lai <= DICH_ROI_DONG thi alpha >= 1 - DICH_ROI_DONG/std do duoc."""
+    lech con lai <= TRANSLATE_FALL_LINE thi alpha >= 1 - TRANSLATE_FALL_LINE/std do duoc."""
     box = _within_card(canvas, box)
     x0, y0, x1, y1 = box
     st = ImageStat.Stat(canvas.crop(box).convert("L"))
@@ -1093,7 +1093,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", roi=False)
     # Ca hai deu phai theo quyet dinh sang/toi cua nen. Truoc 06/09/2026 net
     # khung la CYAN CUNG, khong co nhanh nao doi: tren anh nen sang, CYAN cua
     # dcgr (trang thuan) cho CR 1.04 — bon doan line + hai arc bien mat sach;
-    # CYAN cua donniechublog cho 1.88, nhat han. Con dau ngoac thi _du_sang keo
+    # CYAN cua donniechublog cho 1.88, nhat han. Con dau ngoac thi _enough_bright keo
     # mau hang SANG THEM (nguong 0.42 von danh cho nen toi), tuc sai chieu.
     # Hai dau " co 210px va khung la vat nhan dien cua kieu pull-quote.
     mau_net = _enough_dark(CYAN) if nen_sang else CYAN
@@ -1106,7 +1106,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", roi=False)
                  mau_net, mark_col)
 
     # Dong nguon (attribution), CANH GIUA, sat day. Vung nay da duoc
-    # _mo_vung_chu lam mo tu truoc, va mau lay theo phep do cua CHINH no.
+    # _open_region_text lam mo tu truoc, va mau lay theo phep do cua CHINH no.
     ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
@@ -1160,7 +1160,7 @@ def _phase(mau, do_sang: float, nen=None):
 # dot 2): chung la cong chan CHU, khong lien quan toi ve anh, va viec chung
 # song o day bat manifest_write/ada_submit/cape_submit/itachi_submit/render_edu phai keo ca
 # PIL vao chi de hoi "chuoi nay co mat dau khong". Re-export de moi loi goi cu
-# (`card.tim_mat_dau`, `card.bo_dau_cam`, `card.DAU_CAM`...) giu nguyen.
+# (`card.find_face_mark`, `card.drop_mark_forbid`, `card.MARK_FORBID`...) giu nguyen.
 from vietnamese import (  # noqa: E402
     NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID, drop_mark_forbid, find_face_mark,
 )
@@ -1226,7 +1226,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
     co_chan = b.get("co_chan") or 1.0
     mo_chan = b.get("mo_chan") or 1.0
     f_via = _f(F_REG, max(12, round(VIA_SIZE * co_chan)), weight=500)
-    # Chu thut vao trong khung (TRAN_TEXT_X > TRAN_FRAME_X), khong an ra sat le
+    # Chu thut vao trong khung (CEILING_TEXT_X > CEILING_FRAME_X), khong an ra sat le
     # the nhu truoc: co khung roi thi chu cham net la khoi chu doc ra chat.
     avail_w = W - 2 * CEILING_TEXT_X
     lead = TRAN_LEAD
@@ -1277,7 +1277,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
         # bang chinh tam anh lam mo, nen chieu cao vung chu khong con phu
         # thuoc vao anh cao bao nhieu.
         box_h = max(box_min, int(H * CEILING_TEXTBOX))
-        # Cho trong con lai danh cho tieu de no, chan o TRAN_TITLE_LINES dong.
+        # Cho trong con lai danh cho tieu de no, chan o CEILING_TITLE_LINES dong.
         _g1, _g2, _g3, _g4 = _range(nen)
         frame_h = _cao_dau(nen) + _g3 + max(via_h, 34) + _g4
         f_title, title_lines = _grow_title(probe, title.upper(), avail_w,
@@ -1295,7 +1295,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
 
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     # Lop anh dung chung voi kieu quote: nen mo phu kin + anh sac full be ngang,
-    # mep duoi tan dan. KHONG con nhanh "anh thap -> nen mau dac" (xem _lop_anh).
+    # mep duoi tan dan. KHONG con nhanh "anh thap -> nen mau dac" (xem _layer_image).
     _layer_image(canvas, src_img, H)
     d = ImageDraw.Draw(canvas)
     g1, _g2, g3, g4 = _range(nen)
@@ -1354,7 +1354,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
         # Tru _kb[1] de DINH chu roi dung vao y, khong phai goc ascender.
         _about_tracked(d, (W - rong_chu) / 2, y - _kb[1], kicker, f_kick,
                     mau_kick, KICKER_TRACK)
-        # Hai duong ke hai ben. Ca cum rong dung KICKER_CUM cua the, nen ke
+        # Hai duong ke hai ben. Ca cum rong dung KICKER_PHRASE cua the, nen ke
         # NGAN LAI khi chu dai ra — cum giu nguyen be ngang, chu khong phai
         # ke giu nguyen do dai. Chu qua dai thi khong con cho, bo ke di.
         rong_ke = (W * KICKER_PHRASE - rong_chu) / 2 - KICKER_FAMILY

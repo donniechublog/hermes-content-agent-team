@@ -115,7 +115,7 @@ def _report_no_family_point(token, group, thread_id, msg, mid):
 
 def _pick_command_if_has(token, group, msg, thread_id, text, mid):
     """So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
-    REPLY dung vao bao cao (xem _la_reply_bao_cao). Tra (vai, lenh); lenh None
+    REPLY dung vao bao cao (xem _is_reply_report). Tra (vai, lenh); lenh None
     la hoi thoai. Ghi lai quyet dinh cong reply: khi Ong Chu bao "go so ma
     khong ra bai" thi mot dong log du de biet cong da xu ra sao."""
     vai = role_of_topic(thread_id)
@@ -221,7 +221,7 @@ def handle_message(token, group, msg):
         return
 
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
-    # REPLY dung vao bao cao (xem _la_reply_bao_cao). Moi thu khac (ke ca dung
+    # REPLY dung vao bao cao (xem _is_reply_report). Moi thu khac (ke ca dung
     # so nhung go troi, khong bam Reply) la hoi thoai. Finn, Nova, Vera deu
     # duoc — cung mot cach tra loi.
     vai, lenh = _pick_command_if_has(token, group, msg, thread_id, text, mid)
@@ -484,7 +484,7 @@ if __name__ == "__main__":
                 except Exception as e:                       # noqa: BLE001
                     log("loi", f"doc category cua {dpath.name} hong (dung topic mac dinh): {e!r}")
             # Tin thuong ve topic NGUOI VIET CUA BAI, teaser ve topic Cape.
-            # Truoc 10/09/2026 cho nay go `MAC_DINH_VIET` vi ca doi chi co mot
+            # Truoc 10/09/2026 cho nay go `DEFAULT_WRITE` vi ca doi chi co mot
             # nguoi viet ("mot container mot nguoi viet"). Van dung mot nguoi
             # moi container, nhung ten cua nguoi do khac nhau theo brand
             # (LOW-13), va cau tra loi da duoc chot tu luc chon tin — doc lai

@@ -24,8 +24,8 @@ def test_link_bing_rss_giai_ra_url_that():
 
 def test_loc_bai_bo_trung_bo_tong_hop_toi_da_moi_mien():
     items = [
-        ("https://www.msn.com/en-us/x", "msn tong hop"),                       # BO_MIEN
-        ("https://seekingalpha.com/news/1", "chan bot"),                       # BO_MIEN
+        ("https://www.msn.com/en-us/x", "msn tong hop"),                       # DROP_DOMAIN
+        ("https://seekingalpha.com/news/1", "chan bot"),                       # DROP_DOMAIN
         ("https://247wallst.com/a", "a"), ("https://247wallst.com/a", "a lap"),
         ("https://247wallst.com/b", "b"), ("https://247wallst.com/c", "c"),    # mien thu 3 -> bo
         ("https://www.engadget.com/x", "e"),

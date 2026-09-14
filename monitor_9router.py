@@ -51,7 +51,7 @@ EMPTY_OUT_MAX = 5
 EMPTY_PROMPT_MIN = 1000
 # Mọi HERMES_HOME đang chạy (per-brand) → $ theo vai gộp cả hai brand.
 HERMES_HOMES = sorted(Path.home().glob(".hermes-*"))
-# Model CỦA TA mà cache% dưới mức này trên hơn PROMPT_TOI_THIEU_CACHE token prompt
+# Model CỦA TA mà cache% dưới mức này trên hơn PROMPT_MIN_CACHE token prompt
 # là đang lật model giữa hội thoại (cache là per-model). Chuyển từ usage_audit.py
 # khi gộp hai script (05/09/2026).
 THRESHOLD_CACHE = 40.0

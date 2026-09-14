@@ -4,8 +4,8 @@
 - B-r2-2: 4 luồng bắn cùng lúc vào router, 429/5xx thì trước đây chỉ log
   'HTTPError' và trả lien_quan=None → ảnh rơi vào "CHƯA AI NHÌN", bị loại khỏi
   dung_duoc. Không retry/backoff nào; song song hoá làm 429 dễ xảy ra HƠN.
-- B-r2-3: phan_loai không có try — một PNG cụt làm list(ex.map) ném tại
-  _nhin_anh → cả lô mất kể cả ảnh đã nhìn xong, engine chết không xong.json.
+- B-r2-3: classify không có try — một PNG cụt làm list(ex.map) ném tại
+  _seen_image → cả lô mất kể cả ảnh đã nhìn xong, engine chết không xong.json.
 
 Chạy:  venv/bin/python tests/test_nhin_song_song.py
 """
@@ -95,7 +95,7 @@ def test_mot_anh_hong_khong_giet_ca_lo():
             else:
                 Image.new("RGB", (900, 700), (100 + i, 120, 140)).save(p)
             anh.append({"ma": f"A{i}", "goc": str(p)})
-        # tieu_de rong -> khong goi vision; dem_mat co the None tren may khong cv2
+        # tieu_de rong -> khong goi vision; count_faces co the None tren may khong cv2
         ra, dung_duoc, chua_nhin = vision._seen_image(anh, {}, "", wd)
         assert len(ra) == 4, "ca lo phai con du 4 ban ghi"
         assert ra[2]["lien_quan"] is None and any("không phân loại" in g for g in ra[2]["ghi_chu"]), ra[2]

@@ -132,7 +132,7 @@ def ask_commons(cau: str, so: int = 20, loai_logo: bool = True):
     """Tim anh bitmap tren Wikimedia Commons. Tra `query.pages` (dict, co the
     rong = KHONG CO anh), hoac None khi HONG VI MOI TRUONG (mang, HTTP, JSON).
 
-    MOT ban cho ba nguoi goi (chuan_bi/nguon, image_concept, image_brand).
+    MOT ban cho ba nguoi goi (prepare/source, image_concept, image_brand).
     Truoc audit lượt 2 (ADF-r2-16) cung query nay chep ba lan, va quy uoc C1
     chi ap cho hai: image_brand._ask_commons tra {} khi mat mang, log khong
     co repr — "mat mang" va "hang khong co anh" la mot.

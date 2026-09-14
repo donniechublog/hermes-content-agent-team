@@ -3,7 +3,7 @@
 bat bien "hen gio trong < hen gio ngoai" (INV-4).
 
 Do may chu 14 ngay: dre/kite p95 ~23 phut, sat tran 25m dung chung; ethan <= 8.
-Fail tren code cu (khong co max_runtime_cua / WAIT_SLOT_SECONDS), pass tren code moi.
+Fail tren code cu (khong co max_runtime_for / WAIT_SLOT_SECONDS), pass tren code moi.
 
 Chay:  venv/bin/python tests/test_ngan_sach_thoi_gian.py
 """

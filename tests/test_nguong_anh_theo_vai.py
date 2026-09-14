@@ -31,7 +31,7 @@ from prepare.manifest import build_manifest                   # noqa: E402
 
 
 def _anh(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
-    """Mot muc `anh` du khoa cho dung_manifest. ti_le < 1.3 co chu dich: `cap_ghep`
+    """Mot muc `anh` du khoa cho build_manifest. ti_le < 1.3 co chu dich: `cap_ghep`
     chi MO TEP anh voi anh ngang, ma o day khong co tep that nao."""
     return {"ma": ma, "goc": f"/khong-co/{ma}.jpg", "ti_le": 1.0, "w": 1200, "h": 1200,
             "loai": "anh", "dung": list(dung), "lien_quan": lien_quan, "mat": 0,
@@ -39,7 +39,7 @@ def _anh(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
 
 
 def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
-    """Manifest that (qua dung_manifest, khong che tay) cho `so_anh` anh dung duoc."""
+    """Manifest that (qua build_manifest, khong che tay) cho `so_anh` anh dung duoc."""
     with tempfile.TemporaryDirectory() as tmp:
         return build_manifest(
             "d1", {"brand": "donniechublog", "title": "t"}, "t", "http://vi.du/a",

@@ -30,7 +30,7 @@ from approve_dispatch import (  # noqa: E402
 
 
 def _process_button(token, channel, cq):
-    """Nut bam chay o thread NEN (qua _chay_nen): tao task kanban + ghi bang den
+    """Nut bam chay o thread NEN (qua _run_background): tao task kanban + ghi bang den
     toi ~2 phut, truoc day chay tren chinh thread poll nen moi nut/tin khac xep
     hang theo (audit 05/09/2026). Khoa theo draft de hai lan bam cung mot bai
     van chay lan luot — cac chot trang thai trong handle_callback giu nguyen
@@ -42,7 +42,7 @@ def _process_button(token, channel, cq):
         except Exception as e:                               # noqa: BLE001
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text=f"Lỗi: {type(e).__name__}: {str(e)[:150]}", show_alert=True)
-            raise                                            # _chay_nen ghi traceback + bao topic
+            raise                                            # _run_background ghi traceback + bao topic
 
 def keyboard(draft_id):
     return {"inline_keyboard": [[
@@ -133,7 +133,7 @@ MARK_LEN_CHANNEL = ("channel_album_mid", "channel_anh_mid", "channel_chu_mid")
 
 
 def already_len_channel(d: dict) -> bool:
-    """Draft nay da co PHAN NAO len channel chua (theo DAU_LEN_CHANNEL).
+    """Draft nay da co PHAN NAO len channel chua (theo MARK_LEN_CHANNEL).
 
     `_rescue_article_end_publishing` (approve_service) dung de phan biet hai canh
     giong het nhau tu ben ngoai: bai CHUA kip len channel (moi bam Duyet lai),
@@ -319,7 +319,7 @@ def _extract_reason_redo(text):
     return None, t
 
 def _code_of_slide(spec: dict, n: int) -> list:
-    """Ma anh dang dung o slide N (1 = bia) theo spec.json HIEN TAI cua chuan_bi
+    """Ma anh dang dung o slide N (1 = bia) theo spec.json HIEN TAI trong thu muc state chuan_bi
     (ban Ong Chu vua thay, truoc khi task lam lai ghi de)."""
     if n == 1:
         ma = (spec.get("cover") or {}).get("anh")
@@ -448,7 +448,7 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
     return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})", rid
 
 # Doc-sua-ghi lam_lai_cho.json dien ra o HAI thread: nut Lam lai chay nen
-# (_chay_nen) con han 10 phut quet o thread poll. Khoa nay chi om cac doan doc-
+# (_run_background) con han 10 phut quet o thread poll. Khoa nay chi om cac doan doc-
 # ghi ngan (mot tep JSON nho), KHONG bao gio om lenh mang hay kanban_create.
 _KHOA_LAM_LAI = threading.Lock()
 
@@ -479,7 +479,7 @@ def _wait_within_topic(cho: dict, thread_id) -> list:
     return [v for v in cho.values() if str(v.get("thread_id")) == str(thread_id)]
 
 def _over_limit(v: dict) -> bool:
-    """Ban ghi cho ly do da qua LAM_LAI_HAN (vong poll chua kip don). `ts` rac
+    """Ban ghi cho ly do da qua REDO_LIMIT (vong poll chua kip don). `ts` rac
     cung tinh la qua han — de ket con te hon giao theo kieu cu."""
     try:
         return time.time() - float(v.get("ts", 0)) >= REDO_LIMIT
@@ -540,7 +540,7 @@ def _process_reason_redo(token, group, msg, thread_id, draft_id, text):
          reply_to_message_id=msg.get("message_id"), text=note)
 
 def _redo_all_done_limit(token, group):
-    """Cho qua LAM_LAI_HAN giay ma Ong Chu chua neu ly do -> giao theo kieu cu,
+    """Cho qua REDO_LIMIT giay ma Ong Chu chua neu ly do -> giao theo kieu cu,
     de khong ket. Goi moi vong poll (re: chi doc mot tep JSON nho)."""
     with _KHOA_LAM_LAI:
         cho = _load_redo_wait()
@@ -552,7 +552,7 @@ def _redo_all_done_limit(token, group):
                 het.append(cho.pop(did))
         if het:
             _write_json(REDO_WAIT, cho, indent=None)
-    # Bat thread NGOAI khoa: _giao_het_han om khoa draft roi goi kanban (toi 2
+    # Bat thread NGOAI khoa: _hand_all_done_limit om khoa draft roi goi kanban (toi 2
     # phut), giu _KHOA_LAM_LAI suot doan do se chan ca nut Lam lai lan cau tra
     # loi cua Ong Chu.
     for ho_so in het:
@@ -584,7 +584,7 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
                                        ket_thuc=task_bodies.end_role_image(ROOT, draft_id))
     # Engine da nhin anh: co bao nhieu tam that dung duoc? Kite phai DUNG chung
     # (Ong Chu 05/09/2026), khong ra bo toan text & card.
-    # C-r2-5: doc qua schema.doc_manifest va dem bang schema.so_anh_dung_duoc —
+    # C-r2-5: doc qua schema.read_manifest va dem bang schema.count_image_use_ok —
     # truoc day tu dem `dung and lien_quan is not False` (khai niem dem tung
     # tam) nen body noi "4 anh THAT" trong khi manifest noi 2.
     co, so_that = [], 0
@@ -703,7 +703,7 @@ def _button_lower_ready(token, draft_id, cq):
     # Gio HA SAN that: ve `toi_thieu_co_ban` (san cua carousel.py). Duoi san
     # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
     xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
-    # doc_manifest bu so_dung_duoc cho manifest ban 0 (C-r2-5) — doc tho thi
+    # read_manifest bu so_dung_duoc cho manifest ban 0 (C-r2-5) — doc tho thi
     # so=0 -> "Chi 0 anh that" du co 6 anh.
     mm = schema.read_manifest(xong) or {}
     san = int(mm.get("toi_thieu_co_ban", 5))
@@ -723,7 +723,7 @@ def _button_lower_ready(token, draft_id, cq):
     elif so < san:
         # HET DUONG that su: khong the ha san duoi san cung (carousel.MIN_SLIDE),
         # nen chi con Kite hoac bo tin. Truoc 08/09/2026 noi vay roi GO LUON ban
-        # phim (_chot_nut xoa vo dieu kien) — Ong Chu doc thay "chuyen Kite hoac
+        # phim (_finalize_button xoa vo dieu kien) — Ong Chu doc thay "chuyen Kite hoac
         # bo tin" ma khong con nut nao bam duoc, phai tu go lenh. Gan lai dung
         # hai nut do thay vi hua suong.
         _, khong_kite = standard_assignee("kite")
@@ -756,13 +756,13 @@ def _button_lower_ready(token, draft_id, cq):
 
 def _button_redo(token, chat_id, draft_id, cq, msg):
     """imgredo: KHONG giao ngay — hoi mot dong, nuot tin ke tiep cua Ong Chu lam
-    ly do (_nhan_ly_do_lam_lai). Tra None khi topic dang cho ly do bai khac:
+    ly do (_label_reason_redo). Tra None khi topic dang cho ly do bai khac:
     giu nguyen nut, khong sua tin."""
     # Ong Chu 04/09/2026: bam Lam lai phai co cho de noi SLIDE NAO va VI SAO.
     # Chi bam "lam lai" thi vai khong biet sua cho nao, lan sau van co the sai
     # y nhu cu. Nen KHONG giao ngay: ghi "dang cho ly do" cho topic nay, hoi
     # mot dong, va nuot tin nhan ke tiep cua Ong Chu lam ly do
-    # (_nhan_ly_do_lam_lai). Het LAM_LAI_HAN giay chua tra loi -> giao kieu cu.
+    # (_label_reason_redo). Het REDO_LIMIT giay chua tra loi -> giao kieu cu.
     ip = DRAFTS / (draft_id + ".img.json")
     if not ip.exists():
         note = "⚠️ Không thấy thông tin task ảnh để làm lại"
@@ -945,7 +945,7 @@ def handle_img_approval(token, action, draft_id, cq):
                             them ghi chu chon anh khac) -> designer dung lai.
       imgno    (Bo han)  -> giet tin: khong viet, khong lam lai.
 
-    Tach 07/09/2026: moi nut mot ham tra ve `note`, mot duoi chung (_chot_nut).
+    Tach 07/09/2026: moi nut mot ham tra ve `note`, mot duoi chung (_finalize_button).
     Ban cu la 218 dong, nam nhanh noi tiep trong mot ham; doi chieu bang vet
     side-effect (26 kich ban), khong doi hanh vi."""
     msg = cq["message"]
@@ -1027,7 +1027,7 @@ def handle_callback(token, channel, cq):
         return
 
     if st == "publishing":
-        # Dang co thread dang bai nay (publish chay NEN, xem _dang_nen). Truoc
+        # Dang co thread dang bai nay (publish chay NEN, xem _form_background). Truoc
         # day publish chay dong bo nen callback thu hai tu xep hang sau; nay
         # phai chan tuong minh de hai thread khong cung dang mot bai.
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],

@@ -60,7 +60,7 @@ MAX_NEW_RANK = 2        # ảnh mỗi hãng — để một bộ không thành a
 SHORT_SIDE_MIN = 700
 
 # Tên đi tìm trên Commons cho từng hãng (khoá = tên hãng chuẩn của
-# `scan_business.HANG_CUA_TEN`). Nhiều tên khi tên trên biển hiệu khác tên pháp
+# `scan_business.RANK_OF_NAME`). Nhiều tên khi tên trên biển hiệu khác tên pháp
 # lý (Meta -> Facebook) hoặc khi hãng con nằm trong khuôn viên hãng mẹ
 # (DeepMind -> Google). Tên đầu là tên hiện trong brief.
 DISPLAY_NAME = {
@@ -156,7 +156,7 @@ _NHIEU_BIEN: dict = {}
 # cảnh của hãng. Đo thật 09/09/2026: câu "Amazon building" trả về hai tấm
 # "International Day of Solidarity With Alabama Amazon Workers" — ảnh mít tinh
 # công đoàn, đúng chữ "Amazon" mà sai hẳn loại ảnh cho một tin ký hợp đồng chip.
-# `TEN_LOAI` của image_concept có "protest" nhưng tên tệp này không có chữ đó.
+# `NAME_TYPE` của image_concept có "protest" nhưng tên tệp này không có chữ đó.
 # Không đưa "march" vào (trùng tháng Ba) hay "union" trần (trùng Union Square).
 MANY_COMMON = re.compile(
     r"solidarity|rall(y|ies)|\bstrikes?\b|striking|picket|protest|demonstrat|"
@@ -195,11 +195,11 @@ def _many(ten: str):
 
 
 def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
-    """Các hãng lớn tin này nói tới, theo thứ tự xuất hiện, tối đa `TOI_DA_HANG`.
+    """Các hãng lớn tin này nói tới, theo thứ tự xuất hiện, tối đa `MAX_RANK`.
 
     Dùng chung WATCHLIST của `scan_business` — cùng một danh sách "tên trong
     ngành phải theo sát", không chép lại ở đây. Tên model/chip quy về hãng chủ
-    qua HANG_CUA_TEN, nên "Claude Opus 5" ra Anthropic, "Xring O3" ra Xiaomi.
+    qua RANK_OF_NAME, nên "Claude Opus 5" ra Anthropic, "Xring O3" ra Xiaomi.
     Trả [{"khoa": "qualcomm", "hang": "Qualcomm"}].
     """
     import scan_business
@@ -325,7 +325,7 @@ def qid_rank(hang: str) -> tuple:
     r = _ask_api(WIKIDATA, action="wbsearchentities", search=hang, language="en",
                  type="item", limit=5)
     if r is None:
-        print(f"[thuong_hieu] qid_hang({hang!r}): khong goi duoc Wikidata (wbsearchentities), bo qua",
+        print(f"[thuong_hieu] qid_rank({hang!r}): khong goi duoc Wikidata (wbsearchentities), bo qua",
               file=sys.stderr)
         return None, {}
     ids = [x["id"] for x in r.get("search", []) if x.get("id")]
@@ -333,7 +333,7 @@ def qid_rank(hang: str) -> tuple:
         return None, {}
     ent = _ask_api(WIKIDATA, action="wbgetentities", ids="|".join(ids), props="claims")
     if ent is None:
-        print(f"[thuong_hieu] qid_hang({hang!r}): khong goi duoc Wikidata (wbgetentities), bo qua",
+        print(f"[thuong_hieu] qid_rank({hang!r}): khong goi duoc Wikidata (wbgetentities), bo qua",
               file=sys.stderr)
         return None, {}
     ent = ent.get("entities", {})
@@ -358,7 +358,7 @@ def material_wikidata(hang: str) -> dict:
         ent = _ask_api(WIKIDATA, action="wbgetentities", ids="|".join(ids),
                        props="claims|labels", languages="en")
         if ent is None:
-            print(f"[thuong_hieu] tu_lieu_wikidata({hang!r}): khong goi duoc Wikidata "
+            print(f"[thuong_hieu] material_wikidata({hang!r}): khong goi duoc Wikidata "
                   "(nguoi/CEO), bo qua", file=sys.stderr)
             ent = {}
         else:
@@ -383,7 +383,7 @@ def material_wikidata(hang: str) -> dict:
 # nhưng Google News không index nó và 13/14 báo không link sang, nên engine
 # không có đường nào tới. Đường ở đây: Wikidata P856 (website chính thức) ->
 # trang danh sách tin của hãng -> khớp tên model (đã tách bằng
-# ranking.extract_model) trong slug link. Chỉ mạng tĩnh, ≤ 1 + len(DUONG_TIN) fetch.
+# ranking.extract_model) trong slug link. Chỉ mạng tĩnh, ≤ 1 + len(PATH_STORY) fetch.
 P_WEBSITE = "P856"
 PATH_STORY = ("/news/", "/en/news/", "/blog/", "/news", "/blog", "/research/")
 # Trang HTML bị chặn bot (openai.com trả 0 byte cho httpx, đo 11/09/2026) thì
@@ -495,7 +495,7 @@ def commons_urls(tens: list) -> dict:
     r = _ask_api(COMMONS, action="query", titles="|".join("File:" + t for t in tens),
                  prop="imageinfo", iiprop="url|size|mime", iiurlwidth=1800)
     if r is None:
-        print("[thuong_hieu] url_commons: khong goi duoc Commons API, bo qua", file=sys.stderr)
+        print("[thuong_hieu] commons_urls: khong goi duoc Commons API, bo qua", file=sys.stderr)
         return {}
     ra = {}
     for pg in ((r.get("query") or {}).get("pages") or {}).values():
@@ -587,7 +587,7 @@ def image_wikidata(hang, wd=None) -> list:
         # Wikidata P18 chi giu DUNG MOT anh (thuong la chan dung studio, doc) —
         # chua bao gio hoi Commons theo TEN NGUOI. Do that 12/09: search "Dario
         # Amodei" ra 9 anh su kien/hop bao 4000x2667..8192x5464, ti le 1.5, ma
-        # pipeline chua bao gio cham toi vi HAU_TO chi khop "headquarters/
+        # pipeline chua bao gio cham toi vi SUFFIX chi khop "headquarters/
         # building/campus". Ten day du it dung hang nhu ten hang (khong nhu
         # "Anthropic" trung khao co, "Claude" trung hoi hoa) nen dung lai
         # `_tu_dac_trung`/`_has_phrase` cua chinh module nay, khong can bang NHIEU.
@@ -655,7 +655,7 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
             continue
         ten_tep = (pg.get("title") or "").replace("File:", "")
         thap = ten_tep.lower()
-        # `_has_phrase` chu KHONG `all(_co_tu(...))` (12/09/2026): ban long chi doi
+        # `_has_phrase` chu KHONG `all(_has_word(...))` (12/09/2026): ban long chi doi
         # MOI tu co mat dau do nen "Dario Amodei" khop ca "dario rossi meets luca
         # amodei in rome" — anh HAI NGUOI KHAC, ma caption lai khai
         # `nhan_vat: "Dario Amodei"`, tuc bia mat nguoi (LUAT_ANH §0/§6). Cung
@@ -775,7 +775,7 @@ def vendor_images(hang, so: int = MAX_NEW_RANK, wd=None) -> list:
             if len(ra) >= so:
                 break
     if hong and not ra:
-        # ADF-r2-16: truoc day {} cua _hoi_commons di thang vao loc_commons nen
+        # ADF-r2-16: truoc day {} cua _ask_commons di thang vao filter_commons nen
         # mat mang == hang khong co anh. Giu hop dong tra [] cua ham, nhung noi
         # ro de brief/nhat ky khong ket luan sai ve hang.
         print(f"[thuong_hieu] {khoa}: {hong} truy van Commons HONG (mang/API) — "
@@ -891,7 +891,7 @@ def label_brand(a: dict) -> dict:
     th = a.get("thuong_hieu") or {}
     loai = th.get("loai", "anh")
     if a.get("lien_quan") is False:
-        return a                                  # phan_loai đã xoá dung + ghi ❌
+        return a                                  # classify đã xoá dung + ghi ❌
     a["ghi_chu"] = [g for g in a["ghi_chu"] if "Wikimedia Commons" not in g]
 
     if loai == "nguoi":
@@ -902,7 +902,7 @@ def label_brand(a: dict) -> dict:
         # thiếu cv2/model, và LUAT_ANH §6 nói rõ cổng mặt được phép tự tắt. Lấy
         # `mat == 0` làm "không phải chân dung" thì trên máy thiếu cv2 MỌI chân
         # dung đều bị bỏ câm lặng. Ảnh này là P18 của chính người đó trên
-        # Wikidata; đúng/sai để con mắt (cau_hoi_vision) phán.
+        # Wikidata; đúng/sai để con mắt (sentence_ask_vision) phán.
         a["ghi_chu"].insert(0, label_by_type(th))
         return a
 

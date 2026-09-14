@@ -39,7 +39,7 @@ import approve_post as db                                         # noqa: E402
 import approve_service as aps                                  # noqa: E402
 
 
-# =========================================================== _dang_nen =====
+# =========================================================== _form_background =====
 class _MoatGia:
     """Thay the module `moat_publish` that: chi ghi lai draft_id da goi
     intake(), khong dong mang that."""
@@ -128,7 +128,7 @@ def test_dang_nen_publish_nem_exception_van_ha_publish_failed():
         f"note phai neu ro loai loi + thong diep de con debug: {note!r}"
 
 
-# =============================================== _cuu_bai_ket_publishing ===
+# =============================================== _rescue_article_end_publishing ===
 def _ghi_draft(tmp: Path, ten: str, **du_lieu) -> Path:
     p = tmp / f"{ten}.json"
     p.write_text(json.dumps(du_lieu), encoding="utf-8")

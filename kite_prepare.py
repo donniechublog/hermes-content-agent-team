@@ -30,7 +30,7 @@ import route_missing_images                                       # noqa: E402
 def handle_channel(brand: str) -> str:
     """Handle hien thi cua brand KHONG co "@" (slide cuoi tu ghep): dcgr ->
     dcgr.tech (Ong Chu 05/09/2026: slide cuoi in 'Theo doi @dcgr' vi dung thang
-    slug). Mot ban o env_load.handle_kenh (ADF-r2-9) — truoc day ban nay khong
+    slug). Mot ban o env_load.handle_channel (ADF-r2-9) — truoc day ban nay khong
     doi 'blog' -> 'donniechublog' nhu bob_submit."""
     import env_load
     return env_load.handle_channel(brand, co_a_cong=False)

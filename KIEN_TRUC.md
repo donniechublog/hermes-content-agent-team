@@ -194,7 +194,7 @@ flowchart TD
     subgraph S3["3 · TẠO CẶP TASK"]
         pair["approve_pick.create_pair<br/>chạy nền image_prepare --im"]:::container
         kanban["Kanban swarm (Hermes)<br/>task ảnh → task viết (chờ ảnh)"]:::external
-        blackboard["blackboard.py<br/>ghi bảng đen (tao_root/ghi_nen)"]:::container
+        blackboard["blackboard.py<br/>ghi bảng đen (create_root/write_background)"]:::container
         chontin --> pair
         pair --> kanban
         pair --> blackboard
@@ -335,12 +335,12 @@ sequenceDiagram
 Sơ đồ trên vẽ trước đợt sửa 09/09. Năm khối mới nằm **giữa** các stage, không
 thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương ứng:
 
-- `role.py` — bản đăng ký vai duy nhất; mọi bảng cũ (`VAI_ANH`, `SLUG_CU`,
-  `TEN_HIEN`, `chat_router.TOPIC_PROFILE`…) là view dẫn xuất. Giữ cả **luật
-  riêng của vai**, không chỉ tên: `so_anh_toi_thieu(slug, flagship)` là số ảnh
+- `role.py` — bản đăng ký vai duy nhất; mọi bảng cũ (`ROLE_IMAGE`, `SLUG_OLD`,
+  `DISPLAY_NAME`, `chat_router.TOPIC_PROFILE`…) là view dẫn xuất. Giữ cả **luật
+  riêng của vai**, không chỉ tên: `min_images(slug, flagship)` là số ảnh
   thật tối thiểu để vai dựng được (Ethan 1, Dre 5/8, Kite 1) — engine ảnh dùng
   chung phải hỏi ở đây, mượn thẳng `carousel.MIN_SLIDE` là sự cố 10/09/2026.
-  Từ 10/09/2026 (LOW-13) còn giữ **ai viết tin nào**: `vai_viet_cua(vai_quet,
+  Từ 10/09/2026 (LOW-13) còn giữ **ai viết tin nào**: `writer_for(vai_quet,
   brand)` hỏi vai quét trước rồi mới tới brand — Finn/Nova → Jika
   (`jika`), Vera → Miles (`miles`). Hai vai viết không bao giờ cùng nằm
   trong một container, đúng như `finn` chỉ có ở blog và `vera` chỉ có ở dcgr.

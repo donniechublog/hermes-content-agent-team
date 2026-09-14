@@ -38,7 +38,7 @@ QUOTE_PHAI_QUA = [
     "Qwen3-Max: 1 trieu token context",
     # tiếng Việt chuẩn
     "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench",
-    # tiếng Việt gõ mất dấu: card.tim_mat_dau lo việc này, không phải cổng này
+    # tiếng Việt gõ mất dấu: card.find_face_mark lo việc này, không phải cổng này
     "GPT-5 Codex Max ra mat, benchmark SWE-bench tang 12 diem so voi ban truoc",
 ]
 QUOTE_PHAI_CHAN = [
@@ -304,7 +304,7 @@ def _anh_xh(d: Path, ten="XH.png", w=1242, h=2688):
 
 def test_luu_crop_giu_dau_anh_goc():
     """_save_crop từng dựng PngInfo trắng → bản cắt mất dấu chup_xep_hang →
-    la_xep_hang False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
+    is_ranking_image False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
     import image_prepare as cb
     import image_rules as la
     from PIL import Image

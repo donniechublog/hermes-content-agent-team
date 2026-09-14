@@ -4,10 +4,10 @@
 mất công cụ tìm ảnh (Ông Chủ 09/09/2026).
 
 Bốn hàm thuần, không mạng:
-  - hang_trong_tin    tiêu đề -> hãng; hỏng = tin hai hãng chỉ hỏi được một.
+  - vendors_in_story    tiêu đề -> hãng; hỏng = tin hai hãng chỉ hỏi được một.
   - truy_van          hãng -> câu hỏi Commons; hỏng = hỏi tên trần, ra ảnh hội thảo mờ.
-  - loc_commons       lọc trang API; hỏng = rừng Amazon / quả táo lọt vào bộ.
-  - nhan_thuong_hieu  siết nhãn; hỏng = mặt người vô danh lên bìa (LUAT_ANH §6).
+  - filter_commons       lọc trang API; hỏng = rừng Amazon / quả táo lọt vào bộ.
+  - label_brand  siết nhãn; hỏng = mặt người vô danh lên bìa (LUAT_ANH §6).
 
 Chạy:  venv/bin/python tests/test_thuong_hieu.py
 """
@@ -48,7 +48,7 @@ def test_toi_da_ba_hang_va_khong_trung():
 
 def test_ten_tran_watchlist_khong_giu():
     """WATCHLIST giữ "google deepmind"/"meta ai" (dạng liên quan AI); tin thì
-    viết "Google", "Meta". Bù bằng TEN_THEM, không sửa WATCHLIST."""
+    viết "Google", "Meta". Bù bằng NAME_EXTRA, không sửa WATCHLIST."""
     assert _h("Google cuts cloud prices") == ["Google"]
     assert _h("Meta buys a data center site") == ["Meta Platforms"]
     assert _h("Snapdragon 8 Elite ships") == ["Qualcomm"]
@@ -109,7 +109,7 @@ def test_loc_bo_anh_mit_tinh_cong_doan():
     """Đo thật 09/09/2026: câu "Amazon building" trả về hai tấm "International
     Day of Solidarity With Alabama Amazon Workers" — đúng chữ Amazon, sai hẳn
     loại ảnh cho tin ký hợp đồng chip. Tên tệp không có chữ "protest" nên
-    TEN_LOAI không bắt được."""
+    NAME_TYPE không bắt được."""
     pages = {"1": _pg("International Day of Solidarity With Alabama Amazon Workers 01.jpg"),
              "2": _pg("Amazon workers strike in Coventry.jpg"),
              "3": _pg("Amazon Spheres Seattle.jpg")}

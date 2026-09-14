@@ -1384,7 +1384,7 @@ def color_rank_within_spec(spec) -> tuple | None:
     """Mau nhan dien cua hang duoc nhac toi trong spec, hoac None.
 
     Tra cuu CUNG mot bang voi cho to ten hang trong tieu de cua Ethan
-    (`card.MAU_HANG` / `MAU_CUM`) — mot bang mau cho ca doi, khong dung bang
+    (`card.COLOR_RANK` / `COLOR_PHRASE`) — mot bang mau cho ca doi, khong dung bang
     thu hai roi de hai cho troi khoi nhau.
 
     Doc `folio` TRUOC roi moi toi eyebrow/title cua bia: folio la nhan chu de
@@ -1414,7 +1414,7 @@ def pick_theme_auto(spec, bia_anh=False, anh_mau=None):
 
     THU TU chon mau cho theme (Ong Chu chot 10/09/2026, LOW-11):
       1. mau NOI BAT cua anh bia that — manh nhat, khong doi duoc;
-      2. mau NHAN DIEN CUA HANG nhac trong spec (`card.MAU_HANG`) — palette
+      2. mau NHAN DIEN CUA HANG nhac trong spec (`card.COLOR_RANK`) — palette
          cua slide di cung mau brand, giong cho to ten hang cua Ethan;
       3. xoay vong cho khoi lap bo truoc — chi khi ca hai tren deu khong co.
     Nen mot loat tin cung hang se cung tone: do la y muon, khong phai trui."""

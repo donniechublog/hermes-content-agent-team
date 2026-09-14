@@ -3,7 +3,7 @@
 
 Day la cong CUOI CUNG truoc khi mot bai vao hang duyet, va la thu Ong Chu doc
 tren kenh. 103 dong, 14 cong, thuan (chuoi vao, bo ba ra) — ma truoc 07/09/2026
-chi co helper `so_la` duoc test, con `kiem` thi khong. Moi cong o day la mot
+chi co helper `count_is` duoc test, con `kiem` thi khong. Moi cong o day la mot
 loi da len kenh that: caption 802 ky tu khong mot dau nao (doi provider), tin
 DeepSeek co bang 11 dong so ma caption 0 con so, cung mot cum 6 tu lap hai lan
 trong 500 ky tu, link song lot vi khong co scheme.

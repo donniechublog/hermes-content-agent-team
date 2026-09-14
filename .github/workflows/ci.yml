@@ -37,7 +37,7 @@ jobs:
           python -m pip install -q -r requirements.txt pyflakes
           python -m playwright install --with-deps chromium
       - name: pyflakes
-        run: python -m pyflakes *.py chuan_bi/*.py tests/*.py hermes/skills/url-mascot-frame/scripts/*.py
+        run: python -m pyflakes *.py prepare/*.py tests/*.py hermes/skills/url-mascot-frame/scripts/*.py
       - name: tests/chay.sh
         env:
           PY: python

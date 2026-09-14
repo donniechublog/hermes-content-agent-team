@@ -47,7 +47,7 @@ Dung:
             page.goto(...)
 
 Ham nao nhan `phien` tuy chon thi dung `session_or_new`:
-    with phien_hoac_moi(phien) as ph:      # phien=None -> tu mo, tu dong
+    with session_or_new(phien) as ph:      # phien=None -> tu mo, tu dong
         with ph.trang() as page:
             ...
 """
@@ -123,7 +123,7 @@ class BrowserSession:
             # Browser chet giua bai (Chromium crash/OOM, bi kill) ma van nam
             # trong cache thi MOI buoc sau cua cung bai deu TargetClosedError —
             # image_prepare dung MOT phien cho ca 5 buoc, nen truoc B4 mot crash
-            # chi mat mot buoc, sau B4 mat ca gnews/xep_hang/vong_bu (audit
+            # chi mat mot buoc, sau B4 mat ca gnews/xep_hang/fallback_rounds (audit
             # lượt 2, N-r2-1). Mo lai thay vi tra xac.
             if b is not None and not b.is_connected():
                 print(f"[phien] browser {khoa} da chet, mo lai", file=sys.stderr)

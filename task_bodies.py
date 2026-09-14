@@ -8,7 +8,7 @@ Duong dan may chu KHONG hardcode: `{goc}` (thu muc content-team) duoc dien luc
 .format() tu ROOT cua approve_service — doi ten user Unix khong con lam gay
 template im lang.
 
-Doan ket thuc dung chung cua ba vai lam anh nam o `KET_THUC_VAI_ANH` va duoc
+Doan ket thuc dung chung cua ba vai lam anh nam o `END_ROLE_IMAGE` va duoc
 dien qua khoa `{ket_thuc}`; dung chep no vao tung body nua.
 """
 
@@ -28,7 +28,7 @@ dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban)."""
 
 
 def end_role_image(goc, draft_id: str) -> str:
-    """KET_THUC_VAI_ANH da dien duong dan: `str.format` cua body KHONG dien de quy
+    """END_ROLE_IMAGE da dien duong dan: `str.format` cua body KHONG dien de quy
     vao gia tri `{ket_thuc}`, nen `{goc}`/`{draft_id}` trong doan ket thuc phai
     dien o day truoc (12/09/2026, khi doan nay bat dau mang mot dong lenh)."""
     return END_ROLE_IMAGE.format(goc=str(goc), draft_id=draft_id)

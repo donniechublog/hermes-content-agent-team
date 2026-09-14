@@ -118,7 +118,7 @@ the funnier one — savage/absurd leans 💀, confusing leans 🤨/🤯.
 ## Step 3 — Composite the frame
 
 ```bash
-venv/bin/python ~/content-team/khung_anh.py \
+venv/bin/python ~/content-team/image_frame.py \
   --image /tmp/src.png \
   --emoji "🙄" \
   --out ./framed.png

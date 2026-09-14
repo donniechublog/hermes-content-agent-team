@@ -12,7 +12,7 @@ Ba lop loi da bat duoc bang cach render THAT truoc khi sua:
      giua khung voi vien trang bon phia, nhin nhu hinh vuong chu khong phai 4:5
      day khung -> phai CONTAIN-FIT (phong to duoc, khong chi thu nho).
   3. lap day GAN NHU TOAN BO chieu cao khien tieu de de thang len anh, cong bao
-     ve tuong phan cua carousel.py (_lop_neu_can) phai phu mot dai xam day —
+     ve tuong phan cua carousel.py (_layer_if_can) phai phu mot dai xam day —
      chinh la "vet nhat" — vi khong con nen PHANG nao ngay tren cho chu se nam
      de cong do bo qua -> phai CHUA lap day 100%, danh lai mot dai nen phang
      (via `lap_day` + `cao_tren` thap) lam nen sach cho tieu de.

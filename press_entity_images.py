@@ -43,7 +43,7 @@ def link_real(link: str) -> str:
 def filter_article(items: list, bo_mien: tuple = (), toi_da: int = MAX_ARTICLE) -> list:
     """`items` = [(link, title)] từ RSS (đã hoặc chưa giải url=). Bỏ trùng URL,
     bỏ miền tổng hợp/chặn bot (article_sources.DROP_DOMAIN + bo_mien), tối đa
-    TOI_DA_MOI_MIEN bài một miền. Giữ thứ tự RSS (mới trước)."""
+    MAX_NEW_DOMAIN bài một miền. Giữ thứ tự RSS (mới trước)."""
     ra, thay, dem = [], set(), {}
     for link, title in items:
         u = link_real(link)

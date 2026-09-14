@@ -71,11 +71,11 @@ def test_moi_hang_co_it_nhat_mot_anh_truoc_khi_hang_nao_duoc_them():
     """Đo thật 13/09/2026 (tin Anthropic tố Moonshot): 3 hãng trong tin,
     Anthropic ra 2 chân dung (diem 24), Alibaba ra 2 ảnh trụ sở (diem 28),
     Moonshot chỉ ra ĐÚNG 1 ảnh thật (diem 20, loại "anh" thường) từ
-    `_report_brand_empty`. `TOI_DA_THEM_TH` = 4 — nếu cứ lấy 4 tấm điểm cao
+    `_report_brand_empty`. `MAX_EXTRA_BRAND_` = 4 — nếu cứ lấy 4 tấm điểm cao
     nhất theo thứ tự phẳng, Anthropic (2) + Alibaba (2) chiếm hết 4 slot,
     Moonshot bị cắt TRƯỚC KHI vào brief dù có ảnh thật hợp lệ — đúng lỗi
     "bài nhắc cả Anthropic và Moonshot mà chỉ có ảnh Anthropic" Ông Chủ báo.
-    Sau khi round-robin theo hãng khi cắt `TOI_DA_THEM_TH`, ảnh của Moonshot
+    Sau khi round-robin theo hãng khi cắt `MAX_EXTRA_BRAND_`, ảnh của Moonshot
     phải sống sót."""
     def _ung(hang, khoa, diem, i):
         return {"anh": f"https://x/{khoa}-{i}.jpg", "alt": khoa, "og": False,
@@ -91,7 +91,7 @@ def test_moi_hang_co_it_nhat_mot_anh_truoc_khi_hang_nao_duoc_them():
     }
 
     def anh_hang_gia(hang, so=4, wd=None):
-        return []                                             # Commons rỗng cho cả 3 — ép sang bao_ve_tu_khoa
+        return []                                             # Commons rỗng cho cả 3 — ép sang report_about_keyword
 
     def bao_thuong_hieu_rong_gia(h, wd, phien=None):
         return cands_theo_hang.get(h["khoa"], [])

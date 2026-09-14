@@ -191,7 +191,7 @@ TOPIC = [
 # nhung chu co trong hau het tom tat cua Finn/Nova/Vera. Do that: 6/6 tieu de
 # goi von / doanh thu / gia chip deu bi dong dau TIN XEP HANG ("Reflection gọi
 # vốn 2 tỷ USD, vòng seed do Nvidia dẫn đầu"), keo theo ca chuoi hong ben duoi.
-# Gia tri `kieu` ma tim_va_chup / tim_va_chup_nhieu PHAT RA khi CHUP DUOC bang
+# Gia tri `kieu` ma find_and_capture / find_and_capture_many PHAT RA khi CHUP DUOC bang
 # that (bang, hai bang ghep, danh sach hang-the, nhan SVG). Chi "the" la the du
 # phong engine tu dung. LOW-21 (11/09/2026): manifest va submit_common tung doi
 # `kieu == "chup"` — gia tri KHONG MOT nhanh nao o day phat ra — nen moi tin xep
@@ -235,7 +235,7 @@ _DUOI = (r"(?:Astra|Flash|Pro|Max|Mini|Nano|Ultra|Sol|Sonnet|Opus|Haiku|Fable|Th
          r"High|Low|Medium|XHigh|Vision|Code|Omni|Deep|Research|Horizon|Build|Experimental|Exp|"
          # Ten ma cua CAC BIEN THE cung ho hien tren mot bang xep hang (09/09/2026:
          # GPT-Image-2.5 Sunburst #1 va GPT-Image-2.5 Flare #2, CUNG mot bang Image
-         # Edit Arena). Thieu duoi nay thi tach_model dung o "GPT Image 2.5", khop
+         # Edit Arena). Thieu duoi nay thi extract_model dung o "GPT Image 2.5", khop
          # NHAP NHANG ca hai hang — khoanh dai dung hang nao tim thay truoc, sai
          # tin khi tin noi ve Flare ma engine khoanh Sunburst.
          r"Sunburst|Flare|"
@@ -266,7 +266,7 @@ def extract_model(tieu_de: str) -> list:
     "GPT-6 Astra (max) 55 điểm" -> ["GPT-6 Astra (max)", "GPT-6 Astra", "GPT-6"]."""
     # Tieu de trang HuggingFace la "org/Model · Hugging Face": "deepseek-ai/"
     # dung truoc nen _MODEL bat "deepseek" (khong so, khong duoi) roi dung —
-    # _khoa_model ra rong va trang cong bo chinh chu KHONG BAO GIO duoc hoi
+    # _lock_model ra rong va trang cong bo chinh chu KHONG BAO GIO duoc hoi
     # (LOW-34, 12/09/2026: the DeepSeek-V4.1-Flash khong co anh tu deepseek.com).
     # Bo tien to repo truoc khi tim.
     tieu_de = re.sub(r"^\s*[\w.-]+/(?=[A-Za-z])", "", tieu_de or "")
@@ -340,7 +340,7 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
     # BANG nao duoc nhac thi doc o TIEU DE / LINK / VIA — KHONG doc o than bai
     # (LOW-22): than bai ve mot model text hau nhu luon co chu "code", ma bay bang
     # arena chung mot ten mien nen truoc 12/09/2026 `duoc_nhac` = "co arena.ai
-    # o dau do" — ca 7 bang deu True, canh bao "BANG KHAC" trong cau_xep_hang
+    # o dau do" — ca 7 bang deu True, canh bao "BANG KHAC" trong describe_ranking_image
     # khong bao gio no. Nguon co `bang_re` thi phai KHOP bang moi la duoc nhac.
     nhac_bang = f"{tieu_de} {link} {via}".lower()
     diem, ra = {}, []
@@ -537,7 +537,7 @@ def _highlight(png: Path, x: float, y: float, w: float, h: float, dpr: int = DPR
 
 def _of_count(rows: list, idx: int, hdr_h: float) -> tuple:
     """[dau, cuoi] hàng đưa vào ảnh: trong top → từ hàng 1, sâu → từ idx-2, rồi
-    kéo xuống hết CAO_TOI_DA_CSS. Ông Chủ 06/09/2026: "chụp full chiều dài cũng
+    kéo xuống hết HEIGHT_MAX_CSS. Ông Chủ 06/09/2026: "chụp full chiều dài cũng
     chả vấn đề" — càng nhiều hàng quanh model càng tốt, chỉ chặn ở trần vì thẻ
     cao bấy nhiêu, chụp thêm cũng bị cắt."""
     n = len(rows)
@@ -619,7 +619,7 @@ def _capture_one_board(page, tim: dict, out: Path, dpr: int = DPR):
 
 def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool = False):
     """Chụp bảng chứa model, chọn bảng VỪA KHỔ nhất trang. Thử tối đa 3 bảng theo
-    thứ tự vừa khổ → nhiều hàng → hẹp, lấy bảng đầu ra rộng/cao ≤ TI_LE_VUA.
+    thứ tự vừa khổ → nhiều hàng → hẹp, lấy bảng đầu ra rộng/cao ≤ RATIO_FIT.
     Vẫn quá ngang thì thu hẹp cửa sổ trình duyệt cho bảng tự dồn cột (tbench ra
     3.2 nếu không làm)."""
     ung = page.evaluate(_JS_TIM, [models, HEIGHT_MAX_CSS, RATIO_FIT, vua_khung])
@@ -980,7 +980,7 @@ class SessionCapture:
     """Mot phien chromium cho ca luot di nguon: hai context (mobile thu truoc, desktop
     lui ve) tao LAZY va dung lai giua cac nguon. Viewport desktop cao san bang
     tran cua so chup: khong doi kich thuoc giua chung, doi la trang reflow, bbox
-    do truoc do lech. Tach khoi tim_va_chup 07/09/2026 (118 dong, ba closure)."""
+    do truoc do lech. Tach khoi find_and_capture 07/09/2026 (118 dong, ba closure)."""
 
     def __init__(self, br):
         self.br = br

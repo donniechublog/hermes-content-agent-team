@@ -145,7 +145,7 @@ def test_intake_thanh_cong_day_duoc_va_ghi_workflow_id_vao_draft():
         assert request.headers.get("X-API-Key") == "fake-key"
         body = json.loads(request.content.decode("utf-8"))
         assert body["externalId"] == "draft-thanh-cong"
-        # Boc the HTML: chu_thuan() phai da go <b> truoc khi gui sang moat.
+        # Boc the HTML: pure_text() phai da go <b> truoc khi gui sang moat.
         assert "<b>" not in body["caption"]
         return httpx.Response(200, json={
             "workflowId": "wf-moi-123",

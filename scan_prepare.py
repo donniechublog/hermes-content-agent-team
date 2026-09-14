@@ -62,7 +62,7 @@ FRAME_HOURS = 12
 
 
 def turn(gio_vn: int = None) -> int:
-    """Luot trong ngay cho vai chay nhieu lan: khung KHUNG_GIO tieng tu 05:00 VN.
+    """Luot trong ngay cho vai chay nhieu lan: khung FRAME_HOURS tieng tu 05:00 VN.
 
     Moc cron nam dau moi khung, vai chay brief o dau khung va nop trong vong vai
     phut -> luon cung mot luot. Khong dung gio tron vi nop luc 16:59 va 17:01 se

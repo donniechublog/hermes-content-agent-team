@@ -6,7 +6,7 @@ o hai tep khac nhau:
 
   1. `scan_models.ARENA_BOARDS`  (chi bang arena)
   2. `scan_models.KHOA_BANG`     (ban ke khai de main() tu doi chieu)
-  3. `scan_models.NHAN_BANG`     (nhan ngan cho muc "leo hang" / "nguon hong")
+  3. `scan_models.LABEL_BOARD`     (nhan ngan cho muc "leo hang" / "nguon hong")
   4. khoi `bang_so` trong `scan_models.main`
   5. mot loi goi `_in_board` rieng trong `scan_models._in_bao_cao`
   6. `required.LINK_BOARD`        (link cho muc BAT BUOC)

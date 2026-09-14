@@ -36,7 +36,7 @@ def _ten_goi(call: ast.Call) -> str:
 
 
 def _doc_tho(src: str):
-    """Cac lenh doc xong.json khong qua doc_manifest: [(dong, ten ham)]."""
+    """Cac lenh doc xong.json khong qua read_manifest: [(dong, ten ham)]."""
     xau = []
     for n in ast.walk(ast.parse(src)):
         if not isinstance(n, ast.Call):

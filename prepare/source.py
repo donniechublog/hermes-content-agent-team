@@ -31,7 +31,7 @@ def _summary_from_img_json(draft_id: str) -> dict:
 
 # ---- 1. nguon ---------------------------------------------------------------
 def load_source(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
-    """Tra ve (nguon_dict, nguon_path, link_that). Giai ma link Google News neu
+    """Tra ve (nguon_dict, nguon_path, link_real). Giai ma link Google News neu
     can va ghi nguoc vao nguon json + meta de moi vai sau cung dung link that."""
     import article_sources
     p = state / f"nguon_{draft_id}.json"
@@ -58,7 +58,7 @@ def load_source(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
                 # `.meta.json` la tep BA TIEN TRINH cung ghi khong khoa chung:
                 # approve_service, engine nen, va blackboard cua hermes ghi
                 # `root_task` rieng, xem docstring env_load.ghi_json). Ghi de ca
-                # dict y het loi hop_nhat_meta da sua cho approve_pick.py —
+                # dict y het loi merge_meta da sua cho approve_pick.py —
                 # ghi de mat `root_task` neu blackboard vua ghi xong trong luc
                 # tien trinh nay con dang giai ma Google News.
                 p_meta = DRAFTS / f"{draft_id}.meta.json"
@@ -85,8 +85,8 @@ def candidate_social(link: str, wd: Path) -> list:
     article_images.find di tim "bao khac" cho mot post ca nhan thi ra rac. Anh nguoi ta
     dang kem bai CHINH LA anh that cua tin do — Ong Chu chot 08/09/2026.
 
-    Diem 95: cao hon moi nguon khac de no dung dau khi tai_va_loc cat bot, nhung
-    van de xep_hang (anh bang xep hang, khong di qua tai_va_loc) dung tren.
+    Diem 95: cao hon moi nguon khac de no dung dau khi download_and_filter cat bot, nhung
+    van de xep_hang (anh bang xep hang, khong di qua download_and_filter) dung tren.
     Tai han ve dia thay vi giu link CDN: link CDN co tham so het han (`oe=`).
     """
     import social_post
@@ -122,7 +122,7 @@ def candidate_static(title: str, link: str, nguon_path: Path, title_en: str = ""
 def commons_images(tu_khoa: str, so: int = 4) -> list | None:
     """Anh that tren Wikimedia Commons (tru so, san pham, su kien) cho tin mong
     anh — LUAT_ANH muc 1.2 ke Commons la nguon hop le. Chi goi khi bai + bao khac
-    khong du 5 anh. Loai SVG/logo (mime + _do_hoa o buoc tai).
+    khong du 5 anh. Loai SVG/logo (mime + _graphic o buoc tai).
 
     Tra None khi HONG VI MOI TRUONG (mang, API loi) — KHAC voi [] (da chay het,
     khong ra anh nao). Nguoi goi phai tu phan biet hai truong hop nay (quy uoc

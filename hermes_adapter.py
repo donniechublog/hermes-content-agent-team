@@ -331,9 +331,9 @@ def count_done_by_role(tu_ts, den_ts, db=None):
 
 
 def last_run_many(tids):
-    """{task_id: lan_chay_cuoi} cho nhieu task trong MOT luot doc.
+    """{task_id: last_run} cho nhieu task trong MOT luot doc.
 
-    nhat_ky/ada_chuan_bi duyet hang tram task mot ngay; goi lan_chay_cuoi()
+    journal/ada_prepare duyet hang tram task mot ngay; goi last_run()
     tung cai la mo/dong kanban.db hang tram lan."""
     tids = [t for t in (tids or []) if t]
     if not tids:

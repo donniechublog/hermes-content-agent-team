@@ -31,18 +31,18 @@ Không dùng font đơn cách ở đây. JetBrains Mono bắt mỗi chữ cái c
 nên một câu dài ăn rất nhiều bề ngang và đọc ra "code" chứ không ra "báo".
 Oswald hẹp ngang nên chứa được câu dài ở cỡ chữ to.
 
-Tên hãng trong tiêu đề được tô màu tự động, tra theo `BRAND_TU` và `BRAND_CUM`
+Tên hãng trong tiêu đề được tô màu tự động, tra theo `BRAND_FROM` và `BRAND_PHRASE`
 trong `card.py`. Riêng `AI` đứng một mình không tô.
 
 Hai thương hiệu tô khác nhau, khai báo bằng khoá `to_ten_hang`:
 
 - **donniechublog** (`"cyan"`) — dùng CYAN của bộ nhận diện.
 - **dcgr** (`"hang"`) — dùng **màu riêng của chính hãng** được nhắc tới, tra
-  `MAU_HANG` / `MAU_CUM`. Đây là màu thứ ba của bảng đơn sắc: nó không cố định,
+  `COLOR_RANK` / `COLOR_PHRASE`. Đây là màu thứ ba của bảng đơn sắc: nó không cố định,
   mà đến từ chủ thể của tin. Màu quá đậm được `_enough_bright()` kéo lên đủ đọc trên
   nền tối. Hãng chưa biết màu thì dùng `mau_du_phong` (hổ phách).
 
-Cùng bảng `MAU_HANG` đó còn quyết **palette của carousel EDU** (Kite): khi ảnh
+Cùng bảng `COLOR_RANK` đó còn quyết **palette của carousel EDU** (Kite): khi ảnh
 bìa không có màu rõ ràng, `render_edu.chon_theme_tu_dong` bám màu hãng nhắc
 trong spec thay vì xoay vòng mù màu (LOW-11 — tin DeepSeek xanh dương từng ra
 slide xanh lá). Thứ tự: màu ảnh thật → màu hãng → xoay vòng.
@@ -64,10 +64,10 @@ dưới. Khác hero (một tiêu đề bao quát tin) và khác carousel (nhiề
 2. **KHÔNG CÓ MÀN TỐI** (Ông Chủ chốt 06/09/2026). Thay vào đó chỉ **làm mờ cục
    bộ** đúng vùng chữ đè lên (`_open_region_text`, Gaussian `QUOTE_BLUR = 28`). Ảnh
    phía trên vùng chữ giữ nguyên 100% sắc nét — bảng xếp hạng, chart hiện trọn
-   tới sát mép khối chữ. Mờ tan dần từ `frame_top - QUOTE_BLUR_DEM` tới
+   tới sát mép khối chữ. Mờ tan dần từ `frame_top - QUOTE_BLUR_COUNT` tới
    `frame_top` để ranh giới NÉT/MỜ không đọc ra thành hai vùng.
 3. **Màu chữ đo theo TỪNG DẢI DÒNG**, không phải một trung bình cho cả khối
-   (`_bright_region` + `NGUONG_NEN_SANG = 116`). Ảnh có ranh sáng/tối ngang cắt qua
+   (`_bright_region` + `THRESHOLD_BACKGROUND_BRIGHT = 116`). Ảnh có ranh sáng/tối ngang cắt qua
    khối chữ là ca rất thường; một phép trung bình thì nửa khối thành
    trắng-trên-trắng hoặc đen-trên-đen.
 4. **Dòng nguồn đo riêng**: nó nằm DƯỚI khung, ngoài hộp vừa đo, nên lấy màu
@@ -106,13 +106,13 @@ kiểu `quote` vẫn làm từ trước.
 2. **KHÔNG CÓ MÀN TỐI** — giống kiểu `quote` từ 06/09/2026. Chỉ **làm mờ cục bộ**
    dải chữ đè lên (`_open_region_text`), ảnh phía trên khối chữ giữ nguyên 100% sắc
    nét. Màn tối dài chính là thứ biến vùng chữ thành mảng thứ hai.
-2b. **Màu chữ đo theo TỪNG DẢI DÒNG** (`_bright_region` + `NGUONG_NEN_SANG = 116`),
+2b. **Màu chữ đo theo TỪNG DẢI DÒNG** (`_bright_region` + `THRESHOLD_BACKGROUND_BRIGHT = 116`),
    không phải một trung bình cho cả khối. Nét khung, kicker, tên hãng trong tiêu
    đề và tên kênh đều theo phe sáng/tối đo được: nền sáng thì kéo về phía tối
    (`_enough_dark`), nếu không thì trên ảnh nền trắng chúng biến mất. Tên kênh đo
    **riêng** dải của chính nó — nó nằm ngoài khung, và ảnh có khối chữ tối nhưng
    đáy thẻ sáng là ca rất thường.
-2c. Chữ **thụt vào trong khung** (`TRAN_TEXT_X = TRAN_FRAME_X + 44`), không ăn
+2c. Chữ **thụt vào trong khung** (`CEILING_TEXT_X = CEILING_FRAME_X + 44`), không ăn
    ra sát lề thẻ như trước: có khung rồi mà chữ chạm nét là khối chữ đọc ra chật.
 3. **Kicker** phía trên tiêu đề: nhãn ngắn tiếng Anh, cỡ nhỏ, giãn chữ cái,
    màu nhấn. Đây là thứ duy nhất còn lại nói cho người đọc biết loại tin, sau
@@ -129,7 +129,7 @@ kiểu `quote` vẫn làm từ trước.
 7. **Giãn dòng bó sát** (`TRAN_LEAD = 2` so với `LEAD = 6` ở kiểu dài). Chữ
    display cỡ lớn để khoảng hở mặc định thì đọc ra rời rạc; bó lại cho khối chữ
    thành một mảng.
-8. Vùng chữ chiếm `TRAN_TEXTBOX = 0.40` chiều cao thẻ, **không thương lượng với
+8. Vùng chữ chiếm `CEILING_TEXTBOX = 0.40` chiều cao thẻ, **không thương lượng với
    chiều cao ảnh** như kiểu dài, vì ảnh phủ kín thẻ và vùng chữ chỉ là một lớp
    đè lên.
 9. Chân thẻ rút còn **đúng tên kênh, cân giữa**.
@@ -155,7 +155,7 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - Em-dash (—) bị chặn ở mọi văn bản thẻ.
 - Tiếng Việt không dấu trên thẻ bị chặn (từng in ra "CONG CU").
 - Ảnh là chính, chữ là lớp đè lên: chữ nhường chỗ cho ảnh, không ngược lại.
-- Tên hãng trong tiêu đề được tô màu tự động, tra `MAU_HANG` / `MAU_CUM` trong
+- Tên hãng trong tiêu đề được tô màu tự động, tra `COLOR_RANK` / `COLOR_PHRASE` trong
   `card.py`. Riêng `AI` đứng một mình không tô.
 - Giãn dòng đo bằng `_step_line()`, tức đo **chính các dòng sắp vẽ**, không đo
   bằng chuỗi mẫu `"Ây"`: tiêu đề tiếng Việt viết hoa trải rộng hơn chuỗi đó (dấu

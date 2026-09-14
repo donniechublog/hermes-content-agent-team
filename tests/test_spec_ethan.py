@@ -7,7 +7,7 @@ chung o submit_common (mat nguoi, quote dich, so tren anh), cung cong XH va cong
 Ethan khong doc co `lien_quan` nen chon bang ti so giai golf cho tin GPT-6.
 
 Rieng cua Ethan: mot anh (hoac ghep hai anh ngang qua "anh2"), kieu quote/tran,
-va nguong ngang TI_LE_HERO_MAX cua card.py.
+va nguong ngang RATIO_HERO_MAX cua card.py.
 
 Chay:  venv/bin/python tests/test_spec_ethan.py
 """
@@ -26,7 +26,7 @@ from test_spec_dre import _m as _m_dre  # noqa: E402
 
 def _m(wd, anh, **k):
     """Manifest cua Ethan: `cap_ghep` la LIST (engine ghi list rong khi khong
-    co cap) — `eb.cap_ghep_hero` lap thang qua no, None la TypeError."""
+    co cap) — `eb.stackable_pairs_hero` lap thang qua no, None la TypeError."""
     k.setdefault("cap_ghep", [])
     return _m_dre(wd, anh, **k)
 

@@ -83,7 +83,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # cong chan §9 khong co cot Kite va chuoi kite_* khong goi cong
 
-            # nao ngoai kiem_da_dung — mot khoang cach im lang giua tai lieu
+            # nao ngoai check_not_reused — mot khoang cach im lang giua tai lieu
 
             # va ma (audit 06/09/2026). Bon cong duoi day khong dinh gi toi
 
@@ -162,7 +162,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 def _resolve_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
                 loi: list, canh: list):
     """Mot slide cua vai -> mot slide cua render_edu, hoac None khi kind la.
-    Tach khoi giai_spec 07/09/2026: than vong lap dai 95 dong."""
+    Tach khoi resolve_spec 07/09/2026: than vong lap dai 95 dong."""
     k = sl.get("kind")
 
     if k not in REQUIRED:
@@ -276,7 +276,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     if slides and slides[0].get("kind") != "cover":
         loi.append("slide 1 phải là kind \"cover\"")
     hinh = {a["ma"]: a for a in kb.figure_real(m)}
-    da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (kiem_trung)
+    da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (check_duplicate)
     # brand trong spec render la CHU in o masthead/folio (render_edu chi dung no
     # lam chu) -> phai la handle hien thi (dcgr -> dcgr.tech), khong phai slug.
     # d24ddfc da sua byline/follow, con masthead van in "dcgr" (05/09/2026).
@@ -315,7 +315,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     # (than gianh mat). Nay ca ba deu chan — im lang ve vector la giau mot that
     # bai cua vong tim anh duoi mot bo slide trong nhu that.
     #
-    # Chan cung KHONG lam vai treo: `nc.dem_vong_loi` dem ba vong loi Y HET
+    # Chan cung KHONG lam vai treo: `nc.count_round_error` dem ba vong loi Y HET
     # nhau roi bao vai `kanban_block` va day len Ong Chu — dung duong danh cho
     # "cong dang doi mot thu khong the co (thieu anh...)".
     hero = kb.figure_hero(m)

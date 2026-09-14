@@ -181,14 +181,14 @@ def test_sai_schema_cung_tra_None():
             _go()
 
 
-# ------------------------------------------------------ tao_task (CLI hermes)
+# ------------------------------------------------------ create_task (CLI hermes)
 class _Ra:
     def __init__(self, rc=0, out="", err=""):
         self.returncode, self.stdout, self.stderr = rc, out, err
 
 
 def _tao_task(ket_qua, **kw):
-    """Goi ha.tao_task voi subprocess gia. Tra (ket_qua_ham, args_da_chay)."""
+    """Goi ha.create_task voi subprocess gia. Tra (ket_qua_ham, args_da_chay)."""
     import subprocess
     da_chay = {}
 

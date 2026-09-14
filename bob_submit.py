@@ -50,10 +50,10 @@ RC_NO_HAS_IMAGE = 3            # get_source.py thoat 3 khi trang khong co anh do
 
 
 def handle_channel(brand: str) -> str:
-    """@handle hien thi cua brand — mot ban o env_load.handle_kenh (ADF-r2-9).
+    """@handle hien thi cua brand — mot ban o env_load.handle_channel (ADF-r2-9).
 
     Su co 06/09/2026 giu lai lam ly do ham nay LUON co "@": CT_BRAND='blog'
-    khong co trong card.THUONG_HIEU nen tung roi ve chuoi 'blog' — watermark tren
+    khong co trong card.BRAND nen tung roi ve chuoi 'blog' — watermark tren
     MOI anh Bob dong khung in dung chu "blog"."""
     return env_load.handle_channel(brand, co_a_cong=True)
 

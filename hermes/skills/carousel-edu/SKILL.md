@@ -74,7 +74,7 @@ mảng art bị đọc thành "bằng chứng thật" thì nó thuộc cột C�
 | `graph` | mạng node-cạnh | quan hệ, so sánh nhiều bên |
 
 Thứ tự chọn theme, renderer tự làm, không hỏi Ông Chủ: **màu ảnh bìa thật** →
-**màu nhận diện của hãng** được nhắc trong bài (tra `MAU_HANG`, cùng bảng với chỗ
+**màu nhận diện của hãng** được nhắc trong bài (tra `COLOR_RANK`, cùng bảng với chỗ
 tô tên hãng của Ethan) → mới tới cột "hợp với" ở bảng trên cho khỏi lặp bộ trước.
 Nên một loạt tin cùng hãng sẽ cùng tone: đó là chủ ý, palette của slide đi cùng
 màu brand. Bìa dùng hình thật thì bộ không vẽ hero.

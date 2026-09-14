@@ -4,8 +4,8 @@ YuNet, Playwright/Chromium, OPENAI_API_KEY, TELEGRAM_BOT_TOKEN hay khong.
 
 Vi sao (audit C1 diem 4): thieu tung thu nay khong lam engine crash NGAY o
 dau, ma chet cam lang o GIUA chung, rat xa cho thieu that su:
-- Thieu cv2               -> image_rules._load_yunet() tra ve None, dem_mat()/
-                             kiem_mat_nguoi() lang le bao "khong kiem duoc",
+- Thieu cv2               -> image_rules._load_yunet() tra ve None, count_faces()/
+                             check_unnamed_face() lang le bao "khong kiem duoc",
                              cong mat nguoi (LUAT_ANH SS6) tu tat ma khong ai
                              biet.
 - Thieu file model .onnx  -> giong het thieu cv2 (_yunet() cung tra None),
@@ -46,7 +46,7 @@ NAME_MODEL_YUNET = "face_detection_yunet_2023mar.onnx"
 
 
 def check_cv2() -> tuple:
-    """`import cv2` co thanh cong khong -- image_rules.count_faces/kiem_mat_nguoi can no."""
+    """`import cv2` co thanh cong khong -- image_rules.count_faces/check_unnamed_face can no."""
     try:
         import cv2
     except Exception as e:
@@ -61,7 +61,7 @@ def check_yunet() -> tuple:
     """Model YuNet ma image_rules._load_yunet() dung co nap duoc khong.
 
     Goi THANG image_rules._load_yunet() -- ham co gach duoi nhung Python khong chan
-    goi tu ngoai, va day la duong CHINH XAC ma dem_mat()/kiem_mat_nguoi() di
+    goi tu ngoai, va day la duong CHINH XAC ma count_faces()/check_unnamed_face() di
     qua (khong mo phong lai logic, tranh lech nhau ve sau). Kiem file .onnx
     truoc de tach ro ly do: thieu FILE khac voi thieu cv2 (da co muc rieng o
     tren) -- ca hai deu lam _yunet() tra ve None nhu nhau nen tu no khong noi

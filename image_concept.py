@@ -250,8 +250,8 @@ def keyword_concept(tieu_de: str, tom_tat: str = "", dung_llm: bool = True,
     """Heuristic trước (chắc, không mạng), LLM bù cho tới 3 từ khoá.
 
     `them` (12/09/2026, bảng loại tin `story_type.py`): từ khoá do LOẠI TIN ép
-    vào TRƯỚC heuristic — cờ nước của hãng (`NUOC_CUA_HANG`), datacenter/nhà
-    máy cho tin INFRA dù tiêu đề không có chữ nào khớp `CHU_DE`. Trước đây cờ
+    vào TRƯỚC heuristic — cờ nước của hãng (`COUNTRY_OF_RANK`), datacenter/nhà
+    máy cho tin INFRA dù tiêu đề không có chữ nào khớp `TOPIC`. Trước đây cờ
     chỉ ra khi tiêu đề nhắc tên nước, nên tin Samsung không bao giờ ra cờ Hàn."""
     ra = [{"tu_khoa": t, "ly_do": "theo loại tin"} for t in (them or []) if t]
     for x in keyword_heuristic(tieu_de, tom_tat):
@@ -292,7 +292,7 @@ def filter_commons(pages: dict, tu_khoa: str, so: int = 4, canh_ngan_min: int = 
         # Tu khoa DAI (>= 3 tu dac trung, thuong do LLM sinh: "mathematics blackboard
         # equations") hiem khi co 2 tu cung nam trong ten tep — do that 12/09/2026:
         # ca hai tu khoa toan hoc tra 0 anh. Voi loai do 1 tu khop la du; con mat
-        # (cau_hoi_vision) moi la cong quyet dinh, khong phai ten tep.
+        # (sentence_ask_vision) moi la cong quyet dinh, khong phai ten tep.
         can = 1 if len(dac_trung) >= 3 else min(2, len(dac_trung))
         if dac_trung and sum(t in ten_thap for t in dac_trung) < can:
             continue
@@ -366,7 +366,7 @@ def label_concept(a: dict) -> dict:
         a["ghi_chu"].insert(0, "❌ ảnh khái niệm mà là chart/đồ hoạ hoặc có mặt người → KHÔNG DÙNG")
         return a
     if a.get("lien_quan") is False:
-        return a                                  # phan_loai đã xoá dung + ghi ❌
+        return a                                  # classify đã xoá dung + ghi ❌
     if a.get("ngang"):
         a["dung"] = [d for d in a["dung"] if d.startswith("ghép dọc")]
     else:

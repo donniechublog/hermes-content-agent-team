@@ -218,7 +218,7 @@ chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là d�
 - **Tối đa 3 lượt** một bài, mỗi lượt đổi từ khoá khác hẳn — không quay lại
   60 tool call/task. Từ khoá tiếng Việt bị từ chối (§ tìm kiếm chỉ tiếng Anh).
 - Hết 3 lượt vẫn thiếu mới `kanban_block`, lý do **phải kể từ khoá đã thử**.
-- Đếm **slide dựng được**, không đếm tấm (`schema.so_anh_dung_duoc`): ảnh ngang
+- Đếm **slide dựng được**, không đếm tấm (`schema.count_image_use_ok`): ảnh ngang
   thấp hơn 700px chỉ ghép được, hai tấm mới thành một slide, một tấm lẻ = 0.
   Cùng số này quyết định engine có tìm tiếp không (`role.has_enough_material`).
 - Ảnh **chụp** có biển hiệu, số nhà, logo trên tường vẫn là ảnh chụp — cắt dọc
@@ -270,15 +270,15 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
   không bao giờ hỏi tới Commons/Wikidata — mà vai thì bị cấm tự tải thêm, nên bộ
   ảnh giao cho vai trắng trơn dù máy móc đã sẵn. Tin không nhắc hãng nào:
   `vendors_in_story` trả rỗng, vòng thoát ngay, không một request nào.
-- **Trần**: thêm tối đa 4 ảnh một bộ (`TOI_DA_THEM_TH`), và tổng ảnh không quá
-  `TOI_DA_ANH + 4`. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối
+- **Trần**: thêm tối đa 4 ảnh một bộ (`MAX_EXTRA_BRAND_`), và tổng ảnh không quá
+  `MAX_IMAGE + 4`. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối
   cảnh thì vẫn chỉ chạy khi **thật sự thiếu ảnh** — đó là phần đắt.
 - **Chỗ đứng**: ảnh của hãng xếp **sau** ảnh riêng của tin trong gợi ý bìa
   (`goi_y_bia`), nên bài có ảnh riêng tốt không bị chúng chiếm bìa.
 - **Hãng nào**: mọi hãng trong `scan_business.WATCHLIST` mà tin nhắc tới, tối đa
   3, theo thứ tự xuất hiện — **không phải chỉ tên riêng đầu tiêu đề**. Tên
   model/chip quy về hãng chủ (Claude → Anthropic, Xring → Xiaomi). Tên trần mà
-  watchlist không giữ (Google, Meta, Snapdragon) bù bằng `TEN_THEM`.
+  watchlist không giữ (Google, Meta, Snapdragon) bù bằng `NAME_EXTRA`.
 - **Hỏi gì**: `"<Hãng> headquarters"`, `"<Hãng> building"`, `"<Hãng> campus"` —
   hỏi thẳng thứ hãng nào cũng có ảnh, không hỏi tên trần. Hỏi tên trần
   ("Anthropic") ra ảnh khảo cổ *anthropic cut marks*.
@@ -305,7 +305,7 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
      `ranking.fallback_card`: không thêm một nét nào của ta, chỉ là chỗ đặt —
      nên không vướng §0. Là đường **cuối**, chỉ khi không còn ảnh chụp nào.
 - **Lọc**: tên tệp phải chứa **đủ** từ đặc trưng của tên hãng theo *biên giới từ*
-  ("Arm" ≠ "Armstrong"); bỏ đồ hoạ (`TEN_LOAI`); bỏ **nhiễu theo hãng** (Amazon →
+  ("Arm" ≠ "Armstrong"); bỏ đồ hoạ (`NAME_TYPE`); bỏ **nhiễu theo hãng** (Amazon →
   rừng/sông, Apple → quả táo, Tesla → Nikola Tesla) và **nhiễu chung** (mít tinh,
   đình công, biểu tình — đo thật: "Amazon building" trả về hai tấm *Solidarity
   With Alabama Amazon Workers*). JPEG trước, ảnh to trước, cạnh ngắn ≥ 700.
@@ -344,7 +344,7 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
   Cổng cũ (§ `kite_submit`) chỉ đòi một tấm, nên Kite đặt đúng một tấm lên bìa rồi
   vẽ vector cả thân — đúng cái bị chê.
 - **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure`.
-- **Trần 6 tấm** (`TOI_DA_EP_HINH`): bộ chỉ được 6..10 slide, trừ bìa và cta còn
+- **Trần 6 tấm** (`MAX_FORCE_FIGURE`): bộ chỉ được 6..10 slide, trừ bìa và cta còn
   8. Ép hết khi engine tìm được 9 tấm là hai cổng đá nhau, vai không có đường nộp.
 - Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`). Vision tắt thì mọi ảnh là
   `None`, ép lúc đó là đẩy quảng cáo/widget lên slide — cùng bài học với cổng
@@ -435,8 +435,8 @@ Thinking Machines, SWE-bench) đều **ra từ khoá** qua `vendors_in_story` (�
 hoặc `keyword_concept` (§1.2c) — 9/9, **không cần LLM**, chỉ bảng tĩnh. Và
 `image_concept.image_concept("flag of Philippines")` trả về ảnh thật từ Commons.
 Chỗ trắng chỉ xuất hiện với tiêu đề *không nhắc hãng nào trong watchlist, không
-nhắc nước nào, và không khớp mẫu `CHU_DE` nào* — chưa gặp trong lưu lượng thật.
-Nên đừng nhét từ khoá chung chung vào `CHU_DE` để "cho chắc": Commons trả minh
+nhắc nước nào, và không khớp mẫu `TOPIC` nào* — chưa gặp trong lưu lượng thật.
+Nên đừng nhét từ khoá chung chung vào `TOPIC` để "cho chắc": Commons trả minh
 hoạ tệ cho khái niệm trừu tượng (§1.2c), và thêm một từ khoá sai làm hỏng đúng
 cái §0 giữ.
 - **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
@@ -733,7 +733,7 @@ mảng nhìn tách rời:
   chữ của chúng khác nhau:
   - **Carousel (Dre)**: FG một màu cố định cho cả bộ; chỉ thêm lớp mờ+tinh khi
     đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
-    "rối" (`carousel.py::_lop_neu_can`).
+    "rối" (`carousel.py::_layer_if_can`).
   - **Hero cả hai kiểu** `quote` (06/09/2026) và `tran` (07/09/2026): không còn
     TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_open_region_text`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
@@ -781,7 +781,7 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   infographic nhồi chữ), chụp màn hình web/app nhiều chữ, cắt ghép nhiều hình,
   đồ hoạ nhồi nhét. Biểu đồ/bảng số liệu gọn gàng **không** tính là rối. Chỉ
   con mắt phân biệt được: vision trả thêm dòng `ROI` (`prepare/nhin.py`,
-  `CAU_ROI`), ghi vào manifest thành `roi`.
+  `SENTENCE_FALL`), ghi vào manifest thành `roi`.
 - **Không ưu tiên:** ảnh rối không bao giờ là bìa. Làm thân chỉ khi **hết ảnh
   sạch** — `submit_common.check_image_fall` chặn Dre và Ethan nếu còn ảnh sạch dùng
   một mình được mà chưa dùng, chưa lên bài khác.
@@ -795,7 +795,7 @@ cho nghiêm chỉnh, đừng nham nhở"*.
 - **Buộc dùng thì nền chữ đặc**, không phải lớp mờ 55% như mặc định: chữ in sẵn
   trong ảnh vẫn lộ lem nhem qua lớp mờ. Carousel `_background_solid_below_text`, thẻ
   Ethan `_text_bg_strict`: nền đặc bắt đầu ở **khoảng lặng gần nhất phía trên
-  chữ** (`card._moc_nen_dac` đo chi tiết ngang từng hàng pixel), dải smoothstep
+  chữ** (`card._timestamp_background_solid` đo chi tiết ngang từng hàng pixel), dải smoothstep
   nằm trong khoảng lặng đó — nên chữ in sẵn của ảnh bị phủ trọn, không bị cắt
   nửa dòng, và **không có đường kẻ ngang**. Không bao giờ phủ cao hơn 40% khung
   từ trên xuống. Đo thật 13/09: đồ hoạ "Nvidia Weighs $10B..." có tiêu đề in sẵn

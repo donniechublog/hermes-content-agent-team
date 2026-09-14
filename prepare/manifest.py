@@ -219,7 +219,7 @@ def compute_derived(anh: list, so_xh: int = 0) -> dict:
     so_mien = sorted({(a.get("mien") or a.get("tu") or "?") for a in dung_duoc})
     # Anh khai niem chi lam bia, nen ca chum chi DEM LA MOT khi xet du/thieu:
     # 5 la co Nhat khong phai 5 slide. `so_dung_duoc` di vao brief (THIEU ANH)
-    # va co `thieu_anh` (xem _mo_ta_thieu_anh) ma route_missing_images doc de quyet
+    # va co `thieu_anh` (xem _description_missing_image) ma route_missing_images doc de quyet
     # dinh hoi Ong Chu hay chuyen Kite.
     so_dung_duoc = schema.count_image_use_ok(anh)
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua

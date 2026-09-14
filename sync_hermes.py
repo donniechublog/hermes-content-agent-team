@@ -92,7 +92,7 @@ def plugin_home(H: Path) -> Path:
 
 
 # ---- Cong cu bi TAT theo profile (agent.disabled_toolsets) ------------------
-# Vi sao phai co co che RIENG, khong nhet vao cap_tep(): cap_tep chep NGUYEN
+# Vi sao phai co co che RIENG, khong nhet vao cap_file(): cap_file chep NGUYEN
 # TEP, ma config.yaml cua profile co api_key nen khong duoc vao git. Nhung
 # `agent.disabled_toolsets` lai dung la CHINH SACH — no quyet dinh vai con
 # execute_code/delegate_task hay khong — nen de no chi song tren server la dinh
@@ -259,7 +259,7 @@ def cap_file():
         for hk, H in HOMES.items():
             ra.append((f"cron {hk}/{s}", H / "scripts" / f"{s}.sh",
                        REPO / "scripts" / f"{s}.sh"))
-    # Ten muc: "kanban <home> <tep>" — thieu_dau_vet tach tep bang split(" ", 2).
+    # Ten muc: "kanban <home> <tep>" — missing_trace tach tep bang split(" ", 2).
     for f in PLUGIN_FILE:
         for hk, H in HOMES.items():
             ra.append((f"kanban {hk} {f}", plugin_home(H) / f, PLUGIN_REPO / f))
@@ -653,7 +653,7 @@ def main():
                     print(f"  TAO   kanban {hk} {f} -> home")
 
     # agent.disabled_toolsets: khoa chinh sach nam trong config.yaml (khong chep
-    # ca tep duoc vi co api_key) — dong bo rieng, xem dong_bo_tat_cong_cu.
+    # ca tep duoc vi co api_key) — dong bo rieng, xem sync_all_gate_old.
     tat_khac, tat_chep = sync_all_gate_old(a.vao_repo, a.ra_hermes, a.chi)
     da_chep += tat_chep
 

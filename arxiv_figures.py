@@ -39,12 +39,12 @@ import sys
 from pathlib import Path
 
 # ---- kho ra -----------------------------------------------------------------
-# Vector trong PDF phong to khong vo, nen cu render du to. RONG_MUC vuot 2160 =
+# Vector trong PDF phong to khong vo, nen cu render du to. EMPTY_ITEM vuot 2160 =
 # be ngang slide cua render_edu (1080) nhan DPR 2 luc chup, nen hinh khong bao
-# gio phai phong len. CANH_NGAN_MUC vuot image_rules.SHORT_SIDE_MIN (1000) de khoi
+# gio phai phong len. SHORT_SIDE_ITEM vuot image_rules.SHORT_SIDE_MIN (1000) de khoi
 # dinh canh bao "canh ngan, phong len se mem" luc nop — va bo xa hai nguong duoi
 # no: image_rules.SHORT_SIDE_DOWNLOAD (500, duoi do image_prepare khong buon tai) va
-# render_edu.FIG_RONG_TOI_THIEU (800).
+# render_edu.FIG_EMPTY_MIN (800).
 EMPTY_ITEM = 2200
 SHORT_SIDE_ITEM = 1000
 ZOOM_MAX = 12.0

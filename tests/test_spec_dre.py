@@ -361,7 +361,7 @@ def test_duoi_hai_quote_thi_chan():
 
 
 def test_quote_con_nguyen_tieng_anh_thi_chan():
-    """card.tim_mat_dau CO Y bo qua tieng Anh, nen quote chua dich lot thang
+    """card.find_face_mark CO Y bo qua tieng Anh, nen quote chua dich lot thang
     len Telegram neu cong nay khong bat (06/09/2026)."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)

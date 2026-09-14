@@ -9,7 +9,7 @@ vien, khong vach, khong vung den rieng, khong hai vung tach roi. Chu de len
 anh: MAC DINH KHONG PHU LOP NAO — FG (trang/den, co dinh theo NEN ca bo) tu no
 da tuong phan voi hau het anh. Chi khi do that tren pixel thay vung duoi chu
 khong du tuong phan (qua sang/toi, hoac qua "roi") moi them mot lop mo+tinh
-NGAN va VUA DU (_lop_neu_can), khong bao gio bat dau truoc dong chu dau tien.
+NGAN va VUA DU (_layer_if_can), khong bao gio bat dau truoc dong chu dau tien.
 Nen bao gio cung la anh (lam mo neu can), khong bao gio la mot hop den dat
 canh anh.
 
@@ -26,7 +26,7 @@ Bo cuc moi slide (1080x1350, ti le 4:5; nen "toi" mac dinh hoac "sang" — xem N
       da LAM MO MANH lam nen — khong bao gio la nen den tro, cung khong bao gio
       la mot ban sao sac net cua chinh no (se doc ra hai vung).
     - Khoi chu canh trai o duoi, tach doan theo dong trong, DE LEN anh — lop
-      mo+tinh (neu can) neo dung tai dong chu dau tien (_lop_neu_can).
+      mo+tinh (neu can) neo dung tai dong chu dau tien (_layer_if_can).
     - Chip ten kenh o goc DUOI-TRAI.
 
 Xuat ra: <out>.png (bia), <out>_2.png, <out>_3.png ... <out>_N.png
@@ -79,8 +79,8 @@ PAD = 84                         # le trai/phai cua chu, do tu mau tham chieu
 BACKGROUND = {"toi": {"bg": (0, 0, 0), "fg": (255, 255, 255), "mo": (190, 190, 190)},
        "sang": {"bg": (255, 255, 255), "fg": (0, 0, 0), "mo": (80, 80, 80)}}
 BACKGROUND_SHOW = "toi"
-BG = (0, 0, 0)                   # nen/man phu (dat lai qua dat_nen)
-FG = (255, 255, 255)            # chu chinh (dat lai qua dat_nen)
+BG = (0, 0, 0)                   # nen/man phu (dat lai qua set_background)
+FG = (255, 255, 255)            # chu chinh (dat lai qua set_background)
 OPEN = (190, 190, 190)            # chu phu (dong nguon quote)
 
 
@@ -96,7 +96,7 @@ def set_background(ten):
 WM = (10, 132, 255)             # #0A84FF — mau du phong neu chua nap thuong hieu
 
 # Neobrutalism (dong bo voi card.py --kieu quote): chip khoi dac, vien den day,
-# bong cung lech, chu mono. Mau chip lay CYAN nhan dien (dat qua dat_thuong_hieu
+# bong cung lech, chu mono. Mau chip lay CYAN nhan dien (dat qua set_brand
 # trong main): donniechublog #00cce0, dcgr trang.
 F_MONO_CH = str(FONTS / "JetBrainsMono-Regular.ttf")   # chip ten kenh (khong dam)
 F_UI_CH = str(FONTS / "JetBrainsMono-Bold.ttf")        # chip category (dam)
@@ -107,7 +107,7 @@ F_UI_CH = str(FONTS / "JetBrainsMono-Bold.ttf")        # chip category (dam)
 # anh de dat chu. Chi khi do THAT SU tren pixel WYSIWYG (sau khi da dan anh,
 # truoc khi ve chu) thay vung ngay duoi chu khong du tuong phan voi FG (qua
 # sang/qua toi, hoac qua "roi" — bien thien mau cao, chu mot mau khong an toan
-# het cho) moi them MOT lop mo+tinh. Khi them: vua du (tran thap TOI_TOI_DA,
+# het cho) moi them MOT lop mo+tinh. Khi them: vua du (tran thap DARK_MAX,
 # khong phai luon phu 80% roi moi tinh tiep), va KHONG BAO GIO bat dau truoc
 # dong chu dau tien (khong con khoang dem VEIL_LEAD/VEIL_TOP chom truoc nhu
 # ban cu).
@@ -148,7 +148,7 @@ def _line_h(font, lines, lead):
     Chuoi mau cu "ÂgqÁ" khong bao gom cac to hop dau DOI (mu/moc + dau thanh,
     vd "ẫ" "ệ" "ữ"): mot dong that co nhung to hop nay co the cao hon chuoi
     mau, khien hai dong lien nhau chong len nhau (Ong Chu nhac 08/09/2026 —
-    dung phat hien cua card._buoc_dong 06/09/2026 ben card.py: chuoi mau
+    dung phat hien cua card._step_line 06/09/2026 ben card.py: chuoi mau
     121px, dong that 134px, hai dong chong 11px). Rong danh sach (chua wrap
     duoc dong nao) thi lui ve chuoi mau tham chieu de van co mot con so."""
     hop = [font.getbbox(l) for l in lines if l] or [font.getbbox("ÂgqÁ")]
@@ -190,7 +190,7 @@ def _draw_paragraphs(d, x, y, wrapped, font, lh, fill):
 
 
 def _cyan():
-    """CYAN nhan dien da nap qua dat_thuong_hieu (donniechublog #00cce0, dcgr
+    """CYAN nhan dien da nap qua set_brand (donniechublog #00cce0, dcgr
     trang). Chua nap thi ve mau du phong."""
     return card.CYAN or WM
 
@@ -258,9 +258,9 @@ def _open(path):
 
 def _stack_if_can(muc, nhan, stem):
     """Slide/bia co "images": [a, b] (hai anh NGANG) -> ghep doc thanh mot anh
-    (card.ghep_doc), ghi ra `<stem>.ghep.png` va gan vao muc["image"] de moi
+    (card.stack_read), ghi ra `<stem>.ghep.png` va gan vao muc["image"] de moi
     cong chan + builder phia sau dung nhu anh thuong. Xem ghi chu trong
-    card.ghep_doc: thay vi crop anh ngang mat tieu de, xep hai anh ngang
+    card.stack_read: thay vi crop anh ngang mat tieu de, xep hai anh ngang
     trong cung khung."""
     ds = muc.get("images")
     if not ds:
@@ -318,10 +318,10 @@ BACKGROUND_FALL_SPREAD = 180        # dai smoothstep toi da tu anh sang nen dac
 def _background_solid_below_text(canvas, text_top):
     """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
     cua text phai lam cho nghiem chinh, dung nham nho"). Lop mo+tinh cua
-    `_layer_if_can` bi tran TOI_TOI_DA (~55%) va chi mo ban kinh BLUR_RADIUS —
+    `_layer_if_can` bi tran DARK_MAX (~55%) va chi mo ban kinh BLUR_RADIUS —
     tren anh co chu in san (do that: do hoa "Nvidia Weighs $10B...") chu cu van
     lo lem nhem sau cau quote. O day: nen DAC mau BG tu khoang lang gan nhat
-    phia tren dong chu (`card._moc_nen_dac`, dung chung voi the Ethan) xuong
+    phia tren dong chu (`card._timestamp_background_solid`, dung chung voi the Ethan) xuong
     day; dai smoothstep nam trong khoang lang nen khong cat ngang dong chu in
     san nao, khong co duong ke ngang (LUAT_ANH muc 7.1)."""
     dac, top = card._timestamp_background_solid(canvas, text_top - BACKGROUND_FALL_ODD, BACKGROUND_FALL_SPREAD)
@@ -365,7 +365,7 @@ def _layer_if_can(canvas, base, text_top, text_bottom, anh_roi=False):
     blurred = base.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
     # 1) mo NHE ban sac ngay tai vung chu — xoa chi tiet gay roi
     canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=200, ease=VEIL_EASE))
-    # 2) tinh VUA DU (tran TOI_TOI_DA, khong phai mac dinh phu cao roi moi tinh)
+    # 2) tinh VUA DU (tran DARK_MAX, khong phai mac dinh phu cao roi moi tinh)
     lop = Image.new("RGB", (W, H), BG)
     canvas.paste(lop, (0, 0), _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE))
 
@@ -381,14 +381,14 @@ def _body_image(canvas, img):
         con giong loi ky thuat. Lam mo bien nen thanh mot mang mau lien, de anh
         sac o tren doc ra MOT chu the tren MOT mat phang.
       - KHONG lam toi them nen: nen toi hon han lop sac se ve ra mot hinh chu
-        nhat quanh chart — dung la hai vung. Chi _lop_neu_can moi duoc lam toi
+        nhat quanh chart — dung la hai vung. Chi _layer_if_can moi duoc lam toi
         (va chi khi thuc su can — xem ham do), theo gradient ngan nen khong
         sinh mep.
       - LOP SAC len tren: full be ngang, KHONG cat hai canh -> giu tron chi
         tiet mep (chup man hinh, bang so khong bi cat chu). Anh 4:5 phu kin
         luon (nen khong lo ra ti nao); anh 1:1 phu 0..~1080, phan duoi la nen.
 
-    Tra ve ban COVER SAC (de _lop_neu_can dung lam nguon mo neu can).
+    Tra ve ban COVER SAC (de _layer_if_can dung lam nguon mo neu can).
     (Luat: anh dua vao carousel da la 1:1 hoac 4:5 — xem crop_ratio.py; nen
     luon cham du sau.)"""
     cover = _fit_cover(img, W, H).convert("RGB")
@@ -425,7 +425,7 @@ def build_body(img_path, text, handle, out, roi=False):
     text_top = TEXT_BASE - total
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
-    # phan voi FG — xem _lop_neu_can. Khong bao gio bat dau truoc text_top.
+    # phan voi FG — xem _layer_if_can. Khong bao gio bat dau truoc text_top.
     _layer_if_can(canvas, base, text_top, TEXT_BASE, anh_roi=roi)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
@@ -441,7 +441,7 @@ def build_body(img_path, text, handle, out, roi=False):
 # brand (dong bo voi card.py --kieu quote): donniechublog xanh, dcgr trang.
 Q_HI, Q_LO = 60, 38              # co chu quote trong slide than
 # Be rong THAT su cua chu quote khi ve (build_body_quote thut vao trong khung).
-# Cong chan _gate_chu truoc 06/09/2026 do o W - 2*PAD = 912px trong khi ban ve
+# Cong chan _gate_overflow truoc 06/09/2026 do o W - 2*PAD = 912px trong khi ban ve
 # chi rong 900px: cau vua du 7 dong luc do khi ve thanh 8 dong — lot cong roi
 # bi cat. Hai cho phai dung CUNG mot so.
 Q_FRAME_X = 40                   # le khung quote
@@ -486,7 +486,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
-    # Chi them lop khi do THAT can (xem _lop_neu_can) — neo dung tai dinh khung,
+    # Chi them lop khi do THAT can (xem _layer_if_can) — neo dung tai dinh khung,
     # khong con chom truoc 24px nhu ban cu.
     _layer_if_can(canvas, base, max(0, frame_top), H, anh_roi=roi)
 
@@ -531,7 +531,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     if roi:
         # Anh roi lam bia (LOW-47): KHONG cover-crop — cat hai canh la mat chu
         # khoa o mep (do that A9: "NVIDIA" cut). Hien NGUYEN be ngang nhu slide
-        # than; nen dac duoi hook tu dat o khoang lang (_nen_dac_duoi_chu).
+        # than; nen dac duoi hook tu dat o khoang lang (_background_solid_below_text).
         cover = _body_image(canvas, _open(img_path))
     else:
         cover = _fit_cover(_open(img_path), W, H).convert("RGB")
@@ -556,7 +556,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
         weight=HOOK_WEIGHT, lead=HOOK_LEAD)
     y = hook_bottom - total
     # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem
-    # _lop_neu_can) — the tich category/label o duoi la chip dac, tu doc duoc,
+    # _layer_if_can) — the tich category/label o duoi la chip dac, tu doc duoc,
     # khong can lop bao ve.
     _layer_if_can(canvas, cover, y, H, anh_roi=roi)
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
@@ -649,7 +649,7 @@ def _gate_image(paths):
         la_bia = (nhan == "bia")
         khai_chart = bool(muc.get("chart"))
 
-        # Anh RONG chan TRUOC kiem_chart: anh trang tron duoc do_chart cham la
+        # Anh RONG chan TRUOC check_chart_integrity: anh trang tron duoc do_chart cham la
         # "chart" (phang 100%, 2 mau), de sau thi thong bao thanh "thieu co".
         if not gom(image_rules.check_blank_image(nhan, img)):
             continue

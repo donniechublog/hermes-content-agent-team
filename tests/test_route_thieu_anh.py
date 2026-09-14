@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Engine chỉ MÔ TẢ thiếu ảnh, tầng ghép nối mới QUYẾT ĐỊNH (issue A1).
 
-Truoc 09/09/2026 `image_prepare._route_thieu_anh` gui Telegram va tao task Kite
+Truoc 09/09/2026 engine (ham cu `_route_thieu_anh`, da xoa) gui Telegram va tao task Kite
 ngay trong engine, nen engine phai `from approve_dispatch import standard_assignee`
 va `from approve_post import create_task_kite`: lop CHUAN BI goi NGUOC len lop dieu
 phoi. Nay engine ghi `xong.json["thieu_anh"] = {"so": .., "toi_thieu": ..}` va

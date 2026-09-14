@@ -87,8 +87,8 @@ def _host_is_side_try_three(c: dict) -> bool:
 
 
 def _download_candidate(c: dict) -> tuple:
-    """Bytes cho MOT ung vien cua tai_va_loc: file local (c['tep']) hoac HTTP
-    qua _tai_bytes — ham THUAN, khong dung chung state, an toan chay song song
+    """Bytes cho MOT ung vien cua download_and_filter: file local (c['tep']) hoac HTTP
+    qua _download_bytes — ham THUAN, khong dung chung state, an toan chay song song
     (audit_content_team B3). Tra (data, loi): `loi` giu lai exception cua
     Path.read_bytes() (`_download_bytes` tu no da nuot loi, khong bao gio nem) de pha
     loc tuan tu phia duoi nem lai va in dung log nhu khi con goi truc tiep tai
@@ -110,7 +110,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
     Pha 2 (tuan tu, y het truoc day): loc/dedup/early-break PHAI giu dung thu
     tu diem (quyet dinh "ban nao trung thi giu ban lon hon"), nen khong song
     song duoc — chi khac o cho lay `data` tu ket qua Pha 1 thay vi tai lai.
-    Chap nhan over-fetch (tai het cands[:TOI_DA_TAI+6], early-break Pha 2 co
+    Chap nhan over-fetch (tai het cands[:MAX_DOWNLOAD+6], early-break Pha 2 co
     the bo khong dung toi vai ban) — danh doi lay toc do, audit_content_team B3."""
     import article_images
     goc_dir = wd / "goc"
@@ -236,7 +236,7 @@ def _save_crop(img: Image.Image, out: Path, ti_le_ten: str, cx=0.5, cy=0.5,
     ra = crop_ratio.crop(img, crop_ratio.RATIO[ti_le_ten], cx, cy, cat_ngang=cat_ngang)
     meta = PngInfo()
     # CHEP LAI dau cua anh goc truoc khi them dau crop. Truoc 06/09/2026 ham nay
-    # dung PngInfo TRANG, nen ban cat mat `nguon_dung=chup_xep_hang` -> la_xep_hang
+    # dung PngInfo TRANG, nen ban cat mat `nguon_dung=chup_xep_hang` -> is_ranking_image
     # tra False -> mat mien tru o image_rules, va carousel chan dung cai bia ma
     # dre_submit bat buoc dung. Xay ra 100% voi anh chup bang tren khung mobile.
     for k, v in (getattr(img, "text", None) or {}).items():

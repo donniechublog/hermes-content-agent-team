@@ -111,7 +111,7 @@ def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str =
     return loi
 
 
-# So lan nop HONG voi CUNG mot bo loi truoc khi coi la tac (xem dem_vong_loi).
+# So lan nop HONG voi CUNG mot bo loi truoc khi coi la tac (xem count_round_error).
 MAX_ROUND = 3
 
 
@@ -172,7 +172,7 @@ def article_text_for(m: dict, wd: Path) -> str:
 
 
 def _strip_diacritics(t: str) -> str:
-    """Bo dau tieng Viet, ha chu thuong (cung phep nhu teaser_assemble._bo_dau)."""
+    """Bo dau tieng Viet, ha chu thuong (cung phep nhu teaser_assemble._drop_mark)."""
     t = t.replace("đ", "d").replace("Đ", "D")
     nfd = unicodedata.normalize("NFD", t)
     return "".join(c for c in nfd if unicodedata.category(c) != "Mn").lower()
@@ -289,8 +289,8 @@ def needs_ranking_image(m: dict, a: dict) -> bool:
     ban cu so voi chuoi "chup" ma xep_hang chua bao gio phat ra). Truoc
     06/09/2026 chieu cong nay chan ca khi m["xep_hang"] la None — bao vai dung
     ma "XH" trong khi ma do khong ton tai, nen vai sua kieu gi cung sai va khong
-    bao gio nop duoc. Ba duong dan toi canh do: --khong-browser, tach_model()
-    rong (tin xep hang KHONG neu ten model), hoac tim_va_chup nem. The DU PHONG
+    bao gio nop duoc. Ba duong dan toi canh do: --khong-browser, extract_model()
+    rong (tin xep hang KHONG neu ten model), hoac find_and_capture nem. The DU PHONG
     (kieu="the") cung khong ep: no la anh engine tu dung, chua he doc bang that.
     Dre va Ethan tung moi ben mot ban cua dieu kien nay (07/09/2026 gom lai)."""
     import ranking
@@ -327,7 +327,7 @@ def _clean_use_alone(a: dict) -> bool:
     vision da noi ro "khong roi", lien quan, anh chup (khong chart), khong mat
     nguoi (mat nguoi con phu thuoc ten co trong bai), ngang thi phai cat doc duoc
     (vision cat_ngang_ok + du cao). Thieu dieu kien nao cung khong tinh — cong
-    kiem_anh_roi chi duoc bat vai doi anh khi THAT SU co cho doi, khong de ket."""
+    check_image_fall chi duoc bat vai doi anh khi THAT SU co cho doi, khong de ket."""
     if not a.get("dung") or a.get("lien_quan") is False or a.get("roi") is not False:
         return False
     if a.get("loai") != "anh" or a.get("xep_hang") or a.get("mat"):
@@ -344,7 +344,7 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
 
     Khong cam han: tin it anh thi anh roi van la anh that cua tin, va carousel/
     card tu dat nen chu dac khi buoc dung. Chi chan khi con anh sach CHUA dung
-    va CHUA len bai khac (kiem_da_dung) — de vai doi duoc that, khong ket."""
+    va CHUA len bai khac (check_not_reused) — de vai doi duoc that, khong ket."""
     # Roi ma DU TU KHOA chinh cua tin (vision TU_KHOA) thi mien — Ong Chu 13/09
     # chon chinh mot do hoa roi nhu vay lam hero.
     roi = [(nhan, ma) for ma, nhan in dung.items()
@@ -374,10 +374,10 @@ def check_quote_translated(chu: str, nhan: str) -> list:
     (2) co >= 2 tu chuc nang tieng Anh. Ban dau chi do dieu kien (1) — sai:
     no chan ca nhan hop le toan ten rieng va so ("Claude Opus 4.5 vs GPT-5.2:
     82,5 vs 79,1 MMLU", "GPT-5 Codex Max: 2,75 USD / 1M token"), 5/6 hook thu
-    that bi chan oan (do 06/09/2026). card.tim_mat_dau CO Y khong bao tieng
+    that bi chan oan (do 06/09/2026). card.find_face_mark CO Y khong bao tieng
     Anh vi dung ly do do; cong nay khong duoc di nguoc quyet dinh ay.
 
-    Tieng Viet GO MAT DAU khong phai viec cua ham nay — card.tim_mat_dau lo,
+    Tieng Viet GO MAT DAU khong phai viec cua ham nay — card.find_face_mark lo,
     va no bao dung ten loi."""
     t = (chu or "").strip()
     if len(t) < 25:
@@ -478,7 +478,7 @@ def check_rank_matches_image(chu: str, a: dict, nhan: str = "hook") -> list:
     nhung chi la chu dan; `needs_ranking_image` EP dung anh XH ma khong hoi hang.
     Day la cong: so trong chu phai la so trong anh, khong thi khong nop duoc.
 
-    Chi xet khi anh la BANG CHUP THAT (la_chup) va co `hang`; the du phong (kieu
+    Chi xet khi anh la BANG CHUP THAT (is_capture) va co `hang`; the du phong (kieu
     "the") in hang tu tieu de nen khong doi chieu. Chu khong noi hang -> khong
     chan (khong bat vai phai nhac hang). `extract_rank` hieu "dẫn đầu" = 1 va bo
     "top 10" kieu kich co danh sach — cung bo doc voi engine, khong doc rieng."""
@@ -549,7 +549,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
         cb._write_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
                                            "lan": int((da_dung or {}).get("lan", 0)) + 1,
                                            # Moc de phan biet "Ong Chu bam Lam lai"
-                                           # voi "vai chay lai" — xem kiem_lam_lai.
+                                           # voi "vai chay lai" — xem check_redo_reused.
                                            "remakes": count_of_redo(draft_id),
                                            "message_id": mid})
         # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot
