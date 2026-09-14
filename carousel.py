@@ -60,6 +60,7 @@ from PIL import Image, ImageDraw, ImageFilter
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
 import image_rules
+import text_bg
 from card import (
     _f, _wrap, _fit_cover,
     find_face_mark, drop_mark_forbid, set_brand, BRAND,
@@ -140,10 +141,20 @@ LABEL_SIZE = 34                  # nhan duoi hook o bia
 
 
 # ---- Ve chu ---------------------------------------------------------------
-def _line_h(font, lead):
-    """Chieu cao mot dong theo bbox chu co dau, nhan he so gian dong."""
-    b = font.getbbox("ÂgqÁ")
-    return int((b[3] - b[1]) * lead)
+def _line_h(font, lines, lead):
+    """Chieu cao MOT buoc dong, do bang CHINH cac dong SE VE — khong phai mot
+    chuoi mau co dinh — roi nhan he so gian dong.
+
+    Chuoi mau cu "ÂgqÁ" khong bao gom cac to hop dau DOI (mu/moc + dau thanh,
+    vd "ẫ" "ệ" "ữ"): mot dong that co nhung to hop nay co the cao hon chuoi
+    mau, khien hai dong lien nhau chong len nhau (Ong Chu nhac 08/09/2026 —
+    dung phat hien cua card._buoc_dong 06/09/2026 ben card.py: chuoi mau
+    121px, dong that 134px, hai dong chong 11px). Rong danh sach (chua wrap
+    duoc dong nao) thi lui ve chuoi mau tham chieu de van co mot con so."""
+    hop = [font.getbbox(l) for l in lines if l] or [font.getbbox("ÂgqÁ")]
+    tren = min(h[1] for h in hop)
+    duoi = max(h[3] for h in hop)
+    return int((duoi - tren) * lead)
 
 
 def _fit_block(d, paragraphs, max_w, max_h, hi, lo, weight=None, lead=BODY_LEAD):
@@ -153,16 +164,16 @@ def _fit_block(d, paragraphs, max_w, max_h, hi, lo, weight=None, lead=BODY_LEAD)
     """
     for size in range(hi, lo - 1, -2):
         f = _f(F_REG, size, weight)
-        lh = _line_h(f, lead)
         wrapped = [_wrap(d, p, f, max_w) for p in paragraphs]
+        lh = _line_h(f, [ln for w in wrapped for ln in w], lead)
         n_lines = sum(len(w) for w in wrapped)
         gap = int(lh * PARA_GAP) * max(0, len(paragraphs) - 1)
         total = n_lines * lh + gap
         if total <= max_h:
             return f, wrapped, lh, total
     f = _f(F_REG, lo, weight)
-    lh = _line_h(f, lead)
     wrapped = [_wrap(d, p, f, max_w) for p in paragraphs]
+    lh = _line_h(f, [ln for w in wrapped for ln in w], lead)
     return f, wrapped, lh, sum(len(w) for w in wrapped) * lh
 
 
@@ -294,13 +305,10 @@ def _measure_region_text(canvas, y0, y1):
     """Do sang trung binh + do roi (stddev xam) cua DUNG vung pixel WYSIWYG se
     nam duoi chu — doc thang tren canvas HIEN TAI (sau khi da dan anh, truoc
     khi ve chu), khong doan qua toa do nguon. -> (sang 0..255, roi 0..255)."""
-    from PIL import ImageStat
     y0, y1 = max(0, int(y0)), min(H, int(y1))
     if y1 <= y0:
         return 255.0, 0.0
-    vung = canvas.convert("L").crop((0, y0, W, y1))
-    st = ImageStat.Stat(vung)
-    return st.mean[0], st.stddev[0]
+    return text_bg.measure_bright_offset(canvas.crop((0, y0, W, y1)))
 
 
 BACKGROUND_FALL_ODD = 40          # nen dac bat dau cach dong chu dau bao nhieu px phia tren
@@ -461,7 +469,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
 
     f_at = _f(F_QUOTE_REG, 26)
     at_lines = _wrap(d, attrib, f_at, avail) if attrib else []
-    at_lh = _line_h(f_at, 1.3)
+    at_lh = _line_h(f_at, at_lines, 1.3)
     at_h = at_lh * len(at_lines)
 
     BOX_PAD_Y = 62       # khung cao hon chu — khoang tho + dau " o goc
