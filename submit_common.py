@@ -579,17 +579,23 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
         if _recently_posted(vai, files):
             _ghi_so()
             sys.exit(f"[LOI] album ĐÃ lên topic nhưng gửi nút Duyệt lỗi: {e}\n"
-                     "Ảnh đã ghi vào sổ. ĐỪNG chạy lại (sẽ trùng) — báo Ông Chủ "
-                     "duyệt tay bộ vừa lên.")
+                     "Ảnh đã ghi vào sổ. Đợi 1–2 phút rồi chạy lại ĐÚNG lệnh nộp: script "
+                     "chỉ gửi BÙ nút, không gửi trùng album (LOW-134). Vẫn lỗi thì "
+                     "kanban_block, ghi rõ: THIẾU NÚT DUYỆT — Ông Chủ reply vào album "
+                     "\"gửi cho <tên người viết>\" để duyệt.")
         sys.exit(f"[LOI] {e}")
     r = res.get("result")
     mid = (r[-1] if isinstance(r, list) else r or {}).get("message_id")
     if res.get("trung"):
-        # post() thay md5 trung trong 30 phut nen tra ve SOM, KHONG gui nut Duyet.
-        # Khong duoc de vai in "da gui kem nut duyet" trong khi khong co nut nao.
-        print("[CANH BAO] album trùng bản đã gửi trong 30 phút nên KHÔNG gửi lại, "
-              "và KHÔNG có nút Duyệt mới. Xem lại topic: bộ trước mà thiếu nút thì "
-              "báo Ông Chủ duyệt tay.")
+        if res.get("button_state") == "resent":
+            print(f"[xong] album đã lên từ lần trước; vừa gửi BÙ nút Duyệt "
+                  f"(message_id={res.get('button_message_id')}).")
+        elif res.get("button_state") != "sent":
+            # Dong so cu (truoc LOW-134) khong biet lan truoc nut co len khong.
+            # Khong duoc de vai in "da gui kem nut duyet" trong khi co the khong co nut nao.
+            print("[CANH BAO] album trùng bản đã gửi trong 30 phút nên KHÔNG gửi lại, "
+                  "và không rõ lần trước có nút Duyệt không. Xem lại topic: thiếu nút thì "
+                  "báo Ông Chủ reply vào album \"gửi cho <tên người viết>\".")
     _ghi_so(mid)
     return mid
 

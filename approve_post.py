@@ -830,12 +830,20 @@ def _button_redo(token, chat_id, draft_id, cq, msg):
     return note
 
 
-def _button_approve(token, chat_id, draft_id, cq, wp):
-    """imgok: sinh task viet caption tu writer sidecar, dan kem ban giao cua vai anh."""
+def _answer_callback(token, cq, **kw):
+    """answerCallbackQuery — bo qua khi khong co cq (duyet bang reply, LOW-134)."""
+    if cq:
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"], **kw)
+
+
+def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
+    """imgok: sinh task viet caption tu writer sidecar, dan kem ban giao cua vai anh.
+
+    `cq` None = duyet bang reply "gửi cho <writer>" (LOW-134); `forced_writer` la
+    nguoi viet Ong Chu chon, bo qua chia theo hang cho (LOW-123)."""
     if not wp.exists():
         note = "⚠️ Không thấy thông tin bài (writer sidecar) cho draft này"
-        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Thiếu thông tin bài", show_alert=True)
+        _answer_callback(token, cq, text="Thiếu thông tin bài", show_alert=True)
     else:
         w = json.loads(wp.read_text(encoding="utf-8"))
         if w.get("created") is True:
@@ -858,22 +866,20 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
                 note = f"⚠️ Không đọc được kanban nên không rõ trạng thái task {wid} — xem log approve_service"
             else:                             # "" (task khong co / trang thai la)
                 note = "✅ Đã duyệt rồi — bài đang được viết"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Đã duyệt trước đó")
+            _answer_callback(token, cq, text="Đã duyệt trước đó")
         elif w.get("created") == "rejected":
             note = "🗑 Tin này đã bỏ hẳn trước đó — không viết"
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Đã bỏ hẳn", show_alert=True)
+            _answer_callback(token, cq, text="Đã bỏ hẳn", show_alert=True)
         else:
-            call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Đang giao cho người viết…")
+            _answer_callback(token, cq, text="Đang giao cho người viết…")
             # Ban giao tu vai anh (dre_submit.py ghi: link that, nguon tung anh)
             # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
             # phai "nhan Miles".
-            chosen_writer = _writer_by_queue(draft_id, w)
+            chosen_writer = forced_writer or _writer_by_queue(draft_id, w)
             if chosen_writer != w.get("vai_viet"):
+                why = "Ong Chu chon qua reply, LOW-134" if forced_writer else "shorter queue, LOW-123"
                 log("nut", f"imgok draft={draft_id}: assigned {chosen_writer} instead of "
-                           f"{w.get('vai_viet')} (shorter queue, LOW-123)")
+                           f"{w.get('vai_viet')} ({why})")
                 w["body"] = retarget_writer_body(w["body"], w.get("vai_viet"), chosen_writer)
                 w["vai_viet"] = chosen_writer
             _body = w["body"]
@@ -947,6 +953,102 @@ def retarget_writer_body(body, old_writer, new_writer):
         body = body.replace(f"venv/bin/python {old_writer}{suffix}",
                             f"venv/bin/python {new_writer}{suffix}")
     return body
+
+
+# Duong du phong khi tin nut Duyet khong len vi mang loi (LOW-134, Ong Chu
+# 14/09/2026): reply vao anh bat ky trong album "gửi cho Jika" = bam ✅ nhung chon
+# dung nguoi viet; "duyệt" khong ten = bam ✅ y het (chon theo hang cho).
+REPLY_APPROVE_PATTERN = re.compile(
+    r"^\s*(?:(?:duyệt|duyet|ok)\s*[,.]?\s*(?:và|va)?\s*)?(?:gửi|gui)\s+(?:cho\s+)?"
+    r"(?P<name>[^\s.,!?]+)\s*[.!]*\s*$", re.I)
+REPLY_QUEUE_PATTERN = re.compile(r"^\s*(?:duyệt|duyet)\s*[.!]*\s*$", re.I)
+ALBUM_SUFFIX_PATTERN = re.compile(r"_\d+$")
+
+
+def parse_reply_approval(text):
+    """'gửi cho Jika' -> 'Jika'; 'duyệt' -> '' (theo hang cho); cau khac -> None."""
+    m = REPLY_APPROVE_PATTERN.match(text or "")
+    if m:
+        return m.group("name")
+    return "" if REPLY_QUEUE_PATTERN.match(text or "") else None
+
+
+def find_album_draft(message_id):
+    """message_id cua anh bat ky trong album (hoac tin nut) -> (draft_id, ban_ghi),
+    doc so `telegram_sent/*.jsonl` cua moi vai anh; khong thay -> None.
+
+    Dong so cu (truoc LOW-134) chi co message_id tin CUOI album: Telegram cap id
+    album lien tiep nen tinh lui theo so tep. Draft id lay tu ten tep dau
+    (`drafts/<draft>.png`, tep sau `_2`, `_3`...)."""
+    try:
+        journals = sorted((STATE_DIR / "telegram_sent").glob("*.jsonl"))
+    except OSError:
+        return None
+    for p in journals:
+        try:
+            lines = p.read_text(encoding="utf-8").splitlines()[-300:]
+        except OSError:
+            continue
+        for line in reversed(lines):
+            try:
+                rec = json.loads(line)
+            except ValueError:
+                continue
+            last, files = rec.get("message_id"), rec.get("files") or []
+            if not isinstance(last, int) or not files:
+                continue
+            ids = rec.get("message_ids") or range(last - len(files) + 1, last + 1)
+            if message_id not in ids and message_id != rec.get("button_message_id"):
+                continue
+            draft_id = rec.get("button_draft") or ALBUM_SUFFIX_PATTERN.sub("", Path(files[0]).stem)
+            if _DRAFT_ID_HOP_LE.match(draft_id) and (DRAFTS / (draft_id + ".writer.json")).exists():
+                return draft_id, rec
+    return None
+
+
+def handle_reply_approval(token, group, msg, thread_id, text):
+    """Tin nay co phai lenh duyet bang reply vao album anh khong. Phai thi xu ly
+    (o thread nen) va tra True; khong thi False de handle_message di tiep nhu cu —
+    'gửi cho Miles' go troi, hay reply vao tin khong phai album, van la hoi thoai."""
+    name = parse_reply_approval(text)
+    if name is None:
+        return False
+    rt = _reply_real(msg)
+    found = find_album_draft(rt.get("message_id")) if rt else None
+    if not found:
+        return False
+    draft_id, rec = found
+    mid = msg.get("message_id")
+    thread_kw = {"message_thread_id": thread_id} if thread_id else {}
+    writer = None
+    if name:
+        brand = (_load_json(DRAFTS / (draft_id + ".meta.json"), {}) or {}).get("brand", "")
+        allowed = role.writers_for_brand(brand) or tuple(NAME_ROLE_WRITE)
+        writer = role.canonical_slug(name)
+        if writer not in allowed:
+            log("nut", f"reply msg={mid} draft={draft_id}: '{name}' khong phai nguoi viet {allowed}")
+            call(token, "sendMessage", chat_id=group, reply_to_message_id=mid, **thread_kw,
+                 text=f"⚠️ {name} không phải người viết của bài này — gửi cho: "
+                      + ", ".join(NAME_ROLE_WRITE.get(s, s) for s in allowed))
+            return True
+    log("nut", f"reply msg={mid} -> imgok draft={draft_id} writer={writer or 'theo hang cho'}")
+    _run_background("nut", _process_reply_approval, token, group, thread_id,
+                    token, group, msg, thread_id, draft_id, writer, rec)
+    return True
+
+
+def _process_reply_approval(token, group, msg, thread_id, draft_id, writer, rec):
+    """Chay y het nut ✅ (cung khoa theo draft), roi reply ket qua vao tin Ong Chu."""
+    with _lock_of(draft_id):
+        note = _button_approve(token, group, draft_id, None, DRAFTS / (draft_id + ".writer.json"),
+                               forced_writer=writer)
+    log("nut", f"ket qua reply imgok draft={draft_id}: {note}")
+    call(token, "sendMessage", chat_id=group, reply_to_message_id=msg.get("message_id"),
+         **({"message_thread_id": thread_id} if thread_id else {}), text=note)
+    if rec.get("button_message_id") and note.startswith("✅ Đã duyệt ảnh"):
+        # Tin nut cu van con tren topic: go ban phim de khong ai bam nham lan nua.
+        call(token, "editMessageReplyMarkup", chat_id=group, message_id=rec["button_message_id"],
+             reply_markup={"inline_keyboard": []})
 
 
 def _finalize_button(token, msg, draft_id, note, keyboard=None):
