@@ -145,10 +145,11 @@ lần sau tra:
 |---|---|---|
 | `KIEN_TRUC.md` | `ARCHITECTURE.md` | |
 | `LUAT_ANH.md` | `IMAGE_RULES.md` | khớp module `image_rules.py`; tham chiếu mục `LUAT_ANH §1.2d` → `IMAGE_RULES §1.2d`, giữ số mục |
+| `KHUON_TICKET.md` | `TICKET_TEMPLATE.md` | LOW-148, 14/09/2026 |
 
 Không đổi trong `nhat_ky/` (lịch sử) và trong chính thư mục này.
 `skill_lesson_filter.SOURCE_OF_TRUTH` khớp **cả hai** tên vì bài học cũ vẫn ghi
-`LUAT_ANH`. Tên tài liệu Việt không dấu còn lại (vd `KHUON_TICKET.md`) chưa đổi.
+`LUAT_ANH`.
 
 ## Thứ tự ưu tiên khi dịch một tên (`gen.py`)
 

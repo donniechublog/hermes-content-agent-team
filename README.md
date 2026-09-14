@@ -5,7 +5,7 @@ Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes
 Tệp này chỉ mô tả **hiện trạng**. Chẩn đoán, số đo một lần và bài học rút ra
 nằm ở [NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md). Luật ảnh dùng chung ở
 [IMAGE_RULES.md](IMAGE_RULES.md); khuôn ticket Linear 7 bước ở
-[KHUON_TICKET.md](KHUON_TICKET.md); spec chữ trên thẻ ở
+[TICKET_TEMPLATE.md](TICKET_TEMPLATE.md); spec chữ trên thẻ ở
 [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md). Sơ đồ kiến trúc (Mermaid, theo mô
 hình C4) ở [ARCHITECTURE.md](ARCHITECTURE.md).
 
