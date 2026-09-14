@@ -62,6 +62,7 @@ blog/dre:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 blog/ethan:
@@ -77,6 +78,7 @@ blog/ethan:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 blog/finn:
@@ -106,6 +108,7 @@ blog/gin:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 blog/itachi:
@@ -121,6 +124,7 @@ blog/itachi:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 blog/jika:
@@ -149,6 +153,7 @@ blog/kite:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 blog/miles:
@@ -165,6 +170,20 @@ blog/miles:
   toolsets:
   - hermes-cli
 blog/nova:
+  agent/reasoning_effort: none
+  auxiliary/title_generation/enabled: false
+  fallback_providers:
+  - api_key: <da bo>
+    base_url: http://127.0.0.1:20128/v1
+    model: ds/deepseek-v4-flash
+    provider: custom
+  model/base_url: http://127.0.0.1:20128/v1
+  model/default: DS-v4Flash
+  model/provider: custom
+  toolsets:
+  - hermes-cli
+  - kanban
+blog/qinn:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
   fallback_providers:
@@ -223,6 +242,7 @@ dcgr/dre:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 dcgr/ethan:
@@ -238,6 +258,7 @@ dcgr/ethan:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 dcgr/gin:
@@ -253,6 +274,7 @@ dcgr/gin:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 dcgr/itachi:
@@ -268,6 +290,7 @@ dcgr/itachi:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 dcgr/kite:
@@ -283,6 +306,7 @@ dcgr/kite:
   model/provider: custom
   skills/external_dirs:
   - /home/donniechu/content-team/hermes/skills
+  skills/write_approval: true
   toolsets:
   - hermes-cli
 dcgr/miles:

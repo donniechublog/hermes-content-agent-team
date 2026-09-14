@@ -492,6 +492,7 @@ LOCK_PROMPT = [
     ("agent", "reasoning_effort"),
     ("skills", "external_dirs"),
     ("skills", "enabled"),
+    ("skills", "write_approval"),
     ("terminal", "command_allowlist"),
     ("kanban", "max_in_progress"),
     ("auxiliary", "title_generation", "enabled"),
