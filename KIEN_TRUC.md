@@ -342,8 +342,9 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   chung phải hỏi ở đây, mượn thẳng `carousel.MIN_SLIDE` là sự cố 10/09/2026.
   Từ 10/09/2026 (LOW-13) còn giữ **ai viết tin nào**: `writer_for(vai_quet,
   brand)` hỏi vai quét trước rồi mới tới brand — Finn/Nova → Jika
-  (`jika`), Vera → Miles (`miles`). Hai vai viết không bao giờ cùng nằm
-  trong một container, đúng như `finn` chỉ có ở blog và `vera` chỉ có ở dcgr.
+  (`jika`), Vera → Miles (`miles`) — đó là người viết **tạm**. Từ 14/09/2026
+  (LOW-123 blog, LOW-136 dcgr) **mỗi container có cả Miles lẫn Jika**
+  (`WRITERS_BY_BRAND`): lúc duyệt ảnh `approve_post` giao cho người ít việc chờ hơn.
   Quyết định chốt **một lần** lúc chọn tin và nằm trong `drafts/{id}.writer.json`;
   `miles_submit`/`approve_service push` đọc lại chỗ đó (qua
   `submit_common.writer_for_article`) thay vì đoán lại — đoán lại là bài của blog rơi
