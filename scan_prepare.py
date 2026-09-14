@@ -57,7 +57,7 @@ def _crop(bao_cao: str, tran: int = CEILING_REPORT) -> str:
 
 # Khung gio cua MOT luot, tinh tu 05:00 VN. 12 = hai luot/ngay (05:00 va 17:00
 # VN). Doi so nay la doi CA nhip: phai sua cung luc ba cho — hang so nay, cron
-# expr cua job `qinn-scan`, va cong thuc LUOT trong hermes/scripts/quet_daily_scan.sh.
+# expr cua job `qinn-scan`, va cong thuc LUOT trong hermes/scripts/daily_scan.sh.
 FRAME_HOURS = 12
 
 

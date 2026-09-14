@@ -24,17 +24,17 @@ sys.path.insert(0, str(ROOT))
 import role  # noqa: E402
 
 SCRIPTS = ROOT / "hermes" / "scripts"
-THAN = SCRIPTS / "quet_daily_scan.sh"
+THAN = SCRIPTS / "daily_scan.sh"
 VO = ["finn_daily_scan.sh", "nova_daily_scan.sh", "vera_daily_scan.sh"]
 BASH = shutil.which("bash")
 
 
 def test_vo_mong_truyen_slug_hien_tai():
-    """Moi vo mong `exec quet_daily_scan.sh <x>`: x la slug trong role.ROLE, khong phai slug cu."""
+    """Moi vo mong `exec daily_scan.sh <x>`: x la slug trong role.ROLE, khong phai slug cu."""
     for ten in VO:
         s = (SCRIPTS / ten).read_text(encoding="utf-8")
-        m = re.search(r'quet_daily_scan\.sh"?\s+(\S+)', s)
-        assert m, f"{ten}: khong thay dong exec quet_daily_scan.sh"
+        m = re.search(r'daily_scan\.sh"?\s+(\S+)', s)
+        assert m, f"{ten}: khong thay dong exec daily_scan.sh"
         x = m.group(1)
         assert x not in role.SLUG_OLD, f"{ten}: truyen slug CU '{x}' (-> {role.SLUG_OLD[x]})"
         assert x in role.ROLE, f"{ten}: '{x}' khong co trong role.ROLE"
@@ -44,10 +44,10 @@ def test_vo_mong_truyen_slug_hien_tai():
 def test_than_dung_slug_lam_assignee():
     """--assignee phai la chinh $VAI (slug profile), khong qua bien trung gian nao."""
     s = THAN.read_text(encoding="utf-8")
-    assert re.search(r'--assignee\s+"\$VAI"', s), "quet_daily_scan.sh: --assignee khong phai \"$VAI\""
+    assert re.search(r'--assignee\s+"\$VAI"', s), "daily_scan.sh: --assignee khong phai \"$VAI\""
     for cu in role.SLUG_OLD:
         assert not re.search(rf"^\s*{re.escape(cu)}\)", s, re.M), \
-            f"quet_daily_scan.sh: con nhanh case cho slug cu '{cu}'"
+            f"daily_scan.sh: con nhanh case cho slug cu '{cu}'"
 
 
 def _chay(arg, home):

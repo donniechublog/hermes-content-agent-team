@@ -98,14 +98,14 @@ def test_bang_doi_hinh_khop_voi_profile_that():
     Dung lop troi nay da xay ra hai lan: README ghi Kite "chua deploy dcgr" (do
     04/09, mot ngay TRUOC khi dcgr deploy 05/09) va khong ai sua; roi ban viet
     lai 06/09 chep tiep thanh "chi donniechublog". Ban chup
-    hermes/profiles/cau_hinh_that.yaml gio cho phep kiem bang code.
+    hermes/profiles/live_config_snapshot.yaml gio cho phep kiem bang code.
     """
     import re
     try:
         import yaml
     except ImportError:
         return                       # khong co pyyaml thi bo qua, dung lam do test
-    chup = ROOT / "hermes/profiles/cau_hinh_that.yaml"
+    chup = ROOT / "hermes/profiles/live_config_snapshot.yaml"
     if not chup.exists():
         return
     d = yaml.safe_load(chup.read_text(encoding="utf-8")) or {}
@@ -140,7 +140,7 @@ def test_muc_model_khop_voi_profile_that():
         import yaml
     except ImportError:
         return
-    chup = ROOT / "hermes/profiles/cau_hinh_that.yaml"
+    chup = ROOT / "hermes/profiles/live_config_snapshot.yaml"
     if not chup.exists():
         return
     d = yaml.safe_load(chup.read_text(encoding="utf-8")) or {}

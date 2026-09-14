@@ -140,7 +140,7 @@ thiếu trong `NAME_BRIGHT_CAP` làm cả lệnh chọn bị từ chối rồi g
 (06/09), sidecar ghi slug cũ làm task nằm `ready` hai ngày (01/09). Từ khi có
 `role.py` thì còn **ba bước mã** (dưới) cộng **ba bước cấu hình** không dẫn xuất
 được từ mã: `hermes/profiles/<brand>/<slug>.SOUL.md`, một khoá trong
-`state/topics.<brand>.json` (id topic Telegram), và `hermes/profiles/cau_hinh_that.yaml`.
+`state/topics.<brand>.json` (id topic Telegram), và `hermes/profiles/live_config_snapshot.yaml`.
 `chat_router.TOPIC_PROFILE` tự dẫn xuất từ `role.py` (từ 09/09/2026, audit lượt 2),
 và `tests/test_vai.py` giữ mọi bảng dẫn xuất khớp bản đăng ký. Bước 1 sinh lại
 mọi bảng cũ:
@@ -435,7 +435,7 @@ trên máy chủ nhưng chưa có mục riêng dưới đây.
   `vera-daily-scan` (dcgr) — **05:00 VN** (22:00 UTC). Ba job này nằm ở **hai
   container khác nhau**; nova và vera cùng ở dcgr nhưng là hai profile khác nhau
   nên chạy song song (`max_in_progress: 3`, mỗi profile 1). Thân ba script là **một** tệp
-  `hermes/scripts/quet_daily_scan.sh <vai>`; `finn_daily_scan.sh` và hai tệp kia
+  `hermes/scripts/daily_scan.sh <vai>`; `finn_daily_scan.sh` và hai tệp kia
   chỉ còn 7 dòng gọi sang đó, giữ tên cũ để khỏi phải sửa job cron trên máy chủ.
 - `daily-log` — 06:00 VN, dựng nhật ký ngày hôm trước + chốt nhật ký 9router
   (`monitor_9router.py --gui` → topic `ada`).
@@ -564,7 +564,7 @@ plugin kanban kể từ lần port cuối.
 v4-flash: DeepSeek trực tiếp, xKiro, aellm — DeepSeek trực tiếp xếp trước vì
 cache là của từng nhà cung cấp). Ada cũng vậy — bản README trước ghi Ada giữ
 deepseek-reasoner, điều đó không còn đúng từ khi đổi sang combo (bản chụp
-`hermes/profiles/cau_hinh_that.yaml` là chỗ đối chiếu).
+`hermes/profiles/live_config_snapshot.yaml` là chỗ đối chiếu).
 
 `agent.reasoning_effort`: **`none`** cho mọi vai làm nội dung, vì model deepseek
 đốt hết ngân sách token vào suy luận rồi trả về **rỗng** (đo thật: 3/24 lần trên
