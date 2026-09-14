@@ -76,7 +76,8 @@ SCRIPT = ["quet_daily_scan",                              # than chung cua ba va
           "finn_daily_scan", "nova_daily_scan", "vera_daily_scan",   # vo mong, giu ten cho cron
           "model_watch", "nhat_ky_daily", "moat_publish_watch",
           "audit_cron",                                   # chay o CA HAI home
-          "skill_lesson_filter"]                          # both homes (LOW-119)
+          "skill_lesson_filter",                          # both homes (LOW-119)
+          "skill_lesson_commit"]                          # both homes (LOW-120)
 # `usage_audit` da bo khoi danh sach 06/09/2026: job cron da go khoi ca hai home,
 # va tep chi con la mot stub echo mot dong ("da gop vao daily-log"). Giu mot stub
 # trong git de dong bo ra server chi de nhac nguoi ta xoa no la mot vong lap kin.
