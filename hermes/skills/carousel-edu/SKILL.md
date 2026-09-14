@@ -101,28 +101,19 @@ chủ động, không em-dash, không số ngoài tư liệu, dẫn nguồn ghi 
 
 ## Cổng ảnh có thể ĐÁ NHAU (gặp thật 10/09/2026)
 
-Tin chuyển sang Kite vì thiếu ảnh thì `kite_submit` ép **mọi** mã trong
-`figure_right_use` phải có slide `figure`. Đồng thời `image_rules.check_not_reused`
-chặn ảnh đã lên bộ trong 14 ngày. Hai cổng gặp nhau khi mã bắt buộc trùng ảnh bộ
-trước, hoặc khi các mã còn lại đều vướng `check_crop_landscape` (ảnh gốc ngang đã
-crop). Lúc đó vai KHÔNG có đường nộp: bỏ mã bắt buộc thì cổng `figure_right_use`
-chặn, để nguyên thì cổng trùng chặn.
+Tin chuyển sang Kite vì thiếu ảnh thì `kite_submit.py` ép **mọi** mã trong
+`kite_prepare.figure_right_use` (đã trừ ảnh khái niệm, ảnh chụp trang nguồn và
+tấm lên bìa) phải có slide `figure`. Đồng thời `image_rules.check_not_reused`
+chặn ảnh đã lên bài KHÁC trong 14 ngày: so theo md5/dHash chứ không theo tên
+mã, bỏ qua chính draft này, ảnh cùng tin và ảnh bảng xếp hạng. Hai cổng gặp
+nhau khi một mã bắt buộc chính là ảnh đã dùng ở tin khác. Lúc đó vai KHÔNG có
+đường nộp: bỏ mã thì cổng bắt buộc chặn, để nguyên thì cổng trùng chặn.
 
 Cách thoát duy nhất trong luật: nộp `kanban_block(kind="needs_input")` kèm
-(a) mã nào vướng cổng nào và vì sao, (b) bằng chứng đây là đụng TÊN MÃ chứ
-không phải dùng lại ảnh (đối chiếu tệp gốc của bộ trước: `xong.json` +
-`render_edu.spec.json` bên đó, vision `mo_ta`), (c) ảnh thay thế đã tải sẵn.
-Đừng tự sửa `image_rules.py` hay nhồi mã ngoài `hinh_that` — script sẽ chặn
+(a) mã nào vướng cổng nào, chép nguyên dòng báo TRUNG (có tên draft cũ),
+(b) ảnh thay thế đã tải sẵn nếu có. Đừng tự sửa `image_rules.py` hay nhồi mã
+ngoài danh sách hình thật của brief — script sẽ chặn
 `image "<mã>" không phải mã hình thật dùng được`.
-
-## Bug renderer đã biết (tránh ở spec)
-
-`render_edu.anh_lam_nen` không có `return` ở cuối khi ảnh chụp dạng "mo"
-cần lớp mo (`can_lop=True`, lỗi `TypeError: cannot unpack non-iterable NoneType`
-trong `s_cover`/`s_figure` khi dùng ảnh chụp rối nhiều chi tiết — ví dụ tủ
-server đèn LED data center). Công đoạn để **bìa vector hero** (không set
-`image`) và đưa ảnh thật bắt buộc vào `figure` dưới dạng **bảng/đồ thị nền
-phang** (không trigger nhánh "mo").
 
 ## Nhìn lại trước khi nộp (đọc spec)
 
