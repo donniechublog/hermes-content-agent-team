@@ -129,7 +129,7 @@ def context_edge_role(profile) -> str:
 # lan sau khong ai tuong day la sot.
 ROLE_CHAT_MAKE_JOB = {"gin", "itachi", "bob", "ada"}
 # analyst (Ada) them 06/09/2026 chieu, sau khi audit bat duoc: Ada dung la Jean
-# thu hai. SOUL cua Ada la chay ada_chuan_bi.py roi ada_nop.py BANG BASH, ma
+# thu hai. SOUL cua Ada la chay ada_prepare.py roi ada_submit.py BANG BASH, ma
 # Ada khong co task kanban nao o blog (dem that: 0), khong nut, khong cron rieng,
 # va cau hoi cua Ong Chu ("do 7 ngay qua di") KHONG co URL lan anh — nen ca hai
 # cua ngo con lai (_reply_that, _tin_dua_viec) deu khong cuu duoc. Bo `safe`
@@ -145,8 +145,8 @@ def _story_pass_job(msg, text) -> bool:
     Vi sao can, ngoai luat vai (06/09/2026 chieu, sau khi audit bat duoc ba hoi
     quy THAT do ban dau chi khoa theo vai):
       - Jean (teaser) CHET HAN: teaser.SOUL.md:8 "Ong Chu dan mot URL bai vao
-        chat... Do la yeu cau viet teaser", roi chay jean_chuan_bi.py /
-        jean_nop.py bang bash. Bo `safe` khong co terminal.
+        chat... Do la yeu cau viet teaser", roi chay cape_prepare.py /
+        cape_submit.py bang bash. Bo `safe` khong co terminal.
       - Skill social-crawl viet RIENG cho duong chat cua Finn/Nova/Vera
         (social-crawl/SKILL.md:6 "dan mot link x.com/instagram.com vao hoi
         thoai") — tinh nang moi them o b2bc852, bi giet ngay.

@@ -105,7 +105,7 @@ from pathlib import Path
 
 # tái dùng cổng chặn tiếng Việt của cả đội
 import vietnamese  # noqa: E402  (cùng thư mục) — chỉ cần cổng chữ, không cần PIL
-# đo tương phản WCAG dùng CHUNG với card.py/Ethan + itachi_nop.py — xem LOW-9
+# đo tương phản WCAG dùng CHUNG với card.py/Ethan + itachi_submit.py — xem LOW-9
 import text_bg  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
@@ -468,7 +468,7 @@ def hero_svg(name, th):
 # hay mot trang bao cao thi ve lai bang tay vua mat cong vua de sai — chen thang
 # ban that vao. Slide kind "figure" lam viec do.
 #
-# Be ngang la NOI DUNG (cung luat voi chup_chart.py): mot bieu do bi cat mep
+# Be ngang la NOI DUNG (cung luat voi capture_chart.py): mot bieu do bi cat mep
 # phai thi mat truc, mat cot cuoi, mat luon cai diem duoc to sang — no NOI SAI
 # chu khong phai thieu mot ti. Nen anh LUON trai het 1080px, khong bao gio cat
 # hai ben. Chieu cao thi cat duoc: cao qua tran thi giu mep tren, phan con lai
@@ -492,7 +492,7 @@ FIG_EMPTY_MIN = 800    # hep hon the ma keo len 1080 thi be nat
 # tung kiem lai bang phep do WCAG that — LOW-9: Kite ra chu gan nhu lien mau
 # voi nen (vd nen xam ~130-149, code van chon chu SANG vi 130-149 < 150, nhung
 # tuong phan chu sang/nen 130-149 chi ~2.7-3.1:1, trong khi chu toi cho tuong
-# phan ~4.5-5.1:1 — sai huong). Tinh lai bang nen_chu.nguong_tuong_phan (dung
+# phan ~4.5-5.1:1 — sai huong). Tinh lai bang text_bg.threshold_wall_part (dung
 # cong thuc CHUNG voi card.py/Ethan) cho DUNG cap mau THAT dang dung o day,
 # thay vi mot con so co dinh dung chung cho ca chu sang tuyet doi lan chu toi
 # alpha-blend.
@@ -1086,7 +1086,7 @@ _DAN_NGUON_SAI = re.compile(
 # Truong BAT BUOC cua tung kind — kiem TRONG gate_slides, tuc TRUOC khi mo
 # Chromium (doi 06/09/2026 dot 2).
 #
-# Truoc day bang nay chi song o kite_nop.py va gate_slides khong kiem truong nao
+# Truoc day bang nay chi song o kite_submit.py va gate_slides khong kiem truong nao
 # ca: mot spec thieu `standfirst` o slide 4 di qua cong sach se, render() mo
 # Chromium, roi `s_statement` nem KeyError THO. Neu no ra o vong chup thu hai
 # (:1281) thi mot phan album da nam trong drafts/ — dung cai album cut ma thiet

@@ -105,10 +105,10 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
   ảnh trong nguồn topic, đặc biệt là những thông tin liên quan tới benchmark của
   model"*). Tin nhắc tới một model của hãng trong watchlist thì engine **luôn**
   ghé trang công bố của hãng — không đợi thiếu ảnh, cùng lý do với §1.2d. Đường
-  đi (`anh_thuong_hieu.trang_cong_bo`, nối ở `vong_bu._them_trang_cong_bo`
+  đi (`image_brand.announcement_page`, nối ở `fallback_rounds._extra_announcement_page`
   **trước** khi mở browser): Wikidata `P856` (website chính thức) → `/news/`,
   `/en/news/`, `/blog/`… hoặc RSS của hãng khi HTML chặn bot (openai.com) → khớp
-  slug tên model đã tách (`xep_hang.tach_model`, bỏ hậu tố effort `-max`/`-high`,
+  slug tên model đã tách (`ranking.extract_model`, bỏ hậu tố effort `-max`/`-high`,
   khoá ngắn nhất còn ≥ 2 mảnh để không khớp mọi bài của hãng). Trang đó vào
   `nguon_<id>.json` với `loai: "công bố"` (Miles cùng dùng), browser mở nó
   **trước** báo khác và lấy **4 ảnh** như bài gốc — chart benchmark ở đó là ảnh
@@ -117,7 +117,7 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
   News không index nó và 13/14 báo đưa tin không link sang; engine cũ không có
   cách nào tới, Dre bị chặn "thiếu ảnh" với 5/8 tấm toàn logo + rack data center.
 - **Truy vấn báo khác phải giữ tên model** (cùng LOW-21): tiêu đề Việt rơi về
-  `nguon_bai._ten_rieng_khong_dau` thì token có gạch nối (`deepseek-v4.1-flash-max`)
+  `article_sources._name_own_no_mark` thì token có gạch nối (`deepseek-v4.1-flash-max`)
   là **một** tên riêng, không xoá gạch rồi tách; Bing thử thêm bản bỏ gạch trước
   (`deepseek v4.1 flash max` → 6 báo, bản có gạch → 1).
 
@@ -132,8 +132,8 @@ toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng má
 
 - **Khi nào**: sau vòng thương hiệu mà vẫn thiếu ảnh, **trước** vòng khái niệm.
   Khối lead là vật **thật** của chính tin; ảnh khái niệm thì không.
-- **Chụp gì**: `chup_trang.chup_lead_mobile` mở trang ở khung điện thoại
-  (`phien_browser.MOBILE_VIEWPORT` 414×896, DPR 3, UA iPhone — **một bản duy
+- **Chụp gì**: `capture_page.capture_lead_mobile` mở trang ở khung điện thoại
+  (`browser_session.MOBILE_VIEWPORT` 414×896, DPR 3, UA iPhone — **một bản duy
   nhất**, dùng chung với `xep_hang`), clip **đúng khung ảnh hero** của bài —
   không kèm tít/byline. Ông Chủ 12/09 (sửa lại bản "khối lead" cùng ngày):
   *"dùng ảnh hero trong main article làm thumbnail cho hero slide, vì ảnh đó là
@@ -143,13 +143,13 @@ toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng má
   nền cho hero slide CHƯA-BAO-GIỜ là việc được yêu cầu với Kite"*. Lớp mờ chỉ
   dành cho ảnh **dọc** kéo xuống quá vùng chữ (bảng xếp hạng): mờ phần dưới để
   title/subtitle hiện lên, bật/tắt theo dòng chữ đầu thật.
-- **Bỏ nguồn khi**: trang là tường chặn bot (`phien_browser.bi_chan` — không tìm
+- **Bỏ nguồn khi**: trang là tường chặn bot (`browser_session.got_block` — không tìm
   cách vượt), hoặc không đo được tít lẫn ảnh lead. Thử tối đa 3 trang: bài gốc
   rồi các báo khác cùng tin.
 - **Lớp nổi** (banner đồng ý cookie, popup) chỉ bị **ẩn khi chụp**; không bấm
   "Đồng ý", không bấm nút đóng — đọc một trang thì không được thay người dùng
   chấp nhận điều khoản của họ.
-- **Được làm bìa**, khác chart của người khác: `phan_loai` đọc ảnh chụp trang là
+- **Được làm bìa**, khác chart của người khác: `classify` đọc ảnh chụp trang là
   "chart/screenshot" rồi dán *KHÔNG LÀM BÌA*, nhãn đó bị gỡ cho ảnh chụp nguồn —
   **trừ khi có mặt người**, lúc đó §6 vẫn đòi khai `nhan_vat`.
 - **Không hỏi vision** "có liên quan bài không": đây là trang của **chính** tin.
@@ -189,16 +189,16 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   không vào slide thân; gợi ý bìa xếp **sau** mọi ảnh riêng của tin; caption
   "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và vẫn được nói "thiếu ảnh" nếu
   thấy cờ/bản đồ không hợp tin.
-- **Có cổng chặn thật, không chỉ là câu dặn** (`kite_nop`, §9): `image` là ảnh
+- **Có cổng chặn thật, không chỉ là câu dặn** (`kite_submit`, §9): `image` là ảnh
   khái niệm ở slide khác slide 1 → chặn. Đo 10/09/2026 ở đường Kite: cờ Nhật đặt
   vào `figure` thân đi qua cổng **không một dòng lỗi**, vì nó là **ảnh chụp
   thật** nên sạch với mọi cổng kỹ thuật (rỗng · trùng · độ nét · mặt người) —
   cái sai của nó là **chỗ dùng**, mà chỗ dùng thì chỉ tài liệu này biết. Ở
   `figure` thân nó đọc như bằng chứng của bài, trong khi nó chỉ minh hoạ chủ đề.
-  Vẫn để nó trong `kite_chuan_bi.hinh_that` (ứng viên cho `image` của **bìa**) và
+  Vẫn để nó trong `kite_prepare.figure_real` (ứng viên cho `image` của **bìa**) và
   brief ghi thẳng nhãn 🧭 ở dòng của nó — loại khỏi danh sách là mất luôn đường
   lên bìa, tức mất cả tác dụng của §1.2c.
-- **§1.2e không được ép nó xuống thân**: xem chỗ `hinh_phai_dung` ở mục đó.
+- **§1.2e không được ép nó xuống thân**: xem chỗ `figure_right_use` ở mục đó.
 
 ### 1.2e Vai TỰ ĐI TÌM khi ban chuẩn bị thiếu — `find_more_images.py`
 
@@ -220,7 +220,7 @@ chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là d�
 - Hết 3 lượt vẫn thiếu mới `kanban_block`, lý do **phải kể từ khoá đã thử**.
 - Đếm **slide dựng được**, không đếm tấm (`schema.so_anh_dung_duoc`): ảnh ngang
   thấp hơn 700px chỉ ghép được, hai tấm mới thành một slide, một tấm lẻ = 0.
-  Cùng số này quyết định engine có tìm tiếp không (`vai.du_nguyen_lieu`).
+  Cùng số này quyết định engine có tìm tiếp không (`role.has_enough_material`).
 - Ảnh **chụp** có biển hiệu, số nhà, logo trên tường vẫn là ảnh chụp — cắt dọc
   được. "Có chữ" cấm crop chỉ là chart, bảng, slide, banner, screenshot có tiêu đề.
 
@@ -251,7 +251,7 @@ chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là d�
 >   (mặt người vô danh §6, ảnh trùng, chất lượng nhìn thấy — mờ/chụp lại màn
 >   hình — vẫn CẤM như cũ, đây là luật về CHẤT LƯỢNG chứ không phải về NGUỒN).
 >
-> Cài đặt: `nguon_bai.bao_ve_tu_khoa` (tìm theo tên hãng, không đòi cùng sự
+> Cài đặt: `article_sources.report_about_keyword` (tìm theo tên hãng, không đòi cùng sự
 > kiện) + `prepare.fallback_rounds._report_brand_empty` (quét ảnh từ các bài tìm
 > được) — trước 13/09/2026 chỉ chạy khi Commons/Wikidata RỖNG; nay chạy
 > **song song, luôn luôn**, không còn là phương án cuối.
@@ -269,7 +269,7 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
   09/09 treo vòng này sau điều kiện *thiếu ảnh*, nên tin nào bài gốc đủ ảnh là
   không bao giờ hỏi tới Commons/Wikidata — mà vai thì bị cấm tự tải thêm, nên bộ
   ảnh giao cho vai trắng trơn dù máy móc đã sẵn. Tin không nhắc hãng nào:
-  `hang_trong_tin` trả rỗng, vòng thoát ngay, không một request nào.
+  `vendors_in_story` trả rỗng, vòng thoát ngay, không một request nào.
 - **Trần**: thêm tối đa 4 ảnh một bộ (`TOI_DA_THEM_TH`), và tổng ảnh không quá
   `TOI_DA_ANH + 4`. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối
   cảnh thì vẫn chỉ chạy khi **thật sự thiếu ảnh** — đó là phần đắt.
@@ -295,14 +295,14 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
      mà không lọc thì Wikidata trả cả CEO tạm quyền cũ, brief ghi sai tên.
      Brief vẫn dặn: **bài không nhắc tên người này thì bỏ**.
   3. 📊 **bảng xếp hạng có model của hãng** — mượn `ranking.py` chụp bảng, chỉ
-     cho hãng **có làm model** (`hang_co_model`; Qualcomm/TSMC không khớp hàng
-     nào). **Chỉ nhận ảnh chụp thật**: hết đường thì `tim_va_chup` tự dựng *thẻ
+     cho hãng **có làm model** (`rank_has_model`; Qualcomm/TSMC không khớp hàng
+     nào). **Chỉ nhận ảnh chụp thật**: hết đường thì `find_and_capture` tự dựng *thẻ
      dự phòng* "`<model> #<hạng>`" — thẻ đó cho một tin KHÔNG PHẢI tin xếp hạng
      là bịa ra một thứ hạng không ai nói, nên phải vứt.
   4. 🔖 **thẻ logo** — logo chính thức (`P154`) đặt trên nền trơn, dồn lên nửa
      trên để hook đè nửa dưới; nền sáng hay tối **chọn theo độ sáng của chính
      logo** (wordmark chữ đen trên nền tối là mất chữ). Cùng nguyên tắc với
-     `xep_hang.the_du_phong`: không thêm một nét nào của ta, chỉ là chỗ đặt —
+     `ranking.fallback_card`: không thêm một nét nào của ta, chỉ là chỗ đặt —
      nên không vướng §0. Là đường **cuối**, chỉ khi không còn ảnh chụp nào.
 - **Lọc**: tên tệp phải chứa **đủ** từ đặc trưng của tên hãng theo *biên giới từ*
   ("Arm" ≠ "Armstrong"); bỏ đồ hoạ (`TEN_LOAI`); bỏ **nhiễu theo hãng** (Amazon →
@@ -317,10 +317,10 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
 - **Mặt người**: ảnh **cơ sở** có mặt là bỏ — người đứng trước cửa hàng trên
   Commons thì không ai gọi được tên (§6). Ảnh **chân dung** thì ngược lại: mặt
   là thứ ta đi tìm, và tên đi kèm sẵn. Đừng chặn chân dung theo số mặt đếm được:
-  `luat_anh.dem_mat` trả `None` khi thiếu cv2/model và §6 cho phép cổng mặt tự
+  `image_rules.count_faces` trả `None` khi thiếu cv2/model và §6 cho phép cổng mặt tự
   tắt, nên lấy `mat == 0` làm "không phải chân dung" là bỏ câm lặng mọi chân
   dung trên máy thiếu cv2. Để **con mắt** phán, bằng câu hỏi riêng cho từng loại
-  tư liệu (`cau_hoi_vision`) — câu chung hỏi "có phải ảnh của tin không" thì
+  tư liệu (`sentence_ask_vision`) — câu chung hỏi "có phải ảnh của tin không" thì
   chân dung và thẻ logo chắc chắn trượt.
 
 **Wikimedia đòi User-Agent riêng.** Robot policy của Wikimedia trả **403** cho UA
@@ -341,7 +341,7 @@ Chủ bấm "🎨 Gửi Kite vẽ vector" ở một trong hai thông báo thiế
 bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới không bao giờ bật.
 
 - **Cả n mã hình thật đều phải xuất hiện** trong spec, không phải "ít nhất một".
-  Cổng cũ (§ `kite_nop`) chỉ đòi một tấm, nên Kite đặt đúng một tấm lên bìa rồi
+  Cổng cũ (§ `kite_submit`) chỉ đòi một tấm, nên Kite đặt đúng một tấm lên bìa rồi
   vẽ vector cả thân — đúng cái bị chê.
 - **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure`.
 - **Trần 6 tấm** (`TOI_DA_EP_HINH`): bộ chỉ được 6..10 slide, trừ bìa và cta còn
@@ -354,16 +354,16 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
   **ép nó xuống đúng chỗ §1.2c cấm** — hai cổng đá nhau. Đo 10/09/2026: tin
   chuyển sang Kite mà engine chỉ tìm được **một tấm cờ nước** thì đường nộp
   *duy nhất* qua được là đặt cờ vào `figure` thân. Nó rơi khỏi
-  `hinh_phai_dung` và về bìa qua `hinh_hero` (§1.2f) — đó là đường nộp còn lại.
+  `figure_right_use` và về bìa qua `figure_hero` (§1.2f) — đó là đường nộp còn lại.
   **Ảnh thương hiệu thì ở lại**: §1.2d cho nó vào thân, vì nó là ảnh thật của
   chính hãng được nhắc trong tin.
-- **Trừ tấm đã lên bìa** (`hinh_hero`, §1.2f): cùng một ảnh không lên được hai
-  slide (`kiem_trung` §8), nên để nó trong tập bị ép là đòi một thứ bất khả. Hệ
+- **Trừ tấm đã lên bìa** (`figure_hero`, §1.2f): cùng một ảnh không lên được hai
+  slide (`check_duplicate` §8), nên để nó trong tập bị ép là đòi một thứ bất khả. Hệ
   quả: tin chỉ có **đúng một** tấm thì tập này **rỗng** — tấm đó lên bìa và thân
   không đòi gì nữa.
-- `kite_chuan_bi.hinh_phai_dung` là **một nguồn** cho cả brief lẫn cổng chặn, và
+- `kite_prepare.figure_right_use` là **một nguồn** cho cả brief lẫn cổng chặn, và
   khung spec in sẵn một `figure` cho mỗi mã — đừng bắt vai tự suy ra "ba hình thì
-  ba slide". `_ep_tho` là tập chưa trừ bìa, chỉ `hinh_hero` dùng (cắt vòng gọi).
+  ba slide". `_force_raw` là tập chưa trừ bìa, chỉ `figure_hero` dùng (cắt vòng gọi).
 
 Brief của Kite còn ghi rõ **từng tấm là loại gì** (🏢 cơ sở · 👤 chân dung ·
 📊 bảng xếp hạng · 🔖 thẻ logo, §1.2d), vì caption của chúng khác hẳn nhau: chú
@@ -386,17 +386,17 @@ thất bại đó dưới một bộ slide trông như thật, nên cổng phả
 
 Bản trước (08/09) chỉ chỉ định hero khi ảnh có `paper_hinh` — tức **chỉ bài
 arxiv** (§1.4). Mọi tin còn lại thì brief nói "bìa `image` **hoặc** `figure`"
-(tuỳ chọn) và `kite_nop` chỉ đòi "dùng ít nhất một ảnh ở đâu đó", nên nhét hết
+(tuỳ chọn) và `kite_submit` chỉ đòi "dùng ít nhất một ảnh ở đâu đó", nên nhét hết
 ảnh vào `figure` thân rồi vẽ sơ đồ lên bìa là **hợp lệ**. Đo 10/09: ba ca — tin
 thường, tin chuyển sang vì thiếu ảnh, và ảnh khái niệm đặt nhầm vào thân — đều
 qua cổng không một dòng lỗi.
 
-- **`kite_chuan_bi.hinh_hero`** chọn tấm lên bìa, **một nguồn** cho cả brief lẫn
-  cổng chặn (cùng lý do với `hinh_phai_dung` §1.2e). Thứ tự: hình paper (§1.4) →
+- **`kite_prepare.figure_hero`** chọn tấm lên bìa, **một nguồn** cho cả brief lẫn
+  cổng chặn (cùng lý do với `figure_right_use` §1.2e). Thứ tự: hình paper (§1.4) →
   ảnh riêng của tin → ảnh thương hiệu (§1.2d) → ảnh khái niệm (§1.2c); hai loại
   bù xếp sau mọi ảnh riêng, đúng như hai mục đó ghi.
-- **Cổng**: slide `cover` không có `image` → `kite_nop` chặn, **luôn**. Cổng đòi
-  **có** ảnh ở bìa, không đòi đúng mã nào — `hinh_hero` chỉ gợi ý. Ba lời báo
+- **Cổng**: slide `cover` không có `image` → `kite_submit` chặn, **luôn**. Cổng đòi
+  **có** ảnh ở bìa, không đòi đúng mã nào — `figure_hero` chỉ gợi ý. Ba lời báo
   khác nhau theo nguyên nhân, vì việc phải làm khác nhau: có ứng viên → *đặt mã
   này vào slide 1*; ảnh có mà **vision chưa nhìn** → *bật vision rồi
   `--lam-moi`*; **0 ảnh** → *chạy lại vòng tìm ảnh, vẫn trắng thì `kanban_block`*.
@@ -409,10 +409,10 @@ qua cổng không một dòng lỗi.
   10/09/2026, ngay sau khi xem cổng chặn ở trên: *"Dre tìm được ảnh đúng, nên kỹ
   năng tìm ảnh đó dùng được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*. Đo cả
   chuỗi hôm đó, và đây là chỗ hỏng thật sự:
-  1. `anh_chuan_bi.chay` trả **thẳng** `xong.json` cũ khi tệp đã có
+  1. `image_prepare.run` trả **thẳng** `xong.json` cũ khi tệp đã có
      (`if xong.exists() and not lam_moi`);
   2. task body giao cho Kite chạy `kite_prepare.py <id>` — **không** `--lam-moi`;
-  3. `tao_task_kite` còn ghi vào body *"tin này không có ảnh thật dùng được: vẽ
+  3. `create_task_kite` còn ghi vào body *"tin này không có ảnh thật dùng được: vẽ
      vector hoàn toàn"* — chính hệ thống giục vai làm thứ mục này cấm.
 
   Nên tin chuyển sang Kite **đọc lại đúng kết quả đã thất bại của vai cũ** và
@@ -420,10 +420,10 @@ qua cổng không một dòng lỗi.
   nó cho Kite. Mà **hai vai dừng ở hai ngưỡng khác nhau**: vai cũ cần đủ ~5 ảnh
   cho carousel rồi mới thôi, Kite chỉ cần **một tấm lên bìa** — rẻ hơn hẳn, nên
   "vai cũ không đủ" không hề có nghĩa "Kite không đủ".
-  `kite_chuan_bi.bao_dam_co_bia` chạy lại vòng tìm **đúng một lượt** khi chưa có
+  `kite_prepare.ensure_has_cover` chạy lại vòng tìm **đúng một lượt** khi chưa có
   tấm nào lên bìa được, trước khi in brief.
 - **Chặn cứng không làm vai treo**: nước đi đầu là *tìm lại*, không phải *báo
-  hỏng*. Hết đường thì `nop_chung.dem_vong_loi` đếm ba vòng lỗi *y hệt nhau* rồi
+  hỏng*. Hết đường thì `submit_common.count_round_error` đếm ba vòng lỗi *y hệt nhau* rồi
   bảo vai gọi `kanban_block` và đẩy lên Ông Chủ — đúng đường đã dành sẵn cho
   *"cổng đang đợi một thứ không thể có"*. Engine về trắng cho một tin có thật là
   việc của Ông Chủ, không phải của vai.
@@ -431,26 +431,26 @@ qua cổng không một dòng lỗi.
 **Đo 10/09/2026 — máy móc tìm ảnh KHÔNG hỏng, đừng đi vá nhầm chỗ.** Chín tiêu
 đề tin thật lấy từ chính tài liệu này (Philippines 34 tỷ, Qualcomm × Amazon,
 xưởng Samsung, kiện Anthropic, DeepSeek gọi vốn, Nemotron, Google Antigravity,
-Thinking Machines, SWE-bench) đều **ra từ khoá** qua `hang_trong_tin` (§1.2d)
-hoặc `tu_khoa_khai_niem` (§1.2c) — 9/9, **không cần LLM**, chỉ bảng tĩnh. Và
-`anh_khai_niem.anh_khai_niem("flag of Philippines")` trả về ảnh thật từ Commons.
+Thinking Machines, SWE-bench) đều **ra từ khoá** qua `vendors_in_story` (§1.2d)
+hoặc `keyword_concept` (§1.2c) — 9/9, **không cần LLM**, chỉ bảng tĩnh. Và
+`image_concept.image_concept("flag of Philippines")` trả về ảnh thật từ Commons.
 Chỗ trắng chỉ xuất hiện với tiêu đề *không nhắc hãng nào trong watchlist, không
 nhắc nước nào, và không khớp mẫu `CHU_DE` nào* — chưa gặp trong lưu lượng thật.
 Nên đừng nhét từ khoá chung chung vào `CHU_DE` để "cho chắc": Commons trả minh
 hoạ tệ cho khái niệm trừu tượng (§1.2c), và thêm một từ khoá sai làm hỏng đúng
 cái §0 giữ.
 - **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
-  **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`kiem_trung` §8).
+  **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`check_duplicate` §8).
   Tấm nào bị thân giữ độc quyền thì **lùi xuống ứng viên kế tiếp**, không bỏ
   cuộc ngay: ảnh khái niệm không nằm trong tập bị ép (§1.2c cấm nó ở thân) nên
   tin có một ảnh riêng + một ảnh khái niệm thì ảnh riêng ở thân còn **ảnh khái
   niệm lên bìa** — đúng chỗ của nó, và cả hai tấm đều được dùng.
 - **Hết ứng viên thì BÌA THẮNG**, không phải thân. Tin chỉ có **đúng một** tấm:
-  tấm đó lên bìa, và `hinh_phai_dung` trừ nó ra nên thân không đòi gì nữa. Đòi
+  tấm đó lên bìa, và `figure_right_use` trừ nó ra nên thân không đòi gì nữa. Đòi
   của §1.2e sinh ra từ ca **nhiều** tấm mà Kite chỉ dùng một; còn một tấm thì nó
   **vẫn được dùng**, chỉ là dùng ở bìa. Bản 10/09 sáng cho thân thắng ở ca này —
   đó chính là một trong ba ca ra hero vector mà Ông Chủ chặn.
-- Bìa có ảnh thì **cả bộ không vẽ hero art** (`chon_theme_tu_dong` trả
+- Bìa có ảnh thì **cả bộ không vẽ hero art** (`pick_theme_auto` trả
   `hero=None`), nên đây là thay thế chứ không phải thêm một lớp trang trí.
 
 ### 1.2g Con mắt trả lời mà không đọc ra được thì hỏi lại, không mặc định duyệt
@@ -463,17 +463,17 @@ cái §0 giữ.
   1. **Không hỏi được** (thiếu `OPENAI_API_KEY`, router hỏng cả 3 lần thử lại
      429/5xx) — đây là "vision tắt" có chủ đích ở nơi khác (`kite_submit.py`:
      "vision tắt thì ép là đẩy quảng cáo/banner lên bìa"), **giữ nguyên `None`**.
-     Không hỏi lại ở đây — `_goi_router` đã có backoff riêng.
+     Không hỏi lại ở đây — `_call_router` đã có backoff riêng.
   2. **Hỏi được nhưng không đọc ra dòng `LIEN_QUAN`** (model trả lời lệch định
      dạng) — đo 12/09/2026 trên máy chủ: ảnh trụ sở Tesla (Terafab) và một ứng
      viên thương hiệu Anthropic đều lọt bìa qua đường này dù router đã trả lời,
      chỉ là câu trả lời không parse được. Ca này **hỏi lại đúng 1 lần**
-     (`chuan_bi/nhin.mo_ta_anh`); vẫn không đọc ra thì **coi là RỚT**
+     (`prepare/vision.description_image`); vẫn không đọc ra thì **coi là RỚT**
      (`lien_quan = False`), không còn là `None` nữa.
 - Không gộp hai ca làm một: nếu "không hỏi được" cũng bị đóng thì mọi lần vision
   tắt (thiếu key ở môi trường dev/test) sẽ biến TOÀN BỘ ảnh của tin thành rớt —
   không còn ảnh nào để dùng, sai với hợp đồng "chưa ai nhìn" mà nhiều nơi khác
-  (brief, `hinh_hero`, `kite_nop`) đang dựa vào.
+  (brief, `figure_hero`, `kite_submit`) đang dựa vào.
 
 ### 1.3 Tin model ra mắt / xếp hạng: ưu tiên benchmark table/chart
 
@@ -509,7 +509,7 @@ chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng d�
 `nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.
 
 Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
-`ethan_nop` / `dre_nop` chặn ảnh chính khác khi `xong.json` có `tin_xep_hang` —
+`ethan_submit` / `dre_submit` chặn ảnh chính khác khi `xong.json` có `tin_xep_hang` —
 không phải "chưa đạt", là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
 thể của tin; vẫn chịu mọi cổng khác.
 
@@ -517,12 +517,12 @@ Chart đi đâu, theo khung:
 
 - **Hero (`quote`/`tran`)** — chart ở `anh`, thêm `anh2` là một ảnh ngang cùng
   tone: script ghép dọc, chart nằm nửa trên **nguyên vẹn**. `ethan_submit.py` gợi ý
-  sẵn cặp ghép (`cap_ghep_hero`).
+  sẵn cặp ghép (`stackable_pairs_hero`).
 - **Carousel slide thân** — `"chart": true`, dán full bề ngang nguyên vẹn.
 
 Nguồn không có sẵn ảnh chart thì **chụp từ chính trang nguồn**: engine
 `image_prepare.py` mở browser thật và tự chụp `figure/table/canvas/svg` (mã ảnh
-loại `chart`, đóng dấu `chup_chart`). Chụp tay thì dùng `capture_chart.py` — full
+loại `chart`, đóng dấu `capture_chart`). Chụp tay thì dùng `capture_chart.py` — full
 chiều rộng trước, chiều cao xét sau (mục 2).
 
 ### 1.4 Bài arxiv: hình trong paper trước, trang bìa sau
@@ -598,7 +598,7 @@ này rồi ép sang đúng đường, thay vì bảo bạn "đổi ảnh khác".
 vứt 56% bề ngang, mất chữ đầu tiêu đề ("…osses across the Horizon fleet") và mất
 sạch trục y.
 
-### Cách nhận diện (`luat_anh.la_chart`), đo trên bản thu nhỏ 480px
+### Cách nhận diện (`image_rules.is_chart`), đo trên bản thu nhỏ 480px
 
 | Phép đo | Chart/screenshot | Ảnh thật |
 |---|---|---|
@@ -695,7 +695,7 @@ xem mục 7), carousel thì vẫn qua màn tối riêng của nó — nên đặ
 trọng hơn ở trên** để nó hiện trọn, không bị chữ/vùng mờ/màn tối chia sẻ.
 
 **Cổng "không được lệch tone" ĐÃ BỎ (13/09/2026)** — `luat_anh.kiem_lech_tone`
-(và bản dùng trực tiếp `luat_anh.lech_tone` trong `dre_submit.py`) không còn chặn
+(và bản dùng trực tiếp `image_rules.tone_mismatch` trong `dre_submit.py`) không còn chặn
 gì, ở mọi vai. Ghép hai ảnh dù khác tone hẳn (một nền trắng một nền đen) vẫn
 qua được cổng; `prepare/manifest.py::cap_ghep` cũng không còn loại cặp lệch
 tone khỏi gợi ý. Việc chọn cặp cùng tone cho đẹp giờ là **gu**, không phải luật.
@@ -735,9 +735,9 @@ mảng nhìn tách rời:
     đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
     "rối" (`carousel.py::_lop_neu_can`).
   - **Hero cả hai kiểu** `quote` (06/09/2026) và `tran` (07/09/2026): không còn
-    TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_mo_vung_chu`, tan dần
+    TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_open_region_text`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
-    đã mờ đó (`_mau_doi_nen_an_toan`, đo qua `_can_bang_dong` nên một mảng sáng cục
+    đã mờ đó (`_color_change_background_hide_whole`, đo qua `_can_board_line` nên một mảng sáng cục
     bộ trong dải chữ không làm chọn sai màu). Phần ảnh phía trên dải chữ giữ nguyên
     sắc nét 100%.
   - **Carousel-edu (Kite)**: màu chữ đổi theo **từng dải dòng** (eyebrow, tiêu
@@ -758,7 +758,7 @@ mảng nhìn tách rời:
   nhận cho **hero của Kite** (bảng xếp hạng) — chưa ai đo nó cho Dre/Ethan,
   nên đừng tự suy ra là nó cũng áp dụng ở đó.
 - **Không có màu nền đặc ở đâu hết.** Chỗ nào lớp ảnh sắc không phủ tới thì nền
-  là bản cover **làm mờ** của chính tấm đó (`_lop_anh`, dùng chung cho cả hai
+  là bản cover **làm mờ** của chính tấm đó (`_layer_image`, dùng chung cho cả hai
   kiểu thẻ). Kiểu `tran` từng có một nhánh lấy màu nền bộ nhận diện làm nền cho
   phần ảnh thiếu — ảnh 16:9 trên khổ 4:5 ra hơn nửa thẻ là màu đặc; bỏ
   07/09/2026.
@@ -783,18 +783,18 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   con mắt phân biệt được: vision trả thêm dòng `ROI` (`prepare/nhin.py`,
   `CAU_ROI`), ghi vào manifest thành `roi`.
 - **Không ưu tiên:** ảnh rối không bao giờ là bìa. Làm thân chỉ khi **hết ảnh
-  sạch** — `nop_chung.kiem_anh_roi` chặn Dre và Ethan nếu còn ảnh sạch dùng
+  sạch** — `submit_common.check_image_fall` chặn Dre và Ethan nếu còn ảnh sạch dùng
   một mình được mà chưa dùng, chưa lên bài khác.
 - **Rối nhưng đủ từ khoá thì được, và hợp làm bìa.** Ông Chủ cùng ngày, về
   chính đồ hoạ "Nvidia Weighs $10B...": *"ảnh này xứng đáng làm hero, thể hiện
   được đầy đủ mọi từ khoá quan trọng"*. Vision trả thêm dòng `TU_KHOA` (đọc ra
   đủ tên các hãng/nhân vật chính VÀ con số/sự kiện chính) → manifest
-  `du_tu_khoa`; ảnh rối có cờ này được miễn `kiem_anh_roi`, được làm bìa (kể cả
+  `du_tu_khoa`; ảnh rối có cờ này được miễn `check_image_fall`, được làm bìa (kể cả
   khi đo ra là chart), và bìa hiện **nguyên bề ngang** như slide thân —
   cover-crop cắt hai mép là mất chữ khoá ở mép.
 - **Buộc dùng thì nền chữ đặc**, không phải lớp mờ 55% như mặc định: chữ in sẵn
-  trong ảnh vẫn lộ lem nhem qua lớp mờ. Carousel `_nen_dac_duoi_chu`, thẻ
-  Ethan `_nen_chu_nghiem`: nền đặc bắt đầu ở **khoảng lặng gần nhất phía trên
+  trong ảnh vẫn lộ lem nhem qua lớp mờ. Carousel `_background_solid_below_text`, thẻ
+  Ethan `_text_bg_strict`: nền đặc bắt đầu ở **khoảng lặng gần nhất phía trên
   chữ** (`card._moc_nen_dac` đo chi tiết ngang từng hàng pixel), dải smoothstep
   nằm trong khoảng lặng đó — nên chữ in sẵn của ảnh bị phủ trọn, không bị cắt
   nửa dòng, và **không có đường kẻ ngang**. Không bao giờ phủ cao hơn 40% khung
@@ -828,7 +828,7 @@ trớ trêu là ảnh trắng lại là thứ "giống chart" nhất theo phép 
 cho qua ngay. Đo trên 76 ảnh trong kho: ảnh rỗng = 2 màu, ảnh thật ít màu nhất
 = 40 màu — cách nhau 20 lần nên chặn được chắc (khác các phép đo "slide trống"
 đã thử và bỏ vì chồng lấn với chart sạch). `capture_chart.py` nay tự dừng ngay khi
-chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. **Vẫn phải mở
+chụp ra ảnh rỗng; `check_blank_image` chặn thêm một lớp ở renderer. **Vẫn phải mở
 ảnh ra xem trước khi ghi vào spec** — tên tệp không nói ảnh có gì.
 
 ---
@@ -837,19 +837,19 @@ chụp ra ảnh rỗng; `kiem_anh_rong` chặn thêm một lớp ở renderer. *
 
 | Cổng | Hàm | Chặn hay cảnh báo |
 |---|---|---|
-| **Ảnh rỗng** (trắng trơn / một màu) | `kiem_anh_rong` | chặn — chạy **trước** cổng chart |
-| Ảnh trùng (theo nội dung tệp) | `kiem_trung` | chặn |
-| Chart/screenshot thiếu `chart: true` | `kiem_chart` | chặn |
-| Khai `chart: true` mà máy không nhận ra chart | `kiem_chart` | **chỉ cảnh báo** (mục 3) |
-| Ảnh gốc ngang đã crop, không khai `crop_ok` | `kiem_crop_ngang` | chặn |
-| Mặt người mà không khai `nhan_vat` | `kiem_mat_nguoi` | chặn |
-| Sai dải tỉ lệ của khung | `kiem_ti_le` | chặn |
-| Chart đi một mình vào khung đặt chữ đè lên ảnh | `kiem_chart_mot_minh` | chặn (miễn ảnh `XH`) |
-| Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_nop` / `dre_nop` | chặn |
-| Bìa Kite không có `image` — mọi trường hợp, kể cả 0 ảnh (§1.2f) | `kite_nop` | chặn |
-| Ảnh khái niệm đặt ở slide **thân** của Kite (§1.2c) | `kite_nop` | chặn |
-| Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `kiem_da_dung` | chặn |
-| Cạnh ngắn <1000px | `kiem_do_phan_giai` | cảnh báo |
+| **Ảnh rỗng** (trắng trơn / một màu) | `check_blank_image` | chặn — chạy **trước** cổng chart |
+| Ảnh trùng (theo nội dung tệp) | `check_duplicate` | chặn |
+| Chart/screenshot thiếu `chart: true` | `check_chart_integrity` | chặn |
+| Khai `chart: true` mà máy không nhận ra chart | `check_chart_integrity` | **chỉ cảnh báo** (mục 3) |
+| Ảnh gốc ngang đã crop, không khai `crop_ok` | `check_crop_landscape` | chặn |
+| Mặt người mà không khai `nhan_vat` | `check_unnamed_face` | chặn |
+| Sai dải tỉ lệ của khung | `check_aspect_ratio` | chặn |
+| Chart đi một mình vào khung đặt chữ đè lên ảnh | `check_chart_standalone` | chặn (miễn ảnh `XH`) |
+| Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_submit` / `dre_submit` | chặn |
+| Bìa Kite không có `image` — mọi trường hợp, kể cả 0 ảnh (§1.2f) | `kite_submit` | chặn |
+| Ảnh khái niệm đặt ở slide **thân** của Kite (§1.2c) | `kite_submit` | chặn |
+| Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `check_not_reused` | chặn |
+| Cạnh ngắn <1000px | `check_resolution` | cảnh báo |
 
 **Đã bỏ khỏi bảng này (13/09/2026, Ông Chủ: bỏ cấm đoán, mọi vai):**
 `kiem_xuat_xu` (đúng khít 4:5/1:1 không dấu xuất xứ), `kiem_lech_tone` (ghép
@@ -862,7 +862,7 @@ nào cũng gọi được. Vai tự chọn cổng nào hợp với khung của m
 
 Uỷ quyền crop bề ngang có **hai** đường, cổng nhận cả hai: khai `crop_ok` trong
 spec, hoặc cắt bằng `crop_ratio.py --cat-ngang` (cờ đó đóng dấu vào PNG, đọc
-bằng `doc_cat_ngang`). Trước 04/09 chỉ card.py đọc dấu thứ hai nên carousel vẫn
+bằng `allows_landscape_crop`). Trước 04/09 chỉ card.py đọc dấu thứ hai nên carousel vẫn
 chặn oan một tấm đã được cho phép cắt.
 
 **Vai nào đã gọi cổng nào** (cập nhật 04/09/2026 — luật Ông Chủ: *"ảnh do ai làm
@@ -892,7 +892,7 @@ khổ, không crop và không đè chữ lên ảnh.
 
 Sửa một luật ở đây là **cả đội đổi theo** — đó là lý do tài liệu này tồn tại.
 Đừng chép luật sang SKILL của vai. (SKILL **không** trỏ về đây: từ a757f61 luật
-ảnh đi vào brief do `*_chuan_bi.py` tự sinh, nên tệp này là nguồn cho **code và
+ảnh đi vào brief do `*_prepare.py` tự sinh, nên tệp này là nguồn cho **code và
 người**, không phải cho prompt của vai.)
 
 ---

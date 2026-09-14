@@ -345,7 +345,7 @@ def test_host_cong_khai_khong_bi_chan_oan():
 
 
 def test_kiem_url_chan_scheme_khong_phai_http():
-    """chup_chart tai bang urllib, ma urllib nhan ca `file://`."""
+    """capture_chart tai bang urllib, ma urllib nhan ca `file://`."""
     import scan_common as qc
     for u in ["file:///etc/passwd", "ftp://x.com/a", "data:text/html,x", "x"]:
         assert not qc.url_hide_whole(u), u
@@ -356,7 +356,7 @@ def test_moi_duong_tai_deu_qua_cong():
     """Doc bang AST: cac ham tai da duoc noi vao cong. Them mot duong tai moi
     ma quen goi cong la mo lai cua da dong."""
     import ast
-    # `_tai_bytes` sang chuan_bi/tai_loc.py khi tach goi 09/09/2026 (audit A1) —
+    # `_download_bytes` sang prepare/download_filter.py khi tach goi 09/09/2026 (audit A1) —
     # cong host van phai duoc goi y nhu cu, chi doi cho tim.
     for tep, ham in [("prepare/download_filter.py", "_download_bytes"), ("article_images.py", "_download"),
                      ("capture_chart.py", "download_image"), ("article_extract.py", "fetch")]:
@@ -394,19 +394,19 @@ def test_argv_khong_profile_thi_khong_co_co_p():
 
 def test_argv_khop_ban_ke_khai_cua_kiem_hermes():
     """`check_hermes.HAS_CHAT` la danh sach co ma script kiem sau moi
-    `hermes update`. Hai ban ke khai nay phai khop, khong thi kiem_hermes bao
+    `hermes update`. Hai ban ke khai nay phai khop, khong thi check_hermes bao
     xanh cho mot dong lenh khong con dung."""
     import chat_router as cr
     import check_hermes as kh
     a = set(cr.use_argv("miles", "tele-writer", "x"))
     thieu = [c for c in kh.HAS_CHAT if c not in a]
-    assert not thieu, f"kiem_hermes doi co {thieu} ma use_argv khong sinh ra"
+    assert not thieu, f"check_hermes doi co {thieu} ma use_argv khong sinh ra"
 
 
 # ------------------------------------------------------------ tong_hop (9router)
-# Tach khoi `doc_ngay` 07/09/2026. Phep dem o day quyet dinh nhung thu khong lo
+# Tach khoi `read_date` 07/09/2026. Phep dem o day quyet dinh nhung thu khong lo
 # ra khi sai: nhan khoa API (chi duoc 4 ky tu cuoi — bao cao nay duoc ghi ra dia
-# VA phuc vu qua nhat_ky_web), cap lat model nao tinh la fallback, model nao bi
+# VA phuc vu qua journal_web), cap lat model nao tinh la fallback, model nao bi
 # goi la "tra rong".
 def _dong(giay, model="ds/deepseek-v4-pro", cid="c1", ak="sk-abcd1234efgh",
           status=None, ptok=2000, ctok=500, cost=0.01, cache=0):

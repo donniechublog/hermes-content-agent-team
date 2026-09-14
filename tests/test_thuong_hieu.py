@@ -24,7 +24,7 @@ def _h(tieu_de, tom=""):
 
 
 def test_hai_hang_trong_mot_tin_deu_ra():
-    """Tin sáng 09/09 làm lộ lỗi: `_ten_rieng_dau` chỉ ra "Qualcomm", Amazon
+    """Tin sáng 09/09 làm lộ lỗi: `_leading_proper_noun` chỉ ra "Qualcomm", Amazon
     không bao giờ được hỏi tới."""
     assert _h("Qualcomm signs AI chip deal with Amazon, option to buy $4B in shares") \
         == ["Qualcomm", "Amazon"]
@@ -248,7 +248,7 @@ def test_nhan_chan_dung_doi_khai_dung_ten():
 
 
 def test_nhan_chan_dung_khong_chan_theo_mat():
-    """`dem_mat` trả None (-> 0) khi thiếu cv2, mà LUAT_ANH §6 cho phép cổng mặt
+    """`count_faces` trả None (-> 0) khi thiếu cv2, mà LUAT_ANH §6 cho phép cổng mặt
     tự tắt. Lấy mat==0 làm "không phải chân dung" là bỏ câm lặng mọi chân dung."""
     a = th.label_brand(_anh(thuong_hieu={"hang": "Anthropic", "loai": "nguoi",
                                               "nguoi": "Dario Amodei", "vai": "CEO"}, mat=0))
@@ -256,7 +256,7 @@ def test_nhan_chan_dung_khong_chan_theo_mat():
 
 
 def test_nhan_the_logo_go_ghi_chu_chart_mau_thuan():
-    """Thẻ logo là nền trơn + chữ nên `phan_loai` đọc ra "chart" và dán kèm
+    """Thẻ logo là nền trơn + chữ nên `classify` đọc ra "chart" và dán kèm
     "KHÔNG làm bìa" — ngược hẳn công dụng của nó (09/09/2026)."""
     a = th.label_brand(_anh(thuong_hieu={"hang": "DeepSeek", "loai": "logo", "nen": "tối"},
                                  loai="chart", dung=["thân (chart, dán full bề ngang)"],

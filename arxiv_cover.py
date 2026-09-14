@@ -156,7 +156,7 @@ def main():
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     # Dong dau XUAT XU: anh nay ra dung 1200x1500 (4:5 chan) ma khong qua
-    # crop_ti_le.py — carousel.py chan anh 4:5/1:1 "chan" khong co dau vet vi do
+    # crop_ratio.py — carousel.py chan anh 4:5/1:1 "chan" khong co dau vet vi do
     # la dau hieu cat tay ne cong (Ong Chu bat loi 04/09/2026). Dau nay cho cong
     # biet chinh cong cu cua doi dung ra anh, khong phai cat lui.
     from PIL.PngImagePlugin import PngInfo

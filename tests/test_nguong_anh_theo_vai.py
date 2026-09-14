@@ -160,7 +160,7 @@ def test_nut_ha_san_van_noi_slide_cho_dre_va_cho_manifest_cu():
 
 
 def test_nut_ha_san_theo_sidecar_khi_bai_da_chuyen_kite():
-    """`tao_task_kite` doi `vai_anh` trong SIDECAR chu khong sua manifest, nen
+    """`create_task_kite` doi `vai_anh` trong SIDECAR chu khong sua manifest, nen
     sidecar la ban moi nhat — bai da sang Kite thi lai goi la slide."""
     with tempfile.TemporaryDirectory() as tmp:
         note = _ha_san(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
@@ -222,7 +222,7 @@ def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
 
 def test_sidecar_ghi_truoc_khi_engine_chay():
     """Engine doc `vai_anh` tu sidecar .img.json ngay dau. `create_pair` tung
-    goi `_khoi_chay_engine` TRUOC `_cat_sidecar`, tuc engine doc mot tep chua ai
+    goi `_block_run_engine` TRUOC `_crop_sidecar`, tuc engine doc mot tep chua ai
     ghi — truoc gio chi mat tom tat (im lang), tu 10/09/2026 mat ca nguong."""
     import inspect
 

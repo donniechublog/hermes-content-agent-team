@@ -150,7 +150,7 @@ def filter(tweets: list, cu: dict) -> tuple:
 
 def out_story(t: dict) -> dict:
     """Mot tweet -> mot muc `tin_moi`, cung hinh dang voi scan_business de
-    manifest_ghi --nguon chon duoc bang so thu tu k."""
+    manifest_write --nguon chon duoc bang so thu tu k."""
     ts = t.get("timestamp") or t.get("crawledAt") or ""
     try:
         ngay = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(VN).strftime("%Y-%m-%d")

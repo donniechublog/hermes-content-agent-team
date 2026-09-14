@@ -36,7 +36,7 @@ import env_load
 import required
 
 STATE = env_load.state_dir() / "business_seen.json"
-UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
 # Moi dong la mot goc theo doi. Them chu de moi = them mot dong.
@@ -174,7 +174,7 @@ def within_watchlist(tieu_de: str) -> bool:
 
 
 
-_get = scan_common.get                  # mot ban duy nhat, xem quet_chung
+_get = scan_common.get                  # mot ban duy nhat, xem scan_common
 
 
 _ts = scan_common.timestamp_time          # mot ban (ADF-r2-15): 45e206c them ham chung ma chua ai goi
@@ -434,7 +434,7 @@ def main():
             # KHONG dung ten `cu`: do la bo nho da-thay (da_thay()) dung o cuoi
             # main cho ghi_moc. Ghi de no o day lam ghi_moc nhan None -> crash
             # sau khi da ghi --out, tuc Vera co tep ma moc khong duoc cap nhat
-            # (tin bao lai hom sau). Bat 04/09/2026 khi chay thu quet_chuan_bi.
+            # (tin bao lai hom sau). Bat 04/09/2026 khi chay thu scan_prepare.
             cu_nhom = nhom.get(k)
             if not cu_nhom or (t.get("so_bao") or 0) > (cu_nhom.get("so_bao") or 0):
                 nhom[k] = t

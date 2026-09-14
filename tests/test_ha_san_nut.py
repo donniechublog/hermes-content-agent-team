@@ -3,11 +3,11 @@
 08/09/2026: Ong Chu bam "Dre lam voi 4 anh", engine tra loi "chi 4 anh ma can
 toi thieu 5 slide — bam tiep cung khong dung duoc. Chuyen Kite ve vector, hoac
 bo tin" RỒI GỠ LUÔN BÀN PHÍM — không còn nút nào bấm được hai đường vừa nêu,
-phải tự gõ lệnh. `_chot_nut` trước đó gỡ bàn phím vô điều kiện bất kể nút nào
+phải tự gõ lệnh. `_finalize_button` trước đó gỡ bàn phím vô điều kiện bất kể nút nào
 vừa bấm ra kết quả gì.
 
-Sua: `_nut_ha_san` het duong thi tra ve mot ban phim moi (Gui Kite + Bo han,
-hoac chi Bo han neu brand khong co Kite) thay vi None; `_chot_nut` gan lai dung
+Sua: `_button_lower_ready` het duong thi tra ve mot ban phim moi (Gui Kite + Bo han,
+hoac chi Bo han neu brand khong co Kite) thay vi None; `_finalize_button` gan lai dung
 ban phim do thay vi go trang.
 
 Chay:  venv/bin/python tests/test_ha_san_nut.py

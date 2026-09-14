@@ -149,7 +149,7 @@ def part_kanban(ngay: str) -> list:
     # trong ngay la mot cau `select ... from task_runs` rieng.
     tat_ca = hermes_adapter.job()
     if tat_ca is None:
-        # Adapter da nuot sqlite3.Error va tra None, nen `_chiu_loi_db` KHONG
+        # Adapter da nuot sqlite3.Error va tra None, nen `_bear_error_db` KHONG
         # con bat duoc gi — ma cai decorator do sinh ra dung de dua loi doc DB
         # len CUOI TRANG (LOI_DOC) thay vi de trang im lang "khong co task".
         # Review Fable 09/09/2026 bat duoc: ban dau tien cua doan nay tra []

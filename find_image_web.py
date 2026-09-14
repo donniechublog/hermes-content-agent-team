@@ -58,7 +58,7 @@ def filter(urls: list, so: int, tu: str, q: str) -> list:
         if u in thay or not _use_ok(u):
             continue
         thay.add(u)
-        # `trang` = chính ảnh: tai_loc coi ảnh khác miền trang là quảng cáo,
+        # `trang` = chính ảnh: download_filter coi ảnh khác miền trang là quảng cáo,
         # mà kết quả tìm ảnh thì không có "trang" nào cả.
         ra.append({"anh": u, "alt": q, "og": False, "tu": tu, "trang": u,
                    # Duoi og:image bao chi (42): ket qua web co the lac de ca loat

@@ -21,7 +21,7 @@ Tu 06/09/2026 tep nay CHI con vong poll + dieu phoi tin nhan (handle_message) + 
   approve_post.py       nut Duyet/Bo/Lam lai, chuyen Kite, dang kenh, day hang duyet
   approve_chat.py      chat theo topic: FIFO moi vai + semaphore
   approve_command.py      lenh slash /bai /vai /hd
-Khong con re-export names tu day (sua 09/09/2026): anh_chuan_bi va cac kich ban
+Khong con re-export names tu day (sua 09/09/2026): image_prepare va cac kich ban
 thu goi duyet_* truc tiep neu can.
 """
 import json
@@ -173,11 +173,11 @@ def handle_message(token, group, msg):
                f"from={msg.get('from', {}).get('id')} text={rut(text)}")
 
     # ALLOWLIST cho MOI tin, khong chi lenh slash. Truoc 06/09/2026 chi
-    # duyet_lenh va nhanh "ly do lam lai" kiem `ong_chu.json`; lenh chon so va
+    # approve_command va nhanh "ly do lam lai" kiem `ong_chu.json`; lenh chon so va
     # chat thi khong — bat ky ai trong group reply "1, 3" vao bao cao Finn la
     # tao duoc cap task ton LLM, con reply kem URL la agent chay voi bo cong cu
     # day du. Khong co tep ong_chu.json thi giu nguyen hanh vi cu (xem
-    # `la_ong_chu`), nen bat cai nay khong lam ket chet may dang chay.
+    # `is_boss`), nen bat cai nay khong lam ket chet may dang chay.
     if not is_boss(msg):
         uid = msg.get("from", {}).get("id")
         log("vao", f"msg={mid} TU CHOI: {uid} khong co trong ong_chu.json")
@@ -206,7 +206,7 @@ def handle_message(token, group, msg):
 
     # Dau "/" = LENH, o bat ky topic nao — xu ly rieng, khong bao gio roi ve
     # hoi thoai (mot lenh go sai ma dem hoi LLM la vua on ao vua nguy hiem).
-    # Chay nen: /bai co buoc fetch trang + research (nguon_bai, toi 180s),
+    # Chay nen: /bai co buoc fetch trang + research (article_sources, toi 180s),
     # khong duoc nghen vong poll — cung ly do voi handle_chat ben duoi.
     if text.startswith("/"):
         log("route", f"msg={mid} lenh slash")
@@ -306,7 +306,7 @@ def _rescue_article_end_publishing(token, group):
     Sau restart khong co buoc nao doc lai trang thai: `handle_callback` thay
     `publishing` va tra "Đang đăng — chờ chút" cho MOI lan bam ve sau. Bai do
     khong bao gio dang duoc va cung khong bo duoc, tru khi co nguoi sua tay
-    tep JSON. Docstring cua `_dang_nen` hua "khong bao gio ket vinh vien" —
+    tep JSON. Docstring cua `_form_background` hua "khong bao gio ket vinh vien" —
     dieu do chi dung voi exception, khong dung voi restart.
 
     Chay MOT lan luc khoi dong: bai nao con `publishing` qua 15 phut thi ha ve

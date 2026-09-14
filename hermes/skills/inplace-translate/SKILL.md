@@ -103,7 +103,7 @@ BodyMist 28/08 mất trắng 3 dòng vì bỏ qua.
 ## Chỗ chưa làm được
 
 **Nền nửa sáng nửa tối thì mask bắt nhầm phía — xoá ra một mảng bôi màu.**
-`doi_chu_anh.dung_mask` quyết chữ sáng-hay-tối bằng trung vị độ sáng cả vùng so
+`swap_image_text.use_mask` quyết chữ sáng-hay-tối bằng trung vị độ sáng cả vùng so
 với ngưỡng Otsu. Sau chữ có cả giấy trắng lẫn bàn tay thì trung vị bị kéo sát
 ngưỡng và luật lật ngược: mask phủ lên NỀN thay vì lên chữ, LaMa xoá nền rồi lấy
 màu chữ trám vào. Đo trên slide 3 carousel TECHS 07/09/2026:
@@ -119,7 +119,7 @@ lỗi khiến brief báo màu vùng đó là `[23,22,22]` thay vì xanh `[159,19
 Chưa có cổng nào chặn — **thấy brief báo màu chữ tối trên một dòng rõ ràng đang
 sáng thì đừng chạy nop, báo Ông Chủ.**
 
-**Ảnh lớn từng làm LaMa chết vì hết bộ nhớ.** Đã sửa (`doi_chu_anh.MAX_PX_LAMA`):
+**Ảnh lớn từng làm LaMa chết vì hết bộ nhớ.** Đã sửa (`swap_image_text.MAX_PX_LAMA`):
 trên 3 Mpx thì dựng nền ở độ phân giải thấp rồi ghép lại đúng vùng đã xoá. Đo
 trên máy này (7GB RAM, CPU): 1536x1912 chạy 16s, 2048x2550 đòi 14.7GB và chết —
 mà 2048x2550 là kích thước chuẩn của carousel Instagram.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """approve_pick.py — Ong Chu REPLY SO trong topic quet -> doc manifest ->
-create_pair: meta.json + nguon_bai + task vai anh + sidecar vai viet + bang den.
+create_pair: meta.json + article_sources + task vai anh + sidecar vai viet + bang den.
 Khoa theo duong dan manifest (hai lenh chon cung topic xep hang, khong nuot
 da_giao cua nhau). Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 """
@@ -57,7 +57,7 @@ def latest_manifest(vai="finn"):
     return max(files, key=lambda f: f.stat().st_mtime) if files else None
 
 def _mid_report(vai: str) -> dict:
-    """Noi dung tep `bao_cao_mid.<vai>.json` — quet_nop ghi moi lan gui bao cao.
+    """Noi dung tep `bao_cao_mid.<vai>.json` — scan_submit ghi moi lan gui bao cao.
 
     Ba khoa: `message_ids` (mid cua TUNG manh tin, bao cao dai bi Telegram chia
     nho), `message_id` (manh cuoi, giu lai cho ban cu) va `manifest` (duong dan
@@ -69,7 +69,7 @@ def manifest_already_send(vai: str):
     """Manifest dung voi ban bao cao Ong Chu dang nhin, hoac None.
 
     `latest_manifest` (moi nhat theo mtime) chi bang voi cau nay khi moi lan
-    ghi manifest deu ket thuc bang mot lan gui. Tu 12/09/2026 quet_nop CHAN gui
+    ghi manifest deu ket thuc bang mot lan gui. Tu 12/09/2026 scan_submit CHAN gui
     ban hong (mat tin / tieu de mat dau) nhung van ghi manifest, nen hai thu do
     tach nhau duoc: so thu tu phai doc tren ban DA GUI, khong phai ban moi
     nhat. Chua ghim (bao cao gui truoc khi co co che nay) -> None, nguoi goi lui
@@ -186,7 +186,7 @@ def write_meta(draft_id, item, out_png, brand="donniechublog"):
         "score_reason": item.get("score_reason", ""),
         "brand": brand,
     }
-    # TRON, khong ghi de: bang_den ghi `root_task` vao cung tep tu mot tien
+    # TRON, khong ghi de: blackboard ghi `root_task` vao cung tep tu mot tien
     # trinh khac, va write_meta con chay lan hai sau khi giai xong link Google
     # News. Ghi de ca dict thi ai ghi sau xoa cua ai ghi truoc — hom nay chua
     # mat chi vi thu tu goi tinh co dung (F2).
@@ -221,10 +221,10 @@ def _research_source(item, draft_id, out_png, brand):
     # viet giai thich dung nhung gi doc gia nhin thay tren tam anh.
     nguon_path = STATE_DIR / f"nguon_{draft_id}.json"
     # C-r2-6: truoc day khong nhin returncode va `except: pass` khi doc ket qua —
-    # nguon_bai chet (thieu module, traceback) thi khong mot dong log, khong tep
+    # article_sources chet (thieu module, traceback) thi khong mot dong log, khong tep
     # nguon, vai nhan link Google News chua giai ma; dung trieu chung "Dre/Miles
     # doc ra rong" 04/09 ma khong ai thay nguyen nhan. `sys.executable` thay
-    # duong venv go cung theo quy uoc tu_lieu.boc().
+    # duong venv go cung theo quy uoc material.extract().
     loi = None
     try:
         r = subprocess.run(
@@ -233,13 +233,13 @@ def _research_source(item, draft_id, out_png, brand):
              "--out", str(nguon_path)],
             capture_output=True, text=True, timeout=180, cwd=str(ROOT))
         if r.returncode != 0:
-            loi = f"nguon_bai exit {r.returncode}: {(r.stderr or '').strip()[-300:]}"
+            loi = f"article_sources exit {r.returncode}: {(r.stderr or '').strip()[-300:]}"
     except Exception as e:                                   # noqa: BLE001
         loi = f"{type(e).__name__}: {e!r}"
     if loi:
         print(f"[research] {draft_id}: khong tim duoc nguon — {loi}")
         return loi
-    # Link cua Vera la duong chuyen huong Google News; nguon_bai da giai ma ra
+    # Link cua Vera la duong chuyen huong Google News; article_sources da giai ma ra
     # bai that (link_gnews/link_goc). Dung link THAT cho moi vai sau va cho
     # meta — truoc day Dre/Miles nhan link chuyen huong, doc ra rong, phai tu
     # web_search lai (do 04/09/2026).
@@ -260,7 +260,7 @@ def _block_run_engine(draft_id):
     """Chay NEN image_prepare.py ngay khi Ong Chu chon tin — toi luc vai nhan
     viec thi brief da san. Khong chan reply cho Ong Chu."""
     # Phan CO HOC cua vai anh (nguon, tai/do/cat anh, tu lieu) chay NEN ngay bay
-    # gio bang engine dung chung anh_chuan_bi.py — toi luc Dre/Ethan/Kite nhan
+    # gio bang engine dung chung image_prepare.py — toi luc Dre/Ethan/Kite nhan
     # viec thi brief da san, task chi con viet chu; Miles doc lai cung tu lieu.
     # Khong chan reply cho Ong Chu.
     try:
@@ -366,7 +366,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
         return None, "Loi tao task anh: " + err
 
     # SIDECAR TRUOC, ENGINE SAU. Engine doc `<draft_id>.img.json` ngay dau
-    # (`_tom_tat_tu_img_json`) de lay tom tat, source_note VA — tu 10/09/2026 —
+    # (`_summary_from_img_json`) de lay tom tat, source_note VA — tu 10/09/2026 —
     # `vai_anh` de biet can bao nhieu anh that. Chay engine truoc la de no doc
     # mot tep chua ai ghi: truoc gio chi mat tom tat (im lang), nay con mat ca
     # nguong nen Ethan lai bi doi du anh cho carousel. Doi cho hai dong nay la
@@ -398,7 +398,7 @@ def _report_already_label(token, group, thread_id, manifest_path, lenh):
     Vi sao (Ong Chu 12/09/2026: *"phai co phan hoi 'dang gui cho Dre' ngay sau
     khi nhan duoc reply"*): tu luc reply den dong ket qua dau tien la 157 giay —
     do that tren approve.log 11/09/2026, lenh luc 04:22:43, "xong sau 157s" luc
-    04:25:20 — va suot quang do topic im re. Co `_bao_nhan_viec`, nhung no bao
+    04:25:20 — va suot quang do topic im re. Co `_report_receive_job`, nhung no bao
     vao topic CUA VAI NHAN (Dre), khong phai topic Ong Chu dang nhin; nen ben
     nay khong khac gi luc lenh bi nuot (su co cung ngay).
 
@@ -445,7 +445,7 @@ def _process_pick(token, group, thread_id, vai, lenh):
 
     # KHOA THEO MANIFEST, om CA vong tao task. Vi sao 06/09/2026: moi lenh chon
     # chay mot thread rieng (_chay_nen), ma ca ba buoc "doc ca manifest ->
-    # create_pair (toi 180s moi tin vi nguon_bai chay dong bo) -> ghi lai ca
+    # create_pair (toi 180s moi tin vi article_sources chay dong bo) -> ghi lai ca
     # manifest" deu khong khoa. Lenh thu hai doc ban CU roi ghi de, nuot mat
     # `da_giao`/`picked` cua lenh truoc — ma chinh `da_giao` la cong chan giao
     # trung, nen lan chon sau se tao task doi cho tin da giao.

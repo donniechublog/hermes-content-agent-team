@@ -38,7 +38,7 @@ import env_load                                              # noqa: E402
 SKILL = ROOT / "hermes" / "skills" / "url-mascot-frame"
 GET_SOURCE = SKILL / "scripts" / "get_source.py"
 # frame.js / screenshot.js da bo 09/09/2026 (audit A6): ca hai viet lai bang
-# PIL + Playwright cua Python (khung_anh.py, chup_trang.py), server het can Node.
+# PIL + Playwright cua Python (image_frame.py, capture_page.py), server het can Node.
 # Skill van giu assets (avatar, font, mood-palette) va SKILL.md.
 
 # Ong Chu 06/09/2026: eyeroll la mood AN TOAN NHAT — no hop voi moi tinh huong,
@@ -72,7 +72,7 @@ def board_mood() -> dict:
 def mood_from_vision(txt: str) -> str:
     """Emoji dau tien trong `txt` co nam trong bang mood cua skill. "" neu khong.
 
-    Chi nhan emoji THUOC BANG: vision tra ve chu tu do, ma khung_anh chi doi
+    Chi nhan emoji THUOC BANG: vision tra ve chu tu do, ma image_frame chi doi
     emoji sang mascot cho nhung mood da co anh."""
     bang = board_mood()
     for ky_tu in txt or "":
@@ -117,7 +117,7 @@ def take_image(nguon: str, ra: Path) -> str:
 
 
 def line_frame(src: Path, ra: Path, emoji: str, handle: str) -> None:
-    """Goi thang khung_anh trong CUNG tien trinh, thay vi shell ra node frame.js.
+    """Goi thang image_frame trong CUNG tien trinh, thay vi shell ra node frame.js.
 
     Het mot lop subprocess nghia la loi hien nguyen van (traceback that) chu
     khong con phai doan tu vai dong stderr cuoi cua Node."""
@@ -191,7 +191,7 @@ def main() -> int:
     # duoc (model chinh khong nhan anh), nen truoc day Bob phai tu go mot lenh
     # HTTP toi router vision — meo do nam trong MEMORY.md, khong ai kiem, va
     # mau thuan voi luat "ngoai lenh nay khong chay gi khac". Gio engine nhin
-    # ho: cung ham `mo_ta_anh` ma Dre/Ethan/Kite dung. Hong thi bao va di tiep,
+    # ho: cung ham `description_image` ma Dre/Ethan/Kite dung. Hong thi bao va di tiep,
     # vi Bob van co the tu nhin neu model cua no doc duoc anh.
     emoji, vi_sao = a.emoji, "Ông Chủ chỉ định"
     if not a.khong_nhin:

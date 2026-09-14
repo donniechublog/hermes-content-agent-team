@@ -69,7 +69,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
     if m.get("tin_xep_hang"):
-        L.append(cb.ranking_brief_line(m, "bìa ", "dre_nop"))
+        L.append(cb.ranking_brief_line(m, "bìa ", "dre_submit"))
     for a in m["anh"]:
         if a.get("lien_quan") is False:
             L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "

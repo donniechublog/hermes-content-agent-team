@@ -36,7 +36,7 @@ def file(vai: str) -> Path:
 def read(vai: str) -> dict:
     """Danh sach BAT BUOC cua vai; {} neu chua co.
 
-    Tep HONG khong duoc im lang tra {}: `them_nhieu` ngay sau do ghi de bang
+    Tep HONG khong duoc im lang tra {}: `extra_many` ngay sau do ghi de bang
     muc cua hom nay, va cac muc "phai dua" mang tu hom truoc bien mat vinh vien
     — scan_models da ghi `aa_da_bao` nen khong gieo lai lan nua. Nay: doi ten
     tep hong thanh `.hong` (con de kham) va noi ra mot dong.
@@ -99,7 +99,7 @@ def extra_many(vai: str, muc: list) -> int:
     return moi
 
 
-chuan_link = scan_common.standard_link     # mot ban duy nhat, xem quet_chung
+chuan_link = scan_common.standard_link     # mot ban duy nhat, xem scan_common
 
 
 def _standard(t: str) -> str:
@@ -166,7 +166,7 @@ def match(muc: dict, item: dict) -> bool:
 
 # Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC
 # khong co link (Nova 05/09 mo 17 tool call grep repo tim link cho 15 muc).
-# Bang thi doc tu BAN DANG KY (bang_model): truoc 07/09/2026 danh sach nay la
+# Bang thi doc tu BAN DANG KY (model_boards): truoc 07/09/2026 danh sach nay la
 # ban chep tay thu SAU cua cung mot bo bang, va `test_bang_nova` sinh ra chinh
 # vi mot lan them bang ma quen khai o day -> muc BAT BUOC ra link RONG.
 LINK_BOARD = dict(model_boards.LINK_BOARD)

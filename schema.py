@@ -4,19 +4,19 @@
 Vi sao (audit_content_team F2): bon hop dong duoi day deu la dict TU DO, khong
 khai o dau. Hau qua do duoc:
 
-  - `so_dung_duoc` thieu khoa thi BA noi doan ba kieu: dre_chuan_bi dem lai bang
-    mot cong thuc KHAC cong thuc cua nguoi ghi, con duyet_bai va anh_chuan_bi coi
+  - `so_dung_duoc` thieu khoa thi BA noi doan ba kieu: dre_prepare dem lai bang
+    mot cong thuc KHAC cong thuc cua nguoi ghi, con approve_post va image_prepare coi
     la 0 ("khong co anh nao") — hai ket luan nguoc nhau tu cung mot tep.
   - `dre_submit.py` vao nhanh bang `m.get("toi_thieu", 5)` roi trong than lai doc
     `m["toi_thieu"]` tho: thieu khoa la KeyError NGAY TRONG CONG CHAN.
-  - `write_meta` ghi DE ca dict 8 khoa, ma `bang_den` ghi `root_task` vao cung
+  - `write_meta` ghi DE ca dict 8 khoa, ma `blackboard` ghi `root_task` vao cung
     tep o mot tien trinh khac. Hom nay khong mat chi vi THU TU goi may man.
 
 Tep nay KHONG kiem tra luc chay (khong validate). No lam ba viec:
   1. Khai bao khoa bang TypedDict — doi ten khoa thi co MOT cho de sua va de doc.
-  2. Giu CONG THUC DAN XUAT dung mot ban (`so_anh_dung_duoc`), de nguoi ghi va
+  2. Giu CONG THUC DAN XUAT dung mot ban (`count_image_use_ok`), de nguoi ghi va
      nguoi doc khong bao gio tinh ra hai so khac nhau.
-  3. `doc_manifest()` — doc manifest cu, bu cac khoa dan xuat con thieu roi dan
+  3. `read_manifest()` — doc manifest cu, bu cac khoa dan xuat con thieu roi dan
      nhan `phien_ban`, de ban cu va ban moi doc ra nhu nhau.
 
 CHU Y — "xong.json" KHONG phai mot hop dong. Do la ten tep dung lai o nhieu cho
@@ -38,9 +38,9 @@ class Manifest(TypedDict, total=False):
     """`state/<brand>/chuan_bi/<draft_id>/xong.json` — engine ghi, moi vai doc.
 
     Nguoi ghi: `prepare.manifest.build_manifest` (26 khoa goc), roi
-    `anh_chuan_bi.chay` them `thieu_anh`, `route_thieu_anh.sau_chuan_bi` them
+    `image_prepare.run` them `thieu_anh`, `route_missing_images.after_prepare` them
     `chuyen_kite`/`hoi_kite`/`khong_kite` — CA BA con trong khoa cua engine, nen
-    nguoi doc luon thay ban da chot. Rieng `duyet_bai._nut_ha_san` ghi de
+    nguoi doc luon thay ban da chot. Rieng `approve_post._button_lower_ready` ghi de
     `toi_thieu` + them `ha_san_luc` SAU DO, luc Ong Chu bam nut.
 
     `total=False` vi ban cu thieu khoa moi; cot BAT BUOC ghi trong chu thich.
@@ -54,9 +54,9 @@ class Manifest(TypedDict, total=False):
     link: str
     workdir: str                   # duong dan TUYET DOI toi thu muc lam viec
     anh: list                      # [{ma, goc, san, dung, ghi_chu, lien_quan, ...}]
-    # So ANH THAT toi thieu de VAI DUOC GIAO dung duoc bo nay (`vai.so_anh_toi_thieu`).
+    # So ANH THAT toi thieu de VAI DUOC GIAO dung duoc bo nay (`role.min_images`).
     # Voi Dre con la so SLIDE toi thieu — moi slide mot anh rieng nen hai con so
-    # trung nhau, va `dre_nop`/`dre_chuan_bi` doc khoa nay theo nghia "slide".
+    # trung nhau, va `dre_submit`/`dre_prepare` doc khoa nay theo nghia "slide".
     # Voi Ethan thi KHONG trung (1 anh, 1 the): truoc 10/09/2026 cho nay luon la
     # so cua carousel nen bai cua Ethan bi bao thieu anh oan.
     toi_thieu: int
@@ -72,11 +72,11 @@ class Manifest(TypedDict, total=False):
     chu_bai: str                   # CAT con 20000 ky tu luc ghi
     so_mien: list
     cap_ghep: list
-    ghep_hai_hang: list        # M&A: cap [ma_A, ma_B] anh cua HAI hang (loai_tin.py, 12/09/2026)
+    ghep_hai_hang: list        # M&A: cap [ma_A, ma_B] anh cua HAI hang (story_type.py, 12/09/2026)
     thu_tu_anh_theo_loai: list  # loai tin -> vat duoc phep, de brief noi vi sao co logo/co/bieu do gia
     goi_y_bia: list                # ma anh goi y lam bia, XH dung dau neu co
     chua_nhin: list                # ma anh vision chua nhin duoc
-    so_dung_duoc: int              # xem `so_anh_dung_duoc` — CHUM khai niem tinh la MOT
+    so_dung_duoc: int              # xem `count_image_use_ok` — CHUM khai niem tinh la MOT
     toi_thieu_co_ban: int          # san tuyet doi CUA VAI DO, `ha san` khong xuong duoi day
     vai_anh: str                   # SLUG vai duoc giao bo anh nay ("" o manifest cu)
     tin_xep_hang: bool
@@ -85,7 +85,7 @@ class Manifest(TypedDict, total=False):
     tao_luc: int
     nguon_path: str
 
-    # --- Co dinh tuyen, chi co khi bai THIEU anh (route_thieu_anh ghi) ---
+    # --- Co dinh tuyen, chi co khi bai THIEU anh (route_missing_images ghi) ---
     thieu_anh: dict                # {"so": int, "toi_thieu": int}
     chuyen_kite: str               # task id Kite, khi engine tu chuyen
     hoi_kite: bool                 # da hoi Ong Chu bang nut
@@ -96,10 +96,10 @@ class Manifest(TypedDict, total=False):
 class Meta(TypedDict, total=False):
     """`drafts/<draft_id>.meta.json` — sinh luc Ong Chu chon tin.
 
-    HAI TIEN TRINH ghi: `duyet_chon_tin.write_meta` (8 khoa dau, ghi DE ca dict)
-    va `bang_den._ghi_meta` (chi `root_task`, chay bang python cua hermes).
+    HAI TIEN TRINH ghi: `approve_pick.write_meta` (8 khoa dau, ghi DE ca dict)
+    va `blackboard._write_meta` (chi `root_task`, chay bang python cua hermes).
     Vi write_meta ghi de chu khong merge, thu tu goi la thu duy nhat giu cho
-    `root_task` khong bi xoa — xem `hop_nhat_meta`.
+    `root_task` khong bi xoa — xem `merge_meta`.
     """
     source_url: str                # BAT BUOC (draft_write thoat neu rong)
     title: str                     # BAT BUOC
@@ -123,15 +123,15 @@ class SidecarImage(TypedDict, total=False):
     summary: str
     source_note: str
     via: str
-    chuyen_kite: str               # duyet_bai ghi khi Ong Chu bam "Gui Kite"
+    chuyen_kite: str               # approve_post ghi khi Ong Chu bam "Gui Kite"
     chuyen_tu: str
-    ly_do_chuyen: str              # duyet_bai.tao_task_kite (ADF-r2-5: tung ghi ma chua khai)
+    ly_do_chuyen: str              # approve_post.create_task_kite (ADF-r2-5: tung ghi ma chua khai)
 
 
 class SidecarWrite(TypedDict, total=False):
     """`drafts/<draft_id>.writer.json` — task viet CHI sinh khi Ong Chu bam "Duyet anh".
 
-    duyet_chon_tin.create_pair ghi 6 khoa dau; duyet_bai cap nhat `created`
+    approve_pick.create_pair ghi 6 khoa dau; approve_post cap nhat `created`
     (True khi da tao task, "rejected" khi bo han) va `writer_task`. Khong co
     TypedDict nay truoc audit lượt 2 (ADF-r2-5) — `created` nhan ba kieu ma khong
     ai khai, test_schema chi gac Manifest va Meta."""
@@ -152,7 +152,7 @@ class LineImageUsed(TypedDict):
     dhash: str
     draft_id: str
     vai: str
-    tin: str                       # khoa on dinh cua tin, xem luat_anh.khoa_tin
+    tin: str                       # khoa on dinh cua tin, xem image_rules.story_key
     ten: str
     md5: str
     luc: int                       # epoch giay, de xet cua so 14 ngay
@@ -161,8 +161,8 @@ class LineImageUsed(TypedDict):
 # ---------------------------------------------------------------- dan xuat
 # Anh NGANG thap hon nguong nay khong cat doc 4:5 duoc (con ~80% chieu cao roi
 # phong len 1080 se nhoe) — chi con duong "ghep" voi mot anh ngang khac. MOT ban
-# cho ca nguoi dem (so_anh_dung_duoc) lan cong chan (dre_nop): truoc 12/09/2026
-# dre_nop go cung 700 con nguoi dem thi khong biet, nen A5 900x600 cua tin TSMC
+# cho ca nguoi dem (so_anh_dung_duoc) lan cong chan (dre_submit): truoc 12/09/2026
+# dre_submit go cung 700 con nguoi dem thi khong biet, nen A5 900x600 cua tin TSMC
 # duoc dem la mot slide trong khi khong ai dung no mot minh duoc.
 HEIGHT_MIN_CROP_LANDSCAPE = 700
 
@@ -172,7 +172,7 @@ def _only_stack_ok(a: dict) -> bool:
     trong hai ly do:
       1. qua thap de cat doc (`h < CAO_TOI_THIEU_CAT_NGANG`), hoac
       2. la anh chup NGANG co chu/logo/so lieu de len (`cat_ngang_ok is False`
-         — vision xac nhan, xem prepare.vision.classify) nen luat_anh cam crop.
+         — vision xac nhan, xem prepare.vision.classify) nen image_rules cam crop.
     Su co 12/09/2026 lan hai (t_a8ffd2f6): Dre chay that, 4/5 anh ngang cao
     >=700 la bien hieu/logo CO CHU (khong phai chart — chart da co duong rieng
     "than, dan full be ngang"), nhung cong thuc cu chi nhin chieu cao nen dem
@@ -190,7 +190,7 @@ def _only_stack_ok(a: dict) -> bool:
 
 def _count_stackable_pairs_real(ds: list) -> int:
     """So cap ROI NHAU lon nhat trong `ds` ma moi cap ghep doc ra dung khung
-    (`luat_anh.ghep_vua_khung`, theo `ti_le` da do — khong mo tep anh).
+    (`image_rules.stack_fit_frame`, theo `ti_le` da do — khong mo tep anh).
 
     Phai la ghep cap TOI UU, khong phai tham lam: bon tam C-A-B-D ma chi A-C,
     A-B, B-D ghep duoc thi nhat A-B truoc ra 1 cap, dung ra 2 (A-C, B-D). So tam
@@ -224,23 +224,23 @@ def count_image_use_ok(anh: list) -> int:
     Dem theo cai vai DUNG DUOC, khong phai so tam tai ve:
       - chum anh KHAI NIEM chi lam bia nen ca chum dem la MOT ("5" o day la co
         Nhat, khong phai 5 slide);
-      - anh ngang QUA THAP (`_chi_ghep_duoc`) khong dung mot minh duoc, hai tam
+      - anh ngang QUA THAP (`_only_stack_ok`) khong dung mot minh duoc, hai tam
         nhu the moi ghep thanh MOT slide — mot tam le dem la 0.
     Su co 12/09/2026 (tin TSMC, t_a8ffd2f6): engine dem "5 dung duoc / toi thieu
     5" roi NGUNG TIM (bo qua vong chup trang nguon + anh khai niem) trong khi
     A5 900x600 chi ghep duoc ma khong co cap, tuc chi dung duoc 4 slide. Dre
-    block, Ong Chu phai go tay. Truoc khi gom ve day, `dre_chuan_bi` doan lai
-    bang `len([a for a in anh if a["dung"]])` — mot so KHAC — con `duyet_bai`
-    va `anh_chuan_bi` coi thieu khoa la 0. Ba cach doan cho ba ket luan.
+    block, Ong Chu phai go tay. Truoc khi gom ve day, `dre_prepare` doan lai
+    bang `len([a for a in anh if a["dung"]])` — mot so KHAC — con `approve_post`
+    va `image_prepare` coi thieu khoa la 0. Ba cach doan cho ba ket luan.
 
     LOW-46 (13/09/2026, tin TSMC lan ba, t_2d546375): cong thuc noi "du 6" ma
     Dre chi dung duoc 4 va phai block. Hai cho dem lac quan hon cong chan that:
       - `len(chi_ghep) // 2` coi BAT KY hai tam chi-ghep nao cung la mot cap —
-        A5+A10 (deu 3:2) ghep ra 0.75, ngoai dai 4:5..1:1, dre_nop chan. Nay dem
-        so cap roi nhau LON NHAT ma `luat_anh.ghep_vua_khung` cho qua;
+        A5+A10 (deu 3:2) ghep ra 0.75, ngoai dai 4:5..1:1, dre_submit chan. Nay dem
+        so cap roi nhau LON NHAT ma `image_rules.stack_fit_frame` cho qua;
       - tam co mat nguoi khong ro ai (A3) van duoc dem, trong khi
-        `nop_chung.kiem_nhan_vat` chan no. Nay bo qua qua `vai.mat_khong_ro_ai`,
-        cung dieu kien voi `vai.anh_chinh_duoc`."""
+        `submit_common.check_subject_named` chan no. Nay bo qua qua `role.face_no_clear_ai`,
+        cung dieu kien voi `role.can_be_hero`."""
     import role
     dung_duoc = [a for a in (anh or []) if a.get("dung") and a.get("lien_quan") is not False
                  and not role.face_no_clear_ai(a)]
@@ -295,7 +295,7 @@ def merge_meta(cu: dict | None, moi: dict) -> dict:
     """Tron ban meta MOI vao ban CU thay vi ghi de.
 
     `write_meta` chay hai lan cho mot bai (luc chon tin, roi luc giai xong link
-    Google News), con `bang_den` ghi `root_task` vao CUNG tep tu mot tien trinh
+    Google News), con `blackboard` ghi `root_task` vao CUNG tep tu mot tien trinh
     khac. Ghi de ca dict nghia la ai ghi sau xoa cua ai ghi truoc — hom nay chua
     mat chi vi thu tu goi tinh co dung. Tron thi khong phu thuoc thu tu nua.
 

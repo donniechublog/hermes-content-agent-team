@@ -26,13 +26,13 @@ import env_load                                              # noqa: E402
 import scan_prepare as qb                                   # noqa: E402
 import role                                                   # noqa: E402
 
-NAME = scan_common.NAME_ROLE       # mot ban duy nhat, xem quet_chung
+NAME = scan_common.NAME_ROLE       # mot ban duy nhat, xem scan_common
 
 
-# Nhan cua cac dong dang chu y trong stderr cua manifest_build / manifest_ghi.
+# Nhan cua cac dong dang chu y trong stderr cua manifest_build / manifest_write.
 # "[bo qua]" la loai NANG NHAT — mat tron mot tin — va truoc 06/09/2026 no KHONG
 # nam trong bo loc: bo loc chi nhat [canh bao] / [tu them] / dong bat dau "- ",
-# nen ca ba nhanh [bo qua] cua manifest_ghi (k ngoai danh sach, thieu title hoac
+# nen ca ba nhanh [bo qua] cua manifest_write (k ngoai danh sach, thieu title hoac
 # link, link khong phai URL) khong bao gio duoc in. Chay thu voi Vera: mot muc
 # go nham k=9 lam tin "OpenAI IPO dinh gia 900 ty USD" bien mat sach, KHONG mot
 # dong canh bao nao, rc=0, va vai ket thuc task bao "da gui bao cao".
@@ -62,7 +62,7 @@ def error_block_send(canh: list) -> list:
 
 
 def path_manifest(stdout: str):
-    """Manifest vua ghi, doc tu stdout cua manifest_ghi / manifest_build.
+    """Manifest vua ghi, doc tu stdout cua manifest_write / manifest_build.
 
     Hai script in khac nhau (`<duong dan>` va `da ghi N muc -> <duong dan>`) nen
     khong bam theo so dong: lay token cuoi cua tung dong, nhan cai nao la tep
@@ -77,14 +77,14 @@ def path_manifest(stdout: str):
 def pin_manifest(mid_tep: Path, manifest: Path) -> None:
     """Ghim duong dan manifest vao tep mid, NGAY SAU khi gui thanh cong.
 
-    Vi sao can ghim: duyet_chon_tin truoc day tu doan bang `latest_manifest`
+    Vi sao can ghim: approve_pick truoc day tu doan bang `latest_manifest`
     (ban moi nhat theo mtime). Dieu do chi dung khi moi lan ghi manifest deu
     ket thuc bang mot lan GUI — tu khi co cong CHAN_GUI thi khong con: lan chay
     bi chan van ghi manifest moi, roi Ong Chu tra loi so tren bao cao CU (mid cu
     van khop) va so do tro vao mot ban CHUA AI NHIN THAY. Ghim thi so thu tu
     luon doc tren dung ban da gui.
 
-    Best-effort: ghim hong khong duoc lam hong viec da gui xong (duyet_chon_tin
+    Best-effort: ghim hong khong duoc lam hong viec da gui xong (approve_pick
     lui ve latest_manifest nhu cu)."""
     try:
         d = json.loads(mid_tep.read_text(encoding="utf-8"))
@@ -187,7 +187,7 @@ def main() -> int:
               f"danh sach) roi chay lai: venv/bin/python scan_submit.py --vai {a.vai}")
         return 1
     print((r.stdout or "").strip()[-800:])
-    # rc=0 KHONG co nghia la sach: manifest_build/manifest_ghi van ghi manifest
+    # rc=0 KHONG co nghia la sach: manifest_build/manifest_write van ghi manifest
     # khi da cat diem ngoai dai, doi category la, bo tin trung hay cat theo tran
     # 8 tin. Truoc 06/09/2026 nhung dong do chi nam o stderr va bi nuot o day —
     # vai tuong moi thu binh thuong, Ong Chu khong bao gio biet.

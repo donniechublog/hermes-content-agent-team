@@ -5,7 +5,7 @@
 Vì sao không nhét vào hermes-dashboard: đó là dashboard của Hermes (bind
 127.0.0.1, có session token, code trong hermes-agent), không phải chỗ để thêm
 trang của đội. Cái này là http.server chuẩn Python, KHÔNG phụ thuộc gói ngoài
-nào — bảng .md tự dựng thành HTML bằng `md_sang_html` (bỏ `markdown`, audit D2)
+nào — bảng .md tự dựng thành HTML bằng `md_bright_html` (bỏ `markdown`, audit D2)
 — và CHỈ ĐỌC tệp trong state/9router/nhat_ky.
 
 Đường dẫn:
@@ -61,7 +61,7 @@ def _bold(s: str) -> str:
 
 
 def md_bright_html(tho: str) -> str:
-    """Bon cu phap markdown ma `theo_doi_9router` SINH RA: `#`/`##`, bang `|`,
+    """Bon cu phap markdown ma `monitor_9router` SINH RA: `#`/`##`, bang `|`,
     muc `- `, va `**dam**`. Khong phai bo render markdown day du (audit D2 —
     bo goi `markdown`).
 

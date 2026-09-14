@@ -13,7 +13,7 @@ mock qua `httpx.MockTransport`, boc trong mot doi tuong thay THE BINDING module-
 level `moat_publish.httpx` (khong dung cham vao module `httpx` that/sys.modules,
 nen an toan phuc hoi bang try/finally nhu moi bien khac). `moat_publish.py` chi
 co DUNG hai cho goi `httpx.Client(...)` luc chay (dong 284 trong `intake`, dong
-312 trong `_fetch_status` ma `poll()` -> `_poll_mot_bai` goi toi) -- da doi
+312 trong `_fetch_status` ma `poll()` -> `_poll_one_article` goi toi) -- da doi
 chieu bang grep truoc khi viet, nen fake object chi can mot thuoc tinh `Client`.
 
 `DRAFTS` (thu muc drafts that su) va cac ham cau hinh (`base_url`, `config`,

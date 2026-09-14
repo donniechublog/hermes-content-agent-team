@@ -54,7 +54,7 @@ def so_tam(tmp):
     Truoc 06/09/2026 bon test gan thang `la._so_da_dung = lambda: d/"s.jsonl"`
     va khong bao gio tra lai. Ca suite chay trong MOT tien trinh theo thu tu
     dinh nghia, nen tu test dau tien tro di `_used_images_log()` tro toi mot
-    TemporaryDirectory DA BI XOA: `kiem_da_dung` thay tep khong ton tai va tra
+    TemporaryDirectory DA BI XOA: `check_not_reused` thay tep khong ton tai va tra
     ve ([], []) VO DIEU KIEN. Cong "khong dung lai anh trong 14 ngay" chet im
     trong moi test sau do — ke ca test_kite_khong_ep_dung_anh_chua_nhin, von di
     qua dung cong do o kite_submit.py:88. Test xanh ma cong khong chay.

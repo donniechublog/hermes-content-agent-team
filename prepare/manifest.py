@@ -18,7 +18,7 @@ from prepare.common import ROOT, _brand_of
 
 def describe_ranking_image(m: dict) -> str:
     """Mot cau ta anh XH engine da chup, dung chung cho brief cua Ethan/Dre va cho
-    cau bao loi cua ethan_nop/dre_nop — de loi noi cung mot thu o moi noi."""
+    cau bao loi cua ethan_submit/dre_submit — de loi noi cung mot thu o moi noi."""
     xh = m.get("xep_hang") or {}
     if not xh:
         return "engine KHÔNG có ảnh xếp hạng cho bài này"
@@ -39,7 +39,7 @@ def describe_ranking_image(m: dict) -> str:
 
 def ranking_brief_line(m: dict, khoa: str, vai: str) -> str:
     """Dong 🏁 trong brief: `khoa` la "anh" (hero) hay "bìa" (carousel), `vai` la
-    ten file nop chan (ethan_nop / dre_nop)."""
+    ten file nop chan (ethan_submit / dre_submit)."""
     import ranking
     xh_ = m.get("xep_hang") or {}
     if xh_ and not ranking.is_capture(xh_.get("kieu")):
@@ -100,7 +100,7 @@ def pair_two_vendor_images(anh: list, category) -> list:
 
 def stackable_pairs(anh: list) -> list:
     """Cac cap anh NGANG ghep doc duoc: ti le sau ghep nam trong dai carousel
-    chap nhan. (13/09/2026: bo dieu kien "cung tone" — luat_anh.lech_tone
+    chap nhan. (13/09/2026: bo dieu kien "cung tone" — image_rules.tone_mismatch
     khong con la cam doan ve chat luong/nguon, moi vai.)"""
     ngang = [a for a in anh if a["ti_le"] >= 1.3]
     ra = []
@@ -192,7 +192,7 @@ def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: 
         cau_so = _tl.sentence_has_count(doan)[:25]
         tl = {"cau_co_so": cau_so, "doan_dau": " ".join(doan)[:1500],
               "so_nguon": max(tl.get("so_nguon", 0), 1), "tu": "browser"}
-        # Dung CHINH `dung_trang` de dung tep, khong tu ghep chuoi.
+        # Dung CHINH `use_page` de dung tep, khong tu ghep chuoi.
         #
         # Ban tu ghep truoc 06/09/2026 chi in cac doan van thuan, KHONG co dong
         # nao bat dau bang "- ". Ma `caption_check` tim cau nguon bang dung dau
@@ -211,15 +211,15 @@ def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: 
 
 def compute_derived(anh: list, so_xh: int = 0) -> dict:
     """Cac gia tri DAN XUAT tu bo anh: dung_duoc, chua_nhin, so_mien, so_dung_duoc,
-    goi_y_bia, cap_ghep. MOT ban cho hai nguoi goi: `dung_manifest` luc engine
-    chay xong, va `tim_anh_them.lam_moi_manifest` khi vai tim them anh sau do —
+    goi_y_bia, cap_ghep. MOT ban cho hai nguoi goi: `build_manifest` luc engine
+    chay xong, va `find_more_images.fresh_manifest` khi vai tim them anh sau do —
     khong thi manifest sau khi them anh mang so cu (12/09/2026)."""
     dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
     chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
     so_mien = sorted({(a.get("mien") or a.get("tu") or "?") for a in dung_duoc})
     # Anh khai niem chi lam bia, nen ca chum chi DEM LA MOT khi xet du/thieu:
     # 5 la co Nhat khong phai 5 slide. `so_dung_duoc` di vao brief (THIEU ANH)
-    # va co `thieu_anh` (xem _mo_ta_thieu_anh) ma route_thieu_anh doc de quyet
+    # va co `thieu_anh` (xem _mo_ta_thieu_anh) ma route_missing_images doc de quyet
     # dinh hoi Ong Chu hay chuyen Kite.
     so_dung_duoc = schema.count_image_use_ok(anh)
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
@@ -229,7 +229,7 @@ def compute_derived(anh: list, so_xh: int = 0) -> dict:
         key=lambda a: (bool(a.get("khai_niem")), bool(a.get("thuong_hieu")),
                        a["goc_trai_sang"], -a["canh_ngan"]))][:3]
     # `xhs` co the co NHIEU HON MOT (bang xep hang do nang luc khac nhau, xem
-    # `_chup_xep_hang`) — goi y het cac ma XH/XH2/... truoc anh khac; `xep_hang`
+    # `_capture_ranking`) — goi y het cac ma XH/XH2/... truoc anh khac; `xep_hang`
     # (so, dung boi cong chan/brief "bat buoc dung XH") van la BANG DAU TIEN.
     if so_xh:
         goi_y_bia = ["XH" if i == 0 else f"XH{i + 1}" for i in range(so_xh)] + goi_y_bia
@@ -240,7 +240,7 @@ def compute_derived(anh: list, so_xh: int = 0) -> dict:
 def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
                   tom: dict, wd: Path, anh: list, xhs: list, tin_xep_hang: bool, bp: dict, tl: dict,
                   flagship: bool, toi_thieu: int, vai_anh: str = "") -> dict:
-    """Manifest (xong.json) cua bai — thu ma moi *_chuan_bi va *_nop doc. Cac gia
+    """Manifest (xong.json) cua bai — thu ma moi *_prepare va *_submit doc. Cac gia
     tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
     import story_type            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
@@ -254,7 +254,7 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
          "workdir": str(wd), "tao_luc": int(time.time()),
          "flagship": flagship, "toi_thieu": toi_thieu,
          # VAI se dung bo anh nay. Ghi vao manifest de nguoi doc sau (nut "ha
-         # san" cua duyet_bai) khoi phai doan tu draft_id — va de biet goi san
+         # san" cua approve_post) khoi phai doan tu draft_id — va de biet goi san
          # pham la "slide" hay "ảnh" (su co 10/09/2026).
          "vai_anh": vai_anh,
          # San tuyet doi cua VAI DO (Dre 5 = carousel.MIN_SLIDE, Ethan 1). Ong

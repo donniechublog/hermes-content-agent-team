@@ -23,12 +23,12 @@ _HANG_DE = ("HOMES", "REPO", "PLUGIN_REPO", "FILE_UPSTREAM", "ALL_GATE_OLD",
 
 
 def _tam():
-    """Tro MOI hang duong dan cua dong_bo_hermes vao thu muc tam.
+    """Tro MOI hang duong dan cua sync_hermes vao thu muc tam.
 
     Truoc 06/09/2026 chi de HOMES/REPO/PLUGIN_REPO. Ba hang con lai
     (TEP_UPSTREAM, TAT_CONG_CU, TEP_CAU_HINH) duoc tinh TU `REPO` LUC IMPORT
-    nen de `REPO` khong lam chung doi theo: mot test cho `dong_bo_tat_cong_cu`,
-    `ghi_upstream` hay `chup_cau_hinh` se ghi THANG vao repo that
+    nen de `REPO` khong lam chung doi theo: mot test cho `sync_all_gate_old`,
+    `write_upstream` hay `chup_cau_hinh` se ghi THANG vao repo that
     (hermes/profiles/disabled_toolsets.json, hermes/plugins/kanban/UPSTREAM,
     hermes/profiles/cau_hinh_that.yaml). Cai bay do dang mo san; day dong lai.
 

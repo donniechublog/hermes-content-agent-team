@@ -10,8 +10,8 @@ nhan mot moc `after_prepare`; `route_missing_images.py` la noi duy nhat biet ca 
 Test giu HAI thu:
   1. Hanh vi dinh tuyen khong doi (bon nhanh cua ham cu).
   2. Moc chay TRONG khoa va TRUOC khi ghi `xong.json` — day la thu chan cuoc
-     dua: neu `xong.json` hien ra truoc khi dinh tuyen xong thi dre_chuan_bi /
-     kite_chuan_bi co the doc trung khe do va dung brief noi "du anh" trong khi
+     dua: neu `xong.json` hien ra truoc khi dinh tuyen xong thi dre_prepare /
+     kite_prepare co the doc trung khe do va dung brief noi "du anh" trong khi
      tin dang cho chuyen Kite.
 
 Chay:  venv/bin/python tests/test_route_thieu_anh.py
@@ -41,7 +41,7 @@ def _chay_gia(tmp, m_engine, sau_chuan_bi=None):
     """Chay cb.run() voi engine gia (khong browser/mang), tra (m, wd)."""
     wd = Path(tmp) / "wd"
     wd.mkdir(parents=True, exist_ok=True)
-    # Dung `_cho_luot` THAT: tu khi C3 them fallback khi thieu fcntl, no chay
+    # Dung `_wait_for_slot` THAT: tu khi C3 them fallback khi thieu fcntl, no chay
     # duoc ca tren Windows (khong khoa, co canh bao) nen test khong con phai
     # thay bang no-op de lach nua.
     cu = (cb.prepare_article, cb.load_meta, cb.workdir)

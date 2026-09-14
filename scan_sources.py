@@ -31,7 +31,7 @@ import required
 
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback state/)
-UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 
 MAX_AGE_HOURS = 72
 SUBS = ["MachineLearning", "LocalLLaMA", "singularity", "OpenAI", "StableDiffusion"]
@@ -255,7 +255,7 @@ def fetch_arxiv(max_results=30) -> list:
 
 # ---------- chong trung ----------
 
-# Mot ban duy nhat o quet_chung (audit 06/09/2026): ba ban chuan hoa khac nhau
+# Mot ban duy nhat o scan_common (audit 06/09/2026): ba ban chuan hoa khac nhau
 # nghia la "da thay tin nay chua" tra loi khac nhau tuy ai hoi.
 _norm_url = scan_common.standard_link
 
@@ -271,8 +271,8 @@ def seen_keys() -> set:
         for it in data.get("items", []):
             if it.get("link"):
                 keys.add(_norm_url(it["link"]))
-    # CO Y KHONG loc `.meta.json` ra khoi glob nay, khac voi theo_doi_9router.py/
-    # ada_chuan_bi.py/approve_service.py — nhung cho do quet de tim DRAFT THAT
+    # CO Y KHONG loc `.meta.json` ra khoi glob nay, khac voi monitor_9router.py/
+    # ada_prepare.py/approve_service.py — nhung cho do quet de tim DRAFT THAT
     # (doc "caption"/"status", thu ".meta.json" khong co), con o day chi doc MOT
     # truong (`source_url`) ma ".meta.json" CO (schema.Meta, bat buoc, ghi ngay
     # luc giao task — TRUOC khi vai viet xong caption). Loc no ra la mat dung
@@ -406,7 +406,7 @@ def main():
 
     # BAT BUOC (luat Ong Chu 04/09/2026): tieu de nhac hang frontier, hoac bai
     # HN/Reddit tu 150 diem tro len, la PHAI co trong manifest — Finn cham diem
-    # nhung khong duoc bo. Tich luy sang hom sau neu sot (xem bat_buoc.py).
+    # nhung khong duoc bo. Tich luy sang hom sau neu sot (xem required.py).
     muc = []
     for it in fresh:
         hang = RANK_FRONTIER.search(it["title"] or "")

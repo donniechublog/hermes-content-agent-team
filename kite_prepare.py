@@ -31,7 +31,7 @@ def handle_channel(brand: str) -> str:
     """Handle hien thi cua brand KHONG co "@" (slide cuoi tu ghep): dcgr ->
     dcgr.tech (Ong Chu 05/09/2026: slide cuoi in 'Theo doi @dcgr' vi dung thang
     slug). Mot ban o env_load.handle_kenh (ADF-r2-9) — truoc day ban nay khong
-    doi 'blog' -> 'donniechublog' nhu bob_nop."""
+    doi 'blog' -> 'donniechublog' nhu bob_submit."""
     import env_load
     return env_load.handle_channel(brand, co_a_cong=False)
 
@@ -45,15 +45,15 @@ MAX_FORCE_FIGURE = 6
 def transfer_from_role(m: dict) -> str:
     """Tên vai đã CHUYỂN tin này sang Kite vì thiếu ảnh thật ("Dre"/"Ethan"), hoặc "".
 
-    Mọi đường vào Kite đều là đường THIẾU ẢNH: `duyet_bai` chỉ gắn nút "Gửi Kite"
-    ở hai chỗ báo thiếu ảnh, và `anh_chuan_bi._route_thieu_anh` tự chuyển khi 0
-    ảnh. Cả hai đều đi qua `tao_task_kite`, nơi ghi `chuyen_tu` vào img.json —
+    Mọi đường vào Kite đều là đường THIẾU ẢNH: `approve_post` chỉ gắn nút "Gửi Kite"
+    ở hai chỗ báo thiếu ảnh, và `route_missing_images.after_prepare` tự chuyển khi 0
+    ảnh. Cả hai đều đi qua `create_task_kite`, nơi ghi `chuyen_tu` vào img.json —
     xong.json thì KHÔNG có (nút của Ông Chủ bấm sau khi engine đã ghi xong).
     """
     im = cb._read_json(cb.DRAFTS / (str(m.get("draft_id", "")) + ".img.json"), {}) or {}
     tu = im.get("chuyen_tu") or ""
     if tu:
-        return vai_mod.display_name(tu)      # ban dang ky: vai.py (audit A4)
+        return vai_mod.display_name(tu)      # ban dang ky: role.py (audit A4)
     return "vai ảnh" if (m.get("chuyen_kite") or im.get("chuyen_kite")) else ""
 
 
@@ -95,9 +95,9 @@ def figure_hero(m: dict) -> dict | None:
 
     Chi anh DA DUOC NHIN, tru hinh paper (boc thang tu PDF nen khong the la
     quang cao): vision tat thi moi anh co `lien_quan=None`, ep luc do la day
-    banner len bia — cung bai hoc voi `hinh_phai_dung`.
+    banner len bia — cung bai hoc voi `figure_right_use`.
 
-    MOT nguon cho ca brief lan cong chan (`kite_nop`).
+    MOT nguon cho ca brief lan cong chan (`kite_submit`).
     """
     ut = [a for a in figure_real(m)
           if a.get("lien_quan") is True or a.get("paper_hinh")]
@@ -107,11 +107,11 @@ def figure_hero(m: dict) -> dict | None:
     xep = ([a for a in rieng if a.get("paper_hinh")] + rieng
            + [a for a in ut if a.get("thuong_hieu")]
            + [a for a in ut if a.get("khai_niem")])
-    # Tin CHUYEN sang Kite vi thieu anh: `kite_nop` doi hinh that nam o slide
+    # Tin CHUYEN sang Kite vi thieu anh: `kite_submit` doi hinh that nam o slide
     # THAN (Ong Chu 09/09), ma cung mot anh khong len duoc hai slide
-    # (`luat_anh.kiem_trung`). Tam nao bi than giu doc quyen thi LUI xuong ung
+    # (`image_rules.check_duplicate`). Tam nao bi than giu doc quyen thi LUI xuong ung
     # vien ke tiep, de ca hai tam deu duoc dung: anh khai niem khong nam trong
-    # `_ep_tho` (§1.2c cam no o than) nen no nhan bia khi anh rieng bi than giu.
+    # `_force_raw` (§1.2c cam no o than) nen no nhan bia khi anh rieng bi than giu.
     ep = _force_raw(m)
     for chon in xep:
         if not ep or [ma for ma in ep if ma != chon["ma"]]:
@@ -120,7 +120,7 @@ def figure_hero(m: dict) -> dict | None:
     # viec dung vector o hero slide"*). Ban truoc tra None o day — than thang va
     # bia ve vector. Vong doi cua §1.2e ("phai co hinh o BODY") sinh ra tu ca
     # NHIEU tam ma Kite chi dung mot; con mot tam thi no VAN duoc dung, chi la
-    # dung o bia. `hinh_phai_dung` tru tam nay ra nen than khong doi no nua.
+    # dung o bia. `figure_right_use` tru tam nay ra nen than khong doi no nua.
     return xep[0]
 
 
@@ -130,7 +130,7 @@ def _hero_what_is(h: dict) -> tuple:
         return (f"{h['paper_hinh']} — hình mở đầu của chính paper, tấm nói nhiều nhất về bài",
                 f"{h['paper_hinh']} trong paper · via <ai>")
     if h.get("chup_nguon"):
-        # LOW-22: `phan_loai` doc anh chup trang la loai "chart" — khong co nhanh
+        # LOW-22: `classify` doc anh chup trang la loai "chart" — khong co nhanh
         # nay thi brief goi no la "bieu do/bang cua bai", vai chu thich sai.
         return (f"khối lead (ảnh chính + tít) chụp từ chính trang {h.get('mien', 'nguồn')} "
                 "ở khung điện thoại — Ông Chủ 12/09/2026: cắt lấy khối lead rồi làm bìa",
@@ -165,8 +165,8 @@ def line_hero(m: dict) -> list:
 def _force_raw(m: dict) -> list:
     """Mã hình thật bị ép vào bộ khi tin chuyển sang Kite — CHƯA trừ tấm lên bìa.
 
-    Tách khỏi `hinh_phai_dung` 10/09/2026 để cắt vòng gọi: `hinh_hero` cần biết
-    tấm nào bị thân giữ, mà `hinh_phai_dung` lại cần biết tấm nào đã lên bìa.
+    Tách khỏi `figure_right_use` 10/09/2026 để cắt vòng gọi: `figure_hero` cần biết
+    tấm nào bị thân giữ, mà `figure_right_use` lại cần biết tấm nào đã lên bìa.
     """
     if not transfer_from_role(m):
         return []
@@ -183,18 +183,18 @@ def figure_right_use(m: dict) -> list:
     Ông Chủ 09/09/2026: *"sau khi tìm được hình tốt mà vẫn ko đủ để làm và pass
     qua cho Kite thì Kite cũng phải dùng những hình đó trong body"*. Rỗng khi
     tin không phải hàng chuyển sang, hoặc chưa ai nhìn ảnh (vision tắt thì ép là
-    đẩy quảng cáo/widget lên slide — xem chú thích cùng loại ở kite_nop).
+    đẩy quảng cáo/widget lên slide — xem chú thích cùng loại ở kite_submit).
 
     KHÔNG ép **ảnh khái niệm** (§1.2c: "chỉ bìa/hero, không vào slide thân").
     Cổng này đòi mỗi mã một slide `figure` *và* ít nhất một tấm ở thân, nên để
     ảnh khái niệm lọt vào đây là ÉP nó xuống đúng chỗ luật cấm — đo 10/09/2026:
     tin chuyển sang mà chỉ có một tấm cờ nước thì đường nộp duy nhất là đặt cờ
-    vào `figure` thân. Nó rơi khỏi danh sách này và về bìa qua `hinh_hero`.
+    vào `figure` thân. Nó rơi khỏi danh sách này và về bìa qua `figure_hero`.
     Ảnh thương hiệu thì Ở LẠI: §1.2d cho nó vào thân (ảnh thật của chính hãng
     trong tin).
 
-    **Trừ tấm đã lên bìa** (`hinh_hero`): cùng một ảnh không lên được hai slide
-    (`luat_anh.kiem_trung` §8), nên để nó trong danh sách này là đòi một thứ bất
+    **Trừ tấm đã lên bìa** (`figure_hero`): cùng một ảnh không lên được hai slide
+    (`image_rules.check_duplicate` §8), nên để nó trong danh sách này là đòi một thứ bất
     khả. Hệ quả: tin chỉ có ĐÚNG MỘT tấm thì danh sách rỗng — tấm đó lên bìa và
     thân không đòi gì nữa (§1.2f, Ông Chủ 10/09/2026: không chấp nhận hero
     vector). Đòi của §1.2e sinh ra từ ca NHIỀU tấm mà Kite chỉ dùng một.
@@ -213,7 +213,7 @@ def ensure_has_cover(draft_id: str, m: dict, wd, khong_browser: bool, cho: int,
     Ông Chủ 10/09/2026: *"Dre tìm được ảnh đúng, nên kỹ năng tìm ảnh đó dùng
     được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
 
-    Đo hôm đó, cả chuỗi: (1) `anh_chuan_bi.chay` trả thẳng `xong.json` cũ khi tệp
+    Đo hôm đó, cả chuỗi: (1) `image_prepare.run` trả thẳng `xong.json` cũ khi tệp
     đã có (`if xong.exists() and not lam_moi`), (2) task body giao cho Kite chạy
     `kite_prepare.py <id>` — KHÔNG có `--lam-moi`. Nên khi tin được chuyển sang
     Kite vì thiếu ảnh, Kite **đọc lại đúng kết quả đã thất bại của vai cũ** và
@@ -255,8 +255,8 @@ def call_y_tone(title: str) -> tuple:
 def write_brief(m: dict, da_dung: dict | None) -> str:
     theme, hero, gan = call_y_tone(m["title"])
     # Khung in sẵn MỘT `figure` cho mỗi mã bắt buộc, để vai khỏi phải tự suy ra
-    # "à, ba hình thì ba slide". `hinh_phai_dung` đã trừ tấm lên bìa, nên khung
-    # không bao giờ in cùng một mã ở cả cover lẫn `figure` (`kiem_trung` chặn).
+    # "à, ba hình thì ba slide". `figure_right_use` đã trừ tấm lên bìa, nên khung
+    # không bao giờ in cùng một mã ở cả cover lẫn `figure` (`check_duplicate` chặn).
     hero_anh = figure_hero(m)
     ep_khung = figure_right_use(m)
     import brief_common
@@ -326,7 +326,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat, chi
         # CHO DUNG cua no bi gioi han (§1.2c). Danh sach nay mang tieu de "dung
         # duoc cho `figure` / bia `image`" — khong noi gi thi vai dat co nuoc
-        # vao `figure` than roi an cong chan cua kite_nop (do 10/09/2026).
+        # vao `figure` than roi an cong chan cua kite_submit (do 10/09/2026).
         kn = a.get("khai_niem") or {}
         nhan_kn = (f"🧭 ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — minh hoạ chủ đề, KHÔNG phải "
                    "ảnh của tin: CHỈ dùng ở bìa (slide 1), không vào slide thân; "
@@ -389,7 +389,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
           f"cd {ROOT} && venv/bin/python kite_submit.py {m['draft_id']}",
           "Script tự kiểm spec, dựng bằng render_edu.py (Chromium), gửi album lên topic kèm nút duyệt, ghi bàn "
           "giao cho Miles. Báo [LOI] thì sửa đúng chỗ đó trong spec.json rồi chạy lại. KHÔNG mở từng slide ra "
-          "xem, KHÔNG chạy render_edu.py/gui_telegram.py tay, KHÔNG sinh agent con, KHÔNG gửi lại."]
+          "xem, KHÔNG chạy render_edu.py/send_telegram.py tay, KHÔNG sinh agent con, KHÔNG gửi lại."]
     return "\n".join(L)
 
 

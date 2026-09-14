@@ -38,7 +38,7 @@ REQUIRED = {k: v["truong"] for k, v in render_edu.REQUIRED_KIND.items()}
 LIMIT = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
 # LOW-45 (Ong Chu 12/09/2026): "bài có 8 slide thì tối thiểu phải có 3 hình
 # thật" — 1 ảnh thật KHÁC NHAU cho mỗi 3 slide, làm tròn LÊN (8 -> 3, 6 -> 2,
-# 10 -> 4). Chi ap dung khi vong tim đủ nguồn (xem `giai_spec`).
+# 10 -> 4). Chi ap dung khi vong tim đủ nguồn (xem `resolve_spec`).
 SLIDE_NEW_IMAGE_REAL = 3
 # Chi bat dang DAN NGUON ro rang ("theo nguồn", "nguồn:") — KHONG bat blunt
 # nhu caption/readmore ben duoi, vi standfirst la van xuoi tu do (dung o ca 5
@@ -299,7 +299,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
         ra["slides"].append(s2)
 
     # Brief noi "CO n hinh that lien quan -> BAT BUOC dung it nhat mot"
-    # (kite_chuan_bi.py), nhung truoc 06/09/2026 khong cong nao kiem: vai bo qua
+    # (kite_prepare.py), nhung truoc 06/09/2026 khong cong nao kiem: vai bo qua
     # ca bang benchmark that roi ve vector, dung cai loi Ong Chu da bat 05/09
     # ("dung anh that khi engine tim duoc").
     # CHI ep khi anh DA DUOC NHIN (lien_quan is True). Vision tat/thieu
@@ -334,7 +334,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
                        "KHÔNG được vẽ hero vector. Bật vision rồi chạy lại "
                        f"`kite_prepare.py {m.get('draft_id', '<id>')} --lam-moi`.")
         else:
-            # 0 anh SAU KHI `kite_chuan_bi.bao_dam_co_bia` da tu chay lai vong
+            # 0 anh SAU KHI `kite_prepare.ensure_has_cover` da tu chay lai vong
             # tim — nen day khong con la "vai luoi", ma la vong tim that su ve
             # trang. Ong Chu 10/09/2026: "Dre tim duoc anh dung... ko co ly gi
             # ma ko tim duoc anh de bao hong" — nen dong dau tien phai la MOT
@@ -355,7 +355,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     # RONG hon cho bo nhieu slide, tranh ca dcgr Moonshot 12/09: engine tim ra 6
     # anh that (A1..A6) ma bo 8 slide chi dung DUNG MOT anh, lap lai o ca bia
     # lan than. Dem theo MA KHAC NHAU tren slide (khong theo so slide co anh) vi
-    # dung lai cung mot ma o hai slide da bi `kiem_trung` (§8) chan rieng.
+    # dung lai cung mot ma o hai slide da bi `check_duplicate` (§8) chan rieng.
     # CHI chan cung khi NGUON DU (du_nhin >= muc can) — thieu nguon that thi chi
     # canh bao, khong bay ra thu Kite khong the co.
     so_slide_moi_anh = len(slides)
@@ -397,7 +397,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     # nhat cua carousel kien thuc, ma truoc 06/09/2026 khong ai doi chieu.
     # CO Y tinh lai tu `hinh` (= kb.hinh_that(m), da loc >= 800px va bo mat
     # nguoi khong ro ai), KHONG doc thang m["chua_nhin"]: khoa do trong manifest
-    # tinh tren TOAN BO m["anh"] chua loc (chuan_bi/manifest.py), nen se ke ca
+    # tinh tren TOAN BO m["anh"] chua loc (prepare/manifest.py), nen se ke ca
     # anh nho <800px ma Kite khong bao gio dung duoc — doc thang no vao day se
     # bao "vision chưa nhìn" cho mot anh khong the thanh candidate, dung loai
     # canh bao gia da bi bat 08/09/2026 (b403ca4) o cong "nguon/via" ben tren.

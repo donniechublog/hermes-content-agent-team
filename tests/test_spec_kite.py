@@ -377,7 +377,7 @@ def test_hinh_paper_van_len_bia_du_vision_tat():
 
 def test_chuyen_kite_chi_mot_tam_thi_BIA_thang():
     """Hai cổng không được đá nhau: tin chuyển sang Kite đòi hình thật nằm ở
-    slide THÂN (09/09), mà cùng một ảnh không lên được hai slide (`kiem_trung`).
+    slide THÂN (09/09), mà cùng một ảnh không lên được hai slide (`check_duplicate`).
 
     ĐẢO NGƯỢC 10/09/2026 — Ông Chủ: "không chấp nhận việc dùng vector ở hero
     slide". Bản trước cho THÂN thắng và bìa vẽ vector. Nay BÌA thắng: đòi của
@@ -594,7 +594,7 @@ def test_hinh_chua_nhin_thi_chi_goi_y():
 
 
 def test_hinh_qua_nho_chua_nhin_khong_bi_bao_gia():
-    """kite_nop tinh "chua nhin" tu `hinh` (= kb.figure_real(m), da loc >= 800px),
+    """kite_submit tinh "chua nhin" tu `hinh` (= kb.figure_real(m), da loc >= 800px),
     KHONG doc thang m["chua_nhin"] cap manifest (tinh tren TOAN BO anh, xem
     prepare/manifest.py) — anh <800px khong bao gio la candidate cua Kite nen
     "chua nhin" cua no la nhieu, khong phai tin. Neu sau nay co ai "gon" lai
@@ -602,8 +602,8 @@ def test_hinh_qua_nho_chua_nhin_khong_bi_bao_gia():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         nho = _hinh(wd, ma="NHO", w=400, h=300, lien_quan=None)
-        # Gia lap dung khoa "chua_nhin" cap manifest nhu chuan_bi/manifest.py
-        # se ghi (tinh tren TOAN BO anh, khong loc kich thuoc) — neu kite_nop
+        # Gia lap dung khoa "chua_nhin" cap manifest nhu prepare/manifest.py
+        # se ghi (tinh tren TOAN BO anh, khong loc kich thuoc) — neu kite_submit
         # doc thang khoa nay thay vi tinh tu `hinh`, NHO se lot vao canh bao.
         _r, loi, canh = _chay(_du(), _m(wd, [nho], chua_nhin=["NHO"]), wd)
         assert not _co(canh, "chưa nhìn", "NHO"), canh

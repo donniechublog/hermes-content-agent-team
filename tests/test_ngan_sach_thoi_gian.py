@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LOW-25 (12/09/2026): ngan sach thoi gian theo vai + tran cho `_cho_luot`, va
+"""LOW-25 (12/09/2026): ngan sach thoi gian theo vai + tran cho `_wait_for_slot`, va
 bat bien "hen gio trong < hen gio ngoai" (INV-4).
 
 Do may chu 14 ngay: dre/kite p95 ~23 phut, sat tran 25m dung chung; ethan <= 8.

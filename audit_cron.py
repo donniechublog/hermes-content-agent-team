@@ -217,7 +217,7 @@ def use_story(van_de, tong, thieu, ngay: str, so_brand: int) -> str:
     MOI phan bien doi deu qua `html.escape`: `last_error` la stderr cua script,
     va mot dong stderr co `<` (vi du `<stdin>`, `Traceback ... <module>`) se
     lam Telegram tu choi CA tin voi loi parse HTML — tuc dung hom co loi thi
-    canh bao bien mat, dung nhu cai loi da sua o nhat_ky_web (06/09/2026)."""
+    canh bao bien mat, dung nhu cai loi da sua o journal_web (06/09/2026)."""
     e = html.escape
     dong = [f"<b>🔧 Soát cron sáng {e(ngay)}</b>", ""]
     for m in sorted(van_de, key=lambda x: (x["muc"] != "HONG", x["brand"], x["ten"])):

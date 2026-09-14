@@ -117,7 +117,7 @@ def try_small_commons(url: str, w: int, h: int) -> tuple:
 
 
 def filter_openverse(kq: dict, tu_khoa: str, so: int) -> list:
-    """Bien ket qua Openverse thanh ung vien cho `tai_va_loc`. Tach rieng de test
+    """Bien ket qua Openverse thanh ung vien cho `download_and_filter`. Tach rieng de test
     khong can mang. Chi giay phep CC dung duoc, chi anh du lon, JPEG/PNG."""
     ra = []
     for r in (kq or {}).get("results") or []:

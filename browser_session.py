@@ -2,7 +2,7 @@
 """Mot phien Chromium dung chung cho ca mot bai (audit_content_team B4).
 
 Vi sao: engine mo toi BON tien trinh Chromium cho MOT bai — browser_pass (boc
-anh trong trang), nguon_bai.giai_ma_gnews (theo chuyen huong Google News), va
+anh trong trang), article_sources.resolve_code_gnews (theo chuyen huong Google News), va
 xep_hang co the chup HAI lan (bang cua tin xep hang, roi bang lam boi canh cho
 tin thuong). Moi lan launch ton 1-2s va vai tram MB, trong khi ca bon deu chay
 noi tiep trong cung mot tien trinh engine.
@@ -33,7 +33,7 @@ mot cho `settle` thanh cho doi selector roi lam anh chup vo:
   3. Cho Cloudflare/interstitial kip hien de doc `page.title()` (2 cho):
      ranking.py:994,1015. Doi mot dieu kien o day la doi chinh cai minh dang
      dinh phat hien.
-  4. `xep_hang._doi_bang:457` nhin thi tuong thay duoc bang `wait_for_selector`
+  4. `ranking._change_board:457` nhin thi tuong thay duoc bang `wait_for_selector`
      theo dung selector o dong 461 — nhung 1200ms do la settle TRUOC khi bat
      dau do, bo di la doi thoi diem kiem DOM lan dau. Docstring ngay tren no
      ghi "Cho co dinh 6s la danh bac": cho nay ho da bi timing can mot lan roi.
@@ -46,7 +46,7 @@ Dung:
         with phien.trang(viewport={"width": 1600, "height": 1200}) as page:
             page.goto(...)
 
-Ham nao nhan `phien` tuy chon thi dung `phien_hoac_moi`:
+Ham nao nhan `phien` tuy chon thi dung `session_or_new`:
     with phien_hoac_moi(phien) as ph:      # phien=None -> tu mo, tu dong
         with ph.trang() as page:
             ...
@@ -62,7 +62,7 @@ ARGS_DEFAULT = ("--no-sandbox", "--disable-dev-shm-usage")
 # 12/09/2026): "vao trang nao chup thi cung hay duyet theo kich thuoc mobile, vi
 # hinh luon dang o ratio 4:5". 414px * DPR 3 = 1242px, gan khop kho the 1200px
 # nen chu gan nhu khong bi co; desktop 2400 * DPR 2 = 4800px phai co bon lan.
-# O day chu khong o xep_hang.py: tu 12/09 ca `chup_trang` (chup trang nguon lam
+# O day chu khong o ranking.py: tu 12/09 ca `capture_page` (chup trang nguon lam
 # anh bia) lan `xep_hang` (chup bang) cung dung, chep doi thi mot ngay nao do
 # hai cho lech nhau ma khong ai thay.
 MOBILE_VIEWPORT = {"width": 414, "height": 896}
@@ -72,7 +72,7 @@ MOBILE_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit
 
 # TUONG CHAN BOT: khong phai noi dung trang, va KHONG duoc co vuot qua — chi
 # nhan ra roi bo nguon do. Truoc 12/09/2026 phep thu nay nam inline trong
-# `xep_hang._thu_nguon`; `chup_trang` chup lead khong co no nen mot trang chan
+# `ranking._try_source`; `capture_page` chup lead khong co no nen mot trang chan
 # bot ra tam anh "Let's confirm you are human" chay thang len bia (do that tren
 # arstechnica 12/09).
 CODE_BLOCK = (403, 429, 503)
@@ -122,7 +122,7 @@ class BrowserSession:
             b = self._browser.get(khoa)
             # Browser chet giua bai (Chromium crash/OOM, bi kill) ma van nam
             # trong cache thi MOI buoc sau cua cung bai deu TargetClosedError —
-            # anh_chuan_bi dung MOT phien cho ca 5 buoc, nen truoc B4 mot crash
+            # image_prepare dung MOT phien cho ca 5 buoc, nen truoc B4 mot crash
             # chi mat mot buoc, sau B4 mat ca gnews/xep_hang/vong_bu (audit
             # lượt 2, N-r2-1). Mo lai thay vi tra xac.
             if b is not None and not b.is_connected():

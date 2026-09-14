@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""render_edu.py — hop dong tra ve cua `anh_lam_nen` + chon theme theo mau anh.
+"""render_edu.py — hop dong tra ve cua `image_make_background` + chon theme theo mau anh.
 
 HAI LOP GUARDRAIL chong len nhau o day, de rieng vi hai doi lan khac nhau:
 
-1. `anh_lam_nen` phai RETURN o moi nhanh (09/09/2026). Commit e883880 viet lai
+1. `image_make_background` phai RETURN o moi nhanh (09/09/2026). Commit e883880 viet lai
    ham nay nhung lam ROI cau `return` cuoi cung — nhanh "anh chup ma vung duoi
    chu THAT SU roi" build xong roi RA KHOI HAM khong return, Python tra ve None
-   ngam. Moi noi goi (`_cover_anh`, `s_figure`) deu unpack; gap None thi
+   ngam. Moi noi goi (`_cover_image`, `s_figure`) deu unpack; gap None thi
    `TypeError: cannot unpack non-iterable NoneType object` — sap tat ca cong
    chan roi den thang Chromium trong `render()`. Khong ai bat duoc vi hai nhanh
    con lai co return rieng ngay tai cho, chi nhanh "mo VA roi" (dung loai anh

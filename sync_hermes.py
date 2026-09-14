@@ -38,7 +38,7 @@ import env_load
 
 ROOT = env_load.ROOT
 REPO = ROOT / "hermes"
-# Moi brand mot home rieng. Khai bao o env_load (soat_cron.py cung doc bang do
+# Moi brand mot home rieng. Khai bao o env_load (audit_cron.py cung doc bang do
 # — hai ban sao thi them brand la sua hai cho, quen mot cho la bo sot ca brand).
 HOMES = env_load.hermes_homes()
 

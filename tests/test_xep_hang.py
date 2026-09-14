@@ -9,14 +9,14 @@ cau lang (khong loi, chi la khong bao gio ra anh dung):
     xac nhan bang WebFetch truoc khi them, board that, 55 model, du lieu khop
     hoan toan anh Ong Chu gui (sunburst 1520, flare 1491, gpt-image-2 medium 1461).
   - `_DUOI` khong co "Sunburst"/"Flare" (ten ma cua HAI bien the CUNG mot ho tren
-    CUNG mot bang) nen `tach_model` dung o "GPT Image 2.5" — khop nhap nhang ca
+    CUNG mot bang) nen `extract_model` dung o "GPT Image 2.5" — khop nhap nhang ca
     hai hang, engine khoanh hang nao tim thay truoc bat ke tin noi ve bien the nao.
 
 Sau khi sua xong ca hai, Ong Chu bac lai de xuat "chi lay MOT anh xep hang moi
-tin" (ban dau cua `tim_va_chup`): *"đã làm social media thì làm gì có chuyện bị
+tin" (ban dau cua `find_and_capture`): *"đã làm social media thì làm gì có chuyện bị
 giới hạn ở nguồn tư liệu"*, và hai bang vi du *"một bảng là top model tạo sinh,
-một bảng là top model chỉnh sửa, đâu có trùng lặp"*. `tim_va_chup_nhieu` +
-`_bo_qua_nguon` la ket qua: nguon `doc_lap: True` (nang luc rieng, khong phai
+một bảng là top model chỉnh sửa, đâu có trùng lặp"*. `find_and_capture_many` +
+`_skip_source` la ket qua: nguon `doc_lap: True` (nang luc rieng, khong phai
 cach do khac cua cung mot thu) khong bao gio bi mot thanh cong khac chan lai.
 
 Chay:  venv/bin/python tests/test_xep_hang.py
@@ -129,7 +129,7 @@ def test_hai_nguon_doc_lap_khong_chan_nhau():
 def test_nguon_thuong_dung_sau_thanh_cong_dau_tien():
     """arena-code/swebench/aider/livecodebench la BON CACH DO cua CUNG mot nang
     luc — thanh cong o mot nguon THUONG phai chan cac nguon THUONG con lai,
-    dung hanh vi cu cua `tim_va_chup` (khong lap lai cung mot bang chung)."""
+    dung hanh vi cu cua `find_and_capture` (khong lap lai cung mot bang chung)."""
     code = {"ma": "arena-code"}                          # khong doc_lap
     swebench = {"ma": "swebench"}
     assert xh._skip_source(code, da_chup_thuong=False) is False
@@ -186,7 +186,7 @@ def test_ca_ba_bang_anh_cua_gpt_image_2_5():
 
 
 def test_khong_doi_hop_dong_tim_va_chup_cu():
-    """`tim_va_chup` (so, khong "_nhieu") phai con nguyen — `_xep_hang_boi_canh`
+    """`find_and_capture` (so, khong "_nhieu") phai con nguyen — `_ranking_context_edge`
     trong image_prepare.py va CLI main() van goi ham nay, doi dung MOT dict."""
     import inspect
     sig = inspect.signature(xh.find_and_capture)

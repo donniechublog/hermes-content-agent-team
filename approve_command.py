@@ -64,7 +64,7 @@ def _url_valid(url):
         return "URL không đọc được."
     if p.scheme not in ("http", "https") or not p.hostname:
         return "URL phải là http/https đầy đủ."
-    # `quet_chung.host_noi_bo` la MOT cong cho ca day chuyen: `_HOST_CAM` o tren
+    # `scan_common.host_say_drop` la MOT cong cho ca day chuyen: `_HOST_CAM` o tren
     # chi so khop chuoi nen bo lot "127.1", "2130706433" va "[::1]". Giu ca hai
     # cho ro y dinh; ban chung moi la ban quyet dinh.
     if _HOST_CAM.search(p.hostname) or scan_common.host_say_drop(p.hostname):
@@ -110,7 +110,7 @@ def _read_page(url):
 # link Facebook sinh ra task tieu de "Nguyen Doan Tung" voi brief rong (su co
 # 08/09/2026, task t_905914b6).
 #
-# Cua goi chung nam o social_post.py — anh_chuan_bi.py cung goi dung cua do de
+# Cua goi chung nam o social_post.py — image_prepare.py cung goi dung cua do de
 # lay ANH cua post. Dung viet lai o day.
 
 
@@ -119,7 +119,7 @@ def _read_social(url):
     khi khong lay duoc — goi la de goi y roi ve _doc_trang, khong chan lenh.
 
     Khong tai anh ve o buoc nay: /bai chi can mot link de dien vao the. Anh that
-    cho slide do image_prepare.py tai (`ung_vien_social`) khi dung brief, boi luc
+    cho slide do image_prepare.py tai (`candidate_social`) khi dung brief, boi luc
     do moi co thu muc lam viec cua draft."""
     import social_post
     d = social_post.read(url, in_log=lambda t: log("bai", t))
@@ -233,7 +233,7 @@ def _command_article(tra_loi, args):
     ten_hien = NAME_ROLE_IMAGE.get(vai_anh, "Ethan")
     # Ong Chu 08/09/2026: bo cum "X viet caption sau khi duyet anh" — thua, ai
     # cung biet quy trinh, khong can nhac lai moi lan giao task. Cung luat voi
-    # duyet_chon_tin.py (bao cao chon tin) — sot lai o day vi hai cho viet rieng.
+    # approve_pick.py (bao cao chon tin) — sot lai o day vi hai cho viet rieng.
     dong = ("✅ <b>" + html_escape(title) + "</b>\n"
             + f"{ten_hien} dựng ảnh ({brand}) — task {tid}")
     if ghi_chu:

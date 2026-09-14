@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """`image_rules.count_faces` phải cho cùng kết quả khi gọi từ nhiều luồng (audit lượt 2, B-r2-1).
 
-B2 (ca167c3) đưa `phan_loai` vào ThreadPoolExecutor 4 luồng, và khoá `_YUNET_LOCK`
+B2 (ca167c3) đưa `classify` vào ThreadPoolExecutor 4 luồng, và khoá `_YUNET_LOCK`
 chỉ bảo vệ lúc NẠP model. Một `cv2.FaceDetectorYN` dùng chung thì không
 thread-safe khi DÙNG: `setInputSize` của luồng này chen giữa `setInputSize` và
 `detect` của luồng kia → cv2 ném → `None`. Đo 09/09/2026 với 24 ảnh KHÁC CỠ, 4

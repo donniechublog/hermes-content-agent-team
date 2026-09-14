@@ -7,8 +7,8 @@ xếp hạng": *"đã làm social media thì làm gì có chuyện bị giới h
 liệu"*, và hai bảng ví dụ *"một bảng là top model tạo sinh, một bảng là top
 model chỉnh sửa, đâu có trùng lặp"*. `ranking.find_and_capture_many` (test riêng
 ở tests/test_xep_hang.py) lo phần CHỤP; tệp này test phần MANG VÀO MANIFEST —
-`image_prepare._gom_va_tai_anh` gắn mã XH/XH2, `dung_manifest` gộp vào
-goi_y_bia/so_xep_hang, `dong_brief_xep_hang` nói cho vai biết có tấm thứ hai.
+`image_prepare._gom_va_tai_anh` gắn mã XH/XH2, `build_manifest` gộp vào
+goi_y_bia/so_xep_hang, `ranking_brief_line` nói cho vai biết có tấm thứ hai.
 
 Chay:  venv/bin/python tests/test_xep_hang_nhieu.py
 """
@@ -39,7 +39,7 @@ def _a(ma, xep_hang=None, dung=None, ti_le=0.8):
 
 
 # -------------------------------------------------- _anh_muc_xep_hang: gan ma
-# `_gom_va_tai_anh` goi mang that (anh_bai, arxiv_hinh...) nen khong goi thang o
+# `_gather_and_download_image` goi mang that (article_images, arxiv_figures...) nen khong goi thang o
 # day — no chi la mot vong lap `for i, xh in enumerate(xhs): anh.insert(i,
 # _anh_muc_xep_hang(i, xh))` quanh ham thuan duoi, test dung ham thuan la du.
 def test_anh_muc_xep_hang_danh_ma_dung_theo_vi_tri():
@@ -119,7 +119,7 @@ def test_brief_noi_ro_co_bang_thu_hai():
                       "model": "GPT-Image-2.5 Sunburst", "hang": 1, "kieu": "bang",
                       "duoc_nhac": True},
          "so_xep_hang": 2}
-    dong = cb.ranking_brief_line(m, "bìa", "dre_nop")
+    dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
     assert "XH2" in dong, dong
     assert "BẮT BUỘC" in dong
 
@@ -129,7 +129,7 @@ def test_brief_mot_bang_khong_nhac_xh2():
          "xep_hang": {"site": "ARENA.AI", "bang": "Text Arena", "model": "Kimi-K3",
                       "hang": 1, "kieu": "bang", "duoc_nhac": True},
          "so_xep_hang": 1}
-    dong = cb.ranking_brief_line(m, "bìa", "dre_nop")
+    dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
     assert "XH2" not in dong, dong
 
 

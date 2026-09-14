@@ -176,7 +176,7 @@ flowchart TD
     subgraph S1["1 · QUÉT TIN"]
         cron1{{"cron 05:00 VN"}}:::cron
         scan["scan_prepare.py --vai scout|nova|market<br/>Finn / Nova / Vera"]:::container
-        manifest["manifest_chung/_build/_ghi<br/>+ required.py"]:::container
+        manifest["manifest_common/_build/_write<br/>+ required.py"]:::container
         candidates[("candidates_*.json")]:::datastore
         cron1 -.-> scan
         scan --> manifest
@@ -192,7 +192,7 @@ flowchart TD
     end
 
     subgraph S3["3 · TẠO CẶP TASK"]
-        pair["duyet_chon_tin.create_pair<br/>chạy nền anh_chuan_bi --im"]:::container
+        pair["approve_pick.create_pair<br/>chạy nền image_prepare --im"]:::container
         kanban["Kanban swarm (Hermes)<br/>task ảnh → task viết (chờ ảnh)"]:::external
         blackboard["blackboard.py<br/>ghi bảng đen (tao_root/ghi_nen)"]:::container
         chontin --> pair
@@ -287,7 +287,7 @@ sequenceDiagram
     participant CR as "Cron 05:00"
     participant SC as "Vai quét (Finn/Nova/Vera)"
     participant AP as "approve_service"
-    participant PR as "anh_chuan_bi (engine)"
+    participant PR as "image_prepare (engine)"
     participant IR as "Vai ảnh (vd Ethan)"
     participant MI as "Vai viết (Miles/Jika)"
     participant LLM as "9router → DeepSeek"
@@ -301,8 +301,8 @@ sequenceDiagram
     OC->>TG: trả lời số thứ tự đã chọn
     TG->>AP: forward lệnh chọn số
     AP->>AP: create_pair() — task ảnh + task viết (viết chờ ảnh)
-    Note over AP: chốt AI viết theo VAI QUÉT (vai.vai_viet_cua)<br/>ghi vào drafts/{id}.writer.json
-    AP->>PR: chạy nền anh_chuan_bi --im
+    Note over AP: chốt AI viết theo VAI QUÉT (role.writer_for)<br/>ghi vào drafts/{id}.writer.json
+    AP->>PR: chạy nền image_prepare --im
     PR-->>AP: xong.json + bang_anh.png
     AP->>IR: task dựng ảnh (đọc xong.json)
     IR-->>AP: drafts/{id}.img.json + ban_giao.md
@@ -315,7 +315,7 @@ sequenceDiagram
 
     alt Duyệt
         OC->>TG: bấm ✅
-        TG->>AP: callback duyệt (duyet_bai)
+        TG->>AP: callback duyệt (approve_post)
         AP->>PB: publish.py đăng bài
         PB->>TG: đăng lên channel
         AP->>MO: moat_publish.intake() đẩy bài
@@ -325,7 +325,7 @@ sequenceDiagram
         AP->>TG: báo trạng thái (topic vai viết)
     else Bỏ
         OC->>TG: bấm ❌
-        TG->>AP: callback bỏ (duyet_bai)
+        TG->>AP: callback bỏ (approve_post)
         AP->>AP: đánh dấu bỏ — dừng ở đây
     end
 ```
@@ -345,20 +345,20 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
   (`jika`), Vera → Miles (`miles`). Hai vai viết không bao giờ cùng nằm
   trong một container, đúng như `finn` chỉ có ở blog và `vera` chỉ có ở dcgr.
   Quyết định chốt **một lần** lúc chọn tin và nằm trong `drafts/{id}.writer.json`;
-  `miles_nop`/`approve_service push` đọc lại chỗ đó (qua
-  `nop_chung.vai_viet_cua_bai`) thay vì đoán lại — đoán lại là bài của blog rơi
+  `miles_submit`/`approve_service push` đọc lại chỗ đó (qua
+  `submit_common.writer_for_article`) thay vì đoán lại — đoán lại là bài của blog rơi
   vào topic của Miles mà không cổng nào báo lỗi.
 - `hermes_adapter.py` — mọi SQL vào `kanban.db` và `profiles/*/state.db` của
-  hermes; `kiem_hermes.COT_CAN*` dẫn xuất cột từ đây.
+  hermes; `check_hermes.COLUMN_CAN*` dẫn xuất cột từ đây.
 - `schema.py` — hợp đồng dữ liệu (`Manifest`, `Meta`, `SidecarAnh`,
-  `SidecarViet`), `doc_manifest` nâng bản cũ, `hop_nhat_meta` trộn thay vì ghi
+  `SidecarViet`), `read_manifest` nâng bản cũ, `merge_meta` trộn thay vì ghi
   đè `.meta.json` (tệp ba tiến trình cùng ghi).
 - `route_missing_images.py` — tầng ghép nối giữa engine (stage 4) và duyệt (stage 6):
   engine chỉ mô tả thiếu ảnh, tầng này quyết định hỏi Ông Chủ / chuyển Kite.
   "Thiếu" đo theo ngưỡng của **vai được giao**, nên bài 2 ảnh là đủ với Ethan
   và vẫn thiếu với Dre.
-- `chuan_bi/` — engine `image_prepare.py` tách thành gói theo pha
-  (`nguon → browser → tai_loc → nhin → vong_bu → manifest`); `image_prepare.py`
+- `prepare/` — engine `image_prepare.py` tách thành gói theo pha
+  (`nguon → browser → download_filter → nhin → fallback_rounds → manifest`); `image_prepare.py`
   còn là mặt tiền + CLI.
 
 ## Bảo trì sơ đồ

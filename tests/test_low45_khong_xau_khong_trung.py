@@ -5,17 +5,17 @@ MỘT ảnh (Bloomberg/Getty chụp App Store của Kimi K3) cho cả bìa lẫn
 ảnh xấu, ko ảnh trùng, bài có 8 slide thì tối thiểu phải có 3 hình thật."*
 
 Đo trên máy chủ 12/09: hai vòng quét trang ĐỘC LẬP cùng chụp lại đúng ảnh hero
-của bài TechCrunch — `_lay_anh_trang` (prepare/browser.py, coi mọi `<figure>`
-là ứng viên chart) và `_vong_chup_nguon` (LOW-22, tự tìm hero khung mobile) —
+của bài TechCrunch — `_take_image_page` (prepare/browser.py, coi mọi `<figure>`
+là ứng viên chart) và `_round_capture_source` (LOW-22, tự tìm hero khung mobile) —
 ra hai crop khác hash (dHash cách nhau 22 bit, KHÔNG bắt được bằng gần-giống)
 nên `image_rules.check_duplicate` (md5 tuyệt đối) cũng không bắt được. Ba nhóm test,
 mỗi nhóm FAIL trên code cũ:
 
-  1. `_lay_anh_trang` không còn chụp `<figure>` thuần ảnh biên tập (chặn tại
+  1. `_take_image_page` không còn chụp `<figure>` thuần ảnh biên tập (chặn tại
      NGUỒN thay vì cố dò trùng SAU khi đã có hai crop khác nhau — dHash đo
      thật không đủ nhạy cho ca này).
   2. Câu hỏi con mắt MẶC ĐỊNH (đường "ảnh riêng của tin") có điều kiện rõ nét/
-     không chụp góc nghiêng, đồng bộ với `anh_thuong_hieu`/`anh_khai_niem`.
+     không chụp góc nghiêng, đồng bộ với `image_brand`/`image_concept`.
   3. `kite_submit.resolve_spec` chặn khi bộ nhiều slide dùng quá ít ảnh thật khác
      nhau (8 slide → tối thiểu 3), NHƯNG chỉ khi vòng tìm đủ nguồn.
 
@@ -39,7 +39,7 @@ from test_spec_kite import _cover, _statement, _hinh, _m, _chay  # noqa: E402
 def test_js_fig_bo_qua_figure_thuan_anh_khong_co_chart_ben_trong():
     """`<figure><img><figcaption>...</figcaption></figure>` (ảnh báo + credit,
     đúng khuôn TechCrunch bọc ảnh hero của Moonshot/Kimi) không còn được
-    `_lay_anh_trang` coi là ứng viên chart — chỉ `<figure>` bọc canvas/svg/table
+    `_take_image_page` coi là ứng viên chart — chỉ `<figure>` bọc canvas/svg/table
     (chart thật) mới còn được chụp."""
     js = browser._js_browser()["FIG"]
     assert "el.querySelector('canvas, svg, table')" in js, js
@@ -73,7 +73,7 @@ def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
     """LOW-45 (13/09/2026) — đúng ảnh Getty chụp nghiêng App Store của Kimi K3
     (đã chặn ở JS_FIG + _vong_chup_nguon) lọt qua LẦN THỨ BA qua một đường khác
     hẳn: nhánh "anh bối cảnh" của `image_brand.sentence_ask_vision` (dùng khi
-    Commons/Wikidata rỗng, `_bao_thuong_hieu_rong` tìm ảnh qua báo) chưa từng
+    Commons/Wikidata rỗng, `_report_brand_empty` tìm ảnh qua báo) chưa từng
     có cụm này. Một hằng số dùng chung (`image_rules.IMAGE_PHRASES_SCREENSHOT`),
     mọi câu hỏi con mắt đều chèn — đóng cả lớp thay vì vá từng đường một."""
     import image_rules

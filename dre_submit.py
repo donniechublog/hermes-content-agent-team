@@ -5,13 +5,13 @@ da viet copy vao spec.json (khung do dre_prepare.py in ra).
 Vai chi dien CHU + MA ANH (A1, A2...). Tep nay:
   1. Doi ma anh -> tep da cat san (san/), hoac anh goc + "chart": true, hoac
      ghep doc hai anh ngang ("ghep"), hoac cat be ngang anh nguoi/san pham
-     ("cat_ngang") qua crop_ti_le co dau vet.
+     ("cat_ngang") qua crop_ratio co dau vet.
   2. Kiem nhung loi ma vai hay mac TRUOC khi ve (ma anh sai, dung mot anh hai
      lan, chart lam bia, anh ngang khong ghep, mat nguoi khong khai nhan_vat,
      lam lai ma giu bia/hook cu) — bao gon, chi dung cho can sua.
   3. Xoa slide cu (lam lai ma it slide hon thi draft_write se gom nham slide
      thua vao album), chay carousel.py (moi cong chan chu/anh/bo cuc nam o do).
-  4. Gui album len topic `carousel` kem nut Duyet (gui_telegram.post) — chong gui
+  4. Gui album len topic `carousel` kem nut Duyet (send_telegram.post) — chong gui
      trung 30 phut co san ben do.
   5. Ghi ban giao cho Miles (`drafts/<id>.ban_giao.md`: link that, nguon tung
      anh) — approve_service dan vao task viet khi Ong Chu bam Duyet, vai khong
@@ -46,7 +46,7 @@ class Context:
     """Bo dem dung chung khi giai MOT spec: cac hang so cua bai, cong voi ba cai
     tich luy ma tung slide deu ghi vao (`loi`, `da_dung`, `dung_anh`).
 
-    Vi sao la mot doi tuong chu khong phai bien cuc bo cua `giai_spec`: phan
+    Vi sao la mot doi tuong chu khong phai bien cuc bo cua `resolve_spec`: phan
     giai mot slide dai 110 dong va co hai nhanh lon (ghep doc / anh don), nen no
     phai tach ra thanh ham rieng — ma tach ra thi ba cai tich luy do khong con
     la bien dong kin nua. Gom mot cho de khong phai truyen sau tham so lac nhau
@@ -74,7 +74,7 @@ class Context:
                 "không dùng, chọn mã khác hoặc gộp ý/giảm slide")
 
     def kiem_mat(self, ma_ds, muc: dict, nhan: str) -> None:
-        # Cong chan nam o nop_chung de Ethan dung chung dung mot ban (06/09/2026).
+        # Cong chan nam o submit_common de Ethan dung chung dung mot ban (06/09/2026).
         self.loi.extend(nc.check_subject_named(self.anh, ma_ds, muc.get("nhan_vat"),
                                          self.chu_bai, f"{nhan}: "))
 
@@ -98,7 +98,7 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
         rc = image_rules.ratio_after_stack(r1, r2)
         bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
                       f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
-    # Cong lech tone (`luat_anh.lech_tone`) da bo khoi he thong (Ong Chu
+    # Cong lech tone (`image_rules.tone_mismatch`) da bo khoi he thong (Ong Chu
     # 13/09/2026): bo cam doan ve nguon/chat luong nay, moi vai.
     bo.kiem_mat(ghep, muc, nhan)
     bo.dung_anh.append((nhan, list(ghep)))
@@ -116,7 +116,7 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
     bo.kiem_lien_quan([ma], nhan)
     a, ra = bo.anh[ma], {}
     # Dieu kien "tin xep hang ma bia khong phai bang" dung chung voi Ethan
-    # (nop_chung.can_anh_xep_hang — xem lich su hoi quy o do).
+    # (submit_common.needs_ranking_image — xem lich su hoi quy o do).
     if la_bia and nc.needs_ranking_image(m, a):
         bo.loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
                       f"Bìa dùng \"anh\": \"XH\" — " + cb.describe_ranking_image(m) + ".")
@@ -195,11 +195,11 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     """Dich spec cua vai (ma anh) -> spec cua carousel.py (duong dan). Tra ve
     (spec_carousel, loi, canh, dung_anh) — dung_anh: [(slide_nhan, [ma...])].
 
-    Tach thanh `_Boi` + `_giai_ghep`/`_giai_don`/`_giai_muc` ngay 07/09/2026:
+    Tach thanh `_Boi` + `_resolve_stack`/`_resolve_single`/`_resolve_item` ngay 07/09/2026:
     ban cu la 166 dong voi 36 nhanh trong mot ham, va la cho DUY NHAT kiem spec
     cua Dre truoc khi ve. Phan lon luat trong day la luat Ong Chu dat sau mot su
-    co that, ma khong luat nao co test — `test_cong_chan` nhac `bob_nop` 19 lan,
-    `dre_nop` mot lan. Nay o `tests/test_spec_dre.py`.
+    co that, ma khong luat nao co test — `test_cong_chan` nhac `bob_submit` 19 lan,
+    `dre_submit` mot lan. Nay o `tests/test_spec_dre.py`.
     """
     bo = Context(m, wd)
     loi = bo.loi

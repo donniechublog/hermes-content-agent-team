@@ -78,7 +78,7 @@ def test_main_kiem_lech_ban_ke_khai():
 
 
 def test_khong_in_bat_buoc_hai_lan():
-    """quet_chuan_bi PHAI goi scan_models voi --khong-bat-buoc, vi chinh no da
+    """scan_prepare PHAI goi scan_models voi --khong-bat-buoc, vi chinh no da
     in danh sach do mot lan roi (qua _required, nam NGOAI vung cat)."""
     src = (ROOT / "scan_prepare.py").read_text(encoding="utf-8")
     i = src.find("def brief_nova")
@@ -208,7 +208,7 @@ def test_moi_fetcher_trong_main_deu_qua_hang_rao():
 # ---------------------------------------------------------------- ban dang ky
 # Tu 07/09/2026 sau cho khai bang (ARENA_BOARDS, KHOA_BANG, NHAN_BANG, LINK_BANG,
 # khoi in trong _in_bao_cao, phan `ket` cua cac bang top) deu dan xuat tu
-# bang_model.BANG. Ba test dau cua tep nay gio la hien nhien — giu lai lam
+# model_boards.BOARD. Ba test dau cua tep nay gio la hien nhien — giu lai lam
 # cong, nhung cai can canh chuyen sang chinh ban dang ky.
 def test_ban_dang_ky_moi_bang_du_truong():
     import model_boards as bm

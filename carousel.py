@@ -318,7 +318,7 @@ BACKGROUND_FALL_SPREAD = 180        # dai smoothstep toi da tu anh sang nen dac
 def _background_solid_below_text(canvas, text_top):
     """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
     cua text phai lam cho nghiem chinh, dung nham nho"). Lop mo+tinh cua
-    `_lop_neu_can` bi tran TOI_TOI_DA (~55%) va chi mo ban kinh BLUR_RADIUS —
+    `_layer_if_can` bi tran TOI_TOI_DA (~55%) va chi mo ban kinh BLUR_RADIUS —
     tren anh co chu in san (do that: do hoa "Nvidia Weighs $10B...") chu cu van
     lo lem nhem sau cau quote. O day: nen DAC mau BG tu khoang lang gan nhat
     phia tren dong chu (`card._moc_nen_dac`, dung chung voi the Ethan) xuong
@@ -573,7 +573,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
 
 # ---- Cong chan tam co tin ------------------------------------------------
 # San tuyet doi cua mot bo carousel (ke ca bia). Duoi muc nay thi khong con la
-# carousel — tin mot tang de Ethan dung mot the hero. anh_chuan_bi doc hang so
+# carousel — tin mot tang de Ethan dung mot the hero. image_prepare doc hang so
 # nay (khong chep so 5) va ghi vao xong.json de approve_service biet ha san toi
 # dau khi Ong Chu bam "lam voi N anh".
 # Ong Chu 12/09/2026: "ha flagship xuong 7, tin thuong giu 6" — hoi vi sao Dre doi 8
@@ -621,7 +621,7 @@ def _gate_text(chunks, bo_qua_dau):
 def _gate_image(paths):
     """paths: [(nhan, duong_dan, muc)] — muc la dict cover/slide trong spec.
 
-    Chi PHAN HOP cac cong chan cua `luat_anh` theo dung thu tu cua khung
+    Chi PHAN HOP cac cong chan cua `image_rules` theo dung thu tu cua khung
     carousel; ban than cac luat nam ben do va dung chung voi Ethan/Itachi.
     Cai RIENG cua carousel chi la: dai ti le 4:5..1:1, va viec slide than khai
     "chart": true thi mien cong ti le (anh ngang duoc dan full be ngang).

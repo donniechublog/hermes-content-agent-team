@@ -64,7 +64,7 @@ def _check_text(spec: dict, kieu: str, loi: list) -> None:
 
 def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     """Spec cua Ethan (ma anh) -> (ket_qua, loi, canh). Tach 07/09/2026: ba cong
-    trung voi Dre (tin xep hang, khong lien quan, anh da dung) sang nop_chung,
+    trung voi Dre (tin xep hang, khong lien quan, anh da dung) sang submit_common,
     phan ghep va phan chu thanh hai ham rieng."""
     anh = {a["ma"]: a for a in m["anh"]}
     loi = []
@@ -83,13 +83,13 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
         ma2 = None
     a = anh[ma]
     # TIN XEP HANG (Ong Chu 06/09/2026): anh chinh PHAI la anh xep hang (ma XH),
-    # nhung CHI khi engine da CHUP duoc bang — xem nop_chung.can_anh_xep_hang.
+    # nhung CHI khi engine da CHUP duoc bang — xem submit_common.needs_ranking_image.
     if nc.needs_ranking_image(m, a):
         loi.append(f"TIN XẾP HẠNG mà \"anh\" = {ma} không phải bảng xếp hạng. Dùng \"anh\": \"XH\" — "
                    + cb.describe_ranking_image(m) + ".")
     _check_stack(a, ma, ma2, anh, m, loi)
     # ẢNH KHÔNG LIÊN QUAN BÀI (Ông Chủ bắt lỗi 06/09/2026) — điều kiện dùng chung
-    # với Dre (nop_chung.anh_khong_lien_quan), câu báo của Ethan dài hơn vì Ethan
+    # với Dre (submit_common.irrelevant_images), câu báo của Ethan dài hơn vì Ethan
     # hay đi tìm ảnh khác khi chart bị chặn một mình.
     rac, mo_ta = nc.irrelevant_images(anh, (ma, ma2))
     if rac:
@@ -99,20 +99,20 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
                    "dọc với một ảnh ngang cùng tone qua \"anh2\". Đừng đi tìm ảnh "
                    "khác chỉ vì chart bị chặn khi đi một mình.")
 
-    # Mat nguoi: dung CHUNG cong chan voi Dre (nop_chung.kiem_nhan_vat, 06/09/2026).
+    # Mat nguoi: dung CHUNG cong chan voi Dre (submit_common.check_subject_named, 06/09/2026).
     loi.extend(nc.check_subject_named(anh, [ma, ma2], spec.get("nhan_vat"),
                                 nc.article_text_for(m, wd), ""))
     _check_text(spec, kieu, loi)
     loi += nc.check_not_reused_across_runs(anh, [(x, x) for x in (ma, ma2) if x], m)
     loi += nc.check_image_fall(anh, {x: n for x, n in ((ma, "anh"), (ma2, "anh2")) if x}, m)
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
-    # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o nop_chung.
+    # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o submit_common.
     hook_hay_title = str(spec.get("hook") or spec.get("title") or "")
     loi.extend(nc.check_quote_translated(hook_hay_title, "hook"))
     # So hang tren the phai la so hang trong anh (LOW-24) — dung chung voi bia Dre.
     loi.extend(nc.check_rank_matches_image(hook_hay_title, a, "hook"))
     # Dan nguon gon: khong "doc bai"/"xem bai", khong duoi ten mien — Ong Chu
-    # 13/09/2026, dung chung voi Dre (nop_chung.kiem_dan_nguon_gon).
+    # 13/09/2026, dung chung voi Dre (submit_common.check_guide_source_compact).
     loi.extend(nc.check_guide_source_compact(spec.get("attrib"), "attrib"))
     loi.extend(nc.check_guide_source_compact(hook_hay_title, "hook" if kieu == "quote" else "title"))
     canh = nc.check_numbers_on_card(hook_hay_title + " " + str(spec.get("attrib") or ""), m, wd)

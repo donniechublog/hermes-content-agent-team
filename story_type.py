@@ -11,9 +11,9 @@ khó, hoàn toàn xây dựng logic định lượng được"*. Nguyên văn b�
     hạ tầng          → datacenter, nhà máy, cloud server
 
 Đo trước khi viết (12/09): `category` của mỗi tin đã được Finn/Vera gán từ lúc
-quét (`manifest_build.VALID_CATEGORIES`), `duyet_chon_tin` ghi vào draft,
-`prepare/manifest.py` chép vào `xong.json` — nhưng engine ảnh (`anh_chuan_bi`,
-`anh_khai_niem`, `anh_thuong_hieu`, `chuan_bi/*`) KHÔNG đọc nó ở đâu cả. Bộ phân
+quét (`manifest_build.VALID_CATEGORIES`), `approve_pick` ghi vào draft,
+`prepare/manifest.py` chép vào `xong.json` — nhưng engine ảnh (`image_prepare`,
+`image_concept`, `image_brand`, `chuan_bi/*`) KHÔNG đọc nó ở đâu cả. Bộ phân
 loại đã chạy, bảng vật thể đã có (Wikidata P154/P112/P169, `HAU_TO`, `CHU_DE`,
 `NUOC`, `xep_hang`), chỉ thiếu dây nối. Tệp này là dây nối.
 
@@ -50,12 +50,12 @@ def standard_type(category) -> str:
 # ---- bảng: loại tin → thứ tự vật được phép -----------------------------------
 # Tên vật là tên NHÁNH TÌM đã có trong engine, không phải mô tả:
 #   ghep_hai_hang  ảnh của CẢ HAI hãng trong tin, để vai ghép (thương vụ)
-#   xep_hang       bảng benchmark chụp từ trang xếp hạng (xep_hang.py)
+#   xep_hang       bảng benchmark chụp từ trang xếp hạng (ranking.py)
 #   chart_cong_bo  chart trong trang công bố chính chủ (_them_trang_cong_bo)
-#   logo/tru_so/founder   anh_thuong_hieu: Wikidata P154 / HAU_TO / P112-P169
-#   co_phieu       biểu đồ giá theo MA_CO_PHIEU (anh_thuong_hieu.anh_co_phieu)
+#   logo/tru_so/founder   image_brand: Wikidata P154 / HAU_TO / P112-P169
+#   co_phieu       biểu đồ giá theo MA_CO_PHIEU (image_brand.image_has_ballot)
 #   san_giao_dich  CHU_DE "stock exchange trading floor"
-#   co_nuoc_hang   cờ nước của hãng (NUOC_CUA_HANG -> anh_khai_niem "flag of")
+#   co_nuoc_hang   cờ nước của hãng (NUOC_CUA_HANG -> image_concept "flag of")
 #   khai_niem      bảng CHU_DE theo chữ trong tiêu đề (đường cũ)
 BOARD_IMAGE_BY_TYPE = {
     "M&A":       ("ghep_hai_hang", "logo", "tru_so", "founder", "co_phieu"),
@@ -82,7 +82,7 @@ def late(category, vat: str) -> bool:
 
 # Điểm cộng theo thứ tự trong bảng: vật đứng đầu +8, kế +6, +4, +2, còn lại 0.
 # Cộng vào `diem` gốc của ứng viên (anh 28 / nguoi 24 / logo 18) TRƯỚC khi
-# `_vong_thuong_hieu` sort — để cùng một bộ ứng viên, tin M&A đẩy logo lên
+# `_round_brand` sort — để cùng một bộ ứng viên, tin M&A đẩy logo lên
 # trước chân dung, tin LAB đẩy trụ sở/founder lên trước logo.
 _LOAI_UNG_VIEN = {"anh": "tru_so", "nguoi": "founder", "logo": "logo", "co_phieu": "co_phieu"}
 
@@ -96,8 +96,8 @@ def score_by_type(category, loai_ung_vien: str) -> int:
 
 
 # ---- hãng → nước (cờ) ----------------------------------------------------------
-# Tên nước = tên chuẩn trong `anh_khai_niem.NUOC` để "flag of <nước>" khớp tên tệp
-# Commons. Khoá = khoá hãng của `anh_thuong_hieu.TEN_HIEN`.
+# Tên nước = tên chuẩn trong `image_concept.COUNTRY` để "flag of <nước>" khớp tên tệp
+# Commons. Khoá = khoá hãng của `image_brand.DISPLAY_NAME`.
 COUNTRY_OF_RANK = {
     "anthropic": "United States", "openai": "United States", "google deepmind": "United States",
     "meta": "United States", "microsoft": "United States", "nvidia": "United States",
@@ -125,7 +125,7 @@ def country_of(khoa: str) -> str:
 
 # ---- hãng → mã cổ phiếu (định dạng Google Finance TICKER:SAN) ---------------------
 # Chỉ hãng NIÊM YẾT. Hãng tư nhân (anthropic, openai, deepseek, mistral, xai...)
-# không có — `anh_co_phieu` bỏ qua, không đoán.
+# không có — `image_has_ballot` bỏ qua, không đoán.
 CODE_HAS_BALLOT = {
     "nvidia": "NVDA:NASDAQ", "microsoft": "MSFT:NASDAQ", "apple": "AAPL:NASDAQ",
     "amazon": "AMZN:NASDAQ", "meta": "META:NASDAQ", "google deepmind": "GOOGL:NASDAQ",

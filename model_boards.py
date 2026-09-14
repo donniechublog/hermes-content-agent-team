@@ -8,8 +8,8 @@ o hai tep khac nhau:
   2. `scan_models.KHOA_BANG`     (ban ke khai de main() tu doi chieu)
   3. `scan_models.NHAN_BANG`     (nhan ngan cho muc "leo hang" / "nguon hong")
   4. khoi `bang_so` trong `scan_models.main`
-  5. mot loi goi `_in_bang` rieng trong `scan_models._in_bao_cao`
-  6. `bat_buoc.LINK_BANG`        (link cho muc BAT BUOC)
+  5. mot loi goi `_in_board` rieng trong `scan_models._in_bao_cao`
+  6. `required.LINK_BOARD`        (link cho muc BAT BUOC)
 
 Va do la kieu loi KHONG BAO GI CA — script van chay, bao cao van in, chi la
 Nova mat mot bang hoac muc BAT BUOC ra link rong. Chinh ma nguon da ghi lai hai
@@ -21,8 +21,8 @@ Nay 1, 2, 3, 5, 6 deu dan xuat tu day. Rieng 4 (`bang_so`) van viet tay vi moi
 fetcher tra ve mot hinh khac nhau — nhung `main()` tu doi chieu
 `set(bang_so) ^ set(KHOA_BANG)` nen quen mot bang o do thi co dong canh bao.
 
-Tep nay KHONG import gi cua du an: ca `scan_models` lan `bat_buoc` deu doc no,
-ma `scan_models` da import `bat_buoc`.
+Tep nay KHONG import gi cua du an: ca `scan_models` lan `required` deu doc no,
+ma `scan_models` da import `required`.
 
 THU TU trong `BANG` la thu tu IN RA bao cao.
 """
@@ -45,7 +45,7 @@ class Board(NamedTuple):
     ket_khoa  — khoa trong tep ket qua neu khac `khoa`
     diem_hau  — hau to sau cot diem khi in ("%" hoac rong)
     them      — ham nhan mot hang, tra chuoi in them mot cot
-    in_bang   — False neu bang do in theo khuon RIENG, khong qua `_in_bang`
+    in_bang   — False neu bang do in theo khuon RIENG, khong qua `_in_board`
     """
     khoa: str
     nhan: str

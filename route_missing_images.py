@@ -2,10 +2,10 @@
 """Tang GHEP NOI: bai thieu anh that thi hoi Ong Chu hay chuyen Kite.
 
 Vi sao tach ra (audit_content_team A1): hai viec nay — gui Telegram va tao task
-Kite — la viec cua tang DIEU PHOI, nhung truoc 09/09/2026 chung nam trong
-`anh_chuan_bi._route_thieu_anh`, tuc trong ENGINE. Engine vi vay phai
-`from duyet_giao_viec import chuan_assignee` va `from duyet_bai import
-tao_task_kite`: lop CHUAN BI goi NGUOC len lop dieu phoi. Do la vong phu thuoc
+Kite — la viec cua tang DIEU PHOI, nhung truoc 09/09/2026 chung nam ngay trong
+ENGINE (`image_prepare`, ham cu `_route_thieu_anh`, da xoa). Engine vi vay phai
+`from approve_dispatch import standard_assignee` va `from approve_post import
+create_task_kite`: lop CHUAN BI goi NGUOC len lop dieu phoi. Do la vong phu thuoc
 that, chi bi che di bang hai import luoi trong than ham.
 
 Nay engine chi MO TA (`xong.json["thieu_anh"] = {"so": 2, "toi_thieu": 5}`) va
@@ -81,12 +81,12 @@ def after_prepare(draft_id: str, m: dict) -> None:
         return
     im = json.loads(ip.read_text(encoding="utf-8"))
     # slug_that: sidecar cu con ghi ten persona ("dre", "miles") — chinh ly do
-    # vai.py ton tai. Dung tho thi topics().get("dre") miss -> khong gui gi.
+    # role.py ton tai. Dung tho thi topics().get("dre") miss -> khong gui gi.
     vai = vai_mod.canonical_slug(im.get("vai_anh", ""))
     if vai == "kite" or im.get("chuyen_kite"):
         return                                     # da la Kite / da chuyen roi
     so, tt = int(thieu.get("so", 0)), int(thieu.get("toi_thieu", 5))
-    ten = vai_mod.display_name(vai)      # ban dang ky: vai.py (audit A4)
+    ten = vai_mod.display_name(vai)      # ban dang ky: role.py (audit A4)
     tieu = m.get("title", draft_id)
     from approve_dispatch import standard_assignee
     from approve_post import create_task_kite

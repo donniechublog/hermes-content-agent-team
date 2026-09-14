@@ -83,7 +83,7 @@ def main() -> int:
             print(f"[LOI] cần cắt ít nhất {tin['do_dai'] - caption_check.LIMIT} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
         # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
-        # bao Jika chay miles_nop.py doc ra nhu giao nham nguoi (LOW-13).
+        # bao Jika chay miles_submit.py doc ra nhu giao nham nguoi (LOW-13).
         return nc.count_round_error(wd, loi,
                                f"venv/bin/python {persona}_submit.py {a.draft_id}")
 

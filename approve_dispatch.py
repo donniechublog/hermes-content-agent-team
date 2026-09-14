@@ -56,10 +56,10 @@ def _report_receive_job(token, group, vai, tu_vai, title, tid, ly_do=""):
          text=text, parse_mode="HTML")
     log("route", f"bao {vai} nhan viec tu {tu_vai or 'Ong Chu'}: {tid} (truoc={truoc})")
 
-# BANG VAI da gom vao `vai.py` (audit A4/F1) — them mot vai = them MOT dong o
+# BANG VAI da gom vao `role.py` (audit A4/F1) — them mot vai = them MOT dong o
 # do, khong phai sua sau cho nhu truoc. Cac ten duoi day giu nguyen la MAT TIEN
-# cho ho duyet_* (duyet_lenh/duyet_chon_tin/duyet_bai) va test dang goi qua
-# `duyet_giao_viec.X`; ly do ton tai cua tung bang nam trong vai.py.
+# cho ho approve_* (approve_command/approve_pick/approve_post) va test dang goi qua
+# `approve_dispatch.X`; ly do ton tai cua tung bang nam trong role.py.
 ROLE_IMAGE = role.ROLE_IMAGE
 ROLE_CAROUSEL = role.ROLE_CAROUSEL
 ROLE_EDU = role.ROLE_EDU
@@ -85,9 +85,9 @@ def role_of_topic(thread_id):
     return None
 
 # SLUG_CU (slug cu -> slug profile; su co 01/09/2026 hai bai dcgr ket 2 ngay vi
-# sidecar ghi "dre"/"miles") nay la VIEW cua vai.py — dong 69 o tren. Truoc audit
+# sidecar ghi "dre"/"miles") nay la VIEW cua role.py — dong 69 o tren. Truoc audit
 # lượt 2 (ADF-r2-1) mot bang chep tay o day ghi de no 21 dong sau khi gan, nen
-# them slug_cu vao vai.py KHONG toi duoc day (chua lo chi vi hai bang dang trung).
+# them slug_cu vao role.py KHONG toi duoc day (chua lo chi vi hai bang dang trung).
 
 def standard_assignee(assignee):
     """Tra ve slug profile thuc co trong home container, hoac (None, loi)."""
@@ -158,10 +158,10 @@ def killed_message(ten: str, title: str, tid: str, troi, tran, st: str) -> str:
     sau = "đang chạy lại" if st == "running" else "đã xếp lại hàng, sẽ chạy lại"
     return f"⏱ <b>{ten}</b> bị hermes dừng sau {phut}{tran_}, {sau}: {bai}"
 
-_TEN_HIEN = role.DISPLAY_NAME            # xem vai.py
+_TEN_HIEN = role.DISPLAY_NAME            # xem role.py
 
-# Moi bai mot the goc (bang_den.py), Dre/Miles/Ada la con cua no. Ly do va so do
-# o dau bang_den.py. O day chi co ba mieng noi vao luong san:
+# Moi bai mot the goc (blackboard.py), Dre/Miles/Ada la con cua no. Ly do va so do
+# o dau blackboard.py. O day chi co ba mieng noi vao luong san:
 #   create_pair  -> tao the goc, task Dre parent=goc
 #   imgok        -> task Miles parent=[Dre, goc]  (cong "Ong Chu duyet anh" giu nguyen)
 #   tien do      -> ban giao cua Miles da nam tren bang den qua kanban_complete.
@@ -172,7 +172,7 @@ _TEN_HIEN = role.DISPLAY_NAME            # xem vai.py
 # hanh vi blog phai y nguyen. Bat blog: Environment=CT_BANG_DEN=dcgr,blog trong unit.
 BLACKBOARD_BRANDS = {b.strip() for b in os.environ.get("CT_BANG_DEN", "dcgr").split(",") if b.strip()}
 
-BLACKBOARD_ASSIGNEE = "ban_bien_tap"     # trung voi bang_den.ROOT_ASSIGNEE
+BLACKBOARD_ASSIGNEE = "ban_bien_tap"     # trung voi blackboard.ROOT_ASSIGNEE
 
 BLACKBOARD_MENTION = """
 
@@ -207,7 +207,7 @@ def _blackboard_root(draft_id, title, goal=""):
         return None
 
 def _blackboard_write(draft_id, key, value):
-    """Ghi mot muc len bang den qua bang_den.ghi_nen (python cua hermes, tien
+    """Ghi mot muc len bang den qua blackboard.write_background (python cua hermes, tien
     trinh con). Best-effort, khong nem."""
     ok, loi = blackboard.write_background(draft_id, key, value, "approve_service", hermes_home=HERMES_HOME)
     if not ok:

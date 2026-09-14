@@ -2,7 +2,7 @@
 """Cong chan spec the hero cua Ethan (`ethan_submit.resolve_spec`).
 
 Cung ho voi cong Dre (`test_spec_dre`): cung manifest anh, cung ba cong dung
-chung o nop_chung (mat nguoi, quote dich, so tren anh), cung cong XH va cong
+chung o submit_common (mat nguoi, quote dich, so tren anh), cung cong XH va cong
 "khong lien quan" — nhung viet lai rieng, va da tung lech: truoc 06/09/2026
 Ethan khong doc co `lien_quan` nen chon bang ti so giai golf cho tin GPT-6.
 

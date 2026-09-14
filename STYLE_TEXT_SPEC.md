@@ -3,7 +3,7 @@
 Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh khi đổi renderer.
 
 `card.py` có **hai** kiểu thẻ, và **mặc định là `quote`** (`card.build(kieu="quote")`,
-`ethan_nop` cũng vậy). `--kieu tran` là lựa chọn có chủ đích khi muốn ảnh phủ kín
+`ethan_submit` cũng vậy). `--kieu tran` là lựa chọn có chủ đích khi muốn ảnh phủ kín
 thẻ. Kiểu `dai` đã bỏ khỏi mã 05/09/2026; bản mô tả thiết kế của nó chuyển sang
 [NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md).
 
@@ -39,7 +39,7 @@ Hai thương hiệu tô khác nhau, khai báo bằng khoá `to_ten_hang`:
 - **donniechublog** (`"cyan"`) — dùng CYAN của bộ nhận diện.
 - **dcgr** (`"hang"`) — dùng **màu riêng của chính hãng** được nhắc tới, tra
   `MAU_HANG` / `MAU_CUM`. Đây là màu thứ ba của bảng đơn sắc: nó không cố định,
-  mà đến từ chủ thể của tin. Màu quá đậm được `_du_sang()` kéo lên đủ đọc trên
+  mà đến từ chủ thể của tin. Màu quá đậm được `_enough_bright()` kéo lên đủ đọc trên
   nền tối. Hãng chưa biết màu thì dùng `mau_du_phong` (hổ phách).
 
 Cùng bảng `MAU_HANG` đó còn quyết **palette của carousel EDU** (Kite): khi ảnh
@@ -47,7 +47,7 @@ bìa không có màu rõ ràng, `render_edu.chon_theme_tu_dong` bám màu hãng 
 trong spec thay vì xoay vòng mù màu (LOW-11 — tin DeepSeek xanh dương từng ra
 slide xanh lá). Thứ tự: màu ảnh thật → màu hãng → xoay vòng.
 
-Giãn dòng và khoảng cách kicker đo bằng `_buoc_dong()`, tức là đo **chính các
+Giãn dòng và khoảng cách kicker đo bằng `_step_line()`, tức là đo **chính các
 dòng sắp vẽ**, không đo bằng chuỗi mẫu `"Ây"`. Tiêu đề tiếng Việt viết hoa trải
 rộng hơn chuỗi mẫu đó: dấu sắc trên `Ắ` cao hơn dấu mũ, dấu nặng dưới `Ạ` thấp
 hơn đuôi `y`. Đo bằng chuỗi mẫu thì với giãn dòng bó sát, hai dòng liền nhau
@@ -62,19 +62,19 @@ dưới. Khác hero (một tiêu đề bao quát tin) và khác carousel (nhiề
    cắt theo chiều dọc. Ảnh thấp hơn khổ thì đặt sát trên và **tan dần** vào lớp
    nền mờ ở đúng đáy ảnh — không đặt màn tối, không để lộ một đường ranh ngang.
 2. **KHÔNG CÓ MÀN TỐI** (Ông Chủ chốt 06/09/2026). Thay vào đó chỉ **làm mờ cục
-   bộ** đúng vùng chữ đè lên (`_mo_vung_chu`, Gaussian `QUOTE_BLUR = 28`). Ảnh
+   bộ** đúng vùng chữ đè lên (`_open_region_text`, Gaussian `QUOTE_BLUR = 28`). Ảnh
    phía trên vùng chữ giữ nguyên 100% sắc nét — bảng xếp hạng, chart hiện trọn
    tới sát mép khối chữ. Mờ tan dần từ `frame_top - QUOTE_BLUR_DEM` tới
    `frame_top` để ranh giới NÉT/MỜ không đọc ra thành hai vùng.
 3. **Màu chữ đo theo TỪNG DẢI DÒNG**, không phải một trung bình cho cả khối
-   (`_sang_vung` + `NGUONG_NEN_SANG = 116`). Ảnh có ranh sáng/tối ngang cắt qua
+   (`_bright_region` + `NGUONG_NEN_SANG = 116`). Ảnh có ranh sáng/tối ngang cắt qua
    khối chữ là ca rất thường; một phép trung bình thì nửa khối thành
    trắng-trên-trắng hoặc đen-trên-đen.
 4. **Dòng nguồn đo riêng**: nó nằm DƯỚI khung, ngoài hộp vừa đo, nên lấy màu
    theo dải của chính nó.
 5. **Khung chữ nhật bo góc** quanh câu trích, hai dấu `“` `”` cỡ lớn gần góc
    trên-trái / dưới-phải. Nét khung và dấu ngoặc **theo quyết định sáng/tối của
-   khối**: nền sáng thì kéo màu nhận diện về phía tối (`_du_toi`), nếu không thì
+   khối**: nền sáng thì kéo màu nhận diện về phía tối (`_enough_dark`), nếu không thì
    trên ảnh nền trắng chúng biến mất.
 6. **Hai chip neobrutalism** (khối đặc, viền đen 4px, bóng cứng lệch, chữ mono):
    tên kênh góc trên-phải khung, tagline góc dưới-trái, tâm chip ngang mức nét
@@ -96,7 +96,7 @@ một vật nằm TRÊN mặt phẳng ảnh, không cắt mặt phẳng đó ra 
 kiểu `quote` vẫn làm từ trước.
 
 1. **Ảnh phủ kín thẻ ở mọi trường hợp**, cùng một lớp ảnh với kiểu `quote`
-   (`_lop_anh`): nền là bản cover **làm mờ** phủ kín khung, lớp sắc là ảnh
+   (`_layer_image`): nền là bản cover **làm mờ** phủ kín khung, lớp sắc là ảnh
    nguyên tỉ lệ full bề ngang đặt sát trên; ảnh cao hơn khung thì chỉ cắt theo
    chiều dọc, ảnh thấp hơn thì mép dưới của lớp sắc **tan dần** vào lớp nền mờ
    qua một dải smoothstep. **Không còn nhánh "ảnh thấp → nền màu đặc"**: trước
@@ -104,12 +104,12 @@ kiểu `quote` vẫn làm từ trước.
    nhận diện — đúng "vùng thứ hai" mà LUAT_ANH mục 7 cấm, và cũng trái với chính
    mục 1 này. Hai kiểu thẻ dùng chung một hàm nên không lệch nhau được nữa.
 2. **KHÔNG CÓ MÀN TỐI** — giống kiểu `quote` từ 06/09/2026. Chỉ **làm mờ cục bộ**
-   dải chữ đè lên (`_mo_vung_chu`), ảnh phía trên khối chữ giữ nguyên 100% sắc
+   dải chữ đè lên (`_open_region_text`), ảnh phía trên khối chữ giữ nguyên 100% sắc
    nét. Màn tối dài chính là thứ biến vùng chữ thành mảng thứ hai.
-2b. **Màu chữ đo theo TỪNG DẢI DÒNG** (`_sang_vung` + `NGUONG_NEN_SANG = 116`),
+2b. **Màu chữ đo theo TỪNG DẢI DÒNG** (`_bright_region` + `NGUONG_NEN_SANG = 116`),
    không phải một trung bình cho cả khối. Nét khung, kicker, tên hãng trong tiêu
    đề và tên kênh đều theo phe sáng/tối đo được: nền sáng thì kéo về phía tối
-   (`_du_toi`), nếu không thì trên ảnh nền trắng chúng biến mất. Tên kênh đo
+   (`_enough_dark`), nếu không thì trên ảnh nền trắng chúng biến mất. Tên kênh đo
    **riêng** dải của chính nó — nó nằm ngoài khung, và ảnh có khối chữ tối nhưng
    đáy thẻ sáng là ca rất thường.
 2c. Chữ **thụt vào trong khung** (`TRAN_TEXT_X = TRAN_FRAME_X + 44`), không ăn
@@ -157,11 +157,11 @@ Không mascot: ảnh đã phủ kín nên mascot chỉ che mất nội dung.
 - Ảnh là chính, chữ là lớp đè lên: chữ nhường chỗ cho ảnh, không ngược lại.
 - Tên hãng trong tiêu đề được tô màu tự động, tra `MAU_HANG` / `MAU_CUM` trong
   `card.py`. Riêng `AI` đứng một mình không tô.
-- Giãn dòng đo bằng `_buoc_dong()`, tức đo **chính các dòng sắp vẽ**, không đo
+- Giãn dòng đo bằng `_step_line()`, tức đo **chính các dòng sắp vẽ**, không đo
   bằng chuỗi mẫu `"Ây"`: tiêu đề tiếng Việt viết hoa trải rộng hơn chuỗi đó (dấu
   sắc trên `Ắ` cao hơn dấu mũ, dấu nặng dưới `Ạ` thấp hơn đuôi `y`), đo bằng
   chuỗi mẫu thì hai dòng liền nhau chồng lên nhau tới 11px.
-- Ảnh chart/bảng/screenshot: `luat_anh.la_chart()` nhận diện rồi ép vào đường
+- Ảnh chart/bảng/screenshot: `image_rules.is_chart()` nhận diện rồi ép vào đường
   của chart — hero thì ghép dọc `--image2`, carousel thì `"chart": true`. Chart
   luôn phải nguyên vẹn và trải full bề ngang.
 - Phân tầng thị giác: câu trích / tiêu đề to nhất → dòng nguồn → chip mờ dần.

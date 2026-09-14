@@ -11,7 +11,7 @@ Itachi — phải tái tạo nền bằng LaMa; script này đo và báo, không
 
 Trước (đo 28/08–04/09): mỗi ảnh Gin tốn 11–39 tool call: `df -h`, `ls`, dò
 cv2/easyocr đã cài chưa, viết PIL script xem kích thước, `vision_analyze` 5–15
-lần để đọc chữ trên ảnh, chạy doi_chu_anh 2 lần. Giờ: một lệnh in danh sách vùng
+lần để đọc chữ trên ảnh, chạy swap_image_text 2 lần. Giờ: một lệnh in danh sách vùng
 chữ có SỐ THỨ TỰ + text OCR + toạ độ + màu + nền phẳng/ảnh + font đo được; vai
 chỉ viết bản dịch tiếng Việt rồi chạy gin_submit.py.
 
@@ -59,9 +59,9 @@ FLAT_STD = 12.0
 #     thân bài regular   0.147 – 0.272
 #     tiêu đề đậm        0.370 – 0.525
 BOLD_ITEM = 0.32
-# Đậm rồi thì chọn giữa BeVietnamPro-Bold và Oswald bằng `ve_chu.chon_font`:
+# Đậm rồi thì chọn giữa BeVietnamPro-Bold và Oswald bằng `about_text.pick_font`:
 # hỏi từng font "vẽ chuỗi này ra bề ngang bao nhiêu" rồi lấy font gần chữ gốc
-# nhất. Không dùng ngưỡng cố định — xem chú thích trong ve_chu.chon_font.
+# nhất. Không dùng ngưỡng cố định — xem chú thích trong about_text.pick_font.
 
 
 def _download_link(url: str, slide: int = None) -> tuple:

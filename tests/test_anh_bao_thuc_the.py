@@ -45,7 +45,7 @@ def test_og_tu_html_hai_thu_tu_thuoc_tinh_va_twitter():
 
 
 def test_ung_vien_dat_trang_bang_chinh_anh_de_qua_loc_ben_thu_ba():
-    """og:image gần như luôn trên CDN khác miền bài; tai_loc coi khác miền là
+    """og:image gần như luôn trên CDN khác miền bài; download_filter coi khác miền là
     quảng cáo. Ứng viên phải mang trang=ảnh và giữ bài gốc ở `bai`."""
     src = inspect.getsource(bt._og)
     assert '"trang": im' in src and '"bai": u' in src

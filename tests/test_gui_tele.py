@@ -28,7 +28,7 @@ import approve_base                  # noqa: E402
 import tele_util                    # noqa: E402
 
 
-# ============================================================ duyet_co_so.call
+# ============================================================ approve_base.call
 def _goi_voi_mock_transport(handler, token, method, **kw):
     """Goi approve_base.call(token, method, **kw) nhung ep httpx.Client() O BEN
     TRONG no dung MockTransport(handler) thay vi mang that, roi phuc hoi lai.

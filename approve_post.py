@@ -135,7 +135,7 @@ MARK_LEN_CHANNEL = ("channel_album_mid", "channel_anh_mid", "channel_chu_mid")
 def already_len_channel(d: dict) -> bool:
     """Draft nay da co PHAN NAO len channel chua (theo DAU_LEN_CHANNEL).
 
-    `_cuu_bai_ket_publishing` (approve_service) dung de phan biet hai canh
+    `_rescue_article_end_publishing` (approve_service) dung de phan biet hai canh
     giong het nhau tu ben ngoai: bai CHUA kip len channel (moi bam Duyet lai),
     voi bai DA len roi ma tien trinh chet truoc khi kip ghi "published" (khong
     duoc moi bam lai)."""
@@ -259,7 +259,7 @@ def publish(token, channel, draft_id):
 def _go_count_image(draft_id: str, ly_do: str) -> None:
     """Go anh cua draft khoi so "anh da dung".
 
-    So duoc ghi o buoc GUI album (nop_chung.gui_album), tuc TRUOC khi Ong Chu
+    So duoc ghi o buoc GUI album (submit_common.send_album), tuc TRUOC khi Ong Chu
     bam nut. Bam "Bo han tin" thi bai chet, bam "Lam lai" thi album bi thay —
     ca hai truong hop anh KHONG bao gio len kenh, nhung truoc 06/09/2026 chung
     van nam trong so va chan moi bai khac suot 14 ngay. Voi tin cung chu de
@@ -292,7 +292,7 @@ def _extract_reason_redo(text):
     lot qua regex cu — "Làm lại slide 3, 6: ..." co CHU "Làm lại" dung truoc
     "slide" (regex cu neo ^ ngay tai "slide"), va "Slide 6 vẫn là hình cũ, ..."
     khong co dau hai cham phan cach (regex cu bat buoc [:\-–—]). Ca hai lan
-    slide roi ve None, cong `kiem_khong_lap_anh_lam_lai` moi (submit_common.py)
+    slide roi ve None, cong `check_no_repeat_image_redo` moi (submit_common.py)
     khong co gi de chan, nen anh cu lot qua tiep — dung la nguyen nhan that.
 
     Sua: tim "slide/ảnh N[, M...]" O BAT KY DAU trong cau (khong neo ^, cho
@@ -341,7 +341,7 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
     doc/nghe theo. Truoc khi giao task lam lai, chup dHash cua CHINH cac anh
     GOC dang dung o cac slide bi che (tu spec.json hien tai, luc con la ban Ong
     Chu vua xem) roi ghi vao img.json duoi "cam_anh_slide" — {"6": ["<dHash
-    hex>", ...]}. `nop_chung.kiem_khong_lap_anh_lam_lai` doc lai khi vai nop
+    hex>", ...]}. `submit_common.check_no_repeat_image_redo` doc lai khi vai nop
     ban moi, so theo dHash (khong theo ma anh, vi vai co the doi ten ma A6 ->
     A9 ma van tro toi CUNG mot file/anh) nen khong the lach bang cach doi ten."""
     sp = STATE_DIR / "chuan_bi" / draft_id / "spec.json"
@@ -603,9 +603,9 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
             # chap nhan viec dung vector o hero slide"* + *"Dre tim duoc anh
             # dung, nen ky nang tim anh do dung duoc. ko co ly gi ma ko tim
             # duoc anh de bao hong"*). Cau cu la CHINH HE THONG bao vai lam
-            # dung thu bi cam: vai doc body truoc khi chay `kite_chuan_bi.py`,
+            # dung thu bi cam: vai doc body truoc khi chay `kite_prepare.py`,
             # nen no vao vong voi dinh kien "bo nay khong co anh" du
-            # `kite_chuan_bi` co tim lai duoc.
+            # `kite_prepare` co tim lai duoc.
             body += (" Vong tim anh cua vai cu chua ra tam nao dung duoc — `kite_prepare.py` se TU "
                      "CHAY LAI vong tim (anh thuong hieu + anh khai niem, cung may moc Dre dung) "
                      "truoc khi in brief. Bia BAT BUOC co anh that; KHONG ve hero vector.")
@@ -698,7 +698,7 @@ def _button_lower_ready(token, draft_id, cq):
     San la CUA VAI DUOC GIAO (Dre 5 slide, Ethan 1 anh) — tu 10/09/2026 manifest
     ghi san theo vai thay vi luon lay so cua carousel."""
     # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
-    # xong.json van nguyen (8 voi tin flagship), nen dre_nop van chan "chi N
+    # xong.json van nguyen (8 voi tin flagship), nen dre_submit van chan "chi N
     # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
     # Gio HA SAN that: ve `toi_thieu_co_ban` (san cua carousel.py). Duoi san
     # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
@@ -710,7 +710,7 @@ def _button_lower_ready(token, draft_id, cq):
     so = int(mm.get("so_dung_duoc", 0))
     cu = int(mm.get("toi_thieu", san))
     # Goi san pham dung ten cua vai: "slide" cho Dre/Kite, "ảnh" cho Ethan.
-    # Sidecar TRUOC manifest: `tao_task_kite` doi `vai_anh` trong sidecar khi
+    # Sidecar TRUOC manifest: `create_task_kite` doi `vai_anh` trong sidecar khi
     # chuyen bai sang Kite, con manifest giu vai luc chuan bi. Manifest cu
     # (truoc 10/09/2026) khong co khoa nay -> giu nguyen chu "slide" nhu truoc.
     _im = _load_json(DRAFTS / (draft_id + ".img.json"), {})
@@ -867,7 +867,7 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
         else:
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
                  text="Đang giao cho người viết…")
-            # Ban giao tu vai anh (dre_nop.py ghi: link that, nguon tung anh)
+            # Ban giao tu vai anh (dre_submit.py ghi: link that, nguon tung anh)
             # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
             # phai "nhan Miles".
             _body = w["body"]

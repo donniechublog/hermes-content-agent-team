@@ -9,7 +9,7 @@ quote, tiêu đề báo Nga RBC.
 
 Bốn phần, mỗi phần có ví dụ ĐÚNG-PHẢI-QUA đi kèm SAI-PHẢI-CHẶN:
   1. vision hỏi thêm dòng ROI, trả qua `ket_qua` mà không đổi số phần tử tuple;
-  2. `phan_loai`: ảnh rối không làm bìa, có ghi chú đầu dòng;
+  2. `classify`: ảnh rối không làm bìa, có ghi chú đầu dòng;
   3. `submit_common.check_image_fall`: chỉ chặn khi CÒN ảnh sạch thật sự thay được;
   4. nền chữ đặc ở carousel và thẻ Ethan.
 

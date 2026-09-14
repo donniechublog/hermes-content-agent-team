@@ -42,7 +42,7 @@ def link_real(link: str) -> str:
 
 def filter_article(items: list, bo_mien: tuple = (), toi_da: int = MAX_ARTICLE) -> list:
     """`items` = [(link, title)] từ RSS (đã hoặc chưa giải url=). Bỏ trùng URL,
-    bỏ miền tổng hợp/chặn bot (nguon_bai.BO_MIEN + bo_mien), tối đa
+    bỏ miền tổng hợp/chặn bot (article_sources.DROP_DOMAIN + bo_mien), tối đa
     TOI_DA_MOI_MIEN bài một miền. Giữ thứ tự RSS (mới trước)."""
     ra, thay, dem = [], set(), {}
     for link, title in items:
@@ -104,7 +104,7 @@ def _og(bai: dict) -> dict | None:
             return None
         return {"anh": im, "alt": bai["tieu_de"], "og": True, "tu": "bao_thuc_the",
                 # `trang` = chính ảnh: og:image gần như luôn nằm trên CDN khác
-                # miền bài (image.cnbcfm.com / cnbc.com) và tai_loc coi "khác
+                # miền bài (image.cnbcfm.com / cnbc.com) và download_filter coi "khác
                 # miền" là quảng cáo; bài gốc giữ ở `bai` để truy nguồn.
                 "trang": im, "bai": u, "mien_bai": bai["mien"], "rong": 0, "cao": 0, "diem": 42}
     except Exception as e:                                   # noqa: BLE001

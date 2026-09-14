@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""`_vong_thuong_hieu` phải TẢI ứng viên theo thứ tự điểm — đúng hợp đồng mà
-chính `tai_va_loc` tự ghi trong docstring: "Tai ung vien theo thu tu diem".
+"""`_round_brand` phải TẢI ứng viên theo thứ tự điểm — đúng hợp đồng mà
+chính `download_and_filter` tự ghi trong docstring: "Tai ung vien theo thu tu diem".
 
 `image_brand._candidate` gán điểm khác nhau theo LOẠI ảnh: nơi/sản phẩm 28 >
 người (chân dung) 24 > logo 18 — đúng ý "ảnh minh hoạ được nhiều hơn thắng ảnh
-chỉ là headshot". `_vong_tim_rong` (fallback_rounds.py:198) đã sort đúng; `_vong_thuong_hieu`
+chỉ là headshot". `_round_widen_search` (fallback_rounds.py:198) đã sort đúng; `_round_brand`
 thì quên, nên tin NHIỀU HÃNG ("Qualcomm ... with Amazon", docstring của chính
-hàm) nối thẳng candidate của hãng A trước hãng B theo thứ tự gọi `anh_hang`,
+hàm) nối thẳng candidate của hãng A trước hãng B theo thứ tự gọi `vendor_images`,
 không theo độ "minh hoạ được" — một chân dung của hãng xử lý trước có thể chặn
 mất một ảnh trụ sở/sản phẩm của hãng xử lý sau.
 
@@ -27,7 +27,7 @@ from prepare import fallback_rounds  # noqa: E402
 
 def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
     """Tin hai hãng: hãng A xử lý trước chỉ có chân dung (24), hãng B xử lý sau
-    có ảnh trụ sở (28). Danh sách đưa vào `tai_va_loc` phải đặt ảnh trụ sở của
+    có ảnh trụ sở (28). Danh sách đưa vào `download_and_filter` phải đặt ảnh trụ sở của
     hãng B lên TRƯỚC chân dung của hãng A — ngược thứ tự xử lý."""
     ung_vien_A = {"anh": "https://x/a-portrait.jpg", "alt": "chân dung", "og": False,
                  "tu": "thuong_hieu", "rong": 1800, "cao": 2880, "trang": "https://x/a",
@@ -60,7 +60,7 @@ def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
     assert goi["thu_tu_diem"] == sorted(goi["thu_tu_diem"], reverse=True), (
         f"cands khong duoc sap theo diem giam dan: {goi['thu_tu_diem']} — "
         f"vi pham hop dong cua tai_va_loc ('tai ung vien theo thu tu diem')")
-    # Tu 12/09/2026 diem con duoc cong theo LOAI TIN (loai_tin.diem_theo_loai) —
+    # Tu 12/09/2026 diem con duoc cong theo LOAI TIN (story_type.score_by_type) —
     # khong assert so tuyet doi, chi assert thu tu: tru so (goc 28) van TRUOC
     # chan dung (goc 24) voi category mac dinh.
     assert goi["thu_tu_diem"][0] > goi["thu_tu_diem"][1], \
@@ -71,7 +71,7 @@ def test_moi_hang_co_it_nhat_mot_anh_truoc_khi_hang_nao_duoc_them():
     """Đo thật 13/09/2026 (tin Anthropic tố Moonshot): 3 hãng trong tin,
     Anthropic ra 2 chân dung (diem 24), Alibaba ra 2 ảnh trụ sở (diem 28),
     Moonshot chỉ ra ĐÚNG 1 ảnh thật (diem 20, loại "anh" thường) từ
-    `_bao_thuong_hieu_rong`. `TOI_DA_THEM_TH` = 4 — nếu cứ lấy 4 tấm điểm cao
+    `_report_brand_empty`. `TOI_DA_THEM_TH` = 4 — nếu cứ lấy 4 tấm điểm cao
     nhất theo thứ tự phẳng, Anthropic (2) + Alibaba (2) chiếm hết 4 slot,
     Moonshot bị cắt TRƯỚC KHI vào brief dù có ảnh thật hợp lệ — đúng lỗi
     "bài nhắc cả Anthropic và Moonshot mà chỉ có ảnh Anthropic" Ông Chủ báo.

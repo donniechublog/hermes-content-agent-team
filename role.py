@@ -3,8 +3,8 @@
 
 Vi sao (audit_content_team A4/F1): tri thuc ve vai nam rai it nhat sau cho —
 VAI_ANH / TEN_SANG_CAP / TEN_VAI_ANH / VAI_CAROUSEL / VAI_EDU / SLUG_CU /
-_TEN_HIEN trong duyet_giao_viec, cong map "slug -> ten" chep tay lai o
-kite_chuan_bi va route_thieu_anh. Them mot vai phai dung tam cho; quen mot cho
+_TEN_HIEN trong approve_dispatch, cong map "slug -> ten" chep tay lai o
+kite_prepare va route_missing_images. Them mot vai phai dung tam cho; quen mot cho
 thi hong CAM: su co 06/09/2026 "kites" khong khop TEN_SANG_CAP nen lenh chon roi
 ve hoi thoai va gui nham cho Finn, con su co 01/09/2026 sidecar ghi slug cu
 ("dre") lam task nam 'ready' hai ngay vi khong profile nao ten vay.
@@ -66,7 +66,7 @@ class Role:
     # Ong Chu: *"tieu chi ve anh thi la chung cua moi designer, nhung carousel la
     # nhieu anh con Ethan lam single image, nen 'so luong' ko the la thu ap vao
     # duoc"*. Tieu chi CHAT LUONG (net, khong rac, lien quan, day toi) van dung
-    # chung o `luat_anh` + `prepare.vision.classify` cho ca ba vai. Chi hai thu
+    # chung o `image_rules` + `prepare.vision.classify` cho ca ba vai. Chi hai thu
     # duoi day di theo vai, va chung tra loi hai cau khac han nhau:
     #
     #   anh_muc_tieu_tim  BAO NHIEU tam thi ngung di tim. CHI co nghia voi vai
@@ -75,7 +75,7 @@ class Role:
     #                     dung lam anh chinh chua".
     #   ti_le_don_max     tam anh phai <= ti le nay moi DUNG MOT MINH duoc, theo
     #                     kho cua renderer. 0 = vai khong xet (moi anh dung duoc
-    #                     deu la mot slide, tam lam bia do `phan_loai` dan nhan).
+    #                     deu la mot slide, tam lam bia do `classify` dan nhan).
     anh_muc_tieu_tim: int = 0
     anh_muc_tieu_tim_flagship: int = 0
     ti_le_don_max: float = 0.0
@@ -107,7 +107,7 @@ ROLE = {v.slug: v for v in [
     # luc ("3, 4 - Kites"). Thieu no la ca lenh chon bi tu choi (su co 06/09/2026).
     # anh_toi_thieu=1: Kite ve ART VECTOR GOC, anh that chi la hinh chen them —
     # bai khong co anh that van dung duoc bo slide (day cung la ly do
-    # route_thieu_anh bo qua han vai nay).
+    # route_missing_images bo qua han vai nay).
     # anh_muc_tieu_tim 5/8: render_edu cung XEP NHIEU SLIDE, nen so luong van la
     # mot tieu chi that. Giu dung so engine van di tim tu truoc LOW-12 — vai nay
     # chua duoc ra lai, va ha xuong la Kite it hinh chen hon truoc.
@@ -118,7 +118,7 @@ ROLE = {v.slug: v for v in [
     # Hai vai viet KHONG bao gio cung nam trong mot container, dung nhu `finn`
     # (chi blog) va `vera` (chi dcgr) — nen ban dang ky giu ca hai,
     # con moi home chi deploy mot. Ly do tach: nguoi doc hai brand hoi hai cau
-    # khac han nhau (xem GIONG trong miles_chuan_bi), va MEMORY da tach theo
+    # khac han nhau (xem GIONG trong miles_prepare), va MEMORY da tach theo
     # brand tu 05/09/2026 — bai hoc "bot so lieu, noi tien" cua tin kinh doanh
     # tung ro sang tin model, noi phai giu nguyen tham so va benchmark.
     Role("miles", "Miles", go=("cap",), slug_cu=("writer",), viet=True),
@@ -146,7 +146,7 @@ DEFAULT_WRITE = "miles"
 # --- AI VIET TIN NAY (LOW-13) -----------------------------------------------
 # Truoc 10/09/2026 chi co MOT nguoi viet, nen `MAC_DINH_VIET` la hang so va moi
 # cho cu goi thang no. Gio co hai, va cau tra loi phu thuoc TIN — nen phai hoi
-# qua `vai_viet_cua`, dung doc hang so.
+# qua `writer_for`, dung doc hang so.
 #
 # Hai bang, hoi theo THU TU nay, va thu tu do co ly do:
 #   1. VAI QUET — chinh xac nhat, vi day la dieu Ong Chu chot: "vai viet di theo
@@ -195,7 +195,7 @@ _TEN_THUONG = {v.ten.lower(): v.slug for v in ROLE.values()}
 def display_name(slug: str) -> str:
     """Ten persona de in ra bao cao; tra lai chinh slug neu chua khai.
 
-    Giai qua `slug_that` truoc: sau LOW-14 con 337 sidecar tren dia ghi slug
+    Giai qua `canonical_slug` truoc: sau LOW-14 con 337 sidecar tren dia ghi slug
     role cu ("carousel", "designer"...). Tra thang VAI.get thi Ong Chu doc duoc
     dong "chuyen tu carousel" thay vi "chuyen tu Dre" — dung cai kieu lan lon
     role/name ma LOW-14 sinh ra de dep."""
@@ -221,7 +221,7 @@ def canonical_slug(chu: str) -> str:
 # (run completed, phut): dre median 3.0 / p95 22.9, kite p95 17.8 / max 22.9,
 # ethan p95 2.3 (blog) 7.6 (dcgr); vai viet/quet p95 <= 8.6. Vai anh mo
 # Chromium + vision tung anh nen 25m la sat tran; vai viet thi 25m thua.
-# Canh bao "chay lau" o duyet_giao_viec (NGUONG_TREO_PHUT=20) phai NHO HON ca
+# Canh bao "chay lau" o approve_dispatch (NGUONG_TREO_PHUT=20) phai NHO HON ca
 # hai con so nay — test_ngan_sach_thoi_gian giu bat bien do.
 MAX_RUNTIME = "25m"
 MAX_RUNTIME_IMAGE = "40m"
@@ -237,7 +237,7 @@ def min_images(slug: str, flagship: bool = False) -> int:
     """So ANH THAT toi thieu de vai `slug` dung duoc san pham cua no.
 
     Vi sao la ham o day chu khong phai hang so trong carousel.py: engine anh
-    (`anh_chuan_bi.chuan_bi`) chay CHUNG cho ca ba vai dung anh va truoc
+    (`image_prepare.prepare_article`) chay CHUNG cho ca ba vai dung anh va truoc
     10/09/2026 no lay thang `carousel.MIN_SLIDE`/`FLAGSHIP_MIN` — tuc ap luat
     cua Dre cho Ethan lan Kite. Hau qua: bai giao Ethan chi co 2 anh (rat
     thuong gap voi tin khong phai benchmark) bi ket o buoc "thieu anh", roi
@@ -278,9 +278,9 @@ def has_label_cover(dung) -> bool:
 
 def face_no_clear_ai(a: dict) -> bool:
     """Tam co mat nguoi ma khong biet la ai — thuong hieu khong gan ten nguoi,
-    alt/caption khong neu ten. `nop_chung.kiem_nhan_vat` chan tam nhu the, vai
+    alt/caption khong neu ten. `submit_common.check_subject_named` chan tam nhu the, vai
     khong duoc bia ten cho qua cong, nen no KHONG phai mot duong dung duoc: ca
-    `anh_chinh_duoc` lan nguoi dem slide (`schema.so_anh_dung_duoc`, LOW-46) hoi
+    `can_be_hero` lan nguoi dem slide (`schema.so_anh_dung_duoc`, LOW-46) hoi
     CHINH ham nay, khong moi noi mot dieu kien."""
     return bool(a.get("mat")) and not ((a.get("thuong_hieu") or {}).get("nguoi")
                                        or person_names_in_alt(a.get("alt") or ""))
@@ -291,7 +291,7 @@ def can_be_hero(slug: str, a: dict) -> bool:
     vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.
 
     Tieu chi CHAT LUONG (net, khong rac, lien quan bai) khong nam o day: chung
-    dung chung cho moi vai va da chay o `luat_anh` + `prepare.vision.classify`.
+    dung chung cho moi vai va da chay o `image_rules` + `prepare.vision.classify`.
     Ham nay chi tra loi phan di theo KHO cua renderer."""
     v = ROLE.get(slug) or ROLE[DEFAULT_IMAGE]
     if a.get("lien_quan") is False or not a.get("dung"):
@@ -305,7 +305,7 @@ def can_be_hero(slug: str, a: dict) -> bool:
         return False
     if float(a.get("ti_le") or 0) > v.ti_le_don_max:
         return False
-    # Mat nguoi khong ro ai: `nop_chung.kiem_nhan_vat` chan, ma vai thi khong
+    # Mat nguoi khong ro ai: `submit_common.check_subject_named` chan, ma vai thi khong
     # duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc.
     if face_no_clear_ai(a):
         return False
@@ -314,7 +314,7 @@ def can_be_hero(slug: str, a: dict) -> bool:
 
 def search_target_for(slug: str, flagship: bool = False) -> int:
     """Bao nhieu tam thi NGUNG di tim. 0 = vai lam san pham mot anh, so luong
-    khong phai tieu chi cua no — hoi `du_nguyen_lieu` thay vi so sanh con so nay."""
+    khong phai tieu chi cua no — hoi `has_enough_material` thay vi so sanh con so nay."""
     v = ROLE.get(slug) or ROLE[DEFAULT_IMAGE]
     if flagship and v.anh_muc_tieu_tim_flagship:
         return v.anh_muc_tieu_tim_flagship

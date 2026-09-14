@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Boc hinh that trong paper (arxiv_figures.py) — cac ham THUAN, khong PDF khong mang.
 
-Vi sao co tep nay: `vung_hinh` la mot chuoi luat hinh hoc, moi luat sinh ra tu
+Vi sao co tep nay: `region_figure` la mot chuoi luat hinh hoc, moi luat sinh ra tu
 MOT paper that lam hong ban truoc do (ACE, BERT, DeepSeek-R1, Attention). Hong
 o day thi khong ai thay: engine van chay, van ra anh, chi la anh cat sai — nua
 dong chay dau trang, cut mat ten bieu do, hoac nguyen mot trang chu hai cot.

@@ -126,7 +126,7 @@ def create_root(draft_id: str, title: str, goal: str, author: str) -> tuple:
                                   value={"draft_id": draft_id, "title": title})
     # TRON vao ban tren dia NGAY TRUOC khi ghi, khong ghi de `meta` doc o dau
     # ham: khoi kanban o tren mat thoi gian, va .meta.json la tep ba tien trinh
-    # cung ghi — engine (chuan_bi/nguon.py) co the vua tron source_url that vao
+    # cung ghi — engine (prepare/source.py) co the vua tron source_url that vao
     # trong luc do. Ghi de la xoa cua nguoi khac (audit lượt 2, C-r2-4 — cung
     # loi d59691c vua sua o dau kia). Hom nay chua mat chi vi create_pair goi
     # ham nay TRUOC khi khoi chay engine — thu tu tinh co, khong phai bao ve.
@@ -152,7 +152,7 @@ def write_background(draft_id: str, key: str, value, author: str = "script", her
     Best-effort: tra ve (ok, thong_bao), khong nem. `hermes_home` None = thua ke
     moi truong (dispatcher/systemd da dat, hoac _chuan_home suy tu brand);
     dat gia tri thi ep HERMES_HOME cho tien trinh con.
-    Truoc 05/09/2026 doan nay chep bon ban o dre_nop/kite_nop/miles_nop/approve_service."""
+    Truoc 05/09/2026 doan nay chep bon ban o dre_submit/kite_submit/miles_submit/approve_service."""
     import subprocess
     sys.path.insert(0, str(ROOT))
     import env_load

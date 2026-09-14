@@ -19,11 +19,11 @@ import env_load                                              # noqa: E402
 from prepare.common import MAX_IMAGE, _original_domain, _hdr, _domain
 
 
-# Nguong (cung goc voi luat_anh; o day chi la phan CHON anh de tai)
-URL_JUNK = image_rules.JUNK                 # mot bo tu vung, xem luat_anh
+# Nguong (cung goc voi image_rules; o day chi la phan CHON anh de tai)
+URL_JUNK = image_rules.JUNK                 # mot bo tu vung, xem image_rules
 
 
-SHORT_SIDE_DROP = image_rules.SHORT_SIDE_DOWNLOAD   # xem luat_anh (ba nguong dat canh nhau)
+SHORT_SIDE_DROP = image_rules.SHORT_SIDE_DOWNLOAD   # xem image_rules (ba nguong dat canh nhau)
 
 
 MAX_DOWNLOAD = 14             # ung vien thu tai (co cai hong/trung)
@@ -90,7 +90,7 @@ def _download_candidate(c: dict) -> tuple:
     """Bytes cho MOT ung vien cua tai_va_loc: file local (c['tep']) hoac HTTP
     qua _tai_bytes — ham THUAN, khong dung chung state, an toan chay song song
     (audit_content_team B3). Tra (data, loi): `loi` giu lai exception cua
-    Path.read_bytes() (`_tai_bytes` tu no da nuot loi, khong bao gio nem) de pha
+    Path.read_bytes() (`_download_bytes` tu no da nuot loi, khong bao gio nem) de pha
     loc tuan tu phia duoi nem lai va in dung log nhu khi con goi truc tiep tai
     day, khong lam mat dong log loi hien co."""
     try:
@@ -154,7 +154,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
             if ly_do_do_hoa and not la_ct and not _chart_by_figure(im) and not c.get("cho_do_hoa"):
                 continue                                  # logo/wordmark
             # `cho_do_hoa`: ung vien CO CHU Y la do hoa — the logo chinh thuc cua
-            # hang (anh_thuong_hieu.the_logo). Cong tren sinh ra de chan logo lot
+            # hang (image_brand.card_logo). Cong tren sinh ra de chan logo lot
             # vao tu <img> cua bai bao, khong phai de chan thu ta co tinh dung.
             h = image_rules.dhash(im)
             # Trung gan giong (cung anh o co khac, anh <img> vs figure chup): giu ban LON hon.
@@ -211,7 +211,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
 
 
 def _chart_by_figure(im: Image.Image) -> bool:
-    """Bo sung cho luat_anh.la_chart (bo sot chart co duong mau khu rang cua, xem
+    """Bo sung cho image_rules.is_chart (bo sot chart co duong mau khu rang cua, xem
     chu thich ben do). Do 04/09/2026 tren 11 anh that: chart/bang/infographic co
     NEN GAN TRANG 0.64-0.82 va MAT DO CANH 0.09-0.14; anh chup 0.00-0.06 /
     0.04-0.05; anh chup co vien trang 0.36 / 0.05. Can CA HAI: nen trang nhieu
@@ -229,16 +229,16 @@ def _chart_by_figure(im: Image.Image) -> bool:
 # ---- 3. do, phan loai, cat san --------------------------------------------
 def _save_crop(img: Image.Image, out: Path, ti_le_ten: str, cx=0.5, cy=0.5,
               cat_ngang=False) -> Image.Image:
-    """Cat qua crop_ti_le.cat va DONG DAU y het CLI crop_ratio.py — cong
-    `kiem_xuat_xu`/`kiem_crop_ngang` doc dau nay."""
+    """Cat qua crop_ratio.crop va DONG DAU y het CLI crop_ratio.py — cong
+    `kiem_xuat_xu`/`check_crop_landscape` doc dau nay."""
     import crop_ratio
     from PIL.PngImagePlugin import PngInfo
     ra = crop_ratio.crop(img, crop_ratio.RATIO[ti_le_ten], cx, cy, cat_ngang=cat_ngang)
     meta = PngInfo()
     # CHEP LAI dau cua anh goc truoc khi them dau crop. Truoc 06/09/2026 ham nay
     # dung PngInfo TRANG, nen ban cat mat `nguon_dung=chup_xep_hang` -> la_xep_hang
-    # tra False -> mat mien tru o luat_anh, va carousel chan dung cai bia ma
-    # dre_nop bat buoc dung. Xay ra 100% voi anh chup bang tren khung mobile.
+    # tra False -> mat mien tru o image_rules, va carousel chan dung cai bia ma
+    # dre_submit bat buoc dung. Xay ra 100% voi anh chup bang tren khung mobile.
     for k, v in (getattr(img, "text", None) or {}).items():
         if k != "crop_ti_le" and isinstance(v, str):
             meta.add_text(k, v)

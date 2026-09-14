@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""submit_common.py — phan dung chung cua cac script NOP (dre_nop, ethan_nop, kite_nop,
-miles_nop): nap meta/workdir/xong.json/spec.json, chuan hoa chuoi, kiem "lam
+"""submit_common.py — phan dung chung cua cac script NOP (dre_submit, ethan_submit, kite_submit,
+miles_submit): nap meta/workdir/xong.json/spec.json, chuan hoa chuoi, kiem "lam
 lai", gui album kem nut duyet + ghi da_dung.json, ghi bang den.
 
 Truoc 05/09/2026 moi doan nay chep 3–4 ban giong het nhau o tung nop; sua mot
@@ -47,7 +47,7 @@ def load_draft_context(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) ->
 
 
 # ---- ai viet bai nay, va lenh cua nguoi do (LOW-13, 10/09/2026) -------------
-# Tu khi co hai nguoi viet, "miles_nop.py" khong con la cau tra loi dung cho moi
+# Tu khi co hai nguoi viet, "miles_submit.py" khong con la cau tra loi dung cho moi
 # bai. Ba thu duoi day tung go cung ten Miles: ten script in trong brief, ten
 # tep brief, va `author` ghi len bang den. Go cung thi task cua Jika bao Jika
 # chay lenh cua Miles, va ban giao cua Jika len bang den mang ten Miles — khong
@@ -56,7 +56,7 @@ def load_draft_context(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) ->
 def writer_for_article(draft_id: str, brand: str = "") -> str:
     """SLUG nguoi viet da chot cho bai nay.
 
-    Nguon su that la sidecar `<draft_id>.writer.json` — duyet_chon_tin chot
+    Nguon su that la sidecar `<draft_id>.writer.json` — approve_pick chot
     nguoi viet NGAY luc chon tin (luc do con biet vai quet), con luc nop thi
     vai quet da khong con trong tam tay. Sidecar cu (ghi truoc LOW-13) khong co
     khoa `vai_viet`, hoac ghi mot slug la -> hoi lai ban dang ky theo brand."""
@@ -70,7 +70,7 @@ def writer_for_article(draft_id: str, brand: str = "") -> str:
 def writer_persona_name(slug: str) -> str:
     """Slug vai viet -> chu dung trong TEN SCRIPT va `author` bang den ("miles",
     "jika"). Lay tu ban dang ky chu khong chep bang thu hai: cac cap script deu
-    dat theo ten nhan vat (miles_nop, dre_nop, kite_nop...), nen ten persona
+    dat theo ten nhan vat (miles_submit, dre_submit, kite_submit...), nen ten persona
     viet thuong CHINH LA tien to script."""
     return _vai.display_name(slug).lower()
 
@@ -88,13 +88,13 @@ def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str =
 
     CHI ap khi Ong Chu THAT SU bam "Lam lai" (sua 06/09/2026 dot 2). Truoc day
     dieu kien la "co da_dung.json", ma tep do duoc ghi o MOI lan gui va
-    duyet_bai khong bao gio xoa — nen moi lan chay lai vi bat ky ly do gi (task
+    approve_post khong bao gio xoa — nen moi lan chay lai vi bat ky ly do gi (task
     kanban retry, vai chay lai sau mot [CANH BAO]) deu bi bao "Ong Chu bam lam
-    lai nghia la bia chua dat, doi bia khac". Vai doi bia that, roi `gui_album`
-    gui BO THU HAI voi mot nut Duyet thu hai; md5 30 phut cua gui_telegram chi
+    lai nghia la bia chua dat, doi bia khac". Vai doi bia that, roi `send_album`
+    gui BO THU HAI voi mot nut Duyet thu hai; md5 30 phut cua send_telegram chi
     chan duoc truong hop tep y het.
 
-    Moc so sanh la `remakes` trong img.json — chinh con so duyet_bai tang moi
+    Moc so sanh la `remakes` trong img.json — chinh con so approve_post tang moi
     lan bam nut.
     """
     if not da_dung:
@@ -216,7 +216,7 @@ def _name_in_article(nv: str, chu_bai: str) -> bool:
 def check_subject_named(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> list:
     """Cong chan MAT NGUOI dung chung Dre/Ethan.
 
-    Truoc 06/09/2026 chi dre_nop co day du ba lop nay; ethan_nop chi kiem "co
+    Truoc 06/09/2026 chi dre_submit co day du ba lop nay; ethan_submit chi kiem "co
     khai ten hay chua", nen mot cai ten CEO bia dat van qua cong cho the hero
     (su co bia Broadcom 05/09: anh quan chuc G20, khai "Hock Tan"). Gom mot cho
     de hai vai khong con lech."""
@@ -239,10 +239,10 @@ def check_subject_named(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> 
     # tran "logo", ma cong nay chi no khi anh CO MAT NGUOI va vai DA khai ten —
     # tuc no nham dung vao anh chan dung/su kien, loai anh the hero can nhat.
     # Anh hop le nhat cua loai do la "CEO dung tren san khau, phia sau la logo
-    # hang": vision tra dung LIEN_QUAN=co (chinh prompt o anh_chuan_bi day rang
+    # hang": vision tra dung LIEN_QUAN=co (chinh prompt o image_prepare day rang
     # logo-tren-toa-nha / su kien cua chinh cong ty trong bai LA lien quan), roi
     # cong nay van chan vi mo ta co chuoi con "logo". Anh khong lien quan da co
-    # cong rieng (`lien_quan is False` o dre_nop/ethan_nop), nen o day chi giu
+    # cong rieng (`lien_quan is False` o dre_submit/ethan_submit), nen o day chi giu
     # nhung cum thuc su noi len "day la logo cua TO BAO, khong phai cua bai".
     for ma in co:
         mo_ta = (anh.get(ma, {}).get("mo_ta") or "").lower()
@@ -285,7 +285,7 @@ _TU_ANH = {
 def needs_ranking_image(m: dict, a: dict) -> bool:
     """TIN XEP HANG ma anh chinh/bia KHONG phai bang xep hang -> phai doi.
 
-    CHI khi engine THUC SU CHUP duoc bang (`xep_hang.la_chup(kieu)` — LOW-21:
+    CHI khi engine THUC SU CHUP duoc bang (`ranking.is_capture(kieu)` — LOW-21:
     ban cu so voi chuoi "chup" ma xep_hang chua bao gio phat ra). Truoc
     06/09/2026 chieu cong nay chan ca khi m["xep_hang"] la None — bao vai dung
     ma "XH" trong khi ma do khong ton tai, nen vai sua kieu gi cung sai va khong
@@ -311,8 +311,8 @@ def irrelevant_images(anh: dict, ma_ds) -> tuple:
 
 def check_not_reused_across_runs(anh: dict, cap, m: dict) -> list:
     """KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026.
-    `cap`: [(nhan, ma)]. Ba vai lam anh deu goi luat_anh.kiem_da_dung theo
-    cung mot cach; gom de khong ai bo `link` (khoa theo TIN, xem luat_anh)."""
+    `cap`: [(nhan, ma)]. Ba vai lam anh deu goi image_rules.check_not_reused theo
+    cung mot cach; gom de khong ai bo `link` (khoa theo TIN, xem image_rules)."""
     import image_rules
     loi = []
     for nhan, ma in cap:
@@ -407,7 +407,7 @@ def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -
     6 hai lan lien, ca hai lan spec moi deu chon lai dung anh cu). Dong "DUNG
     lap lai anh cu" trong task chi la loi mem — cong nay la loi cung: so theo
     dHash (khong theo ma anh) cac anh GOC dang dung o tung slide voi danh sach
-    dHash da bi che ghi trong drafts/<id>.img.json (duyet_bai._ghi_cam_anh_lam_lai
+    dHash da bi che ghi trong drafts/<id>.img.json (approve_post._write_forbid_image_redo
     ghi luc bam nut Lam lai). Chi chan DUNG slide bi Ong Chu neu ten — cac slide
     khac trong ban lam lai duoc giu nguyen anh cu binh thuong."""
     draft_id = m.get("draft_id")
@@ -475,12 +475,12 @@ def check_rank_matches_image(chu: str, a: dict, nhan: str = "hook") -> list:
 
     Ca 12/09/2026: hook "claude-opus-4-7-high leo lên #3 bảng văn bản Arena" in
     len anh khoanh hang #26 (bang khac). Brief co ghi "#26 / WebDev / Code Arena"
-    nhung chi la chu dan; `can_anh_xep_hang` EP dung anh XH ma khong hoi hang.
+    nhung chi la chu dan; `needs_ranking_image` EP dung anh XH ma khong hoi hang.
     Day la cong: so trong chu phai la so trong anh, khong thi khong nop duoc.
 
     Chi xet khi anh la BANG CHUP THAT (la_chup) va co `hang`; the du phong (kieu
     "the") in hang tu tieu de nen khong doi chieu. Chu khong noi hang -> khong
-    chan (khong bat vai phai nhac hang). `tach_hang` hieu "dẫn đầu" = 1 va bo
+    chan (khong bat vai phai nhac hang). `extract_rank` hieu "dẫn đầu" = 1 va bo
     "top 10" kieu kich co danh sach — cung bo doc voi engine, khong doc rieng."""
     import ranking
     xh = (a or {}).get("xep_hang") or {}
@@ -564,7 +564,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
             if goc.get(ma):
                 image_rules.record_used(goc[ma], draft_id, vai, xong.get("link", ""))
 
-    # Nop THANH CONG thi xoa bo dem vong loi. `dem_vong_loi` chi reset khi BO
+    # Nop THANH CONG thi xoa bo dem vong loi. `count_round_error` chi reset khi BO
     # LOI doi hoac qua 6 gio, con duong thanh cong truoc 06/09/2026 khong dung
     # vao tep nop_lan.json — nen mot bai hong 2 lan vi "can >= 2 quote", sua
     # xong, gui duoc, roi mot gio sau Ong Chu bam Lam lai va vai lai quen quote

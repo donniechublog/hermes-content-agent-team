@@ -99,7 +99,7 @@ def ceiling_box(d: ImageDraw.ImageDraw, text: str, w: int, h: int, font_key: str
              co: int = None, buoc: int = None, cao_goc: int = None) -> int:
     """So pixel chieu cao BI TRAN ra ngoai hop khi da co chu nho het muc.
 
-    `ve_khoi` co lai co chu toi CO_MIN roi VE BAT KE — vong while thoat vi
+    `about_block` co lai co chu toi CO_MIN roi VE BAT KE — vong while thoat vi
     `size > CO_MIN` la sai, khong phai vi chu da vua. Cau dich dai gap doi cau
     goc thi chu tran de len phan anh ben duoi va khong cong nao bao (06/09/2026).
     """

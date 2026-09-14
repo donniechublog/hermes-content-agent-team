@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Nhật ký không được IM LẶNG khi đọc kanban.db hỏng (hồi quy review Fable, C2).
 
-Lich su: 06/09/2026 doi them `_chiu_loi_db` vi mot lan `hermes update` doi ten
+Lich su: 06/09/2026 doi them `_bear_error_db` vi mot lan `hermes update` doi ten
 cot lam nhat_ky chet im — cron chay `>/dev/null 2>&1`, khong trang, khong dong
 log. Decorator do bat sqlite3.Error va day vao LOI_DOC, in o CUOI TRANG.
 

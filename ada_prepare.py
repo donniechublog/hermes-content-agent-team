@@ -10,7 +10,7 @@ kanban.db/state.db, ls drafts, đọc manifest từng tệp. Giờ script gom:
   - Draft: pending / published / rejected + điểm Finn của bài đó.
   - Kanban: task theo vai, done/blocked/failed, thời gian chạy, lỗi cuối.
   - Token: tool call, input token, api call theo vai (profiles/*/state.db) +
-    chi phí thật 9router N ngày (từ nhật ký ngày của theo_doi_9router).
+    chi phí thật 9router N ngày (từ nhật ký ngày của monitor_9router).
   - 9router theo NGÀY (monitor_9router.py): req/$/cache%/lật model/lỗi/khoá
     API/IP máy gọi từng ngày, để so ngày này với ngày trước thay vì một số gộp.
 

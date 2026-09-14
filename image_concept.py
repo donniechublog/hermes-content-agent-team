@@ -6,7 +6,7 @@ Vì sao có tệp này (Ông Chủ 07/09/2026): "các Designer có vẻ mất k�
 hình trên internet, trong resource gốc không có hình hoặc hình không đạt là bỏ
 qua luôn. Nhắc tới Nhật thì tìm cờ hoặc bản đồ nước Nhật, Nhật đầu tư xây
 compute thì lấy hình datacenter". Trước 04/09 Dre có web_search nên tự làm;
-từ kiến trúc 3 lớp vai không còn công cụ, còn `anh_chuan_bi` chỉ tìm ảnh CÙNG
+từ kiến trúc 3 lớp vai không còn công cụ, còn `image_prepare` chỉ tìm ảnh CÙNG
 TIN (Bing News + Commons theo tên hãng) — không ai tìm ảnh CÙNG KHÁI NIỆM nữa,
 nên tin không ảnh đi thẳng sang Kite. Sửa ở engine để cả Ethan, Dre, Kite cùng
 hưởng, đúng luật "vai chỉ chọn mã".
@@ -16,10 +16,10 @@ Wikimedia Commons — không vẽ, không AI. Nó chỉ được làm BÌA/HERO,
 ảnh riêng của tin; caption "via Wikimedia Commons" do renderer ghi.
 
 Ba phần, phần nào cũng thuần để test được:
-  - `tu_khoa_khai_niem`  tiêu đề (+ tóm tắt) -> [{tu_khoa, ly_do}], ≤ 3;
+  - `keyword_concept`  tiêu đề (+ tóm tắt) -> [{tu_khoa, ly_do}], ≤ 3;
                          heuristic bảng nước + chủ đề, thêm LLM khi có router.
-  - `loc_commons`        lọc trang trả về của API Commons theo từ khoá.
-  - `nhan_khai_niem`     siết nhãn "dùng được" của một ảnh đã phân loại.
+  - `filter_commons`        lọc trang trả về của API Commons theo từ khoá.
+  - `label_concept`     siết nhãn "dùng được" của một ảnh đã phân loại.
 """
 import json
 import re
@@ -357,7 +357,7 @@ def sentence_ask_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> 
 
 
 def label_concept(a: dict) -> dict:
-    """Siết nhãn của một ảnh khái niệm ĐÃ qua `phan_loai`: chỉ bìa/hero (hoặc ghép
+    """Siết nhãn của một ảnh khái niệm ĐÃ qua `classify`: chỉ bìa/hero (hoặc ghép
     dọc nếu ngang), không vào thân, không chart, không mặt người. Thuần."""
     kn = a.get("khai_niem") or {}
     tk, ly_do = kn.get("tu_khoa", "?"), kn.get("ly_do", "")

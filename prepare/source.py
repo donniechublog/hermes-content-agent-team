@@ -56,22 +56,22 @@ def load_source(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
                 # TRON vao ban TREN DIA hien tai, khong ghi de nguyen `meta` (co
                 # the da cu di so voi luc goi ham nay — pipeline chay lau, va
                 # `.meta.json` la tep BA TIEN TRINH cung ghi khong khoa chung:
-                # approve_service, engine nen, va bang_den cua hermes ghi
+                # approve_service, engine nen, va blackboard cua hermes ghi
                 # `root_task` rieng, xem docstring env_load.ghi_json). Ghi de ca
-                # dict y het loi hop_nhat_meta da sua cho duyet_chon_tin.py —
-                # ghi de mat `root_task` neu bang_den vua ghi xong trong luc
+                # dict y het loi hop_nhat_meta da sua cho approve_pick.py —
+                # ghi de mat `root_task` neu blackboard vua ghi xong trong luc
                 # tien trinh nay con dang giai ma Google News.
                 p_meta = DRAFTS / f"{draft_id}.meta.json"
                 _write_json(p_meta, schema.merge_meta(
                     _read_json(p_meta, {}), {"source_url": that}))
     # Tieu de TIENG ANH cua bai that: tin cua Vera/Nova mang tieu de tieng Viet,
     # tim Google News/RSS bang tieu de do ra rong. Lay <title>/og:title cua trang
-    # goc mot lan, ghi vao nguon json de anh_bai/tu_lieu tim bao khac bang no.
+    # goc mot lan, ghi vao nguon json de article_images/material tim bao khac bang no.
     return nguon, p, link_goc
 
 
 def _title_page(url: str) -> str:
-    """og:title cua bai goc — mot ban duy nhat o nguon_bai (co luat: tieu de
+    """og:title cua bai goc — mot ban duy nhat o article_sources (co luat: tieu de
     tieng Viet thi tra rong, khong duoc dem di tim kiem)."""
     import article_sources
     return article_sources._title_page(url)
@@ -82,7 +82,7 @@ def candidate_social(link: str, wd: Path) -> list:
 
     Vi sao khong de duong tim anh thuong lo: post mang xa hoi chan khach chua
     dang nhap, browser_pass mo facebook.com chi thay tuong dang nhap, con
-    anh_bai.tim di tim "bao khac" cho mot post ca nhan thi ra rac. Anh nguoi ta
+    article_images.find di tim "bao khac" cho mot post ca nhan thi ra rac. Anh nguoi ta
     dang kem bai CHINH LA anh that cua tin do — Ong Chu chot 08/09/2026.
 
     Diem 95: cao hon moi nguon khac de no dung dau khi tai_va_loc cat bot, nhung
@@ -108,7 +108,7 @@ def candidate_social(link: str, wd: Path) -> list:
 
 
 def candidate_static(title: str, link: str, nguon_path: Path, title_en: str = "") -> list:
-    """anh_bai.tim tren bo nguon cua Finn; it qua thi tim rong them (bao khac,
+    """article_images.find tren bo nguon cua Finn; it qua thi tim rong them (bao khac,
     bang tieu de tieng Anh cua bai that)."""
     import article_images
     ds = article_images.find(title, link, sau_rong=True, tu_nguon=str(nguon_path))
@@ -154,7 +154,7 @@ def commons_images(tu_khoa: str, so: int = 4) -> list | None:
 # quan gi ban dan (Ong Chu 08/09/2026, cung loai loi voi "Gimlet" -> cocktail
 # 05/09/2026 nhung khac nguyen nhan: do la tu hiem gap tu vung chung, day la tu
 # thuong dung nhung ro ngau nhien dung dau cau/menh de). RIENG cho ham nay —
-# KHONG gop vao nguon_bai.TU_RONG_TRUY_VAN vi set do con dung loc tu truy van
+# KHONG gop vao article_sources.FROM_EMPTY_QUERY vi set do con dung loc tu truy van
 # bao khac, noi "foundry" la tu khoa TOT can giu lai.
 FROM_COMMON_MARK_SENTENCE = {
     "foundry", "power", "choice", "chip", "chips", "deal", "deals", "report",

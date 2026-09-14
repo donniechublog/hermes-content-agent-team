@@ -12,12 +12,12 @@ mascot) đã bỏ 05/09/2026: từ khi cả đội chuyển sang một kiểu �
 không vai nào gọi tới nó nữa.
 
 Chữ đè lên ảnh (cả hai kiểu): KHÔNG mặc định phủ lớp nào — chỉ làm mờ cục bộ
-đúng vùng dưới chữ (`_mo_vung_chu`) rồi đổi màu chữ theo độ sáng đo được
-(`_mau_doi_nen_an_toan`). Độ sáng đo qua `_can_bang_dong` chứ không lấy trung
+đúng vùng dưới chữ (`_open_region_text`) rồi đổi màu chữ theo độ sáng đo được
+(`_color_change_background_hide_whole`). Độ sáng đo qua `_can_board_line` chứ không lấy trung
 bình thuần: một dải chữ có mảng sáng cục bộ (áo trắng, cửa sổ, đèn sân khấu)
 thì trung bình cả dải vẫn nói "nền tối" trong khi chữ chìm đúng chỗ mảng sáng
 đó. Ngưỡng sáng/tối tính theo đúng cặp màu FG/BG của từng thương hiệu
-(`nen_chu.nguong_tuong_phan`), không còn một con số cố định dùng chung cho
+(`text_bg.threshold_wall_part`), không còn một con số cố định dùng chung cho
 mọi bảng màu.
 """
 import argparse
@@ -126,7 +126,7 @@ def set_brand(ten: str):
     ACCENT, ACCENT_DIM = m["ACCENT"], m["ACCENT_DIM"]
     CYAN, LINE = m["CYAN"], m["LINE"]
     # Diem hoa nhau cua WCAG contrast ratio giua chu FG va chu BG tren nen xam —
-    # tinh theo dung cap mau CUA THUONG HIEU NAY (nen_chu.nguong_tuong_phan), vi
+    # tinh theo dung cap mau CUA THUONG HIEU NAY (text_bg.threshold_wall_part), vi
     # mot con so co dinh (116, tinh rieng cho FG/BG cua donniechublog) se sai
     # nguong voi dcgr (FG/BG gan nhu trang tuyet doi / den tuyet doi).
     THRESHOLD_BACKGROUND_BRIGHT = text_bg.threshold_wall_part(FG, BG)
@@ -422,7 +422,7 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
                 thi dung `mau_du_phong`.
 
     `nen_sang`: dong nay nam tren mot dai anh SANG. Khi do mau ten hang phai
-    keo ve phia TOI (`_du_toi`), khong phai sang them — dung cai loi da sua cho
+    keo ve phia TOI (`_enough_dark`), khong phai sang them — dung cai loi da sua cho
     net khung quote 06/09/2026 (CYAN cua dcgr tren nen trang cho CR 1.04, tuc
     mat chu). Chi kieu `tran` truyen co nay: no dat chu thang len anh khong man
     toi nen dai chu co the sang; kieu the tin luon co nen toi.
@@ -488,7 +488,7 @@ def _grow_title(d, text, max_w, max_h, max_lines=TITLE_GROW_LINES, lead=LEAD,
     Chỉ dùng khi tỉ lệ thẻ bị khoá — lúc đó textbox có chiều cao cố định nên
     biết chính xác còn bao nhiêu chỗ cho tiêu đề.
 
-    Đo chiều cao bằng CHÍNH các dòng sẽ vẽ (`_buoc_dong`), không phải một
+    Đo chiều cao bằng CHÍNH các dòng sẽ vẽ (`_step_line`), không phải một
     chuỗi mẫu cố định: chuỗi mẫu không có các tổ hợp dấu đôi (mũ/móc + dấu
     thanh, vd "ẫ" "ệ" "ữ") nên đánh giá thấp một dòng tiếng Việt thật, khiến
     hai dòng liền nhau chồng lên nhau khi giãn dòng bó sát.
@@ -546,7 +546,7 @@ def stack_read(paths, gap=0, nen=(0, 0, 0)):
     `gap=0` (Ong Chu chot 04/09/2026): truoc day chen 12px nen den giua hai anh.
     Vach den do la mot DUONG KE ngang giua khung — dung cai mat bat ngay va doc
     ra HAI VUNG rieng biet, dung thu ma luat carousel/hero cam. Hai anh ap sat
-    nhau, cong `lech_tone` lo phan tone, moi ra mot mat phang lien. Chi truyen
+    nhau, cong `tone_mismatch` lo phan tone, moi ra mot mat phang lien. Chi truyen
     `gap` khac 0 khi co ly do rat cu the."""
     ims = [Image.open(q).convert("RGB") for q in paths]
     if len(ims) == 1:
@@ -568,7 +568,7 @@ def _block_standard_image(src, nhan_vat=""):
     """Bo cong CHUAN ANH dung chung — Ethan chiu dung tieu chuan nhu Dre.
 
     Ong Chu chot 04/09/2026: "anh do ai lam ma cha phai dat tieu chuan". Truoc
-    do bang trong docstring cua `luat_anh` ghi thang ra chenh lech: mat nguoi,
+    do bang trong docstring cua `image_rules` ghi thang ra chenh lech: mat nguoi,
     anh trung, do phan giai — carousel.py CO, card.py KHONG. Cac cong do khong
     co gi rieng cua carousel ca, chung chi tinh co duoc viet o do vi do la cho
     Ong Chu bat loi truoc. (13/09/2026: bo `kiem_xuat_xu`/`kiem_day_sang` khoi
@@ -599,7 +599,7 @@ def _block_standard_image(src, nhan_vat=""):
 def _block_chart(src):
     """Chart di MOT MINH vao kieu `quote`/`tran` thi DUNG.
 
-    Tieu chi o `luat_anh.kiem_chart_mot_minh` — cau hoi "anh nay co dung duoc
+    Tieu chi o `image_rules.check_chart_standalone` — cau hoi "anh nay co dung duoc
     khong", dung chung cho moi khung dat CHU DE LEN anh phu kin. O day chi con
     phan rieng cua card.py: kieu nao la khung do (quote/tran, xem `build`), va
     bao loi bang cach dung han."""
@@ -615,7 +615,7 @@ def _block_chart(src):
 def _block_crop(src):
     """DUNG neu anh dua vao la mot anh NGANG da bi cat bot BE NGANG.
 
-    Tieu chi o `luat_anh.kiem_crop_ngang` — cung mot cong ma carousel dung.
+    Tieu chi o `image_rules.check_crop_landscape` — cung mot cong ma carousel dung.
     O day chi con phan rieng cua card.py: doc nhieu duong dan (--image/--image2)
     va bao loi bang cach dung han."""
     for q in (src if isinstance(src, (list, tuple)) else [src]):
@@ -701,7 +701,7 @@ def _layer_image(canvas, src_img, H) -> int:
     #
     # Truoc dot lam lai 06/09/2026 co `_man_quote` dat man DAC dung tai nat_h de
     # xoa mep (9f129cf viet ro la de sua ca nay); 9b7244d go man do ma khong
-    # thay gi, 0c7415b bo not .enhance(0.5) cua lop nen. Con `_mo_vung_chu` thi
+    # thay gi, 0c7415b bo not .enhance(0.5) cua lop nen. Con `_open_region_text` thi
     # bat dau tan `frame_top - 110`, thuong NAM DUOI mep, va ngay khi no phu
     # trung thi mat na o do moi dat mot phan nen mep van lo (anh 4:3 quote 3
     # dong: mat na ~28%, delta van +20).
@@ -799,10 +799,10 @@ def _timestamp_background_solid(canvas, y0, tan=BACKGROUND_FALL_SPREAD):
 
 def _text_bg_strict(canvas, frame_top):
     """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
-    cua text phai lam cho nghiem chinh, dung nham nho"). `_mo_vung_chu` chi
+    cua text phai lam cho nghiem chinh, dung nham nho"). `_open_region_text` chi
     lam mo — tren anh co chu in san, chu cu van lo mo mo sau chu moi, doc ra
     lem nhem. O day: nen DAC mau BG tu khoang lang gan nhat phia tren khung chu
-    (`_moc_nen_dac`) xuong day, dai smoothstep nam trong khoang lang nen khong
+    (`_timestamp_background_solid`) xuong day, dai smoothstep nam trong khoang lang nen khong
     cat ngang chi tiet nao va khong co duong ke ngang."""
     W_, H_ = canvas.size
     dac, top = _timestamp_background_solid(canvas, frame_top - BACKGROUND_FALL_ODD)
@@ -827,7 +827,7 @@ def _open_region_text(canvas, frame_top):
 
     Chi deu duoc chi tiet co ~QUOTE_BLUR px: chenh sang trai vai tram px (mang
     ao trang cat doc khoi chu) thi mo bao nhieu cung khong san phang, do la
-    viec cua `_can_bang_dong`."""
+    viec cua `_can_board_line`."""
     W_, H_ = canvas.size
     top = max(0, int(frame_top - QUOTE_BLUR_COUNT))
     vung = canvas.crop((0, top, W_, H_))
@@ -841,7 +841,7 @@ def _open_region_text(canvas, frame_top):
 
 
 # Nguong quyet dinh chu SANG hay chu TOI tren mot vung nen: diem sang xam noi
-# CR(chu trang) = CR(chu toi) — dat qua dat_thuong_hieu (nen_chu.nguong_tuong_phan)
+# CR(chu trang) = CR(chu toi) — dat qua dat_thuong_hieu (text_bg.threshold_wall_part)
 # theo dung cap mau CUA THUONG HIEU DANG NAP, khong con la mot con so co dinh
 # (116, tinh rieng cho FG/BG cua donniechublog) dung nham sang ca dcgr. Truoc
 # 06/09/2026 con so nay la 140, go tay: sai phe tren ca dai nen 116..140 (dai
@@ -851,7 +851,7 @@ def _open_region_text(canvas, frame_top):
 def _within_card(canvas, box):
     """Ep mot khung do sang nam gon trong the, va luon co dien tich.
 
-    `_sang_vung` goi `canvas.crop` roi `ImageStat` — crop ra ngoai bien tra ve
+    `_bright_region` goi `canvas.crop` roi `ImageStat` — crop ra ngoai bien tra ve
     vung DEN (PIL dem den vao), tuc mot dai chu sat day the se do ra "nen toi"
     va chon chu trang, du day the that su sang."""
     x0, y0, x1, y1 = (int(v) for v in box)
@@ -906,12 +906,12 @@ def _can_board_line(canvas, box):
 
 def _color_change_background_hide_whole(canvas, box):
     """Mau chu TUONG PHAN voi vung anh ben duoi `box` (x0,y0,x1,y1), DO SAU KHI
-    da lam mo (`_mo_vung_chu`). Vung toi -> chu sang (FG); vung sang -> chu toi
+    da lam mo (`_open_region_text`). Vung toi -> chu sang (FG); vung sang -> chu toi
     (BG, mau nen thuong hieu, khong phai den tuyet doi).
 
-    Do sang lay qua `_can_bang_dong` chu khong phai mean thuan: mean bao "nen
+    Do sang lay qua `_can_board_line` chu khong phai mean thuan: mean bao "nen
     toi" van sai khi trong box co mot mang sang cuc bo — chu ra trang roi chim
-    dung tai mang do. `_can_bang_dong` bat ca ay bang stddev va tinh them mot
+    dung tai mang do. `_can_board_line` bat ca ay bang stddev va tinh them mot
     lop mong CHI TRONG box truoc khi chon mau."""
     return FG if _can_board_line(canvas, box) < THRESHOLD_BACKGROUND_BRIGHT else BG
 
@@ -980,8 +980,8 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", roi=False)
 
     Ong Chu chot 06/09/2026, sau nhieu lan bat loi cung mot goc (nen phu chu
     cao hon chinh cau chu, doc ra hai vung rieng biet): BO HAN man toi. Quote
-    dat THANG len anh goc; vung anh duoi chu duoc lam mo cuc bo (`_mo_vung_chu`)
-    roi mau chu chon theo do sang do duoc (`_mau_doi_nen_an_toan`).
+    dat THANG len anh goc; vung anh duoi chu duoc lam mo cuc bo (`_open_region_text`)
+    roi mau chu chon theo do sang do duoc (`_color_change_background_hide_whole`).
     """
     H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
@@ -1058,7 +1058,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", roi=False)
     # lai, mot mau la du") khong dung: Gaussian ban kinh 28 chi xoa chi tiet co
     # ~28px, khong he san phang chenh sang co vai tram px.
     #
-    # Dung `_can_bang_dong` chu khong `_sang_vung` truc tiep: do tung dai moi xu
+    # Dung `_can_board_line` chu khong `_bright_region` truc tiep: do tung dai moi xu
     # duoc ranh sang/toi NGANG, con mang sang/toi DOC nam gon trong MOT dai (ao
     # trang, cua so, den san khau) thi trung binh ca dai van thien dung phe ma
     # chu van chim tai dung cho do. Do that (nen toi co mang sang doc): dai
@@ -1156,9 +1156,9 @@ def _phase(mau, do_sang: float, nen=None):
     return tuple(int(n + (c - n) * t) for c, n in zip(mau, nen))
 
 
-# Cac phep kiem chu tieng Viet da chuyen sang `tieng_viet.py` (audit 06/09/2026
+# Cac phep kiem chu tieng Viet da chuyen sang `vietnamese.py` (audit 06/09/2026
 # dot 2): chung la cong chan CHU, khong lien quan toi ve anh, va viec chung
-# song o day bat manifest_ghi/ada_nop/jean_nop/itachi_nop/render_edu phai keo ca
+# song o day bat manifest_write/ada_submit/cape_submit/itachi_submit/render_edu phai keo ca
 # PIL vao chi de hoi "chuoi nay co mat dau khong". Re-export de moi loi goi cu
 # (`card.tim_mat_dau`, `card.bo_dau_cam`, `card.DAU_CAM`...) giu nguyen.
 from vietnamese import (  # noqa: E402
@@ -1214,7 +1214,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
     con moi kieu the mot ham ve. Truoc do `build` la 221 dong trong do 187
     dong chi thuoc ve kieu tran — doc mot kieu phai luot qua ca kieu kia.
 
-    `b`: bang thuong hieu da nap (`dat_thuong_hieu`), can cho co chan, che do
+    `b`: bang thuong hieu da nap (`set_brand`), can cho co chan, che do
     to ten hang va do ro cua ten kenh.
     """
     src_img = _open_image(src)
@@ -1273,7 +1273,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
         # Vung chu luon lay dung phan da dinh, KE CA khi anh thap hon the.
         # Truoc 07/09/2026 nhanh "anh thap" keo box_h len `H - nat_h` de phan
         # thieu cua anh thanh nen cua vung chu — tuc dung mot mang MAU DAC lam
-        # nen, va anh cang thap thi mang do cang cao. Nay `_lop_anh` lap day
+        # nen, va anh cang thap thi mang do cang cao. Nay `_layer_image` lap day
         # bang chinh tam anh lam mo, nen chieu cao vung chu khong con phu
         # thuoc vao anh cao bao nhieu.
         box_h = max(box_min, int(H * CEILING_TEXTBOX))
@@ -1325,8 +1325,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, roi=False):
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi: ranh
     # sang/toi ngang cat qua khoi chu la ca rat thuong (anh chup hero toi tren
     # nen trang duoi, anh ghep doc hai tone). Mot phep trung binh thi nua khoi
-    # thanh trang-tren-trang hoac den-tren-den. `_can_bang_dong` (khong phai
-    # `_sang_vung` truc tiep) vi mot dai RONG van co the co diem sang/toi cuc
+    # thanh trang-tren-trang hoac den-tren-den. `_can_board_line` (khong phai
+    # `_bright_region` truc tiep) vi mot dai RONG van co the co diem sang/toi cuc
     # bo du trung binh ca dai dung phe — xem ghi chu tai dinh nghia ham.
     buoc, tren = _step_line(f_title, title_lines, lead)
     dau_tieu_de = cum_top + (kick_h + KICKER_GAP if kicker else 0)
