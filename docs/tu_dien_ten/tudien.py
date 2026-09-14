@@ -100,15 +100,29 @@ class TuDien:
         return en, fl
 
 
-def quet(ROOT: Path):
+def _tep_py(ROOT: Path, chi_git: bool) -> list:
+    """Tệp .py cần quét. `chi_git`: chỉ lấy tệp git theo dõi khi ROOT nằm trong
+    repo — tệp nháp bị .gitignore trên máy chủ (gif2png_tmp.py, LOW-55) không
+    phải mã của repo. Ngoài git (thư mục tạm của test) thì quét đĩa như cũ."""
+    trong_goc = lambda p: not any(part in BO_QUA for part in p.relative_to(ROOT).parts[:-1])  # noqa: E731
+    if chi_git:
+        import subprocess
+        r = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z", "--", "*.py"],
+                           capture_output=True)
+        if r.returncode == 0:
+            return sorted(p for p in (ROOT / s for s in r.stdout.decode("utf-8").split("\0") if s)
+                          if p.is_file() and trong_goc(p))
+    return sorted(p for p in ROOT.rglob("*.py") if trong_goc(p))
+
+
+def quet(ROOT: Path, chi_git: bool = False):
     """Quét repo: (mods, defs, consts, where).
     defs   = [(mod, name, kind, lineno)] — MỌI def/class (kể cả nested, để in bảng)
     consts = {(mod, NAME)} — gán ở cột 0, tên CHỮ_HOA
     top    = {mod: [(name, kind)]} — CHỈ top-level (thứ dùng để rename + kiểm va chạm)
     where  = {token: {mod}} — để mục E chỉ ra token nằm ở đâu"""
     ROOT = Path(ROOT).resolve()
-    files = sorted(p for p in ROOT.rglob("*.py")
-                   if not any(part in BO_QUA for part in p.relative_to(ROOT).parts[:-1]))
+    files = _tep_py(ROOT, chi_git)
     mods, defs, consts, top = [], [], set(), collections.defaultdict(list)
     where = collections.defaultdict(set)
 
@@ -252,11 +266,11 @@ def va_cham_module(td: TuDien, ROOT: Path, mods: list) -> dict:
     return dict(ra)
 
 
-def bang_doi_ten(td: TuDien, ROOT: Path) -> dict:
+def bang_doi_ten(td: TuDien, ROOT: Path, chi_git: bool = False) -> dict:
     """Toàn bộ kế hoạch rename cho rename.py:
     {"modules": {mod: mod_en}, "defs": {mod: [(old, new, kind)]},
      "consts": {mod: [(old, new)]}} — chỉ ghi những cái THỰC SỰ đổi."""
-    mods, _defs, consts, top, _where, _files = quet(ROOT)
+    mods, _defs, consts, top, _where, _files = quet(ROOT, chi_git)
     plan = {"modules": {}, "defs": collections.defaultdict(list), "consts": collections.defaultdict(list)}
     for mod in mods:
         en, _ = td.dich_module(mod)
