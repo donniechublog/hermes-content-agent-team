@@ -29,6 +29,25 @@ _BASE = Path(__file__).resolve().parent
 ROOT = _BASE
 HERMES_DIR = Path.home() / "hermes-agent"
 HERMES_PY = HERMES_DIR / "venv" / "bin" / "python"
+
+# LOW-159: OpenSSL 3.5 mac dinh bat nhom khoa lai ML-KEM, ~50% handshake tu may
+# chu toi api.telegram.org bi treo (LOW-133/134). Ban va o do dung Environment=
+# systemd cho hermes-approve@/hermes-gateway@ — nhung KHONG toi duoc kanban
+# worker: hermes dung lai worker vao mot moi truong xay lai tu dau, khong ke
+# thua os.environ cua tien trinh gateway cha (do truc tiep /proc/<pid>/environ
+# cua mot worker dang chay: 13 bien, khong co OPENSSL_CONF). Moi vai chay that
+# publish.py/send_telegram.py o day, nen phai va o CHINH tien trinh do.
+#
+# Phai set TRUOC `import httpx` trong tung tep goi Telegram — set SAU khong co
+# tac dung (do truc tiep: OpenSSL da nap cau hinh ngay luc thu vien SSL khoi
+# tao khi import). Vi vay ca 5 tep goi Telegram (send_telegram.py, publish.py,
+# approve_service.py, route_missing_images.py, approve_base.py) dua `import
+# env_load` len TRUOC `import httpx`. `setdefault` de khong de neu ai da tu
+# dat OPENSSL_CONF khac; kiem ton tai de khong vo may khac chua co tep nay.
+_OPENSSL_CONF = _BASE / "hermes" / "systemd" / "openssl" / "hermes-groups.cnf"
+if _OPENSSL_CONF.exists():
+    os.environ.setdefault("OPENSSL_CONF", str(_OPENSSL_CONF))
+
 ROUTER_URL = "http://127.0.0.1:20128/v1/chat/completions"   # 9router cuc bo, chung hai brand
 VISION_MODEL = "ds/deepseek-v4-flash-vision-exp"            # con mat cua engine anh (image_prepare)
 

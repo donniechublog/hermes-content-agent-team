@@ -25,11 +25,12 @@ import sys
 import time
 from pathlib import Path
 
-import httpx
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load
-import role
+import env_load  # noqa: E402 — LOW-159: phai nap TRUOC httpx de dat OPENSSL_CONF kip
+
+import httpx  # noqa: E402
+
+import role  # noqa: E402
 
 STATE = env_load.state_dir() / "telegram_sent"
 TOPICS = env_load.topics_path()

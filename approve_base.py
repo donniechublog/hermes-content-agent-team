@@ -17,10 +17,11 @@ import time
 from pathlib import Path
 
 
-import httpx
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load                                              # noqa: E402
+import env_load                                              # noqa: E402 — LOW-159: truoc httpx de dat OPENSSL_CONF kip
+
+import httpx                                                  # noqa: E402
+
 import tele_util                                            # noqa: E402
 import write_log                                              # noqa: E402
 

@@ -25,10 +25,11 @@ import os
 import sys
 from pathlib import Path
 
-import httpx
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import env_load                                              # noqa: E402
+import env_load                                              # noqa: E402 — LOW-159: truoc httpx de dat OPENSSL_CONF kip
+
+import httpx                                                  # noqa: E402
+
 import role as vai_mod                                        # noqa: E402
 
 DRAFTS = env_load.ROOT / "drafts"
