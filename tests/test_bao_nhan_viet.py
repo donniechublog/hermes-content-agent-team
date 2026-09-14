@@ -134,6 +134,63 @@ def test_khong_bao_lai_khi_bam_nut_lan_hai():
     assert goi_bao_nhan == [], f"bam lai nut cu KHONG duoc bao nhan lan nua: {goi_bao_nhan}"
 
 
+def _approve_with_queue(tmp: Path, *, writer, brand, queue):
+    """Press imgok with a brand in the draft meta and a fake writer queue. Returns
+    (created tasks as (assignee, body), sidecar after the press)."""
+    import hermes_adapter
+    draft_id, wp = _dung(tmp, vai_viet=writer)
+    (tmp / f"{draft_id}.meta.json").write_text(json.dumps({"brand": brand}), encoding="utf-8")
+    sidecar = json.loads(wp.read_text(encoding="utf-8"))
+    sidecar["body"] = (f"cd /r && venv/bin/python {writer}_prepare.py {draft_id}\n"
+                       f"cd /r && venv/bin/python {writer}_submit.py {draft_id}")
+    wp.write_text(json.dumps(sidecar), encoding="utf-8")
+    created = []
+    saved = (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call,
+             hermes_adapter.writer_queue)
+    db.DRAFTS = tmp
+    db.kanban_create = lambda title, assignee, body, parent=None: (
+        created.append((assignee, body)) or ("t_writer1", None))
+    db._report_receive_job = lambda *a, **k: None
+    db._status_task = lambda _tid: "done"
+    db.call = lambda *a, **k: {"ok": True}
+    hermes_adapter.writer_queue = queue
+    try:
+        db._button_approve("tok", -100, draft_id, {"id": "cbq1"}, wp)
+    finally:
+        (db.DRAFTS, db.kanban_create, db._report_receive_job, db._status_task, db.call,
+         hermes_adapter.writer_queue) = saved
+    return created, json.loads(wp.read_text(encoding="utf-8"))
+
+
+def test_blog_assigns_writer_with_shorter_queue():
+    """LOW-123: the tentative writer is Jika but Jika has 2 waiting tasks and Miles
+    is free -> the task goes to Miles, and both script commands and the sidecar follow."""
+    with tempfile.TemporaryDirectory() as t:
+        created, sidecar = _approve_with_queue(
+            Path(t), writer="jika", brand="donniechublog",
+            queue=lambda slugs: {"miles": (0, None), "jika": (2, 100)})
+    assignee, body = created[0]
+    assert assignee == "miles", f"should assign Miles (empty queue), got {assignee}"
+    assert "miles_prepare.py" in body and "miles_submit.py" in body and "jika_" not in body, body
+    assert sidecar["vai_viet"] == "miles", "sidecar must record the real writer for prepare/submit/topic"
+
+
+def test_unreadable_kanban_keeps_tentative_writer():
+    with tempfile.TemporaryDirectory() as t:
+        created, sidecar = _approve_with_queue(Path(t), writer="jika", brand="donniechublog",
+                                               queue=lambda slugs: None)
+    assert created[0][0] == "jika" and sidecar["vai_viet"] == "jika"
+
+
+def test_dcgr_single_writer_skips_queue_lookup():
+    def _forbidden_queue(_slugs):
+        raise AssertionError("dcgr only has Miles, the queue must not be read")
+    with tempfile.TemporaryDirectory() as t:
+        created, _sidecar = _approve_with_queue(Path(t), writer="miles", brand="dcgr.tech",
+                                                queue=_forbidden_queue)
+    assert created[0][0] == "miles"
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bắt cả Exception, luôn in N/M
     chay_tat_ca(globals())

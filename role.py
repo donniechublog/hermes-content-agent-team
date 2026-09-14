@@ -114,13 +114,12 @@ ROLE = {v.slug: v for v in [
     Role("kite", "Kite", go=("edu", "kites"), slug_cu=("carousel-edu",),
         renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
         anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
-    # --- vai VIET: MOI BRAND MOT NGUOI VIET (LOW-13, 10/09/2026) ---
-    # Hai vai viet KHONG bao gio cung nam trong mot container, dung nhu `finn`
-    # (chi blog) va `vera` (chi dcgr) — nen ban dang ky giu ca hai,
-    # con moi home chi deploy mot. Ly do tach: nguoi doc hai brand hoi hai cau
-    # khac han nhau (xem GIONG trong miles_prepare), va MEMORY da tach theo
-    # brand tu 05/09/2026 — bai hoc "bot so lieu, noi tien" cua tin kinh doanh
-    # tung ro sang tin model, noi phai giu nguyen tham so va benchmark.
+    # --- WRITER roles (LOW-13 2026-09-10, LOW-123 2026-09-14) ---
+    # dcgr only has Miles; blog has BOTH Miles and Jika sharing work by queue
+    # (WRITERS_BY_BRAND), differing only in writing voice. Readers of the two
+    # brands ask very different questions (see VOICE in miles_prepare), and MEMORY
+    # is split per brand since 2026-09-05 — the business-news lesson "fewer figures,
+    # talk money" once leaked into model news, which must keep params and benchmarks.
     Role("miles", "Miles", go=("cap",), slug_cu=("writer",), viet=True),
     Role("jika", "Jika", viet=True),
     # --- vai di tim tin / phan tich / chat ---
@@ -172,6 +171,29 @@ WRITE_BY_BRAND = {
     "dcgr": "miles",
     "dcgr.tech": "miles",
 }
+
+# Writers that SHARE the work in each brand (LOW-123, 2026-09-14): blog has Miles
+# and Jika, who differ only in writing voice. `writer_for` only gives a TENTATIVE
+# writer at pick time; the real writer is chosen by queue when the boss approves
+# the image (approve_post).
+WRITERS_BY_BRAND = {
+    "blog": ("miles", "jika"),
+    "donniechublog": ("miles", "jika"),
+    "dcgr": ("miles",),
+    "dcgr.tech": ("miles",),
+}
+
+
+def writers_for_brand(brand) -> tuple:
+    """Writer slugs sharing the work in this brand; empty for an unknown brand."""
+    return WRITERS_BY_BRAND.get(str(brand or "").lower(), ())
+
+
+def pick_by_queue(candidates, waiting: dict, last_assigned: dict) -> str:
+    """The writer with the fewest waiting tasks; ties go to whoever was assigned
+    least recently, then to the order of `candidates`."""
+    return min(candidates, key=lambda slug: (waiting.get(slug, 0), last_assigned.get(slug) or 0,
+                                             candidates.index(slug)))
 
 
 def writer_for(vai_quet=None, brand=None) -> str:

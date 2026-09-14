@@ -870,6 +870,12 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
             # Ban giao tu vai anh (dre_submit.py ghi: link that, nguon tung anh)
             # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
             # phai "nhan Miles".
+            chosen_writer = _writer_by_queue(draft_id, w)
+            if chosen_writer != w.get("vai_viet"):
+                log("nut", f"imgok draft={draft_id}: assigned {chosen_writer} instead of "
+                           f"{w.get('vai_viet')} (shorter queue, LOW-123)")
+                w["body"] = retarget_writer_body(w["body"], w.get("vai_viet"), chosen_writer)
+                w["vai_viet"] = chosen_writer
             _body = w["body"]
             _bg = DRAFTS / (draft_id + ".ban_giao.md")
             if _bg.exists():
@@ -916,6 +922,31 @@ def _button_approve(token, chat_id, draft_id, cq, wp):
                 _report_receive_job(token, chat_id, w["vai_viet"], _vai_anh_cu,
                                w.get("title", draft_id), wid)
     return note
+
+
+def _writer_by_queue(draft_id, sidecar):
+    """The REAL writer of the article (LOW-123): within the brand's writer group, the
+    one with fewer waiting tasks. A single-writer brand or an unreadable kanban keeps
+    the tentative writer recorded at pick time."""
+    tentative = sidecar.get("vai_viet")
+    brand = (_load_json(DRAFTS / (draft_id + ".meta.json"), {}) or {}).get("brand", "")
+    group = role.writers_for_brand(brand)
+    if len(group) < 2:
+        return tentative
+    import hermes_adapter
+    queue = hermes_adapter.writer_queue(group)
+    if queue is None:
+        return tentative
+    return role.pick_by_queue(group, {slug: queue[slug][0] for slug in group},
+                              {slug: queue[slug][1] for slug in group})
+
+
+def retarget_writer_body(body, old_writer, new_writer):
+    """Point both WRITER_BODY script commands at the new writer."""
+    for suffix in ("_prepare.py", "_submit.py"):
+        body = body.replace(f"venv/bin/python {old_writer}{suffix}",
+                            f"venv/bin/python {new_writer}{suffix}")
+    return body
 
 
 def _finalize_button(token, msg, draft_id, note, keyboard=None):
