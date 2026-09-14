@@ -26,9 +26,11 @@ import re
 import sys
 from pathlib import Path
 
-# 1024 la gioi han CHU THICH ANH cua Telegram. Vua trong muc do thi anh va chu
-# di chung mot tin nhan; vuot qua la Telegram tach lam hai, anh mot noi chu mot
-# noi. Nen day vua la tran vua la muc tieu nen tan dung.
+# 1024 la gioi han CHU THICH ANH cua Telegram. Vua trong muc do thi ca caption
+# di chung mot tin nhan voi anh; vuot qua thi publish() tu tach thanh phan 1
+# (<=1024, van gan lam caption that cua anh) + phan 2 (tin nhan rieng, xem
+# approve_post._split_caption_html — LOW-157). Vi vay day la MUC TIEU nen tan
+# dung, khong con la loi chan nop — vuot chi con CANH BAO (_check_measure_long).
 LIMIT = 1024
 # Tran cung cho moi nen tang. Ong Chu chot: viet duoi 2.200 o moi noi thi moat
 # khong phai can thiep gi, khong can caption rieng theo nen tang. Con so nay la
@@ -126,14 +128,16 @@ def count_is(chu: str, tu_lieu: str) -> list:
 
 
 def _check_measure_long(caption: str) -> tuple:
-    """Ba nguong do dai: tran nen tang (loi), gioi han chu thich anh (loi),
+    """Ba nguong do dai: tran nen tang (loi), gioi han chu thich anh (chi
+    nhac — LOW-157: publish() tu tach phan 1/phan 2, khong con chan nop),
     muc nen dat (chi nhac)."""
     loi, canh = [], []
     if len(caption) > CEILING_BACKGROUND_LAYER:
         loi.append(f"Dài {len(caption)} ký tự, vượt trần {CEILING_BACKGROUND_LAYER} của "
                    "Instagram và TikTok. Bài sẽ bị cắt hoặc từ chối khi moat đẩy đi.")
     elif len(caption) > LIMIT:
-        loi.append(f"Dài {len(caption)} ký tự, vượt giới hạn {LIMIT}.")
+        canh.append(f"Dài {len(caption)} ký tự, vượt giới hạn chú thích ảnh {LIMIT} — "
+                    "sẽ tự tách thành phần chú thích ảnh + tin nhắn riêng khi đăng.")
     elif len(caption) < BACKGROUND_SET:
         canh.append(f"{len(caption)} ký tự, còn {LIMIT - len(caption)} ký tự "
                     "chưa dùng trong giới hạn chú thích ảnh. Khai thác thêm số "
