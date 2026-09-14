@@ -1231,6 +1231,54 @@ def test_lam_lai_chi_ap_khi_ong_chu_that_su_bam():
         nc2.count_of_redo = cu
 
 
+def test_only_ranking_choice_mot_anh_xep_hang():
+    """`only_ranking_choice` chỉ trả về mã ảnh khi bài LÀ tin xếp hạng CHỤP được
+    bảng và CHỈ CÓ ĐÚNG MỘT ảnh xếp hạng — None nếu không phải tin xếp hạng,
+    chưa chụp được bảng, không có, hoặc có từ hai ảnh xếp hạng trở lên (còn
+    đường khác để đổi, không cần miễn cổng làm lại)."""
+    import submit_common as nc2
+    m_mot = {"tin_xep_hang": True, "xep_hang": {"kieu": "bang"},
+              "anh": [{"ma": "XH", "xep_hang": True}, {"ma": "A2", "xep_hang": False}]}
+    assert nc2.only_ranking_choice(m_mot) == "XH"
+
+    m_hai = {"tin_xep_hang": True, "xep_hang": {"kieu": "bang"},
+              "anh": [{"ma": "XH", "xep_hang": True}, {"ma": "XH2", "xep_hang": True}]}
+    assert nc2.only_ranking_choice(m_hai) is None
+
+    m_khong_chup = {"tin_xep_hang": True, "xep_hang": {"kieu": "the"},
+                     "anh": [{"ma": "XH", "xep_hang": True}]}
+    assert nc2.only_ranking_choice(m_khong_chup) is None
+
+    m_khong_xep_hang = {"tin_xep_hang": False, "anh": [{"ma": "XH", "xep_hang": True}]}
+    assert nc2.only_ranking_choice(m_khong_xep_hang) is None
+
+
+def test_lam_lai_khong_ket_khi_chi_co_mot_anh_xep_hang():
+    """LOW-146: needs_ranking_image bắt bìa PHẢI là ảnh xếp hạng; check_redo_reused
+    cấm bìa trùng lần trước. Khi bộ ảnh chỉ có ĐÚNG MỘT ảnh xếp hạng và nó đã là
+    bìa lần trước, hai cổng khoá nhau — bộ ảnh không còn đường nộp hợp lệ dù sửa
+    gì khác. `anh_bat_buoc=True` (tính từ only_ranking_choice) phải mở khoá phần
+    so ảnh, nhưng vẫn giữ cổng hook — vai vẫn phải đổi cách diễn đạt."""
+    import submit_common as nc2
+    cu = nc2.count_of_redo
+    try:
+        nc2.count_of_redo = lambda _id: 1                # Ong Chu THAT SU bam lam lai
+        da_dung = {"bia": "XH", "hook": "Hook cu", "remakes": 0}
+        # khong bat_buoc: giu nguyen bia XH bi bat nhu binh thuong
+        loi_cu = nc2.check_redo_reused(da_dung, "bìa", "XH", "Hook moi",
+                                  khoa_anh="bia", draft_id="x")
+        assert len(loi_cu) == 1 and "vẫn là" in loi_cu[0], loi_cu
+        # bat_buoc=True (chi co 1 anh xep hang, khong the doi): bo qua phan so anh,
+        # nhung hook giong het van bi bat
+        assert nc2.check_redo_reused(da_dung, "bìa", "XH", "Hook moi",
+                                khoa_anh="bia", draft_id="x", anh_bat_buoc=True) == []
+        loi_hook = nc2.check_redo_reused(da_dung, "bìa", "XH", "Hook cu",
+                                    khoa_anh="bia", draft_id="x", anh_bat_buoc=True)
+        assert len(loi_hook) == 1 and "hook" in loi_hook[0].lower(), loi_hook
+    finally:
+        nc2.count_of_redo = cu
+
+
 def test_album_da_len_so_theo_tep_va_thoi_gian():
     """Ban cu hoi `if draft_id in dong` tren 400 dong cuoi MOI tep .jsonl, khong
     nhin moc thoi gian: album tu hom qua lam nhanh cuu hieu nham la "vua len",

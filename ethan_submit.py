@@ -135,8 +135,11 @@ def main() -> int:
     kq, loi, canh = resolve_spec(spec, m, wd)
     for c in canh:
         print(f"[CANH BAO] {c}")
+    # LOW-146: cung khoa voi Dre — bai chi co dung mot anh xep hang va bi ep dung
+    # no thi khong bao "lam lai ma van giu anh cu" (xem submit_common.only_ranking_choice).
+    bat_buoc = spec.get("anh") is not None and spec.get("anh") == nc.only_ranking_choice(m)
     loi = nc.check_redo_reused(da_dung, "ảnh", spec.get("anh"), spec.get("hook") or spec.get("title"),
-                          draft_id=a.draft_id) + loi
+                          draft_id=a.draft_id, anh_bat_buoc=bat_buoc) + loi
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
