@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT))
 # va lenh chay tren server, cong nay se bao oan — can mot cong rieng.
 TAI_LIEU = ["README.md", "IMAGE_RULES.md", "STYLE_TEXT_SPEC.md", "ARCHITECTURE.md", "hermes/README.md"]
 
-# NHAT_KY_SU_CO.md va nhat_ky/*.md CO CHU DICH nam ngoai cong nay: chung la NHAT
+# INCIDENT_LOG.md va nhat_ky/*.md CO CHU DICH nam ngoai cong nay: chung la NHAT
 # KY, nen viec chung nhac toi script da xoa (`usage_audit.py`, `doi_model_combo.py`)
 # hay tep cua repo khac (`hermes_cli/env_loader.py`) chinh la noi dung cua chung.
 # Bat chung phai tro toi tep con song la bat chung noi doi ve qua khu.

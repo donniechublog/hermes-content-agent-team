@@ -93,7 +93,7 @@ nhật ký ngày, dòng log nào, cron nào.
 
 Danh sách ticket con đã tạo từ mục "để sau" (LOW-x — một dòng tên). Ticket này
 sinh ra một **tệp mới** `nhat_ky/YYYY-MM-DD-ten-ngan.md` (không sửa tệp nhật ký
-của ticket khác — xem `NHAT_KY_SU_CO.md`), trong đó phải ghi "ticket theo dõi: LOW-x".
+của ticket khác — xem `INCIDENT_LOG.md`), trong đó phải ghi "ticket theo dõi: LOW-x".
 
 ---
 

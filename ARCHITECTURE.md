@@ -367,7 +367,7 @@ thay stage nào, nhưng là nơi phải sửa khi đụng tới thứ tương �
 
 - Sơ đồ này vẽ **kiến trúc**, không vẽ **hành vi chi tiết** — luật ảnh, số đo,
   lịch sử sự cố vẫn nằm ở [README.md](README.md), [IMAGE_RULES.md](IMAGE_RULES.md),
-  [NHAT_KY_SU_CO.md](NHAT_KY_SU_CO.md), [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md).
+  [INCIDENT_LOG.md](INCIDENT_LOG.md), [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md).
 - Khi thêm/bớt vai, đổi hạ tầng (systemd, cron, container), hoặc đổi luồng
   duyệt: cập nhật sơ đồ tương ứng ở đây **và** mục liên quan trong README.md
   trong cùng một commit — hai tài liệu lệch nhau còn hại hơn không có tài liệu.
