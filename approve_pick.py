@@ -25,13 +25,14 @@ from approve_base import (  # noqa: E402
 from approve_dispatch import (  # noqa: E402
     BLACKBOARD_MENTION, DEFAULT_IMAGE, NAME_BRIGHT_CAP, NAME_ROLE_IMAGE, ROLE_CAROUSEL, ROLE_EDU, _blackboard_root, _report_receive_job, standard_label, kanban_create,
 )
+from submit_common import _strip_diacritics                  # noqa: E402
 # Khuon body task (van ban dai) tach sang task_bodies.py — xem ghi chu o do.
 import task_bodies                                            # noqa: E402
 from task_bodies import ILLU_BODY, CAROUSEL_BODY, EDU_BODY, WRITER_BODY  # noqa: E402
 
 
 def slugify(title, fallback):
-    s = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    s = re.sub(r"[^a-z0-9]+", "-", _strip_diacritics(title)).strip("-")
     return (s[:40].strip("-") or fallback)
 
 # Topic nao chon tin tu manifest nao. Finn, Nova va Vera deu la vai DI TIM TIN,

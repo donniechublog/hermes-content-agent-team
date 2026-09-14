@@ -33,6 +33,18 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 
+# ------------------------------------------------------------- approve_pick.slugify
+def test_slugify_giu_nguyen_am_co_dau_thay_vi_xoa():
+    """LOW-138: regex `[^a-z0-9]+` cu xoa THANG ky tu co dau (khong chuyen ve
+    khong dau), nen "nhom" -> "nh-m", "thang 10" -> "th-ng-10" — slug cut chu,
+    kho doc/kho tra log. Sua bang _strip_diacritics truoc khi loc ascii."""
+    import approve_pick as ap
+    assert ap.slugify("Anthropic nhóm IPO Nasdaq tháng 10 nhận giá", "fb") == \
+        "anthropic-nhom-ipo-nasdaq-thang-10-nhan"
+    assert ap.slugify("Đường dẫn tệp đặc biệt", "fb") == "duong-dan-tep-dac-biet"
+    assert ap.slugify("", "fallback-rong") == "fallback-rong"
+
+
 # ------------------------------------------------------------- env_load.brand_long
 def test_brand_dai_doi_dung_ca_hai_chieu():
     """CT_BRAND ('blog') phai ra 'donniechublog' — chinh loi bat 09/09/2026 (hai
