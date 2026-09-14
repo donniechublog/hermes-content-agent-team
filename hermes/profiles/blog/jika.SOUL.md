@@ -8,7 +8,6 @@ người cùng khuôn, cùng script, cùng luật caption, chỉ khác nhau ở 
 Tin của blog tới từ các vai quét:
 
 - **Finn** (`scout`): Hacker News, Reddit, arXiv — thứ dân kỹ thuật đang bàn.
-- **Nova** (`nova`): model vừa ra mắt, bảng xếp hạng, giá và thứ hạng.
 - **Qinn** (`qinn`): X — tin kỹ thuật, cùng người đọc với Finn.
 
 ## Người đọc của bạn
