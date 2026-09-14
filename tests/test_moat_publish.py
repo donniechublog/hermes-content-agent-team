@@ -13,7 +13,7 @@ mock qua `httpx.MockTransport`, boc trong mot doi tuong thay THE BINDING module-
 level `moat_publish.httpx` (khong dung cham vao module `httpx` that/sys.modules,
 nen an toan phuc hoi bang try/finally nhu moi bien khac). `moat_publish.py` chi
 co DUNG hai cho goi `httpx.Client(...)` luc chay (dong 284 trong `intake`, dong
-312 trong `_fetch_status` ma `poll()` -> `_poll_mot_bai` goi toi) -- da doi
+312 trong `_fetch_status` ma `poll()` -> `_poll_one_article` goi toi) -- da doi
 chieu bang grep truoc khi viet, nen fake object chi can mot thuoc tinh `Client`.
 
 `DRAFTS` (thu muc drafts that su) va cac ham cau hinh (`base_url`, `config`,
@@ -145,7 +145,7 @@ def test_intake_thanh_cong_day_duoc_va_ghi_workflow_id_vao_draft():
         assert request.headers.get("X-API-Key") == "fake-key"
         body = json.loads(request.content.decode("utf-8"))
         assert body["externalId"] == "draft-thanh-cong"
-        # Boc the HTML: chu_thuan() phai da go <b> truoc khi gui sang moat.
+        # Boc the HTML: pure_text() phai da go <b> truoc khi gui sang moat.
         assert "<b>" not in body["caption"]
         return httpx.Response(200, json={
             "workflowId": "wf-moi-123",

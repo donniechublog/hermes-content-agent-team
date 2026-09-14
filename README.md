@@ -22,13 +22,13 @@ container chỉ có một vai mỗi loại — nên profile chỉ còn **Tên** 
 không còn hậu tố `.blog`/`.dcgr`. Slug **Profile hermes** là định danh thật
 (lệnh, assignee, topic map); nhãn chỉ là chữ nhìn thấy.
 
-Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `nop_chung.nap`
+Brand đi theo **sidecar của bài**, vai không truyền cờ `--brand`: `submit_common.load_draft_context`
 đọc ra từ `drafts/<id>.*.json`. Cùng một script phục vụ cả hai brand.
 
 **Hai người viết, cắt theo vai quét** (LOW-13, 10/09/2026): Finn và Nova → **Jika**
 (`jika`, donniechublog); Vera → **Miles** (`writer`, dcgr.tech). Quyết định chốt
 ngay lúc chọn tin và nằm trong `drafts/<id>.writer.json`; mọi bước sau đọc lại chỗ đó
-thay vì đoán lại. Bảng định tuyến ở `vai.vai_viet_cua` — hỏi vai quét trước, brand làm
+thay vì đoán lại. Bảng định tuyến ở `role.writer_for` — hỏi vai quét trước, brand làm
 lưới. Vai **ảnh** không đổi: vẫn do Ông Chủ chọn theo từng tin.
 
 | Tên | Profile hermes | Role | Việc |
@@ -85,33 +85,33 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 - `image_prepare.py` — **engine dùng chung** cho mọi vai làm ảnh/chữ từ một tin.
   `approve_service.create_pair` khởi chạy nền (`--im`) ngay lúc Ông Chủ chọn số:
   giải mã link Google News, Bing News RSS tìm báo khác, một phiên chromium (chữ
-  bài, img lớn, chụp table/figure/canvas), `anh_bai`, Wikimedia Commons khi < 5
+  bài, img lớn, chụp table/figure/canvas), `article_images`, Wikimedia Commons khi < 5
   ảnh; vẫn thiếu hoặc không tấm nào làm bìa được thì hai vòng bù theo độ liên
   quan giảm dần — `image_brand.py` tìm **ảnh thương hiệu** (trụ sở/campus của
   chính hãng trong tin, LUAT_ANH §1.2d, vào được slide thân), rồi
   `image_concept.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
   LUAT_ANH §1.2c, chỉ bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
-  `crop_ti_le`; cặp ghép cùng tone; tư liệu. Kết quả
+  `crop_ratio`; cặp ghép cùng tone; tư liệu. Kết quả
   `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
 - Tin **chuyển sang Kite vì thiếu ảnh** (engine tự chuyển khi 0 ảnh, hoặc Ông Chủ
   bấm "Gửi Kite"): những ảnh thật engine đã tìm được **vẫn phải vào bộ của Kite,
-  và phải có ở body** — `kite_chuan_bi.hinh_phai_dung` là một nguồn cho cả brief
-  lẫn cổng `kite_nop` (LUAT_ANH §1.2e). Trừ **ảnh khái niệm**: §1.2c cấm nó ở
+  và phải có ở body** — `kite_prepare.figure_right_use` là một nguồn cho cả brief
+  lẫn cổng `kite_submit` (LUAT_ANH §1.2e). Trừ **ảnh khái niệm**: §1.2c cấm nó ở
   slide thân, nên ép nó vào body là hai cổng đá nhau — nó về bìa qua
-  `hinh_hero`, và `kite_nop` chặn nếu nó xuất hiện ở slide khác slide 1.
+  `figure_hero`, và `kite_submit` chặn nếu nó xuất hiện ở slide khác slide 1.
 - **Bìa của Kite luôn phải là ảnh thật** (LUAT_ANH §1.2f, Ông Chủ 10/09/2026:
   *"không chấp nhận việc dùng vector ở hero slide"*). Slide 1 không có `image`
-  là `kite_nop` chặn — **kể cả khi engine giao 0 ảnh**: "không có ảnh" là thất
+  là `kite_submit` chặn — **kể cả khi engine giao 0 ảnh**: "không có ảnh" là thất
   bại của vòng tìm ảnh, không phải một trạng thái hợp lệ của tin, nên nó phải
   nổ ra chứ không được lặng lẽ thành một bộ slide vẽ tay.
-- Và nước đi đầu là **tìm lại**, không phải báo hỏng: `kite_chuan_bi` không được
-  thừa kế `xong.json` đã thất bại của vai cũ (`anh_chuan_bi.chay` trả thẳng tệp
-  cũ, còn task body của Kite không có `--lam-moi`), nên `bao_dam_co_bia` tự chạy
+- Và nước đi đầu là **tìm lại**, không phải báo hỏng: `kite_prepare` không được
+  thừa kế `xong.json` đã thất bại của vai cũ (`image_prepare.run` trả thẳng tệp
+  cũ, còn task body của Kite không có `--lam-moi`), nên `ensure_has_cover` tự chạy
   lại vòng tìm ảnh một lượt khi chưa có tấm nào lên bìa được. Vai cũ cần ~5 ảnh
   mới đủ, Kite chỉ cần một tấm — "vai cũ không đủ" không có nghĩa Kite không đủ.
-  Hết đường thì `dem_vong_loi` đẩy lên Ông Chủ qua `kanban_block`.
-- Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_chuan_bi/dre_nop`,
-  `ethan_chuan_bi/ethan_nop`, `kite_chuan_bi/kite_nop`, `miles_chuan_bi/miles_nop`.
+  Hết đường thì `count_round_error` đẩy lên Ông Chủ qua `kanban_block`.
+- Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_prepare/dre_submit`,
+  `ethan_prepare/ethan_submit`, `kite_prepare/kite_submit`, `miles_prepare/miles_submit`.
   Nop chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi
   `drafts/<id>.ban_giao.md` và `da_dung.json` (để "Làm lại" bắt buộc đổi
   ảnh/hook/tone). `--khong-gui`/`--out`/`--khong-push` để thử.
@@ -123,9 +123,9 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   ghép manifest, kiểm bắt buộc, viết báo cáo, gửi topic. `--khong-co` gửi dòng
   "hôm nay không có gì"; `--thu` không ghi manifest thật.
   **Một lần quét = một báo cáo**: bản mất tin (`[bo qua]`) hay tiêu đề tiếng
-  Việt mất dấu bị `loi_chan_gui` chặn, rc=1, vai sửa tệp nộp rồi chạy lại — chạy
+  Việt mất dấu bị `error_block_send` chặn, rc=1, vai sửa tệp nộp rồi chạy lại — chạy
   lại mà vẫn gửi thì topic có nhiều bản gần giống nhau và chỉ bản cuối reply
-  được (sự cố Vera 12/09/2026). Gửi xong, `quet_nop` ghim đường dẫn manifest vào
+  được (sự cố Vera 12/09/2026). Gửi xong, `scan_submit` ghim đường dẫn manifest vào
   `state/<brand>/bao_cao_mid.<vai>.json` để lệnh chọn số đọc đúng bản đã gửi.
 - Skill `ai-background` và bộ retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh
   ảnh bằng CPU quá nặng) — không phải lỗi. Script sinh nền chưa được viết; skill
@@ -135,7 +135,7 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
 ### Thêm một vai mới
 
 Trước 09/09/2026 việc này đụng tám chỗ và quên một chỗ là hỏng **câm**: "kites"
-thiếu trong `TEN_SANG_CAP` làm cả lệnh chọn bị từ chối rồi gửi nhầm cho Finn
+thiếu trong `NAME_BRIGHT_CAP` làm cả lệnh chọn bị từ chối rồi gửi nhầm cho Finn
 (06/09), sidecar ghi slug cũ làm task nằm `ready` hai ngày (01/09). Từ khi có
 `role.py` thì còn **ba bước mã** (dưới) cộng **ba bước cấu hình** không dẫn xuất
 được từ mã: `hermes/profiles/<brand>/<slug>.SOUL.md`, một khoá trong
@@ -146,13 +146,13 @@ mọi bảng cũ:
 
 1. **Một dòng trong `role.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
    nhan_anh=…, viet=…, anh_toi_thieu=…)`. `slug` phải trùng **tên thư mục
-   profile thật** trong `HERMES_HOME`, nếu không `chuan_assignee` từ chối tạo
+   profile thật** trong `HERMES_HOME`, nếu không `standard_assignee` từ chối tạo
    task. `go` là mọi chữ Ông Chủ có thể gõ khi chọn tin (kể cả số nhiều kiểu
    "kites"); `slug_cu` chỉ dành cho slug cũ còn nằm trong sidecar trên đĩa.
    `anh_toi_thieu` là số ảnh thật tối thiểu để vai dựng được sản phẩm — engine
-   ảnh dùng chung đọc nó qua `so_anh_toi_thieu()`, đặt sai thì bài bị báo thiếu
-   ảnh oan (sự cố 10/09/2026). `VAI_ANH`, `TEN_SANG_CAP`, `TEN_VAI_ANH`,
-   `VAI_CAROUSEL`, `VAI_EDU`, `SLUG_CU`, `TEN_HIEN` tự có theo.
+   ảnh dùng chung đọc nó qua `min_images()`, đặt sai thì bài bị báo thiếu
+   ảnh oan (sự cố 10/09/2026). `ROLE_IMAGE`, `NAME_BRIGHT_CAP`, `NAME_ROLE_IMAGE`,
+   `ROLE_CAROUSEL`, `ROLE_EDU`, `SLUG_OLD`, `DISPLAY_NAME` tự có theo.
 2. **Một cặp `<vai>_prepare.py` / `<vai>_submit.py`** — cả hai đọc chung
    `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
    (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).
@@ -171,7 +171,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `card.py` — thẻ đơn. Kiểu `quote` (mặc định): pull-quote trong khung hai góc
   ngoặc, dòng nguồn `--attrib` canh giữa. Kiểu `tran`: tiêu đề một câu trong
   **khung chữ nhật nét** (Ông Chủ chốt 07/09/2026 — trước đó là "không một nét
-  nào"). Cả hai kiểu dùng chung **một** lớp ảnh (`_lop_anh`): nền là bản cover
+  nào"). Cả hai kiểu dùng chung **một** lớp ảnh (`_layer_image`): nền là bản cover
   làm mờ, lớp sắc full bề ngang đặt sát trên, mép dưới tan dần — **không còn
   màu nền đặc** ở đâu. Không màn tối; màu chữ/khung/tên kênh đo theo từng dải
   nền của chính tấm ảnh. Spec chữ và bố cục:
@@ -226,7 +226,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 **Đi tìm tin**
 
 - `scan_sources.py` / `article_sources.py` — quét nguồn của Finn và research lúc chọn
-  tin; tự giải mã link Google News (`giai_ma_gnews`).
+  tin; tự giải mã link Google News (`resolve_code_gnews`).
 - `scan_models.py` — quét của Nova: 23 bảng xếp hạng, mục "RA MẮT THEO BẢNG CHẤM
   ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
   **Bảng đăng ký ở `model_boards.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
@@ -258,7 +258,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `approve_post` / `approve_chat` / `approve_command`. Mọi tin nhắn vào đều có log
   (`state/<brand>/approve.log`, xoay vòng 5 MB×3) theo nhãn
   `vao → route → chat/chon/lenh → tele`, và mọi nhánh kết thúc bằng một tin trả về.
-  Lệnh chọn số còn báo **ngay khi nhận** (`_bao_da_nhan`, kèm tiêu đề từng số)
+  Lệnh chọn số còn báo **ngay khi nhận** (`_report_already_label`, kèm tiêu đề từng số)
   trước khi vào việc — `create_pair` mất tới 180 giây một tin, đo thật 157 giây
   im lặng ngày 11/09/2026.
 - `chat_router.py` — định tuyến chat Telegram → hermes CLI theo topic (blog).
@@ -296,8 +296,8 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `test_cong_chan` giữ các cổng chặn và đường báo lỗi của nop, `test_cong_thuan`
   giữ mấy hàm thuần đã từng hồi quy im lặng (lệnh chọn số, `draft_id` ≤ 55 byte,
   cắt tin nhắn dài), `test_ham_thuan` giữ các hàm không ai canh mà quyết định
-  nhiều (`co_tieng_viet`, `_url_hop_le`, `route`, `_HangFIFO`, `gom_trung`,
-  `tong_hop` của nhật ký 9router),
+  nhiều (`has_vietnamese`, `_url_valid`, `route`, `_HangFIFO`, `gather_duplicate`,
+  `aggregate` của nhật ký 9router),
   `test_soat_cron` giữ người canh cuối cùng (job soát cron — nó im thì không
   còn ai), `test_the_anh` soi chính tấm ảnh ra (mảng nền đặc = một dải pixel
   giống hệt nhau, đếm được), `test_spec_dre` giữ cổng spec carousel của Dre
@@ -309,8 +309,8 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `test_spec_kite` giữ hai cổng spec còn lại (cùng fixture manifest với
   `test_spec_dre`; Kite tắt YuNet trong test), `test_khai_niem` giữ từ khoá,
   bộ lọc Commons và nhãn của ảnh khái niệm, và `test_tai_lieu` chặn tài liệu
-  trôi khỏi mã. Ba cổng dùng chung của Dre/Ethan nằm ở `nop_chung`
-  (`can_anh_xep_hang`, `anh_khong_lien_quan`, `kiem_da_dung_nhieu`) — trước
+  trôi khỏi mã. Ba cổng dùng chung của Dre/Ethan nằm ở `submit_common`
+  (`needs_ranking_image`, `irrelevant_images`, `check_not_reused_across_runs`) — trước
   07/09/2026 mỗi vai một bản, và đã lệch một lần (Ethan không đọc cờ
   `lien_quan`).
   Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
@@ -329,8 +329,8 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 
   **Test không được đụng vào state thật.** Hai chỗ từng đụng: `assemble` gọi
   thẳng `emoji_deck.next_emoji` (mỗi lần chạy suite đẩy sổ emoji của Jean đi ba
-  bước) — nay truyền `lay_emoji=`; và `luat_anh._so_da_dung` bị gán đè không trả
-  lại, khiến `kiem_da_dung` trả rỗng vô điều kiện trong mọi test sau đó — nay
+  bước) — nay truyền `lay_emoji=`; và `image_rules._used_images_log` bị gán đè không trả
+  lại, khiến `check_not_reused` trả rỗng vô điều kiện trong mọi test sau đó — nay
   qua `_so_tam()`. Thêm test mới thì giữ đúng hai lối này.
 - `check_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
@@ -353,7 +353,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
 - Lệnh chọn nhiều tin nhiều vai ("1, 3 - Ethan, 2 - Dre") được **sắp theo vai** trước
   khi tạo task, nên vai xuất hiện trước làm hết bài của mình rồi vai sau mới bắt đầu.
 - Hàng đợi có tiếng nói: mỗi task bắt đầu / xong / dừng, approve_service đưa một dòng
-  vào topic của vai đó kèm số việc còn xếp hàng (`bao_tien_do_kanban`, mỗi vòng poll).
+  vào topic của vai đó kèm số việc còn xếp hàng (`report_progress_kanban`, mỗi vòng poll).
   Ngày 04/09 Ông Chủ chọn 7 bài lúc 05:33, Nova xếp thứ 8, im lặng cả tiếng trông
   như hệ thống đứng — nên có mục này.
 - Chat Telegram (đổi 04/09): **không còn một hàng chung cho cả 12 vai** — với khoá
@@ -367,10 +367,10 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   - **Nguyên tắc (Ông Chủ, 04/09): task làm lần lượt được, reply phải song song và
     nhanh** — reply đơ là công việc treo theo hết. Task kanban vẫn `max_in_progress: 1`.
   - **Nguyên tắc (Ông Chủ, 08/09): vai cần phản hồi ngay khi được giao task là đã
-    nhận task** — trước đó `_bao_nhan_viec` chỉ bắn khi việc CHUYỂN giữa hai vai
+    nhận task** — trước đó `_report_receive_job` chỉ bắn khi việc CHUYỂN giữa hai vai
     (Dre→Miles, →Kite); task MỚI tạo trong `approve_pick.py` (Ông Chủ chọn tin) thì
-    im lặng cho tới khi dispatcher thực sự chạy (tới 1 phút). Nay `_xu_ly_chon` gọi
-    `_bao_nhan_viec(..., tu_vai=None, ...)` ngay sau `create_pair` nên vai luôn được
+    im lặng cho tới khi dispatcher thực sự chạy (tới 1 phút). Nay `_process_pick` gọi
+    `_report_receive_job(..., tu_vai=None, ...)` ngay sau `create_pair` nên vai luôn được
     báo "đã nhận task" tức thì, không đợi dispatcher.
 - Chat giữ mạch bằng `hermes chat -c tele-<vai> --create-if-missing -Q -q` (`chat_router.py`).
   Trước 04/09 dùng `--continue … -z`: `-z` được xử lý trước và thoát luôn nên `--continue`
@@ -504,17 +504,17 @@ có bảng này thì không ai biết sửa một tệp sẽ đụng vào ai.
 
 | Tệp | Ai TẠO | Ai SỬA | Ai ĐỌC |
 |---|---|---|---|
-| `drafts/<id>.meta.json` | `duyet_chon_tin.write_meta` | `anh_chuan_bi` (nền), `bang_den` | vai ảnh, vai viết, Ada |
-| `drafts/<id>.img.json` | `duyet_chon_tin` | `duyet_bai` (làm lại, chuyển Kite) | `duyet_bai`, Ada |
-| `drafts/<id>.writer.json` | `duyet_chon_tin` | `duyet_bai` (duyệt / bỏ hẳn) | `duyet_bai`, Ada |
-| `drafts/<id>.json` (bản nháp) | `draft_write` | `duyet_bai.mark_draft`, `moat_publish` (cron) | `duyet_bai`, `publish` |
-| `drafts/<id>.ban_giao.md` | `*_nop` | — | `duyet_bai` dán vào task Miles |
-| `state/<brand>/chuan_bi/<id>/xong.json` | `anh_chuan_bi` | — | mọi `*_chuan_bi` và `*_nop` |
-| `state/<brand>/anh_da_dung.jsonl` | `nop_chung.gui_album` | `duyet_bai` (gỡ khi Bỏ/Làm lại) | `luat_anh.kiem_da_dung` |
-| `state/<brand>/bat_buoc_<vai>.json` | script quét | `manifest_ghi` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
-| `state/<brand>/<vai>_candidates_*.json` | `manifest_*` | — | `duyet_chon_tin` (chọn theo mtime) |
-| `state/9router/` | `theo_doi_9router` | — | `nhat_ky_web`, Ada |
-| `state/soat_cron.json` | `soat_cron` (brand nào chạy trước) | brand kia | `soat_cron` của brand kia |
+| `drafts/<id>.meta.json` | `approve_pick.write_meta` | `image_prepare` (nền), `blackboard` | vai ảnh, vai viết, Ada |
+| `drafts/<id>.img.json` | `approve_pick` | `approve_post` (làm lại, chuyển Kite) | `approve_post`, Ada |
+| `drafts/<id>.writer.json` | `approve_pick` | `approve_post` (duyệt / bỏ hẳn) | `approve_post`, Ada |
+| `drafts/<id>.json` (bản nháp) | `draft_write` | `approve_post.mark_draft`, `moat_publish` (cron) | `approve_post`, `publish` |
+| `drafts/<id>.ban_giao.md` | `*_submit` | — | `approve_post` dán vào task Miles |
+| `state/<brand>/chuan_bi/<id>/xong.json` | `image_prepare` | — | mọi `*_prepare` và `*_submit` |
+| `state/<brand>/anh_da_dung.jsonl` | `submit_common.send_album` | `approve_post` (gỡ khi Bỏ/Làm lại) | `image_rules.check_not_reused` |
+| `state/<brand>/bat_buoc_<vai>.json` | script quét | `manifest_write` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
+| `state/<brand>/<vai>_candidates_*.json` | `manifest_*` | — | `approve_pick` (chọn theo mtime) |
+| `state/9router/` | `monitor_9router` | — | `journal_web`, Ada |
+| `state/soat_cron.json` | `audit_cron` (brand nào chạy trước) | brand kia | `audit_cron` của brand kia |
 
 **Quy ước gốc state:** `state/<brand>/` cho mọi thứ thuộc về một brand;
 `state/` gốc **chỉ** cho thứ chung cả máy (nhật ký 9router, khoá). Sổ theme của
@@ -524,7 +524,7 @@ không có lý do nào. Đã chuyển về `state/<brand>/` ngày 06/09/2026.
 
 **Tệp nào có nhiều tiến trình cùng ghi thì phải ghi qua `env_load.ghi_json`**
 (tmp + `os.replace`), không `write_text` thẳng — đó là `meta.json` (approve,
-engine nền, bảng đen), `drafts/<id>.json` (draft_write, duyet_bai, cron moat) và
+engine nền, bảng đen), `drafts/<id>.json` (draft_write, approve_post, cron moat) và
 mọi sidecar của `duyet_*`. `write_text` cắt ngắn tệp cũ trước khi ghi nội dung
 mới, nên hai tiến trình trùng thời điểm để lại một sidecar cụt và mọi người đọc
 sau đó ném `ValueError` — bài kẹt vĩnh viễn mà không ai biết. Tệp chỉ một tiến

@@ -107,7 +107,7 @@ def send_text_fragments(token, chat, text, parse_mode="HTML", thread=None) -> li
     Vi sao nguoi goi can CA danh sach chu khong chi manh cuoi: bao cao danh so
     dai thanh hai tin thi muc so 1 nam o manh DAU, va Ong Chu reply vao chinh
     manh do. `--luu-mid` truoc 12/09/2026 chi giu mid cua manh CUOI, nen cong
-    `_la_reply_bao_cao` thay mid khong khop, im lang bo qua ca lenh chon."""
+    `_is_reply_report` thay mid khong khop, im lang bo qua ca lenh chon."""
     ket_qua = []
     for phan in tele_util.split_message(single_pretty(text)):
         with httpx.Client(timeout=60) as c:
@@ -203,7 +203,7 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
 def send_topic(text: str, vai: str) -> bool:
     """Gui `text` (HTML) vao topic cua `vai` trong group cua brand. Thieu token/
     group thi in ra man hinh; loi Telegram thi in canh bao — KHONG nem, vi day la
-    ham cua script cron (model_watch, nhat_ky_daily, theo_doi_9router).
+    ham cua script cron (model_watch, nhat_ky_daily, monitor_9router).
     Truoc 05/09/2026 sau tep tu viet lai doan nay moi tep mot kieu."""
     env_load.load()
     tok = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -292,7 +292,7 @@ def _main():
             a.luu_mid.parent.mkdir(parents=True, exist_ok=True)
             mids = [r.get("message_id") for r in cac_manh] or [res.get("message_id")]
             # Ghi de CA tep (khong merge): moi lan gui la mot bao cao moi, cac
-            # khoa cu (vd `manifest` do quet_nop ghim) phai bien mat cung ban cu.
+            # khoa cu (vd `manifest` do scan_submit ghim) phai bien mat cung ban cu.
             a.luu_mid.write_text(
                 json.dumps({"message_id": res.get("message_id"),
                             "message_ids": [m for m in mids if m],

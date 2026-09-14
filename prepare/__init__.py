@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Goi `chuan_bi`: engine chuan bi anh/tu lieu, tach theo PHA (audit A1).
+"""Goi `prepare`: engine chuan bi anh/tu lieu, tach theo PHA (audit A1).
 
-image_prepare.py o goc van la diem vao (chay/CLI) de cron, SOUL va cac vai KHONG
+image_prepare.py o goc van la diem vao (run/CLI) de cron, SOUL va cac vai KHONG
 phai doi lenh. Thu tu phu thuoc mot chieu:
-    chung <- nguon, browser, tai_loc <- nhin <- vong_bu;  manifest <- chung
+    common <- source, browser, download_filter <- vision <- fallback_rounds;  manifest <- common
 """
 import sys
 from pathlib import Path

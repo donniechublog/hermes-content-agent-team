@@ -53,8 +53,8 @@ def test_top10_la_kich_co_danh_sach_khong_phai_hang():
 def test_ethan_va_dre_deu_goi_cong():
     src_e = (ROOT / "ethan_submit.py").read_text(encoding="utf-8")
     src_d = (ROOT / "dre_submit.py").read_text(encoding="utf-8")
-    assert "check_rank_matches_image(" in src_e, "ethan_nop chua goi cong LOW-24"
-    assert "check_rank_matches_image(" in src_d, "dre_nop chua goi cong LOW-24"
+    assert "check_rank_matches_image(" in src_e, "ethan_submit chua goi cong LOW-24"
+    assert "check_rank_matches_image(" in src_d, "dre_submit chua goi cong LOW-24"
 
 
 if __name__ == "__main__":

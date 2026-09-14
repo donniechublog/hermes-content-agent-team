@@ -4,10 +4,10 @@
 mất công cụ tìm ảnh (Ông Chủ 09/09/2026).
 
 Bốn hàm thuần, không mạng:
-  - hang_trong_tin    tiêu đề -> hãng; hỏng = tin hai hãng chỉ hỏi được một.
+  - vendors_in_story    tiêu đề -> hãng; hỏng = tin hai hãng chỉ hỏi được một.
   - truy_van          hãng -> câu hỏi Commons; hỏng = hỏi tên trần, ra ảnh hội thảo mờ.
-  - loc_commons       lọc trang API; hỏng = rừng Amazon / quả táo lọt vào bộ.
-  - nhan_thuong_hieu  siết nhãn; hỏng = mặt người vô danh lên bìa (LUAT_ANH §6).
+  - filter_commons       lọc trang API; hỏng = rừng Amazon / quả táo lọt vào bộ.
+  - label_brand  siết nhãn; hỏng = mặt người vô danh lên bìa (LUAT_ANH §6).
 
 Chạy:  venv/bin/python tests/test_thuong_hieu.py
 """
@@ -24,7 +24,7 @@ def _h(tieu_de, tom=""):
 
 
 def test_hai_hang_trong_mot_tin_deu_ra():
-    """Tin sáng 09/09 làm lộ lỗi: `_ten_rieng_dau` chỉ ra "Qualcomm", Amazon
+    """Tin sáng 09/09 làm lộ lỗi: `_leading_proper_noun` chỉ ra "Qualcomm", Amazon
     không bao giờ được hỏi tới."""
     assert _h("Qualcomm signs AI chip deal with Amazon, option to buy $4B in shares") \
         == ["Qualcomm", "Amazon"]
@@ -48,7 +48,7 @@ def test_toi_da_ba_hang_va_khong_trung():
 
 def test_ten_tran_watchlist_khong_giu():
     """WATCHLIST giữ "google deepmind"/"meta ai" (dạng liên quan AI); tin thì
-    viết "Google", "Meta". Bù bằng TEN_THEM, không sửa WATCHLIST."""
+    viết "Google", "Meta". Bù bằng NAME_EXTRA, không sửa WATCHLIST."""
     assert _h("Google cuts cloud prices") == ["Google"]
     assert _h("Meta buys a data center site") == ["Meta Platforms"]
     assert _h("Snapdragon 8 Elite ships") == ["Qualcomm"]
@@ -109,7 +109,7 @@ def test_loc_bo_anh_mit_tinh_cong_doan():
     """Đo thật 09/09/2026: câu "Amazon building" trả về hai tấm "International
     Day of Solidarity With Alabama Amazon Workers" — đúng chữ Amazon, sai hẳn
     loại ảnh cho tin ký hợp đồng chip. Tên tệp không có chữ "protest" nên
-    TEN_LOAI không bắt được."""
+    NAME_TYPE không bắt được."""
     pages = {"1": _pg("International Day of Solidarity With Alabama Amazon Workers 01.jpg"),
              "2": _pg("Amazon workers strike in Coventry.jpg"),
              "3": _pg("Amazon Spheres Seattle.jpg")}
@@ -248,7 +248,7 @@ def test_nhan_chan_dung_doi_khai_dung_ten():
 
 
 def test_nhan_chan_dung_khong_chan_theo_mat():
-    """`dem_mat` trả None (-> 0) khi thiếu cv2, mà LUAT_ANH §6 cho phép cổng mặt
+    """`count_faces` trả None (-> 0) khi thiếu cv2, mà LUAT_ANH §6 cho phép cổng mặt
     tự tắt. Lấy mat==0 làm "không phải chân dung" là bỏ câm lặng mọi chân dung."""
     a = th.label_brand(_anh(thuong_hieu={"hang": "Anthropic", "loai": "nguoi",
                                               "nguoi": "Dario Amodei", "vai": "CEO"}, mat=0))
@@ -256,7 +256,7 @@ def test_nhan_chan_dung_khong_chan_theo_mat():
 
 
 def test_nhan_the_logo_go_ghi_chu_chart_mau_thuan():
-    """Thẻ logo là nền trơn + chữ nên `phan_loai` đọc ra "chart" và dán kèm
+    """Thẻ logo là nền trơn + chữ nên `classify` đọc ra "chart" và dán kèm
     "KHÔNG làm bìa" — ngược hẳn công dụng của nó (09/09/2026)."""
     a = th.label_brand(_anh(thuong_hieu={"hang": "DeepSeek", "loai": "logo", "nen": "tối"},
                                  loai="chart", dung=["thân (chart, dán full bề ngang)"],

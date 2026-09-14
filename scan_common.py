@@ -5,7 +5,7 @@ Vi sao co tep nay (06/09/2026, audit dot 1): cung mot viec duoc viet lai o
 nhieu cho, va cac ban da bat dau lech nhau.
 
   - Chuan hoa URL: `scan_sources._norm_url`, `manifest_build._norm`,
-    `bat_buoc.chuan_link` — ba ban CUNG y dinh, khac thu tu `.lower()` va
+    `required` (ham cu `chuan_link`) — ba ban CUNG y dinh, khac thu tu `.lower()` va
     `.strip()`. Ba ban chuan hoa khac nhau nghia la "da thay tin nay chua" tra
     loi khac nhau tuy ai hoi.
   - Tai trang: `scan_models._get` va `scan_business._get`, cung chu thich ve
@@ -32,9 +32,9 @@ UA = "Mozilla/5.0 (compatible; donniechu-scout/1.0)"
 
 VN = timezone(timedelta(hours=7))
 
-# Ten hien thi cua ba vai di tim tin. Truoc day co hai bang (quet_nop.TEN va
-# bao_cao_manifest.TEN_VAI) va chung phai nho sua cung luc.
-# `vera` la but danh cu cho role `market` — bao_cao_manifest van nhan ca hai
+# Ten hien thi cua ba vai di tim tin. Truoc day co hai bang (scan_submit.NAME va
+# manifest_report.NAME_ROLE) va chung phai nho sua cung luc.
+# `vera` la but danh cu cho role `market` — manifest_report van nhan ca hai
 # de bao cao cu khong ra "None".
 NAME_ROLE = {"finn": "Finn", "nova": "Nova", "vera": "Vera", "qinn": "Qinn"}
 
@@ -47,11 +47,11 @@ def host_say_drop(host: str) -> bool:
     """Host nay co tro vao trong may / mang rieng khong.
 
     MOT cho duy nhat cho ca doi. Truoc 06/09/2026 chi `article_extract` va
-    `duyet_lenh` co cong nay, va ca hai deu so khop bang regex tren CHUOI:
+    `approve_command` co cong nay, va ca hai deu so khop bang regex tren CHUOI:
     `127.0.0.1` bi chan nhung `127.1`, `2130706433` (dang thap phan) va
     `[::1]` thi khong. Cac duong tai con lai — anh trong HTML bai bao,
     `page.goto` theo trang tim kiem, `httpx.head` theo chuyen huong,
-    `chup_chart` — khong co cong nao.
+    `capture_chart` — khong co cong nao.
 
     Dung `ipaddress` nen bat duoc moi cach viet cua cung mot dia chi. Van
     KHONG resolve DNS: mot ten mien cong khai tro ve 127.0.0.1 se lot, va do
@@ -106,7 +106,7 @@ def standard_link(u: str) -> str:
     HA CHU THUONG TRUOC roi moi boc scheme. Ban cua `scan_sources`/
     `manifest_build` ha chu o CUOI, ma regex `^https?://(www\.)?` phan biet hoa
     thuong — nen "HTTP://WWW.a.io" khong bi boc scheme va thanh mot khoa khac
-    han "a.io". Hai ban do coi cung mot bai la hai bai; ban cua `bat_buoc` lam
+    han "a.io". Hai ban do coi cung mot bai la hai bai; ban cua `required` lam
     dung, va day lay theo no.
     """
     from urllib.parse import parse_qsl, urlencode
@@ -132,9 +132,9 @@ def ask_commons(cau: str, so: int = 20, loai_logo: bool = True):
     """Tim anh bitmap tren Wikimedia Commons. Tra `query.pages` (dict, co the
     rong = KHONG CO anh), hoac None khi HONG VI MOI TRUONG (mang, HTTP, JSON).
 
-    MOT ban cho ba nguoi goi (chuan_bi/nguon, anh_khai_niem, anh_thuong_hieu).
+    MOT ban cho ba nguoi goi (prepare/source, image_concept, image_brand).
     Truoc audit lượt 2 (ADF-r2-16) cung query nay chep ba lan, va quy uoc C1
-    chi ap cho hai: anh_thuong_hieu._hoi_commons tra {} khi mat mang, log khong
+    chi ap cho hai: image_brand._ask_commons tra {} khi mat mang, log khong
     co repr — "mat mang" va "hang khong co anh" la mot.
 
     `loai_logo`: them -intitle:logo -intitle:icon (anh khai niem / thuong hieu);
@@ -189,8 +189,8 @@ def timestamp_time(txt: str) -> float:
     return 0.0
 
 # Tu qua chung, bo khi so "hai tieu de co noi cung mot chuyen khong". Truoc
-# 06/09/2026 co hai ban: `nguon_bai.TU_RONG` va mot bo go tay trong
-# `anh_bai._tu_dac_trung`, khac nhau dung mot tu ("how") — nen cung mot cap tieu
+# 06/09/2026 co hai ban: `article_sources.FROM_EMPTY` va mot bo go tay trong
+# `article_images` (ham cu `_tu_dac_trung`), khac nhau dung mot tu ("how") — nen cung mot cap tieu
 # de co the "cung tin" voi ham nay va "khac tin" voi ham kia.
 FROM_EMPTY = {"the", "a", "an", "of", "in", "on", "to", "for", "and", "or", "with",
            "new", "ai", "model", "is", "its", "as", "at", "by", "from", "how"}

@@ -57,7 +57,7 @@ DAY=$(TZ=Asia/Ho_Chi_Minh date +%Y-%m-%d)
 # Vai chay NHIEU LAN trong ngay phai co LUOT trong khoa chong trung va trong
 # tieu de. Khong co thi luot sau trung khoa cua luot dau: kanban tra ve task CU
 # (da done), khoi kiem ben duoi thoat 1, va luot sau im lang khong chay.
-# KHUNG_GIO phai khop quet_chuan_bi.KHUNG_GIO va cron expr cua job qinn-scan:
+# KHUNG_GIO phai khop scan_prepare.FRAME_HOURS va cron expr cua job qinn-scan:
 # 12 = hai luot/ngay (05:00 va 17:00 VN).
 case "$VAI" in
   qinn)

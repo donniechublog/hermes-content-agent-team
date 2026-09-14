@@ -9,7 +9,7 @@ quote, tiêu đề báo Nga RBC.
 
 Bốn phần, mỗi phần có ví dụ ĐÚNG-PHẢI-QUA đi kèm SAI-PHẢI-CHẶN:
   1. vision hỏi thêm dòng ROI, trả qua `ket_qua` mà không đổi số phần tử tuple;
-  2. `phan_loai`: ảnh rối không làm bìa, có ghi chú đầu dòng;
+  2. `classify`: ảnh rối không làm bìa, có ghi chú đầu dòng;
   3. `submit_common.check_image_fall`: chỉ chặn khi CÒN ảnh sạch thật sự thay được;
   4. nền chữ đặc ở carousel và thẻ Ethan.
 
@@ -54,7 +54,7 @@ def _anh_tam(tmp, ten="a.png", w=1000, h=1250, tone=(30, 30, 40), seed=3):
 
 
 def _hoi_vision(tra_loi, **k):
-    """Goi mo_ta_anh voi router gia; tra (ket qua, ket_qua dict, cau hoi da gui)."""
+    """Goi description_image voi router gia; tra (ket qua, ket_qua dict, cau hoi da gui)."""
     gui = {}
 
     def _goi(req, _ngu=None):
@@ -102,7 +102,7 @@ def test_vision_hoi_them_cua_bob_van_ba_phan_tu():
     assert kq["roi"] is False
 
 
-# ---------------------------------------------------------------- 2. phan_loai
+# ---------------------------------------------------------------- 2. classify
 def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
     def _gia(path, tieu_de, hang="", **k):
         k["ket_qua"]["roi"] = True
@@ -120,7 +120,7 @@ def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
     assert a["ghi_chu"][0].startswith("⚠️ ẢNH RỐI"), a["ghi_chu"]
 
 
-# ---------------------------------------------------------------- 3. kiem_anh_roi
+# ---------------------------------------------------------------- 3. check_image_fall
 def _muc(tmp, ma, seed, **k):
     a = {"ma": ma, "goc": str(_anh_tam(tmp, f"{ma}.png", seed=seed)), "dung": ["thân"],
          "lien_quan": True, "roi": False, "loai": "anh", "mat": 0, "ngang": False, "h": 1250}
@@ -256,7 +256,7 @@ def _la_nen(canvas, y, bg):
 
 
 def test_nguong_phan_biet_chu_in_san_voi_anh_chup():
-    """Hai loại dải giả phải rơi đúng hai phía ngưỡng NEN_ROI_CHU, không thì
+    """Hai loại dải giả phải rơi đúng hai phía ngưỡng BACKGROUND_FALL_TEXT, không thì
     các test dưới đo sai thứ."""
     import card
     e = card._capability_flow_rank(_canvas_vung(1080, 400, [(0, 199, "chu"), (200, 399, "anh")]))

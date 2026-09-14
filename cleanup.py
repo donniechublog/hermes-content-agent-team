@@ -79,7 +79,7 @@ def trim_jsonl(file_path: Path, keep_lines: int = 5000, dry_run: bool = False) -
     if not dry_run:
         # Ghi ra tep tam CUNG thu muc roi os.replace: open('w') cat tep ve 0
         # truoc khi ghi lai, chet giua chung (het dia, kill) la MAT SACH nhat ky
-        # — trong khi luat_anh/gui_telegram dang append vao chinh tep nay tu
+        # — trong khi image_rules/send_telegram dang append vao chinh tep nay tu
         # tien trinh khac. Cung cach env_load.ghi_json da lam (B-r2-5).
         tam = file_path.with_name(f"{file_path.name}.tmp.{os.getpid()}")
         with open(tam, "w", encoding="utf-8") as fh:
@@ -104,7 +104,7 @@ def cleanup_append_only_logs(state_dir: Path, keep_lines: int = 5000, dry_run: b
     for log_file in state_dir.glob("*_da_dung.jsonl"):
         trimmed += trim_jsonl(log_file, keep_lines, dry_run)
 
-    # <vai>_nop.jsonl
+    # <vai>_submit.jsonl
     for log_file in state_dir.glob("*_nop.jsonl"):
         trimmed += trim_jsonl(log_file, keep_lines, dry_run)
 

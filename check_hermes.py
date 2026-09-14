@@ -30,16 +30,16 @@ HERMES_PY = Path.home() / "hermes-agent" / "venv" / "bin" / "python"
 
 # Cot ta doc bang SQL THO. Thieu mot cot la nhat ky/bang dieu phoi chet cham.
 COLUMN_CAN = {
-    # nhat_ky.phan_kanban + duyet_giao_viec (SELECT ... FROM tasks)
+    # journal.part_kanban + approve_dispatch (SELECT ... FROM tasks)
     # Tu 09/09/2026 (C2) moi cau doc kanban.db di qua hermes_adapter — danh sach
     # nay phai KHOP hermes_adapter._COT_VIEC / _COT_LAN_CHAY. Review Fable bat
-    # duoc hai cot thieu: `started_at` (ada_chuan_bi tinh giay trung binh) va
+    # duoc hai cot thieu: `started_at` (ada_prepare tinh giay trung binh) va
     # `task_runs.id` (adapter ORDER BY id de lay lan chay cuoi) — hermes doi
     # hai cot do thi script nay van xanh ma adapter vo.
     # DAN XUAT tu adapter (ADF-r2-4): truoc day chep tay "phai KHOP" ma khong
-    # test nao noi hai bang — hermes doi cot thi kiem_hermes van xanh, adapter vo.
+    # test nao noi hai bang — hermes doi cot thi check_hermes van xanh, adapter vo.
     "tasks": [c for c, _ in hermes_adapter._COT_VIEC],
-    # nhat_ky.phan_kanban + duyet_giao_viec (banh giao doc `metadata` o DAY,
+    # journal.part_kanban + approve_dispatch (banh giao doc `metadata` o DAY,
     # khong phai o `tasks` — cot cua hai bang de nho nham). `id`/`task_id` la
     # cot adapter dung trong WHERE/ORDER BY, khong nam trong bang map.
     "task_runs": ["id", "task_id"] + [c for c, _ in hermes_adapter._COT_LAN_CHAY],
@@ -47,7 +47,7 @@ COLUMN_CAN = {
     "task_events": ["id", "task_id", "run_id", "kind", "payload", "created_at"],
 }
 # profiles/<vai>/state.db — mat ghep noi thu 6 (audit lượt 2, ADF-r2-3): truoc
-# day theo_doi_9router va ada_chuan_bi doc thang bang SQL tho, khong ai kiem.
+# day monitor_9router va ada_prepare doc thang bang SQL tho, khong ai kiem.
 # Phai KHOP hermes_adapter._COT_DUNG_MODEL / _COT_PHIEN.
 COLUMN_CAN_STATE = {
     "session_model_usage": list(hermes_adapter._COT_DUNG_MODEL),
@@ -121,7 +121,7 @@ def check_has_chat() -> list:
 
 
 def check_swarm() -> list:
-    """Ham private cua kanban_swarm ma bang_den goi."""
+    """Ham private cua kanban_swarm ma blackboard goi."""
     if not HERMES_PY.exists():
         return [f"khong thay python cua hermes: {HERMES_PY}"]
     ma = ("import hermes_cli.kanban_swarm as ks\n"

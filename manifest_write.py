@@ -181,16 +181,16 @@ def main():
     mc.list_count(items)
 
     # GIO VN, khong phai UTC. Ca doi song theo ngay VN: cron quet chay 05:01 VN,
-    # `quet_chuan_bi.workdir` dat thu muc `vera_20260912`, bao cao mac dinh cua
-    # `bao_cao_manifest.dung` cung lay gio VN. Rieng dong nay truoc 12/09/2026
+    # `scan_prepare.workdir` dat thu muc `vera_20260912`, bao cao mac dinh cua
+    # `manifest_report.use` cung lay gio VN. Rieng dong nay truoc 12/09/2026
     # lay UTC — tuc 05:01 VN van con la ngay HOM QUA. Hai hau qua that sang
     # 12/09: bao cao len topic de "Vera — 2026-09-11" cho ban quet ngay 12, va
     # ten tep dung vao ten cua hom truoc (da co) nen manifest roi xuong nhanh
-    # `duong_ra_moi` -> `vera_candidates_2026-09-11_t2201.json`.
+    # `path_out_new` -> `vera_candidates_2026-09-11_t2201.json`.
     ngay = datetime.now(scan_common.VN).strftime("%Y-%m-%d")
     ten = f"{PREFIX[a.vai]}_{ngay}{('_' + a.hau_to) if a.hau_to else ''}.json"
     out = Path(a.out) if a.out else STATE / ten
-    # KHONG ghi de manifest da co — ly do day du o `manifest_chung.duong_ra_moi`.
+    # KHONG ghi de manifest da co — ly do day du o `manifest_common.path_out_new`.
     # Ten ban ghi lai bo hau to di (giu nguyen hanh vi cu): `--hau-to` la co THU
     # thu cong, ban ghi lai cua no van mang ten ban chinh.
     if out.exists() and not a.out:

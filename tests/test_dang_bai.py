@@ -19,13 +19,13 @@ Chay:  venv/bin/python tests/test_dang_bai.py
 
 --------------------------------------------------------------------------
 BUG SAN XUAT PHAT HIEN KHI VIET TEST NAY -- DA SUA (09/09/2026):
-approve_service.py dong ~46 import `_label_reason_redo` tu `duyet_giao_viec`,
+approve_service.py dong ~46 import `_label_reason_redo` tu `approve_dispatch`,
 nhung ham nay chi dinh nghia trong `approve_post.py` (dong 344). Loi phat sinh tu
 commit 8cd8226 ("bo shim re-export 79 ten trong approve_service") -- khi don
-import, ten nay bi dat nham vao tuple cua duyet_giao_viec. Hau qua:
+import, ten nay bi dat nham vao tuple cua approve_dispatch. Hau qua:
 `import approve_service` nem ImportError ngay lap tuc, dich vu approve_service
 (ham loop()) khong khoi dong duoc. Da sua bang cach chuyen ten nay ve tuple
-import cua duyet_bai; shim tam trong tep test nay da duoc go bo.
+import cua approve_post; shim tam trong tep test nay da duoc go bo.
 """
 import json
 import sys
@@ -39,7 +39,7 @@ import approve_post as db                                         # noqa: E402
 import approve_service as aps                                  # noqa: E402
 
 
-# =========================================================== _dang_nen =====
+# =========================================================== _form_background =====
 class _MoatGia:
     """Thay the module `moat_publish` that: chi ghi lai draft_id da goi
     intake(), khong dong mang that."""
@@ -52,7 +52,7 @@ class _MoatGia:
 
 
 def _goi_dang_nen(publish_fn):
-    """Thay the publish/mark_draft/moat_publish/_fix_story_go_button cua duyet_bai
+    """Thay the publish/mark_draft/moat_publish/_fix_story_go_button cua approve_post
     bang gia, goi db._form_background(...) voi msg toi thieu, roi tra ve
     (goi_mark_draft, goi_moat_intake, goi_sua_tin) de assert. Khoi phuc moi
     monkeypatch trong finally du _form_background co nem loi hay khong (khong duoc,
@@ -128,7 +128,7 @@ def test_dang_nen_publish_nem_exception_van_ha_publish_failed():
         f"note phai neu ro loai loi + thong diep de con debug: {note!r}"
 
 
-# =============================================== _cuu_bai_ket_publishing ===
+# =============================================== _rescue_article_end_publishing ===
 def _ghi_draft(tmp: Path, ten: str, **du_lieu) -> Path:
     p = tmp / f"{ten}.json"
     p.write_text(json.dumps(du_lieu), encoding="utf-8")

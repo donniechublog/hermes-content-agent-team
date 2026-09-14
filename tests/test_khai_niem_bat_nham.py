@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bảng chủ đề của `anh_khai_niem` BẮT NHẦM nghĩa (LOW-23, Ông Chủ 12/09/2026).
+"""Bảng chủ đề của `image_concept` BẮT NHẦM nghĩa (LOW-23, Ông Chủ 12/09/2026).
 
 `tests/test_khai_niem.py` chỉ kiểm ca THUẬN — "nhắc Nhật thì ra cờ Nhật". Tệp này
 kiểm ca NGHỊCH: từ nào không được kéo tin sang rổ sai. Sinh ra từ một bộ thật —

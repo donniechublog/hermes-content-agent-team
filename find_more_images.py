@@ -15,7 +15,7 @@ Nay giu phan dung, bo phan pha hoai:
     biet). Script di hoi Bing News + Wikimedia Commons, mo trang bang browser,
     tai, nhin (vision), do, cat san — y het engine — roi noi vao xong.json va
     in ra anh moi. Vai chon, may van xu ly.
-  - toi da TOI_DA_LUOT luot mot bai, de khong quay lai 60 tool call/task;
+  - toi da MAX_TURN luot mot bai, de khong quay lai 60 tool call/task;
   - het luot ma van thieu moi kanban_block, va cau block PHAI ke tu khoa da thu.
 
 Dung:
@@ -117,7 +117,7 @@ def try_small_commons(url: str, w: int, h: int) -> tuple:
 
 
 def filter_openverse(kq: dict, tu_khoa: str, so: int) -> list:
-    """Bien ket qua Openverse thanh ung vien cho `tai_va_loc`. Tach rieng de test
+    """Bien ket qua Openverse thanh ung vien cho `download_and_filter`. Tach rieng de test
     khong can mang. Chi giay phep CC dung duoc, chi anh du lon, JPEG/PNG."""
     ra = []
     for r in (kq or {}).get("results") or []:

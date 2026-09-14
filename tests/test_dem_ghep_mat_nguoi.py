@@ -6,10 +6,10 @@ thật thì cổng chặn loại cặp ghép A5+A10 (ra tỉ lệ 0.75, ngoài d
 tấm A3 có mặt người không rõ ai — còn 4 slide, Dre block. Hai chỗ đếm sai:
 
   1. `len(chi_ghep) // 2` coi BẤT KỲ hai tấm chỉ-ghép nào cũng là một cặp;
-  2. tấm mặt người không rõ ai vẫn được đếm dù `kiem_nhan_vat` chặn nó.
+  2. tấm mặt người không rõ ai vẫn được đếm dù `check_subject_named` chặn nó.
 
-Nay người đếm, gợi ý cặp (`manifest.stackable_pairs`) và cổng chặn (`dre_nop`) hỏi
-CÙNG một luật ghép (`image_rules.stack_fit_frame`); người đếm và `anh_chinh_duoc`
+Nay người đếm, gợi ý cặp (`manifest.stackable_pairs`) và cổng chặn (`dre_submit`) hỏi
+CÙNG một luật ghép (`image_rules.stack_fit_frame`); người đếm và `can_be_hero`
 hỏi CÙNG một luật mặt người (`role.face_no_clear_ai`).
 
 Chạy:  venv/bin/python tests/test_dem_ghep_mat_nguoi.py

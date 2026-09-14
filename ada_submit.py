@@ -94,7 +94,7 @@ def main() -> int:
     # dung de doi rubric, tuc mot con so bia o day di thang vao cach cham diem.
     #
     # `xong.json` da chua moi so THAT, va `brief.md` in chung ra — nen doi chieu
-    # duoc bang code, dung ky thuat `caption_check.so_la` (so sanh theo chuoi
+    # duoc bang code, dung ky thuat `caption_check.count_is` (so sanh theo chuoi
     # chu so, bo dau cham/phay/cach, vi hai ben viet "2,5 ti" / "2.5B" / "2500
     # trieu"). Chi CANH BAO, khong chan: hai cach viet khac nhau la chuyen
     # thuong, chan cung se chan oan.

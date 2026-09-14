@@ -34,7 +34,7 @@ def measure_bright_offset(vung):
 def color_average(vung):
     """Mau RGB trung binh cua MOT vung anh (PIL Image) — dung khi can biet
     dung MAU (khong chi do sang xam) de tinh ti le tuong phan voi mot mau cu
-    the da co san (vd mau chu OCR do duoc tu anh goc, xem `ti_le_tuong_phan`).
+    the da co san (vd mau chu OCR do duoc tu anh goc, xem `ratio_wall_part`).
     -> (r, g, b) 0..255."""
     st = ImageStat.Stat(vung.convert("RGB"))
     return tuple(round(c) for c in st.mean[:3])
@@ -74,7 +74,7 @@ def threshold_wall_part(mau_sang, mau_toi):
 
 def ratio_wall_part(mau1, mau2):
     """Ti le tuong phan WCAG giua HAI MAU RGB THAT (0..255 moi kenh) — khac
-    `nguong_tuong_phan` (tim DIEM SANG NEN noi hai lua chon mau hoa nhau): ham
+    `threshold_wall_part` (tim DIEM SANG NEN noi hai lua chon mau hoa nhau): ham
     nay dung khi da co san ca hai mau cu the (vd mau chu do tu anh goc qua OCR
     + mau nen do duoc sau khi da xoa/ve lai) va can biet chung co du tuong
     phan voi nhau khong. 1.0 = khong the phan biet, 21.0 = den tren trang."""

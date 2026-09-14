@@ -57,7 +57,7 @@ def test_nuoc_va_ma_co_phieu():
     assert lt.country_of("khong co") == ""
     assert lt.code_has_ballot("nvidia") == "NVDA:NASDAQ"
     assert lt.code_has_ballot("anthropic") == "", "hãng tư nhân không được đoán mã"
-    # Ten nuoc phai la ten chuan trong anh_khai_niem.NUOC de "flag of" khop
+    # Ten nuoc phai la ten chuan trong image_concept.COUNTRY de "flag of" khop
     for nuoc in set(lt.COUNTRY_OF_RANK.values()):
         assert nuoc in k.COUNTRY.values(), f"{nuoc!r} khong co trong image_concept.COUNTRY"
 

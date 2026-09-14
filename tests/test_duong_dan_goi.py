@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Hằng số đường dẫn trong gói `chuan_bi/` phải trỏ về GỐC DỰ ÁN.
+"""Hằng số đường dẫn trong gói `prepare/` phải trỏ về GỐC DỰ ÁN.
 
 Su co 09/09/2026 (commit 7b72620): khi tach goi A1, dong
 `ROOT = Path(__file__).resolve().parent` duoc chep NGUYEN VAN tu
 image_prepare.py o goc sang prepare/common.py. Tep moi nam sau mot cap thu muc
-nen mot `.parent` chi ra `chuan_bi/`, khien `DRAFTS = ROOT / "drafts"` thanh
+nen mot `.parent` chi ra `prepare/`, khien `DRAFTS = ROOT / "drafts"` thanh
 `chuan_bi/drafts` (rong). Moi lenh doc `drafts/<id>.meta.json` bao "Khong thay
 ... task nay khong do approve_service tao?" du tep TON TAI — bat duoc khi
 kite_submit.py chay lai mot draft that.

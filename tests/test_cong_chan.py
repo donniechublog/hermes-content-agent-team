@@ -3,7 +3,7 @@
 
 Một cổng chặn sai làm vai không nộp được bài, tệ hơn nhiều so với việc thiếu
 cổng: vai sửa kiểu gì cũng sai và Ông Chủ chỉ thấy im lặng. Ngày 06/09
-`kiem_quote_dich` đã chặn 5/6 hook hợp lệ vì chỉ đo dấu tiếng Việt, nên mọi
+`check_quote_translated` đã chặn 5/6 hook hợp lệ vì chỉ đo dấu tiếng Việt, nên mọi
 cổng ở đây phải có ví dụ ĐÚNG-PHẢI-QUA đi kèm ví dụ SAI-PHẢI-CHẶN.
 
 Chạy:  venv/bin/python tests/test_cong_chan.py
@@ -38,7 +38,7 @@ QUOTE_PHAI_QUA = [
     "Qwen3-Max: 1 trieu token context",
     # tiếng Việt chuẩn
     "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench",
-    # tiếng Việt gõ mất dấu: card.tim_mat_dau lo việc này, không phải cổng này
+    # tiếng Việt gõ mất dấu: card.find_face_mark lo việc này, không phải cổng này
     "GPT-5 Codex Max ra mat, benchmark SWE-bench tang 12 diem so voi ban truoc",
 ]
 QUOTE_PHAI_CHAN = [
@@ -182,12 +182,12 @@ def test_tin_xep_hang_khong_co_bang_thi_khong_chan():
 
 
 def test_cong_xep_hang_chi_chan_khi_CHUP_duoc_bang():
-    """dre_nop/ethan_nop chỉ được chặn khi engine CHỤP được bảng thật
+    """dre_submit/ethan_submit chỉ được chặn khi engine CHỤP được bảng thật
     (`ranking.is_capture(kieu)`). Không có ảnh XH, hoặc chỉ có thẻ dự phòng engine
     tự dựng, đều không được ép — xem test_the_du_phong_khong_duoc_ep_lam_anh_chinh."""
     import re as _re
     mau = r'ranking\.is_capture\(\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\)\)'
-    # Tu 07/09/2026 dieu kien nam o MOT cho (nop_chung.can_anh_xep_hang); hai vai
+    # Tu 07/09/2026 dieu kien nam o MOT cho (submit_common.needs_ranking_image); hai vai
     # phai goi no chu khong tu viet lai — tu viet lai la cach no da lech.
     assert _re.search(mau, (ROOT / "submit_common.py").read_text(encoding="utf-8")), \
         "submit_common.needs_ranking_image phải hỏi ranking.is_capture(kieu)"
@@ -304,7 +304,7 @@ def _anh_xh(d: Path, ten="XH.png", w=1242, h=2688):
 
 def test_luu_crop_giu_dau_anh_goc():
     """_save_crop từng dựng PngInfo trắng → bản cắt mất dấu chup_xep_hang →
-    la_xep_hang False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
+    is_ranking_image False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
     import image_prepare as cb
     import image_rules as la
     from PIL import Image
@@ -341,7 +341,7 @@ def test_kiem_ti_le_mien_tru_anh_xep_hang():
 def test_anh_xep_hang_khong_bi_cat():
     """Hàng model đã khoanh có thể nằm dưới 55% dải chụp; cắt 4:5 cy=0.35 sẽ
     xoá mất nó. Ảnh xếp hạng phải giữ nguyên vẹn (a["san"] = a["goc"])."""
-    # `phan_loai` sang chuan_bi/nhin.py khi tach goi 09/09/2026 (audit A1).
+    # `classify` sang prepare/vision.py khi tach goi 09/09/2026 (audit A1).
     src = (ROOT / "prepare" / "vision.py").read_text(encoding="utf-8")
     khoi = src[src.index("    san = wd / \"san\""):]
     khoi = khoi[:khoi.index("a[\"dung\"] = [\"thân")]
@@ -624,7 +624,7 @@ def test_dong_nguon_doc_duoc_tren_day_the_sang():
         assert chenh > 120, (f"dong nguon khong noi tren nen: chenh sang chi {chenh} "
                              "(nen ~230, chu phai tach han ra)")
 
-# ------------------------------------- bat_buoc: manh ngan CO SO la thu phan biet
+# ------------------------------------- required: manh ngan CO SO la thu phan biet
 def test_khop_giu_so_hieu_phien_ban():
     """`ten` cua muc BAT BUOC hay co so hieu phien ban ngan: "R1", "K2", "o4",
     "4 Fast". Loc `len >= 3` vut sach chung, nen "DeepSeek R1" rut con
@@ -695,7 +695,7 @@ def test_mo_ta_logo_hang_trong_bai_khong_bi_chan():
     assert nc.check_subject_named(anh_bao, ["A1"], "Sam Altman", _BAI, "")
 
 
-# ------------------------------------------------------- quet_nop: dong [bo qua]
+# ------------------------------------------------------- scan_submit: dong [bo qua]
 def test_quet_nop_in_ca_dong_bo_qua():
     """[bo qua] = mat tron mot tin, loai nang nhat, ma truoc 06/09/2026 bo loc
     khong nhat no. Vera go nham k=9: tin "OpenAI IPO dinh gia 900 ty USD" bien
@@ -717,8 +717,8 @@ def test_manifest_rong_khong_ghi_de():
     ca hai duong vao deu cho problems RONG: picks la `[]`, hoac dict sai khoa
     (script chi nhan "picks"/"items"). Khi ay script ghi manifest 0 muc, gui bao
     cao chi co tieu de + dong moi tra loi so ma khong co so nao, rc=0. Nang hon:
-    quet_nop co dinh ten tep theo NGAY nen lan chay lai de thang len ban tot, va
-    duyet_chon_tin chon manifest theo mtime — khong co duong lui."""
+    scan_submit co dinh ten tep theo NGAY nen lan chay lai de thang len ban tot, va
+    approve_pick chon manifest theo mtime — khong co duong lui."""
     import json
     import os
     import subprocess
@@ -1159,12 +1159,12 @@ def test_teaser_nhac_muc_dan_y_bi_bo():
     assert ta._item_no_ok_mention(dan_y, du) == []
     assert ta._item_no_ok_mention(None, doan) == []
 
-# ------------------------------------------------- duong bao loi cua miles_nop
+# ------------------------------------------------- duong bao loi cua miles_submit
 def test_miles_nop_bao_loi_thay_vi_no():
     """Caption truot cong phai ra dong "Sua roi chay lai" + ma thoat 1.
 
-    Bay 06/09/2026 (commit 519adb2): `dem_vong_loi` duoc goi qua `nc` o dong 79
-    trong khi `import nop_chung as nc` nam o dong 109 CUNG ham, nen Python coi
+    Bay 06/09/2026 (commit 519adb2): `count_round_error` duoc goi qua `nc` o dong 79
+    trong khi `import submit_common as nc` nam o dong 109 CUNG ham, nen Python coi
     `nc` la bien cuc bo va nem UnboundLocalError. Duong di thuong gap nhat cua
     Miles ket thuc bang traceback: vai khong thay tran vong, khong thay lenh
     chay lai. Ca 82 test cu van xanh vi khong test nao cham duong nay.
@@ -1197,7 +1197,7 @@ def test_miles_nop_bao_loi_thay_vi_no():
 def test_so_da_dung_duoc_tra_lai_sau_cac_test_tren():
     """Chot cai bay monkeypatch: sau moi test o tren, `_used_images_log()` phai tro
     ve duong THAT chu khong phai mot TemporaryDirectory da bi xoa — neu khong,
-    `kiem_da_dung` tra rong vo dieu kien va moi cong "khong dung lai anh" trong
+    `check_not_reused` tra rong vo dieu kien va moi cong "khong dung lai anh" trong
     cac test sau deu chet im."""
     import image_rules as la
     p = la._used_images_log()
@@ -1207,7 +1207,7 @@ def test_so_da_dung_duoc_tra_lai_sau_cac_test_tren():
 
 # --------------------------------------------------- trang thai (buoc 4)
 def test_lam_lai_chi_ap_khi_ong_chu_that_su_bam():
-    """`da_dung.json` duoc ghi o MOI lan gui va duyet_bai khong bao gio xoa, nen
+    """`da_dung.json` duoc ghi o MOI lan gui va approve_post khong bao gio xoa, nen
     "co da_dung" khong dong nghia "Ong Chu bam Lam lai". Ban cu bat vai doi bia
     o moi lan chay lai, vai doi that, roi gui BO THU HAI kem nut Duyet thu hai.
     Moc dung la `remakes` trong img.json."""

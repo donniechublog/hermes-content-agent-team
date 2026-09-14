@@ -3,7 +3,7 @@
 
 Tach ra khoi itachi_submit.py (07/09/2026) khi Gin nhan viec thay chu tren the
 quote: hai vai ve cung mot kieu, nen luat ve phai nam MOT cho. Truoc do
-`_ve_khoi` chi co trong itachi_submit.py; de Gin import cua Itachi la buoc mot vai
+`_ve_khoi` (nay `about_block`) chi co trong itachi_submit.py; de Gin import cua Itachi la buoc mot vai
 phu thuoc vao script cua vai khac, va sua mot ben quen ben kia.
 
 Ham o day khong biet Telegram, khong biet spec, khong biet vai nao goi — chi
@@ -99,8 +99,8 @@ def ceiling_box(d: ImageDraw.ImageDraw, text: str, w: int, h: int, font_key: str
              co: int = None, buoc: int = None, cao_goc: int = None) -> int:
     """So pixel chieu cao BI TRAN ra ngoai hop khi da co chu nho het muc.
 
-    `ve_khoi` co lai co chu toi CO_MIN roi VE BAT KE — vong while thoat vi
-    `size > CO_MIN` la sai, khong phai vi chu da vua. Cau dich dai gap doi cau
+    `about_block` co lai co chu toi HAS_MIN roi VE BAT KE — vong while thoat vi
+    `size > HAS_MIN` la sai, khong phai vi chu da vua. Cau dich dai gap doi cau
     goc thi chu tran de len phan anh ben duoi va khong cong nao bao (06/09/2026).
     """
     f = _f(path_font(font_key), HAS_MIN)

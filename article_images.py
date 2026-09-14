@@ -35,13 +35,13 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scan_common                                            # noqa: E402
 
-UA = scan_common.UA                     # mot ban duy nhat, xem quet_chung
+UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 
 # Anh khong dai dien noi dung — the thuong hieu, logo, avatar...
 import image_rules                                              # noqa: E402
 import env_load                                              # noqa: E402
-JUNK = image_rules.JUNK                     # mot bo tu vung, xem luat_anh
+JUNK = image_rules.JUNK                     # mot bo tu vung, xem image_rules
 
 # Ten tep / alt goi y day la bieu do, bang so — thu doc gia muon xem
 RULE = re.compile(
@@ -61,7 +61,7 @@ IS_STORY_MODEL = re.compile(
 
 LONG_MAX = 6          # so bai dua tin lay them
 IMAGE_NEW_PAGE = 6       # so anh lay toi da moi trang
-AREA_MIN = image_rules.AREA_DOWNLOAD   # ~350x350, xem luat_anh
+AREA_MIN = image_rules.AREA_DOWNLOAD   # ~350x350, xem image_rules
 
 # Kich thuoc CHINH XAC ma cac model sinh anh hay xuat ra. Anh chup man hinh hay
 # bang so that gan nhu khong bao gio roi dung vao mot trong nhung con so nay —
@@ -126,14 +126,14 @@ def image_within_page(url: str) -> list:
     return ra[: IMAGE_NEW_PAGE * 2]
 
 
-_tu_dac_trung = scan_common.from_distinctive   # mot ban duy nhat, xem quet_chung
+_tu_dac_trung = scan_common.from_distinctive   # mot ban duy nhat, xem scan_common
 
 
 def other_outlets(tieu_de: str, link: str = "", so=LONG_MAX) -> list:
     """Bai bao KHAC dua cung tin nay — noi thuong co bieu do va bang so that.
     Tra ve [(url, tieu_de)].
 
-    Uy quyen cho `nguon_bai.tim` (Google News -> ten mien toa soan -> RSS toa
+    Uy quyen cho `article_sources.find` (Google News -> ten mien toa soan -> RSS toa
     soan -> khop tieu de, roi Bing bu phan thieu). Truoc 05/09/2026 vong do feed
     do duoc chep o day mot ban nua va chi chay khi thieu tep nguon cua Finn."""
     import article_sources

@@ -26,10 +26,10 @@ import manifest_common as mc                                 # noqa: E402
 ROOT = env_load.ROOT
 STATE = env_load.state_dir()      # state/<brand>/ — cung cho approve_service doc
 
-# Nhan chuan la TIENG ANH (approve_service.NHAN_CHUAN) — SOUL/brief cua Finn ke
+# Nhan chuan la TIENG ANH (approve_service.LABEL_STANDARD) — SOUL/brief cua Finn ke
 # ARXIV / MODEL / LAB / INFRA / TOOL / ENGINEERING / BUSINESS / RESEARCH /
 # SECURITY. Bang cu chi co ban tieng Viet nen moi lan Finn nop deu bi bao
-# "category khong hop le" (thay 04/09/2026 khi chay thu quet_nop). Nhan ca hai.
+# "category khong hop le" (thay 04/09/2026 khi chay thu scan_submit). Nhan ca hai.
 VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BUSINESS",
                     "RESEARCH", "SECURITY", "OPEN SOURCE", "OPEN WEIGHTS", "BENCHMARK",
                     "M&A", "UPDATE",
@@ -43,7 +43,7 @@ VALID_CATEGORIES = {"ARXIV", "MODEL", "LAB", "INFRA", "TOOL", "ENGINEERING", "BU
 MAX_PICK = 8
 
 
-_norm = scan_common.standard_link          # mot ban duy nhat, xem quet_chung
+_norm = scan_common.standard_link          # mot ban duy nhat, xem scan_common
 
 
 def _score(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
@@ -51,7 +51,7 @@ def _score(gt, ten: str, hi: int, problems: list, tieu_de: str) -> tuple:
 
     Truoc 06/09/2026: `int(p.get(...))` no thang khi vai ghi "24 diem" hoac
     null, va diem ngoai dai chi ghi mot dong stderr roi VAN vao manifest —
-    ma quet_nop nuot stderr khi rc=0 nen khong ai thay. Gio cat ve dai va ghi
+    ma scan_submit nuot stderr khi rc=0 nen khong ai thay. Gio cat ve dai va ghi
     chu tren bao cao, khong bao im lang, khong bat vai sua them mot vong."""
     try:
         d = int(gt)
@@ -83,7 +83,7 @@ def _item_from_pick(p: dict, c: dict, problems: list) -> dict:
                        "diem lien quan cat ve dai" if sua_r else "",
                        f"category {cat!r} khong hop le -> TOOL" if cat_xau else "") if x)).strip()
 
-    # Cung mot bo kiem cho ca ba vai di tim tin (`manifest_chung.don_tom_tat`):
+    # Cung mot bo kiem cho ca ba vai di tim tin (`manifest_common.single_summary`):
     # headline la thu DUY NHAT Ong Chu doc tren topic, va brief hua "summary_vi
     # mot menh de <= 15 tu". Truoc 06/09/2026 nhanh Finn khong kiem gi — summary
     # dai ba dong len bao cao y nguyen, va em-dash lot xuong tan caption.
@@ -148,8 +148,8 @@ def crop_ceiling(items: list, bb_link: set, problems: list) -> list:
     """Tran 8 tin — CHI ap cho tin thuong.
 
     Muc BAT BUOC vai da nop phai o ngoai tran: muc ton tu hom truoc duoc
-    `_bo_sung_bat_buoc` gan score_partial=0 nen tran diem chi con 50 (0+30+20),
-    LUON xep chot va LUON bi cat. Cat xong thi `bat_buoc.kiem` lai them BAN
+    `_supplement_required` gan score_partial=0 nen tran diem chi con 50 (0+30+20),
+    LUON xep chot va LUON bi cat. Cat xong thi `required.check` lai them BAN
     TRONG (score=0, summary_vi rong, ghi chu "vai bo sot") — bao cao gui Ong Chu
     do oan cho vai la bo sot dung cai tin no vua cham ky, con vai viet bai thi
     mat sach tom tat (06/09/2026)."""
@@ -206,7 +206,7 @@ def main():
                     help="Ghi luon ban bao cao danh so, de gui bang publish.py --file")
     ap.add_argument("--ghi-de", action="store_true",
                     help="Cho ghi de manifest da co (chi dung khi THU — ban that "
-                         "khong duoc ghi de vi duyet_chon_tin ghi nguoc picked/da_giao vao do)")
+                         "khong duoc ghi de vi approve_pick ghi nguoc picked/da_giao vao do)")
     ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
                     help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
     a = ap.parse_args()
@@ -222,7 +222,7 @@ def main():
     items = crop_ceiling(items, bb_link, problems)
 
     if problems:
-        # In ca stdout LAN stderr: quet_nop chi in stdout khi rc=0 nen canh bao
+        # In ca stdout LAN stderr: scan_submit chi in stdout khi rc=0 nen canh bao
         # o stderr truoc day khong ai thay (audit 06/09/2026).
         print("PHAT HIEN VAN DE:")
         for pr in problems:
@@ -235,9 +235,9 @@ def main():
     # la `[]`, hoac ghi dict sai khoa (`{"tin": [...]}` — script chi nhan "picks"
     # / "items"). Khi ay items=[] va problems=[] nen cong khong bao gio chay:
     # script ghi manifest 0 muc, ghi bao cao chi co tieu de + dong moi tra loi
-    # so ma khong co so nao, tra rc=0, va quet_nop gui thang len topic.
-    # Nang hon: quet_nop co dinh ten `finn_candidates_<ngay>.json` nen lan chay
-    # lai de THANG len tep tot trong ngay, con duyet_chon_tin chon manifest theo
+    # so ma khong co so nao, tra rc=0, va scan_submit gui thang len topic.
+    # Nang hon: scan_submit co dinh ten `finn_candidates_<ngay>.json` nen lan chay
+    # lai de THANG len tep tot trong ngay, con approve_pick chon manifest theo
     # mtime — ban rong thanh ban moi nhat, khong co duong lui.
     if not items:
         sys.exit("Khong co muc nao hop le — KHONG ghi manifest (tranh de len ban tot "
@@ -245,15 +245,15 @@ def main():
                  "  - picks rong hay sai khoa? Script chi doc mang, hoac dict co "
                  "khoa \"picks\"/\"items\".\n"
                  "  - That su hom nay khong co tin nao dat nguong thi chay lai "
-                 "quet_nop voi --khong-co.")
+                 "scan_submit voi --khong-co.")
 
     items.sort(key=lambda x: x["score"], reverse=True)
     mc.list_count(items)
 
     out = Path(a.out)
     # KHONG ghi de manifest da co trong ngay (sua 06/09/2026 dot 2) — cung luat
-    # ma manifest_ghi da ap cho Nova/Vera, rieng nhanh Finn thi chua. Ly do day
-    # du o `manifest_chung.duong_ra_moi`.
+    # ma manifest_write da ap cho Nova/Vera, rieng nhanh Finn thi chua. Ly do day
+    # du o `manifest_common.path_out_new`.
     if out.exists() and not a.ghi_de:
         moi = mc.path_out_new(out)
         print(f"[canh bao] {out.name} da co — ghi ban moi ra {moi.name} de khong "

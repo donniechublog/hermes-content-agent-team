@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
 
 
 def _anh_that(w, h, sang=False):
-    """Mot tam anh co van — anh phang bi cong `kiem_anh_rong` chan dung.
+    """Mot tam anh co van — anh phang bi cong `check_blank_image` chan dung.
 
     `sang=True`: anh NEN TRANG co van, dung dang mot bang benchmark hay mot
     trang web chup lai — ca LUAT_ANH lan cac su co da ghi deu noi day la loai
@@ -164,7 +164,7 @@ def _dung_the(tmp, ten_anh, title, **k):
 
 
 def test_the_tran_khong_con_mang_nen_dac_o_day():
-    """Ca duong ve, khong chi `_lop_anh`: day the phai la anh, khong phai mau."""
+    """Ca duong ve, khong chi `_layer_image`: day the phai la anh, khong phai mau."""
     with tempfile.TemporaryDirectory() as t:
         im = _dung_the(t, (1920, 1080), "Nvidia mở kho mô hình Nemotron")
         phang = _dong_phang(im, 700, 1500)

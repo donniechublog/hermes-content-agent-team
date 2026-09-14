@@ -3,13 +3,13 @@
 
 Ba duong hong CO THAT ma tep nay giu:
 
-  1. `so_dung_duoc` thieu khoa thi BA noi doan ba kieu — dre_chuan_bi dem lai
+  1. `so_dung_duoc` thieu khoa thi BA noi doan ba kieu — dre_prepare dem lai
      bang cong thuc khac nguoi ghi (chum anh khai niem dem thanh nhieu thay vi
-     MOT), con duyet_bai/anh_chuan_bi coi la 0 ("khong co anh nao"). Nay ca ba
+     MOT), con approve_post/image_prepare coi la 0 ("khong co anh nao"). Nay ca ba
      di qua `schema.count_image_use_ok`.
   2. Manifest ban cu (truoc 09/09/2026) khong co `phien_ban` va co the thieu
-     khoa dan xuat. `doc_manifest` bu lai bang dung cong thuc cua nguoi ghi.
-  3. `write_meta` ghi DE ca dict, ma `bang_den` ghi `root_task` vao cung tep tu
+     khoa dan xuat. `read_manifest` bu lai bang dung cong thuc cua nguoi ghi.
+  3. `write_meta` ghi DE ca dict, ma `blackboard` ghi `root_task` vao cung tep tu
      mot tien trinh khac. Hom nay chua mat chi vi thu tu goi may man.
 
 Chay:  venv/bin/python tests/test_schema.py
@@ -56,7 +56,7 @@ def test_khop_cong_thuc_cua_nguoi_ghi():
     assert "so_rieng = sum(" not in src, "cong thuc cu con nam lai trong nguoi ghi"
 
 
-# ------------------------------------------------------------ doc_manifest
+# ------------------------------------------------------------ read_manifest
 def test_ban_moi_giu_nguyen_khong_bi_dung_cham():
     m = {"phien_ban": schema.VERSION_MANIFEST, "so_dung_duoc": 99,
          "so_xep_hang": 7, "anh": []}
@@ -106,9 +106,9 @@ def test_tep_json_khong_phai_dict_cung_ra_None():
         assert schema.read_manifest(p) is None
 
 
-# ------------------------------------------------------------- hop_nhat_meta
+# ------------------------------------------------------------- merge_meta
 def test_tron_giu_khoa_cu_khong_co_trong_ban_moi():
-    """Dung duong da suyt mat: bang_den ghi root_task, write_meta ghi de."""
+    """Dung duong da suyt mat: blackboard ghi root_task, write_meta ghi de."""
     ra = schema.merge_meta({"root_task": "t_9", "title": "cu"},
                               {"title": "moi", "brand": "dcgr"})
     assert ra.get("root_task") == "t_9", "mat root_task -> the goc bang den mo coi"   # .get: do bang FAIL, khong KeyError (E-r2-7)
@@ -151,7 +151,7 @@ def test_write_meta_that_su_tron_chu_khong_ghi_de():
 
 # --------------------------------------------------- khai bao khop thuc te
 def test_moi_khoa_nguoi_ghi_sinh_ra_deu_co_trong_Manifest():
-    """Them khoa vao dung_manifest ma quen khai o schema.Manifest thi bang khai
+    """Them khoa vao build_manifest ma quen khai o schema.Manifest thi bang khai
     bao thanh vo dung — chan tu day."""
     import ast
     src = (ROOT / "prepare" / "manifest.py").read_text(encoding="utf-8")
@@ -172,7 +172,7 @@ def test_moi_khoa_write_meta_deu_co_trong_Meta():
     cay = ast.parse(src)
     ham = next(n for n in ast.walk(cay)
                if isinstance(n, ast.FunctionDef) and n.name == "write_meta")
-    # Loc theo TEN bien `meta` nhu test dung_manifest (E-r2-6): lay dict Assign
+    # Loc theo TEN bien `meta` nhu test build_manifest (E-r2-6): lay dict Assign
     # DAU TIEN thi mot dict phu dat truoc `meta = {...}` la bao hong oan.
     gan = next(n for n in ast.walk(ham)
                if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
@@ -212,7 +212,7 @@ def test_moi_khoa_writer_json_deu_co_trong_SidecarViet():
     """ADF-r2-5: .writer.json truoc day khong co TypedDict nao."""
     src = (ROOT / "approve_pick.py").read_text(encoding="utf-8")
     khoa = _khoa_dict_ghi_vao(src, "writer.json")
-    assert khoa, "khong tim thay cho ghi writer.json trong duyet_chon_tin — cong nay mu"
+    assert khoa, "khong tim thay cho ghi writer.json trong approve_pick — cong nay mu"
     thieu = sorted(khoa - set(schema._kind(schema.SidecarWrite)))
     assert not thieu, f"writer.json ghi khoa chua khai trong schema.SidecarViet: {thieu}"
 
@@ -220,7 +220,7 @@ def test_moi_khoa_writer_json_deu_co_trong_SidecarViet():
 def test_moi_khoa_img_json_deu_co_trong_SidecarAnh():
     src = (ROOT / "approve_pick.py").read_text(encoding="utf-8")
     khoa = _khoa_dict_ghi_vao(src, "img.json")
-    assert khoa, "khong tim thay cho ghi img.json trong duyet_chon_tin"
+    assert khoa, "khong tim thay cho ghi img.json trong approve_pick"
     thieu = sorted(khoa - set(schema._kind(schema.SidecarImage)))
     assert not thieu, f"img.json ghi khoa chua khai trong schema.SidecarAnh: {thieu}"
 

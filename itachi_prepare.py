@@ -103,7 +103,7 @@ def write_brief(slides: list, khoa: str, wd: Path) -> str:
           f"cd {ROOT} && venv/bin/python itachi_submit.py {khoa}",
           "Script vẽ chữ tại chỗ hoặc dựng deck.py, chạy cổng chặn tiếng Việt, gửi album trả lời đúng tin nhắn. "
           "Báo [LOI] thì sửa spec.json rồi chạy lại. KHÔNG ls/pip/which, KHÔNG PIL script, KHÔNG vision_analyze "
-          "từng ảnh, KHÔNG chạy deck.py/doi_chu_anh.py/gui_telegram.py tay, KHÔNG dùng tool clarify."]
+          "từng ảnh, KHÔNG chạy deck.py/swap_image_text.py/send_telegram.py tay, KHÔNG dùng tool clarify."]
     return "\n".join(L)
 
 

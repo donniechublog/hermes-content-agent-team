@@ -6,7 +6,7 @@ chay dau doi tron 300s (= tran bash tool cua vai) roi bi cat `exit 124`. Test:
   - khoa mo coi (pid chet) -> don NGAY, khong ngu mot giay nao, co dong log;
   - pid con song -> doi toi `cho` roi thoat bang SystemExit, KHONG ghi de khoa;
   - `cho` mac dinh phai nho han han 300.
-Fail tren code cu (khong co _doi_khoa; cho=300), pass tren code moi.
+Fail tren code cu (khong co _handle_lock; cho=300), pass tren code moi.
 
 Chay:  venv/bin/python tests/test_khoa_chuan_bi.py
 """

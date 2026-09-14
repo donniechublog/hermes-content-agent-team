@@ -21,7 +21,7 @@ Tu 06/09/2026 tep nay CHI con vong poll + dieu phoi tin nhan (handle_message) + 
   approve_post.py       nut Duyet/Bo/Lam lai, chuyen Kite, dang kenh, day hang duyet
   approve_chat.py      chat theo topic: FIFO moi vai + semaphore
   approve_command.py      lenh slash /bai /vai /hd
-Khong con re-export names tu day (sua 09/09/2026): anh_chuan_bi va cac kich ban
+Khong con re-export names tu day (sua 09/09/2026): image_prepare va cac kich ban
 thu goi duyet_* truc tiep neu can.
 """
 import json
@@ -115,7 +115,7 @@ def _report_no_family_point(token, group, thread_id, msg, mid):
 
 def _pick_command_if_has(token, group, msg, thread_id, text, mid):
     """So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
-    REPLY dung vao bao cao (xem _la_reply_bao_cao). Tra (vai, lenh); lenh None
+    REPLY dung vao bao cao (xem _is_reply_report). Tra (vai, lenh); lenh None
     la hoi thoai. Ghi lai quyet dinh cong reply: khi Ong Chu bao "go so ma
     khong ra bai" thi mot dong log du de biet cong da xu ra sao."""
     vai = role_of_topic(thread_id)
@@ -173,11 +173,11 @@ def handle_message(token, group, msg):
                f"from={msg.get('from', {}).get('id')} text={rut(text)}")
 
     # ALLOWLIST cho MOI tin, khong chi lenh slash. Truoc 06/09/2026 chi
-    # duyet_lenh va nhanh "ly do lam lai" kiem `ong_chu.json`; lenh chon so va
+    # approve_command va nhanh "ly do lam lai" kiem `ong_chu.json`; lenh chon so va
     # chat thi khong — bat ky ai trong group reply "1, 3" vao bao cao Finn la
     # tao duoc cap task ton LLM, con reply kem URL la agent chay voi bo cong cu
     # day du. Khong co tep ong_chu.json thi giu nguyen hanh vi cu (xem
-    # `la_ong_chu`), nen bat cai nay khong lam ket chet may dang chay.
+    # `is_boss`), nen bat cai nay khong lam ket chet may dang chay.
     if not is_boss(msg):
         uid = msg.get("from", {}).get("id")
         log("vao", f"msg={mid} TU CHOI: {uid} khong co trong ong_chu.json")
@@ -206,7 +206,7 @@ def handle_message(token, group, msg):
 
     # Dau "/" = LENH, o bat ky topic nao — xu ly rieng, khong bao gio roi ve
     # hoi thoai (mot lenh go sai ma dem hoi LLM la vua on ao vua nguy hiem).
-    # Chay nen: /bai co buoc fetch trang + research (nguon_bai, toi 180s),
+    # Chay nen: /bai co buoc fetch trang + research (article_sources, toi 180s),
     # khong duoc nghen vong poll — cung ly do voi handle_chat ben duoi.
     if text.startswith("/"):
         log("route", f"msg={mid} lenh slash")
@@ -221,7 +221,7 @@ def handle_message(token, group, msg):
         return
 
     # So trong topic cua MOT VAI DI TIM TIN = lenh chon tin — NHUNG chi khi la
-    # REPLY dung vao bao cao (xem _la_reply_bao_cao). Moi thu khac (ke ca dung
+    # REPLY dung vao bao cao (xem _is_reply_report). Moi thu khac (ke ca dung
     # so nhung go troi, khong bam Reply) la hoi thoai. Finn, Nova, Vera deu
     # duoc — cung mot cach tra loi.
     vai, lenh = _pick_command_if_has(token, group, msg, thread_id, text, mid)
@@ -306,7 +306,7 @@ def _rescue_article_end_publishing(token, group):
     Sau restart khong co buoc nao doc lai trang thai: `handle_callback` thay
     `publishing` va tra "Đang đăng — chờ chút" cho MOI lan bam ve sau. Bai do
     khong bao gio dang duoc va cung khong bo duoc, tru khi co nguoi sua tay
-    tep JSON. Docstring cua `_dang_nen` hua "khong bao gio ket vinh vien" —
+    tep JSON. Docstring cua `_form_background` hua "khong bao gio ket vinh vien" —
     dieu do chi dung voi exception, khong dung voi restart.
 
     Chay MOT lan luc khoi dong: bai nao con `publishing` qua 15 phut thi ha ve
@@ -484,7 +484,7 @@ if __name__ == "__main__":
                 except Exception as e:                       # noqa: BLE001
                     log("loi", f"doc category cua {dpath.name} hong (dung topic mac dinh): {e!r}")
             # Tin thuong ve topic NGUOI VIET CUA BAI, teaser ve topic Cape.
-            # Truoc 10/09/2026 cho nay go `MAC_DINH_VIET` vi ca doi chi co mot
+            # Truoc 10/09/2026 cho nay go `DEFAULT_WRITE` vi ca doi chi co mot
             # nguoi viet ("mot container mot nguoi viet"). Van dung mot nguoi
             # moi container, nhung ten cua nguoi do khac nhau theo brand
             # (LOW-13), va cau tra loi da duoc chot tu luc chon tin — doc lai

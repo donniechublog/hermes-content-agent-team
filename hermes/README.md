@@ -116,7 +116,7 @@ Trước 06/09/2026 cổng bảo vệ so **lệch kích thước 15%** và chỉ
   dòng vào `plugin_api.py` chỉ lệch ~2,4% — lọt dưới ngưỡng, và `--ra-hermes`
   vẫn đè mất tính năng upstream.
 
-Nay `sync_hermes.py` kiểm **theo dấu vết** (`DAU_VET`), áp cho **cả hai
+Nay `sync_hermes.py` kiểm **theo dấu vết** (`TRACE`), áp cho **cả hai
 chiều**: mỗi bản vá có một chuỗi đặc trưng (`tenVai(`, chuỗi lane-check, thứ tự
 cột, các thuộc tính CSS, `display_names`). Trước khi ghi, script so bên nguồn và
 bên đích — **bên đích đang có dấu vết mà bên nguồn thiếu thì từ chối ghi**, vì

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bảng vai dẫn xuất phải khớp CHÍNH XÁC bảng viết tay cũ (issue A4/F1).
 
-Tri thuc ve vai tung nam rai sau cho trong duyet_giao_viec cong ba map "slug ->
+Tri thuc ve vai tung nam rai sau cho trong approve_dispatch cong ba map "slug ->
 ten" chep tay o noi khac. `role.py` gom lai mot cho va sinh lai cac bang do.
 
 Tep nay giu hai thu:
@@ -82,7 +82,7 @@ def _ap_doi_slug_cu(cu):
     for alias, slug in cu.items():
         moi = _ad(slug)
         ra[slug if alias == moi else alias] = moi
-    # "teaser" chua bao gio nam trong SLUG_CU (Cape hoi do resolve qua ten
+    # "teaser" chua bao gio nam trong SLUG_OLD (Cape hoi do resolve qua ten
     # persona o `_TEN_THUONG`, xem N-r2-10). Doi xong thi no la slug CU that —
     # 11 topic/task tren dia con ghi chu do — nen phai khai them.
     ra["teaser"] = "cape"
@@ -135,7 +135,7 @@ def test_khong_slug_nao_con_dat_theo_role():
     tam dong da doi. `slug` chi duoc khac `ten` o chu hoa."""
     lech = {v.slug: v.ten for v in role.ROLE.values() if v.slug != v.ten.lower()}
     assert not lech, f"slug khong phai ten nhan vat viet thuong: {lech}"
-    # bien cuc bo KHONG duoc ten `role`: tu LOW-50 do la ten module (vai.py -> role.py)
+    # bien cuc bo KHONG duoc ten `role`: tu LOW-50 do la ten module (role.py -> role.py)
     slug_role = sorted(set(DOI_LOW14) & set(role.ROLE))
     assert not slug_role, f"chu role quay lai lam slug: {slug_role}"
 
@@ -290,8 +290,8 @@ def _a(**doi) -> dict:
 def test_anh_chinh_duoc_hoi_dung_luat_cua_tung_renderer():
     """Cung mot tam anh, hai vai tra loi khac nhau — va khac dung o cho kho anh
     khac nhau, khong phai o tieu chi chat luong (thu do dung chung, chay o
-    luat_anh + classify truoc khi toi day)."""
-    # Ti le 1.5: qua NGANG_RO (1.4) nen phan_loai KHONG dan nhan "bìa" -> Dre
+    image_rules + classify truoc khi toi day)."""
+    # Ti le 1.5: qua LANDSCAPE_CLEAR (1.4) nen classify KHONG dan nhan "bìa" -> Dre
     # khong lam bia duoc; nhung card.py cho toi 1.6 nen Ethan dung lam nen hero.
     ngang_vua = _a(ti_le=1.5, ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone"])
     assert role.can_be_hero("ethan", ngang_vua)

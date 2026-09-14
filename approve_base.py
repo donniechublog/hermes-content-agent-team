@@ -188,7 +188,7 @@ def is_boss(msg) -> bool:
 
     KHONG co state/ong_chu.json = cho qua het (hanh vi cu: group rieng, chi co
     Ong Chu). Co tep thi MOI cua deu phai kiem — truoc 06/09/2026 chi hai cho
-    kiem (lenh slash o duyet_lenh, ly do lam lai o duyet_bai) trong khi ba cua
+    kiem (lenh slash o approve_command, ly do lam lai o approve_post) trong khi ba cua
     con lai thi khong:
 
       - nut Duyet/Bo/Lam lai  -> bam ✅ la bai len channel VA day sang moat

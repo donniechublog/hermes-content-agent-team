@@ -224,7 +224,7 @@ def test_khoa_doi_khi_co_them_job_hong():
 # ---------------------------------------------------------------- tin nhan
 def test_tin_nhan_escape_HTML_trong_loi():
     """stderr co `<module>` / `&` -> Telegram tu choi CA tin voi loi parse HTML,
-    tuc dung hom co loi thi canh bao bien mat (loi da sua o nhat_ky_web)."""
+    tuc dung hom co loi thi canh bao bien mat (loi da sua o journal_web)."""
     import audit_cron as sc
     van_de = [{"brand": "blog", "ten": "daily-log", "muc": "HONG",
                "ly_do": ['lỗi: File "<stdin>", line 1 & <module>']}]

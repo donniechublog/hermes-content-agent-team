@@ -62,7 +62,7 @@ FRAME_HOURS = 12
 
 
 def turn(gio_vn: int = None) -> int:
-    """Luot trong ngay cho vai chay nhieu lan: khung KHUNG_GIO tieng tu 05:00 VN.
+    """Luot trong ngay cho vai chay nhieu lan: khung FRAME_HOURS tieng tu 05:00 VN.
 
     Moc cron nam dau moi khung, vai chay brief o dau khung va nop trong vong vai
     phut -> luon cung mot luot. Khong dung gio tron vi nop luc 16:59 va 17:01 se
@@ -190,7 +190,7 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
         # KIEM MA THOAT. brief_scout:118 va brief_market deu kiem, rieng day thi
         # khong: scan_models chet giua chung van ghi scan_models.txt gan rong,
         # brief in "Bao cao cua script:" trong, Nova suy ra "khong co gi" va chay
-        # `quet_nop --khong-co`. Ong Chu doc "hom nay khong co gi" trong khi that
+        # `scan_submit --khong-co`. Ong Chu doc "hom nay khong co gi" trong khi that
         # ra 23 bang deu khong duoc doc. Dung loai hong README goi la dang so
         # nhat, va no im lang tuyet doi.
         if r.returncode != 0:

@@ -7,7 +7,7 @@ ada_prepare.py — moi tep tu mo sqlite, tu viet ten bang va ten cot, tu chiu
 loi mot kieu. kanban.db la bang cua TIEN TRINH KHAC: hermes co quyen doi schema
 bat cu luc nao, va da doi. Khi do phai di sua nam cho, ma quen mot cho thi cho
 do hong CAM (tra ve rong, khong ai bao) — dung lop loi C1 goi la "hong cam
-lang". `kiem_hermes.COT_CAN` phai liet ke 20 cot chinh vi ly do do.
+lang". `check_hermes.COLUMN_CAN` phai liet ke 20 cot chinh vi ly do do.
 
 Nay: hermes doi thi sua MOT tep nay. Cac ham doc tra ve dict DA CHUAN HOA voi
 ten khoa cua RIENG ta (id/vai/trang_thai/tieu_de/...), nen ten cot cua hermes
@@ -58,7 +58,7 @@ def _open(db=None):
 
     `mode=ro` vi day la DB cua tien trinh khac dang ghi: mo ghi la co nguy co
     khoa nham hermes. `db` de chi ro mot kanban.db KHAC container hien tai —
-    theo_doi_9router quet kanban cua MOI brand, khong chi brand dang chay."""
+    monitor_9router quet kanban cua MOI brand, khong chi brand dang chay."""
     p = Path(db) if db else kanban_db()
     if not p.exists():
         return None
@@ -85,11 +85,11 @@ def _ask(cau: str, tham=(), buoc: str = "doc kanban", db=None):
 
 
 # --- state.db cua TUNG PROFILE (profiles/<vai>/state.db) -----------------------
-# Mat ghep noi thu 6 voi hermes (audit lượt 2, ADF-r2-3): theo_doi_9router va
-# ada_chuan_bi tung doc thang bang `session_model_usage` / `sessions` bang SQL
-# tho o hai tep, adapter khong biet, kiem_hermes khong kiem — hermes doi mot
+# Mat ghep noi thu 6 voi hermes (audit lượt 2, ADF-r2-3): monitor_9router va
+# ada_prepare tung doc thang bang `session_model_usage` / `sessions` bang SQL
+# tho o hai tep, adapter khong biet, check_hermes khong kiem — hermes doi mot
 # cot la nhat ky va brief cua Ada hong cam SAU `hermes update`. Cot dung o day
-# phai KHOP kiem_hermes.COT_CAN["session_model_usage"] / ["sessions"].
+# phai KHOP check_hermes.COLUMN_CAN["session_model_usage"] / ["sessions"].
 _COT_DUNG_MODEL = ("model", "api_call_count", "input_tokens", "output_tokens",
                    "cache_read_tokens", "reasoning_tokens", "session_id", "last_seen")
 _COT_PHIEN = ("title", "tool_call_count", "input_tokens", "api_call_count", "started_at")
@@ -341,7 +341,7 @@ def pid_alive(pid) -> bool | None:
 
 def count_done_by_role(tu_ts, den_ts, db=None):
     """{vai: so task 'done' xong trong khoang [tu_ts, den_ts)} — None neu khong
-    doc duoc. `db` de doc kanban cua brand KHAC (theo_doi_9router quet ca hai)."""
+    doc duoc. `db` de doc kanban cua brand KHAC (monitor_9router quet ca hai)."""
     hang = _ask("SELECT assignee, count(*) FROM tasks WHERE status='done' "
                 "AND completed_at >= ? AND completed_at < ? GROUP BY assignee",
                 (int(tu_ts), int(den_ts)), "dem task xong theo vai", db=db)
@@ -349,9 +349,9 @@ def count_done_by_role(tu_ts, den_ts, db=None):
 
 
 def last_run_many(tids):
-    """{task_id: lan_chay_cuoi} cho nhieu task trong MOT luot doc.
+    """{task_id: last_run} cho nhieu task trong MOT luot doc.
 
-    nhat_ky/ada_chuan_bi duyet hang tram task mot ngay; goi lan_chay_cuoi()
+    journal/ada_prepare duyet hang tram task mot ngay; goi last_run()
     tung cai la mo/dong kanban.db hang tram lan."""
     tids = [t for t in (tids or []) if t]
     if not tids:

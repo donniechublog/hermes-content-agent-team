@@ -77,8 +77,8 @@ def capture(url: str, ra, phien=None) -> bool:
 # dung lam bia: "cat lay khoi lead roi lam bia". Khoi lead = anh chinh + tit cua
 # chinh bai do, tuc mot vat THAT cua tin, khac han anh khai niem Commons.
 #
-# Khong cat toi 4:5 o day: `chuan_bi/nhin.phan_loai` da cat san 4:5/1:1 cho moi
-# anh (`_luu_crop`), cat hai lan la cat vao tit. O day chi chan hai dau: thap hon
+# Khong cat toi 4:5 o day: `prepare/vision.classify` da cat san 4:5/1:1 cho moi
+# anh (`_save_crop`), cat hai lan la cat vao tit. O day chi chan hai dau: thap hon
 # vuong thi khong con la "khoi", cao hon 2:1 thi phan duoi chac chan la than bai.
 # Chup DUNG khung anh hero cua bai, khong kem tit/byline (Ong Chu 12/09/2026
 # chot lai sau ban "khoi lead": "dung anh hero trong main article lam thumbnail
@@ -247,7 +247,7 @@ def _variable_text_card_x(im):
 def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: float = 0.15,
            lap_day: float = 0.78):
     """Dat anh chup vao khung `ti_le` (4:5) — CAT BOT HAI BEN neu anh qua ngang
-    (quanh tam THI GIAC cua chu the — xem `_tam_chu_the_x` — toi da `CAT_TOI_DA`
+    (quanh tam THI GIAC cua chu the — xem `_tam_chu_the_x` — toi da `CROP_MAX`
     be ngang) roi PHONG LEN cho day khung (contain-fit, co the phong to hon anh
     goc), phan con lai (neu con) to MAU NEN cua chinh trang do. Ra mot tam dung
     mot minh lam slide duoc, khong ghep cap.
@@ -266,7 +266,7 @@ def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: fl
         bien = _variable_text_card_x(im)
         if bien is not None:
             # KHONG BAO GIO cat vao trong bien chu the that (do bang do-lech-mau-
-            # nen, xem _bien_chu_the_x) — chu the rong hon `w_dich` thi NOI RONG
+            # nen, xem _variable_text_card_x) — chu the rong hon `w_dich` thi NOI RONG
             # cua so cat ra du chua tron no, chap nhan giam bot muc dem thay vi
             # lam dut chu (su co 13/09/2026: logo "tsmc" trai het chieu ngang,
             # cat theo trong tam van dut chu "t").
@@ -285,7 +285,7 @@ def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: fl
     # nhu ban cu (do la nguyen nhan anh da cat gon van nho giua khung thay vi
     # day no ra). KHONG lap day 100% chieu cao (Ong Chu 13/09/2026, sau khi cat
     # gan day khung: chu tieu de de thang len anh, cong bao ve tuong phan cua
-    # carousel.py (_lop_neu_can) phai phu mot dai xam day de chu den doc duoc —
+    # carousel.py (_layer_if_can) phai phu mot dai xam day de chu den doc duoc —
     # chinh la "vet nhat" — vi khong con mieng nen PHANG nao ngay tren cho chu
     # se nam de cong do tu bo qua. Chua het khung: `lap_day` (0.78) danh lai
     # mot dai phang o duoi (via `cao_tren` thap, phan lon roi ve duoi) lam nen
@@ -312,7 +312,7 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
     KHONG dung anh rac.
 
     Ba buoc truoc khi do, moi buoc sinh ra tu mot tam anh hong do that
-    12/09/2026: (1) `bi_chan` — arstechnica tra tuong "confirm you are human" ma
+    12/09/2026: (1) `got_block` — arstechnica tra tuong "confirm you are human" ma
     van co <h1>, chup ra thi tam do len bia; (2) cuon xuong roi ve dau — anh hero
     lazy-load cua techcrunch chua bao gio tai, khoi lead chi con tit va mot o
     trong; (3) `_JS_AN_LOP_NOI` — banner dieu khoan cua theverge che kin nua duoi
@@ -327,7 +327,7 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
                 resp = None
                 try:
                     # `domcontentloaded`, KHONG `networkidle` — giong
-                    # `xep_hang._thu_nguon`. Do that tren may chu 12/09/2026:
+                    # `ranking._try_source`. Do that tren may chu 12/09/2026:
                     # theverge KHONG BAO GIO yen (quang cao + websocket chay
                     # lien tuc) nen goto an tron 45s roi nem TimeoutError, toi
                     # luc do trang moi tai duoc mot phan va h1/anh hero chua

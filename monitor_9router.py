@@ -2,7 +2,7 @@
 """monitor_9router.py — nhật ký 9router theo NGÀY: model, token, chi phí, lật
 model, lỗi, khoá API, model lạ, cache thấp, $ theo vai. Nguồn sự thật cho Ada
 khi bàn chi phí; cron `daily-log` chốt ngày hôm qua và gửi tóm tắt lên topic
-analyst (kèm link nhat_ky_web).
+analyst (kèm link journal_web).
 
 Đọc usageHistory của 9router CHỈ ĐỌC → state/9router/nhat_ky/9router_<ngày>.json
 + .md. Chạy lại bao nhiêu lần cũng ra y hệt (idempotent), nên cả hai brand gọi
@@ -51,13 +51,13 @@ EMPTY_OUT_MAX = 5
 EMPTY_PROMPT_MIN = 1000
 # Mọi HERMES_HOME đang chạy (per-brand) → $ theo vai gộp cả hai brand.
 HERMES_HOMES = sorted(Path.home().glob(".hermes-*"))
-# Model CỦA TA mà cache% dưới mức này trên hơn PROMPT_TOI_THIEU_CACHE token prompt
+# Model CỦA TA mà cache% dưới mức này trên hơn PROMPT_MIN_CACHE token prompt
 # là đang lật model giữa hội thoại (cache là per-model). Chuyển từ usage_audit.py
 # khi gộp hai script (05/09/2026).
 THRESHOLD_CACHE = 40.0
 PROMPT_MIN_CACHE = 20_000
 DRAFTS = ROOT / "drafts"
-# Link trong tin Telegram → nhat_ky_web.py (netbird IP để điện thoại mở được
+# Link trong tin Telegram → journal_web.py (netbird IP để điện thoại mở được
 # không cần DNS). Đổi bằng biến môi trường NHAT_KY_URL.
 WEB_URL = os.environ.get("NHAT_KY_URL", "http://100.87.121.46:9130").rstrip("/")
 
@@ -216,7 +216,7 @@ def inspect_model(theo_model: dict, combo: dict) -> tuple:
 def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict]:
     """Gom cac dong `usageHistory` thanh so lieu. THUAN: khong SQL, khong doc dia.
 
-    Tach khoi `doc_ngay` 07/09/2026. `doc_ngay` la 93 dong trong do dung 4 dong
+    Tach khoi `read_date` 07/09/2026. `read_date` la 93 dong trong do dung 4 dong
     dau cham vao SQLite, con lai la phep dem — ma phep dem do quyet dinh nhung
     thu khong lo ra khi sai: nhan khoa API (chi duoc 4 ky tu cuoi), cap lat model
     nao tinh la fallback, model nao bi goi la "tra rong". Nam trong mot ham co
@@ -226,7 +226,7 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
     promptTokens, completionTokens, cost, tokens-json) — dung thu tu SELECT.
     `cap_fb`: tap cap (chinh, du phong) doc tu config; None thi tu doc.
 
-    Tra ve (so_lieu, tho). `tho` la bo tich luy CHUA lam tron — `gom_vai` tinh
+    Tra ve (so_lieu, tho). `tho` la bo tich luy CHUA lam tron — `gather_role` tinh
     don gia tren no, dung nhu truoc khi tach ham; lam tron truoc roi chia se
     lech o chu so thu nam.
     """
@@ -259,7 +259,7 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
         nhan = f"{model} @ {kn_ten.get(cid, provider or '?')}"
         # Khoa da xoay/xoa khong con dong trong `apiKeys`, va ban truoc
         # 06/09/2026 lay CHINH CHUOI KHOA lam nhan. Nhan do duoc ghi vao
-        # 9router_<ngay>.json/.md roi phuc vu qua nhat_ky_web — mot khoa API
+        # 9router_<ngay>.json/.md roi phuc vu qua journal_web — mot khoa API
         # tho nam trong tep tren dia va tren mot trang HTTP. Chi giu 4 ky tu
         # cuoi, du de doi chieu tren dashboard 9router.
         nhan_khoa = khoa_ten.get(ak) or (f"khoa la …{ak[-4:]}" if ak else "?")
@@ -411,7 +411,7 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
         brand = home.name.replace(".hermes-", "")
         for p in hermes_adapter.state_db_each_profile(home):
             # Qua adapter (ADF-r2-3): SQL vao state.db cua hermes nam MOT cho,
-            # kiem_hermes kiem duoc cot. None = khong doc duoc -> noi ra, khong
+            # check_hermes kiem duoc cot. None = khong doc duoc -> noi ra, khong
             # `continue` cam nhu truoc (vai do bien mat khoi nhat ky ma khong ai hay).
             rows = hermes_adapter.use_by_model(p, e0, e1)
             if rows is None:
