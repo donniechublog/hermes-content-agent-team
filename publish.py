@@ -200,6 +200,31 @@ def send_media_group(token, chat, media, caption="", parse_mode="HTML",
     return _check(r)
 
 
+def send_topic_with_keyboard(text: str, vai: str, keyboard: dict) -> dict | None:
+    """Like `send_topic`, but with an inline keyboard, and returns the sent
+    message (so the caller can edit it later) instead of a bare bool. None on
+    any failure — missing token/group, or Telegram rejecting the call."""
+    env_load.load()
+    tok = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat = os.environ.get("TELEGRAM_GROUP_ID") or os.environ.get("TELEGRAM_CHANNEL_ID")
+    if not (tok and chat):
+        print("[canh bao] thieu TELEGRAM_BOT_TOKEN/GROUP_ID — in ra man hinh thay vi gui")
+        print(text)
+        return None
+    payload = {"chat_id": chat, "text": single_pretty(text), "parse_mode": "HTML",
+               "disable_web_page_preview": True, "reply_markup": keyboard}
+    thread = env_load.topics().get(vai)
+    if thread:
+        payload["message_thread_id"] = int(thread)
+    try:
+        with httpx.Client(timeout=60) as c:
+            r = c.post(API.format(token=tok, method="sendMessage"), json=payload)
+        return _check(r)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[canh bao] khong gui duoc Telegram: {type(e).__name__}: {e}")
+        return None
+
+
 def send_topic(text: str, vai: str) -> bool:
     """Gui `text` (HTML) vao topic cua `vai` trong group cua brand. Thieu token/
     group thi in ra man hinh; loi Telegram thi in canh bao — KHONG nem, vi day la

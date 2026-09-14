@@ -148,7 +148,19 @@ def run(*, repo=REPO, state=STATE, open_pr=default_open_pr, enable_auto_merge=de
     opened = merged = rejected = checked = closed = 0
     for out in sorted(verdict_dir.glob("*.json")):
         verdict = json.loads(out.read_text(encoding="utf-8"))
-        if verdict.get("verdict") != "accepted":
+        boss_decision = verdict.get("boss_decision")
+        # A clean lesson (layer 2) or a flagged one the boss approved on
+        # Telegram (LOW-154) both go through the same apply→PR→auto-merge path
+        # below. A flagged lesson with no decision yet is left alone — still
+        # waiting on the boss, not this script's call.
+        if verdict.get("verdict") != "accepted" and boss_decision != "approved":
+            if verdict.get("verdict") == "flagged" and boss_decision == "rejected" \
+                    and verdict.get("commit_status") not in ("merged", "rejected", "closed_without_merge"):
+                verdict["commit_status"] = "rejected"
+                verdict["reject_reason"] = "Ông Chủ từ chối trên Telegram"
+                env_load.write_json(out, verdict)
+                discard(verdict)
+                rejected += 1
             continue
         status = verdict.get("commit_status")
         if status in ("merged", "rejected", "closed_without_merge"):

@@ -306,24 +306,32 @@ def find_task(kanban_db: Path, profile: str, created_at: float):
     return row[0] if row else None
 
 
-def format_message(verdicts: list) -> str:
+def keyboard_for(key: str) -> dict:
+    """Two buttons routed to skill_lesson_approve.handle_button (LOW-154) via
+    approve_post.handle_callback, same callback machinery as imgok/imgno."""
+    return {"inline_keyboard": [[
+        {"text": "✅ Nhận", "callback_data": f"skillok:{key}"},
+        {"text": "❌ Từ chối", "callback_data": f"skillno:{key}"},
+    ]]}
+
+
+def format_message(verdict: dict) -> str:
+    """One Telegram message for ONE flagged lesson — every lesson gets its own
+    message (not batched) so its Duyệt/Từ chối buttons unambiguously belong to
+    it (LOW-154)."""
     esc = html.escape
-    header = f"🧪 <b>Bài học skill cần duyệt</b> ({len(verdicts)})"
-    blocks, size = [], len(header)
-    for shown, v in enumerate(verdicts):
-        lines = ["", f"<b>{esc(v['profile'])}</b> · {esc(v['brand'])} · task <code>{esc(v.get('task') or '?')}</code>"
-                     f" · skill <code>{esc(v['skill'])}</code> · pending <code>{esc(str(v['id']))}</code>"]
-        lines += [f"• <b>{esc(RULE_LABELS.get(f['rule'], f['rule']))}</b>: {esc(f['detail'])}" for f in v["flags"]]
-        diff = ["+ " + line for line in v["added"][:8]] + ["- " + line for line in v["removed"][:4]]
-        if diff:
-            lines.append("<pre>" + esc("\n".join(diff)) + "</pre>")
-        block = "\n".join(lines)
-        if size + len(block) > TELEGRAM_BUDGET:
-            blocks.append(f"\n… còn {len(verdicts) - shown} bài, xem state/skill_lessons/verdicts/")
-            break
-        blocks.append(block)
-        size += len(block)
-    return header + "".join(blocks)
+    lines = [f"🧪 <b>Bài học skill cần duyệt</b> — {esc(verdict['profile'])} · {esc(verdict['brand'])} "
+             f"· task <code>{esc(verdict.get('task') or '?')}</code> · skill <code>{esc(verdict['skill'])}</code>"]
+    lines += [f"• <b>{esc(RULE_LABELS.get(f['rule'], f['rule']))}</b>: {esc(f['detail'])}"
+             for f in verdict["flags"]]
+    diff = ["+ " + line for line in verdict["added"][:8]] + ["- " + line for line in verdict["removed"][:4]]
+    if diff:
+        text = "\n".join(diff)
+        budget = TELEGRAM_BUDGET - sum(len(line) for line in lines)
+        if len(text) > budget:
+            text = text[:budget] + "\n… (cắt bớt, xem state/skill_lessons/verdicts/)"
+        lines.append("<pre>" + esc(text) + "</pre>")
+    return "\n".join(lines)
 
 
 def run(homes=None, repo=REPO, state=STATE, send=None, now=None, notify=True) -> dict:
@@ -350,23 +358,30 @@ def run(homes=None, repo=REPO, state=STATE, send=None, now=None, notify=True) ->
         verdict = json.loads(out.read_text(encoding="utf-8"))
         if verdict["verdict"] == "flagged" and not verdict.get("notified"):
             waiting.append((out, verdict))
+
+    sender = send or publish.send_topic_with_keyboard
+    sent = 0
     notified_ok = True
-    if waiting:
-        message = format_message([v for _, v in waiting])
-        if notify:
-            notified_ok = bool((send or publish.send_topic)(message, "ada"))
-            if notified_ok:
-                for out, verdict in waiting:
-                    verdict["notified"] = True
-                    env_load.write_json(out, verdict)
-        else:
-            print(message)
+    for out, verdict in waiting:
+        if not notify:
+            print(format_message(verdict))
+            continue
+        result = sender(format_message(verdict), "ada", keyboard_for(out.stem))
+        if not result:
+            notified_ok = False
+            continue
+        verdict["notified"] = True
+        if isinstance(result, dict):
+            verdict["telegram_chat_id"] = (result.get("chat") or {}).get("id")
+            verdict["telegram_message_id"] = result.get("message_id")
+        env_load.write_json(out, verdict)
+        sent += 1
 
     rules = Counter(f["rule"] for v in new for f in v["flags"])
     report = {"at": datetime.fromtimestamp(now, timezone.utc).isoformat(), "pending": len(pending),
               "new": len(new), "accepted": sum(v["verdict"] == "accepted" for v in new),
               "flagged": sum(v["verdict"] == "flagged" for v in new), "by_rule": dict(rules),
-              "notified": len(waiting) if notify and notified_ok else 0, "notified_ok": notified_ok}
+              "notified": sent, "notified_ok": notified_ok}
     with open(Path(state) / "reports.jsonl", "a", encoding="utf-8") as fh:
         fh.write(json.dumps(report, ensure_ascii=False) + "\n")
     return report
