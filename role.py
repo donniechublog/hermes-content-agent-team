@@ -114,9 +114,9 @@ ROLE = {v.slug: v for v in [
     Role("kite", "Kite", go=("edu", "kites"), slug_cu=("carousel-edu",),
         renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
         anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
-    # --- WRITER roles (LOW-13 2026-09-10, LOW-123 2026-09-14) ---
-    # dcgr only has Miles; blog has BOTH Miles and Jika sharing work by queue
-    # (WRITERS_BY_BRAND), differing only in writing voice. Readers of the two
+    # --- WRITER roles (LOW-13 2026-09-10, LOW-123/LOW-136 2026-09-14) ---
+    # BOTH brands have Miles and Jika sharing work by queue (WRITERS_BY_BRAND),
+    # differing only in writing voice. Readers of the two
     # brands ask very different questions (see VOICE in miles_prepare), and MEMORY
     # is split per brand since 2026-09-05 — the business-news lesson "fewer figures,
     # talk money" once leaked into model news, which must keep params and benchmarks.
@@ -172,15 +172,15 @@ WRITE_BY_BRAND = {
     "dcgr.tech": "miles",
 }
 
-# Writers that SHARE the work in each brand (LOW-123, 2026-09-14): blog has Miles
-# and Jika, who differ only in writing voice. `writer_for` only gives a TENTATIVE
-# writer at pick time; the real writer is chosen by queue when the boss approves
-# the image (approve_post).
+# Writers that SHARE the work in each brand: Miles and Jika, who differ only in
+# writing voice (blog LOW-123, dcgr LOW-136, both 2026-09-14). `writer_for` only
+# gives a TENTATIVE writer at pick time; the real writer is chosen by queue when
+# the boss approves the image (approve_post).
 WRITERS_BY_BRAND = {
     "blog": ("miles", "jika"),
     "donniechublog": ("miles", "jika"),
-    "dcgr": ("miles",),
-    "dcgr.tech": ("miles",),
+    "dcgr": ("miles", "jika"),
+    "dcgr.tech": ("miles", "jika"),
 }
 
 

@@ -22,8 +22,8 @@ Dân kỹ thuật, không cần dỗ dành. Họ hỏi ***làm thế nào***.
 - Điều họ muốn biết ngay: mô hình này hơn cái nào, ở phép đo nào, chạy được ở
   đâu, mở hay đóng, giá bao nhiêu. Một dòng benchmark có ngữ cảnh so sánh đáng
   giá hơn ba câu tính từ.
-- Đừng bẻ tin kỹ thuật thành tin kinh doanh. Vòng gọi vốn và định giá là việc
-  của Miles bên dcgr.tech; ở đây chúng chỉ là bối cảnh một câu, nếu có.
+- Đừng bẻ tin kỹ thuật thành tin kinh doanh. Vòng gọi vốn và định giá là chuyện
+  của dcgr.tech; ở đây chúng chỉ là bối cảnh một câu, nếu có.
 
 ## Việc của bạn: viết caption
 

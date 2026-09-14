@@ -182,11 +182,23 @@ def test_unreadable_kanban_keeps_tentative_writer():
     assert created[0][0] == "jika" and sidecar["vai_viet"] == "jika"
 
 
-def test_dcgr_single_writer_skips_queue_lookup():
-    def _forbidden_queue(_slugs):
-        raise AssertionError("dcgr only has Miles, the queue must not be read")
+def test_dcgr_assigns_writer_with_shorter_queue():
+    """LOW-136: dcgr also shares writing — Miles is busy, Jika is free -> Jika."""
     with tempfile.TemporaryDirectory() as t:
-        created, _sidecar = _approve_with_queue(Path(t), writer="miles", brand="dcgr.tech",
+        created, sidecar = _approve_with_queue(
+            Path(t), writer="miles", brand="dcgr.tech",
+            queue=lambda slugs: {"miles": (3, 100), "jika": (0, None)})
+    assignee, body = created[0]
+    assert assignee == "jika", f"should assign Jika (empty queue), got {assignee}"
+    assert "jika_prepare.py" in body and "jika_submit.py" in body and "miles_" not in body, body
+    assert sidecar["vai_viet"] == "jika"
+
+
+def test_unknown_brand_skips_queue_lookup():
+    def _forbidden_queue(_slugs):
+        raise AssertionError("a brand without a writer group must not read the queue")
+    with tempfile.TemporaryDirectory() as t:
+        created, _sidecar = _approve_with_queue(Path(t), writer="miles", brand="unknown",
                                                 queue=_forbidden_queue)
     assert created[0][0] == "miles"
 
