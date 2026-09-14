@@ -272,9 +272,13 @@ def test_tinh_lai_bo_anh_that_tsmc_lan_hai():
         d = {"ma": ma, "dung": ["x"], "lien_quan": True, "ngang": ngang, "h": h}
         d.update(k)
         return d
-    bo = [_a("A3", False, 1166), _a("A5", True, 600), _a("A6", False, 1020),
-          _a("A7", True, 1067, cat_ngang_ok=False), _a("A8", True, 768, cat_ngang_ok=True),
+    # ti_le: A5 900x600 do that; A7/A12 bo goc khong ghi, gia dinh 16:9 (bien
+    # hieu/logo chup ngang) — LOW-46 dem cap theo ti le that, khong con // 2.
+    bo = [_a("A3", False, 1166), _a("A5", True, 600, ti_le=1.5), _a("A6", False, 1020),
+          _a("A7", True, 1067, cat_ngang_ok=False, ti_le=1.78),
+          _a("A8", True, 768, cat_ngang_ok=True),
           _a("A10", True, 1628, loai="chart"), _a("A11", True, 820, loai="chart"),
-          _a("A12", True, 853, cat_ngang_ok=False)]
-    # rieng khong chi_ghep: A3, A6, A8, A10, A11 = 5. chi_ghep: A5, A7, A12 = 3 -> +1 cap.
+          _a("A12", True, 853, cat_ngang_ok=False, ti_le=1.78)]
+    # rieng khong chi_ghep: A3, A6, A8, A10, A11 = 5. chi_ghep: A5, A7, A12 = 3 ->
+    # cap roi nhau lon nhat = 1 (ba tam chi ghep toi da mot cap).
     assert schema.count_image_use_ok(bo) == 6

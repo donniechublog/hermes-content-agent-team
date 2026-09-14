@@ -276,6 +276,16 @@ def has_label_cover(dung) -> bool:
     return any(str(d).startswith("bìa") for d in (dung or []))
 
 
+def face_no_clear_ai(a: dict) -> bool:
+    """Tam co mat nguoi ma khong biet la ai — thuong hieu khong gan ten nguoi,
+    alt/caption khong neu ten. `nop_chung.kiem_nhan_vat` chan tam nhu the, vai
+    khong duoc bia ten cho qua cong, nen no KHONG phai mot duong dung duoc: ca
+    `anh_chinh_duoc` lan nguoi dem slide (`schema.so_anh_dung_duoc`, LOW-46) hoi
+    CHINH ham nay, khong moi noi mot dieu kien."""
+    return bool(a.get("mat")) and not ((a.get("thuong_hieu") or {}).get("nguoi")
+                                       or person_names_in_alt(a.get("alt") or ""))
+
+
 def can_be_hero(slug: str, a: dict) -> bool:
     """Tam anh `a` (mot muc trong manifest) co dung MOT MINH lam ANH CHINH cua
     vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.
@@ -297,8 +307,7 @@ def can_be_hero(slug: str, a: dict) -> bool:
         return False
     # Mat nguoi khong ro ai: `nop_chung.kiem_nhan_vat` chan, ma vai thi khong
     # duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc.
-    if a.get("mat") and not ((a.get("thuong_hieu") or {}).get("nguoi")
-                             or person_names_in_alt(a.get("alt") or "")):
+    if face_no_clear_ai(a):
         return False
     return True
 

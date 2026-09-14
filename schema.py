@@ -188,6 +188,36 @@ def _only_stack_ok(a: dict) -> bool:
     return a.get("cat_ngang_ok") is not True
 
 
+def _count_stackable_pairs_real(ds: list) -> int:
+    """So cap ROI NHAU lon nhat trong `ds` ma moi cap ghep doc ra dung khung
+    (`luat_anh.ghep_vua_khung`, theo `ti_le` da do — khong mo tep anh).
+
+    Phai la ghep cap TOI UU, khong phai tham lam: bon tam C-A-B-D ma chi A-C,
+    A-B, B-D ghep duoc thi nhat A-B truoc ra 1 cap, dung ra 2 (A-C, B-D). So tam
+    chi-ghep cua mot bai chi vai tam den chuc tam — duyet tap con co nho la du."""
+    from functools import lru_cache
+
+    import image_rules
+    n = len(ds)
+    ke = [[j for j in range(n) if j != i and image_rules.stack_fit_frame(ds[i].get("ti_le"),
+                                                                     ds[j].get("ti_le"))]
+          for i in range(n)]
+
+    @lru_cache(maxsize=None)
+    def _tot(con: int) -> int:
+        if not con:
+            return 0
+        i = (con & -con).bit_length() - 1
+        bo_i = con & ~(1 << i)
+        ra = _tot(bo_i)                                  # tam i dung le, khong vao cap nao
+        for j in ke[i]:
+            if bo_i >> j & 1:
+                ra = max(ra, 1 + _tot(bo_i & ~(1 << j)))
+        return ra
+
+    return _tot((1 << n) - 1)
+
+
 def count_image_use_ok(anh: list) -> int:
     """So SLIDE dung duoc tu bo anh, de xet du/thieu — MOT ban duy nhat cua cong thuc.
 
@@ -201,12 +231,23 @@ def count_image_use_ok(anh: list) -> int:
     A5 900x600 chi ghep duoc ma khong co cap, tuc chi dung duoc 4 slide. Dre
     block, Ong Chu phai go tay. Truoc khi gom ve day, `dre_chuan_bi` doan lai
     bang `len([a for a in anh if a["dung"]])` — mot so KHAC — con `duyet_bai`
-    va `anh_chuan_bi` coi thieu khoa la 0. Ba cach doan cho ba ket luan."""
-    dung_duoc = [a for a in (anh or []) if a.get("dung") and a.get("lien_quan") is not False]
+    va `anh_chuan_bi` coi thieu khoa la 0. Ba cach doan cho ba ket luan.
+
+    LOW-46 (13/09/2026, tin TSMC lan ba, t_2d546375): cong thuc noi "du 6" ma
+    Dre chi dung duoc 4 va phai block. Hai cho dem lac quan hon cong chan that:
+      - `len(chi_ghep) // 2` coi BAT KY hai tam chi-ghep nao cung la mot cap —
+        A5+A10 (deu 3:2) ghep ra 0.75, ngoai dai 4:5..1:1, dre_nop chan. Nay dem
+        so cap roi nhau LON NHAT ma `luat_anh.ghep_vua_khung` cho qua;
+      - tam co mat nguoi khong ro ai (A3) van duoc dem, trong khi
+        `nop_chung.kiem_nhan_vat` chan no. Nay bo qua qua `vai.mat_khong_ro_ai`,
+        cung dieu kien voi `vai.anh_chinh_duoc`."""
+    import role
+    dung_duoc = [a for a in (anh or []) if a.get("dung") and a.get("lien_quan") is not False
+                 and not role.face_no_clear_ai(a)]
     khai_niem = [a for a in dung_duoc if a.get("khai_niem")]
     rieng = [a for a in dung_duoc if not a.get("khai_niem")]
     chi_ghep = [a for a in rieng if _only_stack_ok(a)]
-    return (len(rieng) - len(chi_ghep)) + len(chi_ghep) // 2 + min(1, len(khai_niem))
+    return (len(rieng) - len(chi_ghep)) + _count_stackable_pairs_real(chi_ghep) + min(1, len(khai_niem))
 
 
 def read_manifest(nguon) -> dict | None:

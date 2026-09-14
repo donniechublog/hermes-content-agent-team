@@ -107,11 +107,8 @@ def stackable_pairs(anh: list) -> list:
     for i in range(len(ngang)):
         for j in range(i + 1, len(ngang)):
             x, y = ngang[i], ngang[j]
-            rc = 1 / (1 / x["ti_le"] + 1 / y["ti_le"])
-            if not (image_rules.TI_LE_45 - image_rules.TOLERANCE_RATIO <= rc
-                    <= image_rules.TI_LE_11 + image_rules.TOLERANCE_RATIO):
-                continue
-            ra.append([x["ma"], y["ma"]])
+            if image_rules.stack_fit_frame(x["ti_le"], y["ti_le"]):
+                ra.append([x["ma"], y["ma"]])
     return ra
 
 

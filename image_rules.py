@@ -55,6 +55,22 @@ IMAGE_PHRASES_SCREENSHOT = (
 TI_LE_45, TI_LE_11 = 0.8, 1.0
 TOLERANCE_RATIO = 0.03            # dai hop le 4:5..1:1, nong 3%
 LANDSCAPE_CLEAR = 1.4                   # anh goc >= 1.4 la NGANG ro (16:9, 3:2)
+
+
+def ratio_after_stack(r1: float, r2: float) -> float:
+    """Ti le rong/cao cua hai anh chong doc cung be ngang: 1 / (1/r1 + 1/r2)."""
+    return 1 / (1 / r1 + 1 / r2)
+
+
+def stack_fit_frame(r1, r2) -> bool:
+    """Hai anh ti le rong/cao r1, r2 chong doc co ra khung 4:5..1:1 (nong
+    DUNG_SAI_TI_LE) khong. MOT ban cho ca ba noi truoc day tu tinh rieng: goi y
+    cap (`chuan_bi.manifest.cap_ghep`), cong chan (`dre_nop._giai_ghep`) va nguoi
+    dem slide (`schema.so_anh_dung_duoc`, LOW-46). Thieu ti le = khong ghep duoc."""
+    r1, r2 = float(r1 or 0), float(r2 or 0)
+    if r1 <= 0 or r2 <= 0:
+        return False
+    return TI_LE_45 - TOLERANCE_RATIO <= ratio_after_stack(r1, r2) <= TI_LE_11 + TOLERANCE_RATIO
 SHORT_SIDE_MIN = 1000             # duoi nguong nay phong len 1080 se mem
 BRIGHT_BOTTOM_MAX = 150               # do sang trung binh 25% duoi anh (chi con dung
                                  # lam ghi chu tham khao trong chuan_bi/nhin.py,
