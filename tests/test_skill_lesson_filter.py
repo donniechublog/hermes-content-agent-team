@@ -177,6 +177,21 @@ def test_failed_send_is_retried_next_run():
     assert len(attempts) == 2
 
 
+def test_lesson_staged_just_after_run_end_maps_to_task():
+    """Real case 2026-09-09: run t_14df7eee ended 00:45:25, the skill patch was
+    staged 00:45:30 — the agent keeps calling tools after the task is marked done."""
+    with tempfile.TemporaryDirectory() as t:
+        db = Path(t) / "kanban.db"
+        con = sqlite3.connect(db)
+        con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, started_at REAL, ended_at REAL)")
+        con.execute("INSERT INTO task_runs VALUES ('t_14df7eee', 'kite', 1788914503, 1788914725)")
+        con.execute("INSERT INTO task_runs VALUES ('t_other', 'miles', 1788914700, 1788914800)")
+        con.commit()
+        con.close()
+        assert slf.find_task(db, "kite", 1788914730.1) == "t_14df7eee"
+        assert slf.find_task(db, "kite", 1788914725 + slf.TASK_END_GRACE_SECONDS + 10) is None
+
+
 def test_accepted_lesson_sends_nothing():
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)

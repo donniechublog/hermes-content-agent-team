@@ -46,6 +46,9 @@ MAX_SKILL_LINES = 220
 MAX_SKILL_SECTIONS = 10
 DUPLICATE_RATIO = 0.85
 TELEGRAM_BUDGET = 3800
+# The agent keeps calling tools after the task is marked done: on 2026-09-09 a
+# lesson was staged 5 s after its run ended (session closed 9 s after).
+TASK_END_GRACE_SECONDS = 120
 
 RENAME_COMMIT = re.compile(r"LOW-50|LOW-56|rename|đổi tên English|doi ten English", re.I)
 BUG_WORDS = re.compile(r"\b(bug|lỗi|crash|traceback|exception|typeerror|keyerror|valueerror)\b"
@@ -291,7 +294,7 @@ def find_task(kanban_db: Path, profile: str, created_at: float):
             row = con.execute(
                 "SELECT task_id FROM task_runs WHERE profile = ? AND started_at <= ? "
                 "AND (ended_at IS NULL OR ended_at >= ?) ORDER BY started_at DESC LIMIT 1",
-                (profile, created_at, created_at - 5)).fetchone()
+                (profile, created_at, created_at - TASK_END_GRACE_SECONDS)).fetchone()
         finally:
             con.close()
     except sqlite3.Error as e:
