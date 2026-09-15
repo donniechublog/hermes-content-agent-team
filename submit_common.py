@@ -354,7 +354,7 @@ def _clean_use_alone(a: dict) -> bool:
     nguoi (mat nguoi con phu thuoc ten co trong bai), ngang thi phai cat doc duoc
     (vision cat_ngang_ok + du cao). Thieu dieu kien nao cung khong tinh — cong
     check_image_fall chi duoc bat vai doi anh khi THAT SU co cho doi, khong de ket."""
-    if not a.get("dung") or a.get("lien_quan") is False or a.get("roi") is not False:
+    if not a.get("dung") or a.get("lien_quan") is False or a.get("cluttered") is not False:
         return False
     if a.get("loai") != "anh" or a.get("xep_hang") or a.get("mat"):
         return False
@@ -373,9 +373,9 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
     va CHUA len bai khac (check_not_reused) — de vai doi duoc that, khong ket."""
     # Roi ma DU TU KHOA chinh cua tin (vision TU_KHOA) thi mien — Ong Chu 13/09
     # chon chinh mot do hoa roi nhu vay lam hero.
-    roi = [(nhan, ma) for ma, nhan in dung.items()
-           if ma and (anh.get(ma) or {}).get("roi") and not (anh.get(ma) or {}).get("du_tu_khoa")]
-    if not roi:
+    cluttered = [(nhan, ma) for ma, nhan in dung.items()
+           if ma and (anh.get(ma) or {}).get("cluttered") and not (anh.get(ma) or {}).get("du_tu_khoa")]
+    if not cluttered:
         return []
     import image_rules
     sach = []
@@ -389,7 +389,7 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
         return []
     return [f"{nhan}: {ma} là ảnh RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) mà vẫn còn ảnh sạch "
             f"chưa dùng: {', '.join(sach[:6])} — đổi sang ảnh sạch, ảnh rối chỉ dùng khi hết ảnh sạch"
-            for nhan, ma in roi]
+            for nhan, ma in cluttered]
 
 
 def check_quote_translated(chu: str, nhan: str) -> list:

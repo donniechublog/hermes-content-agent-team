@@ -90,10 +90,10 @@ def test_carousel_VAN_con_co_che_lop_mo():
     """Chiều ngược, giữ từ 955f33b: cơ chế lớp mờ của carousel.py là bản riêng,
     dọn bên render_edu không được kéo theo."""
     import carousel                                           # noqa: PLC0415
-    for t in ("THRESHOLD_FALL_CAN_LAYER", "VEIL_SPAN"):
+    for t in ("THRESHOLD_VARIANCE_NEEDS_LAYER", "VEIL_SPAN"):
         assert hasattr(carousel, t), f"carousel.{t} bị xoá"
     src = (ROOT / "carousel.py").read_text(encoding="utf-8")
-    assert "roi - THRESHOLD_FALL_CAN_LAYER" in src
+    assert "variance - THRESHOLD_VARIANCE_NEEDS_LAYER" in src
     assert "top_y + VEIL_SPAN" in src
 
 

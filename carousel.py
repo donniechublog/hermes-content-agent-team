@@ -117,7 +117,7 @@ BG_BLUR = 44                     # mo MANH ban cover lam nen: phai xoa het chi t
                                  # phong to cua chinh tam anh -> mat doc ra HAI VUNG
 THRESHOLD_BRIGHT_DARK = 130    # nen "toi" (FG trang): sang trung binh duoi chu phai <= muc nay
 THRESHOLD_BRIGHT_BRIGHT = 130   # nen "sang" (FG den): (255 - sang) duoi chu phai <= muc nay
-THRESHOLD_FALL_CAN_LAYER = 26  # do lech mau (stddev xam) duoi chu vuot muc nay moi can lop
+THRESHOLD_VARIANCE_NEEDS_LAYER = 26  # do lech mau (stddev xam) duoi chu vuot muc nay moi can lop
 DARK_MAX = 140         # tran cua lop (0..255, ~55%) — "vua du", khong phu ca mang
 VEIL_SPAN = 70           # px duong cong chuyen tiep — bat dau NGAY tai dong chu dau
 VEIL_EASE = 1.3          # duong cong: nhat luc bat dau, dam dan trong VEIL_SPAN roi giu
@@ -304,15 +304,15 @@ def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
 def _measure_region_text(canvas, y0, y1):
     """Do sang trung binh + do roi (stddev xam) cua DUNG vung pixel WYSIWYG se
     nam duoi chu — doc thang tren canvas HIEN TAI (sau khi da dan anh, truoc
-    khi ve chu), khong doan qua toa do nguon. -> (sang 0..255, roi 0..255)."""
+    khi ve chu), khong doan qua toa do nguon. -> (sang 0..255, variance 0..255)."""
     y0, y1 = max(0, int(y0)), min(H, int(y1))
     if y1 <= y0:
         return 255.0, 0.0
     return text_bg.measure_bright_offset(canvas.crop((0, y0, W, y1)))
 
 
-BACKGROUND_FALL_ODD = 40          # nen dac bat dau cach dong chu dau bao nhieu px phia tren
-BACKGROUND_FALL_SPREAD = 180        # dai smoothstep toi da tu anh sang nen dac
+CLUTTERED_BG_ODD = 40          # nen dac bat dau cach dong chu dau bao nhieu px phia tren
+CLUTTERED_BG_SPREAD = 180        # dai smoothstep toi da tu anh sang nen dac
 
 
 def _background_solid_below_text(canvas, text_top):
@@ -324,7 +324,7 @@ def _background_solid_below_text(canvas, text_top):
     phia tren dong chu (`card._timestamp_background_solid`, dung chung voi the Ethan) xuong
     day; dai smoothstep nam trong khoang lang nen khong cat ngang dong chu in
     san nao, khong co duong ke ngang (IMAGE_RULES muc 7.1)."""
-    dac, top = card._timestamp_background_solid(canvas, text_top - BACKGROUND_FALL_ODD, BACKGROUND_FALL_SPREAD)
+    dac, top = card._timestamp_background_solid(canvas, text_top - CLUTTERED_BG_ODD, CLUTTERED_BG_SPREAD)
     m = Image.new("L", (1, H), 0)
     for y in range(H):
         if y >= dac:
@@ -338,7 +338,7 @@ def _background_solid_below_text(canvas, text_top):
     canvas.paste(Image.new("RGB", (W, H), BG), (0, 0), m.resize((W, H)))
 
 
-def _layer_if_can(canvas, base, text_top, text_bottom, anh_roi=False):
+def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False):
     """Them mot lop mo+tinh NGAY TAI text_top — CHI KHI can (xem nguyen tac o
     dau file). Mac dinh khong lam gi: FG (co dinh theo NEN ca bo) da du tuong
     phan thi giu nguyen anh.
@@ -348,18 +348,18 @@ def _layer_if_can(canvas, base, text_top, text_bottom, anh_roi=False):
     `text_bottom` la vung se do de QUYET DINH co can lop khong; mat na ve ra
     luon giu phang tu `text_top + VEIL_SPAN` tro xuong H, khong phu thuoc
     `text_bottom`."""
-    if anh_roi:
+    if image_cluttered:
         _background_solid_below_text(canvas, text_top)
         return
-    sang, roi = _measure_region_text(canvas, text_top, text_bottom)
+    sang, variance = _measure_region_text(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
         thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "toi": qua sang la thieu
     else:
         thieu = max(0.0, (255 - sang) - THRESHOLD_BRIGHT_BRIGHT)  # nen "sang": qua toi la thieu
-    roi_du = max(0.0, roi - THRESHOLD_FALL_CAN_LAYER)
-    if thieu <= 0 and roi_du <= 0:
+    variance_excess = max(0.0, variance - THRESHOLD_VARIANCE_NEEDS_LAYER)
+    if thieu <= 0 and variance_excess <= 0:
         return                       # da du tuong phan tren pixel that — khong phu gi
-    do = min(DARK_MAX, max(40.0, thieu * 1.8, roi_du * 2.2))
+    do = min(DARK_MAX, max(40.0, thieu * 1.8, variance_excess * 2.2))
     top_y = max(0, int(text_top))
     full_y = min(H, top_y + VEIL_SPAN)
     blurred = base.filter(ImageFilter.GaussianBlur(BLUR_RADIUS))
@@ -410,7 +410,7 @@ def _body_image(canvas, img):
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out, roi=False):
+def build_body(img_path, text, handle, out, cluttered=False):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
 
@@ -426,7 +426,7 @@ def build_body(img_path, text, handle, out, roi=False):
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
     # phan voi FG — xem _layer_if_can. Khong bao gio bat dau truoc text_top.
-    _layer_if_can(canvas, base, text_top, TEXT_BASE, anh_roi=roi)
+    _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
@@ -452,7 +452,7 @@ Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
 Q_BOTTOM = 1150                  # day cum quote
 
 
-def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
+def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
     """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
@@ -488,7 +488,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, roi=False):
 
     # Chi them lop khi do THAT can (xem _layer_if_can) — neo dung tai dinh khung,
     # khong con chom truoc 24px nhu ban cu.
-    _layer_if_can(canvas, base, max(0, frame_top), H, anh_roi=roi)
+    _layer_if_can(canvas, base, max(0, frame_top), H, image_cluttered=cluttered)
 
     # Cac dong quote.
     qy = first_line_top
@@ -522,13 +522,13 @@ CATEGORY_CALL_Y = ["MODEL RELEASE", "MODEL UPDATE", "PRODUCT", "RESEARCH",
                   "FUNDING", "POLICY", "OPINION"]
 
 
-def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE", roi=False):
+def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE", cluttered=False):
     """Bia: hang chip duoi cung = chip CATEGORY (cyan, thay cho ten kenh — Ong
     Chu chot 03/09/2026: hero slide KHONG dung chip 'donniechublog', phai la
     'MODEL RELEASE' / 'MODEL UPDATE'...) + chip label trang (ten model/hang).
     Ten kenh chi xuat hien tren cac slide than."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    if roi:
+    if cluttered:
         # Anh roi lam bia (LOW-47): KHONG cover-crop — cat hai canh la mat chu
         # khoa o mep (do that A9: "NVIDIA" cut). Hien NGUYEN be ngang nhu slide
         # than; nen dac duoi hook tu dat o khoang lang (_background_solid_below_text).
@@ -558,7 +558,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
     # Do vi tri hook TRUOC roi moi quyet dinh co can lop khong (xem
     # _layer_if_can) — the tich category/label o duoi la chip dac, tu doc duoc,
     # khong can lop bao ve.
-    _layer_if_can(canvas, cover, y, H, anh_roi=roi)
+    _layer_if_can(canvas, cover, y, H, image_cluttered=cluttered)
     _draw_paragraphs(d, PAD, y, wrapped, hf, lh, FG)
     if label:
         # Hang duoi cung: chip CATEGORY (cyan) + chip label (trang), cung y.
@@ -814,15 +814,15 @@ def main():
     stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
 
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
-                category=cover["category"], roi=bool(cover.get("roi")))
+                category=cover["category"], cluttered=bool(cover.get("cluttered")))
     paths = [str(out)]
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
         if s.get("quote"):
             build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,
-                             roi=bool(s.get("roi")))
+                             cluttered=bool(s.get("cluttered")))
         else:
-            build_body(s["image"], s["text"], handle, p, roi=bool(s.get("roi")))
+            build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")))
         paths.append(p)
 
     print(f"da dung {len(paths)} slide:")

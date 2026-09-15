@@ -126,7 +126,7 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
     if a["loai"] == "chart" and not a.get("xep_hang"):
         # Do hoa ROI lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
         # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
-        if la_bia and a.get("roi"):
+        if la_bia and a.get("cluttered"):
             ra["image"] = a["goc"]
         elif la_bia:
             bo.loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
@@ -183,8 +183,8 @@ def _resolve_item(bo: Context, muc: dict, nhan: str, la_bia: bool) -> dict | Non
     if ra is None:
         return None
     # Anh roi buoc phai dung: carousel.py dat nen chu dac thay lop mo (LOW-47).
-    if any((bo.anh.get(x) or {}).get("roi") for x in (list(ghep) if ghep else [ma])):
-        ra["roi"] = True
+    if any((bo.anh.get(x) or {}).get("cluttered") for x in (list(ghep) if ghep else [ma])):
+        ra["cluttered"] = True
     for k in TEXT_KEEP:
         if muc.get(k) is not None:
             ra[k] = muc[k]
