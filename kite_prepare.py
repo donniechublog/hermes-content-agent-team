@@ -137,9 +137,7 @@ def _hero_what_is(h: dict) -> tuple:
                 f"Ảnh chụp từ {h.get('mien', 'trang nguồn')} · via {h.get('mien', '<ai>')}")
     if h.get("khai_niem"):
         tk = h["khai_niem"].get("tu_khoa", "")
-        # §1.2c: anh khai niem CHI dung o bia/hero, khong vao slide than — nen
-        # khi no la hero thi noi thang, keo vai lai dat xuong `figure`.
-        return (f"ảnh khái niệm ({tk}) — loại này CHỈ được dùng ở bìa, không vào slide thân",
+        return (f"ảnh khái niệm ({tk}) — minh hoạ chủ đề, không phải ảnh chụp đúng sự kiện",
                 f"{tk} · via Wikimedia Commons")
     if h.get("thuong_hieu"):
         return (f"ảnh thương hiệu của {h['thuong_hieu'].get('hang')} (xem nhãn ở trên để "
@@ -185,11 +183,10 @@ def figure_right_use(m: dict) -> list:
     tin không phải hàng chuyển sang, hoặc chưa ai nhìn ảnh (vision tắt thì ép là
     đẩy quảng cáo/widget lên slide — xem chú thích cùng loại ở kite_submit).
 
-    KHÔNG ép **ảnh khái niệm** (§1.2c: "chỉ bìa/hero, không vào slide thân").
-    Cổng này đòi mỗi mã một slide `figure` *và* ít nhất một tấm ở thân, nên để
-    ảnh khái niệm lọt vào đây là ÉP nó xuống đúng chỗ luật cấm — đo 10/09/2026:
-    tin chuyển sang mà chỉ có một tấm cờ nước thì đường nộp duy nhất là đặt cờ
-    vào `figure` thân. Nó rơi khỏi danh sách này và về bìa qua `figure_hero`.
+    KHÔNG ép **ảnh khái niệm** vào đây (dù §1.2c từ LOW-58, 15/09/2026 đã cho
+    phép nó vào slide thân — đây chỉ là THỨ TỰ ƯU TIÊN, không phải luật cấm):
+    ảnh khái niệm hợp làm bìa hơn, nên để nó ưu tiên `figure_hero`; vai vẫn có
+    thể tự đặt nó vào `figure` thân nếu muốn, cổng không chặn nữa.
     Ảnh thương hiệu thì Ở LẠI: §1.2d cho nó vào thân (ảnh thật của chính hãng
     trong tin).
 
@@ -323,14 +320,12 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                    "xep_hang": f"📊 bảng {th.get('site')} · {th.get('bang')} có {th.get('hang')} — "
                                "KHÔNG phải bảng của tin này, caption ghi rõ nguồn + tên bảng",
                    }.get(th.get("loai"), "")
-        # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat, chi
-        # CHO DUNG cua no bi gioi han (§1.2c). Danh sach nay mang tieu de "dung
-        # duoc cho `figure` / bia `image`" — khong noi gi thi vai dat co nuoc
-        # vao `figure` than roi an cong chan cua kite_submit (do 10/09/2026).
+        # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat; tu
+        # LOW-58 (15/09/2026) duoc dung o ca bia lan than, uu tien bia hon.
         kn = a.get("khai_niem") or {}
         nhan_kn = (f"🧭 ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — minh hoạ chủ đề, KHÔNG phải "
-                   "ảnh của tin: CHỈ dùng ở bìa (slide 1), không vào slide thân; "
-                   "caption 'via Wikimedia Commons'") if kn else ""
+                   "ảnh của tin: ưu tiên dùng ở bìa (slide 1), vẫn dùng được ở slide thân "
+                   "nếu cần; caption 'via Wikimedia Commons'") if kn else ""
         L.append(f"- {a['ma']}: {kieu} {a['w']}x{a['h']} ({a['ti_le']}) | nguồn: {a['mien'] or a['tu']}"
                  + (f" | {a['paper_hinh']} của chính paper" if a.get("paper_hinh") else "")
                  + (f" | {nhan_kn}" if nhan_kn else "")

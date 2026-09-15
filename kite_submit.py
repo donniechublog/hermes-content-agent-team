@@ -137,26 +137,19 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
 
-            # ANH KHAI NIEM chi duoc dung o BIA (IMAGE_RULES §1.2c "Cho dung:
-            # nhan 🧭 ANH KHAI NIEM, chi bia/hero, khong vao slide than"). No
-            # la anh chup that — co nuoc, day rack datacenter tu Wikimedia
-            # Commons — nen di qua sach moi cong ky thuat; cai sai la CHO
-            # DUNG: o `figure` than no doc nhu bang chung cua bai, trong khi
-            # no chi minh hoa chu de. Do 10/09/2026: dat vao than, cong khong
-            # mot dong loi. Chan o day chu khong loai khoi `hinh_that`, vi no
-            # van phai la ung vien cho `image` cua bia.
+            # ANH KHAI NIEM duoc dung o ca bia lan slide than (IMAGE_RULES
+            # §1.2c noi long LOW-58, Ong Chu 15/09/2026: "anh nao cung dung
+            # duoc, khong phai cau ne"). Truoc day chan cung o `figure` than;
+            # gio chi CANH BAO de nguoi duyet biet day la anh minh hoa chu
+            # de chu khong phai anh chup dung su kien.
 
             kn = hinh[img].get("khai_niem") or {}
 
             if kn and i > 1:
 
-                loi.append(f"slide {i}: 🧭 {img} là ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — "
+                canh.append(f"slide {i}: 🧭 {img} là ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — "
 
-                           "minh hoạ chủ đề, KHÔNG phải ảnh của tin, nên CHỈ được dùng ở bìa "
-
-                           "(slide 1), không vào slide thân. Đưa nó lên cover, hoặc bỏ image của "
-
-                           "slide này và để `figure` cho hình thật của bài.")
+                           "minh hoạ chủ đề, không phải ảnh chụp đúng sự kiện của tin.")
 
 
 def _resolve_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
