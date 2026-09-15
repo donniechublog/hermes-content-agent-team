@@ -64,6 +64,21 @@ _LINK_SONG = re.compile(
     r"(?:\.[a-z0-9-]{1,63})*\.(?:" + "|".join(_TLD) + r")\b",
     re.I)
 
+# Dan nguon/anh bi cam trong CAPTION (LOW-173): image/carousel da ghi nguon va
+# anh roi (watermark, chu thich anh), nhac lai bang chu trong caption la dong
+# tac thua. Ap dung cho MOI vai writer va MOI brand vi day la cong chung
+# (check() duoc goi qua submit_common.py). Khac voi gate tren slide
+# (render_edu._DAN_NGUON_SAI, cho phep "via <ai>"), o day KHONG cho nhac
+# nguon/anh duoi bat ky hinh thuc nao — "mã nguồn" khong bi bat (loai tru
+# giong _DAN_NGUON_SAI).
+_SOURCE_CREDIT_FORBIDDEN = re.compile(
+    r"(?<!\bmã\s)\bnguồn\s*[:—-]"                 # "Nguồn: X"
+    r"|\bnguồn\s+(?:tin|từ|theo|bài|ảnh|dữ liệu|số liệu)\b"
+    r"|\btheo\s+nguồn\b"
+    r"|\bảnh\s*[:—-]"                              # "Ảnh: X"
+    r"|\bảnh\s+từ\b",                              # "ảnh từ ..."
+    re.I)
+
 # Tieng Viet CO DAU la yeu cau song con cua kenh. Mat dau la loi nang nhat —
 # nang hon thieu so — vi bai khong dang duoc. Da gap that: Miles viet ca caption
 # 802 ky tu khong mot dau nao sau khi doi sang provider moi, va khong ai phat
@@ -162,6 +177,11 @@ def _check_still_room(caption: str, tran: str) -> tuple:
         loi.append(f'Còn URL/link sống trong bài ("{link_song.group(0).strip()}") — '
                    'bỏ ra còm, không đặt trong caption. Nếu buộc phải nhắc tên miền '
                    'thì viết dấu chấm thành " . " (vd z . ai) để không thành link.')
+
+    source_credit = _SOURCE_CREDIT_FORBIDDEN.search(tran)
+    if source_credit:
+        loi.append(f'Có dòng dẫn nguồn/ảnh kiểu "{source_credit.group(0).strip()}" — '
+                   'ảnh/carousel đã ghi nguồn rồi, caption không được lặp lại.')
 
     sao = [p for p in STAR_EMPTY if p in tran.lower()]
     if sao:

@@ -240,6 +240,23 @@ def test_duoi_ba_cau_thi_nhac_cau_truc():
     assert _co(canh, "cấu trúc SOUL"), canh
 
 
+# ---------------------------------------------------------------- dan nguon/anh (LOW-173)
+def test_dong_dan_nguon_bi_chan():
+    loi, _c, _t = _kiem(CHUAN + "\nNguồn: TechCrunch.")
+    assert _co(loi, "dẫn nguồn", "Nguồn:"), loi
+
+
+def test_dong_dan_anh_bi_chan():
+    loi, _c, _t = _kiem(CHUAN + "\nẢnh: techcrunch chấm com.")
+    assert _co(loi, "dẫn nguồn", "Ảnh:"), loi
+
+
+def test_ma_nguon_mo_khong_bi_chan():
+    """Loai tru giong _DAN_NGUON_SAI cua render_edu: khong bat 'mã nguồn mở'."""
+    loi, _c, _t = _kiem(CHUAN.replace("mô hình", "mô hình mã nguồn mở", 1))
+    assert not _co(loi, "dẫn nguồn"), loi
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())
