@@ -222,6 +222,34 @@ def test_chu_dai_chi_canh_bao():
         assert _co(canh, "slide 3", "title", "80"), canh
 
 
+def test_ma_anh_khong_bi_bao_la_so_bia():
+    """Ong Chu 15/09/2026: `kite_submit.py` bao canh bao "số trên slide KHÔNG
+    thấy trong tư liệu: 13" cho mot tin ma "13" chi la HAU TO cua ma anh noi
+    bo ("A13") trong truong `image`, khong he xuat hien tren slide that. Truoc
+    day `chu` quet ca sl.values() nen an ca ma anh vao — gio chi quet cac
+    truong CHU HIEN THI (eyebrow/title/standfirst/callout/caption)."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du()
+        sl[0] = _cover(image="A13", caption="Bảng trong bài · via AA")
+        m = _m(wd, [_hinh(wd, ma="A13")])
+        _r, _loi, canh = _chay(sl, m, wd)
+        assert not _co(canh, "KHÔNG thấy trong tư liệu"), canh
+
+
+def test_so_bia_that_van_bi_canh_bao():
+    """Doi chung voi test tren: thu hep truong quet KHONG duoc lam mat luon
+    cong that — so bia gia (khong trong tu lieu) tren `title` van phai bi bat."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl = _du()
+        sl[0] = _cover(title="Doanh thu tăng 999%", image="B1",
+                       caption="Bảng trong bài · via AA")
+        m = _m(wd, [_hinh(wd, ma="B1")])
+        _r, _loi, canh = _chay(sl, m, wd)
+        assert _co(canh, "KHÔNG thấy trong tư liệu", "999"), canh
+
+
 def test_bars_can_2_den_6_cot_va_value_phai_la_so():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)

@@ -400,7 +400,11 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     if chua_nhin and not da_nhin:
         canh.append(f"vision chưa nhìn {', '.join(chua_nhin)} (router tắt/thiếu khoá) — "
                     "hình thật CHƯA được kiểm nội dung, chỉ dùng khi bạn tự tin nó đúng bài")
-    chu = " ".join(str(v) for sl in slides for v in sl.values() if isinstance(v, str))
+    # CHI quet cac truong CHU HIEN THI tren slide — truoc day doc het sl.values()
+    # nen an ca "image" (ma anh noi bo nhu "A13") vao chu, bao nham so 13 la bia
+    # (Ong Chu 15/09/2026). "kind" cung la truong dieu khien, khong hien thi.
+    chu = " ".join(str(sl.get(k) or "") for sl in slides
+                   for k in ("eyebrow", "title", "standfirst", "callout", "caption"))
     canh.extend(nc.check_numbers_on_card(chu, m, wd))
     return ra, loi, canh
 
