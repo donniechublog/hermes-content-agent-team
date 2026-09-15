@@ -19,9 +19,10 @@ END_ROLE_IMAGE = """THIEU ANH THAT (duoi toi thieu, hoac anh chuan bi lac de): B
 cd {goc} && venv/bin/python find_more_images.py {draft_id} --tu-khoa "<tu khoa TIENG ANH cu the>"
 (hang, san pham, nha may, su kien, nguoi trong bai; lap --tu-khoa duoc; co URL trang/anh thi
 --url). Script tai, nhin, do, cat san roi in anh moi; chay lai BUOC 1 de doc brief moi.
-Toi da 3 luot, moi luot doi tu khoa khac han. HET 3 LUOT ma van thieu moi goi tool
-kanban_block, ly do PHAI ke cac tu khoa da thu va anh nao bi loai vi sao — Ong Chu quyet
-tiep. TUYET DOI KHONG kanban_complete khi chua gui album: "done" nghia la DA CO san pham
+Moi lan chay doi tu khoa khac han (huong brand truoc: logo/tru so/su kien/nguoi, roi moi
+den ten model/thiet bi cu the). Van thieu sau nhieu huong tu khoa khac nhau da hop ly moi
+goi tool kanban_block, ly do PHAI ke cac tu khoa da thu va anh nao bi loai vi sao — Ong Chu
+quyet tiep. TUYET DOI KHONG kanban_complete khi chua gui album: "done" nghia la DA CO san pham
 tren topic. Khong tu che metadata kieu "abort"; abort = kanban_block.
 Xong: goi tool kanban_complete — summary = dong "Ket qua task", metadata = JSON o
 dong "[metadata]" ma script in ra (Miles doc ban giao nay qua kanban)."""

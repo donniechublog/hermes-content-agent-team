@@ -15,8 +15,12 @@ Nay giu phan dung, bo phan pha hoai:
     biet). Script di hoi Bing News + Wikimedia Commons, mo trang bang browser,
     tai, nhin (vision), do, cat san — y het engine — roi noi vao xong.json va
     in ra anh moi. Vai chon, may van xu ly.
-  - toi da MAX_TURN luot mot bai, de khong quay lai 60 tool call/task;
-  - het luot ma van thieu moi kanban_block, va cau block PHAI ke tu khoa da thu.
+  - moi lan chay ghi lai tu khoa da thu (tim_them.json), de khong lap lai huong cu;
+  - van thieu sau nhieu huong tu khoa khac nhau da hop ly thi kanban_block, cau
+    block PHAI ke tu khoa da thu (LOW-174, 15/09/2026: bo tran cung "toi da 3
+    luot" — dem theo draft_id vinh vien khien mot bai tung bi block se KHONG
+    BAO GIO thu lai duoc, ke ca khi huong tiep can da doi, vd sau khi sua engine
+    vision LOW-164 thi tu khoa cu van bi tu choi chay lai).
 
 Dung:
     venv/bin/python find_more_images.py <draft_id> --tu-khoa "TSMC fab Arizona" [--tu-khoa ...]
@@ -45,7 +49,6 @@ from prepare.manifest import contact_sheet, compute_derived             # noqa: 
 from prepare.vision import _seen_image                          # noqa: E402
 from prepare.download_filter import download_and_filter                      # noqa: E402
 
-MAX_TURN = 3             # moi bai toi da 3 luot tim them (Ong Chu 12/09/2026)
 COUNT_REPORT_NEW_TURN = 4         # bao moi hoi Bing moi luot
 COUNT_COMMONS_NEW_TURN = 6
 MAX_IMAGE_EXTRA = 12        # tran anh moi noi vao mot luot (8 -> 12 khi co them nguon web, 12/09)
@@ -235,7 +238,7 @@ def fresh_manifest(m: dict) -> dict:
 
 
 def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
-    print(f"\n== TIM THEM luot {so_luot['luot']}/{MAX_TURN}: +{len(moi)} anh moi ==")
+    print(f"\n== TIM THEM luot {so_luot['luot']}: +{len(moi)} anh moi ==")
     for a in moi:
         if a.get("lien_quan") is False:
             print(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or ''} (nguồn: {a.get('mien') or a.get('tu')})")
@@ -248,12 +251,10 @@ def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
           + (" — ĐỦ." if so >= tt else f" — còn thiếu {tt - so}."))
     print(f"Chạy lại: cd {ROOT} && venv/bin/python {vai_anh}_prepare.py {m['draft_id']}  (brief mới, bảng ảnh mới)")
     if so < tt:
-        con = MAX_TURN - so_luot["luot"]
-        if con > 0:
-            print(f"Còn {con} lượt tìm. Đổi từ khoá khác hẳn (hãng, sản phẩm, nhà máy, sự kiện, người trong bài).")
-        else:
-            print("HẾT LƯỢT. Nếu vẫn thiếu: kanban_block, ly do ghi ro DA THU tu khoa: "
-                  + "; ".join(so_luot["da_thu"]))
+        print(f"Đã thử {so_luot['luot']} lượt (từ khoá: {'; '.join(so_luot['da_thu']) or '—'}). "
+              "Đổi từ khoá khác hẳn (hãng, sản phẩm, nhà máy, sự kiện, người trong bài) rồi chạy lại, "
+              "hoặc nếu đã thử đủ nhiều hướng khác nhau mà vẫn thiếu thì kanban_block — ly do ghi ro "
+              "cac tu khoa da thu.")
 
 
 def main() -> int:
@@ -275,9 +276,6 @@ def main() -> int:
     if not xong.exists():
         sys.exit(f"[LOI] chua co ban chuan bi ({xong}) — chay <vai>_prepare.py {a.draft_id} truoc")
     so_luot = read_count_turn(wd)
-    if so_luot["luot"] >= MAX_TURN:
-        sys.exit(f"[DUNG] da het {MAX_TURN} luot tim them cho bai nay (da thu: "
-                 f"{'; '.join(so_luot['da_thu'])}). Van thieu thi kanban_block, ghi ro cac tu khoa da thu.")
     cb._handle_lock(khoa, 120, a.draft_id)
     khoa.write_text(str(os.getpid()))
     try:
