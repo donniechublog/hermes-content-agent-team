@@ -119,7 +119,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     if loi:
         return None, loi, canh
     return {"kieu": kieu, "anh": a, "anh2": anh[ma2] if ma2 else None,
-            "roi": bool(a.get("roi") or (ma2 and anh[ma2].get("roi")))}, [], canh
+            "cluttered": bool(a.get("cluttered") or (ma2 and anh[ma2].get("cluttered")))}, [], canh
 
 
 def main() -> int:
@@ -156,8 +156,8 @@ def main() -> int:
         args += ["--nhan-vat", str(spec["nhan_vat"])]
     if a.bo_qua_dau:
         args.append("--bo-qua-dau")
-    if kq.get("roi"):
-        args.append("--roi")
+    if kq.get("cluttered"):
+        args.append("--cluttered")
     if kq["kieu"] == "quote":
         hook = str(spec["hook"]).strip()
         args += ["--ratio", "4:5", "--title", hook, "--tagline", str(spec["tagline"]).strip().upper(),

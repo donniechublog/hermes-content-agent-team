@@ -72,40 +72,40 @@ def _hoi_vision(tra_loi, **k):
 
 # ---------------------------------------------------------------- 1. vision
 def test_vision_hoi_them_dong_roi_va_doc_ra():
-    ra, kq, hoi = _hoi_vision("MO_TA: đồ hoạ tin tức nhiều chữ.\nLIEN_QUAN: co\nROI: co")
-    assert "DUNG 4 dong" in hoi and "ROI:" in hoi and "TU_KHOA:" in hoi, hoi
+    ra, kq, hoi = _hoi_vision("MO_TA: đồ hoạ tin tức nhiều chữ.\nLIEN_QUAN: co\nCLUTTERED: co")
+    assert "DUNG 4 dong" in hoi and "CLUTTERED:" in hoi and "TU_KHOA:" in hoi, hoi
     assert ra == ("đồ hoạ tin tức nhiều chữ.", True)       # tuple van 2 phan tu
-    assert kq["roi"] is True
+    assert kq["cluttered"] is True
 
 
 def test_vision_anh_sach_la_false():
-    _ra, kq, _hoi = _hoi_vision("MO_TA: biển hiệu trụ sở Nvidia.\nLIEN_QUAN: có\nRỐI: không")
-    assert kq["roi"] is False
+    _ra, kq, _hoi = _hoi_vision("MO_TA: biển hiệu trụ sở Nvidia.\nLIEN_QUAN: có\nCLUTTERED: không")
+    assert kq["cluttered"] is False
 
 
 def test_vision_doc_ra_du_tu_khoa():
     _ra, kq, _hoi = _hoi_vision("MO_TA: đồ hoạ Nvidia Anthropic $10B IPO.\nLIEN_QUAN: co\n"
-                                "ROI: co\nTỪ_KHOÁ: có")
-    assert kq["roi"] is True and kq["du_tu_khoa"] is True, kq
+                                "CLUTTERED: co\nTỪ_KHOÁ: có")
+    assert kq["cluttered"] is True and kq["du_tu_khoa"] is True, kq
 
 
 def test_vision_khong_tra_dong_roi_thi_none_khong_doan():
     _ra, kq, _hoi = _hoi_vision("MO_TA: ảnh.\nLIEN_QUAN: co")
-    assert kq["roi"] is None and kq["du_tu_khoa"] is None
+    assert kq["cluttered"] is None and kq["du_tu_khoa"] is None
 
 
 def test_vision_hoi_them_cua_bob_van_ba_phan_tu():
-    ra, kq, hoi = _hoi_vision("MO_TA: ảnh.\nLIEN_QUAN: co\nROI: khong\nMOOD: vui",
+    ra, kq, hoi = _hoi_vision("MO_TA: ảnh.\nLIEN_QUAN: co\nCLUTTERED: khong\nMOOD: vui",
                               hoi_them="tâm trạng ảnh", nhan_them="MOOD")
     assert "DUNG 5 dong" in hoi, hoi
     assert ra == ("ảnh.", True, "vui")
-    assert kq["roi"] is False
+    assert kq["cluttered"] is False
 
 
 # ---------------------------------------------------------------- 2. classify
 def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
     def _gia(path, tieu_de, hang="", **k):
-        k["ket_qua"]["roi"] = True
+        k["ket_qua"]["cluttered"] = True
         return ("đồ hoạ nhiều chữ", True)
 
     with tempfile.TemporaryDirectory() as t:
@@ -114,7 +114,7 @@ def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
                 mock.patch.object(vision.image_rules, "count_faces", return_value=0):
             vision.classify(a, Path(t), "Tin gì đó")
-    assert a["roi"] is True
+    assert a["cluttered"] is True
     assert not any(str(d).startswith("bìa") for d in a["dung"]), a["dung"]
     assert a["dung"], "anh roi van dung duoc lam than khi het anh sach"
     assert a["ghi_chu"][0].startswith("⚠️ ẢNH RỐI"), a["ghi_chu"]
@@ -123,7 +123,7 @@ def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
 # ---------------------------------------------------------------- 3. check_image_fall
 def _muc(tmp, ma, seed, **k):
     a = {"ma": ma, "goc": str(_anh_tam(tmp, f"{ma}.png", seed=seed)), "dung": ["thân"],
-         "lien_quan": True, "roi": False, "loai": "anh", "mat": 0, "ngang": False, "h": 1250}
+         "lien_quan": True, "cluttered": False, "loai": "anh", "mat": 0, "ngang": False, "h": 1250}
     a.update(k)
     return a
 
@@ -131,7 +131,7 @@ def _muc(tmp, ma, seed, **k):
 def test_con_anh_sach_chua_dung_thi_chan_anh_roi():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, roi=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y"})
     assert loi and "slide 5" in loi[0] and "A2" in loi[0], loi
 
@@ -140,14 +140,14 @@ def test_anh_roi_du_tu_khoa_duoc_mien_cong():
     """Ông Chủ chọn chính đồ hoạ rối "Nvidia Weighs $10B" làm hero vì đủ từ khoá."""
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, roi=True, du_tu_khoa=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _muc(t, "A1", 1, cluttered=True, du_tu_khoa=True), "A2": _muc(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y"})
     assert loi == [], loi
 
 
 def test_phan_loai_roi_du_tu_khoa_giu_bia_va_ghi_chu_sao():
     def _gia(path, tieu_de, hang="", **k):
-        k["ket_qua"].update({"roi": True, "du_tu_khoa": True})
+        k["ket_qua"].update({"cluttered": True, "du_tu_khoa": True})
         return ("đồ hoạ đủ từ khoá", True)
 
     with tempfile.TemporaryDirectory() as t:
@@ -165,11 +165,11 @@ def test_dre_nop_do_hoa_roi_chart_lam_bia_duoc():
     import test_spec_dre as ts
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = ts._du(t)
-        m["anh"][0].update({"loai": "chart", "roi": True, "du_tu_khoa": True})      # A1 la bia
+        m["anh"][0].update({"loai": "chart", "cluttered": True, "du_tu_khoa": True})      # A1 la bia
         ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert not ts._co(loi, "bìa", "CHART"), loi
-        assert ra["cover"].get("roi") is True and ra["cover"]["image"] == m["anh"][0]["goc"]
-        m["anh"][0]["roi"] = False                                                 # chart that
+        assert ra["cover"].get("cluttered") is True and ra["cover"]["image"] == m["anh"][0]["goc"]
+        m["anh"][0]["cluttered"] = False                                                 # chart that
         _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert ts._co(loi, "bìa", "CHART"), loi
 
@@ -177,7 +177,7 @@ def test_dre_nop_do_hoa_roi_chart_lam_bia_duoc():
 def test_het_anh_sach_thi_duoc_dung_anh_roi():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, roi=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5", "A2": "slide 6"},
                               {"draft_id": "tin", "link": "https://x/y"})
     assert loi == [], loi
@@ -187,8 +187,8 @@ def test_khong_tinh_la_sach_neu_khong_the_dung_mot_minh():
     """Chặn oan là vai kẹt vòng: ứng viên phải thật sự thay được, không cần khai thêm."""
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, roi=True),
-               "A2": _muc(t, "A2", 2, roi=None),                       # chua ai noi la sach
+        anh = {"A1": _muc(t, "A1", 1, cluttered=True),
+               "A2": _muc(t, "A2", 2, cluttered=None),                       # chua ai noi la sach
                "A3": _muc(t, "A3", 3, mat=1),                          # mat nguoi
                "A4": _muc(t, "A4", 4, loai="chart"),
                "A5": _muc(t, "A5", 5, ngang=True, h=600, cat_ngang_ok=True),   # qua thap
@@ -202,7 +202,7 @@ def test_khong_tinh_la_sach_neu_khong_the_dung_mot_minh():
 def test_anh_ngang_cat_doc_duoc_la_anh_sach_thay_duoc():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, roi=True),
+        anh = {"A1": _muc(t, "A1", 1, cluttered=True),
                "A2": _muc(t, "A2", 2, ngang=True, h=1000, cat_ngang_ok=True)}
         loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y"})
     assert loi and "A2" in loi[0], loi
@@ -212,7 +212,7 @@ def test_anh_sach_da_len_bai_khac_khong_tinh():
     import image_rules
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, roi=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
         image_rules.record_used(anh["A2"]["goc"], "tin-khac", "dre", "https://x/khac")
         loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y"})
     assert loi == [], loi
@@ -222,12 +222,12 @@ def test_dre_nop_gan_roi_cho_slide_va_chan_khi_con_anh_sach():
     import test_spec_dre as ts
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = ts._du(t)
-        m["anh"][1]["roi"] = True                              # A2 o slide 2
+        m["anh"][1]["cluttered"] = True                              # A2 o slide 2
         ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert loi == [], loi                                  # khong co anh sach nao thay
-        assert ra["slides"][0].get("roi") is True
-        assert not ra["slides"][1].get("roi")
-        m["anh"].append(ts._anh(wd, "A6", 1000, 1250, dung=["thân"], roi=False))
+        assert ra["slides"][0].get("cluttered") is True
+        assert not ra["slides"][1].get("cluttered")
+        m["anh"].append(ts._anh(wd, "A6", 1000, 1250, dung=["thân"], cluttered=False))
         _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert ts._co(loi, "slide 2", "RỐI", "A6"), loi
 
@@ -256,12 +256,12 @@ def _la_nen(canvas, y, bg):
 
 
 def test_nguong_phan_biet_chu_in_san_voi_anh_chup():
-    """Hai loại dải giả phải rơi đúng hai phía ngưỡng BACKGROUND_FALL_TEXT, không thì
+    """Hai loại dải giả phải rơi đúng hai phía ngưỡng CLUTTERED_BG_TEXT, không thì
     các test dưới đo sai thứ."""
     import card
     e = card._capability_flow_rank(_canvas_vung(1080, 400, [(0, 199, "chu"), (200, 399, "anh")]))
-    assert min(e[20:180]) >= card.BACKGROUND_FALL_TEXT, min(e[20:180])
-    assert card.BACKGROUND_FALL_LANG <= max(e[220:380]) < card.BACKGROUND_FALL_TEXT, max(e[220:380])
+    assert min(e[20:180]) >= card.CLUTTERED_BG_TEXT, min(e[20:180])
+    assert card.CLUTTERED_BG_LANG <= max(e[220:380]) < card.CLUTTERED_BG_TEXT, max(e[220:380])
 
 
 def test_moc_nen_dac_leo_len_khoang_lang_tren_chu_in_san():
@@ -298,15 +298,15 @@ def test_moc_nen_dac_chu_ta_nam_duoi_khoang_lang_rong_thi_giu_nguyen_vi_tri():
     import card
     cv = _canvas_vung(1080, 1350, [(0, 500, "anh")])
     dac, top = card._timestamp_background_solid(cv, 990)
-    assert dac == 990 and 990 - card.BACKGROUND_FALL_SPREAD <= top < 990, (dac, top)
+    assert dac == 990 and 990 - card.CLUTTERED_BG_SPREAD <= top < 990, (dac, top)
 
 
 def test_moc_nen_dac_khong_co_khoang_lang_thi_dung_o_tran_40_phan_tram():
     import card
     cv = _canvas_vung(1080, 1350, [(0, 1349, "chu")])
     dac, top = card._timestamp_background_solid(cv, 990)
-    assert dac == int(1350 * card.BACKGROUND_FALL_CEILING), dac
-    assert top == dac - card.BACKGROUND_FALL_SPREAD_SAME, top
+    assert dac == int(1350 * card.CLUTTERED_BG_CEILING), dac
+    assert top == dac - card.CLUTTERED_BG_SPREAD_SAME, top
 
 
 def test_carousel_anh_roi_phu_tron_chu_in_san_giu_anh_phia_tren():
@@ -314,7 +314,7 @@ def test_carousel_anh_roi_phu_tron_chu_in_san_giu_anh_phia_tren():
     carousel.set_background("toi")
     cv = _canvas_vung(carousel.W, carousel.H, [(0, 600, "anh"), (700, 980, "chu")])
     truoc = cv.copy()
-    carousel._layer_if_can(cv, cv.convert("RGB"), 1030, carousel.H, anh_roi=True)
+    carousel._layer_if_can(cv, cv.convert("RGB"), 1030, carousel.H, image_cluttered=True)
     for y in (705, 800, 975, 1100, carousel.H - 1):
         assert _la_nen(cv, y, carousel.BG), (y, cv.getpixel((0, y)))
     assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300)), "anh phia tren khong duoc dong"

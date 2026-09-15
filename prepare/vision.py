@@ -30,10 +30,25 @@ VISION_URL = env_load.ROUTER_URL
 # con dong "loading chart...", do hoa "Nvidia Weighs $10B..." chu in chim sau
 # cau quote, tieu de bao Nga RBC — ca ba deu qua cong LIEN_QUAN (dung chu de)
 # nhung nhin roi. Chi con mat moi phan biet duoc anh roi voi anh sach.
-SENTENCE_FALL = ("ROI: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, "
-           "banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu "
-           "hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau; khong = anh chup that, "
-           "logo, bien hieu, san pham voi MOT chu the ro, hoac bieu do/bang so lieu gon gang)")
+#
+# LOW-165 (15/09/2026): mo rong dinh nghia them nhanh "mang sang/toi/mau lech
+# tong cuc bo trai rong hang tram px" — GaussianBlur cuc bo (card._open_region_text)
+# chi san phang chi tiet ~QUOTE_BLUR px, KHONG xoa duoc mot mang lon nhu vay du
+# blur bao nhieu, nen anh loai nay phai di duong nen dac (_text_bg_strict) thay vi
+# blur mac dinh — truoc day chi "chu in san/chup man hinh/cat ghep" moi duoc gan cluttered,
+# nen loai mang mau nay lot qua, blur nhe khong xoa het, con "sot" lai.
+#
+# Doi ten tag ROI -> CLUTTERED (15/09/2026, Ong Chu): "ROI" go khong dau cua "RỐI"
+# trung chu voi tu viet tat tieng Anh "return on investment", gay hieu nham khi doc
+# code/manifest. Dung han tieng Anh that cho tag + khoa manifest, giai thich van
+# bang tieng Viet cho vision model.
+SENTENCE_CLUTTERED = ("CLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de "
+           "bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu "
+           "hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau "
+           "lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup "
+           "khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no "
+           "van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT "
+           "chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)")
 # Ong Chu 13/09/2026, cung ngay, ve CHINH do hoa "Nvidia Weighs $10B": "anh nay
 # xung dang lam hero, the hien duoc day du moi tu khoa quan trong". Roi thi
 # khong uu tien — TRU KHI nhin vao doc ra du tu khoa chinh cua tin.
@@ -142,7 +157,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
         # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
-        hoi = hoi.replace("DUNG 2 dong", "DUNG 4 dong") + "\n" + SENTENCE_FALL + "\n" + SENTENCE_KEYWORD
+        hoi = hoi.replace("DUNG 2 dong", "DUNG 4 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
         if hoi_them and nhan_them:
             hoi = hoi.replace("DUNG 4 dong", "DUNG 5 dong") + f"\n{nhan_them}: {hoi_them}"
         body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
@@ -194,11 +209,11 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         if hoi_them and nhan_them:
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
             them = t.group(1).strip()[:120] if t else ""
-        rr = re.search(r"^\s*R[OỐ]I\s*:\s*(co|có|khong|không)", txt, re.I | re.M)
-        roi = rr.group(1).lower().startswith("c") if rr else None
+        rr = re.search(r"^\s*CLUTTERED\s*:\s*(co|có|khong|không)", txt, re.I | re.M)
+        cluttered = rr.group(1).lower().startswith("c") if rr else None
         tk = re.search(r"^\s*T[UỪ]_?\s*KHO[AÁ]\s*:\s*(co|có|khong|không)", txt, re.I | re.M)
         du_tk = tk.group(1).lower().startswith("c") if tk else None
-        return mt, lqv, them, {"roi": roi, "du_tu_khoa": du_tk}
+        return mt, lqv, them, {"cluttered": cluttered, "du_tu_khoa": du_tk}
 
     try:
         mt, lqv, them, phu = _mot_lan()
@@ -329,7 +344,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     else:
         a["mo_ta"], a["lien_quan"] = ket_qua
         a["cat_ngang_ok"] = None
-    a["roi"] = kq.get("roi")
+    a["cluttered"] = kq.get("cluttered")
     a["du_tu_khoa"] = kq.get("du_tu_khoa")
     # VISION TU NOI "bieu do/do thi" ma cong do hoa (pixel) bo lo (A11, 12/09):
     # tin theo chinh mo ta cua no hon la phep do phang mau — sua nguoc la_ct SAU
@@ -404,10 +419,10 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
             a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
                                 "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")
             a["dung"] = [d for d in a["dung"] if d != "bìa"]
-    if a.get("roi") and a.get("du_tu_khoa"):
+    if a.get("cluttered") and a.get("du_tu_khoa"):
         a["ghi_chu"].insert(0, "⭐ ẢNH RỐI NHƯNG ĐỦ TỪ KHOÁ chính của tin → dùng thoải mái, HỢP LÀM "
                                "BÌA; script tự hiện nguyên bề ngang + đặt nền chữ đặc")
-    elif a.get("roi"):
+    elif a.get("cluttered"):
         # Anh roi khong du tu khoa: khong la bia; lam than chi khi het anh sach
         # (submit_common.check_image_fall), va script tu dat nen chu dac (LOW-47).
         a["dung"] = [d for d in a["dung"] if not str(d).startswith("bìa")]

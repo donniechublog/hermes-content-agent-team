@@ -780,9 +780,17 @@ cho nghiêm chỉnh, đừng nham nhở"*.
 
 - **Ảnh rối** = nhiều chữ in sẵn đè lên hình (tiêu đề báo, banner chữ,
   infographic nhồi chữ), chụp màn hình web/app nhiều chữ, cắt ghép nhiều hình,
-  đồ hoạ nhồi nhét. Biểu đồ/bảng số liệu gọn gàng **không** tính là rối. Chỉ
-  con mắt phân biệt được: vision trả thêm dòng `ROI` (`prepare/nhin.py`,
-  `SENTENCE_FALL`), ghi vào manifest thành `roi`.
+  đồ hoạ nhồi nhét, **hoặc có một mảng sáng/tối/màu lệch tông rõ rệt so với
+  xung quanh, trải rộng từ vài trăm px trở lên** (LOW-165, 15/09/2026: một
+  khối ảnh khác sáng hơn/tối hơn/màu khác hẳn phần còn lại — loại mảng này lớp
+  mờ cục bộ đằng sau chữ (`card._open_region_text`, bán kính `QUOTE_BLUR`) san
+  phẳng KHÔNG NỔI dù mờ bao nhiêu, vì Gaussian blur chỉ đều được chi tiết cỡ
+  bán kính của nó, không xoá được một khối lệch tông cỡ hàng trăm px). Biểu
+  đồ/bảng số liệu gọn gàng, sáng tối đều **không** tính là rối. Chỉ con mắt
+  phân biệt được: vision trả thêm dòng `CLUTTERED` (`prepare/vision.py`,
+  `SENTENCE_CLUTTERED`), ghi vào manifest thành `cluttered`. (Tag từng gọi là
+  `ROI` — đổi tên 15/09/2026 vì đó là "RỐI" gõ không dấu, trùng chữ với viết
+  tắt tiếng Anh "return on investment", gây hiểu nhầm khi đọc code/manifest.)
 - **Không ưu tiên:** ảnh rối không bao giờ là bìa. Làm thân chỉ khi **hết ảnh
   sạch** — `submit_common.check_image_fall` chặn Dre và Ethan nếu còn ảnh sạch dùng
   một mình được mà chưa dùng, chưa lên bài khác.
