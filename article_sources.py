@@ -228,7 +228,35 @@ def _title_page(url: str) -> str:
                     return t
     except Exception:                                        # noqa: BLE001
         pass
-    return _title_rss(url)
+    return _title_rss(url) or _title_slug(url)
+
+
+def _title_slug(url: str) -> str:
+    """Suy tieu de tieng Anh THAT tu duong dan URL khi ca og:title va RSS deu
+    khong lay duoc (trang chan bot, khong co feed cong khai). Da so CMS tin
+    tuc (WordPress...) dat slug = chinh headline noi bang gach ngang; tach
+    gach ngang ra la ca cau tieng Anh day du va dac trung, KHONG can Google
+    News doi chieu — DUNG va AN TOAN HON nhieu so voi ten rieng roi rac cua
+    `_name_own_no_mark` (Malaysia 14/09/2026: og:title bi Cloudflare chan,
+    RSS khong khop, roi ve "Malaysia 385" tu tieu de Viet khop nham bai xe
+    dien iCaur 03 vi ca hai co du 2 tu "malaysia" + "385"; slug URL cua chinh
+    bai goc lai ra dung ca cau "malaysia records rm385 7 billion in data
+    centre investments...", vua tieng Anh vua dac trung, khong lam mat nguon
+    tim kiem nhu tra ve rong)."""
+    try:
+        path = up.urlsplit(url).path
+    except Exception:                                        # noqa: BLE001
+        return ""
+    for doan in reversed([d for d in path.split("/") if d]):
+        doan = re.sub(r"\.(html?|php|aspx?)$", "", doan, flags=re.I)
+        tu = [w for w in doan.split("-") if w]
+        if sum(1 for w in tu if re.search(r"[a-zA-Z]", w)) < 4:
+            continue                                          # doan qua ngan/toan so, khong phai slug
+        t = " ".join(tu)
+        if not has_vietnamese(t):
+            print(f"[nguon_bai] tieu de tim = slug URL bai goc: {t[:90]}", file=sys.stderr)
+            return t
+    return ""
 
 
 def _name_own_no_mark(tieu_de_viet: str) -> str:
