@@ -473,6 +473,32 @@ def loop():
                 loai_loi_dang_bao = type(e).__name__
             time.sleep(min(60, 5 * loi_lien_tiep))
 
+
+def _finish_push_cli(res, draft_id, thread):
+    """Ket thuc lenh CLI `push`: luu message_id (best-effort), in ket qua, tra
+    ve ma thoat.
+
+    LOW-160: truoc day nhanh nay luon in roi ket thuc ham __main__ (thoat 0)
+    du `res.get("ok")` la False — mot lan Telegram sendMessage bi cat giua
+    chung (vd RemoteProtocolError) la vai (Miles/Jika, qua miles_submit.py)
+    bao task "done"/"da vao hang duyet" trong khi the duyet CHUA TUNG len
+    Telegram, khong ai biet de gui lai. Tach rieng ham nay de test duoc va
+    tra ve 1 khi that bai, de nguoi goi (kiem tra returncode subprocess) coi
+    day la task that bai thay vi bao thanh cong nham."""
+    try:                                  # message_id the duyet: doi chieu bai <-> the (Ada phan tich)
+        _mid = (res.get("result") or {}).get("message_id") if isinstance(res, dict) else None
+        if _mid:
+            _dp = DRAFTS / (draft_id + ".json")
+            _d = json.loads(_dp.read_text(encoding="utf-8"))
+            _d["tg_card_message_id"] = _mid
+            _write_json(_dp, _d)
+    except Exception as _e:                              # noqa: BLE001
+        print(f"[push] khong luu message_id: {type(_e).__name__}: {_e}")
+    print("day ban nhap -> topic " + str(thread) + " | " +
+          ("OK" if res.get("ok") else str(res.get("description"))))
+    return 0 if res.get("ok") else 1
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "push":
         tok, _ch, grp = load_secrets()
@@ -505,16 +531,6 @@ if __name__ == "__main__":
         if len(sys.argv) > 3:
             thread = int(sys.argv[3])
         res = draft_push(tok, grp, draft_id, thread_id=thread)
-        try:                                  # message_id the duyet: doi chieu bai <-> the (Ada phan tich)
-            _mid = (res.get("result") or {}).get("message_id") if isinstance(res, dict) else None
-            if _mid:
-                _dp = DRAFTS / (draft_id + ".json")
-                _d = json.loads(_dp.read_text(encoding="utf-8"))
-                _d["tg_card_message_id"] = _mid
-                _write_json(_dp, _d)
-        except Exception as _e:                              # noqa: BLE001
-            print(f"[push] khong luu message_id: {type(_e).__name__}: {_e}")
-        print("day ban nhap -> topic " + str(thread) + " | " +
-              ("OK" if res.get("ok") else str(res.get("description"))))
+        sys.exit(_finish_push_cli(res, draft_id, thread))
     else:
         loop()
