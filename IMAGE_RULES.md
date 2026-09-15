@@ -185,20 +185,22 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
 - **Nhìn**: vision được hỏi câu riêng ("có đúng là *cờ Nhật* chụp thật, hợp làm
   bìa không"), không hỏi "có phải ảnh của tin" vì chắc chắn không phải. Ảnh có
   mặt người hay là đồ hoạ → bỏ.
-- **Chỗ đứng**: nhãn 🧭 ẢNH KHÁI NIỆM, chỉ **bìa/hero** (ngang thì chỉ ghép dọc),
-  không vào slide thân; gợi ý bìa xếp **sau** mọi ảnh riêng của tin; caption
-  "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và vẫn được nói "thiếu ảnh" nếu
-  thấy cờ/bản đồ không hợp tin.
-- **Có cổng chặn thật, không chỉ là câu dặn** (`kite_submit`, §9): `image` là ảnh
-  khái niệm ở slide khác slide 1 → chặn. Đo 10/09/2026 ở đường Kite: cờ Nhật đặt
-  vào `figure` thân đi qua cổng **không một dòng lỗi**, vì nó là **ảnh chụp
-  thật** nên sạch với mọi cổng kỹ thuật (rỗng · trùng · độ nét · mặt người) —
-  cái sai của nó là **chỗ dùng**, mà chỗ dùng thì chỉ tài liệu này biết. Ở
-  `figure` thân nó đọc như bằng chứng của bài, trong khi nó chỉ minh hoạ chủ đề.
-  Vẫn để nó trong `kite_prepare.figure_real` (ứng viên cho `image` của **bìa**) và
-  brief ghi thẳng nhãn 🧭 ở dòng của nó — loại khỏi danh sách là mất luôn đường
-  lên bìa, tức mất cả tác dụng của §1.2c.
-- **§1.2e không được ép nó xuống thân**: xem chỗ `figure_right_use` ở mục đó.
+- **Chỗ đứng (nới lỏng LOW-58, Ông Chủ 15/09/2026: *"ảnh nào cũng dùng được
+  hết, không phải câu nệ"*)**: nhãn 🧭 ẢNH KHÁI NIỆM, ưu tiên **bìa/hero**
+  (ngang thì chỉ ghép dọc) nhưng **được phép vào slide thân** nếu vai thấy hợp
+  — không còn là loại ảnh bị cấm theo chỗ dùng. Gợi ý bìa vẫn xếp **sau** mọi
+  ảnh riêng của tin; caption "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và
+  vẫn được nói "thiếu ảnh" nếu thấy cờ/bản đồ không hợp tin.
+- **Không còn cổng chặn cứng** (`kite_submit`, §9): trước 15/09/2026 `image` là
+  ảnh khái niệm ở slide khác slide 1 sẽ bị chặn (đo 10/09/2026 ở đường Kite: cờ
+  Nhật đặt vào `figure` thân đi qua cổng không một dòng lỗi, vì nó là ảnh chụp
+  thật nên sạch với mọi cổng kỹ thuật — cái "sai" khi đó là **chỗ dùng**). Từ
+  LOW-58 cổng chỉ còn **CẢNH BÁO** (🧭 nhãn ở slide thân) để người duyệt biết
+  đây là ảnh minh hoạ chủ đề chứ không phải ảnh chụp đúng sự kiện, không còn
+  chặn bài. Vẫn để nó trong `kite_prepare.figure_real` (ứng viên cho `image`
+  của bìa lẫn thân) và brief ghi thẳng nhãn 🧭 ở dòng của nó.
+- **§1.2e không ép nó xuống thân**: đây vẫn là thứ tự ƯU TIÊN (concept image
+  hợp bìa hơn) chứ không phải luật cấm — xem chỗ `figure_right_use` ở mục đó.
 
 ### 1.2e Vai TỰ ĐI TÌM khi ban chuẩn bị thiếu — `find_more_images.py`
 
@@ -349,12 +351,10 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
 - Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`). Vision tắt thì mọi ảnh là
   `None`, ép lúc đó là đẩy quảng cáo/widget lên slide — cùng bài học với cổng
   "ít nhất một".
-- **Không ép ảnh khái niệm** (§1.2c). Cổng này đòi mỗi mã một slide `figure`
-  *và* ít nhất một tấm ở **thân**, nên để ảnh khái niệm lọt vào tập bị ép là
-  **ép nó xuống đúng chỗ §1.2c cấm** — hai cổng đá nhau. Đo 10/09/2026: tin
-  chuyển sang Kite mà engine chỉ tìm được **một tấm cờ nước** thì đường nộp
-  *duy nhất* qua được là đặt cờ vào `figure` thân. Nó rơi khỏi
-  `figure_right_use` và về bìa qua `figure_hero` (§1.2f) — đó là đường nộp còn lại.
+- **Không ép ảnh khái niệm** vào tập này — chỉ là **ưu tiên** (§1.2c nới lỏng
+  LOW-58 15/09/2026, không còn cấm nó ở thân): ảnh khái niệm hợp bìa hơn nên để
+  nó rơi khỏi `figure_right_use` và về bìa qua `figure_hero` (§1.2f); vai vẫn
+  có thể tự đặt nó vào `figure` thân nếu muốn, cổng chỉ còn cảnh báo.
   **Ảnh thương hiệu thì ở lại**: §1.2d cho nó vào thân, vì nó là ảnh thật của
   chính hãng được nhắc trong tin.
 - **Trừ tấm đã lên bìa** (`figure_hero`, §1.2f): cùng một ảnh không lên được hai
@@ -442,9 +442,10 @@ cái §0 giữ.
 - **Hai cổng không được đá nhau**: tin chuyển sang Kite đòi hình thật nằm ở slide
   **thân** (§1.2e), mà cùng một ảnh không lên được hai slide (`check_duplicate` §8).
   Tấm nào bị thân giữ độc quyền thì **lùi xuống ứng viên kế tiếp**, không bỏ
-  cuộc ngay: ảnh khái niệm không nằm trong tập bị ép (§1.2c cấm nó ở thân) nên
-  tin có một ảnh riêng + một ảnh khái niệm thì ảnh riêng ở thân còn **ảnh khái
-  niệm lên bìa** — đúng chỗ của nó, và cả hai tấm đều được dùng.
+  cuộc ngay: ảnh khái niệm không nằm trong tập bị ép (§1.2c ưu tiên nó ở bìa,
+  không còn cấm ở thân từ LOW-58) nên tin có một ảnh riêng + một ảnh khái niệm
+  thì ảnh riêng ở thân còn **ảnh khái niệm lên bìa** — đúng chỗ ưu tiên của nó,
+  và cả hai tấm đều được dùng.
 - **Hết ứng viên thì BÌA THẮNG**, không phải thân. Tin chỉ có **đúng một** tấm:
   tấm đó lên bìa, và `figure_right_use` trừ nó ra nên thân không đòi gì nữa. Đòi
   của §1.2e sinh ra từ ca **nhiều** tấm mà Kite chỉ dùng một; còn một tấm thì nó
@@ -847,7 +848,7 @@ chụp ra ảnh rỗng; `check_blank_image` chặn thêm một lớp ở rendere
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `check_chart_standalone` | chặn (miễn ảnh `XH`) |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_submit` / `dre_submit` | chặn |
 | Bìa Kite không có `image` — mọi trường hợp, kể cả 0 ảnh (§1.2f) | `kite_submit` | chặn |
-| Ảnh khái niệm đặt ở slide **thân** của Kite (§1.2c) | `kite_submit` | chặn |
+| Ảnh khái niệm đặt ở slide **thân** của Kite (§1.2c, nới lỏng LOW-58 15/09/2026) | `kite_submit` | **chỉ cảnh báo** |
 | Dùng lại ảnh đã gửi trong 14 ngày (dHash, mọi bài, mọi vai) | `check_not_reused` | chặn |
 | Cạnh ngắn <1000px | `check_resolution` | cảnh báo |
 

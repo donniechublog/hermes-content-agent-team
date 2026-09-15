@@ -496,11 +496,11 @@ def _khai_niem(wd, ma="K1", tu_khoa="Japan flag", **k):
                  khai_niem={"tu_khoa": tu_khoa, "ly_do": "tin nhac Nhat"}, **k)
 
 
-def test_anh_khai_niem_o_slide_than_thi_chan():
-    """§1.2c "Chỗ đứng: chỉ bìa/hero, không vào slide thân". Đo 10/09/2026: ảnh
-    khái niệm đặt vào `figure` thân qua cổng không một dòng lỗi — nó là ảnh
-    minh hoạ CHỦ ĐỀ, không phải ảnh của tin, nên ở thân nó đọc như bằng chứng
-    của bài."""
+def test_anh_khai_niem_o_slide_than_thi_canh_bao_khong_chan():
+    """§1.2c nới lỏng LOW-58 (15/09/2026, Ông Chủ: "ảnh nào cũng dùng được hết,
+    không phải câu nệ"): ảnh khái niệm đặt vào `figure` thân KHÔNG còn bị chặn,
+    chỉ còn cảnh báo để người duyệt biết đây là ảnh minh hoạ chủ đề, không phải
+    ảnh của tin."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         rieng = _hinh(wd, ma="R1")
@@ -509,7 +509,8 @@ def test_anh_khai_niem_o_slide_than_thi_chan():
         sl[0] = _cover(image="R1", caption="Bảng trong bài · via AA")
         sl[1] = _figure("K1", title="Cờ Nhật")
         _r, loi, _c = _chay(sl, _m(wd, [rieng, kn]), wd)
-        assert _co(loi, "K1", "KHÁI NIỆM", "bìa"), loi
+        assert loi == [], loi
+        assert _co(_c, "K1", "KHÁI NIỆM"), _c
 
 
 def test_anh_khai_niem_len_bia_thi_qua():
