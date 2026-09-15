@@ -8,7 +8,7 @@
 # Vì sao giờ mới có: lượt 1 lẫn lượt 2 audit đều thấy "xanh 37/37" mà một trong
 # hai lần là xanh giả (không cách ly). Không có CI thì lượt audit 3 sẽ lặp lại
 # lượt 2.
-name: kiem
+name: ci
 
 # `branches: ["**"]` chứ không liệt kê tiền tố: danh sách cũ [main, feat/**,
 # fix/**] bỏ sót sua/**, anh/**, rename/**, claude/** — đo 12/09/2026 thì
@@ -23,7 +23,7 @@ on:
   pull_request:
 
 jobs:
-  kiem:
+  check:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
