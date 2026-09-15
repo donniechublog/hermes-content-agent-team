@@ -190,6 +190,8 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             # voi "da nhin nhung parse hong".
             print(f"[vision] {Path(path).name}: co MO_TA nhung khong parse duoc dong "
                   f"LIEN_QUAN tu: {txt[:200]!r}", file=sys.stderr)
+        tk = re.search(r"^\s*T[UỪ]_?\s*KHO[AÁ]\s*:\s*(co|có|khong|không)", txt, re.I | re.M)
+        du_tk = tk.group(1).lower().startswith("c") if tk else None
         # Chot tat dinh: mo ta neu dung ten hang -> lien quan (anh tru so/san pham
         # Broadcom bi vision phan "khong" luc co luc khong, 05/09/2026).
         # ...nhung chi khi mo ta la BOI CANH hang (tru so/san pham/logo/su kien),
@@ -201,6 +203,17 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                            r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
         if khai_niem or thuong_hieu or chup_nguon:
             pass                                   # tin cau tra loi, khong override theo ten hang
+        elif lqv is False and du_tk and BOI_CANH.search(mt) and not KHONG.search(mt):
+            # LOW-164 (15/09/2026): `hang` chi la MOT cum ten rieng dau tieu de
+            # (_leading_proper_noun) — bai nhac nhieu hang/nhieu ten goi khac nhau
+            # cua cung mot chu de (vd tieu de bat "Opus" nhung mo ta anh lai noi
+            # "Claude"/"AMD"/"Ryzen") thi so khop chu-doi-chu voi `hang` luon
+            # truot, anh brand/thiet bi dung chu de van bi rot. Vision da tu doc
+            # ra DU_TU_KHOA (TU_KHOA: co) cho chinh anh nay roi — dung thang tin
+            # hieu do thay vi bat ten hang phai trung tung chu: anh la boi canh
+            # hang/thiet bi that (khong phai man hinh/UI) VA vision xac nhan doc
+            # ra du tu khoa chinh cua bai thi tinh la lien quan.
+            lqv = True
         elif hang and lqv is False and hang.lower() in mt.lower() and BOI_CANH.search(mt) and not KHONG.search(mt):
             lqv = True
         elif lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt):

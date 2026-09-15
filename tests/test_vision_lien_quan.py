@@ -124,6 +124,52 @@ def test_thieu_api_key_khong_bi_canh_bao_kep():
         assert "khong parse duoc dong LIEN_QUAN" not in err, "khong co MO_TA thi khong phai cảnh báo parse"
 
 
+def test_du_tu_khoa_override_lien_quan_khi_ten_hang_khong_khop_chu():
+    """LOW-164 (15/09/2026): bai co the nhac hang/san pham bang NHIEU TEN goi
+    khac nhau (vd tieu de bat cum \"Opus\" nhung anh mo ta lai noi \"Claude\"/
+    \"Ryzen\") — so khop chu-doi-chu voi `hang` (mot cum danh tu rieng DUY NHAT
+    trich tu dau tieu de) se truot, du vision da tu doc ra DU_TU_KHOA cho chinh
+    anh do. Ca that tren bai TSMC/AMD/Claude (Ryzen AI Max 400): anh chip AMD
+    bi vision tra LIEN_QUAN: khong (vi hang trich duoc la \"Opus\", khong xuat
+    hien trong mo ta) nhung TU_KHOA: co va mo ta la boi canh chip that (khong
+    phai man hinh/UI) — phai duoc override thanh lien_quan."""
+    with tempfile.TemporaryDirectory() as tmp, \
+         mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
+        p = _anh_1x1(Path(tmp))
+        body = _body("MO_TA: Anh chip AMD Ryzen AI Max PRO 400 Series.\n"
+                      "LIEN_QUAN: khong\nROI: khong\nTU_KHOA: co")
+        with _goi(body):
+            mt, lq = vision.description_image(p, "Notes on gotchas migrating from Opus", hang="Opus")
+        assert lq is True, f"TU_KHOA=co + boi canh chip phai override lien_quan, duoc {lq!r}"
+
+
+def test_du_tu_khoa_khong_override_khi_la_man_hinh_ui():
+    """TU_KHOA: co KHONG duoc override khi mo ta la man hinh/giao dien/terminal
+    (khop KHONG) — override chi danh cho anh la BOI CANH hang that (logo/chip/
+    tru so/su kien), khong mo cua cho moi anh du_tu_khoa deu lot qua."""
+    with tempfile.TemporaryDirectory() as tmp, \
+         mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
+        p = _anh_1x1(Path(tmp))
+        body = _body("MO_TA: Anh chup man hinh terminal chay lenh ollama.\n"
+                      "LIEN_QUAN: khong\nROI: khong\nTU_KHOA: co")
+        with _goi(body):
+            mt, lq = vision.description_image(p, "Notes on gotchas migrating from Opus", hang="Opus")
+        assert lq is False, f"man hinh/UI khong duoc override du TU_KHOA=co, duoc {lq!r}"
+
+
+def test_khong_du_tu_khoa_thi_khong_override():
+    """TU_KHOA: khong (vision tu noi anh KHONG the hien du tu khoa chinh) thi
+    khong duoc override boi nhanh moi nay — hanh vi cu (rot) giu nguyen."""
+    with tempfile.TemporaryDirectory() as tmp, \
+         mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
+        p = _anh_1x1(Path(tmp))
+        body = _body("MO_TA: Anh chip AMD Ryzen AI Max PRO 400 Series.\n"
+                      "LIEN_QUAN: khong\nROI: khong\nTU_KHOA: khong")
+        with _goi(body):
+            mt, lq = vision.description_image(p, "Notes on gotchas migrating from Opus", hang="Opus")
+        assert lq is False
+
+
 # ---------------------------------- cat_ngang_ok hoi chung mot luot (12/09, lan hai)
 def test_hoi_cat_ngang_khi_ngang_cao_khong_phai_chart():
     """Anh ngang, cao >=700, khong phai chart -> hoi THEM cau CAT_NGANG trong
