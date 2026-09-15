@@ -102,7 +102,7 @@ tên tệp) và bước `--package chuan_bi → prepare` — thêm các quy tắ
 
 ## Cổng CI sau refactor (LOW-53) — `tests/test_ten_english.py`
 
-Chạy trong `tests/run.sh` (CI `kiem`): `bang_doi_ten()` trên cây hiện tại phải
+Chạy trong `tests/run.sh` (CI `ci` / job `check`): `bang_doi_ten()` trên cây hiện tại phải
 **rỗng**. Còn tên top-level nào từ điển vẫn dịch ra tên khác thì đỏ và in
 `module.tên → tên_đề_xuất`. Hai cách sửa, theo đúng thứ tự:
 
