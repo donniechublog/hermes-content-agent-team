@@ -190,15 +190,34 @@ def draft_push(token, group, draft_id, thread_id=None):
 
     img = d.get("image")
     if img and Path(img).exists():
+        # LOW-170: tien to "BẢN NHÁP" o tren cong vao caption cua writer SAU khi
+        # caption_check da cho qua (gate do len(caption) GOC, khong biet tien
+        # to nay se duoc ghep them) — caption dung sat 1024 thi cong tien to
+        # vuot CAPTION_LIMIT, Telegram tu choi ca anh lan chu ("caption is too
+        # long"), dung im o giua khien vai bi block du script bao "dat". Tach
+        # nhu _split_caption_html (LOW-157) thay vi gui thang: phan 1 lam
+        # caption anh, phan 2 (neu co) gui rieng kem nut duyet.
+        part1, part2 = _split_caption_html(caption)
+        photo_payload = dict(payload)
+        photo_payload["caption"] = part1
+        if part2:
+            photo_payload.pop("reply_markup", None)
         # LOW-155: cung nen + retry nhu album (xem _send_media_group).
         with tempfile.TemporaryDirectory(prefix="tg_preview_") as tmp:
             local = _compress_preview(Path(img), Path(tmp))
             form = {k: (json.dumps(v) if k == "reply_markup" else v)
-                    for k, v in payload.items()}
+                    for k, v in photo_payload.items()}
             mime = "image/jpeg" if local.suffix == ".jpg" else "image/png"
-            return call_upload(token, "sendPhoto", form,
+            res = call_upload(token, "sendPhoto", form,
                                lambda: {"photo": (local.name, open(local, "rb"), mime)},
                                timeout=_upload_timeout(local.stat().st_size))
+        if part2 and res.get("ok"):
+            text_payload = {"chat_id": group, "text": part2, "parse_mode": "HTML",
+                            "reply_markup": keyboard(draft_id)}
+            if thread_id:
+                text_payload["message_thread_id"] = int(thread_id)
+            return call(token, "sendMessage", **text_payload)
+        return res
     payload["text"] = payload.pop("caption")
     return call(token, "sendMessage", **payload)
 
