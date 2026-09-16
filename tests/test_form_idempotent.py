@@ -11,7 +11,7 @@ Ban sua 06/09/2026 moi khoa CHAN ALBUM (`channel_album_mid`). Ba chan con lai
 van dang lai duoc: anh don (sendPhoto), bai chi co chu, va phan CHU tach rieng
 khi caption dai hon 1024. Tep nay giu ca ba chan do.
 
-Chay:  venv/bin/python tests/test_dang_idempotent.py
+Chay:  venv/bin/python tests/test_form_idempotent.py
 """
 import json
 import sys
@@ -66,7 +66,7 @@ def _draft(tmp, **truong):
     return "d1", p
 
 
-def _chay(tmp, res_http=None):
+def _run(tmp, res_http=None):
     """Goi publish() voi DRAFTS + httpx + _send_text gia. Tra (res, httpx, chu)."""
     fake = _FakeHttpx(res_http or {"ok": True, "result": [{"message_id": 111}]})
     chu = []
@@ -82,70 +82,70 @@ def _chay(tmp, res_http=None):
 
 
 # ------------------------------------------------- chan CHU (bai chi co chu)
-def test_bai_chi_co_chu_ghi_dau_sau_khi_gui():
+def test_article_only_has_text_write_mark_after_when_send():
     """Gui xong phai ghi `channel_chu_mid` vao draft NGAY — do la thu duy nhat
     cho lan bam Duyet ke tiep biet chu da len roi."""
     with tempfile.TemporaryDirectory() as tmp:
         _, p = _draft(tmp)
-        res, _, chu = _chay(tmp)
+        res, _, chu = _run(tmp)
         assert res.get("ok"), res
         assert len(chu) == 1, f"phai gui dung mot lan: {chu}"
         d = json.loads(p.read_text(encoding="utf-8"))
         assert d.get("channel_chu_mid") == 222, f"khong ghi dau: {d}"
 
 
-def test_bai_chi_co_chu_da_gui_thi_khong_gui_lai():
+def test_article_only_has_text_already_send_then_no_send_again():
     """Dung su co E5: draft da co dau -> bam Duyet lai KHONG duoc gui lai."""
     with tempfile.TemporaryDirectory() as tmp:
         _draft(tmp, channel_chu_mid=222)
-        res, _, chu = _chay(tmp)
+        res, _, chu = _run(tmp)
         assert res.get("ok"), res
         assert chu == [], f"da gui roi ma van gui lai: {chu}"
 
 
 # --------------------------------------------------------- chan ANH DON
-def test_anh_don_ghi_dau_sau_khi_gui():
+def test_image_single_write_mark_after_when_send():
     with tempfile.TemporaryDirectory() as tmp:
         anh = Path(tmp) / "a.png"
         anh.write_bytes(b"PNG")
         _, p = _draft(tmp, image=str(anh))
-        res, fake, _ = _chay(tmp, {"ok": True, "result": {"message_id": 333}})
+        res, fake, _ = _run(tmp, {"ok": True, "result": {"message_id": 333}})
         assert res.get("ok"), res
         assert len(fake.goi) == 1, f"phai goi sendPhoto dung mot lan: {fake.goi}"
         d = json.loads(p.read_text(encoding="utf-8"))
         assert d.get("channel_anh_mid") == 333, f"khong ghi dau: {d}"
 
 
-def test_anh_don_da_gui_thi_khong_gui_lai():
+def test_image_single_already_send_then_no_send_again():
     """Truoc 09/09/2026 chan nay khong co dau nao: bai anh don len channel hai
     lan moi khi tien trinh chet dung khe giua publish va mark_draft."""
     with tempfile.TemporaryDirectory() as tmp:
         anh = Path(tmp) / "a.png"
         anh.write_bytes(b"PNG")
         _draft(tmp, image=str(anh), channel_anh_mid=333)
-        res, fake, _ = _chay(tmp)
+        res, fake, _ = _run(tmp)
         assert res.get("ok"), res
         assert fake.goi == [], f"da gui anh roi ma van goi lai: {fake.goi}"
 
 
 # ------------------------------------------------------------- chan ALBUM
-def test_album_da_gui_thi_khong_gui_lai():
+def test_album_already_send_then_no_send_again():
     with tempfile.TemporaryDirectory() as tmp:
         _draft(tmp, images=["http://x/a.png"], channel_album_mid=111)
-        res, fake, _ = _chay(tmp)
+        res, fake, _ = _run(tmp)
         assert res.get("ok"), res
         assert fake.goi == [], f"da gui album roi ma van goi lai: {fake.goi}"
 
 
 # ------------------------- caption dai: album xong, chu hong roi bam lai
-def test_caption_dai_bam_lai_chi_gui_phan_con_thieu():
+def test_caption_long_press_again_only_send_part_remaining_missing():
     """Kich ban that: album len channel, buoc gui CHU hong (Telegram 400 vi
     HTML cua LLM) -> publish_failed -> Ong Chu bam Duyet lai. Lan hai chi duoc
     gui phan CHU; album KHONG duoc len lan nua."""
     with tempfile.TemporaryDirectory() as tmp:
         _, p = _draft(tmp, caption="x" * (db.CAPTION_LIMIT + 5),
                       images=["http://x/a.png"], channel_album_mid=111)
-        res, fake, chu = _chay(tmp)
+        res, fake, chu = _run(tmp)
         assert res.get("ok"), res
         assert fake.goi == [], f"album da len ma van gui lai: {fake.goi}"
         assert len(chu) == 1, f"phan chu phai duoc gui dung mot lan: {chu}"
@@ -153,13 +153,13 @@ def test_caption_dai_bam_lai_chi_gui_phan_con_thieu():
         assert d.get("channel_chu_mid") == 222, f"khong ghi dau chu: {d}"
 
 
-def test_caption_dai_bam_lai_lan_ba_khong_gui_gi_nua():
+def test_caption_long_press_again_attempt_three_no_send_what_half():
     """Sau khi CA HAI chan da co dau thi bam bao nhieu lan cung khong gui gi."""
     with tempfile.TemporaryDirectory() as tmp:
         _draft(tmp, caption="x" * (db.CAPTION_LIMIT + 5),
                images=["http://x/a.png"], channel_album_mid=111,
                channel_chu_mid=222)
-        res, fake, chu = _chay(tmp)
+        res, fake, chu = _run(tmp)
         assert res.get("ok"), res
         assert fake.goi == [] and chu == [], f"van gui lai: http={fake.goi} chu={chu}"
 

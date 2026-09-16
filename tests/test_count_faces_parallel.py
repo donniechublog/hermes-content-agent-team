@@ -11,7 +11,7 @@ người (LUẬT ẢNH §6) tắt câm cho gần hết ảnh trong sản xuất.
 Ảnh khác cỡ là điều kiện bắt buộc để tái hiện: cùng cỡ thì setInputSize
 idempotent và cuộc đua không lộ.
 
-Chạy:  venv/bin/python tests/test_dem_mat_song_song.py
+Chạy:  venv/bin/python tests/test_count_faces_parallel.py
 """
 import sys
 import tempfile
@@ -24,7 +24,7 @@ from PIL import Image                                         # noqa: E402
 import image_rules_ethan as image_rules                       # noqa: E402
 
 
-def _anh_khac_co(tmp, n=24):
+def _image_other_has(tmp, n=24):
     ra = []
     for i in range(n):
         p = Path(tmp) / f"a{i}.png"
@@ -33,12 +33,12 @@ def _anh_khac_co(tmp, n=24):
     return ra
 
 
-def test_song_song_khong_mat_ket_qua_nao():
+def test_parallel_no_face_result_which():
     if image_rules._load_yunet() is None:
         print("   (bo qua: may nay khong co cv2/model YuNet)")
         return
     with tempfile.TemporaryDirectory() as t:
-        anh = _anh_khac_co(t)
+        anh = _image_other_has(t)
         tuan_tu = [image_rules.count_faces(p) for p in anh]
         assert not any(v is None for v in tuan_tu), "tuan tu da None: khong phai loi dua"
         for lan in range(3):
@@ -49,7 +49,7 @@ def test_song_song_khong_mat_ket_qua_nao():
             assert song == tuan_tu, "song song ra khac tuan tu"
 
 
-def test_nhin_ghi_chu_khi_cong_mat_khong_chay():
+def test_seen_notes_when_gate_face_no_run():
     """None (khong chay) phai LO ra o ghi_chu, khong lang le thanh 0 mat (C1)."""
     import prepare.vision as vision
     cu = image_rules.count_faces

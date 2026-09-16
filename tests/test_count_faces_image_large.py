@@ -10,7 +10,7 @@ Test khong cho detector that an anh 50MP (se segfault chinh test runner tren
 code cu): dung detector GIA ghi lai kich thuoc `setInputSize` nhan duoc. Fail
 tren code cu (nhan 9440x5310), pass tren code moi (<= FACE_EDGE_MAX).
 
-Chay:  venv/bin/python tests/test_dem_mat_anh_lon.py
+Chay:  venv/bin/python tests/test_count_faces_image_large.py
 """
 import importlib.util
 import sys
@@ -36,7 +36,7 @@ class _DetGia:
         return 0, None
 
 
-def _voi_det_gia(path):
+def _with_det_fake(path):
     det = _DetGia()
     cu = image_rules._load_yunet
     image_rules._load_yunet = lambda: det
@@ -47,30 +47,30 @@ def _voi_det_gia(path):
     return ra, det.kich_thuoc
 
 
-def test_anh_50mp_duoc_thu_ve_duoi_tran():
+def test_image_50mp_ok_try_about_below_ceiling():
     if importlib.util.find_spec("cv2") is None:
         return                                            # may khong co cv2: count_faces ve None
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp) / "a2.png"
         Image.new("RGB", (9440, 5310), (30, 30, 30)).save(p, compress_level=1)
-        ra, wh = _voi_det_gia(p)
+        ra, wh = _with_det_fake(p)
     assert ra == 0, ra
     assert wh is not None and max(wh) <= image_rules.FACE_EDGE_MAX, wh
     # giu ti le: 9440/5310 = 1.778
     assert abs(wh[0] / wh[1] - 9440 / 5310) < 0.01, wh
 
 
-def test_anh_nho_giu_nguyen_kich_thuoc():
+def test_image_small_keep_raw_size():
     if importlib.util.find_spec("cv2") is None:
         return                                            # may khong co cv2: count_faces ve None
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp) / "a.png"
         Image.new("RGB", (1200, 675), (200, 200, 200)).save(p)
-        _ra, wh = _voi_det_gia(p)
+        _ra, wh = _with_det_fake(p)
     assert wh == (1200, 675), wh
 
 
-def test_tran_nho_hon_gioi_han_thuc_te_da_do():
+def test_ceiling_small_than_limit_actual_already_measure():
     assert image_rules.FACE_EDGE_MAX < 9440
 
 

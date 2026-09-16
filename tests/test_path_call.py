@@ -13,7 +13,7 @@ Vi sao khong luoi nao bat duoc: pyflakes thay ROOT co dinh nghia va co dung nen
 im; `import prepare.chung` chay binh thuong; con suite thi monkeypatch DRAFTS
 va workdir nen khong bao gio cham duong dan THAT. Tep nay chinh la cho trong do.
 
-Chay:  venv/bin/python tests/test_duong_dan_goi.py
+Chay:  venv/bin/python tests/test_path_call.py
 """
 import sys
 from pathlib import Path
@@ -25,19 +25,19 @@ import image_prepare as cb                                     # noqa: E402
 import prepare.common as common                                # noqa: E402
 
 
-def test_ROOT_cua_goi_la_goc_du_an():
+def test_root_of_call_is_original_enough_hide():
     """Khong phai chuan_bi/. Day la dung dong da vo hom 09/09."""
     assert common.ROOT == GOC, \
         f"prepare.common.ROOT tro sai: {common.ROOT} (phai la {GOC})"
 
 
-def test_ROOT_khop_env_load():
+def test_root_match_env_load():
     """env_load.ROOT la ban goc su that; hai cho lech nhau la mot cho sai."""
     assert common.ROOT == Path(env_load.ROOT).resolve(), \
         f"{common.ROOT} != env_load.ROOT {env_load.ROOT}"
 
 
-def test_DRAFTS_nam_ngay_duoi_goc_va_co_anh_em_that():
+def test_drafts_lie_date_below_original_and_has_image_em_real():
     """`drafts/` phai la thu muc drafts THAT o goc — canh cac tep nguon, khong
     phai mot duong dan long trong goi."""
     assert common.DRAFTS == GOC / "drafts", common.DRAFTS
@@ -45,13 +45,13 @@ def test_DRAFTS_nam_ngay_duoi_goc_va_co_anh_em_that():
         f"cha cua DRAFTS khong phai goc du an: {common.DRAFTS.parent}"
 
 
-def test_mat_tien_anh_chuan_bi_tro_cung_cho():
+def test_face_money_image_prepare_point_same_wait():
     """Vai/test goi qua `cb.DRAFTS`; no chi la tai xuat cua common.DRAFTS nen hai
     ben lech nhau la co mot ban sao thu hai dang song."""
     assert cb.ROOT == common.ROOT and cb.DRAFTS == common.DRAFTS, (cb.DRAFTS, common.DRAFTS)
 
 
-def test_moi_hang_so_duong_dan_trong_goi_deu_duoi_goc():
+def test_new_rank_count_path_within_call_all_below_original():
     """Quet moi Path cap module cua goi: khong cai nao duoc ro ra ngoai goc du
     an, va khong cai nao duoc nam trong chuan_bi/ (dau hieu thieu .parent)."""
     import importlib

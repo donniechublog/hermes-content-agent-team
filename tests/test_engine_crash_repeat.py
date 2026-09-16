@@ -6,7 +6,7 @@ t_24b214a6: SIGSEGV 3 lan, vai tu `rm -f dang_chay.pid` roi goi lai 16 lan trong
 dem, `run()` dung o MAX_CRASH va goi `_report_crash_loop`. Fail tren code cu
 (chua co count_crashes / _handle_lock tra None), pass tren code moi.
 
-Chay:  venv/bin/python tests/test_engine_chet_lap.py
+Chay:  venv/bin/python tests/test_engine_crash_repeat.py
 """
 import ast
 import io
@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 
 
-def test_doi_khoa_bao_mo_coi():
+def test_wait_lock_report_orphan():
     with tempfile.TemporaryDirectory() as tmp:
         khoa = Path(tmp) / "dang_chay.pid"
         with redirect_stderr(io.StringIO()):
@@ -30,7 +30,7 @@ def test_doi_khoa_bao_mo_coi():
         assert not khoa.exists()
 
 
-def test_dem_chet_tang_theo_mo_coi_va_ve_0_khi_lam_moi():
+def test_count_crashes_layer_by_orphan_and_about_0_when_fresh():
     with tempfile.TemporaryDirectory() as tmp:
         wd = Path(tmp)
         assert cb.count_crashes(wd, False) == 0
@@ -41,11 +41,11 @@ def test_dem_chet_tang_theo_mo_coi_va_ve_0_khi_lam_moi():
         assert cb.count_crashes(wd, False) == 0
 
 
-def test_toi_da_chet_la_hai():
+def test_max_crash_is_two():
     assert cb.MAX_CRASH == 2
 
 
-def test_chay_dung_o_toi_da_va_bao():
+def test_run_use_cell_max_and_report():
     """Cong o muc ma nguon: `run()` phai goi count_crashes, so voi MAX_CRASH, goi
     _report_crash_loop va sys.exit — khong test duoc bang chay that (can meta draft +
     browser), nen doc AST cua run() nhu cong _round_brand (10/09/2026)."""
@@ -61,7 +61,7 @@ def test_chay_dung_o_toi_da_va_bao():
                and n.func.attr == "exit" for n in ast.walk(ham)), "run() phai sys.exit khi chet lap"
 
 
-def test_bao_chet_lap_gui_dung_topic_va_khong_nem():
+def test_report_repeated_crash_send_use_topic_and_no_throw():
     """Stub publish.send_topic: test KHONG duoc gui Telegram that (tren may chu co token)."""
     import publish
     gui = []
