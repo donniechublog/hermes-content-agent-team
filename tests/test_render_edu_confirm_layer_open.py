@@ -16,7 +16,7 @@ Nên test này khoá CẢ HAI chiều: không còn nền blur (`.fig-nen`) và k
 ảnh-trong-dòng (`.fig-anh`); nhưng lớp mờ phần-dưới-chữ (`__datMan`, `.fig-molop`,
 `DARK_MAX_OPEN`, `VEIL_SPAN`) PHẢI có và phải được đọc thật.
 
-Chạy:  venv/bin/python tests/test_render_edu_xac_lop_mo.py
+Chạy:  venv/bin/python tests/test_render_edu_confirm_layer_open.py
 """
 import random
 import sys
@@ -31,7 +31,7 @@ TH = dict(bg="#171A21", panel="#212530", line="#333846",
           a="#2FD4E1", b="#8E86F0", stand="#BFC5CF")
 
 
-def _anh_chup(w=600, h=760):
+def _image_capture(w=600, h=760):
     """PNG giả làm ẢNH CHỤP THẬT: viền không phẳng -> phân loại 'mo'."""
     from PIL import Image
     random.seed(0)
@@ -49,22 +49,22 @@ def _anh_chup(w=600, h=760):
     return p
 
 
-def test_nhanh_mo_khong_con_nen_blur_va_khong_con_anh_trong_dong():
+def test_branch_open_no_remaining_background_blur_and_no_remaining_image_within_line():
     """Ý 2: nền là màu theme, không phải bản blur của chính tấm ảnh.
     Ý 1: ảnh là `.fig-sac` full bề ngang, không phải `.fig-anh` contain."""
-    nen, anh = re_.image_make_background({"image": str(_anh_chup())}, TH, "bia")
+    nen, anh = re_.image_make_background({"image": str(_image_capture())}, TH, "bia")
     assert "fig-nen" not in nen, "còn nền blur cả ảnh — Ông Chủ: chưa bao giờ yêu cầu"
     assert "fig-anh" not in nen and "fig-anh" not in anh, "còn ảnh-trong-dòng (contain)"
     assert 'class="fig-sac' in nen, "ảnh chụp phải là lớp sắc full bề ngang"
     assert f'background:{TH["bg"]}' in nen, "nền phải là màu palette của theme"
 
 
-def test_lop_mo_phan_duoi_chu_con_song_va_duoc_doc_that():
+def test_layer_open_part_below_text_remaining_alive_and_ok_read_real():
     """Ý 3: lớp mờ chỉ cho phần ảnh chờm xuống chữ. Hằng số phải tồn tại VÀ được
     đọc trong HTML sinh ra, script đặt lớp phải được sinh và được gọi."""
     for t in ("DARK_MAX_OPEN", "VEIL_SPAN"):
         assert hasattr(re_, t), f"thiếu {t}"
-    nen, _ = re_.image_make_background({"image": str(_anh_chup())}, TH, "bia")
+    nen, _ = re_.image_make_background({"image": str(_image_capture())}, TH, "bia")
     assert "window.__datMan=function" in nen, "không sinh script đặt lớp mờ"
     assert f"{re_.DARK_MAX_OPEN:.3f}" in nen and f"top+{re_.VEIL_SPAN}" in nen, \
         "hằng số lớp mờ có tên nhưng không được đọc"
@@ -79,14 +79,14 @@ def test_lop_mo_phan_duoi_chu_con_song_va_duoc_doc_that():
         assert luat not in css, f"BASE_CSS_TPL còn luật chết: {luat}"
 
 
-def test_lop_mo_chi_bat_khi_anh_chom_qua_chu():
+def test_layer_open_only_catch_when_image_overlap_over_text():
     """Script phải có đường tắt: mép dưới ảnh nằm trên dòng chữ đầu -> ẩn cả
     lớp mờ lẫn màn tint. Ảnh ngang (ý 1) đi đúng nhánh này."""
-    nen, _ = re_.image_make_background({"image": str(_anh_chup(1500, 1000))}, TH, "bia")
+    nen, _ = re_.image_make_background({"image": str(_image_capture(1500, 1000))}, TH, "bia")
     assert 'if(Y0+CAO<=top){v.style.display="none";m.style.display="none";return;}' in nen
 
 
-def test_carousel_VAN_con_co_che_lop_mo():
+def test_carousel_still_remaining_mechanism_layer_open():
     """Chiều ngược, giữ từ 955f33b: cơ chế lớp mờ của carousel.py là bản riêng,
     dọn bên render_edu không được kéo theo."""
     import carousel                                           # noqa: PLC0415

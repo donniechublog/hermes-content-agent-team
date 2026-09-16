@@ -25,7 +25,7 @@ Nay `role.has_enough_material` tra loi: MOI vai deu phai co mot tam lam anh chin
 rieng SO LUONG thi chi vai xep nhieu anh moi bi dem. Tieu chi CHAT LUONG van
 dung chung o image_rules + classify, khong dong toi.
 
-Chay:  venv/bin/python tests/test_tim_anh_theo_vai.py
+Chay:  venv/bin/python tests/test_find_image_by_role.py
 """
 import ast
 import inspect
@@ -48,7 +48,7 @@ class _Phien:
         return False
 
 
-def _anh(ma: str, **doi) -> dict:
+def _image(ma: str, **doi) -> dict:
     """Anh doc 4:5, day toi, khong mat — `classify` dan nhan "bìa" cho no, va
     card.py cung dung lam nen hero duoc."""
     a = {"ma": ma, "goc": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
@@ -59,21 +59,21 @@ def _anh(ma: str, **doi) -> dict:
     return a
 
 
-def _anh_ngang(ma: str) -> dict:
+def _image_landscape(ma: str) -> dict:
     """16:9 (1.78): Dre ghep doc thanh mot slide, Ethan khong dung duoc (>1.6)."""
-    return _anh(ma, ti_le=1.78, w=1920, h=1080, ngang=True, canh_ngan=1080,
+    return _image(ma, ti_le=1.78, w=1920, h=1080, ngang=True, canh_ngan=1080,
                 dung=["ghép dọc với một ảnh ngang cùng tone"])
 
 
-def _anh_ngang_vua(ma: str) -> dict:
+def _image_landscape_fit(ma: str) -> dict:
     """1.5: qua LANDSCAPE_CLEAR (1.4) nen KHONG co nhan "bìa" cua carousel, nhung card.py
     cho toi 1.6 — day dung la cho luat cua carousel bat Ethan di tim vo ich."""
-    return _anh(ma, ti_le=1.5, w=1500, h=1000, ngang=True, canh_ngan=1000,
+    return _image(ma, ti_le=1.5, w=1500, h=1000, ngang=True, canh_ngan=1000,
                 dung=["ghép dọc với một ảnh ngang cùng tone"])
 
 
-def _anh_chart(ma: str) -> dict:
-    return _anh(ma, ti_le=1.2, w=1200, h=1000, loai="chart", canh_ngan=1000,
+def _image_chart(ma: str) -> dict:
+    return _image(ma, ti_le=1.2, w=1200, h=1000, loai="chart", canh_ngan=1000,
                 goc_trai_sang=200, dung=["thân (chart, dán full bề ngang nguyên vẹn)"])
 
 
@@ -84,7 +84,7 @@ PHA_NANG = ("BrowserSession", "load_source", "_summary_from_img_json", "_supplem
             "build_manifest", "contact_sheet")
 
 
-def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
+def _fallback_rounds_already_run(anh_bai: list, vai_anh="ethan", khong_browser=False,
                      tieu_de="OpenAI ships new image model for developers") -> list:
     """Chay THAT `prepare_article()` voi moi pha nang thay bang stub, tra ve ten cac vong
     bu da duoc goi. Khong mang, khong browser, khong vision."""
@@ -136,71 +136,71 @@ def _vong_bu_da_chay(anh_bai: list, vai_anh="ethan", khong_browser=False,
 
 
 # ------------------------------------------------------- vai MOT ANH (Ethan)
-def test_bai_du_anh_ma_khong_tam_nao_len_hero_thi_van_di_tim():
+def test_article_enough_image_code_no_temp_which_len_hero_then_still_go_find():
     """Dung canh sinh ra su co: bai goc cho DU 5 anh nhung toan 16:9 / chart."""
-    for ten, bo in (("5 ngang 16:9", [_anh_ngang(f"A{i + 1}") for i in range(5)]),
-                    ("3 ngang + 2 chart", [_anh_ngang("A1"), _anh_ngang("A2"), _anh_ngang("A3"),
-                                           _anh_chart("A4"), _anh_chart("A5")]),
-                    ("9 ngang — nhieu khong cuu duoc", [_anh_ngang(f"A{i + 1}") for i in range(9)])):
-        goi = _vong_bu_da_chay(bo)
+    for ten, bo in (("5 ngang 16:9", [_image_landscape(f"A{i + 1}") for i in range(5)]),
+                    ("3 ngang + 2 chart", [_image_landscape("A1"), _image_landscape("A2"), _image_landscape("A3"),
+                                           _image_chart("A4"), _image_chart("A5")]),
+                    ("9 ngang — nhieu khong cuu duoc", [_image_landscape(f"A{i + 1}") for i in range(9)])):
+        goi = _fallback_rounds_already_run(bo)
         assert "tim_rong" in goi, \
             f"{ten}: Ethan het duong lam hero ma engine khong di tim (da chay: {goi or 'khong vong nao'})"
 
 
-def test_mat_nguoi_khong_ro_ai_khong_tinh_la_hero():
+def test_face_no_clear_ai_no_static_is_hero():
     """`submit_common.check_subject_named` chan anh co mat ma khong khai `nhan_vat`, va vai
     khong duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc."""
-    assert "tim_rong" in _vong_bu_da_chay([_anh(f"A{i + 1}", mat=1) for i in range(5)])
-    assert "tim_rong" not in _vong_bu_da_chay(
-        [_anh("A1", mat=1, alt="Jensen Huang speaks at GTC")]), \
+    assert "tim_rong" in _fallback_rounds_already_run([_image(f"A{i + 1}", mat=1) for i in range(5)])
+    assert "tim_rong" not in _fallback_rounds_already_run(
+        [_image("A1", mat=1, alt="Jensen Huang speaks at GTC")]), \
         "alt da neu ten thi Ethan khai duoc nhan_vat — khong can di tim nua"
 
 
-def test_MOT_tam_hero_la_du_cho_the_don():
+def test_one_temp_hero_is_enough_wait_card_single():
     """So luong khong phai tieu chi cua vai lam san pham mot anh (Ong Chu
     10/09/2026). Mot tam dung duoc la du, khong doi cho du 5."""
-    assert "tim_rong" not in _vong_bu_da_chay([_anh("A1")]), \
+    assert "tim_rong" not in _fallback_rounds_already_run([_image("A1")]), \
         "Ethan da co nen hero ma engine van tra tien mot phien browser di tim"
 
 
-def test_luat_ti_le_phai_la_cua_card_khong_phai_cua_carousel():
+def test_rules_ratio_right_is_of_card_no_right_of_carousel():
     """Anh 1.5: carousel khong goi la "bìa" (qua LANDSCAPE_CLEAR 1.4) nhung card.py cho
     toi 1.6. Do bang nhan cua carousel la Ethan di tim mot cach vo ich."""
-    assert "tim_rong" not in _vong_bu_da_chay([_anh_ngang_vua("A1")]), \
+    assert "tim_rong" not in _fallback_rounds_already_run([_image_landscape_fit("A1")]), \
         "do anh cua Ethan bang nguong 1.4 cua carousel thay vi 1.6 cua card.py"
 
 
-def test_khong_browser_van_khong_mo_phien_nao():
-    goi = _vong_bu_da_chay([_anh_ngang(f"A{i + 1}") for i in range(5)], khong_browser=True)
+def test_no_browser_still_no_open_session_which():
+    goi = _fallback_rounds_already_run([_image_landscape(f"A{i + 1}") for i in range(5)], khong_browser=True)
     assert "tim_rong" not in goi, f"--khong-browser ma van mo browser di tim rong: {goi}"
 
 
 # --------------------------------------------------- vai NHIEU ANH (Dre, Kite)
-def test_vai_nhieu_anh_giu_nguyen_cach_dem_cu():
+def test_role_many_image_keep_raw_way_count_old():
     """Ban sua khong duoc dong toi Dre/Kite: o do moi slide an mot tam that, nen
     SO LUONG van la mot tieu chi that."""
     for vai_anh in ("dre", "kite"):
-        assert "tim_rong" not in _vong_bu_da_chay([_anh(f"A{i + 1}") for i in range(6)],
+        assert "tim_rong" not in _fallback_rounds_already_run([_image(f"A{i + 1}") for i in range(6)],
                                                   vai_anh=vai_anh), \
             f"{vai_anh}: du 6 tam va co bia ma van di tim"
-        assert "tim_rong" in _vong_bu_da_chay([_anh("A1"), _anh("A2")], vai_anh=vai_anh), \
+        assert "tim_rong" in _fallback_rounds_already_run([_image("A1"), _image("A2")], vai_anh=vai_anh), \
             f"{vai_anh}: moi 2 tam ma khong di tim — thieu 3 slide"
-        assert "tim_rong" in _vong_bu_da_chay([_anh_ngang(f"A{i + 1}") for i in range(5)],
+        assert "tim_rong" in _fallback_rounds_already_run([_image_landscape(f"A{i + 1}") for i in range(5)],
                                               vai_anh=vai_anh), \
             f"{vai_anh}: du 5 tam nhung khong tam nao lam bia duoc"
 
 
-def test_anh_khai_niem_van_la_duong_cuoi():
+def test_image_concept_still_is_path_last():
     """Anh khai niem (co, rack, datacenter) chung chung, phai doi den luc that su
     het duong — va phai di SAU vong tim anh that o bao khac."""
-    goi = _vong_bu_da_chay([_anh_ngang(f"A{i + 1}") for i in range(5)])
+    goi = _fallback_rounds_already_run([_image_landscape(f"A{i + 1}") for i in range(5)])
     assert goi.index("tim_rong") < goi.index("khai_niem")
-    assert "khai_niem" not in _vong_bu_da_chay([_anh("A1")]), \
+    assert "khai_niem" not in _fallback_rounds_already_run([_image("A1")]), \
         "bai da co nen hero that ma van day them anh minh hoa chung chung"
 
 
 # ------------------------------------------- cong o muc ma nguon (chong troi)
-def _if_boc_loi_goi(goc: ast.AST, ten: str) -> list:
+def _if_extract_error_call(goc: ast.AST, ten: str) -> list:
     """Cac node `ast.If` ma than no goi thang `ten(...)`."""
     ra = []
 
@@ -219,7 +219,7 @@ def _if_boc_loi_goi(goc: ast.AST, ten: str) -> list:
     return ra
 
 
-def _ten_ham_trong(nut: ast.AST) -> set:
+def _name_function_within(nut: ast.AST) -> set:
     ra = set()
     for n in ast.walk(nut):
         if isinstance(n, ast.Call):
@@ -228,21 +228,21 @@ def _ten_ham_trong(nut: ast.AST) -> set:
     return ra
 
 
-def test_hai_vong_bu_phai_hoi_ban_dang_ky_vai():
+def test_two_fallback_rounds_right_ask_copy_form_ky_role():
     """Cong chong troi: cac test tren dung stub, nen ai do do lai bang mot phep
     dem khac van co the vo tinh xanh khi con so tinh co thuan. Day bat thang
     HINH DANG cua ma."""
     goc = ast.parse(textwrap.dedent(inspect.getsource(cb.prepare_article)))
     for ten_vong in ("_round_widen_search", "_round_concept"):
-        ifs = _if_boc_loi_goi(goc, ten_vong)
+        ifs = _if_extract_error_call(goc, ten_vong)
         assert ifs, f"khong tim thay loi goi {ten_vong} trong mot `if` cua chuan_bi()"
         for nut in ifs:
-            assert "has_enough_material" in _ten_ham_trong(nut.test), (
+            assert "has_enough_material" in _name_function_within(nut.test), (
                 f"dieu kien mo {ten_vong} khong con hoi `role.has_enough_material` — do la "
                 "LOW-12: no se lai do bo anh cua Ethan bang so slide cua carousel")
 
 
-def test_khong_con_so_nao_cua_carousel_trong_duong_di_tim():
+def test_no_remaining_count_which_of_carousel_within_path_go_find():
     """`prepare_article()` chay chung cho ca ba vai, nen mot hang so cua carousel nam
     trong do la ap luat cua Dre len Ethan (Ong Chu 10/09/2026)."""
     src = textwrap.dedent(inspect.getsource(cb.prepare_article))

@@ -13,7 +13,7 @@ chat cua phien dung chung:
 
 Khong can playwright that: thay `sync_playwright` bang ban gia.
 
-Chay:  venv/bin/python tests/test_phien_browser.py
+Chay:  venv/bin/python tests/test_browser_session.py
 """
 import sys
 import types
@@ -70,7 +70,7 @@ class _PwGia:
         self.da_dung = True
 
 
-def _gia():
+def _fake():
     """Cai playwright gia vao sys.modules, tra ve doi tuong theo doi."""
     pw = _PwGia()
     mod = types.ModuleType("playwright")
@@ -87,9 +87,9 @@ def _go():
     sys.modules.pop("playwright.sync_api", None)
 
 
-def test_mo_luoi_khong_dung_thi_khong_launch():
+def test_open_lazy_no_use_then_no_launch():
     """Bai chay --khong-browser khong duoc ton mot tien trinh Chromium nao."""
-    pw = _gia()
+    pw = _fake()
     try:
         with pb.BrowserSession():
             pass
@@ -98,8 +98,8 @@ def test_mo_luoi_khong_dung_thi_khong_launch():
         _go()
 
 
-def test_cung_tham_so_thi_dung_chung_mot_tien_trinh():
-    pw = _gia()
+def test_same_parameter_then_use_common_one_money_program():
+    pw = _fake()
     try:
         with pb.BrowserSession() as ph:
             a = ph.browser()
@@ -111,9 +111,9 @@ def test_cung_tham_so_thi_dung_chung_mot_tien_trinh():
         _go()
 
 
-def test_khac_tham_so_thi_tien_trinh_rieng():
+def test_other_parameter_then_money_program_own():
     """xep_hang ep srgb — gop chung la lang le doi cach xu ly mau anh chup."""
-    pw = _gia()
+    pw = _fake()
     try:
         srgb = tuple(pb.ARGS_DEFAULT) + ("--force-color-profile=srgb",)
         with pb.BrowserSession() as ph:
@@ -126,10 +126,10 @@ def test_khac_tham_so_thi_tien_trinh_rieng():
         _go()
 
 
-def test_browser_chet_giua_bai_thi_mo_lai_khong_tra_xac():
+def test_browser_crash_middle_article_then_open_again_no_return_confirm():
     """N-r2-1: Chromium crash/OOM giua bai — B4 dung MOT phien cho ca 5 buoc,
     nen tra lai browser da chet la 4 buoc sau deu TargetClosedError. Phai mo lai."""
-    pw = _gia()
+    pw = _fake()
     with pb.BrowserSession() as ph:
         b1 = ph.browser()
         b1.chet = True                       # tien trinh chet, doi tuong van trong cache
@@ -139,8 +139,8 @@ def test_browser_chet_giua_bai_thi_mo_lai_khong_tra_xac():
         assert ph.browser() is b2, "browser song thi van dung chung"
 
 
-def test_ra_khoi_khoi_thi_dong_het():
-    pw = _gia()
+def test_out_block_block_then_line_all_done():
+    pw = _fake()
     try:
         with pb.BrowserSession() as ph:
             b = ph.browser()
@@ -150,8 +150,8 @@ def test_ra_khoi_khoi_thi_dong_het():
         _go()
 
 
-def test_trang_dong_context_ngay_de_cach_ly_loi():
-    pw = _gia()
+def test_page_line_context_date_for_isolate_error():
+    pw = _fake()
     try:
         with pb.BrowserSession() as ph:
             with ph.trang(viewport={"width": 100, "height": 100}) as page:
@@ -163,8 +163,8 @@ def test_trang_dong_context_ngay_de_cach_ly_loi():
         _go()
 
 
-def test_context_dong_ca_khi_than_nem():
-    pw = _gia()
+def test_context_line_all_when_than_throw():
+    pw = _fake()
     try:
         with pb.BrowserSession() as ph:
             try:
@@ -178,8 +178,8 @@ def test_context_dong_ca_khi_than_nem():
 
 
 # ------------------------------------------------------------ session_or_new
-def test_khong_truyen_phien_thi_tu_mo_va_TU_DONG():
-    _gia()
+def test_no_transmit_session_then_from_open_and_auto():
+    _fake()
     try:
         with pb.session_or_new(None) as ph:
             b = ph.browser()
@@ -188,10 +188,10 @@ def test_khong_truyen_phien_thi_tu_mo_va_TU_DONG():
         _go()
 
 
-def test_muon_phien_thi_KHONG_duoc_dong_cua_nguoi_khac():
+def test_late_session_then_no_ok_line_of_person_other():
     """Tinh chat quan trong nhat: ham nhan `phien` tu ngoai chi MUON. Dong no la
     cac buoc sau cua cung bai mat browser giua chung."""
-    pw = _gia()
+    pw = _fake()
     try:
         with pb.BrowserSession() as chung:
             b = chung.browser()

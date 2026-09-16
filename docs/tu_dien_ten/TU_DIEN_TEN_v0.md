@@ -41,6 +41,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `bat_dau` | `start` |
 | `benchmark_trich` | `benchmark_excerpt` |
 | `bi_mat` | `secret` |
+| `bien_gioi` | `border` |
 | `bieu_do` | `chart` |
 | `bieu_tinh` | `protest` |
 | `binh_thuong` | `normal` |
@@ -52,6 +53,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `bo_sung` | `supplement` |
 | `brief_chung` | `brief_common` |
 | `cac_manh` | `fragments` |
+| `cach_ly` | `isolate` |
 | `cai_dat` | `setup` |
 | `cam_ket` | `commit` |
 | `can_anh_xep_hang` | `needs_ranking_image` |
@@ -91,6 +93,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `chup_man_hinh` | `screenshot` |
 | `chup_nguon` | `capture_source` |
 | `chup_trang` | `capture_page` |
+| `co_che` | `mechanism` |
 | `co_cum` | `has_phrase` |
 | `co_hoc` | `mechanical` |
 | `co_so_du_lieu` | `database` |
@@ -237,6 +240,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `lap_cum` | `repeat_phrase` |
 | `lap_day` | `fill` |
 | `lenh_chon` | `pick_command` |
+| `lien_he` | `contact` |
 | `lien_quan` | `relevant` |
 | `liet_ke` | `list` |
 | `loai_tin` | `story_type` |
@@ -256,6 +260,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `mau_sac` | `color` |
 | `max_runtime_cua` | `max_runtime_for` |
 | `may_chu` | `server` |
+| `mit_tinh` | `rally` |
 | `mo_coi` | `orphan` |
 | `mo_hinh` | `model` |
 | `mo_ta` | `description` |
@@ -351,6 +356,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ten_hien` | `display_name` |
 | `ten_rieng_dau` | `leading_proper_noun` |
 | `tham_lam` | `greedy` |
+| `tham_so` | `parameter` |
 | `thanh_cong` | `success` |
 | `thanh_vien` | `member` |
 | `thap_nhat` | `lowest` |
@@ -420,6 +426,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `vi_du` | `example` |
 | `vi_sao` | `why` |
 | `vi_tri` | `position` |
+| `vo_danh` | `anonymous` |
 | `vong_bu` | `fallback_rounds` |
 | `vong_lap` | `loop` |
 | `website_hang` | `vendor_website` |
@@ -486,6 +493,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `chinh` | `main` |  |
 | `chiu` | `bear` |  |
 | `cho` | `wait` | ⚠️ chờ=wait / cho=for/give |
+| `chom` | `overlap` |  |
 | `chon` | `pick` |  |
 | `chong` | `anti` |  |
 | `chot` | `finalize` |  |
@@ -562,6 +570,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `giay` | `seconds` |  |
 | `giet` | `kill` |  |
 | `gio` | `hours` |  |
+| `gioi` | `border` |  |
 | `giong` | `voice` |  |
 | `giu` | `keep` |  |
 | `giua` | `middle` |  |
@@ -574,6 +583,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `gui` | `send` |  |
 | `ha` | `lower` |  |
 | `hai` | `two` |  |
+| `ham` | `function` |  |
 | `han` | `limit` |  |
 | `hang` | `rank` | ⚠️ hạng=rank / hàng=row / hãng=vendor |
 | `hen` | `timer` |  |
@@ -591,6 +601,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `hon` | `than` |  |
 | `hong` | `broken` |  |
 | `hop` | `box` |  |
+| `hua` | `promise` |  |
 | `im` | `silent` |  |
 | `in` | `print` | ⚠️ in=print (mặc định: in_log, in_bang) / English in (cụm in_progress/in_use/in_executor) |
 | `kem` | `with` |  |
@@ -599,6 +610,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ket` | `end` |  |
 | `khac` | `other` |  |
 | `khach` | `customer` |  |
+| `khai` | `declare` |  |
 | `khan` | `urgent` |  |
 | `khe` | `slit` |  |
 | `khi` | `when` |  |
@@ -735,6 +747,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `roi` | `fall` |  |
 | `rong` | `empty` | ⚠️ rỗng=empty / rộng=wide |
 | `rot` | `fail` |  |
+| `rung` | `forest` |  |
 | `rut` | `shorten` |  |
 | `sac` | `tone` |  |
 | `sach` | `clean` |  |
@@ -743,6 +756,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `sang` | `bright` | ⚠️ sáng=bright / sang=to |
 | `sao` | `star` |  |
 | `sap` | `sort` |  |
+| `sat` | `close` |  |
 | `sau` | `after` |  |
 | `se` | `will` |  |
 | `sinh` | `generate` |  |
@@ -846,6 +860,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `vien` | `border` |  |
 | `viet` | `write` |  |
 | `vit` | `duck` |  |
+| `vo` | `without` |  |
 | `voi` | `with` |  |
 | `vong` | `round` |  |
 | `vua` | `fit` |  |

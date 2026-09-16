@@ -14,7 +14,7 @@ Test giu HAI thu:
      kite_prepare co the doc trung khe do va dung brief noi "du anh" trong khi
      tin dang cho chuyen Kite.
 
-Chay:  venv/bin/python tests/test_route_thieu_anh.py
+Chay:  venv/bin/python tests/test_route_missing_images.py
 """
 import json
 import sys
@@ -28,16 +28,16 @@ import route_missing_images as rt                                  # noqa: E402
 
 
 # --------------------------------------------------------------- engine mô tả
-def test_mo_ta_thieu_anh_du_thi_None():
+def test_description_missing_image_enough_then_none():
     assert cb._description_missing_image({"so_dung_duoc": 5, "toi_thieu": 5}) is None
     assert cb._description_missing_image({"so_dung_duoc": 9, "toi_thieu": 5}) is None
 
 
-def test_mo_ta_thieu_anh_thieu_thi_ta_ro_so():
+def test_description_missing_image_missing_then_ta_clear_count():
     assert cb._description_missing_image({"so_dung_duoc": 2, "toi_thieu": 5}) == {"so": 2, "toi_thieu": 5}
 
 
-def _chay_gia(tmp, m_engine, sau_chuan_bi=None):
+def _run_fake(tmp, m_engine, sau_chuan_bi=None):
     """Chay cb.run() voi engine gia (khong browser/mang), tra (m, wd)."""
     wd = Path(tmp) / "wd"
     wd.mkdir(parents=True, exist_ok=True)
@@ -55,29 +55,29 @@ def _chay_gia(tmp, m_engine, sau_chuan_bi=None):
         cb.prepare_article, cb.load_meta, cb.workdir = cu
 
 
-def test_chay_ghi_co_thieu_anh_vao_xong_json():
+def test_run_write_has_missing_image_into_done_json():
     with tempfile.TemporaryDirectory() as tmp:
-        m, wd = _chay_gia(tmp, {"so_dung_duoc": 2, "toi_thieu": 5, "anh": []})
+        m, wd = _run_fake(tmp, {"so_dung_duoc": 2, "toi_thieu": 5, "anh": []})
         assert m["thieu_anh"] == {"so": 2, "toi_thieu": 5}, m
         tren_dia = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
         assert tren_dia["thieu_anh"] == {"so": 2, "toi_thieu": 5}, tren_dia
 
 
-def test_chay_du_anh_thi_khong_co_co():
+def test_run_enough_image_then_no_has_has():
     with tempfile.TemporaryDirectory() as tmp:
-        m, _ = _chay_gia(tmp, {"so_dung_duoc": 6, "toi_thieu": 5, "anh": []})
+        m, _ = _run_fake(tmp, {"so_dung_duoc": 6, "toi_thieu": 5, "anh": []})
         assert "thieu_anh" not in m, m
 
 
-def test_chay_khong_co_moc_van_chay_duoc():
+def test_run_no_has_timestamp_still_run_ok():
     """Engine phai dung mot minh duoc (chay tay, test) — moc la tuy chon."""
     with tempfile.TemporaryDirectory() as tmp:
-        m, wd = _chay_gia(tmp, {"so_dung_duoc": 0, "toi_thieu": 5, "anh": []})
+        m, wd = _run_fake(tmp, {"so_dung_duoc": 0, "toi_thieu": 5, "anh": []})
         assert (wd / "xong.json").exists()
         assert m["thieu_anh"]["so"] == 0
 
 
-def test_moc_chay_TRUOC_khi_xong_json_hien_ra():
+def test_timestamp_run_before_when_done_json_show_out():
     """Thu chan cuoc dua: luc moc duoc goi, `xong.json` CHUA duoc ghi; va thu
     moc ghi vao `m` phai nam trong tep cuoi cung."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -87,7 +87,7 @@ def test_moc_chay_TRUOC_khi_xong_json_hien_ra():
             thay["xong_ton_tai_luc_goi"] = (Path(tmp) / "wd" / "xong.json").exists()
             m["chuyen_kite"] = "t_9"
 
-        m, wd = _chay_gia(tmp, {"so_dung_duoc": 0, "toi_thieu": 5, "anh": []}, moc)
+        m, wd = _run_fake(tmp, {"so_dung_duoc": 0, "toi_thieu": 5, "anh": []}, moc)
         assert thay["xong_ton_tai_luc_goi"] is False, \
             "xong.json da hien ra TRUOC khi dinh tuyen xong — dung khe dua can chan"
         tren_dia = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
@@ -95,12 +95,12 @@ def test_moc_chay_TRUOC_khi_xong_json_hien_ra():
             f"quyet dinh cua moc khong duoc ghi xuong dia: {tren_dia}"
 
 
-def test_moc_no_thi_van_ghi_xong_json():
+def test_timestamp_no_then_still_write_done_json():
     """Moc hong khong duoc lam mat xong.json — bai hoc audit 05/09."""
     with tempfile.TemporaryDirectory() as tmp:
         def moc(draft_id, m):
             raise RuntimeError("router vo")
-        m, wd = _chay_gia(tmp, {"so_dung_duoc": 1, "toi_thieu": 5, "anh": []}, moc)
+        m, wd = _run_fake(tmp, {"so_dung_duoc": 1, "toi_thieu": 5, "anh": []}, moc)
         assert (wd / "xong.json").exists(), "moc no lam mat xong.json"
 
 
@@ -131,7 +131,7 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
         rt.DRAFTS, rt._time_send, dgv.standard_assignee, db.create_task_kite = cu
 
 
-def test_telegram_tu_choi_thi_KHONG_danh_dau_da_hoi():
+def test_telegram_reject_then_no_list_mark_already_ask():
     """C-r2-1: truoc day _time_send vut ket qua post, m["hoi_kite"]=True van ghi vao
     xong.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -142,7 +142,7 @@ def test_telegram_tu_choi_thi_KHONG_danh_dau_da_hoi():
         assert "route_loi" in m and "hoi_kite" in m["route_loi"], m
 
 
-def test_sidecar_cu_ghi_slug_cu_van_toi_dung_topic():
+def test_sidecar_old_write_slug_old_still_dark_use_topic():
     """C-r2-1 (N-r2-5): im.json cu ghi mot chu KHAC slug hien tai — phai doi ve
     slug that truoc khi tra topic, khong thi task nam 'ready' mai (su co
     01/09/2026). Sau LOW-14 chu do la slug ROLE cu ("carousel"), con "heller"
@@ -155,7 +155,7 @@ def test_sidecar_cu_ghi_slug_cu_van_toi_dung_topic():
             assert m.get("hoi_kite") is True, (chu, m)
 
 
-def test_tg_gui_that_doc_ok_cua_telegram():
+def test_time_send_real_read_ok_of_telegram():
     """_time_send phai nhin vao {"ok": false} cua Telegram, khong chi vao HTTP."""
     import httpx
     import os
@@ -180,13 +180,13 @@ def test_tg_gui_that_doc_ok_cua_telegram():
                 os.environ[k] = v
 
 
-def test_du_anh_thi_router_im():
+def test_enough_image_then_router_silent():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"title": "x"}, {"vai_anh": "dre"})
         assert tin == [] and "hoi_kite" not in m, (m, tin)
 
 
-def test_khong_co_sidecar_thi_im():
+def test_no_has_sidecar_then_silent():
     with tempfile.TemporaryDirectory() as tmp:
         drafts = Path(tmp) / "drafts"
         drafts.mkdir(parents=True)
@@ -200,14 +200,14 @@ def test_khong_co_sidecar_thi_im():
             rt.DRAFTS = cu
 
 
-def test_da_la_kite_thi_khong_tu_chuyen_nua():
+def test_already_is_kite_then_no_from_transfer_half():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "x"},
                          {"vai_anh": "kite"})
         assert tin == [] and "chuyen_kite" not in m, (m, tin)
 
 
-def test_khong_anh_nao_thi_tu_chuyen_kite():
+def test_no_image_which_then_from_transfer_kite():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin A"},
                          {"vai_anh": "dre"})
@@ -215,7 +215,7 @@ def test_khong_anh_nao_thi_tu_chuyen_kite():
         assert tin and "Kite" in tin[0][1], tin
 
 
-def test_thieu_nhung_con_anh_thi_hoi_ong_chu_hai_nut():
+def test_missing_but_remaining_image_then_ask_boss_two_button():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "Tin B"},
                          {"vai_anh": "dre"})
@@ -224,7 +224,7 @@ def test_thieu_nhung_con_anh_thi_hoi_ong_chu_hai_nut():
         assert "imgkite:d1" in nut and "imgtiep:d1" in nut, nut
 
 
-def test_brand_khong_co_kite_thi_khong_hua_chuyen():
+def test_brand_no_has_kite_then_no_promise_transfer():
     """dcgr 05/09/2026: khong duoc hien nut Kite khi brand chua co Kite."""
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "Tin C"},
@@ -235,7 +235,7 @@ def test_brand_khong_co_kite_thi_khong_hua_chuyen():
         assert "imgno:d1" in nut, nut
 
 
-def test_brand_khong_co_kite_va_0_anh_thi_bao_bo_tin():
+def test_brand_no_has_kite_and_0_image_then_report_drop_story():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin D"},
                          {"vai_anh": "dre"}, kite_co=False)
@@ -243,7 +243,7 @@ def test_brand_khong_co_kite_va_0_anh_thi_bao_bo_tin():
         assert "chuyen_kite" not in m, m
 
 
-def test_tao_task_kite_loi_thi_bao_ra_khong_dat_co():
+def test_create_task_kite_error_then_report_out_no_set_has():
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin E"},
                          {"vai_anh": "dre"}, tao_kite=(None, "kanban 500"))

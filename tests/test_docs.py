@@ -7,7 +7,7 @@ dần theo mỗi lần đổi code. Ba test dưới là thứ rẻ nhất chặn
 tệp được nhắc phải có thật, và những con số mà code nói ra thì tài liệu không
 được ghi khác.
 
-Chạy:  venv/bin/python tests/test_tai_lieu.py
+Chạy:  venv/bin/python tests/test_docs.py
 """
 import re
 import sys
@@ -43,7 +43,7 @@ BO_QUA = ("~", "<", "$", "config.yaml", "jobs.json", "xong.json", "da_dung.json"
           "dist.index.js")        # hermes/README nhac TEN PHANG CU de noi "khong con dung"
 
 
-def _tep_duoc_nhac(vb: str) -> set:
+def _file_ok_mention(vb: str) -> set:
     ra = set()
     for d in DUONG_DAN.findall(vb):
         if d.startswith(BO_QUA) or any(x in d for x in BO_QUA):
@@ -54,7 +54,7 @@ def _tep_duoc_nhac(vb: str) -> set:
     return ra
 
 
-def test_tai_lieu_khong_nhac_tep_da_xoa():
+def test_docs_no_mention_file_already_delete():
     """Tệp bị xoá mà tài liệu vẫn nhắc thì người đọc đi tìm một thứ không có —
     đúng chuyện `usage_audit.py` (xoá 05/09/2026, README nhắc 5 lần)."""
     thieu = []
@@ -62,13 +62,13 @@ def test_tai_lieu_khong_nhac_tep_da_xoa():
         p = ROOT / ten
         if not p.exists():
             continue
-        for d in _tep_duoc_nhac(p.read_text(encoding="utf-8")):
+        for d in _file_ok_mention(p.read_text(encoding="utf-8")):
             if not (ROOT / d).exists() and not list(ROOT.glob(f"**/{d}")):
                 thieu.append(f"{ten}: `{d}`")
     assert not thieu, "tài liệu nhắc tệp không tồn tại:\n  " + "\n  ".join(thieu)
 
 
-def test_readme_khong_ghi_sai_so_kind_cua_render_edu():
+def test_readme_no_write_wrong_count_kind_of_render_edu():
     """README từng ghi render_edu có '5 kind' trong khi code có 7 — loại sai mà
     người đọc không cách nào biết nếu không mở code ra đếm."""
     import render_edu
@@ -81,7 +81,7 @@ def test_readme_khong_ghi_sai_so_kind_cua_render_edu():
         assert f"`{k}`" in vb, f"README không liệt kê kind {k!r}"
 
 
-def test_readme_khong_ghi_sai_kieu_the_mac_dinh():
+def test_readme_no_write_wrong_kind_card_default():
     """README từng ghi Ethan dựng 'kiểu tràn' trong khi card.build mặc định là
     `quote` — vai đọc README rồi truyền cờ thừa, hoặc tưởng thẻ ra khác."""
     import inspect
@@ -93,7 +93,7 @@ def test_readme_khong_ghi_sai_kieu_the_mac_dinh():
         f"card.build mặc định kieu={mac_dinh!r}, README phải nói đúng thế"
 
 
-def test_bang_doi_hinh_khop_voi_profile_that():
+def test_board_change_figure_match_with_profile_real():
     """README noi vai nao co o brand nao — doi chieu voi ban chup profile that.
 
     Dung lop troi nay da xay ra hai lan: README ghi Kite "chua deploy dcgr" (do
@@ -132,7 +132,7 @@ def test_bang_doi_hinh_khop_voi_profile_that():
             loi.append(f"README noi `{slug}` chi co o dcgr, nhung profile that co ca blog")
     assert not loi, "bang doi hinh lech voi profile that:\n  " + "\n  ".join(loi)
 
-def test_muc_model_khop_voi_profile_that():
+def test_item_model_match_with_profile_real():
     """Muc "## Model" cua README khong duoc goi ten mot model ma KHONG profile nao
     dang chay. README tung ghi "Ada giu `ds/deepseek-reasoner`" suot nhieu ngay
     sau khi ca 20 profile da chuyen sang combo DS-v4Flash."""

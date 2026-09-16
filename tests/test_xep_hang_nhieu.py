@@ -98,7 +98,7 @@ def test_dung_manifest_mot_bang_tuong_thich_nguoc():
 
 
 def test_dung_manifest_nhan_none_nhu_quy_uoc_cu():
-    """Vai/test khac (test_concept.py, test_thuong_hieu.py) van truyen None
+    """Vai/test khac (test_concept.py, test_brand.py) van truyen None
     o vi tri nay — KHONG duoc nem TypeError tu len(None)."""
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), [_a("A1", dung=("bìa",))], None, False, {}, {}, False, 5, vai_anh="ethan")
