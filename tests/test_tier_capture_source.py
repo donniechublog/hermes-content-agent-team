@@ -7,7 +7,7 @@ thường nhảy thẳng từ ảnh thương hiệu xuống ảnh khái niệm C
 thứ: hằng số mobile chỉ có MỘT bản, nấc mới đứng TRƯỚC nấc khái niệm, và ảnh chụp
 được phép làm bìa (Ông Chủ 12/09: "cắt lấy khối lead rồi làm bìa").
 
-Chạy:  venv/bin/python tests/test_nac_chup_nguon.py
+Chạy:  venv/bin/python tests/test_tier_capture_source.py
 """
 import sys
 import tempfile
@@ -24,7 +24,7 @@ from prepare import fallback_rounds  # noqa: E402
 from prepare import vision  # noqa: E402
 
 
-def test_hang_so_mobile_chi_co_mot_ban():
+def test_rank_count_mobile_only_has_one_copy():
     """Chép đôi thì một ngày nào đó hai chỗ lệch nhau mà không ai thấy."""
     assert ranking.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
     assert capture_page.MOBILE_VIEWPORT is browser_session.MOBILE_VIEWPORT
@@ -33,7 +33,7 @@ def test_hang_so_mobile_chi_co_mot_ban():
     assert "iPhone" in browser_session.MOBILE_UA
 
 
-def test_nac_chup_nguon_dung_TRUOC_nac_khai_niem():
+def test_tier_capture_source_use_before_tier_concept():
     """Thứ tự là cả nội dung của ticket: khối lead là vật THẬT của tin, ảnh khái
     niệm thì không. Đảo thứ tự là quay về đúng lỗi 12/09."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
@@ -42,7 +42,7 @@ def test_nac_chup_nguon_dung_TRUOC_nac_khai_niem():
     assert i_chup < i_kn, "vòng chụp nguồn phải gọi trước vòng khái niệm"
 
 
-def test_bi_chan_nhan_ra_tuong_chan_bot():
+def test_got_block_label_out_wall_block_bot():
     """Tường chặn bot vẫn có <h1> và vẫn chụp ra ảnh — không nhận ra thì tấm
     "Let's confirm you are human" của arstechnica lên thẳng bìa (12/09/2026)."""
     assert browser_session.got_block("Just a moment...")
@@ -54,7 +54,7 @@ def test_bi_chan_nhan_ra_tuong_chan_bot():
                                      "verify you are human " + "x" * 1300)
 
 
-def _anh_gia(path: Path, seed: int = 0):
+def _image_fake(path: Path, seed: int = 0):
     """Một PNG dọc có vân — `classify` đọc được, không phải ảnh rỗng.
     `seed` (13/09/2026, sau khi thêm loại trùng dHash vào `_round_capture_source`):
     lệch pha hoạ tiết để hai lần gọi khác seed ra ảnh THẬT SỰ khác nhau, không
@@ -74,7 +74,7 @@ def _anh_gia(path: Path, seed: int = 0):
     im.save(path)
 
 
-def test_anh_chup_duoc_phep_lam_bia_va_khong_hoi_vision():
+def test_image_capture_ok_permission_make_cover_and_no_ask_vision():
     """`classify` đọc ảnh chụp trang là "chart/screenshot" rồi dán KHÔNG LÀM BÌA.
     Đúng cho chart của người khác, sai cho khối lead của chính bài.
 
@@ -85,7 +85,7 @@ def test_anh_chup_duoc_phep_lam_bia_va_khong_hoi_vision():
 
     def gia(url, ra, phien=None):
         goi.append(url)
-        _anh_gia(Path(ra), seed=len(goi))   # moi URL mot anh KHAC NHAU (cong loai trung dHash)
+        _image_fake(Path(ra), seed=len(goi))   # moi URL mot anh KHAC NHAU (cong loai trung dHash)
         return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
                 "alt": "khối lead", "ly_do": "khối lead của trang nguồn"}
 
@@ -114,7 +114,7 @@ def test_anh_chup_duoc_phep_lam_bia_va_khong_hoi_vision():
     assert dung_duoc == anh, "cả hai đều dùng được (bìa + thân), không tấm nào bị bỏ phí"
 
 
-def test_chup_nguon_rot_chat_luong_khong_ghi_khong_lien_quan():
+def test_capture_source_fail_quality_no_write_no_relevant():
     """LOW-192: `chup_nguon=True` (LOW-45) không hỏi lại "có liên quan bài
     không" — câu hỏi thực tế chỉ về CHẤT LƯỢNG (rõ nét, không phải chụp lại
     một màn hình khác). Do that: khối lead của bài "Anthropic ra tích hợp
@@ -128,7 +128,7 @@ def test_chup_nguon_rot_chat_luong_khong_ghi_khong_lien_quan():
     with tempfile.TemporaryDirectory() as t:
         wd = Path(t)
         p = wd / "A1.png"
-        _anh_gia(p)
+        _image_fake(p)
         a = {"ma": "A1", "goc": str(p)}
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
                 mock.patch.object(image_rules, "count_faces", return_value=0):
@@ -138,14 +138,14 @@ def test_chup_nguon_rot_chat_luong_khong_ghi_khong_lien_quan():
     assert a["ghi_chu"][0].startswith("❌ ẢNH HERO TRANG NGUỒN"), a["ghi_chu"]
 
 
-def test_khong_browser_thi_bo_qua_nac_nay():
+def test_no_browser_then_skip_tier_this():
     """Nấc này cần Chromium; `--khong-browser` phải đi qua mà không nổ."""
     with tempfile.TemporaryDirectory() as d:
         anh, dung_duoc, chua_nhin = fallback_rounds._round_capture_source(
             [], "https://vidu.com/x", [], Path(d), khong_browser=True)
     assert anh == [] and dung_duoc == [] and chua_nhin == []
 
-def test_khong_co_anh_hero_thi_chup_khoi_tit():
+def test_no_has_image_hero_then_capture_block_headline():
     """Ông Chủ 12/09/2026: "tin ko có tên riêng thì capture màn hình, ko phải đã
     nói rồi sao?" — bài tiểu luận không ảnh hero KHÔNG được trả rỗng rồi rơi
     xuống khái niệm (nơi con mắt nhận bừa phòng máy cho tin toán). Phải chụp
@@ -156,7 +156,7 @@ def test_khong_co_anh_hero_thi_chup_khoi_tit():
     assert '"kieu": "hero" if r["co_anh"] else "tit"' in src
 
 
-def test_khoi_tit_la_nac_cuoi_sau_khai_niem():
+def test_block_headline_is_tier_last_after_concept():
     """Ông Chủ 12/09/2026 xem bìa tin toán ra toàn chữ: "AI giải toán giỏi hoàn
     toàn có thể dùng hình bảng đen... thiếu idea đến thế à?". Khối tít (trang
     không ảnh hero) chỉ làm bìa khi thực thể + khái niệm đều rỗng."""
@@ -169,7 +169,7 @@ def test_khoi_tit_la_nac_cuoi_sau_khai_niem():
     assert b["dung"] == [], "co mat nguoi thi khong len bia"
 
 
-def test_bang_khai_niem_co_toan_khoa_hoc_lop_hoc():
+def test_board_concept_has_whole_lock_geometry_layer_geometry():
     import image_concept
     tk = [x["tu_khoa"] for x in image_concept.keyword_heuristic(
         "AI is getting good at math. Mathematicians worry about what that means")]
@@ -180,7 +180,7 @@ def test_bang_khai_niem_co_toan_khoa_hoc_lop_hoc():
     assert "classroom students" in tk, tk
 
 
-def test_anh_co_mat_khong_len_bia_du_thu_truoc_anh_khong_mat_thu_sau():
+def test_image_has_face_no_len_cover_enough_try_before_image_no_face_try_after():
     """LOW-45 (13/09/2026, Ông Chủ: "bộ logo/founder khó kiếm lắm hay sao mà
     phải dùng cờ China?"). Đo thật: trang ĐẦU tiên (TechCrunch) rớt chất lượng,
     trang THỨ HAI qua cổng ngay là một ảnh minh hoạ chung chung — vòng cũ DỪNG
@@ -193,7 +193,7 @@ def test_anh_co_mat_khong_len_bia_du_thu_truoc_anh_khong_mat_thu_sau():
 
     def gia(url, ra, phien=None):
         thu.append(url)
-        _anh_gia(Path(ra), seed=len(thu))   # moi URL mot anh KHAC NHAU (cong loai trung dHash)
+        _image_fake(Path(ra), seed=len(thu))   # moi URL mot anh KHAC NHAU (cong loai trung dHash)
         return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
                 "alt": "khối lead", "ly_do": "khối lead của trang nguồn"}
 
