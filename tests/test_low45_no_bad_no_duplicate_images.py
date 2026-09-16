@@ -19,7 +19,7 @@ mỗi nhóm FAIL trên code cũ:
   3. `kite_submit.resolve_spec` chặn khi bộ nhiều slide dùng quá ít ảnh thật khác
      nhau (8 slide → tối thiểu 3), NHƯNG chỉ khi vòng tìm đủ nguồn.
 
-Chạy:  venv/bin/python tests/test_low45_khong_xau_khong_trung.py
+Chạy:  venv/bin/python tests/test_low45_no_bad_no_duplicate_images.py
 """
 import sys
 import tempfile
@@ -36,7 +36,7 @@ from test_spec_kite import _cover, _statement, _hinh, _m, _chay  # noqa: E402
 
 
 # --------------------------------------------------- 1. figure ảnh biên tập
-def test_js_fig_bo_qua_figure_thuan_anh_khong_co_chart_ben_trong():
+def test_js_fig_skips_pure_image_figure_without_chart():
     """`<figure><img><figcaption>...</figcaption></figure>` (ảnh báo + credit,
     đúng khuôn TechCrunch bọc ảnh hero của Moonshot/Kimi) không còn được
     `_take_image_page` coi là ứng viên chart — chỉ `<figure>` bọc canvas/svg/table
@@ -50,14 +50,16 @@ def test_js_fig_bo_qua_figure_thuan_anh_khong_co_chart_ben_trong():
 
 
 # --------------------------------------------------- 2. câu hỏi mặc định rõ nét
-def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
+def test_default_question_requires_sharp_not_angled():
     """Trước 12/09/2026, nhánh mặc định (không `khai_niem`/`thuong_hieu`) —
     đường mà CẢ ảnh hero thật lẫn ảnh chụp lại trang đều đi qua — không hỏi gì
     về độ nét/góc chụp, chỉ hỏi "có liên quan bài không". Ảnh báo chụp nghiêng
     một màn hình (đúng ca Kimi K3) lọt qua dễ dàng vì rõ ràng đúng chủ đề.
 
-    13/09/2026: cụm "chụp lại màn hình" gộp thành `image_rules.IMAGE_PHRASES_SCREENSHOT`
-    dùng chung (xem `test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi` bên dưới)."""
+    13/09/2026: cụm "chụp lại màn hình" từng gộp thành `IMAGE_PHRASES_SCREENSHOT`
+    dùng chung — đã GỠ 16/09/2026 (LOW-201, đảo LOW-45, xem
+    `test_no_longer_blocks_clean_screenshot_or_generic_illustration` bên dưới).
+    Điều kiện "RÕ NÉT" vẫn giữ — ảnh mờ/nghiêng thật sự vẫn bị chặn."""
     import inspect
     src = inspect.getsource(vision.description_image)
     # Cụm phải nằm trong nhánh MẶC ĐỊNH (trước dòng gán `hoi` của khai_niem),
@@ -66,34 +68,40 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
     i_khai_niem = src.index("elif khai_niem:")
     doan_mac_dinh = src[i_hoi_mac_dinh:i_khai_niem]
     assert "RO NET" in doan_mac_dinh, doan_mac_dinh
-    assert "IMAGE_PHRASES_SCREENSHOT" in doan_mac_dinh, doan_mac_dinh
 
 
-def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
-    """LOW-45 (13/09/2026) — đúng ảnh Getty chụp nghiêng App Store của Kimi K3
-    (đã chặn ở JS_FIG + _round_capture_source) lọt qua LẦN THỨ BA qua một đường khác
-    hẳn: nhánh "anh bối cảnh" của `image_brand.sentence_ask_vision` (dùng khi
-    Commons/Wikidata rỗng, `_report_brand_empty` tìm ảnh qua báo) chưa từng
-    có cụm này. Một hằng số dùng chung (`image_rules.IMAGE_PHRASES_SCREENSHOT`),
-    mọi câu hỏi con mắt đều chèn — đóng cả lớp thay vì vá từng đường một."""
+def test_no_longer_blocks_clean_screenshot_or_generic_illustration():
+    """LOW-201 (16/09/2026) — đảo LOW-45. Do that 16/09: tin "TypeSafe ra System
+    One" bị loại oan một screenshot SẠCH (chụp thẳng từ blog TypeSafe, không
+    phải chụp lại màn hình bằng máy ảnh khác) và một minh hoạ biên tập gọi đúng
+    tên sản phẩm "Jev" — cả hai đúng chủ đề nhưng bị hai tiêu chí này loại oan.
+    Ông Chủ 16/09: "ảnh minh hoạ chung chung ko phải vấn đề, ảnh chụp bằng máy
+    ảnh khác cũng ko phải vấn đề". Hằng số `IMAGE_PHRASES_SCREENSHOT` không còn
+    tồn tại, và không câu hỏi con mắt nào còn nhắc "minh hoạ chung chung"."""
     import image_rules_ethan as image_rules
-    assert hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
-    assert "man hinh" in image_rules.IMAGE_PHRASES_SCREENSHOT.lower()
+    assert not hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
 
     import image_brand as th
     for loai, th_dict in (("nguoi", {"hang": "X", "loai": "nguoi", "nguoi": "A", "vai": "CEO"}),
                          ("logo", {"hang": "X", "loai": "logo"}),
                          ("anh", {"hang": "X", "loai": "anh"})):
         c = th.sentence_ask_vision("tin gi do", th_dict)
-        assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, (loai, c)
+        assert "man hinh" not in c.lower(), (loai, c)
+        assert "chung chung" not in c.lower(), (loai, c)
 
     import image_concept as kn
     c = kn.sentence_ask_vision("tin gi do", "tu khoa x")
-    assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, c
+    assert "man hinh" not in c.lower(), c
+
+    import inspect
+    src = inspect.getsource(vision.description_image)
+    i_hoi_mac_dinh = src.index('hoi = (f"Bai bao: \\"{tieu_de}\\".')
+    i_khai_niem = src.index("elif khai_niem:")
+    assert "chung chung" not in src[i_hoi_mac_dinh:i_khai_niem].lower()
 
 
 # --------------------------------------------------- 3. tối thiểu ảnh thật/slide
-def _bo_nhieu_anh(wd, so_anh: int, so_dung: int, so_slide: int = 8):
+def _build_image_pool(wd, so_anh: int, so_dung: int, so_slide: int = 8):
     """`so_anh` ảnh thật (lien_quan=True) trong `m["anh"]`, nhưng chỉ `so_dung`
     mã đầu tiên được đặt vào slide (mã còn lại coi như "tìm ra rồi mà không
     dùng" — đúng hiện trạng Moonshot: A1..A6 tìm ra, chỉ 1 ảnh (lặp lại) lên
@@ -111,7 +119,7 @@ def _bo_nhieu_anh(wd, so_anh: int, so_dung: int, so_slide: int = 8):
     return sl, _m(wd, anh)
 
 
-def test_8_slide_1_anh_lap_lai_thi_chan_khi_du_nguon():
+def test_8_slides_1_repeated_image_blocks_when_source_enough():
     """Đúng ca Moonshot/Kimi K3: 8 slide, engine tìm ra 6 ảnh thật (đủ nguồn),
     nhưng chỉ 1 mã (H1) lên slide, lặp lại — phải CHẶN CỨNG."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
@@ -125,23 +133,23 @@ def test_8_slide_1_anh_lap_lai_thi_chan_khi_du_nguon():
         assert any("tối thiểu" in d and "3" in d and "H1" in d for d in loi), loi
 
 
-def test_8_slide_du_3_anh_khac_nhau_thi_qua():
+def test_8_slides_3_different_images_passes():
     """Cùng 8 slide, cùng nguồn dồi dào, nhưng lần này 3 mã KHÁC NHAU lên slide
     — không còn gì để chặn ở cổng này."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        sl, m = _bo_nhieu_anh(wd, so_anh=6, so_dung=3, so_slide=8)
+        sl, m = _build_image_pool(wd, so_anh=6, so_dung=3, so_slide=8)
         _r, loi, _canh = _chay(sl, m, wd)
         assert not any("tối thiểu" in d and "hình thật" in d for d in loi), loi
 
 
-def test_6_slide_thieu_nguon_thi_chi_canh_bao_khong_chan():
+def test_6_slides_missing_source_warns_only():
     """6 slide cần tối thiểu 2 ảnh (ceil(6/3)), nhưng vòng tìm CHỈ ra được 1 —
     không đủ nguồn để đòi, nên chỉ cảnh báo, không chặn cứng (Kite không thể
     dùng ảnh không tồn tại)."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        sl, m = _bo_nhieu_anh(wd, so_anh=1, so_dung=1, so_slide=6)
+        sl, m = _build_image_pool(wd, so_anh=1, so_dung=1, so_slide=6)
         _r, loi, canh = _chay(sl, m, wd)
         assert not any("tối thiểu" in d and "hình thật" in d for d in loi), loi
         assert any("tối thiểu" in c and "không đủ nguồn" in c for c in canh), canh

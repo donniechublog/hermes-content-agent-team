@@ -383,7 +383,8 @@ def sentence_ask_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> 
     quy_dinh = (f" Tu khoa \"{tu_khoa}\" do LOAI TIN quy dinh la vat lien quan (bang loai tin cua "
                 "Ong Chu) — KHONG xet no co hop bai hay khong, coi nhu hop; chi xet anh co dung la "
                 "vat do, nhin ra vat chinh." if theo_loai else "")
-    import role
+    # LOW-201 (16/09/2026, dao LOW-45): go IMAGE_PHRASES_SCREENSHOT khoi day —
+    # xem prepare/vision.py cho do that va ly do day du.
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no duoc tim lam ANH KHAI NIEM "
             f"theo tu khoa \"{tu_khoa}\" de lam anh bia.{quy_dinh}\nTra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
@@ -392,8 +393,7 @@ def sentence_ask_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> 
             f"tu khoa \"{tu_khoa}\" that su hop chu de bai tren, VA nhin vao la NHAN RA NGAY vat "
             "chinh — vat do lien quan chu de bai; khong = khong phai thu do, so do/icon/clipart/"
             "ban do phang, mo, nhieu chu, logo, co nguoi ro mat, tu khoa lac chu de bai, "
-            f"{role.active_rules().IMAGE_PHRASES_SCREENSHOT}, HOAC anh "
-            "roi/chat chung khong nhan ra vat gi la vat chinh du co dung tu khoa "
+            "HOAC anh roi/chat chung khong nhan ra vat gi la vat chinh du co dung tu khoa "
             "(khong can dep, chi can NHIN RA va lien quan)")
 
 

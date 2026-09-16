@@ -27,22 +27,9 @@ from pathlib import Path
 
 from PIL import Image, ImageOps, ImageStat
 
-# ---- Cum dung CHUNG cho MOI cau hoi con mat (LOW-45, 13/09/2026) -----------
-#
-# Ong Chu: "bộ logo của Moonshot hay hình ảnh nhà sáng lập khó kiếm lắm hay sao
-# mà phải dùng cờ China?" — do that: mot anh bao Getty chup nghieng man hinh
-# App Store cua Kimi K3 (nen mo/bokeh, chu net) lot qua BA duong khac nhau
-# (`_take_image_page`'s JS_FIG, `_round_capture_source`, VA `image_brand.
-# sentence_ask_vision` nhanh "anh bo canh") truoc khi bi chan dung ca ba — vi moi
-# nhanh tu viet lai dieu kien "khong mo/nhoe" theo cach rieng, khong dong bo.
-# MOT cum duy nhat, moi cau hoi con mat chen vao ve "khong =" cua no.
-IMAGE_PHRASES_SCREENSHOT = (
-    "HOAC la anh chup LAI mot man hinh dien thoai/may tinh bang MAY ANH KHAC "
-    "(thay duoc vien man hinh, phan chieu anh sang, hoac nen phia sau man hinh "
-    "bi mo/out-of-focus trong khi chu/hinh tren man hinh net) thay vi anh xuat "
-    "truc tiep tu web/thiet ke — loai nay du doc duoc chu/logo tren man hinh "
-    "van tinh la khong, vi la anh chup thu cap chu khong phai anh goc"
-)
+# IMAGE_PHRASES_SCREENSHOT (LOW-45, 13/09/2026) DA GO 16/09/2026 (LOW-201, dao
+# LOW-45): tieu chi "trong giong chup lai man hinh" loai oan anh dung chu de
+# (screenshot sach chup thang tu web). Xem prepare/vision.py cho ly do day du.
 
 # ---- Nguong (do thuc tren kho anh cua doi, xem chu thich tung cong) --------
 TI_LE_45, TI_LE_11 = 0.8, 1.0
