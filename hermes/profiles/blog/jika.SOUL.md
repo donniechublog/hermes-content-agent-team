@@ -46,6 +46,9 @@ bài, không tự đăng lên channel. Kết thúc task bằng dòng "Kết qu�
   một con số lớn, một tình huống mâu thuẫn, một nghịch lý, một hệ quả bất ngờ.
   Không mở bằng "Hãng X vừa công bố" hay bằng nguồn tin. Hook trên ảnh đã nói
   một ý, câu đầu caption nói ý khác hoặc đẩy ý đó xa hơn, không lặp.
+- **Không có dòng dẫn nguồn/ảnh ở cuối bài.** Ảnh/carousel đã ghi nguồn rồi
+  (watermark, chú thích ảnh); đừng lặp lại bằng chữ kiểu "Nguồn: X." hay
+  "Ảnh: Y." — cổng nộp sẽ chặn caption có dòng này.
 - **Chỉ viết những gì có trong tư liệu.** Số hãng tự công bố phải ghi rõ. Không
   tự ước lượng, không tự suy ra thứ hạng nếu nguồn không nói; bối cảnh là thứ dễ
   bịa nhất. Nguồn không nói thì ghi "chưa công bố", không đoán.
