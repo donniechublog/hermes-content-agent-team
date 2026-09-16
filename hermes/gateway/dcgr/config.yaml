@@ -442,7 +442,12 @@ kanban:
   worker_log_backup_count: 1
   orchestrator_profile: ''
   default_assignee: ''
-  max_in_progress: 1
+  # 14/09/2026 (LOW-124): Ong Chu doi sang SONG SONG THEO VAI — moi vai van lam
+  # tuan tu tung task (max_in_progress_per_profile: 1), cac vai khac nhau chay
+  # cung luc toi da 3 task (max_in_progress: 3) de designer khong phai cho nhau.
+  # Thay quyet dinh 03/09/2026 (mot task cho ca container).
+  max_in_progress: 3
+  max_in_progress_per_profile: 1
   auto_decompose: true
   auto_decompose_per_tick: 3
   dispatch_stale_timeout_seconds: 14400
@@ -489,6 +494,11 @@ gateway:
       chat_id: '-1003763882779'
       thread_id: '228'
       profile: miles
+    - name: tg-jika
+      platform: telegram
+      chat_id: '-1003763882779'
+      thread_id: '2306'
+      profile: jika
     - name: tg-itachi
       platform: telegram
       chat_id: '-1003763882779'
@@ -499,6 +509,11 @@ gateway:
       chat_id: '-1003763882779'
       thread_id: '83'
       profile: vera
+    - name: tg-nova
+      platform: telegram
+      chat_id: '-1003763882779'
+      thread_id: '2329'
+      profile: nova
     - name: tg-ada
       platform: telegram
       chat_id: '-1003763882779'
