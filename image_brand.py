@@ -195,16 +195,28 @@ def _many(ten: str):
 
 
 def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
-    """Các hãng lớn tin này nói tới, theo thứ tự xuất hiện, tối đa `MAX_RANK`.
+    """Các hãng tin này nói tới, theo thứ tự xuất hiện, tối đa `MAX_RANK`.
 
     Dùng chung WATCHLIST của `scan_business` — cùng một danh sách "tên trong
     ngành phải theo sát", không chép lại ở đây. Tên model/chip quy về hãng chủ
     qua RANK_OF_NAME, nên "Claude Opus 5" ra Anthropic, "Xring O3" ra Xiaomi.
     Trả [{"khoa": "qualcomm", "hang": "Qualcomm"}].
+
+    WATCHLIST/NAME_EXTRA chỉ để TỐI ƯU (biết ngay tên chuẩn/QID của hãng lớn
+    hay gặp) — KHÔNG dùng để LOẠI hãng ngoài danh sách (LOW-176, 16/09/2026):
+    tin "Anthropic ra tích hợp Salesforce" trước đây chỉ ra được "Anthropic"
+    (Salesforce không có trong watchlist AI), nên cả vòng ảnh thương hiệu lẫn
+    câu hỏi con mắt đều không bao giờ biết tới Salesforce — trong khi ảnh đúng
+    chủ đề nhất của tin lại là ảnh sự kiện của CHÍNH Salesforce. Hãng nào được
+    gọi tên rõ trong tiêu đề (cụm chữ hoa liên tiếp, qua `all_proper_nouns`)
+    mà chưa khớp watchlist cũng được thử — qua CÙNG cơ chế Commons/Wikidata
+    (đã tổng quát sẵn, xem `query()`: `DISPLAY_NAME.get(khoa, (khoa.title(),))`
+    — hãng lạ vẫn tra được, chỉ là không có tên hiển thị đẹp sẵn).
     """
     import scan_business
+    from prepare.source import all_proper_nouns
     vb = f"{tieu_de or ''} {tom_tat or ''}".lower()
-    vi_tri = {}
+    vi_tri, ten_that = {}, {}
     for ten in list(scan_business.WATCHLIST) + list(NAME_EXTRA):
         t = ten.strip()
         if len(t) < 3:                       # "yi" một mình bắt cả "yield"
@@ -215,7 +227,25 @@ def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
         khoa = NAME_EXTRA.get(t) or scan_business.RANK_OF_NAME.get(ten, ten).strip()
         if khoa not in vi_tri or m.start() < vi_tri[khoa]:
             vi_tri[khoa] = m.start()
-    ra = [{"khoa": k, "hang": DISPLAY_NAME.get(k, (k.title(),))[0]}
+    import image_concept
+    for ten in all_proper_nouns(tieu_de):
+        thap = ten.lower()
+        if thap in image_concept.COUNTRY:
+            continue                     # "Philippines"/"Japan"... la nuoc, khong phai hang
+        # Chi giai qua TU DAU cua cum de doi chieu NAME_EXTRA/RANK_OF_NAME:
+        # "Claude Opus" phai quy ve "anthropic" (tu "claude", da co trong
+        # vi_tri qua vong watchlist tren) chu khong tach ra thanh mot muc
+        # "Claude Opus" rieng, dung mot ma san pham lam hang gia.
+        tu_dau = thap.split()[0]
+        khoa = NAME_EXTRA.get(tu_dau) or scan_business.RANK_OF_NAME.get(tu_dau) or thap
+        if khoa in vi_tri or len(khoa) < 3:
+            continue
+        m = re.search(r"(?<!\w)" + re.escape(thap) + r"(?!\w)", vb)
+        if not m:
+            continue
+        vi_tri[khoa] = m.start()
+        ten_that[khoa] = ten              # giu dung hoa nhu trong tieu de (Salesforce, khong phai salesforce)
+    ra = [{"khoa": k, "hang": DISPLAY_NAME.get(k, (ten_that.get(k) or k.title(),))[0]}
           for k, _ in sorted(vi_tri.items(), key=lambda kv: kv[1])]
     return ra[:MAX_RANK]
 

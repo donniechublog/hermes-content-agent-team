@@ -14,7 +14,7 @@ from PIL import Image, ImageStat
 import env_load
 import role
 
-from prepare.source import _leading_proper_noun
+from prepare.source import all_proper_nouns
 from prepare.download_filter import _chart_by_figure, _save_crop
 
 
@@ -323,7 +323,14 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # khong phai ten rieng dau tieu de. Tin "Qualcomm ... with Amazon" ma dua
     # "Qualcomm" cho mot tam tru so Amazon thi chot "ten hang trong mo ta" khong
     # bao gio nay, anh that cua Amazon bi vision danh rot (09/09/2026).
-    hang = (a.get("thuong_hieu") or {}).get("hang") or _leading_proper_noun(tieu_de)
+    #
+    # LIET KE CA (LOW-176, 16/09/2026): mot cum duy nhat (_leading_proper_noun)
+    # van la cung mot loi — tin "Anthropic ra tich hop Salesforce" chi hoi
+    # con mat ve "Anthropic", nen anh dung chu de nhat cua tin (su kien CHINH
+    # cua Salesforce, co logo Salesforce) bi cham "khong lien quan" vi con mat
+    # khong biet Salesforce cung la chu the cua bai. `all_proper_nouns` liet ke
+    # HET cac cum ten rieng trong tieu de, khong dung o cum dau tien.
+    hang = (a.get("thuong_hieu") or {}).get("hang") or ", ".join(all_proper_nouns(tieu_de))
     # HOI LUON co cat_ngang duoc khong (12/09/2026, su co t_a8ffd2f6 lan hai):
     # ngang cao >=700 truoc day duoc dan mac dinh "cat_ngang: true NEU la anh
     # nguoi/san pham KHONG co chu" — mot cau DIEU KIEN, khong ai xac nhan dieu
