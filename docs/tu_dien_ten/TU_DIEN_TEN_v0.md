@@ -1,6 +1,6 @@
 # TỪ ĐIỂN TÊN — v0 (chưa đụng mã)
 
-Sinh tự động bởi `gen.py` từ repo hiện tại: 106 module, 1095 def/class (962 tên khác nhau), 713 hằng số. `?token` = chưa có trong bảng; ⚠️ = token mơ hồ, phải chọn tay theo nghĩa tại chỗ.
+Sinh tự động bởi `gen.py` từ repo hiện tại: 114 module, 1243 def/class (1059 tên khác nhau), 791 hằng số. `?token` = chưa có trong bảng; ⚠️ = token mơ hồ, phải chọn tay theo nghĩa tại chỗ.
 
 **Tiêu chí (Ông Chủ 12/09/2026):** nghĩa dịch không cần đúng từng chữ — chỉ cần KHÔNG hai hàm/lớp top-level nào trong cùng module trùng tên sau khi dịch. Xem mục F.
 
@@ -81,7 +81,9 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `chuan_bi` | `prepare` |
 | `chuc_nang` | `feature` |
 | `chup_chart` | `capture_chart` |
+| `chup_lai_man_hinh` | `screenshot` |
 | `chup_lead` | `capture_lead` |
+| `chup_man_hinh` | `screenshot` |
 | `chup_nguon` | `capture_source` |
 | `chup_trang` | `capture_page` |
 | `co_cum` | `has_phrase` |
@@ -92,6 +94,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `cong_chan` | `gate` |
 | `cost_squeeze` | `cost_squeeze` |
 | `crop_ti_le` | `crop_ratio` |
+| `cum_anh` | `image_phrases` |
 | `cung_tin` | `same_story` |
 | `cuon_roi` | `scrolled` |
 | `cuu_bai` | `rescue_article` |
@@ -109,9 +112,12 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `dem_lai` | `recount` |
 | `dem_mat` | `count_faces` |
 | `di_chuyen` | `migrate` |
+| `dien_tich` | `area` |
 | `dieu_kien` | `condition` |
 | `dinh_dang` | `format` |
 | `dinh_tuyen` | `route` |
+| `do_hoa` | `graphic` |
+| `do_phan_giai` | `resolution` |
 | `do_tre` | `latency` |
 | `do_uu_tien` | `priority` |
 | `doc_gia` | `reader` |
@@ -125,6 +131,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `draft_write` | `draft_write` |
 | `du_lieu` | `data` |
 | `du_nguyen_lieu` | `has_enough_material` |
+| `dung_sai` | `tolerance` |
 | `duyet_bai` | `approve_post` |
 | `duyet_chat` | `approve_chat` |
 | `duyet_chon_tin` | `approve_pick` |
@@ -161,6 +168,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `hang_doi` | `queue` |
 | `hang_ngang` | `row` |
 | `hang_trong_tin` | `vendors_in_story` |
+| `hanh_vi` | `behavior` |
 | `hau_to` | `suffix` |
 | `hermes_adapter` | `hermes_adapter` |
 | `hieu_nang` | `performance` |
@@ -231,6 +239,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `luot_dung` | `usage` |
 | `ly_do` | `reason` |
 | `mac_dinh` | `default` |
+| `man_hinh` | `screen` |
 | `manifest_build` | `manifest_build` |
 | `manifest_chung` | `manifest_common` |
 | `manifest_ghi` | `manifest_write` |
@@ -275,6 +284,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `noi_dung` | `content` |
 | `nop_chung` | `submit_common` |
 | `ong_chu` | `boss` |
+| `phan_giai` | `resolution` |
 | `phan_loai` | `classify` |
 | `phan_tich` | `analyze` |
 | `phan_tram` | `percent` |
@@ -306,6 +316,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `scan_sources` | `scan_sources` |
 | `slug_that` | `canonical_slug` |
 | `so_anh_toi_thieu` | `min_images` |
+| `so_lan` | `count_of` |
 | `so_lieu` | `figures` |
 | `so_luong` | `quantity` |
 | `so_sanh` | `compare` |
@@ -343,6 +354,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `thu_tu` | `order` |
 | `thuat_ngu` | `term` |
 | `thuc_the` | `entity` |
+| `thuoc_tinh` | `attribute` |
 | `thuong_hieu` | `brand` |
 | `ti_le` | `ratio` |
 | `ti_le_phan_tram` | `percentage` |
@@ -383,6 +395,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tu_dong` | `auto` |
 | `tu_khoa` | `keyword` |
 | `tu_lieu` | `material` |
+| `tu_rac` | `junk_words` |
 | `ung_vien` | `candidate` |
 | `url_commons` | `commons_urls` |
 | `uu_tien` | `priority` |
@@ -491,6 +504,8 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `de` | `for` | ⚠️ để=to / dễ=easy |
 | `dem` | `count` |  |
 | `dep` | `pretty` |  |
+| `deu` | `all` |  |
+| `di` | `go` |  |
 | `dia` | `disk` |  |
 | `dich` | `translate` |  |
 | `diem` | `score` |  |
@@ -544,6 +559,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `hoa` | `ify` |  |
 | `hoac` | `or` |  |
 | `hoi` | `ask` |  |
+| `hon` | `than` |  |
 | `hong` | `broken` |  |
 | `hop` | `box` |  |
 | `im` | `silent` |  |
@@ -556,6 +572,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `khach` | `customer` |  |
 | `khan` | `urgent` |  |
 | `khe` | `slit` |  |
+| `khi` | `when` |  |
 | `khit` | `tight` |  |
 | `kho` | `format` |  |
 | `khoa` | `lock` | ⚠️ khoá=lock / khoá=key |
@@ -588,6 +605,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `loi` | `error` |  |
 | `lon` | `large` |  |
 | `lop` | `layer` |  |
+| `lot` | `pass` |  |
 | `luan` | `reason` |  |
 | `luat` | `rules` |  |
 | `lui` | `back` |  |
@@ -710,6 +728,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `the` | `card` | ⚠️ thẻ=card / thế=so |
 | `them` | `extra` |  |
 | `theo` | `by` |  |
+| `thi` | `then` |  |
 | `thich` | `explain` |  |
 | `thieu` | `missing` |  |
 | `tho` | `raw` |  |
@@ -754,6 +773,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tu` | `from` | ⚠️ từ=from/word / tự=self |
 | `tuan` | `week` |  |
 | `tuc` | `instant` |  |
+| `tung` | `each` |  |
 | `tuoi` | `age` |  |
 | `tuong` | `wall` |  |
 | `ty` | `billion` |  |
@@ -769,6 +789,8 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `viec` | `job` |  |
 | `vien` | `border` |  |
 | `viet` | `write` |  |
+| `vit` | `duck` |  |
+| `voi` | `with` |  |
 | `vong` | `round` |  |
 | `vua` | `fit` |  |
 | `vung` | `region` |  |
@@ -786,248 +808,313 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `ada_chuan_bi` | `ada_prepare` |  |
-| `ada_nop` | `ada_submit` |  |
-| `anh_bai` | `article_images` |  |
-| `anh_bao_thuc_the` | `press_entity_images` |  |
-| `anh_chuan_bi` | `image_prepare` |  |
-| `anh_khai_niem` | `image_concept` |  |
-| `anh_thuc_the` | `entity_images` |  |
-| `anh_thuong_hieu` | `image_brand` |  |
+| `about_text` | `about_text` |  |
+| `ada_prepare` | `ada_prepare` |  |
+| `ada_submit` | `ada_submit` |  |
+| `approve_base` | `approve_base` |  |
+| `approve_chat` | `approve_chat` |  |
+| `approve_command` | `approve_command` |  |
+| `approve_dispatch` | `approve_dispatch` |  |
+| `approve_pick` | `approve_pick` |  |
+| `approve_post` | `approve_post` |  |
 | `approve_service` | `approve_service` |  |
 | `article_extract` | `article_extract` |  |
-| `arxiv_bia` | `arxiv_cover` |  |
-| `arxiv_hinh` | `arxiv_figures` |  |
-| `bang_den` | `blackboard` |  |
-| `bang_model` | `model_boards` |  |
-| `bao_cao_manifest` | `manifest_report` |  |
-| `bat_buoc` | `required` |  |
-| `bob_nop` | `bob_submit` |  |
-| `brief_chung` | `brief_common` |  |
-| `cape_chuan_bi` | `cape_prepare` |  |
-| `cape_nop` | `cape_submit` |  |
+| `article_images` | `article_images` |  |
+| `article_sources` | `article_sources` |  |
+| `arxiv_cover` | `arxiv_cover` |  |
+| `arxiv_figures` | `arxiv_figures` |  |
+| `audit_cron` | `audit_cron` |  |
+| `blackboard` | `blackboard` |  |
+| `bob_submit` | `bob_submit` |  |
+| `brief_common` | `brief_common` |  |
+| `browser_session` | `browser_session` |  |
+| `cape_prepare` | `cape_prepare` |  |
+| `cape_submit` | `cape_submit` |  |
 | `caption_check` | `caption_check` |  |
+| `capture_chart` | `capture_chart` |  |
+| `capture_page` | `capture_page` |  |
 | `card` | `card` |  |
 | `carousel` | `carousel` |  |
 | `chat_router` | `chat_router` |  |
-| `chuan_bi.__init__` | `prepare.__init__` |  |
-| `chuan_bi.browser` | `prepare.browser` |  |
-| `chuan_bi.chung` | `prepare.common` |  |
-| `chuan_bi.manifest` | `prepare.manifest` |  |
-| `chuan_bi.nguon` | `prepare.source` |  |
-| `chuan_bi.nhin` | `prepare.vision` |  |
-| `chuan_bi.tai_loc` | `prepare.download_filter` |  |
-| `chuan_bi.vong_bu` | `prepare.fallback_rounds` |  |
-| `chup_chart` | `capture_chart` |  |
-| `chup_trang` | `capture_page` |  |
+| `check_env` | `check_env` |  |
+| `check_hermes` | `check_hermes` |  |
 | `cleanup` | `cleanup` |  |
 | `cost_squeeze` | `cost_squeeze` |  |
-| `crop_ti_le` | `crop_ratio` |  |
+| `crop_ratio` | `crop_ratio` |  |
 | `deck` | `deck` |  |
-| `doi_chu_anh` | `swap_image_text` |  |
-| `dong_bo_hermes` | `sync_hermes` |  |
 | `draft_write` | `draft_write` |  |
-| `dre_chuan_bi` | `dre_prepare` |  |
-| `dre_nop` | `dre_submit` |  |
-| `duyet_bai` | `approve_post` |  |
-| `duyet_chat` | `approve_chat` |  |
-| `duyet_chon_tin` | `approve_pick` |  |
-| `duyet_co_so` | `approve_base` |  |
-| `duyet_giao_viec` | `approve_dispatch` |  |
-| `duyet_lenh` | `approve_command` |  |
+| `dre_prepare` | `dre_prepare` |  |
+| `dre_submit` | `dre_submit` |  |
 | `emoji_deck` | `emoji_deck` |  |
+| `entity_images` | `entity_images` |  |
 | `env_load` | `env_load` |  |
-| `ethan_chuan_bi` | `ethan_prepare` |  |
-| `ethan_nop` | `ethan_submit` |  |
-| `ghi_log` | `write_log` |  |
-| `gin_chuan_bi` | `gin_prepare` |  |
-| `gin_nop` | `gin_submit` |  |
-| `gui_telegram` | `send_telegram` |  |
+| `ethan_prepare` | `ethan_prepare` |  |
+| `ethan_submit` | `ethan_submit` |  |
+| `find_image_web` | `find_image_web` |  |
+| `find_more_images` | `find_more_images` |  |
+| `gin_prepare` | `gin_prepare` |  |
+| `gin_submit` | `gin_submit` |  |
 | `hermes_adapter` | `hermes_adapter` |  |
-| `itachi_chuan_bi` | `itachi_prepare` |  |
-| `itachi_nop` | `itachi_submit` |  |
-| `jika_chuan_bi` | `jika_prepare` |  |
-| `jika_nop` | `jika_submit` |  |
-| `khung_anh` | `image_frame` |  |
-| `kiem_hermes` | `check_hermes` |  |
-| `kiem_moi_truong` | `check_env` |  |
-| `kite_chuan_bi` | `kite_prepare` |  |
-| `kite_nop` | `kite_submit` |  |
-| `loai_tin` | `story_type` |  |
-| `luat_anh` | `image_rules` |  |
+| `image_brand` | `image_brand` |  |
+| `image_concept` | `image_concept` |  |
+| `image_frame` | `image_frame` |  |
+| `image_prepare` | `image_prepare` |  |
+| `image_provenance` | `image_provenance` |  |
+| `image_rules_dre` | `image_rules_dre` |  |
+| `image_rules_ethan` | `image_rules_ethan` |  |
+| `image_rules_kite` | `image_rules_kite` |  |
+| `itachi_prepare` | `itachi_prepare` |  |
+| `itachi_submit` | `itachi_submit` |  |
+| `jika_prepare` | `jika_prepare` |  |
+| `jika_submit` | `jika_submit` |  |
+| `journal` | `journal` |  |
+| `journal_web` | `journal_web` |  |
+| `kite_prepare` | `kite_prepare` |  |
+| `kite_submit` | `kite_submit` |  |
 | `manifest_build` | `manifest_build` |  |
-| `manifest_chung` | `manifest_common` |  |
-| `manifest_ghi` | `manifest_write` |  |
-| `miles_chuan_bi` | `miles_prepare` |  |
-| `miles_nop` | `miles_submit` |  |
+| `manifest_common` | `manifest_common` |  |
+| `manifest_report` | `manifest_report` |  |
+| `manifest_write` | `manifest_write` |  |
+| `material` | `material` |  |
+| `miles_prepare` | `miles_prepare` |  |
+| `miles_submit` | `miles_submit` |  |
 | `moat_publish` | `moat_publish` |  |
 | `model_audition` | `model_audition` |  |
+| `model_boards` | `model_boards` |  |
 | `model_watch` | `model_watch` |  |
-| `nen_chu` | `text_bg` |  |
-| `nguon_bai` | `article_sources` |  |
-| `nhat_ky` | `journal` |  |
-| `nhat_ky_web` | `journal_web` |  |
-| `nop_chung` | `submit_common` |  |
-| `phien_browser` | `browser_session` |  |
+| `monitor_9router` | `monitor_9router` |  |
+| `prepare.__init__` | `prepare.__init__` |  |
+| `prepare.browser` | `prepare.browser` |  |
+| `prepare.common` | `prepare.common` |  |
+| `prepare.download_filter` | `prepare.download_filter` |  |
+| `prepare.fallback_rounds` | `prepare.fallback_rounds` |  |
+| `prepare.manifest` | `prepare.manifest` |  |
+| `prepare.source` | `prepare.source` |  |
+| `prepare.vision` | `prepare.vision` |  |
+| `press_entity_images` | `press_entity_images` |  |
 | `publish` | `publish` |  |
-| `quet_chuan_bi` | `scan_prepare` |  |
-| `quet_chung` | `scan_common` |  |
-| `quet_nop` | `scan_submit` |  |
+| `ranking` | `ranking` |  |
 | `render_edu` | `render_edu` |  |
+| `required` | `required` |  |
 | `role` | `role` |  |
-| `route_thieu_anh` | `route_missing_images` |  |
+| `route_missing_images` | `route_missing_images` |  |
 | `scan_business` | `scan_business` |  |
+| `scan_common` | `scan_common` |  |
 | `scan_models` | `scan_models` |  |
+| `scan_prepare` | `scan_prepare` |  |
 | `scan_sources` | `scan_sources` |  |
+| `scan_submit` | `scan_submit` |  |
 | `scan_x` | `scan_x` |  |
 | `schema` | `schema` |  |
-| `soat_cron` | `audit_cron` |  |
+| `send_telegram` | `send_telegram` |  |
+| `skill_lesson_approve` | `skill_lesson_approve` |  |
+| `skill_lesson_commit` | `skill_lesson_commit` |  |
+| `skill_lesson_filter` | `skill_lesson_filter` |  |
 | `social_post` | `social_post` |  |
+| `story_type` | `story_type` |  |
+| `submit_common` | `submit_common` |  |
+| `swap_image_text` | `swap_image_text` |  |
+| `sync_hermes` | `sync_hermes` |  |
 | `task_bodies` | `task_bodies` |  |
 | `teaser_assemble` | `teaser_assemble` |  |
 | `tele_util` | `tele_util` |  |
-| `theo_doi_9router` | `monitor_9router` |  |
-| `tieng_viet` | `vietnamese` |  |
-| `tim_anh_them` | `find_more_images` |  |
-| `tim_anh_web` | `find_image_web` |  |
-| `tu_lieu` | `material` |  |
-| `xep_hang` | `ranking` |  |
+| `text_bg` | `text_bg` |  |
+| `vietnamese` | `vietnamese` |  |
+| `worker_scope_sweep` | `worker_scope_sweep` |  |
+| `write_log` | `write_log` |  |
 
 ## C. Hàm/lớp theo module
 
-### `ada_chuan_bi`
+### `about_text`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `path_font` | `path_font` |  |
+| `font_default` | `font_default` |  |
+| `height_item` | `height_item` |  |
+| `has_by_original` | `has_by_original` |  |
+| `ratio_empty` | `ratio_empty` |  |
+| `pick_font` | `pick_font` |  |
+| `to_color` | `to_color` |  |
+| `ceiling_box` | `ceiling_box` |  |
+| `_space_line` | `_space_line` |  |
+| `_slit` | `_slit` |  |
+| `pick_has` | `pick_has` |  |
+| `about_block` | `about_block` |  |
+
+### `ada_prepare`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `workdir` | `workdir` |  |
-| `_bac` | `_tier` |  |
-| `gom_manifest` | `gather_manifest` |  |
-| `gom_draft` | `gather_draft` |  |
-| `gom_kanban` | `gather_kanban` |  |
-| `gom_token` | `gather_token` |  |
-| `gom_9router` | `gather_9router` |  |
-| `viet_brief` | `write_brief` |  |
+| `_tier` | `_tier` |  |
+| `gather_manifest` | `gather_manifest` |  |
+| `gather_draft` | `gather_draft` |  |
+| `gather_kanban` | `gather_kanban` |  |
+| `gather_token` | `gather_token` |  |
+| `gather_9router` | `gather_9router` |  |
+| `write_brief` | `write_brief` |  |
 
-### `ada_nop`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `dung_bao_cao` | `use_report` | ⚠️ dung |
-
-### `anh_bai`
+### `ada_submit`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_tai` | `_download` |  |
-| `anh_trong_trang` | `image_within_page` |  |
-| `them` | `extra` |  |
-| `bao_khac` | `other_outlets` |  |
-| `_do_hoa` | `_measure_ify` |  |
-| `do_anh` | `measure_image` |  |
-| `cham` | `touch` |  |
-| `tim` | `find` |  |
-| `_da_thu_nho` | `_already_try_small` | ⚠️ thu |
+| `use_report` | `use_report` |  |
 
-### `anh_bao_thuc_the`
+### `approve_base`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `link_that` | `link_real` |  |
-| `loc_bai` | `filter_article` |  |
-| `_rss` | `_rss` |  |
-| `bao_ve` | `report_about` |  |
-| `og_tu_html` | `og_from_html` | ⚠️ tu |
-| `_og` | `_og` |  |
-| `anh_bao_thuc_the` | `press_entity_images` |  |
+| `load_secrets` | `load_secrets` |  |
+| `call` | `call` |  |
+| `call_upload` | `call_?upload` |  |
+| `_write_json` | `_write_json` |  |
+| `_lock_of` | `_lock_of` |  |
+| `_run_background` | `_run_background` |  |
+| `_boc` | `_extract` |  |
+| `_send_text` | `_send_text` |  |
+| `_reply_real` | `_reply_real` |  |
+| `_extract_line` | `_extract_line` |  |
+| `_load_json` | `_load_json` |  |
+| `is_boss` | `is_boss` |  |
 
-### `anh_chuan_bi`
+### `approve_chat`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `chuan_bi` | `prepare_article` |  |
-| `workdir` | `workdir` |  |
-| `nap_meta` | `load_meta` |  |
-| `_cho_luot` | `_wait_for_slot` |  |
-| `_mo_ta_thieu_anh` | `_description_missing_image` |  |
-| `_doi_khoa` | `_handle_lock` |  |
-| `dem_chet` | `count_crashes` |  |
-| `_bao_chet_lap` | `_report_crash_loop` |  |
+| `RankFIFCell` | `RankFIFCell` |  |
+| `lay_so` | `take_count` | ⚠️ so |
+| `doi` | `change` | ⚠️ doi |
+| `release` | `release` |  |
+| `_rank_of` | `_rank_of` |  |
+| `_ai_form_run` | `_ai_form_run` |  |
+| `context_edge_role` | `context_edge_role` |  |
+| `_story_pass_job` | `_story_pass_job` |  |
+| `_drop_gate_old_chat` | `_drop_gate_old_chat` |  |
+| `handle_chat` | `handle_chat` |  |
+| `_chat_has_lock` | `_chat_has_lock` |  |
+| `_goi` | `_call` |  |
+
+### `approve_command`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_standard_ify_url` | `_standard_ify_url` |  |
+| `_url_valid` | `_url_valid` |  |
+| `_read_page` | `_read_page` |  |
+| `_read_social` | `_read_social` |  |
+| `_line_role_help` | `_line_role_help` |  |
+| `_command_article` | `_command_article` |  |
+| `handle_command` | `handle_command` |  |
+| `tra_loi` | `return_error` | ⚠️ tra |
+
+### `approve_dispatch`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_report_receive_job` | `_report_receive_job` |  |
+| `role_of_topic` | `role_of_topic` |  |
+| `standard_assignee` | `standard_assignee` |  |
+| `kanban_create` | `kanban_create` |  |
+| `long_run_message` | `long_run_message` |  |
+| `killed_message` | `killed_message` |  |
+| `_blackboard_root` | `_blackboard_root` |  |
+| `_blackboard_write` | `_blackboard_write` |  |
+| `_status_task` | `_status_task` |  |
+| `_summary_run` | `_summary_run` |  |
+| `reason_task` | `reason_task` |  |
+| `link_result` | `link_result` |  |
+| `_done_code_no_hand` | `_done_code_no_hand` |  |
+| `report_progress_kanban` | `report_progress_kanban` |  |
+| `standard_label` | `standard_label` |  |
+
+### `approve_pick`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `slugify` | `slugify` |  |
+| `latest_manifest` | `latest_manifest` |  |
+| `_mid_report` | `_mid_report` |  |
+| `manifest_already_send` | `manifest_already_send` |  |
+| `_is_reply_report` | `_is_reply_report` |  |
+| `read_pick_command` | `read_pick_command` |  |
+| `_xa` | `_far` |  |
+| `write_meta` | `write_meta` |  |
+| `_draft_id` | `_draft_id` |  |
+| `_research_source` | `_research_source` |  |
+| `_block_run_engine` | `_block_run_engine` |  |
+| `_crop_sidecar` | `_crop_sidecar` |  |
+| `create_pair` | `create_pair` |  |
+| `_lock_manifest` | `_lock_manifest` |  |
+| `_report_already_label` | `_report_already_label` |  |
+| `_process_pick` | `_process_pick` |  |
+
+### `approve_post`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_process_button` | `_process_button` |  |
+| `keyboard` | `keyboard` |  |
+| `_upload_timeout` | `_?upload_timeout` |  |
+| `_media_timeout` | `_media_timeout` |  |
+| `_compress_preview` | `_?compress_preview` |  |
+| `_send_media_group` | `_send_media_group` |  |
+| `draft_push` | `draft_push` |  |
+| `_split_caption_html` | `_split_caption_html` |  |
+| `already_len_channel` | `already_len_channel` |  |
+| `_write_mark` | `_write_mark` |  |
+| `_text_one_attempt` | `_text_one_attempt` |  |
+| `publish` | `publish` |  |
+| `_go_count_image` | `_go_count_image` |  |
+| `mark_draft` | `mark_draft` |  |
+| `_extract_reason_redo` | `_extract_reason_redo` |  |
+| `_code_of_slide` | `_code_of_slide` |  |
+| `_write_forbid_image_redo` | `_write_forbid_image_redo` |  |
+| `_hand_redo` | `_hand_redo` |  |
+| `_load_redo_wait` | `_load_redo_wait` |  |
+| `_wait_within_topic` | `_wait_within_topic` |  |
+| `_over_limit` | `_over_limit` |  |
+| `_label_reason_redo` | `_label_reason_redo` |  |
+| `_process_reason_redo` | `_process_reason_redo` |  |
+| `_redo_all_done_limit` | `_redo_all_done_limit` |  |
+| `_hand_all_done_limit` | `_hand_all_done_limit` |  |
+| `create_task_kite` | `create_task_kite` |  |
+| `_button_drop_limit` | `_button_drop_limit` |  |
+| `_button_kite` | `_button_kite` |  |
+| `_button_lower_ready` | `_button_lower_ready` |  |
+| `_button_redo` | `_button_redo` |  |
+| `_answer_callback` | `_?answer_callback` |  |
+| `_button_approve` | `_button_approve` |  |
+| `_writer_by_queue` | `_writer_by_queue` |  |
+| `retarget_writer_body` | `?retarget_writer_body` |  |
+| `parse_reply_approval` | `parse_reply_approval` |  |
+| `find_album_draft` | `find_album_draft` |  |
+| `handle_reply_approval` | `handle_reply_approval` |  |
+| `_process_reply_approval` | `_process_reply_approval` |  |
+| `_finalize_button` | `_finalize_button` |  |
+| `handle_img_approval` | `handle_img_approval` |  |
+| `handle_callback` | `handle_callback` |  |
+| `_bottom_again_moat` | `_bottom_again_moat` |  |
 | `chay` | `run` |  |
-
-### `anh_khai_niem`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_nuoc_trong` | `_country_within` |  |
-| `tu_khoa_heuristic` | `keyword_heuristic` |  |
-| `tu_khoa_llm` | `keyword_llm` |  |
-| `doc_tra_loi_llm` | `read_return_error_llm` | ⚠️ doc tra |
-| `tu_khoa_khai_niem` | `keyword_concept` |  |
-| `_tu_dac_trung` | `_from_distinctive` | ⚠️ tu |
-| `loc_commons` | `filter_commons` |  |
-| `anh_khai_niem` | `image_concept` |  |
-| `cau_hoi_vision` | `sentence_ask_vision` |  |
-| `nhan_khai_niem` | `label_concept` | ⚠️ nhan |
-
-### `anh_thuc_the`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `thuc_the_trong_tieu_de` | `entity_within_title` |  |
-| `pageimages` | `pageimages` |  |
-| `commons_theo_cum` | `commons_by_phrase` |  |
-| `anh_thuc_the` | `entity_images` |  |
-| `nhan_thuc_the` | `label_entity` | ⚠️ nhan |
-
-### `anh_thuong_hieu`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_tu_dac_trung` | `_from_distinctive` | ⚠️ tu |
-| `_co_cum` | `_has_phrase` |  |
-| `_co_tu` | `_has_word` |  |
-| `_nhieu` | `_many` |  |
-| `hang_trong_tin` | `vendors_in_story` |  |
-| `truy_van` | `query` |  |
-| `loc_commons` | `filter_commons` |  |
-| `_hoi_api` | `_ask_api` |  |
-| `_tep_claim` | `_file_claim` |  |
-| `_qid_claim` | `_qid_claim` |  |
-| `qid_hang` | `qid_rank` | ⚠️ hang |
-| `tu_lieu_wikidata` | `material_wikidata` |  |
-| `_slug` | `_slug` |  |
-| `_khoa_model` | `_lock_model` | ⚠️ khoa |
-| `website_hang` | `vendor_website` |  |
-| `_tai_html` | `_download_html` |  |
-| `trang_cong_bo` | `announcement_page` |  |
-| `url_commons` | `commons_urls` |  |
-| `the_logo` | `card_logo` | ⚠️ the |
-| `_do_sang_logo` | `_measure_bright_logo` | ⚠️ sang |
-| `anh_wikidata` | `image_wikidata` |  |
-| `_ung_vien` | `_candidate` |  |
-| `anh_nguoi_ngang` | `image_person_landscape` |  |
-| `anh_co_phieu` | `image_has_ballot` |  |
-| `anh_hang` | `vendor_images` |  |
-| `hang_co_model` | `rank_has_model` | ⚠️ hang |
-| `cau_hoi_vision` | `sentence_ask_vision` |  |
-| `_hoi_commons` | `_ask_commons` |  |
-| `nhan_theo_loai` | `label_by_type` | ⚠️ nhan |
-| `nhan_thuong_hieu` | `label_brand` | ⚠️ nhan |
+| `_read_draft` | `_read_draft` |  |
+| `_form_background` | `_form_background` |  |
+| `_fix_story_go_button` | `_fix_story_go_button` |  |
 
 ### `approve_service`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_tai_anh_dinh_kem` | `_download_image_fixed_with` |  |
-| `_bao_khong_ho_tro` | `_report_no_family_point` |  |
-| `_lenh_chon_neu_co` | `_pick_command_if_has` |  |
-| `_bao_khong_phai_reply` | `_report_no_right_reply` |  |
+| `_download_image_fixed_with` | `_download_image_fixed_with` |  |
+| `_report_no_family_point` | `_report_no_family_point` |  |
+| `_pick_command_if_has` | `_pick_command_if_has` |  |
+| `_report_no_right_reply` | `_report_no_right_reply` |  |
 | `handle_message` | `handle_message` |  |
-| `_ghi_offset` | `_write_offset` |  |
-| `_doc_offset` | `_read_offset` | ⚠️ doc |
-| `_soat_tirith` | `_audit_tirith` |  |
-| `_cuu_bai_ket_publishing` | `_rescue_article_end_publishing` |  |
+| `_write_offset` | `_write_offset` |  |
+| `_read_offset` | `_read_offset` |  |
+| `_audit_tirith` | `_audit_tirith` |  |
+| `_rescue_article_end_publishing` | `_rescue_article_end_publishing` |  |
 | `loop` | `loop` |  |
+| `_finish_push_cli` | `_finish_push_cli` |  |
 
 ### `article_extract`
 
@@ -1038,112 +1125,143 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `extract` | `extract` |  |
 | `meta` | `meta` |  |
 
-### `arxiv_bia`
+### `article_images`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `la_arxiv` | `is_arxiv` |  |
-| `tai_pdf` | `download_pdf` |  |
-| `chup_bia` | `capture_cover` |  |
-| `_toi_nua_duoi` | `_dark_half_below` | ⚠️ toi |
+| `_download` | `_download` |  |
+| `image_within_page` | `image_within_page` |  |
+| `them` | `extra` |  |
+| `other_outlets` | `other_outlets` |  |
+| `_graphic` | `_graphic` |  |
+| `measure_image` | `measure_image` |  |
+| `touch` | `touch` |  |
+| `find` | `find` |  |
+| `_da_thu_nho` | `_already_try_small` | ⚠️ thu |
 
-### `arxiv_hinh`
+### `article_sources`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `la_chu_thich` | `is_annotation` |  |
-| `la_than_bai` | `is_body_article` |  |
-| `_giao` | `_hand` |  |
-| `_gop` | `_merge` |  |
-| `_chong_ngang` | `_anti_landscape` |  |
-| `chu_thich_du_dong` | `annotation_enough_line` | ⚠️ dong |
-| `_bo_chay_dau` | `_drop_run_mark` | ⚠️ bo dau |
-| `_do_hoa_trong_dai` | `_measure_ify_within_long` |  |
-| `vung_hinh` | `region_figure` |  |
-| `pdf_cua_link` | `pdf_of_link` |  |
-| `_do_hoa_trang` | `_measure_ify_page` |  |
-| `_khong_trang_tron` | `_no_page_full` |  |
-| `boc` | `extract` |  |
-| `tai_pdf` | `download_pdf` |  |
-| `ung_vien` | `candidate` |  |
+| `strip_site_suffix` | `strip_site_suffix` |  |
+| `story_tokens` | `story_tokens` |  |
+| `same_story` | `same_story` |  |
+| `_download` | `_download` |  |
+| `resolve_code_gnews` | `resolve_code_gnews` |  |
+| `has_vietnamese` | `has_vietnamese` |  |
+| `_title_rss` | `_title_rss` |  |
+| `_title_page` | `_title_page` |  |
+| `_title_slug` | `_title_slug` |  |
+| `_name_own_no_mark` | `_name_own_no_mark` |  |
+| `title_find` | `title_find` |  |
+| `_query_bing` | `_query_bing` |  |
+| `other_outlets_bing` | `other_outlets_bing` |  |
+| `report_about_keyword` | `report_about_keyword` |  |
+| `find` | `find` |  |
+| `_trong_feed` | `_within_feed` |  |
 
-### `bang_den`
+### `arxiv_cover`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `is_arxiv` | `is_arxiv` |  |
+| `download_pdf` | `download_pdf` |  |
+| `capture_cover` | `capture_cover` |  |
+| `_dark_half_below` | `_dark_half_below` |  |
+
+### `arxiv_figures`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `is_annotation` | `is_annotation` |  |
+| `is_body_article` | `is_body_article` |  |
+| `_hand` | `_hand` |  |
+| `_merge` | `_merge` |  |
+| `_anti_landscape` | `_anti_landscape` |  |
+| `annotation_enough_line` | `annotation_enough_line` |  |
+| `_drop_run_mark` | `_drop_run_mark` |  |
+| `_graphic_within_long` | `_graphic_within_long` |  |
+| `region_figure` | `region_figure` |  |
+| `pdf_of_link` | `pdf_of_link` |  |
+| `_graphic_page` | `_graphic_page` |  |
+| `_no_page_full` | `_no_page_full` |  |
+| `extract` | `extract` |  |
+| `download_pdf` | `download_pdf` |  |
+| `candidate` | `candidate` |  |
+
+### `audit_cron`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_epoch` | `_epoch` |  |
+| `_hours` | `_hours` |  |
+| `_age` | `_age` |  |
+| `format_cron` | `format_cron` |  |
+| `audit_format` | `audit_format` |  |
+| `audit` | `audit` |  |
+| `lock_still_for` | `lock_still_for` |  |
+| `read_mark` | `read_mark` |  |
+| `use_story` | `use_story` |  |
+
+### `blackboard`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `_meta_path` | `_meta_path` |  |
 | `_meta` | `_meta` |  |
-| `_ghi_meta` | `_write_meta` |  |
-| `_chuan_home` | `_standard_home` |  |
+| `_write_meta` | `_write_meta` |  |
+| `_standard_home` | `_standard_home` |  |
 | `_kb` | `_kb` |  |
 | `root_of` | `root_of` |  |
-| `tao_root` | `create_root` |  |
-| `ghi` | `write` |  |
-| `ghi_nen` | `write_background` | ⚠️ nen |
-| `doc` | `read` | ⚠️ doc |
-| `_gia_tri` | `_value` |  |
+| `create_root` | `create_root` |  |
+| `write` | `write` |  |
+| `write_background` | `write_background` |  |
+| `read` | `read` |  |
+| `_value` | `_value` |  |
 
-### `bang_model`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `Bang` | `Board` | ⚠️ bang |
-| `hang_va_ngay` | `rank_and_date` | ⚠️ hang |
-
-### `bao_cao_manifest`
+### `bob_submit`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `dung` | `use` | ⚠️ dung |
+| `handle_channel` | `handle_channel` |  |
+| `board_mood` | `board_mood` |  |
+| `mood_from_vision` | `mood_from_vision` |  |
+| `is_url` | `is_url` |  |
+| `take_image` | `take_image` |  |
+| `line_frame` | `line_frame` |  |
+| `_env_clean` | `_env_clean` |  |
+| `send` | `send` |  |
 
-### `bat_buoc`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `tep` | `file` |  |
-| `doc` | `read` | ⚠️ doc |
-| `_ghi` | `_write` |  |
-| `them` | `extra` |  |
-| `them_nhieu` | `extra_many` |  |
-| `_chuan` | `_standard` |  |
-| `khop` | `match` |  |
-| `link_goi_y` | `link_call_y` |  |
-| `kiem` | `check` |  |
-| `xoa` | `delete` |  |
-| `in_danh_sach` | `in_list_clean` | ⚠️ in |
-
-### `bob_nop`
+### `brief_common`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `handle_kenh` | `handle_channel` |  |
-| `bang_mood` | `board_mood` | ⚠️ bang |
-| `mood_tu_vision` | `mood_from_vision` | ⚠️ tu |
-| `la_url` | `is_url` |  |
-| `lay_anh` | `take_image` |  |
-| `dong_khung` | `line_frame` | ⚠️ dong |
-| `_env_sach` | `_env_clean` |  |
-| `gui` | `send` |  |
+| `mark` | `mark` |  |
+| `block_redo` | `block_redo` |  |
+| `block_material` | `block_material` |  |
+| `below` | `below` |  |
 
-### `brief_chung`
+### `browser_session`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `dau` | `mark` | ⚠️ dau |
-| `khoi_lam_lai` | `block_redo` |  |
-| `khoi_tu_lieu` | `block_material` |  |
-| `duoi` | `below` |  |
+| `got_block` | `got_block` |  |
+| `BrowserSession` | `BrowserSession` |  |
+| `browser` | `browser` |  |
+| `trang` | `page` |  |
+| `dong` | `line` | ⚠️ dong |
+| `session_or_new` | `session_or_new` |  |
 
-### `cape_chuan_bi`
+### `cape_prepare`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `slug` | `slug` |  |
 | `workdir` | `workdir` |  |
-| `boc` | `extract` |  |
-| `viet_brief` | `write_brief` |  |
+| `extract` | `extract` |  |
+| `write_brief` | `write_brief` |  |
 
-### `cape_nop`
+### `cape_submit`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
@@ -1152,61 +1270,80 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `ty_le_dau` | `billion_odd_mark` | ⚠️ dau |
-| `_bo_the` | `_drop_card` | ⚠️ bo the |
-| `_tu` | `_words` |  |
-| `lap_cum` | `repeat_phrase` |  |
-| `so_trong` | `count_within` | ⚠️ so |
-| `so_la` | `count_is` | ⚠️ so |
-| `_kiem_do_dai` | `_check_measure_long` |  |
-| `_kiem_van_phong` | `_check_still_room` | ⚠️ van |
-| `_kiem_so_lieu` | `_check_figures` |  |
-| `kiem` | `check` |  |
+| `billion_odd_mark` | `billion_odd_mark` |  |
+| `_drop_card` | `_drop_card` |  |
+| `_words` | `_words` |  |
+| `repeat_phrase` | `repeat_phrase` |  |
+| `count_within` | `count_within` |  |
+| `count_is` | `count_is` |  |
+| `_check_measure_long` | `_check_measure_long` |  |
+| `_check_still_room` | `_check_still_room` |  |
+| `_check_figures` | `_check_figures` |  |
+| `check` | `check` |  |
+
+### `capture_chart`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_block_empty` | `_block_empty` |  |
+| `frame_can` | `frame_can` |  |
+| `_is_image` | `_is_image` |  |
+| `download_image` | `download_image` |  |
+| `capture` | `capture` |  |
+
+### `capture_page`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `capture` | `capture` |  |
+| `_out_rgb` | `_out_rgb` |  |
+| `_variable_text_card_x` | `_variable_text_card_x` |  |
+| `count_background` | `count_background` |  |
+| `capture_lead_mobile` | `capture_lead_mobile` |  |
 
 ### `card`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `dat_thuong_hieu` | `set_brand` |  |
+| `set_brand` | `set_brand` |  |
 | `_f` | `_f` |  |
-| `_do_sang` | `_measure_bright` | ⚠️ sang |
-| `_du_sang` | `_enough_bright` | ⚠️ sang |
-| `_du_toi` | `_enough_dark` | ⚠️ toi |
-| `_mau_cua_hang` | `_color_of_rank` | ⚠️ hang mau |
-| `_tach_nhan` | `_extract_label` | ⚠️ nhan |
-| `_mau_hang_trong` | `_color_rank_within` | ⚠️ hang mau |
-| `_rong_dong` | `_empty_line` | ⚠️ dong rong |
-| `_ve_dong` | `_about_line` | ⚠️ dong |
-| `_rong_tracked` | `_empty_tracked` | ⚠️ rong |
-| `_ve_tracked` | `_about_tracked` |  |
+| `_measure_bright` | `_measure_bright` |  |
+| `_enough_bright` | `_enough_bright` |  |
+| `_enough_dark` | `_enough_dark` |  |
+| `_color_of_rank` | `_color_of_rank` |  |
+| `_extract_label` | `_extract_label` |  |
+| `_color_rank_within` | `_color_rank_within` |  |
+| `_empty_line` | `_empty_line` |  |
+| `_about_line` | `_about_line` |  |
+| `_empty_tracked` | `_empty_tracked` |  |
+| `_about_tracked` | `_about_tracked` |  |
 | `_wrap` | `_wrap` |  |
 | `_fit_text` | `_fit_text` |  |
 | `_grow_title` | `_grow_title` |  |
-| `_buoc_dong` | `_step_line` | ⚠️ dong |
-| `ghep_doc` | `stack_read` | ⚠️ doc |
-| `_chan_chuan_anh` | `_block_standard_image` |  |
-| `_chan_chart` | `_block_chart` |  |
-| `_chan_crop` | `_block_crop` |  |
-| `_mo_anh` | `_open_image` |  |
+| `_step_line` | `_step_line` |  |
+| `stack_read` | `stack_read` |  |
+| `_block_standard_image` | `_block_standard_image` |  |
+| `_block_chart` | `_block_chart` |  |
+| `_block_crop` | `_block_crop` |  |
+| `_open_image` | `_open_image` |  |
 | `_fit_cover` | `_fit_cover` |  |
-| `_khoang` | `_range` |  |
-| `_lop_anh` | `_layer_image` |  |
-| `_nang_luong_hang` | `_capability_flow_rank` | ⚠️ hang |
-| `_moc_nen_dac` | `_timestamp_background_solid` | ⚠️ nen |
-| `_nen_chu_nghiem` | `_text_bg_strict` |  |
-| `_mo_vung_chu` | `_open_region_text` | ⚠️ chu |
-| `_trong_the` | `_within_card` | ⚠️ the |
-| `_sang_vung` | `_bright_region` | ⚠️ sang |
-| `_mau_doi_nen` | `_color_change_background` | ⚠️ doi mau nen |
-| `_can_bang_dong` | `_can_board_line` | ⚠️ bang dong |
-| `_mau_doi_nen_an_toan` | `_color_change_background_hide_whole` | ⚠️ doi mau nen |
+| `_range` | `_range` |  |
+| `_layer_image` | `_layer_image` |  |
+| `_capability_flow_rank` | `_capability_flow_rank` |  |
+| `_timestamp_background_solid` | `_timestamp_background_solid` |  |
+| `_text_bg_strict` | `_text_bg_strict` |  |
+| `_open_region_text` | `_open_region_text` |  |
+| `_within_card` | `_within_card` |  |
+| `_bright_region` | `_bright_region` |  |
+| `_can_board_line` | `_can_board_line` |  |
+| `_color_change_background_hide_whole` | `_color_change_background_hide_whole` |  |
 | `_quote_mark` | `_quote_mark` |  |
 | `_quote_frame` | `_quote_frame` |  |
 | `_render_quote` | `_render_quote` |  |
 | `_chip_neo` | `_chip_neo` |  |
-| `_pha` | `_phase` |  |
+| `_phase` | `_phase` |  |
 | `build` | `build` |  |
-| `_render_tran` | `_render_ceiling` |  |
+| `_render_ceiling` | `_render_ceiling` |  |
 | `_cao_tieu_de` | `_height_title` |  |
 | `_cao_dau` | `_height_mark` | ⚠️ dau |
 | `_box_min` | `_box_min` |  |
@@ -1216,30 +1353,30 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `dat_nen` | `set_background` | ⚠️ nen |
+| `set_background` | `set_background` |  |
 | `_line_h` | `_line_h` |  |
 | `_fit_block` | `_fit_block` |  |
 | `_draw_paragraphs` | `_draw_paragraphs` |  |
 | `_cyan` | `_cyan` |  |
 | `_net` | `_net` |  |
-| `_mau_dau` | `_color_mark` | ⚠️ dau mau |
+| `_color_mark` | `_color_mark` |  |
 | `_chip_neo` | `_chip_neo` |  |
 | `_watermark` | `_watermark` |  |
 | `_open` | `_open` |  |
-| `_ghep_neu_can` | `_stack_if_can` |  |
+| `_stack_if_can` | `_stack_if_can` |  |
 | `_ramp_mask` | `_ramp_mask` |  |
-| `_do_vung_chu` | `_measure_region_text` | ⚠️ chu |
-| `_nen_dac_duoi_chu` | `_background_solid_below_text` | ⚠️ chu nen |
-| `_lop_neu_can` | `_layer_if_can` |  |
+| `_measure_region_text` | `_measure_region_text` |  |
+| `_background_solid_below_text` | `_background_solid_below_text` |  |
+| `_layer_if_can` | `_layer_if_can` |  |
 | `_body_image` | `_body_image` |  |
 | `build_body` | `build_body` |  |
 | `build_body_quote` | `build_body_quote` |  |
 | `build_cover` | `build_cover` |  |
-| `_la_flagship` | `_is_flagship` |  |
+| `_is_flagship` | `_is_flagship` |  |
 | `_gate_text` | `_gate_text` |  |
-| `_gate_anh` | `_gate_image` |  |
+| `_gate_image` | `_gate_image` |  |
 | `gom` | `gather` |  |
-| `_gate_chu` | `_gate_overflow` |  |
+| `_gate_overflow` | `_gate_overflow` |  |
 
 ### `chat_router`
 
@@ -1247,120 +1384,31 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 |---|---|---|
 | `chat_hint` | `chat_hint` |  |
 | `route` | `route` |  |
-| `_bo_dong_rac` | `_drop_line_junk` | ⚠️ bo dong |
-| `dung_argv` | `use_argv` | ⚠️ dung |
+| `_drop_line_junk` | `_drop_line_junk` |  |
+| `use_argv` | `use_argv` |  |
 | `ask` | `ask` |  |
 | `clean` | `clean` |  |
 
-### `chuan_bi.browser`
+### `check_env`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_js_browser` | `_js_browser` |  |
-| `_lay_anh_trang` | `_take_image_page` |  |
-| `_mo_trang` | `_open_page` |  |
-| `_tim_bao_gnews` | `_find_report_gnews` |  |
-| `browser_pass` | `browser_pass` |  |
-| `het_gio` | `all_done_hours` |  |
+| `check_cv2` | `check_cv2` |  |
+| `check_yunet` | `check_yunet` |  |
+| `check_chromium` | `check_chromium` |  |
+| `check_variable_environment` | `check_variable_environment` |  |
+| `check_openai_key` | `check_openai_key` |  |
+| `check_telegram_token` | `check_telegram_token` |  |
 
-### `chuan_bi.chung`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_hdr` | `_hdr` |  |
-| `_brand_cua` | `_brand_of` |  |
-| `_mien` | `_domain` |  |
-| `_doc_json` | `_read_json` | ⚠️ doc |
-| `_ghi_json` | `_write_json` |  |
-| `_goc_mien` | `_original_domain` |  |
-
-### `chuan_bi.manifest`
+### `check_hermes`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `cau_xep_hang` | `describe_ranking_image` |  |
-| `dong_brief_xep_hang` | `ranking_brief_line` |  |
-| `ghep_hai_hang` | `pair_two_vendor_images` |  |
-| `cap_ghep` | `stackable_pairs` |  |
-| `bang_anh` | `contact_sheet` |  |
-| `gom_tu_lieu` | `gather_material` |  |
-| `_tu_lieu_bai` | `_article_material` |  |
-| `dan_xuat` | `compute_derived` |  |
-| `dung_manifest` | `build_manifest` |  |
-
-### `chuan_bi.nguon`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_tom_tat_tu_img_json` | `_summary_from_img_json` | ⚠️ tu |
-| `nap_nguon` | `load_source` |  |
-| `_tieu_de_trang` | `_title_page` |  |
-| `ung_vien_social` | `candidate_social` |  |
-| `ung_vien_tinh` | `candidate_static` |  |
-| `anh_commons` | `commons_images` |  |
-| `_ten_rieng_dau` | `_leading_proper_noun` |  |
-
-### `chuan_bi.nhin`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `mo_ta_anh` | `description_image` |  |
-| `_mot_lan` | `_one_attempt` | ⚠️ lan |
-| `_goi_router` | `_call_router` |  |
-| `_phan_loai_an_toan` | `_classify_hide_whole` |  |
-| `phan_loai` | `classify` |  |
-| `_nhin_anh` | `_seen_image` |  |
-
-### `chuan_bi.tai_loc`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_tai_bytes` | `_download_bytes` |  |
-| `_host_la_ben_thu_ba` | `_host_is_side_try_three` | ⚠️ thu |
-| `_tai_ung_vien` | `_download_candidate` |  |
-| `tai_va_loc` | `download_and_filter` |  |
-| `_chart_theo_hinh` | `_chart_by_figure` |  |
-| `_luu_crop` | `_save_crop` |  |
-
-### `chuan_bi.vong_bu`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_bo_sung_nguon` | `_supplement_source` |  |
-| `_them_trang_cong_bo` | `_extra_announcement_page` |  |
-| `_lay_tu_browser` | `_take_from_browser` | ⚠️ tu |
-| `_chup_xep_hang` | `_capture_ranking` |  |
-| `_anh_muc_xep_hang` | `_image_item_ranking` | ⚠️ muc |
-| `_gom_va_tai_anh` | `_gather_and_download_image` |  |
-| `_vong_tim_rong` | `_round_widen_search` |  |
-| `_xep_hang_boi_canh` | `_ranking_context_edge` | ⚠️ canh |
-| `_bao_thuong_hieu_rong` | `_report_brand_empty` | ⚠️ rong |
-| `_vong_thuong_hieu` | `_round_brand` |  |
-| `_vong_chup_nguon` | `_round_capture_source` |  |
-| `_ra` | `_out` |  |
-| `nang_khoi_tit` | `capability_block_headline` |  |
-| `_vong_khai_niem` | `_round_concept` |  |
-| `_vong_thuc_the` | `_round_entity` |  |
-
-### `chup_chart`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_chan_rong` | `_block_empty` | ⚠️ rong |
-| `khung_can` | `frame_can` |  |
-| `_la_anh` | `_is_image` |  |
-| `tai_anh` | `download_image` |  |
-| `chup` | `capture` |  |
-
-### `chup_trang`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `chup` | `capture` |  |
-| `_ra_rgb` | `_out_rgb` |  |
-| `_bien_chu_the_x` | `_variable_text_card_x` | ⚠️ chu the |
-| `dem_nen` | `count_background` | ⚠️ nen |
-| `chup_lead_mobile` | `capture_lead_mobile` |  |
+| `_home_kanban` | `_home_kanban` |  |
+| `_check_board` | `_check_board` |  |
+| `check_column` | `check_column` |  |
+| `check_has_chat` | `check_has_chat` |  |
+| `check_swarm` | `check_swarm` |  |
 
 ### `cleanup`
 
@@ -1376,19 +1424,19 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `suy_luan_cua_vai` | `reasoning_of_role` |  |
+| `reasoning_of_role` | `reasoning_of_role` |  |
 | `soul` | `soul` |  |
-| `viec_teaser` | `job_teaser` |  |
-| `viec_writer` | `job_writer` |  |
+| `job_teaser` | `job_teaser` |  |
+| `job_writer` | `job_writer` |  |
 | `nhac` | `mention` |  |
-| `rut_van` | `shorten_text` |  |
-| `chay` | `run` |  |
+| `shorten_text` | `shorten_text` |  |
+| `run` | `run` |  |
 
-### `crop_ti_le`
+### `crop_ratio`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `cat` | `crop` |  |
+| `crop` | `crop` |  |
 
 ### `deck`
 
@@ -1400,210 +1448,43 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_badge` | `_badge` |  |
 | `_two_tone_title` | `_two_tone_title` |  |
 | `_open_bg` | `_open_bg` |  |
-| `lay_statement` | `take_statement` |  |
-| `lay_list_steps` | `take_list_steps` |  |
-| `lay_checklist` | `take_checklist` |  |
-| `lay_grid3` | `take_grid3` |  |
-| `lay_cover` | `take_cover` |  |
+| `take_statement` | `take_statement` |  |
+| `take_list_steps` | `take_list_steps` |  |
+| `take_checklist` | `take_checklist` |  |
+| `take_grid3` | `take_grid3` |  |
+| `take_cover` | `take_cover` |  |
 | `_fit_size` | `_fit_size` |  |
 | `_footer_burst` | `_footer_burst` |  |
 | `_footer_two` | `_footer_two` |  |
 | `_burst` | `_burst` |  |
 | `_gate` | `_gate` |  |
 
-### `doi_chu_anh`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_doc_giu` | `_read_keep` | ⚠️ doc |
-| `_trong_giu` | `_within_keep` |  |
-| `tim_vung_chu` | `find_region_text` | ⚠️ chu |
-| `dung_mask` | `use_mask` | ⚠️ dung |
-| `_lama` | `_lama` |  |
-| `inpaint` | `inpaint` |  |
-| `xoa_chu` | `delete_text` | ⚠️ chu |
-
-### `dong_bo_hermes`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_slug` | `_slug` |  |
-| `plugin_home` | `plugin_home` |  |
-| `_cau_hinh_profile` | `_config_profile` |  |
-| `_doc_tat` | `_read_all` | ⚠️ doc |
-| `_ghi_tat` | `_write_all` |  |
-| `dong_bo_tat_cong_cu` | `sync_all_gate_old` | ⚠️ cu |
-| `cap_tep` | `cap_file` | ⚠️ cap |
-| `them_profile` | `extra_profile` |  |
-| `_tep_plugin` | `_file_plugin` |  |
-| `thieu_dau_vet` | `missing_trace` |  |
-| `hai_home_lech` | `two_home_offset` |  |
-| `hash_upstream` | `hash_upstream` |  |
-| `doc_upstream` | `read_upstream` | ⚠️ doc |
-| `ghi_upstream` | `write_upstream` |  |
-| `kiem_upstream` | `check_upstream` |  |
-| `kanban_da_bat` | `kanban_already_catch` | ⚠️ bat |
-| `nhac_bat_plugin` | `mention_catch_plugin` | ⚠️ bat |
-| `nhac_don_ban_cai` | `mention_single_copy_item` | ⚠️ ban |
-| `doc` | `read` | ⚠️ doc |
-| `chuan` | `standard` |  |
-| `_loc_bi_mat` | `_filter_secret` |  |
-| `_lay` | `_take` |  |
-| `chup_cau_hinh` | `capture_config` |  |
-
 ### `draft_write`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 
-### `dre_chuan_bi`
+### `dre_prepare`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `viet_brief` | `write_brief` |  |
+| `write_brief` | `write_brief` |  |
 
-### `dre_nop`
+### `dre_submit`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_Boi` | `Context` |  |
+| `Context` | `Context` |  |
 | `nhan_ma` | `mark_code` |  |
 | `kiem_lien_quan` | `check_relevant` |  |
 | `kiem_mat` | `check_faces` |  |
-| `_giai_ghep` | `_resolve_stack` |  |
-| `_giai_don` | `_resolve_single` |  |
-| `_giai_muc` | `_resolve_item` |  |
-| `giai_spec` | `resolve_spec` |  |
-| `don_slide_cu` | `single_slide_old` | ⚠️ cu |
-| `dung` | `use` | ⚠️ dung |
-| `ban_giao` | `handoff` |  |
-
-### `duyet_bai`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_xu_ly_nut` | `_process_button` |  |
-| `keyboard` | `keyboard` |  |
-| `_send_media_group` | `_send_media_group` |  |
-| `draft_push` | `draft_push` |  |
-| `da_len_channel` | `already_len_channel` |  |
-| `_ghi_dau` | `_write_mark` | ⚠️ dau |
-| `_chu_mot_lan` | `_text_one_attempt` | ⚠️ chu lan |
-| `publish` | `publish` |  |
-| `_go_so_anh` | `_go_count_image` | ⚠️ so |
-| `mark_draft` | `mark_draft` |  |
-| `_tach_ly_do_lam_lai` | `_extract_reason_redo` |  |
-| `_ma_cua_slide` | `_code_of_slide` | ⚠️ ma |
-| `_ghi_cam_anh_lam_lai` | `_write_forbid_image_redo` |  |
-| `_giao_lam_lai` | `_hand_redo` |  |
-| `_nap_lam_lai_cho` | `_load_redo_wait` | ⚠️ cho |
-| `_cho_trong_topic` | `_wait_within_topic` | ⚠️ cho |
-| `_qua_han` | `_over_limit` |  |
-| `_nhan_ly_do_lam_lai` | `_label_reason_redo` | ⚠️ nhan |
-| `_xu_ly_ly_do_lam_lai` | `_process_reason_redo` |  |
-| `_lam_lai_het_han` | `_redo_all_done_limit` |  |
-| `_giao_het_han` | `_hand_all_done_limit` |  |
-| `tao_task_kite` | `create_task_kite` |  |
-| `_nut_bo_han` | `_button_drop_limit` | ⚠️ bo |
-| `_nut_kite` | `_button_kite` |  |
-| `_nut_ha_san` | `_button_lower_ready` |  |
-| `_nut_lam_lai` | `_button_redo` |  |
-| `_nut_duyet` | `_button_approve` |  |
-| `_chot_nut` | `_finalize_button` |  |
-| `handle_img_approval` | `handle_img_approval` |  |
-| `handle_callback` | `handle_callback` |  |
-| `_day_lai_moat` | `_bottom_again_moat` | ⚠️ day |
-| `chay` | `run` |  |
-| `_doc_draft` | `_read_draft` | ⚠️ doc |
-| `_dang_nen` | `_form_background` | ⚠️ nen |
-| `_sua_tin_go_nut` | `_fix_story_go_button` |  |
-
-### `duyet_chat`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_HangFIFO` | `RankFIFCell` | ⚠️ hang |
-| `lay_so` | `take_count` | ⚠️ so |
-| `doi` | `change` | ⚠️ doi |
-| `release` | `release` |  |
-| `_hang_cua` | `_rank_of` |  |
-| `_ai_dang_chay` | `_ai_form_run` |  |
-| `boi_canh_vai` | `context_edge_role` | ⚠️ canh |
-| `_tin_dua_viec` | `_story_pass_job` |  |
-| `_bo_cong_cu_chat` | `_drop_gate_old_chat` | ⚠️ bo cu |
-| `handle_chat` | `handle_chat` |  |
-| `_chat_co_khoa` | `_chat_has_lock` | ⚠️ khoa |
-| `_goi` | `_call` |  |
-
-### `duyet_chon_tin`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `slugify` | `slugify` |  |
-| `latest_manifest` | `latest_manifest` |  |
-| `_mid_bao_cao` | `_mid_report` |  |
-| `manifest_da_gui` | `manifest_already_send` |  |
-| `_la_reply_bao_cao` | `_is_reply_report` |  |
-| `doc_lenh_chon` | `read_pick_command` | ⚠️ doc |
-| `_xa` | `_far` |  |
-| `write_meta` | `write_meta` |  |
-| `_draft_id` | `_draft_id` |  |
-| `_research_nguon` | `_research_source` |  |
-| `_khoi_chay_engine` | `_block_run_engine` |  |
-| `_cat_sidecar` | `_crop_sidecar` |  |
-| `create_pair` | `create_pair` |  |
-| `_khoa_manifest` | `_lock_manifest` | ⚠️ khoa |
-| `_bao_da_nhan` | `_report_already_label` | ⚠️ nhan |
-| `_xu_ly_chon` | `_process_pick` |  |
-
-### `duyet_co_so`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `load_secrets` | `load_secrets` |  |
-| `call` | `call` |  |
-| `_ghi_json` | `_write_json` |  |
-| `_khoa_cua` | `_lock_of` | ⚠️ khoa |
-| `_chay_nen` | `_run_background` | ⚠️ nen |
-| `_boc` | `_extract` |  |
-| `_gui_chu` | `_send_text` | ⚠️ chu |
-| `_reply_that` | `_reply_real` |  |
-| `_boc_dong` | `_extract_line` | ⚠️ dong |
-| `_nap_json` | `_load_json` |  |
-| `la_ong_chu` | `is_boss` |  |
-
-### `duyet_giao_viec`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_bao_nhan_viec` | `_report_receive_job` |  |
-| `vai_cua_topic` | `role_of_topic` |  |
-| `chuan_assignee` | `standard_assignee` |  |
-| `kanban_create` | `kanban_create` |  |
-| `cau_chay_lau` | `long_run_message` |  |
-| `cau_bi_dung` | `killed_message` |  |
-| `_bang_den_root` | `_blackboard_root` |  |
-| `_bang_den_ghi` | `_blackboard_write` |  |
-| `_trang_thai_task` | `_status_task` |  |
-| `_tom_tat_run` | `_summary_run` |  |
-| `ly_do_task` | `reason_task` |  |
-| `link_ket_qua` | `link_result` |  |
-| `_xong_ma_khong_giao` | `_done_code_no_hand` | ⚠️ ma |
-| `bao_tien_do_kanban` | `report_progress_kanban` |  |
-| `chuan_nhan` | `standard_label` | ⚠️ nhan |
-
-### `duyet_lenh`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_chuan_hoa_url` | `_standard_ify_url` |  |
-| `_url_hop_le` | `_url_valid` |  |
-| `_doc_trang` | `_read_page` | ⚠️ doc |
-| `_doc_social` | `_read_social` | ⚠️ doc |
-| `_dong_vai_help` | `_line_role_help` | ⚠️ dong |
-| `_lenh_bai` | `_command_article` |  |
-| `handle_command` | `handle_command` |  |
-| `tra_loi` | `return_error` | ⚠️ tra |
+| `_resolve_stack` | `_resolve_stack` |  |
+| `_resolve_single` | `_resolve_single` |  |
+| `_resolve_item` | `_resolve_item` |  |
+| `resolve_spec` | `resolve_spec` |  |
+| `single_slide_old` | `single_slide_old` |  |
+| `use` | `use` |  |
+| `handoff` | `handoff` |  |
 
 ### `emoji_deck`
 
@@ -1613,6 +1494,16 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_save` | `_save` |  |
 | `next_emoji` | `next_emoji` |  |
 
+### `entity_images`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `entity_within_title` | `entity_within_title` |  |
+| `pageimages` | `pageimages` |  |
+| `commons_by_phrase` | `commons_by_phrase` |  |
+| `entity_images` | `entity_images` |  |
+| `label_entity` | `label_entity` |  |
+
 ### `env_load`
 
 | Hiện tại | Đề xuất | Cờ |
@@ -1621,306 +1512,479 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `hermes_homes` | `hermes_homes` |  |
 | `topics` | `topics` |  |
 | `_brand` | `_brand` |  |
-| `brand_dai` | `brand_long` |  |
-| `so_luong` | `quantity` |  |
-| `handle_kenh` | `handle_channel` |  |
-| `_tep_env` | `_file_env` |  |
+| `brand_long` | `brand_long` |  |
+| `quantity` | `quantity` |  |
+| `handle_channel` | `handle_channel` |  |
+| `_file_env` | `_file_env` |  |
 | `state_dir` | `state_dir` |  |
 | `topics_path` | `topics_path` |  |
-| `nap` | `load` |  |
-| `album_phu` | `album_secondary` |  |
+| `load` | `load` |  |
+| `album_secondary` | `album_secondary` |  |
 | `so` | `count` | ⚠️ so |
-| `bat_buoc` | `required` |  |
-| `ghi_json` | `write_json` |  |
+| `required` | `required` |  |
+| `write_json` | `write_json` |  |
 
-### `ethan_chuan_bi`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `nhan_ethan` | `label_ethan` | ⚠️ nhan |
-| `cap_ghep_hero` | `stackable_pairs_hero` |  |
-| `viet_brief` | `write_brief` |  |
-
-### `ethan_nop`
+### `ethan_prepare`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_kiem_ghep` | `_check_stack` |  |
-| `_kiem_chu` | `_check_text` |  |
-| `giai_spec` | `resolve_spec` |  |
+| `label_ethan` | `label_ethan` |  |
+| `stackable_pairs_hero` | `stackable_pairs_hero` |  |
+| `write_brief` | `write_brief` |  |
 
-### `ghi_log`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_khoi_tao` | `_block_create` |  |
-| `_khoi_tao_that` | `_block_create_real` |  |
-| `log` | `log` |  |
-| `rut` | `shorten` |  |
-| `brand` | `brand` |  |
-
-### `gin_chuan_bi`
+### `ethan_submit`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `tim_anh` | `find_image` |  |
+| `_check_stack` | `_check_stack` |  |
+| `_check_text` | `_check_text` |  |
+| `resolve_spec` | `resolve_spec` |  |
+
+### `find_image_web`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_use_ok` | `_use_ok` |  |
+| `bing_murl` | `bing_murl` |  |
+| `yandex_img_url` | `yandex_img_url` |  |
+| `filter` | `filter` |  |
+| `_bing` | `_bing` |  |
+| `_yandex` | `_yandex` |  |
+| `find_image_web` | `find_image_web` |  |
+
+### `find_more_images`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `read_count_turn` | `read_count_turn` |  |
+| `check_keyword` | `check_keyword` |  |
+| `candidate_commons` | `candidate_commons` |  |
+| `try_small_commons` | `try_small_commons` |  |
+| `filter_openverse` | `filter_openverse` |  |
+| `candidate_openverse` | `candidate_openverse` |  |
+| `candidate_from_url` | `candidate_from_url` |  |
+| `candidate_keyword` | `candidate_keyword` |  |
+| `say_image_new` | `say_image_new` |  |
+| `fresh_manifest` | `fresh_manifest` |  |
+| `in_result` | `in_result` | ⚠️ in |
+
+### `gin_prepare`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_download_link` | `_download_link` |  |
+| `find_image` | `find_image` |  |
 | `workdir` | `workdir` |  |
-| `mau_chu` | `color_text` | ⚠️ chu mau |
-| `ocr_vung` | `ocr_region` |  |
-| `ve_preview` | `about_preview` |  |
-| `viet_brief` | `write_brief` |  |
+| `_extract_text` | `_extract_text` |  |
+| `color_text` | `color_text` |  |
+| `distinctive_text` | `distinctive_text` |  |
+| `measure_background` | `measure_background` |  |
+| `ocr_region` | `ocr_region` |  |
+| `_read_can_odd` | `_read_can_odd` |  |
+| `about_preview` | `about_preview` |  |
+| `write_brief` | `write_brief` |  |
 
-### `gin_nop`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `don` | `single` |  |
-
-### `gui_telegram`
+### `gin_submit`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `GuiLoi` | `SendError` |  |
-| `_topic` | `_topic` |  |
-| `_md5` | `_md5` |  |
-| `_ghi_nhat_ky` | `_write_journal` |  |
-| `_da_gui_gan_day` | `_already_send_near_bottom` | ⚠️ day |
-| `_kb_duyet` | `_kb_approve` |  |
-| `post` | `post` |  |
-| `gan_day` | `near_bottom` | ⚠️ day |
+| `single` | `single` |  |
+| `_no_box` | `_no_box` |  |
+| `_box_translate` | `_box_translate` |  |
+| `make_card` | `make_card` |  |
 
 ### `hermes_adapter`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `kanban_db` | `kanban_db` |  |
-| `co_kanban` | `has_kanban` |  |
-| `_mo` | `_open` |  |
-| `_hoi` | `_ask` |  |
-| `state_db_cac_profile` | `state_db_each_profile` |  |
-| `dung_theo_model` | `use_by_model` | ⚠️ dung |
-| `tom_tat_phien` | `summary_session` |  |
-| `tao_task` | `create_task` |  |
-| `viec` | `job` |  |
-| `mot_viec` | `one_job` |  |
-| `trang_thai` | `status` |  |
-| `dem_dang_chay` | `count_form_run` |  |
-| `lan_chay_cuoi` | `last_run` |  |
-| `_chuan_hoa_lan_chay` | `_standard_ify_run` |  |
-| `moc_lan_chay` | `run_start` |  |
-| `nhip_tho` | `heartbeat` |  |
-| `pid_song` | `pid_alive` |  |
-| `dem_xong_theo_vai` | `count_done_by_role` |  |
-| `lan_chay_cuoi_nhieu` | `last_run_many` |  |
+| `has_kanban` | `has_kanban` |  |
+| `_open` | `_open` |  |
+| `_ask` | `_ask` |  |
+| `state_db_each_profile` | `state_db_each_profile` |  |
+| `use_by_model` | `use_by_model` |  |
+| `summary_session` | `summary_session` |  |
+| `create_task` | `create_task` |  |
+| `job` | `job` |  |
+| `one_job` | `one_job` |  |
+| `status` | `status` |  |
+| `count_form_run` | `count_form_run` |  |
+| `writer_queue` | `writer_queue` |  |
+| `last_run` | `last_run` |  |
+| `_standard_ify_run` | `_standard_ify_run` |  |
+| `run_start` | `run_start` |  |
+| `heartbeat` | `heartbeat` |  |
+| `pid_alive` | `pid_alive` |  |
+| `worker_run_state` | `worker_run_state` |  |
+| `count_done_by_role` | `count_done_by_role` |  |
+| `last_run_many` | `last_run_many` |  |
 
-### `itachi_chuan_bi`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `chuan_bi_slide` | `prepare_slide` |  |
-| `goi_y_cach` | `call_y_way` |  |
-| `viet_brief` | `write_brief` |  |
-
-### `itachi_nop`
+### `image_brand`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_font_mac_dinh` | `_font_default` |  |
-| `_ve_khoi` | `_about_block` |  |
-| `_tran_hop` | `_ceiling_box` |  |
-| `_mau` | `_color` | ⚠️ mau |
-| `_mau_an_toan` | `_color_hide_whole` | ⚠️ mau |
-| `ve_tai_cho` | `about_download_wait` | ⚠️ cho |
+| `_from_distinctive` | `_from_distinctive` |  |
+| `_has_phrase` | `_has_phrase` |  |
+| `_has_word` | `_has_word` |  |
+| `_many` | `_many` |  |
+| `vendors_in_story` | `vendors_in_story` | ⚠️ in |
+| `query` | `query` |  |
+| `filter_commons` | `filter_commons` |  |
+| `_ask_api` | `_ask_api` |  |
+| `_file_claim` | `_file_claim` |  |
+| `_qid_claim` | `_qid_claim` |  |
+| `qid_rank` | `qid_rank` |  |
+| `material_wikidata` | `material_wikidata` |  |
+| `_slug` | `_slug` |  |
+| `_lock_model` | `_lock_model` |  |
+| `vendor_website` | `vendor_website` |  |
+| `_download_html` | `_download_html` |  |
+| `announcement_page` | `announcement_page` |  |
+| `commons_urls` | `commons_urls` |  |
+| `card_logo` | `card_logo` |  |
+| `_measure_bright_logo` | `_measure_bright_logo` |  |
+| `image_wikidata` | `image_wikidata` |  |
+| `_candidate` | `_candidate` |  |
+| `image_person_landscape` | `image_person_landscape` |  |
+| `image_has_ballot` | `image_has_ballot` |  |
+| `vendor_images` | `vendor_images` |  |
+| `rank_has_model` | `rank_has_model` |  |
+| `sentence_ask_vision` | `sentence_ask_vision` |  |
+| `_ask_commons` | `_ask_commons` |  |
+| `label_by_type` | `label_by_type` |  |
+| `label_brand` | `label_brand` |  |
 
-### `khung_anh`
+### `image_concept`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_lam_tron` | `_make_full` |  |
-| `_mau` | `_color` | ⚠️ mau |
+| `_country_within` | `_country_within` |  |
+| `keyword_heuristic` | `keyword_heuristic` |  |
+| `keyword_llm` | `keyword_llm` |  |
+| `read_return_error_llm` | `read_return_error_llm` |  |
+| `keyword_concept` | `keyword_concept` |  |
+| `_from_distinctive` | `_from_distinctive` |  |
+| `filter_commons` | `filter_commons` |  |
+| `image_concept` | `image_concept` |  |
+| `sentence_ask_vision` | `sentence_ask_vision` |  |
+| `label_concept` | `label_concept` |  |
+
+### `image_frame`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_make_full` | `_make_full` |  |
+| `_color` | `_color` |  |
 | `_font` | `_font` |  |
-| `avatar_cho_emoji` | `avatar_wait_emoji` | ⚠️ cho |
-| `_ve_rgb` | `_about_rgb` |  |
-| `dong_khung` | `line_frame` | ⚠️ dong |
-| `_chu_gian` | `_text_space` | ⚠️ chu |
+| `avatar_wait_emoji` | `avatar_wait_emoji` |  |
+| `_about_rgb` | `_about_rgb` |  |
+| `line_frame` | `line_frame` |  |
+| `_text_space` | `_text_space` |  |
 
-### `kiem_hermes`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_home_kanban` | `_home_kanban` |  |
-| `_kiem_bang` | `_check_board` | ⚠️ bang |
-| `kiem_cot` | `check_column` |  |
-| `kiem_co_chat` | `check_has_chat` |  |
-| `kiem_swarm` | `check_swarm` |  |
-
-### `kiem_moi_truong`
+### `image_prepare`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `kiem_cv2` | `check_cv2` |  |
-| `kiem_yunet` | `check_yunet` |  |
-| `kiem_chromium` | `check_chromium` |  |
-| `kiem_bien_moi_truong` | `check_variable_environment` |  |
-| `kiem_openai_key` | `check_openai_key` |  |
-| `kiem_telegram_token` | `check_telegram_token` |  |
+| `prepare_article` | `prepare_article` |  |
+| `workdir` | `workdir` |  |
+| `load_meta` | `load_meta` |  |
+| `_wait_for_slot` | `_wait_for_slot` |  |
+| `_description_missing_image` | `_description_missing_image` |  |
+| `_handle_lock` | `_handle_lock` |  |
+| `count_crashes` | `count_crashes` |  |
+| `_report_crash_loop` | `_report_crash_loop` |  |
+| `run` | `run` |  |
 
-### `kite_chuan_bi`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `handle_kenh` | `handle_channel` |  |
-| `chuyen_tu_vai` | `transfer_from_role` | ⚠️ tu |
-| `hinh_that` | `figure_real` |  |
-| `hinh_mo_dau` | `figure_open_mark` | ⚠️ dau |
-| `hinh_hero` | `figure_hero` |  |
-| `_hero_la_gi` | `_hero_what_is` |  |
-| `dong_hero` | `line_hero` | ⚠️ dong |
-| `_ep_tho` | `_force_raw` |  |
-| `hinh_phai_dung` | `figure_right_use` | ⚠️ dung |
-| `bao_dam_co_bia` | `ensure_has_cover` |  |
-| `goi_y_tone` | `call_y_tone` |  |
-| `viet_brief` | `write_brief` |  |
-
-### `kite_nop`
+### `image_provenance`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_kiem_hinh_slide` | `_check_figure_slide` |  |
-| `_giai_slide` | `_resolve_slide` |  |
-| `giai_spec` | `resolve_spec` |  |
-
-### `loai_tin`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `chuan_loai` | `standard_type` |  |
-| `thu_tu_anh` | `order_image` |  |
-| `muon` | `late` |  |
-| `diem_theo_loai` | `score_by_type` |  |
-| `nuoc_cua` | `country_of` |  |
-| `ma_co_phieu` | `code_has_ballot` | ⚠️ ma |
-| `dong_brief` | `line_brief` | ⚠️ dong |
-
-### `luat_anh`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `dong_dau` | `stamp_provenance` |  |
-| `dong_dau_tep` | `stamp_file` |  |
+| `stamp_provenance` | `stamp_provenance` |  |
+| `stamp_file` | `stamp_file` |  |
 | `_text` | `_text` |  |
-| `doc_dau_crop` | `read_crop_trace` |  |
-| `doc_cat_ngang` | `allows_landscape_crop` |  |
-| `la_xep_hang` | `is_ranking_image` |  |
-| `la_ghep` | `is_stacked_composite` |  |
-| `do_chart` | `measure_chart_signal` |  |
-| `la_chart` | `is_chart` |  |
-| `_js_re` | `_js_regex_literal` |  |
-| `js_rac_url` | `js_junk_url_pattern` |  |
-| `js_rac_dom` | `js_junk_dom_pattern` |  |
+| `read_crop_trace` | `read_crop_trace` |  |
+| `allows_landscape_crop` | `allows_landscape_crop` |  |
+| `is_ranking_image` | `is_ranking_image` |  |
+| `is_stacked_composite` | `is_stacked_composite` |  |
+| `_used_images_log` | `_used_images_log` |  |
+| `story_key` | `story_key` |  |
+| `remove_used_for_draft` | `remove_used_for_draft` |  |
+
+### `image_rules_dre`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `ratio_after_stack` | `ratio_after_stack` |  |
+| `stack_fit_frame` | `stack_fit_frame` |  |
+| `stack_crop_note` | `stack_crop_?note` |  |
+| `_is_title_case_headline` | `_is_title_?case_headline` |  |
+| `subject_names` | `subject_names` |  |
+| `subject_evidence` | `subject_evidence` |  |
+| `measure_chart_signal` | `measure_chart_signal` |  |
+| `is_chart` | `is_chart` |  |
+| `_js_regex_literal` | `_js_regex_literal` |  |
+| `js_junk_url_pattern` | `js_junk_url_pattern` |  |
+| `js_junk_dom_pattern` | `js_junk_dom_pattern` |  |
 | `dhash` | `dhash` |  |
-| `gan_giong` | `is_near_duplicate` |  |
-| `_md5` | `_file_md5` |  |
-| `nguong_dhash` | `dhash_threshold_for` |  |
-| `_so_da_dung` | `_used_images_log` |  |
-| `khoa_tin` | `story_key` |  |
-| `ghi_da_dung` | `record_used` |  |
-| `xoa_da_dung` | `remove_used_for_draft` |  |
-| `kiem_da_dung` | `check_not_reused` |  |
-| `lech_tone` | `tone_mismatch` |  |
-| `_yunet` | `_load_yunet` |  |
-| `dem_mat` | `count_faces` |  |
-| `la_anh_rong` | `is_blank_image` |  |
-| `kiem_anh_rong` | `check_blank_image` |  |
-| `kiem_chart` | `check_chart_integrity` |  |
-| `kiem_chart_mot_minh` | `check_chart_standalone` |  |
-| `kiem_ti_le` | `check_aspect_ratio` |  |
-| `kiem_crop_ngang` | `check_crop_landscape` |  |
-| `kiem_do_phan_giai` | `check_measure_part_resolve` | ⚠️ phan |
-| `kiem_mat_nguoi` | `check_unnamed_face` |  |
-| `kiem_trung` | `check_duplicate` |  |
+| `is_near_duplicate` | `is_near_duplicate` |  |
+| `_file_md5` | `_file_md5` |  |
+| `dhash_threshold_for` | `dhash_threshold_for` |  |
+| `record_used` | `record_used` |  |
+| `check_not_reused` | `check_not_reused` |  |
+| `tone_mismatch` | `tone_mismatch` |  |
+| `_load_yunet` | `_load_yunet` |  |
+| `count_faces` | `count_faces` |  |
+| `is_blank_image` | `is_blank_image` |  |
+| `check_blank_image` | `check_blank_image` |  |
+| `check_chart_integrity` | `check_chart_integrity` |  |
+| `check_chart_standalone` | `check_chart_standalone` |  |
+| `check_aspect_ratio` | `check_aspect_ratio` |  |
+| `check_crop_landscape` | `check_crop_landscape` |  |
+| `check_resolution` | `check_resolution` |  |
+| `check_unnamed_face` | `check_unnamed_face` |  |
+| `check_duplicate` | `check_duplicate` |  |
+
+### `image_rules_ethan`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `ratio_after_stack` | `ratio_after_stack` |  |
+| `stack_fit_frame` | `stack_fit_frame` |  |
+| `measure_chart_signal` | `measure_chart_signal` |  |
+| `is_chart` | `is_chart` |  |
+| `_js_regex_literal` | `_js_regex_literal` |  |
+| `js_junk_url_pattern` | `js_junk_url_pattern` |  |
+| `js_junk_dom_pattern` | `js_junk_dom_pattern` |  |
+| `dhash` | `dhash` |  |
+| `is_near_duplicate` | `is_near_duplicate` |  |
+| `_file_md5` | `_file_md5` |  |
+| `dhash_threshold_for` | `dhash_threshold_for` |  |
+| `record_used` | `record_used` |  |
+| `check_not_reused` | `check_not_reused` |  |
+| `tone_mismatch` | `tone_mismatch` |  |
+| `_load_yunet` | `_load_yunet` |  |
+| `count_faces` | `count_faces` |  |
+| `is_blank_image` | `is_blank_image` |  |
+| `check_blank_image` | `check_blank_image` |  |
+| `check_chart_integrity` | `check_chart_integrity` |  |
+| `check_chart_standalone` | `check_chart_standalone` |  |
+| `check_aspect_ratio` | `check_aspect_ratio` |  |
+| `check_crop_landscape` | `check_crop_landscape` |  |
+| `check_resolution` | `check_resolution` |  |
+| `check_unnamed_face` | `check_unnamed_face` |  |
+| `check_duplicate` | `check_duplicate` |  |
+
+### `image_rules_kite`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `ratio_after_stack` | `ratio_after_stack` |  |
+| `stack_fit_frame` | `stack_fit_frame` |  |
+| `measure_chart_signal` | `measure_chart_signal` |  |
+| `is_chart` | `is_chart` |  |
+| `_js_regex_literal` | `_js_regex_literal` |  |
+| `js_junk_url_pattern` | `js_junk_url_pattern` |  |
+| `js_junk_dom_pattern` | `js_junk_dom_pattern` |  |
+| `dhash` | `dhash` |  |
+| `is_near_duplicate` | `is_near_duplicate` |  |
+| `_file_md5` | `_file_md5` |  |
+| `dhash_threshold_for` | `dhash_threshold_for` |  |
+| `record_used` | `record_used` |  |
+| `check_not_reused` | `check_not_reused` |  |
+| `tone_mismatch` | `tone_mismatch` |  |
+| `_load_yunet` | `_load_yunet` |  |
+| `count_faces` | `count_faces` |  |
+| `is_blank_image` | `is_blank_image` |  |
+| `check_blank_image` | `check_blank_image` |  |
+| `check_chart_integrity` | `check_chart_integrity` |  |
+| `check_chart_standalone` | `check_chart_standalone` |  |
+| `check_aspect_ratio` | `check_aspect_ratio` |  |
+| `check_crop_landscape` | `check_crop_landscape` |  |
+| `check_resolution` | `check_resolution` |  |
+| `check_unnamed_face` | `check_unnamed_face` |  |
+| `check_duplicate` | `check_duplicate` |  |
+
+### `itachi_prepare`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `prepare_slide` | `prepare_slide` |  |
+| `call_y_way` | `call_y_way` |  |
+| `write_brief` | `write_brief` |  |
+
+### `itachi_submit`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_color_hide_whole` | `_color_hide_whole` |  |
+| `about_download_wait` | `about_download_wait` |  |
+
+### `journal`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_hours_vn` | `_hours_vn` |  |
+| `_within_date` | `_within_date` |  |
+| `_open` | `_open` |  |
+| `_bear_error_db` | `_bear_error_db` |  |
+| `bao` | `report` |  |
+| `trong` | `within` |  |
+| `_gather_by_job` | `_gather_by_job` |  |
+| `part_cron` | `part_cron` |  |
+| `part_kanban` | `part_kanban` |  |
+| `part_finn` | `part_finn` |  |
+| `_diem` | `_score` |  |
+| `part_draft` | `part_draft` |  |
+| `part_git` | `part_git` |  |
+| `part_model` | `part_model` |  |
+| `extra_notes` | `extra_notes` |  |
+| `read_notes` | `read_notes` |  |
+| `use_page` | `use_page` |  |
+
+### `journal_web`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_page` | `_page` |  |
+| `_bold` | `_bold` |  |
+| `md_bright_html` | `md_bright_html` |  |
+| `xa_bang` | `off_board` |  |
+| `page_date` | `page_date` |  |
+| `page_list_clean` | `page_list_clean` |  |
+| `bai` | `article` |  |
+| `Handler` | `Handler` |  |
+| `log_message` | `log_message` |  |
+| `_tra` | `_return` | ⚠️ tra |
+| `do_GET` | `measure_get` |  |
+
+### `kite_prepare`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `handle_channel` | `handle_channel` |  |
+| `transfer_from_role` | `transfer_from_role` |  |
+| `figure_real` | `figure_real` |  |
+| `figure_open_mark` | `figure_open_mark` |  |
+| `figure_hero` | `figure_hero` |  |
+| `_hero_what_is` | `_hero_what_is` |  |
+| `line_hero` | `line_hero` |  |
+| `_force_raw` | `_force_raw` |  |
+| `figure_right_use` | `figure_right_use` |  |
+| `ensure_has_cover` | `ensure_has_cover` |  |
+| `call_y_tone` | `call_y_tone` |  |
+| `write_brief` | `write_brief` |  |
+
+### `kite_submit`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_check_figure_slide` | `_check_figure_slide` |  |
+| `_resolve_slide` | `_resolve_slide` |  |
+| `resolve_spec` | `resolve_spec` |  |
 
 ### `manifest_build`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_diem` | `_score` |  |
-| `_muc_tu_pick` | `_item_from_pick` | ⚠️ muc tu |
-| `gom_muc` | `gather_item` | ⚠️ muc |
-| `cat_tran` | `crop_ceiling` |  |
-| `them_bat_buoc` | `extra_required` |  |
+| `_score` | `_score` |  |
+| `_item_from_pick` | `_item_from_pick` |  |
+| `gather_item` | `gather_item` |  |
+| `crop_ceiling` | `crop_ceiling` |  |
+| `extra_required` | `extra_required` |  |
 
-### `manifest_chung`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `chon_theo_k` | `pick_by_k` |  |
-| `don_tom_tat` | `single_summary` |  |
-| `danh_so` | `list_count` | ⚠️ so |
-| `duong_ra_moi` | `path_out_new` | ⚠️ moi |
-| `ghi_manifest` | `write_manifest` |  |
-| `chot_bat_buoc` | `finalize_required` |  |
-| `viet_bao_cao` | `write_report` |  |
-
-### `manifest_ghi`
+### `manifest_common`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_so_bao` | `_count_report` | ⚠️ so |
-| `_muc_tu_nop` | `_item_from_submit` | ⚠️ muc tu |
-| `them_bat_buoc` | `extra_required` |  |
+| `pick_by_k` | `pick_by_k` |  |
+| `single_summary` | `single_summary` |  |
+| `list_count` | `list_count` |  |
+| `path_out_new` | `path_out_new` |  |
+| `write_manifest` | `write_manifest` |  |
+| `finalize_required` | `finalize_required` |  |
+| `write_report` | `write_report` |  |
 
-### `miles_chuan_bi`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `viet_brief` | `write_brief` |  |
-
-### `miles_nop`
+### `manifest_report`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `chuan_hoa` | `standard_ify` |  |
+| `use` | `use` |  |
+
+### `manifest_write`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_count_report` | `_count_report` |  |
+| `_item_from_submit` | `_item_from_submit` |  |
+| `extra_required` | `extra_required` |  |
+
+### `material`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `extract` | `extract` |  |
+| `sentence_has_count` | `sentence_has_count` |  |
+| `gather` | `gather` |  |
+| `use_page` | `use_page` |  |
+
+### `miles_prepare`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `write_brief` | `write_brief` |  |
+
+### `miles_submit`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `standard_ify` | `standard_ify` |  |
 
 ### `moat_publish`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `load_secrets` | `load_secrets` |  |
-| `_cho_trong` | `_wait_within` | ⚠️ cho |
-| `ten_khoa` | `name_lock` | ⚠️ khoa |
+| `_wait_within` | `_wait_within` |  |
+| `name_lock` | `name_lock` |  |
 | `brand_container` | `brand_container` |  |
 | `base_url` | `base_url` |  |
 | `config` | `config` |  |
 | `draft_path` | `draft_path` |  |
 | `read_draft` | `read_draft` |  |
-| `_ghi_json` | `_write_json` |  |
+| `_write_json` | `_write_json` |  |
 | `write_draft` | `write_draft` |  |
-| `chu_thuan` | `pure_text` |  |
-| `_nen` | `_background` | ⚠️ nen |
+| `pure_text` | `pure_text` |  |
+| `_background` | `_background` |  |
 | `images_payload` | `images_payload` |  |
 | `_body_intake` | `_body_intake` |  |
 | `intake` | `intake` |  |
-| `_doc_hang_doi` | `_read_queue` | ⚠️ doc |
-| `_ghi_hang_doi` | `_write_queue` |  |
-| `_dang_thu_lai` | `_form_try_again` | ⚠️ thu |
-| `_danh_dau_dang_day` | `_list_mark_form_bottom` | ⚠️ dau day |
-| `xep_day_lai` | `refill` |  |
-| `_bo_khoi_hang_doi` | `_drop_block_queue` | ⚠️ bo |
-| `day_lai` | `bottom_again` | ⚠️ day |
+| `_read_queue` | `_read_queue` |  |
+| `_write_queue` | `_write_queue` |  |
+| `_form_try_again` | `_form_try_again` |  |
+| `_list_mark_form_bottom` | `_list_mark_form_bottom` |  |
+| `refill` | `refill` |  |
+| `_drop_block_queue` | `_drop_block_queue` |  |
+| `bottom_again` | `bottom_again` |  |
 | `_fetch_status` | `_fetch_status` |  |
-| `_poll_mot_bai` | `_poll_one_article` |  |
+| `_poll_one_article` | `_poll_one_article` |  |
 | `poll` | `poll` |  |
-| `_thoat` | `_exit` |  |
+| `_exit` | `_exit` |  |
 | `_tele` | `_tele` |  |
-| `bao_the` | `report_card` | ⚠️ the |
+| `report_card` | `report_card` |  |
 | `_notify` | `_notify` |  |
 
 ### `model_audition`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `goi` | `call` |  |
+| `call` | `call` |  |
+
+### `model_boards`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `Board` | `Board` |  |
+| `rank_and_date` | `rank_and_date` |  |
 
 ### `model_watch`
 
@@ -1929,175 +1993,188 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `models_in_use` | `models_in_use` |  |
 | `probe` | `probe` |  |
 
-### `nen_chu`
+### `monitor_9router`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `do_sang_lech` | `measure_bright_offset` | ⚠️ sang |
-| `mau_trung_binh` | `color_average` | ⚠️ mau |
-| `_luminance` | `_luminance` |  |
-| `kenh` | `channel` |  |
-| `_ti_le_tuong_phan` | `_ratio_wall_part` | ⚠️ phan |
-| `nguong_tuong_phan` | `threshold_wall_part` | ⚠️ phan |
-| `ti_le_tuong_phan` | `ratio_wall_part` | ⚠️ phan |
+| `_of_count_utc` | `_of_count_utc` |  |
+| `_hours_vn` | `_hours_vn` |  |
+| `_seconds` | `_seconds` |  |
+| `_hhmm` | `_hhmm` |  |
+| `_name_board` | `_name_board` |  |
+| `_each_name` | `_each_name` |  |
+| `string_already_config` | `string_already_config` |  |
+| `cap_fallback` | `cap_fallback` | ⚠️ cap |
+| `inspect_model` | `inspect_model` |  |
+| `aggregate` | `aggregate` |  |
+| `moi` | `new` | ⚠️ moi |
+| `pct` | `pct` |  |
+| `gon` | `compact` |  |
+| `read_date` | `read_date` |  |
+| `error_connection` | `error_connection` |  |
+| `_standard_model` | `_standard_model` |  |
+| `_single_fake` | `_single_fake` |  |
+| `gather_role` | `gather_role` |  |
+| `gia_cua` | `fake_of` | ⚠️ gia |
+| `write_md` | `write_md` |  |
+| `still_for` | `still_for` |  |
+| `summary_tele` | `summary_tele` |  |
+| `use` | `use` |  |
+| `download` | `download` |  |
 
-### `nguon_bai`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `bo_hau_to_site` | `strip_site_suffix` |  |
-| `tu_cung_tin` | `story_tokens` |  |
-| `cung_tin` | `same_story` |  |
-| `_tai` | `_download` |  |
-| `giai_ma_gnews` | `resolve_code_gnews` | ⚠️ ma |
-| `co_tieng_viet` | `has_vietnamese` |  |
-| `_tieu_de_rss` | `_title_rss` |  |
-| `_tieu_de_trang` | `_title_page` |  |
-| `_ten_rieng_khong_dau` | `_name_own_no_mark` | ⚠️ dau |
-| `tieu_de_tim` | `title_find` |  |
-| `_truy_van_bing` | `_query_bing` |  |
-| `bao_khac_bing` | `other_outlets_bing` |  |
-| `bao_ve_tu_khoa` | `report_about_keyword` |  |
-| `tim` | `find` |  |
-| `_trong_feed` | `_within_feed` |  |
-
-### `nhat_ky`
+### `prepare.browser`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_gio_vn` | `_hours_vn` |  |
-| `_trong_ngay` | `_within_date` |  |
-| `_mo` | `_open` |  |
-| `_chiu_loi_db` | `_bear_error_db` |  |
-| `bao` | `report` |  |
-| `trong` | `within` |  |
-| `_gom_theo_viec` | `_gather_by_job` |  |
-| `phan_cron` | `part_cron` | ⚠️ phan |
-| `phan_kanban` | `part_kanban` | ⚠️ phan |
-| `phan_finn` | `part_finn` | ⚠️ phan |
-| `_diem` | `_score` |  |
-| `phan_draft` | `part_draft` | ⚠️ phan |
-| `phan_git` | `part_git` | ⚠️ phan |
-| `phan_model` | `part_model` | ⚠️ phan |
-| `them_ghi_chu` | `extra_notes` |  |
-| `doc_ghi_chu` | `read_notes` | ⚠️ doc |
-| `dung_trang` | `use_page` | ⚠️ dung |
+| `_js_browser` | `_js_browser` |  |
+| `_take_image_page` | `_take_image_page` |  |
+| `_open_page` | `_open_page` |  |
+| `_find_report_gnews` | `_find_report_gnews` |  |
+| `browser_pass` | `browser_pass` |  |
+| `het_gio` | `all_done_hours` |  |
 
-### `nhat_ky_web`
+### `prepare.common`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_trang` | `_page` |  |
-| `_dam` | `_bold` |  |
-| `md_sang_html` | `md_bright_html` | ⚠️ sang |
-| `xa_bang` | `off_board` |  |
-| `trang_ngay` | `page_date` |  |
-| `trang_danh_sach` | `page_list_clean` |  |
-| `bai` | `article` |  |
-| `Handler` | `Handler` |  |
-| `log_message` | `log_message` |  |
-| `_tra` | `_return` | ⚠️ tra |
-| `do_GET` | `measure_get` |  |
+| `_hdr` | `_hdr` |  |
+| `_brand_of` | `_brand_of` |  |
+| `_domain` | `_domain` |  |
+| `_read_json` | `_read_json` |  |
+| `_write_json` | `_write_json` |  |
+| `_original_domain` | `_original_domain` |  |
 
-### `nop_chung`
+### `prepare.download_filter`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `chuan` | `normalize` |  |
-| `nap` | `load_draft_context` |  |
-| `vai_viet_cua_bai` | `writer_for_article` |  |
-| `persona_viet` | `writer_persona_name` |  |
-| `so_lan_lam_lai` | `count_attempt_redo` | ⚠️ lan so |
-| `kiem_lam_lai` | `check_redo_reused` |  |
-| `dem_vong_loi` | `count_round_error` |  |
-| `chu_bai_cua` | `article_text_for` |  |
-| `_khong_dau` | `_strip_diacritics` |  |
-| `_tu` | `_words` |  |
-| `_ten_co_trong_bai` | `_name_in_article` |  |
-| `kiem_nhan_vat` | `check_subject_named` |  |
-| `kiem_so_tren_anh` | `check_numbers_on_card` |  |
-| `can_anh_xep_hang` | `needs_ranking_image` |  |
-| `anh_khong_lien_quan` | `irrelevant_images` |  |
-| `kiem_da_dung_nhieu` | `check_not_reused_across_runs` |  |
-| `_sach_dung_mot_minh` | `_clean_use_alone` | ⚠️ dung |
-| `kiem_anh_roi` | `check_image_fall` |  |
-| `kiem_quote_dich` | `check_quote_translated` |  |
-| `kiem_khong_lap_anh_lam_lai` | `check_no_repeat_image_redo` |  |
-| `kiem_dan_nguon_gon` | `check_guide_source_compact` |  |
-| `kiem_hang_tren_the` | `check_rank_matches_image` |  |
-| `_album_da_len` | `_recently_posted` |  |
-| `gui_album` | `send_album` |  |
-| `_ghi_so` | `_write_count` | ⚠️ so |
-| `ghi_bang_den` | `write_blackboard` |  |
+| `_download_bytes` | `_download_bytes` |  |
+| `_host_is_side_try_three` | `_host_is_side_try_three` |  |
+| `_download_candidate` | `_download_candidate` |  |
+| `download_and_filter` | `download_and_filter` |  |
+| `_chart_by_figure` | `_chart_by_figure` |  |
+| `_save_crop` | `_save_crop` |  |
 
-### `phien_browser`
+### `prepare.fallback_rounds`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `bi_chan` | `got_block` |  |
-| `PhienBrowser` | `BrowserSession` |  |
-| `browser` | `browser` |  |
-| `trang` | `page` |  |
-| `dong` | `line` | ⚠️ dong |
-| `phien_hoac_moi` | `session_or_new` |  |
+| `_supplement_source` | `_supplement_source` |  |
+| `_extra_announcement_page` | `_extra_announcement_page` |  |
+| `_take_from_browser` | `_take_from_browser` |  |
+| `_capture_ranking` | `_capture_ranking` |  |
+| `_image_item_ranking` | `_image_item_ranking` |  |
+| `_gather_and_download_image` | `_gather_and_download_image` |  |
+| `_round_widen_search` | `_round_widen_search` |  |
+| `_ranking_context_edge` | `_ranking_context_edge` |  |
+| `_report_brand_empty` | `_report_brand_empty` |  |
+| `_round_brand` | `_round_brand` |  |
+| `_round_capture_source` | `_round_capture_source` |  |
+| `_ra` | `_out` |  |
+| `capability_block_headline` | `capability_block_headline` |  |
+| `_round_concept` | `_round_concept` |  |
+| `_round_entity` | `_round_entity` |  |
+
+### `prepare.manifest`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `describe_ranking_image` | `describe_ranking_image` |  |
+| `ranking_brief_line` | `ranking_brief_line` |  |
+| `pair_two_vendor_images` | `pair_two_vendor_images` |  |
+| `stackable_pairs` | `stackable_pairs` |  |
+| `contact_sheet` | `contact_sheet` |  |
+| `gather_material` | `gather_material` |  |
+| `_article_material` | `_article_material` |  |
+| `compute_derived` | `compute_derived` |  |
+| `build_manifest` | `build_manifest` |  |
+
+### `prepare.source`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_summary_from_img_json` | `_summary_from_img_json` |  |
+| `load_source` | `load_source` |  |
+| `_title_page` | `_title_page` |  |
+| `candidate_social` | `candidate_social` |  |
+| `candidate_static` | `candidate_static` |  |
+| `commons_images` | `commons_images` |  |
+| `all_proper_nouns` | `all_proper_?nouns` |  |
+| `_leading_proper_noun` | `_leading_proper_noun` |  |
+
+### `prepare.vision`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `description_image` | `description_image` |  |
+| `_mot_lan` | `_one_attempt` | ⚠️ lan |
+| `_call_router` | `_call_router` |  |
+| `_classify_hide_whole` | `_classify_hide_whole` |  |
+| `classify` | `classify` |  |
+| `_seen_image` | `_seen_image` |  |
+
+### `press_entity_images`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `link_real` | `link_real` |  |
+| `filter_article` | `filter_article` |  |
+| `_rss` | `_rss` |  |
+| `report_about` | `report_about` |  |
+| `og_from_html` | `og_from_html` |  |
+| `_og` | `_og` |  |
+| `press_entity_images` | `press_entity_images` |  |
 
 ### `publish`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `load_secrets` | `load_secrets` |  |
-| `don_dep` | `single_pretty` |  |
+| `single_pretty` | `single_pretty` |  |
 | `_bo` | `_drop` | ⚠️ bo |
-| `TelegramTuChoi` | `TelegramReject` |  |
+| `TelegramReject` | `TelegramReject` |  |
 | `_check` | `_check` |  |
-| `send_text_cac_manh` | `send_text_fragments` |  |
+| `send_text_fragments` | `send_text_fragments` |  |
 | `send_text` | `send_text` |  |
 | `send_photo` | `send_photo` |  |
 | `send_document` | `send_document` |  |
 | `send_media_group` | `send_media_group` |  |
-| `gui_topic` | `send_topic` |  |
+| `send_topic_with_keyboard` | `send_topic_with_keyboard` |  |
+| `send_topic` | `send_topic` |  |
 | `_main` | `_main` |  |
 
-### `quet_chuan_bi`
+### `ranking`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_cat` | `_crop` |  |
-| `luot` | `turn` |  |
-| `workdir` | `workdir` |  |
-| `_moi` | `_new` | ⚠️ moi |
-| `_chay` | `_run` |  |
-| `_bat_buoc` | `_required` |  |
-| `_bo_sung_bat_buoc` | `_supplement_required` |  |
-| `brief_scout` | `brief_scout` |  |
-| `brief_nova` | `brief_nova` |  |
-| `brief_market` | `brief_market` |  |
-| `brief_qinn` | `brief_qinn` |  |
-
-### `quet_chung`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `host_noi_bo` | `host_say_drop` | ⚠️ bo |
-| `kiem_url` | `check_url` |  |
-| `url_an_toan` | `url_hide_whole` |  |
-| `chuan_link` | `standard_link` |  |
-| `hoi_commons` | `ask_commons` |  |
-| `get` | `get` |  |
-| `moc_thoi_gian` | `timestamp_time` |  |
-| `tu_dac_trung` | `from_distinctive` | ⚠️ tu |
-
-### `quet_nop`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `loi_chan_gui` | `error_block_send` |  |
-| `duong_manifest` | `path_manifest` |  |
-| `ghim_manifest` | `pin_manifest` |  |
-| `loc_canh_bao` | `filter_warning` |  |
-| `_chay` | `_run` |  |
-| `_in_loi` | `_in_error` | ⚠️ in |
-| `gui` | `send` |  |
+| `is_capture` | `is_capture` |  |
+| `is_ranking_story` | `is_ranking_story` |  |
+| `extract_model` | `extract_model` |  |
+| `extract_rank` | `extract_rank` |  |
+| `suggest_sources` | `suggest_sources` |  |
+| `_change_board` | `_change_board` |  |
+| `_hand` | `_hand` |  |
+| `_capture` | `_capture` |  |
+| `_highlight` | `_highlight` |  |
+| `_of_count` | `_of_count` |  |
+| `_capture_one_board` | `_capture_one_board` |  |
+| `capture_board` | `capture_board` |  |
+| `_capture_one_column` | `_capture_one_column` |  |
+| `capture_list_clean` | `capture_list_clean` |  |
+| `capture_svg` | `capture_svg` |  |
+| `capture_logo` | `capture_logo` |  |
+| `fallback_card` | `fallback_card` |  |
+| `giua` | `middle` |  |
+| `SessionCapture` | `SessionCapture` |  |
+| `trang` | `page` |  |
+| `thu` | `try` | ⚠️ thu |
+| `_try_source` | `_try_source` |  |
+| `find_and_capture` | `find_and_capture` |  |
+| `_rank_of` | `_rank_of` |  |
+| `source_proves_story` | `source_?proves_story` |  |
+| `_sources_proving_story` | `_sources_?proving_story` |  |
+| `_skip_source` | `_skip_source` |  |
+| `find_and_capture_many` | `find_and_capture_many` |  |
 
 ### `render_edu`
 
@@ -2108,15 +2185,15 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `base_css` | `base_css` |  |
 | `rgba` | `rgba` |  |
 | `hero_svg` | `hero_svg` |  |
-| `_nho` | `_small` |  |
-| `_do_anh` | `_measure_image` |  |
-| `_do_anh_that` | `_measure_image_real` |  |
-| `_anh_data_uri` | `_image_data_uri` |  |
+| `_small` | `_small` |  |
+| `_measure_image` | `_measure_image` |  |
+| `_measure_image_real` | `_measure_image_real` |  |
+| `_image_data_uri` | `_image_data_uri` |  |
 | `lam` | `make` |  |
-| `_sang` | `_bright` | ⚠️ sang |
-| `doc_nen` | `read_background` | ⚠️ doc nen |
-| `_doc_nen_that` | `_read_background_real` | ⚠️ doc nen |
-| `dat_anh` | `set_image` |  |
+| `_bright` | `_bright` |  |
+| `read_background` | `read_background` |  |
+| `_read_background_real` | `_read_background_real` |  |
+| `set_image` | `set_image` |  |
 | `esc` | `esc` |  |
 | `accent_html` | `accent_html` |  |
 | `glow` | `glow` |  |
@@ -2124,95 +2201,134 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `eyebrow` | `eyebrow` |  |
 | `folio` | `folio` |  |
 | `s_cover` | `s_cover` |  |
-| `_cover_anh` | `_cover_image` |  |
+| `_cover_image` | `_cover_image` |  |
 | `s_statement` | `s_statement` |  |
 | `s_steps` | `s_steps` |  |
 | `s_loop` | `s_loop` |  |
-| `_mau_toi` | `_color_dark` | ⚠️ mau toi |
-| `_css_mast_toi` | `_css_mast_dark` | ⚠️ toi |
-| `_css_chu_toi_vung` | `_css_text_dark_region` | ⚠️ chu toi |
-| `anh_lam_nen` | `image_make_background` | ⚠️ nen |
+| `_color_dark` | `_color_dark` |  |
+| `_css_mast_dark` | `_css_mast_dark` |  |
+| `_css_text_dark_region` | `_css_text_dark_region` |  |
+| `image_make_background` | `image_make_background` |  |
 | `s_figure` | `s_figure` |  |
-| `_so` | `_count` | ⚠️ so |
-| `_gia_tri` | `_value` |  |
+| `_count` | `_count` |  |
+| `_value` | `_value` |  |
 | `s_bars` | `s_bars` |  |
 | `s_cta` | `s_cta` |  |
-| `slide_doc` | `slide_read` | ⚠️ doc |
-| `kiem_truong` | `check_field` |  |
+| `slide_read` | `slide_read` |  |
+| `check_field` | `check_field` |  |
 | `gate_slides` | `gate_slides` |  |
-| `_gate_noi_dung` | `_gate_content` |  |
+| `_gate_content` | `_gate_content` |  |
 | `_texts` | `_texts` |  |
-| `_nhat_ky_theme` | `_journal_theme` |  |
-| `_theme_gan_day` | `_theme_near_bottom` | ⚠️ day |
-| `_ghi_theme` | `_write_theme` |  |
-| `mau_noi_bat` | `color_say_catch` | ⚠️ bat mau |
-| `lech_hue` | `offset_hue` |  |
-| `theme_gan_mau` | `theme_near_color` | ⚠️ mau |
-| `mau_hang_trong_spec` | `color_rank_within_spec` | ⚠️ hang mau |
-| `chon_theme_tu_dong` | `pick_theme_auto` |  |
+| `_journal_theme` | `_journal_theme` |  |
+| `_theme_near_bottom` | `_theme_near_bottom` |  |
+| `_write_theme` | `_write_theme` |  |
+| `color_say_catch` | `color_say_catch` |  |
+| `offset_hue` | `offset_hue` |  |
+| `theme_near_color` | `theme_near_color` |  |
+| `color_rank_within_spec` | `color_rank_within_spec` |  |
+| `pick_theme_auto` | `pick_theme_auto` |  |
 | `it_dung_nhat` | `least_used` |  |
 | `_route_font` | `_route_font` |  |
 | `_tra` | `_return` | ⚠️ tra |
-| `_kiem_tieu_de_dong` | `_check_title_line` | ⚠️ dong |
-| `_chup_cac_slide` | `_capture_each_slide` |  |
+| `_check_title_line` | `_check_title_line` |  |
+| `_capture_each_slide` | `_capture_each_slide` |  |
 | `render` | `render` |  |
 | `dung_doc` | `use_read` | ⚠️ doc dung |
+
+### `required`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `file` | `file` |  |
+| `read` | `read` |  |
+| `_write` | `_write` |  |
+| `extra` | `extra` |  |
+| `extra_many` | `extra_many` |  |
+| `_standard` | `_standard` |  |
+| `match` | `match` |  |
+| `link_call_y` | `link_call_y` |  |
+| `check` | `check` |  |
+| `delete` | `delete` |  |
+| `in_list_clean` | `in_list_clean` | ⚠️ in |
 
 ### `role`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `Role` | `Role` |  |
+| `writers_for_brand` | `?writers_for_brand` |  |
+| `pick_by_queue` | `pick_by_queue` |  |
 | `writer_for` | `writer_for` |  |
 | `display_name` | `display_name` |  |
+| `rules_module` | `rules_?module` |  |
+| `set_active_role` | `set_active_role` |  |
+| `active_rules` | `active_rules` |  |
 | `canonical_slug` | `canonical_slug` |  |
 | `max_runtime_for` | `max_runtime_for` |  |
 | `min_images` | `min_images` |  |
 | `person_names_in_alt` | `person_names_in_alt` | ⚠️ in |
 | `has_label_cover` | `has_label_cover` |  |
+| `face_no_clear_ai` | `face_no_clear_ai` |  |
 | `can_be_hero` | `can_be_hero` |  |
 | `search_target_for` | `search_target_for` |  |
 | `has_enough_material` | `has_enough_material` |  |
 | `product_unit_for` | `product_unit_for` |  |
 | `_build_go_map` | `_build_go_map` |  |
 
-### `route_thieu_anh`
+### `route_missing_images`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_tg_gui` | `_time_send` |  |
-| `sau_chuan_bi` | `after_prepare` |  |
+| `_time_send` | `_time_send` |  |
+| `after_prepare` | `after_prepare` |  |
 | `_hoi` | `_ask` |  |
 
 ### `scan_business`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `ten_watchlist` | `name_watchlist` |  |
-| `trong_watchlist` | `within_watchlist` |  |
-| `chuan_hoa` | `standard_ify` |  |
-| `toa_soan` | `outlet` |  |
-| `quet_gnews` | `scan_gnews` |  |
-| `quet_bao` | `scan_report` |  |
-| `_tu_khoa` | `_keyword` |  |
-| `gom_trung` | `gather_duplicate` |  |
-| `da_thay` | `already_see` | ⚠️ thay |
-| `ghi_moc` | `write_timestamp` |  |
+| `name_watchlist` | `name_watchlist` |  |
+| `within_watchlist` | `within_watchlist` |  |
+| `standard_ify` | `standard_ify` |  |
+| `outlet` | `outlet` |  |
+| `scan_gnews` | `scan_gnews` |  |
+| `scan_report` | `scan_report` |  |
+| `_keyword` | `_keyword` |  |
+| `_amounts` | `_?amounts` |  |
+| `_deal_keywords` | `_?deal_?keywords` |  |
+| `_same_amount` | `_same_?amount` |  |
+| `_is_follow_up` | `_is_?follow_?up` |  |
+| `_capitalized` | `_?capitalized` |  |
+| `gather_duplicate` | `gather_duplicate` |  |
+| `is_deal_name` | `is_?deal_name` |  |
+| `root` | `root` |  |
+| `already_see` | `already_see` |  |
+| `write_timestamp` | `write_timestamp` |  |
+
+### `scan_common`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `host_say_drop` | `host_say_drop` |  |
+| `check_url` | `check_url` |  |
+| `url_hide_whole` | `url_hide_whole` |  |
+| `standard_link` | `standard_link` |  |
+| `ask_commons` | `ask_commons` |  |
+| `get` | `get` |  |
+| `timestamp_time` | `timestamp_time` |  |
+| `from_distinctive` | `from_distinctive` |  |
 
 ### `scan_models`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `vung_cua` | `region_of` |  |
-| `fetch_openrouter` | `fetch_openrouter` |  |
-| `_usd_1m` | `_usd_1m` |  |
+| `region_of` | `region_of` |  |
 | `fetch_catalog` | `fetch_catalog` |  |
 | `_arena_board` | `_arena_board` |  |
 | `fetch_arena` | `fetch_arena` |  |
 | `fetch_swebench` | `fetch_swebench` |  |
 | `fetch_livebench` | `fetch_livebench` |  |
-| `fetch_openrouter_usage` | `fetch_openrouter_usage` |  |
-| `_goc_theo_ten` | `_original_by_name` |  |
+| `_original_by_name` | `_original_by_name` |  |
 | `fetch_tbench` | `fetch_tbench` |  |
 | `fetch_arcagi` | `fetch_arcagi` |  |
 | `fetch_hle` | `fetch_hle` |  |
@@ -2223,33 +2339,47 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `fetch_anthropic` | `fetch_anthropic` |  |
 | `_rsc` | `_rsc` |  |
 | `fetch_aa` | `fetch_aa` |  |
-| `loc_aa` | `filter_aa` |  |
+| `filter_aa` | `filter_aa` |  |
 | `gon` | `compact` |  |
 | `gon2` | `compact2` |  |
-| `ten_goc` | `name_original` |  |
-| `_bang_goc` | `_board_original` | ⚠️ bang |
-| `_lam_tron` | `_make_full` |  |
-| `fetch_tin_hang` | `fetch_story_rank` | ⚠️ hang |
+| `name_original` | `name_original` |  |
+| `_board_original` | `_board_original` |  |
+| `_make_full` | `_make_full` |  |
+| `fetch_story_rank` | `fetch_story_rank` |  |
 | `_t` | `_t` |  |
 | `fetch_github` | `fetch_github` |  |
-| `_lam_sach` | `_make_clean` |  |
-| `trich_benchmark` | `excerpt_benchmark` |  |
-| `doc_state` | `read_state` | ⚠️ doc |
-| `da_thay` | `already_see` | ⚠️ thay |
-| `hang_cu` | `rank_old` | ⚠️ cu hang |
-| `aa_da_bao` | `aa_already_report` |  |
-| `ghi_moc` | `write_timestamp` |  |
-| `ghi_bat_buoc` | `write_required` |  |
-| `so_hang` | `count_rank` | ⚠️ hang so |
-| `_thu` | `_try` | ⚠️ thu |
-| `_in_bang` | `_in_board` | ⚠️ bang in |
-| `_in_bao_cao` | `_in_report` | ⚠️ in |
+| `read_state` | `read_state` |  |
+| `already_see` | `already_see` |  |
+| `rank_old` | `rank_old` |  |
+| `aa_already_report` | `aa_already_report` |  |
+| `write_timestamp` | `write_timestamp` |  |
+| `write_required` | `write_required` |  |
+| `count_rank` | `count_rank` |  |
+| `_try` | `_try` |  |
+| `_in_board` | `_in_board` | ⚠️ in |
+| `_in_report` | `_in_report` | ⚠️ in |
+
+### `scan_prepare`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_crop` | `_crop` |  |
+| `turn` | `turn` |  |
+| `workdir` | `workdir` |  |
+| `_new` | `_new` |  |
+| `_run` | `_run` |  |
+| `_required` | `_required` |  |
+| `_supplement_required` | `_supplement_required` |  |
+| `brief_scout` | `brief_scout` |  |
+| `brief_nova` | `brief_nova` |  |
+| `brief_market` | `brief_market` |  |
+| `brief_qinn` | `brief_qinn` |  |
 
 ### `scan_sources`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `nguon_goc` | `source_original` |  |
+| `source_original` | `source_original` |  |
 | `_is_ai_ish` | `_is_ai_ish` |  |
 | `_age_hours` | `_age_hours` |  |
 | `score_recency` | `score_recency` |  |
@@ -2258,21 +2388,33 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `fetch_reddit` | `fetch_reddit` |  |
 | `fetch_arxiv` | `fetch_arxiv` |  |
 | `seen_keys` | `seen_keys` |  |
-| `_anh_cua` | `_image_of` |  |
-| `gan_anh` | `near_image` |  |
+| `_image_of` | `_image_of` |  |
+| `near_image` | `near_image` |  |
+
+### `scan_submit`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `error_block_send` | `error_block_send` |  |
+| `path_manifest` | `path_manifest` |  |
+| `pin_manifest` | `pin_manifest` |  |
+| `filter_warning` | `filter_warning` |  |
+| `_run` | `_run` |  |
+| `_in_error` | `_in_error` | ⚠️ in |
+| `send` | `send` |  |
 
 ### `scan_x`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `doc_tweets` | `read_tweets` | ⚠️ doc |
-| `da_thay` | `already_see` | ⚠️ thay |
-| `ghi_moc` | `write_timestamp` |  |
-| `mot_dong` | `one_line` | ⚠️ dong |
-| `diem_co_hoc` | `score_mechanical` |  |
+| `read_tweets` | `read_tweets` |  |
+| `already_see` | `already_see` |  |
+| `write_timestamp` | `write_timestamp` |  |
+| `one_line` | `one_line` |  |
+| `score_mechanical` | `score_mechanical` |  |
 | `so` | `count` | ⚠️ so |
-| `loc` | `filter` |  |
-| `ra_tin` | `out_story` |  |
+| `filter` | `filter` |  |
+| `out_story` | `out_story` |  |
 
 ### `schema`
 
@@ -2280,294 +2422,418 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 |---|---|---|
 | `Manifest` | `Manifest` |  |
 | `Meta` | `Meta` |  |
-| `SidecarAnh` | `SidecarImage` |  |
-| `SidecarViet` | `SidecarWrite` |  |
-| `DongAnhDaDung` | `LineImageUsed` | ⚠️ dong |
-| `_chi_ghep_duoc` | `_only_stack_ok` | ⚠️ chi |
-| `so_anh_dung_duoc` | `count_image_use_ok` | ⚠️ dung so |
-| `doc_manifest` | `read_manifest` | ⚠️ doc |
-| `hop_nhat_meta` | `merge_meta` |  |
-| `_kieu` | `_kind` |  |
+| `SidecarImage` | `SidecarImage` |  |
+| `SidecarWrite` | `SidecarWrite` |  |
+| `LineImageUsed` | `LineImageUsed` |  |
+| `_only_stack_ok` | `_only_stack_ok` |  |
+| `_count_stackable_pairs_real` | `_count_stackable_pairs_real` |  |
+| `_tot` | `_good` |  |
+| `count_image_use_ok` | `count_image_use_ok` |  |
+| `read_manifest` | `read_manifest` |  |
+| `merge_meta` | `merge_meta` |  |
+| `_kind` | `_kind` |  |
 
-### `soat_cron`
+### `send_telegram`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_epoch` | `_epoch` |  |
-| `_gio` | `_hours` |  |
-| `_tuoi` | `_age` |  |
-| `kho_cron` | `format_cron` |  |
-| `soat_kho` | `audit_format` |  |
-| `soat` | `audit` |  |
-| `khoa_van_de` | `lock_still_for` | ⚠️ de khoa van |
-| `doc_dau` | `read_mark` | ⚠️ dau doc |
-| `dung_tin` | `use_story` | ⚠️ dung |
+| `SendError` | `SendError` |  |
+| `_topic` | `_topic` |  |
+| `_md5` | `_md5` |  |
+| `_telegram_post` | `_telegram_post` |  |
+| `_write_journal` | `_write_journal` |  |
+| `_mark_button_sent` | `_mark_button_?sent` |  |
+| `_send_button` | `_send_button` |  |
+| `_already_send_near_bottom` | `_already_send_near_bottom` |  |
+| `_kb_approve` | `_kb_approve` |  |
+| `post` | `post` |  |
+| `near_bottom` | `near_bottom` |  |
+
+### `skill_lesson_approve`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `verdict_path` | `?verdict_path` |  |
+| `decide` | `decide` |  |
+| `_drop_row` | `_drop_row` |  |
+| `handle_button` | `handle_button` |  |
+
+### `skill_lesson_commit`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `ApplyError` | `ApplyError` |  |
+| `branch_name` | `branch_name` |  |
+| `metadata_comment` | `?metadata_?comment` |  |
+| `build_worktree` | `build_?worktree` |  |
+| `remove_worktree` | `remove_?worktree` |  |
+| `apply_lesson` | `apply_lesson` |  |
+| `commit_lesson` | `commit_lesson` |  |
+| `format_pr_body` | `format_?pr_body` |  |
+| `default_open_pr` | `default_open_?pr` |  |
+| `default_enable_auto_merge` | `default_?enable_auto_merge` |  |
+| `default_pr_state` | `default_?pr_state` |  |
+| `discard_pending` | `?discard_?pending` |  |
+| `run` | `run` |  |
+
+### `skill_lesson_filter`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `RepoIndex` | `RepoIndex` |  |
+| `_read` | `_read` |  |
+| `_defines` | `_?defines` |  |
+| `has_identifier` | `has_?identifier` |  |
+| `_suggest` | `_suggest` |  |
+| `check_symbol` | `check_?symbol` |  |
+| `commits_since` | `?commits_?since` |  |
+| `extract_symbols` | `extract_?symbols` |  |
+| `_line_diff` | `_line_diff` |  |
+| `_paragraphs` | `_paragraphs` |  |
+| `judge` | `?judge` |  |
+| `flag` | `flag` |  |
+| `collect_pending` | `?collect_?pending` |  |
+| `find_task` | `find_task` |  |
+| `keyboard_for` | `keyboard_for` |  |
+| `format_message` | `format_message` |  |
+| `run` | `run` |  |
 
 ### `social_post`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `la_social` | `is_social` |  |
-| `tieu_de_tu_text` | `title_from_text` | ⚠️ tu |
-| `doc` | `read` | ⚠️ doc |
+| `is_social` | `is_social` |  |
+| `title_from_text` | `title_from_text` |  |
+| `read` | `read` |  |
+
+### `story_type`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `standard_type` | `standard_type` |  |
+| `order_image` | `order_image` |  |
+| `late` | `late` |  |
+| `score_by_type` | `score_by_type` |  |
+| `country_of` | `country_of` |  |
+| `code_has_ballot` | `code_has_ballot` |  |
+| `line_brief` | `line_brief` |  |
+
+### `submit_common`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `normalize` | `normalize` |  |
+| `load_draft_context` | `load_draft_context` |  |
+| `writer_for_article` | `writer_for_article` |  |
+| `writer_persona_name` | `writer_persona_name` |  |
+| `count_of_redo` | `count_of_redo` |  |
+| `check_redo_reused` | `check_redo_reused` |  |
+| `count_round_error` | `count_round_error` |  |
+| `article_text_for` | `article_text_for` |  |
+| `_strip_diacritics` | `_strip_diacritics` |  |
+| `_words` | `_words` |  |
+| `_name_in_article` | `_name_in_article` | ⚠️ in |
+| `check_subject_named` | `check_subject_named` |  |
+| `check_numbers_on_card` | `check_numbers_on_card` |  |
+| `needs_ranking_image` | `needs_ranking_image` |  |
+| `only_ranking_choice` | `only_ranking_?choice` |  |
+| `irrelevant_images` | `irrelevant_images` |  |
+| `check_not_reused_across_runs` | `check_not_reused_across_runs` |  |
+| `_clean_use_alone` | `_clean_use_alone` |  |
+| `check_image_fall` | `check_image_fall` |  |
+| `check_quote_translated` | `check_quote_translated` |  |
+| `check_no_repeat_image_redo` | `check_no_repeat_image_redo` |  |
+| `check_guide_source_compact` | `check_guide_source_compact` |  |
+| `check_rank_matches_image` | `check_rank_matches_image` |  |
+| `_recently_posted` | `_recently_posted` |  |
+| `send_album` | `send_album` |  |
+| `_ghi_so` | `_write_count` | ⚠️ so |
+| `write_blackboard` | `write_blackboard` |  |
+
+### `swap_image_text`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_read_keep` | `_read_keep` |  |
+| `_within_keep` | `_within_keep` |  |
+| `find_region_text` | `find_region_text` |  |
+| `use_mask` | `use_mask` |  |
+| `_lama` | `_lama` |  |
+| `_lama_run` | `_lama_run` |  |
+| `inpaint` | `inpaint` |  |
+| `delete_text` | `delete_text` |  |
+
+### `sync_hermes`
+
+| Hiện tại | Đề xuất | Cờ |
+|---|---|---|
+| `_slug` | `_slug` |  |
+| `plugin_home` | `plugin_home` |  |
+| `_config_profile` | `_config_profile` |  |
+| `_read_all` | `_read_all` |  |
+| `_write_all` | `_write_all` |  |
+| `sync_all_gate_old` | `sync_all_gate_old` |  |
+| `cap_file` | `cap_file` | ⚠️ cap |
+| `them_profile` | `extra_profile` |  |
+| `_file_plugin` | `_file_plugin` |  |
+| `missing_trace` | `missing_trace` |  |
+| `two_home_offset` | `two_home_offset` |  |
+| `hash_upstream` | `hash_upstream` |  |
+| `read_upstream` | `read_upstream` |  |
+| `write_upstream` | `write_upstream` |  |
+| `check_upstream` | `check_upstream` |  |
+| `kanban_already_catch` | `kanban_already_catch` |  |
+| `mention_catch_plugin` | `mention_catch_plugin` |  |
+| `mention_single_copy_item` | `mention_single_copy_item` |  |
+| `read` | `read` |  |
+| `standard` | `standard` |  |
+| `_filter_secret` | `_filter_secret` |  |
+| `_take` | `_take` |  |
+| `capture_config` | `capture_config` |  |
 
 ### `task_bodies`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `ket_thuc_vai_anh` | `end_role_image` |  |
+| `end_role_image` | `end_role_image` |  |
 
 ### `teaser_assemble`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_bo_dau` | `_drop_mark` | ⚠️ bo dau |
-| `tim_giong_tuong_thuat` | `find_voice_wall_technique` |  |
-| `_muc_khong_duoc_nhac` | `_item_no_ok_mention` | ⚠️ muc |
+| `_drop_mark` | `_drop_mark` |  |
+| `find_voice_wall_technique` | `find_voice_wall_technique` |  |
+| `_item_no_ok_mention` | `_item_no_ok_mention` |  |
 | `assemble` | `assemble` |  |
 
 ### `tele_util`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `bo_ansi` | `drop_ansi` | ⚠️ bo |
-| `_diem_cat_an_toan` | `_score_crop_hide_whole` |  |
-| `chia_tin` | `split_message` |  |
+| `drop_ansi` | `drop_ansi` |  |
+| `_score_crop_hide_whole` | `_score_crop_hide_whole` |  |
+| `split_message` | `split_message` |  |
 
-### `theo_doi_9router`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `_cua_so_utc` | `_of_count_utc` | ⚠️ so |
-| `_gio_vn` | `_hours_vn` |  |
-| `_giay` | `_seconds` |  |
-| `_hhmm` | `_hhmm` |  |
-| `_ten_bang` | `_name_board` | ⚠️ bang |
-| `_cac_ten` | `_each_name` |  |
-| `chuoi_da_cau_hinh` | `string_already_config` |  |
-| `cap_fallback` | `cap_fallback` | ⚠️ cap |
-| `soi_model` | `inspect_model` |  |
-| `tong_hop` | `aggregate` |  |
-| `moi` | `new` | ⚠️ moi |
-| `pct` | `pct` |  |
-| `gon` | `compact` |  |
-| `doc_ngay` | `read_date` | ⚠️ doc |
-| `loi_ket_noi` | `error_connection` |  |
-| `_chuan_model` | `_standard_model` |  |
-| `_don_gia` | `_single_fake` | ⚠️ gia |
-| `gom_vai` | `gather_role` |  |
-| `gia_cua` | `fake_of` | ⚠️ gia |
-| `viet_md` | `write_md` |  |
-| `van_de` | `still_for` | ⚠️ de van |
-| `tom_tat_tele` | `summary_tele` |  |
-| `dung` | `use` | ⚠️ dung |
-| `tai` | `download` |  |
-
-### `tieng_viet`
+### `text_bg`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `bo_dau_cam` | `drop_mark_forbid` | ⚠️ bo dau |
-| `tim_mat_dau` | `find_face_mark` | ⚠️ dau |
+| `measure_bright_offset` | `measure_bright_offset` |  |
+| `color_average` | `color_average` |  |
+| `_luminance` | `_luminance` |  |
+| `kenh` | `channel` |  |
+| `_ratio_wall_part` | `_ratio_wall_part` |  |
+| `threshold_wall_part` | `threshold_wall_part` |  |
+| `ratio_wall_part` | `ratio_wall_part` |  |
 
-### `tim_anh_them`
-
-| Hiện tại | Đề xuất | Cờ |
-|---|---|---|
-| `doc_so_luot` | `read_count_turn` | ⚠️ doc so |
-| `kiem_tu_khoa` | `check_keyword` |  |
-| `ung_vien_commons` | `candidate_commons` |  |
-| `thu_nho_commons` | `try_small_commons` | ⚠️ thu |
-| `loc_openverse` | `filter_openverse` |  |
-| `ung_vien_openverse` | `candidate_openverse` |  |
-| `ung_vien_tu_url` | `candidate_from_url` | ⚠️ tu |
-| `ung_vien_tu_khoa` | `candidate_keyword` |  |
-| `noi_anh_moi` | `say_image_new` | ⚠️ moi |
-| `lam_moi_manifest` | `fresh_manifest` |  |
-| `in_ket_qua` | `in_result` | ⚠️ in |
-
-### `tim_anh_web`
+### `vietnamese`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `_dung_duoc` | `_use_ok` | ⚠️ dung |
-| `bing_murl` | `bing_murl` |  |
-| `yandex_img_url` | `yandex_img_url` |  |
-| `loc` | `filter` |  |
-| `_bing` | `_bing` |  |
-| `_yandex` | `_yandex` |  |
-| `tim_anh_web` | `find_image_web` |  |
+| `drop_mark_forbid` | `drop_mark_forbid` |  |
+| `find_face_mark` | `find_face_mark` |  |
 
-### `tu_lieu`
+### `worker_scope_sweep`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `boc` | `extract` |  |
-| `cau_co_so` | `sentence_has_count` | ⚠️ so |
-| `gom` | `gather` |  |
-| `dung_trang` | `use_page` | ⚠️ dung |
+| `kanban_homes` | `kanban_homes` |  |
+| `list_scopes` | `list_?scopes` |  |
+| `decide` | `decide` |  |
+| `stop` | `?stop` |  |
 
-### `xep_hang`
+### `write_log`
 
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
-| `la_chup` | `is_capture` |  |
-| `la_tin_xep_hang` | `is_ranking_story` |  |
-| `tach_model` | `extract_model` |  |
-| `tach_hang` | `extract_rank` |  |
-| `goi_y_nguon` | `suggest_sources` |  |
-| `_doi_bang` | `_change_board` | ⚠️ bang doi |
-| `_giao` | `_hand` |  |
-| `_chup` | `_capture` |  |
-| `_khoanh` | `_highlight` |  |
-| `_cua_so` | `_of_count` | ⚠️ so |
-| `_chup_mot_bang` | `_capture_one_board` | ⚠️ bang |
-| `chup_bang` | `capture_board` | ⚠️ bang |
-| `_chup_mot_cot` | `_capture_one_column` |  |
-| `chup_danh_sach` | `capture_list_clean` |  |
-| `chup_svg` | `capture_svg` |  |
-| `chup_logo` | `capture_logo` |  |
-| `the_du_phong` | `fallback_card` |  |
-| `giua` | `middle` |  |
-| `_PhienChup` | `SessionCapture` |  |
-| `trang` | `page` |  |
-| `thu` | `try` | ⚠️ thu |
-| `_thu_nguon` | `_try_source` | ⚠️ thu |
-| `tim_va_chup` | `find_and_capture` |  |
-| `_hang_cua` | `_rank_of` |  |
-| `_bo_qua_nguon` | `_skip_source` |  |
-| `tim_va_chup_nhieu` | `find_and_capture_many` |  |
+| `_block_create` | `_block_create` |  |
+| `_block_create_real` | `_block_create_real` |  |
+| `log` | `log` |  |
+| `shorten` | `shorten` |  |
+| `brand` | `brand` |  |
 
 ## D. Hằng số module
 
 | Module | Hiện tại | Đề xuất | Cờ |
 |---|---|---|---|
-| `ada_chuan_bi` | `DRAFTS` | `DRAFTS` |  |
-| `ada_chuan_bi` | `HERMES` | `HERMES` |  |
-| `ada_chuan_bi` | `ROOT` | `ROOT` |  |
-| `ada_chuan_bi` | `VN` | `VN` |  |
-| `ada_nop` | `ROOT` | `ROOT` |  |
-| `anh_bai` | `ANH_MOI_TRANG` | `IMAGE_NEW_PAGE` | ⚠️ moi |
-| `anh_bai` | `CO_AI_SINH` | `HAS_AI_GENERATE` |  |
-| `anh_bai` | `DAI_TOI_DA` | `LONG_MAX` |  |
-| `anh_bai` | `DIEN_TICH_TOI_THIEU` | `ASPECT_ACCUMULATE_MIN` |  |
-| `anh_bai` | `HDR` | `HDR` |  |
-| `anh_bai` | `LA_TIN_MODEL` | `IS_STORY_MODEL` |  |
-| `anh_bai` | `QUY` | `RULE` |  |
-| `anh_bai` | `QUY_MODEL` | `RULE_MODEL` |  |
-| `anh_bai` | `RAC` | `JUNK` |  |
-| `anh_bai` | `UA` | `UA` |  |
-| `anh_bao_thuc_the` | `BING_RSS` | `BING_RSS` |  |
-| `anh_bao_thuc_the` | `MKT` | `MKT` |  |
-| `anh_bao_thuc_the` | `TOI_DA_BAI` | `MAX_ARTICLE` |  |
-| `anh_bao_thuc_the` | `TOI_DA_MOI_MIEN` | `MAX_NEW_DOMAIN` | ⚠️ moi |
-| `anh_chuan_bi` | `CHO_KHOA_GIAY` | `WAIT_LOCK_SECONDS` | ⚠️ cho khoa |
-| `anh_chuan_bi` | `CHO_LUOT_GIAY` | `WAIT_SLOT_SECONDS` |  |
-| `anh_chuan_bi` | `SO_ENGINE_SONG_SONG` | `COUNT_ENGINE_PARALLEL` | ⚠️ so |
-| `anh_chuan_bi` | `TEN_CT` | `NAME_CT` |  |
-| `anh_chuan_bi` | `TOI_DA_CHET` | `MAX_CRASH` |  |
-| `anh_khai_niem` | `CHU_DE` | `TOPIC` |  |
-| `anh_khai_niem` | `NUOC` | `COUNTRY` |  |
-| `anh_khai_niem` | `NUOC_VIET_TAT` | `COUNTRY_WRITE_ALL` |  |
-| `anh_khai_niem` | `TEN_LOAI` | `NAME_TYPE` |  |
-| `anh_khai_niem` | `TOI_DA_TU_KHOA` | `MAX_KEYWORD` |  |
-| `anh_khai_niem` | `TU_BO` | `FROM_DROP` | ⚠️ bo tu |
-| `anh_khai_niem` | `UA` | `UA` |  |
-| `anh_thuc_the` | `CANH_NGAN_MIN` | `SHORT_SIDE_MIN` |  |
-| `anh_thuc_the` | `TOI_DA_MOI_THUC_THE` | `MAX_NEW_ENTITY` | ⚠️ moi |
-| `anh_thuc_the` | `TOI_DA_THUC_THE` | `MAX_ENTITY` |  |
-| `anh_thuc_the` | `WIKI_API` | `WIKI_API` |  |
-| `anh_thuong_hieu` | `CANH_NGAN_MIN` | `SHORT_SIDE_MIN` |  |
-| `anh_thuong_hieu` | `COMMONS` | `COMMONS` |  |
-| `anh_thuong_hieu` | `CO_PHIEU_CHO` | `HAS_BALLOT_WAIT` | ⚠️ cho |
-| `anh_thuong_hieu` | `CO_PHIEU_URL` | `HAS_BALLOT_URL` |  |
-| `anh_thuong_hieu` | `DUONG_FEED` | `PATH_FEED` |  |
-| `anh_thuong_hieu` | `DUONG_TIN` | `PATH_STORY` |  |
-| `anh_thuong_hieu` | `HAU_TO` | `SUFFIX` |  |
-| `anh_thuong_hieu` | `NHIEU` | `MANY` |  |
-| `anh_thuong_hieu` | `NHIEU_CHUNG` | `MANY_COMMON` |  |
-| `anh_thuong_hieu` | `P_CONG_TY` | `P_GATE_BILLION` |  |
-| `anh_thuong_hieu` | `P_WEBSITE` | `P_WEBSITE` |  |
-| `anh_thuong_hieu` | `TEN_HIEN` | `DISPLAY_NAME` |  |
-| `anh_thuong_hieu` | `TEN_THEM` | `NAME_EXTRA` |  |
-| `anh_thuong_hieu` | `TOI_DA_HANG` | `MAX_RANK` | ⚠️ hang |
-| `anh_thuong_hieu` | `TOI_DA_MOI_HANG` | `MAX_NEW_RANK` | ⚠️ hang moi |
-| `anh_thuong_hieu` | `TOI_DA_NGUOI` | `MAX_PERSON` |  |
-| `anh_thuong_hieu` | `TOI_DA_NGUOI_NGANG` | `MAX_PERSON_LANDSCAPE` |  |
-| `anh_thuong_hieu` | `TOI_DA_TRANG_CONG_BO` | `MAX_ANNOUNCEMENT_PAGE` |  |
-| `anh_thuong_hieu` | `TOI_DA_TRUY_VAN` | `MAX_QUERY` |  |
-| `anh_thuong_hieu` | `TU_CHUNG_TEN` | `FROM_COMMON_NAME` | ⚠️ tu |
-| `anh_thuong_hieu` | `WIKIDATA` | `WIKIDATA` |  |
-| `approve_service` | `KET_PUBLISHING_GIAY` | `END_PUBLISHING_SECONDS` |  |
+| `about_text` | `FONT` | `FONT` |  |
+| `about_text` | `FONTS` | `FONTS` |  |
+| `about_text` | `HAS_MEASURE` | `HAS_MEASURE` |  |
+| `about_text` | `HAS_MIN` | `HAS_MIN` |  |
+| `about_text` | `ROOT` | `ROOT` |  |
+| `ada_prepare` | `DRAFTS` | `DRAFTS` |  |
+| `ada_prepare` | `HERMES` | `HERMES` |  |
+| `ada_prepare` | `ROOT` | `ROOT` |  |
+| `ada_prepare` | `VN` | `VN` |  |
+| `ada_submit` | `ROOT` | `ROOT` |  |
+| `approve_base` | `API` | `API` |  |
+| `approve_base` | `BOSS_IDS` | `BOSS_IDS` |  |
+| `approve_base` | `BRAND` | `BRAND` |  |
+| `approve_base` | `DRAFTS` | `DRAFTS` |  |
+| `approve_base` | `HERMES_HOME` | `HERMES_HOME` |  |
+| `approve_base` | `HERMES_PY` | `HERMES_PY` |  |
+| `approve_base` | `OFFSET` | `OFFSET` |  |
+| `approve_base` | `ROOT` | `ROOT` |  |
+| `approve_base` | `STATE_DIR` | `STATE_DIR` |  |
+| `approve_base` | `TELEGRAM_INCOMING` | `TELEGRAM_INCOMING` |  |
+| `approve_base` | `UPLOAD_RETRY_DELAYS` | `?UPLOAD_RETRY_?DELAYS` |  |
+| `approve_chat` | `ROLE_CHAT_MAKE_JOB` | `ROLE_CHAT_MAKE_JOB` |  |
+| `approve_command` | `COMMAND_HELP` | `COMMAND_HELP` |  |
+| `approve_command` | `SET_ARTICLE_COUNT` | `SET_ARTICLE_COUNT` |  |
+| `approve_dispatch` | `AGAIN_REPORT_STALLED_MINUTES` | `AGAIN_REPORT_STALLED_MINUTES` |  |
+| `approve_dispatch` | `ALREADY_REPORT_PROGRESS` | `ALREADY_REPORT_PROGRESS` |  |
+| `approve_dispatch` | `ALREADY_REPORT_STALLED` | `ALREADY_REPORT_STALLED` |  |
+| `approve_dispatch` | `BEAT_SILENT_MINUTES` | `BEAT_SILENT_MINUTES` |  |
+| `approve_dispatch` | `BLACKBOARD_ASSIGNEE` | `BLACKBOARD_ASSIGNEE` |  |
+| `approve_dispatch` | `BLACKBOARD_BRANDS` | `BLACKBOARD_BRANDS` |  |
+| `approve_dispatch` | `BLACKBOARD_MENTION` | `BLACKBOARD_MENTION` |  |
+| `approve_dispatch` | `DEFAULT_IMAGE` | `DEFAULT_IMAGE` |  |
+| `approve_dispatch` | `DEFAULT_WRITE` | `DEFAULT_WRITE` |  |
+| `approve_dispatch` | `LABEL_STANDARD` | `LABEL_STANDARD` |  |
+| `approve_dispatch` | `NAME_BRIGHT_CAP` | `NAME_BRIGHT_CAP` | ⚠️ cap |
+| `approve_dispatch` | `NAME_ROLE_IMAGE` | `NAME_ROLE_IMAGE` |  |
+| `approve_dispatch` | `NAME_ROLE_WRITE` | `NAME_ROLE_WRITE` |  |
+| `approve_dispatch` | `ROLE_CAROUSEL` | `ROLE_CAROUSEL` |  |
+| `approve_dispatch` | `ROLE_EDU` | `ROLE_EDU` |  |
+| `approve_dispatch` | `ROLE_IMAGE` | `ROLE_IMAGE` |  |
+| `approve_dispatch` | `SLUG_OLD` | `SLUG_OLD` |  |
+| `approve_dispatch` | `STORY_RESULT` | `STORY_RESULT` |  |
+| `approve_dispatch` | `THRESHOLD_STALLED_MINUTES` | `THRESHOLD_STALLED_MINUTES` |  |
+| `approve_pick` | `MANIFEST_BY_TOPIC` | `MANIFEST_BY_TOPIC` |  |
+| `approve_post` | `ALBUM_SUFFIX_PATTERN` | `ALBUM_SUFFIX_PATTERN` |  |
+| `approve_post` | `BACKGROUND_LAYER_BUTTON` | `BACKGROUND_LAYER_BUTTON` |  |
+| `approve_post` | `CAPTION_LIMIT` | `CAPTION_LIMIT` |  |
+| `approve_post` | `MARK_LEN_CHANNEL` | `MARK_LEN_CHANNEL` |  |
+| `approve_post` | `PREVIEW_MAX_BYTES` | `PREVIEW_MAX_BYTES` |  |
+| `approve_post` | `PREVIEW_MAX_DIM` | `PREVIEW_MAX_DIM` |  |
+| `approve_post` | `REDO_LIMIT` | `REDO_LIMIT` |  |
+| `approve_post` | `REDO_WAIT` | `REDO_WAIT` |  |
+| `approve_post` | `REPLY_APPROVE_PATTERN` | `REPLY_APPROVE_PATTERN` |  |
+| `approve_post` | `REPLY_QUEUE_PATTERN` | `REPLY_QUEUE_PATTERN` |  |
+| `approve_post` | `UPLOAD_BASE_SECONDS` | `?UPLOAD_BASE_SECONDS` |  |
+| `approve_post` | `UPLOAD_FLOOR_BYTES_PER_SEC` | `?UPLOAD_?FLOOR_BYTES_PER_SEC` |  |
+| `approve_post` | `UPLOAD_WRITE_CEILING` | `?UPLOAD_WRITE_CEILING` |  |
+| `approve_service` | `END_PUBLISHING_SECONDS` | `END_PUBLISHING_SECONDS` |  |
 | `article_extract` | `SKIP_IMG_HINTS` | `SKIP_IMG_HINTS` |  |
 | `article_extract` | `UA` | `UA` |  |
-| `arxiv_bia` | `BAT_DAU_TOI` | `START_DARK` | ⚠️ toi |
-| `arxiv_bia` | `CAO` | `HEIGHT` |  |
-| `arxiv_bia` | `DAC` | `SOLID` |  |
-| `arxiv_bia` | `DAC_TU` | `SOLID_FROM` | ⚠️ tu |
-| `arxiv_bia` | `RONG` | `EMPTY` | ⚠️ rong |
-| `arxiv_bia` | `TI_LE` | `RATIO` |  |
-| `arxiv_bia` | `TOI` | `DARK` | ⚠️ toi |
-| `arxiv_bia` | `UA` | `UA` |  |
-| `arxiv_hinh` | `CANH_NGAN_MUC` | `SHORT_SIDE_ITEM` | ⚠️ muc |
-| `arxiv_hinh` | `CHU_THICH` | `ANNOTATION` |  |
-| `arxiv_hinh` | `DEM` | `COUNT` |  |
-| `arxiv_hinh` | `KHE_CHU` | `SLIT_TEXT` | ⚠️ chu |
-| `arxiv_hinh` | `LE_CHAY_DAU` | `ODD_RUN_MARK` | ⚠️ dau |
-| `arxiv_hinh` | `LE_CUNG` | `ODD_SAME` |  |
-| `arxiv_hinh` | `RONG_MUC` | `EMPTY_ITEM` | ⚠️ muc rong |
-| `arxiv_hinh` | `SO_TRANG` | `COUNT_PAGE` | ⚠️ so |
-| `arxiv_hinh` | `TI_LE_MAX` | `RATIO_MAX` |  |
-| `arxiv_hinh` | `TOI_DA` | `MAX` |  |
-| `arxiv_hinh` | `ZOOM_MAX` | `ZOOM_MAX` |  |
-| `arxiv_hinh` | `ZOOM_MIN` | `ZOOM_MIN` |  |
-| `bang_den` | `DRAFTS` | `DRAFTS` |  |
-| `bang_den` | `HERMES_DIR` | `HERMES_DIR` |  |
-| `bang_den` | `ROOT` | `ROOT` |  |
-| `bang_den` | `ROOT_ASSIGNEE` | `ROOT_ASSIGNEE` |  |
-| `bang_den` | `TIEN_TO_BAI` | `PREFIX_ARTICLE` |  |
-| `bang_model` | `AA` | `AA` |  |
-| `bang_model` | `ARENA` | `ARENA` |  |
-| `bang_model` | `ARENA_BOARDS` | `ARENA_BOARDS` |  |
-| `bang_model` | `BANG` | `BOARD` | ⚠️ bang |
-| `bang_model` | `KHOA_BANG` | `LOCK_BOARD` | ⚠️ bang khoa |
-| `bang_model` | `LINK_BANG` | `LINK_BOARD` | ⚠️ bang |
-| `bang_model` | `NHAN_BANG` | `LABEL_BOARD` | ⚠️ bang nhan |
-| `bang_model` | `SO_BANG` | `COUNT_BOARD` | ⚠️ bang so |
-| `bang_model` | `SWE` | `SWE` |  |
-| `bao_cao_manifest` | `NHAC` | `MENTION` |  |
-| `bao_cao_manifest` | `TEN_VAI` | `NAME_ROLE` |  |
-| `bao_cao_manifest` | `VN` | `VN` |  |
-| `bat_buoc` | `LINK_BANG` | `LINK_BOARD` | ⚠️ bang |
-| `bob_nop` | `EMOJI_MAC_DINH` | `EMOJI_DEFAULT` |  |
-| `bob_nop` | `GET_SOURCE` | `GET_SOURCE` |  |
-| `bob_nop` | `RC_KHONG_CO_ANH` | `RC_NO_HAS_IMAGE` |  |
-| `bob_nop` | `ROOT` | `ROOT` |  |
-| `bob_nop` | `SKILL` | `SKILL` |  |
-| `cape_chuan_bi` | `CHU_TOI_DA` | `TEXT_MAX` | ⚠️ chu |
-| `cape_chuan_bi` | `ROOT` | `ROOT` |  |
-| `cape_nop` | `ROOT` | `ROOT` |  |
-| `caption_check` | `CUM_SO` | `PHRASE_COUNT` | ⚠️ so |
-| `caption_check` | `DAU` | `MARK` | ⚠️ dau |
-| `caption_check` | `GIOI_HAN` | `LIMIT` |  |
-| `caption_check` | `NEN_DAT` | `BACKGROUND_SET` | ⚠️ nen |
-| `caption_check` | `NGUONG_DAU` | `THRESHOLD_MARK` | ⚠️ dau |
-| `caption_check` | `SAO_RONG` | `STAR_EMPTY` | ⚠️ rong |
-| `caption_check` | `SO` | `COUNT` | ⚠️ so |
-| `caption_check` | `THE_CHO_PHEP` | `CARD_ALLOW` | ⚠️ the |
-| `caption_check` | `THOI_PHONG` | `TIME_ROOM` |  |
-| `caption_check` | `TRAN_NEN_TANG` | `CEILING_BACKGROUND_LAYER` | ⚠️ nen |
-| `caption_check` | `TU_CONG_BO` | `FROM_ANNOUNCEMENT` | ⚠️ tu |
+| `article_images` | `HAS_AI_GENERATE` | `HAS_AI_GENERATE` |  |
+| `article_images` | `HDR` | `HDR` |  |
+| `article_images` | `IMAGE_NEW_PAGE` | `IMAGE_NEW_PAGE` |  |
+| `article_images` | `IS_STORY_MODEL` | `IS_STORY_MODEL` |  |
+| `article_images` | `LONG_MAX` | `LONG_MAX` |  |
+| `article_images` | `RULE` | `RULE` |  |
+| `article_images` | `RULE_MODEL` | `RULE_MODEL` |  |
+| `article_images` | `UA` | `UA` |  |
+| `article_sources` | `BING_RSS` | `BING_RSS` |  |
+| `article_sources` | `COUNT_SOURCE` | `COUNT_SOURCE` |  |
+| `article_sources` | `DROP_DOMAIN` | `DROP_DOMAIN` |  |
+| `article_sources` | `FROM_EMPTY` | `FROM_EMPTY` |  |
+| `article_sources` | `FROM_EMPTY_QUERY` | `FROM_EMPTY_QUERY` |  |
+| `article_sources` | `GNEWS` | `GNEWS` |  |
+| `article_sources` | `GNEWS_ARTICLE` | `GNEWS_ARTICLE` |  |
+| `article_sources` | `HDR` | `HDR` |  |
+| `article_sources` | `RSS_GUESS` | `RSS_GUESS` |  |
+| `article_sources` | `UA` | `UA` |  |
+| `arxiv_cover` | `DARK` | `DARK` |  |
+| `arxiv_cover` | `EMPTY` | `EMPTY` |  |
+| `arxiv_cover` | `HEIGHT` | `HEIGHT` |  |
+| `arxiv_cover` | `RATIO` | `RATIO` |  |
+| `arxiv_cover` | `SOLID` | `SOLID` |  |
+| `arxiv_cover` | `SOLID_FROM` | `SOLID_FROM` |  |
+| `arxiv_cover` | `START_DARK` | `START_DARK` |  |
+| `arxiv_cover` | `UA` | `UA` |  |
+| `arxiv_figures` | `ANNOTATION` | `ANNOTATION` |  |
+| `arxiv_figures` | `COUNT` | `COUNT` |  |
+| `arxiv_figures` | `COUNT_PAGE` | `COUNT_PAGE` |  |
+| `arxiv_figures` | `EMPTY_ITEM` | `EMPTY_ITEM` |  |
+| `arxiv_figures` | `MAX` | `MAX` |  |
+| `arxiv_figures` | `ODD_RUN_MARK` | `ODD_RUN_MARK` |  |
+| `arxiv_figures` | `ODD_SAME` | `ODD_SAME` |  |
+| `arxiv_figures` | `RATIO_MAX` | `RATIO_MAX` |  |
+| `arxiv_figures` | `SHORT_SIDE_ITEM` | `SHORT_SIDE_ITEM` |  |
+| `arxiv_figures` | `SLIT_TEXT` | `SLIT_TEXT` |  |
+| `arxiv_figures` | `ZOOM_MAX` | `ZOOM_MAX` |  |
+| `arxiv_figures` | `ZOOM_MIN` | `ZOOM_MIN` |  |
+| `audit_cron` | `ITEM` | `ITEM` |  |
+| `audit_cron` | `LATE_SECONDS` | `LATE_SECONDS` |  |
+| `audit_cron` | `MARK` | `MARK` |  |
+| `audit_cron` | `TICK_OLD` | `TICK_OLD` |  |
+| `blackboard` | `DRAFTS` | `DRAFTS` |  |
+| `blackboard` | `HERMES_DIR` | `HERMES_DIR` |  |
+| `blackboard` | `PREFIX_ARTICLE` | `PREFIX_ARTICLE` |  |
+| `blackboard` | `ROOT` | `ROOT` |  |
+| `blackboard` | `ROOT_ASSIGNEE` | `ROOT_ASSIGNEE` |  |
+| `bob_submit` | `EMOJI_DEFAULT` | `EMOJI_DEFAULT` |  |
+| `bob_submit` | `GET_SOURCE` | `GET_SOURCE` |  |
+| `bob_submit` | `RC_NO_HAS_IMAGE` | `RC_NO_HAS_IMAGE` |  |
+| `bob_submit` | `ROOT` | `ROOT` |  |
+| `bob_submit` | `SKILL` | `SKILL` |  |
+| `browser_session` | `ARGS_DEFAULT` | `ARGS_DEFAULT` |  |
+| `browser_session` | `CODE_BLOCK` | `CODE_BLOCK` |  |
+| `browser_session` | `MOBILE_DPR` | `MOBILE_DPR` |  |
+| `browser_session` | `MOBILE_UA` | `MOBILE_UA` |  |
+| `browser_session` | `MOBILE_VIEWPORT` | `MOBILE_VIEWPORT` |  |
+| `cape_prepare` | `ROOT` | `ROOT` |  |
+| `cape_prepare` | `TEXT_MAX` | `TEXT_MAX` |  |
+| `cape_submit` | `ROOT` | `ROOT` |  |
+| `caption_check` | `BACKGROUND_SET` | `BACKGROUND_SET` |  |
+| `caption_check` | `CARD_ALLOW` | `CARD_ALLOW` |  |
+| `caption_check` | `CEILING_BACKGROUND_LAYER` | `CEILING_BACKGROUND_LAYER` |  |
+| `caption_check` | `COUNT` | `COUNT` |  |
+| `caption_check` | `FROM_ANNOUNCEMENT` | `FROM_ANNOUNCEMENT` |  |
+| `caption_check` | `LIMIT` | `LIMIT` |  |
+| `caption_check` | `MARK` | `MARK` |  |
+| `caption_check` | `PHRASE_COUNT` | `PHRASE_COUNT` |  |
+| `caption_check` | `STAR_EMPTY` | `STAR_EMPTY` |  |
+| `caption_check` | `THRESHOLD_MARK` | `THRESHOLD_MARK` |  |
+| `caption_check` | `TIME_ROOM` | `TIME_ROOM` |  |
+| `capture_chart` | `DPR` | `DPR` |  |
+| `capture_chart` | `EMPTY_MARK` | `EMPTY_MARK` |  |
+| `capture_chart` | `EMPTY_MAX` | `EMPTY_MAX` |  |
+| `capture_chart` | `HEIGHT_WARNING` | `HEIGHT_WARNING` |  |
+| `capture_chart` | `MEASURE_JS` | `MEASURE_JS` |  |
+| `capture_chart` | `PICK_DEFAULT` | `PICK_DEFAULT` |  |
+| `capture_page` | `CROP_MAX` | `CROP_MAX` |  |
+| `capture_page` | `CROP_RATIO_TRANSLATE` | `CROP_RATIO_TRANSLATE` |  |
+| `capture_page` | `DPR` | `DPR` |  |
+| `capture_page` | `FRAME` | `FRAME` |  |
+| `capture_page` | `LEAD_TRY` | `LEAD_TRY` |  |
+| `capture_page` | `MIN` | `MIN` |  |
+| `capture_page` | `PICK` | `PICK` |  |
+| `capture_page` | `THRESHOLD_OTHER_BACKGROUND` | `THRESHOLD_OTHER_BACKGROUND` |  |
+| `capture_page` | `TIME_LIMIT` | `TIME_LIMIT` |  |
+| `capture_page` | `UA` | `UA` |  |
+| `capture_page` | `WAIT_LANG` | `WAIT_LANG` |  |
+| `capture_page` | `WAIT_LAZY` | `WAIT_LAZY` |  |
 | `card` | `ACCENT` | `ACCENT` |  |
 | `card` | `ACCENT_DIM` | `ACCENT_DIM` |  |
 | `card` | `ASSETS` | `ASSETS` |  |
 | `card` | `BG` | `BG` |  |
 | `card` | `BG_CARD` | `BG_CARD` |  |
-| `card` | `BRAND_CUM` | `BRAND_PHRASE` |  |
+| `card` | `BRAND` | `BRAND` |  |
+| `card` | `BRAND_FROM` | `BRAND_FROM` |  |
+| `card` | `BRAND_PHRASE` | `BRAND_PHRASE` |  |
 | `card` | `BRAND_SIZE` | `BRAND_SIZE` |  |
-| `card` | `BRAND_TU` | `BRAND_FROM` | ⚠️ tu |
+| `card` | `CEILING_FRAME_LW` | `CEILING_FRAME_LW` |  |
+| `card` | `CEILING_FRAME_PAD` | `CEILING_FRAME_PAD` |  |
+| `card` | `CEILING_FRAME_R` | `CEILING_FRAME_R` |  |
+| `card` | `CEILING_FRAME_X` | `CEILING_FRAME_X` |  |
+| `card` | `CEILING_TEXTBOX` | `CEILING_TEXTBOX` |  |
+| `card` | `CEILING_TEXT_X` | `CEILING_TEXT_X` |  |
+| `card` | `CEILING_TITLE_LINES` | `CEILING_TITLE_LINES` |  |
+| `card` | `CEILING_TITLE_MAX` | `CEILING_TITLE_MAX` |  |
+| `card` | `CLUTTERED_BG_CEILING` | `?CLUTTERED_BG_CEILING` |  |
+| `card` | `CLUTTERED_BG_LANG` | `?CLUTTERED_BG_LANG` |  |
+| `card` | `CLUTTERED_BG_LONG_LANG` | `?CLUTTERED_BG_LONG_LANG` |  |
+| `card` | `CLUTTERED_BG_ODD` | `?CLUTTERED_BG_ODD` |  |
+| `card` | `CLUTTERED_BG_SPREAD` | `?CLUTTERED_BG_SPREAD` |  |
+| `card` | `CLUTTERED_BG_SPREAD_SAME` | `?CLUTTERED_BG_SPREAD_SAME` |  |
+| `card` | `CLUTTERED_BG_TEXT` | `?CLUTTERED_BG_TEXT` |  |
+| `card` | `CLUTTERED_BG_VISION` | `?CLUTTERED_BG_VISION` |  |
+| `card` | `COLOR_PHRASE` | `COLOR_PHRASE` |  |
+| `card` | `COLOR_RANK` | `COLOR_RANK` |  |
 | `card` | `CYAN` | `CYAN` |  |
-| `card` | `DICH_ROI_DONG` | `TRANSLATE_FALL_LINE` | ⚠️ dong |
+| `card` | `DARK_MAX_LINE` | `DARK_MAX_LINE` |  |
 | `card` | `FG` | `FG` |  |
 | `card` | `FONTS` | `FONTS` |  |
 | `card` | `F_BOLD` | `F_BOLD` |  |
@@ -2580,52 +2846,38 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `card` | `F_SUB` | `F_SUB` |  |
 | `card` | `F_UI` | `F_UI` |  |
 | `card` | `HERO_WEIGHT` | `HERO_WEIGHT` |  |
-| `card` | `KICKER_CUM` | `KICKER_PHRASE` |  |
+| `card` | `KICKER_FAMILY` | `KICKER_FAMILY` |  |
 | `card` | `KICKER_GAP` | `KICKER_GAP` |  |
-| `card` | `KICKER_HO` | `KICKER_FAMILY` |  |
+| `card` | `KICKER_PHRASE` | `KICKER_PHRASE` |  |
 | `card` | `KICKER_SIZE` | `KICKER_SIZE` |  |
 | `card` | `KICKER_TRACK` | `KICKER_TRACK` |  |
 | `card` | `LINE` | `LINE` |  |
 | `card` | `MARK_SIZE` | `MARK_SIZE` |  |
-| `card` | `MAU_CUM` | `COLOR_PHRASE` | ⚠️ mau |
-| `card` | `MAU_HANG` | `COLOR_RANK` | ⚠️ hang mau |
 | `card` | `MUTED` | `MUTED` |  |
-| `card` | `NEN_ROI_CHU` | `BACKGROUND_FALL_TEXT` | ⚠️ chu nen |
-| `card` | `NEN_ROI_DAI_LANG` | `BACKGROUND_FALL_LONG_LANG` | ⚠️ nen |
-| `card` | `NEN_ROI_LANG` | `BACKGROUND_FALL_LANG` | ⚠️ nen |
-| `card` | `NEN_ROI_LE` | `BACKGROUND_FALL_ODD` | ⚠️ nen |
-| `card` | `NEN_ROI_NHIN` | `BACKGROUND_FALL_VISION` | ⚠️ nen |
-| `card` | `NEN_ROI_TAN` | `BACKGROUND_FALL_SPREAD` | ⚠️ nen |
-| `card` | `NEN_ROI_TAN_CUNG` | `BACKGROUND_FALL_SPREAD_SAME` | ⚠️ nen |
-| `card` | `NEN_ROI_TRAN` | `BACKGROUND_FALL_CEILING` | ⚠️ nen |
-| `card` | `NGUONG_NEN_SANG` | `THRESHOLD_BACKGROUND_BRIGHT` | ⚠️ nen sang |
-| `card` | `NGUONG_ROI_DONG` | `THRESHOLD_FALL_LINE` | ⚠️ dong |
 | `card` | `PAD` | `PAD` |  |
 | `card` | `QUOTE_BLUR` | `QUOTE_BLUR` |  |
-| `card` | `QUOTE_BLUR_DEM` | `QUOTE_BLUR_COUNT` |  |
+| `card` | `QUOTE_BLUR_COUNT` | `QUOTE_BLUR_COUNT` |  |
 | `card` | `QUOTE_LEAD` | `QUOTE_LEAD` |  |
 | `card` | `QUOTE_MAX_LINES` | `QUOTE_MAX_LINES` |  |
 | `card` | `QUOTE_PAD` | `QUOTE_PAD` |  |
 | `card` | `RATIOS` | `RATIOS` |  |
 | `card` | `SUB_SIZE` | `SUB_SIZE` |  |
-| `card` | `THUONG_HIEU` | `BRAND` |  |
+| `card` | `THRESHOLD_BACKGROUND_BRIGHT` | `THRESHOLD_BACKGROUND_BRIGHT` |  |
+| `card` | `THRESHOLD_FALL_LINE` | `THRESHOLD_FALL_LINE` |  |
 | `card` | `TITLE_GROW_LINES` | `TITLE_GROW_LINES` |  |
 | `card` | `TITLE_GROW_MAX` | `TITLE_GROW_MAX` |  |
-| `card` | `TOI_TOI_DA_DONG` | `DARK_MAX_LINE` | ⚠️ dong toi |
-| `card` | `TRAN_FRAME_LW` | `CEILING_FRAME_LW` |  |
-| `card` | `TRAN_FRAME_PAD` | `CEILING_FRAME_PAD` |  |
-| `card` | `TRAN_FRAME_R` | `CEILING_FRAME_R` |  |
-| `card` | `TRAN_FRAME_X` | `CEILING_FRAME_X` |  |
-| `card` | `TRAN_TEXTBOX` | `CEILING_TEXTBOX` |  |
-| `card` | `TRAN_TEXT_X` | `CEILING_TEXT_X` |  |
-| `card` | `TRAN_TITLE_LINES` | `CEILING_TITLE_LINES` |  |
-| `card` | `TRAN_TITLE_MAX` | `CEILING_TITLE_MAX` |  |
+| `card` | `TRANSLATE_FALL_LINE` | `TRANSLATE_FALL_LINE` |  |
 | `card` | `VIA_SIZE` | `VIA_SIZE` |  |
+| `carousel` | `BACKGROUND` | `BACKGROUND` |  |
+| `carousel` | `BACKGROUND_SHOW` | `BACKGROUND_SHOW` |  |
 | `carousel` | `BG` | `BG` |  |
 | `carousel` | `BG_BLUR` | `BG_BLUR` |  |
 | `carousel` | `BLUR_RADIUS` | `BLUR_RADIUS` |  |
 | `carousel` | `BODY_LEAD` | `BODY_LEAD` |  |
-| `carousel` | `CATEGORY_GOI_Y` | `CATEGORY_CALL_Y` |  |
+| `carousel` | `CATEGORY_CALL_Y` | `CATEGORY_CALL_Y` |  |
+| `carousel` | `CLUTTERED_BG_ODD` | `?CLUTTERED_BG_ODD` |  |
+| `carousel` | `CLUTTERED_BG_SPREAD` | `?CLUTTERED_BG_SPREAD` |  |
+| `carousel` | `DARK_MAX` | `DARK_MAX` |  |
 | `carousel` | `FG` | `FG` |  |
 | `carousel` | `FLAGSHIP_MIN` | `FLAGSHIP_MIN` |  |
 | `carousel` | `F_MONO_CH` | `F_MONO_CH` |  |
@@ -2634,14 +2886,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `carousel` | `HOOK_WEIGHT` | `HOOK_WEIGHT` |  |
 | `carousel` | `LABEL_SIZE` | `LABEL_SIZE` |  |
 | `carousel` | `MIN_SLIDE` | `MIN_SLIDE` |  |
-| `carousel` | `MO` | `OPEN` |  |
-| `carousel` | `NEN` | `BACKGROUND` | ⚠️ nen |
-| `carousel` | `NEN_HIEN` | `BACKGROUND_SHOW` | ⚠️ nen |
-| `carousel` | `NEN_ROI_LE` | `BACKGROUND_FALL_ODD` | ⚠️ nen |
-| `carousel` | `NEN_ROI_TAN` | `BACKGROUND_FALL_SPREAD` | ⚠️ nen |
-| `carousel` | `NGUONG_ROI_CAN_LOP` | `THRESHOLD_FALL_CAN_LAYER` |  |
-| `carousel` | `NGUONG_SANG_SANG` | `THRESHOLD_BRIGHT_BRIGHT` | ⚠️ sang |
-| `carousel` | `NGUONG_SANG_TOI` | `THRESHOLD_BRIGHT_DARK` | ⚠️ sang toi |
+| `carousel` | `OPEN` | `OPEN` |  |
 | `carousel` | `PAD` | `PAD` |  |
 | `carousel` | `PARA_GAP` | `PARA_GAP` |  |
 | `carousel` | `Q_AVAIL` | `Q_AVAIL` |  |
@@ -2652,66 +2897,38 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `carousel` | `Q_TEXT_X` | `Q_TEXT_X` |  |
 | `carousel` | `TEXT_BASE` | `TEXT_BASE` |  |
 | `carousel` | `TEXT_MAX_H` | `TEXT_MAX_H` |  |
-| `carousel` | `TOI_TOI_DA` | `DARK_MAX` | ⚠️ toi |
+| `carousel` | `THRESHOLD_BRIGHT_BRIGHT` | `THRESHOLD_BRIGHT_BRIGHT` |  |
+| `carousel` | `THRESHOLD_BRIGHT_DARK` | `THRESHOLD_BRIGHT_DARK` |  |
+| `carousel` | `THRESHOLD_VARIANCE_NEEDS_LAYER` | `THRESHOLD_?VARIANCE_NEEDS_LAYER` |  |
 | `carousel` | `VEIL_EASE` | `VEIL_EASE` |  |
 | `carousel` | `VEIL_SPAN` | `VEIL_SPAN` |  |
 | `carousel` | `WM` | `WM` |  |
 | `carousel` | `WM_BOTTOM` | `WM_BOTTOM` |  |
 | `carousel` | `WM_SIZE` | `WM_SIZE` |  |
-| `chat_router` | `BO_CHI_DOC` | `DROP_ONLY_READ` | ⚠️ bo chi doc |
 | `chat_router` | `CHAT_HINT` | `CHAT_HINT` |  |
+| `chat_router` | `DROP_ONLY_READ` | `DROP_ONLY_READ` |  |
 | `chat_router` | `HERMES_DIR` | `HERMES_DIR` |  |
 | `chat_router` | `HERMES_HOME` | `HERMES_HOME` |  |
 | `chat_router` | `HERMES_PY` | `HERMES_PY` |  |
 | `chat_router` | `REPLY_LIMIT` | `REPLY_LIMIT` |  |
 | `chat_router` | `TIMEOUT_SEC` | `TIMEOUT_SEC` |  |
 | `chat_router` | `TOPIC_PROFILE` | `TOPIC_PROFILE` |  |
-| `chuan_bi.chung` | `DRAFTS` | `DRAFTS` |  |
-| `chuan_bi.chung` | `GNEWS` | `GNEWS` |  |
-| `chuan_bi.chung` | `HDR` | `HDR` |  |
-| `chuan_bi.chung` | `ROOT` | `ROOT` |  |
-| `chuan_bi.chung` | `TOI_DA_ANH` | `MAX_IMAGE` |  |
-| `chuan_bi.chung` | `UA` | `UA` |  |
-| `chuan_bi.nguon` | `TU_CHUNG_DAU_CAU` | `FROM_COMMON_MARK_SENTENCE` | ⚠️ dau tu |
-| `chuan_bi.nhin` | `CAU_ROI` | `SENTENCE_FALL` |  |
-| `chuan_bi.nhin` | `CAU_TU_KHOA` | `SENTENCE_KEYWORD` |  |
-| `chuan_bi.nhin` | `VISION_MODEL` | `VISION_MODEL` |  |
-| `chuan_bi.nhin` | `VISION_URL` | `VISION_URL` |  |
-| `chuan_bi.tai_loc` | `CANH_NGAN_BO` | `SHORT_SIDE_DROP` | ⚠️ bo |
-| `chuan_bi.tai_loc` | `TAI_TOI_DA_BYTE` | `DOWNLOAD_MAX_BYTE` |  |
-| `chuan_bi.tai_loc` | `TOI_DA_TAI` | `MAX_DOWNLOAD` |  |
-| `chuan_bi.tai_loc` | `URL_RAC` | `URL_JUNK` |  |
-| `chuan_bi.vong_bu` | `TOI_DA_NGUON_BAI` | `MAX_ARTICLE_SOURCES` |  |
-| `chuan_bi.vong_bu` | `TOI_DA_THEM_TH` | `MAX_EXTRA_BRAND_` |  |
-| `chuan_bi.vong_bu` | `TOI_DA_TRANG_CHUP` | `MAX_PAGE_CAPTURE` |  |
-| `chuan_bi.vong_bu` | `XH_BOI_CANH_NGUON` | `XH_CONTEXT_EDGE_SOURCE` | ⚠️ canh |
-| `chup_chart` | `CAO_CANH_BAO` | `HEIGHT_WARNING` |  |
-| `chup_chart` | `CHON_MAC_DINH` | `PICK_DEFAULT` |  |
-| `chup_chart` | `DO_JS` | `MEASURE_JS` |  |
-| `chup_chart` | `DPR` | `DPR` |  |
-| `chup_chart` | `RONG_DAU` | `EMPTY_MARK` | ⚠️ dau rong |
-| `chup_chart` | `RONG_TOI_DA` | `EMPTY_MAX` | ⚠️ rong |
-| `chup_trang` | `CAT_TI_LE_DICH` | `CROP_RATIO_TRANSLATE` |  |
-| `chup_trang` | `CAT_TOI_DA` | `CROP_MAX` |  |
-| `chup_trang` | `CHON` | `PICK` |  |
-| `chup_trang` | `CHO_LANG` | `WAIT_LANG` | ⚠️ cho |
-| `chup_trang` | `CHO_LAZY` | `WAIT_LAZY` | ⚠️ cho |
-| `chup_trang` | `DPR` | `DPR` |  |
-| `chup_trang` | `GIO_HAN` | `TIME_LIMIT` |  |
-| `chup_trang` | `KHUNG` | `FRAME` |  |
-| `chup_trang` | `LEAD_THU` | `LEAD_TRY` | ⚠️ thu |
-| `chup_trang` | `NGUONG_KHAC_NEN` | `THRESHOLD_OTHER_BACKGROUND` | ⚠️ nen |
-| `chup_trang` | `TOI_THIEU` | `MIN` |  |
-| `chup_trang` | `UA` | `UA` |  |
+| `check_env` | `ITEM_CHECK` | `ITEM_CHECK` |  |
+| `check_env` | `NAME_MODEL_YUNET` | `NAME_MODEL_YUNET` |  |
+| `check_hermes` | `COLUMN_CAN` | `COLUMN_CAN` |  |
+| `check_hermes` | `COLUMN_CAN_STATE` | `COLUMN_CAN_STATE` |  |
+| `check_hermes` | `HAS_CHAT` | `HAS_CHAT` |  |
+| `check_hermes` | `HERMES_PY` | `HERMES_PY` |  |
+| `check_hermes` | `ROOT` | `ROOT` |  |
 | `cleanup` | `ROOT` | `ROOT` |  |
-| `cost_squeeze` | `GIA` | `FAKE` | ⚠️ gia |
+| `cost_squeeze` | `CANDIDATE` | `CANDIDATE` |  |
+| `cost_squeeze` | `FAKE` | `FAKE` |  |
 | `cost_squeeze` | `HERMES` | `HERMES` |  |
+| `cost_squeeze` | `JOB` | `JOB` |  |
 | `cost_squeeze` | `ROOT` | `ROOT` |  |
 | `cost_squeeze` | `ROUTER` | `ROUTER` |  |
-| `cost_squeeze` | `TIN_WRITER` | `STORY_WRITER` |  |
-| `cost_squeeze` | `UNG_VIEN` | `CANDIDATE` |  |
-| `cost_squeeze` | `VIEC` | `JOB` |  |
-| `crop_ti_le` | `TI_LE` | `RATIO` |  |
+| `cost_squeeze` | `STORY_WRITER` | `STORY_WRITER` |  |
+| `crop_ratio` | `RATIO` | `RATIO` |  |
 | `deck` | `ASSETS` | `ASSETS` |  |
 | `deck` | `BG_CREAM` | `BG_CREAM` |  |
 | `deck` | `BG_DARK` | `BG_DARK` |  |
@@ -2728,255 +2945,298 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `deck` | `LAYOUTS` | `LAYOUTS` |  |
 | `deck` | `PAD` | `PAD` |  |
 | `deck` | `WHITE` | `WHITE` |  |
-| `doi_chu_anh` | `DIEN_TICH_TO_KIN` | `ASPECT_ACCUMULATE_TO_SEALED` |  |
-| `doi_chu_anh` | `DILATE_PX` | `DILATE_PX` |  |
-| `dong_bo_hermes` | `DAU_VET` | `TRACE` |  |
-| `dong_bo_hermes` | `HERMES_AGENT` | `HERMES_AGENT` |  |
-| `dong_bo_hermes` | `HOMES` | `HOMES` |  |
-| `dong_bo_hermes` | `KHOA_BI_MAT` | `LOCK_SECRET` | ⚠️ khoa |
-| `dong_bo_hermes` | `KHOA_PROMPT` | `LOCK_PROMPT` | ⚠️ khoa |
-| `dong_bo_hermes` | `LA_PLUGIN` | `IS_PLUGIN` |  |
-| `dong_bo_hermes` | `MAU_UPSTREAM` | `COLOR_UPSTREAM` | ⚠️ mau |
-| `dong_bo_hermes` | `PLUGIN_REPO` | `PLUGIN_REPO` |  |
-| `dong_bo_hermes` | `PLUGIN_TEP` | `PLUGIN_FILE` |  |
-| `dong_bo_hermes` | `REPO` | `REPO` |  |
-| `dong_bo_hermes` | `ROOT` | `ROOT` |  |
-| `dong_bo_hermes` | `SCRIPT` | `SCRIPT` |  |
-| `dong_bo_hermes` | `TAT_CONG_CU` | `ALL_GATE_OLD` | ⚠️ cu |
-| `dong_bo_hermes` | `TEP_CAU_HINH` | `FILE_CONFIG` |  |
-| `dong_bo_hermes` | `TEP_UPSTREAM` | `FILE_UPSTREAM` |  |
 | `draft_write` | `DRAFTS` | `DRAFTS` |  |
-| `dre_chuan_bi` | `DRAFTS` | `DRAFTS` |  |
-| `dre_chuan_bi` | `ROOT` | `ROOT` |  |
-| `dre_nop` | `CHU_GIU` | `TEXT_KEEP` | ⚠️ chu |
-| `dre_nop` | `DRAFTS` | `DRAFTS` |  |
-| `dre_nop` | `ROOT` | `ROOT` |  |
-| `duyet_bai` | `CAPTION_LIMIT` | `CAPTION_LIMIT` |  |
-| `duyet_bai` | `DAU_LEN_CHANNEL` | `MARK_LEN_CHANNEL` | ⚠️ dau |
-| `duyet_bai` | `LAM_LAI_CHO` | `REDO_WAIT` | ⚠️ cho |
-| `duyet_bai` | `LAM_LAI_HAN` | `REDO_LIMIT` |  |
-| `duyet_bai` | `NEN_TANG_NUT` | `BACKGROUND_LAYER_BUTTON` | ⚠️ nen |
-| `duyet_chat` | `VAI_CHAT_LAM_VIEC` | `ROLE_CHAT_MAKE_JOB` |  |
-| `duyet_chon_tin` | `MANIFEST_THEO_TOPIC` | `MANIFEST_BY_TOPIC` |  |
-| `duyet_co_so` | `API` | `API` |  |
-| `duyet_co_so` | `BRAND` | `BRAND` |  |
-| `duyet_co_so` | `DRAFTS` | `DRAFTS` |  |
-| `duyet_co_so` | `HERMES_HOME` | `HERMES_HOME` |  |
-| `duyet_co_so` | `HERMES_PY` | `HERMES_PY` |  |
-| `duyet_co_so` | `OFFSET` | `OFFSET` |  |
-| `duyet_co_so` | `ONG_CHU_IDS` | `BOSS_IDS` |  |
-| `duyet_co_so` | `ROOT` | `ROOT` |  |
-| `duyet_co_so` | `STATE_DIR` | `STATE_DIR` |  |
-| `duyet_co_so` | `TELEGRAM_INCOMING` | `TELEGRAM_INCOMING` |  |
-| `duyet_giao_viec` | `BANG_DEN_ASSIGNEE` | `BLACKBOARD_ASSIGNEE` |  |
-| `duyet_giao_viec` | `BANG_DEN_BRANDS` | `BLACKBOARD_BRANDS` |  |
-| `duyet_giao_viec` | `BANG_DEN_NHAC` | `BLACKBOARD_MENTION` |  |
-| `duyet_giao_viec` | `DA_BAO_TIEN_DO` | `ALREADY_REPORT_PROGRESS` |  |
-| `duyet_giao_viec` | `DA_BAO_TREO` | `ALREADY_REPORT_STALLED` |  |
-| `duyet_giao_viec` | `LAI_BAO_TREO_PHUT` | `AGAIN_REPORT_STALLED_MINUTES` |  |
-| `duyet_giao_viec` | `MAC_DINH_ANH` | `DEFAULT_IMAGE` |  |
-| `duyet_giao_viec` | `MAC_DINH_VIET` | `DEFAULT_WRITE` |  |
-| `duyet_giao_viec` | `NGUONG_TREO_PHUT` | `THRESHOLD_STALLED_MINUTES` |  |
-| `duyet_giao_viec` | `NHAN_CHUAN` | `LABEL_STANDARD` | ⚠️ nhan |
-| `duyet_giao_viec` | `NHIP_IM_PHUT` | `BEAT_SILENT_MINUTES` |  |
-| `duyet_giao_viec` | `SLUG_CU` | `SLUG_OLD` | ⚠️ cu |
-| `duyet_giao_viec` | `TEN_SANG_CAP` | `NAME_BRIGHT_CAP` | ⚠️ cap sang |
-| `duyet_giao_viec` | `TEN_VAI_ANH` | `NAME_ROLE_IMAGE` |  |
-| `duyet_giao_viec` | `TEN_VAI_VIET` | `NAME_ROLE_WRITE` |  |
-| `duyet_giao_viec` | `TIN_KET_QUA` | `STORY_RESULT` |  |
-| `duyet_giao_viec` | `VAI_ANH` | `ROLE_IMAGE` |  |
-| `duyet_giao_viec` | `VAI_CAROUSEL` | `ROLE_CAROUSEL` |  |
-| `duyet_giao_viec` | `VAI_EDU` | `ROLE_EDU` |  |
-| `duyet_lenh` | `DAT_BAI_SO` | `SET_ARTICLE_COUNT` | ⚠️ so |
-| `duyet_lenh` | `LENH_HELP` | `COMMAND_HELP` |  |
+| `dre_prepare` | `DRAFTS` | `DRAFTS` |  |
+| `dre_prepare` | `ROOT` | `ROOT` |  |
+| `dre_submit` | `DRAFTS` | `DRAFTS` |  |
+| `dre_submit` | `ROOT` | `ROOT` |  |
+| `dre_submit` | `TEXT_KEEP` | `TEXT_KEEP` |  |
 | `emoji_deck` | `DECK` | `DECK` |  |
 | `emoji_deck` | `FLAG_HINTS` | `FLAG_HINTS` |  |
 | `emoji_deck` | `STATE_PATH` | `STATE_PATH` |  |
-| `env_load` | `BRAND_DAI` | `BRAND_LONG` |  |
+| `entity_images` | `MAX_ENTITY` | `MAX_ENTITY` |  |
+| `entity_images` | `MAX_NEW_ENTITY` | `MAX_NEW_ENTITY` |  |
+| `entity_images` | `SHORT_SIDE_MIN` | `SHORT_SIDE_MIN` |  |
+| `entity_images` | `WIKI_API` | `WIKI_API` |  |
+| `env_load` | `BRAND_LONG` | `BRAND_LONG` |  |
 | `env_load` | `HERMES_DIR` | `HERMES_DIR` |  |
 | `env_load` | `HERMES_PY` | `HERMES_PY` |  |
 | `env_load` | `ROOT` | `ROOT` |  |
 | `env_load` | `ROUTER_URL` | `ROUTER_URL` |  |
-| `env_load` | `UA_TRINH_DUYET` | `UA_BROWSER` |  |
+| `env_load` | `UA_BROWSER` | `UA_BROWSER` |  |
 | `env_load` | `UA_WIKI` | `UA_WIKI` |  |
 | `env_load` | `VISION_MODEL` | `VISION_MODEL` |  |
-| `ethan_chuan_bi` | `ROOT` | `ROOT` |  |
-| `ethan_chuan_bi` | `TAGLINE_GOI_Y` | `TAGLINE_CALL_Y` |  |
-| `ethan_chuan_bi` | `TI_LE_HERO_MAX` | `RATIO_HERO_MAX` |  |
-| `ethan_nop` | `DRAFTS` | `DRAFTS` |  |
-| `ethan_nop` | `ROOT` | `ROOT` |  |
-| `gin_chuan_bi` | `ROOT` | `ROOT` |  |
-| `gin_nop` | `ROOT` | `ROOT` |  |
-| `gui_telegram` | `API` | `API` |  |
-| `gui_telegram` | `STATE` | `STATE` |  |
-| `gui_telegram` | `TOPICS` | `TOPICS` |  |
-| `itachi_chuan_bi` | `LAYOUT_HELP` | `LAYOUT_HELP` |  |
-| `itachi_chuan_bi` | `ROOT` | `ROOT` |  |
-| `itachi_nop` | `CO_MIN` | `HAS_MIN` |  |
-| `itachi_nop` | `FONT` | `FONT` |  |
-| `itachi_nop` | `FONTS` | `FONTS` |  |
-| `itachi_nop` | `NGUONG_TUONG_PHAN` | `THRESHOLD_WALL_PART` | ⚠️ phan |
-| `itachi_nop` | `ROOT` | `ROOT` |  |
-| `khung_anh` | `AVATARS` | `AVATARS` |  |
-| `khung_anh` | `BG` | `BG` |  |
-| `khung_anh` | `DOTS` | `DOTS` |  |
-| `khung_anh` | `FONT_DIR` | `FONT_DIR` |  |
-| `khung_anh` | `FOOTER` | `FOOTER` |  |
-| `khung_anh` | `K_BONG` | `K_SHADOW` |  |
-| `khung_anh` | `K_BO_TRON_NGOAI` | `K_DROP_FULL_OUTSIDE` | ⚠️ bo |
-| `khung_anh` | `K_BO_TRON_THE` | `K_DROP_FULL_CARD` | ⚠️ bo the |
-| `khung_anh` | `MAU_HANDLE` | `COLOR_HANDLE` | ⚠️ mau |
-| `khung_anh` | `MAU_PROMPT` | `COLOR_PROMPT` | ⚠️ mau |
-| `khung_anh` | `MAXW` | `MAXW` |  |
-| `khung_anh` | `ROOT` | `ROOT` |  |
-| `khung_anh` | `SKILL` | `SKILL` |  |
-| `khung_anh` | `VIEN` | `BORDER` |  |
-| `kiem_hermes` | `COT_CAN` | `COLUMN_CAN` |  |
-| `kiem_hermes` | `COT_CAN_STATE` | `COLUMN_CAN_STATE` |  |
-| `kiem_hermes` | `CO_CHAT` | `HAS_CHAT` |  |
-| `kiem_hermes` | `HERMES_PY` | `HERMES_PY` |  |
-| `kiem_hermes` | `ROOT` | `ROOT` |  |
-| `kiem_moi_truong` | `MUC_KIEM` | `ITEM_CHECK` | ⚠️ muc |
-| `kiem_moi_truong` | `TEN_MODEL_YUNET` | `NAME_MODEL_YUNET` |  |
-| `kite_chuan_bi` | `FIG_RONG_TOI_THIEU` | `FIG_EMPTY_MIN` | ⚠️ rong |
-| `kite_chuan_bi` | `ROOT` | `ROOT` |  |
-| `kite_chuan_bi` | `TOI_DA_EP_HINH` | `MAX_FORCE_FIGURE` |  |
-| `kite_nop` | `BAT_BUOC` | `REQUIRED` |  |
-| `kite_nop` | `DRAFTS` | `DRAFTS` |  |
-| `kite_nop` | `GIOI_HAN` | `LIMIT` |  |
-| `kite_nop` | `ROOT` | `ROOT` |  |
-| `kite_nop` | `SLIDE_MOI_ANH_THAT` | `SLIDE_NEW_IMAGE_REAL` | ⚠️ moi |
-| `loai_tin` | `BANG_ANH_THEO_LOAI` | `BOARD_IMAGE_BY_TYPE` | ⚠️ bang |
-| `loai_tin` | `MAC_DINH` | `DEFAULT` |  |
-| `loai_tin` | `MA_CO_PHIEU` | `CODE_HAS_BALLOT` | ⚠️ ma |
-| `loai_tin` | `NUOC_CUA_HANG` | `COUNTRY_OF_RANK` | ⚠️ hang |
-| `loai_tin` | `TU_KHOA_HA_TANG` | `KEYWORD_LOWER_LAYER` |  |
-| `luat_anh` | `CANH_NGAN_MIN` | `SHORT_SIDE_MIN` |  |
-| `luat_anh` | `CANH_NGAN_TAI` | `SHORT_SIDE_DOWNLOAD` |  |
-| `luat_anh` | `CHART_PHANG` | `CHART_FLAT` |  |
-| `luat_anh` | `CHART_SO_MAU` | `CHART_COUNT_COLOR` | ⚠️ mau so |
-| `luat_anh` | `CUM_ANH_CHUP_LAI_MAN_HINH` | `PHRASE_IMAGE_CAPTURE_AGAIN_SCREEN_FIGURE` |  |
-| `luat_anh` | `DAU_PNG` | `MARK_PNG` | ⚠️ dau |
-| `luat_anh` | `DAY_SANG_MAX` | `BRIGHT_BOTTOM_MAX` |  |
-| `luat_anh` | `DIEN_TICH_TAI` | `ASPECT_ACCUMULATE_DOWNLOAD` |  |
-| `luat_anh` | `DUNG_SAI_TI_LE` | `USE_WRONG_RATIO` | ⚠️ dung |
-| `luat_anh` | `MAT_CANH_MAX` | `FACE_EDGE_MAX` | ⚠️ canh |
-| `luat_anh` | `NGANG_RO` | `LANDSCAPE_CLEAR` |  |
-| `luat_anh` | `NGAY_NHO_ANH` | `DATE_SMALL_IMAGE` |  |
-| `luat_anh` | `NGUONG_DO_HOA` | `THRESHOLD_MEASURE_IFY` |  |
-| `luat_anh` | `RAC` | `JUNK` |  |
-| `luat_anh` | `RONG_MAU` | `EMPTY_COLOR` | ⚠️ mau rong |
-| `luat_anh` | `RONG_PHANG` | `EMPTY_FLAT` | ⚠️ rong |
-| `luat_anh` | `TU_RAC_DOM` | `FROM_JUNK_DOM` | ⚠️ tu |
-| `luat_anh` | `TU_RAC_URL` | `FROM_JUNK_URL` | ⚠️ tu |
+| `ethan_prepare` | `RATIO_HERO_MAX` | `RATIO_HERO_MAX` |  |
+| `ethan_prepare` | `ROOT` | `ROOT` |  |
+| `ethan_prepare` | `TAGLINE_CALL_Y` | `TAGLINE_CALL_Y` |  |
+| `ethan_submit` | `DRAFTS` | `DRAFTS` |  |
+| `ethan_submit` | `ROOT` | `ROOT` |  |
+| `find_image_web` | `DROP_DOMAIN_WEB` | `DROP_DOMAIN_WEB` |  |
+| `find_image_web` | `SOURCE` | `SOURCE` |  |
+| `find_image_web` | `UA` | `UA` |  |
+| `find_more_images` | `COUNT_COMMONS_NEW_TURN` | `COUNT_COMMONS_NEW_TURN` |  |
+| `find_more_images` | `COUNT_REPORT_NEW_TURN` | `COUNT_REPORT_NEW_TURN` |  |
+| `find_more_images` | `LICENSE_OK` | `LICENSE_OK` |  |
+| `find_more_images` | `MAX_IMAGE_EXTRA` | `MAX_IMAGE_EXTRA` |  |
+| `find_more_images` | `OPENVERSE` | `OPENVERSE` |  |
+| `find_more_images` | `ROOT` | `ROOT` |  |
+| `find_more_images` | `SHORT_SIDE_OPENVERSE` | `SHORT_SIDE_OPENVERSE` |  |
+| `find_more_images` | `THUMB_COMMONS` | `THUMB_COMMONS` |  |
+| `gin_prepare` | `BOLD_ITEM` | `BOLD_ITEM` |  |
+| `gin_prepare` | `FLAT_STD` | `FLAT_STD` |  |
+| `gin_prepare` | `ROOT` | `ROOT` |  |
+| `gin_prepare` | `SOCIAL` | `SOCIAL` |  |
+| `gin_submit` | `BAN_KINH_TRAM` | `COPY_?KINH_?TRAM` | ⚠️ ban |
+| `gin_submit` | `RATIO_HAS_MIN` | `RATIO_HAS_MIN` |  |
+| `gin_submit` | `ROOT` | `ROOT` |  |
+| `image_brand` | `COMMONS` | `COMMONS` |  |
+| `image_brand` | `DISPLAY_NAME` | `DISPLAY_NAME` |  |
+| `image_brand` | `FROM_COMMON_NAME` | `FROM_COMMON_NAME` |  |
+| `image_brand` | `HAS_BALLOT_URL` | `HAS_BALLOT_URL` |  |
+| `image_brand` | `HAS_BALLOT_WAIT` | `HAS_BALLOT_WAIT` |  |
+| `image_brand` | `MANY` | `MANY` |  |
+| `image_brand` | `MANY_COMMON` | `MANY_COMMON` |  |
+| `image_brand` | `MAX_ANNOUNCEMENT_PAGE` | `MAX_ANNOUNCEMENT_PAGE` |  |
+| `image_brand` | `MAX_NEW_RANK` | `MAX_NEW_RANK` |  |
+| `image_brand` | `MAX_PERSON` | `MAX_PERSON` |  |
+| `image_brand` | `MAX_PERSON_LANDSCAPE` | `MAX_PERSON_LANDSCAPE` |  |
+| `image_brand` | `MAX_QUERY` | `MAX_QUERY` |  |
+| `image_brand` | `MAX_RANK` | `MAX_RANK` |  |
+| `image_brand` | `NAME_EXTRA` | `NAME_EXTRA` |  |
+| `image_brand` | `PATH_FEED` | `PATH_FEED` |  |
+| `image_brand` | `PATH_STORY` | `PATH_STORY` |  |
+| `image_brand` | `P_GATE_BILLION` | `P_GATE_BILLION` |  |
+| `image_brand` | `P_WEBSITE` | `P_WEBSITE` |  |
+| `image_brand` | `SHORT_SIDE_MIN` | `SHORT_SIDE_MIN` |  |
+| `image_brand` | `SUFFIX` | `SUFFIX` |  |
+| `image_brand` | `WIKIDATA` | `WIKIDATA` |  |
+| `image_concept` | `COUNTRY` | `COUNTRY` |  |
+| `image_concept` | `COUNTRY_WRITE_ALL` | `COUNTRY_WRITE_ALL` |  |
+| `image_concept` | `FROM_DROP` | `FROM_DROP` |  |
+| `image_concept` | `MAX_KEYWORD` | `MAX_KEYWORD` |  |
+| `image_concept` | `NAME_TYPE` | `NAME_TYPE` |  |
+| `image_concept` | `TOPIC` | `TOPIC` |  |
+| `image_concept` | `UA` | `UA` |  |
+| `image_frame` | `AVATARS` | `AVATARS` |  |
+| `image_frame` | `BG` | `BG` |  |
+| `image_frame` | `BORDER` | `BORDER` |  |
+| `image_frame` | `COLOR_HANDLE` | `COLOR_HANDLE` |  |
+| `image_frame` | `COLOR_PROMPT` | `COLOR_PROMPT` |  |
+| `image_frame` | `DOTS` | `DOTS` |  |
+| `image_frame` | `FONT_DIR` | `FONT_DIR` |  |
+| `image_frame` | `FOOTER` | `FOOTER` |  |
+| `image_frame` | `K_DROP_FULL_CARD` | `K_DROP_FULL_CARD` |  |
+| `image_frame` | `K_DROP_FULL_OUTSIDE` | `K_DROP_FULL_OUTSIDE` |  |
+| `image_frame` | `K_SHADOW` | `K_SHADOW` |  |
+| `image_frame` | `MAXW` | `MAXW` |  |
+| `image_frame` | `ROOT` | `ROOT` |  |
+| `image_frame` | `SKILL` | `SKILL` |  |
+| `image_prepare` | `COUNT_ENGINE_PARALLEL` | `COUNT_ENGINE_PARALLEL` |  |
+| `image_prepare` | `MAX_CRASH` | `MAX_CRASH` |  |
+| `image_prepare` | `NAME_CT` | `NAME_CT` |  |
+| `image_prepare` | `WAIT_LOCK_SECONDS` | `WAIT_LOCK_SECONDS` |  |
+| `image_prepare` | `WAIT_SLOT_SECONDS` | `WAIT_SLOT_SECONDS` |  |
+| `image_provenance` | `MARK_PNG` | `MARK_PNG` |  |
+| `image_rules_dre` | `AREA_DOWNLOAD` | `AREA_DOWNLOAD` |  |
+| `image_rules_dre` | `BRIGHT_BOTTOM_MAX` | `BRIGHT_BOTTOM_MAX` |  |
+| `image_rules_dre` | `CHART_COUNT_COLOR` | `CHART_COUNT_COLOR` |  |
+| `image_rules_dre` | `CHART_FLAT` | `CHART_FLAT` |  |
+| `image_rules_dre` | `DATE_SMALL_IMAGE` | `DATE_SMALL_IMAGE` |  |
+| `image_rules_dre` | `EMPTY_COLOR` | `EMPTY_COLOR` |  |
+| `image_rules_dre` | `EMPTY_FLAT` | `EMPTY_FLAT` |  |
+| `image_rules_dre` | `FACE_EDGE_MAX` | `FACE_EDGE_MAX` |  |
+| `image_rules_dre` | `JUNK` | `JUNK` |  |
+| `image_rules_dre` | `JUNK_WORDS_DOM` | `JUNK_WORDS_DOM` |  |
+| `image_rules_dre` | `JUNK_WORDS_URL` | `JUNK_WORDS_URL` |  |
+| `image_rules_dre` | `LANDSCAPE_CLEAR` | `LANDSCAPE_CLEAR` |  |
+| `image_rules_dre` | `SHORT_SIDE_DOWNLOAD` | `SHORT_SIDE_DOWNLOAD` |  |
+| `image_rules_dre` | `SHORT_SIDE_MIN` | `SHORT_SIDE_MIN` |  |
+| `image_rules_dre` | `STACK_FLOOR` | `STACK_?FLOOR` |  |
+| `image_rules_dre` | `THRESHOLD_GRAPHIC` | `THRESHOLD_GRAPHIC` |  |
+| `image_rules_dre` | `TOLERANCE_RATIO` | `TOLERANCE_RATIO` |  |
+| `image_rules_ethan` | `AREA_DOWNLOAD` | `AREA_DOWNLOAD` |  |
+| `image_rules_ethan` | `BRIGHT_BOTTOM_MAX` | `BRIGHT_BOTTOM_MAX` |  |
+| `image_rules_ethan` | `CHART_COUNT_COLOR` | `CHART_COUNT_COLOR` |  |
+| `image_rules_ethan` | `CHART_FLAT` | `CHART_FLAT` |  |
+| `image_rules_ethan` | `DATE_SMALL_IMAGE` | `DATE_SMALL_IMAGE` |  |
+| `image_rules_ethan` | `EMPTY_COLOR` | `EMPTY_COLOR` |  |
+| `image_rules_ethan` | `EMPTY_FLAT` | `EMPTY_FLAT` |  |
+| `image_rules_ethan` | `FACE_EDGE_MAX` | `FACE_EDGE_MAX` |  |
+| `image_rules_ethan` | `JUNK` | `JUNK` |  |
+| `image_rules_ethan` | `JUNK_WORDS_DOM` | `JUNK_WORDS_DOM` |  |
+| `image_rules_ethan` | `JUNK_WORDS_URL` | `JUNK_WORDS_URL` |  |
+| `image_rules_ethan` | `LANDSCAPE_CLEAR` | `LANDSCAPE_CLEAR` |  |
+| `image_rules_ethan` | `SHORT_SIDE_DOWNLOAD` | `SHORT_SIDE_DOWNLOAD` |  |
+| `image_rules_ethan` | `SHORT_SIDE_MIN` | `SHORT_SIDE_MIN` |  |
+| `image_rules_ethan` | `THRESHOLD_GRAPHIC` | `THRESHOLD_GRAPHIC` |  |
+| `image_rules_ethan` | `TOLERANCE_RATIO` | `TOLERANCE_RATIO` |  |
+| `image_rules_kite` | `AREA_DOWNLOAD` | `AREA_DOWNLOAD` |  |
+| `image_rules_kite` | `BRIGHT_BOTTOM_MAX` | `BRIGHT_BOTTOM_MAX` |  |
+| `image_rules_kite` | `CHART_COUNT_COLOR` | `CHART_COUNT_COLOR` |  |
+| `image_rules_kite` | `CHART_FLAT` | `CHART_FLAT` |  |
+| `image_rules_kite` | `DATE_SMALL_IMAGE` | `DATE_SMALL_IMAGE` |  |
+| `image_rules_kite` | `EMPTY_COLOR` | `EMPTY_COLOR` |  |
+| `image_rules_kite` | `EMPTY_FLAT` | `EMPTY_FLAT` |  |
+| `image_rules_kite` | `FACE_EDGE_MAX` | `FACE_EDGE_MAX` |  |
+| `image_rules_kite` | `JUNK` | `JUNK` |  |
+| `image_rules_kite` | `JUNK_WORDS_DOM` | `JUNK_WORDS_DOM` |  |
+| `image_rules_kite` | `JUNK_WORDS_URL` | `JUNK_WORDS_URL` |  |
+| `image_rules_kite` | `LANDSCAPE_CLEAR` | `LANDSCAPE_CLEAR` |  |
+| `image_rules_kite` | `SHORT_SIDE_DOWNLOAD` | `SHORT_SIDE_DOWNLOAD` |  |
+| `image_rules_kite` | `SHORT_SIDE_MIN` | `SHORT_SIDE_MIN` |  |
+| `image_rules_kite` | `THRESHOLD_GRAPHIC` | `THRESHOLD_GRAPHIC` |  |
+| `image_rules_kite` | `TOLERANCE_RATIO` | `TOLERANCE_RATIO` |  |
+| `itachi_prepare` | `LAYOUT_HELP` | `LAYOUT_HELP` |  |
+| `itachi_prepare` | `ROOT` | `ROOT` |  |
+| `itachi_submit` | `ROOT` | `ROOT` |  |
+| `itachi_submit` | `THRESHOLD_WALL_PART` | `THRESHOLD_WALL_PART` |  |
+| `journal` | `DIRECTORY` | `DIRECTORY` |  |
+| `journal` | `ERROR_READ` | `ERROR_READ` |  |
+| `journal` | `EXCESS` | `EXCESS` |  |
+| `journal` | `FORM_RUN` | `FORM_RUN` |  |
+| `journal` | `HERMES` | `HERMES` |  |
+| `journal` | `NOTES` | `NOTES` |  |
+| `journal` | `ROOT` | `ROOT` |  |
+| `journal` | `TYPE` | `TYPE` |  |
+| `journal` | `VN` | `VN` |  |
+| `journal_web` | `CSS` | `CSS` |  |
+| `journal_web` | `HOST` | `HOST` |  |
+| `journal_web` | `PORT` | `PORT` |  |
+| `journal_web` | `ROOT` | `ROOT` |  |
+| `kite_prepare` | `FIG_EMPTY_MIN` | `FIG_EMPTY_MIN` |  |
+| `kite_prepare` | `MAX_FORCE_FIGURE` | `MAX_FORCE_FIGURE` |  |
+| `kite_prepare` | `ROOT` | `ROOT` |  |
+| `kite_submit` | `DRAFTS` | `DRAFTS` |  |
+| `kite_submit` | `LIMIT` | `LIMIT` |  |
+| `kite_submit` | `REQUIRED` | `REQUIRED` |  |
+| `kite_submit` | `ROOT` | `ROOT` |  |
+| `kite_submit` | `SLIDE_NEW_IMAGE_REAL` | `SLIDE_NEW_IMAGE_REAL` |  |
+| `manifest_build` | `MAX_PICK` | `MAX_PICK` |  |
 | `manifest_build` | `ROOT` | `ROOT` |  |
 | `manifest_build` | `STATE` | `STATE` |  |
-| `manifest_build` | `TOI_DA_PICK` | `MAX_PICK` |  |
 | `manifest_build` | `VALID_CATEGORIES` | `VALID_CATEGORIES` |  |
-| `manifest_chung` | `TOI_DA_TU_TOM_TAT` | `MAX_FROM_SUMMARY` | ⚠️ tu |
-| `manifest_ghi` | `NHAN_MAC_DINH` | `LABEL_DEFAULT` | ⚠️ nhan |
-| `manifest_ghi` | `ROOT` | `ROOT` |  |
-| `manifest_ghi` | `STATE` | `STATE` |  |
-| `manifest_ghi` | `TIEN_TO` | `PREFIX` |  |
-| `miles_chuan_bi` | `DRAFTS` | `DRAFTS` |  |
-| `miles_chuan_bi` | `GIONG` | `VOICE` |  |
-| `miles_chuan_bi` | `ROOT` | `ROOT` |  |
-| `miles_nop` | `DRAFTS` | `DRAFTS` |  |
-| `miles_nop` | `ROOT` | `ROOT` |  |
-| `moat_publish` | `BAC_CHAT_LUONG` | `TIER_QUALITY` |  |
-| `moat_publish` | `CHAT_LUONG_NEN` | `QUALITY_BACKGROUND` | ⚠️ nen |
+| `manifest_common` | `MAX_FROM_SUMMARY` | `MAX_FROM_SUMMARY` |  |
+| `manifest_report` | `MENTION` | `MENTION` |  |
+| `manifest_report` | `NAME_ROLE` | `NAME_ROLE` |  |
+| `manifest_report` | `VN` | `VN` |  |
+| `manifest_write` | `LABEL_DEFAULT` | `LABEL_DEFAULT` |  |
+| `manifest_write` | `PREFIX` | `PREFIX` |  |
+| `manifest_write` | `ROOT` | `ROOT` |  |
+| `manifest_write` | `STATE` | `STATE` |  |
+| `material` | `COUNT_ARTICLE_OTHER` | `COUNT_ARTICLE_OTHER` |  |
+| `material` | `HAS_COUNT` | `HAS_COUNT` |  |
+| `material` | `ROOT` | `ROOT` |  |
+| `material` | `TEXT_MAX` | `TEXT_MAX` |  |
+| `miles_prepare` | `DRAFTS` | `DRAFTS` |  |
+| `miles_prepare` | `ROOT` | `ROOT` |  |
+| `miles_prepare` | `VOICE` | `VOICE` |  |
+| `miles_submit` | `DRAFTS` | `DRAFTS` |  |
+| `miles_submit` | `ROOT` | `ROOT` |  |
+| `moat_publish` | `BACKGROUND_IMAGE` | `BACKGROUND_IMAGE` |  |
+| `moat_publish` | `CEILING_BACKGROUND_LAYER` | `CEILING_BACKGROUND_LAYER` |  |
+| `moat_publish` | `CEILING_TOTAL` | `CEILING_TOTAL` |  |
+| `moat_publish` | `CODE_BUTTON_FORM_AGAIN` | `CODE_BUTTON_FORM_AGAIN` |  |
+| `moat_publish` | `DEFAULT_BRAND` | `DEFAULT_BRAND` |  |
 | `moat_publish` | `DRAFTS` | `DRAFTS` |  |
-| `moat_publish` | `HANG_DOI` | `QUEUE` |  |
-| `moat_publish` | `KHOA_MAC_DINH` | `LOCK_DEFAULT` | ⚠️ khoa |
-| `moat_publish` | `KHOA_THEO_BRAND` | `LOCK_BY_BRAND` | ⚠️ khoa |
-| `moat_publish` | `LICH_LUI` | `SCHEDULE_BACK` |  |
-| `moat_publish` | `MAC_DINH_BRAND` | `DEFAULT_BRAND` |  |
-| `moat_publish` | `MAX_ANH` | `MAX_IMAGE` |  |
+| `moat_publish` | `LOCK_BY_BRAND` | `LOCK_BY_BRAND` |  |
+| `moat_publish` | `LOCK_DEFAULT` | `LOCK_DEFAULT` |  |
+| `moat_publish` | `MAX_IMAGE` | `MAX_IMAGE` |  |
 | `moat_publish` | `MAX_TRACK_DAYS` | `MAX_TRACK_DAYS` |  |
-| `moat_publish` | `MA_NUT_DANG_LAI` | `CODE_BUTTON_FORM_AGAIN` | ⚠️ ma |
 | `moat_publish` | `MIME_BY_SUFFIX` | `MIME_BY_SUFFIX` |  |
-| `moat_publish` | `NEN_ANH` | `BACKGROUND_IMAGE` | ⚠️ nen |
-| `moat_publish` | `NGUONG_NEN` | `THRESHOLD_BACKGROUND` | ⚠️ nen |
 | `moat_publish` | `PLATFORMS` | `PLATFORMS` |  |
 | `moat_publish` | `PLATFORM_LABEL` | `PLATFORM_LABEL` |  |
+| `moat_publish` | `QUALITY_BACKGROUND` | `QUALITY_BACKGROUND` |  |
+| `moat_publish` | `QUEUE` | `QUEUE` |  |
 | `moat_publish` | `ROOT` | `ROOT` |  |
+| `moat_publish` | `SCHEDULE_BACK` | `SCHEDULE_BACK` |  |
 | `moat_publish` | `SPOOL` | `SPOOL` |  |
 | `moat_publish` | `STATE_DIR` | `STATE_DIR` |  |
 | `moat_publish` | `TERMINAL` | `TERMINAL` |  |
+| `moat_publish` | `THRESHOLD_BACKGROUND` | `THRESHOLD_BACKGROUND` |  |
+| `moat_publish` | `TIER_QUALITY` | `TIER_QUALITY` |  |
 | `moat_publish` | `TIMEOUT` | `TIMEOUT` |  |
-| `moat_publish` | `TIMEOUT_DAY` | `TIMEOUT_BOTTOM` | ⚠️ day |
-| `moat_publish` | `TRAN_NEN_TANG` | `CEILING_BACKGROUND_LAYER` | ⚠️ nen |
-| `moat_publish` | `TRAN_TONG` | `CEILING_TOTAL` |  |
-| `model_audition` | `DEM` | `COUNT` |  |
-| `model_audition` | `NGUONG_DAU` | `THRESHOLD_MARK` | ⚠️ dau |
+| `moat_publish` | `TIMEOUT_BOTTOM` | `TIMEOUT_BOTTOM` |  |
+| `model_audition` | `CANDIDATE` | `CANDIDATE` |  |
+| `model_audition` | `COUNT` | `COUNT` |  |
 | `model_audition` | `ROUTER` | `ROUTER` |  |
+| `model_audition` | `STORY` | `STORY` |  |
 | `model_audition` | `SYS` | `SYS` |  |
-| `model_audition` | `TIN` | `STORY` |  |
+| `model_audition` | `THRESHOLD_MARK` | `THRESHOLD_MARK` |  |
 | `model_audition` | `TOOLS` | `TOOLS` |  |
-| `model_audition` | `UNGVIEN` | `CANDIDATE` |  |
+| `model_boards` | `AA` | `AA` |  |
+| `model_boards` | `ARENA` | `ARENA` |  |
+| `model_boards` | `ARENA_BOARDS` | `ARENA_BOARDS` |  |
+| `model_boards` | `BOARD` | `BOARD` |  |
+| `model_boards` | `COUNT_BOARD` | `COUNT_BOARD` |  |
+| `model_boards` | `LABEL_BOARD` | `LABEL_BOARD` |  |
+| `model_boards` | `LINK_BOARD` | `LINK_BOARD` |  |
+| `model_boards` | `LOCK_BOARD` | `LOCK_BOARD` |  |
+| `model_boards` | `SWE` | `SWE` |  |
 | `model_watch` | `PROBE` | `PROBE` |  |
 | `model_watch` | `REASONS` | `REASONS` |  |
 | `model_watch` | `ROUTER` | `ROUTER` |  |
 | `model_watch` | `TIMEOUT` | `TIMEOUT` |  |
-| `nguon_bai` | `BING_RSS` | `BING_RSS` |  |
-| `nguon_bai` | `BO_MIEN` | `DROP_DOMAIN` | ⚠️ bo |
-| `nguon_bai` | `GNEWS` | `GNEWS` |  |
-| `nguon_bai` | `GNEWS_BAI` | `GNEWS_ARTICLE` |  |
-| `nguon_bai` | `HDR` | `HDR` |  |
-| `nguon_bai` | `RSS_DOAN` | `RSS_GUESS` |  |
-| `nguon_bai` | `SO_NGUON` | `COUNT_SOURCE` | ⚠️ so |
-| `nguon_bai` | `TU_RONG` | `FROM_EMPTY` | ⚠️ rong tu |
-| `nguon_bai` | `TU_RONG_TRUY_VAN` | `FROM_EMPTY_QUERY` | ⚠️ rong tu |
-| `nguon_bai` | `UA` | `UA` |  |
-| `nhat_ky` | `DANG_CHAY` | `FORM_RUN` |  |
-| `nhat_ky` | `GHI_CHU` | `NOTES` |  |
-| `nhat_ky` | `HERMES` | `HERMES` |  |
-| `nhat_ky` | `LOAI` | `TYPE` |  |
-| `nhat_ky` | `LOI_DOC` | `ERROR_READ` | ⚠️ doc |
-| `nhat_ky` | `ROOT` | `ROOT` |  |
-| `nhat_ky` | `THUA` | `EXCESS` |  |
-| `nhat_ky` | `THU_MUC` | `DIRECTORY` |  |
-| `nhat_ky` | `VN` | `VN` |  |
-| `nhat_ky_web` | `CSS` | `CSS` |  |
-| `nhat_ky_web` | `HOST` | `HOST` |  |
-| `nhat_ky_web` | `PORT` | `PORT` |  |
-| `nhat_ky_web` | `ROOT` | `ROOT` |  |
-| `nop_chung` | `PHUT_ALBUM_VUA_LEN` | `MINUTES_ALBUM_FIT_LEN` |  |
-| `nop_chung` | `ROOT` | `ROOT` |  |
-| `nop_chung` | `TOI_DA_VONG` | `MAX_ROUND` |  |
-| `phien_browser` | `ARGS_MAC_DINH` | `ARGS_DEFAULT` |  |
-| `phien_browser` | `MA_CHAN` | `CODE_BLOCK` | ⚠️ ma |
-| `phien_browser` | `MOBILE_DPR` | `MOBILE_DPR` |  |
-| `phien_browser` | `MOBILE_UA` | `MOBILE_UA` |  |
-| `phien_browser` | `MOBILE_VIEWPORT` | `MOBILE_VIEWPORT` |  |
+| `monitor_9router` | `DB` | `DB` |  |
+| `monitor_9router` | `DIRECTORY` | `DIRECTORY` |  |
+| `monitor_9router` | `DRAFTS` | `DRAFTS` |  |
+| `monitor_9router` | `EMPTY_OUT_MAX` | `EMPTY_OUT_MAX` |  |
+| `monitor_9router` | `EMPTY_PROMPT_MIN` | `EMPTY_PROMPT_MIN` |  |
+| `monitor_9router` | `FALLBACK_REAL` | `FALLBACK_REAL` |  |
+| `monitor_9router` | `HERMES_HOMES` | `HERMES_HOMES` |  |
+| `monitor_9router` | `JOURNAL` | `JOURNAL` |  |
+| `monitor_9router` | `PROMPT_MIN_CACHE` | `PROMPT_MIN_CACHE` |  |
+| `monitor_9router` | `ROOT` | `ROOT` |  |
+| `monitor_9router` | `SECONDS_FLIP` | `SECONDS_FLIP` |  |
+| `monitor_9router` | `THRESHOLD_CACHE` | `THRESHOLD_CACHE` |  |
+| `monitor_9router` | `VN` | `VN` |  |
+| `monitor_9router` | `WEB_URL` | `WEB_URL` |  |
+| `prepare.common` | `DRAFTS` | `DRAFTS` |  |
+| `prepare.common` | `GNEWS` | `GNEWS` |  |
+| `prepare.common` | `HDR` | `HDR` |  |
+| `prepare.common` | `MAX_IMAGE` | `MAX_IMAGE` |  |
+| `prepare.common` | `ROOT` | `ROOT` |  |
+| `prepare.common` | `UA` | `UA` |  |
+| `prepare.download_filter` | `DOWNLOAD_MAX_BYTE` | `DOWNLOAD_MAX_BYTE` |  |
+| `prepare.download_filter` | `MAX_DOWNLOAD` | `MAX_DOWNLOAD` |  |
+| `prepare.fallback_rounds` | `MAX_ARTICLE_SOURCES` | `MAX_ARTICLE_SOURCES` |  |
+| `prepare.fallback_rounds` | `MAX_EXTRA_BRAND_` | `MAX_EXTRA_BRAND_?` |  |
+| `prepare.fallback_rounds` | `MAX_PAGE_CAPTURE` | `MAX_PAGE_CAPTURE` |  |
+| `prepare.fallback_rounds` | `XH_CONTEXT_EDGE_SOURCE` | `XH_CONTEXT_EDGE_SOURCE` |  |
+| `prepare.source` | `FROM_COMMON_MARK_SENTENCE` | `FROM_COMMON_MARK_SENTENCE` |  |
+| `prepare.vision` | `SENTENCE_CLUTTERED` | `SENTENCE_?CLUTTERED` |  |
+| `prepare.vision` | `SENTENCE_KEYWORD` | `SENTENCE_KEYWORD` |  |
+| `prepare.vision` | `VISION_MODEL` | `VISION_MODEL` |  |
+| `prepare.vision` | `VISION_URL` | `VISION_URL` |  |
+| `press_entity_images` | `BING_RSS` | `BING_RSS` |  |
+| `press_entity_images` | `MAX_ARTICLE` | `MAX_ARTICLE` |  |
+| `press_entity_images` | `MAX_NEW_DOMAIN` | `MAX_NEW_DOMAIN` |  |
+| `press_entity_images` | `MKT` | `MKT` |  |
 | `publish` | `API` | `API` |  |
 | `publish` | `CAPTION_LIMIT` | `CAPTION_LIMIT` |  |
-| `publish` | `THE_HOP_LE` | `CARD_VALID` | ⚠️ the |
-| `quet_chuan_bi` | `CACHE_GIO` | `CACHE_HOURS` |  |
-| `quet_chuan_bi` | `KHUNG_GIO` | `FRAME_HOURS` |  |
-| `quet_chuan_bi` | `NHIEU_LAN_TRONG_NGAY` | `MANY_ATTEMPT_WITHIN_DATE` | ⚠️ lan |
-| `quet_chuan_bi` | `ROOT` | `ROOT` |  |
-| `quet_chuan_bi` | `TOPIC` | `TOPIC` |  |
-| `quet_chuan_bi` | `TRAN_BAO_CAO` | `CEILING_REPORT` |  |
-| `quet_chuan_bi` | `VN` | `VN` |  |
-| `quet_chung` | `TEN_VAI` | `NAME_ROLE` |  |
-| `quet_chung` | `TU_RONG` | `FROM_EMPTY` | ⚠️ rong tu |
-| `quet_chung` | `UA` | `UA` |  |
-| `quet_chung` | `VN` | `VN` |  |
-| `quet_nop` | `CHAN_GUI` | `BLOCK_SEND` |  |
-| `quet_nop` | `NHAN_CANH_BAO` | `LABEL_WARNING` | ⚠️ nhan |
-| `quet_nop` | `ROOT` | `ROOT` |  |
-| `quet_nop` | `TEN` | `NAME` |  |
-| `render_edu` | `ANH_MIME` | `IMAGE_MIME` |  |
+| `publish` | `CARD_VALID` | `CARD_VALID` |  |
+| `ranking` | `ARGS_CAPTURE` | `ARGS_CAPTURE` |  |
+| `ranking` | `DPR` | `DPR` |  |
+| `ranking` | `GOLD` | `GOLD` |  |
+| `ranking` | `HEIGHT_MAX_CSS` | `HEIGHT_MAX_CSS` |  |
+| `ranking` | `KIND_CAPTURE` | `KIND_CAPTURE` |  |
+| `ranking` | `MAX_XH` | `MAX_XH` |  |
+| `ranking` | `ON_MODEL` | `ON_MODEL` |  |
+| `ranking` | `RATIO_FIT` | `RATIO_FIT` |  |
+| `ranking` | `ROOT` | `ROOT` |  |
+| `ranking` | `SOURCE` | `SOURCE` |  |
+| `ranking` | `TIME_LIMIT` | `TIME_LIMIT` |  |
+| `ranking` | `TOPIC` | `TOPIC` |  |
+| `ranking` | `TOP_DEFAULT` | `TOP_DEFAULT` |  |
+| `ranking` | `UA` | `UA` |  |
 | `render_edu` | `BASE_CSS_TPL` | `BASE_CSS_TPL` |  |
-| `render_edu` | `BAT_BUOC_KIND` | `REQUIRED_KIND` |  |
 | `render_edu` | `BUILDERS` | `BUILDERS` |  |
+| `render_edu` | `DARK_MAX_OPEN` | `DARK_MAX_OPEN` |  |
 | `render_edu` | `DIM` | `DIM` |  |
 | `render_edu` | `FALLBACK` | `FALLBACK` |  |
-| `render_edu` | `FIG_DAY_PHANG` | `FIG_BOTTOM_FLAT` | ⚠️ day |
-| `render_edu` | `FIG_DINH` | `FIG_FIXED` |  |
-| `render_edu` | `FIG_RONG_TOI_THIEU` | `FIG_EMPTY_MIN` | ⚠️ rong |
-| `render_edu` | `FIG_TIEU_DE_DONG` | `FIG_TITLE_LINE` | ⚠️ dong |
+| `render_edu` | `FIG_BOTTOM_FLAT` | `FIG_BOTTOM_FLAT` |  |
+| `render_edu` | `FIG_EMPTY_MIN` | `FIG_EMPTY_MIN` |  |
+| `render_edu` | `FIG_FIXED` | `FIG_FIXED` |  |
+| `render_edu` | `FIG_TITLE_LINE` | `FIG_TITLE_LINE` |  |
 | `render_edu` | `FONTS` | `FONTS` |  |
 | `render_edu` | `FONTS_DIR` | `FONTS_DIR` |  |
 | `render_edu` | `FONT_URL` | `FONT_URL` |  |
@@ -2987,19 +3247,21 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `render_edu` | `HERO_RINGS` | `HERO_RINGS` |  |
 | `render_edu` | `HERO_TPL` | `HERO_TPL` |  |
 | `render_edu` | `HERO_WAVE` | `HERO_WAVE` |  |
+| `render_edu` | `IMAGE_MIME` | `IMAGE_MIME` |  |
 | `render_edu` | `MUTED` | `MUTED` |  |
-| `render_edu` | `NGUONG_HUE_LECH_MAU` | `THRESHOLD_HUE_OFFSET_COLOR` | ⚠️ mau |
-| `render_edu` | `NGUONG_LECH_VIEN` | `THRESHOLD_OFFSET_BORDER` |  |
-| `render_edu` | `NGUONG_SANG_CHU_TOI` | `THRESHOLD_BRIGHT_TEXT_DARK` | ⚠️ chu sang toi |
+| `render_edu` | `RATIO_COLOR_APPLY_INVERT` | `RATIO_COLOR_APPLY_INVERT` |  |
+| `render_edu` | `RATIO_FLAT_MIN` | `RATIO_FLAT_MIN` |  |
+| `render_edu` | `RATIO_IMAGE_HAS_COLOR` | `RATIO_IMAGE_HAS_COLOR` |  |
+| `render_edu` | `REQUIRED_KIND` | `REQUIRED_KIND` |  |
 | `render_edu` | `ROOT` | `ROOT` |  |
 | `render_edu` | `SOFT` | `SOFT` |  |
 | `render_edu` | `THEMES` | `THEMES` |  |
-| `render_edu` | `TI_LE_ANH_CO_MAU` | `RATIO_IMAGE_HAS_COLOR` | ⚠️ mau |
-| `render_edu` | `TI_LE_MAU_AP_DAO` | `RATIO_COLOR_APPLY_INVERT` | ⚠️ mau |
-| `render_edu` | `TI_LE_PHANG_TOI_THIEU` | `RATIO_FLAT_MIN` |  |
-| `render_edu` | `TOI_TOI_DA_MO` | `DARK_MAX_OPEN` | ⚠️ toi |
+| `render_edu` | `THRESHOLD_BRIGHT_TEXT_DARK` | `THRESHOLD_BRIGHT_TEXT_DARK` |  |
+| `render_edu` | `THRESHOLD_HUE_OFFSET_COLOR` | `THRESHOLD_HUE_OFFSET_COLOR` |  |
+| `render_edu` | `THRESHOLD_OFFSET_BORDER` | `THRESHOLD_OFFSET_BORDER` |  |
 | `render_edu` | `VEIL_SPAN` | `VEIL_SPAN` |  |
 | `render_edu` | `WHITE` | `WHITE` |  |
+| `required` | `LINK_BOARD` | `LINK_BOARD` |  |
 | `role` | `DEFAULT_IMAGE` | `DEFAULT_IMAGE` |  |
 | `role` | `DEFAULT_WRITE` | `DEFAULT_WRITE` |  |
 | `role` | `DISPLAY_NAME` | `DISPLAY_NAME` |  |
@@ -3013,19 +3275,34 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `role` | `ROLE_EDU` | `ROLE_EDU` |  |
 | `role` | `ROLE_IMAGE` | `ROLE_IMAGE` |  |
 | `role` | `SLUG_OLD` | `SLUG_OLD` |  |
+| `role` | `WRITERS_BY_BRAND` | `?WRITERS_BY_BRAND` |  |
 | `role` | `WRITE_BY_BRAND` | `WRITE_BY_BRAND` |  |
 | `role` | `WRITE_BY_SCAN` | `WRITE_BY_SCAN` |  |
-| `route_thieu_anh` | `DRAFTS` | `DRAFTS` |  |
-| `scan_business` | `BAO_LON` | `REPORT_LARGE` |  |
+| `route_missing_images` | `DRAFTS` | `DRAFTS` |  |
+| `scan_business` | `AMOUNT_PATTERN` | `?AMOUNT_PATTERN` |  |
+| `scan_business` | `AMOUNT_UNIT` | `?AMOUNT_UNIT` |  |
+| `scan_business` | `CROSS_CURRENCY_TOLERANCE` | `?CROSS_?CURRENCY_TOLERANCE` |  |
+| `scan_business` | `CURRENCY_OF_MARK` | `?CURRENCY_OF_MARK` |  |
+| `scan_business` | `DEAL_WORDS` | `?DEAL_WORDS` |  |
+| `scan_business` | `FOLLOW_UP_BEFORE_AMOUNT` | `?FOLLOW_?UP_BEFORE_?AMOUNT` |  |
+| `scan_business` | `FOLLOW_UP_WINDOW` | `?FOLLOW_?UP_?WINDOW` |  |
+| `scan_business` | `FROM_EMPTY` | `FROM_EMPTY` |  |
 | `scan_business` | `GNEWS` | `GNEWS` |  |
-| `scan_business` | `HANG_CUA_TEN` | `RANK_OF_NAME` |  |
-| `scan_business` | `HANG_LOI` | `RANK_ERROR` | ⚠️ hang |
-| `scan_business` | `RSS_BAO` | `RSS_REPORT` |  |
+| `scan_business` | `MIN_SHARED_DEAL_KEYWORDS` | `MIN_?SHARED_?DEAL_?KEYWORDS` |  |
+| `scan_business` | `QUERY` | `QUERY` |  |
+| `scan_business` | `RANK_ERROR` | `RANK_ERROR` |  |
+| `scan_business` | `RANK_OF_NAME` | `RANK_OF_NAME` |  |
+| `scan_business` | `REPORT_LARGE` | `REPORT_LARGE` |  |
+| `scan_business` | `RSS_REPORT` | `RSS_REPORT` |  |
+| `scan_business` | `SAME_AMOUNT_TOLERANCE` | `SAME_?AMOUNT_TOLERANCE` |  |
 | `scan_business` | `STATE` | `STATE` |  |
-| `scan_business` | `TRUY_VAN` | `QUERY` |  |
-| `scan_business` | `TU_RONG` | `FROM_EMPTY` | ⚠️ rong tu |
 | `scan_business` | `UA` | `UA` |  |
 | `scan_business` | `WATCHLIST` | `WATCHLIST` |  |
+| `scan_business` | `WATCHLIST_WORDS` | `WATCHLIST_WORDS` |  |
+| `scan_common` | `FROM_EMPTY` | `FROM_EMPTY` |  |
+| `scan_common` | `NAME_ROLE` | `NAME_ROLE` |  |
+| `scan_common` | `UA` | `UA` |  |
+| `scan_common` | `VN` | `VN` |  |
 | `scan_models` | `AA` | `AA` |  |
 | `scan_models` | `AA_MEDIA` | `AA_MEDIA` |  |
 | `scan_models` | `ANTHROPIC_CL` | `ANTHROPIC_CL` |  |
@@ -3033,139 +3310,215 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `scan_models` | `ARENA` | `ARENA` |  |
 | `scan_models` | `ARENA_BOARDS` | `ARENA_BOARDS` |  |
 | `scan_models` | `ARENA_WEBDEV` | `ARENA_WEBDEV` |  |
-| `scan_models` | `BENCH_HINTS` | `BENCH_HINTS` |  |
 | `scan_models` | `BIG` | `BIG` |  |
 | `scan_models` | `CATALOG` | `CATALOG` |  |
+| `scan_models` | `CEILING_BOARD` | `CEILING_BOARD` |  |
+| `scan_models` | `CEILING_GH` | `CEILING_GH` |  |
+| `scan_models` | `CEILING_HF` | `CEILING_HF` |  |
+| `scan_models` | `COUNT_BOARD` | `COUNT_BOARD` |  |
 | `scan_models` | `ECI` | `ECI` |  |
 | `scan_models` | `GITHUB_REPOS` | `GITHUB_REPOS` |  |
-| `scan_models` | `HANG_MY` | `RANK_MY` | ⚠️ hang |
-| `scan_models` | `HANG_TQ` | `RANK_CHINA` | ⚠️ hang |
 | `scan_models` | `HF_API` | `HF_API` |  |
-| `scan_models` | `HF_RAC` | `HF_JUNK` |  |
-| `scan_models` | `HF_SAN` | `HF_READY` |  |
+| `scan_models` | `HF_JUNK` | `HF_JUNK` |  |
+| `scan_models` | `HF_READY` | `HF_READY` |  |
 | `scan_models` | `HLE` | `HLE` |  |
 | `scan_models` | `HLE_PAT` | `HLE_PAT` |  |
 | `scan_models` | `I2V_PAT` | `I2V_PAT` |  |
-| `scan_models` | `KHOA_BANG` | `LOCK_BOARD` | ⚠️ bang khoa |
+| `scan_models` | `KEYWORD_STORY` | `KEYWORD_STORY` |  |
+| `scan_models` | `LABEL_BOARD` | `LABEL_BOARD` |  |
 | `scan_models` | `LIVEBENCH` | `LIVEBENCH` |  |
-| `scan_models` | `NHAN_BANG` | `LABEL_BOARD` | ⚠️ bang nhan |
+| `scan_models` | `LOCK_BOARD` | `LOCK_BOARD` |  |
 | `scan_models` | `OC_API` | `OC_API` |  |
-| `scan_models` | `OPENROUTER` | `OPENROUTER` |  |
-| `scan_models` | `OPENROUTER_RANK` | `OPENROUTER_RANK` |  |
-| `scan_models` | `RSS_HANG` | `RSS_RANK` | ⚠️ hang |
-| `scan_models` | `SO_BANG` | `COUNT_BOARD` | ⚠️ bang so |
+| `scan_models` | `RANK_CHINA` | `RANK_CHINA` |  |
+| `scan_models` | `RANK_MY` | `RANK_MY` |  |
+| `scan_models` | `REGION_LABEL` | `REGION_LABEL` |  |
+| `scan_models` | `RSS_RANK` | `RSS_RANK` |  |
 | `scan_models` | `STATE` | `STATE` |  |
 | `scan_models` | `STT_PAT` | `STT_PAT` |  |
 | `scan_models` | `SWEBENCH` | `SWEBENCH` |  |
 | `scan_models` | `SWE_BASH` | `SWE_BASH` |  |
 | `scan_models` | `SWE_SPLIT` | `SWE_SPLIT` |  |
 | `scan_models` | `TBENCH` | `TBENCH` |  |
-| `scan_models` | `TBENCH_BANG` | `TBENCH_BOARD` | ⚠️ bang |
-| `scan_models` | `TRAN_BANG` | `CEILING_BOARD` | ⚠️ bang |
-| `scan_models` | `TRAN_BM` | `CEILING_BM` |  |
-| `scan_models` | `TRAN_GH` | `CEILING_GH` |  |
-| `scan_models` | `TRAN_HF` | `CEILING_HF` |  |
-| `scan_models` | `TRAN_MOI` | `CEILING_NEW` | ⚠️ moi |
+| `scan_models` | `TBENCH_BOARD` | `TBENCH_BOARD` |  |
 | `scan_models` | `TTS_PAT` | `TTS_PAT` |  |
-| `scan_models` | `TU_KHOA_TIN` | `KEYWORD_STORY` |  |
 | `scan_models` | `UA` | `UA` |  |
-| `scan_models` | `VUNG_NHAN` | `REGION_LABEL` | ⚠️ nhan |
+| `scan_prepare` | `CACHE_HOURS` | `CACHE_HOURS` |  |
+| `scan_prepare` | `CEILING_REPORT` | `CEILING_REPORT` |  |
+| `scan_prepare` | `FRAME_HOURS` | `FRAME_HOURS` |  |
+| `scan_prepare` | `MANY_ATTEMPT_WITHIN_DATE` | `MANY_ATTEMPT_WITHIN_DATE` |  |
+| `scan_prepare` | `ROOT` | `ROOT` |  |
+| `scan_prepare` | `TOPIC` | `TOPIC` |  |
+| `scan_prepare` | `VN` | `VN` |  |
 | `scan_sources` | `AI_HINTS` | `AI_HINTS` |  |
-| `scan_sources` | `ANH_RAC` | `IMAGE_JUNK` |  |
 | `scan_sources` | `ARXIV_CATS` | `ARXIV_CATS` |  |
-| `scan_sources` | `HANG_FRONTIER` | `RANK_FRONTIER` | ⚠️ hang |
-| `scan_sources` | `KHONG_CO_ANH` | `NO_HAS_IMAGE` |  |
+| `scan_sources` | `IMAGE_JUNK` | `IMAGE_JUNK` |  |
+| `scan_sources` | `KEYWORD_AI` | `KEYWORD_AI` |  |
 | `scan_sources` | `MAX_AGE_HOURS` | `MAX_AGE_HOURS` |  |
+| `scan_sources` | `NAME_ORGANIZATION` | `NAME_ORGANIZATION` |  |
+| `scan_sources` | `NO_HAS_IMAGE` | `NO_HAS_IMAGE` |  |
+| `scan_sources` | `RANK_FRONTIER` | `RANK_FRONTIER` |  |
 | `scan_sources` | `ROOT` | `ROOT` |  |
 | `scan_sources` | `STATE` | `STATE` |  |
 | `scan_sources` | `SUBS` | `SUBS` |  |
-| `scan_sources` | `TEN_TO_CHUC` | `NAME_ORGANIZATION` |  |
-| `scan_sources` | `TU_KHOA_AI` | `KEYWORD_AI` |  |
 | `scan_sources` | `UA` | `UA` |  |
-| `scan_x` | `GIU_NGAY` | `KEEP_DATE` |  |
-| `scan_x` | `LINK_BAT_KY` | `LINK_CATCH_KY` | ⚠️ bat |
-| `scan_x` | `LINK_NANG` | `LINK_CAPABILITY` |  |
-| `scan_x` | `MAC_DINH_URL` | `DEFAULT_URL` |  |
+| `scan_submit` | `BLOCK_SEND` | `BLOCK_SEND` |  |
+| `scan_submit` | `LABEL_WARNING` | `LABEL_WARNING` |  |
+| `scan_submit` | `NAME` | `NAME` |  |
+| `scan_submit` | `ROOT` | `ROOT` |  |
+| `scan_x` | `CEILING_OLD_HOURS` | `CEILING_OLD_HOURS` |  |
+| `scan_x` | `DEFAULT_URL` | `DEFAULT_URL` |  |
+| `scan_x` | `KEEP_DATE` | `KEEP_DATE` |  |
+| `scan_x` | `LINK_CAPABILITY` | `LINK_CAPABILITY` |  |
+| `scan_x` | `LINK_CATCH_KY` | `LINK_CATCH_KY` |  |
+| `scan_x` | `MIN_KY_FROM` | `MIN_KY_FROM` |  |
 | `scan_x` | `STATE` | `STATE` |  |
-| `scan_x` | `TOI_THIEU_KY_TU` | `MIN_KY_FROM` | ⚠️ tu |
-| `scan_x` | `TRAN_CU_GIO` | `CEILING_OLD_HOURS` | ⚠️ cu |
-| `schema` | `CAO_TOI_THIEU_CAT_NGANG` | `HEIGHT_MIN_CROP_LANDSCAPE` |  |
-| `schema` | `PHIEN_BAN_MANIFEST` | `VERSION_MANIFEST` |  |
-| `soat_cron` | `DAU` | `MARK` | ⚠️ dau |
-| `soat_cron` | `MUC` | `ITEM` | ⚠️ muc |
-| `soat_cron` | `TICK_CU` | `TICK_OLD` | ⚠️ cu |
-| `soat_cron` | `TRE_GIAY` | `LATE_SECONDS` |  |
+| `schema` | `HEIGHT_MIN_CROP_LANDSCAPE` | `HEIGHT_MIN_CROP_LANDSCAPE` |  |
+| `schema` | `VERSION_MANIFEST` | `VERSION_MANIFEST` |  |
+| `send_telegram` | `API` | `API` |  |
+| `send_telegram` | `RETRY_DELAYS` | `RETRY_?DELAYS` |  |
+| `send_telegram` | `STATE` | `STATE` |  |
+| `send_telegram` | `TOPICS` | `TOPICS` |  |
+| `skill_lesson_approve` | `DECISION_NOTE` | `?DECISION_?NOTE` |  |
+| `skill_lesson_approve` | `SAFE_KEY` | `?SAFE_KEY` |  |
+| `skill_lesson_approve` | `STATE` | `STATE` |  |
+| `skill_lesson_commit` | `BRANCH_PREFIX` | `BRANCH_PREFIX` |  |
+| `skill_lesson_commit` | `REPO` | `REPO` |  |
+| `skill_lesson_commit` | `STATE` | `STATE` |  |
+| `skill_lesson_filter` | `AVOID_WORDS` | `?AVOID_WORDS` |  |
+| `skill_lesson_filter` | `BACKTICK` | `?BACKTICK` |  |
+| `skill_lesson_filter` | `BRAND_WORDS` | `BRAND_WORDS` |  |
+| `skill_lesson_filter` | `BUG_WORDS` | `?BUG_WORDS` |  |
+| `skill_lesson_filter` | `DATA_SUFFIXES` | `DATA_?SUFFIXES` |  |
+| `skill_lesson_filter` | `DOTTED` | `?DOTTED` |  |
+| `skill_lesson_filter` | `DUPLICATE_RATIO` | `DUPLICATE_RATIO` |  |
+| `skill_lesson_filter` | `IDENTIFIER` | `?IDENTIFIER` |  |
+| `skill_lesson_filter` | `MAX_ADDED_LINES` | `MAX_?ADDED_LINES` |  |
+| `skill_lesson_filter` | `MAX_SKILL_LINES` | `MAX_SKILL_LINES` |  |
+| `skill_lesson_filter` | `MAX_SKILL_SECTIONS` | `MAX_SKILL_?SECTIONS` |  |
+| `skill_lesson_filter` | `PY_FILE` | `PY_FILE` |  |
+| `skill_lesson_filter` | `RENAME_COMMIT` | `RENAME_COMMIT` |  |
+| `skill_lesson_filter` | `RENAME_DICTS` | `RENAME_?DICTS` |  |
+| `skill_lesson_filter` | `REPO` | `REPO` |  |
+| `skill_lesson_filter` | `RULE_LABELS` | `RULE_LABELS` |  |
+| `skill_lesson_filter` | `SOURCE_OF_TRUTH` | `SOURCE_OF_?TRUTH` |  |
+| `skill_lesson_filter` | `STATE` | `STATE` |  |
+| `skill_lesson_filter` | `TASK_END_GRACE_SECONDS` | `TASK_END_?GRACE_SECONDS` |  |
+| `skill_lesson_filter` | `TELEGRAM_BUDGET` | `TELEGRAM_BUDGET` |  |
 | `social_post` | `HOSTS` | `HOSTS` |  |
 | `social_post` | `ROOT` | `ROOT` |  |
 | `social_post` | `SCRIPT` | `SCRIPT` |  |
+| `story_type` | `BOARD_IMAGE_BY_TYPE` | `BOARD_IMAGE_BY_TYPE` |  |
+| `story_type` | `CODE_HAS_BALLOT` | `CODE_HAS_BALLOT` |  |
+| `story_type` | `COUNTRY_OF_RANK` | `COUNTRY_OF_RANK` |  |
+| `story_type` | `DEFAULT` | `DEFAULT` |  |
+| `story_type` | `KEYWORD_LOWER_LAYER` | `KEYWORD_LOWER_LAYER` |  |
+| `submit_common` | `MAX_ROUND` | `MAX_ROUND` |  |
+| `submit_common` | `MINUTES_ALBUM_FIT_LEN` | `MINUTES_ALBUM_FIT_LEN` |  |
+| `submit_common` | `ROOT` | `ROOT` |  |
+| `swap_image_text` | `AREA_TO_SEALED` | `AREA_TO_SEALED` |  |
+| `swap_image_text` | `DILATE_PX` | `DILATE_PX` |  |
+| `swap_image_text` | `MAX_PX_LAMA` | `MAX_PX_LAMA` |  |
+| `sync_hermes` | `ALL_GATE_OLD` | `ALL_GATE_OLD` |  |
+| `sync_hermes` | `COLOR_UPSTREAM` | `COLOR_UPSTREAM` |  |
+| `sync_hermes` | `FILE_CONFIG` | `FILE_CONFIG` |  |
+| `sync_hermes` | `FILE_UPSTREAM` | `FILE_UPSTREAM` |  |
+| `sync_hermes` | `HERMES_AGENT` | `HERMES_AGENT` |  |
+| `sync_hermes` | `HOMES` | `HOMES` |  |
+| `sync_hermes` | `IS_PLUGIN` | `IS_PLUGIN` |  |
+| `sync_hermes` | `LOCK_PROMPT` | `LOCK_PROMPT` |  |
+| `sync_hermes` | `LOCK_SECRET` | `LOCK_SECRET` |  |
+| `sync_hermes` | `PLUGIN_FILE` | `PLUGIN_FILE` |  |
+| `sync_hermes` | `PLUGIN_REPO` | `PLUGIN_REPO` |  |
+| `sync_hermes` | `REPO` | `REPO` |  |
+| `sync_hermes` | `ROOT` | `ROOT` |  |
+| `sync_hermes` | `SCRIPT` | `SCRIPT` |  |
+| `sync_hermes` | `TRACE` | `TRACE` |  |
 | `task_bodies` | `CAROUSEL_BODY` | `CAROUSEL_BODY` |  |
 | `task_bodies` | `EDU_BODY` | `EDU_BODY` |  |
+| `task_bodies` | `END_ROLE_IMAGE` | `END_ROLE_IMAGE` |  |
 | `task_bodies` | `ILLU_BODY` | `ILLU_BODY` |  |
-| `task_bodies` | `KET_THUC_VAI_ANH` | `END_ROLE_IMAGE` |  |
 | `task_bodies` | `WRITER_BODY` | `WRITER_BODY` |  |
 | `teaser_assemble` | `CLOSING` | `CLOSING` |  |
-| `teaser_assemble` | `CUM_TUONG_THUAT` | `PHRASE_WALL_TECHNIQUE` |  |
-| `teaser_assemble` | `DAI_HONG` | `LONG_BROKEN` |  |
-| `teaser_assemble` | `DAI_MONG_MUON` | `LONG_THIN_LATE` |  |
-| `tele_util` | `GIOI_HAN` | `LIMIT` |  |
-| `theo_doi_9router` | `DB` | `DB` |  |
-| `theo_doi_9router` | `DRAFTS` | `DRAFTS` |  |
-| `theo_doi_9router` | `FALLBACK_THAT` | `FALLBACK_REAL` |  |
-| `theo_doi_9router` | `GIAY_LAT` | `SECONDS_FLIP` |  |
-| `theo_doi_9router` | `HERMES_HOMES` | `HERMES_HOMES` |  |
-| `theo_doi_9router` | `NGUONG_CACHE` | `THRESHOLD_CACHE` |  |
-| `theo_doi_9router` | `NHAT_KY` | `JOURNAL` |  |
-| `theo_doi_9router` | `PROMPT_TOI_THIEU_CACHE` | `PROMPT_MIN_CACHE` |  |
-| `theo_doi_9router` | `RONG_OUT_MAX` | `EMPTY_OUT_MAX` | ⚠️ rong |
-| `theo_doi_9router` | `RONG_PROMPT_MIN` | `EMPTY_PROMPT_MIN` | ⚠️ rong |
-| `theo_doi_9router` | `ROOT` | `ROOT` |  |
-| `theo_doi_9router` | `THU_MUC` | `DIRECTORY` |  |
-| `theo_doi_9router` | `VN` | `VN` |  |
-| `theo_doi_9router` | `WEB_URL` | `WEB_URL` |  |
-| `tieng_viet` | `AM_MAT_DAU` | `NEGATIVE_FACE_MARK` | ⚠️ dau |
-| `tieng_viet` | `CUM_MAT_DAU` | `PHRASE_FACE_MARK` | ⚠️ dau |
-| `tieng_viet` | `DAU_CAM` | `MARK_FORBID` | ⚠️ dau |
-| `tim_anh_them` | `CANH_NGAN_OPENVERSE` | `SHORT_SIDE_OPENVERSE` |  |
-| `tim_anh_them` | `GIAY_PHEP_OK` | `LICENSE_OK` |  |
-| `tim_anh_them` | `OPENVERSE` | `OPENVERSE` |  |
-| `tim_anh_them` | `ROOT` | `ROOT` |  |
-| `tim_anh_them` | `SO_BAO_MOI_LUOT` | `COUNT_REPORT_NEW_TURN` | ⚠️ moi so |
-| `tim_anh_them` | `SO_COMMONS_MOI_LUOT` | `COUNT_COMMONS_NEW_TURN` | ⚠️ moi so |
-| `tim_anh_them` | `THUMB_COMMONS` | `THUMB_COMMONS` |  |
-| `tim_anh_them` | `TOI_DA_ANH_THEM` | `MAX_IMAGE_EXTRA` |  |
-| `tim_anh_them` | `TOI_DA_LUOT` | `MAX_TURN` |  |
-| `tim_anh_web` | `BO_MIEN_WEB` | `DROP_DOMAIN_WEB` | ⚠️ bo |
-| `tim_anh_web` | `NGUON` | `SOURCE` |  |
-| `tim_anh_web` | `UA` | `UA` |  |
-| `tu_lieu` | `CHU_TOI_DA` | `TEXT_MAX` | ⚠️ chu |
-| `tu_lieu` | `CO_SO` | `HAS_COUNT` | ⚠️ so |
-| `tu_lieu` | `ROOT` | `ROOT` |  |
-| `tu_lieu` | `SO_BAI_KHAC` | `COUNT_ARTICLE_OTHER` | ⚠️ so |
-| `xep_hang` | `ARGS_CHUP` | `ARGS_CAPTURE` |  |
-| `xep_hang` | `CAO_TOI_DA_CSS` | `HEIGHT_MAX_CSS` |  |
-| `xep_hang` | `CHU_DE` | `TOPIC` |  |
-| `xep_hang` | `DPR` | `DPR` |  |
-| `xep_hang` | `GIO_HAN` | `TIME_LIMIT` |  |
-| `xep_hang` | `KIEU_CHUP` | `KIND_CAPTURE` |  |
-| `xep_hang` | `NGUON` | `SOURCE` |  |
-| `xep_hang` | `ROOT` | `ROOT` |  |
-| `xep_hang` | `TI_LE_VUA` | `RATIO_FIT` |  |
-| `xep_hang` | `TOI_DA_XH` | `MAX_XH` |  |
-| `xep_hang` | `TOP_MAC_DINH` | `TOP_DEFAULT` |  |
-| `xep_hang` | `TREN_MODEL` | `ON_MODEL` |  |
-| `xep_hang` | `UA` | `UA` |  |
-| `xep_hang` | `VANG` | `GOLD` |  |
+| `teaser_assemble` | `LONG_BROKEN` | `LONG_BROKEN` |  |
+| `teaser_assemble` | `LONG_THIN_LATE` | `LONG_THIN_LATE` |  |
+| `teaser_assemble` | `PHRASE_WALL_TECHNIQUE` | `PHRASE_WALL_TECHNIQUE` |  |
+| `tele_util` | `LIMIT` | `LIMIT` |  |
+| `vietnamese` | `MARK_FORBID` | `MARK_FORBID` |  |
+| `vietnamese` | `NEGATIVE_FACE_MARK` | `NEGATIVE_FACE_MARK` |  |
+| `vietnamese` | `PHRASE_FACE_MARK` | `PHRASE_FACE_MARK` |  |
+| `worker_scope_sweep` | `SCOPE_PATTERN` | `SCOPE_PATTERN` |  |
 
 ## E. Token chưa có trong bảng
 
 | token | lần | ví dụ module |
 |---|---|---|
+| `cluttered` | 11 | card, carousel, prepare.vision |
+| `upload` | 6 | approve_base, approve_post |
+| `amount` | 5 | scan_business |
+| `deal` | 4 | scan_business |
+| `follow` | 3 | scan_business |
+| `up` | 3 | scan_business |
+| `pr` | 3 | manifest_build, skill_lesson_commit |
+| `note` | 2 | approve_command, approve_post, image_rules_dre |
+| `writers` | 2 | role |
+| `keywords` | 2 | scan_business |
+| `worktree` | 2 | skill_lesson_commit |
+| `pending` | 2 | moat_publish, skill_lesson_commit, skill_lesson_filter |
+| `identifier` | 2 | skill_lesson_filter |
+| `delays` | 2 | approve_base, send_telegram |
+| `floor` | 2 | approve_post, image_rules_dre |
+| `currency` | 2 | scan_business |
+| `compress` | 1 | approve_post |
+| `answer` | 1 | approve_post |
+| `retarget` | 1 | approve_post |
+| `case` | 1 | image_rules_dre |
+| `nouns` | 1 | prepare.source |
+| `proves` | 1 | ranking |
+| `proving` | 1 | ranking |
+| `module` | 1 | role, skill_lesson_filter |
+| `amounts` | 1 | scan_business |
+| `capitalized` | 1 | scan_business |
+| `sent` | 1 | cleanup, send_telegram, skill_lesson_filter |
+| `verdict` | 1 | skill_lesson_approve, skill_lesson_commit, skill_lesson_filter |
+| `metadata` | 1 | skill_lesson_commit |
+| `comment` | 1 | skill_lesson_commit |
+| `enable` | 1 | skill_lesson_commit |
+| `discard` | 1 | skill_lesson_commit |
+| `defines` | 1 | skill_lesson_filter |
+| `symbol` | 1 | skill_lesson_commit, skill_lesson_filter |
+| `commits` | 1 | skill_lesson_filter |
+| `since` | 1 | skill_lesson_filter |
+| `symbols` | 1 | skill_lesson_commit, skill_lesson_filter |
+| `judge` | 1 | skill_lesson_filter |
+| `collect` | 1 | skill_lesson_filter |
+| `choice` | 1 | submit_common |
+| `scopes` | 1 | worker_scope_sweep |
+| `stop` | 1 | worker_scope_sweep |
+| `variance` | 1 | carousel |
+| `kinh` | 1 | gin_submit |
+| `tram` | 1 | gin_submit |
+| `` | 1 |  |
+| `cross` | 1 | scan_business |
+| `window` | 1 | scan_business |
+| `shared` | 1 | scan_business |
+| `decision` | 1 | skill_lesson_approve, skill_lesson_commit |
+| `safe` | 1 | skill_lesson_approve |
+| `avoid` | 1 | skill_lesson_filter |
+| `backtick` | 1 | skill_lesson_filter |
+| `bug` | 1 | skill_lesson_filter |
+| `suffixes` | 1 | skill_lesson_filter |
+| `dotted` | 1 | skill_lesson_filter |
+| `added` | 1 | skill_lesson_filter |
+| `sections` | 1 | skill_lesson_filter |
+| `dicts` | 1 | skill_lesson_filter |
+| `truth` | 1 | skill_lesson_filter |
+| `grace` | 1 | skill_lesson_filter, worker_scope_sweep |
 
 ## F. Va chạm tên — PHẢI SỬA trước khi rename
 
 Hai hàm/lớp top-level khác nhau trong CÙNG module mà dịch ra CÙNG một tên — rename thẳng sẽ ghi đè, gây lỗi gọi thật. Sửa bằng `overrides.json` (`"module.ten_goc": "ten_moi"`), không cần đụng bảng từ điển chung.
 
-**Không còn va chạm nào** — đo trên 106 module / 1032 hàm-lớp top-level.
+**Không còn va chạm nào** — đo trên 114 module / 1169 hàm-lớp top-level.
 
 ## F2. Tên module mới đè lên tên đã dùng — PHẢI SỬA trước khi đổi tên tệp
 

@@ -10,7 +10,7 @@ vit-robot; `_round_capture_source` lay tam dau tien chup duoc va gan lien_quan=T
 Fail tren code cu (khong co strip_site_suffix/same_story; vong chup khong loc), pass
 tren code moi.
 
-Chay:  venv/bin/python tests/test_bao_khac_dung_tin.py
+Chay:  venv/bin/python tests/test_other_outlets_use_story.py
 """
 import io
 import sys
@@ -30,7 +30,7 @@ VIT = "Hugging Face robot duck is already a hit"
 THAT = "DeepSeek releases V4.1 Flash, says it outperforms flagship V4 Pro"
 
 
-def test_boc_hau_to_site_ca_dau_cham_giua():
+def test_extract_suffix_site_all_mark_touch_middle():
     assert article_sources.strip_site_suffix(HF) == "deepseek-ai/DeepSeek-V4.1-Flash"
     assert article_sources.strip_site_suffix("Tin X | The Verge") == "Tin X"
     assert article_sources.strip_site_suffix("Tin X » TechCrunch") == "Tin X"
@@ -39,24 +39,24 @@ def test_boc_hau_to_site_ca_dau_cham_giua():
     assert article_sources.strip_site_suffix("Claude Opus 4.7 · Anthropic") == "Claude Opus 4.7"
 
 
-def test_ten_nen_tang_khong_phai_tu_dac_trung():
+def test_name_background_layer_no_right_from_distinctive():
     assert not (article_sources.story_tokens(HF) & {"hugging", "face"})
     assert {"deepseek", "flash"} <= article_sources.story_tokens(HF)
 
 
-def test_bai_vit_robot_khong_cung_tin_bai_that_thi_co():
+def test_duck_headline_different_story_real_article_same_story():
     assert article_sources.same_story(HF, VIT) is False
     assert article_sources.same_story(HF, THAT) is True
     assert article_sources.same_story(HF, "DeepSeek V4.1 Flash vs GLM-5.3 Flash") is True
 
 
-def test_bao_khac_bing_dung_cung_tin():
+def test_other_outlets_bing_use_same_story():
     src = (ROOT / "article_sources.py").read_text(encoding="utf-8")
     than = src[src.index("def other_outlets_bing("):src.index("\ndef find(")]
     assert "story_tokens(" in than and "strip_site_suffix(" in than, "other_outlets_bing chua di qua same_story"
 
 
-def _chay_vong(tieu_de, tit_trang_cua):
+def _run_round(tieu_de, tit_trang_cua):
     """Stub capture_lead_mobile: bai goc (link) khong chup duoc, bao khac tra tit."""
     goi = []
 
@@ -83,8 +83,8 @@ def _chay_vong(tieu_de, tit_trang_cua):
         capture_page.capture_lead_mobile = that
 
 
-def test_vong_chup_bo_bao_khac_khong_cung_tin_va_lay_bao_dung():
-    goi, anh, log = _chay_vong(HF, {
+def test_round_capture_drop_other_outlets_no_same_story_and_take_report_use():
+    goi, anh, log = _run_round(HF, {
         "https://www.therundown.ai/articles/hugging-face-robot-duck": VIT,
         "https://siliconangle.com/deepseek-v4-1-flash": THAT,
     })
@@ -92,15 +92,15 @@ def test_vong_chup_bo_bao_khac_khong_cung_tin_va_lay_bao_dung():
     assert "KHÔNG cùng tin" in log and "therundown.ai" in log, log
 
 
-def test_vong_chup_khong_co_tieu_de_thi_giu_hanh_vi_cu():
+def test_round_capture_no_title_keeps_old_behavior():
     """Goi cu (khong tieu_de) khong bi doi: van lay tam dau tien — test_nac_chup_nguon giu."""
-    goi, anh, _ = _chay_vong("", {
+    goi, anh, _ = _run_round("", {
         "https://www.therundown.ai/articles/hugging-face-robot-duck": VIT,
     })
     assert len(anh) == 1 and anh[0]["mien"] == "therundown.ai"
 
 
-def test_chup_lead_mobile_tra_tit_trang():
+def test_capture_lead_mobile_return_headline_page():
     src = (ROOT / "capture_page.py").read_text(encoding="utf-8")
     assert '"tit_trang": tit_trang' in src, "capture_lead_mobile phai tra tit trang de doi chieu"
 

@@ -9,7 +9,7 @@ quét Ông Chủ đang nhìn; nên ở bên này im lặng y hệt lúc lệnh b
 Luật Ông Chủ 12/09/2026: *"phải có phản hồi 'đang gửi cho Dre' ngay sau khi
 nhận được reply"*.
 
-Chay:  venv/bin/python tests/test_bao_da_nhan.py
+Chay:  venv/bin/python tests/test_report_already_label.py
 """
 import json
 import sys
@@ -50,7 +50,7 @@ class _Ghi:
         return "t_" + str(it["index"]), None
 
 
-def _chay(manifest_path, lenh):
+def _run(manifest_path, lenh):
     g = _Ghi()
     # Chi va `latest_manifest`, KHONG dung toi `manifest_already_send`: tep test nay
     # phai fail tren code cu vi THIEU DONG BAO, khong phai vi thieu mot ham cua
@@ -73,11 +73,11 @@ def _chay(manifest_path, lenh):
     return g.moc
 
 
-def test_bao_da_nhan_di_truoc_moi_viec():
+def test_report_already_label_go_before_new_job():
     """Dòng báo phải nằm TRƯỚC create_pair — create_pair mất tới 180s mỗi tin,
     xếp sau nó thì 'ngay' không còn nghĩa gì."""
     with tempfile.TemporaryDirectory() as t:
-        moc = _chay(_manifest(Path(t)), [(1, "dre", "dcgr"), (7, "dre", "dcgr")])
+        moc = _run(_manifest(Path(t)), [(1, "dre", "dcgr"), (7, "dre", "dcgr")])
     assert moc, "không có việc nào chạy"
     assert moc[0][0] == "gui", f"việc đầu tiên phải là báo đã nhận, đang là {moc[0][0]}"
     i_bao = 0
@@ -85,40 +85,40 @@ def test_bao_da_nhan_di_truoc_moi_viec():
     assert i_bao < i_pair, moc
 
 
-def test_bao_dung_topic_ong_chu_vua_go():
+def test_report_use_topic_boss_fit_go():
     """`_report_receive_job` bắn vào topic của Dre; dòng này phải ở lại topic quét."""
     with tempfile.TemporaryDirectory() as t:
-        moc = _chay(_manifest(Path(t)), [(1, "dre", "dcgr")])
+        moc = _run(_manifest(Path(t)), [(1, "dre", "dcgr")])
     assert moc[0][1] == THREAD_VERA, f"gửi nhầm thread {moc[0][1]}"
 
 
-def test_bao_co_ten_vai_va_tieu_de_tung_so():
+def test_report_has_name_role_and_title_each_count():
     """Ông Chủ phải đọc được NGAY là số vừa gõ có trỏ đúng tin định giao không."""
     with tempfile.TemporaryDirectory() as t:
-        moc = _chay(_manifest(Path(t)), [(1, "dre", "dcgr"), (7, "dre", "dcgr")])
+        moc = _run(_manifest(Path(t)), [(1, "dre", "dcgr"), (7, "dre", "dcgr")])
     text = moc[0][2]
     assert "đang gửi cho" in text and "Dre" in text, text
     assert "#1" in text and "#7" in text, text
     assert "Moonshot" in text and "TSMC" in text, "thiếu tiêu đề để đối chiếu"
 
 
-def test_bao_noi_ro_so_khong_co_trong_danh_sach():
+def test_report_say_clear_count_no_has_within_list_clean():
     """Gõ nhầm số ngoài dải: phải biết ngay, không phải đợi 'Kết quả chọn'."""
     with tempfile.TemporaryDirectory() as t:
-        moc = _chay(_manifest(Path(t)), [(99, "dre", "dcgr")])
+        moc = _run(_manifest(Path(t)), [(99, "dre", "dcgr")])
     assert "#99" in moc[0][2] and "không có số này" in moc[0][2], moc[0][2]
 
 
-def test_moi_vai_deu_duoc_ke_ten():
+def test_every_role_gets_named():
     with tempfile.TemporaryDirectory() as t:
-        moc = _chay(_manifest(Path(t)), [(1, "dre", "dcgr"), (7, "ethan", "dcgr")])
+        moc = _run(_manifest(Path(t)), [(1, "dre", "dcgr"), (7, "ethan", "dcgr")])
     assert "Dre" in moc[0][2] and "Ethan" in moc[0][2], moc[0][2]
 
 
-def test_van_con_dong_ket_qua_o_cuoi():
+def test_still_remaining_line_result_cell_last():
     """Báo đã nhận là THÊM, không thay dòng kết quả cuối."""
     with tempfile.TemporaryDirectory() as t:
-        moc = _chay(_manifest(Path(t)), [(1, "dre", "dcgr")])
+        moc = _run(_manifest(Path(t)), [(1, "dre", "dcgr")])
     cuoi = [m for m in moc if m[0] == "gui"][-1]
     assert "Kết quả chọn" in cuoi[2], cuoi
 
