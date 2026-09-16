@@ -4,7 +4,7 @@ noi dung trang thai; task bi hermes giet (timed_out) phai duoc bao.
 
 Ca that t_24b214a6: hai run 25.1 phut deu timed_out, heartbeat moi 60s suot,
 Telegram noi "khong phan hoi hon 20 phut" roi im lang khi bi giet. Dung harness
-cua test_bao_treo (kanban/telegram gia), them stub cho ba ham moi cua
+cua test_report_stalled (kanban/telegram gia), them stub cho ba ham moi cua
 hermes_adapter. Fail tren code cu (khong co run_start/long_run_message), pass
 tren code moi.
 
@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "tests"))
 import approve_dispatch as dg                                  # noqa: E402
-from test_bao_treo import _chay_bao_tien_do_gia               # noqa: E402
+from test_report_stalled import _run_report_progress_fake               # noqa: E402
 
 
 def _with_stub(moc, nhip, lan_cuoi, pid_song, rows, tmp):
@@ -31,7 +31,7 @@ def _with_stub(moc, nhip, lan_cuoi, pid_song, rows, tmp):
     ha.pid_alive = lambda pid: pid_song
     gui = []
     try:
-        _chay_bao_tien_do_gia(tmp, rows, gui)
+        _run_report_progress_fake(tmp, rows, gui)
     finally:
         ha.run_start, ha.heartbeat, ha.last_run_many, ha.pid_alive = cu
     return gui

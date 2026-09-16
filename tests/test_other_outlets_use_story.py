@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "tests"))
 import article_sources                                             # noqa: E402
 import capture_page                                            # noqa: E402
 from prepare import fallback_rounds                                 # noqa: E402
-from test_nac_chup_nguon import _anh_gia                     # noqa: E402
+from test_tier_capture_source import _image_fake                     # noqa: E402
 
 HF = "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face"
 VIT = "Hugging Face robot duck is already a hit"
@@ -65,7 +65,7 @@ def _run_round(tieu_de, tit_trang_cua):
         tit = tit_trang_cua.get(url)
         if tit is None:
             return None
-        _anh_gia(Path(ra))
+        _image_fake(Path(ra))
         return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
                 "tit_trang": tit, "alt": "khối lead", "ly_do": "khối lead"}
     that = capture_page.capture_lead_mobile
@@ -93,7 +93,7 @@ def test_round_capture_drop_other_outlets_no_same_story_and_take_report_use():
 
 
 def test_round_capture_no_title_keeps_old_behavior():
-    """Goi cu (khong tieu_de) khong bi doi: van lay tam dau tien — test_nac_chup_nguon giu."""
+    """Goi cu (khong tieu_de) khong bi doi: van lay tam dau tien — test_tier_capture_source giu."""
     goi, anh, _ = _run_round("", {
         "https://www.therundown.ai/articles/hugging-face-robot-duck": VIT,
     })

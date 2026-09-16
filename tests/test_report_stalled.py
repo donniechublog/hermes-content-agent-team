@@ -6,7 +6,7 @@ report_progress_kanban. Test o day chi phan LOGIC THUAN (khong Telegram/kanban.d
 that), theo dung kieu tests/test_route_missing_images.py: monkeypatch truc tiep
 thuoc tinh module, tu luu/phuc hoi trong finally.
 
-Chay:  venv/bin/python tests/test_bao_treo.py
+Chay:  venv/bin/python tests/test_report_stalled.py
 """
 import json
 import sys
@@ -20,7 +20,7 @@ import approve_dispatch as dg                                  # noqa: E402
 
 
 # --------------------------------------------------------------- link_result
-def test_link_ket_qua_chua_co_thi_none():
+def test_link_result_not_yet_has_then_none():
     with tempfile.TemporaryDirectory() as tmp:
         cu = dg.STORY_RESULT
         dg.STORY_RESULT = Path(tmp) / "tin.json"
@@ -31,7 +31,7 @@ def test_link_ket_qua_chua_co_thi_none():
             dg.STORY_RESULT = cu
 
 
-def test_link_ket_qua_dung_dinh_dang_co_thread():
+def test_link_result_use_format_has_thread():
     with tempfile.TemporaryDirectory() as tmp:
         cu = dg.STORY_RESULT
         dg.STORY_RESULT = Path(tmp) / "tin.json"
@@ -43,7 +43,7 @@ def test_link_ket_qua_dung_dinh_dang_co_thread():
             dg.STORY_RESULT = cu
 
 
-def test_link_ket_qua_khong_co_thread_thi_bo_doan_do():
+def test_link_result_no_has_thread_then_drop_guess_measure():
     with tempfile.TemporaryDirectory() as tmp:
         cu = dg.STORY_RESULT
         dg.STORY_RESULT = Path(tmp) / "tin.json"
@@ -55,7 +55,7 @@ def test_link_ket_qua_khong_co_thread_thi_bo_doan_do():
             dg.STORY_RESULT = cu
 
 
-def test_link_ket_qua_dm_khong_phai_supergroup_thi_none():
+def test_link_result_dm_no_right_supergroup_then_none():
     """Chat thuong (DM, id duong, khong -100...) khong lam duoc deep-link kieu nay."""
     with tempfile.TemporaryDirectory() as tmp:
         cu = dg.STORY_RESULT
@@ -69,7 +69,7 @@ def test_link_ket_qua_dm_khong_phai_supergroup_thi_none():
 
 
 # --------------------------------------------------------------------- reason_task
-def test_ly_do_task_lay_tu_lan_chay_cuoi():
+def test_reason_task_take_from_last_run():
     cu = dg.hermes_adapter.last_run
     dg.hermes_adapter.last_run = lambda tid: {"tom_tat": None, "loi": "thieu anh that", "metadata": {}}
     try:
@@ -78,7 +78,7 @@ def test_ly_do_task_lay_tu_lan_chay_cuoi():
         dg.hermes_adapter.last_run = cu
 
 
-def test_ly_do_task_chua_chay_lan_nao_thi_chuoi_rong():
+def test_reason_task_not_yet_run_attempt_which_then_string_empty():
     cu = dg.hermes_adapter.last_run
     dg.hermes_adapter.last_run = lambda tid: {}
     try:
@@ -88,7 +88,7 @@ def test_ly_do_task_chua_chay_lan_nao_thi_chuoi_rong():
 
 
 # --------------------------------------------------- canh bao "khong phan hoi"
-def _chay_bao_tien_do_gia(tmp, rows, gui_ghi_lai):
+def _run_report_progress_fake(tmp, rows, gui_ghi_lai):
     """Chay report_progress_kanban() voi kanban/telegram gia, tra list text da 'send'."""
     state = Path(tmp)
     cu = (dg.ALREADY_REPORT_PROGRESS, dg.STORY_RESULT, dg.ALREADY_REPORT_STALLED,
@@ -113,7 +113,7 @@ def _chay_bao_tien_do_gia(tmp, rows, gui_ghi_lai):
          dg.hermes_adapter.has_kanban, dg.hermes_adapter.job, dg.call, dg.env_load.topics_path) = cu
 
 
-def test_treo_bao_khi_running_qua_lau():
+def test_stalled_report_when_running_over_long_time():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
         rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
@@ -121,14 +121,14 @@ def test_treo_bao_khi_running_qua_lau():
                   "bat_dau_luc": now - dg.THRESHOLD_STALLED_MINUTES * 60 - 60,
                   "xong_luc": None, "ket_qua": None, "loi": None}]
         gui = []
-        _chay_bao_tien_do_gia(tmp, rows, gui)
+        _run_report_progress_fake(tmp, rows, gui)
         assert any("không phản hồi" in t for t in gui), gui
         # Da ghi lai da_bao_treo de vong sau khong bao lap ngay.
         treo = json.loads((Path(tmp) / "da_bao_treo.json").read_text(encoding="utf-8"))
         assert "t_1" in treo
 
 
-def test_treo_chua_qua_nguong_thi_im():
+def test_stalled_not_yet_over_threshold_then_silent():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
         rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
@@ -136,11 +136,11 @@ def test_treo_chua_qua_nguong_thi_im():
                   "bat_dau_luc": now - 60,       # moi chay 1 phut, chua treo
                   "xong_luc": None, "ket_qua": None, "loi": None}]
         gui = []
-        _chay_bao_tien_do_gia(tmp, rows, gui)
+        _run_report_progress_fake(tmp, rows, gui)
         assert not any("không phản hồi" in t for t in gui), gui
 
 
-def test_treo_khong_bao_lap_trong_cua_so_lai_bao():
+def test_stalled_no_report_repeat_within_of_count_again_report():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
         state = Path(tmp)
@@ -152,11 +152,11 @@ def test_treo_khong_bao_lap_trong_cua_so_lai_bao():
                   "bat_dau_luc": now - dg.THRESHOLD_STALLED_MINUTES * 60 - 60,
                   "xong_luc": None, "ket_qua": None, "loi": None}]
         gui = []
-        _chay_bao_tien_do_gia(tmp, rows, gui)
+        _run_report_progress_fake(tmp, rows, gui)
         assert not any("không phản hồi" in t for t in gui), gui
 
 
-def test_treo_duoc_xoa_khi_task_het_running():
+def test_stalled_ok_delete_when_task_all_done_running():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
         state = Path(tmp)
@@ -167,7 +167,7 @@ def test_treo_duoc_xoa_khi_task_het_running():
                   "bat_dau_luc": now - 3000, "xong_luc": now,
                   "ket_qua": None, "loi": None}]
         gui = []
-        _chay_bao_tien_do_gia(tmp, rows, gui)
+        _run_report_progress_fake(tmp, rows, gui)
         treo = json.loads((state / "da_bao_treo.json").read_text(encoding="utf-8"))
         assert "t_1" not in treo
 
