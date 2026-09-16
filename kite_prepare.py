@@ -69,10 +69,19 @@ def figure_real(m: dict) -> list:
     `nhan_vat` (`check_unnamed_face`) — Kite truoc day loai thang tu day nen
     ca khi vai da xac minh duoc ten that (vd doc dung bai goc), anh van khong
     bao gio toi duoc buoc nop de khai ten. Ghi chu "KHONG RO AI" van con trong
-    `ghi_chu` de brief/vai biet ma nao can khai `nhan_vat` truoc khi dung."""
+    `ghi_chu` de brief/vai biet ma nao can khai `nhan_vat` truoc khi dung.
+
+    Loai them anh co `dung` rong/falsy (LOW-189, 16/09/2026): image_concept.
+    label_concept() gan `dung = []` cho anh khai niem dang chart/co mat nguoi
+    ma KHONG dong thoi dat lien_quan = False, nen truoc ban va nay anh da bi
+    chinh engine danh dau "khong co cho nao dung duoc" van lot qua day va bi
+    dem la hinh that dung duoc, khien cong SLIDE_NEW_IMAGE_REAL doi vai dung
+    anh sai chu de."""
     ra = []
     for a in m["anh"]:
         if a["w"] < FIG_EMPTY_MIN or a.get("lien_quan") is False:
+            continue
+        if "dung" in a and not a.get("dung"):
             continue
         ra.append(a)
     return ra
