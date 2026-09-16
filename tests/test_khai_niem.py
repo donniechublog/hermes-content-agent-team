@@ -60,6 +60,36 @@ def test_doc_tra_loi_llm_bo_rac_va_gioi_han():
     assert k.read_return_error_llm("") == [] and k.read_return_error_llm(None) == []
 
 
+# ------------------------------------------------------------- LOW-191: nhai lai vi du
+def test_bo_tu_khoa_nhai_nguyen_van_vi_du_trong_prompt():
+    """Do that 16/09/2026: tin "TypeSafe ra System One: 193,6 lần nhanh hơn,
+    444,6 lần rẻ hơn frontier model" (toc do/gia model) ra dung nguyen ba vi
+    du cu trong prompt cua keyword_llm — khong lien quan toan/luat/truong hoc
+    gi ca. "laboratory bench" tim tren Commons ra dung nghia den: mot cai voi
+    nuoc gan ban thi nghiem, khong phai an du "benchmark"."""
+    ra = k.read_return_error_llm(
+        "KEYWORD: chalkboard equations | math visual\n"
+        "KEYWORD: courthouse building | law visual\n"
+        "KEYWORD: laboratory bench | testing visual")
+    assert ra == [], ra
+
+
+def test_khong_chan_nham_cum_hop_le_chua_cung_tu():
+    """Chi chan NGUYEN VAN, khong chan substring — cum khac vi du van qua."""
+    ra = k.read_return_error_llm(
+        "KEYWORD: harvard laboratory renovation | that cum khac\n"
+        "KEYWORD: blackboard mathematical formulas | dung tu khac chalkboard\n"
+        "KEYWORD: server racks | khong nam trong danh sach vi du")
+    assert [x["tu_khoa"] for x in ra] == [
+        "harvard laboratory renovation", "blackboard mathematical formulas", "server racks"]
+
+
+def test_ca_nam_vi_du_ban_cu_deu_bi_chan():
+    for vd in ("flag flying", "a building", "a laboratory bench", "a product", "a chalkboard",
+               "chalkboard equations", "courthouse", "classroom"):
+        assert k.read_return_error_llm(f"KEYWORD: {vd} | ly do") == [], vd
+
+
 def _pg(ten, w=1600, h=1200, mime="image/jpeg"):
     return {"title": "File:" + ten, "imageinfo": [{"width": w, "height": h, "mime": mime,
                                                   "thumburl": "https://u/" + ten.replace(" ", "_")}]}
