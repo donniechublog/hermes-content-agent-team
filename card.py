@@ -27,7 +27,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
-import image_rules
+import ethan_image_rules
 import text_bg
 
 ASSETS = Path(__file__).resolve().parent / "assets"
@@ -588,10 +588,10 @@ def _block_standard_image(src, nhan_vat=""):
         with Image.open(q) as im:
             w, h = im.size
             rgb = im.convert("RGB")
-            for l, c in (image_rules.check_blank_image(nhan, rgb),
-                         image_rules.check_resolution(nhan, w, h),
-                         image_rules.check_unnamed_face(nhan, q, nhan_vat),
-                         image_rules.check_duplicate(nhan, q, da_thay)):
+            for l, c in (ethan_image_rules.check_blank_image(nhan, rgb),
+                         ethan_image_rules.check_resolution(nhan, w, h),
+                         ethan_image_rules.check_unnamed_face(nhan, q, nhan_vat),
+                         ethan_image_rules.check_duplicate(nhan, q, da_thay)):
                 loi += l
                 canh_bao += c
     for c in canh_bao:
@@ -603,14 +603,14 @@ def _block_standard_image(src, nhan_vat=""):
 def _block_chart(src):
     """Chart di MOT MINH vao kieu `quote`/`tran` thi DUNG.
 
-    Tieu chi o `image_rules.check_chart_standalone` — cau hoi "anh nay co dung duoc
+    Tieu chi o `ethan_image_rules.check_chart_standalone` — cau hoi "anh nay co dung duoc
     khong", dung chung cho moi khung dat CHU DE LEN anh phu kin. O day chi con
     phan rieng cua card.py: kieu nao la khung do (quote/tran, xem `build`), va
     bao loi bang cach dung han."""
     da_ghep = isinstance(src, (list, tuple)) and len([q for q in src if q]) >= 2
     q = src[0] if isinstance(src, (list, tuple)) else src
     with Image.open(q) as im:
-        loi, _ = image_rules.check_chart_standalone(str(q), im.convert("RGB"), da_ghep)
+        loi, _ = ethan_image_rules.check_chart_standalone(str(q), im.convert("RGB"), da_ghep)
     if loi:
         raise SystemExit("CHART DI MOT MINH VAO HERO — " + "\n  ".join(loi) +
                          "\n  (Chac chan muon chart mot minh thi --bo-qua-anh)")
@@ -619,7 +619,8 @@ def _block_chart(src):
 def _block_crop(src):
     """DUNG neu anh dua vao la mot anh NGANG da bi cat bot BE NGANG.
 
-    Tieu chi o `image_rules.check_crop_landscape` — cung mot cong ma carousel dung.
+    Tieu chi o `ethan_image_rules.check_crop_landscape` — ban COPY cua rieng Ethan;
+    carousel co ban rieng, sua ben nay khong doi ben do (LOW-183).
     O day chi con phan rieng cua card.py: doc nhieu duong dan (--image/--image2)
     va bao loi bang cach dung han."""
     for q in (src if isinstance(src, (list, tuple)) else [src]):
@@ -627,7 +628,7 @@ def _block_crop(src):
             continue
         with Image.open(q) as im:
             w, h = im.size
-            loi, _ = image_rules.check_crop_landscape(str(q), im, w, h)
+            loi, _ = ethan_image_rules.check_crop_landscape(str(q), im, w, h)
         if loi:
             raise SystemExit(
                 "ANH BI CAT BE NGANG — " + "\n  ".join(loi) +

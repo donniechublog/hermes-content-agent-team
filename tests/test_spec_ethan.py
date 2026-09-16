@@ -216,6 +216,13 @@ def test_hook_con_nguyen_tieng_anh_thi_chan():
 
 
 def test_anh_da_dung_o_tin_khac_thi_chan():
+    # CHU Y (LOW-183): ghi so bang `image_rules` CHUNG, khong phai
+    # `ethan_image_rules`. Duong dedup cua Ethan di qua
+    # `submit_common.check_not_reused` -> module CHUNG, va `so_tam` cung va
+    # `image_rules._used_images_log`. Ghi bang ban copy cua Ethan la ghi sang
+    # MOT SO KHAC: cong doc so tam, khong thay gi, khong chan. Do chinh la rui ro
+    # lech ban ma viec tach nay mang lai. Doi dong nay khi tach so theo vai (buoc
+    # 4 cua LOW-183).
     import image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
