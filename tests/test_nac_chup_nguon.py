@@ -12,6 +12,7 @@ Chạy:  venv/bin/python tests/test_nac_chup_nguon.py
 import sys
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -20,6 +21,7 @@ import image_rules_ethan as image_rules  # noqa: E402
 import browser_session  # noqa: E402
 import ranking  # noqa: E402
 from prepare import fallback_rounds  # noqa: E402
+from prepare import vision  # noqa: E402
 
 
 def test_hang_so_mobile_chi_co_mot_ban():
@@ -110,6 +112,30 @@ def test_anh_chup_duoc_phep_lam_bia_va_khong_hoi_vision():
     assert any(d.startswith("bìa") for d in a["dung"]), a["dung"]
     assert anh[1]["dung"] == ["thân"], "trang thứ hai qua cổng vẫn giữ làm thân, không lên bìa"
     assert dung_duoc == anh, "cả hai đều dùng được (bìa + thân), không tấm nào bị bỏ phí"
+
+
+def test_chup_nguon_rot_chat_luong_khong_ghi_khong_lien_quan():
+    """LOW-192: `chup_nguon=True` (LOW-45) không hỏi lại "có liên quan bài
+    không" — câu hỏi thực tế chỉ về CHẤT LƯỢNG (rõ nét, không phải chụp lại
+    một màn hình khác). Do that: khối lead của bài "Anthropic ra tích hợp
+    Salesforce" là một bản chụp dở dang (còn spinner "Loading chart...", chữ
+    bị cắt cụt), vision trả lien_quan=khong vì lý do CHẤT LƯỢNG đó — nhưng
+    ghi_chu cũ luôn in cứng "KHÔNG LIÊN QUAN BÀI" bất kể lý do thật, khiến
+    người đọc brief/manifest hiểu lầm là hệ thống coi ảnh sai chủ đề."""
+    def _gia(path, tieu_de, hang="", **k):
+        return ("ảnh chụp lại màn hình, logo Claude, còn dở dang (loading)", False)
+
+    with tempfile.TemporaryDirectory() as t:
+        wd = Path(t)
+        p = wd / "A1.png"
+        _anh_gia(p)
+        a = {"ma": "A1", "goc": str(p)}
+        with mock.patch.object(vision, "description_image", side_effect=_gia), \
+                mock.patch.object(image_rules, "count_faces", return_value=0):
+            vision.classify(a, wd, "Anthropic ra tích hợp Salesforce", chup_nguon=True)
+    assert a["lien_quan"] is False
+    assert not any("KHÔNG LIÊN QUAN BÀI" in g for g in a["ghi_chu"]), a["ghi_chu"]
+    assert a["ghi_chu"][0].startswith("❌ ẢNH HERO TRANG NGUỒN"), a["ghi_chu"]
 
 
 def test_khong_browser_thi_bo_qua_nac_nay():
