@@ -8,7 +8,7 @@ thật lên các slide chụp báo cùng tin).
 khuôn HTML phổ biến — `figure.getBoundingClientRect()` bao trọn cả figcaption,
 kéo dài vùng chụp xuống đúng chỗ ta sẽ vẽ headline/quote đè lên.
 
-Chạy:  venv/bin/python tests/test_chup_loai_chu_thich.py
+Chạy:  venv/bin/python tests/test_capture_type_annotation.py
 """
 import re
 import sys
@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 import capture_page                                              # noqa: E402
 
 
-def test_js_lead_chi_do_img_ben_trong_figure_khong_do_ca_figure():
+def test_js_lead_only_measure_img_side_within_figure_no_measure_all_figure():
     js = capture_page._JS_LEAD
     assert "chiAnh" in js, "phải có bước thu hẹp về ảnh bên trong, không dùng thẳng bbox của figure/picture"
     # `el` (bbox dùng để đo) phải đến từ `chiAnh(goc_el)`, không phải chính `goc_el`.
@@ -27,7 +27,7 @@ def test_js_lead_chi_do_img_ben_trong_figure_khong_do_ca_figure():
     assert m, "phải đo bbox của chiAnh(goc_el), không phải goc_el (tức cả <figure>)"
 
 
-def test_chi_anh_uu_tien_img_con_khi_goc_la_figure():
+def test_only_image_priority_img_remaining_when_original_is_figure():
     js = capture_page._JS_LEAD
     # Hàm chiAnh: figure/picture -> tìm img con; img -> giữ nguyên.
     assert "el.querySelector('img, picture img, picture source')" in js

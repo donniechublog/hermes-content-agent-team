@@ -20,7 +20,7 @@ chieu bang grep truoc khi viet, nen fake object chi can mot thuoc tinh `Client`.
 `brand_container`, `read_draft`, `write_draft`) deu la BIEN/HAM Muc module cua
 moat_publish.py, duoc goi qua ten global (khong qua class) -- nen monkeypatch
 thang thuoc tinh module (`mp.TEN = ...` trong try/finally) la du, giong cach
-tests/test_ha_san_nut.py da lam voi `db.STATE_DIR`/`db.call`.
+tests/test_lower_stage_button.py da lam voi `db.STATE_DIR`/`db.call`.
 
 Chay:  python tests/test_moat_publish.py
 """

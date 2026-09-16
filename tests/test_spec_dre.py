@@ -2,7 +2,7 @@
 """Cong chan spec carousel cua Dre (`dre_submit.resolve_spec`).
 
 Audit 06/09/2026 do: ham nay 166 dong, 36 nhanh, va gan nhu KHONG co test —
-`test_cong_chan` nhac `bob_submit` 19 lan, `dre_submit` mot lan. No la cho duy nhat
+`test_gate` nhac `bob_submit` 19 lan, `dre_submit` mot lan. No la cho duy nhat
 kiem spec cua Dre truoc khi ve, va phan lon luat trong do la luat Ong Chu tu
 dat sau mot su co that: khong dung lai anh, khong lay chart lam bia, mat nguoi
 phai khai ten co trong bai. (13/09/2026: bo cong "khong ghep hai anh lech

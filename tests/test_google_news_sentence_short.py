@@ -12,7 +12,7 @@ gồm đúng SCMP/Bloomberg/CNBC/Reuters — y hệt các nguồn Ông Chủ tì
 loại lỗi ĐÃ BIẾT ở Bing (`_query_bing` docstring: "truy vấn đầy đủ -> 1 bài")
 nhưng chưa từng áp dụng sang Google News.
 
-Chạy:  venv/bin/python tests/test_google_news_cau_ngan.py
+Chạy:  venv/bin/python tests/test_google_news_sentence_short.py
 """
 import sys
 from pathlib import Path
@@ -31,7 +31,7 @@ class _RSS:
         self.content = f"<rss><channel>{rows}</channel></rss>".encode()
 
 
-def test_tim_khong_chi_hoi_headline_day_du():
+def test_find_no_only_ask_headline_bottom_enough():
     """Thân `find()` phải gọi `_query_bing` để sinh thêm câu ngắn cho GNEWS,
     không chỉ hỏi đúng một lần bằng `ten` (headline đầy đủ)."""
     src = (ROOT / "article_sources.py").read_text(encoding="utf-8")
@@ -40,7 +40,7 @@ def test_tim_khong_chi_hoi_headline_day_du():
         "find() phải thử thêm câu ngắn (_query_bing) cho Google News, không chỉ headline đầy đủ"
 
 
-def test_cau_ngan_gop_them_mien_khong_co_o_cau_day_du():
+def test_sentence_short_merge_extra_domain_no_has_cell_sentence_bottom_enough():
     """Câu đầy đủ ra 2 miền; một câu ngắn (được `_query_bing` sinh ra) ra
     thêm SCMP/Bloomberg — `trang` cuối cùng phải gồm cả hai, không chỉ câu đầu."""
     goi = []
