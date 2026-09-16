@@ -724,8 +724,13 @@ phải là nhân vật **cụ thể được nhắc trong bài** (CEO phát bi�
 founder). **Không gọi được tên thì không được dùng.** Khai sai tên là bịa đặt.
 
 **Tên đối chiếu ở đâu (LOW-178, 16/09/2026):** tên khai phải có trong **chữ
-bài HOẶC trong chú thích/nhãn người của chính tấm ảnh** (`alt`/caption của trang
-nguồn, `thuong_hieu.nguoi` do vòng thương hiệu gắn từ Wikidata). Trước đó chỉ
+bài HOẶC trong tên người mà chính tấm ảnh mang theo** — theo thứ tự tin cậy:
+`thuong_hieu.nguoi` (vòng thương hiệu gắn từ Wikidata), tên riêng trong `mo_ta`
+(vision nhìn mặt và gọi tên), rồi tên riêng trong `alt`/caption của trang nguồn.
+`alt` là **tiêu đề báo viết hoa đầu mỗi từ** (≥ 5 từ, > 60% viết hoa) thì bỏ
+qua: đo thật 16/09 alt "Nvidia CEO Says AGI is Here Following GPT-6 Astra
+Launch" cho ra "tên" *Here Following*, brief in ra và Dre khai đúng thế — một
+tên bịa lọt cổng — trong khi `mo_ta` đã nói rõ "CEO Jensen Huang". Trước đó chỉ
 chữ bài được tính: bài về Nvidia không gõ "Jensen Huang" thì ảnh Jensen Huang
 lấy từ Wikimedia (caption ghi rõ tên) bị coi là bịa — trong khi người đếm slide
 (`role.face_no_clear_ai`) đã tính tấm đó là dùng được, tức người đếm nói "đủ" mà

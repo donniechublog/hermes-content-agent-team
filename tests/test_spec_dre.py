@@ -379,6 +379,37 @@ def test_chu_thich_anh_khac_khong_bao_lanh_low178():
         assert _co(loi, "slide 2", "Jensen Huang", "không xuất hiện"), loi
 
 
+def test_subject_names_bo_headline_uu_tien_vision_low178():
+    """Đo thật 16/09/2026 (A18 tin Nvidia/Anthropic): alt là tiêu đề báo Title-Case,
+    regex tên riêng đọc ra "Here Following"; brief in ra, Dre khai đúng thế và
+    qua cổng với một tên bịa — trong khi vision mo_ta nói rõ "CEO Jensen Huang"."""
+    import image_rules_dre as dre
+    a18 = {"alt": "Nvidia CEO Says AGI is Here Following GPT-6 Astra Launch",
+           "mo_ta": "Anh CEO Jensen Huang cua Nvidia dang phat bieu, phia sau la logo Nvidia."}
+    assert dre.subject_names(a18) == ["Jensen Huang"]
+    # caption thuong (khong phai headline) van la bang chung
+    assert dre.subject_names({"alt": "Jensen Huang speaking at GTC 2026",
+                              "mo_ta": "Anh mot nguoi dan ong dang phat bieu"}) == ["Jensen Huang"]
+    # tien to "Anh ..." cua mo_ta khong dau bi cat
+    assert dre.subject_names({"mo_ta": "Anh Lisa Su gioi thieu chip"}) == ["Lisa Su"]
+    assert dre.subject_names({"alt": "Officials pose for a group photo at the summit",
+                              "mo_ta": "Anh quan chuc G20"}) == []
+    assert dre.subject_names({"thuong_hieu": {"nguoi": "C.C. Wei"}, "alt": ""}) == ["C.C. Wei"]
+
+
+def test_nhan_vat_bia_tu_headline_van_chan_ten_that_qua_low178():
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _du(t)
+        m["anh"][1] = _anh_mat(wd, "A2", alt="Nvidia CEO Says AGI is Here Following GPT-6 Astra Launch",
+                               mo_ta="Anh CEO Jensen Huang cua Nvidia dang phat bieu")
+        spec["slides"][0]["nhan_vat"] = "Here Following"
+        _ra, loi, _c, _d = _chay(spec, m, wd)
+        assert _co(loi, "slide 2", "Here Following", "không xuất hiện"), loi
+        spec["slides"][0]["nhan_vat"] = "Jensen Huang"
+        _ra, loi, _c, _d = _chay(spec, m, wd)
+        assert loi == [], loi
+
+
 def test_ghep_hai_anh_lech_tone_khong_con_bi_chan():
     """Ông Chủ 13/09/2026: bỏ `kiem_lech_tone`/`image_rules.tone_mismatch` khỏi hệ
     thống, mọi vai — ghép hai ảnh lệch tone hẳn (một tối 15/15/20, một sáng
