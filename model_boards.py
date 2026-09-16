@@ -111,15 +111,15 @@ BOARD = (
          "https://artificialanalysis.ai/speech-to-text", "media", diem_hau="%"),
     Board("i2v", "anh->video", "ANH -> VIDEO (artificialanalysis, Elo)",
          "https://artificialanalysis.ai/video/leaderboard/image-to-video", "media"),
-    # --- hai bang co khuon in RIENG ------------------------------------------
+    # --- bang co khuon in RIENG -----------------------------------------------
     # coding AA: khong in ca bang, muc "TOP CODING" o tren da la no. Van phai
     # co mat o day vi VAN duoc so hang (GPT-6 Astra vao #8 coding ngay ra mat
     # ma khong ai hay — do la ly do no vao bo nho tu 04/09/2026).
     Board("coding", "coding AA", "CODING (artificialanalysis)", AA, "aa", in_bang=False),
-    # openrouter usage: in kem cot token/ngay va % doi, khong vua khuon chung.
-    Board("openrouter", "OpenRouter usage", "OPENROUTER USAGE",
-         "https://openrouter.ai/rankings", "top", ket_khoa="openrouter_usage",
-         in_bang=False),
+    # Bo OpenRouter (ca catalog phat hien model moi lan bang usage token/ngay)
+    # khoi nguon cua Nova, Ong Chu chot 16/09/2026 (LOW-185): tieu chi research
+    # chi con benchmark uy tin + HuggingFace, khong dua so lieu usage/gateway
+    # vao lam tin hieu chon model.
 )
 
 LOCK_BOARD = tuple(b.khoa for b in BOARD)
