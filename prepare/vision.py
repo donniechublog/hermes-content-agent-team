@@ -124,16 +124,25 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         # xau"): truoc day cau hoi mac dinh (duong "anh rieng cua tin", pho bien
         # nhat) chi hoi "co lien quan bai khong", KHONG hoi ve do net/goc chup —
         # khac han hai nhanh khai_niem/thuong_hieu ben duoi da co san cum "qua
-        # mo" tu lau. Anh bao chup nghieng mot man hinh (vd App Store cua Kimi
-        # K3, do that tren dcgr) lot qua de dang vi dung chu de nhung mo/nghieng
-        # — them dung mot dieu kien nhu hai nhanh kia, khong mo cau hoi rieng.
+        # mo" tu lau.
+        #
+        # LOW-201 (16/09/2026, dao LOW-45): tieu chi "anh minh hoa chung chung"
+        # va IMAGE_PHRASES_SCREENSHOT (LOW-45, 13/09/2026 — chan anh "chup LAI
+        # mot man hinh bang may anh khac") da GO khoi day. Do that: tin
+        # "TypeSafe ra System One" (16/09) bi loai oan mot minh hoa bien tap goi
+        # dung ten san pham "Jev" (dung nghia illustration, khong phai "chung
+        # chung") VA mot screenshot SACH chup thang tu web (khong phai chup lai
+        # man hinh bang may anh khac) — ca hai deu dung chu de nhung bi hai tieu
+        # chi nay loai oan. Ong Chu 16/09: "ảnh minh hoạ chung chung ko phải vấn
+        # đề, ảnh chụp bằng máy ảnh khác cũng ko phải vấn đề". Dieu kien "VA anh
+        # phai RO NET" o duoi VAN GIU — anh mo/nghieng that su van bi chan qua
+        # duong do, chi rieng "trong giong chup lai man hinh" la go.
         hoi = (f"Bai bao: \"{tieu_de}\"." + (f" Cong ty/san pham chinh: {hang}." if hang else "")
                + "\nTra loi DUNG 2 dong:\n"
                "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
                "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; "
-               "khong = quang cao, widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/"
-               f"chu de khac, {role.active_rules().IMAGE_PHRASES_SCREENSHOT})")
+               "khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)")
         if chup_nguon:
             # LA anh cua tin (tu chinh DOM cua bai) — khong hoi lai "co lien
             # quan khong", CHI hoi CHAT LUONG. Tach khoi nhanh mac dinh o tren
@@ -144,7 +153,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                    "khong hoi 'co lien quan khong'.\nTra loi DUNG 2 dong:\n"
                    "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                    "LIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; "
-                   f"khong = mo/nhoe, {role.active_rules().IMAGE_PHRASES_SCREENSHOT})")
+                   "khong = mo/nhoe)")
         elif khai_niem:
             import image_concept
             hoi = image_concept.sentence_ask_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)

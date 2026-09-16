@@ -56,8 +56,10 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
     về độ nét/góc chụp, chỉ hỏi "có liên quan bài không". Ảnh báo chụp nghiêng
     một màn hình (đúng ca Kimi K3) lọt qua dễ dàng vì rõ ràng đúng chủ đề.
 
-    13/09/2026: cụm "chụp lại màn hình" gộp thành `image_rules.IMAGE_PHRASES_SCREENSHOT`
-    dùng chung (xem `test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi` bên dưới)."""
+    13/09/2026: cụm "chụp lại màn hình" từng gộp thành `IMAGE_PHRASES_SCREENSHOT`
+    dùng chung — đã GỠ 16/09/2026 (LOW-201, đảo LOW-45, xem
+    `test_khong_con_chan_screenshot_sach_hay_minh_hoa_chung_chung` bên dưới).
+    Điều kiện "RÕ NÉT" vẫn giữ — ảnh mờ/nghiêng thật sự vẫn bị chặn."""
     import inspect
     src = inspect.getsource(vision.description_image)
     # Cụm phải nằm trong nhánh MẶC ĐỊNH (trước dòng gán `hoi` của khai_niem),
@@ -66,30 +68,36 @@ def test_cau_hoi_mac_dinh_doi_ro_net_khong_goc_nghieng():
     i_khai_niem = src.index("elif khai_niem:")
     doan_mac_dinh = src[i_hoi_mac_dinh:i_khai_niem]
     assert "RO NET" in doan_mac_dinh, doan_mac_dinh
-    assert "IMAGE_PHRASES_SCREENSHOT" in doan_mac_dinh, doan_mac_dinh
 
 
-def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
-    """LOW-45 (13/09/2026) — đúng ảnh Getty chụp nghiêng App Store của Kimi K3
-    (đã chặn ở JS_FIG + _round_capture_source) lọt qua LẦN THỨ BA qua một đường khác
-    hẳn: nhánh "anh bối cảnh" của `image_brand.sentence_ask_vision` (dùng khi
-    Commons/Wikidata rỗng, `_report_brand_empty` tìm ảnh qua báo) chưa từng
-    có cụm này. Một hằng số dùng chung (`image_rules.IMAGE_PHRASES_SCREENSHOT`),
-    mọi câu hỏi con mắt đều chèn — đóng cả lớp thay vì vá từng đường một."""
+def test_khong_con_chan_screenshot_sach_hay_minh_hoa_chung_chung():
+    """LOW-201 (16/09/2026) — đảo LOW-45. Do that 16/09: tin "TypeSafe ra System
+    One" bị loại oan một screenshot SẠCH (chụp thẳng từ blog TypeSafe, không
+    phải chụp lại màn hình bằng máy ảnh khác) và một minh hoạ biên tập gọi đúng
+    tên sản phẩm "Jev" — cả hai đúng chủ đề nhưng bị hai tiêu chí này loại oan.
+    Ông Chủ 16/09: "ảnh minh hoạ chung chung ko phải vấn đề, ảnh chụp bằng máy
+    ảnh khác cũng ko phải vấn đề". Hằng số `IMAGE_PHRASES_SCREENSHOT` không còn
+    tồn tại, và không câu hỏi con mắt nào còn nhắc "minh hoạ chung chung"."""
     import image_rules_ethan as image_rules
-    assert hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
-    assert "man hinh" in image_rules.IMAGE_PHRASES_SCREENSHOT.lower()
+    assert not hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
 
     import image_brand as th
     for loai, th_dict in (("nguoi", {"hang": "X", "loai": "nguoi", "nguoi": "A", "vai": "CEO"}),
                          ("logo", {"hang": "X", "loai": "logo"}),
                          ("anh", {"hang": "X", "loai": "anh"})):
         c = th.sentence_ask_vision("tin gi do", th_dict)
-        assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, (loai, c)
+        assert "man hinh" not in c.lower(), (loai, c)
+        assert "chung chung" not in c.lower(), (loai, c)
 
     import image_concept as kn
     c = kn.sentence_ask_vision("tin gi do", "tu khoa x")
-    assert image_rules.IMAGE_PHRASES_SCREENSHOT in c, c
+    assert "man hinh" not in c.lower(), c
+
+    import inspect
+    src = inspect.getsource(vision.description_image)
+    i_hoi_mac_dinh = src.index('hoi = (f"Bai bao: \\"{tieu_de}\\".')
+    i_khai_niem = src.index("elif khai_niem:")
+    assert "chung chung" not in src[i_hoi_mac_dinh:i_khai_niem].lower()
 
 
 # --------------------------------------------------- 3. tối thiểu ảnh thật/slide
