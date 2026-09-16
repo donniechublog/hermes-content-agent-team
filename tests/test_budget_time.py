@@ -5,7 +5,7 @@ bat bien "hen gio trong < hen gio ngoai" (INV-4).
 Do may chu 14 ngay: dre/kite p95 ~23 phut, sat tran 25m dung chung; ethan <= 8.
 Fail tren code cu (khong co max_runtime_for / WAIT_SLOT_SECONDS), pass tren code moi.
 
-Chay:  venv/bin/python tests/test_ngan_sach_thoi_gian.py
+Chay:  venv/bin/python tests/test_budget_time.py
 """
 import io
 import sys
@@ -21,11 +21,11 @@ import role                                                   # noqa: E402
 TRAN_BASH_GIAY = 300          # bash tool cua hermes cat o ~300s (t_24b214a6: exit 124)
 
 
-def _phut(s: str) -> int:
+def _minutes(s: str) -> int:
     return int(s[:-1]) * (60 if s.endswith("h") else 1)
 
 
-def test_vai_anh_40m_vai_khac_25m():
+def test_role_image_40m_role_other_25m():
     assert role.max_runtime_for("ethan") == "40m"
     assert role.max_runtime_for("dre") == "40m"
     assert role.max_runtime_for("kite") == "40m"
@@ -34,7 +34,7 @@ def test_vai_anh_40m_vai_khac_25m():
     assert role.max_runtime_for("khong-ton-tai") == "25m"
 
 
-def test_kanban_create_truyen_max_runtime_theo_vai():
+def test_kanban_create_transmit_max_runtime_by_role():
     goi = {}
     cu = (dg.hermes_adapter.create_task, dg.standard_assignee)
     dg.hermes_adapter.create_task = lambda *a, **k: (goi.update(k) or ("t_x", None))
@@ -47,15 +47,15 @@ def test_kanban_create_truyen_max_runtime_theo_vai():
     assert goi.get("max_runtime") == "40m", goi
 
 
-def test_bat_bien_hen_gio_trong_nho_hon_hen_gio_ngoai():
+def test_catch_variable_timer_hours_within_small_than_timer_hours_outside():
     assert cb.WAIT_LOCK_SECONDS < TRAN_BASH_GIAY
     assert cb.WAIT_SLOT_SECONDS < TRAN_BASH_GIAY
     # canh bao "chay lau" phai den TRUOC khi hermes giet, voi MOI vai
     for slug in role.ROLE:
-        assert dg.THRESHOLD_STALLED_MINUTES < _phut(role.max_runtime_for(slug)), slug
+        assert dg.THRESHOLD_STALLED_MINUTES < _minutes(role.max_runtime_for(slug)), slug
 
 
-def test_cho_luot_het_gio_thi_thoat_co_cau_bao_dinh_ky():
+def test_wait_slot_all_done_hours_then_exit_has_sentence_report_fixed_ky():
     if cb.fcntl is None:
         return                                            # Windows: khong khoa
     import fcntl

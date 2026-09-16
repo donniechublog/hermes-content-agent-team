@@ -302,6 +302,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `phien_hoac_moi` | `session_or_new` |
 | `phien_lam_viec` | `session` |
 | `phong_ban` | `department` |
+| `phu_thuoc` | `depend` |
 | `pid_song` | `pid_alive` |
 | `quan_trong` | `important` |
 | `quet_chuan_bi` | `scan_prepare` |
@@ -400,6 +401,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `trinh_duyet` | `browser` |
 | `tro_giup` | `help` |
 | `trong_so` | `weight` |
+| `trong_suot` | `transparent` |
 | `trung_binh` | `average` |
 | `trung_gan_giong` | `near_duplicate` |
 | `truy_van` | `query` |
@@ -558,6 +560,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `gian` | `space` |  |
 | `giao` | `hand` |  |
 | `giay` | `seconds` |  |
+| `giet` | `kill` |  |
 | `gio` | `hours` |  |
 | `giong` | `voice` |  |
 | `giu` | `keep` |  |
@@ -573,8 +576,10 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `hai` | `two` |  |
 | `han` | `limit` |  |
 | `hang` | `rank` | ⚠️ hạng=rank / hàng=row / hãng=vendor |
+| `hen` | `timer` |  |
 | `hep` | `narrow` |  |
 | `het` | `all_done` |  |
+| `hiem` | `rare` |  |
 | `hien` | `show` |  |
 | `hieu` | `understand` |  |
 | `hinh` | `figure` |  |
@@ -647,6 +652,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `mat` | `face` |  |
 | `mau` | `color` | ⚠️ màu=color / mẫu=sample |
 | `may` | `machine` |  |
+| `mep` | `edge` |  |
 | `mien` | `domain` |  |
 | `mieng` | `piece` |  |
 | `minh` | `self` |  |
@@ -828,6 +834,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ungvien` | `candidate` |  |
 | `uu` | `prefer` |  |
 | `va` | `and` |  |
+| `vach` | `divider` |  |
 | `vai` | `role` |  |
 | `van` | `still` | ⚠️ vẫn=still / văn=text |
 | `vang` | `gold` |  |
@@ -843,6 +850,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `vong` | `round` |  |
 | `vua` | `fit` |  |
 | `vung` | `region` |  |
+| `vuong` | `square` |  |
 | `xa` | `far` |  |
 | `xac` | `confirm` |  |
 | `xau` | `ugly` |  |
