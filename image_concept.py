@@ -207,14 +207,30 @@ def keyword_llm(tieu_de: str, tom_tat: str = "") -> list:
     # roi model VAN de "computer server rack" cho tin toan — vi tin nao cung co
     # chu "AI". Nen phai CAM THANG, khong chi bo vi du. Minh hoa bien tap (ve
     # tay/digital nhu The Economist) duoc dung nhu anh chup — chi cam tu ve.
+    #
+    # NHAI LAI VI DU (LOW-191, 16/09/2026): ban cu ket bang mot cau "Pick the
+    # thing the story is about (math -> chalkboard equations; law ->
+    # courthouse; school -> classroom)" — mot danh sach "chu de -> dap an" co
+    # san de chep, va model (flash, re, temperature=0) tra ve NGUYEN VAN ca
+    # ba vi du cho tin "TypeSafe ra System One: nhanh hon 193,6 lan, re hon
+    # 444,6 lan" — mot tin ve toc do/gia model, khong dinh gi toi toan/luat/
+    # truong hoc. Anh Commons ra cho "laboratory bench" la tam chup vo nuoc
+    # gan ban thi nghiem THAT, dung nghia den chu khong phai an du
+    # "benchmark". Bo han cau vi du dang cap "chu de -> dap an" va ca list
+    # vat the mau — khong con gi de chep nguyen van nua, chi con mo ta +
+    # doi hoi bam vao chu THAT trong Story/Summary. Luoi thu hai (khong doi
+    # con model) o `read_return_error_llm`: loai thang tu khoa nao TRUNG
+    # NGUYEN VAN mot cum tung/dang nam trong prompt (ke ca ban truoc khi sua),
+    # phong khi model van tu nho hoac ban sua sau nay lo dem vi du tro lai.
     hoi = ("You pick search keywords for Wikimedia Commons to illustrate a news story when "
-           "the story itself has no usable image. Keywords must name concrete, visible things "
-           "(a flag flying, a building, a laboratory bench, a product, a chalkboard) — a photo or an "
-           "editorial illustration of them is fine — never abstract ideas (growth, partnership, AI).\n"
+           "the story itself has no usable image. A keyword must name ONE concrete, visible "
+           "thing a camera could photograph — never an abstract idea (growth, partnership, AI, "
+           "speed, cost).\n"
            "HARD RULE: do NOT suggest AI-industry hardware — server racks, data center, GPU, chip, "
            "circuit board, robot, computer screen — unless the story is literally about that hardware. "
-           "Every story here is about AI; that is NOT a reason to show a machine room. Pick the thing "
-           "the story is about (math -> chalkboard equations; law -> courthouse; school -> classroom).\n"
+           "Every story here is about AI; that is NOT a reason to show a machine room.\n"
+           "Ground every keyword in a SPECIFIC noun or topic taken from the Story/Summary text below, "
+           "not from these instructions.\n"
            "English only, 2-4 words each.\n"
            f"Story: {tieu_de}\n" + (f"Summary: {tom_tat[:400]}\n" if tom_tat else "")
            + "Answer with up to 3 lines, each exactly: KEYWORD: <keyword> | <why, 5 words>")
@@ -235,11 +251,36 @@ def keyword_llm(tieu_de: str, tom_tat: str = "") -> list:
     return read_return_error_llm(txt)
 
 
+# Cac cum tung xuat hien lam VI DU trong prompt cua `keyword_llm` — ban hien
+# tai lan ban truoc khi sua (LOW-191). Model tra ve NGUYEN VAN mot trong so
+# nay nghia la no dang CHEP VI DU chu khong suy tu bai: do that 16/09/2026,
+# tin "TypeSafe ra System One" (toc do/gia model) ra ca ba "chalkboard
+# equations", "courthouse", "laboratory bench" — dung nguyen ba vi du cu,
+# khong lien quan gi bai. Kiem NGUYEN VAN (khong phai substring) de khong
+# chan nham cum hop le chua cung tu — "harvard laboratory bench renovation"
+# vAn qua duoc. Giu ca vi du BAN CU (da bo khoi prompt) phong model con nho
+# tu du lieu huan luyen truoc, hoac prompt bi sua lai vo tinh.
+_PROMPT_ECHO = {
+    "flag flying", "a flag flying", "building", "a building",
+    "laboratory bench", "a laboratory bench", "product", "a product",
+    "chalkboard", "a chalkboard", "chalkboard equations",
+    "courthouse", "courthouse building", "classroom", "classroom students",
+}
+
+
 def read_return_error_llm(txt: str) -> list:
-    """Bóc các dòng `KEYWORD: x | why` — thuần, test được."""
+    """Bóc các dòng `KEYWORD: x | why` — thuần, test được.
+
+    Bỏ luôn từ khoá NGUYÊN VĂN trùng một ví dụ minh hoạ trong prompt của
+    `keyword_llm` (`_PROMPT_ECHO`) — dấu hiệu model nhại lại ví dụ chứ không
+    suy ra từ bài (LOW-191)."""
     ra = []
     for m in re.finditer(r"KEYWORD\s*:\s*([^|\n]{3,60})(?:\|\s*([^\n]{0,80}))?", txt or ""):
         tk = re.sub(r"[^A-Za-z0-9 \-]", "", m.group(1)).strip().lower()
+        if tk in _PROMPT_ECHO:
+            print(f"[khai_niem] llm: bỏ từ khoá {tk!r} — trùng nguyên văn ví dụ trong prompt, "
+                  "không phải suy ra từ bài", file=sys.stderr)
+            continue
         if 1 <= len(tk.split()) <= 5 and tk not in [x["tu_khoa"] for x in ra]:
             ra.append({"tu_khoa": tk, "ly_do": (m.group(2) or "").strip()[:80] or "gợi ý của model"})
     return ra[:MAX_KEYWORD]
