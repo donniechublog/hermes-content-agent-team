@@ -687,6 +687,41 @@ def test_cung_mot_hinh_hai_slide_bi_chan():
         assert _co(loi, "slide 3"), loi
 
 
+def test_mat_nguoi_khong_khai_nhan_vat_thi_chan():
+    """LOW-186 (16/09/2026): Kite gio doi hoi giong het Dre/Ethan — anh co mat
+    nguoi ma khong khai `nhan_vat` trong slide thi CHAN, khong con chi canh bao
+    (truoc do Kite khong co truong nay nen luon cho qua kem canh bao).
+
+    Goi thang `kite_submit.resolve_spec`, KHONG qua `_chay`/`_khong_soi_mat`:
+    context do thay the han `check_unnamed_face` bang no-op, se lam bai test
+    nay khong con kiem duoc gi — chi mock `count_faces` (ham YuNet ton thoi
+    gian) de `check_unnamed_face` that van tu quyet dinh chan/khong."""
+    from unittest import mock
+    import image_rules_kite
+    import kite_submit
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl, m = _du_bia(wd)
+        with mock.patch.object(image_rules_kite, "count_faces", return_value=1):
+            _r, loi, _c = kite_submit.resolve_spec({"slides": sl}, m, Path(wd))
+        assert _co(loi, "B1", "mat nguoi"), loi
+
+
+def test_mat_nguoi_khai_nhan_vat_thi_qua():
+    """Khai đúng `nhan_vat` (đã xác minh qua nguồn) thì chỉ còn cảnh báo tự soi
+    lại, không chặn — khớp hành vi `check_unnamed_face` của Dre/Ethan."""
+    from unittest import mock
+    import image_rules_kite
+    import kite_submit
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        sl, m = _du_bia(wd)
+        sl[0]["nhan_vat"] = "Marc Benioff"
+        with mock.patch.object(image_rules_kite, "count_faces", return_value=1):
+            _r, loi, _c = kite_submit.resolve_spec({"slides": sl}, m, Path(wd))
+        assert not _co(loi, "mat nguoi"), loi
+
+
 def test_so_tren_slide_khong_co_trong_tu_lieu_thi_canh_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)

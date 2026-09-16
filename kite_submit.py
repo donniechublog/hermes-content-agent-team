@@ -119,19 +119,21 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 loi.append(f"{nhan}: khong mo duoc anh ({type(e).__name__})")
 
-            # Mat nguoi: Kite khong co truong `nhan_vat` trong spec (khac
+            # Mat nguoi (LOW-186, 16/09/2026): Kite gio CO truong `nhan_vat`
 
-            # card.py/carousel.py), nen o day chi CANH BAO — chan cung se
+            # trong slide, giong Dre/Ethan — khai duoc thi chi CANH BAO (nguoi
 
-            # khoa het anh su kien ma vai khong co cach nao khai.
+            # duyet tu soi dung sai), khong khai duoc thi CHAN cung nhu hai vai
 
-            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["goc"])
+            # kia. `kite_prepare.figure_real` khong con loai anh mat vo danh tu
 
-            canh += [d + " — Kite chưa có trường nhan_vat, tự soi xem "
+            # buoc chuan bi nen ung vien nay phai doi hoi giong het Dre/Ethan.
 
-                     "người trong ảnh có đúng là người trong bài không"
+            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["goc"], sl.get("nhan_vat"))
 
-                     for d in l] + c
+            loi += l
+
+            canh += c
 
             if not sl.get("caption"):
 

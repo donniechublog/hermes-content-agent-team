@@ -59,15 +59,20 @@ def transfer_from_role(m: dict) -> str:
 
 def figure_real(m: dict) -> list:
     """Hinh THAT Kite duoc dung: chart/bang VA anh chup, dieu kien: engine da nhin
-    va khong danh dau KHONG LIEN QUAN, >= 800px, khong phai mat nguoi khong ro
-    ai. Ong Chu 05/09/2026: "Dre tim duoc 1-2 anh chat luong thi Kite cung nen
-    dua vao slide, chu khong chi text & card don dieu". Truoc do chi lay chart
-    -> anh chup bi bo, con chart khong lien quan (Fear&Greed) van lot."""
+    va khong danh dau KHONG LIEN QUAN, >= 800px. Ong Chu 05/09/2026: "Dre tim
+    duoc 1-2 anh chat luong thi Kite cung nen dua vao slide, chu khong chi text
+    & card don dieu". Truoc do chi lay chart -> anh chup bi bo, con chart khong
+    lien quan (Fear&Greed) van lot.
+
+    KHONG con loai cung anh "KHONG RO AI" o day (LOW-186, 16/09/2026): Dre/Ethan
+    khong loai o buoc chuan bi nay, chi chan luc NOP neu khong khai duoc
+    `nhan_vat` (`check_unnamed_face`) — Kite truoc day loai thang tu day nen
+    ca khi vai da xac minh duoc ten that (vd doc dung bai goc), anh van khong
+    bao gio toi duoc buoc nop de khai ten. Ghi chu "KHONG RO AI" van con trong
+    `ghi_chu` de brief/vai biet ma nao can khai `nhan_vat` truoc khi dung."""
     ra = []
     for a in m["anh"]:
         if a["w"] < FIG_EMPTY_MIN or a.get("lien_quan") is False:
-            continue
-        if any("KHÔNG RÕ AI" in g for g in a.get("ghi_chu", [])):
             continue
         ra.append(a)
     return ra
@@ -331,7 +336,9 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  + (f" | {nhan_kn}" if nhan_kn else "")
                  + (f" | {nhan_th}" if nhan_th else "")
                  + (f" | ảnh là: {a['mo_ta'][:90]}" if a.get("mo_ta") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
-                 + (" | có mặt người, khai đúng tên trong caption" if a.get("mat") else ""))
+                 + (" | có mặt người: khai \"nhan_vat\": \"<tên>\" vào slide dùng mã này (nếu xác minh "
+                    "được qua chính bài/nguồn) rồi ghi đúng tên đó trong caption — không xác minh được "
+                    "thì đổi mã khác, đừng đoán tên" if a.get("mat") else ""))
     L += line_hero(m)
     import story_type
     L += story_type.line_brief(m)
