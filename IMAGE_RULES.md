@@ -6,13 +6,15 @@
 > [IMAGE_RULES_ETHAN.md](IMAGE_RULES_ETHAN.md), cổng của Ethan ở
 > `ethan_image_rules.py`, và `card.py` đã thôi import `image_rules`.
 >
-> Dre và Kite **vẫn** dùng tệp này cho tới khi tách xong (bước 2–3 của LOW-183),
-> nên phần dưới còn nguyên văn cũ — kể cả những câu nói "cả đội" và "một nguồn sự
-> thật duy nhất". Đừng đọc chúng như luật còn hiệu lực với Ethan.
+> Dre và Kite **vẫn dùng tệp này** — Ông Chủ thu hẹp cùng ngày: *"việc của role
+> nào để role đó xử lý, chỉ cần Ethan ko lấy sai hình là được"*, nên **chỉ Ethan
+> tách**, không có bước tách cho Dre/Kite/engine. Phần dưới còn nguyên văn cũ, kể
+> cả những câu nói "cả đội" và "một nguồn sự thật duy nhất": đọc chúng là luật của
+> Dre và Kite, không phải của Ethan.
 >
-> Đường dedup (`check_not_reused` / `record_used` qua `submit_common.py`) vẫn dùng
-> chung cho **cả ba** vai vì sổ `state/<brand>/anh_da_dung.jsonl` là sổ chung —
-> tách sổ là bước 4, chưa làm.
+> Đường dedup (`check_not_reused` / `record_used` qua `submit_common.py`) dùng
+> chung cho **cả ba** vai vì sổ `state/<brand>/anh_da_dung.jsonl` là sổ chung, và
+> **giữ nguyên như vậy** — nhờ đó dedup vẫn chặn được ảnh vai khác đã dùng.
 
 Bộ tiêu chí ảnh của cả đội, **một nguồn sự thật duy nhất**. Ông Chủ chốt
 04/09/2026: làm một bộ chung thay vì mỗi vai một bộ.
