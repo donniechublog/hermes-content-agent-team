@@ -10,7 +10,7 @@ Moi test duoi day la mot ca that, ghi ro paper nao.
 Truc toa do cua MuPDF: y TANG khi di XUONG. Hinh nam TREN chu thich nghia la y
 nho hon.
 
-Chay:  venv/bin/python tests/test_arxiv_hinh.py
+Chay:  venv/bin/python tests/test_arxiv_figures.py
 """
 import sys
 from pathlib import Path
@@ -29,7 +29,7 @@ DOAN = "x" * 200                          # khoi chu chac chan la than bai
 
 
 # ------------------------------------------------------------- is_annotation
-def test_nhan_dung_cac_kieu_chu_thich():
+def test_label_use_each_kind_annotation():
     import arxiv_figures as ah
     assert ah.is_annotation("Figure 1: Overall Performance Results.")[:2] == ("figure", 1)
     assert ah.is_annotation("Fig. 2. Scaled attention")[:2] == ("figure", 2)
@@ -38,7 +38,7 @@ def test_nhan_dung_cac_kieu_chu_thich():
     assert ah.is_annotation("Figure 1 | (a) AIME accuracy of DeepSeek-R1-Zero")[:2] == ("figure", 1)
 
 
-def test_khong_nham_cau_than_bai_nhac_toi_hinh():
+def test_no_wrong_sentence_than_article_mention_dark_figure():
     """DeepSeek-R1 co hai doan mo dau bang tham chieu hinh. Nhan nham chung la
     chu thich thi engine cat mot vung chu giua bai roi dan len slide."""
     import arxiv_figures as ah
@@ -50,7 +50,7 @@ def test_khong_nham_cau_than_bai_nhac_toi_hinh():
 
 
 # --------------------------------------------------------- annotation_enough_line
-def test_gom_du_cac_dong_chu_thich_khi_pdf_cat_tung_dong():
+def test_gather_enough_each_line_annotation_when_pdf_crop_each_line():
     """DeepSeek-R1: MuPDF tra MOI DONG mot khoi. Khong gom thi anh cut mat cac
     dong sau cua chu thich."""
     import arxiv_figures as ah
@@ -61,7 +61,7 @@ def test_gom_du_cac_dong_chu_thich_khi_pdf_cat_tung_dong():
     assert ah.annotation_enough_line(cap, khoi)[3] == 301
 
 
-def test_khong_nuot_doan_than_bai_ngay_duoi_chu_thich():
+def test_no_swallow_guess_than_article_date_below_annotation():
     """BERT: chu thich 5 dong nam TRON mot khoi (cao 60pt). Neu do khe theo
     chieu cao CA KHOI thi doan than bai cach 30pt bi gom vao, roi chuoi tiep
     xuong het trang — anh ra la ca trang chu hai cot."""
@@ -72,7 +72,7 @@ def test_khong_nuot_doan_than_bai_ngay_duoi_chu_thich():
 
 
 # ----------------------------------------------------------------- region_figure
-def test_cat_dung_hinh_va_chu_thich():
+def test_crop_use_figure_and_annotation():
     import arxiv_figures as ah
     cap = _k(108, 652, 504, 673, "Figure 1: Overall Performance Results.")
     khoi = [_k(144, 268, 468, 475, DOAN),          # tom tat
@@ -86,7 +86,7 @@ def test_cat_dung_hinh_va_chu_thich():
     assert hop[0] <= 108 and hop[2] >= 504
 
 
-def test_net_ve_tran_ra_ngoai_trang_khong_keo_vung_cat_theo():
+def test_net_about_ceiling_out_outside_page_no_drag_region_crop_by():
     """ACE: cot bieu do duoc ve bang duong keo dai roi cat bang clip — hop cua
     net ve cao toi y=964 tren trang 792. Cat theo hop do thi anh nuot ca doan
     van duoi chu thich va tran khoi trang."""
@@ -99,7 +99,7 @@ def test_net_ve_tran_ra_ngoai_trang_khong_keo_vung_cat_theo():
     assert hop[3] <= TRANG[3]
 
 
-def test_bo_chay_dau_trang_va_duong_ke_cua_no():
+def test_drop_run_mark_page_and_ruled_line_of_it():
     """ACE hinh 4: hinh nam ngay dau trang. Duong ke mo cua chay dau (y=39.15)
     lot vao dai thi anh bat dau tu do va cong them nua dong chu
     "Published as a conference paper at ICLR 2026"."""
@@ -111,7 +111,7 @@ def test_bo_chay_dau_trang_va_duong_ke_cua_no():
     assert hop[1] > 41, f"cat cham vao chay dau trang: {hop}"
 
 
-def test_dong_chu_rong_BEN_TRONG_hinh_khong_cat_cut_hinh():
+def test_line_text_empty_side_within_figure_no_crop_stub_figure():
     """BERT hinh 1: trong hinh co nhung hang o token trai rong bang cot, trong
     het nhu mot dong than bai. Chot moc ngay o dong do thi anh chi con mot vet
     duoi cung cua hinh (do that: ti le 5.4:1, bi loai)."""
@@ -125,7 +125,7 @@ def test_dong_chu_rong_BEN_TRONG_hinh_khong_cat_cut_hinh():
     assert hop[1] < 105, f"vung cat bi cat cut o dong chu trong hinh: {hop}"
 
 
-def test_ten_bieu_do_ke_sat_khung_van_duoc_lay():
+def test_name_chart_adjacent_frame_still_ok_take():
     """DeepSeek-R1: ten bieu do ("DeepSeek-R1-Zero AIME accuracy during
     training") nam ngay TREN khung ve, khong cham vao khung — khong keo hop ra
     thi anh cat cut dau ten."""
@@ -137,14 +137,14 @@ def test_ten_bieu_do_ke_sat_khung_van_duoc_lay():
     assert hop[1] <= 83, f"cut mat ten bieu do: {hop}"
 
 
-def test_khong_co_do_hoa_thi_khong_boc():
+def test_no_has_graphic_then_no_extract():
     """Chu thich ma tren no khong co net ve nao — khong doan mo, tra None."""
     import arxiv_figures as ah
     cap = _k(108, 652, 504, 673, "Figure 1: Overall Performance Results.")
     assert ah.region_figure(cap, [_k(144, 268, 468, 475, DOAN), cap], [], TRANG) is None
 
 
-def test_bo_qua_do_hoa_cot_khac_trong_bo_cuc_hai_cot():
+def test_skip_graphic_column_other_within_layout_two_column():
     import arxiv_figures as ah
     cap = _k(60, 400, 290, 420, "Figure 2: BERT input representation.")
     khoi = [_k(60, 100, 290, 300, DOAN), cap]
@@ -154,7 +154,7 @@ def test_bo_qua_do_hoa_cot_khac_trong_bo_cuc_hai_cot():
 
 
 # --------------------------------------------------------------- pdf_of_link
-def test_nhan_link_paper():
+def test_label_link_paper():
     import arxiv_figures as ah
     for u in ["https://arxiv.org/abs/2510.04618", "https://arxiv.org/pdf/2510.04618v3",
               "https://arxiv.org/html/2510.04618v3"]:

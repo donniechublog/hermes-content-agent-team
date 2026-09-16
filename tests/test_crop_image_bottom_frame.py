@@ -17,7 +17,7 @@ Ba lop loi da bat duoc bang cach render THAT truoc khi sua:
      de cong do bo qua -> phai CHUA lap day 100%, danh lai mot dai nen phang
      (via `lap_day` + `cao_tren` thap) lam nen sach cho tieu de.
 
-Chay:  venv/bin/python tests/test_cat_anh_day_khung.py
+Chay:  venv/bin/python tests/test_crop_image_bottom_frame.py
 """
 import sys
 import tempfile
@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 import capture_page                                              # noqa: E402
 
 
-def _anh_don_sac(tmp: Path, w, h, nen=(10, 10, 12), chu_the=(220, 30, 30),
+def _image_single_tone(tmp: Path, w, h, nen=(10, 10, 12), chu_the=(220, 30, 30),
                  x0=None, x1=None) -> Path:
     """Anh gia: nen don sac + mot khoi CHU THE mau khac tu cot x0..x1 (mac
     dinh gan het be ngang, giong logo TSMC that: tran ca hai canh)."""
@@ -45,12 +45,12 @@ def _anh_don_sac(tmp: Path, w, h, nen=(10, 10, 12), chu_the=(220, 30, 30),
     return p
 
 
-def test_cat_can_giua_hinh_hoc_se_dut_nhung_bien_that_thi_khong():
+def test_crop_can_middle_figure_geometry_will_snap_but_variable_real_then_no():
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
         # Chu the tran gan het be ngang (nhu "tsmc" that) — cat theo trong tam/
         # tam hinh hoc deu se dut, chi bien That moi giu tron.
-        p = _anh_don_sac(tmp, 1242, 828)
+        p = _image_single_tone(tmp, 1242, 828)
         bien = capture_page._variable_text_card_x(__import__("PIL.Image", fromlist=["Image"]).open(p))
         assert bien is not None
         trai_px, phai_px = round(bien[0] * 1241), round(bien[1] * 1241)
@@ -74,13 +74,13 @@ def test_cat_can_giua_hinh_hoc_se_dut_nhung_bien_that_thi_khong():
         assert any(c == (220, 30, 30) for c in hang[-45:-15]), "mep phai cua chu the bi cat mat"
 
 
-def test_anh_sau_khi_cat_duoc_phong_len_gan_day_khung_khong_con_nho_giua_nen():
+def test_image_after_when_crop_ok_zoom_up_near_bottom_frame_no_remaining_small_middle_background():
     """Bug thu hai: truoc day anh cat gon van GIU NGUYEN kich thuoc nho, khong
     duoc phong len — nam co lai giua khung 1080x1350 voi vien nen bon phia,
     nhin nhu mot hinh vuong nho co khung trang bao quanh."""
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
-        p = _anh_don_sac(tmp, 1600, 900, x0=700, x1=900)  # ngang manh + chu the hep, GIUA khung
+        p = _image_single_tone(tmp, 1600, 900, x0=700, x1=900)  # ngang manh + chu the hep, GIUA khung
         ra = tmp / "out.png"
         w, h = capture_page.count_background(p, ra, "#ffffff")
         assert (w, h) == (1080, 1350)
@@ -93,13 +93,13 @@ def test_anh_sau_khi_cat_duoc_phong_len_gan_day_khung_khong_con_nho_giua_nen():
         assert rong_anh > w * 0.85, f"anh chi chiem {rong_anh}/{w} px be ngang — chua duoc phong day khung"
 
 
-def test_khong_lap_day_100_phan_tram_de_lai_nen_phang_cho_tieu_de():
+def test_no_fill_100_percent_for_again_background_flat_wait_title():
     """Bug thu ba (vet nhat): lap day toan bo chieu cao khien tieu de de len
     anh, cong bao ve tuong phan cua carousel.py phai phu lop xam day. Phai
     con lai mot dai NEN PHANG (mau_nen) ngay duoi anh."""
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
-        p = _anh_don_sac(tmp, 1600, 900, nen=(5, 5, 5))
+        p = _image_single_tone(tmp, 1600, 900, nen=(5, 5, 5))
         ra = tmp / "out.png"
         w, h = capture_page.count_background(p, ra, "#ffffff")
         from PIL import Image
@@ -110,7 +110,7 @@ def test_khong_lap_day_100_phan_tram_de_lai_nen_phang_cho_tieu_de():
         assert sum(duoi) > 700, f"gan day canvas van la anh toi ({duoi}), khong con nen phang cho chu"
 
 
-def test_du_nguyen_lieu_khong_can_cat_khi_anh_da_du_dung():
+def test_has_enough_material_no_can_crop_when_image_already_enough_use():
     """Anh da gan 4:5 (khong ngang) thi khong cham vao — chi nhanh NGANG moi cat.
     Dung mot anh MAU DAC TOAN BO KHUNG (khong phan biet nen/chu the) de do
     dung khoi da dan trong canvas: ti le CUA CHINH KHOI DO phai giu nguyen 0.8

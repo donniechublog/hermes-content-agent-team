@@ -14,7 +14,7 @@ Trung Quốc). Hai việc:
      ảnh từ các báo tìm được (`browser_pass`, đã sửa LOW-45 phần 1 nên không vớ
      nhầm `<figure>` là chart) thay vì bỏ cuộc.
 
-Chạy:  venv/bin/python tests/test_bao_ve_tu_khoa.py
+Chạy:  venv/bin/python tests/test_report_about_keyword.py
 """
 import sys
 import tempfile
@@ -40,7 +40,7 @@ class _RSS:
         pass
 
 
-def test_bao_ve_tu_khoa_khong_doi_cung_su_kien():
+def test_report_about_keyword_no_change_same_event():
     """Khác `other_outlets_bing` (đòi khớp MỘT sự kiện gốc qua `same_story(a, b)` — hai
     tham số): thân hàm không gọi `same_story(`, chỉ dùng `story_tokens(` (tách từ,
     một tham số) để so với chính từ khoá."""
@@ -52,7 +52,7 @@ def test_bao_ve_tu_khoa_khong_doi_cung_su_kien():
     assert "story_tokens(tu_khoa)" in than
 
 
-def test_bao_ve_tu_khoa_loc_theo_tu_khoa_khong_theo_su_kien_goc():
+def test_report_about_keyword_filter_by_keyword_no_by_event_original():
     """Bài THIẾU từ khoá bị loại; bài CÓ đủ từ khoá (dù nói chuyện khác hẳn sự
     kiện gì) vẫn được nhận — đúng tinh thần "chỉ cần liên quan tới hãng"."""
     items = [
@@ -77,7 +77,7 @@ def test_bao_ve_tu_khoa_loc_theo_tu_khoa_khong_theo_su_kien_goc():
     assert mien == {"https://a.example", "https://c.example"}, ra
 
 
-def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
+def test_report_about_keyword_type_report_vietnamese():
     """Đo thật 13/09/2026 (test thử Kite trên tin Anthropic/Moonshot): query
     "Anthropic" — dù chỉ là tên hãng tiếng Anh, không có dấu — vẫn khiến Bing
     News trả về CẢ báo tiếng Việt (cafebiz.vn, thanhnien.vn...) vì đủ từ khoá
@@ -105,7 +105,7 @@ def test_bao_ve_tu_khoa_loai_bao_tieng_viet():
     assert {r["toa_soan"] for r in ra} == {"https://en.example"}, ra
 
 
-def test_bao_ve_tu_khoa_khong_gioi_han_thoi_gian():
+def test_report_about_keyword_no_limit_time():
     """IMAGE_RULES §1.2d (13/09/2026): "được tìm không giới hạn thời gian, sự
     kiện". Một bài rất CŨ (2019) về đúng từ khoá vẫn phải được nhận — mặc định
     `ngay=None` nghĩa là KHÔNG lọc theo ngày (khác `other_outlets_bing`, vẫn lọc
@@ -128,7 +128,7 @@ def test_bao_ve_tu_khoa_khong_gioi_han_thoi_gian():
     assert {r["toa_soan"] for r in ra} == {"https://cu.example"}, ra
 
 
-def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
+def test_rank_empty_then_find_report_by_keyword_scan_image():
     """`_round_brand`: Commons/Wikidata rỗng cho một hãng -> gọi
     `report_about_keyword` rồi `browser_pass`, ứng viên tìm được gắn `thuong_hieu`
     và cuối cùng có mặt trong `dung_duoc` (fail trên code cũ: hãng rỗng thì
@@ -182,7 +182,7 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
     assert a in dung_duoc, "ảnh tìm qua báo phải qua được đến dùng_được (đủ quan/không mặt vô danh v.v.)"
 
 
-def test_tim_bao_chay_song_song_ke_ca_khi_commons_co_anh():
+def test_find_report_run_parallel_including_when_commons_has_image():
     """IMAGE_RULES §1.2d (13/09/2026, Ông Chủ chốt nguyên tắc nguồn): tìm báo theo
     từ khoá KHÔNG còn là phương án cuối khi Commons rỗng — chạy SONG SONG với
     Commons cho MỌI hãng, kể cả khi Commons ĐÃ có ảnh. Fail trên code cũ (nhánh

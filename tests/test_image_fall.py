@@ -13,7 +13,7 @@ Bốn phần, mỗi phần có ví dụ ĐÚNG-PHẢI-QUA đi kèm SAI-PHẢI-CH
   3. `submit_common.check_image_fall`: chỉ chặn khi CÒN ảnh sạch thật sự thay được;
   4. nền chữ đặc ở carousel và thẻ Ethan.
 
-Chạy:  venv/bin/python tests/test_anh_roi.py
+Chạy:  venv/bin/python tests/test_image_fall.py
 """
 import json
 import sys
@@ -40,7 +40,7 @@ class _Resp:
         return self._b
 
 
-def _anh_tam(tmp, ten="a.png", w=1000, h=1250, tone=(30, 30, 40), seed=3):
+def _image_temp(tmp, ten="a.png", w=1000, h=1250, tone=(30, 30, 40), seed=3):
     im = Image.new("RGB", (w, h), tone)
     d = ImageDraw.Draw(im)
     b = seed
@@ -54,7 +54,7 @@ def _anh_tam(tmp, ten="a.png", w=1000, h=1250, tone=(30, 30, 40), seed=3):
     return p
 
 
-def _hoi_vision(tra_loi, **k):
+def _ask_vision(tra_loi, **k):
     """Goi description_image voi router gia; tra (ket qua, ket_qua dict, cau hoi da gui)."""
     gui = {}
 
@@ -66,37 +66,37 @@ def _hoi_vision(tra_loi, **k):
     with tempfile.TemporaryDirectory() as t, \
             mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}), \
             mock.patch.object(vision, "_call_router", side_effect=_goi):
-        p = _anh_tam(t)
+        p = _image_temp(t)
         ra = vision.description_image(str(p), "Nvidia rót 10 tỷ USD vào IPO Anthropic", ket_qua=kq, **k)
     return ra, kq, gui.get("hoi", "")
 
 
 # ---------------------------------------------------------------- 1. vision
-def test_vision_hoi_them_dong_roi_va_doc_ra():
-    ra, kq, hoi = _hoi_vision("MO_TA: đồ hoạ tin tức nhiều chữ.\nLIEN_QUAN: co\nCLUTTERED: co")
+def test_vision_ask_extra_line_fall_and_read_out():
+    ra, kq, hoi = _ask_vision("MO_TA: đồ hoạ tin tức nhiều chữ.\nLIEN_QUAN: co\nCLUTTERED: co")
     assert "DUNG 4 dong" in hoi and "CLUTTERED:" in hoi and "TU_KHOA:" in hoi, hoi
     assert ra == ("đồ hoạ tin tức nhiều chữ.", True)       # tuple van 2 phan tu
     assert kq["cluttered"] is True
 
 
-def test_vision_anh_sach_la_false():
-    _ra, kq, _hoi = _hoi_vision("MO_TA: biển hiệu trụ sở Nvidia.\nLIEN_QUAN: có\nCLUTTERED: không")
+def test_vision_image_clean_is_false():
+    _ra, kq, _hoi = _ask_vision("MO_TA: biển hiệu trụ sở Nvidia.\nLIEN_QUAN: có\nCLUTTERED: không")
     assert kq["cluttered"] is False
 
 
-def test_vision_doc_ra_du_tu_khoa():
-    _ra, kq, _hoi = _hoi_vision("MO_TA: đồ hoạ Nvidia Anthropic $10B IPO.\nLIEN_QUAN: co\n"
+def test_vision_read_out_enough_keyword():
+    _ra, kq, _hoi = _ask_vision("MO_TA: đồ hoạ Nvidia Anthropic $10B IPO.\nLIEN_QUAN: co\n"
                                 "CLUTTERED: co\nTỪ_KHOÁ: có")
     assert kq["cluttered"] is True and kq["du_tu_khoa"] is True, kq
 
 
-def test_vision_khong_tra_dong_roi_thi_none_khong_doan():
-    _ra, kq, _hoi = _hoi_vision("MO_TA: ảnh.\nLIEN_QUAN: co")
+def test_vision_no_return_line_fall_then_none_no_guess():
+    _ra, kq, _hoi = _ask_vision("MO_TA: ảnh.\nLIEN_QUAN: co")
     assert kq["cluttered"] is None and kq["du_tu_khoa"] is None
 
 
-def test_vision_hoi_them_cua_bob_van_ba_phan_tu():
-    ra, kq, hoi = _hoi_vision("MO_TA: ảnh.\nLIEN_QUAN: co\nCLUTTERED: khong\nMOOD: vui",
+def test_vision_ask_extra_of_bob_still_three_part_from():
+    ra, kq, hoi = _ask_vision("MO_TA: ảnh.\nLIEN_QUAN: co\nCLUTTERED: khong\nMOOD: vui",
                               hoi_them="tâm trạng ảnh", nhan_them="MOOD")
     assert "DUNG 5 dong" in hoi, hoi
     assert ra == ("ảnh.", True, "vui")
@@ -104,13 +104,13 @@ def test_vision_hoi_them_cua_bob_van_ba_phan_tu():
 
 
 # ---------------------------------------------------------------- 2. classify
-def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
+def test_classify_image_fall_no_make_cover_and_notes_mark_line():
     def _gia(path, tieu_de, hang="", **k):
         k["ket_qua"]["cluttered"] = True
         return ("đồ hoạ nhiều chữ", True)
 
     with tempfile.TemporaryDirectory() as t:
-        p = _anh_tam(t, tone=(20, 20, 25))                  # toi, doc: binh thuong duoc goi y bia
+        p = _image_temp(t, tone=(20, 20, 25))                  # toi, doc: binh thuong duoc goi y bia
         a = {"ma": "A1", "goc": str(p)}
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
                 mock.patch.object(image_rules_ethan, "count_faces", return_value=0):
@@ -122,37 +122,37 @@ def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
 
 
 # ---------------------------------------------------------------- 3. check_image_fall
-def _muc(tmp, ma, seed, **k):
-    a = {"ma": ma, "goc": str(_anh_tam(tmp, f"{ma}.png", seed=seed)), "dung": ["thân"],
+def _item(tmp, ma, seed, **k):
+    a = {"ma": ma, "goc": str(_image_temp(tmp, f"{ma}.png", seed=seed)), "dung": ["thân"],
          "lien_quan": True, "cluttered": False, "loai": "anh", "mat": 0, "ngang": False, "h": 1250}
     a.update(k)
     return a
 
 
-def test_con_anh_sach_chua_dung_thi_chan_anh_roi():
+def test_remaining_image_clean_not_yet_use_then_block_image_fall():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _item(t, "A1", 1, cluttered=True), "A2": _item(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi and "slide 5" in loi[0] and "A2" in loi[0], loi
 
 
-def test_anh_roi_du_tu_khoa_duoc_mien_cong():
+def test_image_fallback_enough_keyword_ok_domain_gate():
     """Ông Chủ chọn chính đồ hoạ rối "Nvidia Weighs $10B" làm hero vì đủ từ khoá."""
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, cluttered=True, du_tu_khoa=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _item(t, "A1", 1, cluttered=True, du_tu_khoa=True), "A2": _item(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 
-def test_phan_loai_roi_du_tu_khoa_giu_bia_va_ghi_chu_sao():
+def test_classify_fallback_enough_keyword_keep_cover_and_notes_star():
     def _gia(path, tieu_de, hang="", **k):
         k["ket_qua"].update({"cluttered": True, "du_tu_khoa": True})
         return ("đồ hoạ đủ từ khoá", True)
 
     with tempfile.TemporaryDirectory() as t:
-        p = _anh_tam(t, tone=(20, 20, 25))
+        p = _image_temp(t, tone=(20, 20, 25))
         a = {"ma": "A1", "goc": str(p)}
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
                 mock.patch.object(image_rules_ethan, "count_faces", return_value=0):
@@ -162,7 +162,7 @@ def test_phan_loai_roi_du_tu_khoa_giu_bia_va_ghi_chu_sao():
     assert not a["ghi_chu"][0].startswith("⚠️")
 
 
-def test_dre_nop_do_hoa_roi_chart_lam_bia_duoc():
+def test_dre_submit_graphic_fall_chart_make_cover_ok():
     import test_spec_dre as ts
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = ts._du(t)
@@ -175,50 +175,50 @@ def test_dre_nop_do_hoa_roi_chart_lam_bia_duoc():
         assert ts._co(loi, "bìa", "CHART"), loi
 
 
-def test_het_anh_sach_thi_duoc_dung_anh_roi():
+def test_all_done_image_clean_then_ok_use_image_fall():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _item(t, "A1", 1, cluttered=True), "A2": _item(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5", "A2": "slide 6"},
                               {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 
-def test_khong_tinh_la_sach_neu_khong_the_dung_mot_minh():
+def test_no_static_is_clean_if_no_card_use_alone():
     """Chặn oan là vai kẹt vòng: ứng viên phải thật sự thay được, không cần khai thêm."""
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, cluttered=True),
-               "A2": _muc(t, "A2", 2, cluttered=None),                       # chua ai noi la sach
-               "A3": _muc(t, "A3", 3, mat=1),                          # mat nguoi
-               "A4": _muc(t, "A4", 4, loai="chart"),
-               "A5": _muc(t, "A5", 5, ngang=True, h=600, cat_ngang_ok=True),   # qua thap
-               "A6": _muc(t, "A6", 6, ngang=True, h=900, cat_ngang_ok=False),  # co chu
-               "A7": _muc(t, "A7", 7, lien_quan=False),
-               "A8": _muc(t, "A8", 8, dung=[])}
+        anh = {"A1": _item(t, "A1", 1, cluttered=True),
+               "A2": _item(t, "A2", 2, cluttered=None),                       # chua ai noi la sach
+               "A3": _item(t, "A3", 3, mat=1),                          # mat nguoi
+               "A4": _item(t, "A4", 4, loai="chart"),
+               "A5": _item(t, "A5", 5, ngang=True, h=600, cat_ngang_ok=True),   # qua thap
+               "A6": _item(t, "A6", 6, ngang=True, h=900, cat_ngang_ok=False),  # co chu
+               "A7": _item(t, "A7", 7, lien_quan=False),
+               "A8": _item(t, "A8", 8, dung=[])}
         loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 
-def test_anh_ngang_cat_doc_duoc_la_anh_sach_thay_duoc():
+def test_image_landscape_crop_read_ok_is_image_clean_see_ok():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, cluttered=True),
-               "A2": _muc(t, "A2", 2, ngang=True, h=1000, cat_ngang_ok=True)}
+        anh = {"A1": _item(t, "A1", 1, cluttered=True),
+               "A2": _item(t, "A2", 2, ngang=True, h=1000, cat_ngang_ok=True)}
         loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi and "A2" in loi[0], loi
 
 
-def test_anh_sach_da_len_bai_khac_khong_tinh():
+def test_image_clean_already_live_article_other_no_static():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
+        anh = {"A1": _item(t, "A1", 1, cluttered=True), "A2": _item(t, "A2", 2)}
         image_rules_ethan.record_used(anh["A2"]["goc"], "tin-khac", "dre", "https://x/khac")
         loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 
-def test_dre_nop_gan_roi_cho_slide_va_chan_khi_con_anh_sach():
+def test_dre_submit_near_fall_wait_slide_and_block_when_remaining_image_clean():
     import test_spec_dre as ts
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = ts._du(t)
@@ -233,7 +233,7 @@ def test_dre_nop_gan_roi_cho_slide_va_chan_khi_con_anh_sach():
 
 
 # ---------------------------------------------------------------- 4. nen chu dac
-def _canvas_vung(W, H, vung, nen=(40, 40, 40)):
+def _canvas_region(W, H, vung, nen=(40, 40, 40)):
     """Canvas co cac DAI ngang `vung` = [(y0, y1, kieu)]:
     "chu" = soc manh day dac (nhu chu in san), "anh" = soc thua tuong phan
     vua (nhu chi tiet anh chup); ngoai cac dai la mau phang (khoang lang)."""
@@ -251,78 +251,78 @@ def _canvas_vung(W, H, vung, nen=(40, 40, 40)):
     return im
 
 
-def _la_nen(canvas, y, bg):
+def _is_background(canvas, y, bg):
     return all(canvas.getpixel((x, y))[:3] == tuple(bg) for x in (0, 301, 777, canvas.width - 1))
 
 
-def test_nguong_phan_biet_chu_in_san_voi_anh_chup():
+def test_threshold_distinguish_text_in_ready_with_image_capture():
     """Hai loại dải giả phải rơi đúng hai phía ngưỡng CLUTTERED_BG_TEXT, không thì
     các test dưới đo sai thứ."""
     import card
-    e = card._capability_flow_rank(_canvas_vung(1080, 400, [(0, 199, "chu"), (200, 399, "anh")]))
+    e = card._capability_flow_rank(_canvas_region(1080, 400, [(0, 199, "chu"), (200, 399, "anh")]))
     assert min(e[20:180]) >= card.CLUTTERED_BG_TEXT, min(e[20:180])
     assert card.CLUTTERED_BG_LANG <= max(e[220:380]) < card.CLUTTERED_BG_TEXT, max(e[220:380])
 
 
-def test_moc_nen_dac_leo_len_khoang_lang_tren_chu_in_san():
+def test_timestamp_background_solid_climb_up_range_lang_on_text_in_ready():
     """Đo thật A9 carousel: chữ in sẵn 690–989, khe lặng 630–689, phía trên là
     ảnh chụp. Nền đặc phủ trọn chữ in sẵn, dải chuyển nằm trong khe lặng."""
     import card
-    cv = _canvas_vung(1080, 1350, [(0, 600, "anh"), (700, 980, "chu")])
+    cv = _canvas_region(1080, 1350, [(0, 600, "anh"), (700, 980, "chu")])
     dac, top = card._timestamp_background_solid(cv, 990)
     assert 690 <= dac <= 700, dac
     assert 600 <= top < dac, (top, dac)
 
 
-def test_moc_nen_dac_khe_hep_ngay_duoi_chu_in_san_khong_duoc_dung():
+def test_timestamp_background_solid_slit_narrow_date_below_text_in_ready_no_ok_use():
     """Đo thật thẻ Ethan A9: chữ in sẵn 780–1109, khe 1110–1136 ngay trên chữ
     của ta. Dừng ở khe đó là tiêu đề in sẵn lộ nguyên — phải leo qua."""
     import card
-    cv = _canvas_vung(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
+    cv = _canvas_region(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
     dac, top = card._timestamp_background_solid(cv, 1136)
     assert 770 <= dac <= 780, dac
 
 
-def test_moc_nen_dac_cham_tran_thi_ve_khoang_lang_khong_cat_chu_in_san():
+def test_timestamp_background_solid_touch_ceiling_then_about_range_lang_no_crop_text_in_ready():
     """Đo thật A9 slide quote: khe lặng 627–650 ngay trên khung quote, phía trên
     lại có chữ in sẵn "$10B INVESTMENT" vắt qua trần 40% (540). Dừng ở trần là
     dải chuyển cắt nửa chữ — phải quay về khe lặng cao nhất đã gặp."""
     import card
-    cv = _canvas_vung(1080, 1350, [(0, 480, "anh"), (500, 560, "chu"), (690, 980, "chu")])
+    cv = _canvas_region(1080, 1350, [(0, 480, "anh"), (500, 560, "chu"), (690, 980, "chu")])
     dac, top = card._timestamp_background_solid(cv, 650)
     assert dac == 650, dac
     assert 561 <= top < dac, (top, dac)                  # dai chuyen khong cham dai chu 500-560
 
 
-def test_moc_nen_dac_chu_ta_nam_duoi_khoang_lang_rong_thi_giu_nguyen_vi_tri():
+def test_timestamp_background_solid_text_ta_lie_below_range_lang_empty_then_keep_raw_position():
     import card
-    cv = _canvas_vung(1080, 1350, [(0, 500, "anh")])
+    cv = _canvas_region(1080, 1350, [(0, 500, "anh")])
     dac, top = card._timestamp_background_solid(cv, 990)
     assert dac == 990 and 990 - card.CLUTTERED_BG_SPREAD <= top < 990, (dac, top)
 
 
-def test_moc_nen_dac_khong_co_khoang_lang_thi_dung_o_tran_40_phan_tram():
+def test_timestamp_background_solid_no_has_range_lang_then_use_cell_ceiling_40_percent():
     import card
-    cv = _canvas_vung(1080, 1350, [(0, 1349, "chu")])
+    cv = _canvas_region(1080, 1350, [(0, 1349, "chu")])
     dac, top = card._timestamp_background_solid(cv, 990)
     assert dac == int(1350 * card.CLUTTERED_BG_CEILING), dac
     assert top == dac - card.CLUTTERED_BG_SPREAD_SAME, top
 
 
-def test_carousel_anh_roi_phu_tron_chu_in_san_giu_anh_phia_tren():
+def test_carousel_image_fall_secondary_full_text_in_ready_keep_image_side_on():
     import carousel
     carousel.set_background("toi")
-    cv = _canvas_vung(carousel.W, carousel.H, [(0, 600, "anh"), (700, 980, "chu")])
+    cv = _canvas_region(carousel.W, carousel.H, [(0, 600, "anh"), (700, 980, "chu")])
     truoc = cv.copy()
     carousel._layer_if_can(cv, cv.convert("RGB"), 1030, carousel.H, image_cluttered=True)
     for y in (705, 800, 975, 1100, carousel.H - 1):
-        assert _la_nen(cv, y, carousel.BG), (y, cv.getpixel((0, y)))
+        assert _is_background(cv, y, carousel.BG), (y, cv.getpixel((0, y)))
     assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300)), "anh phia tren khong duoc dong"
     L = [cv.convert("L").getpixel((30, y)) for y in range(601, 700)]      # cot nen cua dai "anh"
     assert max(abs(L[i + 1] - L[i]) for i in range(len(L) - 1)) < 20, "khong co buoc nhay = khong co vach"
 
 
-def test_carousel_anh_sach_giu_nguyen_lop_mo_cu():
+def test_carousel_image_clean_keep_raw_layer_open_old():
     import carousel
     carousel.set_background("toi")
     canvas = Image.new("RGBA", (carousel.W, carousel.H), (10, 10, 10, 255))
@@ -331,14 +331,14 @@ def test_carousel_anh_sach_giu_nguyen_lop_mo_cu():
     assert canvas.tobytes() == truoc.tobytes(), "nen toi deu du tuong phan -> khong phu gi"
 
 
-def test_card_nen_chu_nghiem_phu_tron_chu_in_san():
+def test_card_text_bg_strict_secondary_full_text_in_ready():
     import card
     card.set_brand("dcgr")
-    cv = _canvas_vung(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
+    cv = _canvas_region(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
     truoc = cv.copy()
     card._text_bg_strict(cv, 1160)
     for y in (790, 1000, 1499):
-        assert _la_nen(cv, y, card.BG), (y, cv.getpixel((0, y)))
+        assert _is_background(cv, y, card.BG), (y, cv.getpixel((0, y)))
     assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300))
 
 
