@@ -8,7 +8,7 @@ bat ky, dispatcher xep task do vao "nonspawnable" va CO Y khong bao "stuck",
 cron van `ok`. Ba lop deu im, nen lop chan phai nam o day: vo mong chi duoc
 truyen slug hien tai, va than script phai tu choi slug la va profile khong co.
 
-Chay:  venv/bin/python tests/test_quet_daily_scan.py
+Chay:  venv/bin/python tests/test_daily_scan.py
 """
 import os
 import re
@@ -29,7 +29,7 @@ VO = ["finn_daily_scan.sh", "nova_daily_scan.sh", "vera_daily_scan.sh"]
 BASH = shutil.which("bash")
 
 
-def test_vo_mong_truyen_slug_hien_tai():
+def test_without_thin_transmit_slug_current():
     """Moi vo mong `exec daily_scan.sh <x>`: x la slug trong role.ROLE, khong phai slug cu."""
     for ten in VO:
         s = (SCRIPTS / ten).read_text(encoding="utf-8")
@@ -41,7 +41,7 @@ def test_vo_mong_truyen_slug_hien_tai():
         assert ten.startswith(x + "_"), f"{ten}: ten tep va slug lech ({x})"
 
 
-def test_than_dung_slug_lam_assignee():
+def test_than_use_slug_make_assignee():
     """--assignee phai la chinh $VAI (slug profile), khong qua bien trung gian nao."""
     s = THAN.read_text(encoding="utf-8")
     assert re.search(r'--assignee\s+"\$VAI"', s), "daily_scan.sh: --assignee khong phai \"$VAI\""
@@ -50,12 +50,12 @@ def test_than_dung_slug_lam_assignee():
             f"daily_scan.sh: con nhanh case cho slug cu '{cu}'"
 
 
-def _chay(arg, home):
+def _run(arg, home):
     return subprocess.run([BASH, str(THAN), arg], capture_output=True, text=True,
                           env={**os.environ, "HERMES_HOME": str(home), "HOME": str(home)})
 
 
-def test_tu_choi_slug_cu_va_profile_thieu():
+def test_reject_slug_old_and_profile_missing():
     """Chay that bang bash: slug cu -> thoat 2; slug moi ma home khong co profile -> thoat 1."""
     if not BASH:
         print("  (bo qua: khong co bash)")
@@ -63,14 +63,14 @@ def test_tu_choi_slug_cu_va_profile_thieu():
     with tempfile.TemporaryDirectory() as d:
         home = Path(d)
         (home / "profiles" / "vera").mkdir(parents=True)
-        r = _chay("market", home)
+        r = _run("market", home)
         assert r.returncode == 2, f"slug cu 'market' phai bi tu choi (ma 2), duoc {r.returncode}: {r.stderr}"
-        r = _chay("finn", home)
+        r = _run("finn", home)
         assert r.returncode == 1 and "khong co profile" in r.stderr, \
             f"thieu profile finn phai thoat 1 + bao ro, duoc {r.returncode}: {r.stderr}"
         # vera co profile: phai qua cong, roi moi hong o cho goi hermes (khong co
         # trong home gia) — chung to cong khong chan nham profile co that.
-        r = _chay("vera", home)
+        r = _run("vera", home)
         assert "khong co profile" not in r.stderr, f"vera co profile ma van bi chan: {r.stderr}"
 
 

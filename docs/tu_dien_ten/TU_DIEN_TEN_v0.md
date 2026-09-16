@@ -180,6 +180,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `hanh_vi` | `behavior` |
 | `hau_to` | `suffix` |
 | `hermes_adapter` | `hermes_adapter` |
+| `hien_tai` | `current` |
 | `hieu_nang` | `performance` |
 | `ho_model` | `model_family` |
 | `ho_so` | `profile` |
@@ -197,6 +198,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `in_use` | `in_use` |
 | `it_dung_nhat` | `least_used` |
 | `k_tho` | `k_raw` |
+| `ke_hoach` | `plan` |
 | `ke_tiep` | `next` |
 | `ket_luan` | `conclusion` |
 | `ket_noi` | `connection` |
@@ -1053,7 +1055,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 |---|---|---|
 | `load_secrets` | `load_secrets` |  |
 | `call` | `call` |  |
-| `call_upload` | `call_?upload` |  |
+| `call_upload` | `call_upload` |  |
 | `_write_json` | `_write_json` |  |
 | `_lock_of` | `_lock_of` |  |
 | `_run_background` | `_run_background` |  |
@@ -1141,7 +1143,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 |---|---|---|
 | `_process_button` | `_process_button` |  |
 | `keyboard` | `keyboard` |  |
-| `_upload_timeout` | `_?upload_timeout` |  |
+| `_upload_timeout` | `_upload_timeout` |  |
 | `_media_timeout` | `_media_timeout` |  |
 | `_compress_preview` | `_?compress_preview` |  |
 | `_send_media_group` | `_send_media_group` |  |
@@ -2257,7 +2259,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `_try_source` | `_try_source` |  |
 | `find_and_capture` | `find_and_capture` |  |
 | `_rank_of` | `_rank_of` |  |
-| `source_proves_story` | `source_?proves_story` |  |
+| `source_proves_story` | `source_proves_story` |  |
 | `_sources_proving_story` | `_sources_?proving_story` |  |
 | `_skip_source` | `_skip_source` |  |
 | `find_and_capture_many` | `find_and_capture_many` |  |
@@ -2762,7 +2764,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `approve_base` | `ROOT` | `ROOT` |  |
 | `approve_base` | `STATE_DIR` | `STATE_DIR` |  |
 | `approve_base` | `TELEGRAM_INCOMING` | `TELEGRAM_INCOMING` |  |
-| `approve_base` | `UPLOAD_RETRY_DELAYS` | `?UPLOAD_RETRY_?DELAYS` |  |
+| `approve_base` | `UPLOAD_RETRY_DELAYS` | `UPLOAD_RETRY_?DELAYS` |  |
 | `approve_chat` | `ROLE_CHAT_MAKE_JOB` | `ROLE_CHAT_MAKE_JOB` |  |
 | `approve_command` | `COMMAND_HELP` | `COMMAND_HELP` |  |
 | `approve_command` | `SET_ARTICLE_COUNT` | `SET_ARTICLE_COUNT` |  |
@@ -2796,9 +2798,9 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `approve_post` | `REDO_WAIT` | `REDO_WAIT` |  |
 | `approve_post` | `REPLY_APPROVE_PATTERN` | `REPLY_APPROVE_PATTERN` |  |
 | `approve_post` | `REPLY_QUEUE_PATTERN` | `REPLY_QUEUE_PATTERN` |  |
-| `approve_post` | `UPLOAD_BASE_SECONDS` | `?UPLOAD_BASE_SECONDS` |  |
-| `approve_post` | `UPLOAD_FLOOR_BYTES_PER_SEC` | `?UPLOAD_?FLOOR_BYTES_PER_SEC` |  |
-| `approve_post` | `UPLOAD_WRITE_CEILING` | `?UPLOAD_WRITE_CEILING` |  |
+| `approve_post` | `UPLOAD_BASE_SECONDS` | `UPLOAD_BASE_SECONDS` |  |
+| `approve_post` | `UPLOAD_FLOOR_BYTES_PER_SEC` | `UPLOAD_?FLOOR_BYTES_PER_SEC` |  |
+| `approve_post` | `UPLOAD_WRITE_CEILING` | `UPLOAD_WRITE_CEILING` |  |
 | `approve_service` | `END_PUBLISHING_SECONDS` | `END_PUBLISHING_SECONDS` |  |
 | `article_extract` | `SKIP_IMG_HINTS` | `SKIP_IMG_HINTS` |  |
 | `article_extract` | `UA` | `UA` |  |
@@ -3539,7 +3541,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | token | lần | ví dụ module |
 |---|---|---|
 | `cluttered` | 11 | card, carousel, prepare.vision |
-| `upload` | 6 | approve_base, approve_post |
 | `pr` | 3 | manifest_build, skill_lesson_commit |
 | `keywords` | 2 | scan_business |
 | `worktree` | 2 | skill_lesson_commit |
@@ -3553,7 +3554,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `retarget` | 1 | approve_post |
 | `case` | 1 | image_rules_dre |
 | `nouns` | 1 | prepare.source |
-| `proves` | 1 | ranking |
 | `proving` | 1 | ranking |
 | `module` | 1 | role, skill_lesson_filter |
 | `amounts` | 1 | scan_business |
