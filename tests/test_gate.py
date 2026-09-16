@@ -6,7 +6,7 @@ cổng: vai sửa kiểu gì cũng sai và Ông Chủ chỉ thấy im lặng. Ng
 `check_quote_translated` đã chặn 5/6 hook hợp lệ vì chỉ đo dấu tiếng Việt, nên mọi
 cổng ở đây phải có ví dụ ĐÚNG-PHẢI-QUA đi kèm ví dụ SAI-PHẢI-CHẶN.
 
-Chạy:  venv/bin/python tests/test_cong_chan.py
+Chạy:  venv/bin/python tests/test_gate.py
 
 Ba lệnh subprocess trong tệp này gọi `sys.executable`, KHÔNG gõ cứng
 `venv/bin/python`: đường cứng chỉ đúng trên Linux/macOS và làm test đỏ trên
@@ -48,32 +48,32 @@ QUOTE_PHAI_CHAN = [
 ]
 
 
-def test_quote_dich_khong_chan_oan():
+def test_quote_translate_no_block_wrongly():
     for t in QUOTE_PHAI_QUA:
         assert nc.check_quote_translated(t, "hook") == [], f"chặn oan: {t}"
 
 
-def test_quote_dich_van_bat_tieng_anh():
+def test_quote_translate_still_catch_language_image():
     for t in QUOTE_PHAI_CHAN:
         assert nc.check_quote_translated(t, "hook"), f"lọt tiếng Anh: {t}"
 
 
-def test_quote_dich_bo_qua_chuoi_ngan():
+def test_quote_translate_skip_string_short():
     assert nc.check_quote_translated("It is what it is", "hook") == []   # < 25 ký tự
 
 
-def test_dan_nguon_gon_bat_cum_thua():
+def test_guide_source_compact_catch_phrase_excess():
     for t in ('Đọc bài "TSMC hits record" - btimesonline.com',
               "Xem bài chi tiết trên techcrunch.com",
               "Nguồn: reuters.com"):
         assert nc.check_guide_source_compact(t, "attrib"), f"lọt cụm thừa/tên miền: {t}"
 
 
-def test_dan_nguon_gon_bat_ten_mien_du_khong_co_cum_doc_bai():
+def test_guide_source_compact_catch_name_domain_enough_no_has_phrase_read_article():
     assert nc.check_guide_source_compact("via businesstimes.com", "attrib")
 
 
-def test_dan_nguon_gon_khong_chan_oan():
+def test_guide_source_compact_no_block_wrongly():
     for t in ("via BusinessTimes", "CEO TSMC", "Phát biểu của C.C. Wei, CEO TSMC",
               "TSMC vừa báo doanh thu tháng 8 đạt 514,8 tỷ Đài tệ.",
               "So với tháng 7, tăng 10,1%.", ""):
@@ -81,7 +81,7 @@ def test_dan_nguon_gon_khong_chan_oan():
 
 
 # --------------------------------------------------------------- nhân vật
-def test_nhan_vat_ba_lop():
+def test_subject_three_layer():
     anh = {"A1": {"mat": True, "mo_ta": "chan dung CEO"},
            "A2": {"mat": False},
            "A3": {"mat": True, "mo_ta": "anh quan chuc G20"}}
@@ -98,7 +98,7 @@ def test_nhan_vat_ba_lop():
 
 
 # ------------------------------------------------------------------- số lạ
-def test_so_la_doi_don_vi_khong_bi_bao():
+def test_count_is_change_single_vi_no_got_report():
     tl = "- Model dat 82,5 diem MMLU, gia 3 USD moi trieu token.\n- Huy dong 500 trieu USD."
     assert cc.count_is("Model dat 82,5 diem", tl) == []
     assert cc.count_is("chi 5 cai", tl) == []                    # 1 chữ số: bỏ qua
@@ -106,7 +106,7 @@ def test_so_la_doi_don_vi_khong_bi_bao():
 
 
 # ------------------------------------------------------------ bắt buộc khớp
-def test_khop_van_nhan_ra_muc_that():
+def test_match_still_label_out_item_real():
     that = [
         ("GPT-5.2", "OpenAI ra mat GPT-5.2 voi cua so 2 trieu token"),
         ("o4-mini", "OpenAI phat hanh o4-mini gia re"),
@@ -120,19 +120,19 @@ def test_khop_van_nhan_ra_muc_that():
         assert bb.match({"ten": ten}, {"title": tieu_de, "summary_vi": ""}), f"trượt: {ten}"
 
 
-def test_khop_khong_con_khop_bua_voi_manh_ngan():
+def test_match_no_remaining_match_random_with_fragment_short():
     # "v3"/"ai" là mảnh 2 ký tự: trước 06/09 khớp gần như mọi tiêu đề
     assert bb.match({"ten": "v3 ai"}, {"title": "bai nao cung co v3 va ai", "summary_vi": ""}) is False
 
 
-def test_khop_uu_tien_link_va_tu_khoa():
+def test_match_priority_link_and_keyword():
     assert bb.match({"link": "https://x.com/a/"}, {"link": "http://www.x.com/a"})
     assert bb.match({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia mua Hugging Face", "summary_vi": ""})
     assert not bb.match({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia ra chip moi", "summary_vi": ""})
 
 
 # ------------------------------------------------------------------ teaser
-def test_teaser_chan_url_emoji_danh_so():
+def test_teaser_block_url_emoji_list_count():
     import teaser_assemble as ta
     day = ("Con so chi phi o muc 2,75 USD moi task, thap hon ba lan doi thu tren thi truong va van "
            "giu chat luong dau ra theo bo do luong cong khai cua ben thu ba doc lap. ") * 3
@@ -151,14 +151,14 @@ def test_teaser_chan_url_emoji_danh_so():
             raise AssertionError(f"không chặn {ten}")
 
 
-def test_teaser_khong_bat_nham_ky_tu_tieng_viet():
+def test_teaser_no_catch_wrong_ky_from_vietnamese():
     # ế ộ ữ … — “ ” đều dưới U+2500, không được coi là emoji
     for c in "ếộữ…—“”•":
         assert ord(c) < 0x2500, f"{c!r} U+{ord(c):04X} sẽ bị coi là emoji"
 
 
 # ------------------------------------------------------- tin xếp hạng không bảng
-def test_tin_xep_hang_khong_co_bang_thi_khong_chan():
+def test_story_ranking_no_has_board_then_no_block():
     """Bẫy 06/09: tiêu đề trông như tin xếp hạng nhưng không nêu tên model →
     engine không chụp được bảng → không có mã "XH". Nếu cổng vẫn đòi "XH" thì
     vai sửa kiểu gì cũng sai và không bao giờ nộp được."""
@@ -181,10 +181,10 @@ def test_tin_xep_hang_khong_co_bang_thi_khong_chan():
     assert "BẮT BUỘC" in dong2, dong2
 
 
-def test_cong_xep_hang_chi_chan_khi_CHUP_duoc_bang():
+def test_gate_ranking_only_block_when_capture_ok_board():
     """dre_submit/ethan_submit chỉ được chặn khi engine CHỤP được bảng thật
     (`ranking.is_capture(kieu)`). Không có ảnh XH, hoặc chỉ có thẻ dự phòng engine
-    tự dựng, đều không được ép — xem test_the_du_phong_khong_duoc_ep_lam_anh_chinh."""
+    tự dựng, đều không được ép — xem test_fallback_card_no_ok_force_make_image_main."""
     import re as _re
     mau = r'ranking\.is_capture\(\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\)\)'
     # Tu 07/09/2026 dieu kien nam o MOT cho (submit_common.needs_ranking_image); hai vai
@@ -214,7 +214,7 @@ TIEU_DE_XEP_HANG = [
 ]
 
 
-def test_tin_thuong_khong_bi_dong_dau_xep_hang():
+def test_story_regular_no_got_stamp_ranking():
     """Trước 06/09 mọi chữ 'vượt/dẫn đầu/số 1' đều kích hoạt, kéo engine đi lục
     12 bảng xếp hạng cho một tin gọi vốn rồi dựng thẻ số liệu bịa."""
     import ranking as xh
@@ -222,13 +222,13 @@ def test_tin_thuong_khong_bi_dong_dau_xep_hang():
         assert not xh.is_ranking_story(t, ""), f"vẫn bắt nhầm: {t}"
 
 
-def test_tin_xep_hang_that_van_duoc_nhan():
+def test_story_ranking_real_still_ok_label():
     import ranking as xh
     for t in TIEU_DE_XEP_HANG:
         assert xh.is_ranking_story(t, ""), f"mất nhận diện: {t}"
 
 
-def test_ho_model_trung_tu_thuong_phai_di_kem_so():
+def test_model_family_duplicate_from_regular_right_go_with_count():
     """'seed', 'nova', 'solar'... chỉ là tên model khi có số phiên bản."""
     import ranking as xh
     assert xh.extract_model("vòng seed do Nvidia dẫn đầu") == []
@@ -237,7 +237,7 @@ def test_ho_model_trung_tu_thuong_phai_di_kem_so():
     assert xh.extract_model("GPT-5.2 leo lên #1"), "GPT-5.2 phải nhận ra"
 
 
-def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
+def test_fallback_card_no_ok_force_make_image_main():
     """kieu='the' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
     ảnh thật. Chỉ kieu chụp thật (`ranking.KIND_CAPTURE`) mới bật cổng bắt buộc."""
     import ethan_submit
@@ -258,7 +258,7 @@ def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
 
 
 # ------------------------------------------------- sổ ảnh đã dùng: khoá theo TIN
-def test_so_anh_khoa_theo_tin_khong_theo_draft():
+def test_count_image_lock_by_story_no_by_draft():
     """Cùng một tin giao cho Dre rồi Ethan ra hai draft_id khác nhau nhưng dùng
     chung bộ ảnh — vai sau không được bị chặn sạch."""
     import image_rules_ethan as la
@@ -278,14 +278,14 @@ def test_so_anh_khoa_theo_tin_khong_theo_draft():
         assert la.check_not_reused("A1", p, "tin-xyz-carousel-blog", "https://x.com/khac")[0]
 
 
-def test_khoa_tin_chuan_hoa_url():
+def test_lock_story_standard_ify_url():
     import image_provenance as la
     assert la.story_key("https://www.OpenAI.com/tin/") == la.story_key("http://openai.com/tin")
     assert la.story_key("https://x.com/a?utm=1#z") == "x.com/a"
 
 
 # ------------------------------------------- ảnh xếp hạng: dấu, cắt, tỉ lệ
-def _anh_xh(d: Path, ten="XH.png", w=1242, h=2688):
+def _image_xh(d: Path, ten="XH.png", w=1242, h=2688):
     """Ảnh giả lập bảng xếp hạng đã đóng dấu như ranking.py làm."""
     from PIL import Image, ImageDraw
     from PIL.PngImagePlugin import PngInfo
@@ -303,7 +303,7 @@ def _anh_xh(d: Path, ten="XH.png", w=1242, h=2688):
     return p
 
 
-def test_luu_crop_giu_dau_anh_goc():
+def test_save_crop_keep_mark_image_original():
     """_save_crop từng dựng PngInfo trắng → bản cắt mất dấu chup_xep_hang →
     is_ranking_image False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
     import image_prepare as cb
@@ -311,7 +311,7 @@ def test_luu_crop_giu_dau_anh_goc():
     from PIL import Image
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
-        goc = _anh_xh(d)
+        goc = _image_xh(d)
         with Image.open(goc) as im:
             assert la.is_ranking_image(im), "ảnh gốc phải mang dấu"
             cb._save_crop(im, d / "cat.png", "4:5", cy=0.35)
@@ -320,7 +320,7 @@ def test_luu_crop_giu_dau_anh_goc():
             assert la.read_crop_trace(ra), "bản cắt phải vẫn có dấu crop_ti_le"
 
 
-def test_kiem_ti_le_mien_tru_anh_xep_hang():
+def test_check_ratio_domain_except_image_ranking():
     """Bảng desktop ra ~1.28, bảng mobile ra ~0.46 — cả hai đều ngoài dải
     4:5..1:1. Không miễn trừ thì Dre kẹt: cổng bắt dùng XH, carousel chặn XH."""
     import image_rules_ethan as la
@@ -328,7 +328,7 @@ def test_kiem_ti_le_mien_tru_anh_xep_hang():
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
         for w, h in ((1600, 1250), (1242, 2688)):
-            p = _anh_xh(d, f"xh_{w}x{h}.png", w, h)
+            p = _image_xh(d, f"xh_{w}x{h}.png", w, h)
             with Image.open(p) as im:
                 assert la.check_aspect_ratio("bìa", p, w, h, img=im)[0] == [], f"chặn oan {w}x{h}"
         # ảnh thường ngoài dải VẪN phải bị chặn
@@ -339,7 +339,7 @@ def test_kiem_ti_le_mien_tru_anh_xep_hang():
             assert la.check_aspect_ratio("bìa", q, 1600, 1250, img=im)[0], "ảnh thường phải bị chặn"
 
 
-def test_anh_xep_hang_khong_bi_cat():
+def test_image_ranking_no_got_crop():
     """Hàng model đã khoanh có thể nằm dưới 55% dải chụp; cắt 4:5 cy=0.35 sẽ
     xoá mất nó. Ảnh xếp hạng phải giữ nguyên vẹn (a["san"] = a["goc"])."""
     # `classify` sang prepare/vision.py khi tach goi 09/09/2026 (audit A1).
@@ -352,7 +352,7 @@ def test_anh_xep_hang_khong_bi_cat():
 
 
 # ------------------------------------------------- Kite: ảnh chưa ai nhìn
-def test_kite_khong_ep_dung_anh_chua_nhin():
+def test_kite_no_force_use_image_not_yet_seen():
     """Vision tắt → mọi ảnh lien_quan=None. Ép lúc đó là đẩy quảng cáo/widget
     lên slide."""
     import kite_submit
@@ -370,7 +370,7 @@ def test_kite_khong_ep_dung_anh_chua_nhin():
 
 
 # -------------------------------------- tách model / hạng từ tiêu đề xếp hạng
-def test_tach_model_giu_so_phien_ban_nguyen():
+def test_extract_model_keep_count_version_raw():
     """Lookahead cũ chặn mọi chữ thường sau số → "GPT-6 tops the leaderboard"
     ra ['GPT'], engine khoanh hàng đầu tiên chứa "gpt" (có thể là GPT-5.2 mini
     hạng 23) rồi cổng ép dùng đúng tấm đó làm hero."""
@@ -384,14 +384,14 @@ def test_tach_model_giu_so_phien_ban_nguyen():
         assert ra and ra[0] == mong, f"{t!r} → {ra[:2]}, mong {mong}"
 
 
-def test_tach_model_khong_an_so_don_vi():
+def test_extract_model_no_hide_count_single_vi():
     """Số đi với đơn vị (điểm, USD, tỷ) không phải số phiên bản."""
     import ranking as xh
     assert xh.extract_model("GPT-6 Astra đạt 55 điểm trên bảng xếp hạng")[0] == "GPT-6 Astra"
     assert xh.extract_model("Claude Opus 4.5 giá 3 USD mỗi triệu token")[0] == "Claude Opus 4.5"
 
 
-def test_tach_hang_chon_dung_khong_lay_match_dau():
+def test_extract_rank_pick_use_no_take_match_mark():
     """"Top 10" đầu tiêu đề là kích cỡ danh sách, không phải thứ hạng."""
     import ranking as xh
     for t, mong in [("Top 10 mô hình AI 2026: GPT-6 Astra dẫn đầu", 1),
@@ -403,7 +403,7 @@ def test_tach_hang_chon_dung_khong_lay_match_dau():
         assert xh.extract_rank(t, md[0] if md else "") == mong, t
 
 
-def _anh_chup(ra, hat, co=(1200, 900)):
+def _image_capture(ra, hat, co=(1200, 900)):
     """Anh giong ANH CHUP that: bo cuc RIENG theo `hat` (khoi mau tho, khong
     phai mot gradient chung) cong nhieu pixel-to-pixel. Doi `co` khong lam doi
     noi dung — dung de dung ca "dung lai anh o co khac".
@@ -433,7 +433,7 @@ def _anh_chup(ra, hat, co=(1200, 900)):
     return ra
 
 
-def test_anh_xep_hang_mien_cong_dung_lai():
+def test_image_ranking_domain_gate_use_again():
     """Hai bài về hai model cùng trong top một bảng chụp đúng dải hàng đó, chỉ
     khác khung khoanh → dHash coi là trùng. Cổng dùng-lại chặn ảnh XH, còn cổng
     "tin xếp hạng phải dùng XH" chặn mọi ảnh khác: hai lỗi loại trừ nhau."""
@@ -458,9 +458,9 @@ def test_anh_xep_hang_mien_cong_dung_lai():
         b1, b2 = bang("xh1.png", 140), bang("xh2.png", 620)
         # "Anh thuong" phai la anh CHUP that (co nhieu tu nhien), khong phai mot
         # tam bang nua: bang/chart la do hoa, va do hoa nay di theo nguong chat
-        # rieng (xem test_hai_chart_khac_nhau_khong_bi_coi_la_trung).
-        a1 = _anh_chup(d / "a1.png", 0)
-        a2 = _anh_chup(d / "a2.png", 0, co=(1000, 750))   # cung anh, khac co
+        # rieng (xem test_two_chart_different_no_got_regard_is_duplicate).
+        a1 = _image_capture(d / "a1.png", 0)
+        a2 = _image_capture(d / "a2.png", 0, co=(1000, 750))   # cung anh, khac co
         la.record_used(b1, "bai1-designer-blog", "ethan", "https://a.com/1")
         la.record_used(a1, "bai1-designer-blog", "ethan", "https://a.com/1")
         # ảnh xếp hạng: bài sau dùng lại được
@@ -470,7 +470,7 @@ def test_anh_xep_hang_mien_cong_dung_lai():
 
 
 # ------------------------------------------------- watermark cua Bob (@handle)
-def test_handle_bob_luon_co_cong_va_nhan_ca_hai_kieu_khoa():
+def test_handle_bob_always_has_gate_and_label_all_two_kind_lock():
     """CT_BRAND la khoa CONTAINER ('blog'), card.BRAND khoa theo TEN brand
     ('donniechublog'). Truoc 06/09/2026 `handle_channel` tra thang gia tri tra cuu
     nen tren container blog no roi ve chinh chuoi 'blog': MOI anh Bob dong khung
@@ -487,7 +487,7 @@ def test_handle_bob_luon_co_cong_va_nhan_ca_hai_kieu_khoa():
 
 
 # ------------------------------------------- tran 8 tin khong cat muc BAT BUOC
-def test_tran_tin_khong_cat_muc_bat_buoc():
+def test_ceiling_story_no_crop_item_required():
     """Muc BAT BUOC ton tu hom truoc duoc gan score_partial=0 nen diem toi da chi
     con 50 — LUON xep chot va truoc 06/09/2026 LUON bi tran 8 tin cat. Cat xong
     thi `required.check` lai them BAN TRONG (score=0, summary_vi rong, ghi chu
@@ -551,7 +551,7 @@ def test_tran_tin_khong_cat_muc_bat_buoc():
             kho.rmdir()
 
 # ------------------------------------------------------------ the quote (card)
-def _anh_van(w, h, ra, dai_toi=None, sang=False):
+def _image_still(w, h, ra, dai_toi=None, sang=False):
     """Anh thu co VAN DAY (khong bi `_block_chart` bat nham la bieu do) va mot dai
     toi tuy chon. Kich thuoc tranh khit 4:5 vi cong `_block_standard_image` doi dau vet
     crop_ratio.py voi anh dung khit ti le."""
@@ -574,7 +574,7 @@ def _anh_van(w, h, ra, dai_toi=None, sang=False):
     return ra
 
 
-def _dung_the(src, ra, tmp):
+def _use_card(src, ra, tmp):
     import card
     card.set_brand("donniechublog")
     card.build(str(src), "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified",
@@ -583,7 +583,7 @@ def _dung_the(src, ra, tmp):
     return ra
 
 
-def test_anh_ngang_khong_lo_duong_ranh_ngang():
+def test_image_landscape_no_leak_path_seam_landscape():
     """Anh THAP hon khung (moi anh ngang) dan thang len lop nen se lo mot duong
     ke ngang tai `nat_h`: tren la anh sac, duoi la ban cover-blur cua MOT VUNG
     KHAC. Do that trước 06/09/2026: anh 3:2 tut 128 do sang trong MOT hang, 4:3
@@ -593,8 +593,8 @@ def test_anh_ngang_khong_lo_duong_ranh_ngang():
     with tempfile.TemporaryDirectory() as td:
         t = Path(td)
         for w, h in ((1500, 1000), (1200, 900), (1600, 1000)):     # 3:2, 4:3, 16:10
-            src = _anh_van(w, h, t / f"g{w}.png", dai_toi=(0.62, 1.0))
-            ra = _dung_the(src, t / f"the{w}.png", t)
+            src = _image_still(w, h, t / f"g{w}.png", dai_toi=(0.62, 1.0))
+            ra = _use_card(src, t / f"the{w}.png", t)
             im = Image.open(ra).convert("L")
             W_, H_ = im.size
             nat_h = round(h * W_ / w)
@@ -605,7 +605,7 @@ def test_anh_ngang_khong_lo_duong_ranh_ngang():
                               f"buoc nhay {buoc:.1f} do sang trong mot hang")
 
 
-def test_dong_nguon_doc_duoc_tren_day_the_sang():
+def test_line_source_read_ok_on_bottom_card_bright():
     """Dong nguon ("Doc bai ... - <nguon>") duoc ve DUOI `frame_bottom`, tuc
     ngoai cai hop dung de chon mau chu cho quote. Anh co khoi chu toi nhung day
     the sang thi truoc 06/09/2026 no lay mau TRANG cua quote dat len nen sang:
@@ -615,8 +615,8 @@ def test_dong_nguon_doc_duoc_tren_day_the_sang():
         t = Path(td)
         # anh 1200x1560 (khong khit 4:5): sang toan bo, chi toi o giua — khoi
         # quote nam tren nen toi, day the van sang.
-        src = _anh_van(1200, 1560, t / "sang.png", dai_toi=(0.58, 0.90), sang=True)
-        ra = _dung_the(src, t / "the.png", t)
+        src = _image_still(1200, 1560, t / "sang.png", dai_toi=(0.58, 0.90), sang=True)
+        ra = _use_card(src, t / "the.png", t)
         im = Image.open(ra).convert("L")
         W_, H_ = im.size
         dai = im.crop((150, H_ - 105, W_ - 150, H_ - 25))     # dai chua dong nguon
@@ -626,7 +626,7 @@ def test_dong_nguon_doc_duoc_tren_day_the_sang():
                              "(nen ~230, chu phai tach han ra)")
 
 # ------------------------------------- required: manh ngan CO SO la thu phan biet
-def test_khop_giu_so_hieu_phien_ban():
+def test_match_keep_count_understand_version():
     """`ten` cua muc BAT BUOC hay co so hieu phien ban ngan: "R1", "K2", "o4",
     "4 Fast". Loc `len >= 3` vut sach chung, nen "DeepSeek R1" rut con
     ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la match() tra True, check()
@@ -663,7 +663,7 @@ _BAI = ("sam altman, ceo of openai, said the model is ready today. "
         "pham nhat vuong opened the new plant in hai phong.")
 
 
-def test_nhan_vat_co_chuc_danh_hoac_dau_van_qua():
+def test_subject_has_function_list_or_mark_still_over():
     """Phep so cu (`ho = nv.split(",")[0]`, roi `ho not in chu_bai`) tach hau to
     CHI bang dau phay va so CHUOI CON chu khong so TU. Hai huong hong: chan oan
     ten kem chuc danh trong ngoac / sau gach, chan oan ten Viet CO DAU khi bai
@@ -674,14 +674,14 @@ def test_nhan_vat_co_chuc_danh_hoac_dau_van_qua():
         assert nc._name_in_article(nv, _BAI), f"chan oan ten dung: {nv!r}"
 
 
-def test_nhan_vat_van_bat_ten_bia():
+def test_subject_still_catch_name_cover():
     """Cong nay sinh ra sau su co bia ten 05/09 (anh quan chuc G20, khai "Hock
     Tan"), noi long khong duoc lam mat no."""
     for nv in ("Hock Tan", "Tim Cook (CEO Apple)", "Nguyen Van Bia"):
         assert not nc._name_in_article(nv, _BAI), f"lot ten khong co trong bai: {nv!r}"
 
 
-def test_mo_ta_logo_hang_trong_bai_khong_bi_chan():
+def test_description_logo_rank_within_article_no_got_block():
     """Cong chi no khi anh CO MAT NGUOI va vai DA khai ten — tuc nham dung vao
     anh chan dung/su kien, loai anh the hero can nhat. Tu tran "logo" trong bo
     tu khoa chan luon "CEO tren san khau, phia sau la logo OpenAI" — anh chuan
@@ -697,7 +697,7 @@ def test_mo_ta_logo_hang_trong_bai_khong_bi_chan():
 
 
 # ------------------------------------------------------- scan_submit: dong [bo qua]
-def test_quet_nop_in_ca_dong_bo_qua():
+def test_scan_submit_in_all_sync_over():
     """[bo qua] = mat tron mot tin, loai nang nhat, ma truoc 06/09/2026 bo loc
     khong nhat no. Vera go nham k=9: tin "OpenAI IPO dinh gia 900 ty USD" bien
     mat sach, khong mot dong canh bao, rc=0, vai bao "da gui bao cao"."""
@@ -713,7 +713,7 @@ def test_quet_nop_in_ca_dong_bo_qua():
 
 
 # --------------------------------- manifest_build: khong ghi de bang manifest rong
-def test_manifest_rong_khong_ghi_de():
+def test_manifest_empty_no_overwrite():
     """Cong `if not items` truoc 06/09/2026 nam LOT TRONG khoi `if problems`, ma
     ca hai duong vao deu cho problems RONG: picks la `[]`, hoac dict sai khoa
     (script chi nhan "picks"/"items"). Khi ay script ghi manifest 0 muc, gui bao
@@ -764,7 +764,7 @@ def _cr(a, b):
     return (hi + 0.05) / (lo + 0.05)
 
 
-def _anh_hai_tone(w, h, ra, ranh):
+def _image_two_tone(w, h, ra, ranh):
     """Nua TREN toi, nua DUOI sang, ranh o `ranh` (ti le chieu cao). Van day de
     khong bi `_block_chart` bat nham la bieu do."""
     from PIL import Image, ImageDraw
@@ -784,7 +784,7 @@ def _anh_hai_tone(w, h, ra, ranh):
     return ra
 
 
-def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
+def test_new_line_quote_read_ok_when_background_two_tone():
     """Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong (anh chup co hero
     toi tren, bang trang duoi; anh ghep doc hai tam khac tone). Truoc 06/09/2026
     mau chu do MOT mean cho CA KHOI: trung binh 136 -> chon chu TRANG
@@ -807,7 +807,7 @@ def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
         # 0.756: ranh roi GIUA khoi chu. 0.60: ca khoi tren nen sang.
         for ranh in (0.756, 0.60, 0.95):
             da_ve.clear()
-            src = _anh_hai_tone(1200, 1560, t / f"g{int(ranh*1000)}.png", ranh)
+            src = _image_two_tone(1200, 1560, t / f"g{int(ranh*1000)}.png", ranh)
             ra = t / f"the{int(ranh*1000)}.png"
             ImageDraw.ImageDraw.text = ve_ghi
             try:
@@ -828,7 +828,7 @@ def test_moi_dong_quote_doc_duoc_khi_nen_hai_tone():
                     f"chi CR {_cr(mau, (nen,) * 3):.2f}")
 
 
-def _anh_mang_sang_doc(w, h, ra, x0_ti=0.42, x1_ti=0.72):
+def _image_network_bright_read(w, h, ra, x0_ti=0.42, x1_ti=0.72):
     """Nen TOI, mot mang SANG DOC (ao trang, cua so, den san khau) chiem mot
     phan be ngang — mang nay cat qua MOI dai dong, khong phai ranh ngang."""
     from PIL import Image, ImageDraw
@@ -848,7 +848,7 @@ def _anh_mang_sang_doc(w, h, ra, x0_ti=0.42, x1_ti=0.72):
     return ra
 
 
-def test_moi_dong_quote_doc_duoc_khi_co_mang_sang_doc():
+def test_new_line_quote_read_ok_when_has_network_bright_read():
     """Nua con lai cua bai toan tren: mang sang/toi nam GON TRONG mot dai dong.
 
     Do tung dai (test tren) chi xu duoc ranh NGANG. Mang sang DOC thi trung binh
@@ -874,7 +874,7 @@ def test_moi_dong_quote_doc_duoc_khi_co_mang_sang_doc():
         quote = "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench Verified"
         for x0_ti, x1_ti in ((0.42, 0.72), (0.0, 0.35), (0.6, 1.0)):
             da_ve.clear()
-            src = _anh_mang_sang_doc(1200, 1560, t / f"g{int(x0_ti*100)}.png",
+            src = _image_network_bright_read(1200, 1560, t / f"g{int(x0_ti*100)}.png",
                                      x0_ti, x1_ti)
             ra = t / f"the{int(x0_ti*100)}.png"
             ImageDraw.ImageDraw.text = ve_ghi
@@ -898,7 +898,7 @@ def test_moi_dong_quote_doc_duoc_khi_co_mang_sang_doc():
                         f"{_cr(mau, (nen,) * 3):.2f}")
 
 
-def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
+def test_net_frame_and_mark_bracket_no_sink_on_background_bright():
     """Net khung + hai dau " 210px la vat nhan dien cua kieu pull-quote. Truoc
     06/09/2026 net khung la CYAN CUNG, khong nhanh nao doi: tren anh nen sang,
     CYAN cua dcgr (trang thuan) cho CR 1.04 — bien mat sach; cua donniechublog
@@ -919,7 +919,7 @@ def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
             card._quote_frame = bat
             try:
                 # ranh 0.60: ca khoi chu nam tren nen SANG
-                src = _anh_hai_tone(1200, 1560, t / f"s_{brand}.png", 0.60)
+                src = _image_two_tone(1200, 1560, t / f"s_{brand}.png", 0.60)
                 card.build(str(src), "Mô hình mở đầu tiên vượt GPT-5 trên SWE-bench",
                            str(t / f"the_{brand}.png"), handle="@donniechublog",
                            ratio="4:5", attrib="Đọc bài đầy đủ tại donniechublog")
@@ -932,7 +932,7 @@ def test_net_khung_va_dau_ngoac_khong_chim_tren_nen_sang():
         card.set_brand("donniechublog")
 
 # ------------------------------------------- so "anh da dung": nguong theo loai
-def _bieu_do(ra, gia_tri, mau=(40, 90, 200)):
+def _chart(ra, gia_tri, mau=(40, 90, 200)):
     """Bieu do cot nen trang — do hoa vector, khong co nhieu tu nhien."""
     from PIL import Image, ImageDraw
     im = Image.new("RGB", (1200, 800), (255, 255, 255))
@@ -946,7 +946,7 @@ def _bieu_do(ra, gia_tri, mau=(40, 90, 200)):
     return ra
 
 
-def test_hai_chart_khac_nhau_khong_bi_coi_la_trung():
+def test_two_chart_different_no_got_regard_is_duplicate():
     """dHash 8x8 doc BO XUONG BO CUC. Anh chup that co nhieu tu nhien nen hai
     tam khac nhau cach hang chuc bit, nhung do hoa vector thi khong: hai bieu do
     cot HOAN TOAN khac so lieu, mien cung dang di xuong, chi cach 4-5 bit. Voi
@@ -954,8 +954,8 @@ def test_hai_chart_khac_nhau_khong_bi_coi_la_trung():
     anh da dung", vai lang le doi sang anh minh hoa yeu hon."""
     import image_rules_ethan as la
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
-        c1 = _bieu_do(d / "c1.png", [0.90, 0.82, 0.75, 0.60, 0.50])
-        c2 = _bieu_do(d / "c2.png", [0.88, 0.80, 0.70, 0.62, 0.45], mau=(200, 80, 40))
+        c1 = _chart(d / "c1.png", [0.90, 0.82, 0.75, 0.60, 0.50])
+        c2 = _chart(d / "c2.png", [0.88, 0.80, 0.70, 0.62, 0.45], mau=(200, 80, 40))
         la.record_used(c1, "baiA", "ethan", "https://a.com/1")
         loi, _ = la.check_not_reused("A1", c2, "baiB", "https://a.com/2")
         assert not loi, f"hai chart khac so lieu bi coi la trung: {loi}"
@@ -967,7 +967,7 @@ def test_hai_chart_khac_nhau_khong_bi_coi_la_trung():
             "dung lai y het mot chart ma khong chan"
 
 
-def test_bo_bai_thi_go_anh_khoi_so():
+def test_drop_article_then_go_image_block_count():
     """So duoc ghi o buoc GUI album, tuc TRUOC khi Ong Chu bam nut. Bam "Bo han
     tin" hay "Lam lai" thi anh KHONG bao gio len kenh, nhung truoc 06/09/2026
     chung van nam trong so va chan moi bai khac suot 14 ngay — ma thong bao chan
@@ -975,10 +975,10 @@ def test_bo_bai_thi_go_anh_khoi_so():
     import image_rules_ethan as la
     import image_provenance
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
-        a1 = _anh_chup(d / "x1.png", 5)
-        a2 = _anh_chup(d / "x2.png", 5, co=(1000, 750))     # cung anh, khac co
+        a1 = _image_capture(d / "x1.png", 5)
+        a2 = _image_capture(d / "x2.png", 5, co=(1000, 750))     # cung anh, khac co
         la.record_used(a1, "bai-bi-bo", "ethan", "https://a.com/1")
-        la.record_used(_anh_chup(d / "y1.png", 9), "bai-khac", "ethan",
+        la.record_used(_image_capture(d / "y1.png", 9), "bai-khac", "ethan",
                        "https://a.com/9")
         assert la.check_not_reused("A1", a2, "bai-sau", "https://a.com/2")[0], \
             "chua go thi phai con chan (neu khong, test nay vo nghia)"
@@ -990,7 +990,7 @@ def test_bo_bai_thi_go_anh_khoi_so():
         assert len((d / "s.jsonl").read_text(encoding="utf-8").strip().splitlines()) == 1
 
 # ------------------------------------------------ bars: so kieu Viet, va cong text
-def test_gia_tri_bars_doc_dung_cham_hang_nghin():
+def test_value_bars_read_use_touch_rank_thousand():
     """Kite viet "1.200" (mot nghin hai tram) — dung kieu Viet, dung cai docstring
     noi la chap nhan. Truoc 06/09/2026 `_value` chi doi ',' thanh '.', nen
     float("1.200") = 1.2: cot "1.200 tac vu" ve rong 0.1% con cot "900" ve rong
@@ -1007,7 +1007,7 @@ def test_gia_tri_bars_doc_dung_cham_hang_nghin():
     assert ti_le == [100.0, 75.0], f"ti le cot sai: {ti_le}"
 
 
-def test_cong_bars_bat_text_lech_value():
+def test_gate_bars_catch_text_offset_value():
     """`text` la thu NGUOI DOC nhin thay tren cot, `value` la thu quyet dinh
     CHIEU DAI cot. Lech nhau thi bieu do noi mot dang, chu noi mot dang — va
     truoc day khong cong nao doi chieu hai cai."""
@@ -1024,7 +1024,7 @@ def test_cong_bars_bat_text_lech_value():
 
 
 # ------------------------------------------- get_source: giu dinh dang goc twimg
-def test_twimg_giu_dinh_dang_anh_goc():
+def test_twimg_keep_format_image_original():
     """`name=orig` chi duoc phuc vu o DUNG dinh dang anh duoc luu. Ep
     `format=jpg` cho post co anh PNG (anh chup man hinh meme — noi dung chinh
     cua kenh) thi CDN tra 404 chu khong tra ban JPEG. 404 bi vong ung vien nuot,
@@ -1060,7 +1060,7 @@ def test_twimg_giu_dinh_dang_anh_goc():
 
 
 # ------------------------------------------------------ Bob: mood tu luot nhin
-def test_bob_dung_ket_qua_nhin_de_chon_mood():
+def test_bob_use_result_seen_for_pick_mood():
     """main() goi description_image, IN mo ta, roi dong khung bang `a.emoji` va gui —
     tat ca trong mot lan chay. Truoc 06/09/2026 bien `mo_ta` khong bao gio cham
     toi mood, ma Bob chi thay stdout SAU KHI tien trinh thoat (luc anh da len
@@ -1106,7 +1106,7 @@ def test_bob_dung_ket_qua_nhin_de_chon_mood():
             bob_submit.take_image, bob_submit.line_frame, cb.description_image = goc_lay, goc_khung, goc_mo_ta
 
 # ------------------------------------------- vong [LOI]: dem trong CODE, khong phai chu
-def test_vong_loi_co_bo_dem_va_reset_khi_loi_doi():
+def test_round_error_has_buffer_and_reset_when_error_change():
     """"Toi da 2 lan sua [LOI]" truoc 06/09/2026 chi la CHU trong task body —
     khong dong code nao dem. Ghep voi cong phi tat dinh (vision doi ket qua
     giua hai lan chay), vai co the lap toi khi het ngan sach tool call ma khong
@@ -1122,7 +1122,7 @@ def test_vong_loi_co_bo_dem_va_reset_khi_loi_doi():
 
 
 # ------------------------------------------------ Itachi: vung quen, tran hop, mau
-def test_itachi_mau_sai_dang_khong_lam_chet_ban_ve():
+def test_itachi_color_wrong_form_no_make_crash_copy_about():
     """`tuple(color)` voi color tu spec nem TypeError GIUA buoi ve — mat ca
     slide, vai chi thay traceback."""
     import itachi_submit as it
@@ -1131,7 +1131,7 @@ def test_itachi_mau_sai_dang_khong_lam_chet_ban_ve():
         assert it._color(xau) == (20, 20, 20), f"khong do duoc dang xau: {xau!r}"
 
 
-def test_itachi_bat_chu_tran_hop():
+def test_itachi_catch_text_ceiling_box():
     """`_about_block` co lai co chu toi HAS_MIN roi VE BAT KE: vong while thoat vi
     `size > HAS_MIN` chu khong phai vi chu da vua. Cau dich dai gap doi cau goc
     thi tran de len anh ben duoi, khong cong nao bao."""
@@ -1145,7 +1145,7 @@ def test_itachi_bat_chu_tran_hop():
 
 
 # ------------------------------------------------------ Cape: dan y co duoc nhac
-def test_teaser_nhac_muc_dan_y_bi_bo():
+def test_teaser_mention_item_guide_y_got_drop():
     """SOUL bat Cape "nhac du muc dan y" nhung khong cong nao doi chieu —
     teaser dai dung so tu ma bo han mot nua bai van qua sach. So theo TU
     NGUYEN VEN: tieng Viet phan lon la am tiet 2-4 ky tu nen so chuoi con thi
@@ -1162,7 +1162,7 @@ def test_teaser_nhac_muc_dan_y_bi_bo():
     assert ta._item_no_ok_mention(None, doan) == []
 
 # ------------------------------------------------- duong bao loi cua miles_submit
-def test_miles_nop_bao_loi_thay_vi_no():
+def test_miles_submit_report_error_see_vi_no():
     """Caption truot cong phai ra dong "Sua roi chay lai" + ma thoat 1.
 
     Bay 06/09/2026 (commit 519adb2): `count_round_error` duoc goi qua `nc` o dong 79
@@ -1196,7 +1196,7 @@ def test_miles_nop_bao_loi_thay_vi_no():
         assert (wd / "nop_lan.json").exists(), "khong ghi bo dem vong loi"
 
 
-def test_so_da_dung_duoc_tra_lai_sau_cac_test_tren():
+def test_count_used_ok_return_again_after_each_test_on():
     """Chot cai bay monkeypatch: sau moi test o tren, `_used_images_log()` phai tro
     ve duong THAT chu khong phai mot TemporaryDirectory da bi xoa — neu khong,
     `check_not_reused` tra rong vo dieu kien va moi cong "khong dung lai anh" trong
@@ -1208,7 +1208,7 @@ def test_so_da_dung_duoc_tra_lai_sau_cac_test_tren():
 
 
 # --------------------------------------------------- trang thai (buoc 4)
-def test_lam_lai_chi_ap_khi_ong_chu_that_su_bam():
+def test_redo_only_apply_when_boss_really_press():
     """`da_dung.json` duoc ghi o MOI lan gui va approve_post khong bao gio xoa, nen
     "co da_dung" khong dong nghia "Ong Chu bam Lam lai". Ban cu bat vai doi bia
     o moi lan chay lai, vai doi that, roi gui BO THU HAI kem nut Duyet thu hai.
@@ -1233,7 +1233,7 @@ def test_lam_lai_chi_ap_khi_ong_chu_that_su_bam():
         nc2.count_of_redo = cu
 
 
-def test_only_ranking_choice_mot_anh_xep_hang():
+def test_only_ranking_choice_one_image_ranking():
     """`only_ranking_choice` chỉ trả về mã ảnh khi bài LÀ tin xếp hạng CHỤP được
     bảng và CHỈ CÓ ĐÚNG MỘT ảnh xếp hạng — None nếu không phải tin xếp hạng,
     chưa chụp được bảng, không có, hoặc có từ hai ảnh xếp hạng trở lên (còn
@@ -1255,7 +1255,7 @@ def test_only_ranking_choice_mot_anh_xep_hang():
     assert nc2.only_ranking_choice(m_khong_xep_hang) is None
 
 
-def test_lam_lai_khong_ket_khi_chi_co_mot_anh_xep_hang():
+def test_redo_no_end_when_only_has_one_image_ranking():
     """LOW-146: needs_ranking_image bắt bìa PHẢI là ảnh xếp hạng; check_redo_reused
     cấm bìa trùng lần trước. Khi bộ ảnh chỉ có ĐÚNG MỘT ảnh xếp hạng và nó đã là
     bìa lần trước, hai cổng khoá nhau — bộ ảnh không còn đường nộp hợp lệ dù sửa
@@ -1281,7 +1281,7 @@ def test_lam_lai_khong_ket_khi_chi_co_mot_anh_xep_hang():
         nc2.count_of_redo = cu
 
 
-def test_album_da_len_so_theo_tep_va_thoi_gian():
+def test_album_already_len_count_by_file_and_time():
     """Ban cu hoi `if draft_id in dong` tren 400 dong cuoi MOI tep .jsonl, khong
     nhin moc thoi gian: album tu hom qua lam nhanh cuu hieu nham la "vua len",
     ghi so voi bo anh CHUA gui roi in "ĐỪNG chạy lại" — album moi khong bao gio
@@ -1313,7 +1313,7 @@ def test_album_da_len_so_theo_tep_va_thoi_gian():
             el.state_dir = cu
 
 
-def test_publish_khong_dang_album_lan_hai():
+def test_publish_no_form_album_attempt_two():
     """Caption dai: album len truoc, tin chu gui sau. Tin chu hong -> bai thanh
     publish_failed -> Ong Chu bam ✅ lai -> ban cu dang album LAN HAI."""
     import json as _j

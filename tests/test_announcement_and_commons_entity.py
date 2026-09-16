@@ -9,7 +9,7 @@ LOW-35: "Hugging Face" (tu hau to site) thanh hang trong tin + tu khoa Commons -
 "Octopus' Hugging Face.jpg", "West Lighthouse, Rathlin hugging the cliff face".
 Fail tren code cu, pass tren code moi.
 
-Chay:  venv/bin/python tests/test_cong_bo_va_commons_thuc_the.py
+Chay:  venv/bin/python tests/test_announcement_and_commons_entity.py
 """
 import io
 import json
@@ -35,12 +35,12 @@ def _pg(*ten):
 
 
 # ---------------------------------------------------------------- LOW-34
-def test_tach_model_bo_tien_to_repo_hf():
+def test_extract_model_drop_prefix_repo_hf():
     assert ranking.extract_model(EN)[0] == "DeepSeek-V4.1-Flash", ranking.extract_model(EN)
     assert th._lock_model(ranking.extract_model(EN))[0] == "deepseek-v4-1-flash"
 
 
-def test_them_trang_cong_bo_hoi_voi_ten_dai_nhat_va_khong_co_hugging_face():
+def test_extra_announcement_page_ask_with_name_long_most_and_no_has_hugging_face():
     goi = {}
     cu = th.announcement_page
     th.announcement_page = lambda hang, models: goi.update(hang=hang, models=models) or None
@@ -57,7 +57,7 @@ def test_them_trang_cong_bo_hoi_voi_ten_dai_nhat_va_khong_co_hugging_face():
     assert goi["hang"]["khoa"] == "deepseek", goi
 
 
-def test_trang_cong_bo_khong_im_khi_khong_co_khoa():
+def test_announcement_page_no_silent_when_no_has_lock():
     err = io.StringIO()
     with redirect_stderr(err):
         assert th.announcement_page({"khoa": "deepseek", "hang": "DeepSeek"}, ["deepseek"]) is None
@@ -65,7 +65,7 @@ def test_trang_cong_bo_khong_im_khi_khong_co_khoa():
 
 
 # ---------------------------------------------------------------- LOW-35
-def test_commons_hugging_face_phai_la_cum_lien_nhau():
+def test_commons_hugging_face_right_is_phrase_connect_other():
     pages = _pg("West Lighthouse, Rathlin hugging the cliff face 01.jpg",
                 "Hugging Face headquarters Paris 2025.jpg",
                 "Face hugging octopus.jpg")
@@ -73,19 +73,19 @@ def test_commons_hugging_face_phai_la_cum_lien_nhau():
         ["Commons: Hugging Face headquarters Paris 2025.jpg"]
 
 
-def test_co_cum_ten_mot_tu_nhu_cu():
+def test_has_phrase_name_one_from_like_old():
     assert th._has_phrase(["samsung"], "samsung town seoul.jpg")
     assert not th._has_phrase(["arm"], "harmony hall.jpg")
     assert th._has_phrase(["thinking", "machines"], "thinking machines lab office.jpg")
     assert not th._has_phrase(["thinking", "machines"], "machines for thinking.jpg")
 
 
-def test_ten_rieng_dau_khong_lay_hau_to_site():
+def test_leading_proper_noun_no_take_suffix_site():
     assert cbn._leading_proper_noun(EN) == "", cbn._leading_proper_noun(EN)
     assert cbn._leading_proper_noun("Gimlet Labs raises 40M | TechCrunch") == "Gimlet Labs"
 
 
-def test_hang_trong_tin_khong_co_hugging_face_sau_khi_bo_hau_to():
+def test_vendors_in_story_no_has_hugging_face_after_when_drop_suffix():
     import article_sources
     hangs = th.vendors_in_story(f"{VI} {article_sources.strip_site_suffix(EN)}")
     assert [h["khoa"] for h in hangs] == ["deepseek"], hangs

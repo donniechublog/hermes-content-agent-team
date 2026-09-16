@@ -47,7 +47,7 @@ class _FakeFile(io.BytesIO):
 
 def _goi(handler, *, n_files=1, timeout=30):
     """Goi that ab.call_upload voi httpx.Client bi ep dung MockTransport(handler)
-    (cung ky thuat voi tests/test_gui_tele.py). Tra ve (ket_qua, so_lan_mo_file,
+    (cung ky thuat voi tests/test_send_tele.py). Tra ve (ket_qua, so_lan_mo_file,
     danh_sach_tay_cam_da_tao)."""
     cu = httpx.Client
     tay_cam = []

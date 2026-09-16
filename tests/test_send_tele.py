@@ -15,7 +15,7 @@ Hai muc tieu:
   2. `tele_util.split_message()` — ham THUAN chia tin dai, test truc tiep khong
      can mock gi ca.
 
-Chay:  python tests/test_gui_tele.py
+Chay:  python tests/test_send_tele.py
 """
 import sys
 from pathlib import Path
@@ -29,7 +29,7 @@ import tele_util                    # noqa: E402
 
 
 # ============================================================ approve_base.call
-def _goi_voi_mock_transport(handler, token, method, **kw):
+def _call_with_mock_transport(handler, token, method, **kw):
     """Goi approve_base.call(token, method, **kw) nhung ep httpx.Client() O BEN
     TRONG no dung MockTransport(handler) thay vi mang that, roi phuc hoi lai.
 
@@ -53,7 +53,7 @@ def _goi_voi_mock_transport(handler, token, method, **kw):
         httpx.Client = cu
 
 
-def test_call_mang_loi_tra_dict_khong_nem_exception():
+def test_call_network_error_return_dict_no_throw_exception():
     """Transport nem httpx.ConnectError (gia lap mat mang / DNS fail) -> call()
     PHAI bat lai va tra dict {"ok": False, ...}, dung docstring cua call():
     'loi mang -> {"ok": False, "description"}', khong duoc de exception thoat
@@ -61,7 +61,7 @@ def test_call_mang_loi_tra_dict_khong_nem_exception():
     def handler_loi(request):
         raise httpx.ConnectError("gia lap mat mang", request=request)
 
-    res = _goi_voi_mock_transport(handler_loi, "fake-token", "sendMessage",
+    res = _call_with_mock_transport(handler_loi, "fake-token", "sendMessage",
                                    chat_id=1, text="x")
 
     assert isinstance(res, dict), f"phai tra ve dict ke ca khi loi, duoc {type(res)}"
@@ -69,21 +69,21 @@ def test_call_mang_loi_tra_dict_khong_nem_exception():
     assert "description" in res, f"thieu description de biet loi gi: {res}"
 
 
-def test_call_loi_bat_ky_khong_phai_httpx_cung_khong_thoat_ra_ngoai():
+def test_call_error_catch_ky_no_right_httpx_same_no_exit_out_outside():
     """`except Exception` trong call() la bat CHUNG, khong rieng loi httpx —
     dam bao dieu do bang mot loi hoan toan khac (RuntimeError), khong lien
     quan gi den mang."""
     def handler_loi_la(request):
         raise RuntimeError("loi bat ky, khong phai loi mang httpx")
 
-    res = _goi_voi_mock_transport(handler_loi_la, "fake-token", "sendMessage",
+    res = _call_with_mock_transport(handler_loi_la, "fake-token", "sendMessage",
                                    chat_id=1, text="x")
 
     assert isinstance(res, dict) and not res.get("ok"), (
         f"except Exception phai bat ca loi khong-httpx, khong duoc nem ra ngoai: {res}")
 
 
-def test_call_thanh_cong_tra_dung_json_cua_response():
+def test_call_success_return_use_json_of_response():
     """MockTransport tra HTTP 200 that + json {"ok": true, "result": {...}}
     -> call() phai tra DUNG dict do (r.json(), khong bien doi gi them)."""
     ket_qua_gia = {"ok": True, "result": {"message_id": 42, "chat": {"id": 1}}}
@@ -93,7 +93,7 @@ def test_call_thanh_cong_tra_dung_json_cua_response():
         goi.append(request)
         return httpx.Response(200, json=ket_qua_gia)
 
-    res = _goi_voi_mock_transport(handler_ok, "fake-token", "sendMessage",
+    res = _call_with_mock_transport(handler_ok, "fake-token", "sendMessage",
                                    chat_id=1, text="x")
 
     assert res == ket_qua_gia, f"phai tra dung json cua response thanh cong: {res}"
@@ -103,7 +103,7 @@ def test_call_thanh_cong_tra_dung_json_cua_response():
 
 
 # ============================================================ tele_util.split_message
-def test_chia_tin_ngan_hon_gioi_han_giu_nguyen_mot_phan():
+def test_split_message_short_than_limit_keep_raw_one_part():
     """Text ngan hon gioi han: KHONG chia, tra ve dung 1 phan tu = text.rstrip()
     (ham luon rstrip() truoc, xem dong dau cua split_message())."""
     text = "Xin chao, day la mot tin nhan ngan.   \n\n"
@@ -113,7 +113,7 @@ def test_chia_tin_ngan_hon_gioi_han_giu_nguyen_mot_phan():
     assert ket_qua == [text.rstrip()], f"phan tu do phai la text.rstrip(): {ket_qua!r}"
 
 
-def test_chia_tin_dai_hon_gioi_han_nhieu_lan_chia_dung_do_dai():
+def test_split_message_long_than_limit_many_attempt_split_use_measure_long():
     """Text dai gap nhieu lan gioi_han -> nhieu phan, MOI phan <= gioi_han ky tu."""
     gioi_han = 50
     tu = ["chia", "tin", "dai", "thanh", "nhieu", "phan", "cho", "vua", "gioi", "han"]
@@ -127,7 +127,7 @@ def test_chia_tin_dai_hon_gioi_han_nhieu_lan_chia_dung_do_dai():
         assert len(p) <= gioi_han, f"phan thu {i} dai {len(p)} > gioi_han {gioi_han}: {p!r}"
 
 
-def test_chia_tin_ghep_lai_khong_mat_noi_dung():
+def test_split_message_stack_again_no_face_content():
     """Ghep tat ca cac phan lai, bo whitespace o ranh gioi cat (dung docstring
     'khong mat noi dung, chi bo whitespace o ranh gioi'), phai cho lai DUNG
     chuoi ky tu khong-whitespace nhu text goc. Text co ca newline xen giua de
@@ -149,7 +149,7 @@ def test_chia_tin_ghep_lai_khong_mat_noi_dung():
         f"(goc {len(goc_khong_trang)} ky tu, ghep lai duoc {len(ghep_khong_trang)} ky tu)")
 
 
-def test_chia_tin_uu_tien_cat_o_xuong_dong():
+def test_split_message_priority_crop_cell_down_line():
     """Khi mot xuong dong nam trong nua sau cua so gioi_han, ham phai cat DUNG
     tai do va giu nguyen ca dong — khong lui ve cat bang khoang trang giua
     dong (dung nhu docstring module: 'uu tien cat o ranh gioi xuong dong roi
@@ -165,7 +165,7 @@ def test_chia_tin_uu_tien_cat_o_xuong_dong():
         f"phai cat dung tai xuong dong, giu nguyen tung dong: {ket_qua}")
 
 
-def test_chia_tin_text_rong_tra_ve_it_nhat_mot_phan_tu():
+def test_split_message_text_empty_return_it_most_one_part_from():
     """Docstring: 'Luon tra ve list co it nhat MOT phan tu (co the la chuoi
     rong)' de nguoi goi cu lap la gui du, khong can kiem tra rong truoc."""
     ket_qua = tele_util.split_message("", gioi_han=50)

@@ -10,6 +10,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 
 | Việt | English |
 |---|---|
+| `an_ninh` | `security` |
 | `anh_bai` | `article_images` |
 | `anh_bao_thuc_the` | `press_entity_images` |
 | `anh_chuan_bi` | `image_prepare` |
@@ -25,6 +26,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ba_cham` | `ellipsis` |
 | `ban_do` | `map` |
 | `ban_giao` | `handoff` |
+| `ban_phim` | `keyboard` |
 | `bang_chung` | `evidence` |
 | `bang_den` | `blackboard` |
 | `bang_du_lieu` | `table` |
@@ -40,6 +42,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `benchmark_trich` | `benchmark_excerpt` |
 | `bi_mat` | `secret` |
 | `bieu_do` | `chart` |
+| `bieu_tinh` | `protest` |
 | `binh_thuong` | `normal` |
 | `bo_cuc` | `layout` |
 | `bo_dem` | `buffer` |
@@ -350,6 +353,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `thanh_cong` | `success` |
 | `thanh_vien` | `member` |
 | `thap_nhat` | `lowest` |
+| `that_su` | `really` |
 | `the_du_phong` | `fallback_card` |
 | `theo_bac` | `by_tier` |
 | `theo_doi` | `monitor` |
@@ -454,6 +458,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `boi` | `context` |  |
 | `bong` | `shadow` |  |
 | `bu` | `fallback` |  |
+| `bua` | `random` |  |
 | `buoc` | `step` |  |
 | `ca` | `all` |  |
 | `cac` | `each` |  |
@@ -473,7 +478,9 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `chet` | `crash` |  |
 | `chi` | `only` | ⚠️ chỉ=only / chi=spend |
 | `chia` | `split` |  |
+| `chien` | `war` |  |
 | `chieu` | `dimension` |  |
+| `chim` | `sink` |  |
 | `chinh` | `main` |  |
 | `chiu` | `bear` |  |
 | `cho` | `wait` | ⚠️ chờ=wait / cho=for/give |
@@ -484,12 +491,14 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `chua` | `not_yet` |  |
 | `chuan` | `standard` |  |
 | `chuc` | `function` |  |
+| `chum` | `cluster` |  |
 | `chung` | `common` |  |
 | `chung2` | `common2` |  |
 | `chuoi` | `string` |  |
 | `chup` | `capture` |  |
 | `chuyen` | `transfer` |  |
 | `co` | `has` |  |
+| `coi` | `regard` |  |
 | `con` | `remaining` |  |
 | `cong` | `gate` |  |
 | `cot` | `column` |  |
@@ -514,6 +523,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `day` | `bottom` | ⚠️ đáy=bottom / dây=cable / dạy=teach / đầy=full |
 | `de` | `for` | ⚠️ để=to / dễ=easy |
 | `dem` | `count` |  |
+| `den` | `black` |  |
 | `dep` | `pretty` |  |
 | `deu` | `all` |  |
 | `di` | `go` |  |
@@ -613,6 +623,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `lenh` | `command` |  |
 | `leo` | `climb` |  |
 | `lich` | `schedule` |  |
+| `lien` | `connect` |  |
 | `lieu` | `material` |  |
 | `lo` | `leak` |  |
 | `loai` | `type` |  |
@@ -657,16 +668,20 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `neu` | `if` |  |
 | `ngan` | `short` |  |
 | `ngang` | `landscape` |  |
+| `nganh` | `industry` |  |
 | `ngat` | `break` |  |
 | `ngay` | `date` |  |
 | `nghich` | `reverse` |  |
 | `nghiem` | `strict` |  |
+| `nghin` | `thousand` |  |
+| `ngoac` | `bracket` |  |
 | `ngoai` | `outside` |  |
 | `nguoi` | `person` |  |
 | `nguon` | `source` |  |
 | `nguong` | `threshold` |  |
 | `nguyen` | `raw` |  |
 | `nhac` | `mention` |  |
+| `nhai` | `mimic` |  |
 | `nham` | `wrong` |  |
 | `nhan` | `label` | ⚠️ nhãn=label / nhận=receive / nhân=multiply |
 | `nhat` | `most` |  |
@@ -677,6 +692,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `nhip` | `beat` |  |
 | `nho` | `small` |  |
 | `nhom` | `group` |  |
+| `nhu` | `like` |  |
 | `nhung` | `but` |  |
 | `noi` | `say` |  |
 | `nong` | `hot` |  |
@@ -686,6 +702,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `nuot` | `swallow` |  |
 | `nut` | `button` |  |
 | `o` | `cell` |  |
+| `oan` | `wrongly` |  |
 | `pha` | `phase` |  |
 | `phai` | `right` |  |
 | `phan` | `part` | ⚠️ phần=part / phân=classify |
@@ -706,6 +723,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `quyet` | `decide` |  |
 | `ra` | `out` |  |
 | `rac` | `junk` |  |
+| `ranh` | `seam` |  |
 | `rieng` | `own` |  |
 | `ro` | `clear` |  |
 | `roi` | `fall` |  |
@@ -794,10 +812,12 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `troi` | `drift` |  |
 | `tron` | `full` |  |
 | `trong` | `within` |  |
+| `tru` | `except` |  |
 | `trung` | `duplicate` |  |
 | `truoc` | `before` |  |
 | `truong` | `field` |  |
 | `truy` | `trace` |  |
+| `truyen` | `transmit` |  |
 | `tu` | `from` | ⚠️ từ=from/word / tự=self |
 | `tuan` | `week` |  |
 | `tuc` | `instant` |  |
@@ -812,6 +832,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `van` | `still` | ⚠️ vẫn=still / văn=text |
 | `vang` | `gold` |  |
 | `vao` | `into` |  |
+| `vat` | `object` |  |
 | `ve` | `about` |  |
 | `vet` | `trace` |  |
 | `viec` | `job` |  |
@@ -830,6 +851,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `xoa` | `delete` |  |
 | `xong` | `done` |  |
 | `xuat` | `export` |  |
+| `xuong` | `down` |  |
 | `yeu` | `weak` |  |
 
 ## B. Module
@@ -2564,7 +2586,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `check_subject_named` | `check_subject_named` |  |
 | `check_numbers_on_card` | `check_numbers_on_card` |  |
 | `needs_ranking_image` | `needs_ranking_image` |  |
-| `only_ranking_choice` | `only_ranking_?choice` |  |
+| `only_ranking_choice` | `only_ranking_choice` |  |
 | `irrelevant_images` | `irrelevant_images` |  |
 | `check_not_reused_across_runs` | `check_not_reused_across_runs` |  |
 | `_clean_use_alone` | `_clean_use_alone` |  |
@@ -3518,7 +3540,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `symbols` | 1 | skill_lesson_commit, skill_lesson_filter |
 | `judge` | 1 | skill_lesson_filter |
 | `collect` | 1 | skill_lesson_filter |
-| `choice` | 1 | submit_common |
 | `scopes` | 1 | worker_scope_sweep |
 | `stop` | 1 | worker_scope_sweep |
 | `variance` | 1 | carousel |

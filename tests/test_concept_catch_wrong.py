@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Bảng chủ đề của `image_concept` BẮT NHẦM nghĩa (LOW-23, Ông Chủ 12/09/2026).
 
-`tests/test_khai_niem.py` chỉ kiểm ca THUẬN — "nhắc Nhật thì ra cờ Nhật". Tệp này
+`tests/test_concept.py` chỉ kiểm ca THUẬN — "nhắc Nhật thì ra cờ Nhật". Tệp này
 kiểm ca NGHỊCH: từ nào không được kéo tin sang rổ sai. Sinh ra từ một bộ thật —
 bìa "AI giải toán giỏi, nền toán học thì lệch chuẩn" ra tấm dây mạng phòng máy,
 vì `\\bhack` trần khớp "reward hacking" (mô hình lách thước đo), không phải tin tặc.
 
-Chạy:  venv/bin/python tests/test_khai_niem_bat_nham.py
+Chạy:  venv/bin/python tests/test_concept_catch_wrong.py
 """
 import sys
 from pathlib import Path
@@ -22,7 +22,7 @@ def _tk(tieu_de, tom=""):
     return [x["tu_khoa"] for x in k.keyword_heuristic(tieu_de, tom)]
 
 
-def test_reward_hacking_khong_thanh_tin_an_ninh_mang():
+def test_reward_hacking_no_into_story_security_network():
     """Đúng ca đã hỏng 12/09/2026: tin toán học + 'reward hacking'."""
     for tom in ("Models are reward hacking the benchmark, researchers say",
                 "Researchers warn about benchmark gaming and reward hacking",
@@ -30,7 +30,7 @@ def test_reward_hacking_khong_thanh_tin_an_ninh_mang():
         assert "server room cables" not in _tk(TIN_TOAN, tom), tom
 
 
-def test_tin_an_ninh_mang_that_van_ra_dung_ro():
+def test_story_security_network_real_still_out_use_clear():
     """Sửa chiều bắt nhầm mà giết luôn ca đúng thì còn tệ hơn."""
     for tieu_de in ("Hackers breached the model registry, company says",
                     "Ransomware group hits cloud provider",
@@ -39,7 +39,7 @@ def test_tin_an_ninh_mang_that_van_ra_dung_ro():
         assert "server room cables" in _tk(tieu_de), tieu_de
 
 
-def test_tin_toan_hoc_ra_bang_den_khong_ra_phong_may():
+def test_story_whole_geometry_out_blackboard_no_out_room_machine():
     """Trước 12/09 test này đòi RỖNG ("không từ khoá còn hơn từ khoá sai"). Ông
     Chủ xem bìa toán toàn chữ: "hoàn toàn có thể dùng hình bảng đen công thức
     làm hero, thiếu idea đến thế à?" — nên tin toán phải ra bảng đen, và vẫn
@@ -48,14 +48,14 @@ def test_tin_toan_hoc_ra_bang_den_khong_ra_phong_may():
     assert tk == ["blackboard mathematical formulas"], tk
 
 
-def test_cau_hoi_vision_hoi_ca_TU_KHOA_CO_HOP_BAI():
+def test_sentence_ask_vision_ask_all_keyword_has_box_article():
     """Cổng `lien_quan` cho ảnh khái niệm chỉ hỏi "có đúng là <từ khoá>" nên một
     từ khoá sai được chính cổng hợp thức hoá. Phải hỏi thêm chiều hợp bài."""
     c = k.sentence_ask_vision(TIN_TOAN, "server room cables")
     assert "hop chu de bai" in c, c
     assert "lac chu de bai" in c, c
 
-def test_cau_hoi_vision_hoi_ca_NHIN_RA_VAT_CHINH():
+def test_sentence_ask_vision_ask_all_seen_out_object_main():
     """LOW-34 (Ông Chủ 12/09/2026): *"ĐẸP hay ko thì ko phải vấn đề, nhưng ảnh
     hiển thị rõ ràng, có các object liên quan tới topic thì được tính là đẹp"*.
 
@@ -69,7 +69,7 @@ def test_cau_hoi_vision_hoi_ca_NHIN_RA_VAT_CHINH():
     # Khong duoc bien thanh thang tham my: phai noi ro khong can dep.
     assert "khong can dep" in c, c
 
-def test_prompt_llm_khong_lay_vat_nganh_AI_lam_vi_du():
+def test_prompt_llm_no_take_object_industry_ai_make_example():
     """Đo trên máy chủ 12/09/2026: tin TOÁN HỌC ra từ khoá "server racks data
     center" chỉ vì prompt lấy "server racks" làm ví dụ. Ví dụ không được là một
     vật của ngành AI, không thì mọi tin AI đều bị kéo về phòng máy."""
@@ -81,7 +81,7 @@ def test_prompt_llm_khong_lay_vat_nganh_AI_lam_vi_du():
     assert "do NOT suggest AI-industry hardware" in src and "server racks, data center, GPU" in src
 
 
-def test_minh_hoa_bien_tap_duoc_dung_nhu_anh_chup():
+def test_self_ify_variable_set_ok_use_like_image_capture():
     """Ông Chủ 12/09/2026: "ảnh illustration cũng chả sao cả, The Economist còn
     dùng". IMAGE_RULES §0 cấm TỰ VẼ, không cấm DÙNG minh hoạ có sẵn. Bộ lọc tên tệp
     và câu hỏi con mắt không được gạt illustration/drawing; icon/clipart/sơ đồ
@@ -94,7 +94,7 @@ def test_minh_hoa_bien_tap_duoc_dung_nhu_anh_chup():
     assert "minh hoa bien tap" in c and "anh CHUP THAT" not in c, c
 
 
-def test_cau_hoi_vision_theo_loai_khong_xet_hop_bai():
+def test_sentence_ask_vision_by_type_no_consider_box_article():
     """Từ khoá do LOẠI TIN ép (cờ nước của hãng cho tin LAB) — con mắt không được
     tự phán "cờ thì liên quan gì xác minh tuổi". Đo trên máy chủ 12/09: cờ Mỹ bị
     từ chối cho tin Anthropic dù bảng loại tin (Ông Chủ) coi cờ là vật liên quan."""
@@ -104,7 +104,7 @@ def test_cau_hoi_vision_theo_loai_khong_xet_hop_bai():
     assert "do LOAI TIN quy dinh" not in c0
 
 
-def test_loc_commons_tu_khoa_dai_mot_tu_khop_la_du():
+def test_filter_commons_keyword_long_one_from_match_is_enough():
     """"mathematics blackboard equations" (3 từ) hiếm khi có 2 từ cùng trong tên
     tệp — đo 12/09: 0 ảnh cho cả hai từ khoá toán. Từ khoá ≥3 từ: 1 từ khớp đủ."""
     pg = {"1": {"title": "File:Blackboard with proof.jpg",
