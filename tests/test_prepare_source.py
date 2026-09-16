@@ -12,7 +12,7 @@ sau chính là lệnh gọi trong `prepare/source.py`, nhưng cho tới trước
 nó ghi đè `meta` (bản trong bộ nhớ, có thể đã CŨ đi so với lúc gọi hàm — pipeline
 Kite/Dre/Ethan chạy lâu) thay vì trộn — mất đúng thứ `merge_meta` sinh ra để giữ.
 
-Chạy:  venv/bin/python tests/test_chuan_bi_nguon.py
+Chạy:  venv/bin/python tests/test_prepare_source.py
 """
 import json
 import sys
@@ -28,7 +28,7 @@ GNEWS_URL = "https://news.google.com/rss/articles/CBMi_gia_lap"
 THAT_URL = "https://baothat.vi.du/bai-goc"
 
 
-def _voi_drafts_tam(ham):
+def _with_drafts_temp(ham):
     """Chay `ham(drafts, state)` voi source.DRAFTS tro vao thu muc tam, phuc hoi
     sau do du co loi hay khong."""
     with tempfile.TemporaryDirectory() as t:
@@ -44,7 +44,7 @@ def _voi_drafts_tam(ham):
             source.DRAFTS = cu
 
 
-def _gia_lap_giai_ma(ket_qua):
+def _fake_repeat_resolve_code(ket_qua):
     """Doi article_sources.resolve_code_gnews de khong goi mang/Chromium that. `load_source`
     goi qua `import article_sources` moi lan, nen doi thuoc tinh tren MODULE la du —
     khong can vi sys.modules thu cong."""
@@ -53,7 +53,7 @@ def _gia_lap_giai_ma(ket_qua):
     return cu
 
 
-def test_giai_gnews_tron_khong_ghi_de_root_task_dang_co_tren_dia():
+def test_resolve_gnews_full_no_overwrite_root_task_form_has_on_disk():
     """root_task duoc blackboard ghi vao .meta.json SAU khi meta da nap vao bo nho
     (mo phong dua bang cach: dia co root_task, ban trong bo nho thi khong) —
     load_source() giai gnews KHONG duoc xoa mat no khi ghi lai."""
@@ -67,21 +67,21 @@ def test_giai_gnews_tron_khong_ghi_de_root_task_dang_co_tren_dia():
         # Bo nho: BAN CU, chua co root_task (dung dung bo nho da nap TRUOC khi
         # blackboard ghi — day la khe ho that)
         meta = {"source_url": GNEWS_URL, "title": "t", "category": "AI"}
-        cu = _gia_lap_giai_ma(THAT_URL)
+        cu = _fake_repeat_resolve_code(THAT_URL)
         try:
             source.load_source(draft_id, meta, state)
         finally:
             article_sources.resolve_code_gnews = cu
         tren_dia = json.loads(p_meta.read_text(encoding="utf-8"))
         return meta, tren_dia
-    meta, tren_dia = _voi_drafts_tam(_chay)
+    meta, tren_dia = _with_drafts_temp(_chay)
     assert meta["source_url"] == THAT_URL, "ban trong bo nho phai duoc cap nhat"
     assert tren_dia.get("root_task") == "t_42", \
         f"root_task blackboard ghi bi mat sau khi load_source ghi lai: {tren_dia}"
     assert tren_dia.get("source_url") == THAT_URL, tren_dia
 
 
-def test_khong_phai_gnews_thi_khong_dung_toi_meta_json():
+def test_no_right_gnews_then_no_use_dark_meta_json():
     """Duong dan thuong (khong phai news.google.com) khong duoc cham vao
     .meta.json — chi giai gnews moi ghi lai."""
     def _chay(drafts, state):
@@ -89,23 +89,23 @@ def test_khong_phai_gnews_thi_khong_dung_toi_meta_json():
         meta = {"source_url": "https://vi.du/bai-thuong", "title": "t"}
         source.load_source(draft_id, meta, state)
         return (drafts / f"{draft_id}.meta.json").exists()
-    da_ghi = _voi_drafts_tam(_chay)
+    da_ghi = _with_drafts_temp(_chay)
     assert not da_ghi, ".meta.json khong duoc tao ra khi khong co gnews de giai"
 
 
-def test_giai_ra_dung_link_cu_thi_khong_ghi_lai():
+def test_resolve_out_use_link_old_then_no_write_again():
     """resolve_code_gnews tra ve CHINH url dau vao (khong giai duoc gi moi) — guard
     `!= that` phai chan, khong ghi lai file vo ich."""
     def _chay(drafts, state):
         draft_id = "d3"
         meta = {"source_url": GNEWS_URL, "title": "t"}
-        cu = _gia_lap_giai_ma(GNEWS_URL)
+        cu = _fake_repeat_resolve_code(GNEWS_URL)
         try:
             source.load_source(draft_id, meta, state)
         finally:
             article_sources.resolve_code_gnews = cu
         return (drafts / f"{draft_id}.meta.json").exists()
-    da_ghi = _voi_drafts_tam(_chay)
+    da_ghi = _with_drafts_temp(_chay)
     assert not da_ghi
 
 
