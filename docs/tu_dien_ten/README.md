@@ -100,7 +100,7 @@ tên tệp) và bước `--package chuan_bi → prepare` — thêm các quy tắ
   test đổi theo; `STATE_DIR / "chuan_bi"` và `"chuan_bi"` trần **không bao giờ đổi**
   (thư mục state trên đĩa). Shim `chuan_bi/__init__.py` → `prepare`.
 
-## Cổng CI sau refactor (LOW-53) — `tests/test_ten_english.py`
+## Cổng CI sau refactor (LOW-53) — `tests/test_name_english.py`
 
 Chạy trong `tests/run.sh` (CI `ci` / job `check`): `bang_doi_ten()` trên cây hiện tại phải
 **rỗng**. Còn tên top-level nào từ điển vẫn dịch ra tên khác thì đỏ và in
@@ -154,7 +154,7 @@ Không đổi trong `nhat_ky/` (lịch sử) và trong chính thư mục này.
 
 ## Script/cấu hình không phải `.md` (LOW-151/152, 14/09/2026)
 
-Cùng lý do trên — không phải mã, `rename.py`/`test_ten_english.py` không xét.
+Cùng lý do trên — không phải mã, `rename.py`/`test_name_english.py` không xét.
 
 | Tên cũ | Tên mới | Ghi chú |
 |---|---|---|

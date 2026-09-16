@@ -30,4 +30,4 @@ Bối cảnh: repo này được sửa từ nhiều máy (Mac này + 2 máy khá
 - Khái niệm đã có tên: tra `docs/tu_dien_ten/` để dùng đúng từ đã chốt, không tự dịch thành từ khác.
 - Sửa tệp cũ: phần thêm mới vẫn English; KHÔNG tiện tay đổi tên cũ xung quanh. Đổi tên hàng loạt phải có ticket riêng và kiểm phiên khác trước (dùng `docs/tu_dien_ten/rename.py`).
 - KHÔNG áp cho nội dung: chuỗi hiển thị, prompt/SOUL, nhật ký, commit message, tài liệu tiếng Việt giữ nguyên; khoá JSON/đường dẫn state đang chạy trên máy chủ không đổi.
-- Cổng CI `tests/test_ten_english.py` (LOW-53) chặn tên top-level Việt quay lại; nó không xét biến cục bộ hay tên nhánh — phần đó dựa vào quy ước này. Đỏ vì từ English/tên riêng bị nhận nhầm → thêm vào `docs/tu_dien_ten/them.json` (PASS), không tắt cổng.
+- Cổng CI `tests/test_name_english.py` (LOW-53) chặn tên top-level Việt quay lại; nó không xét biến cục bộ hay tên nhánh — phần đó dựa vào quy ước này. Đỏ vì từ English/tên riêng bị nhận nhầm → thêm vào `docs/tu_dien_ten/them.json` (PASS), không tắt cổng.

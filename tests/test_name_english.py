@@ -11,7 +11,7 @@ Việt, in ra `module.tên → tên_đề_xuất` để người viết đổi (
 Phạm vi = phạm vi của LOW-50: tên top-level. Tham số/biến cục bộ không xét.
 Shim tên cũ (`\"\"\"SHIM tạm`) được `quet` bỏ qua.
 
-Chay:  venv/bin/python tests/test_ten_english.py
+Chay:  venv/bin/python tests/test_name_english.py
 """
 import sys
 from pathlib import Path
@@ -24,7 +24,7 @@ from tudien import TuDien, bang_doi_ten                       # noqa: E402
 TU_DIEN = ROOT / "docs" / "tu_dien_ten"
 
 
-def _ke_hoach(root: Path) -> list:
+def _plan(root: Path) -> list:
     """[(module, tên_cũ, tên_đề_xuất, loại)] — rỗng là sạch. Chỉ quét tệp git
     theo dõi (LOW-55): tệp nháp bị .gitignore trên máy chủ không phải mã repo."""
     plan = bang_doi_ten(TuDien(TU_DIEN), root, chi_git=True)
@@ -38,13 +38,13 @@ def _ke_hoach(root: Path) -> list:
     return ra
 
 
-def test_khong_con_ten_viet_top_level():
-    con = _ke_hoach(ROOT)
+def test_no_remaining_name_write_top_level():
+    con = _plan(ROOT)
     assert con == [], "tên Việt không dấu ở top-level (đổi theo cột phải, hoặc thêm PASS vào them.json):\n" + \
         "\n".join(f"  {m}.{o} -> {n}  ({k})" for m, o, n, k in con[:40])
 
 
-def test_bo_qua_tep_gitignore_nhung_van_bat_tep_trong_git():
+def test_skip_file_gitignore_but_still_catch_file_within_git():
     """LOW-55: máy chủ có `gif2png_tmp.py` (nháp, bị .gitignore) làm cổng đỏ giả
     dù CI xanh. Trong repo git: tệp bị ignore/untracked KHÔNG được tính, tệp đã
     `git add` mang tên Việt VẪN phải bị bắt."""
@@ -61,14 +61,14 @@ def test_bo_qua_tep_gitignore_nhung_van_bat_tep_trong_git():
         (g / "chua_add.py").write_text("def tim_chua_add():\n    pass\n", encoding="utf-8")
         (g / "thu_moi.py").write_text("def tim_anh_moi(x):\n    return x\n", encoding="utf-8")
         subprocess.run(["git", "-C", str(g), "add", "thu_moi.py", "docs"], check=True)
-        con = _ke_hoach(g)
+        con = _plan(g)
     ten = {o for _m, o, _n, _k in con}
     assert "tim_anh_moi" in ten, con
     assert "doi_anh_nhap" not in ten and "anh_nhap_tmp" not in ten, con
     assert "tim_chua_add" not in ten and "chua_add" not in ten, con
 
 
-def test_cong_bat_duoc_ten_viet_moi():
+def test_gate_catch_ok_name_write_new():
     """Cổng phải ĐỎ khi có `def tim_anh_moi()` — chứng minh cổng còn sống, không
     phải rỗng vì từ điển không nạp được."""
     import shutil
@@ -78,7 +78,7 @@ def test_cong_bat_duoc_ten_viet_moi():
         (g / "docs").mkdir()
         shutil.copytree(TU_DIEN, g / "docs" / "tu_dien_ten")
         (g / "thu_moi.py").write_text("def tim_anh_moi(x):\n    return x\n\nSO_LUOT_TOI_DA = 3\n", encoding="utf-8")
-        con = _ke_hoach(g)
+        con = _plan(g)
     ten = {(o, k) for _m, o, _n, k in con}
     assert ("tim_anh_moi", "def") in ten, con
     assert ("SO_LUOT_TOI_DA", "const") in ten, con
