@@ -222,6 +222,38 @@ def test_gom_trung_khong_gop_hai_tin_nguoc_nhau():
     assert len(ra) == 2, f"gop nham hai tin nguoc nhau: {[t['tieu_de'] for t in ra]}"
 
 
+def test_dedup_merges_same_deal_reworded_across_outlets():
+    """LOW-184: Vera 16/09 dua 5 dong cho MOT vong goi von Euclyd — cac bao lech
+    dong tu, lech so (230/231), lech tien te (€200M), nguong 60% khong bat duoc."""
+    import scan_business as sb
+    tin = [_tin("Samsung backs Nvidia AI chip rival in $230 million funding round as GPU alternatives boom - CNBC", 100, "CNBC"),
+           _tin("Samsung Co-Led $231 Million Funding Round for Nvidia AI Chip Rival - SammyGuru", 200, "SammyGuru"),
+           _tin("Dutch AI chipmaker Euclyd pulled in $231 million with Samsung's backing - qz.com", 300, "qz.com"),
+           _tin("Samsung Leads $230 Mn Funding for European Chip Co EUCLYD Amid Memory Shortage - analyticsindiamag.com", 400, "analyticsindiamag.com"),
+           _tin("Euclyd secures over €200M in Series A co-led by Samsung and Somerset Capital - Crypto Briefing", 500, "Crypto Briefing"),
+           _tin("Samsung's Taylor Fab Begins Mass Production of Tesla AI5 Chips, Targets Full Capacity by Year-End", 600, "biggo")]
+    ra = sb.gather_duplicate(tin)
+    assert len(ra) == 2, [t["tieu_de"] for t in ra]
+    assert ra[0]["so_bao"] == 5 and ra[0]["ts"] == 100
+
+
+def test_dedup_keeps_different_deals_with_same_amount_apart():
+    """Cung so tien nhung chi chung tu goi von, hoac chi chung MOT ten hang, la hai vu khac nhau."""
+    import scan_business as sb
+    tin = [_tin("Acme Robotics raises $100 million in Series A round led by Sequoia for warehouse arms", 100),
+           _tin("Zeta Health lands $100 million Series A funding round for cancer screening", 200),
+           _tin("Nvidia invests $1 billion in Nokia to push telecom gear", 300),
+           _tin("Nvidia commits $1 billion to Anthropic compute partnership", 400),
+           _tin("OpenAI acquires camera maker Glass Imaging for $300 million", 500),
+           _tin("Glass Imaging valued at $3 billion as OpenAI talks stall", 600)]
+    for i in range(0, 6, 2):
+        a, b = tin[i]["tieu_de"], tin[i + 1]["tieu_de"]
+        ka, kb = sb._keyword(a), sb._keyword(b)
+        assert len(ka & kb) / max(len(ka), len(kb)) < 0.6, "cap nay phai thu luat so tien, khong phai luat 60%"
+    ra = sb.gather_duplicate(tin)
+    assert len(ra) == 6, [t["tieu_de"] for t in ra]
+
+
 def test_chuan_hoa_lam_khoa_dedup_on_dinh():
     import scan_business as sb
     a = sb.standard_ify("Nvidia's Q3 Revenue Jumps 34%!")
