@@ -167,7 +167,7 @@ def match(muc: dict, item: dict) -> bool:
 # Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC
 # khong co link (Nova 05/09 mo 17 tool call grep repo tim link cho 15 muc).
 # Bang thi doc tu BAN DANG KY (model_boards): truoc 07/09/2026 danh sach nay la
-# ban chep tay thu SAU cua cung mot bo bang, va `test_bang_nova` sinh ra chinh
+# ban chep tay thu SAU cua cung mot bo bang, va `test_model_boards` sinh ra chinh
 # vi mot lan them bang ma quen khai o day -> muc BAT BUOC ra link RONG.
 LINK_BOARD = dict(model_boards.LINK_BOARD)
 # `ra_mat` KHONG phai mot bang: no la `loai` cua muc BAT BUOC sinh tu "ra mat
