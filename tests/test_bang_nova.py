@@ -104,7 +104,7 @@ def test_tran_in_an_co_can_tren():
     """Ba muc nay truoc 06/09 khong co `[:n]`, mot ngay xau nuot sach phan duoi."""
     kiem("test_tran_in_an_co_can_tren",
          all(isinstance(v, int) and 0 < v < 100
-             for v in (s.CEILING_NEW, s.CEILING_BM, s.CEILING_GH, s.CEILING_HF, s.CEILING_BOARD)))
+             for v in (s.CEILING_GH, s.CEILING_HF, s.CEILING_BOARD)))
 
 
 def test_bang_hong_thi_noi_ra():
@@ -115,14 +115,14 @@ def test_bang_hong_thi_noi_ra():
     import io as _io
     b = _io.StringIO()
     with contextlib.redirect_stdout(b):
-        s._in_report({"model_moi": [], "bang_hong": ["tbench", "hle"]}, 7)
+        s._in_report({"bang_hong": ["tbench", "hle"]})
     ra = b.getvalue()
     kiem("test_bang_hong_thi_noi_ra",
          "NGUON KHONG LAY DUOC" in ra and "Terminal-B" in ra and "HLE" in ra,
          "khong bao ten bang hong -> vai tuong la bang do khong co tin")
     b2 = _io.StringIO()
     with contextlib.redirect_stdout(b2):
-        s._in_report({"model_moi": [], "bang_hong": []}, 7)
+        s._in_report({"bang_hong": []})
     kiem("test_khong_hong_thi_im", "NGUON KHONG LAY DUOC" not in b2.getvalue())
 
 
@@ -223,19 +223,14 @@ def test_ban_dang_ky_moi_bang_du_truong():
          len({b.khoa for b in bm.BOARD}) == len(bm.BOARD))
 
 
-def test_ban_dang_ky_dung_hai_bang_in_rieng():
-    """coding AA (da co muc TOP CODING) va openrouter usage (co cot token/ngay)
-    in theo khuon rieng. Them mot bang `in_bang=False` nua ma khong viet khoi
-    in rieng cho no la bang do bien mat khoi bao cao."""
+def test_ban_dang_ky_dung_bang_in_rieng():
+    """coding AA (da co muc TOP CODING) in theo khuon rieng. Them mot bang
+    `in_bang=False` nua ma khong viet khoi in rieng cho no la bang do bien
+    mat khoi bao cao."""
     import model_boards as bm
     rieng = sorted(b.khoa for b in bm.BOARD if not b.in_bang)
-    kiem("test_ban_dang_ky_dung_hai_bang_in_rieng", rieng == ["coding", "openrouter"],
+    kiem("test_ban_dang_ky_dung_bang_in_rieng", rieng == ["coding"],
          f"bang in rieng: {rieng}")
-    src = Path(s.__file__).read_text(encoding="utf-8")
-    i = src.find("def _in_report")
-    kiem("test_openrouter_usage_co_khoi_in_rieng",
-         "OPENROUTER USAGE" in src[i:] and "for b in model_boards.BOARD" in src[i:],
-         "_in_report phai in bang qua ban dang ky VA co khoi rieng cho openrouter")
 
 
 def test_hang_va_ngay_doc_dung_bon_hinh():
@@ -246,16 +241,19 @@ def test_hang_va_ngay_doc_dung_bon_hinh():
            "cham_diem": {"bang_tri_tue_goc": [{"ten": "b"}]},
            "media": {"tts": [{"ten": "c"}]},
            "tbench": {"rows": [{"ten": "d"}], "ngay": "2026-09-01"},
-           "openrouter_usage": {"rows": [{"ten": "e"}], "ngay": "2026-09-02"}}
+           "gia_usage": {"rows": [{"ten": "e"}], "ngay": "2026-09-02"}}
     lay = {b.khoa: b for b in bm.BOARD}
     kiem("test_hang_va_ngay_arena", bm.rank_and_date(ket, lay["text"]) == ([{"ten": "a"}], None))
     kiem("test_hang_va_ngay_aa", bm.rank_and_date(ket, lay["tri_tue"]) == ([{"ten": "b"}], None))
     kiem("test_hang_va_ngay_media", bm.rank_and_date(ket, lay["tts"]) == ([{"ten": "c"}], None))
     kiem("test_hang_va_ngay_top",
          bm.rank_and_date(ket, lay["tbench"]) == ([{"ten": "d"}], "2026-09-01"))
+    # Khong con bang nao trong ban dang ky dung ket_khoa khac khoa (kiem tra
+    # truc tiep co che nay bang mot Board gia, doc lap voi registry).
+    gia = bm.Board("gia", "gia", "GIA", "https://vi.du/", "top", ket_khoa="gia_usage")
     kiem("test_hang_va_ngay_ket_khoa",
-         bm.rank_and_date(ket, lay["openrouter"]) == ([{"ten": "e"}], "2026-09-02"),
-         "openrouter nam o khoa `openrouter_usage` trong ket")
+         bm.rank_and_date(ket, gia) == ([{"ten": "e"}], "2026-09-02"),
+         "ket_khoa phai tro toi khoa khac trong ket khi duoc khai")
     kiem("test_hang_va_ngay_thieu_thi_None",
          bm.rank_and_date({}, lay["hle"]) == (None, None))
 

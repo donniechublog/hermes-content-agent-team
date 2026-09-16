@@ -5,17 +5,21 @@ Khac Finn: Finn quet HN/Reddit/arXiv, tuc chi thay tin KHI DA CO NGUOI BAN LUAN.
 Model release khong can cho thao luan moi dang gia — luc bao chi viet thi model da
 len so dang ky vai ngay roi. Nen o day doc thang SO DANG KY.
 
-Ba nguon, moi nguon doc lap (mot nguon chet khong keo do ca lan quet):
+Hai nguon, moi nguon doc lap (mot nguon chet khong keo do ca lan quet):
 
-  1. OpenRouter /api/v1/models — 400+ model, MOI model deu co moc `created`, kem
-     gia in/out, context, co reasoning. Phat hien model moi = phep tru tap hop
-     tren ID, khong can LLM, khong the trung.
-  2. Catalog cua 9router — tra loi cau thuc dung hon: "model moi nao HOM NAY ta
+  1. Catalog cua 9router — tra loi cau thuc dung hon: "model moi nao HOM NAY ta
      goi duoc ngay", vi no da loc theo tai khoan dang co.
-  3. lmarena.ai/leaderboard — bang xep hang. Du lieu nam trong payload RSC cua
+  2. lmarena.ai/leaderboard — bang xep hang. Du lieu nam trong payload RSC cua
      Next.js (self.__next_f), phai giai ma chuoi JS roi moi raw_decode duoc.
      Trang con /leaderboard/image va /video tai bang JS nen RONG — phai lay tu
      trang chinh, o do co ca `rankByModality` cho anh va video.
+
+Model moi ra mat con duoc bat qua "ra mat theo bang cham diem" (artificialanalysis,
+doc lap voi hai nguon tren) va qua HuggingFace trending (tha trong so). Truoc
+16/09/2026 con co OpenRouter (/api/v1/models cho catalog, rankings cho usage
+token/ngay) la mot nguon nua — Ong Chu chot bo han (LOW-185): tieu chi research
+cua Nova chi con benchmark uy tin + HuggingFace, khong dua so lieu usage/gateway
+vao lam tin hieu chon model.
 
 Uu tien (Ong Chu chot): frontier My, top 5 Trung Quoc, top tao anh, top tao video.
 
@@ -43,7 +47,6 @@ import env_load
 STATE = env_load.state_dir() / "models_seen.json"
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 
-OPENROUTER = "https://openrouter.ai/api/v1/models"
 # CATALOG cua HERMES (tai lieu cua hermes-agent), KHONG phai catalog cua
 # 9router. metadata.source cua chinh tep do ghi "hermes-agent repo", va
 # upstream hermes_cli/models.py dung dung tep nay lam danh muc model cua
@@ -65,7 +68,9 @@ AA = "https://artificialanalysis.ai/leaderboards/models"
 
 # RSS cua hang — bat nhung su kien KHONG hien ra o so dang ky: mo ma nguon, doi
 # giay phep, cong bo benchmark. Da do song 21/08: Anthropic va Meta KHONG co RSS
-# (404 moi duong thu), model moi cua ho van hien o OpenRouter nen khong mat tin.
+# (404 moi duong thu). Anthropic co fetch_anthropic() rieng (changelog) lam luoi
+# an toan; Meta thi KHONG — tu 16/09/2026 (bo OpenRouter, LOW-185) model moi cua
+# Meta chi con bat duoc qua GITHUB_REPOS (llama.cpp) hoac khi len arena/AA/HF.
 # Qwen co feed hop le nhung bai moi nhat tu 9/2025 — feed chet, da bo.
 RSS_RANK = [
     ("OpenAI", "https://openai.com/news/rss.xml"),
@@ -114,56 +119,7 @@ def region_of(org: str) -> str:
     return "khac"
 
 
-# ---------- nguon 1: OpenRouter ----------
-
-def fetch_openrouter() -> list:
-    try:
-        d = _get(OPENROUTER).json()["data"]
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[openrouter] hong: {type(e).__name__}: {e}", file=sys.stderr)
-        return []
-    out = []
-    for m in d:
-        created = m.get("created")
-        if not created:
-            continue
-        p = m.get("pricing") or {}
-        org = (m.get("id") or "").split("/")[0].lstrip("~")
-        out.append({
-            "nguon": "openrouter",
-            "id": m["id"],
-            "ten": m.get("name") or m["id"],
-            "to_chuc": org,
-            "vung": region_of(org),
-            "ra_mat": datetime.fromtimestamp(created, timezone.utc).strftime("%Y-%m-%d"),
-            "ra_mat_ts": created,
-            # OpenRouter bao gia theo USD/token — nhan 1e6 cho ve USD/1M cho de doc
-            "gia_vao": _usd_1m(p.get("prompt")),
-            "gia_ra": _usd_1m(p.get("completion")),
-            "context": m.get("context_length"),
-            "co_reasoning": bool(m.get("reasoning")),
-            "hf_id": m.get("hugging_face_id") or "",
-            # Model la thuong KHONG co hugging_face_id (da kiem: sakana, dots-3,
-            # ox-alpha, solar-pro4 deu None). Luc do mo ta cua chinh hang la
-            # manh moi duy nhat con lai. Tim nguoc tren HuggingFace theo ten thi
-            # ra model KHAC (tim "sakana" ra TinySwallow) — dua so sai con te hon
-            # khong co so, nen khong lam.
-            # 150 ky tu du de Nova biet model la gi; chi tiet no tu doc link.
-            # Truoc day [:400] x moi model moi trong 14 ngay lam prompt phinh
-            # theo ngay nhieu model ra mat (audit 01/09).
-            "mo_ta": (m.get("description") or "")[:150],
-        })
-    return out
-
-
-def _usd_1m(v):
-    try:
-        return round(float(v) * 1_000_000, 4)
-    except (TypeError, ValueError):
-        return None
-
-
-# ---------- nguon 2: catalog cua 9router ----------
+# ---------- nguon 1: catalog cua 9router ----------
 
 def fetch_catalog() -> list:
     try:
@@ -332,42 +288,6 @@ def fetch_livebench(top: int) -> tuple:
     for i, r in enumerate(rows):
         r["hang"] = i + 1
     return rows[:top], ngay
-
-
-# ---------- nguon 8: OpenRouter usage (token thuc te) ----------
-
-OPENROUTER_RANK = "https://openrouter.ai/api/frontend/v1/rankings/models"
-
-
-def fetch_openrouter_usage(top: int) -> tuple:
-    """Model nao duoc DUNG nhieu nhat (token/ngay tren OpenRouter). Khac bang
-    diem: day la thi truong bo phieu bang tien. Tra (rows, ngay)."""
-    try:
-        data = _get(OPENROUTER_RANK, timeout=60).json().get("data", [])
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[openrouter usage] hong: {type(e).__name__}: {e}", file=sys.stderr)
-        return [], None
-    if not data:
-        return [], None
-    ngay = max(r["date"] for r in data)[:10]
-    truoc = sorted({r["date"] for r in data})
-    ngay_truoc = truoc[-2][:10] if len(truoc) > 1 else None
-    tong, tong_truoc = {}, {}
-    for r in data:
-        slug = re.sub(r"-\d{8}$", "", r["model_permaslug"])   # bo hau to ngay
-        tk = (r.get("total_completion_tokens") or 0) + (r.get("total_prompt_tokens") or 0)
-        if r["date"][:10] == ngay:
-            tong[slug] = tong.get(slug, 0) + tk
-        elif ngay_truoc and r["date"][:10] == ngay_truoc:
-            tong_truoc[slug] = tong_truoc.get(slug, 0) + tk
-    rows = []
-    for i, (slug, tk) in enumerate(sorted(tong.items(), key=lambda x: -x[1])[:top]):
-        org = slug.split("/")[0]
-        doi = (tk - tong_truoc[slug]) / tong_truoc[slug] * 100 if tong_truoc.get(slug) else None
-        rows.append({"hang": i + 1, "ten": slug, "to_chuc": org, "vung": region_of(org),
-                     "ty_token": round(tk / 1e9, 1),
-                     "doi_pct": round(doi) if doi is not None else None})
-    return rows, ngay
 
 
 # ---------- nguon 9-14: cac chieu 12 bang cu KHONG do ------------------------
@@ -918,57 +838,6 @@ def fetch_github(ngay: int) -> list:
     return ra
 
 
-# ---------- benchmark cua model la ----------
-
-# Model card cua moi hang mot kieu bang khac nhau, regex boc so ra la hong —
-# da thu, no bat nham. Nen o day code chi lam phan CO HOC: tai card ve va CAT
-# doan quanh cho nhac benchmark. Doc bang va phan dinh con so co an tuong khong
-# la viec cua Nova, vi do la doc that chu khong phai so khop chuoi.
-BENCH_HINTS = ("swe-bench", "swebench", "swe bench", "aider", "livecodebench",
-               "humaneval", "mbpp", "terminal-bench")
-
-
-def _make_clean(t: str) -> str:
-    """Bo the HTML va gop khoang trang — card cua Qwen nhung ca CSS inline."""
-    # Card cua vai hang (Qwen) nhung CSS inline. Vi ta CAT mot cua so giua chung,
-    # doan trich hay bat dau/ket thuc GIUA mot the — nen ngoai viec bo the tron
-    # con phai bo not manh the cut o hai dau, roi quet lai nhung manh CSS le.
-    t = re.sub(r"<[^>]*>", " ", t)          # the tron ven
-    t = re.sub(r"^[^<]*?>", " ", t, count=1)   # duoi the bi cat o dau doan
-    t = re.sub(r"<[^>]*$", " ", t)             # dau the bi cat o cuoi doan
-    t = re.sub(r"[a-zA-Z-]+\s*:\s*[^;\s]{1,40};", " ", t)   # khai bao CSS le
-    t = re.sub(r"\S*(?:#[0-9a-fA-F]{3,8}|rgba?\()\S*", " ", t)
-    return re.sub(r"\s+", " ", t).strip()
-
-
-def excerpt_benchmark(hf_id: str, quanh: int = 400) -> list:
-    """Tra ve vai doan van ban quanh cho model card nhac toi benchmark code."""
-    if not hf_id:
-        return []
-    url = f"https://huggingface.co/{hf_id}/raw/main/README.md"
-    try:
-        r = _get(url, timeout=30)
-        if r.status_code != 200:
-            return []
-        card = r.text
-    except Exception:                                        # noqa: BLE001
-        return []
-    doan, da_lay = [], []
-    low = card.lower()
-    for h in BENCH_HINTS:
-        i = low.find(h)
-        if i < 0:
-            continue
-        a, b = max(0, i - quanh // 2), min(len(card), i + quanh)
-        if any(abs(a - x) < quanh for x in da_lay):   # tranh cat trung cho
-            continue
-        da_lay.append(a)
-        doan.append(_make_clean(card[a:b]))
-        if len(doan) >= 3:
-            break
-    return doan
-
-
 # ---------- moc da thay ----------
 
 def read_state() -> dict:
@@ -1036,7 +905,7 @@ def write_timestamp(ids: set, xep_hang: dict, da_bao: dict | None = None):
 import required                                              # noqa: E402
 
 
-def write_required(ra_mat_aa: list, leo_hang: list, moi_router: list,
+def write_required(ra_mat_aa: list, leo_hang: list,
                  hf_moi: list | None = None) -> None:
     """Tich luy moi su kien tat dinh vao danh sach BAT BUOC cua Nova (xem
     required.py). Luat Ong Chu 04/09/2026: xuat hien tren bang la phai dua;
@@ -1049,20 +918,9 @@ def write_required(ra_mat_aa: list, leo_hang: list, moi_router: list,
     for l in leo_hang:
         muc.append((f"{l['loai']}|{l['ten']}", l["ten"], l["loai"], l["ghi_chu"],
                     required.link_call_y({"loai": l["loai"], "ten": l["ten"]})))
-    for m in moi_router:
-        muc.append((f"router|{m['id']}", m["id"], "router",
-                    f"moi tren router, ra mat {m.get('ra_mat')}",
-                    required.link_call_y({"loai": "router", "ten": m["id"]})))
-    # Model tha trong so tren HuggingFace: cung mot loai su kien "model xuat
-    # hien" nhu router, nen cung bat buoc. Khu trung theo doan sau dau / — cung
-    # mot model len ca hai noi (deepseek-ai/DeepSeek-V4 vs deepseek/deepseek-v4)
-    # thi chi la MOT tin.
-    ten_router = {(m["id"].split("/")[-1] or "").lower().replace("_", "-")
-                  for m in moi_router}
+    # Model tha trong so tren HuggingFace: mot loai su kien "model xuat hien",
+    # nen cung bat buoc.
     for m in hf_moi or []:
-        goc = (m["id"].split("/")[-1] or "").lower().replace("_", "-")
-        if any(goc in t or t in goc for t in ten_router):
-            continue
         muc.append((f"hf|{m['id']}", m["id"], "hf",
                     f"tha trong so tren HuggingFace {m.get('ra_mat')}, "
                     f"trending {m.get('diem')}, {m.get('tai')} luot tai",
@@ -1098,10 +956,10 @@ def _try(ten: str, fn, khi_hong):
     """Hang rao cuoi cho MOT nguon: loi bat ngo khong duoc keo do ca luot quet.
 
     Vi sao can du moi fetcher da co try rieng: cac try do chi boc LOI GOI MANG,
-    khong boc phan PARSE. `max(r["date"] for r in data)` (openrouter usage),
-    `float(v)` (livebench khi o la "-"), `float(mt["accuracy"])` (tbench doi
-    schema), `r["codingIndex"]`, `h < h_cu` khi OpenCompass thieu `ranking` —
-    tat ca nam NGOAI try va nem thang ra `main`, giet ca 23 bang. Khi do:
+    khong boc phan PARSE. `float(v)` (livebench khi o la "-"),
+    `float(mt["accuracy"])` (tbench doi schema), `r["codingIndex"]`,
+    `h < h_cu` khi OpenCompass thieu `ranking` — tat ca nam NGOAI try va nem
+    thang ra `main`, giet ca 22 bang. Khi do:
     stdout rong, khong bang nao, khong ghi moc, va `brief_nova` van dung bao
     cao rong do -> Nova ket luan "hom nay khong co gi". Dung loai hong ma
     README goi la dang so nhat.
@@ -1129,8 +987,6 @@ def main():
                     help="Coi la moi neu ra mat trong N ngay (mac dinh 14)")
     ap.add_argument("--top", type=int, default=10,
                     help="Chi lay top N moi bang xep hang (mac dinh 10)")
-    ap.add_argument("--khong-benchmark", action="store_true",
-                    help="Bo qua buoc tai model card cua model la")
     ap.add_argument("--out", help="Ghi JSON ra tep thay vi in ra man hinh")
     ap.add_argument("--khong-bat-buoc", action="store_true",
                     help="Van GIEO muc bat buoc, chi khong IN lai o cuoi bao cao. "
@@ -1147,7 +1003,6 @@ def main():
     # GHEP nhu ban tuan tu cu — _thu tu bat het Exception nen .result() o day
     # khong bao gio nem, chi cho toi khi luong cua no xong.
     with ThreadPoolExecutor(max_workers=env_load.quantity(8)) as ex:
-        f_orouter = ex.submit(_try, "openrouter", fetch_openrouter, [])
         f_catalog = ex.submit(_try, "catalog", fetch_catalog, [])
         f_arena = ex.submit(_try, "arena", fetch_arena, {})
         f_aa = ex.submit(_try, "aa", lambda: filter_aa(fetch_aa(), a.ngay, a.top), {})
@@ -1166,7 +1021,6 @@ def main():
         f_top = {}
         for khoa, ten, fn in (
                 ("livebench", "livebench", fetch_livebench),
-                ("openrouter", "openrouter usage", fetch_openrouter_usage),
                 ("tbench", "tbench", fetch_tbench),
                 ("arcagi", "arcagi", fetch_arcagi),
                 ("hle", "hle", fetch_hle),
@@ -1177,7 +1031,6 @@ def main():
         f_hf = ex.submit(
             _try, "hf-trending", lambda: fetch_hf_trending(a.ngay, a.top), [])
 
-        orouter = f_orouter.result()
         catalog = f_catalog.result()
         arena = f_arena.result()
         aa = f_aa.result()
@@ -1190,7 +1043,7 @@ def main():
         media = f_media.result()
         hf = f_hf.result()
 
-    tat_ca = {m["id"] for m in orouter} | {m["id"] for m in catalog}
+    tat_ca = {m["id"] for m in catalog}
     cu = already_see()
 
     # MOT nguon su that cho moi bang. Truoc 06/09/2026 danh sach bang bi chep
@@ -1217,10 +1070,10 @@ def main():
     # khac han nhau. Ghi ten ra de Nova biet minh dang nhin thieu cai gi.
     hong = sorted(k for k, v in bang_so.items() if not v)
     # Nguon KHONG phai bang xep hang khong nam trong `bang_so`, nen `hong` mu
-    # voi chung: openrouter 5xx mot sang la muc "MODEL MOI" in ra "0 cai" va
-    # Nova tin la hom nay khong hang nao ra model. Danh muc router luon co hang
-    # tram model — rong = hong, khong co cach doc nao khac.
-    for ten, gt in (("openrouter", orouter), ("catalog", catalog),
+    # voi chung: catalog 5xx mot sang la muc "MOI TRONG CATALOG" in ra rong ma
+    # khong ai hay — catalog luon co hang tram model, rong = hong, khong co
+    # cach doc nao khac.
+    for ten, gt in (("catalog", catalog),
                     ("aa", aa), ("aa media", media), ("arena", arena)):
         if not gt and ten not in _HONG_KHAC:
             print(f"[{ten}] tra RONG — coi nhu khong lay duoc", file=sys.stderr)
@@ -1232,27 +1085,10 @@ def main():
         print(f"Da ghi moc {len(tat_ca)} model. Lan sau se chi bao cai moi.")
         return
 
-    nguong = time.time() - a.ngay * 86400
-    moi = [m for m in orouter
-           if m["id"] not in cu and (m["ra_mat_ts"] or 0) >= nguong]
-    moi.sort(key=lambda m: -(m["ra_mat_ts"] or 0))
     moi_catalog = [m for m in catalog if m["id"] not in cu]
 
     for mod in list(arena):
         arena[mod] = arena[mod][:a.top]
-
-    # Model trong top N thi da co hang de noi. Model LA — ngoai top, hang khong
-    # ten — chi dang nhac neu benchmark that su noi troi. Lay san doan benchmark
-    # de Nova phan dinh, thay vi de Nova tu di mo tung trang.
-    ten_top = {r["ten"].lower() for rows in arena.values() for r in rows}
-    if not a.khong_benchmark:
-        for m in moi:
-            goc = (m["id"].split("/")[-1] or "").lower()
-            if any(goc in t or t in goc for t in ten_top):
-                continue                       # da nam trong top, khoi tra them
-            # Giu MOT doan trich la du de Nova phan dinh "co an tuong khong";
-            # muon xem het thi mo model card — nhieu doan chi phinh prompt.
-            m["benchmark_trich"] = excerpt_benchmark(m.get("hf_id") or "")[:1]
 
     # Moc trong state giu hang DAY DU (mot model tut xuong #40 roi leo lai #8
     # phai doc ra "leo 32 bac"), nhung chi BAO cai dang o top N.
@@ -1267,12 +1103,11 @@ def main():
     ket = {
         "quet_luc": datetime.now(timezone.utc).isoformat(),
         "top_moi_bang": a.top,
-        "model_moi": moi,
         "leo_hang": leo_hang,
         "cham_diem": aa,
         "ra_mat_aa_chua_bao": ra_mat_aa,
         # Moi bang kieu (rows, ngay) mot muc, khoa theo ban dang ky (`ket_khoa`
-        # neu khac khoa trong bang_so — openrouter -> openrouter_usage).
+        # neu khac khoa trong bang_so).
         **{(b.ket_khoa or b.khoa): {"ngay": top[b.khoa][1], "rows": top[b.khoa][0]}
            for b in model_boards.BOARD if b.nguon == "top"},
         "media": media,
@@ -1291,11 +1126,11 @@ def main():
                                encoding="utf-8")
         print(a.out)
     else:
-        _in_report(ket, a.ngay)
+        _in_report(ket)
 
     da_bao.update({r["ten_goc"]: r["ra_mat"] for r in ra_mat_aa})
     write_timestamp(tat_ca | cu, hang_moi, da_bao)
-    write_required(ra_mat_aa, leo_hang, moi, hf)
+    write_required(ra_mat_aa, leo_hang, hf)
     if not a.khong_bat_buoc:
         # In ra STDERR, khong phai stdout: `scan_prepare` chep nguyen stdout vao
         # brief roi TU in danh sach bat buoc mot lan nua — Nova doc hai ban cua
@@ -1318,8 +1153,6 @@ LABEL_BOARD = model_boards.LABEL_BOARD
 # 12.000 — tuc LIVEBENCH va OPENROUTER USAGE bi nuot mat truoc khi Nova nhin
 # thay, va khong co dau hieu nao bao la da cut. Ba muc duoi day truoc do KHONG
 # CO CAN TREN, mot ngay xau la nuot sach phan duoi bao cao.
-CEILING_NEW = 25          # MODEL MOI — truoc: vo han (40 model = 5.612 ky tu)
-CEILING_BM = 5            # trich benchmark — truoc: vo han x 2 doan x 200 ky tu
 CEILING_GH = 10           # ban phat hanh engine — truoc: vo han
 CEILING_HF = 10
 CEILING_BOARD = 5          # moi bang xep hang — truoc: 8
@@ -1348,33 +1181,7 @@ def _in_board(nhan: str, rows, n: int = CEILING_BOARD, ngay=None, diem_hau: str 
               f"{str(r.get('diem')):>6s}{diem_hau} {org:<14s}{phu}")
 
 
-def _in_report(k: dict, ngay: int):
-    moi = k.get("model_moi") or []
-    print(f"=== MODEL MOI ({ngay} ngay qua) — {len(moi)} cai ===")
-    for m in moi[:CEILING_NEW]:
-        vung = REGION_LABEL[m["vung"]]
-        gia = (f"${m['gia_vao']}/{m['gia_ra']} mot trieu"
-               if m["gia_vao"] is not None else "chua co gia")
-        print(f"  {m['ra_mat']}  [{vung}] {m['id'][:44]:<45s} {gia}")
-    if len(moi) > CEILING_NEW:
-        print(f"  ... con {len(moi) - CEILING_NEW} model nua, xem muc BAT BUOC o cuoi")
-    co_bm = [m for m in moi if m.get("benchmark_trich")]
-    if co_bm:
-        print(f"\n=== MODEL LA CO CONG BO BENCHMARK ({len(co_bm)}) "
-              "— Nova doc va phan dinh co an tuong khong ===")
-        for m in co_bm[:CEILING_BM]:
-            print(f"  --- {m['id']}  ({m['ra_mat']})")
-            for d in m["benchmark_trich"][:1]:
-                print(f"      {d[:200].replace(chr(10), ' ')}")
-    la_khong_bm = [m for m in moi
-                   if not m.get("benchmark_trich") and m.get("mo_ta")
-                   and "benchmark_trich" in m]
-    if la_khong_bm:
-        print(f"\n=== MODEL LA KHONG CO MODEL CARD ({len(la_khong_bm)}) "
-              "— chi con mo ta cua hang ===")
-        for m in la_khong_bm[:8]:
-            print(f"  --- {m['id']}  ({m['ra_mat']})")
-            print(f"      {m['mo_ta'][:180]}")
+def _in_report(k: dict):
     if k.get("moi_tren_router_cua_ta"):
         print(f"\n=== MOI TRONG CATALOG CUA HERMES ({len(k['moi_tren_router_cua_ta'])}) "
               "— danh muc model cua hermes-agent, CHUA chac 9router goi duoc ===")
@@ -1460,15 +1267,6 @@ def _in_report(k: dict, ngay: int):
             continue
         rows, ngay_b = model_boards.rank_and_date(k, b)
         _in_board(b.tieu_de, rows, ngay=ngay_b, diem_hau=b.diem_hau, them=b.them)
-
-    orr = k.get("openrouter_usage") or {}
-    if orr.get("rows"):
-        print(f"\n=== OPENROUTER USAGE (token/ngay, {orr.get('ngay')}) — thi "
-              "truong bo phieu bang tien ===")
-        for r in orr["rows"][:CEILING_BOARD]:
-            doi = (f"  {'+' if r['doi_pct'] > 0 else ''}{r['doi_pct']}% so hom truoc"
-                   if r.get("doi_pct") is not None else "")
-            print(f"  #{str(r['hang']):<3s} {r['ty_token']:>7}B  {r['ten'][:38]:<39s}{doi}")
 
 
 if __name__ == "__main__":

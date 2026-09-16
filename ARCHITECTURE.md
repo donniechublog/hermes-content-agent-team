@@ -57,7 +57,7 @@ flowchart TB
     sys["content-team<br/>Dây chuyền nội dung tự động<br/>12 vai AI · Python"]:::container
     hermes["Hermes Agent Platform<br/>gateway · kanban · cron ·<br/>dashboard · chat routing"]:::external
     router9["9router<br/>127.0.0.1:20128<br/>→ DeepSeek v4-Flash"]:::external
-    news["Nguồn tin, dữ liệu ngoài<br/>HN/Reddit/arXiv, Google/Bing News,<br/>Wikimedia Commons, 23 bảng model,<br/>tin kinh doanh/đầu tư"]:::external
+    news["Nguồn tin, dữ liệu ngoài<br/>HN/Reddit/arXiv, Google/Bing News,<br/>Wikimedia Commons, 22 bảng model,<br/>tin kinh doanh/đầu tư"]:::external
     moat["Moat<br/>org dcgr.tech — hàng đợi đăng bài"]:::external
     social["Facebook / Instagram<br/>hệ thống ngoài — ngoài phạm vi tài liệu này"]:::external
 
@@ -87,7 +87,7 @@ flowchart TB
   (extension trình duyệt claim/đăng thế nào) là hệ thống của người khác, không
   thuộc phạm vi mã nguồn hay tài liệu này.
 - **Nguồn tin & dữ liệu ngoài** — HN, Reddit, arXiv, Google News/Bing News
-  RSS, Wikimedia Commons, 23 bảng xếp hạng model, feed tin kinh doanh/đầu tư.
+  RSS, Wikimedia Commons, 22 bảng xếp hạng model, feed tin kinh doanh/đầu tư.
 
 ## Cấp 2 — Sơ đồ container (theo brand)
 
