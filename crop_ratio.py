@@ -17,16 +17,9 @@ from pathlib import Path
 
 from PIL import Image
 
-RATIO = {"1:1": 1.0, "4:5": 0.8}          # rong/cao
+import role
 
-# Duoi ti le nay thi anh goc con coi la "gan vuong": cat bot mot chut be ngang
-# de ve 1:1 khong lam mat noi dung. Tu 1.4 tro len (16:9, 3:2, anh chup slide/
-# chart) thi cat be ngang la cat mat truc, mat nhan, mat cot cuoi cua bang.
-#
-# Lay tu image_rules.py — MOT nguon su that. Truoc day so 1.4 nam ca o day lan
-# trong cong chan, hai ban co the troi khac nhau ma khong ai biet (dung cai
-# benh ma IMAGE_RULES.md sinh ra de chan).
-from image_rules import LANDSCAPE_CLEAR as NGANG
+RATIO = {"1:1": 1.0, "4:5": 0.8}          # rong/cao
 
 
 def crop(img, ratio, cx=0.5, cy=0.5, cat_ngang=False):
@@ -39,11 +32,13 @@ def crop(img, ratio, cx=0.5, cy=0.5, cat_ngang=False):
     nghia — thay vi thieu mot ti thi no NOI SAI. Chieu cao thi khac: cat bot mep
     tren/duoi cua mot chart thuong chi mat khoang tho.
 
-    Nen anh goc NGANG (>= `NGANG`) mac dinh KHONG duoc cat be ngang. Muon cat
-    that thi truyen `cat_ngang=True` (CLI: --cat-ngang) va phai co ly do: anh
-    chup nguoi/san pham khong co chu, crop la chon khung chu the."""
+    Nen anh goc NGANG (>= nguong `LANDSCAPE_CLEAR` cua module luat vai dang
+    chay, `role.active_rules()` — LOW-182, 16/09/2026) mac dinh KHONG duoc cat
+    be ngang. Muon cat that thi truyen `cat_ngang=True` (CLI: --cat-ngang) va
+    phai co ly do: anh chup nguoi/san pham khong co chu, crop la chon khung
+    chu the."""
     w, h = img.size
-    if w / h > ratio and not cat_ngang and w / h >= NGANG:
+    if w / h > ratio and not cat_ngang and w / h >= role.active_rules().LANDSCAPE_CLEAR:
         raise ValueError(
             f"KHONG CAT BE NGANG anh NGANG {w}x{h} ({w/h:.2f}) ve {ratio:.2f}.\n"
             "  Chart / bang benchmark / slide co tieu de: be ngang la NOI DUNG\n"
@@ -79,7 +74,12 @@ def main():
     ap.add_argument("--cat-ngang", action="store_true",
                     help="Cho phep cat BE NGANG anh ngang (>=1.4). Chi dung voi anh "
                          "chup nguoi/san pham KHONG co chu — chart/bang thi khong.")
+    # BAT BUOC (LOW-182, 16/09/2026): script chi chay tay, khong biet dang cat
+    # cho vai nao de chon dung nguong NGANG cua module luat.
+    ap.add_argument("--vai", required=True, choices=["ethan", "dre", "kite"],
+                    help="Vai dang cat anh cho ai — chon dung module tieu chi anh")
     a = ap.parse_args()
+    role.set_active_role(a.vai)
 
     img = Image.open(a.anh).convert("RGB")
     try:

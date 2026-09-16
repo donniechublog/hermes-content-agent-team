@@ -45,7 +45,7 @@ def _ve(w, h, tone=(60, 70, 90)):
 
 def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
     """Mot dong manifest anh, dung cac khoa ma `image_prepare` that su ghi ra."""
-    import image_rules
+    import image_rules_dre as image_rules
     goc = wd / "goc" / f"{ma}.png"
     goc.parent.mkdir(parents=True, exist_ok=True)
     _ve(w, h, tone).save(goc)
@@ -62,7 +62,8 @@ def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
 def _m(wd, anh, **k):
     m = {"anh": anh, "draft_id": "tin-thu", "link": "https://vi.du/bai",
          "chu_bai": "Nvidia mở kho mô hình Nemotron cho mọi nhà phát triển",
-         "tu_lieu": {}, "toi_thieu": 5, "cap_ghep": None, "goi_y_bia": []}
+         "tu_lieu": {}, "toi_thieu": 5, "cap_ghep": None, "goi_y_bia": [],
+         "vai_anh": "dre"}
     m.update(k)
     return m
 
@@ -404,7 +405,7 @@ def test_flagship_cua_manifest_thanh_tam_co():
 def test_anh_da_gui_o_bai_khac_thi_chan():
     """Ong Chu chot 06/09: bang tỉ số giải golf lên hai thẻ của hai tin khác
     nhau trong cùng một ngày."""
-    import image_rules
+    import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         image_rules.record_used(m["anh"][1]["goc"], "tin-khac", "dre",
@@ -415,7 +416,7 @@ def test_anh_da_gui_o_bai_khac_thi_chan():
 
 def test_lam_lai_chinh_bai_nay_thi_khong_bi_coi_la_dung_lai():
     """Lam lai mot bai thi duoc giu anh — chan la vai khong bao gio lam lai duoc."""
-    import image_rules
+    import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         image_rules.record_used(m["anh"][1]["goc"], m["draft_id"], "dre", m["link"])
@@ -426,7 +427,7 @@ def test_lam_lai_chinh_bai_nay_thi_khong_bi_coi_la_dung_lai():
 def test_cung_tin_nhung_vai_khac_thi_khong_chan():
     """Mot tin giao ca Dre lan Ethan ra hai draft_id nhung dung CHUNG bo anh
     engine tai ve; chan la vai nop sau khong con anh nao (do 06/09/2026)."""
-    import image_rules
+    import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         image_rules.record_used(m["anh"][1]["goc"], "tin-thu-ethan", "ethan", m["link"])
@@ -441,7 +442,7 @@ def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
     o day phai chan slide 3 du ma anh doi ten."""
     import shutil
     import dre_submit
-    import image_rules
+    import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         with tempfile.TemporaryDirectory() as dr:
@@ -466,7 +467,7 @@ def test_lam_lai_slide_khac_khong_bi_anh_huong():
     """Cam chi ap cho DUNG slide bi neu — cac slide khac trong ban lam lai van
     duoc giu anh cu binh thuong, khong bi chan oan."""
     import dre_submit
-    import image_rules
+    import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
         with tempfile.TemporaryDirectory() as dr:

@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import image_rules                                               # noqa: E402
+import image_rules_ethan as image_rules                       # noqa: E402
 import schema                                                 # noqa: E402
 import role                                                    # noqa: E402
 
@@ -47,12 +47,18 @@ def test_ghep_vua_khung_dung_dai_4_5_toi_1_1():
 
 
 def test_mot_luat_ghep_cho_ca_ba_noi():
-    """Gộp, không chép: ba nơi trước đây mỗi nơi tự tính công thức tỉ lệ."""
+    """Gộp, không chép: ba nơi trước đây mỗi nơi tự tính công thức tỉ lệ.
+
+    LOW-182 (16/09/2026): không còn một `image_rules.stack_fit_frame` dùng
+    chung — mỗi nơi gọi ĐÚNG module luật của vai đang chạy (`manifest`/`schema`
+    qua `role.active_rules()`/`role.rules_module()`, `dre_submit` tĩnh qua
+    `image_rules_dre` vì nó luôn là Dre) — nhưng cả ba vẫn CÙNG GỌI
+    `stack_fit_frame(`, không tự tính lại công thức tỉ lệ."""
     from prepare import manifest
     import dre_submit
-    assert "image_rules.stack_fit_frame(" in inspect.getsource(manifest.stackable_pairs)
-    assert "image_rules.stack_fit_frame(" in inspect.getsource(dre_submit._resolve_stack)
-    assert "image_rules.stack_fit_frame(" in inspect.getsource(schema._count_stackable_pairs_real)
+    assert "stack_fit_frame(" in inspect.getsource(manifest.stackable_pairs)
+    assert "image_rules_dre.stack_fit_frame(" in inspect.getsource(dre_submit._resolve_stack)
+    assert "stack_fit_frame(" in inspect.getsource(schema._count_stackable_pairs_real)
     for ham in (manifest.stackable_pairs, dre_submit._resolve_stack):
         assert "1 / (1 /" not in inspect.getsource(ham) and "1 / sum(" not in inspect.getsource(ham)
 
@@ -65,11 +71,11 @@ def test_mot_luat_mat_nguoi_cho_nguoi_dem_va_anh_chinh():
 # ---------------------------------------------------------------- dem cap that
 def test_cap_ghep_lech_khung_khong_duoc_dem():
     bo = [_doc("A6"), _doc("A7"), _doc("A8"), _doc("A9"), _thap("A5", 1.5), _thap("A10", 1.5)]
-    assert schema.count_image_use_ok(bo) == 4, "A5+A10 ra 0.75 — cong ghep chan, khong phai mot slide"
+    assert schema.count_image_use_ok(bo, "dre") == 4, "A5+A10 ra 0.75 — cong ghep chan, khong phai mot slide"
 
 
 def test_hai_banner_16_9_ghep_duoc_dem_mot_slide():
-    assert schema.count_image_use_ok([_thap("A1", 1.78), _thap("A2", 1.78)]) == 1
+    assert schema.count_image_use_ok([_thap("A1", 1.78), _thap("A2", 1.78)], "dre") == 1
 
 
 def test_dem_cap_toi_uu_khong_tham_lam():
@@ -80,26 +86,26 @@ def test_dem_cap_toi_uu_khong_tham_lam():
     assert not (image_rules.stack_fit_frame(C, B) or image_rules.stack_fit_frame(A, D)
                 or image_rules.stack_fit_frame(C, D))
     bo = [_thap("A", A), _thap("B", B), _thap("C", C), _thap("D", D)]
-    assert schema.count_image_use_ok(bo) == 2
+    assert schema.count_image_use_ok(bo, "dre") == 2
 
 
 # ---------------------------------------------------------------- mat nguoi
 def test_mat_nguoi_khong_ro_ai_khong_duoc_dem():
-    assert schema.count_image_use_ok([_doc("A3", mat=1)]) == 0
-    assert schema.count_image_use_ok([_doc("A3", mat=1, alt="Jensen Huang on stage")]) == 1
-    assert schema.count_image_use_ok([_doc("A3", mat=2, thuong_hieu={"nguoi": "C.C. Wei"})]) == 1
+    assert schema.count_image_use_ok([_doc("A3", mat=1)], "dre") == 0
+    assert schema.count_image_use_ok([_doc("A3", mat=1, alt="Jensen Huang on stage")], "dre") == 1
+    assert schema.count_image_use_ok([_doc("A3", mat=2, thuong_hieu={"nguoi": "C.C. Wei"})], "dre") == 1
 
 
 def test_mat_nguoi_trong_cap_ghep_cung_khong_dem():
     bo = [_thap("A1", 1.78, mat=1), _thap("A2", 1.78)]
-    assert schema.count_image_use_ok(bo) == 0, "cong ghep cung kiem mat (bo.kiem_mat)"
+    assert schema.count_image_use_ok(bo, "dre") == 0, "cong ghep cung kiem mat (bo.kiem_mat)"
 
 
 def test_tai_hien_t_2d546375():
     """Đúng bộ Dre thấy khi block: 4 ảnh dùng được A6..A9, A5+A10 lệch khung, A3 mặt lạ."""
     bo = [_doc("A3", mat=1), _thap("A5", 1.5), _doc("A6"), _doc("A7"), _doc("A8"), _doc("A9"),
           _thap("A10", 1.5)]
-    assert schema.count_image_use_ok(bo) == 4
+    assert schema.count_image_use_ok(bo, "dre") == 4
     assert not role.has_enough_material("dre", bo), "4 slide < 6: engine phai tim tiep, khong ngung"
 
 

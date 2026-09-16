@@ -21,7 +21,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import image_rules                                              # noqa: E402
+import image_rules_ethan as image_rules                       # noqa: E402
 
 
 class _DetGia:

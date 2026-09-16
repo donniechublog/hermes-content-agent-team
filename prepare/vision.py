@@ -11,7 +11,6 @@ from pathlib import Path
 
 from PIL import Image, ImageStat
 
-import image_rules
 import env_load
 import role
 
@@ -134,7 +133,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                "LIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/"
                "san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; "
                "khong = quang cao, widget, logo bao, placeholder, anh minh hoa chung chung, cong ty/"
-               f"chu de khac, {image_rules.IMAGE_PHRASES_SCREENSHOT})")
+               f"chu de khac, {role.active_rules().IMAGE_PHRASES_SCREENSHOT})")
         if chup_nguon:
             # LA anh cua tin (tu chinh DOM cua bai) — khong hoi lai "co lien
             # quan khong", CHI hoi CHAT LUONG. Tach khoi nhanh mac dinh o tren
@@ -145,7 +144,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                    "khong hoi 'co lien quan khong'.\nTra loi DUNG 2 dong:\n"
                    "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                    "LIEN_QUAN: co | khong  (co = anh RO NET, xuat truc tiep tu web/thiet ke; "
-                   f"khong = mo/nhoe, {image_rules.IMAGE_PHRASES_SCREENSHOT})")
+                   f"khong = mo/nhoe, {role.active_rules().IMAGE_PHRASES_SCREENSHOT})")
         elif khai_niem:
             import image_concept
             hoi = image_concept.sentence_ask_vision(tieu_de, khai_niem, theo_loai=khai_niem_theo_loai)
@@ -302,15 +301,16 @@ def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
 
 
 def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> dict:
-    """Do mot anh bang image_rules, quyet dinh no DUNG DUOC O DAU, cat san neu can.
+    """Do mot anh bang module luat cua vai dang chay (`role.active_rules()`),
+    quyet dinh no DUNG DUOC O DAU, cat san neu can.
 
     `chup_nguon` (LOW-45): anh hero chup tu chinh trang nguon — xem
     `description_image(..., chup_nguon=True)`."""
     img = Image.open(a["goc"]).convert("RGB")
     w, h = img.size
     r = w / h
-    la_ct, mo_ta = image_rules.is_chart(img)
-    phang, _ = image_rules.measure_chart_signal(img)
+    la_ct, mo_ta = role.active_rules().is_chart(img)
+    phang, _ = role.active_rules().measure_chart_signal(img)
     # Override chi khi phep do KHONG noi nguoc: chart that phang >= 82%, anh chup
     # 52-77% (do 05/09). Truoc day hint tu alt tu gan de len ca phang 52% -> hinh
     # minh hoa AI thanh "CHART", dan full be ngang, ra hai vung.
@@ -335,7 +335,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # "NEU") lan o dem slide (schema._only_stack_ok). Ket hop voi `chup_nguon`
     # (LOW-45) — hai co so doc lap, mot anh hero chup tu nguon van co the ngang
     # cao va can hoi cat_ngang binh thuong.
-    hoi_cat_ngang = (r >= image_rules.LANDSCAPE_CLEAR and h >= 700 and not la_ct)
+    hoi_cat_ngang = (r >= role.active_rules().LANDSCAPE_CLEAR and h >= 700 and not la_ct)
     kq = {}
     ket_qua = (description_image(a["goc"], tieu_de, hang, khai_niem=kn,
                          khai_niem_theo_loai=kn_theo_loai,
@@ -366,14 +366,14 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
     # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua
     # nhau tren mot detector lam 80-95% anh tra None, tat ca thanh "khong mat".
-    mat_tho = image_rules.count_faces(a["goc"])
+    mat_tho = role.active_rules().count_faces(a["goc"])
     mat = mat_tho or 0
     day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
     goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
     a.update({"w": w, "h": h, "ti_le": round(r, 2), "loai": "chart" if la_ct else "anh",
               "do_chart": mo_ta, "mat": mat, "day_sang": round(day),
               "goc_trai_sang": round(goc_trai), "canh_ngan": min(w, h),
-              "ngang": r >= image_rules.LANDSCAPE_CLEAR, "san": None, "dung": [], "ghi_chu": []})
+              "ngang": r >= role.active_rules().LANDSCAPE_CLEAR, "san": None, "dung": [], "ghi_chu": []})
     if mat_tho is None:
         a["ghi_chu"].append("⚠️ cổng mặt người KHÔNG chạy (thiếu cv2/model hoặc lỗi) — chưa kiểm mặt")
     san = wd / "san" / f"{a['ma']}.png"
@@ -384,7 +384,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
             # mat), va no la CHU THE cua tin chu khong phai anh minh hoa.
             a["san"] = a["goc"]
             a["ghi_chu"].append("bảng xếp hạng: giữ nguyên vẹn, dán full bề ngang")
-        elif r < image_rules.TI_LE_45 - image_rules.TOLERANCE_RATIO:
+        elif r < role.active_rules().TI_LE_45 - role.active_rules().TOLERANCE_RATIO:
             _save_crop(img, san, "4:5", cy=0.35)           # chart cao: cat bot day
             a["san"] = str(san)
             a["ghi_chu"].append("chart cao, đã cắt bớt phần dưới về 4:5")
@@ -442,9 +442,9 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     if a.get("lien_quan") is False:
         a["dung"] = []
         a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
-    if a["canh_ngan"] < image_rules.SHORT_SIDE_MIN:
+    if a["canh_ngan"] < role.active_rules().SHORT_SIDE_MIN:
         a["ghi_chu"].append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
-    if day > image_rules.BRIGHT_BOTTOM_MAX and not la_ct:
+    if day > role.active_rules().BRIGHT_BOTTOM_MAX and not la_ct:
         a["ghi_chu"].append("đáy sáng, chữ trắng hơi nhạt")
     if a.get("khai_niem"):
         import image_concept

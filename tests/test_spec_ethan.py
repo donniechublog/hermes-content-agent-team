@@ -28,6 +28,7 @@ def _m(wd, anh, **k):
     """Manifest cua Ethan: `cap_ghep` la LIST (engine ghi list rong khi khong
     co cap) — `eb.stackable_pairs_hero` lap thang qua no, None la TypeError."""
     k.setdefault("cap_ghep", [])
+    k.setdefault("vai_anh", "ethan")
     return _m_dre(wd, anh, **k)
 
 
@@ -216,7 +217,7 @@ def test_hook_con_nguyen_tieng_anh_thi_chan():
 
 
 def test_anh_da_dung_o_tin_khac_thi_chan():
-    import image_rules
+    import image_rules_ethan as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
         image_rules.record_used(anh[0]["goc"], "tin-khac", "ethan", "https://vi.du/khac")

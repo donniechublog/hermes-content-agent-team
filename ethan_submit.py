@@ -130,6 +130,8 @@ def main() -> int:
     ap.add_argument("--bo-qua-dau", action="store_true")
     ap.add_argument("--out")
     a = ap.parse_args()
+    import role
+    role.set_active_role("ethan")
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "ethan_prepare.py", "ethan_submit.py")
     kq, loi, canh = resolve_spec(spec, m, wd)

@@ -53,7 +53,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     # Mac dinh bang CUNG cong thuc voi nguoi ghi (schema.count_image_use_ok): ban
     # cu dem `len([a for a in m["anh"] if a["dung"]])` — mot so KHAC, vi chum anh
     # khai niem phai dem la MOT (F2).
-    so_dd = m.get("so_dung_duoc", schema.count_image_use_ok(m.get("anh")))
+    so_dd = m.get("so_dung_duoc", schema.count_image_use_ok(m.get("anh"), "dre"))
     if m["anh"] and so_dd < m.get("toi_thieu", 5):
         L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} slide dựng được, cần ≥ {m.get('toi_thieu', 5)}. "
                  "KHÔNG nhồi ảnh không liên quan cho đủ. Việc của bạn: TỰ ĐI TÌM — "

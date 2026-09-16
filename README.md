@@ -3,8 +3,10 @@
 Dây chuyền nội dung tự động cho kênh Telegram AI, chạy trên hermes-agent.
 
 Tệp này chỉ mô tả **hiện trạng**. Chẩn đoán, số đo một lần và bài học rút ra
-nằm ở [INCIDENT_LOG.md](INCIDENT_LOG.md). Luật ảnh dùng chung ở
-[IMAGE_RULES.md](IMAGE_RULES.md); khuôn ticket Linear 7 bước ở
+nằm ở [INCIDENT_LOG.md](INCIDENT_LOG.md). Luật ảnh — riêng từng vai từ LOW-182
+(16/09/2026) — ở [IMAGE_RULES_ETHAN.md](IMAGE_RULES_ETHAN.md) /
+[IMAGE_RULES_DRE.md](IMAGE_RULES_DRE.md) / [IMAGE_RULES_KITE.md](IMAGE_RULES_KITE.md);
+khuôn ticket Linear 7 bước ở
 [TICKET_TEMPLATE.md](TICKET_TEMPLATE.md); spec chữ trên thẻ ở
 [STYLE_TEXT_SPEC.md](STYLE_TEXT_SPEC.md). Sơ đồ kiến trúc (Mermaid, theo mô
 hình C4) ở [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -220,9 +222,13 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `capture_chart.py` — chụp chart/bảng benchmark theo luật *full chiều rộng trước,
   chiều cao xét sau*: đo `scrollWidth` thật, nới khung cho vừa rồi mới chụp ở
   DPR 2; thiếu bề ngang thì dừng. Cần `playwright` + chromium.
-- `image_rules.py` + `IMAGE_RULES.md` — **một nguồn sự thật** của luật ảnh, dùng chung
-  cho mọi vai TẠO ra ảnh (Ethan, Dre, Kite). Đừng chép luật vào SKILL của vai.
-  Gin/Itachi chỉ sửa trên ảnh gốc nên không áp bộ này.
+- `image_rules_ethan.py` / `image_rules_dre.py` / `image_rules_kite.py` (+ `IMAGE_RULES_ETHAN.md` /
+  `IMAGE_RULES_DRE.md` / `IMAGE_RULES_KITE.md`) — **luật ảnh riêng từng vai** TẠO ra ảnh
+  (Ethan, Dre, Kite) từ LOW-182 (16/09/2026, đảo ngược quyết định "một bộ chung"
+  04/09/2026) — mỗi vai một bản độc lập, sửa một bản không tự áp sang hai bản kia.
+  `image_provenance.py` giữ phần THUẦN CƠ CHẾ dùng chung (đóng dấu xuất xứ PNG,
+  sổ ảnh đã dùng) — không có tiêu chí/ngưỡng nào ở đó. Đừng chép luật vào SKILL
+  của vai. Gin/Itachi chỉ sửa trên ảnh gốc nên không áp các bộ này.
 
 **Đi tìm tin**
 

@@ -12,18 +12,17 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-import image_rules
+import role
 import scan_common
 import env_load                                              # noqa: E402
 
 from prepare.common import MAX_IMAGE, _original_domain, _hdr, _domain
 
-
-# Nguong (cung goc voi image_rules; o day chi la phan CHON anh de tai)
-URL_JUNK = image_rules.JUNK                 # mot bo tu vung, xem image_rules
-
-
-SHORT_SIDE_DROP = image_rules.SHORT_SIDE_DOWNLOAD   # xem image_rules (ba nguong dat canh nhau)
+# `url_junk`/`short_side_drop` KHONG con la hang so module-level (LOW-182,
+# 16/09/2026): tieu chi gio di theo vai (`role.active_rules()`), ma vai chi
+# biet duoc SAU khi `image_prepare.prepare_article` doc xong sidecar — truoc
+# do o day chi la hang so import-time nen luon la ban cua vai dau tien chay
+# trong tien trinh. Doc truc tiep trong `download_and_filter` moi lan can.
 
 
 MAX_DOWNLOAD = 14             # ung vien thu tai (co cai hong/trung)
@@ -113,6 +112,9 @@ def download_and_filter(cands: list, wd: Path) -> list:
     Chap nhan over-fetch (tai het cands[:MAX_DOWNLOAD+6], early-break Pha 2 co
     the bo khong dung toi vai ban) — danh doi lay toc do, audit_content_team B3."""
     import article_images
+    import image_provenance
+    rules = role.active_rules()
+    url_junk, short_side_drop = rules.JUNK, rules.SHORT_SIDE_DOWNLOAD
     goc_dir = wd / "goc"
     goc_dir.mkdir(parents=True, exist_ok=True)
     ung_vien = cands[:MAX_DOWNLOAD + 6]
@@ -131,41 +133,41 @@ def download_and_filter(cands: list, wd: Path) -> list:
             im.load()
             im = im.convert("RGB")
             w, hh = im.size
-            if min(w, hh) < SHORT_SIDE_DROP:
+            if min(w, hh) < short_side_drop:
                 continue
             if _host_is_side_try_three(c):
                 print(f"[tai] bo anh host ben thu ba (quang cao?): {_domain(c.get('anh',''))} tren {_domain(c.get('trang',''))}", file=sys.stderr)
                 continue
-            if not c.get("cho_do_hoa") and (URL_JUNK.search(c.get("anh", "") or "")
-                                            or URL_JUNK.search(c.get("alt", "") or "")):
+            if not c.get("cho_do_hoa") and (url_junk.search(c.get("anh", "") or "")
+                                            or url_junk.search(c.get("alt", "") or "")):
                 # `cho_do_hoa` mien cong nay: bo tu vung RAC co chu "logo", ma
                 # THE LOGO thi duong dan lan ten tep Commons deu co chu do — no
                 # tu chan chinh no (09/09/2026). Cong nay de chan logo bao/quang
                 # cao lot vao tu <img> cua trang, khong phai logo ta co tinh lay.
                 print(f"[tai] bo url/alt rac: {str(c.get('anh'))[-60:]}", file=sys.stderr)
                 continue                                  # placeholder/onboarding/logo/ad
-            if image_rules.is_blank_image(im)[0]:
+            if rules.is_blank_image(im)[0]:
                 print(f"[tai] bo anh RONG: {str(c.get('anh'))[-60:]}", file=sys.stderr)
                 continue
             if (w, hh) in article_images.HAS_AI_GENERATE:
                 continue
             ly_do_do_hoa = article_images._graphic(im)
-            la_ct, _ = image_rules.is_chart(im)
+            la_ct, _ = rules.is_chart(im)
             if ly_do_do_hoa and not la_ct and not _chart_by_figure(im) and not c.get("cho_do_hoa"):
                 continue                                  # logo/wordmark
             # `cho_do_hoa`: ung vien CO CHU Y la do hoa — the logo chinh thuc cua
             # hang (image_brand.card_logo). Cong tren sinh ra de chan logo lot
             # vao tu <img> cua bai bao, khong phai de chan thu ta co tinh dung.
-            h = image_rules.dhash(im)
+            h = rules.dhash(im)
             # Trung gan giong (cung anh o co khac, anh <img> vs figure chup): giu ban LON hon.
             # Nguong theo LOAI anh: voi do hoa (chart/bang) dHash 8x8 chi doc bo
             # xuong bo cuc nen HAI bieu do khac han so lieu chi cach nhau 4-5 bit
             # — nguong chung 6 lam mat mot trong hai chart cua CUNG mot bai. Va
             # phai IN RA: cac nhanh loai bo khac quanh day deu co dong stderr,
             # rieng nhanh nay truoc 06/09/2026 bo im lang.
-            ng = image_rules.dhash_threshold_for(im)
+            ng = rules.dhash_threshold_for(im)
             trung = next((k for k, (h2, im2, _, _) in enumerate(da_tai)
-                          if image_rules.is_near_duplicate(h, h2, image_rules.dhash_threshold_for(im2, ng))), None)
+                          if rules.is_near_duplicate(h, h2, rules.dhash_threshold_for(im2, ng))), None)
             if trung is not None:
                 lon_hon = w * hh > da_tai[trung][1].width * da_tai[trung][1].height
                 print(f"[tai] bo ban {'nho' if lon_hon else 'sau'} vi trung gan giong "
@@ -188,7 +190,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
     for n, (h, im, c, _) in enumerate(da_tai[:MAX_IMAGE], start=1):
         ma = f"A{n}"
         out = goc_dir / f"{ma}.png"
-        im.save(out, "PNG", pnginfo=image_rules.stamp_provenance(
+        im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance(
             {"chup": "chup_chart", "arxiv_hinh": "arxiv_hinh"}.get(c.get("tu"), "dre_chuan_bi")))
         # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
         # khong noi len gi (bao boc ca anh minh hoa lan quang cao).
@@ -211,7 +213,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
 
 
 def _chart_by_figure(im: Image.Image) -> bool:
-    """Bo sung cho image_rules.is_chart (bo sot chart co duong mau khu rang cua, xem
+    """Bo sung cho rules.is_chart (bo sot chart co duong mau khu rang cua, xem
     chu thich ben do). Do 04/09/2026 tren 11 anh that: chart/bang/infographic co
     NEN GAN TRANG 0.64-0.82 va MAT DO CANH 0.09-0.14; anh chup 0.00-0.06 /
     0.04-0.05; anh chup co vien trang 0.36 / 0.05. Can CA HAI: nen trang nhieu

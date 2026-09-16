@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import kite_prepare as kb                                   # noqa: E402
-import image_rules                                              # noqa: E402
+import image_rules_kite                                       # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import render_edu                                            # noqa: E402
 
@@ -73,7 +73,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
 
-            l, _ = image_rules.check_not_reused(f"slide {i} ({img})", hinh[img]["goc"],
+            l, _ = image_rules_kite.check_not_reused(f"slide {i} ({img})", hinh[img]["goc"],
 
                                          m.get("draft_id", ""), m.get("link", ""))
 
@@ -91,7 +91,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             nhan = f"slide {i} ({img})"
 
-            l, c = image_rules.check_duplicate(nhan, hinh[img]["goc"], da_thay)
+            l, c = image_rules_kite.check_duplicate(nhan, hinh[img]["goc"], da_thay)
 
             loi += l
 
@@ -103,13 +103,13 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 with _Im.open(hinh[img]["goc"]) as _im:
 
-                    l, c = image_rules.check_blank_image(nhan, _im)
+                    l, c = image_rules_kite.check_blank_image(nhan, _im)
 
                     loi += l
 
                     canh += c
 
-                    l, c = image_rules.check_resolution(nhan, _im.width, _im.height)
+                    l, c = image_rules_kite.check_resolution(nhan, _im.width, _im.height)
 
                     loi += l
 
@@ -125,7 +125,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # khoa het anh su kien ma vai khong co cach nao khai.
 
-            l, c = image_rules.check_unnamed_face(nhan, hinh[img]["goc"])
+            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["goc"])
 
             canh += [d + " — Kite chưa có trường nhan_vat, tự soi xem "
 
@@ -417,6 +417,8 @@ def main() -> int:
     ap.add_argument("--bo-qua-dau", action="store_true")
     ap.add_argument("--out")
     a = ap.parse_args()
+    import role
+    role.set_active_role("kite")
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "kite_prepare.py", "kite_submit.py")
     spec_r, loi, canh = resolve_spec(spec, m, wd)

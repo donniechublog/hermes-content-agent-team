@@ -76,7 +76,7 @@ def test_cum_chup_lai_man_hinh_dung_chung_moi_cau_hoi():
     Commons/Wikidata rỗng, `_report_brand_empty` tìm ảnh qua báo) chưa từng
     có cụm này. Một hằng số dùng chung (`image_rules.IMAGE_PHRASES_SCREENSHOT`),
     mọi câu hỏi con mắt đều chèn — đóng cả lớp thay vì vá từng đường một."""
-    import image_rules
+    import image_rules_ethan as image_rules
     assert hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
     assert "man hinh" in image_rules.IMAGE_PHRASES_SCREENSHOT.lower()
 

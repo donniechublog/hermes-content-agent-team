@@ -56,6 +56,10 @@ class Role:
     renderer: str = ""                         # card | carousel | render_edu
     nhan_anh: bool = False                     # vai DUNG ANH (chon tin giao duoc)
     viet: bool = False                         # vai viet caption
+    # Module tieu chi anh RIENG cua vai nay ("" = vai khong dung anh / khong co
+    # bo luat rieng). LOW-182 (16/09/2026): moi vai lam anh co MOT module rieng
+    # (`image_rules_<vai>.py`) — xem `rules_module()` duoi day.
+    rules: str = ""
     # So ANH THAT toi thieu de vai nay dung duoc mot san pham. Voi vai carousel
     # con la so SLIDE toi thieu (moi slide mot anh rieng) — hai con so do trung
     # nhau nen `toi_thieu` trong manifest lam duoc ca hai viec; voi Ethan thi
@@ -65,9 +69,11 @@ class Role:
     # ---- SO LUONG co phai tieu chi cua vai nay khong (LOW-12, 10/09/2026) ----
     # Ong Chu: *"tieu chi ve anh thi la chung cua moi designer, nhung carousel la
     # nhieu anh con Ethan lam single image, nen 'so luong' ko the la thu ap vao
-    # duoc"*. Tieu chi CHAT LUONG (net, khong rac, lien quan, day toi) van dung
-    # chung o `image_rules` + `prepare.vision.classify` cho ca ba vai. Chi hai thu
-    # duoi day di theo vai, va chung tra loi hai cau khac han nhau:
+    # duoc"*. Tieu chi CHAT LUONG (net, khong rac, lien quan, day toi) TUNG dung
+    # chung o `image_rules` + `prepare.vision.classify` cho ca ba vai — DAO NGUOC
+    # o LOW-182 (16/09/2026, Ong Chu chu dong doi lai): gio ca CHAT LUONG cung di
+    # theo vai (`rules` o tren), khong con phan nao chung nua. Hai thu duoi day
+    # van la rieng cua vai tu truoc LOW-182, khong doi:
     #
     #   anh_muc_tieu_tim  BAO NHIEU tam thi ngung di tim. CHI co nghia voi vai
     #                     xep NHIEU anh (Dre: moi slide mot anh). 0 = vai lam
@@ -95,14 +101,14 @@ ROLE = {v.slug: v for v in [
     # kiem_anh_thap cua card.py o kho 4:5; chart va anh ngang hon the chi con
     # duong ghep doc, khong dung mot minh duoc.
     Role("ethan", "Ethan", go=("img", "anh"), slug_cu=("designer", "chad"),
-        renderer="card", nhan_anh=True, anh_toi_thieu=1,
+        renderer="card", nhan_anh=True, anh_toi_thieu=1, rules="image_rules_ethan",
         ti_le_don_max=1.6, chart_don=False),
     # 6 va 7 la carousel.MIN_SLIDE / carousel.FLAGSHIP_MIN (12/09/2026). Chep so o day chu
     # khong import carousel: tep nay la BAN DANG KY, phai nhe (carousel keo theo
     # card + PIL). test_vai giu hai ban khong troi khoi nhau.
     Role("dre", "Dre", go=("cr",), slug_cu=("carousel", "heller"),
         renderer="carousel", nhan_anh=True, anh_toi_thieu=6, anh_toi_thieu_flagship=7,
-        anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
+        anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7, rules="image_rules_dre"),
     # "kites": so nhieu tieng Anh — Ong Chu hay go the khi giao nhieu tin cung
     # luc ("3, 4 - Kites"). Thieu no la ca lenh chon bi tu choi (su co 06/09/2026).
     # anh_toi_thieu=1: Kite ve ART VECTOR GOC, anh that chi la hinh chen them —
@@ -112,7 +118,7 @@ ROLE = {v.slug: v for v in [
     # mot tieu chi that. Giu dung so engine van di tim tu truoc LOW-12 — vai nay
     # chua duoc ra lai, va ha xuong la Kite it hinh chen hon truoc.
     Role("kite", "Kite", go=("edu", "kites"), slug_cu=("carousel-edu",),
-        renderer="render_edu", nhan_anh=True, anh_toi_thieu=1,
+        renderer="render_edu", nhan_anh=True, anh_toi_thieu=1, rules="image_rules_kite",
         anh_muc_tieu_tim=6, anh_muc_tieu_tim_flagship=7),
     # --- WRITER roles (LOW-13 2026-09-10, LOW-123/LOW-136 2026-09-14) ---
     # BOTH brands have Miles and Jika sharing work by queue (WRITERS_BY_BRAND),
@@ -225,6 +231,61 @@ def display_name(slug: str) -> str:
     role/name ma LOW-14 sinh ra de dep."""
     v = ROLE.get(slug) or ROLE.get(canonical_slug(slug))
     return v.ten if v else slug
+
+
+def rules_module(vai_anh: str):
+    """Module `image_rules_<vai>` cua vai lam anh nay (LOW-182, 16/09/2026).
+
+    Moi vai lam anh (Ethan/Dre/Kite) co MOT module tieu chi rieng, hoan toan
+    doc lap — khong con `image_rules.py` dung chung. `vai_anh` khong khop vai
+    nao co `rules` (rong hoac slug la) thi nem ValueError ngay, khong fail-open
+    ve mot module mac dinh: dung sai module la ap nham tieu chi cua vai khac.
+    """
+    v = ROLE.get(vai_anh) or ROLE.get(canonical_slug(vai_anh))
+    if not v or not v.rules:
+        raise ValueError(f"vai '{vai_anh}' khong co module tieu chi anh rieng (role.rules)")
+    import importlib
+    return importlib.import_module(v.rules)
+
+
+_ACTIVE_VAI = None    # xem set_active_role/active_rules ngay duoi
+
+
+def set_active_role(vai_anh: str) -> None:
+    """Ghi vai lam anh dang chay TRONG TIEN TRINH NAY (LOW-182, 16/09/2026).
+
+    Bien tien trinh (khong phai contextvar/khoa luong), va day la lua chon co
+    y: kien truc hien tai la MOI TIEN TRINH PYTHON XU LY DUNG MOT DRAFT/VAI roi
+    thoat — moi `*_prepare.py`/`*_submit.py` nhan MOT `draft_id` qua CLI
+    (`sys.exit(main())`), khong co duong nao mot tien trinh xu ly hai vai xen
+    ke de doi gia tri nay giua chung. `ThreadPoolExecutor` trong
+    `prepare.vision._seen_image` chi chay song song NHIEU ANH cua CUNG MOT
+    draft — tuc CUNG MOT vai — nen doc tu luong khac trong luc do van an toan:
+    gia tri khong doi trong suot vong doi tien trinh sau lan goi dau.
+
+    Goi cang SOM cang tot trong tien trinh (truoc khi bat cu anh nao duoc tai/
+    nhin): `image_prepare.prepare_article` goi ngay khi doc duoc `vai_anh` tu
+    sidecar, TRUOC ca `load_source`; cac CLI don le khong di qua do
+    (`crop_ratio.py`, `capture_chart.py`, `arxiv_figures.py` khi chay tay) tu
+    goi voi vai duoc truyen qua `--vai`.
+    """
+    global _ACTIVE_VAI
+    rules_module(vai_anh)          # nem som neu vai khong hop le, dung de sai lang le
+    _ACTIVE_VAI = canonical_slug(vai_anh)
+
+
+def active_rules():
+    """Module tieu chi anh cua vai dang chay trong tien trinh nay.
+
+    Nem RuntimeError neu chua goi `set_active_role` — KHONG fail-open ve mot vai
+    mac dinh nao: ap nham tieu chi cua vai khac la dung sai luat ma khong ai
+    biet, dung mot loi ro con hon mot ket qua sai lang le.
+    """
+    if not _ACTIVE_VAI:
+        raise RuntimeError(
+            "role.active_rules(): chua goi set_active_role() trong tien trinh nay — "
+            "khong biet dang chay cho vai nao nen khong the chon module tieu chi anh")
+    return rules_module(_ACTIVE_VAI)
 
 
 def canonical_slug(chu: str) -> str:
@@ -367,7 +428,7 @@ def has_enough_material(slug: str, dung_duoc: list, flagship: bool = False) -> b
     # 12/09/2026 co 5 tam nhung mot tam 900x600 chi ghep duoc ma khong co cap
     # -> 4 slide, engine van bao "du 5" va ngung tim (t_a8ffd2f6).
     import schema
-    return schema.count_image_use_ok(dung_duoc) >= search_target_for(slug, flagship)
+    return schema.count_image_use_ok(dung_duoc, slug) >= search_target_for(slug, flagship)
 
 
 def product_unit_for(slug: str) -> str:

@@ -58,9 +58,16 @@ def check_cv2() -> tuple:
 
 
 def check_yunet() -> tuple:
-    """Model YuNet ma image_rules._load_yunet() dung co nap duoc khong.
+    """Model YuNet ma `_load_yunet()` dung co nap duoc khong.
 
-    Goi THANG image_rules._load_yunet() -- ham co gach duoi nhung Python khong chan
+    LOW-182 (16/09/2026): `_load_yunet()`/`count_faces()` gio nam trong CA BA
+    module luat rieng vai (`image_rules_ethan/dre/kite.py`) — cung mot doan
+    code copy nguyen, khong lech nhau. Muc nay chi kiem MOI TRUONG (cv2 + file
+    .onnx co nap duoc khong tren may nay), khong phai tieu chi cua rieng vai
+    nao, nen chon DAI DIEN mot ban (`image_rules_ethan`) la du; ket qua giong
+    het nhau o ca ba ban.
+
+    Goi THANG `_load_yunet()` -- ham co gach duoi nhung Python khong chan
     goi tu ngoai, va day la duong CHINH XAC ma count_faces()/check_unnamed_face() di
     qua (khong mo phong lai logic, tranh lech nhau ve sau). Kiem file .onnx
     truoc de tach ro ly do: thieu FILE khac voi thieu cv2 (da co muc rieng o
@@ -68,20 +75,20 @@ def check_yunet() -> tuple:
     duoc ly do gi.
     """
     try:
-        import image_rules
+        import image_rules_ethan as rules_dai_dien
     except Exception as e:
-        return False, f"khong import duoc image_rules: {type(e).__name__}: {e}"
+        return False, f"khong import duoc image_rules_ethan: {type(e).__name__}: {e}"
 
-    model = Path(image_rules.__file__).resolve().parent / "assets" / NAME_MODEL_YUNET
+    model = Path(rules_dai_dien.__file__).resolve().parent / "assets" / NAME_MODEL_YUNET
     if not model.exists():
         return False, f"khong thay file model: {model}"
 
     try:
-        det = image_rules._load_yunet()
+        det = rules_dai_dien._load_yunet()
     except Exception as e:
-        return False, f"loi khi goi image_rules._load_yunet(): {type(e).__name__}: {e}"
+        return False, f"loi khi goi _load_yunet(): {type(e).__name__}: {e}"
     if det is None:
-        return False, ("image_rules._load_yunet() tra ve None du file model co ton tai "
+        return False, ("_load_yunet() tra ve None du file model co ton tai "
                         "-- xem muc cv2 o tren")
     return True, ""
 
@@ -146,7 +153,7 @@ def check_telegram_token() -> tuple:
 
 ITEM_CHECK = [
     ("cv2 (opencv)", check_cv2),
-    ("model YuNet (image_rules)", check_yunet),
+    ("model YuNet (image_rules_ethan)", check_yunet),
     ("Playwright + Chromium", check_chromium),
     ("OPENAI_API_KEY", check_openai_key),
     ("TELEGRAM_BOT_TOKEN", check_telegram_token),

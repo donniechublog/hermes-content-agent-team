@@ -25,7 +25,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-import image_rules                                              # noqa: E402
+import image_provenance                                           # noqa: E402
 import env_load                                              # noqa: E402
 
 DPR = 2
@@ -971,7 +971,7 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     d.text((w // 2 - d.textlength(handle, font=f_nho) / 2, h - 110), handle, font=f_nho, fill=card.MUTED)
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, "PNG")
-    image_rules.stamp_file(out, "the_xep_hang", model=model, hang=hang, nguon=site, bang=bang)
+    image_provenance.stamp_file(out, "the_xep_hang", model=model, hang=hang, nguon=site, bang=bang)
     return out
 
 
@@ -1097,7 +1097,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                     logo = capture_logo(pg, out_dir / "xep_hang_logo.png")
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
-            image_rules.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
+            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
                                   site=n["site"], bang=n["bang"], hang=kq.get("hang"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "
@@ -1189,7 +1189,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                     logo = capture_logo(pg, out_dir / "xep_hang_logo.png")
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
-            image_rules.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
+            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
                                   site=n["site"], bang=n["bang"], hang=kq.get("hang"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "

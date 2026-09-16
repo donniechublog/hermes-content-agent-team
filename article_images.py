@@ -38,10 +38,12 @@ import scan_common                                            # noqa: E402
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 
-# Anh khong dai dien noi dung — the thuong hieu, logo, avatar...
-import image_rules                                              # noqa: E402
+import role                                                   # noqa: E402
 import env_load                                              # noqa: E402
-JUNK = image_rules.JUNK                     # mot bo tu vung, xem image_rules
+# `JUNK`/`AREA_MIN` (anh khong dai dien noi dung — the thuong hieu, logo,
+# avatar...) KHONG con la hang so module-level (LOW-182, 16/09/2026): doc qua
+# `role.active_rules()` ngay trong `touch()`, vi vai chi biet duoc sau khi
+# sidecar draft duoc doc (hoac qua `--vai` khi chay CLI tay).
 
 # Ten tep / alt goi y day la bieu do, bang so — thu doc gia muon xem
 RULE = re.compile(
@@ -61,7 +63,6 @@ IS_STORY_MODEL = re.compile(
 
 LONG_MAX = 6          # so bai dua tin lay them
 IMAGE_NEW_PAGE = 6       # so anh lay toi da moi trang
-AREA_MIN = image_rules.AREA_DOWNLOAD   # ~350x350, xem image_rules
 
 # Kich thuoc CHINH XAC ma cac model sinh anh hay xuat ra. Anh chup man hinh hay
 # bang so that gan nhu khong bao gio roi dung vao mot trong nhung con so nay —
@@ -221,13 +222,14 @@ def touch(url: str, alt: str, la_og: bool, rong: int, cao: int,
     """
     if rong == 0 or cao == 0:
         return (-1, "khong doc duoc kich thuoc")
+    rules = role.active_rules()
     dt = rong * cao
-    if dt < AREA_MIN:
+    if dt < rules.AREA_DOWNLOAD:
         return (-1, f"qua nho {rong}x{cao}")
     ti = max(rong, cao) / min(rong, cao)
     if ti > 4:
         return (-1, f"ti le qua lech {rong}x{cao}")
-    if JUNK.search(url) or JUNK.search(alt):
+    if rules.JUNK.search(url) or rules.JUNK.search(alt):
         return (-1, "the thuong hieu / logo")
     # Loai logo/wordmark phat hien qua NOI DUNG anh — TRU khi anh co dau hieu la
     # bang so / bieu do (thu pipeline MUON): bang benchmark cung it mau, nen
@@ -332,7 +334,11 @@ def main():
     ap.add_argument("--tin-model", action="store_true",
                     help="Ep coi day la tin ve model (uu tien manh bang so/SWE-bench)")
     ap.add_argument("--json", action="store_true")
+    # BAT BUOC khi chay tay (LOW-182, 16/09/2026): xem crop_ratio.py/capture_chart.py.
+    ap.add_argument("--vai", required=True, choices=["ethan", "dre", "kite"],
+                    help="Vai dang tim anh cho ai — chon dung module tieu chi anh")
     a = ap.parse_args()
+    role.set_active_role(a.vai)
 
     kq = find(a.tieu_de, a.link, sau_rong=not a.chi_link_goc,
              tin_model=True if a.tin_model else None, tu_nguon=a.tu_nguon)

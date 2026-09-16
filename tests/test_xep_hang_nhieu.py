@@ -78,7 +78,7 @@ def test_dung_manifest_hai_bang_len_ca_hai_ma_goi_y_bia():
            _a("A1")]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), anh, [anh[0]["xep_hang"], anh[1]["xep_hang"]],
-                         True, {}, {}, False, 5)
+                         True, {}, {}, False, 5, vai_anh="ethan")
     assert m["goi_y_bia"][:2] == ["XH", "XH2"], m["goi_y_bia"]
     assert m["so_xep_hang"] == 2, m["so_xep_hang"]
     # m["xep_hang"] (so, dung boi cong chan needs_ranking_image) la bang DAU TIEN
@@ -91,7 +91,7 @@ def test_dung_manifest_mot_bang_tuong_thich_nguoc():
     xh = _xh("Text Arena", "Kimi-K3")
     anh = [_a("XH", xh)]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
-                         Path("/tmp"), anh, [xh], True, {}, {}, False, 5)
+                         Path("/tmp"), anh, [xh], True, {}, {}, False, 5, vai_anh="ethan")
     assert m["goi_y_bia"] == ["XH"], m["goi_y_bia"]
     assert m["so_xep_hang"] == 1
     assert "XH2" not in m["goi_y_bia"]
@@ -101,14 +101,14 @@ def test_dung_manifest_nhan_none_nhu_quy_uoc_cu():
     """Vai/test khac (test_khai_niem.py, test_thuong_hieu.py) van truyen None
     o vi tri nay — KHONG duoc nem TypeError tu len(None)."""
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
-                         Path("/tmp"), [_a("A1", dung=("bìa",))], None, False, {}, {}, False, 5)
+                         Path("/tmp"), [_a("A1", dung=("bìa",))], None, False, {}, {}, False, 5, vai_anh="ethan")
     assert m["so_xep_hang"] == 0
     assert m["xep_hang"] is None
 
 
 def test_dung_manifest_khong_bang_thi_khong_dinh_xh_vao_goi_y():
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
-                         Path("/tmp"), [_a("A1", dung=("bìa",))], [], False, {}, {}, False, 5)
+                         Path("/tmp"), [_a("A1", dung=("bìa",))], [], False, {}, {}, False, 5, vai_anh="ethan")
     assert "XH" not in m["goi_y_bia"] and m["so_xep_hang"] == 0
 
 

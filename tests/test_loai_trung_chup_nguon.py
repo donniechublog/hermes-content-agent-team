@@ -107,6 +107,8 @@ def test_hai_anh_that_su_khac_nhau_deu_duoc_giu():
 
 
 if __name__ == "__main__":
+    import role
+    role.set_active_role("ethan")            # xem tam.chay_tat_ca (LOW-182)
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
     for n in ten:

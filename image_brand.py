@@ -536,9 +536,9 @@ def card_logo(tep_logo, out, brand: str = "donniechublog"):
     lg = lg.resize((rong, cao), Image.LANCZOS)
     hop = ((w - rong) // 2, int(h * 0.30) - cao // 2)
     im.paste(lg, hop, lg if lg.mode == "RGBA" else None)
-    import image_rules
+    import image_provenance
     Path(out).parent.mkdir(parents=True, exist_ok=True)
-    im.save(out, "PNG", pnginfo=image_rules.stamp_provenance("the_logo"))
+    im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("the_logo"))
     return out, ("sáng" if sang < 110 else "tối")
 
 
@@ -803,12 +803,12 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
     không" — chân dung nhà sáng lập và logo chắc chắn không phải, nên bị đánh
     rớt dù đó đúng là thứ ta đi tìm (09/09/2026).
 
-    Cả ba nhánh chèn `image_rules.IMAGE_PHRASES_SCREENSHOT` (LOW-45, 13/09/2026):
+    Cả ba nhánh chèn `role.active_rules().IMAGE_PHRASES_SCREENSHOT` (LOW-45, 13/09/2026):
     đo thật, đúng ảnh Getty chụp nghiêng App Store của Kimi K3 (đã chặn ở
     `_take_image_page`/`_round_capture_source`) lọt qua ĐÚNG nhánh "anh" ở đây khi tìm
     thấy qua một đường khác (`_report_brand_empty`) — nhánh này TỪNG chỉ có
     "quá mờ" chung chung, không đủ chặn ảnh nét-ở-tiền-cảnh/mờ-ở-hậu-cảnh."""
-    import image_rules
+    import role
     hang, loai = th.get("hang", "hãng"), th.get("loai", "anh")
     if loai == "nguoi":
         ai = th.get("nguoi", "")
@@ -818,20 +818,20 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                 f"LIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan "
                 f"dung cho {hang}; khong = do hoa/tranh ve, anh nhom dong nguoi, qua mo, "
-                f"{image_rules.IMAGE_PHRASES_SCREENSHOT}, hoac ro rang khong phai anh chan dung)")
+                f"{role.active_rules().IMAGE_PHRASES_SCREENSHOT}, hoac ro rang khong phai anh chan dung)")
     if loai == "logo":
         return (f"Bai bao: \"{tieu_de}\". Anh nay la THE LOGO: logo chinh thuc cua {hang} dat "
                 "tren nen tron.\nTra loi DUNG 2 dong:\n"
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                 f"LIEN_QUAN: co | khong  (co = doc duoc ro logo/ten {hang}, khong be xiu, khong "
                 f"meo, khong lan mau nen; khong = logo hang KHAC, chu bi cat, qua nho, trong, "
-                f"{image_rules.IMAGE_PHRASES_SCREENSHOT})")
+                f"{role.active_rules().IMAGE_PHRASES_SCREENSHOT})")
     return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua su viec trong tin; no duoc tim "
             f"lam ANH BOI CANH cua {hang} (tru so, campus, bien hieu, nha may, san pham).\n"
             "Tra loi DUNG 2 dong:\n"
             "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
             f"LIEN_QUAN: co | khong  (co = anh CHUP THAT dung la co so/san pham cua {hang}; "
-            f"khong = hang khac, do hoa/ban ve, anh mit tinh/bieu tinh, qua mo, {image_rules.IMAGE_PHRASES_SCREENSHOT}, "
+            f"khong = hang khac, do hoa/ban ve, anh mit tinh/bieu tinh, qua mo, {role.active_rules().IMAGE_PHRASES_SCREENSHOT}, "
             "hoac chi la anh "
             "minh hoa chung chung)")
 
