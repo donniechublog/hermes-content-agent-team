@@ -106,6 +106,8 @@ def test_chup_lead_mobile_tra_tit_trang():
 
 
 if __name__ == "__main__":
+    import role
+    role.set_active_role("ethan")            # xem tam.chay_tat_ca (LOW-182)
     ok = 0
     ten = [k for k in list(globals()) if k.startswith("test_")]
     for k in ten:

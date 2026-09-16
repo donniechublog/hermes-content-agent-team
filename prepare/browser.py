@@ -9,7 +9,8 @@ import time
 from pathlib import Path
 
 
-import image_rules
+import image_provenance
+import role
 import env_load
 from browser_session import session_or_new
 
@@ -18,7 +19,9 @@ from prepare.common import GNEWS, _domain
 
 def _js_browser() -> dict:
     """Cac doan JS chay trong trang. Dung ham (khong phai hang module) vi chung
-    ghep nguong/regex cua image_rules tai thoi diem goi — doi image_rules la doi JS."""
+    ghep nguong/regex cua module luat CUA VAI dang chay (`role.active_rules()`)
+    tai thoi diem goi — doi tieu chi la doi JS."""
+    rules = role.active_rules()
     JS_TITLE = """() => ((document.querySelector('meta[property="og:title"]')||{}).content
                     || document.title || '')"""
     JS_TEXT = """() => ((document.querySelector('article') || document.querySelector('main')
@@ -29,8 +32,8 @@ def _js_browser() -> dict:
     # tien la ad/aside/nav/related/promo; src/class/id/alt mang tu quang cao;
     # va phan tu cao hon 75% trang (chup ca trang chu).
     JS_LOAI = """
-        const XAU_DOM = """ + image_rules.js_junk_dom_pattern() + """;
-        const XAU_URL = """ + image_rules.js_junk_url_pattern() + """;
+        const XAU_DOM = """ + rules.js_junk_dom_pattern() + """;
+        const XAU_URL = """ + rules.js_junk_url_pattern() + """;
         const trongBai = (el) => { const a = document.querySelector('article') || document.querySelector('main');
             return !a || a.contains(el); };
         const xau = (el) => { for (let e = el; e; e = e.parentElement) {
@@ -41,7 +44,7 @@ def _js_browser() -> dict:
         const caoQua = (r) => r.height > Math.max(900, 0.75 * document.documentElement.scrollHeight);
     """
     JS_IMG = JS_LOAI + """() => Array.from(document.images)
-        .filter(i => i.naturalWidth >= """ + str(image_rules.TAI_W_MIN) + """ && i.naturalHeight >= """ + str(image_rules.TAI_H_MIN) + """)
+        .filter(i => i.naturalWidth >= """ + str(rules.TAI_W_MIN) + """ && i.naturalHeight >= """ + str(rules.TAI_H_MIN) + """)
         .filter(i => trongBai(i) && !xau(i) && !XAU_URL.test((i.currentSrc||i.src||'').replace(/[-_]/g,' '))
                      && !XAU_URL.test((i.alt||'').replace(/[-_]/g,' ')))
         .map(i => ({src: i.currentSrc || i.src, alt: i.alt || '',
@@ -95,7 +98,7 @@ def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
             el.screenshot(path=str(out))
         except Exception:                                # noqa: BLE001
             continue
-        image_rules.stamp_file(out, "chup_chart")
+        image_provenance.stamp_file(out, "chup_chart")
         # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
         # article_images -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
         ra["cands"].append({"anh": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",

@@ -108,7 +108,7 @@ Bài không có số nhưng vẫn phải đưa nhiều hình thật lên slide (
 
 Tin chuyển sang Kite vì thiếu ảnh thì `kite_submit.py` ép **mọi** mã trong
 `kite_prepare.figure_right_use` (đã trừ ảnh khái niệm, ảnh chụp trang nguồn và
-tấm lên bìa) phải có slide `figure`. Đồng thời `image_rules.check_not_reused`
+tấm lên bìa) phải có slide `figure`. Đồng thời `image_rules_kite.check_not_reused`
 chặn ảnh đã lên bài KHÁC trong 14 ngày: so theo md5/dHash chứ không theo tên
 mã, bỏ qua chính draft này, ảnh cùng tin và ảnh bảng xếp hạng. Hai cổng gặp
 nhau khi một mã bắt buộc chính là ảnh đã dùng ở tin khác. Lúc đó vai KHÔNG có
@@ -116,7 +116,7 @@ nhau khi một mã bắt buộc chính là ảnh đã dùng ở tin khác. Lúc 
 
 Cách thoát duy nhất trong luật: nộp `kanban_block(kind="needs_input")` kèm
 (a) mã nào vướng cổng nào, chép nguyên dòng báo TRUNG (có tên draft cũ),
-(b) ảnh thay thế đã tải sẵn nếu có. Đừng tự sửa `image_rules.py` hay nhồi mã
+(b) ảnh thay thế đã tải sẵn nếu có. Đừng tự sửa `image_rules_kite.py` hay nhồi mã
 ngoài danh sách hình thật của brief — script sẽ chặn
 `image "<mã>" không phải mã hình thật dùng được`.
 

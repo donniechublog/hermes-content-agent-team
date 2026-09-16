@@ -110,6 +110,30 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     dong; doi chieu bang vet voi moi ham anh em thay bang ban gia (13 kich ban)."""
     import carousel
     title = meta.get("title", draft_id)
+    # `tom`/`vai_anh` doc SOM, TRUOC ca browser (doi cho tu duoi len 16/09/2026,
+    # LOW-182): `role.set_active_role` phai chay TRUOC bat cu anh nao duoc tai/
+    # nhin, vi tu day moi ham "co tieu chi" sau trong ham nay (`_seen_image` ->
+    # `prepare.vision.classify`, `_gather_and_download_image`, `_take_from_browser`...)
+    # doc module luat qua `role.active_rules()` — bien tien trinh, khong phai
+    # tham so — nen phai dat gia tri TRUOC khi chung chay, khong phai sau. `tom`
+    # chi doc `.img.json` tren dia (`_summary_from_img_json`), khong dung gi tu
+    # `load_source`/browser nen doi len day an toan.
+    tom = _summary_from_img_json(draft_id)
+    # NGUONG DI THEO VAI (su co 10/09/2026). Truoc day dong nay la
+    # `carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE` — engine
+    # chay chung cho ca ba vai dung anh nen Ethan (card.py, MOT anh la du)
+    # cung bi doi 5 anh, roi ca day "thieu anh" ban cho Ethan cau hoi cua
+    # carousel. `tom["vai_anh"]` da co san tu sidecar .img.json ngay tren
+    # (`_summary_from_img_json`), chi la truoc gio khong ai dung toi.
+    vai_anh = role.canonical_slug(tom.get("vai_anh") or "")
+    if vai_anh not in role.ROLE:
+        # Chay tay, hoac sidecar mat/chua kip ghi. Khong im: nguong sai lam
+        # lech ca `thieu_anh` o manifest lan cau bao gui Ong Chu.
+        print(f"[chuan bi] khong biet vai cua {draft_id} "
+              f"(vai_anh={tom.get('vai_anh')!r}) -> dung nguong cua "
+              f"{role.DEFAULT_IMAGE}", file=sys.stderr)
+        vai_anh = role.DEFAULT_IMAGE
+    role.set_active_role(vai_anh)
     # MOT phien Chromium cho ca bai (audit B4): truoc day load_source (giai link
     # Google News), browser_pass va xep_hang moi cho tu launch mot tien trinh —
     # toi BON lan cho mot bai. Phien mo LUOI nen `--khong-browser` khong ton
@@ -118,7 +142,6 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     with BrowserSession() as phien:
         nguon, nguon_path, link = load_source(draft_id, meta, state, phien=phien)
         trang = nguon.get("trang", [])
-        tom = _summary_from_img_json(draft_id)
 
         trang = _supplement_source(nguon, nguon_path, trang, link)
         # Trang cong bo CHINH CHU cua model (LOW-21): chay cho moi tin nhac model
@@ -132,20 +155,6 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         anh = _gather_and_download_image(title, link, nguon_path, nguon, trang, bp, wd, xhs)
         anh, dung_duoc, chua_nhin = _seen_image(anh, nguon, title, wd)
         flagship = bool(carousel._FLAGSHIP_RE.search(title + " " + tom.get("summary", "")))
-        # NGUONG DI THEO VAI (su co 10/09/2026). Truoc day dong nay la
-        # `carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE` — engine
-        # chay chung cho ca ba vai dung anh nen Ethan (card.py, MOT anh la du)
-        # cung bi doi 5 anh, roi ca day "thieu anh" ban cho Ethan cau hoi cua
-        # carousel. `tom["vai_anh"]` da co san tu sidecar .img.json ngay tren
-        # (`_summary_from_img_json`), chi la truoc gio khong ai dung toi.
-        vai_anh = role.canonical_slug(tom.get("vai_anh") or "")
-        if vai_anh not in role.ROLE:
-            # Chay tay, hoac sidecar mat/chua kip ghi. Khong im: nguong sai lam
-            # lech ca `thieu_anh` o manifest lan cau bao gui Ong Chu.
-            print(f"[chuan bi] khong biet vai cua {draft_id} "
-                  f"(vai_anh={tom.get('vai_anh')!r}) -> dung nguong cua "
-                  f"{role.DEFAULT_IMAGE}", file=sys.stderr)
-            vai_anh = role.DEFAULT_IMAGE
         toi_thieu = role.min_images(vai_anh, flagship)
         # HAI CAU HOI KHAC NHAU, dung lan nhau la hong ca hai chieu:
         #   `toi_thieu`             — nguong CHAN: duoi no thi bai bi coi la
@@ -158,8 +167,8 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # la nhung thu ko dung"* va *"carousel la nhieu anh con Ethan lam single
         # image, nen 'so luong' ko the la thu ap vao duoc"*. Nay ban dang ky vai
         # tra loi: vai xep nhieu anh moi dem tam, vai mot anh chi hoi da co tam
-        # nao dung lam anh chinh chua — tieu chi CHAT LUONG thi van dung chung o
-        # `image_rules` + `classify` cho ca ba.
+        # nao dung lam anh chinh chua — tieu chi CHAT LUONG (LOW-182, 16/09/2026)
+        # gio cung di theo vai, qua `role.active_rules()`, khong con chung nua.
         # Bo hau to site khoi tieu de dung de NHIN/tim hang (LOW-35): " · Hugging
         # Face" tung lam Hugging Face thanh "hang trong tin" cua mot tin DeepSeek.
         import article_sources

@@ -185,6 +185,8 @@ def test_hoi_cat_ngang_khi_ngang_cao_khong_phai_chart():
 
 
 if __name__ == "__main__":
+    import role
+    role.set_active_role("ethan")            # xem tam.chay_tat_ca (LOW-182)
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
     for n in ten:

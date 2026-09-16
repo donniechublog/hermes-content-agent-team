@@ -1,25 +1,22 @@
-# LUẬT ẢNH — tài liệu chuẩn dùng chung
+# LUẬT ẢNH CỦA KITE (`carousel-edu`, `render_edu.py`)
 
-Bộ tiêu chí ảnh của cả đội, **một nguồn sự thật duy nhất**. Ông Chủ chốt
-04/09/2026: làm một bộ chung thay vì mỗi vai một bộ.
+**LOW-182 (16/09/2026):** Ông Chủ đảo ngược quyết định 04/09/2026 ("làm một bộ
+chung thay vì mỗi vai một bộ") — tách tài liệu dùng chung `IMAGE_RULES_KITE.md`
+thành **ba bản riêng**, mỗi vai làm ảnh (Ethan/Dre/Kite) một bản, bắt đầu từ
+đúng nội dung bản chung tại thời điểm tách. Đây là **bản của Kite** — sửa ở
+đây không còn tự động áp sang bản của Ethan/Dre nữa.
 
-**Đường cắt — một câu:**
+Toàn bộ nội dung dưới đây là **lịch sử** dẫn tới bộ luật hiện tại của Kite
+(nhiều sự cố thật, xem từng mục) — giữ lại để không mất ngữ cảnh, nhưng từ
+16/09/2026 các bảng so sánh "cả ba vai" / "cổng dùng chung" chỉ còn đúng cho
+tới ngày tách; đọc chúng như ảnh chụp một thời điểm, không phải trạng thái
+hiện tại của hai vai kia.
 
-> *"Ảnh này có được dùng không"* → **chung**, nằm ở đây (và thành cổng chặn
-> trong `image_rules.py`).
-> *"Đặt nó lên khung thế nào"* → **riêng** từng vai, nằm trong SKILL của vai đó.
+**Đường cắt — một câu, vẫn còn đúng cho riêng Kite:**
 
-**Ai phải theo:** mọi vai **tạo ra** ảnh mới — Ethan (`hero-image`, `card.py`),
-Dre (`carousel`, `carousel.py`), Kite (`carousel-edu`, `render_edu.py`). Gin và
-Itachi **không tạo ảnh**, chỉ chỉnh sửa trên ảnh gốc có sẵn (`swap_image_text.py` →
-`deck.py`), nên không áp bộ này — họ có tiêu chí riêng của việc remake.
-
-**Vì sao phải chung.** Đo thật trong repo trước khi gom (04/09/2026): cổng mặt
-người, dấu vết crop, ảnh trùng, chart nguyên vẹn — cả bốn chỉ tồn tại trong
-**đúng một tệp** (`carousel.py`), và nằm ở đó không phải vì thiết kế mà vì đó là
-chỗ Ông Chủ bắt lỗi. Giá của việc chia lẻ đã trả trong đúng một ngày: hai phiên
-làm hai lần cùng việc "nhận diện chart", một bản ra kết quả sai và chặn nhầm
-việc đúng.
+> *"Ảnh này có được dùng không"* → nằm ở đây (và thành cổng chặn trong
+> `image_rules_kite.py`).
+> *"Đặt nó lên khung thế nào"* → nằm trong `render_edu.py`.
 
 ---
 
@@ -842,7 +839,7 @@ chụp ra ảnh rỗng; `check_blank_image` chặn thêm một lớp ở rendere
 
 ---
 
-## 9. Bảng cổng chặn (`image_rules.py`)
+## 9. Bảng cổng chặn (`image_rules_kite.py`)
 
 | Cổng | Hàm | Chặn hay cảnh báo |
 |---|---|---|

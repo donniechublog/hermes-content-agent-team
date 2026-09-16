@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import capture_page  # noqa: E402
-import image_rules  # noqa: E402
+import image_rules_ethan as image_rules  # noqa: E402
 import browser_session  # noqa: E402
 import ranking  # noqa: E402
 from prepare import fallback_rounds  # noqa: E402

@@ -249,6 +249,7 @@ def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
             "tagline": "MODEL", "attrib": "via X"}
     for kieu, phai_chan in (("bang", True), ("danh-sach", True), ("the", False), ("chup", False)):
         m = {"anh": anh, "tin_xep_hang": True, "chu_bai": "", "tu_lieu": {}, "draft_id": "d1",
+             "vai_anh": "ethan",
              "xep_hang": {"kieu": kieu, "site": "arena.ai", "bang": "Text Arena",
                           "model": "seed", "hang": 5}}
         _, loi, _ = ethan_submit.resolve_spec(spec, m, Path("/tmp"))
@@ -260,7 +261,7 @@ def test_the_du_phong_khong_duoc_ep_lam_anh_chinh():
 def test_so_anh_khoa_theo_tin_khong_theo_draft():
     """Cùng một tin giao cho Dre rồi Ethan ra hai draft_id khác nhau nhưng dùng
     chung bộ ảnh — vai sau không được bị chặn sạch."""
-    import image_rules as la
+    import image_rules_ethan as la
     from PIL import Image, ImageDraw
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         p = d / "a.png"
@@ -278,7 +279,7 @@ def test_so_anh_khoa_theo_tin_khong_theo_draft():
 
 
 def test_khoa_tin_chuan_hoa_url():
-    import image_rules as la
+    import image_provenance as la
     assert la.story_key("https://www.OpenAI.com/tin/") == la.story_key("http://openai.com/tin")
     assert la.story_key("https://x.com/a?utm=1#z") == "x.com/a"
 
@@ -306,7 +307,7 @@ def test_luu_crop_giu_dau_anh_goc():
     """_save_crop từng dựng PngInfo trắng → bản cắt mất dấu chup_xep_hang →
     is_ranking_image False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
     import image_prepare as cb
-    import image_rules as la
+    import image_rules_ethan as la
     from PIL import Image
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
@@ -322,7 +323,7 @@ def test_luu_crop_giu_dau_anh_goc():
 def test_kiem_ti_le_mien_tru_anh_xep_hang():
     """Bảng desktop ra ~1.28, bảng mobile ra ~0.46 — cả hai đều ngoài dải
     4:5..1:1. Không miễn trừ thì Dre kẹt: cổng bắt dùng XH, carousel chặn XH."""
-    import image_rules as la
+    import image_rules_ethan as la
     from PIL import Image
     with tempfile.TemporaryDirectory() as tmp:
         d = Path(tmp)
@@ -436,7 +437,7 @@ def test_anh_xep_hang_mien_cong_dung_lai():
     """Hai bài về hai model cùng trong top một bảng chụp đúng dải hàng đó, chỉ
     khác khung khoanh → dHash coi là trùng. Cổng dùng-lại chặn ảnh XH, còn cổng
     "tin xếp hạng phải dùng XH" chặn mọi ảnh khác: hai lỗi loại trừ nhau."""
-    import image_rules as la
+    import image_rules_ethan as la
     from PIL import Image, ImageDraw
     from PIL.PngImagePlugin import PngInfo
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
@@ -951,7 +952,7 @@ def test_hai_chart_khac_nhau_khong_bi_coi_la_trung():
     cot HOAN TOAN khac so lieu, mien cung dang di xuong, chi cach 4-5 bit. Voi
     nguong chung 6, chart THAT cua bai — bang chung manh nhat — bi bao "TRUNG
     anh da dung", vai lang le doi sang anh minh hoa yeu hon."""
-    import image_rules as la
+    import image_rules_ethan as la
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         c1 = _bieu_do(d / "c1.png", [0.90, 0.82, 0.75, 0.60, 0.50])
         c2 = _bieu_do(d / "c2.png", [0.88, 0.80, 0.70, 0.62, 0.45], mau=(200, 80, 40))
@@ -971,7 +972,8 @@ def test_bo_bai_thi_go_anh_khoi_so():
     tin" hay "Lam lai" thi anh KHONG bao gio len kenh, nhung truoc 06/09/2026
     chung van nam trong so va chan moi bai khac suot 14 ngay — ma thong bao chan
     chi noi ten bai va cham, KHONG noi bai do da bi bo."""
-    import image_rules as la
+    import image_rules_ethan as la
+    import image_provenance
     with tempfile.TemporaryDirectory() as tmp, _so_tam(tmp) as d:
         a1 = _anh_chup(d / "x1.png", 5)
         a2 = _anh_chup(d / "x2.png", 5, co=(1000, 750))     # cung anh, khac co
@@ -980,11 +982,11 @@ def test_bo_bai_thi_go_anh_khoi_so():
                        "https://a.com/9")
         assert la.check_not_reused("A1", a2, "bai-sau", "https://a.com/2")[0], \
             "chua go thi phai con chan (neu khong, test nay vo nghia)"
-        assert la.remove_used_for_draft("bai-bi-bo") == 1
+        assert image_provenance.remove_used_for_draft("bai-bi-bo") == 1
         assert not la.check_not_reused("A1", a2, "bai-sau", "https://a.com/2")[0], \
             "da bo bai ma anh van bi khoa"
         # khong duoc go nham dong cua bai khac
-        assert la.remove_used_for_draft("bai-khong-co") == 0
+        assert image_provenance.remove_used_for_draft("bai-khong-co") == 0
         assert len((d / "s.jsonl").read_text(encoding="utf-8").strip().splitlines()) == 1
 
 # ------------------------------------------------ bars: so kieu Viet, va cong text
@@ -1199,7 +1201,7 @@ def test_so_da_dung_duoc_tra_lai_sau_cac_test_tren():
     ve duong THAT chu khong phai mot TemporaryDirectory da bi xoa — neu khong,
     `check_not_reused` tra rong vo dieu kien va moi cong "khong dung lai anh" trong
     cac test sau deu chet im."""
-    import image_rules as la
+    import image_provenance as la
     p = la._used_images_log()
     assert p.name == "anh_da_dung.jsonl", p
     assert p.parent.exists(), f"so tro vao thu muc khong ton tai: {p}"

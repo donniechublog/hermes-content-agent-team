@@ -226,7 +226,7 @@ def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
 
 def fresh_manifest(m: dict) -> dict:
     """Tinh lai cac gia tri dan xuat sau khi bo anh doi (cung cong thuc voi engine)."""
-    dx = compute_derived(m["anh"], so_xh=int(m.get("so_xep_hang") or 0))
+    dx = compute_derived(m["anh"], m.get("vai_anh", ""), so_xh=int(m.get("so_xep_hang") or 0))
     for k in ("so_mien", "cap_ghep", "goi_y_bia", "so_dung_duoc", "chua_nhin"):
         m[k] = dx[k]
     thieu = cb._description_missing_image(m)
@@ -284,6 +284,7 @@ def main() -> int:
             sys.exit(f"[LOI] khong doc duoc {xong}")
         tieu_de = m.get("tieu_de_en") or m.get("title") or a.draft_id
         vai_anh = vai_mod.canonical_slug(m.get("vai_anh") or "") or vai_mod.DEFAULT_IMAGE
+        vai_mod.set_active_role(vai_anh)
         so_luot["luot"] += 1
         so_luot["da_thu"] += a.tu_khoa + a.url
         _write_json(wd / "tim_them.json", so_luot)

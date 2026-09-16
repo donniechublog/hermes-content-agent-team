@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageDraw  # noqa: E402
 
 import approve_post as db  # noqa: E402
-import image_rules  # noqa: E402
+import image_rules_ethan as image_rules  # noqa: E402
 
 
 def _ve(w, h, tone, seed=7):

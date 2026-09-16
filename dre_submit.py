@@ -81,7 +81,7 @@ class Context:
 
 def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
     """Nhanh "ghep": hai anh NGANG chong doc thanh mot khung 4:5..1:1."""
-    import image_rules
+    import image_rules_dre
     if not isinstance(ghep, list) or len(ghep) != 2:
         bo.loi.append(f"{nhan}: \"ghep\" phải là đúng 2 mã ảnh, vd [\"A3\", \"A5\"]")
         return None
@@ -94,11 +94,11 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
     bo.kiem_lien_quan(ghep, nhan)
     r1, r2 = (im.width / im.height for im in
               (Image.open(bo.anh[x]["goc"]) for x in ghep))
-    if not image_rules.stack_fit_frame(r1, r2):
-        rc = image_rules.ratio_after_stack(r1, r2)
+    if not image_rules_dre.stack_fit_frame(r1, r2):
+        rc = image_rules_dre.ratio_after_stack(r1, r2)
         bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
                       f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
-    # Cong lech tone (`image_rules.tone_mismatch`) da bo khoi he thong (Ong Chu
+    # Cong lech tone (`tone_mismatch`) da bo khoi he thong (Ong Chu
     # 13/09/2026): bo cam doan ve nguon/chat luong nay, moi vai.
     bo.kiem_mat(ghep, muc, nhan)
     bo.dung_anh.append((nhan, list(ghep)))
@@ -315,6 +315,8 @@ def main() -> int:
                     help="Tat cong tieng Viet (chi khi chu THAT SU la tieng Anh)")
     ap.add_argument("--out", help="Ghi slide ra cho khac (de thu, khong de len drafts/)")
     a = ap.parse_args()
+    import role
+    role.set_active_role("dre")
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "dre_prepare.py", "dre_submit.py")
     spec_cs, loi, canh, dung_anh = resolve_spec(spec, m, wd)

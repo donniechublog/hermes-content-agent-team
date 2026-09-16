@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageDraw  # noqa: E402
 
 import prepare.vision as vision  # noqa: E402
+import image_rules_ethan  # noqa: E402
 from tam import so_tam  # noqa: E402
 
 
@@ -112,7 +113,7 @@ def test_phan_loai_anh_roi_khong_lam_bia_va_ghi_chu_dau_dong():
         p = _anh_tam(t, tone=(20, 20, 25))                  # toi, doc: binh thuong duoc goi y bia
         a = {"ma": "A1", "goc": str(p)}
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
-                mock.patch.object(vision.image_rules, "count_faces", return_value=0):
+                mock.patch.object(image_rules_ethan, "count_faces", return_value=0):
             vision.classify(a, Path(t), "Tin gì đó")
     assert a["cluttered"] is True
     assert not any(str(d).startswith("bìa") for d in a["dung"]), a["dung"]
@@ -132,7 +133,7 @@ def test_con_anh_sach_chua_dung_thi_chan_anh_roi():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
-        loi = nc.check_image_fall(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y"})
+        loi = nc.check_image_fall(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi and "slide 5" in loi[0] and "A2" in loi[0], loi
 
 
@@ -141,7 +142,7 @@ def test_anh_roi_du_tu_khoa_duoc_mien_cong():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, cluttered=True, du_tu_khoa=True), "A2": _muc(t, "A2", 2)}
-        loi = nc.check_image_fall(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y"})
+        loi = nc.check_image_fall(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 
@@ -154,7 +155,7 @@ def test_phan_loai_roi_du_tu_khoa_giu_bia_va_ghi_chu_sao():
         p = _anh_tam(t, tone=(20, 20, 25))
         a = {"ma": "A1", "goc": str(p)}
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
-                mock.patch.object(vision.image_rules, "count_faces", return_value=0):
+                mock.patch.object(image_rules_ethan, "count_faces", return_value=0):
             vision.classify(a, Path(t), "Tin gì đó")
     assert a["du_tu_khoa"] is True
     assert a["ghi_chu"][0].startswith("⭐"), a["ghi_chu"]
@@ -179,7 +180,7 @@ def test_het_anh_sach_thi_duoc_dung_anh_roi():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5", "A2": "slide 6"},
-                              {"draft_id": "tin", "link": "https://x/y"})
+                              {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 
@@ -195,7 +196,7 @@ def test_khong_tinh_la_sach_neu_khong_the_dung_mot_minh():
                "A6": _muc(t, "A6", 6, ngang=True, h=900, cat_ngang_ok=False),  # co chu
                "A7": _muc(t, "A7", 7, lien_quan=False),
                "A8": _muc(t, "A8", 8, dung=[])}
-        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y"})
+        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 
@@ -204,17 +205,16 @@ def test_anh_ngang_cat_doc_duoc_la_anh_sach_thay_duoc():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, cluttered=True),
                "A2": _muc(t, "A2", 2, ngang=True, h=1000, cat_ngang_ok=True)}
-        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y"})
+        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi and "A2" in loi[0], loi
 
 
 def test_anh_sach_da_len_bai_khac_khong_tinh():
-    import image_rules
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _muc(t, "A1", 1, cluttered=True), "A2": _muc(t, "A2", 2)}
-        image_rules.record_used(anh["A2"]["goc"], "tin-khac", "dre", "https://x/khac")
-        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y"})
+        image_rules_ethan.record_used(anh["A2"]["goc"], "tin-khac", "dre", "https://x/khac")
+        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
     assert loi == [], loi
 
 

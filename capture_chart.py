@@ -27,7 +27,8 @@ import argparse
 import sys
 from pathlib import Path
 
-import image_rules
+import image_provenance
+import role
 import scan_common
 
 
@@ -38,7 +39,7 @@ def _block_empty(ra):
     from PIL import Image
     try:
         with Image.open(ra) as im:
-            rong, mo_ta = image_rules.is_blank_image(im.convert("RGB"))
+            rong, mo_ta = role.active_rules().is_blank_image(im.convert("RGB"))
     except Exception:
         return
     if rong:
@@ -92,7 +93,7 @@ def download_image(url: str, ra: Path) -> bool:
         return False
     ra.parent.mkdir(parents=True, exist_ok=True)
     ra.write_bytes(data)
-    image_rules.stamp_file(ra, "chup_chart")
+    image_provenance.stamp_file(ra, "chup_chart")
     _block_empty(ra)
     return True
 
@@ -160,11 +161,11 @@ def capture(url: str, ra: Path, chon: str = "", rong_dau: int = EMPTY_MARK) -> i
                 el.scroll_into_view_if_needed()
                 page.wait_for_timeout(400)
                 el.screenshot(path=str(ra))
-                image_rules.stamp_file(ra, "chup_chart")
+                image_provenance.stamp_file(ra, "chup_chart")
                 _block_empty(ra)
             else:
                 page.screenshot(path=str(ra), full_page=True)
-                image_rules.stamp_file(ra, "chup_chart")
+                image_provenance.stamp_file(ra, "chup_chart")
                 _block_empty(ra)
         finally:
             b.close()
@@ -198,7 +199,14 @@ def main():
     ap.add_argument("--rong", type=int, default=EMPTY_MARK,
                     help=f"Be ngang khung mo dau (mac dinh {EMPTY_MARK}); script tu noi "
                          "them neu chart rong hon")
+    # BAT BUOC, khong mac dinh (LOW-182, 16/09/2026): script nay chi chay tay
+    # (khong vai nao goi no qua ham Python), nen khong biet dang chup cho vai
+    # nao de chon dung nguong "anh rong" — doi sai vai la ap nham tieu chi,
+    # dung hon mot loi ro con hon mot ket qua sai lang le.
+    ap.add_argument("--vai", required=True, choices=["ethan", "dre", "kite"],
+                    help="Vai dang chup cho ai — chon dung module tieu chi anh")
     a = ap.parse_args()
+    role.set_active_role(a.vai)
     ra = Path(a.ra)
     if _is_image(a.url):
         # Link anh truc tiep: ban goc luon day du hon moi ban chup lai.

@@ -25,7 +25,7 @@ _HttpxError = httpx.HTTPError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
-import image_rules                                             # noqa: E402
+import image_provenance                                        # noqa: E402
 import schema                                               # noqa: E402
 import skill_lesson_approve                                  # noqa: E402
 import role                                                  # noqa: E402
@@ -413,7 +413,7 @@ def _go_count_image(draft_id: str, ly_do: str) -> None:
     bao chan chi noi ten bai va cham, KHONG noi bai do da bi bo.
     """
     try:
-        n = image_rules.remove_used_for_draft(draft_id)
+        n = image_provenance.remove_used_for_draft(draft_id)
     except Exception as e:                                      # noqa: BLE001
         log("nut", f"go so anh {draft_id} loi: {type(e).__name__}")
         return
@@ -503,6 +503,13 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
         im = {}
     cam = im.setdefault("cam_anh_slide", {})
     goc_dir = STATE_DIR / "chuan_bi" / draft_id / "goc"
+    # `.img.json` luon co `vai_anh` tren duong that (ghi tu luc tao task); roi
+    # ve `role.DEFAULT_IMAGE` chi cho sidecar thieu/hong — dhash thuan tuy
+    # khong lech giua cac module luat nen mot ban mac dinh la an toan o day.
+    vai_anh = role.canonical_slug(im.get("vai_anh") or "") or role.DEFAULT_IMAGE
+    if vai_anh not in role.ROLE:
+        vai_anh = role.DEFAULT_IMAGE
+    rules = role.rules_module(vai_anh)
     from PIL import Image
     for n in so_slide:
         for ma in _code_of_slide(spec, n):
@@ -510,7 +517,7 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
             if not fp.exists():
                 continue
             try:
-                h = image_rules.dhash(Image.open(fp).convert("RGB"))
+                h = rules.dhash(Image.open(fp).convert("RGB"))
             except (OSError, ValueError):
                 continue
             ds = cam.setdefault(str(n), [])

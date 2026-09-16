@@ -34,7 +34,7 @@ import sys
 import time
 from pathlib import Path
 
-import image_rules
+import image_provenance
 
 import cv2
 import numpy as np
@@ -251,7 +251,7 @@ def main():
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(out), sach)
-    image_rules.stamp_file(out, "doi_chu_anh")
+    image_provenance.stamp_file(out, "doi_chu_anh")
     print(f"da xoa {len(da_xoa)} vung chu -> {out}", file=sys.stderr)
 
     if a.xem_mask:

@@ -91,7 +91,7 @@ def test_vision_noi_bieu_do_ma_pixel_bo_lo_thi_sua_lai_thanh_chart():
     """A11 that (12/09): pixel do 'la_chart' False nhung mo_ta ro rang la
     bieu do -- phai tin mo_ta, khong con hoi CAT_NGANG mot cach vo nghia."""
     with tempfile.TemporaryDirectory() as tmp, mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}), \
-         mock.patch("image_rules.is_chart", return_value=(False, "khong phai chart (pixel)")):
+         mock.patch("image_rules_ethan.is_chart", return_value=(False, "khong phai chart (pixel)")):
         a = _anh(Path(tmp), 1600, 1000)
         with _goi_thu("MO_TA: Biểu đồ tròn thể hiện tỷ trọng doanh thu.\nLIEN_QUAN: co\nCAT_NGANG: khong"):
             classify(a, wd=Path(tmp), tieu_de="T")
@@ -120,6 +120,8 @@ from prepare.vision import classify  # noqa: E402  (import sau de mock image_rul
 
 
 if __name__ == "__main__":
+    import role
+    role.set_active_role("ethan")            # xem tam.chay_tat_ca (LOW-182)
     ok = 0
     ten = [n for n in dir() if n.startswith("test_")]
     for n in ten:

@@ -38,7 +38,7 @@ RATIO_HAS_MIN = 0.75   # chu ve ra duoi 75% co chu goc thi coi la khong dat
 def single(id_: str, wd: Path, spec: dict) -> tuple:
     """Xoá chữ. Trả về (nen_sach, mask_debug, vung_json, số vùng xoá, số vùng giữ)."""
     import swap_image_text
-    import image_rules
+    import image_provenance
     d = json.loads((wd / "vung_ocr.json").read_text(encoding="utf-8"))
     anh = Path(d["anh"])
     img = cv2.imread(str(anh))
@@ -68,7 +68,7 @@ def single(id_: str, wd: Path, spec: dict) -> tuple:
     sach = swap_image_text.inpaint(img, mask, verbose=False)
     nen = wd / "nen_sach.png"
     cv2.imwrite(str(nen), sach)
-    image_rules.stamp_file(nen, "doi_chu_anh")
+    image_provenance.stamp_file(nen, "doi_chu_anh")
     vis = img.copy()
     vis[mask > 0] = (0, 0, 255)
     vis = cv2.addWeighted(img, 0.5, vis, 0.5, 0)
@@ -240,7 +240,7 @@ def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
         return None, [], loi
 
     import swap_image_text
-    import image_rules
+    import image_provenance
     # Tram TUNG VUNG bang chinh mau nen do duoc, khong dua het cho cv2.inpaint.
     # Telea lan mau tu vien vao trong, net chu DAY thi giua net khong voi toi
     # vien va con lai mot bong ma xam hinh chu — thay ro tren tieu de condensed
@@ -291,7 +291,7 @@ def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
                        cao_goc=kh["cao_net"])
     out = wd / f"ket_qua_{id_}.png"
     im.save(out, "PNG")
-    image_rules.stamp_file(out, "doi_chu_anh")
+    image_provenance.stamp_file(out, "doi_chu_anh")
     vis = img.copy()
     vis[mask > 0] = (0, 0, 255)
     cv2.imwrite(str(wd / "mask_debug.png"), cv2.addWeighted(img, 0.5, vis, 0.5, 0))

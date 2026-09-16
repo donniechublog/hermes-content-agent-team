@@ -331,9 +331,9 @@ def extract(pdf_bytes: bytes, ra_dir, so_trang=COUNT_PAGE, toi_da=MAX) -> list:
             anh = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
             if not _no_page_full(anh):
                 continue
-            import image_rules
+            import image_provenance
             tep = ra_dir / f"paper_{loai}_{so}.png"
-            anh.save(tep, "PNG", pnginfo=image_rules.stamp_provenance(
+            anh.save(tep, "PNG", pnginfo=image_provenance.stamp_provenance(
                 "arxiv_hinh", hinh=f"{loai} {so}", trang_pdf=so_t + 1))
             da_co.add((loai, so))
             ra.append({"tep": str(tep), "loai": loai, "so": so, "caption": chu[:300],

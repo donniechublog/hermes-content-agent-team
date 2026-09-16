@@ -9,7 +9,6 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-import image_rules
 import schema
 import role as vai_mod                 # `vai` la ten tham so o vai ham duoi
 
@@ -107,7 +106,7 @@ def stackable_pairs(anh: list) -> list:
     for i in range(len(ngang)):
         for j in range(i + 1, len(ngang)):
             x, y = ngang[i], ngang[j]
-            if image_rules.stack_fit_frame(x["ti_le"], y["ti_le"]):
+            if vai_mod.active_rules().stack_fit_frame(x["ti_le"], y["ti_le"]):
                 ra.append([x["ma"], y["ma"]])
     return ra
 
@@ -209,7 +208,7 @@ def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: 
     return tl
 
 
-def compute_derived(anh: list, so_xh: int = 0) -> dict:
+def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
     """Cac gia tri DAN XUAT tu bo anh: dung_duoc, chua_nhin, so_mien, so_dung_duoc,
     goi_y_bia, cap_ghep. MOT ban cho hai nguoi goi: `build_manifest` luc engine
     chay xong, va `find_more_images.fresh_manifest` khi vai tim them anh sau do —
@@ -221,7 +220,7 @@ def compute_derived(anh: list, so_xh: int = 0) -> dict:
     # 5 la co Nhat khong phai 5 slide. `so_dung_duoc` di vao brief (THIEU ANH)
     # va co `thieu_anh` (xem _description_missing_image) ma route_missing_images doc de quyet
     # dinh hoi Ong Chu hay chuyen Kite.
-    so_dung_duoc = schema.count_image_use_ok(anh)
+    so_dung_duoc = schema.count_image_use_ok(anh, vai_anh)
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
     # hang trong tin, 09/09/2026) -> anh KHAI NIEM (co, rack, chung chung; 07/09).
     goi_y_bia = [a["ma"] for a in sorted(
@@ -244,7 +243,7 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
     tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
     import story_type            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
-    dx = compute_derived(anh, so_xh=len(xhs))
+    dx = compute_derived(anh, vai_anh, so_xh=len(xhs))
     chua_nhin, so_mien = dx["chua_nhin"], dx["so_mien"]
     so_dung_duoc, goi_y_bia = dx["so_dung_duoc"], dx["goi_y_bia"]
     m = {"phien_ban": schema.VERSION_MANIFEST,

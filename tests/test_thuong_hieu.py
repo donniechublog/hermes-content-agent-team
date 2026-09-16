@@ -193,7 +193,7 @@ def test_manifest_dem_du_va_xep_bia_sau_anh_rieng():
 
     anh = [_a("A1", kn=True), _a("A2", thh=True), _a("A3"), _a("A4", thh=True)]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
-                         Path("/tmp"), anh, None, False, {}, {}, False, 5)
+                         Path("/tmp"), anh, None, False, {}, {}, False, 5, vai_anh="ethan")
     assert m["so_dung_duoc"] == 4, m["so_dung_duoc"]          # 3 riêng/thương hiệu + 1 khái niệm
     assert m["goi_y_bia"] == ["A3", "A2", "A4"], m["goi_y_bia"]
 

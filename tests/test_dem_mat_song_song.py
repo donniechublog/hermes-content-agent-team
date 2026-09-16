@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from PIL import Image                                         # noqa: E402
-import image_rules                                               # noqa: E402
+import image_rules_ethan as image_rules                       # noqa: E402
 
 
 def _anh_khac_co(tmp, n=24):

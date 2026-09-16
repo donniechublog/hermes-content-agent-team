@@ -7,8 +7,10 @@ Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh 
 thẻ. Kiểu `dai` đã bỏ khỏi mã 05/09/2026; bản mô tả thiết kế của nó chuyển sang
 [INCIDENT_LOG.md](INCIDENT_LOG.md).
 
-Luật *"ảnh này có được dùng không"* nằm ở [IMAGE_RULES.md](IMAGE_RULES.md); tệp này chỉ
-nói *"đặt chữ lên khung thế nào"*.
+Luật *"ảnh này có được dùng không"* — riêng từng vai từ LOW-182 (16/09/2026) —
+nằm ở [IMAGE_RULES_ETHAN.md](IMAGE_RULES_ETHAN.md) /
+[IMAGE_RULES_DRE.md](IMAGE_RULES_DRE.md) / [IMAGE_RULES_KITE.md](IMAGE_RULES_KITE.md);
+tệp này chỉ nói *"đặt chữ lên khung thế nào"*.
 
 ## Hệ chữ — kiểu `quote`
 

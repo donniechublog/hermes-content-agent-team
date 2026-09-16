@@ -1,31 +1,24 @@
 #!/usr/bin/env python3
-"""image_rules.py — BO TIEU CHI ANH DUNG CHUNG cho moi vai lam anh.
+"""image_rules_ethan.py — BO TIEU CHI ANH RIENG CUA ETHAN (`hero-image`, `card.py`).
 
-Ong Chu chot 04/09/2026: lam MOT bo tieu chi chung thay vi moi vai mot bo.
+LOW-182 (16/09/2026): Ong Chu dao nguoc quyet dinh 04/09/2026 ("lam MOT bo tieu
+chi chung thay vi moi vai mot bo") — tach `image_rules.py` dung chung thanh MOT
+BAN RIENG cho moi vai lam anh (Ethan/Dre/Kite), bat dau tu dung noi dung ban
+chung tai thoi diem tach (khong mat luat dang co). Tu day ba ban la BA TEP DOC
+LAP: sua luat o day KHONG con tu dong ap sang `image_rules_dre.py`/
+`image_rules_kite.py` nua — muon dong bo thi phai tu tay sua ca ba.
 
-DUONG CAT — mot cau:
-    "Anh nay co DUOC DUNG khong"      -> CHUNG, nam o day.
-    "Dat no LEN KHUNG the nao"        -> RIENG tung vai, o lai renderer.
+Rui ro da noi ro va Ong Chu da xac nhan chap nhan (xem LOW-182): ba ban de troi
+khac nhau theo thoi gian, va mot loi an toan (vd chong bia danh tinh, cam logo)
+gio phai nho sua ca ba cho thay vi mot.
 
-Vi sao phai chung (so lieu thuc do 04/09/2026 trong repo nay):
+DUONG CAT cu van con dung — mot cau:
+    "Anh nay co DUOC DUNG khong"      -> nam o day (rieng cua Ethan).
+    "Dat no LEN KHUNG the nao"        -> rieng vai, o lai renderer (`card.py`).
 
-    Cong chan          card.py(Ethan)  carousel.py(Dre)  deck.py(Itachi)
-    mat nguoi              khong            co               khong
-    dau vet crop           khong            co               khong
-    anh trung              khong            co               khong
-    chart nguyen ven       khong            co               khong
-
-Moi luat doi bang may ngay bat loi deu chi nam trong DUNG MOT tep, va nam o do
-khong phai vi thiet ke ma vi do la cho Ong Chu bat loi. Khong co ly do nao de
-"khong dung mat nguoi la" dung voi Dre ma khong dung voi Ethan hay Itachi.
-
-Gia cua viec chia le da tra roi: trong cung mot ngay, hai phien lam hai lan
-cung mot viec "nhan dien chart", va mot ban ra ket qua sai (bo sot chinh cai
-chart gay ra su co K2 Horizon).
-
-CACH DUNG: moi ham `kiem_*` tra ve (loi, canh_bao) — hai danh sach chuoi. Vai
-tu chon cong nao hop voi khung cua minh roi gop lai. Khong ham nao ve gi, khong
-ham nao biet den canvas — de vai nao cung goi duoc.
+CACH DUNG: moi ham `kiem_*`/`check_*` tra ve (loi, canh_bao) — hai danh sach
+chuoi. `card.py` tu chon cong nao hop voi khung cua minh roi gop lai. Khong ham
+nao ve gi, khong ham nao biet den canvas.
 """
 import re
 import sys
@@ -80,84 +73,12 @@ CHART_COUNT_COLOR = 220
 EMPTY_COLOR = 4                     # <= 4 mau rieng biet (sau luong hoa 5 bit) = anh rong
 EMPTY_FLAT = 0.995               # ... va gan nhu 100% cap pixel ke nhau bang nhau
 
-MARK_PNG = ("crop_ti_le", "nguon_dung")   # cac khoa metadata bao "do doi dung ra"
-
-
-# ---- Dau vet xuat xu ------------------------------------------------------
-def stamp_provenance(xuat_xu, **them):
-    """Tra ve PngInfo mang dau `nguon_dung=<xuat_xu>` (+ cac khoa phu neu co).
-
-    Ten tham so la `xuat_xu` chu khong phai `nguon`: `nguon` la mot trong nhung
-    khoa phu hay dung nhat (nguon=ARENA.AI), de trung ten thi vo TypeError.
-
-    Moi cong cu trong doi sinh ra anh PHAI dong dau: crop_ratio.py, arxiv_cover.py,
-    ghep doc cua carousel.py, capture_chart.py. Cong `kiem_xuat_xu` dua vao dau nay
-    de phan biet "anh do doi dung ra" voi "anh cat tay bang cong cu ngoai".
-    """
-    from PIL.PngImagePlugin import PngInfo
-    m = PngInfo()
-    m.add_text("nguon_dung", str(xuat_xu))
-    for k, v in them.items():
-        if v is not None:
-            m.add_text(str(k), str(v))
-    return m
-
-
-def stamp_file(duong_dan, xuat_xu, **them):
-    """Mo lai mot tep PNG DA LUU va ghi dau `nguon_dung` (+ khoa phu) vao do.
-
-    Cho cac cong cu khong luu bang PIL (playwright screenshot, cv2.imwrite,
-    tai thang tu URL). Khong phai PNG thi bo qua, tra ve False — dong dau la
-    viec phu, khong duoc lam hong buoc chinh.
-    """
-    q = Path(duong_dan)
-    try:
-        im = Image.open(q)
-        if (im.format or "").upper() != "PNG":
-            return False
-        im.load()
-        im.save(q, "PNG", pnginfo=stamp_provenance(xuat_xu, **them))
-        return True
-    except Exception:
-        return False
-
-
-def _text(img):
-    return (getattr(img, "text", None) or img.info or {})
-
-
-def read_crop_trace(img):
-    """Dau vet crop_ratio.py -> (w_goc, h_goc), hoac None."""
-    m = _text(img).get("crop_ti_le")
-    if not m:
-        return None
-    try:
-        goc = [k for k in m.split(";") if k.startswith("goc=")][0][4:]
-        w, h = goc.lower().split("x")
-        return int(w), int(h)
-    except Exception:
-        return None
-
-
-def allows_landscape_crop(img):
-    """crop_ratio.py co duoc phep cat BE NGANG tam nay khong (co --cat-ngang)?
-
-    Day la mot UY QUYEN da ghi lai luc cat, tuong duong `crop_ok` khai trong
-    spec — chi khac la no duoc dong dau ngay tai cho cat nen khong khai lai
-    duoc. `check_crop_landscape` nhan ca hai."""
-    return _text(img).get("crop_ti_le", "").find("cat_ngang=1") >= 0
-
-
-def is_ranking_image(img):
-    """Anh do ranking.py dung: bang xep hang chup tu nguon (co khoanh model) hoac
-    the du phong. Voi tin xep hang thi DAY LA CHU THE cua tin (Ong Chu 06/09/2026),
-    nen no duoc mien hai cong von cam chart len bia/hero."""
-    return _text(img).get("nguon_dung") in ("chup_xep_hang", "the_xep_hang")
-
-
-def is_stacked_composite(img):
-    """Anh nay co phai ban GHEP DOC do doi dung ra khong."""
-    return _text(img).get("nguon_dung") == "ghep_doc"
+# Dau vet xuat xu PNG: THUAN CO CHE, khong co nguong/phan doan nao — chuyen
+# sang image_provenance.py dung chung cho moi cong cu TAO/SUA anh (ke ca
+# Gin/Itachi, von di khong ap bo luat nay) khi tach `image_rules.py` (LOW-182).
+from image_provenance import (       # noqa: E402
+    read_crop_trace, allows_landscape_crop, is_ranking_image, is_stacked_composite,
+)
 
 
 # ---- Do luong anh ---------------------------------------------------------
@@ -331,24 +252,12 @@ def dhash_threshold_for(im, nguong=6) -> int:
 DATE_SMALL_IMAGE = 14      # cua so nho anh da dung, xem check_not_reused
 
 
-def _used_images_log():
-    """state/<brand>/anh_da_dung.jsonl — moi dong mot anh da GUI DI (khong phai
-    ung vien). Ghi o buoc gui album, doc o buoc nop."""
-    import env_load
-    return env_load.state_dir() / "anh_da_dung.jsonl"
-
-
-def story_key(link: str) -> str:
-    """Khoa on dinh cua MOT TIN (khong phai mot draft).
-
-    Cung mot tin giao cho Dre roi giao cho Ethan ra HAI draft_id khac nhau
-    (approve_pick._draft_id ghep them vai-brand) nhung van la MOT tin va dung
-    CHUNG bo anh engine tai ve. So "anh da dung" khoa theo draft thi vai nop sau
-    bi chan sach anh cua vai truoc — do 06/09/2026: Ethan mat toan bo 5-6 ma Dre
-    da dung, khong nop duoc the nao."""
-    import re as _re
-    u = _re.sub(r"^https?://(www\.)?", "", (link or "").strip().lower()).rstrip("/")
-    return _re.sub(r"[?#].*$", "", u)
+# `_used_images_log`/`story_key`/`remove_used_for_draft` chuyen sang
+# image_provenance.py (THUAN I/O, dung CHUNG ca ba vai theo thiet ke — LOW-182).
+# Goi QUA TEN MODULE (khong `from ... import`) de test van patch duoc dung MOT
+# cho (`image_provenance._used_images_log`) va ca ba vai deu thay ngay — patch
+# rieng tung ban se lech nhau, dung cai LOW-182 dinh tranh.
+import image_provenance
 
 
 def record_used(duong_dan, draft_id: str, vai: str, link: str = "") -> None:
@@ -359,40 +268,10 @@ def record_used(duong_dan, draft_id: str, vai: str, link: str = "") -> None:
             h = dhash(im)
     except Exception:                                        # noqa: BLE001
         return
-    dong = {"dhash": h, "draft_id": draft_id, "vai": vai, "tin": story_key(link),
+    dong = {"dhash": h, "draft_id": draft_id, "vai": vai, "tin": image_provenance.story_key(link),
             "ten": q.name, "md5": _file_md5(q), "luc": int(time.time())}
-    with open(_used_images_log(), "a", encoding="utf-8") as f:
+    with open(image_provenance._used_images_log(), "a", encoding="utf-8") as f:
         f.write(json.dumps(dong, ensure_ascii=False) + "\n")
-
-
-def remove_used_for_draft(draft_id: str) -> int:
-    """Go moi dong cua mot draft khoi so "anh da dung". Tra so dong da go.
-
-    So duoc ghi o buoc GUI album, tuc TRUOC khi Ong Chu bam nut. Bam "Bo han
-    tin" hay "Lam lai" thi bai chet / album bi thay, anh KHONG bao gio len
-    kenh — nhung truoc 06/09/2026 chung van nam trong so va chan moi bai khac
-    suot 14 ngay. Voi cac tin cung chu de (cung anh wire Reuters/AP, cung anh
-    tru so hang) thi bai sau bi day sang anh kem hon, hoac tac han neu tam bi
-    khoa la anh that duy nhat — ma thong bao chan chi noi ten bai va cham, KHONG
-    noi bai do da bi bo.
-    """
-    import json
-    so = _used_images_log()
-    if not so.exists():
-        return 0
-    dong = so.read_text(encoding="utf-8").splitlines()
-    giu = []
-    for d in dong:
-        try:
-            giu.append(d) if json.loads(d).get("draft_id") != draft_id else None
-        except Exception:                                    # noqa: BLE001
-            giu.append(d)                                    # dong hong: giu nguyen
-    if len(giu) == len(dong):
-        return 0
-    tmp = so.with_suffix(".jsonl.tmp")
-    tmp.write_text(("\n".join(giu) + "\n") if giu else "", encoding="utf-8")
-    tmp.replace(so)
-    return len(dong) - len(giu)
 
 
 def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
@@ -405,7 +284,7 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
     nguoi doc kenh nho anh lau hon mot ngay.
     """
     import json, time
-    so = _used_images_log()
+    so = image_provenance._used_images_log()
     if not so.exists():
         return [], []
     try:
@@ -426,7 +305,7 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
     except Exception:                                        # noqa: BLE001
         pass
     moc = time.time() - DATE_SMALL_IMAGE * 86400
-    tin = story_key(link)
+    tin = image_provenance.story_key(link)
     # Nguong theo LOAI anh (xem THRESHOLD_GRAPHIC). md5 van chan tuyet doi: cung
     # mot tap tin thi trung that, khong can doan theo hinh.
     try:
@@ -670,10 +549,10 @@ def check_aspect_ratio(nhan, p, w, h, lo=TI_LE_45, hi=TI_LE_11, dung_sai=TOLERAN
                 f'tone roi ghep doc, ghi "images": [a, b]; hoac (b) chart/bang '
                 f'benchmark thi ghi "chart": true de hien full be ngang nguyen ven '
                 f"(slide than). Chi khi la anh chup nguoi/san pham KHONG co chu moi "
-                f"duoc cat be ngang: crop_ratio.py --anh {p} --ra <ra.png> "
+                f"duoc cat be ngang: crop_ratio.py --anh {p} --ra <ra.png> --vai ethan "
                 f"--ti-le 4:5 --cat-ngang"], []
     return [f"{nhan}: ti le {w}x{h} ({r:.2f}) khong nam trong 4:5..1:1 — cat "
-            f"truoc: venv/bin/python crop_ratio.py --anh {p} --ra <ra.png> "
+            f"truoc: venv/bin/python crop_ratio.py --anh {p} --ra <ra.png> --vai ethan "
             f"[--ti-le 4:5] [--cx/--cy]"], []
 
 

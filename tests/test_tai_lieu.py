@@ -20,7 +20,8 @@ sys.path.insert(0, str(ROOT))
 # lech ngay truoc khi vao git (Jean/Cape, create_pair o sai module). SKILL.md
 # va SOUL.md CHUA vao day: chung nhac duong dan tuong doi trong thu muc skill
 # va lenh chay tren server, cong nay se bao oan — can mot cong rieng.
-TAI_LIEU = ["README.md", "IMAGE_RULES.md", "STYLE_TEXT_SPEC.md", "ARCHITECTURE.md", "hermes/README.md"]
+TAI_LIEU = ["README.md", "IMAGE_RULES_ETHAN.md", "IMAGE_RULES_DRE.md", "IMAGE_RULES_KITE.md",
+          "STYLE_TEXT_SPEC.md", "ARCHITECTURE.md", "hermes/README.md"]
 
 # INCIDENT_LOG.md va nhat_ky/*.md CO CHU DICH nam ngoai cong nay: chung la NHAT
 # KY, nen viec chung nhac toi script da xoa (`usage_audit.py`, `doi_model_combo.py`)

@@ -29,10 +29,18 @@ def chay_tat_ca(ns: dict) -> None:
       kem ten loi (van dem la hong, van chay tiep);
     - luon in "N/M test qua" va thoat 1 neu co hong, de run.sh doc duoc."""
     import traceback
+    import role
     ham = [v for k, v in list(ns.items()) if k.startswith("test_") and callable(v)]
     hong = 0
     for h in ham:
         try:
+            # Mac dinh MOI test (LOW-182, 16/09/2026): `role.active_rules()` doi
+            # `set_active_role()` da goi trong tien trinh. "ethan" chi la mot lua
+            # chon hop le trung tinh — ba module luat giong het nhau tai thoi
+            # diem tach, nen khong anh huong ket qua; test nao can DUNG vai cu
+            # the (vd hanh vi rieng cua dre_submit) thi tu goi lai set_active_role
+            # trong than test cua no.
+            role.set_active_role("ethan")
             h()
             print(f"OK   {h.__name__}")
         except AssertionError as e:
@@ -61,7 +69,10 @@ def so_tam(tmp):
 
     Emoji cung mot bai hoc, xem `lay_emoji` cua teaser_assemble.assemble.
     """
-    import image_rules as la
+    # LOW-182 (16/09/2026): `_used_images_log` song o image_provenance.py, dung
+    # CHUNG ca ba module luat vai (ho goi QUA TEN MODULE, khong `from ... import`,
+    # dung de patch dung MOT cho nay la ca ba deu thay).
+    import image_provenance as la
     cu = la._used_images_log
     d = Path(tmp)
     # Ten tep giu nguyen "s.jsonl" cua ban cu: co test doc thang ten do.

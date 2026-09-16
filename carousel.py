@@ -59,7 +59,7 @@ from PIL import Image, ImageDraw, ImageFilter
 # Tai dung nguyen xi cac helper da kiem chung cua card.py thay vi viet lai:
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
-import image_rules
+import image_rules_dre
 import text_bg
 from card import (
     _f, _wrap, _fit_cover,
@@ -621,7 +621,7 @@ def _gate_text(chunks, bo_qua_dau):
 def _gate_image(paths):
     """paths: [(nhan, duong_dan, muc)] — muc la dict cover/slide trong spec.
 
-    Chi PHAN HOP cac cong chan cua `image_rules` theo dung thu tu cua khung
+    Chi PHAN HOP cac cong chan cua `image_rules_dre` theo dung thu tu cua khung
     carousel; ban than cac luat nam ben do va dung chung voi Ethan/Itachi.
     Cai RIENG cua carousel chi la: dai ti le 4:5..1:1, va viec slide than khai
     "chart": true thi mien cong ti le (anh ngang duoc dan full be ngang).
@@ -642,7 +642,7 @@ def _gate_image(paths):
         if not Path(p).exists():
             loi.append(f"{nhan}: khong thay tep anh {p}")
             continue
-        if not gom(image_rules.check_duplicate(nhan, p, da_thay)):
+        if not gom(image_rules_dre.check_duplicate(nhan, p, da_thay)):
             continue
         img = Image.open(p)
         w, h_px = img.size
@@ -651,25 +651,25 @@ def _gate_image(paths):
 
         # Anh RONG chan TRUOC check_chart_integrity: anh trang tron duoc do_chart cham la
         # "chart" (phang 100%, 2 mau), de sau thi thong bao thanh "thieu co".
-        if not gom(image_rules.check_blank_image(nhan, img)):
+        if not gom(image_rules_dre.check_blank_image(nhan, img)):
             continue
-        if not gom(image_rules.check_chart_integrity(nhan, img, khai_chart, la_bia)):
+        if not gom(image_rules_dre.check_chart_integrity(nhan, img, khai_chart, la_bia)):
             continue
 
         # RIENG CUA CAROUSEL: slide than khai "chart": true -> nhan ca anh NGANG
         # nguyen ven (_body_image dan full be ngang, khong cat). Bia thi khong,
         # vi hook de len anh; bia chart ngang phai ghep doc "images".
         r = w / h_px
-        if khai_chart and not la_bia and r > image_rules.TI_LE_11 + image_rules.TOLERANCE_RATIO:
-            if image_rules.read_crop_trace(img):
+        if khai_chart and not la_bia and r > image_rules_dre.TI_LE_11 + image_rules_dre.TOLERANCE_RATIO:
+            if image_rules_dre.read_crop_trace(img):
                 loi.append(f"{nhan}: chart ma van di qua crop_ratio.py — chart phai "
                            'NGUYEN VEN, dua thang anh goc vao voi "chart": true')
             continue
-        gom(image_rules.check_aspect_ratio(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
+        gom(image_rules_dre.check_aspect_ratio(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
 
-        gom(image_rules.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
-        gom(image_rules.check_resolution(nhan, w, h_px))
-        gom(image_rules.check_unnamed_face(nhan, p, muc.get("nhan_vat")))
+        gom(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
+        gom(image_rules_dre.check_resolution(nhan, w, h_px))
+        gom(image_rules_dre.check_unnamed_face(nhan, p, muc.get("nhan_vat")))
     return loi, canh_bao
 
 

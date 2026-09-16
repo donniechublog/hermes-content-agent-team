@@ -8,7 +8,8 @@ from pathlib import Path
 
 from PIL import Image
 
-import image_rules
+import image_provenance
+import role
 import env_load
 import ranking
 
@@ -216,7 +217,7 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
             bia = arxiv_cover.capture_cover(data) if data else None
             if bia is not None:
                 out.parent.mkdir(parents=True, exist_ok=True)
-                bia.save(out, "PNG", pnginfo=image_rules.stamp_provenance("arxiv_bia"))
+                bia.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("arxiv_bia"))
                 cands.append({"anh": str(out), "tep": str(out), "alt": "trang bia paper",
                               "tu": "arxiv_bia", "trang": link, "diem": 60})
     cands.sort(key=lambda c: -c.get("diem", 0))
@@ -579,7 +580,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
     da_hash = []
     for a0 in anh:
         try:
-            da_hash.append(image_rules.dhash(Image.open(a0["goc"]).convert("RGB")))
+            da_hash.append(role.active_rules().dhash(Image.open(a0["goc"]).convert("RGB")))
         except Exception:                                    # noqa: BLE001
             pass
     for u in urls[:MAX_PAGE_CAPTURE]:
@@ -600,11 +601,11 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
                 Path(tam).unlink(missing_ok=True)
                 continue
         try:
-            h = image_rules.dhash(Image.open(tam).convert("RGB"))
+            h = role.active_rules().dhash(Image.open(tam).convert("RGB"))
         except Exception:                                    # noqa: BLE001
             h = None
         if h is not None:
-            trung = next((h2 for h2 in da_hash if image_rules.is_near_duplicate(h, h2)), None)
+            trung = next((h2 for h2 in da_hash if role.active_rules().is_near_duplicate(h, h2)), None)
             if trung is not None:
                 print(f"[chup nguon] {_domain(u)}: TRÙNG ảnh đã có (cùng photo-wire, "
                       f"lệch {bin(h ^ trung).count('1')} bit) — bỏ", file=sys.stderr)

@@ -30,22 +30,22 @@ def test_chum_khai_niem_dem_la_mot():
     anh = [{"dung": ["bìa"], "khai_niem": {"tu_khoa": "co"}},
            {"dung": ["bìa"], "khai_niem": {"tu_khoa": "rack"}},
            {"dung": ["thân"]}]
-    assert schema.count_image_use_ok(anh) == 2, \
+    assert schema.count_image_use_ok(anh, "ethan") == 2, \
         "hai anh khai niem phai dem la MOT (cong thuc cu dem thanh 3)"
 
 
 def test_anh_khong_lien_quan_khong_duoc_tinh():
     anh = [{"dung": ["thân"], "lien_quan": False}, {"dung": ["thân"], "lien_quan": True}]
-    assert schema.count_image_use_ok(anh) == 1
+    assert schema.count_image_use_ok(anh, "ethan") == 1
 
 
 def test_anh_khong_dung_duoc_o_dau_thi_khong_tinh():
-    assert schema.count_image_use_ok([{"dung": []}, {"dung": ["thân"]}]) == 1
+    assert schema.count_image_use_ok([{"dung": []}, {"dung": ["thân"]}], "ethan") == 1
 
 
 def test_danh_sach_rong_va_None_deu_ra_0():
-    assert schema.count_image_use_ok([]) == 0
-    assert schema.count_image_use_ok(None) == 0
+    assert schema.count_image_use_ok([], "ethan") == 0
+    assert schema.count_image_use_ok(None, "ethan") == 0
 
 
 def test_khop_cong_thuc_cua_nguoi_ghi():
@@ -281,4 +281,4 @@ def test_tinh_lai_bo_anh_that_tsmc_lan_hai():
           _a("A12", True, 853, cat_ngang_ok=False, ti_le=1.78)]
     # rieng khong chi_ghep: A3, A6, A8, A10, A11 = 5. chi_ghep: A5, A7, A12 = 3 ->
     # cap roi nhau lon nhat = 1 (ba tam chi ghep toi da mot cap).
-    assert schema.count_image_use_ok(bo) == 6
+    assert schema.count_image_use_ok(bo, "ethan") == 6

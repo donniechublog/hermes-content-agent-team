@@ -337,12 +337,13 @@ def irrelevant_images(anh: dict, ma_ds) -> tuple:
 
 def check_not_reused_across_runs(anh: dict, cap, m: dict) -> list:
     """KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026.
-    `cap`: [(nhan, ma)]. Ba vai lam anh deu goi image_rules.check_not_reused theo
-    cung mot cach; gom de khong ai bo `link` (khoa theo TIN, xem image_rules)."""
-    import image_rules
+    `cap`: [(nhan, ma)]. Ba vai lam anh deu goi check_not_reused theo cung mot
+    cach (module luat rieng cua m["vai_anh"], LOW-182); gom de khong ai bo
+    `link` (khoa theo TIN)."""
+    rules = _vai.rules_module(m.get("vai_anh", ""))
     loi = []
     for nhan, ma in cap:
-        l, _ = image_rules.check_not_reused(nhan, anh[ma]["goc"], m.get("draft_id", ""),
+        l, _ = rules.check_not_reused(nhan, anh[ma]["goc"], m.get("draft_id", ""),
                                      m.get("link", ""))
         loi += l
     return loi
@@ -377,12 +378,12 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
            if ma and (anh.get(ma) or {}).get("cluttered") and not (anh.get(ma) or {}).get("du_tu_khoa")]
     if not cluttered:
         return []
-    import image_rules
+    rules = _vai.rules_module(m.get("vai_anh", ""))
     sach = []
     for ma, a in anh.items():
         if ma in dung or not _clean_use_alone(a):
             continue
-        l, _ = image_rules.check_not_reused(ma, a["goc"], m.get("draft_id", ""), m.get("link", ""))
+        l, _ = rules.check_not_reused(ma, a["goc"], m.get("draft_id", ""), m.get("link", ""))
         if not l:
             sach.append(ma)
     if not sach:
@@ -449,7 +450,7 @@ def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -
     cam = im.get("cam_anh_slide") or {}
     if not cam:
         return []
-    import image_rules
+    rules = _vai.rules_module(m.get("vai_anh", ""))
     from PIL import Image
     loi = []
     for nhan, ma_list in dung_anh:
@@ -463,10 +464,10 @@ def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -
             if not fp:
                 continue
             try:
-                h = image_rules.dhash(Image.open(fp).convert("RGB"))
+                h = rules.dhash(Image.open(fp).convert("RGB"))
             except (OSError, ValueError):
                 continue
-            if any(image_rules.is_near_duplicate(h, int(c, 16)) for c in ds):
+            if any(rules.is_near_duplicate(h, int(c, 16)) for c in ds):
                 loi.append(f"{nhan}: {ma} vẫn là ảnh đã bị Ông Chủ từ chối lúc làm lại trước "
                            "— chọn ảnh THẬT SỰ khác (khác nguồn, khác góc), không chỉ đổi mã")
                 break
@@ -580,7 +581,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
                                            "message_id": mid})
         # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot
         # khoa: Ethan de anh ghep thu hai o "anh2", Kite de o "hinh".
-        import image_rules
+        rules = _vai.rules_module(vai)
         goc = {a["ma"]: a["goc"] for a in xong.get("anh", [])}
         ma_ds = []
         for k in ("anh", "anh2", "bia", "hinh"):
@@ -588,7 +589,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
             ma_ds += list(v) if isinstance(v, (list, tuple)) else [v]
         for ma in dict.fromkeys(x for x in ma_ds if x):
             if goc.get(ma):
-                image_rules.record_used(goc[ma], draft_id, vai, xong.get("link", ""))
+                rules.record_used(goc[ma], draft_id, vai, xong.get("link", ""))
 
     # Nop THANH CONG thi xoa bo dem vong loi. `count_round_error` chi reset khi BO
     # LOI doi hoac qua 6 gio, con duong thanh cong truoc 06/09/2026 khong dung

@@ -45,7 +45,8 @@ def _du():
 def _m(wd, anh=(), **k):
     d = {"anh": list(anh), "brand": "donniechublog", "title": "Nemotron mở kho",
          "draft_id": "tin-thu", "link": "https://vi.du/bai",
-         "chu_bai": "Nemotron có 340 tỷ tham số, đạt 86,2 điểm MMLU.", "tu_lieu": {}}
+         "chu_bai": "Nemotron có 340 tỷ tham số, đạt 86,2 điểm MMLU.", "tu_lieu": {},
+         "vai_anh": "kite"}
     d.update(k)
     return d
 
@@ -74,7 +75,7 @@ def _du_bia(wd, **mk):
 def _khong_soi_mat():
     """YuNet (dem mat) can tep model va ton thoi gian; cong mat nguoi cua Kite
     chi CANH BAO nen tat no trong test, TRA LAI sau."""
-    import image_rules
+    import image_rules_kite as image_rules
     cu = image_rules.check_unnamed_face
     image_rules.check_unnamed_face = lambda nhan, path, nhan_vat=None: ([], [])
     try:
@@ -665,7 +666,7 @@ def test_image_hop_le_doi_thanh_duong_dan_tep():
 def test_hinh_da_dung_o_tin_khac_thi_chan():
     """Dre va Ethan co cong nay tu dau; Kite thi khong — bang benchmark Dre dung
     hom qua van len bo cua Kite hom nay (06/09/2026)."""
-    import image_rules
+    import image_rules_kite as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         h = _hinh(wd)

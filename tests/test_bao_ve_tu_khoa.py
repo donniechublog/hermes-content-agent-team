@@ -151,7 +151,7 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
 
         import os
         import env_load
-        import image_rules
+        import image_rules_ethan
         # LOW-127: test nay kiem luong TIM ANH QUA BAO, khong kiem vision. May chu co
         # secret.*.env that -> env_load.load() nap lai OPENAI_API_KEY -> vision THAT cham
         # anh nhieu tu ve la khong lien quan -> anh khong vao dung_duoc (do tren may chu).
@@ -170,9 +170,9 @@ def test_hang_rong_thi_tim_bao_theo_tu_khoa_quet_anh():
                               return_value={"cands": [ung_vien], "tieu_de_en": "", "chu": "",
                                            "trang_them": []}), \
              mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia), \
-             mock.patch.object(image_rules, "count_faces", return_value=0), \
-             mock.patch.object(image_rules, "is_chart", return_value=(False, "ảnh chụp thật")), \
-             mock.patch.object(image_rules, "measure_chart_signal", return_value=(0.1, 500)), \
+             mock.patch.object(image_rules_ethan, "count_faces", return_value=0), \
+             mock.patch.object(image_rules_ethan, "is_chart", return_value=(False, "ảnh chụp thật")), \
+             mock.patch.object(image_rules_ethan, "measure_chart_signal", return_value=(0.1, 500)), \
              mock.patch.object(fallback_rounds, "_ranking_context_edge", return_value=None):  # trung mang that
             anh, dung_duoc, _ = fallback_rounds._round_brand([], "Moonshot AI raises funding", "", wd)
 

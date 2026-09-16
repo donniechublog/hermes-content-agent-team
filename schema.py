@@ -188,18 +188,26 @@ def _only_stack_ok(a: dict) -> bool:
     return a.get("cat_ngang_ok") is not True
 
 
-def _count_stackable_pairs_real(ds: list) -> int:
+def _count_stackable_pairs_real(ds: list, vai_anh: str) -> int:
     """So cap ROI NHAU lon nhat trong `ds` ma moi cap ghep doc ra dung khung
-    (`image_rules.stack_fit_frame`, theo `ti_le` da do — khong mo tep anh).
+    (`stack_fit_frame` cua module luat rieng `vai_anh`, LOW-182 — theo `ti_le`
+    da do, khong mo tep anh).
+
+    Vai la/khong biet -> module cua vai anh mac dinh, CUNG mot quy uoc voi
+    `role.min_images`/`can_be_hero`/`search_target_for` (khong nem — nguoi goi
+    o do la `role.has_enough_material`, va da co canh bao rieng o
+    `image_prepare.prepare_article` khi sidecar mat `vai_anh`).
 
     Phai la ghep cap TOI UU, khong phai tham lam: bon tam C-A-B-D ma chi A-C,
     A-B, B-D ghep duoc thi nhat A-B truoc ra 1 cap, dung ra 2 (A-C, B-D). So tam
     chi-ghep cua mot bai chi vai tam den chuc tam — duyet tap con co nho la du."""
     from functools import lru_cache
 
-    import image_rules
+    import role
+    v = role.ROLE.get(vai_anh) or role.ROLE[role.DEFAULT_IMAGE]
+    rules = role.rules_module(v.slug)
     n = len(ds)
-    ke = [[j for j in range(n) if j != i and image_rules.stack_fit_frame(ds[i].get("ti_le"),
+    ke = [[j for j in range(n) if j != i and rules.stack_fit_frame(ds[i].get("ti_le"),
                                                                      ds[j].get("ti_le"))]
           for i in range(n)]
 
@@ -218,7 +226,7 @@ def _count_stackable_pairs_real(ds: list) -> int:
     return _tot((1 << n) - 1)
 
 
-def count_image_use_ok(anh: list) -> int:
+def count_image_use_ok(anh: list, vai_anh: str) -> int:
     """So SLIDE dung duoc tu bo anh, de xet du/thieu — MOT ban duy nhat cua cong thuc.
 
     Dem theo cai vai DUNG DUOC, khong phai so tam tai ve:
@@ -237,7 +245,8 @@ def count_image_use_ok(anh: list) -> int:
     Dre chi dung duoc 4 va phai block. Hai cho dem lac quan hon cong chan that:
       - `len(chi_ghep) // 2` coi BAT KY hai tam chi-ghep nao cung la mot cap —
         A5+A10 (deu 3:2) ghep ra 0.75, ngoai dai 4:5..1:1, dre_submit chan. Nay dem
-        so cap roi nhau LON NHAT ma `image_rules.stack_fit_frame` cho qua;
+        so cap roi nhau LON NHAT ma `stack_fit_frame` (module luat rieng cua
+        `vai_anh`, LOW-182) cho qua;
       - tam co mat nguoi khong ro ai (A3) van duoc dem, trong khi
         `submit_common.check_subject_named` chan no. Nay bo qua qua `role.face_no_clear_ai`,
         cung dieu kien voi `role.can_be_hero`."""
@@ -247,7 +256,7 @@ def count_image_use_ok(anh: list) -> int:
     khai_niem = [a for a in dung_duoc if a.get("khai_niem")]
     rieng = [a for a in dung_duoc if not a.get("khai_niem")]
     chi_ghep = [a for a in rieng if _only_stack_ok(a)]
-    return (len(rieng) - len(chi_ghep)) + _count_stackable_pairs_real(chi_ghep) + min(1, len(khai_niem))
+    return (len(rieng) - len(chi_ghep)) + _count_stackable_pairs_real(chi_ghep, vai_anh) + min(1, len(khai_niem))
 
 
 def read_manifest(nguon) -> dict | None:
@@ -281,7 +290,14 @@ def read_manifest(nguon) -> dict | None:
     m["phien_ban"] = pv                 # chuan hoa ve int; nhanh duoi ghi de neu nang ban
     if pv < 1:
         if "so_dung_duoc" not in m:
-            m["so_dung_duoc"] = count_image_use_ok(m.get("anh") or [])
+            # Ban cu co the thieu `vai_anh` (truoc LOW-12, 10/09/2026): roi ve
+            # `role.DEFAULT_IMAGE` nhu `image_prepare.prepare_article` da lam,
+            # khong de ValueError cua `role.rules_module` lam vo hieu ca ham bu.
+            import role
+            vai_anh = role.canonical_slug(m.get("vai_anh") or "") or role.DEFAULT_IMAGE
+            if vai_anh not in role.ROLE:
+                vai_anh = role.DEFAULT_IMAGE
+            m["so_dung_duoc"] = count_image_use_ok(m.get("anh") or [], vai_anh)
         # `so_xep_hang` = SO BANG chup duoc. Ban cu chi co `xep_hang` (bang dau
         # tien) nen suy: co bang thi it nhat mot, khong co thi 0. Nguoi doc tung
         # mac dinh 1 ke ca khi khong co bang nao — nguoc han y nghia.
