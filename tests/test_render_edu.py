@@ -22,7 +22,7 @@ HAI LOP GUARDRAIL chong len nhau o day, de rieng vi hai doi lan khac nhau:
    bo han slot `js` o giua -> `(nen, anh)`. aac796a de lai slot do luon bang
    chuoi rong va hai noi goi van `+ js` vao HTML; bo slot bien "khong con
    script dat lop mo" tu mot assert (`js == ""`) thanh dieu KHONG THE xay ra.
-   Cong chan nay gio o `tests/test_render_edu_xac_lop_mo.py` cung voi cac xac
+   Cong chan nay gio o `tests/test_render_edu_confirm_layer_open.py` cung voi cac xac
    con lai cua co che veil — VA voi cong chan nguoc: carousel.py giu ban sao
    rieng cua co che do va van dung that, khong duoc xoa theo.
 

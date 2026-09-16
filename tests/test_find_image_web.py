@@ -5,7 +5,7 @@
 đoạn mã tìm kiếm hình ảnh cho model thì tôi cũng không biết nên hiểu thế nào".
 Xem docstring find_image_web.py cho bảng đo Google/DDG/Bing/Yandex từ IP máy chủ.
 
-Chạy:  venv/bin/python tests/test_tim_anh_web.py
+Chạy:  venv/bin/python tests/test_find_image_web.py
 """
 import sys
 from pathlib import Path
@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 import find_image_web as tw                                      # noqa: E402
 
 
-def test_bing_murl_hai_dinh_dang_va_unicode():
+def test_bing_murl_two_format_and_unicode():
     html = ('<a class="iusc" m=\'{"murl":"https://a.com/x.jpg","turl":"t"}\'></a>'
             'm=&quot;{&quot;murl&quot;:&quot;https://b.com/y.png&quot;}'
             '{"murl":"https://c.com/\\u5716.jpg"}')
@@ -24,12 +24,12 @@ def test_bing_murl_hai_dinh_dang_va_unicode():
     assert any("圖" in u for u in ra), ra
 
 
-def test_yandex_img_url_giai_ma():
+def test_yandex_img_url_resolve_code():
     hs = ["https://yandex.com/images/search?img_url=https%3A%2F%2Fcdn.x.com%2Fa.jpg&pos=1", "https://yandex.com/khac"]
     assert tw.yandex_img_url(hs) == ["https://cdn.x.com/a.jpg"]
 
 
-def test_loc_bo_stock_thumb_khong_phai_anh_va_trung():
+def test_filter_drop_stock_thumb_no_right_image_and_duplicate():
     urls = ["https://i.ytimg.com/vi/x/maxresdefault.jpg",          # thumb youtube
             "https://www.shutterstock.com/a.jpg",                    # stock watermark
             "https://a.com/page.html",                               # khong phai anh
@@ -43,11 +43,11 @@ def test_loc_bo_stock_thumb_khong_phai_anh_va_trung():
     assert len(tw.filter(urls, 1, "web_bing", "q")) == 1
 
 
-def test_yandex_la_nguon_chinh_bing_tat():
+def test_yandex_is_source_main_bing_all():
     assert [t for t, _ in tw.SOURCE] == ["Yandex"], "Bing lech de 3/5 tu IP may chu (12/09) — khong duoc bat mac dinh"
 
 
-def test_noi_vao_vai_va_engine():
+def test_say_into_role_and_engine():
     assert "find_image_web.find_image_web(" in (ROOT / "find_more_images.py").read_text(encoding="utf-8")
     src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
     assert "find_image_web.find_image_web(" in src and "press_entity_images.press_entity_images(" in src, \

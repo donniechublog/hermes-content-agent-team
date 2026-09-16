@@ -3,7 +3,7 @@
 approve_dispatch.py — link_result/reason_task (nut bam cu tra loi dung trang thai
 thuc) va canh bao "khong phan hoi" khi mot vai treo giua running trong
 report_progress_kanban. Test o day chi phan LOGIC THUAN (khong Telegram/kanban.db
-that), theo dung kieu tests/test_route_thieu_anh.py: monkeypatch truc tiep
+that), theo dung kieu tests/test_route_missing_images.py: monkeypatch truc tiep
 thuoc tinh module, tu luu/phuc hoi trong finally.
 
 Chay:  venv/bin/python tests/test_bao_treo.py

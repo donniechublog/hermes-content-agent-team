@@ -6,7 +6,7 @@ coi `not data` là `continue`. Mất DNS/proxy thì 5 ứng viên hỏng ra 0 d�
 stderr, engine kết luận "tải được 0 ảnh" → so_dung_duoc=0 → tự chuyển Kite,
 không dấu vết lỗi môi trường nào.
 
-Chạy:  venv/bin/python tests/test_tai_loc_log.py
+Chạy:  venv/bin/python tests/test_download_filter_log.py
 """
 import io
 import sys
@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 import prepare.download_filter as tl                                 # noqa: E402
 
 
-def _bat_stderr(ham):
+def _catch_stderr(ham):
     cu, sys.stderr = sys.stderr, io.StringIO()
     try:
         kq = ham()
@@ -27,20 +27,20 @@ def _bat_stderr(ham):
         sys.stderr = cu
 
 
-def test_tai_bytes_hong_mang_phai_noi_ra():
-    kq, err = _bat_stderr(lambda: tl._download_bytes("http://khong-ton-tai.invalid/a.png"))
+def test_download_bytes_broken_network_right_say_out():
+    kq, err = _catch_stderr(lambda: tl._download_bytes("http://khong-ton-tai.invalid/a.png"))
     assert kq is None
     assert "[tai]" in err and "khong-ton-tai.invalid" in err, repr(err)
     assert "Error" in err or "error" in err, "phai co ten loi (repr), khong chi None"
 
 
-def test_tai_va_loc_tat_ca_hong_thi_co_dong_tong():
+def test_download_and_filter_all_all_broken_then_has_line_total():
     """Khong chi tung URL: mot dong tong noi 'TAT CA khong tai duoc' de brief
     phan biet voi bai khong co anh."""
     cands = [{"anh": f"http://khong-ton-tai.invalid/{i}.png", "trang": "http://x.invalid/"}
              for i in range(3)]
     with tempfile.TemporaryDirectory() as t:
-        (ra, err) = _bat_stderr(lambda: tl.download_and_filter(cands, Path(t)))
+        (ra, err) = _catch_stderr(lambda: tl.download_and_filter(cands, Path(t)))
     assert ra == [], ra
     assert "3/3 ung vien KHONG tai duoc" in err and "TAT CA" in err, repr(err)
 

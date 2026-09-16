@@ -181,7 +181,7 @@ def test_engine_take_threshold_block_from_copy_form_ky_role():
     `role.min_images` de dung manifest) — chi cong nay bat duoc.
 
     Nguong CHAN va cau hoi "con phai di tim nua khong" la HAI thu: cai thu hai
-    nay do `role.has_enough_material`, giu o `tests/test_tim_anh_theo_vai.py`."""
+    nay do `role.has_enough_material`, giu o `tests/test_find_image_by_role.py`."""
     import inspect
     import re
 
