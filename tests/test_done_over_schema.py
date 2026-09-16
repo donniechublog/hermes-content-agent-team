@@ -12,7 +12,7 @@ _read_json / read_text mà đối số có literal "xong.json" — comment nhắ
 tệp không tính. Ada/Itachi có xong.json RIÊNG (không phải manifest engine, không
 có `anh`) nên không nằm trong cổng này.
 
-Chạy:  venv/bin/python tests/test_xong_qua_schema.py
+Chạy:  venv/bin/python tests/test_done_over_schema.py
 """
 import ast
 import sys
@@ -26,45 +26,45 @@ NGUOI_DOC_ENGINE = ["submit_common.py", "approve_post.py", "image_prepare.py", "
                     "dre_submit.py", "ethan_submit.py", "kite_submit.py", "miles_submit.py"]
 
 
-def _co_xong_json(node) -> bool:
+def _has_done_json(node) -> bool:
     return any(isinstance(n, ast.Constant) and n.value == "xong.json" for n in ast.walk(node))
 
 
-def _ten_goi(call: ast.Call) -> str:
+def _name_call(call: ast.Call) -> str:
     f = call.func
     return f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", "")
 
 
-def _doc_tho(src: str):
+def _read_raw(src: str):
     """Cac lenh doc xong.json khong qua read_manifest: [(dong, ten ham)]."""
     xau = []
     for n in ast.walk(ast.parse(src)):
         if not isinstance(n, ast.Call):
             continue
-        ten = _ten_goi(n)
-        if ten in ("loads", "_read_json", "read_text", "_load_json", "doc_json") and _co_xong_json(n):
+        ten = _name_call(n)
+        if ten in ("loads", "_read_json", "read_text", "_load_json", "doc_json") and _has_done_json(n):
             xau.append((n.lineno, ten))
     return xau
 
 
-def test_khong_ai_doc_xong_json_tho():
+def test_no_ai_read_done_json_raw():
     xau = []
     for ten in NGUOI_DOC_ENGINE:
         p = ROOT / ten
         if not p.exists():
             continue
-        for dong, ham in _doc_tho(p.read_text(encoding="utf-8")):
+        for dong, ham in _read_raw(p.read_text(encoding="utf-8")):
             xau.append(f"{ten}:{dong} {ham}(... xong.json)")
     assert not xau, "doc xong.json tho, khong qua schema.read_manifest:\n  " + "\n  ".join(xau)
 
 
-def test_cong_bat_duoc_doc_tho_va_bo_qua_comment():
-    assert _doc_tho('m = json.loads((wd / "xong.json").read_text())') == [(1, "loads"), (1, "read_text")]
-    assert _doc_tho('x = cb._read_json(wd / "xong.json")') == [(1, "_read_json")]
-    assert _doc_tho('# doc xong.json o day\nm = schema.read_manifest(wd / "xong.json")') == []
+def test_gate_catch_ok_read_raw_and_skip_comment():
+    assert _read_raw('m = json.loads((wd / "xong.json").read_text())') == [(1, "loads"), (1, "read_text")]
+    assert _read_raw('x = cb._read_json(wd / "xong.json")') == [(1, "_read_json")]
+    assert _read_raw('# doc xong.json o day\nm = schema.read_manifest(wd / "xong.json")') == []
 
 
-def test_doc_manifest_bu_so_dung_duoc_cho_ban_0():
+def test_read_manifest_fallback_count_use_ok_wait_copy_0():
     import schema
     m0 = {"anh": [{"ma": "A1", "dung": ["bìa"], "lien_quan": True},
                   {"ma": "A2", "dung": ["thân"], "lien_quan": None}]}

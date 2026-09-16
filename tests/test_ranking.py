@@ -19,7 +19,7 @@ một bảng là top model chỉnh sửa, đâu có trùng lặp"*. `find_and_ca
 `_skip_source` la ket qua: nguon `doc_lap: True` (nang luc rieng, khong phai
 cach do khac cua cung mot thu) khong bao gio bi mot thanh cong khac chan lai.
 
-Chay:  venv/bin/python tests/test_xep_hang.py
+Chay:  venv/bin/python tests/test_ranking.py
 """
 import sys
 from pathlib import Path
@@ -30,7 +30,7 @@ import ranking as xh   # noqa: E402
 
 
 # --------------------------------------------------------------- registry
-def test_co_nguon_image_edit_arena():
+def test_has_source_image_edit_arena():
     """arena-image-edit phai co trong NGUON, dung URL that (da WebFetch xac
     nhan truoc khi them: 55 model, du lieu khop anh Ong Chu gui 09/09/2026)."""
     ma = {n["ma"]: n for n in xh.SOURCE}
@@ -40,13 +40,13 @@ def test_co_nguon_image_edit_arena():
     assert n["site"] == "ARENA.AI"
 
 
-def test_khong_trung_ma_nguon():
+def test_no_duplicate_code_source():
     ma = [n["ma"] for n in xh.SOURCE]
     assert len(ma) == len(set(ma)), f"trung ma nguon: {ma}"
 
 
 # ----------------------------------------------------------------- extract_model
-def test_tach_model_giu_ten_ma_bien_the():
+def test_extract_model_keep_name_code_variable_card():
     """Sunburst/Flare la ten ma CUA CHINH HAI HANG dang xep #1 va #2 tren cung
     mot bang (Image Edit Arena, du lieu that 09/09/2026). Mat ten ma thi ca hai
     hang deu chi con "GPT Image 2.5", khong con phan biet duoc dung hang nao."""
@@ -56,7 +56,7 @@ def test_tach_model_giu_ten_ma_bien_the():
         == "GPT Image 2.5 Flare"
 
 
-def test_tach_model_van_co_ten_ngan_du_phong():
+def test_extract_model_still_has_name_short_enough_room():
     """Ten day nhat dung truoc, nhung ban ngan hon ("GPT Image 2.5" tran) van
     phai con trong danh sach — trang xep hang co the ghi khac chinh ta ten ma,
     luc do engine lui ve ban ngan de con co gang khop."""
@@ -64,7 +64,7 @@ def test_tach_model_van_co_ten_ngan_du_phong():
     assert "GPT-Image-2.5" in ra, ra
 
 
-def test_tach_model_khong_doi_hanh_vi_cu():
+def test_extract_model_no_change_behavior_old():
     """Cac vi du CHINH module tu ghi trong docstring/comment cua no — khong duoc
     doi khi them Sunburst/Flare vao _DUOI."""
     ca = [
@@ -85,7 +85,7 @@ def test_tach_model_khong_doi_hanh_vi_cu():
 
 
 # --------------------------------------------------------------- suggest_sources
-def test_link_image_edit_uu_tien_dung_bang_do():
+def test_link_image_edit_priority_use_board_measure():
     """Tin CO LINK toi image-edit thi nguon do phai len DAU danh sach (nhac
     truc tiep, +500 diem) — khong bi bang t2i chen truoc chi vi dung tu 'image'."""
     ds = xh.suggest_sources("GPT-Image-2.5 Sunburst dung #1 Image Edit Arena",
@@ -94,7 +94,7 @@ def test_link_image_edit_uu_tien_dung_bang_do():
     assert ds[0]["duoc_nhac"] is True
 
 
-def test_tin_tao_anh_chung_chung_van_xet_ca_hai_bang():
+def test_story_create_image_common_common_still_consider_all_two_board():
     """Tin ve tao anh (khong noi ro edit) khong co link: arena-t2i va
     arena-image-edit phai CUNG nam trong top nguon thu — mot model tao anh manh
     thuong len ca hai bang (du lieu that: GPT-Image-2.5 #1&#2 CA HAI bang cung
@@ -104,7 +104,7 @@ def test_tin_tao_anh_chung_chung_van_xet_ca_hai_bang():
     assert "arena-t2i" in top5 and "arena-image-edit" in top5, top5
 
 
-def test_tin_chinh_sua_anh_uu_tien_bang_edit_hon_t2i():
+def test_story_main_fix_image_priority_board_edit_than_t2i():
     """Tu khoa 'chỉnh sửa ảnh' phai keo arena-image-edit len TRUOC arena-t2i —
     hai bang do khac nang luc (sua anh vs tao anh tu dau), khong the lan nhau.
     Chuoi tieu de PHAI giu dau tieng Viet: regex khop dau, "chinh sua anh"
@@ -116,7 +116,7 @@ def test_tin_chinh_sua_anh_uu_tien_bang_edit_hon_t2i():
 
 
 # ------------------------------------------------------- doc_lap / _skip_source
-def test_hai_nguon_doc_lap_khong_chan_nhau():
+def test_two_source_independent_no_block_other():
     """Ca hai bang GPT-Image-2.5 dung dau (tao anh, sua anh) deu doc_lap: da
     chup duoc mot cai KHONG duoc chan cai kia — dung yeu cau cua Ong Chu 09/09."""
     t2i = {"ma": "arena-t2i", "doc_lap": True}
@@ -128,7 +128,7 @@ def test_hai_nguon_doc_lap_khong_chan_nhau():
     assert xh._skip_source(edit, da_chup_thuong=True) is False
 
 
-def test_nguon_thuong_dung_sau_thanh_cong_dau_tien():
+def test_source_regular_use_after_success_first():
     """arena-code/swebench/aider/livecodebench la BON CACH DO cua CUNG mot nang
     luc — thanh cong o mot nguon THUONG phai chan cac nguon THUONG con lai,
     dung hanh vi cu cua `find_and_capture` (khong lap lai cung mot bang chung)."""
@@ -138,7 +138,7 @@ def test_nguon_thuong_dung_sau_thanh_cong_dau_tien():
     assert xh._skip_source(swebench, da_chup_thuong=True) is True
 
 
-def test_kich_ban_that_gpt_image_2_5_lay_ca_hai_bang():
+def test_size_copy_real_gpt_image_2_5_take_all_two_board():
     """Mo phong DUNG trinh tu quyet dinh cua vong lap trong find_and_capture_many
     (khong dung Playwright that) cho ca that: tieu de nhac thang link Image Edit
     Arena — arena-image-edit len dau danh sach, arena-t2i theo sau, roi cac bang
@@ -168,7 +168,7 @@ def test_kich_ban_that_gpt_image_2_5_lay_ca_hai_bang():
     assert thu2 == ["arena-code"], f"tin code bi keo them nguon thuong khac: {thu2}"
 
 
-def test_ca_ba_bang_anh_cua_gpt_image_2_5():
+def test_all_three_board_image_of_gpt_image_2_5():
     """Ca that dung tieu de draft (09/09/2026): tweet cong bo cua @arena xep
     gpt-image-2.5-sunburst #1 CA BA bang — Text-to-Image, Image Edit, Multi-Image
     Edit — trong cung mot tweet. Mo phong voi tran MAX_XH nhu vong lap that."""
@@ -187,7 +187,7 @@ def test_ca_ba_bang_anh_cua_gpt_image_2_5():
     assert thu == ["arena-t2i", "arena-image-edit", "arena-multi-image-edit"], thu
 
 
-def test_khong_doi_hop_dong_tim_va_chup_cu():
+def test_no_change_contract_find_and_capture_old():
     """`find_and_capture` (so, khong "_nhieu") phai con nguyen — `_ranking_context_edge`
     trong image_prepare.py va CLI main() van goi ham nay, doi dung MOT dict."""
     import inspect
@@ -197,7 +197,7 @@ def test_khong_doi_hop_dong_tim_va_chup_cu():
     assert "return kq_cuoi" in src and "break" in src, "tim_va_chup khong con dung o thanh cong dau tien"
 
 
-def test_hang_tu_tieu_de_khong_lay_sang_bang_doc_lap():
+def test_rank_from_title_no_take_bright_board_independent():
     """R-r2-5: hang tach tu tieu de la hang tren bang CHINH; bang doc lap
     (do nang luc khac, nguon svg tra hang=None) khong duoc muon "#1" do."""
     goi_y = 1

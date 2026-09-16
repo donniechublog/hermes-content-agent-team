@@ -144,7 +144,7 @@ thiếu trong `NAME_BRIGHT_CAP` làm cả lệnh chọn bị từ chối rồi g
 được từ mã: `hermes/profiles/<brand>/<slug>.SOUL.md`, một khoá trong
 `state/topics.<brand>.json` (id topic Telegram), và `hermes/profiles/live_config_snapshot.yaml`.
 `chat_router.TOPIC_PROFILE` tự dẫn xuất từ `role.py` (từ 09/09/2026, audit lượt 2),
-và `tests/test_vai.py` giữ mọi bảng dẫn xuất khớp bản đăng ký. Bước 1 sinh lại
+và `tests/test_role.py` giữ mọi bảng dẫn xuất khớp bản đăng ký. Bước 1 sinh lại
 mọi bảng cũ:
 
 1. **Một dòng trong `role.py`** — `Vai(slug, ten, go=…, slug_cu=…, renderer=…,
@@ -164,7 +164,7 @@ mọi bảng cũ:
    home đang chạy.
 
 Còn phải làm tay: một topic trong `state/topics.json` (id do Telegram cấp) và
-`task_bodies.py` nếu vai cần khuôn body riêng. `tests/test_vai.py` giữ cho các
+`task_bodies.py` nếu vai cần khuôn body riêng. `tests/test_role.py` giữ cho các
 bảng dẫn xuất không lệch bản viết tay cũ.
 
 ## Tệp

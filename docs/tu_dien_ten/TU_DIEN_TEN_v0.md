@@ -187,6 +187,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `hoan_tat` | `finish` |
 | `hoan_thanh` | `complete` |
 | `hoi_thoai` | `conversation` |
+| `hom_nay` | `today` |
 | `hop_dong` | `contract` |
 | `hop_le` | `valid` |
 | `hop_nhat` | `merge` |
@@ -308,6 +309,8 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `phien_lam_viec` | `session` |
 | `phong_ban` | `department` |
 | `phu_thuoc` | `depend` |
+| `phuc_hoi` | `restore` |
+| `phuc_vu` | `serve` |
 | `pid_song` | `pid_alive` |
 | `quan_trong` | `important` |
 | `quet_chuan_bi` | `scan_prepare` |
@@ -351,6 +354,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tai_loc` | `download_filter` |
 | `tao_task` | `create_task` |
 | `task_bodies` | `task_bodies` |
+| `tat_ca` | `all` |
 | `teaser_assemble` | `teaser_assemble` |
 | `tele_util` | `tele_util` |
 | `ten_hien` | `display_name` |
@@ -404,6 +408,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `trang_thai` | `status` |
 | `tre_gio` | `late` |
 | `trich_dan` | `citation` |
+| `trien_khai` | `deploy` |
 | `trinh_duyet` | `browser` |
 | `tro_giup` | `help` |
 | `trong_so` | `weight` |
@@ -519,6 +524,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `cung` | `same` |  |
 | `cuoi` | `last` |  |
 | `cuon` | `scroll` |  |
+| `cuop` | `snatch` |  |
 | `cuu` | `rescue` |  |
 | `da` | `already` |  |
 | `dac` | `solid` |  |
@@ -558,6 +564,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `dut` | `snap` |  |
 | `duyet` | `approve` |  |
 | `ep` | `force` |  |
+| `gach` | `dash` |  |
 | `gan` | `near` |  |
 | `ghep` | `stack` |  |
 | `ghi` | `write` |  |
@@ -565,6 +572,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `gi` | `what` |  |
 | `gia` | `fake` | ⚠️ giả=fake (mặc định, stub test) / giá=price (cụm gia_vao/gia_ra/gia_usd/gia_moi_bai) |
 | `giai` | `resolve` |  |
+| `giam` | `decrease` |  |
 | `gian` | `space` |  |
 | `giao` | `hand` |  |
 | `giay` | `seconds` |  |
@@ -586,6 +594,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ham` | `function` |  |
 | `han` | `limit` |  |
 | `hang` | `rank` | ⚠️ hạng=rank / hàng=row / hãng=vendor |
+| `hay` | `or` |  |
 | `hen` | `timer` |  |
 | `hep` | `narrow` |  |
 | `het` | `all_done` |  |
@@ -607,6 +616,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `kem` | `with` |  |
 | `kenh` | `channel` |  |
 | `keo` | `drag` |  |
+| `kep` | `double` |  |
 | `ket` | `end` |  |
 | `khac` | `other` |  |
 | `khach` | `customer` |  |
@@ -694,6 +704,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `nghin` | `thousand` |  |
 | `ngoac` | `bracket` |  |
 | `ngoai` | `outside` |  |
+| `nguoc` | `reverse` |  |
 | `nguoi` | `person` |  |
 | `nguon` | `source` |  |
 | `nguong` | `threshold` |  |
@@ -816,6 +827,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tit` | `headline` |  |
 | `toan` | `whole` |  |
 | `toi` | `dark` | ⚠️ tối=dark / tới=until |
+| `ton` | `cost` |  |
 | `tong` | `total` |  |
 | `tot` | `good` |  |
 | `tq` | `china` |  |
@@ -827,6 +839,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tren` | `on` |  |
 | `treo` | `stalled` |  |
 | `trich` | `excerpt` |  |
+| `trien` | `expand` |  |
 | `trinh` | `program` |  |
 | `tro` | `point` |  |
 | `troi` | `drift` |  |
@@ -2329,7 +2342,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | Hiện tại | Đề xuất | Cờ |
 |---|---|---|
 | `Role` | `Role` |  |
-| `writers_for_brand` | `?writers_for_brand` |  |
+| `writers_for_brand` | `writers_for_brand` |  |
 | `pick_by_queue` | `pick_by_queue` |  |
 | `writer_for` | `writer_for` |  |
 | `display_name` | `display_name` |  |
@@ -2368,12 +2381,12 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `scan_report` | `scan_report` |  |
 | `_keyword` | `_keyword` |  |
 | `_amounts` | `_?amounts` |  |
-| `_deal_keywords` | `_?deal_?keywords` |  |
-| `_same_amount` | `_same_?amount` |  |
-| `_is_follow_up` | `_is_?follow_?up` |  |
+| `_deal_keywords` | `_deal_?keywords` |  |
+| `_same_amount` | `_same_amount` |  |
+| `_is_follow_up` | `_is_follow_up` |  |
 | `_capitalized` | `_?capitalized` |  |
 | `gather_duplicate` | `gather_duplicate` |  |
-| `is_deal_name` | `is_?deal_name` |  |
+| `is_deal_name` | `is_deal_name` |  |
 | `root` | `root` |  |
 | `already_see` | `already_see` |  |
 | `write_timestamp` | `write_timestamp` |  |
@@ -2537,7 +2550,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 |---|---|---|
 | `ApplyError` | `ApplyError` |  |
 | `branch_name` | `branch_name` |  |
-| `metadata_comment` | `?metadata_?comment` |  |
+| `metadata_comment` | `?metadata_comment` |  |
 | `build_worktree` | `build_?worktree` |  |
 | `remove_worktree` | `remove_?worktree` |  |
 | `apply_lesson` | `apply_lesson` |  |
@@ -3348,26 +3361,26 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `role` | `ROLE_EDU` | `ROLE_EDU` |  |
 | `role` | `ROLE_IMAGE` | `ROLE_IMAGE` |  |
 | `role` | `SLUG_OLD` | `SLUG_OLD` |  |
-| `role` | `WRITERS_BY_BRAND` | `?WRITERS_BY_BRAND` |  |
+| `role` | `WRITERS_BY_BRAND` | `WRITERS_BY_BRAND` |  |
 | `role` | `WRITE_BY_BRAND` | `WRITE_BY_BRAND` |  |
 | `role` | `WRITE_BY_SCAN` | `WRITE_BY_SCAN` |  |
 | `route_missing_images` | `DRAFTS` | `DRAFTS` |  |
-| `scan_business` | `AMOUNT_PATTERN` | `?AMOUNT_PATTERN` |  |
-| `scan_business` | `AMOUNT_UNIT` | `?AMOUNT_UNIT` |  |
+| `scan_business` | `AMOUNT_PATTERN` | `AMOUNT_PATTERN` |  |
+| `scan_business` | `AMOUNT_UNIT` | `AMOUNT_UNIT` |  |
 | `scan_business` | `CROSS_CURRENCY_TOLERANCE` | `?CROSS_?CURRENCY_TOLERANCE` |  |
 | `scan_business` | `CURRENCY_OF_MARK` | `?CURRENCY_OF_MARK` |  |
-| `scan_business` | `DEAL_WORDS` | `?DEAL_WORDS` |  |
-| `scan_business` | `FOLLOW_UP_BEFORE_AMOUNT` | `?FOLLOW_?UP_BEFORE_?AMOUNT` |  |
-| `scan_business` | `FOLLOW_UP_WINDOW` | `?FOLLOW_?UP_?WINDOW` |  |
+| `scan_business` | `DEAL_WORDS` | `DEAL_WORDS` |  |
+| `scan_business` | `FOLLOW_UP_BEFORE_AMOUNT` | `FOLLOW_UP_BEFORE_AMOUNT` |  |
+| `scan_business` | `FOLLOW_UP_WINDOW` | `FOLLOW_UP_?WINDOW` |  |
 | `scan_business` | `FROM_EMPTY` | `FROM_EMPTY` |  |
 | `scan_business` | `GNEWS` | `GNEWS` |  |
-| `scan_business` | `MIN_SHARED_DEAL_KEYWORDS` | `MIN_?SHARED_?DEAL_?KEYWORDS` |  |
+| `scan_business` | `MIN_SHARED_DEAL_KEYWORDS` | `MIN_?SHARED_DEAL_?KEYWORDS` |  |
 | `scan_business` | `QUERY` | `QUERY` |  |
 | `scan_business` | `RANK_ERROR` | `RANK_ERROR` |  |
 | `scan_business` | `RANK_OF_NAME` | `RANK_OF_NAME` |  |
 | `scan_business` | `REPORT_LARGE` | `REPORT_LARGE` |  |
 | `scan_business` | `RSS_REPORT` | `RSS_REPORT` |  |
-| `scan_business` | `SAME_AMOUNT_TOLERANCE` | `SAME_?AMOUNT_TOLERANCE` |  |
+| `scan_business` | `SAME_AMOUNT_TOLERANCE` | `SAME_AMOUNT_TOLERANCE` |  |
 | `scan_business` | `STATE` | `STATE` |  |
 | `scan_business` | `UA` | `UA` |  |
 | `scan_business` | `WATCHLIST` | `WATCHLIST` |  |
@@ -3527,12 +3540,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 |---|---|---|
 | `cluttered` | 11 | card, carousel, prepare.vision |
 | `upload` | 6 | approve_base, approve_post |
-| `amount` | 5 | scan_business |
-| `deal` | 4 | scan_business |
-| `follow` | 3 | scan_business |
-| `up` | 3 | scan_business |
 | `pr` | 3 | manifest_build, skill_lesson_commit |
-| `writers` | 2 | role |
 | `keywords` | 2 | scan_business |
 | `worktree` | 2 | skill_lesson_commit |
 | `pending` | 2 | moat_publish, skill_lesson_commit, skill_lesson_filter |
@@ -3553,7 +3561,6 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `sent` | 1 | cleanup, send_telegram, skill_lesson_filter |
 | `verdict` | 1 | skill_lesson_approve, skill_lesson_commit, skill_lesson_filter |
 | `metadata` | 1 | skill_lesson_commit |
-| `comment` | 1 | skill_lesson_commit |
 | `enable` | 1 | skill_lesson_commit |
 | `discard` | 1 | skill_lesson_commit |
 | `defines` | 1 | skill_lesson_filter |

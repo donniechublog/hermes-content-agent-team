@@ -2,15 +2,15 @@
 """LAY NHIEU BANG XEP HANG cho MOT tin — sinh sau su co 09/09/2026.
 
 Sau khi vá xong "Image Edit Arena" thiếu và tên mã biến thể bị nuốt
-(tests/test_xep_hang.py), Ông Chủ bác luôn cả tiền đề "mỗi tin chỉ mang một ảnh
+(tests/test_ranking.py), Ông Chủ bác luôn cả tiền đề "mỗi tin chỉ mang một ảnh
 xếp hạng": *"đã làm social media thì làm gì có chuyện bị giới hạn ở nguồn tư
 liệu"*, và hai bảng ví dụ *"một bảng là top model tạo sinh, một bảng là top
 model chỉnh sửa, đâu có trùng lặp"*. `ranking.find_and_capture_many` (test riêng
-ở tests/test_xep_hang.py) lo phần CHỤP; tệp này test phần MANG VÀO MANIFEST —
+ở tests/test_ranking.py) lo phần CHỤP; tệp này test phần MANG VÀO MANIFEST —
 `image_prepare._gather_and_download_image` gắn mã XH/XH2, `build_manifest` gộp vào
 goi_y_bia/so_xep_hang, `ranking_brief_line` nói cho vai biết có tấm thứ hai.
 
-Chay:  venv/bin/python tests/test_xep_hang_nhieu.py
+Chay:  venv/bin/python tests/test_ranking_many.py
 """
 import sys
 from pathlib import Path
@@ -42,7 +42,7 @@ def _a(ma, xep_hang=None, dung=None, ti_le=0.8):
 # `_gather_and_download_image` goi mang that (article_images, arxiv_figures...) nen khong goi thang o
 # day — no chi la mot vong lap `for i, xh in enumerate(xhs): anh.insert(i,
 # _image_item_ranking(i, xh))` quanh ham thuan duoi, test dung ham thuan la du.
-def test_anh_muc_xep_hang_danh_ma_dung_theo_vi_tri():
+def test_image_item_ranking_list_code_use_by_position():
     """Ket qua dau (i=0) la 'XH' tran; cac ket qua sau danh so XH2, XH3... —
     khong duoc trung ma (tao anh + sua anh la hai bang KHAC nhau, ghi de len
     nhau la mat mot trong hai)."""
@@ -54,14 +54,14 @@ def test_anh_muc_xep_hang_danh_ma_dung_theo_vi_tri():
         {"XH": "Text-to-Image Arena", "XH2": "Image Edit Arena"}
 
 
-def test_anh_muc_xep_hang_mot_ket_qua_van_la_xh_tran():
+def test_image_item_ranking_one_result_still_is_xh_ceiling():
     """CHI mot bang (truong hop thuong, khong doi hanh vi cu): ma van la 'XH'
     tran, khong phai 'XH1'."""
     muc = cb._image_item_ranking(0, _xh("Text Arena", "Kimi-K3"))
     assert muc["ma"] == "XH", muc["ma"]
 
 
-def test_anh_muc_xep_hang_moi_tam_giu_rieng_bang_cua_no():
+def test_image_item_ranking_new_temp_keep_own_board_of_no():
     """`xep_hang` gan vao moi muc phai la CHINH tam do, khong bi tam khac de
     len — day la du lieu ca_xep_hang()/dong_brief_xep_hang doc de ta dung bang."""
     xhs = [_xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst"),
@@ -72,7 +72,7 @@ def test_anh_muc_xep_hang_moi_tam_giu_rieng_bang_cua_no():
 
 
 # --------------------------------------------------------- build_manifest
-def test_dung_manifest_hai_bang_len_ca_hai_ma_goi_y_bia():
+def test_use_manifest_two_board_len_all_two_code_call_y_cover():
     anh = [_a("XH", _xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst")),
            _a("XH2", _xh("Image Edit Arena", "GPT-Image-2.5 Sunburst")),
            _a("A1")]
@@ -85,7 +85,7 @@ def test_dung_manifest_hai_bang_len_ca_hai_ma_goi_y_bia():
     assert m["xep_hang"]["bang"] == "Text-to-Image Arena", m["xep_hang"]
 
 
-def test_dung_manifest_mot_bang_tuong_thich_nguoc():
+def test_use_manifest_one_board_backward_compatible():
     """Truyen dung MOT phan tu (hanh vi truoc 09/09/2026) — so_xep_hang=1,
     khong co "XH2" nao trong goi_y_bia."""
     xh = _xh("Text Arena", "Kimi-K3")
@@ -97,7 +97,7 @@ def test_dung_manifest_mot_bang_tuong_thich_nguoc():
     assert "XH2" not in m["goi_y_bia"]
 
 
-def test_dung_manifest_nhan_none_nhu_quy_uoc_cu():
+def test_use_manifest_label_none_like_convention_old():
     """Vai/test khac (test_concept.py, test_brand.py) van truyen None
     o vi tri nay — KHONG duoc nem TypeError tu len(None)."""
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
@@ -106,14 +106,14 @@ def test_dung_manifest_nhan_none_nhu_quy_uoc_cu():
     assert m["xep_hang"] is None
 
 
-def test_dung_manifest_khong_bang_thi_khong_dinh_xh_vao_goi_y():
+def test_use_manifest_no_board_then_no_fixed_xh_into_call_y():
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), [_a("A1", dung=("bìa",))], [], False, {}, {}, False, 5, vai_anh="ethan")
     assert "XH" not in m["goi_y_bia"] and m["so_xep_hang"] == 0
 
 
 # ------------------------------------------------------- ranking_brief_line
-def test_brief_noi_ro_co_bang_thu_hai():
+def test_brief_say_clear_has_board_try_two():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "ARENA.AI", "bang": "Text-to-Image Arena",
                       "model": "GPT-Image-2.5 Sunburst", "hang": 1, "kieu": "bang",
@@ -124,7 +124,7 @@ def test_brief_noi_ro_co_bang_thu_hai():
     assert "BẮT BUỘC" in dong
 
 
-def test_brief_mot_bang_khong_nhac_xh2():
+def test_brief_one_board_no_mention_xh2():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "ARENA.AI", "bang": "Text Arena", "model": "Kimi-K3",
                       "hang": 1, "kieu": "bang", "duoc_nhac": True},
