@@ -265,6 +265,47 @@ def _keyword(tieu_de: str) -> set:
     return {w for w in standard_ify(tieu_de).split() if w not in FROM_EMPTY and len(w) > 2}
 
 
+CURRENCY_OF_MARK = {"$": "usd", "us$": "usd", "usd": "usd", "€": "eur", "eur": "eur",
+                    "£": "gbp", "gbp": "gbp", "¥": "jpy"}
+AMOUNT_UNIT = {"m": 1, "mn": 1, "mln": 1, "million": 1, "b": 1000, "bn": 1000, "billion": 1000}
+AMOUNT_PATTERN = re.compile(
+    r"(us\$|\$|€|£|¥|usd|eur|gbp)\s?(\d+(?:[.,]\d+)?)\s?(million|billion|mln|mn|bn|m|b)\b",
+    re.IGNORECASE)
+# Tu chung cua moi tin goi von/mua ban: hai vu KHAC nhau cung "raises $100M in
+# Series A funding round" van chia se may tu nay, nen khong duoc tinh la trung.
+DEAL_WORDS = {"raises", "raise", "raised", "funding", "round", "series", "valuation",
+              "investment", "invests", "invest", "deal", "startup", "led", "leads",
+              "lead", "backed", "backs", "secures", "million", "billion", "mln",
+              "company", "firm", "more", "than", "around", "about", "reportedly"}
+SAME_AMOUNT_TOLERANCE = 0.03
+# EUR/GBP -> USD lech toi ~25%: Crypto Briefing "over €200M" va CNBC "$230 million"
+# la cung vong Euclyd (LOW-184).
+CROSS_CURRENCY_TOLERANCE = 0.25
+MIN_SHARED_DEAL_KEYWORDS = 2
+
+
+def _amounts(tieu_de: str) -> list:
+    out = []
+    for m in AMOUNT_PATTERN.finditer(tieu_de):
+        value = float(m.group(2).replace(",", ".")) * AMOUNT_UNIT[m.group(3).lower()]
+        out.append((CURRENCY_OF_MARK[m.group(1).lower()], value))
+    return out
+
+
+def _deal_keywords(tieu_de: str) -> set:
+    return {w for w in _keyword(tieu_de)
+            if w not in DEAL_WORDS and not re.fullmatch(r"\d+(?:m|mn|bn|b)?", w)}
+
+
+def _same_amount(a: list, b: list) -> bool:
+    for cur_a, va in a:
+        for cur_b, vb in b:
+            tol = SAME_AMOUNT_TOLERANCE if cur_a == cur_b else CROSS_CURRENCY_TOLERANCE
+            if abs(va - vb) / max(va, vb) <= tol:
+                return True
+    return False
+
+
 def gather_duplicate(tin: list, nguong=0.6) -> list:
     """Mot su kien nhieu bao dua -> giu ban som nhat, dem so bao de biet do nong.
 
@@ -273,44 +314,70 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
     Infrastructure", TechCrunch viet "Nvidia partners with data center developer
     Cloverleaf", so nguyen van thi thanh hai tin. Nen gom theo DO TRUNG TU KHOA:
     hai tieu de dung chung >= 60% tu dac trung (bo tu rong) thi coi la mot.
+
+    Tin tien (goi von, mua ban) thi dien dat lech qua xa cho nguong 60%: vong
+    Euclyd 16/09 ra 5 dong rieng — "Samsung backs Nvidia AI chip rival in $230
+    million funding round" vs "Samsung Co-Led $231 Million Funding Round for
+    Nvidia AI Chip Rival" chi 7/12=0.58 (LOW-184). Nen them luat thu hai: CUNG
+    SO TIEN (xem _same_amount) va chung >= 2 tu dac trung khong phai tu goi von.
+
+    Gom theo cap roi hop nhom (union-find), khong so voi ban dai dien: "Euclyd
+    pulled in $231 million with Samsung's backing" chi noi voi nhom qua ban
+    "...EUCLYD Amid Memory Shortage", khong qua ban som nhat.
     """
-    nhom = []
+    items = []
     for t in sorted(tin, key=lambda x: x["ts"] or 0):      # som nhat truoc
         tu = _keyword(t["tieu_de"])
-        if not tu:
-            continue
-        vao = None
-        for n in nhom:
-            chung = tu & n["_tu"]
+        if tu:
+            items.append((t, tu, _deal_keywords(t["tieu_de"]), _amounts(t["tieu_de"])))
+
+    parent = list(range(len(items)))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i, (_, tu_i, deal_i, amt_i) in enumerate(items):
+        for j in range(i):
+            _, tu_j, deal_j, amt_j = items[j]
+            chung = tu_i & tu_j
             # Mau so la MAX chu khong phai MIN. Voi min, tit ngan la tap con
             # cua tit dai thi LUON gop: "Nvidia stock jumps" nuot "Nvidia stock
             # slides after Beijing bans chip purchases" (2/min(3,7)=0.67) — hai
             # tin nguoc nhau thanh mot. Voi max, ca hai tit phai chia se phan
             # lon tu: ca Cloverleaf kinh dien (invests vs partners) van gop
             # dung (5/7=0.71), con jumps-vs-slides thi khong (2/7=0.29).
-            if chung and len(chung) / max(len(tu), len(n["_tu"])) >= nguong:
-                vao = n
-                break
+            same = chung and len(chung) / max(len(tu_i), len(tu_j)) >= nguong
+            if not same and amt_i and amt_j:
+                same = (len(deal_i & deal_j) >= MIN_SHARED_DEAL_KEYWORDS
+                        and _same_amount(amt_i, amt_j))
+            if same:
+                ri, rj = root(i), root(j)
+                parent[max(ri, rj)] = min(ri, rj)   # goc = ban som nhat
+
+    nhom = {}
+    for i, (t, _, _, _) in enumerate(items):
+        r = root(i)
+        vao = nhom.get(r)
         if vao is None:
-            t = dict(t)
-            t["so_bao"] = 1
-            t["cac_bao"] = [t["toa_soan"]] if t["toa_soan"] else []
-            t["_tu"] = tu
-            # Co watchlist tinh NGAY TAI DAY, tren tung bien the, va nhom giu
-            # co neu BAT KY bien the nao khop. Truoc day tinh sau dedup tren
-            # tit dai dien (ban som nhat): ban tin dau khong nhac ten hang lam
-            # dai dien la ca nhom mat co bao ve — dung kich ban Xiaomi Cube.
-            t["hang_watch"] = name_watchlist(t["tieu_de"])
-            nhom.append(t)
+            vao = dict(t)
+            vao["so_bao"] = 1
+            vao["cac_bao"] = [t["toa_soan"]] if t["toa_soan"] else []
+            # Co watchlist tinh tren tung bien the, va nhom giu co neu BAT KY
+            # bien the nao khop. Truoc day tinh sau dedup tren tit dai dien
+            # (ban som nhat): ban tin dau khong nhac ten hang lam dai dien la
+            # ca nhom mat co bao ve — dung kich ban Xiaomi Cube.
+            vao["hang_watch"] = name_watchlist(t["tieu_de"])
+            nhom[r] = vao
         else:
             vao["so_bao"] += 1
             if t["toa_soan"] and t["toa_soan"] not in vao["cac_bao"]:
                 vao["cac_bao"].append(t["toa_soan"])
             if not vao.get("hang_watch"):
                 vao["hang_watch"] = name_watchlist(t["tieu_de"])
-    for n in nhom:
-        n.pop("_tu", None)
-    return nhom
+    return list(nhom.values())
 
 
 def already_see() -> dict:
