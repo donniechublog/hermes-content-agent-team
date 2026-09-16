@@ -282,6 +282,7 @@ SAME_AMOUNT_TOLERANCE = 0.03
 # la cung vong Euclyd (LOW-184).
 CROSS_CURRENCY_TOLERANCE = 0.25
 MIN_SHARED_DEAL_KEYWORDS = 2
+WATCHLIST_WORDS = {w for name in (*WATCHLIST, *RANK_OF_NAME, *RANK_ERROR) for w in name.split()}
 
 
 def _amounts(tieu_de: str) -> list:
@@ -297,13 +298,23 @@ def _deal_keywords(tieu_de: str) -> set:
             if w not in DEAL_WORDS and not re.fullmatch(r"\d+(?:m|mn|bn|b)?", w)}
 
 
-def _same_amount(a: list, b: list) -> bool:
+def _same_amount(a: list, b: list, cross_currency=True) -> bool:
     for cur_a, va in a:
         for cur_b, vb in b:
-            tol = SAME_AMOUNT_TOLERANCE if cur_a == cur_b else CROSS_CURRENCY_TOLERANCE
+            if cur_a == cur_b:
+                tol = SAME_AMOUNT_TOLERANCE
+            elif cross_currency:
+                tol = CROSS_CURRENCY_TOLERANCE
+            else:
+                continue
             if abs(va - vb) / max(va, vb) <= tol:
                 return True
     return False
+
+
+def _capitalized(tieu_de: str, word: str) -> bool:
+    return any(tok[0].isupper() and standard_ify(tok) == word
+               for tok in re.findall(r"\w+", tieu_de))
 
 
 def gather_duplicate(tin: list, nguong=0.6) -> list:
@@ -331,6 +342,25 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         if tu:
             items.append((t, tu, _deal_keywords(t["tieu_de"]), _amounts(t["tieu_de"])))
 
+    items_with_word = {}
+    for idx, (_, tu, _, _) in enumerate(items):
+        for w in tu:
+            items_with_word.setdefault(w, []).append(idx)
+
+    def is_deal_name(w, i, j):
+        # LOW-193: Cornelis/Profound chi chung DUNG MOT ten. Tin mot tu don khi:
+        # - moi tieu de trong lo co tu do deu noi cung so tien: ten hang le chi
+        #   xuat hien quanh vu cua no, con tu thuong ("factory" robots) va hang
+        #   lon ("nvidia" dau tu $1B vao Nokia lan Anthropic) thi khong;
+        # - viet hoa o CA HAI tieu de va cung tien te: 13/09 "Nvidia Considers
+        #   $10 Billion" da nho "considers" + €13bn ma dinh vao tin Finland.
+        if len(w) < 4 or w in WATCHLIST_WORDS:
+            return False
+        if not all(_capitalized(items[k][0]["tieu_de"], w) for k in (i, j)):
+            return False
+        return all(items[k][3] and _same_amount(items[k][3], items[i][3], cross_currency=False)
+                   for k in items_with_word[w])
+
     parent = list(range(len(items)))
 
     def root(i):
@@ -351,8 +381,10 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
             # dung (5/7=0.71), con jumps-vs-slides thi khong (2/7=0.29).
             same = chung and len(chung) / max(len(tu_i), len(tu_j)) >= nguong
             if not same and amt_i and amt_j:
-                same = (len(deal_i & deal_j) >= MIN_SHARED_DEAL_KEYWORDS
-                        and _same_amount(amt_i, amt_j))
+                shared = deal_i & deal_j
+                same = _same_amount(amt_i, amt_j) and (
+                    len(shared) >= MIN_SHARED_DEAL_KEYWORDS
+                    or any(is_deal_name(w, i, j) for w in shared))
             if same:
                 ri, rj = root(i), root(j)
                 parent[max(ri, rj)] = min(ri, rj)   # goc = ban som nhat
