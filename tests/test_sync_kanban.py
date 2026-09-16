@@ -3,7 +3,7 @@
 co che nay bi mat ban va (a1f9387), nen phai co luoi.
 
 Khong dung pytest (chua co trong venv). Chay:
-    venv/bin/python tests/test_dong_bo_kanban.py
+    venv/bin/python tests/test_sync_kanban.py
 Khong dung home that: HOMES/REPO tro vao thu muc tam.
 """
 import sys
@@ -22,7 +22,7 @@ _HANG_DE = ("HOMES", "REPO", "PLUGIN_REPO", "FILE_UPSTREAM", "ALL_GATE_OLD",
             "FILE_CONFIG")
 
 
-def _tam():
+def _temp():
     """Tro MOI hang duong dan cua sync_hermes vao thu muc tam.
 
     Truoc 06/09/2026 chi de HOMES/REPO/PLUGIN_REPO. Ba hang con lai
@@ -32,7 +32,7 @@ def _tam():
     (hermes/profiles/disabled_toolsets.json, hermes/plugins/kanban/UPSTREAM,
     hermes/profiles/live_config_snapshot.yaml). Cai bay do dang mo san; day dong lai.
 
-    Goi trong `with _tam() as t:` de tra lai hang cu — hom nay moi tep test la
+    Goi trong `with _temp() as t:` de tra lai hang cu — hom nay moi tep test la
     mot tien trinh nen ro ri khong lo ra, nhung doi sang pytest gom mot tien
     trinh la ro sang moi test khac import sync_hermes.
     """
@@ -57,14 +57,14 @@ class _TamCtx:
         return False
 
 
-def test_ten_muc_tach_dung_tep():
+def test_name_item_extract_use_file():
     assert db._file_plugin("kanban blog dist/index.js") == "dist/index.js"
     assert db._file_plugin("kanban dcgr plugin_api.py") == "plugin_api.py"
     assert db._file_plugin("SOUL blog/bob") is None
     assert db._file_plugin("kanban dist/index.js") is None       # dinh dang cu, khong nhan
 
 
-def test_cong_dau_vet_chan_thut_lui_ca_hai_chieu():
+def test_gate_trace_block_indent_back_all_two_dimension():
     ten = "kanban blog dist/index.js"
     # dich co ban va, nguon khong -> chan (day la kich ban a1f9387)
     assert db.missing_trace(ten, KHONG_VA, CO_VA)
@@ -76,8 +76,8 @@ def test_cong_dau_vet_chan_thut_lui_ca_hai_chieu():
     assert db.missing_trace("kanban blog manifest.json", b"a", b"b") is None
 
 
-def test_cap_tep_tro_vao_plugin_nguoi_dung():
-    with _tam() as t:
+def test_cap_file_point_into_plugin_user():
+    with _temp() as t:
         cap = {ten: (that, repo) for ten, that, repo in db.cap_file() if ten.startswith("kanban ")}
         assert len(cap) == len(db.PLUGIN_FILE) * 2, sorted(cap)
         that, repo = cap["kanban blog dist/index.js"]
@@ -87,8 +87,8 @@ def test_cap_tep_tro_vao_plugin_nguoi_dung():
         assert not any("hermes-agent" in str(p) for _, (p, _) in cap.items())
 
 
-def test_hai_home_lech_bi_tu_choi():
-    with _tam():
+def test_two_home_offset_got_reject():
+    with _temp():
         for hk in ("blog", "dcgr"):
             p = db.plugin_home(db.HOMES[hk]) / "dist" / "index.js"
             p.parent.mkdir(parents=True)
@@ -103,8 +103,8 @@ def test_hai_home_lech_bi_tu_choi():
         assert db.two_home_offset("dist/index.js") is None
 
 
-def test_kanban_da_bat_doc_config():
-    with _tam():
+def test_kanban_already_catch_read_config():
+    with _temp():
         H = db.HOMES["blog"]; H.mkdir(parents=True)
         (H / "config.yaml").write_text("plugins:\n  enabled:\n    - kanban\n", encoding="utf-8")
         assert db.kanban_already_catch(H) is True
@@ -115,11 +115,11 @@ def test_kanban_da_bat_doc_config():
         assert db.kanban_already_catch(db.HOMES["dcgr"]) is None       # khong co tep
 
 
-def test_tam_tra_lai_moi_hang_duong_dan():
-    """Chinh cai bay o tren: _tam() phai de VA tra lai du sau hang, khong thi
+def test_temp_return_again_new_rank_path():
+    """Chinh cai bay o tren: _temp() phai de VA tra lai du sau hang, khong thi
     test sau (hoac tep test khac khi doi sang pytest) ghi vao repo that."""
     truoc = {k: getattr(db, k) for k in _HANG_DE}
-    with _tam() as t:
+    with _temp() as t:
         for k in _HANG_DE:
             v = getattr(db, k)
             duong = list(v.values()) if isinstance(v, dict) else [v]

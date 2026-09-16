@@ -132,6 +132,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `du_lieu` | `data` |
 | `du_nguyen_lieu` | `has_enough_material` |
 | `dung_sai` | `tolerance` |
+| `duong_dan` | `path` |
 | `duyet_bai` | `approve_post` |
 | `duyet_chat` | `approve_chat` |
 | `duyet_chon_tin` | `approve_pick` |
@@ -193,6 +194,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ket_qua` | `result` |
 | `ket_thuc` | `end` |
 | `kha_nang` | `capability` |
+| `khac_nhau` | `different` |
 | `khai_niem` | `concept` |
 | `khe_tren` | `top_slit` |
 | `kho_khoa` | `locked_format` |
@@ -339,6 +341,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `tele_util` | `tele_util` |
 | `ten_hien` | `display_name` |
 | `ten_rieng_dau` | `leading_proper_noun` |
+| `tham_lam` | `greedy` |
 | `thanh_cong` | `success` |
 | `thanh_vien` | `member` |
 | `thap_nhat` | `lowest` |
@@ -353,6 +356,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `thu_muc` | `directory` |
 | `thu_tu` | `order` |
 | `thuat_ngu` | `term` |
+| `thuc_te` | `actual` |
 | `thuc_the` | `entity` |
 | `thuoc_tinh` | `attribute` |
 | `thuong_hieu` | `brand` |
@@ -633,8 +637,10 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `muon` | `late` |  |
 | `nam` | `lie` |  |
 | `nang` | `capability` |  |
+| `nao` | `which` |  |
 | `nap` | `load` |  |
 | `nay` | `this` |  |
+| `nem` | `throw` |  |
 | `nen` | `background` | ⚠️ nền=background / nên=should |
 | `neu` | `if` |  |
 | `ngan` | `short` |  |
@@ -652,6 +658,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `nham` | `wrong` |  |
 | `nhan` | `label` | ⚠️ nhãn=label / nhận=receive / nhân=multiply |
 | `nhat` | `most` |  |
+| `nhau` | `other` |  |
 | `nhieu` | `many` |  |
 | `nhin` | `seen` |  |
 | `nhip` | `beat` |  |
@@ -689,6 +696,7 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `ro` | `clear` |  |
 | `roi` | `fall` |  |
 | `rong` | `empty` | ⚠️ rỗng=empty / rộng=wide |
+| `rot` | `fail` |  |
 | `rut` | `shorten` |  |
 | `sach` | `clean` |  |
 | `sai` | `wrong` |  |
@@ -741,8 +749,10 @@ Luật: rename 1-1 giữ cấu trúc cụm; khoá JSON trên đĩa KHÔNG đổi
 | `thuat` | `technique` |  |
 | `thuc` | `actual` |  |
 | `thuong` | `regular` |  |
+| `thut` | `indent` |  |
 | `tich` | `accumulate` |  |
 | `tien` | `money` |  |
+| `tieng` | `language` |  |
 | `tiep` | `next` |  |
 | `tieu` | `consume` |  |
 | `tim` | `find` |  |

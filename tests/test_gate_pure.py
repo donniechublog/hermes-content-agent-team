@@ -6,7 +6,7 @@ tuc la re nhat de kiem, va cung la cho hoi quy nhieu nhat theo nhat ky su co:
 lenh chon sai vai, nut Duyet bien mat vi callback_data qua dai, tin dai bi cat
 giua the HTML. Truoc dot nay ca ba deu khong co lay mot test.
 
-Chay:  venv/bin/python tests/test_cong_thuan.py
+Chay:  venv/bin/python tests/test_gate_pure.py
 """
 import sys
 from pathlib import Path
@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 
 # ------------------------------------------------------------- lenh chon tin
-def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
+def test_read_pick_command_name_role_apply_wait_new_count_before_no():
     """Quy tac: ten vai ap cho MOI SO dung truoc no, tinh tu ten vai gan nhat;
     so khong co ten vai nao phia sau ve mac dinh (Ethan/designer)."""
     from approve_pick import read_pick_command
@@ -33,7 +33,7 @@ def test_doc_lenh_chon_ten_vai_ap_cho_moi_so_truoc_no():
         assert rut == mong, f"{lenh!r} -> {rut}, mong {mong}"
 
 
-def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
+def test_read_pick_command_label_count_many_language_image():
     """Su co 06/09/2026: "3, 4 - Kites" (Ong Chu go so nhieu) bi read_pick_command tu
     choi CA lenh vi "kites" khong khop NAME_BRIGHT_CAP -> roi ve hoi thoai, gui
     nham cho Finn (topic scout) thay vi tao task cho Kite."""
@@ -44,7 +44,7 @@ def test_doc_lenh_chon_nhan_so_nhieu_tieng_anh():
     assert rut == [(1, "ethan"), (3, "kite"), (4, "kite")], rut
 
 
-def test_doc_lenh_chon_bo_qua_cau_khong_phai_lenh():
+def test_read_pick_command_skip_sentence_no_right_command():
     """Chat thuong khong duoc bien thanh lenh giao viec."""
     from approve_pick import read_pick_command
     for text in ("", "chào Finn", "hôm nay có gì hay không", "ok"):
@@ -52,7 +52,7 @@ def test_doc_lenh_chon_bo_qua_cau_khong_phai_lenh():
 
 
 # ----------------------------------------------------- draft_id <= 55 ky tu
-def test_draft_id_luon_vua_callback_data_cua_telegram():
+def test_draft_id_always_fit_callback_data_of_telegram():
     """draft_id di vao callback_data ("imgredo:" + draft_id). Telegram chan
     callback_data > 64 byte va LANG LE tu choi ca ban phim — anh dang len khong
     co nut nao. Nen draft_id phai <= 55 ky tu ASCII trong MOI truong hop."""
@@ -78,7 +78,7 @@ def test_draft_id_luon_vua_callback_data_cua_telegram():
                 assert vai[:6] in d, f"draft_id mat phan vai: {d!r}"
 
 
-def test_draft_id_khac_nhau_theo_vai_va_brand():
+def test_draft_id_different_by_role_and_brand():
     """Mot tin hot giao cho NHIEU role: moi lan giao phai co draft_id rieng,
     neu khong hai san pham song song dung chung png/meta/sidecar va nut Duyet."""
     from approve_pick import _draft_id
@@ -89,7 +89,7 @@ def test_draft_id_khac_nhau_theo_vai_va_brand():
 
 
 # ------------------------------------------------------- chia tin nhan dai
-def test_chia_tin_khong_cat_giua_the_html():
+def test_split_message_no_crop_middle_card_html():
     """Telegram tu choi tin co the HTML ho. Cat giua "<b>...</b>" la ca tin bi
     tra ve loi, va nguoi goi chi thay "gui that bai"."""
     import re
@@ -106,7 +106,7 @@ def test_chia_tin_khong_cat_giua_the_html():
     assert "".join(phan).replace(" ", "") == tho.replace(" ", "").rstrip()
 
 
-def test_chia_tin_luon_tra_it_nhat_mot_phan():
+def test_split_message_always_return_it_most_one_part():
     from tele_util import split_message
     for t in ("", None, "ngan"):
         ra = split_message(t)
