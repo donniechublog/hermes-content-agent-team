@@ -34,7 +34,18 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         f"bìa {da_dung.get('bia')}, ảnh dùng {', '.join(da_dung.get('anh', []))}, "
         f"hook: “{da_dung.get('hook', '')}”. Lần này BÌA và HOOK phải khác, đổi ít "
         "nhất nửa số ảnh, đổi cách chia slide." if da_dung else "")
-    L += brief_common.block_material(m, n_cau=99, n_doan=100000)
+    L += brief_common.block_material(
+        m, n_cau=99, n_doan=100000,
+        tieu_de='## Tư liệu thật (khẳng định số liệu/so sánh CHỈ khi có ở đây; nguồn không nói '
+                'thì ghi "chưa công bố" như Miles — không suy luận thay từ việc nhìn chart)',
+        dong_thieu="(Không bóc được chữ từ nguồn — viết từ tóm tắt, KHÔNG bịa số, KHÔNG tự đọc "
+                   "đường cong trên chart rồi kết luận thay.)")
+    L.append("")
+    L.append("Ảnh chart/Figure của paper (nếu có, mã A? kèm alt \"Figure N: ...\") là MINH HOẠ, "
+             "không phải căn cứ để tự suy ra ai thắng ai thua. Chỉ viết khẳng định so sánh/kết quả "
+             "cụ thể (vd \"ăn baseline\", \"vượt X%\") nếu câu đó có trong tư liệu chữ ở trên; "
+             "không có thì mô tả trung tính (\"so sánh N phương pháp trên benchmark\") hoặc ghi "
+             "\"chưa công bố\" — copy của bạn phải khớp với caption của Miles, không được nói ngược.")
     L.append("")
     L.append("## Ảnh đã tải & xử lý xong — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm")
     if not m["anh"]:
