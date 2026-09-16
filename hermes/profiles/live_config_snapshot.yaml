@@ -334,7 +334,6 @@ dcgr/nova:
   model/provider: custom
   toolsets:
   - hermes-cli
-  - kanban
 dcgr/vera:
   agent/reasoning_effort: none
   auxiliary/title_generation/enabled: false
