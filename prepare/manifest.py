@@ -22,9 +22,17 @@ def describe_ranking_image(m: dict) -> str:
     if not xh:
         return "engine KHÔNG có ảnh xếp hạng cho bài này"
     cau = (f"engine đã chụp {xh.get('site')} ({xh.get('bang')}): {xh.get('model')}"
-           + (f" #{xh.get('hang')}" if xh.get("hang") else "")
-           + (" — THẺ DỰ PHÒNG vì không chụp được bảng" if xh.get("kieu") == "the"
-              else ", đã khoanh hàng model"))
+           + (f" #{xh.get('hang')}" if xh.get("hang") else ""))
+    if xh.get("kieu") == "the":
+        cau += " — THẺ DỰ PHÒNG vì không chụp được bảng"
+    else:
+        # IN RA HANG THAT da khoanh, khong chi khang dinh "da khoanh hang model":
+        # ba bai 15/09/2026 khoanh hang "9. | DeepSeek Harness" (mot app cua nguoi
+        # khac trong bang Apps) ma cau nay van noi "DeepSeek #2, da khoanh hang
+        # model". `dong` nam san trong xong.json nhung chua tung ra toi brief hay
+        # cau chan, nen ca vai lan nguoi duyet deu khong co gi de soat (LOW-180).
+        dong = " ".join((xh.get("dong") or "").split())
+        cau += f", hàng đã khoanh: {dong[:90]}" if dong else ", đã khoanh hàng model"
     # Bang trong anh KHAC bang trong tieu de: khong chup duoc bang tin nhac toi nen
     # engine lay bang khac cua cung model. Anh dung, nhung so hang trong anh co the
     # KHAC so hang o tieu de — viet theo ANH, dung bung tieu de len ma anh khong do.
