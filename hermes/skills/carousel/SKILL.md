@@ -42,8 +42,13 @@ brief xong phải tự đếm trước khi viết spec**:
 - Ảnh ❌ KHÔNG LIÊN QUAN: brief đã chặn sẵn, `dre_submit.py` cũng chặn.
 - Ảnh KHÁI NIỆM (cờ, bản đồ, ảnh minh họa theo từ khóa): brief ghi rõ "chỉ làm
   bìa, KHÔNG vào slide thân". Đừng tính vào số slide thân.
-- Ảnh có mặt người mà alt/caption không nêu tên: bị chặn cho tới khi khai
-  `nhan_vat`, và khai tên không có trong caption là bịa. Coi như không dùng được.
+- Ảnh có mặt người: brief in sẵn cột "mặt người" — có tên (từ chú thích nguồn
+  hoặc nhãn thương hiệu) thì khai đúng `nhan_vat` đó là qua cổng, kể cả khi bài
+  không nhắc tên. "KHÔNG rõ ai" thì chỉ dùng được nếu bài nêu đúng tên người
+  đó; tên không có ở cả bài lẫn chú thích là bịa. Coi như không dùng được.
+- Hai ảnh ngang 3:2 `ghep` với nhau (ra 0.75) là **bình thường** — cổng chỉ
+  cảnh báo mép bị cắt, không chặn. Ảnh có tiêu đề sát mép trên thì đặt làm ảnh
+  thứ hai.
 - Ảnh NGANG chỉ có hai đường: `ghep` với ảnh ngang **cùng tone**, hoặc
   `cat_ngang` khi là người/sản phẩm KHÔNG có chữ. Ảnh ngang nào cao dưới 700px
   (`schema.HEIGHT_MIN_CROP_LANDSCAPE`) thì `cat_ngang` bị chặn luôn vì cắt 4:5

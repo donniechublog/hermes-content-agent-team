@@ -46,6 +46,24 @@ def test_ghep_vua_khung_dung_dai_4_5_toi_1_1():
     assert not image_rules.stack_fit_frame(None, 2.0) and not image_rules.stack_fit_frame(0, 2.0)
 
 
+def test_luat_ghep_rieng_dre_nhan_cap_3_2_low178():
+    """LOW-178 (16/09/2026): Dre có sàn ghép riêng `STACK_FLOOR` — hai ảnh 3:2
+    (= 0.75, tỉ lệ phổ biến nhất của ảnh báo/Wikimedia) và 4:3+4:3 (= 0.67) đều
+    ghép được; `carousel._body_image` cắt giữa dọc phần cao hơn khung. Trần 1:1
+    giữ nguyên. Ethan KHÔNG đổi (bài test trên vẫn dùng `image_rules_ethan`)."""
+    import image_rules_dre as dre
+    assert dre.stack_fit_frame(1.5, 1.5), "3:2 + 3:2 = 0.75: Dre ghép được"
+    assert dre.stack_fit_frame(1.5, 1.33), "3:2 + 4:3 = 0.71"
+    assert dre.stack_fit_frame(1.33, 1.33), "4:3 + 4:3 = 0.67"
+    assert not dre.stack_fit_frame(1.0, 1.0), "1:1 + 1:1 = 0.5: mat qua nhieu"
+    assert not dre.stack_fit_frame(3.0, 3.0), "3:1 + 3:1 = 1.5: tran 1:1 giu nguyen"
+    assert not dre.stack_fit_frame(None, 1.5) and not dre.stack_fit_frame(0, 1.5)
+    assert not image_rules.stack_fit_frame(1.5, 1.5), "Ethan khong doi theo"
+    # Canh bao (khong chan) chi khi cao hon 4:5; vua khung thi im.
+    assert dre.stack_crop_note(1.78, 1.78) == ""
+    assert "3%" in dre.stack_crop_note(1.5, 1.5) and "mép" in dre.stack_crop_note(1.5, 1.5)
+
+
 def test_mot_luat_ghep_cho_ca_ba_noi():
     """Gộp, không chép: ba nơi trước đây mỗi nơi tự tính công thức tỉ lệ.
 
@@ -69,9 +87,17 @@ def test_mot_luat_mat_nguoi_cho_nguoi_dem_va_anh_chinh():
 
 
 # ---------------------------------------------------------------- dem cap that
-def test_cap_ghep_lech_khung_khong_duoc_dem():
+def test_cap_3_2_ghep_duoc_dem_mot_slide_low178():
+    """Trước LOW-178 cặp 3:2+3:2 (0.75) bị cổng ghép loại nên người đếm cũng
+    không đếm (4). Nay Dre nhận cặp đó — người đếm và cổng chặn vẫn hỏi CÙNG
+    `image_rules_dre.stack_fit_frame`, nên cùng ra 5."""
     bo = [_doc("A6"), _doc("A7"), _doc("A8"), _doc("A9"), _thap("A5", 1.5), _thap("A10", 1.5)]
-    assert schema.count_image_use_ok(bo, "dre") == 4, "A5+A10 ra 0.75 — cong ghep chan, khong phai mot slide"
+    assert schema.count_image_use_ok(bo, "dre") == 5, "A5+A10 ra 0.75 — Dre ghep duoc, mot slide"
+
+
+def test_cap_qua_cao_van_khong_duoc_dem():
+    bo = [_doc("A6"), _thap("A5", 1.0), _thap("A10", 1.0)]
+    assert schema.count_image_use_ok(bo, "dre") == 1, "1:1 + 1:1 = 0.5 — duoi san STACK_FLOOR"
 
 
 def test_hai_banner_16_9_ghep_duoc_dem_mot_slide():
@@ -102,11 +128,12 @@ def test_mat_nguoi_trong_cap_ghep_cung_khong_dem():
 
 
 def test_tai_hien_t_2d546375():
-    """Đúng bộ Dre thấy khi block: 4 ảnh dùng được A6..A9, A5+A10 lệch khung, A3 mặt lạ."""
+    """Đúng bộ Dre thấy khi block: 4 ảnh dùng được A6..A9, A5+A10 (3:2+3:2), A3 mặt lạ.
+    Trước LOW-178 đếm 4 (cặp 0.75 bị loại); nay cặp đó là một slide -> 5, vẫn < 6."""
     bo = [_doc("A3", mat=1), _thap("A5", 1.5), _doc("A6"), _doc("A7"), _doc("A8"), _doc("A9"),
           _thap("A10", 1.5)]
-    assert schema.count_image_use_ok(bo, "dre") == 4
-    assert not role.has_enough_material("dre", bo), "4 slide < 6: engine phai tim tiep, khong ngung"
+    assert schema.count_image_use_ok(bo, "dre") == 5
+    assert not role.has_enough_material("dre", bo), "5 slide < 6: engine phai tim tiep, khong ngung"
 
 
 if __name__ == "__main__":

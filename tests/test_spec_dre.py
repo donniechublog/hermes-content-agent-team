@@ -293,7 +293,90 @@ def test_ghep_ra_ti_le_ngoai_dai_thi_chan():
                                   _slide("A4", quote="Câu hai", attrib="Y"),
                                   _slide("A5"), _slide("A6")])
         _ra, loi, _c, _d = _chay(spec, _m(wd, anh, cap_ghep=["A4", "A5"]), wd)
-        assert _co(loi, "slide 2", "ngoài dải 4:5..1:1"), loi
+        assert _co(loi, "slide 2", "ngoài dải ghép"), loi
+
+
+def test_ghep_hai_anh_3_2_qua_cong_kem_canh_bao_low178():
+    """LOW-178 (16/09/2026, tin Samsung Taylor): bốn ảnh sạch đều 3:2, ghép nhau
+    ra 0.75 — trước đây "ngoài dải 4:5..1:1", Dre block. Nay qua cổng, chỉ CẢNH
+    BÁO mép nào bị cắt (lệch tỉ lệ = lỗi nhỏ, Ông Chủ 12/09/2026)."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        anh = [_anh(wd, "A1", 1000, 1250)] + \
+              [_anh(wd, "A2", 1500, 1000), _anh(wd, "A3", 1500, 1000)] + \
+              [_anh(wd, f"A{i}", 1000, 1250) for i in range(4, 7)]
+        spec = _spec(_bia("A1"), [{"ghep": ["A2", "A3"], "text": "x", "quote": "Một câu", "attrib": "X"},
+                                  _slide("A4", quote="Câu hai", attrib="Y"),
+                                  _slide("A5"), _slide("A6")])
+        ra, loi, canh, _d = _chay(spec, _m(wd, anh, cap_ghep=["A2", "A3"]), wd)
+        assert loi == [], loi
+        assert ra["slides"][0]["images"] == [anh[1]["goc"], anh[2]["goc"]]
+        assert _co(canh, "slide 2", "0.75", "mép"), canh
+
+
+def test_carousel_gate_nhan_anh_ghep_cao_hon_4_5_low178():
+    """Lưới thứ hai: cổng ảnh của `carousel.py` chạy lại `check_aspect_ratio` trên
+    tấm `.ghep.png` — phải dùng sàn STACK_FLOOR cho mục có "images", không thì
+    dre_submit cho qua rồi carousel lại chặn (đúng kiểu kẹt hai đầu 06/09)."""
+    import carousel
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "x.ghep.png"
+        # Nhieu hat ngau nhien de khong bi do_chart nhan nham la chart (anh phang, it mau).
+        Image.merge("RGB", [Image.effect_noise((1080, 1440), 60) for _ in range(3)]).save(p)   # 0.75
+        loi, _canh = carousel._gate_image([("slide 2", str(p), {"images": ["a", "b"], "image": str(p)})])
+        assert not [x for x in loi if "ti le" in x], loi
+        loi, _canh = carousel._gate_image([("slide 3", str(p), {"image": str(p)})])
+        assert [x for x in loi if "ti le" in x], "anh DON 0.75 van phai qua dai 4:5..1:1"
+
+
+# ------------------------------------------------------------ nhan_vat (LOW-178)
+def _anh_mat(wd, ma, **k):
+    return _anh(wd, ma, 1000, 1250, mat=1, **k)
+
+
+def test_nhan_vat_theo_chu_thich_anh_low178():
+    """Bài về Nvidia không gõ "Jensen Huang", nhưng caption Wikimedia của chính tấm
+    ảnh có tên — khai đúng tên đó không phải bịa (LOW-178, 16/09/2026)."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _du(t)
+        m["anh"][1] = _anh_mat(wd, "A2", alt="Jensen Huang speaking at GTC 2026")
+        spec["slides"][0]["nhan_vat"] = "Jensen Huang"
+        _ra, loi, _c, _d = _chay(spec, m, wd)
+        assert loi == [], loi
+
+
+def test_nhan_vat_theo_nhan_thuong_hieu_low178():
+    """Vòng thương hiệu gắn `thuong_hieu.nguoi` (Wikidata founder/CEO) — cùng bằng
+    chứng `role.face_no_clear_ai` đã dùng để ĐẾM tấm này là dùng được."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _du(t)
+        m["anh"][1] = _anh_mat(wd, "A2", thuong_hieu={"nguoi": "C.C. Wei", "loai": "chan_dung"})
+        spec["slides"][0]["nhan_vat"] = "C.C. Wei"
+        _ra, loi, _c, _d = _chay(spec, m, wd)
+        assert loi == [], loi
+
+
+def test_nhan_vat_khong_co_o_bai_lan_chu_thich_van_chan():
+    """Sự cố gốc 05/09 (ảnh quan chức G20 khai "Hock Tan") vẫn bị chặn: caption ảnh
+    không có tên, bài cũng không."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _du(t)
+        m["anh"][1] = _anh_mat(wd, "A2", alt="Officials pose for a group photo at the summit")
+        spec["slides"][0]["nhan_vat"] = "Hock Tan"
+        _ra, loi, _c, _d = _chay(spec, m, wd)
+        assert _co(loi, "slide 2", "Hock Tan", "không xuất hiện"), loi
+
+
+def test_chu_thich_anh_khac_khong_bao_lanh_low178():
+    """Chỉ tấm ĐANG khai mới làm bằng chứng — tên nằm ở caption của tấm khác
+    trong manifest không cho tấm mặt lạ này qua."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _du(t)
+        m["anh"][1] = _anh_mat(wd, "A2", alt="")
+        m["anh"][2]["alt"] = "Jensen Huang speaking at GTC 2026"
+        spec["slides"][0]["nhan_vat"] = "Jensen Huang"
+        _ra, loi, _c, _d = _chay(spec, m, wd)
+        assert _co(loi, "slide 2", "Jensen Huang", "không xuất hiện"), loi
 
 
 def test_ghep_hai_anh_lech_tone_khong_con_bi_chan():
