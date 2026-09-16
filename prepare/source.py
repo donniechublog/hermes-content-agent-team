@@ -166,24 +166,61 @@ FROM_COMMON_MARK_SENTENCE = {
 }
 
 
-def _leading_proper_noun(tieu_de: str) -> str:
-    """Cum ten rieng dau tieu de (hang/san pham) lam tu khoa Commons: lay CAC TU
-    VIET HOA LIEN TIEP ("Gimlet Labs", "Thinking Machines"), khong chi mot tu —
-    "Gimlet" mot minh ra cocktail (05/09/2026). Bo the "[News]" dau tieu de."""
+def all_proper_nouns(tieu_de: str) -> list:
+    """TAT CA cum ten rieng trong tieu de, theo thu tu xuat hien — khong dung
+    lai o cum DAU TIEN nhu `_leading_proper_noun` (LOW-176, 16/09/2026: tin
+    hai hang "Anthropic ra tich hop Salesforce" chi ra duoc "Anthropic" lam
+    tu khoa, nen ca vong anh thuong hieu lan cau hoi vision deu khong bao gio
+    biet toi Salesforce — ma anh dung chu de nhat cua tin lai la anh su kien
+    cua CHINH Salesforce). Dung CHUNG mot bo loc voi ham do (STOPWORD
+    FROM_EMPTY_QUERY/FROM_COMMON_MARK_SENTENCE), chi khac la quet HET tieu de
+    thay vi dung lai o tu dau tien khop."""
     import article_sources
     # Hau to site (" · Hugging Face") khong phai ten rieng cua tin (LOW-35):
     # no tung thanh tu khoa Commons va ra "Octopus' Hugging Face.jpg".
     t = article_sources.strip_site_suffix(re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or ""))
     ws = re.sub(r"[\$;:,\"'()\[\]|]", " ", t).split()
-    for i, w in enumerate(ws):
+    ra = []
+    i = 0
+    while i < len(ws):
+        w = ws[i]
         if w[:1].isupper() and w.isalpha() and len(w) >= 4 and w.lower() not in article_sources.FROM_EMPTY_QUERY \
                 and w.lower() not in FROM_COMMON_MARK_SENTENCE:
             cum = [w]
-            for w2 in ws[i + 1:i + 3]:
+            j, da_qua_so = i + 1, False
+            while j < len(ws) and len(cum) < 3:
+                w2 = ws[j]
                 if w2[:1].isupper() and w2.isalpha() and w2.lower() not in article_sources.FROM_EMPTY_QUERY \
                         and w2.lower() not in ("raises", "nabs", "drops", "launches", "unveils", "forecasts"):
                     cum.append(w2)
+                    j += 1
+                    da_qua_so = False
+                elif not da_qua_so and re.fullmatch(r"[0-9][0-9a-zA-Z]*", w2):
+                    # So/ma phien ban xen giua chinh ten san pham ("Snapdragon 8
+                    # Elite", "GPT-4 Turbo") — bo qua token nay (khong dua vao
+                    # ten hien thi) nhung KHONG cat cum, de tu hoa ke tiep van
+                    # duoc gop chung MOT ten thay vi bi doc thanh mot "hang" rieng
+                    # gia (LOW-176: "Snapdragon 8 Elite" tung ra hai muc "Qualcomm"
+                    # va "Elite" — "Elite" la hang bia).
+                    j += 1
+                    da_qua_so = True
                 else:
                     break
-            return " ".join(cum)
-    return ""
+            cum_ten = " ".join(cum)
+            if cum_ten not in ra:
+                ra.append(cum_ten)
+            i = j
+        else:
+            i += 1
+    return ra
+
+
+def _leading_proper_noun(tieu_de: str) -> str:
+    """Cum ten rieng dau tieu de (hang/san pham) lam tu khoa Commons: lay CAC TU
+    VIET HOA LIEN TIEP ("Gimlet Labs", "Thinking Machines"), khong chi mot tu —
+    "Gimlet" mot minh ra cocktail (05/09/2026). Bo the "[News]" dau tieu de.
+
+    MOT trong (co the nhieu) cum ten rieng cua tieu de — xem `all_proper_nouns`
+    khi can CA cac cum con lai (LOW-176)."""
+    ra = all_proper_nouns(tieu_de)
+    return ra[0] if ra else ""
