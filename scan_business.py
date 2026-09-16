@@ -312,6 +312,20 @@ def _same_amount(a: list, b: list, cross_currency=True) -> bool:
     return False
 
 
+FOLLOW_UP_BEFORE_AMOUNT = re.compile(r"\b(after|following|amid|despite|since)\b", re.IGNORECASE)
+FOLLOW_UP_WINDOW = 60
+
+
+def _is_follow_up(tieu_de: str) -> bool:
+    # LOW-197: "Finland's Opposition Calls for Data Center Controls After Google's
+    # €13 Billion AI Investment" — so tien nam sau "after" la BOI CANH cua mot tin
+    # moi, khong phai chu de; khong duoc gop vao tin cong bo €13B.
+    for m in AMOUNT_PATTERN.finditer(tieu_de):
+        if FOLLOW_UP_BEFORE_AMOUNT.search(tieu_de[max(0, m.start() - FOLLOW_UP_WINDOW):m.start()]):
+            return True
+    return False
+
+
 def _capitalized(tieu_de: str, word: str) -> bool:
     return any(tok[0].isupper() and standard_ify(tok) == word
                for tok in re.findall(r"\w+", tieu_de))
@@ -361,6 +375,7 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         return all(items[k][3] and _same_amount(items[k][3], items[i][3], cross_currency=False)
                    for k in items_with_word[w])
 
+    follow_up = [_is_follow_up(t["tieu_de"]) for t, _, _, _ in items]
     parent = list(range(len(items)))
 
     def root(i):
@@ -380,7 +395,7 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
             # lon tu: ca Cloverleaf kinh dien (invests vs partners) van gop
             # dung (5/7=0.71), con jumps-vs-slides thi khong (2/7=0.29).
             same = chung and len(chung) / max(len(tu_i), len(tu_j)) >= nguong
-            if not same and amt_i and amt_j:
+            if not same and amt_i and amt_j and not (follow_up[i] or follow_up[j]):
                 shared = deal_i & deal_j
                 same = _same_amount(amt_i, amt_j) and (
                     len(shared) >= MIN_SHARED_DEAL_KEYWORDS

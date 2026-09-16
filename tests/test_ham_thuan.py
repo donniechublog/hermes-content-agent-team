@@ -278,6 +278,16 @@ def test_dedup_single_word_rule_rejects_common_words_and_verbs():
     assert len(ra) == 5, [t["tieu_de"] for t in ra]
 
 
+def test_dedup_keeps_follow_up_story_apart_from_announcement():
+    """LOW-197: so tien sau 'After' la boi canh cua tin moi (tin that 11/09)."""
+    import scan_business as sb
+    tin = [_tin("Google deepens commitment to Finland with two-year €13 Billion investment in AI infrastructure", 100),
+           _tin("Google's EUR13 Billion Finland AI Investment: Nuclear PPA, Data Centers, Jobs - IndexBox", 200),
+           _tin("Finland's Opposition Calls for Data Center Controls After Google's €13 Billion AI Investment", 300)]
+    ra = sb.gather_duplicate(tin)
+    assert [t["so_bao"] for t in ra] == [2, 1], [(t["so_bao"], t["tieu_de"]) for t in ra]
+
+
 def test_chuan_hoa_lam_khoa_dedup_on_dinh():
     import scan_business as sb
     a = sb.standard_ify("Nvidia's Q3 Revenue Jumps 34%!")
