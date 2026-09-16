@@ -254,6 +254,30 @@ def test_dedup_keeps_different_deals_with_same_amount_apart():
     assert len(ra) == 6, [t["tieu_de"] for t in ra]
 
 
+def test_dedup_merges_same_deal_sharing_only_a_rare_name():
+    """LOW-193: tin that 15-16/09 chi chung MOT ten hang le (Cornelis, Profound)."""
+    import scan_business as sb
+    tin = [_tin("AI infrastructure company Cornelis raises $205M to chip away at Nvidia's dominance", 100),
+           _tin("Cornelis Expands into Scale-Up Networking with Active Compute Fabric, $205M in Funding, and Qualcomm Collaboration at AI Infra Summit - Business Wire", 200),
+           _tin("Profound Lands $180M In Series D Funding, Reaching $1.8B Valuation - Unite.AI", 300),
+           _tin("AEO startup Profound hits unicorn valuation, raises $180M Series D 7 months after last round - TechCrunch", 400)]
+    ra = sb.gather_duplicate(tin)
+    assert len(ra) == 2, [t["tieu_de"] for t in ra]
+
+
+def test_dedup_single_word_rule_rejects_common_words_and_verbs():
+    """Tu don phai la TEN: 'factory' co trong tin robot khong lien quan; 'considers'
+    viet thuong o mot ben va lech tien te (tin that 13/09 va 16/09)."""
+    import scan_business as sb
+    tin = [_tin("Factory Raises $200M at $5B Valuation to Scale Enterprise Software Platform - HPCwire", 100),
+           _tin("Exclusive | AI Coding Startup Factory More Than Triples Valuation to $5 Billion - WSJ", 200),
+           _tin("Factory robots long posed a safety threat to human workers. This company says it has solved that problem.", 300),
+           _tin("Anthropic IPO: Nvidia Considers $10 Billion Anchor Investment in Potential $2 Trillion AI Startup Valuation", 400),
+           _tin("Finland considers data centre permitting system after Google's €13bn AI investment", 500)]
+    ra = sb.gather_duplicate(tin)
+    assert len(ra) == 5, [t["tieu_de"] for t in ra]
+
+
 def test_chuan_hoa_lam_khoa_dedup_on_dinh():
     import scan_business as sb
     a = sb.standard_ify("Nvidia's Q3 Revenue Jumps 34%!")
