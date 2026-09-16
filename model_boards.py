@@ -14,7 +14,7 @@ o hai tep khac nhau:
 Va do la kieu loi KHONG BAO GI CA — script van chay, bao cao van in, chi la
 Nova mat mot bang hoac muc BAT BUOC ra link rong. Chinh ma nguon da ghi lai hai
 lan bi dinh: "danh sach bang bi chep LAM HAI o hai cho... them bang ma quen mot
-cho thi no khong bao gio sinh duoc tin 'leo hang'" (06/09), va `test_bang_nova`
+cho thi no khong bao gio sinh duoc tin 'leo hang'" (06/09), va `test_model_boards`
 sinh ra sau khi mo tu 12 len 20 bang lam mat nhan va mat link.
 
 Nay 1, 2, 3, 5, 6 deu dan xuat tu day. Rieng 4 (`bang_so`) van viet tay vi moi

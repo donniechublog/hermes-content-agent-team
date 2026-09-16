@@ -1159,7 +1159,7 @@ CEILING_BOARD = 5          # moi bang xep hang — truoc: 8
 REGION_LABEL = {"my": "My", "tq": "TQ", "khac": "  "}
 # Ban ke khai bang xep hang. main() dung de kiem `bang_so` khong lech, va bao
 # cao dung de in con so. Go tay con so nay thi no lech ngay: ban dau ghi 20
-# trong khi that su co 23 (test_bang_nova bat duoc).
+# trong khi that su co 23 (test_model_boards bat duoc).
 LOCK_BOARD = model_boards.LOCK_BOARD
 COUNT_BOARD = model_boards.COUNT_BOARD
 

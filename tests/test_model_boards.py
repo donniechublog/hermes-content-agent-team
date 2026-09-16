@@ -11,7 +11,7 @@ link, va phai vai ngay sau moi co nguoi de y:
   3. In danh sach BAT BUOC hai lan     -> ton 5.600 ky tu o cuoi bao cao, dung
      cho de bi tran cat mat truoc tien
 
-Chay: venv/bin/python tests/test_bang_nova.py
+Chay: venv/bin/python tests/test_model_boards.py
 """
 import sys
 from pathlib import Path
