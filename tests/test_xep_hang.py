@@ -73,7 +73,9 @@ def test_tach_model_khong_doi_hanh_vi_cu():
         ("Kimi-K3 leo len #1 Frontend Code Arena", ["Kimi-K3"]),
         ("Qwen3.8-27B ra mat", ["Qwen3.8-27B"]),
         ("GLM-5.2 (Max) xep hang 3", ["GLM-5.2 (Max)", "GLM-5.2"]),
-        ("Muse Spark 1.2 duoc danh gia cao", ["Muse Spark 1.2", "Muse Spark", "Muse"]),
+        # "Muse" (mot tu, khong so) bi bo tu LOW-177: dang do la TEN HANG TRAN,
+        # khop ca nhung hang khong phai model cua bai. "Muse Spark" van giu.
+        ("Muse Spark 1.2 duoc danh gia cao", ["Muse Spark 1.2", "Muse Spark"]),
     ]
     for tieu_de, ky_vong in ca:
         assert xh.extract_model(tieu_de) == ky_vong, f"{tieu_de!r}: {xh.extract_model(tieu_de)} != {ky_vong}"

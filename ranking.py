@@ -279,10 +279,18 @@ def extract_model(tieu_de: str) -> list:
     if khong_ngoac != ten:
         ra.append(khong_ngoac)
     ws = khong_ngoac.split()
-    # bớt dần từ cuối, giữ tối thiểu "Họ + số" (GPT-6) hoặc "Họ Tên" (Muse Spark)
+    # bớt dần từ cuối, nhưng KHÔNG bớt tới dạng MỘT TỪ KHÔNG MANG SỐ — đó là TÊN
+    # HÃNG TRẦN ("DeepSeek", "Gemini", "Claude"), nó khớp mọi hàng có chữ đó kể cả
+    # hàng KHÔNG PHẢI model của bài: "DeepSeek" khoanh trúng "DeepSeek Harness" —
+    # app của người khác, hạng 9 bảng Apps của openrouter — trong ba bài liền
+    # 15/09/2026 (LOW-177). Giữ "GPT-6" (một từ nhưng có số nên vẫn định danh
+    # được model) và "Muse Spark" (hai từ nên vẫn là tên model, không phải hãng).
     while len(ws) > 1:
         ws = ws[:-1]
-        ra.append(" ".join(ws))
+        ngan = " ".join(ws)
+        if len(ws) == 1 and not any(c.isdigit() for c in ngan):
+            break
+        ra.append(ngan)
     return list(dict.fromkeys(x for x in ra if len(x) >= 3))
 
 
@@ -323,12 +331,21 @@ def extract_rank(tieu_de: str, model: str):
 
 def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str = "") -> list:
     """Xếp registry: nguồn được NHẮC (tiêu đề/link/via/chữ bài) trước, rồi theo chủ
-    đề tin, rồi phần còn lại. Không loại nguồn nào — "không giới hạn nguồn".
+    đề tin, rồi phần còn lại. Hàm này KHÔNG loại nguồn nào — nó chỉ xếp thứ tự;
+    việc loại nằm ở `source_proves_story`, xem đó.
 
-    Mỗi mục trả về mang thêm `duoc_nhac`: True khi CHÍNH TIN nhắc tới nguồn đó.
-    Chụp được từ nguồn `duoc_nhac=False` nghĩa là ảnh nói về MỘT BẢNG KHÁC với
-    bảng trong tiêu đề — vẫn dùng được nhưng phải cảnh báo, xem `describe_ranking_image`
-    trong image_prepare.py.
+    Mỗi mục trả về mang thêm hai khoá:
+      `duoc_nhac`  True khi CHÍNH TIN nhắc tới nguồn đó (đọc ở tiêu đề/link/via).
+      `on_topic`   True khi tiêu đề/link/via khớp một mẫu TOPIC của nguồn đó — tin
+                   "top 10 OpenRouter" với bảng lượt dùng. ĐỌC Ở TIÊU ĐỀ, không
+                   đọc thân bài (LOW-22).
+
+    Trước LOW-179, chụp được từ nguồn `duoc_nhac=False` vẫn dùng được, chỉ kèm
+    cảnh báo "đây là bảng khác" trong `describe_ranking_image`. Không còn: tin
+    HuggingFace thả trọng số ra ảnh bảng lượt dùng openrouter (15/09/2026), mà
+    cảnh báo đó thì hai bài cùng đợt không hề nổ vì tiêu đề có chữ "OpenRouter"
+    nên `duoc_nhac=True`. Luật Ông Chủ 16/09: không chụp đại chart rồi đưa vào
+    minh hoạ.
 
     Mỗi mục còn giữ nguyên `doc_lap` nếu có (spread từ NGUON) — `find_and_capture_many`
     đọc khoá này để biết nguồn nào đo NĂNG LỰC RIÊNG, không phải cách đo khác
@@ -351,11 +368,20 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
             nhac = bool(re.search(n["bang_re"], nhac_bang, re.I))
         if nhac:
             d += 500
+        on_topic = False
         for pat, mas in TOPIC:
-            if n["ma"] in mas and re.search(pat, chu_de, re.I):
+            if n["ma"] not in mas:
+                continue
+            if re.search(pat, chu_de, re.I):
                 d += 200
+            # `on_topic` doc o TIEU DE/LINK/VIA, KHONG doc than bai — cung ly do
+            # voi `nhac_bang` (LOW-22: than bai lam moi nguon trong nhu duoc nhac).
+            # Diem sap xep van doc ca than bai: doi no la doi THU TU nguon, khong
+            # phai viec cua LOW-179.
+            if re.search(pat, nhac_bang, re.I):
+                on_topic = True
         diem[n["ma"]] = d
-        ra.append({**n, "duoc_nhac": nhac})
+        ra.append({**n, "duoc_nhac": nhac, "on_topic": on_topic})
     return sorted(ra, key=lambda n: -diem[n["ma"]])
 
 
@@ -367,6 +393,18 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
 # rồi đo lại theo VIEWPORT và clip ngay — không tính toạ độ trước rồi cuộn sau.
 _JS_NORM = """
 const norm = s => (s||'').toLowerCase().replace(/[\\s\\-_–—.]+/g,'');
+// Khop ten model trong mot chuoi DA norm. `norm` xoa ca dau cham nen phien ban
+// NGAN an duoc phien ban DAI: "deepseekv4" la substring cua "deepseekv41flash",
+// nen bai ve V4 Pro khoanh nham hang V4.1 Flash (LOW-177). Chan bang mot dieu
+// kien: ky tu ngay sau cho khop khong duoc la CHU SO. "Gemini 3" cung khong con
+// an duoc "Gemini 3.8 Flash". (charCodeAt qua cuoi chuoi tra NaN -> moi so sanh
+// la false -> tinh la khop, dung y: khop tan cung chuoi.)
+const matchesModel = (hay, nm) => {
+  for (let i = hay.indexOf(nm); i >= 0; i = hay.indexOf(nm, i + 1)) {
+    const c = hay.charCodeAt(i + nm.length);
+    if (!(c >= 48 && c <= 57)) return true;
+  }
+  return false; };
 const rect = el => { const r = el.getBoundingClientRect(); return {x: r.x, y: r.y, w: r.width, h: r.height}; };
 const khungCuon = el => { for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
   const cs = getComputedStyle(e); if (/(auto|scroll)/.test(cs.overflowY) && e.scrollHeight > e.clientHeight + 4) return e; }
@@ -406,7 +444,7 @@ _JS_TIM = _JS_NORM + """
       // ra anh khoanh vang mot o trong (thay tren vellum o khung mobile 06/09).
       const idx = rows.findIndex((r, i) => {
         const t = (r.innerText || '').trim();
-        return i > 0 && t.length >= 3 && norm(t).includes(nm);
+        return i > 0 && t.length >= 3 && matchesModel(norm(t), nm);
       });
       if (idx < 0) continue;
       const r = rows[idx];
@@ -473,7 +511,7 @@ _JS_SVG = _JS_NORM + """
   for (const model of models) {
     const nm = norm(model);
     for (const t of document.querySelectorAll('svg text, svg tspan')) {
-      if (!norm(t.textContent).includes(nm) || t.getBoundingClientRect().width <= 0) continue;
+      if (!matchesModel(norm(t.textContent), nm) || t.getBoundingClientRect().width <= 0) continue;
       const s = t.closest('svg'); if (!s) continue;
       const sb = s.getBoundingClientRect();
       if (sb.width < 500 || sb.height < 250) continue;
@@ -706,12 +744,19 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
 #      đúng trên cả arena-code lẫn arena-text, hai giao diện hơi khác nhau.
 _JS_NORM_DS = """
 const norm = s => (s||'').toLowerCase().replace(/[\\s\\-_.]+/g,'');
+// Cung dieu kien bien nhu `matchesModel` trong _JS_NORM — xem chu thich o do (LOW-177).
+const matchesModel = (hay, nm) => {
+  for (let i = hay.indexOf(nm); i >= 0; i = hay.indexOf(nm, i + 1)) {
+    const c = hay.charCodeAt(i + nm.length);
+    if (!(c >= 48 && c <= 57)) return true;
+  }
+  return false; };
 const rect = el => { const r = el.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height}; };
 const timDanhSach = (models) => {
   const chuaModel = els => {
     if (!models || !models.length) return false;
     const t = norm(els.map(e => e.textContent || '').join(' '));
-    return models.some(m => t.includes(norm(m)));
+    return models.some(m => matchesModel(t, norm(m)));
   };
   const groups = new Map();
   // div/li/a: openrouter dung <ol><li>, arena dung <div> — quet ca ba, dung khoa
@@ -778,7 +823,7 @@ _JS_DS = _JS_NORM_DS + """
   let idx = -1, model = null;
   for (const m of models) {
     const nm = norm(m);
-    idx = els.findIndex(e => norm(e.innerText || e.textContent).includes(nm));
+    idx = els.findIndex(e => matchesModel(norm(e.innerText || e.textContent), nm));
     if (idx >= 0) { model = m; break; }
   }
   // Cot duoc goi DICH DANH (cot >= 0) thi khong doi phai co model: do la cac cot
@@ -1080,6 +1125,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
     # browser tren duong THANH CONG, nen mot ngoai le giua chung (mot nguon doi
     # DOM, mot `page.evaluate` nem) de lai tien trinh chromium song. Chay 7 tin
     # mot sang la 7 lan nhu vay.
+    nguon_ds = _sources_proving_story(nguon_ds, in_log)
     with session_or_new(phien_browser) as _ph:
         phien = SessionCapture(_ph.browser(ARGS_CAPTURE))
         for n in nguon_ds:
@@ -1127,10 +1173,57 @@ def _rank_of(kq: dict, n: dict, hang_goi_y):
     duoc nhac). Truoc audit lượt 2 (R-r2-5) no lam fallback cho MOI bang: nguon
     kieu svg luon tra hang=None nen XH2/XH3 (bang doc lap, do nang luc khac)
     mang "#1" cua bang khac vao alt — dung loi "khoanh sai hang" ma chuoi commit
-    nhieu bang muon tranh. Chi bang chinh moi duoc muon hang tu tieu de."""
+    nhieu bang muon tranh. Chi bang chinh moi duoc muon hang tu tieu de.
+
+    Tu LOW-177: anh CHUP DUOC ma khong doc ra so hang o chinh hang da khoanh thi
+    de TRONG, khong muon hang o tieu de nua. Truoc do alt ghi "DeepSeek #2" de
+    len mot anh dang khoanh hang 9 ("hang #?" trong log nhung van nop) — con so
+    o tieu de bien thanh loi khang dinh ve mot tam anh khong chung minh no. The
+    du phong (`kieu="the"`) thi van duoc: hang do la CHU engine tu in ra the,
+    khong phai bang chung chup tu bang nao."""
     if kq.get("hang"):
         return kq["hang"]
+    if is_capture(kq.get("kieu")):
+        return None
     return None if n.get("doc_lap") else hang_goi_y
+
+
+def source_proves_story(n: dict) -> bool:
+    """Nguồn này có đủ tư cách làm ẢNH XẾP HẠNG cho bài không? Hàm THUẦN.
+
+    Chỉ hai loại đủ: bảng bài NHẮC TÊN (`duoc_nhac`) hoặc bảng ĐÚNG CHỦ ĐỀ bài
+    (`on_topic` — tin "top 10 OpenRouter" với bảng lượt dùng).
+
+    `doc_lap` KHÔNG phải tư cách. Đo 16/09/2026: với tin HuggingFace thả trọng số,
+    ba bảng arena ảnh (`doc_lap: True`) là những nguồn DUY NHẤT lọt qua nếu tính
+    `doc_lap` — tức lấy bảng đấu model tạo ảnh minh hoạ cho tin thả trọng số một
+    model văn bản. Mà ca `doc_lap` sinh ra để phục vụ (GPT-Image-2.5 lên cả bảng
+    tạo ảnh lẫn bảng chỉnh sửa ảnh) thì cả ba bảng đó đã `on_topic=True` rồi, nên
+    không mất gì. Việc thật của `doc_lap` nằm ở `_skip_source`: đừng dừng ở thành
+    công đầu tiên — khác hẳn "nguồn này có tư cách làm ảnh của bài".
+
+    Nguồn chỉ nằm trong registry theo thứ tự còn lại thì KHÔNG: chụp nó là lấy
+    bảng đo THỨ KHÁC làm bằng chứng cho claim của bài. Đó chính là ba bài
+    15/09/2026 — tin HuggingFace thả trọng số (325.712 lượt tải, trending 2327)
+    ra ảnh bảng LLM Rankings theo lượt dùng của openrouter, một bảng không đo
+    lượt tải cũng không đo trending (LOW-179).
+
+    Hết nguồn đủ tư cách thì rơi về THẺ DỰ PHÒNG, không thay bằng bảng khác —
+    thẻ là chữ engine tự in, `is_capture("the")` là False nên `needs_ranking_image`
+    không ép vai dùng nó.
+    """
+    return bool(n.get("duoc_nhac") or n.get("on_topic"))
+
+
+def _sources_proving_story(nguon_ds: list, in_log) -> list:
+    """Lọc `nguon_ds` qua `source_proves_story` và NÓI RA đã bỏ những gì — im lặng
+    thì "vì sao bài xếp hạng này không có ảnh" lại phải đoán (INV-3)."""
+    ok = [n for n in nguon_ds if source_proves_story(n)]
+    if len(ok) < len(nguon_ds):
+        in_log(f"[xep_hang] bỏ {len(nguon_ds) - len(ok)}/{len(nguon_ds)} nguồn không chứng minh "
+               f"được bài (bài không nhắc, không đúng chủ đề, không đo năng lực riêng) — "
+               f"còn: {', '.join(n['ma'] for n in ok) or 'không nguồn nào, sẽ dựng thẻ dự phòng'}")
+    return ok
 
 
 def _skip_source(n: dict, da_chup_thuong: bool) -> bool:
@@ -1169,6 +1262,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
     logo = None
     ket_qua: list = []
     da_chup_thuong = False
+    nguon_ds = _sources_proving_story(nguon_ds, in_log)
     with session_or_new(phien_browser) as _ph:
         phien = SessionCapture(_ph.browser(ARGS_CAPTURE))
         for n in nguon_ds:
