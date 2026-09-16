@@ -16,7 +16,7 @@ Ba loi do duoc, moi loi mot nhom test FAIL TREN CODE CU:
      (`image_brand.announcement_page` + `fallback_rounds._extra_announcement_page` +
      `browser_pass` uu tien trang do voi tran 4 anh).
 
-Chay:  venv/bin/python tests/test_tim_tat_ca_anh_lien_quan.py
+Chay:  venv/bin/python tests/test_find_all_image_relevant.py
 """
 import ast
 import json
@@ -38,13 +38,13 @@ TIEU_DE = "deepseek-v4.1-flash-max vào bảng LiveBench ở #6, 81.4 điểm, k
 
 
 # ------------------------------------------------ 1. truy van giu ten model
-def test_ten_rieng_khong_dau_giu_token_gach_noi():
+def test_name_own_no_mark_keep_token_dash_say():
     en = article_sources._name_own_no_mark(TIEU_DE)
     assert "deepseek-v4.1-flash-max" in en.split(), en
     assert "deepseek" in en.lower(), f"mat ten hang: {en!r}"
 
 
-def test_tieu_de_tim_khong_mat_ten_hang_khi_og_title_rong():
+def test_title_find_no_face_name_rank_when_og_title_empty():
     """Dung canh that: og:title cua livebench.ai la 'LiveBench' (bi bo vi < 4 tu),
     Google News hong -> roi ve ten rieng. Ket qua PHAI con 'deepseek'."""
     cu = article_sources._title_page, article_sources._download
@@ -60,7 +60,7 @@ def test_tieu_de_tim_khong_mat_ten_hang_khi_og_title_rong():
     assert "deepseek" in en.lower(), f"truy van khong co ten hang/model: {en!r}"
 
 
-def test_truy_van_bing_thu_ban_bo_gach_truoc():
+def test_query_bing_try_copy_drop_dash_before():
     """Do 11/09: 'deepseek-v4.1-flash-max ...' -> 1 bai, 'deepseek v4.1 flash max' -> 6."""
     qs = article_sources._query_bing("deepseek-v4.1-flash-max LiveBench #6 81.4")
     assert qs and "-" not in qs[0], qs
@@ -69,7 +69,7 @@ def test_truy_van_bing_thu_ban_bo_gach_truoc():
 
 
 # ------------------------------------------------ 2. kieu "chup that" thong nhat
-def _kieu_xep_hang_phat_ra() -> set:
+def _kind_ranking_emit_out() -> set:
     """Moi gia tri chuoi gan cho khoa "kieu" trong dict literal cua ranking.py."""
     cay = ast.parse((ROOT / "ranking.py").read_text(encoding="utf-8"))
     ra = set()
@@ -82,8 +82,8 @@ def _kieu_xep_hang_phat_ra() -> set:
     return ra
 
 
-def test_moi_kieu_xep_hang_phat_ra_deu_duoc_nguoi_doc_hieu():
-    phat = _kieu_xep_hang_phat_ra()
+def test_new_kind_ranking_emit_out_all_ok_reader_understand():
+    phat = _kind_ranking_emit_out()
     assert phat, "khong doc duoc kieu nao tu ranking.py — test hong"
     assert "the" in phat, "the du phong phai con"
     la = {k for k in phat if k != "the"}
@@ -95,7 +95,7 @@ def test_moi_kieu_xep_hang_phat_ra_deu_duoc_nguoi_doc_hieu():
     assert not ranking.is_capture("the") and not ranking.is_capture(None)
 
 
-def test_brief_va_cong_nop_coi_bang_chup_that_la_bat_buoc():
+def test_brief_and_gate_submit_regard_board_capture_real_is_required():
     m = {"tin_xep_hang": True,
          "xep_hang": {"site": "LIVEBENCH.AI", "bang": "LiveBench", "model": "deepseek-v4.1-flash-max",
                       "hang": 6, "kieu": "bang", "duoc_nhac": True}}
@@ -108,7 +108,7 @@ def test_brief_va_cong_nop_coi_bang_chup_that_la_bat_buoc():
     assert not submit_common.needs_ranking_image(m, {"ma": "A1"})
 
 
-def test_nguoi_doc_kieu_khong_so_chuoi_tay():
+def test_reader_kind_no_count_string_manual():
     """Cong o muc ma nguon: hai noi doc phai hoi ranking.is_capture, khong so chuoi."""
     for tep in ("prepare/manifest.py", "submit_common.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
@@ -129,65 +129,65 @@ RSS = """<rss><channel><item><title>GPT-6 Astra</title>
 <link>https://vi.du/index/gpt-6-astra-next-generation-work</link></item></channel></rss>"""
 
 
-def _voi_stub(website, tai):
+def _with_stub(website, tai):
     cu = th.vendor_website, th._download_html
     th.vendor_website = website
     th._download_html = tai
     return cu
 
 
-def _phuc_hoi(cu):
+def _restore(cu):
     th.vendor_website, th._download_html = cu
 
 
-def test_khoa_model_bo_hau_to_effort_va_giu_toi_thieu_hai_manh():
+def test_lock_model_drop_suffix_effort_and_keep_min_two_fragment():
     assert th._lock_model(["deepseek-v4.1-flash-max"]) == ["deepseek-v4-1-flash", "deepseek-v4-1", "deepseek-v4"]
     assert th._lock_model(ranking.extract_model("GPT-6 Astra (max) 55 điểm"))[0] == "gpt-6-astra"
     assert th._lock_model([]) == []
 
 
-def test_trang_cong_bo_khop_bai_khong_khop_anh_bia():
+def test_announcement_page_match_article_no_match_image_cover():
     goi = []
 
     def _tai(url, timeout=15, feed=False):
         goi.append(url)
         return HTML_NEWS if url.endswith("/news/") and not feed else ""
-    cu = _voi_stub(lambda hang: "https://vi.du", _tai)
+    cu = _with_stub(lambda hang: "https://vi.du", _tai)
     try:
         kq = th.announcement_page({"khoa": "deepseek", "hang": "DeepSeek"},
                               ranking.extract_model(TIEU_DE))
     finally:
-        _phuc_hoi(cu)
+        _restore(cu)
     assert kq and kq["url"] == "https://vi.du/en/news/deepseek-v4-1-flash/", kq
     assert kq["loai"] == "công bố" and kq["toa_soan"] == "https://vi.du"
     assert len(goi) == 1, f"khop o /news/ ma van fetch tiep: {goi}"
 
 
-def test_trang_cong_bo_roi_ve_rss_khi_html_bi_chan():
+def test_announcement_page_fall_about_rss_when_html_got_block():
     def _tai(url, timeout=15, feed=False):
         return RSS if feed and url.endswith("/news/rss.xml") else ""
-    cu = _voi_stub(lambda hang: "https://vi.du", _tai)
+    cu = _with_stub(lambda hang: "https://vi.du", _tai)
     try:
         kq = th.announcement_page({"khoa": "openai", "hang": "OpenAI"},
                               ranking.extract_model("GPT-6 Astra dẫn đầu bảng"))
     finally:
-        _phuc_hoi(cu)
+        _restore(cu)
     assert kq and kq["url"] == "https://vi.du/index/gpt-6-astra-next-generation-work", kq
 
 
-def test_trang_cong_bo_khong_hoi_gi_khi_khong_co_model_hay_website():
+def test_announcement_page_no_ask_what_when_no_has_model_or_website():
     goi = []
-    cu = _voi_stub(lambda hang: goi.append(("web", hang)) or "", lambda *a, **k: goi.append("tai") or "")
+    cu = _with_stub(lambda hang: goi.append(("web", hang)) or "", lambda *a, **k: goi.append("tai") or "")
     try:
         assert th.announcement_page({"khoa": "samsung", "hang": "Samsung"}, []) is None
         assert goi == [], f"khong co model ma van hoi: {goi}"
         assert th.announcement_page({"khoa": "x", "hang": "X"}, ["GPT-6"]) is None
         assert "tai" not in goi, "khong co website ma van fetch"
     finally:
-        _phuc_hoi(cu)
+        _restore(cu)
 
 
-def test_them_trang_cong_bo_ghi_vao_nguon_json_mot_lan():
+def test_extra_announcement_page_write_into_source_json_one_attempt():
     cu = th.announcement_page, th.vendors_in_story
     th.announcement_page = lambda h, models: {"url": "https://vi.du/news/deepseek-v4-1-flash/",
                                           "loai": "công bố", "tieu_de": "", "toa_soan": "https://vi.du"}
@@ -219,7 +219,7 @@ class _PageGia:
                 for i in range(self.so_anh)]
 
 
-def test_browser_tran_anh_trang_cong_bo_bang_bai_goc():
+def test_browser_ceiling_image_announcement_page_board_article_original():
     """Bao khac <= 3 anh, nhung trang cong bo chinh chu duoc 4 nhu bai goc —
     4 chart benchmark cua DeepSeek ma cat con 3 la mat mot tam."""
     JS = {"IMG": ""}
@@ -235,7 +235,7 @@ def test_browser_tran_anh_trang_cong_bo_bang_bai_goc():
     assert 'khac.sort(key=lambda t: t.get("loai") != "công bố")' in src, "trang cong bo phai duoc mo truoc"
 
 
-def test_engine_noi_trang_cong_bo_truoc_browser():
+def test_engine_say_announcement_page_before_browser():
     """Cong o muc ma nguon: prepare_article() goi _extra_announcement_page giua _supplement_source
     va _take_from_browser — de browser ghe trang do lay chart."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")

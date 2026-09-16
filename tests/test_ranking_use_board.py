@@ -10,7 +10,7 @@ phai Text Arena. Hai lo:
      arena.ai lam ca 7 bang deu "duoc nhac" -> canh bao "BANG KHAC" khong no.
 Fail tren code cu (da doi chung), pass tren code moi.
 
-Chay:  venv/bin/python tests/test_xep_hang_dung_bang.py
+Chay:  venv/bin/python tests/test_ranking_use_board.py
 """
 import sys
 from pathlib import Path
@@ -24,12 +24,12 @@ LINK = "https://arena.ai/leaderboard/text"
 CHU = "Anthropic nói model mới mạnh hơn ở code và toán."   # 1 chu 'code' trong bai goc
 
 
-def test_tin_bang_text_khong_bi_bang_code_cuop_vi_than_bai_co_chu_code():
+def test_story_board_text_no_got_board_code_snatch_vi_than_article_has_text_code():
     ds = xh.suggest_sources(TD, LINK, "Arena", CHU)
     assert ds[0]["ma"] == "arena-text", [n["ma"] for n in ds[:3]]
 
 
-def test_duoc_nhac_theo_bang_khong_chi_theo_mien():
+def test_ok_mention_by_board_no_only_by_domain():
     ds = {n["ma"]: n for n in xh.suggest_sources(TD, LINK, "Arena", CHU)}
     assert ds["arena-text"]["duoc_nhac"] is True
     # Cung mien arena.ai nhung tieu de/link khong noi toi bang code
@@ -37,7 +37,7 @@ def test_duoc_nhac_theo_bang_khong_chi_theo_mien():
     assert ds["arena-vision"]["duoc_nhac"] is False
 
 
-def test_canh_bao_bang_khac_no_khi_chup_duoc_bang_code_cho_tin_text():
+def test_warning_board_other_no_when_capture_ok_board_code_wait_story_text():
     """Manifest nhu engine ghi khi (van) chup duoc arena-code: cau brief phai co ⚠️."""
     from prepare.manifest import describe_ranking_image
     ds = {n["ma"]: n for n in xh.suggest_sources(TD, LINK, "Arena", CHU)}
@@ -47,7 +47,7 @@ def test_canh_bao_bang_khac_no_khi_chup_duoc_bang_code_cho_tin_text():
     assert "BẢNG KHÁC" in describe_ranking_image(m), describe_ranking_image(m)
 
 
-def test_tin_that_su_ve_code_van_ra_arena_code():
+def test_story_really_about_code_still_out_arena_code():
     ds = xh.suggest_sources("Kimi-K3 leo lên #1 Frontend Code Arena", "", "", "")
     assert ds[0]["ma"] == "arena-code", [n["ma"] for n in ds[:3]]
     # "Arena" tran khong khop mien `arena\.ai|lmarena` (hanh vi cu, giu nguyen):
@@ -55,7 +55,7 @@ def test_tin_that_su_ve_code_van_ra_arena_code():
     assert all(n["duoc_nhac"] is False for n in ds), [n["ma"] for n in ds if n["duoc_nhac"]]
 
 
-def test_link_code_lam_bang_code_duoc_nhac():
+def test_link_code_make_board_code_ok_mention():
     ds = {n["ma"]: n for n in xh.suggest_sources("Qwen 3.8 vào top WebDev", "https://arena.ai/leaderboard/code", "", "")}
     assert ds["arena-code"]["duoc_nhac"] is True
     assert ds["arena-text"]["duoc_nhac"] is False

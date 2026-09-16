@@ -13,7 +13,7 @@ mất một ảnh trụ sở/sản phẩm của hãng xử lý sau.
 Việc sort không cứu được ca "chỉ có đúng một ảnh" (Anthropic/Dario — xem ticket
 đường lùi bìa Kite), nhưng đúng hợp đồng cho ca có nhiều lựa chọn thật.
 
-Chạy:  venv/bin/python tests/test_vong_thuong_hieu_sap_xep.py
+Chạy:  venv/bin/python tests/test_round_brand_sort.py
 """
 import sys
 import tempfile
@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT))
 from prepare import fallback_rounds  # noqa: E402
 
 
-def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
+def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
     """Tin hai hãng: hãng A xử lý trước chỉ có chân dung (24), hãng B xử lý sau
     có ảnh trụ sở (28). Danh sách đưa vào `download_and_filter` phải đặt ảnh trụ sở của
     hãng B lên TRƯỚC chân dung của hãng A — ngược thứ tự xử lý."""
@@ -67,7 +67,7 @@ def test_cands_duoc_sap_theo_diem_giam_dan_truoc_khi_tai():
         "anh tru so (diem cao hon) phai dung TRUOC chan dung"
 
 
-def test_moi_hang_co_it_nhat_mot_anh_truoc_khi_hang_nao_duoc_them():
+def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
     """Đo thật 13/09/2026 (tin Anthropic tố Moonshot): 3 hãng trong tin,
     Anthropic ra 2 chân dung (diem 24), Alibaba ra 2 ảnh trụ sở (diem 28),
     Moonshot chỉ ra ĐÚNG 1 ảnh thật (diem 20, loại "anh" thường) từ

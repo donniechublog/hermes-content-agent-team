@@ -6,7 +6,7 @@ Dre chay that voi bo anh da co du 8 tam ("du 6 slide" theo cong thuc cu), nhung
 4/5 anh ngang cao (>=700) la bien hieu/logo/chart CO CHU — chi 1 tam la nguoi/
 san pham that dung mot minh duoc qua cat_ngang. Cong thuc cu chi nhin chieu cao,
 khong biet noi dung, nen dem thua 2 slide. Xem them tests/test_schema.py
-(cong thuc dem) va tests/test_vision_lien_quan.py (parse cau LIEN_QUAN).
+(cong thuc dem) va tests/test_vision_relevant.py (parse cau LIEN_QUAN).
 
 Chay:  venv/bin/python tests/test_crop_landscape_vision.py
 """
