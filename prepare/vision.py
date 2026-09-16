@@ -448,7 +448,15 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
                                "ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc")
     if a.get("lien_quan") is False:
         a["dung"] = []
-        a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
+        if chup_nguon:
+            # LOW-192: nhanh chup_nguon (LOW-45) KHONG hoi "co lien quan" —
+            # cau hoi vision o day chi ve CHAT LUONG (ro net, khong phai anh
+            # chup lai man hinh khac). Ghi "KHONG LIEN QUAN BAI" o day la SAI
+            # ban chat, danh lua nguoi doc brief/manifest ve sau.
+            a["ghi_chu"].insert(0, "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG "
+                                   "(mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG")
+        else:
+            a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
     if a["canh_ngan"] < role.active_rules().SHORT_SIDE_MIN:
         a["ghi_chu"].append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
     if day > role.active_rules().BRIGHT_BOTTOM_MAX and not la_ct:
