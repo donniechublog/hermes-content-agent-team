@@ -4,7 +4,7 @@
 Ông Chủ 12/09/2026 ném 7 link ảnh TSMC tìm bằng tay; tất cả là og:image của
 bài báo VỀ TSMC, không phải bài cùng tin. Xem docstring press_entity_images.py.
 
-Chạy:  venv/bin/python tests/test_anh_bao_thuc_the.py
+Chạy:  venv/bin/python tests/test_press_entity_images.py
 """
 import inspect
 import sys
@@ -15,14 +15,14 @@ sys.path.insert(0, str(ROOT))
 import press_entity_images as bt                                 # noqa: E402
 
 
-def test_link_bing_rss_giai_ra_url_that():
+def test_link_bing_rss_resolve_out_url_real():
     l = "http://www.bing.com/news/apiclick.aspx?ref=FexRss&aid=&url=https%3a%2f%2f247wallst.com%2finvesting%2f2026%2f09%2f11%2ftsmc-x%2f&c=1&mkt=en-ww"
     assert bt.link_real(l) == "https://247wallst.com/investing/2026/09/11/tsmc-x/"
     assert bt.link_real("https://a.com/b") == "https://a.com/b"
     assert bt.link_real("") == ""
 
 
-def test_loc_bai_bo_trung_bo_tong_hop_toi_da_moi_mien():
+def test_filter_article_drop_duplicate_drop_aggregate_max_new_domain():
     items = [
         ("https://www.msn.com/en-us/x", "msn tong hop"),                       # DROP_DOMAIN
         ("https://seekingalpha.com/news/1", "chan bot"),                       # DROP_DOMAIN
@@ -37,21 +37,21 @@ def test_loc_bai_bo_trung_bo_tong_hop_toi_da_moi_mien():
     assert bt.filter_article(items, bo_mien=("engadget.com",))[-1]["mien"] == "247wallst.com"
 
 
-def test_og_tu_html_hai_thu_tu_thuoc_tinh_va_twitter():
+def test_og_from_html_two_attribute_order_and_twitter():
     assert bt.og_from_html('<meta property="og:image" content="https://c/x.jpg">', "https://a/b") == "https://c/x.jpg"
     assert bt.og_from_html('<meta content="https://c/y.jpg" property="og:image"/>', "https://a/b") == "https://c/y.jpg"
     assert bt.og_from_html('<meta name="twitter:image" content="/img/z.jpg">', "https://a/b/c") == "https://a/img/z.jpg"
     assert bt.og_from_html("<html></html>", "https://a") is None
 
 
-def test_ung_vien_dat_trang_bang_chinh_anh_de_qua_loc_ben_thu_ba():
+def test_candidate_set_page_board_main_image_for_over_filter_side_try_three():
     """og:image gần như luôn trên CDN khác miền bài; download_filter coi khác miền là
     quảng cáo. Ứng viên phải mang trang=ảnh và giữ bài gốc ở `bai`."""
     src = inspect.getsource(bt._og)
     assert '"trang": im' in src and '"bai": u' in src
 
 
-def test_tim_anh_them_goi_nguon_nay():
+def test_find_more_images_call_source_this():
     src = (ROOT / "find_more_images.py").read_text(encoding="utf-8")
     assert "press_entity_images.press_entity_images(" in src
 

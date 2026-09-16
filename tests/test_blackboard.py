@@ -9,7 +9,7 @@ khoảng đó. Ghi đè nguyên dict cũ là xoá của người khác — cùng
 sửa ở đầu kia của cùng tệp. Hôm nay chưa mất chỉ vì `create_pair` gọi `create_root`
 TRƯỚC khi khởi chạy engine — thứ tự tình cờ, không phải bảo vệ.
 
-Chạy:  venv/bin/python tests/test_bang_den.py
+Chạy:  venv/bin/python tests/test_blackboard.py
 """
 import contextlib
 import json
@@ -58,7 +58,7 @@ class _KsGia:
         pass
 
 
-def _voi_drafts_tam(ham):
+def _with_drafts_temp(ham):
     with tempfile.TemporaryDirectory() as t:
         cu = (blackboard.DRAFTS, blackboard._kb)
         blackboard.DRAFTS = Path(t)
@@ -68,7 +68,7 @@ def _voi_drafts_tam(ham):
             blackboard.DRAFTS, blackboard._kb = cu
 
 
-def test_root_task_tron_vao_meta_khong_xoa_cua_nguoi_khac():
+def test_root_task_full_into_meta_no_delete_of_person_other():
     def _chay(d):
         p = d / "d1.meta.json"
         p.write_text(json.dumps({"source_url": "http://gnews", "title": "T"}), encoding="utf-8")
@@ -81,18 +81,18 @@ def test_root_task_tron_vao_meta_khong_xoa_cua_nguoi_khac():
         blackboard._kb = lambda: (_KbGia(engine_chen_vao), _KsGia())
         rid, moi = blackboard.create_root("d1", "T", "", "test")
         return rid, moi, json.loads(p.read_text(encoding="utf-8"))
-    rid, moi, meta = _voi_drafts_tam(_chay)
+    rid, moi, meta = _with_drafts_temp(_chay)
     assert (rid, moi) == ("t_root", True)
     assert meta["root_task"] == "t_root", meta
     assert meta["source_url"] == "http://that", f"ghi de mat source_url cua engine: {meta}"
 
 
-def test_da_co_root_task_thi_khong_dung_kanban():
+def test_already_has_root_task_then_no_use_kanban():
     def _chay(d):
         (d / "d2.meta.json").write_text(json.dumps({"root_task": "t_cu"}), encoding="utf-8")
         blackboard._kb = lambda: (_ for _ in ()).throw(AssertionError("khong duoc goi kanban"))
         return blackboard.create_root("d2", "T", "", "test")
-    assert _voi_drafts_tam(_chay) == ("t_cu", False)
+    assert _with_drafts_temp(_chay) == ("t_cu", False)
 
 
 if __name__ == "__main__":

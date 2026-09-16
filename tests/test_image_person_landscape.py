@@ -10,7 +10,7 @@ kiện tỉ lệ 1,5 (ngang), điều mà `image_wikidata` trước đây không
 Test này KHÔNG gọi mạng thật (mock `_ask_commons`) để chạy được offline/CI; bằng
 chứng mạng thật nằm trong ticket, không nằm trong test.
 
-Chạy:  venv/bin/python tests/test_anh_nguoi_ngang.py
+Chạy:  venv/bin/python tests/test_image_person_landscape.py
 """
 import sys
 from pathlib import Path
@@ -21,19 +21,19 @@ sys.path.insert(0, str(ROOT))
 import image_brand as th  # noqa: E402
 
 
-def _trang_commons(w, h, ten_tep, mime="image/jpeg"):
+def _page_commons(w, h, ten_tep, mime="image/jpeg"):
     return {"title": f"File:{ten_tep}",
             "imageinfo": [{"width": w, "height": h, "mime": mime,
                           "thumburl": f"https://x/{ten_tep}", "url": f"https://x/{ten_tep}"}]}
 
 
-def test_anh_nguoi_ngang_loc_dung_ten_va_ti_le():
+def test_image_person_landscape_filter_use_name_and_ratio():
     """Trả ảnh NGANG, khớp đủ hai từ của tên, bỏ ảnh dọc và ảnh không khớp tên."""
     pages = {
-        "1": _trang_commons(4000, 2667, "Dario Amodei at TechCrunch Disrupt 2023 01.jpg"),
-        "2": _trang_commons(1800, 2880, "Dario Amodei in 2023.jpg"),          # doc -> bo
-        "3": _trang_commons(3500, 2300, "Some Other Person at an event.jpg"),  # sai ten -> bo
-        "4": _trang_commons(600, 400, "Dario Amodei tiny.jpg"),               # qua nho -> bo
+        "1": _page_commons(4000, 2667, "Dario Amodei at TechCrunch Disrupt 2023 01.jpg"),
+        "2": _page_commons(1800, 2880, "Dario Amodei in 2023.jpg"),          # doc -> bo
+        "3": _page_commons(3500, 2300, "Some Other Person at an event.jpg"),  # sai ten -> bo
+        "4": _page_commons(600, 400, "Dario Amodei tiny.jpg"),               # qua nho -> bo
     }
     with mock.patch.object(th, "_ask_commons", return_value=pages):
         ra = th.image_person_landscape("Dario Amodei", "CEO", "Anthropic", "anthropic")
@@ -45,7 +45,7 @@ def test_anh_nguoi_ngang_loc_dung_ten_va_ti_le():
     assert c["thuong_hieu"]["nguoi"] == "Dario Amodei"
 
 
-def test_hai_nguoi_khac_ghep_ten_khong_duoc_lot():
+def test_two_person_other_stack_name_no_ok_pass():
     """Tên phải nằm LIỀN NHAU, đúng thứ tự — không phải "mỗi từ có mặt đâu đó".
 
     Bản lỏng `all(_has_word(...))` cho "dario rossi meets luca amodei in rome" đi
@@ -54,22 +54,22 @@ def test_hai_nguoi_khac_ghep_ten_khong_duoc_lot():
     `filter_commons` bị siết ngày 12/09/2026 ("Hugging Face" khớp "Rathlin hugging
     the cliff face"), bản vá đó không lan sang đây."""
     pages = {
-        "1": _trang_commons(4000, 2667, "Dario Rossi meets Luca Amodei in Rome.jpg"),
-        "2": _trang_commons(4000, 2667, "Amodei family and Dario Gabbani at a wedding.jpg"),
+        "1": _page_commons(4000, 2667, "Dario Rossi meets Luca Amodei in Rome.jpg"),
+        "2": _page_commons(4000, 2667, "Amodei family and Dario Gabbani at a wedding.jpg"),
     }
     with mock.patch.object(th, "_ask_commons", return_value=pages):
         ra = th.image_person_landscape("Dario Amodei", "CEO", "Anthropic", "anthropic")
     assert ra == [], [c["alt"] for c in ra]
 
 
-def test_anh_wikidata_uu_tien_ngang_hon_chan_dung_doc_sau_khi_sap():
+def test_image_wikidata_priority_landscape_than_block_use_read_after_when_sort():
     """Ghép với sort của `_round_brand` (test riêng): trong chính danh sách
     `image_wikidata` trả về, ảnh ngang (26) phải đứng trước chân dung dọc (24)
     một khi đã sort theo điểm — đo bằng lệnh Ông Chủ có thể tự chạy lại."""
     tl = {"anh": [], "nguoi": [{"ten": "Dario Amodei", "tep": "Dario Amodei in 2023.jpg",
                                 "vai": "CEO"}], "logo": []}
-    pages_p18 = {"p": _trang_commons(1800, 2880, "Dario Amodei in 2023.jpg")}
-    pages_ngang = {"e": _trang_commons(4000, 2667, "Dario Amodei at TechCrunch Disrupt 2023 01.jpg")}
+    pages_p18 = {"p": _page_commons(1800, 2880, "Dario Amodei in 2023.jpg")}
+    pages_ngang = {"e": _page_commons(4000, 2667, "Dario Amodei at TechCrunch Disrupt 2023 01.jpg")}
 
     def hoi_commons_gia(cau):
         # commons_urls goi _ask_commons(...) mot lan cho danh sach ten tep P18;
