@@ -21,7 +21,7 @@ Cai bay da bat duoc khi port, giu lai lam test:
     CHAN: round(40.5) ra 40 thay vi 41 -> canvas lech 2 pixel.
   - SVG ve net GIUA duong (straddle), PIL ve VAO TRONG hop -> vien lech 2,5px.
 
-Chay:  venv/bin/python tests/test_khung_anh.py
+Chay:  venv/bin/python tests/test_image_frame.py
 """
 import sys
 import tempfile
@@ -33,14 +33,14 @@ from PIL import Image                                         # noqa: E402
 import image_frame as ka                                        # noqa: E402
 
 
-def _nguon(tmp, w=1400, h=900):
+def _source(tmp, w=1400, h=900):
     p = Path(tmp) / "source.png"
     Image.new("RGB", (w, h), (28, 42, 66)).save(p)
     return p
 
 
 # ------------------------------------------------- lam tron kieu JS
-def test_lam_tron_nua_len_nhu_Math_round():
+def test_make_full_half_len_like_math_round():
     """round() cua Python lam tron ve so CHAN — dung no la canvas lech 2px."""
     assert ka._make_full(40.5) == 41, "phai lam tron LEN nhu Math.round cua JS"
     assert ka._make_full(41.5) == 42
@@ -49,25 +49,25 @@ def test_lam_tron_nua_len_nhu_Math_round():
 
 
 # ------------------------------------------------- hinh hoc khop ban Node
-def test_canvas_khop_con_so_da_doi_chieu_voi_ban_node():
+def test_canvas_match_remaining_count_already_change_dimension_with_copy_node():
     with tempfile.TemporaryDirectory() as t:
-        mo_ta = ka.line_frame(_nguon(t), Path(t) / "ra.png", khong_mascot=True)
+        mo_ta = ka.line_frame(_source(t), Path(t) / "ra.png", khong_mascot=True)
         assert mo_ta["canvas"] == {"width": 1507, "height": 1033}, mo_ta["canvas"]
         assert mo_ta["source"] == {"width": 1400, "height": 900}, mo_ta["source"]
         assert Image.open(Path(t) / "ra.png").size == (1507, 1033)
 
 
-def test_canvas_co_gian_theo_ti_le_anh_khong_cat_vuong():
+def test_canvas_has_space_by_ratio_image_no_crop_square():
     """Anh doc phai ra canvas doc — frame.js co y giu ti le goc."""
     with tempfile.TemporaryDirectory() as t:
-        mo_ta = ka.line_frame(_nguon(t, 600, 1200), Path(t) / "ra.png", khong_mascot=True)
+        mo_ta = ka.line_frame(_source(t, 600, 1200), Path(t) / "ra.png", khong_mascot=True)
         c = mo_ta["canvas"]
         assert c["height"] > c["width"], c
 
 
-def test_anh_qua_rong_bi_thu_ve_2048():
+def test_image_over_empty_got_try_about_2048():
     with tempfile.TemporaryDirectory() as t:
-        mo_ta = ka.line_frame(_nguon(t, 3000, 1500), Path(t) / "ra.png", khong_mascot=True)
+        mo_ta = ka.line_frame(_source(t, 3000, 1500), Path(t) / "ra.png", khong_mascot=True)
         assert mo_ta["source"]["width"] == ka.MAXW, mo_ta["source"]
         assert mo_ta["source"]["height"] == 1024, "phai giu ti le khi thu"
 
@@ -76,15 +76,15 @@ def test_anh_qua_rong_bi_thu_ve_2048():
 # Lop vector ve o 4x roi thu bang LANCZOS, ma LANCZOS co rung (ringing): ngay
 # giua mot vung mot mau van lech vai don vi. Nen so mau co dung sai — cai dang
 # do o day la VI TRI, khong phai gia tri byte.
-def _diem(anh, x, y):
+def _score(anh, x, y):
     return Image.open(anh).convert("RGB").getpixel((int(x), int(y)))
 
 
-def _gan(thuc, mong, sai=10):
+def _near(thuc, mong, sai=10):
     return all(abs(a - b) <= sai for a, b in zip(thuc, mong))
 
 
-def _hinh_hoc(w=1400, h=900):
+def _figure_geometry(w=1400, h=900):
     """Dung LAI cong thuc cua frame.js. Test tu tinh cho phai nhin thay, thay vi
     ghim toa do dem duoc tren mot anh — de doi cong thuc la test do ngay."""
     R, ngan = ka._make_full, min(w, h)
@@ -94,93 +94,93 @@ def _hinh_hoc(w=1400, h=900):
             "cham_d": cham_d, "cham_khe": R(cham_d * 0.7), "cham_cy": R(header_h / 2)}
 
 
-def test_vien_den_bat_dau_ngay_tu_mep_trai():
+def test_border_black_start_date_from_edge_left():
     """SVG ve net giua duong nen vien phu [0, day). Lui nua do day nhu SVG la
     lech 2,5px — do duoc bang chinh diem nay khi con ban Node de so."""
-    g = _hinh_hoc()
+    g = _figure_geometry()
     with tempfile.TemporaryDirectory() as t:
         ra = Path(t) / "ra.png"
-        ka.line_frame(_nguon(t), ra, khong_mascot=True)
+        ka.line_frame(_source(t), ra, khong_mascot=True)
         for x in (0, g["day"] // 2):
-            assert _gan(_diem(ra, x, 200), ka._color(ka.BORDER)), f"x={x} phai la vien den"
+            assert _near(_score(ra, x, 200), ka._color(ka.BORDER)), f"x={x} phai la vien den"
         # Ngoai be day vien la da vao nen the — vien khong duoc day hon frame.js.
-        assert _gan(_diem(ra, g["day"] + 3, 200), ka._color(ka.BG)), "vien day qua"
+        assert _near(_score(ra, g["day"] + 3, 200), ka._color(ka.BG)), "vien day qua"
 
 
-def test_nen_the_la_mau_kem_thuong_hieu():
+def test_background_card_is_color_with_brand():
     with tempfile.TemporaryDirectory() as t:
         ra = Path(t) / "ra.png"
-        ka.line_frame(_nguon(t), ra, khong_mascot=True)
-        assert _gan(_diem(ra, 30, 200), ka._color(ka.BG))
+        ka.line_frame(_source(t), ra, khong_mascot=True)
+        assert _near(_score(ra, 30, 200), ka._color(ka.BG))
 
 
-def test_ba_cham_macos_dung_mau_va_dung_cho():
+def test_ellipsis_macos_use_color_and_use_wait():
     """Ba cham phai dung mau den giao thong VA dung thu tu do-vang-luc."""
-    g = _hinh_hoc()
+    g = _figure_geometry()
     with tempfile.TemporaryDirectory() as t:
         ra = Path(t) / "ra.png"
-        ka.line_frame(_nguon(t), ra, khong_mascot=True)
+        ka.line_frame(_source(t), ra, khong_mascot=True)
         for i, mau in enumerate(ka.DOTS):
             cx = g["canh"] + g["cham_d"] / 2 + i * (g["cham_d"] + g["cham_khe"])
-            thuc = _diem(ra, cx, g["cham_cy"])
-            assert _gan(thuc, ka._color(mau)), f"cham {i} o x={cx}: {thuc} != {mau}"
+            thuc = _score(ra, cx, g["cham_cy"])
+            assert _near(thuc, ka._color(mau)), f"cham {i} o x={cx}: {thuc} != {mau}"
 
 
-def test_vach_ngan_duoi_header_la_den():
+def test_divider_short_below_header_is_black():
     """Vach nam o [header_h - day/2, header_h + day/2) nhu net SVG."""
-    g = _hinh_hoc()
+    g = _figure_geometry()
     with tempfile.TemporaryDirectory() as t:
         ra = Path(t) / "ra.png"
-        ka.line_frame(_nguon(t), ra, khong_mascot=True)
-        assert _gan(_diem(ra, 700, g["header_h"]), ka._color(ka.BORDER)), "giua vach phai den"
+        ka.line_frame(_source(t), ra, khong_mascot=True)
+        assert _near(_score(ra, 700, g["header_h"]), ka._color(ka.BORDER)), "giua vach phai den"
         # Tren vach la header (nen kem), duoi vach la khe roi toi anh.
-        assert _gan(_diem(ra, 700, g["header_h"] - g["day"]), ka._color(ka.BG))
+        assert _near(_score(ra, 700, g["header_h"] - g["day"]), ka._color(ka.BG))
 
 
 # ------------------------------------------------- mascot & footer
-def test_emoji_trong_bang_ra_dung_avatar_da_ghim():
+def test_emoji_within_board_out_use_avatar_already_pin():
     with tempfile.TemporaryDirectory() as t:
-        mo_ta = ka.line_frame(_nguon(t), Path(t) / "ra.png", emoji="😂")
+        mo_ta = ka.line_frame(_source(t), Path(t) / "ra.png", emoji="😂")
         assert mo_ta["avatar"] == "expr-021-040-0004.png", mo_ta["avatar"]
 
 
-def test_emoji_la_thi_van_ra_anh_chi_la_khong_co_mascot():
+def test_emoji_is_then_still_out_image_only_is_no_has_mascot():
     with tempfile.TemporaryDirectory() as t:
-        mo_ta = ka.line_frame(_nguon(t), Path(t) / "ra.png", emoji="🦄")
+        mo_ta = ka.line_frame(_source(t), Path(t) / "ra.png", emoji="🦄")
         assert mo_ta["avatar"] is None
         assert (Path(t) / "ra.png").exists(), "thieu mascot khong duoc lam hong ca khung"
 
 
-def test_khong_mascot_thi_khong_ve_mascot():
+def test_no_mascot_then_no_about_mascot():
     with tempfile.TemporaryDirectory() as t:
-        mo_ta = ka.line_frame(_nguon(t), Path(t) / "ra.png", emoji="😂", khong_mascot=True)
+        mo_ta = ka.line_frame(_source(t), Path(t) / "ra.png", emoji="😂", khong_mascot=True)
         assert mo_ta["avatar"] is None
 
 
-def test_handle_la_thi_KHONG_muon_footer_cua_brand_khac():
+def test_handle_is_then_no_late_footer_of_brand_other():
     """Loi thuong hieu khong ai thay cho toi khi da dang: moi khung dcgr tung
     mang tagline cua donniechublog."""
     with tempfile.TemporaryDirectory() as t:
-        ka.line_frame(_nguon(t), Path(t) / "ra.png", handle="@dcgr", khong_mascot=True)
+        ka.line_frame(_source(t), Path(t) / "ra.png", handle="@dcgr", khong_mascot=True)
     assert ka.FOOTER.get("@dcgr") is None, "chua khai footer cho @dcgr — dung doan ho"
 
 
-def test_footer_truyen_tay_thi_duoc_dung():
+def test_footer_transmit_manual_then_ok_use():
     with tempfile.TemporaryDirectory() as t:
         ra = Path(t) / "ra.png"
-        ka.line_frame(_nguon(t), ra, handle="@la", footer=">_ dong rieng", khong_mascot=True)
+        ka.line_frame(_source(t), ra, handle="@la", footer=">_ dong rieng", khong_mascot=True)
         assert ra.exists()
 
 
 # ------------------------------------------------- khong con Node
-def test_khong_con_tep_node_nao_trong_skill():
+def test_no_remaining_file_node_which_within_skill():
     skill = ROOT / "hermes" / "skills" / "url-mascot-frame"
     con = [p.name for p in skill.rglob("*")
            if p.name in ("frame.js", "screenshot.js", "package.json", "package-lock.json")]
     assert not con, f"van con tep Node trong skill: {con}"
 
 
-def test_khong_con_ai_shell_ra_node():
+def test_no_remaining_ai_shell_out_node():
     """Doc bang ast (E-r2-4): chi bat lenh subprocess.*([... "node" ...]) hoac
     shutil.which("node") — quet chuoi tho tung bao hong oan voi mot comment."""
     import ast
@@ -202,7 +202,7 @@ def test_khong_con_ai_shell_ra_node():
 
 
 # ------------------------------------------------- anh dau vao la (N-r2-3)
-def test_png_trong_suot_ra_nen_kem_khong_phai_den():
+def test_png_transparent_out_background_with_no_right_black():
     """convert("RGB") vut alpha -> vung trong suot ra DEN; sharp cua ban Node
     composite giu alpha nen ra nen the. Logo/meme/sticker la dau vao thuong."""
     with tempfile.TemporaryDirectory() as t:
@@ -210,20 +210,20 @@ def test_png_trong_suot_ra_nen_kem_khong_phai_den():
         Image.new("RGBA", (1200, 800), (0, 0, 0, 0)).save(p)
         mo = ka.line_frame(p, Path(t) / "ra.png", khong_mascot=True)
         c = mo["canvas"]
-        assert _gan(_diem(Path(t) / "ra.png", c["width"] // 2, c["height"] // 2), ka._color(ka.BG)), \
+        assert _near(_score(Path(t) / "ra.png", c["width"] // 2, c["height"] // 2), ka._color(ka.BG)), \
             "vung trong suot phai la nen the kem"
 
 
-def test_png_16bit_khong_ra_trang_tinh():
+def test_png_16bit_no_out_page_static():
     with tempfile.TemporaryDirectory() as t:
         p = Path(t) / "i16.png"
         im = Image.new("I;16", (1200, 800))
         im.putdata([int(x / 1200 * 65535) for y in range(800) for x in range(1200)])
         im.save(p)
         ka.line_frame(p, Path(t) / "ra.png", khong_mascot=True)
-        g = _hinh_hoc(1200, 800)
+        g = _figure_geometry(1200, 800)
         # giua anh: gradient ~50% -> xam, KHONG phai (255,255,255)
-        px = _diem(Path(t) / "ra.png", g["canh"] + 600, g["header_h"] + 400)
+        px = _score(Path(t) / "ra.png", g["canh"] + 600, g["header_h"] + 400)
         assert max(px) < 200, f"anh 16-bit ra trang tinh: {px}"
 
 

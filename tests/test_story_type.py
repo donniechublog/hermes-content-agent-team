@@ -6,7 +6,7 @@
 Tệp này khoá (1) bảng thuần, (2) `category` thật sự đổi hành vi ở ba nấc:
 cổng chụp bảng xếp hạng, điểm ứng viên thương hiệu, từ khoá ảnh khái niệm.
 
-Chạy:  venv/bin/python tests/test_loai_tin.py
+Chạy:  venv/bin/python tests/test_story_type.py
 """
 import sys
 from pathlib import Path
@@ -18,7 +18,7 @@ import story_type as lt  # noqa: E402
 import image_concept as k  # noqa: E402
 
 
-def test_chuan_loai_nhan_ca_viet_lan_lech():
+def test_standard_type_label_all_write_attempt_offset():
     assert lt.standard_type("m&a") == "M&A"
     assert lt.standard_type("Thâu tóm") == "M&A"
     assert lt.standard_type("MO HINH") == "MODEL"
@@ -26,7 +26,7 @@ def test_chuan_loai_nhan_ca_viet_lan_lech():
     assert lt.standard_type("gi do la") == ""
 
 
-def test_bang_theo_dung_loi_ong_chu():
+def test_board_by_use_error_boss():
     """Nguyên văn: brand→logo/trụ sở/founder/cổ phiếu/cờ; thương vụ→hai brand;
     model→benchmark; hạ tầng→datacenter/nhà máy."""
     assert lt.order_image("M&A")[0] == "ghep_hai_hang"
@@ -38,7 +38,7 @@ def test_bang_theo_dung_loi_ong_chu():
     assert lt.order_image("") == lt.DEFAULT
 
 
-def test_diem_theo_loai_doi_thu_tu_ung_vien():
+def test_score_by_type_change_order_candidate():
     """Cùng bộ ứng viên: M&A đẩy logo (18+6=24) lên ngang chân dung (24+2=26)?
     Không — founder đứng sau logo trong bảng M&A nên logo phải THẮNG."""
     logo = 18 + lt.score_by_type("M&A", "logo")
@@ -51,7 +51,7 @@ def test_diem_theo_loai_doi_thu_tu_ung_vien():
     assert lt.score_by_type("SECURITY", "anh") == 0   # SECURITY khong muon tru so
 
 
-def test_nuoc_va_ma_co_phieu():
+def test_country_and_code_has_ballot():
     assert lt.country_of("samsung") == "South Korea"
     assert lt.country_of("deepseek") == "China"
     assert lt.country_of("khong co") == ""
@@ -62,7 +62,7 @@ def test_nuoc_va_ma_co_phieu():
         assert nuoc in k.COUNTRY.values(), f"{nuoc!r} khong co trong image_concept.COUNTRY"
 
 
-def test_tu_khoa_khai_niem_them_dung_truoc():
+def test_keyword_concept_extra_use_before():
     ra = k.keyword_concept("Samsung opens new chip plant", "", dung_llm=False,
                              them=["flag of South Korea"])
     assert ra[0]["tu_khoa"] == "flag of South Korea", ra
@@ -70,7 +70,7 @@ def test_tu_khoa_khai_niem_them_dung_truoc():
     assert any(x["tu_khoa"] == "silicon wafer" for x in ra), ra   # heuristic van chay
 
 
-def test_category_ep_chup_bang_xep_hang():
+def test_category_force_capture_board_ranking():
     """MODEL/BENCHMARK ép `tin_xep_hang=True` dù tiêu đề không có '#1'/'top'."""
     from prepare import fallback_rounds
     goi = {}
@@ -87,7 +87,7 @@ def test_category_ep_chup_bang_xep_hang():
     assert goi["model"] is True and goi["security"] is False, goi
 
 
-def test_ghep_hai_hang_chi_khi_ma():
+def test_stack_two_rank_only_when_code():
     from prepare import manifest
     anh = [{"ma": "A1", "dung": ["bìa"], "lien_quan": True,
             "thuong_hieu": {"khoa": "nvidia", "loai": "logo"}},

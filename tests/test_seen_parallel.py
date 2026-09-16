@@ -7,7 +7,7 @@
 - B-r2-3: classify không có try — một PNG cụt làm list(ex.map) ném tại
   _seen_image → cả lô mất kể cả ảnh đã nhìn xong, engine chết không xong.json.
 
-Chạy:  venv/bin/python tests/test_nhin_song_song.py
+Chạy:  venv/bin/python tests/test_seen_parallel.py
 """
 import io
 import sys
@@ -30,7 +30,7 @@ class _Resp:
         return self.s
 
 
-def test_429_duoc_thu_lai_roi_thanh_cong():
+def test_429_ok_try_again_fall_success():
     dem = {"goi": 0}
     ngu = []
 
@@ -49,7 +49,7 @@ def test_429_duoc_thu_lai_roi_thanh_cong():
     assert ngu == [1, 2], f"backoff tang dan 1s, 2s: {ngu}"
 
 
-def test_401_khong_thu_lai():
+def test_401_no_try_again():
     def _open(req, timeout=0):
         raise urllib.error.HTTPError("u", 401, "Unauthorized", {}, io.BytesIO(b""))
     cu = urllib.request.urlopen
@@ -65,7 +65,7 @@ def test_401_khong_thu_lai():
     raise AssertionError("401 phai nem ngay, khong thu lai")
 
 
-def test_het_luot_thu_thi_nem_429():
+def test_all_done_turn_try_then_throw_429():
     goi = []
 
     def _open(req, timeout=0):
@@ -84,7 +84,7 @@ def test_het_luot_thu_thi_nem_429():
     raise AssertionError("het luot phai nem")
 
 
-def test_mot_anh_hong_khong_giet_ca_lo():
+def test_one_image_broken_no_kill_all_leak():
     with tempfile.TemporaryDirectory() as t:
         wd = Path(t)
         anh = []

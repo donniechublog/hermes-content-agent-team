@@ -8,7 +8,7 @@ chay dau doi tron 300s (= tran bash tool cua vai) roi bi cat `exit 124`. Test:
   - `cho` mac dinh phai nho han han 300.
 Fail tren code cu (khong co _handle_lock; cho=300), pass tren code moi.
 
-Chay:  venv/bin/python tests/test_khoa_chuan_bi.py
+Chay:  venv/bin/python tests/test_lock_prepare.py
 """
 import io
 import os
@@ -22,12 +22,12 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 
 
-def test_cho_mac_dinh_nho_han_tran_bash_cua_vai():
+def test_wait_default_small_limit_ceiling_bash_of_role():
     assert cb.WAIT_LOCK_SECONDS <= 60, cb.WAIT_LOCK_SECONDS
     assert cb.run.__defaults__[2] == cb.WAIT_LOCK_SECONDS        # (lam_moi, khong_browser, cho, ...)
 
 
-def test_khoa_mo_coi_don_ngay_khong_doi():
+def test_lock_orphan_single_date_no_change():
     with tempfile.TemporaryDirectory() as tmp:
         khoa = Path(tmp) / "dang_chay.pid"
         khoa.write_text("999999999")                          # pid khong ton tai
@@ -40,7 +40,7 @@ def test_khoa_mo_coi_don_ngay_khong_doi():
         assert "mo coi" in err.getvalue(), err.getvalue()
 
 
-def test_pid_song_thi_doi_roi_thoat_khong_ghi_de():
+def test_pid_alive_then_change_fall_exit_no_overwrite():
     with tempfile.TemporaryDirectory() as tmp:
         khoa = Path(tmp) / "dang_chay.pid"
         khoa.write_text(str(os.getpid()))                    # chinh minh: chac chan song

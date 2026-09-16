@@ -14,7 +14,7 @@ Tep nay kiem phan (1) o approve_post._extract_reason_redo va phan ghi-doc dHash 
 approve_post._write_forbid_image_redo; cong chan o dre_submit/submit_common da co test rieng
 trong test_spec_dre.py.
 
-Chay:  venv/bin/python tests/test_lam_lai_cam_anh.py
+Chay:  venv/bin/python tests/test_redo_forbid_image.py
 """
 import json
 import sys
@@ -31,7 +31,7 @@ import approve_post as db  # noqa: E402
 import image_rules_ethan as image_rules  # noqa: E402
 
 
-def _ve(w, h, tone, seed=7):
+def _about(w, h, tone, seed=7):
     im = Image.new("RGB", (w, h), tone)
     d = ImageDraw.Draw(im)
     b = seed
@@ -43,39 +43,39 @@ def _ve(w, h, tone, seed=7):
     return im
 
 
-def test_slide_co_chu_dan_truoc_van_nhan_dung_so():
+def test_slide_has_text_guide_before_still_label_use_count():
     so, ly_do = db._extract_reason_redo(
         "Làm lại slide 3, 6: có rất nhiều hình chất lượng hơn, đừng dùng hình chỉ thuần text")
     assert so == "3, 6", so
     assert "chất lượng hơn" in ly_do
 
 
-def test_slide_khong_co_hai_cham_van_nhan_dung_so():
+def test_slide_no_has_two_touch_still_label_use_count():
     so, ly_do = db._extract_reason_redo(
         "Slide 6 vẫn là hình cũ, tìm hình khác. Đã nói ko dùng hình chỉ có text")
     assert so == "6", so
     assert "vẫn là hình cũ" in ly_do        # khong mat noi dung khi khong tach duoc
 
 
-def test_kieu_cu_bare_so_van_chay_binh_thuong():
+def test_kind_old_bare_count_still_run_normal():
     assert db._extract_reason_redo("4: chart bi cat") == ("4", "chart bi cat")
     assert db._extract_reason_redo("2,5: hai anh nay xau") == ("2, 5", "hai anh nay xau")
 
 
-def test_tat_ca_va_rong_khong_doi():
+def test_all_all_and_empty_no_change():
     assert db._extract_reason_redo("tất cả: xấu quá")[0] == "CA BO"
     assert db._extract_reason_redo("") == (None, "")
     assert db._extract_reason_redo("làm lại đi") == (None, "làm lại đi")
 
 
-def test_ghi_cam_anh_lam_lai_chup_dung_anh_dang_o_slide_bi_neu():
+def test_write_forbid_image_redo_capture_use_image_form_cell_slide_got_if():
     """spec.json co bia=A1 (slide 1) va slides[0]=A2 (slide 2); che slide 2 thi
     img.json phai co dHash cua A2, KHONG phai A1."""
     with tempfile.TemporaryDirectory() as t:
         wd = Path(t) / "chuan_bi" / "tin-thu"
         (wd / "goc").mkdir(parents=True)
-        _ve(800, 1000, (10, 20, 30), seed=1).save(wd / "goc" / "A1.png")
-        _ve(800, 1000, (200, 90, 40), seed=2).save(wd / "goc" / "A2.png")
+        _about(800, 1000, (10, 20, 30), seed=1).save(wd / "goc" / "A1.png")
+        _about(800, 1000, (200, 90, 40), seed=2).save(wd / "goc" / "A2.png")
         (wd / "spec.json").write_text(json.dumps({
             "cover": {"anh": "A1"}, "slides": [{"anh": "A2", "text": "..."}]}),
             encoding="utf-8")
@@ -93,13 +93,13 @@ def test_ghi_cam_anh_lam_lai_chup_dung_anh_dang_o_slide_bi_neu():
             db.STATE_DIR, db.DRAFTS = cu_state, cu_drafts
 
 
-def test_ghi_cam_anh_lam_lai_ghep_ca_hai_ma():
+def test_write_forbid_image_redo_stack_all_two_code():
     """Slide bi neu la mot cap "ghep" — phai che CA HAI ma, khong chi ma dau."""
     with tempfile.TemporaryDirectory() as t:
         wd = Path(t) / "chuan_bi" / "tin-thu"
         (wd / "goc").mkdir(parents=True)
-        _ve(1200, 700, (10, 20, 30), seed=6).save(wd / "goc" / "A6.png")
-        _ve(1200, 700, (200, 90, 40), seed=12).save(wd / "goc" / "A12.png")
+        _about(1200, 700, (10, 20, 30), seed=6).save(wd / "goc" / "A6.png")
+        _about(1200, 700, (200, 90, 40), seed=12).save(wd / "goc" / "A12.png")
         (wd / "spec.json").write_text(json.dumps({
             "cover": {"anh": "A1"},
             "slides": [{"anh": "A2", "text": "x"}, {"anh": "A3", "text": "y"},

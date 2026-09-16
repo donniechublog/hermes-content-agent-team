@@ -8,7 +8,7 @@ photo-wire (AP/Reuters/Getty) cho cung mot tin bao; `_round_capture_source` chup
 tung trang RIENG LE, khong di qua `prepare.download_filter.download_and_filter` (noi CO san
 co che so dHash) nen chua bao gio duoc so trung.
 
-Chay:  venv/bin/python tests/test_loai_trung_chup_nguon.py
+Chay:  venv/bin/python tests/test_type_duplicate_capture_source.py
 """
 import sys
 import tempfile
@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 from prepare import fallback_rounds                                   # noqa: E402
 
 
-def _anh(tmp: Path, ten: str, seed: int) -> Path:
+def _image(tmp: Path, ten: str, seed: int) -> Path:
     """Anh co CAU TRUC ro (o vuong lech theo `seed`), khong phai mau phang —
     dHash doc chenh lech SANG/TOI giua cac pixel ke nhau nen hai anh mau phang
     khac nhau (vd xanh vs do) van co the ra hash GIONG HET nhau (ca hai deu
@@ -38,7 +38,7 @@ def _anh(tmp: Path, ten: str, seed: int) -> Path:
     return p
 
 
-def _gia_chup_lead(anh_map):
+def _fake_capture_lead(anh_map):
     """Gia `capture_page.capture_lead_mobile`: 'chup' bang cach COPY tep anh co san
     (mo phong hai trang dung CHUNG mot photo-wire khi anh_map anh xa nhieu URL
     ve CUNG mot tep nguon)."""
@@ -54,17 +54,17 @@ def _gia_chup_lead(anh_map):
     return gia
 
 
-def test_hai_bao_dung_chung_photo_wire_chi_giu_mot_tam():
+def test_two_report_use_common_photo_wire_only_keep_one_temp():
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
-        wire = _anh(tmp, "wire.png", seed=1)       # anh AP/Reuters dung chung
-        rieng = _anh(tmp, "rieng.png", seed=2)      # anh khac han cua bao thu ba
+        wire = _image(tmp, "wire.png", seed=1)       # anh AP/Reuters dung chung
+        rieng = _image(tmp, "rieng.png", seed=2)      # anh khac han cua bao thu ba
         anh_map = {
             "https://a.com/bai": wire,
             "https://b.com/bai-khac-dua-cung-tin": wire,   # CUNG anh, khac bao
             "https://c.com/bai-thu-ba": rieng,
         }
-        with mock.patch("capture_page.capture_lead_mobile", _gia_chup_lead(anh_map)), \
+        with mock.patch("capture_page.capture_lead_mobile", _fake_capture_lead(anh_map)), \
              mock.patch("article_sources.same_story", return_value=True):
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://a.com/bai",
@@ -76,30 +76,30 @@ def test_hai_bao_dung_chung_photo_wire_chi_giu_mot_tam():
         assert "c.com" in mien
 
 
-def test_khong_trung_voi_anh_da_co_tu_vong_khac():
+def test_no_duplicate_with_image_already_has_word_round_other():
     """Anh chup TRUNG voi mot tam DA CO SAN trong `anh` (tu vong tim rong/goc)
     tu truoc do — cung phai bi loai, khong chi so giua cac tam chup voi nhau."""
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
-        wire = _anh(tmp, "wire.png", seed=1)
+        wire = _image(tmp, "wire.png", seed=1)
         da_co = tmp / "wd" / "goc"
         da_co.mkdir(parents=True)
         from PIL import Image
         Image.open(wire).convert("RGB").save(da_co / "A1.png")
         anh_ban_dau = [{"ma": "A1", "goc": str(da_co / "A1.png"), "dung": ["thân"], "lien_quan": True}]
         anh_map = {"https://a.com/bai": wire}
-        with mock.patch("capture_page.capture_lead_mobile", _gia_chup_lead(anh_map)):
+        with mock.patch("capture_page.capture_lead_mobile", _fake_capture_lead(anh_map)):
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(anh_ban_dau, "https://a.com/bai", [], tmp / "wd")
         assert len(anh) == 1, "anh chup trung voi A1 da co tu truoc phai bi loai"
 
 
-def test_hai_anh_that_su_khac_nhau_deu_duoc_giu():
+def test_two_image_really_different_all_ok_keep():
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
-        a1 = _anh(tmp, "a1.png", seed=1)
-        a2 = _anh(tmp, "a2.png", seed=2)
+        a1 = _image(tmp, "a1.png", seed=1)
+        a2 = _image(tmp, "a2.png", seed=2)
         anh_map = {"https://a.com/bai": a1, "https://b.com/khac": a2}
-        with mock.patch("capture_page.capture_lead_mobile", _gia_chup_lead(anh_map)), \
+        with mock.patch("capture_page.capture_lead_mobile", _fake_capture_lead(anh_map)), \
              mock.patch("article_sources.same_story", return_value=True):
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://a.com/bai", [{"url": "https://b.com/khac"}], tmp / "wd")

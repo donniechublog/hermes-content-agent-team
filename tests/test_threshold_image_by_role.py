@@ -17,7 +17,7 @@ Bon test duoi giu dung bon mat cua duong hong do: nguong trong manifest, quyet
 dinh "co thieu anh khong", tang ghep noi co hoi Ong Chu khong, va cau chu cua
 nut ha san.
 
-Chay:  venv/bin/python tests/test_nguong_anh_theo_vai.py
+Chay:  venv/bin/python tests/test_threshold_image_by_role.py
 """
 import json
 import sys
@@ -30,7 +30,7 @@ import role                                                    # noqa: E402
 from prepare.manifest import build_manifest                   # noqa: E402
 
 
-def _anh(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
+def _image(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
     """Mot muc `anh` du khoa cho build_manifest. ti_le < 1.3 co chu dich: `cap_ghep`
     chi MO TEP anh voi anh ngang, ma o day khong co tep that nao."""
     return {"ma": ma, "goc": f"/khong-co/{ma}.jpg", "ti_le": 1.0, "w": 1200, "h": 1200,
@@ -44,13 +44,13 @@ def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
         return build_manifest(
             "d1", {"brand": "donniechublog", "title": "t"}, "t", "http://vi.du/a",
             {"tieu_de_en": ""}, Path(tmp) / "source.json", {}, Path(tmp),
-            [_anh(f"A{i + 1}") for i in range(so_anh)], [], False,
+            [_image(f"A{i + 1}") for i in range(so_anh)], [], False,
             {"chu": ""}, {}, flagship,
             role.min_images(vai_anh, flagship), vai_anh=vai_anh)
 
 
 # ------------------------------------------------ 1. nguong ghi vao manifest
-def test_manifest_ghi_nguong_theo_vai_duoc_giao():
+def test_manifest_write_threshold_by_role_ok_hand():
     """`toi_thieu` va `toi_thieu_co_ban` la cua ROLE DUOC GIAO. Truoc 10/09/2026
     `toi_thieu_co_ban` go cung `carousel.MIN_SLIDE` cho moi vai, nen nut "ha san"
     cua mot bai Ethan cung lay san 5."""
@@ -67,14 +67,14 @@ def test_manifest_ghi_nguong_theo_vai_duoc_giao():
         "tin flagship lay nguong flagship cho Dre"
 
 
-def test_tin_flagship_khong_lam_the_cua_ethan_can_them_anh():
+def test_story_flagship_no_make_card_of_ethan_can_extra_image():
     """`flagship` la luat cua carousel (bo phai day hon cho tin lon). The hero
     cua Ethan van la MOT tam anh du tin co lon co nao."""
     assert _manifest("ethan", 2, flagship=True)["toi_thieu"] == 1
 
 
 # --------------------------------------- 2. quyet dinh "bai nay co thieu anh"
-def test_hai_anh_that_la_DU_cho_ethan_va_THIEU_cho_dre():
+def test_two_image_real_is_enough_wait_ethan_and_missing_wait_dre():
     """Dung canh sinh ra su co: 2 anh that dung duoc.
 
     Voi Ethan phai la None (khong co gi de hoi) — truoc sua, ham nay tra
@@ -89,7 +89,7 @@ def test_hai_anh_that_la_DU_cho_ethan_va_THIEU_cho_dre():
 
 
 # ------------------------------------------- 3. tang ghep noi khong hoi oan
-def test_khong_hoi_ong_chu_khi_ethan_du_anh():
+def test_no_ask_boss_when_ethan_enough_image():
     """`sau_chuan_bi` chi hoi khi manifest co `thieu_anh`. Bai cua Ethan voi 2
     anh khong con khoa do -> khong mot tin nao gui len topic, khong nut "Gui
     Kite ve vector" nao moc vao task le ra chay tron."""
@@ -115,7 +115,7 @@ def test_khong_hoi_ong_chu_khi_ethan_du_anh():
 
 
 # ------------------------------------------------------ 4. cau chu cua nut
-def _ha_san(tmp: Path, manifest: dict, sidecar: dict | None):
+def _lower_ready(tmp: Path, manifest: dict, sidecar: dict | None):
     """Chay approve_post._button_lower_ready voi moi truong gia, tra `note`."""
     import approve_post as db
     import approve_dispatch as dgv
@@ -138,39 +138,39 @@ def _ha_san(tmp: Path, manifest: dict, sidecar: dict | None):
         db.STATE_DIR, db.DRAFTS, dgv.HERMES_HOME, db.call = cu
 
 
-def test_nut_ha_san_khong_goi_the_cua_ethan_la_slide():
+def test_button_lower_ready_no_call_card_of_ethan_is_slide():
     """Dong chu Ong Chu doc duoc hom 10/09: "carousel cần tối thiểu 5 slide" —
     tren mot task le ra chi la mot tam anh."""
     with tempfile.TemporaryDirectory() as tmp:
-        note = _ha_san(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
+        note = _lower_ready(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
                                    "toi_thieu_co_ban": 1, "vai_anh": "ethan"}, None)
     assert "slide" not in note.lower(), f"van goi san pham cua Ethan la slide: {note}"
     assert "ảnh" in note
 
 
-def test_nut_ha_san_van_noi_slide_cho_dre_va_cho_manifest_cu():
+def test_button_lower_ready_still_say_slide_wait_dre_and_wait_manifest_old():
     """Dre khong doi gi; manifest cu (khong co `vai_anh`) giu nguyen chu cu."""
     with tempfile.TemporaryDirectory() as tmp:
-        note = _ha_san(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
+        note = _lower_ready(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
                                    "toi_thieu_co_ban": 5, "vai_anh": "dre"}, None)
         assert "slide" in note, note
-        cu = _ha_san(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
+        cu = _lower_ready(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
                                  "toi_thieu_co_ban": 5}, None)
         assert "slide" in cu, cu
 
 
-def test_nut_ha_san_theo_sidecar_khi_bai_da_chuyen_kite():
+def test_button_lower_ready_by_sidecar_when_article_already_transfer_kite():
     """`create_task_kite` doi `vai_anh` trong SIDECAR chu khong sua manifest, nen
     sidecar la ban moi nhat — bai da sang Kite thi lai goi la slide."""
     with tempfile.TemporaryDirectory() as tmp:
-        note = _ha_san(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
+        note = _lower_ready(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
                                    "toi_thieu_co_ban": 1, "vai_anh": "ethan"},
                        {"vai_anh": "kite", "chuyen_tu": "ethan"})
     assert "slide" in note, note
 
 
 # ------------------------------------------- 5. cong chan dung DONG da hong
-def test_engine_lay_nguong_CHAN_tu_ban_dang_ky_vai():
+def test_engine_take_threshold_block_from_copy_form_ky_role():
     """Cong chan o muc MA NGUON, vi dong that su hong nam trong `prepare_article()` —
     ham do mo Chromium, tai anh, goi vision, khong unit test duoc.
 
@@ -192,7 +192,7 @@ def test_engine_lay_nguong_CHAN_tu_ban_dang_ky_vai():
          "vai — do la su co 10/09/2026")
 
 
-def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
+def test_threshold_block_no_got_use_make_target_go_find():
     """Nguoc lai voi test tren: lay nguong CHAN (Ethan 1) lam so de NGUNG DI TIM
     cung hong, chi la hong kieu khac — engine se dung ngay khi co mot tam bat ky
     dung duoc, ke ca tam Ethan khong lam hero duoc.
@@ -220,7 +220,7 @@ def test_nguong_chan_khong_bi_dung_lam_muc_tieu_di_tim():
         "engine se ngung tim khi Ethan van chua co tam nao lam nen hero"
 
 
-def test_sidecar_ghi_truoc_khi_engine_chay():
+def test_sidecar_write_before_when_engine_run():
     """Engine doc `vai_anh` tu sidecar .img.json ngay dau. `create_pair` tung
     goi `_block_run_engine` TRUOC `_crop_sidecar`, tuc engine doc mot tep chua ai
     ghi — truoc gio chi mat tom tat (im lang), tu 10/09/2026 mat ca nguong."""
