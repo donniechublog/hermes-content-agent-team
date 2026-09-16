@@ -87,8 +87,9 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
             # Ten nguoi ma chinh tam anh mang theo (LOW-178): vai khai dung ten nay
             # la qua cong, ke ca khi chu bai khong nhac ten.
             ten = image_rules_dre.subject_names(a)
-            dong += (f" | mặt người: khai \"nhan_vat\": \"{ten[0]}\" (theo chú thích nguồn)" if ten
-                     else " | mặt người KHÔNG rõ ai: chỉ dùng nếu bài nêu đúng tên người này")
+            dong += ((" | mặt người: tên theo vision/chú thích: " + " / ".join(f"\"{x}\"" for x in ten[:3])
+                      + " — khai \"nhan_vat\" đúng tên NGƯỜI trong ảnh (không khai địa danh/cụm chữ)")
+                     if ten else " | mặt người KHÔNG rõ ai: chỉ dùng nếu bài nêu đúng tên người này")
         if a["ghi_chu"]:
             dong += " | " + "; ".join(a["ghi_chu"])
         L.append(dong)

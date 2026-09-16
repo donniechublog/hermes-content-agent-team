@@ -93,17 +93,45 @@ def stack_crop_note(r1, r2) -> str:
             "mép thì đảo thứ tự hai mã")
 
 
+def _is_title_case_headline(t: str) -> bool:
+    """alt la TIEU DE BAO viet hoa dau moi tu (>= 5 tu, > 60% viet hoa): regex ten
+    rieng khong phan biet duoc ten nguoi voi cum "Here Following" trong do."""
+    w = [x for x in re.split(r"\s+", t.strip()) if x]
+    if len(w) < 5:
+        return False
+    return sum(1 for x in w if x[0].isupper()) / len(w) > 0.6
+
+
+# Tu dung dau mot cum ten do vision/caption viet khong dau: "Anh Jensen Huang".
+_NAME_PREFIX = ("anh", "ong", "ba", "ceo", "chu", "tich", "ts", "gs")
+
+
 def subject_names(a: dict) -> list:
-    """Ten nguoi ma CHINH tam anh mang theo: nhan nguoi cua vong thuong hieu
-    (`thuong_hieu.nguoi`, Wikidata founder/CEO) va ten rieng trong alt/caption
-    cua trang nguon. Cung bang chung `role.face_no_clear_ai` dung de dem slide,
-    nen nguoi dem va cong chan (LOW-178) doc cung mot thu."""
+    """Ten nguoi ma CHINH tam anh mang theo, theo thu tu tin cay: nhan nguoi cua
+    vong thuong hieu (`thuong_hieu.nguoi`, Wikidata founder/CEO), ten rieng trong
+    `mo_ta` (vision NHIN mat va goi ten), roi ten rieng trong alt/caption.
+
+    Do that 16/09/2026 (A18 tin Nvidia/Anthropic): alt la tieu de bao
+    "Nvidia CEO Says AGI is Here Following GPT-6 Astra Launch" -> regex ten rieng
+    tra "Here Following", brief in ra, Dre khai dung the va qua cong voi mot ten
+    bia — trong khi mo_ta noi ro "CEO Jensen Huang". Nen: alt dang headline
+    Title-Case bo qua, mo_ta duoc doc truoc. `role.person_names_in_alt` (nguoi
+    dem chung) giu nguyen."""
     import role
     ra = []
     th = (a.get("thuong_hieu") or {}).get("nguoi")
     if th:
         ra.append(str(th))
-    ra += role.person_names_in_alt(a.get("alt") or "")
+    for txt in (a.get("mo_ta") or "", a.get("alt") or ""):
+        if not txt or _is_title_case_headline(txt):
+            continue
+        for ten in role.person_names_in_alt(txt):
+            w = ten.split()
+            while len(w) > 2 and w[0].lower() in _NAME_PREFIX:
+                w = w[1:]
+            ten = " ".join(w)
+            if ten not in ra:
+                ra.append(ten)
     return ra
 
 
