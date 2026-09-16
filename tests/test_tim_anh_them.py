@@ -52,8 +52,12 @@ def test_anh_ngang_qua_thap_khong_dem_mot_minh():
           _ngang(ma="A7"), _ngang(ma="A5", h=600, dung=["ghép dọc với một ảnh ngang cùng tone"])]
     assert schema.count_image_use_ok(bo, "dre") == 4, "A5 le khong co cap -> 4 slide, khong phai 5"
     bo.append(_ngang(ma="A8", h=650, dung=["ghép dọc với một ảnh ngang cùng tone"]))
-    assert schema.count_image_use_ok(bo, "dre") == 4, \
-        "hai tam 3:2 ghep ra 0.75, ngoai dai 4:5..1:1 — dre_submit chan, khong duoc dem (LOW-46)"
+    # LOW-46: nguoi dem hoi cung `stack_fit_frame` voi cong chan; LOW-178 (16/09/2026):
+    # san ghep rieng cua Dre nhan cap 3:2+3:2 (0.75), nen ca hai cung dem A5+A8 la MOT slide.
+    assert schema.count_image_use_ok(bo, "dre") == 5, \
+        "hai tam 3:2 ghep ra 0.75 — Dre ghep duoc (STACK_FLOOR), dem mot slide"
+    bo[-2]["ti_le"] = bo[-1]["ti_le"] = 1.0
+    assert schema.count_image_use_ok(bo, "dre") == 4, "hai tam 1:1 ghep ra 0.5 — duoi san, khong dem"
     bo[-2]["ti_le"] = bo[-1]["ti_le"] = 1.78
     assert schema.count_image_use_ok(bo, "dre") == 5, "hai tam 16:9 thap ghep thanh MOT slide"
     assert schema.count_image_use_ok([_ngang(h=0)], "dre") == 1, "khong biet chieu cao thi khong tru"

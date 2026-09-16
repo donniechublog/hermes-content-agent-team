@@ -48,6 +48,17 @@ IMAGE_PHRASES_SCREENSHOT = (
 TI_LE_45, TI_LE_11 = 0.8, 1.0
 TOLERANCE_RATIO = 0.03            # dai hop le 4:5..1:1, nong 3%
 LANDSCAPE_CLEAR = 1.4                   # anh goc >= 1.4 la NGANG ro (16:9, 3:2)
+# San rieng cua Dre cho anh GHEP DOC (LOW-178, 16/09/2026). Truoc do cap ghep
+# phai roi dung dai 4:5..1:1 nhu anh don, nen hai anh 3:2 (= 0.75) bi loai — ma
+# 3:2 la ti le pho bien nhat cua anh bao/Wikimedia: tin Samsung Taylor co bon
+# anh sach deu 3:2, khong ghep duoc voi nhau, Dre block du anh dung chu de.
+# `carousel._body_image` dan anh full be ngang va CAT GIUA DOC phan cao hon
+# khung, nen cap cao hon 4:5 chi mat mot dai mong o mep tren anh 1 + mep duoi
+# anh 2 (0.75 -> ~3% moi mep; 4:3+4:3 = 0.67 -> ~8%). Ong Chu 12/09/2026: lech
+# ti le/bo cuc la LOI NHO — canh bao, khong chan. Duoi san nay (mat > ~10% moi
+# mep) moi la mat noi dung that. Tran 1:1 giu nguyen: ghep RONG hon 1:1 thi nua
+# duoi khung la nen, ra "hai vung" (muc 7).
+STACK_FLOOR = 0.65
 
 
 def ratio_after_stack(r1: float, r2: float) -> float:
@@ -56,14 +67,56 @@ def ratio_after_stack(r1: float, r2: float) -> float:
 
 
 def stack_fit_frame(r1, r2) -> bool:
-    """Hai anh ti le rong/cao r1, r2 chong doc co ra khung 4:5..1:1 (nong
-    TOLERANCE_RATIO) khong. MOT ban cho ca ba noi truoc day tu tinh rieng: goi y
-    cap (`prepare.manifest.stackable_pairs`), cong chan (`dre_submit._resolve_stack`) va nguoi
-    dem slide (`schema.count_image_use_ok`, LOW-46). Thieu ti le = khong ghep duoc."""
+    """Hai anh ti le rong/cao r1, r2 chong doc co dung duoc khong: ra
+    STACK_FLOOR..1:1 (nong TOLERANCE_RATIO). MOT ban cho ca ba noi: goi y cap
+    (`prepare.manifest.stackable_pairs`), cong chan (`dre_submit._resolve_stack`)
+    va nguoi dem slide (`schema.count_image_use_ok`, LOW-46) — ba noi phai cung
+    mot cau tra loi, khong thi nguoi dem noi "du" ma cong chan loai (LOW-46).
+    Thieu ti le = khong ghep duoc."""
     r1, r2 = float(r1 or 0), float(r2 or 0)
     if r1 <= 0 or r2 <= 0:
         return False
-    return TI_LE_45 - TOLERANCE_RATIO <= ratio_after_stack(r1, r2) <= TI_LE_11 + TOLERANCE_RATIO
+    return STACK_FLOOR - TOLERANCE_RATIO <= ratio_after_stack(r1, r2) <= TI_LE_11 + TOLERANCE_RATIO
+
+
+def stack_crop_note(r1, r2) -> str:
+    """Canh bao (KHONG chan) cho cap ghep vua `stack_fit_frame` nhung cao hon
+    khung 4:5: khung se cat mot dai o mep tren anh 1 va mep duoi anh 2. Rong
+    neu cap roi dung dai 4:5..1:1. Tinh theo phan tram chieu cao, khong biet
+    canvas."""
+    rc = ratio_after_stack(float(r1), float(r2))
+    if rc >= TI_LE_45 - TOLERANCE_RATIO:
+        return ""
+    mat = 1 - rc / TI_LE_45                     # phan chieu cao bi cat, ca hai mep
+    return (f"ghép ra tỉ lệ {rc:.2f}, cao hơn khung 4:5: cắt ~{mat / 2:.0%} chiều cao ở "
+            "mép trên ảnh 1 và mép dưới ảnh 2 — nếu ảnh 1 là chart/bảng có tiêu đề sát "
+            "mép thì đảo thứ tự hai mã")
+
+
+def subject_names(a: dict) -> list:
+    """Ten nguoi ma CHINH tam anh mang theo: nhan nguoi cua vong thuong hieu
+    (`thuong_hieu.nguoi`, Wikidata founder/CEO) va ten rieng trong alt/caption
+    cua trang nguon. Cung bang chung `role.face_no_clear_ai` dung de dem slide,
+    nen nguoi dem va cong chan (LOW-178) doc cung mot thu."""
+    import role
+    ra = []
+    th = (a.get("thuong_hieu") or {}).get("nguoi")
+    if th:
+        ra.append(str(th))
+    ra += role.person_names_in_alt(a.get("alt") or "")
+    return ra
+
+
+def subject_evidence(anh_ds) -> str:
+    """Chuoi de doi chieu `nhan_vat` NGOAI chu bai (LOW-178, 16/09/2026): ten
+    nguoi ma chinh nhung tam anh dang xet mang theo (`subject_names`).
+
+    Truoc do ten khai phai co trong CHU BAI — bai ve Nvidia khong go "Jensen
+    Huang" thi anh Jensen Huang (Wikimedia, caption ghi ro ten) bi coi la bia.
+    Su co goc 05/09 (anh quan chuc G20 khai "Hock Tan") van bi chan: caption
+    anh do khong co ten nay. Chi xet dung nhung tam dang khai, tam khac trong
+    manifest khong bao lanh."""
+    return " ".join(x for a in anh_ds for x in subject_names(a or {}))
 SHORT_SIDE_MIN = 1000             # duoi nguong nay phong len 1080 se mem
 BRIGHT_BOTTOM_MAX = 150               # do sang trung binh 25% duoi anh (chi con dung
                                  # lam ghi chu tham khao trong prepare/vision.py,

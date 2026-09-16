@@ -665,7 +665,11 @@ def _gate_image(paths):
                 loi.append(f"{nhan}: chart ma van di qua crop_ratio.py — chart phai "
                            'NGUYEN VEN, dua thang anh goc vao voi "chart": true')
             continue
-        gom(image_rules_dre.check_aspect_ratio(nhan, p, w, h_px, img=img))   # img: de mien tru anh xep hang
+        # Anh GHEP DOC ("images") duoc san rieng STACK_FLOOR (LOW-178): _body_image
+        # cat giua doc phan cao hon khung, dre_submit da canh bao mep nao bi cat.
+        gom(image_rules_dre.check_aspect_ratio(
+            nhan, p, w, h_px, img=img,                                # img: de mien tru anh xep hang
+            lo=image_rules_dre.STACK_FLOOR if muc.get("images") else image_rules_dre.TI_LE_45))
 
         gom(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
         gom(image_rules_dre.check_resolution(nhan, w, h_px))

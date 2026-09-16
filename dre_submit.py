@@ -38,6 +38,7 @@ import image_prepare as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import schema                                                # noqa: E402
+import image_rules_dre                                       # noqa: E402
 
 DRAFTS = ROOT / "drafts"
 
@@ -57,6 +58,7 @@ class Context:
         self.anh = {a["ma"]: a for a in m["anh"]}
         self.chu_bai = nc.article_text_for(m, wd)
         self.loi = []
+        self.canh = []                   # canh bao: in ra, khong chan
         self.da_dung = {}                # ma anh -> nhan slide da dung no
         self.dung_anh = []               # [(nhan slide, [ma...])]
 
@@ -75,13 +77,19 @@ class Context:
 
     def kiem_mat(self, ma_ds, muc: dict, nhan: str) -> None:
         # Cong chan nam o submit_common de Ethan dung chung dung mot ban (06/09/2026).
+        # Rieng Dre (LOW-178): ten khai duoc doi chieu voi chu bai VA voi chu
+        # thich/nhan nguoi cua chinh tam anh — bai ve Nvidia khong go "Jensen
+        # Huang" nhung caption Wikimedia co, thi khong phai bia.
+        chu_bai = self.chu_bai
+        chung_cu = image_rules_dre.subject_evidence([self.anh.get(x) for x in ma_ds if x])
+        if chu_bai and chung_cu:
+            chu_bai = chu_bai + " " + chung_cu
         self.loi.extend(nc.check_subject_named(self.anh, ma_ds, muc.get("nhan_vat"),
-                                         self.chu_bai, f"{nhan}: "))
+                                         chu_bai, f"{nhan}: "))
 
 
 def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
-    """Nhanh "ghep": hai anh NGANG chong doc thanh mot khung 4:5..1:1."""
-    import image_rules_dre
+    """Nhanh "ghep": hai anh NGANG chong doc thanh mot khung STACK_FLOOR..1:1."""
     if not isinstance(ghep, list) or len(ghep) != 2:
         bo.loi.append(f"{nhan}: \"ghep\" phải là đúng 2 mã ảnh, vd [\"A3\", \"A5\"]")
         return None
@@ -96,8 +104,15 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
               (Image.open(bo.anh[x]["goc"]) for x in ghep))
     if not image_rules_dre.stack_fit_frame(r1, r2):
         rc = image_rules_dre.ratio_after_stack(r1, r2)
-        bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải 4:5..1:1 — "
+        bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải ghép "
+                      f"{image_rules_dre.STACK_FLOOR}..1.0 — "
                       f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
+    else:
+        # Cao hon 4:5 mot chut la LOI NHO (Ong Chu 12/09/2026): bao de vai biet
+        # mep nao bi cat, khong chan (LOW-178).
+        nhac = image_rules_dre.stack_crop_note(r1, r2)
+        if nhac:
+            bo.canh.append(f"{nhan}: {nhac}")
     # Cong lech tone (`tone_mismatch`) da bo khoi he thong (Ong Chu
     # 13/09/2026): bo cam doan ve nguon/chat luong nay, moi vai.
     bo.kiem_mat(ghep, muc, nhan)
@@ -261,7 +276,7 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # So tren slide co trong tu lieu khong (chi CANH BAO — doi don vi la thuong).
     chu_slide = " ".join(str(x.get(k) or "") for x in [cover] + list(slides)
                          for k in ("hook", "text", "quote", "label", "attrib"))
-    canh = nc.check_numbers_on_card(chu_slide, m, wd)
+    canh = bo.canh + nc.check_numbers_on_card(chu_slide, m, wd)
     # LAM LAI mot slide cu the nhung van ra dung anh cu (Ong Chu 13/09/2026) —
     # dat SAU khi bia + moi slide da giai, luc bo.dung_anh da co du (nhan, ma).
     loi += nc.check_no_repeat_image_redo(bo.anh, bo.dung_anh, m, DRAFTS)

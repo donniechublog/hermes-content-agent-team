@@ -698,6 +698,20 @@ gì, ở mọi vai. Ghép hai ảnh dù khác tone hẳn (một nền trắng m�
 qua được cổng; `prepare/manifest.py::cap_ghep` cũng không còn loại cặp lệch
 tone khỏi gợi ý. Việc chọn cặp cùng tone cho đẹp giờ là **gu**, không phải luật.
 
+**Dải ghép riêng của Dre: `STACK_FLOOR`..1:1 (LOW-178, 16/09/2026).** Trước đó
+cặp ghép phải rơi đúng dải 4:5..1:1 như ảnh đơn, nên hai ảnh 3:2 (ghép ra 0.75)
+bị loại — mà 3:2 là tỉ lệ phổ biến nhất của ảnh báo/Wikimedia: tin Samsung
+Taylor có bốn ảnh sạch đều 3:2, không ghép được với nhau, Dre block dù ảnh
+đúng chủ đề. `carousel._body_image` dán ảnh full bề ngang và **cắt giữa dọc**
+phần cao hơn khung, nên cặp cao hơn 4:5 chỉ mất một dải mỏng ở mép trên ảnh 1
+và mép dưới ảnh 2 (0.75 → ~3% mỗi mép; 4:3+4:3 = 0.67 → ~8%). Lệch tỉ lệ là
+**lỗi nhỏ** (Ông Chủ 12/09/2026): `dre_submit.py` chỉ **cảnh báo** mép nào bị
+cắt, không chặn; dưới sàn `image_rules_dre.STACK_FLOOR` (0.65, mất > ~10% mỗi
+mép) mới chặn. Trần 1:1 giữ nguyên — ghép rộng hơn 1:1 thì nửa dưới khung là
+nền, ra hai vùng (mục 7). Ba nơi (gợi ý cặp, người đếm slide, cổng chặn) vẫn
+hỏi cùng `stack_fit_frame`; cổng ảnh của `carousel.py` dùng sàn này cho mục có
+`"images"`. Ethan/Kite không đổi theo.
+
 ---
 
 ## 6. Mặt người
@@ -708,6 +722,17 @@ Astra dùng mặt một người không liên quan, đọc ra như ảnh stock.
 Có mặt người là **CHẶN**, trừ khi khai `"nhan_vat": "<tên>"` — người trong ảnh
 phải là nhân vật **cụ thể được nhắc trong bài** (CEO phát biểu, tác giả paper,
 founder). **Không gọi được tên thì không được dùng.** Khai sai tên là bịa đặt.
+
+**Tên đối chiếu ở đâu (LOW-178, 16/09/2026):** tên khai phải có trong **chữ
+bài HOẶC trong chú thích/nhãn người của chính tấm ảnh** (`alt`/caption của trang
+nguồn, `thuong_hieu.nguoi` do vòng thương hiệu gắn từ Wikidata). Trước đó chỉ
+chữ bài được tính: bài về Nvidia không gõ "Jensen Huang" thì ảnh Jensen Huang
+lấy từ Wikimedia (caption ghi rõ tên) bị coi là bịa — trong khi người đếm slide
+(`role.face_no_clear_ai`) đã tính tấm đó là dùng được, tức người đếm nói "đủ" mà
+cổng loại. Nay cả hai đọc cùng bằng chứng (`image_rules_dre.subject_names`).
+Sự cố gốc 05/09 (ảnh quan chức G20 khai "Hock Tan") vẫn bị chặn: caption tấm
+đó không có tên. Chỉ tấm **đang khai** làm bằng chứng — tên ở caption tấm khác
+không bảo lãnh. Brief của `dre_prepare.py` in sẵn tên này ở cột "mặt người".
 
 Tin model/sản phẩm: ảnh là **sản phẩm, screenshot, chart** — không phải mặt người.
 

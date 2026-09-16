@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import schema                                                # noqa: E402
 import route_missing_images                                       # noqa: E402
+import image_rules_dre                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -82,6 +83,12 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
             dong += f" | ảnh là: {a['mo_ta'][:110]}"
         elif a.get("alt"):
             dong += f" | alt: {a['alt'][:70]}"
+        if a.get("mat"):
+            # Ten nguoi ma chinh tam anh mang theo (LOW-178): vai khai dung ten nay
+            # la qua cong, ke ca khi chu bai khong nhac ten.
+            ten = image_rules_dre.subject_names(a)
+            dong += (f" | mặt người: khai \"nhan_vat\": \"{ten[0]}\" (theo chú thích nguồn)" if ten
+                     else " | mặt người KHÔNG rõ ai: chỉ dùng nếu bài nêu đúng tên người này")
         if a["ghi_chu"]:
             dong += " | " + "; ".join(a["ghi_chu"])
         L.append(dong)
