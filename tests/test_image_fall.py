@@ -312,7 +312,7 @@ def test_timestamp_background_solid_no_has_range_lang_then_use_cell_ceiling_40_p
 
 def test_carousel_image_fall_secondary_full_text_in_ready_keep_image_side_on():
     import carousel
-    carousel.set_background("toi")
+    carousel.set_background("dark")
     cv = _canvas_region(carousel.W, carousel.H, [(0, 600, "anh"), (700, 980, "chu")])
     truoc = cv.copy()
     carousel._layer_if_can(cv, cv.convert("RGB"), 1030, carousel.H, image_cluttered=True)
@@ -325,7 +325,7 @@ def test_carousel_image_fall_secondary_full_text_in_ready_keep_image_side_on():
 
 def test_carousel_image_clean_keep_raw_layer_open_old():
     import carousel
-    carousel.set_background("toi")
+    carousel.set_background("dark")
     canvas = Image.new("RGBA", (carousel.W, carousel.H), (10, 10, 10, 255))
     truoc = canvas.copy()
     carousel._layer_if_can(canvas, canvas.convert("RGB"), 1000, carousel.H)

@@ -234,14 +234,14 @@ def check_subject_named(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> 
     nv = str(nhan_vat or "").strip()
     loi = []
     if co and not nv:
-        loi.append(f"{nhan}{', '.join(co)} có mặt người mà không khai \"nhan_vat\": "
+        loi.append(f"{nhan}{', '.join(co)} có mặt người mà không khai \"subject\": "
                    "\"<tên người trong bài>\" — khai tên nếu đúng là nhân vật, "
                    "không thì đổi ảnh khác")
         return loi
     if not co or not nv:
         return loi
     if chu_bai and not _name_in_article(nv, chu_bai):
-        loi.append(f"{nhan}nhan_vat \"{nv}\" không xuất hiện trong chữ bài — "
+        loi.append(f"{nhan}subject \"{nv}\" không xuất hiện trong chữ bài — "
                    "khai tên người KHÔNG có trong bài là bịa. Bỏ ảnh này. "
                    "(Nếu tên đúng thì bỏ phần chức danh: khai \"Sam Altman\", "
                    "không khai \"Sam Altman (CEO OpenAI)\".)")

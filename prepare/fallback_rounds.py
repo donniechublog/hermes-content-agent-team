@@ -542,7 +542,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
     khac cung tin, LOW-33 — rat co the co anh that cua nguoi sang lap ma vong cu
     CHUA BAO GIO thu toi vi da dung o trang thu hai). Sau khi thu het, chon BIA
     la ung vien qua cong DAU TIEN theo thu tu ma KHONG CO MAT NGUOI — anh co mat
-    van qua cong nhung khong len duoc bia (IMAGE_RULES §6 doi khai "nhan_vat" ma
+    van qua cong nhung khong len duoc bia (IMAGE_RULES §6 doi khai "subject" ma
     Kite chua co truong do), giu lam `than` thay vi bo phi. Tra (anh, dung_duoc,
     chua_nhin)."""
     def _ra():
@@ -655,7 +655,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         # nhieu chu) roi dan nhan KHONG LAM BIA — dung cho chart cua nguoi khac,
         # sai cho tam nay: Ong Chu 12/09/2026 chot "cat lay khoi lead roi lam
         # bia". Mo lai dung bia, TRU khi co mat nguoi: cong mat (IMAGE_RULES §6)
-        # doi khai `nhan_vat`, ma spec cua Kite khong co truong do.
+        # doi khai `subject`, ma spec cua Kite khong co truong do.
         a["notes"] = [g for g in a["notes"] if "KHÔNG làm bìa" not in g]
         # KHOI TIT (trang khong co anh hero) la NAC CUOI, sau khai niem (Ong Chu
         # 12/09/2026 xem bia toan chu-de-chu: "thieu idea den the a?"). Giu anh
@@ -692,7 +692,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
     # CHON BIA sau khi da thu HET cac URL (LOW-45, Ong Chu 13/09/2026): trong so
     # cac ung vien QUA CONG (lien_quan True, khong phai khoi tit), uu tien tam
     # KHONG CO MAT NGUOI dau tien theo thu tu thu — tam co mat khong len bia
-    # duoc vi cong mat (IMAGE_RULES §6) doi khai "nhan_vat" ma Kite chua co truong
+    # duoc vi cong mat (IMAGE_RULES §6) doi khai "subject" ma Kite chua co truong
     # do, nhung VAN giu lai lam `than` thay vi bo phi (do that: anh founder that
     # cua Yang Zhilin tren cac bao khac ve Moonshot/Kimi K3 rat co the nam trong
     # so nay — truoc ban va nay bi bo qua hoan toan vi vong lap dung som).
@@ -705,7 +705,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         print(f"[chup nguon] {bia['id']} <- {bia['domain']} lên BÌA (không mặt người)", file=sys.stderr)
     elif ung_vien:
         print(f"[chup nguon] {len(ung_vien)} ảnh qua cổng đều CÓ mặt người vô danh với Kite "
-              "(thiếu \"nhan_vat\") — không tấm nào lên bìa, giữ làm thân", file=sys.stderr)
+              "(thiếu \"subject\") — không tấm nào lên bìa, giữ làm thân", file=sys.stderr)
     if not any(a.get("capture_kind") == "headline" for a in anh) and not ung_vien:
         print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
     return _ra()

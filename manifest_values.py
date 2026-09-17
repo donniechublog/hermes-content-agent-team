@@ -7,7 +7,8 @@ so code compares codes instead of searching substrings of a sentence.
 """
 
 # image `uses`: slot code -> sentence printed in briefs (byte-identical to the
-# strings stored before LOW-230).
+# strings stored before LOW-230, except the spec key `landscape_crop` — was
+# `cat_ngang` before LOW-248).
 USE_LABELS = {
     "cover": "bìa",
     "cover_headline_block": "bìa (khối tít của bài gốc — không còn ảnh nào khác)",
@@ -17,8 +18,8 @@ USE_LABELS = {
     "body_chart": "thân (chart)",
     "body_chart_full_width": "thân (chart, dán full bề ngang nguyên vẹn)",
     "stack_vertical": "ghép dọc với một ảnh ngang cùng tone",
-    "landscape_crop_if_no_text": "cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ",
-    "landscape_crop_confirmed": "cat_ngang: true (ảnh người/sản phẩm không chữ, vision đã xác nhận)",
+    "landscape_crop_if_no_text": "landscape_crop: true NẾU là ảnh người/sản phẩm KHÔNG có chữ",
+    "landscape_crop_confirmed": "landscape_crop: true (ảnh người/sản phẩm không chữ, vision đã xác nhận)",
     "figure": "figure",
 }
 

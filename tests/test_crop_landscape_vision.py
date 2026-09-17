@@ -74,7 +74,7 @@ def test_landscape_height_has_text_then_no_offer_crop_landscape():
         with _call_try("MO_TA: bien hieu logo cong ty tren tuong.\nLIEN_QUAN: co\nCAT_NGANG: khong"):
             classify(a, wd=Path(tmp), tieu_de="T")
         assert a["landscape_crop_ok"] is False
-        assert not any("cat_ngang" in d and "NẾU" not in d and "false" not in d.lower()
+        assert not any("landscape_crop" in d and "NẾU" not in d and "false" not in d.lower()
                        for d in manifest_values.use_labels(a["uses"]) if "true (" in d)
         assert any("không được crop" in g for g in a["notes"]), a["notes"]
 

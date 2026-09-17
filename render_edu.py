@@ -68,7 +68,7 @@ Spec JSON:
     {"kind": "bars", "eyebrow": "SỐ LIỆU",
      "title": "Chi phí mỗi task giảm ba lần", "accent": "ba lần",
      "bars": [{"label": "Trước", "value": 2.75, "text": "2,75 USD"},
-              {"label": "Sau boost", "value": 0.9, "text": "0,90 USD", "nhan": true}],
+              {"label": "Sau boost", "value": 0.9, "text": "0,90 USD", "highlight": true}],
      "caption": "Số trong bài · via Google DeepMind",
      "standfirst": "Tuỳ chọn, ≤ 160 ký tự."},
 
@@ -264,7 +264,7 @@ BASE_CSS_TPL = """
 .bar-track{flex-grow:1;height:46px;background:%(PANEL)s;border:1px solid %(LINE)s;
   position:relative;}
 .bar-fill{position:absolute;left:0;top:0;bottom:0;background:%(VIOLET)s;}
-.bar-fill.nhan{background:%(CYAN)s;}
+.bar-fill.highlight{background:%(CYAN)s;}
 .bar-v{font-family:%(MONO)s;font-size:30px;font-weight:700;color:%(WHITE)s;
   flex:none;width:190px;text-align:right;}
 /* hinh that: phu kin the, KHONG bao gio la mot hop dat canh chu */
@@ -997,16 +997,16 @@ def _value(v):
 
 def s_bars(sl, th):
     """Bieu do cot ngang tu so THAT trong bai: nhan | thanh | gia tri. Be rong
-    theo cot lon nhat; cot co 'nhan': true (mac dinh cot dau) mau chinh, con
+    theo cot lon nhat; cot co 'highlight': true (mac dinh cot dau) mau chinh, con
     lai mau phu. Khong co truc/luoi: 2..6 cot, doc trong 3 giay."""
     items = sl.get("bars", [])
     vals = [_value(b["value"]) for b in items]
     vmax = max(vals, default=0.0) or 1.0
-    co_nhan = any(b.get("nhan") for b in items)
+    co_nhan = any(b.get("highlight") for b in items)
     rows = ""
     for i, (b, v) in enumerate(zip(items, vals)):
         pct = max(0.0, min(100.0, v / vmax * 100))
-        cls = "bar-fill nhan" if (b.get("nhan") or (i == 0 and not co_nhan)) else "bar-fill"
+        cls = "bar-fill highlight" if (b.get("highlight") or (i == 0 and not co_nhan)) else "bar-fill"
         rows += (f'<div class="bar"><span class="bar-l">{esc(b["label"])}</span>'
                  f'<span class="bar-track"><span class="{cls}" style="width:{pct:.1f}%;"></span></span>'
                  f'<span class="bar-v">{esc(b.get("text") or _count(v))}</span></div>')

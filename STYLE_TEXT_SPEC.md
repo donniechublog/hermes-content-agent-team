@@ -3,7 +3,7 @@
 Baseline từ phân tích thẻ thật đã render. Dùng làm điểm so sánh khi đổi renderer.
 
 `card.py` có **hai** kiểu thẻ, và **mặc định là `quote`** (`card.build(kieu="quote")`,
-`ethan_submit` cũng vậy). `--kieu tran` là lựa chọn có chủ đích khi muốn ảnh phủ kín
+`ethan_submit` cũng vậy). `--kieu full_bleed` là lựa chọn có chủ đích khi muốn ảnh phủ kín
 thẻ. Kiểu `dai` đã bỏ khỏi mã 05/09/2026; bản mô tả thiết kế của nó chuyển sang
 [INCIDENT_LOG.md](INCIDENT_LOG.md).
 
@@ -21,7 +21,7 @@ tệp này chỉ nói *"đặt chữ lên khung thế nào"*.
 | Chip tên kênh | JetBrains Mono Regular | 22px | góc TRÊN-PHẢI khung |
 | Chip tagline | JetBrains Mono Bold | 20px | góc DƯỚI-TRÁI khung |
 
-## Hệ chữ — kiểu `tran`
+## Hệ chữ — kiểu `full_bleed`
 
 | Vai trò | Font | Cỡ | Kiểu |
 |---|---|---|---|
@@ -82,7 +82,7 @@ dưới. Khác hero (một tiêu đề bao quát tin) và khác carousel (nhiề
    tên kênh góc trên-phải khung, tagline góc dưới-trái, tâm chip ngang mức nét
    khung. Chip **không** đặt ở góc thẻ — ở đó nó đè lên tiêu đề của ảnh nguồn.
 
-## Bố cục kiểu `tran` — vai designer Ethan (cả hai brand)
+## Bố cục kiểu `full_bleed` — vai designer Ethan (cả hai brand)
 
 **Ông Chủ chốt 07/09/2026** — bản này thay hẳn bản "không vẽ khung, không một
 nét nào" trước đó. Ba thứ đổi: bỏ nền đặc, chữ tự đổi màu tương phản, và có một

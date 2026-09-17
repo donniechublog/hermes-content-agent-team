@@ -244,7 +244,7 @@ def test_label_block_use_change_declare_use_name():
     a = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "person",
                                               "person": "Dario Amodei", "person_role": "CEO"}, faces=1))
     assert a["uses"] == ["cover", "body"]
-    assert "Dario Amodei" in a["notes"][0] and "nhan_vat" in a["notes"][0]
+    assert "Dario Amodei" in a["notes"][0] and "subject" in a["notes"][0]
 
 
 def test_label_block_use_no_block_by_face():
@@ -268,9 +268,9 @@ def test_label_card_logo_go_notes_chart_color_pure():
 def test_label_card_logo_only_cover_and_say_clear_background():
     a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "logo", "background_tone": "dark"}))
     assert a["uses"] == ["cover"]
-    assert a["notes"][0].startswith("🔖 THẺ LOGO DeepSeek") and '"nen": "toi"' in a["notes"][0]
+    assert a["notes"][0].startswith("🔖 THẺ LOGO DeepSeek") and '"background_tone": "dark"' in a["notes"][0]
     b = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "logo", "background_tone": "light"}))
-    assert '"nen": "sang"' in b["notes"][0]
+    assert '"background_tone": "light"' in b["notes"][0]
 
 
 def test_label_board_ranking_say_clear_no_right_board_of_story():

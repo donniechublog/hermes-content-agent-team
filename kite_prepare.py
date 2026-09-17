@@ -68,10 +68,10 @@ def figure_real(m: dict) -> list:
 
     KHONG con loai cung anh "KHONG RO AI" o day (LOW-186, 16/09/2026): Dre/Ethan
     khong loai o buoc chuan bi nay, chi chan luc NOP neu khong khai duoc
-    `nhan_vat` (`check_unnamed_face`) — Kite truoc day loai thang tu day nen
+    `subject` (`check_unnamed_face`) — Kite truoc day loai thang tu day nen
     ca khi vai da xac minh duoc ten that (vd doc dung bai goc), anh van khong
     bao gio toi duoc buoc nop de khai ten. Ghi chu "KHONG RO AI" van con trong
-    `notes` de brief/vai biet ma nao can khai `nhan_vat` truoc khi dung.
+    `notes` de brief/vai biet ma nao can khai `subject` truoc khi dung.
 
     Loai them anh co `uses` rong/falsy (LOW-189, 16/09/2026): image_concept.
     label_concept() gan `uses = []` cho anh khai niem dang chart/co mat nguoi
@@ -347,7 +347,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  + (f" | {nhan_kn}" if nhan_kn else "")
                  + (f" | {nhan_th}" if nhan_th else "")
                  + (f" | ảnh là: {a['description'][:90]}" if a.get("description") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
-                 + (" | có mặt người: khai \"nhan_vat\": \"<tên>\" vào slide dùng mã này (nếu xác minh "
+                 + (" | có mặt người: khai \"subject\": \"<tên>\" vào slide dùng mã này (nếu xác minh "
                     "được qua chính bài/nguồn) rồi ghi đúng tên đó trong caption — không xác minh được "
                     "thì đổi mã khác, đừng đoán tên" if a.get("faces") else ""))
     L += line_hero(m)
@@ -383,7 +383,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                "standfirst": "<≤ 200>"} for ma in (ep_khung or ["<mã hình thật A?>"])],
             {"kind": "bars", "eyebrow": "SỐ LIỆU", "title": "<≤ 60>", "accent": "<cụm>",
              "bars": [{"label": "<≤ 28>", "value": "<số THẬT trong bài, viết dạng số>", "text": "<cách ghi, vd 2,75 USD>"},
-                      {"label": "<≤ 28>", "value": "<số>", "text": "<…>", "nhan": True}],
+                      {"label": "<≤ 28>", "value": "<số>", "text": "<…>", "highlight": True}],
              "caption": "<Số trong bài · via <ai>>", "standfirst": "<≤ 160, tuỳ chọn>"},
             {"kind": "loop", "eyebrow": "CƠ CHẾ", "title": "<≤ 60>", "accent": "<cụm>",
              "chips": ["<≤ 3 từ>", "<≤ 3 từ>", "<≤ 3 từ>"], "standfirst": "<≤ 220>", "callout": "<≤ 110>"},

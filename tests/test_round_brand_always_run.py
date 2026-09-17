@@ -160,7 +160,7 @@ _TH_NGUOI = {"company": "Nvidia", "key": "nvidia", "kind": "person",
 
 def test_label_block_use_say_name_and_change_declare_subject():
     n = th.label_by_type(_TH_NGUOI)
-    assert "Jensen Huang" in n and "nhan_vat" in n and n.startswith("👤")
+    assert "Jensen Huang" in n and "subject" in n and n.startswith("👤")
 
 
 def test_brief_of_ethan_no_remaining_call_block_use_is_except_count():

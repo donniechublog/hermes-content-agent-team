@@ -6,7 +6,7 @@ chung o submit_common (mat nguoi, quote dich, so tren anh), cung cong XH va cong
 "khong lien quan" — nhung viet lai rieng, va da tung lech: truoc 06/09/2026
 Ethan khong doc co `relevant` nen chon bang ti so giai golf cho tin GPT-6.
 
-Rieng cua Ethan: mot anh (hoac ghep hai anh ngang qua "anh2"), kieu quote/tran,
+Rieng cua Ethan: mot anh (hoac ghep hai anh ngang qua "image2"), card_style quote/full_bleed,
 va nguong ngang RATIO_HERO_MAX cua card.py.
 
 Chay:  venv/bin/python tests/test_spec_ethan.py
@@ -33,7 +33,7 @@ def _m(wd, anh, **k):
 
 
 def _spec(ma="A1", **k):
-    d = {"anh": ma, "kieu": "quote", "hook": "Nvidia mở kho mô hình Nemotron",
+    d = {"image": ma, "card_style": "quote", "hook": "Nvidia mở kho mô hình Nemotron",
          "tagline": "MODEL RELEASE", "attrib": "via Reuters"}
     d.update(k)
     return d
@@ -56,26 +56,26 @@ def test_spec_du_thi_tra_ve_anh_da_giai():
         anh, wd = _bo(t)
         kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
         assert loi == [], loi
-        assert kq["kieu"] == "quote" and kq["anh"]["id"] == "A1" and kq["anh2"] is None
+        assert kq["card_style"] == "quote" and kq["image"]["id"] == "A1" and kq["image2"] is None
 
 
 def test_kieu_tran_can_title_khong_can_hook():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        kq, loi, _c = _chay({"anh": "A1", "kieu": "tran",
+        kq, loi, _c = _chay({"image": "A1", "card_style": "full_bleed",
                              "title": "Nvidia mở kho mô hình Nemotron cho mọi người"},
                             _m(wd, anh), wd)
         assert loi == [], loi
-        assert kq["kieu"] == "tran"
-        _kq, loi2, _c = _chay({"anh": "A1", "kieu": "tran"}, _m(wd, anh), wd)
-        assert _co(loi2, "tran", "title"), loi2
+        assert kq["card_style"] == "full_bleed"
+        _kq, loi2, _c = _chay({"image": "A1", "card_style": "full_bleed"}, _m(wd, anh), wd)
+        assert _co(loi2, "full_bleed", "title"), loi2
 
 
 def test_kieu_la_thi_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        _kq, loi, _c = _chay(_spec(kieu="banner"), _m(wd, anh), wd)
-        assert _co(loi, "kieu", "quote", "tran"), loi
+        _kq, loi, _c = _chay(_spec(card_style="banner"), _m(wd, anh), wd)
+        assert _co(loi, "card_style", "quote", "full_bleed"), loi
 
 
 def test_quote_thieu_hook_tagline_attrib_bao_du_ba():
@@ -96,10 +96,10 @@ def test_anh_khong_ton_tai_thi_dung_ngay_va_liet_ke_ma_co():
 def test_anh2_sai_hoac_trung_thi_bo_anh2_nhung_van_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        _kq, loi, _c = _chay(_spec(anh2="A9"), _m(wd, anh), wd)
-        assert _co(loi, "anh2", "A9"), loi
-        _kq, loi2, _c = _chay(_spec(anh2="A1"), _m(wd, anh), wd)
-        assert _co(loi2, "anh2", "trùng"), loi2
+        _kq, loi, _c = _chay(_spec(image2="A9"), _m(wd, anh), wd)
+        assert _co(loi, "image2", "A9"), loi
+        _kq, loi2, _c = _chay(_spec(image2="A1"), _m(wd, anh), wd)
+        assert _co(loi2, "image2", "trùng"), loi2
 
 
 def test_anh_khong_lien_quan_bi_chan_va_chi_duong_ra():
@@ -118,13 +118,13 @@ def test_chart_di_mot_minh_thi_doi_anh2():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t, [_anh(wd := Path(t), "C1", 1600, 900, loai="chart")])
         _kq, loi, _c = _chay(_spec("C1"), _m(wd, anh), wd)
-        assert _co(loi, "C1", "CHART", "anh2"), loi
+        assert _co(loi, "C1", "CHART", "image2"), loi
 
 
 def test_anh_ngang_qua_nguong_khong_con_bi_ep_doi_anh2():
     """13/09/2026: bỏ điều kiện "ảnh quá ngang phải ghép" (tương đương
     `image_rules.kiem_anh_thap`, đã bỏ khỏi hệ thống, mọi vai) — ảnh ngang dù vượt
-    ngưỡng cũ vẫn được đứng một mình, không còn bị ép thêm "anh2"."""
+    ngưỡng cũ vẫn được đứng một mình, không còn bị ép thêm "image2"."""
     import ethan_prepare as eb
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
@@ -148,9 +148,9 @@ def test_ghep_hai_anh_ngang_hop_le():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "N1", 1920, 1080), _anh(wd, "N2", 1600, 900)]
-        kq, loi, _c = _chay(_spec("N1", anh2="N2"), _m(wd, anh), wd)
+        kq, loi, _c = _chay(_spec("N1", image2="N2"), _m(wd, anh), wd)
         assert loi == [], loi
-        assert kq["anh2"]["id"] == "N2"
+        assert kq["image2"]["id"] == "N2"
 
 
 def test_ghep_qua_ngang_khong_con_bi_chan():
@@ -160,7 +160,7 @@ def test_ghep_qua_ngang_khong_con_bi_chan():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "N1", 4000, 1000), _anh(wd, "N2", 4000, 1000)]
-        _kq, loi, _c = _chay(_spec("N1", anh2="N2"), _m(wd, anh), wd)
+        _kq, loi, _c = _chay(_spec("N1", image2="N2"), _m(wd, anh), wd)
         assert not _co(loi, "quá ngang"), loi
 
 
@@ -168,7 +168,7 @@ def test_ghep_doc_chi_cho_hai_anh_ngang():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, "N1", 1920, 1080), _anh(wd, "A2", 1000, 1250)]
-        _kq, loi, _c = _chay(_spec("N1", anh2="A2"), _m(wd, anh), wd)
+        _kq, loi, _c = _chay(_spec("N1", image2="A2"), _m(wd, anh), wd)
         assert _co(loi, "hai ảnh NGANG", "A2"), loi
 
 
@@ -184,7 +184,7 @@ def test_tin_xep_hang_da_chup_bang_ma_anh_khong_phai_XH_thi_chan():
         assert _co(loi, "XẾP HẠNG", "XH"), loi
         kq, loi2, _c = _chay(_spec("XH"), m, wd)
         assert loi2 == [], loi2
-        assert kq["anh"]["id"] == "XH"
+        assert kq["image"]["id"] == "XH"
 
 
 def test_khong_chup_duoc_bang_thi_khong_ep():
@@ -203,8 +203,8 @@ def test_mat_nguoi_khong_khai_ten_thi_chan():
         anh, wd = _bo(t)
         anh[0]["faces"] = 1
         _kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
-        assert loi, "mat nguoi ma khong nhan_vat phai bi chan"
-        assert not _chay(_spec(nhan_vat="Jensen Huang"),
+        assert loi, "mat nguoi ma khong subject phai bi chan"
+        assert not _chay(_spec(subject="Jensen Huang"),
                          _m(wd, anh, article_text="CEO Jensen Huang phát biểu tại GTC"), wd)[1]
 
 

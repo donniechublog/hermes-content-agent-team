@@ -4,10 +4,10 @@ da viet copy vao spec.json (khung do dre_prepare.py in ra).
 
 Vai chi dien CHU + MA ANH (A1, A2...). Tep nay:
   1. Doi ma anh -> tep da cat san (ready/), hoac anh goc + "chart": true, hoac
-     ghep doc hai anh ngang ("ghep"), hoac cat be ngang anh nguoi/san pham
-     ("cat_ngang") qua crop_ratio co dau vet.
+     ghep doc hai anh ngang ("stack"), hoac cat be ngang anh nguoi/san pham
+     ("landscape_crop") qua crop_ratio co dau vet.
   2. Kiem nhung loi ma vai hay mac TRUOC khi ve (ma anh sai, dung mot anh hai
-     lan, chart lam bia, anh ngang khong ghep, mat nguoi khong khai nhan_vat,
+     lan, chart lam bia, anh ngang khong ghep, mat nguoi khong khai subject,
      lam lai ma giu bia/hook cu) — bao gon, chi dung cho can sua.
   3. Xoa slide cu (lam lai ma it slide hon thi draft_write se gom nham slide
      thua vao album), chay carousel.py (moi cong chan chu/anh/bo cuc nam o do).
@@ -19,6 +19,8 @@ Vai chi dien CHU + MA ANH (A1, A2...). Tep nay:
   6. Ghi previous_submission.json de lan "Lam lai" bat buoc doi bia/hook.
 
 Loi thi in [LOI] + cach sua, thoat 1; vai sua spec.json roi chay lai DUNG lenh.
+
+Ten khoa/gia tri spec English tu LOW-248 (role_spec.py); spec cu doc qua role_spec.dre_spec.
 
 Dung:
     venv/bin/python dre_submit.py <draft_id>                # spec o state/<brand>/prepare/<id>/spec.json
@@ -41,6 +43,7 @@ import schema                                                # noqa: E402
 import manifest_values                                       # noqa: E402
 import state_paths                                           # noqa: E402
 import image_rules_dre                                       # noqa: E402
+import role_spec                                             # noqa: E402
 
 DRAFTS = ROOT / "drafts"
 
@@ -86,14 +89,14 @@ class Context:
         chung_cu = image_rules_dre.subject_evidence([self.anh.get(x) for x in ma_ds if x])
         if chu_bai and chung_cu:
             chu_bai = chu_bai + " " + chung_cu
-        self.loi.extend(nc.check_subject_named(self.anh, ma_ds, muc.get("nhan_vat"),
+        self.loi.extend(nc.check_subject_named(self.anh, ma_ds, muc.get("subject"),
                                          chu_bai, f"{nhan}: "))
 
 
 def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
-    """Nhanh "ghep": hai anh NGANG chong doc thanh mot khung STACK_FLOOR..1:1."""
+    """Nhanh "stack": hai anh NGANG chong doc thanh mot khung STACK_FLOOR..1:1."""
     if not isinstance(ghep, list) or len(ghep) != 2:
-        bo.loi.append(f"{nhan}: \"ghep\" phải là đúng 2 mã ảnh, vd [\"A3\", \"A5\"]")
+        bo.loi.append(f"{nhan}: \"stack\" phải là đúng 2 mã ảnh, vd [\"A3\", \"A5\"]")
         return None
     sai = [x for x in ghep if x not in bo.anh]
     if sai:
@@ -136,7 +139,7 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
     # (submit_common.needs_ranking_image — xem lich su hoi quy o do).
     if la_bia and nc.needs_ranking_image(m, a):
         bo.loi.append(f"bìa: TIN XẾP HẠNG mà bìa là {ma}, không phải bảng xếp hạng. "
-                      f"Bìa dùng \"anh\": \"XH\" — " + cb.describe_ranking_image(m) + ".")
+                      f"Bìa dùng \"image\": \"XH\" — " + cb.describe_ranking_image(m) + ".")
     if la_bia:
         # So hang trong hook bia phai la so hang engine khoanh (LOW-24, chung voi Ethan).
         bo.loi.extend(nc.check_rank_matches_image(str(muc.get("hook") or ""), a, "bìa"))
@@ -148,7 +151,7 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         elif la_bia:
             bo.loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
                           "bìa dùng ảnh khác (gợi ý: "
-                          f"{', '.join(m.get('cover_suggestions') or ['—'])}) hoặc \"ghep\" hai ảnh ngang")
+                          f"{', '.join(m.get('cover_suggestions') or ['—'])}) hoặc \"stack\" hai ảnh ngang")
             return None
         else:
             ra["image"] = a["ready_path"] or a["original_path"]
@@ -160,21 +163,21 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         if not la_bia:
             ra["chart"] = True
     elif a["landscape"]:
-        if muc.get("cat_ngang") and a["h"] < schema.HEIGHT_MIN_CROP_LANDSCAPE:
+        if muc.get("landscape_crop") and a["h"] < schema.HEIGHT_MIN_CROP_LANDSCAPE:
             bo.loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
-                          "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"ghep\" hoặc bỏ")
+                          "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"stack\" hoặc bỏ")
             return None
-        if muc.get("cat_ngang"):
-            tam = muc.get("tam") or [0.5, 0.5]
+        if muc.get("landscape_crop"):
+            tam = muc.get("crop_center") or [0.5, 0.5]
             out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.LANDSCAPE_SUFFIX}"
             cb._save_crop(Image.open(a["original_path"]).convert("RGB"), out, "4:5",
                          float(tam[0]), float(tam[1]), cat_ngang=True)
             ra["image"] = str(out)
         else:
             bo.loi.append(f"{nhan}: {ma} là ảnh NGANG ({a['ratio']}). Hai đường: "
-                          f"\"ghep\": [\"{ma}\", \"<ảnh ngang cùng tone>\"] "
+                          f"\"stack\": [\"{ma}\", \"<ảnh ngang cùng tone>\"] "
                           f"(cặp gợi ý: {m.get('stackable_pairs') or 'không có'}), hoặc "
-                          "\"cat_ngang\": true CHỈ KHI đây là ảnh người/sản phẩm không có chữ")
+                          "\"landscape_crop\": true CHỈ KHI đây là ảnh người/sản phẩm không có chữ")
             return None
     else:
         ra["image"] = a["ready_path"]
@@ -184,18 +187,18 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
 
 
 # Cac truong CHU vai viet, di thang sang spec cua carousel.py khong doi.
-TEXT_KEEP = ("nhan_vat", "text", "quote", "attrib", "hook", "category", "label")
+TEXT_KEEP = ("subject", "text", "quote", "attrib", "hook", "category", "label")
 
 
 def _resolve_item(bo: Context, muc: dict, nhan: str, la_bia: bool) -> dict | None:
     """Mot muc cua vai (bia hoac mot slide) -> mot muc cua carousel.py."""
-    ghep, ma = muc.get("ghep"), muc.get("anh")
+    ghep, ma = muc.get("stack"), muc.get("image")
     if ghep:
         ra = _resolve_stack(bo, ghep, muc, nhan)
     elif ma:
         ra = _resolve_single(bo, ma, muc, nhan, la_bia)
     else:
-        bo.loi.append(f"{nhan}: thiếu \"anh\": \"A?\" hoặc \"ghep\": [\"A?\", \"A?\"]")
+        bo.loi.append(f"{nhan}: thiếu \"image\": \"A?\" hoặc \"stack\": [\"A?\", \"A?\"]")
         return None
     if ra is None:
         return None
@@ -211,6 +214,7 @@ def _resolve_item(bo: Context, muc: dict, nhan: str, la_bia: bool) -> dict | Non
 def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     """Dich spec cua vai (ma anh) -> spec cua carousel.py (duong dan). Tra ve
     (spec_carousel, loi, canh, dung_anh) — dung_anh: [(slide_nhan, [ma...])].
+    `spec` da qua role_spec.dre_spec (ten moi, LOW-248).
 
     Tach thanh `_Boi` + `_resolve_stack`/`_resolve_single`/`_resolve_item` ngay 07/09/2026:
     ban cu la 166 dong voi 36 nhanh trong mot ham, va la cho DUY NHAT kiem spec
@@ -227,16 +231,16 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
         loi.append("thiếu \"cover\"")
     if not slides:
         loi.append("thiếu \"slides\"")
-    ra = {"tam_co": spec.get("tam_co") or ("flagship" if m.get("flagship") else None)}
-    if not ra["tam_co"]:
-        ra.pop("tam_co")
-    nen = str(spec.get("nen") or "").strip().lower()
+    ra = {"tier": spec.get("tier") or ("flagship" if m.get("flagship") else None)}
+    if not ra["tier"]:
+        ra.pop("tier")
+    nen = str(spec.get("background_tone") or "").strip().lower()
     if nen:
         import carousel
         if nen not in carousel.BACKGROUND:
-            loi.append(f"\"nen\": \"{nen}\" không hợp lệ — chọn {' | '.join(carousel.BACKGROUND)}")
+            loi.append(f"\"background_tone\": \"{nen}\" không hợp lệ — chọn {' | '.join(carousel.BACKGROUND)}")
         else:
-            ra["nen"] = nen
+            ra["background_tone"] = nen
     c = _resolve_item(bo, cover, "bìa", True) if cover else None
     if c is not None:
         if not str(c.get("hook") or "").strip():
@@ -336,6 +340,7 @@ def main() -> int:
     role.set_active_role("dre")
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "dre_prepare.py", "dre_submit.py")
+    spec = role_spec.dre_spec(spec)          # LOW-248: spec viet truoc deploy con ten cu
     spec_cs, loi, canh, dung_anh = resolve_spec(spec, m, wd)
     for c in canh:
         print(f"[CANH BAO] {c}")
@@ -343,8 +348,8 @@ def main() -> int:
     # LOW-146: khi bai chi co DUNG MOT anh xep hang va needs_ranking_image dang ep
     # bia phai la no, khong bao "lam lai ma van giu bia cu" — khong con anh nao
     # khac de doi (xem submit_common.only_ranking_choice).
-    bat_buoc = cover.get("anh") is not None and cover.get("anh") == nc.only_ranking_choice(m)
-    loi = nc.check_redo_reused(da_dung, "bìa", cover.get("anh") or "+".join(cover.get("ghep") or []),
+    bat_buoc = cover.get("image") is not None and cover.get("image") == nc.only_ranking_choice(m)
+    loi = nc.check_redo_reused(da_dung, "bìa", cover.get("image") or "+".join(cover.get("stack") or []),
                           cover.get("hook"), khoa_anh="cover_image", draft_id=a.draft_id,
                           anh_bat_buoc=bat_buoc) + loi
     if loi:
@@ -389,7 +394,7 @@ def main() -> int:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
         mid = nc.send_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
-                           {"cover_image": cover.get("anh"), "hook": hook,
+                           {"cover_image": cover.get("image"), "hook": hook,
                             "image_ids": [ma for _, ds in dung_anh for ma in ds]})
     nguon_anh = sorted({m_["domain"] or manifest_values.source_label(m_["source"]) for m_ in m["images"]
                         if m_["id"] in {ma for _, ds in dung_anh for ma in ds}})

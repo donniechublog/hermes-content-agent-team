@@ -37,7 +37,7 @@ người đang ít việc chờ hơn trong `role.WRITERS_BY_BRAND`. Vai **ảnh*
 | Tên | Profile hermes | Role | Việc |
 |---|---|---|---|
 | Finn | `finn` | scout | Quét HN/Reddit/arXiv, chấm điểm, gửi danh sách đánh số — **chỉ donniechublog** (dcgr chỉ có Vera) |
-| Ethan | `ethan` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu tran` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
+| Ethan | `ethan` | designer | Dựng ảnh hero cho cả hai brand — mặc định thẻ **quote** (pull-quote có khung), `--kieu full_bleed` khi muốn ảnh phủ kín (cũng có khung, từ 07/09/2026) |
 | Dre | `dre` | carousel | Dựng **carousel nhiều slide** cho cả hai brand — ảnh thật, chữ chìm vào ảnh, ra album |
 | Kite | `kite` | carousel.edu | Carousel **EDU** bằng **art vector gốc** (paper/nghiên cứu, không ảnh thật), tối thiểu 6 slide — **cả hai brand** (blog từ 02/09/2026, dcgr từ 05/09). Ngoại lệ có chủ đích với luật không-tự-vẽ |
 | Gin | `gin` | clean | Thay chữ Anh bằng chữ Việt trên **thẻ/dải nền phẳng**, tự tải ảnh từ link IG/X (`gin_prepare.py` → `gin_submit.py`) |
@@ -172,7 +172,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 **Dựng ảnh**
 
 - `card.py` — thẻ đơn. Kiểu `quote` (mặc định): pull-quote trong khung hai góc
-  ngoặc, dòng nguồn `--attrib` canh giữa. Kiểu `tran`: tiêu đề một câu trong
+  ngoặc, dòng nguồn `--attrib` canh giữa. Kiểu `full_bleed`: tiêu đề một câu trong
   **khung chữ nhật nét** (Ông Chủ chốt 07/09/2026 — trước đó là "không một nét
   nào"). Cả hai kiểu dùng chung **một** lớp ảnh (`_layer_image`): nền là bản cover
   làm mờ, lớp sắc full bề ngang đặt sát trên, mép dưới tan dần — **không còn
@@ -204,7 +204,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `image_brand.py` — tin về **hãng lớn** mà kho ảnh mỏng thì đi lấy tư liệu
   của chính hãng, bốn loại theo độ "là ảnh chụp thật" giảm dần: 🏢 **cơ sở**
   (tìm tên tệp Commons + `P18` Wikidata), 👤 **chân dung founder/CEO**
-  (`P112`/`P169`, kèm tên nên khai được `nhan_vat`, bỏ người đã thôi chức),
+  (`P112`/`P169`, kèm tên nên khai được `subject`, bỏ người đã thôi chức),
   📊 **bảng xếp hạng** có model của hãng (mượn `ranking.py`, chỉ nhận ảnh chụp
   thật), 🔖 **thẻ logo** (`P154` trên nền trơn, đường cuối). Lấy **mọi** hãng
   watchlist tin nhắc tới (tối đa 3), không phải chỉ tên riêng đầu tiêu đề. Lọc

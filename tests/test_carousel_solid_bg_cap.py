@@ -45,7 +45,7 @@ def _row_energy(canvas, y):
 
 
 def test_body_dark_background_capped_at_30_percent():
-    carousel.set_background("toi")
+    carousel.set_background("dark")
     cv = _stacked_like_claude_slide()
     carousel._layer_if_can(cv, cv.convert("RGB"), 1033, carousel.H, image_cluttered=True,
                            max_share=carousel.SOLID_BG_MAX_SHARE)
@@ -61,7 +61,7 @@ def test_body_dark_background_capped_at_30_percent():
 def test_body_printed_text_above_cap_still_dissolved():
     """Chu in san nam tren tran toi (700..940) van phai tan ra (y LOW-47) —
     bang lam mo, khong phai bang khoi den."""
-    carousel.set_background("toi")
+    carousel.set_background("dark")
     cv = _stacked_like_claude_slide()
     truoc = _row_energy(cv, 800)
     carousel._layer_if_can(cv, cv.convert("RGB"), 1033, carousel.H, image_cluttered=True,
@@ -72,7 +72,7 @@ def test_body_printed_text_above_cap_still_dissolved():
 
 def test_body_dark_background_not_flat_black():
     """Luat 04/09: nen khong bao gio la den tron — phan toi van mang mau anh."""
-    carousel.set_background("toi")
+    carousel.set_background("dark")
     W, H = carousel.W, carousel.H
     cv = Image.new("RGBA", (W, H), (200, 60, 30, 255))
     carousel._layer_if_can(cv, cv.convert("RGB"), 1033, H, image_cluttered=True,
@@ -82,7 +82,7 @@ def test_body_dark_background_not_flat_black():
 
 def test_cover_path_keeps_old_behaviour():
     """Bia (khong truyen max_share) giu nguyen: nen dac mau BG tu khoang lang."""
-    carousel.set_background("toi")
+    carousel.set_background("dark")
     cv = _stacked_like_claude_slide()
     carousel._layer_if_can(cv, cv.convert("RGB"), 1033, carousel.H, image_cluttered=True)
     dac, _top = card._timestamp_background_solid(_stacked_like_claude_slide(), 1033 - carousel.CLUTTERED_BG_ODD,

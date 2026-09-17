@@ -378,7 +378,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # HET cac cum ten rieng trong tieu de, khong dung o cum dau tien.
     hang = (a.get("brand_match") or {}).get("company") or ", ".join(all_proper_nouns(tieu_de))
     # HOI LUON co cat_ngang duoc khong (12/09/2026, su co t_a8ffd2f6 lan hai):
-    # ngang cao >=700 truoc day duoc dan mac dinh "cat_ngang: true NEU la anh
+    # ngang cao >=700 truoc day duoc dan mac dinh "landscape_crop: true NEU la anh
     # nguoi/san pham KHONG co chu" — mot cau DIEU KIEN, khong ai xac nhan dieu
     # kien do co dung hay khong, ma_engine dem no la "dung duoc mot minh". Dre
     # chay that: 4/5 tam ngang cao la chart/logo/bien hieu CO CHU, chi 1 tam la
@@ -491,7 +491,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         ten = role.person_names_in_alt(a.get("alt", "") or "")
         if ten:
             a["notes"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
-                                "chỉ dùng khi đúng người đó, khai \"nhan_vat\" y hệt")
+                                "chỉ dùng khi đúng người đó, khai \"subject\" y hệt")
         else:
             a["notes"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
                                 "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")

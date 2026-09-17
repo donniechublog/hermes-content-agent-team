@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Dung carousel nhieu slide kieu bang tin — anh phu kin the, chip ten kenh o
-goc duoi-trai. Khac han card.py (mot the bia kieu tran): day la mot bo N slide
+goc duoi-trai. Khac han card.py (mot the bia kieu full_bleed): day la mot bo N slide
 ke chuyen, dung cho Dre.
 
 LUAT TREN HET (Ong Chu chot 04/09/2026, cap nhat 08/09/2026, CHUNG voi Kite
@@ -13,7 +13,7 @@ NGAN va VUA DU (_layer_if_can), khong bao gio bat dau truoc dong chu dau tien.
 Nen bao gio cung la anh (lam mo neu can), khong bao gio la mot hop den dat
 canh anh.
 
-Bo cuc moi slide (1080x1350, ti le 4:5; nen "toi" mac dinh hoac "sang" — xem NEN):
+Bo cuc moi slide (1080x1350, ti le 4:5; background_tone "dark" mac dinh hoac "light" — xem BACKGROUND):
 
   Slide bia (slide 1):
     - Anh phu kin the (cover), lop mo+tinh o nua duoi CHI KHI can.
@@ -60,6 +60,7 @@ from PIL import Image, ImageDraw, ImageFilter
 # nap font co truc bien thien, wrap chu, contain/cover anh, cong chan tieng Viet.
 import card
 import image_rules_dre
+import role_spec
 import text_bg
 from card import (
     _f, _wrap, _fit_cover,
@@ -73,24 +74,26 @@ from card import (
 W, H = 1080, 1350                # kho dang chuan Instagram/Facebook 4:5
 PAD = 84                         # le trai/phai cua chu, do tu mau tham chieu
 # Hai bien the nen (Ong Chu chot 05/09/2026: nen KHONG co dinh den, nen phuc vu
-# anh, den va trang la hai mau uu tien). "toi" = anh phu kin + man toi lien mach
-# + chu trang (mac dinh); "sang" = cung bo cuc, man SANG lien mach + chu den.
-# Spec khai "nen": "sang" (hoac --nen sang). Moi bo carousel MOT nen.
-BACKGROUND = {"toi": {"bg": (0, 0, 0), "fg": (255, 255, 255), "mo": (190, 190, 190)},
-       "sang": {"bg": (255, 255, 255), "fg": (0, 0, 0), "mo": (80, 80, 80)}}
-BACKGROUND_SHOW = "toi"
+# anh, den va trang la hai mau uu tien). "dark" = anh phu kin + man toi lien mach
+# + chu trang (mac dinh); "light" = cung bo cuc, man SANG lien mach + chu den.
+# Spec khai "background_tone": "light" (hoac --nen light). Moi bo carousel MOT nen.
+# LOW-248: khoa tieng Viet cu toi/sang/mo -> dark/light/muted ("mo" = chu phu
+# MO/nhat, ban dich cu "OPEN" la nham); --nen van nhan toi/sang (role_spec).
+BACKGROUND = {"dark": {"bg": (0, 0, 0), "fg": (255, 255, 255), "muted": (190, 190, 190)},
+       "light": {"bg": (255, 255, 255), "fg": (0, 0, 0), "muted": (80, 80, 80)}}
+BACKGROUND_SHOW = "dark"
 BG = (0, 0, 0)                   # nen/man phu (dat lai qua set_background)
 FG = (255, 255, 255)            # chu chinh (dat lai qua set_background)
-OPEN = (190, 190, 190)            # chu phu (dong nguon quote)
+MUTED = (190, 190, 190)           # chu phu (dong nguon quote)
 
 
 def set_background(ten):
     """Chon bien the nen cho ca bo. Goi truoc khi dung slide nao."""
-    global BACKGROUND_SHOW, BG, FG, OPEN
+    global BACKGROUND_SHOW, BG, FG, MUTED
     if ten not in BACKGROUND:
         raise ValueError(f"nen phai la mot trong: {', '.join(BACKGROUND)} (co: {ten!r})")
     BACKGROUND_SHOW = ten
-    BG, FG, OPEN = BACKGROUND[ten]["bg"], BACKGROUND[ten]["fg"], BACKGROUND[ten]["mo"]
+    BG, FG, MUTED = BACKGROUND[ten]["bg"], BACKGROUND[ten]["fg"], BACKGROUND[ten]["muted"]
 # Watermark ten kenh: MOT mau xanh co dinh (xanh nhu icon Finder cua macOS),
 # KHONG doi theo brand nua.
 WM = (10, 132, 255)             # #0A84FF — mau du phong neu chua nap thuong hieu
@@ -103,7 +106,7 @@ F_UI_CH = str(FONTS / "JetBrainsMono-Bold.ttf")        # chip category (dam)
 
 # NEN CHO CHU O SLIDE THAN (Ong Chu chot 08/09/2026, nhac lai nhieu lan, CUNG
 # luc voi Kite — xem IMAGE_RULES.md muc 7): FG la mot mau CO DINH theo NEN
-# ca bo (trang tren "toi", den tren "sang") — KHONG mac dinh phu lop nao len
+# ca bo (trang tren "dark", den tren "light") — KHONG mac dinh phu lop nao len
 # anh de dat chu. Chi khi do THAT SU tren pixel WYSIWYG (sau khi da dan anh,
 # truoc khi ve chu) thay vung ngay duoi chu khong du tuong phan voi FG (qua
 # sang/qua toi, hoac qua "roi" — bien thien mau cao, chu mot mau khong an toan
@@ -115,8 +118,8 @@ BLUR_RADIUS = 14                 # mo NHE thoi — du diu chi tiet sau chu, khon
 BG_BLUR = 44                     # mo MANH ban cover lam nen: phai xoa het chi tiet doc duoc,
                                  # neu khong cho nao lop sac khong phu se lo mot BAN SAO
                                  # phong to cua chinh tam anh -> mat doc ra HAI VUNG
-THRESHOLD_BRIGHT_DARK = 130    # nen "toi" (FG trang): sang trung binh duoi chu phai <= muc nay
-THRESHOLD_BRIGHT_BRIGHT = 130   # nen "sang" (FG den): (255 - sang) duoi chu phai <= muc nay
+THRESHOLD_BRIGHT_DARK = 130    # nen "dark" (FG trang): sang trung binh duoi chu phai <= muc nay
+THRESHOLD_BRIGHT_BRIGHT = 130   # nen "light" (FG den): (255 - sang) duoi chu phai <= muc nay
 THRESHOLD_VARIANCE_NEEDS_LAYER = 26  # do lech mau (stddev xam) duoi chu vuot muc nay moi can lop
 DARK_MAX = 140         # tran cua lop (0..255, ~55%) — "vua du", khong phu ca mang
 VEIL_SPAN = 70           # px duong cong chuyen tiep — bat dau NGAY tai dong chu dau
@@ -199,7 +202,7 @@ def _net():
     """Mau NET (khung quote): CYAN nhan dien, nhung tren nen SANG mau gan trang
     (dcgr) thi khong thay — doi sang den. Chip van giu CYAN vi co vien den."""
     c = _cyan()
-    if BACKGROUND_SHOW == "sang" and card._measure_bright(c) > 0.85:
+    if BACKGROUND_SHOW == "light" and card._measure_bright(c) > 0.85:
         return (0, 0, 0)
     return c
 
@@ -209,7 +212,7 @@ def _color_mark(mau_hang):
     (mau hang thuong dam, doc ro tren trang), tru khi qua nhat thi ve _net()."""
     if not mau_hang:
         return _net()
-    if BACKGROUND_SHOW == "sang":
+    if BACKGROUND_SHOW == "light":
         return _net() if card._measure_bright(tuple(mau_hang[:3])) > 0.85 else tuple(mau_hang[:3])
     return card._enough_bright(mau_hang)
 
@@ -402,9 +405,9 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ma
         return _background_solid_below_text(canvas, text_top, max_share)
     sang, variance = _measure_region_text(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
-        thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "toi": qua sang la thieu
+        thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "dark": qua sang la thieu
     else:
-        thieu = max(0.0, (255 - sang) - THRESHOLD_BRIGHT_BRIGHT)  # nen "sang": qua toi la thieu
+        thieu = max(0.0, (255 - sang) - THRESHOLD_BRIGHT_BRIGHT)  # nen "light": qua toi la thieu
     variance_excess = max(0.0, variance - THRESHOLD_VARIANCE_NEEDS_LAYER)
     if thieu <= 0 and variance_excess <= 0:
         return                       # da du tuong phan tren pixel that — khong phu gi
@@ -565,7 +568,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
     ay = src_top
     for ln in at_lines:
         lw_ln = d.textlength(ln, font=f_at)
-        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=OPEN)
+        d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=MUTED)
         ay += at_lh
     canvas.convert("RGB").save(out, "PNG")
     return touched
@@ -640,13 +643,13 @@ _FLAGSHIP_RE = re.compile(
 
 
 def _is_flagship(spec, cover, slides):
-    """Tin flagship = spec khai "tam_co": "flagship", HOAC hook/label/chu nhac
+    """Tin flagship = spec khai "tier": "flagship", HOAC hook/label/chu nhac
     ten ho model frontier (tu dong, de vai khong "quen" khai). Khai
-    "tam_co": "thuong" thi tat tu dong (chi khi Ong Chu noi ro)."""
-    tc = str(spec.get("tam_co") or "").strip().lower()
+    "tier": "regular" thi tat tu dong (chi khi Ong Chu noi ro)."""
+    tc = str(spec.get("tier") or "").strip().lower()
     if tc == "flagship":
         return True
-    if tc == "thuong":
+    if tc == "regular":
         return False
     chu = " ".join([cover.get("hook", ""), cover.get("label", "")] +
                    [s.get("text", "") + " " + s.get("quote", "") for s in slides])
@@ -726,7 +729,7 @@ def _gate_image(paths):
 
         gom(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
         gom(image_rules_dre.check_resolution(nhan, w, h_px))
-        gom(image_rules_dre.check_unnamed_face(nhan, p, muc.get("nhan_vat")))
+        gom(image_rules_dre.check_unnamed_face(nhan, p, muc.get("subject")))
     return loi, canh_bao
 
 
@@ -784,8 +787,9 @@ def main():
     ap.add_argument("--brand", default="donniechublog",
                     help="donniechublog | dcgr — quyet dinh handle mac dinh")
     ap.add_argument("--handle", help="Ghi de watermark (mac dinh lay theo brand)")
-    ap.add_argument("--nen", choices=list(BACKGROUND),
-                    help="Bien the nen: toi (mac dinh) | sang. Ghi de spec.nen")
+    ap.add_argument("--nen", choices=list(BACKGROUND) + list(role_spec.BACKGROUND_TONE_LEGACY_VALUES),
+                    help="Bien the nen: dark (mac dinh) | light (nhan ca toi | sang cu). "
+                         "Ghi de spec.background_tone")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Tat cong chan tieng Viet (chi khi chu THAT SU la tieng Anh)")
     a = ap.parse_args()
@@ -797,7 +801,7 @@ def main():
         sys.exit(f"Thuong hieu khong nhan ra: {a.brand}")
     b = set_brand(a.brand)
     handle = a.handle or spec.get("handle") or b["handle"]
-    nen = a.nen or str(spec.get("nen") or "toi").strip().lower()
+    nen = role_spec.background_tone(a.nen) or str(spec.get("background_tone") or "dark").strip().lower()
     try:
         set_background(nen)
     except ValueError as e:
@@ -828,7 +832,7 @@ def main():
                  f"{FLAGSHIP_MIN} slide ke ca bia (hien {len(slides)+1}). Dao them tang: "
                  "bang benchmark nguyen ven, chart, gia/context/toc do, so voi doi thu, "
                  "phat bieu lanh dao, rui ro/an toan, cai can theo doi. Chi khi Ong Chu "
-                 "noi ro tin nho moi duoc ghi \"tam_co\": \"thuong\" de bo qua.")
+                 "noi ro tin nho moi duoc ghi \"tier\": \"regular\" de bo qua.")
 
     # Chuan hoa em-dash + chan tieng Viet mat dau truoc khi ve bat cu gi.
     cover["hook"] = drop_mark_forbid(cover["hook"])

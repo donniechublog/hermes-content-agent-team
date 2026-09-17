@@ -148,7 +148,7 @@ toán học thì lệch chuẩn"* ra bìa là một tấm dây mạng phòng má
   chấp nhận điều khoản của họ.
 - **Được làm bìa**, khác chart của người khác: `classify` đọc ảnh chụp trang là
   "chart/screenshot" rồi dán *KHÔNG LÀM BÌA*, nhãn đó bị gỡ cho ảnh chụp nguồn —
-  **trừ khi có mặt người**, lúc đó §6 vẫn đòi khai `nhan_vat`.
+  **trừ khi có mặt người**, lúc đó §6 vẫn đòi khai `subject`.
 - **Không hỏi vision** "có liên quan bài không": đây là trang của **chính** tin.
 
 ### 1.2c Ảnh khái niệm: tin không có ảnh riêng thì tìm theo chủ đề, không bỏ
@@ -289,7 +289,7 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
      mà trụ sở OpenAI trên Commons lại tên *"Pioneer Building, San Francisco"* —
      không một chữ "openai" nào. Wikidata trỏ thẳng tới nó.
   2. 👤 **chân dung founder/CEO** — `P112`/`P169` → `P18` của chính người đó.
-     Đi **kèm tên**, nên khai được `nhan_vat`: đúng ngoại lệ của §6, khác hẳn
+     Đi **kèm tên**, nên khai được `subject`: đúng ngoại lệ của §6, khác hẳn
      mặt vô danh. Bỏ người **đã thôi chức** (qualifier `P582`) — hỏi CEO OpenAI
      mà không lọc thì Wikidata trả cả CEO tạm quyền cũ, brief ghi sai tên.
      Brief vẫn dặn: **bài không nhắc tên người này thì bỏ**.
@@ -507,14 +507,14 @@ chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng d�
 `provenance=ranking_capture|ranking_card` kèm model/hạng/site (PNG cũ trước LOW-237 mang
 `nguon_dung=chup_xep_hang|the_xep_hang` — hàm đọc nhận cả hai).
 
-Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
+Vai chỉ còn một việc: **`"image": "XH"`** (hero) / **bìa `"image": "XH"`** (carousel).
 `ethan_submit` / `dre_submit` chặn ảnh chính khác khi `manifest.json` có `is_ranking_story` —
 không phải "chưa đạt", là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
 thể của tin; vẫn chịu mọi cổng khác.
 
 Chart đi đâu, theo khung:
 
-- **Hero (`quote`/`tran`)** — chart ở `anh`, thêm `anh2` là một ảnh ngang cùng
+- **Hero (`quote`/`full_bleed`)** — chart ở `image`, thêm `image2` là một ảnh ngang cùng
   tone: script ghép dọc, chart nằm nửa trên **nguyên vẹn**. `ethan_submit.py` gợi ý
   sẵn cặp ghép (`stackable_pairs_hero`).
 - **Carousel slide thân** — `"chart": true`, dán full bề ngang nguyên vẹn.
@@ -623,7 +623,7 @@ thật sự là ảnh chụp thường.
 
 ### Nhận ra là chart thì đi đường nào
 
-- **Hero (`quote`/`tran`)**: chart đi một mình bị chặn — hook đè lên thì chart
+- **Hero (`quote`/`full_bleed`)**: chart đi một mình bị chặn — hook đè lên thì chart
   nằm dưới chữ, đọc không ra. Ghép dọc bằng `--image2`, hoặc để chart cho carousel.
 - **Carousel slide thân**: khai `"chart": true`. Ảnh được dán **full bề ngang
   nguyên vẹn**, không crop, không ép tỉ lệ; phần trên/dưới là chính ảnh làm mờ.
@@ -634,7 +634,7 @@ thật sự là ảnh chụp thường.
 Kiểu `quote` (mặc định) không còn màn tối nữa (06/09/2026): chart hiện
 NGUYÊN VẸN từ đầu tới sát mép khối chữ, chỉ đúng dải chữ đè lên mới bị làm mờ
 cục bộ (không phải làm tối) — trục x/nhãn/chú thích của chart phía TRÊN khối
-chữ không hề bị ảnh hưởng. Kiểu `tran` vẫn còn màn tối riêng của nó và tự lùi
+chữ không hề bị ảnh hưởng. Kiểu `full_bleed` vẫn còn màn tối riêng của nó và tự lùi
 điểm bắt đầu xuống dưới mép chart để đáy chart không bị làm tối.
 
 ---
@@ -706,7 +706,7 @@ tone khỏi gợi ý. Việc chọn cặp cùng tone cho đẹp giờ là **gu**
 **Không dùng ảnh một người vô danh.** Ông Chủ bắt lỗi 03/09/2026: bìa tin GPT-6
 Astra dùng mặt một người không liên quan, đọc ra như ảnh stock.
 
-Có mặt người là **CHẶN**, trừ khi khai `"nhan_vat": "<tên>"` — người trong ảnh
+Có mặt người là **CHẶN**, trừ khi khai `"subject": "<tên>"` — người trong ảnh
 phải là nhân vật **cụ thể được nhắc trong bài** (CEO phát biểu, tác giả paper,
 founder). **Không gọi được tên thì không được dùng.** Khai sai tên là bịa đặt.
 
@@ -733,7 +733,7 @@ mảng nhìn tách rời:
   - **Carousel (Dre)**: FG một màu cố định cho cả bộ; chỉ thêm lớp mờ+tinh khi
     đo THẬT trên pixel WYSIWYG thấy vùng dưới chữ không đủ tương phản hoặc quá
     "rối" (`carousel.py::_layer_if_can`).
-  - **Hero cả hai kiểu** `quote` (06/09/2026) và `tran` (07/09/2026): không còn
+  - **Hero cả hai kiểu** `quote` (06/09/2026) và `full_bleed` (07/09/2026): không còn
     TỐI nào cả — chỉ làm MỜ CỤC BỘ đúng dải chữ đè lên (`_open_region_text`, tan dần
     theo đường cong power, không đột ngột), màu chữ tự đổi tương phản với vùng
     đã mờ đó (`_color_change_background_hide_whole`, đo qua `_can_board_line` nên một mảng sáng cục
@@ -758,11 +758,11 @@ mảng nhìn tách rời:
   nên đừng tự suy ra là nó cũng áp dụng ở đó.
 - **Không có màu nền đặc ở đâu hết.** Chỗ nào lớp ảnh sắc không phủ tới thì nền
   là bản cover **làm mờ** của chính tấm đó (`_layer_image`, dùng chung cho cả hai
-  kiểu thẻ). Kiểu `tran` từng có một nhánh lấy màu nền bộ nhận diện làm nền cho
+  kiểu thẻ). Kiểu `full_bleed` từng có một nhánh lấy màu nền bộ nhận diện làm nền cho
   phần ảnh thiếu — ảnh 16:9 trên khổ 4:5 ra hơn nửa thẻ là màu đặc; bỏ
   07/09/2026.
 - **Không vạch, không đường kẻ NGANG cắt qua khung** chia thẻ làm hai. Khung
-  chữ nhật **khép kín** bao quanh khối chữ thì được (`quote` và `tran`): nó là
+  chữ nhật **khép kín** bao quanh khối chữ thì được (`quote` và `full_bleed`): nó là
   một vật nằm TRÊN mặt phẳng ảnh, không cắt mặt phẳng đó ra.
 - **Không để lộ bản sao sắc nét của chính tấm ảnh** làm nền. Chỗ nào lớp ảnh sắc
   không phủ hết thì nền là chính tấm đó **làm mờ mạnh** — một mảng màu liền.
@@ -849,7 +849,7 @@ chụp ra ảnh rỗng; `check_blank_image` chặn thêm một lớp ở rendere
 | Chart/screenshot thiếu `chart: true` | `check_chart_integrity` | chặn |
 | Khai `chart: true` mà máy không nhận ra chart | `check_chart_integrity` | **chỉ cảnh báo** (mục 3) |
 | Ảnh gốc ngang đã crop, không khai `crop_ok` | `check_crop_landscape` | chặn |
-| Mặt người mà không khai `nhan_vat` | `check_unnamed_face` | chặn |
+| Mặt người mà không khai `subject` | `check_unnamed_face` | chặn |
 | Sai dải tỉ lệ của khung | `check_aspect_ratio` | chặn |
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `check_chart_standalone` | chặn (miễn ảnh `XH`) |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_submit` / `dre_submit` | chặn |
@@ -892,7 +892,7 @@ Dấu `–` là **không áp dụng cho khung đó**, khác hẳn `❌` là **ch
 Itachi còn trống nguyên.
 
 `⚠️` của Kite là **cảnh báo, không chặn**: spec của `render_edu` không có trường
-`nhan_vat` (khác `card.py`/`carousel.py`), nên chặn cứng sẽ khoá mọi ảnh sự kiện
+`subject` (khác `card.py`/`carousel.py`), nên chặn cứng sẽ khoá mọi ảnh sự kiện
 mà vai không có đường khai. Muốn nâng lên ✅ thì phải thêm trường đó vào spec
 trước. Kite không đi qua các cổng có dấu `–` vì `kind: figure` dán ảnh nguyên
 khổ, không crop và không đè chữ lên ảnh.

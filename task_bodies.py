@@ -51,7 +51,7 @@ cd {goc} && venv/bin/python ethan_prepare.py {draft_id}
 
 BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1. Chi
 dien MA ANH (A1, A2...) va CHU (hook, tagline, attrib; hoac title+kicker cho
-kieu tran). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
+kieu full_bleed). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
 article_images.py/card.py/send_telegram.py tay. Chu tieng Viet co dau.
 
 BUOC 3 — nop:

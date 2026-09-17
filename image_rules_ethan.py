@@ -574,7 +574,7 @@ def check_unnamed_face(nhan, path, nhan_vat=None):
     """Khong dung anh mot nguoi VO DANH (Ong Chu bat loi 03/09/2026).
 
     Code chi bao co mat hay khong; vai tu chiu trach nhiem nguoi do co phai
-    nhan vat trong bai khong. Co mat la CHAN, tru khi khai "nhan_vat".
+    nhan vat trong bai khong. Co mat la CHAN, tru khi khai "subject".
     """
     n = count_faces(path)
     if n is None:
@@ -589,7 +589,7 @@ def check_unnamed_face(nhan, path, nhan_vat=None):
     return [f"{nhan}: phat hien {n} mat nguoi ma KHONG khai nhan vat. Anh nguoi vo "
             "danh / khong lien quan tin la loi (doc ra la stock). Doi sang anh san "
             "pham/screenshot/chart; con neu dung la nhan vat trong bai (CEO phat "
-            "bieu, tac gia paper) thi khai ten — carousel/deck: \"nhan_vat\": "
+            "bieu, tac gia paper) thi khai ten — carousel/deck: \"subject\": "
             "\"<ten>\" trong slide; card.py (hero): --nhan-vat \"<ten>\"."], []
 
 
