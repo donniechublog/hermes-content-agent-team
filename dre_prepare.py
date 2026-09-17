@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import schema                                                # noqa: E402
+import manifest_values                                       # noqa: E402
 import state_paths                                           # noqa: E402
 import route_missing_images                                       # noqa: E402
 import image_rules_dre                                       # noqa: E402
@@ -86,11 +87,11 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     for a in m["images"]:
         if a.get("relevant") is False:
             L.append(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or 'không rõ'} → KHÔNG DÙNG "
-                     f"(nguồn: {a['domain'] or a['source']})")
+                     f"(nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
             continue
-        dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {a['kind'].upper()}"
-                f"{' NGANG' if a['landscape'] else ''} | dùng: {'; '.join(a['uses']) or 'không'}"
-                f" | nguồn: {a['domain'] or a['source']}")
+        dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {manifest_values.kind_label(a['kind']).upper()}"
+                f"{' NGANG' if a['landscape'] else ''} | dùng: {'; '.join(manifest_values.use_labels(a['uses'])) or 'không'}"
+                f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")
         if a.get("description"):
             dong += f" | ảnh là: {a['description'][:110]}"
         elif a.get("alt"):

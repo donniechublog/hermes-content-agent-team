@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import role                                                    # noqa: E402
 from prepare.manifest import build_manifest                   # noqa: E402
+import schema                                                 # noqa: E402
 import state_paths                                            # noqa: E402
 
 
@@ -35,7 +36,7 @@ def _image(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
     """Mot muc `images` du khoa cho build_manifest. ratio < 1.3 co chu dich: `stackable_pairs`
     chi MO TEP anh voi anh ngang, ma o day khong co tep that nao."""
     return {"id": ma, "original_path": f"/khong-co/{ma}.jpg", "ratio": 1.0, "w": 1200, "h": 1200,
-            "kind": "anh", "uses": list(dung), "relevant": lien_quan, "faces": 0,
+            "kind": "photo", "uses": list(dung), "relevant": lien_quan, "faces": 0,
             "bottom_left_brightness": 60, "short_side": 1200, "domain": "vi_du.com", "source": "bai"}
 
 
@@ -122,7 +123,7 @@ def _lower_ready(tmp: Path, manifest: dict, sidecar: dict | None):
     import approve_dispatch as dgv
     d = tmp / "state" / state_paths.PREPARE_DIR / "d1"
     d.mkdir(parents=True, exist_ok=True)
-    (d / state_paths.MANIFEST_FILE).write_text(json.dumps({"version": 2, **manifest}), encoding="utf-8")
+    (d / state_paths.MANIFEST_FILE).write_text(json.dumps({"version": schema.VERSION_MANIFEST, **manifest}), encoding="utf-8")
     drafts = tmp / "drafts"
     drafts.mkdir(exist_ok=True)
     if sidecar is not None:
@@ -215,8 +216,8 @@ def test_threshold_block_no_got_use_make_target_go_find():
         assert "toi_thieu" not in d.split("_round_widen_search(")[0], \
             f"vong tim anh dang do bang nguong chan: {d}"
     # Mot tam DUNG DUOC nhung khong lam hero duoc thi chua phai la du.
-    a = {"uses": ["ghép dọc với một ảnh ngang cùng tone"], "relevant": True,
-         "kind": "anh", "ratio": 1.78, "faces": 0, "alt": ""}
+    a = {"uses": ["stack_vertical"], "relevant": True,
+         "kind": "photo", "ratio": 1.78, "faces": 0, "alt": ""}
     assert not vai_mod.has_enough_material("ethan", [a]), \
         "engine se ngung tim khi Ethan van chua co tam nao lam nen hero"
 

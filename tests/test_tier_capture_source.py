@@ -17,6 +17,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import capture_page  # noqa: E402
+import manifest_values  # noqa: E402
 import image_rules_ethan as image_rules  # noqa: E402
 import browser_session  # noqa: E402
 import ranking  # noqa: E402
@@ -86,7 +87,7 @@ def test_image_capture_ok_permission_make_cover_and_no_ask_vision():
     def gia(url, ra, phien=None):
         goi.append(url)
         _image_fake(Path(ra), seed=len(goi))   # moi URL mot anh KHAC NHAU (cong loai trung dHash)
-        return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True,
+        return {"image_url": url, "page_url": url, "source": "capture_source", "capture_source": True,
                 "alt": "khối lead", "score_reason": "khối lead của trang nguồn"}
 
     that = capture_page.capture_lead_mobile
@@ -109,8 +110,8 @@ def test_image_capture_ok_permission_make_cover_and_no_ask_vision():
         # Da dem nen thanh khung 4:5 -> dung MOT MINH duoc, khong dinh luat ghep doi
         assert abs(a["w"] / a["h"] - 0.8) < 0.03, f'{a["id"]}: {a["w"]}x{a["h"]} chua dem ve 4:5'
     a = anh[0]
-    assert any(d.startswith("bìa") for d in a["uses"]), a["uses"]
-    assert anh[1]["uses"] == ["thân"], "trang thứ hai qua cổng vẫn giữ làm thân, không lên bìa"
+    assert any(manifest_values.use_label(d).startswith("bìa") for d in a["uses"]), a["uses"]
+    assert anh[1]["uses"] == ["body"], "trang thứ hai qua cổng vẫn giữ làm thân, không lên bìa"
     assert dung_duoc == anh, "cả hai đều dùng được (bìa + thân), không tấm nào bị bỏ phí"
 
 
@@ -153,7 +154,7 @@ def test_no_has_image_hero_then_capture_block_headline():
     src = (ROOT / "capture_page.py").read_text(encoding="utf-8")
     assert "co_anh: false" in src, "JS phai tra khoi tit khi khong co anh hero"
     assert 'clip = {"x": 0, "y": max(0, r["top"]), "width": r["w"], "height": r["w"]}' in src
-    assert '"capture_kind": "hero" if r["co_anh"] else "tit"' in src
+    assert '"capture_kind": "hero" if r["co_anh"] else "headline"' in src
 
 
 def test_block_headline_is_tier_last_after_concept():
@@ -162,10 +163,10 @@ def test_block_headline_is_tier_last_after_concept():
     không ảnh hero) chỉ làm bìa khi thực thể + khái niệm đều rỗng."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
     assert src.index("_round_concept(anh") < src.index("capability_block_headline(anh)")
-    a = {"id": "A1", "capture_kind": "tit", "uses": [], "relevant": True, "notes": []}
-    b = {"id": "A2", "capture_kind": "tit", "uses": [], "relevant": True, "faces": True, "notes": []}
+    a = {"id": "A1", "capture_kind": "headline", "uses": [], "relevant": True, "notes": []}
+    b = {"id": "A2", "capture_kind": "headline", "uses": [], "relevant": True, "faces": True, "notes": []}
     anh, dung, _ = fallback_rounds.capability_block_headline([b, a])
-    assert dung == [a] and a["uses"][0].startswith("bìa"), (a, b)
+    assert dung == [a] and manifest_values.use_label(a["uses"][0]).startswith("bìa"), (a, b)
     assert b["uses"] == [], "co mat nguoi thi khong len bia"
 
 
@@ -194,7 +195,7 @@ def test_image_has_face_no_len_cover_enough_try_before_image_no_face_try_after()
     def gia(url, ra, phien=None):
         thu.append(url)
         _image_fake(Path(ra), seed=len(thu))   # moi URL mot anh KHAC NHAU (cong loai trung dHash)
-        return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True,
+        return {"image_url": url, "page_url": url, "source": "capture_source", "capture_source": True,
                 "alt": "khối lead", "score_reason": "khối lead của trang nguồn"}
 
     goc_dem_mat = image_rules.count_faces
@@ -218,9 +219,9 @@ def test_image_has_face_no_len_cover_enough_try_before_image_no_face_try_after()
     assert thu == ["https://vidu.com/bai-toan", "https://bao-khac.com/x"], thu
     assert len(anh) == 2, anh
     a1, a2 = anh
-    assert a1["faces"] == 1 and a1["uses"] == ["thân"], \
+    assert a1["faces"] == 1 and a1["uses"] == ["body"], \
         "ảnh có mặt người (dù thử trước) không được lên bìa"
-    assert a2["faces"] == 0 and any(d.startswith("bìa") for d in a2["uses"]), \
+    assert a2["faces"] == 0 and any(manifest_values.use_label(d).startswith("bìa") for d in a2["uses"]), \
         "ảnh không mặt người lên bìa dù được thử SAU"
 
 

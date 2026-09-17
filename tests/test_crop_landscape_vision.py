@@ -19,6 +19,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from prepare import vision                                     # noqa: E402
+import manifest_values                                         # noqa: E402
 
 
 def _catch_stderr(ham):
@@ -40,7 +41,7 @@ def _image(tmp: Path, w=1600, h=1000) -> dict:
     img.putdata([(rnd.randint(0, 255), rnd.randint(0, 255), rnd.randint(0, 255))
                  for _ in range(w * h)])
     img.save(p)
-    return {"id": "A1", "original_path": str(p), "url": "https://x/a.png", "source": "chup"}
+    return {"id": "A1", "original_path": str(p), "url": "https://x/a.png", "source": "browser_capture"}
 
 
 class _Res:
@@ -63,8 +64,8 @@ def test_landscape_height_no_right_chart_then_ask_crop_landscape_and_save_result
         with _call_try("MO_TA: nguoi cam san pham.\nLIEN_QUAN: co\nCAT_NGANG: co"):
             classify(a := a, wd=Path(tmp), tieu_de="T")
         assert a["landscape_crop_ok"] is True
-        assert any("vision đã xác nhận" in d for d in a["uses"]), a["uses"]
-        assert not any("NẾU" in d for d in a["uses"]), "khong con cau NEU mo ho khi da xac nhan duoc"
+        assert any("vision đã xác nhận" in manifest_values.use_label(d) for d in a["uses"]), a["uses"]
+        assert not any("NẾU" in manifest_values.use_label(d) for d in a["uses"]), "khong con cau NEU mo ho khi da xac nhan duoc"
 
 
 def test_landscape_height_has_text_then_no_offer_crop_landscape():
@@ -74,7 +75,7 @@ def test_landscape_height_has_text_then_no_offer_crop_landscape():
             classify(a, wd=Path(tmp), tieu_de="T")
         assert a["landscape_crop_ok"] is False
         assert not any("cat_ngang" in d and "NẾU" not in d and "false" not in d.lower()
-                       for d in a["uses"] if "true (" in d)
+                       for d in manifest_values.use_labels(a["uses"]) if "true (" in d)
         assert any("không được crop" in g for g in a["notes"]), a["notes"]
 
 
@@ -97,7 +98,7 @@ def test_vision_say_chart_code_pixel_drop_leak_then_fix_again_into_chart():
             classify(a, wd=Path(tmp), tieu_de="T")
         assert a["kind"] == "chart", "mo_ta noi bieu do thi phai sua lai la chart du pixel bo lo"
         assert a["landscape_crop_ok"] is None
-        assert any("chart" in d for d in a["uses"])
+        assert any("chart" in manifest_values.use_label(d) for d in a["uses"])
 
 
 def test_broken_vision_keep_sentence_condition_old_no_block_writer():
@@ -113,7 +114,7 @@ def test_broken_vision_keep_sentence_condition_old_no_block_writer():
                 if cu is not None:
                     os.environ["OPENAI_API_KEY"] = cu
         assert a["landscape_crop_ok"] is None
-        assert any("NẾU" in d for d in a["uses"]), "vision hong thi giu cau dieu kien cu, khong tu quyet dinh thay writer"
+        assert any("NẾU" in manifest_values.use_label(d) for d in a["uses"]), "vision hong thi giu cau dieu kien cu, khong tu quyet dinh thay writer"
 
 
 from prepare.vision import classify  # noqa: E402  (import sau de mock image_rules o test rieng khong dinh)

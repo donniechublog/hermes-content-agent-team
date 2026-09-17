@@ -7,7 +7,7 @@ Ba duong hong CO THAT ma tep nay giu:
      bang cong thuc khac nguoi ghi (chum anh khai niem dem thanh nhieu thay vi
      MOT), con approve_post/image_prepare coi la 0 ("khong co anh nao"). Nay ca ba
      di qua `schema.count_image_use_ok`.
-  2. Manifest phai la ban hien hanh (`version` 2, khoa English): `read_manifest`
+  2. Manifest phai la ban hien hanh (`version` 3, khoa + gia tri English): `read_manifest`
      tu choi ban cu co bao ro thay vi doc ra toan khoa rong (LOW-229).
   3. `write_meta` ghi DE ca dict, ma `blackboard` ghi `root_task` vao cung tep tu
      mot tien trinh khac. Hom nay chua mat chi vi thu tu goi may man.
@@ -28,20 +28,20 @@ import state_paths                                            # noqa: E402
 # ---------------------------------------------- cong thuc dan xuat, mot ban
 def test_chum_khai_niem_dem_la_mot():
     """5 la co Nhat, khong phai 5 slide: ca chum anh khai niem chi lam bia."""
-    anh = [{"uses": ["bìa"], "concept": {"keyword": "co"}},
-           {"uses": ["bìa"], "concept": {"keyword": "rack"}},
-           {"uses": ["thân"]}]
+    anh = [{"uses": ["cover"], "concept": {"keyword": "co"}},
+           {"uses": ["cover"], "concept": {"keyword": "rack"}},
+           {"uses": ["body"]}]
     assert schema.count_image_use_ok(anh, "ethan") == 2, \
         "hai anh khai niem phai dem la MOT (cong thuc cu dem thanh 3)"
 
 
 def test_anh_khong_lien_quan_khong_duoc_tinh():
-    anh = [{"uses": ["thân"], "relevant": False}, {"uses": ["thân"], "relevant": True}]
+    anh = [{"uses": ["body"], "relevant": False}, {"uses": ["body"], "relevant": True}]
     assert schema.count_image_use_ok(anh, "ethan") == 1
 
 
 def test_anh_khong_dung_duoc_o_dau_thi_khong_tinh():
-    assert schema.count_image_use_ok([{"uses": []}, {"uses": ["thân"]}], "ethan") == 1
+    assert schema.count_image_use_ok([{"uses": []}, {"uses": ["body"]}], "ethan") == 1
 
 
 def test_danh_sach_rong_va_None_deu_ra_0():
@@ -160,10 +160,10 @@ def test_moi_khoa_write_meta_deu_co_trong_Meta():
 def test_doc_manifest_version_kieu_la_khong_crash():
     """N-r2-7: "2" (chuoi) hay None tung nem TypeError o `<` — ham hua None khi
     khong doc duoc ma lai crash."""
-    for pv in ("2", 2.0):
+    for pv in ("3", 3.0):
         m = schema.read_manifest({"version": pv, "images": []})
         assert m is not None and m["version"] == schema.VERSION_MANIFEST, (pv, m)
-    for pv in (None, "abc", "1", 1):
+    for pv in (None, "abc", "1", 1, "2", 2):   # ban 2 = gia tri Viet truoc LOW-230
         assert schema.read_manifest({"version": pv, "images": []}) is None, pv
 
 
@@ -178,7 +178,7 @@ def test_ban_cu_khoa_viet_bi_tu_choi_co_bao_ro():
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             assert schema.read_manifest(cu) is None, cu
-        assert "can ban 2" in buf.getvalue() and "LOW-227" in buf.getvalue(), buf.getvalue()
+        assert f"can ban {schema.VERSION_MANIFEST}" in buf.getvalue() and "LOW-227" in buf.getvalue(), buf.getvalue()
     with tempfile.TemporaryDirectory() as t:
         p = Path(t) / state_paths.MANIFEST_FILE
         p.write_text(json.dumps({"phien_ban": 1, "anh": []}), encoding="utf-8")

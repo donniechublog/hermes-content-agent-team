@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import approve_post as db              # noqa: E402
 import approve_dispatch as dgv       # noqa: E402
+import schema                                                 # noqa: E402
 import state_paths                                            # noqa: E402
 
 
@@ -34,7 +35,7 @@ def _done_json(tmp: Path, so_dung_duoc: int, toi_thieu: int, toi_thieu_co_ban=5)
     d = tmp / "state" / state_paths.PREPARE_DIR / "d1"
     d.mkdir(parents=True, exist_ok=True)
     p = d / state_paths.MANIFEST_FILE
-    p.write_text(json.dumps({"version": 2, "usable_count": so_dung_duoc, "min_images": toi_thieu,
+    p.write_text(json.dumps({"version": schema.VERSION_MANIFEST, "usable_count": so_dung_duoc, "min_images": toi_thieu,
                              "base_min_images": toi_thieu_co_ban}), encoding="utf-8")
     return p
 

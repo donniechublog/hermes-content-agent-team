@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import role as vai_mod                                        # noqa: E402
 import route_missing_images                                       # noqa: E402
+import manifest_values                                       # noqa: E402
 import state_paths                                                # noqa: E402
 
 
@@ -326,13 +327,13 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         th = a.get("brand_match") or {}
         # Anh THUONG HIEU: noi ro no LA GI, vi caption phai khac nhau han. Mot the
         # logo bi chu thich "anh tru so" la sai su that (09/09/2026).
-        nhan_th = {"anh": f"🏢 ảnh cơ sở của {th.get('company')} (KHÔNG phải ảnh của sự việc)",
-                   "nguoi": f"👤 chân dung {th.get('person_role', 'lãnh đạo')} {th.get('company')}: "
+        nhan_th = {"photo": f"🏢 ảnh cơ sở của {th.get('company')} (KHÔNG phải ảnh của sự việc)",
+                   "person": f"👤 chân dung {th.get('person_role', 'lãnh đạo')} {th.get('company')}: "
                             f"{th.get('person')} — caption phải nêu đúng tên này, và chỉ dùng khi "
                             "bài có nhắc người đó",
                    "logo": f"🔖 THẺ LOGO {th.get('company')} (logo chính thức trên nền trơn) — hợp làm "
                            "bìa, đừng chú thích như ảnh chụp",
-                   "xep_hang": f"📊 bảng {th.get('site')} · {th.get('board')} có {th.get('company')} — "
+                   "ranking": f"📊 bảng {th.get('site')} · {th.get('board')} có {th.get('company')} — "
                                "KHÔNG phải bảng của tin này, caption ghi rõ nguồn + tên bảng",
                    }.get(th.get("kind"), "")
         # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat; tu
@@ -341,7 +342,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         nhan_kn = (f"🧭 ẢNH KHÁI NIỆM ({kn.get('keyword')}) — minh hoạ chủ đề, KHÔNG phải "
                    "ảnh của tin: ưu tiên dùng ở bìa (slide 1), vẫn dùng được ở slide thân "
                    "nếu cần; caption 'via Wikimedia Commons'") if kn else ""
-        L.append(f"- {a['id']}: {kieu} {a['w']}x{a['h']} ({a['ratio']}) | nguồn: {a['domain'] or a['source']}"
+        L.append(f"- {a['id']}: {kieu} {a['w']}x{a['h']} ({a['ratio']}) | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}"
                  + (f" | {a['paper_figure']} của chính paper" if a.get("paper_figure") else "")
                  + (f" | {nhan_kn}" if nhan_kn else "")
                  + (f" | {nhan_th}" if nhan_th else "")

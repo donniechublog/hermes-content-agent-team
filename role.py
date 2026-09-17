@@ -357,8 +357,13 @@ def has_label_cover(dung) -> bool:
     chay TRUOC, engine chup ve 4 anh bao cung tin (deu la bia hop le) roi van
     ket luan "co 6 anh nhung khong tam nao lam anh chinh duoc" va di tim tiep
     tren web — chi vi hai chuoi khong bang nhau tuyet doi. Cung ly do khien
-    anh chup khong bao gio xuat hien trong `cover_suggestions`."""
-    return any(str(d).startswith("bìa") for d in (dung or []))
+    anh chup khong bao gio xuat hien trong `cover_suggestions`.
+
+    Tu LOW-230 `uses` luu MA slot: so voi `manifest_values.COVER_PREFIX_USES` — dung
+    ba ma co nhan bat dau "bìa" ma phep `startswith` cu nhan (KHONG gom
+    `cover_ranking`, nhan "HERO / BÌA…" chua bao gio khop)."""
+    import manifest_values
+    return any(str(d) in manifest_values.COVER_PREFIX_USES for d in (dung or []))
 
 
 def face_no_clear_ai(a: dict) -> bool:

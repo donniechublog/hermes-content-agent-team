@@ -103,7 +103,7 @@ def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
         # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
         # article_images -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
         ra["cands"].append({"image_url": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
-                            "og": False, "source": "chup", "html_tag": f["tag"], "page_url": url,
+                            "og": False, "source": "browser_capture", "html_tag": f["tag"], "page_url": url,
                             "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "score": 50})
 
 

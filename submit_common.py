@@ -300,7 +300,7 @@ def needs_ranking_image(m: dict, a: dict) -> bool:
     ma "XH" trong khi ma do khong ton tai, nen vai sua kieu gi cung sai va khong
     bao gio nop duoc. Ba duong dan toi canh do: --khong-browser, extract_model()
     rong (tin xep hang KHONG neu ten model), hoac find_and_capture nem. The DU PHONG
-    (kind="the") cung khong ep: no la anh engine tu dung, chua he doc bang that.
+    (kind="card") cung khong ep: no la anh engine tu dung, chua he doc bang that.
     Dre va Ethan tung moi ben mot ban cua dieu kien nay (07/09/2026 gom lai)."""
     import ranking
     return bool(m.get("is_ranking_story")
@@ -358,7 +358,7 @@ def _clean_use_alone(a: dict) -> bool:
     check_image_fall chi duoc bat vai doi anh khi THAT SU co cho doi, khong de ket."""
     if not a.get("uses") or a.get("relevant") is False or a.get("cluttered") is not False:
         return False
-    if a.get("kind") != "anh" or a.get("ranking") or a.get("faces"):
+    if a.get("kind") != "photo" or a.get("ranking") or a.get("faces"):
         return False
     if a.get("landscape"):
         return (int(a.get("h") or 0) >= schema.HEIGHT_MIN_CROP_LANDSCAPE
@@ -507,7 +507,7 @@ def check_rank_matches_image(chu: str, a: dict, nhan: str = "hook") -> list:
     Day la cong: so trong chu phai la so trong anh, khong thi khong nop duoc.
 
     Chi xet khi anh la BANG CHUP THAT (is_capture) va co `rank`; the du phong (kind
-    "the") in hang tu tieu de nen khong doi chieu. Chu khong noi hang -> khong
+    "card") in hang tu tieu de nen khong doi chieu. Chu khong noi hang -> khong
     chan (khong bat vai phai nhac hang). `extract_rank` hieu "dẫn đầu" = 1 va bo
     "top 10" kieu kich co danh sach — cung bo doc voi engine, khong doc rieng."""
     import ranking

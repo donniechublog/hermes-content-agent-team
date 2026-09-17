@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import ethan_prepare as eb                                  # noqa: E402
 import submit_common as nc                                       # noqa: E402
+import manifest_values                                       # noqa: E402
 import state_paths                                            # noqa: E402
 
 DRAFTS = cb.DRAFTS
@@ -183,11 +184,11 @@ def main() -> int:
         sys.exit(f"[LOI] card.py bao xong nhung khong thay {out}")
 
     anh_dung = [kq["anh"]["id"]] + ([kq["anh2"]["id"]] if kq["anh2"] else [])
-    nguon = sorted({m_["domain"] or m_["source"] for m_ in m["images"] if m_["id"] in anh_dung})
+    nguon = sorted({m_["domain"] or manifest_values.source_label(m_["source"]) for m_ in m["images"] if m_["id"] in anh_dung})
     bg = "\n".join([f"Nguồn tin: {m['title']}", f"Link gốc: {m['link']}"]
                    + ([f"Via: {m['via']}"] if m.get("via") else [])
                    + ["Nguồn ảnh (ghi vào chú thích bài):"]
-                   + [f"- {ma} ← {anh_['domain'] or anh_['source']} ({anh_.get('page_url', '')[:100]})"
+                   + [f"- {ma} ← {anh_['domain'] or manifest_values.source_label(anh_['source'])} ({anh_.get('page_url', '')[:100]})"
                       for ma in anh_dung for anh_ in m["images"] if anh_["id"] == ma]
                    + [f"Hook trên thẻ: {hook}", f"Tệp: {out}"])
     bg_path = state_paths.handoff_file(wd if a.khong_gui else DRAFTS, a.draft_id)

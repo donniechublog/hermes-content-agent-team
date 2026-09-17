@@ -398,8 +398,8 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
         return None
     # `page_title` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
     # trong `page_url` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.
-    return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True, "page_title": tit_trang,
-            "capture_kind": "hero" if r["co_anh"] else "tit", "background_color": mau_nen,
+    return {"image_url": url, "page_url": url, "source": "capture_source", "capture_source": True, "page_title": tit_trang,
+            "capture_kind": "hero" if r["co_anh"] else "headline", "background_color": mau_nen,
             "alt": "ảnh chính + tít của chính bài gốc, chụp ở khung điện thoại",
             "score_reason": "khối lead của trang nguồn"
                      + (", có tít" if r["co_tit"] else "")

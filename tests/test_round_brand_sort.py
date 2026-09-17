@@ -31,13 +31,13 @@ def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
     có ảnh trụ sở (28). Danh sách đưa vào `download_and_filter` phải đặt ảnh trụ sở của
     hãng B lên TRƯỚC chân dung của hãng A — ngược thứ tự xử lý."""
     ung_vien_A = {"image_url": "https://x/a-portrait.jpg", "alt": "chân dung", "og": False,
-                 "source": "thuong_hieu", "rong": 1800, "cao": 2880, "page_url": "https://x/a",
+                 "source": "brand", "rong": 1800, "cao": 2880, "page_url": "https://x/a",
                  "score": 24, "brand_match": {"company": "HangA", "key": "hanga",
-                                              "kind": "nguoi", "keyword": "CEO HangA"}}
+                                              "kind": "person", "keyword": "CEO HangA"}}
     ung_vien_B = {"image_url": "https://x/b-hq.jpg", "alt": "trụ sở", "og": False,
-                 "source": "thuong_hieu", "rong": 2000, "cao": 1200, "page_url": "https://x/b",
+                 "source": "brand", "rong": 2000, "cao": 1200, "page_url": "https://x/b",
                  "score": 28, "brand_match": {"company": "HangB", "key": "hangb",
-                                              "kind": "anh", "keyword": "HangB headquarters"}}
+                                              "kind": "photo", "keyword": "HangB headquarters"}}
 
     def anh_hang_gia(hang, so=4, wd=None):
         return [ung_vien_A] if hang["khoa"] == "hanga" else [ung_vien_B]
@@ -80,9 +80,9 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
     phải sống sót."""
     def _ung(hang, khoa, diem, i):
         return {"image_url": f"https://x/{khoa}-{i}.jpg", "alt": khoa, "og": False,
-                "source": "thuong_hieu", "rong": 1800, "cao": 1200, "page_url": f"https://x/{khoa}",
+                "source": "brand", "rong": 1800, "cao": 1200, "page_url": f"https://x/{khoa}",
                 "score": diem, "brand_match": {"company": hang, "key": khoa,
-                                               "kind": "nguoi" if diem >= 24 else "anh",
+                                               "kind": "person" if diem >= 24 else "photo",
                                                "keyword": f"{hang}"}}
 
     cands_theo_hang = {

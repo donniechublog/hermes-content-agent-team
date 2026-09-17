@@ -312,13 +312,13 @@
    "key:trang_thai": 1
   },
   "image_brand.py": {
-   "key:anh": 4,
+   "key:anh": 3,
    "key:cao": 9,
    "key:cho_do_hoa": 2,
    "key:hang": 6,
    "key:khoa": 5,
    "key:loai": 1,
-   "key:nguoi": 7,
+   "key:nguoi": 6,
    "key:rong": 9,
    "key:ten": 4,
    "key:tep": 6,
@@ -435,10 +435,7 @@
    "key:vai": 1
   },
   "kite_prepare.py": {
-   "key:anh": 1,
-   "key:nguoi": 1,
-   "key:nhan": 1,
-   "key:xep_hang": 1
+   "key:nhan": 1
   },
   "kite_submit.py": {
    "key:ban_giao": 1,
@@ -476,6 +473,9 @@
   "material.py": {
    "key:trang": 1,
    "path:article_extract.py": 1
+  },
+  "migrate_manifest_v3.py": {
+   "path:tu_dien_ten": 1
   },
   "miles_submit.py": {
    "key:cau_so_trong_nguon": 1,
@@ -572,9 +572,7 @@
   },
   "prepare/download_filter.py": {
    "key:alt_chup": 1,
-   "key:arxiv_hinh": 1,
    "key:cho_do_hoa": 2,
-   "key:chup": 1,
    "key:tep": 3
   },
   "prepare/fallback_rounds.py": {
@@ -788,11 +786,6 @@
   },
   "social_post.py": {
    "key:tep": 1
-  },
-  "story_type.py": {
-   "key:anh": 1,
-   "key:co_phieu": 1,
-   "key:nguoi": 1
   },
   "submit_common.py": {
    "key:lan": 5,

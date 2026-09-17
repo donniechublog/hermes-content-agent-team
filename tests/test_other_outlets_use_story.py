@@ -66,7 +66,7 @@ def _run_round(tieu_de, tit_trang_cua):
         if tit is None:
             return None
         _image_fake(Path(ra))
-        return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True,
+        return {"image_url": url, "page_url": url, "source": "capture_source", "capture_source": True,
                 "page_title": tit, "alt": "khối lead", "score_reason": "khối lead"}
     that = capture_page.capture_lead_mobile
     capture_page.capture_lead_mobile = gia

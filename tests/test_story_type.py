@@ -29,12 +29,12 @@ def test_standard_type_label_all_write_attempt_offset():
 def test_board_by_use_error_boss():
     """Nguyên văn: brand→logo/trụ sở/founder/cổ phiếu/cờ; thương vụ→hai brand;
     model→benchmark; hạ tầng→datacenter/nhà máy."""
-    assert lt.order_image("M&A")[0] == "ghep_hai_hang"
-    assert lt.late("M&A", "co_phieu")
-    assert lt.order_image("MODEL")[0] == "xep_hang"
-    assert lt.order_image("INFRA")[0] == "khai_niem_ha_tang"
-    assert lt.late("LAB", "co_nuoc_hang") and lt.late("LAB", "founder")
-    assert lt.order_image("BUSINESS")[0] == "co_phieu"
+    assert lt.order_image("M&A")[0] == "two_company_pair"
+    assert lt.late("M&A", "stock")
+    assert lt.order_image("MODEL")[0] == "ranking"
+    assert lt.order_image("INFRA")[0] == "infrastructure_concept"
+    assert lt.late("LAB", "company_country_flag") and lt.late("LAB", "founder")
+    assert lt.order_image("BUSINESS")[0] == "stock"
     assert lt.order_image("") == lt.DEFAULT
 
 
@@ -42,13 +42,26 @@ def test_score_by_type_change_order_candidate():
     """Cùng bộ ứng viên: M&A đẩy logo (18+6=24) lên ngang chân dung (24+2=26)?
     Không — founder đứng sau logo trong bảng M&A nên logo phải THẮNG."""
     logo = 18 + lt.score_by_type("M&A", "logo")
-    nguoi = 24 + lt.score_by_type("M&A", "nguoi")
-    tru_so = 28 + lt.score_by_type("M&A", "anh")
+    nguoi = 24 + lt.score_by_type("M&A", "person")
+    tru_so = 28 + lt.score_by_type("M&A", "photo")
     assert tru_so > logo, (tru_so, logo)          # tru so van la anh chup that
     assert logo == 24 and nguoi == 26 - 0, (logo, nguoi)
     # LAB: tru so/founder tren logo
-    assert lt.score_by_type("LAB", "anh") > lt.score_by_type("LAB", "logo")
-    assert lt.score_by_type("SECURITY", "anh") == 0   # SECURITY khong muon tru so
+    assert lt.score_by_type("LAB", "photo") > lt.score_by_type("LAB", "logo")
+    assert lt.score_by_type("SECURITY", "photo") == 0   # SECURITY khong muon tru so
+
+
+def test_line_brief_prints_old_object_names():
+    """LOW-230: bảng lưu mã English, dòng brief vẫn in đúng tên cũ (byte y hệt)."""
+    assert lt.line_brief({"category": "M&A"}) == [
+        "Loại tin M&A → ảnh hợp lệ theo thứ tự: ghep_hai_hang > logo > tru_so > founder > co_phieu"
+        " (bảng story_type.py, Ông Chủ 12/09/2026)."]
+    assert lt.line_brief({"category": "INFRA"})[0].split(": ", 1)[1].startswith(
+        "khai_niem_ha_tang > tru_so > co_nuoc_hang > logo (")
+    assert lt.line_brief({"category": "MODEL"})[0].split(": ", 1)[1].startswith(
+        "xep_hang > chart_cong_bo > logo > founder > khai_niem (")
+    assert lt.line_brief({"category": "BUSINESS"})[0].split(": ", 1)[1].startswith(
+        "co_phieu > san_giao_dich > tru_so > logo > founder (")
 
 
 def test_country_and_code_has_ballot():
@@ -89,12 +102,12 @@ def test_category_force_capture_board_ranking():
 
 def test_stack_two_rank_only_when_code():
     from prepare import manifest
-    anh = [{"id": "A1", "uses": ["bìa"], "relevant": True,
+    anh = [{"id": "A1", "uses": ["cover"], "relevant": True,
             "brand_match": {"key": "nvidia", "kind": "logo"}},
-           {"id": "A2", "uses": ["bìa"], "relevant": True,
+           {"id": "A2", "uses": ["cover"], "relevant": True,
             "brand_match": {"key": "hugging face", "kind": "logo"}},
-           {"id": "A3", "uses": ["thân"], "relevant": True,
-            "brand_match": {"key": "nvidia", "kind": "nguoi"}}]
+           {"id": "A3", "uses": ["body"], "relevant": True,
+            "brand_match": {"key": "nvidia", "kind": "person"}}]
     assert manifest.pair_two_vendor_images(anh, "M&A") == [["A1", "A2"]]
     assert manifest.pair_two_vendor_images(anh, "MODEL") == []
     assert manifest.pair_two_vendor_images(anh[:1], "M&A") == []

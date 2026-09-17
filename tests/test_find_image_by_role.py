@@ -52,8 +52,8 @@ def _image(ma: str, **doi) -> dict:
     """Anh doc 4:5, day toi, khong mat — `classify` dan nhan "bìa" cho no, va
     card.py cung dung lam nen hero duoc."""
     a = {"id": ma, "original_path": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
-         "ratio": 0.8, "w": 960, "h": 1200, "kind": "anh", "landscape": False,
-         "uses": ["bìa", "thân"], "relevant": True, "faces": 0, "bottom_left_brightness": 60,
+         "ratio": 0.8, "w": 960, "h": 1200, "kind": "photo", "landscape": False,
+         "uses": ["cover", "body"], "relevant": True, "faces": 0, "bottom_left_brightness": 60,
          "short_side": 960, "domain": "vi_du.com", "source": "bai", "alt": "", "notes": []}
     a.update(doi)
     return a
@@ -62,19 +62,19 @@ def _image(ma: str, **doi) -> dict:
 def _image_landscape(ma: str) -> dict:
     """16:9 (1.78): Dre ghep doc thanh mot slide, Ethan khong dung duoc (>1.6)."""
     return _image(ma, ratio=1.78, w=1920, h=1080, landscape=True, short_side=1080,
-                uses=["ghép dọc với một ảnh ngang cùng tone"])
+                uses=["stack_vertical"])
 
 
 def _image_landscape_fit(ma: str) -> dict:
     """1.5: qua LANDSCAPE_CLEAR (1.4) nen KHONG co nhan "bìa" cua carousel, nhung card.py
     cho toi 1.6 — day dung la cho luat cua carousel bat Ethan di tim vo ich."""
     return _image(ma, ratio=1.5, w=1500, h=1000, landscape=True, short_side=1000,
-                uses=["ghép dọc với một ảnh ngang cùng tone"])
+                uses=["stack_vertical"])
 
 
 def _image_chart(ma: str) -> dict:
     return _image(ma, ratio=1.2, w=1200, h=1000, kind="chart", short_side=1000,
-                bottom_left_brightness=200, uses=["thân (chart, dán full bề ngang nguyên vẹn)"])
+                bottom_left_brightness=200, uses=["body_chart_full_width"])
 
 
 PHA_NANG = ("BrowserSession", "load_source", "_summary_from_img_json", "_supplement_source", "_extra_announcement_page",

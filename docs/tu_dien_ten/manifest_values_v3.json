@@ -13,7 +13,9 @@
     "thuc_the": "entity",
     "xep_hang": "ranking",
     "arxiv_hinh": "arxiv_figure",
-    "arxiv_bia": "arxiv_cover"
+    "arxiv_bia": "arxiv_cover",
+    "goc": "article",
+    "vai": "role_supplied"
   },
   "image.kind": {
     "anh": "photo"
@@ -25,7 +27,8 @@
     "bang": "table",
     "bang-ghep": "table-stitched",
     "danh-sach": "list",
-    "the": "card"
+    "the": "card",
+    "danh-sach-ghep": "list-stitched"
   },
   "brand_match.kind": {
     "anh": "photo",
@@ -45,7 +48,8 @@
     "chart_cong_bo": "announcement_chart",
     "xep_hang": "ranking",
     "co_nuoc_hang": "company_country_flag",
-    "ghep_hai_hang": "two_company_pair"
+    "ghep_hai_hang": "two_company_pair",
+    "khai_niem_ha_tang": "infrastructure_concept"
   },
   "image.uses[]": {
     "bìa": "cover",
@@ -61,14 +65,33 @@
     "figure": "figure"
   },
   "_unchanged_english": {
-    "image.source": ["web_yandex", "commons", "browser", "openverse"],
-    "image.kind": ["chart"],
-    "image.capture_kind": ["hero"],
-    "ranking.kind": ["svg"],
-    "brand_match.kind": ["logo"],
-    "image_order_by_story_type[]": ["logo", "founder"]
+    "image.source": [
+      "web_yandex",
+      "commons",
+      "browser",
+      "openverse"
+    ],
+    "image.kind": [
+      "chart"
+    ],
+    "image.capture_kind": [
+      "hero"
+    ],
+    "ranking.kind": [
+      "svg"
+    ],
+    "brand_match.kind": [
+      "logo"
+    ],
+    "image_order_by_story_type[]": [
+      "logo",
+      "founder"
+    ]
   },
-  "_out_of_scope": ["giá trị trong tệp nguồn nguon_<id>.json (loai: gốc…) — LOW-231",
-                    "dấu provenance trong metadata PNG (chup_chart, dre_chuan_bi…) — không nằm trong manifest",
-                    "spec do vai viết (nen: sang/toi, …) — lời dặn SOUL quyết định"]
+  "_out_of_scope": [
+    "giá trị trong tệp nguồn nguon_<id>.json (loai: gốc…) — LOW-231",
+    "dấu provenance trong metadata PNG (chup_chart, dre_chuan_bi…) — không nằm trong manifest",
+    "spec do vai viết (nen: sang/toi, …) — lời dặn SOUL quyết định"
+  ],
+  "_added_after_approval": "17/09/2026: 4 giá trị code sinh ra nhưng chưa có trong dữ liệu máy chủ, đặt theo đúng quy tắc bảng đã duyệt: goc (không dấu) -> article (cùng nghĩa gốc), vai -> role_supplied (URL do vai đưa, find_more_images), danh-sach-ghep -> list-stitched, khai_niem_ha_tang -> infrastructure_concept."
 }

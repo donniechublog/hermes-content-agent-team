@@ -456,7 +456,7 @@ def test_hero_uu_tien_paper_roi_anh_rieng_roi_anh_bu():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         kn = _hinh(wd, ma="K1", concept={"keyword": "Japan flag"})
-        th = _hinh(wd, ma="T1", brand_match={"kind": "anh", "company": "Nvidia"})
+        th = _hinh(wd, ma="T1", brand_match={"kind": "photo", "company": "Nvidia"})
         rieng = _hinh(wd, ma="R1")
         paper = _hinh(wd, ma="P1", paper_figure="Figure 1")
         assert kb.figure_hero(_m(wd, [kn]))["id"] == "K1"
@@ -522,7 +522,7 @@ def _khai_niem(wd, ma="K1", tu_khoa="Japan flag", **k):
     """Anh khai niem cua `image_concept.py`: co nuoc / day rack datacenter lay
     tu Wikimedia Commons khi tin khong co anh rieng. La ANH CHUP THAT nen no di
     qua moi cong ky thuat — chi cho dung cua no la bi gioi han."""
-    return _hinh(wd, ma=ma, kind="anh",
+    return _hinh(wd, ma=ma, kind="photo",
                  concept={"keyword": tu_khoa, "reason": "tin nhac Nhat"}, **k)
 
 

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+import manifest_values
 import schema
 import state_paths
 import role as vai_mod                 # `vai` la ten tham so o vai ham duoi
@@ -24,7 +25,7 @@ def describe_ranking_image(m: dict) -> str:
         return "engine KHÔNG có ảnh xếp hạng cho bài này"
     cau = (f"engine đã chụp {xh.get('site')} ({xh.get('board')}): {xh.get('model')}"
            + (f" #{xh.get('rank')}" if xh.get("rank") else ""))
-    if xh.get("kind") == "the":
+    if xh.get("kind") == "card":
         cau += " — THẺ DỰ PHÒNG vì không chụp được bảng"
     else:
         # IN RA HANG THAT da khoanh, khong chi khang dinh "da khoanh hang model":
@@ -37,7 +38,7 @@ def describe_ranking_image(m: dict) -> str:
     # Bang trong anh KHAC bang trong tieu de: khong chup duoc bang tin nhac toi nen
     # engine lay bang khac cua cung model. Anh dung, nhung so hang trong anh co the
     # KHAC so hang o tieu de — viet theo ANH, dung bung tieu de len ma anh khong do.
-    if xh.get("mentioned") is False and xh.get("kind") != "the":
+    if xh.get("mentioned") is False and xh.get("kind") != "card":
         cau += (f". ⚠️ ĐÂY LÀ BẢNG KHÁC với bảng tiêu đề nhắc tới — engine không chụp "
                 f"được bảng đó. Viết theo ĐÚNG bảng và thứ hạng TRONG ẢNH "
                 f"({xh.get('site')}" + (f" #{xh.get('rank')}" if xh.get("rank") else "")
@@ -84,7 +85,7 @@ def pair_two_vendor_images(anh: list, category) -> list:
     hai brand đặt vào"*. Trả [[ma_A, ma_B], ...] — ưu tiên cùng loại (logo+logo,
     trụ sở+trụ sở) và dùng được; rỗng khi không phải M&A hay chỉ có một hãng."""
     import story_type
-    if not story_type.late(category, "ghep_hai_hang"):
+    if not story_type.late(category, "two_company_pair"):
         return []
     theo_hang = {}
     for a in anh:
@@ -96,7 +97,7 @@ def pair_two_vendor_images(anh: list, category) -> list:
         return []
     (ka, la), (kb, lb) = list(theo_hang.items())[:2]
     ra = []
-    for loai in ("logo", "anh", "nguoi"):
+    for loai in ("logo", "photo", "person"):
         x = next((a for a in la if (a.get("brand_match") or {}).get("kind") == loai), None)
         y = next((a for a in lb if (a.get("brand_match") or {}).get("kind") == loai), None)
         if x and y:
@@ -139,7 +140,7 @@ def contact_sheet(anh: list, out: Path) -> None:
         im.thumbnail((W - 16, 240))
         x, y = (k % cot) * W + 8, (k // cot) * 300 + 8
         canvas.paste(im, (x, y))
-        nhan = f"{a['id']}  {a['w']}x{a['h']}  {a['kind'].upper()}" + \
+        nhan = f"{a['id']}  {a['w']}x{a['h']}  {manifest_values.kind_label(a['kind']).upper()}" + \
                ("  MẶT" if a["faces"] else "") + ("  NGANG" if a["landscape"] else "")
         d.text((x, y + 250), nhan, font=f, fill=(0, 204, 224))
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -224,7 +225,10 @@ def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
     khong thi manifest sau khi them anh mang so cu (12/09/2026)."""
     dung_duoc = [a for a in anh if a["uses"] and a.get("relevant") is not False]
     chua_nhin = [a["id"] for a in anh if a.get("relevant") is None]
-    so_mien = sorted({(a.get("domain") or a.get("source") or "?") for a in dung_duoc})
+    # Nguon in ra brief/Telegram (Dre, route_missing_images): ten mien, khong co thi
+    # nhan nguon cu (LOW-230) — chuoi hien thi giu nguyen.
+    so_mien = sorted({(a.get("domain") or manifest_values.source_label(a.get("source")) or "?")
+                      for a in dung_duoc})
     # Anh khai niem chi lam bia, nen ca chum chi DEM LA MOT khi xet du/thieu:
     # 5 la co Nhat khong phai 5 slide. `usable_count` di vao brief (THIEU ANH)
     # va co `missing_images` (xem _description_missing_image) ma route_missing_images doc de quyet

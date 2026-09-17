@@ -26,8 +26,8 @@ import role                                                    # noqa: E402
 
 
 def _read(ma, **k):
-    a = {"id": ma, "uses": ["thân"], "relevant": True, "landscape": False, "h": 1350,
-         "ratio": 0.8, "kind": "anh", "faces": 0, "alt": ""}
+    a = {"id": ma, "uses": ["body"], "relevant": True, "landscape": False, "h": 1350,
+         "ratio": 0.8, "kind": "photo", "faces": 0, "alt": ""}
     a.update(k)
     return a
 

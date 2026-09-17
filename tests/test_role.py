@@ -281,7 +281,7 @@ def test_role_one_image_no_has_quantity_for_apply():
 
 
 def _a(**doi) -> dict:
-    a = {"uses": ["bìa", "thân"], "relevant": True, "kind": "anh", "ratio": 0.8,
+    a = {"uses": ["cover", "body"], "relevant": True, "kind": "photo", "ratio": 0.8,
          "faces": 0, "alt": ""}
     a.update(doi)
     return a
@@ -293,11 +293,11 @@ def test_image_main_ok_ask_use_rules_of_each_renderer():
     image_rules + classify truoc khi toi day)."""
     # Ti le 1.5: qua LANDSCAPE_CLEAR (1.4) nen classify KHONG dan nhan "bìa" -> Dre
     # khong lam bia duoc; nhung card.py cho toi 1.6 nen Ethan dung lam nen hero.
-    ngang_vua = _a(ratio=1.5, landscape=True, uses=["ghép dọc với một ảnh ngang cùng tone"])
+    ngang_vua = _a(ratio=1.5, landscape=True, uses=["stack_vertical"])
     assert role.can_be_hero("ethan", ngang_vua)
     assert not role.can_be_hero("dre", ngang_vua)
     # 16:9 thi ca hai deu chiu.
-    ngang_han = _a(ratio=1.78, landscape=True, uses=["ghép dọc với một ảnh ngang cùng tone"])
+    ngang_han = _a(ratio=1.78, landscape=True, uses=["stack_vertical"])
     assert not role.can_be_hero("ethan", ngang_han)
     assert not role.can_be_hero("dre", ngang_han)
     # Chart: card.py chan di mot minh.
@@ -318,7 +318,7 @@ def test_has_enough_material_only_count_temp_with_role_many_image():
         "Ethan co mot tam lam hero duoc la du — the cua anh ta chi dung MOT anh"
     assert not role.has_enough_material("dre", mot_hero), \
         "Dre co bia nhung moi mot tam: van thieu 4 slide"
-    nam_ngang = [_a(ratio=1.78, landscape=True, uses=["ghép dọc với một ảnh ngang cùng tone"])
+    nam_ngang = [_a(ratio=1.78, landscape=True, uses=["stack_vertical"])
                  for _ in range(5)]
     assert not role.has_enough_material("ethan", nam_ngang), \
         "5 anh ngang 16:9 khong cho Ethan mot duong nao — dung su co LOW-12"

@@ -102,7 +102,7 @@ def _og(bai: dict) -> dict | None:
         im = og_from_html(r.text[:400_000], str(r.url))
         if not im or not scan_common.url_hide_whole(im):
             return None
-        return {"image_url": im, "alt": bai["tieu_de"], "og": True, "source": "bao_thuc_the",
+        return {"image_url": im, "alt": bai["tieu_de"], "og": True, "source": "press_entity",
                 # `page_url` = chính ảnh: og:image gần như luôn nằm trên CDN khác
                 # miền bài (image.cnbcfm.com / cnbc.com) và download_filter coi "khác
                 # miền" là quảng cáo; bài gốc giữ ở `bai` để truy nguồn.

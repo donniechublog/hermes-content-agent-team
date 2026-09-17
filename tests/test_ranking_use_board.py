@@ -41,7 +41,7 @@ def test_warning_board_other_no_when_capture_ok_board_code_wait_story_text():
     """Manifest nhu engine ghi khi (van) chup duoc arena-code: cau brief phai co ⚠️."""
     from prepare.manifest import describe_ranking_image
     ds = {n["ma"]: n for n in xh.suggest_sources(TD, LINK, "Arena", CHU)}
-    m = {"ranking": {"site": "ARENA.AI", "board": "WebDev / Code Arena", "kind": "bang",
+    m = {"ranking": {"site": "ARENA.AI", "board": "WebDev / Code Arena", "kind": "table",
                      "model": "claude-opus-4-7-high", "rank": 26,
                      "mentioned": ds["arena-code"]["duoc_nhac"]}}
     assert "BẢNG KHÁC" in describe_ranking_image(m), describe_ranking_image(m)

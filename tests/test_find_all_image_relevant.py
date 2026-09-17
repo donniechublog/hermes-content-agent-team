@@ -85,25 +85,25 @@ def _kind_ranking_emit_out() -> set:
 def test_new_kind_ranking_emit_out_all_ok_reader_understand():
     phat = _kind_ranking_emit_out()
     assert phat, "khong doc duoc kieu nao tu ranking.py — test hong"
-    assert "the" in phat, "the du phong phai con"
-    la = {k for k in phat if k != "the"}
+    assert "card" in phat, "the du phong phai con"
+    la = {k for k in phat if k != "card"}
     assert la and la <= ranking.KIND_CAPTURE, f"xep_hang phat {la} ma KIND_CAPTURE chi biet {set(ranking.KIND_CAPTURE)}"
     assert "chup" not in phat and "chup" not in ranking.KIND_CAPTURE, \
         "'chup' la gia tri ma stub test tung bia ra, khong duoc quay lai"
     for k in la:
         assert ranking.is_capture(k), k
-    assert not ranking.is_capture("the") and not ranking.is_capture(None)
+    assert not ranking.is_capture("card") and not ranking.is_capture(None)
 
 
 def test_brief_and_gate_submit_regard_board_capture_real_is_required():
     m = {"is_ranking_story": True,
          "ranking": {"site": "LIVEBENCH.AI", "board": "LiveBench", "model": "deepseek-v4.1-flash-max",
-                     "rank": 6, "kind": "bang", "mentioned": True}}
+                     "rank": 6, "kind": "table", "mentioned": True}}
     dong = manifest.ranking_brief_line(m, "bìa ", "dre_submit")
     assert "BẮT BUỘC" in dong and "THẺ DỰ PHÒNG" not in dong, dong
     assert submit_common.needs_ranking_image(m, {"id": "A1"}), "bang chup that ma cong khong ep"
     assert not submit_common.needs_ranking_image(m, {"id": "XH", "ranking": m["ranking"]})
-    m["ranking"]["kind"] = "the"
+    m["ranking"]["kind"] = "card"
     assert "THẺ DỰ PHÒNG" in manifest.ranking_brief_line(m, "bìa ", "dre_submit")
     assert not submit_common.needs_ranking_image(m, {"id": "A1"})
 

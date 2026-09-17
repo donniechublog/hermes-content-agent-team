@@ -177,7 +177,7 @@ def test_story_ranking_no_has_board_then_no_block():
     # có bảng thì vẫn đòi như cũ
     dong2 = cb.ranking_brief_line(
         {"is_ranking_story": True, "ranking": {"site": "LMArena", "board": "text",
-                                            "model": "GPT-5.2", "rank": 1, "kind": "bang"}},
+                                            "model": "GPT-5.2", "rank": 1, "kind": "table"}},
         "", "ethan_submit")
     assert "BẮT BUỘC" in dong2, dong2
 
@@ -239,16 +239,16 @@ def test_model_family_duplicate_from_regular_right_go_with_count():
 
 
 def test_fallback_card_no_ok_force_make_image_main():
-    """kind='the' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
+    """kind='card' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
     ảnh thật. Chỉ kieu chụp thật (`ranking.KIND_CAPTURE`) mới bật cổng bắt buộc."""
     import ethan_submit
-    anh = [{"id": "A1", "original_path": "/tmp/x.png", "ready_path": None, "kind": "anh", "ratio": 1.0,
+    anh = [{"id": "A1", "original_path": "/tmp/x.png", "ready_path": None, "kind": "photo", "ratio": 1.0,
             "faces": 0, "landscape": False, "short_side": 1200, "w": 1200, "h": 1200,
             "bottom_left_brightness": 50, "uses": ["nền hero"], "notes": [], "domain": "x.com",
             "source": "x", "relevant": True}]
     spec = {"anh": "A1", "kieu": "quote", "hook": "Mô hình mới đạt điểm cao nhất bảng",
             "tagline": "MODEL", "attrib": "via X"}
-    for kieu, phai_chan in (("bang", True), ("danh-sach", True), ("the", False), ("chup", False)):
+    for kieu, phai_chan in (("table", True), ("list", True), ("card", False), ("chup", False)):
         m = {"images": anh, "is_ranking_story": True, "article_text": "", "material": {}, "draft_id": "d1",
              "image_role": "ethan",
              "ranking": {"kind": kieu, "site": "arena.ai", "board": "Text Arena",
@@ -346,7 +346,7 @@ def test_image_ranking_no_got_crop():
     # `classify` sang prepare/vision.py khi tach goi 09/09/2026 (audit A1).
     src = (ROOT / "prepare" / "vision.py").read_text(encoding="utf-8")
     khoi = src[src.index("    san = wd / state_paths.READY_DIR"):]
-    khoi = khoi[:khoi.index("a[\"uses\"] = [\"thân")]
+    khoi = khoi[:khoi.index("a[\"uses\"] = [\"body_chart_full_width")]
     assert 'if a.get("ranking"):' in khoi, "classify thiếu nhánh giữ nguyên ảnh xếp hạng"
     truoc_elif = khoi[:khoi.index("elif r <")]
     assert 'a["ready_path"] = a["original_path"]' in truoc_elif, "nhánh xếp hạng phải đặt san = goc, không cắt"
@@ -1240,15 +1240,15 @@ def test_only_ranking_choice_one_image_ranking():
     chưa chụp được bảng, không có, hoặc có từ hai ảnh xếp hạng trở lên (còn
     đường khác để đổi, không cần miễn cổng làm lại)."""
     import submit_common as nc2
-    m_mot = {"is_ranking_story": True, "ranking": {"kind": "bang"},
+    m_mot = {"is_ranking_story": True, "ranking": {"kind": "table"},
               "images": [{"id": "XH", "ranking": True}, {"id": "A2", "ranking": False}]}
     assert nc2.only_ranking_choice(m_mot) == "XH"
 
-    m_hai = {"is_ranking_story": True, "ranking": {"kind": "bang"},
+    m_hai = {"is_ranking_story": True, "ranking": {"kind": "table"},
               "images": [{"id": "XH", "ranking": True}, {"id": "XH2", "ranking": True}]}
     assert nc2.only_ranking_choice(m_hai) is None
 
-    m_khong_chup = {"is_ranking_story": True, "ranking": {"kind": "the"},
+    m_khong_chup = {"is_ranking_story": True, "ranking": {"kind": "card"},
                      "images": [{"id": "XH", "ranking": True}]}
     assert nc2.only_ranking_choice(m_khong_chup) is None
 

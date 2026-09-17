@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import route_missing_images                                       # noqa: E402
 import role                                                   # noqa: E402
+import manifest_values                                       # noqa: E402
 import state_paths                                            # noqa: E402
 
 # 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5. Song o ban dang ky vai
@@ -115,13 +116,13 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     for a in m["images"]:
         if a.get("relevant") is False:
             L.append(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or 'không rõ'} → KHÔNG DÙNG "
-                     f"(nguồn: {a['domain'] or a['source']})")
+                     f"(nguồn: {a['domain'] or manifest_values.source_label(a['source'])})")
             continue
         dung, ghi = label_ethan(a)
         if dung[0].startswith("nền hero") and not a.get("faces"):
             goi_y.append((a.get("bottom_left_brightness", 0), -a.get("short_side", 0), a["id"]))
-        dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {a['kind'].upper()} | {'; '.join(dung)}"
-                f" | nguồn: {a['domain'] or a['source']}")
+        dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {manifest_values.kind_label(a['kind']).upper()} | {'; '.join(dung)}"
+                f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")
         if a.get("description"):
             dong += f" | ảnh là: {a['description'][:110]}"
         elif a.get("alt"):

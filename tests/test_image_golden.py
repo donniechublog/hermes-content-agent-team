@@ -24,7 +24,7 @@ import state_paths                                            # noqa: E402
 
 
 def _image(**k):
-    a = {"id": "A1", "source": "commons", "uses": ["thân"], "relevant": True, "notes": []}
+    a = {"id": "A1", "source": "commons", "uses": ["body"], "relevant": True, "notes": []}
     a.update(k)
     return a
 
@@ -40,7 +40,7 @@ def _make_state(root: Path, drafts: dict) -> Path:
             Image.new("RGB", (1200, 800), (i * 20 % 255, 80, 120)).save(goc)
             anh.append(dict(a, id=f"A{i}", original_path=str(goc)))
         (wd / state_paths.MANIFEST_FILE).write_text(json.dumps({
-            "version": 2, "draft_id": draft_id, "title": draft_id, "title_en": draft_id.upper(),
+            "version": 3, "draft_id": draft_id, "title": draft_id, "title_en": draft_id.upper(),
             "material": {"lead_paragraph": "lead " * 400}, "images": anh}), encoding="utf-8")
     return root
 
@@ -86,7 +86,7 @@ def test_sample_is_deterministic_keeps_must_drafts_and_caps_per_draft():
         state = _make_state(Path(tmp), {
             "must-draft": [_image(), _image(relevant=False)],
             "big-draft": [_image(relevant=False, source="web_yandex") for _ in range(9)],
-            "other-draft": [_image(source="báo khác"), _image(source="bao khac", relevant=False)],
+            "other-draft": [_image(source="other_outlet"), _image(source="other_outlet", relevant=False)],
         })
         cands = image_golden_sample.load_candidates(state)
         assert len(cands) == 13
