@@ -1,4 +1,4 @@
-# Hướng dẫn gán nhãn bộ ảnh chuẩn (LOW-224) — bản 2.1
+# Hướng dẫn gán nhãn bộ ảnh chuẩn (LOW-224) — bản 2.2
 
 Bản 2 (17/09/2026): bổ sung **luật Ông Chủ chốt** sau vòng soát 60 nhãn đầu tiên (đồng ý 52/60). Khi luật chốt dưới đây khác các mục phía sau, **luật chốt thắng**.
 
@@ -18,9 +18,18 @@ Bản 2 (17/09/2026): bổ sung **luật Ông Chủ chốt** sau vòng soát 60 
 | 10 | **Bảng xếp hạng** đúng model/hãng của tin nhưng là **bảng con khác** (Multi-Image Edit thay vì Image Edit) | Dùng được. `chart_not_proving_claim` chỉ khi chart về model/hãng KHÁC, hoặc không liên quan gì tới tin |
 | 11 | **Ảnh hero trừu tượng/nghệ thuật** của chính bài gốc | Dùng được |
 | 12 | Chụp trang nguồn **dính quảng cáo, banner, khối đăng ký, thông tin không liên quan** | **TUYỆT ĐỐI không dùng** → `ad_widget`. Nguyên văn: "nội dung chất lượng rất nhiều, ko việc gì phải đưa những thứ trash này vào" |
-| 13 | Chụp màn hình có **viền hai bên quá dày / nửa đen / bố cục xấu** | Không dùng → `poor_capture_layout` |
+| 13 | Chụp màn hình có **viền đen hai bên dày** làm thẩm mỹ kém | Không dùng → `poor_capture_layout` (nhưng code nên CẮT viền: "chỉ cần bỏ viền đen hai bên đi là dùng được"). **Dải đen PHÍA DƯỚI không phải lỗi** — "quá lý tưởng để chúng ta chèn text lên" (vòng 2) |
 | 14 | **Khung video** có nút play / lớp tối đè lên | Không dùng → `video_player_overlay` |
 | 15 | **Logo báo / watermark** nhỏ ở góc ảnh đúng chủ thể | Không phải lỗi |
+
+### Luật chốt vòng 2 (17/09)
+
+| # | Ca | Chốt |
+|---|---|---|
+| 16 | **Bảng xếp hạng đúng hãng**, tin không có claim xếp hạng | Dùng được khi chart cùng **dòng sản phẩm/model** của tin (chart Claude cho tin Claude). KHÔNG khi tin về mảng khác mà hãng có nhiều ảnh tốt hơn — "quá nhiều ảnh của google trên internet, không cần phải đưa ảnh của gemini vào" (#250) |
+| 17 | **Watermark lớn / phủ khắp ảnh** (Bigstock, chữ NEWS to giữa ảnh) | Không dùng → `ad_widget` |
+| 18 | Ảnh đúng hãng nhưng **chữ trên ảnh nói chuyện khác** (banner khoá học, logo "CENSORED", wafer ghi hãng pin mặt trời) | Không dùng → `outdated_or_misleading_text` |
+| 19 | Alt nêu đúng hãng nhưng **hình rõ ràng là thứ khác** (xe cảnh sát, cửa hàng Gucci, đám đông không dấu hiệu gì) | **Theo hình** → không dùng → `off_topic`. Luật 8 (tin alt từ khoá) chỉ áp khi hình không mâu thuẫn |
 
 ### Giới hạn rút từ câu trả lời soát của Ông Chủ (bản 2.1)
 
@@ -31,7 +40,7 @@ Không phải luật mới. Đây là cách Ông Chủ đã chấm chính các �
 | 7 khái niệm | Phải **cùng lĩnh vực nội dung** tin: rack cho tin datacenter được, rack cho tin ra mắt model phần mềm thì **không** | #135 không |
 | 4 địa danh | Ảnh phải là **chính địa danh** (toàn cảnh, biểu tượng). Ảnh một sự kiện/công trình khác ở đó thì không (sân bay Ai Cập cho tin datacenter Ai Cập) | #130 không; toàn cảnh Brisbane được |
 | 6 chữ gây hiểu sai | Chữ **tự nhiên trong cảnh** (bảng điện sàn NYSE) không tính | #69 được |
-| 13 chụp xấu | Dải đen dưới **khoảng 1/3** vẫn dùng được. Lỗi khi **từ nửa trở lên** đen hoặc **viền hai bên dày** | #220 được, #172 không |
+| 13 chụp xấu | Dải đen dưới (1/4 → hơn nửa khung) **dùng được**, là chỗ chèn chữ. Chỉ viền hai bên dày chưa cắt mới lỗi; nội dung còn quá ít (~1/3 khung) thì không | #220, #37, #92, #94, #119, #157, #244 được; #172 không; #132 (~65% đen) không |
 | 3 ảnh người | Chỉ có **URL trang** nêu chủ thể, alt rỗng → **không đủ** | #76 không |
 | 7 khái niệm | Sản phẩm/người của **hãng khác không có trong tin** (máy trạm AMD cho tin không nhắc AMD) → `off_topic` | #115 không |
 
