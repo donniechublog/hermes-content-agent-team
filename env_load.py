@@ -78,8 +78,16 @@ UA_BROWSER = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
 
 def hermes_home() -> Path:
     """HERMES_HOME cua container hien tai (~/.hermes-<brand>, systemd/cron dat san);
-    khong co bien thi roi ve ~/.hermes (che do don cu)."""
-    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
+    khong co bien thi roi ve ~/.hermes (che do don cu).
+
+    LOW-217: trong kanban worker, hermes dat HERMES_HOME = home cua PROFILE
+    (`~/.hermes-blog/profiles/dre`), khong phai home cua brand. Moi nguoi goi ham
+    nay deu can home brand (`profiles/<vai>`, `kanban.db`, `cron/`), nen doc tho
+    thi `standard_assignee("kite")` tim `.../profiles/dre/profiles/kite`, khong
+    thay, va engine anh bao sai "brand nay chua co Kite" (17/09/2026). Quy
+    `<goc>/profiles/<ten>` ve `<goc>` — cung quy tac hermes dung cho kanban."""
+    home = Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
+    return home.parent.parent if home.parent.name == "profiles" else home
 
 
 def hermes_homes() -> dict:

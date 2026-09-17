@@ -107,6 +107,30 @@ def test_tep_goi_telegram_nap_env_load_truoc_httpx():
     assert not loi, "\n".join(loi)
 
 
+def test_hermes_home_from_profile_worker_resolves_to_brand_home():
+    """LOW-217: kanban worker dat HERMES_HOME = home profile; hermes_home() phai
+    tra home brand, neu khong kiem profile Kite bao sai "brand chua co Kite"."""
+    brand = str(Path.home() / ".hermes-blog")
+    assert _voi_env("HERMES_HOME", brand, env_load.hermes_home) == Path(brand)
+    assert _voi_env("HERMES_HOME", brand + "/profiles/dre", env_load.hermes_home) == Path(brand)
+    assert _voi_env("HERMES_HOME", None, env_load.hermes_home) == Path.home() / ".hermes"
+
+
+def test_standard_assignee_finds_kite_from_dre_worker():
+    """LOW-217: dung dung duong goi that — approve_dispatch.standard_assignee
+    chay trong tien trinh co HERMES_HOME cua profile Dre."""
+    with tempfile.TemporaryDirectory() as t:
+        brand = Path(t) / ".hermes-blog"
+        for vai in ("dre", "kite"):
+            (brand / "profiles" / vai).mkdir(parents=True)
+        ma = ("from approve_dispatch import standard_assignee; "
+              "print(standard_assignee('kite'))")
+        r = subprocess.run([sys.executable, "-c", ma], cwd=str(ROOT), capture_output=True, text=True,
+                           env={**os.environ, "HERMES_HOME": str(brand / "profiles" / "dre")}, timeout=60)
+        assert r.returncode == 0, r.stderr[-500:]
+        assert r.stdout.strip().splitlines()[-1] == "('kite', None)", r.stdout
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())
