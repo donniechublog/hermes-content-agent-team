@@ -87,12 +87,12 @@ def test_vision_image_clean_is_false():
 def test_vision_read_out_enough_keyword():
     _ra, kq, _hoi = _ask_vision("MO_TA: đồ hoạ Nvidia Anthropic $10B IPO.\nLIEN_QUAN: co\n"
                                 "CLUTTERED: co\nTỪ_KHOÁ: có")
-    assert kq["cluttered"] is True and kq["du_tu_khoa"] is True, kq
+    assert kq["cluttered"] is True and kq["has_keywords"] is True, kq
 
 
 def test_vision_no_return_line_fall_then_none_no_guess():
     _ra, kq, _hoi = _ask_vision("MO_TA: ảnh.\nLIEN_QUAN: co")
-    assert kq["cluttered"] is None and kq["du_tu_khoa"] is None
+    assert kq["cluttered"] is None and kq["has_keywords"] is None
 
 
 def test_vision_ask_extra_of_bob_still_three_part_from():
@@ -111,20 +111,20 @@ def test_classify_image_fall_no_make_cover_and_notes_mark_line():
 
     with tempfile.TemporaryDirectory() as t:
         p = _image_temp(t, tone=(20, 20, 25))                  # toi, doc: binh thuong duoc goi y bia
-        a = {"ma": "A1", "goc": str(p)}
+        a = {"id": "A1", "original_path": str(p)}
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
                 mock.patch.object(image_rules_ethan, "count_faces", return_value=0):
             vision.classify(a, Path(t), "Tin gì đó")
     assert a["cluttered"] is True
-    assert not any(str(d).startswith("bìa") for d in a["dung"]), a["dung"]
-    assert a["dung"], "anh roi van dung duoc lam than khi het anh sach"
-    assert a["ghi_chu"][0].startswith("⚠️ ẢNH RỐI"), a["ghi_chu"]
+    assert not any(str(d).startswith("bìa") for d in a["uses"]), a["uses"]
+    assert a["uses"], "anh roi van dung duoc lam than khi het anh sach"
+    assert a["notes"][0].startswith("⚠️ ẢNH RỐI"), a["notes"]
 
 
 # ---------------------------------------------------------------- 3. check_image_fall
 def _item(tmp, ma, seed, **k):
-    a = {"ma": ma, "goc": str(_image_temp(tmp, f"{ma}.png", seed=seed)), "dung": ["thân"],
-         "lien_quan": True, "cluttered": False, "loai": "anh", "mat": 0, "ngang": False, "h": 1250}
+    a = {"id": ma, "original_path": str(_image_temp(tmp, f"{ma}.png", seed=seed)), "uses": ["thân"],
+         "relevant": True, "cluttered": False, "kind": "anh", "faces": 0, "landscape": False, "h": 1250}
     a.update(k)
     return a
 
@@ -133,7 +133,7 @@ def test_remaining_image_clean_not_yet_use_then_block_image_fall():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _item(t, "A1", 1, cluttered=True), "A2": _item(t, "A2", 2)}
-        loi = nc.check_image_fall(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
+        loi = nc.check_image_fall(anh, {"A1": "slide 5"}, {"draft_id": "tin", "link": "https://x/y", "image_role": "ethan"})
     assert loi and "slide 5" in loi[0] and "A2" in loi[0], loi
 
 
@@ -141,36 +141,36 @@ def test_image_fallback_enough_keyword_ok_domain_gate():
     """Ông Chủ chọn chính đồ hoạ rối "Nvidia Weighs $10B" làm hero vì đủ từ khoá."""
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
-        anh = {"A1": _item(t, "A1", 1, cluttered=True, du_tu_khoa=True), "A2": _item(t, "A2", 2)}
-        loi = nc.check_image_fall(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
+        anh = {"A1": _item(t, "A1", 1, cluttered=True, has_keywords=True), "A2": _item(t, "A2", 2)}
+        loi = nc.check_image_fall(anh, {"A1": "bìa"}, {"draft_id": "tin", "link": "https://x/y", "image_role": "ethan"})
     assert loi == [], loi
 
 
 def test_classify_fallback_enough_keyword_keep_cover_and_notes_star():
     def _gia(path, tieu_de, hang="", **k):
-        k["ket_qua"].update({"cluttered": True, "du_tu_khoa": True})
+        k["ket_qua"].update({"cluttered": True, "has_keywords": True})
         return ("đồ hoạ đủ từ khoá", True)
 
     with tempfile.TemporaryDirectory() as t:
         p = _image_temp(t, tone=(20, 20, 25))
-        a = {"ma": "A1", "goc": str(p)}
+        a = {"id": "A1", "original_path": str(p)}
         with mock.patch.object(vision, "description_image", side_effect=_gia), \
                 mock.patch.object(image_rules_ethan, "count_faces", return_value=0):
             vision.classify(a, Path(t), "Tin gì đó")
-    assert a["du_tu_khoa"] is True
-    assert a["ghi_chu"][0].startswith("⭐"), a["ghi_chu"]
-    assert not a["ghi_chu"][0].startswith("⚠️")
+    assert a["has_keywords"] is True
+    assert a["notes"][0].startswith("⭐"), a["notes"]
+    assert not a["notes"][0].startswith("⚠️")
 
 
 def test_dre_submit_graphic_fall_chart_make_cover_ok():
     import test_spec_dre as ts
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = ts._du(t)
-        m["anh"][0].update({"loai": "chart", "cluttered": True, "du_tu_khoa": True})      # A1 la bia
+        m["images"][0].update({"kind": "chart", "cluttered": True, "has_keywords": True})      # A1 la bia
         ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert not ts._co(loi, "bìa", "CHART"), loi
-        assert ra["cover"].get("cluttered") is True and ra["cover"]["image"] == m["anh"][0]["goc"]
-        m["anh"][0]["cluttered"] = False                                                 # chart that
+        assert ra["cover"].get("cluttered") is True and ra["cover"]["image"] == m["images"][0]["original_path"]
+        m["images"][0]["cluttered"] = False                                                 # chart that
         _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert ts._co(loi, "bìa", "CHART"), loi
 
@@ -180,7 +180,7 @@ def test_all_done_image_clean_then_ok_use_image_fall():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _item(t, "A1", 1, cluttered=True), "A2": _item(t, "A2", 2)}
         loi = nc.check_image_fall(anh, {"A1": "slide 5", "A2": "slide 6"},
-                              {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
+                              {"draft_id": "tin", "link": "https://x/y", "image_role": "ethan"})
     assert loi == [], loi
 
 
@@ -190,13 +190,13 @@ def test_no_static_is_clean_if_no_card_use_alone():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _item(t, "A1", 1, cluttered=True),
                "A2": _item(t, "A2", 2, cluttered=None),                       # chua ai noi la sach
-               "A3": _item(t, "A3", 3, mat=1),                          # mat nguoi
-               "A4": _item(t, "A4", 4, loai="chart"),
-               "A5": _item(t, "A5", 5, ngang=True, h=600, cat_ngang_ok=True),   # qua thap
-               "A6": _item(t, "A6", 6, ngang=True, h=900, cat_ngang_ok=False),  # co chu
-               "A7": _item(t, "A7", 7, lien_quan=False),
-               "A8": _item(t, "A8", 8, dung=[])}
-        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
+               "A3": _item(t, "A3", 3, faces=1),                          # mat nguoi
+               "A4": _item(t, "A4", 4, kind="chart"),
+               "A5": _item(t, "A5", 5, landscape=True, h=600, landscape_crop_ok=True),   # qua thap
+               "A6": _item(t, "A6", 6, landscape=True, h=900, landscape_crop_ok=False),  # co chu
+               "A7": _item(t, "A7", 7, relevant=False),
+               "A8": _item(t, "A8", 8, uses=[])}
+        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "image_role": "ethan"})
     assert loi == [], loi
 
 
@@ -204,8 +204,8 @@ def test_image_landscape_crop_read_ok_is_image_clean_see_ok():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _item(t, "A1", 1, cluttered=True),
-               "A2": _item(t, "A2", 2, ngang=True, h=1000, cat_ngang_ok=True)}
-        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
+               "A2": _item(t, "A2", 2, landscape=True, h=1000, landscape_crop_ok=True)}
+        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "image_role": "ethan"})
     assert loi and "A2" in loi[0], loi
 
 
@@ -213,8 +213,8 @@ def test_image_clean_already_live_article_other_no_static():
     import submit_common as nc
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh = {"A1": _item(t, "A1", 1, cluttered=True), "A2": _item(t, "A2", 2)}
-        image_rules_ethan.record_used(anh["A2"]["goc"], "tin-khac", "dre", "https://x/khac")
-        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "vai_anh": "ethan"})
+        image_rules_ethan.record_used(anh["A2"]["original_path"], "tin-khac", "dre", "https://x/khac")
+        loi = nc.check_image_fall(anh, {"A1": "slide 2"}, {"draft_id": "tin", "link": "https://x/y", "image_role": "ethan"})
     assert loi == [], loi
 
 
@@ -222,12 +222,12 @@ def test_dre_submit_near_fall_wait_slide_and_block_when_remaining_image_clean():
     import test_spec_dre as ts
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = ts._du(t)
-        m["anh"][1]["cluttered"] = True                              # A2 o slide 2
+        m["images"][1]["cluttered"] = True                              # A2 o slide 2
         ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert loi == [], loi                                  # khong co anh sach nao thay
         assert ra["slides"][0].get("cluttered") is True
         assert not ra["slides"][1].get("cluttered")
-        m["anh"].append(ts._anh(wd, "A6", 1000, 1250, dung=["thân"], cluttered=False))
+        m["images"].append(ts._anh(wd, "A6", 1000, 1250, uses=["thân"], cluttered=False))
         _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert ts._co(loi, "slide 2", "RỐI", "A6"), loi
 

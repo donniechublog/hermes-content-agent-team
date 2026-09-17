@@ -55,7 +55,7 @@ class Context:
 
     def __init__(self, m: dict, wd: Path):
         self.m, self.wd = m, wd
-        self.anh = {a["ma"]: a for a in m["anh"]}
+        self.anh = {a["id"]: a for a in m["images"]}
         self.chu_bai = nc.article_text_for(m, wd)
         self.loi = []
         self.canh = []                   # canh bao: in ra, khong chan
@@ -101,12 +101,12 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
         bo.nhan_ma(x, nhan)
     bo.kiem_lien_quan(ghep, nhan)
     r1, r2 = (im.width / im.height for im in
-              (Image.open(bo.anh[x]["goc"]) for x in ghep))
+              (Image.open(bo.anh[x]["original_path"]) for x in ghep))
     if not image_rules_dre.stack_fit_frame(r1, r2):
         rc = image_rules_dre.ratio_after_stack(r1, r2)
         bo.loi.append(f"{nhan}: ghép {ghep[0]}+{ghep[1]} ra tỉ lệ {rc:.2f}, ngoài dải ghép "
                       f"{image_rules_dre.STACK_FLOOR}..1.0 — "
-                      f"chọn cặp khác (cặp gợi ý: {bo.m.get('cap_ghep')})")
+                      f"chọn cặp khác (cặp gợi ý: {bo.m.get('stackable_pairs')})")
     else:
         # Cao hon 4:5 mot chut la LOI NHO (Ong Chu 12/09/2026): bao de vai biet
         # mep nao bi cat, khong chan (LOW-178).
@@ -117,7 +117,7 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
     # 13/09/2026): bo cam doan ve nguon/chat luong nay, moi vai.
     bo.kiem_mat(ghep, muc, nhan)
     bo.dung_anh.append((nhan, list(ghep)))
-    return {"images": [bo.anh[x]["goc"] for x in ghep]}
+    return {"images": [bo.anh[x]["original_path"] for x in ghep]}
 
 
 def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | None:
@@ -138,26 +138,26 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
     if la_bia:
         # So hang trong hook bia phai la so hang engine khoanh (LOW-24, chung voi Ethan).
         bo.loi.extend(nc.check_rank_matches_image(str(muc.get("hook") or ""), a, "bìa"))
-    if a["loai"] == "chart" and not a.get("xep_hang"):
+    if a["kind"] == "chart" and not a.get("ranking"):
         # Do hoa ROI lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
         # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
         if la_bia and a.get("cluttered"):
-            ra["image"] = a["goc"]
+            ra["image"] = a["original_path"]
         elif la_bia:
             bo.loi.append(f"bìa: {ma} là CHART/screenshot, hook đè lên là mất nửa dưới — "
                           "bìa dùng ảnh khác (gợi ý: "
-                          f"{', '.join(m.get('goi_y_bia') or ['—'])}) hoặc \"ghep\" hai ảnh ngang")
+                          f"{', '.join(m.get('cover_suggestions') or ['—'])}) hoặc \"ghep\" hai ảnh ngang")
             return None
         else:
-            ra["image"] = a["san"] or a["goc"]
+            ra["image"] = a["ready_path"] or a["original_path"]
             ra["chart"] = True
-    elif a.get("xep_hang"):
+    elif a.get("ranking"):
         # Anh xep hang: bia/slide deu dan NGUYEN VEN full be ngang (nhu chart),
         # va duoc phep lam bia — hook de len nua duoi, bang o nua tren.
-        ra["image"] = a["san"] or a["goc"]
+        ra["image"] = a["ready_path"] or a["original_path"]
         if not la_bia:
             ra["chart"] = True
-    elif a["ngang"]:
+    elif a["landscape"]:
         if muc.get("cat_ngang") and a["h"] < schema.HEIGHT_MIN_CROP_LANDSCAPE:
             bo.loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
                           "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"ghep\" hoặc bỏ")
@@ -165,17 +165,17 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         if muc.get("cat_ngang"):
             tam = muc.get("tam") or [0.5, 0.5]
             out = bo.wd / "san" / f"{ma}.ngang.png"
-            cb._save_crop(Image.open(a["goc"]).convert("RGB"), out, "4:5",
+            cb._save_crop(Image.open(a["original_path"]).convert("RGB"), out, "4:5",
                          float(tam[0]), float(tam[1]), cat_ngang=True)
             ra["image"] = str(out)
         else:
-            bo.loi.append(f"{nhan}: {ma} là ảnh NGANG ({a['ti_le']}). Hai đường: "
+            bo.loi.append(f"{nhan}: {ma} là ảnh NGANG ({a['ratio']}). Hai đường: "
                           f"\"ghep\": [\"{ma}\", \"<ảnh ngang cùng tone>\"] "
-                          f"(cặp gợi ý: {m.get('cap_ghep') or 'không có'}), hoặc "
+                          f"(cặp gợi ý: {m.get('stackable_pairs') or 'không có'}), hoặc "
                           "\"cat_ngang\": true CHỈ KHI đây là ảnh người/sản phẩm không có chữ")
             return None
     else:
-        ra["image"] = a["san"]
+        ra["image"] = a["ready_path"]
     bo.kiem_mat([ma], muc, nhan)
     bo.dung_anh.append((nhan, [ma]))
     return ra
@@ -263,10 +263,10 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # khi bia + moi slide da giai, luc `da_dung` da co du ma.
     loi += nc.check_not_reused_across_runs(bo.anh, [(f"{n} ({ma})", ma) for ma, n in bo.da_dung.items()], m)
     n = len(slides) + 1
-    toi_thieu = m.get("toi_thieu", 5)
+    toi_thieu = m.get("min_images", 5)
     if n < toi_thieu:
         # Doc MOT lan: truoc day vao nhanh bang `.get(..., 5)` roi trong than lai
-        # doc `m["toi_thieu"]` tho — thieu khoa va n < 5 la KeyError ngay giua
+        # doc `m["min_images"]` tho — thieu khoa va n < 5 la KeyError ngay giua
         # cong chan, khong phai loi noi dung (F2).
         loi.append(f"chỉ {n} slide, tin này cần tối thiểu {toi_thieu} (kể cả bìa) — "
                    "chia thêm tầng: con số, ý nghĩa, đối thủ, cái cần theo dõi")
@@ -306,7 +306,7 @@ def use(spec_cs: dict, out: Path, brand: str, wd: Path, bo_qua_dau=False) -> tup
 
 
 def handoff(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
-    anh = {a["ma"]: a for a in m["anh"]}
+    anh = {a["id"]: a for a in m["images"]}
     L = [f"Nguồn tin: {m['title']}", f"Link gốc: {m['link']}"]
     if m.get("via"):
         L.append(f"Via: {m['via']}")
@@ -314,8 +314,8 @@ def handoff(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
     for nhan, ds in dung_anh:
         for ma in ds:
             a = anh[ma]
-            L.append(f"- {nhan}: {ma} ← {a['mien'] or a['tu']}" +
-                     (f" ({a['trang'][:100]})" if a.get("trang") else ""))
+            L.append(f"- {nhan}: {ma} ← {a['domain'] or a['source']}" +
+                     (f" ({a['page_url'][:100]})" if a.get("page_url") else ""))
     L.append(f"Hook bìa: {(spec.get('cover') or {}).get('hook', '')}")
     L.append(f"Slide: {len(spec.get('slides') or []) + 1}, tệp: {out}")
     return "\n".join(L)
@@ -389,8 +389,8 @@ def main() -> int:
         mid = nc.send_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
                            {"bia": cover.get("anh"), "hook": hook,
                             "anh": [ma for _, ds in dung_anh for ma in ds]})
-    nguon_anh = sorted({m_["mien"] or m_["tu"] for m_ in m["anh"]
-                        if m_["ma"] in {ma for _, ds in dung_anh for ma in ds}})
+    nguon_anh = sorted({m_["domain"] or m_["source"] for m_ in m["images"]
+                        if m_["id"] in {ma for _, ds in dung_anh for ma in ds}})
     # Bang den (kanban swarm, 05/09): script ghi ban giao co cau truc len the goc
     # cua bai — code lam, LLM khong phai nho. Cung JSON nay in ra dong
     # "[metadata]" de Dre dan vao kanban_complete(metadata=...) -> Miles thay

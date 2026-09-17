@@ -26,15 +26,15 @@ import role                                                    # noqa: E402
 
 
 def _read(ma, **k):
-    a = {"ma": ma, "dung": ["thân"], "lien_quan": True, "ngang": False, "h": 1350,
-         "ti_le": 0.8, "loai": "anh", "mat": 0, "alt": ""}
+    a = {"id": ma, "uses": ["thân"], "relevant": True, "landscape": False, "h": 1350,
+         "ratio": 0.8, "kind": "anh", "faces": 0, "alt": ""}
     a.update(k)
     return a
 
 
 def _low(ma, ti_le, **k):
     """Anh ngang qua thap de cat doc — chi dung duoc qua "ghep"."""
-    return _read(ma, ngang=True, h=600, ti_le=ti_le, dung=["ghép dọc với một ảnh ngang"], **k)
+    return _read(ma, landscape=True, h=600, ratio=ti_le, uses=["ghép dọc với một ảnh ngang"], **k)
 
 
 # ---------------------------------------------------------------- luat ghep
@@ -117,20 +117,20 @@ def test_count_cap_dark_prefer_no_greedy():
 
 # ---------------------------------------------------------------- mat nguoi
 def test_face_no_clear_ai_no_ok_count():
-    assert schema.count_image_use_ok([_read("A3", mat=1)], "dre") == 0
-    assert schema.count_image_use_ok([_read("A3", mat=1, alt="Jensen Huang on stage")], "dre") == 1
-    assert schema.count_image_use_ok([_read("A3", mat=2, thuong_hieu={"nguoi": "C.C. Wei"})], "dre") == 1
+    assert schema.count_image_use_ok([_read("A3", faces=1)], "dre") == 0
+    assert schema.count_image_use_ok([_read("A3", faces=1, alt="Jensen Huang on stage")], "dre") == 1
+    assert schema.count_image_use_ok([_read("A3", faces=2, brand_match={"person": "C.C. Wei"})], "dre") == 1
 
 
 def test_face_within_stackable_pairs_same_no_count():
-    bo = [_low("A1", 1.78, mat=1), _low("A2", 1.78)]
+    bo = [_low("A1", 1.78, faces=1), _low("A2", 1.78)]
     assert schema.count_image_use_ok(bo, "dre") == 0, "cong ghep cung kiem mat (bo.kiem_mat)"
 
 
 def test_download_show_t_2d546375():
     """Đúng bộ Dre thấy khi block: 4 ảnh dùng được A6..A9, A5+A10 (3:2+3:2), A3 mặt lạ.
     Trước LOW-178 đếm 4 (cặp 0.75 bị loại); nay cặp đó là một slide -> 5, vẫn < 6."""
-    bo = [_read("A3", mat=1), _low("A5", 1.5), _read("A6"), _read("A7"), _read("A8"), _read("A9"),
+    bo = [_read("A3", faces=1), _low("A5", 1.5), _read("A6"), _read("A7"), _read("A8"), _read("A9"),
           _low("A10", 1.5)]
     assert schema.count_image_use_ok(bo, "dre") == 5
     assert not role.has_enough_material("dre", bo), "5 slide < 6: engine phai tim tiep, khong ngung"

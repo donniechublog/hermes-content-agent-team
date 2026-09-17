@@ -201,9 +201,9 @@ def test_rank_from_title_no_take_bright_board_independent():
     """R-r2-5: hang tach tu tieu de la hang tren bang CHINH; bang doc lap
     (do nang luc khac, nguon svg tra hang=None) khong duoc muon "#1" do."""
     goi_y = 1
-    assert xh._rank_of({"hang": 3}, {"doc_lap": True}, goi_y) == 3, "hang doc duoc tu bang thi giu"
-    assert xh._rank_of({"hang": None}, {"doc_lap": False}, goi_y) == 1, "bang chinh muon hang tieu de"
-    assert xh._rank_of({"hang": None}, {"doc_lap": True}, goi_y) is None, "bang doc lap KHONG muon"
+    assert xh._rank_of({"rank": 3}, {"doc_lap": True}, goi_y) == 3, "hang doc duoc tu bang thi giu"
+    assert xh._rank_of({"rank": None}, {"doc_lap": False}, goi_y) == 1, "bang chinh muon hang tieu de"
+    assert xh._rank_of({"rank": None}, {"doc_lap": True}, goi_y) is None, "bang doc lap KHONG muon"
     assert xh._rank_of({}, {}, None) is None
 
 

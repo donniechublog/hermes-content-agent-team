@@ -36,10 +36,10 @@ def test_filter_drop_stock_thumb_no_right_image_and_duplicate():
             "https://cdn.wccftech.com/x.jpg", "https://cdn.wccftech.com/x.jpg",
             "https://b.com/y.webp?w=1"]
     ra = tw.filter(urls, 10, "web_bing", "q")
-    assert [c["anh"] for c in ra] == ["https://cdn.wccftech.com/x.jpg", "https://b.com/y.webp?w=1"]
-    assert ra[0]["trang"] == ra[0]["anh"], "trang = chinh anh de qua loc ben thu ba"
-    assert ra[0]["diem"] > tw.filter(urls, 10, "web_yandex", "q")[0]["diem"], "Bing xep truoc Yandex"
-    assert ra[0]["diem"] < 42, "web phai xep SAU og:image bao chi (42): web co the lac de ca loat"
+    assert [c["image_url"] for c in ra] == ["https://cdn.wccftech.com/x.jpg", "https://b.com/y.webp?w=1"]
+    assert ra[0]["page_url"] == ra[0]["image_url"], "trang = chinh anh de qua loc ben thu ba"
+    assert ra[0]["score"] > tw.filter(urls, 10, "web_yandex", "q")[0]["score"], "Bing xep truoc Yandex"
+    assert ra[0]["score"] < 42, "web phai xep SAU og:image bao chi (42): web co the lac de ca loat"
     assert len(tw.filter(urls, 1, "web_bing", "q")) == 1
 
 

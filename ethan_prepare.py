@@ -38,30 +38,30 @@ TAGLINE_CALL_Y = ["MODEL RELEASE", "MODEL UPDATE", "FUNDING", "M&A", "EARNINGS",
 def label_ethan(a: dict) -> tuple:
     """(dung, ghi_chu) cho mot anh theo luat cua card.py."""
     dung, ghi = [], []
-    r = a["ti_le"]
-    if a.get("xep_hang"):
-        xh = a["xep_hang"]
+    r = a["ratio"]
+    if a.get("ranking"):
+        xh = a["ranking"]
         dung.append("✅ ẢNH XẾP HẠNG — ẢNH CHÍNH BẮT BUỘC của tin này, dùng MỘT MÌNH được "
-                    f"(bảng {xh.get('site')} · {xh.get('bang')}, {xh.get('model')}"
-                    + (f" #{xh.get('hang')}" if xh.get('hang') else "") + ", đã khoanh hàng model)")
+                    f"(bảng {xh.get('site')} · {xh.get('board')}, {xh.get('model')}"
+                    + (f" #{xh.get('rank')}" if xh.get('rank') else "") + ", đã khoanh hàng model)")
         if r > RATIO_HERO_MAX:
             ghi.append(f"bảng quá ngang ({r}): thêm \"anh2\" ngang cùng tone để ghép dọc")
         return dung, ghi
-    if a["loai"] == "chart":
+    if a["kind"] == "chart":
         dung.append("CHỈ ghép dọc (anh2) với một ảnh ngang cùng tone, chart một mình bị chặn")
     elif r > RATIO_HERO_MAX:
         dung.append("ảnh NGANG quá 1.6: CHỈ ghép dọc (anh2) với ảnh ngang cùng tone")
     else:
         dung.append("nền hero (một mình)")
-        if a.get("goc_trai_sang", 0) >= 150:
+        if a.get("bottom_left_brightness", 0) >= 150:
             ghi.append("nửa dưới sáng, câu hook đè lên hơi nhạt")
-    if a.get("mat"):
-        ghi.append(f"CÓ {a['mat']} MẶT NGƯỜI → chỉ dùng khi khai \"nhan_vat\": \"<tên người trong bài>\"")
-    if a.get("canh_ngan", 0) < 1000:
-        ghi.append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
+    if a.get("faces"):
+        ghi.append(f"CÓ {a['faces']} MẶT NGƯỜI → chỉ dùng khi khai \"nhan_vat\": \"<tên người trong bài>\"")
+    if a.get("short_side", 0) < 1000:
+        ghi.append(f"cạnh ngắn {a['short_side']}px, phóng lên hơi mềm")
     if a.get("commons"):
         ghi.append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin")
-    if a.get("thuong_hieu"):
+    if a.get("brand_match"):
         # Nhãn theo ĐÚNG LOẠI tư liệu (chân dung có tên / thẻ logo / bảng xếp
         # hạng / ảnh cơ sở), một bản dùng chung với brief của Dre. Bản cũ ở đây
         # dán một câu "trụ sở/campus/biển hiệu" cho MỌI loại, nên chân dung
@@ -69,10 +69,10 @@ def label_ethan(a: dict) -> tuple:
         # `check_subject_named` chặn mặt người không khai tên, tức Ethan buộc phải bỏ
         # ảnh founder (Ông Chủ 10/09/2026).
         import image_brand
-        ghi.append(image_brand.label_by_type(a["thuong_hieu"]))
-    if a.get("khai_niem"):
-        kn = a["khai_niem"]
-        ghi.append(f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{kn.get('tu_khoa')}\"" + (f": {kn['ly_do']}" if kn.get("ly_do") else "")
+        ghi.append(image_brand.label_by_type(a["brand_match"]))
+    if a.get("concept"):
+        kn = a["concept"]
+        ghi.append(f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{kn.get('keyword')}\"" + (f": {kn['reason']}" if kn.get("reason") else "")
                    + ") từ Wikimedia Commons — KHÔNG phải ảnh của tin; làm nền hero khi tin không có ảnh riêng tốt hơn")
     return dung, ghi
 
@@ -80,10 +80,10 @@ def label_ethan(a: dict) -> tuple:
 def stackable_pairs_hero(m: dict) -> list:
     """Cap anh ngang ghep doc duoc cho card.py: cung tone (da tinh trong engine)
     va ti le sau ghep <= 1.6."""
-    anh = {a["ma"]: a for a in m["anh"]}
+    anh = {a["id"]: a for a in m["images"]}
     ra = []
-    for x, y in m.get("cap_ghep", []):
-        rc = 1 / (1 / anh[x]["ti_le"] + 1 / anh[y]["ti_le"])
+    for x, y in m.get("stackable_pairs", []):
+        rc = 1 / (1 / anh[x]["ratio"] + 1 / anh[y]["ratio"])
         if rc <= RATIO_HERO_MAX:
             ra.append([x, y])
     return ra
@@ -99,30 +99,30 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  "Lần này ẢNH và HOOK phải khác." if da_dung else "")
     L += brief_common.block_material(m, nhan="Finn/Vera", n_cau=15, n_doan=800)
     L += ["", "## Ảnh đã tải & xử lý — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm"]
-    if not m["anh"]:
+    if not m["images"]:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng thẻ, không vẽ. Kết thúc task bằng "
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
     # Nhan cua vision (06/09/2026): truoc day brief cua Ethan khong in co
-    # `lien_quan` lan mo ta, nen vai chon phai anh ❌ roi bi ethan_submit doi lai —
+    # `relevant` lan mo ta, nen vai chon phai anh ❌ roi bi ethan_submit doi lai —
     # mat mot vong ma vai khong hieu vi sao. Dre da in day du tu truoc.
-    if m.get("chua_nhin"):
-        L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
+    if m.get("not_yet_seen"):
+        L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['not_yet_seen'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
     goi_y = []
-    if m.get("tin_xep_hang"):
+    if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "", "ethan_submit"))
-    for a in m["anh"]:
-        if a.get("lien_quan") is False:
-            L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "
-                     f"(nguồn: {a['mien'] or a['tu']})")
+    for a in m["images"]:
+        if a.get("relevant") is False:
+            L.append(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or 'không rõ'} → KHÔNG DÙNG "
+                     f"(nguồn: {a['domain'] or a['source']})")
             continue
         dung, ghi = label_ethan(a)
-        if dung[0].startswith("nền hero") and not a.get("mat"):
-            goi_y.append((a.get("goc_trai_sang", 0), -a.get("canh_ngan", 0), a["ma"]))
-        dong = (f"- {a['ma']}: {a['w']}x{a['h']} ({a['ti_le']}) {a['loai'].upper()} | {'; '.join(dung)}"
-                f" | nguồn: {a['mien'] or a['tu']}")
-        if a.get("mo_ta"):
-            dong += f" | ảnh là: {a['mo_ta'][:110]}"
+        if dung[0].startswith("nền hero") and not a.get("faces"):
+            goi_y.append((a.get("bottom_left_brightness", 0), -a.get("short_side", 0), a["id"]))
+        dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {a['kind'].upper()} | {'; '.join(dung)}"
+                f" | nguồn: {a['domain'] or a['source']}")
+        if a.get("description"):
+            dong += f" | ảnh là: {a['description'][:110]}"
         elif a.get("alt"):
             dong += f" | alt: {a['alt'][:70]}"
         if ghi:

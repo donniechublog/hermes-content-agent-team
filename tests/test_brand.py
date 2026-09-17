@@ -148,10 +148,10 @@ def test_filter_empty_when_no_has_what():
 
 
 def _image(**o):
-    a = {"thuong_hieu": {"hang": "Qualcomm", "khoa": "qualcomm", "loai": "anh",
-                         "tu_khoa": "Qualcomm headquarters"},
-         "loai": "anh", "mat": 0, "ngang": False, "lien_quan": True, "dung": ["bìa", "thân"],
-         "ghi_chu": ["ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin"]}
+    a = {"brand_match": {"company": "Qualcomm", "key": "qualcomm", "kind": "anh",
+                         "keyword": "Qualcomm headquarters"},
+         "kind": "anh", "faces": 0, "landscape": False, "relevant": True, "uses": ["bìa", "thân"],
+         "notes": ["ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin"]}
     a.update(o)
     return a
 
@@ -159,25 +159,25 @@ def _image(**o):
 def test_label_keep_all_cover_attempt_than():
     """Khác ảnh khái niệm: ảnh của CHÍNH hãng trong tin được vào slide thân."""
     a = th.label_brand(_image())
-    assert a["dung"] == ["bìa", "thân"]
-    assert a["ghi_chu"][0].startswith("🏢 ẢNH THƯƠNG HIỆU (Qualcomm)")
-    assert not any("ảnh CHUNG của hãng" in g for g in a["ghi_chu"])
+    assert a["uses"] == ["bìa", "thân"]
+    assert a["notes"][0].startswith("🏢 ẢNH THƯƠNG HIỆU (Qualcomm)")
+    assert not any("ảnh CHUNG của hãng" in g for g in a["notes"])
 
 
 def test_label_drop_face_anonymous():
-    a = th.label_brand(_image(mat=2))
-    assert a["dung"] == [] and a["ghi_chu"][0].startswith("❌") and "§6" in a["ghi_chu"][0]
+    a = th.label_brand(_image(faces=2))
+    assert a["uses"] == [] and a["notes"][0].startswith("❌") and "§6" in a["notes"][0]
 
 
 def test_label_drop_chart():
-    a = th.label_brand(_image(loai="chart"))
-    assert a["dung"] == [] and a["ghi_chu"][0].startswith("❌")
+    a = th.label_brand(_image(kind="chart"))
+    assert a["uses"] == [] and a["notes"][0].startswith("❌")
 
 
 def test_label_keep_raw_when_vision_already_type():
-    a = th.label_brand(_image(lien_quan=False, dung=[],
-                                 ghi_chu=["❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG"]))
-    assert a["dung"] == [] and a["ghi_chu"][0].startswith("❌ KHÔNG LIÊN QUAN")
+    a = th.label_brand(_image(relevant=False, uses=[],
+                                 notes=["❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG"]))
+    assert a["uses"] == [] and a["notes"][0].startswith("❌ KHÔNG LIÊN QUAN")
 
 
 def test_manifest_count_enough_and_arrange_cover_after_image_own():
@@ -186,16 +186,16 @@ def test_manifest_count_enough_and_arrange_cover_after_image_own():
     import image_prepare as cb
 
     def _a(ma, kn=False, thh=False):
-        return {"ma": ma, "dung": ["bìa"], "lien_quan": True, "mien": "x", "tu": "x", "ti_le": 0.8,
-                "goc_trai_sang": 50, "canh_ngan": 1000, "ngang": False, "loai": "anh",
-                **({"khai_niem": {"tu_khoa": "silicon wafer"}} if kn else {}),
-                **({"thuong_hieu": {"hang": "Qualcomm"}} if thh else {})}
+        return {"id": ma, "uses": ["bìa"], "relevant": True, "domain": "x", "source": "x", "ratio": 0.8,
+                "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "anh",
+                **({"concept": {"keyword": "silicon wafer"}} if kn else {}),
+                **({"brand_match": {"company": "Qualcomm"}} if thh else {})}
 
     anh = [_a("A1", kn=True), _a("A2", thh=True), _a("A3"), _a("A4", thh=True)]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), anh, None, False, {}, {}, False, 5, vai_anh="ethan")
-    assert m["so_dung_duoc"] == 4, m["so_dung_duoc"]          # 3 riêng/thương hiệu + 1 khái niệm
-    assert m["goi_y_bia"] == ["A3", "A2", "A4"], m["goi_y_bia"]
+    assert m["usable_count"] == 4, m["usable_count"]          # 3 riêng/thương hiệu + 1 khái niệm
+    assert m["cover_suggestions"] == ["A3", "A2", "A4"], m["cover_suggestions"]
 
 
 # ---- hồ sơ Wikidata: logo, founder/CEO, bảng xếp hạng ----------------------
@@ -231,54 +231,54 @@ def test_rank_has_model_only_rank_make_model():
 def test_sentence_ask_vision_no_ask_has_right_image_of_story():
     """Câu chung hỏi "có phải ảnh của tin không" — chân dung founder và thẻ logo
     chắc chắn không phải, nên bị đánh rớt đúng lúc ta cần chúng nhất."""
-    c = th.sentence_ask_vision("Kiện Anthropic", {"hang": "Anthropic", "loai": "nguoi",
-                                             "nguoi": "Dario Amodei", "vai": "CEO"})
+    c = th.sentence_ask_vision("Kiện Anthropic", {"company": "Anthropic", "kind": "nguoi",
+                                             "person": "Dario Amodei", "person_role": "CEO"})
     assert "Dario Amodei" in c and "CHAN DUNG" in c and "LIEN_QUAN" in c
-    c = th.sentence_ask_vision("DeepSeek gọi vốn", {"hang": "DeepSeek", "loai": "logo"})
+    c = th.sentence_ask_vision("DeepSeek gọi vốn", {"company": "DeepSeek", "kind": "logo"})
     assert "THE LOGO" in c and "DeepSeek" in c
-    c = th.sentence_ask_vision("Qualcomm ký", {"hang": "Qualcomm", "loai": "anh"})
+    c = th.sentence_ask_vision("Qualcomm ký", {"company": "Qualcomm", "kind": "anh"})
     assert "BOI CANH" in c and "mit tinh" in c
 
 
 def test_label_block_use_change_declare_use_name():
-    a = th.label_brand(_image(thuong_hieu={"hang": "Anthropic", "loai": "nguoi",
-                                              "nguoi": "Dario Amodei", "vai": "CEO"}, mat=1))
-    assert a["dung"] == ["bìa", "thân"]
-    assert "Dario Amodei" in a["ghi_chu"][0] and "nhan_vat" in a["ghi_chu"][0]
+    a = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "nguoi",
+                                              "person": "Dario Amodei", "person_role": "CEO"}, faces=1))
+    assert a["uses"] == ["bìa", "thân"]
+    assert "Dario Amodei" in a["notes"][0] and "nhan_vat" in a["notes"][0]
 
 
 def test_label_block_use_no_block_by_face():
     """`count_faces` trả None (-> 0) khi thiếu cv2, mà IMAGE_RULES §6 cho phép cổng mặt
     tự tắt. Lấy mat==0 làm "không phải chân dung" là bỏ câm lặng mọi chân dung."""
-    a = th.label_brand(_image(thuong_hieu={"hang": "Anthropic", "loai": "nguoi",
-                                              "nguoi": "Dario Amodei", "vai": "CEO"}, mat=0))
-    assert a["dung"] == ["bìa", "thân"], a["dung"]
+    a = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "nguoi",
+                                              "person": "Dario Amodei", "person_role": "CEO"}, faces=0))
+    assert a["uses"] == ["bìa", "thân"], a["uses"]
 
 
 def test_label_card_logo_go_notes_chart_color_pure():
     """Thẻ logo là nền trơn + chữ nên `classify` đọc ra "chart" và dán kèm
     "KHÔNG làm bìa" — ngược hẳn công dụng của nó (09/09/2026)."""
-    a = th.label_brand(_image(thuong_hieu={"hang": "DeepSeek", "loai": "logo", "nen": "tối"},
-                                 loai="chart", dung=["thân (chart, dán full bề ngang)"],
-                                 ghi_chu=["chart cao, đã cắt bớt phần dưới về 4:5", "KHÔNG làm bìa"]))
-    assert a["dung"] == ["bìa"]
-    assert not any("KHÔNG làm bìa" in g or "chart" in g.lower() for g in a["ghi_chu"]), a["ghi_chu"]
+    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "logo", "background_tone": "tối"},
+                                 kind="chart", uses=["thân (chart, dán full bề ngang)"],
+                                 notes=["chart cao, đã cắt bớt phần dưới về 4:5", "KHÔNG làm bìa"]))
+    assert a["uses"] == ["bìa"]
+    assert not any("KHÔNG làm bìa" in g or "chart" in g.lower() for g in a["notes"]), a["notes"]
 
 
 def test_label_card_logo_only_cover_and_say_clear_background():
-    a = th.label_brand(_image(thuong_hieu={"hang": "DeepSeek", "loai": "logo", "nen": "tối"}))
-    assert a["dung"] == ["bìa"]
-    assert a["ghi_chu"][0].startswith("🔖 THẺ LOGO DeepSeek") and '"nen": "toi"' in a["ghi_chu"][0]
-    b = th.label_brand(_image(thuong_hieu={"hang": "Anthropic", "loai": "logo", "nen": "sáng"}))
-    assert '"nen": "sang"' in b["ghi_chu"][0]
+    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "logo", "background_tone": "tối"}))
+    assert a["uses"] == ["bìa"]
+    assert a["notes"][0].startswith("🔖 THẺ LOGO DeepSeek") and '"nen": "toi"' in a["notes"][0]
+    b = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "logo", "background_tone": "sáng"}))
+    assert '"nen": "sang"' in b["notes"][0]
 
 
 def test_label_board_ranking_say_clear_no_right_board_of_story():
-    a = th.label_brand(_image(thuong_hieu={"hang": "DeepSeek", "loai": "xep_hang",
-                                              "site": "ARENA", "bang": "Text"},
-                                 loai="chart", dung=["thân (chart)"]))
-    assert a["dung"] == ["thân (chart)"]                  # chart CỦA BẢNG thì giữ
-    assert "KHÔNG phải bảng của tin này" in a["ghi_chu"][0] and "ARENA" in a["ghi_chu"][0]
+    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "xep_hang",
+                                              "site": "ARENA", "board": "Text"},
+                                 kind="chart", uses=["thân (chart)"]))
+    assert a["uses"] == ["thân (chart)"]                  # chart CỦA BẢNG thì giữ
+    assert "KHÔNG phải bảng của tin này" in a["notes"][0] and "ARENA" in a["notes"][0]
 
 
 def test_ua_wikimedia_only_send_wait_use_host_wikimedia():

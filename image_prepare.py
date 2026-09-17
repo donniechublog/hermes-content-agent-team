@@ -126,14 +126,14 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     # `carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE` — engine
     # chay chung cho ca ba vai dung anh nen Ethan (card.py, MOT anh la du)
     # cung bi doi 5 anh, roi ca day "thieu anh" ban cho Ethan cau hoi cua
-    # carousel. `tom["vai_anh"]` da co san tu sidecar .img.json ngay tren
+    # carousel. `tom["image_role"]` da co san tu sidecar .img.json ngay tren
     # (`_summary_from_img_json`), chi la truoc gio khong ai dung toi.
-    vai_anh = role.canonical_slug(tom.get("vai_anh") or "")
+    vai_anh = role.canonical_slug(tom.get("image_role") or "")
     if vai_anh not in role.ROLE:
         # Chay tay, hoac sidecar mat/chua kip ghi. Khong im: nguong sai lam
-        # lech ca `thieu_anh` o manifest lan cau bao gui Ong Chu.
+        # lech ca `missing_images` o manifest lan cau bao gui Ong Chu.
         print(f"[chuan bi] khong biet vai cua {draft_id} "
-              f"(vai_anh={tom.get('vai_anh')!r}) -> dung nguong cua "
+              f"(vai_anh={tom.get('image_role')!r}) -> dung nguong cua "
               f"{role.DEFAULT_IMAGE}", file=sys.stderr)
         vai_anh = role.DEFAULT_IMAGE
     role.set_active_role(vai_anh)
@@ -331,8 +331,8 @@ def _description_missing_image(m: dict) -> dict | None:
 
     Engine chi MO TA, khong quyet dinh (audit A1): hoi Ong Chu hay chuyen Kite
     la viec cua tang dieu phoi, xem `route_missing_images.after_prepare`."""
-    so, tt = int(m.get("so_dung_duoc", 0)), int(m.get("toi_thieu", 5))
-    return None if so >= tt else {"so": so, "toi_thieu": tt}
+    so, tt = int(m.get("usable_count", 0)), int(m.get("min_images", 5))
+    return None if so >= tt else {"count": so, "min_images": tt}
 
 
 def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
@@ -410,7 +410,7 @@ def _report_crash_loop(draft_id: str, so_chet: int) -> None:
     try:
         import publish
         tom = _summary_from_img_json(draft_id)
-        slug = role.canonical_slug(tom.get("vai_anh") or "") or role.DEFAULT_IMAGE
+        slug = role.canonical_slug(tom.get("image_role") or "") or role.DEFAULT_IMAGE
         publish.send_topic(
             f"⛔ Engine chuẩn bị ảnh chết bất thường <b>{so_chet} lần liên tiếp</b> trên draft "
             f"<code>{draft_id}</code> — đã DỪNG, không chạy lại. Xem "
@@ -429,7 +429,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
     Mac dinh WAIT_LOCK_SECONDS (60) — xem chu thich o hang so do: 300 bang dung tran
     bash tool cua vai nen "doi het khoa" chua bao gio thanh cong tu trong tay vai.
 
-    `sau_chuan_bi(draft_id, m)`: moc cho tang GHEP NOI xu ly `m["thieu_anh"]`
+    `sau_chuan_bi(draft_id, m)`: moc cho tang GHEP NOI xu ly `m["missing_images"]`
     (hoi Ong Chu / chuyen Kite) — truyen `route_missing_images.after_prepare` vao.
     Engine khong tu import cai do: lam vay la lop CHUAN BI goi nguoc len lop
     dieu phoi (audit A1). Goi TRONG khoa va TRUOC khi ghi `xong.json`, nen moi
@@ -457,7 +457,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
             m = prepare_article(draft_id, meta, state, wd, khong_browser=khong_browser)
         thieu = _description_missing_image(m)
         if thieu:
-            m["thieu_anh"] = thieu
+            m["missing_images"] = thieu
         if sau_chuan_bi is not None:
             t_route = time.time()
             try:
@@ -494,7 +494,7 @@ def main() -> int:
     import route_missing_images
     m, wd, _ = run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                     sau_chuan_bi=route_missing_images.after_prepare)
-    print(f"[xong] {len(m['anh'])} anh, {len(m.get('tu_lieu', {}).get('cau_co_so', []))} cau so lieu -> {wd}",
+    print(f"[xong] {len(m['images'])} anh, {len(m.get('material', {}).get('number_sentences', []))} cau so lieu -> {wd}",
           file=sys.stderr)
     return 0
 

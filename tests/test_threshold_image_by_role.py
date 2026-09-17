@@ -31,11 +31,11 @@ from prepare.manifest import build_manifest                   # noqa: E402
 
 
 def _image(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
-    """Mot muc `anh` du khoa cho build_manifest. ti_le < 1.3 co chu dich: `cap_ghep`
+    """Mot muc `images` du khoa cho build_manifest. ratio < 1.3 co chu dich: `stackable_pairs`
     chi MO TEP anh voi anh ngang, ma o day khong co tep that nao."""
-    return {"ma": ma, "goc": f"/khong-co/{ma}.jpg", "ti_le": 1.0, "w": 1200, "h": 1200,
-            "loai": "anh", "dung": list(dung), "lien_quan": lien_quan, "mat": 0,
-            "goc_trai_sang": 60, "canh_ngan": 1200, "mien": "vi_du.com", "tu": "bai"}
+    return {"id": ma, "original_path": f"/khong-co/{ma}.jpg", "ratio": 1.0, "w": 1200, "h": 1200,
+            "kind": "anh", "uses": list(dung), "relevant": lien_quan, "faces": 0,
+            "bottom_left_brightness": 60, "short_side": 1200, "domain": "vi_du.com", "source": "bai"}
 
 
 def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
@@ -51,26 +51,26 @@ def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
 
 # ------------------------------------------------ 1. nguong ghi vao manifest
 def test_manifest_write_threshold_by_role_ok_hand():
-    """`toi_thieu` va `toi_thieu_co_ban` la cua ROLE DUOC GIAO. Truoc 10/09/2026
-    `toi_thieu_co_ban` go cung `carousel.MIN_SLIDE` cho moi vai, nen nut "ha san"
+    """`min_images` va `base_min_images` la cua ROLE DUOC GIAO. Truoc 10/09/2026
+    `base_min_images` go cung `carousel.MIN_SLIDE` cho moi vai, nen nut "ha san"
     cua mot bai Ethan cung lay san 5."""
     m_ethan = _manifest("ethan", 2)
-    assert m_ethan["toi_thieu"] == 1, m_ethan["toi_thieu"]
-    assert m_ethan["toi_thieu_co_ban"] == 1, m_ethan["toi_thieu_co_ban"]
-    assert m_ethan["vai_anh"] == "ethan"
+    assert m_ethan["min_images"] == 1, m_ethan["min_images"]
+    assert m_ethan["base_min_images"] == 1, m_ethan["base_min_images"]
+    assert m_ethan["image_role"] == "ethan"
 
     m_dre = _manifest("dre", 2)
     import carousel
-    assert m_dre["toi_thieu"] == carousel.MIN_SLIDE, "Dre KHONG duoc doi hanh vi: moi slide mot anh"
-    assert m_dre["toi_thieu_co_ban"] == carousel.MIN_SLIDE
-    assert _manifest("dre", 2, flagship=True)["toi_thieu"] == carousel.FLAGSHIP_MIN, \
+    assert m_dre["min_images"] == carousel.MIN_SLIDE, "Dre KHONG duoc doi hanh vi: moi slide mot anh"
+    assert m_dre["base_min_images"] == carousel.MIN_SLIDE
+    assert _manifest("dre", 2, flagship=True)["min_images"] == carousel.FLAGSHIP_MIN, \
         "tin flagship lay nguong flagship cho Dre"
 
 
 def test_story_flagship_no_make_card_of_ethan_can_extra_image():
     """`flagship` la luat cua carousel (bo phai day hon cho tin lon). The hero
     cua Ethan van la MOT tam anh du tin co lon co nao."""
-    assert _manifest("ethan", 2, flagship=True)["toi_thieu"] == 1
+    assert _manifest("ethan", 2, flagship=True)["min_images"] == 1
 
 
 # --------------------------------------- 2. quyet dinh "bai nay co thieu anh"
@@ -78,19 +78,19 @@ def test_two_image_real_is_enough_wait_ethan_and_missing_wait_dre():
     """Dung canh sinh ra su co: 2 anh that dung duoc.
 
     Voi Ethan phai la None (khong co gi de hoi) — truoc sua, ham nay tra
-    {"so": 2, "toi_thieu": 5} va do la thu keo ca day "thieu anh" chay."""
+    {"count": 2, "min_images": 5} va do la thu keo ca day "thieu anh" chay."""
     import image_prepare as cb
     assert cb._description_missing_image(_manifest("ethan", 2)) is None, \
         "2 anh that ma bao Ethan thieu anh — dung loi 10/09/2026"
     import carousel
-    assert cb._description_missing_image(_manifest("dre", 2)) == {"so": 2, "toi_thieu": carousel.MIN_SLIDE}
+    assert cb._description_missing_image(_manifest("dre", 2)) == {"count": 2, "min_images": carousel.MIN_SLIDE}
     # Va khong anh nao thi Ethan cung thieu that (0 < 1) — cong van con.
-    assert cb._description_missing_image(_manifest("ethan", 0)) == {"so": 0, "toi_thieu": 1}
+    assert cb._description_missing_image(_manifest("ethan", 0)) == {"count": 0, "min_images": 1}
 
 
 # ------------------------------------------- 3. tang ghep noi khong hoi oan
 def test_no_ask_boss_when_ethan_enough_image():
-    """`sau_chuan_bi` chi hoi khi manifest co `thieu_anh`. Bai cua Ethan voi 2
+    """`sau_chuan_bi` chi hoi khi manifest co `missing_images`. Bai cua Ethan voi 2
     anh khong con khoa do -> khong mot tin nao gui len topic, khong nut "Gui
     Kite ve vector" nao moc vao task le ra chay tron."""
     import route_missing_images as rt
@@ -101,17 +101,17 @@ def test_no_ask_boss_when_ethan_enough_image():
         with tempfile.TemporaryDirectory() as tmp:
             rt.DRAFTS = Path(tmp)
             (rt.DRAFTS / "d1.img.json").write_text(
-                json.dumps({"vai_anh": "ethan"}), encoding="utf-8")
+                json.dumps({"image_role": "ethan"}), encoding="utf-8")
             m = _manifest("ethan", 2)
             import image_prepare as cb
             thieu = cb._description_missing_image(m)
             if thieu:
-                m["thieu_anh"] = thieu
+                m["missing_images"] = thieu
             rt.after_prepare("d1", m)
     finally:
         rt._time_send, rt.DRAFTS = cu_gui, cu_drafts
     assert not goi, f"da hoi Ong Chu du Ethan khong thieu anh: {goi}"
-    assert "hoi_kite" not in m and "chuyen_kite" not in m
+    assert "kite_asked" not in m and "kite_task_id" not in m
 
 
 # ------------------------------------------------------ 4. cau chu cua nut
@@ -142,30 +142,30 @@ def test_button_lower_ready_no_call_card_of_ethan_is_slide():
     """Dong chu Ong Chu doc duoc hom 10/09: "carousel cần tối thiểu 5 slide" —
     tren mot task le ra chi la mot tam anh."""
     with tempfile.TemporaryDirectory() as tmp:
-        note = _lower_ready(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
-                                   "toi_thieu_co_ban": 1, "vai_anh": "ethan"}, None)
+        note = _lower_ready(Path(tmp), {"usable_count": 0, "min_images": 1,
+                                   "base_min_images": 1, "image_role": "ethan"}, None)
     assert "slide" not in note.lower(), f"van goi san pham cua Ethan la slide: {note}"
     assert "ảnh" in note
 
 
 def test_button_lower_ready_still_say_slide_wait_dre_and_wait_manifest_old():
-    """Dre khong doi gi; manifest cu (khong co `vai_anh`) giu nguyen chu cu."""
+    """Dre khong doi gi; manifest cu (khong co `image_role`) giu nguyen chu cu."""
     with tempfile.TemporaryDirectory() as tmp:
-        note = _lower_ready(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
-                                   "toi_thieu_co_ban": 5, "vai_anh": "dre"}, None)
+        note = _lower_ready(Path(tmp), {"usable_count": 4, "min_images": 8,
+                                   "base_min_images": 5, "image_role": "dre"}, None)
         assert "slide" in note, note
-        cu = _lower_ready(Path(tmp), {"so_dung_duoc": 4, "toi_thieu": 8,
-                                 "toi_thieu_co_ban": 5}, None)
+        cu = _lower_ready(Path(tmp), {"usable_count": 4, "min_images": 8,
+                                 "base_min_images": 5}, None)
         assert "slide" in cu, cu
 
 
 def test_button_lower_ready_by_sidecar_when_article_already_transfer_kite():
-    """`create_task_kite` doi `vai_anh` trong SIDECAR chu khong sua manifest, nen
+    """`create_task_kite` doi `image_role` trong SIDECAR chu khong sua manifest, nen
     sidecar la ban moi nhat — bai da sang Kite thi lai goi la slide."""
     with tempfile.TemporaryDirectory() as tmp:
-        note = _lower_ready(Path(tmp), {"so_dung_duoc": 0, "toi_thieu": 1,
-                                   "toi_thieu_co_ban": 1, "vai_anh": "ethan"},
-                       {"vai_anh": "kite", "chuyen_tu": "ethan"})
+        note = _lower_ready(Path(tmp), {"usable_count": 0, "min_images": 1,
+                                   "base_min_images": 1, "image_role": "ethan"},
+                       {"image_role": "kite", "transferred_from": "ethan"})
     assert "slide" in note, note
 
 
@@ -214,14 +214,14 @@ def test_threshold_block_no_got_use_make_target_go_find():
         assert "toi_thieu" not in d.split("_round_widen_search(")[0], \
             f"vong tim anh dang do bang nguong chan: {d}"
     # Mot tam DUNG DUOC nhung khong lam hero duoc thi chua phai la du.
-    a = {"dung": ["ghép dọc với một ảnh ngang cùng tone"], "lien_quan": True,
-         "loai": "anh", "ti_le": 1.78, "mat": 0, "alt": ""}
+    a = {"uses": ["ghép dọc với một ảnh ngang cùng tone"], "relevant": True,
+         "kind": "anh", "ratio": 1.78, "faces": 0, "alt": ""}
     assert not vai_mod.has_enough_material("ethan", [a]), \
         "engine se ngung tim khi Ethan van chua co tam nao lam nen hero"
 
 
 def test_sidecar_write_before_when_engine_run():
-    """Engine doc `vai_anh` tu sidecar .img.json ngay dau. `create_pair` tung
+    """Engine doc `image_role` tu sidecar .img.json ngay dau. `create_pair` tung
     goi `_block_run_engine` TRUOC `_crop_sidecar`, tuc engine doc mot tep chua ai
     ghi — truoc gio chi mat tom tat (im lang), tu 10/09/2026 mat ca nguong."""
     import inspect

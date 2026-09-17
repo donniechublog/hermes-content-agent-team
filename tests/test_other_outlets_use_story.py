@@ -66,8 +66,8 @@ def _run_round(tieu_de, tit_trang_cua):
         if tit is None:
             return None
         _image_fake(Path(ra))
-        return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
-                "tit_trang": tit, "alt": "khối lead", "ly_do": "khối lead"}
+        return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True,
+                "page_title": tit, "alt": "khối lead", "score_reason": "khối lead"}
     that = capture_page.capture_lead_mobile
     capture_page.capture_lead_mobile = gia
     err = io.StringIO()
@@ -88,7 +88,7 @@ def test_round_capture_drop_other_outlets_no_same_story_and_take_report_use():
         "https://www.therundown.ai/articles/hugging-face-robot-duck": VIT,
         "https://siliconangle.com/deepseek-v4-1-flash": THAT,
     })
-    assert len(anh) == 1 and anh[0]["mien"] == "siliconangle.com", [a["mien"] for a in anh]
+    assert len(anh) == 1 and anh[0]["domain"] == "siliconangle.com", [a["domain"] for a in anh]
     assert "KHÔNG cùng tin" in log and "therundown.ai" in log, log
 
 
@@ -97,12 +97,12 @@ def test_round_capture_no_title_keeps_old_behavior():
     goi, anh, _ = _run_round("", {
         "https://www.therundown.ai/articles/hugging-face-robot-duck": VIT,
     })
-    assert len(anh) == 1 and anh[0]["mien"] == "therundown.ai"
+    assert len(anh) == 1 and anh[0]["domain"] == "therundown.ai"
 
 
 def test_capture_lead_mobile_return_headline_page():
     src = (ROOT / "capture_page.py").read_text(encoding="utf-8")
-    assert '"tit_trang": tit_trang' in src, "capture_lead_mobile phai tra tit trang de doi chieu"
+    assert '"page_title": tit_trang' in src, "capture_lead_mobile phai tra tit trang de doi chieu"
 
 
 if __name__ == "__main__":

@@ -51,7 +51,7 @@ def test_js_fig_skips_pure_image_figure_without_chart():
 
 # --------------------------------------------------- 2. câu hỏi mặc định rõ nét
 def test_default_question_requires_sharp_not_angled():
-    """Trước 12/09/2026, nhánh mặc định (không `khai_niem`/`thuong_hieu`) —
+    """Trước 12/09/2026, nhánh mặc định (không `concept`/`brand_match`) —
     đường mà CẢ ảnh hero thật lẫn ảnh chụp lại trang đều đi qua — không hỏi gì
     về độ nét/góc chụp, chỉ hỏi "có liên quan bài không". Ảnh báo chụp nghiêng
     một màn hình (đúng ca Kimi K3) lọt qua dễ dàng vì rõ ràng đúng chủ đề.
@@ -82,9 +82,9 @@ def test_no_longer_blocks_clean_screenshot_or_generic_illustration():
     assert not hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
 
     import image_brand as th
-    for loai, th_dict in (("nguoi", {"hang": "X", "loai": "nguoi", "nguoi": "A", "vai": "CEO"}),
-                         ("logo", {"hang": "X", "loai": "logo"}),
-                         ("anh", {"hang": "X", "loai": "anh"})):
+    for loai, th_dict in (("nguoi", {"company": "X", "kind": "nguoi", "person": "A", "person_role": "CEO"}),
+                         ("logo", {"company": "X", "kind": "logo"}),
+                         ("anh", {"company": "X", "kind": "anh"})):
         c = th.sentence_ask_vision("tin gi do", th_dict)
         assert "man hinh" not in c.lower(), (loai, c)
         assert "chung chung" not in c.lower(), (loai, c)
@@ -102,7 +102,7 @@ def test_no_longer_blocks_clean_screenshot_or_generic_illustration():
 
 # --------------------------------------------------- 3. tối thiểu ảnh thật/slide
 def _build_image_pool(wd, so_anh: int, so_dung: int, so_slide: int = 8):
-    """`so_anh` ảnh thật (lien_quan=True) trong `m["anh"]`, nhưng chỉ `so_dung`
+    """`so_anh` ảnh thật (lien_quan=True) trong `m["images"]`, nhưng chỉ `so_dung`
     mã đầu tiên được đặt vào slide (mã còn lại coi như "tìm ra rồi mà không
     dùng" — đúng hiện trạng Moonshot: A1..A6 tìm ra, chỉ 1 ảnh (lặp lại) lên
     hình). Trả (slides, m)."""

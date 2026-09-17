@@ -283,7 +283,7 @@ def _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu
     # dat thi tao lai dung task nay (them ghi chu doi anh khac). Thieu file nay
     # thi nut Lam lai bao khong co thong tin.
     _write_json(DRAFTS / (draft_id + ".img.json"),
-              {"vai_anh": vai_anh, "carousel": la_carousel or la_edu,
+              {"image_role": vai_anh, "carousel": la_carousel or la_edu,
                "title": item["title"], "body": illu_body, "remakes": 0,
                "link": item.get("link", ""), "summary": item.get("summary", ""),
                "source_note": item.get("source_note", ""), "via": item.get("via", "")})
@@ -368,7 +368,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
 
     # SIDECAR TRUOC, ENGINE SAU. Engine doc `<draft_id>.img.json` ngay dau
     # (`_summary_from_img_json`) de lay tom tat, source_note VA — tu 10/09/2026 —
-    # `vai_anh` de biet can bao nhieu anh that. Chay engine truoc la de no doc
+    # `image_role` de biet can bao nhieu anh that. Chay engine truoc la de no doc
     # mot tep chua ai ghi: truoc gio chi mat tom tat (im lang), nay con mat ca
     # nguong nen Ethan lai bi doi du anh cho carousel. Doi cho hai dong nay la
     # du — _crop_sidecar khong can gi tu engine.

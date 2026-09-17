@@ -25,7 +25,7 @@ def _summary_from_img_json(draft_id: str) -> dict:
         m = re.search(rf"^{nhan}: (.*)$", body, re.M)   # sidecar cu: boc tu body
         ra[khoa] = (m.group(1).strip() if m else "")
     ra["remakes"] = int(d.get("remakes", 0) or 0)
-    ra["vai_anh"] = d.get("vai_anh", "")
+    ra["image_role"] = d.get("image_role", "")
     return ra
 
 
@@ -100,9 +100,9 @@ def candidate_social(link: str, wd: Path) -> list:
     for i, m in enumerate(d["media"], 1):
         if m["type"] != "image" or not m["tep"]:
             continue
-        cands.append({"anh": m["tep"], "tep": m["tep"],
+        cands.append({"image_url": m["tep"], "tep": m["tep"],
                       "alt": f"ảnh {i} trong post của {d['author']}".strip(),
-                      "tu": "social_post", "trang": d["link"], "diem": 95})
+                      "source": "social_post", "page_url": d["link"], "score": 95})
     print(f"[social] {len(cands)} anh that tu chinh post", file=sys.stderr)
     return cands
 
@@ -114,8 +114,8 @@ def candidate_static(title: str, link: str, nguon_path: Path, title_en: str = ""
     ds = article_images.find(title, link, sau_rong=True, tu_nguon=str(nguon_path))
     if len(ds) < 4:
         them = article_images.find(title_en or title, link, sau_rong=True, tu_nguon=None)
-        co = {c["anh"] for c in ds}
-        ds += [c for c in them if c["anh"] not in co]
+        co = {c["image_url"] for c in ds}
+        ds += [c for c in them if c["image_url"] not in co]
     return ds
 
 
@@ -140,9 +140,9 @@ def commons_images(tu_khoa: str, so: int = 4) -> list | None:
         ten = (pg.get("title") or "").replace("File:", "")
         if tu_khoa.lower() not in ten.lower():       # tim mo cua Commons hay lac de
             continue
-        ra.append({"anh": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
-                   "tu": "commons", "trang": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
-                   "rong": w, "cao": h, "diem": 30})
+        ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
+                   "source": "commons", "page_url": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
+                   "rong": w, "cao": h, "score": 30})
     ra.sort(key=lambda c: -(c["rong"] * c["cao"]))
     return ra[:so]
 

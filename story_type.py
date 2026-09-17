@@ -81,7 +81,7 @@ def late(category, vat: str) -> bool:
 
 
 # Điểm cộng theo thứ tự trong bảng: vật đứng đầu +8, kế +6, +4, +2, còn lại 0.
-# Cộng vào `diem` gốc của ứng viên (anh 28 / nguoi 24 / logo 18) TRƯỚC khi
+# Cộng vào `score` gốc của ứng viên (anh 28 / nguoi 24 / logo 18) TRƯỚC khi
 # `_round_brand` sort — để cùng một bộ ứng viên, tin M&A đẩy logo lên
 # trước chân dung, tin LAB đẩy trụ sở/founder lên trước logo.
 _LOAI_UNG_VIEN = {"anh": "tru_so", "nguoi": "founder", "logo": "logo", "co_phieu": "co_phieu"}
@@ -155,8 +155,8 @@ def line_brief(m: dict) -> list:
     if loai:
         ra.append(f"Loại tin {loai} → ảnh hợp lệ theo thứ tự: " + " > ".join(order_image(loai))
                   + " (bảng story_type.py, Ông Chủ 12/09/2026).")
-    if m.get("ghep_hai_hang"):
+    if m.get("two_company_pairs"):
         ra.append("THƯƠNG VỤ: ghép ảnh của HAI hãng — " +
-                  ", ".join("+".join(c) for c in m["ghep_hai_hang"]) +
+                  ", ".join("+".join(c) for c in m["two_company_pairs"]) +
                   " (logo+logo hoặc trụ sở+trụ sở, xếp dọc, cùng tone).")
     return ra

@@ -284,10 +284,10 @@ def filter_commons(pages: dict, ten: str, so: int = 4, canh_ngan_min: int = SHOR
             continue
         if nhieu and nhieu.search(thap):
             continue
-        ra.append({"anh": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten_tep,
-                   "og": False, "mime": ii.get("mime"), "tu": "thuong_hieu",
-                   "trang": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
-                   "rong": w, "cao": h, "diem": 25})
+        ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten_tep,
+                   "og": False, "mime": ii.get("mime"), "source": "thuong_hieu",
+                   "page_url": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
+                   "rong": w, "cao": h, "score": 25})
     # JPEG trước PNG: ảnh chụp thật gần như luôn là JPEG (xem image_concept).
     ra.sort(key=lambda c: (c["mime"] != "image/jpeg", -(c["rong"] * c["cao"])))
     return ra[:so]
@@ -608,8 +608,8 @@ def image_wikidata(hang, wd=None) -> list:
         if u and min(u["rong"], u["cao"]) >= 500:
             c = _candidate(u, n["tep"], ten_chinh, khoa, "nguoi",
                           f"{n['vai']} {ten_chinh} (Wikidata)")
-            c["thuong_hieu"]["nguoi"] = n["ten"]
-            c["thuong_hieu"]["vai"] = n["vai"]
+            c["brand_match"]["person"] = n["ten"]
+            c["brand_match"]["person_role"] = n["vai"]
             c["alt"] = f"Commons: {n['ten']} — {n['vai']} {ten_chinh}"
             ra.append(c)
         # BAT ANH NGANG cua chinh nguoi nay tren Commons (Ong Chu 12/09/2026:
@@ -638,18 +638,18 @@ def image_wikidata(hang, wd=None) -> list:
             print(f"[thuong_hieu] the logo hong: {type(e).__name__}", file=sys.stderr)
             continue
         c = _candidate(u, t, ten_chinh, khoa, "logo", "logo chính thức (Wikidata P154)")
-        c["thuong_hieu"]["nen"] = nen
-        c.update({"tep": str(the), "anh": str(the), "cho_do_hoa": True})
+        c["brand_match"]["background_tone"] = nen
+        c.update({"tep": str(the), "image_url": str(the), "cho_do_hoa": True})
         ra.append(c)
     return ra
 
 
 def _candidate(u: dict, ten_tep: str, hang: str, khoa: str, loai: str, ly_do: str) -> dict:
-    return {"anh": u["url"], "alt": "Commons: " + ten_tep, "og": False, "mime": u.get("mime"),
-            "tu": "thuong_hieu", "rong": u["rong"], "cao": u["cao"],
-            "trang": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
-            "diem": {"anh": 28, "nguoi": 24, "logo": 18}.get(loai, 20),
-            "thuong_hieu": {"hang": hang, "khoa": khoa, "loai": loai, "tu_khoa": ly_do}}
+    return {"image_url": u["url"], "alt": "Commons: " + ten_tep, "og": False, "mime": u.get("mime"),
+            "source": "thuong_hieu", "rong": u["rong"], "cao": u["cao"],
+            "page_url": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
+            "score": {"anh": 28, "nguoi": 24, "logo": 18}.get(loai, 20),
+            "brand_match": {"company": hang, "key": khoa, "kind": loai, "keyword": ly_do}}
 
 
 MAX_PERSON_LANDSCAPE = 2   # tran anh ngang moi nguoi — tranh mot CEO chiem het luot
@@ -696,10 +696,10 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
         c = _candidate({"url": ii.get("thumburl") or ii.get("url"), "rong": w, "cao": h,
                        "mime": ii.get("mime")}, ten_tep, hang, khoa, "nguoi",
                       f"{vai} {hang}, ảnh ngang (Commons)")
-        c["diem"] = 26     # giua "anh" cong ty/san pham (28) va chan dung doc (24):
+        c["score"] = 26    # giua "anh" cong ty/san pham (28) va chan dung doc (24):
                            # van la mot nguoi, nhung du ngang de khong can crop nat
-        c["thuong_hieu"]["nguoi"] = ten
-        c["thuong_hieu"]["vai"] = vai
+        c["brand_match"]["person"] = ten
+        c["brand_match"]["person_role"] = vai
         c["alt"] = f"Commons: {ten} — {vai} {hang}, ảnh ngang"
         ra.append(c)
         if len(ra) >= MAX_PERSON_LANDSCAPE:
@@ -772,8 +772,8 @@ def image_has_ballot(hang, wd, phien=None) -> list:
         w, h = im.size
     c = _candidate({"url": str(ra), "rong": w, "cao": h, "mime": "image/png"},
                   ra.name, ten_chinh, khoa, "co_phieu", f"biểu đồ giá {ma} (Google Finance)")
-    c.update({"tep": str(ra), "anh": str(ra), "cho_do_hoa": True, "diem": 22})
-    c["thuong_hieu"]["ma"] = ma
+    c.update({"tep": str(ra), "image_url": str(ra), "cho_do_hoa": True, "score": 22})
+    c["brand_match"]["ticker"] = ma
     return [c]
 
 
@@ -797,10 +797,10 @@ def vendor_images(hang, so: int = MAX_NEW_RANK, wd=None) -> list:
             hong += 1
             continue
         for c in filter_commons(pages, ten, so=so):
-            if c["anh"] in da:
+            if c["image_url"] in da:
                 continue
-            da.add(c["anh"])
-            c["thuong_hieu"] = {"hang": ten_chinh, "khoa": khoa, "loai": "anh", "tu_khoa": cau}
+            da.add(c["image_url"])
+            c["brand_match"] = {"company": ten_chinh, "key": khoa, "kind": "anh", "keyword": cau}
             ra.append(c)
             if len(ra) >= so:
                 break
@@ -812,8 +812,8 @@ def vendor_images(hang, so: int = MAX_NEW_RANK, wd=None) -> list:
               "khong phai hang khong co anh", file=sys.stderr)
     if len(ra) < so:
         for c in image_wikidata(hang, wd):
-            if c["anh"] not in da:
-                da.add(c["anh"])
+            if c["image_url"] not in da:
+                da.add(c["image_url"])
                 ra.append(c)
     return ra
 
@@ -838,11 +838,11 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
     "chup LAI mot man hinh bang may anh khac", dung cho ca Getty chup nghieng
     App Store cua Kimi K3) da GO khoi day. Ong Chu 16/09: hai tieu chi nay loai
     oan anh dung chu de (xem `prepare/vision.py` cho do that va ly do day du)."""
-    hang, loai = th.get("hang", "hãng"), th.get("loai", "anh")
+    hang, loai = th.get("company", "hãng"), th.get("kind", "anh")
     if loai == "nguoi":
-        ai = th.get("nguoi", "")
+        ai = th.get("person", "")
         return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG "
-                f"cua {ai} ({th.get('vai','lanh dao')} {hang}) lay tu Wikidata/Commons.\n"
+                f"cua {ai} ({th.get('person_role','lanh dao')} {hang}) lay tu Wikidata/Commons.\n"
                 "Tra loi DUNG 2 dong:\n"
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
                 f"LIEN_QUAN: co | khong  (co = anh chup that MOT NGUOI, ro mat, hop lam anh chan "
@@ -874,31 +874,31 @@ def label_by_type(th: dict) -> str:
     """Câu nhãn cho MỘT ảnh thương hiệu, theo LOẠI tư liệu. Thuần.
 
     Tách khỏi `label_brand` 10/09/2026 để brief nào cũng dùng đúng một bản:
-    `ethan_prepare.label_ethan` dựng lại `ghi_chu` từ đầu nên tự viết một câu
+    `ethan_prepare.label_ethan` dựng lại `notes` từ đầu nên tự viết một câu
     "trụ sở/campus/biển hiệu" chung cho MỌI loại — một tấm chân dung founder tới
     tay Ethan mất luôn cái TÊN để khai `nhan_vat`, mà `submit_common.check_subject_named`
     chặn ảnh có mặt người không khai tên. Tức Ethan buộc phải bỏ ảnh founder,
     đúng cái Ông Chủ hỏi ("task này thì ko chịu dùng hình của Founder")."""
-    hang, loai = th.get("hang", "?"), th.get("loai", "anh")
+    hang, loai = th.get("company", "?"), th.get("kind", "anh")
     if loai == "nguoi":
-        ai, vai = th.get("nguoi", "?"), th.get("vai", "lãnh đạo")
+        ai, vai = th.get("person", "?"), th.get("person_role", "lãnh đạo")
         return (f"👤 CHÂN DUNG {vai.upper()} — {ai}, {vai} {hang} (Wikidata/Commons). "
                 f"Chỉ dùng khi BÀI CÓ NHẮC {ai}, và phải khai \"nhan_vat\": \"{ai}\" "
                 "y hệt. Bài không nhắc tên người này thì bỏ (IMAGE_RULES §6).")
     if loai == "logo":
         return (f"🔖 THẺ LOGO {hang} — logo chính thức đặt trên nền trơn, dồn lên "
-                f"nửa trên để hook đè nửa dưới. Nền {th.get('nen', 'tối')} → khai "
-                f"\"nen\": \"{'sang' if th.get('nen') == 'sáng' else 'toi'}\". "
+                f"nửa trên để hook đè nửa dưới. Nền {th.get('background_tone', 'tối')} → khai "
+                f"\"nen\": \"{'sang' if th.get('background_tone') == 'sáng' else 'toi'}\". "
                 "Đường cuối khi tin không có ảnh thật nào khác — đừng dùng nếu đã "
                 "có ảnh chụp.")
     if loai == "co_phieu":
-        return (f"📈 BIỂU ĐỒ GIÁ {th.get('ma', '?')} của {hang} (Google Finance, khung điện thoại) — "
+        return (f"📈 BIỂU ĐỒ GIÁ {th.get('ticker', '?')} của {hang} (Google Finance, khung điện thoại) — "
                 "vật liên quan của tin BUSINESS/M&A theo bảng loại tin. Đồ hoạ có chủ ý: dán "
                 "full bề ngang như chart, khai \"chart\": true ở slide thân; caption ghi "
                 "\"via Google Finance\".")
     if loai == "xep_hang":
         return (f"📊 BẢNG XẾP HẠNG có {hang} — ảnh engine chụp từ "
-                f"{th.get('site', '?')} ({th.get('bang', '?')}), đã khoanh hàng. "
+                f"{th.get('site', '?')} ({th.get('board', '?')}), đã khoanh hàng. "
                 "KHÔNG phải bảng của tin này; chỉ làm slide bối cảnh cho thấy hãng "
                 "đang đứng đâu, và caption phải ghi rõ nguồn + bảng.")
     return (f"🏢 ẢNH THƯƠNG HIỆU ({hang}) từ Wikimedia Commons — ảnh THẬT của chính "
@@ -914,52 +914,52 @@ def label_brand(a: dict) -> dict:
     tin, và có mặt người thì bỏ — IMAGE_RULES §6 "không gọi được tên thì không được
     dùng", mà người đứng trước cửa hàng Samsung trên Commons thì không ai gọi
     được tên."""
-    th = a.get("thuong_hieu") or {}
-    loai = th.get("loai", "anh")
-    if a.get("lien_quan") is False:
+    th = a.get("brand_match") or {}
+    loai = th.get("kind", "anh")
+    if a.get("relevant") is False:
         return a                                  # classify đã xoá dung + ghi ❌
-    a["ghi_chu"] = [g for g in a["ghi_chu"] if "Wikimedia Commons" not in g]
+    a["notes"] = [g for g in a["notes"] if "Wikimedia Commons" not in g]
 
     if loai == "nguoi":
         # Mặt người ở đây là CÓ CHỦ Ý và GỌI ĐƯỢC TÊN — đúng ngoại lệ của
         # IMAGE_RULES §6 ("trừ khi khai nhan_vat"), khác hẳn mặt vô danh.
         #
-        # KHÔNG chặn theo `mat` ở đây: `image_rules.count_faces` trả None (-> 0) khi
+        # KHÔNG chặn theo `faces` ở đây: `image_rules.count_faces` trả None (-> 0) khi
         # thiếu cv2/model, và IMAGE_RULES §6 nói rõ cổng mặt được phép tự tắt. Lấy
-        # `mat == 0` làm "không phải chân dung" thì trên máy thiếu cv2 MỌI chân
+        # `faces == 0` làm "không phải chân dung" thì trên máy thiếu cv2 MỌI chân
         # dung đều bị bỏ câm lặng. Ảnh này là P18 của chính người đó trên
         # Wikidata; đúng/sai để con mắt (sentence_ask_vision) phán.
-        a["ghi_chu"].insert(0, label_by_type(th))
+        a["notes"].insert(0, label_by_type(th))
         return a
 
     if loai == "logo":
         # Thẻ logo là nền trơn + chữ nên `classify` đọc ra "chart" và dán kèm
         # "KHÔNG làm bìa" — ngược hẳn công dụng của nó. Gỡ ghi chú đó, đừng để
         # brief tự mâu thuẫn với chính mình.
-        a["dung"] = ["bìa"]
-        a["ghi_chu"] = [g for g in a["ghi_chu"]
+        a["uses"] = ["bìa"]
+        a["notes"] = [g for g in a["notes"]
                         if "KHÔNG làm bìa" not in g and "chart" not in g.lower()]
-        a["ghi_chu"].insert(0, label_by_type(th))
+        a["notes"].insert(0, label_by_type(th))
         return a
 
     if loai == "co_phieu":
-        a["dung"] = ["thân (chart, dán full bề ngang nguyên vẹn)"]
-        a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG làm bìa" not in g]
-        a["ghi_chu"].insert(0, label_by_type(th))
+        a["uses"] = ["thân (chart, dán full bề ngang nguyên vẹn)"]
+        a["notes"] = [g for g in a["notes"] if "KHÔNG làm bìa" not in g]
+        a["notes"].insert(0, label_by_type(th))
         return a
     if loai == "xep_hang":
-        a["ghi_chu"].insert(0, label_by_type(th))
+        a["notes"].insert(0, label_by_type(th))
         return a
 
-    if a.get("loai") == "chart":
-        a["dung"] = []
-        a["ghi_chu"].insert(0, "❌ ảnh thương hiệu mà là chart/đồ hoạ → KHÔNG DÙNG "
+    if a.get("kind") == "chart":
+        a["uses"] = []
+        a["notes"].insert(0, "❌ ảnh thương hiệu mà là chart/đồ hoạ → KHÔNG DÙNG "
                                "(chart phải là chart CỦA TIN)")
         return a
-    if a.get("mat"):
-        a["dung"] = []
-        a["ghi_chu"].insert(0, f"❌ ảnh thương hiệu có {a['mat']} mặt người vô danh → KHÔNG DÙNG "
+    if a.get("faces"):
+        a["uses"] = []
+        a["notes"].insert(0, f"❌ ảnh thương hiệu có {a['faces']} mặt người vô danh → KHÔNG DÙNG "
                                "(IMAGE_RULES §6)")
         return a
-    a["ghi_chu"].insert(0, label_by_type(th))
+    a["notes"].insert(0, label_by_type(th))
     return a

@@ -51,30 +51,30 @@ class _Phien:
 def _image(ma: str, **doi) -> dict:
     """Anh doc 4:5, day toi, khong mat — `classify` dan nhan "bìa" cho no, va
     card.py cung dung lam nen hero duoc."""
-    a = {"ma": ma, "goc": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
-         "ti_le": 0.8, "w": 960, "h": 1200, "loai": "anh", "ngang": False,
-         "dung": ["bìa", "thân"], "lien_quan": True, "mat": 0, "goc_trai_sang": 60,
-         "canh_ngan": 960, "mien": "vi_du.com", "tu": "bai", "alt": "", "ghi_chu": []}
+    a = {"id": ma, "original_path": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
+         "ratio": 0.8, "w": 960, "h": 1200, "kind": "anh", "landscape": False,
+         "uses": ["bìa", "thân"], "relevant": True, "faces": 0, "bottom_left_brightness": 60,
+         "short_side": 960, "domain": "vi_du.com", "source": "bai", "alt": "", "notes": []}
     a.update(doi)
     return a
 
 
 def _image_landscape(ma: str) -> dict:
     """16:9 (1.78): Dre ghep doc thanh mot slide, Ethan khong dung duoc (>1.6)."""
-    return _image(ma, ti_le=1.78, w=1920, h=1080, ngang=True, canh_ngan=1080,
-                dung=["ghép dọc với một ảnh ngang cùng tone"])
+    return _image(ma, ratio=1.78, w=1920, h=1080, landscape=True, short_side=1080,
+                uses=["ghép dọc với một ảnh ngang cùng tone"])
 
 
 def _image_landscape_fit(ma: str) -> dict:
     """1.5: qua LANDSCAPE_CLEAR (1.4) nen KHONG co nhan "bìa" cua carousel, nhung card.py
     cho toi 1.6 — day dung la cho luat cua carousel bat Ethan di tim vo ich."""
-    return _image(ma, ti_le=1.5, w=1500, h=1000, ngang=True, canh_ngan=1000,
-                dung=["ghép dọc với một ảnh ngang cùng tone"])
+    return _image(ma, ratio=1.5, w=1500, h=1000, landscape=True, short_side=1000,
+                uses=["ghép dọc với một ảnh ngang cùng tone"])
 
 
 def _image_chart(ma: str) -> dict:
-    return _image(ma, ti_le=1.2, w=1200, h=1000, loai="chart", canh_ngan=1000,
-                goc_trai_sang=200, dung=["thân (chart, dán full bề ngang nguyên vẹn)"])
+    return _image(ma, ratio=1.2, w=1200, h=1000, kind="chart", short_side=1000,
+                bottom_left_brightness=200, uses=["thân (chart, dán full bề ngang nguyên vẹn)"])
 
 
 PHA_NANG = ("BrowserSession", "load_source", "_summary_from_img_json", "_supplement_source", "_extra_announcement_page",
@@ -94,20 +94,20 @@ def _fallback_rounds_already_run(anh_bai: list, vai_anh="ethan", khong_browser=F
     def _vong(ten):
         def f(a, *args, **kw):
             goi.append(ten)
-            return a, [x for x in a if x["dung"]], []
+            return a, [x for x in a if x["uses"]], []
         return f
 
     cb.BrowserSession = lambda *a, **k: _Phien()
     cb.load_source = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
-    cb._summary_from_img_json = lambda d: {"vai_anh": vai_anh, "summary": ""}
+    cb._summary_from_img_json = lambda d: {"image_role": vai_anh, "summary": ""}
     cb._supplement_source = lambda *a, **k: []
     cb._extra_announcement_page = lambda n, p, trang, *a, **k: trang
     cb._take_from_browser = lambda trang, *a, **k: (
         {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)
     cb._capture_ranking = lambda *a, **k: ([], False)
     cb._gather_and_download_image = lambda *a, **k: anh_bai
-    cb._seen_image = lambda a, nguon, t, wd: (a, [x for x in a if x["dung"]], [])
+    cb._seen_image = lambda a, nguon, t, wd: (a, [x for x in a if x["uses"]], [])
     cb._round_widen_search = _vong("tim_rong")
     cb._round_brand = _vong("thuong_hieu")
     cb._round_concept = _vong("khai_niem")
@@ -122,8 +122,8 @@ def _fallback_rounds_already_run(anh_bai: list, vai_anh="ethan", khong_browser=F
     # `_round_entity` (Wikipedia pageimages) cung goi mang THAT, lam tep test
     # "khong mang" nay ton 6 phut 34 (do 13/09/2026) thay vi vai giay.
     cb._round_entity = _vong("thuc_the")
-    cb._article_material = lambda *a, **k: {"sentence_has_count": [], "doan_dau": "", "so_nguon": 1}
-    cb.build_manifest = lambda *a, **k: {"anh": anh_bai}
+    cb._article_material = lambda *a, **k: {"sentence_has_count": [], "lead_paragraph": "", "source_count": 1}
+    cb.build_manifest = lambda *a, **k: {"images": anh_bai}
     cb.contact_sheet = lambda *a, **k: None
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -150,9 +150,9 @@ def test_article_enough_image_code_no_temp_which_len_hero_then_still_go_find():
 def test_face_no_clear_ai_no_static_is_hero():
     """`submit_common.check_subject_named` chan anh co mat ma khong khai `nhan_vat`, va vai
     khong duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc."""
-    assert "tim_rong" in _fallback_rounds_already_run([_image(f"A{i + 1}", mat=1) for i in range(5)])
+    assert "tim_rong" in _fallback_rounds_already_run([_image(f"A{i + 1}", faces=1) for i in range(5)])
     assert "tim_rong" not in _fallback_rounds_already_run(
-        [_image("A1", mat=1, alt="Jensen Huang speaks at GTC")]), \
+        [_image("A1", faces=1, alt="Jensen Huang speaks at GTC")]), \
         "alt da neu ten thi Ethan khai duoc nhan_vat — khong can di tim nua"
 
 

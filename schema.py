@@ -31,21 +31,23 @@ from typing import Any, TypedDict
 
 # Tang phien ban khi doi Y NGHIA mot khoa (khong phai khi them khoa tuy chon).
 # Ban 0 = moi manifest ghi truoc 09/09/2026, khong co truong `phien_ban`.
-VERSION_MANIFEST = 1
+# Ban 2 (LOW-227, 17/09/2026) = khoa English; bang cu -> moi o
+# docs/tu_dien_ten/manifest_keys_v2.json, ap bang `manifest_migration`.
+VERSION_MANIFEST = 2
 
 
 class Manifest(TypedDict, total=False):
     """`state/<brand>/chuan_bi/<draft_id>/xong.json` — engine ghi, moi vai doc.
 
     Nguoi ghi: `prepare.manifest.build_manifest` (26 khoa goc), roi
-    `image_prepare.run` them `thieu_anh`, `route_missing_images.after_prepare` them
-    `chuyen_kite`/`hoi_kite`/`khong_kite` — CA BA con trong khoa cua engine, nen
+    `image_prepare.run` them `missing_images`, `route_missing_images.after_prepare` them
+    `kite_task_id`/`kite_asked`/`kite_unavailable` — CA BA con trong khoa cua engine, nen
     nguoi doc luon thay ban da chot. Rieng `approve_post._button_lower_ready` ghi de
-    `toi_thieu` + them `ha_san_luc` SAU DO, luc Ong Chu bam nut.
+    `min_images` + them `min_lowered_at` SAU DO, luc Ong Chu bam nut.
 
     `total=False` vi ban cu thieu khoa moi; cot BAT BUOC ghi trong chu thich.
     """
-    phien_ban: int                 # tu ban 1; thieu = ban 0 (truoc 09/09/2026)
+    version: int                   # 2 tu LOW-227; ban 0/1 (khoa Viet) nang qua read_manifest
 
     # --- BAT BUOC: co noi doc tho `m[k]`, thieu la no ---
     draft_id: str
@@ -53,13 +55,13 @@ class Manifest(TypedDict, total=False):
     title: str
     link: str
     workdir: str                   # duong dan TUYET DOI toi thu muc lam viec
-    anh: list                      # [{ma, goc, san, dung, ghi_chu, lien_quan, ...}]
+    images: list                   # [Image]
     # So ANH THAT toi thieu de VAI DUOC GIAO dung duoc bo nay (`role.min_images`).
     # Voi Dre con la so SLIDE toi thieu — moi slide mot anh rieng nen hai con so
     # trung nhau, va `dre_submit`/`dre_prepare` doc khoa nay theo nghia "slide".
     # Voi Ethan thi KHONG trung (1 anh, 1 the): truoc 10/09/2026 cho nay luon la
     # so cua carousel nen bai cua Ethan bi bao thieu anh oan.
-    toi_thieu: int
+    min_images: int
     flagship: bool
 
     # --- Tuy chon: moi noi doc deu co mac dinh ---
@@ -67,31 +69,86 @@ class Manifest(TypedDict, total=False):
     category: str
     summary: str
     source_note: str
-    tieu_de_en: str
-    tu_lieu: dict
-    chu_bai: str                   # CAT con 20000 ky tu luc ghi
+    title_en: str
+    material: dict                 # {number_sentences, lead_paragraph, source_count, source}
+    article_text: str              # CAT con 20000 ky tu luc ghi
     dropped: list                  # LOW-225: ung vien bi bo o pha tai (stage/rule/evidence/thumb)
-    so_mien: list
-    cap_ghep: list
-    ghep_hai_hang: list        # M&A: cap [ma_A, ma_B] anh cua HAI hang (story_type.py, 12/09/2026)
-    thu_tu_anh_theo_loai: list  # loai tin -> vat duoc phep, de brief noi vi sao co logo/co/bieu do gia
-    goi_y_bia: list                # ma anh goi y lam bia, XH dung dau neu co
-    chua_nhin: list                # ma anh vision chua nhin duoc
-    so_dung_duoc: int              # xem `count_image_use_ok` — CHUM khai niem tinh la MOT
-    toi_thieu_co_ban: int          # san tuyet doi CUA VAI DO, `ha san` khong xuong duoi day
-    vai_anh: str                   # SLUG vai duoc giao bo anh nay ("" o manifest cu)
-    tin_xep_hang: bool
-    xep_hang: dict | None          # BANG DAU TIEN; None khi khong chup duoc
-    so_xep_hang: int               # so bang chup duoc; 0 khi khong co
-    tao_luc: int
-    nguon_path: str
+    domains: list
+    stackable_pairs: list
+    two_company_pairs: list    # M&A: cap [id_A, id_B] anh cua HAI hang (story_type.py, 12/09/2026)
+    image_order_by_story_type: list  # loai tin -> vat duoc phep, de brief noi vi sao co logo/co/bieu do gia
+    cover_suggestions: list        # id anh goi y lam bia, XH dung dau neu co
+    not_yet_seen: list             # id anh vision chua nhin duoc
+    usable_count: int              # xem `count_image_use_ok` — CHUM khai niem tinh la MOT
+    base_min_images: int           # san tuyet doi CUA VAI DO, `ha san` khong xuong duoi day
+    image_role: str                # SLUG vai duoc giao bo anh nay ("" o manifest cu)
+    is_ranking_story: bool
+    ranking: dict | None           # BANG DAU TIEN; None khi khong chup duoc
+    ranking_count: int             # so bang chup duoc; 0 khi khong co
+    created_at: int
+    source_path: str
+    route_error: str               # route_missing_images: gui tin hoi that bai
 
     # --- Co dinh tuyen, chi co khi bai THIEU anh (route_missing_images ghi) ---
-    thieu_anh: dict                # {"so": int, "toi_thieu": int}
-    chuyen_kite: str               # task id Kite, khi engine tu chuyen
-    hoi_kite: bool                 # da hoi Ong Chu bang nut
-    khong_kite: bool               # brand chua co Kite, khong hua chuyen
-    ha_san_luc: int                # luc Ong Chu bam "lam voi N anh"
+    missing_images: dict           # {"count": int, "min_images": int}
+    kite_task_id: str              # task id Kite, khi engine tu chuyen
+    kite_asked: bool               # da hoi Ong Chu bang nut
+    kite_unavailable: bool         # brand chua co Kite, khong hua chuyen
+    min_lowered_at: int            # luc Ong Chu bam "lam voi N anh"
+
+
+class Image(TypedDict, total=False):
+    """MOT muc trong `Manifest.images` (va `image` trong state/golden/v0/samples.jsonl).
+
+    Khong co TypedDict nay truoc LOW-227 — khoa anh chi ton tai rai rac trong
+    prepare/vision.py va cac vong tim anh. Khai o day de doi ten co MOT cho doi chieu."""
+    id: str                        # "A1", "A2"... — ma anh trong MOT draft
+    original_path: str             # duong dan TUYET DOI tep goc da tai
+    ready_path: str | None         # tep da xu ly san (cat/phong); None khi chua xu ly
+    url: str
+    alt: str
+    source: str                    # vong tim ra tam nay (gia tri van tieng Viet, LOW-230)
+    page_url: str
+    domain: str
+    og: bool
+    chart_hint: bool
+    w: int
+    h: int
+    ratio: float
+    kind: str                      # "anh" | "chart"
+    short_side: int
+    landscape: bool
+    uses: list                     # cau goi y slot (hien thi)
+    notes: list
+    chart_stats: str
+    faces: int
+    bottom_brightness: int
+    bottom_left_brightness: int
+    score: int
+    score_reason: str
+    description: str
+    relevant: bool | None          # None = vision chua nhin
+    landscape_crop_ok: bool | None
+    has_keywords: bool | None
+    cluttered: bool | None
+    cluttered_legacy: bool | None  # khoa `roi` cu (LOW-47), KHONG code nao doc — giu du lieu
+    decisions: list                # LOW-225 prepare.decision_log: [{stage, outcome, rule, evidence}]
+    vision_raw: dict               # LOW-225: {model, question, answer} cua lan hoi vision
+    from_find_more: bool
+    commons: bool
+    concept: dict                  # {keyword, reason}
+    brand_match: dict              # {company, key, kind, keyword, person, person_role, board, background_tone, ticker}
+    entity: dict                   # {name, article_name, source}
+    ranking: dict                  # cung hinh voi Manifest.ranking + file_path
+    image_url: str                 # URL ung vien truoc khi tai
+    capture_source: bool
+    capture_kind: str
+    page_title: str
+    background_color: str
+    padding_color: str
+    paper_figure: str
+    fallback: bool
+    html_tag: str
 
 
 class Meta(TypedDict, total=False):
@@ -115,7 +172,7 @@ class Meta(TypedDict, total=False):
 
 class SidecarImage(TypedDict, total=False):
     """`drafts/<draft_id>.img.json` — de LAM LAI task anh duoc."""
-    vai_anh: str                   # SLUG vai (ban cu con ghi ten persona)
+    image_role: str                # SLUG vai (ban cu con ghi ten persona)
     carousel: bool
     title: str
     body: str                      # nguyen body task, de dung lai khi lam lai
@@ -124,9 +181,12 @@ class SidecarImage(TypedDict, total=False):
     summary: str
     source_note: str
     via: str
-    chuyen_kite: str               # approve_post ghi khi Ong Chu bam "Gui Kite"
-    chuyen_tu: str
-    ly_do_chuyen: str              # approve_post.create_task_kite (ADF-r2-5: tung ghi ma chua khai)
+    last_task: str
+    kite_task_id: str              # approve_post ghi khi Ong Chu bam "Gui Kite"
+    transferred_from: str
+    transfer_reason: str           # approve_post.create_task_kite (ADF-r2-5: tung ghi ma chua khai)
+    redo_reasons: list             # [{attempt, slide, reason}]
+    forbidden_slide_images: dict
 
 
 class SidecarWrite(TypedDict, total=False):
@@ -172,21 +232,21 @@ def _only_stack_ok(a: dict) -> bool:
     """Tam nay CHI dung duoc qua "ghep" — khong dung MOT MINH duoc, vi mot
     trong hai ly do:
       1. qua thap de cat doc (`h < HEIGHT_MIN_CROP_LANDSCAPE`), hoac
-      2. la anh chup NGANG co chu/logo/so lieu de len (`cat_ngang_ok is False`
+      2. la anh chup NGANG co chu/logo/so lieu de len (`landscape_crop_ok is False`
          — vision xac nhan, xem prepare.vision.classify) nen image_rules cam crop.
     Su co 12/09/2026 lan hai (t_a8ffd2f6): Dre chay that, 4/5 anh ngang cao
     >=700 la bien hieu/logo CO CHU (khong phai chart — chart da co duong rieng
     "than, dan full be ngang"), nhung cong thuc cu chi nhin chieu cao nen dem
-    ca bon la "dung mot minh duoc" — thua 2 slide so voi that te. `cat_ngang_ok`
+    ca bon la "dung mot minh duoc" — thua 2 slide so voi that te. `landscape_crop_ok`
     la None voi manifest CU (chua nhin lai) hoac khi vision khong tra loi duoc
     cau hoi — coi nhu CHUA XAC NHAN, an toan hon la dem lam dung mot minh."""
-    if not a.get("ngang"):
+    if not a.get("landscape"):
         return False
     if 0 < int(a.get("h") or 0) < HEIGHT_MIN_CROP_LANDSCAPE:
         return True
-    if a.get("loai") == "chart":
+    if a.get("kind") == "chart":
         return False           # chart ngang dung MOT MINH qua "than, dan full be ngang"
-    return a.get("cat_ngang_ok") is not True
+    return a.get("landscape_crop_ok") is not True
 
 
 def _count_stackable_pairs_real(ds: list, vai_anh: str) -> int:
@@ -208,8 +268,8 @@ def _count_stackable_pairs_real(ds: list, vai_anh: str) -> int:
     v = role.ROLE.get(vai_anh) or role.ROLE[role.DEFAULT_IMAGE]
     rules = role.rules_module(v.slug)
     n = len(ds)
-    ke = [[j for j in range(n) if j != i and rules.stack_fit_frame(ds[i].get("ti_le"),
-                                                                     ds[j].get("ti_le"))]
+    ke = [[j for j in range(n) if j != i and rules.stack_fit_frame(ds[i].get("ratio"),
+                                                                     ds[j].get("ratio"))]
           for i in range(n)]
 
     @lru_cache(maxsize=None)
@@ -239,7 +299,7 @@ def count_image_use_ok(anh: list, vai_anh: str) -> int:
     5" roi NGUNG TIM (bo qua vong chup trang nguon + anh khai niem) trong khi
     A5 900x600 chi ghep duoc ma khong co cap, tuc chi dung duoc 4 slide. Dre
     block, Ong Chu phai go tay. Truoc khi gom ve day, `dre_prepare` doan lai
-    bang `len([a for a in anh if a["dung"]])` — mot so KHAC — con `approve_post`
+    bang `len([a for a in images if a["uses"]])` — mot so KHAC — con `approve_post`
     va `image_prepare` coi thieu khoa la 0. Ba cach doan cho ba ket luan.
 
     LOW-46 (13/09/2026, tin TSMC lan ba, t_2d546375): cong thuc noi "du 6" ma
@@ -252,10 +312,10 @@ def count_image_use_ok(anh: list, vai_anh: str) -> int:
         `submit_common.check_subject_named` chan no. Nay bo qua qua `role.face_no_clear_ai`,
         cung dieu kien voi `role.can_be_hero`."""
     import role
-    dung_duoc = [a for a in (anh or []) if a.get("dung") and a.get("lien_quan") is not False
+    dung_duoc = [a for a in (anh or []) if a.get("uses") and a.get("relevant") is not False
                  and not role.face_no_clear_ai(a)]
-    khai_niem = [a for a in dung_duoc if a.get("khai_niem")]
-    rieng = [a for a in dung_duoc if not a.get("khai_niem")]
+    khai_niem = [a for a in dung_duoc if a.get("concept")]
+    rieng = [a for a in dung_duoc if not a.get("concept")]
     chi_ghep = [a for a in rieng if _only_stack_ok(a)]
     return (len(rieng) - len(chi_ghep)) + _count_stackable_pairs_real(chi_ghep, vai_anh) + min(1, len(khai_niem))
 
@@ -282,29 +342,38 @@ def read_manifest(nguon) -> dict | None:
             print(f"[schema] manifest {p} khong phai dict")
             return None
 
-    # N-r2-7: phien_ban "1" (chuoi) hay None (tep sua tay/tool khac) tung nem
+    # N-r2-7: version "1" (chuoi) hay None (tep sua tay/tool khac) tung nem
     # TypeError o phep `<` — ham hua "None neu khong doc duoc" ma lai crash.
+    # Ban 0/1 mang khoa `phien_ban`, ban 2 mang `version`.
     try:
-        pv = int(m.get("phien_ban") or 0)
+        pv = int(m.get("version") or m.get("phien_ban") or 0)
     except (TypeError, ValueError):
         pv = 0
-    m["phien_ban"] = pv                 # chuan hoa ve int; nhanh duoi ghi de neu nang ban
+    m.pop("phien_ban", None)
+    if pv < 2:
+        import manifest_migration
+        try:
+            m = manifest_migration.migrate_manifest(m)
+        except manifest_migration.KeyConflict as e:
+            print(f"[schema] manifest {nguon if not isinstance(nguon, dict) else '(dict)'} "
+                  f"lan khoa cu va moi: {e}")
+            return None
     if pv < 1:
-        if "so_dung_duoc" not in m:
-            # Ban cu co the thieu `vai_anh` (truoc LOW-12, 10/09/2026): roi ve
+        if "usable_count" not in m:
+            # Ban cu co the thieu `image_role` (truoc LOW-12, 10/09/2026): roi ve
             # `role.DEFAULT_IMAGE` nhu `image_prepare.prepare_article` da lam,
             # khong de ValueError cua `role.rules_module` lam vo hieu ca ham bu.
             import role
-            vai_anh = role.canonical_slug(m.get("vai_anh") or "") or role.DEFAULT_IMAGE
+            vai_anh = role.canonical_slug(m.get("image_role") or "") or role.DEFAULT_IMAGE
             if vai_anh not in role.ROLE:
                 vai_anh = role.DEFAULT_IMAGE
-            m["so_dung_duoc"] = count_image_use_ok(m.get("anh") or [], vai_anh)
-        # `so_xep_hang` = SO BANG chup duoc. Ban cu chi co `xep_hang` (bang dau
+            m["usable_count"] = count_image_use_ok(m.get("images") or [], vai_anh)
+        # `ranking_count` = SO BANG chup duoc. Ban cu chi co `ranking` (bang dau
         # tien) nen suy: co bang thi it nhat mot, khong co thi 0. Nguoi doc tung
         # mac dinh 1 ke ca khi khong co bang nao — nguoc han y nghia.
-        if "so_xep_hang" not in m:
-            m["so_xep_hang"] = 1 if m.get("xep_hang") else 0
-        m["phien_ban"] = VERSION_MANIFEST
+        if "ranking_count" not in m:
+            m["ranking_count"] = 1 if m.get("ranking") else 0
+    m["version"] = max(pv, VERSION_MANIFEST)
     return m
 
 

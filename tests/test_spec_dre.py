@@ -52,18 +52,18 @@ def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
     san = wd / "san" / f"{ma}.png"
     san.parent.mkdir(parents=True, exist_ok=True)
     _ve(min(w, h), min(w, h), tone).save(san)               # ban da cat san
-    a = {"ma": ma, "goc": str(goc), "san": str(san), "w": w, "h": h,
-         "ti_le": round(w / h, 2), "loai": loai, "ngang": w / h >= image_rules.LANDSCAPE_CLEAR,
-         "mat": 0, "lien_quan": True, "mo_ta": f"anh thu {ma}", "alt": "", "dung": []}
+    a = {"id": ma, "original_path": str(goc), "ready_path": str(san), "w": w, "h": h,
+         "ratio": round(w / h, 2), "kind": loai, "landscape":w / h >= image_rules.LANDSCAPE_CLEAR,
+         "faces": 0, "relevant": True, "description": f"anh thu {ma}", "alt": "", "uses": []}
     a.update(k)
     return a
 
 
 def _m(wd, anh, **k):
-    m = {"anh": anh, "draft_id": "tin-thu", "link": "https://vi.du/bai",
-         "chu_bai": "Nvidia mở kho mô hình Nemotron cho mọi nhà phát triển",
-         "tu_lieu": {}, "toi_thieu": 5, "cap_ghep": None, "goi_y_bia": [],
-         "vai_anh": "dre"}
+    m = {"images": anh, "draft_id": "tin-thu", "link": "https://vi.du/bai",
+         "article_text":"Nvidia mở kho mô hình Nemotron cho mọi nhà phát triển",
+         "material": {}, "min_images": 5, "stackable_pairs": None, "cover_suggestions": [],
+         "image_role": "dre"}
     m.update(k)
     return m
 
@@ -165,13 +165,13 @@ def test_thieu_ca_anh_lan_ghep_thi_bao_ca_hai_duong():
 
 
 def test_anh_bi_danh_dau_khong_lien_quan_thi_chan():
-    """`lien_quan: False` la ket luan cua buoc nhin anh — dung no la dang bai
+    """`relevant: False` la ket luan cua buoc nhin anh — dung no la dang bai
     mot tam anh khong dinh gi toi tin."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, f"A{i}", 1000, 1250) for i in range(1, 6)]
-        anh[1]["lien_quan"] = False
-        anh[1]["mo_ta"] = "một con mèo trên ghế sofa"
+        anh[1]["relevant"] = False
+        anh[1]["description"] = "một con mèo trên ghế sofa"
         _ra, loi, _c, _d = _chay(_spec(_bia("A1"), _du_slide(["A2", "A3", "A4", "A5"])),
                                  _m(wd, anh), wd)
         assert _co(loi, "KHÔNG LIÊN QUAN", "A2", "con mèo"), loi
@@ -185,7 +185,7 @@ def test_chart_khong_duoc_lam_bia_va_goi_y_bia_khac():
         anh = [_anh(wd, "A1", 1200, 900, loai="chart")] + \
               [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
         _ra, loi, _c, _d = _chay(_spec(_bia("A1"), _du_slide(["A2", "A3", "A4", "A5"])),
-                                 _m(wd, anh, goi_y_bia=["A3", "A4"]), wd)
+                                 _m(wd, anh, cover_suggestions=["A3", "A4"]), wd)
         assert _co(loi, "bìa", "A1", "CHART"), loi
         assert _co(loi, "A3"), "khong goi y bia thay the"
 
@@ -206,9 +206,9 @@ def test_anh_xep_hang_duoc_lam_bia_con_lam_slide_thi_la_chart():
     """Anh xep hang la chart nhung DUOC lam bia — bang o nua tren, hook nua duoi."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        xh = _anh(wd, "XH", 1200, 900, loai="chart", xep_hang={"site": "LMArena"})
+        xh = _anh(wd, "XH", 1200, 900, loai="chart", ranking={"site": "LMArena"})
         anh = [xh] + [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
-        m = _m(wd, anh, tin_xep_hang=True, xep_hang={"kieu": "bang"})
+        m = _m(wd, anh, is_ranking_story=True, ranking={"kind": "bang"})
         ra, loi, _c, _d = _chay(_spec(_bia("XH"), _du_slide(["A2", "A3", "A4", "A5"])), m, wd)
         assert loi == [], loi
         assert "chart" not in ra["cover"], "bia xep hang khong duoc dan kieu chart"
@@ -217,10 +217,10 @@ def test_anh_xep_hang_duoc_lam_bia_con_lam_slide_thi_la_chart():
 def test_tin_xep_hang_ma_bia_khong_phai_bang_thi_chan():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        xh = _anh(wd, "XH", 1200, 900, loai="chart", xep_hang={"site": "LMArena"})
+        xh = _anh(wd, "XH", 1200, 900, loai="chart", ranking={"site": "LMArena"})
         anh = [xh] + [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
-        m = _m(wd, anh, tin_xep_hang=True, xep_hang={"kieu": "bang", "site": "LMArena",
-                                                     "bang": "text", "model": "GPT"})
+        m = _m(wd, anh, is_ranking_story=True, ranking={"kind": "bang", "site": "LMArena",
+                                                     "board": "text", "model": "GPT"})
         _ra, loi, _c, _d = _chay(_spec(_bia("A2"), _du_slide(["A3", "A4", "A5", "XH"])), m, wd)
         assert _co(loi, "bìa", "TIN XẾP HẠNG"), loi
 
@@ -232,7 +232,7 @@ def test_khong_co_anh_xep_hang_that_thi_KHONG_ep_bia_dung_XH():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         anh = [_anh(wd, f"A{i}", 1000, 1250) for i in range(1, 6)]
-        m = _m(wd, anh, tin_xep_hang=True, xep_hang=None)
+        m = _m(wd, anh, is_ranking_story=True, ranking=None)
         _ra, loi, _c, _d = _chay(_spec(_bia("A1"), _du_slide(["A2", "A3", "A4", "A5"])), m, wd)
         assert loi == [], loi
 
@@ -244,7 +244,7 @@ def test_anh_ngang_di_mot_minh_thi_bao_dung_hai_duong_ra():
         anh = [_anh(wd, "A1", 1000, 1250)] + [_anh(wd, "A2", 1920, 1080)] + \
               [_anh(wd, f"A{i}", 1000, 1250) for i in range(3, 6)]
         _ra, loi, _c, _d = _chay(_spec(_bia("A1"), _du_slide(["A2", "A3", "A4", "A5"])),
-                                 _m(wd, anh, cap_ghep=["A2", "A3"]), wd)
+                                 _m(wd, anh, stackable_pairs=["A2", "A3"]), wd)
         assert _co(loi, "slide 2", "NGANG", "ghep", "cat_ngang"), loi
 
 
@@ -292,7 +292,7 @@ def test_ghep_ra_ti_le_ngoai_dai_thi_chan():
         spec = _spec(_bia("A1"), [{"ghep": ["A2", "A3"], "text": "x", "quote": "Một câu", "attrib": "X"},
                                   _slide("A4", quote="Câu hai", attrib="Y"),
                                   _slide("A5"), _slide("A6")])
-        _ra, loi, _c, _d = _chay(spec, _m(wd, anh, cap_ghep=["A4", "A5"]), wd)
+        _ra, loi, _c, _d = _chay(spec, _m(wd, anh, stackable_pairs=["A4", "A5"]), wd)
         assert _co(loi, "slide 2", "ngoài dải ghép"), loi
 
 
@@ -308,9 +308,9 @@ def test_ghep_hai_anh_3_2_qua_cong_kem_canh_bao_low178():
         spec = _spec(_bia("A1"), [{"ghep": ["A2", "A3"], "text": "x", "quote": "Một câu", "attrib": "X"},
                                   _slide("A4", quote="Câu hai", attrib="Y"),
                                   _slide("A5"), _slide("A6")])
-        ra, loi, canh, _d = _chay(spec, _m(wd, anh, cap_ghep=["A2", "A3"]), wd)
+        ra, loi, canh, _d = _chay(spec, _m(wd, anh, stackable_pairs=["A2", "A3"]), wd)
         assert loi == [], loi
-        assert ra["slides"][0]["images"] == [anh[1]["goc"], anh[2]["goc"]]
+        assert ra["slides"][0]["images"] == [anh[1]["original_path"], anh[2]["original_path"]]
         assert _co(canh, "slide 2", "0.75", "mép"), canh
 
 
@@ -331,7 +331,7 @@ def test_carousel_gate_nhan_anh_ghep_cao_hon_4_5_low178():
 
 # ------------------------------------------------------------ nhan_vat (LOW-178)
 def _anh_mat(wd, ma, **k):
-    return _anh(wd, ma, 1000, 1250, mat=1, **k)
+    return _anh(wd, ma, 1000, 1250, faces=1, **k)
 
 
 def test_nhan_vat_theo_chu_thich_anh_low178():
@@ -339,18 +339,18 @@ def test_nhan_vat_theo_chu_thich_anh_low178():
     ảnh có tên — khai đúng tên đó không phải bịa (LOW-178, 16/09/2026)."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        m["anh"][1] = _anh_mat(wd, "A2", alt="Jensen Huang speaking at GTC 2026")
+        m["images"][1] = _anh_mat(wd, "A2", alt="Jensen Huang speaking at GTC 2026")
         spec["slides"][0]["nhan_vat"] = "Jensen Huang"
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
 
 
 def test_nhan_vat_theo_nhan_thuong_hieu_low178():
-    """Vòng thương hiệu gắn `thuong_hieu.nguoi` (Wikidata founder/CEO) — cùng bằng
+    """Vòng thương hiệu gắn `brand_match.person` (Wikidata founder/CEO) — cùng bằng
     chứng `role.face_no_clear_ai` đã dùng để ĐẾM tấm này là dùng được."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        m["anh"][1] = _anh_mat(wd, "A2", thuong_hieu={"nguoi": "C.C. Wei", "loai": "chan_dung"})
+        m["images"][1] = _anh_mat(wd, "A2", brand_match={"person": "C.C. Wei", "kind": "chan_dung"})
         spec["slides"][0]["nhan_vat"] = "C.C. Wei"
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
@@ -361,7 +361,7 @@ def test_nhan_vat_khong_co_o_bai_lan_chu_thich_van_chan():
     không có tên, bài cũng không."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        m["anh"][1] = _anh_mat(wd, "A2", alt="Officials pose for a group photo at the summit")
+        m["images"][1] = _anh_mat(wd, "A2", alt="Officials pose for a group photo at the summit")
         spec["slides"][0]["nhan_vat"] = "Hock Tan"
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert _co(loi, "slide 2", "Hock Tan", "không xuất hiện"), loi
@@ -372,8 +372,8 @@ def test_chu_thich_anh_khac_khong_bao_lanh_low178():
     trong manifest không cho tấm mặt lạ này qua."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        m["anh"][1] = _anh_mat(wd, "A2", alt="")
-        m["anh"][2]["alt"] = "Jensen Huang speaking at GTC 2026"
+        m["images"][1] = _anh_mat(wd, "A2", alt="")
+        m["images"][2]["alt"] = "Jensen Huang speaking at GTC 2026"
         spec["slides"][0]["nhan_vat"] = "Jensen Huang"
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert _co(loi, "slide 2", "Jensen Huang", "không xuất hiện"), loi
@@ -382,26 +382,26 @@ def test_chu_thich_anh_khac_khong_bao_lanh_low178():
 def test_subject_names_bo_headline_uu_tien_vision_low178():
     """Đo thật 16/09/2026 (A18 tin Nvidia/Anthropic): alt là tiêu đề báo Title-Case,
     regex tên riêng đọc ra "Here Following"; brief in ra, Dre khai đúng thế và
-    qua cổng với một tên bịa — trong khi vision mo_ta nói rõ "CEO Jensen Huang"."""
+    qua cổng với một tên bịa — trong khi vision description nói rõ "CEO Jensen Huang"."""
     import image_rules_dre as dre
     a18 = {"alt": "Nvidia CEO Says AGI is Here Following GPT-6 Astra Launch",
-           "mo_ta": "Anh CEO Jensen Huang cua Nvidia dang phat bieu, phia sau la logo Nvidia."}
+           "description":"Anh CEO Jensen Huang cua Nvidia dang phat bieu, phia sau la logo Nvidia."}
     assert dre.subject_names(a18) == ["Jensen Huang"]
     # caption thuong (khong phai headline) van la bang chung
     assert dre.subject_names({"alt": "Jensen Huang speaking at GTC 2026",
-                              "mo_ta": "Anh mot nguoi dan ong dang phat bieu"}) == ["Jensen Huang"]
-    # tien to "Anh ..." cua mo_ta khong dau bi cat
-    assert dre.subject_names({"mo_ta": "Anh Lisa Su gioi thieu chip"}) == ["Lisa Su"]
+                              "description":"Anh mot nguoi dan ong dang phat bieu"}) == ["Jensen Huang"]
+    # tien to "Anh ..." cua description khong dau bi cat
+    assert dre.subject_names({"description":"Anh Lisa Su gioi thieu chip"}) == ["Lisa Su"]
     assert dre.subject_names({"alt": "Officials pose for a group photo at the summit",
-                              "mo_ta": "Anh quan chuc G20"}) == []
-    assert dre.subject_names({"thuong_hieu": {"nguoi": "C.C. Wei"}, "alt": ""}) == ["C.C. Wei"]
+                              "description":"Anh quan chuc G20"}) == []
+    assert dre.subject_names({"brand_match": {"person": "C.C. Wei"}, "alt": ""}) == ["C.C. Wei"]
 
 
 def test_nhan_vat_bia_tu_headline_van_chan_ten_that_qua_low178():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        m["anh"][1] = _anh_mat(wd, "A2", alt="Nvidia CEO Says AGI is Here Following GPT-6 Astra Launch",
-                               mo_ta="Anh CEO Jensen Huang cua Nvidia dang phat bieu")
+        m["images"][1] = _anh_mat(wd, "A2", alt="Nvidia CEO Says AGI is Here Following GPT-6 Astra Launch",
+                               description="Anh CEO Jensen Huang cua Nvidia dang phat bieu")
         spec["slides"][0]["nhan_vat"] = "Here Following"
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert _co(loi, "slide 2", "Here Following", "không xuất hiện"), loi
@@ -463,7 +463,7 @@ def test_it_hon_toi_thieu_slide_thi_chan_va_goi_y_chia_tang():
         anh = [_anh(wd, f"A{i}", 1000, 1250) for i in range(1, 6)]
         spec = _spec(_bia("A1"), [_slide("A2", quote="Câu một", attrib="X"),
                                   _slide("A3", quote="Câu hai", attrib="Y")])
-        _ra, loi, _c, _d = _chay(spec, _m(wd, anh, toi_thieu=5), wd)
+        _ra, loi, _c, _d = _chay(spec, _m(wd, anh, min_images=5), wd)
         assert _co(loi, "chỉ 3 slide", "tối thiểu 5"), loi
 
 
@@ -522,7 +522,7 @@ def test_anh_da_gui_o_bai_khac_thi_chan():
     import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        image_rules.record_used(m["anh"][1]["goc"], "tin-khac", "dre",
+        image_rules.record_used(m["images"][1]["original_path"], "tin-khac", "dre",
                              "https://vi.du/mot-tin-khac-han")
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert _co(loi, "slide 2", "TRUNG anh da dung", "tin-khac"), loi
@@ -533,7 +533,7 @@ def test_lam_lai_chinh_bai_nay_thi_khong_bi_coi_la_dung_lai():
     import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        image_rules.record_used(m["anh"][1]["goc"], m["draft_id"], "dre", m["link"])
+        image_rules.record_used(m["images"][1]["original_path"], m["draft_id"], "dre", m["link"])
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
 
@@ -544,7 +544,7 @@ def test_cung_tin_nhung_vai_khac_thi_khong_chan():
     import image_rules_dre as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _du(t)
-        image_rules.record_used(m["anh"][1]["goc"], "tin-thu-ethan", "ethan", m["link"])
+        image_rules.record_used(m["images"][1]["original_path"], "tin-thu-ethan", "ethan", m["link"])
         _ra, loi, _c, _d = _chay(spec, m, wd)
         assert loi == [], loi
 
@@ -552,7 +552,7 @@ def test_cung_tin_nhung_vai_khac_thi_khong_chan():
 def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
     """Ong Chu 13/09/2026 (Anthropic/Nvidia IPO): bam Lam lai chi ro slide, ban
     moi van la CUNG MOT anh (chi doi ma A3 -> A5, cung file). approve_post da chup
-    dHash cua anh bi che vao img.json["cam_anh_slide"]["3"] luc bam nut; cong
+    dHash cua anh bi che vao img.json["forbidden_slide_images"]["3"] luc bam nut; cong
     o day phai chan slide 3 du ma anh doi ten."""
     import shutil
     import dre_submit
@@ -562,14 +562,14 @@ def test_lam_lai_slide_cu_the_van_ra_dung_anh_cu_thi_chan():
         with tempfile.TemporaryDirectory() as dr:
             dre_submit.DRAFTS = Path(dr)
             try:
-                h = image_rules.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
+                h = image_rules.dhash(Image.open(m["images"][1]["original_path"]).convert("RGB"))
                 (Path(dr) / f"{m['draft_id']}.img.json").write_text(
-                    json.dumps({"cam_anh_slide": {"3": [format(h, "x")]}}),
+                    json.dumps({"forbidden_slide_images":{"3": [format(h, "x")]}}),
                     encoding="utf-8")
                 # A3 la anh o slide 3; sao chep chinh no thanh "A5" (doi ten
                 # ma, GIU NGUYEN noi dung file) roi dat vao slide 3 thay A3.
-                a5 = next(a for a in m["anh"] if a["ma"] == "A5")
-                shutil.copyfile(m["anh"][1]["goc"], a5["goc"])
+                a5 = next(a for a in m["images"] if a["id"] == "A5")
+                shutil.copyfile(m["images"][1]["original_path"], a5["original_path"])
                 spec["slides"][1]["anh"] = "A5"
                 _ra, loi, _c, _d = _chay(spec, m, wd)
                 assert _co(loi, "slide 3", "đã bị Ông Chủ từ chối"), loi
@@ -587,9 +587,9 @@ def test_lam_lai_slide_khac_khong_bi_anh_huong():
         with tempfile.TemporaryDirectory() as dr:
             dre_submit.DRAFTS = Path(dr)
             try:
-                h = image_rules.dhash(Image.open(m["anh"][1]["goc"]).convert("RGB"))
+                h = image_rules.dhash(Image.open(m["images"][1]["original_path"]).convert("RGB"))
                 (Path(dr) / f"{m['draft_id']}.img.json").write_text(
-                    json.dumps({"cam_anh_slide": {"6": [format(h, "x")]}}),
+                    json.dumps({"forbidden_slide_images":{"6": [format(h, "x")]}}),
                     encoding="utf-8")
                 _ra, loi, _c, _d = _chay(spec, m, wd)
                 assert loi == [], loi

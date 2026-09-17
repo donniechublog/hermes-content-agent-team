@@ -82,9 +82,9 @@ def test_guide_source_compact_no_block_wrongly():
 
 # --------------------------------------------------------------- nhân vật
 def test_subject_three_layer():
-    anh = {"A1": {"mat": True, "mo_ta": "chan dung CEO"},
-           "A2": {"mat": False},
-           "A3": {"mat": True, "mo_ta": "anh quan chuc G20"}}
+    anh = {"A1": {"faces": True, "description": "chan dung CEO"},
+           "A2": {"faces": False},
+           "A3": {"faces": True, "description": "anh quan chuc G20"}}
     # có mặt, không khai tên
     assert nc.check_subject_named(anh, ["A1"], "", "hock tan noi", "")
     # khai tên có trong bài
@@ -170,23 +170,23 @@ def test_story_ranking_no_has_board_then_no_block():
         assert xh.is_ranking_story(t, ""), t
         assert not xh.extract_model(t), f"{t}: nếu tách được model thì bẫy không xảy ra"
     # brief KHÔNG được đòi mã XH khi không có
-    dong = cb.ranking_brief_line({"tin_xep_hang": True, "xep_hang": None}, "bìa", "dre_submit")
+    dong = cb.ranking_brief_line({"is_ranking_story": True, "ranking": None}, "bìa", "dre_submit")
     assert "BẮT BUỘC" not in dong and "chặn ảnh khác" not in dong, dong
     assert "không chặn" in dong, dong
     # có bảng thì vẫn đòi như cũ
     dong2 = cb.ranking_brief_line(
-        {"tin_xep_hang": True, "xep_hang": {"site": "LMArena", "bang": "text",
-                                            "model": "GPT-5.2", "hang": 1, "kieu": "bang"}},
+        {"is_ranking_story": True, "ranking": {"site": "LMArena", "board": "text",
+                                            "model": "GPT-5.2", "rank": 1, "kind": "bang"}},
         "", "ethan_submit")
     assert "BẮT BUỘC" in dong2, dong2
 
 
 def test_gate_ranking_only_block_when_capture_ok_board():
     """dre_submit/ethan_submit chỉ được chặn khi engine CHỤP được bảng thật
-    (`ranking.is_capture(kieu)`). Không có ảnh XH, hoặc chỉ có thẻ dự phòng engine
+    (`ranking.is_capture(kind)`). Không có ảnh XH, hoặc chỉ có thẻ dự phòng engine
     tự dựng, đều không được ép — xem test_fallback_card_no_ok_force_make_image_main."""
     import re as _re
-    mau = r'ranking\.is_capture\(\(m\.get\("xep_hang"\) or \{\}\)\.get\("kieu"\)\)'
+    mau = r'ranking\.is_capture\(\(m\.get\("ranking"\) or \{\}\)\.get\("kind"\)\)'
     # Tu 07/09/2026 dieu kien nam o MOT cho (submit_common.needs_ranking_image); hai vai
     # phai goi no chu khong tu viet lai — tu viet lai la cach no da lech.
     assert _re.search(mau, (ROOT / "submit_common.py").read_text(encoding="utf-8")), \
@@ -238,20 +238,20 @@ def test_model_family_duplicate_from_regular_right_go_with_count():
 
 
 def test_fallback_card_no_ok_force_make_image_main():
-    """kieu='the' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
+    """kind='the' là thẻ engine tự dựng, chưa đọc bảng thật — không được loại bỏ
     ảnh thật. Chỉ kieu chụp thật (`ranking.KIND_CAPTURE`) mới bật cổng bắt buộc."""
     import ethan_submit
-    anh = [{"ma": "A1", "goc": "/tmp/x.png", "san": None, "loai": "anh", "ti_le": 1.0,
-            "mat": 0, "ngang": False, "canh_ngan": 1200, "w": 1200, "h": 1200,
-            "goc_trai_sang": 50, "dung": ["nền hero"], "ghi_chu": [], "mien": "x.com",
-            "tu": "x", "lien_quan": True}]
+    anh = [{"id": "A1", "original_path": "/tmp/x.png", "ready_path": None, "kind": "anh", "ratio": 1.0,
+            "faces": 0, "landscape": False, "short_side": 1200, "w": 1200, "h": 1200,
+            "bottom_left_brightness": 50, "uses": ["nền hero"], "notes": [], "domain": "x.com",
+            "source": "x", "relevant": True}]
     spec = {"anh": "A1", "kieu": "quote", "hook": "Mô hình mới đạt điểm cao nhất bảng",
             "tagline": "MODEL", "attrib": "via X"}
     for kieu, phai_chan in (("bang", True), ("danh-sach", True), ("the", False), ("chup", False)):
-        m = {"anh": anh, "tin_xep_hang": True, "chu_bai": "", "tu_lieu": {}, "draft_id": "d1",
-             "vai_anh": "ethan",
-             "xep_hang": {"kieu": kieu, "site": "arena.ai", "bang": "Text Arena",
-                          "model": "seed", "hang": 5}}
+        m = {"images": anh, "is_ranking_story": True, "article_text": "", "material": {}, "draft_id": "d1",
+             "image_role": "ethan",
+             "ranking": {"kind": kieu, "site": "arena.ai", "board": "Text Arena",
+                          "model": "seed", "rank": 5}}
         _, loi, _ = ethan_submit.resolve_spec(spec, m, Path("/tmp"))
         co = any("XẾP HẠNG" in x for x in loi)
         assert co == phai_chan, f"kieu={kieu}: {'phải chặn' if phai_chan else 'không được chặn'}"
@@ -341,29 +341,29 @@ def test_check_ratio_domain_except_image_ranking():
 
 def test_image_ranking_no_got_crop():
     """Hàng model đã khoanh có thể nằm dưới 55% dải chụp; cắt 4:5 cy=0.35 sẽ
-    xoá mất nó. Ảnh xếp hạng phải giữ nguyên vẹn (a["san"] = a["goc"])."""
+    xoá mất nó. Ảnh xếp hạng phải giữ nguyên vẹn (a["ready_path"] = a["original_path"])."""
     # `classify` sang prepare/vision.py khi tach goi 09/09/2026 (audit A1).
     src = (ROOT / "prepare" / "vision.py").read_text(encoding="utf-8")
     khoi = src[src.index("    san = wd / \"san\""):]
-    khoi = khoi[:khoi.index("a[\"dung\"] = [\"thân")]
-    assert 'if a.get("xep_hang"):' in khoi, "classify thiếu nhánh giữ nguyên ảnh xếp hạng"
+    khoi = khoi[:khoi.index("a[\"uses\"] = [\"thân")]
+    assert 'if a.get("ranking"):' in khoi, "classify thiếu nhánh giữ nguyên ảnh xếp hạng"
     truoc_elif = khoi[:khoi.index("elif r <")]
-    assert 'a["san"] = a["goc"]' in truoc_elif, "nhánh xếp hạng phải đặt san = goc, không cắt"
+    assert 'a["ready_path"] = a["original_path"]' in truoc_elif, "nhánh xếp hạng phải đặt san = goc, không cắt"
 
 
 # ------------------------------------------------- Kite: ảnh chưa ai nhìn
 def test_kite_no_force_use_image_not_yet_seen():
-    """Vision tắt → mọi ảnh lien_quan=None. Ép lúc đó là đẩy quảng cáo/widget
+    """Vision tắt → mọi ảnh relevant=None. Ép lúc đó là đẩy quảng cáo/widget
     lên slide."""
     import kite_submit
     def hinh(lien_quan):
-        return {"A1": {"ma": "A1", "goc": "/tmp/a.png", "w": 1200, "h": 800,
-                       "ti_le": 1.5, "loai": "chart", "lien_quan": lien_quan,
-                       "mien": "x.com", "tu": "x", "ghi_chu": []}}
+        return {"A1": {"id": "A1", "original_path": "/tmp/a.png", "w": 1200, "h": 800,
+                       "ratio": 1.5, "kind": "chart", "relevant": lien_quan,
+                       "domain": "x.com", "source": "x", "notes": []}}
     slides = [{"kind": "cover", "eyebrow": "X", "title": "T", "standfirst": "S"}] * 6
     for lq, phai_ep in ((True, True), (None, False)):
-        m = {"anh": list(hinh(lq).values()), "brand": "donniechublog", "title": "T",
-             "draft_id": "d1", "chu_bai": "", "tu_lieu": {}, "link": ""}
+        m = {"images": list(hinh(lq).values()), "brand": "donniechublog", "title": "T",
+             "draft_id": "d1", "article_text": "", "material": {}, "link": ""}
         _, loi, _ = kite_submit.resolve_spec({"slides": slides}, m, Path("/tmp"))
         co = any("BẮT BUỘC dùng ít nhất một" in x for x in loi)
         assert co == phai_ep, f"lien_quan={lq}: {'phải ép' if phai_ep else 'KHÔNG được ép'}"
@@ -686,12 +686,12 @@ def test_description_logo_rank_within_article_no_got_block():
     anh chan dung/su kien, loai anh the hero can nhat. Tu tran "logo" trong bo
     tu khoa chan luon "CEO tren san khau, phia sau la logo OpenAI" — anh chuan
     nhat cua loai do, va la thu chinh prompt vision day rang LA lien quan."""
-    anh_ok = {"A1": {"mat": 1, "mo_ta": "Sam Altman phát biểu trên sân khấu, "
+    anh_ok = {"A1": {"faces": 1, "description":"Sam Altman phát biểu trên sân khấu, "
                                         "phía sau là logo OpenAI"}}
     assert not nc.check_subject_named(anh_ok, ["A1"], "Sam Altman", _BAI, ""), \
         "chan oan anh su kien co logo hang trong bai"
     # nhung logo cua TO BAO thi van phai chan
-    anh_bao = {"A1": {"mat": 1, "mo_ta": "Ảnh có watermark của hãng tin, "
+    anh_bao = {"A1": {"faces": 1, "description":"Ảnh có watermark của hãng tin, "
                                          "không rõ người"}}
     assert nc.check_subject_named(anh_bao, ["A1"], "Sam Altman", _BAI, "")
 
@@ -1239,19 +1239,19 @@ def test_only_ranking_choice_one_image_ranking():
     chưa chụp được bảng, không có, hoặc có từ hai ảnh xếp hạng trở lên (còn
     đường khác để đổi, không cần miễn cổng làm lại)."""
     import submit_common as nc2
-    m_mot = {"tin_xep_hang": True, "xep_hang": {"kieu": "bang"},
-              "anh": [{"ma": "XH", "xep_hang": True}, {"ma": "A2", "xep_hang": False}]}
+    m_mot = {"is_ranking_story": True, "ranking": {"kind": "bang"},
+              "images": [{"id": "XH", "ranking": True}, {"id": "A2", "ranking": False}]}
     assert nc2.only_ranking_choice(m_mot) == "XH"
 
-    m_hai = {"tin_xep_hang": True, "xep_hang": {"kieu": "bang"},
-              "anh": [{"ma": "XH", "xep_hang": True}, {"ma": "XH2", "xep_hang": True}]}
+    m_hai = {"is_ranking_story": True, "ranking": {"kind": "bang"},
+              "images": [{"id": "XH", "ranking": True}, {"id": "XH2", "ranking": True}]}
     assert nc2.only_ranking_choice(m_hai) is None
 
-    m_khong_chup = {"tin_xep_hang": True, "xep_hang": {"kieu": "the"},
-                     "anh": [{"ma": "XH", "xep_hang": True}]}
+    m_khong_chup = {"is_ranking_story": True, "ranking": {"kind": "the"},
+                     "images": [{"id": "XH", "ranking": True}]}
     assert nc2.only_ranking_choice(m_khong_chup) is None
 
-    m_khong_xep_hang = {"tin_xep_hang": False, "anh": [{"ma": "XH", "xep_hang": True}]}
+    m_khong_xep_hang = {"is_ranking_story": False, "images": [{"id": "XH", "ranking": True}]}
     assert nc2.only_ranking_choice(m_khong_xep_hang) is None
 
 

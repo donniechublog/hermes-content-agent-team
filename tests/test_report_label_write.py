@@ -24,10 +24,10 @@ import approve_post as db                                          # noqa: E402
 
 def _use(tmp: Path, *, vai_anh="dre", vai_viet="miles", root_task=None):
     """Dung mot draft o trang thai 'da duyet anh, chua tao task viet': ghi
-    .img.json (de code doc vai_anh cho tu_vai) + .writer.json (created=False)."""
+    .img.json (de code doc image_role cho tu_vai) + .writer.json (created=False)."""
     draft_id = "test-imgok-bao-nhan"
     (tmp / f"{draft_id}.img.json").write_text(json.dumps(
-        {"vai_anh": vai_anh, "title": "Tin test", "carousel": False}), encoding="utf-8")
+        {"image_role": vai_anh, "title": "Tin test", "carousel": False}), encoding="utf-8")
     wp = tmp / f"{draft_id}.writer.json"
     wp.write_text(json.dumps(
         {"vai_viet": vai_viet, "title": "Tin test", "body": "than bai",

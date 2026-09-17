@@ -35,15 +35,15 @@ def _check_stack(a: dict, ma: str, ma2, anh: dict, m: dict, loi: list) -> None:
     vai. Chi con giu: chart la chu the (khong bi keo di ghep NEU la xep hang),
     va ghep doc chi hop khi CA HAI anh deu ngang (rang buoc cau truc cua chinh
     co che ghep, khong phai cam doan ve chat luong/nguon)."""
-    can_ghep = a["loai"] == "chart" and not a.get("xep_hang")
+    can_ghep = a["kind"] == "chart" and not a.get("ranking")
     if can_ghep and not ma2:
         cap = eb.stackable_pairs_hero(m)
         loi.append(f"{ma} là CHART — card.py chặn một mình. Thêm \"anh2\" (cặp gợi ý: "
                    f"{cap or 'không có'}) hoặc chọn ảnh khác")
     if ma2:
         b = anh[ma2]
-        if b["ti_le"] < 1.2 or a["ti_le"] < 1.2:
-            loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ti_le']}, {ma2}={b['ti_le']}")
+        if b["ratio"] < 1.2 or a["ratio"] < 1.2:
+            loi.append(f"ghép dọc chỉ dành cho hai ảnh NGANG (≥1.2); {ma}={a['ratio']}, {ma2}={b['ratio']}")
 
 
 def _check_text(spec: dict, kieu: str, loi: list) -> None:
@@ -66,7 +66,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     """Spec cua Ethan (ma anh) -> (ket_qua, loi, canh). Tach 07/09/2026: ba cong
     trung voi Dre (tin xep hang, khong lien quan, anh da dung) sang submit_common,
     phan ghep va phan chu thanh hai ham rieng."""
-    anh = {a["ma"]: a for a in m["anh"]}
+    anh = {a["id"]: a for a in m["images"]}
     loi = []
     kieu = (spec.get("kieu") or "quote").strip().lower()
     if kieu not in ("quote", "tran"):
@@ -150,10 +150,10 @@ def main() -> int:
 
     out = Path(a.out or meta.get("image") or str(DRAFTS / f"{a.draft_id}.png"))
     out.parent.mkdir(parents=True, exist_ok=True)
-    args = [sys.executable, str(ROOT / "card.py"), "--image", kq["anh"]["goc"],
+    args = [sys.executable, str(ROOT / "card.py"), "--image", kq["anh"]["original_path"],
             "--brand", brand, "--out", str(out), "--kieu", kq["kieu"]]
     if kq["anh2"]:
-        args += ["--image2", kq["anh2"]["goc"]]
+        args += ["--image2", kq["anh2"]["original_path"]]
     if spec.get("nhan_vat"):
         args += ["--nhan-vat", str(spec["nhan_vat"])]
     if a.bo_qua_dau:
@@ -181,13 +181,13 @@ def main() -> int:
     if not out.exists():
         sys.exit(f"[LOI] card.py bao xong nhung khong thay {out}")
 
-    anh_dung = [kq["anh"]["ma"]] + ([kq["anh2"]["ma"]] if kq["anh2"] else [])
-    nguon = sorted({m_["mien"] or m_["tu"] for m_ in m["anh"] if m_["ma"] in anh_dung})
+    anh_dung = [kq["anh"]["id"]] + ([kq["anh2"]["id"]] if kq["anh2"] else [])
+    nguon = sorted({m_["domain"] or m_["source"] for m_ in m["images"] if m_["id"] in anh_dung})
     bg = "\n".join([f"Nguồn tin: {m['title']}", f"Link gốc: {m['link']}"]
                    + ([f"Via: {m['via']}"] if m.get("via") else [])
                    + ["Nguồn ảnh (ghi vào chú thích bài):"]
-                   + [f"- {ma} ← {anh_['mien'] or anh_['tu']} ({anh_.get('trang', '')[:100]})"
-                      for ma in anh_dung for anh_ in m["anh"] if anh_["ma"] == ma]
+                   + [f"- {ma} ← {anh_['domain'] or anh_['source']} ({anh_.get('page_url', '')[:100]})"
+                      for ma in anh_dung for anh_ in m["images"] if anh_["id"] == ma]
                    + [f"Hook trên thẻ: {hook}", f"Tệp: {out}"])
     bg_path = (wd if a.khong_gui else DRAFTS) / f"{a.draft_id}.ban_giao.md"
     bg_path.write_text(bg, encoding="utf-8")
@@ -197,10 +197,10 @@ def main() -> int:
         print(f"[thu] khong gui Telegram (--khong-gui). The o {out}")
     else:
         mid = nc.send_album("ethan", [out], f"Thẻ {kq['kieu']}: {hook}", a.draft_id, wd, da_dung,
-                           {"anh": kq["anh"]["ma"], "hook": hook,
+                           {"anh": kq["anh"]["id"], "hook": hook,
                             # anh2 (ghep doc) cung phai bi danh dau da dung —
                             # thieu no thi bai sau dung lai duoc (06/09/2026).
-                            "anh2": (kq["anh2"] or {}).get("ma")})
+                            "anh2": (kq["anh2"] or {}).get("id")})
     print(f"[xong] the {kq['kieu']} -> {out}" + (f"; da gui topic designer (message_id={mid}) kem nut duyet"
                                                  if mid else "") + f"; ban giao: {bg_path}")
     print("Ket qua task (dung dong nay de ket thuc task): "

@@ -17,8 +17,8 @@ import submit_common as nc                                       # noqa: E402
 
 
 def _xh(hang=26, kieu="bang"):
-    return {"ma": "XH", "xep_hang": {"site": "ARENA.AI", "bang": "WebDev / Code Arena",
-                                     "model": "claude-opus-4-7-high", "hang": hang, "kieu": kieu}}
+    return {"id": "XH", "ranking": {"site": "ARENA.AI", "board": "WebDev / Code Arena",
+                                     "model": "claude-opus-4-7-high", "rank": hang, "kind": kieu}}
 
 
 HOOK3 = "claude-opus-4-7-high leo lên #3 bảng văn bản Arena, chốt 1501.8 điểm Elo"
@@ -43,7 +43,7 @@ def test_fallback_card_no_change_dimension():
 
 
 def test_image_regular_no_relevant():
-    assert nc.check_rank_matches_image(HOOK3, {"ma": "A1"}) == []
+    assert nc.check_rank_matches_image(HOOK3, {"id": "A1"}) == []
 
 
 def test_top10_is_size_has_list_clean_no_right_rank():

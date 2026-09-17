@@ -3,11 +3,11 @@
 
 Trước ticket này ảnh tốt bị bỏ là VÔ HÌNH: pha tải bỏ ứng viên ở hơn chục chỗ
 `continue` (năm chỗ không in cả dòng stderr), vision + ba nhánh regex lật
-`lien_quan` mà không ghi nhánh nào đã lật, và `ghi_chu` là văn bản tự do. Ảnh xấu
+`relevant` mà không ghi nhánh nào đã lật, và `notes` là văn bản tự do. Ảnh xấu
 lọt thì Ông Chủ thấy trên Telegram; ảnh tốt bị bỏ thì không ai thấy — nên cổng
 chỉ có chiều siết, không bao giờ nới đúng lúc.
 
-Module này CHỈ GHI, không quyết định gì — `dung`, `lien_quan`, `so_dung_duoc`
+Module này CHỈ GHI, không quyết định gì — `uses`, `relevant`, `usable_count`
 giữ nguyên từng bit (test so đầu ra bật/tắt bản ghi).
 
   - `note(a, stage, outcome, rule, evidence)`: nối một quyết định vào
@@ -49,8 +49,8 @@ def drop_candidate(wd: Path, c: dict, stage: str, rule: str = "", evidence: str 
             t.convert("RGB").save(d / name, "JPEG", quality=85)
             thumb = str(d / name)
         row = {"ts": time.time(), "stage": stage, "outcome": "drop", "rule": rule,
-               "evidence": str(evidence)[:300], "url": c.get("anh", ""), "trang": c.get("trang", ""),
-               "alt": (c.get("alt") or c.get("alt_chup") or "")[:200], "tu": c.get("tu", ""),
+               "evidence": str(evidence)[:300], "url": c.get("image_url", ""), "page_url": c.get("page_url", ""),
+               "alt": (c.get("alt") or c.get("alt_chup") or "")[:200], "source": c.get("source", ""),
                "thumb": thumb}
         with open(d / DROPPED_FILE, "a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")

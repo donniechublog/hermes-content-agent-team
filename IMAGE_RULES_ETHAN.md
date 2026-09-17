@@ -273,7 +273,7 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
   `MAX_IMAGE + 4`. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối
   cảnh thì vẫn chỉ chạy khi **thật sự thiếu ảnh** — đó là phần đắt.
 - **Chỗ đứng**: ảnh của hãng xếp **sau** ảnh riêng của tin trong gợi ý bìa
-  (`goi_y_bia`), nên bài có ảnh riêng tốt không bị chúng chiếm bìa.
+  (`cover_suggestions`), nên bài có ảnh riêng tốt không bị chúng chiếm bìa.
 - **Hãng nào**: mọi hãng trong `scan_business.WATCHLIST` mà tin nhắc tới, tối đa
   3, theo thứ tự xuất hiện — **không phải chỉ tên riêng đầu tiêu đề**. Tên
   model/chip quy về hãng chủ (Claude → Anthropic, Xring → Xiaomi). Tên trần mà
@@ -317,7 +317,7 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
   Commons thì không ai gọi được tên (§6). Ảnh **chân dung** thì ngược lại: mặt
   là thứ ta đi tìm, và tên đi kèm sẵn. Đừng chặn chân dung theo số mặt đếm được:
   `image_rules.count_faces` trả `None` khi thiếu cv2/model và §6 cho phép cổng mặt tự
-  tắt, nên lấy `mat == 0` làm "không phải chân dung" là bỏ câm lặng mọi chân
+  tắt, nên lấy `faces == 0` làm "không phải chân dung" là bỏ câm lặng mọi chân
   dung trên máy thiếu cv2. Để **con mắt** phán, bằng câu hỏi riêng cho từng loại
   tư liệu (`sentence_ask_vision`) — câu chung hỏi "có phải ảnh của tin không" thì
   chân dung và thẻ logo chắc chắn trượt.
@@ -336,7 +336,7 @@ cho Kite thì Kite cũng phải dùng những hình đó trong body"*.
 
 Đường vào Kite **luôn là** đường thiếu ảnh: engine tự chuyển khi 0 ảnh, hoặc Ông
 Chủ bấm "🎨 Gửi Kite vẽ vector" ở một trong hai thông báo thiếu ảnh. Lúc đó
-`img.json` mang `chuyen_tu` (tên vai cũ) — **xong.json không có**, vì nút được
+`img.json` mang `transferred_from` (tên vai cũ) — **xong.json không có**, vì nút được
 bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới không bao giờ bật.
 
 - **Cả n mã hình thật đều phải xuất hiện** trong spec, không phải "ít nhất một".
@@ -345,7 +345,7 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
 - **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure`.
 - **Trần 6 tấm** (`MAX_FORCE_FIGURE`): bộ chỉ được 6..10 slide, trừ bìa và cta còn
   8. Ép hết khi engine tìm được 9 tấm là hai cổng đá nhau, vai không có đường nộp.
-- Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`). Vision tắt thì mọi ảnh là
+- Chỉ ép ảnh **đã được nhìn** (`relevant is True`). Vision tắt thì mọi ảnh là
   `None`, ép lúc đó là đẩy quảng cáo/widget lên slide — cùng bài học với cổng
   "ít nhất một".
 - **Không ép ảnh khái niệm** vào tập này — chỉ là **ưu tiên** (§1.2c nới lỏng
@@ -381,7 +381,7 @@ sau của câu là điều quan trọng hơn — "không có ảnh" **không ph�
 hợp lệ của tin**, nó là *thất bại của vòng tìm ảnh*. Lặng lẽ vẽ vector là giấu
 thất bại đó dưới một bộ slide trông như thật, nên cổng phải nói ra.
 
-Bản trước (08/09) chỉ chỉ định hero khi ảnh có `paper_hinh` — tức **chỉ bài
+Bản trước (08/09) chỉ chỉ định hero khi ảnh có `paper_figure` — tức **chỉ bài
 arxiv** (§1.4). Mọi tin còn lại thì brief nói "bìa `image` **hoặc** `figure`"
 (tuỳ chọn) và `kite_submit` chỉ đòi "dùng ít nhất một ảnh ở đâu đó", nên nhét hết
 ảnh vào `figure` thân rồi vẽ sơ đồ lên bìa là **hợp lệ**. Đo 10/09: ba ca — tin
@@ -397,7 +397,7 @@ qua cổng không một dòng lỗi.
   khác nhau theo nguyên nhân, vì việc phải làm khác nhau: có ứng viên → *đặt mã
   này vào slide 1*; ảnh có mà **vision chưa nhìn** → *bật vision rồi
   `--lam-moi`*; **0 ảnh** → *chạy lại vòng tìm ảnh, vẫn trắng thì `kanban_block`*.
-- Chỉ ép ảnh **đã được nhìn** (`lien_quan is True`), trừ hình paper (bóc thẳng từ
+- Chỉ ép ảnh **đã được nhìn** (`relevant is True`), trừ hình paper (bóc thẳng từ
   PDF nên không thể là quảng cáo). Vision tắt thì mọi ảnh là `None`, và cổng
   **vẫn chặn** — chỉ là không chỉ định mã nào: đẩy một banner chưa ai nhìn lên
   bìa còn tệ hơn vẽ vector. Đây là hỏng khâu vận hành (thiếu `OPENAI_API_KEY`),
@@ -453,9 +453,9 @@ cái §0 giữ.
 
 ### 1.2g Con mắt trả lời mà không đọc ra được thì hỏi lại, không mặc định duyệt
 
-- `lien_quan` có 3 giá trị: `True` (liên quan), `False` (không liên quan — vision
+- `relevant` có 3 giá trị: `True` (liên quan), `False` (không liên quan — vision
   đã xem và từ chối), `None` (chưa biết). Mọi nơi lọc `dung_duoc` viết
-  `lien_quan is not False`, tức **`None` từng được coi là duyệt** — đây là lỗ
+  `relevant is not False`, tức **`None` từng được coi là duyệt** — đây là lỗ
   fail-open. Ông Chủ 12/09/2026 đóng lại: *"đóng luôn cổng fail-open"*.
 - `None` có **hai nguồn gốc khác hẳn nhau**, và chỉ một nguồn được đóng:
   1. **Không hỏi được** (thiếu `OPENAI_API_KEY`, router hỏng cả 3 lần thử lại
@@ -467,7 +467,7 @@ cái §0 giữ.
      viên thương hiệu Anthropic đều lọt bìa qua đường này dù router đã trả lời,
      chỉ là câu trả lời không parse được. Ca này **hỏi lại đúng 1 lần**
      (`prepare/vision.description_image`); vẫn không đọc ra thì **coi là RỚT**
-     (`lien_quan = False`), không còn là `None` nữa.
+     (`relevant = False`), không còn là `None` nữa.
 - Không gộp hai ca làm một: nếu "không hỏi được" cũng bị đóng thì mọi lần vision
   tắt (thiếu key ở môi trường dev/test) sẽ biến TOÀN BỘ ảnh của tin thành rớt —
   không còn ảnh nào để dùng, sai với hợp đồng "chưa ai nhìn" mà nhiều nơi khác
@@ -507,7 +507,7 @@ chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng d�
 `nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.
 
 Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
-`ethan_submit` / `dre_submit` chặn ảnh chính khác khi `xong.json` có `tin_xep_hang` —
+`ethan_submit` / `dre_submit` chặn ảnh chính khác khi `xong.json` có `is_ranking_story` —
 không phải "chưa đạt", là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
 thể của tin; vẫn chịu mọi cổng khác.
 
@@ -795,7 +795,7 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   chính đồ hoạ "Nvidia Weighs $10B...": *"ảnh này xứng đáng làm hero, thể hiện
   được đầy đủ mọi từ khoá quan trọng"*. Vision trả thêm dòng `TU_KHOA` (đọc ra
   đủ tên các hãng/nhân vật chính VÀ con số/sự kiện chính) → manifest
-  `du_tu_khoa`; ảnh rối có cờ này được miễn `check_image_fall`, được làm bìa (kể cả
+  `has_keywords`; ảnh rối có cờ này được miễn `check_image_fall`, được làm bìa (kể cả
   khi đo ra là chart), và bìa hiện **nguyên bề ngang** như slide thân —
   cover-crop cắt hai mép là mất chữ khoá ở mép.
 - **Buộc dùng thì nền chữ đặc**, không phải lớp mờ 55% như mặc định: chữ in sẵn

@@ -58,13 +58,13 @@ def filter(urls: list, so: int, tu: str, q: str) -> list:
         if u in thay or not _use_ok(u):
             continue
         thay.add(u)
-        # `trang` = chính ảnh: download_filter coi ảnh khác miền trang là quảng cáo,
+        # `page_url` = chính ảnh: download_filter coi ảnh khác miền trang là quảng cáo,
         # mà kết quả tìm ảnh thì không có "trang" nào cả.
-        ra.append({"anh": u, "alt": q, "og": False, "tu": tu, "trang": u,
+        ra.append({"image_url": u, "alt": q, "og": False, "source": tu, "page_url": u,
                    # Duoi og:image bao chi (42): ket qua web co the lac de ca loat
                    # (Bing async tra "tiec tra" cho "TSMC wafer fab", 12/09), khong
                    # duoc chiem het tran tai MAX_DOWNLOAD cua download_and_filter.
-                   "rong": 0, "cao": 0, "diem": 40 if tu == "web_bing" else 38, "tu_khoa": q})
+                   "rong": 0, "cao": 0, "score": 40 if tu == "web_bing" else 38, "tu_khoa": q})
         if len(ra) >= so:
             break
     return ra
@@ -113,12 +113,12 @@ def find_image_web(q: str, so: int = 16, phien=None) -> list:
                     break
     thay, kq = set(), []
     for c in ra:
-        if c["anh"] not in thay:
-            thay.add(c["anh"])
+        if c["image_url"] not in thay:
+            thay.add(c["image_url"])
             kq.append(c)
     return kq[:so]
 
 
 if __name__ == "__main__":
     for c in find_image_web(" ".join(sys.argv[1:]) or "TSMC fab"):
-        print(c["tu"], c["anh"][:120])
+        print(c["source"], c["image_url"][:120])

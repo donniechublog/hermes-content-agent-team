@@ -4,13 +4,13 @@
 
 F2 (8ae13cf) đưa upgrade-on-read vào schema nhưng chỉ image_prepare dùng; 4 vai
 *_submit (submit_common), create_task_kite và nút hạ sàn (approve_post) đọc thô — manifest
-bản 0 thiếu so_dung_duoc thì hạ sàn báo "Chỉ 0 ảnh thật" dù có 6, và body Kite
+bản 0 thiếu so_dung_duoc (nay `usable_count`) thì hạ sàn báo "Chỉ 0 ảnh thật" dù có 6, và body Kite
 tự đếm ra 4 trong khi schema đếm 2 (khái niệm là một chùm).
 
 Cổng quét bằng ast, không quét chuỗi (E-r2-4): chỉ bắt lời gọi json.loads /
 _read_json / read_text mà đối số có literal "xong.json" — comment nhắc tới tên
 tệp không tính. Ada/Itachi có xong.json RIÊNG (không phải manifest engine, không
-có `anh`) nên không nằm trong cổng này.
+có `images`) nên không nằm trong cổng này.
 
 Chạy:  venv/bin/python tests/test_done_over_schema.py
 """
@@ -69,7 +69,7 @@ def test_read_manifest_fallback_count_use_ok_wait_copy_0():
     m0 = {"anh": [{"ma": "A1", "dung": ["bìa"], "lien_quan": True},
                   {"ma": "A2", "dung": ["thân"], "lien_quan": None}]}
     m = schema.read_manifest(m0)
-    assert m["so_dung_duoc"] == 2 and m["phien_ban"] == schema.VERSION_MANIFEST, m
+    assert m["usable_count"] == 2 and m["version"] == schema.VERSION_MANIFEST, m
 
 
 if __name__ == "__main__":

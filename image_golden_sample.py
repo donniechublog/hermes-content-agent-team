@@ -8,7 +8,7 @@
 thì nhãn sẽ lệch ảnh mà không ai biết.
 
 Phân tầng: giữ trọn các draft chỉ định (`--must`), phần còn lại chia ~1/3 ảnh
-engine đang giữ, ~2/3 ảnh đang bỏ (đo LOẠI OAN là mục tiêu chính), mỗi nguồn `tu`
+engine đang giữ, ~2/3 ảnh đang bỏ (đo LOẠI OAN là mục tiêu chính), mỗi nguồn `source`
 tối thiểu một suất, mỗi draft tối đa vài tấm để mẫu trải rộng.
 
 Chạy trên máy chủ:
@@ -25,6 +25,7 @@ from pathlib import Path
 
 from PIL import Image
 
+import schema
 from image_eval import source_of, system_kept
 
 ROOT = Path(__file__).resolve().parent
@@ -32,9 +33,9 @@ THUMB_MAX = 512
 LEAD_CHARS = 700
 # Khoá ảnh chép sang mẫu: đủ để người gán nhãn hiểu ảnh đến từ đâu, và đủ để
 # image_eval dựng lại quyết định của engine (system_kept / drop_reason).
-IMAGE_KEYS = ("ma", "tu", "mien", "url", "trang", "alt", "mo_ta", "lien_quan", "dung", "ghi_chu",
-              "cluttered", "du_tu_khoa", "w", "h", "mat", "khai_niem", "thuong_hieu", "chup_nguon",
-              "tim_them", "commons", "xep_hang", "thuc_the", "tit_trang")
+IMAGE_KEYS = ("id", "source", "domain", "url", "page_url", "alt", "description", "relevant", "uses", "notes",
+              "cluttered", "has_keywords", "w", "h", "faces", "concept", "brand_match", "capture_source",
+              "from_find_more", "commons", "ranking", "entity", "page_title")
 
 
 def load_candidates(state_root: Path) -> list:
@@ -45,17 +46,21 @@ def load_candidates(state_root: Path) -> list:
             d = json.loads(manifest.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
+        # Ban 0/1 (khoa Viet) nang len ban 2 qua MOT cho doc (LOW-227).
+        d = schema.read_manifest(d) if isinstance(d, dict) else None
+        if d is None:
+            continue
         brand = manifest.parents[2].name
         story = {"brand": brand, "draft_id": d.get("draft_id") or manifest.parent.name,
-                 "title": d.get("title", ""), "title_en": d.get("tieu_de_en", ""),
+                 "title": d.get("title", ""), "title_en": d.get("title_en", ""),
                  "category": d.get("category", ""), "link": d.get("link", ""),
                  "summary": d.get("summary", ""),
-                 "lead": ((d.get("tu_lieu") or {}).get("doan_dau") or "")[:LEAD_CHARS]}
-        for a in d.get("anh") or []:
-            goc = Path(a.get("goc") or "")
-            if not a.get("ma") or not goc.is_file():
+                 "lead": ((d.get("material") or {}).get("lead_paragraph") or "")[:LEAD_CHARS]}
+        for a in d.get("images") or []:
+            goc = Path(a.get("original_path") or "")
+            if not a.get("id") or not goc.is_file():
                 continue
-            out.append({"id": f"{brand}/{story['draft_id']}/{a['ma']}", "story": story,
+            out.append({"id": f"{brand}/{story['draft_id']}/{a['id']}", "story": story,
                         "image": {k: a[k] for k in IMAGE_KEYS if k in a}, "goc": str(goc)})
     return out
 

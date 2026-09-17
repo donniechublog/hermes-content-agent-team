@@ -95,21 +95,21 @@ _NAME_PREFIX = ("anh", "ong", "ba", "ceo", "chu", "tich", "ts", "gs")
 
 def subject_names(a: dict) -> list:
     """Ten nguoi ma CHINH tam anh mang theo, theo thu tu tin cay: nhan nguoi cua
-    vong thuong hieu (`thuong_hieu.nguoi`, Wikidata founder/CEO), ten rieng trong
-    `mo_ta` (vision NHIN mat va goi ten), roi ten rieng trong alt/caption.
+    vong thuong hieu (`brand_match.person`, Wikidata founder/CEO), ten rieng trong
+    `description` (vision NHIN mat va goi ten), roi ten rieng trong alt/caption.
 
     Do that 16/09/2026 (A18 tin Nvidia/Anthropic): alt la tieu de bao
     "Nvidia CEO Says AGI is Here Following GPT-6 Astra Launch" -> regex ten rieng
     tra "Here Following", brief in ra, Dre khai dung the va qua cong voi mot ten
-    bia — trong khi mo_ta noi ro "CEO Jensen Huang". Nen: alt dang headline
-    Title-Case bo qua, mo_ta duoc doc truoc. `role.person_names_in_alt` (nguoi
+    bia — trong khi description noi ro "CEO Jensen Huang". Nen: alt dang headline
+    Title-Case bo qua, description duoc doc truoc. `role.person_names_in_alt` (nguoi
     dem chung) giu nguyen."""
     import role
     ra = []
-    th = (a.get("thuong_hieu") or {}).get("nguoi")
+    th = (a.get("brand_match") or {}).get("person")
     if th:
         ra.append(str(th))
-    for txt in (a.get("mo_ta") or "", a.get("alt") or ""):
+    for txt in (a.get("description") or "", a.get("alt") or ""):
         if not txt or _is_title_case_headline(txt):
             continue
         for ten in role.person_names_in_alt(txt):

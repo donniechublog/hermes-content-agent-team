@@ -319,7 +319,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   trôi khỏi mã. Ba cổng dùng chung của Dre/Ethan nằm ở `submit_common`
   (`needs_ranking_image`, `irrelevant_images`, `check_not_reused_across_runs`) — trước
   07/09/2026 mỗi vai một bản, và đã lệch một lần (Ethan không đọc cờ
-  `lien_quan`).
+  `relevant`).
   Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
   `run.sh` chỉ chạy `test_*.py`.
 

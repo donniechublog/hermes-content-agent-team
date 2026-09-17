@@ -48,7 +48,7 @@ def test_candidate_set_page_board_main_image_for_over_filter_side_try_three():
     """og:image gần như luôn trên CDN khác miền bài; download_filter coi khác miền là
     quảng cáo. Ứng viên phải mang trang=ảnh và giữ bài gốc ở `bai`."""
     src = inspect.getsource(bt._og)
-    assert '"trang": im' in src and '"bai": u' in src
+    assert '"page_url": im' in src and '"bai": u' in src
 
 
 def test_find_more_images_call_source_this():

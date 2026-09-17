@@ -396,12 +396,12 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
         return None
     if not (ra.exists() and ra.stat().st_size > 0):
         return None
-    # `tit_trang` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
-    # trong `trang` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.
-    return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True, "tit_trang": tit_trang,
-            "kieu": "hero" if r["co_anh"] else "tit", "mau_nen": mau_nen,
+    # `page_title` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
+    # trong `page_url` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.
+    return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True, "page_title": tit_trang,
+            "capture_kind": "hero" if r["co_anh"] else "tit", "background_color": mau_nen,
             "alt": "ảnh chính + tít của chính bài gốc, chụp ở khung điện thoại",
-            "ly_do": "khối lead của trang nguồn"
+            "score_reason": "khối lead của trang nguồn"
                      + (", có tít" if r["co_tit"] else "")
                      + (", có ảnh chính" if r["co_anh"] else "")}
 

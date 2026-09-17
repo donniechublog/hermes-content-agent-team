@@ -27,7 +27,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     import brief_common
     L = brief_common.mark(
         m, "DRE",
-        f"Brand: {m['brand']} | draft: {m['draft_id']} | slide tối thiểu: {m['toi_thieu']}"
+        f"Brand: {m['brand']} | draft: {m['draft_id']} | slide tối thiểu: {m['min_images']}"
         + (" (FLAGSHIP: tin model của hãng frontier)" if m["flagship"] else "")
         + " | tối đa 10 | quote ≥ 2")
     L += brief_common.block_redo(
@@ -49,66 +49,66 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
              "\"chưa công bố\" — copy của bạn phải khớp với caption của Miles, không được nói ngược.")
     L.append("")
     L.append("## Ảnh đã tải & xử lý xong — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm")
-    if not m["anh"]:
+    if not m["images"]:
         L.append("KHÔNG CÓ ảnh thật nào dùng được. Không dựng hình giả. Kết thúc task bằng "
                  "một câu: \"Không tìm được ảnh thật cho tin này\" kèm link đã thử.")
-    if m.get("khong_kite"):
+    if m.get("kite_unavailable"):
         L.append("🛑 0 ẢNH THẬT dùng được và brand này CHƯA CÓ KITE. KHÔNG dựng hình giả. Kết thúc "
                  "task bằng một câu: \"Không có ảnh thật cho tin này, brand chưa có Kite\" — Ông Chủ "
                  "đã nhận nút Bỏ hẳn trên topic.")
         return "\n".join(L)
-    if m.get("chuyen_kite"):
-        L.append(f"🛑 TIN NÀY ĐÃ CHUYỂN KITE (task {m['chuyen_kite']}) vì 0 ảnh thật dùng được. "
+    if m.get("kite_task_id"):
+        L.append(f"🛑 TIN NÀY ĐÃ CHUYỂN KITE (task {m['kite_task_id']}) vì 0 ảnh thật dùng được. "
                  "KHÔNG viết spec, KHÔNG dựng. Kết thúc task ngay bằng một câu: "
                  "\"Đã chuyển Kite vì không có ảnh thật\".")
         return "\n".join(L)
     # Mac dinh bang CUNG cong thuc voi nguoi ghi (schema.count_image_use_ok): ban
-    # cu dem `len([a for a in m["anh"] if a["dung"]])` — mot so KHAC, vi chum anh
+    # cu dem `len([a for a in m["images"] if a["uses"]])` — mot so KHAC, vi chum anh
     # khai niem phai dem la MOT (F2).
-    so_dd = m.get("so_dung_duoc", schema.count_image_use_ok(m.get("anh"), "dre"))
-    if m["anh"] and so_dd < m.get("toi_thieu", 5):
-        L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} slide dựng được, cần ≥ {m.get('toi_thieu', 5)}. "
+    so_dd = m.get("usable_count", schema.count_image_use_ok(m.get("images"), "dre"))
+    if m["images"] and so_dd < m.get("min_images", 5):
+        L.append(f"⚠️ THIẾU ẢNH: chỉ {so_dd} slide dựng được, cần ≥ {m.get('min_images', 5)}. "
                  "KHÔNG nhồi ảnh không liên quan cho đủ. Việc của bạn: TỰ ĐI TÌM — "
                  f"`cd {ROOT} && venv/bin/python find_more_images.py {m['draft_id']} --tu-khoa \"<từ khoá "
                  "TIẾNG ANH cụ thể>\"` (hãng, sản phẩm, nhà máy, sự kiện, người trong bài; có URL "
                  "trang/ảnh thì `--url`), tối đa 3 lượt, rồi chạy lại lệnh brief này. Hết 3 lượt "
                  "vẫn thiếu mới kanban_block, kể rõ từ khoá đã thử.")
-    if m.get("so_mien") is not None:
-        L.append(f"Ảnh dùng được lấy từ {len(m['so_mien'])} nguồn: {', '.join(m['so_mien']) or '—'}"
+    if m.get("domains") is not None:
+        L.append(f"Ảnh dùng được lấy từ {len(m['domains'])} nguồn: {', '.join(m['domains']) or '—'}"
                  + (" — chỉ MỘT nguồn; bộ ≥4 slide nên có ảnh từ ≥2 nguồn, cân nhắc gộp ý."
-                    if len(m['so_mien']) == 1 and so_dd >= 4 else ""))
-    if m.get("chua_nhin"):
-        L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['chua_nhin'])} (vision không chạy) — nhãn dưới chỉ là đo "
+                    if len(m['domains']) == 1 and so_dd >= 4 else ""))
+    if m.get("not_yet_seen"):
+        L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['not_yet_seen'])} (vision không chạy) — nhãn dưới chỉ là đo "
                  "số, có thể sai; mở bang_anh.png trước khi dùng.")
-    if m.get("tin_xep_hang"):
+    if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "bìa ", "dre_submit"))
-    for a in m["anh"]:
-        if a.get("lien_quan") is False:
-            L.append(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or 'không rõ'} → KHÔNG DÙNG "
-                     f"(nguồn: {a['mien'] or a['tu']})")
+    for a in m["images"]:
+        if a.get("relevant") is False:
+            L.append(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or 'không rõ'} → KHÔNG DÙNG "
+                     f"(nguồn: {a['domain'] or a['source']})")
             continue
-        dong = (f"- {a['ma']}: {a['w']}x{a['h']} ({a['ti_le']}) {a['loai'].upper()}"
-                f"{' NGANG' if a['ngang'] else ''} | dùng: {'; '.join(a['dung']) or 'không'}"
-                f" | nguồn: {a['mien'] or a['tu']}")
-        if a.get("mo_ta"):
-            dong += f" | ảnh là: {a['mo_ta'][:110]}"
+        dong = (f"- {a['id']}: {a['w']}x{a['h']} ({a['ratio']}) {a['kind'].upper()}"
+                f"{' NGANG' if a['landscape'] else ''} | dùng: {'; '.join(a['uses']) or 'không'}"
+                f" | nguồn: {a['domain'] or a['source']}")
+        if a.get("description"):
+            dong += f" | ảnh là: {a['description'][:110]}"
         elif a.get("alt"):
             dong += f" | alt: {a['alt'][:70]}"
-        if a.get("mat"):
+        if a.get("faces"):
             # Ten nguoi ma chinh tam anh mang theo (LOW-178): vai khai dung ten nay
             # la qua cong, ke ca khi chu bai khong nhac ten.
             ten = image_rules_dre.subject_names(a)
             dong += ((" | mặt người: tên theo vision/chú thích: " + " / ".join(f"\"{x}\"" for x in ten[:3])
                       + " — khai \"nhan_vat\" đúng tên NGƯỜI trong ảnh (không khai địa danh/cụm chữ)")
                      if ten else " | mặt người KHÔNG rõ ai: chỉ dùng nếu bài nêu đúng tên người này")
-        if a["ghi_chu"]:
-            dong += " | " + "; ".join(a["ghi_chu"])
+        if a["notes"]:
+            dong += " | " + "; ".join(a["notes"])
         L.append(dong)
-    if m.get("goi_y_bia"):
-        L.append(f"Gợi ý bìa (không chart, không mặt, góc dưới-trái tối): {', '.join(m['goi_y_bia'])}")
-    if m.get("cap_ghep"):
+    if m.get("cover_suggestions"):
+        L.append(f"Gợi ý bìa (không chart, không mặt, góc dưới-trái tối): {', '.join(m['cover_suggestions'])}")
+    if m.get("stackable_pairs"):
         L.append("Cặp ảnh ngang ghép dọc được (cùng tone): " +
-                 ", ".join("+".join(c) for c in m["cap_ghep"]))
+                 ", ".join("+".join(c) for c in m["stackable_pairs"]))
     import story_type
     L += story_type.line_brief(m)
     L.append("Ảnh CHỤP (trụ sở, nhà máy, người, sản phẩm) có biển hiệu, số nhà, logo trên tường "
@@ -121,7 +121,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     khung = {
         "tam_co": "flagship" if m["flagship"] else "thuong",
         "nen": "<toi | sang — cả bộ một nền; toi: màn tối chữ trắng, sang: màn sáng chữ đen; chọn theo ảnh, mặc định toi>",
-        "cover": {"anh": (m.get("goi_y_bia") or ["A?"])[0], "hook": "<một câu giật, ≤ 90 ký tự, có dấu>",
+        "cover": {"anh": (m.get("cover_suggestions") or ["A?"])[0], "hook": "<một câu giật, ≤ 90 ký tự, có dấu>",
                   "category": "<" + " | ".join(carousel.CATEGORY_CALL_Y) + " | EARNINGS | M&A>",
                   "label": "<TÊN MODEL / HÃNG, VIẾT HOA>"},
         "slides": [

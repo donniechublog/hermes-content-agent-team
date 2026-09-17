@@ -37,7 +37,7 @@ def test_download_bytes_broken_network_right_say_out():
 def test_download_and_filter_all_all_broken_then_has_line_total():
     """Khong chi tung URL: mot dong tong noi 'TAT CA khong tai duoc' de brief
     phan biet voi bai khong co anh."""
-    cands = [{"anh": f"http://khong-ton-tai.invalid/{i}.png", "trang": "http://x.invalid/"}
+    cands = [{"image_url": f"http://khong-ton-tai.invalid/{i}.png", "page_url": "http://x.invalid/"}
              for i in range(3)]
     with tempfile.TemporaryDirectory() as t:
         (ra, err) = _catch_stderr(lambda: tl.download_and_filter(cands, Path(t)))

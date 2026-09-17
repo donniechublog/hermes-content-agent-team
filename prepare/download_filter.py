@@ -76,9 +76,9 @@ def _host_is_side_try_three(c: dict) -> bool:
     """Anh nam tren host KHAC domain trang va khong phai CDN -> gan nhu chac la
     quang cao/widget ben thu ba (banner Phemex tren siliconangle, 05/09/2026).
     Anh do engine tu chup/tai (tep local, commons, arxiv) khong xet."""
-    if c.get("tep") or c.get("tu") in ("chup", "commons", "arxiv_bia", "openverse"):
+    if c.get("tep") or c.get("source") in ("chup", "commons", "arxiv_bia", "openverse"):
         return False
-    ha, ht = _domain(c.get("anh", "") or ""), _domain(c.get("trang", "") or "")
+    ha, ht = _domain(c.get("image_url", "") or ""), _domain(c.get("page_url", "") or "")
     if not ha or not ht:
         return False
     if _original_domain(ha) == _original_domain(ht) or _CDN.search(ha):
@@ -96,14 +96,14 @@ def _download_candidate(c: dict) -> tuple:
     try:
         if c.get("tep"):
             return Path(c["tep"]).read_bytes(), None
-        return _download_bytes(c["anh"]), None
+        return _download_bytes(c["image_url"]), None
     except Exception as e:                                   # noqa: BLE001
         return None, e
 
 
 def download_and_filter(cands: list, wd: Path) -> list:
     """Tai ung vien theo thu tu diem, loai trung (md5) va anh be, luu PNG co dau
-    xuat xu. Tra ve danh sach anh da tai [{ma, goc, ...}].
+    xuat xu. Tra ve danh sach anh da tai [{id, original_path, ...}].
 
     Pha 1 (song song, ThreadPoolExecutor): tai TRUOC toan bo bytes cho tung ung
     vien — moi tai la mot HTTP GET doc lap, khong quyet dinh gi ve loc/dedup.
@@ -145,23 +145,23 @@ def download_and_filter(cands: list, wd: Path) -> list:
                                             f"{w}x{hh} < {short_side_drop}", im=im)
                 continue
             if _host_is_side_try_three(c):
-                print(f"[tai] bo anh host ben thu ba (quang cao?): {_domain(c.get('anh',''))} tren {_domain(c.get('trang',''))}", file=sys.stderr)
+                print(f"[tai] bo anh host ben thu ba (quang cao?): {_domain(c.get('image_url',''))} tren {_domain(c.get('page_url',''))}", file=sys.stderr)
                 decision_log.drop_candidate(wd, c, "third_party_host", "_host_is_side_try_three",
-                                            f"{_domain(c.get('anh', ''))} tren {_domain(c.get('trang', ''))}", im=im)
+                                            f"{_domain(c.get('image_url', ''))} tren {_domain(c.get('page_url', ''))}", im=im)
                 continue
-            if not c.get("cho_do_hoa") and (url_junk.search(c.get("anh", "") or "")
+            if not c.get("cho_do_hoa") and (url_junk.search(c.get("image_url", "") or "")
                                             or url_junk.search(c.get("alt", "") or "")):
                 # `cho_do_hoa` mien cong nay: bo tu vung RAC co chu "logo", ma
                 # THE LOGO thi duong dan lan ten tep Commons deu co chu do — no
                 # tu chan chinh no (09/09/2026). Cong nay de chan logo bao/quang
                 # cao lot vao tu <img> cua trang, khong phai logo ta co tinh lay.
-                print(f"[tai] bo url/alt rac: {str(c.get('anh'))[-60:]}", file=sys.stderr)
-                khop = url_junk.search(c.get("anh", "") or "") or url_junk.search(c.get("alt", "") or "")
+                print(f"[tai] bo url/alt rac: {str(c.get('image_url'))[-60:]}", file=sys.stderr)
+                khop = url_junk.search(c.get("image_url", "") or "") or url_junk.search(c.get("alt", "") or "")
                 decision_log.drop_candidate(wd, c, "junk_url", "rules.JUNK",
                                             f"khop {khop.group(0)!r}" if khop else "", im=im)
                 continue                                  # placeholder/onboarding/logo/ad
             if rules.is_blank_image(im)[0]:
-                print(f"[tai] bo anh RONG: {str(c.get('anh'))[-60:]}", file=sys.stderr)
+                print(f"[tai] bo anh RONG: {str(c.get('image_url'))[-60:]}", file=sys.stderr)
                 decision_log.drop_candidate(wd, c, "blank", "rules.is_blank_image", im=im)
                 continue
             if (w, hh) in article_images.HAS_AI_GENERATE:
@@ -190,9 +190,9 @@ def download_and_filter(cands: list, wd: Path) -> list:
                 lon_hon = w * hh > da_tai[trung][1].width * da_tai[trung][1].height
                 print(f"[tai] bo ban {'nho' if lon_hon else 'sau'} vi trung gan giong "
                       f"(lech {bin(h ^ da_tai[trung][0]).count('1')} bit, nguong {ng}): "
-                      f"{str(c.get('anh'))[:60]}", file=sys.stderr)
+                      f"{str(c.get('image_url'))[:60]}", file=sys.stderr)
                 bang_chung = (f"lech {bin(h ^ da_tai[trung][0]).count('1')} bit, nguong {ng}, "
-                              f"trung voi {str(da_tai[trung][2].get('anh'))[:120]}")
+                              f"trung voi {str(da_tai[trung][2].get('image_url'))[:120]}")
                 if lon_hon:
                     decision_log.drop_candidate(wd, da_tai[trung][2], "near_duplicate", "dhash_smaller",
                                                 bang_chung, im=da_tai[trung][1])
@@ -202,7 +202,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
                 continue
             da_tai.append((h, im, c, len(data)))
         except Exception as e:                               # noqa: BLE001
-            print(f"[tai] {str(c.get('anh'))[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
+            print(f"[tai] {str(c.get('image_url'))[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
             # Loi LAY anh (tai/doc tep) tach khoi loi XU LY anh da co trong tay.
             decision_log.drop_candidate(wd, c, "acquire_error" if loi is not None else "process_error",
                                         type(e).__name__, repr(e))
@@ -221,24 +221,24 @@ def download_and_filter(cands: list, wd: Path) -> list:
         ma = f"A{n}"
         out = goc_dir / f"{ma}.png"
         im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance(
-            {"chup": "chup_chart", "arxiv_hinh": "arxiv_hinh"}.get(c.get("tu"), "dre_chuan_bi")))
+            {"chup": "chup_chart", "arxiv_hinh": "arxiv_hinh"}.get(c.get("source"), "dre_chuan_bi")))
         # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
         # khong noi len gi (bao boc ca anh minh hoa lan quang cao).
-        hint = bool((c.get("tu") != "chup" and (article_images.RULE.search(c.get("anh", "") or "")
+        hint = bool((c.get("source") != "chup" and (article_images.RULE.search(c.get("image_url", "") or "")
                                                  or article_images.RULE.search(c.get("alt", "") or "")
                                                  or article_images.RULE_MODEL.search(c.get("alt", "") or "")))
-                    or c.get("the") in ("table", "canvas", "svg")
-                    or c.get("tu") == "arxiv_hinh")
-        ra.append({"ma": ma, "goc": str(out), "url": c.get("anh", ""),
-                   "alt": (c.get("alt") or c.get("alt_chup") or "")[:120], "tu": c.get("tu", ""),
-                   "trang": c.get("trang", ""), "mien": _domain(c.get("trang") or c.get("anh")),
-                   "diem": c.get("diem", 0), "ly_do": c.get("ly_do", ""), "hint_chart": hint,
+                    or c.get("html_tag") in ("table", "canvas", "svg")
+                    or c.get("source") == "arxiv_hinh")
+        ra.append({"id": ma, "original_path": str(out), "url": c.get("image_url", ""),
+                   "alt": (c.get("alt") or c.get("alt_chup") or "")[:120], "source": c.get("source", ""),
+                   "page_url": c.get("page_url", ""), "domain": _domain(c.get("page_url") or c.get("image_url")),
+                   "score": c.get("score", 0), "score_reason": c.get("score_reason", ""), "chart_hint": hint,
                    # Ten hinh trong paper ("Figure 1") — Kite doc de biet tam nao
                    # la hinh mo dau bai, va de viet caption cho dung.
-                   **({"paper_hinh": c["paper_hinh"]} if c.get("paper_hinh") else {}),
-                   **({"khai_niem": c["khai_niem"]} if c.get("khai_niem") else {}),
-                   **({"thuong_hieu": c["thuong_hieu"]} if c.get("thuong_hieu") else {}),
-                   **({"thuc_the": c["thuc_the"]} if c.get("thuc_the") else {})})
+                   **({"paper_figure": c["paper_figure"]} if c.get("paper_figure") else {}),
+                   **({"concept": c["concept"]} if c.get("concept") else {}),
+                   **({"brand_match": c["brand_match"]} if c.get("brand_match") else {}),
+                   **({"entity": c["entity"]} if c.get("entity") else {})})
         decision_log.note(ra[-1], "download", "keep", "download_and_filter")
     return ra
 

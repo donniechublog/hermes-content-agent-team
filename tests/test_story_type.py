@@ -71,7 +71,7 @@ def test_keyword_concept_extra_use_before():
 
 
 def test_category_force_capture_board_ranking():
-    """MODEL/BENCHMARK ép `tin_xep_hang=True` dù tiêu đề không có '#1'/'top'."""
+    """MODEL/BENCHMARK ép `is_ranking_story=True` dù tiêu đề không có '#1'/'top'."""
     from prepare import fallback_rounds
     goi = {}
     with mock.patch.object(fallback_rounds.ranking, "is_ranking_story", return_value=False), \
@@ -89,12 +89,12 @@ def test_category_force_capture_board_ranking():
 
 def test_stack_two_rank_only_when_code():
     from prepare import manifest
-    anh = [{"ma": "A1", "dung": ["bìa"], "lien_quan": True,
-            "thuong_hieu": {"khoa": "nvidia", "loai": "logo"}},
-           {"ma": "A2", "dung": ["bìa"], "lien_quan": True,
-            "thuong_hieu": {"khoa": "hugging face", "loai": "logo"}},
-           {"ma": "A3", "dung": ["thân"], "lien_quan": True,
-            "thuong_hieu": {"khoa": "nvidia", "loai": "nguoi"}}]
+    anh = [{"id": "A1", "uses": ["bìa"], "relevant": True,
+            "brand_match": {"key": "nvidia", "kind": "logo"}},
+           {"id": "A2", "uses": ["bìa"], "relevant": True,
+            "brand_match": {"key": "hugging face", "kind": "logo"}},
+           {"id": "A3", "uses": ["thân"], "relevant": True,
+            "brand_match": {"key": "nvidia", "kind": "nguoi"}}]
     assert manifest.pair_two_vendor_images(anh, "M&A") == [["A1", "A2"]]
     assert manifest.pair_two_vendor_images(anh, "MODEL") == []
     assert manifest.pair_two_vendor_images(anh[:1], "M&A") == []

@@ -292,32 +292,32 @@ def find(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) 
     with cf.ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
         for (u, nguon), ds in zip(trang, ex.map(lambda t: image_within_page(t[0]), trang)):
             for src, alt, og in ds:
-                ung_vien.append({"anh": src, "alt": alt, "og": og,
-                                 "tu": nguon, "trang": u})
+                ung_vien.append({"image_url": src, "alt": alt, "og": og,
+                                 "source": nguon, "page_url": u})
     # Cung mot anh thuong duoc phuc vu o nhieu co: image-46.png (2025x1652) va
     # image-46-1024x835.png?resize=640,522. Gom theo ten goc roi GIU BAN GOC —
     # ban co hau to kich co luon la ban da thu nho, chon no la tu bo do net.
     theo_goc = {}
     for c in ung_vien:
-        k = re.sub(r"[-_]\d{2,4}x\d{2,4}|\?.*$", "", c["anh"])
+        k = re.sub(r"[-_]\d{2,4}x\d{2,4}|\?.*$", "", c["image_url"])
         cu = theo_goc.get(k)
         if cu is None:
             theo_goc[k] = c
             continue
         def _da_thu_nho(u):
             return bool(re.search(r"[-_]\d{2,4}x\d{2,4}|resize=|\bw=\d+", u))
-        if _da_thu_nho(cu["anh"]) and not _da_thu_nho(c["anh"]):
+        if _da_thu_nho(cu["image_url"]) and not _da_thu_nho(c["image_url"]):
             theo_goc[k] = c
     loc = list(theo_goc.values())
 
     with cf.ThreadPoolExecutor(max_workers=env_load.quantity(8)) as ex:
-        for c, kt in zip(loc, ex.map(lambda x: measure_image(x["anh"]), loc)):
+        for c, kt in zip(loc, ex.map(lambda x: measure_image(x["image_url"]), loc)):
             c["rong"], c["cao"], c["byte"], c["do_hoa"] = kt
-            c["diem"], c["ly_do"] = touch(c["anh"], c["alt"], c["og"],
+            c["score"], c["score_reason"] = touch(c["image_url"], c["alt"], c["og"],
                                          kt[0], kt[1], do_hoa=kt[3],
                                          tin_model=tin_model)
-    tot = [c for c in loc if c["diem"] > 0]
-    tot.sort(key=lambda c: -c["diem"])
+    tot = [c for c in loc if c["score"] > 0]
+    tot.sort(key=lambda c: -c["score"])
     return tot
 
 
@@ -349,10 +349,10 @@ def main():
         if not kq:
             print("Khong tim duoc anh nao dung duoc.", file=sys.stderr)
         for c in kq[:8]:
-            print(f"  [{c['diem']:>3d}d] {c['ly_do']:<44s} ({c['tu']})")
-            print(f"         {c['anh'][:110]}")
+            print(f"  [{c['score']:>3d}d] {c['score_reason']:<44s} ({c['source']})")
+            print(f"         {c['image_url'][:110]}")
     if a.tai and kq:
-        r = _download(kq[0]["anh"], 40)
+        r = _download(kq[0]["image_url"], 40)
         Path(a.tai).write_bytes(r.content)
         print(f"da tai -> {a.tai} ({len(r.content):,} byte)")
     return 0 if kq else 1
