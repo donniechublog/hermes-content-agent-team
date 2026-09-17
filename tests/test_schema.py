@@ -22,6 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import schema                                                 # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 # ---------------------------------------------- cong thuc dan xuat, mot ban
@@ -94,7 +95,7 @@ def test_khong_ghi_de_khoa_da_co_cua_ban_cu():
 
 def test_doc_tu_duong_dan_va_khong_nem_khi_tep_hong():
     with tempfile.TemporaryDirectory() as t:
-        p = Path(t) / "xong.json"
+        p = Path(t) / state_paths.MANIFEST_FILE
         p.write_text(json.dumps({"anh": [], "title": "x"}), encoding="utf-8")
         assert schema.read_manifest(p)["title"] == "x"
         p.write_text("{khong phai json", encoding="utf-8")
@@ -104,7 +105,7 @@ def test_doc_tu_duong_dan_va_khong_nem_khi_tep_hong():
 
 def test_tep_json_khong_phai_dict_cung_ra_None():
     with tempfile.TemporaryDirectory() as t:
-        p = Path(t) / "xong.json"
+        p = Path(t) / state_paths.MANIFEST_FILE
         p.write_text("[1, 2, 3]", encoding="utf-8")
         assert schema.read_manifest(p) is None
 
@@ -286,7 +287,7 @@ def test_migrate_manifest_idempotent_va_chan_lan_khoa():
 
 
 def test_xong_json_khong_phai_manifest_bi_bo_qua():
-    """Itachi ghi `{khoa, slides}` va Ada ghi bao cao gom cung ten `xong.json`."""
+    """Itachi ghi `{khoa, slides}` va Ada ghi bao cao gom cung ten `manifest.json`."""
     import manifest_migration as mig
     assert not mig.is_manifest({"khoa": "k", "slides": [{"anh": "A1"}]})
     assert not mig.is_manifest({"token": 1, "kanban": {}, "manifest": {}, "draft": "d"})

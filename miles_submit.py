@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import caption_check                                         # noqa: E402
 import submit_common as nc                                       # noqa: E402
+import state_paths                                            # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -68,7 +69,7 @@ def main() -> int:
         print(f"[da sua] {g}")
     p_cap.write_text(cap, encoding="utf-8")
 
-    p_tl = wd / "tu_lieu.md"
+    p_tl = wd / state_paths.MATERIAL_FILE
     tl = p_tl.read_text(encoding="utf-8") if p_tl.exists() else ""
     loi, canh, tin = caption_check.check(cap, tl)
     print(f"[do] {tin.get('do_dai', 0)} ký tự | {tin.get('so_cau', 0)} câu | {tin.get('so_trong_caption', 0)} chỗ có số"

@@ -7,7 +7,7 @@ vai da viet spec.json (khung do ethan_prepare.py in ra).
   2. Chan som loi hay mac: ma anh sai, chart/anh ngang >1.6 ma khong co anh2,
      mat nguoi khong khai, lam lai ma giu anh/hook cu.
   3. Chay card.py (moi cong chan chu/anh nam o do), gui anh len topic `designer`
-     kem nut Duyet, ghi ban giao cho Miles, ghi da_dung.json.
+     kem nut Duyet, ghi ban giao cho Miles, ghi previous_submission.json.
 
 Dung:
     venv/bin/python ethan_submit.py <draft_id>
@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import ethan_prepare as eb                                  # noqa: E402
 import submit_common as nc                                       # noqa: E402
+import state_paths                                            # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -189,7 +190,7 @@ def main() -> int:
                    + [f"- {ma} ← {anh_['domain'] or anh_['source']} ({anh_.get('page_url', '')[:100]})"
                       for ma in anh_dung for anh_ in m["images"] if anh_["id"] == ma]
                    + [f"Hook trên thẻ: {hook}", f"Tệp: {out}"])
-    bg_path = (wd if a.khong_gui else DRAFTS) / f"{a.draft_id}.ban_giao.md"
+    bg_path = state_paths.handoff_file(wd if a.khong_gui else DRAFTS, a.draft_id)
     bg_path.write_text(bg, encoding="utf-8")
 
     mid = None

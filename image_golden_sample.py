@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Chọn mẫu BỘ NHÃN CHUẨN ảnh từ các lần chuẩn bị thật (LOW-224, 17/09/2026).
 
-Đọc mọi `state/<brand>/chuan_bi/<draft>/xong.json`, chọn mẫu phân tầng (seed cố
+Đọc mọi `state/<brand>/prepare/<draft>/manifest.json`, chọn mẫu phân tầng (seed cố
 định), rồi CHỤP RIÊNG từng ảnh ra `state/golden/<version>/` — ảnh thu nhỏ + md5
 ảnh gốc + ngữ cảnh tin. Phải chụp riêng: chạy lại một draft (`*_prepare.py`,
-`find_more_images.py`) ghi đè `goc/A*.png` bằng ảnh KHÁC, nên trỏ thẳng vào `goc/`
+`find_more_images.py`) ghi đè `original/A*.png` bằng ảnh KHÁC, nên trỏ thẳng vào `original/`
 thì nhãn sẽ lệch ảnh mà không ai biết.
 
 Phân tầng: giữ trọn các draft chỉ định (`--must`), phần còn lại chia ~1/3 ảnh
@@ -26,6 +26,7 @@ from pathlib import Path
 from PIL import Image
 
 import schema
+import state_paths
 from image_eval import source_of, system_kept
 
 ROOT = Path(__file__).resolve().parent
@@ -41,7 +42,7 @@ IMAGE_KEYS = ("id", "source", "domain", "url", "page_url", "alt", "description",
 def load_candidates(state_root: Path) -> list:
     """Mọi ứng viên còn tệp gốc trên đĩa, kèm ngữ cảnh tin của draft chứa nó."""
     out = []
-    for manifest in sorted(Path(state_root).glob("*/chuan_bi/*/xong.json")):
+    for manifest in sorted(Path(state_root).glob(f"*/{state_paths.PREPARE_DIR}/*/{state_paths.MANIFEST_FILE}")):
         try:
             d = json.loads(manifest.read_text(encoding="utf-8"))
         except (OSError, ValueError):

@@ -86,7 +86,7 @@ BUOC 2 — viet spec: ghi MOT tep JSON vao dung duong dan in o cuoi BUOC 1, theo
 khung o do. Chi dien CHU (hook, category, label, text/quote/attrib) va MA ANH
 (A1, A2...). KHONG tai anh, KHONG crop, KHONG mo tung anh, KHONG chay
 article_images.py/carousel.py/send_telegram.py bang tay. Muon nhin anh thi mo DUNG MOT
-tam bang_anh.png. Chu tieng Viet co dau, cau quote DICH sang tieng Viet.
+tam contact_sheet.png. Chu tieng Viet co dau, cau quote DICH sang tieng Viet.
 
 BUOC 3 — nop:
 cd {goc} && venv/bin/python dre_submit.py {draft_id}

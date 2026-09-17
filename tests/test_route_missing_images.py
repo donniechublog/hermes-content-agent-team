@@ -4,13 +4,13 @@
 Truoc 09/09/2026 engine (ham cu `_route_thieu_anh`, da xoa) gui Telegram va tao task Kite
 ngay trong engine, nen engine phai `from approve_dispatch import standard_assignee`
 va `from approve_post import create_task_kite`: lop CHUAN BI goi NGUOC len lop dieu
-phoi. Nay engine ghi `xong.json["missing_images"] = {"count": .., "min_images": ..}` va
+phoi. Nay engine ghi `manifest.json["missing_images"] = {"count": .., "min_images": ..}` va
 nhan mot moc `after_prepare`; `route_missing_images.py` la noi duy nhat biet ca hai phia.
 
 Test giu HAI thu:
   1. Hanh vi dinh tuyen khong doi (bon nhanh cua ham cu).
-  2. Moc chay TRONG khoa va TRUOC khi ghi `xong.json` — day la thu chan cuoc
-     dua: neu `xong.json` hien ra truoc khi dinh tuyen xong thi dre_prepare /
+  2. Moc chay TRONG khoa va TRUOC khi ghi `manifest.json` — day la thu chan cuoc
+     dua: neu `manifest.json` hien ra truoc khi dinh tuyen xong thi dre_prepare /
      kite_prepare co the doc trung khe do va dung brief noi "du anh" trong khi
      tin dang cho chuyen Kite.
 
@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                     # noqa: E402
 import route_missing_images as rt                                  # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 # --------------------------------------------------------------- engine mô tả
@@ -59,7 +60,7 @@ def test_run_write_has_missing_image_into_done_json():
     with tempfile.TemporaryDirectory() as tmp:
         m, wd = _run_fake(tmp, {"usable_count": 2, "min_images": 5, "images": []})
         assert m["missing_images"] == {"count": 2, "min_images": 5}, m
-        tren_dia = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
+        tren_dia = json.loads((wd / state_paths.MANIFEST_FILE).read_text(encoding="utf-8"))
         assert tren_dia["missing_images"] == {"count": 2, "min_images": 5}, tren_dia
 
 
@@ -73,35 +74,35 @@ def test_run_no_has_timestamp_still_run_ok():
     """Engine phai dung mot minh duoc (chay tay, test) — moc la tuy chon."""
     with tempfile.TemporaryDirectory() as tmp:
         m, wd = _run_fake(tmp, {"usable_count": 0, "min_images": 5, "images": []})
-        assert (wd / "xong.json").exists()
+        assert (wd / state_paths.MANIFEST_FILE).exists()
         assert m["missing_images"]["count"] == 0
 
 
 def test_timestamp_run_before_when_done_json_show_out():
-    """Thu chan cuoc dua: luc moc duoc goi, `xong.json` CHUA duoc ghi; va thu
+    """Thu chan cuoc dua: luc moc duoc goi, `manifest.json` CHUA duoc ghi; va thu
     moc ghi vao `m` phai nam trong tep cuoi cung."""
     with tempfile.TemporaryDirectory() as tmp:
         thay = {}
 
         def moc(draft_id, m):
-            thay["xong_ton_tai_luc_goi"] = (Path(tmp) / "wd" / "xong.json").exists()
+            thay["xong_ton_tai_luc_goi"] = (Path(tmp) / "wd" / state_paths.MANIFEST_FILE).exists()
             m["kite_task_id"] = "t_9"
 
         m, wd = _run_fake(tmp, {"usable_count": 0, "min_images": 5, "images": []}, moc)
         assert thay["xong_ton_tai_luc_goi"] is False, \
-            "xong.json da hien ra TRUOC khi dinh tuyen xong — dung khe dua can chan"
-        tren_dia = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
+            "manifest.json da hien ra TRUOC khi dinh tuyen xong — dung khe dua can chan"
+        tren_dia = json.loads((wd / state_paths.MANIFEST_FILE).read_text(encoding="utf-8"))
         assert tren_dia.get("kite_task_id") == "t_9", \
             f"quyet dinh cua moc khong duoc ghi xuong dia: {tren_dia}"
 
 
 def test_timestamp_no_then_still_write_done_json():
-    """Moc hong khong duoc lam mat xong.json — bai hoc audit 05/09."""
+    """Moc hong khong duoc lam mat manifest.json — bai hoc audit 05/09."""
     with tempfile.TemporaryDirectory() as tmp:
         def moc(draft_id, m):
             raise RuntimeError("router vo")
         m, wd = _run_fake(tmp, {"usable_count": 1, "min_images": 5, "images": []}, moc)
-        assert (wd / "xong.json").exists(), "moc no lam mat xong.json"
+        assert (wd / state_paths.MANIFEST_FILE).exists(), "moc no lam mat manifest.json"
 
 
 # ------------------------------------------------------- tầng ghép nối quyết định
@@ -133,7 +134,7 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
 
 def test_telegram_reject_then_no_list_mark_already_ask():
     """C-r2-1: truoc day _time_send vut ket qua post, m["kite_asked"]=True van ghi vao
-    xong.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
+    manifest.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
     with tempfile.TemporaryDirectory() as tmp:
         m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
                          {"image_role": "dre"}, gui_ok=False)

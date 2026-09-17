@@ -12,7 +12,7 @@ Hàm `don()` phía dưới là đường CŨ (LaMa, xoá sạch chữ, trả n�
 lên): `itachi_prepare.py` gọi nó, đừng bỏ.
 
 Dùng:
-    venv/bin/python gin_submit.py 338                 # spec ở state/<brand>/chuan_bi/gin_338/spec.json
+    venv/bin/python gin_submit.py 338                 # spec ở state/<brand>/prepare/gin_338/spec.json
     venv/bin/python gin_submit.py 338 --khong-gui     # thử, không gửi Telegram
 """
 import argparse

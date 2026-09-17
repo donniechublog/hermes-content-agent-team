@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT))
 import ada_prepare as ab                                    # noqa: E402
 import caption_check as cc                                   # noqa: E402
 import env_load                                              # noqa: E402
+import state_paths                                           # noqa: E402
 from vietnamese import find_face_mark, drop_mark_forbid               # noqa: E402
 
 
@@ -65,11 +66,11 @@ def main() -> int:
     ap.add_argument("--khong-gui", action="store_true")
     a = ap.parse_args()
     wd = ab.workdir()
-    if not (wd / "xong.json").exists():
+    if not (wd / state_paths.MANIFEST_FILE).exists():
         sys.exit("Chưa chuẩn bị. Chạy trước: venv/bin/python ada_prepare.py")
     if not (wd / "spec.json").exists():
         sys.exit(f"Chưa có spec: {wd / 'spec.json'} — viết theo brief rồi chạy lại.")
-    m = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
+    m = json.loads((wd / state_paths.MANIFEST_FILE).read_text(encoding="utf-8"))
     try:
         spec = json.loads((wd / "spec.json").read_text(encoding="utf-8"))
     except Exception as e:                                   # noqa: BLE001
@@ -93,7 +94,7 @@ def main() -> int:
     # `bang_chung` rong van in ra binh thuong. Ma bao cao cua Ada la thu Ong Chu
     # dung de doi rubric, tuc mot con so bia o day di thang vao cach cham diem.
     #
-    # `xong.json` da chua moi so THAT, va `brief.md` in chung ra — nen doi chieu
+    # `manifest.json` da chua moi so THAT, va `brief.md` in chung ra — nen doi chieu
     # duoc bang code, dung ky thuat `caption_check.count_is` (so sanh theo chuoi
     # chu so, bo dau cham/phay/cach, vi hai ben viet "2,5 ti" / "2.5B" / "2500
     # trieu"). Chi CANH BAO, khong chan: hai cach viet khac nhau la chuyen

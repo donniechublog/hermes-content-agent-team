@@ -2,7 +2,7 @@
 """Migrate on-disk data to manifest keys v2 (English) — LOW-227, run once on the server at deploy.
 
 Three stores share the image/manifest keys:
-  1. state/<brand>/chuan_bi/<draft>/xong.json   (engine manifest; v0/v1 -> v2)
+  1. state/<brand>/prepare/<draft>/manifest.json   (engine manifest; v0/v1 -> v2)
   2. drafts/<draft>.img.json                    (image sidecar)
   3. state/golden/v0/samples.jsonl              (LOW-224 golden set; image_eval reads it)
 
@@ -12,7 +12,7 @@ today would compute — the migrated file and an on-the-fly read cannot disagree
 
 Each changed file keeps its original bytes next to it as `<name>.v1.bak` (never
 overwritten). Files that are already v2, or not an engine manifest (Itachi/Ada
-also write files named xong.json), are left untouched. Re-running is a no-op.
+also write files named manifest.json), are left untouched. Re-running is a no-op.
 
     venv/bin/python migrate_manifest_v2.py --dry-run
     venv/bin/python migrate_manifest_v2.py
@@ -26,6 +26,7 @@ from pathlib import Path
 import env_load
 import manifest_migration as mm
 import schema
+import state_paths
 
 BACKUP_SUFFIX = ".v1.bak"
 
@@ -63,7 +64,7 @@ def plan_golden(p: Path):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Migrate manifest/sidecar/golden JSON keys to v2 (LOW-227)")
-    ap.add_argument("--state", default=str(env_load.ROOT / "state"), help="state root (holds <brand>/chuan_bi)")
+    ap.add_argument("--state", default=str(env_load.ROOT / "state"), help="state root (holds <brand>/prepare)")
     ap.add_argument("--drafts", default=str(env_load.ROOT / "drafts"))
     ap.add_argument("--dry-run", action="store_true", help="report only, write nothing")
     a = ap.parse_args()
@@ -91,7 +92,7 @@ def main() -> int:
         tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
         tmp.replace(p)
 
-    for p in sorted(state.glob("*/chuan_bi/*/xong.json")):
+    for p in sorted(state.glob(f"*/{state_paths.PREPARE_DIR}/*/{state_paths.MANIFEST_FILE}")):
         handle("manifest", p, plan_manifest, dump_json)
     for p in sorted(drafts.glob("*.img.json")):
         handle("img.json", p, plan_sidecar, dump_json)

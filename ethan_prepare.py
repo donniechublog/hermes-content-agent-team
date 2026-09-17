@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import route_missing_images                                       # noqa: E402
 import role                                                   # noqa: E402
+import state_paths                                            # noqa: E402
 
 # 1200/750 — nguong kiem_anh_thap cua card.py o kho 4:5. Song o ban dang ky vai
 # vi engine anh cung phai biet no: no la thu quyet dinh mot tam co lam nen hero
@@ -107,7 +108,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     # mat mot vong ma vai khong hieu vi sao. Dre da in day du tu truoc.
     if m.get("not_yet_seen"):
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['not_yet_seen'])} (vision không chạy) — nhãn dưới chỉ là đo "
-                 "số, có thể sai; mở bang_anh.png trước khi dùng.")
+                 "số, có thể sai; mở contact_sheet.png trước khi dùng.")
     goi_y = []
     if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "", "ethan_submit"))
@@ -136,7 +137,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     L += story_type.line_brief(m)
     if cap:
         L.append("Cặp ghép dọc được (cùng tone, dùng \"anh\"+\"anh2\"): " + ", ".join("+".join(c) for c in cap))
-    L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/bang_anh.png (mở tối đa một lần, khi thật cần).")
+    L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE} (mở tối đa một lần, khi thật cần).")
     L += ["", f"## Viết spec vào: {m['workdir']}/spec.json"]
     khung = {
         "anh": (goi_y[0][2] if goi_y else "A?"),
@@ -171,7 +172,7 @@ def main() -> int:
     a = ap.parse_args()
     m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_missing_images.after_prepare)
-    brief = write_brief(m, cb._read_json(wd / "da_dung.json"))
+    brief = write_brief(m, cb._read_json(wd / state_paths.PREVIOUS_SUBMISSION_FILE))
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)

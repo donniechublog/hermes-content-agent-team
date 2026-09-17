@@ -5,7 +5,7 @@
 
 Vi sao co tep nay (06/09/2026): Bob ra doi 28/08, TRUOC dot "kien truc 3 lop cho
 moi vai" ngay 04/09 (a757f61 + 26b4d9a). Hai commit do gom 10 vai chay theo day
-chuyen tin (co draft_id, co xong.json) va bo sot dung Bob — vai duy nhat nhan
+chuyen tin (co draft_id, co manifest.json) va bo sot dung Bob — vai duy nhat nhan
 mot URL roi le. Hau qua: viec don gian nhat doi lai co SOUL DAI NHAT (91 dong,
 chep hai ban cho hai brand, lech dung 3 dong handle), vi moi thu tuc phai nam
 trong van xuoi cho LLM nho: duong dan hai script, thu tu tham so cua lenh dang

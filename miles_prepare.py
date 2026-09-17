@@ -27,6 +27,7 @@ import image_prepare as cb                                    # noqa: E402
 import route_missing_images                                       # noqa: E402
 import caption_check                                         # noqa: E402
 import submit_common as nc                                        # noqa: E402
+import state_paths                                                # noqa: E402
 
 DRAFTS = cb.DRAFTS
 VOICE = {
@@ -47,7 +48,7 @@ def write_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
     diem = str(meta.get("score") if meta.get("score") is not None else "")
     ly_do = str(meta.get("score_reason") or "")
     bg = ""
-    for p in (DRAFTS / f"{m['draft_id']}.ban_giao.md", wd / f"{m['draft_id']}.ban_giao.md"):
+    for p in (state_paths.handoff_file(DRAFTS, m['draft_id']), state_paths.handoff_file(wd, m['draft_id'])):
         if p.exists():
             bg = p.read_text(encoding="utf-8")
             break

@@ -32,6 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
+import state_paths                                           # noqa: E402
 import hermes_adapter                                        # noqa: E402
 
 VN = timezone(timedelta(hours=7))
@@ -40,7 +41,7 @@ HERMES = env_load.hermes_home()
 
 
 def workdir() -> Path:
-    wd = env_load.state_dir() / "chuan_bi" / f"ada_{datetime.now(VN).strftime('%Y%m%d')}"
+    wd = state_paths.prepare_root(env_load.state_dir()) / f"ada_{datetime.now(VN).strftime('%Y%m%d')}"
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 
@@ -289,7 +290,7 @@ def main() -> int:
     m = {"ngay": a.ngay, "brand": os.environ.get("CT_BRAND", "?"),
          "manifest": gather_manifest(a.ngay), "draft": gather_draft(a.ngay),
          "kanban": gather_kanban(a.ngay), "token": gather_token(a.ngay)}
-    (wd / "xong.json").write_text(json.dumps(m, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
+    (wd / state_paths.MANIFEST_FILE).write_text(json.dumps(m, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     brief = write_brief(m, wd)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:

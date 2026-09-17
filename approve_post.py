@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
 import image_provenance                                        # noqa: E402
 import schema                                               # noqa: E402
+import state_paths                                          # noqa: E402
 import skill_lesson_approve                                  # noqa: E402
 import role                                                  # noqa: E402
 
@@ -464,7 +465,7 @@ def _extract_reason_redo(text):
     return None, t
 
 def _code_of_slide(spec: dict, n: int) -> list:
-    """Ma anh dang dung o slide N (1 = bia) theo spec.json HIEN TAI trong thu muc state chuan_bi
+    """Ma anh dang dung o slide N (1 = bia) theo spec.json HIEN TAI trong thu muc state prepare
     (ban Ong Chu vua thay, truoc khi task lam lai ghi de)."""
     if n == 1:
         ma = (spec.get("cover") or {}).get("anh")
@@ -489,7 +490,7 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
     hex>", ...]}. `submit_common.check_no_repeat_image_redo` doc lai khi vai nop
     ban moi, so theo dHash (khong theo ma anh, vi vai co the doi ten ma A6 ->
     A9 ma van tro toi CUNG mot file/anh) nen khong the lach bang cach doi ten."""
-    sp = STATE_DIR / "chuan_bi" / draft_id / "spec.json"
+    sp = state_paths.workdir(STATE_DIR, draft_id) / "spec.json"
     if not sp.exists() or not so_slide:
         return
     try:
@@ -502,7 +503,7 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
     except (OSError, ValueError):
         im = {}
     cam = im.setdefault("forbidden_slide_images", {})
-    goc_dir = STATE_DIR / "chuan_bi" / draft_id / "goc"
+    goc_dir = state_paths.workdir(STATE_DIR, draft_id) / state_paths.ORIGINAL_DIR
     # `.img.json` luon co `image_role` tren duong that (ghi tu luc tao task); roi
     # ve `role.DEFAULT_IMAGE` chi cho sidecar thieu/hong — dhash thuan tuy
     # khong lech giua cac module luat nen mot ban mac dinh la an toan o day.
@@ -535,7 +536,7 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
     if not ip.exists():
         return "⚠️ Không thấy thông tin task ảnh để làm lại", None
     if slide == "CA BO":
-        sp = STATE_DIR / "chuan_bi" / draft_id / "spec.json"
+        sp = state_paths.workdir(STATE_DIR, draft_id) / "spec.json"
         try:
             spec0 = json.loads(sp.read_text(encoding="utf-8"))
             _write_forbid_image_redo(draft_id, list(range(1, len(spec0.get("slides") or []) + 2)))
@@ -740,7 +741,7 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     # truoc day tu dem `uses and relevant is not False` (khai niem dem tung
     # tam) nen body noi "4 anh THAT" trong khi manifest noi 2.
     co, so_that = [], 0
-    xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
+    xong = state_paths.workdir(STATE_DIR, draft_id) / state_paths.MANIFEST_FILE
     mm = schema.read_manifest(xong) if xong.exists() else None
     if mm:
         co = [a["id"] for a in mm.get("images", []) if a.get("uses") and a.get("relevant") is not False]
@@ -850,11 +851,11 @@ def _button_lower_ready(token, draft_id, cq):
     San la CUA VAI DUOC GIAO (Dre 5 slide, Ethan 1 anh) — tu 10/09/2026 manifest
     ghi san theo vai thay vi luon lay so cua carousel."""
     # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `min_images` trong
-    # xong.json van nguyen (8 voi tin flagship), nen dre_submit van chan "chi N
+    # manifest.json van nguyen (8 voi tin flagship), nen dre_submit van chan "chi N
     # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
     # Gio HA SAN that: ve `base_min_images` (san cua carousel.py). Duoi san
     # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
-    xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
+    xong = state_paths.workdir(STATE_DIR, draft_id) / state_paths.MANIFEST_FILE
     # read_manifest bu usable_count cho manifest ban 0 (C-r2-5) — doc tho thi
     # so=0 -> "Chi 0 anh that" du co 6 anh.
     mm = schema.read_manifest(xong) or {}
@@ -870,8 +871,8 @@ def _button_lower_ready(token, draft_id, cq):
     don_vi = role.product_unit_for(role.canonical_slug(_vai_anh)) if _vai_anh else "slide"
     keyboard = None
     if not mm:
-        note = "⚠️ Không đọc được bản chuẩn bị (xong.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
-        call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Thiếu xong.json", show_alert=True)
+        note = "⚠️ Không đọc được bản chuẩn bị (manifest.json) — chưa hạ sàn được, vai vẫn bị chặn như cũ"
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Thiếu manifest.json", show_alert=True)
     elif so < san:
         # HET DUONG that su: khong the ha san duoi san cung (carousel.MIN_SLIDE),
         # nen chi con Kite hoac bo tin. Truoc 08/09/2026 noi vay roi GO LUON ban
@@ -900,9 +901,9 @@ def _button_lower_ready(token, draft_id, cq):
                     f"{so} ảnh thật hiện có (gộp ý / giảm {don_vi})")
             call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=f"Hạ sàn còn {san} {don_vi}")
         except OSError as e:
-            note = f"⚠️ Không ghi được xong.json ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
+            note = f"⚠️ Không ghi được {state_paths.MANIFEST_FILE} ({type(e).__name__}) — sàn vẫn {cu}, vai sẽ còn bị chặn"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-                 text="Ghi xong.json lỗi", show_alert=True)
+                 text="Ghi manifest.json lỗi", show_alert=True)
     return note, keyboard
 
 
@@ -1035,7 +1036,7 @@ def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
                 w["body"] = retarget_writer_body(w["body"], w.get("vai_viet"), chosen_writer)
                 w["vai_viet"] = chosen_writer
             _body = w["body"]
-            _bg = DRAFTS / (draft_id + ".ban_giao.md")
+            _bg = state_paths.handoff_file(DRAFTS, draft_id)
             if _bg.exists():
                 _body += ("\n\n== BAN GIAO TU VAI ANH (tu dong) ==\n"
                           + _bg.read_text(encoding="utf-8"))

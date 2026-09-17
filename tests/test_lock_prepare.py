@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LOW-26 (12/09/2026): khoa `dang_chay.pid` cua engine chuan bi anh.
+"""LOW-26 (12/09/2026): khoa `running.pid` cua engine chuan bi anh.
 
 t_24b214a6: ethan_prepare.py chet SIGSEGV (exit 139) ba lan, khoa nam lai; lan
 chay dau doi tron 300s (= tran bash tool cua vai) roi bi cat `exit 124`. Test:
@@ -20,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def test_wait_default_small_limit_ceiling_bash_of_role():
@@ -29,7 +30,7 @@ def test_wait_default_small_limit_ceiling_bash_of_role():
 
 def test_lock_orphan_single_date_no_change():
     with tempfile.TemporaryDirectory() as tmp:
-        khoa = Path(tmp) / "dang_chay.pid"
+        khoa = Path(tmp) / state_paths.RUNNING_PID_FILE
         khoa.write_text("999999999")                          # pid khong ton tai
         ngu = []
         err = io.StringIO()
@@ -42,7 +43,7 @@ def test_lock_orphan_single_date_no_change():
 
 def test_pid_alive_then_change_fall_exit_no_overwrite():
     with tempfile.TemporaryDirectory() as tmp:
-        khoa = Path(tmp) / "dang_chay.pid"
+        khoa = Path(tmp) / state_paths.RUNNING_PID_FILE
         khoa.write_text(str(os.getpid()))                    # chinh minh: chac chan song
         ngu = []
         # `ngu` gia: moi lan goi dich dong ho ao bang cach ghi lai; het `cho` nho

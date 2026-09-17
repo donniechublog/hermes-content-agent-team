@@ -18,6 +18,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from prepare import fallback_rounds                                   # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def _image(tmp: Path, ten: str, seed: int) -> Path:
@@ -82,7 +83,7 @@ def test_no_duplicate_with_image_already_has_word_round_other():
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
         wire = _image(tmp, "wire.png", seed=1)
-        da_co = tmp / "wd" / "goc"
+        da_co = tmp / "wd" / state_paths.ORIGINAL_DIR
         da_co.mkdir(parents=True)
         from PIL import Image
         Image.open(wire).convert("RGB").save(da_co / "A1.png")

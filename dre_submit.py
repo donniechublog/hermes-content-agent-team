@@ -3,7 +3,7 @@
 da viet copy vao spec.json (khung do dre_prepare.py in ra).
 
 Vai chi dien CHU + MA ANH (A1, A2...). Tep nay:
-  1. Doi ma anh -> tep da cat san (san/), hoac anh goc + "chart": true, hoac
+  1. Doi ma anh -> tep da cat san (ready/), hoac anh goc + "chart": true, hoac
      ghep doc hai anh ngang ("ghep"), hoac cat be ngang anh nguoi/san pham
      ("cat_ngang") qua crop_ratio co dau vet.
   2. Kiem nhung loi ma vai hay mac TRUOC khi ve (ma anh sai, dung mot anh hai
@@ -13,15 +13,15 @@ Vai chi dien CHU + MA ANH (A1, A2...). Tep nay:
      thua vao album), chay carousel.py (moi cong chan chu/anh/bo cuc nam o do).
   4. Gui album len topic `carousel` kem nut Duyet (send_telegram.post) — chong gui
      trung 30 phut co san ben do.
-  5. Ghi ban giao cho Miles (`drafts/<id>.ban_giao.md`: link that, nguon tung
+  5. Ghi ban giao cho Miles (`drafts/<id>.handoff.md`: link that, nguon tung
      anh) — approve_service dan vao task viet khi Ong Chu bam Duyet, vai khong
      phai "nhan Miles".
-  6. Ghi da_dung.json de lan "Lam lai" bat buoc doi bia/hook.
+  6. Ghi previous_submission.json de lan "Lam lai" bat buoc doi bia/hook.
 
 Loi thi in [LOI] + cach sua, thoat 1; vai sua spec.json roi chay lai DUNG lenh.
 
 Dung:
-    venv/bin/python dre_submit.py <draft_id>                # spec o state/<brand>/chuan_bi/<id>/spec.json
+    venv/bin/python dre_submit.py <draft_id>                # spec o state/<brand>/prepare/<id>/spec.json
     venv/bin/python dre_submit.py <draft_id> --khong-gui    # thu: dung slide, khong gui Telegram
 """
 import argparse
@@ -38,6 +38,7 @@ import image_prepare as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import schema                                                # noqa: E402
+import state_paths                                           # noqa: E402
 import image_rules_dre                                       # noqa: E402
 
 DRAFTS = ROOT / "drafts"
@@ -164,7 +165,7 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
             return None
         if muc.get("cat_ngang"):
             tam = muc.get("tam") or [0.5, 0.5]
-            out = bo.wd / "san" / f"{ma}.ngang.png"
+            out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.LANDSCAPE_SUFFIX}"
             cb._save_crop(Image.open(a["original_path"]).convert("RGB"), out, "4:5",
                          float(tam[0]), float(tam[1]), cat_ngang=True)
             ra["image"] = str(out)
@@ -324,7 +325,7 @@ def handoff(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Nop carousel cua Dre (tat dinh)")
     ap.add_argument("draft_id")
-    ap.add_argument("--spec", help="Tep spec (mac dinh state/<brand>/chuan_bi/<id>/spec.json)")
+    ap.add_argument("--spec", help="Tep spec (mac dinh state/<brand>/prepare/<id>/spec.json)")
     ap.add_argument("--khong-gui", action="store_true", help="Chi dung slide, khong gui Telegram")
     ap.add_argument("--bo-qua-dau", action="store_true",
                     help="Tat cong tieng Viet (chi khi chu THAT SU la tieng Anh)")
@@ -379,7 +380,7 @@ def main() -> int:
     mo_ta = f"Carousel {n} slide: {hook}"[:1000]
 
     bg = handoff(m, spec, dung_anh, out)
-    bg_path = (wd if a.khong_gui else DRAFTS) / f"{a.draft_id}.ban_giao.md"
+    bg_path = state_paths.handoff_file(wd if a.khong_gui else DRAFTS, a.draft_id)
     bg_path.write_text(bg, encoding="utf-8")
 
     mid = None

@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageDraw  # noqa: E402
 
 from tam import so_tam  # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 # ------------------------------------------------------------------ do gia
@@ -46,10 +47,10 @@ def _ve(w, h, tone=(60, 70, 90)):
 def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
     """Mot dong manifest anh, dung cac khoa ma `image_prepare` that su ghi ra."""
     import image_rules_dre as image_rules
-    goc = wd / "goc" / f"{ma}.png"
+    goc = wd / state_paths.ORIGINAL_DIR / f"{ma}.png"
     goc.parent.mkdir(parents=True, exist_ok=True)
     _ve(w, h, tone).save(goc)
-    san = wd / "san" / f"{ma}.png"
+    san = wd / state_paths.READY_DIR / f"{ma}.png"
     san.parent.mkdir(parents=True, exist_ok=True)
     _ve(min(w, h), min(w, h), tone).save(san)               # ban da cat san
     a = {"id": ma, "original_path": str(goc), "ready_path": str(san), "w": w, "h": h,
@@ -270,7 +271,7 @@ def test_cat_ngang_hop_le_thi_ra_tep_da_cat():
         ra, loi, _c, _d = _chay(spec, _m(wd, anh), wd)
         assert loi == [], loi
         assert Path(ra["slides"][0]["image"]).exists()
-        assert ra["slides"][0]["image"].endswith("A2.ngang.png")
+        assert ra["slides"][0]["image"].endswith("A2" + state_paths.LANDSCAPE_SUFFIX)
 
 
 # ------------------------------------------------------------ ghep doc

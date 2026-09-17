@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import schema                                                # noqa: E402
+import state_paths                                           # noqa: E402
 import route_missing_images                                       # noqa: E402
 import image_rules_dre                                       # noqa: E402
 
@@ -79,7 +80,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                     if len(m['domains']) == 1 and so_dd >= 4 else ""))
     if m.get("not_yet_seen"):
         L.append(f"⚠️ CHƯA AI NHÌN {', '.join(m['not_yet_seen'])} (vision không chạy) — nhãn dưới chỉ là đo "
-                 "số, có thể sai; mở bang_anh.png trước khi dùng.")
+                 "số, có thể sai; mở contact_sheet.png trước khi dùng.")
     if m.get("is_ranking_story"):
         L.append(cb.ranking_brief_line(m, "bìa ", "dre_submit"))
     for a in m["images"]:
@@ -115,7 +116,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
              "VẪN LÀ ẢNH CHỤP — cắt dọc (cat_ngang) được. \"Có chữ\" cấm crop chỉ là chart, bảng, "
              "slide, banner, ảnh chụp màn hình có tiêu đề.")
     L.append("Mỗi ảnh đã được NHÌN (cột \"ảnh là\"). Ảnh ❌ tuyệt đối không dùng dù nhãn gì. "
-             f"Bảng thu nhỏ: {m['workdir']}/bang_anh.png")
+             f"Bảng thu nhỏ: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE}")
     L.append("")
     L.append(f"## Viết spec vào: {m['workdir']}/spec.json")
     khung = {
@@ -166,7 +167,7 @@ def main() -> int:
     a = ap.parse_args()
     m, wd, _ = cb.run(a.draft_id, a.lam_moi, a.khong_browser, a.cho,
                        sau_chuan_bi=route_missing_images.after_prepare)
-    da_dung = cb._read_json(wd / "da_dung.json")
+    da_dung = cb._read_json(wd / state_paths.PREVIOUS_SUBMISSION_FILE)
     brief = write_brief(m, da_dung)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:

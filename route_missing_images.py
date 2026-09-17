@@ -8,16 +8,16 @@ ENGINE (`image_prepare`, ham cu `_route_thieu_anh`, da xoa). Engine vi vay phai
 create_task_kite`: lop CHUAN BI goi NGUOC len lop dieu phoi. Do la vong phu thuoc
 that, chi bi che di bang hai import luoi trong than ham.
 
-Nay engine chi MO TA (`xong.json["missing_images"] = {"count": 2, "min_images": 5}`) va
+Nay engine chi MO TA (`manifest.json["missing_images"] = {"count": 2, "min_images": 5}`) va
 nhan mot ham `sau_chuan_bi` de goi. Tep nay la noi DUY NHAT biet ca hai phia,
 nen mui ten phu thuoc chi con mot chieu: ghep noi -> engine, ghep noi -> dich vu.
 
 QUAN TRONG — vi sao van goi DONG BO trong khoa cua engine chu khong doi ra
-ngoai: `chay()` giu `dang_chay.pid` va chi ghi `xong.json` SAU khi ham nay
-xong, nen moi nguoi doc `xong.json` deu thay quyet dinh da chot (co
+ngoai: `chay()` giu `running.pid` va chi ghi `manifest.json` SAU khi ham nay
+xong, nen moi nguoi doc `manifest.json` deu thay quyet dinh da chot (co
 `kite_task_id`/`kite_asked`/`kite_unavailable` hay khong). Neu day viec nay ra sau
 `chay()` — hoac sang mot vong poll khac — thi co khe: `dre_prepare.py:41,46`
-va `kite_prepare.py:54` doc `xong.json` de dung brief, doc trung khe do la
+va `kite_prepare.py:54` doc `manifest.json` de dung brief, doc trung khe do la
 brief IM LANG bao "du anh" trong khi tin dang cho chuyen Kite.
 """
 import json
@@ -73,7 +73,7 @@ def after_prepare(draft_id: str, m: dict) -> None:
 
     Doc co `m["missing_images"]` do engine ghi. Ghi nguoc quyet dinh vao `m`
     (`kite_task_id` / `kite_asked` / `kite_unavailable`) — engine ghi ca `m` xuong
-    `xong.json` ngay sau khi ham nay tra ve."""
+    `manifest.json` ngay sau khi ham nay tra ve."""
     thieu = m.get("missing_images")
     if not thieu:
         return                                     # du anh, khong co gi de hoi

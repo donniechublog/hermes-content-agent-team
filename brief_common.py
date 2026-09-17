@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""brief_common.py — khung chung cua brief bon vai doc `xong.json`.
+"""brief_common.py — khung chung cua brief bon vai doc `manifest.json`.
 
 Vi sao (audit dot 1, 06/09/2026): `dre_prepare`, `ethan_prepare`,
 `kite_prepare`, `miles_prepare` deu mo brief bang cung mot khung — dong tieu

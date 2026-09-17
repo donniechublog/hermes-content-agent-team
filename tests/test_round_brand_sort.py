@@ -23,6 +23,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from prepare import fallback_rounds  # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
@@ -121,7 +122,7 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
          mock.patch.object(fallback_rounds, "_report_brand_empty", side_effect=bao_thuong_hieu_rong_gia), \
          mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia), \
          mock.patch.object(fallback_rounds, "classify", side_effect=phan_loai_gia):
-        (Path(d) / "goc").mkdir()
+        (Path(d) / state_paths.ORIGINAL_DIR).mkdir()
         anh, dung_duoc, _ = fallback_rounds._round_brand(
             [], "Anthropic accuses Alibaba and Moonshot AI", "", Path(d))
 

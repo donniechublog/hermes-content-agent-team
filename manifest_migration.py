@@ -69,7 +69,7 @@ def migrate_material(t):
 
 
 def is_manifest(m) -> bool:
-    """Engine manifests only — `xong.json` is also the file name of Itachi's
+    """Engine manifests only — `manifest.json` is also the file name of Itachi's
     `{khoa, slides}` and Ada's daily report, which must be left alone."""
     return isinstance(m, dict) and ("anh" in m or "images" in m) and "draft_id" in m
 

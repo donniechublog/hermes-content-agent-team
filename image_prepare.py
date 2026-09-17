@@ -22,11 +22,11 @@ tin vi link Google News doc ra rong). Toan bo phan do nam o day:
   3. DO va PHAN LOAI bang `image_rules` + luat bo sung (nen trang >=45% & canh
      >=8% -> chart): chart/anh chup, ti le, mat nguoi, day sang. Cat san
      1:1/4:5 qua crop_ratio (co dau vet), cap anh ngang ghep duoc (cung tone),
-     bang anh thu nho `bang_anh.png`.
+     bang anh thu nho `contact_sheet.png`.
   4. TU LIEU: material.gather (fallback chu tu browser cho trang JS) -> cau co so.
-  5. Ghi `xong.json` (manifest role-neutral). Moi vai co tep rieng in BRIEF theo
+  5. Ghi `manifest.json` (manifest role-neutral). Moi vai co tep rieng in BRIEF theo
      cach nhin cua vai do: dre_prepare.py, ethan_prepare.py, kite_prepare.py,
-     miles_prepare.py — deu doc chung xong.json nay, khong lam lai.
+     miles_prepare.py — deu doc chung manifest.json nay, khong lam lai.
 
 Tu 09/09/2026 (audit A1) than engine nam trong goi `prepare/`, tach theo PHA;
 tep nay chi con `prepare_article()` (noi 9 pha), `run()` (khoa + idempotent) va CLI —
@@ -42,7 +42,7 @@ nen cron, SOUL va cac vai KHONG phai doi lenh. Phu thuoc mot chieu:
   prepare/fallback_rounds.py   ba vong bu khi kho mong (bao khac, xep hang, thuong hieu, khai niem)
   prepare/manifest.py          bang anh, cau tu lieu, brief
 
-Idempotent + khoa: `state/<brand>/chuan_bi/<draft_id>/` (xong.json, dang_chay.pid).
+Idempotent + khoa: `state/<brand>/prepare/<draft_id>/` (manifest.json, running.pid).
 `--lam-moi` de lam lai tu dau.
 
 Dung:
@@ -67,6 +67,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 from browser_session import BrowserSession                       # noqa: E402
 import schema                                                # noqa: E402
+import state_paths                                           # noqa: E402
 from prepare import decision_log                              # noqa: E402
 import role                                                   # noqa: E402
 
@@ -233,13 +234,13 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         m = build_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
                           tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh,
                           dropped=decision_log.collect(wd, since=t_start))
-    contact_sheet(anh, wd / "bang_anh.png")     # ngoai phien: khong dung browser
+    contact_sheet(anh, wd / state_paths.CONTACT_SHEET_FILE)     # ngoai phien: khong dung browser
     return m
 
 
 # ---- chay + khoa + idempotent (dung chung cho moi vai) -----------------------
 def workdir(state: Path, draft_id: str) -> Path:
-    return state / "chuan_bi" / draft_id
+    return state_paths.workdir(state, draft_id)
 
 def load_meta(draft_id: str) -> dict:
     meta = _read_json(DRAFTS / f"{draft_id}.meta.json")
@@ -254,7 +255,7 @@ def load_meta(draft_id: str) -> dict:
 # khoi chay cung luc (audit 05/09/2026). Het cho thi doi, khong bo.
 COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") or 2))
 
-# Doi khoa `dang_chay.pid` cua MOT draft toi da bay nhieu giay (LOW-26, 12/09/2026).
+# Doi khoa `running.pid` cua MOT draft toi da bay nhieu giay (LOW-26, 12/09/2026).
 # Truoc do la 300 — bang dung tran bash tool cua vai (~300s), nen lan chay dau
 # cua t_24b214a6 doi tron 300s roi bi chinh tool cat (`exit 124`), nhanh don khoa
 # phia sau vong doi khong bao gio duoc cham toi. Phai NHO HAN tran ngoai de khi
@@ -273,14 +274,14 @@ MAX_CRASH = 2
 
 # Chet bang tin hieu (SIGSEGV trong PIL/torch/playwright...) thi `try/except`
 # khong thay gi va log khong co traceback — t_24b214a6 chet `exit 139` ba lan ma
-# chuan_bi.log im lang. faulthandler in khung ngan xep Python ra stderr dung luc
+# prepare.log im lang. faulthandler in khung ngan xep Python ra stderr dung luc
 # do, la manh moi duy nhat de truy (LOW-27).
 faulthandler.enable()
 
 
 @contextlib.contextmanager
 def _wait_for_slot():
-    """Giu mot trong N khoa tep state/chuan_bi.<i>.lock (flock) trong luc chuan bi.
+    """Giu mot trong N khoa tep state/prepare.<i>.lock (flock) trong luc chuan bi.
 
     Thieu fcntl (Windows) thi CHAY KHONG KHOA kem mot dong canh bao — tran
     CT_CHUAN_BI_SONG_SONG khong con hieu luc, nhung may do chi mot nguoi chay
@@ -299,7 +300,7 @@ def _wait_for_slot():
     da_bao_giay = -30
     while True:
         for i in range(COUNT_ENGINE_PARALLEL):
-            fh = open(thu_muc / f"chuan_bi.{i}.lock", "w")
+            fh = open(thu_muc / state_paths.LOCK_FILE.format(i), "w")
             try:
                 fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except OSError:
@@ -336,7 +337,7 @@ def _description_missing_image(m: dict) -> dict | None:
 
 
 def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
-    """Xu ly `dang_chay.pid` cua MOT draft truoc khi engine chay (LOW-26).
+    """Xu ly `running.pid` cua MOT draft truoc khi engine chay (LOW-26).
 
     Ba truong hop, theo thu tu:
       1. Khong co khoa                 -> di tiep.
@@ -345,7 +346,7 @@ def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
          nen khoa nam lai; t_24b214a6 (12/09/2026) phai tu `ps -p` roi `rm -f`.
       3. pid CON SONG                  -> doi toi da `cho` giay, bao moi 30s;
          het gio ma van song thi thoat bang mot cau vai doc duoc. KHONG ghi de
-         khoa (06/09/2026: hai engine tren cung draft de len xong.json cua nhau).
+         khoa (06/09/2026: hai engine tren cung draft de len manifest.json cua nhau).
 
     Tach ra khoi `chay()` de test duoc bang mot tep khoa gia, khong can meta
     draft hay browser. `ngu` chi de test khong phai ngu that.
@@ -383,15 +384,15 @@ def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
         return True
     sys.exit(f"[LOI] tien trinh {con} van dang chuan bi {draft_id} sau {cho}s. "
              "KHONG chay engine thu hai tren cung mot draft (hai ban se de len "
-             "xong.json cua nhau). Doi them roi chay lai, hoac `--lam-moi` neu "
+             "manifest.json cua nhau). Doi them roi chay lai, hoac `--lam-moi` neu "
              "chac tien trinh kia treo.")
 
 
 def count_crashes(wd: Path, mo_coi: bool, lam_moi: bool = False) -> int:
     """So lan engine chet bat thuong LIEN TIEP tren draft nay (LOW-28). Ham thuan
-    tren mot tep `so_lan_chet.json` trong wd: `mo_coi` -> +1; `lam_moi` -> ve 0;
-    xong.json ghi duoc -> `chay()` goi lai voi lam_moi=True de ve 0."""
-    tep = wd / "so_lan_chet.json"
+    tren mot tep `crash_count.json` trong wd: `mo_coi` -> +1; `lam_moi` -> ve 0;
+    manifest.json ghi duoc -> `chay()` goi lai voi lam_moi=True de ve 0."""
+    tep = wd / state_paths.CRASH_COUNT_FILE
     n = 0
     if not lam_moi:
         try:
@@ -414,7 +415,7 @@ def _report_crash_loop(draft_id: str, so_chet: int) -> None:
         publish.send_topic(
             f"⛔ Engine chuẩn bị ảnh chết bất thường <b>{so_chet} lần liên tiếp</b> trên draft "
             f"<code>{draft_id}</code> — đã DỪNG, không chạy lại. Xem "
-            f"<code>state/&lt;brand&gt;/chuan_bi/{draft_id}/chuan_bi.log</code> (faulthandler in "
+            f"<code>state/&lt;brand&gt;/{state_paths.PREPARE_DIR}/{draft_id}/{state_paths.PREPARE_LOG}</code> (faulthandler in "
             "chỗ chết). Sửa xong thì chạy lại với <code>--lam-moi</code>.", slug)
     except Exception as e:                                   # noqa: BLE001
         print(f"[chet] khong bao duoc Telegram: {type(e).__name__}: {e}", file=sys.stderr)
@@ -422,31 +423,31 @@ def _report_crash_loop(draft_id: str, so_chet: int) -> None:
 
 def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS,
          sau_chuan_bi=None) -> tuple:
-    """Bao dam xong.json co san (chay neu chua, doi neu tien trinh khac dang chay).
+    """Bao dam manifest.json co san (chay neu chua, doi neu tien trinh khac dang chay).
     Tra ve (manifest, workdir, meta).
 
-    `cho`: so giay toi da doi mot engine KHAC dang giu `dang_chay.pid` con song.
+    `cho`: so giay toi da doi mot engine KHAC dang giu `running.pid` con song.
     Mac dinh WAIT_LOCK_SECONDS (60) — xem chu thich o hang so do: 300 bang dung tran
     bash tool cua vai nen "doi het khoa" chua bao gio thanh cong tu trong tay vai.
 
     `sau_chuan_bi(draft_id, m)`: moc cho tang GHEP NOI xu ly `m["missing_images"]`
     (hoi Ong Chu / chuyen Kite) — truyen `route_missing_images.after_prepare` vao.
     Engine khong tu import cai do: lam vay la lop CHUAN BI goi nguoc len lop
-    dieu phoi (audit A1). Goi TRONG khoa va TRUOC khi ghi `xong.json`, nen moi
-    nguoi doc `xong.json` deu thay quyet dinh da chot — day la ly do no la moc
+    dieu phoi (audit A1). Goi TRONG khoa va TRUOC khi ghi `manifest.json`, nen moi
+    nguoi doc `manifest.json` deu thay quyet dinh da chot — day la ly do no la moc
     dong bo chu khong phai mot viec day sang vong poll khac."""
     meta = load_meta(draft_id)
     state = env_load.state_dir()
     wd = workdir(state, draft_id)
     wd.mkdir(parents=True, exist_ok=True)
-    xong, khoa = wd / "xong.json", wd / "dang_chay.pid"
+    xong, khoa = wd / state_paths.MANIFEST_FILE, wd / state_paths.RUNNING_PID_FILE
     mo_coi = _handle_lock(khoa, cho, draft_id) if not lam_moi else False
     so_chet = count_crashes(wd, mo_coi, lam_moi)
     if so_chet >= MAX_CRASH and not xong.exists():
         _report_crash_loop(draft_id, so_chet)
         sys.exit(f"[LOI] engine da chet bat thuong {so_chet} lan lien tiep tren {draft_id} "
                  "— DUNG, KHONG chay lai. Da bao Ong Chu. Chi chay lai voi `--lam-moi` "
-                 "sau khi sua nguyen nhan (xem chuan_bi.log).")
+                 "sau khi sua nguyen nhan (xem prepare.log).")
     if xong.exists() and not lam_moi:
         # read_manifest bu khoa dan xuat cho ban cu (F2) — moi nguoi doc
         # thay cung mot so, khong ai phai tu doan nua.
@@ -464,7 +465,7 @@ def run(draft_id: str, lam_moi=False, khong_browser=False, cho=WAIT_LOCK_SECONDS
                 sau_chuan_bi(draft_id, m)
             except (Exception, SystemExit) as e:             # noqa: BLE001
                 # SystemExit cung phai bat: vai ham thu vien (send_telegram, crop_ratio)
-                # bao loi bang sys.exit, lot qua thi mat luon xong.json (audit 05/09).
+                # bao loi bang sys.exit, lot qua thi mat luon manifest.json (audit 05/09).
                 print(f"[route] {type(e).__name__}: {e}", file=sys.stderr)
             giay = time.time() - t_route
             # Moc nay chay TRONG khoa draft: cham la moi tien trinh khac phai

@@ -15,6 +15,7 @@ from PIL import Image
 import role
 import scan_common
 import env_load                                              # noqa: E402
+import state_paths
 
 from prepare import decision_log
 from prepare.common import MAX_IMAGE, _original_domain, _hdr, _domain
@@ -116,7 +117,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
     import image_provenance
     rules = role.active_rules()
     url_junk, short_side_drop = rules.JUNK, rules.SHORT_SIDE_DOWNLOAD
-    goc_dir = wd / "goc"
+    goc_dir = wd / state_paths.ORIGINAL_DIR
     goc_dir.mkdir(parents=True, exist_ok=True)
     ung_vien = cands[:MAX_DOWNLOAD + 6]
     with ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:

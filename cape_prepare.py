@@ -19,6 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
+import state_paths                                           # noqa: E402
 import teaser_assemble                                       # noqa: E402
 
 TEXT_MAX = 9000
@@ -31,7 +32,7 @@ def slug(url: str) -> str:
 
 
 def workdir(url: str) -> Path:
-    wd = env_load.state_dir() / "chuan_bi" / f"cape_{slug(url)}"
+    wd = state_paths.prepare_root(env_load.state_dir()) / f"cape_{slug(url)}"
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 

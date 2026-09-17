@@ -25,6 +25,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from prepare import decision_log, download_filter, vision                 # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def _quiet(fn):
@@ -237,7 +238,7 @@ def test_collect_only_rows_of_this_run():
         import time
         mid = time.time()
         time.sleep(0.01)
-        decision_log.drop_candidate(wd / "them_1", {"image_url": "new"}, "junk_url")
+        decision_log.drop_candidate(state_paths.extra_dir(wd, 1), {"image_url": "new"}, "junk_url")
         rows = decision_log.collect(wd, since=mid)
         assert [r["url"] for r in rows] == ["new"]
         assert len(decision_log.collect(wd)) == 2

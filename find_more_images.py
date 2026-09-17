@@ -13,9 +13,9 @@ Nay giu phan dung, bo phan pha hoai:
   - engine van chuan bi nhu cu, cong chan van cua script;
   - THIEU thi vai goi lenh nay voi TU KHOA TIENG ANH (hoac URL trang/anh vai
     biet). Script di hoi Bing News + Wikimedia Commons, mo trang bang browser,
-    tai, nhin (vision), do, cat san — y het engine — roi noi vao xong.json va
+    tai, nhin (vision), do, cat san — y het engine — roi noi vao manifest.json va
     in ra anh moi. Vai chon, may van xu ly.
-  - moi lan chay ghi lai tu khoa da thu (tim_them.json), de khong lap lai huong cu;
+  - moi lan chay ghi lai tu khoa da thu (find_more.json), de khong lap lai huong cu;
   - van thieu sau nhieu huong tu khoa khac nhau da hop ly thi kanban_block, cau
     block PHAI ke tu khoa da thu (LOW-174, 15/09/2026: bo tran cung "toi da 3
     luot" — dem theo draft_id vinh vien khien mot bai tung bi block se KHONG
@@ -25,7 +25,7 @@ Nay giu phan dung, bo phan pha hoai:
 Dung:
     venv/bin/python find_more_images.py <draft_id> --tu-khoa "TSMC fab Arizona" [--tu-khoa ...]
     venv/bin/python find_more_images.py <draft_id> --url https://... [--url ...]
-Sau do chay lai <vai>_prepare.py <draft_id> de doc brief moi (xong.json da cap nhat).
+Sau do chay lai <vai>_prepare.py <draft_id> de doc brief moi (manifest.json da cap nhat).
 """
 import argparse
 import json
@@ -41,6 +41,7 @@ import env_load                                              # noqa: E402
 import image_prepare as cb                                    # noqa: E402
 import article_sources                                             # noqa: E402
 import schema                                                # noqa: E402
+import state_paths                                           # noqa: E402
 import role as vai_mod                                        # noqa: E402
 from browser_session import BrowserSession                       # noqa: E402
 from prepare import decision_log                              # noqa: E402
@@ -58,7 +59,7 @@ _ANH_EXT = re.compile(r"\.(jpe?g|png|webp)(\?.*)?$", re.I)
 
 
 def read_count_turn(wd: Path) -> dict:
-    p = wd / "tim_them.json"
+    p = wd / state_paths.FIND_MORE_FILE
     if p.exists():
         try:
             return json.loads(p.read_text(encoding="utf-8"))
@@ -205,7 +206,7 @@ def candidate_keyword(tu_khoa: str, wd: Path, mien_co: set, phien=None) -> list:
 
 
 def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
-    """Danh ma A<n> tiep theo, don ve goc/, phan loai + vision. Tra danh sach anh MOI."""
+    """Danh ma A<n> tiep theo, don ve original/, phan loai + vision. Tra danh sach anh MOI."""
     anh = m["images"]
     n0 = len(anh)
     moi = []
@@ -213,7 +214,7 @@ def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
         if len(moi) >= MAX_IMAGE_EXTRA:
             break
         a["id"] = f"A{i}"
-        dich = wd / "goc" / f"{a['id']}.png"
+        dich = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         Path(a["original_path"]).replace(dich)
         a["original_path"] = str(dich)
         a["from_find_more"] = True
@@ -274,7 +275,7 @@ def main() -> int:
 
     state = env_load.state_dir()
     wd = cb.workdir(state, a.draft_id)
-    xong, khoa = wd / "xong.json", wd / "dang_chay.pid"
+    xong, khoa = wd / state_paths.MANIFEST_FILE, wd / state_paths.RUNNING_PID_FILE
     if not xong.exists():
         sys.exit(f"[LOI] chua co ban chuan bi ({xong}) — chay <vai>_prepare.py {a.draft_id} truoc")
     so_luot = read_count_turn(wd)
@@ -292,10 +293,10 @@ def main() -> int:
         vai_mod.set_active_role(vai_anh)
         so_luot["luot"] += 1
         so_luot["da_thu"] += a.tu_khoa + a.url
-        _write_json(wd / "tim_them.json", so_luot)
+        _write_json(wd / state_paths.FIND_MORE_FILE, so_luot)
 
         mien_co = {a_.get("domain") for a_ in m["images"]}
-        wd2 = wd / f"them_{so_luot['luot']}"
+        wd2 = state_paths.extra_dir(wd, so_luot['luot'])
         wd2.mkdir(parents=True, exist_ok=True)
         cands = []
         t0 = time.time()
@@ -317,7 +318,7 @@ def main() -> int:
         moi = say_image_new(m, bo_sung, wd, tieu_de)
         m.setdefault("dropped", []).extend(decision_log.collect(wd2, since=t0))   # LOW-225
         fresh_manifest(m)
-        contact_sheet(m["images"], wd / "bang_anh.png")
+        contact_sheet(m["images"], wd / state_paths.CONTACT_SHEET_FILE)
         _write_json(xong, m)
         in_result(m, moi, so_luot, vai_anh)
     finally:

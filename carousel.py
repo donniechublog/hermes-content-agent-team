@@ -628,7 +628,7 @@ def build_cover(img_path, hook, label, out, handle=None, category="MODEL UPDATE"
 # ---- Cong chan tam co tin ------------------------------------------------
 # San tuyet doi cua mot bo carousel (ke ca bia). Duoi muc nay thi khong con la
 # carousel — tin mot tang de Ethan dung mot the hero. image_prepare doc hang so
-# nay (khong chep so 5) va ghi vao xong.json de approve_service biet ha san toi
+# nay (khong chep so 5) va ghi vao manifest.json de approve_service biet ha san toi
 # dau khi Ong Chu bam "lam voi N anh".
 # Ong Chu 12/09/2026: "ha flagship xuong 7, tin thuong giu 6" — hoi vi sao Dre doi 8
 # anh khi mot carousel 6 la dat. Truoc do 5 / 8 (8 tu loi GPT-6 Astra 03/09).

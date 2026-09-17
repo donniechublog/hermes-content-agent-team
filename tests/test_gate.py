@@ -22,6 +22,7 @@ sys.path.insert(0, str(ROOT))
 import submit_common as nc      # noqa: E402
 import required as bb       # noqa: E402
 import caption_check as cc  # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 # `so_tam` da chuyen sang tests/tam.py 07/09/2026: tep test thu hai can dung
@@ -344,7 +345,7 @@ def test_image_ranking_no_got_crop():
     xoá mất nó. Ảnh xếp hạng phải giữ nguyên vẹn (a["ready_path"] = a["original_path"])."""
     # `classify` sang prepare/vision.py khi tach goi 09/09/2026 (audit A1).
     src = (ROOT / "prepare" / "vision.py").read_text(encoding="utf-8")
-    khoi = src[src.index("    san = wd / \"san\""):]
+    khoi = src[src.index("    san = wd / state_paths.READY_DIR"):]
     khoi = khoi[:khoi.index("a[\"uses\"] = [\"thân")]
     assert 'if a.get("ranking"):' in khoi, "classify thiếu nhánh giữ nguyên ảnh xếp hạng"
     truoc_elif = khoi[:khoi.index("elif r <")]
@@ -1193,7 +1194,7 @@ def test_miles_submit_report_error_see_vi_no():
         assert ma == 1, f"ma thoat {ma}, mong doi 1 (con sua duoc)"
         assert "[LOI]" in ra, ra[-400:]
         assert "Sua roi chay lai" in ra, "vai khong duoc bao cach chay lai:\n" + ra[-400:]
-        assert (wd / "nop_lan.json").exists(), "khong ghi bo dem vong loi"
+        assert (wd / state_paths.SUBMIT_COUNT_FILE).exists(), "khong ghi bo dem vong loi"
 
 
 def test_count_used_ok_return_again_after_each_test_on():
@@ -1209,7 +1210,7 @@ def test_count_used_ok_return_again_after_each_test_on():
 
 # --------------------------------------------------- trang thai (buoc 4)
 def test_redo_only_apply_when_boss_really_press():
-    """`da_dung.json` duoc ghi o MOI lan gui va approve_post khong bao gio xoa, nen
+    """`previous_submission.json` duoc ghi o MOI lan gui va approve_post khong bao gio xoa, nen
     "co da_dung" khong dong nghia "Ong Chu bam Lam lai". Ban cu bat vai doi bia
     o moi lan chay lai, vai doi that, roi gui BO THU HAI kem nut Duyet thu hai.
     Moc dung la `remakes` trong img.json."""
