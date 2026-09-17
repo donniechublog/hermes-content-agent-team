@@ -451,23 +451,6 @@
    "key:trang": 1,
    "path:article_extract.py": 1
   },
-  "migrate_manifest_v3.py": {
-   "path:tu_dien_ten": 1
-  },
-  "migrate_model_board_keys.py": {
-   "key:loai": 3,
-   "path:model_audition.json": 2,
-   "path:tu_dien_ten": 1
-  },
-  "migrate_state_files.py": {
-   "key:nhat_ky": 1,
-   "key:quet": 1,
-   "key:tai_ve": 1,
-   "path:nguon_*.json": 1,
-   "path:nhat_ky": 3,
-   "path:quet": 3,
-   "path:vung_ocr.json": 1
-  },
   "miles_submit.py": {
    "key:cau_so_trong_nguon": 1,
    "key:do_dai": 8,
