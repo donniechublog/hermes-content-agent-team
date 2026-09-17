@@ -34,6 +34,7 @@ from pathlib import Path
 
 import env_load
 import publish
+import state_paths
 
 # Nhip ticker cua hermes la 60s (cron/jobs.py TICKER_INTERVAL_SECONDS). Nguong
 # "ticker dung" lay DUNG cong thuc cua `hermes cron status`
@@ -48,9 +49,12 @@ LATE_SECONDS = 15 * 60
 
 # Tep danh dau "hom nay ai da bao gi" — dung chung ca hai brand nen nam o
 # `state/` GOC, khong phai `state/<brand>/` (quy uoc trong README, muc State).
-MARK = env_load.ROOT / "state" / "cron_audit.json"
+MARK = env_load.ROOT / "state" / state_paths.CRON_AUDIT_FILE
 
-ITEM = {"HONG": "🔴", "KET": "🟠", "TAT": "⚪"}
+# Muc do (`severity`) la ma English tu LOW-239 (bang docs/tu_dien_ten/journal_keys_v2.json).
+# Chu in ra stdout (ban ghi duy nhat khi Telegram hong) va icon trong tin giu nguyen.
+ITEM = {"BROKEN": "🔴", "STUCK": "🟠", "OFF": "⚪"}
+SEVERITY_LABELS = {"BROKEN": "HONG", "STUCK": "KET", "OFF": "TAT"}
 
 
 def _epoch(p: Path):
@@ -99,7 +103,7 @@ def format_cron(home: Path) -> list:
 def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
     """Soat MOT kho cron. Tra ve (van_de, so_job_da_soat).
 
-    `van_de`: list dict {muc, ten, ly_do} — `ten` da gom ca profile neu co."""
+    `van_de`: list dict {severity, name, reasons} — `name` da gom ca profile neu co."""
     van_de, tep = [], cron_dir / "jobs.json"
     if not tep.exists():
         # Kho khong co jobs.json la binh thuong (home chua tung tao job nao).
@@ -107,8 +111,8 @@ def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
     try:
         data = json.loads(tep.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
-        van_de.append({"muc": "HONG", "ten": str(tep),
-                       "ly_do": [f"không đọc được jobs.json: {type(e).__name__}"]})
+        van_de.append({"severity": "BROKEN", "name": str(tep),
+                       "reasons": [f"không đọc được jobs.json: {type(e).__name__}"]})
         return van_de, 0
 
     # Ticker: kiem TRUOC cac job. Ticker dung thi MOI job trong kho deu dong
@@ -116,21 +120,21 @@ def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
     nhip = _epoch(cron_dir / "ticker_heartbeat")
     thanh = _epoch(cron_dir / "ticker_last_success")
     if nhip is None:
-        van_de.append({"muc": "KET", "ten": "ticker",
-                       "ly_do": ["không có nhịp nào — gateway chưa từng chạy ở kho này"]})
+        van_de.append({"severity": "STUCK", "name": "ticker",
+                       "reasons": ["không có nhịp nào — gateway chưa từng chạy ở kho này"]})
     elif bay_gio - nhip > TICK_OLD:
-        van_de.append({"muc": "KET", "ten": "ticker",
-                       "ly_do": [f"nhịp cuối {_age(bay_gio - nhip)} trước "
+        van_de.append({"severity": "STUCK", "name": "ticker",
+                       "reasons": [f"nhịp cuối {_age(bay_gio - nhip)} trước "
                                  f"(ngưỡng {TICK_OLD}s) — MỌI job trong kho này đang không nổ"]})
     elif thanh is not None and nhip - thanh > TICK_OLD:
         # Nhip con dap nhung khong tick nao thanh cong: ticker song ma hong.
-        van_de.append({"muc": "KET", "ten": "ticker",
-                       "ly_do": [f"còn nhịp nhưng lần tick THÀNH CÔNG cuối đã "
+        van_de.append({"severity": "STUCK", "name": "ticker",
+                       "reasons": [f"còn nhịp nhưng lần tick THÀNH CÔNG cuối đã "
                                  f"{_age(bay_gio - thanh)} trước"]})
 
     jobs = data.get("jobs") or []
     for job in jobs:
-        ly_do, muc = [], "TAT"
+        ly_do, muc = [], "OFF"
         ten = job.get("name") or job.get("id") or "?"
 
         if not job.get("enabled", True):
@@ -141,16 +145,16 @@ def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
 
         streak = int(job.get("failure_streak") or 0)
         if streak > 0:
-            muc = "HONG"
+            muc = "BROKEN"
             ly_do.append(f"hỏng {streak} lần liên tiếp")
         trang_thai = job.get("last_status")
         if trang_thai and trang_thai != "ok":
-            muc = "HONG"
+            muc = "BROKEN"
             ly_do.append(f"lần chạy cuối: {trang_thai}")
         for khoa, nhan in (("last_error", "lỗi"),
                            ("last_delivery_error", "không gửi được kết quả")):
             if job.get(khoa):
-                muc = "HONG"
+                muc = "BROKEN"
                 ly_do.append(f"{nhan}: {str(job[khoa])[:200]}")
 
         # Job bat nhung scheduler khong no: `next_run_at` nam lai qua khu.
@@ -163,14 +167,14 @@ def audit_format(cron_dir: Path, bay_gio: float) -> tuple:
                     t = t.replace(tzinfo=timezone.utc)
                 tre = bay_gio - t.timestamp()
                 if tre > LATE_SECONDS:
-                    muc = "KET" if muc == "TAT" else muc
+                    muc = "STUCK" if muc == "OFF" else muc
                     ly_do.append(f"lỡ hẹn {_age(tre)} (đáng lẽ chạy lúc {_hours(ke)})")
             except (TypeError, ValueError):
-                muc = "HONG"
+                muc = "BROKEN"
                 ly_do.append(f"next_run_at không đọc được: {ke!r}")
 
         if ly_do:
-            van_de.append({"muc": muc, "ten": ten, "ly_do": ly_do})
+            van_de.append({"severity": muc, "name": ten, "reasons": ly_do})
     return van_de, len(jobs)
 
 
@@ -201,7 +205,7 @@ def lock_still_for(van_de) -> list:
     CHI gom brand + ten + muc, KHONG gom ly do: `failure_streak` tang tu 3 len
     4 khong phai tin moi, va neu tinh ca ly do thi mot job hong lien tuc se
     nhan moi lan chay."""
-    return sorted(f"{m['brand']}/{m['ten']}/{m['muc']}" for m in van_de)
+    return sorted(f"{m['brand']}/{m['name']}/{m['severity']}" for m in van_de)
 
 
 def read_mark() -> dict:
@@ -220,15 +224,15 @@ def use_story(van_de, tong, thieu, ngay: str, so_brand: int) -> str:
     canh bao bien mat, dung nhu cai loi da sua o journal_web (06/09/2026)."""
     e = html.escape
     dong = [f"<b>🔧 Soát cron sáng {e(ngay)}</b>", ""]
-    for m in sorted(van_de, key=lambda x: (x["muc"] != "HONG", x["brand"], x["ten"])):
-        dong.append(f"{ITEM.get(m['muc'], '•')} <b>{e(m['brand'])} / {e(m['ten'])}</b>")
-        for l in m["ly_do"]:
+    for m in sorted(van_de, key=lambda x: (x["severity"] != "BROKEN", x["brand"], x["name"])):
+        dong.append(f"{ITEM.get(m['severity'], '•')} <b>{e(m['brand'])} / {e(m['name'])}</b>")
+        for l in m["reasons"]:
             dong.append(f"    {e(l)}")
         dong.append("")
     for b in thieu:
         dong.append(f"🔴 <b>{e(b)}</b> — không thấy thư mục home, script soát sai cấu hình")
         dong.append("")
-    hong = sum(1 for m in van_de if m["muc"] == "HONG") + len(thieu)
+    hong = sum(1 for m in van_de if m["severity"] == "BROKEN") + len(thieu)
     khac = len(van_de) + len(thieu) - hong
     dong.append(f"<i>Soát {tong} job ở {so_brand} brand; "
                 f"{hong} hỏng, {khac} cần liếc.</i>")
@@ -251,29 +255,30 @@ def main() -> int:
 
     if not a.im:
         for m in van_de:
-            print(f"  {m['muc']:5s} {m['brand']}/{m['ten']}: {'; '.join(m['ly_do'])}")
+            label = SEVERITY_LABELS.get(m["severity"], m["severity"])
+            print(f"  {label:5s} {m['brand']}/{m['name']}: {'; '.join(m['reasons'])}")
         for b in thieu:
             print(f"  HONG  {b}: khong thay thu muc home (kiem env_load.hermes_homes)")
         print(f"  -- {tong} job, {len(khoa)} van de")
 
     dau = read_mark()
     hom_nay = datetime.now().strftime("%Y-%m-%d")
-    da_bao = dau.get("ngay") == hom_nay and dau.get("van_de") == khoa
+    da_bao = dau.get("date") == hom_nay and dau.get("issue_signatures") == khoa
 
     if khoa:
         tin = use_story(van_de, tong, thieu, ngay, len(homes))
-    elif dau.get("van_de") and dau.get("ngay") != hom_nay:
+    elif dau.get("issue_signatures") and dau.get("date") != hom_nay:
         # Het van de sau mot ngay co van de: bao MOT lan roi thoi. Khong co
         # dong nay thi khong bao gio biet cai hong hom qua da het hay chua.
         tin = (f"<b>✅ Cron sạch</b>\n\n{tong} job ở cả hai brand đều bình thường "
-               f"— {len(dau['van_de'])} vấn đề của {dau.get('ngay')} đã hết.")
+               f"— {len(dau['issue_signatures'])} vấn đề của {dau.get('date')} đã hết.")
     else:
         tin = ""
 
     if not tin or (da_bao and not a.luon_bao):
         if not a.im:
             print("khong gui: " + ("khong co van de" if not tin
-                                   else f"da bao hom nay boi {dau.get('boi')}"))
+                                   else f"da bao hom nay boi {dau.get('sent_by')}"))
         return 0
 
     if a.khong_gui:
@@ -286,9 +291,9 @@ def main() -> int:
         print("[LOI] khong gui duoc canh bao cron", file=sys.stderr)
         return 1
 
-    env_load.write_json(MARK, {"ngay": hom_nay, "van_de": khoa,
-                            "boi": env_load._brand() or "don",
-                            "luc": datetime.now().isoformat(timespec="seconds")})
+    env_load.write_json(MARK, {"date": hom_nay, "issue_signatures": khoa,
+                            "sent_by": env_load._brand() or "don",
+                            "sent_at": datetime.now().isoformat(timespec="seconds")})
     if not a.im:
         print(f"da gui canh bao: {len(khoa)} van de")
     return 0

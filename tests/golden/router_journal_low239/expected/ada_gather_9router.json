@@ -1,0 +1,98 @@
+{
+ "theo_ngay": [
+  {
+   "ngay": "09-14",
+   "req": 2,
+   "usd": 0.0031,
+   "cache_pct": 51.3,
+   "lat": 0,
+   "loi": 0,
+   "model_chinh": "deepseek-v4-flash @ deepseek-v4-flash"
+  },
+  {
+   "ngay": "09-15",
+   "req": 8,
+   "usd": 0.223,
+   "cache_pct": 72.1,
+   "lat": 1,
+   "loi": 2,
+   "model_chinh": "deepseek-v4-flash @ DS main (ds)"
+  }
+ ],
+ "vai": {
+  "blog/miles": {
+   "usd": 0.1523,
+   "api": 42,
+   "task_done": 2,
+   "phien": 3,
+   "usd_task": 0.0761
+  },
+  "dcgr/jika": {
+   "usd": 0.0123,
+   "api": 7,
+   "task_done": 0,
+   "phien": 1,
+   "usd_task": null
+  },
+  "blog/ada": {
+   "usd": 0.0001,
+   "api": 1,
+   "task_done": 0,
+   "phien": 1,
+   "usd_task": null
+  }
+ },
+ "brand": {
+  "blog": {
+   "usd": 0.1524,
+   "bai": 2,
+   "usd_bai": 0.0762
+  },
+  "dcgr": {
+   "usd": 0.0123,
+   "bai": 0,
+   "usd_bai": null
+  }
+ },
+ "rong": {
+  "deepseek-v4-flash": 2,
+  "deepseek-chat": 1,
+  "glm-5.3": 1
+ },
+ "loi_ket_noi": [
+  "09-15 Xiaoke <x> & co [429] Too Many Requests: quota hết hạn mức ngày",
+  "09-15 tắt rồi [ECONNREFUSED] connect ECONNREFUSED 127.0.0.1:443 — dài xxxxxxxxxxxxxxxxxxx"
+ ],
+ "lat_model": {
+  "deepseek-v4-flash → deepseek-chat": 1,
+  "deepseek-chat → deepseek-v4-flash": 1,
+  "deepseek-v4-flash → glm-5.3": 1
+ },
+ "loi": {
+  "glm-5.3: error 429": 1,
+  "glm-5.3: error 502": 1
+ },
+ "khoa": {
+  "khoa la …efgh": 0.0031,
+  "blog": 0.171,
+  "dcgr": 0.002,
+  "khoa la …7777": 0.05
+ },
+ "chi_phi": {
+  "deepseek-v4-flash": {
+   "req": 6,
+   "prompt": 195900,
+   "usd": 0.1741
+  },
+  "glm-5.3": {
+   "req": 3,
+   "prompt": 12500,
+   "usd": 0.05
+  },
+  "deepseek-chat": {
+   "req": 1,
+   "prompt": 5000,
+   "usd": 0.002
+  }
+ }
+}

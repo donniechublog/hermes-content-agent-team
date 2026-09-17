@@ -1,0 +1,92 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-239) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; giá trị liệt kê đổi cùng ticket (một lần migrate). Chữ hiển thị (md, HTML, Telegram) giữ nguyên byte.",
+  "_measured": "máy chủ 17/09/2026: 18 tệp state/9router/journal/9router_<date>.json (2026-08-30..09-16); notes.jsonl 0 tệp; state/cron_audit.json không tồn tại.",
+  "router_journal": {
+    "_where": "state/9router/journal/9router_<date>.json — ghi monitor_9router; đọc journal_web, ada_prepare.gather_9router, monitor_9router (write_md/still_for/summary_tele/download)",
+    "ngay": "date",
+    "cua_so_utc": "utc_window",
+    "tong": "totals",
+    "theo_model": "by_model",
+    "theo_khoa": "by_api_key",
+    "theo_gio": "by_hour",
+    "model_la": "unknown_models",
+    "cache_kem": "low_cache_models",
+    "lat_model": "model_switches",
+    "lat_vi_du": "model_switch_examples",
+    "rong": "empty_responses",
+    "rong_vi_du": "empty_response_examples",
+    "loi": "errors_by_model_status",
+    "loi_doc": "read_error",
+    "loi_ket_noi": "connection_errors",
+    "vai": "role_costs",
+    "ket_noi": "legacy_connection"
+  },
+  "router_journal.usage_bucket": {
+    "_where": "totals, by_model.*, by_api_key.*, by_hour.* (+ aggregate() trong bộ nhớ); req/prompt/cache/out/usd/cache_pct giữ",
+    "loi": "error_count"
+  },
+  "router_journal.top_prompt[]": {"luc": "time"},
+  "router_journal.low_cache_models[]": {"vai": "config_roles"},
+  "router_journal.connection_errors[]": {
+    "ten": "name",
+    "trang_thai": "test_status",
+    "ma": "error_code",
+    "loi": "last_error",
+    "luc": "last_error_at",
+    "trong_ngay": "error_in_window",
+    "bat": "active"
+  },
+  "router_journal.legacy_connection": {"co_watcher": "has_watcher"},
+  "router_journal.role_costs": {
+    "theo_vai": "by_role",
+    "theo_brand": "by_brand",
+    "phu_pct": "coverage_pct",
+    "ghi_chu": "note",
+    "loi_doc": "unreadable_profiles"
+  },
+  "router_journal.role_costs.by_role.*": {"phien": "sessions"},
+  "router_journal.role_costs.by_brand.*": {"bai": "published_count", "usd_bai": "usd_per_published"},
+  "journal_rows_in_memory": {
+    "_where": "journal.py part_* → use_page (chỉ trong bộ nhớ, trang .md giữ nguyên byte)",
+    "cron": {"ten": "name", "gio": "time", "giay": "seconds", "trang_thai": "status", "loi": "error"},
+    "kanban": {"tieu_de": "title", "vai": "role", "trang_thai": "status", "gio": "time", "giay": "seconds", "tom_tat": "summary", "loi": "error"},
+    "finn": {"so_tin": "candidate_count", "da_chon": "picked_count", "chon": "picked_titles", "top[].diem": "score", "top[].tieu_de": "title", "top[].nguon": "source_note"},
+    "draft": {"gio": "time", "trang_thai": "status", "chu": "caption_length", "co_anh": "has_image"},
+    "git": {"ma": "hash", "gio": "time", "mo_ta": "subject"},
+    "model_health": {"tong": "model_count", "hong": "broken_models", "ly_do": "reasons"}
+  },
+  "journal_notes": {
+    "_where": "state/<brand>/journal/notes.jsonl (0 tệp)",
+    "ngay": "date",
+    "luc": "time",
+    "loai": "kind",
+    "noi_dung": "content"
+  },
+  "journal_notes.kind": {"bug": "bug", "fix": "fix", "van-de": "issue", "ghi-chu": "note", "quyet-dinh": "decision"},
+  "audit_cron_issue": {
+    "_where": "audit_cron.py dict vấn đề (bộ nhớ, in stdout/Telegram)",
+    "muc": "severity",
+    "ten": "name",
+    "ly_do": "reasons"
+  },
+  "audit_cron_issue.severity": {"HONG": "BROKEN", "KET": "STUCK", "TAT": "OFF"},
+  "cron_audit_mark": {
+    "_where": "state/cron_audit.json (không tồn tại; thêm hằng state_paths)",
+    "ngay": "date",
+    "van_de": "issue_signatures",
+    "boi": "sent_by",
+    "luc": "sent_at"
+  },
+  "env": {"NHAT_KY_URL": "JOURNAL_WEB_URL", "NHAT_KY_HOST": "JOURNAL_WEB_HOST", "NHAT_KY_PORT": "JOURNAL_WEB_PORT"},
+  "_kept_values": [
+    "low_cache_models[].config_roles giá trị kiểu 'engine anh:vision' là nhãn hiển thị dựng từ cấu hình — giữ.",
+    "Tên model, tên kết nối, trạng thái 9router (active/unavailable) là dữ liệu ngoài — giữ."
+  ],
+  "_notes": [
+    "`tong` ở nhật ký 9router là dict tổng → totals; `tong` ở model health là số → model_count.",
+    "`loi` có 4 nghĩa: dict đếm 'model: status' (errors_by_model_status), số lỗi trong bucket (error_count), chữ lỗi kết nối (last_error), lỗi hàng cron/kanban (error).",
+    "`vai` ở kanban row là vai (role); ở nhật ký 9router là khối chi phí theo vai (role_costs); ở low_cache_models là danh sách nhãn cấu hình (config_roles).",
+    "`loi_doc` top là chuỗi lỗi đọc CSDL (read_error); `role_costs.loi_doc` là danh sách profile không đọc được (unreadable_profiles).",
+    "Dump Ada (manifest trong workdir Ada) chép số từ nhật ký — khoá dump giữ nguyên ở ticket này (LOW-243), chỉ đổi chỗ đọc."
+  ]
+}
