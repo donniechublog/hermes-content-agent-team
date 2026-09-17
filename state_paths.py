@@ -21,6 +21,7 @@ CRASH_COUNT_FILE = "crash_count.json"
 FIND_MORE_FILE = "find_more.json"
 PREVIOUS_SUBMISSION_FILE = "previous_submission.json"
 SUBMIT_COUNT_FILE = "submit_count.json"
+DRAFT_TRIAL_FILE = "draft_trial.txt"      # miles_submit --khong-push, LOW-242 (was draft_thu.txt); table submit_keys_v2.json
 HANDOFF_SUFFIX = ".handoff.md"          # drafts/<draft_id>.handoff.md (or in the workdir with --khong-gui)
 
 ORIGINAL_DIR = "original"               # downloaded originals (image key `original_path`)

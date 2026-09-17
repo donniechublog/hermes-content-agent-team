@@ -72,11 +72,11 @@ BRAND = {
         "handle": "donniechublog",
         # Ten hang trong tieu de lay CYAN cua bo nhan dien. Bang mau nay da co
         # mot mau nhan manh roi, muon them mau rieng cua tung hang nua thi doi
-        # "cyan" thanh "hang" o day, khong phai sua cho nao khac.
-        "to_ten_hang": "cyan",
+        # "cyan" thanh "company" o day, khong phai sua cho nao khac.
+        "company_name_color": "cyan",
         # Ten kenh ro va dung mau CYAN nhan dien.
-        "ro_handle": 1.0,
-        "mau": {
+        "handle_clarity": 1.0,
+        "palette": {
             "BG": (14, 17, 23), "BG_CARD": (22, 27, 34),
             "FG": (230, 237, 243), "MUTED": (139, 147, 158),
             "ACCENT": (88, 166, 255), "ACCENT_DIM": (31, 111, 235),
@@ -92,14 +92,14 @@ BRAND = {
         # chu the dang duoc nhac toi — nhac Spotify thi ra xanh la Spotify.
         # Nho vay bang mau van don sac o moi cho khac, va cham mau duy nhat tren
         # the luon mang y nghia.
-        "to_ten_hang": "hang",
-        "mau_du_phong": (255, 176, 32),   # hang chua biet mau: ho phach
+        "company_name_color": "company",
+        "fallback_company_color": (255, 176, 32),   # hang chua biet mau: ho phach
         # Chan the la thong tin PHU: nho va mo hon de lui ve sau.
-        "co_chan": 0.85,        # co chu o chan the: 85% co goc
-        "mo_chan": 0.55,        # do sang chu chan, 1.0 la bang FG
+        "footer_size_scale": 0.85,        # co chu o chan the: 85% co goc
+        "footer_brightness": 0.55,        # do sang chu chan, 1.0 la bang FG
         # Ten kenh la nhan dien, khong phai chu thich: no phai doc ro.
-        "ro_handle": 0.95,
-        "mau": {
+        "handle_clarity": 0.95,
+        "palette": {
             "BG": (10, 10, 10), "BG_CARD": (26, 26, 26),
             "FG": (255, 255, 255), "MUTED": (150, 150, 150),
             "ACCENT": (255, 255, 255), "ACCENT_DIM": (110, 110, 110),
@@ -120,7 +120,7 @@ def set_brand(ten: str):
     if b is None:
         raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
                          f"Co: {', '.join(sorted(BRAND))}")
-    m = b["mau"]
+    m = b["palette"]
     BG, BG_CARD = m["BG"], m["BG_CARD"]
     FG, MUTED = m["FG"], m["MUTED"]
     ACCENT, ACCENT_DIM = m["ACCENT"], m["ACCENT_DIM"]
@@ -422,8 +422,8 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
     che_do:
       None    — khong to gi, ca dong mot mau (the tin kieu dai)
       "cyan"  — ten hang lay CYAN cua bo nhan dien (donniechublog)
-      "hang"  — ten hang lay MAU RIENG CUA HANG do (dcgr). Hang chua biet mau
-                thi dung `mau_du_phong`.
+      "company" — ten hang lay MAU RIENG CUA HANG do (dcgr). Hang chua biet mau
+                thi dung `mau_du_phong` (BRAND `fallback_company_color`).
 
     `nen_sang`: dong nay nam tren mot dai anh SANG. Khi do mau ten hang phai
     keo ve phia TOI (`_enough_dark`), khong phai sang them — dung cai loi da sua cho
@@ -436,7 +436,7 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
         f_mau = mau
         if khoa and che_do == "cyan":
             f_mau = _enough_dark(CYAN) if nen_sang else CYAN
-        elif khoa and che_do == "hang":
+        elif khoa and che_do == "company":
             goc = _color_of_rank(khoa) or mau_du_phong or CYAN
             f_mau = _enough_dark(goc) if nen_sang else _enough_bright(goc)
         d.text((x, y), tu, font=font, fill=f_mau)
@@ -1227,8 +1227,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     nat_h = round(W * src_img.height / src_img.width)
 
     probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
-    co_chan = b.get("co_chan") or 1.0
-    mo_chan = b.get("mo_chan") or 1.0
+    co_chan = b.get("footer_size_scale") or 1.0
+    mo_chan = b.get("footer_brightness") or 1.0
     f_via = _f(F_REG, max(12, round(VIA_SIZE * co_chan)), weight=500)
     # Chu thut vao trong khung (CEILING_TEXT_X > CEILING_FRAME_X), khong an ra sat le
     # the nhu truoc: co khung roi thi chu cham net la khoi chu doc ra chat.
@@ -1376,8 +1376,8 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     def _x_chu(ln, font):
         return (W - _empty_line(d, ln, font)) / 2
 
-    che_do_to = b.get("to_ten_hang")
-    mau_du_phong = b.get("mau_du_phong")
+    che_do_to = b.get("company_name_color")
+    mau_du_phong = b.get("fallback_company_color")
     # Dat dong dau bang DINH CHU chu khong bang goc ve: nho vay khoang ho toi
     # kicker khong doi theo viec dong do co dau hay khong.
     # strict=False co y: `sang_dong` co hau to `or [0.0]` nen o ca tieu de rong
@@ -1394,7 +1394,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     f_handle = _f(F_REG, max(12, round(BRAND_SIZE * co_chan)), weight=500)
     mau_handle = _color_change_background_hide_whole(canvas, (0, bottom_y, W, bottom_y + via_h))
     mau_handle = (_enough_dark(CYAN) if mau_handle == BG
-                  else _phase(CYAN, b.get("ro_handle", mo_chan)))
+                  else _phase(CYAN, b.get("handle_clarity", mo_chan)))
     ten = handle if handle.startswith("@") else "@" + handle
     bb = f_handle.getbbox("Ay")
     d.text(((W - d.textlength(ten, font=f_handle)) / 2,

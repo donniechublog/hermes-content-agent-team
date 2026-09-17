@@ -214,11 +214,11 @@ class LineImageUsed(TypedDict):
     draft_id nhung dung chung bo anh engine tai ve."""
     dhash: str
     draft_id: str
-    vai: str
-    tin: str                       # khoa on dinh cua tin, xem image_rules.story_key
-    ten: str
+    role: str                      # vai tao album (LOW-242, truoc: `vai`)
+    story_key: str                 # khoa on dinh cua tin, xem image_provenance.story_key (truoc: `tin`)
+    file_name: str                 # ten tep anh goc (truoc: `ten`)
     md5: str
-    luc: int                       # epoch giay, de xet cua so 14 ngay
+    used_at: int                   # epoch giay, de xet cua so 14 ngay (truoc: `luc`)
 
 
 # ---------------------------------------------------------------- dan xuat

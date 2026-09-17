@@ -33,7 +33,7 @@ def block_redo(da_dung: dict | None, mo_ta: str) -> list:
     khac nhau tung vai (bia+hook, anh+hook, theme+hero)."""
     if not da_dung:
         return []
-    return ["", f"⚠️ LÀM LẠI — lần trước ({da_dung.get('luc', '?')}): {mo_ta}"]
+    return ["", f"⚠️ LÀM LẠI — lần trước ({da_dung.get('submitted_at', '?')}): {mo_ta}"]
 
 
 def block_material(m: dict, tieu_de: str = "## Tư liệu", nhan: str = "Finn",

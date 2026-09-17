@@ -44,7 +44,7 @@ def _co(ds, *manh):
 def test_caption_chuan_khong_loi():
     loi, canh, tin = _kiem()
     assert loi == [], loi
-    assert tin["so_cau"] == 4 and tin["so_trong_caption"] >= 2, tin
+    assert tin["sentence_count"] == 4 and tin["number_count"] >= 2, tin
     # Duoi 700 ky tu chi la NHAC, khong chan.
     assert not any("MAT DAU" in c for c in canh)
 
@@ -60,7 +60,7 @@ def test_mat_dau_la_loi_nang():
     khong_dau = "Nvidia mo kho mo hinh Nemotron cho moi nha phat trien.\nBan lon nhat co 340 ty tham so.\nDieu nay thu hep khoang cach."
     loi, _c, tin = _kiem(khong_dau)
     assert _co(loi, "MAT DAU"), loi
-    assert tin["ty_le_dau"] < cc.THRESHOLD_MARK
+    assert tin["diacritic_ratio"] < cc.THRESHOLD_MARK
 
 
 def test_nguong_dau_thap_hon_audition_co_y():
@@ -202,7 +202,7 @@ Bản lớn nhất rất mạnh, theo hãng công bố ngang các mô hình đó
 Người làm sản phẩm dùng được ngay mà không cần đăng ký."""
     loi, _c, tin = _kiem(khong_so)
     assert _co(loi, "KHÔNG có con số"), loi
-    assert tin["cau_so_trong_nguon"] == 2, tin
+    assert tin["source_number_sentence_count"] == 2, tin
 
 
 def test_caption_mot_so_thi_chi_nhac_them():
@@ -236,7 +236,7 @@ def test_so_lieu_khong_ghi_tu_cong_bo_thi_nhac():
 def test_duoi_ba_cau_thi_nhac_cau_truc():
     ngan = "Nvidia mở kho mô hình Nemotron với 340 tỷ tham số, theo hãng công bố.\nAi cũng tải được."
     loi, canh, tin = _kiem(ngan)
-    assert tin["so_cau"] == 2
+    assert tin["sentence_count"] == 2
     assert _co(canh, "cấu trúc SOUL"), canh
 
 

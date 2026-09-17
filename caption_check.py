@@ -87,7 +87,7 @@ MARK = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềế�
           "ùúủũụưừứửữựỳýỷỹỵđ")
 # 0.12 CO Y thap hon 0.15 cua model_audition: day la cong chan bai that (caption
 # nhieu ten rieng/thuat ngu tieng Anh keo ty le xuong), con audition do van mau
-# thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. DAU/ty_le_dau
+# thuan Viet. Hai nguong khac nhau la chu dich, khong phai lech. DAU/diacritic_ratio
 # chi co MOT ban o day; model_audition va cost_squeeze import tu day.
 THRESHOLD_MARK = 0.12          # van ban tieng Viet that thuong tren 0.15
 
@@ -219,12 +219,12 @@ def _check_figures(caption: str, tran: str, tu_lieu: str, tin: dict) -> tuple:
     (nhac), co so ma khong ghi tu cong bo (nhac). Ghi them vao `tin`."""
     loi, canh = [], []
     so_cap = count_within(caption)
-    tin["so_trong_caption"] = len(so_cap)
+    tin["number_count"] = len(so_cap)
 
     if tu_lieu:
         cau_nguon = [l[2:].strip() for l in tu_lieu.splitlines()
                      if l.startswith("- ") and COUNT.search(l)]
-        tin["cau_so_trong_nguon"] = len(cau_nguon)
+        tin["source_number_sentence_count"] = len(cau_nguon)
         if cau_nguon and not so_cap:
             loi.append(f"Nguồn có {len(cau_nguon)} câu mang số liệu nhưng caption "
                        "KHÔNG có con số nào. Cô đọng được, thiếu thì không.")
@@ -265,7 +265,7 @@ def check(caption: str, tu_lieu: str = "") -> tuple:
         return (["Caption rỗng."], [], {})
 
     td = billion_odd_mark(tran)
-    tin["ty_le_dau"] = round(td, 3)
+    tin["diacritic_ratio"] = round(td, 3)
     if td < THRESHOLD_MARK:
         loi.append(f"MAT DAU tieng Viet — ty le dau {td:.2f}, duoi nguong "
                    f"{THRESHOLD_MARK}. Bai khong co dau la khong dang duoc.")
@@ -276,8 +276,8 @@ def check(caption: str, tu_lieu: str = "") -> tuple:
         canh += c
 
     cau = [c for c in re.split(r"(?<=[.!?])\s+", tran) if c.strip()]
-    tin["so_cau"] = len(cau)
-    tin["do_dai"] = len(caption)
+    tin["sentence_count"] = len(cau)
+    tin["char_count"] = len(caption)
     if len(cau) < 3:
         canh.append(f"Chỉ {len(cau)} câu — cấu trúc SOUL cần mở, thân, ý nghĩa.")
     return (loi, canh, tin)
@@ -293,10 +293,10 @@ def main():
     tl = Path(a.tu_lieu).read_text(encoding="utf-8") if a.tu_lieu and Path(a.tu_lieu).exists() else ""
     loi, canh, tin = check(cap, tl)
 
-    print(f"  {tin.get('do_dai', 0)} ký tự | {tin.get('so_cau', 0)} câu | "
-          f"{tin.get('so_trong_caption', 0)} chỗ có số | dấu {tin.get('ty_le_dau', 0):.2f}"
-          + (f" | nguồn có {tin['cau_so_trong_nguon']} câu số liệu"
-             if "cau_so_trong_nguon" in tin else ""))
+    print(f"  {tin.get('char_count', 0)} ký tự | {tin.get('sentence_count', 0)} câu | "
+          f"{tin.get('number_count', 0)} chỗ có số | dấu {tin.get('diacritic_ratio', 0):.2f}"
+          + (f" | nguồn có {tin['source_number_sentence_count']} câu số liệu"
+             if "source_number_sentence_count" in tin else ""))
     for c in canh:
         print(f"  [nhắc]  {c}")
     for e in loi:
