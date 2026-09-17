@@ -132,6 +132,8 @@ class Image(TypedDict, total=False):
     has_keywords: bool | None
     cluttered: bool | None
     cluttered_legacy: bool | None  # khoa `roi` cu (LOW-47), KHONG code nao doc — giu du lieu
+    decisions: list                # LOW-225 prepare.decision_log: [{stage, outcome, rule, evidence}]
+    vision_raw: dict               # LOW-225: {model, question, answer} cua lan hoi vision
     from_find_more: bool
     commons: bool
     concept: dict                  # {keyword, reason}
