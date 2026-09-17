@@ -45,6 +45,8 @@ TABLE_242 = json.loads((ROOT / "docs" / "tu_dien_ten" / "submit_keys_v2.json").r
 # LOW-242: chi dong tep workdir (khoa khong co chu thich "(… tmp)" — tep tam cua bob_submit nam trong mkdtemp)
 FILES_242 = {cu: moi for cu, moi in TABLE_242["files"].items() if " " not in cu}
 TABLE_241 = json.loads((ROOT / "docs" / "tu_dien_ten" / "approve_keys_v2.json").read_text(encoding="utf-8"))
+FILES_246 = {cu: moi for cu, moi in json.loads((ROOT / "docs" / "tu_dien_ten" / "ada_keys_v2.json")
+                                               .read_text(encoding="utf-8"))["files"].items() if not cu.startswith("_")}
 SECTIONS_231 = ("brand_files", "brand_dirs", "scan_files", "journal_files", "router_9", "gin_files")
 
 
@@ -132,7 +134,8 @@ def test_constants_match_approved_table():
                    - {ten for _, ten in _rows_237().values()}
                    - {ten for _, ten in _rows_240().values()} - set(_rows_239())
                    - {ten for _, ten in _rows_242().values()}
-                   - {ten for _, ten in _rows_241().values()})
+                   - {ten for _, ten in _rows_241().values()}
+                   - {ten for _, ten in _rows_246().values()})
     assert not thieu, f"hang chua doi chieu voi state_paths_v2.json / state_files_v2.json: {thieu}"
 
 
@@ -263,6 +266,23 @@ def test_low241_constants_match_approved_table():
     assert approve_base.BOSS_IDS.name == state_paths.BOSS_IDS_FILE
 
 
+def _rows_246() -> dict:
+    """LOW-246: tep cua Ada (workdir ada_<date>/ + journal/). {ten CU: (ten MOI dung lai tu hang, ten hang)}."""
+    sp = state_paths
+    return {
+        "manifest.json": (sp.ADA_METRICS_FILE, "ADA_METRICS_FILE"),
+        "bao_cao.txt": (sp.ADA_REPORT_FILE, "ADA_REPORT_FILE"),
+        "phan_tich_{date}.md": (f"{sp.ANALYSIS_REPORT_PREFIX}{{date}}.md", "ANALYSIS_REPORT_PREFIX"),
+    }
+
+
+def test_low246_constants_match_approved_table():
+    rows = _rows_246()
+    assert set(rows) == set(FILES_246), (sorted(rows), sorted(FILES_246))
+    sai = {cu: (moi, FILES_246[cu]) for cu, (moi, _) in rows.items() if FILES_246[cu] != moi}
+    assert not sai, f"hang LOW-246 lech ada_keys_v2.json (dung tu hang, bang): {sai}"
+
+
 def _rows_239() -> dict:
     """LOW-239: hang cho tep da English san (ten giu nguyen, chi thoi viet chuoi rai rac)."""
     return {"CRON_AUDIT_FILE": ("cron_audit.json", "state/cron_audit.json")}
@@ -307,6 +327,8 @@ OLD_NAMES |= set(TABLE_240["files"])
 OLD_NAMES |= set(FILES_242)
 # LOW-241: allowlist bot duyet
 OLD_NAMES |= set(TABLE_241["files"])
+# LOW-246: bao cao Ada (manifest.json van la ten hop le cua engine, khong cam)
+OLD_NAMES |= {"bao_cao.txt"}
 OLD_FILE_SHAPES += [
     re.compile(r"(^|/)(logo_goc|the_logo)\.png$"),        # logo_goc.png, the_logo.png
     re.compile(r"(^|/)co_phieu_.*\.png$"),                  # co_phieu_<key>.png
@@ -320,6 +342,8 @@ OLD_FILE_SHAPES += [
     re.compile(r"(^|/)ket_qua_.*\.png$"),           # Gin ket_qua_<n>.png
     re.compile(r"_nen_sach\.png$"),                 # <id>_nen_sach.png
     re.compile(r"_da_dung\.jsonl$"),                # glob("*_da_dung.jsonl")
+    re.compile(r"(^|/)phan_tich_.*\.md$"),          # Ada journal/phan_tich_<date>.md (LOW-246)
+    re.compile(r"(^|/)bao_cao\.txt$"),              # Ada workdir bao_cao.txt (LOW-246)
 ]
 
 PATH_FUNCS = {"open", "Path", "PurePath", "PosixPath", "glob", "rglob", "joinpath", "join", "with_name"}

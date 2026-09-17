@@ -72,6 +72,12 @@ SCAN_NONE_FOUND_FILE = "none_found.txt"
 SCAN_TRIAL_MANIFEST_FILE = "trial_manifest.json"
 
 JOURNAL_NOTES_FILE = "notes.jsonl"                     # state/journal/notes.jsonl
+ANALYSIS_REPORT_PREFIX = "analysis_"                   # state/<brand>/journal/analysis_<date>.md (Ada), LOW-246
+
+# Ada workdir state/<brand>/prepare/ada_<YYYYMMDD>/, LOW-246; table docs/tu_dien_ten/ada_keys_v2.json
+ADA_METRICS_FILE = "ada_metrics.json"                  # metrics dump (was manifest.json)
+ADA_REPORT_FILE = "report.txt"                         # report sent to Telegram (was bao_cao.txt)
+
 ROUTER_CONNECTIONS_PREFIX = "connections_"             # state/9router/connections_<date>.jsonl
 CRON_AUDIT_FILE = "cron_audit.json"                    # state/cron_audit.json (audit_cron, shared by brands), LOW-239
 
