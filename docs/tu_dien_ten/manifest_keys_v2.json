@@ -118,6 +118,18 @@
     "bai": "article_name",
     "nguon": "source"
   },
+  "sidecar_image": {
+    "vai_anh": "image_role",
+    "chuyen_tu": "transferred_from",
+    "chuyen_kite": "kite_task_id",
+    "ly_do_chuyen": "transfer_reason",
+    "ly_do_lam_lai": "redo_reasons",
+    "cam_anh_slide": "forbidden_slide_images"
+  },
+  "sidecar_image.redo_reasons[]": {
+    "lan": "attempt",
+    "ly_do": "reason"
+  },
   "_unchanged_english": [
     "draft_id", "brand", "title", "link", "workdir", "flagship", "via", "category", "summary",
     "source_note", "dropped", "url", "alt", "w", "h", "cluttered", "commons", "og", "site", "model", "logo"

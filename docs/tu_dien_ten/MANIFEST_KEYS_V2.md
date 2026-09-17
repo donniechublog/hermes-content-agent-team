@@ -90,6 +90,19 @@ Khoá lồng:
    Đề xuất: samples.jsonl **đổi cùng pha 1** (không thì phép đo baseline vô nghĩa);
    `.img.json` đổi cùng pha 1 để một khái niệm chỉ có một tên.
 
+## `drafts/<id>.img.json` (223 tệp, theo quyết định 4)
+
+`vai_anh→image_role` (cùng tên với manifest), `chuyen_tu→transferred_from`,
+`chuyen_kite→kite_task_id` (cùng tên với manifest), `ly_do_chuyen→transfer_reason`,
+`ly_do_lam_lai→redo_reasons` (mỗi mục `lan→attempt`, `ly_do→reason`, `slide` giữ),
+`cam_anh_slide→forbidden_slide_images`. `drafts/<id>.meta.json` đã English hết (đo 259 tệp).
+
+## Phạm vi tệp tên `xong.json`
+
+185/188 tệp là manifest thật. 3 tệp còn lại **không phải manifest** và migration bỏ
+qua: 2 tệp Itachi (`{khoa, slides}`) và 1 báo cáo Ada (`token/kanban/manifest/draft`)
+— `schema.py` đã ghi chú việc dùng lại tên tệp này.
+
 ## Không đổi
 
 Khoá đã English: `draft_id, brand, title, link, workdir, flagship, via, category,
