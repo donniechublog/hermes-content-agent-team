@@ -13,6 +13,7 @@ import role
 import env_load
 import ranking
 
+from prepare import decision_log
 from prepare.browser import browser_pass
 from prepare.common import MAX_IMAGE, _brand_of, _write_json, _domain
 from prepare.source import _leading_proper_noun, _title_page, commons_images, candidate_social, candidate_static
@@ -646,6 +647,8 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         a = classify(a, wd, tieu_de, chup_nguon=True) if tieu_de else classify(a, wd, "")
         if a.get("lien_quan") is None:
             a["lien_quan"] = True          # khong hoi duoc (rong/router hong) -> giu y cu, khong chan oan
+            decision_log.note(a, "capture_source_forced", "keep", "vision_unavailable_keep_hero",
+                              "khong hoi duoc vision cho anh hero trang nguon -> giu")
         a["mo_ta"] = a.get("mo_ta") or "ảnh hero của chính bài gốc, chụp ở khung điện thoại"
         # `classify` doc mot anh chup trang la "chart/screenshot" (nen trang,
         # nhieu chu) roi dan nhan KHONG LAM BIA — dung cho chart cua nguoi khac,

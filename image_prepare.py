@@ -67,6 +67,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                              # noqa: E402
 from browser_session import BrowserSession                       # noqa: E402
 import schema                                                # noqa: E402
+from prepare import decision_log                              # noqa: E402
 import role                                                   # noqa: E402
 
 from prepare.common import (  # noqa: E402
@@ -109,6 +110,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     -> tim rong neu thieu -> anh khai niem neu van thieu/khong co bia -> tu lieu -> manifest. Tach 07/09/2026 tu mot ham 231
     dong; doi chieu bang vet voi moi ham anh em thay bang ban gia (13 kich ban)."""
     import carousel
+    t_start = time.time()           # LOW-225: moc gom ban ghi anh bi bo cua CHINH lan chay nay
     title = meta.get("title", draft_id)
     # `tom`/`vai_anh` doc SOM, TRUOC ca browser (doi cho tu duoi len 16/09/2026,
     # LOW-182): `role.set_active_role` phai chay TRUOC bat cu anh nao duoc tai/
@@ -225,7 +227,8 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
             anh, dung_duoc, chua_nhin = capability_block_headline(anh)
         tl = _article_material(title, link, nguon_path, wd, nguon, bp)
         m = build_manifest(draft_id, meta, title, link, nguon, nguon_path, tom, wd, anh, xhs,
-                          tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh)
+                          tin_xep_hang, bp, tl, flagship, toi_thieu, vai_anh=vai_anh,
+                          dropped=decision_log.collect(wd, since=t_start))
     contact_sheet(anh, wd / "bang_anh.png")     # ngoai phien: khong dung browser
     return m
 

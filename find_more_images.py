@@ -43,6 +43,7 @@ import article_sources                                             # noqa: E402
 import schema                                                # noqa: E402
 import role as vai_mod                                        # noqa: E402
 from browser_session import BrowserSession                       # noqa: E402
+from prepare import decision_log                              # noqa: E402
 from prepare.browser import browser_pass                    # noqa: E402
 from prepare.common import _write_json, _domain                  # noqa: E402
 from prepare.manifest import contact_sheet, compute_derived             # noqa: E402
@@ -310,6 +311,7 @@ def main() -> int:
         print(f"[tim them] tai + loc: {len(bo_sung)} anh giu lai / {len(cands)} ung vien "
               f"({time.time() - t0:.0f}s)", file=sys.stderr)
         moi = say_image_new(m, bo_sung, wd, tieu_de)
+        m.setdefault("dropped", []).extend(decision_log.collect(wd2, since=t0))   # LOW-225
         fresh_manifest(m)
         contact_sheet(m["anh"], wd / "bang_anh.png")
         _write_json(xong, m)
