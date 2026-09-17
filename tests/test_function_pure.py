@@ -320,6 +320,17 @@ def test_dedup_trillion_amount_merges_only_same_valuation():
     assert [t["so_bao"] for t in ra] == [2, 1, 1, 1], [(t["so_bao"], t["tieu_de"]) for t in ra]
 
 
+def test_dedup_rare_name_ignores_no_amount_title_already_in_group():
+    """LOW-214: tin that 17/09. UA.NEWS khong co so tien nhung da cung nhom Euclyd
+    (qua digitimes) nen khong duoc chan IO+ €200M; lech tien te €/$ van la mot vong."""
+    import scan_business as sb
+    tin = [_story("Samsung backs Dutch AI chip startup Euclyd in US$230M funding round - digitimes", 100),
+           _story("Samsung co-leads funding round for Dutch AI startup Euclyd - UA.NEWS", 200),
+           _story("Eindhoven-based AI startup EUCLYD raises more than €200M - IO+", 300)]
+    ra = sb.gather_duplicate(tin)
+    assert [t["so_bao"] for t in ra] == [3], [(t["so_bao"], t["tieu_de"]) for t in ra]
+
+
 def test_dedup_group_keeps_seen_keys_of_every_variant():
     """LOW-213: bo nho da-thay phai co khoa cua MOI bien the. Chi luu dai dien thi
     hom sau dai dien doi (Euclyd, Glass Imaging 17/09) va tin cu bao lai."""

@@ -381,14 +381,24 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         # - moi tieu de trong lo co tu do deu noi cung so tien: ten hang le chi
         #   xuat hien quanh vu cua no, con tu thuong ("factory" robots) va hang
         #   lon ("nvidia" dau tu $1B vao Nokia lan Anthropic) thi khong;
-        # - viet hoa o CA HAI tieu de va cung tien te: 13/09 "Nvidia Considers
-        #   $10 Billion" da nho "considers" + €13bn ma dinh vao tin Finland.
+        # - viet hoa o CA HAI tieu de: 13/09 "Nvidia Considers $10 Billion" da
+        #   nho "considers" + €13bn ma dinh vao tin Finland.
+        # LOW-214: tieu de khong co so tien ma DA cung nhom voi cap nay thi bo
+        # qua (UA.NEWS "...Dutch AI startup Euclyd" chan IO+ "EUCLYD raises more
+        # than €200M"); tieu de khong so tien NGOAI nhom van chan, do la cai giu
+        # "factory" robots tach khoi Factory $5B. Cho lech tien te (€200M vs $231M).
         if len(w) < 4 or w in WATCHLIST_WORDS:
             return False
         if not all(_capitalized(items[k][0]["tieu_de"], w) for k in (i, j)):
             return False
-        return all(items[k][3] and _same_amount(items[k][3], items[i][3], cross_currency=False)
-                   for k in items_with_word[w])
+        groups = {root(i), root(j)}
+        for k in items_with_word[w]:
+            if items[k][3]:
+                if not _same_amount(items[k][3], items[i][3]):
+                    return False
+            elif root(k) not in groups:
+                return False
+        return True
 
     def same_subject_without_amount(i, j):
         # LOW-213: chung >= 4 tu dac trung (bo tu goi von/so) va phu >= 1/2 tieu
@@ -416,30 +426,39 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
             i = parent[i]
         return i
 
-    for i, (_, tu_i, deal_i, amt_i) in enumerate(items):
-        for j in range(i):
-            _, tu_j, deal_j, amt_j = items[j]
-            chung = tu_i & tu_j
-            # Mau so la MAX chu khong phai MIN. Voi min, tit ngan la tap con
-            # cua tit dai thi LUON gop: "Nvidia stock jumps" nuot "Nvidia stock
-            # slides after Beijing bans chip purchases" (2/min(3,7)=0.67) — hai
-            # tin nguoc nhau thanh mot. Voi max, ca hai tit phai chia se phan
-            # lon tu: ca Cloverleaf kinh dien (invests vs partners) van gop
-            # dung (5/7=0.71), con jumps-vs-slides thi khong (2/7=0.29).
-            same = chung and len(chung) / max(len(tu_i), len(tu_j)) >= nguong
-            guarded = follow_up[i] or follow_up[j]
-            if not same and amt_i and amt_j and not guarded:
-                shared = deal_i & deal_j
-                mega = any(v >= MEGA_AMOUNT_MILLIONS for _, v in amt_i + amt_j)
-                same = _same_amount(amt_i, amt_j, cross_currency=not mega) and (
-                    len(shared) >= MIN_SHARED_DEAL_KEYWORDS
-                    or any(is_deal_name(w, i, j) for w in shared)
-                    or (mega and bool(shared)))
-            if not same and not guarded:
-                same = same_subject_without_amount(i, j)
-            if same:
+    def pair_is_same(i, j):
+        _, tu_i, deal_i, amt_i = items[i]
+        _, tu_j, deal_j, amt_j = items[j]
+        chung = tu_i & tu_j
+        # Mau so la MAX chu khong phai MIN. Voi min, tit ngan la tap con
+        # cua tit dai thi LUON gop: "Nvidia stock jumps" nuot "Nvidia stock
+        # slides after Beijing bans chip purchases" (2/min(3,7)=0.67) — hai
+        # tin nguoc nhau thanh mot. Voi max, ca hai tit phai chia se phan
+        # lon tu: ca Cloverleaf kinh dien (invests vs partners) van gop
+        # dung (5/7=0.71), con jumps-vs-slides thi khong (2/7=0.29).
+        same = chung and len(chung) / max(len(tu_i), len(tu_j)) >= nguong
+        guarded = follow_up[i] or follow_up[j]
+        if not same and amt_i and amt_j and not guarded:
+            shared = deal_i & deal_j
+            mega = any(v >= MEGA_AMOUNT_MILLIONS for _, v in amt_i + amt_j)
+            same = _same_amount(amt_i, amt_j, cross_currency=not mega) and (
+                len(shared) >= MIN_SHARED_DEAL_KEYWORDS
+                or any(is_deal_name(w, i, j) for w in shared)
+                or (mega and bool(shared)))
+        if not same and not guarded:
+            same = same_subject_without_amount(i, j)
+        return bool(same)
+
+    # Lap toi khi khong gop them: luat mot-ten-chung xet nhom HIEN TAI, nen cap
+    # bi tu choi o luot dau co the dat sau khi cap khac vua gop (LOW-214).
+    changed = True
+    while changed:
+        changed = False
+        for i, j in _unmerged_pairs(len(items), root):
+            if pair_is_same(i, j):
                 ri, rj = root(i), root(j)
                 parent[max(ri, rj)] = min(ri, rj)   # goc = ban som nhat
+                changed = True
 
     nhom = {}
     for i, (t, _, _, _) in enumerate(items):
@@ -464,6 +483,14 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
             if not vao.get("hang_watch"):
                 vao["hang_watch"] = name_watchlist(t["tieu_de"])
     return list(nhom.values())
+
+
+def _unmerged_pairs(n, root):
+    for i in range(n):
+        for j in range(i):
+            if root(i) != root(j):
+                yield i, j
+
 
 
 def already_see() -> dict:
