@@ -5,7 +5,7 @@ GPU, đợt tới) hoặc dựng deck.py theo spec, cổng chặn tiếng Việt
 
 Vẽ tại chỗ: mỗi vùng OCR gốc (x,y,w,h, màu đo được) nhận bản dịch; chọn cỡ chữ
 lớn nhất còn vừa bề ngang và chiều cao box (tối thiểu 16px), font theo chiều
-cao (≥4.5% ảnh → bold, không thì regular) trừ khi spec ghi `font`; `gop`
+cao (≥4.5% ảnh → bold, không thì regular) trừ khi spec ghi `font`; `merges`
 [a, b, text] gộp dải vùng a..b thành một khối, wrap nhiều dòng trong khối đó.
 
 Màu chữ MẶC ĐỊNH giữ nguyên màu đo được lúc OCR (gin_prepare.color_text, đo
@@ -35,6 +35,7 @@ import text_bg                                               # noqa: E402
 import submit_common as nc                                       # noqa: E402
 from vietnamese import find_face_mark, drop_mark_forbid               # noqa: E402
 import about_text                                                # noqa: E402
+import deck                                                      # noqa: E402
 from about_text import HAS_MIN                                    # noqa: E402  (giu ten cu cho phan duoi)
 
 # Ti le tuong phan toi thieu (WCAG) giua mau chu va nen — muc "chu lon/dam"
@@ -42,6 +43,33 @@ from about_text import HAS_MIN                                    # noqa: E402  
 # theo _about_block. Duoi muc nay moi doi mau, dung "mac dinh khong doi gi neu
 # khong can" — giu dung thiet ke goc khi van con doc duoc.
 THRESHOLD_WALL_PART = 3.0
+
+# LOW-243: spec.json do Itachi tu viet theo brief. Truoc deploy LOW-247 brief/SOUL/skill day
+# ten Viet; spec cu con bi doc lai nhieu ngay sau ("Lam lai", chay lai sau [LOI]). Doi cu
+# -> moi o DUNG MOT CHO nay (truong layout deck: deck.legacy_slide); co ca hai ten thi ten
+# moi thang. Bang: docs/tu_dien_ten/gin_itachi_keys_v2.json (itachi_spec).
+LEGACY_SLIDE_KEYS = {"nguon": "slide_id", "cach": "mode", "vung": "region_texts", "gop": "merges",
+                     "bg_anh": "use_clean_background"}
+LEGACY_MODE_VALUES = {"tai_cho": "in_place"}
+
+
+def _legacy_entry(muc):
+    if not isinstance(muc, dict):
+        return muc
+    out = deck.legacy_slide({LEGACY_SLIDE_KEYS.get(k, k): v for k, v in muc.items()
+                             if not (k in LEGACY_SLIDE_KEYS and LEGACY_SLIDE_KEYS[k] in muc)})
+    mode = out.get("mode")
+    if isinstance(mode, str) and mode.lower() in LEGACY_MODE_VALUES:
+        out["mode"] = LEGACY_MODE_VALUES[mode.lower()]
+    return out
+
+
+def _legacy_spec(spec):
+    """spec Itachi ten cu hoac moi -> ten moi (LOW-243). Dang la thi tra nguyen."""
+    if not isinstance(spec, dict) or not isinstance(spec.get("slides"), list):
+        return spec
+    return {**spec, "slides": [_legacy_entry(m) for m in spec["slides"]]}
+
 
 # Luat VE (font, co chu, mau, cong tran hop) da chuyen sang about_text.py (ten cu
 # about_text.py, 07/09/2026) de Gin dung chung. Bon ten duoi la loi vao cu, giu
@@ -72,28 +100,28 @@ def _color_hide_whole(color_rgb, nen_vung) -> tuple:
 def about_download_wait(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list:
     """Trả về danh sách lỗi (rỗng = đã vẽ xong ra `out`)."""
     loi = []
-    vung = {str(v["stt"]): v for v in s["vung"]}
-    im = Image.open(s["nen_sach"]).convert("RGB")
+    vung = {str(v["number"]): v for v in s["regions"]}
+    im = Image.open(s["clean_background_path"]).convert("RGB")
     d = ImageDraw.Draw(im)
     da_dung = set()
     khoi = []
-    for g in muc.get("gop") or []:
+    for g in muc.get("merges") or []:
         try:
             a, b, text = int(g[0]), int(g[1]), str(g[2])
         except (TypeError, ValueError, IndexError):
-            loi.append(f"slide {s['id']}: gop phải là [stt_đầu, stt_cuối, \"bản dịch\"]")
+            loi.append(f"slide {s['id']}: merges phải là [stt_đầu, stt_cuối, \"bản dịch\"]")
             continue
         ds = [vung[str(k)] for k in range(a, b + 1) if str(k) in vung]
         if not ds:
-            loi.append(f"slide {s['id']}: gop {a}..{b} không có vùng nào")
+            loi.append(f"slide {s['id']}: merges {a}..{b} không có vùng nào")
             continue
         x0, y0 = min(v["x"] for v in ds), min(v["y"] for v in ds)
         x1, y1 = max(v["x"] + v["w"] for v in ds), max(v["y"] + v["h"] for v in ds)
         khoi.append({"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0, "text": text,
                      "color_rgb": ds[0]["color_rgb"], "font": None, "align": "left",
-                     "h_dong": max(v["h"] for v in ds)})
-        da_dung.update(str(v["stt"]) for v in ds)
-    for k, val in (muc.get("vung") or {}).items():
+                     "line_height": max(v["h"] for v in ds)})
+        da_dung.update(str(v["number"]) for v in ds)
+    for k, val in (muc.get("region_texts") or {}).items():
         if k in da_dung or val is None:
             continue
         v = vung.get(str(k))
@@ -107,14 +135,14 @@ def about_download_wait(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list
             continue
         khoi.append({"x": v["x"], "y": v["y"], "w": v["w"], "h": v["h"], "text": text,
                      "color_rgb": val.get("color_rgb") or v["color_rgb"], "font": val.get("font"),
-                     "align": val.get("align") or "left", "h_dong": v["h"]})
+                     "align": val.get("align") or "left", "line_height": v["h"]})
     if not khoi and not loi:
-        loi.append(f"slide {s['id']}: tai_cho nhưng không có vùng nào được dịch")
+        loi.append(f"slide {s['id']}: in_place nhưng không có vùng nào được dịch")
     # VUNG OCR KHONG CO TRONG SPEC: truoc 06/09/2026 vong tren chi duyet cac
-    # khoa CO trong `muc["vung"]`, nen mot vung vai QUEN khai thi bien mat y het
+    # khoa CO trong `muc["region_texts"]`, nen mot vung vai QUEN khai thi bien mat y het
     # vung vai co y bo (`null`) — chu goc bi xoa, chu dich khong duoc ve, khong
     # mot dong [LOI]. Hai y dinh do phai phan biet duoc.
-    da_khai = set(da_dung) | {str(k) for k in (muc.get("vung") or {})}
+    da_khai = set(da_dung) | {str(k) for k in (muc.get("region_texts") or {})}
     quen = [k for k in vung if str(k) not in da_khai]
     if quen:
         loi.append(f"slide {s['id']}: vùng {', '.join(sorted(quen, key=lambda x: int(x) if str(x).isdigit() else 0))} "
@@ -125,14 +153,14 @@ def about_download_wait(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list
         if not bo_qua_dau and find_face_mark(kh["text"]):
             loi.append(f"slide {s['id']}: tiếng Việt mất dấu: {kh['text'][:50]!r}")
         tran = _ceiling_box(d, kh["text"], kh["w"], kh["h"],
-                         kh["font"] or _font_default(kh["h_dong"], s["h"]))
+                         kh["font"] or _font_default(kh["line_height"], s["h"]))
         if tran:
             loi.append(f"slide {s['id']}: bản dịch {kh['text'][:36]!r} tràn hộp "
                        f"{tran}px kể cả khi đã nhỏ hết cỡ ({HAS_MIN}px) — rút gọn "
                        "câu, hoặc gộp vùng để có chỗ rộng hơn")
         # Mau chu do luc OCR (tren anh GOC) co the khong con du tuong phan voi
         # NEN THAT sau khi LaMa da xoa/ve lai — do lai tren dung pixel se hien
-        # (im la nen_sach, chua ve gi len o day). Chi doi mau khi that su
+        # (im la clean_background_path, chua ve gi len o day). Chi doi mau khi that su
         # khong du, con lai giu nguyen thiet ke goc.
         nen_vung = im.crop((kh["x"], kh["y"], kh["x"] + kh["w"], kh["y"] + kh["h"]))
         kh["color_rgb"], da_doi_mau = _color_hide_whole(_color(kh["color_rgb"]), nen_vung)
@@ -144,7 +172,7 @@ def about_download_wait(s: dict, muc: dict, out: Path, bo_qua_dau: bool) -> list
         return loi
     for kh in khoi:
         _about_block(d, kh["text"], kh["x"], kh["y"], kh["w"], kh["h"],
-                 kh["font"] or _font_default(kh["h_dong"], s["h"]), kh["color_rgb"], kh["align"])
+                 kh["font"] or _font_default(kh["line_height"], s["h"]), kh["color_rgb"], kh["align"])
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, "PNG")
     return []
@@ -164,33 +192,33 @@ def main() -> int:
     if not (wd / "spec.json").exists():
         sys.exit(f"Chưa có spec: {wd / 'spec.json'} — viết theo brief ({wd / 'brief.md'}) rồi chạy lại.")
     try:
-        spec = json.loads((wd / "spec.json").read_text(encoding="utf-8"))
+        spec = _legacy_spec(json.loads((wd / "spec.json").read_text(encoding="utf-8")))
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] spec.json không phải JSON hợp lệ: {type(e).__name__}: {e}")
 
     loi, files, deck_slides, deck_idx = [], [], [], []
     for i, muc in enumerate(spec.get("slides") or [], 1):
-        sid = str(muc.get("nguon") or "")
+        sid = str(muc.get("slide_id") or "")
         s = slides.get(sid)
         if not s:
-            loi.append(f"mục {i}: nguon {sid!r} không có trong bộ (có: {', '.join(slides)})")
+            loi.append(f"mục {i}: slide_id {sid!r} không có trong bộ (có: {', '.join(slides)})")
             continue
-        cach = (muc.get("cach") or "tai_cho").lower()
+        cach = (muc.get("mode") or "in_place").lower()
         out = wd / (f"{state_paths.GIN_RESULT_PREFIX}{sid}.png")
-        if cach == "tai_cho":
+        if cach == "in_place":
             loi += about_download_wait(s, muc, out, a.bo_qua_dau)
             files.append(out)
         elif cach == "deck":
-            ds = {k: v for k, v in muc.items() if k not in ("nguon", "cach", "bg_anh")}
-            if muc.get("bg_anh"):
-                ds["bg_anh"] = s["nen_sach"]
+            ds = {k: v for k, v in muc.items() if k not in ("slide_id", "mode", "use_clean_background")}
+            if muc.get("use_clean_background"):
+                ds["bg_image"] = s["clean_background_path"]
             if ds.get("layout") not in ("statement", "list_steps", "checklist", "grid3", "cover"):
                 loi.append(f"mục {i}: layout {ds.get('layout')!r} không hợp lệ")
             deck_slides.append(ds)
             deck_idx.append(out)
             files.append(out)
         else:
-            loi.append(f"mục {i}: cach phải là \"tai_cho\" hoặc \"deck\"")
+            loi.append(f"mục {i}: mode phải là \"in_place\" hoặc \"deck\"")
     if not files and not loi:
         loi.append("spec không có slide nào")
     if loi:

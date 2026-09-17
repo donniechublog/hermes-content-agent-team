@@ -74,11 +74,11 @@
    "key:toi": 1
   },
   "deck.py": {
-   "key:bg_anh": 2,
+   "key:bg_anh": 1,
    "key:den": 1,
-   "key:ghi_chu": 3,
+   "key:ghi_chu": 1,
    "key:lo": 1,
-   "key:nhan": 2
+   "key:nhan": 1
   },
   "dre_prepare.py": {
    "key:anh": 5,
@@ -107,30 +107,12 @@
    "key:kieu": 7,
    "key:nhan_vat": 3
   },
-  "gin_prepare.py": {
-   "key:anh": 1,
-   "key:cao_net": 4,
-   "key:ghi_chu": 1,
-   "key:gop": 1,
-   "key:muc": 3,
-   "key:nen": 6,
-   "key:nen_rgb": 3,
-   "key:std_nen": 3,
-   "key:vung": 2
-  },
   "gin_submit.py": {
-   "key:anh": 3,
-   "key:buoc": 5,
-   "key:cao_net": 10,
    "key:ep_phang": 1,
-   "key:ghi_chu": 2,
+   "key:ghi_chu": 1,
    "key:giu": 1,
-   "key:gop": 2,
-   "key:nen": 4,
-   "key:std_nen": 1,
-   "key:text_goc": 4,
-   "key:vung": 9,
-   "key:vung_goc": 4,
+   "key:gop": 1,
+   "key:vung": 1,
    "key:xoa_them": 1
   },
   "image_provenance.py": {
@@ -151,25 +133,13 @@
    "key:ti_le": 1,
    "key:trang_pdf": 1
   },
-  "itachi_prepare.py": {
-   "key:anh": 2,
-   "key:bg_anh": 1,
-   "key:cach": 2,
-   "key:gop": 1,
-   "key:khoa": 1,
-   "key:nen_sach": 2,
-   "key:nguon": 2,
-   "key:so_vung_ocr": 1,
-   "key:vung": 7
-  },
   "itachi_submit.py": {
-   "key:bg_anh": 2,
+   "key:bg_anh": 1,
    "key:cach": 1,
    "key:gop": 1,
-   "key:h_dong": 4,
-   "key:nen_sach": 2,
    "key:nguon": 1,
-   "key:vung": 3
+   "key:tai_cho": 1,
+   "key:vung": 1
   },
   "kite_prepare.py": {
    "key:nhan": 1
@@ -242,6 +212,30 @@
   "migrate_find_more.py": {
    "key:da_thu": 1,
    "key:luot": 1
+  },
+  "migrate_gin_itachi_stores.py": {
+   "key:anh": 3,
+   "key:bg_anh": 2,
+   "key:cach": 1,
+   "key:cao_net": 1,
+   "key:den": 1,
+   "key:ep_phang": 1,
+   "key:ghi_chu": 2,
+   "key:giu": 1,
+   "key:gop": 2,
+   "key:khoa": 1,
+   "key:muc": 1,
+   "key:nen": 1,
+   "key:nen_rgb": 1,
+   "key:nen_sach": 1,
+   "key:nguon": 1,
+   "key:nhan": 1,
+   "key:phang": 1,
+   "key:so_vung_ocr": 1,
+   "key:std_nen": 1,
+   "key:tai_cho": 1,
+   "key:vung": 4,
+   "key:xoa_them": 1
   },
   "migrate_scan_stores.py": {
    "key:MOAT_CHAT_LUONG_NEN": 1,

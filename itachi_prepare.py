@@ -6,8 +6,8 @@ mỗi ảnh, script tự làm phần của Gin nếu chưa có (OCR + LaMa → c
 regions.json), rồi in cho vai: chữ tiếng Anh từng vùng theo thứ tự đọc (không cần
 vision), gợi ý cách làm, khung spec cho hai đường:
 
-  - "tai_cho": dịch từng vùng, vẽ đúng vị trí/màu/cỡ chữ gốc (nhãn, tiêu đề
-    ngắn; đoạn nhiều dòng thì gộp các vùng liền nhau bằng `gop`).
+  - "in_place": dịch từng vùng, vẽ đúng vị trí/màu/cỡ chữ gốc (nhãn, tiêu đề
+    ngắn; đoạn nhiều dòng thì gộp các vùng liền nhau bằng `merges`).
   - "deck": thiết kế lại bằng deck.py, 5 layout (statement, list_steps,
     checklist, grid3, cover), nền là clean_background.png.
 
@@ -33,8 +33,8 @@ LAYOUT_HELP = {
     "statement": '{"layout": "statement", "badge": "<tuỳ chọn, vd STEP 1>", "heading": "<câu lớn>", "subs": [{"text": "<dòng phụ>", "col": "white|cream|coral|blue|grey", "bold": false}]}',
     "list_steps": '{"layout": "list_steps", "badge": "<tuỳ chọn>", "serif": "<phần serif nghiêng>", "sans": "<phần sans đậm>", "rows": ["<dòng 1>", "<dòng 2>"], "footer": "<tuỳ chọn>"}',
     "checklist": '{"layout": "checklist", "title1": "<màu 1>", "title2": "<màu 2>", "sub": "<phụ đề>", "items": ["<mục>", "<mục>"], "footer1": "<tuỳ chọn>", "footer2": "<tuỳ chọn>"}',
-    "grid3": '{"layout": "grid3", "badge": "<tuỳ chọn>", "serif": "…", "sans": "…", "sub": "<tuỳ chọn>", "nhan": [{"text": "<nhãn>", "x": <tâm x>, "y": <y>}], "footer": "<tuỳ chọn>"}',
-    "cover": '{"layout": "cover", "tiers": [[["<DÒNG 1>", "<DÒNG 2>"], 150, 90], [["<dòng nhỏ>"], 80, 50]], "ghi_chu": {"text": "<ghi chú tay, tuỳ chọn>", "nghieng": -6, "x": 640}}',
+    "grid3": '{"layout": "grid3", "badge": "<tuỳ chọn>", "serif": "…", "sans": "…", "sub": "<tuỳ chọn>", "labels": [{"text": "<nhãn>", "x": <tâm x>, "y": <y>}], "footer": "<tuỳ chọn>"}',
+    "cover": '{"layout": "cover", "tiers": [[["<DÒNG 1>", "<DÒNG 2>"], 150, 90], [["<dòng nhỏ>"], 80, 50]], "annotation": {"text": "<ghi chú tay, tuỳ chọn>", "tilt": -6, "x": 640}}',
 }
 
 
@@ -45,8 +45,8 @@ def prepare_slide(id_: str) -> dict:
     if not (wd / state_paths.GIN_REGIONS_OCR_FILE).exists():
         img, vung = gb.ocr_region(anh)
         gb.about_preview(img, vung, wd / state_paths.GIN_REGIONS_PREVIEW_FILE)
-        (wd / state_paths.GIN_REGIONS_OCR_FILE).write_text(json.dumps({"anh": str(anh), "id": id_, "w": img.shape[1],
-                                                      "h": img.shape[0], "vung": vung},
+        (wd / state_paths.GIN_REGIONS_OCR_FILE).write_text(json.dumps({"image_path": str(anh), "id": id_, "w": img.shape[1],
+                                                      "h": img.shape[0], "regions": vung},
                                                      ensure_ascii=False, indent=1), encoding="utf-8")
     if not (wd / state_paths.GIN_CLEAN_BACKGROUND_FILE).exists():
         import gin_submit
@@ -56,45 +56,46 @@ def prepare_slide(id_: str) -> dict:
         gin_submit.single(id_, wd, spec)
     d = json.loads((wd / state_paths.GIN_REGIONS_OCR_FILE).read_text(encoding="utf-8"))
     vung = json.loads((wd / state_paths.GIN_REGIONS_FILE).read_text(encoding="utf-8")) if (wd / state_paths.GIN_REGIONS_FILE).exists() else []
-    return {"id": id_, "anh": str(anh), "w": d["w"], "h": d["h"], "nen_sach": str(wd / state_paths.GIN_CLEAN_BACKGROUND_FILE),
-            "vung": vung, "so_vung_ocr": len(d["vung"])}
+    return {"id": id_, "image_path": str(anh), "w": d["w"], "h": d["h"],
+            "clean_background_path": str(wd / state_paths.GIN_CLEAN_BACKGROUND_FILE),
+            "regions": vung, "ocr_region_count": len(d["regions"])}
 
 
 def call_y_way(s: dict) -> str:
-    v = s["vung"]
+    v = s["regions"]
     if not v:
         return "không có chữ: cover/statement trên nền sạch"
     dong_dai = sum(1 for x in v if x["w"] > s["w"] * 0.55)
     if len(v) <= 4 and dong_dai <= 1:
-        return "tai_cho (ít vùng, nhãn/tiêu đề ngắn)"
+        return "in_place (ít vùng, nhãn/tiêu đề ngắn)"
     if dong_dai >= 3:
-        return "deck (đoạn văn nhiều dòng: statement/list_steps), hoặc tai_cho có gop"
-    return "tai_cho nếu vùng rời nhau; deck nếu là đoạn"
+        return "deck (đoạn văn nhiều dòng: statement/list_steps), hoặc in_place có merges"
+    return "in_place nếu vùng rời nhau; deck nếu là đoạn"
 
 
 def write_brief(slides: list, khoa: str, wd: Path) -> str:
     L = [f"# ITACHI — ĐÃ CHUẨN BỊ {len(slides)} slide (khoá bộ: {khoa})",
          "Nền sạch (đã xoá chữ Anh) và vùng chữ gốc đã có sẵn cho từng slide. Bạn chỉ viết chữ Việt.", ""]
     for s in slides:
-        L.append(f"## Slide {s['id']}: {s['w']}x{s['h']} | nền sạch: {s['nen_sach']} | gợi ý: {call_y_way(s)}")
-        if not s["vung"]:
+        L.append(f"## Slide {s['id']}: {s['w']}x{s['h']} | nền sạch: {s['clean_background_path']} | gợi ý: {call_y_way(s)}")
+        if not s["regions"]:
             L.append("  (không có vùng chữ)")
-        for v in s["vung"]:
-            L.append(f"  - v{v['stt']} | {v['ocr_text'][:70]!r} | x={v['x']} y={v['y']} w={v['w']} h={v['h']} | màu {v['color_rgb']}")
+        for v in s["regions"]:
+            L.append(f"  - v{v['number']} | {v['ocr_text'][:70]!r} | x={v['x']} y={v['y']} w={v['w']} h={v['h']} | màu {v['color_rgb']}")
         L.append("")
     L += [f"## Viết spec vào: {wd}/spec.json — một mục cho MỖI slide, giữ thứ tự",
           json.dumps({"slides": [
-              {"nguon": slides[0]["id"], "cach": "tai_cho",
-               "vung": {"1": "<bản dịch vùng 1, có dấu>", "2": None,
+              {"slide_id": slides[0]["id"], "mode": "in_place",
+               "region_texts": {"1": "<bản dịch vùng 1, có dấu>", "2": None,
                         "3": {"text": "<bản dịch>", "font": "bold|regular|serif|condensed|mono", "align": "left|center", "color_rgb": [255, 255, 255]}},
-               "gop": [["<stt đầu>", "<stt cuối>", "<bản dịch cả đoạn, nhiều dòng tự xuống>"]]},
-              {"nguon": "<id slide khác>", "cach": "deck", "layout": "statement", "bg_anh": True,
+               "merges": [["<stt đầu>", "<stt cuối>", "<bản dịch cả đoạn, nhiều dòng tự xuống>"]]},
+              {"slide_id": "<id slide khác>", "mode": "deck", "layout": "statement", "use_clean_background": True,
                "heading": "<câu lớn>", "subs": [{"text": "<dòng phụ>"}]},
           ]}, ensure_ascii=False, indent=1),
-          "tai_cho: khoá là stt vùng (v1→\"1\"); null = bỏ vùng (logo/nhiễu OCR, nền sạch để trống); `gop` gộp "
+          "in_place: khoá là stt vùng (v1→\"1\"); null = bỏ vùng (logo/nhiễu OCR, nền sạch để trống); `merges` gộp "
           "một dải vùng liền nhau (đoạn văn) thành một khối rồi dịch cả đoạn. Màu: script dùng màu đo được; hai "
           "dòng cùng khối mà màu lệch hẳn (một tối một gần trắng) thì ghi color_rgb theo dòng đúng.",
-          "deck: bg_anh true = dùng nền sạch của slide đó; bỏ bg_anh thì nền phẳng (\"bg\": \"cream\" hoặc đen). "
+          "deck: use_clean_background true = dùng nền sạch của slide đó; bỏ use_clean_background thì nền phẳng (\"bg\": \"cream\" hoặc đen). "
           "Trường theo layout:"]
     for k, v in LAYOUT_HELP.items():
         L.append(f"  {k}: {v}")
@@ -116,7 +117,7 @@ def main() -> int:
     slides = [prepare_slide(x) for x in a.ids]
     khoa = slides[0]["id"]
     wd = gb.workdir("itachi", khoa)
-    (wd / state_paths.MANIFEST_FILE).write_text(json.dumps({"khoa": khoa, "slides": slides}, ensure_ascii=False, indent=1),
+    (wd / state_paths.MANIFEST_FILE).write_text(json.dumps({"set_id": khoa, "slides": slides}, ensure_ascii=False, indent=1),
                                   encoding="utf-8")
     brief = write_brief(slides, khoa, wd)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
