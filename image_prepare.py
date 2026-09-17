@@ -75,7 +75,7 @@ from prepare.common import (  # noqa: E402
 from prepare.manifest import (  # noqa: E402
     _article_material, contact_sheet, describe_ranking_image, ranking_brief_line, build_manifest,
 )
-from prepare.source import _summary_from_img_json, load_source      # noqa: E402
+from prepare.source import _summary_from_img_json, load_source, set_story_text      # noqa: E402
 from prepare.vision import _seen_image, description_image                  # noqa: E402
 from prepare.download_filter import _save_crop                          # noqa: E402
 from prepare.fallback_rounds import (  # noqa: E402
@@ -118,6 +118,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     # tham so — nen phai dat gia tri TRUOC khi chung chay, khong phai sau. `tom`
     # chi doc `.img.json` tren dia (`_summary_from_img_json`), khong dung gi tu
     # `load_source`/browser nen doi len day an toan.
+    set_story_text("")            # LOW-222: xoa than bai cua draft truoc (neu co) truoc moi vong
     tom = _summary_from_img_json(draft_id)
     # NGUONG DI THEO VAI (su co 10/09/2026). Truoc day dong nay la
     # `carousel.FLAGSHIP_MIN if flagship else carousel.MIN_SLIDE` — engine
@@ -150,6 +151,9 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         bp = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
         if not khong_browser:
             bp, trang = _take_from_browser(trang, wd, nguon, nguon_path, phien=phien)
+        # LOW-222: than bai cua tin la bang chung tach ten rieng cho MOI vong sau
+        # (Commons, Yandex, bao thuc the, thuong hieu, cau hoi vision).
+        set_story_text("\n".join([bp.get("chu") or "", tom.get("summary") or ""]))
         xhs, tin_xep_hang = _capture_ranking(title, nguon, tom, link, meta, bp, wd,
                                            khong_browser, phien=phien)
         anh = _gather_and_download_image(title, link, nguon_path, nguon, trang, bp, wd, xhs)
