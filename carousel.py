@@ -280,8 +280,17 @@ def _stack_if_can(muc, nhan, stem):
     from PIL.PngImagePlugin import PngInfo
     _meta = PngInfo()
     _meta.add_text("nguon_dung", "ghep_doc")
-    card.stack_read(ds).save(ra, "PNG", pnginfo=_meta)
+    stacked = card.stack_read(ds)
+    stacked.save(ra, "PNG", pnginfo=_meta)
     muc["image"] = str(ra)
+    # LOW-215: vi tri anh CUOI trong khung sau khi _body_image dan full be ngang
+    # (cat giua doc neu cao hon H) — de cong sau do anh do con ro bao nhieu.
+    last = Image.open(ds[-1])
+    scale = W / stacked.width
+    last_h = round(last.height * stacked.width / last.width * scale)
+    total_h = round(stacked.height * scale)
+    crop_top = (total_h - H) // 2 if total_h > H else 0
+    muc["_stack_last"] = (total_h - last_h - crop_top, last_h)
 
 
 def _ramp_mask(top_y, full_y, hi=255, ease=1.4):
@@ -313,9 +322,40 @@ def _measure_region_text(canvas, y0, y1):
 
 CLUTTERED_BG_ODD = 40          # nen dac bat dau cach dong chu dau bao nhieu px phia tren
 CLUTTERED_BG_SPREAD = 180        # dai smoothstep toi da tu anh sang nen dac
+# LOW-215 (Ong Chu 17/09/2026, hai slide Claude Cowork: "phan nen chu qua lon va
+# tho kech, ko theo tieu chi"). Do that: khoang lang gan nhat phia tren chu nam
+# o MEP NOI hai anh ghep (y=678) -> nen DEN TRON phu 50% khung, anh duoi bi che
+# 608/608px. Tu nay o slide than:
+#   - phan TOI (mau nen) khong bao gio cao qua SOLID_BG_MAX_SHARE khung;
+#   - phan tu khoang lang xuong toi day do chi LAM MO MANH (BG_BLUR) — chu in
+#     san van tan ra (dung y LOW-47) nhung anh doc ra van la anh, khong thanh
+#     mot khoi den;
+#   - phan toi la anh mo phu mau nen SOLID_BG_TINT, khong phai den tron (luat
+#     04/09: nen khong bao gio la den tron).
+SOLID_BG_MAX_SHARE = 0.30
+SOLID_BG_TINT = 232              # 0..255: do dac cua mau nen phu len ban mo
+SOLID_BG_DARK_SPREAD = 120       # dai chuyen cua phan toi
+# Cap anh ghep doc co anh RO duoi nen bi phu (mo/toi) gan het thi anh do la
+# vo ich va doc ra hai manh: chan, bat vai doi thu tu hoac dung anh khac.
+STACK_BOTTOM_VISIBLE_MIN = 0.35
 
 
-def _background_solid_below_text(canvas, text_top):
+def _smoothstep_mask(top, full):
+    """Mat na doc 0 tren `top`, smoothstep len 255 tai `full`, giu 255 ben duoi."""
+    m = Image.new("L", (1, H), 0)
+    for y in range(H):
+        if y >= full:
+            a = 255
+        elif y > top:
+            t = (y - top) / max(1, full - top)
+            a = 255 * t * t * (3 - 2 * t)
+        else:
+            a = 0
+        m.putpixel((0, y), int(a))
+    return m.resize((W, H))
+
+
+def _background_solid_below_text(canvas, text_top, max_share=None):
     """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
     cua text phai lam cho nghiem chinh, dung nham nho"). Lop mo+tinh cua
     `_layer_if_can` bi tran DARK_MAX (~55%) va chi mo ban kinh BLUR_RADIUS —
@@ -323,22 +363,33 @@ def _background_solid_below_text(canvas, text_top):
     lo lem nhem sau cau quote. O day: nen DAC mau BG tu khoang lang gan nhat
     phia tren dong chu (`card._timestamp_background_solid`, dung chung voi the Ethan) xuong
     day; dai smoothstep nam trong khoang lang nen khong cat ngang dong chu in
-    san nao, khong co duong ke ngang (IMAGE_RULES muc 7.1)."""
+    san nao, khong co duong ke ngang (IMAGE_RULES muc 7.1).
+
+    `max_share` (LOW-215, slide than): tach lam hai lop — MO tu khoang lang,
+    TOI chi tu `H * (1 - max_share)` tro xuong (khong bao gio duoi dong chu dau
+    tru CLUTTERED_BG_ODD). Bia giu nguyen hanh vi cu (khong truyen).
+
+    Tra ve y dau tien anh bi dong vao (mo hoac toi)."""
     dac, top = card._timestamp_background_solid(canvas, text_top - CLUTTERED_BG_ODD, CLUTTERED_BG_SPREAD)
-    m = Image.new("L", (1, H), 0)
-    for y in range(H):
-        if y >= dac:
-            a = 255
-        elif y > top:
-            t = (y - top) / max(1, dac - top)
-            a = 255 * t * t * (3 - 2 * t)
-        else:
-            a = 0
-        m.putpixel((0, y), int(a))
-    canvas.paste(Image.new("RGB", (W, H), BG), (0, 0), m.resize((W, H)))
+    if max_share is None:
+        canvas.paste(Image.new("RGB", (W, H), BG), (0, 0), _smoothstep_mask(top, dac))
+        return top
+    blurred = canvas.convert("RGB").filter(ImageFilter.GaussianBlur(BG_BLUR))
+    # smoothstep dat ~90% truoc diem full khoang SPREAD/4 — day diem full xuong
+    # chung ay de mat thay nen dac bat dau dung o tran max_share, khong som hon.
+    dark_full = max(dac, min(H - int(H * max_share) + SOLID_BG_DARK_SPREAD // 4,
+                             int(text_top) - CLUTTERED_BG_ODD))
+    dark_top = max(top, dark_full - SOLID_BG_DARK_SPREAD)
+    # 1) mo manh tu khoang lang: chu in san tan ra, van la anh
+    canvas.paste(blurred, (0, 0), _smoothstep_mask(top, dac))
+    # 2) toi: ban mo phu mau nen SOLID_BG_TINT, chi trong tran max_share
+    lop = Image.composite(Image.new("RGB", (W, H), BG), blurred,
+                          Image.new("L", (W, H), SOLID_BG_TINT))
+    canvas.paste(lop, (0, 0), _smoothstep_mask(dark_top, dark_full))
+    return min(top, dark_top)
 
 
-def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False):
+def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, max_share=None):
     """Them mot lop mo+tinh NGAY TAI text_top — CHI KHI can (xem nguyen tac o
     dau file). Mac dinh khong lam gi: FG (co dinh theo NEN ca bo) da du tuong
     phan thi giu nguyen anh.
@@ -349,8 +400,7 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False):
     luon giu phang tu `text_top + VEIL_SPAN` tro xuong H, khong phu thuoc
     `text_bottom`."""
     if image_cluttered:
-        _background_solid_below_text(canvas, text_top)
-        return
+        return _background_solid_below_text(canvas, text_top, max_share)
     sang, variance = _measure_region_text(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
         thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "toi": qua sang la thieu
@@ -426,11 +476,13 @@ def build_body(img_path, text, handle, out, cluttered=False):
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
     # phan voi FG — xem _layer_if_can. Khong bao gio bat dau truoc text_top.
-    _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered)
+    touched = _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered,
+                            max_share=SOLID_BG_MAX_SHARE)
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
     canvas.convert("RGB").save(out, "PNG")
+    return touched
 
 
 # ---- Slide than dang quote (tuy slide) ------------------------------------
@@ -488,7 +540,8 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
 
     # Chi them lop khi do THAT can (xem _layer_if_can) — neo dung tai dinh khung,
     # khong con chom truoc 24px nhu ban cu.
-    _layer_if_can(canvas, base, max(0, frame_top), H, image_cluttered=cluttered)
+    touched = _layer_if_can(canvas, base, max(0, frame_top), H, image_cluttered=cluttered,
+                            max_share=SOLID_BG_MAX_SHARE)
 
     # Cac dong quote.
     qy = first_line_top
@@ -516,6 +569,7 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
         d.text(((W - lw_ln) / 2, ay), ln, font=f_at, fill=OPEN)
         ay += at_lh
     canvas.convert("RGB").save(out, "PNG")
+    return touched
 
 
 CATEGORY_CALL_Y = ["MODEL RELEASE", "MODEL UPDATE", "PRODUCT", "RESEARCH",
@@ -703,6 +757,24 @@ def _gate_overflow(slides):
     return loi
 
 
+def _gate_stack_last_hidden(nhan, muc, touched):
+    """LOW-215: slide ghep doc ma anh CUOI bi nen chu (mo/toi) phu gan het —
+    do that slide Claude Cowork: A29 ro 0/608px, chi con mot dai mong tren mep
+    den, doc ra hai manh. `touched` = y dau tien nen chu dong vao (None = khong
+    phu gi). Tra ve chuoi loi hoac ""."""
+    geo = muc.get("_stack_last")
+    if not geo or touched is None:
+        return ""
+    y0, h = geo
+    visible = max(0, min(touched, H, y0 + h) - max(0, y0))
+    if h <= 0 or visible / h >= STACK_BOTTOM_VISIBLE_MIN:
+        return ""
+    return (f"{nhan}: anh ghep duoi chi con ro {visible}/{h}px "
+            f"({round(visible / h * 100)}% < {round(STACK_BOTTOM_VISIBLE_MIN * 100)}%) — "
+            "nen chu cua anh roi phu gan het. Dat anh ROI len TREN trong \"images\", "
+            "hoac dung mot anh sach thay cho cap ghep.")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Dung carousel nhieu slide (Dre)")
     ap.add_argument("--spec", required=True,
@@ -820,14 +892,22 @@ def main():
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
                 category=cover["category"], cluttered=bool(cover.get("cluttered")))
     paths = [str(out)]
+    loi_ghep = []
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
         if s.get("quote"):
-            build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,
-                             cluttered=bool(s.get("cluttered")))
+            touched = build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,
+                                       cluttered=bool(s.get("cluttered")))
         else:
-            build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")))
+            touched = build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")))
         paths.append(p)
+        loi = _gate_stack_last_hidden(f"slide {i}", s, touched)
+        if loi:
+            loi_ghep.append(loi)
+    if loi_ghep:
+        for e in loi_ghep:
+            print(f"[LOI] {e}", file=sys.stderr)
+        sys.exit("Carousel co anh ghep bi nen chu che gan het. Sua theo huong dan o tren.")
 
     print(f"da dung {len(paths)} slide:")
     for p in paths:
