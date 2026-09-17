@@ -1,0 +1,57 @@
+{
+  "_status": "ĐÃ DUYỆT 17/09/2026 (LOW-231): chỉ đổi TÊN tệp/thư mục cấp state + quét + Gin; khoá bên trong các kho tách ticket theo phân hệ; tàn dư đóng gói tar rồi gỡ khỏi state.",
+  "brand_files": {
+    "nguon_{id}.json": "article_source_{id}.json",
+    "anh_da_dung.jsonl": "used_images.jsonl",
+    "edu_theme_da_dung.jsonl": "used_edu_themes.jsonl",
+    "dat_bai.json": "article_request_counts.json",
+    "da_bao_tien_do.json": "reported_progress.json",
+    "da_bao_treo.json": "reported_stalled.json",
+    "tin_ket_qua_task.json": "task_result_messages.json",
+    "lam_lai_cho.json": "redo_waiting.json",
+    "moat_day_lai.json": "moat_republish_queue.json",
+    "bao_cao_mid.{role}.json": "report_message_id.{role}.json",
+    "bat_buoc_{role}.json": "required_{role}.json"
+  },
+  "brand_dirs": {
+    "quet": "scan",
+    "tai_ve": "downloads",
+    "nhat_ky": "journal"
+  },
+  "scan_files": {
+    "baocao.txt": "report.txt",
+    "ds.json": "list.json",
+    "quet.json": "scan.json",
+    "khong_co.txt": "none_found.txt",
+    "thu_manifest.json": "trial_manifest.json"
+  },
+  "journal_files": {
+    "ghi_chu.jsonl": "notes.jsonl"
+  },
+  "router_9": {
+    "ket_noi_{date}.jsonl": "connections_{date}.jsonl",
+    "nhat_ky": "journal"
+  },
+  "gin_files": {
+    "vung.json": "regions.json",
+    "vung_ocr.json": "regions_ocr.json",
+    "vung_preview.png": "regions_preview.png",
+    "nen_sach.png": "clean_background.png",
+    "ket_qua_{n}.png": "result_{n}.png",
+    "{id}_nen_sach.png": "{id}_clean_background.png"
+  },
+  "leftovers_archived": {
+    "state_root_before_brand_split": ["nguon_*.json", "finn_candidates_*", "nova_candidates_*", "vera_candidates_*",
+                                      "bob_job*.txt", "da_bao_chan.json", "business_seen.json", "donniechu_posted.json",
+                                      "offset.txt", "model_health.json", "approve.log", "emoji_deck.json",
+                                      "emoji_deck.lock", "edu_theme_da_dung.jsonl", "nhat_ky/", "telegram_sent/",
+                                      "telegram_incoming/"],
+    "brand_level": ["da_bao_chan.json (không code nào dùng)", "{id}_mask_debug.png", "{id}_nen_sach.png", "_kite_probe.py"],
+    "any_level": ["*.bak-truoc-*"],
+    "draft_dirs": ["*.py", "*.truoc_low*.json", "chuan_bi.low*.log", "bao_cao.txt", "draft_thu.txt",
+                   "tu_lieu_bo_sung.txt", "thieu_anh.md", "chu_de/"]
+  },
+  "_kept": ["state/topics*.json (cấu hình)", "state/prepare.N.lock", "state/golden/", "state/skill_lessons/",
+            "state/9router/ (monitor_9router ghi gốc)", "state/model_audition.json", "state/cron_audit.json",
+            "state/migrate_state_paths_*.journal.jsonl"]
+}

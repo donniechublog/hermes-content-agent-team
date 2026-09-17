@@ -1270,7 +1270,7 @@ def _texts(sl):
 
 # ---- chon theme / hero ------------------------------------------------------
 def _journal_theme() -> Path:
-    """state/<brand>/edu_theme_da_dung.jsonl — so theme/hero da dung gan day.
+    """state/<brand>/used_edu_themes.jsonl — so theme/hero da dung gan day.
 
     Truoc 06/09/2026 tep nay nam o `state/` GOC, tuc dung chung cho ca hai
     brand. Kite gio chay cho ca hai, nen bo "4 bo gan nhat" tron lan: mot bo
@@ -1281,7 +1281,8 @@ def _journal_theme() -> Path:
     CT_BRAND luc CHAY, con hang thi chot luc import.
     """
     import env_load
-    return env_load.state_dir() / "edu_theme_da_dung.jsonl"
+    import state_paths
+    return env_load.state_dir() / state_paths.USED_EDU_THEMES_FILE
 
 
 def _theme_near_bottom(n=4):

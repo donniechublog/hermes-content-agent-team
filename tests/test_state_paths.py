@@ -13,8 +13,16 @@ Giữ ba điều:
      KHÔNG phải đường dẫn vẫn hợp lệ: `a.get("source") == "khai_niem"` là giá trị
      nguồn ảnh, không phải thư mục.
 
+LOW-231 mở rộng (2) và (3) cho tệp/thư mục CẤP STATE (`state/<brand>/…`, quét, Gin,
+nhật ký, 9router) theo bảng docs/tu_dien_ten/state_files_v2.json: hằng phải khớp
+bảng, mỗi dòng bảng phải có hằng, và tên cũ (`nguon_<id>.json`, `anh_da_dung.jsonl`,
+`quet/`, `tai_ve/`, `vung_ocr.json`…) không được nằm ở chỗ dựng đường dẫn. Thư mục
+`nhat_ky/` Ở GỐC REPO (nhật ký sự cố) không phải state — không tệp .py nào trong
+phạm vi quét dựng đường dẫn tới nó, nên không cần ngoại lệ.
+
 Ngoài phạm vi quét: shim LOW-50 (`*chuan_bi*.py`, gói `chuan_bi/`), chính bảng đổi
-tên (`state_path_migration.py`, `migrate_state_paths.py`), `docs/`, `tests/`.
+tên (`state_path_migration.py`, `migrate_state_paths.py`, `migrate_state_files.py`),
+`docs/`, `tests/`.
 
 Chạy:  venv/bin/python tests/test_state_paths.py
 """
@@ -30,6 +38,8 @@ sys.path.insert(0, str(ROOT))
 import state_paths                                            # noqa: E402
 
 TABLE = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_paths_v2.json").read_text(encoding="utf-8"))
+TABLE_231 = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_files_v2.json").read_text(encoding="utf-8"))
+SECTIONS_231 = ("brand_files", "brand_dirs", "scan_files", "journal_files", "router_9", "gin_files")
 
 
 # ------------------------------------------------------------ 1. prepare_root
@@ -110,9 +120,10 @@ def test_constants_match_approved_table():
     # them_{n} -> extra_{n} di qua extra_dir
     assert dirs["them_{n}"] == "extra_{n}" and state_paths.extra_dir(Path("w"), 3).name == "extra_3"
     # moi hang chuoi IN HOA deu da duoc doi chieu — hang moi phai vao bang truoc
+    # (hang LOW-231 doi chieu voi state_files_v2.json o test ben duoi, cung do chat)
     hang = {k for k, v in vars(state_paths).items() if k.isupper() and isinstance(v, str)}
-    thieu = sorted(hang - set(pairs))
-    assert not thieu, f"hang chua doi chieu voi state_paths_v2.json: {thieu}"
+    thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()})
+    assert not thieu, f"hang chua doi chieu voi state_paths_v2.json / state_files_v2.json: {thieu}"
 
 
 def test_every_draft_file_and_dir_in_table_has_a_constant():
@@ -122,6 +133,63 @@ def test_every_draft_file_and_dir_in_table_has_a_constant():
     moi += [v for k, v in TABLE["dirs"].items() if "{" not in k]
     thieu = sorted(set(moi) - gia_tri)
     assert not thieu, f"ten moi trong bang ma state_paths khong co hang: {thieu}"
+
+
+def _rows_231() -> dict:
+    """{(muc, ten CU trong bang): (ten MOI dung lai tu hang, ten hang)} — cho giu cho
+    `{id}`/`{role}`/`{date}`/`{n}` giu nguyen chu nhu bang de so bang ==."""
+    sp = state_paths
+    return {
+        ("brand_files", "nguon_{id}.json"): (f"{sp.ARTICLE_SOURCE_PREFIX}{{id}}.json", "ARTICLE_SOURCE_PREFIX"),
+        ("brand_files", "anh_da_dung.jsonl"): (sp.USED_IMAGES_FILE, "USED_IMAGES_FILE"),
+        ("brand_files", "edu_theme_da_dung.jsonl"): (sp.USED_EDU_THEMES_FILE, "USED_EDU_THEMES_FILE"),
+        ("brand_files", "dat_bai.json"): (sp.ARTICLE_REQUEST_COUNTS_FILE, "ARTICLE_REQUEST_COUNTS_FILE"),
+        ("brand_files", "da_bao_tien_do.json"): (sp.REPORTED_PROGRESS_FILE, "REPORTED_PROGRESS_FILE"),
+        ("brand_files", "da_bao_treo.json"): (sp.REPORTED_STALLED_FILE, "REPORTED_STALLED_FILE"),
+        ("brand_files", "tin_ket_qua_task.json"): (sp.TASK_RESULT_MESSAGES_FILE, "TASK_RESULT_MESSAGES_FILE"),
+        ("brand_files", "lam_lai_cho.json"): (sp.REDO_WAITING_FILE, "REDO_WAITING_FILE"),
+        ("brand_files", "moat_day_lai.json"): (sp.MOAT_REPUBLISH_QUEUE_FILE, "MOAT_REPUBLISH_QUEUE_FILE"),
+        ("brand_files", "bao_cao_mid.{role}.json"): (sp.REPORT_MESSAGE_ID_FILE.format("{role}"), "REPORT_MESSAGE_ID_FILE"),
+        ("brand_files", "bat_buoc_{role}.json"): (sp.REQUIRED_FILE.format("{role}"), "REQUIRED_FILE"),
+        ("brand_dirs", "quet"): (sp.SCAN_DIR, "SCAN_DIR"),
+        ("brand_dirs", "tai_ve"): (sp.DOWNLOADS_DIR, "DOWNLOADS_DIR"),
+        ("brand_dirs", "nhat_ky"): (sp.JOURNAL_DIR, "JOURNAL_DIR"),
+        ("scan_files", "baocao.txt"): (sp.SCAN_REPORT_FILE, "SCAN_REPORT_FILE"),
+        ("scan_files", "ds.json"): (sp.SCAN_LIST_FILE, "SCAN_LIST_FILE"),
+        ("scan_files", "quet.json"): (sp.SCAN_RESULT_FILE, "SCAN_RESULT_FILE"),
+        ("scan_files", "khong_co.txt"): (sp.SCAN_NONE_FOUND_FILE, "SCAN_NONE_FOUND_FILE"),
+        ("scan_files", "thu_manifest.json"): (sp.SCAN_TRIAL_MANIFEST_FILE, "SCAN_TRIAL_MANIFEST_FILE"),
+        ("journal_files", "ghi_chu.jsonl"): (sp.JOURNAL_NOTES_FILE, "JOURNAL_NOTES_FILE"),
+        ("router_9", "ket_noi_{date}.jsonl"): (f"{sp.ROUTER_CONNECTIONS_PREFIX}{{date}}.jsonl", "ROUTER_CONNECTIONS_PREFIX"),
+        ("router_9", "nhat_ky"): (sp.JOURNAL_DIR, "JOURNAL_DIR"),
+        ("gin_files", "vung.json"): (sp.GIN_REGIONS_FILE, "GIN_REGIONS_FILE"),
+        ("gin_files", "vung_ocr.json"): (sp.GIN_REGIONS_OCR_FILE, "GIN_REGIONS_OCR_FILE"),
+        ("gin_files", "vung_preview.png"): (sp.GIN_REGIONS_PREVIEW_FILE, "GIN_REGIONS_PREVIEW_FILE"),
+        ("gin_files", "nen_sach.png"): (sp.GIN_CLEAN_BACKGROUND_FILE, "GIN_CLEAN_BACKGROUND_FILE"),
+        ("gin_files", "ket_qua_{n}.png"): (f"{sp.GIN_RESULT_PREFIX}{{n}}.png", "GIN_RESULT_PREFIX"),
+        ("gin_files", "{id}_nen_sach.png"): (f"{{id}}_{sp.GIN_CLEAN_BACKGROUND_FILE}", "GIN_CLEAN_BACKGROUND_FILE"),
+    }
+
+
+def test_low231_constants_match_approved_table():
+    rows = _rows_231()
+    sai = {f"{muc}/{cu}": (moi, TABLE_231[muc].get(cu)) for (muc, cu), (moi, _) in rows.items()
+           if TABLE_231[muc].get(cu) != moi}
+    assert not sai, f"hang LOW-231 lech state_files_v2.json (dung tu hang, bang): {sai}"
+    # moi dong cua bang deu co hang doi chieu — dong moi trong bang ma quen hang thi hong
+    bang = {(muc, cu) for muc in SECTIONS_231 for cu in TABLE_231[muc]}
+    thieu = sorted(bang - set(rows))
+    assert not thieu, f"dong state_files_v2.json chua co hang trong state_paths: {thieu}"
+    thua = sorted(set(rows) - bang)
+    assert not thua, f"doi chieu dong khong co trong bang: {thua}"
+    ten_hang = {ten for _, ten in rows.values()}
+    khong_co = sorted(t for t in ten_hang if not isinstance(getattr(state_paths, t, None), str))
+    assert not khong_co, f"hang khong ton tai trong state_paths: {khong_co}"
+
+
+def test_article_source_file_uses_table_name():
+    moi = TABLE_231["brand_files"]["nguon_{id}.json"].replace("{id}", "d1")
+    assert state_paths.article_source_file(Path("/s/blog"), "d1") == Path("/s/blog") / moi
 
 
 # ------------------------------------------------------------ 3. quet production
@@ -140,8 +208,23 @@ OLD_FILE_SHAPES = [
     re.compile(r"^them_(\d+|\x00)$"),               # them_<n>
 ]
 
+# LOW-231: ten CU cap state. Ten phang (khong co cho giu {…}) sai o cho duong dan, ca
+# thu muc (quet/tai_ve/nhat_ky cua state — `nhat_ky/` goc repo khong .py nao dung).
+_PLAIN_231 = {cu for muc in SECTIONS_231 for cu in TABLE_231[muc] if "{" not in cu}
+OLD_NAMES |= _PLAIN_231
+OLD_FILE_SHAPES += [
+    re.compile(r"(^|/)(" + "|".join(re.escape(cu) for cu in sorted(_PLAIN_231) if "." in cu) + r")$"),
+    re.compile(r"(^|/)nguon_.*\.json$"),            # nguon_<id>.json, nguon_*.json
+    re.compile(r"(^|/)bao_cao_mid\."),              # bao_cao_mid.<role>.json
+    re.compile(r"(^|/)bat_buoc_.*\.json$"),         # bat_buoc_<role>.json
+    re.compile(r"(^|/)ket_noi_.*\.jsonl$"),         # 9router/ket_noi_<date>.jsonl
+    re.compile(r"(^|/)ket_qua_.*\.png$"),           # Gin ket_qua_<n>.png
+    re.compile(r"_nen_sach\.png$"),                 # <id>_nen_sach.png
+    re.compile(r"_da_dung\.jsonl$"),                # glob("*_da_dung.jsonl")
+]
+
 PATH_FUNCS = {"open", "Path", "PurePath", "PosixPath", "glob", "rglob", "joinpath", "join", "with_name"}
-EXCLUDE_NAMES = {"state_path_migration.py", "migrate_state_paths.py"}
+EXCLUDE_NAMES = {"state_path_migration.py", "migrate_state_paths.py", "migrate_state_files.py"}
 
 
 def _production_files():
@@ -258,6 +341,58 @@ def test_scanner_catches_old_path_names_and_allows_non_path_use():
     ]
     for src in must_allow:
         assert not scan_source(src), f"quet bat oan: {src} -> {scan_source(src)}"
+
+
+def test_scanner_catches_low231_state_names():
+    must_catch = [
+        'p = STATE_DIR / f"nguon_{draft_id}.json"',
+        'p = state / "nguon_x.json"',
+        'for f in state.glob("nguon_*.json"): pass',
+        'p = env_load.state_dir() / "anh_da_dung.jsonl"',
+        'p = env_load.state_dir() / "edu_theme_da_dung.jsonl"',
+        'for f in d.glob("*_da_dung.jsonl"): pass',
+        'Q = STATE_DIR / "dat_bai.json"',
+        'Q = STATE_DIR / "da_bao_tien_do.json"',
+        'Q = STATE_DIR / "da_bao_treo.json"',
+        'Q = STATE_DIR / "tin_ket_qua_task.json"',
+        'Q = STATE_DIR / "lam_lai_cho.json"',
+        'Q = STATE_DIR / "moat_day_lai.json"',
+        'm = STATE_DIR / f"bao_cao_mid.{vai}.json"',
+        'b = env_load.state_dir() / f"bat_buoc_{vai}.json"',
+        'wd = env_load.state_dir() / "quet" / ten',
+        'dest = env_load.state_dir() / "tai_ve" / ma',
+        'j = env_load.state_dir() / "nhat_ky"',
+        'j = DIRECTORY / "nhat_ky" / "ghi_chu.jsonl"',
+        'q = wd / "quet.json"',
+        'b = wd / "baocao.txt"',
+        'tep = "picks.json" if finn else "ds.json"',
+        'x = f"{wd}/ds.json"',
+        'open(wd / "khong_co.txt", "w")',
+        'o = wd / "thu_manifest.json"',
+        'p = DIRECTORY / f"ket_noi_{ngay}.jsonl"',
+        'd = json.loads((wd / "vung_ocr.json").read_text())',
+        'v = wd / "vung.json"',
+        'about_preview(img, vung, wd / "vung_preview.png")',
+        'n = wd / "nen_sach.png"',
+        'o = wd / f"ket_qua_{id_}.png"',
+        'o = state / f"{id_}_nen_sach.png"',
+    ]
+    for src in must_catch:
+        assert scan_source(src), f"quet bo sot (LOW-231): {src}"
+    must_allow = [
+        'k = d.get("nguon_dung")',
+        'nguon_path = state_paths.article_source_file(STATE_DIR, draft_id)',
+        'x = {"nhat_ky_9router": nk, "ghi_chu": "", "loi_ket_noi": []}',
+        'print(f"[nhat_ky] loi doc DB — {loi}")',
+        'return {"nen_sach": str(wd / state_paths.GIN_CLEAN_BACKGROUND_FILE)}',
+        'r = required.file("vera").name',
+        'wd = env_load.state_dir() / state_paths.SCAN_DIR / ten',
+        'q = wd / state_paths.SCAN_RESULT_FILE',
+        'o = wd / f"{state_paths.GIN_RESULT_PREFIX}{id_}.png"',
+        'def f():\n    """doc state/<brand>/anh_da_dung.jsonl va quet/ds.json"""\n',
+    ]
+    for src in must_allow:
+        assert not scan_source(src), f"quet bat oan (LOW-231): {src} -> {scan_source(src)}"
 
 
 def test_production_has_no_old_state_path_names():

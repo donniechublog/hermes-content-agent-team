@@ -10,7 +10,7 @@ HAI PHAN, tach bach co chu y:
   - Phan TU DONG: doc lai tu executions.db, kanban.db, state/*.json, git log.
     Sinh lai duoc bat cu luc nao, chay lai khong hong gi.
   - Phan GHI CHU TAY: van de gap, bug o dau, sua the nao. Thu nay khong suy ra
-    duoc tu du lieu. Luu rieng o ghi_chu.jsonl (chi noi them, khong sua) roi
+    duoc tu du lieu. Luu rieng o notes.jsonl (chi noi them, khong sua) roi
     ghep vao khi dung trang. Nho vay sinh lai phan tu dong KHONG BAO GIO xoa
     mat ghi chu — day la ly do khong luu thang vao tep .md.
 
@@ -34,11 +34,12 @@ from pathlib import Path
 
 import env_load
 import hermes_adapter
+import state_paths
 
 ROOT = env_load.ROOT
 HERMES = env_load.hermes_home()
-DIRECTORY = env_load.state_dir() / "nhat_ky"
-NOTES = DIRECTORY / "ghi_chu.jsonl"
+DIRECTORY = env_load.state_dir() / state_paths.JOURNAL_DIR
+NOTES = DIRECTORY / state_paths.JOURNAL_NOTES_FILE
 VN = timezone(timedelta(hours=7))
 
 TYPE = {"bug": "🐞 Bug", "fix": "🔧 Đã sửa", "van-de": "⚠️ Vấn đề",
@@ -289,7 +290,7 @@ def use_page(ngay: str) -> str:
     ERROR_READ.clear()
     L = [f"# Nhật ký {ngay}", "",
          f"*Dựng lúc {datetime.now(VN).strftime('%H:%M %d/%m')} (giờ VN). "
-         "Phần tự động sinh lại được; ghi chú tay lưu riêng ở `ghi_chu.jsonl`.*", ""]
+         "Phần tự động sinh lại được; ghi chú tay lưu riêng ở `notes.jsonl`.*", ""]
 
     gc = read_notes(ngay)
     if gc:

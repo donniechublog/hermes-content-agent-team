@@ -98,9 +98,9 @@ def bat_buoc_tam(tmp, **danh_sach):
     cu = bb.file
     d = Path(tmp)
     for vai, muc in danh_sach.items():
-        (d / f"bat_buoc_{vai}.json").write_text(json.dumps(muc, ensure_ascii=False),
+        (d / f"required_{vai}.json").write_text(json.dumps(muc, ensure_ascii=False),
                                                 encoding="utf-8")
-    bb.file = lambda vai: d / f"bat_buoc_{vai}.json"
+    bb.file = lambda vai: d / f"required_{vai}.json"
     try:
         yield d
     finally:

@@ -600,7 +600,7 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
                 f"(task {rid})"), rid
     return f"🔄 Đã giao làm lại (lần {n}) — {ten} sẽ dựng ảnh khác (task {rid})", rid
 
-# Doc-sua-ghi lam_lai_cho.json dien ra o HAI thread: nut Lam lai chay nen
+# Doc-sua-ghi redo_waiting.json dien ra o HAI thread: nut Lam lai chay nen
 # (_run_background) con han 10 phut quet o thread poll. Khoa nay chi om cac doan doc-
 # ghi ngan (mot tep JSON nho), KHONG bao gio om lenh mang hay kanban_create.
 _KHOA_LAM_LAI = threading.Lock()
@@ -1272,7 +1272,7 @@ def handle_callback(token, channel, cq):
 
     # `draft_id` di THANG vao duong dan tep (DRAFTS / f"{draft_id}.json") va
     # `mark_draft` ghi lai tep do. Chuoi nay den tu client, khong phai tu ta:
-    # mot client tu bien gui "ok:../../state/blog/lam_lai_cho" la doc/ghi
+    # mot client tu bien gui "ok:../../state/blog/redo_waiting" la doc/ghi
     # `status` vao mot tep JSON bat ky cua dich vu. `_draft_id` sinh ra bang
     # slugify nen moi id THAT deu khop mau duoi day.
     if draft_id and not _DRAFT_ID_HOP_LE.match(draft_id):
@@ -1456,6 +1456,6 @@ def _fix_story_go_button(token, msg, note):
         call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id,
              reply_markup={"inline_keyboard": []})
 
-REDO_WAIT = STATE_DIR / "lam_lai_cho.json"  # {draft_id: {draft_id, thread_id, ts, ...}} — dang cho ly do
+REDO_WAIT = STATE_DIR / state_paths.REDO_WAITING_FILE  # {draft_id: {draft_id, thread_id, ts, ...}} — dang cho ly do
 
 REDO_LIMIT = 600                              # giay cho Ong Chu neu so slide + ly do

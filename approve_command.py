@@ -18,6 +18,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scan_common                                           # noqa: E402
+import state_paths                                           # noqa: E402
 
 from approve_base import (  # noqa: E402
     BRAND, STATE_DIR, _write_json, _load_json, call, is_boss, log,
@@ -30,10 +31,10 @@ from approve_pick import (  # noqa: E402
 )
 
 
-SET_ARTICLE_COUNT = STATE_DIR / "dat_bai.json"     # so dedup: url chuan hoa -> lan dat
+SET_ARTICLE_COUNT = STATE_DIR / state_paths.ARTICLE_REQUEST_COUNTS_FILE     # so dedup: url chuan hoa -> lan dat
 
 # handle_command chay o thread rieng: hai /bai cung luc se cung doc-sua-ghi
-# dat_bai.json -> mat ban ghi dedup, tao cap task trung. Mot khoa la du.
+# article_request_counts.json -> mat ban ghi dedup, tao cap task trung. Mot khoa la du.
 _KHOA_DAT_BAI = threading.Lock()
 
 # Chan host noi bo: bot chay ngay tren server (tunnel, dashboard, cron) nen

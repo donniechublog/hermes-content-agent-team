@@ -43,6 +43,7 @@ BO_QUA = ("~", "<", "$", "config.yaml", "jobs.json", "xong.json", "da_dung.json"
           "manifest.json", "previous_submission.json", "submit_count.json",
           "find_more.json", "crash_count.json", "material.md",
           "profile.yaml",         # tep cua hermes (~/.hermes-*/profiles/*/), khong o repo
+          "regions_ocr.json", "regions.json",   # LOW-231: ten English cua tep Gin (vung_ocr/vung)
           "dist.index.js")        # hermes/README nhac TEN PHANG CU de noi "khong con dung"
 
 

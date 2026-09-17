@@ -38,6 +38,44 @@ CAPTURE_IMAGE_PREFIX = "capture_"       # capture_<n>_<k>.png
 LANDSCAPE_SUFFIX = ".landscape.png"     # <id>.landscape.png
 
 
+# ---- brand-level state (state/<brand>/…), LOW-231; table docs/tu_dien_ten/state_files_v2.json
+ARTICLE_SOURCE_PREFIX = "article_source_"          # article_source_<draft_id>.json
+USED_IMAGES_FILE = "used_images.jsonl"
+USED_EDU_THEMES_FILE = "used_edu_themes.jsonl"
+ARTICLE_REQUEST_COUNTS_FILE = "article_request_counts.json"
+REPORTED_PROGRESS_FILE = "reported_progress.json"
+REPORTED_STALLED_FILE = "reported_stalled.json"
+TASK_RESULT_MESSAGES_FILE = "task_result_messages.json"
+REDO_WAITING_FILE = "redo_waiting.json"
+MOAT_REPUBLISH_QUEUE_FILE = "moat_republish_queue.json"
+REPORT_MESSAGE_ID_FILE = "report_message_id.{}.json"   # .format(role)
+REQUIRED_FILE = "required_{}.json"                      # .format(role)
+SCAN_DIR = "scan"                                       # state/<brand>/scan/<role>_<n>/
+DOWNLOADS_DIR = "downloads"
+JOURNAL_DIR = "journal"
+
+# inside state/<brand>/scan/<run>/
+SCAN_REPORT_FILE = "report.txt"
+SCAN_LIST_FILE = "list.json"
+SCAN_RESULT_FILE = "scan.json"
+SCAN_NONE_FOUND_FILE = "none_found.txt"
+SCAN_TRIAL_MANIFEST_FILE = "trial_manifest.json"
+
+JOURNAL_NOTES_FILE = "notes.jsonl"                     # state/journal/notes.jsonl
+ROUTER_CONNECTIONS_PREFIX = "connections_"             # state/9router/connections_<date>.jsonl
+
+# Gin (image-text swap) artefacts in its prepare workdir
+GIN_REGIONS_FILE = "regions.json"
+GIN_REGIONS_OCR_FILE = "regions_ocr.json"
+GIN_REGIONS_PREVIEW_FILE = "regions_preview.png"
+GIN_CLEAN_BACKGROUND_FILE = "clean_background.png"
+GIN_RESULT_PREFIX = "result_"                          # result_<n>.png
+
+
+def article_source_file(state: Path, draft_id: str) -> Path:
+    return Path(state) / f"{ARTICLE_SOURCE_PREFIX}{draft_id}.json"
+
+
 LEGACY_PREPARE_DIR = "chuan_bi"
 
 

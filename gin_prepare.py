@@ -75,7 +75,7 @@ def _download_link(url: str, slide: int = None) -> tuple:
             slide = None
     m = re.search(r"/(?:p|reel|status)/([A-Za-z0-9_-]+)", url)
     ma = m.group(1) if m else "post"
-    dest = env_load.state_dir() / "tai_ve" / ma
+    dest = env_load.state_dir() / state_paths.DOWNLOADS_DIR / ma
     anh = sorted(dest.glob("[0-9][0-9].jpg")) if dest.exists() else []
     if not anh:
         # Endpoint crawl chay bat dong bo, mot luot mat 10–40s; social_fetch tu
@@ -285,7 +285,7 @@ def write_brief(id_: str, anh: Path, img, vung: list, wd: Path) -> str:
          f"({len(phang)} nền phẳng = việc của bạn, {len(anh_v)} nền ảnh = của Itachi)",
          f"Ảnh gốc: {anh}",
          f"Preview đánh số (mở MỘT lần nếu cần; xanh = nền phẳng, đỏ = nền ảnh): "
-         f"{wd / 'vung_preview.png'}", ""]
+         f"{wd / state_paths.GIN_REGIONS_PREVIEW_FILE}", ""]
     L += ["## Vùng NỀN PHẲNG — bạn dịch (stt | text Anh | x,y,w,h | màu chữ | font đo được | nền)"]
     if not phang:
         L.append("(không có vùng nào nền phẳng — cả ảnh này là việc của Itachi, báo lại Ông Chủ.)")
@@ -332,8 +332,8 @@ def main() -> int:
     anh, id_ = find_image(a.anh, a.slide)
     wd = workdir("gin", id_)
     img, vung = ocr_region(anh)
-    about_preview(img, vung, wd / "vung_preview.png")
-    (wd / "vung_ocr.json").write_text(json.dumps({"anh": str(anh), "id": id_, "w": img.shape[1],
+    about_preview(img, vung, wd / state_paths.GIN_REGIONS_PREVIEW_FILE)
+    (wd / state_paths.GIN_REGIONS_OCR_FILE).write_text(json.dumps({"anh": str(anh), "id": id_, "w": img.shape[1],
                                                   "h": img.shape[0], "vung": vung},
                                                  ensure_ascii=False, indent=1), encoding="utf-8")
     brief = write_brief(id_, anh, img, vung, wd)

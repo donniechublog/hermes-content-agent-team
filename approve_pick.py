@@ -59,12 +59,12 @@ def latest_manifest(vai="finn"):
     return max(files, key=lambda f: f.stat().st_mtime) if files else None
 
 def _mid_report(vai: str) -> dict:
-    """Noi dung tep `bao_cao_mid.<vai>.json` — scan_submit ghi moi lan gui bao cao.
+    """Noi dung tep `report_message_id.<vai>.json` — scan_submit ghi moi lan gui bao cao.
 
     Ba khoa: `message_ids` (mid cua TUNG manh tin, bao cao dai bi Telegram chia
     nho), `message_id` (manh cuoi, giu lai cho ban cu) va `manifest` (duong dan
     ban manifest DUNG voi bao cao vua gui)."""
-    return _load_json(STATE_DIR / f"bao_cao_mid.{vai}.json", {})
+    return _load_json(STATE_DIR / state_paths.REPORT_MESSAGE_ID_FILE.format(vai), {})
 
 
 def manifest_already_send(vai: str):
@@ -221,7 +221,7 @@ def _research_source(item, draft_id, out_png, brand):
     # viet chu. Lam mot lan o day thay vi de hai ben tu tim: khoi
     # tra cuu hai lan, va quan trong hon la ca hai cung doc MOT bo nguon nen bai
     # viet giai thich dung nhung gi doc gia nhin thay tren tam anh.
-    nguon_path = STATE_DIR / f"nguon_{draft_id}.json"
+    nguon_path = state_paths.article_source_file(STATE_DIR, draft_id)
     # C-r2-6: truoc day khong nhin returncode va `except: pass` khi doc ket qua —
     # article_sources chet (thieu module, traceback) thi khong mot dong log, khong tep
     # nguon, vai nhan link Google News chua giai ma; dung trieu chung "Dre/Miles

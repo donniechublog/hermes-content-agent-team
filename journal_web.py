@@ -6,7 +6,7 @@ Vì sao không nhét vào hermes-dashboard: đó là dashboard của Hermes (bin
 127.0.0.1, có session token, code trong hermes-agent), không phải chỗ để thêm
 trang của đội. Cái này là http.server chuẩn Python, KHÔNG phụ thuộc gói ngoài
 nào — bảng .md tự dựng thành HTML bằng `md_bright_html` (bỏ `markdown`, audit D2)
-— và CHỈ ĐỌC tệp trong state/9router/nhat_ky.
+— và CHỈ ĐỌC tệp trong state/9router/journal.
 
 Đường dẫn:
     /                       danh sách ngày, mỗi ngày một dòng số quan trọng

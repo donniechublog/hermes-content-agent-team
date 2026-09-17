@@ -15,7 +15,7 @@ thứ tự, mục bắt buộc và khung tệp nộp.
 
 ```bash
 cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai market   # 1. đọc brief
-# 2. viết ds.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k, script tự lấy link và số báo)
+# 2. viết list.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k, script tự lấy link và số báo)
 cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai market        # 3. nộp
 ```
 

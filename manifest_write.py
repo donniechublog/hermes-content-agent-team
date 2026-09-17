@@ -62,7 +62,7 @@ def _item_from_submit(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> d
 
     Moi cong o day deu la mot lan da mat tin that, khong phai phong xa."""
     # Chon bang SO THU TU `k` trong brief (tu 05/09/2026): script tu lay link va
-    # so bao tu quet.json, vai chi viet headline + summary. Van nhan `link`.
+    # so bao tu scan.json, vai chi viet headline + summary. Van nhan `link`.
     t = None
     k = it.get("k") or it.get("stt") or it.get("#")
     if k is not None and nguon:
@@ -156,7 +156,7 @@ def main():
     ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
                     help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
     ap.add_argument("--out", help="Thu: ghi manifest ra tep nay thay vi state/<brand>/")
-    ap.add_argument("--nguon", help="quet.json cua scan_business (Vera): de vai chon bang so thu tu `k`, "
+    ap.add_argument("--nguon", help="scan.json cua scan_business (Vera): de vai chon bang so thu tu `k`, "
                                     "script tu lay link, tieu de, so bao")
     a = ap.parse_args()
 

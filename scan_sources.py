@@ -419,7 +419,7 @@ def main():
                         + f"{it['source']} {it.get('points', 0)} diem", it["link"]))
     so_moi = required.extra_many("finn", muc)
     print(f"  bat buoc: {len(muc)} muc dat tieu chi, {so_moi} muc moi; tong dang cho "
-          f"{len(required.read('finn'))} (xem bat_buoc_finn.json)", file=sys.stderr)
+          f"{len(required.read('finn'))} (xem {required.file('finn').name})", file=sys.stderr)
 
     if not a.khong_lay_anh:
         t0 = time.time()

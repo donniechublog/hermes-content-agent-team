@@ -12,7 +12,7 @@ Mục tiêu:
 Tệp không xóa:
 - kanban.db (cơ sở dữ liệu Kanban)
 - state.db (nếu có)
-- anh_da_dung.jsonl (tiếp tục dùng, chỉ cắt ngắn)
+- used_images.jsonl (tiếp tục dùng, chỉ cắt ngắn)
 """
 import argparse
 import io
@@ -26,6 +26,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", newline="")
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load  # noqa: E402
+import state_paths  # noqa: E402
 
 
 def get_state_dir() -> Path:
@@ -100,9 +101,9 @@ def cleanup_append_only_logs(state_dir: Path, keep_lines: int = 5000, dry_run: b
         for vai_log in telegram_sent.glob("*.jsonl"):
             trimmed += trim_jsonl(vai_log, keep_lines, dry_run)
 
-    # anh_da_dung.jsonl, edu_theme_da_dung.jsonl
-    for log_file in state_dir.glob("*_da_dung.jsonl"):
-        trimmed += trim_jsonl(log_file, keep_lines, dry_run)
+    # used_images.jsonl, used_edu_themes.jsonl
+    for name in (state_paths.USED_IMAGES_FILE, state_paths.USED_EDU_THEMES_FILE):
+        trimmed += trim_jsonl(state_dir / name, keep_lines, dry_run)
 
     # <vai>_submit.jsonl
     for log_file in state_dir.glob("*_nop.jsonl"):

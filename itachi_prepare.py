@@ -2,14 +2,14 @@
 """itachi_prepare.py — BRIEF cho Itachi (remake carousel: deck.py hoặc dịch tại chỗ).
 
 Đầu vào: một hay nhiều message_id ảnh nguồn (slide tiếng Anh) Ông Chủ gửi. Với
-mỗi ảnh, script tự làm phần của Gin nếu chưa có (OCR + LaMa → nen_sach.png +
-vung.json), rồi in cho vai: chữ tiếng Anh từng vùng theo thứ tự đọc (không cần
+mỗi ảnh, script tự làm phần của Gin nếu chưa có (OCR + LaMa → clean_background.png +
+regions.json), rồi in cho vai: chữ tiếng Anh từng vùng theo thứ tự đọc (không cần
 vision), gợi ý cách làm, khung spec cho hai đường:
 
   - "tai_cho": dịch từng vùng, vẽ đúng vị trí/màu/cỡ chữ gốc (nhãn, tiêu đề
     ngắn; đoạn nhiều dòng thì gộp các vùng liền nhau bằng `gop`).
   - "deck": thiết kế lại bằng deck.py, 5 layout (statement, list_steps,
-    checklist, grid3, cover), nền là nen_sach.png.
+    checklist, grid3, cover), nền là clean_background.png.
 
 Trước (đo 27–28/08): mỗi lượt Itachi 33 tool call — ls/pip list/which tesseract,
 PIL script đo ảnh, vision_analyze 4–7 lần, đọc deck.py. Phần vẽ tại chỗ nằm
@@ -42,21 +42,21 @@ def prepare_slide(id_: str) -> dict:
     """Bảo đảm có OCR + nền sạch cho một ảnh (tự chạy phần Gin nếu chưa có)."""
     anh, id_ = gb.find_image(id_)
     wd = gb.workdir("gin", id_)
-    if not (wd / "vung_ocr.json").exists():
+    if not (wd / state_paths.GIN_REGIONS_OCR_FILE).exists():
         img, vung = gb.ocr_region(anh)
-        gb.about_preview(img, vung, wd / "vung_preview.png")
-        (wd / "vung_ocr.json").write_text(json.dumps({"anh": str(anh), "id": id_, "w": img.shape[1],
+        gb.about_preview(img, vung, wd / state_paths.GIN_REGIONS_PREVIEW_FILE)
+        (wd / state_paths.GIN_REGIONS_OCR_FILE).write_text(json.dumps({"anh": str(anh), "id": id_, "w": img.shape[1],
                                                       "h": img.shape[0], "vung": vung},
                                                      ensure_ascii=False, indent=1), encoding="utf-8")
-    if not (wd / "nen_sach.png").exists():
+    if not (wd / state_paths.GIN_CLEAN_BACKGROUND_FILE).exists():
         import gin_submit
         spec = {}
         if (wd / "spec.json").exists():
             spec = json.loads((wd / "spec.json").read_text(encoding="utf-8"))
         gin_submit.single(id_, wd, spec)
-    d = json.loads((wd / "vung_ocr.json").read_text(encoding="utf-8"))
-    vung = json.loads((wd / "vung.json").read_text(encoding="utf-8")) if (wd / "vung.json").exists() else []
-    return {"id": id_, "anh": str(anh), "w": d["w"], "h": d["h"], "nen_sach": str(wd / "nen_sach.png"),
+    d = json.loads((wd / state_paths.GIN_REGIONS_OCR_FILE).read_text(encoding="utf-8"))
+    vung = json.loads((wd / state_paths.GIN_REGIONS_FILE).read_text(encoding="utf-8")) if (wd / state_paths.GIN_REGIONS_FILE).exists() else []
+    return {"id": id_, "anh": str(anh), "w": d["w"], "h": d["h"], "nen_sach": str(wd / state_paths.GIN_CLEAN_BACKGROUND_FILE),
             "vung": vung, "so_vung_ocr": len(d["vung"])}
 
 

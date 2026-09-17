@@ -8,7 +8,7 @@ Gio: tep nay chay script quet (cache trong ngay), in MOT ban tom tat gon —
 tung ung vien mot dong, muc BAT BUOC, khung tep nop — vai chi cham diem / tom
 tat / viet y nghia vao MOT tep JSON roi chay scan_submit.py.
 
-Thu muc lam viec: state/<brand>/quet/<vai>_<YYYYMMDD VN>/
+Thu muc lam viec: state/<brand>/scan/<vai>_<YYYYMMDD VN>/
 
 Dung:
     venv/bin/python scan_prepare.py --vai finn|nova|vera|qinn [--lam-moi]
@@ -27,13 +27,14 @@ sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
 import required                                              # noqa: E402
 import role                                                   # noqa: E402
+import state_paths                                           # noqa: E402
 
 VN = timezone(timedelta(hours=7))
 TOPIC = {"finn": "finn", "nova": "nova", "vera": "vera", "qinn": "qinn"}
 
 # Vai chay NHIEU LAN trong ngay: thu muc lam viec phai tach theo luot, khong thi
-# luot sau doc lai ds.json cua luot truoc va nop nham tin cu (cache quet 3h het
-# han nen quet.json thi moi, ds.json thi khong — lech nhau im lang).
+# luot sau doc lai list.json cua luot truoc va nop nham tin cu (cache quet 3h het
+# han nen scan.json thi moi, list.json thi khong — lech nhau im lang).
 MANY_ATTEMPT_WITHIN_DATE = {"qinn"}
 CACHE_HOURS = 3
 # Tran bao cao cua Nova trong brief. Truoc 06/09/2026 la 12.000 va cat CAM
@@ -75,7 +76,7 @@ def workdir(vai: str) -> Path:
     ten = f"{vai}_{datetime.now(VN).strftime('%Y%m%d')}"
     if vai in MANY_ATTEMPT_WITHIN_DATE:
         ten += f"_p{turn()}"
-    wd = env_load.state_dir() / "quet" / ten
+    wd = env_load.state_dir() / state_paths.SCAN_DIR / ten
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 
@@ -222,7 +223,7 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
              ". Đã loại có lý do: gemini-3.7-flash (cache 0%, đắt 44 lần), kimi-k3 (không tắt suy luận), grok "
              "(cache 0%), nemotron :free (mất dấu). Giá ở bảng coding là NIÊM YẾT, không phải thực đo.")
     L += [""] + _required("nova")
-    L += ["", f"## Viết danh sách vào: {wd}/ds.json — MỘT mục cho MỖI mục bắt buộc (gộp các bảng của cùng model), "
+    L += ["", f"## Viết danh sách vào: {wd / state_paths.SCAN_LIST_FILE} — MỘT mục cho MỖI mục bắt buộc (gộp các bảng của cùng model), "
           "tiêu đề phải chứa ĐÚNG tên model như script in",
           json.dumps([{"title": "<Tên model đúng như script in + ý chính, có dấu>",
                        "link": "<bỏ trống với mục BẮT BUỘC (script tự lấy link trang model/bảng); "
@@ -235,14 +236,14 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
           "chạy bước 3 với --khong-co.",
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python scan_submit.py --vai nova",
-          "Script tự ghi manifest đánh số, kiểm mục bắt buộc, viết báo cáo, gửi topic. Báo [LOI] thì sửa ds.json "
+          "Script tự ghi manifest đánh số, kiểm mục bắt buộc, viết báo cáo, gửi topic. Báo [LOI] thì sửa list.json "
           "rồi chạy lại. KHÔNG chạy article_sources.py (approve_service làm lúc Ông Chủ chọn), KHÔNG tạo task."]
     return "\n".join(L)
 
 
 # ---- market (Vera) ------------------------------------------------------------
 def brief_market(wd: Path, lam_moi: bool) -> str:
-    q = wd / "quet.json"
+    q = wd / state_paths.SCAN_RESULT_FILE
     if lam_moi or not _new(q):
         r = _run([str(ROOT / "scan_business.py"), "--gio", "30", "--out", str(q)])
         (wd / "scan.log").write_text((r.stderr or "") + (r.stdout or ""), encoding="utf-8")
@@ -258,7 +259,7 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
                  f"{t.get('so_bao', 1)} báo: {', '.join(t.get('cac_bao', [])[:3]) or t.get('toa_soan', '')}"
                  f" | {t.get('tieu_de', '')[:110]} | {t.get('link', '')}")
     L += [""] + _required("vera")
-    L += ["", f"## Viết danh sách vào: {wd}/ds.json — tin có HỆ QUẢ (IPO, thâu tóm, hạ tầng, chính sách, lao "
+    L += ["", f"## Viết danh sách vào: {wd / state_paths.SCAN_LIST_FILE} — tin có HỆ QUẢ (IPO, thâu tóm, hạ tầng, chính sách, lao "
           "động, kiện tụng, cược lớn), kèm mức chắc chắn theo số báo; bỏ giá cổ phiếu trong ngày, PR sản phẩm",
           json.dumps([{"k": "<số thứ tự #k trong danh sách — script tự lấy link và số báo, KHÔNG chép URL>",
                        "title": "<HEADLINE một dòng: chủ thể + việc + con số, tiếng Việt có dấu; đây là thứ DUY NHẤT Ông Chủ đọc>",
@@ -268,14 +269,14 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python scan_submit.py --vai market",
           "Script tự ghi manifest đánh số, tự thêm mục bắt buộc còn thiếu, viết báo cáo, gửi topic. Báo [LOI] thì "
-          "sửa ds.json rồi chạy lại. KHÔNG chạy article_sources.py, KHÔNG web_search, KHÔNG tạo task."]
+          "sửa list.json rồi chạy lại. KHÔNG chạy article_sources.py, KHÔNG web_search, KHÔNG tạo task."]
     return "\n".join(L)
 
 
 
 # ---- qinn (Qinn) -------------------------------------------------------------
 def brief_qinn(wd: Path, lam_moi: bool) -> str:
-    q = wd / "quet.json"
+    q = wd / state_paths.SCAN_RESULT_FILE
     if lam_moi or not _new(q):
         # Cua so quet trung voi khung mot luot: khong chong lap (tin se trung,
         # tuy `x_seen.json` da chan) va khong ho (tin roi vao khe giua hai luot).
@@ -310,7 +311,7 @@ def brief_qinn(wd: Path, lam_moi: bool) -> str:
         )
         L.append("    " + (t.get("text", "") or "").replace("\n", "\n    ")[:900])
     L += [""] + _required("qinn")
-    L += ["", f"## Viet danh sach vao: {wd}/ds.json — chi tin KY THUAT DUNG DUOC LAU: tool/repo "
+    L += ["", f"## Viet danh sach vao: {wd / state_paths.SCAN_LIST_FILE} — chi tin KY THUAT DUNG DUOC LAU: tool/repo "
           "giai mot viec cu the, ky thuat bao mat, kien truc/he thong, cach lam co the doc lai sau "
           "3 nam. BO: thong bao phat hanh, benchmark/bang xep hang, hype khong co noi dung, tin "
           "ngay, crypto, anh/video khong co phuong phap, tweet chi tom tat tin cua nguoi khac.",
@@ -326,7 +327,7 @@ def brief_qinn(wd: Path, lam_moi: bool) -> str:
           "Khong co gi dat nguong thi chay buoc 3 voi --khong-co.",
           "", "## Roi chay dung MOT lenh:",
           f"cd {ROOT} && venv/bin/python scan_submit.py --vai qinn",
-          "Script tu ghi manifest danh so, viet bao cao, gui topic. Bao [LOI] thi sua ds.json roi "
+          "Script tu ghi manifest danh so, viet bao cao, gui topic. Bao [LOI] thi sua list.json roi "
           "chay lai. KHONG chay article_sources.py, KHONG web_search, KHONG tao task."]
     return "\n".join(L)
 

@@ -446,7 +446,7 @@ def test_code_article_from_button_right_match_color():
     tin = {"title": "Nvidia đàm phán rót 2,5 tỷ USD vào Thinking Machines", "index": 3}
     that = dct._draft_id(tin, "donniechublog", "dre")
     assert hop_le.match(that), that
-    for xau in ["../../state/blog/lam_lai_cho", "a/b", "..", "", "A-Hoa",
+    for xau in ["../../state/blog/redo_waiting", "a/b", "..", "", "A-Hoa",
                 "x" * 60, "tin_gach_duoi", "-mo-dau-bang-gach"]:
         assert not hop_le.match(xau), f"nhan ma bai xau: {xau!r}"
 

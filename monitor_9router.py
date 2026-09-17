@@ -4,7 +4,7 @@ model, lỗi, khoá API, model lạ, cache thấp, $ theo vai. Nguồn sự th�
 khi bàn chi phí; cron `daily-log` chốt ngày hôm qua và gửi tóm tắt lên topic
 analyst (kèm link journal_web).
 
-Đọc usageHistory của 9router CHỈ ĐỌC → state/9router/nhat_ky/9router_<ngày>.json
+Đọc usageHistory của 9router CHỈ ĐỌC → state/9router/journal/9router_<ngày>.json
 + .md. Chạy lại bao nhiêu lần cũng ra y hệt (idempotent), nên cả hai brand gọi
 từ journal_daily.sh đều được.
 
@@ -32,12 +32,13 @@ sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
 import hermes_adapter                                        # noqa: E402
 import publish                                               # noqa: E402
+import state_paths                                           # noqa: E402
 
 VN = timezone(timedelta(hours=7))
 DB = Path(os.environ.get("ROUTER_DB", str(Path.home() / ".9router" / "db" / "data.sqlite")))
 # 9router dùng CHUNG cho mọi brand → nhật ký nằm ngoài state/<brand>/.
 DIRECTORY = ROOT / "state" / "9router"
-JOURNAL = DIRECTORY / "nhat_ky"
+JOURNAL = DIRECTORY / state_paths.JOURNAL_DIR
 # Hai request cách nhau dưới ngưỡng này mà khác model → coi là một lần lật
 # (Hermes fallback ngay giữa lượt, 2 retry cách 2–3s).
 SECONDS_FLIP = 120
