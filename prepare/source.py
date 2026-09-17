@@ -166,53 +166,191 @@ FROM_COMMON_MARK_SENTENCE = {
 }
 
 
-def all_proper_nouns(tieu_de: str) -> list:
+# ---- bang chung ten rieng tu THAN BAI (LOW-222, 17/09/2026) -------------------
+# Truoc: moi tu viet hoa >= 4 chu trong tieu de la "ten rieng", chan bang danh
+# sach tu tay (FROM_COMMON_MARK_SENTENCE + dong tu "raises/nabs..."). Tieu de
+# title-case viet hoa MOI tu nen "Banks" (tin Blackstone/Alphabet), "OpenAI
+# Considers", "Financing" thanh hang — Commons ra ca si Banks, Yandex/bao thuc
+# the/vision deu hoi sai ten. Moi su co them vai tu vao danh sach, khong bao gio du.
+# Nay (luat Ong Chu 17/09: "xu ly bang code toi da"): hoi chinh THAN BAI cua tin.
+# Ten rieng that duoc viet hoa o giua cau van; tu thuong thi viet thuong
+# ("banks", "considering", "financing"). Khong co than bai dang tin -> giu cach
+# tach cu, khong doan.
+_STORY_TEXT = ""
+_EVIDENCE_MIN_CHARS = 400
+_SENTENCE_END = set(".!?:\n•—–|")
+_FUNCTION_WORDS = {"the", "a", "an", "of", "to", "in", "on", "for", "and", "or", "with", "by", "at",
+                   "as", "from", "into", "via", "vs", "than", "its", "is", "are", "be"}
+# Bien cua token: khong tinh chu nam trong URL/ten mien/tu ghep gach noi/handle
+# ("claude.ai", "claude-opus-4", "@garrytan") — do la ma, khong phai van xuoi.
+_TOKEN_LEFT = r"(?<![A-Za-z0-9._/@-])"
+_TOKEN_RIGHT = r"(?![A-Za-z0-9_@-]|\.[A-Za-z])"
+
+
+def set_story_text(text: str) -> None:
+    """Than bai tieng Anh cua tin DANG CHAY trong tien trinh nay — bien tien trinh
+    giong `role.set_active_role`: moi tien trinh engine xu ly dung MOT draft
+    (`approve_pick` goi `image_prepare.py` bang subprocess). Goi "" de xoa."""
+    global _STORY_TEXT
+    _STORY_TEXT = text or ""
+
+
+def story_text() -> str:
+    return _STORY_TEXT
+
+
+def _is_title_case(text: str) -> bool:
+    words = [w for w in re.findall(r"[A-Za-z][A-Za-z'’-]*", text or "") if w.lower() not in _FUNCTION_WORDS]
+    return len(words) >= 3 and sum(w[0].isupper() for w in words) / len(words) >= 0.7
+
+
+def _enclosing_sentence(body: str, i: int) -> str:
+    left = max(body.rfind("\n", 0, i), body.rfind(". ", 0, i), body.rfind("? ", 0, i), body.rfind("! ", 0, i))
+    ends = [e for e in (body.find("\n", i), body.find(". ", i), body.find("? ", i), body.find("! ", i)) if e != -1]
+    return body[left + 1 if left >= 0 else 0: min(ends) if ends else len(body)]
+
+
+def _casing_counts(word: str, body: str) -> tuple:
+    """(viet hoa giua cau, viet hoa dau cau, viet thuong) cua `word` trong than bai.
+    Dong kieu headline (tit bai khac, menu) bi bo qua khi dem viet hoa. Viet
+    thuong tinh ca bien the -s/-es/-ed/-ing ("Considers" <- "considering")."""
+    upper_mid = upper_start = 0
+    for m in re.finditer(_TOKEN_LEFT + re.escape(word) + _TOKEN_RIGHT, body):
+        if _is_title_case(_enclosing_sentence(body, m.start())):
+            continue
+        before = body[:m.start()].rstrip(" \t \"'“‘(")
+        if before and before[-1] not in _SENTENCE_END:
+            upper_mid += 1
+        else:
+            upper_start += 1
+    low = word.lower()
+    stems = {low} | {low[: -len(suf)] for suf in ("ing", "ed", "es", "s")
+                     if low.endswith(suf) and len(low) - len(suf) >= 3}
+    lower = sum(len(re.findall(_TOKEN_LEFT + re.escape(st) + r"(?:s|es|ed|ing)?" + _TOKEN_RIGHT, body))
+                for st in stems)
+    return upper_mid, upper_start, lower
+
+
+def _looks_like_name(word: str) -> bool:
+    """Hoa ben trong tu (OpenAI, DeepSeek) hoac viet tat (NVIDIA, LLMs) — tu no la ten."""
+    return bool(re.search(r"[a-z][A-Z]|^[A-Z0-9]{2,}$|^[A-Z]{2,}[a-z]", word))
+
+
+def _body_is_about_story(title: str, body: str) -> bool:
+    """Than bai co that la bai cua tin khong (trang chan bot, trang loi thi khong)."""
+    if len(body or "") < _EVIDENCE_MIN_CHARS:
+        return False
+    words = {w.lower() for w in re.findall(r"[A-Za-z][A-Za-z0-9]{3,}", title or "")
+             if w.lower() not in _FUNCTION_WORDS}
+    if not words:
+        return False
+    hit = sum(1 for w in words if re.search(r"(?<![A-Za-z])" + re.escape(w) + r"(?![A-Za-z])", body, re.I))
+    return hit >= 2 and hit / len(words) >= 0.3
+
+
+def _keep_by_evidence(word: str, body: str, title_case: bool) -> bool:
+    if _looks_like_name(word):
+        return True
+    upper_mid, upper_start, lower = _casing_counts(word, body)
+    if lower == 0 and upper_mid + upper_start > 0:
+        return True
+    if upper_mid > 0 and upper_mid >= lower:
+        return True
+    if lower > 0:
+        return False
+    # Vang mat khoi than bai: tieu de sentence-case thi viet hoa giua tit la bang
+    # chung; tieu de title-case thi viet hoa khong noi gi -> bo.
+    return not title_case
+
+
+def _title_clusters(tieu_de: str) -> list:
+    """Cum chu viet hoa lien tiep cua tieu de (cach tach cu), nhung TACH o dau
+    cau `: ; , |`, gach ngang tach menh de va so huu cach — "Intel, AMD",
+    "Nvidia’s Huang" la HAI ten, khong phai mot."""
+    import article_sources
+    # Hau to site (" · Hugging Face") khong phai ten rieng cua tin (LOW-35):
+    # no tung thanh tu khoa Commons va ra "Octopus' Hugging Face.jpg".
+    t = article_sources.strip_site_suffix(re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or ""))
+    t = re.sub(r"(\w)[’']s\b", r"\1 |", t)
+    ra = []
+    for segment in re.split(r"[:;,|]|\s[–—-]\s", t):
+        ws = re.sub(r"[\$\"'()\[\]]", " ", segment).split()
+        i = 0
+        while i < len(ws):
+            w = ws[i]
+            if w[:1].isupper() and w.isalpha() and len(w) >= 4 and w.lower() not in article_sources.FROM_EMPTY_QUERY \
+                    and w.lower() not in FROM_COMMON_MARK_SENTENCE:
+                cum = [w]
+                j, da_qua_so = i + 1, False
+                while j < len(ws) and len(cum) < 3:
+                    w2 = ws[j]
+                    if w2[:1].isupper() and w2.isalpha() and w2.lower() not in article_sources.FROM_EMPTY_QUERY \
+                            and w2.lower() not in ("raises", "nabs", "drops", "launches", "unveils", "forecasts"):
+                        cum.append(w2)
+                        j += 1
+                        da_qua_so = False
+                    elif not da_qua_so and re.fullmatch(r"[0-9][0-9a-zA-Z]*", w2):
+                        # So/ma phien ban xen giua chinh ten san pham ("Snapdragon 8
+                        # Elite", "GPT-4 Turbo") — bo qua token nay (khong dua vao
+                        # ten hien thi) nhung KHONG cat cum, de tu hoa ke tiep van
+                        # duoc gop chung MOT ten thay vi bi doc thanh mot "hang" rieng
+                        # gia (LOW-176: "Snapdragon 8 Elite" tung ra hai muc "Qualcomm"
+                        # va "Elite" — "Elite" la hang bia).
+                        j += 1
+                        da_qua_so = True
+                    else:
+                        break
+                cum_ten = " ".join(cum)
+                if cum_ten not in ra:
+                    ra.append(cum_ten)
+                i = j
+            else:
+                i += 1
+    return ra
+
+
+def all_proper_nouns(tieu_de: str, body: str | None = None) -> list:
     """TAT CA cum ten rieng trong tieu de, theo thu tu xuat hien — khong dung
     lai o cum DAU TIEN nhu `_leading_proper_noun` (LOW-176, 16/09/2026: tin
     hai hang "Anthropic ra tich hop Salesforce" chi ra duoc "Anthropic" lam
     tu khoa, nen ca vong anh thuong hieu lan cau hoi vision deu khong bao gio
     biet toi Salesforce — ma anh dung chu de nhat cua tin lai la anh su kien
-    cua CHINH Salesforce). Dung CHUNG mot bo loc voi ham do (STOPWORD
-    FROM_EMPTY_QUERY/FROM_COMMON_MARK_SENTENCE), chi khac la quet HET tieu de
-    thay vi dung lai o tu dau tien khop."""
+    cua CHINH Salesforce).
+
+    LOW-222: `body` (mac dinh = `story_text()` cua tien trinh) la than bai cua
+    tin. Co than bai dang tin thi moi tu cua cum phai qua bang chung viet hoa/
+    viet thuong trong bai; cum bi cat ve phan co bang chung ("OpenAI Considers"
+    -> "OpenAI", "Banks" bi bo). Khong co thi tra dung cach tach cu."""
+    clusters = _title_clusters(tieu_de)
+    body = story_text() if body is None else (body or "")
+    if not _body_is_about_story(tieu_de, body):
+        return clusters
     import article_sources
-    # Hau to site (" · Hugging Face") khong phai ten rieng cua tin (LOW-35):
-    # no tung thanh tu khoa Commons va ra "Octopus' Hugging Face.jpg".
-    t = article_sources.strip_site_suffix(re.sub(r"^\[[^\]]{1,20}\]\s*", "", tieu_de or ""))
-    ws = re.sub(r"[\$;:,\"'()\[\]|]", " ", t).split()
-    ra = []
-    i = 0
-    while i < len(ws):
-        w = ws[i]
-        if w[:1].isupper() and w.isalpha() and len(w) >= 4 and w.lower() not in article_sources.FROM_EMPTY_QUERY \
-                and w.lower() not in FROM_COMMON_MARK_SENTENCE:
-            cum = [w]
-            j, da_qua_so = i + 1, False
-            while j < len(ws) and len(cum) < 3:
-                w2 = ws[j]
-                if w2[:1].isupper() and w2.isalpha() and w2.lower() not in article_sources.FROM_EMPTY_QUERY \
-                        and w2.lower() not in ("raises", "nabs", "drops", "launches", "unveils", "forecasts"):
-                    cum.append(w2)
-                    j += 1
-                    da_qua_so = False
-                elif not da_qua_so and re.fullmatch(r"[0-9][0-9a-zA-Z]*", w2):
-                    # So/ma phien ban xen giua chinh ten san pham ("Snapdragon 8
-                    # Elite", "GPT-4 Turbo") — bo qua token nay (khong dua vao
-                    # ten hien thi) nhung KHONG cat cum, de tu hoa ke tiep van
-                    # duoc gop chung MOT ten thay vi bi doc thanh mot "hang" rieng
-                    # gia (LOW-176: "Snapdragon 8 Elite" tung ra hai muc "Qualcomm"
-                    # va "Elite" — "Elite" la hang bia).
-                    j += 1
-                    da_qua_so = True
-                else:
-                    break
-            cum_ten = " ".join(cum)
-            if cum_ten not in ra:
-                ra.append(cum_ten)
-            i = j
-        else:
-            i += 1
-    return ra
+    for echo in {tieu_de, article_sources.strip_site_suffix(tieu_de or "")}:
+        if echo:
+            body = body.replace(echo, " ")        # tit bai in lai trong trang khong phai bang chung
+    title_case = _is_title_case(tieu_de)
+    names = []
+
+    def _add(name: str) -> None:
+        if name and name not in names:
+            names.append(name)
+
+    for cluster in clusters:
+        words = cluster.split()
+        if len(words) > 1:
+            upper_mid, upper_start, lower = _casing_counts(cluster, body)
+            if upper_mid + upper_start > lower:
+                _add(cluster)
+                continue
+        run = []
+        for word in words + [None]:
+            if word is not None and _keep_by_evidence(word, body, title_case):
+                run.append(word)
+            else:
+                _add(" ".join(run))
+                run = []
+    return names
 
 
 def _leading_proper_noun(tieu_de: str) -> str:

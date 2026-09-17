@@ -46,6 +46,7 @@ from browser_session import BrowserSession                       # noqa: E402
 from prepare import decision_log                              # noqa: E402
 from prepare.browser import browser_pass                    # noqa: E402
 from prepare.common import _write_json, _domain                  # noqa: E402
+from prepare.source import set_story_text                        # noqa: E402
 from prepare.manifest import contact_sheet, compute_derived             # noqa: E402
 from prepare.vision import _seen_image                          # noqa: E402
 from prepare.download_filter import download_and_filter                      # noqa: E402
@@ -284,6 +285,9 @@ def main() -> int:
         if m is None:
             sys.exit(f"[LOI] khong doc duoc {xong}")
         tieu_de = m.get("tieu_de_en") or m.get("title") or a.draft_id
+        tu_lieu = m.get("tu_lieu") or {}
+        set_story_text("\n".join([m.get("chu_bai") or "", tu_lieu.get("doan_dau") or ""]   # LOW-222
+                                   + list(tu_lieu.get("cau_co_so") or [])))
         vai_anh = vai_mod.canonical_slug(m.get("vai_anh") or "") or vai_mod.DEFAULT_IMAGE
         vai_mod.set_active_role(vai_anh)
         so_luot["luot"] += 1
