@@ -93,10 +93,11 @@ def main():
     # chu thi phai GHEP DOC hai anh ("images": [a, b]), khong crop.
     if Path(a.ra).suffix.lower() != ".png":
         sys.exit("--ra phai la .png (de giu metadata crop cho carousel.py kiem).")
+    import image_provenance
     from PIL.PngImagePlugin import PngInfo
     meta = PngInfo()
-    meta.add_text("crop_ti_le", f"goc={img.size[0]}x{img.size[1]};ti_le={a.ti_le};"
-                                f"cx={a.cx};cy={a.cy};cat_ngang={int(a.cat_ngang)}")
+    meta.add_text(image_provenance.CROP_TRACE_KEY, image_provenance.crop_trace_text(
+        img.size[0], img.size[1], a.ti_le, a.cx, a.cy, a.cat_ngang))
     out.save(a.ra, "PNG", pnginfo=meta)
     print(f"{img.size} -> {out.size} ({a.ti_le}) -> {a.ra}", file=sys.stderr)
 

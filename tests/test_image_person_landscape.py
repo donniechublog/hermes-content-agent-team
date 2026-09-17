@@ -39,7 +39,7 @@ def test_image_person_landscape_filter_use_name_and_ratio():
         ra = th.image_person_landscape("Dario Amodei", "CEO", "Anthropic", "anthropic")
     assert len(ra) == 1, [c["brand_match"] for c in ra]
     c = ra[0]
-    assert c["rong"] >= c["cao"], "phai la anh ngang/vuong, khong doc"
+    assert c["w"] >= c["h"], "phai la anh ngang/vuong, khong doc"
     assert c["score"] == 26
     assert c["brand_match"]["kind"] == "person"
     assert c["brand_match"]["person"] == "Dario Amodei"
@@ -66,8 +66,8 @@ def test_image_wikidata_priority_landscape_than_block_use_read_after_when_sort()
     """Ghép với sort của `_round_brand` (test riêng): trong chính danh sách
     `image_wikidata` trả về, ảnh ngang (26) phải đứng trước chân dung dọc (24)
     một khi đã sort theo điểm — đo bằng lệnh Ông Chủ có thể tự chạy lại."""
-    tl = {"anh": [], "nguoi": [{"ten": "Dario Amodei", "tep": "Dario Amodei in 2023.jpg",
-                                "vai": "CEO"}], "logo": []}
+    tl = {"photo_files": [], "people": [{"name": "Dario Amodei", "commons_file": "Dario Amodei in 2023.jpg",
+                                "person_role": "CEO"}], "logo": []}
     pages_p18 = {"p": _page_commons(1800, 2880, "Dario Amodei in 2023.jpg")}
     pages_ngang = {"e": _page_commons(4000, 2667, "Dario Amodei at TechCrunch Disrupt 2023 01.jpg")}
 
@@ -78,10 +78,10 @@ def test_image_wikidata_priority_landscape_than_block_use_read_after_when_sort()
 
     with mock.patch.object(th, "material_wikidata", return_value=tl), \
          mock.patch.object(th, "_ask_commons", side_effect=hoi_commons_gia):
-        ra = th.image_wikidata({"khoa": "anthropic", "hang": "Anthropic"})
+        ra = th.image_wikidata({"key": "anthropic", "company": "Anthropic"})
     ra.sort(key=lambda c: -c.get("score", 0))
-    assert ra[0]["rong"] >= ra[0]["cao"], "sau khi sap, anh dau tien phai la anh ngang"
-    assert ra[-1]["rong"] < ra[-1]["cao"], "chan dung doc phai roi xuong cuoi"
+    assert ra[0]["w"] >= ra[0]["h"], "sau khi sap, anh dau tien phai la anh ngang"
+    assert ra[-1]["w"] < ra[-1]["h"], "chan dung doc phai roi xuong cuoi"
 
 
 if __name__ == "__main__":

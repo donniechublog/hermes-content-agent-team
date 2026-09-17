@@ -21,11 +21,32 @@ from pathlib import Path
 
 from PIL import Image
 
-MARK_PNG = ("crop_ti_le", "nguon_dung")   # cac khoa metadata bao "do doi dung ra"
+# ---- Ten metadata PNG (LOW-237) -----------------------------------------------
+# Ham GHI chi dung ten English duoi day. PNG cu tren may chu (~9 GB, md5 da ghi so)
+# KHONG ghi lai, nen mang metadata tieng Viet mai mai: moi ham DOC phai nhan CA ten/
+# gia tri cu lan moi. Kien thuc cu -> moi CHI nam o ba bang LEGACY_* nay (bang duyet:
+# docs/tu_dien_ten/image_search_keys_v2.json) — khong viet chuoi cu rai o module khac.
+PROVENANCE_KEY = "provenance"       # cong cu nao dung ra anh
+CROP_TRACE_KEY = "crop_trace"       # dau vet crop_ratio: original=WxH;ratio=..;cx=..;cy=..;landscape_crop=0|1
+FIGURE_KEY = "figure"               # arxiv_figures: "Figure 1"
+PDF_PAGE_KEY = "pdf_page"           # arxiv_figures: so trang PDF (1-based)
+
+# Ten CU co chu y (anh PNG da luu mang dau cu mai mai) — cac khoa nay nam trong moc
+# tests/test_json_keys_english.py co ly do, khong phai khoa moi.
+LEGACY_KEYS = {"nguon_dung": PROVENANCE_KEY, "crop_ti_le": CROP_TRACE_KEY,
+               "hinh": FIGURE_KEY, "trang_pdf": PDF_PAGE_KEY}
+LEGACY_CROP_TOKENS = {"goc": "original", "ti_le": "ratio", "cat_ngang": "landscape_crop"}
+LEGACY_PROVENANCE_VALUES = {
+    "chup_xep_hang": "ranking_capture", "the_xep_hang": "ranking_card", "ghep_doc": "vertical_stack",
+    "chup_chart": "chart_capture", "doi_chu_anh": "image_text_swap", "arxiv_bia": "arxiv_cover",
+    "arxiv_hinh": "arxiv_figure", "the_logo": "logo_card", "dre_chuan_bi": "engine_download"}
+
+MARK_PNG = (CROP_TRACE_KEY, PROVENANCE_KEY) + tuple(
+    cu for cu, moi in LEGACY_KEYS.items() if moi in (CROP_TRACE_KEY, PROVENANCE_KEY))
 
 
 def stamp_provenance(xuat_xu, **them):
-    """Tra ve PngInfo mang dau `nguon_dung=<xuat_xu>` (+ cac khoa phu neu co).
+    """Tra ve PngInfo mang dau `provenance=<xuat_xu>` (+ cac khoa phu neu co).
 
     Ten tham so la `xuat_xu` chu khong phai `nguon`: `nguon` la mot trong nhung
     khoa phu hay dung nhat (nguon=ARENA.AI), de trung ten thi vo TypeError.
@@ -36,7 +57,7 @@ def stamp_provenance(xuat_xu, **them):
     """
     from PIL.PngImagePlugin import PngInfo
     m = PngInfo()
-    m.add_text("nguon_dung", str(xuat_xu))
+    m.add_text(PROVENANCE_KEY, str(xuat_xu))
     for k, v in them.items():
         if v is not None:
             m.add_text(str(k), str(v))
@@ -44,7 +65,7 @@ def stamp_provenance(xuat_xu, **them):
 
 
 def stamp_file(duong_dan, xuat_xu, **them):
-    """Mo lai mot tep PNG DA LUU va ghi dau `nguon_dung` (+ khoa phu) vao do.
+    """Mo lai mot tep PNG DA LUU va ghi dau `provenance` (+ khoa phu) vao do.
 
     Cho cac cong cu khong luu bang PIL (playwright screenshot, cv2.imwrite,
     tai thang tu URL). Khong phai PNG thi bo qua, tra ve False — dong dau la
@@ -62,18 +83,69 @@ def stamp_file(duong_dan, xuat_xu, **them):
         return False
 
 
+def crop_trace_text(w, h, ratio, cx, cy, landscape_crop) -> str:
+    """Gia tri khoa `crop_trace` — MOT cho dung chuoi cho crop_ratio.py CLI va
+    prepare/download_filter._save_crop (truoc LOW-237 hai noi tu viet tay)."""
+    return f"original={w}x{h};ratio={ratio};cx={cx};cy={cy};landscape_crop={int(landscape_crop)}"
+
+
 def _text(img):
     return (getattr(img, "text", None) or img.info or {})
 
 
+def read_text(img, raw=None) -> dict:
+    """Text chunk cua PNG voi ten/gia tri cu da quy ve ten moi (LOW-237): khoa, gia tri
+    `provenance` va ten token trong `crop_trace`. Ca hai ten cung co (khong le xay ra)
+    thi ten moi thang."""
+    raw = _text(img) if raw is None else raw
+    ra = {}
+    for k, v in raw.items():
+        moi = LEGACY_KEYS.get(k, k)
+        if moi != k and moi in raw:
+            continue
+        if moi == PROVENANCE_KEY and isinstance(v, str):
+            v = LEGACY_PROVENANCE_VALUES.get(v, v)
+        elif moi == CROP_TRACE_KEY and isinstance(v, str):
+            v = ";".join(_new_crop_token(tok) for tok in v.split(";"))
+        ra[moi] = v
+    return ra
+
+
+def carried_text(img) -> dict:
+    """Text chunk de CHEP sang ban cat (`_save_crop`): ten cu da dich sang ten moi,
+    BO dau crop (ca `crop_ti_le` cu lan `crop_trace` moi) vi ban cat ghi dau crop cua
+    rieng no — chep ca dau cu thi mot anh mang hai dau crop."""
+    raw = getattr(img, "text", None) or {}      # chi text chunk that, khong phai img.info
+    return {k: v for k, v in read_text(img, raw).items() if k != CROP_TRACE_KEY and isinstance(v, str)}
+
+
+def _new_crop_token(tok: str) -> str:
+    k, sep, v = tok.partition("=")
+    return f"{LEGACY_CROP_TOKENS.get(k, k)}{sep}{v}"
+
+
+def parse_crop_trace(s) -> dict:
+    """"original=WxH;ratio=4:5;..." (hoac ban cu "goc=WxH;ti_le=...;cat_ngang=1") -> dict ten moi."""
+    ra = {}
+    for tok in str(s or "").split(";"):
+        k, sep, v = tok.partition("=")
+        if sep:
+            ra[LEGACY_CROP_TOKENS.get(k.strip(), k.strip())] = v.strip()
+    return ra
+
+
+def provenance(img):
+    """Gia tri `provenance` da quy ve ten moi, hoac None."""
+    return read_text(img).get(PROVENANCE_KEY)
+
+
 def read_crop_trace(img):
     """Dau vet crop_ratio.py -> (w_goc, h_goc), hoac None."""
-    m = _text(img).get("crop_ti_le")
+    m = read_text(img).get(CROP_TRACE_KEY)
     if not m:
         return None
     try:
-        goc = [k for k in m.split(";") if k.startswith("goc=")][0][4:]
-        w, h = goc.lower().split("x")
+        w, h = parse_crop_trace(m)["original"].lower().split("x")
         return int(w), int(h)
     except Exception:
         return None
@@ -85,19 +157,19 @@ def allows_landscape_crop(img):
     Day la mot UY QUYEN da ghi lai luc cat, tuong duong `crop_ok` khai trong
     spec — chi khac la no duoc dong dau ngay tai cho cat nen khong khai lai
     duoc. `check_crop_landscape` (moi module luat) nhan ca hai."""
-    return _text(img).get("crop_ti_le", "").find("cat_ngang=1") >= 0
+    return parse_crop_trace(read_text(img).get(CROP_TRACE_KEY, "")).get("landscape_crop") == "1"
 
 
 def is_ranking_image(img):
     """Anh do ranking.py dung: bang xep hang chup tu nguon (co khoanh model) hoac
     the du phong. Voi tin xep hang thi DAY LA CHU THE cua tin (Ong Chu 06/09/2026),
     nen no duoc mien hai cong von cam chart len bia/hero."""
-    return _text(img).get("nguon_dung") in ("chup_xep_hang", "the_xep_hang")
+    return provenance(img) in ("ranking_capture", "ranking_card")
 
 
 def is_stacked_composite(img):
     """Anh nay co phai ban GHEP DOC do doi dung ra khong."""
-    return _text(img).get("nguon_dung") == "ghep_doc"
+    return provenance(img) == "vertical_stack"
 
 
 # ---- So "anh da dung" — THUAN I/O, dung CHUNG ca ba vai theo thiet ke -------

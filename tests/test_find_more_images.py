@@ -136,7 +136,7 @@ def test_openverse_only_take_image_cc_enough_large():
     ]}
     ra = find_more_images.filter_openverse(kq, "TSMC fab", so=8)
     assert [c["image_url"] for c in ra] == ["https://u/a.jpg"]
-    assert ra[0]["source"] == "openverse" and ra[0]["giay_phep"] == "by"
+    assert ra[0]["source"] == "openverse" and ra[0]["license"] == "by"
     assert find_more_images.filter_openverse({}, "x", 8) == [] and find_more_images.filter_openverse(None, "x", 8) == []
     src = (ROOT / "prepare" / "download_filter.py").read_text(encoding="utf-8")
     assert '"openverse"' in src, "download_and_filter se vut anh Openverse vi host khac trang (flickr cdn)"

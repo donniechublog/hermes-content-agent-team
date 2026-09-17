@@ -66,7 +66,7 @@ def read_count_turn(wd: Path) -> dict:
             return json.loads(p.read_text(encoding="utf-8"))
         except (ValueError, OSError):
             pass
-    return {"luot": 0, "da_thu": []}
+    return {"run_count": 0, "tried_queries": []}
 
 
 def check_keyword(tu_khoa: list) -> list:
@@ -98,7 +98,7 @@ def candidate_commons(tu_khoa: str, so: int = COUNT_COMMONS_NEW_TURN) -> list:
         c.pop("concept", None)       # vai tim co chu y, khong phai anh khai niem chung chung
         c["source"] = "commons"
         c["score"] = 35
-        c["image_url"], c["rong"], c["cao"] = try_small_commons(c["image_url"], c["rong"], c["cao"])
+        c["image_url"], c["w"], c["h"] = try_small_commons(c["image_url"], c["w"], c["h"])
     return ra
 
 
@@ -136,10 +136,10 @@ def filter_openverse(kq: dict, tu_khoa: str, so: int) -> list:
             continue
         url, w, h = try_small_commons(url, w, h)
         ra.append({"image_url": url, "alt": (r.get("title") or "")[:120], "og": False, "source": "openverse",
-                   "page_url": r.get("foreign_landing_url") or url, "rong": w, "cao": h, "score": 40,
-                   "giay_phep": r.get("license"), "tac_gia": r.get("creator") or "",
-                   "nguon_openverse": r.get("source") or "", "tu_khoa": tu_khoa})
-    ra.sort(key=lambda c: -(c["rong"] * c["cao"]))
+                   "page_url": r.get("foreign_landing_url") or url, "w": w, "h": h, "score": 40,
+                   "license": r.get("license"), "author": r.get("creator") or "",
+                   "openverse_source": r.get("source") or "", "keyword": tu_khoa})
+    ra.sort(key=lambda c: -(c["w"] * c["h"]))
     return ra[:so]
 
 
@@ -168,7 +168,7 @@ def candidate_from_url(urls: list, wd: Path, phien=None) -> list:
     for u in urls:
         if _ANH_EXT.search(u.split("#")[0]):
             anh.append({"image_url": u, "alt": "", "og": False, "source": "role_supplied", "page_url": u,
-                        "rong": 0, "cao": 0, "score": 60})
+                        "w": 0, "h": 0, "score": 60})
         else:
             trang.append({"url": u, "loai": "báo"})
     if trang:
@@ -242,7 +242,7 @@ def fresh_manifest(m: dict) -> dict:
 
 
 def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
-    print(f"\n== TIM THEM luot {so_luot['luot']}: +{len(moi)} anh moi ==")
+    print(f"\n== TIM THEM luot {so_luot['run_count']}: +{len(moi)} anh moi ==")
     for a in moi:
         if a.get("relevant") is False:
             print(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or ''} "
@@ -257,7 +257,7 @@ def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
           + (" — ĐỦ." if so >= tt else f" — còn thiếu {tt - so}."))
     print(f"Chạy lại: cd {ROOT} && venv/bin/python {vai_anh}_prepare.py {m['draft_id']}  (brief mới, bảng ảnh mới)")
     if so < tt:
-        print(f"Đã thử {so_luot['luot']} lượt (từ khoá: {'; '.join(so_luot['da_thu']) or '—'}). "
+        print(f"Đã thử {so_luot['run_count']} lượt (từ khoá: {'; '.join(so_luot['tried_queries']) or '—'}). "
               "Đổi từ khoá khác hẳn (hãng, sản phẩm, nhà máy, sự kiện, người trong bài) rồi chạy lại, "
               "hoặc nếu đã thử đủ nhiều hướng khác nhau mà vẫn thiếu thì kanban_block — ly do ghi ro "
               "cac tu khoa da thu.")
@@ -294,12 +294,12 @@ def main() -> int:
                                    + list(tu_lieu.get("number_sentences") or [])))
         vai_anh = vai_mod.canonical_slug(m.get("image_role") or "") or vai_mod.DEFAULT_IMAGE
         vai_mod.set_active_role(vai_anh)
-        so_luot["luot"] += 1
-        so_luot["da_thu"] += a.tu_khoa + a.url
+        so_luot["run_count"] += 1
+        so_luot["tried_queries"] += a.tu_khoa + a.url
         _write_json(wd / state_paths.FIND_MORE_FILE, so_luot)
 
         mien_co = {a_.get("domain") for a_ in m["images"]}
-        wd2 = state_paths.extra_dir(wd, so_luot['luot'])
+        wd2 = state_paths.extra_dir(wd, so_luot['run_count'])
         wd2.mkdir(parents=True, exist_ok=True)
         cands = []
         t0 = time.time()

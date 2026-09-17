@@ -50,7 +50,7 @@ def drop_candidate(wd: Path, c: dict, stage: str, rule: str = "", evidence: str 
             thumb = str(d / name)
         row = {"ts": time.time(), "stage": stage, "outcome": "drop", "rule": rule,
                "evidence": str(evidence)[:300], "url": c.get("image_url", ""), "page_url": c.get("page_url", ""),
-               "alt": (c.get("alt") or c.get("alt_chup") or "")[:200], "source": c.get("source", ""),
+               "alt": (c.get("alt") or c.get("capture_alt") or "")[:200], "source": c.get("source", ""),
                "thumb": thumb}
         with open(d / DROPPED_FILE, "a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")

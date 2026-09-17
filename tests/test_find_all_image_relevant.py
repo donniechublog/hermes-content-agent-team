@@ -155,7 +155,7 @@ def test_announcement_page_match_article_no_match_image_cover():
         return HTML_NEWS if url.endswith("/news/") and not feed else ""
     cu = _with_stub(lambda hang: "https://vi.du", _tai)
     try:
-        kq = th.announcement_page({"khoa": "deepseek", "hang": "DeepSeek"},
+        kq = th.announcement_page({"key": "deepseek", "company": "DeepSeek"},
                               ranking.extract_model(TIEU_DE))
     finally:
         _restore(cu)
@@ -169,7 +169,7 @@ def test_announcement_page_fall_about_rss_when_html_got_block():
         return RSS if feed and url.endswith("/news/rss.xml") else ""
     cu = _with_stub(lambda hang: "https://vi.du", _tai)
     try:
-        kq = th.announcement_page({"khoa": "openai", "hang": "OpenAI"},
+        kq = th.announcement_page({"key": "openai", "company": "OpenAI"},
                               ranking.extract_model("GPT-6 Astra dẫn đầu bảng"))
     finally:
         _restore(cu)
@@ -180,9 +180,9 @@ def test_announcement_page_no_ask_what_when_no_has_model_or_website():
     goi = []
     cu = _with_stub(lambda hang: goi.append(("web", hang)) or "", lambda *a, **k: goi.append("tai") or "")
     try:
-        assert th.announcement_page({"khoa": "samsung", "hang": "Samsung"}, []) is None
+        assert th.announcement_page({"key": "samsung", "company": "Samsung"}, []) is None
         assert goi == [], f"khong co model ma van hoi: {goi}"
-        assert th.announcement_page({"khoa": "x", "hang": "X"}, ["GPT-6"]) is None
+        assert th.announcement_page({"key": "x", "company": "X"}, ["GPT-6"]) is None
         assert "tai" not in goi, "khong co website ma van fetch"
     finally:
         _restore(cu)
@@ -192,7 +192,7 @@ def test_extra_announcement_page_write_into_source_json_one_attempt():
     cu = th.announcement_page, th.vendors_in_story
     th.announcement_page = lambda h, models: {"url": "https://vi.du/news/deepseek-v4-1-flash/",
                                           "loai": "công bố", "tieu_de": "", "toa_soan": "https://vi.du"}
-    th.vendors_in_story = lambda td, tt="": [{"khoa": "deepseek", "hang": "DeepSeek"}]
+    th.vendors_in_story = lambda td, tt="": [{"key": "deepseek", "company": "DeepSeek"}]
     try:
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "article_source_d1.json"

@@ -93,7 +93,7 @@ def download_image(url: str, ra: Path) -> bool:
         return False
     ra.parent.mkdir(parents=True, exist_ok=True)
     ra.write_bytes(data)
-    image_provenance.stamp_file(ra, "chup_chart")
+    image_provenance.stamp_file(ra, "chart_capture")
     _block_empty(ra)
     return True
 
@@ -161,11 +161,11 @@ def capture(url: str, ra: Path, chon: str = "", rong_dau: int = EMPTY_MARK) -> i
                 el.scroll_into_view_if_needed()
                 page.wait_for_timeout(400)
                 el.screenshot(path=str(ra))
-                image_provenance.stamp_file(ra, "chup_chart")
+                image_provenance.stamp_file(ra, "chart_capture")
                 _block_empty(ra)
             else:
                 page.screenshot(path=str(ra), full_page=True)
-                image_provenance.stamp_file(ra, "chup_chart")
+                image_provenance.stamp_file(ra, "chart_capture")
                 _block_empty(ra)
         finally:
             b.close()

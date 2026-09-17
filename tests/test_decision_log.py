@@ -71,15 +71,15 @@ def _candidates(src: Path) -> tuple:
     remote = {"https://img.phemex.com/banner.png": _png_bytes(_photo(1000, 800, seed=3)),
               "https://bad.example/missing.png": None}
     cands = [
-        {"tep": _save(good, src / "good.png"), "image_url": str(src / "good.png"), "source": "browser",
+        {"file_path": _save(good, src / "good.png"), "image_url": str(src / "good.png"), "source": "browser",
          "page_url": "https://news.example/a", "score": 50},
-        {"tep": _save(good.resize((820, 638)), src / "dup.png"), "image_url": str(src / "dup.png"),
+        {"file_path": _save(good.resize((820, 638)), src / "dup.png"), "image_url": str(src / "dup.png"),
          "source": "browser", "page_url": "https://news.example/a", "score": 49},
-        {"tep": _save(_photo(120, 90, seed=1), src / "tiny.png"), "image_url": str(src / "tiny.png"),
+        {"file_path": _save(_photo(120, 90, seed=1), src / "tiny.png"), "image_url": str(src / "tiny.png"),
          "source": "browser", "page_url": "https://news.example/a", "score": 48},
-        {"tep": _save(_photo(seed=2), src / "placeholder.png"), "image_url": str(src / "placeholder.png"),
+        {"file_path": _save(_photo(seed=2), src / "placeholder.png"), "image_url": str(src / "placeholder.png"),
          "source": "browser", "page_url": "https://news.example/a", "score": 47},
-        {"tep": _save(Image.new("RGB", (900, 700), (255, 255, 255)), src / "white.png"),
+        {"file_path": _save(Image.new("RGB", (900, 700), (255, 255, 255)), src / "white.png"),
          "image_url": str(src / "white.png"), "source": "browser", "page_url": "https://news.example/a", "score": 46},
         {"image_url": "https://img.phemex.com/banner.png", "page_url": "https://siliconangle.com/a",
          "source": "browser", "score": 45},
@@ -146,7 +146,7 @@ def test_every_download_drop_branch_is_recorded_with_thumbnail():
 def test_over_limit_truncation_was_silent_now_recorded():
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        cands = [{"tep": _save(_photo(seed=10 + i), tmp / f"p{i}.png"), "image_url": str(tmp / f"p{i}.png"),
+        cands = [{"file_path": _save(_photo(seed=10 + i), tmp / f"p{i}.png"), "image_url": str(tmp / f"p{i}.png"),
                   "source": "browser", "page_url": "https://news.example/a", "score": 50 - i} for i in range(4)]
         with mock.patch.object(download_filter, "MAX_IMAGE", 2):
             ra = _quiet(lambda: download_filter.download_and_filter(cands, tmp / "wd"))

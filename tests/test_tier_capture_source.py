@@ -152,9 +152,9 @@ def test_no_has_image_hero_then_capture_block_headline():
     xuống khái niệm (nơi con mắt nhận bừa phòng máy cho tin toán). Phải chụp
     khối tít ở khung điện thoại."""
     src = (ROOT / "capture_page.py").read_text(encoding="utf-8")
-    assert "co_anh: false" in src, "JS phai tra khoi tit khi khong co anh hero"
+    assert "has_hero_image: false" in src, "JS phai tra khoi tit khi khong co anh hero"
     assert 'clip = {"x": 0, "y": max(0, r["top"]), "width": r["w"], "height": r["w"]}' in src
-    assert '"capture_kind": "hero" if r["co_anh"] else "headline"' in src
+    assert '"capture_kind": "hero" if r["has_hero_image"] else "headline"' in src
 
 
 def test_block_headline_is_tier_last_after_concept():
@@ -172,12 +172,12 @@ def test_block_headline_is_tier_last_after_concept():
 
 def test_board_concept_has_whole_lock_geometry_layer_geometry():
     import image_concept
-    tk = [x["tu_khoa"] for x in image_concept.keyword_heuristic(
+    tk = [x["keyword"] for x in image_concept.keyword_heuristic(
         "AI is getting good at math. Mathematicians worry about what that means")]
     assert "blackboard mathematical formulas" in tk, tk
-    tk = [x["tu_khoa"] for x in image_concept.keyword_heuristic("AlphaFold predicts new protein structures")]
+    tk = [x["keyword"] for x in image_concept.keyword_heuristic("AlphaFold predicts new protein structures")]
     assert "laboratory bench scientist" in tk, tk
-    tk = [x["tu_khoa"] for x in image_concept.keyword_heuristic("Students use ChatGPT for homework")]
+    tk = [x["keyword"] for x in image_concept.keyword_heuristic("Students use ChatGPT for homework")]
     assert "classroom students" in tk, tk
 
 

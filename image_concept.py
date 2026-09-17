@@ -16,7 +16,7 @@ Wikimedia Commons — không vẽ, không AI. Nó chỉ được làm BÌA/HERO,
 ảnh riêng của tin; caption "via Wikimedia Commons" do renderer ghi.
 
 Ba phần, phần nào cũng thuần để test được:
-  - `keyword_concept`  tiêu đề (+ tóm tắt) -> [{tu_khoa, ly_do}], ≤ 3;
+  - `keyword_concept`  tiêu đề (+ tóm tắt) -> [{keyword, reason}], ≤ 3;
                          heuristic bảng nước + chủ đề, thêm LLM khi có router.
   - `filter_commons`        lọc trang trả về của API Commons theo từ khoá.
   - `label_concept`     siết nhãn "dùng được" của một ảnh đã phân loại.
@@ -185,10 +185,10 @@ def keyword_heuristic(tieu_de: str, tom_tat: str = "") -> list:
     vb = f"{tieu_de or ''} {tom_tat or ''}"
     ra = []
     for nuoc in _country_within(vb)[:1]:
-        ra.append({"tu_khoa": f"flag of {nuoc}", "ly_do": f"tin nhắc tới {nuoc}"})
+        ra.append({"keyword": f"flag of {nuoc}", "reason": f"tin nhắc tới {nuoc}"})
     for mau, tk, ly_do in TOPIC:
-        if mau.search(vb) and all(x["tu_khoa"] != tk for x in ra):
-            ra.append({"tu_khoa": tk, "ly_do": ly_do})
+        if mau.search(vb) and all(x["keyword"] != tk for x in ra):
+            ra.append({"keyword": tk, "reason": ly_do})
         if len(ra) >= MAX_KEYWORD:
             break
     return ra[:MAX_KEYWORD]
@@ -281,8 +281,8 @@ def read_return_error_llm(txt: str) -> list:
             print(f"[khai_niem] llm: bỏ từ khoá {tk!r} — trùng nguyên văn ví dụ trong prompt, "
                   "không phải suy ra từ bài", file=sys.stderr)
             continue
-        if 1 <= len(tk.split()) <= 5 and tk not in [x["tu_khoa"] for x in ra]:
-            ra.append({"tu_khoa": tk, "ly_do": (m.group(2) or "").strip()[:80] or "gợi ý của model"})
+        if 1 <= len(tk.split()) <= 5 and tk not in [x["keyword"] for x in ra]:
+            ra.append({"keyword": tk, "reason": (m.group(2) or "").strip()[:80] or "gợi ý của model"})
     return ra[:MAX_KEYWORD]
 
 
@@ -294,17 +294,17 @@ def keyword_concept(tieu_de: str, tom_tat: str = "", dung_llm: bool = True,
     vào TRƯỚC heuristic — cờ nước của hãng (`COUNTRY_OF_RANK`), datacenter/nhà
     máy cho tin INFRA dù tiêu đề không có chữ nào khớp `TOPIC`. Trước đây cờ
     chỉ ra khi tiêu đề nhắc tên nước, nên tin Samsung không bao giờ ra cờ Hàn."""
-    ra = [{"tu_khoa": t, "ly_do": "theo loại tin"} for t in (them or []) if t]
+    ra = [{"keyword": t, "reason": "theo loại tin"} for t in (them or []) if t]
     for x in keyword_heuristic(tieu_de, tom_tat):
         if len(ra) >= MAX_KEYWORD:
             break
-        if all(x["tu_khoa"] != y["tu_khoa"] for y in ra):
+        if all(x["keyword"] != y["keyword"] for y in ra):
             ra.append(x)
     if dung_llm and len(ra) < MAX_KEYWORD:
         for x in keyword_llm(tieu_de, tom_tat):
             if len(ra) >= MAX_KEYWORD:
                 break
-            if all(x["tu_khoa"] != y["tu_khoa"] for y in ra):
+            if all(x["keyword"] != y["keyword"] for y in ra):
                 ra.append(x)
     return ra
 
@@ -339,10 +339,10 @@ def filter_commons(pages: dict, tu_khoa: str, so: int = 4, canh_ngan_min: int = 
             continue
         ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
                    "mime": ii.get("mime"), "source": "concept", "page_url": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
-                   "rong": w, "cao": h, "score": 20, "concept": {"keyword": tu_khoa}})
+                   "w": w, "h": h, "score": 20, "concept": {"keyword": tu_khoa}})
     # JPEG trước PNG: ảnh chụp thật gần như luôn là JPEG, PNG trên Commons hay là
     # cờ vẽ / bản dựng ("Japan flag - variant.png", "CGI Japan Flag.png").
-    ra.sort(key=lambda c: (c["mime"] != "image/jpeg", -(c["rong"] * c["cao"])))
+    ra.sort(key=lambda c: (c["mime"] != "image/jpeg", -(c["w"] * c["h"])))
     return ra[:so]
 
 

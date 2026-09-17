@@ -159,13 +159,12 @@ def main():
     # crop_ratio.py — carousel.py chan anh 4:5/1:1 "chan" khong co dau vet vi do
     # la dau hieu cat tay ne cong (Ong Chu bat loi 04/09/2026). Dau nay cho cong
     # biet chinh cong cu cua doi dung ra anh, khong phai cat lui.
-    from PIL.PngImagePlugin import PngInfo
-    _meta = PngInfo()
-    _meta.add_text("nguon_dung", "arxiv_bia")
+    import image_provenance
+    _meta = image_provenance.stamp_provenance("arxiv_cover")
     bia.save(out, "PNG", optimize=True, pnginfo=_meta)
     if a.json:
         print(json.dumps({"out": str(out), "pdf": pdf_url,
-                          "rong": bia.width, "cao": bia.height},
+                          "w": bia.width, "h": bia.height},
                          ensure_ascii=False))
     else:
         print(f"da chup bia -> {out} ({bia.width}x{bia.height})")

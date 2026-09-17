@@ -101,7 +101,7 @@ def candidate_social(link: str, wd: Path) -> list:
     for i, m in enumerate(d["media"], 1):
         if m["type"] != "image" or not m["file_path"]:
             continue
-        cands.append({"image_url": m["file_path"], "tep": m["file_path"],
+        cands.append({"image_url": m["file_path"], "file_path": m["file_path"],
                       "alt": f"ảnh {i} trong post của {d['author']}".strip(),
                       "source": "social_post", "page_url": d["link"], "score": 95})
     print(f"[social] {len(cands)} anh that tu chinh post", file=sys.stderr)
@@ -143,8 +143,8 @@ def commons_images(tu_khoa: str, so: int = 4) -> list | None:
             continue
         ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
                    "source": "commons", "page_url": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
-                   "rong": w, "cao": h, "score": 30})
-    ra.sort(key=lambda c: -(c["rong"] * c["cao"]))
+                   "w": w, "h": h, "score": 30})
+    ra.sort(key=lambda c: -(c["w"] * c["h"]))
     return ra[:so]
 
 

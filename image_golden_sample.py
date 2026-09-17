@@ -62,7 +62,7 @@ def load_candidates(state_root: Path) -> list:
             if not a.get("id") or not goc.is_file():
                 continue
             out.append({"id": f"{brand}/{story['draft_id']}/{a['id']}", "story": story,
-                        "image": {k: a[k] for k in IMAGE_KEYS if k in a}, "goc": str(goc)})
+                        "image": {k: a[k] for k in IMAGE_KEYS if k in a}, "original_path": str(goc)})
     return out
 
 
@@ -111,8 +111,8 @@ def write_snapshot(samples: list, out_dir: Path) -> Path:
     img_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     for n, s in enumerate(samples, 1):
-        data = Path(s["goc"]).read_bytes()
-        im = Image.open(s["goc"])
+        data = Path(s["original_path"]).read_bytes()
+        im = Image.open(s["original_path"])
         im.load()
         im = im.convert("RGB")
         im.thumbnail((THUMB_MAX, THUMB_MAX))

@@ -20,7 +20,7 @@ import image_brand as th  # noqa: E402
 
 
 def _h(tieu_de, tom=""):
-    return [x["hang"] for x in th.vendors_in_story(tieu_de, tom)]
+    return [x["company"] for x in th.vendors_in_story(tieu_de, tom)]
 
 
 def test_two_rank_within_one_story_all_out():

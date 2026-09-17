@@ -1020,7 +1020,7 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     d.text((w // 2 - d.textlength(handle, font=f_nho) / 2, h - 110), handle, font=f_nho, fill=card.MUTED)
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, "PNG")
-    image_provenance.stamp_file(out, "the_xep_hang", model=model, rank=hang, source=site, board=bang)
+    image_provenance.stamp_file(out, "ranking_card", model=model, rank=hang, source=site, board=bang)
     return out
 
 
@@ -1147,7 +1147,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                     logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
                 in_log(f"[xep_hang] {n['id']}: bỏ — {ly_do}")
                 continue
-            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], source=n["id"],
+            image_provenance.stamp_file(out, "ranking_capture", model=kq["model"], source=n["id"],
                                   site=n["site"], board=n["board"], rank=kq.get("rank"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
@@ -1287,7 +1287,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                     logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
                 in_log(f"[xep_hang] {n['id']}: bỏ — {ly_do}")
                 continue
-            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], source=n["id"],
+            image_provenance.stamp_file(out, "ranking_capture", model=kq["model"], source=n["id"],
                                   site=n["site"], board=n["board"], rank=kq.get("rank"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "

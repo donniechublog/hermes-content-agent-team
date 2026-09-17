@@ -282,7 +282,7 @@ def _no_page_full(anh) -> bool:
 
 
 def extract(pdf_bytes: bytes, ra_dir, so_trang=COUNT_PAGE, toi_da=MAX) -> list:
-    """Boc hinh cua paper ra PNG trong `ra_dir`. Tra [{tep, loai, so, caption, trang, w, h}]."""
+    """Boc hinh cua paper ra PNG trong `ra_dir`. Tra [{file_path, kind, number, caption, page_number, w, h}]."""
     import pymupdf
     try:
         doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
@@ -334,10 +334,11 @@ def extract(pdf_bytes: bytes, ra_dir, so_trang=COUNT_PAGE, toi_da=MAX) -> list:
             import image_provenance
             tep = ra_dir / f"paper_{loai}_{so}.png"
             anh.save(tep, "PNG", pnginfo=image_provenance.stamp_provenance(
-                "arxiv_hinh", hinh=f"{loai} {so}", trang_pdf=so_t + 1))
+                "arxiv_figure", **{image_provenance.FIGURE_KEY: f"{loai} {so}",
+                                 image_provenance.PDF_PAGE_KEY: so_t + 1}))
             da_co.add((loai, so))
-            ra.append({"tep": str(tep), "loai": loai, "so": so, "caption": chu[:300],
-                       "trang": so_t + 1, "w": anh.width, "h": anh.height})
+            ra.append({"file_path": str(tep), "kind": loai, "number": so, "caption": chu[:300],
+                       "page_number": so_t + 1, "w": anh.width, "h": anh.height})
             if len(ra) >= toi_da:
                 return ra
     return ra
@@ -349,7 +350,7 @@ def download_pdf(url: str, timeout=40) -> bytes | None:
 
 
 def candidate(link: str, ra_dir) -> list:
-    """Hinh cua paper duoi dang UNG VIEN cua image_prepare (`tep` + `score` + `alt`).
+    """Hinh cua paper duoi dang UNG VIEN cua image_prepare (`file_path` + `score` + `alt`).
 
     Diem cao hon moi ung vien khac (og:image ~90, chup figure 50, browser 45):
     hinh cua CHINH bai la bang chung goc, khong phai anh minh hoa muon o dau.
@@ -376,14 +377,14 @@ def candidate(link: str, ra_dir) -> list:
               file=sys.stderr)
         return []
     print(f"[arxiv_hinh] {len(hinh)} hinh trong paper: "
-          + (", ".join(f"{h['loai']} {h['so']} ({h['w']}x{h['h']})" for h in hinh) or "khong co"),
+          + (", ".join(f"{h['kind']} {h['number']} ({h['w']}x{h['h']})" for h in hinh) or "khong co"),
           file=sys.stderr)
     ra = []
     for i, h in enumerate(hinh):
-        ten = ("Figure" if h["loai"] == "figure" else "Table") + f" {h['so']}"
-        ra.append({"image_url": h["tep"], "tep": h["tep"], "alt": f"{ten}: {h['caption']}"[:200],
+        ten = ("Figure" if h["kind"] == "figure" else "Table") + f" {h['number']}"
+        ra.append({"image_url": h["file_path"], "file_path": h["file_path"], "alt": f"{ten}: {h['caption']}"[:200],
                    "og": False, "source": "arxiv_figure", "page_url": link, "html_tag": "figure",
-                   "rong": h["w"], "cao": h["h"], "score": 95 if i == 0 else 80,
+                   "w": h["w"], "h": h["h"], "score": 95 if i == 0 else 80,
                    "score_reason": f"{ten} trong chinh paper", "paper_figure": ten})
     return ra
 
@@ -410,7 +411,7 @@ def main() -> int:
         print(json.dumps(hinh, ensure_ascii=False))
     else:
         for h in hinh:
-            print(f"{h['loai']} {h['so']} (trang {h['trang']}) {h['w']}x{h['h']} -> {h['tep']}")
+            print(f"{h['kind']} {h['number']} (trang {h['page_number']}) {h['w']}x{h['h']} -> {h['file_path']}")
             print(f"    {h['caption'][:100]}")
     return 0
 

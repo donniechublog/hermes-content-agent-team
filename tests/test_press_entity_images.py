@@ -33,8 +33,8 @@ def test_filter_article_drop_duplicate_drop_aggregate_max_new_domain():
     ]
     ra = bt.filter_article(items)
     assert [b["url"] for b in ra] == ["https://247wallst.com/a", "https://247wallst.com/b", "https://www.engadget.com/x"]
-    assert ra[0]["mien"] == "247wallst.com"
-    assert bt.filter_article(items, bo_mien=("engadget.com",))[-1]["mien"] == "247wallst.com"
+    assert ra[0]["domain"] == "247wallst.com"
+    assert bt.filter_article(items, bo_mien=("engadget.com",))[-1]["domain"] == "247wallst.com"
 
 
 def test_og_from_html_two_attribute_order_and_twitter():
@@ -46,9 +46,9 @@ def test_og_from_html_two_attribute_order_and_twitter():
 
 def test_candidate_set_page_board_main_image_for_over_filter_side_try_three():
     """og:image gần như luôn trên CDN khác miền bài; download_filter coi khác miền là
-    quảng cáo. Ứng viên phải mang trang=ảnh và giữ bài gốc ở `bai`."""
+    quảng cáo. Ứng viên phải mang trang=ảnh và giữ bài gốc ở `article_url`."""
     src = inspect.getsource(bt._og)
-    assert '"page_url": im' in src and '"bai": u' in src
+    assert '"page_url": im' in src and '"article_url": u' in src
 
 
 def test_find_more_images_call_source_this():

@@ -54,13 +54,13 @@ def test_extra_announcement_page_ask_with_name_long_most_and_no_has_hugging_face
     finally:
         th.announcement_page = cu
     assert goi.get("models") and goi["models"][0] == "DeepSeek-V4.1-Flash", goi
-    assert goi["hang"]["khoa"] == "deepseek", goi
+    assert goi["hang"]["key"] == "deepseek", goi
 
 
 def test_announcement_page_no_silent_when_no_has_lock():
     err = io.StringIO()
     with redirect_stderr(err):
-        assert th.announcement_page({"khoa": "deepseek", "hang": "DeepSeek"}, ["deepseek"]) is None
+        assert th.announcement_page({"key": "deepseek", "company": "DeepSeek"}, ["deepseek"]) is None
     assert "[cong bo]" in err.getvalue() and "khong ra khoa" in err.getvalue(), err.getvalue()
 
 
@@ -88,7 +88,7 @@ def test_leading_proper_noun_no_take_suffix_site():
 def test_vendors_in_story_no_has_hugging_face_after_when_drop_suffix():
     import article_sources
     hangs = th.vendors_in_story(f"{VI} {article_sources.strip_site_suffix(EN)}")
-    assert [h["khoa"] for h in hangs] == ["deepseek"], hangs
+    assert [h["key"] for h in hangs] == ["deepseek"], hangs
 
 
 if __name__ == "__main__":

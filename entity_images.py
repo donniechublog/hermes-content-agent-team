@@ -81,7 +81,7 @@ def pageimages(ten: str) -> dict | None:
     if not o.get("source") or min(o.get("width", 0), o.get("height", 0)) < SHORT_SIDE_MIN:
         return None
     return {"image_url": o["source"], "alt": f"Wikipedia: {pg.get('title', ten)}", "og": False,
-            "source": "entity", "rong": o["width"], "cao": o["height"],
+            "source": "entity", "w": o["width"], "h": o["height"],
             "page_url": "https://en.wikipedia.org/wiki/" + str(pg.get("title", ten)).replace(" ", "_"),
             "score": 27, "entity": {"name": ten, "article_name": pg.get("title", ten), "source": "wikipedia"}}
 
@@ -106,12 +106,12 @@ def commons_by_phrase(ten: str, so: int = MAX_NEW_ENTITY) -> list:
         if image_concept.NAME_TYPE.search(thap) or not th._has_phrase(dt, thap):
             continue
         ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + tep,
-                   "og": False, "mime": ii.get("mime"), "source": "entity", "rong": w, "cao": h,
+                   "og": False, "mime": ii.get("mime"), "source": "entity", "w": w, "h": h,
                    "page_url": "https://commons.wikimedia.org/wiki/File:" + tep.replace(" ", "_"),
                    "score": 25, "entity": {"name": ten, "source": "commons"}})
         if len(ra) >= so:
             break
-    ra.sort(key=lambda c: (c["rong"] < c["cao"], -(c["rong"] * c["cao"])))   # ngang truoc
+    ra.sort(key=lambda c: (c["w"] < c["h"], -(c["w"] * c["h"])))   # ngang truoc
     return ra
 
 

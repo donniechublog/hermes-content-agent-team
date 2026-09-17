@@ -175,7 +175,7 @@ def _image_item_ranking(i: int, xh: dict) -> dict:
     test duoc khong can chay ca `_gather_and_download_image` (goi mang, cham).
 
     Khong di qua `download_and_filter`: ham do luu lai PNG voi dau xuat xu cua no, se de
-    mat dau `chup_xep_hang` + model/hang/site cua anh nay."""
+    mat dau `ranking_capture` + model/hang/site cua anh nay."""
     ma = "XH" if i == 0 else f"XH{i + 1}"
     mo_ta_xh = (f"bảng xếp hạng {xh['site']} ({xh['board']}) — {xh['model']}"
                 + (f" #{xh['rank']}" if xh.get("rank") else "")
@@ -219,8 +219,8 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
             bia = arxiv_cover.capture_cover(data) if data else None
             if bia is not None:
                 out.parent.mkdir(parents=True, exist_ok=True)
-                bia.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("arxiv_bia"))
-                cands.append({"image_url": str(out), "tep": str(out), "alt": "trang bia paper",
+                bia.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("arxiv_cover"))
+                cands.append({"image_url": str(out), "file_path": str(out), "alt": "trang bia paper",
                               "source": "arxiv_cover", "page_url": link, "score": 60})
     cands.sort(key=lambda c: -c.get("score", 0))
     anh = download_and_filter(cands, wd)
@@ -338,7 +338,7 @@ def _ranking_context_edge(hangs: list, wd: Path, brand: str, phien=None):
     ("<model> #<hang>") — the do cho mot tin KHONG PHAI tin xep hang la bia ra
     mot thu hang khong ai noi. Tra ung vien hoac None."""
     import image_brand as th
-    hs = [h for h in hangs if th.rank_has_model(h["khoa"])]
+    hs = [h for h in hangs if th.rank_has_model(h["key"])]
     if not hs:
         return None
     h = hs[0]
@@ -349,7 +349,7 @@ def _ranking_context_edge(hangs: list, wd: Path, brand: str, phien=None):
         # qua, khong duoc keo ca engine chet giua chung nhu tin xep hang tung
         # lam (xem chu thich cua `_capture_ranking`).
         ds = ranking.suggest_sources("")[:XH_CONTEXT_EDGE_SOURCE]
-        kq = ranking.find_and_capture([h["hang"]], ds, wd / state_paths.RANKING_DIR, brand, None,
+        kq = ranking.find_and_capture([h["company"]], ds, wd / state_paths.RANKING_DIR, brand, None,
                                   in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
     except Exception as e:                                   # noqa: BLE001
         print(f"[thuong hieu] bang xep hang HONG: {type(e).__name__}: {e}", file=sys.stderr)
@@ -359,9 +359,9 @@ def _ranking_context_edge(hangs: list, wd: Path, brand: str, phien=None):
               file=sys.stderr)
         return None
     print(f"[thuong hieu] bang {kq['site']} ({kq['board']}): khop {kq['model']!r}", file=sys.stderr)
-    return {"image_url": kq["file_path"], "tep": kq["file_path"], "alt": f"bảng {kq['site']} — {kq['board']}",
+    return {"image_url": kq["file_path"], "file_path": kq["file_path"], "alt": f"bảng {kq['site']} — {kq['board']}",
             "source": "brand", "page_url": kq["url"], "score": 26, "chart_hint": True,
-            "brand_match": {"company": h["hang"], "key": h["khoa"], "kind": "ranking",
+            "brand_match": {"company": h["company"], "key": h["key"], "kind": "ranking",
                             "site": kq["site"], "board": kq["board"], "keyword": kq["model"]}}
 
 
@@ -382,17 +382,17 @@ def _report_brand_empty(h: dict, wd: Path, phien=None) -> list:
     Gắn `brand_match` cho từng ứng viên để đi qua đúng câu hỏi con mắt và điểm
     theo loại tin như ảnh Commons/Wikidata. Không mạng/router → []."""
     import article_sources
-    bao = article_sources.report_about_keyword(h["hang"], so=4)
+    bao = article_sources.report_about_keyword(h["company"], so=4)
     if not bao:
-        print(f"[thuong hieu] {h['khoa']}: khong tim duoc bao ve \"{h['hang']}\"", file=sys.stderr)
+        print(f"[thuong hieu] {h['key']}: khong tim duoc bao ve \"{h['company']}\"", file=sys.stderr)
         return []
-    print(f"[thuong hieu] {h['khoa']}: Commons/Wikidata rong, thu {len(bao)} bao "
+    print(f"[thuong hieu] {h['key']}: Commons/Wikidata rong, thu {len(bao)} bao "
           f"({', '.join(_domain(b['url']) for b in bao)})", file=sys.stderr)
     bp = browser_pass([{"url": b["url"], "loai": "báo"} for b in bao], wd, tim_them=False, phien=phien)
     ra = []
     for c in bp["cands"]:
-        c["brand_match"] = {"company": h["hang"], "key": h["khoa"], "kind": "photo",
-                            "keyword": f"báo về {h['hang']}"}
+        c["brand_match"] = {"company": h["company"], "key": h["key"], "kind": "photo",
+                            "keyword": f"báo về {h['company']}"}
         ra.append(c)
     return ra
 
@@ -416,7 +416,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     khong bao gio hoi toi hang thu hai. Tra (anh, dung_duoc, chua_nhin)."""
     import image_brand as th
     hangs = th.vendors_in_story(tieu_de_nhin, tom_tat)
-    print("[thuong hieu] hang trong tin: " + (", ".join(h["hang"] for h in hangs) or "khong ra"),
+    print("[thuong hieu] hang trong tin: " + (", ".join(h["company"] for h in hangs) or "khong ra"),
           file=sys.stderr)
     if not hangs:
         return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
@@ -425,7 +425,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     import story_type
     cands = []
     for h in hangs:
-        cands_h = th.vendor_images(h, wd=wd4 / h["khoa"])
+        cands_h = th.vendor_images(h, wd=wd4 / h["key"])
         if not khong_browser:
             # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
             # Wikidata — khong con doi Commons rong moi chay (Ong Chu
@@ -433,11 +433,11 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
             # nguyen tac [khong gioi han thoi gian/su kien/nguon, chi tieng
             # Anh-Trung], khong co bat ky cam doan nao ve nguon anh" — Commons
             # chi con la MOT nguon, khong con doc quyen/duoc hoi truoc).
-            cands_h = cands_h + _report_brand_empty(h, wd4 / h["khoa"], phien=phien)
+            cands_h = cands_h + _report_brand_empty(h, wd4 / h["key"], phien=phien)
         cands += cands_h
         # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
         if story_type.late(category, "stock") and not khong_browser:
-            cands += th.image_has_ballot(h, wd4 / h["khoa"], phien=phien)
+            cands += th.image_has_ballot(h, wd4 / h["key"], phien=phien)
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).
@@ -739,7 +739,7 @@ def _round_concept(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     them = []
     if story_type.late(category, "company_country_flag"):
         for h in th.vendors_in_story(tieu_de_nhin, tom_tat):
-            nuoc = story_type.country_of(h["khoa"])
+            nuoc = story_type.country_of(h["key"])
             if nuoc and f"flag of {nuoc}" not in them:
                 them.append(f"flag of {nuoc}")
     if story_type.late(category, "infrastructure_concept"):
@@ -747,16 +747,16 @@ def _round_concept(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     if story_type.late(category, "stock_exchange"):
         them.append("stock exchange trading floor")
     tks = image_concept.keyword_concept(tieu_de_nhin, tom_tat, them=them)
-    print("[khai niem] tu khoa: " + (", ".join(f"'{t['tu_khoa']}'" for t in tks) or "khong ra"),
+    print("[khai niem] tu khoa: " + (", ".join(f"'{t['keyword']}'" for t in tks) or "khong ra"),
           file=sys.stderr)
     if not tks:
         return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
             [a["id"] for a in anh if a.get("relevant") is None]
     cands = []
     for t in tks:
-        them_kn = image_concept.image_concept(t["tu_khoa"], t.get("ly_do", ""), so=2)
+        them_kn = image_concept.image_concept(t["keyword"], t.get("reason", ""), so=2)
         if them_kn is None:
-            print(f"[anh] image_concept('{t['tu_khoa']}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
+            print(f"[anh] image_concept('{t['keyword']}') khong chay duoc -- bo qua nguon nay", file=sys.stderr)
             them_kn = []
         cands += them_kn
     da = {a["url"] for a in anh}
