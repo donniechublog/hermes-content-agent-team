@@ -68,6 +68,7 @@ SCAN_TRIAL_MANIFEST_FILE = "trial_manifest.json"
 
 JOURNAL_NOTES_FILE = "notes.jsonl"                     # state/journal/notes.jsonl
 ROUTER_CONNECTIONS_PREFIX = "connections_"             # state/9router/connections_<date>.jsonl
+CRON_AUDIT_FILE = "cron_audit.json"                    # state/cron_audit.json (audit_cron, shared by brands), LOW-239
 
 # Gin (image-text swap) artefacts in its prepare workdir
 GIN_REGIONS_FILE = "regions.json"

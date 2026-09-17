@@ -1,0 +1,8 @@
+[
+ "Fallback thật (chính → dự phòng theo config): 1 lần (title_generation/cooldown?)",
+ "Lỗi: glm-5.3: error 429 1; glm-5.3: error 502 1",
+ "Model KHÔNG ở chuỗi cấu hình nào (fallback âm thầm / client khác dùng chung 9router): z-ai/<b>glm-5.3</b> 4 req $0.0831",
+ "Cache thấp, đang lật model? deepseek-v4-flash 31.2% trên 250,000 prompt",
+ "Phiên rỗng: deepseek-v4-flash 2; deepseek-chat 1; glm-5.3 1",
+ "Connection lỗi trong ngày: Xiaoke <x> & co [429] Too Many Requests: quota hết hạn mức ngày"
+]

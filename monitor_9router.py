@@ -59,8 +59,8 @@ THRESHOLD_CACHE = 40.0
 PROMPT_MIN_CACHE = 20_000
 DRAFTS = ROOT / "drafts"
 # Link trong tin Telegram → journal_web.py (netbird IP để điện thoại mở được
-# không cần DNS). Đổi bằng biến môi trường NHAT_KY_URL.
-WEB_URL = os.environ.get("NHAT_KY_URL", "http://100.87.121.46:9130").rstrip("/")
+# không cần DNS). Đổi bằng biến môi trường JOURNAL_WEB_URL.
+WEB_URL = os.environ.get("JOURNAL_WEB_URL", "http://100.87.121.46:9130").rstrip("/")
 
 
 # ---------------------------------------------------------------- thời gian
@@ -210,7 +210,7 @@ def inspect_model(theo_model: dict, combo: dict) -> tuple:
             la.append({"model": m, "req": a["req"], "prompt": a["prompt"],
                        "usd": round(a["usd"], 4), "cache_pct": pct})
         elif pct < THRESHOLD_CACHE and a["prompt"] > PROMPT_MIN_CACHE:
-            kem.append({"model": m, "prompt": a["prompt"], "cache_pct": pct, "vai": vai[:4]})
+            kem.append({"model": m, "prompt": a["prompt"], "cache_pct": pct, "config_roles": vai[:4]})
     return la, kem
 
 
@@ -234,7 +234,7 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
     khoa_ten, kn_ten = khoa_ten or {}, kn_ten or {}
 
     def moi():
-        return {"req": 0, "prompt": 0, "cache": 0, "out": 0, "usd": 0.0, "loi": 0}
+        return {"req": 0, "prompt": 0, "cache": 0, "out": 0, "usd": 0.0, "error_count": 0}
 
     tong = moi()
     theo_model = collections.defaultdict(moi)
@@ -271,7 +271,7 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
             a["out"] += ctok or 0
             a["usd"] += cost or 0
             if status and status != "ok":
-                a["loi"] += 1
+                a["error_count"] += 1
         if status and status != "ok":
             loi[f"{model}: {status}"] += 1
         top.append((ptok or 0, _hhmm(ts), model, cache, cost or 0))
@@ -302,25 +302,25 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
                   file=sys.stderr)
             cap_fb = set(FALLBACK_REAL)
     so_lieu = {
-        "tong": {**tong, "usd": round(tong["usd"], 4), "cache_pct": pct(tong)},
-        "theo_model": dict(sorted(tm.items(), key=lambda kv: -kv[1]["usd"])),
-        "model_la": model_la, "cache_kem": cache_kem,
-        "theo_khoa": gon(theo_khoa),
-        "theo_gio": {str(k): v for k, v in sorted(gon(theo_gio).items())},
-        "lat_model": dict(lat.most_common()), "lat_vi_du": lat_vi_du,
+        "totals": {**tong, "usd": round(tong["usd"], 4), "cache_pct": pct(tong)},
+        "by_model": dict(sorted(tm.items(), key=lambda kv: -kv[1]["usd"])),
+        "unknown_models": model_la, "low_cache_models": cache_kem,
+        "by_api_key": gon(theo_khoa),
+        "by_hour": {str(k): v for k, v in sorted(gon(theo_gio).items())},
+        "model_switches": dict(lat.most_common()), "model_switch_examples": lat_vi_du,
         "fallback": sum(v for k, v in lat.items() if tuple(k.split(" → ")) in cap_fb),
-        "loi": dict(loi.most_common(10)),
-        "top_prompt": [{"prompt": p, "luc": h, "model": m, "cache": c, "usd": round(u, 4)}
+        "errors_by_model_status": dict(loi.most_common(10)),
+        "top_prompt": [{"prompt": p, "time": h, "model": m, "cache": c, "usd": round(u, 4)}
                        for p, h, m, c, u in sorted(top, reverse=True)[:5]],
-        "rong": dict(rong.most_common()), "rong_vi_du": rong_vi_du,
+        "empty_responses": dict(rong.most_common()), "empty_response_examples": rong_vi_du,
     }
-    return so_lieu, {"tong": tong, "theo_model": tm}
+    return so_lieu, {"totals": tong, "by_model": tm}
 
 
 def read_date(ngay: str) -> dict:
     """Gom usageHistory của một ngày VN thành số liệu. Không LLM, không ghi DB."""
     if not DB.exists():
-        return {"ngay": ngay, "loi_doc": f"không thấy CSDL 9router: {DB}"}
+        return {"date": ngay, "read_error": f"không thấy CSDL 9router: {DB}"}
     con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
     khoa_ten, kn_ten = _name_board(con)
     t0, t1 = _of_count_utc(ngay)
@@ -329,10 +329,10 @@ def read_date(ngay: str) -> dict:
         "from usageHistory where timestamp >= ? and timestamp < ? order by timestamp", (t0, t1)).fetchall()
     so_lieu, tho = aggregate(rows, khoa_ten, kn_ten)
     return {
-        "ngay": ngay, "cua_so_utc": [t0, t1],
+        "date": ngay, "utc_window": [t0, t1],
         **so_lieu,
-        "loi_ket_noi": error_connection(con, t0, t1),
-        "vai": gather_role(ngay, tho["theo_model"], tho["tong"]),
+        "connection_errors": error_connection(con, t0, t1),
+        "role_costs": gather_role(ngay, tho["by_model"], tho["totals"]),
     }
 
 
@@ -354,9 +354,10 @@ def error_connection(con, t0: str, t1: str) -> list:
         trong_ngay = bool(khi) and t0 <= khi < t1
         xau = (d.get("testStatus") not in (None, "active")) or d.get("errorCode") or (d.get("backoffLevel") or 0) > 0
         if trong_ngay or xau:
-            ra.append({"ten": name or provider, "trang_thai": d.get("testStatus"), "ma": d.get("errorCode"),
-                       "loi": (d.get("lastError") or "").replace("\n", " ")[:90], "luc": _hhmm(khi) if khi else "",
-                       "trong_ngay": trong_ngay, "backoff": d.get("backoffLevel") or 0, "bat": bool(active)})
+            ra.append({"name": name or provider, "test_status": d.get("testStatus"), "error_code": d.get("errorCode"),
+                       "last_error": (d.get("lastError") or "").replace("\n", " ")[:90],
+                       "last_error_at": _hhmm(khi) if khi else "",
+                       "error_in_window": trong_ngay, "backoff": d.get("backoffLevel") or 0, "active": bool(active)})
     return ra
 
 
@@ -421,7 +422,7 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
             if not rows:
                 continue
             a = {"brand": brand, "api": 0, "in": 0, "out": 0, "cache": 0, "reasoning": 0, "usd": 0.0,
-                 "phien": 0, "model": collections.Counter(), "task_done": 0, "usd_task": None}
+                 "sessions": 0, "model": collections.Counter(), "task_done": 0, "usd_task": None}
             for r in rows:
                 model = r["model"]
                 a["api"] += r["api"]
@@ -429,7 +430,7 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
                 a["out"] += r["out"]
                 a["cache"] += r["cache"]
                 a["reasoning"] += r["reasoning"]
-                a["phien"] = max(a["phien"], r["sessions"])
+                a["sessions"] = max(a["sessions"], r["sessions"])
                 a["usd"] += (r["in"] + r["cache"] + r["out"]) * gia_cua(model)
                 a["model"][model] += r["api"]
             a["model"] = dict(a["model"].most_common(3))
@@ -459,114 +460,118 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
             bai[d.get("brand") or "?"] += 1
     theo_brand = {}
     for k, a in vai.items():
-        b = theo_brand.setdefault(a["brand"], {"usd": 0.0, "bai": 0, "usd_bai": None})
+        b = theo_brand.setdefault(a["brand"], {"usd": 0.0, "published_count": 0, "usd_per_published": None})
         b["usd"] += a["usd"]
     for bname, n in bai.items():
         for b in theo_brand:
             if b in bname:
-                theo_brand[b]["bai"] += n
+                theo_brand[b]["published_count"] += n
     for b in theo_brand.values():
         b["usd"] = round(b["usd"], 4)
-        b["usd_bai"] = round(b["usd"] / b["bai"], 4) if b["bai"] else None
+        b["usd_per_published"] = round(b["usd"] / b["published_count"], 4) if b["published_count"] else None
     phu = round(sum(a["usd"] for a in vai.values()) / tong["usd"] * 100) if tong["usd"] else 0
-    return {"theo_vai": dict(sorted(vai.items(), key=lambda kv: -kv[1]["usd"])), "theo_brand": theo_brand,
-            "phu_pct": phu, "loi_doc": loi_doc,
-            "ghi_chu": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"}
+    return {"by_role": dict(sorted(vai.items(), key=lambda kv: -kv[1]["usd"])), "by_brand": theo_brand,
+            "coverage_pct": phu, "unreadable_profiles": loi_doc,
+            "note": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"}
 
 
 # ---------------------------------------------------------------- báo cáo
 def write_md(m: dict) -> str:
-    if m.get("loi_doc"):
-        return f"# 9router {m['ngay']}\n\n{m['loi_doc']}\n"
-    t = m["tong"]
-    L = [f"# 9router {m['ngay']} (giờ VN)", "",
+    if m.get("read_error"):
+        return f"# 9router {m['date']}\n\n{m['read_error']}\n"
+    t = m["totals"]
+    L = [f"# 9router {m['date']} (giờ VN)", "",
          f"**Tổng:** {t['req']} req, {t['prompt']:,} prompt (cache {t['cache_pct']}%), {t['out']:,} out, "
-         f"${t['usd']}, {t['loi']} lỗi", ""]
+         f"${t['usd']}, {t['error_count']} lỗi", ""]
     L += ["## Theo model @ kết nối", "", "| model @ kết nối | req | prompt | cache% | out | $ | lỗi |", "|---|--:|--:|--:|--:|--:|--:|"]
-    for k, v in m["theo_model"].items():
-        L.append(f"| {k} | {v['req']} | {v['prompt']:,} | {v['cache_pct']} | {v['out']:,} | {v['usd']} | {v['loi']} |")
+    for k, v in m["by_model"].items():
+        L.append(f"| {k} | {v['req']} | {v['prompt']:,} | {v['cache_pct']} | {v['out']:,} | {v['usd']} | {v['error_count']} |")
     L += ["", "## Theo khoá API (client)", ""]
-    for k, v in m["theo_khoa"].items():
+    for k, v in m["by_api_key"].items():
         L.append(f"- {k}: {v['req']} req, ${v['usd']}")
     L += ["", "## Theo giờ (req / $)", "",
-          ", ".join(f"{k}h: {v['req']}/{v['usd']}" for k, v in m["theo_gio"].items()) or "không có request"]
+          ", ".join(f"{k}h: {v['req']}/{v['usd']}" for k, v in m["by_hour"].items()) or "không có request"]
     L += ["", f"## Đổi model giữa 2 request liên tiếp (≤ 2 phút) — fallback thật (cặp lấy từ config đang chạy): {m['fallback']} lần", "",
           "(các cặp khác đa phần là vai chạy song song, 9router không ghi session nên không tách được)", ""]
-    if m["lat_model"]:
-        L += [f"- {k}: {v} lần" for k, v in m["lat_model"].items()]
-        L += ["", "Ví dụ: " + "; ".join(m["lat_vi_du"])]
+    if m["model_switches"]:
+        L += [f"- {k}: {v} lần" for k, v in m["model_switches"].items()]
+        L += ["", "Ví dụ: " + "; ".join(m["model_switch_examples"])]
     else:
         L.append("Không.")
-    L += ["", "## Lỗi", ""] + ([f"- {k}: {v}" for k, v in m["loi"].items()] or ["Không."])
+    L += ["", "## Lỗi", ""] + ([f"- {k}: {v}" for k, v in m["errors_by_model_status"].items()] or ["Không."])
     L += ["", "## Model lạ (không ở chuỗi cấu hình nào) / cache thấp", ""]
     L += [f"- LẠ: {x['model']}: {x['req']} req, {x['prompt']:,} prompt, cache {x['cache_pct']}%, ${x['usd']}"
-          for x in m.get("model_la") or []]
-    L += [f"- CACHE THẤP: {x['model']}: {x['cache_pct']}% trên {x['prompt']:,} prompt ({', '.join(x['vai'])})"
-          for x in m.get("cache_kem") or []]
-    if not m.get("model_la") and not m.get("cache_kem"):
+          for x in m.get("unknown_models") or []]
+    L += [f"- CACHE THẤP: {x['model']}: {x['cache_pct']}% trên {x['prompt']:,} prompt ({', '.join(x['config_roles'])})"
+          for x in m.get("low_cache_models") or []]
+    if not m.get("unknown_models") and not m.get("low_cache_models"):
         L.append("Không.")
     L += ["", "## 5 prompt nặng nhất", ""]
-    L += [f"- {x['luc']} {x['model']}: {x['prompt']:,} prompt (cache {x['cache']:,}), ${x['usd']}" for x in m["top_prompt"]]
+    L += [f"- {x['time']} {x['model']}: {x['prompt']:,} prompt (cache {x['cache']:,}), ${x['usd']}" for x in m["top_prompt"]]
     L += ["", f"## Phiên rỗng (ok, ≤{EMPTY_OUT_MAX} out dù ≥{EMPTY_PROMPT_MIN:,} prompt)", ""]
-    L += ([f"- {k}: {v} lần" for k, v in m["rong"].items()] + ["", "Ví dụ: " + "; ".join(m["rong_vi_du"])]) if m["rong"] else ["Không."]
+    L += ([f"- {k}: {v} lần" for k, v in m["empty_responses"].items()]
+          + ["", "Ví dụ: " + "; ".join(m["empty_response_examples"])]) if m["empty_responses"] else ["Không."]
     L += ["", "## Connection có lỗi / không sẵn sàng (snapshot lúc chốt)", ""]
-    if m["loi_ket_noi"]:
-        for x in m["loi_ket_noi"]:
-            L.append(f"- {x['ten']}: {x['trang_thai']}, mã {x['ma']}, backoff {x['backoff']}"
-                     f"{', lỗi trong ngày lúc ' + x['luc'] if x['trong_ngay'] else ''}: {x['loi']}")
+    if m["connection_errors"]:
+        for x in m["connection_errors"]:
+            L.append(f"- {x['name']}: {x['test_status']}, mã {x['error_code']}, backoff {x['backoff']}"
+                     f"{', lỗi trong ngày lúc ' + x['last_error_at'] if x['error_in_window'] else ''}: {x['last_error']}")
     else:
         L.append("Không.")
-    v = m["vai"]
-    L += ["", f"## $ theo vai (ước lượng, phủ {v['phu_pct']}% tiền 9router) — {v['ghi_chu']}", "",
+    v = m["role_costs"]
+    L += ["", f"## $ theo vai (ước lượng, phủ {v['coverage_pct']}% tiền 9router) — {v['note']}", "",
           "| brand/vai | phiên | api | in | cache | out | $ | task done | $/task | model |", "|---|--:|--:|--:|--:|--:|--:|--:|--:|---|"]
-    for k, a in v["theo_vai"].items():
-        L.append(f"| {k} | {a['phien']} | {a['api']} | {a['in']:,} | {a['cache']:,} | {a['out']:,} | {a['usd']} | "
+    for k, a in v["by_role"].items():
+        L.append(f"| {k} | {a['sessions']} | {a['api']} | {a['in']:,} | {a['cache']:,} | {a['out']:,} | {a['usd']} | "
                  f"{a['task_done']} | {a['usd_task'] if a['usd_task'] is not None else '-'} | "
                  + ", ".join(f"{mm} ({n})" for mm, n in a["model"].items()) + " |")
     L += ["", "**$/bài published:** " + (", ".join(
-        f"{b}: ${x['usd']} / {x['bai']} bài = {('$' + str(x['usd_bai'])) if x['usd_bai'] is not None else 'chưa có bài'}"
-        for b, x in v["theo_brand"].items()) or "không có dữ liệu vai")]
+        f"{b}: ${x['usd']} / {x['published_count']} bài = "
+        f"{('$' + str(x['usd_per_published'])) if x['usd_per_published'] is not None else 'chưa có bài'}"
+        for b, x in v["by_brand"].items()) or "không có dữ liệu vai")]
     return "\n".join(L) + "\n"
 
 
 def still_for(m: dict) -> list[str]:
     """Những gì đáng đánh thức Ông Chủ: lật model, lỗi, phiên rỗng, connection chết, model lạ, cache thấp."""
-    if m.get("loi_doc"):
-        return [m["loi_doc"]]
+    if m.get("read_error"):
+        return [m["read_error"]]
     ra = []
     if m["fallback"]:
         ra.append(f"Fallback thật (chính → dự phòng theo config): {m['fallback']} lần (title_generation/cooldown?)")
-    if m["loi"]:
-        ra.append("Lỗi: " + "; ".join(f"{k} {v}" for k, v in m["loi"].items()))
-    if m.get("model_la"):
+    if m["errors_by_model_status"]:
+        ra.append("Lỗi: " + "; ".join(f"{k} {v}" for k, v in m["errors_by_model_status"].items()))
+    if m.get("unknown_models"):
         ra.append("Model KHÔNG ở chuỗi cấu hình nào (fallback âm thầm / client khác dùng chung 9router): "
-                  + "; ".join(f"{x['model']} {x['req']} req ${x['usd']}" for x in m["model_la"]))
-    if m.get("cache_kem"):
+                  + "; ".join(f"{x['model']} {x['req']} req ${x['usd']}" for x in m["unknown_models"]))
+    if m.get("low_cache_models"):
         ra.append("Cache thấp, đang lật model? " + "; ".join(
-            f"{x['model']} {x['cache_pct']}% trên {x['prompt']:,} prompt" for x in m["cache_kem"]))
-    if sum(m["rong"].values()) >= 3:
-        ra.append("Phiên rỗng: " + "; ".join(f"{k} {v}" for k, v in m["rong"].items()))
-    xau = [x for x in m["loi_ket_noi"] if x["trong_ngay"] and x["bat"]]
+            f"{x['model']} {x['cache_pct']}% trên {x['prompt']:,} prompt" for x in m["low_cache_models"]))
+    if sum(m["empty_responses"].values()) >= 3:
+        ra.append("Phiên rỗng: " + "; ".join(f"{k} {v}" for k, v in m["empty_responses"].items()))
+    xau = [x for x in m["connection_errors"] if x["error_in_window"] and x["active"]]
     if xau:
-        ra.append("Connection lỗi trong ngày: " + "; ".join(f"{x['ten']} [{x['ma']}] {x['loi'][:50]}" for x in xau))
+        ra.append("Connection lỗi trong ngày: " + "; ".join(
+            f"{x['name']} [{x['error_code']}] {x['last_error'][:50]}" for x in xau))
     return ra
 
 
 def summary_tele(m: dict) -> str:
     """Tin Telegram mỗi sáng: 4 số quan trọng + $/bài + vai đắt nhất + cảnh báo
     + link bản đầy đủ. Không bảng (Telegram không render), không ảnh."""
-    ngay = m["ngay"]
-    if m.get("loi_doc"):
-        return f"<b>9router {ngay[8:]}/{ngay[5:7]}</b>: {m['loi_doc']}"
-    t = m["tong"]
+    ngay = m["date"]
+    if m.get("read_error"):
+        return f"<b>9router {ngay[8:]}/{ngay[5:7]}</b>: {m['read_error']}"
+    t = m["totals"]
     L = [f"<b>9router {ngay[8:]}/{ngay[5:7]}</b>: {t['req']} req · ${t['usd']} · cache {t['cache_pct']}% · fallback {m['fallback']}"]
-    v = m.get("vai") or {}
-    if v.get("theo_brand"):
+    v = m.get("role_costs") or {}
+    if v.get("by_brand"):
         L.append("$/bài: " + " · ".join(
-            f"{b} {('$' + str(x['usd_bai'])) if x['usd_bai'] is not None else 'chưa có bài'} ({x['bai']} bài)"
-            for b, x in v["theo_brand"].items()))
-    if v.get("theo_vai"):
-        L.append("Đắt nhất: " + ", ".join(f"{k} ${a['usd']}" for k, a in list(v["theo_vai"].items())[:3]))
+            f"{b} {('$' + str(x['usd_per_published'])) if x['usd_per_published'] is not None else 'chưa có bài'} "
+            f"({x['published_count']} bài)"
+            for b, x in v["by_brand"].items()))
+    if v.get("by_role"):
+        L.append("Đắt nhất: " + ", ".join(f"{k} ${a['usd']}" for k, a in list(v["by_role"].items())[:3]))
     for x in still_for(m):
         L.append(f"⚠ {x}")
     L.append(f'Chi tiết: <a href="{WEB_URL}/9router/{ngay}">{WEB_URL}/9router/{ngay}</a>')

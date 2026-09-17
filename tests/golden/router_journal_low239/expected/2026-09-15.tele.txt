@@ -1,0 +1,10 @@
+<b>9router 15/09</b>: 8 req · $0.223 · cache 72.1% · fallback 1
+$/bài: blog $0.0762 (2 bài) · dcgr chưa có bài (0 bài)
+Đắt nhất: blog/miles $0.1523, dcgr/jika $0.0123, blog/ada $0.0001
+⚠ Fallback thật (chính → dự phòng theo config): 1 lần (title_generation/cooldown?)
+⚠ Lỗi: glm-5.3: error 429 1; glm-5.3: error 502 1
+⚠ Model KHÔNG ở chuỗi cấu hình nào (fallback âm thầm / client khác dùng chung 9router): z-ai/<b>glm-5.3</b> 4 req $0.0831
+⚠ Cache thấp, đang lật model? deepseek-v4-flash 31.2% trên 250,000 prompt
+⚠ Phiên rỗng: deepseek-v4-flash 2; deepseek-chat 1; glm-5.3 1
+⚠ Connection lỗi trong ngày: Xiaoke <x> & co [429] Too Many Requests: quota hết hạn mức ngày
+Chi tiết: <a href="http://100.87.121.46:9130/9router/2026-09-15">http://100.87.121.46:9130/9router/2026-09-15</a>

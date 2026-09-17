@@ -167,9 +167,15 @@ Cùng lý do trên — không phải mã, `rename.py`/`test_name_english.py` kh�
 | `hermes/scripts/nhat_ky_daily.sh` | `hermes/scripts/journal_daily.sh` | LOW-151, đợt 2. Tên nằm trong trường `"script"` của job cron `daily-log` (id `1d476e2f3a8f`, cùng id ở cả hai home) — **deploy phải kèm** `hermes cron edit <id> --script journal_daily.sh` cho CẢ HAI home, và chép tệp mới sang home trước (sync không tự tạo tệp mới) |
 | `hermes/systemd/nhat-ky-web.service` | `hermes/systemd/journal-web.service` | LOW-151, đợt 2. Unit đang chạy thật — deploy phải kèm: cp unit mới → `daemon-reload` → `disable --now nhat-ky-web` → `enable --now journal-web` → kiểm cổng 9130 → xoá unit cũ |
 
-**Không đổi** (ngoài phạm vi "tên tệp"): đường dẫn dữ liệu trên đĩa
-`state/9router/nhat_ky`, thư mục `nhat_ky/`, và biến môi trường
-`NHAT_KY_HOST`/`NHAT_KY_PORT` của `journal_web.py`.
+**Không đổi** (ngoài phạm vi "tên tệp"): thư mục `nhat_ky/` ở gốc repo (lịch sử).
+Đường dẫn `state/9router/nhat_ky` đã thành `state/9router/journal` ở LOW-231.
+
+Biến môi trường `NHAT_KY_URL`/`NHAT_KY_HOST`/`NHAT_KY_PORT` (`monitor_9router.py`,
+`journal_web.py`, unit `journal-web.service`) đổi thành
+`JOURNAL_WEB_URL`/`JOURNAL_WEB_HOST`/`JOURNAL_WEB_PORT` ở LOW-239 (bảng
+`journal_keys_v2.json`, mục `env`). Tên cũ **không còn được đọc** — máy nào đặt tay
+biến cũ ngoài unit trong repo (shell, `.env`, unit đã sửa tại chỗ) phải đổi theo khi
+deploy; unit mới phải chép lại + `daemon-reload` + restart `journal-web`.
 
 ## Thứ tự ưu tiên khi dịch một tên (`gen.py`)
 

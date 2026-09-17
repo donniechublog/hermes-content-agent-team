@@ -556,7 +556,7 @@ def test_aggregate_no_report_hours_write_api_key_raw():
     CHINH CHUOI KHOA lam nhan, roi nhan do di vao json/md va ra trang HTTP."""
     import monitor_9router as tr
     d, _ = tr.aggregate([_line(0, ak="sk-SIEU-BI-MAT-9999")], cap_fb=set())
-    nhan = list(d["theo_khoa"])
+    nhan = list(d["by_api_key"])
     assert nhan == ["khoa la …9999"], nhan
     assert "SIEU-BI-MAT" not in repr(d), "khoa tho lot vao bao cao"
 
@@ -564,7 +564,7 @@ def test_aggregate_no_report_hours_write_api_key_raw():
 def test_aggregate_take_name_lock_when_remaining_within_board():
     import monitor_9router as tr
     d, _ = tr.aggregate([_line(0, ak="sk-x1")], {"sk-x1": "blog"}, cap_fb=set())
-    assert list(d["theo_khoa"]) == ["blog"]
+    assert list(d["by_api_key"]) == ["blog"]
 
 
 def test_aggregate_count_flip_model_within_threshold_and_skip_outside_threshold():
@@ -573,9 +573,9 @@ def test_aggregate_count_flip_model_within_threshold_and_skip_outside_threshold(
     gan = [_line(0, "a"), _line(tr.SECONDS_FLIP - 1, "b")]
     xa = [_line(0, "a"), _line(tr.SECONDS_FLIP + 1, "b")]
     lap = [_line(0, "a"), _line(10, "a")]
-    assert tr.aggregate(gan, cap_fb=set())[0]["lat_model"] == {"a → b": 1}
-    assert tr.aggregate(xa, cap_fb=set())[0]["lat_model"] == {}
-    assert tr.aggregate(lap, cap_fb=set())[0]["lat_model"] == {}
+    assert tr.aggregate(gan, cap_fb=set())[0]["model_switches"] == {"a → b": 1}
+    assert tr.aggregate(xa, cap_fb=set())[0]["model_switches"] == {}
+    assert tr.aggregate(lap, cap_fb=set())[0]["model_switches"] == {}
 
 
 def test_aggregate_only_count_fallback_use_cap_ok_declare():
@@ -584,22 +584,22 @@ def test_aggregate_only_count_fallback_use_cap_ok_declare():
     import monitor_9router as tr
     rows = [_line(0, "chinh"), _line(5, "phu"), _line(200, "chinh"), _line(205, "la")]
     d, _ = tr.aggregate(rows, cap_fb={("chinh", "phu")})
-    assert d["fallback"] == 1, d["lat_model"]
+    assert d["fallback"] == 1, d["model_switches"]
     assert tr.aggregate(rows, cap_fb=set())[0]["fallback"] == 0
 
 
 def test_aggregate_catch_return_error_empty_and_no_catch_attempt_report_error():
     """Prompt to ma out ~0 nhung status ok = model nuot tien khong tra gi. Lan
-    BAO LOI thi da co muc `loi` roi, dem hai lan la doc ra hai su co."""
+    BAO LOI thi da co muc `errors_by_model_status` roi, dem hai lan la doc ra hai su co."""
     import monitor_9router as tr
     rows = [_line(0, "a", ptok=tr.EMPTY_PROMPT_MIN, ctok=tr.EMPTY_OUT_MAX),
             _line(300, "b", ptok=tr.EMPTY_PROMPT_MIN, ctok=tr.EMPTY_OUT_MAX + 1),
             _line(600, "c", ptok=tr.EMPTY_PROMPT_MIN - 1, ctok=0),
             _line(900, "d", ptok=99999, ctok=0, status="error 429")]
     d, _ = tr.aggregate(rows, cap_fb=set())
-    assert d["rong"] == {"a": 1}, d["rong"]
-    assert d["loi"] == {"d: error 429": 1}, d["loi"]
-    assert d["tong"]["loi"] == 1
+    assert d["empty_responses"] == {"a": 1}, d["empty_responses"]
+    assert d["errors_by_model_status"] == {"d: error 429": 1}, d["errors_by_model_status"]
+    assert d["totals"]["error_count"] == 1
 
 
 def test_aggregate_cache_pct_and_total_money():
@@ -607,9 +607,9 @@ def test_aggregate_cache_pct_and_total_money():
     rows = [_line(0, ptok=1000, cache=250, cost=0.5),
             _line(300, ptok=3000, cache=750, cost=0.25)]
     d, tho = tr.aggregate(rows, cap_fb=set())
-    assert d["tong"]["cache_pct"] == 25.0, d["tong"]
-    assert d["tong"]["usd"] == 0.75
-    assert tho["tong"]["usd"] == 0.75, "tho phai la ban CHUA lam tron"
+    assert d["totals"]["cache_pct"] == 25.0, d["totals"]
+    assert d["totals"]["usd"] == 0.75
+    assert tho["totals"]["usd"] == 0.75, "tho phai la ban CHUA lam tron"
 
 
 def test_aggregate_top_prompt_take_5_attempt_most_expensive():
@@ -623,9 +623,9 @@ def test_aggregate_date_empty_no_no():
     """Ngay khong co luot goi nao (9router vua restart) van phai ra bao cao."""
     import monitor_9router as tr
     d, tho = tr.aggregate([], cap_fb=set())
-    assert d["tong"]["req"] == 0 and d["tong"]["cache_pct"] == 0.0
-    assert d["theo_model"] == {} and d["top_prompt"] == []
-    assert tho["tong"]["prompt"] == 0
+    assert d["totals"]["req"] == 0 and d["totals"]["cache_pct"] == 0.0
+    assert d["by_model"] == {} and d["top_prompt"] == []
+    assert tho["totals"]["prompt"] == 0
 
 
 def test_aggregate_no_touch_into_disk():

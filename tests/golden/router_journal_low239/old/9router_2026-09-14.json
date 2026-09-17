@@ -1,0 +1,81 @@
+{
+ "ngay": "2026-09-14",
+ "cua_so_utc": [
+  "2026-09-13T17:00:00.000Z",
+  "2026-09-14T17:00:00.000Z"
+ ],
+ "tong": {
+  "req": 2,
+  "prompt": 3900,
+  "cache": 2000,
+  "out": 902,
+  "usd": 0.0031,
+  "loi": 0,
+  "cache_pct": 51.3
+ },
+ "theo_model": {
+  "deepseek-v4-flash @ deepseek-v4-flash": {
+   "req": 2,
+   "prompt": 3900,
+   "cache": 2000,
+   "out": 902,
+   "usd": 0.0031,
+   "loi": 0,
+   "cache_pct": 51.3
+  }
+ },
+ "model_la": [],
+ "cache_kem": [],
+ "theo_khoa": {
+  "khoa la …efgh": {
+   "req": 2,
+   "prompt": 3900,
+   "cache": 2000,
+   "out": 902,
+   "usd": 0.0031,
+   "loi": 0,
+   "cache_pct": 51.3
+  }
+ },
+ "theo_gio": {
+  "0": {
+   "req": 2,
+   "prompt": 3900,
+   "cache": 2000,
+   "out": 902,
+   "usd": 0.0031,
+   "loi": 0,
+   "cache_pct": 51.3
+  }
+ },
+ "lat_model": {},
+ "lat_vi_du": [],
+ "fallback": 0,
+ "loi": {},
+ "top_prompt": [
+  {
+   "prompt": 3000,
+   "luc": "00:00:00",
+   "model": "deepseek-v4-flash",
+   "cache": 2000,
+   "usd": 0.003
+  },
+  {
+   "prompt": 900,
+   "luc": "00:06:40",
+   "model": "deepseek-v4-flash",
+   "cache": 0,
+   "usd": 0.0001
+  }
+ ],
+ "rong": {},
+ "rong_vi_du": [],
+ "loi_ket_noi": [],
+ "vai": {
+  "theo_vai": {},
+  "theo_brand": {},
+  "phu_pct": 0,
+  "loi_doc": [],
+  "ghi_chu": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"
+ }
+}

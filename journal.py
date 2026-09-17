@@ -21,6 +21,7 @@ Dung:
         vao mot dong shell" --loai bug
     venv/bin/python journal.py --note "Vá publish.py: doi <br> thanh xuong dong"
         --loai fix
+    (--loai: bug | fix | issue | note | decision — ma English tu LOW-239)
 """
 import argparse
 import functools
@@ -42,8 +43,10 @@ DIRECTORY = env_load.state_dir() / state_paths.JOURNAL_DIR
 NOTES = DIRECTORY / state_paths.JOURNAL_NOTES_FILE
 VN = timezone(timedelta(hours=7))
 
-TYPE = {"bug": "🐞 Bug", "fix": "🔧 Đã sửa", "van-de": "⚠️ Vấn đề",
-        "ghi-chu": "📝 Ghi chú", "quyet-dinh": "🎯 Quyết định"}
+# Ma `kind` cua notes.jsonl (English tu LOW-239, bang docs/tu_dien_ten/journal_keys_v2.json)
+# -> nhan hien tren trang .md (giu nguyen chu cu).
+TYPE = {"bug": "🐞 Bug", "fix": "🔧 Đã sửa", "issue": "⚠️ Vấn đề",
+        "note": "📝 Ghi chú", "decision": "🎯 Quyết định"}
 
 
 def _hours_vn(v) -> datetime | None:
@@ -117,7 +120,7 @@ def _gather_by_job(c: list) -> list:
     """Gom cac luot theo ten viec, giu thu tu luot dau tien xuat hien."""
     nhom = {}
     for x in c:
-        nhom.setdefault(x["ten"], []).append(x)
+        nhom.setdefault(x["name"], []).append(x)
     return list(nhom.items())
 
 
@@ -136,10 +139,10 @@ def part_cron(ngay: str) -> list:
         if not _within_date(s, ngay):
             continue
         a, b = _hours_vn(s), _hours_vn(f)
-        ra.append({"ten": ten.get(jid, jid), "gio": a.strftime("%H:%M") if a else "?",
-                   "giay": round((b - a).total_seconds(), 1) if a and b else None,
-                   "trang_thai": st, "loi": err})
-    ra.sort(key=lambda x: x["gio"])
+        ra.append({"name": ten.get(jid, jid), "time": a.strftime("%H:%M") if a else "?",
+                   "seconds": round((b - a).total_seconds(), 1) if a and b else None,
+                   "status": st, "error": err})
+    ra.sort(key=lambda x: x["time"])
     return ra
 
 
@@ -173,13 +176,13 @@ def part_kanban(ngay: str) -> list:
         a, b = _hours_vn(v["created_at"]), _hours_vn(v["completed_at"])
         run = runs.get(v["id"]) or {}
         tom = (run.get("summary") or v["result"]) or ""
-        ra.append({"id": v["id"], "tieu_de": v["title"], "vai": v["assignee"],
-                   "trang_thai": v["status"],
-                   "gio": a.strftime("%H:%M") if a else "?",
-                   "giay": round((b - a).total_seconds()) if a and b else None,
-                   "tom_tat": re.sub(r"\s+", " ", str(tom))[:300],
-                   "loi": (v["error"] or run.get("error") or "") or ""})
-    ra.sort(key=lambda x: x["gio"])
+        ra.append({"id": v["id"], "title": v["title"], "role": v["assignee"],
+                   "status": v["status"],
+                   "time": a.strftime("%H:%M") if a else "?",
+                   "seconds": round((b - a).total_seconds()) if a and b else None,
+                   "summary": re.sub(r"\s+", " ", str(tom))[:300],
+                   "error": (v["error"] or run.get("error") or "") or ""})
+    ra.sort(key=lambda x: x["time"])
     return ra
 
 
@@ -197,10 +200,10 @@ def part_finn(ngay: str) -> dict | None:
         except (TypeError, ValueError):
             return 0
     top = sorted(its, key=_diem, reverse=True)[:3]
-    return {"so_tin": len(its), "da_chon": len(chon),
-            "top": [{"diem": i.get("score"), "tieu_de": i.get("title", "")[:80],
-                     "nguon": i.get("source_note", "")} for i in top],
-            "chon": [i.get("title", "")[:80] for i in chon]}
+    return {"candidate_count": len(its), "picked_count": len(chon),
+            "top": [{"score": i.get("score"), "title": i.get("title", "")[:80],
+                     "source_note": i.get("source_note", "")} for i in top],
+            "picked_titles": [i.get("title", "")[:80] for i in chon]}
 
 
 def part_draft(ngay: str) -> list:
@@ -218,10 +221,10 @@ def part_draft(ngay: str) -> list:
             j = json.loads(p.read_text(encoding="utf-8"))
         except Exception:                                    # noqa: BLE001
             continue
-        ra.append({"id": p.stem, "gio": t.strftime("%H:%M"),
-                   "trang_thai": j.get("status", "?"),
-                   "chu": len(j.get("caption") or ""),
-                   "co_anh": bool(j.get("image"))})
+        ra.append({"id": p.stem, "time": t.strftime("%H:%M"),
+                   "status": j.get("status", "?"),
+                   "caption_length": len(j.get("caption") or ""),
+                   "has_image": bool(j.get("image"))})
     return ra
 
 
@@ -238,7 +241,7 @@ def part_git(ngay: str) -> list:
     for d in out.strip().splitlines():
         p = d.split("|", 2)
         if len(p) == 3:
-            ra.append({"ma": p[0], "gio": p[1], "mo_ta": p[2]})
+            ra.append({"hash": p[0], "time": p[1], "subject": p[2]})
     return ra
 
 
@@ -252,16 +255,16 @@ def part_model(ngay: str) -> dict | None:
         return None
     ms = d.get("models", {})
     hong = [m for m, v in ms.items() if not v.get("ok")]
-    return {"tong": len(ms), "hong": hong,
-            "ly_do": {m: ms[m].get("why") for m in hong}}
+    return {"model_count": len(ms), "broken_models": hong,
+            "reasons": {m: ms[m].get("why") for m in hong}}
 
 
 # ---------- ghi chu tay ----------
 
 def extra_notes(noi_dung: str, loai: str, ngay: str):
     DIRECTORY.mkdir(parents=True, exist_ok=True)
-    ban = {"ngay": ngay, "luc": datetime.now(VN).strftime("%H:%M"),
-           "loai": loai, "noi_dung": noi_dung.strip()}
+    ban = {"date": ngay, "time": datetime.now(VN).strftime("%H:%M"),
+           "kind": loai, "content": noi_dung.strip()}
     with NOTES.open("a", encoding="utf-8") as f:
         f.write(json.dumps(ban, ensure_ascii=False) + "\n")
     return ban
@@ -279,7 +282,7 @@ def read_notes(ngay: str) -> list:
             b = json.loads(d)
         except Exception:                                    # noqa: BLE001
             continue
-        if b.get("ngay") == ngay:
+        if b.get("date") == ngay:
             ra.append(b)
     return ra
 
@@ -296,53 +299,53 @@ def use_page(ngay: str) -> str:
     if gc:
         L += ["## Vấn đề, bug và cách sửa", ""]
         for b in gc:
-            L.append(f"- **{TYPE.get(b['loai'], b['loai'])}** ({b['luc']}) — {b['noi_dung']}")
+            L.append(f"- **{TYPE.get(b['kind'], b['kind'])}** ({b['time']}) — {b['content']}")
         L.append("")
 
     g = part_git(ngay)
     if g:
         L += ["## Thay đổi mã nguồn", ""]
         for c in g:
-            L.append(f"- `{c['ma']}` {c['gio']} — {c['mo_ta']}")
+            L.append(f"- `{c['hash']}` {c['time']} — {c['subject']}")
         L.append("")
 
     f = part_finn(ngay)
     if f:
         L += ["## Finn quét tin", "",
-              f"- Quét được **{f['so_tin']}** tin, Ông Chủ chọn **{f['da_chon']}**", ""]
+              f"- Quét được **{f['candidate_count']}** tin, Ông Chủ chọn **{f['picked_count']}**", ""]
         for t in f["top"]:
-            L.append(f"  - [{t['diem']}đ] {t['tieu_de']} — *{t['nguon']}*")
-        if f["chon"]:
-            L += ["", "  Đã chọn:"] + [f"  - {x}" for x in f["chon"]]
+            L.append(f"  - [{t['score']}đ] {t['title']} — *{t['source_note']}*")
+        if f["picked_titles"]:
+            L += ["", "  Đã chọn:"] + [f"  - {x}" for x in f["picked_titles"]]
         L.append("")
 
     k = part_kanban(ngay)
     if k:
-        xong = sum(1 for x in k if x["trang_thai"] == "done")
+        xong = sum(1 for x in k if x["status"] == "done")
         L += ["## Task kanban", "",
               f"- {len(k)} task, {xong} xong, {len(k) - xong} chưa", ""]
         for x in k:
-            gy = f" ({x['giay']}s)" if x["giay"] else ""
-            L.append(f"- `{x['id']}` {x['gio']} **{x['vai']}** — {x['tieu_de']} "
-                     f"→ {x['trang_thai']}{gy}")
-            if x["tom_tat"]:
-                L.append(f"  > {x['tom_tat']}")
-            if x["loi"]:
-                L.append(f"  ❌ {re.sub(chr(10), ' ', str(x['loi']))[:200]}")
+            gy = f" ({x['seconds']}s)" if x["seconds"] else ""
+            L.append(f"- `{x['id']}` {x['time']} **{x['role']}** — {x['title']} "
+                     f"→ {x['status']}{gy}")
+            if x["summary"]:
+                L.append(f"  > {x['summary']}")
+            if x["error"]:
+                L.append(f"  ❌ {re.sub(chr(10), ' ', str(x['error']))[:200]}")
         L.append("")
 
     d = part_draft(ngay)
     if d:
         L += ["## Bài viết", ""]
         for x in d:
-            L.append(f"- `{x['id']}` {x['gio']} — {x['chu']} ký tự, "
-                     f"{'có ảnh' if x['co_anh'] else 'chưa có ảnh'}, {x['trang_thai']}")
+            L.append(f"- `{x['id']}` {x['time']} — {x['caption_length']} ký tự, "
+                     f"{'có ảnh' if x['has_image'] else 'chưa có ảnh'}, {x['status']}")
         L.append("")
 
     c = part_cron(ngay)
     if c:
-        loi = [x for x in c if x["trang_thai"] not in ("completed", *FORM_RUN)]
-        dang = [x for x in c if x["trang_thai"] in FORM_RUN]
+        loi = [x for x in c if x["status"] not in ("completed", *FORM_RUN)]
+        dang = [x for x in c if x["status"] in FORM_RUN]
         dem = f"- {len(c)} lượt chạy, {len(loi)} lỗi"
         if dang:
             dem += f", {len(dang)} còn đang chạy lúc dựng nhật ký"
@@ -351,37 +354,37 @@ def use_page(ngay: str) -> str:
         # Gom theo việc: việc chạy dày chỉ cần một dòng tổng, việc thưa thì kể từng lượt.
         for ten, nhom in _gather_by_job(c):
             if len(nhom) > EXCESS:
-                gy = [x["giay"] for x in nhom if x["giay"] is not None]
+                gy = [x["seconds"] for x in nhom if x["seconds"] is not None]
                 d = f"- `{ten}` — {len(nhom)} lượt"
                 if gy:
-                    cham = max(nhom, key=lambda x: x["giay"] if x["giay"] is not None else -1)
+                    cham = max(nhom, key=lambda x: x["seconds"] if x["seconds"] is not None else -1)
                     d += (f", trung bình {sum(gy) / len(gy):.1f}s"
-                          f", chậm nhất {cham['giay']}s lúc {cham['gio']}")
-                nl = sum(1 for x in nhom if x["trang_thai"] not in ("completed", *FORM_RUN))
+                          f", chậm nhất {cham['seconds']}s lúc {cham['time']}")
+                nl = sum(1 for x in nhom if x["status"] not in ("completed", *FORM_RUN))
                 d += f", {nl} lỗi" if nl else ", không lỗi"
                 L.append(d)
             else:
                 for x in nhom:
-                    gy = f" {x['giay']}s" if x["giay"] is not None else ""
-                    dau = ("⏳" if x["trang_thai"] in FORM_RUN
-                           else "✓" if x["trang_thai"] == "completed" else "✗")
-                    L.append(f"- {dau} {x['gio']} {x['ten']}{gy}"
-                             + (f" — {x['loi']}" if x["loi"] else ""))
+                    gy = f" {x['seconds']}s" if x["seconds"] is not None else ""
+                    dau = ("⏳" if x["status"] in FORM_RUN
+                           else "✓" if x["status"] == "completed" else "✗")
+                    L.append(f"- {dau} {x['time']} {x['name']}{gy}"
+                             + (f" — {x['error']}" if x["error"] else ""))
 
         if loi:
             L += ["", "**Lượt lỗi**", ""]
             for x in loi:
-                L.append(f"- ✗ {x['gio']} {x['ten']} — {x['loi'] or x['trang_thai']}")
+                L.append(f"- ✗ {x['time']} {x['name']} — {x['error'] or x['status']}")
         L.append("")
 
     m = part_model(ngay)
     if m:
         L += ["## Model", ""]
-        if m["hong"]:
-            for x in m["hong"]:
-                L.append(f"- 🔴 `{x}` — {m['ly_do'].get(x)}")
+        if m["broken_models"]:
+            for x in m["broken_models"]:
+                L.append(f"- 🔴 `{x}` — {m['reasons'].get(x)}")
         else:
-            L.append(f"- Cả {m['tong']} model đều khoẻ")
+            L.append(f"- Cả {m['model_count']} model đều khoẻ")
         L.append("")
 
     if len(L) <= 4:
@@ -402,15 +405,15 @@ def main():
     a_p = argparse.ArgumentParser(description="Nhat ky lam viec hang ngay")
     a_p.add_argument("--ngay", help="YYYY-MM-DD (mac dinh: hom nay, gio VN)")
     a_p.add_argument("--note", help="Them mot ghi chu tay vao ngay do")
-    a_p.add_argument("--loai", default="ghi-chu", choices=sorted(TYPE),
-                     help="Loai ghi chu (mac dinh ghi-chu)")
+    a_p.add_argument("--loai", default="note", choices=sorted(TYPE),
+                     help="Loai ghi chu (mac dinh note)")
     a_p.add_argument("--in-ra", action="store_true", help="In ra man hinh thay vi chi ghi tep")
     a = a_p.parse_args()
 
     ngay = a.ngay or datetime.now(VN).strftime("%Y-%m-%d")
     if a.note:
         b = extra_notes(a.note, a.loai, ngay)
-        print(f"da ghi [{b['loai']}] {b['luc']} ngay {ngay}")
+        print(f"da ghi [{b['kind']}] {b['time']} ngay {ngay}")
 
     DIRECTORY.mkdir(parents=True, exist_ok=True)
     trang = use_page(ngay)
