@@ -632,7 +632,7 @@ def test_match_keep_count_understand_version():
     "4 Fast". Loc `len >= 3` vut sach chung, nen "DeepSeek R1" rut con
     ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la match() tra True, check()
     tuong da dua nen khong tu them, roi delete() xoa han muc. Tin R1 mat VINH VIEN
-    vi scan_models ghi `aa_da_bao` vao moc nen khong gieo lai.
+    vi scan_models ghi `aa_reported` vao moc nen khong gieo lai.
 
     Chieu nguoc lai cung phai dung: manh ngan khong duoc so tran tren van ban da
     bo ky hieu, vi "4" don doc dinh vao moi con so ("tang 40% toc do")."""

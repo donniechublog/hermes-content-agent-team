@@ -115,14 +115,14 @@ def test_bang_hong_thi_noi_ra():
     import io as _io
     b = _io.StringIO()
     with contextlib.redirect_stdout(b):
-        s._in_report({"bang_hong": ["tbench", "hle"]})
+        s._in_report({"broken_boards": ["tbench", "hle"]})
     ra = b.getvalue()
     kiem("test_bang_hong_thi_noi_ra",
          "NGUON KHONG LAY DUOC" in ra and "Terminal-B" in ra and "HLE" in ra,
          "khong bao ten bang hong -> vai tuong la bang do khong co tin")
     b2 = _io.StringIO()
     with contextlib.redirect_stdout(b2):
-        s._in_report({"bang_hong": []})
+        s._in_report({"broken_boards": []})
     kiem("test_khong_hong_thi_im", "NGUON KHONG LAY DUOC" not in b2.getvalue())
 
 
@@ -237,22 +237,22 @@ def test_hang_va_ngay_doc_dung_bon_hinh():
     """Bon nguon, bon cho nam trong tep ket qua. Doc sai mot hinh la bang do in
     rong ma `hong` khong bao (bang_so van co no)."""
     import model_boards as bm
-    ket = {"bang_xep_hang": {"text": [{"ten": "a"}]},
-           "cham_diem": {"bang_tri_tue_goc": [{"ten": "b"}]},
-           "media": {"tts": [{"ten": "c"}]},
-           "tbench": {"rows": [{"ten": "d"}], "ngay": "2026-09-01"},
-           "gia_usage": {"rows": [{"ten": "e"}], "ngay": "2026-09-02"}}
+    ket = {"leaderboards": {"text": [{"name": "a"}]},
+           "aa_scores": {"intelligence_board_original": [{"name": "b"}]},
+           "media": {"tts": [{"name": "c"}]},
+           "tbench": {"rows": [{"name": "d"}], "date": "2026-09-01"},
+           "gia_usage": {"rows": [{"name": "e"}], "date": "2026-09-02"}}
     lay = {b.khoa: b for b in bm.BOARD}
-    kiem("test_hang_va_ngay_arena", bm.rank_and_date(ket, lay["text"]) == ([{"ten": "a"}], None))
-    kiem("test_hang_va_ngay_aa", bm.rank_and_date(ket, lay["tri_tue"]) == ([{"ten": "b"}], None))
-    kiem("test_hang_va_ngay_media", bm.rank_and_date(ket, lay["tts"]) == ([{"ten": "c"}], None))
+    kiem("test_hang_va_ngay_arena", bm.rank_and_date(ket, lay["text"]) == ([{"name": "a"}], None))
+    kiem("test_hang_va_ngay_aa", bm.rank_and_date(ket, lay["intelligence"]) == ([{"name": "b"}], None))
+    kiem("test_hang_va_ngay_media", bm.rank_and_date(ket, lay["tts"]) == ([{"name": "c"}], None))
     kiem("test_hang_va_ngay_top",
-         bm.rank_and_date(ket, lay["tbench"]) == ([{"ten": "d"}], "2026-09-01"))
+         bm.rank_and_date(ket, lay["tbench"]) == ([{"name": "d"}], "2026-09-01"))
     # Khong con bang nao trong ban dang ky dung ket_khoa khac khoa (kiem tra
     # truc tiep co che nay bang mot Board gia, doc lap voi registry).
     gia = bm.Board("gia", "gia", "GIA", "https://vi.du/", "top", ket_khoa="gia_usage")
     kiem("test_hang_va_ngay_ket_khoa",
-         bm.rank_and_date(ket, gia) == ([{"ten": "e"}], "2026-09-02"),
+         bm.rank_and_date(ket, gia) == ([{"name": "e"}], "2026-09-02"),
          "ket_khoa phai tro toi khoa khac trong ket khi duoc khai")
     kiem("test_hang_va_ngay_thieu_thi_None",
          bm.rank_and_date({}, lay["hle"]) == (None, None))

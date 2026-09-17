@@ -235,7 +235,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `scan_sources.py` / `article_sources.py` — quét nguồn của Finn và research lúc chọn
   tin; tự giải mã link Google News (`resolve_code_gnews`).
 - `scan_models.py` — quét của Nova: 22 bảng xếp hạng, mục "RA MẮT THEO BẢNG CHẤM
-  ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_da_bao` trong `models_seen.json`).
+  ĐIỂM" (mỗi model báo đúng một lần nhờ `aa_reported` trong `models_seen.json`).
   **Bảng đăng ký ở `model_boards.py`** — một dòng cho một bảng (khoá, nhãn, tiêu
   đề in, link, lấy hàng từ đâu). Trước 07/09/2026 thêm một bảng phải khai ở
   **sáu** chỗ trong hai tệp; quên một chỗ là loại lỗi không báo gì cả (mất bảng

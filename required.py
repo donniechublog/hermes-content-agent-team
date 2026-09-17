@@ -39,7 +39,7 @@ def read(vai: str) -> dict:
 
     Tep HONG khong duoc im lang tra {}: `extra_many` ngay sau do ghi de bang
     muc cua hom nay, va cac muc "phai dua" mang tu hom truoc bien mat vinh vien
-    — scan_models da ghi `aa_da_bao` nen khong gieo lai lan nua. Nay: doi ten
+    — scan_models da ghi `aa_reported` nen khong gieo lai lan nua. Nay: doi ten
     tep hong thanh `.hong` (con de kham) va noi ra mot dong.
     """
     p = file(vai)
@@ -135,7 +135,7 @@ def match(muc: dict, item: dict) -> bool:
     # Ban truoc loc `len(m) >= 3` cho CA HAI viec, nen "DeepSeek R1" rut con
     # ["deepseek"]: Nova dua tin "DeepSeek V4 ra mat" la khop() tra True, kiem()
     # tuong da dua nen khong tu them, roi xoa() xoa han muc khoi danh sach. Tin
-    # R1 mat VINH VIEN — scan_models ghi `aa_da_bao` vao moc nen khong gieo lai.
+    # R1 mat VINH VIEN — scan_models ghi `aa_reported` vao moc nen khong gieo lai.
     # Cung co che do voi "o4-mini" (con moi ["mini"]), "Kimi K2", "Grok 4 Fast".
     #
     # Manh ngan THUAN CHU ("ai", "ml", "vs") van bo: chung khong phan biet gi.
