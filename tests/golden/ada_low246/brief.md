@@ -7,7 +7,7 @@ Theo category (tổng/chọn): model: 2/1, chip: 2/1, funding: 1/1, ?: 1/0, devi
 Điểm ≥85 mà KHÔNG chọn: [88] Nvidia công bố chip Rubin Ultra cho trung tâm (finn, 2026-09-14); [86] Anthropic mở rộng cửa sổ ngữ cảnh lên 2 triệu (nova, t2201.json)
 Điểm <75 mà ĐƯỢC chọn: [70] Meta thử nghiệm kính AR mới (nova, t2201.json); [72] Startup AI Việt gọi vốn 12 triệu USD vòng Ser (finn, 2026-09-14)
 
-## Draft: {'pending': 1, 'published': 1, 'rejected': 1}
+## Draft: {'published': 1, 'pending': 1, 'rejected': 1}
   - pending   [-] d2-rubin-dcgr
   - published [81] d1-gpt6-blog
   - rejected  [-] d3-meta-ar

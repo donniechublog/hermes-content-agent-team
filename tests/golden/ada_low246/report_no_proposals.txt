@@ -1,7 +1,7 @@
 <b>Ada: phân tích 2 ngày qua</b>
 
 <b>Tin:</b> quét 7, chọn 4. Theo bậc điểm: ≥90 2/2, 80–89 0/2, 70–79 2/2, không điểm 0/1.
-<b>Draft:</b> pending 1, published 1, rejected 1.
+<b>Draft:</b> published 1, pending 1, rejected 1.
 <b>Token nặng nhất:</b> miles 1,234,567 input / 41 tool; dre 45,678 input / 12 tool.
 
 <b>Nhận xét</b>

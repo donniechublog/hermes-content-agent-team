@@ -117,8 +117,8 @@
  },
  "draft": {
   "theo_trang_thai": {
-   "pending": 1,
    "published": 1,
+   "pending": 1,
    "rejected": 1
   },
   "draft": [
