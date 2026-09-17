@@ -1,0 +1,111 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-246, phần Ada của LOW-243) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; dùng lại từ đã có trong journal_keys_v2.json / scan_keys_v2.json. Chữ brief/báo cáo giữ nguyên byte, chỉ đổi token khoá spec trong khung brief.",
+  "_measured": "máy chủ 17/09/2026 (theo phân tích LOW-232): Ada không chạy từ 05/09; 1 workdir cũ state/blog/prepare/ada_20260905 (manifest.json); 0 spec.json, 0 journal/phan_tich_*.md, 0 bao_cao.txt.",
+  "_migration": "KHÔNG migrate. Dump ada_metrics.json dựng lại mỗi lượt ada_prepare; ada_submit chỉ đọc workdir HÔM NAY — workdir cũ chỉ có manifest.json thì dừng bằng thông báo 'Chưa chuẩn bị' (không crash). spec.json do vai viết: ada_submit._legacy_spec nhận cả khoá cũ (khoá mới thắng).",
+  "files": {
+    "_where": "state/<brand>/prepare/ada_<YYYYMMDD>/ và state/<brand>/journal/ — hằng trong state_paths.py",
+    "manifest.json": "ada_metrics.json",
+    "bao_cao.txt": "report.txt",
+    "phan_tich_{date}.md": "analysis_{date}.md"
+  },
+  "ada_metrics": {
+    "_where": "state/<brand>/prepare/ada_<date>/ada_metrics.json — ghi ada_prepare.main (gather_*); đọc ada_prepare.write_brief, ada_submit.use_report",
+    "ngay": "days",
+    "manifest": "candidates"
+  },
+  "ada_metrics.candidates": {
+    "_where": "gather_manifest — gom từ state/<brand>/{finn,nova,vera}_candidates_*.json",
+    "tong": "item_count",
+    "chon": "picked_count",
+    "theo_bac": "by_score_tier",
+    "theo_nguon": "by_source",
+    "theo_cat": "by_category",
+    "cao_bo": "high_score_dropped",
+    "thap_chon": "low_score_picked"
+  },
+  "ada_metrics.candidates.items[]": {
+    "_where": "phần tử của high_score_dropped[] / low_score_picked[] (title/score/picked/source/category giữ)",
+    "vai": "role",
+    "vai_anh": "image_roles",
+    "ngay": "date"
+  },
+  "ada_metrics.draft": {
+    "_where": "gather_draft (draft[] id/status/score/brand giữ)",
+    "theo_trang_thai": "by_status"
+  },
+  "ada_metrics.kanban": {
+    "_where": "gather_kanban (qua hermes_adapter.job)",
+    "theo_vai": "by_role",
+    "giay_trung_binh": "avg_seconds",
+    "loi": "task_errors"
+  },
+  "ada_metrics.kanban.task_errors[]": {
+    "vai": "role",
+    "loi": "error"
+  },
+  "ada_metrics.token": {
+    "_where": "gather_token",
+    "theo_vai": "by_role",
+    "loi_doc": "unreadable_profiles",
+    "chi_phi_9router": "router_cost_by_model",
+    "nhat_ky_9router": "router_journal"
+  },
+  "ada_metrics.token.by_role.*": {
+    "_where": "hermes_adapter.summary_session của từng profile (tool/input/api/top giữ)",
+    "phien": "sessions"
+  },
+  "ada_metrics.token.router_journal": {
+    "_where": "gather_9router — gộp N ngày từ nhật ký 9router (khoá nhật ký: journal_keys_v2.json)",
+    "theo_ngay": "by_date",
+    "vai": "cost_by_role",
+    "rong": "empty_responses",
+    "loi_ket_noi": "connection_errors",
+    "lat_model": "model_switches",
+    "loi": "errors",
+    "khoa": "cost_by_api_key"
+  },
+  "ada_metrics.token.router_journal_in_memory": {
+    "_where": "gather_9router trả về, gather_token pop sang token.router_cost_by_model (không nằm trong dump)",
+    "chi_phi": "cost_by_model"
+  },
+  "ada_metrics.token.router_journal.by_date[]": {
+    "_where": "req/usd/cache_pct giữ",
+    "ngay": "date",
+    "lat": "fallback",
+    "loi": "error_count",
+    "model_chinh": "top_cost_model"
+  },
+  "ada_metrics.token.router_journal.cost_by_role.*": {
+    "_where": "usd/api/task_done/usd_task giữ",
+    "phien": "sessions"
+  },
+  "ada_metrics.token.router_journal.brand.*": {
+    "_where": "usd giữ; cùng tên với role_costs.by_brand của nhật ký 9router",
+    "bai": "published_count",
+    "usd_bai": "usd_per_published"
+  },
+  "ada_spec": {
+    "_where": "state/<brand>/prepare/ada_<date>/spec.json — VAI viết theo khung brief (ada_prepare.write_brief) + ada.SOUL.md; đọc ada_submit (kiểm dấu, bằng chứng, use_report). token/router giữ.",
+    "nhan_xet": "observations",
+    "de_xuat_rubric": "rubric_proposals",
+    "ket_luan": "conclusion"
+  },
+  "ada_spec.rubric_proposals[]": {
+    "thay_doi": "change",
+    "bang_chung": "evidence"
+  },
+  "model_audition": {
+    "_where": "model_audition.TOOLS — schema tool gửi cho model ứng viên (prompt); không code nào đọc tham số theo tên, state/model_audition.json chỉ ghi danh sách tên tool đã gọi (lịch sử, không ai đọc)",
+    "tool_name": {"luu_caption": "save_caption"},
+    "tool_parameters": {"chu_de": "topic"}
+  },
+  "_notes": [
+    "`loi` ba nghĩa trong dump: kanban.loi = danh sách task lỗi (task_errors), kanban.loi[].loi = chuỗi lỗi (error), router_journal.loi = đếm lỗi theo model/status gộp N ngày (errors), by_date[].loi = số lỗi trong ngày (error_count, cùng tên totals.error_count của nhật ký).",
+    "`ngay` hai kiểu: gốc dump là SỐ NGÀY cửa sổ (days, int); ngay của tin/by_date là ngày cụ thể (date, chuỗi).",
+    "`manifest` gốc dump là khối tin quét từ *_candidates_*.json → candidates (tránh nhầm với manifest.json của engine chuẩn bị ảnh); tệp dump đổi tên riêng ada_metrics.json.",
+    "`vai` ở tin quét = vai quét (role); `vai_anh` = danh sách image_role nối phẩy → image_roles; `vai` ở router_journal = $ theo vai → cost_by_role.",
+    "`lat` ở by_date = số lần fallback thật của ngày (m.fallback) → fallback; `lat_model` = đổi model liên tiếp → model_switches (cùng tên nhật ký 9router).",
+    "`khoa` = $ theo khoá API → cost_by_api_key; `chi_phi_9router`/`chi_phi` = $ theo model → router_cost_by_model / cost_by_model.",
+    "`brand` (gốc dump = tên brand chạy; router_journal.brand = $ theo brand) giữ nguyên tên."
+  ]
+}

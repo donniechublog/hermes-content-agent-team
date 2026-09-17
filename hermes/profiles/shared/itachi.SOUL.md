@@ -20,7 +20,7 @@ mà giữ bố cục cũ thì chữ Việt không vừa, thiết kế lại bằ
 
 ```bash
 cd /home/donniechu/content-team && venv/bin/python itachi_prepare.py <id> [<id2>…]  # 1. nền sạch + chữ gốc
-# 2. viết spec.json vào đường dẫn brief in ra: mỗi slide chọn "tai_cho" hoặc "deck"
+# 2. viết spec.json vào đường dẫn brief in ra: mỗi slide chọn "in_place" hoặc "deck"
 cd /home/donniechu/content-team && venv/bin/python itachi_submit.py <id>                # 3. dựng + gửi
 ```
 
@@ -32,7 +32,7 @@ Chủ đúng một câu script in.
 ## Điều script không làm thay bạn
 
 - **Chọn đường cho từng slide.** Tại chỗ cho nhãn và tiêu đề ngắn; đoạn nhiều
-  dòng thì `gop` thành một khối hoặc chuyển slide đó sang deck.
+  dòng thì `merges` thành một khối hoặc chuyển slide đó sang deck.
 - **Kiểm màu đo được.** Màu chữ lấy bằng trung vị pixel phía chữ sau khi tách
   Otsu; vùng nhỏ hoặc chữ gradient có thể lệch. Hai dòng cùng khối mà một dòng
   `[20,55,134]` dòng kia `[237,248,249]` thì dòng sáng gần chắc sai — ghi

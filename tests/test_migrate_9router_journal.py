@@ -160,7 +160,7 @@ def test_real_run_renders_same_bytes_as_old_code():
                 assert tr.summary_tele(m) == (EXPECTED / f"{d}.tele.txt").read_text(encoding="utf-8"), d
             assert journal_web.page_list_clean() == (EXPECTED / "list.html").read_bytes()
 
-            # Ada reads the new keys, its own dump keeps the old keys (LOW-243)
+            # Ada reads the new keys; its own dump keys follow ada_keys_v2.json (LOW-246)
             files = iter(sorted(journal_dir.glob("9router_*.json")))
 
             class _Fixed(_datetime):

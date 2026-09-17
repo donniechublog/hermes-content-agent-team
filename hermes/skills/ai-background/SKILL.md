@@ -53,12 +53,12 @@ cd /home/donniechu/content-team && venv/bin/python tao_nen_ai.py \
   --out /tmp/nen_ai_<id>_<n>.png
 ```
 
-Ra một PNG, đưa thẳng vào `"bg_anh"` của slide đó trong spec `deck.py`.
+Ra một PNG, đưa thẳng vào `"bg_image"` của slide đó trong spec `deck.py`.
 `_open_bg` trong `deck.py` tự cover-crop về đúng khung 1080×1350 dù ảnh ra
 kích thước nào — backend hiện tại (router) hay bỏ qua `--size`, đừng cố ép,
 `deck.py` lo phần khung.
 
-Layout `statement`/`list_steps`/`checklist` nhận `bg_anh` bình thường.
+Layout `statement`/`list_steps`/`checklist` nhận `bg_image` bình thường.
 `grid3` cần ảnh có sẵn grid ảnh thật bên trong (nhãn chữ đặt DƯỚI các ảnh nhỏ
 có sẵn) nên **không hợp** với nền AI generate — dùng nền màu phẳng hoặc
 `cover` cho các slide đó thay vì `grid3`.

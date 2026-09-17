@@ -45,16 +45,16 @@ chữ khác** — không trừ thì dòng kế bên lọt vào vành và mọi v
 - chữ đè lên ảnh thật (mặt người, phố, bokeh): **28.9 – 55.5**
 
 Ngưỡng 12.0 nằm gọn giữa hai nhóm. Vai không phải nhìn ảnh để đoán; preview tô
-xanh vùng phẳng, đỏ vùng ảnh. Chắc chắn máy sai thì `"ep_phang": [stt]`, nhưng
+xanh vùng phẳng, đỏ vùng ảnh. Chắc chắn máy sai thì `"force_flat": [stt]`, nhưng
 xem preview trước đã.
 
 ## Khi nào dịch tại chỗ, khi nào deck
 
 - **Tại chỗ**: nhãn, badge, tiêu đề một dòng, slide ít vùng. Chữ Việt vẽ đúng
   box gốc, màu và cỡ đo được từ ảnh.
-- **Đoạn nhiều dòng**: `gop` cả dải thành một khối. Cả hai vai đều có `gop`.
+- **Đoạn nhiều dòng**: `merges` cả dải thành một khối. Cả hai vai đều có `merges`.
 - **Deck** (chỉ Itachi): infographic dày chữ, giữ bố cục cũ thì chữ Việt không
-  vừa. `bg_anh: true` để lấy nền sạch của slide đó.
+  vừa. `use_clean_background: true` để lấy nền sạch của slide đó.
 
 ## Sáu cái bẫy đã trả giá
 
@@ -67,7 +67,7 @@ toàn chữ hoa không có nét thòng xuống, bản dịch có dấu và có `
 **Dịch lẻ từng dòng thì cỡ chữ vỡ.** OCR trả một hộp mỗi dòng; bản dịch dài hơn
 bị ép vào bề ngang dòng gốc rồi co nhỏ, nằm cạnh dòng bên là thấy ngay. Đo thật
 07/09/2026 trên slide Hello Kitty: một dòng ra chữ bé bằng nửa các dòng còn lại.
-`gop` sửa được. `gin_submit.py` có cổng chặn: chữ vẽ ra dưới **75% cỡ chữ gốc** thì
+`merges` sửa được. `gin_submit.py` có cổng chặn: chữ vẽ ra dưới **75% cỡ chữ gốc** thì
 dừng, kèm số đo cả hai — "vừa hộp" không phải là đạt. Căn lề của khối gộp lấy
 theo ĐA SỐ các vùng thành viên, không so tâm khối với tâm ảnh: một đoạn căn trái
 dài gần hết bề ngang thì tâm nó cũng trùng tâm ảnh và cả đoạn bị thụt vào giữa.
