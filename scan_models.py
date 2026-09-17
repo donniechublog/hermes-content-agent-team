@@ -912,12 +912,12 @@ def write_required(ra_mat_aa: list, leo_hang: list,
     hom truoc sot thi hom sau bo sung, khong duoc bo."""
     muc = []
     for r in ra_mat_aa:
-        muc.append((f"ra_mat|{r['original_name']}", r["original_name"], "ra_mat",
+        muc.append((f"{required.KIND_RELEASE}|{r['original_name']}", r["original_name"], required.KIND_RELEASE,
                     f"ra mat {r['released']}, {r['maker']}, coding={r['coding']}"
                     + (f" #{r['coding_rank']}" if r.get("coding_rank") else ""), ""))
     for l in leo_hang:
         muc.append((f"{l['board']}|{l['name']}", l["name"], l["board"], l["note"],
-                    required.link_call_y({"loai": l["board"], "ten": l["name"]})))
+                    required.link_call_y({"kind": l["board"], "name": l["name"]})))
     # Model tha trong so tren HuggingFace: mot loai su kien "model xuat hien",
     # nen cung bat buoc.
     for m in hf_moi or []:

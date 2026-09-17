@@ -2,7 +2,7 @@
 """approve_pick.py — Ong Chu REPLY SO trong topic quet -> doc manifest ->
 create_pair: meta.json + article_sources + task vai anh + sidecar vai viet + bang den.
 Khoa theo duong dan manifest (hai lenh chon cung topic xep hang, khong nuot
-da_giao cua nhau). Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
+assignments cua nhau). Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 """
 import json
 import re
@@ -249,7 +249,7 @@ def _research_source(item, draft_id, out_png, brand):
         _ng = json.loads(nguon_path.read_text(encoding="utf-8"))
         _that = _ng.get("source_url") or ""
         if _ng.get("gnews_url") and _that and _that != item["link"]:
-            item["link_gnews"], item["link"] = item["link"], _that
+            item["gnews_url"], item["link"] = item["link"], _that
             write_meta(draft_id, item, out_png, brand)
     except Exception as e:                                   # noqa: BLE001
         loi = f"doc {nguon_path.name}: {type(e).__name__}: {e!r}"
@@ -333,7 +333,7 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     # Ong Chu — khong chi nam trong log (C-r2-6).
     loi_nguon = _research_source(item, draft_id, out_png, brand)
     if loi_nguon:
-        item["nguon_loi"] = loi_nguon
+        item["source_error"] = loi_nguon
 
     # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
     # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
@@ -378,12 +378,12 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
     _block_run_engine(draft_id)
 
     item["picked"] = True
-    item["vai_anh"], item["brand"], item["vai_viet"] = vai_anh, brand, vai_viet
-    item["task_anh"], item["task_viet"] = illu_id, None
+    item["image_role"], item["brand"], item["writer_role"] = vai_anh, brand, vai_viet
+    item["image_task"], item["writer_task"] = illu_id, None
     # Ghi lai TUNG lan giao (mot tin co the giao nhieu role) — dung de chan
     # trung y het (cung role + cung brand) o vong chon, xem handle_pick.
-    item.setdefault("da_giao", []).append(
-        {"vai_anh": vai_anh, "brand": brand, "draft_id": draft_id, "task_anh": illu_id})
+    item.setdefault("assignments", []).append(
+        {"image_role": vai_anh, "brand": brand, "draft_id": draft_id, "image_task": illu_id})
     return illu_id, None
 
 _KHOA_MANIFEST = {}                    # manifest path -> Lock
@@ -449,7 +449,7 @@ def _process_pick(token, group, thread_id, vai, lenh):
     # chay mot thread rieng (_run_background), ma ca ba buoc "doc ca manifest ->
     # create_pair (toi 180s moi tin vi article_sources chay dong bo) -> ghi lai ca
     # manifest" deu khong khoa. Lenh thu hai doc ban CU roi ghi de, nuot mat
-    # `da_giao`/`picked` cua lenh truoc — ma chinh `da_giao` la cong chan giao
+    # `assignments`/`picked` cua lenh truoc — ma chinh `assignments` la cong chan giao
     # trung, nen lan chon sau se tao task doi cho tin da giao.
     #
     # Khoa theo MANIFEST chu khong phai mot khoa chung: moi vai di tim tin
@@ -477,8 +477,8 @@ def _process_pick(token, group, thread_id, vai, lenh):
             # Cho phep giao MOT tin cho NHIEU role lam anh (tin hot dang nhieu noi,
             # nhieu cach dien dat). Chi chan lap Y HET: cung role + cung brand da
             # giao roi -> khoi tao trung task va de file len nhau.
-            if any(g.get("vai_anh") == vai_anh and g.get("brand") == brand
-                   for g in it.get("da_giao", [])):
+            if any(g.get("image_role") == vai_anh and g.get("brand") == brand
+                   for g in it.get("assignments", [])):
                 ten_da = NAME_ROLE_IMAGE.get(vai_anh, vai_anh)
                 lines.append(f"#{n}: đã giao {ten_da} ({brand}) trước đó — bỏ qua")
                 continue
@@ -490,10 +490,10 @@ def _process_pick(token, group, thread_id, vai, lenh):
             # Ong Chu 08/09/2026: bo cum "X viet caption sau khi duyet anh" — thua,
             # ai cung biet quy trinh nay, khong can nhac lai moi lan giao task.
             lines.append(f"#{n}: {ten_hien} dựng ảnh ({brand}) — task {tid}")
-            if it.get("nguon_loi"):
+            if it.get("source_error"):
                 # C-r2-6: research hong thi Ong Chu phai thay ngay o day, khong
                 # phai doi vai bao "doc ra rong" roi di lan log.
-                lines.append(f"   ⚠️ không tìm được nguồn cho #{n}: {it['nguon_loi'][:160]}")
+                lines.append(f"   ⚠️ không tìm được nguồn cho #{n}: {it['source_error'][:160]}")
             # Ong Chu 08/09/2026: "cac vai can phan hoi ngay khi duoc giao task la da
             # nhan task" — truoc day chi hang CHUYEN (Dre->Miles, ->Kite) duoc bao
             # ngay qua _report_receive_job, con task MOI tao o day thi im lang cho toi khi
@@ -501,7 +501,7 @@ def _process_pick(token, group, thread_id, vai, lenh):
             _report_receive_job(token, group, vai_anh, None, it["title"], tid)
             # Ghi NGAY sau TUNG tin (create_pair da danh dau vao `it`), khong doi
             # het vong nhu truoc: tin sau no giua chung thi cac tin truoc do van
-            # co `da_giao` tren dia, chon lai khong tao task doi.
+            # co `assignments` tren dia, chon lai khong tao task doi.
             _write_json(manifest_path, data)
     finally:
         khoa.release()

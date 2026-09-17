@@ -15,7 +15,10 @@ Co che:
     vai sua). Sau khi ghi thanh cong goi `xoa(vai, items)` de bo muc da dua.
   - Khop bang link (chuan hoa) hoac bang ten: xem `khop()`.
 
-Tep: state/<brand>/required_<vai>.json (runtime, gitignore).
+Tep: state/<brand>/required_<vai>.json (runtime, gitignore). Moi muc:
+{"name", "kind", "note", "link", "added_date", "keywords"?} — khoa English tu LOW-240
+(bang docs/tu_dien_ten/scan_keys_v2.json); `kind` `release` (cu `ra_mat`) in ra
+brief/stdout bang chu cu qua `kind_label`.
 """
 import json
 import re
@@ -28,6 +31,24 @@ import model_boards                                            # noqa: E402
 import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
 import state_paths                                           # noqa: E402
+
+
+# LOW-240: ma luu tru English, chu HIEN THI (brief, stdout, source_note) giu nguyen
+# byte chu cu. `kind` cua muc bat buoc sinh tu "ra mat theo bang cham diem" (Nova).
+KIND_RELEASE = "release"
+KIND_LABELS = {KIND_RELEASE: "ra_mat"}
+# `source` cua muc BAT BUOC mang tu hom truoc ma scan_prepare them vao cuoi
+# candidates.json cua Finn.
+SOURCE_REQUIRED = "required"
+SOURCE_LABELS = {SOURCE_REQUIRED: "bat_buoc"}
+
+
+def kind_label(kind) -> str:
+    return KIND_LABELS.get(kind, kind)
+
+
+def source_label(source) -> str:
+    return SOURCE_LABELS.get(source, source)
 
 
 def file(vai: str) -> Path:
@@ -76,14 +97,14 @@ def extra(vai: str, khoa: str, ten: str, loai: str, ghi_chu: str = "",
     bb = read(vai)
     if khoa in bb:
         return False
-    bb[khoa] = {"ten": ten, "loai": loai, "ghi_chu": ghi_chu, "link": link or "",
-                "ngay": datetime.now(timezone.utc).strftime("%Y-%m-%d")}
+    bb[khoa] = {"name": ten, "kind": loai, "note": ghi_chu, "link": link or "",
+                "added_date": datetime.now(timezone.utc).strftime("%Y-%m-%d")}
     _write(vai, bb)
     return True
 
 
 def extra_many(vai: str, muc: list) -> int:
-    """muc = [(khoa, ten, loai, ghi_chu, link)]. Tra so muc moi."""
+    """muc = [(khoa, name, kind, note, link[, keywords])]. Tra so muc moi."""
     bb = read(vai)
     moi = 0
     hom_nay = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -92,8 +113,8 @@ def extra_many(vai: str, muc: list) -> int:
         tu_khoa = list(m[5]) if len(m) > 5 and m[5] else []
         if khoa in bb:
             continue
-        bb[khoa] = {"ten": ten, "loai": loai, "ghi_chu": ghi_chu,
-                    "link": link or "", "ngay": hom_nay, "tu_khoa": tu_khoa}
+        bb[khoa] = {"name": ten, "kind": loai, "note": ghi_chu,
+                    "link": link or "", "added_date": hom_nay, "keywords": tu_khoa}
         moi += 1
     if moi:
         _write(vai, bb)
@@ -112,15 +133,15 @@ def match(muc: dict, item: dict) -> bool:
         if chuan_link(muc["link"]) == chuan_link(item["link"]):
             return True
     van_ban = _standard((item.get("title") or "") + " " + (item.get("summary_vi") or ""))
-    # `tu_khoa` (neu co): chi can DU cac tu khoa nay — dung cho tin "mot hang
+    # `keywords` (neu co): chi can DU cac tu khoa nay — dung cho tin "mot hang
     # mot ngay" cua Vera (Nvidia mua Hugging Face: 3 bao, Vera chon 1 bai).
-    if muc.get("tu_khoa"):
+    if muc.get("keywords"):
         # Chi khop trong TIEU DE: tom tat bai khac nhac "OpenAI" khong tinh la
         # da dua tin OpenAI.
         tieu_de = _standard(item.get("title") or "")
-        return all(_standard(t) in tieu_de for t in muc["tu_khoa"])
+        return all(_standard(t) in tieu_de for t in muc["keywords"])
     # Ten khop nguyen khoi truoc: chac chan nhat, khong phu thuoc manh vun.
-    ten_chuan = _standard(muc.get("ten", ""))
+    ten_chuan = _standard(muc.get("name", ""))
     if ten_chuan and ten_chuan in van_ban:
         return True
     # Roi moi den tung manh. Hai nguong KHAC NHAU, va truoc 06/09/2026 chung bi
@@ -146,7 +167,7 @@ def match(muc: dict, item: dict) -> bool:
     # SAT ten model, manh ngan phai khop dang DINH LIEN voi manh ke no:
     #   "Grok 4 Fast" vs "xAI ra mat Grok 5 Fast, tang 40%" -> tim "grok4" /
     #   "4fast", ca hai deu khong co -> khong khop (truoc day tra True).
-    tat_ca = re.findall(r"[a-z0-9]+", str(muc.get("ten", "")).lower())
+    tat_ca = re.findall(r"[a-z0-9]+", str(muc.get("name", "")).lower())
     manh = [m for m in tat_ca if len(m) >= 3 or any(c.isdigit() for c in m)]
     if not manh or not any(len(m) >= 4 for m in manh):
         return False
@@ -165,15 +186,15 @@ def match(muc: dict, item: dict) -> bool:
     return True
 
 
-# Link cua bang xep hang theo `loai` — de brief in san URL cho muc BAT BUOC
+# Link cua bang xep hang theo `kind` — de brief in san URL cho muc BAT BUOC
 # khong co link (Nova 05/09 mo 17 tool call grep repo tim link cho 15 muc).
 # Bang thi doc tu BAN DANG KY (model_boards): truoc 07/09/2026 danh sach nay la
 # ban chep tay thu SAU cua cung mot bo bang, va `test_model_boards` sinh ra chinh
 # vi mot lan them bang ma quen khai o day -> muc BAT BUOC ra link RONG.
 LINK_BOARD = dict(model_boards.LINK_BOARD)
-# `ra_mat` KHONG phai mot bang: no la `loai` cua muc BAT BUOC sinh tu "ra mat
+# `release` (cu `ra_mat`) KHONG phai mot bang: no la `kind` cua muc BAT BUOC sinh tu "ra mat
 # theo bang cham diem", tro ve trang tong cua artificialanalysis.
-LINK_BOARD["ra_mat"] = "https://artificialanalysis.ai/leaderboards/models"
+LINK_BOARD[KIND_RELEASE] = "https://artificialanalysis.ai/leaderboards/models"
 
 
 def link_call_y(muc: dict) -> str:
@@ -181,7 +202,7 @@ def link_call_y(muc: dict) -> str:
     trang model openrouter.ai/<id>; con lai -> trang bang xep hang."""
     if muc.get("link"):
         return muc["link"]
-    loai, ten = muc.get("loai", ""), str(muc.get("ten", ""))
+    loai, ten = muc.get("kind", ""), str(muc.get("name", ""))
     if loai in ("router", "openrouter") and "/" in ten:
         return f"https://openrouter.ai/{ten.split(':')[0]}"
     return LINK_BOARD.get(loai, "")
@@ -207,7 +228,7 @@ def in_list_clean(vai: str, tieu_de: str = "BAT BUOC DUA VAO BAO CAO") -> None:
     print(f"\n=== {tieu_de} ({len(bb)}) — {vai} KHONG duoc bo; thieu thi script "
           "ghi manifest TU THEM va ghi ro 'vai bo sot' tren bao cao ===")
     for v in bb.values():
-        print(f"  {v['ngay']}  [{v['loai']:<10s}] {str(v['ten'])[:60]:<61s} {v.get('ghi_chu', '')[:70]}")
+        print(f"  {v['added_date']}  [{kind_label(v['kind']):<10s}] {str(v['name'])[:60]:<61s} {v.get('note', '')[:70]}")
         if v.get("link"):
             print(f"        {v['link'][:110]}")
 

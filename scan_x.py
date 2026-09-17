@@ -32,11 +32,12 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import env_load                                             # noqa: E402
+import state_paths                                           # noqa: E402
 from scan_common import VN, UA                                # noqa: E402
 
 env_load.load()
 
-STATE = env_load.state_dir() / "x_seen.json"
+STATE = env_load.state_dir() / state_paths.X_SEEN_FILE
 DEFAULT_URL = "https://webhook-social-publishing.mated.dev"
 # Crawler quay 15 phut/lan. Qua 3 tieng khong co tweet moi nghia la no dung,
 # khong phai X im — ca home lan list deu khong bao gio vang the lau.
@@ -54,6 +55,11 @@ LINK_CAPABILITY = re.compile(
     re.I,
 )
 LINK_CATCH_KY = re.compile(r"https?://\S+", re.I)
+
+# `skipped` codes (LOW-240) -> the words the stdout summary always printed, so the
+# debug line `bo: {...}` stays byte-identical.
+SKIPPED_LABELS = {"reply": "reply", "too_short": "ngan", "already_seen": "da_thay",
+                  "missing_id_or_url": "rong"}
 
 
 def read_tweets(gio: int, limit: int) -> dict:
@@ -76,7 +82,7 @@ def read_tweets(gio: int, limit: int) -> dict:
 def already_see() -> dict:
     if not STATE.exists():
         return {}
-    d = json.loads(STATE.read_text(encoding="utf-8")).get("khoa", {})
+    d = json.loads(STATE.read_text(encoding="utf-8")).get("seen_at", {})
     return d if isinstance(d, dict) else {k: time.time() for k in d}
 
 
@@ -90,8 +96,8 @@ def write_timestamp(khoa: dict) -> None:
         except ValueError:
             cu = {}
     nguong = time.time() - KEEP_DATE * 86400
-    cu["khoa"] = {k: v for k, v in khoa.items() if v >= nguong}
-    cu["ghi_luc"] = datetime.now(timezone.utc).isoformat()
+    cu["seen_at"] = {k: v for k, v in khoa.items() if v >= nguong}
+    cu["updated_at"] = datetime.now(timezone.utc).isoformat()
     tmp = STATE.with_suffix(".tmp")
     tmp.write_text(json.dumps(cu, ensure_ascii=False, indent=1), encoding="utf-8")
     tmp.replace(STATE)
@@ -127,29 +133,29 @@ def score_mechanical(t: dict) -> int:
 
 def filter(tweets: list, cu: dict) -> tuple:
     """(giu, bo_dem) — bo_dem noi ro vi sao, de bao cao doi chieu duoc."""
-    bo = {"reply": 0, "ngan": 0, "da_thay": 0, "rong": 0}
+    bo = {"reply": 0, "too_short": 0, "already_seen": 0, "missing_id_or_url": 0}
     giu = []
     for t in tweets:
         tid = t.get("id") or ""
         text = (t.get("text") or "").strip()
         if not tid or not t.get("url"):
-            bo["rong"] += 1
+            bo["missing_id_or_url"] += 1
             continue
         if t.get("type") == "reply":
             bo["reply"] += 1
             continue
         if tid in cu:
-            bo["da_thay"] += 1
+            bo["already_seen"] += 1
             continue
         if len(text) < MIN_KY_FROM and not LINK_CATCH_KY.search(text):
-            bo["ngan"] += 1
+            bo["too_short"] += 1
             continue
         giu.append(t)
     return giu, bo
 
 
 def out_story(t: dict) -> dict:
-    """Mot tweet -> mot muc `tin_moi`, cung hinh dang voi scan_business de
+    """Mot tweet -> mot muc `new_stories`, cung hinh dang voi scan_business de
     manifest_write --nguon chon duoc bang so thu tu k."""
     ts = t.get("timestamp") or t.get("crawledAt") or ""
     try:
@@ -162,16 +168,16 @@ def out_story(t: dict) -> dict:
     media = t.get("media") or []
     return {
         "id": t.get("id") or "",
-        "tieu_de": one_line(t.get("title") or t.get("text") or ""),
+        "title": one_line(t.get("title") or t.get("text") or ""),
         "link": t.get("url"),
-        "ngay": ngay,
-        "toa_soan": handle,
-        "so_bao": 1,
-        "nguon_x": t.get("source") or "home",
-        "loai": t.get("type") or "tweet",
-        "so_lieu": {k: m.get(k) for k in ("views", "likes", "replies", "retweets")},
-        "so_anh": len(media),
-        "diem": score_mechanical(t),
+        "date": ngay,
+        "author": handle,
+        "outlet_count": 1,
+        "x_source": t.get("source") or "home",
+        "tweet_type": t.get("type") or "tweet",
+        "metrics": {k: m.get(k) for k in ("views", "likes", "replies", "retweets")},
+        "media_count": len(media),
+        "mechanical_score": score_mechanical(t),
         # Qinn doc phan nay de cham diem. Cat 1200 ky tu: du cho mot thread da
         # gop, con prompt thi an theo kich thuoc tep nay.
         "text": (t.get("text") or "")[:1200],
@@ -230,24 +236,25 @@ def main() -> int:
         )
 
     ket = {
-        "quet_luc": datetime.now(timezone.utc).isoformat(),
-        "cua_so_gio": a.gio,
-        "tong_quet": len(tweets),
-        "tin_moi": chon,
-        "bo_qua": bo,
+        "scanned_at": datetime.now(timezone.utc).isoformat(),
+        "window_hours": a.gio,
+        "scanned_total": len(tweets),
+        "new_stories": chon,
+        "skipped": bo,
         "freshness": fresh,
-        "tre_gio": round(tre_gio, 1) if tre_gio is not None else None,
-        "canh_bao": canh_bao,
+        "crawl_lag_hours": round(tre_gio, 1) if tre_gio is not None else None,
+        "warnings": canh_bao,
     }
     if a.out:
         Path(a.out).write_text(json.dumps(ket, ensure_ascii=False, indent=2), encoding="utf-8")
         print(a.out)
     else:
-        print(f"=== {len(chon)}/{len(tweets)} tweet (bo: {bo}) ===")
+        bo_hien = {SKIPPED_LABELS.get(k, k): v for k, v in bo.items()}
+        print(f"=== {len(chon)}/{len(tweets)} tweet (bo: {bo_hien}) ===")
         for c in canh_bao:
             print(f"[!] {c}", file=sys.stderr)
         for k, t in enumerate(chon, 1):
-            print(f"#{k} [{t['diem']}] {t['nguon_x']} {t['toa_soan']}: {t['tieu_de'][:90]}")
+            print(f"#{k} [{t['mechanical_score']}] {t['x_source']} {t['author']}: {t['title'][:90]}")
 
     # CHI danh dau tin DA DUA cho Qinn. Tin bi --top cat hom nay van con moi
     # cho lan sau — dung bai hoc cua scan_business: danh dau het la may xoa tin.

@@ -1,0 +1,93 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-240) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; giá trị liệt kê đổi cùng ticket (một lần migrate). Brief/báo cáo/Telegram giữ nguyên byte.",
+  "_measured": "máy chủ 17/09/2026: scan.json 26 (Vera dcgr 14, Qinn blog 12); *_candidates_*.json 67 (blog 36, dcgr 31); Finn candidates.json 14; required_*.json 5-7 đều {}; business_seen.json 2; x_seen.json 1; moat_republish_queue.json 2 đều rỗng; 0 draft có moat_lich_su / moat.loi_da_bao; moat_chua_bao.json không tồn tại.",
+  "scan_result": {
+    "_where": "state/<brand>/scan/<role>_<date>/scan.json (SCAN_RESULT_FILE) — ghi scan_business (Vera), scan_x (Qinn); đọc scan_prepare, scan_submit, manifest_write",
+    "quet_luc": "scanned_at",
+    "tong_quet": "scanned_total",
+    "tin_watchlist": "watchlist_count",
+    "tin_moi": "new_stories",
+    "cua_so_gio": "window_hours",
+    "bo_qua": "skipped",
+    "tre_gio": "crawl_lag_hours",
+    "canh_bao": "warnings"
+  },
+  "scan_result.skipped": {"ngan": "too_short", "da_thay": "already_seen", "rong": "missing_id_or_url"},
+  "scan_result.new_stories[] (Vera, scan_business)": {
+    "goc": "feed_group",
+    "tieu_de": "title",
+    "toa_soan": "outlet",
+    "ngay": "date",
+    "so_bao": "outlet_count",
+    "cac_bao": "outlets"
+  },
+  "scan_business_in_memory": {"hang_watch": "watchlist_company"},
+  "scan_result.new_stories[] (Qinn, scan_x)": {
+    "tieu_de": "title",
+    "ngay": "date",
+    "toa_soan": "author",
+    "so_bao": "outlet_count",
+    "nguon_x": "x_source",
+    "loai": "tweet_type",
+    "so_lieu": "metrics",
+    "so_anh": "media_count",
+    "diem": "mechanical_score"
+  },
+  "finn_candidates": {
+    "_where": "state/<brand>/scan/finn_<date>/candidates.json — scan_sources, scan_prepare",
+    "nguoi_dang": "posted_by",
+    "bat_buoc": "required"
+  },
+  "finn_candidates.source_value": {"bat_buoc": "required"},
+  "role_candidates": {
+    "_where": "state/<brand>/<role>_candidates_<date>.json — ghi manifest_common (top), approve_pick (giao việc); đọc approve_pick, ada_prepare, journal, manifest_report, manifest_write, manifest_build",
+    "quet_luc": "scanned_at",
+    "vai": "scan_role"
+  },
+  "role_candidates.items[]": {
+    "tu_them": "auto_added",
+    "vai_anh": "image_role",
+    "vai_viet": "writer_role",
+    "task_anh": "image_task",
+    "task_viet": "writer_task",
+    "nguon_loi": "source_error",
+    "da_giao": "assignments",
+    "link_gnews": "gnews_url"
+  },
+  "role_candidates.items[].assignments[]": {"vai_anh": "image_role", "task_anh": "image_task"},
+  "business_seen": {"_where": "state/<brand>/business_seen.json → hằng state_paths.BUSINESS_SEEN_FILE", "cap_nhat": "updated_at", "khoa": "seen_at", "ghi_chu": "note"},
+  "x_seen": {"_where": "state/<brand>/x_seen.json → hằng state_paths.X_SEEN_FILE", "khoa": "seen_at", "ghi_luc": "updated_at"},
+  "required_entry": {
+    "_where": "state/<brand>/required_<role>.json (REQUIRED_FILE) + dict bộ nhớ scan_models link_call_y",
+    "ten": "name",
+    "loai": "kind",
+    "ghi_chu": "note",
+    "ngay": "added_date",
+    "tu_khoa": "keywords"
+  },
+  "required_entry.kind_value": {"ra_mat": "release"},
+  "moat_republish_queue_entry": {"lan": "attempts", "loi": "error", "luc": "last_attempt_at"},
+  "draft_moat": {"_where": "drafts/<id>.json", "moat_lich_su": "moat_history", "moat.loi_da_bao": "moat.reported_error"},
+  "files": {"moat_chua_bao.json": "moat_unsent_notices.json"},
+  "env": {
+    "MOAT_NEN_ANH": "MOAT_COMPRESS_IMAGES",
+    "MOAT_NGUONG_NEN": "MOAT_COMPRESS_MIN_BYTES",
+    "MOAT_CHAT_LUONG_NEN": "MOAT_COMPRESS_QUALITY",
+    "MOAT_TRAN_TONG": "MOAT_MAX_TOTAL_BYTES"
+  },
+  "_kept_values": [
+    "scan_result.new_stories[].feed_group giá trị ('báo công nghệ', 'gọi vốn / IPO'…) là nhãn nhóm truy vấn hiển thị — giữ.",
+    "vai_anh/vai_viet giá trị là slug vai (dre, kite, carousel, miles…) — giữ.",
+    "freshness, metrics.views/likes/replies/retweets, nguon_x/loai giá trị (home, list:…, tweet) do máy chủ social-publishing trả — giữ.",
+    "model_watch HONG/MOI, scan_models khac/tq: đã quyết giữ ở LOW-233."
+  ],
+  "_notes": [
+    "`toa_soan` ba nghĩa: tên toà soạn (Vera → outlet), handle tác giả tweet (Qinn → author), URL tên miền (article_source pages → outlet_url, LOW-238).",
+    "`khoa` ở tệp seen là map khoá→thời điểm đã thấy → seen_at (không phải key/lock).",
+    "`vai` ở tệp candidates là vai QUÉT (nova/vera/finn…) → scan_role, vì item có image_role/writer_role.",
+    "`lan` ở hàng đợi moat là số lần thử (attempts), khác `attempt` là chỉ số lần làm lại.",
+    "`ngay` ở required là ngày THÊM vào danh sách → added_date, không phải ngày sự kiện.",
+    "`diem` ở tweet là điểm cơ học để sắp xếp → mechanical_score, khác manifest `score`.",
+    "`link_gnews` ở item candidates → gnews_url cho khớp kho article_source (LOW-238)."
+  ]
+}

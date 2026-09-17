@@ -150,7 +150,7 @@ def main() -> int:
             so = len(d.get("candidates", []))
         elif a.vai in ("vera", "qinn"):
             d = json.loads((wd / state_paths.SCAN_RESULT_FILE).read_text(encoding="utf-8")) if (wd / state_paths.SCAN_RESULT_FILE).exists() else {}
-            so = d.get("tong_quet", "?")
+            so = d.get("scanned_total", "?")
         tep = wd / state_paths.SCAN_NONE_FOUND_FILE
         tep.write_text(f"{NAME[a.vai]}: hôm nay không có tin nào đạt ngưỡng (đã quét {so} tin). "
                        "Không có gì để chọn.", encoding="utf-8")

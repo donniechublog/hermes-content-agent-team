@@ -51,10 +51,12 @@ def _count_report(t: dict) -> str:
     # Tin X (Qinn): "1 báo" vô nghĩa — cái Ông Chủ cần thấy là TÁC GIẢ và tin
     # đến từ home hay từ list nào (list là tập tài khoản Ông Chủ tự chọn, nên
     # đáng tin hơn home; xem SOUL của Qinn).
-    if t.get("nguon_x"):
-        ai = t.get("toa_soan") or ""
-        return f"{ai} · {t['nguon_x']}" if ai else str(t["nguon_x"])
-    return f"{t.get('so_bao', 1)} báo: {', '.join(t.get('cac_bao', [])[:3]) or t.get('toa_soan', '')}"
+    # Tweet ghi tac gia o `author`, tin bao ghi toa soan o `outlet` (LOW-240: cung
+    # mot khoa cu `toa_soan` hai nghia).
+    if t.get("x_source"):
+        ai = t.get("author") or ""
+        return f"{ai} · {t['x_source']}" if ai else str(t["x_source"])
+    return f"{t.get('outlet_count', 1)} báo: {', '.join(t.get('outlets', [])[:3]) or t.get('outlet', '')}"
 
 
 def _item_from_submit(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> dict | None:
@@ -79,7 +81,7 @@ def _item_from_submit(it: dict, i: int, nguon: list, vai: str, vai_bb: str) -> d
                 link = required.link_call_y(v)
                 break
     if not it.get("title") and t:
-        it["title"] = t.get("tieu_de", "")
+        it["title"] = t.get("title", "")
     if not it.get("source_note") and t:
         it["source_note"] = _count_report(t)
     if not it.get("title") or not link:
@@ -126,19 +128,19 @@ def extra_required(items: list, nguon: list, vai: str, vai_bb: str) -> list:
         link = required.link_call_y(v)
         if not link.lower().startswith(("http://", "https://")):
             print(f"[canh bao] muc BAT BUOC khong co link, khong tu them duoc: "
-                  f"{str(v.get('ten', ''))[:60]}", file=sys.stderr)
+                  f"{str(v.get('name', ''))[:60]}", file=sys.stderr)
             continue
-        ten = str(v.get("ten", ""))
+        ten = str(v.get("name", ""))
         title = ten.split(": ", 1)[1] if vai_bb == "vera" and ": " in ten else ten
         t = next((x for x in nguon
                   if required.chuan_link(x.get("link", "")) == required.chuan_link(link)), None)
         items.append({
             "title": title, "link": link, "via": source_original(link) or "",
-            "source_note": _count_report(t) if t else (v.get("ghi_chu") or ""),
+            "source_note": _count_report(t) if t else (v.get("note") or ""),
             "summary_vi": "", "score": None,
             "score_reason": "BAT BUOC, vai bo sot — script tu them",
             "category": "MODEL" if vai == "nova" else "BUSINESS",
-            "image_url": None, "picked": False, "tu_them": True,
+            "image_url": None, "picked": False, "auto_added": True,
         })
         print(f"[tu them] muc BAT BUOC vai bo sot: {title[:60]}", file=sys.stderr)
     return items
@@ -167,7 +169,7 @@ def main():
         sys.exit("Danh sach rong — khong ghi manifest.")
     nguon = []
     if a.nguon and Path(a.nguon).exists():
-        nguon = json.loads(Path(a.nguon).read_text(encoding="utf-8")).get("tin_moi", [])
+        nguon = json.loads(Path(a.nguon).read_text(encoding="utf-8")).get("new_stories", [])
 
     # "market" o day KHONG phai slug sot lai cua LOW-14 — no la chu Ong Chu (va
     # script cron cu) con go duoc; giu de lenh cu khong gay giua chung.

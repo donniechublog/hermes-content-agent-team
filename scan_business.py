@@ -34,8 +34,9 @@ from pathlib import Path
 import scan_common                                            # noqa: E402
 import env_load
 import required
+import state_paths
 
-STATE = env_load.state_dir() / "business_seen.json"
+STATE = env_load.state_dir() / state_paths.BUSINESS_SEEN_FILE
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
@@ -210,9 +211,9 @@ def scan_gnews(gio_toi_da: int) -> list:
             ts = _ts(it.findtext("pubDate") or "")
             if not td or (ts and ts < nguong):
                 continue
-            ra.append({"goc": nhan, "tieu_de": td, "toa_soan": outlet(td),
+            ra.append({"feed_group": nhan, "title": td, "outlet": outlet(td),
                        "link": it.findtext("link") or "", "ts": ts,
-                       "ngay": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
+                       "date": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
                        if ts else "?"})
     return ra
 
@@ -248,9 +249,9 @@ def scan_report(gio_toi_da: int) -> list:
             link = it.findtext("link") or ""
             if not link and it.find("a:link", ns) is not None:
                 link = it.find("a:link", ns).get("href") or ""
-            ra.append({"goc": "báo công nghệ", "tieu_de": td, "toa_soan": ten,
+            ra.append({"feed_group": "báo công nghệ", "title": td, "outlet": ten,
                        "link": link, "ts": ts,
-                       "ngay": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
+                       "date": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
                        if ts else "?"})
     return ra
 
@@ -367,9 +368,9 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
     """
     items = []
     for t in sorted(tin, key=lambda x: x["ts"] or 0):      # som nhat truoc
-        tu = _keyword(t["tieu_de"])
+        tu = _keyword(t["title"])
         if tu:
-            items.append((t, tu, _deal_keywords(t["tieu_de"]), _amounts(t["tieu_de"])))
+            items.append((t, tu, _deal_keywords(t["title"]), _amounts(t["title"])))
 
     items_with_word = {}
     for idx, (_, tu, _, _) in enumerate(items):
@@ -389,7 +390,7 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         # "factory" robots tach khoi Factory $5B. Cho lech tien te (€200M vs $231M).
         if len(w) < 4 or w in WATCHLIST_WORDS:
             return False
-        if not all(_capitalized(items[k][0]["tieu_de"], w) for k in (i, j)):
+        if not all(_capitalized(items[k][0]["title"], w) for k in (i, j)):
             return False
         groups = {root(i), root(j)}
         for k in items_with_word[w]:
@@ -416,8 +417,8 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         lead_i, lead_j = lead[i], lead[j]
         return lead_i in items[j][1] or lead_j in items[i][1]
 
-    follow_up = [_is_follow_up(t["tieu_de"]) for t, _, _, _ in items]
-    lead = [_lead_keyword(t["tieu_de"]) for t, _, _, _ in items]
+    follow_up = [_is_follow_up(t["title"]) for t, _, _, _ in items]
+    lead = [_lead_keyword(t["title"]) for t, _, _, _ in items]
     parent = list(range(len(items)))
 
     def root(i):
@@ -466,22 +467,22 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         vao = nhom.get(r)
         if vao is None:
             vao = dict(t)
-            vao["so_bao"] = 1
-            vao["cac_bao"] = [t["toa_soan"]] if t["toa_soan"] else []
+            vao["outlet_count"] = 1
+            vao["outlets"] = [t["outlet"]] if t["outlet"] else []
             # Co watchlist tinh tren tung bien the, va nhom giu co neu BAT KY
             # bien the nao khop. Truoc day tinh sau dedup tren tit dai dien
             # (ban som nhat): ban tin dau khong nhac ten hang lam dai dien la
             # ca nhom mat co bao ve — dung kich ban Xiaomi Cube.
-            vao["hang_watch"] = name_watchlist(t["tieu_de"])
-            vao["seen_keys"] = [standard_ify(t["tieu_de"])]
+            vao["watchlist_company"] = name_watchlist(t["title"])
+            vao["seen_keys"] = [standard_ify(t["title"])]
             nhom[r] = vao
         else:
-            vao["seen_keys"].append(standard_ify(t["tieu_de"]))
-            vao["so_bao"] += 1
-            if t["toa_soan"] and t["toa_soan"] not in vao["cac_bao"]:
-                vao["cac_bao"].append(t["toa_soan"])
-            if not vao.get("hang_watch"):
-                vao["hang_watch"] = name_watchlist(t["tieu_de"])
+            vao["seen_keys"].append(standard_ify(t["title"]))
+            vao["outlet_count"] += 1
+            if t["outlet"] and t["outlet"] not in vao["outlets"]:
+                vao["outlets"].append(t["outlet"])
+            if not vao.get("watchlist_company"):
+                vao["watchlist_company"] = name_watchlist(t["title"])
     return list(nhom.values())
 
 
@@ -494,13 +495,13 @@ def _unmerged_pairs(n, root):
 
 
 def already_see() -> dict:
-    """Doc bo nho da-thay: {khoa: unix_ts lan cuoi thay}.
+    """Doc bo nho da-thay: {seen_at: {khoa: unix_ts lan cuoi thay}}.
 
     Dinh dang cu la list khoa tran — doc duoc ca hai, chuyen dan sang dict.
     """
     if not STATE.exists():
         return {}
-    d = json.loads(STATE.read_text(encoding="utf-8")).get("khoa", [])
+    d = json.loads(STATE.read_text(encoding="utf-8")).get("seen_at", [])
     if isinstance(d, list):                # dinh dang cu
         now = time.time()
         return {k: now for k in d}
@@ -514,7 +515,7 @@ def write_timestamp(khoa: dict):
     - `sorted(khoa)[-2000:]` cat theo BANG CHU CAI: tin bat dau a–m bi day ra
       khoi bo nho va bao lai mai, tin bat dau z khong bao gio duoc quen. Gio
       moi khoa keo theo timestamp va cat theo do.
-    - Ghi de ca tep chi voi hai truong -> xoa mat `ghi_chu` (ghi chu su co
+    - Ghi de ca tep chi voi hai truong -> xoa mat `note` (ghi chu su co
       26/08 tung bay theo cach nay). Gio doc tep cu, chi thay truong cua minh.
     """
     STATE.parent.mkdir(parents=True, exist_ok=True)
@@ -525,8 +526,8 @@ def write_timestamp(khoa: dict):
         except Exception:                                    # noqa: BLE001
             goc = {}
     giu = dict(sorted(khoa.items(), key=lambda kv: kv[1])[-2000:])
-    goc["cap_nhat"] = datetime.now(timezone.utc).isoformat()
-    goc["khoa"] = giu
+    goc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    goc["seen_at"] = giu
     tmp = STATE.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(goc, ensure_ascii=False, indent=2),
                    encoding="utf-8")
@@ -571,8 +572,8 @@ def main():
     # lot lai vao danh sach.
     moi = [t for t in tin if not any(k in cu for k in t["seen_keys"])]
     for t in moi:
-        # hang_watch da duoc gather_duplicate tinh tren TUNG bien the truoc khi gop.
-        t["watchlist"] = bool(t.get("hang_watch"))
+        # watchlist_company da duoc gather_duplicate tinh tren TUNG bien the truoc khi gop.
+        t["watchlist"] = bool(t.get("watchlist_company"))
 
     # KHONG cham diem, KHONG cat theo do quan trong. Cach cham cu xep theo "nhieu
     # bao dua", nen tin lon ma Google News chi tra vai dong (Xiaomi ra AI Cube,
@@ -592,46 +593,46 @@ def main():
     chon.sort(key=lambda t: -(t["ts"] or 0))
 
     # Gon tung item truoc khi ghi tep cho Vera — prompt cua no an theo kich
-    # thuoc tep nay (audit 01/09). `so_bao` du de danh gia do nong; danh sach
-    # ten bao cap 3 (du cho source_note); `hang_watch` trung y voi `watchlist`
+    # thuoc tep nay (audit 01/09). `outlet_count` du de danh gia do nong; danh sach
+    # ten bao cap 3 (du cho source_note); `watchlist_company` trung y voi `watchlist`
     # thi bo. `chon` goc van dung nguyen cho write_timestamp ben duoi.
     xuat = []
     for t in chon:
-        t2 = {k: v for k, v in t.items() if k not in ("hang_watch", "seen_keys")}
-        t2["cac_bao"] = t.get("cac_bao", [])[:3]
+        t2 = {k: v for k, v in t.items() if k not in ("watchlist_company", "seen_keys")}
+        t2["outlets"] = t.get("outlets", [])[:3]
         xuat.append(t2)
     # BAT BUOC (luat Ong Chu 04/09/2026): tin watchlist (top brand nganh AI)
     # la PHAI co trong manifest cua Vera, tich luy sang hom sau neu sot.
     # MOT muc moi HANG moi NGAY (khong phai moi bai bao): Nvidia mua Hugging
     # Face co 3 bao thi Vera chon 1 bai la du. Chi hang LOI, hoac tin >= 2 bao.
-    # Khop bang ten hang trong tieu de/tom tat cua Vera (tu_khoa), khong theo link.
+    # Khop bang ten hang trong tieu de/tom tat cua Vera (keywords), khong theo link.
     if not a.lan_dau:
         nhom = {}
         for t in chon:
-            hang = (t.get("hang_watch") or "").lower()
+            hang = (t.get("watchlist_company") or "").lower()
             if not (t["watchlist"] and hang):
                 continue
-            if hang not in RANK_ERROR and (t.get("so_bao") or 0) < 2:
+            if hang not in RANK_ERROR and (t.get("outlet_count") or 0) < 2:
                 continue
-            k = f"hang|{hang}|{t['ngay']}"
+            k = f"hang|{hang}|{t['date']}"
             # KHONG dung ten `cu`: do la bo nho da-thay (da_thay()) dung o cuoi
             # main cho write_timestamp. Ghi de no o day lam write_timestamp nhan None -> crash
             # sau khi da ghi --out, tuc Vera co tep ma moc khong duoc cap nhat
             # (tin bao lai hom sau). Bat 04/09/2026 khi chay thu scan_prepare.
             cu_nhom = nhom.get(k)
-            if not cu_nhom or (t.get("so_bao") or 0) > (cu_nhom.get("so_bao") or 0):
+            if not cu_nhom or (t.get("outlet_count") or 0) > (cu_nhom.get("outlet_count") or 0):
                 nhom[k] = t
-        muc = [(k, f"{t['hang_watch']}: {t['tieu_de']}", "watchlist",
-                f"{t['so_bao']} bao; {t['ngay']}", t.get("link", ""), [t["hang_watch"]])
+        muc = [(k, f"{t['watchlist_company']}: {t['title']}", "watchlist",
+                f"{t['outlet_count']} bao; {t['date']}", t.get("link", ""), [t["watchlist_company"]])
                for k, t in nhom.items()]
         so_moi = required.extra_many("vera", muc)
         print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
               f"{len(required.read('vera'))} ({required.file('vera').name})", file=sys.stderr)
 
-    ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
-           "tong_quet": len(tin),
-           "tin_watchlist": sum(1 for t in chon if t["watchlist"]),
-           "tin_moi": xuat}
+    ket = {"scanned_at": datetime.now(timezone.utc).isoformat(),
+           "scanned_total": len(tin),
+           "watchlist_count": sum(1 for t in chon if t["watchlist"]),
+           "new_stories": xuat}
     if a.out:
         Path(a.out).write_text(json.dumps(ket, ensure_ascii=False, indent=2),
                                encoding="utf-8")
@@ -642,8 +643,8 @@ def main():
               f"| {wl} tin watchlist ===\n")
         for t in chon:
             dau = "[W]" if t["watchlist"] else "   "
-            print(f"  {dau} {t['ngay']}  ({t['goc']})  {t['so_bao']} báo")
-            print(f"        {t['tieu_de'][:100]}")
+            print(f"  {dau} {t['date']}  ({t['feed_group']})  {t['outlet_count']} báo")
+            print(f"        {t['title'][:100]}")
     # CHI danh dau tin DA DUA cho Vera (chon), khong phai tat ca tin quet duoc.
     # Truoc day danh dau het: ngay dot bien, phan bi van --top cat van vao seen
     # -> lan sau bi loc "da thay" -> khong bao gio toi Vera nua. Van an toan

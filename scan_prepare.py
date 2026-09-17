@@ -98,7 +98,7 @@ def _required(vai_bb: str) -> list:
                  "'vai bỏ sót' lên báo cáo cho Ông Chủ thấy; hãy tự đưa vào và chấm trung thực")
         for v in bb.values():
             link = required.link_call_y(v)
-            L.append(f"- [{v.get('loai', '')}] {v.get('ten', '')[:90]} | {v.get('ghi_chu', '')[:60]}"
+            L.append(f"- [{required.kind_label(v.get('kind', ''))}] {v.get('name', '')[:90]} | {v.get('note', '')[:60]}"
                      + (f" | {link[:100]}" if link else ""))
     else:
         L.append("## BẮT BUỘC: không có mục nào đang chờ")
@@ -116,18 +116,18 @@ def _supplement_required(cs: list) -> int:
         link = v.get("link", "")
         if not link or required.chuan_link(link) in co:
             continue
-        m = re.search(r"(\d+)\s*diem", v.get("ghi_chu", ""))
+        m = re.search(r"(\d+)\s*diem", v.get("note", ""))
         try:
             tuoi = (datetime.now(timezone.utc)
-                    - datetime.strptime(v.get("ngay", ""), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    - datetime.strptime(v.get("added_date", ""), "%Y-%m-%d").replace(tzinfo=timezone.utc)
                     ).total_seconds() / 3600
         except ValueError:
             tuoi = 0.0
-        cs.append({"source": "bat_buoc", "title": v.get("ten", ""), "link": link, "discussion": "",
+        cs.append({"source": required.SOURCE_REQUIRED, "title": v.get("name", ""), "link": link, "discussion": "",
                    "points": int(m.group(1)) if m else 0, "comments": 0,
-                   "via": required.chuan_link(link).split("/")[0], "nguoi_dang": "",
+                   "via": required.chuan_link(link).split("/")[0], "posted_by": "",
                    "age_hours": tuoi, "score_recency": 0, "score_spread": 0, "score_partial": 0,
-                   "source_median_points": 0, "image_url": None, "bat_buoc": True})
+                   "source_median_points": 0, "image_url": None, "required": True})
         n += 1
     return n
 
@@ -154,7 +154,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
                  "vào cuối danh sách, nguồn bat_buoc, điểm cơ học 0: vẫn phải nộp, chấm trung thực)")
     for k, c in enumerate(cs, 1):
         L.append(f"#{k} | {c.get('score_partial', 0):2d} (mới {c.get('score_recency', 0)}, lan {c.get('score_spread', 0)})"
-                 f" | {c.get('source', '')} {c.get('points', 0)}p/{c.get('comments', 0)}c | {c.get('age_hours', 0):.0f}h"
+                 f" | {required.source_label(c.get('source', ''))} {c.get('points', 0)}p/{c.get('comments', 0)}c | {c.get('age_hours', 0):.0f}h"
                  f" | {c.get('title', '')[:110]} | {c.get('link', '')}")
         if c.get("summary") or c.get("description"):
             L.append(f"     {str(c.get('summary') or c.get('description'))[:200]}")
@@ -250,14 +250,14 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
         if r.returncode != 0 or not q.exists():
             sys.exit(f"[LOI] scan_business.py hong: {(r.stderr or '')[-400:]}")
     d = json.loads(q.read_text(encoding="utf-8"))
-    tin = d.get("tin_moi", [])
+    tin = d.get("new_stories", [])
     L = [f"# VERA — QUÉT XONG {datetime.now(VN).strftime('%d/%m %H:%M')} VN: {len(tin)} tin trong 30h "
-         f"(tổng quét {d.get('tong_quet', '?')}, {d.get('tin_watchlist', 0)} tin watchlist)",
+         f"(tổng quét {d.get('scanned_total', '?')}, {d.get('watchlist_count', 0)} tin watchlist)",
          "Mỗi dòng: #k | [W]=watchlist (LUÔN phải đưa) | ngày | số báo: báo | tiêu đề | link"]
     for k, t in enumerate(tin, 1):
-        L.append(f"#{k} | {'[W]' if t.get('watchlist') else '   '} | {t.get('ngay', '')} | "
-                 f"{t.get('so_bao', 1)} báo: {', '.join(t.get('cac_bao', [])[:3]) or t.get('toa_soan', '')}"
-                 f" | {t.get('tieu_de', '')[:110]} | {t.get('link', '')}")
+        L.append(f"#{k} | {'[W]' if t.get('watchlist') else '   '} | {t.get('date', '')} | "
+                 f"{t.get('outlet_count', 1)} báo: {', '.join(t.get('outlets', [])[:3]) or t.get('outlet', '')}"
+                 f" | {t.get('title', '')[:110]} | {t.get('link', '')}")
     L += [""] + _required("vera")
     L += ["", f"## Viết danh sách vào: {wd / state_paths.SCAN_LIST_FILE} — tin có HỆ QUẢ (IPO, thâu tóm, hạ tầng, chính sách, lao "
           "động, kiện tụng, cược lớn), kèm mức chắc chắn theo số báo; bỏ giá cổ phiếu trong ngày, PR sản phẩm",
@@ -285,28 +285,28 @@ def brief_qinn(wd: Path, lam_moi: bool) -> str:
         if r.returncode != 0 or not q.exists():
             sys.exit(f"[LOI] scan_x.py hong: {(r.stderr or '')[-400:]}")
     d = json.loads(q.read_text(encoding="utf-8"))
-    tin = d.get("tin_moi", [])
-    bo = d.get("bo_qua", {})
+    tin = d.get("new_stories", [])
+    bo = d.get("skipped", {})
 
     L = []
     # Canh bao tuoi du lieu len TRUOC moi thu khac: "crawler dung" va "hom nay
     # khong co tin dang" nhin giong nhau neu khong noi ra.
-    for c in d.get("canh_bao", []):
+    for c in d.get("warnings", []):
         L.append(f"## [!] {c}")
     L.append(
         f"# QINN — QUET XONG {datetime.now(VN).strftime('%d/%m %H:%M')} VN: {len(tin)} tweet "
-        f"trong {d.get('cua_so_gio', '?')}h (doc {d.get('tong_quet', '?')} tu DB; "
-        f"bo: reply {bo.get('reply', 0)}, qua ngan {bo.get('ngan', 0)}, da thay "
-        f"{bo.get('da_thay', 0)})"
+        f"trong {d.get('window_hours', '?')}h (doc {d.get('scanned_total', '?')} tu DB; "
+        f"bo: reply {bo.get('reply', 0)}, qua ngan {bo.get('too_short', 0)}, da thay "
+        f"{bo.get('already_seen', 0)})"
     )
     L.append("Xep theo diem CO HOC (tuong tac + link github/arxiv + do dai + thread) — "
              "diem chi de xep thu tu doc, KHONG phai danh gia. Ban moi la bo loc.")
     L.append("Moi muc: #k | [diem] | nguon | @tac gia | loai | so lieu | link, roi text thu vao.")
     for k, t in enumerate(tin, 1):
-        sl = t.get("so_lieu", {}) or {}
+        sl = t.get("metrics", {}) or {}
         L.append(
-            f"\n#{k} | [{t.get('diem', 0)}] | {t.get('nguon_x', '')} | {t.get('toa_soan', '')} | "
-            f"{t.get('loai', '')} | {sl.get('views') or 0} views, {sl.get('likes') or 0} likes | "
+            f"\n#{k} | [{t.get('mechanical_score', 0)}] | {t.get('x_source', '')} | {t.get('author', '')} | "
+            f"{t.get('tweet_type', '')} | {sl.get('views') or 0} views, {sl.get('likes') or 0} likes | "
             f"{t.get('link', '')}"
         )
         L.append("    " + (t.get("text", "") or "").replace("\n", "\n    ")[:900])

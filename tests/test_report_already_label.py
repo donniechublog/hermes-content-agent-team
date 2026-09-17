@@ -27,7 +27,7 @@ THREAD_VERA = 83          # topic Ông Chủ gõ; topic của Dre là 290 — kh
 
 def _manifest(d: Path) -> Path:
     p = d / "vera_candidates_2026-09-12.json"
-    p.write_text(json.dumps({"vai": "vera", "items": [
+    p.write_text(json.dumps({"scan_role": "vera", "items": [
         {"index": 1, "title": "Moonshot AI (Kimi) đặt mục tiêu 2 tỷ USD doanh thu năm",
          "link": "https://a.vn/1"},
         {"index": 7, "title": "TSMC doanh thu tháng 8 tăng 53% lên kỷ lục 16,35 tỷ USD",

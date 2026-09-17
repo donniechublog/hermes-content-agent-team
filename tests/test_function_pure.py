@@ -196,7 +196,7 @@ def test_rank_fifo_report_use_count_person_form_change():
 
 # ------------------------------------------------------- gather_duplicate / standard_ify
 def _story(td, ts, toa="x"):
-    return {"tieu_de": td, "ts": ts, "toa_soan": toa, "link": "", "goc": "g"}
+    return {"title": td, "ts": ts, "outlet": toa, "link": "", "feed_group": "g"}
 
 
 def test_gather_duplicate_merge_same_event_other_line_from():
@@ -206,8 +206,8 @@ def test_gather_duplicate_merge_same_event_other_line_from():
     tin = [_story("Nvidia invests in data center developer Cloverleaf Infrastructure", 100, "reuters"),
            _story("Nvidia partners with data center developer Cloverleaf", 200, "techcrunch")]
     ra = sb.gather_duplicate(tin)
-    assert len(ra) == 1, [t["tieu_de"] for t in ra]
-    assert ra[0]["so_bao"] == 2
+    assert len(ra) == 1, [t["title"] for t in ra]
+    assert ra[0]["outlet_count"] == 2
     assert ra[0]["ts"] == 100, "phai giu ban som nhat"
 
 
@@ -219,7 +219,7 @@ def test_gather_duplicate_no_merge_two_story_reverse_other():
     tin = [_story("Nvidia stock jumps", 100),
            _story("Nvidia stock slides after Beijing bans chip purchases", 200)]
     ra = sb.gather_duplicate(tin)
-    assert len(ra) == 2, f"gop nham hai tin nguoc nhau: {[t['tieu_de'] for t in ra]}"
+    assert len(ra) == 2, f"gop nham hai tin nguoc nhau: {[t['title'] for t in ra]}"
 
 
 def test_dedup_merges_same_deal_reworded_across_outlets():
@@ -233,8 +233,8 @@ def test_dedup_merges_same_deal_reworded_across_outlets():
            _story("Euclyd secures over €200M in Series A co-led by Samsung and Somerset Capital - Crypto Briefing", 500, "Crypto Briefing"),
            _story("Samsung's Taylor Fab Begins Mass Production of Tesla AI5 Chips, Targets Full Capacity by Year-End", 600, "biggo")]
     ra = sb.gather_duplicate(tin)
-    assert len(ra) == 2, [t["tieu_de"] for t in ra]
-    assert ra[0]["so_bao"] == 5 and ra[0]["ts"] == 100
+    assert len(ra) == 2, [t["title"] for t in ra]
+    assert ra[0]["outlet_count"] == 5 and ra[0]["ts"] == 100
 
 
 def test_dedup_keeps_different_deals_with_same_amount_apart():
@@ -247,11 +247,11 @@ def test_dedup_keeps_different_deals_with_same_amount_apart():
            _story("OpenAI acquires camera maker Glass Imaging for $300 million", 500),
            _story("Glass Imaging valued at $3 billion as OpenAI talks stall", 600)]
     for i in range(0, 6, 2):
-        a, b = tin[i]["tieu_de"], tin[i + 1]["tieu_de"]
+        a, b = tin[i]["title"], tin[i + 1]["title"]
         ka, kb = sb._keyword(a), sb._keyword(b)
         assert len(ka & kb) / max(len(ka), len(kb)) < 0.6, "cap nay phai thu luat so tien, khong phai luat 60%"
     ra = sb.gather_duplicate(tin)
-    assert len(ra) == 6, [t["tieu_de"] for t in ra]
+    assert len(ra) == 6, [t["title"] for t in ra]
 
 
 def test_dedup_merges_same_deal_sharing_only_a_rare_name():
@@ -262,7 +262,7 @@ def test_dedup_merges_same_deal_sharing_only_a_rare_name():
            _story("Profound Lands $180M In Series D Funding, Reaching $1.8B Valuation - Unite.AI", 300),
            _story("AEO startup Profound hits unicorn valuation, raises $180M Series D 7 months after last round - TechCrunch", 400)]
     ra = sb.gather_duplicate(tin)
-    assert len(ra) == 2, [t["tieu_de"] for t in ra]
+    assert len(ra) == 2, [t["title"] for t in ra]
 
 
 def test_dedup_single_word_rule_rejects_common_words_and_verbs():
@@ -275,7 +275,7 @@ def test_dedup_single_word_rule_rejects_common_words_and_verbs():
            _story("Anthropic IPO: Nvidia Considers $10 Billion Anchor Investment in Potential $2 Trillion AI Startup Valuation", 400),
            _story("Finland considers data centre permitting system after Google's €13bn AI investment", 500)]
     ra = sb.gather_duplicate(tin)
-    assert len(ra) == 5, [t["tieu_de"] for t in ra]
+    assert len(ra) == 5, [t["title"] for t in ra]
 
 
 def test_dedup_keeps_follow_up_story_apart_from_announcement():
@@ -285,7 +285,7 @@ def test_dedup_keeps_follow_up_story_apart_from_announcement():
            _story("Google's EUR13 Billion Finland AI Investment: Nuclear PPA, Data Centers, Jobs - IndexBox", 200),
            _story("Finland's Opposition Calls for Data Center Controls After Google's €13 Billion AI Investment", 300)]
     ra = sb.gather_duplicate(tin)
-    assert [t["so_bao"] for t in ra] == [2, 1], [(t["so_bao"], t["tieu_de"]) for t in ra]
+    assert [t["outlet_count"] for t in ra] == [2, 1], [(t["outlet_count"], t["title"]) for t in ra]
 
 
 def test_dedup_merges_same_story_without_amount():
@@ -296,7 +296,7 @@ def test_dedup_merges_same_story_without_amount():
            _story("SK Hynix reportedly in talks with Intel to build memory chips in US", 300),
            _story("SK Hynix in talks with Intel to produce memory chips in US for the first time amid Washington pressure, sources say", 400)]
     ra = sb.gather_duplicate(tin)
-    assert [t["so_bao"] for t in ra] == [2, 2], [(t["so_bao"], t["tieu_de"]) for t in ra]
+    assert [t["outlet_count"] for t in ra] == [2, 2], [(t["outlet_count"], t["title"]) for t in ra]
 
 
 def test_dedup_no_amount_rule_needs_same_lead_subject():
@@ -317,7 +317,7 @@ def test_dedup_trillion_amount_merges_only_same_valuation():
            _story("Nvidia pledges $100 billion to OpenAI for data center buildout", 400),
            _story("OpenAI Stargate expansion adds $100 billion in Texas campuses", 500)]
     ra = sb.gather_duplicate(tin)
-    assert [t["so_bao"] for t in ra] == [2, 1, 1, 1], [(t["so_bao"], t["tieu_de"]) for t in ra]
+    assert [t["outlet_count"] for t in ra] == [2, 1, 1, 1], [(t["outlet_count"], t["title"]) for t in ra]
 
 
 def test_dedup_rare_name_ignores_no_amount_title_already_in_group():
@@ -328,7 +328,7 @@ def test_dedup_rare_name_ignores_no_amount_title_already_in_group():
            _story("Samsung co-leads funding round for Dutch AI startup Euclyd - UA.NEWS", 200),
            _story("Eindhoven-based AI startup EUCLYD raises more than €200M - IO+", 300)]
     ra = sb.gather_duplicate(tin)
-    assert [t["so_bao"] for t in ra] == [3], [(t["so_bao"], t["tieu_de"]) for t in ra]
+    assert [t["outlet_count"] for t in ra] == [3], [(t["outlet_count"], t["title"]) for t in ra]
 
 
 def test_dedup_group_keeps_seen_keys_of_every_variant():
@@ -339,7 +339,7 @@ def test_dedup_group_keeps_seen_keys_of_every_variant():
            _story("OpenAI acquires Israeli-founded camera startup Glass Imaging for over $300 million", 200)]
     ra = sb.gather_duplicate(tin)
     assert len(ra) == 1
-    assert ra[0]["seen_keys"] == [sb.standard_ify(t["tieu_de"]) for t in tin]
+    assert ra[0]["seen_keys"] == [sb.standard_ify(t["title"]) for t in tin]
 
 
 def test_standard_ify_make_lock_dedup_on_fixed():

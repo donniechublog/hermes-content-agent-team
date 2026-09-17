@@ -43,7 +43,7 @@ def use(items: list, vai: str, ngay: str = None, tieu_de_phu: str = "") -> str:
         dau = f"<b>{it['index']}.</b>" + (f" [{diem}đ]" if diem is not None else "")
         phu = " · ".join(x for x in (it.get("via"), it.get("source_note")) if x)
         d.append(f"{dau} {it.get('title', '')}" + (f" <i>({phu})</i>" if phu else "")
-                 + (" <i>(vai bỏ sót, script tự thêm)</i>" if it.get("tu_them") else ""))
+                 + (" <i>(vai bỏ sót, script tự thêm)</i>" if it.get("auto_added") else ""))
     d.append("")
 
     d.append(MENTION)

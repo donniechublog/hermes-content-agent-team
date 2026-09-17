@@ -230,8 +230,8 @@ def test_muc_tu_nop_suy_via_tu_ten_mien():
 
 def test_muc_tu_nop_lay_link_va_so_bao_tu_nguon_khi_vai_ghi_k():
     import manifest_write as mg
-    nguon = [{"link": "https://x.vn/1", "tieu_de": "Nvidia rót vốn",
-              "so_bao": 3, "cac_bao": ["VnExpress", "Tuổi Trẻ", "Thanh Niên"]}]
+    nguon = [{"link": "https://x.vn/1", "title": "Nvidia rót vốn",
+              "outlet_count": 3, "outlets": ["VnExpress", "Tuổi Trẻ", "Thanh Niên"]}]
     muc = mg._item_from_submit({"k": 1, "summary_vi": "Rót vốn lớn"}, 1, nguon, "vera", "vera")
     assert muc["link"] == "https://x.vn/1"
     assert muc["title"] == "Nvidia rót vốn"
@@ -240,7 +240,7 @@ def test_muc_tu_nop_lay_link_va_so_bao_tu_nguon_khi_vai_ghi_k():
 
 def test_muc_tu_nop_k_ngoai_dai_thi_bo_chu_khong_lay_bai_khac():
     import manifest_write as mg
-    nguon = [{"link": "https://x.vn/1", "tieu_de": "Tin một"}]
+    nguon = [{"link": "https://x.vn/1", "title": "Tin một"}]
     assert mg._item_from_submit({"k": 9, "summary_vi": "x"}, 1, nguon, "vera", "vera") is None
 
 
@@ -256,7 +256,7 @@ def test_muc_tu_nop_lay_link_goi_y_cua_muc_bat_buoc_khi_vai_khong_ghi_link():
     """Nova chi can ghi dung ten model, khong phai di tim URL (05/09/2026)."""
     import manifest_write as mg
     with tempfile.TemporaryDirectory() as t:
-        with bat_buoc_tam(t, nova={"k1": {"ten": "Qwen3-Max",
+        with bat_buoc_tam(t, nova={"k1": {"name": "Qwen3-Max",
                                           "link": "https://qwen.ai/max"}}):
             muc = mg._item_from_submit({"title": "Qwen3-Max", "summary_vi": "Model mới"},
                                  1, [], "nova", "nova")
