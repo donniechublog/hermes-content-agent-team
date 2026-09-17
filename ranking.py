@@ -53,67 +53,67 @@ RATIO_FIT = 1.5
 # Thu tu trong danh sach = uu tien khi tin khong goi y gi; `suggest_sources` chi xep
 # lai thu tu nay, khong them nguon la.
 SOURCE = [
-    {"ma": "arena-text",     "site": "ARENA.AI",  "bang": "Text Arena",
-     "url": "https://arena.ai/leaderboard/text",          "mien": r"arena\.ai|lmarena",
-     "bang_re": r"\btext\b(?![- ]?to[- ]?)|văn bản|van ban|\bchat\b"},
-    {"ma": "arena-code",     "site": "ARENA.AI",  "bang": "WebDev / Code Arena",
-     "url": "https://arena.ai/leaderboard/code",          "mien": r"arena\.ai|lmarena",
-     "bang_re": r"\bcode\b|webdev|frontend|front-end|lập trình|lap trinh"},
-    {"ma": "arena-vision",   "site": "ARENA.AI",  "bang": "Vision Arena",
-     "url": "https://arena.ai/leaderboard/vision",        "mien": r"arena\.ai|lmarena",
-     "bang_re": r"\bvision\b|thị giác|thi giac"},
-    # `doc_lap` (09/09/2026): bang nay do NANG LUC RIENG, khong phai mot cach do
+    {"id": "arena-text",     "site": "ARENA.AI",  "board": "Text Arena",
+     "url": "https://arena.ai/leaderboard/text",          "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"\btext\b(?![- ]?to[- ]?)|văn bản|van ban|\bchat\b"},
+    {"id": "arena-code",     "site": "ARENA.AI",  "board": "WebDev / Code Arena",
+     "url": "https://arena.ai/leaderboard/code",          "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"\bcode\b|webdev|frontend|front-end|lập trình|lap trinh"},
+    {"id": "arena-vision",   "site": "ARENA.AI",  "board": "Vision Arena",
+     "url": "https://arena.ai/leaderboard/vision",        "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"\bvision\b|thị giác|thi giac"},
+    # `independent` (09/09/2026): bang nay do NANG LUC RIENG, khong phai mot cach do
     # khac cua cung mot thu — model tao anh gioi va model sua anh gioi la HAI
     # bang xep hang khac han (Ong Chu: "một bảng là top model tạo sinh, một bảng
     # là top model chỉnh sửa, đâu có trùng lặp"). `find_and_capture_many` doc co nay
-    # de KHONG dung lai sau khi da chup duoc mot bang doc_lap khac — khac voi vi
+    # de KHONG dung lai sau khi da chup duoc mot bang `independent` khac — khac voi vi
     # du arena-code/swebench/aider/livecodebench duoi day: bon cai do la BON CACH
     # DO CUNG MOT NANG LUC (code), chup mot cai la du, chup them chi lap lai.
-    {"ma": "arena-t2i",      "site": "ARENA.AI",  "bang": "Text-to-Image Arena",
-     "url": "https://arena.ai/leaderboard/text-to-image", "mien": r"arena\.ai|lmarena",
-     "bang_re": r"text[- ]?to[- ]?image|tạo ảnh|tao anh|\bt2i\b",
-     "doc_lap": True},
+    {"id": "arena-t2i",      "site": "ARENA.AI",  "board": "Text-to-Image Arena",
+     "url": "https://arena.ai/leaderboard/text-to-image", "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"text[- ]?to[- ]?image|tạo ảnh|tao anh|\bt2i\b",
+     "independent": True},
     # Them 09/09/2026: bang RIENG voi text-to-image, do het truoc do — tin GPT
     # Image 2.5 #1&#2 Image Edit Arena khong co duong nao chup duoc (Ong Chu
     # gui anh chup 2 bang, hoi sao khong dua vao duoc). Da doc thu URL
     # (arena.ai/leaderboard/image-edit) truoc khi them, dung 55 model nhu chup.
-    {"ma": "arena-image-edit", "site": "ARENA.AI", "bang": "Image Edit Arena",
-     "url": "https://arena.ai/leaderboard/image-edit", "mien": r"arena\.ai|lmarena",
-     "bang_re": r"image[- ]?edit|sửa ảnh|sua anh|chỉnh sửa ảnh",
-     "doc_lap": True},
+    {"id": "arena-image-edit", "site": "ARENA.AI", "board": "Image Edit Arena",
+     "url": "https://arena.ai/leaderboard/image-edit", "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"image[- ]?edit|sửa ảnh|sua anh|chỉnh sửa ảnh",
+     "independent": True},
     # Them 09/09/2026 cung dot: tweet cong bo cua chinh @arena (status
     # 2097400515546255754) dan lai DUNG bang thu ba nay — "sua NHIEU anh cung
     # luc" khac han "sua MOT anh" (arena-image-edit), nen cung la nang luc rieng.
     # URL doc thang tu chu thich nguon in duoi tam anh trong tweet
     # ("ARENA.AI/LEADERBOARD/IMAGE-EDIT/MULTI-IMAGE-EDIT"), xac nhan lai bang
     # WebFetch: 42 model, gpt-image-2.5-sunburst #1 diem 1535 — khop anh.
-    {"ma": "arena-multi-image-edit", "site": "ARENA.AI", "bang": "Multi-Image Edit Arena",
-     "url": "https://arena.ai/leaderboard/image-edit/multi-image-edit", "mien": r"arena\.ai|lmarena",
-     "bang_re": r"multi[- ]?image|nhiều ảnh|nhieu anh",
-     "doc_lap": True},
-    {"ma": "arena-t2v",      "site": "ARENA.AI",  "bang": "Text-to-Video Arena",
-     "url": "https://arena.ai/leaderboard/text-to-video", "mien": r"arena\.ai|lmarena",
-     "bang_re": r"\bvideo\b|tạo video|tao video"},
-    {"ma": "arena-search",   "site": "ARENA.AI",  "bang": "Search Arena",
-     "url": "https://arena.ai/leaderboard/search",        "mien": r"arena\.ai|lmarena",
-     "bang_re": r"\bsearch\b|tìm kiếm|tim kiem"},
-    {"ma": "aa-models",      "site": "ARTIFICIALANALYSIS.AI", "bang": "Intelligence Index",
-     "url": "https://artificialanalysis.ai/leaderboards/models", "mien": r"artificialanalysis"},
+    {"id": "arena-multi-image-edit", "site": "ARENA.AI", "board": "Multi-Image Edit Arena",
+     "url": "https://arena.ai/leaderboard/image-edit/multi-image-edit", "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"multi[- ]?image|nhiều ảnh|nhieu anh",
+     "independent": True},
+    {"id": "arena-t2v",      "site": "ARENA.AI",  "board": "Text-to-Video Arena",
+     "url": "https://arena.ai/leaderboard/text-to-video", "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"\bvideo\b|tạo video|tao video"},
+    {"id": "arena-search",   "site": "ARENA.AI",  "board": "Search Arena",
+     "url": "https://arena.ai/leaderboard/search",        "domain_pattern": r"arena\.ai|lmarena",
+     "board_pattern": r"\bsearch\b|tìm kiếm|tim kiem"},
+    {"id": "aa-models",      "site": "ARTIFICIALANALYSIS.AI", "board": "Intelligence Index",
+     "url": "https://artificialanalysis.ai/leaderboards/models", "domain_pattern": r"artificialanalysis"},
     # mobile KHONG dung duoc (do 06/09/2026): bang rong 892px trong khung cuon ngang, khung 414 mat cot.
-    {"ma": "tbench",         "site": "TBENCH.AI", "bang": "Terminal-Bench",
-     "url": "https://www.tbench.ai/leaderboard",          "mien": r"tbench|terminal[-_ ]?bench",
-     "khung": "desktop"},
+    {"id": "tbench",         "site": "TBENCH.AI", "board": "Terminal-Bench",
+     "url": "https://www.tbench.ai/leaderboard",          "domain_pattern": r"tbench|terminal[-_ ]?bench",
+     "viewport": "desktop"},
     # mobile KHONG dung duoc (do 06/09/2026): bang rong 990px trong khung cuon ngang, khung 414 mat cot.
-    {"ma": "swebench",       "site": "SWEBENCH.COM", "bang": "SWE-bench",
-     "url": "https://www.swebench.com/",                  "mien": r"swebench|swe[-_ ]?bench",
-     "khung": "desktop"},
+    {"id": "swebench",       "site": "SWEBENCH.COM", "board": "SWE-bench",
+     "url": "https://www.swebench.com/",                  "domain_pattern": r"swebench|swe[-_ ]?bench",
+     "viewport": "desktop"},
     # mobile KHONG dung duoc (do 06/09/2026): khung hep chi bat duoc bieu do CHI PHI
     # chu khong phai bang xep hang, ten model lai bi cat cut ("Claude 4.7 Opu...").
-    {"ma": "livebench",      "site": "LIVEBENCH.AI", "bang": "LiveBench",
-     "url": "https://livebench.ai/",                      "mien": r"livebench",
-     "khung": "desktop"},
-    {"ma": "aider",          "site": "AIDER.CHAT", "bang": "Aider Polyglot",
-     "url": "https://aider.chat/docs/leaderboards/",      "mien": r"aider"},
+    {"id": "livebench",      "site": "LIVEBENCH.AI", "board": "LiveBench",
+     "url": "https://livebench.ai/",                      "domain_pattern": r"livebench",
+     "viewport": "desktop"},
+    {"id": "aider",          "site": "AIDER.CHAT", "board": "Aider Polyglot",
+     "url": "https://aider.chat/docs/leaderboards/",      "domain_pattern": r"aider"},
     # Ông Chủ 06/09/2026: "phải sử dụng hình ảnh từ tất cả trang này, đừng tự giới
     # hạn nguồn ảnh". Bảy mục dưới đây đều ĐO THẬT (chụp ra ảnh có khoanh model)
     # trước khi thêm — không thêm nguồn chưa chụp được, vì mỗi nguồn hỏng ngốn
@@ -126,37 +126,37 @@ SOURCE = [
     #   epoch.ai — bảng vẽ bằng <canvas>, không định vị được hàng để khoanh.
     #   mteb (HF Space) — benchmark embedding, không phải xếp hạng model kiểu tin.
     # openrouter khong render bang xep hang nao o khung <900px -> luon lui ve desktop.
-    {"ma": "openrouter",     "site": "OPENROUTER.AI", "bang": "LLM Rankings (lượt dùng)",
-     "url": "https://openrouter.ai/rankings",             "mien": r"openrouter",
-     "khung": "desktop"},
+    {"id": "openrouter",     "site": "OPENROUTER.AI", "board": "LLM Rankings (lượt dùng)",
+     "url": "https://openrouter.ai/rankings",             "domain_pattern": r"openrouter",
+     "viewport": "desktop"},
     # mobile KHONG dung duoc (do 06/09/2026): bang rong 556px, rong hon khung 414 nen mat cot.
-    {"ma": "livecodebench",  "site": "LIVECODEBENCH", "bang": "LiveCodeBench",
-     "url": "https://livecodebench.github.io/leaderboard.html", "mien": r"livecodebench",
-     "khung": "desktop"},
-    {"ma": "bfcl",           "site": "GORILLA (UC BERKELEY)", "bang": "Function-Calling Leaderboard",
+    {"id": "livecodebench",  "site": "LIVECODEBENCH", "board": "LiveCodeBench",
+     "url": "https://livecodebench.github.io/leaderboard.html", "domain_pattern": r"livecodebench",
+     "viewport": "desktop"},
+    {"id": "bfcl",           "site": "GORILLA (UC BERKELEY)", "board": "Function-Calling Leaderboard",
      "url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
-     "mien": r"\bbfcl\b|gorilla\.cs\.berkeley|berkeley function"},
+     "domain_pattern": r"\bbfcl\b|gorilla\.cs\.berkeley|berkeley function"},
     # mobile KHONG dung duoc (do 06/09/2026): bang cuon ngang 1788px, khung 414 mat cot.
-    {"ma": "gaia",           "site": "GAIA BENCHMARK", "bang": "GAIA",
-     "url": "https://gaia-benchmark-leaderboard.hf.space/", "mien": r"\bgaia\b",
-     "khung": "desktop"},
-    {"ma": "hle",            "site": "SAFE.AI", "bang": "Humanity's Last Exam",
-     "url": "https://agi.safe.ai/",                       "mien": r"agi\.safe\.ai|humanity'?s? last exam|\bHLE\b"},
+    {"id": "gaia",           "site": "GAIA BENCHMARK", "board": "GAIA",
+     "url": "https://gaia-benchmark-leaderboard.hf.space/", "domain_pattern": r"\bgaia\b",
+     "viewport": "desktop"},
+    {"id": "hle",            "site": "SAFE.AI", "board": "Humanity's Last Exam",
+     "url": "https://agi.safe.ai/",                       "domain_pattern": r"agi\.safe\.ai|humanity'?s? last exam|\bHLE\b"},
     # mobile KHONG dung duoc (do 06/09/2026): bieu do cot mang ngu nghia bang: toa do hang khong trung cho hien, chup ra lech.
-    {"ma": "vellum",         "site": "VELLUM.AI", "bang": "LLM Leaderboard",
-     "url": "https://www.vellum.ai/llm-leaderboard",      "mien": r"vellum",
-     "khung": "desktop"},
+    {"id": "vellum",         "site": "VELLUM.AI", "board": "LLM Leaderboard",
+     "url": "https://www.vellum.ai/llm-leaderboard",      "domain_pattern": r"vellum",
+     "viewport": "desktop"},
     # mobile KHONG dung duoc (do 06/09/2026): bang rong 1417px trong khung cuon ngang, khung 414 mat cot.
-    {"ma": "opencompass",    "site": "OPENCOMPASS", "bang": "OpenCompass LLM",
-     "url": "https://rank.opencompass.org.cn/leaderboard/llm", "mien": r"opencompass|司南",
-     "khung": "desktop"},
+    {"id": "opencompass",    "site": "OPENCOMPASS", "board": "OpenCompass LLM",
+     "url": "https://rank.opencompass.org.cn/leaderboard/llm", "domain_pattern": r"opencompass|司南",
+     "viewport": "desktop"},
 ]
 
 # Từ khoá chọn bảng con của một site theo chủ đề tin (video → arena-t2v trước...).
 # Mã trong CÙNG một mục là ALTERNATE — cùng đo một năng lực (vd arena-code/
 # swebench/aider/livecodebench đều là "giỏi code cỡ nào"), chụp được cái đầu
 # tiên là dừng: chụp thêm chỉ lặp lại cùng một bằng chứng. Nguồn nào đo NĂNG LỰC
-# RIÊNG (không phải cách đo khác của cùng một thứ) thì đánh dấu `doc_lap: True`
+# RIÊNG (không phải cách đo khác của cùng một thứ) thì đánh dấu `independent: True`
 # ngay tại chỗ khai NGUON — xem chú thích ở đó (arena-t2i/arena-image-edit).
 TOPIC = [
     # Bang TEXT (LOW-22, 12/09/2026): truoc day khong co mục nao cho no, nen mot
@@ -339,19 +339,19 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
     việc loại nằm ở `source_proves_story`, xem đó.
 
     Mỗi mục trả về mang thêm hai khoá:
-      `duoc_nhac`  True khi CHÍNH TIN nhắc tới nguồn đó (đọc ở tiêu đề/link/via).
+      `mentioned`  True khi CHÍNH TIN nhắc tới nguồn đó (đọc ở tiêu đề/link/via).
       `on_topic`   True khi tiêu đề/link/via khớp một mẫu TOPIC của nguồn đó — tin
                    "top 10 OpenRouter" với bảng lượt dùng. ĐỌC Ở TIÊU ĐỀ, không
                    đọc thân bài (LOW-22).
 
-    Trước LOW-179, chụp được từ nguồn `duoc_nhac=False` vẫn dùng được, chỉ kèm
+    Trước LOW-179, chụp được từ nguồn `mentioned=False` vẫn dùng được, chỉ kèm
     cảnh báo "đây là bảng khác" trong `describe_ranking_image`. Không còn: tin
     HuggingFace thả trọng số ra ảnh bảng lượt dùng openrouter (15/09/2026), mà
     cảnh báo đó thì hai bài cùng đợt không hề nổ vì tiêu đề có chữ "OpenRouter"
-    nên `duoc_nhac=True`. Luật Ông Chủ 16/09: không chụp đại chart rồi đưa vào
+    nên `mentioned=True`. Luật Ông Chủ 16/09: không chụp đại chart rồi đưa vào
     minh hoạ.
 
-    Mỗi mục còn giữ nguyên `doc_lap` nếu có (spread từ NGUON) — `find_and_capture_many`
+    Mỗi mục còn giữ nguyên `independent` nếu có (spread từ NGUON) — `find_and_capture_many`
     đọc khoá này để biết nguồn nào đo NĂNG LỰC RIÊNG, không phải cách đo khác
     của cùng một thứ, nên cố lấy hết thay vì dừng ở thành công đầu tiên."""
     # Tieu de NAM TRONG chuoi do "nguon duoc nhac": tin hay goi thang ten trang
@@ -360,21 +360,21 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
     chu_de = f"{tieu_de} {chu[:1500]}".lower()
     # BANG nao duoc nhac thi doc o TIEU DE / LINK / VIA — KHONG doc o than bai
     # (LOW-22): than bai ve mot model text hau nhu luon co chu "code", ma bay bang
-    # arena chung mot ten mien nen truoc 12/09/2026 `duoc_nhac` = "co arena.ai
+    # arena chung mot ten mien nen truoc 12/09/2026 `mentioned` = "co arena.ai
     # o dau do" — ca 7 bang deu True, canh bao "BANG KHAC" trong describe_ranking_image
-    # khong bao gio no. Nguon co `bang_re` thi phai KHOP bang moi la duoc nhac.
+    # khong bao gio no. Nguon co `board_pattern` thi phai KHOP bang moi la duoc nhac.
     nhac_bang = f"{tieu_de} {link} {via}".lower()
     diem, ra = {}, []
     for i, n in enumerate(SOURCE):
         d = 1000 - i
-        nhac = bool(re.search(n["mien"], goi, re.I))
-        if nhac and n.get("bang_re"):
-            nhac = bool(re.search(n["bang_re"], nhac_bang, re.I))
+        nhac = bool(re.search(n["domain_pattern"], goi, re.I))
+        if nhac and n.get("board_pattern"):
+            nhac = bool(re.search(n["board_pattern"], nhac_bang, re.I))
         if nhac:
             d += 500
         on_topic = False
         for pat, mas in TOPIC:
-            if n["ma"] not in mas:
+            if n["id"] not in mas:
                 continue
             if re.search(pat, chu_de, re.I):
                 d += 200
@@ -384,9 +384,9 @@ def suggest_sources(tieu_de: str = "", link: str = "", via: str = "", chu: str =
             # phai viec cua LOW-179.
             if re.search(pat, nhac_bang, re.I):
                 on_topic = True
-        diem[n["ma"]] = d
-        ra.append({**n, "duoc_nhac": nhac, "on_topic": on_topic})
-    return sorted(ra, key=lambda n: -diem[n["ma"]])
+        diem[n["id"]] = d
+        ra.append({**n, "mentioned": nhac, "on_topic": on_topic})
+    return sorted(ra, key=lambda n: -diem[n["id"]])
 
 
 # ---- Chụp ----------------------------------------------------------------------
@@ -465,14 +465,14 @@ _JS_TIM = _JS_NORM + """
       const w = t.getBoundingClientRect().width;
       const caoDu = rows.slice(0, Math.min(rows.length, 40)).reduce((a, x) => a + x.getBoundingClientRect().height, 0);
       const cao = Math.min(caoDu, tranCao);
-      ra.push({k, model, idx, so_hang: rows.length, hang: hang ? parseInt(hang, 10) : null,
-               dong: cells.join(' | ').slice(0, 160), logo: !!img,
-               ti_le: w / Math.max(1, cao), vua: w / Math.max(1, cao) <= tiLeMucTieu});
+      ra.push({k, model, idx, row_count: rows.length, rank: hang ? parseInt(hang, 10) : null,
+               row: cells.join(' | ').slice(0, 160), logo: !!img,
+               ratio: w / Math.max(1, cao), fits: w / Math.max(1, cao) <= tiLeMucTieu});
       k++; break;
     }
   }
   // vừa khổ trước; trong nhóm đó bảng nhiều hàng hơn trước; rồi tới bảng hẹp hơn
-  ra.sort((a, b) => (b.vua - a.vua) || (b.so_hang - a.so_hang) || (a.ti_le - b.ti_le));
+  ra.sort((a, b) => (b.fits - a.fits) || (b.row_count - a.row_count) || (a.ratio - b.ratio));
   return ra;
 }"""
 
@@ -505,7 +505,7 @@ _JS_CUON_DO = _JS_NORM + """
       if (kc) kc.scrollTop += d; else window.scrollBy(0, d); }
     st = stickyDo();
   }
-  return {vung: vung(t), bang: rect(t), rows: rows.map(rect), sticky: st};
+  return {region: vung(t), table_rect: rect(t), rows: rows.map(rect), sticky: st};
 }"""
 
 # `cuon=true`: tim nhan SVG mang ten model trong mot chart du lon roi cuon toi;
@@ -520,8 +520,8 @@ _JS_SVG = _JS_NORM + """
       const sb = s.getBoundingClientRect();
       if (sb.width < 500 || sb.height < 250) continue;
       if (cuon) { s.scrollIntoView({block: 'center'});
-                  return {model, dong: (t.textContent||'').trim().slice(0,80)}; }
-      return {svg: rect(s), nhan: rect(t), vung: vung(s)};
+                  return {model, row: (t.textContent||'').trim().slice(0,80)}; }
+      return {svg: rect(s), label_rect: rect(t), region: vung(s)};
     }
   }
   return null;
@@ -602,11 +602,11 @@ def _capture_one_board(page, tim: dict, out: Path, dpr: int = DPR):
     do = page.evaluate(_JS_CUON_DO, ["top" if trong_top else "row", idx, k])
     page.wait_for_timeout(400)
     do = page.evaluate(_JS_CUON_DO, ["top" if trong_top else "row", idx, k])
-    rows, vung, hdr = do["rows"], do["vung"], do["rows"][0]
+    rows, vung, hdr = do["rows"], do["region"], do["rows"][0]
     st = do.get("sticky")
     hdr_h = max(hdr["h"], (st["bot"] - st["top"]) if st else 0)
     dau, cuoi = _of_count(rows, idx, hdr_h)
-    x, w = do["bang"]["x"], do["bang"]["w"]
+    x, w = do["table_rect"]["x"], do["table_rect"]["w"]
     # Hàng nào nằm dưới vùng DÍNH (header sticky, có thể nhiều tầng) hoặc ngoài
     # vùng nhìn thì bỏ khỏi band — không chụp cái không hiện.
     duoi_hdr = max(hdr["y"] + hdr["h"] if hdr["y"] >= vung["y"] - 1 else vung["y"],
@@ -618,14 +618,14 @@ def _capture_one_board(page, tim: dict, out: Path, dpr: int = DPR):
         # cua so len dau viewport, lui mot header.
         do = page.evaluate(_JS_CUON_DO, ["row", dau, k]); page.wait_for_timeout(300)
         do = page.evaluate(_JS_CUON_DO, ["row", dau, k])
-        rows, vung, hdr = do["rows"], do["vung"], do["rows"][0]
+        rows, vung, hdr = do["rows"], do["region"], do["rows"][0]
         st = do.get("sticky")
         duoi_hdr = max(hdr["y"] + hdr["h"] if hdr["y"] >= vung["y"] - 1 else vung["y"],
                        st["bot"] if st else -1)
         hien = [k for k in range(dau, cuoi + 1)
                 if rows[k]["y"] >= duoi_hdr - 1 and rows[k]["y"] + rows[k]["h"] <= vung["y"] + vung["h"] + 1]
     if idx not in hien:
-        return None, (f"thấy hàng {idx}/{tim['so_hang']} nhưng không đưa vào tầm nhìn được "
+        return None, (f"thấy hàng {idx}/{tim['row_count']} nhưng không đưa vào tầm nhìn được "
                       f"(vùng {round(vung['y'])}..{round(vung['y']+vung['h'])}, hàng y={round(rows[idx]['y'])} "
                       f"h={round(rows[idx]['h'])}, header y={round(hdr['y'])} h={round(hdr['h'])}, {len(hien)} hàng hiện)")
     dau, cuoi = hien[0], hien[-1]
@@ -648,14 +648,14 @@ def _capture_one_board(page, tim: dict, out: Path, dpr: int = DPR):
         do2 = page.evaluate(_JS_CUON_DO, ["top", 0, k]); page.wait_for_timeout(300)
         do2 = page.evaluate(_JS_CUON_DO, ["top", 0, k])
         h2 = do2["rows"][0]
-        _capture(page, _hand({"x": x, "w": w, "y": h2["y"], "h": h2["h"]}, do2["vung"]), p1)
+        _capture(page, _hand({"x": x, "w": w, "y": h2["y"], "h": h2["h"]}, do2["region"]), p1)
         a, b = Image.open(p1).convert("RGB"), Image.open(p2).convert("RGB")
         g = Image.new("RGB", (max(a.width, b.width), a.height + b.height), (255, 255, 255))
         g.paste(a, (0, 0)); g.paste(b, (0, a.height)); g.save(out, "PNG"); p1.unlink(); p2.unlink()
         goc = (max(0, max(band["x"], vung["x"]) - 8), max(band["y"], vung["y"])); do_hdr = a.height / dpr
     row = rows[idx]
     _highlight(out, row["x"] - goc[0], row["y"] - goc[1] + do_hdr, min(row["w"], w), row["h"], dpr)
-    return {"kind": "table", "model": tim["model"], "rank": tim["hang"], "row": tim["dong"],
+    return {"kind": "table", "model": tim["model"], "rank": tim["rank"], "row": tim["row"],
             "has_logo": tim["logo"]}, ""
 
 
@@ -675,7 +675,7 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
         except Exception as e:                               # noqa: BLE001
             kq, ld = None, f"{type(e).__name__}: {str(e)[:60]}"
         if not kq:
-            ly_do.append(f"bảng {tim['k']} ({tim['so_hang']} hàng): {ld}")
+            ly_do.append(f"bảng {tim['k']} ({tim['row_count']} hàng): {ld}")
             continue
         with Image.open(p) as im:
             r = im.width / im.height
@@ -721,7 +721,7 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
         g.paste(a, (0, 0)); g.paste(b, (0, a.height))
         g.save(out, "PNG")
         kq = {**kq, "kind": "table-stitched", "row": kq["row"] + " ‖ " + kq2["row"][:60],
-              "ghep_voi": tim2["k"]}
+              "stitch_with": tim2["k"]}
     elif p != out:
         p.replace(out)
     for _, q, _, _ in da:
@@ -838,9 +838,9 @@ _JS_DS = _JS_NORM_DS + """
   const hang = (cells.find(c => /^#?\\d{1,3}$/.test(c)) || '').replace('#', '');
   const kc = khungCuonDs(els[0]);
   const r = kc ? kc.getBoundingClientRect() : {x:0, y:0, width:window.innerWidth, height:window.innerHeight};
-  return {idx, model, hang: hang ? parseInt(hang, 10) : null,
-          dong: cells.join(' | ').slice(0, 160), rows: els.map(rect),
-          vung: {x: Math.max(0,r.x), y: Math.max(0,r.y),
+  return {idx, model, rank: hang ? parseInt(hang, 10) : null,
+          row: cells.join(' | ').slice(0, 160), rows: els.map(rect),
+          region: {x: Math.max(0,r.x), y: Math.max(0,r.y),
                  w: Math.min(window.innerWidth, r.x+r.width) - Math.max(0,r.x),
                  h: Math.min(window.innerHeight, r.y+r.height) - Math.max(0,r.y)}};
 }
@@ -854,7 +854,7 @@ def _capture_one_column(page, models: list, out: Path, dpr: int, cot: int = -1):
     do = page.evaluate(_JS_DS, [models, False, cot])
     if not do:
         return None, "mất dấu danh sách"
-    idx, rows, vung = do["idx"], do["rows"], do["vung"]
+    idx, rows, vung = do["idx"], do["rows"], do["region"]
     dau = 0 if idx <= TOP_DEFAULT else max(0, idx - ON_MODEL)
     cuoi = idx if cot < 0 else len(rows) - 1
     cao = lambda k: rows[k]["y"] + rows[k]["h"] - rows[dau]["y"]
@@ -872,7 +872,7 @@ def _capture_one_column(page, models: list, out: Path, dpr: int, cot: int = -1):
     if cot < 0:
         row = rows[idx]
         _highlight(out, row["x"] - r["x"], row["y"] - r["y"], row["w"], row["h"], dpr)
-    return {"model": do["model"], "rank": do["hang"], "row": do["dong"]}, ""
+    return {"model": do["model"], "rank": do["rank"], "row": do["row"]}, ""
 
 
 def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
@@ -948,11 +948,11 @@ def capture_svg(page, models: list, out: Path, dpr: int = DPR):
         return None, "nhãn SVG mất sau khi cuộn"
     out.parent.mkdir(parents=True, exist_ok=True)
     s = do["svg"]
-    r = _hand({"x": s["x"], "y": s["y"], "w": s["w"], "h": min(s["h"], HEIGHT_MAX_CSS)}, do["vung"])
+    r = _hand({"x": s["x"], "y": s["y"], "w": s["w"], "h": min(s["h"], HEIGHT_MAX_CSS)}, do["region"])
     _capture(page, r, out)
-    n = do["nhan"]
+    n = do["label_rect"]
     _highlight(out, n["x"] - r["x"], n["y"] - r["y"], n["w"], n["h"], dpr)
-    return {"kind": "svg", "model": tim["model"], "rank": None, "row": tim["dong"], "has_logo": False}, ""
+    return {"kind": "svg", "model": tim["model"], "rank": None, "row": tim["row"], "has_logo": False}, ""
 
 
 def capture_logo(page, out: Path):
@@ -1020,7 +1020,7 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     d.text((w // 2 - d.textlength(handle, font=f_nho) / 2, h - 110), handle, font=f_nho, fill=card.MUTED)
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, "PNG")
-    image_provenance.stamp_file(out, "the_xep_hang", model=model, hang=hang, nguon=site, bang=bang)
+    image_provenance.stamp_file(out, "the_xep_hang", model=model, rank=hang, source=site, board=bang)
     return out
 
 
@@ -1069,10 +1069,10 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
     """Mot nguon: mo trang (mobile mac dinh, desktop neu nguon danh dau), bo qua
     khi bi chan, thu chup; mobile hut thi mo lai o desktop. Tra (kq, ly_do, pg);
     kq None + ly_do None nghia la bo qua (da in log)."""
-    # Mobile la MAC DINH cho moi nguon; `khung: desktop` chi danh dau nhung
+    # Mobile la MAC DINH cho moi nguon; `viewport: desktop` chi danh dau nhung
     # nguon DA DO la mobile khong dung duoc (ly do ghi ngay tren muc trong
     # NGUON). Go co ra thi van chay dung, chi ton them mot luot mo trang.
-    chi_desktop = n.get("khung") == "desktop"
+    chi_desktop = n.get("viewport") == "desktop"
     pg = phien.trang("desktop" if chi_desktop else "mobile")
     try:
         resp = pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
@@ -1084,7 +1084,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
         # khoi lead cung hoi dung cau nay, chep doi thi mot ben vá mà bên kia không.
         ly = got_block(pg.title() or "", resp.status if resp else None)
         if ly:
-            in_log(f"[xep_hang] {n['ma']}: nguồn chặn ({ly}), bỏ qua")
+            in_log(f"[xep_hang] {n['id']}: nguồn chặn ({ly}), bỏ qua")
             return None, None, pg
         # KHUNG MOBILE TRUOC cho MOI nguon (Ong Chu 06/09/2026: "vào trang
         # nào chụp thì cũng hãy duyệt theo kích thước mobile, vì hình luôn
@@ -1105,7 +1105,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
                 kq, ly_do2 = phien.thu(pg, models, out, DPR, False, 14)
                 ly_do = f"mobile: {ly_do}; desktop: {ly_do2}"
     except Exception as e:                           # noqa: BLE001
-        in_log(f"[xep_hang] {n['ma']}: {type(e).__name__}: {str(e)[:80]}")
+        in_log(f"[xep_hang] {n['id']}: {type(e).__name__}: {str(e)[:80]}")
         return None, None, pg
     return kq, ly_do, pg
 
@@ -1134,9 +1134,9 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
         phien = SessionCapture(_ph.browser(ARGS_CAPTURE))
         for n in nguon_ds:
             if time.time() - t0 > TIME_LIMIT:
-                in_log(f"[xep_hang] hết giờ ({TIME_LIMIT}s), dừng ở {n['ma']}")
+                in_log(f"[xep_hang] hết giờ ({TIME_LIMIT}s), dừng ở {n['id']}")
                 break
-            out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}{n['ma']}.png"
+            out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}{n['id']}.png"
             kq, ly_do, pg = _try_source(phien, n, models, out, in_log)
             if kq is None and ly_do is None:
                 continue
@@ -1145,29 +1145,29 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                 # tu chinh hang do cho THE DU PHONG (duong duy nhat the do chay toi).
                 if logo is None:
                     logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
-                in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
+                in_log(f"[xep_hang] {n['id']}: bỏ — {ly_do}")
                 continue
-            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
-                                  site=n["site"], bang=n["bang"], hang=kq.get("rank"), url=n["url"])
+            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], source=n["id"],
+                                  site=n["site"], board=n["board"], rank=kq.get("rank"), url=n["url"])
             im = Image.open(out)
-            in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
+            in_log(f"[xep_hang] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
                    f"({manifest_values.ranking_kind_label(kq['kind'])}, {im.width}x{im.height}) — {kq['row'][:70]}")
-            kq_cuoi = {"file_path": str(out), "kind": kq["kind"], "source": n["ma"], "site": n["site"],
-                       "board": n["bang"], "rank": kq.get("rank") or hang_goi_y, "model": kq["model"],
+            kq_cuoi = {"file_path": str(out), "kind": kq["kind"], "source": n["id"], "site": n["site"],
+                       "board": n["board"], "rank": kq.get("rank") or hang_goi_y, "model": kq["model"],
                        "url": n["url"], "row": kq["row"], "logo": str(logo) if logo else None,
-                       "mentioned": bool(n.get("duoc_nhac", True))}
+                       "mentioned": bool(n.get("mentioned", True))}
             break
     if kq_cuoi:
         return kq_cuoi
     n = nguon_ds[0] if nguon_ds else SOURCE[0]
-    out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}the.png"
-    fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
+    out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
+    fallback_card(models[0], hang_goi_y, n["site"], n["board"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
-    return {"file_path": str(out), "kind": "card", "source": n["ma"], "site": n["site"], "board": n["bang"],
+    return {"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
             "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}
 
 
-MAX_XH = 3      # tran so anh xep hang lay cho MOT tin (cac nguon doc_lap)
+MAX_XH = 3      # tran so anh xep hang lay cho MOT tin (cac nguon `independent`)
 
 
 def _rank_of(kq: dict, n: dict, hang_goi_y):
@@ -1189,21 +1189,21 @@ def _rank_of(kq: dict, n: dict, hang_goi_y):
         return kq["rank"]
     if is_capture(kq.get("kind")):
         return None
-    return None if n.get("doc_lap") else hang_goi_y
+    return None if n.get("independent") else hang_goi_y
 
 
 def source_proves_story(n: dict) -> bool:
     """Nguồn này có đủ tư cách làm ẢNH XẾP HẠNG cho bài không? Hàm THUẦN.
 
-    Chỉ hai loại đủ: bảng bài NHẮC TÊN (`duoc_nhac`) hoặc bảng ĐÚNG CHỦ ĐỀ bài
+    Chỉ hai loại đủ: bảng bài NHẮC TÊN (`mentioned`) hoặc bảng ĐÚNG CHỦ ĐỀ bài
     (`on_topic` — tin "top 10 OpenRouter" với bảng lượt dùng).
 
-    `doc_lap` KHÔNG phải tư cách. Đo 16/09/2026: với tin HuggingFace thả trọng số,
-    ba bảng arena ảnh (`doc_lap: True`) là những nguồn DUY NHẤT lọt qua nếu tính
-    `doc_lap` — tức lấy bảng đấu model tạo ảnh minh hoạ cho tin thả trọng số một
-    model văn bản. Mà ca `doc_lap` sinh ra để phục vụ (GPT-Image-2.5 lên cả bảng
+    `independent` KHÔNG phải tư cách. Đo 16/09/2026: với tin HuggingFace thả trọng số,
+    ba bảng arena ảnh (`independent: True`) là những nguồn DUY NHẤT lọt qua nếu tính
+    `independent` — tức lấy bảng đấu model tạo ảnh minh hoạ cho tin thả trọng số một
+    model văn bản. Mà ca `independent` sinh ra để phục vụ (GPT-Image-2.5 lên cả bảng
     tạo ảnh lẫn bảng chỉnh sửa ảnh) thì cả ba bảng đó đã `on_topic=True` rồi, nên
-    không mất gì. Việc thật của `doc_lap` nằm ở `_skip_source`: đừng dừng ở thành
+    không mất gì. Việc thật của `independent` nằm ở `_skip_source`: đừng dừng ở thành
     công đầu tiên — khác hẳn "nguồn này có tư cách làm ảnh của bài".
 
     Nguồn chỉ nằm trong registry theo thứ tự còn lại thì KHÔNG: chụp nó là lấy
@@ -1216,7 +1216,7 @@ def source_proves_story(n: dict) -> bool:
     thẻ là chữ engine tự in, `is_capture("card")` là False nên `needs_ranking_image`
     không ép vai dùng nó.
     """
-    return bool(n.get("duoc_nhac") or n.get("on_topic"))
+    return bool(n.get("mentioned") or n.get("on_topic"))
 
 
 def _sources_proving_story(nguon_ds: list, in_log) -> list:
@@ -1226,7 +1226,7 @@ def _sources_proving_story(nguon_ds: list, in_log) -> list:
     if len(ok) < len(nguon_ds):
         in_log(f"[xep_hang] bỏ {len(nguon_ds) - len(ok)}/{len(nguon_ds)} nguồn không chứng minh "
                f"được bài (bài không nhắc, không đúng chủ đề, không đo năng lực riêng) — "
-               f"còn: {', '.join(n['ma'] for n in ok) or 'không nguồn nào, sẽ dựng thẻ dự phòng'}")
+               f"còn: {', '.join(n['id'] for n in ok) or 'không nguồn nào, sẽ dựng thẻ dự phòng'}")
     return ok
 
 
@@ -1235,18 +1235,18 @@ def _skip_source(n: dict, da_chup_thuong: bool) -> bool:
 
     Tach rieng de test khong can Playwright — day la toan bo "luat chon" cua
     `find_and_capture_many` (tran so luong `toi_da` va het gio nam o vong lap goi
-    ham nay, khong phai o day). Nguon doc_lap khong bao gio bi luat nay chan —
+    ham nay, khong phai o day). Nguon `independent` khong bao gio bi luat nay chan —
     no do NANG LUC RIENG, thanh cong o nguon khac khong lam no "du roi".
     """
-    return da_chup_thuong and not n.get("doc_lap")
+    return da_chup_thuong and not n.get("independent")
 
 
 def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                       hang_goi_y=None, in_log=print, toi_da: int = MAX_XH, phien_browser=None) -> list:
     """Nhu `find_and_capture`, nhung KHONG dung o thanh cong dau tien: nguon mang
-    `doc_lap: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
+    `independent: True` (xem chu thich tai NGUON) la NANG LUC RIENG cua model, cu gang
     lay CA nguon do lan mot nguon "thuong" khac, khong coi thanh cong o nguon nay
-    la "du roi". Nguon thuong (khong doc_lap) van dung o thanh cong dau tien nhu
+    la "du roi". Nguon thuong (khong `independent`) van dung o thanh cong dau tien nhu
     truoc — bon cai swebench/aider/livecodebench/arena-code deu la CACH DO KHAC
     cua CUNG mot nang luc (code), lay them chi lap lai bang chung.
 
@@ -1274,37 +1274,37 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                 in_log(f"[xep_hang] đủ {toi_da} ảnh, dừng")
                 break
             if time.time() - t0 > TIME_LIMIT:
-                in_log(f"[xep_hang] hết giờ ({TIME_LIMIT}s), dừng ở {n['ma']}")
+                in_log(f"[xep_hang] hết giờ ({TIME_LIMIT}s), dừng ở {n['id']}")
                 break
             if _skip_source(n, da_chup_thuong):
                 continue                              # da co MOT anh "thuong", nguon khac chi lap lai
-            out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}{n['ma']}.png"
+            out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}{n['id']}.png"
             kq, ly_do, pg = _try_source(phien, n, models, out, in_log)
             if kq is None and ly_do is None:
                 continue
             if not kq:
                 if logo is None:
                     logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
-                in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
+                in_log(f"[xep_hang] {n['id']}: bỏ — {ly_do}")
                 continue
-            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
-                                  site=n["site"], bang=n["bang"], hang=kq.get("rank"), url=n["url"])
+            image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], source=n["id"],
+                                  site=n["site"], board=n["board"], rank=kq.get("rank"), url=n["url"])
             im = Image.open(out)
-            in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
+            in_log(f"[xep_hang] {n['id']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
                    f"({manifest_values.ranking_kind_label(kq['kind'])}, {im.width}x{im.height}) — {kq['row'][:70]}")
-            ket_qua.append({"file_path": str(out), "kind": kq["kind"], "source": n["ma"], "site": n["site"],
-                            "board": n["bang"], "rank": _rank_of(kq, n, hang_goi_y), "model": kq["model"],
+            ket_qua.append({"file_path": str(out), "kind": kq["kind"], "source": n["id"], "site": n["site"],
+                            "board": n["board"], "rank": _rank_of(kq, n, hang_goi_y), "model": kq["model"],
                             "url": n["url"], "row": kq["row"], "logo": str(logo) if logo else None,
-                            "mentioned": bool(n.get("duoc_nhac", True))})
-            if not n.get("doc_lap"):
+                            "mentioned": bool(n.get("mentioned", True))})
+            if not n.get("independent"):
                 da_chup_thuong = True
     if ket_qua:
         return ket_qua
     n = nguon_ds[0] if nguon_ds else SOURCE[0]
-    out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}the.png"
-    fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
+    out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}card.png"
+    fallback_card(models[0], hang_goi_y, n["site"], n["board"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
-    return [{"file_path": str(out), "kind": "card", "source": n["ma"], "site": n["site"], "board": n["bang"],
+    return [{"file_path": str(out), "kind": "card", "source": n["id"], "site": n["site"], "board": n["board"],
             "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}]
 
 
@@ -1323,7 +1323,7 @@ def main() -> int:
         sys.exit("Không tách được tên model — truyền --model")
     ds = suggest_sources(a.tieu_de, a.link)
     if a.nguon:
-        ds = [n for n in SOURCE if n["ma"] == a.nguon] + [n for n in ds if n["ma"] != a.nguon]
+        ds = [n for n in SOURCE if n["id"] == a.nguon] + [n for n in ds if n["id"] != a.nguon]
     ra = Path(a.ra)
     kq = find_and_capture(models, ds, ra.parent / ".xep_hang_tmp", a.brand,
                      a.hang if a.hang is not None else extract_rank(a.tieu_de, models[0]),

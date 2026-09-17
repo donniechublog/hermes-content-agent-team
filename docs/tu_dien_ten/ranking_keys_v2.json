@@ -1,0 +1,36 @@
+{
+  "_status": "ĐÃ DUYỆT 17/09/2026 (LOW-234), gồm metadata PNG và tên tệp thẻ dự phòng. Tiêu chí: tên English dùng đúng, không nhầm.",
+  "source_registry": {
+    "ma": "id",
+    "bang": "board",
+    "mien": "domain_pattern",
+    "bang_re": "board_pattern",
+    "doc_lap": "independent",
+    "khung": "viewport"
+  },
+  "suggested_source": {
+    "duoc_nhac": "mentioned"
+  },
+  "page_js_and_capture": {
+    "hang": "rank",
+    "dong": "row",
+    "so_hang": "row_count",
+    "vung": "region",
+    "bang": "table_rect",
+    "nhan": "label_rect",
+    "ghep_voi": "stitch_with",
+    "vua": "fits",
+    "ti_le": "ratio"
+  },
+  "png_metadata_extra": {
+    "hang": "rank",
+    "nguon": "source",
+    "bang": "board"
+  },
+  "files": {
+    "ranking_the.png": "ranking_card.png"
+  },
+  "_notes": ["`bang` hai nghĩa: tên bảng trong SOURCE (board) vs khung toạ độ bảng trong dict JS (table_rect).",
+             "Metadata PNG phụ không có chỗ đọc lại (chỉ crop_ti_le được đọc) — ảnh cũ giữ nguyên, không migrate.",
+             "Không có kho JSON trên đĩa — deploy chỉ code."]
+}

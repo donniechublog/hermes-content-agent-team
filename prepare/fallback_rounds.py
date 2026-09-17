@@ -126,7 +126,7 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
     09/09/2026, dap lai de xuat gioi han con mot anh: "đã làm social media thì
     làm gì có chuyện bị giới hạn ở nguồn tư liệu" — vd tin GPT-Image-2.5 #1&#2
     CA "Text-to-Image Arena" LAN "Image Edit Arena", hai bang khong trung nhau).
-    `ranking.find_and_capture_many` tu quyet dinh lay may bang qua co `doc_lap`
+    `ranking.find_and_capture_many` tu quyet dinh lay may bang qua co `independent`
     tren tung nguon trong registry."""
     # TIN XEP HANG (Ong Chu chot 06/09/2026): anh phai la bang/chart xep hang, chup
     # tu chinh trang xep hang (arena.ai, artificialanalysis.ai, tbench...), khoanh
@@ -145,7 +145,7 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
         models = ranking.extract_model(nguon.get("tieu_de_en") or "") or ranking.extract_model(title)
         if models:
             ds = ranking.suggest_sources(tieu_de_xh, link, meta.get("via", ""), bp.get("chu", ""))
-            print(f"[xep_hang] tin xep hang: model={models[0]!r}, thu {', '.join(n['ma'] for n in ds[:4])}...",
+            print(f"[xep_hang] tin xep hang: model={models[0]!r}, thu {', '.join(n['id'] for n in ds[:4])}...",
                   file=sys.stderr)
             # BOC. `find_and_capture_many` import playwright va launch chromium NGOAI
             # moi try cua chinh no (ranking.py:899,904), va `br.close()` khong

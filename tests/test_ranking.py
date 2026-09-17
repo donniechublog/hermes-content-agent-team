@@ -16,7 +16,7 @@ Sau khi sua xong ca hai, Ong Chu bac lai de xuat "chi lay MOT anh xep hang moi
 tin" (ban dau cua `find_and_capture`): *"đã làm social media thì làm gì có chuyện bị
 giới hạn ở nguồn tư liệu"*, và hai bang vi du *"một bảng là top model tạo sinh,
 một bảng là top model chỉnh sửa, đâu có trùng lặp"*. `find_and_capture_many` +
-`_skip_source` la ket qua: nguon `doc_lap: True` (nang luc rieng, khong phai
+`_skip_source` la ket qua: nguon `independent: True` (nang luc rieng, khong phai
 cach do khac cua cung mot thu) khong bao gio bi mot thanh cong khac chan lai.
 
 Chay:  venv/bin/python tests/test_ranking.py
@@ -33,7 +33,7 @@ import ranking as xh   # noqa: E402
 def test_has_source_image_edit_arena():
     """arena-image-edit phai co trong NGUON, dung URL that (da WebFetch xac
     nhan truoc khi them: 55 model, du lieu khop anh Ong Chu gui 09/09/2026)."""
-    ma = {n["ma"]: n for n in xh.SOURCE}
+    ma = {n["id"]: n for n in xh.SOURCE}
     assert "arena-image-edit" in ma, "thieu nguon Image Edit Arena trong NGUON"
     n = ma["arena-image-edit"]
     assert n["url"] == "https://arena.ai/leaderboard/image-edit"
@@ -41,7 +41,7 @@ def test_has_source_image_edit_arena():
 
 
 def test_no_duplicate_code_source():
-    ma = [n["ma"] for n in xh.SOURCE]
+    ma = [n["id"] for n in xh.SOURCE]
     assert len(ma) == len(set(ma)), f"trung ma nguon: {ma}"
 
 
@@ -90,8 +90,8 @@ def test_link_image_edit_priority_use_board_measure():
     truc tiep, +500 diem) — khong bi bang t2i chen truoc chi vi dung tu 'image'."""
     ds = xh.suggest_sources("GPT-Image-2.5 Sunburst dung #1 Image Edit Arena",
                         "https://arena.ai/leaderboard/image-edit", "", "")
-    assert ds[0]["ma"] == "arena-image-edit", [n["ma"] for n in ds[:3]]
-    assert ds[0]["duoc_nhac"] is True
+    assert ds[0]["id"] == "arena-image-edit", [n["id"] for n in ds[:3]]
+    assert ds[0]["mentioned"] is True
 
 
 def test_story_create_image_common_common_still_consider_all_two_board():
@@ -100,7 +100,7 @@ def test_story_create_image_common_common_still_consider_all_two_board():
     thuong len ca hai bang (du lieu that: GPT-Image-2.5 #1&#2 CA HAI bang cung
     luc), find_and_capture se lan luot thu tung nguon."""
     ds = xh.suggest_sources("GPT Image 2.5 dan dau bang tao anh AI", "", "", "")
-    top5 = [n["ma"] for n in ds[:5]]
+    top5 = [n["id"] for n in ds[:5]]
     assert "arena-t2i" in top5 and "arena-image-edit" in top5, top5
 
 
@@ -111,19 +111,19 @@ def test_story_main_fix_image_priority_board_edit_than_t2i():
     khong dau se khong khop gi ca (tu ky nghiem 09/09/2026, ban dau viet
     khong dau lam test nay bao FAIL nham khi code dung)."""
     ds = xh.suggest_sources("Model X dẫn đầu bảng chỉnh sửa ảnh bằng AI", "", "", "")
-    ma_thu_tu = [n["ma"] for n in ds]
+    ma_thu_tu = [n["id"] for n in ds]
     assert ma_thu_tu.index("arena-image-edit") < ma_thu_tu.index("arena-t2i"), ma_thu_tu[:5]
 
 
-# ------------------------------------------------------- doc_lap / _skip_source
+# --------------------------------------------------- independent / _skip_source
 def test_two_source_independent_no_block_other():
     """Ca hai bang GPT-Image-2.5 dung dau (tao anh, sua anh) deu doc_lap: da
     chup duoc mot cai KHONG duoc chan cai kia — dung yeu cau cua Ong Chu 09/09."""
-    t2i = {"ma": "arena-t2i", "doc_lap": True}
-    edit = {"ma": "arena-image-edit", "doc_lap": True}
+    t2i = {"id": "arena-t2i", "independent": True}
+    edit = {"id": "arena-image-edit", "independent": True}
     assert xh._skip_source(edit, da_chup_thuong=False) is False
     # da chup MOT nguon "thuong" khac (khong lien quan) truoc do van khong chan
-    # nguon doc_lap:
+    # nguon `independent`:
     assert xh._skip_source(t2i, da_chup_thuong=True) is False
     assert xh._skip_source(edit, da_chup_thuong=True) is False
 
@@ -132,8 +132,8 @@ def test_source_regular_use_after_success_first():
     """arena-code/swebench/aider/livecodebench la BON CACH DO cua CUNG mot nang
     luc — thanh cong o mot nguon THUONG phai chan cac nguon THUONG con lai,
     dung hanh vi cu cua `find_and_capture` (khong lap lai cung mot bang chung)."""
-    code = {"ma": "arena-code"}                          # khong doc_lap
-    swebench = {"ma": "swebench"}
+    code = {"id": "arena-code"}                          # khong `independent`
+    swebench = {"id": "swebench"}
     assert xh._skip_source(code, da_chup_thuong=False) is False
     assert xh._skip_source(swebench, da_chup_thuong=True) is True
 
@@ -151,8 +151,8 @@ def test_size_copy_real_gpt_image_2_5_take_all_two_board():
     for n in ds[:6]:                      # tran gio han/toi_da khong can mo phong o day
         if xh._skip_source(n, da_chup_thuong):
             continue
-        thu.append(n["ma"])               # gia dinh MOI nguon duoc thu deu "chup thanh cong"
-        if not n.get("doc_lap"):
+        thu.append(n["id"])               # gia dinh MOI nguon duoc thu deu "chup thanh cong"
+        if not n.get("independent"):
             da_chup_thuong = True
     assert "arena-image-edit" in thu and "arena-t2i" in thu, thu
     # Tin CHI ve mot nang luc (code) thi khong duoc keo them nguon thuong khac
@@ -162,8 +162,8 @@ def test_size_copy_real_gpt_image_2_5_take_all_two_board():
     for n in ds2[:6]:
         if xh._skip_source(n, da_chup_thuong2):
             continue
-        thu2.append(n["ma"])
-        if not n.get("doc_lap"):
+        thu2.append(n["id"])
+        if not n.get("independent"):
             da_chup_thuong2 = True
     assert thu2 == ["arena-code"], f"tin code bi keo them nguon thuong khac: {thu2}"
 
@@ -181,8 +181,8 @@ def test_all_three_board_image_of_gpt_image_2_5():
             break
         if xh._skip_source(n, da_chup_thuong):
             continue
-        thu.append(n["ma"])
-        if not n.get("doc_lap"):
+        thu.append(n["id"])
+        if not n.get("independent"):
             da_chup_thuong = True
     assert thu == ["arena-t2i", "arena-image-edit", "arena-multi-image-edit"], thu
 
@@ -201,9 +201,9 @@ def test_rank_from_title_no_take_bright_board_independent():
     """R-r2-5: hang tach tu tieu de la hang tren bang CHINH; bang doc lap
     (do nang luc khac, nguon svg tra hang=None) khong duoc muon "#1" do."""
     goi_y = 1
-    assert xh._rank_of({"rank": 3}, {"doc_lap": True}, goi_y) == 3, "hang doc duoc tu bang thi giu"
-    assert xh._rank_of({"rank": None}, {"doc_lap": False}, goi_y) == 1, "bang chinh muon hang tieu de"
-    assert xh._rank_of({"rank": None}, {"doc_lap": True}, goi_y) is None, "bang doc lap KHONG muon"
+    assert xh._rank_of({"rank": 3}, {"independent": True}, goi_y) == 3, "hang doc duoc tu bang thi giu"
+    assert xh._rank_of({"rank": None}, {"independent": False}, goi_y) == 1, "bang chinh muon hang tieu de"
+    assert xh._rank_of({"rank": None}, {"independent": True}, goi_y) is None, "bang doc lap KHONG muon"
     assert xh._rank_of({}, {}, None) is None
 
 

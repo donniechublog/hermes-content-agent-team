@@ -69,43 +69,43 @@ def test_anh_chup_khong_ro_hang_thi_de_trong():
     duoc. Truoc va, alt ghi "#2" (hang o tieu de) de len anh khoanh hang 9."""
     kq = {"kind": "list-stitched", "model": "DeepSeek", "rank": None,
           "row": "9. | DeepSeek Harness | new | 138Btokens"}
-    assert xh._rank_of(kq, {"ma": "openrouter"}, 2) is None
+    assert xh._rank_of(kq, {"id": "openrouter"}, 2) is None
 
 
 def test_anh_chup_co_hang_thi_dung_hang_cua_chinh_no():
     kq = {"kind": "table", "model": "GPT-6 Astra", "rank": 3, "row": "3. | GPT-6 Astra"}
-    assert xh._rank_of(kq, {"ma": "arena-text"}, 1) == 3
+    assert xh._rank_of(kq, {"id": "arena-text"}, 1) == 3
 
 
 def test_the_du_phong_van_duoc_dung_hang_tieu_de():
     """The la CHU engine tu in, khong phai bang chung chup tu bang nao."""
     kq = {"kind": "card", "model": "GPT-6 Astra", "rank": None, "row": ""}
-    assert xh._rank_of(kq, {"ma": "arena-text"}, 1) == 1
+    assert xh._rank_of(kq, {"id": "arena-text"}, 1) == 1
 
 
 # ------------------------------------------------- LOW-179: khong thay bang khac
 def test_nguon_vo_duoc_trong_registry_khong_du_tu_cach():
-    assert xh.source_proves_story({"ma": "openrouter"}) is False
-    assert xh.source_proves_story({"ma": "openrouter", "duoc_nhac": False,
+    assert xh.source_proves_story({"id": "openrouter"}) is False
+    assert xh.source_proves_story({"id": "openrouter", "mentioned": False,
                                    "on_topic": False}) is False
 
 
 def test_nguon_duoc_nhac_hoac_dung_chu_de_thi_du():
-    assert xh.source_proves_story({"ma": "x", "duoc_nhac": True}) is True
-    assert xh.source_proves_story({"ma": "x", "on_topic": True}) is True
+    assert xh.source_proves_story({"id": "x", "mentioned": True}) is True
+    assert xh.source_proves_story({"id": "x", "on_topic": True}) is True
 
 
 def test_doc_lap_mot_minh_khong_phai_tu_cach():
     """Voi tin HuggingFace tha trong so, ba bang arena anh (doc_lap) la nhung
     nguon DUY NHAT lot qua neu tinh doc_lap — bang dau model tao anh minh hoa
     cho tin tha trong so mot model van ban. Viec that cua doc_lap o _skip_source."""
-    assert xh.source_proves_story({"ma": "arena-t2i", "doc_lap": True}) is False
+    assert xh.source_proves_story({"id": "arena-t2i", "independent": True}) is False
 
 
 def test_ca_nhieu_bang_doc_lap_van_du_tu_cach_qua_on_topic():
     """Khong duoc pha ca doc_lap sinh ra de phuc vu: GPT-Image len ca bang tao
     anh lan bang chinh sua anh — ca ba bang do deu on_topic."""
-    ds = {n["ma"]: n for n in xh.suggest_sources("GPT-Image-2.5 Sunburst dựng #1 Image Edit Arena",
+    ds = {n["id"]: n for n in xh.suggest_sources("GPT-Image-2.5 Sunburst dựng #1 Image Edit Arena",
                                                  "", "", "")}
     for ma in ("arena-t2i", "arena-image-edit", "arena-multi-image-edit"):
         assert xh.source_proves_story(ds[ma]) is True, ma
@@ -114,23 +114,23 @@ def test_ca_nhieu_bang_doc_lap_van_du_tu_cach_qua_on_topic():
 def test_tin_openrouter_van_chup_duoc_bang_openrouter():
     """Khong duoc chan oan: hai bai kia DUNG la tin luot dung OpenRouter."""
     for td in (TD_FLASH, TD_PRO):
-        ds = {n["ma"]: n for n in xh.suggest_sources(td, "", "", "")}
+        ds = {n["id"]: n for n in xh.suggest_sources(td, "", "", "")}
         assert xh.source_proves_story(ds["openrouter"]) is True, td
 
 
 def test_tin_tha_trong_so_khong_duoc_lay_bang_luot_dung():
     """Bang LLM Rankings do thi phan token — khong do luot tai, khong do trending."""
-    ds = {n["ma"]: n for n in xh.suggest_sources(TD_HF, "", "", "")}
-    assert ds["openrouter"]["duoc_nhac"] is False
+    ds = {n["id"]: n for n in xh.suggest_sources(TD_HF, "", "", "")}
+    assert ds["openrouter"]["mentioned"] is False
     assert ds["openrouter"]["on_topic"] is False
     assert xh.source_proves_story(ds["openrouter"]) is False
-    assert [n["ma"] for n in xh.suggest_sources(TD_HF, "", "", "")
+    assert [n["id"] for n in xh.suggest_sources(TD_HF, "", "", "")
             if xh.source_proves_story(n)] == []
 
 
 def test_on_topic_doc_o_tieu_de_khong_doc_than_bai():
     """Bai hoc LOW-22: than bai lam moi nguon trong nhu duoc nhac."""
-    ds = {n["ma"]: n for n in xh.suggest_sources(
+    ds = {n["id"]: n for n in xh.suggest_sources(
         TD_HF, "", "", "Bang xep hang openrouter cho thay luot dung tang manh.")}
     assert ds["openrouter"]["on_topic"] is False
 
