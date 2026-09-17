@@ -54,8 +54,8 @@ def write_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
     L = [f"# {persona.upper()} — TƯ LIỆU ĐÃ SẴN: {m['title']}",
          f"Brand: {brand} | draft: {m['draft_id']} | category: {meta.get('category', '')} | via: {meta.get('via', '')}",
          f"Link gốc (thật): {m['link']}"]
-    if m.get("tieu_de_en"):
-        L.append(f"Tiêu đề bài gốc: {m['tieu_de_en']}")
+    if m.get("title_en"):
+        L.append(f"Tiêu đề bài gốc: {m['title_en']}")
     if ly_do:
         L.append(f"Điểm chấm: {diem}/100 — lý do (dùng cho câu Ý NGHĨA, không suy diễn thêm): {ly_do}")
     L += ["", f"## Người đọc: {VOICE.get(brand, VOICE['donniechublog'])}"]

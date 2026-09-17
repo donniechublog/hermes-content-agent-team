@@ -21,9 +21,9 @@ import image_prepare as cb   # noqa: E402
 
 
 def _xh(bang, model, kieu="bang"):
-    return {"tep": f"/tmp/{bang}.png", "kieu": kieu, "nguon": bang, "site": "ARENA.AI",
-            "bang": bang, "hang": 1, "model": model, "url": f"https://arena.ai/{bang}",
-            "dong": "...", "logo": None, "duoc_nhac": True}
+    return {"file_path": f"/tmp/{bang}.png", "kind": kieu, "source": bang, "site": "ARENA.AI",
+            "board": bang, "rank": 1, "model": model, "url": f"https://arena.ai/{bang}",
+            "row": "...", "logo": None, "mentioned": True}
 
 
 def _a(ma, xep_hang=None, dung=None, ti_le=0.8):
@@ -33,9 +33,9 @@ def _a(ma, xep_hang=None, dung=None, ti_le=0.8):
     # cho xhs, dem trung XH hai lan trong mot test bia dat sai gia dinh nay.
     if dung is None:
         dung = ["HERO / BÌA (bảng xếp hạng)", "thân (chart)"] if xep_hang else ["bìa"]
-    return {"ma": ma, "dung": list(dung), "lien_quan": True, "mien": "arena.ai", "tu": "xep_hang",
-            "ti_le": ti_le, "goc_trai_sang": 50, "canh_ngan": 1000, "ngang": False, "loai": "chart",
-            **({"xep_hang": xep_hang} if xep_hang else {})}
+    return {"id": ma, "uses": list(dung), "relevant": True, "domain": "arena.ai", "source": "xep_hang",
+            "ratio": ti_le, "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "chart",
+            **({"ranking": xep_hang} if xep_hang else {})}
 
 
 # -------------------------------------------------- _image_item_ranking: gan ma
@@ -49,8 +49,8 @@ def test_image_item_ranking_list_code_use_by_position():
     xhs = [_xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst"),
            _xh("Image Edit Arena", "GPT-Image-2.5 Sunburst")]
     muc = [cb._image_item_ranking(i, xh) for i, xh in enumerate(xhs)]
-    assert [m["ma"] for m in muc] == ["XH", "XH2"], [m["ma"] for m in muc]
-    assert {m["ma"]: m["xep_hang"]["bang"] for m in muc} == \
+    assert [m["id"] for m in muc] == ["XH", "XH2"], [m["id"] for m in muc]
+    assert {m["id"]: m["ranking"]["board"] for m in muc} == \
         {"XH": "Text-to-Image Arena", "XH2": "Image Edit Arena"}
 
 
@@ -58,17 +58,17 @@ def test_image_item_ranking_one_result_still_is_xh_ceiling():
     """CHI mot bang (truong hop thuong, khong doi hanh vi cu): ma van la 'XH'
     tran, khong phai 'XH1'."""
     muc = cb._image_item_ranking(0, _xh("Text Arena", "Kimi-K3"))
-    assert muc["ma"] == "XH", muc["ma"]
+    assert muc["id"] == "XH", muc["id"]
 
 
 def test_image_item_ranking_new_temp_keep_own_board_of_no():
-    """`xep_hang` gan vao moi muc phai la CHINH tam do, khong bi tam khac de
+    """`ranking` gan vao moi muc phai la CHINH tam do, khong bi tam khac de
     len — day la du lieu ca_xep_hang()/dong_brief_xep_hang doc de ta dung bang."""
     xhs = [_xh("Text-to-Image Arena", "GPT-Image-2.5 Sunburst"),
            _xh("Image Edit Arena", "GPT-Image-2.5 Flare")]
     muc = [cb._image_item_ranking(i, xh) for i, xh in enumerate(xhs)]
-    assert muc[0]["xep_hang"]["model"] == "GPT-Image-2.5 Sunburst"
-    assert muc[1]["xep_hang"]["model"] == "GPT-Image-2.5 Flare"
+    assert muc[0]["ranking"]["model"] == "GPT-Image-2.5 Sunburst"
+    assert muc[1]["ranking"]["model"] == "GPT-Image-2.5 Flare"
 
 
 # --------------------------------------------------------- build_manifest
@@ -77,12 +77,12 @@ def test_use_manifest_two_board_len_all_two_code_call_y_cover():
            _a("XH2", _xh("Image Edit Arena", "GPT-Image-2.5 Sunburst")),
            _a("A1")]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
-                         Path("/tmp"), anh, [anh[0]["xep_hang"], anh[1]["xep_hang"]],
+                         Path("/tmp"), anh, [anh[0]["ranking"], anh[1]["ranking"]],
                          True, {}, {}, False, 5, vai_anh="ethan")
-    assert m["goi_y_bia"][:2] == ["XH", "XH2"], m["goi_y_bia"]
-    assert m["so_xep_hang"] == 2, m["so_xep_hang"]
-    # m["xep_hang"] (so, dung boi cong chan needs_ranking_image) la bang DAU TIEN
-    assert m["xep_hang"]["bang"] == "Text-to-Image Arena", m["xep_hang"]
+    assert m["cover_suggestions"][:2] == ["XH", "XH2"], m["cover_suggestions"]
+    assert m["ranking_count"] == 2, m["ranking_count"]
+    # m["ranking"] (so, dung boi cong chan needs_ranking_image) la bang DAU TIEN
+    assert m["ranking"]["board"] == "Text-to-Image Arena", m["ranking"]
 
 
 def test_use_manifest_one_board_backward_compatible():
@@ -92,9 +92,9 @@ def test_use_manifest_one_board_backward_compatible():
     anh = [_a("XH", xh)]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), anh, [xh], True, {}, {}, False, 5, vai_anh="ethan")
-    assert m["goi_y_bia"] == ["XH"], m["goi_y_bia"]
-    assert m["so_xep_hang"] == 1
-    assert "XH2" not in m["goi_y_bia"]
+    assert m["cover_suggestions"] == ["XH"], m["cover_suggestions"]
+    assert m["ranking_count"] == 1
+    assert "XH2" not in m["cover_suggestions"]
 
 
 def test_use_manifest_label_none_like_convention_old():
@@ -102,33 +102,33 @@ def test_use_manifest_label_none_like_convention_old():
     o vi tri nay — KHONG duoc nem TypeError tu len(None)."""
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), [_a("A1", dung=("bìa",))], None, False, {}, {}, False, 5, vai_anh="ethan")
-    assert m["so_xep_hang"] == 0
-    assert m["xep_hang"] is None
+    assert m["ranking_count"] == 0
+    assert m["ranking"] is None
 
 
 def test_use_manifest_no_board_then_no_fixed_xh_into_call_y():
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
                          Path("/tmp"), [_a("A1", dung=("bìa",))], [], False, {}, {}, False, 5, vai_anh="ethan")
-    assert "XH" not in m["goi_y_bia"] and m["so_xep_hang"] == 0
+    assert "XH" not in m["cover_suggestions"] and m["ranking_count"] == 0
 
 
 # ------------------------------------------------------- ranking_brief_line
 def test_brief_say_clear_has_board_try_two():
-    m = {"tin_xep_hang": True,
-         "xep_hang": {"site": "ARENA.AI", "bang": "Text-to-Image Arena",
-                      "model": "GPT-Image-2.5 Sunburst", "hang": 1, "kieu": "bang",
-                      "duoc_nhac": True},
-         "so_xep_hang": 2}
+    m = {"is_ranking_story": True,
+         "ranking": {"site": "ARENA.AI", "board": "Text-to-Image Arena",
+                     "model": "GPT-Image-2.5 Sunburst", "rank": 1, "kind": "bang",
+                     "mentioned": True},
+         "ranking_count": 2}
     dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
     assert "XH2" in dong, dong
     assert "BẮT BUỘC" in dong
 
 
 def test_brief_one_board_no_mention_xh2():
-    m = {"tin_xep_hang": True,
-         "xep_hang": {"site": "ARENA.AI", "bang": "Text Arena", "model": "Kimi-K3",
-                      "hang": 1, "kieu": "bang", "duoc_nhac": True},
-         "so_xep_hang": 1}
+    m = {"is_ranking_story": True,
+         "ranking": {"site": "ARENA.AI", "board": "Text Arena", "model": "Kimi-K3",
+                     "rank": 1, "kind": "bang", "mentioned": True},
+         "ranking_count": 1}
     dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
     assert "XH2" not in dong, dong
 

@@ -94,11 +94,11 @@ def test_one_image_broken_no_kill_all_leak():
                 p.write_bytes(b"khong phai png")
             else:
                 Image.new("RGB", (900, 700), (100 + i, 120, 140)).save(p)
-            anh.append({"ma": f"A{i}", "goc": str(p)})
+            anh.append({"id": f"A{i}", "original_path": str(p)})
         # tieu_de rong -> khong goi vision; count_faces co the None tren may khong cv2
         ra, dung_duoc, chua_nhin = vision._seen_image(anh, {}, "", wd)
         assert len(ra) == 4, "ca lo phai con du 4 ban ghi"
-        assert ra[2]["lien_quan"] is None and any("không phân loại" in g for g in ra[2]["ghi_chu"]), ra[2]
+        assert ra[2]["relevant"] is None and any("không phân loại" in g for g in ra[2]["notes"]), ra[2]
         assert all("w" in a and a["w"] > 0 for a in (ra[0], ra[1], ra[3])), "anh tot phai duoc phan loai binh thuong"
 
 

@@ -134,7 +134,7 @@ class Image(TypedDict, total=False):
     from_find_more: bool
     commons: bool
     concept: dict                  # {keyword, reason}
-    brand_match: dict              # {company, key, kind, keyword, person, person_role, board, background_tone, board_id}
+    brand_match: dict              # {company, key, kind, keyword, person, person_role, board, background_tone, ticker}
     entity: dict                   # {name, article_name, source}
     ranking: dict                  # cung hinh voi Manifest.ranking + file_path
     image_url: str                 # URL ung vien truoc khi tai

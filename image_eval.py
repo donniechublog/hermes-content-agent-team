@@ -25,29 +25,29 @@ import role
 def system_kept(a: dict) -> bool:
     """Engine có GIỮ tấm này làm ảnh dùng được không — đúng điều kiện lọc đầu
     của `schema.count_image_use_ok` (một công thức, không đoán lại lần thứ hai)."""
-    return bool(a.get("dung")) and a.get("lien_quan") is not False and not role.face_no_clear_ai(a)
+    return bool(a.get("uses")) and a.get("relevant") is not False and not role.face_no_clear_ai(a)
 
 
 def drop_reason(a: dict) -> str:
-    """Tầng nào khiến engine bỏ tấm này, đọc từ khoá có cấu trúc trước, `ghi_chu`
+    """Tầng nào khiến engine bỏ tấm này, đọc từ khoá có cấu trúc trước, `notes`
     sau. Chỉ để chia bảng đo — bản ghi quyết định thật là việc của LOW-225."""
     if system_kept(a):
         return "kept"
-    if a.get("lien_quan") is False:
-        return "capture_quality" if a.get("chup_nguon") else "vision_not_relevant"
+    if a.get("relevant") is False:
+        return "capture_quality" if a.get("capture_source") else "vision_not_relevant"
     if role.face_no_clear_ai(a):
         return "unnamed_face"
-    notes = " ".join(a.get("ghi_chu") or [])
+    notes = " ".join(a.get("notes") or [])
     if "ảnh khái niệm" in notes:
         return "concept_gate"
-    if a.get("lien_quan") is None:
+    if a.get("relevant") is None:
         return "not_seen"
     return "no_use_slot"
 
 
 def source_of(a: dict) -> str:
     """Nguồn ứng viên, gộp hai cách viết cũ của cùng một nguồn."""
-    tu = a.get("tu") or "?"
+    tu = a.get("source") or "?"
     return "báo khác" if tu in ("bao khac", "báo khác") else tu
 
 

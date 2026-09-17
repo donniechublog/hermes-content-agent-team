@@ -23,8 +23,8 @@ def mark(m: dict, ten_vai: str, dong_2: str, nhan_link: str = "Link gốc") -> l
     """
     L = [f"# {ten_vai} — ĐÃ CHUẨN BỊ XONG: {m['title']}", dong_2,
          f"{nhan_link}: {m['link']}" + (f" | via: {m['via']}" if m.get("via") else "")]
-    if m.get("tieu_de_en"):
-        L.append(f"Tiêu đề bài gốc: {m['tieu_de_en']}")
+    if m.get("title_en"):
+        L.append(f"Tiêu đề bài gốc: {m['title_en']}")
     return L
 
 
@@ -51,15 +51,15 @@ def block_material(m: dict, tieu_de: str = "## Tư liệu", nhan: str = "Finn",
         L.append(f"Tóm tắt ({nhan}): {m['summary']}")
     if m.get("source_note"):
         L.append(f"Nguồn ({nhan}): {m['source_note']}")
-    tl = m.get("tu_lieu", {}) or {}
-    cs = tl.get("cau_co_so") or []
+    tl = m.get("material", {}) or {}
+    cs = tl.get("number_sentences") or []
     if cs:
         L.append(f"Câu có số liệu ({len(cs)} câu, bóc từ bài):")
         for i, c in enumerate(cs[:n_cau], 1):
             L.append(f"  {i}. {c}")
-    if tl.get("doan_dau"):
-        L.append(f"Đoạn đầu bài gốc: {tl['doan_dau'][:n_doan]}")
-    if not cs and not tl.get("doan_dau"):
+    if tl.get("lead_paragraph"):
+        L.append(f"Đoạn đầu bài gốc: {tl['lead_paragraph'][:n_doan]}")
+    if not cs and not tl.get("lead_paragraph"):
         L.append(dong_thieu)
     return L
 

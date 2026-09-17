@@ -90,7 +90,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
 
     Ong Chu 12/09/2026, dong CONG FAIL-OPEN: truoc day router TRA LOI duoc
     nhung dong LIEN_QUAN khong doc ra duoc (model lech dinh dang) cung thanh
-    None — ma moi noi loc `dung_duoc` deu viet `lien_quan is not False`, tuc
+    None — ma moi noi loc `dung_duoc` deu viet `relevant is not False`, tuc
     None DUOC COI LA DUYET. Do that 12/09 tren may chu: anh Tesla (Terafab) va
     logo Anthropic (truoc khi sua ca thanh cong 32 diem) deu lot bia qua duong
     nay — router CO tra loi, chi la khong parse duoc. Phan biet ro hai ca:
@@ -117,7 +117,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     (`fallback_rounds._round_capture_source`) — LA anh cua tin, cau hoi khong hoi lai "co
     lien quan khong" nua (chac chan co, tu DOM cua chinh bai), CHI hoi CHAT
     LUONG (ro net, khong phai anh bao chup lai mot man hinh khac). Truoc ticket
-    nay nhanh `_round_capture_source` bo qua vision HOAN TOAN, ep `lien_quan = True`
+    nay nhanh `_round_capture_source` bo qua vision HOAN TOAN, ep `relevant = True`
     thang — do that 12/09: anh hero that cua bai Moonshot/Kimi K3 la mot anh
     bao Getty chup nghieng man hinh App Store, van bi ep True du xau, roi
     tam ngang do LAI bi mot vong khac (`_take_image_page`, da chan o LOW-45 phan
@@ -263,7 +263,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
         if hoi_them and nhan_them:
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
             them = t.group(1).strip()[:120] if t else ""
-        return mt, lqv, them, {"cluttered": cluttered, "du_tu_khoa": du_tk,
+        return mt, lqv, them, {"cluttered": cluttered, "has_keywords": du_tk,
                                "vision_said": lqv_vision, "override": override,
                                "vision_raw": {"model": VISION_MODEL, "question": hoi, "answer": txt[:2000]}}
 
@@ -334,10 +334,10 @@ def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
     try:
         return classify(a, wd, tieu_de)
     except Exception as e:                                   # noqa: BLE001
-        print(f"[vision] {a.get('ma')} {Path(a.get('goc', '?')).name}: HONG khi phan loai — "
+        print(f"[vision] {a.get('id')} {Path(a.get('original_path', '?')).name}: HONG khi phan loai — "
               f"{type(e).__name__}: {e!r}", file=sys.stderr)
-        a.update({"dung": [], "lien_quan": None, "mo_ta": "", "mat": 0,
-                  "ghi_chu": [f"⚠️ không phân loại được ({type(e).__name__}) — bỏ qua ảnh này"]})
+        a.update({"uses": [], "relevant": None, "description": "", "faces": 0,
+                  "notes": [f"⚠️ không phân loại được ({type(e).__name__}) — bỏ qua ảnh này"]})
         decision_log.note(a, "process_error", "drop", type(e).__name__, repr(e))
         a.setdefault("w", 0)
         a.setdefault("h", 0)
@@ -350,7 +350,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
 
     `chup_nguon` (LOW-45): anh hero chup tu chinh trang nguon — xem
     `description_image(..., chup_nguon=True)`."""
-    img = Image.open(a["goc"]).convert("RGB")
+    img = Image.open(a["original_path"]).convert("RGB")
     w, h = img.size
     r = w / h
     la_ct, mo_ta = role.active_rules().is_chart(img)
@@ -358,11 +358,11 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # Override chi khi phep do KHONG noi nguoc: chart that phang >= 82%, anh chup
     # 52-77% (do 05/09). Truoc day hint tu alt tu gan de len ca phang 52% -> hinh
     # minh hoa AI thanh "CHART", dan full be ngang, ra hai vung.
-    if not la_ct and phang >= 0.75 and (a.get("hint_chart") or _chart_by_figure(img)):
+    if not la_ct and phang >= 0.75 and (a.get("chart_hint") or _chart_by_figure(img)):
         la_ct, mo_ta = True, mo_ta + "; nen trang + canh day / alt-tag chart"
-    kn = (a.get("khai_niem") or {}).get("tu_khoa", "")
+    kn = (a.get("concept") or {}).get("keyword", "")
     # Tu khoa do LOAI TIN ep (story_type.py) thi con mat khong duoc tu phan "hop bai".
-    kn_theo_loai = (a.get("khai_niem") or {}).get("ly_do", "") == "theo loại tin"
+    kn_theo_loai = (a.get("concept") or {}).get("reason", "") == "theo loại tin"
     # Hang de con mat doi chieu: voi anh THUONG HIEU la hang cua chinh tam anh do,
     # khong phai ten rieng dau tieu de. Tin "Qualcomm ... with Amazon" ma dua
     # "Qualcomm" cho mot tam tru so Amazon thi chot "ten hang trong mo ta" khong
@@ -374,40 +374,40 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     # cua Salesforce, co logo Salesforce) bi cham "khong lien quan" vi con mat
     # khong biet Salesforce cung la chu the cua bai. `all_proper_nouns` liet ke
     # HET cac cum ten rieng trong tieu de, khong dung o cum dau tien.
-    hang = (a.get("thuong_hieu") or {}).get("hang") or ", ".join(all_proper_nouns(tieu_de))
+    hang = (a.get("brand_match") or {}).get("company") or ", ".join(all_proper_nouns(tieu_de))
     # HOI LUON co cat_ngang duoc khong (12/09/2026, su co t_a8ffd2f6 lan hai):
     # ngang cao >=700 truoc day duoc dan mac dinh "cat_ngang: true NEU la anh
     # nguoi/san pham KHONG co chu" — mot cau DIEU KIEN, khong ai xac nhan dieu
     # kien do co dung hay khong, ma_engine dem no la "dung duoc mot minh". Dre
     # chay that: 4/5 tam ngang cao la chart/logo/bien hieu CO CHU, chi 1 tam la
     # nguoi/san pham that — dem sai 2 slide. Hoi CHUNG mot luot voi mo_ta/lien_quan
-    # (khong ton them HTTP), luu vao `a["cat_ngang_ok"]` (True/False/None =
+    # (khong ton them HTTP), luu vao `a["landscape_crop_ok"]` (True/False/None =
     # khong hoi/khong parse duoc), dung ca o dung[] (cau chu dinh, khong con
     # "NEU") lan o dem slide (schema._only_stack_ok). Ket hop voi `chup_nguon`
     # (LOW-45) — hai co so doc lap, mot anh hero chup tu nguon van co the ngang
     # cao va can hoi cat_ngang binh thuong.
     hoi_cat_ngang = (r >= role.active_rules().LANDSCAPE_CLEAR and h >= 700 and not la_ct)
     kq = {}
-    ket_qua = (description_image(a["goc"], tieu_de, hang, khai_niem=kn,
+    ket_qua = (description_image(a["original_path"], tieu_de, hang, khai_niem=kn,
                          khai_niem_theo_loai=kn_theo_loai,
-                         thuong_hieu=a.get("thuong_hieu"), chup_nguon=chup_nguon,
+                         thuong_hieu=a.get("brand_match"), chup_nguon=chup_nguon,
                          hoi_them=("Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co "
                                    "chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? "
                                    "Tra loi CHI mot tu: co hoac khong.") if hoi_cat_ngang else "",
                          nhan_them="CAT_NGANG" if hoi_cat_ngang else "", ket_qua=kq)
               if tieu_de else ("", None, "") if hoi_cat_ngang else ("", None))
     if hoi_cat_ngang:
-        a["mo_ta"], a["lien_quan"], cn_txt = ket_qua
+        a["description"], a["relevant"], cn_txt = ket_qua
         cn = re.search(r"(co|có|khong|không)", cn_txt or "", re.I)
-        a["cat_ngang_ok"] = (cn.group(1).lower().startswith("c") if cn else None)
+        a["landscape_crop_ok"] = (cn.group(1).lower().startswith("c") if cn else None)
         if cn_txt and cn is None:
-            print(f"[vision] {a.get('ma')}: co tra loi CAT_NGANG nhung khong parse duoc: {cn_txt!r}",
+            print(f"[vision] {a.get('id')}: co tra loi CAT_NGANG nhung khong parse duoc: {cn_txt!r}",
                   file=sys.stderr)
     else:
-        a["mo_ta"], a["lien_quan"] = ket_qua
-        a["cat_ngang_ok"] = None
+        a["description"], a["relevant"] = ket_qua
+        a["landscape_crop_ok"] = None
     a["cluttered"] = kq.get("cluttered")
-    a["du_tu_khoa"] = kq.get("du_tu_khoa")
+    a["has_keywords"] = kq.get("has_keywords")
     # LOW-225: vision noi gi, nhanh regex nao lat, nguyen van cau hoi/tra loi —
     # de do lai offline ma khong goi vision lai.
     if kq.get("vision_raw"):
@@ -416,132 +416,132 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         decision_log.note(a, "vision", "flag" if said is None else ("keep" if said else "drop"),
                           "LIEN_QUAN", f"vision tra loi {said!r}")
         if kq.get("override"):
-            decision_log.note(a, "vision_override", "keep" if a["lien_quan"] else "drop",
-                              kq["override"], f"{said!r} -> {a['lien_quan']!r}")
+            decision_log.note(a, "vision_override", "keep" if a["relevant"] else "drop",
+                              kq["override"], f"{said!r} -> {a['relevant']!r}")
     elif tieu_de:
         decision_log.note(a, "vision", "flag", "vision_unavailable",
                           "khong hoi duoc vision (mang/router/thieu key) — lien_quan None")
     # VISION TU NOI "bieu do/do thi" ma cong do hoa (pixel) bo lo (A11, 12/09):
     # tin theo chinh mo ta cua no hon la phep do phang mau — sua nguoc la_ct SAU
     # khi co mo_ta, truoc khi quyet dinh nhanh chart/anh o duoi.
-    if not la_ct and re.search(r"biểu đồ|đồ thị|bảng số liệu", a["mo_ta"] or "", re.I):
+    if not la_ct and re.search(r"biểu đồ|đồ thị|bảng số liệu", a["description"] or "", re.I):
         la_ct = True
-        a["cat_ngang_ok"] = None       # la chart thi khong con hoi cat_ngang nua
+        a["landscape_crop_ok"] = None       # la chart thi khong con hoi cat_ngang nua
     # None = cong mat KHONG CHAY (thieu cv2/model, hoac cv2 nem) — khac 0 = da
     # dem, khong co mat. Truoc audit lượt 2 (B-r2-1) day la `or 0`: 4 luong dua
     # nhau tren mot detector lam 80-95% anh tra None, tat ca thanh "khong mat".
-    mat_tho = role.active_rules().count_faces(a["goc"])
+    mat_tho = role.active_rules().count_faces(a["original_path"])
     mat = mat_tho or 0
     day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
     goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
-    a.update({"w": w, "h": h, "ti_le": round(r, 2), "loai": "chart" if la_ct else "anh",
-              "do_chart": mo_ta, "mat": mat, "day_sang": round(day),
-              "goc_trai_sang": round(goc_trai), "canh_ngan": min(w, h),
-              "ngang": r >= role.active_rules().LANDSCAPE_CLEAR, "san": None, "dung": [], "ghi_chu": []})
+    a.update({"w": w, "h": h, "ratio": round(r, 2), "kind": "chart" if la_ct else "anh",
+              "chart_stats": mo_ta, "faces": mat, "bottom_brightness": round(day),
+              "bottom_left_brightness": round(goc_trai), "short_side": min(w, h),
+              "landscape": r >= role.active_rules().LANDSCAPE_CLEAR, "ready_path": None, "uses": [], "notes": []})
     if mat_tho is None:
-        a["ghi_chu"].append("⚠️ cổng mặt người KHÔNG chạy (thiếu cv2/model hoặc lỗi) — chưa kiểm mặt")
-    san = wd / "san" / f"{a['ma']}.png"
+        a["notes"].append("⚠️ cổng mặt người KHÔNG chạy (thiếu cv2/model hoặc lỗi) — chưa kiểm mặt")
+    san = wd / "san" / f"{a['id']}.png"
     if la_ct:
-        if a.get("xep_hang"):
+        if a.get("ranking"):
             # ANH XEP HANG GIU NGUYEN VEN, khong cat du cao bao nhieu: hang model
             # da khoanh co the nam duoi 55% dai chup (do that: hang #9, #11 bi cat
             # mat), va no la CHU THE cua tin chu khong phai anh minh hoa.
-            a["san"] = a["goc"]
-            a["ghi_chu"].append("bảng xếp hạng: giữ nguyên vẹn, dán full bề ngang")
+            a["ready_path"] = a["original_path"]
+            a["notes"].append("bảng xếp hạng: giữ nguyên vẹn, dán full bề ngang")
         elif r < role.active_rules().TI_LE_45 - role.active_rules().TOLERANCE_RATIO:
             _save_crop(img, san, "4:5", cy=0.35)           # chart cao: cat bot day
-            a["san"] = str(san)
-            a["ghi_chu"].append("chart cao, đã cắt bớt phần dưới về 4:5")
+            a["ready_path"] = str(san)
+            a["notes"].append("chart cao, đã cắt bớt phần dưới về 4:5")
         else:
-            a["san"] = a["goc"]                           # chart giu NGUYEN
-        a["dung"] = ["thân (chart, dán full bề ngang nguyên vẹn)"]
-        if a["ngang"]:
-            a["dung"].append("ghép dọc với một ảnh ngang cùng tone")
-        a["ghi_chu"].append("KHÔNG làm bìa")
+            a["ready_path"] = a["original_path"]                           # chart giu NGUYEN
+        a["uses"] = ["thân (chart, dán full bề ngang nguyên vẹn)"]
+        if a["landscape"]:
+            a["uses"].append("ghép dọc với một ảnh ngang cùng tone")
+        a["notes"].append("KHÔNG làm bìa")
     else:
-        if a["ngang"]:
-            a["dung"] = ["ghép dọc với một ảnh ngang cùng tone"]
+        if a["landscape"]:
+            a["uses"] = ["ghép dọc với một ảnh ngang cùng tone"]
             if h < 700:
                 # Banner thap (vd 1900x524): cat doc 4:5 chi con ~420px roi phong
                 # len 1080 — mem nhoe (do thu 04/09). Chi con duong ghep.
-                a["ghi_chu"].append("quá thấp để cắt dọc, chỉ ghép")
-            elif a.get("cat_ngang_ok") is True:
-                a["dung"].append("cat_ngang: true (ảnh người/sản phẩm không chữ, vision đã xác nhận)")
-            elif a.get("cat_ngang_ok") is False:
-                a["ghi_chu"].append("có chữ/logo/số liệu đè lên (vision xác nhận) — không được crop, chỉ ghép")
+                a["notes"].append("quá thấp để cắt dọc, chỉ ghép")
+            elif a.get("landscape_crop_ok") is True:
+                a["uses"].append("cat_ngang: true (ảnh người/sản phẩm không chữ, vision đã xác nhận)")
+            elif a.get("landscape_crop_ok") is False:
+                a["notes"].append("có chữ/logo/số liệu đè lên (vision xác nhận) — không được crop, chỉ ghép")
             else:
                 # vision khong tra loi duoc cau CAT_NGANG (hong/parse loi) — giu
                 # dung dieu kien cu, dung tu quyet dinh thay writer.
-                a["dung"].append("cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ")
+                a["uses"].append("cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ")
         else:
             ten = "1:1" if r > 0.9 else "4:5"
             _save_crop(img, san, ten, cy=0.4 if r < 0.7 else 0.5)
-            a["san"] = str(san)
-            a["dung"] = ["thân"]
+            a["ready_path"] = str(san)
+            a["uses"] = ["thân"]
             if not mat and goc_trai < 150:
-                a["dung"].insert(0, "bìa")
+                a["uses"].insert(0, "bìa")
     if a.get("commons"):
-        a["ghi_chu"].append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin — hợp bìa/slide bối cảnh")
+        a["notes"].append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin — hợp bìa/slide bối cảnh")
     if mat:
         # MOT ban regex duy nhat, o ban dang ky vai: cong "mat nguoi phai khai
         # ten" cua `role.can_be_hero` phai doc ra dung cai ten ma chu thich
         # duoi day hua la co.
         ten = role.person_names_in_alt(a.get("alt", "") or "")
         if ten:
-            a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
+            a["notes"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
                                 "chỉ dùng khi đúng người đó, khai \"nhan_vat\" y hệt")
         else:
-            a["ghi_chu"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
+            a["notes"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
                                 "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")
-            a["dung"] = [d for d in a["dung"] if d != "bìa"]
-    if a.get("cluttered") and a.get("du_tu_khoa"):
-        a["ghi_chu"].insert(0, "⭐ ẢNH RỐI NHƯNG ĐỦ TỪ KHOÁ chính của tin → dùng thoải mái, HỢP LÀM "
+            a["uses"] = [d for d in a["uses"] if d != "bìa"]
+    if a.get("cluttered") and a.get("has_keywords"):
+        a["notes"].insert(0, "⭐ ẢNH RỐI NHƯNG ĐỦ TỪ KHOÁ chính của tin → dùng thoải mái, HỢP LÀM "
                                "BÌA; script tự hiện nguyên bề ngang + đặt nền chữ đặc")
     elif a.get("cluttered"):
         # Anh roi khong du tu khoa: khong la bia; lam than chi khi het anh sach
         # (submit_common.check_image_fall), va script tu dat nen chu dac (LOW-47).
-        a["dung"] = [d for d in a["dung"] if not str(d).startswith("bìa")]
+        a["uses"] = [d for d in a["uses"] if not str(d).startswith("bìa")]
         decision_log.note(a, "cluttered", "demote", "CLUTTERED_without_keyword", "khong lam bia, xuong cuoi hang")
-        a["ghi_chu"].insert(0, "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT "
+        a["notes"].insert(0, "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT "
                                "ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc")
-    if a.get("lien_quan") is False:
-        a["dung"] = []
+    if a.get("relevant") is False:
+        a["uses"] = []
         decision_log.note(a, "relevance", "drop", "capture_quality" if chup_nguon else "vision_not_relevant",
-                          (a.get("mo_ta") or "")[:200])
+                          (a.get("description") or "")[:200])
         if chup_nguon:
             # LOW-192: nhanh chup_nguon (LOW-45) KHONG hoi "co lien quan" —
             # cau hoi vision o day chi ve CHAT LUONG (ro net, khong phai anh
             # chup lai man hinh khac). Ghi "KHONG LIEN QUAN BAI" o day la SAI
             # ban chat, danh lua nguoi doc brief/manifest ve sau.
-            a["ghi_chu"].insert(0, "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG "
+            a["notes"].insert(0, "❌ ẢNH HERO TRANG NGUỒN NHƯNG KHÔNG ĐẠT CHẤT LƯỢNG "
                                    "(mờ/cắt lại từ màn hình khác — vision) → KHÔNG DÙNG")
         else:
-            a["ghi_chu"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
-    if a["canh_ngan"] < role.active_rules().SHORT_SIDE_MIN:
-        a["ghi_chu"].append(f"cạnh ngắn {a['canh_ngan']}px, phóng lên hơi mềm")
+            a["notes"].insert(0, "❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG")
+    if a["short_side"] < role.active_rules().SHORT_SIDE_MIN:
+        a["notes"].append(f"cạnh ngắn {a['short_side']}px, phóng lên hơi mềm")
     if day > role.active_rules().BRIGHT_BOTTOM_MAX and not la_ct:
-        a["ghi_chu"].append("đáy sáng, chữ trắng hơi nhạt")
-    if a.get("khai_niem"):
+        a["notes"].append("đáy sáng, chữ trắng hơi nhạt")
+    if a.get("concept"):
         import image_concept
-        truoc = list(a.get("dung") or [])
+        truoc = list(a.get("uses") or [])
         image_concept.label_concept(a)
         _note_use_change(a, truoc, "concept_gate", "image_concept.label_concept")
-    if a.get("thuong_hieu"):
+    if a.get("brand_match"):
         import image_brand
-        truoc = list(a.get("dung") or [])
+        truoc = list(a.get("uses") or [])
         image_brand.label_brand(a)
         _note_use_change(a, truoc, "brand_gate", "image_brand.label_brand")
-    if a.get("dung") and a.get("lien_quan") is not False and role.face_no_clear_ai(a):
-        # Van con `dung` nhung schema.count_image_use_ok + submit_common.check_subject_named
+    if a.get("uses") and a.get("relevant") is not False and role.face_no_clear_ai(a):
+        # Van con `uses` nhung schema.count_image_use_ok + submit_common.check_subject_named
         # deu loai tam nay — ghi ro de khong ai tuong no dang duoc dem.
         decision_log.note(a, "face_gate", "drop", "role.face_no_clear_ai",
-                          f"{a.get('mat')} mat nguoi, alt/thuong_hieu khong neu ten")
+                          f"{a.get('faces')} mat nguoi, alt/thuong_hieu khong neu ten")
     return a
 
 
 def _note_use_change(a: dict, truoc: list, stage: str, rule: str) -> None:
-    """LOW-225: ham gan nhan (khai niem/thuong hieu) co doi `dung` thi ghi lai."""
-    sau = list(a.get("dung") or [])
+    """LOW-225: ham gan nhan (khai niem/thuong hieu) co doi `uses` thi ghi lai."""
+    sau = list(a.get("uses") or [])
     if sau != truoc:
         decision_log.note(a, stage, "drop" if truoc and not sau else "demote", rule,
                           f"dung {truoc} -> {sau}")
@@ -559,19 +559,19 @@ def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     # moi anh mot luot HTTP vision tuan tu la cham, audit_content_team B2). Dung
     # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
     with ThreadPoolExecutor(max_workers=env_load.quantity(4)) as ex:
-        anh = list(ex.map(lambda a: _classify_hide_whole(a, wd, "" if a.get("xep_hang")
+        anh = list(ex.map(lambda a: _classify_hide_whole(a, wd, "" if a.get("ranking")
                                                        else (nguon.get("tieu_de_en") or title)), anh))
     for a in anh:
-        if a.get("xep_hang"):
-            a["mo_ta"] = a["alt"]
-            a["lien_quan"] = True
+        if a.get("ranking"):
+            a["description"] = a["alt"]
+            a["relevant"] = True
             decision_log.note(a, "ranking_forced", "keep", "xep_hang", "anh xep hang engine tu chup, khong hoi vision")
-            a["dung"] = ["HERO / BÌA (bảng xếp hạng, model đã khoanh — ảnh chính bắt buộc của tin xếp hạng)",
+            a["uses"] = ["HERO / BÌA (bảng xếp hạng, model đã khoanh — ảnh chính bắt buộc của tin xếp hạng)",
                          "thân (chart)"]
-            a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG DÙNG" not in g and "KHÔNG làm bìa" not in g]
-            a["ghi_chu"].insert(0, "✅ ẢNH XẾP HẠNG do engine chụp từ nguồn — dùng làm ảnh chính")
-    dung_duoc = [a for a in anh if a["dung"] and a.get("lien_quan") is not False]
-    chua_nhin = [a["ma"] for a in anh if a.get("lien_quan") is None]
+            a["notes"] = [g for g in a["notes"] if "KHÔNG DÙNG" not in g and "KHÔNG làm bìa" not in g]
+            a["notes"].insert(0, "✅ ẢNH XẾP HẠNG do engine chụp từ nguồn — dùng làm ảnh chính")
+    dung_duoc = [a for a in anh if a["uses"] and a.get("relevant") is not False]
+    chua_nhin = [a["id"] for a in anh if a.get("relevant") is None]
     print(f"[anh] {len(dung_duoc)} anh DUNG DUOC / {len(anh)} tai ve"
           + (f"; CHUA NHIN duoc: {', '.join(chua_nhin)}" if chua_nhin else ""), file=sys.stderr)
     return anh, dung_duoc, chua_nhin

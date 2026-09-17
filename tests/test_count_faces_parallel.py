@@ -50,7 +50,7 @@ def test_parallel_no_face_result_which():
 
 
 def test_seen_notes_when_gate_face_no_run():
-    """None (khong chay) phai LO ra o ghi_chu, khong lang le thanh 0 mat (C1)."""
+    """None (khong chay) phai LO ra o notes, khong lang le thanh 0 mat (C1)."""
     import prepare.vision as vision
     cu = image_rules.count_faces
     image_rules.count_faces = lambda p: None
@@ -58,12 +58,12 @@ def test_seen_notes_when_gate_face_no_run():
         with tempfile.TemporaryDirectory() as t:
             p = Path(t) / "x.png"
             Image.new("RGB", (900, 700), (200, 200, 200)).save(p)
-            a = {"ma": "X", "goc": str(p)}
+            a = {"id": "X", "original_path": str(p)}
             vision.classify(a, Path(t), "")       # tieu_de rong -> khong goi vision
     finally:
         image_rules.count_faces = cu
-    assert a["mat"] == 0
-    assert any("cổng mặt" in g for g in a["ghi_chu"]), a["ghi_chu"]
+    assert a["faces"] == 0
+    assert any("cổng mặt" in g for g in a["notes"]), a["notes"]
 
 
 if __name__ == "__main__":

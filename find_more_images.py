@@ -93,10 +93,10 @@ def candidate_commons(tu_khoa: str, so: int = COUNT_COMMONS_NEW_TURN) -> list:
         return []
     ra = image_concept.filter_commons(pages, tu_khoa, so=so)
     for c in ra:
-        c.pop("khai_niem", None)       # vai tim co chu y, khong phai anh khai niem chung chung
-        c["tu"] = "commons"
-        c["diem"] = 35
-        c["anh"], c["rong"], c["cao"] = try_small_commons(c["anh"], c["rong"], c["cao"])
+        c.pop("concept", None)       # vai tim co chu y, khong phai anh khai niem chung chung
+        c["source"] = "commons"
+        c["score"] = 35
+        c["image_url"], c["rong"], c["cao"] = try_small_commons(c["image_url"], c["rong"], c["cao"])
     return ra
 
 
@@ -133,8 +133,8 @@ def filter_openverse(kq: dict, tu_khoa: str, so: int) -> list:
         if min(w, h) < SHORT_SIDE_OPENVERSE or not _ANH_EXT.search(url.split("?")[0]):
             continue
         url, w, h = try_small_commons(url, w, h)
-        ra.append({"anh": url, "alt": (r.get("title") or "")[:120], "og": False, "tu": "openverse",
-                   "trang": r.get("foreign_landing_url") or url, "rong": w, "cao": h, "diem": 40,
+        ra.append({"image_url": url, "alt": (r.get("title") or "")[:120], "og": False, "source": "openverse",
+                   "page_url": r.get("foreign_landing_url") or url, "rong": w, "cao": h, "score": 40,
                    "giay_phep": r.get("license"), "tac_gia": r.get("creator") or "",
                    "nguon_openverse": r.get("source") or "", "tu_khoa": tu_khoa})
     ra.sort(key=lambda c: -(c["rong"] * c["cao"]))
@@ -165,8 +165,8 @@ def candidate_from_url(urls: list, wd: Path, phien=None) -> list:
     anh, trang = [], []
     for u in urls:
         if _ANH_EXT.search(u.split("#")[0]):
-            anh.append({"anh": u, "alt": "", "og": False, "tu": "vai", "trang": u,
-                        "rong": 0, "cao": 0, "diem": 60})
+            anh.append({"image_url": u, "alt": "", "og": False, "source": "vai", "page_url": u,
+                        "rong": 0, "cao": 0, "score": 60})
         else:
             trang.append({"url": u, "loai": "báo"})
     if trang:
@@ -206,21 +206,21 @@ def candidate_keyword(tu_khoa: str, wd: Path, mien_co: set, phien=None) -> list:
 
 def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
     """Danh ma A<n> tiep theo, don ve goc/, phan loai + vision. Tra danh sach anh MOI."""
-    anh = m["anh"]
+    anh = m["images"]
     n0 = len(anh)
     moi = []
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(moi) >= MAX_IMAGE_EXTRA:
             break
-        a["ma"] = f"A{i}"
-        dich = wd / "goc" / f"{a['ma']}.png"
-        Path(a["goc"]).replace(dich)
-        a["goc"] = str(dich)
-        a["tim_them"] = True
+        a["id"] = f"A{i}"
+        dich = wd / "goc" / f"{a['id']}.png"
+        Path(a["original_path"]).replace(dich)
+        a["original_path"] = str(dich)
+        a["from_find_more"] = True
         moi.append(a)
     if not moi:
         return []
-    nguon = {"tieu_de_en": m.get("tieu_de_en") or tieu_de}
+    nguon = {"tieu_de_en": m.get("title_en") or tieu_de}
     moi, _, _ = _seen_image(moi, nguon, tieu_de, wd)
     anh.extend(moi)
     return moi
@@ -228,27 +228,27 @@ def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
 
 def fresh_manifest(m: dict) -> dict:
     """Tinh lai cac gia tri dan xuat sau khi bo anh doi (cung cong thuc voi engine)."""
-    dx = compute_derived(m["anh"], m.get("vai_anh", ""), so_xh=int(m.get("so_xep_hang") or 0))
-    for k in ("so_mien", "cap_ghep", "goi_y_bia", "so_dung_duoc", "chua_nhin"):
+    dx = compute_derived(m["images"], m.get("image_role", ""), so_xh=int(m.get("ranking_count") or 0))
+    for k in ("domains", "stackable_pairs", "cover_suggestions", "usable_count", "not_yet_seen"):
         m[k] = dx[k]
     thieu = cb._description_missing_image(m)
     if thieu:
-        m["thieu_anh"] = thieu
+        m["missing_images"] = thieu
     else:
-        m.pop("thieu_anh", None)
+        m.pop("missing_images", None)
     return m
 
 
 def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
     print(f"\n== TIM THEM luot {so_luot['luot']}: +{len(moi)} anh moi ==")
     for a in moi:
-        if a.get("lien_quan") is False:
-            print(f"- {a['ma']}: ❌ KHÔNG LIÊN QUAN — {a.get('mo_ta') or ''} (nguồn: {a.get('mien') or a.get('tu')})")
+        if a.get("relevant") is False:
+            print(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or ''} (nguồn: {a.get('domain') or a.get('source')})")
             continue
-        print(f"- {a['ma']}: {a.get('w')}x{a.get('h')} {'NGANG ' if a.get('ngang') else ''}"
-              f"| dùng: {'; '.join(a.get('dung') or []) or 'không'} | nguồn: {a.get('mien') or a.get('tu')}"
-              + (f" | ảnh là: {a['mo_ta'][:110]}" if a.get("mo_ta") else ""))
-    so, tt = int(m.get("so_dung_duoc", 0)), int(m.get("toi_thieu", 5))
+        print(f"- {a['id']}: {a.get('w')}x{a.get('h')} {'NGANG ' if a.get('landscape') else ''}"
+              f"| dùng: {'; '.join(a.get('uses') or []) or 'không'} | nguồn: {a.get('domain') or a.get('source')}"
+              + (f" | ảnh là: {a['description'][:110]}" if a.get("description") else ""))
+    so, tt = int(m.get("usable_count", 0)), int(m.get("min_images", 5))
     print(f"Slide dựng được: {so} / tối thiểu {tt}"
           + (" — ĐỦ." if so >= tt else f" — còn thiếu {tt - so}."))
     print(f"Chạy lại: cd {ROOT} && venv/bin/python {vai_anh}_prepare.py {m['draft_id']}  (brief mới, bảng ảnh mới)")
@@ -284,17 +284,17 @@ def main() -> int:
         m = schema.read_manifest(xong)
         if m is None:
             sys.exit(f"[LOI] khong doc duoc {xong}")
-        tieu_de = m.get("tieu_de_en") or m.get("title") or a.draft_id
-        tu_lieu = m.get("tu_lieu") or {}
-        set_story_text("\n".join([m.get("chu_bai") or "", tu_lieu.get("doan_dau") or ""]   # LOW-222
-                                   + list(tu_lieu.get("cau_co_so") or [])))
-        vai_anh = vai_mod.canonical_slug(m.get("vai_anh") or "") or vai_mod.DEFAULT_IMAGE
+        tieu_de = m.get("title_en") or m.get("title") or a.draft_id
+        tu_lieu = m.get("material") or {}
+        set_story_text("\n".join([m.get("article_text") or "", tu_lieu.get("lead_paragraph") or ""]   # LOW-222
+                                   + list(tu_lieu.get("number_sentences") or [])))
+        vai_anh = vai_mod.canonical_slug(m.get("image_role") or "") or vai_mod.DEFAULT_IMAGE
         vai_mod.set_active_role(vai_anh)
         so_luot["luot"] += 1
         so_luot["da_thu"] += a.tu_khoa + a.url
         _write_json(wd / "tim_them.json", so_luot)
 
-        mien_co = {a_.get("mien") for a_ in m["anh"]}
+        mien_co = {a_.get("domain") for a_ in m["images"]}
         wd2 = wd / f"them_{so_luot['luot']}"
         wd2.mkdir(parents=True, exist_ok=True)
         cands = []
@@ -305,19 +305,19 @@ def main() -> int:
                 cands += candidate_keyword(tk, wd2, mien_co, phien=ph)
             if a.url:
                 cands += candidate_from_url(a.url, wd2, phien=ph)
-        da = {x.get("url") for x in m["anh"]}
+        da = {x.get("url") for x in m["images"]}
         n_truoc = len(cands)
-        cands = [c for c in cands if c.get("anh") and c["anh"] not in da]
+        cands = [c for c in cands if c.get("image_url") and c["image_url"] not in da]
         if n_truoc != len(cands):
             print(f"[tim them] bo {n_truoc - len(cands)} ung vien trung URL da co", file=sys.stderr)
-        cands.sort(key=lambda c: -c.get("diem", 0))
+        cands.sort(key=lambda c: -c.get("score", 0))
         bo_sung = download_and_filter(cands, wd2) if cands else []
         print(f"[tim them] tai + loc: {len(bo_sung)} anh giu lai / {len(cands)} ung vien "
               f"({time.time() - t0:.0f}s)", file=sys.stderr)
         moi = say_image_new(m, bo_sung, wd, tieu_de)
         m.setdefault("dropped", []).extend(decision_log.collect(wd2, since=t0))   # LOW-225
         fresh_manifest(m)
-        contact_sheet(m["anh"], wd / "bang_anh.png")
+        contact_sheet(m["images"], wd / "bang_anh.png")
         _write_json(xong, m)
         in_result(m, moi, so_luot, vai_anh)
     finally:

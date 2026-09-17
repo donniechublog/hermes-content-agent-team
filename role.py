@@ -62,7 +62,7 @@ class Role:
     rules: str = ""
     # So ANH THAT toi thieu de vai nay dung duoc mot san pham. Voi vai carousel
     # con la so SLIDE toi thieu (moi slide mot anh rieng) — hai con so do trung
-    # nhau nen `toi_thieu` trong manifest lam duoc ca hai viec; voi Ethan thi
+    # nhau nen `min_images` trong manifest lam duoc ca hai viec; voi Ethan thi
     # KHONG trung, va do chinh la su co 10/09/2026 duoi day.
     anh_toi_thieu: int = 1
     anh_toi_thieu_flagship: int = 0            # 0 = tin flagship khong nang nguong
@@ -264,7 +264,7 @@ def set_active_role(vai_anh: str) -> None:
     gia tri khong doi trong suot vong doi tien trinh sau lan goi dau.
 
     Goi cang SOM cang tot trong tien trinh (truoc khi bat cu anh nao duoc tai/
-    nhin): `image_prepare.prepare_article` goi ngay khi doc duoc `vai_anh` tu
+    nhin): `image_prepare.prepare_article` goi ngay khi doc duoc `image_role` tu
     sidecar, TRUOC ca `load_source`; cac CLI don le khong di qua do
     (`crop_ratio.py`, `capture_chart.py`, `arxiv_figures.py` khi chay tay) tu
     goi voi vai duoc truyen qua `--vai`.
@@ -330,7 +330,7 @@ def min_images(slug: str, flagship: bool = False) -> int:
     "can toi thieu 5 slide") du card.py chi can 1 anh.
 
     Vai la khong biet -> nguong cua vai anh mac dinh (Ethan). Nguoi goi nen
-    keu mot dong khi roi vao day: sidecar mat `vai_anh` la mot chuyen khac."""
+    keu mot dong khi roi vao day: sidecar mat `image_role` la mot chuyen khac."""
     v = ROLE.get(slug) or ROLE[DEFAULT_IMAGE]
     if flagship and v.anh_toi_thieu_flagship:
         return v.anh_toi_thieu_flagship
@@ -357,7 +357,7 @@ def has_label_cover(dung) -> bool:
     chay TRUOC, engine chup ve 4 anh bao cung tin (deu la bia hop le) roi van
     ket luan "co 6 anh nhung khong tam nao lam anh chinh duoc" va di tim tiep
     tren web — chi vi hai chuoi khong bang nhau tuyet doi. Cung ly do khien
-    anh chup khong bao gio xuat hien trong `goi_y_bia`."""
+    anh chup khong bao gio xuat hien trong `cover_suggestions`."""
     return any(str(d).startswith("bìa") for d in (dung or []))
 
 
@@ -367,7 +367,7 @@ def face_no_clear_ai(a: dict) -> bool:
     khong duoc bia ten cho qua cong, nen no KHONG phai mot duong dung duoc: ca
     `can_be_hero` lan nguoi dem slide (`schema.count_image_use_ok`, LOW-46) hoi
     CHINH ham nay, khong moi noi mot dieu kien."""
-    return bool(a.get("mat")) and not ((a.get("thuong_hieu") or {}).get("nguoi")
+    return bool(a.get("faces")) and not ((a.get("brand_match") or {}).get("person")
                                        or person_names_in_alt(a.get("alt") or ""))
 
 
@@ -379,16 +379,16 @@ def can_be_hero(slug: str, a: dict) -> bool:
     dung chung cho moi vai va da chay o `image_rules` + `prepare.vision.classify`.
     Ham nay chi tra loi phan di theo KHO cua renderer."""
     v = ROLE.get(slug) or ROLE[DEFAULT_IMAGE]
-    if a.get("lien_quan") is False or not a.get("dung"):
+    if a.get("relevant") is False or not a.get("uses"):
         return False
-    if a.get("xep_hang"):
+    if a.get("ranking"):
         return True                            # anh chinh BAT BUOC cua tin xep hang
     if not v.ti_le_don_max:
         # Vai xep NHIEU anh: "anh chinh" la tam lam BIA, nhan do classify dan.
-        return has_label_cover(a.get("dung"))
-    if a.get("loai") == "chart" and not v.chart_don:
+        return has_label_cover(a.get("uses"))
+    if a.get("kind") == "chart" and not v.chart_don:
         return False
-    if float(a.get("ti_le") or 0) > v.ti_le_don_max:
+    if float(a.get("ratio") or 0) > v.ti_le_don_max:
         return False
     # Mat nguoi khong ro ai: `submit_common.check_subject_named` chan, ma vai thi khong
     # duoc bia ten cho qua cong — tam do khong phai mot duong dung duoc.

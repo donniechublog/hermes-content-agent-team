@@ -104,9 +104,9 @@ def gather(tieu_de: str, link: str, so_bai_khac=COUNT_ARTICLE_OTHER, tu_nguon=No
     nguon = []
     goc = extract(link)
     if goc.get("paragraphs"):
-        nguon.append({"nhan": "bài gốc", "url": link,
-                      "tieu_de": goc.get("title", ""),
-                      "doan": goc["paragraphs"]})
+        nguon.append({"label": "bài gốc", "url": link,
+                      "title": goc.get("title", ""),
+                      "paragraphs": goc["paragraphs"]})
 
     dsach = []
     if tu_nguon and Path(tu_nguon).exists():
@@ -127,34 +127,34 @@ def gather(tieu_de: str, link: str, so_bai_khac=COUNT_ARTICLE_OTHER, tu_nguon=No
     for u, td in dsach:
         d = extract(u)
         if d.get("paragraphs"):
-            nguon.append({"nhan": "báo đưa tin", "url": u,
-                          "tieu_de": d.get("title", td), "doan": d["paragraphs"]})
+            nguon.append({"label": "báo đưa tin", "url": u,
+                          "title": d.get("title", td), "paragraphs": d["paragraphs"]})
 
-    tat_ca_doan = [p for n in nguon for p in n["doan"]]
-    return {"tieu_de": tieu_de, "link": link, "nguon": nguon,
-            "cau_co_so": sentence_has_count(tat_ca_doan)}
+    tat_ca_doan = [p for n in nguon for p in n["paragraphs"]]
+    return {"title": tieu_de, "link": link, "sources": nguon,
+            "number_sentences": sentence_has_count(tat_ca_doan)}
 
 
 def use_page(tl: dict) -> str:
-    L = [f"# Tư liệu: {tl['tieu_de']}", ""]
-    cs = tl["cau_co_so"]
+    L = [f"# Tư liệu: {tl['title']}", ""]
+    cs = tl["number_sentences"]
     if cs:
         L += ["## Câu có số liệu (đọc kỹ phần này — caption phải có số)", ""]
         L += [f"- {c}" for c in cs[:25]]
         L.append("")
     else:
         L += ["## Câu có số liệu", "", "*Không tìm thấy câu nào mang số liệu.*", ""]
-    for n in tl["nguon"]:
-        L += [f"## {n['nhan']}: {n['tieu_de'][:90]}", f"<{n['url']}>", ""]
+    for n in tl["sources"]:
+        L += [f"## {n['label']}: {n['title'][:90]}", f"<{n['url']}>", ""]
         chu = 0
-        for p in n["doan"]:
+        for p in n["paragraphs"]:
             if chu > TEXT_MAX:
                 L.append("*(cắt bớt)*")
                 break
             L.append(p)
             chu += len(p)
         L.append("")
-    if not tl["nguon"]:
+    if not tl["sources"]:
         L.append("*Không bóc được nội dung từ nguồn nào — Miles phải nói rõ là "
                  "thiếu tư liệu, không được đoán.*")
     return "\n".join(L)
@@ -174,7 +174,7 @@ def main():
     if a.out:
         Path(a.out).write_text(trang, encoding="utf-8")
         print(a.out)
-        print(f"  {len(tl['nguon'])} nguồn, {len(tl['cau_co_so'])} câu có số liệu",
+        print(f"  {len(tl['sources'])} nguồn, {len(tl['number_sentences'])} câu có số liệu",
               file=sys.stderr)
     else:
         print(trang)

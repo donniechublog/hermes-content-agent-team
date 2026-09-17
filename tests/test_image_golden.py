@@ -3,7 +3,7 @@
 
 Giữ ba điều:
   1. "Engine giữ ảnh" trong phép đo là ĐÚNG công thức `schema.count_image_use_ok`
-     (lien_quan, dung, mặt người không tên) — không đoán lại lần thứ hai.
+     (relevant, uses, mặt người không tên) — không đoán lại lần thứ hai.
   2. Chọn mẫu tất định theo seed, giữ trọn draft chỉ định, không vượt trần mỗi draft.
   3. Ảnh được CHỤP RIÊNG kèm md5: chạy lại draft ghi đè goc/ không làm lệch nhãn.
 
@@ -23,7 +23,7 @@ import image_golden_sample                                    # noqa: E402
 
 
 def _image(**k):
-    a = {"ma": "A1", "tu": "commons", "dung": ["thân"], "lien_quan": True, "ghi_chu": []}
+    a = {"id": "A1", "source": "commons", "uses": ["thân"], "relevant": True, "notes": []}
     a.update(k)
     return a
 
@@ -37,18 +37,18 @@ def _make_state(root: Path, drafts: dict) -> Path:
         for i, a in enumerate(images, 1):
             goc = wd / "goc" / f"A{i}.png"
             Image.new("RGB", (1200, 800), (i * 20 % 255, 80, 120)).save(goc)
-            anh.append(dict(a, ma=f"A{i}", goc=str(goc)))
+            anh.append(dict(a, id=f"A{i}", original_path=str(goc)))
         (wd / "xong.json").write_text(json.dumps({
-            "draft_id": draft_id, "title": draft_id, "tieu_de_en": draft_id.upper(),
-            "tu_lieu": {"doan_dau": "lead " * 400}, "anh": anh}), encoding="utf-8")
+            "version": 2, "draft_id": draft_id, "title": draft_id, "title_en": draft_id.upper(),
+            "material": {"lead_paragraph": "lead " * 400}, "images": anh}), encoding="utf-8")
     return root
 
 
 # --------------------------------------------- 1. quyết định engine = công thức schema
 def test_system_kept_matches_schema_formula():
     import schema
-    imgs = [_image(), _image(lien_quan=False), _image(dung=[]),
-            _image(mat=1, alt=""), _image(mat=1, alt="Jack Clark, co-founder of Anthropic")]
+    imgs = [_image(), _image(relevant=False), _image(uses=[]),
+            _image(faces=1, alt=""), _image(faces=1, alt="Jack Clark, co-founder of Anthropic")]
     kept = [image_eval.system_kept(a) for a in imgs]
     assert kept == [True, False, False, False, True], kept
     for a in imgs:
@@ -56,17 +56,17 @@ def test_system_kept_matches_schema_formula():
 
 
 def test_drop_reason_separates_capture_quality_from_vision():
-    assert image_eval.drop_reason(_image(lien_quan=False, chup_nguon=True)) == "capture_quality"
-    assert image_eval.drop_reason(_image(lien_quan=False)) == "vision_not_relevant"
-    assert image_eval.drop_reason(_image(mat=2, alt="")) == "unnamed_face"
+    assert image_eval.drop_reason(_image(relevant=False, capture_source=True)) == "capture_quality"
+    assert image_eval.drop_reason(_image(relevant=False)) == "vision_not_relevant"
+    assert image_eval.drop_reason(_image(faces=2, alt="")) == "unnamed_face"
     assert image_eval.drop_reason(_image()) == "kept"
 
 
 def test_evaluate_counts_wrong_drop_and_junk_pass():
-    samples = [{"id": "a", "image": _image(lien_quan=False)},          # tốt mà bỏ -> loại oan
+    samples = [{"id": "a", "image": _image(relevant=False)},          # tốt mà bỏ -> loại oan
                {"id": "b", "image": _image()},                         # rác mà giữ -> lọt rác
                {"id": "c", "image": _image()},                         # tốt, giữ
-               {"id": "d", "image": _image(lien_quan=False)},          # rác, bỏ
+               {"id": "d", "image": _image(relevant=False)},          # rác, bỏ
                {"id": "e", "image": _image()}]                         # chưa nhãn
     labels = [{"id": "a", "usable": "yes"}, {"id": "b", "usable": "no", "defect": "wrong_meaning"},
               {"id": "c", "usable": "yes"}, {"id": "d", "usable": "no"}, {"id": "zz", "usable": "yes"}]
@@ -83,9 +83,9 @@ def test_evaluate_counts_wrong_drop_and_junk_pass():
 def test_sample_is_deterministic_keeps_must_drafts_and_caps_per_draft():
     with tempfile.TemporaryDirectory() as tmp:
         state = _make_state(Path(tmp), {
-            "must-draft": [_image(), _image(lien_quan=False)],
-            "big-draft": [_image(lien_quan=False, tu="web_yandex") for _ in range(9)],
-            "other-draft": [_image(tu="báo khác"), _image(tu="bao khac", lien_quan=False)],
+            "must-draft": [_image(), _image(relevant=False)],
+            "big-draft": [_image(relevant=False, source="web_yandex") for _ in range(9)],
+            "other-draft": [_image(source="báo khác"), _image(source="bao khac", relevant=False)],
         })
         cands = image_golden_sample.load_candidates(state)
         assert len(cands) == 13
@@ -100,9 +100,29 @@ def test_sample_is_deterministic_keeps_must_drafts_and_caps_per_draft():
 
 def test_sample_never_exceeds_available():
     with tempfile.TemporaryDirectory() as tmp:
-        state = _make_state(Path(tmp), {"d1": [_image(), _image(lien_quan=False)]})
+        state = _make_state(Path(tmp), {"d1": [_image(), _image(relevant=False)]})
         cands = image_golden_sample.load_candidates(state)
         assert len(image_golden_sample.stratified_sample(cands, 300)) == 2
+
+
+def test_load_candidates_reads_v1_manifest_with_new_keys():
+    """LOW-227: xong.json bản 1 (khoá Việt) chưa migrate vẫn ra mẫu khoá English."""
+    with tempfile.TemporaryDirectory() as tmp:
+        wd = Path(tmp) / "dcgr" / "chuan_bi" / "d1"
+        (wd / "goc").mkdir(parents=True)
+        goc = wd / "goc" / "A1.png"
+        Image.new("RGB", (1200, 800), (10, 80, 120)).save(goc)
+        (wd / "xong.json").write_text(json.dumps({
+            "phien_ban": 1, "draft_id": "d1", "title": "d1", "tieu_de_en": "D1",
+            "tu_lieu": {"doan_dau": "lead"},
+            "anh": [{"ma": "A1", "goc": str(goc), "tu": "commons", "dung": ["thân"],
+                     "lien_quan": True, "ghi_chu": [], "khai_niem": {"tu_khoa": "flag"}}]}),
+            encoding="utf-8")
+        cands = image_golden_sample.load_candidates(Path(tmp))
+        assert [c["id"] for c in cands] == ["dcgr/d1/A1"], cands
+        assert cands[0]["image"] == {"id": "A1", "source": "commons", "uses": ["thân"], "relevant": True,
+                                     "notes": [], "concept": {"keyword": "flag"}}, cands[0]["image"]
+        assert cands[0]["story"]["title_en"] == "D1" and cands[0]["story"]["lead"] == "lead"
 
 
 # --------------------------------------------- 3. chụp riêng ảnh
