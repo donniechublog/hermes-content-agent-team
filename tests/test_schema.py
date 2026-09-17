@@ -7,8 +7,8 @@ Ba duong hong CO THAT ma tep nay giu:
      bang cong thuc khac nguoi ghi (chum anh khai niem dem thanh nhieu thay vi
      MOT), con approve_post/image_prepare coi la 0 ("khong co anh nao"). Nay ca ba
      di qua `schema.count_image_use_ok`.
-  2. Manifest ban cu (truoc 09/09/2026) khong co `phien_ban` va co the thieu
-     khoa dan xuat. `read_manifest` bu lai bang dung cong thuc cua nguoi ghi.
+  2. Manifest phai la ban hien hanh (`version` 2, khoa English): `read_manifest`
+     tu choi ban cu co bao ro thay vi doc ra toan khoa rong (LOW-229).
   3. `write_meta` ghi DE ca dict, ma `blackboard` ghi `root_task` vao cung tep tu
      mot tien trinh khac. Hom nay chua mat chi vi thu tu goi may man.
 
@@ -64,39 +64,10 @@ def test_ban_moi_giu_nguyen_khong_bi_dung_cham():
     assert schema.read_manifest(m) == m
 
 
-def test_ban_cu_duoc_bu_so_dung_duoc_dung_cong_thuc():
-    # `concept` phai co noi dung: dict RONG la falsy nen khong danh dau gi ca
-    # (chinh cho nay lam ban dau cua test sai — giu lai lam vi du).
-    # Ban 0 that mang khoa Viet: read_manifest doi ten ROI moi bu khoa dan xuat.
-    cu = {"anh": [{"dung": ["bìa"], "khai_niem": {"tu_khoa": "co"}},
-                  {"dung": ["bìa"], "khai_niem": {"tu_khoa": "rack"}},
-                  {"dung": ["thân"]}]}
-    ra = schema.read_manifest(cu)
-    assert ra["usable_count"] == 2, ra
-    assert ra["version"] == schema.VERSION_MANIFEST
-    assert "so_dung_duoc" not in ra and "anh" not in ra, ra
-
-
-def test_ban_cu_khong_co_bang_xep_hang_thi_so_xep_hang_la_0():
-    """Nguoi doc tung mac dinh 1 ke ca khi khong co bang nao — nguoc y nghia."""
-    assert schema.read_manifest({"anh": [], "xep_hang": None})["ranking_count"] == 0
-
-
-def test_ban_cu_co_bang_thi_so_xep_hang_it_nhat_1():
-    ra = schema.read_manifest({"anh": [], "xep_hang": {"model": "gpt", "kieu": "bang"}})
-    assert ra["ranking_count"] == 1, ra
-    assert ra["ranking"] == {"model": "gpt", "kind": "bang"}, ra
-
-
-def test_khong_ghi_de_khoa_da_co_cua_ban_cu():
-    ra = schema.read_manifest({"anh": [{"dung": ["thân"]}], "so_dung_duoc": 42})
-    assert ra["usable_count"] == 42, "bu khoa THIEU, khong duoc sua khoa da co"
-
-
 def test_doc_tu_duong_dan_va_khong_nem_khi_tep_hong():
     with tempfile.TemporaryDirectory() as t:
         p = Path(t) / state_paths.MANIFEST_FILE
-        p.write_text(json.dumps({"anh": [], "title": "x"}), encoding="utf-8")
+        p.write_text(json.dumps({"version": schema.VERSION_MANIFEST, "images": [], "title": "x"}), encoding="utf-8")
         assert schema.read_manifest(p)["title"] == "x"
         p.write_text("{khong phai json", encoding="utf-8")
         assert schema.read_manifest(p) is None, "tep hong phai ra None, khong nem"
@@ -186,113 +157,35 @@ def test_moi_khoa_write_meta_deu_co_trong_Meta():
     assert not thieu, f"write_meta sinh khoa chua khai trong schema.Meta: {thieu}"
 
 
-def test_doc_manifest_phien_ban_kieu_la_khong_crash():
-    """N-r2-7: "1" (chuoi) hay None tung nem TypeError o `<` — ham hua None khi
+def test_doc_manifest_version_kieu_la_khong_crash():
+    """N-r2-7: "2" (chuoi) hay None tung nem TypeError o `<` — ham hua None khi
     khong doc duoc ma lai crash."""
-    for pv in ("1", None, "abc", 1.0):
-        m = schema.read_manifest({"phien_ban": pv, "anh": []})
-        assert m is not None and m["version"] == schema.VERSION_MANIFEST, (pv, m)
-        assert "phien_ban" not in m, (pv, m)
-    for pv in ("2", None, "abc", 2.0):
+    for pv in ("2", 2.0):
         m = schema.read_manifest({"version": pv, "images": []})
         assert m is not None and m["version"] == schema.VERSION_MANIFEST, (pv, m)
+    for pv in (None, "abc", "1", 1):
+        assert schema.read_manifest({"version": pv, "images": []}) is None, pv
 
 
-# ------------------------------------------ LOW-227: khoa Viet -> English (ban 2)
-_V1_CU = {
-    "phien_ban": 1, "draft_id": "d1", "brand": "dcgr", "title": "t", "tao_luc": 5,
-    "toi_thieu": 6, "toi_thieu_co_ban": 6, "vai_anh": "dre", "so_dung_duoc": 1,
-    "tieu_de_en": "T", "chu_bai": "x", "so_mien": ["a.com"], "cap_ghep": [["A1", "A2"]],
-    "ghep_hai_hang": [], "thu_tu_anh_theo_loai": ["logo"], "goi_y_bia": ["A1"], "chua_nhin": [],
-    "tin_xep_hang": True, "so_xep_hang": 1, "nguon_path": "/n.json",
-    "xep_hang": {"model": "gpt", "hang": 2, "site": "lmarena", "bang": "Text", "kieu": "bang",
-                 "duoc_nhac": False},
-    "tu_lieu": {"cau_co_so": ["tang 10%"], "doan_dau": "mo dau", "so_nguon": 1, "tu": "browser",
-                "tieu_de": "t", "nguon": [{"nhan": "bài gốc", "url": "u", "tieu_de": "t", "doan": ["p"]}]},
-    "thieu_anh": {"so": 1, "toi_thieu": 6},
-    "anh": [{"ma": "A1", "goc": "/w/goc/A1.png", "san": "/w/san/A1.png", "url": "https://x/1.png",
-             "tu": "gốc", "trang": "https://x", "mien": "x", "dung": ["bìa"], "ghi_chu": ["n"],
-             "mo_ta": "m", "lien_quan": True, "roi": True, "ti_le": 1.5, "loai": "anh", "mat": 0,
-             "khai_niem": {"tu_khoa": "flag", "ly_do": "theo loại tin"},
-             "thuong_hieu": {"hang": "Nvidia", "khoa": "nvidia", "loai": "nguoi", "nguoi": "Jensen Huang",
-                             "vai": "CEO", "bang": "b", "nen": "tối", "ma": "NVDA", "tu_khoa": "k"},
-             "thuc_the": {"ten": "TSMC", "bai": "tsmc", "nguon": "wiki"},
-             "xep_hang": {"tep": "/w/xh.png", "kieu": "bang", "nguon": "s", "bang": "Text", "hang": 2,
-                          "dong": "2 | gpt", "duoc_nhac": True, "logo_co": False, "site": "lmarena",
-                          "model": "gpt", "url": "https://l", "logo": "o"}}],
-}
-
-
-def test_ban_1_khoa_viet_doc_ra_khoa_english_ban_2():
-    """LOW-227: manifest ban 1 (khoa Viet) qua read_manifest ra khoa English, ca khoa
-    long trong anh/brand_match/ranking/material/missing_images; GIA TRI giu nguyen."""
-    ra = schema.read_manifest(json.loads(json.dumps(_V1_CU)))
-    assert ra is not None
-    assert ra["version"] == 2 and "phien_ban" not in ra, ra
-    assert set(ra) == {"version", "draft_id", "brand", "title", "created_at", "min_images",
-                       "base_min_images", "image_role", "usable_count", "title_en", "article_text",
-                       "domains", "stackable_pairs", "two_company_pairs", "image_order_by_story_type",
-                       "cover_suggestions", "not_yet_seen", "is_ranking_story", "ranking_count",
-                       "source_path", "ranking", "material", "missing_images", "images"}, sorted(ra)
-    # ban 1 da co khoa dan xuat -> KHONG tinh lai
-    assert ra["usable_count"] == 1 and ra["ranking_count"] == 1, ra
-    assert ra["ranking"] == {"model": "gpt", "rank": 2, "site": "lmarena", "board": "Text",
-                             "kind": "bang", "mentioned": False}, ra["ranking"]
-    assert ra["material"] == {"number_sentences": ["tang 10%"], "lead_paragraph": "mo dau",
-                              "source_count": 1, "source": "browser", "title": "t",
-                              "sources": [{"label": "bài gốc", "url": "u", "title": "t",
-                                           "paragraphs": ["p"]}]}, ra["material"]
-    assert ra["missing_images"] == {"count": 1, "min_images": 6}, ra["missing_images"]
-    a = ra["images"][0]
-    assert a == {"id": "A1", "original_path": "/w/goc/A1.png", "ready_path": "/w/san/A1.png",
-                 "url": "https://x/1.png", "source": "gốc", "page_url": "https://x", "domain": "x",
-                 "uses": ["bìa"], "notes": ["n"], "description": "m", "relevant": True,
-                 "cluttered_legacy": True, "ratio": 1.5, "kind": "anh", "faces": 0,
-                 "concept": {"keyword": "flag", "reason": "theo loại tin"},
-                 "brand_match": {"company": "Nvidia", "key": "nvidia", "kind": "nguoi",
-                                 "person": "Jensen Huang", "person_role": "CEO", "board": "b",
-                                 "background_tone": "tối", "ticker": "NVDA", "keyword": "k"},
-                 "entity": {"name": "TSMC", "article_name": "tsmc", "source": "wiki"},
-                 "ranking": {"file_path": "/w/xh.png", "kind": "bang", "source": "s", "board": "Text",
-                             "rank": 2, "row": "2 | gpt", "mentioned": True, "has_logo": False,
-                             "site": "lmarena", "model": "gpt", "url": "https://l", "logo": "o"}}, a
-    # thu tu khoa giu nguyen (so byte-for-byte voi ban cu can dieu nay)
-    assert list(a)[:4] == ["id", "original_path", "ready_path", "url"], list(a)
-
-
-def test_ban_0_khong_co_phien_ban_van_bu_khoa_dan_xuat():
-    ra = schema.read_manifest({"draft_id": "d0", "anh": [{"ma": "A1", "dung": ["thân"], "lien_quan": True}],
-                               "xep_hang": {"model": "gpt", "kieu": "bang"}})
-    assert ra["version"] == 2, ra
-    assert ra["usable_count"] == 1 and ra["ranking_count"] == 1, ra
-    assert ra["images"] == [{"id": "A1", "uses": ["thân"], "relevant": True}], ra
-
-
-def test_migrate_manifest_idempotent_va_chan_lan_khoa():
-    import manifest_migration as mig
-    goc = json.loads(json.dumps(_V1_CU))
-    mot = mig.migrate_manifest(goc)
-    assert goc == _V1_CU, "migrate_manifest khong duoc sua dict dau vao tai cho"
-    hai = mig.migrate_manifest(json.loads(json.dumps(mot)))
-    assert hai == mot, "chay lan hai tren ban da doi phai ra y het"
-    assert list(hai["images"][0]) == list(mot["images"][0]), "thu tu khoa phai giu"
-    try:
-        mig.migrate_manifest({"draft_id": "d", "anh": [{"ma": "A1", "id": "A1"}]})
-    except mig.KeyConflict:
-        pass
-    else:
-        raise AssertionError("anh co ca `ma` lan `id` phai nem KeyConflict, khong doan")
-    assert schema.read_manifest({"draft_id": "d", "anh": [{"ma": "A1", "id": "A1"}]}) is None, \
-        "read_manifest gap lan khoa phai ra None (khong nem)"
-
-
-def test_xong_json_khong_phai_manifest_bi_bo_qua():
-    """Itachi ghi `{khoa, slides}` va Ada ghi bao cao gom cung ten `manifest.json`."""
-    import manifest_migration as mig
-    assert not mig.is_manifest({"khoa": "k", "slides": [{"anh": "A1"}]})
-    assert not mig.is_manifest({"token": 1, "kanban": {}, "manifest": {}, "draft": "d"})
-    assert mig.is_manifest({"draft_id": "d", "anh": []})
-    assert mig.is_manifest({"draft_id": "d", "images": []})
+def test_ban_cu_khoa_viet_bi_tu_choi_co_bao_ro():
+    """LOW-229: nhanh nang ban 0/1 da go sau khi 185 manifest may chu migrate xong.
+    Tep ban cu (khoi phuc tu *.v1.bak, may khac) phai bi TU CHOI kem loi ro — doc
+    im lang thi moi khoa English deu rong va vai thay "khong co anh nao"."""
+    import contextlib
+    import io
+    for cu in ({"phien_ban": 1, "draft_id": "d1", "anh": [{"ma": "A1", "dung": ["thân"]}]},
+               {"draft_id": "d0", "anh": []}):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            assert schema.read_manifest(cu) is None, cu
+        assert "can ban 2" in buf.getvalue() and "LOW-227" in buf.getvalue(), buf.getvalue()
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / state_paths.MANIFEST_FILE
+        p.write_text(json.dumps({"phien_ban": 1, "anh": []}), encoding="utf-8")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            assert schema.read_manifest(p) is None
+        assert str(p) in buf.getvalue(), "loi phai neu duong dan tep de nguoi sua tim duoc"
 
 
 def _khoa_dict_ghi_vao(src: str, ten_tep: str) -> set:
@@ -330,9 +223,6 @@ def test_moi_khoa_img_json_deu_co_trong_SidecarAnh():
     assert not thieu, f"img.json ghi khoa chua khai trong schema.SidecarAnh: {thieu}"
 
 
-if __name__ == "__main__":
-    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
-    chay_tat_ca(globals())
 
 
 # ---------------------------------------- cat_ngang_ok (su co t_a8ffd2f6 lan hai, 12/09)
@@ -387,3 +277,8 @@ def test_tinh_lai_bo_anh_that_tsmc_lan_hai():
     # rieng khong chi_ghep: A3, A6, A8, A10, A11 = 5. chi_ghep: A5, A7, A12 = 3 ->
     # cap roi nhau lon nhat = 1 (ba tam chi ghep toi da mot cap).
     assert schema.count_image_use_ok(bo, "ethan") == 6
+
+
+if __name__ == "__main__":
+    from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
+    chay_tat_ca(globals())

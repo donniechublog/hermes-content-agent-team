@@ -134,12 +134,16 @@ def test_ada_itachi_outside_gate():
     assert not set(NGOAI_CONG) & set(NGUOI_DOC_ENGINE)
 
 
-def test_read_manifest_fallback_count_use_ok_wait_copy_0():
+def test_read_manifest_refuses_pre_v2_instead_of_empty_keys():
+    """LOW-229: ban 0 tung duoc bu `usable_count`; nhanh do da go. Ban cu nay phai ra
+    None (nguoi doc bao "chua chuan bi") chu khong phai dict ma moi khoa English rong."""
+    import contextlib
+    import io
     import schema
     m0 = {"anh": [{"ma": "A1", "dung": ["bìa"], "lien_quan": True},
                   {"ma": "A2", "dung": ["thân"], "lien_quan": None}]}
-    m = schema.read_manifest(m0)
-    assert m["usable_count"] == 2 and m["version"] == schema.VERSION_MANIFEST, m
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert schema.read_manifest(m0) is None
 
 
 if __name__ == "__main__":

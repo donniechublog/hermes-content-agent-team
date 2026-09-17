@@ -16,8 +16,7 @@ Tep nay KHONG kiem tra luc chay (khong validate). No lam ba viec:
   1. Khai bao khoa bang TypedDict — doi ten khoa thi co MOT cho de sua va de doc.
   2. Giu CONG THUC DAN XUAT dung mot ban (`count_image_use_ok`), de nguoi ghi va
      nguoi doc khong bao gio tinh ra hai so khac nhau.
-  3. `read_manifest()` — doc manifest cu, bu cac khoa dan xuat con thieu roi dan
-     nhan `phien_ban`, de ban cu va ban moi doc ra nhu nhau.
+  3. `read_manifest()` — mot cho doc manifest, tu choi ban cu co bao ro.
 
 CHU Y — "manifest.json" KHONG phai mot hop dong. Do la ten tep dung lai o nhieu cho
 voi hinh dang KHAC HAN: engine ghi manifest o
@@ -32,7 +31,7 @@ from typing import Any, TypedDict
 # Tang phien ban khi doi Y NGHIA mot khoa (khong phai khi them khoa tuy chon).
 # Ban 0 = moi manifest ghi truoc 09/09/2026, khong co truong `phien_ban`.
 # Ban 2 (LOW-227, 17/09/2026) = khoa English; bang cu -> moi o
-# docs/tu_dien_ten/manifest_keys_v2.json, ap bang `manifest_migration`.
+# docs/tu_dien_ten/manifest_keys_v2.json. Migration mot lan da chay va da go (LOW-229).
 VERSION_MANIFEST = 2
 
 
@@ -321,14 +320,14 @@ def count_image_use_ok(anh: list, vai_anh: str) -> int:
 
 
 def read_manifest(nguon) -> dict | None:
-    """Doc manifest cua engine, tu nang ban cu. None neu khong doc duoc.
+    """Doc manifest cua engine. None neu khong doc duoc hoac khong phai ban hien hanh.
 
     `nguon` la duong dan toi manifest.json, hoac chinh dict da doc san.
 
-    Nang ban 0 -> 1: ban cu co the thieu cac khoa DAN XUAT. Bu lai bang dung
-    cong thuc cua nguoi ghi thay vi de moi nguoi doc tu doan — do la nguyen nhan
-    ba noi ra ba so khac nhau. KHONG dung cham cac khoa khac: bu la de doc ban cu
-    cho dung, khong phai de sua du lieu."""
+    Chi nhan `version >= VERSION_MANIFEST`. Nhanh nang ban 0/1 (khoa Viet) da go o
+    LOW-229 sau khi ca 185 manifest may chu duoc migrate (LOW-227, 17/09/2026) — mot
+    tep ban cu xuat hien lai (khoi phuc tu *.v1.bak, may khac) bi TU CHOI co bao ro,
+    khong duoc doc im lang ra toan khoa rong."""
     if isinstance(nguon, dict):
         m = dict(nguon)
     else:
@@ -342,38 +341,17 @@ def read_manifest(nguon) -> dict | None:
             print(f"[schema] manifest {p} khong phai dict")
             return None
 
-    # N-r2-7: version "1" (chuoi) hay None (tep sua tay/tool khac) tung nem
+    # N-r2-7: version "2" (chuoi) hay None (tep sua tay/tool khac) tung nem
     # TypeError o phep `<` — ham hua "None neu khong doc duoc" ma lai crash.
-    # Ban 0/1 mang khoa `phien_ban`, ban 2 mang `version`.
     try:
-        pv = int(m.get("version") or m.get("phien_ban") or 0)
+        pv = int(m.get("version") or 0)
     except (TypeError, ValueError):
         pv = 0
-    m.pop("phien_ban", None)
-    if pv < 2:
-        import manifest_migration
-        try:
-            m = manifest_migration.migrate_manifest(m)
-        except manifest_migration.KeyConflict as e:
-            print(f"[schema] manifest {nguon if not isinstance(nguon, dict) else '(dict)'} "
-                  f"lan khoa cu va moi: {e}")
-            return None
-    if pv < 1:
-        if "usable_count" not in m:
-            # Ban cu co the thieu `image_role` (truoc LOW-12, 10/09/2026): roi ve
-            # `role.DEFAULT_IMAGE` nhu `image_prepare.prepare_article` da lam,
-            # khong de ValueError cua `role.rules_module` lam vo hieu ca ham bu.
-            import role
-            vai_anh = role.canonical_slug(m.get("image_role") or "") or role.DEFAULT_IMAGE
-            if vai_anh not in role.ROLE:
-                vai_anh = role.DEFAULT_IMAGE
-            m["usable_count"] = count_image_use_ok(m.get("images") or [], vai_anh)
-        # `ranking_count` = SO BANG chup duoc. Ban cu chi co `ranking` (bang dau
-        # tien) nen suy: co bang thi it nhat mot, khong co thi 0. Nguoi doc tung
-        # mac dinh 1 ke ca khi khong co bang nao — nguoc han y nghia.
-        if "ranking_count" not in m:
-            m["ranking_count"] = 1 if m.get("ranking") else 0
-    m["version"] = max(pv, VERSION_MANIFEST)
+    if pv < VERSION_MANIFEST:
+        ten = "(dict)" if isinstance(nguon, dict) else nguon
+        print(f"[schema] manifest {ten} la ban {pv}, can ban {VERSION_MANIFEST} (khoa English, LOW-227) — khong doc")
+        return None
+    m["version"] = pv
     return m
 
 
