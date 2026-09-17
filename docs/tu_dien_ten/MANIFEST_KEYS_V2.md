@@ -1,4 +1,8 @@
-# Khoá manifest bản 2 — Việt không dấu → English (LOW-227, **BẢN NHÁP chờ duyệt**)
+# Khoá manifest bản 2 — Việt không dấu → English (LOW-227)
+
+**Ông Chủ duyệt 17/09/2026:** (1) `thuong_hieu → brand_match`; (2) `ma → id`;
+(3) pha này chỉ đổi KHOÁ, giá trị liệt kê tiếng Việt tách ticket riêng sau pha 3;
+(4) `state/golden/v0/samples.jsonl` và `drafts/<id>.img.json` đổi cùng pha 1.
 
 Nguồn sự thật: [`manifest_keys_v2.json`](manifest_keys_v2.json). Script migrate
 và phần sửa code sẽ đọc thẳng tệp đó, không chép tay lần hai.

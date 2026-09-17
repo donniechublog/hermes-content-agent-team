@@ -1,5 +1,5 @@
 {
-  "_status": "DRAFT — chờ Ông Chủ duyệt (LOW-227). Chưa có code nào đọc tệp này.",
+  "_status": "ĐÃ DUYỆT 17/09/2026 (LOW-227): brand_match, id, chỉ đổi khoá (giá trị tách ticket riêng), samples.jsonl + .img.json đổi cùng pha 1.",
   "_scope": "Khoá JSON trong state/<brand>/chuan_bi/<draft>/xong.json (bản 0/1 -> 2) và dict ảnh chảy vào nó. Chỉ KHOÁ, không đổi GIÁ TRỊ.",
   "manifest": {
     "phien_ban": "version",
