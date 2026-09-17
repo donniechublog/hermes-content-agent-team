@@ -51,7 +51,7 @@ SOCIAL = ROOT / "hermes" / "skills" / "social-crawl" / "scripts" / "social_fetch
 
 # Ngưỡng ĐO THẬT trên ảnh của đội 07/09/2026 (carousel Hello Kitty @teach 2048x2550,
 # thẻ đen dưới ảnh; slide 338 bảng chart nền đen; slide 646 chữ trên nền trắng).
-# `std_nen` = độ lệch chuẩn màu của NỀN quanh hộp chữ, đã trừ mọi hộp chữ khác:
+# `background_std` = độ lệch chuẩn màu của NỀN quanh hộp chữ, đã trừ mọi hộp chữ khác:
 #     nền phẳng thật (dải đen, nền trắng)      0.0 – 10.5
 #     chữ đè lên ảnh thật (mặt người, phố)    28.9 – 55.5
 # Khoảng trống giữa hai nhóm rất rộng; lấy 12.0 nằm gọn trong khoảng đó.
@@ -156,14 +156,14 @@ def color_text(img_bgr, box) -> list:
 def distinctive_text(img_bgr, box, text: str) -> dict:
     """Đo CỠ và ĐỘ ĐẬM chữ gốc để chữ Việt vẽ đè lên bám sát nguyên mẫu.
 
-    - `cao_net`: chiều cao MỰC thật (hàng có pixel chữ), không phải chiều cao
+    - `ink_height`: chiều cao MỰC thật (hàng có pixel chữ), không phải chiều cao
       hộp OCR — hộp rộng hơn nét chữ và rộng khác nhau tuỳ dòng có dấu hay không.
-    - `muc`: pixel chữ / diện tích khung nét chữ → đậm hay thường.
+    - `ink_ratio`: pixel chữ / diện tích khung nét chữ → đậm hay thường.
     - `hep`: bề ngang trung bình một ký tự / chiều cao nét → font bó hẹp hay không.
     """
     crop, chu = _extract_text(img_bgr, box)
     if crop is None or chu is None:
-        return {"cao_net": 0, "muc": 0.0, "font": "regular"}
+        return {"ink_height": 0, "ink_ratio": 0.0, "font": "regular"}
     # Hang co IT hon 2% be ngang la muc, coi nhu khong phai net chu: thuong la
     # vien antialias hoac net thong xuong cua DONG BEN CANH lot vao hop OCR. De
     # nguyen thi 'global icon far' do ra cao 162px con 'into a timeless' cung co
@@ -173,14 +173,14 @@ def distinctive_text(img_bgr, box, text: str) -> dict:
     rows = np.where(dac)[0]
     cols = np.where(chu.any(axis=0))[0]
     if rows.size == 0 or cols.size == 0:
-        return {"cao_net": 0, "muc": 0.0, "font": "regular"}
+        return {"ink_height": 0, "ink_ratio": 0.0, "font": "regular"}
     cao = int(rows[-1] - rows[0] + 1)
     rong = int(cols[-1] - cols[0] + 1)
     net = chu[rows[0]:rows[-1] + 1, cols[0]:cols[-1] + 1]
     muc = float(net.sum() / net.size)
     adv = rong / max(1, len((text or "").strip())) / max(1, cao)
     font = about_text.pick_font(_BUT, text, adv, muc >= BOLD_ITEM)
-    return {"cao_net": cao, "muc": round(muc, 3), "adv": round(adv, 3), "font": font}
+    return {"ink_height": cao, "ink_ratio": round(muc, 3), "adv": round(adv, 3), "font": font}
 
 
 def measure_background(img_bgr, boxes: list, i: int) -> dict:
@@ -210,17 +210,18 @@ def measure_background(img_bgr, boxes: list, i: int) -> dict:
     if px.size < 200 * 3:
         # Chu day dac quanh het vanh (khong con nen de do) — khong dam chac la
         # phang, de Itachi lam cho an toan.
-        return {"nen": "anh", "std_nen": -1.0, "nen_rgb": None}
+        return {"background_kind": "photo", "background_std": -1.0, "background_rgb": None}
     px = px.reshape(-1, 3)
     std = float(np.std(px, axis=0).max())
     med = np.median(px, axis=0)
-    return {"nen": "phang" if std <= FLAT_STD else "anh", "std_nen": round(std, 1),
-            "nen_rgb": [int(med[2]), int(med[1]), int(med[0])]}
+    return {"background_kind": "flat" if std <= FLAT_STD else "photo", "background_std": round(std, 1),
+            "background_rgb": [int(med[2]), int(med[1]), int(med[0])]}
 
 
 def ocr_region(anh: Path) -> tuple:
-    """(img_bgr, [vùng]) — vùng: {stt, box, x, y, w, h, text, conf, color_rgb,
-    nen, std_nen, nen_rgb, cao_net, muc, font, can}, sắp trên→dưới, trái→phải."""
+    """(img_bgr, [vùng]) — vùng: {number, box, x, y, w, h, text, conf, color_rgb,
+    background_kind, background_std, background_rgb, ink_height, ink_ratio, adv, font, align},
+    sắp trên→dưới, trái→phải."""
     import swap_image_text
     img = cv2.imread(str(anh))
     if img is None:
@@ -240,12 +241,12 @@ def ocr_region(anh: Path) -> tuple:
     _read_can_odd(vung, img.shape[1])
     vung.sort(key=lambda v: (round(v["y"] / max(1, img.shape[0]) * 40), v["x"]))
     for i, v in enumerate(vung, 1):
-        v["stt"] = i
+        v["number"] = i
     return img, vung
 
 
 def _read_can_odd(vung: list, w_anh: int) -> None:
-    """Gán `can` cho từng vùng theo CỘT LỀ TRÁI chung của cả thẻ.
+    """Gán `align` cho từng vùng theo CỘT LỀ TRÁI chung của cả thẻ.
 
     Đoán từng hộp một là sai: một dòng dài gần hết bề ngang thì tâm nó trùng tâm
     ảnh, và luật "tâm trùng tâm ảnh thì căn giữa" biến đúng dòng dài nhất của một
@@ -254,24 +255,24 @@ def _read_can_odd(vung: list, w_anh: int) -> None:
     """
     from collections import Counter
     tol = max(6, int(w_anh * 0.015))
-    phang = [v for v in vung if v.get("nen") == "phang"]
+    phang = [v for v in vung if v.get("background_kind") == "flat"]
     dem = Counter(round(v["x"] / tol) for v in phang)
     cot = dem.most_common(1)[0] if dem else (None, 0)
     for v in vung:
         if cot[1] >= 2 and round(v["x"] / tol) == cot[0]:
-            v["can"] = "left"
+            v["align"] = "left"
         elif abs((v["x"] + v["w"] / 2) - w_anh / 2) / w_anh < 0.03:
-            v["can"] = "center"
+            v["align"] = "center"
         else:
-            v["can"] = "left"
+            v["align"] = "left"
 
 
 def about_preview(img_bgr, vung: list, out: Path) -> None:
     vis = img_bgr.copy()
     for v in vung:
-        mau = (0, 200, 0) if v.get("nen") == "phang" else (0, 0, 255)
+        mau = (0, 200, 0) if v.get("background_kind") == "flat" else (0, 0, 255)
         cv2.rectangle(vis, (v["x"], v["y"]), (v["x"] + v["w"], v["y"] + v["h"]), mau, 3)
-        cv2.putText(vis, str(v["stt"]), (v["x"], max(28, v["y"] - 6)), cv2.FONT_HERSHEY_SIMPLEX,
+        cv2.putText(vis, str(v["number"]), (v["x"], max(28, v["y"] - 6)), cv2.FONT_HERSHEY_SIMPLEX,
                     1.0, mau, 3)
     out.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(out), vis)
@@ -279,8 +280,8 @@ def about_preview(img_bgr, vung: list, out: Path) -> None:
 
 def write_brief(id_: str, anh: Path, img, vung: list, wd: Path) -> str:
     h, w = img.shape[:2]
-    phang = [v for v in vung if v.get("nen") == "phang"]
-    anh_v = [v for v in vung if v.get("nen") != "phang"]
+    phang = [v for v in vung if v.get("background_kind") == "flat"]
+    anh_v = [v for v in vung if v.get("background_kind") != "flat"]
     L = [f"# GIN — OCR XONG ảnh {id_}: {w}x{h}, {len(vung)} vùng chữ "
          f"({len(phang)} nền phẳng = việc của bạn, {len(anh_v)} nền ảnh = của Itachi)",
          f"Ảnh gốc: {anh}",
@@ -290,29 +291,29 @@ def write_brief(id_: str, anh: Path, img, vung: list, wd: Path) -> str:
     if not phang:
         L.append("(không có vùng nào nền phẳng — cả ảnh này là việc của Itachi, báo lại Ông Chủ.)")
     for v in phang:
-        L.append(f"- {v['stt']:2d} | {v['text'][:56]!r} | {v['x']},{v['y']},{v['w']},{v['h']} | "
-                 f"chữ {v['color_rgb']} | {v['font']} cao {v['cao_net']}px | nền {v['nen_rgb']}")
+        L.append(f"- {v['number']:2d} | {v['text'][:56]!r} | {v['x']},{v['y']},{v['w']},{v['h']} | "
+                 f"chữ {v['color_rgb']} | {v['font']} cao {v['ink_height']}px | nền {v['background_rgb']}")
     if anh_v:
         L += ["", "## Vùng NỀN ẢNH — KHÔNG nhận (chữ đè lên ảnh thật, xoá là hỏng ảnh)"]
         for v in anh_v:
-            L.append(f"- {v['stt']:2d} | {v['text'][:56]!r} | std nền {v['std_nen']} "
+            L.append(f"- {v['number']:2d} | {v['text'][:56]!r} | std nền {v['background_std']} "
                      f"(> {FLAT_STD} là nền ảnh)")
-        L.append("Ảnh có cả hai loại thì làm phần phẳng, và ghi `ghi_chu` báo Ông Chủ "
+        L.append("Ảnh có cả hai loại thì làm phần phẳng, và ghi `note` báo Ông Chủ "
                  "chuyển phần còn lại cho Itachi.")
     L += ["", f"## Spec — viết vào {wd}/spec.json",
-          json.dumps({"gop": [["<stt đầu>", "<stt cuối>", "<bản dịch cả đoạn>"]],
-                      "vung": {"<stt>": "<bản dịch một dòng>", "<stt khác>": None},
-                      "ghi_chu": "<tuỳ chọn, một câu cho Ông Chủ>"},
+          json.dumps({"merges": [["<stt đầu>", "<stt cuối>", "<bản dịch cả đoạn>"]],
+                      "region_texts": {"<stt>": "<bản dịch một dòng>", "<stt khác>": None},
+                      "note": "<tuỳ chọn, một câu cho Ông Chủ>"},
                      ensure_ascii=False, indent=1),
-          "ĐOẠN NHIỀU DÒNG thì dùng `gop`: OCR trả một hộp mỗi DÒNG, mà câu tiếng Việt hiếm khi "
+          "ĐOẠN NHIỀU DÒNG thì dùng `merges`: OCR trả một hộp mỗi DÒNG, mà câu tiếng Việt hiếm khi "
           "ngắt dòng giống bản Anh — dịch từng dòng là bản dịch dài hơn bị ép vào bề ngang dòng "
           "gốc rồi co nhỏ lại, lệch hẳn cỡ so với các dòng bên cạnh. Gộp cả đoạn thành một khối, "
-          "script tự ngắt dòng trong khối đó. Nhãn, badge, tiêu đề một dòng thì dùng `vung`.",
-          "Mỗi vùng nền phẳng phải khai: nằm trong một `gop`, có bản dịch, hoặc `null` nếu cố ý "
+          "script tự ngắt dòng trong khối đó. Nhãn, badge, tiêu đề một dòng thì dùng `region_texts`.",
+          "Mỗi vùng nền phẳng phải khai: nằm trong một `merges`, có bản dịch, hoặc `null` nếu cố ý "
           "giữ nguyên chữ gốc (logo, tên thương hiệu). Quên khai là script dừng — quên và cố ý "
           "giữ phải phân biệt được. Màu chữ, cỡ chữ, font, căn lề lấy theo số đo ở trên, không "
           'cần ghi; muốn đè thì ghi {"text": "…", "font": "bold|regular|condensed|serif", '
-          '"color_rgb": [r,g,b], "can": "left|center"}.',
+          '"color_rgb": [r,g,b], "align": "left|center"}.',
           "", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python gin_submit.py {id_}",
           "Script trám nền phẳng, vẽ chữ Việt đúng vị trí/màu/cỡ/font đo được, chặn tiếng Việt "
@@ -333,8 +334,8 @@ def main() -> int:
     wd = workdir("gin", id_)
     img, vung = ocr_region(anh)
     about_preview(img, vung, wd / state_paths.GIN_REGIONS_PREVIEW_FILE)
-    (wd / state_paths.GIN_REGIONS_OCR_FILE).write_text(json.dumps({"anh": str(anh), "id": id_, "w": img.shape[1],
-                                                  "h": img.shape[0], "vung": vung},
+    (wd / state_paths.GIN_REGIONS_OCR_FILE).write_text(json.dumps({"image_path": str(anh), "id": id_, "w": img.shape[1],
+                                                  "h": img.shape[0], "regions": vung},
                                                  ensure_ascii=False, indent=1), encoding="utf-8")
     brief = write_brief(id_, anh, img, vung, wd)
     (wd / "brief.md").write_text(brief, encoding="utf-8")

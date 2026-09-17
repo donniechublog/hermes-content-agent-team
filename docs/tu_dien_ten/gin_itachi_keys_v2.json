@@ -1,0 +1,101 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-247, thuộc LOW-243) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; giá trị liệt kê đổi cùng ticket. Tên S1–S7 theo phân tích gin/itachi 17/09 + quyết định trong ticket.",
+  "_measured": "máy chủ 17/09/2026 (phân tích, không đo lại trong ticket này): chỉ blog có workdir Gin/Itachi, 6 thư mục state/blog/prepare/{gin_03, gin_07, gin_646, gin_Dc_fbkmD1jT_03, itachi_03, itachi_646}.",
+  "regions_ocr": {
+    "_where": "state/<brand>/prepare/gin_<id>/regions_ocr.json (GIN_REGIONS_OCR_FILE) — ghi gin_prepare.main, itachi_prepare.prepare_slide; đọc gin_submit (single, make_card, main), itachi_prepare. Là CACHE: itachi_prepare dùng lại nếu đã có → migrate_gin_itachi_stores.py.",
+    "anh": "image_path",
+    "vung": "regions"
+  },
+  "regions_ocr.region": {
+    "_where": "phần tử regions[] — gin_prepare.ocr_region/measure_background/distinctive_text/_read_can_odd",
+    "_fixed": ["box", "x", "y", "w", "h", "text", "conf", "color_rgb", "adv", "font"],
+    "stt": "number",
+    "nen": "background_kind",
+    "std_nen": "background_std",
+    "nen_rgb": "background_rgb",
+    "cao_net": "ink_height",
+    "muc": "ink_ratio",
+    "can": "align"
+  },
+  "regions_ocr.region.background_kind_values": {"phang": "flat", "anh": "photo"},
+  "regions_json_item": {
+    "_where": "state/<brand>/prepare/gin_<id>/regions.json (GIN_REGIONS_FILE) — ghi gin_submit.single, đọc itachi_prepare.prepare_slide (không sinh lại khi clean_background.png đã có) → migrate.",
+    "_fixed": ["x", "y", "w", "h", "color_rgb", "ocr_text", "conf"],
+    "stt": "number"
+  },
+  "gin_spec": {
+    "_where": "state/<brand>/prepare/gin_<id>/spec.json — Gin viết theo brief gin_prepare.write_brief, SOUL gin, skill inplace-translate; đọc gin_submit (_legacy_spec nhận cả tên cũ) và itachi_prepare→gin_submit.single.",
+    "gop": "merges",
+    "vung": "region_texts",
+    "ghi_chu": "note",
+    "ep_phang": "force_flat",
+    "giu": "mask_keep",
+    "xoa_them": "mask_extra"
+  },
+  "gin_spec.region_override": {
+    "_where": "giá trị object trong region_texts {\"<stt>\": {text, font, color_rgb, …}}",
+    "can": "align"
+  },
+  "gin_draw_block": {
+    "_where": "khối vẽ trong bộ nhớ — gin_submit._box_translate → make_card",
+    "_fixed": ["x", "y", "w", "h", "text", "font", "color_rgb"],
+    "stt": "number",
+    "vung_goc": "source_regions",
+    "text_goc": "ocr_text",
+    "cao_net": "ink_height",
+    "buoc": "line_pitch",
+    "can": "align"
+  },
+  "itachi_manifest": {
+    "_where": "state/<brand>/prepare/itachi_<khoá>/manifest.json (MANIFEST_FILE, KHÔNG phải manifest engine) — ghi itachi_prepare.main, đọc itachi_submit.main (chạy lại nộp không qua prepare) → migrate.",
+    "khoa": "set_id"
+  },
+  "itachi_manifest.slide": {
+    "_fixed": ["id", "w", "h"],
+    "anh": "image_path",
+    "nen_sach": "clean_background_path",
+    "vung": "regions",
+    "so_vung_ocr": "ocr_region_count"
+  },
+  "itachi_spec.slide": {
+    "_where": "state/<brand>/prepare/itachi_<khoá>/spec.json slides[] — Itachi viết theo brief itachi_prepare.write_brief, SOUL itachi, skill inplace-translate; đọc itachi_submit (_legacy_spec). Trường layout deck đi thẳng sang deck.spec.json (xem deck_spec).",
+    "nguon": "slide_id",
+    "cach": "mode",
+    "vung": "region_texts",
+    "gop": "merges",
+    "bg_anh": "use_clean_background"
+  },
+  "itachi_spec.slide.mode_values": {"tai_cho": "in_place"},
+  "itachi_draw_block": {
+    "_where": "khối vẽ trong bộ nhớ — itachi_submit.about_download_wait",
+    "h_dong": "line_height"
+  },
+  "deck_spec.slide": {
+    "_where": "deck.py --spec (itachi_submit sinh deck.spec.json mỗi lần nộp; skill ai-background bảo vai ghi đường dẫn nền) — deck.legacy_slide nhận cả tên cũ.",
+    "bg_anh": "bg_image",
+    "nhan": "labels",
+    "ghi_chu": "annotation"
+  },
+  "deck_spec.slide.annotation": {"nghieng": "tilt"},
+  "deck_spec.slide.subs.col_values": {"den": "black"},
+  "_kept": {
+    "lo": "deck subs[].lo = cỡ chữ THẤP (low), English sẵn — cổng nhận nhầm, giữ.",
+    "id": "English sẵn.",
+    "mode = deck": "giá trị `cach` = deck English sẵn, giữ."
+  },
+  "_not_migrated": [
+    "deck.spec.json: sinh lại mỗi lần itachi_submit nộp, deck.py đọc ngay sau đó; deck.legacy_slide vẫn nhận tên cũ.",
+    "brief.md / regions_preview.png / result_*.png / submit_count.json: chữ hoặc ảnh, không đọc lại khoá."
+  ],
+  "_notes": [
+    "`vung` hai nghĩa: danh sách vùng OCR (regions, ở regions_ocr/manifest) vs bản dịch theo số vùng do vai viết (region_texts, ở spec) — hai tên khác nhau để không nhầm.",
+    "`anh` hai nghĩa: đường dẫn ảnh nguồn (image_path) vs giá trị `nen` = nền là ảnh thật (photo).",
+    "`bg_anh` hai kiểu: ở spec Itachi là CỜ bool dùng nền sạch của slide (use_clean_background); ở spec deck là ĐƯỜNG DẪN ảnh nền (bg_image).",
+    "`ghi_chu` hai nghĩa: câu gửi Ông Chủ trong spec Gin (note, như journal/scan) vs khối chữ nghiêng kiểu ghi chú tay trên slide cover (annotation).",
+    "`cao_net` = chiều cao MỰC chữ đo trên ảnh (ink_height), không phải chiều cao hộp OCR; `muc` = tỉ lệ mực (ink_ratio), không phải 'mục/item' như don.json.",
+    "`buoc` (Gin) = khoảng cách hai đỉnh dòng gốc (line_pitch) ≠ `h_dong` (Itachi) = chiều cao hộp dòng dùng đoán font (line_height).",
+    "`can` → align: trùng tên Itachi đã dùng sẵn trong object ghi đè vùng.",
+    "`stt` → number: là KHOÁ dict chứa số nguyên thứ tự vùng (1..N), chuỗi của nó làm khoá region_texts; ở khối gộp Gin giá trị là nhãn dải \"a-b\" chỉ để in lỗi. Chữ 'stt' trong văn bản brief/lỗi (\"<stt đầu>\", cột 'stt | text Anh') là chữ hiển thị, giữ nguyên.",
+    "`cach` giá trị so sau .lower(): 'TAI_CHO' cũ cũng thành in_place."
+  ]
+}

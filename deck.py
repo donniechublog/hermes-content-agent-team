@@ -40,6 +40,33 @@ CORAL = (202, 101, 71)
 BLUE = (43, 104, 232)
 GREY = (150, 150, 150)
 
+# LOW-243: spec deck do vai viet tay (Itachi qua itachi_submit, skill ai-background ghi
+# duong dan nen vao spec). Truoc LOW-247 ten khoa la tieng Viet; spec cu van phai dung
+# ra dung slide do. Doi cu -> moi o DUNG MOT CHO nay; co ca hai ten thi ten moi thang.
+# Bang: docs/tu_dien_ten/gin_itachi_keys_v2.json (deck_spec).
+LEGACY_SLIDE_KEYS = {"bg_anh": "bg_image", "nhan": "labels", "ghi_chu": "annotation"}
+LEGACY_ANNOTATION_KEYS = {"nghieng": "tilt"}
+LEGACY_SUB_COL_VALUES = {"den": "black"}
+
+
+def _rename_legacy(d: dict, key_map: dict) -> dict:
+    return {key_map.get(k, k): v for k, v in d.items() if not (k in key_map and key_map[k] in d)}
+
+
+def legacy_slide(s):
+    """Mot slide spec ten cu hoac moi -> ten moi (LOW-243). Khong phai object thi tra nguyen."""
+    if not isinstance(s, dict):
+        return s
+    out = _rename_legacy(s, LEGACY_SLIDE_KEYS)
+    if isinstance(out.get("annotation"), dict):
+        out["annotation"] = _rename_legacy(out["annotation"], LEGACY_ANNOTATION_KEYS)
+    if isinstance(out.get("subs"), list):
+        out["subs"] = [{**sub, "col": LEGACY_SUB_COL_VALUES[sub["col"]]}
+                       if isinstance(sub, dict) and isinstance(sub.get("col"), str)
+                       and sub["col"] in LEGACY_SUB_COL_VALUES else sub
+                       for sub in out["subs"]]
+    return out
+
 
 # ---- helper chung ---------------------------------------------------------
 def _grow(d, text, path, max_w, hi, lo=None, weight=None, italic=False):
@@ -91,10 +118,10 @@ def _two_tone_title(d, x, y, serif_text, sans_text, max_w,
 
 def _open_bg(layout):
     """Nen mot slide: mau phang (mac dinh) hoac ANH THAT da qua swap_image_text.py
-    (chu tieng Anh da xoa sach). `bg_anh` la duong dan anh — dung khi remake
+    (chu tieng Anh da xoa sach). `bg_image` la duong dan anh — dung khi remake
     mot carousel co san, giu nguyen anh nguon, chi thay chu."""
-    if layout.get("bg_anh"):
-        img = Image.open(layout["bg_anh"]).convert("RGB")
+    if layout.get("bg_image"):
+        img = Image.open(layout["bg_image"]).convert("RGB")
         scale = max(W / img.width, H / img.height)
         nw, nh = round(img.width * scale), round(img.height * scale)
         img = img.resize((nw, nh), Image.LANCZOS)
@@ -120,14 +147,14 @@ def take_statement(s):
     y = _draw_lines(d, PAD, y, hl, hf, s.get("heading_col_rgb") or fg, lead=1.12)
     y += int(_line_h(hf) * 0.5)
     for sub in s.get("subs", []):
-        # "y"/"x"/"max_w" ghi de vi tri: dung khi bg_anh da co san mot khoi
+        # "y"/"x"/"max_w" ghi de vi tri: dung khi bg_image da co san mot khoi
         # thiet ke co dinh (vd hop trich dan mau dac) ma chu Viet phai nam
         # DUNG cho do, khong theo dong chay tu tren xuong nhu cac sub khac.
         y_ve = sub["y"] if "y" in sub else y
         x_ve = sub.get("x", PAD)
         mw = sub.get("max_w", W - x_ve - PAD)
         col = {"white": WHITE, "cream": CREAM, "coral": CORAL,
-               "blue": BLUE, "grey": GREY, "den": INK}.get(sub.get("col", "white"), WHITE)
+               "blue": BLUE, "grey": GREY, "black": INK}.get(sub.get("col", "white"), WHITE)
         bold = sub.get("bold", False)
         sf, sl = _grow(d, sub["text"], F_SANS if bold else F_BODY,
                        mw, sub.get("hi", 44), sub.get("lo", 30),
@@ -200,7 +227,7 @@ def take_checklist(s):
 
 def take_grid3(s):
     """Badge + tieu de hai tang + nhan chu dat duoi cac anh nho co san TRONG
-    bg_anh (grid mockup) — layout KHONG tu ve anh grid, chi dinh vi chu that
+    bg_image (grid mockup) — layout KHONG tu ve anh grid, chi dinh vi chu that
     duoi anh that. Dung khi remake slide 'STEP...' co san 2-3 anh minh hoa
     xep hang ngang, chi can doi chu, giu nguyen anh."""
     canvas, fg, _ = _open_bg(s)
@@ -215,7 +242,7 @@ def take_grid3(s):
         sf, sl = _grow(d, s["sub"], F_BODY, W - 2 * PAD, 36, 26, weight=500)
         y = _draw_lines(d, PAD, y, sl, sf, GREY, lead=1.2)
     nf = _f(F_SANS, 30)
-    for nhan in s.get("nhan", []):
+    for nhan in s.get("labels", []):
         tw = d.textlength(nhan["text"], font=nf)
         d.text((nhan["x"] - tw / 2, nhan["y"]), nhan["text"], font=nf, fill=fg)
     _footer_burst(d, s.get("footer"), fg)
@@ -224,7 +251,7 @@ def take_grid3(s):
 
 def take_cover(s):
     """Tieu de khong lo xep tang (moi dong/tier tu no rieng) de len ANH THAT
-    (bg_anh) — kieu bia carousel remake. Tuy chon mot doan chu nghieng nho o
+    (bg_image) — kieu bia carousel remake. Tuy chon mot doan chu nghieng nho o
     goc, kieu ghi chu tay dinh kem. `tiers`: [[[dong,...], co_cao, co_thap], ...]
     — cac dong trong CUNG mot tier dung chung mot co (co lon nhat con vua ca
     ca tier), tier khac nhau co doc lap."""
@@ -246,7 +273,7 @@ def take_cover(s):
         d.text((PAD, y), text, font=f, fill=s.get("title_col_rgb") or fg)
         y += lh
 
-    gc = s.get("ghi_chu")
+    gc = s.get("annotation")
     if gc:
         gc_max_w = gc.get("max_w", 330)
         cf_size, max_cap_h = 40, max(60, title_top - 40 - 60)
@@ -263,8 +290,8 @@ def take_cover(s):
         for ln in cap_lines:
             dl.text((10, cy), ln, font=cf, fill=(255, 255, 255, 255))
             cy += clh
-        if gc.get("nghieng"):
-            lop = lop.rotate(gc["nghieng"], resample=Image.BICUBIC, expand=True)
+        if gc.get("tilt"):
+            lop = lop.rotate(gc["tilt"], resample=Image.BICUBIC, expand=True)
         cap_y = max(60, title_top - 40 - lop.height)
         canvas.alpha_composite(lop, (gc.get("x", 640), cap_y))
     return canvas
@@ -328,12 +355,12 @@ def _gate(slides, bo_qua_dau):
             blob += " " + r
         for sub in s.get("subs", []):
             blob += " " + sub.get("text", "")
-        for nhan in s.get("nhan", []):
+        for nhan in s.get("labels", []):
             blob += " " + nhan.get("text", "")
         for lines, _hi, _lo in s.get("tiers", []):
             blob += " " + " ".join(lines)
-        if s.get("ghi_chu"):
-            blob += " " + s["ghi_chu"].get("text", "")
+        if s.get("annotation"):
+            blob += " " + s["annotation"].get("text", "")
         mat = find_face_mark(blob)
         if mat:
             loi.append(f"slide {i}: tieng Viet mat dau ({', '.join(mat)})")
@@ -349,7 +376,7 @@ def main():
 
     raw = sys.stdin.read() if a.spec == "-" else Path(a.spec).read_text("utf-8")
     spec = json.loads(raw)
-    slides = spec.get("slides") or []
+    slides = [legacy_slide(s) for s in spec.get("slides") or []]
     if not slides:
         sys.exit("Spec khong co slide nao.")
     if len(slides) > 10:

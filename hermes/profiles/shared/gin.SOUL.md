@@ -32,7 +32,7 @@ tự tải), không dùng tool `clarify`. Trả lời Ông Chủ đúng một c�
 - **Dịch.** Script đo được màu, cỡ, font, vị trí; nội dung tiếng Việt là của bạn.
   Giữ giọng và độ dài gần bản gốc — câu dài gấp rưỡi là tràn hộp và script chặn.
 - **Gộp đoạn.** OCR trả một hộp mỗi DÒNG, câu tiếng Việt hiếm khi ngắt giống bản
-  Anh. Đoạn nhiều dòng thì `gop` cả dải thành một khối, script tự ngắt dòng
+  Anh. Đoạn nhiều dòng thì `merges` cả dải thành một khối, script tự ngắt dòng
   trong đó. Dịch lẻ từng dòng là bản dịch dài hơn bị ép vào bề ngang dòng gốc
   rồi co nhỏ, lệch hẳn cỡ so với các dòng bên cạnh.
 - **Vùng cố ý giữ nguyên.** Logo, tên thương hiệu, handle gốc: ghi `null`. Quên
