@@ -184,6 +184,53 @@ def test_ask_crop_landscape_when_landscape_height_no_right_chart():
         assert lq is True and cn.lower().startswith("kh")
 
 
+# ------------------------------- LOW-216: anh giao dien CUA CHINH san pham trong tin
+def _ask(mo_ta, tieu_de, hang, lien_quan="co"):
+    with tempfile.TemporaryDirectory() as tmp, \
+         mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"}):
+        p = _image_1x1(Path(tmp))
+        body = _body(f"MO_TA: {mo_ta}\nLIEN_QUAN: {lien_quan}\nCLUTTERED: khong\nTU_KHOA: co")
+        with _call(body):
+            return vision.description_image(p, tieu_de, hang=hang)[1]
+
+
+def test_ui_of_product_in_title_keeps_relevant():
+    """Do that 17/09/2026 (tin "Claude Cowork and chat are now one Claude"):
+    vision noi LIEN_QUAN: co cho 9 anh giao dien Claude (menu Docs/Slides,
+    MacBook chay Claude, app Claude Cowork) nhung override regex "man hinh/
+    giao dien" lat het thanh khong. Voi tin phan mem, giao dien LA san pham."""
+    tieu = "Claude Cowork and chat are now one Claude"
+    hang = "Claude Cowork, Claude"
+    for mt in ('Ảnh minh họa giao diện Claude với ô chat "Coffee and Claude time?" cùng các thẻ tạo Docs.',
+               "Anh chup man hinh laptop MacBook hien giao dien Claude voi o nhap How can I help you today?",
+               "Ảnh minh họa app Claude Cowork bên trái và cửa sổ trình duyệt chạy tác vụ bên phải."):
+        assert _ask(mt, tieu, hang) is True, f"giao dien cua chinh san pham bi lat: {mt!r}"
+
+
+def test_ui_first_word_of_name_also_counts():
+    """hang chi co cum dai ("Claude Cowork") ma mo ta chi goi "Claude" van tinh."""
+    assert _ask("Ảnh chụp giao diện Claude với menu Docs, Slides.",
+                "Claude Cowork launches", "Claude Cowork") is True
+
+
+def test_system_screen_naming_brand_still_flipped():
+    """Ca goc 05/09 (A10 Ubuntu, tin Broadcom): man hinh driver/he dieu hanh
+    nhac ten hang van KHONG phai anh cua tin — override van lat."""
+    assert _ask("Anh chup man hinh cai dat driver Broadcom tren Ubuntu.",
+                "Broadcom beats earnings", "Broadcom") is False
+
+
+def test_ui_not_naming_title_still_flipped():
+    """Man hinh/giao dien khong nhac ten nao cua tieu de -> van lat nhu cu."""
+    assert _ask("Ảnh chụp màn hình giao diện ứng dụng tin tức.",
+                "Claude Cowork and chat are now one Claude", "Claude Cowork, Claude") is False
+
+
+def test_short_name_does_not_rescue():
+    """Ten ngan (<4 ky tu, vd "AI") khong du de cuu mot anh man hinh."""
+    assert _ask("Ảnh chụp màn hình giao diện AI chung chung.", "AI News today", "AI") is False
+
+
 if __name__ == "__main__":
     import role
     role.set_active_role("ethan")            # xem tam.chay_tat_ca (LOW-182)

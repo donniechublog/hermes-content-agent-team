@@ -56,6 +56,28 @@ SENTENCE_KEYWORD = ("TU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa c
                "chu IPO; khong = chi thay mot phan, hoac khong doc ra)")
 
 
+# Man hinh HE THONG (driver/he dieu hanh/terminal) nhac ten hang van khong phai
+# anh cua tin (A10 Ubuntu trong tin Broadcom, 05/09/2026) — khac giao dien cua
+# chinh san pham trong tin (LOW-216).
+SYSTEM_SCREEN = re.compile(r"driver|ubuntu|windows|terminal|c[aà]i \w*", re.I)
+
+
+def _names_title_product(description: str, names: str) -> bool:
+    """Mo ta co goi ten mot cum ten rieng cua tieu de khong (`names` = chuoi
+    "A, B" nhu `all_proper_nouns` noi lai). Tinh ca tu dau cua cum ("Claude
+    Cowork" -> "Claude"); ten < 4 ky tu (vd "AI") khong tinh."""
+    words = set()
+    for name in (names or "").split(","):
+        name = name.strip()
+        if len(name) >= 4:
+            words.add(name)
+        first = name.split()[0] if name.split() else ""
+        if len(first) >= 4:
+            words.add(first)
+    return any(re.search(r"(?<!\w)" + re.escape(w) + r"(?!\w)", description or "", re.I)
+               for w in words)
+
+
 def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
               nhan_them: str = "", khai_niem: str = "", thuong_hieu: dict | None = None,
               khai_niem_theo_loai: bool = False, chup_nguon: bool = False,
@@ -226,7 +248,14 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             lqv = True
         elif hang and lqv is False and hang.lower() in mt.lower() and BOI_CANH.search(mt) and not KHONG.search(mt):
             lqv = True
-        elif lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt):
+        elif lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt) \
+                and (SYSTEM_SCREEN.search(mt) or not _names_title_product(mt, hang)):
+            # LOW-216 (17/09/2026): tin PHAN MEM thi giao dien LA san pham. Do
+            # that tin "Claude Cowork and chat are now one Claude": vision noi
+            # "co" cho 9 anh giao dien Claude (menu Docs/Slides, app Cowork)
+            # nhung nhanh nay lat het -> Dre chi con logo/dien thoai ngang thap,
+            # phai ghep doc. Chi lat khi mo ta KHONG goi ten san pham cua tieu
+            # de, hoac la man hinh he thong (driver/Ubuntu — ca goc 05/09).
             lqv = False
         them = ""
         if hoi_them and nhan_them:
