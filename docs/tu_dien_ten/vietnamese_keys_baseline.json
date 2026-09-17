@@ -110,10 +110,7 @@
    "key:tg_card_message_id": 1
   },
   "article_images.py": {
-   "key:cao": 1,
-   "key:do_hoa": 1,
    "key:loai": 2,
-   "key:rong": 1,
    "key:tieu_de": 1,
    "key:trang": 2
   },
@@ -124,18 +121,6 @@
    "key:tieu_de_en": 1,
    "key:toa_soan": 3,
    "key:trang": 3
-  },
-  "arxiv_cover.py": {
-   "key:cao": 1,
-   "key:rong": 1
-  },
-  "arxiv_figures.py": {
-   "key:cao": 1,
-   "key:loai": 4,
-   "key:rong": 1,
-   "key:so": 4,
-   "key:tep": 5,
-   "key:trang": 2
   },
   "audit_cron.py": {
    "key:HONG": 1,
@@ -161,10 +146,6 @@
    "key:so_cau": 2,
    "key:so_trong_caption": 2,
    "key:ty_le_dau": 2
-  },
-  "capture_page.py": {
-   "key:co_anh": 4,
-   "key:co_tit": 1
   },
   "card.py": {
    "key:co_chan": 2,
@@ -217,10 +198,6 @@
   "emoji_deck.py": {
    "path:emoji_deck.json": 1
   },
-  "entity_images.py": {
-   "key:cao": 4,
-   "key:rong": 4
-  },
   "ethan_prepare.py": {
    "key:anh": 2,
    "key:kieu": 1,
@@ -231,22 +208,9 @@
    "key:kieu": 7,
    "key:nhan_vat": 3
   },
-  "find_image_web.py": {
-   "key:cao": 1,
-   "key:rong": 1,
-   "key:tu_khoa": 1
-  },
   "find_more_images.py": {
-   "key:cao": 5,
-   "key:da_thu": 3,
-   "key:giay_phep": 1,
    "key:loai": 2,
-   "key:luot": 5,
-   "key:nguon_openverse": 1,
-   "key:rong": 5,
-   "key:tac_gia": 1,
-   "key:tieu_de_en": 1,
-   "key:tu_khoa": 1
+   "key:tieu_de_en": 1
   },
   "gin_prepare.py": {
    "key:anh": 1,
@@ -275,42 +239,33 @@
    "key:xoa_them": 1
   },
   "image_brand.py": {
-   "key:anh": 3,
-   "key:cao": 9,
-   "key:cho_do_hoa": 2,
-   "key:hang": 6,
-   "key:khoa": 5,
    "key:loai": 1,
-   "key:nguoi": 6,
-   "key:rong": 9,
-   "key:ten": 4,
-   "key:tep": 6,
    "key:tieu_de": 1,
-   "key:toa_soan": 1,
-   "key:vai": 5,
-   "path:co_phieu_": 1,
-   "path:logo_goc.png": 1,
-   "path:the_logo.png": 1
-  },
-  "image_concept.py": {
-   "key:cao": 2,
-   "key:ly_do": 4,
-   "key:rong": 2,
-   "key:tu_khoa": 10
-  },
-  "image_golden_sample.py": {
-   "key:goc": 3
+   "key:toa_soan": 1
   },
   "image_prepare.py": {
-   "key:CT_CHUAN_BI_SONG_SONG": 1,
    "key:chu": 2,
    "key:tieu_de_en": 2,
    "key:trang": 1,
    "key:trang_them": 1
   },
   "image_provenance.py": {
-   "key:crop_ti_le": 2,
-   "key:nguon_dung": 2
+   "key:arxiv_bia": 1,
+   "key:arxiv_hinh": 1,
+   "key:cat_ngang": 1,
+   "key:chup_chart": 1,
+   "key:chup_xep_hang": 1,
+   "key:crop_ti_le": 1,
+   "key:doi_chu_anh": 1,
+   "key:dre_chuan_bi": 1,
+   "key:ghep_doc": 1,
+   "key:goc": 1,
+   "key:hinh": 1,
+   "key:nguon_dung": 1,
+   "key:the_logo": 1,
+   "key:the_xep_hang": 1,
+   "key:ti_le": 1,
+   "key:trang_pdf": 1
   },
   "image_rules_dre.py": {
    "key:ten": 1,
@@ -426,6 +381,10 @@
    "key:trang": 1,
    "path:article_extract.py": 1
   },
+  "migrate_find_more.py": {
+   "key:da_thu": 1,
+   "key:luot": 1
+  },
   "miles_submit.py": {
    "key:cau_so_trong_nguon": 1,
    "key:do_dai": 8,
@@ -487,36 +446,19 @@
    "key:vai": 5
   },
   "prepare/browser.py": {
-   "key:alt_chup": 1,
-   "key:cao": 2,
    "key:chu": 2,
    "key:loai": 4,
-   "key:rong": 2,
-   "key:tep": 1,
    "key:tieu_de": 1,
    "key:tieu_de_en": 5,
    "key:toa_soan": 1,
    "key:trang_them": 5
   },
-  "prepare/decision_log.py": {
-   "key:alt_chup": 1
-  },
-  "prepare/download_filter.py": {
-   "key:alt_chup": 1,
-   "key:cho_do_hoa": 2,
-   "key:tep": 3
-  },
   "prepare/fallback_rounds.py": {
    "key:chu": 2,
-   "key:hang": 7,
-   "key:khoa": 9,
    "key:loai": 3,
-   "key:ly_do": 1,
-   "key:tep": 2,
    "key:tieu_de_en": 15,
    "key:trang": 6,
-   "key:trang_them": 2,
-   "key:tu_khoa": 3
+   "key:trang_them": 2
   },
   "prepare/manifest.py": {
    "key:chu": 3,
@@ -524,24 +466,13 @@
    "key:tieu_de_en": 2
   },
   "prepare/source.py": {
-   "key:cao": 2,
    "key:link_goc": 3,
    "key:loai": 1,
-   "key:rong": 2,
-   "key:tep": 1,
    "key:tieu_de": 2,
    "key:trang": 2
   },
   "prepare/vision.py": {
    "key:tieu_de_en": 1
-  },
-  "press_entity_images.py": {
-   "key:bai": 1,
-   "key:cao": 1,
-   "key:mien": 5,
-   "key:mien_bai": 1,
-   "key:rong": 1,
-   "key:tieu_de": 2
   },
   "render_edu.py": {
    "key:nhan": 2,
