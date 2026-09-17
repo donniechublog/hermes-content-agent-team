@@ -17,6 +17,14 @@ scope da dong (ended_at) tu hon `--grace` giay — worker vua kanban_complete co
 vai giay ghi log/thoat, khong giet ngang. Khong doc duoc DB, khong thay task,
 run chua dong: bo qua (khong biet thi khong giet).
 
+DAEMON BROWSER DUNG CHUNG (17/09/2026). Moi worker goi browser deu dung session
+`default` (`~/.config/browser-harness/runtime/bu-default.sock`, chung ca blog +
+dcgr). Daemon nam trong scope cua worker DA SPAWN no; worker sau chi attach. Stop
+scope do khi worker khac dang chay = giet browser cua nguoi ta. Nen scope nao dang
+chua PID trong `bu-default.pid` chi stop khi KHONG con task 'running' nao khac o
+ca hai brand (khong doc duoc kanban thi giu). Session ten rieng (vd `bu-dre48ca`)
+khong ai dung chung -> stop nhu thuong.
+
 Dung:
     venv/bin/python worker_scope_sweep.py              # quet + stop
     venv/bin/python worker_scope_sweep.py --dry-run    # chi in
@@ -32,6 +40,8 @@ from pathlib import Path
 import hermes_adapter as ha
 
 SCOPE_PATTERN = re.compile(r"^hermes-worker-kanban-(t_[0-9a-f]+)-run-(\d+)\.scope$")
+BROWSER_RUNTIME = Path.home() / ".config" / "browser-harness" / "runtime"
+SHARED_BROWSER_PID = "bu-default.pid"
 
 
 def kanban_homes():
@@ -85,6 +95,32 @@ def decide(tid, run_id, homes, now, grace):
     return False, "khong thay task o brand nao"
 
 
+def shared_browser_daemon_unit(runtime=BROWSER_RUNTIME, proc=Path("/proc")):
+    """Scope worker kanban dang chua daemon browser session `default`, hoac None
+    (khong co pid file, PID da chet, hay daemon khong nam trong scope worker nao)."""
+    try:
+        pid = int((runtime / SHARED_BROWSER_PID).read_text().strip())
+        cgroup = (proc / str(pid) / "cgroup").read_text()
+    except (OSError, ValueError):
+        return None
+    for line in cgroup.splitlines():
+        unit = line.rsplit("/", 1)[-1]
+        if SCOPE_PATTERN.match(unit):
+            return unit
+    return None
+
+
+def other_running_tasks(tid, homes):
+    """["brand/task"] dang 'running' ngoai `tid`; None neu co brand khong doc duoc."""
+    others = []
+    for brand, db in homes:
+        running = ha.run_start(db=db)
+        if running is None:
+            return None
+        others += [f"{brand}/{t}" for t in sorted(running) if t != tid]
+    return others
+
+
 def stop(unit, run=subprocess.run):
     try:
         r = run(["systemctl", "--user", "stop", unit], capture_output=True, text=True, timeout=60)
@@ -93,7 +129,8 @@ def stop(unit, run=subprocess.run):
     return None if r.returncode == 0 else f"rc={r.returncode}: {r.stderr[-200:]}"
 
 
-def main(argv=None, run=subprocess.run, homes=None, now=None):
+def main(argv=None, run=subprocess.run, homes=None, now=None,
+         find_daemon_unit=shared_browser_daemon_unit):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--grace", type=int, default=300, help="giay sau khi run dong moi stop")
@@ -103,9 +140,19 @@ def main(argv=None, run=subprocess.run, homes=None, now=None):
         return 2
     homes = kanban_homes() if homes is None else homes
     now = time.time() if now is None else now
+    daemon_unit = find_daemon_unit()
     hong = 0
     for unit, tid, run_id in scopes:
         co, ly_do = decide(tid, run_id, homes, now, a.grace)
+        if co and unit == daemon_unit:
+            others = other_running_tasks(tid, homes)
+            if others is None:
+                co, ly_do = False, "chua daemon browser bu-default, khong doc duoc kanban de biet con ai dung"
+            elif others:
+                co, ly_do = False, (f"chua daemon browser bu-default dung chung, con {len(others)} task "
+                                    f"running ({', '.join(others[:3])})")
+            else:
+                ly_do += "; kem daemon browser bu-default, khong con task running"
         if not co:
             print(f"giu  {unit}: {ly_do}")
             continue
