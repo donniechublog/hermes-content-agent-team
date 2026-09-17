@@ -68,9 +68,9 @@ một tên trong cùng một cấp; không tên mới nào đè khoá English s�
 
 Khoá lồng:
 - `khai_niem → concept {keyword, reason}`
-- `thuong_hieu → brand_match {company, key, kind, keyword, person, person_role, board, background_tone, board_id}`
+- `thuong_hieu → brand_match {company, key, kind, keyword, person, person_role, board, background_tone, ticker}`
 - `thuc_the → entity {name, article_name, source}`
-- `xep_hang → ranking {file_path, kind, source, board, company, row, mentioned, has_logo}` — dùng chung cho `ranking` cấp manifest
+- `xep_hang → ranking {file_path, kind, source, board, rank, row, mentioned, has_logo}` — dùng chung cho `ranking` cấp manifest
 
 ## Cần Ông Chủ quyết
 
@@ -102,6 +102,13 @@ Khoá lồng:
 185/188 tệp là manifest thật. 3 tệp còn lại **không phải manifest** và migration bỏ
 qua: 2 tệp Itachi (`{khoa, slides}`) và 1 báo cáo Ada (`token/kanban/manifest/draft`)
 — `schema.py` đã ghi chú việc dùng lại tên tệp này.
+
+## Sửa sau duyệt (17/09/2026, đo trên dữ liệu máy chủ)
+
+Hai tên trong bản duyệt đặt sai NGHĨA vì đọc nhầm "hạng"/"hãng" và nguồn của `ma`:
+- `ranking.hang` là **thứ hạng** (số nguyên 1…90 trong 15 bảng thật) → `rank`, không phải `company`.
+- `brand_match.ma` chỉ xuất hiện khi `kind = "co_phieu"`, giá trị là **mã cổ phiếu**
+  (`NVDA:NASDAQ`, `005930:KRX`) → `ticker`, không phải `board_id`.
 
 ## Không đổi
 

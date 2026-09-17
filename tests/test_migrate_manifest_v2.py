@@ -21,8 +21,8 @@ V1_IMAGE = {"ma": "A1", "goc": "/x/goc/A1.png", "san": "/x/san/A1.png", "tu": "c
             "mien": "commons.wikimedia.org", "dung": ["bìa"], "ghi_chu": ["n"], "lien_quan": True,
             "mo_ta": "d", "mat": 0, "ngang": False, "ti_le": 0.8, "loai": "anh", "w": 800, "h": 1000,
             "khai_niem": {"tu_khoa": "server room", "ly_do": "r"}, "roi": True,
-            "thuong_hieu": {"hang": "Anthropic", "khoa": "anthropic", "loai": "logo", "nen": "sáng", "ma": "arena-text"},
-            "xep_hang": {"tep": "/x/goc/xh.png", "kieu": "bang", "hang": "Anthropic", "dong": 3, "duoc_nhac": True}}
+            "thuong_hieu": {"hang": "Nvidia", "khoa": "nvidia", "loai": "co_phieu", "nen": "sáng", "ma": "NVDA:NASDAQ"},
+            "xep_hang": {"tep": "/x/goc/xh.png", "kieu": "bang", "hang": 26, "dong": 3, "duoc_nhac": True}}
 
 
 def _manifest(version):
@@ -92,9 +92,9 @@ def test_real_run_matches_read_manifest_and_keeps_backup():
         assert "usable_count" in v0 and v0["ranking_count"] == 0, v0
         img = v1["images"][0]
         assert img["id"] == "A1" and img["ready_path"] == "/x/san/A1.png" and img["cluttered"] is True
-        assert img["brand_match"] == {"company": "Anthropic", "key": "anthropic", "kind": "logo",
-                                      "background_tone": "sáng", "board_id": "arena-text"}
-        assert img["ranking"] == {"file_path": "/x/goc/xh.png", "kind": "bang", "company": "Anthropic",
+        assert img["brand_match"] == {"company": "Nvidia", "key": "nvidia", "kind": "co_phieu",
+                                      "background_tone": "sáng", "ticker": "NVDA:NASDAQ"}
+        assert img["ranking"] == {"file_path": "/x/goc/xh.png", "kind": "bang", "rank": 26,
                                   "row": 3, "mentioned": True}
         assert v1["material"] == {"number_sentences": [], "source": "browser"}
         assert v1["missing_images"] == {"count": 0, "min_images": 1}

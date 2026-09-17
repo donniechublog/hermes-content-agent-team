@@ -55,7 +55,7 @@
     "kieu": "kind",
     "nguon": "source",
     "bang": "board",
-    "hang": "company",
+    "hang": "rank",
     "dong": "row",
     "duoc_nhac": "mentioned",
     "logo_co": "has_logo"
@@ -115,7 +115,7 @@
     "vai": "person_role",
     "bang": "board",
     "nen": "background_tone",
-    "ma": "board_id"
+    "ma": "ticker"
   },
   "image.entity": {
     "ten": "name",
@@ -135,7 +135,26 @@
     "ly_do": "reason"
   },
   "_unchanged_english": [
-    "draft_id", "brand", "title", "link", "workdir", "flagship", "via", "category", "summary",
-    "source_note", "dropped", "url", "alt", "w", "h", "cluttered", "commons", "og", "site", "model", "logo"
+    "draft_id",
+    "brand",
+    "title",
+    "link",
+    "workdir",
+    "flagship",
+    "via",
+    "category",
+    "summary",
+    "source_note",
+    "dropped",
+    "url",
+    "alt",
+    "w",
+    "h",
+    "cluttered",
+    "commons",
+    "og",
+    "site",
+    "model",
+    "logo"
   ]
 }
