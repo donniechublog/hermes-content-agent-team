@@ -12,7 +12,7 @@ khó, hoàn toàn xây dựng logic định lượng được"*. Nguyên văn b�
 
 Đo trước khi viết (12/09): `category` của mỗi tin đã được Finn/Vera gán từ lúc
 quét (`manifest_build.VALID_CATEGORIES`), `approve_pick` ghi vào draft,
-`prepare/manifest.py` chép vào `xong.json` — nhưng engine ảnh (`image_prepare`,
+`prepare/manifest.py` chép vào `manifest.json` — nhưng engine ảnh (`image_prepare`,
 `image_concept`, `image_brand`, `prepare/*`) KHÔNG đọc nó ở đâu cả. Bộ phân
 loại đã chạy, bảng vật thể đã có (Wikidata P154/P112/P169, `SUFFIX`, `TOPIC`,
 `NUOC`, `xep_hang`), chỉ thiếu dây nối. Tệp này là dây nối.

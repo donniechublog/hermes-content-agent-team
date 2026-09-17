@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import write_log                                              # noqa: E402
 import schema                                                # noqa: E402
+import state_paths                                           # noqa: E402
 import role as _vai                                           # noqa: E402
 
 from approve_base import (  # noqa: E402
@@ -265,11 +266,11 @@ def _block_run_engine(draft_id):
     # viec thi brief da san, task chi con viet chu; Miles doc lai cung tu lieu.
     # Khong chan reply cho Ong Chu.
     try:
-        _wd = STATE_DIR / "chuan_bi" / draft_id
+        _wd = state_paths.workdir(STATE_DIR, draft_id)
         _wd.mkdir(parents=True, exist_ok=True)
         subprocess.Popen(
             [str(ROOT / "venv/bin/python"), str(ROOT / "image_prepare.py"), draft_id, "--im"],
-            cwd=str(ROOT), stdout=open(_wd / "chuan_bi.log", "ab"),
+            cwd=str(ROOT), stdout=open(_wd / state_paths.PREPARE_LOG, "ab"),
             stderr=subprocess.STDOUT, start_new_session=True)
     except Exception as e:                                   # noqa: BLE001
         print(f"[chuan_bi] khong khoi chay nen: {type(e).__name__}: {e}")

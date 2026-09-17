@@ -18,11 +18,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def test_wait_lock_report_orphan():
     with tempfile.TemporaryDirectory() as tmp:
-        khoa = Path(tmp) / "dang_chay.pid"
+        khoa = Path(tmp) / state_paths.RUNNING_PID_FILE
         with redirect_stderr(io.StringIO()):
             assert cb._handle_lock(khoa, 5, "d") is False          # khong co khoa
             khoa.write_text("999999999")

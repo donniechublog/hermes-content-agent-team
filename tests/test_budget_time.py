@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import approve_dispatch as dg                                 # noqa: E402
 import role                                                   # noqa: E402
+import state_paths                                            # noqa: E402
 
 TRAN_BASH_GIAY = 300          # bash tool cua hermes cat o ~300s (t_24b214a6: exit 124)
 
@@ -74,7 +75,7 @@ def test_wait_slot_all_done_hours_then_exit_has_sentence_report_fixed_ky():
         def sleep(s):
             ngu.append(s); t[0] += s
     # giu chinh khoa so 0 trong test -> engine khong bao gio co cho
-    fh = open(thu_muc / "chuan_bi.0.lock", "w")
+    fh = open(thu_muc / state_paths.LOCK_FILE.format(0), "w")
     fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
     err = io.StringIO()
     try:

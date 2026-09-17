@@ -16,7 +16,7 @@ chung với card.py/carousel.py/render_edu.py) ngay trước khi vẽ — chỉ 
 KHÔNG đủ mới đổi sang màu an toàn (trắng/đen tuỳ nền), xem `_color_hide_whole`.
 
 Dùng:
-    venv/bin/python itachi_submit.py 338              # spec ở state/<brand>/chuan_bi/itachi_338/spec.json
+    venv/bin/python itachi_submit.py 338              # spec ở state/<brand>/prepare/itachi_338/spec.json
     venv/bin/python itachi_submit.py 338 --khong-gui  # thử
 """
 import argparse
@@ -30,6 +30,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_prepare as gb                                    # noqa: E402
+import state_paths                                          # noqa: E402
 import text_bg                                               # noqa: E402
 import submit_common as nc                                       # noqa: E402
 from vietnamese import find_face_mark, drop_mark_forbid               # noqa: E402
@@ -156,9 +157,9 @@ def main() -> int:
     ap.add_argument("--bo-qua-dau", action="store_true")
     a = ap.parse_args()
     wd = gb.workdir("itachi", a.khoa)
-    if not (wd / "xong.json").exists():
+    if not (wd / state_paths.MANIFEST_FILE).exists():
         sys.exit(f"Chưa chuẩn bị. Chạy trước: venv/bin/python itachi_prepare.py {a.khoa}")
-    m = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
+    m = json.loads((wd / state_paths.MANIFEST_FILE).read_text(encoding="utf-8"))
     slides = {s["id"]: s for s in m["slides"]}
     if not (wd / "spec.json").exists():
         sys.exit(f"Chưa có spec: {wd / 'spec.json'} — viết theo brief ({wd / 'brief.md'}) rồi chạy lại.")

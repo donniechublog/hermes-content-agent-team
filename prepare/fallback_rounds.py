@@ -12,6 +12,7 @@ import image_provenance
 import role
 import env_load
 import ranking
+import state_paths
 
 from prepare import decision_log
 from prepare.browser import browser_pass
@@ -150,12 +151,12 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
             # moi try cua chinh no (ranking.py:899,904), va `br.close()` khong
             # nam trong finally. `hermes update` lam mat playwright khoi venv
             # chung (da xay ra voi pymupdf) hay chromium chua cai la: tin THUONG
-            # van ra xong.json binh thuong, rieng tin XEP HANG giet ca engine
-            # giua chung — khong xong.json, va vai chay lai qua `chay()` chet y
+            # van ra manifest.json binh thuong, rieng tin XEP HANG giet ca engine
+            # giua chung — khong manifest.json, va vai chay lai qua `chay()` chet y
             # het. Nhanh "khong co ma XH" (:743) da co san, cu roi ve do.
             try:
                 xhs = ranking.find_and_capture_many(
-                    models, ds, wd / "goc", _brand_of(meta),
+                    models, ds, wd / state_paths.ORIGINAL_DIR, _brand_of(meta),
                     ranking.extract_rank(title, models[0]) or ranking.extract_rank(nguon.get("tieu_de_en") or "", models[0]),
                     in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
             except Exception as e:                           # noqa: BLE001
@@ -207,13 +208,13 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
     # "khong con ung vien nao -> chup bia": trang bia (ten cong trinh + tac gia)
     # la duong cuoi, con bieu do ket qua moi la anh dat nhat cua tin.
     import arxiv_figures
-    cands = arxiv_figures.candidate(link, wd / "goc") + cands
+    cands = arxiv_figures.candidate(link, wd / state_paths.ORIGINAL_DIR) + cands
     # arxiv khong anh: bia paper
     if not cands:
         import arxiv_cover
         pdf = arxiv_cover.is_arxiv(link)
         if pdf:
-            out = wd / "goc" / "arxiv.png"
+            out = wd / state_paths.ORIGINAL_DIR / "arxiv.png"
             data = arxiv_cover.download_pdf(pdf)
             bia = arxiv_cover.capture_cover(data) if data else None
             if bia is not None:
@@ -243,7 +244,7 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
                     if len(anh) >= MAX_IMAGE:
                         break
                     a["id"] = f"A{i}"
-                    moi = wd / "goc" / f"{a['id']}.png"
+                    moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
                     Path(a["original_path"]).replace(moi)
                     a["original_path"] = str(moi)
                     a["commons"] = True
@@ -267,7 +268,7 @@ def _round_widen_search(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: in
              else f"co {len(dung_duoc)} anh nhung khong tam nao lam anh chinh duoc")
     print(f"[tim rong] {ly_do}: +{len(them_bao)} bao moi"
           + (": " + ", ".join(_domain(t["url"]) for t in them_bao) if them_bao else ""), file=sys.stderr)
-    wd2 = wd / "them"
+    wd2 = wd / state_paths.EXTRA_DIR
     cands2 = []
     if them_bao:
         bp2 = browser_pass([{"url": t["url"], "loai": "báo"} for t in them_bao], wd2, tim_them=False, phien=phien)
@@ -308,7 +309,7 @@ def _round_widen_search(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: in
         if len(anh) >= MAX_IMAGE + 4:
             break
         a["id"] = f"A{i}"
-        moi = wd / "goc" / f"{a['id']}.png"
+        moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         Path(a["original_path"]).replace(moi)
         a["original_path"] = str(moi)
         if a.get("source") == "commons":
@@ -348,7 +349,7 @@ def _ranking_context_edge(hangs: list, wd: Path, brand: str, phien=None):
         # qua, khong duoc keo ca engine chet giua chung nhu tin xep hang tung
         # lam (xem chu thich cua `_capture_ranking`).
         ds = ranking.suggest_sources("")[:XH_CONTEXT_EDGE_SOURCE]
-        kq = ranking.find_and_capture([h["hang"]], ds, wd / "xh", brand, None,
+        kq = ranking.find_and_capture([h["hang"]], ds, wd / state_paths.RANKING_DIR, brand, None,
                                   in_log=lambda t: print(t, file=sys.stderr), phien_browser=phien)
     except Exception as e:                                   # noqa: BLE001
         print(f"[thuong hieu] bang xep hang HONG: {type(e).__name__}: {e}", file=sys.stderr)
@@ -420,7 +421,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     if not hangs:
         return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
             [a["id"] for a in anh if a.get("relevant") is None]
-    wd4 = wd / "thuong_hieu"
+    wd4 = wd / state_paths.BRAND_MATCH_DIR
     import story_type
     cands = []
     for h in hangs:
@@ -481,7 +482,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         if len(anh) >= MAX_IMAGE + 4 or len(anh) - n0 >= MAX_EXTRA_BRAND_:
             break
         a["id"] = f"A{i}"
-        moi = wd / "goc" / f"{a['id']}.png"
+        moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         Path(a["original_path"]).replace(moi)
         a["original_path"] = str(moi)
         anh.append(classify(a, wd, tieu_de_nhin))
@@ -495,10 +496,10 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         # lap lai o image_brand.py, sua chung mot cho o env_load.brand_long().
         c = _ranking_context_edge(hangs, wd4, env_load.brand_long(), phien=phien)
         if c:
-            them = download_and_filter([c], wd4 / "bang")
+            them = download_and_filter([c], wd4 / state_paths.BOARD_DIR)
             for a in them[:1]:
                 a["id"] = f"A{len(anh) + 1}"
-                moi = wd / "goc" / f"{a['id']}.png"
+                moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
                 Path(a["original_path"]).replace(moi)
                 a["original_path"] = str(moi)
                 anh.append(classify(a, wd, tieu_de_nhin))
@@ -571,7 +572,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
                 urls.append(t["url"])
         print(f"[chup nguon] +{len(them)} bao cung tin de chup"
               + (": " + ", ".join(_domain(t["url"]) for t in them) if them else ""), file=sys.stderr)
-    wd5 = wd / "chup_nguon"
+    wd5 = wd / state_paths.CAPTURE_SOURCE_DIR
     # LOAI TRUNG (Ong Chu 13/09/2026, xem carousel that: "có đến 3 ảnh giống hệt
     # nhau về nội dung, góc máy, bố cục. việc này không được phép"): nhieu bao
     # dung CHUNG mot anh photo-wire (AP/Reuters/Getty) cho cung mot tin — chup
@@ -615,7 +616,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
             da_hash.append(h)
         a = {"id": f"A{len(anh) + 1}", "original_path": str(tam), "url": u, "page_url": u,
              "domain": _domain(u), "score": 0, "chart_hint": False, **c}
-        moi = wd / "goc" / f"{a['id']}.png"
+        moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         moi.parent.mkdir(parents=True, exist_ok=True)
         # DEM NEN DEN (Ong Chu 13/09/2026, sua lai cung ngay): tam chup khoi lead
         # thuong la anh NGANG, de nguyen thi dinh luat "ngang phai ghep doi hoac
@@ -760,14 +761,14 @@ def _round_concept(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         cands += them_kn
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["image_url"] not in da]
-    wd3 = wd / "khai_niem"
+    wd3 = wd / state_paths.CONCEPT_DIR
     bo_sung = download_and_filter(cands, wd3) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(anh) >= MAX_IMAGE + 6:
             break
         a["id"] = f"A{i}"
-        moi = wd / "goc" / f"{a['id']}.png"
+        moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         Path(a["original_path"]).replace(moi)
         a["original_path"] = str(moi)
         anh.append(classify(a, wd, tieu_de_nhin))
@@ -792,14 +793,14 @@ def _round_entity(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["image_url"] not in da]
     cands.sort(key=lambda c: -c.get("score", 0))
-    wd6 = wd / "thuc_the"
+    wd6 = wd / state_paths.ENTITY_DIR
     bo_sung = download_and_filter(cands, wd6) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
         if len(anh) >= MAX_IMAGE + 6 or len(anh) - n0 >= MAX_EXTRA_BRAND_:
             break
         a["id"] = f"A{i}"
-        moi = wd / "goc" / f"{a['id']}.png"
+        moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
         moi.parent.mkdir(parents=True, exist_ok=True)
         Path(a["original_path"]).replace(moi)
         a["original_path"] = str(moi)

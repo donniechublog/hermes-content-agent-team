@@ -3,7 +3,7 @@
 
 Guards the four properties the deploy relies on: dry-run writes nothing; a real run
 keeps the original bytes as *.v1.bak and writes exactly what `schema.read_manifest`
-returns (v0 derived keys included); non-manifest xong.json (Itachi/Ada) and v2
+returns (v0 derived keys included); non-manifest manifest.json (Itachi/Ada) and v2
 files are untouched; a second run is a no-op."""
 import json
 import subprocess
@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 import schema  # noqa: E402
+import state_paths  # noqa: E402
 
 V1_IMAGE = {"ma": "A1", "goc": "/x/goc/A1.png", "san": "/x/san/A1.png", "tu": "commons", "trang": "https://p",
             "mien": "commons.wikimedia.org", "dung": ["bìa"], "ghi_chu": ["n"], "lien_quan": True,
@@ -38,9 +39,9 @@ def _manifest(version):
 def _layout(tmp: Path) -> dict:
     st, dr = tmp / "state", tmp / "drafts"
     files = {
-        "v1": st / "blog" / "chuan_bi" / "d1" / "xong.json",
-        "v0": st / "dcgr" / "chuan_bi" / "d0" / "xong.json",
-        "itachi": st / "blog" / "chuan_bi" / "gin_03" / "xong.json",
+        "v1": st / "blog" / state_paths.PREPARE_DIR / "d1" / state_paths.MANIFEST_FILE,
+        "v0": st / "dcgr" / state_paths.PREPARE_DIR / "d0" / state_paths.MANIFEST_FILE,
+        "itachi": st / "blog" / state_paths.PREPARE_DIR / "gin_03" / state_paths.MANIFEST_FILE,
         "img": dr / "d1.img.json",
         "golden": st / "golden" / "v0" / "samples.jsonl",
     }
@@ -110,7 +111,7 @@ def test_real_run_matches_read_manifest_and_keeps_backup():
         for k in ("v1", "v0", "img", "golden"):
             bak = files[k].with_name(files[k].name + ".v1.bak")
             assert bak.read_bytes() == before[k], k
-        assert not files["itachi"].with_name("xong.json.v1.bak").exists()
+        assert not files["itachi"].with_name(state_paths.MANIFEST_FILE + ".v1.bak").exists()
 
 
 def test_second_run_is_noop():

@@ -213,7 +213,7 @@ chỉ có một danh sách nguồn cố định, hết vòng tìm rộng là d�
   máy, sự kiện, người trong bài; hoặc `--url` trang/ảnh vai biết). Script hỏi
   Bing News + Wikimedia Commons + **Openverse** (ảnh CC: Wikimedia, Flickr CC…;
   chỉ giấy phép by / by-sa / cc0 / pdm, cạnh ngắn ≥ 700), mở trang, tải, **nhìn**,
-  đo, cắt sẵn y như engine, nối vào `xong.json`, in ảnh mới. Vai chọn, máy xử lý.
+  đo, cắt sẵn y như engine, nối vào `manifest.json`, in ảnh mới. Vai chọn, máy xử lý.
 - **Tối đa 3 lượt** một bài, mỗi lượt đổi từ khoá khác hẳn — không quay lại
   60 tool call/task. Từ khoá tiếng Việt bị từ chối (§ tìm kiếm chỉ tiếng Anh).
 - Hết 3 lượt vẫn thiếu mới `kanban_block`, lý do **phải kể từ khoá đã thử**.
@@ -336,7 +336,7 @@ cho Kite thì Kite cũng phải dùng những hình đó trong body"*.
 
 Đường vào Kite **luôn là** đường thiếu ảnh: engine tự chuyển khi 0 ảnh, hoặc Ông
 Chủ bấm "🎨 Gửi Kite vẽ vector" ở một trong hai thông báo thiếu ảnh. Lúc đó
-`img.json` mang `transferred_from` (tên vai cũ) — **xong.json không có**, vì nút được
+`img.json` mang `transferred_from` (tên vai cũ) — **manifest.json không có**, vì nút được
 bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới không bao giờ bật.
 
 - **Cả n mã hình thật đều phải xuất hiện** trong spec, không phải "ít nhất một".
@@ -406,7 +406,7 @@ qua cổng không một dòng lỗi.
   10/09/2026, ngay sau khi xem cổng chặn ở trên: *"Dre tìm được ảnh đúng, nên kỹ
   năng tìm ảnh đó dùng được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*. Đo cả
   chuỗi hôm đó, và đây là chỗ hỏng thật sự:
-  1. `image_prepare.run` trả **thẳng** `xong.json` cũ khi tệp đã có
+  1. `image_prepare.run` trả **thẳng** `manifest.json` cũ khi tệp đã có
      (`if xong.exists() and not lam_moi`);
   2. task body giao cho Kite chạy `kite_prepare.py <id>` — **không** `--lam-moi`;
   3. `create_task_kite` còn ghi vào body *"tin này không có ảnh thật dùng được: vẽ
@@ -507,7 +507,7 @@ chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng d�
 `nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.
 
 Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
-`ethan_submit` / `dre_submit` chặn ảnh chính khác khi `xong.json` có `is_ranking_story` —
+`ethan_submit` / `dre_submit` chặn ảnh chính khác khi `manifest.json` có `is_ranking_story` —
 không phải "chưa đạt", là **sai đề tài**. `XH` được miễn hai cổng cấm chart lên bìa/hero vì nó *là* chủ
 thể của tin; vẫn chịu mọi cổng khác.
 

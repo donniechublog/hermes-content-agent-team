@@ -27,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_prepare as gb                                    # noqa: E402
+import state_paths                                          # noqa: E402
 
 LAYOUT_HELP = {
     "statement": '{"layout": "statement", "badge": "<tuỳ chọn, vd STEP 1>", "heading": "<câu lớn>", "subs": [{"text": "<dòng phụ>", "col": "white|cream|coral|blue|grey", "bold": false}]}',
@@ -115,7 +116,7 @@ def main() -> int:
     slides = [prepare_slide(x) for x in a.ids]
     khoa = slides[0]["id"]
     wd = gb.workdir("itachi", khoa)
-    (wd / "xong.json").write_text(json.dumps({"khoa": khoa, "slides": slides}, ensure_ascii=False, indent=1),
+    (wd / state_paths.MANIFEST_FILE).write_text(json.dumps({"khoa": khoa, "slides": slides}, ensure_ascii=False, indent=1),
                                   encoding="utf-8")
     brief = write_brief(slides, khoa, wd)
     (wd / "brief.md").write_text(brief, encoding="utf-8")

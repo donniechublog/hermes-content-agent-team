@@ -357,7 +357,7 @@ def candidate(link: str, ra_dir) -> list:
     tam dung lam hero.
 
     KHONG BAO GIO NEM: ham nay chay tren MOI tin arxiv/PDF, ngay giua
-    `prepare_article()`. Nem la mat luon xong.json cua ca bai — dung loai su co da
+    `prepare_article()`. Nem la mat luon manifest.json cua ca bai — dung loai su co da
     xay ra voi `ranking.find_and_capture` (05/09/2026) va rat de xay ra lai o day:
     `hermes update` dung lai venv chung tung lam mat `pymupdf` khoi no, ma
     `boc()` va `arxiv_cover` deu import pymupdf.

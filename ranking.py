@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import image_provenance                                           # noqa: E402
 import env_load                                              # noqa: E402
+import state_paths                                           # noqa: E402
 
 DPR = 2
 UA = env_load.UA_BROWSER        # mot ban duy nhat, xem env_load (A5)
@@ -1132,7 +1133,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
             if time.time() - t0 > TIME_LIMIT:
                 in_log(f"[xep_hang] hết giờ ({TIME_LIMIT}s), dừng ở {n['ma']}")
                 break
-            out = out_dir / f"xep_hang_{n['ma']}.png"
+            out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}{n['ma']}.png"
             kq, ly_do, pg = _try_source(phien, n, models, out, in_log)
             if kq is None and ly_do is None:
                 continue
@@ -1140,7 +1141,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                 # Khop duoc hang nhung khong chup noi bang: van vot lay logo model
                 # tu chinh hang do cho THE DU PHONG (duong duy nhat the do chay toi).
                 if logo is None:
-                    logo = capture_logo(pg, out_dir / "xep_hang_logo.png")
+                    logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
             image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
@@ -1156,7 +1157,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
     if kq_cuoi:
         return kq_cuoi
     n = nguon_ds[0] if nguon_ds else SOURCE[0]
-    out = out_dir / "xep_hang_the.png"
+    out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}the.png"
     fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
     return {"file_path": str(out), "kind": "the", "source": n["ma"], "site": n["site"], "board": n["bang"],
@@ -1274,13 +1275,13 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                 break
             if _skip_source(n, da_chup_thuong):
                 continue                              # da co MOT anh "thuong", nguon khac chi lap lai
-            out = out_dir / f"xep_hang_{n['ma']}.png"
+            out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}{n['ma']}.png"
             kq, ly_do, pg = _try_source(phien, n, models, out, in_log)
             if kq is None and ly_do is None:
                 continue
             if not kq:
                 if logo is None:
-                    logo = capture_logo(pg, out_dir / "xep_hang_logo.png")
+                    logo = capture_logo(pg, out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}logo.png")
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
             image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
@@ -1297,7 +1298,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
     if ket_qua:
         return ket_qua
     n = nguon_ds[0] if nguon_ds else SOURCE[0]
-    out = out_dir / "xep_hang_the.png"
+    out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}the.png"
     fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
     return [{"file_path": str(out), "kind": "the", "source": n["ma"], "site": n["site"], "board": n["bang"],

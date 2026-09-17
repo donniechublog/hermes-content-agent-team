@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import role                                                    # noqa: E402
 from prepare.manifest import build_manifest                   # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def _image(ma: str, dung=("nền hero (một mình)",), lien_quan=True) -> dict:
@@ -119,9 +120,9 @@ def _lower_ready(tmp: Path, manifest: dict, sidecar: dict | None):
     """Chay approve_post._button_lower_ready voi moi truong gia, tra `note`."""
     import approve_post as db
     import approve_dispatch as dgv
-    d = tmp / "state" / "chuan_bi" / "d1"
+    d = tmp / "state" / state_paths.PREPARE_DIR / "d1"
     d.mkdir(parents=True, exist_ok=True)
-    (d / "xong.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (d / state_paths.MANIFEST_FILE).write_text(json.dumps(manifest), encoding="utf-8")
     drafts = tmp / "drafts"
     drafts.mkdir(exist_ok=True)
     if sidecar is not None:

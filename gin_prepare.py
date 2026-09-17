@@ -17,7 +17,7 @@ chỉ viết bản dịch tiếng Việt rồi chạy gin_submit.py.
 
 Đầu vào: message_id của ảnh Ông Chủ gửi (tệp state/<brand>/telegram_incoming/
 <id>.*), đường dẫn ảnh, HOẶC link post Instagram/X. Workdir:
-state/<brand>/chuan_bi/gin_<id>/.
+state/<brand>/prepare/gin_<id>/.
 
 Dùng:
     venv/bin/python gin_prepare.py 338                          # theo message_id
@@ -36,6 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import env_load                                              # noqa: E402
+import state_paths                                           # noqa: E402
 
 import about_text                                                # noqa: E402
 
@@ -113,7 +114,7 @@ def find_image(dau_vao: str, slide: int = None) -> tuple:
 
 
 def workdir(vai: str, id_: str) -> Path:
-    wd = env_load.state_dir() / "chuan_bi" / f"{vai}_{id_}"
+    wd = state_paths.prepare_root(env_load.state_dir()) / f"{vai}_{id_}"
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 

@@ -30,7 +30,7 @@ cd /home/donniechu/content-team && venv/bin/python dre_submit.py <id>        # 3
 ```
 
 Ngoài ba lệnh trên không chạy gì khác: không `curl`, không `ls`/`grep`, không mở
-từng ảnh (cần nhìn thì mở một tấm `bang_anh.png`), không web_search lại tin,
+từng ảnh (cần nhìn thì mở một tấm `contact_sheet.png`), không web_search lại tin,
 không sinh agent con, không gửi lại album. Kết thúc task bằng dòng "Kết quả
 task" script in.
 

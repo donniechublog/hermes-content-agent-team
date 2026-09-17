@@ -11,12 +11,12 @@ Module này CHỈ GHI, không quyết định gì — `uses`, `relevant`, `usabl
 giữ nguyên từng bit (test so đầu ra bật/tắt bản ghi).
 
   - `note(a, stage, outcome, rule, evidence)`: nối một quyết định vào
-    `a["decisions"]` của ảnh ĐÃ tải (đi vào xong.json cùng ảnh).
+    `a["decisions"]` của ảnh ĐÃ tải (đi vào manifest.json cùng ảnh).
   - `drop_candidate(wd, c, stage, rule, evidence, im)`: ứng viên bị bỏ TRƯỚC khi
     thành ảnh — ghi một dòng `wd/dropped/dropped.jsonl` + ảnh thu nhỏ (nếu đã
     mở được ảnh), để bộ nhãn chuẩn (LOW-224) gán nhãn được về sau.
   - `collect(wd, since)`: gom mọi dòng bỏ dưới `wd` (mọi vòng con: commons/,
-    them_N/...) ghi từ `since` trở đi — manifest dùng làm `dropped`.
+    extra_N/...) ghi từ `since` trở đi — manifest dùng làm `dropped`.
 """
 import json
 import time

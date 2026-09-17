@@ -24,7 +24,7 @@ cd /home/donniechu/content-team && venv/bin/python ethan_submit.py <id>        #
 ```
 
 Ngoài ba lệnh trên không chạy gì khác: không `curl`, không `ls`/`grep`, không mở
-từng ảnh (cần nhìn thì mở một tấm `bang_anh.png`), không web_search lại tin,
+từng ảnh (cần nhìn thì mở một tấm `contact_sheet.png`), không web_search lại tin,
 không sinh agent con, không gửi lại ảnh. Kết thúc task bằng dòng "Kết quả task"
 script in.
 

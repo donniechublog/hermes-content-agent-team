@@ -27,6 +27,7 @@ import env_load                                              # noqa: E402
 import kite_prepare as kb                                   # noqa: E402
 import image_rules_kite                                       # noqa: E402
 import submit_common as nc                                       # noqa: E402
+import state_paths                                            # noqa: E402
 import render_edu                                            # noqa: E402
 
 DRAFTS = cb.DRAFTS
@@ -471,7 +472,7 @@ def main() -> int:
                    + [f"Bộ slide: {n} slide art vector gốc, theme {theme}, hero {hero}"]
                    + ([f"Hình thật đã chèn: {', '.join(hinh)} (nguồn: bài gốc)"] if hinh else [])
                    + [f"Hook bìa: {hook}", f"Tệp: {out}"])
-    bg_path = (wd if a.khong_gui else DRAFTS) / f"{a.draft_id}.ban_giao.md"
+    bg_path = state_paths.handoff_file(wd if a.khong_gui else DRAFTS, a.draft_id)
     bg_path.write_text(bg, encoding="utf-8")
 
     mid = None

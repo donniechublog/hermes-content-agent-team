@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """submit_common.py — phan dung chung cua cac script NOP (dre_submit, ethan_submit, kite_submit,
-miles_submit): nap meta/workdir/xong.json/spec.json, chuan hoa chuoi, kiem "lam
-lai", gui album kem nut duyet + ghi da_dung.json, ghi bang den.
+miles_submit): nap meta/workdir/manifest.json/spec.json, chuan hoa chuoi, kiem "lam
+lai", gui album kem nut duyet + ghi previous_submission.json, ghi bang den.
 
 Truoc 05/09/2026 moi doan nay chep 3–4 ban giong het nhau o tung nop; sua mot
 ban thi ban kia troi (audit 05/09). Tep nay KHONG chua logic rieng cua vai nao.
@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import schema                                                # noqa: E402
+import state_paths                                           # noqa: E402
 import role as _vai                                           # noqa: E402
 
 
@@ -32,7 +33,7 @@ def load_draft_context(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) ->
     meta = cb.load_meta(draft_id)               # dat CT_BRAND theo brand cua draft
     brand = cb._brand_of(meta)
     wd = cb.workdir(env_load.state_dir(), draft_id)
-    m = schema.read_manifest(wd / "xong.json")   # bu khoa dan xuat cho ban cu (C-r2-5)
+    m = schema.read_manifest(wd / state_paths.MANIFEST_FILE)   # bu khoa dan xuat cho ban cu (C-r2-5)
     if not m:
         sys.exit(f"Chua chuan bi. Chay truoc: venv/bin/python {ten_brief} {draft_id}")
     spec_path = Path(spec_arg) if spec_arg else wd / "spec.json"
@@ -43,7 +44,7 @@ def load_draft_context(draft_id: str, spec_arg, ten_brief: str, ten_nop: str) ->
         spec = json.loads(spec_path.read_text(encoding="utf-8"))
     except Exception as e:                                   # noqa: BLE001
         sys.exit(f"[LOI] spec.json khong phai JSON hop le: {type(e).__name__}: {e}")
-    return meta, brand, wd, m, spec, spec_path, cb._read_json(wd / "da_dung.json")
+    return meta, brand, wd, m, spec, spec_path, cb._read_json(wd / state_paths.PREVIOUS_SUBMISSION_FILE)
 
 
 # ---- ai viet bai nay, va lenh cua nguoi do (LOW-13, 10/09/2026) -------------
@@ -84,10 +85,10 @@ def count_of_redo(draft_id: str) -> int:
 def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "anh",
                  draft_id: str = "", anh_bat_buoc: bool = False) -> list:
     """Lam lai ma van giu anh/hook cua lan truoc -> loi. `khoa_anh` la khoa trong
-    da_dung.json ("bia" voi carousel, "anh" voi hero).
+    previous_submission.json ("bia" voi carousel, "anh" voi hero).
 
     CHI ap khi Ong Chu THAT SU bam "Lam lai" (sua 06/09/2026 dot 2). Truoc day
-    dieu kien la "co da_dung.json", ma tep do duoc ghi o MOI lan gui va
+    dieu kien la "co previous_submission.json", ma tep do duoc ghi o MOI lan gui va
     approve_post khong bao gio xoa — nen moi lan chay lai vi bat ky ly do gi (task
     kanban retry, vai chay lai sau mot [CANH BAO]) deu bi bao "Ong Chu bam lam
     lai nghia la bia chua dat, doi bia khac". Vai doi bia that, roi `send_album`
@@ -139,7 +140,7 @@ def count_round_error(wd, loi: list, lenh: str, toi_da: int = MAX_ROUND) -> int:
     import hashlib
     import json as _j
     import time as _t
-    p = Path(wd) / "nop_lan.json"
+    p = Path(wd) / state_paths.SUBMIT_COUNT_FILE
     ky = hashlib.md5("\n".join(sorted(str(x) for x in loi)).encode()).hexdigest()
     cu = {}
     try:
@@ -173,7 +174,7 @@ def article_text_for(m: dict, wd: Path) -> str:
     s = ((m.get("article_text") or "") + " " + (tl.get("lead_paragraph") or "")
          + " " + " ".join(tl.get("number_sentences") or [])).lower()
     try:
-        s += " " + (wd / "tu_lieu.md").read_text(encoding="utf-8").lower()
+        s += " " + (wd / state_paths.MATERIAL_FILE).read_text(encoding="utf-8").lower()
     except OSError:
         pass
     return s
@@ -563,17 +564,17 @@ def _recently_posted(vai: str, files, phut: int = MINUTES_ALBUM_FIT_LEN) -> bool
 
 
 def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi: dict):
-    """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi da_dung.json
+    """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi previous_submission.json
     (`ghi` = cac truong rieng cua vai: bia/anh/hook/theme...). Tra ve message_id."""
     import send_telegram
-    xong = schema.read_manifest(wd / "xong.json") or {}
+    xong = schema.read_manifest(wd / state_paths.MANIFEST_FILE) or {}
 
     def _ghi_so(mid=None):
-        """Ghi da_dung.json + so anh da dung. Goi NGAY KHI album da len topic, ke
+        """Ghi previous_submission.json + so anh da dung. Goi NGAY KHI album da len topic, ke
         ca khi buoc gui nut Duyet loi ngay sau do: anh da nam tren Telegram thi
         so PHAI co dong tuong ung, khong thi bai sau dung lai dung tam vua dang —
         chinh thu luat nay sinh ra de chan (do 06/09/2026)."""
-        cb._write_json(wd / "da_dung.json", {**ghi, "luc": time.strftime("%H:%M %d/%m"),
+        cb._write_json(wd / state_paths.PREVIOUS_SUBMISSION_FILE, {**ghi, "luc": time.strftime("%H:%M %d/%m"),
                                            "lan": int((da_dung or {}).get("lan", 0)) + 1,
                                            # Moc de phan biet "Ong Chu bam Lam lai"
                                            # voi "vai chay lai" — xem check_redo_reused.
@@ -593,10 +594,10 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
 
     # Nop THANH CONG thi xoa bo dem vong loi. `count_round_error` chi reset khi BO
     # LOI doi hoac qua 6 gio, con duong thanh cong truoc 06/09/2026 khong dung
-    # vao tep nop_lan.json — nen mot bai hong 2 lan vi "can >= 2 quote", sua
+    # vao tep submit_count.json — nen mot bai hong 2 lan vi "can >= 2 quote", sua
     # xong, gui duoc, roi mot gio sau Ong Chu bam Lam lai va vai lai quen quote
     # la lan=3 NGAY LUOT DAU: [DUNG] va bao goi kanban_block.
-    (wd / "nop_lan.json").unlink(missing_ok=True)
+    (wd / state_paths.SUBMIT_COUNT_FILE).unlink(missing_ok=True)
     try:
         res = send_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)
     except send_telegram.SendError as e:

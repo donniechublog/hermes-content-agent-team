@@ -5,7 +5,7 @@
   'HTTPError' và trả lien_quan=None → ảnh rơi vào "CHƯA AI NHÌN", bị loại khỏi
   dung_duoc. Không retry/backoff nào; song song hoá làm 429 dễ xảy ra HƠN.
 - B-r2-3: classify không có try — một PNG cụt làm list(ex.map) ném tại
-  _seen_image → cả lô mất kể cả ảnh đã nhìn xong, engine chết không xong.json.
+  _seen_image → cả lô mất kể cả ảnh đã nhìn xong, engine chết không manifest.json.
 
 Chạy:  venv/bin/python tests/test_seen_parallel.py
 """

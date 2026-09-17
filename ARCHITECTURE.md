@@ -110,7 +110,7 @@ flowchart TB
         apB["hermes-approve@blog<br/>approve_service + duyet_*"]:::container
         dashB["hermes-dashboard-blog :9120"]:::container
         cronB{{"cron: finn-scan, qinn-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
-        stateB[("state/blog/<br/>candidates · chuan_bi/ · bat_buoc ·<br/>anh_da_dung.jsonl")]:::datastore
+        stateB[("state/blog/<br/>candidates · prepare/ · bat_buoc ·<br/>anh_da_dung.jsonl")]:::datastore
     end
 
     subgraph DCGR["Container: brand DCGR — ~/.hermes-dcgr"]
@@ -202,7 +202,7 @@ flowchart TD
 
     subgraph S4["4 · CHUẨN BỊ CHUNG (engine dùng chung)"]
         prep["image_prepare.py<br/>giải mã link, research, chụp ảnh,<br/>dHash, phân loại, crop 1:1/4:5"]:::container
-        xong[("state/{brand}/chuan_bi/{id}/<br/>xong.json + bang_anh.png")]:::datastore
+        xong[("state/{brand}/prepare/{id}/<br/>manifest.json + contact_sheet.png")]:::datastore
         kanban --> prep
         prep --> xong
     end
@@ -211,7 +211,7 @@ flowchart TD
         imgRole["Ethan (card.py) · Dre (carousel.py) · Kite (render_edu.py)<br/>{vai}_prepare → {vai}_submit"]:::container
     end
     xong --> imgRole
-    imgDraft[("drafts/{id}.img.json<br/>+ ban_giao.md")]:::datastore
+    imgDraft[("drafts/{id}.img.json<br/>+ handoff.md")]:::datastore
     imgRole --> imgDraft
 
     subgraph S6["6 · VIẾT CAPTION"]
@@ -303,10 +303,10 @@ sequenceDiagram
     AP->>AP: create_pair() — task ảnh + task viết (viết chờ ảnh)
     Note over AP: chốt AI viết theo VAI QUÉT (role.writer_for)<br/>ghi vào drafts/{id}.writer.json
     AP->>PR: chạy nền image_prepare --im
-    PR-->>AP: xong.json + bang_anh.png
-    AP->>IR: task dựng ảnh (đọc xong.json)
-    IR-->>AP: drafts/{id}.img.json + ban_giao.md
-    AP->>MI: task viết caption (đọc xong.json + ban_giao ảnh)
+    PR-->>AP: manifest.json + contact_sheet.png
+    AP->>IR: task dựng ảnh (đọc manifest.json)
+    IR-->>AP: drafts/{id}.img.json + handoff.md
+    AP->>MI: task viết caption (đọc manifest.json + handoff ảnh)
     MI->>LLM: gọi LLM (DS-v4Flash, reasoning=none)
     LLM-->>MI: caption tiếng Việt
     MI-->>AP: drafts/{id}.json (bản nháp) + writer.json

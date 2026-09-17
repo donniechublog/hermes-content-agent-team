@@ -39,6 +39,9 @@ BO_QUA = ("~", "<", "$", "config.yaml", "jobs.json", "xong.json", "da_dung.json"
           "models_seen.json", "AGENTS.md", "package.json", "emoji-map.json",
           "boost.spec.json", "vung.json", "kanban.db", "agent.log", "gateway.log",
           "usageHistory",
+          # LOW-228: ten English cua tep trong state/<brand>/prepare/<draft_id>/
+          "manifest.json", "previous_submission.json", "submit_count.json",
+          "find_more.json", "crash_count.json", "material.md",
           "profile.yaml",         # tep cua hermes (~/.hermes-*/profiles/*/), khong o repo
           "dist.index.js")        # hermes/README nhac TEN PHANG CU de noi "khong con dung"
 

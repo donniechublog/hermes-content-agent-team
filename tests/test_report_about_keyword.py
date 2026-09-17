@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import article_sources                                              # noqa: E402
 from prepare import fallback_rounds                                  # noqa: E402
+import state_paths                                            # noqa: E402
 sys.path.insert(0, str(ROOT / "tests"))
 from test_spec_dre import _ve                                 # noqa: E402
 
@@ -135,7 +136,7 @@ def test_rank_empty_then_find_report_by_keyword_scan_image():
     dừng, 0 ảnh, dù có báo thật ngoài kia)."""
     with tempfile.TemporaryDirectory() as d:
         wd = Path(d)
-        (wd / "goc").mkdir()
+        (wd / state_paths.ORIGINAL_DIR).mkdir()
         ung_vien = {"image_url": "https://x/photo.jpg", "alt": "", "og": False, "source": "browser",
                    "page_url": "https://baomoi.example/moonshot", "rong": 1600, "cao": 1000, "score": 45}
 
@@ -188,7 +189,7 @@ def test_find_report_run_parallel_including_when_commons_has_image():
     Commons cho MỌI hãng, kể cả khi Commons ĐÃ có ảnh. Fail trên code cũ (nhánh
     `if not cands_h`): `report_about_keyword` không được gọi vì Commons đã có 1 ảnh."""
     with tempfile.TemporaryDirectory() as d:
-        wd = Path(d); (wd / "goc").mkdir()
+        wd = Path(d); (wd / state_paths.ORIGINAL_DIR).mkdir()
         anh_commons = {"image_url": "https://commons.example/hq.jpg", "alt": "", "og": False,
                       "source": "thuong_hieu", "rong": 1600, "cao": 1000, "score": 28,
                       "brand_match": {"company": "Moonshot AI", "key": "moonshot", "kind": "anh",

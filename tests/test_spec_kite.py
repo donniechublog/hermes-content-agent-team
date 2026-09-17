@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tam import so_tam  # noqa: E402
 from test_spec_dre import _co, _ve  # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def _cover(**k):
@@ -52,7 +53,7 @@ def _m(wd, anh=(), **k):
 
 
 def _hinh(wd, ma="H1", w=1200, h=800, lien_quan=True, **k):
-    goc = wd / "goc" / f"{ma}.png"
+    goc = wd / state_paths.ORIGINAL_DIR / f"{ma}.png"
     goc.parent.mkdir(parents=True, exist_ok=True)
     _ve(w, h).save(goc)
     a = {"id": ma, "original_path": str(goc), "w": w, "h": h, "ratio": round(w / h, 2),
@@ -285,7 +286,7 @@ def _figure(ma, **k):
 
 
 def test_chuyen_tu_vai_doc_img_json():
-    """Nút "Gửi Kite" của Ông Chủ chỉ ghi `transferred_from` vào img.json, xong.json
+    """Nút "Gửi Kite" của Ông Chủ chỉ ghi `transferred_from` vào img.json, manifest.json
     không có — đọc nhầm chỗ là cổng dưới không bao giờ bật."""
     import image_prepare as cb
     import kite_prepare as kb
@@ -470,7 +471,7 @@ def test_kite_tu_tim_lai_khi_thua_ke_bo_anh_khong_co_bia():
     """Ông Chủ 10/09/2026: *"Dre tìm được ảnh đúng, nên kỹ năng tìm ảnh đó dùng
     được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
 
-    `image_prepare.run` trả thẳng `xong.json` cũ khi tệp đã có, và task body
+    `image_prepare.run` trả thẳng `manifest.json` cũ khi tệp đã có, và task body
     giao cho Kite chạy `kite_prepare.py <id>` KHÔNG kèm `--lam-moi` — nên Kite
     đọc lại đúng kết quả đã thất bại của vai cũ, vòng tìm ảnh không bao giờ
     chạy lần nữa. Hai vai dừng ở hai ngưỡng khác nhau: vai cũ cần ~5 ảnh, Kite

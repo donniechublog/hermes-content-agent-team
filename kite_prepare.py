@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb                                    # noqa: E402
 import role as vai_mod                                        # noqa: E402
 import route_missing_images                                       # noqa: E402
+import state_paths                                                # noqa: E402
 
 
 def handle_channel(brand: str) -> str:
@@ -48,7 +49,7 @@ def transfer_from_role(m: dict) -> str:
     Mọi đường vào Kite đều là đường THIẾU ẢNH: `approve_post` chỉ gắn nút "Gửi Kite"
     ở hai chỗ báo thiếu ảnh, và `route_missing_images.after_prepare` tự chuyển khi 0
     ảnh. Cả hai đều đi qua `create_task_kite`, nơi ghi `transferred_from` vào img.json —
-    xong.json thì KHÔNG có (nút của Ông Chủ bấm sau khi engine đã ghi xong).
+    manifest.json thì KHÔNG có (nút của Ông Chủ bấm sau khi engine đã ghi xong).
     """
     im = cb._read_json(cb.DRAFTS / (str(m.get("draft_id", "")) + ".img.json"), {}) or {}
     tu = im.get("transferred_from") or ""
@@ -170,7 +171,7 @@ def line_hero(m: dict) -> list:
     return ["", f"⭐ HERO: {h['id']} là {la_gi}. Đặt `\"image\": \"{h['id']}\"` vào SLIDE 1 "
                 f"(cover) kèm `\"caption\": \"{cap}\"`; lúc đó bìa lấy chính hình đó làm hero, "
                 "KHÔNG vẽ hero art — `kite_submit.py` chặn bìa vector khi có hình thật dùng được. "
-                "Chỉ bỏ qua khi hình sai bài (xem bang_anh.png) — lúc đó nói rõ một câu vì sao. "
+                "Chỉ bỏ qua khi hình sai bài (xem contact_sheet.png) — lúc đó nói rõ một câu vì sao. "
                 "Hình còn lại để cho `figure`."]
 
 
@@ -224,7 +225,7 @@ def ensure_has_cover(draft_id: str, m: dict, wd, khong_browser: bool, cho: int,
     Ông Chủ 10/09/2026: *"Dre tìm được ảnh đúng, nên kỹ năng tìm ảnh đó dùng
     được. ko có lý gì mà ko tìm được ảnh để báo hỏng"*.
 
-    Đo hôm đó, cả chuỗi: (1) `image_prepare.run` trả thẳng `xong.json` cũ khi tệp
+    Đo hôm đó, cả chuỗi: (1) `image_prepare.run` trả thẳng `manifest.json` cũ khi tệp
     đã có (`if xong.exists() and not lam_moi`), (2) task body giao cho Kite chạy
     `kite_prepare.py <id>` — KHÔNG có `--lam-moi`. Nên khi tin được chuyển sang
     Kite vì thiếu ảnh, Kite **đọc lại đúng kết quả đã thất bại của vai cũ** và
@@ -318,7 +319,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         else:
             # Vision tat/thieu khoa -> moi anh relevant=None. Khong duoc ep.
             L.append(f"Có {len(ht)} hình đủ khổ nhưng ⚠️ CHƯA AI NHÌN (vision không chạy) — chưa biết "
-                     "chúng có đúng bài không. Dùng thì tự kiểm bằng bang_anh.png, không bắt buộc.")
+                     "chúng có đúng bài không. Dùng thì tự kiểm bằng contact_sheet.png, không bắt buộc.")
     for a in ht:
         kieu = ("BIỂU ĐỒ/BẢNG" if a["kind"] == "chart" else "ẢNH CHỤP") + \
                ("" if a.get("relevant") is True else " ⚠️CHƯA NHÌN")
@@ -354,7 +355,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     rac = [a["id"] for a in m["images"] if a.get("relevant") is False]
     if rac:
         L.append(f"Không dùng (engine đánh dấu không liên quan): {', '.join(rac)}")
-    L.append(f"Nhìn tất cả trong MỘT tấm: {m['workdir']}/bang_anh.png (chỉ khi cần).")
+    L.append(f"Nhìn tất cả trong MỘT tấm: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE} (chỉ khi cần).")
     L += ["", "## Tone cho bộ này (mỗi bộ một tone, không trùng bộ gần đây)",
           f"Gợi ý: theme={theme}, hero={hero}. Gần đây đã dùng: {gan or 'chưa có'}.",
           "theme: orbit (agent/hệ thống) | ember (hiệu năng/cảnh báo) | moss (dữ liệu mở/tăng trưởng) | "
@@ -416,7 +417,7 @@ def main() -> int:
                        sau_chuan_bi=route_missing_images.after_prepare)
     # Bia BAT BUOC co anh that (§1.2f) — thieu thi tim lai, dung bao hong.
     m, wd = ensure_has_cover(a.draft_id, m, wd, a.khong_browser, a.cho, a.lam_moi)
-    brief = write_brief(m, cb._read_json(wd / "da_dung.json"))
+    brief = write_brief(m, cb._read_json(wd / state_paths.PREVIOUS_SUBMISSION_FILE))
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)

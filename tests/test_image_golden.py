@@ -5,7 +5,7 @@ Giữ ba điều:
   1. "Engine giữ ảnh" trong phép đo là ĐÚNG công thức `schema.count_image_use_ok`
      (relevant, uses, mặt người không tên) — không đoán lại lần thứ hai.
   2. Chọn mẫu tất định theo seed, giữ trọn draft chỉ định, không vượt trần mỗi draft.
-  3. Ảnh được CHỤP RIÊNG kèm md5: chạy lại draft ghi đè goc/ không làm lệch nhãn.
+  3. Ảnh được CHỤP RIÊNG kèm md5: chạy lại draft ghi đè original/ không làm lệch nhãn.
 
 Chạy:  venv/bin/python tests/test_image_golden.py
 """
@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import image_eval                                             # noqa: E402
 import image_golden_sample                                    # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def _image(**k):
@@ -29,16 +30,16 @@ def _image(**k):
 
 
 def _make_state(root: Path, drafts: dict) -> Path:
-    """drafts = {draft_id: [image dict, ...]} -> state/dcgr/chuan_bi/<draft>/xong.json + goc/*.png"""
+    """drafts = {draft_id: [image dict, ...]} -> state/dcgr/prepare/<draft>/manifest.json + original/*.png"""
     for draft_id, images in drafts.items():
-        wd = root / "dcgr" / "chuan_bi" / draft_id
-        (wd / "goc").mkdir(parents=True)
+        wd = root / "dcgr" / state_paths.PREPARE_DIR / draft_id
+        (wd / state_paths.ORIGINAL_DIR).mkdir(parents=True)
         anh = []
         for i, a in enumerate(images, 1):
-            goc = wd / "goc" / f"A{i}.png"
+            goc = wd / state_paths.ORIGINAL_DIR / f"A{i}.png"
             Image.new("RGB", (1200, 800), (i * 20 % 255, 80, 120)).save(goc)
             anh.append(dict(a, id=f"A{i}", original_path=str(goc)))
-        (wd / "xong.json").write_text(json.dumps({
+        (wd / state_paths.MANIFEST_FILE).write_text(json.dumps({
             "version": 2, "draft_id": draft_id, "title": draft_id, "title_en": draft_id.upper(),
             "material": {"lead_paragraph": "lead " * 400}, "images": anh}), encoding="utf-8")
     return root
@@ -106,13 +107,13 @@ def test_sample_never_exceeds_available():
 
 
 def test_load_candidates_reads_v1_manifest_with_new_keys():
-    """LOW-227: xong.json bản 1 (khoá Việt) chưa migrate vẫn ra mẫu khoá English."""
+    """LOW-227: manifest.json bản 1 (khoá Việt) chưa migrate vẫn ra mẫu khoá English."""
     with tempfile.TemporaryDirectory() as tmp:
-        wd = Path(tmp) / "dcgr" / "chuan_bi" / "d1"
-        (wd / "goc").mkdir(parents=True)
-        goc = wd / "goc" / "A1.png"
+        wd = Path(tmp) / "dcgr" / state_paths.PREPARE_DIR / "d1"
+        (wd / state_paths.ORIGINAL_DIR).mkdir(parents=True)
+        goc = wd / state_paths.ORIGINAL_DIR / "A1.png"
         Image.new("RGB", (1200, 800), (10, 80, 120)).save(goc)
-        (wd / "xong.json").write_text(json.dumps({
+        (wd / state_paths.MANIFEST_FILE).write_text(json.dumps({
             "phien_ban": 1, "draft_id": "d1", "title": "d1", "tieu_de_en": "D1",
             "tu_lieu": {"doan_dau": "lead"},
             "anh": [{"ma": "A1", "goc": str(goc), "tu": "commons", "dung": ["thân"],
@@ -134,7 +135,7 @@ def test_snapshot_copies_image_so_rerun_cannot_shift_labels():
         row = json.loads(path.read_text(encoding="utf-8").splitlines()[0])
         thumb = path.parent / row["thumb"]
         assert thumb.is_file() and max(Image.open(thumb).size) <= image_golden_sample.THUMB_MAX
-        # Chạy lại draft ghi đè goc/A1.png: ảnh chụp riêng và md5 không đổi theo.
+        # Chạy lại draft ghi đè original/A1.png: ảnh chụp riêng và md5 không đổi theo.
         before = thumb.read_bytes()
         Image.new("RGB", (900, 900), (0, 0, 0)).save(cands[0]["goc"])
         assert thumb.read_bytes() == before

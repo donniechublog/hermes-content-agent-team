@@ -12,6 +12,7 @@ from pathlib import Path
 import image_provenance
 import role
 import env_load
+import state_paths
 from browser_session import session_or_new
 
 from prepare.common import GNEWS, _domain
@@ -87,7 +88,7 @@ def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
     if not chup_fig:
         return
     for f in page.evaluate(JS["FIG"]) or []:
-        out = wd / "goc" / f"chup_{so}_{f['sel'][-3:-2]}.png"
+        out = wd / state_paths.ORIGINAL_DIR / f"{state_paths.CAPTURE_IMAGE_PREFIX}{so}_{f['sel'][-3:-2]}.png"
         out.parent.mkdir(parents=True, exist_ok=True)
         el = page.query_selector(f["sel"])
         if not el:

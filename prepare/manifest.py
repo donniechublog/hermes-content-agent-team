@@ -10,6 +10,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 import schema
+import state_paths
 import role as vai_mod                 # `vai` la ten tham so o vai ham duoi
 
 from prepare.common import ROOT, _brand_of
@@ -29,7 +30,7 @@ def describe_ranking_image(m: dict) -> str:
         # IN RA HANG THAT da khoanh, khong chi khang dinh "da khoanh hang model":
         # ba bai 15/09/2026 khoanh hang "9. | DeepSeek Harness" (mot app cua nguoi
         # khac trong bang Apps) ma cau nay van noi "DeepSeek #2, da khoanh hang
-        # model". `row` nam san trong xong.json nhung chua tung ra toi brief hay
+        # model". `row` nam san trong manifest.json nhung chua tung ra toi brief hay
         # cau chan, nen ca vai lan nguoi duyet deu khong co gi de soat (LOW-180).
         dong = " ".join((xh.get("row") or "").split())
         cau += f", hàng đã khoanh: {dong[:90]}" if dong else ", đã khoanh hàng model"
@@ -148,7 +149,7 @@ def contact_sheet(anh: list, out: Path) -> None:
 # ---- 4. tu lieu ------------------------------------------------------------
 def gather_material(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_en: str = "") -> dict:
     import material
-    p = wd / "tu_lieu.md"
+    p = wd / state_paths.MATERIAL_FILE
     try:
         tl = material.gather(title, link, tu_nguon=str(nguon_path))
         p.write_text(material.use_page(tl), encoding="utf-8")
@@ -206,9 +207,9 @@ def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: 
         # hieu do (`l.startswith("- ") and SO.search(l)`), nen tren moi bai di
         # qua nhanh nay — bai trang JS, tuc phan lon trang san pham hien dai —
         # cong "nguon co so ma caption khong co so" TU TAT, khong bao gi, va
-        # `cau_so_trong_nguon` ve 0. Miles doc tu_lieu.md chu khong doc xong.json
+        # `cau_so_trong_nguon` ve 0. Miles doc material.md chu khong doc manifest.json
         # nen khong co duong nao khac de biet.
-        (wd / "tu_lieu.md").write_text(
+        (wd / state_paths.MATERIAL_FILE).write_text(
             _tl.use_page({"title": title, "number_sentences": cau_so,
                             "sources": [{"label": "Chữ lấy từ browser", "title": title,
                                          "url": link, "paragraphs": doan[:60]}]}),
@@ -247,7 +248,7 @@ def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
 def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
                   tom: dict, wd: Path, anh: list, xhs: list, tin_xep_hang: bool, bp: dict, tl: dict,
                   flagship: bool, toi_thieu: int, vai_anh: str = "", dropped: list | None = None) -> dict:
-    """Manifest (xong.json) cua bai — thu ma moi *_prepare va *_submit doc. Cac gia
+    """Manifest (manifest.json) cua bai — thu ma moi *_prepare va *_submit doc. Cac gia
     tri dan xuat (dung_duoc, not_yet_seen, domains, cover_suggestions) tinh o day tu `images`."""
     import story_type            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)

@@ -19,10 +19,10 @@ Tep nay KHONG kiem tra luc chay (khong validate). No lam ba viec:
   3. `read_manifest()` — doc manifest cu, bu cac khoa dan xuat con thieu roi dan
      nhan `phien_ban`, de ban cu va ban moi doc ra nhu nhau.
 
-CHU Y — "xong.json" KHONG phai mot hop dong. Do la ten tep dung lai o nhieu cho
+CHU Y — "manifest.json" KHONG phai mot hop dong. Do la ten tep dung lai o nhieu cho
 voi hinh dang KHAC HAN: engine ghi manifest o
-`state/<brand>/chuan_bi/<id>/xong.json`, con `itachi_prepare.py` ghi
-`{"khoa", "slides"}` va `ada_prepare.py` ghi bao cao gom, deu ten `xong.json`
+`state/<brand>/prepare/<id>/manifest.json`, con `itachi_prepare.py` ghi
+`{"khoa", "slides"}` va `ada_prepare.py` ghi bao cao gom, deu ten `manifest.json`
 nhung o workdir khac. Chi manifest cua engine moi theo `Manifest` duoi day.
 """
 import json
@@ -37,7 +37,7 @@ VERSION_MANIFEST = 2
 
 
 class Manifest(TypedDict, total=False):
-    """`state/<brand>/chuan_bi/<draft_id>/xong.json` — engine ghi, moi vai doc.
+    """`state/<brand>/prepare/<draft_id>/manifest.json` — engine ghi, moi vai doc.
 
     Nguoi ghi: `prepare.manifest.build_manifest` (26 khoa goc), roi
     `image_prepare.run` them `missing_images`, `route_missing_images.after_prepare` them
@@ -323,7 +323,7 @@ def count_image_use_ok(anh: list, vai_anh: str) -> int:
 def read_manifest(nguon) -> dict | None:
     """Doc manifest cua engine, tu nang ban cu. None neu khong doc duoc.
 
-    `nguon` la duong dan toi xong.json, hoac chinh dict da doc san.
+    `nguon` la duong dan toi manifest.json, hoac chinh dict da doc san.
 
     Nang ban 0 -> 1: ban cu co the thieu cac khoa DAN XUAT. Bu lai bang dung
     cong thuc cua nguoi ghi thay vi de moi nguoi doc tu doan — do la nguyen nhan

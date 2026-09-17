@@ -95,7 +95,7 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   `image_concept.py` tìm **ảnh khái niệm** (cờ nước được nhắc, rack datacenter…
   IMAGE_RULES §1.2c, chỉ bìa/hero); dHash bỏ trùng; phân loại chart/mặt người/tỉ lệ; cắt sẵn 1:1 và 4:5 qua
   `crop_ratio`; cặp ghép cùng tone; tư liệu. Kết quả
-  `state/<brand>/chuan_bi/<id>/xong.json` + `bang_anh.png`.
+  `state/<brand>/prepare/<id>/manifest.json` + `contact_sheet.png`.
 - Tin **chuyển sang Kite vì thiếu ảnh** (engine tự chuyển khi 0 ảnh, hoặc Ông Chủ
   bấm "Gửi Kite"): những ảnh thật engine đã tìm được **vẫn phải vào bộ của Kite,
   và phải có ở body** — `kite_prepare.figure_right_use` là một nguồn cho cả brief
@@ -108,15 +108,15 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   bại của vòng tìm ảnh, không phải một trạng thái hợp lệ của tin, nên nó phải
   nổ ra chứ không được lặng lẽ thành một bộ slide vẽ tay.
 - Và nước đi đầu là **tìm lại**, không phải báo hỏng: `kite_prepare` không được
-  thừa kế `xong.json` đã thất bại của vai cũ (`image_prepare.run` trả thẳng tệp
+  thừa kế `manifest.json` đã thất bại của vai cũ (`image_prepare.run` trả thẳng tệp
   cũ, còn task body của Kite không có `--lam-moi`), nên `ensure_has_cover` tự chạy
   lại vòng tìm ảnh một lượt khi chưa có tấm nào lên bìa được. Vai cũ cần ~5 ảnh
   mới đủ, Kite chỉ cần một tấm — "vai cũ không đủ" không có nghĩa Kite không đủ.
   Hết đường thì `count_round_error` đẩy lên Ông Chủ qua `kanban_block`.
-- Mỗi vai một cặp **brief + nop** đọc chung `xong.json`: `dre_prepare/dre_submit`,
+- Mỗi vai một cặp **brief + nop** đọc chung `manifest.json`: `dre_prepare/dre_submit`,
   `ethan_prepare/ethan_submit`, `kite_prepare/kite_submit`, `miles_prepare/miles_submit`.
   Nop chạy cổng chặn của renderer, gửi kèm nút duyệt, ghi
-  `drafts/<id>.ban_giao.md` và `da_dung.json` (để "Làm lại" bắt buộc đổi
+  `drafts/<id>.handoff.md` và `previous_submission.json` (để "Làm lại" bắt buộc đổi
   ảnh/hook/tone). `--khong-gui`/`--out`/`--khong-push` để thử.
 - Bốn vai theo chat cùng mẫu, khoá là message_id/URL: `gin_*`, `itachi_*`,
   `cape_*`, `ada_*`. `bob_submit.py` là một lệnh trọn gói (lấy ảnh → nhìn → đóng
@@ -157,7 +157,7 @@ mọi bảng cũ:
    ảnh oan (sự cố 10/09/2026). `ROLE_IMAGE`, `NAME_BRIGHT_CAP`, `NAME_ROLE_IMAGE`,
    `ROLE_CAROUSEL`, `ROLE_EDU`, `SLUG_OLD`, `DISPLAY_NAME` tự có theo.
 2. **Một cặp `<vai>_prepare.py` / `<vai>_submit.py`** — cả hai đọc chung
-   `xong.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
+   `manifest.json` của engine, không tự chuẩn bị lại. Chép cặp gần nhất về kiểu ảnh
    (`dre_*` cho nhiều slide, `ethan_*` cho thẻ bìa, `kite_*` cho vector).
 3. **Một SOUL** trong `hermes/profiles/<brand>/<slug>.SOUL.md` (hoặc `shared/`
    nếu dùng chung cả hai brand), rồi `sync_hermes.py --ra-hermes` đẩy sang
@@ -523,8 +523,8 @@ có bảng này thì không ai biết sửa một tệp sẽ đụng vào ai.
 | `drafts/<id>.img.json` | `approve_pick` | `approve_post` (làm lại, chuyển Kite) | `approve_post`, Ada |
 | `drafts/<id>.writer.json` | `approve_pick` | `approve_post` (duyệt / bỏ hẳn) | `approve_post`, Ada |
 | `drafts/<id>.json` (bản nháp) | `draft_write` | `approve_post.mark_draft`, `moat_publish` (cron) | `approve_post`, `publish` |
-| `drafts/<id>.ban_giao.md` | `*_submit` | — | `approve_post` dán vào task Miles |
-| `state/<brand>/chuan_bi/<id>/xong.json` | `image_prepare` | — | mọi `*_prepare` và `*_submit` |
+| `drafts/<id>.handoff.md` | `*_submit` | — | `approve_post` dán vào task Miles |
+| `state/<brand>/prepare/<id>/manifest.json` | `image_prepare` | — | mọi `*_prepare` và `*_submit` |
 | `state/<brand>/anh_da_dung.jsonl` | `submit_common.send_album` | `approve_post` (gỡ khi Bỏ/Làm lại) | `image_rules.check_not_reused` |
 | `state/<brand>/bat_buoc_<vai>.json` | script quét | `manifest_write` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
 | `state/<brand>/<vai>_candidates_*.json` | `manifest_*` | — | `approve_pick` (chọn theo mtime) |
@@ -543,7 +543,7 @@ engine nền, bảng đen), `drafts/<id>.json` (draft_write, approve_post, cron 
 mọi sidecar của `duyet_*`. `write_text` cắt ngắn tệp cũ trước khi ghi nội dung
 mới, nên hai tiến trình trùng thời điểm để lại một sidecar cụt và mọi người đọc
 sau đó ném `ValueError` — bài kẹt vĩnh viễn mà không ai biết. Tệp chỉ một tiến
-trình ghi trong thư mục làm việc riêng (`xong.json`, `spec.json`, `vung_ocr.json`)
+trình ghi trong thư mục làm việc riêng (`manifest.json`, `spec.json`, `vung_ocr.json`)
 vẫn `write_text`, và đó là chấp nhận được.
 
 ## Sau mỗi `hermes update`

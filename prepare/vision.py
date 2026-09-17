@@ -13,6 +13,7 @@ from PIL import Image, ImageStat
 
 import env_load
 import role
+import state_paths
 
 from prepare import decision_log
 from prepare.source import all_proper_nouns
@@ -129,7 +130,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     # test deu mo goi 2/3 phan tu.
     # env_load.required nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
-    # la ca engine chet giua chung, khong co xong.json, vai chi thay "chua chuan
+    # la ca engine chet giua chung, khong co manifest.json, vai chi thay "chua chuan
     # bi" ma khong biet vi sao (06/09/2026). Doc thang bien, khong nem.
     env_load.load()
     key = os.environ.get("OPENAI_API_KEY")
@@ -329,7 +330,7 @@ def _call_router(req, _ngu=None):
 def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
     """classify cho executor.map: mot anh hong (PNG cut, count_faces/crop nem) KHONG
     duoc lam list(ex.map) nem — ca lo mat, ke ca anh da nhin xong, engine chet
-    khong xong.json (audit lượt 2, B-r2-3). Anh hong tro thanh anh "chua nhin"
+    khong manifest.json (audit lượt 2, B-r2-3). Anh hong tro thanh anh "chua nhin"
     co ghi chu, cac anh khac di tiep."""
     try:
         return classify(a, wd, tieu_de)
@@ -440,7 +441,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
               "landscape": r >= role.active_rules().LANDSCAPE_CLEAR, "ready_path": None, "uses": [], "notes": []})
     if mat_tho is None:
         a["notes"].append("⚠️ cổng mặt người KHÔNG chạy (thiếu cv2/model hoặc lỗi) — chưa kiểm mặt")
-    san = wd / "san" / f"{a['id']}.png"
+    san = wd / state_paths.READY_DIR / f"{a['id']}.png"
     if la_ct:
         if a.get("ranking"):
             # ANH XEP HANG GIU NGUYEN VEN, khong cat du cao bao nhieu: hang model

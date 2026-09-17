@@ -29,6 +29,7 @@ from PIL import Image, ImageDraw  # noqa: E402
 
 import approve_post as db  # noqa: E402
 import image_rules_ethan as image_rules  # noqa: E402
+import state_paths                                            # noqa: E402
 
 
 def _about(w, h, tone, seed=7):
@@ -72,10 +73,10 @@ def test_write_forbid_image_redo_capture_use_image_form_cell_slide_got_if():
     """spec.json co bia=A1 (slide 1) va slides[0]=A2 (slide 2); che slide 2 thi
     img.json phai co dHash cua A2, KHONG phai A1."""
     with tempfile.TemporaryDirectory() as t:
-        wd = Path(t) / "chuan_bi" / "tin-thu"
-        (wd / "goc").mkdir(parents=True)
-        _about(800, 1000, (10, 20, 30), seed=1).save(wd / "goc" / "A1.png")
-        _about(800, 1000, (200, 90, 40), seed=2).save(wd / "goc" / "A2.png")
+        wd = Path(t) / state_paths.PREPARE_DIR / "tin-thu"
+        (wd / state_paths.ORIGINAL_DIR).mkdir(parents=True)
+        _about(800, 1000, (10, 20, 30), seed=1).save(wd / state_paths.ORIGINAL_DIR / "A1.png")
+        _about(800, 1000, (200, 90, 40), seed=2).save(wd / state_paths.ORIGINAL_DIR / "A2.png")
         (wd / "spec.json").write_text(json.dumps({
             "cover": {"anh": "A1"}, "slides": [{"anh": "A2", "text": "..."}]}),
             encoding="utf-8")
@@ -84,8 +85,8 @@ def test_write_forbid_image_redo_capture_use_image_form_cell_slide_got_if():
         try:
             db._write_forbid_image_redo("tin-thu", [2])
             im = json.loads((Path(t) / "tin-thu.img.json").read_text(encoding="utf-8"))
-            h_a1 = format(image_rules.dhash(Image.open(wd / "goc" / "A1.png").convert("RGB")), "x")
-            h_a2 = format(image_rules.dhash(Image.open(wd / "goc" / "A2.png").convert("RGB")), "x")
+            h_a1 = format(image_rules.dhash(Image.open(wd / state_paths.ORIGINAL_DIR / "A1.png").convert("RGB")), "x")
+            h_a2 = format(image_rules.dhash(Image.open(wd / state_paths.ORIGINAL_DIR / "A2.png").convert("RGB")), "x")
             assert im["forbidden_slide_images"]["2"] == [h_a2]
             assert h_a1 not in im["forbidden_slide_images"]["2"]
             assert "1" not in im["forbidden_slide_images"]           # khong che nham slide khac
@@ -96,10 +97,10 @@ def test_write_forbid_image_redo_capture_use_image_form_cell_slide_got_if():
 def test_write_forbid_image_redo_stack_all_two_code():
     """Slide bi neu la mot cap "ghep" — phai che CA HAI ma, khong chi ma dau."""
     with tempfile.TemporaryDirectory() as t:
-        wd = Path(t) / "chuan_bi" / "tin-thu"
-        (wd / "goc").mkdir(parents=True)
-        _about(1200, 700, (10, 20, 30), seed=6).save(wd / "goc" / "A6.png")
-        _about(1200, 700, (200, 90, 40), seed=12).save(wd / "goc" / "A12.png")
+        wd = Path(t) / state_paths.PREPARE_DIR / "tin-thu"
+        (wd / state_paths.ORIGINAL_DIR).mkdir(parents=True)
+        _about(1200, 700, (10, 20, 30), seed=6).save(wd / state_paths.ORIGINAL_DIR / "A6.png")
+        _about(1200, 700, (200, 90, 40), seed=12).save(wd / state_paths.ORIGINAL_DIR / "A12.png")
         (wd / "spec.json").write_text(json.dumps({
             "cover": {"anh": "A1"},
             "slides": [{"anh": "A2", "text": "x"}, {"anh": "A3", "text": "y"},
