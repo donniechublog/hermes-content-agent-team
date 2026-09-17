@@ -83,7 +83,7 @@ def _run(tmp, res_http=None):
 
 # ------------------------------------------------- chan CHU (bai chi co chu)
 def test_article_only_has_text_write_mark_after_when_send():
-    """Gui xong phai ghi `channel_chu_mid` vao draft NGAY — do la thu duy nhat
+    """Gui xong phai ghi `channel_text_mid` vao draft NGAY — do la thu duy nhat
     cho lan bam Duyet ke tiep biet chu da len roi."""
     with tempfile.TemporaryDirectory() as tmp:
         _, p = _draft(tmp)
@@ -91,13 +91,13 @@ def test_article_only_has_text_write_mark_after_when_send():
         assert res.get("ok"), res
         assert len(chu) == 1, f"phai gui dung mot lan: {chu}"
         d = json.loads(p.read_text(encoding="utf-8"))
-        assert d.get("channel_chu_mid") == 222, f"khong ghi dau: {d}"
+        assert d.get("channel_text_mid") == 222, f"khong ghi dau: {d}"
 
 
 def test_article_only_has_text_already_send_then_no_send_again():
     """Dung su co E5: draft da co dau -> bam Duyet lai KHONG duoc gui lai."""
     with tempfile.TemporaryDirectory() as tmp:
-        _draft(tmp, channel_chu_mid=222)
+        _draft(tmp, channel_text_mid=222)
         res, _, chu = _run(tmp)
         assert res.get("ok"), res
         assert chu == [], f"da gui roi ma van gui lai: {chu}"
@@ -113,7 +113,7 @@ def test_image_single_write_mark_after_when_send():
         assert res.get("ok"), res
         assert len(fake.goi) == 1, f"phai goi sendPhoto dung mot lan: {fake.goi}"
         d = json.loads(p.read_text(encoding="utf-8"))
-        assert d.get("channel_anh_mid") == 333, f"khong ghi dau: {d}"
+        assert d.get("channel_photo_mid") == 333, f"khong ghi dau: {d}"
 
 
 def test_image_single_already_send_then_no_send_again():
@@ -122,7 +122,7 @@ def test_image_single_already_send_then_no_send_again():
     with tempfile.TemporaryDirectory() as tmp:
         anh = Path(tmp) / "a.png"
         anh.write_bytes(b"PNG")
-        _draft(tmp, image=str(anh), channel_anh_mid=333)
+        _draft(tmp, image=str(anh), channel_photo_mid=333)
         res, fake, _ = _run(tmp)
         assert res.get("ok"), res
         assert fake.goi == [], f"da gui anh roi ma van goi lai: {fake.goi}"
@@ -150,7 +150,7 @@ def test_caption_long_press_again_only_send_part_remaining_missing():
         assert fake.goi == [], f"album da len ma van gui lai: {fake.goi}"
         assert len(chu) == 1, f"phan chu phai duoc gui dung mot lan: {chu}"
         d = json.loads(p.read_text(encoding="utf-8"))
-        assert d.get("channel_chu_mid") == 222, f"khong ghi dau chu: {d}"
+        assert d.get("channel_text_mid") == 222, f"khong ghi dau chu: {d}"
 
 
 def test_caption_long_press_again_attempt_three_no_send_what_half():
@@ -158,7 +158,7 @@ def test_caption_long_press_again_attempt_three_no_send_what_half():
     with tempfile.TemporaryDirectory() as tmp:
         _draft(tmp, caption="x" * (db.CAPTION_LIMIT + 5),
                images=["http://x/a.png"], channel_album_mid=111,
-               channel_chu_mid=222)
+               channel_text_mid=222)
         res, fake, chu = _run(tmp)
         assert res.get("ok"), res
         assert fake.goi == [] and chu == [], f"van gui lai: http={fake.goi} chu={chu}"

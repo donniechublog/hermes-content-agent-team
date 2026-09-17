@@ -318,7 +318,7 @@ def _crop_sidecar(draft_id, vai_anh, brand, item, illu_body, la_carousel, la_edu
         draft_id=draft_id, brand=brand, goc=str(ROOT),
         persona=_vai.display_name(vai_viet).lower())
     _write_json(DRAFTS / (draft_id + ".writer.json"),
-              {"vai_viet": vai_viet, "title": item["title"],
+              {"writer_role": vai_viet, "title": item["title"],
                "body": writer_body, "created": False,
                "root_task": root_id, "dre_task": illu_id})
     return vai_viet

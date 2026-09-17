@@ -368,7 +368,7 @@ Từ 03/09/2026, theo yêu cầu Ông Chủ, các vai **không làm cùng lúc**
   108 s chỉ để trả lời "xác nhận"). Giờ hai tầng trong `approve_service.py`:
   - mỗi phiên `tele-<vai>` một hàng FIFO (`_HangFIFO`) — cùng vai không chạy hai lượt
     cùng lúc, tin trước trả lời trước, có báo "đang trả lời N tin trước";
-  - semaphore chung `CT_CHAT_SONG_SONG` (mặc định **4**) chỉ là van an toàn cho
+  - semaphore chung `CT_CHAT_PARALLEL` (mặc định **4**) chỉ là van an toàn cho
     9router/DeepSeek, **không** phải thứ làm reply đợi nhau — một người gõ thực tế không
     hỏi quá 3–4 vai cùng lúc; đặt `=1` trong unit systemd là về hành vi cũ.
   - **Nguyên tắc (Ông Chủ, 04/09): task làm lần lượt được, reply phải song song và
@@ -412,8 +412,8 @@ thẻ gốc "Bài: …"   (done ngay; assignee `ban_bien_tap` — không ai nh�
   `task_links`, bàn giao trong `task_comments`/`task_runs`, không trôi như chat.
 - Bảng đen là lớp thêm, **best-effort**: `blackboard.py` lỗi thì task vẫn tạo như cũ, chỉ mất bảng
   đen.
-- Bật theo `CT_BANG_DEN` (mặc định `dcgr`). **Blog bật từ 05/09/2026 chiều** qua drop-in
-  `hermes-approve@blog.service.d/override.conf` (`Environment=CT_BANG_DEN=dcgr,blog`); đã thử thẻ gốc
+- Bật theo `CT_BLACKBOARD_BRANDS` (mặc định `dcgr`). **Blog bật từ 05/09/2026 chiều** qua drop-in
+  `hermes-approve@blog.service.d/override.conf` (`Environment=CT_BLACKBOARD_BRANDS=dcgr,blog`); đã thử thẻ gốc
   trên kanban blog.
 
 

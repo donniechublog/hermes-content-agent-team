@@ -58,41 +58,11 @@
    "path:bao_cao.txt": 2,
    "path:phan_tich_": 1
   },
-  "approve_base.py": {
-   "path:ong_chu.json": 1
-  },
-  "approve_chat.py": {
-   "key:CT_CHAT_SONG_SONG": 1
-  },
-  "approve_command.py": {
-   "key:CT_CHAT_QUA_GATEWAY": 1,
-   "key:ngay": 3,
-   "key:nguon": 1,
-   "key:vai": 3
-  },
-  "approve_dispatch.py": {
-   "key:CT_BANG_DEN": 1
-  },
-  "approve_pick.py": {
-   "key:vai_viet": 1
-  },
   "approve_post.py": {
    "key:anh": 3,
-   "key:anh_that_dung_duoc": 1,
-   "key:channel_anh_mid": 2,
-   "key:channel_chu_mid": 2,
-   "key:dre_task_truoc_kite": 1,
-   "key:ghep": 2,
-   "key:hoi_mid": 4,
-   "key:lan": 1,
-   "key:ly_do": 2,
-   "key:task_truoc": 1,
-   "key:tu_vai": 1,
-   "key:vai_viet": 9
+   "key:ghep": 2
   },
   "approve_service.py": {
-   "key:CT_CHAT_QUA_GATEWAY": 1,
-   "key:ghi_chu_cuu": 2,
    "key:tg_card_message_id": 1
   },
   "bob_submit.py": {
@@ -121,9 +91,6 @@
    "key:sang": 1,
    "key:tam_co": 1,
    "key:toi": 1
-  },
-  "cleanup.py": {
-   "path:*_nop.jsonl": 1
   },
   "deck.py": {
    "key:bg_anh": 2,
@@ -292,6 +259,28 @@
    "key:usd_bai": 1,
    "key:vai": 2
   },
+  "migrate_approve_stores.py": {
+   "key:CT_BANG_DEN": 1,
+   "key:CT_CHAT_QUA_GATEWAY": 1,
+   "key:CT_CHAT_SONG_SONG": 1,
+   "key:LOI_DOC": 1,
+   "key:anh_that_dung_duoc": 1,
+   "key:channel_anh_mid": 1,
+   "key:channel_chu_mid": 1,
+   "key:chuyen_kite": 1,
+   "key:dre_task_truoc_kite": 1,
+   "key:ghi_chu_cuu": 1,
+   "key:hoi_mid": 1,
+   "key:lam_lai": 1,
+   "key:lan": 1,
+   "key:ly_do": 2,
+   "key:mo_ta": 1,
+   "key:ngay": 1,
+   "key:task_truoc": 1,
+   "key:tu_vai": 1,
+   "key:vai": 1,
+   "key:vai_viet": 1
+  },
   "migrate_article_sources.py": {
    "key:link_goc": 1,
    "key:loai": 1,
@@ -384,16 +373,9 @@
    "key:khac": 1,
    "key:tq": 1
   },
-  "send_telegram.py": {
-   "key:mo_ta": 1
-  },
   "submit_common.py": {
    "key:lan": 5,
-   "key:loi_cuoi": 1,
-   "key:vai_viet": 1
-  },
-  "sync_hermes.py": {
-   "key:LOI_DOC": 1
+   "key:loi_cuoi": 1
   }
  }
 }

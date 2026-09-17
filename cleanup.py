@@ -105,10 +105,6 @@ def cleanup_append_only_logs(state_dir: Path, keep_lines: int = 5000, dry_run: b
     for name in (state_paths.USED_IMAGES_FILE, state_paths.USED_EDU_THEMES_FILE):
         trimmed += trim_jsonl(state_dir / name, keep_lines, dry_run)
 
-    # <vai>_submit.jsonl
-    for log_file in state_dir.glob("*_nop.jsonl"):
-        trimmed += trim_jsonl(log_file, keep_lines, dry_run)
-
     return trimmed
 
 

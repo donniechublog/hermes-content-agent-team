@@ -40,6 +40,7 @@ import httpx                                                  # noqa: E402
 
 import write_log                                              # noqa: E402
 import submit_common                                             # noqa: E402
+import state_paths                                               # noqa: E402
 import role as _vai                                           # noqa: E402
 
 from approve_base import (  # noqa: E402
@@ -175,14 +176,14 @@ def handle_message(token, group, msg):
                f"from={msg.get('from', {}).get('id')} text={rut(text)}")
 
     # ALLOWLIST cho MOI tin, khong chi lenh slash. Truoc 06/09/2026 chi
-    # approve_command va nhanh "ly do lam lai" kiem `ong_chu.json`; lenh chon so va
+    # approve_command va nhanh "ly do lam lai" kiem `boss_ids.json`; lenh chon so va
     # chat thi khong — bat ky ai trong group reply "1, 3" vao bao cao Finn la
     # tao duoc cap task ton LLM, con reply kem URL la agent chay voi bo cong cu
-    # day du. Khong co tep ong_chu.json thi giu nguyen hanh vi cu (xem
+    # day du. Khong co tep boss_ids.json thi giu nguyen hanh vi cu (xem
     # `is_boss`), nen bat cai nay khong lam ket chet may dang chay.
     if not is_boss(msg):
         uid = msg.get("from", {}).get("id")
-        log("vao", f"msg={mid} TU CHOI: {uid} khong co trong ong_chu.json")
+        log("vao", f"msg={mid} TU CHOI: {uid} khong co trong {state_paths.BOSS_IDS_FILE}")
         call(token, "sendMessage", chat_id=group,
              **({"message_thread_id": thread_id} if thread_id else {}),
              text="Chỉ Ông Chủ ra lệnh cho đội được. (id của bạn: <code>"
@@ -238,9 +239,9 @@ def handle_message(token, group, msg):
         # Thi diem 04/09 (dcgr truoc): chat thuong di qua GATEWAY hermes bang bot
         # rieng (profile_routes theo topic). Bot approve chi con giu nut duyet,
         # chon so, lenh "/" va tien do kanban — KHONG tra loi chat nua, khong thi
-        # hai bot cung dap mot cau. Bat bang CT_CHAT_QUA_GATEWAY=1 trong unit.
-        if os.environ.get("CT_CHAT_QUA_GATEWAY", "") == "1":
-            log("route", f"msg={mid} chat -> nhuong gateway (CT_CHAT_QUA_GATEWAY=1)")
+        # hai bot cung dap mot cau. Bat bang CT_CHAT_VIA_GATEWAY=1 trong unit.
+        if os.environ.get("CT_CHAT_VIA_GATEWAY", "") == "1":
+            log("route", f"msg={mid} chat -> nhuong gateway (CT_CHAT_VIA_GATEWAY=1)")
             return
         # Chay nen: mot lan goi agent co the toi 10 phut, khong duoc de nghen
         # vong lap poll (nut Duyet/Bo phai bam duoc bat cu luc nao).
@@ -344,12 +345,12 @@ def _rescue_article_end_publishing(token, group):
         # sinh ra "dang trung" ma E5 di dong.
         if already_len_channel(d):
             d["status"] = "published"
-            d["ghi_chu_cuu"] = (f"dich vu khoi dong lai luc {gio}; bai DA len channel "
+            d["rescue_note"] = (f"dich vu khoi dong lai luc {gio}; bai DA len channel "
                                 "(co dau channel_*_mid) nen danh dau published")
             dich = da_len
         else:
             d["status"] = "publish_failed"
-            d["ghi_chu_cuu"] = f"dich vu khoi dong lai luc {gio}, bo trang thai publishing"
+            d["rescue_note"] = f"dich vu khoi dong lai luc {gio}, bo trang thai publishing"
             dich = cuu
         try:
             _write_json(p, d)

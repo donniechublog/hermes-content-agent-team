@@ -30,7 +30,7 @@ def _use(tmp: Path, *, vai_anh="dre", vai_viet="miles", root_task=None):
         {"image_role": vai_anh, "title": "Tin test", "carousel": False}), encoding="utf-8")
     wp = tmp / f"{draft_id}.writer.json"
     wp.write_text(json.dumps(
-        {"vai_viet": vai_viet, "title": "Tin test", "body": "than bai",
+        {"writer_role": vai_viet, "title": "Tin test", "body": "than bai",
          "created": False, "root_task": root_task, "dre_task": "t_anh1"}), encoding="utf-8")
     return draft_id, wp
 
@@ -172,14 +172,14 @@ def test_blog_assigns_writer_with_shorter_queue():
     assignee, body = created[0]
     assert assignee == "miles", f"should assign Miles (empty queue), got {assignee}"
     assert "miles_prepare.py" in body and "miles_submit.py" in body and "jika_" not in body, body
-    assert sidecar["vai_viet"] == "miles", "sidecar must record the real writer for prepare/submit/topic"
+    assert sidecar["writer_role"] == "miles", "sidecar must record the real writer for prepare/submit/topic"
 
 
 def test_unreadable_kanban_keeps_tentative_writer():
     with tempfile.TemporaryDirectory() as t:
         created, sidecar = _approve_with_queue(Path(t), writer="jika", brand="donniechublog",
                                                queue=lambda slugs: None)
-    assert created[0][0] == "jika" and sidecar["vai_viet"] == "jika"
+    assert created[0][0] == "jika" and sidecar["writer_role"] == "jika"
 
 
 def test_dcgr_assigns_writer_with_shorter_queue():
@@ -191,7 +191,7 @@ def test_dcgr_assigns_writer_with_shorter_queue():
     assignee, body = created[0]
     assert assignee == "jika", f"should assign Jika (empty queue), got {assignee}"
     assert "jika_prepare.py" in body and "jika_submit.py" in body and "miles_" not in body, body
-    assert sidecar["vai_viet"] == "jika"
+    assert sidecar["writer_role"] == "jika"
 
 
 def test_unknown_brand_skips_queue_lookup():

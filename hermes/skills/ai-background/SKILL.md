@@ -79,7 +79,7 @@ venv/bin/python tao_nen_ai.py \
 Cờ này gọi `send_telegram.py` ngay sau khi sinh xong, gửi PNG vào đúng topic
 của bạn (tra `state/topics.json`: `gin`=289, `itachi`=291) và **ghi lại nhật
 ký** ở `state/telegram_sent/<vai>.jsonl` — mỗi dòng là `{message_id, files,
-mo_ta, ts}`. Nhật ký này là chỗ bạn tra lại khi cần, đừng chỉ dựa trí nhớ hội
+description, ts}`. Nhật ký này là chỗ bạn tra lại khi cần, đừng chỉ dựa trí nhớ hội
 thoại (phiên có thể bị tóm tắt/rớt ngữ cảnh qua nhiều lượt).
 
 Sinh **nhiều ảnh cùng lúc** (vài phương án, hoặc nhiều slide) thì gọi
@@ -103,7 +103,7 @@ làm lại đậm màu hơn". Việc của bạn:
    ```bash
    venv/bin/python send_telegram.py --vai itachi --list
    ```
-   In ra vài lần gửi gần nhất (mặc định 5) kèm `mo_ta` và đường dẫn file gốc
+   In ra vài lần gửi gần nhất (mặc định 5) kèm `description` và đường dẫn file gốc
    — đối chiếu với text Ông Chủ vừa reply để xác định ĐÚNG ảnh nào đang được
    nhắc tới. Mô tả không khớp gì trong danh sách thì hỏi lại cho rõ, đừng đoán
    đại — sửa nhầm ảnh còn tốn công hơn hỏi lại một câu.
@@ -117,7 +117,7 @@ làm lại đậm màu hơn". Việc của bạn:
    dừng lượt; Ông Chủ trả lời bằng tin nhắn mới, bạn xử lý tiếp ở lượt sau.
 2. **Sinh lại bằng `tao_nen_ai.py`** với prompt đã chỉnh theo đúng yêu cầu
    (giữ nguyên phần Ông Chủ không yêu cầu đổi, chỉ sửa đúng phần được nhắc —
-   đọc lại `mo_ta`/prompt cũ trong nhật ký để biết cái gì đang giữ nguyên).
+   đọc lại `description`/prompt cũ trong nhật ký để biết cái gì đang giữ nguyên).
 3. **Gửi lại bằng `--gui`/`send_telegram.py` như một tin MỚI**, không sửa đè
    lên tin cũ (Telegram Bot API không cho sửa ảnh đã gửi) — ghi rõ trong
    `--mo-ta` đây là bản sửa của ảnh nào, để lần reply sau còn tra lại được.
