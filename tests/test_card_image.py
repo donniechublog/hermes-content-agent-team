@@ -158,7 +158,7 @@ def _use_card(tmp, ten_anh, title, **k):
     src = Path(tmp) / "source.png"
     _image_real(*ten_anh, sang=k.pop("sang", False)).save(src)
     out = Path(tmp) / "the.png"
-    card.build(str(src), title, str(out), kieu="tran", ratio="4:5",
+    card.build(str(src), title, str(out), kieu="full_bleed", ratio="4:5",
                bo_qua_anh=True, **k)
     return Image.open(out).convert("RGB")
 

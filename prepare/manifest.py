@@ -47,7 +47,7 @@ def describe_ranking_image(m: dict) -> str:
 
 
 def ranking_brief_line(m: dict, khoa: str, vai: str) -> str:
-    """Dong 🏁 trong brief: `khoa` la "anh" (hero) hay "bìa" (carousel), `vai` la
+    """Dong 🏁 trong brief: `khoa` la "" (hero) hay "bìa " (carousel), `vai` la
     ten file nop chan (ethan_submit / dre_submit)."""
     import ranking
     xh_ = m.get("ranking") or {}
@@ -67,7 +67,7 @@ def ranking_brief_line(m: dict, khoa: str, vai: str) -> str:
             them = (f" Engine còn chụp được {m['ranking_count'] - 1} bảng KHÁC cùng model này "
                     "(mã \"XH2\"... trong danh sách hình thật dưới, đo năng lực khác — vd tạo ảnh "
                     "vs chỉnh sửa ảnh) — nên dùng thêm, không chỉ dừng ở XH.")
-        return (f"🏁 TIN XẾP HẠNG → {khoa}\"anh\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về "
+        return (f"🏁 TIN XẾP HẠNG → {khoa}\"image\": \"XH\" là BẮT BUỘC (luật Ông Chủ 06/09: nói về "
                 f"ranking phải là bảng/chart xếp hạng, khoanh đúng model). {vai} chặn ảnh khác. "
                 + describe_ranking_image(m) + "." + them)
     # Khong co ma XH: KHONG duoc bao "bat buoc dung XH" nua — truoc 06/09/2026

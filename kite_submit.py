@@ -9,6 +9,8 @@ kind, ma hinh that -> tep (chi hinh la chart >= 800px), caption khi co image,
 theme/hero hop le va (lam lai) phai khac lan truoc, do dai chu vuot muc thi
 canh bao.
 
+Khoa spec English tu LOW-248 (role_spec.py); spec cu doc qua role_spec.kite_spec.
+
 Dung:
     venv/bin/python kite_submit.py <draft_id>
     venv/bin/python kite_submit.py <draft_id> --khong-gui --out /tmp/k/k.png   # thu
@@ -29,6 +31,7 @@ import image_rules_kite                                       # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import state_paths                                            # noqa: E402
 import render_edu                                            # noqa: E402
+import role_spec                                             # noqa: E402
 
 DRAFTS = cb.DRAFTS
 # MOT bang duy nhat, o renderer (doi 06/09/2026 dot 2). Ban chep o day truoc
@@ -120,7 +123,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 loi.append(f"{nhan}: khong mo duoc anh ({type(e).__name__})")
 
-            # Mat nguoi (LOW-186, 16/09/2026): Kite gio CO truong `nhan_vat`
+            # Mat nguoi (LOW-186, 16/09/2026): Kite gio CO truong `subject`
 
             # trong slide, giong Dre/Ethan — khai duoc thi chi CANH BAO (nguoi
 
@@ -130,7 +133,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # buoc chuan bi nen ung vien nay phai doi hoi giong het Dre/Ethan.
 
-            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["original_path"], sl.get("nhan_vat"))
+            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["original_path"], sl.get("subject"))
 
             loi += l
 
@@ -424,6 +427,7 @@ def main() -> int:
     role.set_active_role("kite")
 
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "kite_prepare.py", "kite_submit.py")
+    spec = role_spec.kite_spec(spec)         # LOW-248: spec viet truoc deploy con ten cu
     spec_r, loi, canh = resolve_spec(spec, m, wd)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
     if da_dung:

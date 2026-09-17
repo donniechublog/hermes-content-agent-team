@@ -246,7 +246,7 @@ def test_fallback_card_no_ok_force_make_image_main():
             "faces": 0, "landscape": False, "short_side": 1200, "w": 1200, "h": 1200,
             "bottom_left_brightness": 50, "uses": ["nền hero"], "notes": [], "domain": "x.com",
             "source": "x", "relevant": True}]
-    spec = {"anh": "A1", "kieu": "quote", "hook": "Mô hình mới đạt điểm cao nhất bảng",
+    spec = {"image": "A1", "card_style": "quote", "hook": "Mô hình mới đạt điểm cao nhất bảng",
             "tagline": "MODEL", "attrib": "via X"}
     for kieu, phai_chan in (("table", True), ("list", True), ("card", False), ("chup", False)):
         m = {"images": anh, "is_ranking_story": True, "article_text": "", "material": {}, "draft_id": "d1",

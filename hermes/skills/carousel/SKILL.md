@@ -17,10 +17,10 @@ metadata:
 Ethan nén cả tin vào **một thẻ**; Dre trải tin ra **5–10 slide** 4:5, mỗi slide
 một ý, người đọc lướt tới đâu hiểu tới đó, slide cuối để lại một câu hỏi hay
 một mốc. Nền không cố định một màu: nền phục vụ ảnh, miễn ảnh và chữ nổi; đen
-và trắng là hai màu ưu tiên. Spec có `"nen": "toi"` (màn tối, chữ trắng, mặc
-định) hoặc `"sang"` (màn sáng, chữ đen), cả bộ một nền: chọn `sang` khi đa số
+và trắng là hai màu ưu tiên. Spec có `"background_tone": "dark"` (màn tối, chữ trắng, mặc
+định) hoặc `"light"` (màn sáng, chữ đen), cả bộ một nền: chọn `light` khi đa số
 ảnh sáng hoặc nền trắng (screenshot, chart nền trắng, sản phẩm trên trắng),
-`toi` khi ảnh tối hoặc lẫn lộn.
+`dark` khi ảnh tối hoặc lẫn lộn.
 
 ## Luồng
 
@@ -43,21 +43,21 @@ brief xong phải tự đếm trước khi viết spec**:
 - Ảnh KHÁI NIỆM (cờ, bản đồ, ảnh minh họa theo từ khóa): brief ghi rõ "chỉ làm
   bìa, KHÔNG vào slide thân". Đừng tính vào số slide thân.
 - Ảnh có mặt người: brief in sẵn cột "mặt người" — có tên (từ chú thích nguồn
-  hoặc nhãn thương hiệu) thì khai đúng `nhan_vat` đó là qua cổng, kể cả khi bài
+  hoặc nhãn thương hiệu) thì khai đúng `subject` đó là qua cổng, kể cả khi bài
   không nhắc tên. "KHÔNG rõ ai" thì chỉ dùng được nếu bài nêu đúng tên người
   đó; tên không có ở cả bài lẫn chú thích là bịa. Coi như không dùng được.
-- Hai ảnh ngang 3:2 `ghep` với nhau (ra 0.75) là **bình thường** — cổng chỉ
+- Hai ảnh ngang 3:2 `stack` với nhau (ra 0.75) là **bình thường** — cổng chỉ
   cảnh báo mép bị cắt, không chặn. Ảnh có tiêu đề sát mép trên thì đặt làm ảnh
   thứ hai.
-- Ảnh NGANG chỉ có hai đường: `ghep` với ảnh ngang **cùng tone**, hoặc
-  `cat_ngang` khi là người/sản phẩm KHÔNG có chữ. Ảnh ngang nào cao dưới 700px
-  (`schema.HEIGHT_MIN_CROP_LANDSCAPE`) thì `cat_ngang` bị chặn luôn vì cắt 4:5
-  rồi phóng lên sẽ nhoè; chỉ còn `ghep` hoặc bỏ.
+- Ảnh NGANG chỉ có hai đường: `stack` với ảnh ngang **cùng tone**, hoặc
+  `landscape_crop` khi là người/sản phẩm KHÔNG có chữ. Ảnh ngang nào cao dưới 700px
+  (`schema.HEIGHT_MIN_CROP_LANDSCAPE`) thì `landscape_crop` bị chặn luôn vì cắt 4:5
+  rồi phóng lên sẽ nhoè; chỉ còn `stack` hoặc bỏ.
 - Cặp ghép phải cùng tone: kiểm bằng `image_rules.tone_mismatch` trước, đừng
   đoán theo mã; hai ảnh cùng nền tối vẫn có thể lệch (nền xanh đậm vs nền xám).
 
 Số slide thân khả dụng = số mã còn lại SAU khi trừ ảnh khái niệm, ảnh mặt không
-rõ ai, ảnh ❌, và sau khi gộp các cặp ghép. Thấp hơn `toi_thieu - 1` thì dừng:
+rõ ai, ảnh ❌, và sau khi gộp các cặp ghép. Thấp hơn `min_images - 1` thì dừng:
 `kanban_comment` bảng mã nào bị loại vì sao, `kanban_block(kind="needs_input")`,
 đừng viết spec rồi để `dre_submit.py` chặn hai lần.
 

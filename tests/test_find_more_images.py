@@ -123,7 +123,7 @@ def test_body_task_report_role_from_find_before_when_block():
 def test_brief_dre_point_dark_command_find_extra_and_say_clear_image_capture_has_variable_understand():
     src = (ROOT / "dre_prepare.py").read_text(encoding="utf-8")
     assert "find_more_images.py" in src
-    assert "biển hiệu" in src and "cat_ngang" in src
+    assert "biển hiệu" in src and "landscape_crop" in src
 
 
 def test_openverse_only_take_image_cc_enough_large():

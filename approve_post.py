@@ -30,6 +30,7 @@ import schema                                               # noqa: E402
 import state_paths                                          # noqa: E402
 import skill_lesson_approve                                  # noqa: E402
 import role                                                  # noqa: E402
+import role_spec                                             # noqa: E402
 
 from approve_base import (  # noqa: E402
     API, DRAFTS, BOSS_IDS, ROOT, STATE_DIR, _extract_line, _run_background, _write_json, _send_text, _lock_of, _load_json, _reply_real, call, call_upload, is_boss, log,
@@ -466,18 +467,19 @@ def _extract_reason_redo(text):
 
 def _code_of_slide(spec: dict, n: int) -> list:
     """Ma anh dang dung o slide N (1 = bia) theo spec.json HIEN TAI trong thu muc state prepare
-    (ban Ong Chu vua thay, truoc khi task lam lai ghi de)."""
+    (ban Ong Chu vua thay, truoc khi task lam lai ghi de). `spec` da qua
+    role_spec.dre_spec (ten moi, LOW-248)."""
     if n == 1:
-        ma = (spec.get("cover") or {}).get("anh")
+        ma = (spec.get("cover") or {}).get("image")
         return [ma] if ma else []
     s_list = spec.get("slides") or []
     idx = n - 2
     if idx < 0 or idx >= len(s_list):
         return []
     muc = s_list[idx]
-    if muc.get("ghep"):
-        return list(muc["ghep"])
-    return [muc["anh"]] if muc.get("anh") else []
+    if muc.get("stack"):
+        return list(muc["stack"])
+    return [muc["image"]] if muc.get("image") else []
 
 
 def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
@@ -494,7 +496,7 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
     if not sp.exists() or not so_slide:
         return
     try:
-        spec = json.loads(sp.read_text(encoding="utf-8"))
+        spec = role_spec.dre_spec(json.loads(sp.read_text(encoding="utf-8")))   # LOW-248: spec cu con ten cu
     except (OSError, ValueError):
         return
     ip = DRAFTS / (draft_id + ".img.json")

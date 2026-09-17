@@ -8,20 +8,8 @@
    "key:nhan_xet": 1,
    "key:thay_doi": 1
   },
-  "approve_post.py": {
-   "key:anh": 3,
-   "key:ghep": 2
-  },
   "approve_service.py": {
    "key:tg_card_message_id": 1
-  },
-  "carousel.py": {
-   "key:mo": 3,
-   "key:nen": 1,
-   "key:nhan_vat": 1,
-   "key:sang": 1,
-   "key:tam_co": 1,
-   "key:toi": 1
   },
   "deck.py": {
    "key:bg_anh": 1,
@@ -29,33 +17,6 @@
    "key:ghi_chu": 1,
    "key:lo": 1,
    "key:nhan": 1
-  },
-  "dre_prepare.py": {
-   "key:anh": 5,
-   "key:cat_ngang": 1,
-   "key:ghep": 1,
-   "key:nen": 1,
-   "key:nhan_vat": 1,
-   "key:tam_co": 1
-  },
-  "dre_submit.py": {
-   "key:anh": 5,
-   "key:cat_ngang": 2,
-   "key:ghep": 2,
-   "key:nen": 2,
-   "key:nhan_vat": 1,
-   "key:tam": 1,
-   "key:tam_co": 4
-  },
-  "ethan_prepare.py": {
-   "key:anh": 1,
-   "key:kieu": 1,
-   "key:nhan_vat": 1
-  },
-  "ethan_submit.py": {
-   "key:anh": 8,
-   "key:kieu": 7,
-   "key:nhan_vat": 3
   },
   "gin_submit.py": {
    "key:ep_phang": 1,
@@ -90,12 +51,6 @@
    "key:nguon": 1,
    "key:tai_cho": 1,
    "key:vung": 1
-  },
-  "kite_prepare.py": {
-   "key:nhan": 1
-  },
-  "kite_submit.py": {
-   "key:nhan_vat": 1
   },
   "migrate_9router_journal.py": {
    "key:bai": 1,
@@ -252,8 +207,20 @@
    "key:HONG": 1,
    "key:MOI": 1
   },
-  "render_edu.py": {
-   "key:nhan": 2
+  "role_spec.py": {
+   "key:anh": 2,
+   "key:cat_ngang": 1,
+   "key:ghep": 1,
+   "key:kieu": 1,
+   "key:nen": 1,
+   "key:nhan": 1,
+   "key:nhan_vat": 3,
+   "key:sang": 1,
+   "key:tam": 1,
+   "key:tam_co": 1,
+   "key:thuong": 1,
+   "key:toi": 1,
+   "key:tran": 1
   },
   "scan_models.py": {
    "key:khac": 1,

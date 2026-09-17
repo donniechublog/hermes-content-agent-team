@@ -101,7 +101,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
             # la qua cong, ke ca khi chu bai khong nhac ten.
             ten = image_rules_dre.subject_names(a)
             dong += ((" | mặt người: tên theo vision/chú thích: " + " / ".join(f"\"{x}\"" for x in ten[:3])
-                      + " — khai \"nhan_vat\" đúng tên NGƯỜI trong ảnh (không khai địa danh/cụm chữ)")
+                      + " — khai \"subject\" đúng tên NGƯỜI trong ảnh (không khai địa danh/cụm chữ)")
                      if ten else " | mặt người KHÔNG rõ ai: chỉ dùng nếu bài nêu đúng tên người này")
         if a["notes"]:
             dong += " | " + "; ".join(a["notes"])
@@ -114,30 +114,30 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     import story_type
     L += story_type.line_brief(m)
     L.append("Ảnh CHỤP (trụ sở, nhà máy, người, sản phẩm) có biển hiệu, số nhà, logo trên tường "
-             "VẪN LÀ ẢNH CHỤP — cắt dọc (cat_ngang) được. \"Có chữ\" cấm crop chỉ là chart, bảng, "
+             "VẪN LÀ ẢNH CHỤP — cắt dọc (landscape_crop) được. \"Có chữ\" cấm crop chỉ là chart, bảng, "
              "slide, banner, ảnh chụp màn hình có tiêu đề.")
     L.append("Mỗi ảnh đã được NHÌN (cột \"ảnh là\"). Ảnh ❌ tuyệt đối không dùng dù nhãn gì. "
              f"Bảng thu nhỏ: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE}")
     L.append("")
     L.append(f"## Viết spec vào: {m['workdir']}/spec.json")
     khung = {
-        "tam_co": "flagship" if m["flagship"] else "thuong",
-        "nen": "<toi | sang — cả bộ một nền; toi: màn tối chữ trắng, sang: màn sáng chữ đen; chọn theo ảnh, mặc định toi>",
-        "cover": {"anh": (m.get("cover_suggestions") or ["A?"])[0], "hook": "<một câu giật, ≤ 90 ký tự, có dấu>",
+        "tier": "flagship" if m["flagship"] else "regular",
+        "background_tone": "<dark | light — cả bộ một nền; dark: màn tối chữ trắng, light: màn sáng chữ đen; chọn theo ảnh, mặc định dark>",
+        "cover": {"image": (m.get("cover_suggestions") or ["A?"])[0], "hook": "<một câu giật, ≤ 90 ký tự, có dấu>",
                   "category": "<" + " | ".join(carousel.CATEGORY_CALL_Y) + " | EARNINGS | M&A>",
                   "label": "<TÊN MODEL / HÃNG, VIẾT HOA>"},
         "slides": [
-            {"anh": "A?", "text": "<đoạn 1.\\n\\nđoạn 2 — tổng ≤ 240 ký tự>"},
-            {"anh": "A?", "quote": "<câu đắt nhất, DỊCH tiếng Việt, ≤ 150 ký tự>", "attrib": "<'via <tên báo>', hoặc tên người nói — không 'đọc/xem bài', không đuôi tên miền>"},
-            {"ghep": ["A?", "A?"], "text": "<hai ảnh ngang cùng tone xếp dọc>"},
-            {"anh": "A?", "nhan_vat": "<tên người trong bài>", "quote": "…", "attrib": "…"},
-            {"anh": "A?", "cat_ngang": True, "text": "<chỉ cho ảnh NGANG là người/sản phẩm không chữ>"},
+            {"image": "A?", "text": "<đoạn 1.\\n\\nđoạn 2 — tổng ≤ 240 ký tự>"},
+            {"image": "A?", "quote": "<câu đắt nhất, DỊCH tiếng Việt, ≤ 150 ký tự>", "attrib": "<'via <tên báo>', hoặc tên người nói — không 'đọc/xem bài', không đuôi tên miền>"},
+            {"stack": ["A?", "A?"], "text": "<hai ảnh ngang cùng tone xếp dọc>"},
+            {"image": "A?", "subject": "<tên người trong bài>", "quote": "…", "attrib": "…"},
+            {"image": "A?", "landscape_crop": True, "text": "<chỉ cho ảnh NGANG là người/sản phẩm không chữ>"},
         ],
     }
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
     L.append("Luật điền: mỗi slide MỘT ảnh, MỘT ý; `text` HOẶC `quote`+`attrib`; mỗi mã ảnh dùng đúng "
-             "một lần; chart chỉ ở slide thân (script tự dán full bề ngang); ảnh NGANG phải `ghep` "
-             "hoặc `cat_ngang`; ảnh có mặt phải có `nhan_vat`; `nen` sang khi đa số ảnh sáng/nền trắng (ảnh nổi hơn trên màn sáng), toi khi ảnh tối hoặc lẫn lộn. Tiếng Việt có dấu, không em-dash, "
+             "một lần; chart chỉ ở slide thân (script tự dán full bề ngang); ảnh NGANG phải `stack` "
+             "hoặc `landscape_crop`; ảnh có mặt phải có `subject`; `background_tone` light khi đa số ảnh sáng/nền trắng (ảnh nổi hơn trên màn sáng), dark khi ảnh tối hoặc lẫn lộn. Tiếng Việt có dấu, không em-dash, "
              "câu quote phải DỊCH. `attrib` KHÔNG \"đọc bài\"/\"xem bài\" (thừa, slide chính là "
              "chỗ đọc rồi), KHÔNG đuôi tên miền (.com/.net/...) — nền tảng quét thành liên kết, "
              "giảm hiển thị cả bài; chỉ \"via <tên báo>\" hoặc tên người nói. Ảnh ⚠️ RỐI (chữ in "

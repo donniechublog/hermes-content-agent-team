@@ -690,7 +690,7 @@ def test_cung_mot_hinh_hai_slide_bi_chan():
 
 def test_mat_nguoi_khong_khai_nhan_vat_thi_chan():
     """LOW-186 (16/09/2026): Kite gio doi hoi giong het Dre/Ethan — anh co mat
-    nguoi ma khong khai `nhan_vat` trong slide thi CHAN, khong con chi canh bao
+    nguoi ma khong khai `subject` trong slide thi CHAN, khong con chi canh bao
     (truoc do Kite khong co truong nay nen luon cho qua kem canh bao).
 
     Goi thang `kite_submit.resolve_spec`, KHONG qua `_chay`/`_khong_soi_mat`:
@@ -709,7 +709,7 @@ def test_mat_nguoi_khong_khai_nhan_vat_thi_chan():
 
 
 def test_mat_nguoi_khai_nhan_vat_thi_qua():
-    """Khai đúng `nhan_vat` (đã xác minh qua nguồn) thì chỉ còn cảnh báo tự soi
+    """Khai đúng `subject` (đã xác minh qua nguồn) thì chỉ còn cảnh báo tự soi
     lại, không chặn — khớp hành vi `check_unnamed_face` của Dre/Ethan."""
     from unittest import mock
     import image_rules_kite
@@ -717,7 +717,7 @@ def test_mat_nguoi_khai_nhan_vat_thi_qua():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         sl, m = _du_bia(wd)
-        sl[0]["nhan_vat"] = "Marc Benioff"
+        sl[0]["subject"] = "Marc Benioff"
         with mock.patch.object(image_rules_kite, "count_faces", return_value=1):
             _r, loi, _c = kite_submit.resolve_spec({"slides": sl}, m, Path(wd))
         assert not _co(loi, "mat nguoi"), loi

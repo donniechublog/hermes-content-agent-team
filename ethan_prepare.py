@@ -4,13 +4,15 @@
 Phan co hoc (nguon, anh, do, cat, tu lieu) nam o image_prepare.py — dung chung
 voi Dre. Tep nay chi in ban chuan bi theo cach nhin cua HERO CARD: mot tam anh
 lam nen, mot cau hook de len (kieu `quote`, mac dinh) hoac mot tieu de + kicker
-(kieu `tran`). Nhan "dung duoc o dau" khac Dre vi card.py khoa kho 4:5:
+(kieu `full_bleed`). Nhan "dung duoc o dau" khac Dre vi card.py khoa kho 4:5:
 
   - anh chup ti le <= 1.6 (card.kiem_anh_thap: trai full be ngang 1200 phai cao
     >= 750px): dung mot minh duoc;
   - anh NGANG hon 1.6, hoac CHART/bang: card.py CHAN mot minh -> phai ghep doc
-    voi mot anh ngang cung tone (`anh2`), khong co cap thi khong dung;
-  - co mat nguoi: phai khai `nhan_vat` (nguoi duoc nhac trong bai).
+    voi mot anh ngang cung tone (`image2`), khong co cap thi khong dung;
+  - co mat nguoi: phai khai `subject` (nguoi duoc nhac trong bai).
+
+Khoa/gia tri spec English tu LOW-248 (role_spec.py, docs/tu_dien_ten/designer_spec_keys_v2.json).
 
 Dung:
     venv/bin/python ethan_prepare.py <draft_id>            # in brief
@@ -47,18 +49,18 @@ def label_ethan(a: dict) -> tuple:
                     f"(bảng {xh.get('site')} · {xh.get('board')}, {xh.get('model')}"
                     + (f" #{xh.get('rank')}" if xh.get('rank') else "") + ", đã khoanh hàng model)")
         if r > RATIO_HERO_MAX:
-            ghi.append(f"bảng quá ngang ({r}): thêm \"anh2\" ngang cùng tone để ghép dọc")
+            ghi.append(f"bảng quá ngang ({r}): thêm \"image2\" ngang cùng tone để ghép dọc")
         return dung, ghi
     if a["kind"] == "chart":
-        dung.append("CHỈ ghép dọc (anh2) với một ảnh ngang cùng tone, chart một mình bị chặn")
+        dung.append("CHỈ ghép dọc (image2) với một ảnh ngang cùng tone, chart một mình bị chặn")
     elif r > RATIO_HERO_MAX:
-        dung.append("ảnh NGANG quá 1.6: CHỈ ghép dọc (anh2) với ảnh ngang cùng tone")
+        dung.append("ảnh NGANG quá 1.6: CHỈ ghép dọc (image2) với ảnh ngang cùng tone")
     else:
         dung.append("nền hero (một mình)")
         if a.get("bottom_left_brightness", 0) >= 150:
             ghi.append("nửa dưới sáng, câu hook đè lên hơi nhạt")
     if a.get("faces"):
-        ghi.append(f"CÓ {a['faces']} MẶT NGƯỜI → chỉ dùng khi khai \"nhan_vat\": \"<tên người trong bài>\"")
+        ghi.append(f"CÓ {a['faces']} MẶT NGƯỜI → chỉ dùng khi khai \"subject\": \"<tên người trong bài>\"")
     if a.get("short_side", 0) < 1000:
         ghi.append(f"cạnh ngắn {a['short_side']}px, phóng lên hơi mềm")
     if a.get("commons"):
@@ -67,7 +69,7 @@ def label_ethan(a: dict) -> tuple:
         # Nhãn theo ĐÚNG LOẠI tư liệu (chân dung có tên / thẻ logo / bảng xếp
         # hạng / ảnh cơ sở), một bản dùng chung với brief của Dre. Bản cũ ở đây
         # dán một câu "trụ sở/campus/biển hiệu" cho MỌI loại, nên chân dung
-        # founder tới tay Ethan không có cái tên để khai `nhan_vat` — mà cổng
+        # founder tới tay Ethan không có cái tên để khai `subject` — mà cổng
         # `check_subject_named` chặn mặt người không khai tên, tức Ethan buộc phải bỏ
         # ảnh founder (Ông Chủ 10/09/2026).
         import image_brand
@@ -137,24 +139,24 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     import story_type
     L += story_type.line_brief(m)
     if cap:
-        L.append("Cặp ghép dọc được (cùng tone, dùng \"anh\"+\"anh2\"): " + ", ".join("+".join(c) for c in cap))
+        L.append("Cặp ghép dọc được (cùng tone, dùng \"image\"+\"image2\"): " + ", ".join("+".join(c) for c in cap))
     L.append(f"Nhìn tất cả ảnh trong MỘT tấm: {m['workdir']}/{state_paths.CONTACT_SHEET_FILE} (mở tối đa một lần, khi thật cần).")
     L += ["", f"## Viết spec vào: {m['workdir']}/spec.json"]
     khung = {
-        "anh": (goi_y[0][2] if goi_y else "A?"),
-        "kieu": "quote",
+        "image": (goi_y[0][2] if goi_y else "A?"),
+        "card_style": "quote",
         "hook": "<một câu ĐẬP VÀO MẮT trong 3 giây, có dấu, ≤ 120 ký tự: tiêu đề/góc giật có CON SỐ, hoặc lời có thật>",
         "tagline": "<" + " | ".join(TAGLINE_CALL_Y) + ">",
         "attrib": "<'via <báo>' nếu hook là câu bạn soạn; 'Phát biểu của <tên>, <chức/hãng>' CHỈ khi là lời có thật>",
-        "anh2": "<mã ảnh ngang thứ hai để ghép dọc, hoặc bỏ trường này>",
-        "nhan_vat": "<tên người trong ảnh nếu ảnh có mặt, hoặc bỏ trường này>",
+        "image2": "<mã ảnh ngang thứ hai để ghép dọc, hoặc bỏ trường này>",
+        "subject": "<tên người trong ảnh nếu ảnh có mặt, hoặc bỏ trường này>",
     }
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
-    L.append("Kiểu \"tran\" (đổi không khí, hiếm dùng): {\"anh\": \"A?\", \"kieu\": \"tran\", \"title\": \"<MỘT câu "
+    L.append("Kiểu \"full_bleed\" (đổi không khí, hiếm dùng): {\"image\": \"A?\", \"card_style\": \"full_bleed\", \"title\": \"<MỘT câu "
              "hoàn chỉnh bao quát tin, có số nếu tin có số>\", \"kicker\": \"<≤ 2 từ tiếng Anh: BREAKING, MODEL "
              "RELEASE, FUNDING...>\"}")
     L.append("Luật: hook là MỘT câu, tiếng Việt có dấu, không em-dash, không gán câu tự soạn thành lời một người; "
-             "tên hãng trong câu tự tô màu. Chart/ảnh ngang >1.6 phải có anh2. Ảnh có mặt phải có nhan_vat.")
+             "tên hãng trong câu tự tô màu. Chart/ảnh ngang >1.6 phải có image2. Ảnh có mặt phải có subject.")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python ethan_submit.py {m['draft_id']}",
           "Script tự ghép/cắt, chạy mọi cổng chặn của card.py, dựng thẻ, gửi lên topic kèm nút duyệt, ghi bàn "

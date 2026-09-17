@@ -1,0 +1,82 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-248, con của LOW-243) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; tên đã có trong docs/tu_dien_ten được dùng lại (subject, stack, landscape_crop, background_tone dark/light). Khoá VÀ giá trị liệt kê đổi cùng ticket.",
+  "_scope": "spec.json do VAI thiết kế tự viết theo brief (Dre / Ethan / Kite) + kho sinh lại từ nó (carousel.spec.json, render_edu.spec.json, tham số card.py) + carousel.BACKGROUND (khoá = giá trị spec). Prompt/SOUL/SKILL/IMAGE_RULES/[LOI] in tên mới.",
+  "_measured": "máy chủ 17/09/2026: spec.json blog 68 + dcgr 73 — KHÔNG migrate; đọc lại qua role_spec.{dre_spec, ethan_spec, kite_spec} ngay sau khi nạp (dre_submit/ethan_submit/kite_submit main, approve_post._write_forbid_image_redo). carousel.spec.json / render_edu.spec.json sinh lại mỗi lần nộp nên không migrate.",
+  "_legacy": "role_spec.py: DRE_LEGACY_KEYS, DRE_LEGACY_ITEM_KEYS, TIER_LEGACY_VALUES, BACKGROUND_TONE_LEGACY_VALUES, ETHAN_LEGACY_KEYS, CARD_STYLE_LEGACY_VALUES, KITE_LEGACY_SLIDE_KEYS, KITE_LEGACY_BAR_KEYS. Có cả khoá cũ lẫn mới thì khoá mới thắng; thứ tự khoá giữ nguyên.",
+  "dre_spec": {
+    "_where": "state/<brand>/prepare/<draft>/spec.json của Dre — khung dre_prepare.write_brief; đọc dre_submit.resolve_spec, approve_post._code_of_slide",
+    "tam_co": "tier",
+    "nen": "background_tone"
+  },
+  "dre_spec.values": {
+    "tier": {"thuong": "regular", "flagship": "flagship"},
+    "background_tone": {"toi": "dark", "sang": "light"}
+  },
+  "dre_spec.cover|slides[]": {
+    "anh": "image",
+    "ghep": "stack",
+    "cat_ngang": "landscape_crop",
+    "tam": "crop_center",
+    "nhan_vat": "subject"
+  },
+  "carousel_spec": {
+    "_where": "state/<brand>/prepare/<draft>/carousel.spec.json — dre_submit.use ghi, carousel.py đọc (sinh lại mỗi lần nộp)",
+    "tam_co": "tier",
+    "nen": "background_tone",
+    "cover|slides[].nhan_vat": "subject"
+  },
+  "carousel.BACKGROUND": {
+    "_where": "carousel.py (bộ nhớ); khoá ngoài = giá trị background_tone; CLI --nen nhận cả toi/sang cũ",
+    "toi": "dark",
+    "sang": "light",
+    "[*].mo": "muted",
+    "const OPEN": "MUTED"
+  },
+  "ethan_spec": {
+    "_where": "state/<brand>/prepare/<draft>/spec.json của Ethan — khung ethan_prepare.write_brief; đọc ethan_submit.resolve_spec → tham số card.py",
+    "anh": "image",
+    "anh2": "image2",
+    "nhan_vat": "subject",
+    "kieu": "card_style"
+  },
+  "ethan_spec.values": {
+    "card_style": {"quote": "quote", "tran": "full_bleed"}
+  },
+  "ethan_submit.resolve_spec result": {
+    "_where": "dict trong bộ nhớ trả về từ ethan_submit.resolve_spec",
+    "kieu": "card_style",
+    "anh": "image",
+    "anh2": "image2"
+  },
+  "card.py CLI": {
+    "_where": "cờ giữ tên (--kieu, --nhan-vat); --kieu nhận quote | full_bleed | tran (cũ); card.build(kieu=...) cũng nhận tran",
+    "--kieu tran": "--kieu full_bleed"
+  },
+  "kite_spec.slides[]": {
+    "_where": "state/<brand>/prepare/<draft>/spec.json của Kite — khung kite_prepare.write_brief; đọc kite_submit.resolve_spec → render_edu.spec.json",
+    "nhan_vat": "subject"
+  },
+  "kite_spec.slides[].bars[]": {
+    "nhan": "highlight"
+  },
+  "render_edu CSS class": {
+    "_where": "render_edu.base_css + s_bars; HTML/PNG giống hệt trừ tên class",
+    ".bar-fill.nhan": ".bar-fill.highlight"
+  },
+  "_display_text_kept": [
+    "Caption Telegram `Thẻ {kiểu}: {hook}` và dòng `Dựng thẻ {kiểu} …` của ethan_submit vẫn in `quote`/`tran` (role_spec.CARD_STYLE_LABELS) — chữ cho người đọc, không phải khoá vai viết."
+  ],
+  "_not_renamed": [
+    "Cờ CLI: carousel --nen, card --kieu / --nhan-vat, crop_ratio --cat-ngang; tham số hàm card.build(kieu=, nhan_vat=), _save_crop(cat_ngang=).",
+    "Dấu crop PNG `cat_ngang=` đã đọc hai tên từ LOW-237 (image_provenance.LEGACY_CROP_TOKENS).",
+    "Hậu tố tệp tạm `<stem>.ghep.png` (carousel._stack_if_can, dre_submit.single_slide_old) — tên tệp, không phải khoá spec; để ticket đường dẫn."
+  ],
+  "_notes": [
+    "`tam` ở spec Dre là TÂM crop [cx, cy] (crop_center), không phải `tam` = tạm (temp) trong TU_DIEN_TEN_v0.",
+    "`tran` ở card là TRÀN (full-bleed), không phải trần (ceiling) — tên hàm cũ `_render_ceiling` là dịch nhầm, không đổi trong ticket này.",
+    "`mo` trong carousel.BACKGROUND là chữ phụ MỜ/nhạt (muted), không phải mở (open) — hằng OPEN dịch nhầm → MUTED.",
+    "`nhan` ở bars[] của Kite là NHẤN (cột được tô màu chính) → highlight; khác `nhan` = nhãn (label) ở chỗ khác. `highlight_y` của ranking (khoanh hàng) là khái niệm khác subsystem.",
+    "`tam_co` = tầm cỡ tin (flagship / thường) → tier, giá trị `regular`; `flagship` giữ nguyên.",
+    "`nen` spec Dre dùng lại `background_tone` + mã dark/light của manifest brand_match (LOW-227/230)."
+  ]
+}

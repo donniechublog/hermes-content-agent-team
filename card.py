@@ -3,8 +3,9 @@
 
   - `quote` (mặc định): pull-quote 4:5 — ảnh phủ kín, câu trích dẫn lớn trong
     khung hai góc ngoặc, dòng nguồn canh giữa, chip tên kênh và tagline.
-  - `tran`: ảnh full bề ngang, tiêu đề MỘT câu đè lên qua khung chữ nhật nét,
-    kicker ngắn phía trên, tên kênh canh giữa ở đáy.
+  - `full_bleed` (tràn; giá trị cũ `tran`, LOW-248): ảnh full bề ngang, tiêu
+    đề MỘT câu đè lên qua khung chữ nhật nét, kicker ngắn phía trên, tên kênh
+    canh giữa ở đáy.
 
 Bề ngang cố định 1200px; ảnh không bao giờ bị cắt bề ngang (luật IMAGE_RULES.md).
 Kiểu `dai` cũ (ảnh trên, textbox riêng dưới, nhãn category, hàng icon social,
@@ -28,6 +29,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 import image_rules_ethan
+import role_spec
 import text_bg
 
 ASSETS = Path(__file__).resolve().parent / "assets"
@@ -428,7 +430,7 @@ def _about_line(d, x, y, dong, font, mau, che_do=None, mau_du_phong=None,
     `nen_sang`: dong nay nam tren mot dai anh SANG. Khi do mau ten hang phai
     keo ve phia TOI (`_enough_dark`), khong phai sang them — dung cai loi da sua cho
     net khung quote 06/09/2026 (CYAN cua dcgr tren nen trang cho CR 1.04, tuc
-    mat chu). Chi kieu `tran` truyen co nay: no dat chu thang len anh khong man
+    mat chu). Chi kieu `full_bleed` truyen co nay: no dat chu thang len anh khong man
     toi nen dai chu co the sang; kieu the tin luon co nen toi.
     """
     khoang = d.textlength(" ", font=font)
@@ -601,11 +603,11 @@ def _block_standard_image(src, nhan_vat=""):
 
 
 def _block_chart(src):
-    """Chart di MOT MINH vao kieu `quote`/`tran` thi DUNG.
+    """Chart di MOT MINH vao kieu `quote`/`full_bleed` thi DUNG.
 
     Tieu chi o `image_rules_ethan.check_chart_standalone` — cau hoi "anh nay co dung duoc
     khong", dung chung cho moi khung dat CHU DE LEN anh phu kin. O day chi con
-    phan rieng cua card.py: kieu nao la khung do (quote/tran, xem `build`), va
+    phan rieng cua card.py: kieu nao la khung do (quote/full_bleed, xem `build`), va
     bao loi bang cach dung han."""
     da_ghep = isinstance(src, (list, tuple)) and len([q for q in src if q]) >= 2
     q = src[0] if isinstance(src, (list, tuple)) else src
@@ -672,7 +674,7 @@ def _range(nen: float) -> tuple:
 
 
 def _layer_image(canvas, src_img, H) -> int:
-    """Lop ANH cua the — dung chung cho CA HAI kieu (`quote` va `tran`).
+    """Lop ANH cua the — dung chung cho CA HAI kieu (`quote` va `full_bleed`).
 
     ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
     cover-crop lam mat tieu de cua slide/bang nguon, anh doc ra vo nghia). Nen:
@@ -680,10 +682,10 @@ def _layer_image(canvas, src_img, H) -> int:
     chu dung boi them mau", ap dung ca cho lop nen nay). Lop sac: anh nguyen ti
     le, full W, dat sat tren. Anh cao hon khung thi chi cat theo chieu doc.
 
-    Tu 07/09/2026 kieu `tran` cung di duong nay. Truoc do no co duong rieng
+    Tu 07/09/2026 kieu `full_bleed` cung di duong nay. Truoc do no co duong rieng
     (`_tran_anh`): anh thap hon the thi phan duoi la mot mang MAU NEN DAC cua bo
     nhan dien — dung cai "vung thu hai" ma IMAGE_RULES muc 7 cam, va chinh spec cua
-    kieu tran cung da ghi la phai dung nen mo. Hai duong ve cho cung mot viec la
+    kieu full_bleed cung da ghi la phai dung nen mo. Hai duong ve cho cung mot viec la
     cach mot ban sua duoc mot nua.
 
     Tra ve `nat_h` — chieu cao tu nhien cua anh o be ngang W.
@@ -1067,7 +1069,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     # trang, cua so, den san khau) thi trung binh ca dai van thien dung phe ma
     # chu van chim tai dung cho do. Do that (nen toi co mang sang doc): dai
     # mean=95 -> chon chu trang, nhung stddev=84 va nen cuc bo tai mang sang la
-    # 217 — CR 1.19, mat chu. Nhanh `tran` da di duong nay tu 07/09/2026 (xem
+    # 217 — CR 1.19, mat chu. Nhanh `full_bleed` da di duong nay tu 07/09/2026 (xem
     # dai_dong cua no); day la back-port sang kieu quote.
     dai_dong = [(TEXT_X, first_line_top + i * buoc,
                  W - TEXT_X, first_line_top + (i + 1) * buoc)
@@ -1175,9 +1177,9 @@ _RE_EXPORT = (NEGATIVE_FACE_MARK, PHRASE_FACE_MARK, MARK_FORBID)
 def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
           brand="donniechublog", bo_qua_dau=False, kieu="quote", kicker="",
           attrib="", bo_qua_anh=False, nhan_vat="", cluttered=False):
-    """Dung the `quote` (mac dinh) hoac `tran`. `src`: mot duong dan, hoac danh
+    """Dung the `quote` (mac dinh) hoac `full_bleed`. `src`: mot duong dan, hoac danh
     sach hai duong dan (ghep doc). `title` la cau trich dan (quote) hoac cau
-    tieu de (tran)."""
+    tieu de (full_bleed). `kieu` nhan ca gia tri cu `tran` (LOW-248, role_spec)."""
     # Nap bang mau TRUOC moi thu khac: cac ham ve doc BG/FG/ACCENT o pham vi
     # module, chua nap thi chung con la None.
     b = set_brand(brand)
@@ -1197,8 +1199,9 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
             "  Go lai co dau day du roi chay lai. The la thu nguoi doc nhin thay\n"
             "  dau tien, chu khong dau lam ca kenh trong nhu lam au.\n"
             "  (Neu that su la tieng Anh, chay lai voi --bo-qua-dau)")
-    if kieu not in ("quote", "tran"):
-        raise SystemExit(f"--kieu phai la quote hoac tran, nhan {kieu!r}")
+    kieu = role_spec.card_style(kieu)
+    if kieu not in role_spec.CARD_STYLES:
+        raise SystemExit(f"--kieu phai la quote hoac full_bleed, nhan {kieu!r}")
     _block_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu
     if not bo_qua_anh:
         _block_standard_image(src, nhan_vat)   # chuan anh chung: do net, mat nguoi, trung
@@ -1216,7 +1219,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     Tach khoi `build` 07/09/2026 cho doi xung voi `_render_quote`: `build`
     chi con la cong chan (tieng Viet co dau, luat anh) cong mot cho re nhanh,
     con moi kieu the mot ham ve. Truoc do `build` la 221 dong trong do 187
-    dong chi thuoc ve kieu tran — doc mot kieu phai luot qua ca kieu kia.
+    dong chi thuoc ve kieu full_bleed — doc mot kieu phai luot qua ca kieu kia.
 
     `b`: bang thuong hieu da nap (`set_brand`), can cho co chan, che do
     to ten hang va do ro cua ten kenh.
@@ -1316,7 +1319,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     cum_top, cum_bot = y, y + cao_cum
 
     # ---- KHUNG + MAU CHU (Ong Chu chot 07/09/2026) --------------------------
-    # Truoc do kieu tran doc duoc nho MOT MAN TOI dai phu ca vung chu, va chu
+    # Truoc do kieu full_bleed doc duoc nho MOT MAN TOI dai phu ca vung chu, va chu
     # luon la FG. Man toi do chinh la thu bien vung chu thanh mot mang thu hai,
     # va o anh thap thi phan duoi con la MAU NEN DAC — dung cai IMAGE_RULES muc 7
     # cam. Nay di dung duong cua kieu quote: khong man toi, chi LAM MO CUC BO
@@ -1416,7 +1419,7 @@ def main():
                    help="Anh NGANG thu hai, ghep DOC duoi --image trong cung khung "
                         "(dung khi anh chinh qua chu nhat ngang, thay vi crop mat tieu de)")
     p.add_argument("--title", required=True,
-                   help="Cau trich dan (--kieu quote) hoac cau tieu de tron ven (--kieu tran)")
+                   help="Cau trich dan (--kieu quote) hoac cau tieu de tron ven (--kieu full_bleed)")
     p.add_argument("--handle", default=None,
                    help="Ghi de ten kenh; mac dinh lay theo --brand")
     p.add_argument("--nhan-vat", default="",
@@ -1435,12 +1438,13 @@ def main():
     p.add_argument("--tagline", default="daily AI update",
                    help="Chip tagline o goc duoi-trai khung quote (chip category)")
     p.add_argument("--kicker", default="",
-                   help="Nhan ngan phia tren tieu de, CHI co o --kieu tran. "
+                   help="Nhan ngan phia tren tieu de, CHI co o --kieu full_bleed. "
                         "Vi du: BREAKING, MODEL RELEASE, AGENT, FUNDING")
-    p.add_argument("--kieu", default="quote", choices=["quote", "tran"],
+    p.add_argument("--kieu", default="quote",
+                   choices=list(role_spec.CARD_STYLES) + list(role_spec.CARD_STYLE_LEGACY_VALUES),
                    help="quote: the trich dan — cau noi lon trong ngoac kep, co dong "
                         "nguon o duoi (--title la cau, --attrib la nguon). "
-                        "tran: anh phu kin the, tieu de de len qua man toi.")
+                        "full_bleed (cu: tran): anh phu kin the, tieu de de len qua man toi.")
     p.add_argument("--attrib", default="",
                    help="Dong nguon cho --kieu quote, vi du: "
                         "\"Doc bai 'Ten bai' - Tac gia\"")

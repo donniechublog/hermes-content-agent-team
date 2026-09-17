@@ -29,7 +29,7 @@ các bảng xếp hạng của model... có thiếu tư liệu đâu?"*):
 
   1. 🏢 **cơ sở**   — trụ sở/campus: tìm tên tệp Commons + `P18` của Wikidata.
   2. 👤 **chân dung** — founder/CEO (`P112`/`P169` -> `P18` của họ). Đi KÈM TÊN,
-     nên khai được `nhan_vat` — đúng ngoại lệ của IMAGE_RULES §6.
+     nên khai được `subject` — đúng ngoại lệ của IMAGE_RULES §6.
   3. 📊 **bảng xếp hạng** — `prepare.fallback_rounds._ranking_context_edge` mượn `ranking.py`
      chụp bảng có model của hãng. Chỉ nhận ảnh chụp thật, không nhận thẻ dự phòng.
   4. 🔖 **thẻ logo** — logo chính thức (`P154`) đặt trên nền trơn. Đường CUỐI.
@@ -589,7 +589,7 @@ def _measure_bright_logo(px) -> float:
 
 def image_wikidata(hang, wd=None) -> list:
     """Ứng viên từ hồ sơ Wikidata: ảnh công ty (P18) -> người sáng lập/CEO (P18
-    của họ, KÈM TÊN để khai `nhan_vat`) -> logo (P154, dựng thành thẻ).
+    của họ, KÈM TÊN để khai `subject`) -> logo (P154, dựng thành thẻ).
 
     Ảnh công ty của Wikidata với tới thứ mà tìm theo tên tệp không với được:
     trụ sở OpenAI trên Commons tên là "Pioneer Building, San Francisco" — không
@@ -672,7 +672,7 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
     từ điển — xem `NHIEU`), nhưng TÊN NGƯỜI ĐẦY ĐỦ hiếm khi trùng nghĩa khác;
     dùng lại đúng `_tu_dac_trung`/`_has_phrase` đã có cho tên hãng: các từ của tên
     phải nằm LIỀN NHAU, đúng thứ tự, theo biên giới từ. Vẫn cùng cổng IMAGE_RULES §6 với chân
-    dung (khai `nhan_vat`) — chỉ khác đủ ngang để không teo khi lên bìa."""
+    dung (khai `subject`) — chỉ khác đủ ngang để không teo khi lên bìa."""
     import image_concept
     pages = _ask_commons(f'"{ten}"')
     if pages is None:
@@ -691,7 +691,7 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
         # `_has_phrase` chu KHONG `all(_has_word(...))` (12/09/2026): ban long chi doi
         # MOI tu co mat dau do nen "Dario Amodei" khop ca "dario rossi meets luca
         # amodei in rome" — anh HAI NGUOI KHAC, ma caption lai khai
-        # `nhan_vat: "Dario Amodei"`, tuc bia mat nguoi (IMAGE_RULES §0/§6). Cung
+        # `subject: "Dario Amodei"`, tuc bia mat nguoi (IMAGE_RULES §0/§6). Cung
         # lop loi ma `filter_commons` vua duoc siet o cung ngay ("Hugging Face" khop
         # "Rathlin hugging the cliff face"); ban va do khong lan sang day.
         if image_concept.NAME_TYPE.search(thap) or not _has_phrase(dac_trung, thap):
@@ -879,19 +879,19 @@ def label_by_type(th: dict) -> str:
     Tách khỏi `label_brand` 10/09/2026 để brief nào cũng dùng đúng một bản:
     `ethan_prepare.label_ethan` dựng lại `notes` từ đầu nên tự viết một câu
     "trụ sở/campus/biển hiệu" chung cho MỌI loại — một tấm chân dung founder tới
-    tay Ethan mất luôn cái TÊN để khai `nhan_vat`, mà `submit_common.check_subject_named`
+    tay Ethan mất luôn cái TÊN để khai `subject`, mà `submit_common.check_subject_named`
     chặn ảnh có mặt người không khai tên. Tức Ethan buộc phải bỏ ảnh founder,
     đúng cái Ông Chủ hỏi ("task này thì ko chịu dùng hình của Founder")."""
     hang, loai = th.get("company", "?"), th.get("kind", "photo")
     if loai == "person":
         ai, vai = th.get("person", "?"), th.get("person_role", "lãnh đạo")
         return (f"👤 CHÂN DUNG {vai.upper()} — {ai}, {vai} {hang} (Wikidata/Commons). "
-                f"Chỉ dùng khi BÀI CÓ NHẮC {ai}, và phải khai \"nhan_vat\": \"{ai}\" "
+                f"Chỉ dùng khi BÀI CÓ NHẮC {ai}, và phải khai \"subject\": \"{ai}\" "
                 "y hệt. Bài không nhắc tên người này thì bỏ (IMAGE_RULES §6).")
     if loai == "logo":
         return (f"🔖 THẺ LOGO {hang} — logo chính thức đặt trên nền trơn, dồn lên "
                 f"nửa trên để hook đè nửa dưới. Nền {manifest_values.tone_label(th.get('background_tone', 'dark'))} → khai "
-                f"\"nen\": \"{'sang' if th.get('background_tone') == 'light' else 'toi'}\". "
+                f"\"background_tone\": \"{'light' if th.get('background_tone') == 'light' else 'dark'}\". "
                 "Đường cuối khi tin không có ảnh thật nào khác — đừng dùng nếu đã "
                 "có ảnh chụp.")
     if loai == "stock":
@@ -925,7 +925,7 @@ def label_brand(a: dict) -> dict:
 
     if loai == "person":
         # Mặt người ở đây là CÓ CHỦ Ý và GỌI ĐƯỢC TÊN — đúng ngoại lệ của
-        # IMAGE_RULES §6 ("trừ khi khai nhan_vat"), khác hẳn mặt vô danh.
+        # IMAGE_RULES §6 ("trừ khi khai subject"), khác hẳn mặt vô danh.
         #
         # KHÔNG chặn theo `faces` ở đây: `image_rules.count_faces` trả None (-> 0) khi
         # thiếu cv2/model, và IMAGE_RULES §6 nói rõ cổng mặt được phép tự tắt. Lấy
