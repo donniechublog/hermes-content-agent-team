@@ -102,11 +102,11 @@ def _og(bai: dict) -> dict | None:
         im = og_from_html(r.text[:400_000], str(r.url))
         if not im or not scan_common.url_hide_whole(im):
             return None
-        return {"anh": im, "alt": bai["tieu_de"], "og": True, "tu": "bao_thuc_the",
-                # `trang` = chính ảnh: og:image gần như luôn nằm trên CDN khác
+        return {"image_url": im, "alt": bai["tieu_de"], "og": True, "source": "bao_thuc_the",
+                # `page_url` = chính ảnh: og:image gần như luôn nằm trên CDN khác
                 # miền bài (image.cnbcfm.com / cnbc.com) và download_filter coi "khác
                 # miền" là quảng cáo; bài gốc giữ ở `bai` để truy nguồn.
-                "trang": im, "bai": u, "mien_bai": bai["mien"], "rong": 0, "cao": 0, "diem": 42}
+                "page_url": im, "bai": u, "mien_bai": bai["mien"], "rong": 0, "cao": 0, "score": 42}
     except Exception as e:                                   # noqa: BLE001
         print(f"[bao thuc the] {bai['mien']}: {type(e).__name__}", file=sys.stderr)
         return None
@@ -123,9 +123,9 @@ def press_entity_images(tu_khoa: list, bo_mien: tuple = (), so_anh: int = 12) ->
         ra = [c for c in ex.map(_og, bai) if c]
     thay, kq = set(), []
     for c in ra:
-        if c["anh"] in thay:
+        if c["image_url"] in thay:
             continue
-        thay.add(c["anh"])
+        thay.add(c["image_url"])
         kq.append(c)
     print(f"[bao thuc the] {len(kq)} og:image / {len(bai)} bài", file=sys.stderr)
     return kq[:so_anh]

@@ -130,14 +130,14 @@ def test_report_about_keyword_no_limit_time():
 
 def test_rank_empty_then_find_report_by_keyword_scan_image():
     """`_round_brand`: Commons/Wikidata rỗng cho một hãng -> gọi
-    `report_about_keyword` rồi `browser_pass`, ứng viên tìm được gắn `thuong_hieu`
+    `report_about_keyword` rồi `browser_pass`, ứng viên tìm được gắn `brand_match`
     và cuối cùng có mặt trong `dung_duoc` (fail trên code cũ: hãng rỗng thì
     dừng, 0 ảnh, dù có báo thật ngoài kia)."""
     with tempfile.TemporaryDirectory() as d:
         wd = Path(d)
         (wd / "goc").mkdir()
-        ung_vien = {"anh": "https://x/photo.jpg", "alt": "", "og": False, "tu": "browser",
-                   "trang": "https://baomoi.example/moonshot", "rong": 1600, "cao": 1000, "diem": 45}
+        ung_vien = {"image_url": "https://x/photo.jpg", "alt": "", "og": False, "source": "browser",
+                   "page_url": "https://baomoi.example/moonshot", "rong": 1600, "cao": 1000, "score": 45}
 
         def tai_va_loc_gia(cands, wd2):
             ra = []
@@ -145,7 +145,7 @@ def test_rank_empty_then_find_report_by_keyword_scan_image():
                 tam = wd2 / f"A{i}.png"
                 tam.parent.mkdir(parents=True, exist_ok=True)
                 _ve(c["rong"], c["cao"]).save(tam)     # anh CO VAN, khong bi doc nham la chart phang
-                c2 = dict(c); c2["goc"] = str(tam); c2["tep"] = str(tam)
+                c2 = dict(c); c2["original_path"] = str(tam); c2["tep"] = str(tam)
                 ra.append(c2)
             return ra
 
@@ -178,7 +178,7 @@ def test_rank_empty_then_find_report_by_keyword_scan_image():
 
     assert len(anh) == 1, anh
     a = anh[0]
-    assert a.get("thuong_hieu", {}).get("hang") == "Moonshot AI", a
+    assert a.get("brand_match", {}).get("company") == "Moonshot AI", a
     assert a in dung_duoc, "ảnh tìm qua báo phải qua được đến dùng_được (đủ quan/không mặt vô danh v.v.)"
 
 
@@ -189,10 +189,10 @@ def test_find_report_run_parallel_including_when_commons_has_image():
     `if not cands_h`): `report_about_keyword` không được gọi vì Commons đã có 1 ảnh."""
     with tempfile.TemporaryDirectory() as d:
         wd = Path(d); (wd / "goc").mkdir()
-        anh_commons = {"anh": "https://commons.example/hq.jpg", "alt": "", "og": False,
-                      "tu": "thuong_hieu", "rong": 1600, "cao": 1000, "diem": 28,
-                      "thuong_hieu": {"hang": "Moonshot AI", "khoa": "moonshot", "loai": "anh",
-                                     "tu_khoa": "tru so"}}
+        anh_commons = {"image_url": "https://commons.example/hq.jpg", "alt": "", "og": False,
+                      "source": "thuong_hieu", "rong": 1600, "cao": 1000, "score": 28,
+                      "brand_match": {"company": "Moonshot AI", "key": "moonshot", "kind": "anh",
+                                     "keyword": "tru so"}}
         goi = {"tim_bao": False}
 
         def bao_ve_tu_khoa_gia(hang, so=6):

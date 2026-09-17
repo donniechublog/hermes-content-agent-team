@@ -107,7 +107,7 @@ def test_filter_commons_can_two_from_distinctive_and_drop_graphic():
     ])}
     ra = k.filter_commons(pages, "flag of Japan")
     assert [c["alt"] for c in ra] == ["Commons: Japan Flag at Kennedy Space Center.jpg"], ra
-    assert ra[0]["tu"] == "khai_niem" and ra[0]["khai_niem"]["tu_khoa"] == "flag of Japan"
+    assert ra[0]["source"] == "khai_niem" and ra[0]["concept"]["keyword"] == "flag of Japan"
 
 
 def test_filter_commons_jpeg_before_png_fall_new_black_size():
@@ -144,34 +144,34 @@ def test_filter_commons_empty_when_no_has_what():
 
 
 def _image(**o):
-    a = {"khai_niem": {"tu_khoa": "flag of Japan", "ly_do": "tin nhắc tới Japan"}, "loai": "anh",
-         "mat": 0, "ngang": False, "lien_quan": True, "dung": ["bìa", "thân"],
-         "ghi_chu": ["ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin"]}
+    a = {"concept": {"keyword": "flag of Japan", "reason": "tin nhắc tới Japan"}, "kind": "anh",
+         "faces": 0, "landscape": False, "relevant": True, "uses": ["bìa", "thân"],
+         "notes": ["ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin"]}
     a.update(o)
     return a
 
 
 def test_label_concept_only_cover_no_than():
     a = k.label_concept(_image())
-    assert a["dung"] == ["bìa"]
-    assert a["ghi_chu"][0].startswith("🧭 ẢNH KHÁI NIỆM") and "flag of Japan" in a["ghi_chu"][0]
-    assert not any("ảnh CHUNG của hãng" in g for g in a["ghi_chu"])
+    assert a["uses"] == ["bìa"]
+    assert a["notes"][0].startswith("🧭 ẢNH KHÁI NIỆM") and "flag of Japan" in a["notes"][0]
+    assert not any("ảnh CHUNG của hãng" in g for g in a["notes"])
 
 
 def test_label_concept_landscape_only_stack():
-    a = k.label_concept(_image(ngang=True, dung=["ghép dọc với một ảnh ngang cùng tone", "cat_ngang: true"]))
-    assert a["dung"] == ["ghép dọc với một ảnh ngang cùng tone"]
+    a = k.label_concept(_image(landscape=True, uses=["ghép dọc với một ảnh ngang cùng tone", "cat_ngang: true"]))
+    assert a["uses"] == ["ghép dọc với một ảnh ngang cùng tone"]
 
 
 def test_label_concept_chart_or_face_then_drop():
-    assert k.label_concept(_image(loai="chart"))["dung"] == []
-    a = k.label_concept(_image(mat=2))
-    assert a["dung"] == [] and a["ghi_chu"][0].startswith("❌")
+    assert k.label_concept(_image(kind="chart"))["uses"] == []
+    a = k.label_concept(_image(faces=2))
+    assert a["uses"] == [] and a["notes"][0].startswith("❌")
 
 
 def test_label_concept_keep_raw_when_vision_already_type():
-    a = k.label_concept(_image(lien_quan=False, dung=[], ghi_chu=["❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG"]))
-    assert a["dung"] == [] and a["ghi_chu"][0].startswith("❌ KHÔNG LIÊN QUAN")
+    a = k.label_concept(_image(relevant=False, uses=[], notes=["❌ KHÔNG LIÊN QUAN BÀI (vision) → KHÔNG DÙNG"]))
+    assert a["uses"] == [] and a["notes"][0].startswith("❌ KHÔNG LIÊN QUAN")
 
 
 def test_filter_commons_drop_has_war_and_protest():
@@ -185,14 +185,14 @@ def test_manifest_count_cluster_concept_is_one():
     import image_prepare as cb
     from pathlib import Path
     def _a(ma, kn=False):
-        return {"ma": ma, "dung": ["bìa"], "lien_quan": True, "mien": "x", "tu": "x", "ti_le": 0.8,
-                "goc_trai_sang": 50, "canh_ngan": 1000, "ngang": False, "loai": "anh",
-                **({"khai_niem": {"tu_khoa": "flag of Japan"}} if kn else {})}
+        return {"id": ma, "uses": ["bìa"], "relevant": True, "domain": "x", "source": "x", "ratio": 0.8,
+                "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "anh",
+                **({"concept": {"keyword": "flag of Japan"}} if kn else {})}
     anh = [_a("A1"), _a("A2", True), _a("A3", True), _a("A4", True)]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {}, Path("/tmp"),
                          anh, None, False, {}, {}, False, 5, vai_anh="ethan")
-    assert m["so_dung_duoc"] == 2, m["so_dung_duoc"]
-    assert m["goi_y_bia"][0] == "A1", m["goi_y_bia"]
+    assert m["usable_count"] == 2, m["usable_count"]
+    assert m["cover_suggestions"][0] == "A1", m["cover_suggestions"]
 
 
 def test_sentence_ask_vision_say_clear_no_right_image_of_story():

@@ -82,8 +82,8 @@ def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
     # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026). Trang CONG BO chinh
     # chu (LOW-21) duoc tran cua bai goc: chart benchmark o do la anh dat nhat.
     for im in (page.evaluate(JS["IMG"]) or [])[: tran or (4 if so == 0 else 3)]:
-        ra["cands"].append({"anh": im["src"], "alt": im["alt"], "og": False, "tu": "browser",
-                            "trang": url, "rong": im["w"], "cao": im["h"], "diem": 45})
+        ra["cands"].append({"image_url": im["src"], "alt": im["alt"], "og": False, "source": "browser",
+                            "page_url": url, "rong": im["w"], "cao": im["h"], "score": 45})
     if not chup_fig:
         return
     for f in page.evaluate(JS["FIG"]) or []:
@@ -101,9 +101,9 @@ def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
         image_provenance.stamp_file(out, "chup_chart")
         # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
         # article_images -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
-        ra["cands"].append({"anh": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
-                            "og": False, "tu": "chup", "the": f["tag"], "trang": url,
-                            "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "diem": 50})
+        ra["cands"].append({"image_url": str(out), "tep": str(out), "alt": "", "alt_chup": f"{f['tag']} chup tu trang",
+                            "og": False, "source": "chup", "html_tag": f["tag"], "page_url": url,
+                            "rong": int(f["w"] * 2), "cao": int(f["h"] * 2), "score": 50})
 
 
 def _open_page(page, url, cho_yen=12000):

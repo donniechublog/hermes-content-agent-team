@@ -349,7 +349,7 @@ def download_pdf(url: str, timeout=40) -> bytes | None:
 
 
 def candidate(link: str, ra_dir) -> list:
-    """Hinh cua paper duoi dang UNG VIEN cua image_prepare (`tep` + `diem` + `alt`).
+    """Hinh cua paper duoi dang UNG VIEN cua image_prepare (`tep` + `score` + `alt`).
 
     Diem cao hon moi ung vien khac (og:image ~90, chup figure 50, browser 45):
     hinh cua CHINH bai la bang chung goc, khong phai anh minh hoa muon o dau.
@@ -381,10 +381,10 @@ def candidate(link: str, ra_dir) -> list:
     ra = []
     for i, h in enumerate(hinh):
         ten = ("Figure" if h["loai"] == "figure" else "Table") + f" {h['so']}"
-        ra.append({"anh": h["tep"], "tep": h["tep"], "alt": f"{ten}: {h['caption']}"[:200],
-                   "og": False, "tu": "arxiv_hinh", "trang": link, "the": "figure",
-                   "rong": h["w"], "cao": h["h"], "diem": 95 if i == 0 else 80,
-                   "ly_do": f"{ten} trong chinh paper", "paper_hinh": ten})
+        ra.append({"image_url": h["tep"], "tep": h["tep"], "alt": f"{ten}: {h['caption']}"[:200],
+                   "og": False, "source": "arxiv_hinh", "page_url": link, "html_tag": "figure",
+                   "rong": h["w"], "cao": h["h"], "score": 95 if i == 0 else 80,
+                   "score_reason": f"{ten} trong chinh paper", "paper_figure": ten})
     return ra
 
 

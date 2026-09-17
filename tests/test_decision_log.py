@@ -70,20 +70,20 @@ def _candidates(src: Path) -> tuple:
     remote = {"https://img.phemex.com/banner.png": _png_bytes(_photo(1000, 800, seed=3)),
               "https://bad.example/missing.png": None}
     cands = [
-        {"tep": _save(good, src / "good.png"), "anh": str(src / "good.png"), "tu": "browser",
-         "trang": "https://news.example/a", "diem": 50},
-        {"tep": _save(good.resize((820, 638)), src / "dup.png"), "anh": str(src / "dup.png"),
-         "tu": "browser", "trang": "https://news.example/a", "diem": 49},
-        {"tep": _save(_photo(120, 90, seed=1), src / "tiny.png"), "anh": str(src / "tiny.png"),
-         "tu": "browser", "trang": "https://news.example/a", "diem": 48},
-        {"tep": _save(_photo(seed=2), src / "placeholder.png"), "anh": str(src / "placeholder.png"),
-         "tu": "browser", "trang": "https://news.example/a", "diem": 47},
+        {"tep": _save(good, src / "good.png"), "image_url": str(src / "good.png"), "source": "browser",
+         "page_url": "https://news.example/a", "score": 50},
+        {"tep": _save(good.resize((820, 638)), src / "dup.png"), "image_url": str(src / "dup.png"),
+         "source": "browser", "page_url": "https://news.example/a", "score": 49},
+        {"tep": _save(_photo(120, 90, seed=1), src / "tiny.png"), "image_url": str(src / "tiny.png"),
+         "source": "browser", "page_url": "https://news.example/a", "score": 48},
+        {"tep": _save(_photo(seed=2), src / "placeholder.png"), "image_url": str(src / "placeholder.png"),
+         "source": "browser", "page_url": "https://news.example/a", "score": 47},
         {"tep": _save(Image.new("RGB", (900, 700), (255, 255, 255)), src / "white.png"),
-         "anh": str(src / "white.png"), "tu": "browser", "trang": "https://news.example/a", "diem": 46},
-        {"anh": "https://img.phemex.com/banner.png", "trang": "https://siliconangle.com/a",
-         "tu": "browser", "diem": 45},
-        {"anh": "https://bad.example/missing.png", "trang": "https://news.example/a",
-         "tu": "browser", "diem": 44},
+         "image_url": str(src / "white.png"), "source": "browser", "page_url": "https://news.example/a", "score": 46},
+        {"image_url": "https://img.phemex.com/banner.png", "page_url": "https://siliconangle.com/a",
+         "source": "browser", "score": 45},
+        {"image_url": "https://bad.example/missing.png", "page_url": "https://news.example/a",
+         "source": "browser", "score": 44},
     ]
     return cands, remote
 
@@ -103,7 +103,7 @@ def _run_download(cands, remote, wd: Path, log_on: bool):
 
 
 def _strip(images: list) -> list:
-    return [{k: v for k, v in a.items() if k not in ("decisions", "goc")} for a in images]
+    return [{k: v for k, v in a.items() if k not in ("decisions", "original_path")} for a in images]
 
 
 def _dropped(wd: Path) -> list:
@@ -145,8 +145,8 @@ def test_every_download_drop_branch_is_recorded_with_thumbnail():
 def test_over_limit_truncation_was_silent_now_recorded():
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        cands = [{"tep": _save(_photo(seed=10 + i), tmp / f"p{i}.png"), "anh": str(tmp / f"p{i}.png"),
-                  "tu": "browser", "trang": "https://news.example/a", "diem": 50 - i} for i in range(4)]
+        cands = [{"tep": _save(_photo(seed=10 + i), tmp / f"p{i}.png"), "image_url": str(tmp / f"p{i}.png"),
+                  "source": "browser", "page_url": "https://news.example/a", "score": 50 - i} for i in range(4)]
         with mock.patch.object(download_filter, "MAX_IMAGE", 2):
             ra = _quiet(lambda: download_filter.download_and_filter(cands, tmp / "wd"))
         assert len(ra) == 2
@@ -171,7 +171,7 @@ def _vision_says(txt: str):
 def _classify(tmp: Path, answer: str, log_on: bool) -> dict:
     p = tmp / f"img_{int(log_on)}.png"
     _photo(1080, 1350, seed=5).save(p)
-    a = {"ma": "A1", "goc": str(p), "url": "https://x/a.png", "tu": "browser", "alt": ""}
+    a = {"id": "A1", "original_path": str(p), "url": "https://x/a.png", "source": "browser", "alt": ""}
     patches = [_vision_says(answer), mock.patch.dict("os.environ", {"OPENAI_API_KEY": "x"})]
     if not log_on:
         patches.append(mock.patch.object(decision_log, "note", lambda *a, **k: None))
@@ -191,7 +191,7 @@ ANSWER_FLIPPED = ("MO_TA: tru so van phong Broadcom voi logo tren toa nha.\n"
 def test_vision_records_raw_answer_and_which_regex_flipped_it():
     with tempfile.TemporaryDirectory() as tmp:
         a = _classify(Path(tmp), ANSWER_FLIPPED, log_on=True)
-        assert a["lien_quan"] is True, "nhánh override hiện có phải vẫn lật như cũ"
+        assert a["relevant"] is True, "nhánh override hiện có phải vẫn lật như cũ"
         stages = [(d["stage"], d["outcome"], d["rule"]) for d in a["decisions"]]
         assert ("vision", "drop", "LIEN_QUAN") in stages, stages
         assert ("vision_override", "keep", "keyword_context_flip_true") in stages, stages
@@ -203,7 +203,7 @@ def test_classify_output_identical_with_and_without_log():
     with tempfile.TemporaryDirectory() as tmp:
         on = _classify(Path(tmp), ANSWER_FLIPPED, log_on=True)
         off = _classify(Path(tmp), ANSWER_FLIPPED, log_on=False)
-        keys = ("dung", "lien_quan", "ghi_chu", "mo_ta", "cluttered", "du_tu_khoa", "cat_ngang_ok")
+        keys = ("uses", "relevant", "notes", "description", "cluttered", "has_keywords", "landscape_crop_ok")
         assert {k: on.get(k) for k in keys} == {k: off.get(k) for k in keys}
 
 
@@ -211,7 +211,7 @@ def test_relevance_drop_is_recorded():
     with tempfile.TemporaryDirectory() as tmp:
         a = _classify(Path(tmp), "MO_TA: xe canh sat tren pho.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong",
                       log_on=True)
-        assert a["lien_quan"] is False and a["dung"] == []
+        assert a["relevant"] is False and a["uses"] == []
         assert any(d["stage"] == "relevance" and d["rule"] == "vision_not_relevant" for d in a["decisions"])
 
 
@@ -220,12 +220,12 @@ def test_vision_unavailable_is_flagged_not_silent():
         tmp = Path(tmp)
         p = tmp / "a.png"
         _photo(1080, 1350).save(p)
-        a = {"ma": "A1", "goc": str(p), "url": "https://x/a.png", "tu": "browser"}
+        a = {"id": "A1", "original_path": str(p), "url": "https://x/a.png", "source": "browser"}
         env = {k: v for k, v in os.environ.items() if k != "OPENAI_API_KEY"}
         with mock.patch.dict("os.environ", env, clear=True), \
              mock.patch.object(vision.env_load, "load", lambda *x, **k: None):
             a = _quiet(lambda: vision.classify(a, wd=tmp, tieu_de="T"))
-        assert a["lien_quan"] is None
+        assert a["relevant"] is None
         assert any(d["rule"] == "vision_unavailable" for d in a["decisions"])
 
 
@@ -233,11 +233,11 @@ def test_vision_unavailable_is_flagged_not_silent():
 def test_collect_only_rows_of_this_run():
     with tempfile.TemporaryDirectory() as tmp:
         wd = Path(tmp)
-        decision_log.drop_candidate(wd / "commons", {"anh": "old"}, "blank")
+        decision_log.drop_candidate(wd / "commons", {"image_url": "old"}, "blank")
         import time
         mid = time.time()
         time.sleep(0.01)
-        decision_log.drop_candidate(wd / "them_1", {"anh": "new"}, "junk_url")
+        decision_log.drop_candidate(wd / "them_1", {"image_url": "new"}, "junk_url")
         rows = decision_log.collect(wd, since=mid)
         assert [r["url"] for r in rows] == ["new"]
         assert len(decision_log.collect(wd)) == 2

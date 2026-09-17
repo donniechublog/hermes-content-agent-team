@@ -49,7 +49,7 @@ def test_story_whole_geometry_out_blackboard_no_out_room_machine():
 
 
 def test_sentence_ask_vision_ask_all_keyword_has_box_article():
-    """Cổng `lien_quan` cho ảnh khái niệm chỉ hỏi "có đúng là <từ khoá>" nên một
+    """Cổng `relevant` cho ảnh khái niệm chỉ hỏi "có đúng là <từ khoá>" nên một
     từ khoá sai được chính cổng hợp thức hoá. Phải hỏi thêm chiều hợp bài."""
     c = k.sentence_ask_vision(TIN_TOAN, "server room cables")
     assert "hop chu de bai" in c, c

@@ -337,9 +337,9 @@ def filter_commons(pages: dict, tu_khoa: str, so: int = 4, canh_ngan_min: int = 
         can = 1 if len(dac_trung) >= 3 else min(2, len(dac_trung))
         if dac_trung and sum(t in ten_thap for t in dac_trung) < can:
             continue
-        ra.append({"anh": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
-                   "mime": ii.get("mime"), "tu": "khai_niem", "trang": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
-                   "rong": w, "cao": h, "diem": 20, "khai_niem": {"tu_khoa": tu_khoa}})
+        ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
+                   "mime": ii.get("mime"), "source": "khai_niem", "page_url": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
+                   "rong": w, "cao": h, "score": 20, "concept": {"keyword": tu_khoa}})
     # JPEG trước PNG: ảnh chụp thật gần như luôn là JPEG, PNG trên Commons hay là
     # cờ vẽ / bản dựng ("Japan flag - variant.png", "CGI Japan Flag.png").
     ra.sort(key=lambda c: (c["mime"] != "image/jpeg", -(c["rong"] * c["cao"])))
@@ -355,7 +355,7 @@ def image_concept(tu_khoa: str, ly_do: str = "", so: int = 4) -> list | None:
         return None
     ra = filter_commons(pages, tu_khoa, so=so)
     for c in ra:
-        c["khai_niem"]["ly_do"] = ly_do
+        c["concept"]["reason"] = ly_do
     return ra
 
 
@@ -400,20 +400,20 @@ def sentence_ask_vision(tieu_de: str, tu_khoa: str, theo_loai: bool = False) -> 
 def label_concept(a: dict) -> dict:
     """Siết nhãn của một ảnh khái niệm ĐÃ qua `classify`: chỉ bìa/hero (hoặc ghép
     dọc nếu ngang), không vào thân, không chart, không mặt người. Thuần."""
-    kn = a.get("khai_niem") or {}
-    tk, ly_do = kn.get("tu_khoa", "?"), kn.get("ly_do", "")
-    if a.get("loai") == "chart" or a.get("mat"):
-        a["dung"] = []
-        a["ghi_chu"].insert(0, "❌ ảnh khái niệm mà là chart/đồ hoạ hoặc có mặt người → KHÔNG DÙNG")
+    kn = a.get("concept") or {}
+    tk, ly_do = kn.get("keyword", "?"), kn.get("reason", "")
+    if a.get("kind") == "chart" or a.get("faces"):
+        a["uses"] = []
+        a["notes"].insert(0, "❌ ảnh khái niệm mà là chart/đồ hoạ hoặc có mặt người → KHÔNG DÙNG")
         return a
-    if a.get("lien_quan") is False:
+    if a.get("relevant") is False:
         return a                                  # classify đã xoá dung + ghi ❌
-    if a.get("ngang"):
-        a["dung"] = [d for d in a["dung"] if d.startswith("ghép dọc")]
+    if a.get("landscape"):
+        a["uses"] = [d for d in a["uses"] if d.startswith("ghép dọc")]
     else:
-        a["dung"] = ["bìa"]
-    a["ghi_chu"] = [g for g in a["ghi_chu"] if "Wikimedia Commons" not in g]
-    a["ghi_chu"].insert(0, f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{tk}\"" + (f": {ly_do}" if ly_do else "") + ") "
+        a["uses"] = ["bìa"]
+    a["notes"] = [g for g in a["notes"] if "Wikimedia Commons" not in g]
+    a["notes"].insert(0, f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{tk}\"" + (f": {ly_do}" if ly_do else "") + ") "
                         "từ Wikimedia Commons — KHÔNG phải ảnh của tin; chỉ làm bìa/hero khi tin không có "
                         "ảnh riêng tốt hơn, không vào slide thân")
     return a

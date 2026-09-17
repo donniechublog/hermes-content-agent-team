@@ -38,7 +38,7 @@ def test_pageimages_drop_image_small_and_no_has():
     with mock.patch("httpx.get", side_effect=[R(nho), R(to), R(trong)]):
         assert tt.pageimages("Erdős problems") is None
         c = tt.pageimages("Anthropic")
-        assert c and c["diem"] == 27 and c["thuc_the"]["bai"] == "Anthropic"
+        assert c and c["score"] == 27 and c["entity"]["article_name"] == "Anthropic"
         assert tt.pageimages("DeepSeek") is None
 
 
@@ -68,13 +68,13 @@ def test_tier_only_run_when_remaining_missing():
 
 def test_round_entity_ask_sentence_concept_no_ask_image_of_matter():
     """Đo trên máy chủ 12/09/2026: ảnh Wikipedia của Anthropic bị vision từ chối vì
-    nấc hỏi câu mặc định "có phải ảnh của sự việc". Nấc phải gắn `khai_niem`
+    nấc hỏi câu mặc định "có phải ảnh của sự việc". Nấc phải gắn `concept`
     trước `classify` để đi câu "có đúng là <thực thể>, hợp bìa"."""
     src = (ROOT / "prepare" / "fallback_rounds.py").read_text(encoding="utf-8")
     i = src.index("def _round_entity")
     than = src[i:i + 3000]
-    assert 'a["khai_niem"] = {"tu_khoa": a["thuc_the"]["ten"]' in than
-    assert than.index('a["khai_niem"] = ') < than.index("classify(a, wd, tieu_de_nhin)")
+    assert 'a["concept"] = {"keyword": a["entity"]["name"]' in than
+    assert than.index('a["concept"] = ') < than.index("classify(a, wd, tieu_de_nhin)")
 
 
 if __name__ == "__main__":

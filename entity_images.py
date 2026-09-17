@@ -80,10 +80,10 @@ def pageimages(ten: str) -> dict | None:
     o = pg.get("original") or {}
     if not o.get("source") or min(o.get("width", 0), o.get("height", 0)) < SHORT_SIDE_MIN:
         return None
-    return {"anh": o["source"], "alt": f"Wikipedia: {pg.get('title', ten)}", "og": False,
-            "tu": "thuc_the", "rong": o["width"], "cao": o["height"],
-            "trang": "https://en.wikipedia.org/wiki/" + str(pg.get("title", ten)).replace(" ", "_"),
-            "diem": 27, "thuc_the": {"ten": ten, "bai": pg.get("title", ten), "nguon": "wikipedia"}}
+    return {"image_url": o["source"], "alt": f"Wikipedia: {pg.get('title', ten)}", "og": False,
+            "source": "thuc_the", "rong": o["width"], "cao": o["height"],
+            "page_url": "https://en.wikipedia.org/wiki/" + str(pg.get("title", ten)).replace(" ", "_"),
+            "score": 27, "entity": {"name": ten, "article_name": pg.get("title", ten), "source": "wikipedia"}}
 
 
 def commons_by_phrase(ten: str, so: int = MAX_NEW_ENTITY) -> list:
@@ -105,10 +105,10 @@ def commons_by_phrase(ten: str, so: int = MAX_NEW_ENTITY) -> list:
         thap = tep.lower()
         if image_concept.NAME_TYPE.search(thap) or not th._has_phrase(dt, thap):
             continue
-        ra.append({"anh": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + tep,
-                   "og": False, "mime": ii.get("mime"), "tu": "thuc_the", "rong": w, "cao": h,
-                   "trang": "https://commons.wikimedia.org/wiki/File:" + tep.replace(" ", "_"),
-                   "diem": 25, "thuc_the": {"ten": ten, "nguon": "commons"}})
+        ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + tep,
+                   "og": False, "mime": ii.get("mime"), "source": "thuc_the", "rong": w, "cao": h,
+                   "page_url": "https://commons.wikimedia.org/wiki/File:" + tep.replace(" ", "_"),
+                   "score": 25, "entity": {"name": ten, "source": "commons"}})
         if len(ra) >= so:
             break
     ra.sort(key=lambda c: (c["rong"] < c["cao"], -(c["rong"] * c["cao"])))   # ngang truoc
@@ -121,8 +121,8 @@ def entity_images(tieu_de: str, models: list | None = None) -> list:
     ra, da = [], set()
     for ten in entity_within_title(tieu_de, models):
         for c in ([pageimages(ten)] if True else []) + commons_by_phrase(ten):
-            if c and c["anh"] not in da:
-                da.add(c["anh"])
+            if c and c["image_url"] not in da:
+                da.add(c["image_url"])
                 ra.append(c)
     return ra
 
@@ -130,12 +130,12 @@ def entity_images(tieu_de: str, models: list | None = None) -> list:
 def label_entity(a: dict) -> dict:
     """Nhãn brief: ảnh đại diện của thực thể, KHÔNG phải ảnh của sự việc; bìa/bối
     cảnh, đừng gán cho slide số liệu. Thuần."""
-    tt = a.get("thuc_the") or {}
-    if a.get("lien_quan") is False:
+    tt = a.get("entity") or {}
+    if a.get("relevant") is False:
         return a
-    a["ghi_chu"] = [g for g in a.get("ghi_chu", []) if "Wikimedia Commons" not in g]
-    a["ghi_chu"].insert(0, (f"🧩 ẢNH THỰC THỂ \"{tt.get('ten', '?')}\" — ảnh đại diện từ "
-                            f"{'bài Wikipedia ' + repr(tt.get('bai', '')) if tt.get('nguon') == 'wikipedia' else 'Commons'}; "
+    a["notes"] = [g for g in a.get("notes", []) if "Wikimedia Commons" not in g]
+    a["notes"].insert(0, (f"🧩 ẢNH THỰC THỂ \"{tt.get('name', '?')}\" — ảnh đại diện từ "
+                            f"{'bài Wikipedia ' + repr(tt.get('article_name', '')) if tt.get('source') == 'wikipedia' else 'Commons'}; "
                             "ảnh CỦA THỰC THỂ trong tin, không phải ảnh của sự việc: hợp bìa/bối cảnh, "
                             "caption ghi tên thực thể · via Wikimedia Commons"))
     return a
