@@ -97,7 +97,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         m, "ETHAN",
         f"Brand: {m['brand']} | draft: {m['draft_id']} | kiểu mặc định: quote (thẻ HOOK 4:5)")
     L += brief_common.block_redo(
-        da_dung, f"ảnh {da_dung.get('anh')}, hook “{da_dung.get('hook', '')}”. "
+        da_dung, f"ảnh {da_dung.get('image')}, hook “{da_dung.get('hook', '')}”. "
                  "Lần này ẢNH và HOOK phải khác." if da_dung else "")
     L += brief_common.block_material(m, nhan="Finn/Vera", n_cau=15, n_doan=800)
     L += ["", "## Ảnh đã tải & xử lý — chỉ dùng MÃ ẢNH, không tải/crop/mở gì thêm"]

@@ -163,7 +163,8 @@ def f(a, wd, m, n):
     assert not any("khai_niem" in k or "bang_anh" in k for k in got), \
         f"giá trị so sánh và chữ hiển thị không phải khoá/đường dẫn: {got}"
     # English module names that cum.json maps to themselves pass via a PASS phrase (LOW-240)
-    for english in ("scan_business.py", "scan_models.txt", "manifest_build.py", "article_extract.py"):
+    for english in ("scan_business.py", "scan_models.txt", "manifest_build.py", "article_extract.py",
+                    "draft_write.py", "render_edu.spec.json", "emoji_deck.json"):          # + LOW-242
         assert not scan_source(f'p = ROOT / "{english}"', det), english
     with tempfile.TemporaryDirectory() as t:
         (Path(t) / "new_module.py").write_text(src, encoding="utf-8")

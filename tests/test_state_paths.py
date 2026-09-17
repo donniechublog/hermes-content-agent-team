@@ -41,6 +41,9 @@ TABLE = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_paths_v2.json").read_
 TABLE_231 = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_files_v2.json").read_text(encoding="utf-8"))
 TABLE_237 = json.loads((ROOT / "docs" / "tu_dien_ten" / "image_search_keys_v2.json").read_text(encoding="utf-8"))["workdir_files"]
 TABLE_240 = json.loads((ROOT / "docs" / "tu_dien_ten" / "scan_keys_v2.json").read_text(encoding="utf-8"))
+TABLE_242 = json.loads((ROOT / "docs" / "tu_dien_ten" / "submit_keys_v2.json").read_text(encoding="utf-8"))
+# LOW-242: chi dong tep workdir (khoa khong co chu thich "(… tmp)" — tep tam cua bob_submit nam trong mkdtemp)
+FILES_242 = {cu: moi for cu, moi in TABLE_242["files"].items() if " " not in cu}
 SECTIONS_231 = ("brand_files", "brand_dirs", "scan_files", "journal_files", "router_9", "gin_files")
 
 
@@ -126,7 +129,8 @@ def test_constants_match_approved_table():
     hang = {k for k, v in vars(state_paths).items() if k.isupper() and isinstance(v, str)}
     thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()}
                    - {ten for _, ten in _rows_237().values()}
-                   - {ten for _, ten in _rows_240().values()} - set(_rows_239()))
+                   - {ten for _, ten in _rows_240().values()} - set(_rows_239())
+                   - {ten for _, ten in _rows_242().values()})
     assert not thieu, f"hang chua doi chieu voi state_paths_v2.json / state_files_v2.json: {thieu}"
 
 
@@ -231,6 +235,18 @@ def test_low240_constants_match_approved_table():
             assert f"state_paths.{ten}" in TABLE_240[muc]["_where"] and cu in TABLE_240[muc]["_where"], muc
 
 
+def _rows_242() -> dict:
+    """LOW-242: tep thu cua miles_submit --khong-push trong workdir. {ten CU: (ten MOI, ten hang)}."""
+    return {"draft_thu.txt": (state_paths.DRAFT_TRIAL_FILE, "DRAFT_TRIAL_FILE")}
+
+
+def test_low242_constants_match_approved_table():
+    rows = _rows_242()
+    assert set(rows) == set(FILES_242), (sorted(rows), sorted(FILES_242))
+    for cu, (moi, _ten) in rows.items():
+        assert FILES_242[cu] == moi, (cu, moi, FILES_242[cu])
+
+
 def _rows_239() -> dict:
     """LOW-239: hang cho tep da English san (ten giu nguyen, chi thoi viet chuoi rai rac)."""
     return {"CRON_AUDIT_FILE": ("cron_audit.json", "state/cron_audit.json")}
@@ -271,6 +287,8 @@ OLD_NAMES |= _PLAIN_231
 OLD_NAMES |= {cu for cu in TABLE_237 if "<" not in cu}
 # LOW-240: spool moat
 OLD_NAMES |= set(TABLE_240["files"])
+# LOW-242: tep thu cua miles_submit
+OLD_NAMES |= set(FILES_242)
 OLD_FILE_SHAPES += [
     re.compile(r"(^|/)(logo_goc|the_logo)\.png$"),        # logo_goc.png, the_logo.png
     re.compile(r"(^|/)co_phieu_.*\.png$"),                  # co_phieu_<key>.png
@@ -443,6 +461,7 @@ def test_scanner_catches_low231_state_names():
         'the = card_logo(goc, Path(wd) / "the_logo.png")',
         'ra = _P(wd) / f"co_phieu_{khoa}.png"',
         'SPOOL = STATE_DIR / "moat_chua_bao.json"',            # LOW-240
+        '(wd / "draft_thu.txt").write_text(cap)',                # LOW-242
     ]
     for src in must_catch:
         assert scan_source(src), f"quet bo sot (LOW-231): {src}"

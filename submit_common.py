@@ -82,10 +82,11 @@ def count_of_redo(draft_id: str) -> int:
     return int(d.get("remakes", 0) or 0)
 
 
-def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "anh",
+def check_redo_reused(da_dung, nhan_anh: str, anh_moi, hook_moi, khoa_anh: str = "image",
                  draft_id: str = "", anh_bat_buoc: bool = False) -> list:
     """Lam lai ma van giu anh/hook cua lan truoc -> loi. `khoa_anh` la khoa trong
-    previous_submission.json ("bia" voi carousel, "anh" voi hero).
+    previous_submission.json ("cover_image" voi carousel, "image" voi hero; LOW-242 —
+    `anh_moi` van lay tu spec cua vai, chi khoa trong tep nop truoc doi ten).
 
     CHI ap khi Ong Chu THAT SU bam "Lam lai" (sua 06/09/2026 dot 2). Truoc day
     dieu kien la "co previous_submission.json", ma tep do duoc ghi o MOI lan gui va
@@ -147,12 +148,12 @@ def count_round_error(wd, loi: list, lenh: str, toi_da: int = MAX_ROUND) -> int:
         cu = _j.loads(p.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         pass
-    if cu.get("ky") != ky or _t.time() - cu.get("luc", 0) > 6 * 3600:
-        cu = {"ky": ky, "lan": 0}
-    lan = int(cu.get("lan", 0)) + 1
+    if cu.get("error_signature") != ky or _t.time() - cu.get("updated_at", 0) > 6 * 3600:
+        cu = {"error_signature": ky, "repeat_count": 0}
+    lan = int(cu.get("repeat_count", 0)) + 1
     try:
-        p.write_text(_j.dumps({"ky": ky, "lan": lan, "luc": int(_t.time()),
-                               "loi_cuoi": [str(x)[:200] for x in loi[:5]]},
+        p.write_text(_j.dumps({"error_signature": ky, "repeat_count": lan, "updated_at": int(_t.time()),
+                               "last_errors": [str(x)[:200] for x in loi[:5]]},
                               ensure_ascii=False), encoding="utf-8")
     except OSError:
         pass
@@ -565,7 +566,7 @@ def _recently_posted(vai: str, files, phut: int = MINUTES_ALBUM_FIT_LEN) -> bool
 
 def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, ghi: dict):
     """Gui anh/album len topic cua `vai` kem nut duyet, roi ghi previous_submission.json
-    (`ghi` = cac truong rieng cua vai: bia/anh/hook/theme...). Tra ve message_id."""
+    (`ghi` = cac truong rieng cua vai: cover_image/image_ids/image/hook/theme...). Tra ve message_id."""
     import send_telegram
     xong = schema.read_manifest(wd / state_paths.MANIFEST_FILE) or {}
 
@@ -574,18 +575,18 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
         ca khi buoc gui nut Duyet loi ngay sau do: anh da nam tren Telegram thi
         so PHAI co dong tuong ung, khong thi bai sau dung lai dung tam vua dang —
         chinh thu luat nay sinh ra de chan (do 06/09/2026)."""
-        cb._write_json(wd / state_paths.PREVIOUS_SUBMISSION_FILE, {**ghi, "luc": time.strftime("%H:%M %d/%m"),
-                                           "lan": int((da_dung or {}).get("lan", 0)) + 1,
+        cb._write_json(wd / state_paths.PREVIOUS_SUBMISSION_FILE, {**ghi, "submitted_at": time.strftime("%H:%M %d/%m"),
+                                           "submission_count": int((da_dung or {}).get("submission_count", 0)) + 1,
                                            # Moc de phan biet "Ong Chu bam Lam lai"
                                            # voi "vai chay lai" — xem check_redo_reused.
                                            "remakes": count_of_redo(draft_id),
                                            "message_id": mid})
         # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot
-        # khoa: Ethan de anh ghep thu hai o "anh2", Kite de o "hinh".
+        # khoa: Ethan de anh ghep thu hai o "image2", Dre/Kite de list o "image_ids".
         rules = _vai.rules_module(vai)
         goc = {a["id"]: a["original_path"] for a in xong.get("images", [])}
         ma_ds = []
-        for k in ("anh", "anh2", "bia", "hinh"):
+        for k in ("image_ids", "image", "image2", "cover_image"):
             v = ghi.get(k)
             ma_ds += list(v) if isinstance(v, (list, tuple)) else [v]
         for ma in dict.fromkeys(x for x in ma_ds if x):
@@ -596,7 +597,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
     # LOI doi hoac qua 6 gio, con duong thanh cong truoc 06/09/2026 khong dung
     # vao tep submit_count.json — nen mot bai hong 2 lan vi "can >= 2 quote", sua
     # xong, gui duoc, roi mot gio sau Ong Chu bam Lam lai va vai lai quen quote
-    # la lan=3 NGAY LUOT DAU: [DUNG] va bao goi kanban_block.
+    # la repeat_count=3 NGAY LUOT DAU: [DUNG] va bao goi kanban_block.
     (wd / state_paths.SUBMIT_COUNT_FILE).unlink(missing_ok=True)
     try:
         res = send_telegram.post(vai, [str(f) for f in files], mo_ta[:1000], duyet=draft_id)

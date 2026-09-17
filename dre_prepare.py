@@ -34,7 +34,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         + " | tối đa 10 | quote ≥ 2")
     L += brief_common.block_redo(
         da_dung,
-        f"bìa {da_dung.get('bia')}, ảnh dùng {', '.join(da_dung.get('anh', []))}, "
+        f"bìa {da_dung.get('cover_image')}, ảnh dùng {', '.join(da_dung.get('image_ids', []))}, "
         f"hook: “{da_dung.get('hook', '')}”. Lần này BÌA và HOOK phải khác, đổi ít "
         "nhất nửa số ảnh, đổi cách chia slide." if da_dung else "")
     L += brief_common.block_material(

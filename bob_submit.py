@@ -180,8 +180,8 @@ def main() -> int:
     handle = handle_channel(brand)
 
     tam = Path(tempfile.mkdtemp(prefix="bob_"))
-    src = tam / "goc.png"
-    ra = Path(a.out) if a.out else tam / "khung.png"
+    src = tam / "original.png"
+    ra = Path(a.out) if a.out else tam / "framed.png"
     ra.parent.mkdir(parents=True, exist_ok=True)
 
     cach = take_image(a.nguon, src)

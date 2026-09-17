@@ -1220,17 +1220,17 @@ def test_redo_only_apply_when_boss_really_press():
     try:
         # Ong Chu chua bam lan nao; da_dung ghi luc remakes=0 -> chay lai KHONG bi bat
         nc2.count_of_redo = lambda _id: 0
-        da_dung = {"bia": "A1", "hook": "Hook cu", "remakes": 0}
+        da_dung = {"cover_image": "A1", "hook": "Hook cu", "remakes": 0}
         assert nc2.check_redo_reused(da_dung, "bìa", "A1", "Hook cu",
-                                khoa_anh="bia", draft_id="x") == []
+                                khoa_anh="cover_image", draft_id="x") == []
         # Ong Chu bam Lam lai (remakes 0 -> 1): giu nguyen bia+hook thi PHAI bat
         nc2.count_of_redo = lambda _id: 1
         loi = nc2.check_redo_reused(da_dung, "bìa", "A1", "Hook cu",
-                               khoa_anh="bia", draft_id="x")
+                               khoa_anh="cover_image", draft_id="x")
         assert len(loi) == 2, loi
         # doi ca hai thi qua
         assert nc2.check_redo_reused(da_dung, "bìa", "A7", "Hook moi",
-                                khoa_anh="bia", draft_id="x") == []
+                                khoa_anh="cover_image", draft_id="x") == []
     finally:
         nc2.count_of_redo = cu
 
@@ -1267,17 +1267,17 @@ def test_redo_no_end_when_only_has_one_image_ranking():
     cu = nc2.count_of_redo
     try:
         nc2.count_of_redo = lambda _id: 1                # Ong Chu THAT SU bam lam lai
-        da_dung = {"bia": "XH", "hook": "Hook cu", "remakes": 0}
+        da_dung = {"cover_image": "XH", "hook": "Hook cu", "remakes": 0}
         # khong bat_buoc: giu nguyen bia XH bi bat nhu binh thuong
         loi_cu = nc2.check_redo_reused(da_dung, "bìa", "XH", "Hook moi",
-                                  khoa_anh="bia", draft_id="x")
+                                  khoa_anh="cover_image", draft_id="x")
         assert len(loi_cu) == 1 and "vẫn là" in loi_cu[0], loi_cu
         # bat_buoc=True (chi co 1 anh xep hang, khong the doi): bo qua phan so anh,
         # nhung hook giong het van bi bat
         assert nc2.check_redo_reused(da_dung, "bìa", "XH", "Hook moi",
-                                khoa_anh="bia", draft_id="x", anh_bat_buoc=True) == []
+                                khoa_anh="cover_image", draft_id="x", anh_bat_buoc=True) == []
         loi_hook = nc2.check_redo_reused(da_dung, "bìa", "XH", "Hook cu",
-                                    khoa_anh="bia", draft_id="x", anh_bat_buoc=True)
+                                    khoa_anh="cover_image", draft_id="x", anh_bat_buoc=True)
         assert len(loi_hook) == 1 and "hook" in loi_hook[0].lower(), loi_hook
     finally:
         nc2.count_of_redo = cu

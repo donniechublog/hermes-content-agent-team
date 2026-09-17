@@ -1,0 +1,73 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-242) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm. Phần writer/designer KHÔNG do LLM viết theo prompt; spec.json vai + carousel.BACKGROUND (khoá = giá trị spec `nen`) + dấu PNG `cat_ngang` để LOW-243.",
+  "_measured": "máy chủ 17/09/2026: previous_submission.json 121 (hook 121, luc 121, lan 121, message_id 121, remakes 84, theme/hero 69, hinh 57, anh 52 [28 chuỗi Ethan, 24 list Dre], anh2 23, bia 24); submit_count.json 55 (ky, lan, luc, loi_cuoi); used_images.jsonl blog 152 + dcgr 273 dòng (dhash, draft_id, vai, tin, ten, md5, luc), mọi dòng trong cửa sổ 14 ngày.",
+  "previous_submission": {
+    "_where": "state/<brand>/prepare/<draft>/previous_submission.json — ghi submit_common (từ dre_submit/ethan_submit/kite_submit); đọc submit_common, brief_common, dre_prepare, ethan_prepare",
+    "bia": "cover_image",
+    "anh (Dre, list)": "image_ids",
+    "anh (Ethan, chuỗi)": "image",
+    "anh2": "image2",
+    "hinh (Kite, list)": "image_ids",
+    "lan": "submission_count",
+    "luc": "submitted_at"
+  },
+  "submit_count": {
+    "_where": "state/<brand>/prepare/<draft>/submit_count.json — submit_common.count_round_error (cửa sổ 6 giờ)",
+    "ky": "error_signature",
+    "lan": "repeat_count",
+    "luc": "updated_at",
+    "loi_cuoi": "last_errors"
+  },
+  "used_images_line": {
+    "_where": "state/<brand>/used_images.jsonl (USED_IMAGES_FILE) — image_rules_{dre,ethan,kite} record_used/check_not_reused, image_provenance, cleanup, schema.LineImageUsed",
+    "vai": "role",
+    "tin": "story_key",
+    "ten": "file_name",
+    "luc": "used_at"
+  },
+  "handoff_metadata": {
+    "_where": "dòng [metadata] + mục bảng đen do dre_submit/kite_submit/miles_submit in/ghi (vai chép nguyên vào kanban_complete); lịch sử không migrate",
+    "nguon_anh": "image_sources",
+    "tep": "file_path",
+    "ban_giao": "handoff_path",
+    "hinh_that": "image_ids",
+    "vai": "role",
+    "do_dai": "char_count",
+    "so_cau": "sentence_count",
+    "so_trong_caption": "number_count"
+  },
+  "handoff_blackboard_entry_keys": {"anh": "images"},
+  "caption_check_info": {
+    "_where": "caption_check.check() trả về (bộ nhớ) — miles_submit, draft_write",
+    "do_dai": "char_count",
+    "so_cau": "sentence_count",
+    "so_trong_caption": "number_count",
+    "ty_le_dau": "diacritic_ratio",
+    "cau_so_trong_nguon": "source_number_sentence_count"
+  },
+  "card_brand": {
+    "_where": "card.BRAND (bộ nhớ)",
+    "mau": "palette",
+    "mau_du_phong": "fallback_company_color",
+    "to_ten_hang": "company_name_color",
+    "ro_handle": "handle_clarity",
+    "co_chan": "footer_size_scale",
+    "mo_chan": "footer_brightness"
+  },
+  "card_brand.company_name_color_value": {"hang": "company"},
+  "render_edu_internal": {"truong": "fields", "long": "nested", "phuc_vu": "served"},
+  "manifest_compute_derived": {"dung_duoc": "usable_images"},
+  "files": {"draft_thu.txt": "draft_trial.txt", "goc.png (bob_submit tmp)": "original.png", "khung.png (bob_submit tmp)": "framed.png"},
+  "_deferred_to_LOW_243": [
+    "spec.json Dre/Ethan/Kite/Itachi (anh, anh2, ghep, cat_ngang, tam, nhan_vat, tam_co, nen, kieu, nhan, bg_anh, ghi_chu…) — LLM viết theo prompt.",
+    "carousel.BACKGROUND {toi, sang, mo} — khoá là giá trị spec `nen`.",
+    "render_edu `nhan` / CSS .bar-fill.nhan — khoá spec Kite bars[].nhan."
+  ],
+  "_notes": [
+    "`anh` ở previous_submission hai kiểu theo vai: Dre list mã → image_ids, Ethan một mã → image; `hinh` của Kite cùng khái niệm list → image_ids.",
+    "`lan` hai nghĩa: số lần nộp (submission_count) vs số lần lặp cùng lỗi (repeat_count).",
+    "`luc` ở previous_submission là chuỗi hiển thị giờ ('11:58 14/09') → submitted_at; ở submit_count/used_images là epoch → updated_at/used_at.",
+    "`tin` ở used_images là khoá tin (story_key, tên hàm image_provenance.story_key) — không phải tiêu đề.",
+    "`vai` ở handoff/used_images là vai tạo (role)."
+  ]
+}

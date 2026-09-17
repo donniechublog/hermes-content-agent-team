@@ -36,13 +36,13 @@ Oswald hẹp ngang nên chứa được câu dài ở cỡ chữ to.
 Tên hãng trong tiêu đề được tô màu tự động, tra theo `BRAND_FROM` và `BRAND_PHRASE`
 trong `card.py`. Riêng `AI` đứng một mình không tô.
 
-Hai thương hiệu tô khác nhau, khai báo bằng khoá `to_ten_hang`:
+Hai thương hiệu tô khác nhau, khai báo bằng khoá `company_name_color`:
 
 - **donniechublog** (`"cyan"`) — dùng CYAN của bộ nhận diện.
-- **dcgr** (`"hang"`) — dùng **màu riêng của chính hãng** được nhắc tới, tra
+- **dcgr** (`"company"`) — dùng **màu riêng của chính hãng** được nhắc tới, tra
   `COLOR_RANK` / `COLOR_PHRASE`. Đây là màu thứ ba của bảng đơn sắc: nó không cố định,
   mà đến từ chủ thể của tin. Màu quá đậm được `_enough_bright()` kéo lên đủ đọc trên
-  nền tối. Hãng chưa biết màu thì dùng `mau_du_phong` (hổ phách).
+  nền tối. Hãng chưa biết màu thì dùng `fallback_company_color` (hổ phách).
 
 Cùng bảng `COLOR_RANK` đó còn quyết **palette của carousel EDU** (Kite): khi ảnh
 bìa không có màu rõ ràng, `render_edu.chon_theme_tu_dong` bám màu hãng nhắc

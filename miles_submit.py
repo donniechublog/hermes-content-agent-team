@@ -72,16 +72,16 @@ def main() -> int:
     p_tl = wd / state_paths.MATERIAL_FILE
     tl = p_tl.read_text(encoding="utf-8") if p_tl.exists() else ""
     loi, canh, tin = caption_check.check(cap, tl)
-    print(f"[do] {tin.get('do_dai', 0)} ký tự | {tin.get('so_cau', 0)} câu | {tin.get('so_trong_caption', 0)} chỗ có số"
-          f" | tỉ lệ dấu {tin.get('ty_le_dau', 0):.2f}"
-          + (f" | nguồn có {tin['cau_so_trong_nguon']} câu số liệu" if "cau_so_trong_nguon" in tin else ""))
+    print(f"[do] {tin.get('char_count', 0)} ký tự | {tin.get('sentence_count', 0)} câu | {tin.get('number_count', 0)} chỗ có số"
+          f" | tỉ lệ dấu {tin.get('diacritic_ratio', 0):.2f}"
+          + (f" | nguồn có {tin['source_number_sentence_count']} câu số liệu" if "source_number_sentence_count" in tin else ""))
     for c in canh:
         print(f"[nhac] {c}")
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        if tin.get("do_dai", 0) > caption_check.LIMIT:
-            print(f"[LOI] cần cắt ít nhất {tin['do_dai'] - caption_check.LIMIT} ký tự "
+        if tin.get("char_count", 0) > caption_check.LIMIT:
+            print(f"[LOI] cần cắt ít nhất {tin['char_count'] - caption_check.LIMIT} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
         # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
         # bao Jika chay miles_submit.py doc ra nhu giao nham nguoi (LOW-13).
@@ -89,9 +89,9 @@ def main() -> int:
                                f"venv/bin/python {persona}_submit.py {a.draft_id}")
 
     if a.khong_push:
-        (wd / "draft_thu.txt").write_text(cap, encoding="utf-8")
+        (wd / state_paths.DRAFT_TRIAL_FILE).write_text(cap, encoding="utf-8")
         print(f"[thu] DAT cong chan. Khong ghep draft/khong push (--khong-push). Caption o {p_cap}")
-        print(f"Ket qua task: caption {tin.get('do_dai')} ký tự đạt cổng chặn (thử).")
+        print(f"Ket qua task: caption {tin.get('char_count')} ký tự đạt cổng chặn (thử).")
         return 0
 
     r = subprocess.run([sys.executable, str(ROOT / "draft_write.py"), a.draft_id,
@@ -117,18 +117,18 @@ def main() -> int:
     # Bang den (kanban swarm, 05/09): ghi ban giao cua Miles len the goc; JSON nay
     # cung in ra "[metadata]" de Miles dan vao kanban_complete (len bang den).
     # Best-effort.
-    md = {"do_dai": tin.get("do_dai"), "so_cau": tin.get("so_cau"),
-          "so_trong_caption": tin.get("so_trong_caption"),
+    md = {"char_count": tin.get("char_count"), "sentence_count": tin.get("sentence_count"),
+          "number_count": tin.get("number_count"),
           "draft": f"drafts/{a.draft_id}.json"}
     # `author` theo NGUOI VIET THAT cua bai, khong go cung "miles" (LOW-13):
     # cung script nay phuc vu ca Miles lan Jika, va bang den la cho Ong Chu doc
     # ra ai lam gi.
     nc.write_blackboard(a.draft_id, "caption", md, persona)
-    print(f"[xong] caption {tin.get('do_dai')} ký tự, {tin.get('so_cau')} câu, "
-          f"{tin.get('so_trong_caption')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")
+    print(f"[xong] caption {tin.get('char_count')} ký tự, {tin.get('sentence_count')} câu, "
+          f"{tin.get('number_count')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))
     print("Ket qua task (dung dong nay de ket thuc task): "
-          f"Viết caption {tin.get('do_dai')} ký tự, {tin.get('so_trong_caption')} chỗ có số, đã vào hàng duyệt.")
+          f"Viết caption {tin.get('char_count')} ký tự, {tin.get('number_count')} chỗ có số, đã vào hàng duyệt.")
     return 0
 
 

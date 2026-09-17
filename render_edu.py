@@ -1093,19 +1093,19 @@ _DAN_NGUON_SAI = re.compile(
 # ke hai vong sinh ra de tranh. Va moi duong khong di qua nop (goi thang
 # render_edu, `--spec -`) thi truoc gio khong co cong nao.
 #
-# `long`: (ten danh sach, cac khoa moi phan tu phai co).
+# `fields`: truong bat buoc; `nested`: (ten danh sach, cac khoa moi phan tu phai co).
 REQUIRED_KIND = {
-    "cover":     {"truong": ("eyebrow", "title", "standfirst")},
-    "statement": {"truong": ("eyebrow", "title", "standfirst"),
-                  "long": ("cards", ("num", "text"))},
-    "steps":     {"truong": ("eyebrow", "title", "steps"),
-                  "long": ("steps", ("title", "desc"))},
-    "loop":      {"truong": ("eyebrow", "title", "standfirst", "callout", "chips")},
-    "figure":    {"truong": ("eyebrow", "title", "standfirst", "image", "caption"),
-                  "long": ("cards", ("num", "text"))},
-    "bars":      {"truong": ("eyebrow", "title", "standfirst", "caption", "bars"),
-                  "long": ("bars", ("label", "value"))},
-    "cta":       {"truong": ("eyebrow", "title", "checks")},
+    "cover":     {"fields": ("eyebrow", "title", "standfirst")},
+    "statement": {"fields": ("eyebrow", "title", "standfirst"),
+                  "nested": ("cards", ("num", "text"))},
+    "steps":     {"fields": ("eyebrow", "title", "steps"),
+                  "nested": ("steps", ("title", "desc"))},
+    "loop":      {"fields": ("eyebrow", "title", "standfirst", "callout", "chips")},
+    "figure":    {"fields": ("eyebrow", "title", "standfirst", "image", "caption"),
+                  "nested": ("cards", ("num", "text"))},
+    "bars":      {"fields": ("eyebrow", "title", "standfirst", "caption", "bars"),
+                  "nested": ("bars", ("label", "value"))},
+    "cta":       {"fields": ("eyebrow", "title", "checks")},
 }
 
 
@@ -1119,10 +1119,10 @@ def check_field(slides) -> list:
                        + ", ".join(sorted(BUILDERS)))
             continue
         q = REQUIRED_KIND.get(kind, {})
-        for k in q.get("truong", ()):
+        for k in q.get("fields", ()):
             if not sl.get(k):
                 loi.append(f"slide {i} [{kind}]: thieu '{k}'")
-        ten_ds, khoa = q.get("long", (None, ()))
+        ten_ds, khoa = q.get("nested", (None, ()))
         if ten_ds:
             for j, muc in enumerate(sl.get(ten_ds) or [], 1):
                 if not isinstance(muc, dict):
@@ -1477,7 +1477,7 @@ def _route_font(page) -> dict:
     Chan tai `FONT_URL` nen KHONG bao gio ra mang that. Bo dem de nguoi goi biet
     font co thuc su duoc nap khong: khac voi `data:` URL (khong bao giu hong),
     route hong thi Chromium lang le roi ve font he thong va ca album sai chu."""
-    dem = {"phuc_vu": 0}
+    dem = {"served": 0}
 
     def _tra(route, request):
         ten = request.url.rsplit("/", 1)[-1]
@@ -1486,7 +1486,7 @@ def _route_font(page) -> dict:
         if fp.parent.resolve() != FONTS_DIR.resolve() or not fp.exists():
             route.abort()
             return
-        dem["phuc_vu"] += 1
+        dem["served"] += 1
         route.fulfill(status=200, body=fp.read_bytes(),
                       headers={"content-type": "font/ttf",
                                "cache-control": "max-age=86400"})
@@ -1595,7 +1595,7 @@ def render(spec, out, brand, bo_qua_dau, scale):
         # Font phuc vu qua route thi PHAI co it nhat mot luot. Zero nghia la
         # Chromium da roi ve font he thong: album van ra anh, chi la sai chu —
         # dung loai hong ma nhin anh moi biet, nen chan o day.
-        if not dem_font["phuc_vu"]:
+        if not dem_font["served"]:
             browser.close()
             raise SystemExit(
                 "KHONG font nao duoc nap qua page.route — album se sai chu.\n"

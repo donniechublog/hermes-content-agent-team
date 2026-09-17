@@ -336,8 +336,8 @@ def record_used(duong_dan, draft_id: str, vai: str, link: str = "") -> None:
             h = dhash(im)
     except Exception:                                        # noqa: BLE001
         return
-    dong = {"dhash": h, "draft_id": draft_id, "vai": vai, "tin": image_provenance.story_key(link),
-            "ten": q.name, "md5": _file_md5(q), "luc": int(time.time())}
+    dong = {"dhash": h, "draft_id": draft_id, "role": vai, "story_key": image_provenance.story_key(link),
+            "file_name": q.name, "md5": _file_md5(q), "used_at": int(time.time())}
     with open(image_provenance._used_images_log(), "a", encoding="utf-8") as f:
         f.write(json.dumps(dong, ensure_ascii=False) + "\n")
 
@@ -387,15 +387,15 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
             d = json.loads(line)
         except Exception:                                    # noqa: BLE001
             continue
-        if d.get("draft_id") == draft_id or d.get("luc", 0) < moc:
+        if d.get("draft_id") == draft_id or d.get("used_at", 0) < moc:
             continue
         # Cung MOT TIN nhung vai khac (Dre roi Ethan) thi KHONG chan: hai vai
         # dung chung bo anh cua bai do, chan la vai sau khong con anh nao.
-        if tin and d.get("tin") and d["tin"] == tin:
+        if tin and d.get("story_key") and d["story_key"] == tin:
             continue
         if (ma and d.get("md5") == ma) or is_near_duplicate(int(d.get("dhash", 0)), h, nguong):
-            khi = time.strftime("%d/%m %H:%M", time.localtime(d.get("luc", 0)))
-            return [f"{nhan}: TRUNG anh da dung o bai '{d.get('draft_id')}' ({d.get('vai')}, {khi}) — "
+            khi = time.strftime("%d/%m %H:%M", time.localtime(d.get("used_at", 0)))
+            return [f"{nhan}: TRUNG anh da dung o bai '{d.get('draft_id')}' ({d.get('role')}, {khi}) — "
                     "moi tin mot anh, nguoi doc kenh nhan ra anh lap lai ngay. Tim anh khac."], []
     return [], []
 

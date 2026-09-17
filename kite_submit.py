@@ -35,7 +35,7 @@ DRAFTS = cb.DRAFTS
 # kia thieu vai truong ma builder that su doc cung (`callout` cua loop,
 # `standfirst` cua figure/bars, cac khoa long trong cards/steps/bars), va no chi
 # chay khi di qua nop — goi thang render_edu.py thi khong co cong nao.
-REQUIRED = {k: v["truong"] for k, v in render_edu.REQUIRED_KIND.items()}
+REQUIRED = {k: v["fields"] for k, v in render_edu.REQUIRED_KIND.items()}
 LIMIT = {"title": 70, "standfirst": 240, "callout": 130, "eyebrow": 32}
 # LOW-45 (Ong Chu 12/09/2026): "bài có 8 slide thì tối thiểu phải có 3 hình
 # thật" — 1 ảnh thật KHÁC NHAU cho mỗi 3 slide, làm tròn LÊN (8 -> 3, 6 -> 2,
@@ -483,15 +483,15 @@ def main() -> int:
                            {"theme": theme, "hero": hero, "hook": hook,
                             # ma hinh THAT da dat len slide — de bai sau (ke ca
                             # cua Dre/Ethan) khong dung lai (06/09/2026).
-                            "hinh": [sl.get("image") for sl in (spec.get("slides") or [])
+                            "image_ids": [sl.get("image") for sl in (spec.get("slides") or [])
                                      if sl.get("image")]})
     # Bang den (kanban swarm): ban giao co cau truc cua Kite len the goc + dong
     # "[metadata]" de Kite dan vao kanban_complete -> Miles thay trong
     # "Parent task results". Best-effort.
-    md = {"slide": n, "hook": hook, "theme": theme, "hero": hero, "hinh_that": hinh,
-          "tep": str(out), "ban_giao": str(bg_path), "message_id": mid, "vai": "kite"}
+    md = {"slide": n, "hook": hook, "theme": theme, "hero": hero, "image_ids": hinh,
+          "file_path": str(out), "handoff_path": str(bg_path), "message_id": mid, "role": "kite"}
     if not a.khong_gui:
-        nc.write_blackboard(a.draft_id, "anh", md, "kite")
+        nc.write_blackboard(a.draft_id, "images", md, "kite")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))
     print(f"[xong] {n} slide -> {out}; theme={theme} hero={hero}"
           + (f"; da gui topic carousel-edu (message_id={mid}) kem nut duyet" if mid else "")

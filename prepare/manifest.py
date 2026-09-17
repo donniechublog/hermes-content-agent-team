@@ -208,7 +208,7 @@ def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: 
         # hieu do (`l.startswith("- ") and SO.search(l)`), nen tren moi bai di
         # qua nhanh nay — bai trang JS, tuc phan lon trang san pham hien dai —
         # cong "nguon co so ma caption khong co so" TU TAT, khong bao gi, va
-        # `cau_so_trong_nguon` ve 0. Miles doc material.md chu khong doc manifest.json
+        # `source_number_sentence_count` ve 0. Miles doc material.md chu khong doc manifest.json
         # nen khong co duong nao khac de biet.
         (wd / state_paths.MATERIAL_FILE).write_text(
             _tl.use_page({"title": title, "number_sentences": cau_so,
@@ -219,7 +219,7 @@ def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: 
 
 
 def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
-    """Cac gia tri DAN XUAT tu bo anh: dung_duoc, not_yet_seen, domains, usable_count,
+    """Cac gia tri DAN XUAT tu bo anh: usable_images, not_yet_seen, domains, usable_count,
     cover_suggestions, stackable_pairs. MOT ban cho hai nguoi goi: `build_manifest` luc engine
     chay xong, va `find_more_images.fresh_manifest` khi vai tim them anh sau do —
     khong thi manifest sau khi them anh mang so cu (12/09/2026)."""
@@ -245,7 +245,7 @@ def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
     # (so, dung boi cong chan/brief "bat buoc dung XH") van la BANG DAU TIEN.
     if so_xh:
         goi_y_bia = ["XH" if i == 0 else f"XH{i + 1}" for i in range(so_xh)] + goi_y_bia
-    return {"dung_duoc": dung_duoc, "not_yet_seen": chua_nhin, "domains": so_mien,
+    return {"usable_images": dung_duoc, "not_yet_seen": chua_nhin, "domains": so_mien,
             "usable_count": so_dung_duoc, "cover_suggestions": goi_y_bia, "stackable_pairs": stackable_pairs(dung_duoc)}
 
 

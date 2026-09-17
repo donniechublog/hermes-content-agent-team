@@ -345,7 +345,7 @@ def main() -> int:
     # khac de doi (xem submit_common.only_ranking_choice).
     bat_buoc = cover.get("anh") is not None and cover.get("anh") == nc.only_ranking_choice(m)
     loi = nc.check_redo_reused(da_dung, "bìa", cover.get("anh") or "+".join(cover.get("ghep") or []),
-                          cover.get("hook"), khoa_anh="bia", draft_id=a.draft_id,
+                          cover.get("hook"), khoa_anh="cover_image", draft_id=a.draft_id,
                           anh_bat_buoc=bat_buoc) + loi
     if loi:
         for e in loi:
@@ -389,18 +389,18 @@ def main() -> int:
         print(f"[thu] khong gui Telegram (--khong-gui). {n} slide o {out.parent}")
     else:
         mid = nc.send_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
-                           {"bia": cover.get("anh"), "hook": hook,
-                            "anh": [ma for _, ds in dung_anh for ma in ds]})
+                           {"cover_image": cover.get("anh"), "hook": hook,
+                            "image_ids": [ma for _, ds in dung_anh for ma in ds]})
     nguon_anh = sorted({m_["domain"] or manifest_values.source_label(m_["source"]) for m_ in m["images"]
                         if m_["id"] in {ma for _, ds in dung_anh for ma in ds}})
     # Bang den (kanban swarm, 05/09): script ghi ban giao co cau truc len the goc
     # cua bai — code lam, LLM khong phai nho. Cung JSON nay in ra dong
     # "[metadata]" de Dre dan vao kanban_complete(metadata=...) -> Miles thay
     # trong "Parent task results". Best-effort: bang den hong khong hong bai.
-    md = {"slide": n, "hook": hook, "nguon_anh": nguon_anh, "tep": str(out),
-          "ban_giao": str(bg_path), "message_id": mid}
+    md = {"slide": n, "hook": hook, "image_sources": nguon_anh, "file_path": str(out),
+          "handoff_path": str(bg_path), "message_id": mid}
     if not a.khong_gui:
-        nc.write_blackboard(a.draft_id, "anh", md, "dre")
+        nc.write_blackboard(a.draft_id, "images", md, "dre")
     print(f"[xong] {n} slide -> {out}" + (f"; da gui topic carousel (message_id={mid}) kem nut duyet"
                                           if mid else "") +
           f"; ban giao cho Miles: {bg_path}")
