@@ -44,10 +44,10 @@ class _Phien:
 
 
 def _image(ma: str) -> dict:
-    return {"ma": ma, "goc": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
-            "ti_le": 1.0, "w": 1200, "h": 1200, "loai": "anh", "ngang": False,
-            "dung": ["bìa", "slide"], "lien_quan": True, "mat": 0, "goc_trai_sang": 60,
-            "canh_ngan": 1200, "mien": "vi_du.com", "tu": "bai", "ghi_chu": []}
+    return {"id": ma, "original_path": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
+            "ratio": 1.0, "w": 1200, "h": 1200, "kind": "anh", "landscape": False,
+            "uses": ["bìa", "slide"], "relevant": True, "faces": 0, "bottom_left_brightness": 60,
+            "short_side": 1200, "domain": "vi_du.com", "source": "bai", "notes": []}
 
 
 PHA_NANG = ("BrowserSession", "load_source", "_summary_from_img_json", "_supplement_source", "_extra_announcement_page",
@@ -67,25 +67,25 @@ def _fallback_rounds_already_run(so_anh_cua_tin: int,
     def _vong(ten):
         def f(a, *args, **kw):
             goi.append(ten)
-            return a, [x for x in a if x["dung"]], []
+            return a, [x for x in a if x["uses"]], []
         return f
 
     cb.BrowserSession = lambda *a, **k: _Phien()
     cb.load_source = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
-    cb._summary_from_img_json = lambda d: {"vai_anh": "dre", "summary": ""}
+    cb._summary_from_img_json = lambda d: {"image_role": "dre", "summary": ""}
     cb._supplement_source = lambda *a, **k: []
     cb._extra_announcement_page = lambda n, p, trang, *a, **k: trang
     cb._take_from_browser = lambda trang, *a, **k: (
         {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)
     cb._capture_ranking = lambda *a, **k: ([], False)
     cb._gather_and_download_image = lambda *a, **k: anh
-    cb._seen_image = lambda a, nguon, tieu_de_, wd: (a, [x for x in a if x["dung"]], [])
+    cb._seen_image = lambda a, nguon, tieu_de_, wd: (a, [x for x in a if x["uses"]], [])
     cb._round_widen_search = _vong("tim_rong")
     cb._round_brand = _vong("thuong_hieu")
     cb._round_concept = _vong("khai_niem")
-    cb._article_material = lambda *a, **k: {"sentence_has_count": [], "doan_dau": "", "so_nguon": 1}
-    cb.build_manifest = lambda *a, **k: {"anh": anh}
+    cb._article_material = lambda *a, **k: {"sentence_has_count": [], "lead_paragraph": "", "source_count": 1}
+    cb.build_manifest = lambda *a, **k: {"images": anh}
     cb.contact_sheet = lambda *a, **k: None
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -154,8 +154,8 @@ def test_error_call_no_ok_stalled_again_after_one_if():
 
 
 # ------------------------------------------- nhan chan dung founder toi ca hai brief
-_TH_NGUOI = {"hang": "Nvidia", "khoa": "nvidia", "loai": "nguoi",
-             "nguoi": "Jensen Huang", "vai": "nhà sáng lập"}
+_TH_NGUOI = {"company": "Nvidia", "key": "nvidia", "kind": "nguoi",
+             "person": "Jensen Huang", "person_role": "nhà sáng lập"}
 
 
 def test_label_block_use_say_name_and_change_declare_subject():
@@ -169,8 +169,8 @@ def test_brief_of_ethan_no_remaining_call_block_use_is_except_count():
     khai `nhan_vat` dung, ma `submit_common.check_subject_named` thi chan anh co mat nguoi
     khong khai ten -> Ethan buoc phai bo anh founder."""
     import ethan_prepare
-    a = {"ma": "A6", "ti_le": 0.8, "w": 960, "h": 1200, "loai": "anh", "mat": 1,
-         "goc_trai_sang": 60, "canh_ngan": 960, "ghi_chu": [], "thuong_hieu": _TH_NGUOI}
+    a = {"id": "A6", "ratio": 0.8, "w": 960, "h": 1200, "kind": "anh", "faces": 1,
+         "bottom_left_brightness": 60, "short_side": 960, "notes": [], "brand_match": _TH_NGUOI}
     _dung, ghi = ethan_prepare.label_ethan(a)
     chu = " ".join(ghi)
     assert "Jensen Huang" in chu, f"brief cua Ethan khong noi ten nguoi trong anh: {chu}"

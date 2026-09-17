@@ -29,14 +29,14 @@ def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
     """Tin hai hãng: hãng A xử lý trước chỉ có chân dung (24), hãng B xử lý sau
     có ảnh trụ sở (28). Danh sách đưa vào `download_and_filter` phải đặt ảnh trụ sở của
     hãng B lên TRƯỚC chân dung của hãng A — ngược thứ tự xử lý."""
-    ung_vien_A = {"anh": "https://x/a-portrait.jpg", "alt": "chân dung", "og": False,
-                 "tu": "thuong_hieu", "rong": 1800, "cao": 2880, "trang": "https://x/a",
-                 "diem": 24, "thuong_hieu": {"hang": "HangA", "khoa": "hanga",
-                                             "loai": "nguoi", "tu_khoa": "CEO HangA"}}
-    ung_vien_B = {"anh": "https://x/b-hq.jpg", "alt": "trụ sở", "og": False,
-                 "tu": "thuong_hieu", "rong": 2000, "cao": 1200, "trang": "https://x/b",
-                 "diem": 28, "thuong_hieu": {"hang": "HangB", "khoa": "hangb",
-                                             "loai": "anh", "tu_khoa": "HangB headquarters"}}
+    ung_vien_A = {"image_url": "https://x/a-portrait.jpg", "alt": "chân dung", "og": False,
+                 "source": "thuong_hieu", "rong": 1800, "cao": 2880, "page_url": "https://x/a",
+                 "score": 24, "brand_match": {"company": "HangA", "key": "hanga",
+                                              "kind": "nguoi", "keyword": "CEO HangA"}}
+    ung_vien_B = {"image_url": "https://x/b-hq.jpg", "alt": "trụ sở", "og": False,
+                 "source": "thuong_hieu", "rong": 2000, "cao": 1200, "page_url": "https://x/b",
+                 "score": 28, "brand_match": {"company": "HangB", "key": "hangb",
+                                              "kind": "anh", "keyword": "HangB headquarters"}}
 
     def anh_hang_gia(hang, so=4, wd=None):
         return [ung_vien_A] if hang["khoa"] == "hanga" else [ung_vien_B]
@@ -44,7 +44,7 @@ def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
     goi = {}
 
     def tai_va_loc_gia(cands, wd):
-        goi["thu_tu_diem"] = [c["diem"] for c in cands]
+        goi["thu_tu_diem"] = [c["score"] for c in cands]
         return []
 
     with tempfile.TemporaryDirectory() as d, \
@@ -78,11 +78,11 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
     Sau khi round-robin theo hãng khi cắt `MAX_EXTRA_BRAND_`, ảnh của Moonshot
     phải sống sót."""
     def _ung(hang, khoa, diem, i):
-        return {"anh": f"https://x/{khoa}-{i}.jpg", "alt": khoa, "og": False,
-                "tu": "thuong_hieu", "rong": 1800, "cao": 1200, "trang": f"https://x/{khoa}",
-                "diem": diem, "thuong_hieu": {"hang": hang, "khoa": khoa,
-                                              "loai": "nguoi" if diem >= 24 else "anh",
-                                              "tu_khoa": f"{hang}"}}
+        return {"image_url": f"https://x/{khoa}-{i}.jpg", "alt": khoa, "og": False,
+                "source": "thuong_hieu", "rong": 1800, "cao": 1200, "page_url": f"https://x/{khoa}",
+                "score": diem, "brand_match": {"company": hang, "key": khoa,
+                                               "kind": "nguoi" if diem >= 24 else "anh",
+                                               "keyword": f"{hang}"}}
 
     cands_theo_hang = {
         "anthropic": [_ung("Anthropic", "anthropic", 24, 1), _ung("Anthropic", "anthropic", 24, 2)],
@@ -103,13 +103,13 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
             c = dict(c)
             p = wd / f"tai_{i}.png"
             p.write_bytes(b"\x89PNG\r\n")
-            c["goc"] = str(p)
+            c["original_path"] = str(p)
             ra.append(c)
         return ra                                               # giữ nguyên thứ tự đưa vào (mô phỏng tải xong)
 
     def phan_loai_gia(a, wd, tieu_de):
-        a["dung"] = True
-        a["lien_quan"] = True
+        a["uses"] = True
+        a["relevant"] = True
         return a
 
     with tempfile.TemporaryDirectory() as d, \
@@ -125,7 +125,7 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
         anh, dung_duoc, _ = fallback_rounds._round_brand(
             [], "Anthropic accuses Alibaba and Moonshot AI", "", Path(d))
 
-    hang_da_len = {a["thuong_hieu"]["khoa"] for a in anh if a.get("thuong_hieu")}
+    hang_da_len = {a["brand_match"]["key"] for a in anh if a.get("brand_match")}
     assert "moonshot" in hang_da_len, (
         f"ảnh Moonshot bị cắt trước khi vào brief dù có ứng viên thật — "
         f"chỉ còn hãng: {hang_da_len}")

@@ -49,8 +49,8 @@ def _fake_capture_lead(anh_map):
         from PIL import Image
         Path(ra).parent.mkdir(parents=True, exist_ok=True)
         Image.open(src).convert("RGB").save(ra)
-        return {"anh": url, "trang": url, "tu": "chup_nguon", "chup_nguon": True,
-                "tit_trang": "", "mau_nen": "#ffffff", "alt": "", "ly_do": ""}
+        return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True,
+                "page_title": "", "background_color": "#ffffff", "alt": "", "score_reason": ""}
     return gia
 
 
@@ -70,7 +70,7 @@ def test_two_report_use_common_photo_wire_only_keep_one_temp():
                 [], "https://a.com/bai",
                 [{"url": "https://b.com/bai-khac-dua-cung-tin"}, {"url": "https://c.com/bai-thu-ba"}],
                 tmp / "wd")
-        mien = sorted(a["mien"] for a in anh)
+        mien = sorted(a["domain"] for a in anh)
         assert len(anh) == 2, f"phai con 2 anh (1 wire + 1 rieng), duoc {mien}"
         assert "a.com" in mien or "b.com" in mien
         assert "c.com" in mien
@@ -86,7 +86,7 @@ def test_no_duplicate_with_image_already_has_word_round_other():
         da_co.mkdir(parents=True)
         from PIL import Image
         Image.open(wire).convert("RGB").save(da_co / "A1.png")
-        anh_ban_dau = [{"ma": "A1", "goc": str(da_co / "A1.png"), "dung": ["thân"], "lien_quan": True}]
+        anh_ban_dau = [{"id": "A1", "original_path": str(da_co / "A1.png"), "uses": ["thân"], "relevant": True}]
         anh_map = {"https://a.com/bai": wire}
         with mock.patch("capture_page.capture_lead_mobile", _fake_capture_lead(anh_map)):
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(anh_ban_dau, "https://a.com/bai", [], tmp / "wd")

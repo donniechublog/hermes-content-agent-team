@@ -37,12 +37,12 @@ def test_image_person_landscape_filter_use_name_and_ratio():
     }
     with mock.patch.object(th, "_ask_commons", return_value=pages):
         ra = th.image_person_landscape("Dario Amodei", "CEO", "Anthropic", "anthropic")
-    assert len(ra) == 1, [c["thuong_hieu"] for c in ra]
+    assert len(ra) == 1, [c["brand_match"] for c in ra]
     c = ra[0]
     assert c["rong"] >= c["cao"], "phai la anh ngang/vuong, khong doc"
-    assert c["diem"] == 26
-    assert c["thuong_hieu"]["loai"] == "nguoi"
-    assert c["thuong_hieu"]["nguoi"] == "Dario Amodei"
+    assert c["score"] == 26
+    assert c["brand_match"]["kind"] == "nguoi"
+    assert c["brand_match"]["person"] == "Dario Amodei"
 
 
 def test_two_person_other_stack_name_no_ok_pass():
@@ -79,7 +79,7 @@ def test_image_wikidata_priority_landscape_than_block_use_read_after_when_sort()
     with mock.patch.object(th, "material_wikidata", return_value=tl), \
          mock.patch.object(th, "_ask_commons", side_effect=hoi_commons_gia):
         ra = th.image_wikidata({"khoa": "anthropic", "hang": "Anthropic"})
-    ra.sort(key=lambda c: -c.get("diem", 0))
+    ra.sort(key=lambda c: -c.get("score", 0))
     assert ra[0]["rong"] >= ra[0]["cao"], "sau khi sap, anh dau tien phai la anh ngang"
     assert ra[-1]["rong"] < ra[-1]["cao"], "chan dung doc phai roi xuong cuoi"
 

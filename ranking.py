@@ -191,7 +191,7 @@ TOPIC = [
 # nhung chu co trong hau het tom tat cua Finn/Nova/Vera. Do that: 6/6 tieu de
 # goi von / doanh thu / gia chip deu bi dong dau TIN XEP HANG ("Reflection gọi
 # vốn 2 tỷ USD, vòng seed do Nvidia dẫn đầu"), keo theo ca chuoi hong ben duoi.
-# Gia tri `kieu` ma find_and_capture / find_and_capture_many PHAT RA khi CHUP DUOC bang
+# Gia tri `kind` ma find_and_capture / find_and_capture_many PHAT RA khi CHUP DUOC bang
 # that (bang, hai bang ghep, danh sach hang-the, nhan SVG). Chi "the" la the du
 # phong engine tu dung. LOW-21 (11/09/2026): manifest va submit_common tung doi
 # `kieu == "chup"` — gia tri KHONG MOT nhanh nao o day phat ra — nen moi tin xep
@@ -651,8 +651,8 @@ def _capture_one_board(page, tim: dict, out: Path, dpr: int = DPR):
         goc = (max(0, max(band["x"], vung["x"]) - 8), max(band["y"], vung["y"])); do_hdr = a.height / dpr
     row = rows[idx]
     _highlight(out, row["x"] - goc[0], row["y"] - goc[1] + do_hdr, min(row["w"], w), row["h"], dpr)
-    return {"kieu": "bang", "model": tim["model"], "hang": tim["hang"], "dong": tim["dong"],
-            "logo_co": tim["logo"]}, ""
+    return {"kind": "bang", "model": tim["model"], "rank": tim["hang"], "row": tim["dong"],
+            "has_logo": tim["logo"]}, ""
 
 
 def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool = False):
@@ -716,7 +716,7 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
         g = Image.new("RGB", (a.width, a.height + b.height), (255, 255, 255))
         g.paste(a, (0, 0)); g.paste(b, (0, a.height))
         g.save(out, "PNG")
-        kq = {**kq, "kieu": "bang-ghep", "dong": kq["dong"] + " ‖ " + kq2["dong"][:60],
+        kq = {**kq, "kind": "bang-ghep", "row": kq["row"] + " ‖ " + kq2["row"][:60],
               "ghep_voi": tim2["k"]}
     elif p != out:
         p.replace(out)
@@ -868,7 +868,7 @@ def _capture_one_column(page, models: list, out: Path, dpr: int, cot: int = -1):
     if cot < 0:
         row = rows[idx]
         _highlight(out, row["x"] - r["x"], row["y"] - r["y"], row["w"], row["h"], dpr)
-    return {"model": do["model"], "hang": do["hang"], "dong": do["dong"]}, ""
+    return {"model": do["model"], "rank": do["hang"], "row": do["dong"]}, ""
 
 
 def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
@@ -901,7 +901,7 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
         r = im.width / im.height
     so_cot = page.evaluate(_JS_NORM_DS + "(models) => nhomCungDang(models).length", models)
     if r <= RATIO_FIT or so_cot < 2:
-        return {"kieu": "danh-sach", **kq, "logo_co": False}, ""
+        return {"kind": "danh-sach", **kq, "has_logo": False}, ""
     # Qua ngang + con cot cung dang: ghep doc theo dung thu tu tren trang.
     cot_model = page.evaluate(_JS_NORM_DS + """
         (models) => { const b = timDanhSach(models);
@@ -916,7 +916,7 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
         if k2:
             manh.append(p); tam.append(p)
     if len(manh) < 2:
-        return {"kieu": "danh-sach", **kq, "logo_co": False}, ""
+        return {"kind": "danh-sach", **kq, "has_logo": False}, ""
     ims = [Image.open(p).convert("RGB") for p in manh]
     rong = max(i.width for i in ims)
     ims = [i if i.width == rong else i.resize((rong, round(i.height * rong / i.width)), Image.LANCZOS)
@@ -930,7 +930,7 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
     g.save(out, "PNG")
     for p in tam:
         p.unlink(missing_ok=True)
-    return {"kieu": "danh-sach-ghep", **kq, "logo_co": False}, ""
+    return {"kind": "danh-sach-ghep", **kq, "has_logo": False}, ""
 
 
 
@@ -948,7 +948,7 @@ def capture_svg(page, models: list, out: Path, dpr: int = DPR):
     _capture(page, r, out)
     n = do["nhan"]
     _highlight(out, n["x"] - r["x"], n["y"] - r["y"], n["w"], n["h"], dpr)
-    return {"kieu": "svg", "model": tim["model"], "hang": None, "dong": tim["dong"], "logo_co": False}, ""
+    return {"kind": "svg", "model": tim["model"], "rank": None, "row": tim["dong"], "has_logo": False}, ""
 
 
 def capture_logo(page, out: Path):
@@ -1115,8 +1115,8 @@ ARGS_CAPTURE = ("--no-sandbox", "--disable-dev-shm-usage", "--force-color-profil
 def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "donniechublog",
                 hang_goi_y=None, in_log=print, phien_browser=None) -> dict:
     """Đi qua từng nguồn, nguồn nào ra ảnh khoanh được model thì dừng; không nguồn
-    nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (tep, kieu, nguon,
-    site, bang, hang, model, url). `models` phải khác rỗng."""
+    nào ra thì dựng thẻ dự phòng. Luôn trả về dict mô tả ảnh (file_path, kind, source,
+    site, board, rank, model, url). `models` phải khác rỗng."""
     from browser_session import session_or_new
     t0 = time.time()
     logo = None
@@ -1144,14 +1144,14 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
             image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
-                                  site=n["site"], bang=n["bang"], hang=kq.get("hang"), url=n["url"])
+                                  site=n["site"], bang=n["bang"], hang=kq.get("rank"), url=n["url"])
             im = Image.open(out)
-            in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "
-                   f"({kq['kieu']}, {im.width}x{im.height}) — {kq['dong'][:70]}")
-            kq_cuoi = {"tep": str(out), "kieu": kq["kieu"], "nguon": n["ma"], "site": n["site"],
-                       "bang": n["bang"], "hang": kq.get("hang") or hang_goi_y, "model": kq["model"],
-                       "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None,
-                       "duoc_nhac": bool(n.get("duoc_nhac", True))}
+            in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
+                   f"({kq['kind']}, {im.width}x{im.height}) — {kq['row'][:70]}")
+            kq_cuoi = {"file_path": str(out), "kind": kq["kind"], "source": n["ma"], "site": n["site"],
+                       "board": n["bang"], "rank": kq.get("rank") or hang_goi_y, "model": kq["model"],
+                       "url": n["url"], "row": kq["row"], "logo": str(logo) if logo else None,
+                       "mentioned": bool(n.get("duoc_nhac", True))}
             break
     if kq_cuoi:
         return kq_cuoi
@@ -1159,8 +1159,8 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
     out = out_dir / "xep_hang_the.png"
     fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
-    return {"tep": str(out), "kieu": "the", "nguon": n["ma"], "site": n["site"], "bang": n["bang"],
-            "hang": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}
+    return {"file_path": str(out), "kind": "the", "source": n["ma"], "site": n["site"], "board": n["bang"],
+            "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}
 
 
 MAX_XH = 3      # tran so anh xep hang lay cho MOT tin (cac nguon doc_lap)
@@ -1179,11 +1179,11 @@ def _rank_of(kq: dict, n: dict, hang_goi_y):
     de TRONG, khong muon hang o tieu de nua. Truoc do alt ghi "DeepSeek #2" de
     len mot anh dang khoanh hang 9 ("hang #?" trong log nhung van nop) — con so
     o tieu de bien thanh loi khang dinh ve mot tam anh khong chung minh no. The
-    du phong (`kieu="the"`) thi van duoc: hang do la CHU engine tu in ra the,
+    du phong (`kind="the"`) thi van duoc: hang do la CHU engine tu in ra the,
     khong phai bang chung chup tu bang nao."""
-    if kq.get("hang"):
-        return kq["hang"]
-    if is_capture(kq.get("kieu")):
+    if kq.get("rank"):
+        return kq["rank"]
+    if is_capture(kq.get("kind")):
         return None
     return None if n.get("doc_lap") else hang_goi_y
 
@@ -1284,14 +1284,14 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                 in_log(f"[xep_hang] {n['ma']}: bỏ — {ly_do}")
                 continue
             image_provenance.stamp_file(out, "chup_xep_hang", model=kq["model"], nguon=n["ma"],
-                                  site=n["site"], bang=n["bang"], hang=kq.get("hang"), url=n["url"])
+                                  site=n["site"], bang=n["bang"], hang=kq.get("rank"), url=n["url"])
             im = Image.open(out)
-            in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('hang') or '?'} "
-                   f"({kq['kieu']}, {im.width}x{im.height}) — {kq['dong'][:70]}")
-            ket_qua.append({"tep": str(out), "kieu": kq["kieu"], "nguon": n["ma"], "site": n["site"],
-                            "bang": n["bang"], "hang": _rank_of(kq, n, hang_goi_y), "model": kq["model"],
-                            "url": n["url"], "dong": kq["dong"], "logo": str(logo) if logo else None,
-                            "duoc_nhac": bool(n.get("duoc_nhac", True))})
+            in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
+                   f"({kq['kind']}, {im.width}x{im.height}) — {kq['row'][:70]}")
+            ket_qua.append({"file_path": str(out), "kind": kq["kind"], "source": n["ma"], "site": n["site"],
+                            "board": n["bang"], "rank": _rank_of(kq, n, hang_goi_y), "model": kq["model"],
+                            "url": n["url"], "row": kq["row"], "logo": str(logo) if logo else None,
+                            "mentioned": bool(n.get("duoc_nhac", True))})
             if not n.get("doc_lap"):
                 da_chup_thuong = True
     if ket_qua:
@@ -1300,8 +1300,8 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
     out = out_dir / "xep_hang_the.png"
     fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
-    return [{"tep": str(out), "kieu": "the", "nguon": n["ma"], "site": n["site"], "bang": n["bang"],
-            "hang": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}]
+    return [{"file_path": str(out), "kind": "the", "source": n["ma"], "site": n["site"], "board": n["bang"],
+            "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}]
 
 
 def main() -> int:
@@ -1326,8 +1326,8 @@ def main() -> int:
                      in_log=lambda s: print(s, file=sys.stderr))
     if not kq:
         sys.exit("Không ra ảnh")
-    Path(kq["tep"]).replace(ra)
-    kq["tep"] = str(ra)
+    Path(kq["file_path"]).replace(ra)
+    kq["file_path"] = str(ra)
     print(json.dumps(kq, ensure_ascii=False))
     return 0
 

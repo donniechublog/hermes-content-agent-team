@@ -11,7 +11,7 @@ Ba loi do duoc, moi loi mot nhom test FAIL TREN CODE CU:
      `deepseek-v4.1-flash-max` vo, mat chu `deepseek`, truy van Bing ra 0 bao.
   2. `manifest`/`submit_common` doi `kieu == "chup"` — gia tri xep_hang chua bao gio
      phat ra; moi test cu stub "chup" nen xanh gia. Cong o muc MA NGUON: tap
-     `kieu` xep_hang phat ra phai duoc nguoi doc coi la "chup that".
+     `kind` xep_hang phat ra phai duoc nguoi doc coi la "chup that".
   3. Khong co duong nao toi trang cong bo chinh chu cua model
      (`image_brand.announcement_page` + `fallback_rounds._extra_announcement_page` +
      `browser_pass` uu tien trang do voi tran 4 anh).
@@ -70,13 +70,13 @@ def test_query_bing_try_copy_drop_dash_before():
 
 # ------------------------------------------------ 2. kieu "chup that" thong nhat
 def _kind_ranking_emit_out() -> set:
-    """Moi gia tri chuoi gan cho khoa "kieu" trong dict literal cua ranking.py."""
+    """Moi gia tri chuoi gan cho khoa "kind" trong dict literal cua ranking.py."""
     cay = ast.parse((ROOT / "ranking.py").read_text(encoding="utf-8"))
     ra = set()
     for n in ast.walk(cay):
         if isinstance(n, ast.Dict):
             for k, v in zip(n.keys, n.values):
-                if isinstance(k, ast.Constant) and k.value == "kieu" \
+                if isinstance(k, ast.Constant) and k.value == "kind" \
                         and isinstance(v, ast.Constant) and isinstance(v.value, str):
                     ra.add(v.value)
     return ra
@@ -96,16 +96,16 @@ def test_new_kind_ranking_emit_out_all_ok_reader_understand():
 
 
 def test_brief_and_gate_submit_regard_board_capture_real_is_required():
-    m = {"tin_xep_hang": True,
-         "xep_hang": {"site": "LIVEBENCH.AI", "bang": "LiveBench", "model": "deepseek-v4.1-flash-max",
-                      "hang": 6, "kieu": "bang", "duoc_nhac": True}}
+    m = {"is_ranking_story": True,
+         "ranking": {"site": "LIVEBENCH.AI", "board": "LiveBench", "model": "deepseek-v4.1-flash-max",
+                     "rank": 6, "kind": "bang", "mentioned": True}}
     dong = manifest.ranking_brief_line(m, "bìa ", "dre_submit")
     assert "BẮT BUỘC" in dong and "THẺ DỰ PHÒNG" not in dong, dong
-    assert submit_common.needs_ranking_image(m, {"ma": "A1"}), "bang chup that ma cong khong ep"
-    assert not submit_common.needs_ranking_image(m, {"ma": "XH", "xep_hang": m["xep_hang"]})
-    m["xep_hang"]["kieu"] = "the"
+    assert submit_common.needs_ranking_image(m, {"id": "A1"}), "bang chup that ma cong khong ep"
+    assert not submit_common.needs_ranking_image(m, {"id": "XH", "ranking": m["ranking"]})
+    m["ranking"]["kind"] = "the"
     assert "THẺ DỰ PHÒNG" in manifest.ranking_brief_line(m, "bìa ", "dre_submit")
-    assert not submit_common.needs_ranking_image(m, {"ma": "A1"})
+    assert not submit_common.needs_ranking_image(m, {"id": "A1"})
 
 
 def test_reader_kind_no_count_string_manual():
@@ -113,6 +113,7 @@ def test_reader_kind_no_count_string_manual():
     for tep in ("prepare/manifest.py", "submit_common.py"):
         src = (ROOT / tep).read_text(encoding="utf-8")
         assert 'get("kieu") == "chup"' not in src and 'get("kieu") != "chup"' not in src, tep
+        assert 'get("kind") == "chup"' not in src and 'get("kind") != "chup"' not in src, tep
         assert "ranking.is_capture(" in src, f"{tep}: phai dung ranking.is_capture"
 
 
