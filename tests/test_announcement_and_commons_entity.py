@@ -47,10 +47,10 @@ def test_extra_announcement_page_ask_with_name_long_most_and_no_has_hugging_face
     try:
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "source.json"
-            ng = {"tieu_de_en": EN, "trang": [{"url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash"}]}
+            ng = {"title_en": EN, "pages": [{"url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash"}]}
             p.write_text(json.dumps(ng), encoding="utf-8")
             with redirect_stderr(io.StringIO()):
-                fallback_rounds._extra_announcement_page(ng, p, ng["trang"], VI, "")
+                fallback_rounds._extra_announcement_page(ng, p, ng["pages"], VI, "")
     finally:
         th.announcement_page = cu
     assert goi.get("models") and goi["models"][0] == "DeepSeek-V4.1-Flash", goi

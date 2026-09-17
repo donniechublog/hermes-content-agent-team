@@ -193,11 +193,11 @@ def gather_material(title: str, link: str, nguon_path: Path, wd: Path, tieu_de_e
 def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: dict, bp: dict) -> dict:
     """Tu lieu cho vai viet; fetch tinh rong (trang JS) thi dung chu tu browser."""
     print("[tu_lieu] boc chu tu nguon...", file=sys.stderr)
-    tl = gather_material(title, link, nguon_path, wd, nguon.get("tieu_de_en", ""))
-    if len(tl.get("number_sentences", [])) < 3 and bp.get("chu"):
+    tl = gather_material(title, link, nguon_path, wd, nguon.get("title_en", ""))
+    if len(tl.get("number_sentences", [])) < 3 and bp.get("article_text"):
         # Fetch tinh doc ra rong (trang JS) -> dung chu lay tu browser.
         import material as _tl
-        doan = [d.strip() for d in bp["chu"].split("\n") if len(d.strip()) > 40]
+        doan = [d.strip() for d in bp["article_text"].split("\n") if len(d.strip()) > 40]
         cau_so = _tl.sentence_has_count(doan)[:25]
         tl = {"number_sentences": cau_so, "lead_paragraph": " ".join(doan)[:1500],
               "source_count": max(tl.get("source_count", 0), 1), "source": "browser"}
@@ -282,8 +282,8 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
                      if xhs else None),
          "ranking_count": len(xhs),
          "is_ranking_story": tin_xep_hang,
-         "article_text": (bp.get("chu") or "")[:20000],
-         "source_path": str(nguon_path), "title_en": nguon.get("tieu_de_en", ""),
+         "article_text": (bp.get("article_text") or "")[:20000],
+         "source_path": str(nguon_path), "title_en": nguon.get("title_en", ""),
          # LOW-225: ung vien bi bo TRUOC khi thanh anh (pha tai) — truoc day chi co o stderr.
          "dropped": dropped or []}
     return m

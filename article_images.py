@@ -144,8 +144,8 @@ def other_outlets(tieu_de: str, link: str = "", so=LONG_MAX) -> list:
     except Exception as e:                                   # noqa: BLE001
         print(f"[anh_bai] khong tim duoc bao khac: {type(e).__name__}", file=sys.stderr)
         return []
-    return [(t["url"], t.get("tieu_de", "")) for t in kq.get("trang", [])
-            if t.get("url") and t.get("loai") != "gốc"][:so]
+    return [(t["url"], t.get("title", "")) for t in kq.get("pages", [])
+            if t.get("url") and t.get("kind") != "article"][:so]
 
 
 def _graphic(im) -> str:
@@ -281,10 +281,10 @@ def find(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) 
     # tim nguon la viec cua Finn, khong phai viec cua nguoi dung anh.
     if tu_nguon and Path(tu_nguon).exists():
         j = json.loads(Path(tu_nguon).read_text(encoding="utf-8"))
-        # `loai` la kieu TRANG trong tep nguon (ngoai LOW-230); gia tri ghi vao anh la
-        # image.source: article / other_outlet.
-        trang = [(t["url"], "article" if t.get("loai") == "gốc" else "other_outlet")
-                 for t in j.get("trang", []) if t.get("url")]
+        # `pages[].kind` la kieu TRANG trong tep nguon (LOW-238); gia tri ghi vao anh la
+        # image.source: article / other_outlet (cung ma, khac kho).
+        trang = [(t["url"], "article" if t.get("kind") == "article" else "other_outlet")
+                 for t in j.get("pages", []) if t.get("url")]
         print(f"[anh_bai] dung {len(trang)} nguon Finn da research", file=sys.stderr)
     else:
         trang = [(link, "article")]

@@ -37,11 +37,28 @@ HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 COUNT_SOURCE = 4
 
+# ---- tep article_source_<id>.json (LOW-238; bang docs/tu_dien_ten/article_source_keys_v2.json)
+#   {"title", "title_en", "source_url", "gnews_url"?, "pages": [{"url", "kind", "title"?, "outlet_url"?}]}
+# `kind` luu MA English; chu hien thi tieng Viet (log) in qua PAGE_KIND_LABELS — dung
+# chu da in truoc LOW-238. "table"/"price" chi co trong tep viet tay, code khong sinh.
+PAGE_KIND_LABELS = {
+    "article": "gốc",
+    "other_outlet": "báo",
+    "announcement": "công bố",
+    "table": "bảng",
+    "price": "giá",
+}
+
+
+def page_kind_label(code: str) -> str:
+    """Chu tieng Viet cua mot `pages[].kind`; ma la in nguyen."""
+    return PAGE_KIND_LABELS.get(code, code)
+
 FROM_EMPTY = scan_common.FROM_EMPTY           # mot ban duy nhat, xem scan_common
 _tu = scan_common.from_distinctive
 
 # ---- "CUNG TIN" (LOW-33, 12/09/2026) ------------------------------------------
-# The Ethan "DeepSeek-V4.1-Flash tha trong so" ra anh con vit-robot: `tieu_de_en`
+# The Ethan "DeepSeek-V4.1-Flash tha trong so" ra anh con vit-robot: `title_en`
 # la <title> thô cua trang HuggingFace "deepseek-ai/DeepSeek-V4.1-Flash · Hugging
 # Face" — hau to " · Hugging Face" khong bi boc (regex chi biet | - – —), hai chu
 # "Hugging"+"Face" tu no da du nguong "chung >= 2 tu", nen Bing tra bai
@@ -356,7 +373,7 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
     Loc: bai trong `ngay` ngay gan day, tieu de phai chung >= 2 tu dac trung voi
     tieu de goc (truy van ngan de keo ve ca tin cu/khong lien quan). Bo trang
     tong hop (msn, yahoo), trang chan bot (seekingalpha) va `bo_mien`.
-    Tra ve [{url, loai: "báo", tieu_de, toa_soan}]."""
+    Tra ve [{url, kind: "other_outlet", title, outlet_url}] (muc `pages[]`, LOW-238)."""
     import email.utils as eu
     import time as _t
     tieu_de = strip_site_suffix(tieu_de)      # LOW-33: " · Hugging Face" khong vao truy van
@@ -403,7 +420,7 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
         if not mien or mien in thay or any(b in mien for b in DROP_DOMAIN + tuple(bo_mien)):
             continue
         thay.add(mien)
-        ra.append({"url": u, "loai": "báo", "tieu_de": td[:160], "toa_soan": "https://" + mien})
+        ra.append({"url": u, "kind": "other_outlet", "title": td[:160], "outlet_url": "https://" + mien})
         if len(ra) >= so:
             break
     return ra
@@ -488,7 +505,7 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
         if not mien or mien in thay or any(b in mien for b in DROP_DOMAIN + tuple(bo_mien)):
             continue
         thay.add(mien)
-        ra.append({"url": u, "loai": "báo", "tieu_de": td[:160], "toa_soan": "https://" + mien})
+        ra.append({"url": u, "kind": "other_outlet", "title": td[:160], "outlet_url": "https://" + mien})
         if len(ra) >= so:
             break
     return ra
@@ -501,7 +518,7 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
         if that:
             link_gnews, link = link, that
             print(f"[nguon_bai] link Google News -> {link[:90]}", file=sys.stderr)
-    ra = [{"url": link, "loai": "gốc", "tieu_de": tieu_de}]
+    ra = [{"url": link, "kind": "article", "title": tieu_de}]
     # Tim kiem CHI bang tieng Anh (xem luat o tren). `ten` rong -> khong hoi feed nao.
     ten = title_find(tieu_de, link)
     its, co_link_gn = [], set()
@@ -550,8 +567,8 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
                     t = i.findtext("title") or ""
                     chung = goc & _tu(t)
                     if chung and len(chung) / max(len(goc), 1) >= 0.5:
-                        return {"url": i.findtext("link") or "", "loai": "báo",
-                                "tieu_de": t, "toa_soan": m}
+                        return {"url": i.findtext("link") or "", "kind": "other_outlet",
+                                "title": t, "outlet_url": m}
                 return None
             except Exception:                                # noqa: BLE001
                 continue
@@ -576,9 +593,9 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
                 ra.append(t)
             if len(ra) > so:
                 break
-    kq = {"tieu_de": tieu_de, "tieu_de_en": ten, "link_goc": link, "trang": ra}
+    kq = {"title": tieu_de, "title_en": ten, "source_url": link, "pages": ra}
     if link_gnews:
-        kq["link_gnews"] = link_gnews
+        kq["gnews_url"] = link_gnews
     return kq
 
 
@@ -595,9 +612,9 @@ def main():
     Path(a.out).write_text(json.dumps(kq, ensure_ascii=False, indent=2),
                            encoding="utf-8")
     print(a.out)
-    for t in kq["trang"]:
-        print(f"  [{t['loai']}] {t['url'][:88]}", file=sys.stderr)
-    return 0 if len(kq["trang"]) > 1 else 1
+    for t in kq["pages"]:
+        print(f"  [{page_kind_label(t['kind'])}] {t['url'][:88]}", file=sys.stderr)
+    return 0 if len(kq["pages"]) > 1 else 1
 
 
 if __name__ == "__main__":

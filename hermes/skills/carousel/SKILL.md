@@ -107,7 +107,7 @@ là" của từng mã trước khi ghép vào slide; mô tả không khớp ý s
 người không rõ ai thì bỏ; không điền tên CEO cho qua cổng.
 
 Tin về một model: brief phải có ảnh từ **trang công bố của hãng** (nguồn
-`loai: "công bố"` — chart benchmark, KV cache, giá) chứ không chỉ ảnh trong link
+`kind: "announcement"` — chart benchmark, KV cache, giá) chứ không chỉ ảnh trong link
 gốc; engine tự ghé (IMAGE_RULES §1.2b). Nếu brief của một tin model mà không có
 tấm nào từ miền của hãng, ghi rõ điều đó trong câu "Thiếu ảnh thật" — đó là lỗi
 engine, không phải tin không có ảnh.

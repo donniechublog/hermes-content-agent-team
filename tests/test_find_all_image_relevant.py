@@ -160,7 +160,7 @@ def test_announcement_page_match_article_no_match_image_cover():
     finally:
         _restore(cu)
     assert kq and kq["url"] == "https://vi.du/en/news/deepseek-v4-1-flash/", kq
-    assert kq["loai"] == "công bố" and kq["toa_soan"] == "https://vi.du"
+    assert kq["kind"] == "announcement" and kq["outlet_url"] == "https://vi.du"
     assert len(goi) == 1, f"khop o /news/ ma van fetch tiep: {goi}"
 
 
@@ -191,22 +191,22 @@ def test_announcement_page_no_ask_what_when_no_has_model_or_website():
 def test_extra_announcement_page_write_into_source_json_one_attempt():
     cu = th.announcement_page, th.vendors_in_story
     th.announcement_page = lambda h, models: {"url": "https://vi.du/news/deepseek-v4-1-flash/",
-                                          "loai": "công bố", "tieu_de": "", "toa_soan": "https://vi.du"}
+                                          "kind": "announcement", "title": "", "outlet_url": "https://vi.du"}
     th.vendors_in_story = lambda td, tt="": [{"key": "deepseek", "company": "DeepSeek"}]
     try:
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "article_source_d1.json"
-            nguon = {"tieu_de_en": "", "trang": [{"url": "https://livebench.ai/", "loai": "gốc"}]}
-            trang = fallback_rounds._extra_announcement_page(nguon, p, nguon["trang"], TIEU_DE, "")
-            assert [t["loai"] for t in trang] == ["gốc", "công bố"], trang
+            nguon = {"title_en": "", "pages": [{"url": "https://livebench.ai/", "kind": "article"}]}
+            trang = fallback_rounds._extra_announcement_page(nguon, p, nguon["pages"], TIEU_DE, "")
+            assert [t["kind"] for t in trang] == ["article", "announcement"], trang
             tren_dia = json.loads(p.read_text(encoding="utf-8"))
-            assert tren_dia["trang"][-1]["loai"] == "công bố", "phai ghi nguon json cho Miles cung dung"
+            assert tren_dia["pages"][-1]["kind"] == "announcement", "phai ghi nguon json cho Miles cung dung"
             trang2 = fallback_rounds._extra_announcement_page(nguon, p, trang, TIEU_DE, "")
             assert len(trang2) == 2, "goi lan hai khong duoc them trung"
             # Tin khong nhac model nao: khong dong toi nguon
-            nguon3 = {"tieu_de_en": "", "trang": [{"url": "https://vi.du/a", "loai": "gốc"}]}
-            assert fallback_rounds._extra_announcement_page(nguon3, p, nguon3["trang"],
-                                               "Samsung opens new chip plant", "") == nguon3["trang"]
+            nguon3 = {"title_en": "", "pages": [{"url": "https://vi.du/a", "kind": "article"}]}
+            assert fallback_rounds._extra_announcement_page(nguon3, p, nguon3["pages"],
+                                               "Samsung opens new chip plant", "") == nguon3["pages"]
     finally:
         th.announcement_page, th.vendors_in_story = cu
 
@@ -232,8 +232,8 @@ def test_browser_ceiling_image_announcement_page_board_article_original():
         browser._take_image_page(_PageGia(6), "http://vi.du", 1, Path(tmp), ra, JS, chup_fig=False, tran=4)
         assert len(ra["cands"]) == 4
     src = (ROOT / "prepare" / "browser.py").read_text(encoding="utf-8")
-    assert 'tran=4 if t.get("loai") == "công bố"' in src, "browser_pass phai cap tran 4 cho trang cong bo"
-    assert 'khac.sort(key=lambda t: t.get("loai") != "công bố")' in src, "trang cong bo phai duoc mo truoc"
+    assert 'tran=4 if t.get("kind") == "announcement"' in src, "browser_pass phai cap tran 4 cho trang cong bo"
+    assert 'khac.sort(key=lambda t: t.get("kind") != "announcement")' in src, "trang cong bo phai duoc mo truoc"
 
 
 def test_engine_say_announcement_page_before_browser():

@@ -112,7 +112,7 @@ def gather(tieu_de: str, link: str, so_bai_khac=COUNT_ARTICLE_OTHER, tu_nguon=No
     if tu_nguon and Path(tu_nguon).exists():
         try:
             j = json.loads(Path(tu_nguon).read_text(encoding="utf-8"))
-            dsach = [(t["url"], "") for t in j.get("trang", [])
+            dsach = [(t["url"], "") for t in j.get("pages", [])
                      if t.get("url") and t["url"] != link][:so_bai_khac]
             print(f"[tu_lieu] dung lai {len(dsach)} nguon co san", file=sys.stderr)
         except Exception:                                    # noqa: BLE001

@@ -74,7 +74,7 @@ def test_report_about_keyword_filter_by_keyword_no_by_event_original():
          mock.patch("scan_common.url_hide_whole", return_value=True):
         ra = article_sources.report_about_keyword("Moonshot AI", so=6)
 
-    mien = {r["toa_soan"] for r in ra}
+    mien = {r["outlet_url"] for r in ra}
     assert mien == {"https://a.example", "https://c.example"}, ra
 
 
@@ -103,7 +103,7 @@ def test_report_about_keyword_type_report_vietnamese():
          mock.patch("scan_common.url_hide_whole", return_value=True):
         ra = article_sources.report_about_keyword("Anthropic", so=6)
 
-    assert {r["toa_soan"] for r in ra} == {"https://en.example"}, ra
+    assert {r["outlet_url"] for r in ra} == {"https://en.example"}, ra
 
 
 def test_report_about_keyword_no_limit_time():
@@ -126,7 +126,7 @@ def test_report_about_keyword_no_limit_time():
          mock.patch("scan_common.url_hide_whole", return_value=True):
         ra = article_sources.report_about_keyword("Moonshot AI", so=6)
 
-    assert {r["toa_soan"] for r in ra} == {"https://cu.example"}, ra
+    assert {r["outlet_url"] for r in ra} == {"https://cu.example"}, ra
 
 
 def test_rank_empty_then_find_report_by_keyword_scan_image():
@@ -165,11 +165,11 @@ def test_rank_empty_then_find_report_by_keyword_scan_image():
              mock.patch("image_brand.vendor_images", return_value=[]), \
              mock.patch.object(article_sources, "report_about_keyword",
                               return_value=[{"url": "https://baomoi.example/moonshot",
-                                            "loai": "báo", "tieu_de": "Moonshot AI raises",
-                                            "toa_soan": "https://baomoi.example"}]), \
+                                            "kind": "other_outlet", "title": "Moonshot AI raises",
+                                            "outlet_url": "https://baomoi.example"}]), \
              mock.patch.object(fallback_rounds, "browser_pass",
-                              return_value={"cands": [ung_vien], "tieu_de_en": "", "chu": "",
-                                           "trang_them": []}), \
+                              return_value={"cands": [ung_vien], "title_en": "", "article_text": "",
+                                           "extra_pages": []}), \
              mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia), \
              mock.patch.object(image_rules_ethan, "count_faces", return_value=0), \
              mock.patch.object(image_rules_ethan, "is_chart", return_value=(False, "ảnh chụp thật")), \
