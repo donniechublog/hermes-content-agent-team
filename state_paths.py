@@ -38,7 +38,19 @@ CAPTURE_IMAGE_PREFIX = "capture_"       # capture_<n>_<k>.png
 LANDSCAPE_SUFFIX = ".landscape.png"     # <id>.landscape.png
 
 
+LEGACY_PREPARE_DIR = "chuan_bi"
+
+
+class NotMigrated(RuntimeError):
+    pass
+
+
 def prepare_root(state: Path) -> Path:
+    """Refuses a state dir still holding the pre-LOW-228 layout: silently creating an
+    empty `prepare/` next to 192 old drafts would make every draft look unprepared."""
+    if (Path(state) / LEGACY_PREPARE_DIR).is_dir():
+        raise NotMigrated(f"{Path(state) / LEGACY_PREPARE_DIR} van con — chua migrate LOW-228: "
+                          "chay venv/bin/python migrate_state_paths.py")
     return Path(state) / PREPARE_DIR
 
 
