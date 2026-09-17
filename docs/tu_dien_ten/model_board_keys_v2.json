@@ -1,0 +1,92 @@
+{
+  "_status": "ĐÃ DUYỆT 17/09/2026 (LOW-233). Tiêu chí Ông Chủ: nghĩa gốc không quan trọng, miễn tên English dùng đúng, không nhầm — `hang` tách rank (dòng xếp hạng) / company (dòng tin hãng).",
+  "models_seen.json": {
+    "cap_nhat": "updated_at",
+    "xep_hang": "rankings",
+    "aa_da_bao": "aa_reported"
+  },
+  "board_keys": {
+    "tri_tue": "intelligence",
+    "swe_da_ngon_ngu": "swe_multilingual"
+  },
+  "model_audition.json": {
+    "dat": "passed",
+    "giay": "seconds",
+    "ty_le_dau": "diacritic_ratio"
+  },
+  "model_audition_in_memory": {
+    "ket": "finish_reason",
+    "loi": "error",
+    "van_ban": "text",
+    "chu_de": "topic",
+    "vi_sao": "reason"
+  },
+  "board_row": {
+    "ten": "name",
+    "ten_goc": "original_name",
+    "to_chuc": "organization",
+    "vung": "region",
+    "nuoc": "country",
+    "diem": "score",
+    "hang": "rank",
+    "hang_cu": "previous_rank",
+    "hang_coding": "coding_rank",
+    "hang_sx": "maker",
+    "ngay": "date",
+    "ra_mat": "released",
+    "ra_mat_ts": "released_ts",
+    "loai": "board",
+    "buoc": "climb",
+    "ghi_chu": "note",
+    "tai": "downloads",
+    "viec": "pipeline_tag",
+    "nguon": "source",
+    "gia_vao": "input_price",
+    "gia_ra": "output_price",
+    "gia_cache": "cache_price",
+    "gia_usd": "price_usd",
+    "gia_moi_bai": "cost_per_task",
+    "giay_phep": "license",
+    "nguon_mo": "open_weights",
+    "mo_nguon": "open_source",
+    "nha_cung_cap": "provider",
+    "co_reasoning": "has_reasoning",
+    "ci_cao": "ci_high",
+    "ci_thap": "ci_low"
+  },
+  "company_news_row": {
+    "hang": "company",
+    "tieu_de": "title",
+    "ngay": "date"
+  },
+  "scan_result": {
+    "quet_luc": "scanned_at",
+    "top_moi_bang": "top_per_board",
+    "leo_hang": "rank_climbs",
+    "cham_diem": "aa_scores",
+    "ra_mat_aa_chua_bao": "aa_releases_unreported",
+    "ra_mat_theo_ten": "releases_by_name",
+    "moi_ra_mat": "new_releases",
+    "nguon_mo_moi": "new_open_weights",
+    "bang_coding_goc": "coding_board_original",
+    "bang_agentic_goc": "agentic_board_original",
+    "bang_tri_tue_goc": "intelligence_board_original",
+    "bang_hong": "broken_boards",
+    "nguon_hong": "broken_sources",
+    "tin_hang": "company_news",
+    "ban_phat_hanh": "releases",
+    "moi_tren_router_cua_ta": "new_on_our_router",
+    "bang_xep_hang": "leaderboards",
+    "tong_theo_doi": "tracked_total"
+  },
+  "_values_not_keys_unchanged": [
+    "model_watch change kinds HONG/MOI/HOI PHUC (chữ in Telegram)",
+    "region values my/tq/khac (in qua REGION_LABEL)",
+    "Board labels 'tri tue AA', 'SWE-b da nn' (chữ báo cáo)"
+  ],
+  "_data_migration": [
+    "state/<brand>/models_seen.json: cap_nhat/xep_hang/aa_da_bao + tên bảng dưới xep_hang",
+    "state/model_audition.json: dat/giay/ty_le_dau",
+    "state/<brand>/required_nova.json: mã chống trùng '<bảng>|<tên>' với tên bảng cũ (hiện rỗng)"
+  ]
+}
