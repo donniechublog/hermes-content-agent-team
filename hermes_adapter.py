@@ -10,7 +10,7 @@ do hong CAM (tra ve rong, khong ai bao) — dung lop loi C1 goi la "hong cam
 lang". `check_hermes.COLUMN_CAN` phai liet ke 20 cot chinh vi ly do do.
 
 Nay: hermes doi thi sua MOT tep nay. Cac ham doc tra ve dict DA CHUAN HOA voi
-ten khoa cua RIENG ta (id/vai/trang_thai/tieu_de/...), nen ten cot cua hermes
+ten khoa cua RIENG ta (id/assignee/status/title/...), nen ten cot cua hermes
 khong con ro ri ra ngoai; hermes doi ten cot chi cham toi cac hang MAP o duoi.
 
 Quy uoc loi (C1 "hong phai lo"): moi ham DOC tra ve None khi khong doc duoc
@@ -44,13 +44,15 @@ def has_kanban() -> bool:
 
 
 # --- MAP: ten cot cua hermes -> ten khoa cua ta. Hermes doi cot thi sua O DAY.
-_COT_VIEC = (("id", "id"), ("assignee", "vai"), ("status", "trang_thai"),
-             ("title", "tieu_de"), ("created_at", "tao_luc"),
-             ("started_at", "bat_dau_luc"), ("completed_at", "xong_luc"),
-             ("result", "ket_qua"), ("last_failure_error", "loi"))
-_COT_LAN_CHAY = (("summary", "tom_tat"), ("error", "loi"),
-                 ("status", "trang_thai"), ("metadata", "metadata"),
-                 ("id", "id_lan_chay"))      # id de bao MOI lan timed_out dung mot lan
+# Khoa cua ta dung lai dung ten cot kanban cua hermes (LOW-236, bang
+# docs/tu_dien_ten/runtime_dicts_v2.json); rieng last_failure_error -> error, id run -> run_id.
+_COT_VIEC = (("id", "id"), ("assignee", "assignee"), ("status", "status"),
+             ("title", "title"), ("created_at", "created_at"),
+             ("started_at", "started_at"), ("completed_at", "completed_at"),
+             ("result", "result"), ("last_failure_error", "error"))
+_COT_LAN_CHAY = (("summary", "summary"), ("error", "error"),
+                 ("status", "status"), ("metadata", "metadata"),
+                 ("id", "run_id"))      # id de bao MOI lan timed_out dung mot lan
 
 
 def _open(db=None):
@@ -103,7 +105,7 @@ def state_db_each_profile(home=None):
 
 def use_by_model(state_db, tu_ts, den_ts):
     """Tong token/api theo model cua mot profile trong [tu_ts, den_ts) —
-    list dict {model, api, in, out, cache, reasoning, phien}; [] neu khong co;
+    list dict {model, api, in, out, cache, reasoning, sessions}; [] neu khong co;
     None neu khong doc duoc (C1: hong moi truong phai lo ra, khac voi rong)."""
     hang = _ask("select model, sum(api_call_count), sum(input_tokens), sum(output_tokens), "
                 "sum(cache_read_tokens), sum(reasoning_tokens), count(distinct session_id) "
@@ -113,11 +115,11 @@ def use_by_model(state_db, tu_ts, den_ts):
     if hang is None:
         return None
     return [{"model": m, "api": api or 0, "in": i or 0, "out": o or 0, "cache": c or 0,
-             "reasoning": r or 0, "phien": p or 0} for m, api, i, o, c, r, p in hang]
+             "reasoning": r or 0, "sessions": p or 0} for m, api, i, o, c, r, p in hang]
 
 
 def summary_session(state_db, tu_ts, so_top=2):
-    """Dem phien cua mot profile tu `tu_ts`: dict {phien, tool, input, api, top}
+    """Dem phien cua mot profile tu `tu_ts`: dict {sessions, tool, input, api, top}
     (top = [(tieu_de, tool, input)] so_top phien nang nhat); None neu khong doc duoc."""
     ten = Path(state_db).parent.name
     tong = _ask("select count(*), coalesce(sum(tool_call_count),0), coalesce(sum(input_tokens),0), "
@@ -131,7 +133,7 @@ def summary_session(state_db, tu_ts, so_top=2):
     if top is None:
         return None
     n, tools, inp, api = tong[0]
-    return {"phien": n, "tool": tools, "input": inp, "api": api,
+    return {"sessions": n, "tool": tools, "input": inp, "api": api,
             "top": [(t[:40], tc, it) for t, tc, it in top]}
 
 
@@ -259,7 +261,7 @@ def writer_queue(slugs):
 
 def last_run(tid):
     """Lan chay CUOI CUNG cua mot task, da chuan hoa:
-    {tom_tat, loi, trang_thai, metadata} — metadata luon la dict.
+    {summary, error, status, metadata, run_id} — metadata luon la dict.
     None neu khong doc duoc; {} neu task chua co lan chay nao."""
     if not tid:
         return {}
@@ -341,8 +343,8 @@ def pid_alive(pid) -> bool | None:
 
 def worker_run_state(tid, run_id, db=None):
     """Trang thai de biet scope worker `hermes-worker-kanban-<tid>-run-<run_id>`
-    con viec khong (LOW-126): {trang_thai, run_hien_tai, run_ket_thuc} —
-    run_ket_thuc la ended_at cua DUNG run do (None neu run chua dong).
+    con viec khong (LOW-126): {status, current_run_id, run_ended_at} —
+    run_ended_at la ended_at cua DUNG run do (None neu run chua dong).
     {} neu task khong co trong kanban.db nay; None neu khong doc duoc."""
     hang = _ask("SELECT t.status, t.current_run_id, r.ended_at FROM tasks t "
                 "LEFT JOIN task_runs r ON r.id = ? AND r.task_id = t.id "
@@ -352,7 +354,7 @@ def worker_run_state(tid, run_id, db=None):
     if not hang:
         return {}
     st, cur, ended = hang[0]
-    return {"trang_thai": st, "run_hien_tai": cur, "run_ket_thuc": ended}
+    return {"status": st, "current_run_id": cur, "run_ended_at": ended}
 
 
 def count_done_by_role(tu_ts, den_ts, db=None):

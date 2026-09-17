@@ -1,0 +1,42 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-236) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm. Dict chỉ trong bộ nhớ; kho đĩa không đổi byte.",
+  "hermes_task": {
+    "_where": "hermes_adapter._COT_VIEC (job/one_job) — dùng lại đúng tên cột kanban của Hermes",
+    "vai": "assignee",
+    "trang_thai": "status",
+    "tieu_de": "title",
+    "tao_luc": "created_at",
+    "bat_dau_luc": "started_at",
+    "xong_luc": "completed_at",
+    "ket_qua": "result",
+    "loi": "error"
+  },
+  "hermes_run": {
+    "_where": "hermes_adapter._COT_LAN_CHAY (last_run/last_run_many)",
+    "tom_tat": "summary",
+    "loi": "error",
+    "trang_thai": "status",
+    "id_lan_chay": "run_id"
+  },
+  "worker_run_state": {
+    "trang_thai": "status",
+    "run_hien_tai": "current_run_id",
+    "run_ket_thuc": "run_ended_at"
+  },
+  "session_usage": {
+    "_where": "hermes_adapter.use_by_model, summary_session",
+    "phien": "sessions"
+  },
+  "telegram_post_result": {
+    "_where": "send_telegram.post() trả về",
+    "trung": "duplicate"
+  },
+  "social_post_media": {
+    "_where": "social_post.read() media[]",
+    "tep": "file_path"
+  },
+  "_notes": [
+    "`assignee` chứ không `role`: gồm cả thẻ gốc ban_bien_tap, không phải vai.",
+    "Kho đĩa chép từ các dict này (nhật ký 9router `phien`, dump Ada, trang journal .md, ứng viên ảnh `tep`) giữ khoá cũ trong ticket này — đổi ở ticket của kho đó (LOW-237/239/243)."
+  ]
+}

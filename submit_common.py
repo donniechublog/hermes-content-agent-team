@@ -614,7 +614,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
         sys.exit(f"[LOI] {e}")
     r = res.get("result")
     mid = (r[-1] if isinstance(r, list) else r or {}).get("message_id")
-    if res.get("trung"):
+    if res.get("duplicate"):
         if res.get("button_state") == "resent":
             print(f"[xong] album đã lên từ lần trước; vừa gửi BÙ nút Duyệt "
                   f"(message_id={res.get('button_message_id')}).")

@@ -62,7 +62,7 @@ def test_viec_loc_theo_vai_va_gioi_han():
         try:
             ra = ha.job(vai="ethan")
             assert [v["id"] for v in ra] == ["t1", "t3"], ra
-            assert ra[0]["tieu_de"] == "bai 1" and ra[0]["trang_thai"] == "done", ra[0]
+            assert ra[0]["title"] == "bai 1" and ra[0]["status"] == "done", ra[0]
             moi = ha.job(vai="ethan", so=1, moi_truoc=True)
             assert [v["id"] for v in moi] == ["t3"], moi
         finally:
@@ -105,7 +105,7 @@ def test_lan_chay_cuoi_lay_ban_moi_nhat_va_doc_metadata():
                   (2, "t1", "done", "lan hai", None, json.dumps({"kind": "ok"}))])
         try:
             r = ha.last_run("t1")
-            assert r["tom_tat"] == "lan hai", r
+            assert r["summary"] == "lan hai", r
             assert r["metadata"] == {"kind": "ok"}, r
         finally:
             _go()
@@ -142,8 +142,8 @@ def test_lan_chay_cuoi_nhieu_lay_dung_ban_cuoi_cua_tung_task():
                   (3, "t1", "done", "t1 moi", None, None)])
         try:
             ra = ha.last_run_many(["t1", "t2"])
-            assert ra["t1"]["tom_tat"] == "t1 moi", ra
-            assert ra["t2"]["tom_tat"] == "t2 chi mot lan", ra
+            assert ra["t1"]["summary"] == "t1 moi", ra
+            assert ra["t2"]["summary"] == "t2 chi mot lan", ra
         finally:
             _go()
 

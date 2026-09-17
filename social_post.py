@@ -47,7 +47,7 @@ def read(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
         in_log=lambda t: None) -> dict | None:
     """Doc mot post. Tra ve dict da don:
 
-        {"title", "text", "author", "link", "media": [{"type", "url", "tep"}]}
+        {"title", "text", "author", "link", "media": [{"type", "url", "file_path"}]}
 
     `tai_ve`: thu muc de tai media that ve (dat ten 01.jpg, 02.jpg... theo thu
     tu carousel) — can khi muon DUNG anh, vi link CDN co tham so het han.
@@ -91,7 +91,7 @@ def read(url: str, tai_ve: Path | None = None, tries: int = 3, cho: int = 300,
             # 0 byte = CDN 302 hut hoac link het han; coi nhu khong tai duoc.
             if p.exists() and p.stat().st_size > 0:
                 tep = str(p)
-        media.append({"type": m.get("type") or "image", "url": m["url"], "tep": tep})
+        media.append({"type": m.get("type") or "image", "url": m["url"], "file_path": tep})
 
     in_log(f"social_fetch OK: {len(text)}c, {len(media)} media, tac gia {tac_gia!r}")
     return {"title": title_from_text(text), "text": text, "author": tac_gia,

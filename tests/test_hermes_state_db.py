@@ -51,14 +51,14 @@ def test_dung_theo_model_gop_theo_model_trong_cua_so():
         assert ra is not None
         theo = {r["model"]: r for r in ra}
         assert theo["gpt-5"]["api"] == 5 and theo["gpt-5"]["in"] == 1500, theo
-        assert theo["gpt-5"]["phien"] == 2 and theo["claude"]["phien"] == 1, theo
+        assert theo["gpt-5"]["sessions"] == 2 and theo["claude"]["sessions"] == 1, theo
 
 
 def test_tom_tat_phien_dem_va_top():
     with tempfile.TemporaryDirectory() as t:
         p = _state_db(t)
         tt = ha.summary_session(p, 100)                    # s0 (10) bi loai
-        assert tt == {"phien": 2, "tool": 16, "input": 1500, "api": 5,
+        assert tt == {"sessions": 2, "tool": 16, "input": 1500, "api": 5,
                       "top": [("viet bai A", 12, 1000), ("viet bai B", 4, 500)]}, tt
 
 

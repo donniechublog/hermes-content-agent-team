@@ -99,9 +99,9 @@ def candidate_social(link: str, wd: Path) -> list:
         return []
     cands = []
     for i, m in enumerate(d["media"], 1):
-        if m["type"] != "image" or not m["tep"]:
+        if m["type"] != "image" or not m["file_path"]:
             continue
-        cands.append({"image_url": m["tep"], "tep": m["tep"],
+        cands.append({"image_url": m["file_path"], "tep": m["file_path"],
                       "alt": f"ảnh {i} trong post của {d['author']}".strip(),
                       "source": "social_post", "page_url": d["link"], "score": 95})
     print(f"[social] {len(cands)} anh that tu chinh post", file=sys.stderr)

@@ -216,7 +216,7 @@ def post(vai: str, files, mo_ta: str = "", reply_to=None, duyet=None) -> dict:
     if truoc:
         print(f"da gui truoc do luc {truoc['luc']} (message_id={truoc['message_id']}), "
               f"KHONG gui lai. Muon gui lai that thi doi ten file hoac cho qua 30 phut.")
-        out = {"ok": True, "result": {"message_id": truoc["message_id"]}, "trung": True,
+        out = {"ok": True, "result": {"message_id": truoc["message_id"]}, "duplicate": True,
                "button_state": "unknown"}
         if duyet and "button_message_id" in truoc:
             if truoc["button_message_id"]:

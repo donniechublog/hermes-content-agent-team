@@ -159,7 +159,7 @@ def part_kanban(ngay: str) -> list:
         ERROR_READ.append(loi)
         print(f"[nhat_ky] loi doc DB — {loi}", file=sys.stderr)
         return []
-    trong_ngay = [v for v in tat_ca if _within_date(v["tao_luc"], ngay)]
+    trong_ngay = [v for v in tat_ca if _within_date(v["created_at"], ngay)]
     runs = {}
     if trong_ngay:                    # khong co task thi khong co gi de tra, khong co gi de bao
         runs = hermes_adapter.last_run_many([v["id"] for v in trong_ngay])
@@ -170,15 +170,15 @@ def part_kanban(ngay: str) -> list:
             runs = {}
     ra = []
     for v in trong_ngay:
-        a, b = _hours_vn(v["tao_luc"]), _hours_vn(v["xong_luc"])
+        a, b = _hours_vn(v["created_at"]), _hours_vn(v["completed_at"])
         run = runs.get(v["id"]) or {}
-        tom = (run.get("tom_tat") or v["ket_qua"]) or ""
-        ra.append({"id": v["id"], "tieu_de": v["tieu_de"], "vai": v["vai"],
-                   "trang_thai": v["trang_thai"],
+        tom = (run.get("summary") or v["result"]) or ""
+        ra.append({"id": v["id"], "tieu_de": v["title"], "vai": v["assignee"],
+                   "trang_thai": v["status"],
                    "gio": a.strftime("%H:%M") if a else "?",
                    "giay": round((b - a).total_seconds()) if a and b else None,
                    "tom_tat": re.sub(r"\s+", " ", str(tom))[:300],
-                   "loi": (v["loi"] or run.get("loi") or "") or ""})
+                   "loi": (v["error"] or run.get("error") or "") or ""})
     ra.sort(key=lambda x: x["gio"])
     return ra
 

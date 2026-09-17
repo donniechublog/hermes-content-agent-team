@@ -4,7 +4,6 @@
   "ada_prepare.py": {
    "key:bai": 6,
    "key:bang_chung": 1,
-   "key:bat_dau_luc": 1,
    "key:cao_bo": 3,
    "key:chi_phi": 2,
    "key:chi_phi_9router": 4,
@@ -16,7 +15,7 @@
    "key:khoa": 3,
    "key:lat": 2,
    "key:lat_model": 4,
-   "key:loi": 13,
+   "key:loi": 12,
    "key:loi_doc": 4,
    "key:loi_ket_noi": 4,
    "key:ma": 1,
@@ -24,7 +23,7 @@
    "key:ngay": 7,
    "key:nhan_xet": 1,
    "key:nhat_ky_9router": 2,
-   "key:phien": 5,
+   "key:phien": 4,
    "key:rong": 4,
    "key:ten": 1,
    "key:thap_chon": 3,
@@ -38,14 +37,11 @@
    "key:theo_nguon": 2,
    "key:theo_trang_thai": 2,
    "key:theo_vai": 5,
-   "key:tieu_de": 1,
    "key:tong": 3,
-   "key:trang_thai": 1,
    "key:trong_ngay": 1,
    "key:usd_bai": 3,
-   "key:vai": 12,
-   "key:vai_anh": 2,
-   "key:xong_luc": 1
+   "key:vai": 11,
+   "key:vai_anh": 2
   },
   "ada_submit.py": {
    "key:bai": 1,
@@ -73,11 +69,7 @@
    "path:ong_chu.json": 1
   },
   "approve_chat.py": {
-   "key:CT_CHAT_SONG_SONG": 1,
-   "key:tieu_de": 1,
-   "key:tom_tat": 1,
-   "key:trang_thai": 1,
-   "key:xong_luc": 1
+   "key:CT_CHAT_SONG_SONG": 1
   },
   "approve_command.py": {
    "key:CT_CHAT_QUA_GATEWAY": 1,
@@ -86,15 +78,7 @@
    "key:vai": 3
   },
   "approve_dispatch.py": {
-   "key:CT_BANG_DEN": 1,
-   "key:bat_dau_luc": 1,
-   "key:id_lan_chay": 2,
-   "key:loi": 1,
-   "key:tao_luc": 1,
-   "key:tieu_de": 1,
-   "key:tom_tat": 1,
-   "key:trang_thai": 3,
-   "key:vai": 1
+   "key:CT_BANG_DEN": 1
   },
   "approve_pick.py": {
    "key:da_giao": 2,
@@ -290,12 +274,6 @@
    "key:vung_goc": 4,
    "key:xoa_them": 1
   },
-  "hermes_adapter.py": {
-   "key:phien": 2,
-   "key:run_hien_tai": 1,
-   "key:run_ket_thuc": 1,
-   "key:trang_thai": 1
-  },
   "image_brand.py": {
    "key:anh": 3,
    "key:cao": 9,
@@ -378,9 +356,8 @@
    "key:giay": 11,
    "key:gio": 12,
    "key:hong": 3,
-   "key:ket_qua": 1,
    "key:loai": 4,
-   "key:loi": 9,
+   "key:loi": 7,
    "key:ly_do": 2,
    "key:ma": 2,
    "key:mo_ta": 2,
@@ -388,14 +365,12 @@
    "key:nguon": 2,
    "key:noi_dung": 2,
    "key:so_tin": 2,
-   "key:tao_luc": 2,
    "key:ten": 4,
-   "key:tieu_de": 5,
-   "key:tom_tat": 4,
+   "key:tieu_de": 4,
+   "key:tom_tat": 3,
    "key:tong": 2,
-   "key:trang_thai": 13,
-   "key:vai": 3,
-   "key:xong_luc": 1
+   "key:trang_thai": 12,
+   "key:vai": 2
   },
   "journal_web.py": {
    "key:NHAT_KY_HOST": 1,
@@ -495,7 +470,7 @@
    "key:ma": 3,
    "key:model_la": 5,
    "key:ngay": 5,
-   "key:phien": 5,
+   "key:phien": 4,
    "key:phu_pct": 2,
    "key:rong": 5,
    "key:rong_vi_du": 2,
@@ -553,7 +528,7 @@
    "key:link_goc": 3,
    "key:loai": 1,
    "key:rong": 2,
-   "key:tep": 4,
+   "key:tep": 1,
    "key:tieu_de": 2,
    "key:trang": 2
   },
@@ -660,25 +635,15 @@
    "key:tre_gio": 1
   },
   "send_telegram.py": {
-   "key:mo_ta": 1,
-   "key:trung": 1
-  },
-  "social_post.py": {
-   "key:tep": 1
+   "key:mo_ta": 1
   },
   "submit_common.py": {
    "key:lan": 5,
    "key:loi_cuoi": 1,
-   "key:trung": 1,
    "key:vai_viet": 1
   },
   "sync_hermes.py": {
    "key:LOI_DOC": 1
-  },
-  "worker_scope_sweep.py": {
-   "key:run_hien_tai": 1,
-   "key:run_ket_thuc": 1,
-   "key:trang_thai": 3
   }
  }
 }

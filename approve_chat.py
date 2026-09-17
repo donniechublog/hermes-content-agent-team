@@ -112,8 +112,8 @@ def context_edge_role(profile) -> str:
     runs = hermes_adapter.last_run_many([r["id"] for r in rows]) or {}
     dong = ["[Việc gần nhất của bạn trên kanban — để trả lời đúng việc mình đã làm]"]
     for v in rows:
-        tid, title, st, done = v["id"], v["tieu_de"], v["trang_thai"], v["xong_luc"]
-        tom = (runs.get(tid) or {}).get("tom_tat")
+        tid, title, st, done = v["id"], v["title"], v["status"], v["completed_at"]
+        tom = (runs.get(tid) or {}).get("summary")
         luc = time.strftime("%d/%m %H:%M", time.localtime(done)) if done else "-"
         dong.append(f"- {tid} [{st}] {title[:90]} (xong {luc})")
         if tom:

@@ -429,7 +429,7 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
                 a["out"] += r["out"]
                 a["cache"] += r["cache"]
                 a["reasoning"] += r["reasoning"]
-                a["phien"] = max(a["phien"], r["phien"])
+                a["phien"] = max(a["phien"], r["sessions"])
                 a["usd"] += (r["in"] + r["cache"] + r["out"]) * gia_cua(model)
                 a["model"][model] += r["api"]
             a["model"] = dict(a["model"].most_common(3))
