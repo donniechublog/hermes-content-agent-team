@@ -73,7 +73,7 @@ BOARD = (
     Board("video", "tao video", "TAO VIDEO (arena.ai)", ARENA + "text-to-video",
          "arena", "text-to-video"),
     # --- artificialanalysis ---------------------------------------------------
-    Board("tri_tue", "tri tue AA",
+    Board("intelligence", "tri tue AA",
          "TRI TUE (artificialanalysis intelligence index)", AA, "aa"),
     # Bang agentic: so DA co san trong payload AA tu lau, chua bao gio duoc xep
     # hang nen so_hang() khong bat duoc "leo hang agentic". Them tu 06/09/2026.
@@ -83,12 +83,12 @@ BOARD = (
     Board("eci", "Epoch ECI",
          "EPOCH ECI (ghep ~50 benchmark bang IRT, co khoang tin cay)",
          "https://epoch.ai/data/ai-benchmarking-dashboard", "top",
-         them=lambda r: f"[{r.get('ci_thap')}-{r.get('ci_cao')}]"),
+         them=lambda r: f"[{r.get('ci_low')}-{r.get('ci_high')}]"),
     Board("hle", "HLE", "HUMANITY'S LAST EXAM (cau hoi do chuyen gia PhD dat)",
          "https://scale.com/leaderboard/humanitys_last_exam", "top", diem_hau="%"),
     Board("arcagi", "ARC-AGI-2", "ARC-AGI-2 (bai CHUA TUNG THAY, khong hoc thuoc duoc)",
          "https://arcprize.org/leaderboard", "top", diem_hau="%",
-         them=lambda r: (f"${r['gia_moi_bai']:.2f}/bai" if r.get("gia_moi_bai") else "")),
+         them=lambda r: (f"${r['cost_per_task']:.2f}/bai" if r.get("cost_per_task") else "")),
     Board("tbench", "Terminal-B",
          "TERMINAL-BENCH 4.0 (agent go lenh trong container that)",
          "https://www.tbench.ai/leaderboard", "top", diem_hau="%",
@@ -97,12 +97,12 @@ BOARD = (
          SWE, "top", diem_hau="%"),
     Board("swe_bash", "SWE-b bash",
          "SWE-BENCH VERIFIED — CHI BASH (so sanh model that)", SWE, "top", diem_hau="%"),
-    Board("swe_da_ngon_ngu", "SWE-b da nn",
+    Board("swe_multilingual", "SWE-b da nn",
          "SWE-BENCH DA NGON NGU (C/C++/Go/Java/PHP/Ruby/Rust)", SWE, "top", diem_hau="%"),
     Board("opencompass", "CompassBench",
          "COMPASSBENCH (de DONG cua OpenCompass, phan lon lab TQ)",
          "https://rank.opencompass.org.cn/home", "top",
-         them=lambda r: "mo nguon" if r.get("mo_nguon") else ""),
+         them=lambda r: "mo nguon" if r.get("open_source") else ""),
     Board("livebench", "LiveBench", "LIVEBENCH", "https://livebench.ai/", "top"),
     # --- media (artificialanalysis) -------------------------------------------
     Board("tts", "giong doc", "GIONG DOC — TTS (artificialanalysis, Elo)",
@@ -137,10 +137,10 @@ def rank_and_date(ket: dict, b: Board) -> tuple:
     Bon hinh khac nhau vi bon nguon khac nhau, va do la ly do ban dang ky phai
     ghi `nguon` chu khong doan duoc tu khoa."""
     if b.nguon == "arena":
-        return (ket.get("bang_xep_hang") or {}).get(b.khoa), None
+        return (ket.get("leaderboards") or {}).get(b.khoa), None
     if b.nguon == "aa":
-        return (ket.get("cham_diem") or {}).get(f"bang_{b.khoa}_goc"), None
+        return (ket.get("aa_scores") or {}).get(f"{b.khoa}_board_original"), None
     if b.nguon == "media":
         return (ket.get("media") or {}).get(b.khoa), None
     o = ket.get(b.ket_khoa or b.khoa) or {}
-    return o.get("rows"), o.get("ngay")
+    return o.get("rows"), o.get("date")

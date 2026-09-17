@@ -80,16 +80,16 @@ def call(model: str, key: str, dung_tool: bool, max_tokens: int) -> dict:
         r = httpx.post(ROUTER, timeout=180,
                        headers={"Authorization": f"Bearer {key}"}, json=body)
     except Exception as e:                                   # noqa: BLE001
-        return {"loi": f"{type(e).__name__}: {e}", "giay": round(time.time() - t0, 1)}
+        return {"error": f"{type(e).__name__}: {e}", "seconds": round(time.time() - t0, 1)}
     giay = round(time.time() - t0, 1)
     if r.status_code != 200:
-        return {"loi": f"HTTP {r.status_code}: {r.text[:200]}", "giay": giay}
+        return {"error": f"HTTP {r.status_code}: {r.text[:200]}", "seconds": giay}
     txt = r.text
     try:
         d, _ = json.JSONDecoder().raw_decode(txt[txt.index("{"):])
         lc = d["choices"][0]
     except Exception:                                        # noqa: BLE001
-        return {"loi": f"body la khong doc duoc: {txt[:200]}", "giay": giay}
+        return {"error": f"body la khong doc duoc: {txt[:200]}", "seconds": giay}
 
     msg = lc.get("message") or {}
     u = d.get("usage") or {}
@@ -98,12 +98,12 @@ def call(model: str, key: str, dung_tool: bool, max_tokens: int) -> dict:
     # Model co the viet caption vao content HOAC vao tham so tool — tinh ca hai
     args = tc[0].get("function", {}).get("arguments", "") if tc else ""
     return {
-        "giay": giay,
-        "ket": lc.get("finish_reason"),
+        "seconds": giay,
+        "finish_reason": lc.get("finish_reason"),
         "content": ct.strip(),
         "tool": [t.get("function", {}).get("name") for t in tc],
         "tool_args": args,
-        "van_ban": (ct.strip() or args),
+        "text": (ct.strip() or args),
         "reason_tok": (u.get("completion_tokens_details") or {}).get("reasoning_tokens"),
         "prompt_tok": u.get("prompt_tokens"),
         "out_tok": u.get("completion_tokens"),
@@ -125,21 +125,21 @@ def main():
     for m in (a.models or CANDIDATE):
         print(f"\n{'=' * 72}\n{m}", flush=True)
         r1 = call(m, key, not a.no_tool, a.max_tokens)
-        if "loi" in r1:
-            print(f"  LOI: {r1['loi']}")
-            ket_qua[m] = {"dat": False, "vi_sao": r1["loi"]}
+        if "error" in r1:
+            print(f"  LOI: {r1['error']}")
+            ket_qua[m] = {"passed": False, "reason": r1["error"]}
             continue
         time.sleep(2)
         r2 = call(m, key, not a.no_tool, a.max_tokens)   # y het -> do cache
 
-        vb = r1["van_ban"]
+        vb = r1["text"]
         td = billion_odd_mark(vb)
         co_tool = bool(r1["tool"]) if not a.no_tool else None
         # cached_tokens > 0 o bat ky lan nao => nha cung cap co cache prefix
         cache_ok = bool((r1["cached"] or 0) or (r2.get("cached") or 0))
 
-        print(f"  thoi gian  : {r1['giay']}s (lan 2: {r2.get('giay')}s)")
-        print(f"  ket thuc   : {r1['ket']}")
+        print(f"  thoi gian  : {r1['seconds']}s (lan 2: {r2.get('seconds')}s)")
+        print(f"  ket thuc   : {r1['finish_reason']}")
         if not a.no_tool:
             print(f"  goi tool   : {r1['tool'] or 'KHONG — truot'}")
         print(f"  tieng Viet : {len(vb)} ky tu, ty le dau {td:.2f} "
@@ -154,14 +154,14 @@ def main():
             print("  --- KHONG VIET RA CHU NAO ---")
 
         dat = td >= THRESHOLD_MARK and bool(vb) and (a.no_tool or co_tool) and cache_ok
-        ket_qua[m] = {"dat": dat, "ty_le_dau": round(td, 2), "tool": r1["tool"],
-                      "cache": cache_ok, "giay": r1["giay"],
+        ket_qua[m] = {"passed": dat, "diacritic_ratio": round(td, 2), "tool": r1["tool"],
+                      "cache": cache_ok, "seconds": r1["seconds"],
                       "reason_tok": r1["reason_tok"]}
         print(f"  => {'DAT' if dat else 'TRUOT'}")
 
     print(f"\n{'=' * 72}\nTONG KET")
     for m, v in ket_qua.items():
-        print(f"  {'DAT   ' if v.get('dat') else 'TRUOT '} {m}")
+        print(f"  {'DAT   ' if v.get('passed') else 'TRUOT '} {m}")
     # state_dir() de per-brand nhu cac script khac (truoc day ghi thang
     # state/ goc, lech voi phan con lai cua he thong).
     out = env_load.state_dir() / "model_audition.json"

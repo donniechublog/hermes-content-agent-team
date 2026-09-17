@@ -135,11 +135,11 @@ def fetch_catalog() -> list:
             if not mid:
                 continue
             org = str(mid).split("/")[0]
-            out.append({"nguon": "catalog", "id": f"{nha}/{mid}",
-                        "ten": m.get("name") or mid, "nha_cung_cap": nha,
-                        "to_chuc": org, "vung": region_of(org), "ra_mat": None,
-                        "ra_mat_ts": None, "gia_vao": None, "gia_ra": None,
-                        "context": m.get("context_length"), "co_reasoning": None})
+            out.append({"source": "catalog", "id": f"{nha}/{mid}",
+                        "name": m.get("name") or mid, "provider": nha,
+                        "organization": org, "region": region_of(org), "released": None,
+                        "released_ts": None, "input_price": None, "output_price": None,
+                        "context": m.get("context_length"), "has_reasoning": None})
     return out
 
 
@@ -181,8 +181,8 @@ def _arena_board(duong_dan: str) -> list:
             continue
         seen.add(ten)
         org = (o.get("modelOrganization") or "").lower()
-        rows.append({"hang": o["rank"], "ten": ten, "to_chuc": org,
-                     "vung": region_of(org), "diem": round(o.get("rating") or 0, 1),
+        rows.append({"rank": o["rank"], "name": ten, "organization": org,
+                     "region": region_of(org), "score": round(o.get("rating") or 0, 1),
                      "votes": o.get("votes")})
     return rows
 
@@ -213,7 +213,7 @@ SWE_BASH = "mini-SWE-agent"
 # Chi lay hai split con SONG. Do 06/09/2026: Lite dung tu 11/09/2025, Full tu
 # 19/12/2025, Multimodal tu 17/11/2025 — deu qua han, khong dua vao.
 SWE_SPLIT = [("swebench", "Verified", False), ("swe_bash", "Verified", True),
-             ("swe_da_ngon_ngu", "Multilingual", True)]
+             ("swe_multilingual", "Multilingual", True)]
 
 
 def fetch_swebench(top: int) -> dict:
@@ -243,10 +243,10 @@ def fetch_swebench(top: int) -> dict:
         rows = []
         for i, (ten, r) in enumerate(list(goc.items())[:top]):
             org = (r.get("model_org") or "").lower()
-            rows.append({"hang": i + 1, "ten": ten, "model": r.get("model_display"),
-                         "to_chuc": org, "vung": region_of(org),
-                         "diem": r.get("resolved"), "ngay": r.get("date"),
-                         "gia_usd": r.get("cost")})
+            rows.append({"rank": i + 1, "name": ten, "model": r.get("model_display"),
+                         "organization": org, "region": region_of(org),
+                         "score": r.get("resolved"), "date": r.get("date"),
+                         "price_usd": r.get("cost")})
         ra[ma] = (rows, ngay)
     return ra
 
@@ -282,11 +282,11 @@ def fetch_livebench(top: int) -> tuple:
     for r in _csv.DictReader(io.StringIO(csv_txt)):
         diem = [float(v) for k, v in r.items() if k != "model" and v not in ("", None)]
         if diem:
-            rows.append({"ten": r["model"], "diem": round(sum(diem) / len(diem), 1),
-                         "to_chuc": "", "vung": "khac"})
-    rows.sort(key=lambda x: -x["diem"])
+            rows.append({"name": r["model"], "score": round(sum(diem) / len(diem), 1),
+                         "organization": "", "region": "khac"})
+    rows.sort(key=lambda x: -x["score"])
     for i, r in enumerate(rows):
-        r["hang"] = i + 1
+        r["rank"] = i + 1
     return rows[:top], ngay
 
 
@@ -305,16 +305,16 @@ def _original_by_name(rows: list, top: int) -> list:
     """Gop bien the effort ve MOT dong (nhu _bang_goc cua AA) roi danh so lai.
     Khong gop thi mot model chiem 5 dong dau bang va bang chi con 2 model."""
     goc, ra = {}, []
-    for r in sorted(rows, key=lambda x: -(x["diem"] or 0)):
-        t = name_original(r["ten"])
+    for r in sorted(rows, key=lambda x: -(x["score"] or 0)):
+        t = name_original(r["name"])
         if t in goc:
             continue
         goc[t] = r
-        ra.append({**r, "ten": t})
+        ra.append({**r, "name": t})
         if len(ra) >= top:
             break
     for i, r in enumerate(ra):
-        r["hang"] = i + 1
+        r["rank"] = i + 1
     return ra
 
 
@@ -345,8 +345,8 @@ def fetch_tbench(top: int) -> tuple:
             continue
         ngay = max(ngay, md.get("date") or "")
         # display_accuracy co markdown ("**58.2%** +- 2.8%") — dung so that
-        rows.append({"ten": str(ten), "agent": agent or "", "to_chuc": "",
-                     "vung": "khac", "diem": round(float(mt["accuracy"]), 1)})
+        rows.append({"name": str(ten), "agent": agent or "", "organization": "",
+                     "region": "khac", "score": round(float(mt["accuracy"]), 1)})
     return _original_by_name(rows, top), (ngay or None)
 
 
@@ -370,10 +370,10 @@ def fetch_arcagi(top: int) -> tuple:
         if e.get("score") is None:
             continue
         org = (e.get("providerDisplayName") or "").lower()
-        rows.append({"ten": e.get("modelDisplayName") or "?",
-                     "to_chuc": e.get("providerDisplayName") or "",
-                     "vung": region_of(org), "diem": round(float(e["score"]) * 100, 1),
-                     "gia_moi_bai": e.get("costPerTask")})
+        rows.append({"name": e.get("modelDisplayName") or "?",
+                     "organization": e.get("providerDisplayName") or "",
+                     "region": region_of(org), "score": round(float(e["score"]) * 100, 1),
+                     "cost_per_task": e.get("costPerTask")})
     return _original_by_name(rows, top), (d.get("generatedAt") or "")[:10] or None
 
 
@@ -401,8 +401,8 @@ def fetch_hle(top: int) -> tuple:
         if k in thay:
             continue
         thay.add(k)
-        rows.append({"ten": ten.strip(), "to_chuc": "", "vung": "khac",
-                     "diem": round(float(diem), 1)})
+        rows.append({"name": ten.strip(), "organization": "", "region": "khac",
+                     "score": round(float(diem), 1)})
     if len(rows) < 5:                       # regex vo -> bao rong, dung bao sai
         print(f"[hle] chi boc duoc {len(rows)} dong — coi nhu hong", file=sys.stderr)
         return [], None
@@ -432,14 +432,14 @@ def fetch_epoch(top: int) -> tuple:
             continue
         ngay = max(ngay, (r.get("date") or "")[:10])
         org = (r.get("Organization") or "").strip()
-        rows.append({"ten": (r.get("Display name") or r.get("Model") or "?").strip(),
-                     "to_chuc": org, "vung": region_of(org.lower().replace(" ", "-")),
-                     "diem": round(diem, 1), "ra_mat": (r.get("date") or "")[:10],
-                     "ci_thap": r.get("eci_ci_low"), "ci_cao": r.get("eci_ci_high")})
-    rows.sort(key=lambda x: -x["diem"])
+        rows.append({"name": (r.get("Display name") or r.get("Model") or "?").strip(),
+                     "organization": org, "region": region_of(org.lower().replace(" ", "-")),
+                     "score": round(diem, 1), "released": (r.get("date") or "")[:10],
+                     "ci_low": r.get("eci_ci_low"), "ci_high": r.get("eci_ci_high")})
+    rows.sort(key=lambda x: -x["score"])
     ra = rows[:top]
     for i, r in enumerate(ra):
-        r["hang"] = i + 1
+        r["rank"] = i + 1
     return ra, (ngay or None)
 
 
@@ -486,9 +486,9 @@ def fetch_opencompass(top: int) -> tuple:
     # nen danh so lai theo thu tu tra ve nhu 22 bang kia thay vi tin truong nay.
     for k, r in enumerate(((d2.get("data") or {}).get("modelRankings") or [])[:top], 1):
         org = (r.get("org") or "").lower()
-        rows.append({"hang": r.get("ranking") or k, "ten": r.get("model") or "?",
-                     "to_chuc": r.get("org") or "", "vung": region_of(org),
-                     "diem": r.get("score"), "mo_nguon": bool(r.get("openSource"))})
+        rows.append({"rank": r.get("ranking") or k, "name": r.get("model") or "?",
+                     "organization": r.get("org") or "", "region": region_of(org),
+                     "score": r.get("score"), "open_source": bool(r.get("openSource"))})
     return rows, ngay
 
 
@@ -531,15 +531,15 @@ def fetch_aa_media(top: int) -> dict:
                 thay.add(ten)
                 # Doi WER -> do chinh xac de MOI bang deu "cao hon = tot hon";
                 # so_hang() gia dinh hang 1 la tot nhat, tron chieu la sai het.
-                rows.append({"ten": ten, "to_chuc": "", "vung": "khac",
-                             "diem": round((1 - float(wer)) * 100, 2)})
+                rows.append({"name": ten, "organization": "", "region": "khac",
+                             "score": round((1 - float(wer)) * 100, 2)})
         elif ma == "tts":
             for ten, elo in TTS_PAT.findall(s):
                 if ten in thay:
                     continue
                 thay.add(ten)
-                rows.append({"ten": ten, "to_chuc": "", "vung": "khac",
-                             "diem": round(float(elo))})
+                rows.append({"name": ten, "organization": "", "region": "khac",
+                             "score": round(float(elo))})
         else:
             # BAY: moi trang arena cua AA nhung NHIEU lat cat (bang tong + bang
             # theo tag use-case). Regex bat ca ngan match nhung bang tong chi
@@ -554,12 +554,12 @@ def fetch_aa_media(top: int) -> dict:
                 if ten in thay:
                     continue
                 thay.add(ten)
-                rows.append({"ten": ten, "to_chuc": "", "vung": "khac",
-                             "diem": int(elo) if elo.isdigit() else None})
-        rows.sort(key=lambda x: -(x["diem"] or 0))
+                rows.append({"name": ten, "organization": "", "region": "khac",
+                             "score": int(elo) if elo.isdigit() else None})
+        rows.sort(key=lambda x: -(x["score"] or 0))
         rows = rows[:top]
         for i, r in enumerate(rows):
-            r["hang"] = i + 1
+            r["rank"] = i + 1
         ra[ma] = rows
     return ra
 
@@ -601,11 +601,11 @@ def fetch_hf_trending(ngay: int, top: int) -> list:
         if (m.get("trendingScore") or 0) < HF_READY:
             continue
         org = mid.split("/")[0]
-        rows.append({"id": mid, "to_chuc": org, "vung": region_of(org),
-                     "diem": m.get("trendingScore"), "likes": m.get("likes"),
-                     "tai": m.get("downloads"), "ra_mat": tao,
-                     "viec": m.get("pipeline_tag") or ""})
-    rows.sort(key=lambda x: -(x["diem"] or 0))
+        rows.append({"id": mid, "organization": org, "region": region_of(org),
+                     "score": m.get("trendingScore"), "likes": m.get("likes"),
+                     "downloads": m.get("downloads"), "released": tao,
+                     "pipeline_tag": m.get("pipeline_tag") or ""})
+    rows.sort(key=lambda x: -(x["score"] or 0))
     return rows[:top]
 
 
@@ -640,8 +640,8 @@ def fetch_anthropic(ngay: int) -> list:
             ln = ln.strip(" -*\t")
             if len(ln) < 12 or ln.startswith("#"):
                 continue
-            ra.append({"ngay": d.isoformat(), "hang": "Anthropic",
-                       "tieu_de": re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", ln)[:120],
+            ra.append({"date": d.isoformat(), "company": "Anthropic",
+                       "title": re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", ln)[:120],
                        "link": "https://platform.claude.com/docs/en/release-notes/overview"})
             if len(ra) >= 12:
                 return ra
@@ -687,20 +687,20 @@ def filter_aa(aa: dict, ngay: int, top: int) -> dict:
 
     def gon(r):
         return {
-            "ten": r.get("name"), "slug": r["slug"],
-            "hang_sx": r.get("modelCreatorName"),
+            "name": r.get("name"), "slug": r["slug"],
+            "maker": r.get("modelCreatorName"),
             # Quoc gia lay tu chinh nguon, khong con doan theo tien to ID
-            "nuoc": (r.get("modelCreatorCountry") or "?").lower(),
-            "ra_mat": r.get("releaseDate"),
+            "country": (r.get("modelCreatorCountry") or "?").lower(),
+            "released": r.get("releaseDate"),
             "coding": _make_full(r.get("codingIndex")),
             "agentic": _make_full(r.get("agenticIndex")),
             "terminal_bench": _make_full(r.get("terminalbenchHard")),
-            "tri_tue": _make_full(r.get("intelligenceIndex")),
-            "gia_vao": r.get("price1mInputTokens"),
-            "gia_ra": r.get("price1mOutputTokens"),
-            "gia_cache": r.get("cacheHitPrice"),
-            "nguon_mo": bool(r.get("isOpenWeights")),
-            "giay_phep": r.get("licenseName"),
+            "intelligence": _make_full(r.get("intelligenceIndex")),
+            "input_price": r.get("price1mInputTokens"),
+            "output_price": r.get("price1mOutputTokens"),
+            "cache_price": r.get("cacheHitPrice"),
+            "open_weights": bool(r.get("isOpenWeights")),
+            "license": r.get("licenseName"),
             "openrouter_id": r.get("openrouterApiId"),
         }
 
@@ -710,8 +710,8 @@ def filter_aa(aa: dict, ngay: int, top: int) -> dict:
 
     def gon2(r):
         g = gon(r)
-        g["hang_coding"] = hang_coding.get(r["slug"])
-        g["ten_goc"] = name_original(g["ten"])
+        g["coding_rank"] = hang_coding.get(r["slug"])
+        g["original_name"] = name_original(g["name"])
         return g
 
     # NHOM THEO TEN GOC: AA liet ke moi muc effort la mot dong ("GPT-6 Astra
@@ -720,28 +720,28 @@ def filter_aa(aa: dict, ngay: int, top: int) -> dict:
     ra_mat_goc = {}
     for r in sorted((gon2(r) for r in gan_day),
                     key=lambda x: -(x["coding"] or 0)):
-        ra_mat_goc.setdefault(r["ten_goc"], r)
+        ra_mat_goc.setdefault(r["original_name"], r)
     return {
-        "moi_ra_mat": sorted((gon2(r) for r in gan_day),
-                             key=lambda x: x["ra_mat"] or "", reverse=True),
-        "ra_mat_theo_ten": sorted(ra_mat_goc.values(),
-                                  key=lambda x: (x["ra_mat"] or "", -(x["coding"] or 0)),
+        "new_releases": sorted((gon2(r) for r in gan_day),
+                             key=lambda x: x["released"] or "", reverse=True),
+        "releases_by_name": sorted(ra_mat_goc.values(),
+                                  key=lambda x: (x["released"] or "", -(x["coding"] or 0)),
                                   reverse=True),
-        "bang_coding_goc": _board_original(co_diem, gon2, top),
-        "bang_tri_tue_goc": _board_original(
+        "coding_board_original": _board_original(co_diem, gon2, top),
+        "intelligence_board_original": _board_original(
             sorted((r for r in aa.values() if r.get("intelligenceIndex") is not None),
-                   key=lambda r: -r["intelligenceIndex"]), gon2, top, khoa="tri_tue"),
+                   key=lambda r: -r["intelligenceIndex"]), gon2, top, khoa="intelligence"),
         # `agenticIndex` da duoc tai ve va bo vao gon() tu truoc, nhung chua bao
         # gio duoc dung bang xep hang -> so_hang() khong co moc de so, nen mot
         # model nhay tu #9 len #2 agentic ma tri tue khong doi thi Nova IM
         # LANG. Cung kieu su co qwen3.8-max WebDev 02/09. Bang nay chua het 0
         # request them: so da nam san trong payload.
-        "bang_agentic_goc": _board_original(
+        "agentic_board_original": _board_original(
             sorted((r for r in aa.values() if r.get("agenticIndex") is not None),
                    key=lambda r: -r["agenticIndex"]), gon2, top, khoa="agentic"),
-        "nguon_mo_moi": sorted(
+        "new_open_weights": sorted(
             (gon(r) for r in gan_day if r.get("isOpenWeights")),
-            key=lambda x: x["ra_mat"] or "", reverse=True),
+            key=lambda x: x["released"] or "", reverse=True),
         "top_coding": [gon(r) for r in co_diem[:top]],
     }
 
@@ -758,12 +758,12 @@ def _board_original(co_diem: list, gon2, top: int, khoa: str = "coding") -> list
     ra, thay = [], set()
     for r in co_diem:
         g = gon2(r)
-        if g["ten_goc"] in thay:
+        if g["original_name"] in thay:
             continue
-        thay.add(g["ten_goc"])
-        ra.append({"hang": len(ra) + 1, "ten": g["ten_goc"], "to_chuc": g["hang_sx"],
-                   "vung": "khac", "coding": g["coding"], "diem": g[khoa],
-                   "ra_mat": g["ra_mat"]})
+        thay.add(g["original_name"])
+        ra.append({"rank": len(ra) + 1, "name": g["original_name"], "organization": g["maker"],
+                   "region": "khac", "coding": g["coding"], "score": g[khoa],
+                   "released": g["released"]})
         if len(ra) >= top:
             break
     return ra
@@ -811,10 +811,10 @@ def fetch_story_rank(ngay: int) -> list:
             low = tieu_de.lower()
             if not any(k in low for k in KEYWORD_STORY):
                 continue
-            ra.append({"hang": hang, "tieu_de": tieu_de, "link": link,
-                       "ngay": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
+            ra.append({"company": hang, "title": tieu_de, "link": link,
+                       "date": datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
                        if ts else "?"})
-    ra.sort(key=lambda x: x["ngay"], reverse=True)
+    ra.sort(key=lambda x: x["date"], reverse=True)
     return ra
 
 
@@ -833,8 +833,8 @@ def fetch_github(ngay: int) -> list:
         ts = scan_common.timestamp_time(pub)
         if not ts or ts < nguong:
             continue
-        ra.append({"repo": repo, "tag": d.get("tag_name"), "ngay": pub[:10],
-                   "ghi_chu": (d.get("body") or "")[:300]})
+        ra.append({"repo": repo, "tag": d.get("tag_name"), "date": pub[:10],
+                   "note": (d.get("body") or "")[:300]})
     return ra
 
 
@@ -871,12 +871,12 @@ def already_see() -> set:
 
 def rank_old() -> dict:
     """{'text': {'ten model': hang}, ...} tu lan quet truoc."""
-    return read_state().get("xep_hang", {})
+    return read_state().get("rankings", {})
 
 
 def aa_already_report() -> dict:
     """{ten goc: ngay ra mat} cac model AA da BAO roi (moi model bao dung mot lan)."""
-    return read_state().get("aa_da_bao", {})
+    return read_state().get("aa_reported", {})
 
 
 def write_timestamp(ids: set, xep_hang: dict, da_bao: dict | None = None):
@@ -897,9 +897,9 @@ def write_timestamp(ids: set, xep_hang: dict, da_bao: dict | None = None):
     # da-thay; con ten tep tam CO DINH (`.json.tmp`, ban truoc 06/09/2026) thi
     # cron va mot lan chay tay `--lam-moi` trung thoi diem se ghi lan vao cung
     # mot tep tam va `replace` ban cut cua nhau.
-    env_load.write_json(STATE, {"cap_nhat": datetime.now(timezone.utc).isoformat(),
-                              "ids": sorted(ids), "xep_hang": xep_hang,
-                              "aa_da_bao": da_bao})
+    env_load.write_json(STATE, {"updated_at": datetime.now(timezone.utc).isoformat(),
+                              "ids": sorted(ids), "rankings": xep_hang,
+                              "aa_reported": da_bao})
 
 
 import required                                              # noqa: E402
@@ -912,18 +912,18 @@ def write_required(ra_mat_aa: list, leo_hang: list,
     hom truoc sot thi hom sau bo sung, khong duoc bo."""
     muc = []
     for r in ra_mat_aa:
-        muc.append((f"ra_mat|{r['ten_goc']}", r["ten_goc"], "ra_mat",
-                    f"ra mat {r['ra_mat']}, {r['hang_sx']}, coding={r['coding']}"
-                    + (f" #{r['hang_coding']}" if r.get("hang_coding") else ""), ""))
+        muc.append((f"ra_mat|{r['original_name']}", r["original_name"], "ra_mat",
+                    f"ra mat {r['released']}, {r['maker']}, coding={r['coding']}"
+                    + (f" #{r['coding_rank']}" if r.get("coding_rank") else ""), ""))
     for l in leo_hang:
-        muc.append((f"{l['loai']}|{l['ten']}", l["ten"], l["loai"], l["ghi_chu"],
-                    required.link_call_y({"loai": l["loai"], "ten": l["ten"]})))
+        muc.append((f"{l['board']}|{l['name']}", l["name"], l["board"], l["note"],
+                    required.link_call_y({"loai": l["board"], "ten": l["name"]})))
     # Model tha trong so tren HuggingFace: mot loai su kien "model xuat hien",
     # nen cung bat buoc.
     for m in hf_moi or []:
         muc.append((f"hf|{m['id']}", m["id"], "hf",
-                    f"tha trong so tren HuggingFace {m.get('ra_mat')}, "
-                    f"trending {m.get('diem')}, {m.get('tai')} luot tai",
+                    f"tha trong so tren HuggingFace {m.get('released')}, "
+                    f"trending {m.get('score')}, {m.get('downloads')} luot tai",
                     f"https://huggingface.co/{m['id']}"))
     required.extra_many("nova", muc)
 
@@ -937,18 +937,18 @@ def count_rank(arena: dict, cu: dict) -> list:
     for mod, rows in arena.items():
         truoc = cu.get(mod) or {}
         for r in rows:
-            ten, h = r["ten"], r["hang"]
+            ten, h = r["name"], r["rank"]
             h_cu = truoc.get(ten)
             if h_cu is None:
                 if truoc:                       # co du lieu cu ma khong co model nay
-                    ra.append({"loai": mod, "ten": ten, "hang": h, "hang_cu": None,
-                               "buoc": None, "ghi_chu": f"MOI vao bang, thang hang #{h}"})
+                    ra.append({"board": mod, "name": ten, "rank": h, "previous_rank": None,
+                               "climb": None, "note": f"MOI vao bang, thang hang #{h}"})
             elif h < h_cu:
-                ra.append({"loai": mod, "ten": ten, "hang": h, "hang_cu": h_cu,
-                           "buoc": h_cu - h,
-                           "ghi_chu": f"leo {h_cu - h} bac: #{h_cu} -> #{h}"})
+                ra.append({"board": mod, "name": ten, "rank": h, "previous_rank": h_cu,
+                           "climb": h_cu - h,
+                           "note": f"leo {h_cu - h} bac: #{h_cu} -> #{h}"})
     # leo nhieu bac nhat len dau; model moi vao bang xep theo hang
-    ra.sort(key=lambda x: (-(x["buoc"] or 99), x["hang"]))
+    ra.sort(key=lambda x: (-(x["climb"] or 99), x["rank"]))
     return ra
 
 
@@ -965,7 +965,7 @@ def _try(ten: str, fn, khi_hong):
     README goi la dang so nhat.
 
     Nguon hong ghi vao `_HONG_KHAC` de in cung muc "NGUON KHONG LAY DUOC" —
-    `bang_hong` chi bat duoc fetcher tra RONG, khong bat duoc fetcher NEM.
+    `broken_boards` chi bat duoc fetcher tra RONG, khong bat duoc fetcher NEM.
     """
     try:
         return fn()
@@ -1017,7 +1017,7 @@ def main():
         # `bang_so` van co no.
         f_swebench = ex.submit(
             _try, "swebench", lambda: fetch_swebench(a.top),
-            {"swebench": RONG2, "swe_bash": RONG2, "swe_da_ngon_ngu": RONG2})
+            {"swebench": RONG2, "swe_bash": RONG2, "swe_multilingual": RONG2})
         f_top = {}
         for khoa, ten, fn in (
                 ("livebench", "livebench", fetch_livebench),
@@ -1035,7 +1035,7 @@ def main():
         arena = f_arena.result()
         aa = f_aa.result()
         tin = f_rss.result() + f_anthropic.result()
-        tin.sort(key=lambda t: t.get("ngay") or "", reverse=True)
+        tin.sort(key=lambda t: t.get("date") or "", reverse=True)
         gh = f_gh.result()
         top = f_swebench.result()
         for khoa, f in f_top.items():
@@ -1053,9 +1053,9 @@ def main():
     # Bang coding AA vao bo nho tu 04/09/2026: truoc do chi so hang arena, nen
     # GPT-6 Astra vao #8 coding ngay ra mat ma khong ai hay.
     bang_so = dict(arena)                       # 7 bang arena.ai
-    bang_so["coding"] = aa.get("bang_coding_goc", [])
-    bang_so["tri_tue"] = aa.get("bang_tri_tue_goc", [])
-    bang_so["agentic"] = aa.get("bang_agentic_goc", [])
+    bang_so["coding"] = aa.get("coding_board_original", [])
+    bang_so["intelligence"] = aa.get("intelligence_board_original", [])
+    bang_so["agentic"] = aa.get("agentic_board_original", [])
     for khoa, (rows, _ngay) in top.items():
         bang_so[khoa] = rows
     bang_so["tts"] = media.get("tts") or []
@@ -1078,7 +1078,7 @@ def main():
         if not gt and ten not in _HONG_KHAC:
             print(f"[{ten}] tra RONG — coi nhu khong lay duoc", file=sys.stderr)
             _HONG_KHAC.append(ten)
-    hang_moi = {mod: {r["ten"]: r["hang"] for r in rows}
+    hang_moi = {mod: {r["name"]: r["rank"] for r in rows}
                 for mod, rows in bang_so.items()}
     if a.lan_dau:
         write_timestamp(tat_ca, hang_moi)
@@ -1098,27 +1098,27 @@ def main():
     # Router-based `moi` bo sot model khong len router (GPT-6 Astra 03/09) va
     # chi bao MOT lan dung ngay id xuat hien — hom do Nova hong la mat luon.
     da_bao = aa_already_report()
-    ra_mat_aa = [r for r in aa.get("ra_mat_theo_ten", []) if r["ten_goc"] not in da_bao]
+    ra_mat_aa = [r for r in aa.get("releases_by_name", []) if r["original_name"] not in da_bao]
 
     ket = {
-        "quet_luc": datetime.now(timezone.utc).isoformat(),
-        "top_moi_bang": a.top,
-        "leo_hang": leo_hang,
-        "cham_diem": aa,
-        "ra_mat_aa_chua_bao": ra_mat_aa,
+        "scanned_at": datetime.now(timezone.utc).isoformat(),
+        "top_per_board": a.top,
+        "rank_climbs": leo_hang,
+        "aa_scores": aa,
+        "aa_releases_unreported": ra_mat_aa,
         # Moi bang kieu (rows, ngay) mot muc, khoa theo ban dang ky (`ket_khoa`
         # neu khac khoa trong bang_so).
-        **{(b.ket_khoa or b.khoa): {"ngay": top[b.khoa][1], "rows": top[b.khoa][0]}
+        **{(b.ket_khoa or b.khoa): {"date": top[b.khoa][1], "rows": top[b.khoa][0]}
            for b in model_boards.BOARD if b.nguon == "top"},
         "media": media,
         "hf_trending": hf,
-        "bang_hong": hong,
-        "nguon_hong": sorted(set(_HONG_KHAC)),
-        "tin_hang": tin,
-        "ban_phat_hanh": gh,
-        "moi_tren_router_cua_ta": moi_catalog,
-        "bang_xep_hang": arena,
-        "tong_theo_doi": len(tat_ca),
+        "broken_boards": hong,
+        "broken_sources": sorted(set(_HONG_KHAC)),
+        "company_news": tin,
+        "releases": gh,
+        "new_on_our_router": moi_catalog,
+        "leaderboards": arena,
+        "tracked_total": len(tat_ca),
     }
 
     if a.out:
@@ -1128,7 +1128,7 @@ def main():
     else:
         _in_report(ket)
 
-    da_bao.update({r["ten_goc"]: r["ra_mat"] for r in ra_mat_aa})
+    da_bao.update({r["original_name"]: r["released"] for r in ra_mat_aa})
     write_timestamp(tat_ca | cu, hang_moi, da_bao)
     write_required(ra_mat_aa, leo_hang, hf)
     if not a.khong_bat_buoc:
@@ -1174,64 +1174,64 @@ def _in_board(nhan: str, rows, n: int = CEILING_BOARD, ngay=None, diem_hau: str 
         return
     print(f"\n=== {nhan}{f' — {ngay}' if ngay else ''} ===")
     for r in rows[:n]:
-        vung = REGION_LABEL.get(r.get("vung") or "khac", "  ")
-        org = str(r.get("to_chuc") or "")[:13]
+        vung = REGION_LABEL.get(r.get("region") or "khac", "  ")
+        org = str(r.get("organization") or "")[:13]
         phu = (them(r) or "") if them else ""
-        print(f"  #{str(r.get('hang')):<3s}[{vung}] {str(r.get('ten'))[:38]:<39s} "
-              f"{str(r.get('diem')):>6s}{diem_hau} {org:<14s}{phu}")
+        print(f"  #{str(r.get('rank')):<3s}[{vung}] {str(r.get('name'))[:38]:<39s} "
+              f"{str(r.get('score')):>6s}{diem_hau} {org:<14s}{phu}")
 
 
 def _in_report(k: dict):
-    if k.get("moi_tren_router_cua_ta"):
-        print(f"\n=== MOI TRONG CATALOG CUA HERMES ({len(k['moi_tren_router_cua_ta'])}) "
+    if k.get("new_on_our_router"):
+        print(f"\n=== MOI TRONG CATALOG CUA HERMES ({len(k['new_on_our_router'])}) "
               "— danh muc model cua hermes-agent, CHUA chac 9router goi duoc ===")
-        for m in k["moi_tren_router_cua_ta"][:15]:
+        for m in k["new_on_our_router"][:15]:
             print(f"  {m['id']}")
-    aa = k.get("cham_diem") or {}
-    rm = k.get("ra_mat_aa_chua_bao") or []
+    aa = k.get("aa_scores") or {}
+    rm = k.get("aa_releases_unreported") or []
     if rm:
         print(f"\n=== RA MAT THEO BANG CHAM DIEM ({len(rm)}) — artificialanalysis, "
               "CHUA BAO LAN NAO, moi ten goc mot dong ===")
         for r in rm[:12]:
-            hc = f"#{r['hang_coding']} coding" if r.get("hang_coding") else "chua co diem coding"
-            print(f"  {r['ra_mat']}  [{r['nuoc']}] {r['ten_goc'][:34]:<35s} "
-                  f"{str(r['hang_sx'])[:14]:<15s} coding={r['coding']}  {hc}"
-                  f"{'  MO NGUON' if r.get('nguon_mo') else ''}")
+            hc = f"#{r['coding_rank']} coding" if r.get("coding_rank") else "chua co diem coding"
+            print(f"  {r['released']}  [{r['country']}] {r['original_name'][:34]:<35s} "
+                  f"{str(r['maker'])[:14]:<15s} coding={r['coding']}  {hc}"
+                  f"{'  MO NGUON' if r.get('open_weights') else ''}")
     tc = aa.get("top_coding") or []
     if tc:
         print("\n=== TOP CODING (artificialanalysis) ===")
         for r in tc[:10]:
-            ca = f"cache ${r['gia_cache']}" if r["gia_cache"] is not None else "khong cache"
-            print(f"  {str(r['coding']):>5s}  [{r['nuoc']}] {str(r['ten'])[:34]:<35s} "
-                  f"{r['ra_mat']}  vao ${r['gia_vao']}  {ca}")
-    nm = aa.get("nguon_mo_moi") or []
+            ca = f"cache ${r['cache_price']}" if r["cache_price"] is not None else "khong cache"
+            print(f"  {str(r['coding']):>5s}  [{r['country']}] {str(r['name'])[:34]:<35s} "
+                  f"{r['released']}  vao ${r['input_price']}  {ca}")
+    nm = aa.get("new_open_weights") or []
     if nm:
         print(f"\n=== VUA MO NGUON ({len(nm)}) — bat duoc ca hang khong co RSS ===")
         for r in nm[:8]:
-            print(f"  {r['ra_mat']}  [{r['nuoc']}] {str(r['ten'])[:34]:<35s} "
-                  f"{r['giay_phep']}  coding={r['coding']}")
+            print(f"  {r['released']}  [{r['country']}] {str(r['name'])[:34]:<35s} "
+                  f"{r['license']}  coding={r['coding']}")
 
-    leo = k.get("leo_hang") or []
+    leo = k.get("rank_climbs") or []
     if leo:
         print(f"\n=== VUA LEO HANG ({len(leo)}) — thay doi so voi lan quet truoc ===")
         for r in leo[:10]:
-            nhan = LABEL_BOARD.get(r["loai"], r["loai"])
-            print(f"  [{nhan:<9s}] {r['ten'][:36]:<37s} {r['ghi_chu']}")
+            nhan = LABEL_BOARD.get(r["board"], r["board"])
+            print(f"  [{nhan:<9s}] {r['name'][:36]:<37s} {r['note']}")
 
-    tin = k.get("tin_hang") or []
+    tin = k.get("company_news") or []
     if tin:
         print(f"\n=== TIN TU HANG ({len(tin)}) — su kien so dang ky khong the hien ===")
         for t in tin[:10]:
-            print(f"  {t['ngay']}  [{t['hang']:<15s}] {t['tieu_de'][:70]}")
+            print(f"  {t['date']}  [{t['company']:<15s}] {t['title'][:70]}")
 
-    gh = k.get("ban_phat_hanh") or []
+    gh = k.get("releases") or []
     if gh:
         print(f"\n=== ENGINE SUY LUAN RA BAN MOI ({len(gh)}) ===")
         for g in gh[:CEILING_GH]:
-            print(f"  {g['ngay']}  {g['repo']:<28s} {g['tag']}")
+            print(f"  {g['date']}  {g['repo']:<28s} {g['tag']}")
 
-    hong = k.get("bang_hong") or []
-    hong_khac = k.get("nguon_hong") or []
+    hong = k.get("broken_boards") or []
+    hong_khac = k.get("broken_sources") or []
     if hong or hong_khac:
         n = len(hong) + len(hong_khac)
         print(f"\n=== NGUON KHONG LAY DUOC LAN NAY ({n}) — cac nguon duoi "
@@ -1249,8 +1249,8 @@ def _in_report(k: dict):
         print(f"\n=== VUA THA TRONG SO TREN HUGGINGFACE ({len(hf)}) — bat truoc "
               "router 1-3 ngay, va bat ca model KHONG BAO GIO len router ===")
         for m in hf[:CEILING_HF]:
-            print(f"  {m['ra_mat']}  {m['id'][:44]:<45s} trending {str(m['diem']):>4s}  "
-                  f"{(m['tai'] or 0):>10,d} tai  {m['viec'][:18]}")
+            print(f"  {m['released']}  {m['id'][:44]:<45s} trending {str(m['score']):>4s}  "
+                  f"{(m['downloads'] or 0):>10,d} tai  {m['pipeline_tag'][:18]}")
 
     # ---- Bang xep hang: tu day tro xuong la BOI CANH, khong phai tin moi. Giu
     # 5 dong/bang co chu dich — muc tren (ra mat / leo hang) moi la thu Nova
