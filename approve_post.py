@@ -485,7 +485,7 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
     dong "DUNG lap lai anh cu" trong task chi la loi mem, khong ai bat buoc
     doc/nghe theo. Truoc khi giao task lam lai, chup dHash cua CHINH cac anh
     GOC dang dung o cac slide bi che (tu spec.json hien tai, luc con la ban Ong
-    Chu vua xem) roi ghi vao img.json duoi "cam_anh_slide" — {"6": ["<dHash
+    Chu vua xem) roi ghi vao img.json duoi "forbidden_slide_images" — {"6": ["<dHash
     hex>", ...]}. `submit_common.check_no_repeat_image_redo` doc lai khi vai nop
     ban moi, so theo dHash (khong theo ma anh, vi vai co the doi ten ma A6 ->
     A9 ma van tro toi CUNG mot file/anh) nen khong the lach bang cach doi ten."""
@@ -501,12 +501,12 @@ def _write_forbid_image_redo(draft_id: str, so_slide: list) -> None:
         im = json.loads(ip.read_text(encoding="utf-8")) if ip.exists() else {}
     except (OSError, ValueError):
         im = {}
-    cam = im.setdefault("cam_anh_slide", {})
+    cam = im.setdefault("forbidden_slide_images", {})
     goc_dir = STATE_DIR / "chuan_bi" / draft_id / "goc"
-    # `.img.json` luon co `vai_anh` tren duong that (ghi tu luc tao task); roi
+    # `.img.json` luon co `image_role` tren duong that (ghi tu luc tao task); roi
     # ve `role.DEFAULT_IMAGE` chi cho sidecar thieu/hong — dhash thuan tuy
     # khong lech giua cac module luat nen mot ban mac dinh la an toan o day.
-    vai_anh = role.canonical_slug(im.get("vai_anh") or "") or role.DEFAULT_IMAGE
+    vai_anh = role.canonical_slug(im.get("image_role") or "") or role.DEFAULT_IMAGE
     if vai_anh not in role.ROLE:
         vai_anh = role.DEFAULT_IMAGE
     rules = role.rules_module(vai_anh)
@@ -575,7 +575,7 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
         w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
     except Exception:                                        # noqa: BLE001
         w = {}
-    rid, err = kanban_create(tieu, im["vai_anh"], im["body"] + chi_ro,
+    rid, err = kanban_create(tieu, im["image_role"], im["body"] + chi_ro,
                              parent=w.get("root_task"))
     if err:
         return "⚠️ Làm lại lỗi: " + str(err), None
@@ -590,9 +590,9 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
                        "task_truoc": im.get("last_task")})
     im["remakes"], im["last_task"] = n, rid
     if ly_do:
-        im.setdefault("ly_do_lam_lai", []).append({"lan": n, "slide": slide, "ly_do": ly_do})
+        im.setdefault("redo_reasons", []).append({"attempt": n, "slide": slide, "reason": ly_do})
     _write_json(ip, im)
-    ten = NAME_ROLE_IMAGE.get(im["vai_anh"], "Ethan")
+    ten = NAME_ROLE_IMAGE.get(im["image_role"], "Ethan")
     if ly_do:
         cho = f"slide {slide}" if slide and slide != "CA BO" else ("cả bộ" if slide == "CA BO" else "ảnh")
         return (f"🔄 Đã giao làm lại {cho} (lần {n}) — {ten} — lý do: {ly_do[:120]} "
@@ -723,7 +723,7 @@ def _hand_all_done_limit(token, group, thread_id, draft_id):
 
 def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     """Chuyen mot draft anh sang Kite (carousel-edu, art vector). Tao task
-    EDU_BODY, ghi img.json (vai_anh=carousel-edu, giu vai cu o chuyen_tu) de nut
+    EDU_BODY, ghi img.json (image_role=carousel-edu, giu vai cu o transferred_from) de nut
     Duyet/Lam lai sau do di dung Kite. Tra ve (task_id, loi)."""
     import task_bodies
     body_cu = im.get("body", "")
@@ -737,16 +737,16 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     # Engine da nhin anh: co bao nhieu tam that dung duoc? Kite phai DUNG chung
     # (Ong Chu 05/09/2026), khong ra bo toan text & card.
     # C-r2-5: doc qua schema.read_manifest va dem bang schema.count_image_use_ok —
-    # truoc day tu dem `dung and lien_quan is not False` (khai niem dem tung
+    # truoc day tu dem `uses and relevant is not False` (khai niem dem tung
     # tam) nen body noi "4 anh THAT" trong khi manifest noi 2.
     co, so_that = [], 0
     xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
     mm = schema.read_manifest(xong) if xong.exists() else None
     if mm:
-        co = [a["ma"] for a in mm.get("anh", []) if a.get("dung") and a.get("lien_quan") is not False]
-        so_that = int(mm.get("so_dung_duoc", 0))
+        co = [a["id"] for a in mm.get("images", []) if a.get("uses") and a.get("relevant") is not False]
+        so_that = int(mm.get("usable_count", 0))
     if ly_do:
-        body += f"\n\n== CHUYEN TU {NAME_ROLE_IMAGE.get(im.get('vai_anh'), im.get('vai_anh'))} ==\n{ly_do}."
+        body += f"\n\n== CHUYEN TU {NAME_ROLE_IMAGE.get(im.get('image_role'), im.get('image_role'))} ==\n{ly_do}."
         if so_that:
             body += (f" Engine tim duoc {so_that} anh THAT dung duoc (ma: {', '.join(co)}, xem brief): "
                      "BAT BUOC dua vao slide (bia image hoac figure), phan con lai ve vector.")
@@ -783,10 +783,10 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
         except OSError as e:
             log("bangden", f"{draft_id}: khong cap nhat dre_task (kite): {e}")
         _blackboard_write(draft_id, "chuyen_kite",
-                      {"task": rid, "tu_vai": im.get("vai_anh"), "ly_do": ly_do,
+                      {"task": rid, "tu_vai": im.get("image_role"), "ly_do": ly_do,
                        "anh_that_dung_duoc": co})
-    im.update({"chuyen_tu": im.get("vai_anh"), "vai_anh": "kite", "carousel": True,
-               "body": body, "chuyen_kite": rid, "ly_do_chuyen": ly_do})
+    im.update({"transferred_from": im.get("image_role"), "image_role": "kite", "carousel": True,
+               "body": body, "kite_task_id": rid, "transfer_reason": ly_do})
     _write_json(DRAFTS / (draft_id + ".img.json"), im)
     return rid, None
 
@@ -828,45 +828,45 @@ def _button_kite(token, chat_id, draft_id, cq):
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note, show_alert=True)
     else:
         im = json.loads(ip.read_text(encoding="utf-8"))
-        if im.get("chuyen_kite"):
-            note = f"↪️ Đã chuyển Kite trước đó (task {im['chuyen_kite']})"
+        if im.get("kite_task_id"):
+            note = f"↪️ Đã chuyển Kite trước đó (task {im['kite_task_id']})"
             call(token, "answerCallbackQuery", callback_query_id=cq["id"], text=note)
         else:
             call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="Đang giao Kite…")
             rid, err = create_task_kite(draft_id, im, ly_do="Ong Chu bam Gui Kite (thieu anh that)")
             note = ("⚠️ Chuyển Kite lỗi: " + str(err)) if err else \
-                   f"🎨 Đã giao Kite vẽ vector (task {rid}) — {NAME_ROLE_IMAGE.get(im.get('chuyen_tu'), 'vai cũ')} dừng bộ này"
+                   f"🎨 Đã giao Kite vẽ vector (task {rid}) — {NAME_ROLE_IMAGE.get(im.get('transferred_from'), 'vai cũ')} dừng bộ này"
             if not err:
-                _report_receive_job(token, chat_id, "kite", im.get("chuyen_tu"),
+                _report_receive_job(token, chat_id, "kite", im.get("transferred_from"),
                                im.get("title", draft_id), rid,
                                ly_do="thiếu ảnh thật, Ông Chủ chuyển sang vẽ vector")
     return note
 
 
 def _button_lower_ready(token, draft_id, cq):
-    """imgtiep: ha san ve `toi_thieu_co_ban` de vai lam voi so anh hien co.
+    """imgtiep: ha san ve `base_min_images` de vai lam voi so anh hien co.
     Tra (note, keyboard) — keyboard None nghia la go het (nhu moi nut khac).
 
     San la CUA VAI DUOC GIAO (Dre 5 slide, Ethan 1 anh) — tu 10/09/2026 manifest
     ghi san theo vai thay vi luon lay so cua carousel."""
-    # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `toi_thieu` trong
+    # Truoc 06/09/2026 nhanh nay chi in mot dong roi thoi: `min_images` trong
     # xong.json van nguyen (8 voi tin flagship), nen dre_submit van chan "chi N
     # slide, can toi thieu 8" — bam nut xong van khong lam duoc, ngo cut.
-    # Gio HA SAN that: ve `toi_thieu_co_ban` (san cua carousel.py). Duoi san
+    # Gio HA SAN that: ve `base_min_images` (san cua carousel.py). Duoi san
     # do thi carousel khong dung duoc, phai noi thang chu khong hua suong.
     xong = STATE_DIR / "chuan_bi" / draft_id / "xong.json"
-    # read_manifest bu so_dung_duoc cho manifest ban 0 (C-r2-5) — doc tho thi
+    # read_manifest bu usable_count cho manifest ban 0 (C-r2-5) — doc tho thi
     # so=0 -> "Chi 0 anh that" du co 6 anh.
     mm = schema.read_manifest(xong) or {}
-    san = int(mm.get("toi_thieu_co_ban", 5))
-    so = int(mm.get("so_dung_duoc", 0))
-    cu = int(mm.get("toi_thieu", san))
+    san = int(mm.get("base_min_images", 5))
+    so = int(mm.get("usable_count", 0))
+    cu = int(mm.get("min_images", san))
     # Goi san pham dung ten cua vai: "slide" cho Dre/Kite, "ảnh" cho Ethan.
-    # Sidecar TRUOC manifest: `create_task_kite` doi `vai_anh` trong sidecar khi
+    # Sidecar TRUOC manifest: `create_task_kite` doi `image_role` trong sidecar khi
     # chuyen bai sang Kite, con manifest giu vai luc chuan bi. Manifest cu
     # (truoc 10/09/2026) khong co khoa nay -> giu nguyen chu "slide" nhu truoc.
     _im = _load_json(DRAFTS / (draft_id + ".img.json"), {})
-    _vai_anh = _im.get("vai_anh") or mm.get("vai_anh") or ""
+    _vai_anh = _im.get("image_role") or mm.get("image_role") or ""
     don_vi = role.product_unit_for(role.canonical_slug(_vai_anh)) if _vai_anh else "slide"
     keyboard = None
     if not mm:
@@ -890,8 +890,8 @@ def _button_lower_ready(token, draft_id, cq):
         note = f"🖼 Sàn đã ở mức tối thiểu {san} {don_vi} — vai làm với {so} ảnh hiện có"
         call(token, "answerCallbackQuery", callback_query_id=cq["id"], text="OK, làm với số ảnh hiện có")
     else:
-        mm["toi_thieu"] = san
-        mm["ha_san_luc"] = int(time.time())
+        mm["min_images"] = san
+        mm["min_lowered_at"] = int(time.time())
         try:
             tmp = xong.with_suffix(".json.tmp")
             tmp.write_text(json.dumps(mm, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -1074,7 +1074,7 @@ def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
                 _ip = DRAFTS / (draft_id + ".img.json")
                 try:
                     if _ip.exists():
-                        _vai_anh_cu = json.loads(_ip.read_text(encoding="utf-8")).get("vai_anh")
+                        _vai_anh_cu = json.loads(_ip.read_text(encoding="utf-8")).get("image_role")
                 except Exception:                            # noqa: BLE001
                     pass
                 _report_receive_job(token, chat_id, w["vai_viet"], _vai_anh_cu,

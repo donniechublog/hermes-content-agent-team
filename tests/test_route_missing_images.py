@@ -4,7 +4,7 @@
 Truoc 09/09/2026 engine (ham cu `_route_thieu_anh`, da xoa) gui Telegram va tao task Kite
 ngay trong engine, nen engine phai `from approve_dispatch import standard_assignee`
 va `from approve_post import create_task_kite`: lop CHUAN BI goi NGUOC len lop dieu
-phoi. Nay engine ghi `xong.json["thieu_anh"] = {"so": .., "toi_thieu": ..}` va
+phoi. Nay engine ghi `xong.json["missing_images"] = {"count": .., "min_images": ..}` va
 nhan mot moc `after_prepare`; `route_missing_images.py` la noi duy nhat biet ca hai phia.
 
 Test giu HAI thu:
@@ -29,12 +29,12 @@ import route_missing_images as rt                                  # noqa: E402
 
 # --------------------------------------------------------------- engine mô tả
 def test_description_missing_image_enough_then_none():
-    assert cb._description_missing_image({"so_dung_duoc": 5, "toi_thieu": 5}) is None
-    assert cb._description_missing_image({"so_dung_duoc": 9, "toi_thieu": 5}) is None
+    assert cb._description_missing_image({"usable_count": 5, "min_images": 5}) is None
+    assert cb._description_missing_image({"usable_count": 9, "min_images": 5}) is None
 
 
 def test_description_missing_image_missing_then_ta_clear_count():
-    assert cb._description_missing_image({"so_dung_duoc": 2, "toi_thieu": 5}) == {"so": 2, "toi_thieu": 5}
+    assert cb._description_missing_image({"usable_count": 2, "min_images": 5}) == {"count": 2, "min_images": 5}
 
 
 def _run_fake(tmp, m_engine, sau_chuan_bi=None):
@@ -57,24 +57,24 @@ def _run_fake(tmp, m_engine, sau_chuan_bi=None):
 
 def test_run_write_has_missing_image_into_done_json():
     with tempfile.TemporaryDirectory() as tmp:
-        m, wd = _run_fake(tmp, {"so_dung_duoc": 2, "toi_thieu": 5, "anh": []})
-        assert m["thieu_anh"] == {"so": 2, "toi_thieu": 5}, m
+        m, wd = _run_fake(tmp, {"usable_count": 2, "min_images": 5, "images": []})
+        assert m["missing_images"] == {"count": 2, "min_images": 5}, m
         tren_dia = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
-        assert tren_dia["thieu_anh"] == {"so": 2, "toi_thieu": 5}, tren_dia
+        assert tren_dia["missing_images"] == {"count": 2, "min_images": 5}, tren_dia
 
 
 def test_run_enough_image_then_no_has_has():
     with tempfile.TemporaryDirectory() as tmp:
-        m, _ = _run_fake(tmp, {"so_dung_duoc": 6, "toi_thieu": 5, "anh": []})
-        assert "thieu_anh" not in m, m
+        m, _ = _run_fake(tmp, {"usable_count": 6, "min_images": 5, "images": []})
+        assert "missing_images" not in m, m
 
 
 def test_run_no_has_timestamp_still_run_ok():
     """Engine phai dung mot minh duoc (chay tay, test) — moc la tuy chon."""
     with tempfile.TemporaryDirectory() as tmp:
-        m, wd = _run_fake(tmp, {"so_dung_duoc": 0, "toi_thieu": 5, "anh": []})
+        m, wd = _run_fake(tmp, {"usable_count": 0, "min_images": 5, "images": []})
         assert (wd / "xong.json").exists()
-        assert m["thieu_anh"]["so"] == 0
+        assert m["missing_images"]["count"] == 0
 
 
 def test_timestamp_run_before_when_done_json_show_out():
@@ -85,13 +85,13 @@ def test_timestamp_run_before_when_done_json_show_out():
 
         def moc(draft_id, m):
             thay["xong_ton_tai_luc_goi"] = (Path(tmp) / "wd" / "xong.json").exists()
-            m["chuyen_kite"] = "t_9"
+            m["kite_task_id"] = "t_9"
 
-        m, wd = _run_fake(tmp, {"so_dung_duoc": 0, "toi_thieu": 5, "anh": []}, moc)
+        m, wd = _run_fake(tmp, {"usable_count": 0, "min_images": 5, "images": []}, moc)
         assert thay["xong_ton_tai_luc_goi"] is False, \
             "xong.json da hien ra TRUOC khi dinh tuyen xong — dung khe dua can chan"
         tren_dia = json.loads((wd / "xong.json").read_text(encoding="utf-8"))
-        assert tren_dia.get("chuyen_kite") == "t_9", \
+        assert tren_dia.get("kite_task_id") == "t_9", \
             f"quyet dinh cua moc khong duoc ghi xuong dia: {tren_dia}"
 
 
@@ -100,7 +100,7 @@ def test_timestamp_no_then_still_write_done_json():
     with tempfile.TemporaryDirectory() as tmp:
         def moc(draft_id, m):
             raise RuntimeError("router vo")
-        m, wd = _run_fake(tmp, {"so_dung_duoc": 1, "toi_thieu": 5, "anh": []}, moc)
+        m, wd = _run_fake(tmp, {"usable_count": 1, "min_images": 5, "images": []}, moc)
         assert (wd / "xong.json").exists(), "moc no lam mat xong.json"
 
 
@@ -132,14 +132,14 @@ def _router(tmp, m, im, kite_co=True, tao_kite=("t_7", None), gui_ok=True):
 
 
 def test_telegram_reject_then_no_list_mark_already_ask():
-    """C-r2-1: truoc day _time_send vut ket qua post, m["hoi_kite"]=True van ghi vao
+    """C-r2-1: truoc day _time_send vut ket qua post, m["kite_asked"]=True van ghi vao
     xong.json — bai 'dang cho Ong Chu chon' ma Ong Chu chua bao gio nhan nut."""
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
-                         {"vai_anh": "dre"}, gui_ok=False)
+        m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
+                         {"image_role": "dre"}, gui_ok=False)
         assert len(tin) == 1, "van phai THU gui"
-        assert "hoi_kite" not in m, m
-        assert "route_loi" in m and "hoi_kite" in m["route_loi"], m
+        assert "kite_asked" not in m, m
+        assert "route_error" in m and "kite_asked" in m["route_error"], m
 
 
 def test_sidecar_old_write_slug_old_still_dark_use_topic():
@@ -149,10 +149,10 @@ def test_sidecar_old_write_slug_old_still_dark_use_topic():
     la ten persona doi truoc nua; ca hai deu phai ra "dre"."""
     for chu in ("carousel", "heller"):
         with tempfile.TemporaryDirectory() as tmp:
-            m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "T"},
-                             {"vai_anh": chu})
+            m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "T"},
+                             {"image_role": chu})
             assert tin and tin[0][0] == "dre", (chu, tin)
-            assert m.get("hoi_kite") is True, (chu, m)
+            assert m.get("kite_asked") is True, (chu, m)
 
 
 def test_time_send_real_read_ok_of_telegram():
@@ -182,8 +182,8 @@ def test_time_send_real_read_ok_of_telegram():
 
 def test_enough_image_then_router_silent():
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"title": "x"}, {"vai_anh": "dre"})
-        assert tin == [] and "hoi_kite" not in m, (m, tin)
+        m, tin = _router(tmp, {"title": "x"}, {"image_role": "dre"})
+        assert tin == [] and "kite_asked" not in m, (m, tin)
 
 
 def test_no_has_sidecar_then_silent():
@@ -193,33 +193,33 @@ def test_no_has_sidecar_then_silent():
         cu = rt.DRAFTS
         rt.DRAFTS = drafts
         try:
-            m = {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "x"}
+            m = {"missing_images": {"count": 0, "min_images": 5}, "title": "x"}
             rt.after_prepare("d1", m)
-            assert "chuyen_kite" not in m and "hoi_kite" not in m, m
+            assert "kite_task_id" not in m and "kite_asked" not in m, m
         finally:
             rt.DRAFTS = cu
 
 
 def test_already_is_kite_then_no_from_transfer_half():
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "x"},
-                         {"vai_anh": "kite"})
-        assert tin == [] and "chuyen_kite" not in m, (m, tin)
+        m, tin = _router(tmp, {"missing_images": {"count": 0, "min_images": 5}, "title": "x"},
+                         {"image_role": "kite"})
+        assert tin == [] and "kite_task_id" not in m, (m, tin)
 
 
 def test_no_image_which_then_from_transfer_kite():
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin A"},
-                         {"vai_anh": "dre"})
-        assert m.get("chuyen_kite") == "t_7", m
+        m, tin = _router(tmp, {"missing_images": {"count": 0, "min_images": 5}, "title": "Tin A"},
+                         {"image_role": "dre"})
+        assert m.get("kite_task_id") == "t_7", m
         assert tin and "Kite" in tin[0][1], tin
 
 
 def test_missing_but_remaining_image_then_ask_boss_two_button():
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "Tin B"},
-                         {"vai_anh": "dre"})
-        assert m.get("hoi_kite") is True, m
+        m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "Tin B"},
+                         {"image_role": "dre"})
+        assert m.get("kite_asked") is True, m
         nut = [b["callback_data"] for b in tin[0][2]["inline_keyboard"][0]]
         assert "imgkite:d1" in nut and "imgtiep:d1" in nut, nut
 
@@ -227,9 +227,9 @@ def test_missing_but_remaining_image_then_ask_boss_two_button():
 def test_brand_no_has_kite_then_no_promise_transfer():
     """dcgr 05/09/2026: khong duoc hien nut Kite khi brand chua co Kite."""
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 3, "toi_thieu": 5}, "title": "Tin C"},
-                         {"vai_anh": "dre"}, kite_co=False)
-        assert m.get("hoi_kite") is True, m
+        m, tin = _router(tmp, {"missing_images": {"count": 3, "min_images": 5}, "title": "Tin C"},
+                         {"image_role": "dre"}, kite_co=False)
+        assert m.get("kite_asked") is True, m
         nut = [b["callback_data"] for b in tin[0][2]["inline_keyboard"][0]]
         assert "imgkite:d1" not in nut, f"hua chuyen Kite khi brand chua co: {nut}"
         assert "imgno:d1" in nut, nut
@@ -237,17 +237,17 @@ def test_brand_no_has_kite_then_no_promise_transfer():
 
 def test_brand_no_has_kite_and_0_image_then_report_drop_story():
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin D"},
-                         {"vai_anh": "dre"}, kite_co=False)
-        assert m.get("khong_kite") is True, m
-        assert "chuyen_kite" not in m, m
+        m, tin = _router(tmp, {"missing_images": {"count": 0, "min_images": 5}, "title": "Tin D"},
+                         {"image_role": "dre"}, kite_co=False)
+        assert m.get("kite_unavailable") is True, m
+        assert "kite_task_id" not in m, m
 
 
 def test_create_task_kite_error_then_report_out_no_set_has():
     with tempfile.TemporaryDirectory() as tmp:
-        m, tin = _router(tmp, {"thieu_anh": {"so": 0, "toi_thieu": 5}, "title": "Tin E"},
-                         {"vai_anh": "dre"}, tao_kite=(None, "kanban 500"))
-        assert "chuyen_kite" not in m, "dat co chuyen_kite du tao task hong"
+        m, tin = _router(tmp, {"missing_images": {"count": 0, "min_images": 5}, "title": "Tin E"},
+                         {"image_role": "dre"}, tao_kite=(None, "kanban 500"))
+        assert "kite_task_id" not in m, "dat co chuyen_kite du tao task hong"
         assert tin and "lỗi" in tin[0][1], tin
 
 

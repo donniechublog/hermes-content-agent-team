@@ -4,7 +4,7 @@
 Cung ho voi cong Dre (`test_spec_dre`): cung manifest anh, cung ba cong dung
 chung o submit_common (mat nguoi, quote dich, so tren anh), cung cong XH va cong
 "khong lien quan" — nhung viet lai rieng, va da tung lech: truoc 06/09/2026
-Ethan khong doc co `lien_quan` nen chon bang ti so giai golf cho tin GPT-6.
+Ethan khong doc co `relevant` nen chon bang ti so giai golf cho tin GPT-6.
 
 Rieng cua Ethan: mot anh (hoac ghep hai anh ngang qua "anh2"), kieu quote/tran,
 va nguong ngang RATIO_HERO_MAX cua card.py.
@@ -25,10 +25,10 @@ from test_spec_dre import _m as _m_dre  # noqa: E402
 
 
 def _m(wd, anh, **k):
-    """Manifest cua Ethan: `cap_ghep` la LIST (engine ghi list rong khi khong
+    """Manifest cua Ethan: `stackable_pairs` la LIST (engine ghi list rong khi khong
     co cap) — `eb.stackable_pairs_hero` lap thang qua no, None la TypeError."""
-    k.setdefault("cap_ghep", [])
-    k.setdefault("vai_anh", "ethan")
+    k.setdefault("stackable_pairs", [])
+    k.setdefault("image_role", "ethan")
     return _m_dre(wd, anh, **k)
 
 
@@ -56,7 +56,7 @@ def test_spec_du_thi_tra_ve_anh_da_giai():
         anh, wd = _bo(t)
         kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
         assert loi == [], loi
-        assert kq["kieu"] == "quote" and kq["anh"]["ma"] == "A1" and kq["anh2"] is None
+        assert kq["kieu"] == "quote" and kq["anh"]["id"] == "A1" and kq["anh2"] is None
 
 
 def test_kieu_tran_can_title_khong_can_hook():
@@ -103,12 +103,12 @@ def test_anh2_sai_hoac_trung_thi_bo_anh2_nhung_van_bao():
 
 
 def test_anh_khong_lien_quan_bi_chan_va_chi_duong_ra():
-    """Loi 06/09/2026: Ethan khong doc co lien_quan nen chon bang ti so giai golf
+    """Loi 06/09/2026: Ethan khong doc co relevant nen chon bang ti so giai golf
     cho tin GPT-6 — bat chu 'leaderboard', khong nhin noi dung."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        anh[0]["lien_quan"] = False
-        anh[0]["mo_ta"] = "bảng tỉ số giải golf Ricoh"
+        anh[0]["relevant"] = False
+        anh[0]["description"] = "bảng tỉ số giải golf Ricoh"
         _kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
         assert _co(loi, "A1", "KHÔNG LIÊN QUAN", "giải golf"), loi
 
@@ -150,7 +150,7 @@ def test_ghep_hai_anh_ngang_hop_le():
         anh = [_anh(wd, "N1", 1920, 1080), _anh(wd, "N2", 1600, 900)]
         kq, loi, _c = _chay(_spec("N1", anh2="N2"), _m(wd, anh), wd)
         assert loi == [], loi
-        assert kq["anh2"]["ma"] == "N2"
+        assert kq["anh2"]["id"] == "N2"
 
 
 def test_ghep_qua_ngang_khong_con_bi_chan():
@@ -176,15 +176,15 @@ def test_ghep_doc_chi_cho_hai_anh_ngang():
 def test_tin_xep_hang_da_chup_bang_ma_anh_khong_phai_XH_thi_chan():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
-        xh = _anh(wd, "XH", 1200, 900, loai="chart", xep_hang={"site": "LMArena"})
+        xh = _anh(wd, "XH", 1200, 900, loai="chart", ranking={"site": "LMArena"})
         anh = [_anh(wd, "A1", 1000, 1250), xh]
-        m = _m(wd, anh, tin_xep_hang=True,
-               xep_hang={"kieu": "bang", "site": "LMArena", "bang": "text", "model": "GPT"})
+        m = _m(wd, anh, is_ranking_story=True,
+               ranking={"kind": "bang", "site": "LMArena", "board": "text", "model": "GPT"})
         _kq, loi, _c = _chay(_spec("A1"), m, wd)
         assert _co(loi, "XẾP HẠNG", "XH"), loi
         kq, loi2, _c = _chay(_spec("XH"), m, wd)
         assert loi2 == [], loi2
-        assert kq["anh"]["ma"] == "XH"
+        assert kq["anh"]["id"] == "XH"
 
 
 def test_khong_chup_duoc_bang_thi_khong_ep():
@@ -192,8 +192,8 @@ def test_khong_chup_duoc_bang_thi_khong_ep():
     sua kieu gi cung sai."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        for xh in (None, {"kieu": "the", "site": "s", "bang": "b", "model": "x"}):
-            _kq, loi, _c = _chay(_spec("A1"), _m(wd, anh, tin_xep_hang=True, xep_hang=xh), wd)
+        for xh in (None, {"kind": "the", "site": "s", "board": "b", "model": "x"}):
+            _kq, loi, _c = _chay(_spec("A1"), _m(wd, anh, is_ranking_story=True, ranking=xh), wd)
             assert not _co(loi, "XẾP HẠNG"), (xh, loi)
 
 
@@ -201,11 +201,11 @@ def test_khong_chup_duoc_bang_thi_khong_ep():
 def test_mat_nguoi_khong_khai_ten_thi_chan():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        anh[0]["mat"] = 1
+        anh[0]["faces"] = 1
         _kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
         assert loi, "mat nguoi ma khong nhan_vat phai bi chan"
         assert not _chay(_spec(nhan_vat="Jensen Huang"),
-                         _m(wd, anh, chu_bai="CEO Jensen Huang phát biểu tại GTC"), wd)[1]
+                         _m(wd, anh, article_text="CEO Jensen Huang phát biểu tại GTC"), wd)[1]
 
 
 def test_hook_con_nguyen_tieng_anh_thi_chan():
@@ -220,7 +220,7 @@ def test_anh_da_dung_o_tin_khac_thi_chan():
     import image_rules_ethan as image_rules
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        image_rules.record_used(anh[0]["goc"], "tin-khac", "ethan", "https://vi.du/khac")
+        image_rules.record_used(anh[0]["original_path"], "tin-khac", "ethan", "https://vi.du/khac")
         _kq, loi, _c = _chay(_spec(), _m(wd, anh), wd)
         assert _co(loi, "TRUNG anh da dung", "tin-khac"), loi
 
@@ -229,7 +229,7 @@ def test_so_tren_the_khong_co_trong_tu_lieu_thi_canh_bao():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
         _kq, loi, canh = _chay(_spec(hook="Nvidia đạt 97,3 điểm MMLU"),
-                               _m(wd, anh, chu_bai="Nvidia mở kho, đạt 86,2 điểm MMLU"), wd)
+                               _m(wd, anh, article_text="Nvidia mở kho, đạt 86,2 điểm MMLU"), wd)
         assert loi == [], loi
         assert any("97,3" in c for c in canh), canh
 

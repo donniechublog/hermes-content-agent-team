@@ -86,9 +86,9 @@ def test_write_forbid_image_redo_capture_use_image_form_cell_slide_got_if():
             im = json.loads((Path(t) / "tin-thu.img.json").read_text(encoding="utf-8"))
             h_a1 = format(image_rules.dhash(Image.open(wd / "goc" / "A1.png").convert("RGB")), "x")
             h_a2 = format(image_rules.dhash(Image.open(wd / "goc" / "A2.png").convert("RGB")), "x")
-            assert im["cam_anh_slide"]["2"] == [h_a2]
-            assert h_a1 not in im["cam_anh_slide"]["2"]
-            assert "1" not in im["cam_anh_slide"]           # khong che nham slide khac
+            assert im["forbidden_slide_images"]["2"] == [h_a2]
+            assert h_a1 not in im["forbidden_slide_images"]["2"]
+            assert "1" not in im["forbidden_slide_images"]           # khong che nham slide khac
         finally:
             db.STATE_DIR, db.DRAFTS = cu_state, cu_drafts
 
@@ -110,7 +110,7 @@ def test_write_forbid_image_redo_stack_all_two_code():
         try:
             db._write_forbid_image_redo("tin-thu", [5])          # slides[3] (ghep) = slide 2+3=5
             im = json.loads((Path(t) / "tin-thu.img.json").read_text(encoding="utf-8"))
-            assert len(im["cam_anh_slide"]["5"]) == 2, im["cam_anh_slide"]
+            assert len(im["forbidden_slide_images"]["5"]) == 2, im["forbidden_slide_images"]
         finally:
             db.STATE_DIR, db.DRAFTS = cu_state, cu_drafts
 

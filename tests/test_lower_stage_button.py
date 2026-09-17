@@ -33,8 +33,8 @@ def _done_json(tmp: Path, so_dung_duoc: int, toi_thieu: int, toi_thieu_co_ban=5)
     d = tmp / "state" / "chuan_bi" / "d1"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "xong.json"
-    p.write_text(json.dumps({"so_dung_duoc": so_dung_duoc, "toi_thieu": toi_thieu,
-                             "toi_thieu_co_ban": toi_thieu_co_ban}), encoding="utf-8")
+    p.write_text(json.dumps({"usable_count": so_dung_duoc, "min_images": toi_thieu,
+                             "base_min_images": toi_thieu_co_ban}), encoding="utf-8")
     return p
 
 

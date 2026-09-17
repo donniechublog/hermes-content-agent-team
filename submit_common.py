@@ -127,7 +127,7 @@ def count_round_error(wd, loi: list, lenh: str, toi_da: int = MAX_ROUND) -> int:
     """Dem so lan nop hong LIEN TIEP voi cung mot bo loi. Tra ve ma thoat.
 
     "Toi da 2 lan sua [LOI]" truoc 06/09/2026 chi la CHU trong task body —
-    khong mot dong code nao dem. Ghep voi cong phi tat dinh (vision lien_quan
+    khong mot dong code nao dem. Ghep voi cong phi tat dinh (vision relevant
     doi ket qua giua hai lan chay) va cong tung bat kha thi, vai co the lap toi
     khi het ngan sach tool call cua Hermes ma khong ai thay gi ngoai mot task
     treo.
@@ -169,9 +169,9 @@ def count_round_error(wd, loi: list, lenh: str, toi_da: int = MAX_ROUND) -> int:
 def article_text_for(m: dict, wd: Path) -> str:
     """Chu bai + tu lieu gom ve mot chuoi chu thuong, de doi chieu ten nguoi hay
     so lieu vai khai co that su nam trong bai khong."""
-    tl = m.get("tu_lieu") or {}
-    s = ((m.get("chu_bai") or "") + " " + (tl.get("doan_dau") or "")
-         + " " + " ".join(tl.get("cau_co_so") or [])).lower()
+    tl = m.get("material") or {}
+    s = ((m.get("article_text") or "") + " " + (tl.get("lead_paragraph") or "")
+         + " " + " ".join(tl.get("number_sentences") or [])).lower()
     try:
         s += " " + (wd / "tu_lieu.md").read_text(encoding="utf-8").lower()
     except OSError:
@@ -228,7 +228,7 @@ def check_subject_named(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> 
     khai ten hay chua", nen mot cai ten CEO bia dat van qua cong cho the hero
     (su co bia Broadcom 05/09: anh quan chuc G20, khai "Hock Tan"). Gom mot cho
     de hai vai khong con lech."""
-    co = [ma for ma in ma_ds if ma and anh.get(ma, {}).get("mat")]
+    co = [ma for ma in ma_ds if ma and anh.get(ma, {}).get("faces")]
     nv = str(nhan_vat or "").strip()
     loi = []
     if co and not nv:
@@ -250,14 +250,14 @@ def check_subject_named(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> 
     # hang": vision tra dung LIEN_QUAN=co (chinh prompt o image_prepare day rang
     # logo-tren-toa-nha / su kien cua chinh cong ty trong bai LA lien quan), roi
     # cong nay van chan vi mo ta co chuoi con "logo". Anh khong lien quan da co
-    # cong rieng (`lien_quan is False` o dre_submit/ethan_submit), nen o day chi giu
+    # cong rieng (`relevant is False` o dre_submit/ethan_submit), nen o day chi giu
     # nhung cum thuc su noi len "day la logo cua TO BAO, khong phai cua bai".
     for ma in co:
-        mo_ta = (anh.get(ma, {}).get("mo_ta") or "").lower()
+        mo_ta = (anh.get(ma, {}).get("description") or "").lower()
         if mo_ta and any(k in mo_ta for k in ("không liên quan", "g20",
                                               "logo báo", "logo của tờ",
                                               "logo hãng tin", "watermark")):
-            loi.append(f"{nhan}{ma} — vision mô tả: \"{anh[ma]['mo_ta'][:80]}\" — "
+            loi.append(f"{nhan}{ma} — vision mô tả: \"{anh[ma]['description'][:80]}\" — "
                        "không phải nhân vật bài này")
     return loi
 
@@ -293,18 +293,18 @@ _TU_ANH = {
 def needs_ranking_image(m: dict, a: dict) -> bool:
     """TIN XEP HANG ma anh chinh/bia KHONG phai bang xep hang -> phai doi.
 
-    CHI khi engine THUC SU CHUP duoc bang (`ranking.is_capture(kieu)` — LOW-21:
+    CHI khi engine THUC SU CHUP duoc bang (`ranking.is_capture(kind)` — LOW-21:
     ban cu so voi chuoi "chup" ma xep_hang chua bao gio phat ra). Truoc
-    06/09/2026 chieu cong nay chan ca khi m["xep_hang"] la None — bao vai dung
+    06/09/2026 chieu cong nay chan ca khi m["ranking"] la None — bao vai dung
     ma "XH" trong khi ma do khong ton tai, nen vai sua kieu gi cung sai va khong
     bao gio nop duoc. Ba duong dan toi canh do: --khong-browser, extract_model()
     rong (tin xep hang KHONG neu ten model), hoac find_and_capture nem. The DU PHONG
-    (kieu="the") cung khong ep: no la anh engine tu dung, chua he doc bang that.
+    (kind="the") cung khong ep: no la anh engine tu dung, chua he doc bang that.
     Dre va Ethan tung moi ben mot ban cua dieu kien nay (07/09/2026 gom lai)."""
     import ranking
-    return bool(m.get("tin_xep_hang")
-                and ranking.is_capture((m.get("xep_hang") or {}).get("kieu"))
-                and not a.get("xep_hang"))
+    return bool(m.get("is_ranking_story")
+                and ranking.is_capture((m.get("ranking") or {}).get("kind"))
+                and not a.get("ranking"))
 
 
 def only_ranking_choice(m: dict) -> str | None:
@@ -316,12 +316,12 @@ def only_ranking_choice(m: dict) -> str | None:
     xep hang, needs_ranking_image bat bia/anh phai la no, con check_redo_reused
     cam dung lai anh cua lan truoc — neu anh do da la lua chon lan truoc, hai cong
     khoa nhau, bo khong con duong nop hop le du sua gi khac."""
-    if not m.get("tin_xep_hang"):
+    if not m.get("is_ranking_story"):
         return None
     import ranking
-    if not ranking.is_capture((m.get("xep_hang") or {}).get("kieu")):
+    if not ranking.is_capture((m.get("ranking") or {}).get("kind")):
         return None
-    ma_xh = [a["ma"] for a in (m.get("anh") or []) if a.get("xep_hang")]
+    ma_xh = [a["id"] for a in (m.get("images") or []) if a.get("ranking")]
     return ma_xh[0] if len(ma_xh) == 1 else None
 
 
@@ -331,19 +331,19 @@ def irrelevant_images(anh: dict, ma_ds) -> tuple:
     Tra ve (rac, mo_ta). Ong Chu bat loi 06/09/2026: Dre doc co nay, Ethan thi
     khong — nen Ethan chon bang ti so giai golf cho tin GPT-6 ("leaderboard",
     bat chu khong nhin noi dung). Moi vai tu viet cau bao, dieu kien thi chung."""
-    rac = [ma for ma in ma_ds if ma and anh[ma].get("lien_quan") is False]
-    return rac, "; ".join((anh[x].get("mo_ta") or "?")[:60] for x in rac)
+    rac = [ma for ma in ma_ds if ma and anh[ma].get("relevant") is False]
+    return rac, "; ".join((anh[x].get("description") or "?")[:60] for x in rac)
 
 
 def check_not_reused_across_runs(anh: dict, cap, m: dict) -> list:
     """KHONG DUNG LAI ANH DA DUNG (lien phien, dHash) — Ong Chu 06/09/2026.
     `cap`: [(nhan, ma)]. Ba vai lam anh deu goi check_not_reused theo cung mot
-    cach (module luat rieng cua m["vai_anh"], LOW-182); gom de khong ai bo
+    cach (module luat rieng cua m["image_role"], LOW-182); gom de khong ai bo
     `link` (khoa theo TIN)."""
-    rules = _vai.rules_module(m.get("vai_anh", ""))
+    rules = _vai.rules_module(m.get("image_role", ""))
     loi = []
     for nhan, ma in cap:
-        l, _ = rules.check_not_reused(nhan, anh[ma]["goc"], m.get("draft_id", ""),
+        l, _ = rules.check_not_reused(nhan, anh[ma]["original_path"], m.get("draft_id", ""),
                                      m.get("link", ""))
         loi += l
     return loi
@@ -353,15 +353,15 @@ def _clean_use_alone(a: dict) -> bool:
     """Anh SACH dung mot minh duoc cho mot slide/the, khong can vai khai them gi:
     vision da noi ro "khong roi", lien quan, anh chup (khong chart), khong mat
     nguoi (mat nguoi con phu thuoc ten co trong bai), ngang thi phai cat doc duoc
-    (vision cat_ngang_ok + du cao). Thieu dieu kien nao cung khong tinh — cong
+    (vision landscape_crop_ok + du cao). Thieu dieu kien nao cung khong tinh — cong
     check_image_fall chi duoc bat vai doi anh khi THAT SU co cho doi, khong de ket."""
-    if not a.get("dung") or a.get("lien_quan") is False or a.get("cluttered") is not False:
+    if not a.get("uses") or a.get("relevant") is False or a.get("cluttered") is not False:
         return False
-    if a.get("loai") != "anh" or a.get("xep_hang") or a.get("mat"):
+    if a.get("kind") != "anh" or a.get("ranking") or a.get("faces"):
         return False
-    if a.get("ngang"):
+    if a.get("landscape"):
         return (int(a.get("h") or 0) >= schema.HEIGHT_MIN_CROP_LANDSCAPE
-                and a.get("cat_ngang_ok") is True)
+                and a.get("landscape_crop_ok") is True)
     return True
 
 
@@ -375,15 +375,15 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
     # Roi ma DU TU KHOA chinh cua tin (vision TU_KHOA) thi mien — Ong Chu 13/09
     # chon chinh mot do hoa roi nhu vay lam hero.
     cluttered = [(nhan, ma) for ma, nhan in dung.items()
-           if ma and (anh.get(ma) or {}).get("cluttered") and not (anh.get(ma) or {}).get("du_tu_khoa")]
+           if ma and (anh.get(ma) or {}).get("cluttered") and not (anh.get(ma) or {}).get("has_keywords")]
     if not cluttered:
         return []
-    rules = _vai.rules_module(m.get("vai_anh", ""))
+    rules = _vai.rules_module(m.get("image_role", ""))
     sach = []
     for ma, a in anh.items():
         if ma in dung or not _clean_use_alone(a):
             continue
-        l, _ = rules.check_not_reused(ma, a["goc"], m.get("draft_id", ""), m.get("link", ""))
+        l, _ = rules.check_not_reused(ma, a["original_path"], m.get("draft_id", ""), m.get("link", ""))
         if not l:
             sach.append(ma)
     if not sach:
@@ -447,10 +447,10 @@ def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -
         im = json.loads(ip.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return []
-    cam = im.get("cam_anh_slide") or {}
+    cam = im.get("forbidden_slide_images") or {}
     if not cam:
         return []
-    rules = _vai.rules_module(m.get("vai_anh", ""))
+    rules = _vai.rules_module(m.get("image_role", ""))
     from PIL import Image
     loi = []
     for nhan, ma_list in dung_anh:
@@ -460,7 +460,7 @@ def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -
         if not ds:
             continue
         for ma in ma_list:
-            fp = anh.get(ma, {}).get("goc")
+            fp = anh.get(ma, {}).get("original_path")
             if not fp:
                 continue
             try:
@@ -505,20 +505,20 @@ def check_rank_matches_image(chu: str, a: dict, nhan: str = "hook") -> list:
     nhung chi la chu dan; `needs_ranking_image` EP dung anh XH ma khong hoi hang.
     Day la cong: so trong chu phai la so trong anh, khong thi khong nop duoc.
 
-    Chi xet khi anh la BANG CHUP THAT (is_capture) va co `hang`; the du phong (kieu
+    Chi xet khi anh la BANG CHUP THAT (is_capture) va co `rank`; the du phong (kind
     "the") in hang tu tieu de nen khong doi chieu. Chu khong noi hang -> khong
     chan (khong bat vai phai nhac hang). `extract_rank` hieu "dẫn đầu" = 1 va bo
     "top 10" kieu kich co danh sach — cung bo doc voi engine, khong doc rieng."""
     import ranking
-    xh = (a or {}).get("xep_hang") or {}
-    if not xh.get("hang") or not ranking.is_capture(xh.get("kieu")):
+    xh = (a or {}).get("ranking") or {}
+    if not xh.get("rank") or not ranking.is_capture(xh.get("kind")):
         return []
     hang_chu = ranking.extract_rank(chu or "", xh.get("model") or "")
-    if hang_chu is None or int(hang_chu) == int(xh["hang"]):
+    if hang_chu is None or int(hang_chu) == int(xh["rank"]):
         return []
-    return [f"{nhan}: viết #{hang_chu} nhưng ảnh {a.get('ma', 'XH')} khoanh hàng "
-            f"#{xh['hang']} trên {xh.get('site')} ({xh.get('bang')}) — số trên thẻ phải "
-            f"là số trong ảnh: sửa thành #{xh['hang']} (và nói đúng bảng đó), hoặc đổi ảnh"]
+    return [f"{nhan}: viết #{hang_chu} nhưng ảnh {a.get('id', 'XH')} khoanh hàng "
+            f"#{xh['rank']} trên {xh.get('site')} ({xh.get('board')}) — số trên thẻ phải "
+            f"là số trong ảnh: sửa thành #{xh['rank']} (và nói đúng bảng đó), hoặc đổi ảnh"]
 
 
 MINUTES_ALBUM_FIT_LEN = 10
@@ -582,7 +582,7 @@ def send_album(vai: str, files, mo_ta: str, draft_id: str, wd: Path, da_dung, gh
         # Gom ma tu MOI khoa co the chua ma anh, khong doan theo hinh dang mot
         # khoa: Ethan de anh ghep thu hai o "anh2", Kite de o "hinh".
         rules = _vai.rules_module(vai)
-        goc = {a["ma"]: a["goc"] for a in xong.get("anh", [])}
+        goc = {a["id"]: a["original_path"] for a in xong.get("images", [])}
         ma_ds = []
         for k in ("anh", "anh2", "bia", "hinh"):
             v = ghi.get(k)

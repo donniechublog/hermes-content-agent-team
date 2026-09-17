@@ -65,7 +65,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
         else:
 
-            s2["image"] = hinh[img]["goc"]
+            s2["image"] = hinh[img]["original_path"]
 
             # KHONG DUNG LAI ANH DA DUNG (Ong Chu 06/09/2026). Dre va Ethan
 
@@ -73,7 +73,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
 
-            l, _ = image_rules_kite.check_not_reused(f"slide {i} ({img})", hinh[img]["goc"],
+            l, _ = image_rules_kite.check_not_reused(f"slide {i} ({img})", hinh[img]["original_path"],
 
                                          m.get("draft_id", ""), m.get("link", ""))
 
@@ -91,7 +91,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             nhan = f"slide {i} ({img})"
 
-            l, c = image_rules_kite.check_duplicate(nhan, hinh[img]["goc"], da_thay)
+            l, c = image_rules_kite.check_duplicate(nhan, hinh[img]["original_path"], da_thay)
 
             loi += l
 
@@ -101,7 +101,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 from PIL import Image as _Im
 
-                with _Im.open(hinh[img]["goc"]) as _im:
+                with _Im.open(hinh[img]["original_path"]) as _im:
 
                     l, c = image_rules_kite.check_blank_image(nhan, _im)
 
@@ -129,7 +129,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # buoc chuan bi nen ung vien nay phai doi hoi giong het Dre/Ethan.
 
-            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["goc"], sl.get("nhan_vat"))
+            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["original_path"], sl.get("nhan_vat"))
 
             loi += l
 
@@ -145,11 +145,11 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
             # gio chi CANH BAO de nguoi duyet biet day la anh minh hoa chu
             # de chu khong phai anh chup dung su kien.
 
-            kn = hinh[img].get("khai_niem") or {}
+            kn = hinh[img].get("concept") or {}
 
             if kn and i > 1:
 
-                canh.append(f"slide {i}: 🧭 {img} là ẢNH KHÁI NIỆM ({kn.get('tu_khoa')}) — "
+                canh.append(f"slide {i}: 🧭 {img} là ẢNH KHÁI NIỆM ({kn.get('keyword')}) — "
 
                            "minh hoạ chủ đề, không phải ảnh chụp đúng sự kiện của tin.")
 
@@ -270,7 +270,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
         loi.append(f"có {len(slides)} slide — cần 6..10")
     if slides and slides[0].get("kind") != "cover":
         loi.append("slide 1 phải là kind \"cover\"")
-    hinh = {a["ma"]: a for a in kb.figure_real(m)}
+    hinh = {a["id"]: a for a in kb.figure_real(m)}
     da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (check_duplicate)
     # brand trong spec render la CHU in o masthead/folio (render_edu chi dung no
     # lam chu) -> phai la handle hien thi (dcgr -> dcgr.tech), khong phai slug.
@@ -297,11 +297,11 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     # (kite_prepare.py), nhung truoc 06/09/2026 khong cong nao kiem: vai bo qua
     # ca bang benchmark that roi ve vector, dung cai loi Ong Chu da bat 05/09
     # ("dung anh that khi engine tim duoc").
-    # CHI ep khi anh DA DUOC NHIN (lien_quan is True). Vision tat/thieu
-    # OPENAI_API_KEY thi moi anh co lien_quan=None, hinh_that van nhan het —
+    # CHI ep khi anh DA DUOC NHIN (relevant is True). Vision tat/thieu
+    # OPENAI_API_KEY thi moi anh co relevant=None, hinh_that van nhan het —
     # ep luc do la day quang cao / widget gia co phieu len slide, dung loai rac
     # ma vision sinh ra de loai (do 06/09/2026). Chua nhin thi goi y, khong ep.
-    da_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is True]
+    da_nhin = [ma for ma, a in hinh.items() if a.get("relevant") is True]
     co_anh = [sl for sl in slides if sl.get("image")]
     # BIA LUON PHAI LA ANH THAT — khong co ngoai le (Ong Chu 10/09/2026: *"khong
     # chap nhan viec dung vector o hero slide, thoi dai nay khong co anh gi ma
@@ -315,10 +315,10 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     # "cong dang doi mot thu khong the co (thieu anh...)".
     hero = kb.figure_hero(m)
     if not (slides and slides[0].get("image")):
-        chua = [ma for ma, a in hinh.items() if a.get("lien_quan") is None]
+        chua = [ma for ma, a in hinh.items() if a.get("relevant") is None]
         if hero:
-            loi.append(f"bìa đang vẽ hero vector trong khi có hình thật dùng được ({hero['ma']}) — "
-                       f"đặt `\"image\": \"{hero['ma']}\"` + `\"caption\"` vào slide 1 (cover). "
+            loi.append(f"bìa đang vẽ hero vector trong khi có hình thật dùng được ({hero['id']}) — "
+                       f"đặt `\"image\": \"{hero['id']}\"` + `\"caption\"` vào slide 1 (cover). "
                        "Hình thật nói nhiều hơn một sơ đồ tự vẽ; bìa có ảnh thì cả bộ không vẽ hero art.")
         elif chua:
             # Co anh nhung CHUA AI NHIN: khong duoc ep len bia (day quang cao/
@@ -391,14 +391,14 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     # So tren slide phai co trong tu lieu (canh bao) — Kite ve so bia la loi nang
     # nhat cua carousel kien thuc, ma truoc 06/09/2026 khong ai doi chieu.
     # CO Y tinh lai tu `hinh` (= kb.hinh_that(m), da loc >= 800px va bo mat
-    # nguoi khong ro ai), KHONG doc thang m["chua_nhin"]: khoa do trong manifest
-    # tinh tren TOAN BO m["anh"] chua loc (prepare/manifest.py), nen se ke ca
+    # nguoi khong ro ai), KHONG doc thang m["not_yet_seen"]: khoa do trong manifest
+    # tinh tren TOAN BO m["images"] chua loc (prepare/manifest.py), nen se ke ca
     # anh nho <800px ma Kite khong bao gio dung duoc — doc thang no vao day se
     # bao "vision chưa nhìn" cho mot anh khong the thanh candidate, dung loai
     # canh bao gia da bi bat 08/09/2026 (b403ca4) o cong "nguon/via" ben tren.
     # `da_nhin` cung tinh cung cach tu `hinh` (khong co khoa manifest tuong
     # duong) nen hai tap phai chung mot vu tru moi so sanh dung.
-    chua_nhin = [ma for ma, a in hinh.items() if a.get("lien_quan") is None]
+    chua_nhin = [ma for ma, a in hinh.items() if a.get("relevant") is None]
     if chua_nhin and not da_nhin:
         canh.append(f"vision chưa nhìn {', '.join(chua_nhin)} (router tắt/thiếu khoá) — "
                     "hình thật CHƯA được kiểm nội dung, chỉ dùng khi bạn tự tin nó đúng bài")
