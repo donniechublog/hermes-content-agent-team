@@ -49,12 +49,6 @@ def migrate_ranking(r):
 def migrate_image(a):
     if not isinstance(a, dict):
         return a
-    legacy = key_table()["image._legacy"]
-    a = dict(a)
-    for old, new in legacy.items():
-        if old in a:
-            v = a.pop(old)
-            a.setdefault(new, v)
     a = _rename(a, "image")
     _nested(a, "concept", "image.concept")
     _nested(a, "brand_match", "image.brand_match")

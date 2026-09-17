@@ -246,7 +246,7 @@ def test_ban_1_khoa_viet_doc_ra_khoa_english_ban_2():
     assert a == {"id": "A1", "original_path": "/w/goc/A1.png", "ready_path": "/w/san/A1.png",
                  "url": "https://x/1.png", "source": "gốc", "page_url": "https://x", "domain": "x",
                  "uses": ["bìa"], "notes": ["n"], "description": "m", "relevant": True,
-                 "cluttered": True, "ratio": 1.5, "kind": "anh", "faces": 0,
+                 "cluttered_legacy": True, "ratio": 1.5, "kind": "anh", "faces": 0,
                  "concept": {"keyword": "flag", "reason": "theo loại tin"},
                  "brand_match": {"company": "Nvidia", "key": "nvidia", "kind": "nguoi",
                                  "person": "Jensen Huang", "person_role": "CEO", "board": "b",

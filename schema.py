@@ -131,6 +131,7 @@ class Image(TypedDict, total=False):
     landscape_crop_ok: bool | None
     has_keywords: bool | None
     cluttered: bool | None
+    cluttered_legacy: bool | None  # khoa `roi` cu (LOW-47), KHONG code nao doc — giu du lieu
     from_find_more: bool
     commons: bool
     concept: dict                  # {keyword, reason}

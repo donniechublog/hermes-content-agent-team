@@ -97,10 +97,8 @@
     "kieu": "capture_kind",
     "paper_hinh": "paper_figure",
     "du_phong": "fallback",
-    "the": "html_tag"
-  },
-  "image._legacy": {
-    "roi": "cluttered"
+    "the": "html_tag",
+    "roi": "cluttered_legacy"
   },
   "image.concept": {
     "tu_khoa": "keyword",

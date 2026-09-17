@@ -91,7 +91,8 @@ def test_real_run_matches_read_manifest_and_keeps_backup():
         assert v1["version"] == 2 and "phien_ban" not in v1
         assert "usable_count" in v0 and v0["ranking_count"] == 0, v0
         img = v1["images"][0]
-        assert img["id"] == "A1" and img["ready_path"] == "/x/san/A1.png" and img["cluttered"] is True
+        assert img["id"] == "A1" and img["ready_path"] == "/x/san/A1.png"
+        assert img["cluttered_legacy"] is True and "cluttered" not in img, img
         assert img["brand_match"] == {"company": "Nvidia", "key": "nvidia", "kind": "co_phieu",
                                       "background_tone": "sáng", "ticker": "NVDA:NASDAQ"}
         assert img["ranking"] == {"file_path": "/x/goc/xh.png", "kind": "bang", "rank": 26,

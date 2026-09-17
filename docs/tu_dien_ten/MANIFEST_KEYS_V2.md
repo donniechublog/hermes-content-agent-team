@@ -64,7 +64,7 @@ một tên trong cùng một cấp; không tên mới nào đè khoá English s�
 | `chup_nguon` / `kieu` | `capture_source` / `capture_kind` | | `tit_trang` | `page_title` |
 | `mau_nen` / `dem_nen` | `background_color` / `padding_color` | | `paper_hinh` | `paper_figure` |
 | `anh` (URL ứng viên) | `image_url` | | `du_phong` | `fallback` |
-| `the` (thẻ HTML ứng viên) | `html_tag` | | `roi` (khoá cũ LOW-47) | gộp vào `cluttered` |
+| `the` (thẻ HTML ứng viên) | `html_tag` | | `roi` (khoá cũ LOW-47) | `cluttered_legacy` |
 
 Khoá lồng:
 - `khai_niem → concept {keyword, reason}`
@@ -109,6 +109,12 @@ Hai tên trong bản duyệt đặt sai NGHĨA vì đọc nhầm "hạng"/"hãng
 - `ranking.hang` là **thứ hạng** (số nguyên 1…90 trong 15 bảng thật) → `rank`, không phải `company`.
 - `brand_match.ma` chỉ xuất hiện khi `kind = "co_phieu"`, giá trị là **mã cổ phiếu**
   (`NVDA:NASDAQ`, `005930:KRX`) → `ticker`, không phải `board_id`.
+
+- `roi` → `cluttered_legacy`, **không** gộp vào `cluttered`. Đo máy chủ: 690 ảnh có `roi`
+  (42 `True`), không ảnh nào có cả hai khoá, và **không code nào đọc `roi`**. Gộp thì 42 ảnh
+  rối đang bị coi là không rối sẽ đổi cách dựng (nền chữ đặc) — lộ ra qua so sánh đầu ra
+  (`resolve_spec` của Dre khác ở 1 draft). Đổi tên không được đổi hành vi; có gộp hay không
+  là quyết định riêng.
 
 ## Không đổi
 
