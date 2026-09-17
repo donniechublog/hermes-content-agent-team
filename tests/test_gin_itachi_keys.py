@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """Gin/Itachi/deck keys -> English (LOW-247, part of LOW-243).
 
-Guards: the legacy maps in gin_submit/itachi_submit/deck and the migration maps equal the approved
+Guards: the legacy maps in gin_submit/itachi_submit/deck equal the approved
 table docs/tu_dien_ten/gin_itachi_keys_v2.json; writers (gin_prepare regions, briefs, Itachi
 manifest, deck.spec.json) emit only the new names; an OLD-key spec and the equivalent NEW-key spec
 give the same draw blocks as the pre-LOW-247 code (golden below, captured from main 88f7164 on the
 same fixture), the same Gin card pixels and caption, the same Itachi in-place/deck PNGs, the same
-[LOI] lines and the same deck render; new name wins when both are present; the one-shot
-migrate_gin_itachi_stores.py renames every store (both layouts), keeps unknown keys, refuses an
-unknown shape (nothing written), keeps an unparseable spec, and a re-run is a no-op."""
+[LOI] lines and the same deck render; new name wins when both are present. (The one-shot
+migrate_gin_itachi_stores.py ran on the server 17/09 and was removed in LOW-251.)"""
 import json
 import os
 import subprocess
 import sys
-import tarfile
 import tempfile
 from pathlib import Path
 
@@ -221,23 +219,14 @@ def test_maps_equal_approved_table():
     import deck
     import gin_submit
     import itachi_submit
-    import migrate_gin_itachi_stores as m
-    assert gin_submit.LEGACY_SPEC_KEYS == _clean(TABLE["gin_spec"]) == m.GIN_SPEC_KEY_MAP
+    assert gin_submit.LEGACY_SPEC_KEYS == _clean(TABLE["gin_spec"])
     assert gin_submit.LEGACY_REGION_OVERRIDE_KEYS == _clean(TABLE["gin_spec.region_override"]) \
-        == m.GIN_REGION_OVERRIDE_KEY_MAP
-    assert itachi_submit.LEGACY_SLIDE_KEYS == _clean(TABLE["itachi_spec.slide"]) == m.ITACHI_SPEC_SLIDE_KEY_MAP
-    assert itachi_submit.LEGACY_MODE_VALUES == TABLE["itachi_spec.slide.mode_values"] == m.ITACHI_MODE_VALUE_MAP
-    assert deck.LEGACY_SLIDE_KEYS == _clean(TABLE["deck_spec.slide"]) == m.DECK_SLIDE_KEY_MAP
-    assert deck.LEGACY_ANNOTATION_KEYS == TABLE["deck_spec.slide.annotation"] == m.DECK_ANNOTATION_KEY_MAP
-    assert deck.LEGACY_SUB_COL_VALUES == TABLE["deck_spec.slide.subs.col_values"] == m.DECK_SUB_COL_VALUE_MAP
-    assert m.REGIONS_OCR_KEY_MAP == _clean(TABLE["regions_ocr"])
-    assert m.REGION_KEY_MAP == _clean(TABLE["regions_ocr.region"])
-    assert m.BACKGROUND_KIND_VALUE_MAP == TABLE["regions_ocr.region.background_kind_values"]
-    assert m.REGIONS_JSON_ITEM_KEY_MAP == _clean(TABLE["regions_json_item"])
-    assert m.ITACHI_MANIFEST_KEY_MAP == _clean(TABLE["itachi_manifest"])
-    assert m.ITACHI_MANIFEST_SLIDE_KEY_MAP == _clean(TABLE["itachi_manifest.slide"])
-    assert m.FIXED_KEYS["region"] == set(TABLE["regions_ocr.region"]["_fixed"])
-    assert m.FIXED_KEYS["regions_json_item"] == set(TABLE["regions_json_item"]["_fixed"])
+       
+    assert itachi_submit.LEGACY_SLIDE_KEYS == _clean(TABLE["itachi_spec.slide"])
+    assert itachi_submit.LEGACY_MODE_VALUES == TABLE["itachi_spec.slide.mode_values"]
+    assert deck.LEGACY_SLIDE_KEYS == _clean(TABLE["deck_spec.slide"])
+    assert deck.LEGACY_ANNOTATION_KEYS == TABLE["deck_spec.slide.annotation"]
+    assert deck.LEGACY_SUB_COL_VALUES == TABLE["deck_spec.slide.subs.col_values"]
 
 
 # ------------------------------------------------------------------ writers emit new names only
@@ -412,154 +401,6 @@ def test_deck_legacy_slide_same_render():
     no_marks = "Nhan hieu cua chung toi rat dep va khong co dau"
     assert deck._gate([{"layout": "grid3", "labels": [{"text": no_marks, "x": 1, "y": 1}]}], False), "gate must read labels"
     assert deck._gate([{"layout": "cover", "annotation": {"text": no_marks}}], False), "gate must read annotation"
-
-
-# ------------------------------------------------------------------ migration
-OLD_REGION = {"box": [[1, 2], [3, 2], [3, 4], [1, 4]], "x": 1, "y": 2, "w": 2, "h": 2, "text": "HI", "conf": 0.9,
-              "color_rgb": W250, "nen": "phang", "std_nen": 0.0, "nen_rgb": [8, 8, 8], "cao_net": 12, "muc": 0.3,
-              "adv": 0.8, "font": "bold", "can": "left", "stt": 1}
-NEW_REGION = {"box": [[1, 2], [3, 2], [3, 4], [1, 4]], "x": 1, "y": 2, "w": 2, "h": 2, "text": "HI", "conf": 0.9,
-              "color_rgb": W250, "background_kind": "flat", "background_std": 0.0, "background_rgb": [8, 8, 8],
-              "ink_height": 12, "ink_ratio": 0.3, "adv": 0.8, "font": "bold", "align": "left", "number": 1}
-OLD_OCR = {"anh": "/in/03.jpg", "id": "03", "w": 10, "h": 10,
-           "vung": [OLD_REGION, {**OLD_REGION, "nen": "anh", "stt": 2, "hep": 1}]}
-NEW_OCR = {"image_path": "/in/03.jpg", "id": "03", "w": 10, "h": 10,
-           "regions": [NEW_REGION, {**NEW_REGION, "background_kind": "photo", "number": 2, "hep": 1}]}
-OLD_REGIONS_JSON = [{"stt": 2, "x": 1, "y": 2, "w": 3, "h": 4, "color_rgb": W250, "ocr_text": "HI", "conf": 0.9}]
-NEW_REGIONS_JSON = [{"number": 2, "x": 1, "y": 2, "w": 3, "h": 4, "color_rgb": W250, "ocr_text": "HI", "conf": 0.9}]
-OLD_MANIFEST = {"khoa": "03", "slides": [{"id": "03", "anh": "/in/03.jpg", "w": 10, "h": 10, "nen_sach": "/cb.png",
-                                         "vung": OLD_REGIONS_JSON, "so_vung_ocr": 2}]}
-NEW_MANIFEST = {"set_id": "03", "slides": [{"id": "03", "image_path": "/in/03.jpg", "w": 10, "h": 10,
-                                           "clean_background_path": "/cb.png", "regions": NEW_REGIONS_JSON,
-                                           "ocr_region_count": 2}]}
-
-
-def _write(p: Path, v) -> None:
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(v if isinstance(v, str) else json.dumps(v, ensure_ascii=False, indent=1), encoding="utf-8")
-
-
-def _migration_layout(tmp: Path, extra=None) -> dict:
-    st = tmp / "state"
-    blog, single = sp.prepare_root(st / "blog"), sp.prepare_root(st)
-    files = {
-        "ocr": blog / "gin_03" / sp.GIN_REGIONS_OCR_FILE, "regions": blog / "gin_03" / sp.GIN_REGIONS_FILE,
-        "gin_spec": blog / "gin_03" / "spec.json", "manifest": blog / "itachi_03" / sp.MANIFEST_FILE,
-        "it_spec": blog / "itachi_03" / "spec.json", "ocr_single": single / "gin_646" / sp.GIN_REGIONS_OCR_FILE,
-        "ocr_done": blog / "gin_07" / sp.GIN_REGIONS_OCR_FILE, "gin_spec_broken": blog / "gin_07" / "spec.json",
-        "deck_spec": blog / "itachi_03" / "deck.spec.json", "other": blog / "d1-carousel" / "spec.json",
-    }
-    data = {"ocr": OLD_OCR, "regions": OLD_REGIONS_JSON, "gin_spec": GIN_OLD["A"], "manifest": OLD_MANIFEST,
-            "it_spec": IT_OLD, "ocr_single": OLD_OCR, "ocr_done": NEW_OCR, "gin_spec_broken": '{"gop": [',
-            "deck_spec": {"slides": [{"layout": "cover", "ghi_chu": {"nghieng": 1}}]}, "other": {"vung": 1}}
-    data.update(extra or {})
-    for k, p in files.items():
-        _write(p, data[k])
-    return files
-
-
-def _migrate(tmp: Path, *extra):
-    return subprocess.run([sys.executable, str(ROOT / "migrate_gin_itachi_stores.py"), "--state", str(tmp / "state"),
-                           *extra], capture_output=True, text=True, cwd=ROOT)
-
-
-def _bytes(files: dict) -> dict:
-    return {k: p.read_bytes() for k, p in files.items()}
-
-
-def _load(p: Path):
-    return json.loads(p.read_text(encoding="utf-8"))
-
-
-def test_migration_dry_run_writes_nothing():
-    with tempfile.TemporaryDirectory() as t:
-        tmp = Path(t)
-        f = _migration_layout(tmp)
-        before = _bytes(f)
-        r = _migrate(tmp, "--dry-run")
-        assert r.returncode == 0, r.stderr
-        assert "DRY RUN — 6 file(s)" in r.stdout, r.stdout
-        assert _bytes(f) == before
-        assert not list(tmp.glob("low247_*"))
-
-
-def test_migration_renames_every_store_and_rerun_is_noop():
-    with tempfile.TemporaryDirectory() as t:
-        tmp = Path(t)
-        f = _migration_layout(tmp)
-        before = _bytes(f)
-        r = _migrate(tmp)
-        assert r.returncode == 0, r.stdout + r.stderr
-        assert _load(f["ocr"]) == NEW_OCR and _load(f["ocr_single"]) == NEW_OCR
-        assert list(_load(f["ocr"])["regions"][0]) == list(NEW_REGION), "key order kept"
-        assert _load(f["regions"]) == NEW_REGIONS_JSON
-        assert _load(f["manifest"]) == NEW_MANIFEST
-        assert _load(f["gin_spec"]) == GIN_NEW["A"]
-        assert _load(f["it_spec"]) == IT_NEW
-        for k in ("ocr_done", "gin_spec_broken", "deck_spec", "other"):
-            assert f[k].read_bytes() == before[k], k
-        assert "not valid JSON" in r.stdout
-        backups = list(tmp.glob("low247_gin_itachi_stores_backup_*.tar.gz"))
-        journals = list(tmp.glob("low247_gin_itachi_stores_*.journal.jsonl"))
-        assert len(backups) == 1 and len(journals) == 1
-        with tarfile.open(backups[0]) as tar:
-            names = sorted(tar.getnames())
-            assert len(names) == 6, names
-            assert tar.extractfile("state/blog/prepare/itachi_03/manifest.json").read() == before["manifest"]
-        rows = [json.loads(ln) for ln in journals[0].read_text(encoding="utf-8").splitlines()]
-        assert {row["kind"] for row in rows} == {"regions_ocr", "regions_json", "gin_spec", "itachi_manifest",
-                                                 "itachi_spec"}
-        assert any("regions[1].hep" in row["kept_unknown_keys"] for row in rows), rows
-        after = _bytes(f)
-        r2 = _migrate(tmp)
-        assert r2.returncode == 0 and "nothing to do" in r2.stdout, r2.stdout + r2.stderr
-        assert _bytes(f) == after
-
-
-def test_migrated_stores_read_back_through_submit_scripts():
-    """Old stores + old specs, migrated, then submitted: same card/pixels as fresh new-name stores."""
-    import gin_submit
-    with tempfile.TemporaryDirectory() as t:
-        tmp = Path(t)
-        state = tmp / "state"
-        wd = _gin_workdir(state)
-        fresh = gin_submit._box_translate(_load(wd / sp.GIN_REGIONS_OCR_FILE), GIN_NEW["B"])
-        old_ocr = {"anh": str(wd / "src.png"), "id": "777", "w": 640, "h": 480,
-                   "vung": [{{"background_kind": "nen", "background_std": "std_nen", "background_rgb": "nen_rgb",
-                              "ink_height": "cao_net", "ink_ratio": "muc", "align": "can", "number": "stt"}.get(k, k):
-                             ({"flat": "phang", "photo": "anh"}[v] if k == "background_kind" else v)
-                             for k, v in r.items()} for r in REGIONS]}
-        _write(wd / sp.GIN_REGIONS_OCR_FILE, old_ocr)
-        _write(wd / "spec.json", GIN_OLD["B"])
-        r = _migrate(tmp)
-        assert r.returncode == 0, r.stdout + r.stderr
-        d = _load(wd / sp.GIN_REGIONS_OCR_FILE)
-        assert d["regions"] == REGIONS
-        assert gin_submit._box_translate(d, _load(wd / "spec.json")) == fresh
-        res = _run_submit("gin_submit.py", "777", state)
-        assert res.returncode == 0, res.stdout + res.stderr
-
-
-def test_migration_refuses_unknown_shape():
-    for bad in ({"ocr": {**OLD_OCR, "regions": []}},
-                {"ocr": {**OLD_OCR, "vung": [{**OLD_REGION, "nen": "xam"}]}},
-                {"ocr": {**OLD_OCR, "vung": "x"}},
-                {"regions": {"stt": 1}},
-                {"gin_spec": {"gop": [], "merges": []}},
-                {"gin_spec": ["x"]},
-                {"manifest": {**OLD_MANIFEST, "slides": [{"vung": [], "regions": []}]}},
-                {"it_spec": {"slides": [{"bg_anh": True, "use_clean_background": False}]}},
-                {"it_spec": {"slides": ["x"]}},
-                {"it_spec": {"slides": [{"ghi_chu": {"nghieng": 1, "tilt": 2}}]}}):
-        with tempfile.TemporaryDirectory() as t:
-            tmp = Path(t)
-            f = _migration_layout(tmp, bad)
-            before = _bytes(f)
-            r = _migrate(tmp)
-            assert r.returncode == 1, (bad, r.stdout, r.stderr)
-            assert "nothing written" in r.stderr, r.stderr
-            assert _bytes(f) == before, bad
-            assert not list(tmp.glob("low247_*"))
 
 
 if __name__ == "__main__":

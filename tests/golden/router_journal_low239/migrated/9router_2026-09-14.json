@@ -1,0 +1,81 @@
+{
+ "date": "2026-09-14",
+ "utc_window": [
+  "2026-09-13T17:00:00.000Z",
+  "2026-09-14T17:00:00.000Z"
+ ],
+ "totals": {
+  "req": 2,
+  "prompt": 3900,
+  "cache": 2000,
+  "out": 902,
+  "usd": 0.0031,
+  "error_count": 0,
+  "cache_pct": 51.3
+ },
+ "by_model": {
+  "deepseek-v4-flash @ deepseek-v4-flash": {
+   "req": 2,
+   "prompt": 3900,
+   "cache": 2000,
+   "out": 902,
+   "usd": 0.0031,
+   "error_count": 0,
+   "cache_pct": 51.3
+  }
+ },
+ "unknown_models": [],
+ "low_cache_models": [],
+ "by_api_key": {
+  "khoa la …efgh": {
+   "req": 2,
+   "prompt": 3900,
+   "cache": 2000,
+   "out": 902,
+   "usd": 0.0031,
+   "error_count": 0,
+   "cache_pct": 51.3
+  }
+ },
+ "by_hour": {
+  "0": {
+   "req": 2,
+   "prompt": 3900,
+   "cache": 2000,
+   "out": 902,
+   "usd": 0.0031,
+   "error_count": 0,
+   "cache_pct": 51.3
+  }
+ },
+ "model_switches": {},
+ "model_switch_examples": [],
+ "fallback": 0,
+ "errors_by_model_status": {},
+ "top_prompt": [
+  {
+   "prompt": 3000,
+   "time": "00:00:00",
+   "model": "deepseek-v4-flash",
+   "cache": 2000,
+   "usd": 0.003
+  },
+  {
+   "prompt": 900,
+   "time": "00:06:40",
+   "model": "deepseek-v4-flash",
+   "cache": 0,
+   "usd": 0.0001
+  }
+ ],
+ "empty_responses": {},
+ "empty_response_examples": [],
+ "connection_errors": [],
+ "role_costs": {
+  "by_role": {},
+  "by_brand": {},
+  "coverage_pct": 0,
+  "unreadable_profiles": [],
+  "note": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"
+ }
+}

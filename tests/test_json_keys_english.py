@@ -175,7 +175,9 @@ def f(a, wd, m, n):
 def test_baseline_is_live_not_vacuous():
     """Mốc rỗng hay từ điển không nạp được thì cổng xanh vô nghĩa."""
     base = load_baseline()
-    assert sum(sum(v.values()) for v in base.values()) > 100, "mốc gần rỗng — dựng lại bằng --write-baseline"
+    # LOW-251: mọi kho đã English (LOW-232..248) — mốc chỉ còn ~60 chỗ có chủ đích (bảng đọc tên cũ,
+    # giá trị đã quyết giữ). Ngưỡng này chỉ bắt mốc bị xoá trắng; từ điển hỏng do test fixture bắt.
+    assert sum(sum(v.values()) for v in base.values()) > 20, "mốc gần rỗng — dựng lại bằng --write-baseline"
     cur = scan_repo(ROOT, Detector())
     assert cur, "quét repo không ra gì — từ điển/AST hỏng"
     stale = [f for f in base if not (ROOT / f).exists()]
