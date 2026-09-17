@@ -16,6 +16,7 @@ import role
 import scan_common
 import env_load                                              # noqa: E402
 
+from prepare import decision_log
 from prepare.common import MAX_IMAGE, _original_domain, _hdr, _domain
 
 # `url_junk`/`short_side_drop` KHONG con la hang so module-level (LOW-182,
@@ -121,22 +122,32 @@ def download_and_filter(cands: list, wd: Path) -> list:
     with ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
         tai_truoc = list(ex.map(_download_candidate, ung_vien))
     da_tai = []                       # [(dhash, im, c, data_len)] — de khu trung gan giong
-    for c, (data, loi) in zip(ung_vien, tai_truoc):
+    for i_uv, (c, (data, loi)) in enumerate(zip(ung_vien, tai_truoc)):
         if len(da_tai) >= MAX_IMAGE + 4:
+            # LOW-225: truoc day cac ung vien con lai bi bo IM LANG — ghi lai.
+            for c_con, _ in zip(ung_vien[i_uv:], tai_truoc[i_uv:]):
+                decision_log.drop_candidate(wd, c_con, "over_limit", "MAX_IMAGE+4",
+                                            f"da giu {len(da_tai)} anh truoc ung vien nay")
             break
         try:
             if loi is not None:
                 raise loi
             if not data:
+                decision_log.drop_candidate(wd, c, "acquire_error", "no_bytes",
+                                            "tai khong ra byte nao (HTTP/mang — xem dong [tai] cung URL)")
                 continue
             im = Image.open(io.BytesIO(data))
             im.load()
             im = im.convert("RGB")
             w, hh = im.size
             if min(w, hh) < short_side_drop:
+                decision_log.drop_candidate(wd, c, "too_small", "SHORT_SIDE_DOWNLOAD",
+                                            f"{w}x{hh} < {short_side_drop}", im=im)
                 continue
             if _host_is_side_try_three(c):
                 print(f"[tai] bo anh host ben thu ba (quang cao?): {_domain(c.get('anh',''))} tren {_domain(c.get('trang',''))}", file=sys.stderr)
+                decision_log.drop_candidate(wd, c, "third_party_host", "_host_is_side_try_three",
+                                            f"{_domain(c.get('anh', ''))} tren {_domain(c.get('trang', ''))}", im=im)
                 continue
             if not c.get("cho_do_hoa") and (url_junk.search(c.get("anh", "") or "")
                                             or url_junk.search(c.get("alt", "") or "")):
@@ -145,15 +156,22 @@ def download_and_filter(cands: list, wd: Path) -> list:
                 # tu chan chinh no (09/09/2026). Cong nay de chan logo bao/quang
                 # cao lot vao tu <img> cua trang, khong phai logo ta co tinh lay.
                 print(f"[tai] bo url/alt rac: {str(c.get('anh'))[-60:]}", file=sys.stderr)
+                khop = url_junk.search(c.get("anh", "") or "") or url_junk.search(c.get("alt", "") or "")
+                decision_log.drop_candidate(wd, c, "junk_url", "rules.JUNK",
+                                            f"khop {khop.group(0)!r}" if khop else "", im=im)
                 continue                                  # placeholder/onboarding/logo/ad
             if rules.is_blank_image(im)[0]:
                 print(f"[tai] bo anh RONG: {str(c.get('anh'))[-60:]}", file=sys.stderr)
+                decision_log.drop_candidate(wd, c, "blank", "rules.is_blank_image", im=im)
                 continue
             if (w, hh) in article_images.HAS_AI_GENERATE:
+                decision_log.drop_candidate(wd, c, "ai_generated_size", "HAS_AI_GENERATE", f"{w}x{hh}", im=im)
                 continue
             ly_do_do_hoa = article_images._graphic(im)
             la_ct, _ = rules.is_chart(im)
             if ly_do_do_hoa and not la_ct and not _chart_by_figure(im) and not c.get("cho_do_hoa"):
+                decision_log.drop_candidate(wd, c, "graphic_logo", "article_images._graphic",
+                                            ly_do_do_hoa, im=im)
                 continue                                  # logo/wordmark
             # `cho_do_hoa`: ung vien CO CHU Y la do hoa — the logo chinh thuc cua
             # hang (image_brand.card_logo). Cong tren sinh ra de chan logo lot
@@ -173,12 +191,21 @@ def download_and_filter(cands: list, wd: Path) -> list:
                 print(f"[tai] bo ban {'nho' if lon_hon else 'sau'} vi trung gan giong "
                       f"(lech {bin(h ^ da_tai[trung][0]).count('1')} bit, nguong {ng}): "
                       f"{str(c.get('anh'))[:60]}", file=sys.stderr)
+                bang_chung = (f"lech {bin(h ^ da_tai[trung][0]).count('1')} bit, nguong {ng}, "
+                              f"trung voi {str(da_tai[trung][2].get('anh'))[:120]}")
                 if lon_hon:
+                    decision_log.drop_candidate(wd, da_tai[trung][2], "near_duplicate", "dhash_smaller",
+                                                bang_chung, im=da_tai[trung][1])
                     da_tai[trung] = (h, im, c, len(data))
+                else:
+                    decision_log.drop_candidate(wd, c, "near_duplicate", "dhash_later", bang_chung, im=im)
                 continue
             da_tai.append((h, im, c, len(data)))
         except Exception as e:                               # noqa: BLE001
             print(f"[tai] {str(c.get('anh'))[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
+            # Loi LAY anh (tai/doc tep) tach khoi loi XU LY anh da co trong tay.
+            decision_log.drop_candidate(wd, c, "acquire_error" if loi is not None else "process_error",
+                                        type(e).__name__, repr(e))
     # MOT dong tong de brief/route phan biet "trang khong co anh" voi "khong
     # tai duoc anh nao" (loi moi truong) — C-r2-2. Tung URL da co dong rieng.
     khong_tai = sum(1 for d, l in tai_truoc if not d)
@@ -186,6 +213,9 @@ def download_and_filter(cands: list, wd: Path) -> list:
         print(f"[tai] {khong_tai}/{len(ung_vien)} ung vien KHONG tai duoc"
               + (" — TAT CA, nghi mang/DNS/proxy truoc khi nghi bai khong co anh" if khong_tai == len(ung_vien) else ""),
               file=sys.stderr)
+    for h, im, c, _ in da_tai[MAX_IMAGE:]:
+        # LOW-225: phan vuot MAX_IMAGE truoc day bi cat IM LANG.
+        decision_log.drop_candidate(wd, c, "over_limit", "MAX_IMAGE", f"chi giu {MAX_IMAGE} anh dau", im=im)
     ra = []
     for n, (h, im, c, _) in enumerate(da_tai[:MAX_IMAGE], start=1):
         ma = f"A{n}"
@@ -209,6 +239,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
                    **({"khai_niem": c["khai_niem"]} if c.get("khai_niem") else {}),
                    **({"thuong_hieu": c["thuong_hieu"]} if c.get("thuong_hieu") else {}),
                    **({"thuc_the": c["thuc_the"]} if c.get("thuc_the") else {})})
+        decision_log.note(ra[-1], "download", "keep", "download_and_filter")
     return ra
 
 

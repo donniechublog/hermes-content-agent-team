@@ -246,7 +246,7 @@ def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
 
 def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict, nguon_path: Path,
                   tom: dict, wd: Path, anh: list, xhs: list, tin_xep_hang: bool, bp: dict, tl: dict,
-                  flagship: bool, toi_thieu: int, vai_anh: str = "") -> dict:
+                  flagship: bool, toi_thieu: int, vai_anh: str = "", dropped: list | None = None) -> dict:
     """Manifest (xong.json) cua bai — thu ma moi *_prepare va *_submit doc. Cac gia
     tri dan xuat (dung_duoc, chua_nhin, so_mien, goi_y_bia) tinh o day tu `anh`."""
     import story_type            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
@@ -278,5 +278,7 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
          "so_xep_hang": len(xhs),
          "tin_xep_hang": tin_xep_hang,
          "chu_bai": (bp.get("chu") or "")[:20000],
-         "nguon_path": str(nguon_path), "tieu_de_en": nguon.get("tieu_de_en", "")}
+         "nguon_path": str(nguon_path), "tieu_de_en": nguon.get("tieu_de_en", ""),
+         # LOW-225: ung vien bi bo TRUOC khi thanh anh (pha tai) — truoc day chi co o stderr.
+         "dropped": dropped or []}
     return m

@@ -14,6 +14,7 @@ from PIL import Image, ImageStat
 import env_load
 import role
 
+from prepare import decision_log
 from prepare.source import all_proper_nouns
 from prepare.download_filter import _chart_by_figure, _save_crop
 
@@ -233,6 +234,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                               r"headquarters|office|building|product|device|event", re.I)
         KHONG = re.compile(r"m[aà]n h[iì]nh|giao di[eệ]n|c[uử]a s[oổ]|driver|ph[aầ]n m[eề]m|screenshot|"
                            r"ubuntu|windows|terminal|c[aà]i \w*|website|trang web", re.I)
+        lqv_vision, override = lqv, ""          # LOW-225: ghi lai vision noi gi TRUOC khi regex lat
         if khai_niem or thuong_hieu or chup_nguon:
             pass                                   # tin cau tra loi, khong override theo ten hang
         elif lqv is False and du_tk and BOI_CANH.search(mt) and not KHONG.search(mt):
@@ -245,9 +247,9 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             # hieu do thay vi bat ten hang phai trung tung chu: anh la boi canh
             # hang/thiet bi that (khong phai man hinh/UI) VA vision xac nhan doc
             # ra du tu khoa chinh cua bai thi tinh la lien quan.
-            lqv = True
+            lqv, override = True, "keyword_context_flip_true"
         elif hang and lqv is False and hang.lower() in mt.lower() and BOI_CANH.search(mt) and not KHONG.search(mt):
-            lqv = True
+            lqv, override = True, "brand_name_in_description_flip_true"
         elif lqv is True and KHONG.search(mt) and not BOI_CANH.search(mt) \
                 and (SYSTEM_SCREEN.search(mt) or not _names_title_product(mt, hang)):
             # LOW-216 (17/09/2026): tin PHAN MEM thi giao dien LA san pham. Do
@@ -256,12 +258,14 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             # nhung nhanh nay lat het -> Dre chi con logo/dien thoai ngang thap,
             # phai ghep doc. Chi lat khi mo ta KHONG goi ten san pham cua tieu
             # de, hoac la man hinh he thong (driver/Ubuntu — ca goc 05/09).
-            lqv = False
+            lqv, override = False, "screen_ui_flip_false"
         them = ""
         if hoi_them and nhan_them:
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
             them = t.group(1).strip()[:120] if t else ""
-        return mt, lqv, them, {"cluttered": cluttered, "du_tu_khoa": du_tk}
+        return mt, lqv, them, {"cluttered": cluttered, "du_tu_khoa": du_tk,
+                               "vision_said": lqv_vision, "override": override,
+                               "vision_raw": {"model": VISION_MODEL, "question": hoi, "answer": txt[:2000]}}
 
     try:
         mt, lqv, them, phu = _mot_lan()
@@ -286,6 +290,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
                   "(khong con fail-open)", file=sys.stderr)
             mt, lqv, them = (mt2 or mt), False, (them2 or them)
             phu = {k: (phu[k] if phu2.get(k) is None else phu2[k]) for k in phu}
+            phu["override"] = "unparsed_twice_forced_false"
         else:
             mt, lqv, them, phu = mt2, lqv2, them2, phu2
 
@@ -333,6 +338,7 @@ def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
               f"{type(e).__name__}: {e!r}", file=sys.stderr)
         a.update({"dung": [], "lien_quan": None, "mo_ta": "", "mat": 0,
                   "ghi_chu": [f"⚠️ không phân loại được ({type(e).__name__}) — bỏ qua ảnh này"]})
+        decision_log.note(a, "process_error", "drop", type(e).__name__, repr(e))
         a.setdefault("w", 0)
         a.setdefault("h", 0)
         return a
@@ -402,6 +408,19 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         a["cat_ngang_ok"] = None
     a["cluttered"] = kq.get("cluttered")
     a["du_tu_khoa"] = kq.get("du_tu_khoa")
+    # LOW-225: vision noi gi, nhanh regex nao lat, nguyen van cau hoi/tra loi —
+    # de do lai offline ma khong goi vision lai.
+    if kq.get("vision_raw"):
+        a["vision_raw"] = kq["vision_raw"]
+        said = kq.get("vision_said")
+        decision_log.note(a, "vision", "flag" if said is None else ("keep" if said else "drop"),
+                          "LIEN_QUAN", f"vision tra loi {said!r}")
+        if kq.get("override"):
+            decision_log.note(a, "vision_override", "keep" if a["lien_quan"] else "drop",
+                              kq["override"], f"{said!r} -> {a['lien_quan']!r}")
+    elif tieu_de:
+        decision_log.note(a, "vision", "flag", "vision_unavailable",
+                          "khong hoi duoc vision (mang/router/thieu key) — lien_quan None")
     # VISION TU NOI "bieu do/do thi" ma cong do hoa (pixel) bo lo (A11, 12/09):
     # tin theo chinh mo ta cua no hon la phep do phang mau — sua nguoc la_ct SAU
     # khi co mo_ta, truoc khi quyet dinh nhanh chart/anh o duoi.
@@ -482,10 +501,13 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         # Anh roi khong du tu khoa: khong la bia; lam than chi khi het anh sach
         # (submit_common.check_image_fall), va script tu dat nen chu dac (LOW-47).
         a["dung"] = [d for d in a["dung"] if not str(d).startswith("bìa")]
+        decision_log.note(a, "cluttered", "demote", "CLUTTERED_without_keyword", "khong lam bia, xuong cuoi hang")
         a["ghi_chu"].insert(0, "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT "
                                "ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc")
     if a.get("lien_quan") is False:
         a["dung"] = []
+        decision_log.note(a, "relevance", "drop", "capture_quality" if chup_nguon else "vision_not_relevant",
+                          (a.get("mo_ta") or "")[:200])
         if chup_nguon:
             # LOW-192: nhanh chup_nguon (LOW-45) KHONG hoi "co lien quan" —
             # cau hoi vision o day chi ve CHAT LUONG (ro net, khong phai anh
@@ -501,11 +523,28 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         a["ghi_chu"].append("đáy sáng, chữ trắng hơi nhạt")
     if a.get("khai_niem"):
         import image_concept
+        truoc = list(a.get("dung") or [])
         image_concept.label_concept(a)
+        _note_use_change(a, truoc, "concept_gate", "image_concept.label_concept")
     if a.get("thuong_hieu"):
         import image_brand
+        truoc = list(a.get("dung") or [])
         image_brand.label_brand(a)
+        _note_use_change(a, truoc, "brand_gate", "image_brand.label_brand")
+    if a.get("dung") and a.get("lien_quan") is not False and role.face_no_clear_ai(a):
+        # Van con `dung` nhung schema.count_image_use_ok + submit_common.check_subject_named
+        # deu loai tam nay — ghi ro de khong ai tuong no dang duoc dem.
+        decision_log.note(a, "face_gate", "drop", "role.face_no_clear_ai",
+                          f"{a.get('mat')} mat nguoi, alt/thuong_hieu khong neu ten")
     return a
+
+
+def _note_use_change(a: dict, truoc: list, stage: str, rule: str) -> None:
+    """LOW-225: ham gan nhan (khai niem/thuong hieu) co doi `dung` thi ghi lai."""
+    sau = list(a.get("dung") or [])
+    if sau != truoc:
+        decision_log.note(a, stage, "drop" if truoc and not sau else "demote", rule,
+                          f"dung {truoc} -> {sau}")
 
 
 def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
@@ -526,6 +565,7 @@ def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
         if a.get("xep_hang"):
             a["mo_ta"] = a["alt"]
             a["lien_quan"] = True
+            decision_log.note(a, "ranking_forced", "keep", "xep_hang", "anh xep hang engine tu chup, khong hoi vision")
             a["dung"] = ["HERO / BÌA (bảng xếp hạng, model đã khoanh — ảnh chính bắt buộc của tin xếp hạng)",
                          "thân (chart)"]
             a["ghi_chu"] = [g for g in a["ghi_chu"] if "KHÔNG DÙNG" not in g and "KHÔNG làm bìa" not in g]

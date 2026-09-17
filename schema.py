@@ -70,6 +70,7 @@ class Manifest(TypedDict, total=False):
     tieu_de_en: str
     tu_lieu: dict
     chu_bai: str                   # CAT con 20000 ky tu luc ghi
+    dropped: list                  # LOW-225: ung vien bi bo o pha tai (stage/rule/evidence/thumb)
     so_mien: list
     cap_ghep: list
     ghep_hai_hang: list        # M&A: cap [ma_A, ma_B] anh cua HAI hang (story_type.py, 12/09/2026)
