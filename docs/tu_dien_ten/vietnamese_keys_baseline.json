@@ -554,7 +554,6 @@
    "key:khoa": 9,
    "key:loai": 3,
    "key:ly_do": 1,
-   "key:ma": 1,
    "key:tep": 2,
    "key:tieu_de_en": 15,
    "key:trang": 6,
@@ -585,22 +584,6 @@
    "key:mien_bai": 1,
    "key:rong": 1,
    "key:tieu_de": 2
-  },
-  "ranking.py": {
-   "key:bang": 30,
-   "key:bang_re": 10,
-   "key:doc_lap": 6,
-   "key:dong": 3,
-   "key:duoc_nhac": 4,
-   "key:ghep_voi": 1,
-   "key:hang": 2,
-   "key:khung": 9,
-   "key:ma": 42,
-   "key:mien": 21,
-   "key:nhan": 1,
-   "key:so_hang": 2,
-   "key:vung": 5,
-   "path:the.png": 2
   },
   "render_edu.py": {
    "key:nhan": 2,
