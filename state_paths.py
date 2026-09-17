@@ -4,8 +4,8 @@
 Before LOW-228 these were Vietnamese literals scattered over ~40 modules
 (`wd / "goc"`, `"xong.json"`, `f"chuan_bi.{i}.lock"`…). Code builds paths only
 through the names below; the old → new table lives in
-docs/tu_dien_ten/state_paths_v2.json and is applied to on-disk data by
-migrate_state_paths.py. Imports nothing heavy so any module can use it.
+docs/tu_dien_ten/state_paths_v2.json (on-disk data migrated once at LOW-228 deploy;
+the one-shot script was removed in LOW-229). Imports nothing heavy so any module can use it.
 """
 from pathlib import Path
 
@@ -50,7 +50,7 @@ def prepare_root(state: Path) -> Path:
     empty `prepare/` next to 192 old drafts would make every draft look unprepared."""
     if (Path(state) / LEGACY_PREPARE_DIR).is_dir():
         raise NotMigrated(f"{Path(state) / LEGACY_PREPARE_DIR} van con — chua migrate LOW-228: "
-                          "chay venv/bin/python migrate_state_paths.py")
+                          "migration mot lan da go o LOW-229, lay lai tu git (e6663b3)")
     return Path(state) / PREPARE_DIR
 
 

@@ -106,8 +106,9 @@ def test_sample_never_exceeds_available():
         assert len(image_golden_sample.stratified_sample(cands, 300)) == 2
 
 
-def test_load_candidates_reads_v1_manifest_with_new_keys():
-    """LOW-227: manifest.json bản 1 (khoá Việt) chưa migrate vẫn ra mẫu khoá English."""
+def test_load_candidates_skips_pre_v2_manifest():
+    """LOW-229: manifest bản 1 (khoá Việt) không còn được nâng khi đọc — sampler bỏ qua,
+    không sinh mẫu mà mọi khoá English đều rỗng (nhãn sẽ đo sai mà không ai biết)."""
     with tempfile.TemporaryDirectory() as tmp:
         wd = Path(tmp) / "dcgr" / state_paths.PREPARE_DIR / "d1"
         (wd / state_paths.ORIGINAL_DIR).mkdir(parents=True)
@@ -119,11 +120,11 @@ def test_load_candidates_reads_v1_manifest_with_new_keys():
             "anh": [{"ma": "A1", "goc": str(goc), "tu": "commons", "dung": ["thân"],
                      "lien_quan": True, "ghi_chu": [], "khai_niem": {"tu_khoa": "flag"}}]}),
             encoding="utf-8")
-        cands = image_golden_sample.load_candidates(Path(tmp))
-        assert [c["id"] for c in cands] == ["dcgr/d1/A1"], cands
-        assert cands[0]["image"] == {"id": "A1", "source": "commons", "uses": ["thân"], "relevant": True,
-                                     "notes": [], "concept": {"keyword": "flag"}}, cands[0]["image"]
-        assert cands[0]["story"]["title_en"] == "D1" and cands[0]["story"]["lead"] == "lead"
+        import contextlib
+        import io
+        with contextlib.redirect_stdout(io.StringIO()):
+            cands = image_golden_sample.load_candidates(Path(tmp))
+        assert cands == [], cands
 
 
 # --------------------------------------------- 3. chụp riêng ảnh

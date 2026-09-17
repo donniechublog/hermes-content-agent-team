@@ -53,12 +53,17 @@ def test_face_money_image_prepare_point_same_wait():
 
 def test_new_rank_count_path_within_call_all_below_original():
     """Quet moi Path cap module cua goi: khong cai nao duoc ro ra ngoai goc du
-    an, va khong cai nao duoc nam trong chuan_bi/ (dau hieu thieu .parent)."""
+    an, va khong cai nao duoc nam trong prepare/ (dau hieu thieu .parent).
+
+    Truoc LOW-229 test nay quet `chuan_bi/` — sau LOW-50 do chi con shim
+    `__init__.py`, nen no kiem RONG. Nay quet goi that."""
     import importlib
-    goi = GOC / "chuan_bi"
+    goi = GOC / "prepare"
     xau = []
-    for p in sorted(goi.glob("*.py")):
-        m = importlib.import_module(f"chuan_bi.{p.stem}")
+    modules = [p for p in sorted(goi.glob("*.py")) if p.stem != "__init__"]
+    assert len(modules) >= 5, f"goi prepare/ phai co module that, thay {modules}"
+    for p in modules:
+        m = importlib.import_module(f"prepare.{p.stem}")
         for ten in dir(m):
             if ten.startswith("__"):
                 continue
@@ -69,7 +74,7 @@ def test_new_rank_count_path_within_call_all_below_original():
             if GOC not in gt.parents and gt != GOC:
                 xau.append(f"{p.name}.{ten} = {gt} (ngoai goc)")
             elif goi == gt or goi in gt.parents:
-                xau.append(f"{p.name}.{ten} = {gt} (nam TRONG chuan_bi/ — thieu .parent?)")
+                xau.append(f"{p.name}.{ten} = {gt} (nam TRONG prepare/ — thieu .parent?)")
     assert not xau, "hang so duong dan sai cho:\n  " + "\n  ".join(xau)
 
 

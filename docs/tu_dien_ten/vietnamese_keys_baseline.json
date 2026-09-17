@@ -1,0 +1,812 @@
+{
+ "_note": "Mốc khoá dict/đoạn đường dẫn tiếng Việt còn hợp lệ (LOW-229). Chỉ được GIẢM; dựng lại: venv/bin/python tests/test_json_keys_english.py --write-baseline",
+ "files": {
+  "ada_prepare.py": {
+   "key:bai": 6,
+   "key:bang_chung": 1,
+   "key:bat_dau_luc": 1,
+   "key:cao_bo": 3,
+   "key:chi_phi": 2,
+   "key:chi_phi_9router": 4,
+   "key:chon": 2,
+   "key:da_giao": 1,
+   "key:de_xuat_rubric": 1,
+   "key:giay_trung_binh": 2,
+   "key:ket_luan": 1,
+   "key:khoa": 3,
+   "key:lat": 2,
+   "key:lat_model": 4,
+   "key:loi": 13,
+   "key:loi_doc": 4,
+   "key:loi_ket_noi": 4,
+   "key:ma": 1,
+   "key:model_chinh": 2,
+   "key:ngay": 7,
+   "key:nhan_xet": 1,
+   "key:nhat_ky_9router": 2,
+   "key:phien": 5,
+   "key:rong": 4,
+   "key:ten": 1,
+   "key:thap_chon": 3,
+   "key:thay_doi": 1,
+   "key:theo_bac": 2,
+   "key:theo_brand": 1,
+   "key:theo_cat": 2,
+   "key:theo_khoa": 1,
+   "key:theo_model": 2,
+   "key:theo_ngay": 3,
+   "key:theo_nguon": 2,
+   "key:theo_trang_thai": 2,
+   "key:theo_vai": 5,
+   "key:tieu_de": 1,
+   "key:tong": 3,
+   "key:trang_thai": 1,
+   "key:trong_ngay": 1,
+   "key:usd_bai": 3,
+   "key:vai": 12,
+   "key:vai_anh": 2,
+   "key:xong_luc": 1
+  },
+  "ada_submit.py": {
+   "key:bai": 1,
+   "key:bang_chung": 4,
+   "key:chon": 1,
+   "key:de_xuat_rubric": 2,
+   "key:ket_luan": 2,
+   "key:lat": 1,
+   "key:loi": 1,
+   "key:ngay": 2,
+   "key:nhan_xet": 2,
+   "key:nhat_ky_9router": 1,
+   "key:thay_doi": 4,
+   "key:theo_bac": 1,
+   "key:theo_ngay": 2,
+   "key:theo_trang_thai": 1,
+   "key:theo_vai": 1,
+   "key:tong": 1,
+   "key:usd_bai": 2,
+   "key:vai": 2,
+   "path:bao_cao.txt": 2,
+   "path:nhat_ky": 1,
+   "path:phan_tich_": 1
+  },
+  "approve_base.py": {
+   "path:ong_chu.json": 1
+  },
+  "approve_chat.py": {
+   "key:CT_CHAT_SONG_SONG": 1,
+   "key:tieu_de": 1,
+   "key:tom_tat": 1,
+   "key:trang_thai": 1,
+   "key:xong_luc": 1
+  },
+  "approve_command.py": {
+   "key:CT_CHAT_QUA_GATEWAY": 1,
+   "key:ngay": 3,
+   "key:nguon": 1,
+   "key:vai": 3,
+   "path:dat_bai.json": 1
+  },
+  "approve_dispatch.py": {
+   "key:CT_BANG_DEN": 1,
+   "key:bat_dau_luc": 1,
+   "key:id_lan_chay": 2,
+   "key:loi": 1,
+   "key:tao_luc": 1,
+   "key:tieu_de": 1,
+   "key:tom_tat": 1,
+   "key:trang_thai": 3,
+   "key:vai": 1,
+   "path:da_bao_tien_do.json": 1,
+   "path:da_bao_treo.json": 1,
+   "path:tin_ket_qua_task.json": 1
+  },
+  "approve_pick.py": {
+   "key:da_giao": 2,
+   "key:link_goc": 1,
+   "key:nguon_loi": 3,
+   "key:task_anh": 2,
+   "key:task_viet": 1,
+   "key:vai_anh": 3,
+   "key:vai_viet": 2,
+   "path:nguon_": 1
+  },
+  "approve_post.py": {
+   "key:anh": 3,
+   "key:anh_that_dung_duoc": 1,
+   "key:channel_anh_mid": 2,
+   "key:channel_chu_mid": 2,
+   "key:dre_task_truoc_kite": 1,
+   "key:ghep": 2,
+   "key:hoi_mid": 4,
+   "key:lan": 1,
+   "key:ly_do": 2,
+   "key:moat_lich_su": 1,
+   "key:task_truoc": 1,
+   "key:tu_vai": 1,
+   "key:vai_viet": 9,
+   "path:lam_lai_cho.json": 1
+  },
+  "approve_service.py": {
+   "key:CT_CHAT_QUA_GATEWAY": 1,
+   "key:ghi_chu_cuu": 2,
+   "key:tg_card_message_id": 1
+  },
+  "article_images.py": {
+   "key:cao": 1,
+   "key:do_hoa": 1,
+   "key:loai": 2,
+   "key:rong": 1,
+   "key:tieu_de": 1,
+   "key:trang": 2
+  },
+  "article_sources.py": {
+   "key:link_goc": 1,
+   "key:loai": 5,
+   "key:tieu_de": 5,
+   "key:tieu_de_en": 1,
+   "key:toa_soan": 3,
+   "key:trang": 3
+  },
+  "arxiv_cover.py": {
+   "key:cao": 1,
+   "key:rong": 1
+  },
+  "arxiv_figures.py": {
+   "key:cao": 1,
+   "key:loai": 4,
+   "key:rong": 1,
+   "key:so": 4,
+   "key:tep": 5,
+   "key:trang": 2
+  },
+  "audit_cron.py": {
+   "key:HONG": 1,
+   "key:KET": 1,
+   "key:TAT": 1,
+   "key:boi": 2,
+   "key:ly_do": 7,
+   "key:muc": 10,
+   "key:ngay": 4,
+   "key:ten": 9,
+   "key:van_de": 4
+  },
+  "bob_submit.py": {
+   "path:goc.png": 1,
+   "path:khung.png": 1
+  },
+  "cape_prepare.py": {
+   "path:article_extract.py": 1
+  },
+  "caption_check.py": {
+   "key:cau_so_trong_nguon": 2,
+   "key:do_dai": 2,
+   "key:so_cau": 2,
+   "key:so_trong_caption": 2,
+   "key:ty_le_dau": 2
+  },
+  "capture_page.py": {
+   "key:co_anh": 4,
+   "key:co_tit": 1
+  },
+  "card.py": {
+   "key:co_chan": 2,
+   "key:mau": 3,
+   "key:mau_du_phong": 2,
+   "key:mo_chan": 2,
+   "key:ro_handle": 3,
+   "key:to_ten_hang": 3
+  },
+  "carousel.py": {
+   "key:mo": 3,
+   "key:nen": 1,
+   "key:nhan_vat": 1,
+   "key:sang": 1,
+   "key:tam_co": 1,
+   "key:toi": 1
+  },
+  "cleanup.py": {
+   "path:*_da_dung.jsonl": 1,
+   "path:*_nop.jsonl": 1
+  },
+  "deck.py": {
+   "key:bg_anh": 2,
+   "key:den": 1,
+   "key:ghi_chu": 3,
+   "key:lo": 1,
+   "key:nhan": 2
+  },
+  "dre_prepare.py": {
+   "key:anh": 6,
+   "key:bia": 1,
+   "key:cat_ngang": 1,
+   "key:ghep": 1,
+   "key:nen": 1,
+   "key:nhan_vat": 1,
+   "key:tam_co": 1
+  },
+  "dre_submit.py": {
+   "key:anh": 6,
+   "key:ban_giao": 1,
+   "key:bia": 1,
+   "key:cat_ngang": 2,
+   "key:ghep": 2,
+   "key:nen": 2,
+   "key:nguon_anh": 1,
+   "key:nhan_vat": 1,
+   "key:tam": 1,
+   "key:tam_co": 4,
+   "key:tep": 1
+  },
+  "emoji_deck.py": {
+   "path:emoji_deck.json": 1
+  },
+  "entity_images.py": {
+   "key:cao": 4,
+   "key:rong": 4
+  },
+  "ethan_prepare.py": {
+   "key:anh": 2,
+   "key:kieu": 1,
+   "key:nhan_vat": 1
+  },
+  "ethan_submit.py": {
+   "key:anh": 9,
+   "key:kieu": 7,
+   "key:nhan_vat": 3
+  },
+  "find_image_web.py": {
+   "key:cao": 1,
+   "key:rong": 1,
+   "key:tu_khoa": 1
+  },
+  "find_more_images.py": {
+   "key:cao": 5,
+   "key:da_thu": 3,
+   "key:giay_phep": 1,
+   "key:loai": 2,
+   "key:luot": 5,
+   "key:nguon_openverse": 1,
+   "key:rong": 5,
+   "key:tac_gia": 1,
+   "key:tieu_de_en": 1,
+   "key:tu_khoa": 1
+  },
+  "gin_prepare.py": {
+   "key:anh": 1,
+   "key:cao_net": 4,
+   "key:ghi_chu": 1,
+   "key:gop": 1,
+   "key:muc": 3,
+   "key:nen": 6,
+   "key:nen_rgb": 3,
+   "key:std_nen": 3,
+   "key:vung": 2,
+   "path:tai_ve": 1,
+   "path:vung_ocr.json": 1,
+   "path:vung_preview.png": 2
+  },
+  "gin_submit.py": {
+   "key:anh": 3,
+   "key:buoc": 5,
+   "key:cao_net": 10,
+   "key:ep_phang": 1,
+   "key:ghi_chu": 2,
+   "key:giu": 1,
+   "key:gop": 2,
+   "key:nen": 4,
+   "key:std_nen": 1,
+   "key:text_goc": 4,
+   "key:vung": 9,
+   "key:vung_goc": 4,
+   "key:xoa_them": 1,
+   "path:ket_qua_": 1,
+   "path:nen_sach.png": 1,
+   "path:vung.json": 1,
+   "path:vung_ocr.json": 4
+  },
+  "hermes_adapter.py": {
+   "key:phien": 2,
+   "key:run_hien_tai": 1,
+   "key:run_ket_thuc": 1,
+   "key:trang_thai": 1
+  },
+  "image_brand.py": {
+   "key:anh": 4,
+   "key:cao": 9,
+   "key:cho_do_hoa": 2,
+   "key:hang": 6,
+   "key:khoa": 5,
+   "key:loai": 1,
+   "key:nguoi": 7,
+   "key:rong": 9,
+   "key:ten": 4,
+   "key:tep": 6,
+   "key:tieu_de": 1,
+   "key:toa_soan": 1,
+   "key:vai": 5,
+   "path:co_phieu_": 1,
+   "path:logo_goc.png": 1,
+   "path:the_logo.png": 1
+  },
+  "image_concept.py": {
+   "key:cao": 2,
+   "key:ly_do": 4,
+   "key:rong": 2,
+   "key:tu_khoa": 10
+  },
+  "image_golden_sample.py": {
+   "key:goc": 3
+  },
+  "image_prepare.py": {
+   "key:CT_CHUAN_BI_SONG_SONG": 1,
+   "key:chu": 2,
+   "key:tieu_de_en": 2,
+   "key:trang": 1,
+   "key:trang_them": 1
+  },
+  "image_provenance.py": {
+   "key:crop_ti_le": 2,
+   "key:nguon_dung": 2,
+   "path:anh_da_dung.jsonl": 1
+  },
+  "image_rules_dre.py": {
+   "key:ten": 1,
+   "key:tin": 3,
+   "key:vai": 2
+  },
+  "image_rules_ethan.py": {
+   "key:ten": 1,
+   "key:tin": 3,
+   "key:vai": 2
+  },
+  "image_rules_kite.py": {
+   "key:ten": 1,
+   "key:tin": 3,
+   "key:vai": 2
+  },
+  "itachi_prepare.py": {
+   "key:anh": 2,
+   "key:bg_anh": 1,
+   "key:cach": 2,
+   "key:gop": 1,
+   "key:khoa": 1,
+   "key:nen_sach": 2,
+   "key:nguon": 2,
+   "key:so_vung_ocr": 1,
+   "key:vung": 7,
+   "path:nen_sach.png": 2,
+   "path:vung.json": 2,
+   "path:vung_ocr.json": 3,
+   "path:vung_preview.png": 1
+  },
+  "itachi_submit.py": {
+   "key:bg_anh": 2,
+   "key:cach": 1,
+   "key:gop": 1,
+   "key:h_dong": 4,
+   "key:nen_sach": 2,
+   "key:nguon": 1,
+   "key:vung": 3,
+   "path:ket_qua_": 1
+  },
+  "journal.py": {
+   "key:chon": 3,
+   "key:chu": 2,
+   "key:co_anh": 2,
+   "key:da_chon": 2,
+   "key:diem": 2,
+   "key:giay": 11,
+   "key:gio": 12,
+   "key:hong": 3,
+   "key:ket_qua": 1,
+   "key:loai": 4,
+   "key:loi": 9,
+   "key:ly_do": 2,
+   "key:ma": 2,
+   "key:mo_ta": 2,
+   "key:ngay": 2,
+   "key:nguon": 2,
+   "key:noi_dung": 2,
+   "key:so_tin": 2,
+   "key:tao_luc": 2,
+   "key:ten": 4,
+   "key:tieu_de": 5,
+   "key:tom_tat": 4,
+   "key:tong": 2,
+   "key:trang_thai": 13,
+   "key:vai": 3,
+   "key:xong_luc": 1,
+   "path:ghi_chu.jsonl": 1,
+   "path:nhat_ky": 1
+  },
+  "journal_web.py": {
+   "key:NHAT_KY_HOST": 1,
+   "key:NHAT_KY_PORT": 1,
+   "key:bai": 1,
+   "key:loi": 1,
+   "key:loi_doc": 1,
+   "key:ngay": 1,
+   "key:rong": 2,
+   "key:theo_brand": 1,
+   "key:theo_model": 1,
+   "key:tong": 1,
+   "key:usd_bai": 2,
+   "key:vai": 1
+  },
+  "kite_prepare.py": {
+   "key:anh": 1,
+   "key:nguoi": 1,
+   "key:nhan": 1,
+   "key:xep_hang": 1
+  },
+  "kite_submit.py": {
+   "key:ban_giao": 1,
+   "key:hinh": 1,
+   "key:hinh_that": 1,
+   "key:nhan_vat": 1,
+   "key:tep": 1,
+   "key:truong": 1,
+   "key:vai": 1,
+   "path:render_edu.py": 1,
+   "path:render_edu.spec.json": 1
+  },
+  "manifest_build.py": {
+   "key:ten": 1,
+   "key:tu_them": 1
+  },
+  "manifest_common.py": {
+   "key:quet_luc": 1,
+   "key:vai": 1
+  },
+  "manifest_report.py": {
+   "key:tu_them": 1
+  },
+  "manifest_write.py": {
+   "key:cac_bao": 1,
+   "key:ghi_chu": 1,
+   "key:nguon_x": 3,
+   "key:so_bao": 1,
+   "key:ten": 2,
+   "key:tieu_de": 1,
+   "key:tin_moi": 1,
+   "key:toa_soan": 2,
+   "key:tu_them": 1
+  },
+  "material.py": {
+   "key:trang": 1,
+   "path:article_extract.py": 1
+  },
+  "miles_submit.py": {
+   "key:cau_so_trong_nguon": 1,
+   "key:do_dai": 8,
+   "key:so_cau": 4,
+   "key:so_trong_caption": 5,
+   "key:ty_le_dau": 1,
+   "path:draft_thu.txt": 1,
+   "path:draft_write.py": 1
+  },
+  "moat_publish.py": {
+   "key:MOAT_CHAT_LUONG_NEN": 1,
+   "key:MOAT_NEN_ANH": 1,
+   "key:MOAT_NGUONG_NEN": 1,
+   "key:MOAT_TRAN_TONG": 1,
+   "key:lan": 5,
+   "key:loi": 5,
+   "key:loi_da_bao": 3,
+   "key:moat_lich_su": 1,
+   "key:tg_card_message_id": 1,
+   "path:moat_chua_bao.json": 1,
+   "path:moat_day_lai.json": 1
+  },
+  "model_audition.py": {
+   "key:chu_de": 1,
+   "key:dat": 3,
+   "key:giay": 8,
+   "key:ket": 2,
+   "key:loi": 5,
+   "key:ty_le_dau": 1,
+   "key:van_ban": 2,
+   "key:vi_sao": 1,
+   "path:model_audition.json": 1
+  },
+  "model_boards.py": {
+   "key:bang_xep_hang": 1,
+   "key:cham_diem": 1,
+   "key:ci_cao": 1,
+   "key:ci_thap": 1,
+   "key:gia_moi_bai": 2,
+   "key:mo_nguon": 1,
+   "key:ngay": 1
+  },
+  "model_watch.py": {
+   "key:HONG": 1,
+   "key:MOI": 1
+  },
+  "monitor_9router.py": {
+   "key:NHAT_KY_URL": 1,
+   "key:bai": 6,
+   "key:bat": 2,
+   "key:cache_kem": 5,
+   "key:cua_so_utc": 1,
+   "key:ghi_chu": 2,
+   "key:lat_model": 3,
+   "key:lat_vi_du": 2,
+   "key:loi": 11,
+   "key:loi_doc": 8,
+   "key:loi_ket_noi": 4,
+   "key:ma": 3,
+   "key:model_la": 5,
+   "key:ngay": 5,
+   "key:phien": 5,
+   "key:phu_pct": 2,
+   "key:rong": 5,
+   "key:rong_vi_du": 2,
+   "key:ten": 3,
+   "key:theo_brand": 4,
+   "key:theo_gio": 2,
+   "key:theo_khoa": 2,
+   "key:theo_model": 4,
+   "key:theo_vai": 4,
+   "key:tong": 5,
+   "key:trang_thai": 2,
+   "key:trong_ngay": 3,
+   "key:usd_bai": 6,
+   "key:vai": 5,
+   "path:nhat_ky": 1
+  },
+  "prepare/browser.py": {
+   "key:alt_chup": 1,
+   "key:cao": 2,
+   "key:chu": 2,
+   "key:loai": 4,
+   "key:rong": 2,
+   "key:tep": 1,
+   "key:tieu_de": 1,
+   "key:tieu_de_en": 5,
+   "key:toa_soan": 1,
+   "key:trang_them": 5
+  },
+  "prepare/decision_log.py": {
+   "key:alt_chup": 1
+  },
+  "prepare/download_filter.py": {
+   "key:alt_chup": 1,
+   "key:arxiv_hinh": 1,
+   "key:cho_do_hoa": 2,
+   "key:chup": 1,
+   "key:tep": 3
+  },
+  "prepare/fallback_rounds.py": {
+   "key:chu": 2,
+   "key:hang": 7,
+   "key:khoa": 9,
+   "key:loai": 3,
+   "key:ly_do": 1,
+   "key:ma": 1,
+   "key:tep": 2,
+   "key:tieu_de_en": 15,
+   "key:trang": 6,
+   "key:trang_them": 2,
+   "key:tu_khoa": 3
+  },
+  "prepare/manifest.py": {
+   "key:chu": 3,
+   "key:dung_duoc": 1,
+   "key:tieu_de_en": 2
+  },
+  "prepare/source.py": {
+   "key:cao": 2,
+   "key:link_goc": 3,
+   "key:loai": 1,
+   "key:rong": 2,
+   "key:tep": 4,
+   "key:tieu_de": 2,
+   "key:trang": 2,
+   "path:nguon_": 1
+  },
+  "prepare/vision.py": {
+   "key:tieu_de_en": 1
+  },
+  "press_entity_images.py": {
+   "key:bai": 1,
+   "key:cao": 1,
+   "key:mien": 5,
+   "key:mien_bai": 1,
+   "key:rong": 1,
+   "key:tieu_de": 2
+  },
+  "ranking.py": {
+   "key:bang": 30,
+   "key:bang_re": 10,
+   "key:doc_lap": 6,
+   "key:dong": 3,
+   "key:duoc_nhac": 4,
+   "key:ghep_voi": 1,
+   "key:hang": 2,
+   "key:khung": 9,
+   "key:ma": 42,
+   "key:mien": 21,
+   "key:nhan": 1,
+   "key:so_hang": 2,
+   "key:vung": 5,
+   "path:the.png": 2
+  },
+  "render_edu.py": {
+   "key:nhan": 2,
+   "key:phuc_vu": 3,
+   "key:truong": 8,
+   "path:edu_theme_da_dung.jsonl": 1
+  },
+  "required.py": {
+   "key:ghi_chu": 3,
+   "key:loai": 4,
+   "key:ngay": 3,
+   "key:ra_mat": 1,
+   "key:ten": 6,
+   "key:tu_khoa": 3,
+   "path:bat_buoc_": 1
+  },
+  "scan_business.py": {
+   "key:cac_bao": 5,
+   "key:cap_nhat": 1,
+   "key:goc": 3,
+   "key:hang_watch": 7,
+   "key:khoa": 2,
+   "key:ngay": 5,
+   "key:quet_luc": 1,
+   "key:so_bao": 7,
+   "key:tieu_de": 14,
+   "key:tin_moi": 1,
+   "key:tin_watchlist": 1,
+   "key:toa_soan": 7,
+   "key:tong_quet": 1
+  },
+  "scan_models.py": {
+   "key:aa_da_bao": 2,
+   "key:ban_phat_hanh": 2,
+   "key:bang_agentic_goc": 2,
+   "key:bang_coding_goc": 2,
+   "key:bang_hong": 2,
+   "key:bang_tri_tue_goc": 2,
+   "key:bang_xep_hang": 1,
+   "key:buoc": 3,
+   "key:cap_nhat": 1,
+   "key:cham_diem": 2,
+   "key:ci_cao": 1,
+   "key:ci_thap": 1,
+   "key:co_reasoning": 1,
+   "key:diem": 21,
+   "key:ghi_chu": 5,
+   "key:gia_cache": 3,
+   "key:gia_moi_bai": 1,
+   "key:gia_ra": 2,
+   "key:gia_usd": 1,
+   "key:gia_vao": 3,
+   "key:giay_phep": 2,
+   "key:hang": 17,
+   "key:hang_coding": 5,
+   "key:hang_cu": 2,
+   "key:hang_sx": 4,
+   "key:khac": 1,
+   "key:leo_hang": 2,
+   "key:loai": 8,
+   "key:mo_nguon": 1,
+   "key:moi_ra_mat": 1,
+   "key:moi_tren_router_cua_ta": 4,
+   "key:ngay": 9,
+   "key:nguon": 1,
+   "key:nguon_hong": 2,
+   "key:nguon_mo": 2,
+   "key:nguon_mo_moi": 2,
+   "key:nha_cung_cap": 1,
+   "key:nuoc": 4,
+   "key:quet_luc": 1,
+   "key:ra_mat": 16,
+   "key:ra_mat_aa_chua_bao": 2,
+   "key:ra_mat_theo_ten": 2,
+   "key:ra_mat_ts": 1,
+   "key:swe_da_ngon_ngu": 1,
+   "key:tai": 3,
+   "key:ten": 29,
+   "key:ten_goc": 10,
+   "key:tieu_de": 3,
+   "key:tin_hang": 2,
+   "key:to_chuc": 15,
+   "key:tong_theo_doi": 1,
+   "key:top_moi_bang": 1,
+   "key:tq": 1,
+   "key:viec": 2,
+   "key:vung": 15,
+   "key:xep_hang": 2
+  },
+  "scan_prepare.py": {
+   "key:bat_buoc": 1,
+   "key:bo_qua": 1,
+   "key:cac_bao": 1,
+   "key:canh_bao": 1,
+   "key:cua_so_gio": 1,
+   "key:da_thay": 1,
+   "key:diem": 1,
+   "key:ghi_chu": 2,
+   "key:loai": 2,
+   "key:ngan": 1,
+   "key:ngay": 2,
+   "key:nguoi_dang": 1,
+   "key:nguon_x": 1,
+   "key:so_bao": 1,
+   "key:so_lieu": 1,
+   "key:ten": 2,
+   "key:tieu_de": 1,
+   "key:tin_moi": 2,
+   "key:tin_watchlist": 1,
+   "key:toa_soan": 2,
+   "key:tong_quet": 2,
+   "path:quet": 1,
+   "path:quet.json": 2,
+   "path:scan_business.py": 1,
+   "path:scan_models.py": 1,
+   "path:scan_models.txt": 1,
+   "path:scan_sources.py": 1
+  },
+  "scan_sources.py": {
+   "key:nguoi_dang": 2
+  },
+  "scan_submit.py": {
+   "key:tong_quet": 1,
+   "path:khong_co.txt": 1,
+   "path:manifest_build.py": 1,
+   "path:quet.json": 3,
+   "path:thu_manifest.json": 2
+  },
+  "scan_x.py": {
+   "key:bo_qua": 1,
+   "key:canh_bao": 1,
+   "key:cua_so_gio": 1,
+   "key:da_thay": 2,
+   "key:diem": 2,
+   "key:ghi_luc": 1,
+   "key:khoa": 2,
+   "key:loai": 1,
+   "key:ngan": 2,
+   "key:ngay": 1,
+   "key:nguon_x": 2,
+   "key:quet_luc": 1,
+   "key:rong": 2,
+   "key:so_anh": 1,
+   "key:so_bao": 1,
+   "key:so_lieu": 1,
+   "key:tieu_de": 2,
+   "key:tin_moi": 1,
+   "key:toa_soan": 2,
+   "key:tong_quet": 1,
+   "key:tre_gio": 1
+  },
+  "send_telegram.py": {
+   "key:mo_ta": 1,
+   "key:trung": 1
+  },
+  "social_post.py": {
+   "key:tep": 1
+  },
+  "story_type.py": {
+   "key:anh": 1,
+   "key:co_phieu": 1,
+   "key:nguoi": 1
+  },
+  "submit_common.py": {
+   "key:lan": 5,
+   "key:loi_cuoi": 1,
+   "key:trung": 1,
+   "key:vai_viet": 1
+  },
+  "sync_hermes.py": {
+   "key:LOI_DOC": 1
+  },
+  "worker_scope_sweep.py": {
+   "key:run_hien_tai": 1,
+   "key:run_ket_thuc": 1,
+   "key:trang_thai": 3
+  }
+ }
+}

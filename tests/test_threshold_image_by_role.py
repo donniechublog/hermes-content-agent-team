@@ -122,7 +122,7 @@ def _lower_ready(tmp: Path, manifest: dict, sidecar: dict | None):
     import approve_dispatch as dgv
     d = tmp / "state" / state_paths.PREPARE_DIR / "d1"
     d.mkdir(parents=True, exist_ok=True)
-    (d / state_paths.MANIFEST_FILE).write_text(json.dumps(manifest), encoding="utf-8")
+    (d / state_paths.MANIFEST_FILE).write_text(json.dumps({"version": 2, **manifest}), encoding="utf-8")
     drafts = tmp / "drafts"
     drafts.mkdir(exist_ok=True)
     if sidecar is not None:
