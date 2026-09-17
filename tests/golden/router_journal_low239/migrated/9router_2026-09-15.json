@@ -1,0 +1,288 @@
+{
+ "date": "2026-09-15",
+ "utc_window": [
+  "2026-09-14T17:00:00.000Z",
+  "2026-09-15T17:00:00.000Z"
+ ],
+ "totals": {
+  "req": 8,
+  "prompt": 209500,
+  "cache": 151000,
+  "out": 4409,
+  "usd": 0.223,
+  "error_count": 2,
+  "cache_pct": 72.1
+ },
+ "by_model": {
+  "deepseek-v4-flash @ DS main (ds)": {
+   "req": 4,
+   "prompt": 192000,
+   "cache": 150000,
+   "out": 3202,
+   "usd": 0.171,
+   "error_count": 0,
+   "cache_pct": 78.1
+  },
+  "glm-5.3 @ Xiaoke <x> & co (xk)": {
+   "req": 3,
+   "prompt": 12500,
+   "cache": 1000,
+   "out": 1204,
+   "usd": 0.05,
+   "error_count": 2,
+   "cache_pct": 8.0
+  },
+  "deepseek-chat @ DS old (dso)": {
+   "req": 1,
+   "prompt": 5000,
+   "cache": 0,
+   "out": 3,
+   "usd": 0.002,
+   "error_count": 0,
+   "cache_pct": 0.0
+  }
+ },
+ "unknown_models": [
+  {
+   "model": "z-ai/<b>glm-5.3</b>",
+   "req": 4,
+   "prompt": 48123,
+   "usd": 0.0831,
+   "cache_pct": 12.5
+  }
+ ],
+ "low_cache_models": [
+  {
+   "model": "deepseek-v4-flash",
+   "prompt": 250000,
+   "cache_pct": 31.2,
+   "config_roles": [
+    "blog/miles:chinh",
+    "dcgr/jika:du phong 1",
+    "engine anh:vision"
+   ]
+  }
+ ],
+ "by_api_key": {
+  "blog": {
+   "req": 6,
+   "prompt": 195500,
+   "cache": 150000,
+   "out": 3206,
+   "usd": 0.171,
+   "error_count": 1,
+   "cache_pct": 76.7
+  },
+  "dcgr": {
+   "req": 1,
+   "prompt": 5000,
+   "cache": 0,
+   "out": 3,
+   "usd": 0.002,
+   "error_count": 0,
+   "cache_pct": 0.0
+  },
+  "khoa la …7777": {
+   "req": 1,
+   "prompt": 9000,
+   "cache": 1000,
+   "out": 1200,
+   "usd": 0.05,
+   "error_count": 1,
+   "cache_pct": 11.1
+  }
+ },
+ "by_hour": {
+  "0": {
+   "req": 4,
+   "prompt": 132000,
+   "cache": 90000,
+   "out": 805,
+   "usd": 0.1274,
+   "error_count": 0,
+   "cache_pct": 68.2
+  },
+  "1": {
+   "req": 2,
+   "prompt": 10500,
+   "cache": 1000,
+   "out": 1204,
+   "usd": 0.05,
+   "error_count": 1,
+   "cache_pct": 9.5
+  },
+  "2": {
+   "req": 2,
+   "prompt": 67000,
+   "cache": 60000,
+   "out": 2400,
+   "usd": 0.0456,
+   "error_count": 1,
+   "cache_pct": 89.6
+  }
+ },
+ "model_switches": {
+  "deepseek-v4-flash → deepseek-chat": 1,
+  "deepseek-chat → deepseek-v4-flash": 1,
+  "deepseek-v4-flash → glm-5.3": 1
+ },
+ "model_switch_examples": [
+  "00:00:30 deepseek-v4-flash → deepseek-chat (+30s)",
+  "00:01:00 deepseek-chat → deepseek-v4-flash (+30s)",
+  "02:01:50 deepseek-v4-flash → glm-5.3 (+10s)"
+ ],
+ "fallback": 1,
+ "errors_by_model_status": {
+  "glm-5.3: error 429": 1,
+  "glm-5.3: error 502": 1
+ },
+ "top_prompt": [
+  {
+   "prompt": 120000,
+   "time": "00:00:00",
+   "model": "deepseek-v4-flash",
+   "cache": 90000,
+   "usd": 0.1234
+  },
+  {
+   "prompt": 65000,
+   "time": "02:01:40",
+   "model": "deepseek-v4-flash",
+   "cache": 60000,
+   "usd": 0.0456
+  },
+  {
+   "prompt": 9000,
+   "time": "01:00:00",
+   "model": "glm-5.3",
+   "cache": 1000,
+   "usd": 0.05
+  },
+  {
+   "prompt": 5000,
+   "time": "00:00:30",
+   "model": "deepseek-chat",
+   "cache": 0,
+   "usd": 0.002
+  },
+  {
+   "prompt": 4000,
+   "time": "00:01:30",
+   "model": "deepseek-v4-flash",
+   "cache": 0,
+   "usd": 0.001
+  }
+ ],
+ "empty_responses": {
+  "deepseek-v4-flash": 2,
+  "deepseek-chat": 1,
+  "glm-5.3": 1
+ },
+ "empty_response_examples": [
+  "00:00:30 deepseek-chat 5,000 prompt → 3 out",
+  "00:01:00 deepseek-v4-flash 3,000 prompt → 0 out",
+  "00:01:30 deepseek-v4-flash 4,000 prompt → 2 out",
+  "01:01:40 glm-5.3 1,500 prompt → 4 out"
+ ],
+ "legacy_connection": {
+  "has_watcher": false,
+  "ip": {}
+ },
+ "connection_errors": [
+  {
+   "name": "Xiaoke <x> & co",
+   "test_status": "unavailable",
+   "error_code": 429,
+   "last_error": "Too Many Requests: quota hết hạn mức ngày",
+   "last_error_at": "07:12:03",
+   "error_in_window": true,
+   "backoff": 2,
+   "active": true
+  },
+  {
+   "name": "DS old",
+   "test_status": "active",
+   "error_code": null,
+   "last_error": "",
+   "last_error_at": "",
+   "error_in_window": false,
+   "backoff": 1,
+   "active": true
+  },
+  {
+   "name": "tắt rồi",
+   "test_status": "unavailable",
+   "error_code": "ECONNREFUSED",
+   "last_error": "connect ECONNREFUSED 127.0.0.1:443 — dài xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "last_error_at": "09:00:00",
+   "error_in_window": true,
+   "backoff": 0,
+   "active": false
+  }
+ ],
+ "role_costs": {
+  "by_role": {
+   "blog/miles": {
+    "brand": "blog",
+    "api": 42,
+    "in": 1234567,
+    "out": 45678,
+    "cache": 900000,
+    "reasoning": 1200,
+    "usd": 0.1523,
+    "sessions": 3,
+    "model": {
+     "DS-v4Flash": 40,
+     "glm-5.3": 2
+    },
+    "task_done": 2,
+    "usd_task": 0.0762
+   },
+   "dcgr/jika": {
+    "brand": "dcgr",
+    "api": 7,
+    "in": 20000,
+    "out": 3000,
+    "cache": 0,
+    "reasoning": 0,
+    "usd": 0.0123,
+    "sessions": 1,
+    "model": {
+     "deepseek-chat": 7
+    },
+    "task_done": 0,
+    "usd_task": null
+   },
+   "blog/ada": {
+    "brand": "blog",
+    "api": 1,
+    "in": 500,
+    "out": 20,
+    "cache": 0,
+    "reasoning": 0,
+    "usd": 0.0001,
+    "sessions": 1,
+    "model": {},
+    "task_done": 0,
+    "usd_task": null
+   }
+  },
+  "by_brand": {
+   "blog": {
+    "usd": 0.1524,
+    "published_count": 2,
+    "usd_per_published": 0.0762
+   },
+   "dcgr": {
+    "usd": 0.0123,
+    "published_count": 0,
+    "usd_per_published": null
+   }
+  },
+  "coverage_pct": 71,
+  "unreadable_profiles": [
+   "dcgr/qinn"
+  ],
+  "note": "ước lượng phân bổ theo token × đơn giá 9router trong ngày; không phải hoá đơn"
+ }
+}

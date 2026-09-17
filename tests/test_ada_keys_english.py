@@ -101,10 +101,10 @@ SESSIONS = {
 
 
 def _journals() -> dict:
-    import migrate_9router_journal as mj
+    # LOW-251: ban da migrate san (script migrate_9router_journal da go sau khi chay tren may chu)
     out = {}
-    for p in sorted(JOURNAL_OLD.glob("9router_*.json")):
-        d = mj.migrate(json.loads(p.read_text(encoding="utf-8")))
+    for p in sorted((JOURNAL_OLD.parent / "migrated").glob("9router_*.json")):
+        d = json.loads(p.read_text(encoding="utf-8"))
         out[d["date"]] = d
     return out
 
