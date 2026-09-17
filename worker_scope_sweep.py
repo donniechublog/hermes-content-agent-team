@@ -82,14 +82,14 @@ def decide(tid, run_id, homes, now, grace):
             continue
         if not st:
             continue
-        if st["trang_thai"] == "running" and st["run_hien_tai"] == run_id:
+        if st["status"] == "running" and st["current_run_id"] == run_id:
             return False, f"{brand}: dang chay"
-        ended = st["run_ket_thuc"]
+        ended = st["run_ended_at"]
         if ended is None:
-            return False, f"{brand}: run {run_id} chua dong (task {st['trang_thai']})"
+            return False, f"{brand}: run {run_id} chua dong (task {st['status']})"
         if now - ended < grace:
             return False, f"{brand}: run dong {int(now - ended)}s truoc, cho du {grace}s"
-        return True, f"{brand}: task {st['trang_thai']}, run {run_id} dong {int(now - ended)}s truoc"
+        return True, f"{brand}: task {st['status']}, run {run_id} dong {int(now - ended)}s truoc"
     if khong_doc:
         return False, f"khong doc duoc kanban {','.join(khong_doc)}"
     return False, "khong thay task o brand nao"

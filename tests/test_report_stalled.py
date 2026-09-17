@@ -71,7 +71,7 @@ def test_link_result_dm_no_right_supergroup_then_none():
 # --------------------------------------------------------------------- reason_task
 def test_reason_task_take_from_last_run():
     cu = dg.hermes_adapter.last_run
-    dg.hermes_adapter.last_run = lambda tid: {"tom_tat": None, "loi": "thieu anh that", "metadata": {}}
+    dg.hermes_adapter.last_run = lambda tid: {"summary": None, "error": "thieu anh that", "metadata": {}}
     try:
         assert dg.reason_task("t_1") == "thieu anh that"
     finally:
@@ -116,10 +116,10 @@ def _run_report_progress_fake(tmp, rows, gui_ghi_lai):
 def test_stalled_report_when_running_over_long_time():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
-        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
-                  "tieu_de": "Bai test", "tao_luc": now - 3000,
-                  "bat_dau_luc": now - dg.THRESHOLD_STALLED_MINUTES * 60 - 60,
-                  "xong_luc": None, "ket_qua": None, "loi": None}]
+        rows = [{"id": "t_1", "assignee": "miles", "status": "running",
+                  "title": "Bai test", "created_at": now - 3000,
+                  "started_at": now - dg.THRESHOLD_STALLED_MINUTES * 60 - 60,
+                  "completed_at": None, "result": None, "error": None}]
         gui = []
         _run_report_progress_fake(tmp, rows, gui)
         assert any("không phản hồi" in t for t in gui), gui
@@ -131,10 +131,10 @@ def test_stalled_report_when_running_over_long_time():
 def test_stalled_not_yet_over_threshold_then_silent():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
-        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
-                  "tieu_de": "Bai test", "tao_luc": now - 60,
-                  "bat_dau_luc": now - 60,       # moi chay 1 phut, chua treo
-                  "xong_luc": None, "ket_qua": None, "loi": None}]
+        rows = [{"id": "t_1", "assignee": "miles", "status": "running",
+                  "title": "Bai test", "created_at": now - 60,
+                  "started_at": now - 60,       # moi chay 1 phut, chua treo
+                  "completed_at": None, "result": None, "error": None}]
         gui = []
         _run_report_progress_fake(tmp, rows, gui)
         assert not any("không phản hồi" in t for t in gui), gui
@@ -147,10 +147,10 @@ def test_stalled_no_report_repeat_within_of_count_again_report():
         # Da bao "treo" 5 phut truoc — con trong cua so AGAIN_REPORT_STALLED_MINUTES (30p).
         (state / "reported_stalled.json").write_text(
             json.dumps({"t_1": now - 5 * 60}), encoding="utf-8")
-        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
-                  "tieu_de": "Bai test", "tao_luc": now - 3000,
-                  "bat_dau_luc": now - dg.THRESHOLD_STALLED_MINUTES * 60 - 60,
-                  "xong_luc": None, "ket_qua": None, "loi": None}]
+        rows = [{"id": "t_1", "assignee": "miles", "status": "running",
+                  "title": "Bai test", "created_at": now - 3000,
+                  "started_at": now - dg.THRESHOLD_STALLED_MINUTES * 60 - 60,
+                  "completed_at": None, "result": None, "error": None}]
         gui = []
         _run_report_progress_fake(tmp, rows, gui)
         assert not any("không phản hồi" in t for t in gui), gui
@@ -162,10 +162,10 @@ def test_stalled_ok_delete_when_task_all_done_running():
         state = Path(tmp)
         (state / "reported_stalled.json").write_text(
             json.dumps({"t_1": now - 40 * 60}), encoding="utf-8")
-        rows = [{"id": "t_1", "vai": "miles", "trang_thai": "done",
-                  "tieu_de": "Bai test", "tao_luc": now - 3000,
-                  "bat_dau_luc": now - 3000, "xong_luc": now,
-                  "ket_qua": None, "loi": None}]
+        rows = [{"id": "t_1", "assignee": "miles", "status": "done",
+                  "title": "Bai test", "created_at": now - 3000,
+                  "started_at": now - 3000, "completed_at": now,
+                  "result": None, "error": None}]
         gui = []
         _run_report_progress_fake(tmp, rows, gui)
         treo = json.loads((state / "reported_stalled.json").read_text(encoding="utf-8"))

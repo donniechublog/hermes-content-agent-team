@@ -231,9 +231,9 @@ def _summary_run(tid):
         return "", {}
     # Y het `coalesce(summary, error, '')` cu: chi roi sang `error` khi summary
     # la NULL, KHONG roi khi summary la chuoi rong.
-    tom = run.get("tom_tat")
+    tom = run.get("summary")
     if tom is None:
-        tom = run.get("loi")
+        tom = run.get("error")
     return (tom or ""), run.get("metadata") or {}
 
 def reason_task(tid):
@@ -320,7 +320,7 @@ def report_progress_kanban(token, group):
     if rows is None:                 # co tep ma doc khong duoc -> phai keu
         log("tiendo", "khong doc duoc kanban")
         return
-    cho = [r for r in rows if r["trang_thai"] == "ready"]
+    cho = [r for r in rows if r["status"] == "ready"]
     tp = env_load.topics_path()
     try:
         topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
@@ -338,9 +338,9 @@ def report_progress_kanban(token, group):
     nhip = hermes_adapter.heartbeat([r["id"] for r in rows]) or {}
     lan_cuoi = None                          # doc luoi: chi khi co task ready/running
     for v in rows:
-        tid, ai, st = v["id"], v["vai"], v["trang_thai"]
-        title, _c = v["tieu_de"], v["tao_luc"]
-        bat_dau = (moc.get(tid) or (None,))[0] or v.get("bat_dau_luc")
+        tid, ai, st = v["id"], v["assignee"], v["status"]
+        title, _c = v["title"], v["created_at"]
+        bat_dau = (moc.get(tid) or (None,))[0] or v.get("started_at")
         if st == "running" and ai != BLACKBOARD_ASSIGNEE and bat_dau:
             phut = (now - bat_dau) / 60
             if phut >= THRESHOLD_STALLED_MINUTES and now - treo.get(tid, 0) >= AGAIN_REPORT_STALLED_MINUTES * 60:
@@ -364,8 +364,8 @@ def report_progress_kanban(token, group):
             if lan_cuoi is None:
                 lan_cuoi = hermes_adapter.last_run_many([r["id"] for r in rows]) or {}
             lc = lan_cuoi.get(tid) or {}
-            khoa_tt = f"{tid}:timed_out:{lc.get('id_lan_chay')}"
-            if lc.get("trang_thai") == "timed_out" and not da.get(khoa_tt):
+            khoa_tt = f"{tid}:timed_out:{lc.get('run_id')}"
+            if lc.get("status") == "timed_out" and not da.get(khoa_tt):
                 md = lc.get("metadata") or {}
                 ten_tt = _TEN_HIEN.get(ai, ai)
                 thread_tt = topics.get(ai)
@@ -376,7 +376,7 @@ def report_progress_kanban(token, group):
                      text=text, parse_mode="HTML")
                 da[khoa_tt] = True
                 doi = True
-                log("tiendo", f"{tid} {ai} timed_out run {lc.get('id_lan_chay')}, da bao")
+                log("tiendo", f"{tid} {ai} timed_out run {lc.get('run_id')}, da bao")
         if st in ("ready", "todo", "triage") or da.get(tid) == st:
             continue
         if ai == BLACKBOARD_ASSIGNEE:          # the goc/bang den: khong phai viec cua ai

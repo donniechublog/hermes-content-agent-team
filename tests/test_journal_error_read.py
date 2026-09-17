@@ -54,9 +54,9 @@ def test_kanban_empty_real_then_no_report_error():
 def test_task_runs_no_read_ok_then_still_out_task_and_has_line_report():
     """viec doc duoc nhung task_runs hong: van liet ke task (tom tat trong), va
     LOI_DOC phai noi ro la phan tom tat/loi bi thieu — khong duoc im."""
-    v = [{"id": "t1", "vai": "ethan", "trang_thai": "done", "tieu_de": "Bai X",
-          "tao_luc": _TS, "bat_dau_luc": None, "xong_luc": None,
-          "ket_qua": "kq", "loi": None}]
+    v = [{"id": "t1", "assignee": "ethan", "status": "done", "title": "Bai X",
+          "created_at": _TS, "started_at": None, "completed_at": None,
+          "result": "kq", "error": None}]
     ra, loi = _run(v, runs=None)
     assert [x["id"] for x in ra] == ["t1"], ra
     assert ra[0]["tom_tat"] == "kq", "khong co run thi phai roi ve result cua task"
@@ -64,10 +64,10 @@ def test_task_runs_no_read_ok_then_still_out_task_and_has_line_report():
 
 
 def test_read_ok_all_done_then_error_read_empty_and_take_use_summary():
-    v = [{"id": "t1", "vai": "ethan", "trang_thai": "done", "tieu_de": "Bai X",
-          "tao_luc": _TS, "bat_dau_luc": None, "xong_luc": None,
-          "ket_qua": "kq", "loi": None}]
-    ra, loi = _run(v, runs={"t1": {"tom_tat": "da giao 6 anh", "loi": None}})
+    v = [{"id": "t1", "assignee": "ethan", "status": "done", "title": "Bai X",
+          "created_at": _TS, "started_at": None, "completed_at": None,
+          "result": "kq", "error": None}]
+    ra, loi = _run(v, runs={"t1": {"summary": "da giao 6 anh", "error": None}})
     assert loi == [], loi
     assert ra[0]["tom_tat"] == "da giao 6 anh", ra
 

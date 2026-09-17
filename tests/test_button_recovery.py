@@ -123,7 +123,7 @@ def test_rerun_resends_only_button():
     assert fake.count("sendMessage") == 1, "chay lai phai gui BU dung mot tin nut"
     body = fake.calls[0][1].content
     assert b"reply_to_message_id=1571" in body and b"imgok%3Ad-1" in body, body
-    assert res["trung"] and res["button_state"] == "resent" and res["button_message_id"] == 1600, res
+    assert res["duplicate"] and res["button_state"] == "resent" and res["button_message_id"] == 1600, res
     assert rec["button_message_id"] == 1600, rec
 
 

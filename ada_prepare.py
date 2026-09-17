@@ -123,14 +123,14 @@ def gather_kanban(ngay: int) -> dict:
     thoi_gian = collections.defaultdict(list)
     loi = []
     for v in viec:
-        aid, st, err = v["vai"], v["trang_thai"], v["loi"]
-        sa, ea = v["bat_dau_luc"], v["xong_luc"]
+        aid, st, err = v["assignee"], v["status"], v["error"]
+        sa, ea = v["started_at"], v["completed_at"]
         theo_vai[aid][st] += 1
         if sa and ea:
             thoi_gian[aid].append(int(ea) - int(sa))
         if st in ("blocked", "failed") or err:
             loi.append({"vai": aid, "status": st,
-                        "title": (v["tieu_de"] or "")[:60], "loi": (err or "")[:160]})
+                        "title": (v["title"] or "")[:60], "loi": (err or "")[:160]})
     return {"theo_vai": {k: dict(v) for k, v in theo_vai.items()},
             "giay_trung_binh": {k: int(sum(v) / len(v)) for k, v in thoi_gian.items() if v},
             "loi": loi[:10]}
@@ -148,8 +148,9 @@ def gather_token(ngay: int) -> dict:
         if tt is None:
             loi_doc.append(prof)
             continue
-        if tt["phien"]:
-            ra[prof] = tt
+        if tt["sessions"]:
+            # Dump Ada (manifest.json) giu khoa cu `phien`, dung vi tri cu (LOW-236)
+            ra[prof] = {("phien" if k == "sessions" else k): x for k, x in tt.items()}
     nk = gather_9router(ngay)
     return {"theo_vai": ra, "loi_doc": loi_doc,
             "chi_phi_9router": nk.pop("chi_phi", {}), "nhat_ky_9router": nk}

@@ -38,9 +38,9 @@ def _with_stub(moc, nhip, lan_cuoi, pid_song, rows, tmp):
 
 
 def _row(now, bat_dau_luc, st="running"):
-    return [{"id": "t_1", "vai": "miles", "trang_thai": st, "tieu_de": "Bai test",
-             "tao_luc": now - 5000, "bat_dau_luc": bat_dau_luc,
-             "xong_luc": None, "ket_qua": None, "loi": None}]
+    return [{"id": "t_1", "assignee": "miles", "status": st, "title": "Bai test",
+             "created_at": now - 5000, "started_at": bat_dau_luc,
+             "completed_at": None, "result": None, "error": None}]
 
 
 def test_retry_new_30s_no_got_report_enough_started_at_40_minutes():
@@ -81,7 +81,7 @@ def test_worker_crash_then_say_already_crash():
 
 def test_timed_out_ok_report_one_attempt_new_run():
     now = time.time()
-    lc = {"t_1": {"trang_thai": "timed_out", "id_lan_chay": 184, "tom_tat": "", "loi": "x",
+    lc = {"t_1": {"status": "timed_out", "run_id": 184, "summary": "", "error": "x",
                   "metadata": {"elapsed_seconds": 1502, "limit_seconds": 1500}}}
     with tempfile.TemporaryDirectory() as tmp:
         gui = _with_stub({}, {}, lc, None, _row(now, now - 1600, st="ready"), tmp)
@@ -93,7 +93,7 @@ def test_timed_out_ok_report_one_attempt_new_run():
         gui2 = _with_stub({}, {}, lc, None, _row(now, now - 1600, st="ready"), tmp)
         assert not any("⏱" in x for x in gui2), gui2
         # run moi timed_out (188) -> bao lai
-        lc["t_1"]["id_lan_chay"] = 188
+        lc["t_1"]["run_id"] = 188
         gui3 = _with_stub({}, {}, lc, None, _row(now, now - 1600, st="ready"), tmp)
         assert any("⏱" in x for x in gui3), gui3
 
