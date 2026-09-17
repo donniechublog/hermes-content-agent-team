@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """approve_chat.py — CHAT theo topic (brand blog; dcgr da sang gateway): moi vai mot
-hang FIFO, semaphore chung CT_CHAT_SONG_SONG, boi canh task gan nhat cho vai, goi
+hang FIFO, semaphore chung CT_CHAT_PARALLEL, boi canh task gan nhat cho vai, goi
 chat_router. Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 """
 import json
@@ -33,7 +33,7 @@ from approve_dispatch import (  # noqa: E402
 #    luot cung luc (hai tien trinh `chat -c` cung ghi mot phien = hong mach), va
 #    tin gui truoc tra loi truoc — threading.Lock khong dam bao thu tu danh thuc,
 #    nen dung ve so.
-# 2) Mot semaphore chung gioi han SO VAI chay cung luc (CT_CHAT_SONG_SONG, mac
+# 2) Mot semaphore chung gioi han SO VAI chay cung luc (CT_CHAT_PARALLEL, mac
 #    dinh 4) — van thu 9router/DeepSeek khoi bi dap don (400 "response_format
 #    unavailable", 429) neu co gi do bung no, nhung KHONG duoc la cai lam reply
 #    doi nhau. Nguyen tac Ong Chu (04/09): task lam lan luot duoc, reply thi
@@ -41,9 +41,9 @@ from approve_dispatch import (  # noqa: E402
 #    thi thuc te khong hoi qua 3-4 vai cung luc nen 4 gan nhu khong bao gio
 #    cham; 429 le te da co chat_router thu lai theo "reset after Ns". Su co
 #    04/09 07:19 voi khoa chung: Itachi doi Gin 108s chi de tra loi "xac nhan".
-#    Dat CT_CHAT_SONG_SONG=1 la ve dung hanh vi cu.
+#    Dat CT_CHAT_PARALLEL=1 la ve dung hanh vi cu.
 # Task kanban van tuan tu (max_in_progress: 1) — muc nay chi noi ve chat.
-_SO_SONG_SONG = max(1, int(os.environ.get("CT_CHAT_SONG_SONG", "4") or 4))
+_SO_SONG_SONG = max(1, int(os.environ.get("CT_CHAT_PARALLEL", "4") or 4))
 
 _CHO_CHAT = threading.BoundedSemaphore(_SO_SONG_SONG)
 

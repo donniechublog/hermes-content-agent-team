@@ -101,7 +101,7 @@ def _write_journal(vai: str, message_ids, files, mo_ta: str, button_draft=None) 
     khi tin nut len that (_mark_button_sent) — lan chay lai nho do biet gui bu nut."""
     STATE.mkdir(parents=True, exist_ok=True)
     dong = {"ts": int(time.time()), "message_id": message_ids[-1], "message_ids": list(message_ids),
-            "files": [str(f) for f in files], "md5": _md5(files), "mo_ta": mo_ta}
+            "files": [str(f) for f in files], "md5": _md5(files), "description": mo_ta}
     if button_draft:
         dong["button_draft"], dong["button_message_id"] = button_draft, None
     with (STATE / f"{vai}.jsonl").open("a", encoding="utf-8") as fh:

@@ -58,61 +58,12 @@
    "path:bao_cao.txt": 2,
    "path:phan_tich_": 1
   },
-  "approve_base.py": {
-   "path:ong_chu.json": 1
-  },
-  "approve_chat.py": {
-   "key:CT_CHAT_SONG_SONG": 1
-  },
-  "approve_command.py": {
-   "key:CT_CHAT_QUA_GATEWAY": 1,
-   "key:ngay": 3,
-   "key:nguon": 1,
-   "key:vai": 3
-  },
-  "approve_dispatch.py": {
-   "key:CT_BANG_DEN": 1
-  },
-  "approve_pick.py": {
-   "key:vai_viet": 1
-  },
   "approve_post.py": {
    "key:anh": 3,
-   "key:anh_that_dung_duoc": 1,
-   "key:channel_anh_mid": 2,
-   "key:channel_chu_mid": 2,
-   "key:dre_task_truoc_kite": 1,
-   "key:ghep": 2,
-   "key:hoi_mid": 4,
-   "key:lan": 1,
-   "key:ly_do": 2,
-   "key:task_truoc": 1,
-   "key:tu_vai": 1,
-   "key:vai_viet": 9
+   "key:ghep": 2
   },
   "approve_service.py": {
-   "key:CT_CHAT_QUA_GATEWAY": 1,
-   "key:ghi_chu_cuu": 2,
    "key:tg_card_message_id": 1
-  },
-  "bob_submit.py": {
-   "path:goc.png": 1,
-   "path:khung.png": 1
-  },
-  "caption_check.py": {
-   "key:cau_so_trong_nguon": 2,
-   "key:do_dai": 2,
-   "key:so_cau": 2,
-   "key:so_trong_caption": 2,
-   "key:ty_le_dau": 2
-  },
-  "card.py": {
-   "key:co_chan": 2,
-   "key:mau": 3,
-   "key:mau_du_phong": 2,
-   "key:mo_chan": 2,
-   "key:ro_handle": 3,
-   "key:to_ten_hang": 3
   },
   "carousel.py": {
    "key:mo": 3,
@@ -122,9 +73,6 @@
    "key:tam_co": 1,
    "key:toi": 1
   },
-  "cleanup.py": {
-   "path:*_nop.jsonl": 1
-  },
   "deck.py": {
    "key:bg_anh": 2,
    "key:den": 1,
@@ -133,8 +81,7 @@
    "key:nhan": 2
   },
   "dre_prepare.py": {
-   "key:anh": 6,
-   "key:bia": 1,
+   "key:anh": 5,
    "key:cat_ngang": 1,
    "key:ghep": 1,
    "key:nen": 1,
@@ -142,28 +89,21 @@
    "key:tam_co": 1
   },
   "dre_submit.py": {
-   "key:anh": 6,
-   "key:ban_giao": 1,
-   "key:bia": 1,
+   "key:anh": 5,
    "key:cat_ngang": 2,
    "key:ghep": 2,
    "key:nen": 2,
-   "key:nguon_anh": 1,
    "key:nhan_vat": 1,
    "key:tam": 1,
-   "key:tam_co": 4,
-   "key:tep": 1
-  },
-  "emoji_deck.py": {
-   "path:emoji_deck.json": 1
+   "key:tam_co": 4
   },
   "ethan_prepare.py": {
-   "key:anh": 2,
+   "key:anh": 1,
    "key:kieu": 1,
    "key:nhan_vat": 1
   },
   "ethan_submit.py": {
-   "key:anh": 9,
+   "key:anh": 8,
    "key:kieu": 7,
    "key:nhan_vat": 3
   },
@@ -211,21 +151,6 @@
    "key:ti_le": 1,
    "key:trang_pdf": 1
   },
-  "image_rules_dre.py": {
-   "key:ten": 1,
-   "key:tin": 3,
-   "key:vai": 2
-  },
-  "image_rules_ethan.py": {
-   "key:ten": 1,
-   "key:tin": 3,
-   "key:vai": 2
-  },
-  "image_rules_kite.py": {
-   "key:ten": 1,
-   "key:tin": 3,
-   "key:vai": 2
-  },
   "itachi_prepare.py": {
    "key:anh": 2,
    "key:bg_anh": 1,
@@ -250,15 +175,7 @@
    "key:nhan": 1
   },
   "kite_submit.py": {
-   "key:ban_giao": 1,
-   "key:hinh": 1,
-   "key:hinh_that": 1,
-   "key:nhan_vat": 1,
-   "key:tep": 1,
-   "key:truong": 1,
-   "key:vai": 1,
-   "path:render_edu.py": 1,
-   "path:render_edu.spec.json": 1
+   "key:nhan_vat": 1
   },
   "migrate_9router_journal.py": {
    "key:bai": 1,
@@ -291,6 +208,28 @@
    "key:trong_ngay": 1,
    "key:usd_bai": 1,
    "key:vai": 2
+  },
+  "migrate_approve_stores.py": {
+   "key:CT_BANG_DEN": 1,
+   "key:CT_CHAT_QUA_GATEWAY": 1,
+   "key:CT_CHAT_SONG_SONG": 1,
+   "key:LOI_DOC": 1,
+   "key:anh_that_dung_duoc": 1,
+   "key:channel_anh_mid": 1,
+   "key:channel_chu_mid": 1,
+   "key:chuyen_kite": 1,
+   "key:dre_task_truoc_kite": 1,
+   "key:ghi_chu_cuu": 1,
+   "key:hoi_mid": 1,
+   "key:lam_lai": 1,
+   "key:lan": 1,
+   "key:ly_do": 2,
+   "key:mo_ta": 1,
+   "key:ngay": 1,
+   "key:task_truoc": 1,
+   "key:tu_vai": 1,
+   "key:vai": 1,
+   "key:vai_viet": 1
   },
   "migrate_article_sources.py": {
    "key:link_goc": 1,
@@ -353,14 +292,14 @@
    "key:vai_anh": 2,
    "key:vai_viet": 1
   },
-  "miles_submit.py": {
-   "key:cau_so_trong_nguon": 1,
-   "key:do_dai": 8,
-   "key:so_cau": 4,
-   "key:so_trong_caption": 5,
-   "key:ty_le_dau": 1,
-   "path:draft_thu.txt": 1,
-   "path:draft_write.py": 1
+  "migrate_submit_stores.py": {
+   "key:bia": 1,
+   "key:hinh": 1,
+   "key:lan": 2,
+   "key:loi_cuoi": 1,
+   "key:ten": 1,
+   "key:tin": 1,
+   "key:vai": 1
   },
   "moat_publish.py": {
    "key:tg_card_message_id": 1
@@ -372,28 +311,12 @@
    "key:HONG": 1,
    "key:MOI": 1
   },
-  "prepare/manifest.py": {
-   "key:dung_duoc": 1
-  },
   "render_edu.py": {
-   "key:nhan": 2,
-   "key:phuc_vu": 3,
-   "key:truong": 8
+   "key:nhan": 2
   },
   "scan_models.py": {
    "key:khac": 1,
    "key:tq": 1
-  },
-  "send_telegram.py": {
-   "key:mo_ta": 1
-  },
-  "submit_common.py": {
-   "key:lan": 5,
-   "key:loi_cuoi": 1,
-   "key:vai_viet": 1
-  },
-  "sync_hermes.py": {
-   "key:LOI_DOC": 1
   }
  }
 }

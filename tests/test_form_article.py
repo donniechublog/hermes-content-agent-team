@@ -157,7 +157,7 @@ def _call_rescue_article(tmp: Path):
 
 def test_rescue_article_over_limit_lower_about_publish_failed_and_report_group():
     """draft "publishing" voi decided_at CU (qua END_PUBLISHING_SECONDS) -> phai
-    ha ve publish_failed + ghi ghi_chu_cuu, VA phai bao qua Telegram (group)
+    ha ve publish_failed + ghi rescue_note, VA phai bao qua Telegram (group)
     de Ong Chu biet ma bam Duyet lai."""
     with tempfile.TemporaryDirectory() as tmp_s:
         tmp = Path(tmp_s)
@@ -167,7 +167,7 @@ def test_rescue_article_over_limit_lower_about_publish_failed_and_report_group()
         d = json.loads(p.read_text(encoding="utf-8"))
         assert d["status"] == "publish_failed", \
             f"qua nguong END_PUBLISHING_SECONDS thi phai ha publish_failed: {d}"
-        assert d.get("ghi_chu_cuu"), f"phai ghi ghi_chu_cuu giai thich ly do: {d}"
+        assert d.get("rescue_note"), f"phai ghi rescue_note giai thich ly do: {d}"
         assert len(goi_call) == 1 and goi_call[0][0] == "sendMessage", \
             f"phai bao 1 tin nhan sendMessage ve group khi cuu duoc bai: {goi_call}"
         assert "d1" in goi_call[0][1].get("text", ""), \
@@ -193,20 +193,20 @@ def test_rescue_article_already_go_live_channel_then_list_mark_published_no_new_
         d = json.loads(p.read_text(encoding="utf-8"))
         assert d["status"] == "published", \
             f"co dau da len channel ma van ha publish_failed -> se dang trung: {d}"
-        assert d.get("ghi_chu_cuu"), f"phai ghi ly do da danh dau published: {d}"
+        assert d.get("rescue_note"), f"phai ghi ly do da danh dau published: {d}"
         text = goi_call[0][1].get("text", "") if goi_call else ""
         assert "d9" in text, f"tin bao phai neu ten draft: {goi_call}"
         assert "Duyệt lại" in text, f"tin bao phai noi ro ve chuyen bam lai: {text}"
 
 
 def test_rescue_article_mark_text_same_static_is_already_go_live_channel():
-    """Bai chi co CHU (khong anh) chi de lai `channel_chu_mid` — cung phai duoc
+    """Bai chi co CHU (khong anh) chi de lai `channel_text_mid` — cung phai duoc
     coi la da len channel, khong rieng gi album."""
     with tempfile.TemporaryDirectory() as tmp_s:
         tmp = Path(tmp_s)
         gio = int(time.time())
         p = _write_draft(tmp, "d10", status="publishing", decided_at=gio - 3600,
-                       channel_chu_mid=777)
+                       channel_text_mid=777)
         _call_rescue_article(tmp)
         assert json.loads(p.read_text(encoding="utf-8"))["status"] == "published"
 
@@ -223,7 +223,7 @@ def test_rescue_article_remaining_new_then_keep_raw_publishing():
         d = json.loads(p.read_text(encoding="utf-8"))
         assert d["status"] == "publishing", \
             f"con moi (<END_PUBLISHING_SECONDS) khong duoc dong cua som: {d}"
-        assert "ghi_chu_cuu" not in d, f"khong duoc dung den draft con moi: {d}"
+        assert "rescue_note" not in d, f"khong duoc dung den draft con moi: {d}"
         assert goi_call == [], \
             f"khong cuu bai nao thi khong duoc goi Telegram: {goi_call}"
 

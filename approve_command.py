@@ -173,9 +173,9 @@ def _command_article(tra_loi, args):
     so = _load_json(SET_ARTICLE_COUNT, {})
     if url_chuan in so:
         cu = so[url_chuan]
-        tra_loi("URL này đã đặt " + cu.get("ngay", "?") + " — draft <code>"
+        tra_loi("URL này đã đặt " + cu.get("requested_at", "?") + " — draft <code>"
                 + html_escape(cu.get("draft_id", "?")) + "</code>, giao "
-                + cu.get("vai", "?") + ". Không tạo lại.")
+                + cu.get("image_role", "?") + ". Không tạo lại.")
         return
 
     vai_anh, brand = NAME_BRIGHT_CAP[ten], BRAND
@@ -197,9 +197,9 @@ def _command_article(tra_loi, args):
         url_chuan = _standard_ify_url(url)          # dedup theo permalink da chuan hoa
         if url_chuan in so:
             cu = so[url_chuan]
-            tra_loi("Post này đã đặt " + cu.get("ngay", "?") + " — draft <code>"
+            tra_loi("Post này đã đặt " + cu.get("requested_at", "?") + " — draft <code>"
                     + html_escape(cu.get("draft_id", "?")) + "</code>, giao "
-                    + cu.get("vai", "?") + ". Không tạo lại.")
+                    + cu.get("image_role", "?") + ". Không tạo lại.")
             return
     else:
         title, image_url, ghi_chu = _read_page(url)
@@ -218,7 +218,6 @@ def _command_article(tra_loi, args):
         "via": "", "image_url": image_url or "khong co",
         "category": None, "score": "?",
         "score_reason": "dat tay, khong qua cham diem",
-        "nguon": "adhoc",
     }
     tid, err = create_pair(item, vai_anh=vai_anh, brand=brand)
     if err:
@@ -226,8 +225,8 @@ def _command_article(tra_loi, args):
         return
 
     draft_id = _draft_id(item, brand, vai_anh)
-    so[url_chuan] = {"ngay": time.strftime("%Y-%m-%d %H:%M"),
-                     "draft_id": draft_id, "vai": vai_anh, "brand": brand,
+    so[url_chuan] = {"requested_at": time.strftime("%Y-%m-%d %H:%M"),
+                     "draft_id": draft_id, "image_role": vai_anh, "brand": brand,
                      "tasks": [tid], "title": title}
     _write_json(SET_ARTICLE_COUNT, so)
 
@@ -247,7 +246,7 @@ def handle_command(token, group, msg, thread_id, text):
              **({"message_thread_id": thread_id} if thread_id else {}),
              text=t, parse_mode="HTML", disable_web_page_preview=True)
 
-    # Allowlist: co file state/ong_chu.json (danh sach user_id) thi chi nhung
+    # Allowlist: co file state/boss_ids.json (danh sach user_id) thi chi nhung
     # id do duoc ra lenh; chua co file thi giu hanh vi cu (ca group — group
     # hien chi co Ong Chu). Tin bao loi kem id de them vao file cho de.
     if not is_boss(msg):
@@ -263,7 +262,7 @@ def handle_command(token, group, msg, thread_id, text):
     # khi goi dich danh /help@<bot duyet>). Lenh KHAC la cua Hermes (gateway):
     # /help, /kanban, /new, /status... -> approve IM, khong "Khong co lenh".
     # Gateway phia kia bo qua /bai /vai /hd (telegram.extra.ignore_commands).
-    qua_gateway = os.environ.get("CT_CHAT_QUA_GATEWAY", "") == "1"
+    qua_gateway = os.environ.get("CT_CHAT_VIA_GATEWAY", "") == "1"
     if lenh == "/help" and qua_gateway and goi_bot and "pm" not in goi_bot:
         return                                  # /help@hermesdcgr_bot: cua gateway
     if lenh == "/help" and qua_gateway and not goi_bot:

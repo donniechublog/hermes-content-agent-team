@@ -405,7 +405,7 @@ def test_cap_fallback_skip_string_duplicate_name():
 
 # --------------------------------------------------- allowlist va ma bai
 def test_is_boss_no_has_file_then_wait_over():
-    """Chua co state/ong_chu.json = giu hanh vi cu (group rieng). Neu doi thanh
+    """Chua co state/boss_ids.json = giu hanh vi cu (group rieng). Neu doi thanh
     "chan het" thi bat cai nay len la khoa chet may dang chay."""
     import tempfile
     import approve_base as cs
@@ -423,7 +423,7 @@ def test_is_boss_has_file_then_block_person_is():
     import tempfile
     import approve_base as cs
     with tempfile.TemporaryDirectory() as tmp:
-        p = Path(tmp) / "ong_chu.json"
+        p = Path(tmp) / cs.state_paths.BOSS_IDS_FILE
         p.write_text(_j.dumps([8112291996]), encoding="utf-8")
         cu = cs.BOSS_IDS
         cs.BOSS_IDS = p

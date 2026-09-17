@@ -57,6 +57,7 @@ MOAT_REPUBLISH_QUEUE_FILE = "moat_republish_queue.json"
 BUSINESS_SEEN_FILE = "business_seen.json"            # scan_business seen-store (Vera), LOW-240
 X_SEEN_FILE = "x_seen.json"                          # scan_x seen-store (Qinn), LOW-240
 MOAT_UNSENT_NOTICES_FILE = "moat_unsent_notices.json"  # moat_publish spool, LOW-240 (was moat_chua_bao.json)
+BOSS_IDS_FILE = "boss_ids.json"                      # approve allowlist [user_id…], LOW-241 (was ong_chu.json)
 REPORT_MESSAGE_ID_FILE = "report_message_id.{}.json"   # .format(role)
 REQUIRED_FILE = "required_{}.json"                      # .format(role)
 SCAN_DIR = "scan"                                       # state/<brand>/scan/<role>_<n>/
