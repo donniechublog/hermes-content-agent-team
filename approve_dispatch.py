@@ -168,10 +168,10 @@ _TEN_HIEN = role.DISPLAY_NAME            # xem role.py
 #   tien do      -> ban giao cua Miles da nam tren bang den qua kanban_complete.
 # Task "Ada soat" tung nam o day (sang 05/09) da bo chieu 05/09: mot task LLM moi
 # bai cho viec caption_check gio lam bang code (so trong caption phai co trong tu lieu).
-# Chi bat cho brand trong CT_BANG_DEN (mac dinh: dcgr). Blog dang la nhom doi chung
+# Chi bat cho brand trong CT_BLACKBOARD_BRANDS (mac dinh: dcgr). Blog dang la nhom doi chung
 # cua tuan do bot-mode (05–12/09) va Ong Chu chi yeu cau dcgr — code chung nhung
-# hanh vi blog phai y nguyen. Bat blog: Environment=CT_BANG_DEN=dcgr,blog trong unit.
-BLACKBOARD_BRANDS = {b.strip() for b in os.environ.get("CT_BANG_DEN", "dcgr").split(",") if b.strip()}
+# hanh vi blog phai y nguyen. Bat blog: Environment=CT_BLACKBOARD_BRANDS=dcgr,blog trong unit.
+BLACKBOARD_BRANDS = {b.strip() for b in os.environ.get("CT_BLACKBOARD_BRANDS", "dcgr").split(",") if b.strip()}
 
 BLACKBOARD_ASSIGNEE = "ban_bien_tap"     # trung voi blackboard.ROOT_ASSIGNEE
 

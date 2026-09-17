@@ -1,0 +1,47 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-241) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; giá trị/env đổi cùng ticket. Tin Telegram, log giữ nguyên byte.",
+  "_measured": "máy chủ 17/09/2026: drafts/*.json có channel_album_mid 30, channel_chu_mid 20, channel_anh_mid 6, ghi_chu_cuu 1, tg_card_message_id 77; drafts/*.writer.json 229 (vai_viet 229: writer 124, miles 65, jika 40; dre_task_truoc_kite 34); redo_waiting.json 2 tệp rỗng; article_request_counts.json blog 2 mục, dcgr rỗng; telegram_sent/*.jsonl blog 4 + dcgr 3 tệp đều có mo_ta; ong_chu.json không tồn tại; override.conf: blog CT_BANG_DEN=dcgr,blog, dcgr CT_CHAT_QUA_GATEWAY=1.",
+  "draft": {
+    "_where": "drafts/<id>.json — approve_post (_write_mark, already_len_channel, publish), approve_service (rescue)",
+    "channel_anh_mid": "channel_photo_mid",
+    "channel_chu_mid": "channel_text_mid",
+    "ghi_chu_cuu": "rescue_note"
+  },
+  "writer_sidecar": {
+    "_where": "drafts/<id>.writer.json — approve_pick, approve_post, submit_common.writer_for_article, schema.SidecarWrite",
+    "vai_viet": "writer_role",
+    "dre_task_truoc_kite": "dre_task_before_kite"
+  },
+  "redo_waiting_entry": {"_where": "state/<brand>/redo_waiting.json (REDO_WAITING_FILE)", "hoi_mid": "question_mid"},
+  "blackboard_entry_keys": {
+    "_where": "kanban.db task_comments `[swarm:blackboard]` do approve_post ghi qua approve_dispatch._blackboard_write; lịch sử append-only, không migrate",
+    "lam_lai": "redo",
+    "chuyen_kite": "kite_transfer"
+  },
+  "blackboard.redo": {"lan": "attempt", "ly_do": "reason", "task_truoc": "previous_task"},
+  "blackboard.kite_transfer": {"tu_vai": "transferred_from", "ly_do": "transfer_reason", "anh_that_dung_duoc": "usable_image_ids"},
+  "article_request_count_entry": {"_where": "state/<brand>/article_request_counts.json (approve_command)", "ngay": "requested_at", "vai": "image_role"},
+  "telegram_sent_line": {"_where": "state/<brand>/telegram_sent/<role>.jsonl (send_telegram)", "mo_ta": "description"},
+  "files": {"ong_chu.json": "boss_ids.json"},
+  "sync_hermes_snapshot_marker": {"LOI_DOC": "READ_ERROR"},
+  "env": {
+    "CT_BANG_DEN": "CT_BLACKBOARD_BRANDS",
+    "CT_CHAT_QUA_GATEWAY": "CT_CHAT_VIA_GATEWAY",
+    "CT_CHAT_SONG_SONG": "CT_CHAT_PARALLEL"
+  },
+  "_cleanup": [
+    "cleanup.py: glob chết `*_nop.jsonl` (không nơi nào ghi) — gỡ vòng lặp.",
+    "approve_command.py: khoá `nguon: \"adhoc\"` trên item /bai không ai đọc — gỡ."
+  ],
+  "_kept": [
+    "tg_card_message_id: English (tg = Telegram) — PASS, không đổi.",
+    "Trường Telegram API (message_id, result, chat…) — ngoài, đã English."
+  ],
+  "_notes": [
+    "`ly_do` hai nghĩa: lý do làm lại (redo.reason) vs lý do chuyển Kite (kite_transfer.transfer_reason).",
+    "`task_truoc` → previous_task, KHÔNG last_task: `.img.json` last_task là task MỚI sau cập nhật.",
+    "`vai` ở article_request_counts là vai ảnh → image_role; `vai_viet` → writer_role khớp image_role ở `.img.json`.",
+    "`ngay` ở article_request_counts là chuỗi giờ địa phương 'YYYY-MM-DD HH:MM' → requested_at (giữ định dạng giá trị).",
+    "`mo_ta` ở telegram_sent → description, cùng khái niệm ảnh `description` của manifest."
+  ]
+}

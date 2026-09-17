@@ -197,12 +197,13 @@ class SidecarWrite(TypedDict, total=False):
     (True khi da tao task, "rejected" khi bo han) va `writer_task`. Khong co
     TypedDict nay truoc audit lượt 2 (ADF-r2-5) — `created` nhan ba kieu ma khong
     ai khai, test_schema chi gac Manifest va Meta."""
-    vai_viet: str                  # SLUG vai viet (writer)
+    writer_role: str               # SLUG vai viet (writer)
     title: str
     body: str                      # body task viet, dung san
     created: bool | str            # False -> True (da tao) | "rejected"
     root_task: str                 # the goc bang den
     dre_task: str                  # task vai anh — cha cua task viet
+    dre_task_before_kite: str      # dre_task truoc khi chuyen Kite (approve_post, bang den)
     writer_task: str               # id task viet, khi da tao
 
 

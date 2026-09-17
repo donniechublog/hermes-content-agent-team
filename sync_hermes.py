@@ -546,7 +546,7 @@ def capture_config() -> int:
             try:
                 d = yaml.safe_load(cf.read_text(encoding="utf-8")) or {}
             except Exception as e:                           # noqa: BLE001
-                ra[f"{hk}/{pd.name}"] = {"LOI_DOC": f"{type(e).__name__}: {e}"}
+                ra[f"{hk}/{pd.name}"] = {"READ_ERROR": f"{type(e).__name__}: {e}"}
                 continue
             muc = {}
             for duong in LOCK_PROMPT:

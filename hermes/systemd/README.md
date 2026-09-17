@@ -2,7 +2,7 @@
 
 Chụp từ máy chủ ngày 06/09/2026. Trước đó **chỉ có `journal-web.service`** nằm
 trong git, còn unit template `hermes-approve@.service` — nơi đặt `CT_BRAND`,
-`HERMES_HOME`, và các drop-in đặt `CT_BANG_DEN` — thì không. Nghĩa là prompt và
+`HERMES_HOME`, và các drop-in đặt `CT_BLACKBOARD_BRANDS` — thì không. Nghĩa là prompt và
 hành vi thật của đội phụ thuộc vào những tệp không ai theo dõi được: cài lại máy
 hay `hermes update` xong là phải dựng lại từ trí nhớ. Đúng cái sự cố
 `moat_publish.py` ngày 22/08 mà `hermes/README.md` mở đầu bằng.

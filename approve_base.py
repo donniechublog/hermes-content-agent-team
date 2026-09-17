@@ -22,6 +22,7 @@ import env_load                                              # noqa: E402 — LO
 
 import httpx                                                  # noqa: E402
 
+import state_paths                                            # noqa: E402
 import tele_util                                            # noqa: E402
 import write_log                                              # noqa: E402
 
@@ -214,7 +215,7 @@ def _extract_line(body: str, nhan: str) -> str:
     m_ = re.search(r"^" + re.escape(nhan) + r"\s*:\s*(.+)$", body or "", re.M)
     return (m_.group(1).strip() if m_ else "")
 
-BOSS_IDS = STATE_DIR / "ong_chu.json"    # [user_id...] duoc phep ra lenh
+BOSS_IDS = STATE_DIR / state_paths.BOSS_IDS_FILE    # [user_id...] duoc phep ra lenh
 
 def _load_json(path, mac_dinh):
     try:
@@ -228,7 +229,7 @@ def is_boss(msg) -> bool:
 
     Nhan ca `message` lan `callback_query` — ca hai deu co truong `from`.
 
-    KHONG co state/ong_chu.json = cho qua het (hanh vi cu: group rieng, chi co
+    KHONG co state/boss_ids.json = cho qua het (hanh vi cu: group rieng, chi co
     Ong Chu). Co tep thi MOI cua deu phai kiem — truoc 06/09/2026 chi hai cho
     kiem (lenh slash o approve_command, ly do lam lai o approve_post) trong khi ba cua
     con lai thi khong:

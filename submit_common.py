@@ -60,9 +60,9 @@ def writer_for_article(draft_id: str, brand: str = "") -> str:
     Nguon su that la sidecar `<draft_id>.writer.json` — approve_pick chot
     nguoi viet NGAY luc chon tin (luc do con biet vai quet), con luc nop thi
     vai quet da khong con trong tam tay. Sidecar cu (ghi truoc LOW-13) khong co
-    khoa `vai_viet`, hoac ghi mot slug la -> hoi lai ban dang ky theo brand."""
+    khoa `writer_role`, hoac ghi mot slug la -> hoi lai ban dang ky theo brand."""
     d = cb._read_json(cb.DRAFTS / f"{draft_id}.writer.json", {}) or {}
-    slug = str(d.get("vai_viet") or "")
+    slug = str(d.get("writer_role") or "")
     if slug in _vai.ROLE:
         return slug
     return _vai.writer_for(None, brand)

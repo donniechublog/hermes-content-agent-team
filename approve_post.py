@@ -267,14 +267,14 @@ def _split_caption_html(caption, limit=CAPTION_LIMIT):
 # Cac dau "phan nay CUA DRAFT DA LEN CHANNEL ROI", ghi vao draft NGAY khi
 # Telegram tra ok — truoc moi viec khac. Moi chan cua `publish` mot dau:
 #   channel_album_mid — album sendMediaGroup   (co tu 06/09/2026)
-#   channel_anh_mid   — anh don sendPhoto
-#   channel_chu_mid   — phan CHU (caption dai tach rieng, hoac bai chi co chu)
+#   channel_photo_mid — anh don sendPhoto
+#   channel_text_mid  — phan CHU (caption dai tach rieng, hoac bai chi co chu)
 # Vi sao phai co ca ba: tien trinh chet GIUA `publish()` va
 # `mark_draft("published")` thi bai ket o "publishing", buoc cuu ha ve
 # publish_failed va moi bam Duyet lai. Truoc 09/09/2026 chi album co dau, nen
 # bai anh don / bai chi co chu se len channel LAN THU HAI — doc gia thay hai
 # bai giong het nhau, dung thu hong README goi la te nhat.
-MARK_LEN_CHANNEL = ("channel_album_mid", "channel_anh_mid", "channel_chu_mid")
+MARK_LEN_CHANNEL = ("channel_album_mid", "channel_photo_mid", "channel_text_mid")
 
 
 def already_len_channel(d: dict) -> bool:
@@ -303,13 +303,13 @@ def _text_one_attempt(token, channel, caption, p_draft, d, draft_id):
 
     Ba chan cua `publish` deu ket thuc bang phan chu (sau album, sau anh don,
     hoac bai chi co chu) — gom mot cho de khong chan nao quen dau."""
-    if d.get("channel_chu_mid"):
+    if d.get("channel_text_mid"):
         print(f"[publish] phan chu cua {draft_id} da len channel truoc do "
-              f"(mid={d['channel_chu_mid']}) — khong gui lai", file=sys.stderr)
+              f"(mid={d['channel_text_mid']}) — khong gui lai", file=sys.stderr)
         return {"ok": True}
     res = _send_text(token, channel, caption)
     if isinstance(res, dict) and res.get("ok"):
-        _write_mark(p_draft, d, "channel_chu_mid",
+        _write_mark(p_draft, d, "channel_text_mid",
                  (res.get("result") or {}).get("message_id"))
     return res
 
@@ -383,9 +383,9 @@ def publish(token, channel, draft_id):
     if img and Path(img).exists():
         # Cung mot luat voi album: anh don da len roi thi khong gui lai, chi lam
         # not phan con thieu.
-        if d.get("channel_anh_mid"):
+        if d.get("channel_photo_mid"):
             print(f"[publish] anh cua {draft_id} da len channel truoc do "
-                  f"(mid={d['channel_anh_mid']}) — khong gui lai", file=sys.stderr)
+                  f"(mid={d['channel_photo_mid']}) — khong gui lai", file=sys.stderr)
             return (_text_one_attempt(token, channel, part2, p_draft, d, draft_id)
                     if long_caption else {"ok": True})
         with httpx.Client(timeout=_media_timeout(Path(img).stat().st_size)) as c, open(img, "rb") as fh:
@@ -395,7 +395,7 @@ def publish(token, channel, draft_id):
                        files={"photo": (Path(img).name, fh, "image/png")})
         res = r.json()
         if res.get("ok"):
-            _write_mark(p_draft, d, "channel_anh_mid",
+            _write_mark(p_draft, d, "channel_photo_mid",
                      (res.get("result") or {}).get("message_id"))
         if long_caption and res.get("ok"):
             return _text_one_attempt(token, channel, part2, p_draft, d, draft_id)
@@ -586,9 +586,9 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
             _write_json(wp, w)
         except OSError as e:
             log("bangden", f"{draft_id}: khong cap nhat dre_task: {e}")
-        _blackboard_write(draft_id, "lam_lai",
-                      {"lan": n, "slide": slide, "ly_do": ly_do, "task": rid,
-                       "task_truoc": im.get("last_task")})
+        _blackboard_write(draft_id, "redo",
+                      {"attempt": n, "slide": slide, "reason": ly_do, "task": rid,
+                       "previous_task": im.get("last_task")})
     im["remakes"], im["last_task"] = n, rid
     if ly_do:
         im.setdefault("redo_reasons", []).append({"attempt": n, "slide": slide, "reason": ly_do})
@@ -656,16 +656,16 @@ def _label_reason_redo(token, group, msg, thread_id, text):
         # chu go trong topic suot 10 phut deu bi nuot lam ly do — hoi Dre chuyen khac
         # cung thanh "ly do lam lai". Tin hoi da bat force_reply nen reply la mac dinh;
         # go tron thi tin di duong chat binh thuong, trang thai cho van giu.
-        # `hoi_mid` con la thu DUY NHAT noi cau tra loi nay thuoc bai nao khi topic
+        # `question_mid` con la thu DUY NHAT noi cau tra loi nay thuoc bai nao khi topic
         # co nhieu bo cho (06/09/2026) — doan mo la giao lam lai nham bai.
         rt = _reply_real(msg) or {}
         mid = rt.get("message_id")
-        ho_so = next((v for v in ds if v.get("hoi_mid") and v["hoi_mid"] == mid), None)
+        ho_so = next((v for v in ds if v.get("question_mid") and v["question_mid"] == mid), None)
         if ho_so is None:
-            # Ban ghi khong co hoi_mid (tin hoi gui loi, hoac ban ghi cu truoc
+            # Ban ghi khong co question_mid (tin hoi gui loi, hoac ban ghi cu truoc
             # 06/09) thi lui ve luat cu "reply toi mot tin cua bot" — chi cho
             # phep khi topic dang cho DUY NHAT mot bai, khong thi khong doan.
-            thieu = [v for v in ds if not v.get("hoi_mid")]
+            thieu = [v for v in ds if not v.get("question_mid")]
             if len(ds) == 1 and thieu and rt.get("from", {}).get("is_bot"):
                 ho_so = thieu[0]
         if ho_so is None:
@@ -764,7 +764,7 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
                      "truoc khi in brief. Bia BAT BUOC co anh that; KHONG ve hero vector.")
     # Bang den: task Kite la con cua the goc va tro thanh `dre_task` (vai anh hien
     # hanh) trong .writer.json — de Miles noi vao ban giao cua Kite, khong phai cua
-    # Dre da dung. Ghi muc chuyen_kite de bang den ke dung chuyen (05/09: bai Gimlet
+    # Dre da dung. Ghi muc kite_transfer de bang den ke dung chuyen (05/09: bai Gimlet
     # di Kite nhung muc `anh` van la cua Dre ban 1).
     wp = DRAFTS / (draft_id + ".writer.json")
     try:
@@ -778,14 +778,14 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     if err:
         return None, err
     if w.get("root_task"):
-        w["dre_task_truoc_kite"], w["dre_task"] = w.get("dre_task"), rid
+        w["dre_task_before_kite"], w["dre_task"] = w.get("dre_task"), rid
         try:
             _write_json(wp, w)
         except OSError as e:
             log("bangden", f"{draft_id}: khong cap nhat dre_task (kite): {e}")
-        _blackboard_write(draft_id, "chuyen_kite",
-                      {"task": rid, "tu_vai": im.get("image_role"), "ly_do": ly_do,
-                       "anh_that_dung_duoc": co})
+        _blackboard_write(draft_id, "kite_transfer",
+                      {"task": rid, "transferred_from": im.get("image_role"), "transfer_reason": ly_do,
+                       "usable_image_ids": co})
     im.update({"transferred_from": im.get("image_role"), "image_role": "kite", "carousel": True,
                "body": body, "kite_task_id": rid, "transfer_reason": ly_do})
     _write_json(DRAFTS / (draft_id + ".img.json"), im)
@@ -975,10 +975,10 @@ def _button_redo(token, chat_id, draft_id, cq, msg):
                 with _KHOA_LAM_LAI:
                     cho = _load_redo_wait()
                     if draft_id in cho:
-                        cho[draft_id]["hoi_mid"] = _mid_hoi
+                        cho[draft_id]["question_mid"] = _mid_hoi
                         _write_json(REDO_WAIT, cho, indent=None)
         except Exception as _e:                              # noqa: BLE001
-            log("nut", f"khong luu hoi_mid: {type(_e).__name__}: {_e}")
+            log("nut", f"khong luu question_mid: {type(_e).__name__}: {_e}")
         note = f"⏳ Chờ lý do làm lại (lần {n})"
     return note
 
@@ -1006,7 +1006,7 @@ def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
             # ra task da done ~12h truoc, chi la bam lai nut cu).
             wid = w.get("writer_task")
             tt = _status_task(wid)
-            ten = NAME_ROLE_WRITE.get(w["vai_viet"], "Miles")
+            ten = NAME_ROLE_WRITE.get(w["writer_role"], "Miles")
             link = link_result(wid)
             if tt == "done":
                 note = f"✅ Bài đã viết xong{' — xem tại ' + link if link else f' (task {wid})'}"
@@ -1029,12 +1029,12 @@ def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
             # dan thang vao task viet — Miles khong phai hoi lai, Dre khong
             # phai "nhan Miles".
             chosen_writer = forced_writer or _writer_by_queue(draft_id, w)
-            if chosen_writer != w.get("vai_viet"):
+            if chosen_writer != w.get("writer_role"):
                 why = "Ong Chu chon qua reply, LOW-134" if forced_writer else "shorter queue, LOW-123"
                 log("nut", f"imgok draft={draft_id}: assigned {chosen_writer} instead of "
-                           f"{w.get('vai_viet')} ({why})")
-                w["body"] = retarget_writer_body(w["body"], w.get("vai_viet"), chosen_writer)
-                w["vai_viet"] = chosen_writer
+                           f"{w.get('writer_role')} ({why})")
+                w["body"] = retarget_writer_body(w["body"], w.get("writer_role"), chosen_writer)
+                w["writer_role"] = chosen_writer
             _body = w["body"]
             _bg = state_paths.handoff_file(DRAFTS, draft_id)
             if _bg.exists():
@@ -1055,13 +1055,13 @@ def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
                 if w.get("root_task"):
                     _body += BLACKBOARD_MENTION.format(root=w["root_task"])
                 wid, err = kanban_create("Bai: " + w.get("title", draft_id),
-                                         w["vai_viet"], _body, parent=_cha)
+                                         w["writer_role"], _body, parent=_cha)
             if err:
                 note = "⚠️ Duyệt ok nhưng tạo task viết lỗi: " + str(err)
             else:
                 w["created"], w["writer_task"] = True, wid
                 _write_json(wp, w)
-                ten = NAME_ROLE_WRITE.get(w["vai_viet"], "Miles")
+                ten = NAME_ROLE_WRITE.get(w["writer_role"], "Miles")
                 # "da gui", KHONG phai "bat dau" — dispatcher moi thuc su chay
                 # (Ong Chu 12/09/2026: ba dong rieng cho MOI vai — gui / nhan /
                 # bat dau — khong gop "gui" voi "bat dau" lam mot).
@@ -1078,7 +1078,7 @@ def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
                         _vai_anh_cu = json.loads(_ip.read_text(encoding="utf-8")).get("image_role")
                 except Exception:                            # noqa: BLE001
                     pass
-                _report_receive_job(token, chat_id, w["vai_viet"], _vai_anh_cu,
+                _report_receive_job(token, chat_id, w["writer_role"], _vai_anh_cu,
                                w.get("title", draft_id), wid)
     return note
 
@@ -1087,7 +1087,7 @@ def _writer_by_queue(draft_id, sidecar):
     """The REAL writer of the article (LOW-123): within the brand's writer group, the
     one with fewer waiting tasks. A single-writer brand or an unreadable kanban keeps
     the tentative writer recorded at pick time."""
-    tentative = sidecar.get("vai_viet")
+    tentative = sidecar.get("writer_role")
     brand = (_load_json(DRAFTS / (draft_id + ".meta.json"), {}) or {}).get("brand", "")
     group = role.writers_for_brand(brand)
     if len(group) < 2:
@@ -1265,7 +1265,7 @@ def handle_callback(token, channel, cq):
     # bai LEN CHANNEL va day sang moat. Allowlist chi che lenh slash.
     if not is_boss(cq):
         uid = (cq.get("from") or {}).get("id")
-        log("nut", f"TU CHOI cq tu {uid}: khong co trong ong_chu.json")
+        log("nut", f"TU CHOI cq tu {uid}: khong co trong {state_paths.BOSS_IDS_FILE}")
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
              text="Chỉ Ông Chủ bấm được nút này.", show_alert=True)
         return

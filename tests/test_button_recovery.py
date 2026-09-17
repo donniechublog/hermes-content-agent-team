@@ -158,7 +158,7 @@ def test_old_journal_record_without_button_field_is_not_resent():
         (tmp / "sent").mkdir()
         (tmp / "sent" / "kite.jsonl").write_text(json.dumps(
             {"ts": int(time.time()), "message_id": 1571, "files": [str(f) for f in files],
-             "md5": st._md5(files), "mo_ta": ""}) + "\n", encoding="utf-8")
+             "md5": st._md5(files), "description": ""}) + "\n", encoding="utf-8")
         fake = FakeTelegram()
         res = _post(tmp, fake, duyet="d-1")
     assert fake.calls == [] and res["button_state"] == "unknown", (fake.calls, res)
@@ -174,7 +174,7 @@ def _approve_env(tmp: Path, records, writer="miles", brand="donniechublog"):
     sent = tmp / "state" / "telegram_sent"
     sent.mkdir(parents=True)
     (drafts / f"{DRAFT}.writer.json").write_text(json.dumps(
-        {"vai_viet": writer, "title": "Tin test", "created": False, "dre_task": "t_anh1",
+        {"writer_role": writer, "title": "Tin test", "created": False, "dre_task": "t_anh1",
          "body": f"venv/bin/python {writer}_prepare.py x\nvenv/bin/python {writer}_submit.py x"}),
         encoding="utf-8")
     (drafts / f"{DRAFT}.meta.json").write_text(json.dumps({"brand": brand}), encoding="utf-8")
@@ -261,7 +261,7 @@ def test_reply_send_to_named_writer_bypasses_queue():
     assert handled
     assert [v for v, _ in p.tasks] == ["jika"], f"phai giao Jika dung ten Ong Chu go: {p.tasks}"
     assert "jika_prepare.py" in p.tasks[0][1], "body phai tro lenh sang Jika"
-    assert w["created"] is True and w["vai_viet"] == "jika", w
+    assert w["created"] is True and w["writer_role"] == "jika", w
     assert not [a for a, _ in p.calls if a[1] == "answerCallbackQuery"], "reply khong co callback de tra loi"
     replies = [k for k in p.sent_texts() if k.get("reply_to_message_id") == 1700]
     assert replies and "Jika" in replies[0]["text"], p.sent_texts()
