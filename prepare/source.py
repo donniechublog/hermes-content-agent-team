@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 import schema
+import state_paths
 
 from prepare.common import DRAFTS, GNEWS, _read_json, _write_json
 
@@ -34,7 +35,7 @@ def load_source(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
     """Tra ve (nguon_dict, nguon_path, link_real). Giai ma link Google News neu
     can va ghi nguoc vao nguon json + meta de moi vai sau cung dung link that."""
     import article_sources
-    p = state / f"nguon_{draft_id}.json"
+    p = state_paths.article_source_file(state, draft_id)
     link = meta.get("source_url", "")
     nguon = _read_json(p) or {"tieu_de": meta.get("title", ""), "link_goc": link,
                              "trang": [{"url": link, "loai": "gốc",

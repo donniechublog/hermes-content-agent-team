@@ -18,14 +18,14 @@ buoc, tat ca chay that khong mo phong:
      vi tai tao duong net that. Da so sanh truc tiep, chenh lech ro rang.
 
 Dung:
-    venv/bin/python swap_image_text.py --anh slide.jpg --out nen_sach.png \
+    venv/bin/python swap_image_text.py --anh slide.jpg --out clean_background.png \
         [--giu "x,y,w,h"] [--giu "x2,y2,w2,h2" ...] \
         [--xem-mask mask_debug.png]
 
 --giu khoanh vung KHONG duoc dong den (logo, icon thuong hieu goc...) — co the
 lap lai nhieu lan. Toa do tinh tren anh GOC (truoc khi resize).
 
-Vai Gin dung script nay. Chay xong, dua nen_sach.png cho deck.py qua key
+Vai Gin dung script nay. Chay xong, dua clean_background.png cho deck.py qua key
 `"bg_anh"` trong JSON spec cua tung slide (khong phai co CLI) de Itachi ve chu
 tieng Viet len (deck.py lo phan typography, script nay khong dung toi chu Viet).
 """

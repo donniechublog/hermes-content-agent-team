@@ -76,10 +76,10 @@ def _run_main(tmp, stderr, stdout=None, manifest=None):
     de test khong dung toi Telegram."""
     d = Path(tmp)
     os.environ["CT_STATE_DIR"] = str(d)
-    wd = d / "quet" / f"vera_{datetime.now(scan_submit.qb.VN).strftime('%Y%m%d')}"
+    wd = d / "scan" / f"vera_{datetime.now(scan_submit.qb.VN).strftime('%Y%m%d')}"
     wd.mkdir(parents=True, exist_ok=True)
-    (wd / "ds.json").write_text("[]", encoding="utf-8")
-    (wd / "baocao.txt").write_text("<b>Vera</b>\n<b>1.</b> Tin", encoding="utf-8")
+    (wd / "list.json").write_text("[]", encoding="utf-8")
+    (wd / "report.txt").write_text("<b>Vera</b>\n<b>1.</b> Tin", encoding="utf-8")
 
     da_gui = []
     cu_chay, cu_gui, cu_argv = scan_submit._run, scan_submit.send, sys.argv
@@ -174,7 +174,7 @@ def test_save_mid_small_new_fragment_of_report_long():
 
     with tempfile.TemporaryDirectory() as t:
         dai = "\n".join(f"<b>{i}.</b> Tin so {i} " + "x" * 120 for i in range(1, 40))
-        d = _send_fake(handler, dai, Path(t) / "bao_cao_mid.vera.json")
+        d = _send_fake(handler, dai, Path(t) / "report_message_id.vera.json")
     assert dem["n"] > 1, "test hong: van ban nay phai bi chia thanh nhieu manh"
     assert d["message_ids"] == [2000 + i for i in range(1, dem["n"] + 1)], d
     assert d["message_id"] == d["message_ids"][-1], d
@@ -182,10 +182,10 @@ def test_save_mid_small_new_fragment_of_report_long():
 
 # ====================================== 3 + 4. cong reply va manifest da gui
 def _set_mid(tmp, **noi_dung):
-    """Ghi bao_cao_mid.vera.json va tro STATE_DIR cua approve_pick vao tmp."""
+    """Ghi report_message_id.vera.json va tro STATE_DIR cua approve_pick vao tmp."""
     import approve_pick as dct
     d = Path(tmp)
-    (d / "bao_cao_mid.vera.json").write_text(json.dumps(noi_dung), encoding="utf-8")
+    (d / "report_message_id.vera.json").write_text(json.dumps(noi_dung), encoding="utf-8")
     dct.STATE_DIR = d
     return dct
 
@@ -268,13 +268,13 @@ def test_name_manifest_and_report_by_date_vn():
     import manifest_write as mg
     with tempfile.TemporaryDirectory() as t:
         d = Path(t)
-        (d / "ds.json").write_text(json.dumps(
+        (d / "list.json").write_text(json.dumps(
             [{"title": "Oracle tăng doanh thu cloud", "link": "https://a.vn/1",
               "summary_vi": "Oracle tăng mạnh"}]), encoding="utf-8")
         cu_state, cu_dt, cu_argv = mg.STATE, mg.datetime, sys.argv
         mg.STATE, mg.datetime = d, _GioGia
-        sys.argv = ["manifest_write.py", "--vai", "vera", "--in", str(d / "ds.json"),
-                    "--bao-cao", str(d / "baocao.txt")]
+        sys.argv = ["manifest_write.py", "--vai", "vera", "--in", str(d / "list.json"),
+                    "--bao-cao", str(d / "report.txt")]
         try:
             with bat_buoc_tam(t, vera={}):
                 mg.main()
@@ -282,7 +282,7 @@ def test_name_manifest_and_report_by_date_vn():
             mg.STATE, mg.datetime, sys.argv = cu_state, cu_dt, cu_argv
         ten = [p.name for p in d.glob("vera_candidates_*.json")]
         assert ten == ["vera_candidates_2026-09-12.json"], ten
-        assert "2026-09-12" in (d / "baocao.txt").read_text(encoding="utf-8")
+        assert "2026-09-12" in (d / "report.txt").read_text(encoding="utf-8")
 
 
 def test_path_out_new_not_placed_onto_copy_run_same_minutes():

@@ -129,7 +129,7 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   Việt mất dấu bị `error_block_send` chặn, rc=1, vai sửa tệp nộp rồi chạy lại — chạy
   lại mà vẫn gửi thì topic có nhiều bản gần giống nhau và chỉ bản cuối reply
   được (sự cố Vera 12/09/2026). Gửi xong, `scan_submit` ghim đường dẫn manifest vào
-  `state/<brand>/bao_cao_mid.<vai>.json` để lệnh chọn số đọc đúng bản đã gửi.
+  `state/<brand>/report_message_id.<vai>.json` để lệnh chọn số đọc đúng bản đã gửi.
 - Skill `ai-background` và bộ retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh
   ảnh bằng CPU quá nặng) — không phải lỗi. Script sinh nền chưa được viết; skill
   mô tả sẵn hợp đồng để khi có GPU thì bắt tay vào đúng chỗ. Tới lúc đó hai vai
@@ -278,7 +278,7 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 **Đo đạc**
 
 - `monitor_9router.py` — nhật ký 9router theo ngày
-  (`state/9router/nhat_ky/9router_<ngày>.md|json`): req/prompt/cache%/$ theo model,
+  (`state/9router/journal/9router_<ngày>.md|json`): req/prompt/cache%/$ theo model,
   theo khoá API, theo giờ VN, model lạ, cache thấp, fallback thật, lỗi, phiên
   rỗng, **$ theo vai** và $/bài theo brand. Ada đọc qua `tai(ngày)`.
 - `journal.py` + `journal_web.py` — nhật ký ngày và trang web cổng 9130.
@@ -525,8 +525,8 @@ có bảng này thì không ai biết sửa một tệp sẽ đụng vào ai.
 | `drafts/<id>.json` (bản nháp) | `draft_write` | `approve_post.mark_draft`, `moat_publish` (cron) | `approve_post`, `publish` |
 | `drafts/<id>.handoff.md` | `*_submit` | — | `approve_post` dán vào task Miles |
 | `state/<brand>/prepare/<id>/manifest.json` | `image_prepare` | — | mọi `*_prepare` và `*_submit` |
-| `state/<brand>/anh_da_dung.jsonl` | `submit_common.send_album` | `approve_post` (gỡ khi Bỏ/Làm lại) | `image_rules.check_not_reused` |
-| `state/<brand>/bat_buoc_<vai>.json` | script quét | `manifest_write` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
+| `state/<brand>/used_images.jsonl` | `submit_common.send_album` | `approve_post` (gỡ khi Bỏ/Làm lại) | `image_rules.check_not_reused` |
+| `state/<brand>/required_<vai>.json` | script quét | `manifest_write` / `manifest_build` (xoá mục đã đưa) | brief của vai quét |
 | `state/<brand>/<vai>_candidates_*.json` | `manifest_*` | — | `approve_pick` (chọn theo mtime) |
 | `state/9router/` | `monitor_9router` | — | `journal_web`, Ada |
 | `state/cron_audit.json` | `audit_cron` (brand nào chạy trước) | brand kia | `audit_cron` của brand kia |
@@ -543,7 +543,7 @@ engine nền, bảng đen), `drafts/<id>.json` (draft_write, approve_post, cron 
 mọi sidecar của `duyet_*`. `write_text` cắt ngắn tệp cũ trước khi ghi nội dung
 mới, nên hai tiến trình trùng thời điểm để lại một sidecar cụt và mọi người đọc
 sau đó ném `ValueError` — bài kẹt vĩnh viễn mà không ai biết. Tệp chỉ một tiến
-trình ghi trong thư mục làm việc riêng (`manifest.json`, `spec.json`, `vung_ocr.json`)
+trình ghi trong thư mục làm việc riêng (`manifest.json`, `spec.json`, `regions_ocr.json`)
 vẫn `write_text`, và đó là chấp nhận được.
 
 ## Sau mỗi `hermes update`

@@ -7,7 +7,7 @@ cuu cho cung mot tin, va co the ra hai bo bai khac nhau, khien bai viet noi mot
 dang con tam anh cho thay mot dang khac.
 
 Nay Finn lam mot lan ngay sau khi Ong Chu chon tin, ghi ra
-state/nguon_<draft_id>.json, roi ca vai dung anh lan vai viet cung doc tep do.
+state/<brand>/article_source_<draft_id>.json, roi ca vai dung anh lan vai viet cung doc tep do.
 
 Cach tim: Google News KHONG cho URL bai (link cua no la duong chuyen huong chay
 bang JS, chuoi CBMi khong phai base64 cua URL, con DuckDuckGo tra 202 chan bot).
@@ -15,7 +15,7 @@ Nhung Google News CO cho ten mien toa soan o <source url>. Nen di duong vong:
 ten mien -> RSS cua chinh toa soan -> khop tieu de -> ra link bai that.
 
 Dung:
-    venv/bin/python article_sources.py --tieu-de "..." --link "..." --out state/nguon_x.json
+    venv/bin/python article_sources.py --tieu-de "..." --link "..." --out state/<brand>/article_source_x.json
 """
 import argparse
 import concurrent.futures as cf

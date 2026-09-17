@@ -102,7 +102,7 @@ def is_stacked_composite(img):
 
 # ---- So "anh da dung" — THUAN I/O, dung CHUNG ca ba vai theo thiet ke -------
 #
-# `state/<brand>/anh_da_dung.jsonl` la MOT tep dung chung co y: cung mot tin co
+# `state/<brand>/used_images.jsonl` la MOT tep dung chung co y: cung mot tin co
 # the giao cho Dre roi Ethan ra HAI draft_id khac nhau (`story_key`), va ca hai
 # phai thay duoc anh nhau da dung — tach tep nay theo vai se lam vai nop sau
 # khong biet vai truoc da dung anh nao, dung cai bug 06/09/2026 tung xay ra
@@ -110,10 +110,11 @@ def is_stacked_composite(img):
 # doan nao o day — ba module luat (`image_rules_<vai>.py`) tu tinh `dhash`/
 # `is_near_duplicate` cua RIENG minh roi ghi/doc qua ba ham nay.
 def _used_images_log():
-    """state/<brand>/anh_da_dung.jsonl — moi dong mot anh da GUI DI (khong phai
+    """state/<brand>/used_images.jsonl — moi dong mot anh da GUI DI (khong phai
     ung vien). Ghi o buoc gui album, doc o buoc nop."""
     import env_load
-    return env_load.state_dir() / "anh_da_dung.jsonl"
+    import state_paths
+    return env_load.state_dir() / state_paths.USED_IMAGES_FILE
 
 
 def story_key(link: str) -> str:

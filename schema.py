@@ -207,7 +207,7 @@ class SidecarWrite(TypedDict, total=False):
 
 
 class LineImageUsed(TypedDict):
-    """MOT DONG trong `state/<brand>/anh_da_dung.jsonl` (noi them, khong sua).
+    """MOT DONG trong `state/<brand>/used_images.jsonl` (noi them, khong sua).
 
     Khoa theo TIN chu khong theo draft: cung mot tin giao cho hai vai ra hai
     draft_id nhung dung chung bo anh engine tai ve."""

@@ -9,7 +9,7 @@ Nguyen tac Ong Chu: CODE TOI DA, LLM TOI THIEU. Do 04/09/2026: moi task anh ton
 ls/grep do file, ghi roi doc lai spec, mo tung anh, crop lap, web_search lai
 tin vi link Google News doc ra rong). Toan bo phan do nam o day:
 
-  1. NGUON: doc bo nguon Finn/Vera da research (`state/<brand>/nguon_<id>.json`),
+  1. NGUON: doc bo nguon Finn/Vera da research (`state/<brand>/article_source_<id>.json`),
      giai ma link Google News, lay tieu de tieng Anh, hoi Bing News RSS tim bao
      khac khi nguon mong (ghi nguoc vao nguon json de moi vai sau cung dung).
   2. ANH: mot phien chromium (chu bai, <img> lon, chup table/figure/canvas full

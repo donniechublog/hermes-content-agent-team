@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """scan_submit.py — NOP cho ba vai di tim tin: ghi manifest danh so (kiem muc bat
-buoc), viet bao cao, gui len topic. Vai chi viet picks.json (Finn) hoac ds.json
+buoc), viet bao cao, gui len topic. Vai chi viet picks.json (Finn) hoac list.json
 (Nova/Vera) theo khung cua scan_prepare.py.
 
     --khong-co   khong co tin dat nguong: gui MOT dong "hom nay khong co gi" kem
@@ -25,6 +25,7 @@ import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
 import scan_prepare as qb                                   # noqa: E402
 import role                                                   # noqa: E402
+import state_paths                                           # noqa: E402
 
 NAME = scan_common.NAME_ROLE       # mot ban duy nhat, xem scan_common
 
@@ -45,7 +46,7 @@ LABEL_WARNING = ("[canh bao]", "[tu them]", "[bo qua]", "[LOI]")
 #   title mat dau   headline ASCII ("dat muc tieu 2 ty USD doanh thu nam") — ma
 #                   headline la thu DUY NHAT Ong Chu doc tren topic.
 # Truoc day hai loai nay chi duoc IN ra roi van gui, rc=0. Vai doc canh bao, sua
-# ds.json, chay lai — va moi lan chay lai la MOT bao cao nua vao topic. Sang hom
+# list.json, chay lai — va moi lan chay lai la MOT bao cao nua vao topic. Sang hom
 # do Ong Chu nhan BA ban gan giong nhau; reply vao ban thu hai thi khong co gi
 # xay ra, vi `--luu-mid` chi giu mid cua ban CUOI (xem _is_reply_report).
 # Chan o day thi chi ban sach moi len topic: mot lan quet, mot bao cao.
@@ -119,7 +120,7 @@ def send(vai: str, tep: Path, thu: bool, manifest: Path = None) -> bool:
         return True
     # --luu-mid: approve_service doi chieu REPLY cua Ong Chu dung vao MID nay
     # truoc khi coi la lenh chon so — xem ghi chu o _is_reply_report.
-    mid_tep = env_load.state_dir() / f"bao_cao_mid.{vai}.json"
+    mid_tep = env_load.state_dir() / state_paths.REPORT_MESSAGE_ID_FILE.format(vai)
     r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "publish.py"), "--to-env", "TELEGRAM_GROUP_ID",
                         "--thread-name", qb.TOPIC[vai], "--file", str(tep),
                         "--luu-mid", str(mid_tep)],
@@ -148,41 +149,41 @@ def main() -> int:
             d = json.loads((wd / "candidates.json").read_text(encoding="utf-8")) if (wd / "candidates.json").exists() else {}
             so = len(d.get("candidates", []))
         elif a.vai in ("vera", "qinn"):
-            d = json.loads((wd / "quet.json").read_text(encoding="utf-8")) if (wd / "quet.json").exists() else {}
+            d = json.loads((wd / state_paths.SCAN_RESULT_FILE).read_text(encoding="utf-8")) if (wd / state_paths.SCAN_RESULT_FILE).exists() else {}
             so = d.get("tong_quet", "?")
-        tep = wd / "khong_co.txt"
+        tep = wd / state_paths.SCAN_NONE_FOUND_FILE
         tep.write_text(f"{NAME[a.vai]}: hôm nay không có tin nào đạt ngưỡng (đã quét {so} tin). "
                        "Không có gì để chọn.", encoding="utf-8")
         ok = send(a.vai, tep, a.thu)
         print("Ket qua task: Không có tin đạt ngưỡng, đã báo Ông Chủ." if ok else "[LOI] gui bao cao hong")
         return 0 if ok else 1
 
-    bao_cao = wd / "baocao.txt"
+    bao_cao = wd / state_paths.SCAN_REPORT_FILE
     if a.vai == "finn":
         picks = wd / "picks.json"
         if not picks.exists():
             sys.exit(f"Chua co {picks} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
                      "(hoac --khong-co neu khong tin nao dat nguong).")
-        out = (wd / "thu_manifest.json") if a.thu else (state / f"finn_candidates_{ngay}.json")
+        out = (wd / state_paths.SCAN_TRIAL_MANIFEST_FILE) if a.thu else (state / f"finn_candidates_{ngay}.json")
         args = [str(ROOT / "manifest_build.py"), "--candidates", str(wd / "candidates.json"),
                 "--picks", str(picks), "--out", str(out), "--bao-cao", str(bao_cao)]
         if a.thu:
             args += ["--khong-xoa-bat-buoc", "--ghi-de"]   # ban thu ghi de duoc
     else:
-        ds = wd / "ds.json"
+        ds = wd / state_paths.SCAN_LIST_FILE
         if not ds.exists():
             sys.exit(f"Chua co {ds} — viet theo khung trong {wd / 'brief.md'} roi chay lai "
                      "(hoac --khong-co neu khong co gi dang len kenh).")
         args = [str(ROOT / "manifest_write.py"), "--vai", a.vai, "--in", str(ds), "--bao-cao", str(bao_cao)]
         if a.vai in ("vera", "qinn"):
-            # de vai chon bang so thu tu k; script tu lay link tu quet.json
-            args += ["--nguon", str(wd / "quet.json")]
+            # de vai chon bang so thu tu k; script tu lay link tu scan.json
+            args += ["--nguon", str(wd / state_paths.SCAN_RESULT_FILE)]
         if a.thu:
-            args += ["--khong-xoa-bat-buoc", "--out", str(wd / "thu_manifest.json")]
+            args += ["--khong-xoa-bat-buoc", "--out", str(wd / state_paths.SCAN_TRIAL_MANIFEST_FILE)]
     r = _run(args)
     if r.returncode != 0:
         _in_error(r)
-        tep = "picks.json" if a.vai == "finn" else "ds.json"
+        tep = "picks.json" if a.vai == "finn" else state_paths.SCAN_LIST_FILE
         print(f"\nSua {wd / tep} theo cac dong [LOI] (thieu muc bat buoc thi THEM vao, link phai y het "
               f"danh sach) roi chay lai: venv/bin/python scan_submit.py --vai {a.vai}")
         return 1
@@ -199,7 +200,7 @@ def main() -> int:
         for d in canh[:20]:
             print("  " + d)
     if chan:
-        tep = "picks.json" if a.vai == "finn" else "ds.json"
+        tep = "picks.json" if a.vai == "finn" else state_paths.SCAN_LIST_FILE
         print(f"\n[LOI] KHONG GUI bao cao: {len(chan)} loi lam hong chinh ban Ong Chu doc "
               "(mat tin, hoac tieu de tieng Viet mat dau).")
         print(f"Sua {wd / tep} theo cac dong tren roi chay lai DUNG lenh: "

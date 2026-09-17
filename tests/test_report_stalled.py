@@ -93,9 +93,9 @@ def _run_report_progress_fake(tmp, rows, gui_ghi_lai):
     state = Path(tmp)
     cu = (dg.ALREADY_REPORT_PROGRESS, dg.STORY_RESULT, dg.ALREADY_REPORT_STALLED,
           dg.hermes_adapter.has_kanban, dg.hermes_adapter.job, dg.call, dg.env_load.topics_path)
-    dg.ALREADY_REPORT_PROGRESS = state / "da_bao_tien_do.json"
-    dg.STORY_RESULT = state / "tin_ket_qua.json"
-    dg.ALREADY_REPORT_STALLED = state / "da_bao_treo.json"
+    dg.ALREADY_REPORT_PROGRESS = state / "reported_progress.json"
+    dg.STORY_RESULT = state / "task_result_messages.json"
+    dg.ALREADY_REPORT_STALLED = state / "reported_stalled.json"
     dg.hermes_adapter.has_kanban = lambda: True
     dg.hermes_adapter.job = lambda tu_ts=None: list(rows)
     tp = state / "topics.json"
@@ -123,8 +123,8 @@ def test_stalled_report_when_running_over_long_time():
         gui = []
         _run_report_progress_fake(tmp, rows, gui)
         assert any("không phản hồi" in t for t in gui), gui
-        # Da ghi lai da_bao_treo de vong sau khong bao lap ngay.
-        treo = json.loads((Path(tmp) / "da_bao_treo.json").read_text(encoding="utf-8"))
+        # Da ghi lai reported_stalled de vong sau khong bao lap ngay.
+        treo = json.loads((Path(tmp) / "reported_stalled.json").read_text(encoding="utf-8"))
         assert "t_1" in treo
 
 
@@ -145,7 +145,7 @@ def test_stalled_no_report_repeat_within_of_count_again_report():
         now = time.time()
         state = Path(tmp)
         # Da bao "treo" 5 phut truoc — con trong cua so AGAIN_REPORT_STALLED_MINUTES (30p).
-        (state / "da_bao_treo.json").write_text(
+        (state / "reported_stalled.json").write_text(
             json.dumps({"t_1": now - 5 * 60}), encoding="utf-8")
         rows = [{"id": "t_1", "vai": "miles", "trang_thai": "running",
                   "tieu_de": "Bai test", "tao_luc": now - 3000,
@@ -160,7 +160,7 @@ def test_stalled_ok_delete_when_task_all_done_running():
     with tempfile.TemporaryDirectory() as tmp:
         now = time.time()
         state = Path(tmp)
-        (state / "da_bao_treo.json").write_text(
+        (state / "reported_stalled.json").write_text(
             json.dumps({"t_1": now - 40 * 60}), encoding="utf-8")
         rows = [{"id": "t_1", "vai": "miles", "trang_thai": "done",
                   "tieu_de": "Bai test", "tao_luc": now - 3000,
@@ -168,7 +168,7 @@ def test_stalled_ok_delete_when_task_all_done_running():
                   "ket_qua": None, "loi": None}]
         gui = []
         _run_report_progress_fake(tmp, rows, gui)
-        treo = json.loads((state / "da_bao_treo.json").read_text(encoding="utf-8"))
+        treo = json.loads((state / "reported_stalled.json").read_text(encoding="utf-8"))
         assert "t_1" not in treo
 
 

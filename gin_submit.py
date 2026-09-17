@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import gin_prepare as gb                                    # noqa: E402
+import state_paths                                           # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import about_text                                                # noqa: E402
 from card import find_face_mark, drop_mark_forbid                     # noqa: E402
@@ -39,7 +40,7 @@ def single(id_: str, wd: Path, spec: dict) -> tuple:
     """Xoá chữ. Trả về (nen_sach, mask_debug, vung_json, số vùng xoá, số vùng giữ)."""
     import swap_image_text
     import image_provenance
-    d = json.loads((wd / "vung_ocr.json").read_text(encoding="utf-8"))
+    d = json.loads((wd / state_paths.GIN_REGIONS_OCR_FILE).read_text(encoding="utf-8"))
     anh = Path(d["anh"])
     img = cv2.imread(str(anh))
     giu_stt = {int(x) for x in (spec.get("giu") or []) if str(x).isdigit()}
@@ -66,7 +67,7 @@ def single(id_: str, wd: Path, spec: dict) -> tuple:
     if not mask.any():
         sys.exit("[LOI] Không có vùng nào để xoá (mọi vùng đều nằm trong `giu`, hoặc OCR không thấy chữ).")
     sach = swap_image_text.inpaint(img, mask, verbose=False)
-    nen = wd / "nen_sach.png"
+    nen = wd / state_paths.GIN_CLEAN_BACKGROUND_FILE
     cv2.imwrite(str(nen), sach)
     image_provenance.stamp_file(nen, "doi_chu_anh")
     vis = img.copy()
@@ -75,7 +76,7 @@ def single(id_: str, wd: Path, spec: dict) -> tuple:
     mask_dbg = wd / "mask_debug.png"
     cv2.imwrite(str(mask_dbg), vis)
     da_xoa = [v for v in d["vung"] if v["stt"] not in giu_stt]
-    vung_json = wd / "vung.json"
+    vung_json = wd / state_paths.GIN_REGIONS_FILE
     vung_json.write_text(json.dumps(
         [{"stt": v["stt"], "x": v["x"], "y": v["y"], "w": v["w"], "h": v["h"],
           "color_rgb": v["color_rgb"], "ocr_text": v["text"], "conf": v["conf"]} for v in da_xoa],
@@ -202,7 +203,7 @@ def _box_translate(d: dict, spec: dict) -> tuple:
 
 def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
     """Trám nền + vẽ chữ Việt. Trả về (đường dẫn kết quả, khối đã vẽ, lỗi)."""
-    d = json.loads((wd / "vung_ocr.json").read_text(encoding="utf-8"))
+    d = json.loads((wd / state_paths.GIN_REGIONS_OCR_FILE).read_text(encoding="utf-8"))
     img = cv2.imread(str(Path(d["anh"])))
     if img is None:
         return None, [], [f"không đọc được ảnh gốc {d['anh']}"]
@@ -289,7 +290,7 @@ def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
         about_text.about_block(dd, kh["text"], kh["x"], kh["y"], kh["w"], kh["h"],
                        kh["font"], kh["color_rgb"], kh["can"], co=co, buoc=kh["buoc"],
                        cao_goc=kh["cao_net"])
-    out = wd / f"ket_qua_{id_}.png"
+    out = wd / f"{state_paths.GIN_RESULT_PREFIX}{id_}.png"
     im.save(out, "PNG")
     image_provenance.stamp_file(out, "doi_chu_anh")
     vis = img.copy()
@@ -306,7 +307,7 @@ def main() -> int:
                     help="Chỉ khi bản dịch THẬT SỰ là tiếng Anh (tên riêng, mã sản phẩm)")
     a = ap.parse_args()
     wd = gb.workdir("gin", a.id)
-    if not (wd / "vung_ocr.json").exists():
+    if not (wd / state_paths.GIN_REGIONS_OCR_FILE).exists():
         sys.exit(f"Chưa chuẩn bị. Chạy trước: venv/bin/python gin_prepare.py {a.id}")
     if not (wd / "spec.json").exists():
         sys.exit(f"Chưa có spec: {wd / 'spec.json'} — viết theo brief ({wd / 'brief.md'}) "
@@ -322,7 +323,7 @@ def main() -> int:
             print(f"[LOI] {e}")
         return nc.count_round_error(wd, loi, f"venv/bin/python gin_submit.py {a.id}")
 
-    d = json.loads((wd / "vung_ocr.json").read_text(encoding="utf-8"))
+    d = json.loads((wd / state_paths.GIN_REGIONS_OCR_FILE).read_text(encoding="utf-8"))
     con = [v["stt"] for v in d["vung"] if v.get("nen") != "phang"]
     mo_ta = (f"Thẻ quote tiếng Việt (ảnh {a.id}): thay {len(khoi)} vùng chữ."
              + (f" Còn {len(con)} vùng nằm trên nền ảnh (stt {', '.join(str(x) for x in con)}) "

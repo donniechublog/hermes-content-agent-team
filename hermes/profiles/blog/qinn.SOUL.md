@@ -14,7 +14,7 @@ cho đủ số.
 
 ```bash
 cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai qinn   # 1. đọc brief
-# 2. viết ds.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k)
+# 2. viết list.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k)
 cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai qinn        # 3. nộp
 ```
 

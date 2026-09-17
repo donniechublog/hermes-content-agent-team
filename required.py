@@ -15,7 +15,7 @@ Co che:
     vai sua). Sau khi ghi thanh cong goi `xoa(vai, items)` de bo muc da dua.
   - Khop bang link (chuan hoa) hoac bang ten: xem `khop()`.
 
-Tep: state/<brand>/bat_buoc_<vai>.json (runtime, gitignore).
+Tep: state/<brand>/required_<vai>.json (runtime, gitignore).
 """
 import json
 import re
@@ -27,10 +27,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import model_boards                                            # noqa: E402
 import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
+import state_paths                                           # noqa: E402
 
 
 def file(vai: str) -> Path:
-    return env_load.state_dir() / f"bat_buoc_{vai}.json"
+    return env_load.state_dir() / state_paths.REQUIRED_FILE.format(vai)
 
 
 def read(vai: str) -> dict:

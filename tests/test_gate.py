@@ -1204,7 +1204,7 @@ def test_count_used_ok_return_again_after_each_test_on():
     cac test sau deu chet im."""
     import image_provenance as la
     p = la._used_images_log()
-    assert p.name == "anh_da_dung.jsonl", p
+    assert p.name == "used_images.jsonl", p
     assert p.parent.exists(), f"so tro vao thu muc khong ton tai: {p}"
 
 

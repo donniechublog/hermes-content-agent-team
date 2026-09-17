@@ -67,7 +67,6 @@
    "key:usd_bai": 2,
    "key:vai": 2,
    "path:bao_cao.txt": 2,
-   "path:nhat_ky": 1,
    "path:phan_tich_": 1
   },
   "approve_base.py": {
@@ -84,8 +83,7 @@
    "key:CT_CHAT_QUA_GATEWAY": 1,
    "key:ngay": 3,
    "key:nguon": 1,
-   "key:vai": 3,
-   "path:dat_bai.json": 1
+   "key:vai": 3
   },
   "approve_dispatch.py": {
    "key:CT_BANG_DEN": 1,
@@ -96,10 +94,7 @@
    "key:tieu_de": 1,
    "key:tom_tat": 1,
    "key:trang_thai": 3,
-   "key:vai": 1,
-   "path:da_bao_tien_do.json": 1,
-   "path:da_bao_treo.json": 1,
-   "path:tin_ket_qua_task.json": 1
+   "key:vai": 1
   },
   "approve_pick.py": {
    "key:da_giao": 2,
@@ -108,8 +103,7 @@
    "key:task_anh": 2,
    "key:task_viet": 1,
    "key:vai_anh": 3,
-   "key:vai_viet": 2,
-   "path:nguon_": 1
+   "key:vai_viet": 2
   },
   "approve_post.py": {
    "key:anh": 3,
@@ -124,8 +118,7 @@
    "key:moat_lich_su": 1,
    "key:task_truoc": 1,
    "key:tu_vai": 1,
-   "key:vai_viet": 9,
-   "path:lam_lai_cho.json": 1
+   "key:vai_viet": 9
   },
   "approve_service.py": {
    "key:CT_CHAT_QUA_GATEWAY": 1,
@@ -206,7 +199,6 @@
    "key:toi": 1
   },
   "cleanup.py": {
-   "path:*_da_dung.jsonl": 1,
    "path:*_nop.jsonl": 1
   },
   "deck.py": {
@@ -281,10 +273,7 @@
    "key:nen": 6,
    "key:nen_rgb": 3,
    "key:std_nen": 3,
-   "key:vung": 2,
-   "path:tai_ve": 1,
-   "path:vung_ocr.json": 1,
-   "path:vung_preview.png": 2
+   "key:vung": 2
   },
   "gin_submit.py": {
    "key:anh": 3,
@@ -299,11 +288,7 @@
    "key:text_goc": 4,
    "key:vung": 9,
    "key:vung_goc": 4,
-   "key:xoa_them": 1,
-   "path:ket_qua_": 1,
-   "path:nen_sach.png": 1,
-   "path:vung.json": 1,
-   "path:vung_ocr.json": 4
+   "key:xoa_them": 1
   },
   "hermes_adapter.py": {
    "key:phien": 2,
@@ -347,8 +332,7 @@
   },
   "image_provenance.py": {
    "key:crop_ti_le": 2,
-   "key:nguon_dung": 2,
-   "path:anh_da_dung.jsonl": 1
+   "key:nguon_dung": 2
   },
   "image_rules_dre.py": {
    "key:ten": 1,
@@ -374,11 +358,7 @@
    "key:nen_sach": 2,
    "key:nguon": 2,
    "key:so_vung_ocr": 1,
-   "key:vung": 7,
-   "path:nen_sach.png": 2,
-   "path:vung.json": 2,
-   "path:vung_ocr.json": 3,
-   "path:vung_preview.png": 1
+   "key:vung": 7
   },
   "itachi_submit.py": {
    "key:bg_anh": 2,
@@ -387,8 +367,7 @@
    "key:h_dong": 4,
    "key:nen_sach": 2,
    "key:nguon": 1,
-   "key:vung": 3,
-   "path:ket_qua_": 1
+   "key:vung": 3
   },
   "journal.py": {
    "key:chon": 3,
@@ -416,9 +395,7 @@
    "key:tong": 2,
    "key:trang_thai": 13,
    "key:vai": 3,
-   "key:xong_luc": 1,
-   "path:ghi_chu.jsonl": 1,
-   "path:nhat_ky": 1
+   "key:xong_luc": 1
   },
   "journal_web.py": {
    "key:NHAT_KY_HOST": 1,
@@ -477,6 +454,15 @@
   "migrate_manifest_v3.py": {
    "path:tu_dien_ten": 1
   },
+  "migrate_state_files.py": {
+   "key:nhat_ky": 1,
+   "key:quet": 1,
+   "key:tai_ve": 1,
+   "path:nguon_*.json": 1,
+   "path:nhat_ky": 3,
+   "path:quet": 3,
+   "path:vung_ocr.json": 1
+  },
   "miles_submit.py": {
    "key:cau_so_trong_nguon": 1,
    "key:do_dai": 8,
@@ -496,8 +482,7 @@
    "key:loi_da_bao": 3,
    "key:moat_lich_su": 1,
    "key:tg_card_message_id": 1,
-   "path:moat_chua_bao.json": 1,
-   "path:moat_day_lai.json": 1
+   "path:moat_chua_bao.json": 1
   },
   "model_audition.py": {
    "key:chu_de": 1,
@@ -552,8 +537,7 @@
    "key:trang_thai": 2,
    "key:trong_ngay": 3,
    "key:usd_bai": 6,
-   "key:vai": 5,
-   "path:nhat_ky": 1
+   "key:vai": 5
   },
   "prepare/browser.py": {
    "key:alt_chup": 1,
@@ -600,8 +584,7 @@
    "key:rong": 2,
    "key:tep": 4,
    "key:tieu_de": 2,
-   "key:trang": 2,
-   "path:nguon_": 1
+   "key:trang": 2
   },
   "prepare/vision.py": {
    "key:tieu_de_en": 1
@@ -633,8 +616,7 @@
   "render_edu.py": {
    "key:nhan": 2,
    "key:phuc_vu": 3,
-   "key:truong": 8,
-   "path:edu_theme_da_dung.jsonl": 1
+   "key:truong": 8
   },
   "required.py": {
    "key:ghi_chu": 3,
@@ -642,8 +624,7 @@
    "key:ngay": 3,
    "key:ra_mat": 1,
    "key:ten": 6,
-   "key:tu_khoa": 3,
-   "path:bat_buoc_": 1
+   "key:tu_khoa": 3
   },
   "scan_business.py": {
    "key:cac_bao": 5,
@@ -740,8 +721,6 @@
    "key:tin_watchlist": 1,
    "key:toa_soan": 2,
    "key:tong_quet": 2,
-   "path:quet": 1,
-   "path:quet.json": 2,
    "path:scan_business.py": 1,
    "path:scan_models.py": 1,
    "path:scan_models.txt": 1,
@@ -752,10 +731,7 @@
   },
   "scan_submit.py": {
    "key:tong_quet": 1,
-   "path:khong_co.txt": 1,
-   "path:manifest_build.py": 1,
-   "path:quet.json": 3,
-   "path:thu_manifest.json": 2
+   "path:manifest_build.py": 1
   },
   "scan_x.py": {
    "key:bo_qua": 1,

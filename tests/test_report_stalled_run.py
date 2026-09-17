@@ -87,7 +87,7 @@ def test_timed_out_ok_report_one_attempt_new_run():
         gui = _with_stub({}, {}, lc, None, _row(now, now - 1600, st="ready"), tmp)
         t = [x for x in gui if "⏱" in x]
         assert t and "25 phút" in t[0] and "trần 25 phút" in t[0], gui
-        da = json.loads((Path(tmp) / "da_bao_tien_do.json").read_text(encoding="utf-8"))
+        da = json.loads((Path(tmp) / "reported_progress.json").read_text(encoding="utf-8"))
         assert da.get("t_1:timed_out:184") is True, da
         # vong sau, cung run -> KHONG bao lai
         gui2 = _with_stub({}, {}, lc, None, _row(now, now - 1600, st="ready"), tmp)

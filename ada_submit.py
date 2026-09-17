@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ada_submit.py — NỘP của Ada: dựng báo cáo (số liệu do ada_prepare.py, nhận xét
-từ spec.json), kiểm tiếng Việt, lưu state/<brand>/nhat_ky/phan_tich_<ngày>.md,
+từ spec.json), kiểm tiếng Việt, lưu state/<brand>/journal/phan_tich_<ngày>.md,
 gửi topic analyst.
 
 Dùng:
@@ -129,7 +129,7 @@ def main() -> int:
         return 1
     bao_cao = use_report(m, spec)
     ngay = datetime.now(ab.VN).strftime("%Y-%m-%d")
-    p_md = env_load.state_dir() / "nhat_ky" / f"phan_tich_{ngay}.md"
+    p_md = env_load.state_dir() / state_paths.JOURNAL_DIR / f"phan_tich_{ngay}.md"
     p_md.parent.mkdir(parents=True, exist_ok=True)
     p_md.write_text(bao_cao, encoding="utf-8")
     (wd / "bao_cao.txt").write_text(bao_cao, encoding="utf-8")

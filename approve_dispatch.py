@@ -20,6 +20,7 @@ import blackboard                                              # noqa: E402
 import write_log                                              # noqa: E402
 import hermes_adapter                                        # noqa: E402
 import role                                                   # noqa: E402
+import state_paths                                           # noqa: E402
 
 from approve_base import (  # noqa: E402
     HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _write_json, call, log,
@@ -119,9 +120,9 @@ def kanban_create(title, assignee, body, parent=None):
 # Kanban cua home container hien tai. Viec bi chan/that bai duoc bao qua
 # report_progress_kanban (kem ly do); ham bao_viec_bi_chan rieng truoc day trung
 # viec voi no va bo sot Kite, da bo 05/09/2026.
-ALREADY_REPORT_PROGRESS = STATE_DIR / "da_bao_tien_do.json"   # {task_id: trang thai da bao}
-STORY_RESULT = STATE_DIR / "tin_ket_qua_task.json"    # {task_id: {chat,thread,mid}}
-ALREADY_REPORT_STALLED = STATE_DIR / "da_bao_treo.json"         # {task_id: epoch lan bao "treo" cuoi}
+ALREADY_REPORT_PROGRESS = STATE_DIR / state_paths.REPORTED_PROGRESS_FILE   # {task_id: trang thai da bao}
+STORY_RESULT = STATE_DIR / state_paths.TASK_RESULT_MESSAGES_FILE    # {task_id: {chat,thread,mid}}
+ALREADY_REPORT_STALLED = STATE_DIR / state_paths.REPORTED_STALLED_FILE         # {task_id: epoch lan bao "treo" cuoi}
 THRESHOLD_STALLED_MINUTES = 20          # lan chay hien tai lau hon nay -> bao (xem long_run_message)
 AGAIN_REPORT_STALLED_MINUTES = 30         # con chay thi nhac lai sau moi khoang nay
 BEAT_SILENT_MINUTES = 5               # khong co heartbeat lau hon nay -> goi la "im lang"

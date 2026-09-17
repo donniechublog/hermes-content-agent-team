@@ -626,7 +626,7 @@ def main():
                for k, t in nhom.items()]
         so_moi = required.extra_many("vera", muc)
         print(f"  bat buoc: {len(muc)} tin watchlist, {so_moi} moi; tong dang cho "
-              f"{len(required.read('vera'))} (bat_buoc_vera.json)", file=sys.stderr)
+              f"{len(required.read('vera'))} ({required.file('vera').name})", file=sys.stderr)
 
     ket = {"quet_luc": datetime.now(timezone.utc).isoformat(),
            "tong_quet": len(tin),

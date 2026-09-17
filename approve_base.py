@@ -128,7 +128,7 @@ def _write_json(path, data, indent=2):
     """Ghi mot tep state JSON NGUYEN TU: tmp cung thu muc + os.replace.
 
     Vi sao 06/09/2026: ca tep nay ghi state bang write_text thang, trong khi
-    offset.txt/dat_bai.json (va moat_publish, bat_buoc, emoji_deck...) da di qua
+    offset.txt/article_request_counts.json (va moat_publish, bat_buoc, emoji_deck...) da di qua
     tmp tu lau. write_text CAT NGAN tep cu truoc khi ghi noi dung moi: dich vu
     bi restart hay het cho dia dung giua hai buoc do se de lai mot sidecar cut,
     va moi nguoi doc sau do (nut Duyet, vai anh, moat) nem ValueError — bai ket

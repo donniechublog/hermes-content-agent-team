@@ -34,6 +34,7 @@ from pathlib import Path
 import httpx
 
 import env_load
+import state_paths
 
 ROOT = env_load.ROOT
 DRAFTS = ROOT / "drafts"
@@ -405,7 +406,7 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
 # day, cron moat-publish-watch (5 phut/lan) day lai theo lich lui dan.
 # An toan vi intake cua moat idempotent theo external_id: goi lai bai da vao roi
 # thi no tra ve workflow cu kem "duplicate": true, khong de ra task trung.
-QUEUE = STATE_DIR / "moat_day_lai.json"
+QUEUE = STATE_DIR / state_paths.MOAT_REPUBLISH_QUEUE_FILE
 
 # Phut cho truoc lan thu thu 1, 2, 3... Het bang la bo cuoc va bao mot dong.
 SCHEDULE_BACK = [5, 15, 45, 120, 360, 720, 1440]

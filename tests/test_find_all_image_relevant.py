@@ -195,7 +195,7 @@ def test_extra_announcement_page_write_into_source_json_one_attempt():
     th.vendors_in_story = lambda td, tt="": [{"khoa": "deepseek", "hang": "DeepSeek"}]
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            p = Path(tmp) / "nguon_d1.json"
+            p = Path(tmp) / "article_source_d1.json"
             nguon = {"tieu_de_en": "", "trang": [{"url": "https://livebench.ai/", "loai": "gốc"}]}
             trang = fallback_rounds._extra_announcement_page(nguon, p, nguon["trang"], TIEU_DE, "")
             assert [t["loai"] for t in trang] == ["gốc", "công bố"], trang

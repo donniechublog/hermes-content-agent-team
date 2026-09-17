@@ -176,7 +176,7 @@ def main() -> int:
             loi.append(f"mục {i}: nguon {sid!r} không có trong bộ (có: {', '.join(slides)})")
             continue
         cach = (muc.get("cach") or "tai_cho").lower()
-        out = wd / (f"ket_qua_{sid}.png")
+        out = wd / (f"{state_paths.GIN_RESULT_PREFIX}{sid}.png")
         if cach == "tai_cho":
             loi += about_download_wait(s, muc, out, a.bo_qua_dau)
             files.append(out)

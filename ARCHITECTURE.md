@@ -110,7 +110,7 @@ flowchart TB
         apB["hermes-approve@blog<br/>approve_service + duyet_*"]:::container
         dashB["hermes-dashboard-blog :9120"]:::container
         cronB{{"cron: finn-scan, qinn-scan @05:00<br/>daily-log @06:00 · model-watch<br/>moat-watch mỗi 5' · audit-cron @07:00"}}:::cron
-        stateB[("state/blog/<br/>candidates · prepare/ · bat_buoc ·<br/>anh_da_dung.jsonl")]:::datastore
+        stateB[("state/blog/<br/>candidates · prepare/ · required_* ·<br/>used_images.jsonl")]:::datastore
     end
 
     subgraph DCGR["Container: brand DCGR — ~/.hermes-dcgr"]
