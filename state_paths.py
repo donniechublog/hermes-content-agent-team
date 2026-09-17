@@ -37,6 +37,11 @@ RANKING_IMAGE_PREFIX = "ranking_"       # ranking_<board>.png
 CAPTURE_IMAGE_PREFIX = "capture_"       # capture_<n>_<k>.png
 LANDSCAPE_SUFFIX = ".landscape.png"     # <id>.landscape.png
 
+# image_brand workdir (brand_match/<key>/), LOW-237; table docs/tu_dien_ten/image_search_keys_v2.json
+LOGO_ORIGINAL_FILE = "logo_original.png"   # logo downloaded from Commons (Wikidata P154)
+LOGO_CARD_FILE = "logo_card.png"           # logo placed on the brand card
+STOCK_IMAGE_PREFIX = "stock_"              # stock_<key>.png (Google Finance capture)
+
 
 # ---- brand-level state (state/<brand>/…), LOW-231; table docs/tu_dien_ten/state_files_v2.json
 ARTICLE_SOURCE_PREFIX = "article_source_"          # article_source_<draft_id>.json

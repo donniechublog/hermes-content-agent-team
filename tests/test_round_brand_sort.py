@@ -31,16 +31,16 @@ def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
     có ảnh trụ sở (28). Danh sách đưa vào `download_and_filter` phải đặt ảnh trụ sở của
     hãng B lên TRƯỚC chân dung của hãng A — ngược thứ tự xử lý."""
     ung_vien_A = {"image_url": "https://x/a-portrait.jpg", "alt": "chân dung", "og": False,
-                 "source": "brand", "rong": 1800, "cao": 2880, "page_url": "https://x/a",
+                 "source": "brand", "w": 1800, "h": 2880, "page_url": "https://x/a",
                  "score": 24, "brand_match": {"company": "HangA", "key": "hanga",
                                               "kind": "person", "keyword": "CEO HangA"}}
     ung_vien_B = {"image_url": "https://x/b-hq.jpg", "alt": "trụ sở", "og": False,
-                 "source": "brand", "rong": 2000, "cao": 1200, "page_url": "https://x/b",
+                 "source": "brand", "w": 2000, "h": 1200, "page_url": "https://x/b",
                  "score": 28, "brand_match": {"company": "HangB", "key": "hangb",
                                               "kind": "photo", "keyword": "HangB headquarters"}}
 
     def anh_hang_gia(hang, so=4, wd=None):
-        return [ung_vien_A] if hang["khoa"] == "hanga" else [ung_vien_B]
+        return [ung_vien_A] if hang["key"] == "hanga" else [ung_vien_B]
 
     goi = {}
 
@@ -50,8 +50,8 @@ def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
 
     with tempfile.TemporaryDirectory() as d, \
          mock.patch("image_brand.vendors_in_story",
-                   return_value=[{"hang": "HangA", "khoa": "hanga"},
-                                 {"hang": "HangB", "khoa": "hangb"}]), \
+                   return_value=[{"company": "HangA", "key": "hanga"},
+                                 {"company": "HangB", "key": "hangb"}]), \
          mock.patch("image_brand.vendor_images", side_effect=anh_hang_gia), \
          mock.patch.object(fallback_rounds, "_report_brand_empty", return_value=[]), \
          mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia):
@@ -80,7 +80,7 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
     phải sống sót."""
     def _ung(hang, khoa, diem, i):
         return {"image_url": f"https://x/{khoa}-{i}.jpg", "alt": khoa, "og": False,
-                "source": "brand", "rong": 1800, "cao": 1200, "page_url": f"https://x/{khoa}",
+                "source": "brand", "w": 1800, "h": 1200, "page_url": f"https://x/{khoa}",
                 "score": diem, "brand_match": {"company": hang, "key": khoa,
                                                "kind": "person" if diem >= 24 else "photo",
                                                "keyword": f"{hang}"}}
@@ -95,7 +95,7 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
         return []                                             # Commons rỗng cho cả 3 — ép sang report_about_keyword
 
     def bao_thuong_hieu_rong_gia(h, wd, phien=None):
-        return cands_theo_hang.get(h["khoa"], [])
+        return cands_theo_hang.get(h["key"], [])
 
     def tai_va_loc_gia(cands, wd):
         wd.mkdir(parents=True, exist_ok=True)
@@ -115,9 +115,9 @@ def test_new_rank_has_it_most_one_image_before_when_rank_which_ok_extra():
 
     with tempfile.TemporaryDirectory() as d, \
          mock.patch("image_brand.vendors_in_story",
-                   return_value=[{"hang": "Anthropic", "khoa": "anthropic"},
-                                 {"hang": "Alibaba", "khoa": "alibaba"},
-                                 {"hang": "Moonshot AI", "khoa": "moonshot"}]), \
+                   return_value=[{"company": "Anthropic", "key": "anthropic"},
+                                 {"company": "Alibaba", "key": "alibaba"},
+                                 {"company": "Moonshot AI", "key": "moonshot"}]), \
          mock.patch("image_brand.vendor_images", side_effect=anh_hang_gia), \
          mock.patch.object(fallback_rounds, "_report_brand_empty", side_effect=bao_thuong_hieu_rong_gia), \
          mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia), \

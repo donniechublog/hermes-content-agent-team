@@ -277,9 +277,8 @@ def _stack_if_can(muc, nhan, stem):
     ra.parent.mkdir(parents=True, exist_ok=True)
     # Dong dau XUAT XU (xem cong 2c): anh ghep co the roi dung 4:5 chan (vd hai
     # anh 16:10 xep doc), dau nay cho cong biet chinh carousel.py dung ra no.
-    from PIL.PngImagePlugin import PngInfo
-    _meta = PngInfo()
-    _meta.add_text("nguon_dung", "ghep_doc")
+    import image_provenance
+    _meta = image_provenance.stamp_provenance("vertical_stack")
     stacked = card.stack_read(ds)
     stacked.save(ra, "PNG", pnginfo=_meta)
     muc["image"] = str(ra)

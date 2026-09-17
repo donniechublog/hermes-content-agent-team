@@ -78,9 +78,9 @@ def test_country_and_code_has_ballot():
 def test_keyword_concept_extra_use_before():
     ra = k.keyword_concept("Samsung opens new chip plant", "", dung_llm=False,
                              them=["flag of South Korea"])
-    assert ra[0]["tu_khoa"] == "flag of South Korea", ra
-    assert ra[0]["ly_do"] == "theo loại tin"
-    assert any(x["tu_khoa"] == "silicon wafer" for x in ra), ra   # heuristic van chay
+    assert ra[0]["keyword"] == "flag of South Korea", ra
+    assert ra[0]["reason"] == "theo loại tin"
+    assert any(x["keyword"] == "silicon wafer" for x in ra), ra   # heuristic van chay
 
 
 def test_category_force_capture_board_ranking():

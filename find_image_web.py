@@ -64,7 +64,7 @@ def filter(urls: list, so: int, tu: str, q: str) -> list:
                    # Duoi og:image bao chi (42): ket qua web co the lac de ca loat
                    # (Bing async tra "tiec tra" cho "TSMC wafer fab", 12/09), khong
                    # duoc chiem het tran tai MAX_DOWNLOAD cua download_and_filter.
-                   "rong": 0, "cao": 0, "score": 40 if tu == "web_bing" else 38, "tu_khoa": q})
+                   "w": 0, "h": 0, "score": 40 if tu == "web_bing" else 38, "keyword": q})
         if len(ra) >= so:
             break
     return ra

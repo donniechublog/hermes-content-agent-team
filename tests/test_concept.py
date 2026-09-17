@@ -18,7 +18,7 @@ import image_concept as k  # noqa: E402
 
 
 def _tk(tieu_de, tom=""):
-    return [x["tu_khoa"] for x in k.keyword_heuristic(tieu_de, tom)]
+    return [x["keyword"] for x in k.keyword_heuristic(tieu_de, tom)]
 
 
 def test_country_and_topic_same_out():
@@ -55,8 +55,8 @@ def test_summary_same_ok_read():
 def test_read_return_error_llm_drop_junk_and_limit():
     ra = k.read_return_error_llm("KEYWORD: Tokyo skyline at night | capital\nblah\nKEYWORD: server racks\n"
                            "KEYWORD: server racks | trùng\nKEYWORD: a b c d e f g | quá dài\nKEYWORD: x | y")
-    assert [x["tu_khoa"] for x in ra] == ["tokyo skyline at night", "server racks", "x"]
-    assert ra[1]["ly_do"] == "gợi ý của model"
+    assert [x["keyword"] for x in ra] == ["tokyo skyline at night", "server racks", "x"]
+    assert ra[1]["reason"] == "gợi ý của model"
     assert k.read_return_error_llm("") == [] and k.read_return_error_llm(None) == []
 
 
@@ -80,7 +80,7 @@ def test_no_block_wrong_phrase_valid_not_yet_same_from():
         "KEYWORD: harvard laboratory renovation | that cum khac\n"
         "KEYWORD: blackboard mathematical formulas | dung tu khac chalkboard\n"
         "KEYWORD: server racks | khong nam trong danh sach vi du")
-    assert [x["tu_khoa"] for x in ra] == [
+    assert [x["keyword"] for x in ra] == [
         "harvard laboratory renovation", "blackboard mathematical formulas", "server racks"]
 
 

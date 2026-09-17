@@ -504,7 +504,8 @@ tự dồn cột — đủ cột, đúng từng ô, chỉ bố cục hẹp lại
 bảng vừa khổ, còn quá ngang mới ghép dọc hai bảng cùng trang — **full bề ngang bảng, khoanh vàng hàng model, đọc thứ
 hạng từ ô đầu**. Không nguồn nào ra → thẻ dự phòng: tên model + #hạng + logo (nếu
 chụp được từ hàng) + site. Ảnh vào kho với mã **`XH`**, đóng dấu
-`nguon_dung=chup_xep_hang|the_xep_hang` kèm model/hạng/site.
+`provenance=ranking_capture|ranking_card` kèm model/hạng/site (PNG cũ trước LOW-237 mang
+`nguon_dung=chup_xep_hang|the_xep_hang` — hàm đọc nhận cả hai).
 
 Vai chỉ còn một việc: **`"anh": "XH"`** (hero) / **bìa `"anh": "XH"`** (carousel).
 `ethan_submit` / `dre_submit` chặn ảnh chính khác khi `manifest.json` có `is_ranking_story` —

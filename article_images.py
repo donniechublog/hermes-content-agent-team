@@ -315,7 +315,7 @@ def find(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) 
 
     with cf.ThreadPoolExecutor(max_workers=env_load.quantity(8)) as ex:
         for c, kt in zip(loc, ex.map(lambda x: measure_image(x["image_url"]), loc)):
-            c["rong"], c["cao"], c["byte"], c["do_hoa"] = kt
+            c["w"], c["h"], c["byte"], c["graphic_reason"] = kt
             c["score"], c["score_reason"] = touch(c["image_url"], c["alt"], c["og"],
                                          kt[0], kt[1], do_hoa=kt[3],
                                          tin_model=tin_model)

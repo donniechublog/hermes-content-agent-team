@@ -297,7 +297,7 @@ def _image_xh(d: Path, ten="XH.png", w=1242, h=2688):
         dr.rectangle([60, y, w - 60, y + 60], fill=(240, 240, 245))
     dr.rectangle([60, h - 700, w - 60, h - 640], outline=(245, 197, 24), width=8)  # khoanh model
     meta = PngInfo()
-    meta.add_text("nguon_dung", "chup_xep_hang")
+    meta.add_text("provenance", "ranking_capture")
     meta.add_text("model", "GPT-5.2")
     p = d / ten
     im.save(p, "PNG", pnginfo=meta)
@@ -305,7 +305,7 @@ def _image_xh(d: Path, ten="XH.png", w=1242, h=2688):
 
 
 def test_save_crop_keep_mark_image_original():
-    """_save_crop từng dựng PngInfo trắng → bản cắt mất dấu chup_xep_hang →
+    """_save_crop từng dựng PngInfo trắng → bản cắt mất dấu ranking_capture →
     is_ranking_image False → mất miễn trừ → carousel chặn đúng cái bìa bắt buộc."""
     import image_prepare as cb
     import image_rules_ethan as la
@@ -317,8 +317,9 @@ def test_save_crop_keep_mark_image_original():
             assert la.is_ranking_image(im), "ảnh gốc phải mang dấu"
             cb._save_crop(im, d / "cat.png", "4:5", cy=0.35)
         with Image.open(d / "cat.png") as ra:
-            assert la.is_ranking_image(ra), "bản cắt MẤT dấu chup_xep_hang"
-            assert la.read_crop_trace(ra), "bản cắt phải vẫn có dấu crop_ti_le"
+            assert la.is_ranking_image(ra), "bản cắt MẤT dấu ranking_capture"
+            assert la.read_crop_trace(ra) == (1242, 2688), "bản cắt phải vẫn có dấu crop_trace"
+            assert ra.text.get("model") == "GPT-5.2" and "crop_ti_le" not in ra.text, ra.text
 
 
 def test_check_ratio_domain_except_image_ranking():
@@ -451,7 +452,7 @@ def test_image_ranking_domain_gate_use_again():
             dr.rectangle([50, khoanh_y, 1150, khoanh_y + 60], outline=(245, 197, 24), width=6)
             m = PngInfo()
             if dau:
-                m.add_text("nguon_dung", "chup_xep_hang")
+                m.add_text("provenance", "ranking_capture")
             p = d / ten
             im.save(p, "PNG", pnginfo=m)
             return p

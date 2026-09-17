@@ -39,6 +39,7 @@ import state_paths                                            # noqa: E402
 
 TABLE = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_paths_v2.json").read_text(encoding="utf-8"))
 TABLE_231 = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_files_v2.json").read_text(encoding="utf-8"))
+TABLE_237 = json.loads((ROOT / "docs" / "tu_dien_ten" / "image_search_keys_v2.json").read_text(encoding="utf-8"))["workdir_files"]
 SECTIONS_231 = ("brand_files", "brand_dirs", "scan_files", "journal_files", "router_9", "gin_files")
 
 
@@ -122,7 +123,8 @@ def test_constants_match_approved_table():
     # moi hang chuoi IN HOA deu da duoc doi chieu — hang moi phai vao bang truoc
     # (hang LOW-231 doi chieu voi state_files_v2.json o test ben duoi, cung do chat)
     hang = {k for k, v in vars(state_paths).items() if k.isupper() and isinstance(v, str)}
-    thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()})
+    thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()}
+                   - {ten for _, ten in _rows_237().values()})
     assert not thieu, f"hang chua doi chieu voi state_paths_v2.json / state_files_v2.json: {thieu}"
 
 
@@ -187,6 +189,23 @@ def test_low231_constants_match_approved_table():
     assert not khong_co, f"hang khong ton tai trong state_paths: {khong_co}"
 
 
+def _rows_237() -> dict:
+    """LOW-237: tep trong workdir image_brand (brand_match/<key>/). {ten CU: (ten MOI, ten hang)}."""
+    sp = state_paths
+    return {
+        "logo_goc.png": (sp.LOGO_ORIGINAL_FILE, "LOGO_ORIGINAL_FILE"),
+        "the_logo.png": (sp.LOGO_CARD_FILE, "LOGO_CARD_FILE"),
+        "co_phieu_<key>.png": (f"{sp.STOCK_IMAGE_PREFIX}<key>.png", "STOCK_IMAGE_PREFIX"),
+    }
+
+
+def test_low237_constants_match_approved_table():
+    rows = _rows_237()
+    sai = {cu: (moi, TABLE_237.get(cu)) for cu, (moi, _) in rows.items() if TABLE_237.get(cu) != moi}
+    assert not sai, f"hang LOW-237 lech image_search_keys_v2.json (dung tu hang, bang): {sai}"
+    assert set(rows) == set(TABLE_237), (sorted(rows), sorted(TABLE_237))
+
+
 def test_article_source_file_uses_table_name():
     moi = TABLE_231["brand_files"]["nguon_{id}.json"].replace("{id}", "d1")
     assert state_paths.article_source_file(Path("/s/blog"), "d1") == Path("/s/blog") / moi
@@ -212,6 +231,12 @@ OLD_FILE_SHAPES = [
 # thu muc (quet/tai_ve/nhat_ky cua state — `nhat_ky/` goc repo khong .py nao dung).
 _PLAIN_231 = {cu for muc in SECTIONS_231 for cu in TABLE_231[muc] if "{" not in cu}
 OLD_NAMES |= _PLAIN_231
+# LOW-237: tep workdir image_brand
+OLD_NAMES |= {cu for cu in TABLE_237 if "<" not in cu}
+OLD_FILE_SHAPES += [
+    re.compile(r"(^|/)(logo_goc|the_logo)\.png$"),        # logo_goc.png, the_logo.png
+    re.compile(r"(^|/)co_phieu_.*\.png$"),                  # co_phieu_<key>.png
+]
 OLD_FILE_SHAPES += [
     re.compile(r"(^|/)(" + "|".join(re.escape(cu) for cu in sorted(_PLAIN_231) if "." in cu) + r")$"),
     re.compile(r"(^|/)nguon_.*\.json$"),            # nguon_<id>.json, nguon_*.json
@@ -376,6 +401,9 @@ def test_scanner_catches_low231_state_names():
         'n = wd / "nen_sach.png"',
         'o = wd / f"ket_qua_{id_}.png"',
         'o = state / f"{id_}_nen_sach.png"',
+        'goc = Path(wd) / "logo_goc.png"',                       # LOW-237
+        'the = card_logo(goc, Path(wd) / "the_logo.png")',
+        'ra = _P(wd) / f"co_phieu_{khoa}.png"',
     ]
     for src in must_catch:
         assert scan_source(src), f"quet bo sot (LOW-231): {src}"
@@ -389,6 +417,8 @@ def test_scanner_catches_low231_state_names():
         'wd = env_load.state_dir() / state_paths.SCAN_DIR / ten',
         'q = wd / state_paths.SCAN_RESULT_FILE',
         'o = wd / f"{state_paths.GIN_RESULT_PREFIX}{id_}.png"',
+        'ra = wd / f"{state_paths.STOCK_IMAGE_PREFIX}{khoa}.png"',
+        'print(f"[co_phieu] {ma}: khong thay bieu do")',
         'def f():\n    """doc state/<brand>/anh_da_dung.jsonl va quet/ds.json"""\n',
     ]
     for src in must_allow:

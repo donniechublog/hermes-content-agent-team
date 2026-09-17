@@ -19,7 +19,7 @@ TIN_TOAN = "AI is getting good at math. Mathematicians worry about what that mea
 
 
 def _tk(tieu_de, tom=""):
-    return [x["tu_khoa"] for x in k.keyword_heuristic(tieu_de, tom)]
+    return [x["keyword"] for x in k.keyword_heuristic(tieu_de, tom)]
 
 
 def test_reward_hacking_no_into_story_security_network():

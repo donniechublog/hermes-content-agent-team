@@ -253,7 +253,7 @@ def load_meta(draft_id: str) -> dict:
 # Tran so engine chay CUNG LUC tren ca may (chung hai brand): moi engine mo mot
 # Chromium 1600x1200 DPR2 + goi vision tung anh. Ong Chu chon 7 tin la 7 engine
 # khoi chay cung luc (audit 05/09/2026). Het cho thi doi, khong bo.
-COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_CHUAN_BI_SONG_SONG", "2") or 2))
+COUNT_ENGINE_PARALLEL = max(1, int(os.environ.get("CT_PREPARE_PARALLEL", "2") or 2))
 
 # Doi khoa `running.pid` cua MOT draft toi da bay nhieu giay (LOW-26, 12/09/2026).
 # Truoc do la 300 — bang dung tran bash tool cua vai (~300s), nen lan chay dau
@@ -284,7 +284,7 @@ def _wait_for_slot():
     """Giu mot trong N khoa tep state/prepare.<i>.lock (flock) trong luc chuan bi.
 
     Thieu fcntl (Windows) thi CHAY KHONG KHOA kem mot dong canh bao — tran
-    CT_CHUAN_BI_SONG_SONG khong con hieu luc, nhung may do chi mot nguoi chay
+    CT_PREPARE_PARALLEL khong con hieu luc, nhung may do chi mot nguoi chay
     tay/chay test, khong phai server hai brand. Truoc 09/09/2026 cho nay
     `import fcntl` tran nen `chay()` KHONG chay duoc tren Windows chut nao
     (audit C3); emoji_deck.py da co san mau nay tu lau."""

@@ -56,7 +56,7 @@ def filter_article(items: list, bo_mien: tuple = (), toi_da: int = MAX_ARTICLE) 
             continue
         thay.add(u)
         dem[mien] = dem.get(mien, 0) + 1
-        ra.append({"url": u, "tieu_de": (title or "")[:160], "mien": mien})
+        ra.append({"url": u, "title": (title or "")[:160], "domain": mien})
         if len(ra) >= toi_da:
             break
     return ra
@@ -73,7 +73,7 @@ def _rss(q: str, mkt: str) -> list:
 
 
 def report_about(tu_khoa: list, bo_mien: tuple = (), toi_da: int = MAX_ARTICLE) -> list:
-    """Bài báo gần đây về các từ khoá (mỗi từ khoá × MKT). Trả [{url, tieu_de, mien}]."""
+    """Bài báo gần đây về các từ khoá (mỗi từ khoá × MKT). Trả [{url, title, domain}]."""
     items = []
     for q in tu_khoa:
         for mkt in MKT:
@@ -97,18 +97,18 @@ def _og(bai: dict) -> dict | None:
     try:
         r = httpx.get(u, headers=article_sources.HDR, timeout=12, follow_redirects=True)
         if r.status_code != 200:
-            print(f"[bao thuc the] {bai['mien']}: HTTP {r.status_code}", file=sys.stderr)
+            print(f"[bao thuc the] {bai['domain']}: HTTP {r.status_code}", file=sys.stderr)
             return None
         im = og_from_html(r.text[:400_000], str(r.url))
         if not im or not scan_common.url_hide_whole(im):
             return None
-        return {"image_url": im, "alt": bai["tieu_de"], "og": True, "source": "press_entity",
+        return {"image_url": im, "alt": bai["title"], "og": True, "source": "press_entity",
                 # `page_url` = chính ảnh: og:image gần như luôn nằm trên CDN khác
                 # miền bài (image.cnbcfm.com / cnbc.com) và download_filter coi "khác
-                # miền" là quảng cáo; bài gốc giữ ở `bai` để truy nguồn.
-                "page_url": im, "bai": u, "mien_bai": bai["mien"], "rong": 0, "cao": 0, "score": 42}
+                # miền" là quảng cáo; bài gốc giữ ở `article_url` để truy nguồn.
+                "page_url": im, "article_url": u, "article_domain": bai["domain"], "w": 0, "h": 0, "score": 42}
     except Exception as e:                                   # noqa: BLE001
-        print(f"[bao thuc the] {bai['mien']}: {type(e).__name__}", file=sys.stderr)
+        print(f"[bao thuc the] {bai['domain']}: {type(e).__name__}", file=sys.stderr)
         return None
 
 
@@ -116,7 +116,7 @@ def press_entity_images(tu_khoa: list, bo_mien: tuple = (), so_anh: int = 12) ->
     """Ứng viên ảnh (og:image) từ báo chí về các từ khoá. [] khi không ra gì."""
     bai = report_about(tu_khoa, bo_mien)
     print(f"[bao thuc the] {len(bai)} bài về {tu_khoa}: "
-          + ", ".join(sorted({b['mien'] for b in bai})), file=sys.stderr)
+          + ", ".join(sorted({b['domain'] for b in bai})), file=sys.stderr)
     if not bai:
         return []
     with ThreadPoolExecutor(max_workers=8) as ex:

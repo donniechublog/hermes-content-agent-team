@@ -138,7 +138,7 @@ def test_snapshot_copies_image_so_rerun_cannot_shift_labels():
         assert thumb.is_file() and max(Image.open(thumb).size) <= image_golden_sample.THUMB_MAX
         # Chạy lại draft ghi đè original/A1.png: ảnh chụp riêng và md5 không đổi theo.
         before = thumb.read_bytes()
-        Image.new("RGB", (900, 900), (0, 0, 0)).save(cands[0]["goc"])
+        Image.new("RGB", (900, 900), (0, 0, 0)).save(cands[0]["original_path"])
         assert thumb.read_bytes() == before
         assert row["md5"] and row["story"]["title_en"] == "D1"
         assert len(row["story"]["lead"]) <= image_golden_sample.LEAD_CHARS

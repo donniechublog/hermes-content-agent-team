@@ -153,12 +153,12 @@ _JS_LEAD = """() => {
   // article lam thumbnail cho hero slide, vi anh do la chu nhat ngang, nen no
   // hien thi vua van voi nua tren"). Tit cua bao la thu render_edu tu viet.
   if (ir) return {top: ir.top, bottom: ir.bottom, left: ir.left, right: ir.right,
-                  w: W, co_tit: !!hr, co_anh: true};
+                  w: W, has_headline: !!hr, has_hero_image: true};
   // KHONG CO ANH HERO (bai kieu tieu luan: toan hoc, chinh sach) -> "capture man
   // hinh" dung nghia luat 06/09 (Ong Chu nhac lai 12/09: "tin ko co ten rieng
   // thi capture man hinh"): khoi TIT o khung dien thoai, tu mep tren tit xuong.
   if (!hr) return null;
-  return {top: hr.top, bottom: hr.bottom, left: 0, right: W, w: W, co_tit: true, co_anh: false};
+  return {top: hr.top, bottom: hr.bottom, left: 0, right: W, w: W, has_headline: true, has_hero_image: false};
 }"""
 
 
@@ -369,7 +369,7 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
                 r = None
                 for _ in range(LEAD_TRY):
                     r = page.evaluate(_JS_LEAD) or r
-                    if r and r["co_anh"]:
+                    if r and r["has_hero_image"]:
                         break
                     page.wait_for_timeout(WAIT_LAZY)
                 if not r:
@@ -378,7 +378,7 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
                 # Clip DUNG khung anh hero, khong lay tit/byline. full_page: clip
                 # theo toa do TAI LIEU; da cuon ve 0 nen toa do khung nhin trung
                 # toa do tai lieu, anh nam duoi mot man van chup du.
-                if r["co_anh"]:
+                if r["has_hero_image"]:
                     if r["bottom"] - max(0, r["top"]) < 60:
                         print(f"[chup_lead] {url[:70]}: anh hero do ra cao {r['bottom']-max(0,r['top']):.0f}px, bo", file=sys.stderr)
                         return None
@@ -399,11 +399,11 @@ def capture_lead_mobile(url: str, ra, phien=None) -> dict | None:
     # `page_title` de nguoi goi doi chieu "co cung tin khong" (LOW-33) — trang
     # trong `page_url` co the la bao khac khop NHAM, khong duoc mac dinh la bai goc.
     return {"image_url": url, "page_url": url, "source": "capture_source", "capture_source": True, "page_title": tit_trang,
-            "capture_kind": "hero" if r["co_anh"] else "headline", "background_color": mau_nen,
+            "capture_kind": "hero" if r["has_hero_image"] else "headline", "background_color": mau_nen,
             "alt": "ảnh chính + tít của chính bài gốc, chụp ở khung điện thoại",
             "score_reason": "khối lead của trang nguồn"
-                     + (", có tít" if r["co_tit"] else "")
-                     + (", có ảnh chính" if r["co_anh"] else "")}
+                     + (", có tít" if r["has_headline"] else "")
+                     + (", có ảnh chính" if r["has_hero_image"] else "")}
 
 
 def main() -> int:

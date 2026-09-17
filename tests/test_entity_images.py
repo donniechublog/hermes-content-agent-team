@@ -54,7 +54,7 @@ def test_commons_by_phrase_no_pass_two_person_stack_name():
         ra = tt.commons_by_phrase("Dario Amodei", so=5)
     ten = [c["alt"] for c in ra]
     assert len(ra) == 2 and all("Rossi" not in t for t in ten), ten
-    assert ra[0]["rong"] >= ra[0]["cao"], "anh ngang phai dung truoc"
+    assert ra[0]["w"] >= ra[0]["h"], "anh ngang phai dung truoc"
 
 
 def test_tier_only_run_when_remaining_missing():

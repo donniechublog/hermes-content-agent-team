@@ -55,6 +55,7 @@ from pathlib import Path
 
 import env_load
 import manifest_values
+import state_paths
 
 MAX_RANK = 3            # số hãng lấy trong một tin
 MAX_NEW_RANK = 2        # ảnh mỗi hãng — để một bộ không thành album trụ sở
@@ -201,7 +202,7 @@ def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
     Dùng chung WATCHLIST của `scan_business` — cùng một danh sách "tên trong
     ngành phải theo sát", không chép lại ở đây. Tên model/chip quy về hãng chủ
     qua RANK_OF_NAME, nên "Claude Opus 5" ra Anthropic, "Xring O3" ra Xiaomi.
-    Trả [{"khoa": "qualcomm", "hang": "Qualcomm"}].
+    Trả [{"key": "qualcomm", "company": "Qualcomm"}].
 
     WATCHLIST/NAME_EXTRA chỉ để TỐI ƯU (biết ngay tên chuẩn/QID của hãng lớn
     hay gặp) — KHÔNG dùng để LOẠI hãng ngoài danh sách (LOW-176, 16/09/2026):
@@ -246,7 +247,7 @@ def vendors_in_story(tieu_de: str, tom_tat: str = "") -> list:
             continue
         vi_tri[khoa] = m.start()
         ten_that[khoa] = ten              # giu dung hoa nhu trong tieu de (Salesforce, khong phai salesforce)
-    ra = [{"khoa": k, "hang": DISPLAY_NAME.get(k, (ten_that.get(k) or k.title(),))[0]}
+    ra = [{"key": k, "company": DISPLAY_NAME.get(k, (ten_that.get(k) or k.title(),))[0]}
           for k, _ in sorted(vi_tri.items(), key=lambda kv: kv[1])]
     return ra[:MAX_RANK]
 
@@ -288,9 +289,9 @@ def filter_commons(pages: dict, ten: str, so: int = 4, canh_ngan_min: int = SHOR
         ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten_tep,
                    "og": False, "mime": ii.get("mime"), "source": "brand",
                    "page_url": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
-                   "rong": w, "cao": h, "score": 25})
+                   "w": w, "h": h, "score": 25})
     # JPEG trước PNG: ảnh chụp thật gần như luôn là JPEG (xem image_concept).
-    ra.sort(key=lambda c: (c["mime"] != "image/jpeg", -(c["rong"] * c["cao"])))
+    ra.sort(key=lambda c: (c["mime"] != "image/jpeg", -(c["w"] * c["h"])))
     return ra[:so]
 
 
@@ -376,13 +377,13 @@ def qid_rank(hang: str) -> tuple:
 
 
 def material_wikidata(hang: str) -> dict:
-    """Hồ sơ ảnh của một hãng: {"qid", "anh": [tệp], "logo": [tệp],
-    "nguoi": [{"ten","tep","vai"}]}. Không có/hỏng mạng -> {}."""
+    """Hồ sơ ảnh của một hãng: {"qid", "photo_files": [tệp], "logo": [tệp],
+    "people": [{"name","commons_file","person_role"}]}. Không có/hỏng mạng -> {}."""
     qid, cl = qid_rank(hang)
     if not qid:
         return {}
-    ra = {"qid": qid, "anh": _file_claim(cl, P_ANH)[:2], "logo": _file_claim(cl, P_LOGO)[:1],
-          "nguoi": []}
+    ra = {"qid": qid, "photo_files": _file_claim(cl, P_ANH)[:2], "logo": _file_claim(cl, P_LOGO)[:1],
+          "people": []}
     ceo = _qid_claim(cl, P_CEO)
     ids = list(dict.fromkeys(ceo + _qid_claim(cl, P_SANG_LAP)))[:MAX_PERSON + 1]
     if ids:
@@ -399,9 +400,9 @@ def material_wikidata(hang: str) -> dict:
             ten = ((e.get("labels") or {}).get("en") or {}).get("value", "")
             tep = _file_claim(e.get("claims", {}), P_ANH)[:1]
             if ten and tep:
-                ra["nguoi"].append({"ten": ten, "tep": tep[0],
-                                    "vai": "CEO" if i in ceo else "nhà sáng lập"})
-    ra["nguoi"] = ra["nguoi"][:MAX_PERSON]
+                ra["people"].append({"name": ten, "commons_file": tep[0],
+                                     "person_role": "CEO" if i in ceo else "nhà sáng lập"})
+    ra["people"] = ra["people"][:MAX_PERSON]
     return ra
 
 
@@ -482,12 +483,12 @@ def announcement_page(hang: dict, models: list) -> dict | None:
     if not hang or not khoa:
         # Khong im (INV-3): truoc 12/09/2026 nhanh nay tra None khong mot dong,
         # nen "vi sao khong co trang cong bo" phai doan.
-        print(f"[cong bo] {(hang or {}).get('hang') or '?'}: bo qua — models={models!r} "
+        print(f"[cong bo] {(hang or {}).get('company') or '?'}: bo qua — models={models!r} "
               f"khong ra khoa slug nao (can 'Hang-Ten-So', vd DeepSeek-V4.1-Flash)", file=sys.stderr)
         return None
-    site = vendor_website(hang.get("hang") or hang.get("khoa", ""))
+    site = vendor_website(hang.get("company") or hang.get("key", ""))
     if not site:
-        print(f"[cong bo] {hang.get('hang')}: Wikidata khong co website (P856)", file=sys.stderr)
+        print(f"[cong bo] {hang.get('company')}: Wikidata khong co website (P856)", file=sys.stderr)
         return None
     mien = re.sub(r"^https?://(www\.)?", "", site).lower()
     for duong in PATH_STORY + PATH_FEED:
@@ -510,15 +511,15 @@ def announcement_page(hang: dict, models: list) -> dict | None:
             trung = [u for u in links if k in _slug(re.sub(r"^https?://[^/]+", "", u))]
             if trung:
                 u = trung[0]
-                print(f"[cong bo] {hang.get('hang')}: {u} (khop '{k}' o {duong})", file=sys.stderr)
+                print(f"[cong bo] {hang.get('company')}: {u} (khop '{k}' o {duong})", file=sys.stderr)
                 return {"url": u, "loai": "công bố", "tieu_de": "", "toa_soan": site}
-    print(f"[cong bo] {hang.get('hang')}: khong thay bai nao khop {khoa[:2]} tren {site}",
+    print(f"[cong bo] {hang.get('company')}: khong thay bai nao khop {khoa[:2]} tren {site}",
           file=sys.stderr)
     return None
 
 
 def commons_urls(tens: list) -> dict:
-    """Tên tệp Commons -> {url, rong, cao, mime}. Hỏi một lượt. SVG được Commons
+    """Tên tệp Commons -> {url, w, h, mime}. Hỏi một lượt. SVG được Commons
     render sẵn ra PNG ở `thumburl`, nên logo vector cũng dùng được."""
     tens = [t for t in tens if t]
     if not tens:
@@ -534,8 +535,8 @@ def commons_urls(tens: list) -> dict:
         ten = (pg.get("title") or "").replace("File:", "")
         u = ii.get("thumburl") or ii.get("url")
         if u:
-            ra[ten] = {"url": u, "rong": ii.get("thumbwidth") or ii.get("width", 0),
-                       "cao": ii.get("thumbheight") or ii.get("height", 0),
+            ra[ten] = {"url": u, "w": ii.get("thumbwidth") or ii.get("width", 0),
+                       "h": ii.get("thumbheight") or ii.get("height", 0),
                        "mime": ii.get("mime")}
     return ra
 
@@ -569,7 +570,7 @@ def card_logo(tep_logo, out, brand: str = "donniechublog"):
     im.paste(lg, hop, lg if lg.mode == "RGBA" else None)
     import image_provenance
     Path(out).parent.mkdir(parents=True, exist_ok=True)
-    im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("the_logo"))
+    im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("logo_card"))
     return out, ("light" if sang < 110 else "dark")
 
 
@@ -592,26 +593,26 @@ def image_wikidata(hang, wd=None) -> list:
     Ảnh công ty của Wikidata với tới thứ mà tìm theo tên tệp không với được:
     trụ sở OpenAI trên Commons tên là "Pioneer Building, San Francisco" — không
     có chữ "openai" nào trong tên tệp (09/09/2026)."""
-    khoa = hang["khoa"] if isinstance(hang, dict) else hang
+    khoa = hang["key"] if isinstance(hang, dict) else hang
     ten_chinh = DISPLAY_NAME.get(khoa, (khoa.title(),))[0]
     tl = material_wikidata(ten_chinh)
     if not tl:
         return []
-    can = list(tl["anh"]) + [n["tep"] for n in tl["nguoi"]] + list(tl["logo"])
+    can = list(tl["photo_files"]) + [n["commons_file"] for n in tl["people"]] + list(tl["logo"])
     thong = commons_urls(can)
     ra = []
-    for t in tl["anh"]:
+    for t in tl["photo_files"]:
         u = thong.get(t)
-        if u and min(u["rong"], u["cao"]) >= SHORT_SIDE_MIN:
+        if u and min(u["w"], u["h"]) >= SHORT_SIDE_MIN:
             ra.append(_candidate(u, t, ten_chinh, khoa, "photo", "ảnh công ty (Wikidata P18)"))
-    for n in tl["nguoi"]:
-        u = thong.get(n["tep"])
-        if u and min(u["rong"], u["cao"]) >= 500:
-            c = _candidate(u, n["tep"], ten_chinh, khoa, "person",
-                          f"{n['vai']} {ten_chinh} (Wikidata)")
-            c["brand_match"]["person"] = n["ten"]
-            c["brand_match"]["person_role"] = n["vai"]
-            c["alt"] = f"Commons: {n['ten']} — {n['vai']} {ten_chinh}"
+    for n in tl["people"]:
+        u = thong.get(n["commons_file"])
+        if u and min(u["w"], u["h"]) >= 500:
+            c = _candidate(u, n["commons_file"], ten_chinh, khoa, "person",
+                          f"{n['person_role']} {ten_chinh} (Wikidata)")
+            c["brand_match"]["person"] = n["name"]
+            c["brand_match"]["person_role"] = n["person_role"]
+            c["alt"] = f"Commons: {n['name']} — {n['person_role']} {ten_chinh}"
             ra.append(c)
         # BAT ANH NGANG cua chinh nguoi nay tren Commons (Ong Chu 12/09/2026:
         # "chỉ cần search claude hay anthropic thì cũng ra một rừng ảnh rồi").
@@ -622,32 +623,32 @@ def image_wikidata(hang, wd=None) -> list:
         # building/campus". Ten day du it dung hang nhu ten hang (khong nhu
         # "Anthropic" trung khao co, "Claude" trung hoi hoa) nen dung lai
         # `_tu_dac_trung`/`_has_phrase` cua chinh module nay, khong can bang NHIEU.
-        for c in image_person_landscape(n["ten"], n["vai"], ten_chinh, khoa):
+        for c in image_person_landscape(n["name"], n["person_role"], ten_chinh, khoa):
             ra.append(c)
     for t in tl["logo"]:
         u = thong.get(t)
         if not u or not wd:
             continue
         try:
-            goc = Path(wd) / "logo_goc.png"
+            goc = Path(wd) / state_paths.LOGO_ORIGINAL_FILE
             goc.parent.mkdir(parents=True, exist_ok=True)
             import httpx
             goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
                                       timeout=30, follow_redirects=True).content)
-            the, nen = card_logo(goc, Path(wd) / "the_logo.png", env_load.brand_long())
+            the, nen = card_logo(goc, Path(wd) / state_paths.LOGO_CARD_FILE, env_load.brand_long())
         except Exception as e:                               # noqa: BLE001
             print(f"[thuong_hieu] the logo hong: {type(e).__name__}", file=sys.stderr)
             continue
         c = _candidate(u, t, ten_chinh, khoa, "logo", "logo chính thức (Wikidata P154)")
         c["brand_match"]["background_tone"] = nen
-        c.update({"tep": str(the), "image_url": str(the), "cho_do_hoa": True})
+        c.update({"file_path": str(the), "image_url": str(the), "graphic_allowed": True})
         ra.append(c)
     return ra
 
 
 def _candidate(u: dict, ten_tep: str, hang: str, khoa: str, loai: str, ly_do: str) -> dict:
     return {"image_url": u["url"], "alt": "Commons: " + ten_tep, "og": False, "mime": u.get("mime"),
-            "source": "brand", "rong": u["rong"], "cao": u["cao"],
+            "source": "brand", "w": u["w"], "h": u["h"],
             "page_url": "https://commons.wikimedia.org/wiki/File:" + ten_tep.replace(" ", "_"),
             "score": {"photo": 28, "person": 24, "logo": 18}.get(loai, 20),
             "brand_match": {"company": hang, "key": khoa, "kind": loai, "keyword": ly_do}}
@@ -694,7 +695,7 @@ def image_person_landscape(ten: str, vai: str, hang: str, khoa: str) -> list:
         # "Rathlin hugging the cliff face"); ban va do khong lan sang day.
         if image_concept.NAME_TYPE.search(thap) or not _has_phrase(dac_trung, thap):
             continue
-        c = _candidate({"url": ii.get("thumburl") or ii.get("url"), "rong": w, "cao": h,
+        c = _candidate({"url": ii.get("thumburl") or ii.get("url"), "w": w, "h": h,
                        "mime": ii.get("mime")}, ten_tep, hang, khoa, "person",
                       f"{vai} {hang}, ảnh ngang (Commons)")
         c["score"] = 26    # giua "anh" cong ty/san pham (28) va chan dung doc (24):
@@ -718,16 +719,16 @@ def image_has_ballot(hang, wd, phien=None) -> list:
     Bảng loại tin (`story_type.py`, Ông Chủ 12/09/2026): tin BUSINESS/M&A thì "mã
     cổ phiếu" là một vật liên quan. Chỉ hãng có trong `story_type.CODE_HAS_BALLOT`
     (niêm yết); hãng tư nhân trả [] ngay, không đoán. Tường chặn bot -> [] (dùng
-    chung `browser_session.got_block`). Là đồ hoạ có chủ ý (`cho_do_hoa`, như thẻ
+    chung `browser_session.got_block`). Là đồ hoạ có chủ ý (`graphic_allowed`, như thẻ
     logo) nên `download_and_filter` không loại nó như logo báo lọt."""
     import story_type
     from pathlib import Path as _P
-    khoa = hang["khoa"] if isinstance(hang, dict) else hang
+    khoa = hang["key"] if isinstance(hang, dict) else hang
     ma = story_type.code_has_ballot(khoa)
     if not ma or wd is None:
         return []
     ten_chinh = DISPLAY_NAME.get(khoa, (khoa.title(),))[0]
-    ra = _P(wd) / f"co_phieu_{khoa.replace(' ', '_')}.png"
+    ra = _P(wd) / f"{state_paths.STOCK_IMAGE_PREFIX}{khoa.replace(' ', '_')}.png"
     ra.parent.mkdir(parents=True, exist_ok=True)
     try:
         from browser_session import (MOBILE_DPR, MOBILE_UA, MOBILE_VIEWPORT, got_block,
@@ -771,15 +772,15 @@ def image_has_ballot(hang, wd, phien=None) -> list:
     from PIL import Image as _Im
     with _Im.open(ra) as im:
         w, h = im.size
-    c = _candidate({"url": str(ra), "rong": w, "cao": h, "mime": "image/png"},
+    c = _candidate({"url": str(ra), "w": w, "h": h, "mime": "image/png"},
                   ra.name, ten_chinh, khoa, "stock", f"biểu đồ giá {ma} (Google Finance)")
-    c.update({"tep": str(ra), "image_url": str(ra), "cho_do_hoa": True, "score": 22})
+    c.update({"file_path": str(ra), "image_url": str(ra), "graphic_allowed": True, "score": 22})
     c["brand_match"]["ticker"] = ma
     return [c]
 
 
 def vendor_images(hang, so: int = MAX_NEW_RANK, wd=None) -> list:
-    """Ứng viên ảnh thương hiệu cho một hãng ({"khoa","hang"} hoặc khoá).
+    """Ứng viên ảnh thương hiệu cho một hãng ({"key","company"} hoặc khoá).
 
     Hai đường, theo độ "là ảnh chụp thật của hãng" giảm dần:
       1. tìm tên tệp trên Commons: `"<Hãng> headquarters/building/campus"`;
@@ -787,7 +788,7 @@ def vendor_images(hang, so: int = MAX_NEW_RANK, wd=None) -> list:
     Đường 2 chạy khi đường 1 chưa đủ `so` — hãng thuần phần mềm (Anthropic,
     DeepSeek) không có ảnh trụ sở nào trên Commons, và đó chính là loại tin hay
     bị dừng ở nút "chỉ 2/5 ảnh". Hỏng mạng -> []."""
-    khoa = hang["khoa"] if isinstance(hang, dict) else hang
+    khoa = hang["key"] if isinstance(hang, dict) else hang
     ten_chinh = DISPLAY_NAME.get(khoa, (khoa.title(),))[0]
     ra, da, hong = [], set(), 0
     for ten, cau in query(khoa):

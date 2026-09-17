@@ -77,7 +77,7 @@ def _host_is_side_try_three(c: dict) -> bool:
     """Anh nam tren host KHAC domain trang va khong phai CDN -> gan nhu chac la
     quang cao/widget ben thu ba (banner Phemex tren siliconangle, 05/09/2026).
     Anh do engine tu chup/tai (tep local, commons, arxiv) khong xet."""
-    if c.get("tep") or c.get("source") in ("browser_capture", "commons", "arxiv_cover", "openverse"):
+    if c.get("file_path") or c.get("source") in ("browser_capture", "commons", "arxiv_cover", "openverse"):
         return False
     ha, ht = _domain(c.get("image_url", "") or ""), _domain(c.get("page_url", "") or "")
     if not ha or not ht:
@@ -88,15 +88,15 @@ def _host_is_side_try_three(c: dict) -> bool:
 
 
 def _download_candidate(c: dict) -> tuple:
-    """Bytes cho MOT ung vien cua download_and_filter: file local (c['tep']) hoac HTTP
+    """Bytes cho MOT ung vien cua download_and_filter: file local (c['file_path']) hoac HTTP
     qua _download_bytes — ham THUAN, khong dung chung state, an toan chay song song
     (audit_content_team B3). Tra (data, loi): `loi` giu lai exception cua
     Path.read_bytes() (`_download_bytes` tu no da nuot loi, khong bao gio nem) de pha
     loc tuan tu phia duoi nem lai va in dung log nhu khi con goi truc tiep tai
     day, khong lam mat dong log loi hien co."""
     try:
-        if c.get("tep"):
-            return Path(c["tep"]).read_bytes(), None
+        if c.get("file_path"):
+            return Path(c["file_path"]).read_bytes(), None
         return _download_bytes(c["image_url"]), None
     except Exception as e:                                   # noqa: BLE001
         return None, e
@@ -150,9 +150,9 @@ def download_and_filter(cands: list, wd: Path) -> list:
                 decision_log.drop_candidate(wd, c, "third_party_host", "_host_is_side_try_three",
                                             f"{_domain(c.get('image_url', ''))} tren {_domain(c.get('page_url', ''))}", im=im)
                 continue
-            if not c.get("cho_do_hoa") and (url_junk.search(c.get("image_url", "") or "")
-                                            or url_junk.search(c.get("alt", "") or "")):
-                # `cho_do_hoa` mien cong nay: bo tu vung RAC co chu "logo", ma
+            if not c.get("graphic_allowed") and (url_junk.search(c.get("image_url", "") or "")
+                                                 or url_junk.search(c.get("alt", "") or "")):
+                # `graphic_allowed` mien cong nay: bo tu vung RAC co chu "logo", ma
                 # THE LOGO thi duong dan lan ten tep Commons deu co chu do — no
                 # tu chan chinh no (09/09/2026). Cong nay de chan logo bao/quang
                 # cao lot vao tu <img> cua trang, khong phai logo ta co tinh lay.
@@ -170,11 +170,11 @@ def download_and_filter(cands: list, wd: Path) -> list:
                 continue
             ly_do_do_hoa = article_images._graphic(im)
             la_ct, _ = rules.is_chart(im)
-            if ly_do_do_hoa and not la_ct and not _chart_by_figure(im) and not c.get("cho_do_hoa"):
+            if ly_do_do_hoa and not la_ct and not _chart_by_figure(im) and not c.get("graphic_allowed"):
                 decision_log.drop_candidate(wd, c, "graphic_logo", "article_images._graphic",
                                             ly_do_do_hoa, im=im)
                 continue                                  # logo/wordmark
-            # `cho_do_hoa`: ung vien CO CHU Y la do hoa — the logo chinh thuc cua
+            # `graphic_allowed`: ung vien CO CHU Y la do hoa — the logo chinh thuc cua
             # hang (image_brand.card_logo). Cong tren sinh ra de chan logo lot
             # vao tu <img> cua bai bao, khong phai de chan thu ta co tinh dung.
             h = rules.dhash(im)
@@ -222,7 +222,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
         ma = f"A{n}"
         out = goc_dir / f"{ma}.png"
         im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance(
-            {"browser_capture": "chup_chart", "arxiv_figure": "arxiv_hinh"}.get(c.get("source"), "dre_chuan_bi")))
+            {"browser_capture": "chart_capture", "arxiv_figure": "arxiv_figure"}.get(c.get("source"), "engine_download")))
         # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
         # khong noi len gi (bao boc ca anh minh hoa lan quang cao).
         hint = bool((c.get("source") != "browser_capture" and (article_images.RULE.search(c.get("image_url", "") or "")
@@ -231,7 +231,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
                     or c.get("html_tag") in ("table", "canvas", "svg")
                     or c.get("source") == "arxiv_figure")
         ra.append({"id": ma, "original_path": str(out), "url": c.get("image_url", ""),
-                   "alt": (c.get("alt") or c.get("alt_chup") or "")[:120], "source": c.get("source", ""),
+                   "alt": (c.get("alt") or c.get("capture_alt") or "")[:120], "source": c.get("source", ""),
                    "page_url": c.get("page_url", ""), "domain": _domain(c.get("page_url") or c.get("image_url")),
                    "score": c.get("score", 0), "score_reason": c.get("score_reason", ""), "chart_hint": hint,
                    # Ten hinh trong paper ("Figure 1") — Kite doc de biet tam nao
@@ -266,18 +266,20 @@ def _save_crop(img: Image.Image, out: Path, ti_le_ten: str, cx=0.5, cy=0.5,
     """Cat qua crop_ratio.crop va DONG DAU y het CLI crop_ratio.py — cong
     `kiem_xuat_xu`/`check_crop_landscape` doc dau nay."""
     import crop_ratio
+    import image_provenance
     from PIL.PngImagePlugin import PngInfo
     ra = crop_ratio.crop(img, crop_ratio.RATIO[ti_le_ten], cx, cy, cat_ngang=cat_ngang)
     meta = PngInfo()
     # CHEP LAI dau cua anh goc truoc khi them dau crop. Truoc 06/09/2026 ham nay
-    # dung PngInfo TRANG, nen ban cat mat `nguon_dung=chup_xep_hang` -> is_ranking_image
+    # dung PngInfo TRANG, nen ban cat mat `provenance=ranking_capture` -> is_ranking_image
     # tra False -> mat mien tru o image_rules, va carousel chan dung cai bia ma
     # dre_submit bat buoc dung. Xay ra 100% voi anh chup bang tren khung mobile.
-    for k, v in (getattr(img, "text", None) or {}).items():
-        if k != "crop_ti_le" and isinstance(v, str):
-            meta.add_text(k, v)
-    meta.add_text("crop_ti_le", f"goc={img.size[0]}x{img.size[1]};ti_le={ti_le_ten};"
-                                f"cx={cx};cy={cy};cat_ngang={int(cat_ngang)}")
+    # LOW-237: khoa/gia tri cu (anh goc tai truoc LOW-237) duoc DICH sang ten moi khi
+    # chep, va bo ca dau crop cu lan moi — ban cat chi mang ten moi, mot dau crop.
+    for k, v in image_provenance.carried_text(img).items():
+        meta.add_text(k, v)
+    meta.add_text(image_provenance.CROP_TRACE_KEY, image_provenance.crop_trace_text(
+        img.size[0], img.size[1], ti_le_ten, cx, cy, cat_ngang))
     out.parent.mkdir(parents=True, exist_ok=True)
     ra.save(out, "PNG", pnginfo=meta)
     return ra

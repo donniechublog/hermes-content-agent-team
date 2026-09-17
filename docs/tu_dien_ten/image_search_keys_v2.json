@@ -1,0 +1,56 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-237) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; giá trị liệt kê đổi cùng ticket.",
+  "image_candidate": {
+    "_where": "dict ứng viên ảnh trong bộ nhớ (image_brand, entity_images, image_concept, article_images, find_more_images, find_image_web, arxiv_figures, prepare/browser, prepare/source, prepare/fallback_rounds, press_entity_images → prepare/download_filter, prepare/decision_log). Không vào manifest.",
+    "rong": "w",
+    "cao": "h",
+    "tep": "file_path",
+    "cho_do_hoa": "graphic_allowed",
+    "alt_chup": "capture_alt",
+    "do_hoa": "graphic_reason",
+    "giay_phep": "license",
+    "tac_gia": "author",
+    "nguon_openverse": "openverse_source",
+    "tu_khoa": "keyword",
+    "bai": "article_url",
+    "mien_bai": "article_domain"
+  },
+  "vendor_in_story": {"khoa": "key", "hang": "company"},
+  "wikidata_profile": {"anh": "photo_files", "nguoi": "people", "people[].ten": "name", "people[].tep": "commons_file", "people[].vai": "person_role"},
+  "commons_url_map": {"rong": "w", "cao": "h"},
+  "concept_keyword": {"tu_khoa": "keyword", "ly_do": "reason"},
+  "press_article": {"tieu_de": "title", "mien": "domain"},
+  "arxiv_figure": {"tep": "file_path", "loai": "kind", "so": "number", "trang": "page_number"},
+  "arxiv_cover_json": {"rong": "w", "cao": "h"},
+  "capture_page_lead_js": {"co_anh": "has_hero_image", "co_tit": "has_headline"},
+  "golden_sample_candidate": {"goc": "original_path"},
+  "find_more_json": {"_where": "state_paths.FIND_MORE_FILE — migrate 38 tệp", "luot": "run_count", "da_thu": "tried_queries"},
+  "png_metadata_keys": {
+    "_where": "PNG text chunk. KHÔNG ghi lại PNG cũ (~9 GB, md5) → mọi hàm đọc nhận cả tên cũ lẫn mới; ghi mới dùng tên mới.",
+    "nguon_dung": "provenance",
+    "crop_ti_le": "crop_trace",
+    "hinh": "figure",
+    "trang_pdf": "pdf_page"
+  },
+  "png_crop_trace_tokens": {"goc=": "original=", "ti_le=": "ratio=", "cat_ngang=": "landscape_crop="},
+  "png_provenance_values": {
+    "chup_xep_hang": "ranking_capture",
+    "the_xep_hang": "ranking_card",
+    "ghep_doc": "vertical_stack",
+    "chup_chart": "chart_capture",
+    "doi_chu_anh": "image_text_swap",
+    "arxiv_bia": "arxiv_cover",
+    "arxiv_hinh": "arxiv_figure",
+    "the_logo": "logo_card",
+    "dre_chuan_bi": "engine_download"
+  },
+  "workdir_files": {"logo_goc.png": "logo_original.png", "the_logo.png": "logo_card.png", "co_phieu_<key>.png": "stock_<key>.png"},
+  "env": {"CT_CHUAN_BI_SONG_SONG": "CT_PREPARE_PARALLEL"},
+  "_notes": [
+    "`dre_chuan_bi` là dấu mặc định cho MỌI ảnh engine tải về (không riêng Dre) → engine_download.",
+    "`bai` ở ứng viên là URL bài; `bai` của manifest entity là article_name — khác khái niệm nên khác tên.",
+    "`hang` ở vendor là hãng (company), khác ranking `hang`=rank.",
+    "`trang` ở arxiv là số trang (page_number), khác pages của article_source (LOW-238).",
+    "Kho article_source (tieu_de/link_goc/trang, browser_pass chu/tieu_de_en/trang_them) thuộc LOW-238, không đổi ở đây."
+  ]
+}

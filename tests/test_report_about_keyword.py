@@ -138,15 +138,15 @@ def test_rank_empty_then_find_report_by_keyword_scan_image():
         wd = Path(d)
         (wd / state_paths.ORIGINAL_DIR).mkdir()
         ung_vien = {"image_url": "https://x/photo.jpg", "alt": "", "og": False, "source": "browser",
-                   "page_url": "https://baomoi.example/moonshot", "rong": 1600, "cao": 1000, "score": 45}
+                   "page_url": "https://baomoi.example/moonshot", "w": 1600, "h": 1000, "score": 45}
 
         def tai_va_loc_gia(cands, wd2):
             ra = []
             for i, c in enumerate(cands, 1):
                 tam = wd2 / f"A{i}.png"
                 tam.parent.mkdir(parents=True, exist_ok=True)
-                _ve(c["rong"], c["cao"]).save(tam)     # anh CO VAN, khong bi doc nham la chart phang
-                c2 = dict(c); c2["original_path"] = str(tam); c2["tep"] = str(tam)
+                _ve(c["w"], c["h"]).save(tam)     # anh CO VAN, khong bi doc nham la chart phang
+                c2 = dict(c); c2["original_path"] = str(tam); c2["file_path"] = str(tam)
                 ra.append(c2)
             return ra
 
@@ -161,7 +161,7 @@ def test_rank_empty_then_find_report_by_keyword_scan_image():
         with mock.patch.dict("os.environ", env_khong_key, clear=True), \
              mock.patch.object(env_load, "load", lambda *a, **k: None), \
              mock.patch("image_brand.vendors_in_story",
-                        return_value=[{"hang": "Moonshot AI", "khoa": "moonshot"}]), \
+                        return_value=[{"company": "Moonshot AI", "key": "moonshot"}]), \
              mock.patch("image_brand.vendor_images", return_value=[]), \
              mock.patch.object(article_sources, "report_about_keyword",
                               return_value=[{"url": "https://baomoi.example/moonshot",
@@ -191,7 +191,7 @@ def test_find_report_run_parallel_including_when_commons_has_image():
     with tempfile.TemporaryDirectory() as d:
         wd = Path(d); (wd / state_paths.ORIGINAL_DIR).mkdir()
         anh_commons = {"image_url": "https://commons.example/hq.jpg", "alt": "", "og": False,
-                      "source": "brand", "rong": 1600, "cao": 1000, "score": 28,
+                      "source": "brand", "w": 1600, "h": 1000, "score": 28,
                       "brand_match": {"company": "Moonshot AI", "key": "moonshot", "kind": "photo",
                                      "keyword": "tru so"}}
         goi = {"tim_bao": False}
@@ -201,7 +201,7 @@ def test_find_report_run_parallel_including_when_commons_has_image():
             return []
 
         with mock.patch("image_brand.vendors_in_story",
-                        return_value=[{"hang": "Moonshot AI", "khoa": "moonshot"}]), \
+                        return_value=[{"company": "Moonshot AI", "key": "moonshot"}]), \
              mock.patch("image_brand.vendor_images", return_value=[anh_commons]), \
              mock.patch.object(article_sources, "report_about_keyword", side_effect=bao_ve_tu_khoa_gia), \
              mock.patch.object(fallback_rounds, "_ranking_context_edge", return_value=None):

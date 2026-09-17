@@ -69,7 +69,7 @@ def single(id_: str, wd: Path, spec: dict) -> tuple:
     sach = swap_image_text.inpaint(img, mask, verbose=False)
     nen = wd / state_paths.GIN_CLEAN_BACKGROUND_FILE
     cv2.imwrite(str(nen), sach)
-    image_provenance.stamp_file(nen, "doi_chu_anh")
+    image_provenance.stamp_file(nen, "image_text_swap")
     vis = img.copy()
     vis[mask > 0] = (0, 0, 255)
     vis = cv2.addWeighted(img, 0.5, vis, 0.5, 0)
@@ -292,7 +292,7 @@ def make_card(id_: str, wd: Path, spec: dict, bo_qua_dau: bool) -> tuple:
                        cao_goc=kh["cao_net"])
     out = wd / f"{state_paths.GIN_RESULT_PREFIX}{id_}.png"
     im.save(out, "PNG")
-    image_provenance.stamp_file(out, "doi_chu_anh")
+    image_provenance.stamp_file(out, "image_text_swap")
     vis = img.copy()
     vis[mask > 0] = (0, 0, 255)
     cv2.imwrite(str(wd / "mask_debug.png"), cv2.addWeighted(img, 0.5, vis, 0.5, 0))
