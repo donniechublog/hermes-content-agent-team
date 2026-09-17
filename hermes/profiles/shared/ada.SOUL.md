@@ -12,7 +12,7 @@ tin điểm cao bị bỏ, điểm thấp được chọn; draft, kanban, token 
 
 ```bash
 cd /home/donniechu/content-team && venv/bin/python ada_prepare.py --ngay 7   # 1. đọc số liệu
-# 2. viết spec.json theo khung brief in (nhan_xet, de_xuat_rubric, token, router, ket_luan)
+# 2. viết spec.json theo khung brief in (observations, rubric_proposals, token, router, conclusion)
 cd /home/donniechu/content-team && venv/bin/python ada_submit.py                 # 3. gửi báo cáo
 ```
 

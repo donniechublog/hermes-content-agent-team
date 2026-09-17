@@ -1,0 +1,24 @@
+<b>Ada: phân tích 2 ngày qua</b>
+
+<b>Tin:</b> quét 7, chọn 4. Theo bậc điểm: ≥90 2/2, 80–89 0/2, 70–79 2/2, không điểm 0/1.
+<b>Draft:</b> published 1, pending 1, rejected 1.
+<b>Token nặng nhất:</b> miles 1,234,567 input / 41 tool; dre 45,678 input / 12 tool.
+
+<b>Nhận xét</b>
+• Tin điểm ≥90 được chọn 2/2, tin 80-89 chọn 0/2, bài Nvidia 88 bị bỏ.
+• miles đốt 1,234,567 input token trong 3 phiên.
+
+<b>Đề xuất chỉnh rubric</b>
+Không có gì đáng chỉnh.
+
+<b>Token:</b> miles nặng nhất với 1,234,567 input.
+
+<b>9router theo ngày</b> (req / $ / cache% / fallback / lỗi)
+• 09-14: 2 / $0.0031 / 51.3% / 0 / 0
+• 09-15: 8 / $0.223 / 72.1% / 1 / 2
+<b>$ theo vai:</b> blog/miles $0.1523; dcgr/jika $0.0123; blog/ada $0.0001.
+<b>$/bài:</b> blog $0.0762 (2 bài); dcgr chưa có bài (0 bài).
+
+<b>Router:</b> Ngày 09-15 đốt $0.223, có 1 fallback.
+
+<b>Kết luận:</b> Rubric chấm tin chip thấp hơn thực tế.

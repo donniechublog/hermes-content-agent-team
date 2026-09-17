@@ -1,62 +1,12 @@
 {
  "_note": "Mốc khoá dict/đoạn đường dẫn tiếng Việt còn hợp lệ (LOW-229). Chỉ được GIẢM; dựng lại: venv/bin/python tests/test_json_keys_english.py --write-baseline",
  "files": {
-  "ada_prepare.py": {
-   "key:bai": 5,
-   "key:bang_chung": 1,
-   "key:cao_bo": 3,
-   "key:chi_phi": 2,
-   "key:chi_phi_9router": 4,
-   "key:chon": 2,
-   "key:de_xuat_rubric": 1,
-   "key:giay_trung_binh": 2,
-   "key:ket_luan": 1,
-   "key:khoa": 3,
-   "key:lat": 2,
-   "key:lat_model": 3,
-   "key:loi": 9,
-   "key:loi_doc": 3,
-   "key:loi_ket_noi": 3,
-   "key:model_chinh": 2,
-   "key:ngay": 7,
-   "key:nhan_xet": 1,
-   "key:nhat_ky_9router": 2,
-   "key:phien": 3,
-   "key:rong": 3,
-   "key:thap_chon": 3,
-   "key:thay_doi": 1,
-   "key:theo_bac": 2,
-   "key:theo_cat": 2,
-   "key:theo_ngay": 3,
-   "key:theo_nguon": 2,
-   "key:theo_trang_thai": 2,
-   "key:theo_vai": 4,
-   "key:tong": 2,
-   "key:usd_bai": 3,
-   "key:vai": 8,
-   "key:vai_anh": 1
-  },
   "ada_submit.py": {
-   "key:bai": 1,
-   "key:bang_chung": 4,
-   "key:chon": 1,
-   "key:de_xuat_rubric": 2,
-   "key:ket_luan": 2,
-   "key:lat": 1,
-   "key:loi": 1,
-   "key:ngay": 2,
-   "key:nhan_xet": 2,
-   "key:nhat_ky_9router": 1,
-   "key:thay_doi": 4,
-   "key:theo_bac": 1,
-   "key:theo_ngay": 2,
-   "key:theo_trang_thai": 1,
-   "key:theo_vai": 1,
-   "key:tong": 1,
-   "key:usd_bai": 2,
-   "key:vai": 2,
-   "path:bao_cao.txt": 2,
-   "path:phan_tich_": 1
+   "key:bang_chung": 1,
+   "key:de_xuat_rubric": 1,
+   "key:ket_luan": 1,
+   "key:nhan_xet": 1,
+   "key:thay_doi": 1
   },
   "approve_post.py": {
    "key:anh": 3,
@@ -297,9 +247,6 @@
   },
   "moat_publish.py": {
    "key:tg_card_message_id": 1
-  },
-  "model_audition.py": {
-   "key:chu_de": 1
   },
   "model_watch.py": {
    "key:HONG": 1,
