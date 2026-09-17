@@ -242,13 +242,13 @@ def _research_source(item, draft_id, out_png, brand):
         print(f"[research] {draft_id}: khong tim duoc nguon — {loi}")
         return loi
     # Link cua Vera la duong chuyen huong Google News; article_sources da giai ma ra
-    # bai that (link_gnews/link_goc). Dung link THAT cho moi vai sau va cho
+    # bai that (gnews_url/source_url). Dung link THAT cho moi vai sau va cho
     # meta — truoc day Dre/Miles nhan link chuyen huong, doc ra rong, phai tu
     # web_search lai (do 04/09/2026).
     try:
         _ng = json.loads(nguon_path.read_text(encoding="utf-8"))
-        _that = _ng.get("link_goc") or ""
-        if _ng.get("link_gnews") and _that and _that != item["link"]:
+        _that = _ng.get("source_url") or ""
+        if _ng.get("gnews_url") and _that and _that != item["link"]:
             item["link_gnews"], item["link"] = item["link"], _that
             write_meta(draft_id, item, out_png, brand)
     except Exception as e:                                   # noqa: BLE001

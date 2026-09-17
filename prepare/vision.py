@@ -562,7 +562,7 @@ def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
     # executor.map de GIU NGUYEN thu tu ket qua nhu list-comprehension cu.
     with ThreadPoolExecutor(max_workers=env_load.quantity(4)) as ex:
         anh = list(ex.map(lambda a: _classify_hide_whole(a, wd, "" if a.get("ranking")
-                                                       else (nguon.get("tieu_de_en") or title)), anh))
+                                                       else (nguon.get("title_en") or title)), anh))
     for a in anh:
         if a.get("ranking"):
             a["description"] = a["alt"]

@@ -475,7 +475,8 @@ def _download_html(url: str, timeout: int = 15, feed: bool = False) -> str:
 
 
 def announcement_page(hang: dict, models: list) -> dict | None:
-    """Trang công bố CHÍNH CHỦ của model trong tin: {"url", "tieu_de", "toa_soan"}
+    """Trang công bố CHÍNH CHỦ của model trong tin — một mục `pages[]` của tệp nguồn:
+    {"url", "kind": "announcement", "title", "outlet_url"}
     hoặc None. `hang` là một mục của `vendors_in_story`, `models` từ
     `ranking.extract_model`. Không hỏi gì khi thiếu một trong hai."""
     from urllib.parse import urljoin
@@ -512,7 +513,7 @@ def announcement_page(hang: dict, models: list) -> dict | None:
             if trung:
                 u = trung[0]
                 print(f"[cong bo] {hang.get('company')}: {u} (khop '{k}' o {duong})", file=sys.stderr)
-                return {"url": u, "loai": "công bố", "tieu_de": "", "toa_soan": site}
+                return {"url": u, "kind": "announcement", "title": "", "outlet_url": site}
     print(f"[cong bo] {hang.get('company')}: khong thay bai nao khop {khoa[:2]} tren {site}",
           file=sys.stderr)
     return None

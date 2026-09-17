@@ -89,11 +89,11 @@ def test_category_force_capture_board_ranking():
     goi = {}
     with mock.patch.object(fallback_rounds.ranking, "is_ranking_story", return_value=False), \
          mock.patch.object(fallback_rounds.ranking, "extract_model", return_value=[]):
-        _, tin = fallback_rounds._capture_ranking("DeepSeek releases V4.1 Flash", {"tieu_de_en": ""},
+        _, tin = fallback_rounds._capture_ranking("DeepSeek releases V4.1 Flash", {"title_en": ""},
                                         {}, "https://x", {"category": "MODEL"}, {}, Path("/tmp"),
                                         khong_browser=False)
         goi["model"] = tin
-        _, tin2 = fallback_rounds._capture_ranking("DeepSeek releases V4.1 Flash", {"tieu_de_en": ""},
+        _, tin2 = fallback_rounds._capture_ranking("DeepSeek releases V4.1 Flash", {"title_en": ""},
                                          {}, "https://x", {"category": "SECURITY"}, {}, Path("/tmp"),
                                          khong_browser=False)
         goi["security"] = tin2

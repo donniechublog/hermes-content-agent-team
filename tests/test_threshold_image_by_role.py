@@ -45,9 +45,9 @@ def _manifest(vai_anh: str, so_anh: int, flagship=False) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         return build_manifest(
             "d1", {"brand": "donniechublog", "title": "t"}, "t", "http://vi.du/a",
-            {"tieu_de_en": ""}, Path(tmp) / "source.json", {}, Path(tmp),
+            {"title_en": ""}, Path(tmp) / "source.json", {}, Path(tmp),
             [_image(f"A{i + 1}") for i in range(so_anh)], [], False,
-            {"chu": ""}, {}, flagship,
+            {"article_text": ""}, {}, flagship,
             role.min_images(vai_anh, flagship), vai_anh=vai_anh)
 
 

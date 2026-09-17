@@ -1,0 +1,37 @@
+{
+  "_status": "CHỐT 17/09/2026 (LOW-238) — Claude tự chốt theo tiêu chí Ông Chủ: tên English dùng đúng, không nhầm; giá trị liệt kê đổi cùng ticket (một lần migrate).",
+  "_measured": "máy chủ 17/09/2026: blog 88 + dcgr 112 tệp article_source_<id>.json (235 KB); trang 569 mục (loai gốc 200, báo 357, công bố 10, bảng 1, giá 1).",
+  "article_source": {
+    "_where": "state/<brand>/article_source_<id>.json (state_paths.article_source_file)",
+    "tieu_de": "title",
+    "tieu_de_en": "title_en",
+    "link_goc": "source_url",
+    "link_gnews": "gnews_url",
+    "trang": "pages"
+  },
+  "article_source.pages[]": {
+    "loai": "kind",
+    "tieu_de": "title",
+    "toa_soan": "outlet_url"
+  },
+  "article_source.pages[].kind": {
+    "gốc": "article",
+    "báo": "other_outlet",
+    "công bố": "announcement",
+    "bảng": "table",
+    "giá": "price"
+  },
+  "browser_pass_result": {
+    "_where": "prepare/browser.browser_pass trả về (bộ nhớ); extra_pages chép vào pages",
+    "tieu_de_en": "title_en",
+    "chu": "article_text",
+    "trang_them": "extra_pages"
+  },
+  "_unread_hand_written_keys": "2 tệp blog viết tay có khoá thừa không code nào đọc (tac_gia_blog, nguon_tin, ngay, chuyen_muc_de_xuat, tom_tat, y_chinh, cau_co_so_lieu, luu_y_nguon, ghi_chu, pages[].anh) — migrate giữ nguyên, không đổi tên, báo trong journal.",
+  "_notes": [
+    "`link_goc` → `source_url`: cùng giá trị với meta `source_url` (prepare/source.py giữ hai nơi khớp nhau).",
+    "`báo` → `other_outlet`: cùng khái niệm và cùng mã với image.source `báo khác` (manifest_values_v3).",
+    "`toa_soan` ở trang là URL gốc tên miền (`https://domain`), không phải tên toà soạn → `outlet_url`; tên toà soạn ở kho quét tin là `outlet` (LOW-240).",
+    "`trang` ở đây là danh sách trang → `pages`; manifest `page_url` là chuỗi URL, arxiv `page_number` là số — khác khái niệm."
+  ]
+}

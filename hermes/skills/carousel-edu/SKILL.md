@@ -88,7 +88,7 @@ Bộ toàn chữ và card khi có ảnh thật là thiếu. Mọi hình thật c
 via <ai>"; ảnh có mặt người thì caption ghi đúng tên trong bài.
 
 Tin về một model: hình thật phải gồm chart từ **trang công bố của hãng** (nguồn
-`loai: "công bố"`), engine tự ghé — IMAGE_RULES §1.2b. Brief tin model không có tấm
+`kind: "announcement"`), engine tự ghé — IMAGE_RULES §1.2b. Brief tin model không có tấm
 nào từ miền của hãng thì nói rõ khi báo thiếu, đừng vẽ vector thay.
 
 ## Nhịp feature (tham chiếu, không cứng)

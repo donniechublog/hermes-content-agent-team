@@ -107,7 +107,7 @@ hãng, trụ sở, logo (Wikimedia Commons, các báo cùng đưa tin).
   `/en/news/`, `/blog/`… hoặc RSS của hãng khi HTML chặn bot (openai.com) → khớp
   slug tên model đã tách (`ranking.extract_model`, bỏ hậu tố effort `-max`/`-high`,
   khoá ngắn nhất còn ≥ 2 mảnh để không khớp mọi bài của hãng). Trang đó vào
-  `article_source_<id>.json` với `loai: "công bố"` (Miles cùng dùng), browser mở nó
+  `article_source_<id>.json` với `kind: "announcement"` (Miles cùng dùng), browser mở nó
   **trước** báo khác và lấy **4 ảnh** như bài gốc — chart benchmark ở đó là ảnh
   đắt nhất của tin model. Vì sao cần đường riêng: đo 11/09, trang
   `deepseek.com/en/news/deepseek-v4-1-flash/` có 4 chart 5148×2640… nhưng Google

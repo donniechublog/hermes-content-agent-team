@@ -170,7 +170,7 @@ def candidate_from_url(urls: list, wd: Path, phien=None) -> list:
             anh.append({"image_url": u, "alt": "", "og": False, "source": "role_supplied", "page_url": u,
                         "w": 0, "h": 0, "score": 60})
         else:
-            trang.append({"url": u, "loai": "báo"})
+            trang.append({"url": u, "kind": "other_outlet"})
     if trang:
         bp = browser_pass(trang, wd, tim_them=False, phien=phien)
         print(f"[tim them] browser boc {len(bp['cands'])} ung vien tu {len(trang)} trang vai dua",
@@ -189,7 +189,7 @@ def candidate_keyword(tu_khoa: str, wd: Path, mien_co: set, phien=None) -> list:
     print(f"[tim them] Bing '{tu_khoa}': {len(bao)} bao"
           + (": " + ", ".join(_domain(t["url"]) for t in bao) if bao else ""), file=sys.stderr)
     if bao:
-        bp = browser_pass([{"url": t["url"], "loai": "báo"} for t in bao], wd, tim_them=False, phien=phien)
+        bp = browser_pass([{"url": t["url"], "kind": "other_outlet"} for t in bao], wd, tim_them=False, phien=phien)
         print(f"[tim them] browser boc {len(bp['cands'])} ung vien tu {len(bao)} bao", file=sys.stderr)
         cands += bp["cands"]
     cm = candidate_commons(tu_khoa)
@@ -222,7 +222,7 @@ def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
         moi.append(a)
     if not moi:
         return []
-    nguon = {"tieu_de_en": m.get("title_en") or tieu_de}
+    nguon = {"title_en": m.get("title_en") or tieu_de}
     moi, _, _ = _seen_image(moi, nguon, tieu_de, wd)
     anh.extend(moi)
     return moi

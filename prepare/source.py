@@ -37,17 +37,17 @@ def load_source(draft_id: str, meta: dict, state: Path, phien=None) -> tuple:
     import article_sources
     p = state_paths.article_source_file(state, draft_id)
     link = meta.get("source_url", "")
-    nguon = _read_json(p) or {"tieu_de": meta.get("title", ""), "link_goc": link,
-                             "trang": [{"url": link, "loai": "gốc",
-                                        "tieu_de": meta.get("title", "")}]}
-    link_goc = nguon.get("link_goc") or link
+    nguon = _read_json(p) or {"title": meta.get("title", ""), "source_url": link,
+                             "pages": [{"url": link, "kind": "article",
+                                        "title": meta.get("title", "")}]}
+    link_goc = nguon.get("source_url") or link
     if GNEWS in link_goc:
         that = article_sources.resolve_code_gnews(link_goc, phien=phien)
         if that:
             print(f"[nguon] giai ma Google News -> {that[:90]}", file=sys.stderr)
-            nguon["link_gnews"] = link_goc
-            nguon["link_goc"] = that
-            for t in nguon.get("trang", []):
+            nguon["gnews_url"] = link_goc
+            nguon["source_url"] = that
+            for t in nguon.get("pages", []):
                 if t.get("url") == link_goc:
                     t["url"] = that
             _write_json(p, nguon)

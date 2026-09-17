@@ -82,7 +82,6 @@
   },
   "approve_pick.py": {
    "key:da_giao": 2,
-   "key:link_goc": 1,
    "key:nguon_loi": 3,
    "key:task_anh": 2,
    "key:task_viet": 1,
@@ -108,19 +107,6 @@
    "key:CT_CHAT_QUA_GATEWAY": 1,
    "key:ghi_chu_cuu": 2,
    "key:tg_card_message_id": 1
-  },
-  "article_images.py": {
-   "key:loai": 2,
-   "key:tieu_de": 1,
-   "key:trang": 2
-  },
-  "article_sources.py": {
-   "key:link_goc": 1,
-   "key:loai": 5,
-   "key:tieu_de": 5,
-   "key:tieu_de_en": 1,
-   "key:toa_soan": 3,
-   "key:trang": 3
   },
   "audit_cron.py": {
    "key:HONG": 1,
@@ -208,10 +194,6 @@
    "key:kieu": 7,
    "key:nhan_vat": 3
   },
-  "find_more_images.py": {
-   "key:loai": 2,
-   "key:tieu_de_en": 1
-  },
   "gin_prepare.py": {
    "key:anh": 1,
    "key:cao_net": 4,
@@ -237,17 +219,6 @@
    "key:vung": 9,
    "key:vung_goc": 4,
    "key:xoa_them": 1
-  },
-  "image_brand.py": {
-   "key:loai": 1,
-   "key:tieu_de": 1,
-   "key:toa_soan": 1
-  },
-  "image_prepare.py": {
-   "key:chu": 2,
-   "key:tieu_de_en": 2,
-   "key:trang": 1,
-   "key:trang_them": 1
   },
   "image_provenance.py": {
    "key:arxiv_bia": 1,
@@ -378,8 +349,15 @@
    "key:tu_them": 1
   },
   "material.py": {
-   "key:trang": 1,
    "path:article_extract.py": 1
+  },
+  "migrate_article_sources.py": {
+   "key:link_goc": 1,
+   "key:loai": 1,
+   "key:tieu_de": 2,
+   "key:tieu_de_en": 1,
+   "key:toa_soan": 1,
+   "key:trang": 1
   },
   "migrate_find_more.py": {
    "key:da_thu": 1,
@@ -445,34 +423,8 @@
    "key:usd_bai": 6,
    "key:vai": 5
   },
-  "prepare/browser.py": {
-   "key:chu": 2,
-   "key:loai": 4,
-   "key:tieu_de": 1,
-   "key:tieu_de_en": 5,
-   "key:toa_soan": 1,
-   "key:trang_them": 5
-  },
-  "prepare/fallback_rounds.py": {
-   "key:chu": 2,
-   "key:loai": 3,
-   "key:tieu_de_en": 15,
-   "key:trang": 6,
-   "key:trang_them": 2
-  },
   "prepare/manifest.py": {
-   "key:chu": 3,
-   "key:dung_duoc": 1,
-   "key:tieu_de_en": 2
-  },
-  "prepare/source.py": {
-   "key:link_goc": 3,
-   "key:loai": 1,
-   "key:tieu_de": 2,
-   "key:trang": 2
-  },
-  "prepare/vision.py": {
-   "key:tieu_de_en": 1
+   "key:dung_duoc": 1
   },
   "render_edu.py": {
    "key:nhan": 2,

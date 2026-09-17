@@ -71,13 +71,13 @@ def _fallback_rounds_already_run(so_anh_cua_tin: int,
         return f
 
     cb.BrowserSession = lambda *a, **k: _Phien()
-    cb.load_source = lambda d, m, s, phien=None: ({"trang": [], "tieu_de_en": tieu_de},
+    cb.load_source = lambda d, m, s, phien=None: ({"pages": [], "title_en": tieu_de},
                                                 Path(s) / "n.json", "http://vi.du/a")
     cb._summary_from_img_json = lambda d: {"image_role": "dre", "summary": ""}
     cb._supplement_source = lambda *a, **k: []
     cb._extra_announcement_page = lambda n, p, trang, *a, **k: trang
     cb._take_from_browser = lambda trang, *a, **k: (
-        {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}, trang)
+        {"title_en": "", "article_text": "", "cands": [], "extra_pages": []}, trang)
     cb._capture_ranking = lambda *a, **k: ([], False)
     cb._gather_and_download_image = lambda *a, **k: anh
     cb._seen_image = lambda a, nguon, tieu_de_, wd: (a, [x for x in a if x["uses"]], [])

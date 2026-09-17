@@ -123,7 +123,7 @@ def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
     # 2) tim bao khac (bo nguon mong)
     if True:
         try:
-            q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["tieu_de_en"])[:120]
+            q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["title_en"])[:120]
             _open_page(page, "https://news.google.com/search?q=" + up.quote(q)
                + "&hl=en-US&gl=US&ceid=US:en", cho_yen=6000)
             links, thay = [], set()
@@ -133,7 +133,7 @@ def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
                     thay.add(k)
                     links.append(h)
             for h in links[:5]:
-                if het_gio() or len(ra["trang_them"]) >= 3:
+                if het_gio() or len(ra["extra_pages"]) >= 3:
                     break
                 try:
                     page.goto(h, wait_until="domcontentloaded", timeout=25000)
@@ -142,19 +142,19 @@ def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
                         page.wait_for_timeout(500)
                     u = page.url
                     if "news.google.com" in u or _domain(u) == mien_goc \
-                            or any(_domain(u) == _domain(x["url"]) for x in ra["trang_them"]):
+                            or any(_domain(u) == _domain(x["url"]) for x in ra["extra_pages"]):
                         continue
                     td = (page.title() or "")[:160]
                     # Google News tra ca bai KHONG lien quan (cung tu "AI"):
                     # bai benh than, letsdatascience (Gimlet 05/09). Phai
                     # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
                     import article_images as _ab
-                    if len(_ab._tu_dac_trung(ra["tieu_de_en"]) & _ab._tu_dac_trung(td)) < 2:
+                    if len(_ab._tu_dac_trung(ra["title_en"]) & _ab._tu_dac_trung(td)) < 2:
                         print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
                         continue
-                    ra["trang_them"].append({"url": u, "loai": "báo",
-                                             "tieu_de": td,
-                                             "toa_soan": "https://" + _domain(u)})
+                    ra["extra_pages"].append({"url": u, "kind": "other_outlet",
+                                              "title": td,
+                                              "outlet_url": "https://" + _domain(u)})
                 except Exception:                # noqa: BLE001
                     continue
         except Exception as e:                   # noqa: BLE001
@@ -180,10 +180,10 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
     # Thieu playwright thi `except` cuoi ham bat va IN RA ly do. Truoc day co
     # mot buoc kiem rieng o day, tra ve rong IM LANG — dung lop "hong cam lang"
     # ma quy uoc C1 di go.
-    ra = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
+    ra = {"title_en": "", "article_text": "", "cands": [], "extra_pages": []}
     JS = _js_browser()
     t0 = time.time()
-    goc = next((t.get("url") for t in trang if t.get("loai") == "gốc" and t.get("url")), None) \
+    goc = next((t.get("url") for t in trang if t.get("kind") == "article" and t.get("url")), None) \
         or (trang[0].get("url") if trang else "")
     mien_goc = _domain(goc)
 
@@ -198,28 +198,28 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                 if goc and goc.startswith("http") and GNEWS not in goc:
                     try:
                         _open_page(page, goc)
-                        ra["tieu_de_en"] = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "",
+                        ra["title_en"] = re.sub(r"\s+[|\-–—]\s+[^|\-–—]{2,40}$", "",
                                                   (page.evaluate(JS["TITLE"]) or "").strip())
-                        ra["chu"] = page.evaluate(JS["TEXT"]) or ""
+                        ra["article_text"] = page.evaluate(JS["TEXT"]) or ""
                         _take_image_page(page, goc, 0, wd, ra, JS)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] goc {goc[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
                 # 2) tim bao khac (bo nguon mong)
-                if tim_them and ra["tieu_de_en"] and not het_gio():
+                if tim_them and ra["title_en"] and not het_gio():
                     _find_report_gnews(page, ra, mien_goc, het_gio, JS)
                 # 3) bao khac (co san trong nguon + vua tim): lay anh, toi da 2 trang
                 khac = [t for t in trang if t.get("url") and t.get("url") != goc and GNEWS not in t["url"]]
-                khac += ra["trang_them"]
+                khac += ra["extra_pages"]
                 # Trang cong bo chinh chu di TRUOC (LOW-21): chi mo 2 trang khac,
                 # khong duoc de no rot khoi cua so vi bao Bing them vao truoc.
-                khac.sort(key=lambda t: t.get("loai") != "công bố")
+                khac.sort(key=lambda t: t.get("kind") != "announcement")
                 for i, t in enumerate(khac[:2], start=1):
                     if het_gio():
                         break
                     try:
                         _open_page(page, t["url"], cho_yen=8000)
                         _take_image_page(page, t["url"], i, wd, ra, JS,
-                                       tran=4 if t.get("loai") == "công bố" else None)
+                                       tran=4 if t.get("kind") == "announcement" else None)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] {t['url'][:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
     except Exception as e:                                   # noqa: BLE001

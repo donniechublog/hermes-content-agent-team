@@ -4,7 +4,7 @@ duoc mac dinh moi URL trong `trang` la bai goc.
 
 Ca that: the Ethan "DeepSeek-V4.1-Flash tha trong so" ra anh con vit-robot — anh
 hero cua bai "Hugging Face robot duck is already a hit" tren therundown.ai.
-`tieu_de_en` = <title> tho "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face"
+`title_en` = <title> tho "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face"
 (hau to `·` khong bi boc), "Hugging"+"Face" du nguong 2 tu chung, Bing tra bai
 vit-robot; `_round_capture_source` lay tam dau tien chup duoc va gan lien_quan=True.
 Fail tren code cu (khong co strip_site_suffix/same_story; vong chup khong loc), pass

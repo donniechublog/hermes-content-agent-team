@@ -145,18 +145,18 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
     # srgb) de khong lang le doi cach xu ly mau anh chup.
     with BrowserSession() as phien:
         nguon, nguon_path, link = load_source(draft_id, meta, state, phien=phien)
-        trang = nguon.get("trang", [])
+        trang = nguon.get("pages", [])
 
         trang = _supplement_source(nguon, nguon_path, trang, link)
         # Trang cong bo CHINH CHU cua model (LOW-21): chay cho moi tin nhac model
         # cua hang trong watchlist, TRUOC browser de browser ghe lay chart.
         trang = _extra_announcement_page(nguon, nguon_path, trang, title, tom.get("summary", ""))
-        bp = {"tieu_de_en": "", "chu": "", "cands": [], "trang_them": []}
+        bp = {"title_en": "", "article_text": "", "cands": [], "extra_pages": []}
         if not khong_browser:
             bp, trang = _take_from_browser(trang, wd, nguon, nguon_path, phien=phien)
         # LOW-222: than bai cua tin la bang chung tach ten rieng cho MOI vong sau
         # (Commons, Yandex, bao thuc the, thuong hieu, cau hoi vision).
-        set_story_text("\n".join([bp.get("chu") or "", tom.get("summary") or ""]))
+        set_story_text("\n".join([bp.get("article_text") or "", tom.get("summary") or ""]))
         xhs, tin_xep_hang = _capture_ranking(title, nguon, tom, link, meta, bp, wd,
                                            khong_browser, phien=phien)
         anh = _gather_and_download_image(title, link, nguon_path, nguon, trang, bp, wd, xhs)
@@ -179,7 +179,7 @@ def prepare_article(draft_id: str, meta: dict, state: Path, wd: Path, khong_brow
         # Bo hau to site khoi tieu de dung de NHIN/tim hang (LOW-35): " · Hugging
         # Face" tung lam Hugging Face thanh "hang trong tin" cua mot tin DeepSeek.
         import article_sources
-        tieu_de_nhin = article_sources.strip_site_suffix(nguon.get("tieu_de_en") or "") or title
+        tieu_de_nhin = article_sources.strip_site_suffix(nguon.get("title_en") or "") or title
         # THU TU (Ong Chu 13/09/2026): CHUP MAN HINH BAO CUNG TIN TRUOC, tim kiem
         # anh tren web sau. Mot tin hot co hang tram bao dua, moi bao mot anh hero
         # dung chu de san — chup ve roi dem nen la co slide, khong phai doan xem
