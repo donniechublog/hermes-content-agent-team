@@ -59,7 +59,7 @@ def test_task_runs_no_read_ok_then_still_out_task_and_has_line_report():
           "result": "kq", "error": None}]
     ra, loi = _run(v, runs=None)
     assert [x["id"] for x in ra] == ["t1"], ra
-    assert ra[0]["tom_tat"] == "kq", "khong co run thi phai roi ve result cua task"
+    assert ra[0]["summary"] == "kq", "khong co run thi phai roi ve result cua task"
     assert any("task_runs" in d for d in loi), f"task_runs hong ma khong bao: {loi}"
 
 
@@ -69,7 +69,7 @@ def test_read_ok_all_done_then_error_read_empty_and_take_use_summary():
           "result": "kq", "error": None}]
     ra, loi = _run(v, runs={"t1": {"summary": "da giao 6 anh", "error": None}})
     assert loi == [], loi
-    assert ra[0]["tom_tat"] == "da giao 6 anh", ra
+    assert ra[0]["summary"] == "da giao 6 anh", ra
 
 
 if __name__ == "__main__":

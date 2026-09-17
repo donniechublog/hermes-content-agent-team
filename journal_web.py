@@ -13,8 +13,8 @@ nào — bảng .md tự dựng thành HTML bằng `md_bright_html` (bỏ `markd
     /9router/<ngày>         bản .md của ngày render thành HTML (bảng thật)
     /9router/<ngày>.json    số liệu thô (cho ai muốn vẽ thêm)
 
-Chạy dưới systemd user `journal-web` (hermes/systemd/). Cổng NHAT_KY_PORT
-(mặc định 9130), host NHAT_KY_HOST (mặc định 0.0.0.0 để đi qua netbird
+Chạy dưới systemd user `journal-web` (hermes/systemd/). Cổng JOURNAL_WEB_PORT
+(mặc định 9130), host JOURNAL_WEB_HOST (mặc định 0.0.0.0 để đi qua netbird
 100.87.121.46). Không có gì bí mật trong nhật ký (tên connection, model, tiền),
 không có khoá.
 """
@@ -33,10 +33,10 @@ import monitor_9router as tdr                               # noqa: E402
 # Mac dinh 127.0.0.1, KHONG phai 0.0.0.0 (doi 06/09/2026). Trang nay khong co
 # xac thuc va hien chi phi theo vai, ten khoa API, ten ket noi, model dang chay
 # — bind moi giao dien nghia la ai o cung LAN/netbird cung doc duoc. Muon mo
-# cho dien thoai thi dat NHAT_KY_HOST = dia chi netbird trong unit systemd,
+# cho dien thoai thi dat JOURNAL_WEB_HOST = dia chi netbird trong unit systemd,
 # dung mo ca 0.0.0.0.
-HOST = os.environ.get("NHAT_KY_HOST", "127.0.0.1")
-PORT = int(os.environ.get("NHAT_KY_PORT", "9130"))
+HOST = os.environ.get("JOURNAL_WEB_HOST", "127.0.0.1")
+PORT = int(os.environ.get("JOURNAL_WEB_PORT", "9130"))
 
 CSS = """
 body{font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;max-width:1100px;margin:0 auto;padding:12px;color:#222;background:#fafafa}
@@ -134,19 +134,19 @@ def page_list_clean() -> bytes:
             m = json.loads(p.read_text(encoding="utf-8"))
         except Exception:                                    # noqa: BLE001
             continue
-        if m.get("loi_doc"):
+        if m.get("read_error"):
             continue
-        t, ngay = m["tong"], m["ngay"]
-        brand = (m.get("vai") or {}).get("theo_brand", {})
+        t, ngay = m["totals"], m["date"]
+        brand = (m.get("role_costs") or {}).get("by_brand", {})
 
         def bai(b):
             x = brand.get(b)
-            return "-" if not x or x["usd_bai"] is None else f"{x['usd_bai']} ({x['bai']})"
-        model = next(iter(m["theo_model"]), "-").split(" @ ")[0]
-        canh = " class=canh" if (m.get("fallback") or sum((m.get("rong") or {}).values()) >= 3) else ""
+            return "-" if not x or x["usd_per_published"] is None else f"{x['usd_per_published']} ({x['published_count']})"
+        model = next(iter(m["by_model"]), "-").split(" @ ")[0]
+        canh = " class=canh" if (m.get("fallback") or sum((m.get("empty_responses") or {}).values()) >= 3) else ""
         L.append(f"<tr{canh}><td><a href='/9router/{ngay}'>{ngay}</a></td><td>{t['req']}</td><td>{t['usd']}</td>"
-                 f"<td>{t['cache_pct']}</td><td>{m.get('fallback', 0)}</td><td>{sum((m.get('rong') or {}).values())}</td>"
-                 f"<td>{t['loi']}</td><td>{bai('blog')}</td><td>{bai('dcgr')}</td><td>{html.escape(model)}</td></tr>")
+                 f"<td>{t['cache_pct']}</td><td>{m.get('fallback', 0)}</td><td>{sum((m.get('empty_responses') or {}).values())}</td>"
+                 f"<td>{t['error_count']}</td><td>{bai('blog')}</td><td>{bai('dcgr')}</td><td>{html.escape(model)}</td></tr>")
     L.append("</table><p>fallback = v4-flash→deepseek-chat trong ≤2 phút; rỗng = ok nhưng ≤5 token out dù prompt ≥1k; "
              "$/bài = $ ước lượng theo vai của brand / số bài published trong ngày (số bài trong ngoặc). Dòng đỏ: có chuyện đáng xem.</p>")
     return _page("Nhật ký 9router", "".join(L))

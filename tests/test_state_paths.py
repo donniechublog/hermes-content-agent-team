@@ -126,7 +126,7 @@ def test_constants_match_approved_table():
     hang = {k for k, v in vars(state_paths).items() if k.isupper() and isinstance(v, str)}
     thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()}
                    - {ten for _, ten in _rows_237().values()}
-                   - {ten for _, ten in _rows_240().values()})
+                   - {ten for _, ten in _rows_240().values()} - set(_rows_239()))
     assert not thieu, f"hang chua doi chieu voi state_paths_v2.json / state_files_v2.json: {thieu}"
 
 
@@ -229,6 +229,17 @@ def test_low240_constants_match_approved_table():
             assert cu == moi, (cu, moi)
             muc = "business_seen" if ten == "BUSINESS_SEEN_FILE" else "x_seen"
             assert f"state_paths.{ten}" in TABLE_240[muc]["_where"] and cu in TABLE_240[muc]["_where"], muc
+
+
+def _rows_239() -> dict:
+    """LOW-239: hang cho tep da English san (ten giu nguyen, chi thoi viet chuoi rai rac)."""
+    return {"CRON_AUDIT_FILE": ("cron_audit.json", "state/cron_audit.json")}
+
+
+def test_low239_constants_keep_existing_names():
+    for hang, (ten, kept) in _rows_239().items():
+        assert getattr(state_paths, hang) == ten, (hang, getattr(state_paths, hang))
+        assert kept in TABLE_231["_kept"], f"{kept} khong con trong _kept cua state_files_v2.json"
 
 
 def test_article_source_file_uses_table_name():

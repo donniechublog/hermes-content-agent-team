@@ -166,37 +166,39 @@ def gather_9router(ngay: int) -> dict:
     hom_nay = datetime.now(VN).date()
     theo_ngay, lat, loi, khoa = [], collections.Counter(), collections.Counter(), collections.Counter()
     vai, brand, rong, loi_kn, chi_phi = {}, {}, collections.Counter(), [], {}
+    # Doc khoa English cua nhat ky 9router (LOW-239); dump Ada tra ve giu khoa cu (LOW-243).
     for i in range(ngay, -1, -1):
         d = (hom_nay - timedelta(days=i)).strftime("%Y-%m-%d")
         m = tdr.download(d, lam_moi=(i == 0))
-        if not m or m.get("loi_doc"):
+        if not m or m.get("read_error"):
             continue
-        t = m["tong"]
-        model_chinh = next(iter(m["theo_model"]), "-")
+        t = m["totals"]
+        model_chinh = next(iter(m["by_model"]), "-")
         theo_ngay.append({"ngay": d[5:], "req": t["req"], "usd": t["usd"], "cache_pct": t["cache_pct"],
-                          "lat": m.get("fallback", 0), "loi": t["loi"],
+                          "lat": m.get("fallback", 0), "loi": t["error_count"],
                           "model_chinh": model_chinh})
-        lat.update(m["lat_model"])
-        loi.update(m["loi"])
-        for nhan, v in m["theo_model"].items():          # $ theo model gop N ngay (thay usage_audit)
+        lat.update(m["model_switches"])
+        loi.update(m["errors_by_model_status"])
+        for nhan, v in m["by_model"].items():          # $ theo model gop N ngay (thay usage_audit)
             c = chi_phi.setdefault(nhan.split(" @ ")[0], {"req": 0, "prompt": 0, "usd": 0.0})
             c["req"] += v["req"]
             c["prompt"] += v["prompt"]
             c["usd"] = round(c["usd"] + v["usd"], 4)
-        for k, v in m["theo_khoa"].items():
+        for k, v in m["by_api_key"].items():
             khoa[k] += v["usd"]
-        rong.update(m.get("rong") or {})
-        loi_kn += [f"{d[5:]} {x['ten']} [{x['ma']}] {x['loi'][:60]}" for x in (m.get("loi_ket_noi") or []) if x["trong_ngay"]]
-        for k, a in (m.get("vai") or {}).get("theo_vai", {}).items():
+        rong.update(m.get("empty_responses") or {})
+        loi_kn += [f"{d[5:]} {x['name']} [{x['error_code']}] {x['last_error'][:60]}"
+                   for x in (m.get("connection_errors") or []) if x["error_in_window"]]
+        for k, a in (m.get("role_costs") or {}).get("by_role", {}).items():
             t = vai.setdefault(k, {"usd": 0.0, "api": 0, "task_done": 0, "phien": 0})
             t["usd"] += a["usd"]
             t["api"] += a["api"]
             t["task_done"] += a["task_done"]
-            t["phien"] += a["phien"]
-        for b, x in (m.get("vai") or {}).get("theo_brand", {}).items():
+            t["phien"] += a["sessions"]
+        for b, x in (m.get("role_costs") or {}).get("by_brand", {}).items():
             t = brand.setdefault(b, {"usd": 0.0, "bai": 0})
             t["usd"] += x["usd"]
-            t["bai"] += x["bai"]
+            t["bai"] += x["published_count"]
     for t in vai.values():
         t["usd"] = round(t["usd"], 4)
         t["usd_task"] = round(t["usd"] / t["task_done"], 4) if t["task_done"] else None

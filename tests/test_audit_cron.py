@@ -46,7 +46,7 @@ def _job(ten, **k):
 
 
 def _ten(van_de):
-    return {f"{m['brand']}/{m['ten']}": m["muc"] for m in van_de}
+    return {f"{m['brand']}/{m['name']}": m["severity"] for m in van_de}
 
 
 # ---------------------------------------------------------------- job binh thuong
@@ -71,8 +71,8 @@ def test_failure_streak_va_last_error_deu_ra_HONG():
             _job("finn-daily-scan", failure_streak=3, last_status="error",
                  last_error="quet LOI: khong tao duoc task")])}
         van_de, _, _ = sc.audit(homes, BAY_GIO)
-        assert _ten(van_de) == {"blog/finn-daily-scan": "HONG"}, _ten(van_de)
-        ly = " | ".join(van_de[0]["ly_do"])
+        assert _ten(van_de) == {"blog/finn-daily-scan": "BROKEN"}, _ten(van_de)
+        ly = " | ".join(van_de[0]["reasons"])
         assert "3 lần" in ly and "khong tao duoc task" in ly, ly
 
 
@@ -84,7 +84,7 @@ def test_khong_gui_duoc_ket_qua_cung_la_HONG():
         homes = {"blog": _home(Path(t), "blog", [
             _job("daily-log", last_delivery_error="chat not found")]) }
         van_de, _, _ = sc.audit(homes, BAY_GIO)
-        assert _ten(van_de) == {"blog/daily-log": "HONG"}, _ten(van_de)
+        assert _ten(van_de) == {"blog/daily-log": "BROKEN"}, _ten(van_de)
 
 
 # ---------------------------------------------- ba kieu hong KHONG co lan chay nao
@@ -96,8 +96,8 @@ def test_job_bi_tat_va_bi_pause_deu_lo_ra():
             _job("model-watch", enabled=False),
             _job("vera-daily-scan", state="paused", paused_reason="gateway restart")])}
         van_de, _, _ = sc.audit(homes, BAY_GIO)
-        assert _ten(van_de) == {"blog/model-watch": "TAT",
-                                "blog/vera-daily-scan": "TAT"}, _ten(van_de)
+        assert _ten(van_de) == {"blog/model-watch": "OFF",
+                                "blog/vera-daily-scan": "OFF"}, _ten(van_de)
 
 
 def test_ticker_dung_bao_MOT_dong_cho_ca_kho():
@@ -109,8 +109,8 @@ def test_ticker_dung_bao_MOT_dong_cho_ca_kho():
                                [_job("vera-daily-scan"), _job("daily-log")],
                                nhip=3 * 3600)}
         van_de, _, _ = sc.audit(homes, BAY_GIO)
-        assert _ten(van_de) == {"dcgr/ticker": "KET"}, _ten(van_de)
-        assert "3 giờ" in van_de[0]["ly_do"][0], van_de[0]["ly_do"]
+        assert _ten(van_de) == {"dcgr/ticker": "STUCK"}, _ten(van_de)
+        assert "3 giờ" in van_de[0]["reasons"][0], van_de[0]["reasons"]
 
 
 def test_ticker_song_ma_moi_tick_deu_hong():
@@ -121,7 +121,7 @@ def test_ticker_song_ma_moi_tick_deu_hong():
         homes = {"blog": _home(Path(t), "blog", [_job("daily-log")],
                                nhip=10, thanh=4 * 3600)}
         van_de, _, _ = sc.audit(homes, BAY_GIO)
-        assert _ten(van_de) == {"blog/ticker": "KET"}, _ten(van_de)
+        assert _ten(van_de) == {"blog/ticker": "STUCK"}, _ten(van_de)
 
 
 def test_nguong_ticker_bam_theo_hermes_cron_status():
@@ -145,9 +145,9 @@ def test_job_le_hen_ra_KET_con_job_dang_tat_thi_khong():
             _job("daily-log", next_run_at=_iso(-3600)),
             _job("model-watch", enabled=False, next_run_at=_iso(-99999))])}
         van_de, _, _ = sc.audit(homes, BAY_GIO)
-        assert _ten(van_de) == {"blog/daily-log": "KET",
-                                "blog/model-watch": "TAT"}, _ten(van_de)
-        assert len([m for m in van_de if m["ten"] == "model-watch"][0]["ly_do"]) == 1
+        assert _ten(van_de) == {"blog/daily-log": "STUCK",
+                                "blog/model-watch": "OFF"}, _ten(van_de)
+        assert len([m for m in van_de if m["name"] == "model-watch"][0]["reasons"]) == 1
 
 
 def test_le_hen_it_hon_15_phut_khong_tinh():
@@ -174,7 +174,7 @@ def test_soat_ca_kho_cron_cua_tung_profile():
         (p / "cron" / "ticker_heartbeat").write_text(str(BAY_GIO), encoding="utf-8")
         (p / "cron" / "ticker_last_success").write_text(str(BAY_GIO), encoding="utf-8")
         van_de, tong, _ = sc.audit({"blog": h}, BAY_GIO)
-        assert _ten(van_de) == {"blog/coder/coder-job": "HONG"}, _ten(van_de)
+        assert _ten(van_de) == {"blog/coder/coder-job": "BROKEN"}, _ten(van_de)
         assert tong == 2, tong
 
 
@@ -199,9 +199,9 @@ def test_jobs_json_hong_khong_lam_ca_lan_soat_chet():
         (h / "cron" / "jobs.json").write_text("{ khong phai json", encoding="utf-8")
         ok = _home(g, "dcgr", [_job("y", failure_streak=2)])
         van_de, _, _ = sc.audit({"blog": h, "dcgr": ok}, BAY_GIO)
-        muc = sorted(m["muc"] for m in van_de)
-        assert muc == ["HONG", "HONG"], van_de
-        assert any("dcgr/y" == f"{m['brand']}/{m['ten']}" for m in van_de), van_de
+        muc = sorted(m["severity"] for m in van_de)
+        assert muc == ["BROKEN", "BROKEN"], van_de
+        assert any("dcgr/y" == f"{m['brand']}/{m['name']}" for m in van_de), van_de
 
 
 # ---------------------------------------------------------------- chong bao trung
@@ -209,15 +209,15 @@ def test_khoa_khong_doi_khi_streak_tang():
     """Chu ky bo van de KHONG gom ly do: streak 3 -> 4 khong phai tin moi, va
     neu tinh ca ly do thi container thu hai nhan lai y het."""
     import audit_cron as sc
-    a = [{"brand": "blog", "ten": "finn", "muc": "HONG", "ly_do": ["hỏng 3 lần"]}]
-    b = [{"brand": "blog", "ten": "finn", "muc": "HONG", "ly_do": ["hỏng 4 lần"]}]
+    a = [{"brand": "blog", "name": "finn", "severity": "BROKEN", "reasons": ["hỏng 3 lần"]}]
+    b = [{"brand": "blog", "name": "finn", "severity": "BROKEN", "reasons": ["hỏng 4 lần"]}]
     assert sc.lock_still_for(a) == sc.lock_still_for(b)
 
 
 def test_khoa_doi_khi_co_them_job_hong():
     import audit_cron as sc
-    a = [{"brand": "blog", "ten": "finn", "muc": "HONG", "ly_do": []}]
-    b = a + [{"brand": "dcgr", "ten": "vera", "muc": "KET", "ly_do": []}]
+    a = [{"brand": "blog", "name": "finn", "severity": "BROKEN", "reasons": []}]
+    b = a + [{"brand": "dcgr", "name": "vera", "severity": "STUCK", "reasons": []}]
     assert sc.lock_still_for(a) != sc.lock_still_for(b)
 
 
@@ -226,8 +226,8 @@ def test_tin_nhan_escape_HTML_trong_loi():
     """stderr co `<module>` / `&` -> Telegram tu choi CA tin voi loi parse HTML,
     tuc dung hom co loi thi canh bao bien mat (loi da sua o journal_web)."""
     import audit_cron as sc
-    van_de = [{"brand": "blog", "ten": "daily-log", "muc": "HONG",
-               "ly_do": ['lỗi: File "<stdin>", line 1 & <module>']}]
+    van_de = [{"brand": "blog", "name": "daily-log", "severity": "BROKEN",
+               "reasons": ['lỗi: File "<stdin>", line 1 & <module>']}]
     tin = sc.use_story(van_de, 9, [], "07/09", 2)
     assert "<stdin>" not in tin and "&lt;stdin&gt;" in tin, tin
     assert "&amp;" in tin, tin
@@ -239,6 +239,17 @@ def test_tin_nhan_dem_ca_home_bien_mat():
     import audit_cron as sc
     tin = sc.use_story([], 0, ["dcgr"], "07/09", 2)
     assert "1 hỏng" in tin, tin
+
+
+def test_severity_codes_follow_table_and_printed_words_stay():
+    """LOW-239: `severity` la ma English trong bang; chu in ra stdout (HONG/KET/TAT, ban
+    ghi duy nhat khi Telegram hong) va icon trong tin giu nguyen nhu truoc."""
+    import audit_cron as sc
+    table = json.loads((ROOT / "docs" / "tu_dien_ten" / "journal_keys_v2.json").read_text(encoding="utf-8"))
+    codes = table["audit_cron_issue.severity"]
+    assert sc.SEVERITY_LABELS == {new: old for old, new in codes.items()}, sc.SEVERITY_LABELS
+    assert sc.ITEM == {codes["HONG"]: "🔴", codes["KET"]: "🟠", codes["TAT"]: "⚪"}, sc.ITEM
+    assert sc.MARK.name == "cron_audit.json" and sc.MARK.parent.name == "state", sc.MARK
 
 
 if __name__ == "__main__":
