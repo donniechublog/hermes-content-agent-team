@@ -1,0 +1,44 @@
+{
+  "_status": "ĐÃ DUYỆT 17/09/2026 (LOW-228): tên theo khoá pha 1; đổi cả thư mục theo vòng tìm ảnh + tiền tố tệp ảnh; đổi tên tệp của vai (khoá bên trong giữ); tệp cấp state + Gin + tệp gỡ lỗi để LOW-231.",
+  "root": {
+    "chuan_bi": "prepare"
+  },
+  "lock": {
+    "chuan_bi.{n}.lock": "prepare.{n}.lock"
+  },
+  "draft_files": {
+    "xong.json": "manifest.json",
+    "xong.json.v1.bak": "manifest.json.v1.bak",
+    "chuan_bi.log": "prepare.log",
+    "tu_lieu.md": "material.md",
+    "bang_anh.png": "contact_sheet.png",
+    "dang_chay.pid": "running.pid",
+    "so_lan_chet.json": "crash_count.json",
+    "tim_them.json": "find_more.json",
+    "da_dung.json": "previous_submission.json",
+    "nop_lan.json": "submit_count.json"
+  },
+  "dirs": {
+    "goc": "original",
+    "san": "ready",
+    "them": "extra",
+    "them_{n}": "extra_{n}",
+    "khai_niem": "concept",
+    "thuong_hieu": "brand_match",
+    "thuc_the": "entity",
+    "chup_nguon": "capture_source",
+    "xh": "ranking",
+    "bang": "board"
+  },
+  "file_patterns": {
+    "xep_hang_{board}.png": "ranking_{board}.png",
+    "chup_{n}_{k}.png": "capture_{n}_{k}.png",
+    "{id}.ngang.png": "{id}.landscape.png",
+    "{draft_id}.ban_giao.md": "{draft_id}.handoff.md"
+  },
+  "_unchanged": ["brief.md", "brief_<writer>.md", "spec.json", "carousel.spec.json", "render_edu.spec.json",
+                 "caption.txt", "commons/", "dropped/", "<brand-slug>/ trong brand_match/"],
+  "_later_LOW-231": ["state/nguon_<id>.json", "state/anh_da_dung.jsonl", "state/edu_theme_da_dung.jsonl",
+                     "state/da_bao_chan.json", "tệp Gin: vung*.json, nen_sach.png, ket_qua_N.png",
+                     "tệp gỡ lỗi bỏ lại: chk.py, dbg.py, *.truoc_lowN.json, chuan_bi.lowN.log…"]
+}
