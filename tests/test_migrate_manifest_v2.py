@@ -28,7 +28,8 @@ V1_IMAGE = {"ma": "A1", "goc": "/x/goc/A1.png", "san": "/x/san/A1.png", "tu": "c
 def _manifest(version):
     m = {"draft_id": "d1", "brand": "donniechublog", "title": "t", "link": "l", "workdir": "/x",
          "anh": [dict(V1_IMAGE)], "toi_thieu": 1, "vai_anh": "ethan", "tu_lieu": {"cau_co_so": [], "tu": "browser"},
-         "thieu_anh": {"so": 0, "toi_thieu": 1}, "xep_hang": None}
+         "thieu_anh": {"so": 0, "toi_thieu": 1}, "xep_hang": None,
+         "dropped": [{"stage": "download", "rule": "r", "url": "u", "trang": "https://p", "tu": "commons"}]}
     if version:
         m.update(phien_ban=version, so_dung_duoc=1, so_xep_hang=0)
     return m
@@ -97,6 +98,8 @@ def test_real_run_matches_read_manifest_and_keeps_backup():
                                   "row": 3, "mentioned": True}
         assert v1["material"] == {"number_sentences": [], "source": "browser"}
         assert v1["missing_images"] == {"count": 0, "min_images": 1}
+        assert v1["dropped"] == [{"stage": "download", "rule": "r", "url": "u", "page_url": "https://p",
+                                  "source": "commons"}]
         side = json.loads(files["img"].read_text(encoding="utf-8"))
         assert side == {"image_role": "dre", "carousel": True,
                         "redo_reasons": [{"attempt": 1, "slide": None, "reason": "x"}]}

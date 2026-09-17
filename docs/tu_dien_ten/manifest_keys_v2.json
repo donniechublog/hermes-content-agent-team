@@ -42,6 +42,10 @@
     "tieu_de": "title",
     "doan": "paragraphs"
   },
+  "manifest.dropped[]": {
+    "trang": "page_url",
+    "tu": "source"
+  },
   "manifest.missing_images": {
     "so": "count",
     "toi_thieu": "min_images"

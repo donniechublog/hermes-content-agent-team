@@ -89,6 +89,8 @@ def migrate_manifest(m: dict) -> dict:
         m["images"] = [migrate_image(a) for a in m["images"]]
     if "material" in m:
         m["material"] = migrate_material(m["material"])
+    if isinstance(m.get("dropped"), list):
+        m["dropped"] = [_rename(r, "manifest.dropped[]") if isinstance(r, dict) else r for r in m["dropped"]]
     _nested(m, "missing_images", "manifest.missing_images")
     if isinstance(m.get("ranking"), dict):
         m["ranking"] = migrate_ranking(m["ranking"])
