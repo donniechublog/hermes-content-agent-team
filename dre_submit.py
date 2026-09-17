@@ -38,6 +38,7 @@ import image_prepare as cb                                    # noqa: E402
 import env_load                                              # noqa: E402
 import submit_common as nc                                       # noqa: E402
 import schema                                                # noqa: E402
+import manifest_values                                       # noqa: E402
 import state_paths                                           # noqa: E402
 import image_rules_dre                                       # noqa: E402
 
@@ -315,7 +316,7 @@ def handoff(m: dict, spec: dict, dung_anh: list, out: Path) -> str:
     for nhan, ds in dung_anh:
         for ma in ds:
             a = anh[ma]
-            L.append(f"- {nhan}: {ma} ← {a['domain'] or a['source']}" +
+            L.append(f"- {nhan}: {ma} ← {a['domain'] or manifest_values.source_label(a['source'])}" +
                      (f" ({a['page_url'][:100]})" if a.get("page_url") else ""))
     L.append(f"Hook bìa: {(spec.get('cover') or {}).get('hook', '')}")
     L.append(f"Slide: {len(spec.get('slides') or []) + 1}, tệp: {out}")
@@ -390,7 +391,7 @@ def main() -> int:
         mid = nc.send_album("dre", files, mo_ta, a.draft_id, wd, da_dung,
                            {"bia": cover.get("anh"), "hook": hook,
                             "anh": [ma for _, ds in dung_anh for ma in ds]})
-    nguon_anh = sorted({m_["domain"] or m_["source"] for m_ in m["images"]
+    nguon_anh = sorted({m_["domain"] or manifest_values.source_label(m_["source"]) for m_ in m["images"]
                         if m_["id"] in {ma for _, ds in dung_anh for ma in ds}})
     # Bang den (kanban swarm, 05/09): script ghi ban giao co cau truc len the goc
     # cua bai — code lam, LLM khong phai nho. Cung JSON nay in ra dong

@@ -50,7 +50,7 @@ def _fake_capture_lead(anh_map):
         from PIL import Image
         Path(ra).parent.mkdir(parents=True, exist_ok=True)
         Image.open(src).convert("RGB").save(ra)
-        return {"image_url": url, "page_url": url, "source": "chup_nguon", "capture_source": True,
+        return {"image_url": url, "page_url": url, "source": "capture_source", "capture_source": True,
                 "page_title": "", "background_color": "#ffffff", "alt": "", "score_reason": ""}
     return gia
 
@@ -87,7 +87,7 @@ def test_no_duplicate_with_image_already_has_word_round_other():
         da_co.mkdir(parents=True)
         from PIL import Image
         Image.open(wire).convert("RGB").save(da_co / "A1.png")
-        anh_ban_dau = [{"id": "A1", "original_path": str(da_co / "A1.png"), "uses": ["thân"], "relevant": True}]
+        anh_ban_dau = [{"id": "A1", "original_path": str(da_co / "A1.png"), "uses": ["body"], "relevant": True}]
         anh_map = {"https://a.com/bai": wire}
         with mock.patch("capture_page.capture_lead_mobile", _fake_capture_lead(anh_map)):
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(anh_ban_dau, "https://a.com/bai", [], tmp / "wd")

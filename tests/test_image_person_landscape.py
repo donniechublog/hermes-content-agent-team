@@ -41,7 +41,7 @@ def test_image_person_landscape_filter_use_name_and_ratio():
     c = ra[0]
     assert c["rong"] >= c["cao"], "phai la anh ngang/vuong, khong doc"
     assert c["score"] == 26
-    assert c["brand_match"]["kind"] == "nguoi"
+    assert c["brand_match"]["kind"] == "person"
     assert c["brand_match"]["person"] == "Dario Amodei"
 
 

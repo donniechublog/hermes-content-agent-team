@@ -107,7 +107,7 @@ def test_filter_commons_can_two_from_distinctive_and_drop_graphic():
     ])}
     ra = k.filter_commons(pages, "flag of Japan")
     assert [c["alt"] for c in ra] == ["Commons: Japan Flag at Kennedy Space Center.jpg"], ra
-    assert ra[0]["source"] == "khai_niem" and ra[0]["concept"]["keyword"] == "flag of Japan"
+    assert ra[0]["source"] == "concept" and ra[0]["concept"]["keyword"] == "flag of Japan"
 
 
 def test_filter_commons_jpeg_before_png_fall_new_black_size():
@@ -144,8 +144,8 @@ def test_filter_commons_empty_when_no_has_what():
 
 
 def _image(**o):
-    a = {"concept": {"keyword": "flag of Japan", "reason": "tin nhắc tới Japan"}, "kind": "anh",
-         "faces": 0, "landscape": False, "relevant": True, "uses": ["bìa", "thân"],
+    a = {"concept": {"keyword": "flag of Japan", "reason": "tin nhắc tới Japan"}, "kind": "photo",
+         "faces": 0, "landscape": False, "relevant": True, "uses": ["cover", "body"],
          "notes": ["ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin"]}
     a.update(o)
     return a
@@ -153,14 +153,14 @@ def _image(**o):
 
 def test_label_concept_only_cover_no_than():
     a = k.label_concept(_image())
-    assert a["uses"] == ["bìa"]
+    assert a["uses"] == ["cover"]
     assert a["notes"][0].startswith("🧭 ẢNH KHÁI NIỆM") and "flag of Japan" in a["notes"][0]
     assert not any("ảnh CHUNG của hãng" in g for g in a["notes"])
 
 
 def test_label_concept_landscape_only_stack():
-    a = k.label_concept(_image(landscape=True, uses=["ghép dọc với một ảnh ngang cùng tone", "cat_ngang: true"]))
-    assert a["uses"] == ["ghép dọc với một ảnh ngang cùng tone"]
+    a = k.label_concept(_image(landscape=True, uses=["stack_vertical", "landscape_crop_if_no_text"]))
+    assert a["uses"] == ["stack_vertical"]
 
 
 def test_label_concept_chart_or_face_then_drop():
@@ -185,8 +185,8 @@ def test_manifest_count_cluster_concept_is_one():
     import image_prepare as cb
     from pathlib import Path
     def _a(ma, kn=False):
-        return {"id": ma, "uses": ["bìa"], "relevant": True, "domain": "x", "source": "x", "ratio": 0.8,
-                "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "anh",
+        return {"id": ma, "uses": ["cover"], "relevant": True, "domain": "x", "source": "x", "ratio": 0.8,
+                "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "photo",
                 **({"concept": {"keyword": "flag of Japan"}} if kn else {})}
     anh = [_a("A1"), _a("A2", True), _a("A3", True), _a("A4", True)]
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {}, Path("/tmp"),

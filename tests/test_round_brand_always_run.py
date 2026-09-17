@@ -45,8 +45,8 @@ class _Phien:
 
 def _image(ma: str) -> dict:
     return {"id": ma, "original_path": f"/khong-co/{ma}.png", "url": f"http://vi.du/{ma}.png",
-            "ratio": 1.0, "w": 1200, "h": 1200, "kind": "anh", "landscape": False,
-            "uses": ["bìa", "slide"], "relevant": True, "faces": 0, "bottom_left_brightness": 60,
+            "ratio": 1.0, "w": 1200, "h": 1200, "kind": "photo", "landscape": False,
+            "uses": ["cover", "slide"], "relevant": True, "faces": 0, "bottom_left_brightness": 60,
             "short_side": 1200, "domain": "vi_du.com", "source": "bai", "notes": []}
 
 
@@ -154,7 +154,7 @@ def test_error_call_no_ok_stalled_again_after_one_if():
 
 
 # ------------------------------------------- nhan chan dung founder toi ca hai brief
-_TH_NGUOI = {"company": "Nvidia", "key": "nvidia", "kind": "nguoi",
+_TH_NGUOI = {"company": "Nvidia", "key": "nvidia", "kind": "person",
              "person": "Jensen Huang", "person_role": "nhà sáng lập"}
 
 
@@ -169,7 +169,7 @@ def test_brief_of_ethan_no_remaining_call_block_use_is_except_count():
     khai `nhan_vat` dung, ma `submit_common.check_subject_named` thi chan anh co mat nguoi
     khong khai ten -> Ethan buoc phai bo anh founder."""
     import ethan_prepare
-    a = {"id": "A6", "ratio": 0.8, "w": 960, "h": 1200, "kind": "anh", "faces": 1,
+    a = {"id": "A6", "ratio": 0.8, "w": 960, "h": 1200, "kind": "photo", "faces": 1,
          "bottom_left_brightness": 60, "short_side": 960, "notes": [], "brand_match": _TH_NGUOI}
     _dung, ghi = ethan_prepare.label_ethan(a)
     chu = " ".join(ghi)

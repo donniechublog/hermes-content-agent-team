@@ -338,7 +338,7 @@ def filter_commons(pages: dict, tu_khoa: str, so: int = 4, canh_ngan_min: int = 
         if dac_trung and sum(t in ten_thap for t in dac_trung) < can:
             continue
         ra.append({"image_url": ii.get("thumburl") or ii.get("url"), "alt": "Commons: " + ten, "og": False,
-                   "mime": ii.get("mime"), "source": "khai_niem", "page_url": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
+                   "mime": ii.get("mime"), "source": "concept", "page_url": "https://commons.wikimedia.org/wiki/File:" + ten.replace(" ", "_"),
                    "rong": w, "cao": h, "score": 20, "concept": {"keyword": tu_khoa}})
     # JPEG trước PNG: ảnh chụp thật gần như luôn là JPEG, PNG trên Commons hay là
     # cờ vẽ / bản dựng ("Japan flag - variant.png", "CGI Japan Flag.png").
@@ -409,9 +409,9 @@ def label_concept(a: dict) -> dict:
     if a.get("relevant") is False:
         return a                                  # classify đã xoá dung + ghi ❌
     if a.get("landscape"):
-        a["uses"] = [d for d in a["uses"] if d.startswith("ghép dọc")]
+        a["uses"] = [d for d in a["uses"] if d == "stack_vertical"]
     else:
-        a["uses"] = ["bìa"]
+        a["uses"] = ["cover"]
     a["notes"] = [g for g in a["notes"] if "Wikimedia Commons" not in g]
     a["notes"].insert(0, f"🧭 ẢNH KHÁI NIỆM (từ khoá \"{tk}\"" + (f": {ly_do}" if ly_do else "") + ") "
                         "từ Wikimedia Commons — KHÔNG phải ảnh của tin; chỉ làm bìa/hero khi tin không có "

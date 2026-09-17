@@ -1,0 +1,97 @@
+{
+  "_status": "ĐÃ DUYỆT 17/09/2026 (LOW-230): bảng như dưới; `uses` lưu mã slot, câu tiếng Việt in qua manifest_values.USE_LABELS; gộp báo khác/bao khac → other_outlet. Chỉ đổi GIÁ TRỊ; khoá đã English từ LOW-227.",
+  "_measured": "185 manifest máy chủ 17/09/2026 (@f6d5da8)",
+  "image.source": {
+    "bao_thuc_the": "press_entity",
+    "báo khác": "other_outlet",
+    "bao khac": "other_outlet",
+    "khai_niem": "concept",
+    "gốc": "article",
+    "thuong_hieu": "brand",
+    "chup": "browser_capture",
+    "chup_nguon": "capture_source",
+    "thuc_the": "entity",
+    "xep_hang": "ranking",
+    "arxiv_hinh": "arxiv_figure",
+    "arxiv_bia": "arxiv_cover",
+    "goc": "article",
+    "vai": "role_supplied"
+  },
+  "image.kind": {
+    "anh": "photo"
+  },
+  "image.capture_kind": {
+    "tit": "headline"
+  },
+  "ranking.kind": {
+    "bang": "table",
+    "bang-ghep": "table-stitched",
+    "danh-sach": "list",
+    "the": "card",
+    "danh-sach-ghep": "list-stitched"
+  },
+  "brand_match.kind": {
+    "anh": "photo",
+    "nguoi": "person",
+    "xep_hang": "ranking",
+    "co_phieu": "stock"
+  },
+  "brand_match.background_tone": {
+    "sáng": "light",
+    "tối": "dark"
+  },
+  "image_order_by_story_type[]": {
+    "khai_niem": "concept",
+    "tru_so": "headquarters",
+    "co_phieu": "stock",
+    "san_giao_dich": "stock_exchange",
+    "chart_cong_bo": "announcement_chart",
+    "xep_hang": "ranking",
+    "co_nuoc_hang": "company_country_flag",
+    "ghep_hai_hang": "two_company_pair",
+    "khai_niem_ha_tang": "infrastructure_concept"
+  },
+  "image.uses[]": {
+    "bìa": "cover",
+    "bìa (khối tít của bài gốc — không còn ảnh nào khác)": "cover_headline_block",
+    "bìa (ảnh hero của chính bài gốc)": "cover_article_hero",
+    "HERO / BÌA (bảng xếp hạng, model đã khoanh — ảnh chính bắt buộc của tin xếp hạng)": "cover_ranking",
+    "thân": "body",
+    "thân (chart)": "body_chart",
+    "thân (chart, dán full bề ngang nguyên vẹn)": "body_chart_full_width",
+    "ghép dọc với một ảnh ngang cùng tone": "stack_vertical",
+    "cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ": "landscape_crop_if_no_text",
+    "cat_ngang: true (ảnh người/sản phẩm không chữ, vision đã xác nhận)": "landscape_crop_confirmed",
+    "figure": "figure"
+  },
+  "_unchanged_english": {
+    "image.source": [
+      "web_yandex",
+      "commons",
+      "browser",
+      "openverse"
+    ],
+    "image.kind": [
+      "chart"
+    ],
+    "image.capture_kind": [
+      "hero"
+    ],
+    "ranking.kind": [
+      "svg"
+    ],
+    "brand_match.kind": [
+      "logo"
+    ],
+    "image_order_by_story_type[]": [
+      "logo",
+      "founder"
+    ]
+  },
+  "_out_of_scope": [
+    "giá trị trong tệp nguồn nguon_<id>.json (loai: gốc…) — LOW-231",
+    "dấu provenance trong metadata PNG (chup_chart, dre_chuan_bi…) — không nằm trong manifest",
+    "spec do vai viết (nen: sang/toi, …) — lời dặn SOUL quyết định"
+  ],
+  "_added_after_approval": "17/09/2026: 4 giá trị code sinh ra nhưng chưa có trong dữ liệu máy chủ, đặt theo đúng quy tắc bảng đã duyệt: goc (không dấu) -> article (cùng nghĩa gốc), vai -> role_supplied (URL do vai đưa, find_more_images), danh-sach-ghep -> list-stitched, khai_niem_ha_tang -> infrastructure_concept."
+}

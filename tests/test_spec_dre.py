@@ -44,7 +44,7 @@ def _ve(w, h, tone=(60, 70, 90)):
     return im
 
 
-def _anh(wd, ma, w, h, loai="anh", tone=(60, 70, 90), **k):
+def _anh(wd, ma, w, h, loai="photo", tone=(60, 70, 90), **k):
     """Mot dong manifest anh, dung cac khoa ma `image_prepare` that su ghi ra."""
     import image_rules_dre as image_rules
     goc = wd / state_paths.ORIGINAL_DIR / f"{ma}.png"
@@ -209,7 +209,7 @@ def test_anh_xep_hang_duoc_lam_bia_con_lam_slide_thi_la_chart():
         wd = Path(t)
         xh = _anh(wd, "XH", 1200, 900, loai="chart", ranking={"site": "LMArena"})
         anh = [xh] + [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
-        m = _m(wd, anh, is_ranking_story=True, ranking={"kind": "bang"})
+        m = _m(wd, anh, is_ranking_story=True, ranking={"kind": "table"})
         ra, loi, _c, _d = _chay(_spec(_bia("XH"), _du_slide(["A2", "A3", "A4", "A5"])), m, wd)
         assert loi == [], loi
         assert "chart" not in ra["cover"], "bia xep hang khong duoc dan kieu chart"
@@ -220,7 +220,7 @@ def test_tin_xep_hang_ma_bia_khong_phai_bang_thi_chan():
         wd = Path(t)
         xh = _anh(wd, "XH", 1200, 900, loai="chart", ranking={"site": "LMArena"})
         anh = [xh] + [_anh(wd, f"A{i}", 1000, 1250) for i in range(2, 6)]
-        m = _m(wd, anh, is_ranking_story=True, ranking={"kind": "bang", "site": "LMArena",
+        m = _m(wd, anh, is_ranking_story=True, ranking={"kind": "table", "site": "LMArena",
                                                      "board": "text", "model": "GPT"})
         _ra, loi, _c, _d = _chay(_spec(_bia("A2"), _du_slide(["A3", "A4", "A5", "XH"])), m, wd)
         assert _co(loi, "bìa", "TIN XẾP HẠNG"), loi

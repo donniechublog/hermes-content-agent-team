@@ -25,6 +25,8 @@ Thuần để test được. Không import module nào của engine.
 """
 import re
 
+import manifest_values
+
 # ---- loại tin -------------------------------------------------------------
 # Tên chuẩn dùng trong bảng. Nhận cả tiếng Việt lẫn cách viết lệch của Finn/Vera.
 _CHUAN = {
@@ -48,27 +50,29 @@ def standard_type(category) -> str:
 
 
 # ---- bảng: loại tin → thứ tự vật được phép -----------------------------------
-# Tên vật là tên NHÁNH TÌM đã có trong engine, không phải mô tả:
-#   ghep_hai_hang  ảnh của CẢ HAI hãng trong tin, để vai ghép (thương vụ)
-#   xep_hang       bảng benchmark chụp từ trang xếp hạng (ranking.py)
-#   chart_cong_bo  chart trong trang công bố chính chủ (_extra_announcement_page)
-#   logo/tru_so/founder   image_brand: Wikidata P154 / SUFFIX / P112-P169
-#   co_phieu       biểu đồ giá theo CODE_HAS_BALLOT (image_brand.image_has_ballot)
-#   san_giao_dich  TOPIC "stock exchange trading floor"
-#   co_nuoc_hang   cờ nước của hãng (COUNTRY_OF_RANK -> image_concept "flag of")
-#   khai_niem      bảng TOPIC theo chữ trong tiêu đề (đường cũ)
+# Tên vật là tên NHÁNH TÌM đã có trong engine, không phải mô tả (mã English từ
+# LOW-230; tên cũ in ra brief qua manifest_values.STORY_OBJECT_LABELS):
+#   two_company_pair      ảnh của CẢ HAI hãng trong tin, để vai ghép (thương vụ)
+#   ranking               bảng benchmark chụp từ trang xếp hạng (ranking.py)
+#   announcement_chart    chart trong trang công bố chính chủ (_extra_announcement_page)
+#   logo/headquarters/founder   image_brand: Wikidata P154 / SUFFIX / P112-P169
+#   stock                 biểu đồ giá theo CODE_HAS_BALLOT (image_brand.image_has_ballot)
+#   stock_exchange        TOPIC "stock exchange trading floor"
+#   company_country_flag  cờ nước của hãng (COUNTRY_OF_RANK -> image_concept "flag of")
+#   concept               bảng TOPIC theo chữ trong tiêu đề (đường cũ)
+#   infrastructure_concept  từ khoá hạ tầng ép cho INFRA (KEYWORD_LOWER_LAYER)
 BOARD_IMAGE_BY_TYPE = {
-    "M&A":       ("ghep_hai_hang", "logo", "tru_so", "founder", "co_phieu"),
-    "MODEL":     ("xep_hang", "chart_cong_bo", "logo", "founder", "khai_niem"),
-    "BENCHMARK": ("xep_hang", "chart_cong_bo", "logo"),
-    "INFRA":     ("khai_niem_ha_tang", "tru_so", "co_nuoc_hang", "logo"),
-    "LAB":       ("tru_so", "founder", "logo", "co_nuoc_hang"),
-    "BUSINESS":  ("co_phieu", "san_giao_dich", "tru_so", "logo", "founder"),
-    "SECURITY":  ("khai_niem", "logo"),
-    "ARXIV":     ("chart_cong_bo", "khai_niem", "logo"),
-    "TOOL":      ("chart_cong_bo", "logo", "khai_niem"),
+    "M&A":       ("two_company_pair", "logo", "headquarters", "founder", "stock"),
+    "MODEL":     ("ranking", "announcement_chart", "logo", "founder", "concept"),
+    "BENCHMARK": ("ranking", "announcement_chart", "logo"),
+    "INFRA":     ("infrastructure_concept", "headquarters", "company_country_flag", "logo"),
+    "LAB":       ("headquarters", "founder", "logo", "company_country_flag"),
+    "BUSINESS":  ("stock", "stock_exchange", "headquarters", "logo", "founder"),
+    "SECURITY":  ("concept", "logo"),
+    "ARXIV":     ("announcement_chart", "concept", "logo"),
+    "TOOL":      ("announcement_chart", "logo", "concept"),
 }
-DEFAULT = ("tru_so", "founder", "logo", "khai_niem")   # tin không có category hợp lệ
+DEFAULT = ("headquarters", "founder", "logo", "concept")   # tin không có category hợp lệ
 
 
 def order_image(category) -> tuple:
@@ -81,10 +85,11 @@ def late(category, vat: str) -> bool:
 
 
 # Điểm cộng theo thứ tự trong bảng: vật đứng đầu +8, kế +6, +4, +2, còn lại 0.
-# Cộng vào `score` gốc của ứng viên (anh 28 / nguoi 24 / logo 18) TRƯỚC khi
+# Cộng vào `score` gốc của ứng viên (photo 28 / person 24 / logo 18) TRƯỚC khi
 # `_round_brand` sort — để cùng một bộ ứng viên, tin M&A đẩy logo lên
 # trước chân dung, tin LAB đẩy trụ sở/founder lên trước logo.
-_LOAI_UNG_VIEN = {"anh": "tru_so", "nguoi": "founder", "logo": "logo", "co_phieu": "co_phieu"}
+# Khoá = brand_match.kind, giá trị = vật trong bảng trên.
+_LOAI_UNG_VIEN = {"photo": "headquarters", "person": "founder", "logo": "logo", "stock": "stock"}
 
 
 def score_by_type(category, loai_ung_vien: str) -> int:
@@ -153,7 +158,8 @@ def line_brief(m: dict) -> list:
     ra = []
     loai = standard_type(m.get("category"))
     if loai:
-        ra.append(f"Loại tin {loai} → ảnh hợp lệ theo thứ tự: " + " > ".join(order_image(loai))
+        ra.append(f"Loại tin {loai} → ảnh hợp lệ theo thứ tự: "
+                  + " > ".join(manifest_values.story_object_label(v) for v in order_image(loai))
                   + " (bảng story_type.py, Ông Chủ 12/09/2026).")
     if m.get("two_company_pairs"):
         ra.append("THƯƠNG VỤ: ghép ảnh của HAI hãng — " +

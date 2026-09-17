@@ -77,7 +77,7 @@ def _host_is_side_try_three(c: dict) -> bool:
     """Anh nam tren host KHAC domain trang va khong phai CDN -> gan nhu chac la
     quang cao/widget ben thu ba (banner Phemex tren siliconangle, 05/09/2026).
     Anh do engine tu chup/tai (tep local, commons, arxiv) khong xet."""
-    if c.get("tep") or c.get("source") in ("chup", "commons", "arxiv_bia", "openverse"):
+    if c.get("tep") or c.get("source") in ("browser_capture", "commons", "arxiv_cover", "openverse"):
         return False
     ha, ht = _domain(c.get("image_url", "") or ""), _domain(c.get("page_url", "") or "")
     if not ha or not ht:
@@ -222,14 +222,14 @@ def download_and_filter(cands: list, wd: Path) -> list:
         ma = f"A{n}"
         out = goc_dir / f"{ma}.png"
         im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance(
-            {"chup": "chup_chart", "arxiv_hinh": "arxiv_hinh"}.get(c.get("source"), "dre_chuan_bi")))
+            {"browser_capture": "chup_chart", "arxiv_figure": "arxiv_hinh"}.get(c.get("source"), "dre_chuan_bi")))
         # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
         # khong noi len gi (bao boc ca anh minh hoa lan quang cao).
-        hint = bool((c.get("source") != "chup" and (article_images.RULE.search(c.get("image_url", "") or "")
+        hint = bool((c.get("source") != "browser_capture" and (article_images.RULE.search(c.get("image_url", "") or "")
                                                  or article_images.RULE.search(c.get("alt", "") or "")
                                                  or article_images.RULE_MODEL.search(c.get("alt", "") or "")))
                     or c.get("html_tag") in ("table", "canvas", "svg")
-                    or c.get("source") == "arxiv_hinh")
+                    or c.get("source") == "arxiv_figure")
         ra.append({"id": ma, "original_path": str(out), "url": c.get("image_url", ""),
                    "alt": (c.get("alt") or c.get("alt_chup") or "")[:120], "source": c.get("source", ""),
                    "page_url": c.get("page_url", ""), "domain": _domain(c.get("page_url") or c.get("image_url")),

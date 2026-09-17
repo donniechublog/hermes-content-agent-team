@@ -12,6 +12,7 @@ from pathlib import Path
 from PIL import Image, ImageStat
 
 import env_load
+import manifest_values
 import role
 import state_paths
 
@@ -435,7 +436,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     mat = mat_tho or 0
     day = ImageStat.Stat(img.convert("L").crop((0, int(h * .75), w, h))).mean[0]
     goc_trai = ImageStat.Stat(img.convert("L").crop((0, int(h * .55), int(w * .6), h))).mean[0]
-    a.update({"w": w, "h": h, "ratio": round(r, 2), "kind": "chart" if la_ct else "anh",
+    a.update({"w": w, "h": h, "ratio": round(r, 2), "kind": "chart" if la_ct else "photo",
               "chart_stats": mo_ta, "faces": mat, "bottom_brightness": round(day),
               "bottom_left_brightness": round(goc_trai), "short_side": min(w, h),
               "landscape": r >= role.active_rules().LANDSCAPE_CLEAR, "ready_path": None, "uses": [], "notes": []})
@@ -455,32 +456,32 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
             a["notes"].append("chart cao, đã cắt bớt phần dưới về 4:5")
         else:
             a["ready_path"] = a["original_path"]                           # chart giu NGUYEN
-        a["uses"] = ["thân (chart, dán full bề ngang nguyên vẹn)"]
+        a["uses"] = ["body_chart_full_width"]
         if a["landscape"]:
-            a["uses"].append("ghép dọc với một ảnh ngang cùng tone")
+            a["uses"].append("stack_vertical")
         a["notes"].append("KHÔNG làm bìa")
     else:
         if a["landscape"]:
-            a["uses"] = ["ghép dọc với một ảnh ngang cùng tone"]
+            a["uses"] = ["stack_vertical"]
             if h < 700:
                 # Banner thap (vd 1900x524): cat doc 4:5 chi con ~420px roi phong
                 # len 1080 — mem nhoe (do thu 04/09). Chi con duong ghep.
                 a["notes"].append("quá thấp để cắt dọc, chỉ ghép")
             elif a.get("landscape_crop_ok") is True:
-                a["uses"].append("cat_ngang: true (ảnh người/sản phẩm không chữ, vision đã xác nhận)")
+                a["uses"].append("landscape_crop_confirmed")
             elif a.get("landscape_crop_ok") is False:
                 a["notes"].append("có chữ/logo/số liệu đè lên (vision xác nhận) — không được crop, chỉ ghép")
             else:
                 # vision khong tra loi duoc cau CAT_NGANG (hong/parse loi) — giu
                 # dung dieu kien cu, dung tu quyet dinh thay writer.
-                a["uses"].append("cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ")
+                a["uses"].append("landscape_crop_if_no_text")
         else:
             ten = "1:1" if r > 0.9 else "4:5"
             _save_crop(img, san, ten, cy=0.4 if r < 0.7 else 0.5)
             a["ready_path"] = str(san)
-            a["uses"] = ["thân"]
+            a["uses"] = ["body"]
             if not mat and goc_trai < 150:
-                a["uses"].insert(0, "bìa")
+                a["uses"].insert(0, "cover")
     if a.get("commons"):
         a["notes"].append("ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin — hợp bìa/slide bối cảnh")
     if mat:
@@ -494,14 +495,14 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         else:
             a["notes"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
                                 "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")
-            a["uses"] = [d for d in a["uses"] if d != "bìa"]
+            a["uses"] = [d for d in a["uses"] if d != "cover"]
     if a.get("cluttered") and a.get("has_keywords"):
         a["notes"].insert(0, "⭐ ẢNH RỐI NHƯNG ĐỦ TỪ KHOÁ chính của tin → dùng thoải mái, HỢP LÀM "
                                "BÌA; script tự hiện nguyên bề ngang + đặt nền chữ đặc")
     elif a.get("cluttered"):
         # Anh roi khong du tu khoa: khong la bia; lam than chi khi het anh sach
         # (submit_common.check_image_fall), va script tu dat nen chu dac (LOW-47).
-        a["uses"] = [d for d in a["uses"] if not str(d).startswith("bìa")]
+        a["uses"] = [d for d in a["uses"] if str(d) not in manifest_values.COVER_PREFIX_USES]
         decision_log.note(a, "cluttered", "demote", "CLUTTERED_without_keyword", "khong lam bia, xuong cuoi hang")
         a["notes"].insert(0, "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT "
                                "ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc")
@@ -545,7 +546,7 @@ def _note_use_change(a: dict, truoc: list, stage: str, rule: str) -> None:
     sau = list(a.get("uses") or [])
     if sau != truoc:
         decision_log.note(a, stage, "drop" if truoc and not sau else "demote", rule,
-                          f"dung {truoc} -> {sau}")
+                          f"dung {manifest_values.use_labels(truoc)} -> {manifest_values.use_labels(sau)}")
 
 
 def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
@@ -567,8 +568,7 @@ def _seen_image(anh: list, nguon: dict, title: str, wd: Path) -> tuple:
             a["description"] = a["alt"]
             a["relevant"] = True
             decision_log.note(a, "ranking_forced", "keep", "xep_hang", "anh xep hang engine tu chup, khong hoi vision")
-            a["uses"] = ["HERO / BÌA (bảng xếp hạng, model đã khoanh — ảnh chính bắt buộc của tin xếp hạng)",
-                         "thân (chart)"]
+            a["uses"] = ["cover_ranking", "body_chart"]
             a["notes"] = [g for g in a["notes"] if "KHÔNG DÙNG" not in g and "KHÔNG làm bìa" not in g]
             a["notes"].insert(0, "✅ ẢNH XẾP HẠNG do engine chụp từ nguồn — dùng làm ảnh chính")
     dung_duoc = [a for a in anh if a["uses"] and a.get("relevant") is not False]

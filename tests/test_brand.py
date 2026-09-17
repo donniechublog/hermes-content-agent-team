@@ -148,9 +148,9 @@ def test_filter_empty_when_no_has_what():
 
 
 def _image(**o):
-    a = {"brand_match": {"company": "Qualcomm", "key": "qualcomm", "kind": "anh",
+    a = {"brand_match": {"company": "Qualcomm", "key": "qualcomm", "kind": "photo",
                          "keyword": "Qualcomm headquarters"},
-         "kind": "anh", "faces": 0, "landscape": False, "relevant": True, "uses": ["bìa", "thân"],
+         "kind": "photo", "faces": 0, "landscape": False, "relevant": True, "uses": ["cover", "body"],
          "notes": ["ảnh CHUNG của hãng từ Wikimedia Commons (trụ sở/sản phẩm), không phải ảnh của tin"]}
     a.update(o)
     return a
@@ -159,7 +159,7 @@ def _image(**o):
 def test_label_keep_all_cover_attempt_than():
     """Khác ảnh khái niệm: ảnh của CHÍNH hãng trong tin được vào slide thân."""
     a = th.label_brand(_image())
-    assert a["uses"] == ["bìa", "thân"]
+    assert a["uses"] == ["cover", "body"]
     assert a["notes"][0].startswith("🏢 ẢNH THƯƠNG HIỆU (Qualcomm)")
     assert not any("ảnh CHUNG của hãng" in g for g in a["notes"])
 
@@ -186,8 +186,8 @@ def test_manifest_count_enough_and_arrange_cover_after_image_own():
     import image_prepare as cb
 
     def _a(ma, kn=False, thh=False):
-        return {"id": ma, "uses": ["bìa"], "relevant": True, "domain": "x", "source": "x", "ratio": 0.8,
-                "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "anh",
+        return {"id": ma, "uses": ["cover"], "relevant": True, "domain": "x", "source": "x", "ratio": 0.8,
+                "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "photo",
                 **({"concept": {"keyword": "silicon wafer"}} if kn else {}),
                 **({"brand_match": {"company": "Qualcomm"}} if thh else {})}
 
@@ -231,53 +231,53 @@ def test_rank_has_model_only_rank_make_model():
 def test_sentence_ask_vision_no_ask_has_right_image_of_story():
     """Câu chung hỏi "có phải ảnh của tin không" — chân dung founder và thẻ logo
     chắc chắn không phải, nên bị đánh rớt đúng lúc ta cần chúng nhất."""
-    c = th.sentence_ask_vision("Kiện Anthropic", {"company": "Anthropic", "kind": "nguoi",
+    c = th.sentence_ask_vision("Kiện Anthropic", {"company": "Anthropic", "kind": "person",
                                              "person": "Dario Amodei", "person_role": "CEO"})
     assert "Dario Amodei" in c and "CHAN DUNG" in c and "LIEN_QUAN" in c
     c = th.sentence_ask_vision("DeepSeek gọi vốn", {"company": "DeepSeek", "kind": "logo"})
     assert "THE LOGO" in c and "DeepSeek" in c
-    c = th.sentence_ask_vision("Qualcomm ký", {"company": "Qualcomm", "kind": "anh"})
+    c = th.sentence_ask_vision("Qualcomm ký", {"company": "Qualcomm", "kind": "photo"})
     assert "BOI CANH" in c and "mit tinh" in c
 
 
 def test_label_block_use_change_declare_use_name():
-    a = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "nguoi",
+    a = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "person",
                                               "person": "Dario Amodei", "person_role": "CEO"}, faces=1))
-    assert a["uses"] == ["bìa", "thân"]
+    assert a["uses"] == ["cover", "body"]
     assert "Dario Amodei" in a["notes"][0] and "nhan_vat" in a["notes"][0]
 
 
 def test_label_block_use_no_block_by_face():
     """`count_faces` trả None (-> 0) khi thiếu cv2, mà IMAGE_RULES §6 cho phép cổng mặt
     tự tắt. Lấy mat==0 làm "không phải chân dung" là bỏ câm lặng mọi chân dung."""
-    a = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "nguoi",
+    a = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "person",
                                               "person": "Dario Amodei", "person_role": "CEO"}, faces=0))
-    assert a["uses"] == ["bìa", "thân"], a["uses"]
+    assert a["uses"] == ["cover", "body"], a["uses"]
 
 
 def test_label_card_logo_go_notes_chart_color_pure():
     """Thẻ logo là nền trơn + chữ nên `classify` đọc ra "chart" và dán kèm
     "KHÔNG làm bìa" — ngược hẳn công dụng của nó (09/09/2026)."""
-    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "logo", "background_tone": "tối"},
-                                 kind="chart", uses=["thân (chart, dán full bề ngang)"],
+    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "logo", "background_tone": "dark"},
+                                 kind="chart", uses=["body_chart_full_width"],
                                  notes=["chart cao, đã cắt bớt phần dưới về 4:5", "KHÔNG làm bìa"]))
-    assert a["uses"] == ["bìa"]
+    assert a["uses"] == ["cover"]
     assert not any("KHÔNG làm bìa" in g or "chart" in g.lower() for g in a["notes"]), a["notes"]
 
 
 def test_label_card_logo_only_cover_and_say_clear_background():
-    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "logo", "background_tone": "tối"}))
-    assert a["uses"] == ["bìa"]
+    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "logo", "background_tone": "dark"}))
+    assert a["uses"] == ["cover"]
     assert a["notes"][0].startswith("🔖 THẺ LOGO DeepSeek") and '"nen": "toi"' in a["notes"][0]
-    b = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "logo", "background_tone": "sáng"}))
+    b = th.label_brand(_image(brand_match={"company": "Anthropic", "kind": "logo", "background_tone": "light"}))
     assert '"nen": "sang"' in b["notes"][0]
 
 
 def test_label_board_ranking_say_clear_no_right_board_of_story():
-    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "xep_hang",
+    a = th.label_brand(_image(brand_match={"company": "DeepSeek", "kind": "ranking",
                                               "site": "ARENA", "board": "Text"},
-                                 kind="chart", uses=["thân (chart)"]))
-    assert a["uses"] == ["thân (chart)"]                  # chart CỦA BẢNG thì giữ
+                                 kind="chart", uses=["body_chart"]))
+    assert a["uses"] == ["body_chart"]                  # chart CỦA BẢNG thì giữ
     assert "KHÔNG phải bảng của tin này" in a["notes"][0] and "ARENA" in a["notes"][0]
 
 

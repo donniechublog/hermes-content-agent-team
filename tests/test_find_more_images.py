@@ -29,8 +29,8 @@ from prepare import manifest                                 # noqa: E402
 
 
 def _a(**k):
-    a = {"id": "A", "uses": ["thân"], "relevant": True, "landscape": False, "h": 1200,
-         "ratio": 1.0, "kind": "anh", "bottom_left_brightness": 50, "short_side": 1000, "faces": 0, "alt": ""}
+    a = {"id": "A", "uses": ["body"], "relevant": True, "landscape": False, "h": 1200,
+         "ratio": 1.0, "kind": "photo", "bottom_left_brightness": 50, "short_side": 1000, "faces": 0, "alt": ""}
     a.update(k)
     return a
 
@@ -40,18 +40,18 @@ def _landscape(h=1280, cat_ngang_ok=True, **k):
     # NGUONG CHIEU CAO (700px), khong phai kiem tra noi dung anh -- danh dau
     # "da xac nhan dung mot minh duoc" nhu vision that se lam voi anh nguoi/
     # san pham. Test rieng ve noi dung (chart/co chu) nam o tests/test_schema.py.
-    k.setdefault("uses", ["ghép dọc với một ảnh ngang cùng tone",
-                          "cat_ngang: true NẾU là ảnh người/sản phẩm KHÔNG có chữ"])
+    k.setdefault("uses", ["stack_vertical",
+                          "landscape_crop_if_no_text"])
     k.setdefault("ratio", 1.5)
     return _a(landscape=True, h=h, landscape_crop_ok=cat_ngang_ok, **k)
 
 
 def test_image_landscape_over_low_no_count_alone():
     # Dung bo anh TSMC: bia A3, A2/A6/A7 ngang cao, A5 900x600 chi ghep.
-    bo = [_a(id="A3", uses=["bìa", "thân"]), _landscape(id="A2", h=942), _landscape(id="A6"),
-          _landscape(id="A7"), _landscape(id="A5", h=600, uses=["ghép dọc với một ảnh ngang cùng tone"])]
+    bo = [_a(id="A3", uses=["cover", "body"]), _landscape(id="A2", h=942), _landscape(id="A6"),
+          _landscape(id="A7"), _landscape(id="A5", h=600, uses=["stack_vertical"])]
     assert schema.count_image_use_ok(bo, "dre") == 4, "A5 le khong co cap -> 4 slide, khong phai 5"
-    bo.append(_landscape(id="A8", h=650, uses=["ghép dọc với một ảnh ngang cùng tone"]))
+    bo.append(_landscape(id="A8", h=650, uses=["stack_vertical"]))
     # LOW-46: nguoi dem hoi cung `stack_fit_frame` voi cong chan; LOW-178 (16/09/2026):
     # san ghep rieng cua Dre nhan cap 3:2+3:2 (0.75), nen ca hai cung dem A5+A8 la MOT slide.
     assert schema.count_image_use_ok(bo, "dre") == 5, \
@@ -66,8 +66,8 @@ def test_image_landscape_over_low_no_count_alone():
 def test_engine_right_find_next_when_only_enough_temp_code_missing_slide():
     # Nguong Dre tu 12/09/2026 la 6 (carousel.MIN_SLIDE); bo 6 tam trong do mot tam
     # 900x600 chi ghep duoc -> 5 slide -> chua du.
-    bo = [_a(id="A3", uses=["bìa", "thân"]), _landscape(id="A2", h=942), _landscape(id="A6"),
-          _landscape(id="A7"), _a(id="A8"), _landscape(id="A5", h=600, uses=["ghép dọc với một ảnh ngang cùng tone"])]
+    bo = [_a(id="A3", uses=["cover", "body"]), _landscape(id="A2", h=942), _landscape(id="A6"),
+          _landscape(id="A7"), _a(id="A8"), _landscape(id="A5", h=600, uses=["stack_vertical"])]
     assert schema.count_image_use_ok(bo, "dre") == 5
     assert not role.has_enough_material("dre", bo), "6 tam nhung 5 slide: engine CHUA duoc ngung tim"
     bo[-1]["h"] = 1000
@@ -89,7 +89,7 @@ def test_manifest_and_find_extra_use_one_gate_actual_guide_export():
 
 
 def test_fresh_manifest_static_again_missing_image():
-    m = {"images": [_a(id="A1", uses=["bìa", "thân"]), _a(id="A2")], "min_images": 5,
+    m = {"images": [_a(id="A1", uses=["cover", "body"]), _a(id="A2")], "min_images": 5,
          "usable_count": 5, "missing_images": None, "ranking_count": 0, "draft_id": "x",
          "image_role": "dre"}
     # stackable_pairs mo anh tu dia -> bo anh ngang rong de khong dung toi PIL

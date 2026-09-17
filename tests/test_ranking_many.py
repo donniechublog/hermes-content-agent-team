@@ -20,20 +20,20 @@ sys.path.insert(0, str(ROOT))
 import image_prepare as cb   # noqa: E402
 
 
-def _xh(bang, model, kieu="bang"):
+def _xh(bang, model, kieu="table"):
     return {"file_path": f"/tmp/{bang}.png", "kind": kieu, "source": bang, "site": "ARENA.AI",
             "board": bang, "rank": 1, "model": model, "url": f"https://arena.ai/{bang}",
             "row": "...", "logo": None, "mentioned": True}
 
 
 def _a(ma, xep_hang=None, dung=None, ti_le=0.8):
-    # Anh xep hang THAT (qua _seen_image) mang dung=["HERO / BÌA (...)", "thân
-    # (chart)"] — CHU KHONG PHAI "bìa" tran. Neu de tran "bìa" thi comprehension
+    # Anh xep hang THAT (qua _seen_image) mang uses=["cover_ranking", "body_chart"]
+    # ("HERO / BÌA (...)") — CHU KHONG PHAI "cover" tran. Neu de tran "cover" thi comprehension
     # goi_y_bia (khop CHINH XAC phan tu list) doc trung no VOI ca prepend rieng
     # cho xhs, dem trung XH hai lan trong mot test bia dat sai gia dinh nay.
     if dung is None:
-        dung = ["HERO / BÌA (bảng xếp hạng)", "thân (chart)"] if xep_hang else ["bìa"]
-    return {"id": ma, "uses": list(dung), "relevant": True, "domain": "arena.ai", "source": "xep_hang",
+        dung = ["cover_ranking", "body_chart"] if xep_hang else ["cover"]
+    return {"id": ma, "uses": list(dung), "relevant": True, "domain": "arena.ai", "source": "ranking",
             "ratio": ti_le, "bottom_left_brightness": 50, "short_side": 1000, "landscape": False, "kind": "chart",
             **({"ranking": xep_hang} if xep_hang else {})}
 
@@ -101,14 +101,14 @@ def test_use_manifest_label_none_like_convention_old():
     """Vai/test khac (test_concept.py, test_brand.py) van truyen None
     o vi tri nay — KHONG duoc nem TypeError tu len(None)."""
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
-                         Path("/tmp"), [_a("A1", dung=("bìa",))], None, False, {}, {}, False, 5, vai_anh="ethan")
+                         Path("/tmp"), [_a("A1", dung=("cover",))], None, False, {}, {}, False, 5, vai_anh="ethan")
     assert m["ranking_count"] == 0
     assert m["ranking"] is None
 
 
 def test_use_manifest_no_board_then_no_fixed_xh_into_call_y():
     m = cb.build_manifest("t", {"brand": "dcgr"}, "t", "http://x", {}, Path("/nonexist"), {},
-                         Path("/tmp"), [_a("A1", dung=("bìa",))], [], False, {}, {}, False, 5, vai_anh="ethan")
+                         Path("/tmp"), [_a("A1", dung=("cover",))], [], False, {}, {}, False, 5, vai_anh="ethan")
     assert "XH" not in m["cover_suggestions"] and m["ranking_count"] == 0
 
 
@@ -116,7 +116,7 @@ def test_use_manifest_no_board_then_no_fixed_xh_into_call_y():
 def test_brief_say_clear_has_board_try_two():
     m = {"is_ranking_story": True,
          "ranking": {"site": "ARENA.AI", "board": "Text-to-Image Arena",
-                     "model": "GPT-Image-2.5 Sunburst", "rank": 1, "kind": "bang",
+                     "model": "GPT-Image-2.5 Sunburst", "rank": 1, "kind": "table",
                      "mentioned": True},
          "ranking_count": 2}
     dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
@@ -127,7 +127,7 @@ def test_brief_say_clear_has_board_try_two():
 def test_brief_one_board_no_mention_xh2():
     m = {"is_ranking_story": True,
          "ranking": {"site": "ARENA.AI", "board": "Text Arena", "model": "Kimi-K3",
-                     "rank": 1, "kind": "bang", "mentioned": True},
+                     "rank": 1, "kind": "table", "mentioned": True},
          "ranking_count": 1}
     dong = cb.ranking_brief_line(m, "bìa", "dre_submit")
     assert "XH2" not in dong, dong

@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 import submit_common as nc                                       # noqa: E402
 
 
-def _xh(hang=26, kieu="bang"):
+def _xh(hang=26, kieu="table"):
     return {"id": "XH", "ranking": {"site": "ARENA.AI", "board": "WebDev / Code Arena",
                                      "model": "claude-opus-4-7-high", "rank": hang, "kind": kieu}}
 
@@ -39,7 +39,7 @@ def test_hook_no_say_rank_then_no_block():
 
 
 def test_fallback_card_no_change_dimension():
-    assert nc.check_rank_matches_image(HOOK3, _xh(26, kieu="the")) == []
+    assert nc.check_rank_matches_image(HOOK3, _xh(26, kieu="card")) == []
 
 
 def test_image_regular_no_relevant():

@@ -67,19 +67,19 @@ def test_van_giu_ung_vien_hai_tu_khong_so():
 def test_anh_chup_khong_ro_hang_thi_de_trong():
     """Log that cua task V4 Flash: "khớp 'DeepSeek' hàng #?" — hang khong doc ra
     duoc. Truoc va, alt ghi "#2" (hang o tieu de) de len anh khoanh hang 9."""
-    kq = {"kind": "danh-sach-ghep", "model": "DeepSeek", "rank": None,
+    kq = {"kind": "list-stitched", "model": "DeepSeek", "rank": None,
           "row": "9. | DeepSeek Harness | new | 138Btokens"}
     assert xh._rank_of(kq, {"ma": "openrouter"}, 2) is None
 
 
 def test_anh_chup_co_hang_thi_dung_hang_cua_chinh_no():
-    kq = {"kind": "bang", "model": "GPT-6 Astra", "rank": 3, "row": "3. | GPT-6 Astra"}
+    kq = {"kind": "table", "model": "GPT-6 Astra", "rank": 3, "row": "3. | GPT-6 Astra"}
     assert xh._rank_of(kq, {"ma": "arena-text"}, 1) == 3
 
 
 def test_the_du_phong_van_duoc_dung_hang_tieu_de():
     """The la CHU engine tu in, khong phai bang chung chup tu bang nao."""
-    kq = {"kind": "the", "model": "GPT-6 Astra", "rank": None, "row": ""}
+    kq = {"kind": "card", "model": "GPT-6 Astra", "rank": None, "row": ""}
     assert xh._rank_of(kq, {"ma": "arena-text"}, 1) == 1
 
 
@@ -144,7 +144,7 @@ def test_loc_nguon_noi_ra_da_bo_bao_nhieu():
 
 # ------------------------------------------------- LOW-180: in ra hang that
 def test_cau_ta_anh_in_ra_hang_da_khoanh():
-    xhd = {"site": "OPENROUTER.AI", "board": "LLM Rankings (lượt dùng)", "kind": "danh-sach-ghep",
+    xhd = {"site": "OPENROUTER.AI", "board": "LLM Rankings (lượt dùng)", "kind": "list-stitched",
            "model": "DeepSeek", "rank": 2, "mentioned": True,
            "row": "9. | DeepSeek Harness | new | 138Btokens"}
     cau = describe_ranking_image({"ranking": xhd})
@@ -153,7 +153,7 @@ def test_cau_ta_anh_in_ra_hang_da_khoanh():
 
 
 def test_the_du_phong_van_noi_ro_la_the():
-    cau = describe_ranking_image({"ranking": {"site": "S", "board": "B", "kind": "the",
+    cau = describe_ranking_image({"ranking": {"site": "S", "board": "B", "kind": "card",
                                               "model": "M", "rank": 1}})
     assert "THẺ DỰ PHÒNG" in cau, cau
 

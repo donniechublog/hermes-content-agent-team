@@ -139,7 +139,7 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
     # hinh benchmark"): category MODEL/BENCHMARK ep chup bang du tieu de khong co
     # chu "#1"/"top" nao — truoc day chi regex tieu de quyet dinh.
     import story_type
-    if story_type.late(meta.get("category"), "xep_hang"):
+    if story_type.late(meta.get("category"), "ranking"):
         tin_xep_hang = True
     if not khong_browser and tin_xep_hang:
         models = ranking.extract_model(nguon.get("tieu_de_en") or "") or ranking.extract_model(title)
@@ -179,10 +179,10 @@ def _image_item_ranking(i: int, xh: dict) -> dict:
     ma = "XH" if i == 0 else f"XH{i + 1}"
     mo_ta_xh = (f"bảng xếp hạng {xh['site']} ({xh['board']}) — {xh['model']}"
                 + (f" #{xh['rank']}" if xh.get("rank") else "")
-                + (" — THẺ DỰ PHÒNG (không chụp được bảng)" if xh["kind"] == "the" else ", đã khoanh hàng model"))
+                + (" — THẺ DỰ PHÒNG (không chụp được bảng)" if xh["kind"] == "card" else ", đã khoanh hàng model"))
     return {"id": ma, "original_path": xh["file_path"], "url": xh["url"], "alt": mo_ta_xh[:120],
-            "source": "xep_hang", "page_url": xh["url"], "domain": _domain(xh["url"]),
-            "chart_hint": xh["kind"] != "the", "ranking": xh}
+            "source": "ranking", "page_url": xh["url"], "domain": _domain(xh["url"]),
+            "chart_hint": xh["kind"] != "card", "ranking": xh}
 
 
 def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: dict, trang: list,
@@ -221,7 +221,7 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
                 out.parent.mkdir(parents=True, exist_ok=True)
                 bia.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("arxiv_bia"))
                 cands.append({"image_url": str(out), "tep": str(out), "alt": "trang bia paper",
-                              "source": "arxiv_bia", "page_url": link, "score": 60})
+                              "source": "arxiv_cover", "page_url": link, "score": 60})
     cands.sort(key=lambda c: -c.get("score", 0))
     anh = download_and_filter(cands, wd)
     for i, xh in enumerate(xhs):
@@ -354,14 +354,14 @@ def _ranking_context_edge(hangs: list, wd: Path, brand: str, phien=None):
     except Exception as e:                                   # noqa: BLE001
         print(f"[thuong hieu] bang xep hang HONG: {type(e).__name__}: {e}", file=sys.stderr)
         return None
-    if not kq or kq.get("kind") == "the":
+    if not kq or kq.get("kind") == "card":
         print("[thuong hieu] khong bang nao co hang cua hang nay -> bo (khong dung the du phong)",
               file=sys.stderr)
         return None
     print(f"[thuong hieu] bang {kq['site']} ({kq['board']}): khop {kq['model']!r}", file=sys.stderr)
     return {"image_url": kq["file_path"], "tep": kq["file_path"], "alt": f"bảng {kq['site']} — {kq['board']}",
-            "source": "thuong_hieu", "page_url": kq["url"], "score": 26, "chart_hint": True,
-            "brand_match": {"company": h["hang"], "key": h["khoa"], "kind": "xep_hang",
+            "source": "brand", "page_url": kq["url"], "score": 26, "chart_hint": True,
+            "brand_match": {"company": h["hang"], "key": h["khoa"], "kind": "ranking",
                             "site": kq["site"], "board": kq["board"], "keyword": kq["model"]}}
 
 
@@ -391,7 +391,7 @@ def _report_brand_empty(h: dict, wd: Path, phien=None) -> list:
     bp = browser_pass([{"url": b["url"], "loai": "báo"} for b in bao], wd, tim_them=False, phien=phien)
     ra = []
     for c in bp["cands"]:
-        c["brand_match"] = {"company": h["hang"], "key": h["khoa"], "kind": "anh",
+        c["brand_match"] = {"company": h["hang"], "key": h["khoa"], "kind": "photo",
                             "keyword": f"báo về {h['hang']}"}
         ra.append(c)
     return ra
@@ -436,14 +436,14 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
             cands_h = cands_h + _report_brand_empty(h, wd4 / h["khoa"], phien=phien)
         cands += cands_h
         # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
-        if story_type.late(category, "co_phieu") and not khong_browser:
+        if story_type.late(category, "stock") and not khong_browser:
             cands += th.image_has_ballot(h, wd4 / h["khoa"], phien=phien)
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).
     for c in cands:
         c["score"] = c.get("score", 0) + story_type.score_by_type(
-            category, (c.get("brand_match") or {}).get("kind", "anh"))
+            category, (c.get("brand_match") or {}).get("kind", "photo"))
     # `download_and_filter` tu ghi hop dong "tai ung vien THEO THU TU DIEM" — noi duy
     # nhat trong ca thang anh thuong hieu ma diem THAT SU khac nhau (anh noi/san
     # pham 28 > nguoi 24 > logo 18, dat o `image_brand._candidate`), nhung
@@ -661,7 +661,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         # 12/09/2026 xem bia toan chu-de-chu: "thieu idea den the a?"). Giu anh
         # trong `anh` nhung KHONG tinh la dung duoc; `capability_block_headline` mo lai lam
         # bia chi khi khai niem cung rong.
-        if a.get("capture_kind") == "tit":
+        if a.get("capture_kind") == "headline":
             a["uses"] = []
             a["notes"].insert(0, "📰 KHỐI TÍT CHỤP TỪ TRANG NGUỒN (trang không có ảnh hero) — "
                                    "chỉ làm bìa khi không còn ảnh nào khác")
@@ -680,7 +680,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         # duoi khi da biet toan bo ung vien. (Thay cho bo dem n_chup cu — ban
         # feat/org-id-multitenant tach truoc LOW-45 phan 2, chua co vong chon
         # bia nay.)
-        a["uses"] = [] if a.get("relevant") is False else ["thân"]
+        a["uses"] = [] if a.get("relevant") is False else ["body"]
         if a.get("relevant") is False:
             print(f"[chup nguon] {a['id']} <- {a['domain']} ({a['w']}x{a['h']}) RỚT chất lượng "
                   f"({a.get('description', '')[:60]!r}), thử URL khác", file=sys.stderr)
@@ -696,27 +696,27 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
     # do, nhung VAN giu lai lam `than` thay vi bo phi (do that: anh founder that
     # cua Yang Zhilin tren cac bao khac ve Moonshot/Kimi K3 rat co the nam trong
     # so nay — truoc ban va nay bi bo qua hoan toan vi vong lap dung som).
-    ung_vien = [a for a in anh if a.get("source") == "chup_nguon" and a.get("capture_kind") != "tit"
+    ung_vien = [a for a in anh if a.get("source") == "capture_source" and a.get("capture_kind") != "headline"
                 and a.get("relevant") is True]
     khong_mat = [a for a in ung_vien if not a.get("faces")]
     if khong_mat:
         bia = khong_mat[0]
-        bia["uses"] = ["bìa (ảnh hero của chính bài gốc)", "thân"]
+        bia["uses"] = ["cover_article_hero", "body"]
         print(f"[chup nguon] {bia['id']} <- {bia['domain']} lên BÌA (không mặt người)", file=sys.stderr)
     elif ung_vien:
         print(f"[chup nguon] {len(ung_vien)} ảnh qua cổng đều CÓ mặt người vô danh với Kite "
               "(thiếu \"nhan_vat\") — không tấm nào lên bìa, giữ làm thân", file=sys.stderr)
-    if not any(a.get("capture_kind") == "tit" for a in anh) and not ung_vien:
+    if not any(a.get("capture_kind") == "headline" for a in anh) and not ung_vien:
         print("[chup nguon] khong trang nao do duoc khoi lead", file=sys.stderr)
     return _ra()
 
 
 def capability_block_headline(anh: list) -> tuple:
-    """Nấc cuối cùng: mở khối tít đã chụp (`capture_kind == "tit"`) làm bìa khi thực thể
+    """Nấc cuối cùng: mở khối tít đã chụp (`capture_kind == "headline"`) làm bìa khi thực thể
     và khái niệm đều rỗng. Thuần. Trả (anh, dung_duoc, chua_nhin)."""
     for a in anh:
-        if a.get("capture_kind") == "tit" and not a["uses"] and not a.get("faces"):
-            a["uses"] = ["bìa (khối tít của bài gốc — không còn ảnh nào khác)", "thân"]
+        if a.get("capture_kind") == "headline" and not a["uses"] and not a.get("faces"):
+            a["uses"] = ["cover_headline_block", "body"]
             print(f"[chup nguon] {a['id']}: nang khoi tit lam bia (nac cuoi)", file=sys.stderr)
             break
     return anh, [a for a in anh if a["uses"] and a.get("relevant") is not False], \
@@ -737,14 +737,14 @@ def _round_concept(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     # INFRA — truoc day co chi ra khi tieu de nhac ten nuoc), datacenter/nha may
     # cho INFRA du tieu de khong khop TOPIC. Bang: story_type.py (12/09/2026).
     them = []
-    if story_type.late(category, "co_nuoc_hang"):
+    if story_type.late(category, "company_country_flag"):
         for h in th.vendors_in_story(tieu_de_nhin, tom_tat):
             nuoc = story_type.country_of(h["khoa"])
             if nuoc and f"flag of {nuoc}" not in them:
                 them.append(f"flag of {nuoc}")
-    if story_type.late(category, "khai_niem_ha_tang"):
+    if story_type.late(category, "infrastructure_concept"):
         them += [t for t in story_type.KEYWORD_LOWER_LAYER if t not in them]
-    if story_type.late(category, "san_giao_dich"):
+    if story_type.late(category, "stock_exchange"):
         them.append("stock exchange trading floor")
     tks = image_concept.keyword_concept(tieu_de_nhin, tom_tat, them=them)
     print("[khai niem] tu khoa: " + (", ".join(f"'{t['tu_khoa']}'" for t in tks) or "khong ra"),

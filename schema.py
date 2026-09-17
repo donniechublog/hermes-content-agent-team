@@ -32,7 +32,9 @@ from typing import Any, TypedDict
 # Ban 0 = moi manifest ghi truoc 09/09/2026, khong co truong `phien_ban`.
 # Ban 2 (LOW-227, 17/09/2026) = khoa English; bang cu -> moi o
 # docs/tu_dien_ten/manifest_keys_v2.json. Migration mot lan da chay va da go (LOW-229).
-VERSION_MANIFEST = 2
+# Ban 3 (LOW-230, 17/09/2026) = GIA TRI liet ke English (source, kind, uses…); bang o
+# docs/tu_dien_ten/manifest_values_v3.json, nhan tieng Viet in qua manifest_values.
+VERSION_MANIFEST = 3
 
 
 class Manifest(TypedDict, total=False):
@@ -106,7 +108,7 @@ class Image(TypedDict, total=False):
     ready_path: str | None         # tep da xu ly san (cat/phong); None khi chua xu ly
     url: str
     alt: str
-    source: str                    # vong tim ra tam nay (gia tri van tieng Viet, LOW-230)
+    source: str                    # vong tim ra tam nay: press_entity | other_outlet | concept | article | brand | …
     page_url: str
     domain: str
     og: bool
@@ -114,10 +116,10 @@ class Image(TypedDict, total=False):
     w: int
     h: int
     ratio: float
-    kind: str                      # "anh" | "chart"
+    kind: str                      # "photo" | "chart"
     short_side: int
     landscape: bool
-    uses: list                     # cau goi y slot (hien thi)
+    uses: list                     # MA slot (cover, body_chart…); cau Viet: manifest_values.USE_LABELS
     notes: list
     chart_stats: str
     faces: int

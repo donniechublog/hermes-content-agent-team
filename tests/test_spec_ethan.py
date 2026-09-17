@@ -179,7 +179,7 @@ def test_tin_xep_hang_da_chup_bang_ma_anh_khong_phai_XH_thi_chan():
         xh = _anh(wd, "XH", 1200, 900, loai="chart", ranking={"site": "LMArena"})
         anh = [_anh(wd, "A1", 1000, 1250), xh]
         m = _m(wd, anh, is_ranking_story=True,
-               ranking={"kind": "bang", "site": "LMArena", "board": "text", "model": "GPT"})
+               ranking={"kind": "table", "site": "LMArena", "board": "text", "model": "GPT"})
         _kq, loi, _c = _chay(_spec("A1"), m, wd)
         assert _co(loi, "XẾP HẠNG", "XH"), loi
         kq, loi2, _c = _chay(_spec("XH"), m, wd)
@@ -192,7 +192,7 @@ def test_khong_chup_duoc_bang_thi_khong_ep():
     sua kieu gi cung sai."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         anh, wd = _bo(t)
-        for xh in (None, {"kind": "the", "site": "s", "board": "b", "model": "x"}):
+        for xh in (None, {"kind": "card", "site": "s", "board": "b", "model": "x"}):
             _kq, loi, _c = _chay(_spec("A1"), _m(wd, anh, is_ranking_story=True, ranking=xh), wd)
             assert not _co(loi, "XẾP HẠNG"), (xh, loi)
 

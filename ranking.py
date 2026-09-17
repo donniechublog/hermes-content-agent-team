@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import image_provenance                                           # noqa: E402
 import env_load                                              # noqa: E402
+import manifest_values                                       # noqa: E402
 import state_paths                                           # noqa: E402
 
 DPR = 2
@@ -198,7 +199,9 @@ TOPIC = [
 # `kieu == "chup"` — gia tri KHONG MOT nhanh nao o day phat ra — nen moi tin xep
 # hang deu bi brief goi la "THE DU PHONG" va cong ep bia XH chua tung chay; test
 # thi stub "chup" nen xanh gia. Nguoi doc hoi qua `is_capture`, khong so chuoi.
-KIND_CAPTURE = frozenset({"bang", "bang-ghep", "danh-sach", "danh-sach-ghep", "svg"})
+# Ma English tu LOW-230 (bang cu -> table, bang-ghep -> table-stitched, danh-sach -> list,
+# danh-sach-ghep -> list-stitched, the -> card).
+KIND_CAPTURE = frozenset({"table", "table-stitched", "list", "list-stitched", "svg"})
 
 
 def is_capture(kieu) -> bool:
@@ -652,7 +655,7 @@ def _capture_one_board(page, tim: dict, out: Path, dpr: int = DPR):
         goc = (max(0, max(band["x"], vung["x"]) - 8), max(band["y"], vung["y"])); do_hdr = a.height / dpr
     row = rows[idx]
     _highlight(out, row["x"] - goc[0], row["y"] - goc[1] + do_hdr, min(row["w"], w), row["h"], dpr)
-    return {"kind": "bang", "model": tim["model"], "rank": tim["hang"], "row": tim["dong"],
+    return {"kind": "table", "model": tim["model"], "rank": tim["hang"], "row": tim["dong"],
             "has_logo": tim["logo"]}, ""
 
 
@@ -717,7 +720,7 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
         g = Image.new("RGB", (a.width, a.height + b.height), (255, 255, 255))
         g.paste(a, (0, 0)); g.paste(b, (0, a.height))
         g.save(out, "PNG")
-        kq = {**kq, "kind": "bang-ghep", "row": kq["row"] + " ‖ " + kq2["row"][:60],
+        kq = {**kq, "kind": "table-stitched", "row": kq["row"] + " ‖ " + kq2["row"][:60],
               "ghep_voi": tim2["k"]}
     elif p != out:
         p.replace(out)
@@ -902,7 +905,7 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
         r = im.width / im.height
     so_cot = page.evaluate(_JS_NORM_DS + "(models) => nhomCungDang(models).length", models)
     if r <= RATIO_FIT or so_cot < 2:
-        return {"kind": "danh-sach", **kq, "has_logo": False}, ""
+        return {"kind": "list", **kq, "has_logo": False}, ""
     # Qua ngang + con cot cung dang: ghep doc theo dung thu tu tren trang.
     cot_model = page.evaluate(_JS_NORM_DS + """
         (models) => { const b = timDanhSach(models);
@@ -917,7 +920,7 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
         if k2:
             manh.append(p); tam.append(p)
     if len(manh) < 2:
-        return {"kind": "danh-sach", **kq, "has_logo": False}, ""
+        return {"kind": "list", **kq, "has_logo": False}, ""
     ims = [Image.open(p).convert("RGB") for p in manh]
     rong = max(i.width for i in ims)
     ims = [i if i.width == rong else i.resize((rong, round(i.height * rong / i.width)), Image.LANCZOS)
@@ -931,7 +934,7 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
     g.save(out, "PNG")
     for p in tam:
         p.unlink(missing_ok=True)
-    return {"kind": "danh-sach-ghep", **kq, "has_logo": False}, ""
+    return {"kind": "list-stitched", **kq, "has_logo": False}, ""
 
 
 
@@ -1148,7 +1151,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
                                   site=n["site"], bang=n["bang"], hang=kq.get("rank"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
-                   f"({kq['kind']}, {im.width}x{im.height}) — {kq['row'][:70]}")
+                   f"({manifest_values.ranking_kind_label(kq['kind'])}, {im.width}x{im.height}) — {kq['row'][:70]}")
             kq_cuoi = {"file_path": str(out), "kind": kq["kind"], "source": n["ma"], "site": n["site"],
                        "board": n["bang"], "rank": kq.get("rank") or hang_goi_y, "model": kq["model"],
                        "url": n["url"], "row": kq["row"], "logo": str(logo) if logo else None,
@@ -1160,7 +1163,7 @@ def find_and_capture(models: list, nguon_ds: list, out_dir: Path, brand: str = "
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}the.png"
     fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
-    return {"file_path": str(out), "kind": "the", "source": n["ma"], "site": n["site"], "board": n["bang"],
+    return {"file_path": str(out), "kind": "card", "source": n["ma"], "site": n["site"], "board": n["bang"],
             "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}
 
 
@@ -1180,7 +1183,7 @@ def _rank_of(kq: dict, n: dict, hang_goi_y):
     de TRONG, khong muon hang o tieu de nua. Truoc do alt ghi "DeepSeek #2" de
     len mot anh dang khoanh hang 9 ("hang #?" trong log nhung van nop) — con so
     o tieu de bien thanh loi khang dinh ve mot tam anh khong chung minh no. The
-    du phong (`kind="the"`) thi van duoc: hang do la CHU engine tu in ra the,
+    du phong (`kind="card"`) thi van duoc: hang do la CHU engine tu in ra the,
     khong phai bang chung chup tu bang nao."""
     if kq.get("rank"):
         return kq["rank"]
@@ -1210,7 +1213,7 @@ def source_proves_story(n: dict) -> bool:
     lượt tải cũng không đo trending (LOW-179).
 
     Hết nguồn đủ tư cách thì rơi về THẺ DỰ PHÒNG, không thay bằng bảng khác —
-    thẻ là chữ engine tự in, `is_capture("the")` là False nên `needs_ranking_image`
+    thẻ là chữ engine tự in, `is_capture("card")` là False nên `needs_ranking_image`
     không ép vai dùng nó.
     """
     return bool(n.get("duoc_nhac") or n.get("on_topic"))
@@ -1288,7 +1291,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
                                   site=n["site"], bang=n["bang"], hang=kq.get("rank"), url=n["url"])
             im = Image.open(out)
             in_log(f"[xep_hang] {n['ma']}: khớp {kq['model']!r} hàng #{kq.get('rank') or '?'} "
-                   f"({kq['kind']}, {im.width}x{im.height}) — {kq['row'][:70]}")
+                   f"({manifest_values.ranking_kind_label(kq['kind'])}, {im.width}x{im.height}) — {kq['row'][:70]}")
             ket_qua.append({"file_path": str(out), "kind": kq["kind"], "source": n["ma"], "site": n["site"],
                             "board": n["bang"], "rank": _rank_of(kq, n, hang_goi_y), "model": kq["model"],
                             "url": n["url"], "row": kq["row"], "logo": str(logo) if logo else None,
@@ -1301,7 +1304,7 @@ def find_and_capture_many(models: list, nguon_ds: list, out_dir: Path, brand: st
     out = out_dir / f"{state_paths.RANKING_IMAGE_PREFIX}the.png"
     fallback_card(models[0], hang_goi_y, n["site"], n["bang"], out, brand, logo)
     in_log(f"[xep_hang] không nguồn nào chụp được → thẻ dự phòng {models[0]} #{hang_goi_y or '?'}")
-    return [{"file_path": str(out), "kind": "the", "source": n["ma"], "site": n["site"], "board": n["bang"],
+    return [{"file_path": str(out), "kind": "card", "source": n["ma"], "site": n["site"], "board": n["bang"],
             "rank": hang_goi_y, "model": models[0], "url": n["url"], "logo": str(logo) if logo else None}]
 
 

@@ -46,9 +46,9 @@ def drop_reason(a: dict) -> str:
 
 
 def source_of(a: dict) -> str:
-    """Nguồn ứng viên, gộp hai cách viết cũ của cùng một nguồn."""
-    tu = a.get("source") or "?"
-    return "báo khác" if tu in ("bao khac", "báo khác") else tu
+    """Nguồn ứng viên. Hai cách viết cũ "báo khác"/"bao khac" đã gộp thành
+    `other_outlet` từ LOW-230, nên không còn gì để gộp ở đây."""
+    return a.get("source") or "?"
 
 
 def read_jsonl(path) -> list:

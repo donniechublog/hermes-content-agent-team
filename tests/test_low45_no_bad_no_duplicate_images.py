@@ -82,9 +82,9 @@ def test_no_longer_blocks_clean_screenshot_or_generic_illustration():
     assert not hasattr(image_rules, "IMAGE_PHRASES_SCREENSHOT")
 
     import image_brand as th
-    for loai, th_dict in (("nguoi", {"company": "X", "kind": "nguoi", "person": "A", "person_role": "CEO"}),
+    for loai, th_dict in (("nguoi", {"company": "X", "kind": "person", "person": "A", "person_role": "CEO"}),
                          ("logo", {"company": "X", "kind": "logo"}),
-                         ("anh", {"company": "X", "kind": "anh"})):
+                         ("anh", {"company": "X", "kind": "photo"})):
         c = th.sentence_ask_vision("tin gi do", th_dict)
         assert "man hinh" not in c.lower(), (loai, c)
         assert "chung chung" not in c.lower(), (loai, c)

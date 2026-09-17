@@ -38,6 +38,7 @@ import scan_common                                            # noqa: E402
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 
+import manifest_values                                        # noqa: E402
 import role                                                   # noqa: E402
 import env_load                                              # noqa: E402
 # `JUNK`/`AREA_MIN` (anh khong dai dien noi dung — the thuong hieu, logo,
@@ -280,13 +281,15 @@ def find(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) 
     # tim nguon la viec cua Finn, khong phai viec cua nguoi dung anh.
     if tu_nguon and Path(tu_nguon).exists():
         j = json.loads(Path(tu_nguon).read_text(encoding="utf-8"))
-        trang = [(t["url"], "gốc" if t.get("loai") == "gốc" else "báo khác")
+        # `loai` la kieu TRANG trong tep nguon (ngoai LOW-230); gia tri ghi vao anh la
+        # image.source: article / other_outlet.
+        trang = [(t["url"], "article" if t.get("loai") == "gốc" else "other_outlet")
                  for t in j.get("trang", []) if t.get("url")]
         print(f"[anh_bai] dung {len(trang)} nguon Finn da research", file=sys.stderr)
     else:
-        trang = [(link, "goc")]
+        trang = [(link, "article")]
         if sau_rong:
-            trang += [(u, "bao khac") for u, _ in other_outlets(tieu_de, link) if u]
+            trang += [(u, "other_outlet") for u, _ in other_outlets(tieu_de, link) if u]
 
     ung_vien = []
     with cf.ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
@@ -349,7 +352,7 @@ def main():
         if not kq:
             print("Khong tim duoc anh nao dung duoc.", file=sys.stderr)
         for c in kq[:8]:
-            print(f"  [{c['score']:>3d}d] {c['score_reason']:<44s} ({c['source']})")
+            print(f"  [{c['score']:>3d}d] {c['score_reason']:<44s} ({manifest_values.source_label(c['source'])})")
             print(f"         {c['image_url'][:110]}")
     if a.tai and kq:
         r = _download(kq[0]["image_url"], 40)

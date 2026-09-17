@@ -191,8 +191,8 @@ def test_find_report_run_parallel_including_when_commons_has_image():
     with tempfile.TemporaryDirectory() as d:
         wd = Path(d); (wd / state_paths.ORIGINAL_DIR).mkdir()
         anh_commons = {"image_url": "https://commons.example/hq.jpg", "alt": "", "og": False,
-                      "source": "thuong_hieu", "rong": 1600, "cao": 1000, "score": 28,
-                      "brand_match": {"company": "Moonshot AI", "key": "moonshot", "kind": "anh",
+                      "source": "brand", "rong": 1600, "cao": 1000, "score": 28,
+                      "brand_match": {"company": "Moonshot AI", "key": "moonshot", "kind": "photo",
                                      "keyword": "tru so"}}
         goi = {"tim_bao": False}
 

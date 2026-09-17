@@ -41,6 +41,7 @@ import env_load                                              # noqa: E402
 import image_prepare as cb                                    # noqa: E402
 import article_sources                                             # noqa: E402
 import schema                                                # noqa: E402
+import manifest_values                                       # noqa: E402
 import state_paths                                           # noqa: E402
 import role as vai_mod                                        # noqa: E402
 from browser_session import BrowserSession                       # noqa: E402
@@ -166,7 +167,7 @@ def candidate_from_url(urls: list, wd: Path, phien=None) -> list:
     anh, trang = [], []
     for u in urls:
         if _ANH_EXT.search(u.split("#")[0]):
-            anh.append({"image_url": u, "alt": "", "og": False, "source": "vai", "page_url": u,
+            anh.append({"image_url": u, "alt": "", "og": False, "source": "role_supplied", "page_url": u,
                         "rong": 0, "cao": 0, "score": 60})
         else:
             trang.append({"url": u, "loai": "báo"})
@@ -244,10 +245,12 @@ def in_result(m: dict, moi: list, so_luot: dict, vai_anh: str) -> None:
     print(f"\n== TIM THEM luot {so_luot['luot']}: +{len(moi)} anh moi ==")
     for a in moi:
         if a.get("relevant") is False:
-            print(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or ''} (nguồn: {a.get('domain') or a.get('source')})")
+            print(f"- {a['id']}: ❌ KHÔNG LIÊN QUAN — {a.get('description') or ''} "
+                  f"(nguồn: {a.get('domain') or manifest_values.source_label(a.get('source'))})")
             continue
         print(f"- {a['id']}: {a.get('w')}x{a.get('h')} {'NGANG ' if a.get('landscape') else ''}"
-              f"| dùng: {'; '.join(a.get('uses') or []) or 'không'} | nguồn: {a.get('domain') or a.get('source')}"
+              f"| dùng: {'; '.join(manifest_values.use_labels(a.get('uses'))) or 'không'} "
+              f"| nguồn: {a.get('domain') or manifest_values.source_label(a.get('source'))}"
               + (f" | ảnh là: {a['description'][:110]}" if a.get("description") else ""))
     so, tt = int(m.get("usable_count", 0)), int(m.get("min_images", 5))
     print(f"Slide dựng được: {so} / tối thiểu {tt}"

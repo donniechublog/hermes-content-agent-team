@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageDraw  # noqa: E402
 
 import prepare.vision as vision  # noqa: E402
+import manifest_values  # noqa: E402
 import image_rules_ethan  # noqa: E402
 from tam import so_tam  # noqa: E402
 
@@ -116,15 +117,15 @@ def test_classify_image_fall_no_make_cover_and_notes_mark_line():
                 mock.patch.object(image_rules_ethan, "count_faces", return_value=0):
             vision.classify(a, Path(t), "Tin gì đó")
     assert a["cluttered"] is True
-    assert not any(str(d).startswith("bìa") for d in a["uses"]), a["uses"]
+    assert not any(manifest_values.use_label(d).startswith("bìa") for d in a["uses"]), a["uses"]
     assert a["uses"], "anh roi van dung duoc lam than khi het anh sach"
     assert a["notes"][0].startswith("⚠️ ẢNH RỐI"), a["notes"]
 
 
 # ---------------------------------------------------------------- 3. check_image_fall
 def _item(tmp, ma, seed, **k):
-    a = {"id": ma, "original_path": str(_image_temp(tmp, f"{ma}.png", seed=seed)), "uses": ["thân"],
-         "relevant": True, "cluttered": False, "kind": "anh", "faces": 0, "landscape": False, "h": 1250}
+    a = {"id": ma, "original_path": str(_image_temp(tmp, f"{ma}.png", seed=seed)), "uses": ["body"],
+         "relevant": True, "cluttered": False, "kind": "photo", "faces": 0, "landscape": False, "h": 1250}
     a.update(k)
     return a
 
@@ -227,7 +228,7 @@ def test_dre_submit_near_fall_wait_slide_and_block_when_remaining_image_clean():
         assert loi == [], loi                                  # khong co anh sach nao thay
         assert ra["slides"][0].get("cluttered") is True
         assert not ra["slides"][1].get("cluttered")
-        m["images"].append(ts._anh(wd, "A6", 1000, 1250, uses=["thân"], cluttered=False))
+        m["images"].append(ts._anh(wd, "A6", 1000, 1250, uses=["body"], cluttered=False))
         _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert ts._co(loi, "slide 2", "RỐI", "A6"), loi
 

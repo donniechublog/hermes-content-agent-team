@@ -382,7 +382,7 @@ def candidate(link: str, ra_dir) -> list:
     for i, h in enumerate(hinh):
         ten = ("Figure" if h["loai"] == "figure" else "Table") + f" {h['so']}"
         ra.append({"image_url": h["tep"], "tep": h["tep"], "alt": f"{ten}: {h['caption']}"[:200],
-                   "og": False, "source": "arxiv_hinh", "page_url": link, "html_tag": "figure",
+                   "og": False, "source": "arxiv_figure", "page_url": link, "html_tag": "figure",
                    "rong": h["w"], "cao": h["h"], "score": 95 if i == 0 else 80,
                    "score_reason": f"{ten} trong chinh paper", "paper_figure": ten})
     return ra
