@@ -40,6 +40,7 @@ import state_paths                                            # noqa: E402
 TABLE = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_paths_v2.json").read_text(encoding="utf-8"))
 TABLE_231 = json.loads((ROOT / "docs" / "tu_dien_ten" / "state_files_v2.json").read_text(encoding="utf-8"))
 TABLE_237 = json.loads((ROOT / "docs" / "tu_dien_ten" / "image_search_keys_v2.json").read_text(encoding="utf-8"))["workdir_files"]
+TABLE_240 = json.loads((ROOT / "docs" / "tu_dien_ten" / "scan_keys_v2.json").read_text(encoding="utf-8"))
 SECTIONS_231 = ("brand_files", "brand_dirs", "scan_files", "journal_files", "router_9", "gin_files")
 
 
@@ -124,7 +125,8 @@ def test_constants_match_approved_table():
     # (hang LOW-231 doi chieu voi state_files_v2.json o test ben duoi, cung do chat)
     hang = {k for k, v in vars(state_paths).items() if k.isupper() and isinstance(v, str)}
     thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()}
-                   - {ten for _, ten in _rows_237().values()} - set(_rows_239()))
+                   - {ten for _, ten in _rows_237().values()}
+                   - {ten for _, ten in _rows_240().values()} - set(_rows_239()))
     assert not thieu, f"hang chua doi chieu voi state_paths_v2.json / state_files_v2.json: {thieu}"
 
 
@@ -206,6 +208,29 @@ def test_low237_constants_match_approved_table():
     assert set(rows) == set(TABLE_237), (sorted(rows), sorted(TABLE_237))
 
 
+def _rows_240() -> dict:
+    """LOW-240: seen-store cua scan (ten khong doi, nay la hang) + spool moat (doi ten).
+    {ten CU: (ten MOI, ten hang)}."""
+    sp = state_paths
+    return {
+        "business_seen.json": (sp.BUSINESS_SEEN_FILE, "BUSINESS_SEEN_FILE"),
+        "x_seen.json": (sp.X_SEEN_FILE, "X_SEEN_FILE"),
+        "moat_chua_bao.json": (sp.MOAT_UNSENT_NOTICES_FILE, "MOAT_UNSENT_NOTICES_FILE"),
+    }
+
+
+def test_low240_constants_match_approved_table():
+    rows = _rows_240()
+    assert set(TABLE_240["files"]) <= set(rows), (sorted(TABLE_240["files"]), sorted(rows))
+    for cu, (moi, ten) in rows.items():
+        if cu in TABLE_240["files"]:
+            assert TABLE_240["files"][cu] == moi, (cu, moi, TABLE_240["files"][cu])
+        else:          # ten giu nguyen, bang chi dat hang cho no
+            assert cu == moi, (cu, moi)
+            muc = "business_seen" if ten == "BUSINESS_SEEN_FILE" else "x_seen"
+            assert f"state_paths.{ten}" in TABLE_240[muc]["_where"] and cu in TABLE_240[muc]["_where"], muc
+
+
 def _rows_239() -> dict:
     """LOW-239: hang cho tep da English san (ten giu nguyen, chi thoi viet chuoi rai rac)."""
     return {"CRON_AUDIT_FILE": ("cron_audit.json", "state/cron_audit.json")}
@@ -244,6 +269,8 @@ _PLAIN_231 = {cu for muc in SECTIONS_231 for cu in TABLE_231[muc] if "{" not in 
 OLD_NAMES |= _PLAIN_231
 # LOW-237: tep workdir image_brand
 OLD_NAMES |= {cu for cu in TABLE_237 if "<" not in cu}
+# LOW-240: spool moat
+OLD_NAMES |= set(TABLE_240["files"])
 OLD_FILE_SHAPES += [
     re.compile(r"(^|/)(logo_goc|the_logo)\.png$"),        # logo_goc.png, the_logo.png
     re.compile(r"(^|/)co_phieu_.*\.png$"),                  # co_phieu_<key>.png
@@ -415,6 +442,7 @@ def test_scanner_catches_low231_state_names():
         'goc = Path(wd) / "logo_goc.png"',                       # LOW-237
         'the = card_logo(goc, Path(wd) / "the_logo.png")',
         'ra = _P(wd) / f"co_phieu_{khoa}.png"',
+        'SPOOL = STATE_DIR / "moat_chua_bao.json"',            # LOW-240
     ]
     for src in must_catch:
         assert scan_source(src), f"quet bo sot (LOW-231): {src}"

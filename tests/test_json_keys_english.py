@@ -50,7 +50,10 @@ class Detector:
         parts = [p for p in re.split(r"[^a-z0-9]+", word.lower()) if p]
         for i, p in enumerate(parts):
             for n in (4, 3, 2):
-                if "_".join(parts[i:i + n]) in self.td.cum:
+                phrase = "_".join(parts[i:i + n])
+                # A whole phrase in PASS (English module name that also sits in
+                # cum.json, e.g. `scan_business`) is not Vietnamese (LOW-240).
+                if phrase in self.td.cum and phrase not in self.td.pass_:
                     return True
             if p not in self.td.pass_ and not p.isdigit() and p in self.td.don:
                 return True
@@ -159,6 +162,9 @@ def f(a, wd, m, n):
         assert english not in got, (english, got)
     assert not any("khai_niem" in k or "bang_anh" in k for k in got), \
         f"giá trị so sánh và chữ hiển thị không phải khoá/đường dẫn: {got}"
+    # English module names that cum.json maps to themselves pass via a PASS phrase (LOW-240)
+    for english in ("scan_business.py", "scan_models.txt", "manifest_build.py", "article_extract.py"):
+        assert not scan_source(f'p = ROOT / "{english}"', det), english
     with tempfile.TemporaryDirectory() as t:
         (Path(t) / "new_module.py").write_text(src, encoding="utf-8")
         bad = regressions(scan_repo(Path(t), det), {})

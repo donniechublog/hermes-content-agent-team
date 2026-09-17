@@ -71,17 +71,17 @@ MAX_IMAGE = 10                # tran so anh mot bai cua moat
 # noi TIMEOUT_BOTTOM bao nhieu cung vo ich: body chua di het thi ket noi da dut.
 # Mot carousel 5 the PNG la ~7 MB (base64 ~9.7 MB, ~180 giay) => luon 524.
 # Cung bo the do sang WebP q90 con ~1.1 MB (~29 giay), qua duoi tran.
-# Chi nen the nao VUOT nguong; the nho de nguyen. Tat bang MOAT_NEN_ANH=0.
-BACKGROUND_IMAGE = (os.environ.get("MOAT_NEN_ANH") or "1") != "0"
-THRESHOLD_BACKGROUND = int(os.environ.get("MOAT_NGUONG_NEN") or 400_000)   # bytes
-QUALITY_BACKGROUND = int(os.environ.get("MOAT_CHAT_LUONG_NEN") or 90)
+# Chi nen the nao VUOT nguong; the nho de nguyen. Tat bang MOAT_COMPRESS_IMAGES=0.
+BACKGROUND_IMAGE = (os.environ.get("MOAT_COMPRESS_IMAGES") or "1") != "0"
+THRESHOLD_BACKGROUND = int(os.environ.get("MOAT_COMPRESS_MIN_BYTES") or 400_000)   # bytes
+QUALITY_BACKGROUND = int(os.environ.get("MOAT_COMPRESS_QUALITY") or 90)
 
 # Tran CUNG cho tong anh mot bai. Nen tung the rieng le khong bao dam gi ca: 10
 # the anh chup (nhieu chi tiet, WebP kem hieu qua hon anh do hoa) van co the ra
 # 5 MB va lai 524. Uplink do duoc dao dong 37-49 KB/s, nen lay 1,5 MB: base64
 # ~2 MB, tuc ~55 giay o luc mang xau nhat -- con nua thoi gian du phong.
 # Vuot tran thi ha chat luong dan; kem nhat van con q60, thua bo bai.
-CEILING_TOTAL = int(os.environ.get("MOAT_TRAN_TONG") or 1_500_000)
+CEILING_TOTAL = int(os.environ.get("MOAT_MAX_TOTAL_BYTES") or 1_500_000)
 TIER_QUALITY = [QUALITY_BACKGROUND, 80, 70, 60]
 
 # Task o cac trang thai nay coi nhu xong, khong hoi lai nua.
@@ -383,7 +383,7 @@ def intake(draft_id, scheduled_at=None, platforms=None, external_id=None):
     # mat dau workflow cu (con task dang theo doi). Cat vao lich su truoc.
     cu = d.get("moat")
     if isinstance(cu, dict) and cu.get("workflow_id") != out.get("workflowId"):
-        d.setdefault("moat_lich_su", []).append(cu)
+        d.setdefault("moat_history", []).append(cu)
     d["moat"] = {
         "workflow_id": out.get("workflowId"),
         # Ghi lai org da day len. poll() phai hoi dung cai org do, khong
@@ -449,11 +449,11 @@ def _list_mark_form_bottom(draft_id, brand, scheduled_at):
     """Ghi mot muc "dang day" truoc khi POST. KHONG tang so lan: day la dau vet
     de song sot qua mot cu kill, khong phai mot lan that bai."""
     d = _read_queue()
-    muc = d.get(draft_id) or {"lan": 0}
+    muc = d.get(draft_id) or {"attempts": 0}
     muc["brand"] = brand
     muc["scheduled_at"] = scheduled_at
-    muc["luc"] = int(time.time())
-    muc["loi"] = muc.get("loi") or "dang day, chua co ket qua"
+    muc["last_attempt_at"] = int(time.time())
+    muc["error"] = muc.get("error") or "dang day, chua co ket qua"
     d[draft_id] = muc
     _write_queue(d)
 
@@ -463,13 +463,13 @@ def refill(draft_id, brand, scheduled_at, loi):
     if not _form_try_again(loi):
         return False
     d = _read_queue()
-    muc = d.get(draft_id) or {"lan": 0, "brand": brand,
+    muc = d.get(draft_id) or {"attempts": 0, "brand": brand,
                               "scheduled_at": scheduled_at}
-    muc["lan"] = int(muc.get("lan", 0)) + 1
+    muc["attempts"] = int(muc.get("attempts", 0)) + 1
     muc["brand"] = brand
     muc["scheduled_at"] = scheduled_at
-    muc["luc"] = int(time.time())
-    muc["loi"] = loi[:200]
+    muc["last_attempt_at"] = int(time.time())
+    muc["error"] = loi[:200]
     d[draft_id] = muc
     _write_queue(d)
     return True
@@ -501,17 +501,17 @@ def bottom_again():
         brand = muc.get("brand") or DEFAULT_BRAND
         if cua_toi and brand != cua_toi:
             continue
-        lan = max(int(muc.get("lan", 1)), 1)   # muc write-ahead co lan=0
+        lan = max(int(muc.get("attempts", 1)), 1)   # muc write-ahead co attempts=0
         if lan > len(SCHEDULE_BACK):
             _drop_block_queue(draft_id)
             txt = ("🛑 Bỏ cuộc sau " + str(lan - 1) + " lần đẩy lại sang moat — "
-                   + _exit(str(muc.get("loi", ""))[:150]))
+                   + _exit(str(muc.get("error", ""))[:150]))
             if not report_card(draft_id, txt,
                            [{"text": "🔁 Đẩy lại moat", "callback_data": "mlai:" + draft_id}]):
                 lines.append("🛑 moat: bo cuoc sau " + str(lan - 1) + " lan day lai "
-                             + draft_id + " — " + str(muc.get("loi", ""))[:120])
+                             + draft_id + " — " + str(muc.get("error", ""))[:120])
             continue
-        if bay_gio - int(muc.get("luc", 0)) < SCHEDULE_BACK[lan - 1] * 60:
+        if bay_gio - int(muc.get("last_attempt_at", 0)) < SCHEDULE_BACK[lan - 1] * 60:
             continue
 
         # intake() tu tang so lan (loi con thu lai duoc) hoac tu xoa (thanh cong).
@@ -587,14 +587,14 @@ def _poll_one_article(path, d, cua_toi, lines):
         # loi da bao trong draft; loi doi (DNS -> timeout) thi bao lai,
         # het loi thi xoa co de lan sap sau con bao.
         loi_moi = type(e).__name__
-        if moat.get("loi_da_bao") != loi_moi:
-            moat["loi_da_bao"] = loi_moi
+        if moat.get("reported_error") != loi_moi:
+            moat["reported_error"] = loi_moi
             d["moat"] = moat
             _write_json(path, d)
             lines.append("⚠️ " + path.stem + ": khong hoi duoc moat ("
                          + loi_moi + "), se im cho toi khi tinh hinh doi")
         return
-    if moat.pop("loi_da_bao", None):
+    if moat.pop("reported_error", None):
         d["moat"] = moat
         _write_json(path, d)
         lines.append("✅ " + path.stem + ": moat hoi lai duoc roi")
@@ -645,7 +645,7 @@ def poll():
         return []
 
     # drafts/ dung CHUNG cho moi container, ma poll() lai ghi co trang thai
-    # ("loi_da_bao", "reported", "tracking_stopped") nguoc vao chinh file draft.
+    # ("reported_error", "reported", "tracking_stopped") nguoc vao chinh file draft.
     # Container nao cung soi ca thu muc thi hai tien trinh thay nhau dat va xoa
     # cung mot co: co che "chi bao MOT lan" thanh bao mai mai, va bao sai — moi
     # container giai ra mot khoa khac nhau cho cung mot brand, nen ben thay
@@ -742,7 +742,7 @@ def report_card(draft_id, text, nut=None):
     return bool(r.get("ok"))
 
 
-SPOOL = STATE_DIR / "moat_chua_bao.json"
+SPOOL = STATE_DIR / state_paths.MOAT_UNSENT_NOTICES_FILE
 
 
 def _notify(lines):

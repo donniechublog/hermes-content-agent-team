@@ -67,11 +67,11 @@ def gather_manifest(ngay: int) -> dict:
         except Exception:                                    # noqa: BLE001
             continue
         for it in d.get("items", []):
-            items.append({"vai": d.get("vai") or p.name.split("_")[0], "title": it.get("title", "")[:70],
+            items.append({"vai": d.get("scan_role") or p.name.split("_")[0], "title": it.get("title", "")[:70],
                           "score": it.get("score"), "picked": bool(it.get("picked")),
                           "source": (it.get("via") or it.get("source_note") or "").split(",")[0][:20],
-                          "category": it.get("category", ""), "vai_anh": ",".join(g.get("vai_anh", "")
-                                                                                   for g in it.get("da_giao", [])),
+                          "category": it.get("category", ""), "vai_anh": ",".join(g.get("image_role", "")
+                                                                                   for g in it.get("assignments", [])),
                           "ngay": p.name.rsplit("_", 1)[-1][:10]})
     theo_bac = collections.defaultdict(lambda: [0, 0])
     theo_nguon = collections.defaultdict(lambda: [0, 0])

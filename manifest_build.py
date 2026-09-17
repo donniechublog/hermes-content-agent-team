@@ -94,7 +94,7 @@ def _item_from_pick(p: dict, c: dict, problems: list) -> dict:
         # tu candidates.json — Finn khong phai go lai
         "title": c["title"],
         "link": c["link"],
-        "source_note": f"{c['source']}, {c['points']} diem, "
+        "source_note": f"{required.source_label(c['source'])}, {c['points']} diem, "
                       f"{c['comments']} binh luan",
         "via": c["via"],
         "image_url": p.get("image_url") or c.get("image_url"),
@@ -177,17 +177,17 @@ def extra_required(items: list, cands: list) -> list:
         c = by_link.get(_norm(v.get("link", "")))
         if not c or _norm(c["link"]) in da_co:
             print(f"  [canh bao] muc BAT BUOC khong co trong candidates, khong tu them duoc: "
-                  f"{str(v.get('ten', ''))[:60]}", file=sys.stderr)
+                  f"{str(v.get('name', ''))[:60]}", file=sys.stderr)
             continue
         items.append({
             "title": c["title"], "link": c["link"],
-            "source_note": f"{c['source']}, {c['points']} diem, {c['comments']} binh luan",
+            "source_note": f"{required.source_label(c['source'])}, {c['points']} diem, {c['comments']} binh luan",
             "via": c["via"], "image_url": c.get("image_url"),
             "category": "TOOL", "score_technical": 0, "score_relevance": 0,
             "score": c["score_partial"],
             "score_reason": "BAT BUOC, vai bo sot — script tu them, chua cham",
             "summary_vi": "", "score_recency": c["score_recency"],
-            "score_spread": c["score_spread"], "picked": False, "tu_them": True,
+            "score_spread": c["score_spread"], "picked": False, "auto_added": True,
         })
         da_co.add(_norm(c["link"]))
         print(f"  [tu them] muc BAT BUOC vai bo sot: {c['title'][:60]}", file=sys.stderr)
@@ -206,7 +206,7 @@ def main():
                     help="Ghi luon ban bao cao danh so, de gui bang publish.py --file")
     ap.add_argument("--ghi-de", action="store_true",
                     help="Cho ghi de manifest da co (chi dung khi THU — ban that "
-                         "khong duoc ghi de vi approve_pick ghi nguoc picked/da_giao vao do)")
+                         "khong duoc ghi de vi approve_pick ghi nguoc picked/assignments vao do)")
     ap.add_argument("--khong-xoa-bat-buoc", action="store_true",
                     help="Thu: kiem nhung KHONG xoa muc bat buoc da dua")
     a = ap.parse_args()
@@ -257,7 +257,7 @@ def main():
     if out.exists() and not a.ghi_de:
         moi = mc.path_out_new(out)
         print(f"[canh bao] {out.name} da co — ghi ban moi ra {moi.name} de khong "
-              "mat co picked/da_giao cua ban dang dung", file=sys.stderr)
+              "mat co picked/assignments cua ban dang dung", file=sys.stderr)
         out = moi
     mc.write_manifest(out, "finn", items)
     print(f"da ghi {len(items)} muc -> {out}")

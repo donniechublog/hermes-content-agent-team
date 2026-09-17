@@ -79,7 +79,7 @@ def list_count(items: list) -> list:
 def path_out_new(goc: Path) -> Path:
     """Ten khac cho ban ghi LAI trong ngay: `<goc>_tHHMMSS.<duoi>` (gio VN).
 
-    KHONG ghi de ban da co: ghi de la mat co `picked`/`da_giao` ma
+    KHONG ghi de ban da co: ghi de la mat co `picked`/`assignments` ma
     `approve_pick` ghi nguoc vao chinh tep do, va TE HON la doi nghia so thu
     tu — muc "2" cua ban moi khac muc "2" ma Ong Chu dang nhin, tra loi "2" luc
     do ra dung bai khac.
@@ -104,7 +104,7 @@ def write_manifest(out: Path, vai: str, items: list) -> None:
     mot dinh dang, khong moi noi mot kieu."""
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(
-        {"quet_luc": datetime.now(timezone.utc).isoformat(), "vai": vai,
+        {"scanned_at": datetime.now(timezone.utc).isoformat(), "scan_role": vai,
          "items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

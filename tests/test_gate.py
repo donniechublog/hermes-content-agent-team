@@ -118,18 +118,18 @@ def test_match_still_label_out_item_real():
         ("R2", "DeepSeek ra R2"),
     ]
     for ten, tieu_de in that:
-        assert bb.match({"ten": ten}, {"title": tieu_de, "summary_vi": ""}), f"trượt: {ten}"
+        assert bb.match({"name": ten}, {"title": tieu_de, "summary_vi": ""}), f"trượt: {ten}"
 
 
 def test_match_no_remaining_match_random_with_fragment_short():
     # "v3"/"ai" là mảnh 2 ký tự: trước 06/09 khớp gần như mọi tiêu đề
-    assert bb.match({"ten": "v3 ai"}, {"title": "bai nao cung co v3 va ai", "summary_vi": ""}) is False
+    assert bb.match({"name": "v3 ai"}, {"title": "bai nao cung co v3 va ai", "summary_vi": ""}) is False
 
 
 def test_match_priority_link_and_keyword():
     assert bb.match({"link": "https://x.com/a/"}, {"link": "http://www.x.com/a"})
-    assert bb.match({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia mua Hugging Face", "summary_vi": ""})
-    assert not bb.match({"tu_khoa": ["nvidia", "hugging"]}, {"title": "Nvidia ra chip moi", "summary_vi": ""})
+    assert bb.match({"keywords": ["nvidia", "hugging"]}, {"title": "Nvidia mua Hugging Face", "summary_vi": ""})
+    assert not bb.match({"keywords": ["nvidia", "hugging"]}, {"title": "Nvidia ra chip moi", "summary_vi": ""})
 
 
 # ------------------------------------------------------------------ teaser
@@ -512,7 +512,7 @@ def test_ceiling_story_no_crop_item_required():
         # ghi danh sach bat buoc bang chinh tien trinh con (cung state dir)
         subprocess.run([sys.executable, "-c",
                         "import sys; sys.path.insert(0, %r); import required; "
-                        "required.extra('finn', 'k1', 'Claude Opus 4.6', 'ra_mat', '', %r)"
+                        "required.extra('finn', 'k1', 'Claude Opus 4.6', 'release', '', %r)"
                         % (str(ROOT), BB)],
                        env=moi_truong, check=True, capture_output=True)
         try:
@@ -652,10 +652,10 @@ def test_match_keep_count_understand_version():
         ("Claude Opus 4.6", "Claude Opus 4.6 dat 82% SWE-bench Verified"),
     ]
     for ten, td in khong_khop:
-        assert not bb.match({"ten": ten}, {"title": td}), \
+        assert not bb.match({"name": ten}, {"title": td}), \
             f"muc {ten!r} bi coi la 'da dua' boi tin khac: {td!r} — se bi xoa oan"
     for ten, td in phai_khop:
-        assert bb.match({"ten": ten}, {"title": td}), \
+        assert bb.match({"name": ten}, {"title": td}), \
             f"muc {ten!r} KHONG nhan ra chinh no trong {td!r} — se bi them trung"
 
 

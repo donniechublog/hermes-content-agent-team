@@ -1373,7 +1373,7 @@ def _bottom_again_moat(token, action, draft_id, cq):
                 nen_tang, nhan = BACKGROUND_LAYER_BUTTON[action]
                 # external_id PHAI khac lan truoc, khong thi moat tra ve
                 # workflow cu (idempotent) va khong co task nao duoc tao.
-                lan = len((_read_draft(draft_id) or {}).get("moat_lich_su", [])) + 2
+                lan = len((_read_draft(draft_id) or {}).get("moat_history", [])) + 2
                 ok, why = moat_publish.intake(
                     draft_id, platforms=[nen_tang],
                     external_id=draft_id + "-lai" + str(lan))

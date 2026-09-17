@@ -165,7 +165,7 @@ def fetch_hn(limit=40) -> list:
                 "points": it.get("score", 0),
                 "comments": it.get("descendants", 0),
                 "via": source_original(it.get("url") or "") or "HackerNews",
-                "nguoi_dang": "@" + it.get("by", "hn"),
+                "posted_by": "@" + it.get("by", "hn"),
                 "age_hours": round(age, 1),
             })
     return out
@@ -210,7 +210,7 @@ def fetch_reddit(limit_per_sub=25) -> list:
                     "points": d.get("score", 0),
                     "comments": d.get("num_comments", 0),
                     "via": source_original(d.get("url") or "") or ("r/" + sub),
-                    "nguoi_dang": "r/" + sub,
+                    "posted_by": "r/" + sub,
                     "age_hours": round(age, 1),
                 })
     return out

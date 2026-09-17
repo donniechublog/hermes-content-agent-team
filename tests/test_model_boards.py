@@ -57,7 +57,7 @@ def test_link_bang_deu_la_url():
 
 
 def test_muc_hf_co_link_rieng():
-    l = required.link_call_y({"loai": "hf", "ten": "deepseek-ai/X",
+    l = required.link_call_y({"kind": "hf", "name": "deepseek-ai/X",
                              "link": "https://huggingface.co/deepseek-ai/X"})
     kiem("test_muc_hf_co_link_rieng", l == "https://huggingface.co/deepseek-ai/X")
 
@@ -272,8 +272,8 @@ def test_link_bat_buoc_dan_tu_ban_dang_ky():
     import model_boards as bm
     lech = [k for k, v in bm.LINK_BOARD.items() if required.LINK_BOARD.get(k) != v]
     kiem("test_link_bat_buoc_dan_tu_ban_dang_ky", not lech, f"lech: {lech}")
-    kiem("test_link_ra_mat_van_con", required.LINK_BOARD.get("ra_mat", "").startswith("https://"),
-         "`ra_mat` khong phai bang nhung muc BAT BUOC ra mat can link")
+    kiem("test_link_ra_mat_van_con", required.LINK_BOARD.get("release", "").startswith("https://"),
+         "`release` (cu `ra_mat`) khong phai bang nhung muc BAT BUOC ra mat can link")
 
 
 if __name__ == "__main__":
