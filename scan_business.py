@@ -267,21 +267,31 @@ def _keyword(tieu_de: str) -> set:
 
 CURRENCY_OF_MARK = {"$": "usd", "us$": "usd", "usd": "usd", "€": "eur", "eur": "eur",
                     "£": "gbp", "gbp": "gbp", "¥": "jpy"}
-AMOUNT_UNIT = {"m": 1, "mn": 1, "mln": 1, "million": 1, "b": 1000, "bn": 1000, "billion": 1000}
+AMOUNT_UNIT = {"m": 1, "mn": 1, "mln": 1, "million": 1, "b": 1000, "bn": 1000, "billion": 1000,
+               "tn": 1_000_000, "trillion": 1_000_000}
 AMOUNT_PATTERN = re.compile(
-    r"(us\$|\$|€|£|¥|usd|eur|gbp)\s?(\d+(?:[.,]\d+)?)\s?(million|billion|mln|mn|bn|m|b)\b",
+    r"(us\$|\$|€|£|¥|usd|eur|gbp)\s?(\d+(?:[.,]\d+)?)\s?(trillion|million|billion|mln|mn|bn|tn|m|b)\b",
     re.IGNORECASE)
 # Tu chung cua moi tin goi von/mua ban: hai vu KHAC nhau cung "raises $100M in
 # Series A funding round" van chia se may tu nay, nen khong duoc tinh la trung.
 DEAL_WORDS = {"raises", "raise", "raised", "funding", "round", "series", "valuation",
               "investment", "invests", "invest", "deal", "startup", "led", "leads",
-              "lead", "backed", "backs", "secures", "million", "billion", "mln",
+              "lead", "backed", "backs", "secures", "million", "billion", "trillion", "mln",
               "company", "firm", "more", "than", "around", "about", "reportedly"}
 SAME_AMOUNT_TOLERANCE = 0.03
 # EUR/GBP -> USD lech toi ~25%: Crypto Briefing "over €200M" va CNBC "$230 million"
 # la cung vong Euclyd (LOW-184).
 CROSS_CURRENCY_TOLERANCE = 0.25
 MIN_SHARED_DEAL_KEYWORDS = 2
+# LOW-213: OpenAI "$1.5 Trillion Valuation" (GV Wire) vs "over $1.5 trillion
+# valuation" (Straits Times) chi chung `openai`. So tien co nay gan nhu la dinh
+# danh cua vu; con $1B thi nhieu vu (Nvidia dau tu $1B vao Nokia lan Anthropic),
+# va ca $100B cung trung (Nvidia-OpenAI $100B, Stargate $100B) nen nguong la $1T.
+MEGA_AMOUNT_MILLIONS = 1_000_000
+# LOW-213: tin khong co so tien (Anthropic Queensland, SK Hynix-Intel) khong dung
+# duoc luat cung-so-tien. Do tren 7 lo that 11-17/09.
+NO_AMOUNT_MIN_SHARED = 4
+NO_AMOUNT_MIN_RATIO = 0.5
 WATCHLIST_WORDS = {w for name in (*WATCHLIST, *RANK_OF_NAME, *RANK_ERROR) for w in name.split()}
 
 
@@ -295,7 +305,12 @@ def _amounts(tieu_de: str) -> list:
 
 def _deal_keywords(tieu_de: str) -> set:
     return {w for w in _keyword(tieu_de)
-            if w not in DEAL_WORDS and not re.fullmatch(r"\d+(?:m|mn|bn|b)?", w)}
+            if w not in DEAL_WORDS and not re.fullmatch(r"\d+(?:m|mn|bn|tn|b)?", w)}
+
+
+def _lead_keyword(tieu_de: str) -> str | None:
+    return next((w for w in standard_ify(tieu_de).split()
+                 if w not in FROM_EMPTY and len(w) > 2), None)
 
 
 def _same_amount(a: list, b: list, cross_currency=True) -> bool:
@@ -375,7 +390,24 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
         return all(items[k][3] and _same_amount(items[k][3], items[i][3], cross_currency=False)
                    for k in items_with_word[w])
 
+    def same_subject_without_amount(i, j):
+        # LOW-213: chung >= 4 tu dac trung (bo tu goi von/so) va phu >= 1/2 tieu
+        # de ngan hon, co >= 2 tu ngoai watchlist, va tu DAU cua mot ben co o ben
+        # kia. Tu dau chan hai may Intel Wildcat Lake khac hang (HP OmniDesk vs
+        # Acemagic Kron) ma van giu "TSMC posts record August revenue"...
+        deal_i, deal_j = items[i][2], items[j][2]
+        shared = deal_i & deal_j
+        if len(shared) < NO_AMOUNT_MIN_SHARED:
+            return False
+        if len(shared) / min(len(deal_i), len(deal_j)) < NO_AMOUNT_MIN_RATIO:
+            return False
+        if len(shared - WATCHLIST_WORDS) < 2:
+            return False
+        lead_i, lead_j = lead[i], lead[j]
+        return lead_i in items[j][1] or lead_j in items[i][1]
+
     follow_up = [_is_follow_up(t["tieu_de"]) for t, _, _, _ in items]
+    lead = [_lead_keyword(t["tieu_de"]) for t, _, _, _ in items]
     parent = list(range(len(items)))
 
     def root(i):
@@ -395,11 +427,16 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
             # lon tu: ca Cloverleaf kinh dien (invests vs partners) van gop
             # dung (5/7=0.71), con jumps-vs-slides thi khong (2/7=0.29).
             same = chung and len(chung) / max(len(tu_i), len(tu_j)) >= nguong
-            if not same and amt_i and amt_j and not (follow_up[i] or follow_up[j]):
+            guarded = follow_up[i] or follow_up[j]
+            if not same and amt_i and amt_j and not guarded:
                 shared = deal_i & deal_j
-                same = _same_amount(amt_i, amt_j) and (
+                mega = any(v >= MEGA_AMOUNT_MILLIONS for _, v in amt_i + amt_j)
+                same = _same_amount(amt_i, amt_j, cross_currency=not mega) and (
                     len(shared) >= MIN_SHARED_DEAL_KEYWORDS
-                    or any(is_deal_name(w, i, j) for w in shared))
+                    or any(is_deal_name(w, i, j) for w in shared)
+                    or (mega and bool(shared)))
+            if not same and not guarded:
+                same = same_subject_without_amount(i, j)
             if same:
                 ri, rj = root(i), root(j)
                 parent[max(ri, rj)] = min(ri, rj)   # goc = ban som nhat
@@ -417,8 +454,10 @@ def gather_duplicate(tin: list, nguong=0.6) -> list:
             # (ban som nhat): ban tin dau khong nhac ten hang lam dai dien la
             # ca nhom mat co bao ve — dung kich ban Xiaomi Cube.
             vao["hang_watch"] = name_watchlist(t["tieu_de"])
+            vao["seen_keys"] = [standard_ify(t["tieu_de"])]
             nhom[r] = vao
         else:
+            vao["seen_keys"].append(standard_ify(t["tieu_de"]))
             vao["so_bao"] += 1
             if t["toa_soan"] and t["toa_soan"] not in vao["cac_bao"]:
                 vao["cac_bao"].append(t["toa_soan"])
@@ -496,11 +535,14 @@ def main():
     now = time.time()
 
     if a.lan_dau:
-        write_timestamp({**cu, **{standard_ify(t["tieu_de"]): now for t in tin}})
+        write_timestamp({**cu, **{k: now for t in tin for k in t["seen_keys"]}})
         print(f"Da ghi moc {len(tin)} tin. Lan sau chi bao cai moi.")
         return
 
-    moi = [t for t in tin if standard_ify(t["tieu_de"]) not in cu]
+    # LOW-213: nhom da thay neu BAT KY bien the nao da thay. Chi so dai dien thi
+    # hom sau dai dien doi sang ban khac (Euclyd, Glass Imaging 17/09) va tin cu
+    # lot lai vao danh sach.
+    moi = [t for t in tin if not any(k in cu for k in t["seen_keys"])]
     for t in moi:
         # hang_watch da duoc gather_duplicate tinh tren TUNG bien the truoc khi gop.
         t["watchlist"] = bool(t.get("hang_watch"))
@@ -528,7 +570,7 @@ def main():
     # thi bo. `chon` goc van dung nguyen cho write_timestamp ben duoi.
     xuat = []
     for t in chon:
-        t2 = {k: v for k, v in t.items() if k != "hang_watch"}
+        t2 = {k: v for k, v in t.items() if k not in ("hang_watch", "seen_keys")}
         t2["cac_bao"] = t.get("cac_bao", [])[:3]
         xuat.append(t2)
     # BAT BUOC (luat Ong Chu 04/09/2026): tin watchlist (top brand nganh AI)
@@ -579,7 +621,7 @@ def main():
     # Truoc day danh dau het: ngay dot bien, phan bi van --top cat van vao seen
     # -> lan sau bi loc "da thay" -> khong bao gio toi Vera nua. Van an toan
     # thanh may xoa tin. Tin bi cat hom nay, mai van con moi thi van len duoc.
-    write_timestamp({**cu, **{standard_ify(t["tieu_de"]): now for t in chon}})
+    write_timestamp({**cu, **{k: now for t in chon for k in t["seen_keys"]}})
 
 
 if __name__ == "__main__":

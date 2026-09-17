@@ -288,6 +288,49 @@ def test_dedup_keeps_follow_up_story_apart_from_announcement():
     assert [t["so_bao"] for t in ra] == [2, 1], [(t["so_bao"], t["tieu_de"]) for t in ra]
 
 
+def test_dedup_merges_same_story_without_amount():
+    """LOW-213: tin that 17/09 khong co so tien o mot/ca hai ben."""
+    import scan_business as sb
+    tin = [_story("Anthropic inks deal for $32 billion mega data centre in Queensland - SMH.com.au", 100),
+           _story("Anthropic inks Queensland data centre deal worth five times Olympics budget - ABC News", 200),
+           _story("SK Hynix reportedly in talks with Intel to build memory chips in US", 300),
+           _story("SK Hynix in talks with Intel to produce memory chips in US for the first time amid Washington pressure, sources say", 400)]
+    ra = sb.gather_duplicate(tin)
+    assert [t["so_bao"] for t in ra] == [2, 2], [(t["so_bao"], t["tieu_de"]) for t in ra]
+
+
+def test_dedup_no_amount_rule_needs_same_lead_subject():
+    """Hai may khac hang cung chip Intel Wildcat Lake (tin that 15/09) khong phai mot tin."""
+    import scan_business as sb
+    tin = [_story("HP OmniDesk Mini: Compact Desktop Launches with Intel Wildcat Lake and up to Core 5 320 - igor´sLAB", 100),
+           _story("Acemagic launches Kron K5 mini PC powered by Intel Wildcat Lake chip - ARYnews.tv", 200)]
+    assert len(sb.gather_duplicate(tin)) == 2
+
+
+def test_dedup_trillion_amount_merges_only_same_valuation():
+    """LOW-213: $1.5T chi chung `openai` van la mot vu; $1.2T la con so khac.
+    Duoi $1T thi chi chung mot hang watchlist van khong du."""
+    import scan_business as sb
+    tin = [_story("OpenAI Considers New Financing at a $1.5 Trillion Valuation - GV Wire", 100),
+           _story("OpenAI weighs funding round at over $1.5 trillion valuation - The Straits Times", 200),
+           _story("OpenAI weighs fresh funding at $1.2 trillion valuation ahead of IPO - business-standard.com", 300),
+           _story("Nvidia pledges $100 billion to OpenAI for data center buildout", 400),
+           _story("OpenAI Stargate expansion adds $100 billion in Texas campuses", 500)]
+    ra = sb.gather_duplicate(tin)
+    assert [t["so_bao"] for t in ra] == [2, 1, 1, 1], [(t["so_bao"], t["tieu_de"]) for t in ra]
+
+
+def test_dedup_group_keeps_seen_keys_of_every_variant():
+    """LOW-213: bo nho da-thay phai co khoa cua MOI bien the. Chi luu dai dien thi
+    hom sau dai dien doi (Euclyd, Glass Imaging 17/09) va tin cu bao lai."""
+    import scan_business as sb
+    tin = [_story("OpenAI acquires smartphone camera maker Glass Imaging for over $300 million", 100),
+           _story("OpenAI acquires Israeli-founded camera startup Glass Imaging for over $300 million", 200)]
+    ra = sb.gather_duplicate(tin)
+    assert len(ra) == 1
+    assert ra[0]["seen_keys"] == [sb.standard_ify(t["tieu_de"]) for t in tin]
+
+
 def test_standard_ify_make_lock_dedup_on_fixed():
     import scan_business as sb
     a = sb.standard_ify("Nvidia's Q3 Revenue Jumps 34%!")
