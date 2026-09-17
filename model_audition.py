@@ -39,15 +39,15 @@ CANDIDATE = [
 TOOLS = [{
     "type": "function",
     "function": {
-        "name": "luu_caption",
+        "name": "save_caption",
         "description": "Luu caption tieng Viet vao hang doi duyet",
         "parameters": {
             "type": "object",
             "properties": {
                 "caption": {"type": "string", "description": "Caption tieng Viet"},
-                "chu_de": {"type": "string", "description": "Chu de ngan"},
+                "topic": {"type": "string", "description": "Chu de ngan"},
             },
-            "required": ["caption", "chu_de"],
+            "required": ["caption", "topic"],
         },
     },
 }]
@@ -68,7 +68,7 @@ THRESHOLD_MARK = 0.15
 def call(model: str, key: str, dung_tool: bool, max_tokens: int) -> dict:
     nhac = (f"{COUNT}\n\nTin: {STORY}\n" + (
         "Hay viet caption 3 cau tieng Viet co dau day du, roi GOI TOOL "
-        "luu_caption de luu lai." if dung_tool else
+        "save_caption de luu lai." if dung_tool else
         "Viet dung 3 cau tieng Viet co dau day du. Chi tra ve 3 cau."))
     body = {"model": model, "temperature": 0.3, "max_tokens": max_tokens,
             "messages": [{"role": "system", "content": SYS},

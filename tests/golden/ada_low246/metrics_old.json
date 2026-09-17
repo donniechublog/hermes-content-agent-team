@@ -1,0 +1,321 @@
+{
+ "ngay": 2,
+ "brand": "blog",
+ "manifest": {
+  "tong": 7,
+  "chon": 4,
+  "theo_bac": {
+   "≥90": [
+    2,
+    2
+   ],
+   "80–89": [
+    2,
+    0
+   ],
+   "70–79": [
+    2,
+    2
+   ],
+   "không điểm": [
+    1,
+    0
+   ]
+  },
+  "theo_nguon": {
+   "The Verge": [
+    2,
+    1
+   ],
+   "Google News": [
+    1,
+    1
+   ],
+   "VnExpress": [
+    1,
+    1
+   ],
+   "?": [
+    1,
+    0
+   ],
+   "TechCrunch": [
+    1,
+    0
+   ],
+   "Reuters": [
+    1,
+    1
+   ]
+  },
+  "theo_cat": {
+   "model": [
+    2,
+    1
+   ],
+   "chip": [
+    2,
+    1
+   ],
+   "funding": [
+    1,
+    1
+   ],
+   "?": [
+    1,
+    0
+   ],
+   "device": [
+    1,
+    1
+   ]
+  },
+  "cao_bo": [
+   {
+    "vai": "finn",
+    "title": "Nvidia công bố chip Rubin Ultra cho trung tâm dữ liệu",
+    "score": 88,
+    "picked": false,
+    "source": "The Verge",
+    "category": "chip",
+    "vai_anh": "",
+    "ngay": "2026-09-14"
+   },
+   {
+    "vai": "nova",
+    "title": "Anthropic mở rộng cửa sổ ngữ cảnh lên 2 triệu token",
+    "score": 86,
+    "picked": false,
+    "source": "TechCrunch",
+    "category": "model",
+    "vai_anh": "",
+    "ngay": "t2201.json"
+   }
+  ],
+  "thap_chon": [
+   {
+    "vai": "nova",
+    "title": "Meta thử nghiệm kính AR mới",
+    "score": 70,
+    "picked": true,
+    "source": "The Verge",
+    "category": "device",
+    "vai_anh": "cover",
+    "ngay": "t2201.json"
+   },
+   {
+    "vai": "finn",
+    "title": "Startup AI Việt gọi vốn 12 triệu USD vòng Series A",
+    "score": 72,
+    "picked": true,
+    "source": "VnExpress",
+    "category": "funding",
+    "vai_anh": "hero",
+    "ngay": "2026-09-14"
+   }
+  ]
+ },
+ "draft": {
+  "theo_trang_thai": {
+   "pending": 1,
+   "published": 1,
+   "rejected": 1
+  },
+  "draft": [
+   {
+    "id": "d2-rubin-dcgr",
+    "status": "pending",
+    "score": null,
+    "brand": "dcgr"
+   },
+   {
+    "id": "d1-gpt6-blog",
+    "status": "published",
+    "score": 81,
+    "brand": "blog"
+   },
+   {
+    "id": "d3-meta-ar",
+    "status": "rejected",
+    "score": null,
+    "brand": "blog"
+   }
+  ]
+ },
+ "kanban": {
+  "theo_vai": {
+   "miles": {
+    "done": 2
+   },
+   "dre": {
+    "blocked": 1
+   },
+   "ada": {
+    "failed": 1
+   },
+   "finn": {
+    "done": 1
+   }
+  },
+  "giay_trung_binh": {
+   "miles": 450,
+   "finn": 60
+  },
+  "loi": [
+   {
+    "vai": "dre",
+    "status": "blocked",
+    "title": "Ảnh cho bài chip Rubin",
+    "loi": "thiếu ảnh thật"
+   },
+   {
+    "vai": "ada",
+    "status": "failed",
+    "title": "Phân tích tuần",
+    "loi": "timeout xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   {
+    "vai": "finn",
+    "status": "done",
+    "title": "Quét tin sáng",
+    "loi": "cảnh báo nhẹ"
+   }
+  ]
+ },
+ "token": {
+  "theo_vai": {
+   "miles": {
+    "phien": 3,
+    "tool": 41,
+    "input": 1234567,
+    "api": 52,
+    "top": [
+     [
+      "Viết bài GPT-6",
+      20,
+      600000
+     ],
+     [
+      "Viết bài TSMC",
+      11,
+      300000
+     ]
+    ]
+   },
+   "dre": {
+    "phien": 2,
+    "tool": 12,
+    "input": 45678,
+    "api": 14,
+    "top": [
+     [
+      "Ảnh cho bài chip Rubin",
+      12,
+      45678
+     ]
+    ]
+   }
+  },
+  "loi_doc": [
+   "qinn"
+  ],
+  "chi_phi_9router": {
+   "deepseek-v4-flash": {
+    "req": 6,
+    "prompt": 195900,
+    "usd": 0.1741
+   },
+   "glm-5.3": {
+    "req": 3,
+    "prompt": 12500,
+    "usd": 0.05
+   },
+   "deepseek-chat": {
+    "req": 1,
+    "prompt": 5000,
+    "usd": 0.002
+   }
+  },
+  "nhat_ky_9router": {
+   "theo_ngay": [
+    {
+     "ngay": "09-14",
+     "req": 2,
+     "usd": 0.0031,
+     "cache_pct": 51.3,
+     "lat": 0,
+     "loi": 0,
+     "model_chinh": "deepseek-v4-flash @ deepseek-v4-flash"
+    },
+    {
+     "ngay": "09-15",
+     "req": 8,
+     "usd": 0.223,
+     "cache_pct": 72.1,
+     "lat": 1,
+     "loi": 2,
+     "model_chinh": "deepseek-v4-flash @ DS main (ds)"
+    }
+   ],
+   "vai": {
+    "blog/miles": {
+     "usd": 0.1523,
+     "api": 42,
+     "task_done": 2,
+     "phien": 3,
+     "usd_task": 0.0761
+    },
+    "dcgr/jika": {
+     "usd": 0.0123,
+     "api": 7,
+     "task_done": 0,
+     "phien": 1,
+     "usd_task": null
+    },
+    "blog/ada": {
+     "usd": 0.0001,
+     "api": 1,
+     "task_done": 0,
+     "phien": 1,
+     "usd_task": null
+    }
+   },
+   "brand": {
+    "blog": {
+     "usd": 0.1524,
+     "bai": 2,
+     "usd_bai": 0.0762
+    },
+    "dcgr": {
+     "usd": 0.0123,
+     "bai": 0,
+     "usd_bai": null
+    }
+   },
+   "rong": {
+    "deepseek-v4-flash": 2,
+    "deepseek-chat": 1,
+    "glm-5.3": 1
+   },
+   "loi_ket_noi": [
+    "09-15 Xiaoke <x> & co [429] Too Many Requests: quota hết hạn mức ngày",
+    "09-15 tắt rồi [ECONNREFUSED] connect ECONNREFUSED 127.0.0.1:443 — dài xxxxxxxxxxxxxxxxxxx"
+   ],
+   "lat_model": {
+    "deepseek-v4-flash → deepseek-chat": 1,
+    "deepseek-chat → deepseek-v4-flash": 1,
+    "deepseek-v4-flash → glm-5.3": 1
+   },
+   "loi": {
+    "glm-5.3: error 429": 1,
+    "glm-5.3: error 502": 1
+   },
+   "khoa": {
+    "khoa la …efgh": 0.0031,
+    "blog": 0.171,
+    "dcgr": 0.002,
+    "khoa la …7777": 0.05
+   }
+  }
+ }
+}
