@@ -331,6 +331,78 @@ def test_dedup_rare_name_ignores_no_amount_title_already_in_group():
     assert [t["outlet_count"] for t in ra] == [3], [(t["outlet_count"], t["title"]) for t in ra]
 
 
+def test_same_story_parse_drops_bad_indices_and_unrelated_members():
+    """LOW-253: chi so ngoai pham vi bo; thanh vien khong chung tu nao voi nhom bo
+    (LLM lech so thu tu); nhom khong con T bo."""
+    import scan_business as sb
+    today = ["BrainChip Launches AKD1500 PCIe Card For Edge AI Evaluation",
+             "A new card lets developers test BrainChip's AI chip on a PC",
+             "Weather turns cold across Europe"]
+    prior = ["cohere and aleph alpha plan merger for transatlantic sovereign ai firm",
+             "mistral raises 3 billion series d"]
+    txt = "SAME: T0, T1, T2, T9\nSAME: P1000, P1001\nnoise line\nSAME: T2, P1000\nSAME: T0, P0"
+    assert sb.parse_same_story_groups(txt, today, prior) == [[("T", 0), ("T", 1)]]
+
+
+def test_same_story_merge_combines_today_and_drops_already_reported():
+    """LOW-253: T cung su kien gop vao ban som nhat (cong bao, khoa); nhom dinh P
+    la tin da bao — bo khoi danh sach va tra ve de ghi da thay."""
+    import scan_business as sb
+    tin = sb.gather_duplicate([
+        _story("Cohere and Aleph Alpha Seal Trans-Atlantic A.I. Merger - trendingtopics.eu", 200, "tt"),
+        _story("Cohere and Aleph Alpha agree to merge in reported $20B deal", 100, "tc"),
+        _story("OpenAI Acquires Glass Imaging in a $300 Million Bet on AI's Next Challenge - Memeburn", 300, "mb"),
+        _story("Snowflake stock rises on earnings", 400, "sn")])
+    tin.sort(key=lambda t: t["ts"])
+    assert len(tin) == 4
+    prior = ["openai acquires smartphone camera maker glass imaging for over 300 million"]
+    titles = [t["title"] for t in tin]
+    txt = (f"SAME: T{titles.index(tin[0]['title'])}, T{titles.index(tin[1]['title'])}\n"
+           f"SAME: T{titles.index(tin[2]['title'])}, P1000")
+    groups = sb.parse_same_story_groups(txt, titles, prior)
+    fresh, reported = sb.merge_same_story(tin, groups)
+    assert [t["title"][:20] for t in fresh] == ["Cohere and Aleph Alp", "Snowflake stock rise"]
+    assert fresh[0]["ts"] == 100 and fresh[0]["outlet_count"] == 2
+    assert sorted(fresh[0]["outlets"]) == ["tc", "tt"] and len(fresh[0]["seen_keys"]) == 2
+    assert [t["title"][:12] for t in reported] == ["OpenAI Acqui"]
+
+
+def test_same_story_merge_ignores_llm_failure_text():
+    import scan_business as sb
+    tin = sb.gather_duplicate([_story("Snowflake stock rises on earnings", 1)])
+    groups = sb.consensus_groups(["NONE", "NONE"], [tin[0]["title"]], [])
+    fresh, reported = sb.merge_same_story(tin, groups)
+    assert groups == [] and fresh == tin and reported == []
+
+
+def test_same_story_consensus_keeps_only_links_both_answers_agree_on():
+    """LOW-253: hai lan hoi cung lo ra khac nhau; lien ket chi co o mot lan
+    (Sagtec hop tac vs hop dong $10M, 18/09) bi bo."""
+    import scan_business as sb
+    today = ["Sagtec Global expands partnership with Kinetic Seas to launch MaluDB platform",
+             "Sagtec Global secures US$10 million AI data center management contract in Malaysia",
+             "Doosan to invest record W970b for high-end CCLs on AI boom",
+             "Doosan boosts Korea, China CCL capacity with 1t won investment for AI surge"]
+    first = "SAME: T0, T1\nSAME: T2, T3"
+    second = "SAME: T2, T3"
+    assert sb.consensus_groups([first, second], today, []) == [[("T", 2), ("T", 3)]]
+
+
+def test_same_story_cross_day_link_needs_a_shared_name():
+    """LOW-253 (18/09): ca hai lan hoi deu noi Manus $500M voi Emulate (da bao) qua
+    "nears ... valuation" — Manus se bi an nham la tin cu. Lien ket T-P phai chung
+    mot tu rieng; lien ket trong ngay (T-T) giu nguyen."""
+    import scan_business as sb
+    today = ["Manus Nears $500M Raise as Meta Deal Unravels, Valuation Hits $4B",
+             "AI agent maker Manus to double valuation in new US$500m funding round",
+             "OpenAI Acquires Glass Imaging in a $300 Million Bet on AI's Next Challenge"]
+    prior = ["google deepmind offshoot nears 4bn valuation just a month after founding",
+             "openai acquires smartphone camera maker glass imaging for over 300 million"]
+    txt = "SAME: T0, T1, P1000\nSAME: T2, P1001"
+    assert sb.consensus_groups([txt, txt], today, prior) == [
+        [("P", 1), ("T", 2)], [("T", 0), ("T", 1)]]
+
+
 def test_dedup_group_keeps_seen_keys_of_every_variant():
     """LOW-213: bo nho da-thay phai co khoa cua MOI bien the. Chi luu dai dien thi
     hom sau dai dien doi (Euclyd, Glass Imaging 17/09) va tin cu bao lai."""
