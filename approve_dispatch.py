@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from html import escape as html_escape
@@ -160,6 +161,37 @@ def killed_message(ten: str, title: str, tid: str, troi, tran, st: str) -> str:
     return f"⏱ <b>{ten}</b> bị hermes dừng sau {phut}{tran_}, {sau}: {bai}"
 
 _TEN_HIEN = role.DISPLAY_NAME            # xem role.py
+
+# Gio VN (UTC+7, khong DST) — cung quy uoc voi journal.VN, dung rieng o day de
+# khoi keo them journal.py (BAN DANG KY nay muon nhe, xem docstring dau tep).
+VN = timezone(timedelta(hours=7))
+
+# Vai can dem "task #NN hom nay" khi bao xong viec (LOW-250, Ong Chu 17/09/2026):
+# CHI writer + designer (nguoi lam ra san pham dem duoc moi ngay) — researcher/
+# analyst (Finn/Vera/Qinn/Ada...) chua can, de sau.
+DAILY_ORDINAL_ROLES = set(NAME_ROLE_WRITE) | set(NAME_ROLE_IMAGE)
+
+
+def _daily_task_ordinal(rows, ai, tid, completed_at):
+    """So thu tu task `done` thu N trong NGAY (gio VN) cua vai `ai`, tinh ca
+    task `tid` dang xet — None neu khong co completed_at de biet ngay nao.
+
+    `rows` la danh sach 24h gan nhat da doc san trong report_progress_kanban
+    (hermes_adapter.job(tu_ts=...)) — 24h luon phu het "hom nay" nen khong can
+    doc kanban lan nua. Xep hang theo completed_at (rieng id lam tie-break khi
+    trung giay) roi tim vi tri cua `tid` trong danh sach cung ngay/cung vai."""
+    if not completed_at:
+        return None
+    ngay = datetime.fromtimestamp(completed_at, VN).strftime("%Y-%m-%d")
+    cung_ngay = sorted(
+        (r for r in rows if r["assignee"] == ai and r["status"] == "done"
+         and r.get("completed_at")
+         and datetime.fromtimestamp(r["completed_at"], VN).strftime("%Y-%m-%d") == ngay),
+        key=lambda r: (r["completed_at"], r["id"]))
+    for i, r in enumerate(cung_ngay, start=1):
+        if r["id"] == tid:
+            return i
+    return len(cung_ngay) + 1        # tid chua nam trong rows (khong nen xay ra)
 
 # Moi bai mot the goc (blackboard.py), Dre/Miles/Ada la con cua no. Ly do va so do
 # o dau blackboard.py. O day chi co ba mieng noi vao luong san:
@@ -396,7 +428,10 @@ def report_progress_kanban(token, group):
                         "(Task đóng sai cách — vai phải dùng kanban_block khi thiếu ảnh.)")
                 log("bangden", f"{tid} {ai} done-gia: {gia[:120]}")
             else:
-                text = f"✅ <b>{ten}</b> xong: <i>{html_escape(title[:80])}</i>"
+                so_tt = (_daily_task_ordinal(rows, ai, tid, v.get("completed_at"))
+                         if ai in DAILY_ORDINAL_ROLES else None)
+                nhan = f" task #{so_tt:02d}" if so_tt else ""
+                text = f"✅ <b>{ten}</b> xong{nhan}: <i>{html_escape(title[:80])}</i>"
         elif st in ("blocked", "failed"):
             # Kem LY DO (summary/error cua lan chay cuoi) — day la cai Ong Chu can
             # de go: vai anh block vi thieu anh that thi bao ro anh nao bi loai.
