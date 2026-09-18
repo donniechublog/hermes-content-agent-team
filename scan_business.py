@@ -26,6 +26,7 @@ import os
 import time
 import unicodedata
 import urllib.parse as up
+import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
@@ -493,6 +494,163 @@ def _unmerged_pairs(n, root):
                 yield i, j
 
 
+# LOW-253: sau 5 lan va luat tu khoa (LOW-184..214) van con tin trung chi khac
+# vai chu (NYT/Microsoft "theft" 4 dong, BrainChip, Cohere + Aleph Alpha 18/09)
+# va tin cu quay lai khi cac ban cu ra khoi cua so quet (Glass Imaging). Luat
+# "code truoc, LLM sau" (17/09): code gom phan tat dinh o tren, LLM gom phan con
+# lai. Do 18/09 tren lo that: flash gop bua (Snapdragon voi Tesla AI5, Mistral voi
+# Cohere); pro dung het 12 nhom, ~2 giay.
+SAME_STORY_MODEL = "ds/deepseek-v4-pro"
+SAME_STORY_LOOKBACK_SECONDS = 3 * 86400
+SAME_STORY_MAX_PRIOR = 200
+SAME_STORY_TIMEOUT = 120
+SAME_STORY_ASKS = 2
+# Dong tu tin tuc chung: hai tin khac nhau van hay dung chung ("Manus nears $500M
+# raise" vs "Emulate nears $700 million round", 18/09 ca hai lan hoi deu noi nham).
+GENERIC_NEWS_WORDS = {"nears", "hits", "approaches", "launches", "launch", "announces",
+                      "unveils", "reveals", "says", "plans", "expands", "weighs", "considers",
+                      "talks", "gets", "wins", "adds", "makes", "boosts", "first", "latest",
+                      "report", "reports", "stock", "shares", "market", "global"}
+SAME_STORY_LINE = re.compile(r"\b([TP])(\d+)\b")
+# Tieu de cu danh so tu 1000: do 18/09, khi hai danh sach cung bat dau tu 0 thi ca
+# hai lan hoi deu ghep T123 voi P123, T124 voi P124... (lech so, khong lien quan).
+PRIOR_ID_OFFSET = 1000
+
+
+def same_story_prompt(today: list, prior: list) -> str:
+    lines = ([f"T{i}: {t}" for i, t in enumerate(today)]
+             + [f"P{i + PRIOR_ID_OFFSET}: {t}" for i, t in enumerate(prior)])
+    return ("Below are news headlines. T = today's candidates, P = already reported in the last 3 days.\n"
+            "Find headlines that report the SAME specific event (same company/people AND same action), "
+            "even if worded differently or with different figures from different sources.\n"
+            "Do NOT group headlines that merely share a company, a topic, or a trend.\n"
+            "Every group must contain at least one T headline.\n"
+            "Answer ONLY with lines like: SAME: T3, T11, P1040\n"
+            "No other text. If nothing matches, answer NONE.\n\n" + "\n".join(lines))
+
+
+def parse_same_story_groups(txt: str, today: list, prior: list) -> list:
+    """Boc `SAME: T3, T11, P40` thanh [[("T", 3), ...]] — thuan, test duoc.
+
+    Bo chi so ngoai pham vi, bo thanh vien khong chung TU KHOA nao voi thanh vien
+    con lai (LLM lech so thu tu thi ghep bua), bo nhom khong con T hoac < 2 muc.
+    """
+    groups = []
+    for line in txt.splitlines():
+        members = []
+        for kind, n in SAME_STORY_LINE.findall(line):
+            n = int(n) - (PRIOR_ID_OFFSET if kind == "P" else 0)
+            src = today if kind == "T" else prior
+            if 0 <= n < len(src) and (kind, n) not in members:
+                members.append((kind, n))
+        words = {m: _keyword((today if m[0] == "T" else prior)[m[1]]) for m in members}
+        members = [m for m in members
+                   if any(words[m] & words[o] for o in members if o != m)]
+        if len(members) >= 2 and any(k == "T" for k, _ in members):
+            groups.append(members)
+    return groups
+
+
+def ask_same_story(today: list, prior: list) -> str | None:
+    env_load.load()
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        print("[same_story] thieu OPENAI_API_KEY -> chi dung gom bang code", file=sys.stderr)
+        return None
+    body = {"model": SAME_STORY_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 1500,
+            "stream": False, "temperature": 0,
+            "messages": [{"role": "user", "content": same_story_prompt(today, prior)}]}
+    try:
+        req = urllib.request.Request(env_load.ROUTER_URL, data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json",
+                                              "Authorization": "Bearer " + key})
+        raw = urllib.request.urlopen(req, timeout=SAME_STORY_TIMEOUT).read().decode().strip()
+        if raw.startswith("data:"):
+            raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
+        return json.loads(raw)["choices"][0]["message"]["content"]
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[same_story] llm loi {type(e).__name__} -> chi dung gom bang code", file=sys.stderr)
+        return None
+
+
+def consensus_groups(txts: list, today: list, prior: list) -> list:
+    """Chi giu lien ket ma MOI cau tra loi deu co — thuan, test duoc.
+
+    Do 18/09: cung lo, cung prompt, temperature 0 ma hai lan hoi ra nhom khac
+    nhau; lan dau gop nham Sagtec (hop tac vs hop dong $10M) va Snap (Specs AI vs
+    kinh $2,200), lan sau khong. Loi gop bua hiem khi lap lai hai lan.
+    """
+    def title(m):
+        return today[m[1]] if m[0] == "T" else prior[m[1]]
+
+    def cross_day_ok(a, b):
+        # Lien ket T-P lam tin MOI bien mat vi "da bao" — loi dat nhat, nen phai
+        # chung mot tu rieng (ten), khong tinh tu goi von, so, dong tu tin chung.
+        if a[0] == b[0]:
+            return True
+        return bool((_deal_keywords(title(a)) & _deal_keywords(title(b))) - GENERIC_NEWS_WORDS)
+
+    edge_sets = []
+    for txt in txts:
+        edges = set()
+        for members in parse_same_story_groups(txt, today, prior):
+            edges |= {frozenset((a, b)) for a in members for b in members
+                      if a != b and cross_day_ok(a, b)}
+        edge_sets.append(edges)
+    if not edge_sets:
+        return []
+    agreed = set.intersection(*edge_sets)
+    parent = {}
+
+    def root(m):
+        parent.setdefault(m, m)
+        while parent[m] != m:
+            m = parent[m]
+        return m
+
+    for edge in agreed:
+        a, b = sorted(edge)
+        parent[root(b)] = root(a)
+    comps = {}
+    for m in {m for e in agreed for m in e}:
+        comps.setdefault(root(m), []).append(m)
+    return sorted(sorted(c) for c in comps.values() if any(k == "T" for k, _ in c))
+
+
+def merge_same_story(fresh: list, groups: list) -> tuple:
+    """Ap ket qua LLM len cac nhom chua bao (`fresh`) — thuan, test duoc.
+
+    Nhom dinh mot tieu de da bao (P) -> bo, tra ve de danh dau da thay. Cac nhom
+    T cung mot su kien -> gop vao ban som nhat, cong so bao va khoa da thay.
+    Tra ve (fresh_moi, nhom_da_bao).
+    """
+    absorbed, already_reported = set(), []
+    out = {id(t): t for t in fresh}
+    for members in groups:
+        idx = sorted({n for k, n in members if k == "T"} - absorbed,
+                     key=lambda n: fresh[n]["ts"] or 0)
+        if not idx:
+            continue
+        if any(k == "P" for k, _ in members):
+            for n in idx:
+                already_reported.append(fresh[n])
+                out.pop(id(fresh[n]), None)
+            absorbed.update(idx)
+            continue
+        if len(idx) < 2:
+            continue
+        base = fresh[idx[0]]
+        for n in idx[1:]:
+            other = fresh[n]
+            base["outlet_count"] += other["outlet_count"]
+            base["outlets"] += [o for o in other["outlets"] if o not in base["outlets"]]
+            base["seen_keys"] += other["seen_keys"]
+            base["watchlist_company"] = base.get("watchlist_company") or other.get("watchlist_company")
+            out.pop(id(other), None)
+        absorbed.update(idx)
+    return [t for t in fresh if id(t) in out], already_reported
+
+
 
 def already_see() -> dict:
     """Doc bo nho da-thay: {seen_at: {khoa: unix_ts lan cuoi thay}}.
@@ -571,6 +729,20 @@ def main():
     # hom sau dai dien doi sang ban khac (Euclyd, Glass Imaging 17/09) va tin cu
     # lot lai vao danh sach.
     moi = [t for t in tin if not any(k in cu for k in t["seen_keys"])]
+    # LOW-253: buoc 2, LLM gom nhom cung su kien ma luat code bo sot, va so voi
+    # tieu de da bao 3 ngay qua. Khoa da thay la standard_ify(tieu de) — chu
+    # thuong, bo dau cau — van du de LLM doc. LLM loi thi giu nguyen buoc 1.
+    prior = [k for k, ts in sorted(cu.items(), key=lambda kv: -kv[1])
+             if ts >= now - SAME_STORY_LOOKBACK_SECONDS][:SAME_STORY_MAX_PRIOR]
+    reported = []
+    if moi:
+        today = [t["title"] for t in moi]
+        txts = [ask_same_story(today, prior) for _ in range(SAME_STORY_ASKS)]
+        if all(x is not None for x in txts):
+            truoc = len(moi)
+            moi, reported = merge_same_story(moi, consensus_groups(txts, today, prior))
+            print(f"  same_story: {truoc} -> {len(moi)} nhom moi, {len(reported)} nhom da bao "
+                  f"({SAME_STORY_MODEL})", file=sys.stderr)
     for t in moi:
         # watchlist_company da duoc gather_duplicate tinh tren TUNG bien the truoc khi gop.
         t["watchlist"] = bool(t.get("watchlist_company"))
@@ -649,7 +821,9 @@ def main():
     # Truoc day danh dau het: ngay dot bien, phan bi van --top cat van vao seen
     # -> lan sau bi loc "da thay" -> khong bao gio toi Vera nua. Van an toan
     # thanh may xoa tin. Tin bi cat hom nay, mai van con moi thi van len duoc.
-    write_timestamp({**cu, **{k: now for t in chon for k in t["seen_keys"]}})
+    # Nhom LLM xac nhan da bao (LOW-253) cung ghi lai, de lan sau buoc 1 loc
+    # luon bang khoa, khong phai hoi LLM lai.
+    write_timestamp({**cu, **{k: now for t in chon + reported for k in t["seen_keys"]}})
 
 
 if __name__ == "__main__":
