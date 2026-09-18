@@ -106,7 +106,8 @@ def figure_hero(m: dict) -> dict | None:
     o dau do", nen dat het vao `figure` than roi ve hero vector la HOP LE.
 
     Thu tu theo IMAGE_RULES: hinh paper (§1.4 "Figure 1 la hero") -> anh rieng cua
-    tin -> anh thuong hieu (§1.2d) -> anh khai niem (§1.2c); hai loai bu xep sau
+    tin -> anh thuong hieu (§1.2d) -> anh khai niem (§1.2c) -> khoi tit chup trang
+    nguon (nac cuoi cung, xem `capability_block_headline`); ba loai sau xep sau
     moi anh rieng cua tin, dung nhu tai lieu ghi.
 
     Chi anh DA DUOC NHIN, tru hinh paper (boc thang tu PDF nen khong the la
@@ -119,24 +120,43 @@ def figure_hero(m: dict) -> dict | None:
           if a.get("relevant") is True or a.get("paper_figure")]
     if not ut:
         return None
-    rieng = [a for a in ut if not (a.get("concept") or a.get("brand_match"))]
+    # LOW-254 (18/09/2026): "khoi tit chup trang nguon" (`capture_kind ==
+    # "headline"`) la NAC CUOI CUNG theo chinh ghi chu cua no ("chi lam bia khi
+    # khong con anh nao khac", `prepare/fallback_rounds.py`) — tach rieng khoi
+    # `rieng` de no KHONG duoc xep ngang hang voi anh rieng that su cua tin, va
+    # nam sau ca anh khai niem trong `xep`.
+    is_headline_capture = lambda a: a.get("capture_kind") == "headline"   # noqa: E731
+    rieng = [a for a in ut
+             if not (a.get("concept") or a.get("brand_match") or is_headline_capture(a))]
     xep = ([a for a in rieng if a.get("paper_figure")] + rieng
            + [a for a in ut if a.get("brand_match")]
-           + [a for a in ut if a.get("concept")])
+           + [a for a in ut if a.get("concept")]
+           + [a for a in ut if is_headline_capture(a)])
     # Tin CHUYEN sang Kite vi thieu anh: `kite_submit` doi hinh that nam o slide
     # THAN (Ong Chu 09/09), ma cung mot anh khong len duoc hai slide
     # (`image_rules.check_duplicate`). Tam nao bi than giu doc quyen thi LUI xuong ung
     # vien ke tiep, de ca hai tam deu duoc dung: anh khai niem khong nam trong
     # `_force_raw` (§1.2c cam no o than) nen no nhan bia khi anh rieng bi than giu.
     ep = _force_raw(m)
+    # LOW-254: nhung "lui xuong ung vien ke tiep" o tren KHONG duoc dung toi
+    # khoi tit chup trang nguon khi con anh khac trong `xep` — bug that: bo Cohere
+    # x Aleph Alpha chi co dung 2 anh (A1 anh ghep logo hai hang, A8 khoi tit chup
+    # tu prnewswire.com, roi/cluttered), `_force_raw` giu doc quyen A1 o than nen
+    # vong lui cu tuot xuong A8 lam hero — dung nguoc chinh cai thu tu no tu ghi
+    # ("chi lam bia khi khong con anh nao khac"). Chi cho khoi tit len hero khi
+    # no la ung vien DUY NHAT trong `xep` (khong con anh nao khac de chon).
+    has_other_candidate = any(not is_headline_capture(a) for a in xep)
     for chon in xep:
+        if is_headline_capture(chon) and has_other_candidate:
+            continue
         if not ep or [ma for ma in ep if ma != chon["id"]]:
             return chon
-    # Chi con DUNG MOT tam: BIA THANG (Ong Chu 10/09/2026: *"khong chap nhan
-    # viec dung vector o hero slide"*). Ban truoc tra None o day — than thang va
-    # bia ve vector. Vong doi cua §1.2e ("phai co hinh o BODY") sinh ra tu ca
-    # NHIEU tam ma Kite chi dung mot; con mot tam thi no VAN duoc dung, chi la
-    # dung o bia. `figure_right_use` tru tam nay ra nen than khong doi no nua.
+    # Chi con DUNG MOT tam (hoac vong tren khong con ai ngoai khoi tit de lui
+    # xuong, LOW-254): BIA THANG (Ong Chu 10/09/2026: *"khong chap nhan viec
+    # dung vector o hero slide"*). Ban truoc tra None o day — than thang va bia
+    # ve vector. Vong doi cua §1.2e ("phai co hinh o BODY") sinh ra tu ca NHIEU
+    # tam ma Kite chi dung mot; con mot tam thi no VAN duoc dung, chi la dung o
+    # bia. `figure_right_use` tru tam nay ra nen than khong doi no nua.
     return xep[0]
 
 
