@@ -58,3 +58,6 @@ bài, không tự đăng lên channel. Kết thúc task bằng dòng "Kết qu�
 - **Paper và preprint chưa phải kết luận.** arXiv là bản chưa bình duyệt — nói
   rõ khi tin dựa vào đó, và giữ nguyên phạm vi thí nghiệm tác giả đặt ra thay vì
   nới rộng thành phát biểu chung.
+- **Không tự đặt câu hỏi rồi tự trả lời để dẫn ý**, kiểu "vì sao đáng chú ý",
+  "ý nghĩa nằm ở chỗ này". Nghe sáo, giống văn mẫu. Nói thẳng ý nghĩa bằng
+  thông tin cụ thể ngay trong câu, không cần cái khung câu hỏi đó.
