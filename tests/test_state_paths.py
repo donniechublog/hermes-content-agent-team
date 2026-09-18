@@ -133,6 +133,7 @@ def test_constants_match_approved_table():
     thieu = sorted(hang - set(pairs) - {ten for _, ten in _rows_231().values()}
                    - {ten for _, ten in _rows_237().values()}
                    - {ten for _, ten in _rows_240().values()} - set(_rows_239())
+                   - set(_rows_publish_schedule())
                    - {ten for _, ten in _rows_242().values()}
                    - {ten for _, ten in _rows_241().values()}
                    - {ten for _, ten in _rows_246().values()})
@@ -286,6 +287,24 @@ def test_low246_constants_match_approved_table():
 def _rows_239() -> dict:
     """LOW-239: hang cho tep da English san (ten giu nguyen, chi thoi viet chuoi rai rac)."""
     return {"CRON_AUDIT_FILE": ("cron_audit.json", "state/cron_audit.json")}
+
+
+def _rows_publish_schedule() -> dict:
+    """Hang cua hang doi xep lich dang bai (18/09/2026) — sinh ra da English
+    san, khong co ten cu de doi chieu, nen chi kiem ten + phai co mat trong
+    `_kept` cua bang."""
+    return {"PUBLISH_SCHEDULE_FILE": ("publish_schedule.json",
+                                      "state/<brand>/publish_schedule.json"),
+            "PUBLISH_SLOT_LOCK": ("publish_slot.lock",
+                                  "state/<brand>/publish_slot.lock"),
+            "PUBLISH_DUE_LOCK": ("publish_due.lock",
+                                 "state/<brand>/publish_due.lock")}
+
+
+def test_publish_schedule_constants_are_declared():
+    for hang, (ten, kept) in _rows_publish_schedule().items():
+        assert getattr(state_paths, hang) == ten, (hang, getattr(state_paths, hang))
+        assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
 
 
 def test_low239_constants_keep_existing_names():

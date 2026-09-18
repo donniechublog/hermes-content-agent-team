@@ -11,6 +11,7 @@ import threading
 import time
 from pathlib import Path
 
+from datetime import datetime, timedelta, timezone
 from html import escape as html_escape
 
 import httpx
@@ -25,6 +26,7 @@ _HttpxError = httpx.HTTPError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import moat_publish                                         # noqa: E402
+import publish_schedule                                     # noqa: E402
 import image_provenance                                        # noqa: E402
 import schema                                               # noqa: E402
 import state_paths                                          # noqa: E402
@@ -61,6 +63,34 @@ def keyboard(draft_id):
         {"text": "✅ Duyệt & đăng", "callback_data": "ok:" + draft_id},
         {"text": "❌ Bỏ", "callback_data": "no:" + draft_id},
     ]]}
+
+
+VN = timezone(timedelta(hours=7))          # cung quy uoc voi journal.py/ada_prepare.py
+
+
+def _clock(at):
+    """Epoch -> "HH:MM dd/mm" gio VN. Ong Chu doc the tren dien thoai, khong
+    doc epoch, va may chu khong chac chay mui gio VN."""
+    return datetime.fromtimestamp(int(at), VN).strftime("%H:%M %d/%m")
+
+
+def keyboard_scheduled(draft_id):
+    """Ban phim sau khi bai da vao lich: hai duong ra tay truoc khi toi gio."""
+    return {"inline_keyboard": [[
+        {"text": "⚡ Đăng ngay", "callback_data": "pnow:" + draft_id},
+        {"text": "🗑 Huỷ lịch", "callback_data": "pcancel:" + draft_id},
+    ]]}
+
+
+def _publish_now_work(token, msg, draft_id):
+    """Phan nang cua nut "Dang ngay". Tach ra khoi thread de test goi thang.
+
+    Goi DUNG `publish_schedule.publish_one` ma cron goi -- cung mot khoa, nen
+    bam trung luc cron dang dang bai nay thi cho, roi thay trang thai da doi
+    va bo qua, khong ra hai bai.
+    """
+    ok, note = publish_schedule.publish_one(draft_id)
+    _fix_story_go_button(token, msg, note)
 
 # Anh XEM TRUOC (hang duyet), khong phai anh dang kenh — publish() doc thang
 # tu draft, khong qua ham nen nay. Muc tieu chon 14/09/2026 (LOW-155):
@@ -1314,12 +1344,22 @@ def handle_callback(token, channel, cq):
     # xep hang, va truoc day ca hai deu dang. Doc status som + tra loi callback
     # NGAY de nut thoi quay, roi moi lam viec nang.
     try:
-        st = json.loads(p.read_text(encoding="utf-8")).get("status")
+        _d = json.loads(p.read_text(encoding="utf-8"))
     except Exception:                                        # noqa: BLE001
-        st = None
-    if st in ("published", "rejected"):
+        _d = {}
+    st = _d.get("status")
+    if st in ("published", "rejected", publish_schedule.CANCELLED):
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
-             text="Bài này đã xử lý rồi (" + st + ")", show_alert=True)
+             text="Bài này đã xử lý rồi (" + str(st) + ")", show_alert=True)
+        return
+
+    # Da vao lich roi thi bam Duyet them lan nua KHONG duoc chiem slot thu hai
+    # (bai ke tiep se bi day lui mot tieng vi mot cu bam thua). Hai nut kia
+    # (pnow/pcancel) van phai di tiep — chung chi bam duoc o dung trang thai nay.
+    if st == publish_schedule.SCHEDULED and action == "ok":
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã xếp lịch rồi — đăng lúc "
+                  + _clock(_d.get("publish_at") or 0), show_alert=True)
         return
 
     if st == "publishing":
@@ -1331,14 +1371,27 @@ def handle_callback(token, channel, cq):
         return
 
     if action == "ok":
-        # Danh dau DANG XU LY roi tra callback NGAY; viec nang (upload toi 180s
-        # + moat) chay o thread NEN de vong poll khong nghen — nut cua bai khac
-        # va chat van bam duoc, cung ly do voi handle_chat/handle_command.
-        mark_draft(draft_id, "publishing")
+        # Nut nay KHONG con dang bai. No chiem mot slot (cach bai truoc mot
+        # tieng, xem docs/publish_schedule.md) roi tra the ve ngay; cron
+        # `publish-due` dang khi toi gio. Hang vang thi slot chinh la bay gio,
+        # tuc bam nut van la dang — cham nhat mot vong cron.
+        at = publish_schedule.schedule(draft_id)
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã xếp lịch " + _clock(at))
+        _fix_story_go_button(token, msg, "🕒 ĐÃ DUYỆT — đăng lúc " + _clock(at),
+                             keyboard_scheduled(draft_id))
+        return
+    elif action == "pnow":
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
              text="Đang đăng…")
-        threading.Thread(target=_form_background, daemon=True,
-                         args=(token, channel, draft_id, msg)).start()
+        threading.Thread(target=_publish_now_work, daemon=True,
+                         args=(token, msg, draft_id)).start()
+        return
+    elif action == "pcancel":
+        mark_draft(draft_id, publish_schedule.CANCELLED)
+        call(token, "answerCallbackQuery", callback_query_id=cq["id"],
+             text="Đã huỷ lịch")
+        _fix_story_go_button(token, msg, "🗑 ĐÃ HUỶ LỊCH — không đăng")
         return
     elif action == "no":
         mark_draft(draft_id, "rejected")
@@ -1404,43 +1457,12 @@ def _read_draft(draft_id):
         return {}
 
 
-def _form_background(token, channel, draft_id, msg):
-    """Phan nang cua nut Duyet, chay trong thread rieng. Moi duong loi deu phai
-    ra trang thai ro rang: publish_failed cho bam Duyet lai duoc — khong bao
-    gio ket vinh vien o 'publishing' (truoc day exception giua chung se ket)."""
-    try:
-        res = publish(token, channel, draft_id)
-        ok = res.get("ok")
-        mark_draft(draft_id, "published" if ok else "publish_failed")
-        note = ("✅ ĐÃ ĐĂNG lên channel" if ok
-                else "⚠️ Đăng lỗi: " + str(res.get("description")))
-        # Bai da len channel thi day tiep sang moat cho extension dang len social.
-        # Chi day khi Telegram da nhan -- khong dang duoc o day thi bai chua duyet xong.
-        # Loi ben moat chi them mot dong vao the, KHONG lam hong luong duyet.
-        if ok:
-            pushed, why = moat_publish.intake(draft_id)
-            note += ("\n\U0001f4e4 moat: " + why) if pushed else ("\n\u26a0\ufe0f moat: " + why)
-            # Nut cua the bi go ngay sau day, nen loi moat ma chi nam trong
-            # `note` la mot dong chu chet: khong bam lai duoc, va cron day lai
-            # co the cung bo cuoc sau 2 ngay. Reply mot tin RIENG co nut de
-            # con nguoi ra tay bat cu luc nao.
-            if not pushed:
-                moat_publish.report_card(
-                    draft_id,
-                    "⚠️ Chưa đẩy được sang moat: " + moat_publish._exit(why)
-                    + "\nĐang tự thử lại theo lịch lùi; bấm nút để thử ngay.",
-                    [{"text": "🔁 Đẩy lại moat", "callback_data": "mlai:" + draft_id}])
-    except Exception as e:                                   # noqa: BLE001
-        try:
-            mark_draft(draft_id, "publish_failed")
-        except Exception:                                    # noqa: BLE001
-            pass
-        note = "⚠️ Đăng lỗi: " + type(e).__name__ + ": " + str(e)
-    _fix_story_go_button(token, msg, note)
-
-def _fix_story_go_button(token, msg, note):
+def _fix_story_go_button(token, msg, note, keyboard_new=None):
     """Ghi ket qua vao tin nhan draft va go ban phim (dung chung cho nhanh Bo
-    tren poll thread va nhanh Duyet chay nen)."""
+    tren poll thread va nhanh Duyet chay nen).
+
+    `keyboard_new` de THAY ban phim thay vi go trang: bai vua vao lich van
+    phai bam "Dang ngay"/"Huy lich" duoc. Mac dinh None = go trang nhu cu."""
     log("nut", f"ket qua msg={msg.get('message_id')}: {note}")
     chat_id, msg_id = msg["chat"]["id"], msg["message_id"]
     base = msg.get("caption") or msg.get("text") or ""
@@ -1450,13 +1472,15 @@ def _fix_story_go_button(token, msg, note):
     # `note` co the chua text tho tu moat (trang HTML 502 cua nginx...). Khong
     # escape thi editMessageText bi tu choi -> inline_keyboard khong duoc go ->
     # nut van con, moi bam tiep. Escape TOAN BO note vi minh chi chen <b> quanh no.
+    kb = keyboard_new or {"inline_keyboard": []}
     r = call(token, method, chat_id=chat_id, message_id=msg_id,
              **{key: body + "\n\n<b>" + html_escape(note) + "</b>"},
-             parse_mode="HTML", reply_markup={"inline_keyboard": []})
+             parse_mode="HTML", reply_markup=kb)
     if not r.get("ok"):
-        # Khong sua duoc tin nhan (vi du body cu co ky tu la) thi it nhat go nut.
+        # Khong sua duoc tin nhan (vi du body cu co ky tu la) thi it nhat dat
+        # lai dung ban phim can co.
         call(token, "editMessageReplyMarkup", chat_id=chat_id, message_id=msg_id,
-             reply_markup={"inline_keyboard": []})
+             reply_markup=kb)
 
 REDO_WAIT = STATE_DIR / state_paths.REDO_WAITING_FILE  # {draft_id: {draft_id, thread_id, ts, ...}} — dang cho ly do
 
