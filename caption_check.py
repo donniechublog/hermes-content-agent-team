@@ -71,9 +71,13 @@ _LINK_SONG = re.compile(
 # (render_edu._DAN_NGUON_SAI, cho phep "via <ai>"), o day KHONG cho nhac
 # nguon/anh duoi bat ky hinh thuc nao — "mã nguồn" khong bi bat (loai tru
 # giong _DAN_NGUON_SAI).
+#
+# Nhanh "nguon tin/tu/theo/bai/anh/du lieu/so lieu" PHAI doi hoi dau ":"/"—"/"-"
+# ngay sau (LOW-259): tung bat ca cum nay o giua cau, nen "Bon nguon tin noi
+# quan doi My..." (van phong bao chi binh thuong, nghia "four sources say") bi
+# chan oan giong het "Nguồn tin: Reuters" — mot dong dan nguon that.
 _SOURCE_CREDIT_FORBIDDEN = re.compile(
-    r"(?<!\bmã\s)\bnguồn\s*[:—-]"                 # "Nguồn: X"
-    r"|\bnguồn\s+(?:tin|từ|theo|bài|ảnh|dữ liệu|số liệu)\b"
+    r"(?<!\bmã\s)\bnguồn\s*(?:tin|từ|theo|bài|ảnh|dữ liệu|số liệu)?\s*[:—-]"  # "Nguồn: X" / "Nguồn tin: X"
     r"|\btheo\s+nguồn\b"
     r"|\bảnh\s*[:—-]"                              # "Ảnh: X"
     r"|\bảnh\s+từ\b",                              # "ảnh từ ..."
