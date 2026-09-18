@@ -526,6 +526,58 @@ def _khai_niem(wd, ma="K1", tu_khoa="Japan flag", **k):
                  concept={"keyword": tu_khoa, "reason": "tin nhac Nhat"}, **k)
 
 
+# ---- KHOI TIT CHUP TRANG NGUON la NAC CUOI CUNG cho hero (LOW-254) ----------
+def _khoi_tit(wd, ma="H1", domain="prnewswire.com", **k):
+    """Khoi tit (headline) chup tu trang nguon khi bai khong co anh hero rieng
+    (`prepare/fallback_rounds.py::capability_block_headline`) — chinh ghi chu
+    cua no da noi "chi lam bia khi khong con anh nao khac"."""
+    return _hinh(wd, ma=ma, kind="photo", capture_kind="headline", capture_source=True,
+                 domain=domain, cluttered=True, **k)
+
+
+def test_khoi_tit_khong_cuop_hero_khi_con_anh_rieng_khac():
+    """LOW-254 (18/09/2026, bộ Cohere × Aleph Alpha): tin chuyển sang Kite có
+    MỘT ảnh riêng thật (bị `_force_raw` giữ độc quyền ở thân) và MỘT khối tít
+    chụp trang nguồn (rối/cluttered, tự ghi "chỉ làm bìa khi không còn ảnh nào
+    khác"). Vòng "lùi xuống ứng viên kế tiếp" (dành cho ảnh khái niệm) không
+    được đá khối tít lên hero khi ảnh riêng vẫn tồn tại — bug thật: engine đã
+    đẩy khối tít xấu hơn lên bìa, còn ảnh ghép logo hai hãng (đẹp, cân bằng cả
+    hai chủ thể) bị dồn xuống thân."""
+    import kite_prepare as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        rieng = _hinh(wd, ma="R1")
+        ht = _khoi_tit(wd, ma="H1")
+        m = _m(wd, [rieng, ht], kite_task_id="t_9")
+        assert kb.figure_hero(m)["id"] == "R1", kb.figure_hero(m)
+        # R1 tu len bia nen khong con bi ep xuong than nua — dung nhu ca "chi con
+        # DUNG MOT tam" (khong phai vi H1 bi loai khoi _force_raw tu dau).
+        assert kb.figure_right_use(m) == [], kb.figure_right_use(m)
+
+
+def test_khoi_tit_van_len_hero_khi_la_ung_vien_duy_nhat():
+    """Đúng như ghi chú của chính nó: khối tít VẪN được lên bìa khi không còn
+    ảnh nào khác — §1.2f (bìa phải là ảnh thật khi có ảnh thật) không đổi."""
+    import kite_prepare as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        ht = _khoi_tit(wd, ma="H1")
+        m = _m(wd, [ht], kite_task_id="t_9")
+        assert kb.figure_hero(m)["id"] == "H1"
+
+
+def test_khoi_tit_xep_sau_ca_anh_khai_niem():
+    """Thứ tự đầy đủ: paper > riêng > thương hiệu > khái niệm > khối tít (nấc
+    cuối cùng, sau cả ảnh bù)."""
+    import kite_prepare as kb
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        ht = _khoi_tit(wd, ma="H1")
+        kn = _khai_niem(wd, ma="K1")
+        assert kb.figure_hero(_m(wd, [ht]))["id"] == "H1"
+        assert kb.figure_hero(_m(wd, [ht, kn]))["id"] == "K1"
+
+
 def test_anh_khai_niem_o_slide_than_thi_canh_bao_khong_chan():
     """§1.2c nới lỏng LOW-58 (15/09/2026, Ông Chủ: "ảnh nào cũng dùng được hết,
     không phải câu nệ"): ảnh khái niệm đặt vào `figure` thân KHÔNG còn bị chặn,
