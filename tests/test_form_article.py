@@ -2,11 +2,10 @@
 """Test cho hai diem sinh su co "dang trung" / "ket publishing" trong nhat ky
 su co du an (issue E3):
 
-  _form_background (approve_post.py)              phan nang cua nut Duyet, chay o thread
-      rieng. publish() loi HOAC nem exception deu phai ha trang thai ve
-      publish_failed -- khong bao gio duoc ket vinh vien o "publishing" (xem
-      docstring cua chinh ham do). moat_publish.intake() chi duoc goi khi
-      publish() tra ok=True.
+  _form_background (approve_post.py) DA BI GO 18/09/2026: nut Duyet khong con
+      dang bai, no xep lich va `publish_schedule.publish_one()` dang. Ba test
+      cua ham do chuyen nguyen luat sang tests/test_publish_schedule.py (Telegram
+      loi thi khong day moat; ngoai le giua chung van ha ve publish_failed).
 
   _rescue_article_end_publishing (approve_service.py)  chay MOT lan luc dich vu khoi
       dong: ha ve publish_failed cac draft con ket o "publishing" QUA
@@ -35,97 +34,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import approve_post as db                                         # noqa: E402
 import approve_service as aps                                  # noqa: E402
-
-
-# =========================================================== _form_background =====
-class _MoatGia:
-    """Thay the module `moat_publish` that: chi ghi lai draft_id da goi
-    intake(), khong dong mang that."""
-    def __init__(self):
-        self.goi = []
-
-    def intake(self, draft_id):
-        self.goi.append(draft_id)
-        return True, "da day sang moat (gia)"
-
-
-def _call_form_background(publish_fn):
-    """Thay the publish/mark_draft/moat_publish/_fix_story_go_button cua approve_post
-    bang gia, goi db._form_background(...) voi msg toi thieu, roi tra ve
-    (goi_mark_draft, goi_moat_intake, goi_sua_tin) de assert. Khoi phuc moi
-    monkeypatch trong finally du _form_background co nem loi hay khong (khong duoc,
-    nhung phong truong hop)."""
-    goi_mark_draft = []
-    goi_sua_tin = []
-    moat_gia = _MoatGia()
-
-    def _fake_mark_draft(draft_id, status):
-        goi_mark_draft.append((draft_id, status))
-
-    def _fake_sua_tin_go_nut(token, msg, note):
-        goi_sua_tin.append((token, msg, note))
-
-    cu = (db.publish, db.mark_draft, db.moat_publish, db._fix_story_go_button)
-    db.publish = publish_fn
-    db.mark_draft = _fake_mark_draft
-    db.moat_publish = moat_gia
-    db._fix_story_go_button = _fake_sua_tin_go_nut
-    try:
-        msg = {"chat": {"id": 1}, "message_id": 2, "text": "ban nhap goc"}
-        db._form_background("tok", "chan", "d1", msg)
-    finally:
-        db.publish, db.mark_draft, db.moat_publish, db._fix_story_go_button = cu
-    return goi_mark_draft, moat_gia.goi, goi_sua_tin
-
-
-def test_form_background_publish_ok_then_list_mark_published_and_push_moat():
-    """publish() tra ok=True -> mark_draft("d1", "published") va
-    moat_publish.intake("d1") deu phai duoc goi (chi day moat khi Telegram da
-    nhan bai, dung nhu ghi chu trong code)."""
-    goi_mark_draft, goi_moat_intake, goi_sua_tin = _call_form_background(
-        lambda token, channel, draft_id: {"ok": True, "result": [{"message_id": 9}]})
-    assert goi_mark_draft == [("d1", "published")], \
-        f"phai mark_draft ve published: {goi_mark_draft}"
-    assert goi_moat_intake == ["d1"], \
-        f"phai day sang moat khi publish ok=True: {goi_moat_intake}"
-    assert goi_sua_tin, "phai goi _fix_story_go_button de go nut tren tin nhan"
-    assert "DA DANG" in goi_sua_tin[0][2].upper() or "ĐÃ ĐĂNG" in goi_sua_tin[0][2], \
-        f"note phai bao da dang thanh cong: {goi_sua_tin[0][2]!r}"
-
-
-def test_form_background_publish_return_error_then_lower_publish_failed_no_push_moat():
-    """publish() tra {"ok": False, "description": ...} -> mark_draft phai ghi
-    "publish_failed" (bam Duyet lai duoc) va moat_publish.intake TUYET DOI
-    khong duoc goi (code chi day khi ok=True)."""
-    goi_mark_draft, goi_moat_intake, goi_sua_tin = _call_form_background(
-        lambda token, channel, draft_id: {"ok": False, "description": "loi X"})
-    assert goi_mark_draft == [("d1", "publish_failed")], \
-        f"phai mark_draft ve publish_failed: {goi_mark_draft}"
-    assert goi_moat_intake == [], \
-        f"KHONG duoc day sang moat khi publish ok=False: {goi_moat_intake}"
-    assert goi_sua_tin and "loi X" in goi_sua_tin[0][2], \
-        f"note phai chua mo ta loi tu Telegram: {goi_sua_tin[0][2]!r}"
-
-
-def test_form_background_publish_throw_exception_still_lower_publish_failed():
-    """THEN CHOT cua docstring _form_background: "khong bao gio ket vinh vien o
-    publishing" phai dung CA KHI publish() nem exception giua chung (mang rot,
-    bug code...), khong chi khi no tra ve gon gang {"ok": False}. Truoc khi co
-    try/except bao boc, nhanh nay se lam draft ket o "publishing" mai mai."""
-    def _no(token, channel, draft_id):
-        raise RuntimeError("boom")
-
-    goi_mark_draft, goi_moat_intake, goi_sua_tin = _call_form_background(_no)
-    assert goi_mark_draft == [("d1", "publish_failed")], \
-        f"exception giua publish() VAN phai ha publish_failed, khong duoc ket o publishing: {goi_mark_draft}"
-    assert goi_moat_intake == [], \
-        f"khong duoc day sang moat khi publish nem exception: {goi_moat_intake}"
-    assert goi_sua_tin, "phai VAN goi _fix_story_go_button de go nut du publish() nem loi"
-    note = goi_sua_tin[0][2]
-    assert "RuntimeError" in note and "boom" in note, \
-        f"note phai neu ro loai loi + thong diep de con debug: {note!r}"
 
 
 # =============================================== _rescue_article_end_publishing ===

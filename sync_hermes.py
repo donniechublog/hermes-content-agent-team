@@ -76,6 +76,7 @@ SCRIPT = ["daily_scan",                              # than chung cua ba vai que
           "finn_daily_scan", "nova_daily_scan", "vera_daily_scan",   # vo mong, giu ten cho cron
           "qinn_scan",                                    # chi blog (LOW-156: thieu tu truoc, phat hien 14/09)
           "model_watch", "journal_daily", "moat_publish_watch",
+          "publish_due",                                  # ca hai home, moi phut (18/09/2026)
           "audit_cron",                                   # chay o CA HAI home
           "skill_lesson_filter",                          # both homes (LOW-119)
           "skill_lesson_commit"]                          # both homes (LOW-120)
