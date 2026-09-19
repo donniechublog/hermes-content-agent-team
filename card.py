@@ -977,32 +977,12 @@ def _quote_frame(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
         d.line([(mr2, yb), (x1 - r, yb)], fill=line_color, width=lw)   # line ra (phai)
 
 
-def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=False):
-    """The pull-quote: mot cau trich dan lon tren anh phu kin, KHONG LOP NEN.
-
-    Khac hero image (mot tieu de bao quat tin) va carousel (nhieu slide): day la
-    MOT cau noi dat trong ngoac kep, co dong nguon o duoi — dung dang the trich
-    dan cua bao.
-
-    Ong Chu chot 06/09/2026, sau nhieu lan bat loi cung mot goc (nen phu chu
-    cao hon chinh cau chu, doc ra hai vung rieng biet): BO HAN man toi. Quote
-    dat THANG len anh goc; vung anh duoi chu duoc lam mo cuc bo (`_open_region_text`)
-    roi mau chu chon theo do sang do duoc (`_color_change_background_hide_whole`).
-    """
-    H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
-    canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    src_img = _open_image(src)
-    # ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
-    # cover-crop lam mat tieu de cua slide/bang nguon, anh doc ra vo nghia).
-    # Nen: ban cover LAM MO phu kin khung (KHONG lam toi — Ong Chu 06/09/2026:
-    # "lam mo chu dung boi them mau", ap dung ca cho lop nen nay chu khong chi
-    # vung chu; truoc day co giam sang .enhance(0.5), gio bo, giu nguyen do sang
-    # goc, chi mo). Lop sac: anh nguyen ti le, full W, dat sat tren (chu quote
-    # nam duoi). Anh cao hon khung thi chi cat theo chieu doc, giu tron be
-    # ngang. Dong nhip voi carousel._body_image.
-    _layer_image(canvas, src_img, H)
-
-    d = ImageDraw.Draw(canvas)
+def _quote_geometry(d, quote, attrib, handle, H):
+    """Hinh hoc cua the `quote` o khung cao H: co chu, cac dong, vi tri khung/chip/dong
+    nguon. MOT noi tinh cho CA hai nguoi dung: `_render_quote` (ve) va `quote_text_top`
+    (ethan_submit kiem chu the co nam tren khung chu khong, LOW-273) — hai ban tinh
+    rieng la lech nhau ngay khi mot ben doi le."""
+    from types import SimpleNamespace
     # Khung o le FRAME_X; chu THUT VAO them (TEXT_X > FRAME_X) de hai canh chieu
     # rong cua khung thoang khoi chu.
     FRAME_X = 42
@@ -1019,9 +999,6 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     at_lines = _wrap(d, attrib, f_at, avail_w) if attrib else []
     at_lh = _step_line(f_at, at_lines, 8)[0]
     at_h = at_lh * len(at_lines)
-
-    # Tagline ngan cua kenh — chip nho o goc duoi-trai khung (xem ben duoi).
-    tag = (tagline or "").strip()
 
     # KHUNG CHU NHAT BO GOC bao quanh quote; dau " gan goc TL/BR (xem _quote_frame).
     # BO CUC (Ong Chu chot 03/09/2026): hai CHIP can theo muc net khung (tam chip
@@ -1049,6 +1026,63 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     last_line_bottom = frame_bottom - BOX_PAD_Y
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
+
+    return SimpleNamespace(FRAME_X=FRAME_X, TEXT_X=TEXT_X, CHIP_INSET=CHIP_INSET,
+                           f_q=f_q, q_lines=q_lines, buoc=buoc, tren=tren,
+                           f_at=f_at, at_lines=at_lines, at_lh=at_lh, at_h=at_h,
+                           f_hchip=f_hchip, f_tchip=f_tchip, ten=ten, chip_h=chip_h,
+                           src_top=src_top, yb=yb, frame_bottom=frame_bottom,
+                           first_line_top=first_line_top, frame_top=frame_top)
+
+
+def quote_text_top(quote, attrib, handle, ratio="4:5", brand="donniechublog") -> tuple:
+    """(y dau tien ma the `quote` ve chu/khung/chip DE LEN anh, chieu cao the) — de
+    kiem chu the cua anh co nam TREN vung chu khong (LOW-273). Tinh bang CHINH
+    `_quote_geometry` ma `_render_quote` dung de ve."""
+    b = set_brand(brand)
+    handle = handle or b["handle"]
+    H = RATIOS.get(ratio) or RATIOS["4:5"]
+    d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    g = _quote_geometry(d, drop_mark_forbid(quote), drop_mark_forbid(attrib or ""), handle, H)
+    return min(g.frame_top, g.frame_top - g.chip_h // 2), H
+
+
+def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=False):
+    """The pull-quote: mot cau trich dan lon tren anh phu kin, KHONG LOP NEN.
+
+    Khac hero image (mot tieu de bao quat tin) va carousel (nhieu slide): day la
+    MOT cau noi dat trong ngoac kep, co dong nguon o duoi — dung dang the trich
+    dan cua bao.
+
+    Ong Chu chot 06/09/2026, sau nhieu lan bat loi cung mot goc (nen phu chu
+    cao hon chinh cau chu, doc ra hai vung rieng biet): BO HAN man toi. Quote
+    dat THANG len anh goc; vung anh duoi chu duoc lam mo cuc bo (`_open_region_text`)
+    roi mau chu chon theo do sang do duoc (`_color_change_background_hide_whole`).
+    """
+    H = RATIOS.get(ratio) or RATIOS["4:5"]     # quote luon khoa khung; free -> 4:5
+    canvas = Image.new("RGBA", (W, H), (*BG, 255))
+    src_img = _open_image(src)
+    # ANH LUON HIEN FULL BE NGANG, KHONG CAT HAI CANH (Ong Chu bat loi 03/09/2026:
+    # cover-crop lam mat tieu de cua slide/bang nguon, anh doc ra vo nghia).
+    # Nen: ban cover LAM MO phu kin khung (KHONG lam toi — Ong Chu 06/09/2026:
+    # "lam mo chu dung boi them mau", ap dung ca cho lop nen nay chu khong chi
+    # vung chu; truoc day co giam sang .enhance(0.5), gio bo, giu nguyen do sang
+    # goc, chi mo). Lop sac: anh nguyen ti le, full W, dat sat tren (chu quote
+    # nam duoi). Anh cao hon khung thi chi cat theo chieu doc, giu tron be
+    # ngang. Dong nhip voi carousel._body_image.
+    _layer_image(canvas, src_img, H)
+
+    d = ImageDraw.Draw(canvas)
+    g = _quote_geometry(d, quote, attrib, handle, H)
+    FRAME_X, TEXT_X, CHIP_INSET = g.FRAME_X, g.TEXT_X, g.CHIP_INSET
+    f_q, q_lines, buoc, tren = g.f_q, g.q_lines, g.buoc, g.tren
+    f_at, at_lines, at_lh, at_h = g.f_at, g.at_lines, g.at_lh, g.at_h
+    f_hchip, f_tchip, ten, chip_h = g.f_hchip, g.f_tchip, g.ten, g.chip_h
+    src_top, yb, frame_bottom = g.src_top, g.yb, g.frame_bottom
+    first_line_top, frame_top = g.first_line_top, g.frame_top
+
+    # Tagline ngan cua kenh — chip nho o goc duoi-trai khung (xem ben duoi).
+    tag = (tagline or "").strip()
 
     (_text_bg_strict if cluttered else _open_region_text)(canvas, frame_top)
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi.

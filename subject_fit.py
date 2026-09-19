@@ -73,18 +73,52 @@ def too_empty(empty_share, limit: float = EMPTY_SHARE_MAX) -> bool:
     return empty_share is not None and float(empty_share) >= limit
 
 
+def face_boxes_with(det, lock, path, edge_max: int):
+    """Hop MAT nguoi trong anh, toa do 0..1 [x0, y0, x1, y1], bang detector YuNet cua
+    vai goi (`det`, `lock` cua image_rules_<vai> — moi vai giu model/khoa rieng nhu
+    count_faces). Thu nho anh qua `edge_max` truoc khi do (LOW-27: YuNet SIGSEGV voi anh
+    50MP). None neu khong chay duoc; [] neu khong co mat."""
+    if det is None:
+        return None
+    try:
+        import cv2
+        im = cv2.imread(str(path))
+        if im is None:
+            return None
+        h, w = im.shape[:2]
+        if max(h, w) > edge_max:
+            ty = edge_max / max(h, w)
+            im = cv2.resize(im, (max(1, int(w * ty)), max(1, int(h * ty))),
+                            interpolation=cv2.INTER_AREA)
+            h, w = im.shape[:2]
+        with lock:
+            det.setInputSize((w, h))
+            _n, res = det.detect(im)
+        if res is None:
+            return []
+        return [[max(0.0, float(r[0]) / w), max(0.0, float(r[1]) / h),
+                 min(1.0, float(r[0] + r[2]) / w), min(1.0, float(r[1] + r[3]) / h)] for r in res]
+    except Exception as e:                                   # noqa: BLE001
+        import sys
+        from pathlib import Path
+        print(f"[mat] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
+        return None
+
+
 def head_box(faces):
     """Hop DAU NGUOI tu cac hop MAT (0..1, do bang code — YuNet): gop moi mat, noi them
-    toc/tran phia tren va cam/co phia duoi. Do that 19/09: vision duoc dan "chi khoanh
+    toc/tran phia tren va mot chut duoi cam. Do that 19/09: vision duoc dan "chi khoanh
     dau va mat" van khoanh ca than (Altman 0.25..0.85), nen voi anh nguoi dung mat
-    do bang code, khong dung hop cua vision (luat "code truoc, LLM sau")."""
+    do bang code, khong dung hop cua vision (luat "code truoc, LLM sau"). Hop YuNet da
+    toi cam: noi 0.4 lan chieu cao mat xuong duoi thi chan oan (do 19/09 anh A15: mat
+    nam tron tren khung quote ma cong bao lan 10% khung) — chi noi 0.1."""
     if not faces:
         return None
     x0 = min(f[0] for f in faces); y0 = min(f[1] for f in faces)
     x1 = max(f[2] for f in faces); y1 = max(f[3] for f in faces)
     fw, fh = x1 - x0, y1 - y0
     return [max(0.0, x0 - 0.3 * fw), max(0.0, y0 - 0.5 * fh),
-            min(1.0, x1 + 0.3 * fw), min(1.0, y1 + 0.4 * fh)]
+            min(1.0, x1 + 0.3 * fw), min(1.0, y1 + 0.1 * fh)]
 
 
 def band_full_width(w: int, h: int, box, frame_w: int, frame_h: int, short_top_share: float = 0.6):

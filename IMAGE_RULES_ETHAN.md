@@ -719,6 +719,25 @@ nguyên**.
 
 ---
 
+## 6b. Chủ thể chính phải nằm TRÊN vùng chữ (LOW-273, 19/09/2026)
+
+Ông Chủ, nguyên văn: *"ko chấp nhận những hình như thế này ở mọi designer. ko phải là tìm
+hình có tỷ lệ 4:5, mà là tìm hình có main character đặt vừa trong 4:5"*.
+
+- **Ảnh gần như trống** (vision `empty_share` ≥ `image_rules_ethan.EMPTY_SHARE_MAX` = 0.60: logo nhỏ trên
+  nền trơn) → chặn, `submit_common.check_empty_image`.
+- **Chủ thể dưới vùng chữ** → chặn, `ethan_submit._check_subject_above_quote`. Người: hộp đầu từ mặt đo bằng code
+  (`image_rules_ethan.face_boxes`, YuNet; `subject_fit.head_box` nới 0.1 lần chiều cao mặt dưới cằm);
+  còn lại hộp vision `subject_box`. Dung sai `image_rules_ethan.SUBJECT_TEXT_TOLERANCE` = 2% khung.
+- **Chỉ kiểu `quote`** (khung 4:5 khoá, chữ + khung + chip tên kênh đè lên ảnh). Vị trí khung
+  tính bằng CHÍNH hàm vẽ: `card._quote_geometry` (tách từ `_render_quote`, so pixel trước/sau
+  giống hệt) qua `card.quote_text_top` — câu quote càng dài khung càng cao.
+- Kiểu `full_bleed` ở tỉ lệ tự do đặt chữ DƯỚI ảnh nên không xét. Cặp ghép (`image2`) chưa xét.
+- Ảnh dán full bề ngang như `card._layer_image` (ảnh ngang nằm nửa trên thẻ): đo 19/09 ảnh ngang
+  Altman mặt nằm trọn trên khung → qua; ảnh dọc A15 quote dài mặt kết thúc 55%, khung từ 56%
+  → qua (nhìn thẻ dựng ra xác nhận).
+- Manifest cũ (không `subject_box`, không mặt) → không chặn.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai

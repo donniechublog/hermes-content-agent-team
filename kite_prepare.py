@@ -417,7 +417,9 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
              "không thì bars từ 2..6 số THẬT trong bài, không có số thì bỏ) → cơ chế/hệ quả (loop) → áp dụng + CTA. "
              "Ý nào hình nói nhanh hơn chữ thì dùng hình (steps/loop/bars), chữ thuần là đường cuối. Bỏ `figure` "
              "nếu không có hình thật; thêm `statement` khi cần đủ 6. Dẫn nguồn ghi 'via', không ghi 'nguồn'. Cấm logo hãng, số bịa, "
-             "quote bịa, ảnh AI. Không em-dash.")
+             "quote bịa, ảnh AI. Không em-dash. Ảnh CHỤP ở bìa/figure: CHỦ THỂ (mặt người, sản phẩm) phải nằm "
+             "TRÊN khối chữ — chữ càng nhiều khối chữ càng cao, cổng chặn đo bằng Chromium; không dùng ảnh gần "
+             "như trống (logo nhỏ trên nền trơn).")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python kite_submit.py {m['draft_id']}",
           "Script tự kiểm spec, dựng bằng render_edu.py (Chromium), gửi album lên topic kèm nút duyệt, ghi bàn "

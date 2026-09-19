@@ -32,6 +32,7 @@ import submit_common as nc                                       # noqa: E402
 import state_paths                                            # noqa: E402
 import render_edu                                            # noqa: E402
 import role_spec                                             # noqa: E402
+import manifest_values                                       # noqa: E402
 
 DRAFTS = cb.DRAFTS
 # MOT bang duy nhat, o renderer (doi 06/09/2026 dot 2). Ban chep o day truoc
@@ -278,6 +279,86 @@ def _resolve_slide(i: int, sl: dict, hinh: dict, m: dict, da_thay: dict,
     return s2
 
 
+def measure_text_tops(spec_r: dict, brand: str) -> dict:
+    """{so slide (1..n): y DINH khoi chu #figtxt, px trong khung render_edu.H} cho moi
+    slide co anh — do bang CHINH Chromium va CHINH html cua render_edu (slide_read), vi
+    chieu cao khoi chu (tieu de, caption, standfirst, cards) chi trinh duyet biet.
+
+    Theme khong doi bo cuc (THEMES chi khac mau) nen do bang theme dau tien, khong goi
+    pick_theme_auto. Khong co Playwright thi {} (khong chan)."""
+    slides = spec_r.get("slides") or []
+    idx = [i for i, sl in enumerate(slides, start=1) if sl.get("image")]
+    if not idx:
+        return {}
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return {}
+    brand = spec_r.get("brand") or brand
+    th = dict(next(iter(render_edu.THEMES.values())), hero=None)
+    font_css = render_edu._font_face_css()
+    section = spec_r.get("section", "AI TOOLING")
+    folio_left = spec_r.get("folio") or brand
+    tops = {}
+    with sync_playwright() as p:
+        browser = p.chromium.launch(args=["--force-color-profile=srgb"])
+        page = browser.new_context(viewport={"width": render_edu.W, "height": render_edu.H}).new_page()
+        render_edu._route_font(page)
+        for i in idx:
+            page.set_content(render_edu.slide_read(slides[i - 1], i, len(slides), brand, section,
+                                                   folio_left, font_css, th), wait_until="load")
+            page.evaluate("document.fonts.ready")
+            top = page.evaluate("() => {const t=document.getElementById('figtxt');"
+                                "return t ? t.getBoundingClientRect().top : null;}")
+            if top is not None:
+                tops[i] = float(top)
+        browser.close()
+    return tops
+
+
+def check_subject_above_text(spec_r: dict, m: dict, text_tops: dict) -> list:
+    """CHU THE CHINH cua anh CHUP phai nam TREN khoi chu (LOW-273, Ong Chu 19/09/2026: "ko
+    chap nhan nhung hinh nhu the nay o moi designer ... main character dat vua trong 4:5").
+
+    Kite dat anh full be ngang ngay duoi masthead (render_edu.set_image: y0 = FIG_FIXED,
+    cao tu nhien, cat duoi), khoi chu #figtxt nam o day khung (vi tri do bang
+    `measure_text_tops`). Nguoi: hop dau tu mat do bang code; con lai hop vision.
+    KHONG xet bang/bieu do/bang xep hang (bang DeepSeek trong anh chuan chay xuong duoi
+    chu), anh chup trang nguon da dem vien (hop vision do tren ban dem, Kite ve ban chua
+    dem), va anh chua do (manifest cu)."""
+    import subject_fit
+    by_path = {}
+    for a in m.get("images") or []:
+        for k in ("unpadded_path", "original_path"):
+            if a.get(k):
+                by_path.setdefault(str(a[k]), a)
+    loi = []
+    for i, sl in enumerate(spec_r.get("slides") or [], start=1):
+        a = by_path.get(str(sl.get("image") or ""))
+        top = text_tops.get(i)
+        if not a or top is None or a.get("kind") == "chart" or a.get("ranking") or a.get("unpadded_path"):
+            continue
+        path = sl["image"]
+        faces = image_rules_kite.face_boxes(path) if a.get("faces") else None
+        box = subject_fit.head_box(faces) if faces else a.get("subject_box")
+        if not box:
+            continue
+        iw, ih = int(a.get("w") or 0), int(a.get("h") or 0)
+        if iw <= 0 or ih <= 0:
+            continue
+        phang = render_edu.read_background(Path(path))[0] == "phang"
+        cao, y0, cao_that = render_edu.set_image(iw, ih, phang)
+        bottom = y0 + box[3] * cao_that
+        lim = top + image_rules_kite.SUBJECT_TEXT_TOLERANCE * render_edu.H
+        if bottom <= min(lim, y0 + cao + 1):
+            continue
+        chu_the = "khuôn mặt" if faces else manifest_values.subject_kind_label(a.get("subject_kind"))
+        loi.append(f"slide {i} ({a.get('id')}): {chu_the} kéo xuống tới {bottom / render_edu.H:.0%} khung, "
+                   f"khối chữ bắt đầu ở {top / render_edu.H:.0%} — chữ sẽ đè lên chủ thể. Rút gọn "
+                   "chữ của slide (standfirst/caption/cards), hoặc dùng ảnh có chủ thể ở nửa trên")
+    return loi
+
+
 def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     loi, canh = [], []
     slides = spec.get("slides") or []
@@ -440,6 +521,15 @@ def main() -> int:
     meta, brand, wd, m, spec, spec_path, da_dung = nc.load_draft_context(a.draft_id, a.spec, "kite_prepare.py", "kite_submit.py")
     spec = role_spec.kite_spec(spec)         # LOW-248: spec viet truoc deploy con ten cu
     spec_r, loi, canh = resolve_spec(spec, m, wd)
+    if not loi:
+        # LOW-273: chu the anh chup nam tren khoi chu — do bo cuc that bang Chromium.
+        # Do hong (Chromium loi) thi canh bao, khong chan: render ngay sau se tu bao loi that.
+        try:
+            tops = measure_text_tops(spec_r, brand)
+        except Exception as e:                               # noqa: BLE001
+            print(f"[CANH BAO] khong do duoc khoi chu de kiem chu the ({type(e).__name__}: {e})")
+            tops = {}
+        loi += check_subject_above_text(spec_r, m, tops)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
     if da_dung:
         if (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):

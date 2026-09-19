@@ -383,6 +383,17 @@ def _load_yunet():
 # nay; phep do chung o subject_fit.too_empty (vision dong TRONG). Do 19/09: logo
 # Instinct 0.90, logo SoftBank 0.92; bang/bieu do/anh chup chuan 0.02..0.35.
 EMPTY_SHARE_MAX = 0.60
+# Chu the (anh CHUP) duoc lan xuong duoi dinh khoi chu #figtxt bao nhieu phan khung
+# (dung sai hop mat/hop vision) — LOW-273. Bang/bieu do khong xet: anh chuan 19/09 (bang
+# DeepSeek, slide 07) chay xuong duoi chu va Ong Chu coi la chuan.
+SUBJECT_TEXT_TOLERANCE = 0.02
+
+
+def face_boxes(path):
+    """Hop MAT nguoi trong anh, toa do 0..1 — dat chu the nguoi tren vung chu (LOW-273).
+    Cung model/khoa/thu nho voi count_faces; phep do chung o subject_fit.face_boxes_with."""
+    import subject_fit
+    return subject_fit.face_boxes_with(_load_yunet(), _YUNET_LOCK, path, FACE_EDGE_MAX)
 
 
 def count_faces(path):

@@ -193,9 +193,9 @@ def test_dre_cat_4_5_quanh_chu_the_thay_ban_cat_giua():
 
 
 def test_dre_mat_nguoi_duoi_vung_quote_bi_chan_nhung_slide_text_thi_qua():
-    """Altman 19/09: anh ngang, khung doc cao het anh nen khong day mat len duoc — dau
-    ket thuc o ~58% cao: quote (vung chu tu 55%) thi mat nam duoi khung chu, slide text
-    (vung chu tu 70%) thi van vua."""
+    """Anh ngang, khung doc cao het anh nen khong day mat len duoc — dau ket thuc o
+    ~62% cao: quote (vung chu tu 55%) thi mat nam duoi khung chu, slide text (vung chu
+    tu 70%) thi van vua."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         spec, m, wd = _bo(wd)
@@ -206,7 +206,7 @@ def test_dre_mat_nguoi_duoi_vung_quote_bi_chan_nhung_slide_text_thi_qua():
         m["article_text"] += ". Jensen Huang phát biểu"
         spec["slides"][1] = ts._slide("A7", quote="Câu hai", attrib="Y", landscape_crop=True,
                                       subject="Jensen Huang")
-        faces = [[0.42, 0.30, 0.55, 0.50]]              # dau (mo rong) 0.20..0.58
+        faces = [[0.42, 0.35, 0.55, 0.60]]              # dau (mo rong) 0.225..0.625
         with mock.patch("image_rules_dre.face_boxes", return_value=faces):
             _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert ts._co(loi, "slide 3", "khuôn mặt", "A7", "slide quote"), loi
