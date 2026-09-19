@@ -269,9 +269,14 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
   không bao giờ hỏi tới Commons/Wikidata — mà vai thì bị cấm tự tải thêm, nên bộ
   ảnh giao cho vai trắng trơn dù máy móc đã sẵn. Tin không nhắc hãng nào:
   `vendors_in_story` trả rỗng, vòng thoát ngay, không một request nào.
-- **Trần**: thêm tối đa 4 ảnh một bộ (`MAX_EXTRA_BRAND_`), và tổng ảnh không quá
-  `MAX_IMAGE + 4`. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối
-  cảnh thì vẫn chỉ chạy khi **thật sự thiếu ảnh** — đó là phần đắt.
+- **Trần**: không còn trần riêng cho "ảnh thương hiệu" (LOW-263, 19/09/2026 —
+  bỏ hẳn `MAX_EXTRA_BRAND_`/`MAX_NEW_RANK` cũ). Chỉ còn đúng MỘT trần: tổng ảnh
+  của cả carousel không quá `MAX_IMAGE + 4`, có round-robin chia đều giữa các
+  hãng khi tin nhắc nhiều hãng cùng lúc (để một hãng không nuốt hết chỗ của
+  hãng kia). Tin chỉ nhắc MỘT hãng thì hãng đó được lấy tối đa đúng bằng trần
+  chung đó — không còn bị bóp trước ở mức thấp hơn dù Commons/báo chí còn dư
+  ảnh sạch. Riêng việc **mở browser đi chụp bảng xếp hạng** làm ảnh bối cảnh
+  thì vẫn chỉ chạy khi **thật sự thiếu ảnh** — đó là phần đắt.
 - **Chỗ đứng**: ảnh của hãng xếp **sau** ảnh riêng của tin trong gợi ý bìa
   (`cover_suggestions`), nên bài có ảnh riêng tốt không bị chúng chiếm bìa.
 - **Hãng nào**: mọi hãng trong `scan_business.WATCHLIST` mà tin nhắc tới, tối đa
@@ -311,8 +316,11 @@ có hàng trăm ảnh thật. Luật của **engine** (`image_brand.py`):
 - **Chỗ đứng**: nhãn 🏢 ẢNH THƯƠNG HIỆU. **Khác ảnh khái niệm ở hai điểm**: nó
   vào được **slide thân** (là ảnh thật của chính hãng trong tin, đúng loại "trụ
   sở/sản phẩm" §1.2 vẫn kể là liên quan) và nó **đếm đủ**, không gộp cả chùm
-  thành một. Gợi ý bìa vẫn xếp sau mọi ảnh riêng của tin. Trần **4 tấm** một bộ,
-  2 tấm mỗi hãng — để một bộ không thành album trụ sở.
+  thành một. Gợi ý bìa vẫn xếp sau mọi ảnh riêng của tin. **Không còn trần
+  riêng mỗi hãng** (LOW-263, 19/09/2026 — trước là 2 rồi 4, nhưng trần tổng
+  của cả carousel + round-robin giữa các hãng khi cắt đã tự lo việc "không
+  thành album một hãng" rồi; cap riêng chỉ còn bóp chết đúng ca tin **một hãng
+  duy nhất, ít nguồn** — nơi cần ảnh hãng nhất). Chỉ còn trần tổng của cả bộ.
 - **Mặt người**: ảnh **cơ sở** có mặt là bỏ — người đứng trước cửa hàng trên
   Commons thì không ai gọi được tên (§6). Ảnh **chân dung** thì ngược lại: mặt
   là thứ ta đi tìm, và tên đi kèm sẵn. Đừng chặn chân dung theo số mặt đếm được:

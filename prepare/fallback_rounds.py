@@ -322,7 +322,15 @@ def _round_widen_search(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: in
     return anh, dung_duoc, chua_nhin
 
 
-MAX_EXTRA_BRAND_ = 4          # tran anh thuong hieu them vao mot bo
+# LOW-263 (19/09/2026): tung dung chung cho ca _round_brand LAN _round_entity.
+# _round_brand bo han sub-quota nay (xem chu thich o "_round_brand": trong tong
+# cua carousel (MAX_IMAGE + 4) + round-robin giua cac hang da du chan "mot hang
+# nuot het slot" roi, khong can them mot tran rieng danh cho "anh thuong hieu")
+# — hang chi con Microsoft/Google... ma tin thieu tu lieu thi khong con bi bop
+# truoc nua. _round_entity (nac cuoi, anh dai dien cho THUC THE trong tieu de,
+# khac ban chat voi anh hang) van giu tran rieng, tach ten de khong dung chung
+# so phan voi quyet dinh tren.
+MAX_EXTRA_ENTITY_ = 4          # tran anh thuc the them vao mot bo (_round_entity)
 
 
 XH_CONTEXT_EDGE_SOURCE = 3       # so bang xep hang thu khi lay anh bang lam boi canh
@@ -461,19 +469,23 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     da = {a["url"] for a in anh}
     cands = [c for c in cands if c["image_url"] not in da]
     bo_sung = download_and_filter(cands, wd4) if cands else []
-    # CONG BANG GIUA CAC HANG khi cat theo MAX_EXTRA_BRAND_: neu cu giu nguyen
-    # thu tu diem (tren) roi lay N tam dau, tin nhieu hang de bi mot hang co
-    # LOAI anh diem cao (vd "nguoi": chan dung CEO) nuot het slot cua hang con
-    # lai chi co "anh" thuong diem thap hon. Do that 13/09/2026 (Ong Chu:
-    # "bai nhac toi ca Anthropic va Moonshot nhung chi co anh Anthropic, kha
-    # mat can doi"): tin Anthropic+Alibaba+Moonshot ra 2+2+1 ung vien da tai,
-    # Anthropic (chan dung) + Alibaba (tru so) chiem het 4 slot, ung vien
-    # Moonshot (mot anh that tu TechCrunch) diem thap hon bi cat truoc khi
-    # vao brief — dung o day, SAU khi tai (khong dung thu tu tai cua
-    # `download_and_filter`), chi doi lai THU TU CHON trong luc cat: gop theo hang
-    # ("key"), giu nguyen diem-giam-dan TRONG tung hang, roi XEN KE
-    # (round-robin) giua cac hang — moi hang co it nhat mot ung vien vao
-    # truoc khi hang nao duoc ung vien thu hai.
+    # CONG BANG GIUA CAC HANG khi cat: neu cu giu nguyen thu tu diem (tren) roi
+    # lay N tam dau, tin nhieu hang de bi mot hang co LOAI anh diem cao (vd
+    # "nguoi": chan dung CEO) nuot het slot cua hang con lai chi co "anh"
+    # thuong diem thap hon. Do that 13/09/2026 (Ong Chu: "bai nhac toi ca
+    # Anthropic va Moonshot nhung chi co anh Anthropic, kha mat can doi"): tin
+    # Anthropic+Alibaba+Moonshot ra 2+2+1 ung vien da tai, Anthropic (chan
+    # dung) + Alibaba (tru so) chiem het 4 slot, ung vien Moonshot (mot anh
+    # that tu TechCrunch) diem thap hon bi cat truoc khi vao brief — dung o
+    # day, SAU khi tai (khong dung thu tu tai cua `download_and_filter`), chi
+    # doi lai THU TU CHON trong luc cat: gop theo hang ("key"), giu nguyen
+    # diem-giam-dan TRONG tung hang, roi XEN KE (round-robin) giua cac hang —
+    # moi hang co it nhat mot ung vien vao truoc khi hang nao duoc ung vien
+    # thu hai. LOW-263 (19/09/2026): khong con sub-quota rieng cho "anh
+    # thuong hieu" (`MAX_EXTRA_BRAND_` cu) — vong nay chi con dung TRAN TUYET
+    # DOI cua ca carousel (`MAX_IMAGE + 4`) lam diem dung; round-robin o day
+    # van la thu bao dam mot hang khong nuot het tran do khi co nhieu hang,
+    # con tin CHI mot hang thi hang do duoc lay toi da so anh tran do cho phep.
     theo_hang: dict = {}
     for a in bo_sung:
         khoa = (a.get("brand_match") or {}).get("key") or f"_khac_{id(a)}"
@@ -486,7 +498,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                 bo_sung.append(nhom.pop(0))
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= MAX_IMAGE + 4 or len(anh) - n0 >= MAX_EXTRA_BRAND_:
+        if len(anh) >= MAX_IMAGE + 4:
             break
         a["id"] = f"A{i}"
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
@@ -494,7 +506,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         a["original_path"] = str(moi)
         anh.append(classify(a, wd, tieu_de_nhin))
     dung_duoc = [a for a in anh if a["uses"] and a.get("relevant") is not False]
-    if len(dung_duoc) < toi_thieu and not khong_browser and len(anh) - n0 < MAX_EXTRA_BRAND_:
+    if len(dung_duoc) < toi_thieu and not khong_browser and len(anh) < MAX_IMAGE + 4:
         # `env_load.brand_long()`, KHONG PHAI os.environ["CT_BRAND"] thang: CT_BRAND
         # la ten NGAN cho thu muc state ("blog"), con `card.set_brand` doi
         # slug DAI ("donniechublog") — bat 09/09/2026 khi chay lai draft
@@ -809,7 +821,7 @@ def _round_entity(anh: list, tieu_de_nhin: str, wd: Path) -> tuple:
     bo_sung = download_and_filter(cands, wd6) if cands else []
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= MAX_IMAGE + 6 or len(anh) - n0 >= MAX_EXTRA_BRAND_:
+        if len(anh) >= MAX_IMAGE + 6 or len(anh) - n0 >= MAX_EXTRA_ENTITY_:
             break
         a["id"] = f"A{i}"
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
