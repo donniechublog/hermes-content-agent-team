@@ -67,6 +67,42 @@ def _check_text(spec: dict, kieu: str, loi: list) -> None:
             loi.append("kiểu full_bleed: thiếu \"title\" (một câu hoàn chỉnh)")
 
 
+def _check_subject_above_quote(spec: dict, kieu: str, a: dict, ma: str, ma2, m: dict) -> list:
+    """CHU THE CHINH phai nam TREN khung chu cua the `quote` (LOW-273, Ong Chu 19/09/2026:
+    "ko chap nhan nhung hinh nhu the nay o moi designer ... main character dat vua trong
+    4:5"; slide loi: mat Altman nam duoi khung quote).
+
+    Chi kieu `quote`: khung 4:5 khoa, chu + khung + chip ten kenh DE LEN anh. Kieu
+    `full_bleed` (ti le tu do) dat chu DUOI anh nen khong bi. Vi tri khung tinh bang chinh
+    ham ve (`card.quote_text_top`), anh dan full be ngang nhu `card._layer_image`.
+    Khong ap cho chart/bang xep hang (bang trong anh chuan cua Kite cung chay xuong duoi
+    chu) va cap ghep; chua do (manifest cu) thi khong chan."""
+    if kieu != "quote" or ma2 or a.get("ranking") or a.get("kind") == "chart":
+        return []
+    import card
+    import image_rules_ethan
+    import subject_fit
+    faces = image_rules_ethan.face_boxes(a["original_path"]) if a.get("faces") else None
+    box = subject_fit.head_box(faces) if faces else a.get("subject_box")
+    if not box:
+        return []
+    text_top, H = card.quote_text_top(str(spec.get("hook") or ""), str(spec.get("attrib") or ""),
+                                      None, "4:5", m.get("brand") or "donniechublog")
+    w, h = int(a.get("w") or 0), int(a.get("h") or 0)
+    band = subject_fit.band_full_width(w, h, box, card.W, H, short_top_share=0)
+    if not band:
+        return []
+    lim = text_top / H + image_rules_ethan.SUBJECT_TEXT_TOLERANCE
+    if band[1] <= lim and band[0] >= -image_rules_ethan.SUBJECT_TEXT_TOLERANCE:
+        return []
+    chu_the = "khuôn mặt" if faces else manifest_values.subject_kind_label(a.get("subject_kind"))
+    vi_tri = (f"kéo xuống tới {band[1]:.0%} khung, khung chữ bắt đầu ở {text_top / H:.0%}"
+              if band[1] > lim else "bị cắt mất phần trên")
+    return [f"{chu_the} của {ma} {vi_tri} — chữ/khung quote sẽ đè lên chủ thể. Đổi "
+            "\"card_style\": \"full_bleed\" (chữ nằm DƯỚI ảnh), rút ngắn câu quote, hoặc dùng ảnh "
+            "có chủ thể ở nửa trên"]
+
+
 def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     """Spec cua Ethan (ma anh) -> (ket_qua, loi, canh). Tach 07/09/2026: ba cong
     trung voi Dre (tin xep hang, khong lien quan, anh da dung) sang submit_common,
@@ -116,6 +152,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     for x, n in ((ma, "image"), (ma2, "image2")):
         if x:
             loi += nc.check_empty_image(anh.get(x), n, image_rules_ethan.EMPTY_SHARE_MAX)
+    loi += _check_subject_above_quote(spec, kieu, a, ma, ma2, m)
     # Hook/attrib con nguyen tieng Anh, va so tren the khong co trong tu lieu:
     # hai cong nay Dre da co tu 06/09/2026, Ethan dung chung o submit_common.
     hook_hay_title = str(spec.get("hook") or spec.get("title") or "")

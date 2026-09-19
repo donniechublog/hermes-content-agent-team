@@ -471,33 +471,10 @@ def _load_yunet():
 
 
 def face_boxes(path):
-    """Hop MAT nguoi trong anh, toa do 0..1 [x0, y0, x1, y1] (LOW-273: dat chu the
-    nguoi vao khung 4:5 tren vung chu). Cung model/khoa/thu nho voi count_faces.
-    None neu khong chay duoc; [] neu khong co mat."""
-    det = _load_yunet()
-    if det is None:
-        return None
-    try:
-        import cv2
-        im = cv2.imread(str(path))
-        if im is None:
-            return None
-        h, w = im.shape[:2]
-        if max(h, w) > FACE_EDGE_MAX:
-            ty = FACE_EDGE_MAX / max(h, w)
-            im = cv2.resize(im, (max(1, int(w * ty)), max(1, int(h * ty))),
-                            interpolation=cv2.INTER_AREA)
-            h, w = im.shape[:2]
-        with _YUNET_LOCK:
-            det.setInputSize((w, h))
-            _n, res = det.detect(im)
-        if res is None:
-            return []
-        return [[max(0.0, r[0] / w), max(0.0, r[1] / h), min(1.0, (r[0] + r[2]) / w),
-                 min(1.0, (r[1] + r[3]) / h)] for r in res]
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[mat] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
-        return None
+    """Hop MAT nguoi trong anh, toa do 0..1 (LOW-273). Cung model/khoa/thu nho voi
+    count_faces; phep do chung o subject_fit.face_boxes_with."""
+    import subject_fit
+    return subject_fit.face_boxes_with(_load_yunet(), _YUNET_LOCK, path, FACE_EDGE_MAX)
 
 
 def count_faces(path):

@@ -719,6 +719,25 @@ nguyên**.
 
 ---
 
+## 6b. Chủ thể chính phải nằm TRÊN vùng chữ (LOW-273, 19/09/2026)
+
+Ông Chủ, nguyên văn: *"ko chấp nhận những hình như thế này ở mọi designer. ko phải là tìm
+hình có tỷ lệ 4:5, mà là tìm hình có main character đặt vừa trong 4:5"*.
+
+- **Ảnh gần như trống** (vision `empty_share` ≥ `image_rules_kite.EMPTY_SHARE_MAX` = 0.60: logo nhỏ trên
+  nền trơn) → chặn, `submit_common.check_empty_image`.
+- **Chủ thể dưới vùng chữ** → chặn, `kite_submit.check_subject_above_text`. Người: hộp đầu từ mặt đo bằng code
+  (`image_rules_kite.face_boxes`, YuNet; `subject_fit.head_box` nới 0.1 lần chiều cao mặt dưới cằm);
+  còn lại hộp vision `subject_box`. Dung sai `image_rules_kite.SUBJECT_TEXT_TOLERANCE` = 2% khung.
+- **Chỉ ảnh CHỤP** ở bìa/`figure`. Bảng/biểu đồ/bảng xếp hạng KHÔNG xét: ảnh chuẩn 19/09 (bảng
+  DeepSeek, slide 07) chạy xuống dưới khối chữ và Ông Chủ coi là chuẩn.
+- Đỉnh khối chữ `#figtxt` đo bằng CHÍNH Chromium + html của `render_edu.slide_read`
+  (`kite_submit.measure_text_tops`, ~2 giây một bộ) vì chiều cao khối chữ chỉ trình duyệt biết.
+  Đo 19/09 trên 4 bộ thật: 53–62% khung. Ảnh đặt như `render_edu.set_image` (dưới masthead,
+  cao tự nhiên, cắt dưới). Không sửa `render_edu.py`.
+- Ảnh chụp trang nguồn đã đệm viền (`unpadded_path`) chưa xét: hộp vision đo trên bản đệm.
+- Manifest cũ (không `subject_box`, không mặt) → không chặn.
+
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai

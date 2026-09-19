@@ -156,7 +156,9 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
              "hoàn chỉnh bao quát tin, có số nếu tin có số>\", \"kicker\": \"<≤ 2 từ tiếng Anh: BREAKING, MODEL "
              "RELEASE, FUNDING...>\"}")
     L.append("Luật: hook là MỘT câu, tiếng Việt có dấu, không em-dash, không gán câu tự soạn thành lời một người; "
-             "tên hãng trong câu tự tô màu. Chart/ảnh ngang >1.6 phải có image2. Ảnh có mặt phải có subject.")
+             "tên hãng trong câu tự tô màu. Chart/ảnh ngang >1.6 phải có image2. Ảnh có mặt phải có subject. "
+             "Kiểu quote: CHỦ THỂ (mặt người, sản phẩm) phải nằm TRÊN khung quote — câu càng dài khung càng cao, "
+             "cổng chặn đo đúng vị trí; không dùng ảnh gần như trống (logo nhỏ trên nền trơn).")
     L += ["", "## Rồi chạy đúng MỘT lệnh:",
           f"cd {ROOT} && venv/bin/python ethan_submit.py {m['draft_id']}",
           "Script tự ghép/cắt, chạy mọi cổng chặn của card.py, dựng thẻ, gửi lên topic kèm nút duyệt, ghi bàn "
