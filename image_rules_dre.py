@@ -109,7 +109,7 @@ def subject_names(a: dict) -> list:
     th = (a.get("brand_match") or {}).get("person")
     if th:
         ra.append(str(th))
-    for txt in (a.get("description") or "", a.get("alt") or ""):
+    for txt in (a.get("description") or "", a.get("alt") or "", " ".join(role.person_names_in_url(a.get("url") or ""))):
         if not txt or _is_title_case_headline(txt):
             continue
         for ten in role.person_names_in_alt(txt):
@@ -786,3 +786,50 @@ def check_stack_portrait_subjects(nhan, member_paths, muc, da_subject):
     for k in ten:
         da_subject[k] = nhan
     return [], []
+
+
+def check_founder_balance(anh: dict, muc_ds) -> list:
+    """Tin nhieu hang: da dung chan dung founder cua hang A thi phai co founder
+    cua hang B (LOW-269, Ong Chu 19/09/2026: *"neu da dung founder thi anh tren la
+    founder OpenAI thi anh duoi phai la founder Anthropic"*).
+
+    Cong LOI, nhung CHI chan khi hang con lai CO SAN chan dung dung duoc trong
+    manifest (co `brand_match.person` + `uses`, relevant khong False) va spec chua
+    dung — het nguon thi khong co gi de chan (khong doi vai bia ten).
+
+    Hang nao "da co dai dien": mot ma anh cua hang do co trong spec, HOAC ten
+    khai `subject` khop `brand_match.person` cua hang do (chan dung bao chi cua
+    chinh nguoi do, khong co nhan hang).
+    """
+    def _key(t):
+        return _normalize_subject(str(t))
+
+    dung_ma, khai = set(), set()
+    for muc in muc_ds:
+        for ma in ([muc.get("image")] if muc.get("image") else []) + list(muc.get("stack") or []):
+            dung_ma.add(ma)
+        for t in _SUBJECT_SEPARATOR.split(str(muc.get("subject") or "")):
+            if t.strip():
+                khai.add(_key(t))
+    nguoi = {}                                     # hang -> [(ma, ten)] chan dung dung duoc
+    for ma, a in anh.items():
+        bm = a.get("brand_match") or {}
+        if bm.get("kind") != "person" or not bm.get("person") or not bm.get("key"):
+            continue
+        if not a.get("uses") or a.get("relevant") is False:
+            continue
+        nguoi.setdefault(bm["key"], []).append((ma, bm["person"]))
+    if len(nguoi) < 2:
+        return []
+    co_mat = {k for k, ds in nguoi.items()
+              if any(ma in dung_ma or _key(ten) in khai for ma, ten in ds)}
+    if not co_mat:
+        return []
+    thieu = [k for k in nguoi if k not in co_mat]
+    if not thieu:
+        return []
+    goi_y = "; ".join(f"{k}: {ds[0][0]} ({ds[0][1]})" for k, ds in nguoi.items() if k in thieu)
+    return [f"tin nhiều hãng: đã có chân dung founder/CEO của {', '.join(sorted(co_mat))} "
+            f"nhưng thiếu bên {', '.join(sorted(thieu))} dù manifest có sẵn ({goi_y}). "
+            "Ghép cặp mỗi hãng một người trong cùng slide (khai \"subject\": "
+            "\"Tên A, Tên B\") hoặc thêm slide cho người còn thiếu."]
