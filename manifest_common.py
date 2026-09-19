@@ -117,14 +117,14 @@ def finalize_required(vai_bb: str, items: list, bo_qua: bool) -> None:
     print(f"da xac nhan {da} muc bat buoc, con lai {len(required.read(vai_bb))}")
 
 
-def write_report(duong_dan, items: list, vai: str, ngay: str = None) -> None:
+def write_report(duong_dan, items: list, vai: str, ngay: str = None, subtitle: str = "") -> None:
     """Bao cao do CHINH SCRIPT dung, khong de agent go lai so. Go lai la co hoi
     lech: so trong tin nhan mot dang, so trong manifest mot dang, Ong Chu tra
     loi so lai ra bai khac."""
     if not duong_dan:
         return
     import manifest_report
-    vb = (manifest_report.use(items, vai, ngay) if ngay
-          else manifest_report.use(items, vai))
+    vb = (manifest_report.use(items, vai, ngay, tieu_de_phu=subtitle) if ngay
+          else manifest_report.use(items, vai, tieu_de_phu=subtitle))
     Path(duong_dan).write_text(vb, encoding="utf-8")
     print(f"  bao cao -> {duong_dan}", file=sys.stderr)

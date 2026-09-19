@@ -73,6 +73,17 @@ def chat_hint() -> str:
 CHAT_HINT = chat_hint()
 
 
+def profile_missing(profile, home: Path = None) -> bool:
+    """Topic co vai nhung container nay KHONG co profile do (LOW-283: topic Vera
+    ben blog chi de chon tin du tu dcgr; Vera chi song o dcgr). Goi hermes voi
+    `-p vera` o blog thi chi ra loi kho doc. Chi ket luan khi home CO thu muc
+    profiles/ — bo cuc home la thi coi nhu co, giu hanh vi cu."""
+    if not profile:
+        return False
+    goc = Path(home or HERMES_HOME) / "profiles"
+    return goc.is_dir() and not (goc / profile).is_dir()
+
+
 def route(thread_id, topics: dict) -> tuple:
     """Tra ve (profile, ten_phien) cho topic nay."""
     by_id = {v: k for k, v in topics.items()}

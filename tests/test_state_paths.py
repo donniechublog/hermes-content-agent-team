@@ -136,6 +136,7 @@ def test_constants_match_approved_table():
                    - {ten for _, ten in _rows_237().values()}
                    - {ten for _, ten in _rows_240().values()} - set(_rows_239())
                    - set(_rows_publish_schedule())
+                   - set(_rows_scan_overflow())
                    - {ten for _, ten in _rows_242().values()}
                    - {ten for _, ten in _rows_241().values()}
                    - {ten for _, ten in _rows_246().values()})
@@ -301,6 +302,21 @@ def _rows_publish_schedule() -> dict:
                                   "state/<brand>/publish_slot.lock"),
             "PUBLISH_DUE_LOCK": ("publish_due.lock",
                                  "state/<brand>/publish_due.lock")}
+
+
+def _rows_scan_overflow() -> dict:
+    """LOW-283 (19/09/2026): tep cua phan tin du Vera chuyen sang blog — sinh ra
+    da English san, cung kieu `_rows_publish_schedule`."""
+    return {"SCAN_OVERFLOW_REPORT_FILE": ("overflow_report.txt",
+                                          "state/<brand>/scan/<run>/overflow_report.txt"),
+            "SCAN_TRIAL_OVERFLOW_MANIFEST_FILE": ("trial_overflow_manifest.json",
+                                                  "state/<brand>/scan/<run>/trial_overflow_manifest.json")}
+
+
+def test_scan_overflow_constants_are_declared():
+    for hang, (ten, kept) in _rows_scan_overflow().items():
+        assert getattr(state_paths, hang) == ten, (hang, getattr(state_paths, hang))
+        assert kept in TABLE_231["_kept"], f"{kept} khong co trong _kept cua state_files_v2.json"
 
 
 def test_publish_schedule_constants_are_declared():

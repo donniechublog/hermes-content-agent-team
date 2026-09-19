@@ -74,6 +74,8 @@ SCAN_LIST_FILE = "list.json"
 SCAN_RESULT_FILE = "scan.json"
 SCAN_NONE_FOUND_FILE = "none_found.txt"
 SCAN_TRIAL_MANIFEST_FILE = "trial_manifest.json"
+SCAN_OVERFLOW_REPORT_FILE = "overflow_report.txt"            # phan du sang brand khac, LOW-283
+SCAN_TRIAL_OVERFLOW_MANIFEST_FILE = "trial_overflow_manifest.json"
 
 JOURNAL_NOTES_FILE = "notes.jsonl"                     # state/journal/notes.jsonl
 ANALYSIS_REPORT_PREFIX = "analysis_"                   # state/<brand>/journal/analysis_<date>.md (Ada), LOW-246

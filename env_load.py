@@ -102,10 +102,11 @@ def hermes_homes() -> dict:
             "dcgr": Path.home() / ".hermes-dcgr"}
 
 
-def topics() -> dict:
-    """Anh xa ten vai -> thread_id cua brand; rong neu tep thieu hoac hong."""
+def topics(brand: str = None) -> dict:
+    """Anh xa ten vai -> thread_id cua brand; rong neu tep thieu hoac hong.
+    `brand`: xem `state_dir`."""
     try:
-        return json.loads(topics_path().read_text(encoding="utf-8"))
+        return json.loads(topics_path(brand).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
@@ -176,29 +177,62 @@ def _file_env() -> tuple:
     return tuple(files)
 
 
-def state_dir() -> Path:
+def state_dir(brand: str = None) -> Path:
     """Thu muc STATE RUNTIME cua brand (offset, dedup, manifest, drafts tam...).
     `state/<CT_BRAND>/` khi co CT_BRAND, nguoc lai `state/` (che do don cu).
-    CT_STATE_DIR env var ghi de duong dan co ban. Bi gitignore (du lieu chay). Luon tao san thu muc."""
+    CT_STATE_DIR env var ghi de duong dan co ban. Bi gitignore (du lieu chay). Luon tao san thu muc.
+
+    `brand` (LOW-283, 19/09/2026): state cua MOT brand KHAC container dang chay.
+    Duy nhat mot cho can: Vera (dcgr) ghi phan tin du sang blog."""
     state_base = os.environ.get("CT_STATE_DIR")
     if state_base:
         d = Path(state_base)
     else:
         d = _BASE / "state"
-    key = _brand()
+    key = brand or _brand()
     if key:
         d = d / key
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
-def topics_path() -> Path:
+def topics_path(brand: str = None) -> Path:
     """Duong dan tep anh xa topic cua brand. KHONG phai runtime — day la CAU HINH
     khong tai tao duoc (topic id trong group), NEN commit vao git: `state/
-    topics.<CT_BRAND>.json` (da un-ignore). Che do don cu: `state/topics.json`."""
+    topics.<CT_BRAND>.json` (da un-ignore). Che do don cu: `state/topics.json`.
+    `brand`: xem `state_dir`."""
     base = _BASE / "state"
-    key = _brand()
+    key = brand or _brand()
     return base / f"topics.{key}.json" if key else base / "topics.json"
+
+
+def _env_keys(p: Path) -> set:
+    """Ten bien khai trong mot tep .env (khong doc gia tri ra ngoai)."""
+    try:
+        dong = p.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return set()
+    return {d.split("=", 1)[0].strip() for d in dong
+            if "=" in d and not d.strip().startswith("#")}
+
+
+def env_for_brand(brand: str) -> dict:
+    """Moi truong cho tien trinh con chay nhu container `brand` (LOW-283).
+
+    Vi sao khong chi doi CT_BRAND: `load` dung `setdefault`, nen bien tien trinh
+    cha da nap tu `secret.<brand cha>.env` (token bot, id group) THANG tep cua
+    brand dich — con dcgr goi publish.py voi CT_BRAND=blog van gui bang bot
+    dcgr vao group dcgr. Bo moi bien khai trong tep secret cua HAI brand, va
+    moi TELEGRAM_* (worker hermes con nap them .env cua HERMES_HOME), roi de
+    tien trinh con tu nap lai tu tep cua brand dich."""
+    bo = _env_keys(_BASE / f"secret.{_brand()}.env") | _env_keys(_BASE / f"secret.{brand}.env")
+    env = {k: v for k, v in os.environ.items()
+           if k not in bo and not k.startswith("TELEGRAM_")}
+    env["CT_BRAND"] = brand
+    home = hermes_homes().get(brand)
+    if home:
+        env["HERMES_HOME"] = str(home)
+    return env
 
 
 def load(*them: Path) -> None:
