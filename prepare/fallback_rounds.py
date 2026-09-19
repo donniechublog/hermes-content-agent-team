@@ -139,7 +139,7 @@ def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, 
     # hinh benchmark"): category MODEL/BENCHMARK ep chup bang du tieu de khong co
     # chu "#1"/"top" nao — truoc day chi regex tieu de quyet dinh.
     import story_type
-    if story_type.late(meta.get("category"), "ranking"):
+    if story_type.is_ranking_story_type(meta.get("category")):
         tin_xep_hang = True
     if not khong_browser and tin_xep_hang:
         models = ranking.extract_model(nguon.get("title_en") or "") or ranking.extract_model(title)

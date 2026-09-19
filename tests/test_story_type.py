@@ -110,7 +110,23 @@ def test_category_force_capture_board_ranking():
                                          {}, "https://x", {"category": "SECURITY"}, {}, Path("/tmp"),
                                          khong_browser=False)
         goi["security"] = tin2
+        # LOW-266: BUSINESS/M&A/LAB co `ranking` (anh boi canh cua hang, cuoi bang
+        # tu LOW-264) nhung KHONG phai tin xep hang — truoc day bi ep thanh tin xep
+        # hang, brief in dong 🏁 sai va submit_common ap cong xep hang.
+        for loai in ("BUSINESS", "M&A", "LAB"):
+            _, tin3 = fallback_rounds._capture_ranking(
+                "Microsoft Advertising Sets New Rules for AI Generated Ads", {"title_en": ""},
+                {}, "https://x", {"category": loai}, {}, Path("/tmp"), khong_browser=False)
+            goi[loai] = tin3
     assert goi["model"] is True and goi["security"] is False, goi
+    assert goi["BUSINESS"] is False and goi["M&A"] is False and goi["LAB"] is False, goi
+
+
+def test_is_ranking_story_type_only_when_ranking_leads():
+    assert lt.is_ranking_story_type("MODEL") and lt.is_ranking_story_type("BENCHMARK")
+    for loai in ("BUSINESS", "M&A", "LAB", "SECURITY", ""):
+        assert lt.late(loai, "ranking") == (loai in ("BUSINESS", "M&A", "LAB", "")), loai
+        assert not lt.is_ranking_story_type(loai), loai
 
 
 def test_stack_two_rank_only_when_code():
