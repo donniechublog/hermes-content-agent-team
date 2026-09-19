@@ -378,11 +378,20 @@ def person_names_in_url(url: str) -> list:
     return [t for t in _TEN_NGUOI.findall(tep) if _looks_like_person_name(t)]
 
 
+def real_alt(a: dict) -> str:
+    """Alt/caption THAT cua anh. Anh tim web (Bing/Yandex) truoc LOW-285 mang cau truy
+    van trong `alt` — khong phai chu thich, tra ve rong."""
+    import manifest_values
+    if a.get("source") in manifest_values.SOURCES_ALT_IS_QUERY:
+        return ""
+    return a.get("alt") or ""
+
+
 def person_names_of(a: dict) -> list:
     """Ten nguoi cua mot tam anh: ten IN tren anh (lower-third/bang ten, vision chep lai —
     LOW-279) truoc, roi alt/caption, roi ten tep URL, khong trung."""
     ra = person_names_in_alt(a.get("printed_name") or "")
-    for t in person_names_in_alt(a.get("alt") or ""):
+    for t in person_names_in_alt(real_alt(a)):
         if t not in ra:
             ra.append(t)
     for t in person_names_in_url(a.get("url") or ""):

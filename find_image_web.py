@@ -60,7 +60,11 @@ def filter(urls: list, so: int, tu: str, q: str) -> list:
         thay.add(u)
         # `page_url` = chính ảnh: download_filter coi ảnh khác miền trang là quảng cáo,
         # mà kết quả tìm ảnh thì không có "trang" nào cả.
-        ra.append({"image_url": u, "alt": q, "og": False, "source": tu, "page_url": u,
+        # `alt` RONG (LOW-285): truoc day ghi chinh cau truy van q -> ten nguoi trong truy van
+        # ("Anton Osika Lovable founder") thanh "alt neu ten" cho MOI mat nguoi trong ket qua,
+        # va chu "logo" trong truy van lam download_filter bo ca loat nhu anh rac. Truy van
+        # van giu o `keyword`.
+        ra.append({"image_url": u, "alt": "", "og": False, "source": tu, "page_url": u,
                    # Duoi og:image bao chi (42): ket qua web co the lac de ca loat
                    # (Bing async tra "tiec tra" cho "TSMC wafer fab", 12/09), khong
                    # duoc chiem het tran tai MAX_DOWNLOAD cua download_and_filter.

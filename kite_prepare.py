@@ -366,7 +366,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                  + (f" | {a['paper_figure']} của chính paper" if a.get("paper_figure") else "")
                  + (f" | {nhan_kn}" if nhan_kn else "")
                  + (f" | {nhan_th}" if nhan_th else "")
-                 + (f" | ảnh là: {a['description'][:90]}" if a.get("description") else (f" | alt: {a['alt'][:70]}" if a.get("alt") else ""))
+                 + (f" | ảnh là: {a['description'][:90]}" if a.get("description") else (f" | alt: {vai_mod.real_alt(a)[:70]}" if vai_mod.real_alt(a) else ""))
                  + (" | có mặt người: khai \"subject\": \"<tên>\" vào slide dùng mã này (nếu xác minh "
                     "được qua chính bài/nguồn) rồi ghi đúng tên đó trong caption — không xác minh được "
                     "thì đổi mã khác, đừng đoán tên" if a.get("faces") else ""))

@@ -20,6 +20,7 @@ import manifest_values                                       # noqa: E402
 import state_paths                                           # noqa: E402
 import route_missing_images                                       # noqa: E402
 import image_rules_dre                                       # noqa: E402
+import role                                                  # noqa: E402
 
 DRAFTS = cb.DRAFTS
 
@@ -94,8 +95,8 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                 f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")
         if a.get("description"):
             dong += f" | ảnh là: {a['description'][:110]}"
-        elif a.get("alt"):
-            dong += f" | alt: {a['alt'][:70]}"
+        elif role.real_alt(a):               # LOW-285: alt anh tim web la cau truy van
+            dong += f" | alt: {role.real_alt(a)[:70]}"
         if a.get("faces"):
             # Ten nguoi ma chinh tam anh mang theo (LOW-178): vai khai dung ten nay
             # la qua cong, ke ca khi chu bai khong nhac ten.

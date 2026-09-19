@@ -127,8 +127,8 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                 f" | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}")
         if a.get("description"):
             dong += f" | ảnh là: {a['description'][:110]}"
-        elif a.get("alt"):
-            dong += f" | alt: {a['alt'][:70]}"
+        elif role.real_alt(a):               # LOW-285: alt anh tim web la cau truy van
+            dong += f" | alt: {role.real_alt(a)[:70]}"
         if ghi:
             dong += " | " + "; ".join(ghi)
         L.append(dong)
