@@ -879,9 +879,9 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
                 f"co phieu {ma or hang} cua {hang} tu Google Finance.\n"
                 "Tra loi DUNG 2 dong:\n"
                 "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
-                f"LIEN_QUAN: co | khong  (co = DUNG la man hinh bieu do/gia co phieu, doc duoc "
-                f"ma {ma or '?'} hoac ten {hang} tren do; khong = khong phai bieu do gia co "
-                "phieu, hoac la ma/hang khac)")
+                f"LIEN_QUAN: co | khong  (co = day la man hinh gia co phieu THAT cua {hang} "
+                "(bat ky ten/ma nao hien tren do, khong can doc het); khong = khong phai bieu "
+                "do gia co phieu, hoac ro rang la hang khac)")
     if loai == "person":
         ai = th.get("person", "")
         return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG "
