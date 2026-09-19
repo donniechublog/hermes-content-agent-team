@@ -125,6 +125,37 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
     return {"images": [bo.anh[x]["original_path"] for x in ghep]}
 
 
+def _clean_cover_stack_pair(anh: dict, cap_ids) -> list | None:
+    """Cap anh ngang SACH (co the ghep doc lam bia) — dung LOW-269. Sach = lien quan,
+    khong roi, khong mat nguoi, khong chart/bang xep hang, khong phai anh chup khoi tit."""
+    def sach(x):
+        a = anh.get(x) or {}
+        return (a.get("relevant") is True and not a.get("cluttered") and not a.get("faces")
+                and a.get("kind") != "chart" and not a.get("ranking")
+                and "cover_headline_block" not in (a.get("uses") or [])
+                and a.get("source") != "capture_source")
+    for c in cap_ids:
+        if len(c) == 2 and all(sach(x) for x in c):
+            return list(c)
+    return None
+
+
+def _headline_cover_with_better(anh: dict, ma: str, cap_ids) -> str | None:
+    """LOW-269 (19/09/2026, Ong Chu: "da noi rat nhieu ve viec ko de hinh kem chat luong
+    lam hero, trong khi hinh co logo cua ca 2 chu the lai dung lam body"): khoi tit
+    chup tu trang nguon (toan chu, lap lai hook) la DUONG LUI CUOI. Con cap anh sach
+    ghep doc duoc thi bia khong duoc dung no."""
+    a = anh.get(ma) or {}
+    if "cover_headline_block" not in (a.get("uses") or []):
+        return None
+    cap = _clean_cover_stack_pair(anh, cap_ids)
+    if not cap:
+        return None
+    return (f"bìa: {ma} là KHỐI TÍT chụp từ trang nguồn (toàn chữ, lặp lại hook) — chỉ là "
+            f"đường lùi cuối. Còn cặp ảnh sạch ghép dọc được: dùng \"stack\": "
+            f"[\"{cap[0]}\", \"{cap[1]}\"] làm bìa (ưu tiên cặp có logo/chủ thể của tin).")
+
+
 def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) -> dict | None:
     """Nhanh mot ma anh: chon ban dung (goc / da cat san / cat ngang) va chan
     cac cach dung sai loai anh."""
@@ -143,6 +174,9 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
     if la_bia:
         # So hang trong hook bia phai la so hang engine khoanh (LOW-24, chung voi Ethan).
         bo.loi.extend(nc.check_rank_matches_image(str(muc.get("hook") or ""), a, "bìa"))
+        cap = _headline_cover_with_better(bo.anh, ma, m.get("stackable_pairs") or [])
+        if cap:
+            bo.loi.append(cap)
     if a["kind"] == "chart" and not a.get("ranking"):
         # Do hoa ROI lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
         # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
@@ -288,6 +322,7 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     loi += nc.check_no_repeat_image_redo(bo.anh, bo.dung_anh, m, DRAFTS)
     # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
     loi += nc.check_image_fall(bo.anh, bo.da_dung, m)
+    loi += image_rules_dre.check_founder_balance(bo.anh, [cover] + list(slides))
     return ra, loi, canh, bo.dung_anh
 
 

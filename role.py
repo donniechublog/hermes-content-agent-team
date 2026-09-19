@@ -343,9 +343,48 @@ def min_images(slug: str, flagship: bool = False) -> int:
 _TEN_NGUOI = re.compile(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+")
 
 
+# Cum Title-Case KHONG phai ten nguoi (LOW-269): alt "Anthropic tells San Francisco
+# staff..." tung bi coi "San Francisco" la ten nguoi nen anh mat nguoi vo danh
+# duoc goi la "co ten". Chi loai khi tu DAU hoac tu CUOI thuoc danh sach nay.
+_NOT_PERSON_HEAD = frozenset({
+    "san", "new", "los", "las", "hong", "silicon", "white", "united", "getty", "wall",
+    "north", "south", "east", "west", "saint", "st", "el", "the", "open", "google",
+    "microsoft", "amazon", "apple", "meta", "nvidia", "anthropic", "openai"})
+_NOT_PERSON_TAIL = frozenset({
+    "francisco", "york", "angeles", "kong", "valley", "house", "states", "kingdom",
+    "street", "images", "building", "park", "city", "bay", "center", "centre", "tower",
+    "university", "institute", "times", "post", "journal", "news", "technologies",
+    "labs", "corp", "inc", "ltd", "headquarters", "office", "campus", "logo", "stock"})
+
+
+def _looks_like_person_name(cum: str) -> bool:
+    w = cum.lower().split()
+    return not (w[0] in _NOT_PERSON_HEAD or w[-1] in _NOT_PERSON_TAIL)
+
+
 def person_names_in_alt(alt: str) -> list:
     """Cac ten nguoi neu trong alt/caption cua mot tam anh."""
-    return _TEN_NGUOI.findall(alt or "")
+    return [t for t in _TEN_NGUOI.findall(alt or "") if _looks_like_person_name(t)]
+
+
+def person_names_in_url(url: str) -> list:
+    """Ten nguoi doc tu TEN TEP cua URL anh (LOW-269): `Dario_Amodei_at_TechCrunch_
+    Disrupt_2023_01_Resized.jpg` -> ["Dario Amodei"]. Ten tep tren Commons/bao thuong
+    ghi ro nguoi trong anh khi alt de trong. Chi lay phan tep, bo duoi/kich thuoc."""
+    from urllib.parse import unquote, urlsplit
+    tep = unquote(urlsplit(url or "").path.rsplit("/", 1)[-1])
+    tep = re.sub(r"\.[A-Za-z0-9]{2,5}$", "", tep)
+    tep = re.sub(r"[_+\-]+", " ", tep)
+    return [t for t in _TEN_NGUOI.findall(tep) if _looks_like_person_name(t)]
+
+
+def person_names_of(a: dict) -> list:
+    """Ten nguoi cua mot tam anh: alt/caption truoc, ten tep URL sau, khong trung."""
+    ra = person_names_in_alt(a.get("alt") or "")
+    for t in person_names_in_url(a.get("url") or ""):
+        if t not in ra:
+            ra.append(t)
+    return ra
 
 
 def has_label_cover(dung) -> bool:
@@ -373,7 +412,7 @@ def face_no_clear_ai(a: dict) -> bool:
     `can_be_hero` lan nguoi dem slide (`schema.count_image_use_ok`, LOW-46) hoi
     CHINH ham nay, khong moi noi mot dieu kien."""
     return bool(a.get("faces")) and not ((a.get("brand_match") or {}).get("person")
-                                       or person_names_in_alt(a.get("alt") or ""))
+                                       or person_names_of(a))
 
 
 def can_be_hero(slug: str, a: dict) -> bool:

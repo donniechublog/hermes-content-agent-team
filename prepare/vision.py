@@ -488,7 +488,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         # MOT ban regex duy nhat, o ban dang ky vai: cong "mat nguoi phai khai
         # ten" cua `role.can_be_hero` phai doc ra dung cai ten ma chu thich
         # duoi day hua la co.
-        ten = role.person_names_in_alt(a.get("alt", "") or "")
+        ten = role.person_names_of(a)
         if ten:
             a["notes"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
                                 "chỉ dùng khi đúng người đó, khai \"subject\" y hệt")
