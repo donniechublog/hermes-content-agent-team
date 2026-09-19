@@ -49,8 +49,9 @@ FROM_ANNOUNCEMENT = ("tự công bố", "hãng công bố", "theo công bố", "
               "chưa có kiểm chứng", "nội bộ", "tự đo", "theo hãng", "công ty công bố")
 
 # Cum sao rong bi cam (tieu chuan bien tap): noi thang y nghia bang thong tin cu
-# the, dung dan bang "dang chu y / dang quan tam".
-STAR_EMPTY = ("đáng chú ý", "đáng quan tâm")
+# the, dung dan bang "dang chu y / dang quan tam" hoac tu dat cau hoi roi tu tra
+# loi kieu "y nghia nam o" (LOW-261: Miles/Jika hay mo doan bang cum nay).
+STAR_EMPTY = ("đáng chú ý", "đáng quan tâm", "ý nghĩa nằm ở")
 
 # Bat URL/link SONG trong caption. Ngoai http/www con bat DOMAIN TRAN (vd z.ai,
 # openai.com) — truoc day lot vi khong co scheme. Chi bat khi dau cham DINH LIEN;
@@ -187,7 +188,7 @@ def _check_still_room(caption: str, tran: str) -> tuple:
     if sao:
         loi.append("Cụm sáo rỗng bị cấm: " + ", ".join(f'"{p}"' for p in sao)
                    + '. Nói thẳng vì sao quan trọng bằng thông tin cụ thể, '
-                   'không dùng "đáng chú ý / đáng quan tâm".')
+                   'không dùng "đáng chú ý / đáng quan tâm / ý nghĩa nằm ở".')
 
     # Tieu chuan bien tap: moi cau mot dong. Bat khi mot DONG con chua >=2 cau
     # (dau ket cau + khoang trang + chu hoa) -> chi NHAC, khong chan cung.

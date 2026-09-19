@@ -48,3 +48,6 @@ bài, không tự đăng lên channel. Kết thúc task bằng dòng "Kết qu�
   khách vừa là nhà đầu tư): giữ cả hai đầu mốc khi số leo thang; gom vòng lợi
   ích vào một đoạn; câu kết nâng lên tầng ngành nhưng vẫn suy ra từ số đã có;
   từ có màu sắc đặt trong ngoặc kép.
+- **Không tự đặt câu hỏi rồi tự trả lời để dẫn ý**, kiểu "vì sao đáng chú ý",
+  "ý nghĩa nằm ở chỗ này". Nghe sáo, giống văn mẫu. Nói thẳng ý nghĩa bằng
+  thông tin cụ thể ngay trong câu, không cần cái khung câu hỏi đó.
