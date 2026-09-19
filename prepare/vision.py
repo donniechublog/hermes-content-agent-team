@@ -66,8 +66,8 @@ SENTENCE_KEYWORD = ("TU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa c
 # logo SoftBank TRONG 0.93, anh SoftBank cua hang 0.12. Xem subject_fit.py.
 SENTENCE_SUBJECT = ("CHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / "
                     "toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc "
-                    "tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = nguoi | san_pham | "
-                    "toa_nha | logo | man_hinh | bieu_do | khac)")
+                    "tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | "
+                    "building | logo | screen | chart | other)")
 SENTENCE_EMPTY = ("TRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren "
                   "nen trang = 0.9, anh chup day khung = 0.05)")
 

@@ -17,9 +17,8 @@ TEXT_SHARE = 0.30                # phan DUOI khung danh cho chu o slide than Dre
 EMPTY_SHARE_MAX = 0.60           # tam anh trong hon muc nay = chu the qua nho tren nen tron
                                  # (do that 19/09: logo Instinct 0.90, logo SoftBank 0.93)
 
-# Ma loai chu the (English, LOW-230) <- tu vision viet khong dau
-KINDS = {"nguoi": "person", "san_pham": "product", "toa_nha": "building", "logo": "logo",
-         "man_hinh": "screen", "bieu_do": "chart", "khac": "other"}
+# Ma loai chu the (English, LOW-230) — vision duoc hoi tra thang ma nay
+KINDS = ("person", "product", "building", "logo", "screen", "chart", "other")
 
 _NUM = r"-?\d*\.?\d+"
 
@@ -35,7 +34,7 @@ def parse_subject(txt: str) -> dict:
         if -0.02 <= x0 < x1 <= 1.02 and -0.02 <= y0 < y1 <= 1.02:      # bo vai nguoi tra toa do pixel/rac
             out["subject_box"] = [max(0.0, x0), max(0.0, y0), min(1.0, x1), min(1.0, y1)]
         kind = (m.group(5) or "").lower()
-        out["subject_kind"] = KINDS.get(kind) or (kind if kind in KINDS.values() else None)
+        out["subject_kind"] = kind if kind in KINDS else None
     e = re.search(rf"^\s*TR[OỐ]NG\s*:\s*({_NUM})", txt or "", re.I | re.M)
     if e:
         v = float(e.group(1))

@@ -34,9 +34,10 @@ def test_parse_subject_reads_box_kind_empty():
 
 
 def test_parse_subject_rejects_pixel_coordinates_and_garbage():
-    r = subject_fit.parse_subject("CHU_THE: 120,40,800,600 | nguoi\nTRONG: 35")
+    r = subject_fit.parse_subject("CHU_THE: 120,40,800,600 | person\nTRONG: 35")
     assert r["subject_box"] is None and r["empty_share"] is None and r["subject_kind"] == "person", r
     assert subject_fit.parse_subject("") == {"subject_box": None, "subject_kind": None, "empty_share": None}
+    assert subject_fit.parse_subject("CHU_THE: 0.1,0.1,0.5,0.5 | ghe")["subject_kind"] is None   # ma la
 
 
 def test_crop_window_keeps_subject_above_text_zone():
