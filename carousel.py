@@ -732,6 +732,8 @@ def _gate_image(paths):
         gom(image_rules_dre.check_resolution(nhan, w, h_px))
         gom(image_rules_dre.check_unnamed_face(nhan, p, muc.get("subject")))
         gom(image_rules_dre.check_repeated_subject_portrait(nhan, p, muc, da_subject))
+        # LOW-267: tep ghep co 2 mat nen cong tren bo qua — kiem tung tam thanh phan.
+        gom(image_rules_dre.check_stack_portrait_subjects(nhan, muc.get("images"), muc, da_subject))
     return loi, canh_bao
 
 

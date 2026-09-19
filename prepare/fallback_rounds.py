@@ -8,6 +8,7 @@ from pathlib import Path
 
 from PIL import Image
 
+import image_eval
 import image_provenance
 import role
 import env_load
@@ -333,6 +334,11 @@ def _round_widen_search(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: in
 MAX_EXTRA_ENTITY_ = 4          # tran anh thuc the them vao mot bo (_round_entity)
 
 
+def _count_kept(anh: list) -> int:
+    """So anh engine con giu (LOW-267) — anh da bi loai khong chiem cho trong tran."""
+    return sum(1 for a in anh if image_eval.system_kept(a))
+
+
 XH_CONTEXT_EDGE_SOURCE = 3       # so bang xep hang thu khi lay anh bang lam boi canh
 
 
@@ -496,9 +502,15 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         for nhom in con:
             if nhom:
                 bo_sung.append(nhom.pop(0))
+    # LOW-267 (19/09/2026): tran dem anh engine CON GIU (`image_eval.system_kept`),
+    # KHONG dem ca anh da bi loai. Do that draft "Nha nghien cuu dung Claude tan
+    # cong OpenAI": vong tim rong (Yandex "Researchers") de lai 12 anh, 7 anh da
+    # bi loai (phong lab, toa nha vo danh) — dem `len(anh)` la cham tran 12 nen
+    # 3 chan dung Dario Amodei CO TEN tu Wikidata da tai ve bi bo sach
+    # ("+0 anh"), Dre chi con Sam Altman va chong hai tam Sam len mot slide.
     n0 = len(anh)
     for i, a in enumerate(bo_sung, start=n0 + 1):
-        if len(anh) >= MAX_IMAGE + 4:
+        if _count_kept(anh) >= MAX_IMAGE + 4:
             break
         a["id"] = f"A{i}"
         moi = wd / state_paths.ORIGINAL_DIR / f"{a['id']}.png"
@@ -506,7 +518,7 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         a["original_path"] = str(moi)
         anh.append(classify(a, wd, tieu_de_nhin))
     dung_duoc = [a for a in anh if a["uses"] and a.get("relevant") is not False]
-    if len(dung_duoc) < toi_thieu and not khong_browser and len(anh) < MAX_IMAGE + 4:
+    if len(dung_duoc) < toi_thieu and not khong_browser and _count_kept(anh) < MAX_IMAGE + 4:
         # `env_load.brand_long()`, KHONG PHAI os.environ["CT_BRAND"] thang: CT_BRAND
         # la ten NGAN cho thu muc state ("blog"), con `card.set_brand` doi
         # slug DAI ("donniechublog") — bat 09/09/2026 khi chay lai draft
