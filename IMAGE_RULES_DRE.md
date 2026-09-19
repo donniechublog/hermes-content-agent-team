@@ -691,17 +691,35 @@ nhiều.** Ghép là đường **bình thường**, không phải phương án c
 
 Riêng ảnh có **tiêu đề / chữ** thì ghép là **bắt buộc**, không được crop.
 
-**Ưu tiên ảnh vừa khung trước, ghép là đường cuối (LOW-273, Ông Chủ 19/09/2026,
-nguyên văn: *"ưu tiên tìm hình đặt vừa 4:5 ratio mà có chủ thể trước, nếu ko thì
-chuyển qua ghép"*).** Đoạn trên nói cách xử lý ảnh NGANG đã có trong tay (ghép, không
-cắt) và vẫn đúng. Nhưng trước khi ghép, Dre phải dùng hết ảnh **đã vừa 4:5..1:1** (không
-cần cắt) mà có chủ thể: một ảnh một slide, không đường nối, không bị nền chữ che.
-`submit_common.check_stack_last_resort` (chỉ `dre_submit` gọi) chặn slide `stack` khi
-còn ảnh như vậy chưa dùng. "Vừa khung có chủ thể" = `_fits_frame_with_subject`:
-đúng điều kiện của `check_image_fall` (sạch, liên quan, ảnh chụp, không mặt người, có `uses`)
-CỘNG không phải ảnh ngang và `ratio` trong dải 4:5..1:1; ảnh ngang "cắt dọc được" (vision
-`landscape_crop_ok`) KHÔNG tính, để giữ chốt 04/09. Chưa đo trên bộ thật — đây là
-ngưỡng theo luật, chưa có số đo tỉ lệ bị chặn.
+**Chủ thể chính đặt vừa khung 4:5 trước, ghép là đường cuối (LOW-273, Ông Chủ
+19/09/2026).** Hai câu nguyên văn cùng ngày: *"ưu tiên tìm hình đặt vừa 4:5 ratio mà
+có chủ thể trước, nếu ko thì chuyển qua ghép"*, rồi kèm bốn slide bị loại (logo
+Instinct trên nền trắng, mặt Altman dưới khung quote, trang báo Hyperscale nhoè một
+dải, ghép SoftBank với logo trên nền trắng): *"ko chấp nhận những hình như thế này ở
+mọi designer. ko phải là tìm hình có tỷ lệ 4:5, mà là tìm hình có main character đặt
+vừa trong 4:5"*.
+
+- **Đo gì:** vision trả thêm hai dòng trong CÙNG lượt nhìn (`prepare/vision.py`,
+  `SENTENCE_SUBJECT`/`SENTENCE_EMPTY`): hộp bao chủ thể chính + loại, và độ trống của
+  cả tấm → manifest `subject_box`, `subject_kind`, `empty_share`. Ảnh người thì hộp
+  đầu lấy từ **mặt đo bằng code** (`image_rules_dre.face_boxes`, YuNet), không lấy
+  hộp vision — đo 19/09 vision được dặn "chỉ khoanh đầu" vẫn khoanh cả thân.
+- **Chặn ở MỌI designer:** `empty_share >= EMPTY_SHARE_MAX` (0.60, mỗi vai tự giữ số
+  của mình) → `submit_common.check_empty_image`, gọi từ `dre_submit`, `ethan_submit`,
+  `kite_submit`. Đo 19/09: logo Instinct 0.90, logo SoftBank 0.92; bảng/biểu đồ/ảnh
+  chụp chuẩn 0.02–0.35.
+- **Riêng Dre — chủ thể phải nằm TRÊN vùng chữ** (`dre_submit._place_subject`, hình
+  học ở `subject_fit.py`): vùng chữ = 30% dưới khung ở slide text, 45% ở slide quote,
+  40% ở bìa (`image_rules_dre.TEXT_SHARE_*`). Ảnh chụp: script tự cắt 4:5 quanh chủ
+  thể (`<id>.subject.png`), không còn cắt giữa/`crop_center` đoán tay; không khung nào
+  vừa → chặn. Ảnh dán full ngang (chart, trang chụp): nội dung chính lấn vùng chữ →
+  chặn. Chưa đo (manifest cũ) thì giữ đường cũ, không chặn.
+- **Ghép là đường cuối:** `submit_common.check_stack_last_resort` chặn slide `stack` khi
+  còn ảnh có chủ thể vừa khung (sạch, liên quan, ảnh chụp, không mặt người, không
+  trống) chưa dùng. Ảnh ngang có chữ không tính (vẫn giữ chốt 04/09: ảnh ngang có chữ
+  thì ghép, không cắt).
+- **Chưa làm:** vùng chữ của Ethan (`card.py`) và Kite (`render_edu.py`) khác Dre —
+  mới áp cổng "ảnh trống" cho hai vai này, chưa áp cổng "chủ thể trên vùng chữ".
 
 Cách ghi: `--image2 <ảnh thứ hai>` (hero), hoặc `"images": [a, b]` thay cho
 `"image"` (carousel, dùng được ở cả bìa lẫn slide thân).

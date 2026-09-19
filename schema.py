@@ -133,6 +133,9 @@ class Image(TypedDict, total=False):
     has_keywords: bool | None
     cluttered: bool | None
     cluttered_legacy: bool | None  # khoa `roi` cu (LOW-47), KHONG code nao doc — giu du lieu
+    subject_box: list | None       # LOW-273: [x0,y0,x1,y1] 0..1 hop bao CHU THE CHINH (vision); None = khong co
+    subject_kind: str | None       # person | product | building | logo | screen | chart | other
+    empty_share: float | None      # 0..1 phan tam anh la nen tron (subject_fit.EMPTY_SHARE_MAX)
     decisions: list                # LOW-225 prepare.decision_log: [{stage, outcome, rule, evidence}]
     vision_raw: dict               # LOW-225: {model, question, answer} cua lan hoi vision
     from_find_more: bool

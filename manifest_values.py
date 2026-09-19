@@ -42,6 +42,18 @@ def use_labels(codes) -> list:
 COVER_PREFIX_USES = frozenset({"cover", "cover_headline_block", "cover_article_hero"})
 
 
+# image `subject_kind` (LOW-273): what vision says the main character is.
+SUBJECT_KIND_LABELS = {
+    "person": "người", "product": "sản phẩm", "building": "toà nhà", "logo": "logo",
+    "screen": "màn hình", "chart": "biểu đồ", "other": "chủ thể",
+}
+
+
+def subject_kind_label(code) -> str:
+    """Vietnamese word for a subject kind; unknown/None prints 'chủ thể'."""
+    return SUBJECT_KIND_LABELS.get(code or "", "chủ thể")
+
+
 # Other enumerated values: code -> the Vietnamese value printed before LOW-230.
 # Briefs, logs, Telegram and handoff text print through these so the text stays
 # byte-identical; data and comparisons use the codes. Codes not listed print as-is.

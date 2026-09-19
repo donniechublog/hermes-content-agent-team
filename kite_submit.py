@@ -102,6 +102,10 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             nhan = f"slide {i} ({img})"
 
+            # LOW-273: anh trong (logo nho tren nen tron) — "khong chap nhan o moi designer"
+            loi += nc.check_empty_image(hinh[img], f"slide {i}", image_rules_kite.EMPTY_SHARE_MAX)
+
+
             l, c = image_rules_kite.check_duplicate(nhan, img_path, da_thay)
 
             loi += l

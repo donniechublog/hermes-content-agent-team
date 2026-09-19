@@ -120,6 +120,8 @@ def test_constants_match_approved_table():
         "RANKING_IMAGE_PREFIX": pats["xep_hang_{board}.png"].split("{")[0],
         "CAPTURE_IMAGE_PREFIX": pats["chup_{n}_{k}.png"].split("{")[0],
         "LANDSCAPE_SUFFIX": pats["{id}.ngang.png"].split("}", 1)[1],
+        # LOW-273: ten MOI, khong co ten Viet cu -> bang ghi trung chinh no
+        "SUBJECT_SUFFIX": pats["{id}.subject.png"].split("}", 1)[1],
         "HANDOFF_SUFFIX": pats["{draft_id}.ban_giao.md"].split("}", 1)[1],
         "LEGACY_PREPARE_DIR": "chuan_bi",
     }
