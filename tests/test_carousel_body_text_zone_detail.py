@@ -70,8 +70,19 @@ def test_body_still_within_solid_cap():
     assert touched >= carousel.H * 0.5, touched
 
 
+def test_bright_page_under_white_text_becomes_dark_zone():
+    """Trang trang/anh qua sang duoi chu trang (vd trang Ollama): lop nhe chi ra
+    mang xam ban, chu trang tren xam khong doc ro -> phai thanh nen toi sach."""
+    carousel.set_background("dark")
+    cv = Image.new("RGBA", (carousel.W, carousel.H), (245, 245, 245, 255))
+    carousel._layer_if_can(cv, cv.convert("RGB"), TEXT_TOP, carousel.TEXT_BASE,
+                           max_share=carousel.SOLID_BG_MAX_SHARE)
+    for y in (TEXT_TOP + 10, TEXT_TOP + 80, carousel.TEXT_BASE - 10):
+        assert sum(cv.getpixel((500, y))[:3]) / 3 < 60, (y, cv.getpixel((500, y)))
+
+
 def test_smooth_image_keeps_light_layer():
-    """Anh tron khong co chi tiet de lo -> khong leo thang len nen chu."""
+    """Anh tron, da du tuong phan voi chu -> khong phu gi (khong leo thang)."""
     carousel.set_background("dark")
     cv = _smooth()
     goc = cv.copy()
