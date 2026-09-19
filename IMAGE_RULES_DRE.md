@@ -755,6 +755,24 @@ là việc của vai. Cổng dùng YuNet, cần `assets/face_detection_yunet_202
 thiếu model thì cổng tự bỏ qua chứ không làm hỏng bản dựng — nhưng **luật vẫn
 nguyên**.
 
+**Không lặp lại chân dung cùng một người (LOW-265, 19/09/2026).** Ông Chủ, sau
+khi xem carousel dcgr Nvidia/Brookfield dùng cả ảnh Jensen Huang cầm 2 laptop
+LẪN ảnh Jensen Huang nói với mic — hai tấm khác hẳn nhau nhưng đều là chân
+dung CEO: *"ko dùng 2 ảnh cùng là chân dung founder trong 1 slide"*.
+`check_repeated_subject_portrait` chặn khi ≥ 2 ảnh trong **cùng một carousel**
+đều khai cùng một `"subject"` VÀ đều chỉ có **1 mặt người** (tức đều là chân
+dung — ảnh nhiều mặt/hiện trường không tính). Dựa vào dữ liệu đã khai, không
+đoán qua pixel — nên bắt được cả trường hợp hai tấm ảnh khác nhau lẫn trường
+hợp cùng một tấm gốc bị cắt lại nhiều lần rồi rải ra nhiều slide (cả hai đều tự
+khai chung một `subject`).
+
+Từng thử vá hướng khác trước đó — so **dHash gần-giống** trong `check_duplicate`
+để bắt các crop khác nhau của cùng một tấm — nhưng đo thật trên ảnh chụp (không
+phải đồ hoạ) cho thấy không khả thi: crop nhẹ (~10% mép) đã cách 7-17 bit, ảnh
+THẬT SỰ khác nhau chỉ cách 36 bit, không có ngưỡng nào tách được hai trường hợp
+này (khớp đúng kết quả đo LOW-45 trước đó). `check_duplicate` giữ nguyên md5
+tuyệt đối.
+
 ---
 
 ## 7. Không bao giờ để ra hai vùng riêng biệt
@@ -900,6 +918,7 @@ chụp ra ảnh rỗng; `check_blank_image` chặn thêm một lớp ở rendere
 | Khai `chart: true` mà máy không nhận ra chart | `check_chart_integrity` | **chỉ cảnh báo** (mục 3) |
 | Ảnh gốc ngang đã crop, không khai `crop_ok` | `check_crop_landscape` | chặn |
 | Mặt người mà không khai `subject` | `check_unnamed_face` | chặn |
+| ≥2 ảnh chân dung (1 mặt) cùng khai một `subject` trong 1 carousel | `check_repeated_subject_portrait` | chặn |
 | Sai dải tỉ lệ của khung | `check_aspect_ratio` | chặn |
 | Chart đi một mình vào khung đặt chữ đè lên ảnh | `check_chart_standalone` | chặn (miễn ảnh `XH`) |
 | Tin xếp hạng mà ảnh chính không phải bảng xếp hạng | `ethan_submit` / `dre_submit` | chặn |
@@ -934,6 +953,7 @@ mà chả phải đạt tiêu chuẩn"*):
 | crop ngang | ✅ | ✅ | – | ❌ |
 | chart một mình | ✅ | – | – | ❌ |
 | `chart: true` · dải tỉ lệ | – | ✅ | – | ❌ |
+| lặp chân dung cùng người trong 1 bộ | – | ✅ | – | ❌ |
 
 (Hàng "xuất xứ · đáy sáng", "lệch tone" trong cột crop ngang, và "ảnh quá
 ngang" đã bỏ 13/09/2026 — xem ghi chú dưới bảng cổng chặn ở trên.)
