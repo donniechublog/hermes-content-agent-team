@@ -17,6 +17,7 @@ import sys
 import tempfile
 from contextlib import redirect_stderr
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "tests"))
@@ -44,16 +45,23 @@ def test_name_background_layer_no_right_from_distinctive():
     assert {"deepseek", "flash"} <= article_sources.story_tokens(HF)
 
 
+# Ca chung 2-3 tu la "lung chung" va hoi LLM (LOW-276). Test LOW-33 giu nguyen nghia
+# cu: LLM khong tra loi -> lui ve luat tu. Khong goi mang that trong test.
+_LLM_DOWN = mock.patch.object(article_sources, "_ask_same_event", return_value=None)
+
+
 def test_duck_headline_different_story_real_article_same_story():
-    assert article_sources.same_story(HF, VIT) is False
-    assert article_sources.same_story(HF, THAT) is True
-    assert article_sources.same_story(HF, "DeepSeek V4.1 Flash vs GLM-5.3 Flash") is True
+    with _LLM_DOWN:
+        assert article_sources.same_story(HF, VIT) is False
+        assert article_sources.same_story(HF, THAT) is True
+        assert article_sources.same_story(HF, "DeepSeek V4.1 Flash vs GLM-5.3 Flash") is True
 
 
 def test_other_outlets_bing_use_same_story():
     src = (ROOT / "article_sources.py").read_text(encoding="utf-8")
-    than = src[src.index("def other_outlets_bing("):src.index("\ndef find(")]
-    assert "story_tokens(" in than and "strip_site_suffix(" in than, "other_outlets_bing chua di qua same_story"
+    start = src.index("def other_outlets_bing(")
+    than = src[start:src.index("\ndef ", start + 1)]
+    assert "same_story_many(" in than and "strip_site_suffix(" in than, "other_outlets_bing chua di qua same_story"
 
 
 def _run_round(tieu_de, tit_trang_cua):
@@ -72,7 +80,7 @@ def _run_round(tieu_de, tit_trang_cua):
     capture_page.capture_lead_mobile = gia
     err = io.StringIO()
     try:
-        with tempfile.TemporaryDirectory() as d, redirect_stderr(err):
+        with tempfile.TemporaryDirectory() as d, redirect_stderr(err), _LLM_DOWN:
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
                 [{"url": "https://www.therundown.ai/articles/hugging-face-robot-duck"},

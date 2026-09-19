@@ -1,0 +1,1085 @@
+{
+ "about": "LOW-276 (19/09/2026): cap (tieu de goc, tieu de bao khac) -> co cung SU KIEN khong. Nhan tay tu 421 cap 'bao khac' tung duoc nhan trong state/*/article_source_*.json (chi cap chung 2-3 tu dac trung — vung luat cu khong chac) + ca do tay. Cap lung chung (bang xep hang, cung chu de khac dot) khong gan nhan.",
+ "pairs": [
+  {
+   "title": "A misalignment of AI in mathematics",
+   "candidate": "Twenty-five Fields Medal winners warn of misalignment between AI and mathematics",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Accurate Models of AMD Matrix Cores",
+   "candidate": "AMD Matrix Cores: modelos bit-exactos para MI100, MI250 y MI300X",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Bellman Policy Optimization",
+   "candidate": "Bellman Policy Optimization Trains LLM Reasoning Without a Critic",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "ChatGPT Images 2.5",
+   "candidate": "ChatGPT Images 2.5 is out — I’ve been testing it for 24 hours, and these are the 3 new features you’ll actually use",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "ChatGPT Images 2.5",
+   "candidate": "OpenAI releases ChatGPT Images 2.5 with ‘sharper details’ and ‘more precise editing’",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "ChatGPT Images 2.5",
+   "candidate": "OpenAI Launches ChatGPT Images 2.5 and Sketch",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code now reads AGENTS.md if there is no Claude.md",
+   "candidate": "Anthropic updates Claude Code to support AGENTS.md file, joining cross-tool AI coding standard",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code now reads AGENTS.md if there is no Claude.md",
+   "candidate": "Anthropic Redesigns Claude Code Projects to Coordinate Agent Threads",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code now reads AGENTS.md if there is no Claude.md",
+   "candidate": "Claude Code Adds AGENTS.md Project-Instruction Fallback",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code now reads AGENTS.md if there is no Claude.md",
+   "candidate": "A new experience for Claude projects, now available in beta in Claude Code",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Cowork and chat are now one Claude",
+   "candidate": "Anthropic merging Claude Cowork with chat",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Cowork and chat are now one Claude",
+   "candidate": "Anthropic brings Cowork directly inside Claude’s chat interface",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Cowork and chat are now one Claude",
+   "candidate": "Anthropic Folds Cowork Into a Single Claude Experience Across Plans",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Cowork and chat are now one Claude",
+   "candidate": "Anthropic merges Claude Chat, Cowork, and more into a single product",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Cowork and chat are now one Claude",
+   "candidate": "Anthropic Simplifies Claude’s Cowork and Design Tools",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Cowork and chat are now one Claude",
+   "candidate": "Anthropic Merges Claude Cowork Into Claude Chat, Adds Claude Docs and Slides",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Fable 5.1 Solves the Cyphral Distich, a 370-year-old cipher",
+   "candidate": "Nên sử dụng mô hình Claude Opus 5 hay Claude Fable 5 của Anthropic?",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Fable 5.1 Solves the Cyphral Distich, a 370-year-old cipher",
+   "candidate": "GPT-6 Astra vs Claude Fable 5.1 : quel est le meilleur modèle ?",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Fable 5.1 Solves the Cyphral Distich, a 370-year-old cipher",
+   "candidate": "Fable 5.1 解開 370 年未解密碼，關鍵線索就印在旁邊",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Fable 5.1 Solves the Cyphral Distich, a 370-year-old cipher",
+   "candidate": "Claude Fable 5.1 resuelve un cifrado histórico de 370 años",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Fable 5.1 Solves the Cyphral Distich, a 370-year-old cipher",
+   "candidate": "Claude Fable 5.1 Retakes the Top AI Benchmark Spot From GPT-6 Astra",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash HuggingFace 10/09 1974 244.457",
+   "candidate": "DeepSeek Launches V4.1-Flash AI Model With Focus on Speed and Scalability",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash HuggingFace 10/09 1974 244.457",
+   "candidate": "DeepSeek Releases V4.1 Flash, Retires Older Flash Models and Routes V4 Pro Traffic Next Week",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash HuggingFace 10/09 1974 244.457",
+   "candidate": "Baseten Adds DeepSeek-V4.1-Flash to Model APIs With 1M-Token Context",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash HuggingFace 10/09 1974 244.457",
+   "candidate": "DeepSeek V4.1 Flash Outperforms Opus 5 in New AI Benchmarks",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash HuggingFace 10/09 1974 244.457",
+   "candidate": "DeepSeek V4.1 Flash 登場：AI 代理成本戰再升級",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash HuggingFace 10/09 1974 244.457",
+   "candidate": "הוכרז: DeepSeek V4.1-Flash: מודל מולטימודלי א-סימטרי לצמצום עלויות הזיכרון",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash HuggingFace 10/09 1974 244.457",
+   "candidate": "DeepSeek、新AIモデル「V4.1-Flash」公開 KVキャッシュを圧縮",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face",
+   "candidate": "DeepSeek V4.1 Flash: Stronger, Faster, More Accessible",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face",
+   "candidate": "DeepSeek releases V4.1-Flash, says it outperforms flagship V4-Pro",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face",
+   "candidate": "DeepSeek V4.1 Flash vs. GLM 5.3 Flash: Benchmarks, Pricing, and Speed",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp · Hugging Face",
+   "candidate": "DeepSeek Open-Sources First V4 Vision Model: Benchmark Claims Need Independent Proof",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "On-device intelligence for every product",
+   "candidate": "Every new Apple product coming in 2026 & 2027",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Y Combinator's Garry Tan wants US open-weight AI labs to 'distill' frontier models, too",
+   "candidate": "Garry Tan Tells Regulators to Leave AI Model Distillation Alone",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Y Combinator's Garry Tan wants US open-weight AI labs to 'distill' frontier models, too",
+   "candidate": "YC's Garry Tan Says 'Do Nothing' on Chinese AI Distillation",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Y Combinator's Garry Tan wants US open-weight AI labs to 'distill' frontier models, too",
+   "candidate": "Y Combinator’s Garry Tan says 'do nothing' about distillation as AI giants accuse China of copying their tech",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Introducing Gemini 3.8 Live and 3.8 Live Extended Thinking",
+   "candidate": "Gemini 3.8 Live Changes Voice Agent Design",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Introducing Gemini 3.8 Live and 3.8 Live Extended Thinking",
+   "candidate": "Google Releases Gemini 3.8 Live-Extended Conversational Model, Claims Better Performance Than Rivals At Lower Price",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Introducing Gemini 3.8 Live and 3.8 Live Extended Thinking",
+   "candidate": "Google Launches Gemini 3.8 Live Models for Real-Time AI Dialogue",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google AI Mode shows the same products 21.6% more expensive than traditional search [Data Study]",
+   "candidate": "Google AI Mode Prices Differ From Product Carousel For Same Items",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google AI Mode shows the same products 21.6% more expensive than traditional search [Data Study]",
+   "candidate": "ZEE partners with Google to bring Search AI Mode into TV show storylines",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "GPT-6 Astra, Looped Transformers, and Hidden Reasoning",
+   "candidate": "Why less visibility into how OpenAI’s new GPT-6 Astra ‘thinks’ is sparking safety concerns",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "GPT-6 Astra, Looped Transformers, and Hidden Reasoning",
+   "candidate": "What Is A Looped Transformer, Which OpenAI Is Using In Its Astra Model",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "GPT-6 Astra: OpenAI’s Answer to Claude Opus and Fable",
+   "candidate": "GPT-6 Astra: OpenAI Launches Its Most Powerful AI Model Yet — Features, Benchmarks, Price and ChatGPT Availability",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Toward Recursive Self-Improvement: How GLM Built Its Own Inference Infrastructure",
+   "candidate": "Why fears of AI self-improvement are causing ‘existential’ concerns at Anthropic and OpenAI",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "How GPT‑5.6 Sol helps run quantum computing experiments",
+   "candidate": "OpenAI hé lộ mô hình Astra với năng lực an ninh mạng vượt xa GPT-5.6 Sol",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Making sovereign, open-weight AI the technology frontier",
+   "candidate": "IIT Madras-backed Bodhan AI launches four open-weight AI models for Indian languages",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Mistral x Mozilla: Private, Multilingual AI Browsing",
+   "candidate": "Firefox teams with Mistral for AI browsing",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Hugging Face approached Nvidia’s Huang weeks ahead of $12.9B acquisition, CEO tells CNBC",
+   "candidate": "Nvidia’s Hugging Face Acquisition Is a $12.9 Billion Bet on Open-Source AI",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Hugging Face approached Nvidia’s Huang weeks ahead of $12.9B acquisition, CEO tells CNBC",
+   "candidate": "Hugging Face goes from a ‘scrappy’ startup named after an emoji to $13 billion Nvidia acquisition",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI Agents API",
+   "candidate": "OpenAI launches GPT-Live-1 for full-duplex voice agents",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI Agents API",
+   "candidate": "OpenAI Launches Agents API to Streamline AI-Powered Cloud Agents",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI Agents API",
+   "candidate": "OpenAI Ships Agents API in Public Beta, Exposing Managed Codex Harness With Sandbox and MCP",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI Agents API",
+   "candidate": "OpenAI brings GPT-Live-1 voice model to developers as an API",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Qwen 3.8 follows GPT-5.5 Pro reasoning prefills",
+   "candidate": "Qwen 3.8 跟進 GPT-5.5 Pro 思維預填充：AI 推理效率的新賽局",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Qwen3.8 Max (0902)",
+   "candidate": "Alibaba upgrades Qwen3.8-Max with a new 0902 snapshot",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Qwen3.8 Max (0902)",
+   "candidate": "Chiński model Qwen3.8-Max-0902 depcze po piętach Anthropic Claude Opus 5. Kosztuje przy tym znacznie mniej",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Qwen3.8 Max (0902)",
+   "candidate": "Qwen3.8-Max 新版登顶：首次压过 Claude Opus 5、Kimi K3",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Qwen3.8 Max (0902)",
+   "candidate": "Qwen3.8-Max-0902 vede Code Arena: za webové AI porazil Claude i Kimi",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "tencent/hy4 #1 OpenRouter 18.7 Tencent v4",
+   "candidate": "Tencent Releases Open-Source Hy4 LLM Preview With 770B Parameters and 1M+ Token Context",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "tencent/hy4 #1 OpenRouter 18.7 Tencent v4",
+   "candidate": "Tencent Releases Open-Source Tencent Hy4 Preview",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "tencent/hy4 #1 OpenRouter 18.7 Tencent v4",
+   "candidate": "Tencent open-sources 770B-parameter Hy4 preview",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Hy4 preview",
+   "candidate": "Tencent open-sources Hy4 preview with 770B parameters and a 1M-token context",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Hy4 preview",
+   "candidate": "Tencent Releases and Open-Sources Tencent Hy4 preview",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Hy4 preview",
+   "candidate": "Tencent User Data Fuels High-Performance Hy4 Preview AI Model",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Hy4 preview",
+   "candidate": "Tencent open-sources 770B-parameter Hy4 preview",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "us military ai false intelligence china ship",
+   "candidate": "US military faces near miss due to AI-based false intelligence report",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "us military ai false intelligence china ship",
+   "candidate": "One AI Claim About a Chinese Ship Nearly Triggered a US Military Response",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Tech in Asia",
+   "candidate": "Tech Week Singapore 2026: Charting the next phase of “The Infrastructure Era” across Asia",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Adobe Inc. (ADBE) Acquires Rilo to Accelerate Agentic AI",
+   "candidate": "Adobe Buys Indian AI Startup Rilo to Strengthen Marketing Automation",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Adobe Inc. (ADBE) Acquires Rilo to Accelerate Agentic AI",
+   "candidate": "Adobe Acquires Indian AI Startup Rilo for Marketing Automation",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Adobe Inc. (ADBE) Acquires Rilo to Accelerate Agentic AI",
+   "candidate": "Adobe Acquires Bengaluru AI Startup Rilo to Expand Automation",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Adobe Inc. (ADBE) Acquires Rilo to Accelerate Agentic AI",
+   "candidate": "Adobe Acquires Indian Marketing Intelligence Startup Rilo",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "AI hallucination of Chinese nuclear components almost led to US military attack",
+   "candidate": "US military AI blunder: False intelligence on Chinese ship ‘almost started a war,’ report claims",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Egypt moves to build $1 bn AI data centre with Nvidia tech",
+   "candidate": "US beats China in its AI race to Africa as Egypt inks a $1 billion data center deal with the world’s most valuable company",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic details distillation campaigns from Alibaba, Moonshot AI, and DeepSeek",
+   "candidate": "Anthropic Admits to Mythos Misbehaviour, But Wants to Curb Chinese Distillation First",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic details distillation campaigns from Alibaba, Moonshot AI, and DeepSeek",
+   "candidate": "Anthropic Details Russian, Chinese AI-Uplifted Ops on Claude",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic details distillation campaigns from Alibaba, Moonshot AI, and DeepSeek",
+   "candidate": "Anthropic Details Disrupted Claude Misuse Across Seven Harm Areas",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic brings Cowork directly inside Claude's chat interface",
+   "candidate": "Anthropic brings Claude Docs and Claude Slides: Here is what these new AI tools can do",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic brings Cowork directly inside Claude's chat interface",
+   "candidate": "Anthropic tries to make Claude stickier with launch of Docs and Slides",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic brings Cowork directly inside Claude's chat interface",
+   "candidate": "Anthropic's Claude for Financial Advisors Turns AI Into Research and Workflow Tool",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic Abandons Proposed $6 Billion Acquisition of AI Startup Decart AI",
+   "candidate": "Anthropic Abandons $6B Decart AI Deal Ahead of Upcoming Public Debut",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic opens AI-powered biology research lab",
+   "candidate": "AI-driven drug discovery race: Anthropic quietly opens biology laboratory in major push",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic opens AI-powered biology research lab",
+   "candidate": "Anthropic Launches Physical Biology Lab and Acquires Coefficient Bio for $400M",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic Is Reportedly Heading Toward a $2 Trillion Nasdaq IPO in October",
+   "candidate": "The trusts that could receive an Anthropic IPO boost",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code relaunches Projects to manage multiple AI agents in the cloud",
+   "candidate": "Anthropic Redesigns Claude Code Projects to Coordinate Agent Threads",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code relaunches Projects to manage multiple AI agents in the cloud",
+   "candidate": "Claude Code’s revised projects adds AI orchestration, but local developers must wait",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code relaunches Projects to manage multiple AI agents in the cloud",
+   "candidate": "Claude Code Launches parallel Projects beta",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code relaunches Projects to manage multiple AI agents in the cloud",
+   "candidate": "Anthropic launches Claude Code Projects for persistent developer coordination",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Claude Code relaunches Projects to manage multiple AI agents in the cloud",
+   "candidate": "A new experience for Claude projects, now available in beta in Claude Code",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic launches Salesforce integration in Claude beta with 37 prebuilt sales skills",
+   "candidate": "Anthropic Adds 43 Workflows, 27 Integrations to Claude for Small Business",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic launches Salesforce integration in Claude beta with 37 prebuilt sales skills",
+   "candidate": "Anthropic Puts Claude On Small Business Sales After 900,000 Installs",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic launches Salesforce integration in Claude beta with 37 prebuilt sales skills",
+   "candidate": "AI progress and responsibility: Nvidia, Anthropic and OpenAI CEOs weigh in at Salesforce’s annual event",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic and OpenAI Hunt Smaller Data Center Deals as AI Inference Demand Surges",
+   "candidate": "Người tiêu dùng kiện Anthropic, OpenAI, SpaceXAI và Google vì cáo buộc thỏa thuận AI",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic and OpenAI Hunt Smaller Data Center Deals as AI Inference Demand Surges",
+   "candidate": "OpenAI, Anthropic và các “ông lớn” AI trước bài toán cân bằng giữa cạnh tranh và an toàn",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic $15 billion revolving credit facility",
+   "candidate": "Anthropic Expands Credit Line to $15 Billion Ahead of IPO",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic $15 billion revolving credit facility",
+   "candidate": "Anthropic Nears a $15 Billion Credit Line as Its IPO Push Accelerates",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Apple reportedly building server packed with M-series Ultra chips for AI",
+   "candidate": "Apple is Reportedly Building AI Servers with Nvidia’s Help",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Apple reportedly building server packed with M-series Ultra chips for AI",
+   "candidate": "Apple plans AI servers with M8 ultra chips and Nvidia technology: What to know",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "[News] Broadcom Targets $115B AI Revenue in FY27, Nearly 2X FY26; Singapore Fab to Ease Key Substrate Bottleneck",
+   "candidate": "Top Tech News: Broadcom’s $115B AI Forecast, Wonderful Hits $5B",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Milan Cybersecurity Startup Bynario Secures €2.1M After AI Uncovers Apple Vulnerabilities",
+   "candidate": "Bynario, la cybersecurity IA raccoglie 2,1 milioni di euro",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Foundry power balance flips: Samsung's choice amid TSMC dominance",
+   "candidate": "[News] Samsung Reportedly Targets In-House Silicon Photonics PIC Testing by End-2026 Using TSMC-Qualified Tools",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Clipto Raises $15M At $250M Valuation, Launches Windows, Android And MCP",
+   "candidate": "Clipto: buscador local con IA levanta US$15M y vale US$250M",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Clipto Raises $15M At $250M Valuation, Launches Windows, Android And MCP",
+   "candidate": "Clipto uses AI to search terabytes of video and is now valued at $250M",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Cohere, Aleph Alpha combine to target enterprise AI market",
+   "candidate": "Cohere in advanced talks to raise up to $3B as enterprise AI race heats up",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Cohere, Aleph Alpha combine to target enterprise AI market",
+   "candidate": "Cohere and Aleph Alpha agree to merge in reported $20B deal",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Cohere, Aleph Alpha combine to target enterprise AI market",
+   "candidate": "Cohere and Aleph Alpha Sign Agreement to Become the First Transatlantic Sovereign AI Solution",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Cohere, Aleph Alpha combine to target enterprise AI market",
+   "candidate": "Cohere reaches terms with German peer Aleph Alpha to take on AI giants",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Cohere, Aleph Alpha combine to target enterprise AI market",
+   "candidate": "Cohere And Aleph Alpha Sign Deal To Create Transatlantic Sovereign AI Company",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Cohere, Aleph Alpha combine to target enterprise AI market",
+   "candidate": "Cohere Reaches Terms for Aleph Alpha Combination",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Cohere, Aleph Alpha combine to target enterprise AI market",
+   "candidate": "Cohere agrees terms with Aleph Alpha as it seeks scale and compute",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "DeepSeek is hiring 150 engineers, and none of them will touch a model",
+   "candidate": "DeepSeek hires 150 engineers as AI race shifts to systems, application",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "DeepSeek is hiring 150 engineers, and none of them will touch a model",
+   "candidate": "DeepSeek embarks on ‘unprecedented’ hiring spree as it overhauls back end systems",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "elon musk nvidia chip supply",
+   "candidate": "Nvidia CEO Jensen Huang joins state dinner for China’s Xi, eyeing $50B chip market",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "DeepMind Alumni’s Emulate Nears $700 Million Funding Round",
+   "candidate": "DeepMind’s Genie creators launch Emulate, seeking $700M to build world models for robotics and simulation: Report",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Oxford dropout and two Fluidstack co-founders become billionaires after AI startup reaches $18B valuation",
+   "candidate": "FluidStack Raises $1.5B Led by Jane Street Capital at an $18B Valuation",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Gimlet Labs nabs $300M for its disaggregated inference platform",
+   "candidate": "Gimlet Labs Raises $300 Million Series B",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Gimlet Labs nabs $300M for its disaggregated inference platform",
+   "candidate": "Gimlet Labs Raises $300 Million, Reaches $3 Billion Valuation",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Gimlet Labs nabs $300M for its disaggregated inference platform",
+   "candidate": "Gimlet Labs Valuation Surges To $3B On New Funding",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Gimlet Labs nabs $300M for its disaggregated inference platform",
+   "candidate": "Now Valued at $3 Billion, Gimlet Labs Raises $300 Million in Series B Led by Andreessen Horowitz for Industry’s First Multi-Silicon Inference Cloud for Agentic",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "globalfoundries marvell expand chip capacity deal ai data center connectivity 2026 09 17",
+   "candidate": "GlobalFoundries, Marvell Deepen AI Chip Partnership",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "globalfoundries marvell expand chip capacity deal ai data center connectivity 2026 09 17",
+   "candidate": "GlobalFoundries Rallies as Marvell Deal Expansion and Japan Fab Report Lift Sentiment",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google’s €13 Billion Finland Expansion",
+   "candidate": "Google deepens its commitment to Finland with a €13 billion investment in AI infrastructure",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google’s €13 Billion Finland Expansion",
+   "candidate": "How Google Is Spending $15 Billion To Get Finland To Build Its AI Grid",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google’s €13 Billion Finland Expansion",
+   "candidate": "Google deepens commitment to Finland with €13 billion investment in AI infrastructure",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google’s €13 Billion Finland Expansion",
+   "candidate": "Google to Invest €13 Billion in AI Infrastructure in Finland",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google’s €13 Billion Finland Expansion",
+   "candidate": "Google is investing €13 billion in Finland’s AI infrastructure",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google, Nvidia, and Anthropic want Emerald AI to find space on the grid for more data centers",
+   "candidate": "OpenAI, Google and Anthropic want to establish an autonomous agency for AI safety",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google, Nvidia, and Anthropic want Emerald AI to find space on the grid for more data centers",
+   "candidate": "King Charles Convenes OpenAI, Anthropic, Nvidia and Google for AI Safety Summit",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google, Nvidia, and Anthropic want Emerald AI to find space on the grid for more data centers",
+   "candidate": "Google, Nvidia, Anthropic bet on smarter grids for AI’s power crunch",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Google Invests €13 Billion in Finland AI Infrastructure, Including Three New Data Centres: how 19 outlets framed it",
+   "candidate": "Google commits €13 billion to Finnish AI infrastructure with nuclear deal",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Huawei plans Q1 2027 launch of new AI chip as it takes on Nvidia",
+   "candidate": "Huawei has two new AI chips coming in 2027; here is when they launch",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Huawei plans Q1 2027 launch of new AI chip as it takes on Nvidia",
+   "candidate": "Huawei Launches New AI Chips and Takes Aim at Nvidia’s Dominance in China",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Hyperscale Data Invests More Than $70 Million In Michigan AI Data Center As Potential Contract Revenue Exceeds $3 Billion",
+   "candidate": "Hyperscale Data, Inc. (GPUS) Stock: Rebounds as $70M Investment Advances 340 MW AI Data Center",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Lovable Acquires Sutro, Company Behind the SLang Programming Language",
+   "candidate": "Lovable Acquires Sutro to Boost AI Software Transparency",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Microsoft has new AI privacy rules for schools",
+   "candidate": "Microsoft, teachers unions announce AI privacy standard for schools",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Microsoft has new AI privacy rules for schools",
+   "candidate": "Microsoft, AFT unveil AI safety and privacy standard for schools",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Microsoft has new AI privacy rules for schools",
+   "candidate": "Teachers union, Microsoft agree on AI privacy rules",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Microsoft has new AI privacy rules for schools",
+   "candidate": "Microsoft Signs Binding AI Safety and Privacy Standard for US Schools",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI stuck fighting Musk antitrust suit after Apple finds a way out",
+   "candidate": "Musk Drops Apple Lawsuit Over ChatGPT Siri Deal, Keeps Suing OpenAI",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI stuck fighting Musk antitrust suit after Apple finds a way out",
+   "candidate": "Musk's X Corp and SpaceXAI resolve antitrust lawsuit against Apple",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI stuck fighting Musk antitrust suit after Apple finds a way out",
+   "candidate": "Elon Musk's Legal Tango: X Corp vs. Apple OpenAI Monopoly Battle",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Banks arrange $22B chip loan connected to Blackstone and Alphabet in record AI infrastructure deal",
+   "candidate": "Ten Banks Line Up $22B Loan for Crux AI to Buy Google TPUs",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Anthropic researcher’s resignation sparks broad AI safety discussion",
+   "candidate": "Anthropic researcher's resignation sends warning about the dangers of AI development",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Researchers used Claude to hack OpenAI",
+   "candidate": "Cybersecurity researchers gain access to OpenAI’s GitHub repository using Claude",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Researchers used Claude to hack OpenAI",
+   "candidate": "Security Researchers Use Anthropic’s Claude to Penetrate OpenAI’s Private Software Cache",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "NVIDIA RTX Spark N1X: ARM Chip with 128 GB Memory",
+   "candidate": "Nvidia’s new RTX Spark laptops launch in October with two different configs",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI, Anthropic, Google have been in talks on AI safety for weeks",
+   "candidate": "OpenAI, Anthropic, and Google Discuss Creating Professional Body to Oversee AI Risks",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI, Anthropic, Google have been in talks on AI safety for weeks",
+   "candidate": "Anthropic, OpenAI, Google Meet Since July on AI Standards Body",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI Considers New Financing at a $1.5 Trillion Valuation",
+   "candidate": "OpenAI weighs fresh funding round at $1.2 trillion valuation ahead of IPO: Report",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI Considers New Financing at a $1.5 Trillion Valuation",
+   "candidate": "OpenAI Mulls Fresh Funding Round at $1.2 Trillion Valuation Ahead of IPO",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI Samsung collaboration extends to next-generation chips",
+   "candidate": "OpenAI deepens cooperation with Samsung on chips and enterprise AI",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "ChatGPT Sketch turns your bad drawings into detailed AI images",
+   "candidate": "OpenAI Launches ChatGPT Images 2.5 and Sketch",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "ChatGPT Sketch turns your bad drawings into detailed AI images",
+   "candidate": "OpenAI Releases ChatGPT Images 2.5 With Sketch and Two New API Models",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI puts Pro subscriptions on hold due to Astra demand",
+   "candidate": "OpenAI pausa Pro de US$200 ante demanda de Astra",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "OpenAI admits to German wiki ‘incident’",
+   "candidate": "OpenAI confirms ‘wiki incident,’ says it’s ‘working on a framework’ for more disclosure",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Trump regulation puts AI data centers on alert; costs could jump if Chinese equipment is blocked",
+   "candidate": "Trump’s data center push puts Republicans in a political bind",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Mistral raises record 3 billion euros in Samsung-led round at over 21 billion euro valuation",
+   "candidate": "Mistral raises record €3B to boost AI capabilities",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Samsung backs Nvidia AI chip rival in $230 million funding round as GPU alternatives boom",
+   "candidate": "Samsung Backs Euclyd AI Chips in $230M Round",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Samsung backs Nvidia AI chip rival in $230 million funding round as GPU alternatives boom",
+   "candidate": "Dutch chip startup gets Samsung's backing to take on Nvidia",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Samsung sees rising demand for custom HBM4E and HBM5",
+   "candidate": "[News] Samsung Unveils Memory Roadmap at SEMICON: HBM5 Targets 2× HBM4E Performance, zHBM 8× Boost",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "SK Hynix in talks with Intel to produce memory chips in US for the first time amid Washington pressure, sources say",
+   "candidate": "SK Hynix is preparing to take a historic step: talks with Intel",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "SK Hynix in talks with Intel to produce memory chips in US for the first time amid Washington pressure, sources say",
+   "candidate": "Intel, SK hynix Shares Jump on Reported Ohio AI Chip Partnership Talks",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "SK Hynix in talks with Intel to produce memory chips in US for the first time amid Washington pressure, sources say",
+   "candidate": "Intel Stock Rallies on Report of Possible SK Hynix Ohio Memory Deal",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "AI Startup Cognition Raises $2 Billion at a $48 Billion Value",
+   "candidate": "AI coding startup Cognition raises $2B at $48B valuation as revenue nears $900M",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "AI Startup Cognition Raises $2 Billion at a $48 Billion Value",
+   "candidate": "Cognition AI raises $2 billion at $48 billion valuation",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "ai startup mantic raises 25 million superhuman forecasting 2026 09 18",
+   "candidate": "London-Based Mantic Raises $25M For AI Forecasting",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "TSMC August Revenue Surges 53% to Record $16.35 Billion as AI Chip Demand Accelerates",
+   "candidate": "Taiwan Semiconductor September Revenue Surges 53% and Can’t Keep Up With Demand",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "TSMC August Revenue Surges 53% to Record $16.35 Billion as AI Chip Demand Accelerates",
+   "candidate": "TSMC Posts 53% August Revenue Surge, Boosts Support for Global Subsidiaries",
+   "same": true,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "Family offices are clamoring for AI investments",
+   "candidate": "Family Offices Are Rethinking How They Choose a Jurisdiction, TMF Group Data Shows",
+   "same": false,
+   "source": "article_source 19/09"
+  },
+  {
+   "title": "AI Data Centers Spark Long-Duration Energy Storage Boom: US Planned Capacity Surges Fivefold, Meta Bets on 100-Hour Solution",
+   "candidate": "Proposed data centers for AI infrastructure development spark widespread concern",
+   "same": false,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "AI Data Centers Spark Long-Duration Energy Storage Boom: US Planned Capacity Surges Fivefold, Meta Bets on 100-Hour Solution",
+   "candidate": "Crusoe Raises $3.9 Billion to Build AI Data Centers and Modular AI Factories",
+   "same": false,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "SoftBank adds $21 billion to AI firepower in new debt deals",
+   "candidate": "SoftBank Raises Arm Margin Loan to $25 Billion as AI Bets Grow",
+   "same": true,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "SoftBank adds $21 billion to AI firepower in new debt deals",
+   "candidate": "Anthropic, Accenture to invest $2 billion in AI model evaluation as safety concerns rise",
+   "same": false,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "SoftBank adds $21 billion to AI firepower in new debt deals",
+   "candidate": "OpenAI forecasts cash burn near $280 billion by 2030: Report",
+   "same": false,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "Anthropic details practical metrics to help monitor the speed of AI development",
+   "candidate": "Anthropic shares 3 metrics to help AI companies monitor pace of development",
+   "same": true,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "Anthropic details practical metrics to help monitor the speed of AI development",
+   "candidate": "Anthropic Proposes Three New AI Development Metrics Days After Amodei Calls For Coordinated Slowdown",
+   "same": true,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "Anthropic details practical metrics to help monitor the speed of AI development",
+   "candidate": "Anthropic Releases 3 Metrics Framework",
+   "same": true,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "Anthropic details practical metrics to help monitor the speed of AI development",
+   "candidate": "Exclusive: PeakMetrics tracks brand reputations across five top AI platforms",
+   "same": false,
+   "source": "do tay 19/09 (LOW-275/276)"
+  },
+  {
+   "title": "DeepSeek releases V4.1 Flash, says it outperforms flagship V4 Pro",
+   "candidate": "Hugging Face robot duck is already a hit",
+   "same": false,
+   "source": "do tay 19/09 (LOW-275/276)"
+  }
+ ]
+}

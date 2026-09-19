@@ -179,7 +179,8 @@ def test_other_outlets_gnews_filters_ranks_and_resolves():
     def fake_resolve(link, timeout=30, phien=None):
         resolved.append(link)
         return real.get(link)
-    with mock.patch.object(article_sources, "resolve_code_gnews", side_effect=fake_resolve):
+    with mock.patch.object(article_sources, "resolve_code_gnews", side_effect=fake_resolve), \
+            mock.patch.object(article_sources, "_ask_same_event", return_value=None):   # LOW-276: khong goi LLM
         pages = article_sources.other_outlets_gnews(title, items, count=3,
                                                     skip_domains=("siliconangle.com",))
     assert [p["url"] for p in pages] == [real["g/cnbc"], real["g/tek"]], pages   # chung nhieu tu xep truoc
@@ -195,6 +196,7 @@ def test_find_falls_back_to_google_news_when_rss_and_bing_are_empty():
             mock.patch.object(article_sources, "_download", return_value=rss), \
             mock.patch.object(article_sources, "_query_bing", return_value=[]), \
             mock.patch.object(article_sources, "other_outlets_bing", return_value=[]), \
+            mock.patch.object(article_sources, "_ask_same_event", return_value=None), \
             mock.patch.object(article_sources, "resolve_code_gnews",
                               side_effect=lambda link, **_k: f"https://real.example/{link[2:]}"):
         kq = article_sources.find("Anthropic công bố bộ chỉ số",
