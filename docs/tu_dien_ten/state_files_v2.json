@@ -55,5 +55,6 @@
             "state/9router/ (monitor_9router ghi gốc)", "state/model_audition.json", "state/cron_audit.json",
             "state/migrate_state_paths_*.journal.jsonl",
             "state/<brand>/publish_schedule.json", "state/<brand>/publish_slot.lock",
-            "state/<brand>/publish_due.lock"]
+            "state/<brand>/publish_due.lock",
+            "state/<brand>/scan/<run>/overflow_report.txt", "state/<brand>/scan/<run>/trial_overflow_manifest.json"]
 }

@@ -17,6 +17,7 @@ Dung:
 """
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -146,6 +147,33 @@ def extra_required(items: list, nguon: list, vai: str, vai_bb: str) -> list:
     return items
 
 
+def split_overflow(items: list, cap: int, vai_bb: str) -> tuple:
+    """(keep, overflow) — LOW-283 (19/09/2026): Vera nop qua `cap` tin thi phan
+    du sang blog, CHIA THEO THU TU vai nop (Ong Chu chot, khong de vai gan brand
+    tung tin).
+
+    `keep` = MOI muc BAT BUOC (ke ca muc script tu them) + cac tin DAU danh sach
+    cho du `cap`. Muc bat buoc khong bao gio sang blog: luat "quet thay la phai
+    dua" la luat cua brand quet, va `finalize_required` chi xoa muc da vao
+    manifest cua chinh brand nay — de no sang blog thi hom sau no lai bi gieo
+    lai, bao "vai bo sot". Thu tu trong moi phan giu nguyen."""
+    if cap <= 0 or len(items) <= cap:
+        return items, []
+    bb = list(required.read(vai_bb).values())
+    must = [bool(it.get("auto_added")) or any(required.match(v, it) for v in bb) for it in items]
+    room = max(0, cap - sum(must))
+    keep, overflow = [], []
+    for it, m in zip(items, must):
+        if m:
+            keep.append(it)
+        elif room > 0:
+            keep.append(it)
+            room -= 1
+        else:
+            overflow.append(it)
+    return keep, overflow
+
+
 def main():
     ap = argparse.ArgumentParser(description="Ghi manifest danh so cho Nova/Vera")
     ap.add_argument("--vai", required=True, choices=sorted(PREFIX))
@@ -160,6 +188,13 @@ def main():
     ap.add_argument("--out", help="Thu: ghi manifest ra tep nay thay vi state/<brand>/")
     ap.add_argument("--nguon", help="scan.json cua scan_business (Vera): de vai chon bang so thu tu `k`, "
                                     "script tu lay link, tieu de, so bao")
+    # LOW-283: phan du sang brand khac — xem split_overflow. scan_submit chi bat
+    # khi brand dich da co topic cho vai nay.
+    ap.add_argument("--overflow-after", type=int, default=0,
+                    help="Qua N tin thi phan du (tru muc bat buoc) ghi sang --overflow-brand")
+    ap.add_argument("--overflow-brand", help="Khoa container nhan phan du (vd blog)")
+    ap.add_argument("--overflow-report", metavar="PATH", help="Bao cao danh so cua phan du")
+    ap.add_argument("--overflow-out", help="Thu: ghi manifest phan du ra tep nay thay vi state/<brand dich>/")
     a = ap.parse_args()
 
     ds = json.loads(Path(a.infile).read_text(encoding="utf-8"))
@@ -180,7 +215,11 @@ def main():
         if muc is not None:
             items.append(muc)
     items = extra_required(items, nguon, a.vai, vai_bb)
+    overflow = []
+    if a.overflow_brand:
+        items, overflow = split_overflow(items, a.overflow_after, vai_bb)
     mc.list_count(items)
+    mc.list_count(overflow)
 
     # GIO VN, khong phai UTC. Ca doi song theo ngay VN: cron quet chay 05:01 VN,
     # `scan_prepare.workdir` dat thu muc `vera_20260912`, bao cao mac dinh cua
@@ -202,7 +241,28 @@ def main():
     mc.finalize_required(vai_bb, items, a.khong_xoa_bat_buoc)
     for it in items:
         print(f"  {it['index']}. [{it['via']}] {it['title'][:66]}", file=sys.stderr)
-    mc.write_report(a.bao_cao, items, a.vai, ngay)
+    ten_vai = scan_common.NAME_ROLE.get(vai_bb, vai_bb)
+    # Dong phu KHONG duoc mo dau bang so: scan_submit dem muc bao cao bang cach
+    # nhin hai ky tu dau moi dong ("12 tin..." se bi dem thanh mot tin).
+    mc.write_report(a.bao_cao, items, a.vai, ngay,
+                    subtitle=(f"Đã chuyển {len(overflow)} tin sau sang topic {ten_vai} bên {a.overflow_brand}."
+                              if overflow else ""))
+    if overflow:
+        # Cung luat dat ten / khong ghi de nhu ban chinh, nhung trong state cua
+        # brand dich — approve_pick ben do tim `<prefix>_*.json` o chinh state cua no.
+        dich = env_load.state_dir(a.overflow_brand)
+        o_out = Path(a.overflow_out) if a.overflow_out else dich / ten
+        if o_out.exists() and not a.overflow_out:
+            o_out = mc.path_out_new(dich / f"{PREFIX[a.vai]}_{ngay}.json")
+        mc.write_manifest(o_out, a.vai, overflow)
+        # scan_submit doc dong nay (overflow_manifest_path) — giu nguyen dang.
+        print(f"overflow -> {o_out}")
+        for it in overflow:
+            print(f"  [{a.overflow_brand}] {it['index']}. [{it['via']}] {it['title'][:60]}", file=sys.stderr)
+        nguon_brand = os.environ.get("CT_BRAND", "") or "brand quét"
+        mc.write_report(a.overflow_report, overflow, a.vai, ngay,
+                        subtitle=(f"Phần dư từ báo cáo {ten_vai} bên {nguon_brand} (quá {a.overflow_after} tin). "
+                                  f"Reply số vào đây để làm bài cho {a.overflow_brand}."))
 
 
 if __name__ == "__main__":

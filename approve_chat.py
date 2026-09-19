@@ -18,6 +18,7 @@ import env_load                                              # noqa: E402
 import chat_router                                          # noqa: E402
 import tele_util                                            # noqa: E402
 import hermes_adapter                                        # noqa: E402
+import role as _vai                                          # noqa: E402
 
 from approve_base import (  # noqa: E402
     STATE_DIR, _reply_real, call, log, rut,
@@ -193,6 +194,13 @@ def handle_chat(token, group, msg, thread_id, text):
 
     who = profile or "trợ lý"
     kw_thread = {"message_thread_id": thread_id} if thread_id else {}
+    if chat_router.profile_missing(profile):
+        ten = _vai.display_name(profile)
+        log("route", f"chat -> profile={profile} KHONG co o container nay -> bao topic chi de chon tin")
+        call(token, "sendMessage", chat_id=group, **kw_thread,
+             text=f"{ten} không chạy ở brand này — topic này chỉ để chọn tin: Reply số vào "
+                  f"báo cáo mới nhất. Muốn trò chuyện với {ten} thì vào topic {ten} ở brand kia.")
+        return
     log("route", f"chat -> profile={profile or '(mac dinh)'} session={session} "
                  f"thread={thread_id} text={rut(text)}")
     # Tang 1: hang FIFO cua rieng phien nay — cung vai thi tin truoc tra loi truoc.

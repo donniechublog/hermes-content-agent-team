@@ -130,6 +130,10 @@ nhiều vòng. Giờ mỗi task là **3 lệnh**.
   lại mà vẫn gửi thì topic có nhiều bản gần giống nhau và chỉ bản cuối reply
   được (sự cố Vera 12/09/2026). Gửi xong, `scan_submit` ghim đường dẫn manifest vào
   `state/<brand>/report_message_id.<vai>.json` để lệnh chọn số đọc đúng bản đã gửi.
+  **Vera quá 15 tin (LOW-283):** dcgr giữ mọi mục bắt buộc + các tin đầu cho đủ 15,
+  phần sau thành manifest + báo cáo đánh số riêng ở `state/blog/` và topic `vera`
+  của group blog (`scan_submit.OVERFLOW`, `manifest_write.split_overflow`). Chỉ bật
+  khi `state/topics.blog.json` có khoá `vera`; reply số bên blog thì blog làm bài.
 - Skill `ai-background` và bộ retouch/blend của Gin/Itachi **chờ GPU** (sửa/sinh
   ảnh bằng CPU quá nặng) — không phải lỗi. Script sinh nền chưa được viết; skill
   mô tả sẵn hợp đồng để khi có GPU thì bắt tay vào đúng chỗ. Tới lúc đó hai vai

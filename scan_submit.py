@@ -13,6 +13,7 @@ Dung:
 """
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -28,6 +29,35 @@ import role                                                   # noqa: E402
 import state_paths                                           # noqa: E402
 
 NAME = scan_common.NAME_ROLE       # mot ban duy nhat, xem scan_common
+
+# LOW-283 (19/09/2026): vai quet -> (brand nhan phan du, so tin toi da mot bao
+# cao). Ong Chu: Vera quet ra hon 15 headline thi san bot qua blog, chia theo
+# thu tu Vera nop (manifest_write.split_overflow). Chi bat khi brand dich DA CO
+# topic cho vai nay (overflow_target) — chua tao topic thi giu hanh vi cu.
+OVERFLOW = {"vera": ("blog", 15)}
+
+
+def overflow_target(vai: str):
+    """(brand dich, tran) neu vai nay duoc chuyen phan du VA brand dich co topic
+    cua vai; nguoc lai None. Khong bao gio tro ve chinh container dang chay."""
+    cfg = OVERFLOW.get(vai)
+    if not cfg:
+        return None
+    brand, cap = cfg
+    if brand == os.environ.get("CT_BRAND", "").strip():
+        return None
+    if qb.TOPIC[vai] not in env_load.topics(brand):
+        return None
+    return brand, cap
+
+
+def overflow_manifest_path(stdout: str):
+    """Manifest phan du, doc tu dong `overflow -> <duong dan>` cua manifest_write."""
+    for d in (stdout or "").splitlines():
+        if d.startswith("overflow -> "):
+            p = Path(d[len("overflow -> "):].strip())
+            return p if p.exists() else None
+    return None
 
 
 # Nhan cua cac dong dang chu y trong stderr cua manifest_build / manifest_write.
@@ -114,17 +144,22 @@ def _in_error(r):
             print(f"[LOI] {d.strip()}")
 
 
-def send(vai: str, tep: Path, thu: bool, manifest: Path = None) -> bool:
+def send(vai: str, tep: Path, thu: bool, manifest: Path = None, brand: str = None) -> bool:
+    """`brand` (LOW-283): gui vao group/topic cua brand KHAC container dang chay —
+    publish.py chay voi env sach cua brand do (env_load.env_for_brand), mid ghi
+    vao state cua brand do de approve ben kia doi chieu reply."""
     if thu:
-        print(f"[thu] khong gui. Noi dung {tep}:\n" + tep.read_text(encoding="utf-8")[:1500])
+        print(f"[thu] khong gui{f' (sang {brand})' if brand else ''}. Noi dung {tep}:\n"
+              + tep.read_text(encoding="utf-8")[:1500])
         return True
     # --luu-mid: approve_service doi chieu REPLY cua Ong Chu dung vao MID nay
     # truoc khi coi la lenh chon so — xem ghi chu o _is_reply_report.
-    mid_tep = env_load.state_dir() / state_paths.REPORT_MESSAGE_ID_FILE.format(vai)
+    mid_tep = env_load.state_dir(brand) / state_paths.REPORT_MESSAGE_ID_FILE.format(vai)
     r = subprocess.run([str(ROOT / "venv/bin/python"), str(ROOT / "publish.py"), "--to-env", "TELEGRAM_GROUP_ID",
                         "--thread-name", qb.TOPIC[vai], "--file", str(tep),
                         "--luu-mid", str(mid_tep)],
-                       cwd=str(ROOT), capture_output=True, text=True, timeout=120)
+                       cwd=str(ROOT), capture_output=True, text=True, timeout=120,
+                       env=env_load.env_for_brand(brand) if brand else None)
     if r.returncode != 0:
         _in_error(r)
         return False
@@ -180,6 +215,12 @@ def main() -> int:
             args += ["--nguon", str(wd / state_paths.SCAN_RESULT_FILE)]
         if a.thu:
             args += ["--khong-xoa-bat-buoc", "--out", str(wd / state_paths.SCAN_TRIAL_MANIFEST_FILE)]
+        dich = overflow_target(a.vai)
+        if dich:
+            args += ["--overflow-brand", dich[0], "--overflow-after", str(dich[1]),
+                     "--overflow-report", str(wd / state_paths.SCAN_OVERFLOW_REPORT_FILE)]
+            if a.thu:
+                args += ["--overflow-out", str(wd / state_paths.SCAN_TRIAL_OVERFLOW_MANIFEST_FILE)]
     r = _run(args)
     if r.returncode != 0:
         _in_error(r)
@@ -213,14 +254,39 @@ def main() -> int:
     ok = send(a.vai, bao_cao, a.thu, path_manifest(r.stdout))
     if not ok:
         return 1
+    n = _count_items(bao_cao)
+    print(f"[xong] manifest + bao cao ({n} muc) da gui topic {qb.TOPIC[a.vai]}" + (" (thu)" if a.thu else ""))
+    them = _send_overflow(a.vai, wd, a.thu, overflow_manifest_path(r.stdout))
+    print(f"Ket qua task (dung dong nay de ket thuc task): {NAME[a.vai]} nộp {n} tin đánh số, đã gửi báo cáo, "
+          "Ông Chủ trả lời số để chọn." + them)
+    return 0
+
+
+def _count_items(bao_cao: Path) -> int:
     # Bao cao la HTML Telegram, dong tin bat dau bang "<b>1." — bo the truoc khi
     # dem, khong thi in "nop 0 tin" va vai di doc ma nguon (Nova/Vera 05/09).
-    n = sum(1 for d in bao_cao.read_text(encoding="utf-8").splitlines()
-            if re.sub(r"<[^>]+>", "", d).strip()[:2].rstrip(".").isdigit())
-    print(f"[xong] manifest + bao cao ({n} muc) da gui topic {qb.TOPIC[a.vai]}" + (" (thu)" if a.thu else ""))
-    print(f"Ket qua task (dung dong nay de ket thuc task): {NAME[a.vai]} nộp {n} tin đánh số, đã gửi báo cáo, "
-          "Ông Chủ trả lời số để chọn.")
-    return 0
+    return sum(1 for d in bao_cao.read_text(encoding="utf-8").splitlines()
+               if re.sub(r"<[^>]+>", "", d).strip()[:2].rstrip(".").isdigit())
+
+
+def _send_overflow(vai: str, wd: Path, thu: bool, manifest) -> str:
+    """Gui bao cao phan du sang brand dich SAU khi bao cao chinh da len. Tra ve
+    doan them vao dong "Ket qua task" ("" neu khong co phan du).
+
+    Hong o day KHONG tra ma loi: bao cao chinh da gui roi, ma vai thay rc!=0 thi
+    chay lai — tuc gui THEM mot ban bao cao chinh (dung su co 12/09, xem
+    BLOCK_SEND). Thay vao do noi to trong dong ket qua cho Ong Chu doc."""
+    if manifest is None:
+        return ""
+    dich = OVERFLOW[vai][0]
+    tep = wd / state_paths.SCAN_OVERFLOW_REPORT_FILE
+    m = _count_items(tep) if tep.exists() else 0
+    if tep.exists() and send(vai, tep, thu, manifest, brand=dich):
+        print(f"[xong] phan du ({m} muc) da gui topic {qb.TOPIC[vai]} ben {dich}" + (" (thu)" if thu else ""))
+        return f" {m} tin dư đã chuyển sang topic {NAME[vai]} bên {dich}."
+    print(f"[LOI] KHONG gui duoc phan du ({m} muc) sang {dich} — manifest van nam o {manifest}")
+    return (f" ⚠️ Gửi {m} tin dư sang {dich} HỎNG — các tin này chưa tới topic {NAME[vai]} bên {dich} "
+            "(đừng chạy lại lệnh nộp: báo cáo chính đã gửi).")
 
 
 if __name__ == "__main__":
