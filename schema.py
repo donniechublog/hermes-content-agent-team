@@ -323,7 +323,9 @@ def count_image_use_ok(anh: list, vai_anh: str) -> int:
         cung dieu kien voi `role.can_be_hero`."""
     import role
     dung_duoc = [a for a in (anh or []) if a.get("uses") and a.get("relevant") is not False
-                 and not role.face_no_clear_ai(a)]
+                 and not role.face_no_clear_ai(a) and not role.blocked_empty(a, vai_anh)]
+    # LOW-288 (20/09/2026): tam bi cong ANH TRONG chan (LOW-273) khong duoc dem —
+    # truoc day bo dem bao "5/6" trong khi mot trong 5 tam la logo nen tron bi chan.
     khai_niem = [a for a in dung_duoc if a.get("concept")]
     rieng = [a for a in dung_duoc if not a.get("concept")]
     chi_ghep = [a for a in rieng if _only_stack_ok(a)]

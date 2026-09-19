@@ -206,9 +206,11 @@ def _force_raw(m: dict) -> list:
         return []
     # `capture_source` (LOW-22) di cung duong voi khai niem: no la BIA, khong ep
     # xuong than — mot man hinh trang bao dat o `figure` la lap lai tit cua bai.
+    # KHONG ep tam bi cong ANH TRONG chan (LOW-278/LOW-288): truoc day brief va cong
+    # doi Kite dung A12 (logo nen tron 85%) ma `check_empty_image` chan cung -> ket.
     return [a["id"] for a in figure_real(m)
             if a.get("relevant") is True and not a.get("concept")
-            and not a.get("capture_source")][:MAX_FORCE_FIGURE]
+            and not a.get("capture_source") and not vai_mod.blocked_empty(a, "kite")][:MAX_FORCE_FIGURE]
 
 
 def figure_right_use(m: dict) -> list:

@@ -428,6 +428,21 @@ def face_no_clear_ai(a: dict) -> bool:
                                        or person_names_of(a))
 
 
+def blocked_empty(a: dict, slug: str = "") -> bool:
+    """Tam anh bi cong ANH TRONG cua vai `slug` chan (LOW-273: logo nho tren nen tron).
+
+    MOT ban duy nhat cho ca cong chan (`submit_common.check_empty_image`) lan cac danh
+    sach "anh dung duoc" ma cong khac dua vao (LOW-288, 20/09/2026): truoc day cong
+    chan doc `image_rules_<vai>.EMPTY_SHARE_MAX` con cac danh sach khong doc gi, nen
+    `check_image_fall` doi Dre dung A77/A78 — dung hai tam ma cong trong dang chan —
+    va Kite bi ep dung A12 (LOW-278), bo dem bao "5/6" lac quan (LOW-280).
+    Vision chua do (`empty_share` thieu) thi khong chan, y nhu cong."""
+    import subject_fit
+    v = ROLE.get(canonical_slug(slug or "")) or ROLE[DEFAULT_IMAGE]
+    limit = getattr(rules_module(v.slug), "EMPTY_SHARE_MAX", subject_fit.EMPTY_SHARE_MAX)
+    return subject_fit.too_empty(a.get("empty_share"), limit)
+
+
 def can_be_hero(slug: str, a: dict) -> bool:
     """Tam anh `a` (mot muc trong manifest) co dung MOT MINH lam ANH CHINH cua
     vai `slug` khong — bia cua bo carousel, hay nen hero cua the card.

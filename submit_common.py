@@ -393,20 +393,23 @@ def check_not_reused_across_runs(anh: dict, cap, m: dict) -> list:
     return loi
 
 
-def _clean_photo(a: dict) -> bool:
+def _clean_photo(a: dict, slug: str = "") -> bool:
     """Anh chup SACH: vision da noi ro "khong roi", lien quan, anh chup (khong chart),
-    khong mat nguoi (mat nguoi con phu thuoc ten co trong bai). Chua xet ty le."""
+    khong mat nguoi (mat nguoi con phu thuoc ten co trong bai), KHONG bi cong anh trong
+    chan (LOW-288). Chua xet ty le."""
     if not a.get("uses") or a.get("relevant") is False or a.get("cluttered") is not False:
+        return False
+    if _vai.blocked_empty(a, slug):
         return False
     return a.get("kind") == "photo" and not a.get("ranking") and not a.get("faces")
 
 
-def _clean_use_alone(a: dict) -> bool:
+def _clean_use_alone(a: dict, slug: str = "") -> bool:
     """Anh SACH dung mot minh duoc cho mot slide/the, khong can vai khai them gi:
     `_clean_photo`, ngang thi phai cat doc duoc (vision landscape_crop_ok + du cao).
     Thieu dieu kien nao cung khong tinh — cong check_image_fall chi duoc bat vai doi
     anh khi THAT SU co cho doi, khong de ket."""
-    if not _clean_photo(a):
+    if not _clean_photo(a, slug):
         return False
     if a.get("landscape"):
         return (int(a.get("h") or 0) >= schema.HEIGHT_MIN_CROP_LANDSCAPE
@@ -430,7 +433,7 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
     rules = _vai.rules_module(m.get("image_role", ""))
     sach = []
     for ma, a in anh.items():
-        if ma in dung or not _clean_use_alone(a):
+        if ma in dung or not _clean_use_alone(a, m.get("image_role", "")):
             continue
         l, _ = rules.check_not_reused(ma, a["original_path"], m.get("draft_id", ""), m.get("link", ""))
         if not l:
