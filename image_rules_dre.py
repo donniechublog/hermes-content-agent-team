@@ -120,7 +120,7 @@ def subject_names(a: dict) -> list:
     th = (a.get("brand_match") or {}).get("person")
     if th:
         ra.append(str(th))
-    for txt in (a.get("printed_name") or "", a.get("description") or "", a.get("alt") or "",
+    for txt in (a.get("printed_name") or "", a.get("description") or "", role.real_alt(a),
                 " ".join(role.person_names_in_url(a.get("url") or ""))):
         if not txt or _is_title_case_headline(txt):
             continue

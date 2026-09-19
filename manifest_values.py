@@ -71,6 +71,10 @@ SOURCE_LABELS = {                       # image.source
     "arxiv_cover": "arxiv_bia",
     "role_supplied": "vai",
 }
+# LOW-285: nguon tim anh web (find_image_web) truoc 19/09/2026 ghi CAU TRUY VAN vao
+# `alt` — alt cua cac nguon nay KHONG phai chu thich that, khong duoc lay ten nguoi tu do
+# (manifest cu van con, nen nhan theo nguon chu khong theo ngay).
+SOURCES_ALT_IS_QUERY = frozenset({"web_bing", "web_yandex"})
 KIND_LABELS = {"photo": "anh"}          # image.kind
 RANKING_KIND_LABELS = {                 # ranking.kind
     "table": "bang",

@@ -216,11 +216,48 @@ def _name_in_article(nv: str, chu_bai: str) -> bool:
     ten = _words(dau_tien)
     if not ten:
         return True                      # khong con gi de doi chieu -> khong chan
-    bai = set(_words(chu_bai))
-    if all(w in bai for w in ten):
+    bai = _words(chu_bai)
+    # LIEN NHAU (LOW-285): truoc day so tung tu rieng le, nen "Lovable Sutro" (hai ten
+    # hang cach xa nhau trong bai) lot nhu mot ten nguoi.
+    if _contains_run(bai, ten):
         return True
     # Ten dai (co ten dem): chap nhan hai tu cuoi — "Nguyen Van A" khop "Van A".
-    return len(ten) > 2 and all(w in bai for w in ten[-2:])
+    return len(ten) > 2 and _contains_run(bai, ten[-2:])
+
+
+def _contains_run(words: list, run: list) -> bool:
+    """`run` co nam LIEN NHAU (dung thu tu) trong `words` khong."""
+    n = len(run)
+    return any(words[i:i + n] == run for i in range(len(words) - n + 1))
+
+
+def _brand_words(anh: dict) -> set:
+    """Cac tu cua TEN HANG/THUC THE trong bo anh (brand_match.company, entity.name) —
+    de nhan ra `subject` khai ten hang thay cho ten nguoi (LOW-285)."""
+    ra = set()
+    for a in (anh or {}).values():
+        for ten in ((a.get("brand_match") or {}).get("company"), (a.get("entity") or {}).get("name")):
+            ra.update(_words(ten or ""))
+    return ra
+
+
+def _not_person_subject(nv: str, anh: dict, ma_co: list) -> bool:
+    """`subject` (phan truoc dau ngan cach dau tien, nhu _name_in_article) KHONG phai ten
+    nguoi: mot chu, hoac chua ten hang trong tin — tru khi khop DUNG ten nguoi ma chinh
+    tam anh mang theo (brand_match.person, ten in tren anh, alt that): "Michael Dell"
+    cua hang Dell van qua."""
+    ten = _words(re.split(r"[,(\[|/]|\s[-–—]\s", nv)[0])
+    if not ten:
+        return False
+    bang_chung = set()
+    for ma in ma_co:
+        a = anh.get(ma) or {}
+        for t in _vai.person_names_of(a) + [(a.get("brand_match") or {}).get("person") or ""]:
+            if t:
+                bang_chung.add(tuple(_words(t)))
+    if tuple(ten) in bang_chung:
+        return False
+    return len(ten) < 2 or any(w in _brand_words(anh) for w in ten)
 
 
 def check_subject_named(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> list:
@@ -239,6 +276,11 @@ def check_subject_named(anh: dict, ma_ds, nhan_vat, chu_bai: str, nhan: str) -> 
                    "không thì đổi ảnh khác")
         return loi
     if not co or not nv:
+        return loi
+    if _not_person_subject(nv, anh, co):
+        loi.append(f"{nhan}subject \"{nv}\" không phải TÊN NGƯỜI (tên hãng/tổ chức, hoặc chỉ "
+                   "một chữ) — khai đúng họ tên người trong ảnh có trong bài; không biết là ai "
+                   "thì đổi ảnh khác, đừng khai tên hãng cho qua cổng (LOW-285)")
         return loi
     if chu_bai and not _name_in_article(nv, chu_bai):
         loi.append(f"{nhan}subject \"{nv}\" không xuất hiện trong chữ bài — "
