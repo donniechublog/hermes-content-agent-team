@@ -288,6 +288,50 @@ def check(caption: str, tu_lieu: str = "") -> tuple:
     return (loi, canh, tin)
 
 
+# Giong Jika (LOW-274, Ong Chu 19/09): khong goc nhin ca nhan, nguoi doc luon la
+# "quy dao huu", cau hoi ket bai vao thang noi dung, emoji chi o cau mo/ket.
+# Chi gate nhung thu KHONG co duong nham. "tôi"/"mình" khong gate (loi nguoi khac
+# trong ngoac kep co the chua chung); "bần đạo" khong gate (Ong Chu cho dung khi
+# buoc phai tu xung); "goc nhin ca nhan" la luat SOUL, khong regex nao bat duoc.
+_YOU_WORD = re.compile(r"(?<!\w)bạn(?!\w)(?!\s+(?:bè|gái|trai|thân|học|cũ|hữu|đời|hàng|đồng|cùng)(?!\w))",
+                       re.I)
+_ASK_LEAD = re.compile(r"(?<!\w)(?:hỏi\s+(?:thật|nhỏ|nhé|câu)|xin\s+hỏi|cho\s+hỏi|thử\s+hỏi)(?!\w)", re.I)
+
+
+_EMOJI_HEAD = re.compile("[\U0001F000-\U0001FAFF⌀-⏿☀-➿⬀-⯿]️?")
+_TAG_HEAD = re.compile(r"^(?:<[^>]+>)+")
+
+
+def check_jika_voice(caption: str) -> list:
+    """Loi giong rieng cua Jika: tra ve danh sach loi (rong = dat)."""
+    loi = []
+    ban = _YOU_WORD.search(caption)
+    if ban:
+        loi.append('Có "bạn" gọi người đọc: đổi thành "quý đạo hữu" '
+                   f'(gặp ở: “{caption[max(0, ban.start() - 20):ban.end() + 20].strip()}”).')
+    lead = _ASK_LEAD.search(caption)
+    if lead:
+        loi.append(f'Có mào đầu câu hỏi kiểu "{lead.group(0)}": câu hỏi kết bài đi thẳng vào '
+                   "nội dung, không báo trước rằng sắp hỏi.")
+
+    # Emoji CHI o cau mo dau va cau ket (Ong Chu 19/09). Moi cau mot dong nen
+    # dong ~ cau; dong dau/cuoi phai co emoji dung dau, dong giua thi khong.
+    lines = [l.strip() for l in caption.splitlines() if l.strip()]
+    if lines:
+        head = [_EMOJI_HEAD.match(_TAG_HEAD.sub("", l)) for l in lines]
+        if not head[0]:
+            loi.append("Câu mở đầu phải bắt đầu bằng một emoji.")
+        if not head[-1]:
+            loi.append("Câu kết phải bắt đầu bằng một emoji.")
+        mid = [l for l, h in zip(lines[1:-1], head[1:-1]) if h]
+        if mid:
+            loi.append("Emoji chỉ đặt ở câu mở đầu và câu kết, bỏ emoji ở các câu giữa bài "
+                       f"(gặp ở: “{mid[0][:40]}”).")
+        if len(lines) > 1 and head[0] and head[-1] and head[0].group(0) == head[-1].group(0):
+            loi.append("Emoji câu mở đầu và câu kết đang trùng nhau, đổi một trong hai.")
+    return loi
+
+
 def main():
     ap = argparse.ArgumentParser(description="Kiem caption truoc khi vao hang duyet")
     ap.add_argument("--caption-file", required=True)
