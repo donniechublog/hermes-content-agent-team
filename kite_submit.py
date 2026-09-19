@@ -388,6 +388,9 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
         if s2 is None:
             continue
         ra["slides"].append(s2)
+    # Cung mot buc anh tai tu hai nguon len hai slide (LOW-284) — md5 (check_duplicate) khong bat.
+    loi += nc.check_same_photo(hinh, [(f"slide {i}", [sl.get("image")])
+                                      for i, sl in enumerate(slides, 1) if sl.get("image")])
 
     # Brief noi "CO n hinh that lien quan -> BAT BUOC dung it nhat mot"
     # (kite_prepare.py), nhung truoc 06/09/2026 khong cong nao kiem: vai bo qua
