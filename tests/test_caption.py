@@ -257,6 +257,21 @@ def test_ma_nguon_mo_khong_bi_chan():
     assert not _co(loi, "dẫn nguồn"), loi
 
 
+# ---------------------------------------------------------------- nguon tin giua cau (LOW-259)
+def test_nguon_tin_van_phong_bao_chi_khong_bi_chan():
+    """'Bốn nguồn tin nói...' la van phong bao chi binh thuong (four sources
+    say), khac han dong dan nguon 'Nguồn tin: X'. Bug that: task t_6a8bca46
+    (Miles) bi chan 3 lan cung mot loi roi ket vinh vien o blocked."""
+    loi, _c, _t = _kiem(CHUAN + "\nBốn nguồn tin nói quân đội Mỹ lập kế hoạch chặn tàu.")
+    assert not _co(loi, "dẫn nguồn"), loi
+
+
+def test_dong_dan_nguon_tin_van_bi_chan():
+    """Dong dan nguon that co dau hai cham/gach ngang van phai bi chan."""
+    loi, _c, _t = _kiem(CHUAN + "\nNguồn tin: Reuters.")
+    assert _co(loi, "dẫn nguồn", "Nguồn tin:"), loi
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())
