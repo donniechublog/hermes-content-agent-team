@@ -148,20 +148,27 @@ def test_filter_empty_when_no_has_what():
     assert th.filter_commons({}, "Qualcomm") == [] and th.filter_commons(None, "Qualcomm") == []
 
 
-def test_vendor_images_no_more_cap_at_two_match_story_ceiling():
-    """LOW-263 (19/09/2026): trước đây mỗi hãng bị chặn ở 2 ảnh dù Commons còn
-    thiếu gì đâu ("de mot bo khong thanh album tru so") — nhưng trần đó đã có
-    `fallback_rounds.MAX_EXTRA_BRAND_` (trần TỔNG cho cả tin) + round-robin
-    giữa các hãng lo rồi. Đo thật: tin chỉ nhắc Microsoft, 1 báo, trang nguồn
-    dính captcha — hãng vô hạn ảnh mà bị bóp xuống 2. Commons có ≥ 4 ảnh sạch
-    thì `vendor_images` phải lấy đủ tới `MAX_NEW_RANK` (khớp trần tổng), không
-    dừng ở 2 nữa."""
-    assert th.MAX_NEW_RANK == 4, "phải khớp fallback_rounds.MAX_EXTRA_BRAND_ (trần tổng một bộ)"
-    pages = {str(i): p for i, p in enumerate([
-        _pg(f"Microsoft Headquarters {i}.jpg", 4036, 3456) for i in range(6)])}
-    with mock.patch.object(th, "_ask_commons", return_value=pages):
+def test_vendor_images_no_cap_takes_every_clean_candidate():
+    """LOW-263 (19/09/2026): trước đây mỗi hãng bị chặn ở một số ảnh cố định
+    (`MAX_NEW_RANK`, từng là 2 rồi 4) dù Commons còn thiếu gì đâu ("de mot bo
+    khong thanh album tru so") — lý do đó đã có `_round_brand` (trần TỔNG
+    `MAX_IMAGE + 4` của cả carousel + round-robin giữa các hãng) lo rồi. Đo
+    thật: tin chỉ nhắc Microsoft, 1 báo, trang nguồn dính captcha — hãng vô
+    hạn ảnh mà bị bóp xuống một số cố định. Bỏ hẳn trần ở `vendor_images`:
+    Commons trả 2 ảnh sạch cho MỖI câu hỏi (`headquarters`/`building`/`campus`,
+    xem `SUFFIX`) thì phải lấy đủ CẢ 6, không dừng ở một trần nhân tạo nào."""
+    theo_cau = {
+        "Microsoft headquarters": {"0": _pg("Microsoft Headquarters A.jpg", 4036, 3456),
+                                    "1": _pg("Microsoft Headquarters B.jpg", 4036, 3456)},
+        "Microsoft building": {"0": _pg("Microsoft Building A.jpg", 4036, 3456),
+                                "1": _pg("Microsoft Building B.jpg", 4036, 3456)},
+        "Microsoft campus": {"0": _pg("Microsoft Campus A.jpg", 4036, 3456),
+                              "1": _pg("Microsoft Campus B.jpg", 4036, 3456)},
+    }
+    with mock.patch.object(th, "_ask_commons", side_effect=lambda cau: theo_cau[cau]), \
+         mock.patch.object(th, "image_wikidata", return_value=[]):
         ra = th.vendor_images({"key": "microsoft", "company": "Microsoft"})
-    assert len(ra) == th.MAX_NEW_RANK, f"chỉ lấy {len(ra)}/{th.MAX_NEW_RANK} dù Commons còn dư ảnh sạch"
+    assert len(ra) == 6, f"chỉ lấy {len(ra)}/6 ảnh sạch dù Commons trả đủ cho cả 3 câu hỏi"
 
 
 def _image(**o):

@@ -58,14 +58,6 @@ import manifest_values
 import state_paths
 
 MAX_RANK = 3            # số hãng lấy trong một tin
-# LOW-263 (19/09/2026): tung la 2, voi ly do "de mot bo khong thanh album tru
-# so" — nhung ly do do da co `fallback_rounds.MAX_EXTRA_BRAND_` (tran TONG cho
-# ca tin) + round-robin chia deu giua cac hang lo roi (xem "_round_brand"). Cap
-# rieng o day chi con tac dung phu: bop chet dung ca CAN no nhat — tin mot hang
-# duy nhat, it nguon (1 bao, trang nguon dinh captcha), ma hang do (Microsoft,
-# Google...) co material that vo han. Nang khop tran tong de mot hang duy nhat
-# van lay duoc toi da so anh ma _round_brand cho phep, thay vi tu bop truoc.
-MAX_NEW_RANK = 4        # anh moi hang — bang tran tong (fallback_rounds.MAX_EXTRA_BRAND_)
 SHORT_SIDE_MIN = 700
 
 # Tên đi tìm trên Commons cho từng hãng (khoá = tên hãng chuẩn của
@@ -812,44 +804,48 @@ def image_has_ballot(hang, wd, phien=None) -> list:
     return [c]
 
 
-def vendor_images(hang, so: int = MAX_NEW_RANK, wd=None) -> list:
+def vendor_images(hang, wd=None) -> list:
     """Ứng viên ảnh thương hiệu cho một hãng ({"key","company"} hoặc khoá).
 
     Hai đường, theo độ "là ảnh chụp thật của hãng" giảm dần:
-      1. tìm tên tệp trên Commons: `"<Hãng> headquarters/building/campus"`;
-      2. hồ sơ Wikidata: ảnh công ty -> founder/CEO (kèm tên) -> logo.
-    Đường 2 chạy khi đường 1 chưa đủ `so` — hãng thuần phần mềm (Anthropic,
-    DeepSeek) không có ảnh trụ sở nào trên Commons, và đó chính là loại tin hay
-    bị dừng ở nút "chỉ 2/5 ảnh". Hỏng mạng -> []."""
+      1. tìm tên tệp trên Commons: `"<Hãng> headquarters/building/campus"`,
+         tối đa `MAX_QUERY` câu hỏi/hãng — tự bị chặn bởi số kết quả Commons
+         thật trả về, không cần thêm trần nhân tạo nào ở đây (LOW-263,
+         19/09/2026: trần "N ảnh/hãng" từng có ở đây bóp chết đúng ca cần
+         nó nhất — tin chỉ một hãng, ít nguồn, mà hãng đó (Microsoft,
+         Google…) có material thật vô hạn trên Commons/báo chí. Số ảnh
+         một tin THỰC SỰ dùng vẫn bị chặn đúng chỗ: trần tổng của cả
+         carousel ở `_round_brand`/`prepare/common.MAX_IMAGE`).
+      2. hồ sơ Wikidata: ảnh công ty -> founder/CEO (kèm tên) -> logo — LUÔN
+         chạy thêm (không đợi đường 1 thiếu): hãng thuần phần mềm (Anthropic,
+         DeepSeek) không có ảnh trụ sở nào trên Commons, và đó chính là loại
+         tin hay bị dừng ở nút "chỉ 2/5 ảnh"; vài ảnh nữa không hại gì, việc
+         chọn/cắt cuối cùng đã có `_round_brand` (round-robin + trần tổng) lo.
+    Hỏng mạng -> []."""
     khoa = hang["key"] if isinstance(hang, dict) else hang
     ten_chinh = DISPLAY_NAME.get(khoa, (khoa.title(),))[0]
     ra, da, hong = [], set(), 0
     for ten, cau in query(khoa):
-        if len(ra) >= so:
-            break
         pages = _ask_commons(cau)
         if pages is None:                    # hong moi truong, KHONG phai "khong co anh"
             hong += 1
             continue
-        for c in filter_commons(pages, ten, so=so):
+        for c in filter_commons(pages, ten):
             if c["image_url"] in da:
                 continue
             da.add(c["image_url"])
             c["brand_match"] = {"company": ten_chinh, "key": khoa, "kind": "photo", "keyword": cau}
             ra.append(c)
-            if len(ra) >= so:
-                break
     if hong and not ra:
         # ADF-r2-16: truoc day {} cua _ask_commons di thang vao filter_commons nen
         # mat mang == hang khong co anh. Giu hop dong tra [] cua ham, nhung noi
         # ro de brief/nhat ky khong ket luan sai ve hang.
         print(f"[thuong_hieu] {khoa}: {hong} truy van Commons HONG (mang/API) — "
               "khong phai hang khong co anh", file=sys.stderr)
-    if len(ra) < so:
-        for c in image_wikidata(hang, wd):
-            if c["image_url"] not in da:
-                da.add(c["image_url"])
-                ra.append(c)
+    for c in image_wikidata(hang, wd):
+        if c["image_url"] not in da:
+            da.add(c["image_url"])
+            ra.append(c)
     return ra
 
 
@@ -877,8 +873,8 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
     LOW-260 (19/09/2026): nhánh "stock" tách riêng khỏi câu chung "trụ sở/
     campus/sản phẩm" bên dưới — một ảnh chụp màn hình biểu đồ giá không bao
     giờ trả lời "có" được câu hỏi đó, nên MỌI ảnh tier cổ phiếu (đúng hãng,
-    đúng mã) bị vision loại oan, chắc chắn phí 1 trong `MAX_NEW_RANK` suất
-    ảnh của hãng (đo thật: MSFT:NASDAQ của Microsoft)."""
+    đúng mã) bị vision loại oan, chắc chắn phí một lượt tải/nhìn vô ích (đo
+    thật: MSFT:NASDAQ của Microsoft)."""
     hang, loai = th.get("company", "hãng"), th.get("kind", "photo")
     if loai == "stock":
         ma = th.get("ticker", "")
