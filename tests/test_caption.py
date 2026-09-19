@@ -272,6 +272,77 @@ def test_dong_dan_nguon_tin_van_bi_chan():
     assert _co(loi, "dẫn nguồn", "Nguồn tin:"), loi
 
 
+# ---------------------------------------------------------------- giong Jika (LOW-274)
+def test_jika_bat_hoi_that_va_ban_trong_cau_that():
+    """Cau that Ong Chu bao bo (19/09): 'Bần đạo hỏi thật: nếu là bạn, bạn rót ...'."""
+    loi = cc.check_jika_voice("🏆 Mở bài.\n💬 Bần đạo hỏi thật: nếu là bạn, bạn rót không?")
+    assert _co(loi, "bạn", "quý đạo hữu"), loi
+    assert _co(loi, "hỏi thật"), loi
+
+
+def test_jika_ban_dao_khong_bi_chan():
+    """Ong Chu 19/09: khi buoc phai tu xung thi dung 'bần đạo'; cong khong chan
+    ('tôi', 'mình' cung khong chan). Chi cau hoi mao dau moi bi bat."""
+    ok = "🏆 Bần đạo chưa từng thấy hãng nào công bố số như thế.\nGiữa bài.\n💬 Quý đạo hữu nghĩ sao về chuyện này?"
+    assert cc.check_jika_voice(ok) == []
+    assert cc.check_jika_voice(ok.replace("Bần đạo", "Tôi").replace("chưa từng", "chưa từng")) == []
+
+
+def test_jika_bat_moi_kieu_mao_dau_cau_hoi():
+    for lead in ("Xin hỏi", "Cho hỏi", "Thử hỏi", "Hỏi nhỏ", "hỏi nhé"):
+        assert _co(cc.check_jika_voice(f"{lead}: quý đạo hữu rót không?"), "mào đầu"), lead
+
+
+def test_jika_quy_dao_huu_dat():
+    ok = "🏆 Model mới ra lò.\nSố liệu do hãng công bố.\n💬 Quý đạo hữu còn tin điểm MMLU tới mức nào, hay giờ chỉ tin bài test của chính mình?"
+    assert cc.check_jika_voice(ok) == []
+
+
+def test_jika_khong_bat_oan_ban_be_ban_gai():
+    """'bạn bè', 'bạn gái', 'bạn học' la danh tu trong tin, khong phai goi nguoi doc."""
+    loi = cc.check_jika_voice("🏆 Bạn bè ông Musk và bạn gái cũ, bạn học cùng lớp đều có mặt.\n💬 Quý đạo hữu nghĩ đó là tình cờ?")
+    assert not _co(loi, "bạn", "quý đạo hữu"), loi
+    assert loi == [], loi
+
+
+def test_jika_bai_mau_trong_soul_dat_cong():
+    """Bai mau trong SOUL Jika phai qua chinh cong nop: khong bat oan, khong lech luat."""
+    import re
+    for org in ("blog", "dcgr"):
+        t = (ROOT / "hermes" / "profiles" / org / "jika.SOUL.md").read_text(encoding="utf-8")
+        mau = re.search(r"### Bài mẫu đúng giọng.*?```\n(.*?)```", t, re.S).group(1).strip()
+        assert cc.check_jika_voice(mau) == [], (org, cc.check_jika_voice(mau))
+        loi, _c, _t = cc.check(mau)
+        assert loi == [], (org, loi)
+        co_emoji = [d for d in mau.splitlines() if cc._EMOJI_HEAD.match(d)]
+        assert len(co_emoji) == 2, f"{org}: chỉ câu mở và câu kết có emoji, đang có {len(co_emoji)}"
+
+
+def test_jika_emoji_chi_o_cau_mo_va_ket():
+    """Ong Chu 19/09: emoji chi o cau mo dau va cau ket, khong con o dau moi cau."""
+    dung = "🏆 Mở bài.\nCâu giữa.\nCâu giữa nữa.\n💬 Quý đạo hữu nghĩ sao về chuyện này?"
+    assert cc.check_jika_voice(dung) == []
+    moi_cau = "🏆 Mở bài.\n📦 Câu giữa.\n💬 Quý đạo hữu nghĩ sao về chuyện này?"
+    assert _co(cc.check_jika_voice(moi_cau), "câu giữa bài"), cc.check_jika_voice(moi_cau)
+
+
+def test_jika_thieu_emoji_mo_hoac_ket_la_loi():
+    loi = cc.check_jika_voice("Mở bài không emoji.\nCâu giữa.\nKết không emoji.")
+    assert _co(loi, "Câu mở đầu"), loi
+    assert _co(loi, "Câu kết"), loi
+
+
+def test_jika_emoji_mo_va_ket_trung_nhau_la_loi():
+    loi = cc.check_jika_voice("💬 Mở bài.\nCâu giữa.\n💬 Quý đạo hữu nghĩ sao?")
+    assert _co(loi, "trùng nhau"), loi
+
+
+def test_jika_emoji_co_the_html_va_variation_selector():
+    """<b> boc dau dong va emoji co U+FE0F (🕳️) van duoc nhan la emoji."""
+    loi = cc.check_jika_voice("<b>🕳️ Mở bài.</b>\nGiữa.\n💬 Quý đạo hữu nghĩ sao?")
+    assert loi == [], loi
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca          # runner chung: bat ca Exception, luon in N/M (E-r2-2)
     chay_tat_ca(globals())

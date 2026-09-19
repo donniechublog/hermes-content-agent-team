@@ -72,6 +72,8 @@ def main() -> int:
     p_tl = wd / state_paths.MATERIAL_FILE
     tl = p_tl.read_text(encoding="utf-8") if p_tl.exists() else ""
     loi, canh, tin = caption_check.check(cap, tl)
+    if persona == "jika":
+        loi += caption_check.check_jika_voice(cap)
     print(f"[do] {tin.get('char_count', 0)} ký tự | {tin.get('sentence_count', 0)} câu | {tin.get('number_count', 0)} chỗ có số"
           f" | tỉ lệ dấu {tin.get('diacritic_ratio', 0):.2f}"
           + (f" | nguồn có {tin['source_number_sentence_count']} câu số liệu" if "source_number_sentence_count" in tin else ""))
