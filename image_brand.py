@@ -580,42 +580,86 @@ def card_logo(tep_logo, out, brand: str = "donniechublog"):
 
     Logo Commons hay là PNG trong suốt / SVG render nền trong; dán thẳng lên nền
     tối thì chữ đen của wordmark biến mất, nên nền được chọn theo độ sáng của
-    chính logo."""
+    chính logo.
+
+    LOW-270 (19/09/2026, Ông Chủ: "logo mà hiển thị quá nhỏ so với khung hình
+    thì cũng ko ưu tiên"): trước đây logo bị ép rộng 62% khung, cao tối đa 30%,
+    và dán NGUYÊN tệp nguồn kể cả viền trống — đo 39 hãng: logo chữ ngang chỉ
+    chiếm 3–10% diện tích (Microsoft 6,6%, Hugging Face 1,3%). Giờ cắt viền
+    trống của tệp nguồn, trải `LOGO_CARD_WIDTH` bề ngang, cao tối đa
+    `LOGO_CARD_MAX_HEIGHT`. Trả thêm tỉ lệ diện tích phần logo NHÌN THẤY ĐƯỢC
+    trong khung (`logo_fill`, đo trên thẻ đã dựng) để `image_wikidata` hạ ưu
+    tiên logo vẫn quá nhỏ.
+
+    Nền: trước đây chọn theo độ sáng TRUNG BÌNH của logo — logo nhiều màu thì
+    trung bình lừa: Hugging Face (mặt cười vàng + chữ xanh đen) ra nền tối và
+    chữ "Hugging Face" chìm mất. Giờ chọn nền làm ÍT điểm ảnh logo bị chìm nhất."""
     import card
-    from PIL import Image
+    from PIL import Image, ImageChops
     card.set_brand(brand)
     w, h = 1200, 1500
     lg = Image.open(tep_logo)
     lg = lg.convert("RGBA") if lg.mode in ("RGBA", "LA", "P") else lg.convert("RGB")
-    # Độ sáng phần KHÔNG trong suốt: logo chữ đen -> nền sáng, logo chữ trắng -> nền tối.
+    lg = _trim_logo_margin(lg)
     px = lg.convert("RGBA")
-    sang = _measure_bright_logo(px)
-    nen = (245, 245, 245) if sang < 110 else card.BG
+    light_background = (245, 245, 245)
+    nen = (light_background if _hidden_pixel_count(px, light_background) <= _hidden_pixel_count(px, card.BG)
+           else card.BG)
     im = Image.new("RGB", (w, h), nen)
-    rong = int(w * 0.62)
+    rong = int(w * LOGO_CARD_WIDTH)
     cao = max(1, round(lg.height * rong / lg.width))
-    if cao > h * 0.30:                       # logo dọc: khớp theo chiều cao
-        cao = int(h * 0.30)
+    if cao > h * LOGO_CARD_MAX_HEIGHT:       # logo dọc/vuông: khớp theo chiều cao
+        cao = int(h * LOGO_CARD_MAX_HEIGHT)
         rong = max(1, round(lg.width * cao / lg.height))
     lg = lg.resize((rong, cao), Image.LANCZOS)
+    # Tâm logo ở 30% chiều cao: logo cao nhất (40%) vẫn nằm gọn trong nửa trên,
+    # nửa dưới để hook đè.
     hop = ((w - rong) // 2, int(h * 0.30) - cao // 2)
     im.paste(lg, hop, lg if lg.mode == "RGBA" else None)
     import image_provenance
     Path(out).parent.mkdir(parents=True, exist_ok=True)
     im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance("logo_card"))
-    return out, ("light" if sang < 110 else "dark")
+    visible = ImageChops.difference(im, Image.new("RGB", (w, h), nen)).convert("L")
+    bbox = visible.point(lambda v: 255 if v > 24 else 0).getbbox()
+    fill = ((bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) / (w * h)) if bbox else 0.0
+    return out, ("light" if nen == light_background else "dark"), fill
 
 
-def _measure_bright_logo(px) -> float:
-    """Độ sáng trung bình của phần ĐỤC trong logo (bỏ vùng trong suốt)."""
-    L = px.convert("L")
-    a = px.getchannel("A")
-    tong = so = 0
-    for lum, alpha in zip(L.getdata(), a.getdata()):
-        if alpha > 128:
-            tong += lum
-            so += 1
-    return (tong / so) if so else 128.0
+LOGO_CARD_WIDTH = 0.88        # logo trải tối đa 88% bề ngang thẻ
+LOGO_CARD_MAX_HEIGHT = 0.40   # và cao tối đa 40% (nửa trên, chừa chỗ cho hook)
+# Dưới mức này phần logo nhìn thấy được coi là "quá nhỏ so với khung" — không
+# ưu tiên (LOW-270). Mốc: bìa logo Microsoft Ông Chủ chê nhỏ (19/09/2026) chiếm
+# 6,6% khung. Đo lại 39 hãng sau khi phóng to: chỉ Anthropic (6,98%, chữ ngang
+# rất mảnh) còn dưới mốc.
+LOGO_FILL_MIN = 0.07
+
+
+def _trim_logo_margin(lg):
+    """Cắt viền trống quanh logo, trả RGBA. Tệp logo Commons hay có viền rộng —
+    viền đó bị phóng to theo làm logo thật teo lại trong thẻ.
+
+    Tệp có nền TRẮNG ĐỤC (không trong suốt, vd Cohere-Logo.png) thì nền trắng đó
+    được coi là trong suốt trước khi cắt — không thì dán lên nền tối thành một
+    hộp trắng. Chỉ nền gần trắng: logo có ô màu riêng (icon app) giữ nguyên ô."""
+    lg = lg.convert("RGBA")
+    r, g, b, a = lg.getpixel((0, 0))
+    if a > 8 and min(r, g, b) > 235:
+        lg.putdata([(pr, pg, pb, 0) if min(pr, pg, pb) > 235 else (pr, pg, pb, pa)
+                    for pr, pg, pb, pa in lg.getdata()])
+    bbox = lg.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
+    return lg.crop(bbox) if bbox else lg
+
+
+def _hidden_pixel_count(px, background) -> int:
+    """Số điểm ảnh ĐỤC của logo gần màu nền tới mức chìm vào nền (mọi kênh lệch
+    < 48). Đo trên bản thu nhỏ cho nhanh — chỉ cần so hai nền với nhau."""
+    small = px.copy()
+    small.thumbnail((300, 300))
+    hidden = 0
+    for r, g, b, a in small.getdata():
+        if a > 128 and max(abs(r - background[0]), abs(g - background[1]), abs(b - background[2])) < 48:
+            hidden += 1
+    return hidden
 
 
 def image_wikidata(hang, wd=None) -> list:
@@ -667,12 +711,17 @@ def image_wikidata(hang, wd=None) -> list:
             import httpx
             goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
                                       timeout=30, follow_redirects=True).content)
-            the, nen = card_logo(goc, Path(wd) / state_paths.LOGO_CARD_FILE, env_load.brand_long())
+            the, nen, fill = card_logo(goc, Path(wd) / state_paths.LOGO_CARD_FILE, env_load.brand_long())
         except Exception as e:                               # noqa: BLE001
             print(f"[thuong_hieu] the logo hong: {type(e).__name__}", file=sys.stderr)
             continue
         c = _candidate(u, t, ten_chinh, khoa, "logo", "logo chính thức (Wikidata P154)")
         c["brand_match"]["background_tone"] = nen
+        c["brand_match"]["logo_fill"] = round(fill, 4)
+        if fill < LOGO_FILL_MIN:
+            c["brand_match"]["small_logo"] = True
+            print(f"[thuong_hieu] {khoa}: logo chi chiem {fill:.1%} khung (< {LOGO_FILL_MIN:.0%}) "
+                  "-- khong uu tien (LOW-270)", file=sys.stderr)
         c.update({"file_path": str(the), "image_url": str(the), "graphic_allowed": True})
         ra.append(c)
     return ra
@@ -939,11 +988,16 @@ def label_by_type(th: dict) -> str:
                 f"Chỉ dùng khi BÀI CÓ NHẮC {ai}, và phải khai \"subject\": \"{ai}\" "
                 "y hệt. Bài không nhắc tên người này thì bỏ (IMAGE_RULES §6).")
     if loai == "logo":
-        return (f"🔖 THẺ LOGO {hang} — logo chính thức đặt trên nền trơn, dồn lên "
-                f"nửa trên để hook đè nửa dưới. Nền {manifest_values.tone_label(th.get('background_tone', 'dark'))} → khai "
-                f"\"background_tone\": \"{'light' if th.get('background_tone') == 'light' else 'dark'}\". "
-                "Đường cuối khi tin không có ảnh thật nào khác — đừng dùng nếu đã "
-                "có ảnh chụp.")
+        # LOW-270: câu cũ "Đường cuối... đừng dùng nếu đã có ảnh chụp" là từ trước
+        # LOW-264 (logo đứng ĐẦU thứ tự ưu tiên ảnh hãng) — brief tự mâu thuẫn với
+        # thứ tự engine đã xếp. Chỉ logo quá nhỏ trong khung mới là phương án cuối.
+        head = (f"🔖 THẺ LOGO {hang} — logo chính thức đặt trên nền trơn, dồn lên "
+               f"nửa trên để hook đè nửa dưới. Nền {manifest_values.tone_label(th.get('background_tone', 'dark'))} → khai "
+                f"\"background_tone\": \"{'light' if th.get('background_tone') == 'light' else 'dark'}\". ")
+        if th.get("small_logo"):
+            return head + (f"⚠️ Logo chỉ chiếm {th.get('logo_fill', 0):.0%} khung — QUÁ NHỎ, không ưu tiên: "
+                          "chỉ dùng khi không còn ảnh nào khác làm bìa.")
+        return head + "Ưu tiên đầu cho bìa (logo > CEO/founder > trụ sở > xếp hạng > cổ phiếu, LOW-264)."
     if loai == "stock":
         return (f"📈 BIỂU ĐỒ GIÁ {th.get('ticker', '?')} của {hang} (Google Finance, khung điện thoại) — "
                 "vật liên quan của tin BUSINESS/M&A theo bảng loại tin. Đồ hoạ có chủ ý: dán "
