@@ -27,6 +27,8 @@ import concurrent.futures as cf
 import json
 import re
 import sys
+import threading
+import time
 import urllib.parse as up
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -45,6 +47,12 @@ COUNT_SOURCE = 4
 # tu tra khi co exception, nen approve coi 5/9 tin la "loi" va BO LUON buoc doi
 # link Google News sang link that. Ma rieng de nguoi goi tach hai truong hop.
 EXIT_ONLY_ORIGINAL = 3
+# LOW-277 (19/09/2026): vong doan RSS theo ten mien trong `find()` tung ton ~80s cho
+# mot tin — mot mien treo ca 5 duong x 15s, va `with ThreadPoolExecutor` doi no du
+# ket qua da co tu giay 3-6. Do 26 tin that: bai khop qua RSS den muon nhat o giay
+# 13,9 tinh tu dau `find()`. Tran ca vong + timeout moi lan tai:
+FEED_BUDGET_SECONDS = 15
+FEED_TIMEOUT_SECONDS = 10
 
 # ---- tep article_source_<id>.json (LOW-238; bang docs/tu_dien_ten/article_source_keys_v2.json)
 #   {"title", "title_en", "source_url", "gnews_url"?, "pages": [{"url", "kind", "title"?, "outlet_url"?}]}
@@ -683,12 +691,15 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
                 mien.append((u, it.findtext("title") or ""))
 
     goc = _tu(ten or tieu_de)
+    stop_feeds = threading.Event()
 
     def _trong_feed(cap):
         m, _ = cap
         for duong in ("/feed/", "/rss", "/feed", "/rss.xml", "/index.xml"):
+            if stop_feeds.is_set():                          # het FEED_BUDGET_SECONDS (LOW-277)
+                return None
             try:
-                rr = _download(m + duong, 15)
+                rr = _download(m + duong, FEED_TIMEOUT_SECONDS)
                 if rr.status_code != 200 or b"<item" not in rr.content[:400_000]:
                     continue
                 for i in ET.fromstring(rr.content).findall(".//item"):
@@ -698,18 +709,34 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
                         return {"url": i.findtext("link") or "", "kind": "other_outlet",
                                 "title": t, "outlet_url": m}
                 return None
+            except (httpx.TimeoutException, httpx.ConnectError):
+                return None                                  # mien treo/khong toi duoc: bo 4 duong con lai
             except Exception:                                # noqa: BLE001
                 continue
         return None
 
     thay = {link}
-    with cf.ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
-        for kq in ex.map(_trong_feed, mien[: so * 3]):
-            if kq and kq["url"] and kq["url"] not in thay:
-                thay.add(kq["url"])
-                ra.append(kq)
-            if len(ra) > so:
-                break
+    # Khong `with`: khoi `with` doi MOI luong xong ke ca khi da het tran (LOW-277).
+    # Luong dang tai do se tu dung sau lan tai hien tai nho `stop_feeds`.
+    feed_start = time.time()
+    pool = cf.ThreadPoolExecutor(max_workers=env_load.quantity(6))
+    futures = [pool.submit(_trong_feed, cap) for cap in mien[: so * 3]]
+    done, not_done = cf.wait(futures, timeout=FEED_BUDGET_SECONDS)
+    stop_feeds.set()
+    pool.shutdown(wait=False, cancel_futures=True)
+    if not_done:
+        print(f"[nguon_bai] doan RSS: het {FEED_BUDGET_SECONDS}s, bo {len(not_done)}/{len(futures)} "
+              f"mien chua xong", file=sys.stderr)
+    elif futures:
+        print(f"[nguon_bai] doan RSS: {len(futures)} mien xong trong {time.time() - feed_start:.1f}s",
+              file=sys.stderr)
+    for fut in futures:                                      # giu thu tu Google News, khong theo luc xong
+        kq = fut.result() if fut in done and fut.exception() is None else None
+        if kq and kq["url"] and kq["url"] not in thay:
+            thay.add(kq["url"])
+            ra.append(kq)
+        if len(ra) > so:
+            break
     # Goi Bing khi chua du `so`+1 nguon (truoc: < 3). Vong feed thuong chi ra 2-3
     # trang vi nhieu toa soan khong co RSS; Bing voi headline tieng Anh bu phan con lai.
     m = re.match(r"https?://([^/]+)", link)
