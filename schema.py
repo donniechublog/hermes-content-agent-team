@@ -147,6 +147,10 @@ class Image(TypedDict, total=False):
     page_title: str
     background_color: str
     padding_color: str
+    unpadded_path: str             # ban truoc khi dem padding_color (ti le tu nhien) — chi
+                                    # co khi padding_color duoc set; renderer full-bleed nhu
+                                    # render_edu.py (Kite) phai dung tep nay thay vi original_path
+                                    # (LOW-262), carousel.py (Dre) van dung original_path nhu cu
     paper_figure: str
     fallback: bool
     html_tag: str

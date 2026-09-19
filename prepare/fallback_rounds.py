@@ -629,8 +629,13 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         # khong can lop phu nua.
         try:
             capture_page.count_background(tam, moi, "#000000")
-            Path(tam).unlink(missing_ok=True)
+            # GIU LAI `tam` (ti le tu nhien, chua dem vien) thay vi xoa (LOW-262):
+            # renderer full-bleed cua Kite (render_edu.py) tu lo full-width fit/crop
+            # rieng, dua no anh da dem vien den (quy uoc cua carousel.py/Dre) thi
+            # vien do la pixel that, bi trai theo luon len slide. `unpadded_path`
+            # la loi ra cho renderer do — `kite_submit.py` uu tien dung no.
             a["padding_color"] = "#000000"
+            a["unpadded_path"] = str(tam)
         except Exception as e:                               # noqa: BLE001
             print(f"[chup nguon] {_domain(u)}: dem nen hong ({type(e).__name__}), giu tam goc",
                   file=sys.stderr)

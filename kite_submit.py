@@ -69,7 +69,14 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
         else:
 
-            s2["image"] = hinh[img]["original_path"]
+            # LOW-262: anh chup trang nguon (`padding_color` set) da bi
+            # `count_background` dem vien den de dung rieng cho carousel.py
+            # (Dre) — render_edu.py (Kite) tu lo full-width fit/crop, dua no
+            # anh da dem vien thi vien do la pixel that, bi trai theo len
+            # slide. Dung `unpadded_path` (ti le tu nhien, chua dem) khi co.
+            img_path = hinh[img].get("unpadded_path") or hinh[img]["original_path"]
+
+            s2["image"] = img_path
 
             # KHONG DUNG LAI ANH DA DUNG (Ong Chu 06/09/2026). Dre va Ethan
 
@@ -77,7 +84,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # bang benchmark Dre dung hom qua van len bo cua Kite hom nay.
 
-            l, _ = image_rules_kite.check_not_reused(f"slide {i} ({img})", hinh[img]["original_path"],
+            l, _ = image_rules_kite.check_not_reused(f"slide {i} ({img})", img_path,
 
                                          m.get("draft_id", ""), m.get("link", ""))
 
@@ -95,7 +102,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             nhan = f"slide {i} ({img})"
 
-            l, c = image_rules_kite.check_duplicate(nhan, hinh[img]["original_path"], da_thay)
+            l, c = image_rules_kite.check_duplicate(nhan, img_path, da_thay)
 
             loi += l
 
@@ -105,7 +112,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
                 from PIL import Image as _Im
 
-                with _Im.open(hinh[img]["original_path"]) as _im:
+                with _Im.open(img_path) as _im:
 
                     l, c = image_rules_kite.check_blank_image(nhan, _im)
 
@@ -133,7 +140,7 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             # buoc chuan bi nen ung vien nay phai doi hoi giong het Dre/Ethan.
 
-            l, c = image_rules_kite.check_unnamed_face(nhan, hinh[img]["original_path"], sl.get("subject"))
+            l, c = image_rules_kite.check_unnamed_face(nhan, img_path, sl.get("subject"))
 
             loi += l
 
