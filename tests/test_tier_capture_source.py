@@ -90,6 +90,7 @@ def test_image_capture_ok_permission_make_cover_and_no_ask_vision():
         return {"image_url": url, "page_url": url, "source": "capture_source", "capture_source": True,
                 "alt": "khối lead", "score_reason": "khối lead của trang nguồn"}
 
+    from PIL import Image
     that = capture_page.capture_lead_mobile
     capture_page.capture_lead_mobile = gia
     try:
@@ -97,6 +98,18 @@ def test_image_capture_ok_permission_make_cover_and_no_ask_vision():
             wd = Path(d)
             anh, dung_duoc, _ = fallback_rounds._round_capture_source(
                 [], "https://vidu.com/bai-toan", [{"url": "https://bao-khac.com/x"}], wd)
+            # LOW-262: `original_path` (dem vien den cho carousel.py) phai con
+            # giu ban `unpadded_path` (ti le tu nhien, TRUOC khi dem) — kiem
+            # trong scope cua TemporaryDirectory, tep bien mat khi ra khoi `with`.
+            for a in anh:
+                assert a.get("unpadded_path"), f'{a["id"]}: thiếu unpadded_path'
+                assert a["unpadded_path"] != a["original_path"]
+                with Image.open(a["unpadded_path"]) as im_raw:
+                    assert im_raw.size == (414 * 3, 520 * 3), \
+                        f'{a["id"]}: unpadded_path bị đổi kích thước, phải giữ nguyên ảnh chụp gốc'
+                with Image.open(a["original_path"]) as im_padded:
+                    assert im_padded.size == (1080, 1350), \
+                        f'{a["id"]}: original_path phải vẫn là bản đã đệm 4:5 cho carousel.py'
     finally:
         capture_page.capture_lead_mobile = that
 
