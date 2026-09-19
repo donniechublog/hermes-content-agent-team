@@ -391,6 +391,8 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     # LAM LAI mot slide cu the nhung van ra dung anh cu (Ong Chu 13/09/2026) —
     # dat SAU khi bia + moi slide da giai, luc bo.dung_anh da co du (nhan, ma).
     loi += nc.check_no_repeat_image_redo(bo.anh, bo.dung_anh, m, DRAFTS)
+    # Cung mot buc anh tai tu hai nguon len hai slide (LOW-284) — md5 khong bat duoc.
+    loi += nc.check_same_photo(bo.anh, bo.dung_anh)
     # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
     loi += nc.check_image_fall(bo.anh, bo.da_dung, m)
     # Ghep doc chi khi het anh vua khung 4:5 co chu the (LOW-273) — chi Dre.

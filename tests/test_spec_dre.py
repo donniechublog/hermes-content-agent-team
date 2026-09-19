@@ -31,11 +31,13 @@ import state_paths                                            # noqa: E402
 
 
 # ------------------------------------------------------------------ do gia
-def _ve(w, h, tone=(60, 70, 90)):
-    """Anh co van, tone chi dinh — `tone_mismatch` do do sang va mau trung binh."""
+def _ve(w, h, tone=(60, 70, 90), seed=7):
+    """Anh co van, tone chi dinh — `tone_mismatch` do do sang va mau trung binh.
+    `seed` khac nhau -> hoa van khac nhau: cung seed la CUNG MOT buc anh (LOW-284,
+    submit_common.check_same_photo chan hai ma cung anh o hai slide)."""
     im = Image.new("RGB", (w, h), tone)
     d = ImageDraw.Draw(im)
-    b = 7
+    b = seed
     for x in range(0, w, 29):
         for y in range(0, h, 31):
             b = (b * 1103515245 + 12345) % 2147483648
@@ -49,10 +51,11 @@ def _anh(wd, ma, w, h, loai="photo", tone=(60, 70, 90), **k):
     import image_rules_dre as image_rules
     goc = wd / state_paths.ORIGINAL_DIR / f"{ma}.png"
     goc.parent.mkdir(parents=True, exist_ok=True)
-    _ve(w, h, tone).save(goc)
+    seed = sum(ord(c) * 131 ** i for i, c in enumerate(ma))    # moi ma mot anh rieng (LOW-284)
+    _ve(w, h, tone, seed).save(goc)
     san = wd / state_paths.READY_DIR / f"{ma}.png"
     san.parent.mkdir(parents=True, exist_ok=True)
-    _ve(min(w, h), min(w, h), tone).save(san)               # ban da cat san
+    _ve(min(w, h), min(w, h), tone, seed).save(san)         # ban da cat san
     a = {"id": ma, "original_path": str(goc), "ready_path": str(san), "w": w, "h": h,
          "ratio": round(w / h, 2), "kind": loai, "landscape":w / h >= image_rules.LANDSCAPE_CLEAR,
          "faces": 0, "relevant": True, "description": f"anh thu {ma}", "alt": "", "uses": []}

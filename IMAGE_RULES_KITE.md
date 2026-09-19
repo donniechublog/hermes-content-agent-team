@@ -877,6 +877,7 @@ chụp ra ảnh rỗng; `check_blank_image` chặn thêm một lớp ở rendere
 |---|---|---|
 | **Ảnh rỗng** (trắng trơn / một màu) | `check_blank_image` | chặn — chạy **trước** cổng chart |
 | Ảnh trùng (theo nội dung tệp) | `check_duplicate` | chặn |
+| Cùng MỘT ảnh chụp tải từ hai nguồn (cắt/nén khác) lên hai slide (LOW-284) | `submit_common.check_same_photo` (`same_photo.py`: ORB+RANSAC ≥ 200 điểm VÀ tương quan pixel sau khi căn ≥ 0.82; chart/bảng xếp hạng không xét) | chặn |
 | Chart/screenshot thiếu `chart: true` | `check_chart_integrity` | chặn |
 | Khai `chart: true` mà máy không nhận ra chart | `check_chart_integrity` | **chỉ cảnh báo** (mục 3) |
 | Ảnh gốc ngang đã crop, không khai `crop_ok` | `check_crop_landscape` | chặn |

@@ -550,6 +550,31 @@ _DOMAIN = re.compile(
     re.IGNORECASE)
 
 
+def check_same_photo(anh: dict, dung_anh: list) -> list:
+    """Hai MA khac nhau ma la CUNG MOT buc anh chup (tai tu hai nguon, cat khac nhau) len
+    hai slide — hoac cung mot slide ghep (LOW-284, album Lovable: dien thoai o slide 5
+    va 6, trang chu o slide 2 va 6). `dung_anh`: [(nhan slide, [ma...])]. Chi xet anh
+    CHUP (chart/bang xep hang cung khuon van khop nhieu diem) — xem same_photo.py."""
+    import same_photo
+    dung = []                                   # [(nhan, ma)] theo thu tu slide, khong lap ma
+    for nhan, ds in dung_anh:
+        for ma in ds:
+            a = anh.get(ma) or {}
+            if ma and a.get("original_path") and a.get("kind") != "chart" and not a.get("ranking") \
+                    and all(ma != x for _, x in dung):
+                dung.append((nhan, ma))
+    loi = []
+    for i in range(len(dung)):
+        for j in range(i + 1, len(dung)):
+            (n1, m1), (n2, m2) = dung[i], dung[j]
+            if same_photo.is_same_photo(anh[m1]["original_path"], anh[m2]["original_path"]):
+                noi = n1 if n1 == n2 else f"{n1} và {n2}"
+                loi.append(f"{noi}: {m1} và {m2} là CÙNG MỘT bức ảnh tải từ hai nguồn "
+                           f"({anh[m1].get('domain') or '?'}, {anh[m2].get('domain') or '?'}) — "
+                           "đổi một trong hai sang ảnh khác, mỗi slide một ảnh riêng (LOW-284)")
+    return loi
+
+
 def check_no_repeat_image_redo(anh: dict, dung_anh: list, m: dict, drafts_dir) -> list:
     """LAM LAI mot slide cu the nhung ban moi van la CUNG MOT anh cu, chi doi
     ten ma (Ong Chu 13/09/2026, Anthropic/Nvidia IPO: bam Lam lai chi ro slide

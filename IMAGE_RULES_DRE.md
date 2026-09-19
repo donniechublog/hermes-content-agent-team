@@ -822,6 +822,12 @@ THẬT SỰ khác nhau chỉ cách 36 bit, không có ngưỡng nào tách đư�
 này (khớp đúng kết quả đo LOW-45 trước đó). `check_duplicate` giữ nguyên md5
 tuyệt đối.
 
+**LOW-284 (19/09/2026):** md5 để lọt cùng một ảnh báo chí tải từ hai URL (album Lovable: điện
+thoại chạy app ở slide 5 và 6). Cổng riêng `submit_common.check_same_photo` không dùng dHash mà
+đếm điểm khớp ORB sau RANSAC rồi căn ảnh A lên ảnh B so pixel. Đo trên ảnh máy chủ: cùng ảnh
+0.85–1.00, ảnh khác chung logo/khuôn 0.66–0.83. Chạy lại 44 carousel cũ: bắt đúng 3 bộ có
+ảnh trùng thật, không bắt oan bộ nào (cặp đồ hoạ Apple M3/M5 Ultra chung logo thì không bắt).
+
 ---
 
 ## 7. Không bao giờ để ra hai vùng riêng biệt
@@ -987,6 +993,7 @@ chụp ra ảnh rỗng; `check_blank_image` chặn thêm một lớp ở rendere
 |---|---|---|
 | **Ảnh rỗng** (trắng trơn / một màu) | `check_blank_image` | chặn — chạy **trước** cổng chart |
 | Ảnh trùng (theo nội dung tệp) | `check_duplicate` | chặn |
+| Cùng MỘT ảnh chụp tải từ hai nguồn (cắt/nén khác) lên hai slide (LOW-284) | `submit_common.check_same_photo` (`same_photo.py`: ORB+RANSAC ≥ 200 điểm VÀ tương quan pixel sau khi căn ≥ 0.82; chart/bảng xếp hạng không xét) | chặn |
 | Chart/screenshot thiếu `chart: true` | `check_chart_integrity` | chặn |
 | Khai `chart: true` mà máy không nhận ra chart | `check_chart_integrity` | **chỉ cảnh báo** (mục 3) |
 | Ảnh gốc ngang đã crop, không khai `crop_ok` | `check_crop_landscape` | chặn |
