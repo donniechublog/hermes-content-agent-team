@@ -16,6 +16,12 @@ FRAME_RATIO = 0.8                # rong/cao cua khung 4:5
 TEXT_SHARE = 0.30                # phan DUOI khung danh cho chu o slide than Dre
 EMPTY_SHARE_MAX = 0.60           # tam anh trong hon muc nay = chu the qua nho tren nen tron
                                  # (do that 19/09: logo Instinct 0.90, logo SoftBank 0.93)
+# LOW-279: mat nao THAT SU doi khai ten (xem faces_needing_name). Do 19/09 tren 1.102 anh co
+# mat cua may chu: avatar trong giao dien app Lovable cao 3.2% anh, san Frankfurt 1.6%, anh
+# ve tinh/trang GitHub 1-2% — khong ai nhan ra duoc; chan dung that 20-50%.
+FACE_MIN_HEIGHT = 0.04           # mat thap hon 4% chieu cao anh: khong nhan ra la ai
+CROWD_MIN_FACES = 10             # tu 10 mat tro len ...
+CROWD_FACE_HEIGHT_MAX = 0.10     # ... ma khong mat nao cao toi 10% anh = anh dam dong/tap the
 
 # Ma loai chu the (English, LOW-230) — vision duoc hoi tra thang ma nay
 KINDS = ("person", "product", "building", "logo", "screen", "chart", "other")
@@ -103,6 +109,25 @@ def face_boxes_with(det, lock, path, edge_max: int):
         from pathlib import Path
         print(f"[mat] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return None
+
+
+def faces_needing_name(boxes):
+    """So mat nguoi ma luat "khong dung anh nguoi vo danh" (IMAGE_RULES §6) doi GOI TEN,
+    tu hop mat YuNet (`face_boxes_with`). None giu nguyen = cong mat khong chay duoc.
+
+    LOW-279 (19/09/2026, tin Lovable mua Sutro): ba anh that cua Lovable bi loai vi
+    "mat nguoi khong ro ai" — A26 mat la avatar ti hon trong giao dien app, A39 la anh
+    tap the 209 nguoi cua doi Lovable. Hai loai mat khong dem:
+      - mat thap hon FACE_MIN_HEIGHT chieu cao anh: khong ai nhan ra (avatar, nguoi dung xa);
+      - DAM DONG: >= CROWD_MIN_FACES mat ma khong mat nao cao toi CROWD_FACE_HEIGHT_MAX —
+        khong ai la tieu diem nen khong co "mot nguoi" nao de goi ten. Hop 4-6 nguoi
+        la hoac mot dien gia noi bat giua khan gia van phai khai ten."""
+    if boxes is None:
+        return None
+    heights = [b[3] - b[1] for b in boxes]
+    if len(heights) >= CROWD_MIN_FACES and max(heights) < CROWD_FACE_HEIGHT_MAX:
+        return 0
+    return sum(1 for x in heights if x >= FACE_MIN_HEIGHT)
 
 
 def head_box(faces):

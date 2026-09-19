@@ -787,6 +787,18 @@ không bảo lãnh. Brief của `dre_prepare.py` in sẵn tên này ở cột "m
 
 Tin model/sản phẩm: ảnh là **sản phẩm, screenshot, chart** — không phải mặt người.
 
+**Mặt nào mới tính (LOW-279, 19/09/2026)** — đo 1.128 ảnh có mặt trên máy chủ, tin
+Lovable mua Sutro bị loại oan ba ảnh thật của hãng:
+- Mặt **thấp hơn 4% chiều cao ảnh** không tính: avatar trong giao diện app, người
+  đứng xa trong ảnh toà nhà/sàn giao dịch — không ai nhận ra được là ai.
+- **Ảnh đám đông / tập thể** (≥ 10 mặt, không mặt nào cao tới 10% ảnh) không đòi khai
+  tên: không có "một người" nào là tiêu điểm. Họp 4–6 người lạ, hay một diễn giả
+  nổi bật giữa khán giả, **vẫn phải khai tên**.
+- **Tên IN trên ảnh** (dòng chú thích lower-third, bảng tên trước mặt) là bằng chứng
+  tên như alt/caption: vision chép lại ở trường `printed_name`, chỉ chép chữ đọc được,
+  không đoán tên từ khuôn mặt.
+Ngưỡng nằm ở `subject_fit.faces_needing_name`, `count_faces` của cả ba vai đều gọi nó.
+
 Code chỉ báo có mặt hay không; phán đoán "có đúng là nhân vật trong bài không"
 là việc của vai. Cổng dùng YuNet, cần `assets/face_detection_yunet_2023mar.onnx`;
 thiếu model thì cổng tự bỏ qua chứ không làm hỏng bản dựng — nhưng **luật vẫn

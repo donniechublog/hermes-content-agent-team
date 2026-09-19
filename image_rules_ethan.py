@@ -21,7 +21,6 @@ chuoi. `card.py` tu chon cong nao hop voi khung cua minh roi gop lai. Khong ham
 nao ve gi, khong ham nao biet den canvas.
 """
 import re
-import sys
 import threading
 from pathlib import Path
 
@@ -396,43 +395,16 @@ def face_boxes(path):
 
 
 def count_faces(path):
-    """So mat nguoi trong anh. None neu khong chay duoc (thieu cv2/model).
+    """So mat nguoi CAN GOI TEN trong anh (LOW-279). None neu khong chay duoc (thieu cv2/model).
 
-    setInputSize + detect PHAI nam trong _YUNET_LOCK (audit lượt 2, B-r2-1):
-    khoa o _yunet() chi bao ve luc NAP model, con mot FaceDetectorYN dung chung
-    thi khong thread-safe khi DUNG — luong A vua setInputSize((w1,h1)) thi luong
-    B setInputSize((w2,h2)) roi A detect() voi kich thuoc sai -> cv2 nem -> None.
-    Do duoc voi 24 anh khac co, 4 luong: tuan tu 0/24 None, song song 22-23/24;
-    vision.py lam `or 0` nen 80-95% anh bi coi la KHONG co mat — cong mat nguoi
-    (IMAGE_RULES §6) tat cam. detect() nhanh (vai ms), khong can song song.
+    Do bang `face_boxes` (cung model, cung khoa _YUNET_LOCK quanh setInputSize+detect — mot
+    FaceDetectorYN dung chung khong thread-safe khi DUNG, audit luot 2 B-r2-1; cung buoc thu
+    nho anh qua FACE_EDGE_MAX truoc khi do — YuNet SIGSEGV voi anh 50MP, LOW-27), roi bo cac
+    mat khong doi khai ten: mat qua nho (avatar trong giao dien app, nguoi dung xa) va anh
+    dam dong khong ai la tieu diem — xem `subject_fit.faces_needing_name`.
     """
-    det = _load_yunet()
-    if det is None:
-        return None
-    try:
-        import cv2
-        im = cv2.imread(str(path))
-        if im is None:
-            return None
-        h, w = im.shape[:2]
-        # THU NHO truoc khi do (LOW-27, 12/09/2026): YuNet SIGSEGV (exit 139, khong
-        # ngoai le Python nao bat duoc) voi anh 9440x5310 — do tung anh trong tien
-        # trinh rieng tren may chu: 7/8 anh cua draft t_24b214a6 ok, A2.png 50MP
-        # chet -11 ngay ca khi chay MOT MINH. Tu do ca engine chet, khoa mo coi,
-        # vai chay lai 16 lan. Model dung o 320px nen thu ve FACE_EDGE_MAX khong
-        # mat mat nao dang ke; INTER_AREA de thu nho khong ra rang cua.
-        if max(h, w) > FACE_EDGE_MAX:
-            ty = FACE_EDGE_MAX / max(h, w)
-            im = cv2.resize(im, (max(1, int(w * ty)), max(1, int(h * ty))),
-                            interpolation=cv2.INTER_AREA)
-            h, w = im.shape[:2]
-        with _YUNET_LOCK:
-            det.setInputSize((w, h))
-            _n, res = det.detect(im)
-        return 0 if res is None else len(res)
-    except Exception as e:                                   # noqa: BLE001
-        print(f"[mat] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
-        return None
+    import subject_fit
+    return subject_fit.faces_needing_name(face_boxes(path))
 
 
 # ---- Cong chan: moi ham tra ve (loi, canh_bao) ----------------------------
