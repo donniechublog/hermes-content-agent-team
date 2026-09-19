@@ -351,15 +351,20 @@ def check_not_reused_across_runs(anh: dict, cap, m: dict) -> list:
     return loi
 
 
-def _clean_use_alone(a: dict) -> bool:
-    """Anh SACH dung mot minh duoc cho mot slide/the, khong can vai khai them gi:
-    vision da noi ro "khong roi", lien quan, anh chup (khong chart), khong mat
-    nguoi (mat nguoi con phu thuoc ten co trong bai), ngang thi phai cat doc duoc
-    (vision landscape_crop_ok + du cao). Thieu dieu kien nao cung khong tinh — cong
-    check_image_fall chi duoc bat vai doi anh khi THAT SU co cho doi, khong de ket."""
+def _clean_photo(a: dict) -> bool:
+    """Anh chup SACH: vision da noi ro "khong roi", lien quan, anh chup (khong chart),
+    khong mat nguoi (mat nguoi con phu thuoc ten co trong bai). Chua xet ty le."""
     if not a.get("uses") or a.get("relevant") is False or a.get("cluttered") is not False:
         return False
-    if a.get("kind") != "photo" or a.get("ranking") or a.get("faces"):
+    return a.get("kind") == "photo" and not a.get("ranking") and not a.get("faces")
+
+
+def _clean_use_alone(a: dict) -> bool:
+    """Anh SACH dung mot minh duoc cho mot slide/the, khong can vai khai them gi:
+    `_clean_photo`, ngang thi phai cat doc duoc (vision landscape_crop_ok + du cao).
+    Thieu dieu kien nao cung khong tinh — cong check_image_fall chi duoc bat vai doi
+    anh khi THAT SU co cho doi, khong de ket."""
+    if not _clean_photo(a):
         return False
     if a.get("landscape"):
         return (int(a.get("h") or 0) >= schema.HEIGHT_MIN_CROP_LANDSCAPE
@@ -419,11 +424,15 @@ def subject_crop_window(a: dict, text_share: float, faces=None):
 def _fits_frame_with_subject(a: dict, rules) -> bool:
     """Anh ma CHU THE CHINH dat vua trong khung 4:5, tren vung chu slide than (LOW-273,
     Ong Chu 19/09/2026: "ko phai la tim hinh co ty le 4:5, ma la tim hinh co main
-    character dat vua trong 4:5"). Ty le anh KHONG tinh: anh ngang cung vua neu vision
-    noi cat doc duoc (khong chu) va chu the gon; anh 4:5 ma la logo nho tren nen trang
-    thi KHONG. Dieu kien sach/lien quan/anh chup/khong mat nguoi nhu `_clean_use_alone`
-    (chi tinh khi THAT SU dung duoc). Thieu hop chu the (manifest cu) -> khong tinh."""
-    if not _clean_use_alone(a):
+    character dat vua trong 4:5"; roi "ko can phai co tim anh doc, cang ko tim anh
+    vuong. Mien la chu the hien thi duoc trong mot ratio crop 4:5 la duoc"). Ty le anh
+    KHONG tinh: anh ngang chu the gon la vua (dre_submit tu cat quanh chu the, khong can
+    vision noi "khong co chu"); anh 4:5 ma la logo nho tren nen trang thi KHONG. Dieu kien
+    sach/lien quan/anh chup/khong mat nguoi nhu `_clean_photo`; anh ngang con phai du cao
+    de cat khong nhoe. Thieu hop chu the (manifest cu) -> khong tinh."""
+    if not _clean_photo(a):
+        return False
+    if a.get("landscape") and int(a.get("h") or 0) < schema.HEIGHT_MIN_CROP_LANDSCAPE:
         return False
     if a.get("empty_share") is None or not a.get("subject_box"):
         return False

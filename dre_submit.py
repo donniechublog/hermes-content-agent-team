@@ -200,11 +200,19 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         if not la_bia:
             ra["chart"] = True
     elif a["landscape"]:
-        if muc.get("landscape_crop") and a["h"] < schema.HEIGHT_MIN_CROP_LANDSCAPE:
+        # Ong Chu 19/09/2026: "ko can phai co tim anh doc, cang ko tim anh vuong. Mien la chu
+        # the hien thi duoc trong mot ratio crop 4:5 la duoc". Anh NGANG da do chu the (mat
+        # do bang code hoac hop vision) thi dung MOT MINH duoc, khong can vai khai
+        # `landscape_crop` hay vision noi "khong co chu": _place_subject tu cat 4:5 quanh chu
+        # the, khong vua thi bao dung `stack`. Chua do (manifest cu) thi giu duong cu.
+        measured = bool(a.get("faces") or a.get("subject_box"))
+        if (muc.get("landscape_crop") or measured) and a["h"] < schema.HEIGHT_MIN_CROP_LANDSCAPE:
             bo.loi.append(f"{nhan}: {ma} chỉ cao {a['h']}px, cắt dọc 4:5 còn ~{int(a['h']*0.8)}px "
                           "rồi phóng lên 1080 sẽ nhoè — chỉ dùng qua \"stack\" hoặc bỏ")
             return None
-        if muc.get("landscape_crop"):
+        if measured:
+            ra["image"] = a["original_path"]
+        elif muc.get("landscape_crop"):
             tam = muc.get("crop_center") or [0.5, 0.5]
             out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.LANDSCAPE_SUFFIX}"
             cb._save_crop(Image.open(a["original_path"]).convert("RGB"), out, "4:5",
@@ -242,8 +250,9 @@ def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: 
 
       - Anh dan FULL BE NGANG (chart/screenshot, bia roi): noi dung chinh khong duoc
         lan xuong vung chu -> loi.
-      - Anh chup: cat 4:5 QUANH chu the (nguoi: hop dau tu mat do bang code) thay cho
-        ban cat giua / crop_center doan tay; khong co khung nao vua -> loi.
+      - Anh chup (doc, vuong hay NGANG — ty le anh khong quan trong, Ong Chu 19/09): cat
+        4:5 QUANH chu the (nguoi: hop dau tu mat do bang code) thay cho ban cat giua /
+        crop_center doan tay; khong co khung nao vua -> loi.
     Chua do (manifest cu: khong subject_box, khong mat) thi giu duong cu, khong chan."""
     if a.get("ranking"):
         return                                   # bang xep hang: engine khoanh hang, luat rieng
@@ -260,8 +269,6 @@ def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: 
                           f"vùng chữ (từ {1 - share:.0%} trở xuống) — chữ sẽ đè lên nội dung, nền chữ "
                           "thành một dải nhoè. Dùng ảnh khác, hoặc ảnh có nội dung gọn ở nửa trên")
         return
-    if a.get("landscape") and not muc.get("landscape_crop"):
-        return                                   # da bao "anh NGANG phai stack/landscape_crop" o tren
     faces = image_rules_dre.face_boxes(goc) if a.get("faces") else None
     box = subject_fit.head_box(faces) if faces else a.get("subject_box")
     if not box:
@@ -274,7 +281,9 @@ def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: 
         bo.loi.append(f"{nhan}: {chu_the} của {ma} không đặt vừa khung 4:5 phía TRÊN vùng chữ của {loai} "
                       f"({share:.0%} dưới khung) — chữ sẽ đè lên chủ thể. Dùng ảnh khác"
                       + ("; hoặc đưa ảnh này sang slide `text` (vùng chữ nhỏ hơn)"
-                         if share > image_rules_dre.TEXT_SHARE_BODY else ""))
+                         if share > image_rules_dre.TEXT_SHARE_BODY else "")
+                      + (f"; ảnh ngang thì \"stack\" với một ảnh ngang khác (cặp gợi ý: "
+                         f"{bo.m.get('stackable_pairs') or 'không có'})" if a.get("landscape") else ""))
         return
     out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.SUBJECT_SUFFIX}"
     out.parent.mkdir(parents=True, exist_ok=True)

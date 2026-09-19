@@ -714,10 +714,17 @@ vừa trong 4:5"*.
   thể (`<id>.subject.png`), không còn cắt giữa/`crop_center` đoán tay; không khung nào
   vừa → chặn. Ảnh dán full ngang (chart, trang chụp): nội dung chính lấn vùng chữ →
   chặn. Chưa đo (manifest cũ) thì giữ đường cũ, không chặn.
+- **Tỉ lệ ảnh gốc không quan trọng — không đi tìm ảnh dọc/vuông** (Ông Chủ 19/09/2026, nguyên
+  văn: *"Ko cần phải cố tìm ảnh dọc, càng ko tìm ảnh vuông. Miễn là chủ thể hiển thị được trong
+  một ratio crop 4:5 là được"*). Ảnh NGANG đã đo chủ thể (mặt hoặc `subject_box`) dùng một mình
+  được: `dre_submit._resolve_single` không đòi `landscape_crop` hay vision `landscape_crop_ok`
+  nữa, `_place_subject` tự cắt 4:5 quanh chủ thể; không vừa thì báo dùng `stack`. Vẫn giữ luật
+  chất lượng: ảnh ngang cao dưới `schema.HEIGHT_MIN_CROP_LANDSCAPE` (700px) cắt ra sẽ nhoè → chỉ
+  ghép. Bảng/biểu đồ vẫn full bề ngang (hộp vision cho bảng không tin được).
 - **Ghép là đường cuối:** `submit_common.check_stack_last_resort` chặn slide `stack` khi
   còn ảnh có chủ thể vừa khung (sạch, liên quan, ảnh chụp, không mặt người, không
-  trống) chưa dùng. Ảnh ngang có chữ không tính (vẫn giữ chốt 04/09: ảnh ngang có chữ
-  thì ghép, không cắt).
+  trống) chưa dùng — kể cả ảnh ngang có chủ thể gọn (không còn đòi vision nói "không có
+  chữ"). Ảnh ngang mà chủ thể là cả khung (bảng, banner chữ) tự không vừa nên vẫn ghép.
 - **Chưa làm:** vùng chữ của Ethan (`card.py`) và Kite (`render_edu.py`) khác Dre —
   mới áp cổng "ảnh trống" cho hai vai này, chưa áp cổng "chủ thể trên vùng chữ".
 

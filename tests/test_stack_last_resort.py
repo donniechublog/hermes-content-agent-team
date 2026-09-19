@@ -124,13 +124,61 @@ def test_anh_ngang_cat_doc_duoc_chu_the_gon_thi_tinh():
         assert _blocked(loi), loi
 
 
-def test_anh_ngang_co_chu_khong_tinh():
+def test_anh_ngang_chu_the_gon_tinh_du_vision_noi_co_chu():
+    """Ong Chu 19/09: "mien la chu the hien thi duoc trong mot ratio crop 4:5 la duoc" —
+    khong con doi vision noi 'khong co chu' (landscape_crop_ok)."""
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         spec, m, wd = _bo(Path(t), subject_box=[0.4, 0.1, 0.6, 0.5])
         m["images"][5].update({"w": 1920, "h": 1080, "ratio": 1.78, "landscape": True,
                                "landscape_crop_ok": False})
         _ra, loi, _c, _d = ts._chay(spec, m, wd)
+        assert _blocked(loi), loi
+
+
+def test_anh_ngang_qua_thap_khong_tinh():
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _bo(Path(t), subject_box=[0.4, 0.1, 0.6, 0.5])
+        m["images"][5].update({"w": 1000, "h": 600, "ratio": 1.67, "landscape": True})
+        _ra, loi, _c, _d = ts._chay(spec, m, wd)
         assert not _blocked(loi), loi
+
+
+def _landscape_slide(wd, m, box):
+    a = ts._anh(wd, "A7", 1920, 1080, uses=["body"], cluttered=False, subject_box=box,
+                subject_kind="product", empty_share=0.2)
+    m["images"].append(a)
+    return ts._slide("A7")
+
+
+def test_dre_anh_ngang_chu_the_gon_tu_cat_khong_can_khai():
+    """Khong khai landscape_crop, khong co landscape_crop_ok: van dung mot minh, cat 4:5."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _bo(Path(t))
+        spec["slides"][2] = _landscape_slide(Path(t), m, [0.4, 0.1, 0.6, 0.5])
+        spec["slides"].append(ts._slide("A5"))
+        spec["slides"].append(ts._slide("A6"))
+        ra, loi, _c, _d = ts._chay(spec, m, wd)
+        assert not ts._co(loi, "A7"), loi
+        p = ra["slides"][2]["image"]
+        assert p.endswith("A7.subject.png"), p
+        w, h = Image.open(p).size
+        assert abs(w / h - 0.8) < 0.01 and h == 1080, (w, h)
+
+
+def test_dre_anh_ngang_chu_the_rong_bao_ghep():
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _bo(Path(t))
+        spec["slides"][2] = _landscape_slide(Path(t), m, [0.05, 0.1, 0.95, 0.5])
+        _ra, loi, _c, _d = ts._chay(spec, m, wd)
+        assert ts._co(loi, "slide 4", "A7", "không đặt vừa khung 4:5", "stack"), loi
+
+
+def test_dre_anh_ngang_chua_do_giu_duong_cu():
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        spec, m, wd = _bo(Path(t))
+        spec["slides"][2] = _landscape_slide(Path(t), m, None)
+        _ra, loi, _c, _d = ts._chay(spec, m, wd)
+        assert ts._co(loi, "slide 4", "A7", "NGANG", "landscape_crop"), loi
 
 
 def test_het_anh_vua_khung_thi_cho_ghep():
