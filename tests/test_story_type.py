@@ -27,41 +27,54 @@ def test_standard_type_label_all_write_attempt_offset():
 
 
 def test_board_by_use_error_boss():
-    """Nguyên văn: brand→logo/trụ sở/founder/cổ phiếu/cờ; thương vụ→hai brand;
-    model→benchmark; hạ tầng→datacenter/nhà máy."""
+    """LOW-264 (19/09/2026): logo > CEO/founder > trụ sở > bảng xếp hạng > cổ
+    phiếu cho MỌI loại tin về một hãng cụ thể (BUSINESS/M&A/LAB) — tính năng
+    riêng (ghép 2 hãng của M&A, cờ nước của LAB) vẫn giữ, không tính vào 5 mục
+    này; model→benchmark, hạ tầng→datacenter/nhà máy không đổi."""
     assert lt.order_image("M&A")[0] == "two_company_pair"
+    assert lt.order_image("M&A")[1] == "logo"
     assert lt.late("M&A", "stock")
     assert lt.order_image("MODEL")[0] == "ranking"
     assert lt.order_image("INFRA")[0] == "infrastructure_concept"
+    assert lt.order_image("LAB")[0] == "logo" and lt.order_image("LAB")[-1] == "company_country_flag"
     assert lt.late("LAB", "company_country_flag") and lt.late("LAB", "founder")
-    assert lt.order_image("BUSINESS")[0] == "stock"
+    assert lt.order_image("BUSINESS") == ("logo", "founder", "headquarters", "ranking", "stock")
     assert lt.order_image("") == lt.DEFAULT
+    assert lt.DEFAULT[0] == "logo"
 
 
 def test_score_by_type_change_order_candidate():
-    """Cùng bộ ứng viên: M&A đẩy logo (18+6=24) lên ngang chân dung (24+2=26)?
-    Không — founder đứng sau logo trong bảng M&A nên logo phải THẮNG."""
-    logo = 18 + lt.score_by_type("M&A", "logo")
-    nguoi = 24 + lt.score_by_type("M&A", "person")
-    tru_so = 28 + lt.score_by_type("M&A", "photo")
-    assert tru_so > logo, (tru_so, logo)          # tru so van la anh chup that
-    assert logo == 24 and nguoi == 26 - 0, (logo, nguoi)
-    # LAB: tru so/founder tren logo
-    assert lt.score_by_type("LAB", "photo") > lt.score_by_type("LAB", "logo")
+    """LOW-264: biên độ điểm cộng theo thứ tự (100/80/60/40/20/0) phải áp đảo
+    chênh lệch điểm GỐC theo loại ảnh (photo 28 / person 24 / logo 18) — trước
+    đây biên độ chỉ +8 nên dù bảng nói "logo đứng đầu", logo (18+8=26) vẫn
+    thua trụ sở (28+4=32); giờ logo phải THẬT SỰ thắng cả trụ sở lẫn chân
+    dung ở BUSINESS/M&A/LAB."""
+    for loai in ("BUSINESS", "M&A", "LAB"):
+        logo = 18 + lt.score_by_type(loai, "logo")
+        nguoi = 24 + lt.score_by_type(loai, "person")
+        tru_so = 28 + lt.score_by_type(loai, "photo")
+        co_phieu = 30 + lt.score_by_type(loai, "stock")
+        assert logo > nguoi > tru_so > co_phieu, (loai, logo, nguoi, tru_so, co_phieu)
     assert lt.score_by_type("SECURITY", "photo") == 0   # SECURITY khong muon tru so
+    # MODEL khong doi: logo van truoc founder, bien do moi cang lam ro dieu do
+    assert lt.score_by_type("MODEL", "logo") > lt.score_by_type("MODEL", "person")
 
 
 def test_line_brief_prints_old_object_names():
-    """LOW-230: bảng lưu mã English, dòng brief vẫn in đúng tên cũ (byte y hệt)."""
+    """LOW-230: bảng lưu mã English, dòng brief vẫn in đúng tên cũ (byte y hệt).
+    LOW-264 (19/09/2026): BUSINESS/M&A/LAB đổi sang logo>founder>trụ sở>xếp
+    hạng>cổ phiếu."""
     assert lt.line_brief({"category": "M&A"}) == [
-        "Loại tin M&A → ảnh hợp lệ theo thứ tự: ghep_hai_hang > logo > tru_so > founder > co_phieu"
+        "Loại tin M&A → ảnh hợp lệ theo thứ tự: ghep_hai_hang > logo > founder > tru_so > xep_hang > co_phieu"
         " (bảng story_type.py, Ông Chủ 12/09/2026)."]
     assert lt.line_brief({"category": "INFRA"})[0].split(": ", 1)[1].startswith(
         "khai_niem_ha_tang > tru_so > co_nuoc_hang > logo (")
     assert lt.line_brief({"category": "MODEL"})[0].split(": ", 1)[1].startswith(
         "xep_hang > chart_cong_bo > logo > founder > khai_niem (")
     assert lt.line_brief({"category": "BUSINESS"})[0].split(": ", 1)[1].startswith(
-        "co_phieu > san_giao_dich > tru_so > logo > founder (")
+        "logo > founder > tru_so > xep_hang > co_phieu (")
+    assert lt.line_brief({"category": "LAB"})[0].split(": ", 1)[1].startswith(
+        "logo > founder > tru_so > xep_hang > co_phieu > co_nuoc_hang (")
 
 
 def test_country_and_code_has_ballot():
