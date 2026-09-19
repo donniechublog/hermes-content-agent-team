@@ -462,9 +462,12 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
     # truoc logo (story_type.BOARD_IMAGE_BY_TYPE, Ong Chu 12/09/2026).
+    # LOW-270: logo QUÁ NHỎ trong khung (image_brand.LOGO_FILL_MIN) không được
+    # điểm ưu tiên loại tin — xuống cuối, dưới cả cổ phiếu.
     for c in cands:
-        c["score"] = c.get("score", 0) + story_type.score_by_type(
-            category, (c.get("brand_match") or {}).get("kind", "photo"))
+        bm = c.get("brand_match") or {}
+        if not bm.get("small_logo"):
+            c["score"] = c.get("score", 0) + story_type.score_by_type(category, bm.get("kind", "photo"))
     # `download_and_filter` tu ghi hop dong "tai ung vien THEO THU TU DIEM" — noi duy
     # nhat trong ca thang anh thuong hieu ma diem THAT SU khac nhau (anh noi/san
     # pham 28 > nguoi 24 > logo 18, dat o `image_brand._candidate`), nhung

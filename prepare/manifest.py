@@ -236,9 +236,11 @@ def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
     so_dung_duoc = schema.count_image_use_ok(anh, vai_anh)
     # Thu tu goi y bia: anh RIENG cua tin -> anh THUONG HIEU (tru so that cua
     # hang trong tin, 09/09/2026) -> anh KHAI NIEM (co, rack, chung chung; 07/09).
+    # LOW-270: thẻ logo quá nhỏ trong khung xếp CUỐI, sau cả ảnh khái niệm.
     goi_y_bia = [a["id"] for a in sorted(
         (a for a in anh if vai_mod.has_label_cover(a["uses"]) and a.get("relevant") is not False),
-        key=lambda a: (bool(a.get("concept")), bool(a.get("brand_match")),
+        key=lambda a: (bool((a.get("brand_match") or {}).get("small_logo")),
+                       bool(a.get("concept")), bool(a.get("brand_match")),
                        a["bottom_left_brightness"], -a["short_side"]))][:3]
     # `xhs` co the co NHIEU HON MOT (bang xep hang do nang luc khac nhau, xem
     # `_capture_ranking`) — goi y het cac ma XH/XH2/... truoc anh khac; `ranking`
