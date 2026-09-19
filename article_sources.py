@@ -25,11 +25,13 @@ bai goc; khac = loi that (1 la ma Python tu tra khi co exception).
 import argparse
 import concurrent.futures as cf
 import json
+import os
 import re
 import sys
 import threading
 import time
 import urllib.parse as up
+import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -98,10 +100,88 @@ def story_tokens(t: str) -> set:
     return _tu(strip_site_suffix(t)) - _TU_NEN
 
 
-def same_story(tieu_de_goc: str, tieu_de_khac: str, toi_thieu: int = 2) -> bool:
-    """Hai tieu de co noi ve CUNG mot tin khong: chung >= `toi_thieu` tu dac trung
-    sau khi bo hau to site va ten nen tang."""
-    return len(story_tokens(tieu_de_goc) & story_tokens(tieu_de_khac)) >= toi_thieu
+# ---- "CUNG TIN" = CUNG SU KIEN (LOW-276, 19/09/2026) ---------------------------
+# Chung >= 2 tu dac trung khong du: do 180 cap tieu de that (421 cap "bao khac"
+# tung duoc nhan), luat cu nhan nham 34/38 cap KHAC tin — cung chu the, khac su
+# kien ("Claude Fable 5.1 giai mat ma" vs "Claude Fable 5.1 len dau bang xep
+# hang"; tin luu tru dien biggo vs bai Crusoe goi von vi chung "data centers").
+# Moi luat chi dem/cham do hiem cua tu deu that bai (tot nhat van nhan nham
+# 27/38), vi cap sai va cap dung chung tu hiem nhu nhau. Nen: code loai/nhan
+# ca CHAC, chi ca lung chung (chung 2-3 tu) hoi LLM — MOT lan cho ca danh sach.
+# Bo mau 180 cap: tests/golden/same_story_golden.json.
+SAME_STORY_SURE = 4                          # chung >= 4 tu: chac cung tin, khong hoi
+SAME_STORY_MODEL = "ds/deepseek-v4-pro"      # cung model Vera gom tin (scan_business)
+SAME_STORY_TIMEOUT = 40
+
+
+def _same_event_prompt(title: str, candidates: list) -> str:
+    lines = "\n".join(f"{i}. {c[:200]}" for i, c in enumerate(candidates, 1))
+    return ("You check which candidate headlines cover the SAME news as an original headline.\n\n"
+            f"Original: {title[:200]}\n\nCandidates:\n{lines}\n\n"
+            "A candidate MATCHES if it is about the same news as the original: the same announcement, "
+            "launch, release, deal, funding round, incident, report or finding — even if it covers it "
+            "from another angle (analysis, reaction, benchmark or explainer of that same release, "
+            "slightly different figures). The original may be a terse label such as a model name.\n"
+            "A candidate does NOT match if it is about a different event that merely involves the "
+            "same company, product, person or topic (another launch, another deal, an older story, "
+            "an unrelated feature). Headlines may be in any language.\n"
+            "Reply with ONLY a JSON array of the matching candidate numbers, e.g. [1, 3] or [].")
+
+
+def _ask_same_event(title: str, candidates: list) -> set | None:
+    """Chi so (tu 0) cac ung vien CUNG SU KIEN theo LLM; None khi LLM hong (goi
+    router loi, thieu khoa, tra loi khong doc duoc) — nguoi goi tu quyet lui."""
+    print(f"[nguon_bai] same_story: hoi llm {len(candidates)} ca lung chung", file=sys.stderr)
+    env_load.load()
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        print("[nguon_bai] same_story: thieu OPENAI_API_KEY -> chi dung luat tu", file=sys.stderr)
+        return None
+    body = {"model": SAME_STORY_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 300,
+            "stream": False, "temperature": 0,
+            "messages": [{"role": "user", "content": _same_event_prompt(title, candidates)}]}
+    try:
+        req = urllib.request.Request(env_load.ROUTER_URL, data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json",
+                                              "Authorization": "Bearer " + key})
+        raw = urllib.request.urlopen(req, timeout=SAME_STORY_TIMEOUT).read().decode().strip()
+        if raw.startswith("data:"):
+            raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
+        text = json.loads(raw)["choices"][0]["message"]["content"]
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[nguon_bai] same_story: llm loi {type(e).__name__} -> chi dung luat tu", file=sys.stderr)
+        return None
+    found = re.search(r"\[[\d,\s]*\]", text or "")
+    if not found:
+        print(f"[nguon_bai] same_story: llm tra loi khong doc duoc {text[:80]!r} -> chi dung luat tu",
+              file=sys.stderr)
+        return None
+    return {int(n) - 1 for n in re.findall(r"\d+", found.group(0)) if 1 <= int(n) <= len(candidates)}
+
+
+def same_story_many(title: str, candidates: list) -> list:
+    """[bool] cho tung ung vien: co bao CUNG SU KIEN voi `title` khong.
+
+    Chung < 2 tu dac trung -> khong; >= SAME_STORY_SURE -> co; con lai (lung
+    chung) gom lai hoi LLM mot lan. LLM hong thi lung chung tinh la co — dung
+    luat cu, khong de mat nguon vi mot lan goi hong."""
+    story = story_tokens(title)
+    shared = [len(story & story_tokens(c)) for c in candidates]
+    verdict = [n >= SAME_STORY_SURE for n in shared]
+    borderline = [i for i, n in enumerate(shared) if 2 <= n < SAME_STORY_SURE]
+    if borderline:
+        picked = _ask_same_event(title, [candidates[i] for i in borderline])
+        for k, i in enumerate(borderline):
+            verdict[i] = True if picked is None else k in picked
+        if picked is not None:
+            print(f"[nguon_bai] same_story: llm nhan {len(picked)}/{len(borderline)} ca lung chung "
+                  f"cho {title[:60]!r}", file=sys.stderr)
+    return verdict
+
+
+def same_story(tieu_de_goc: str, tieu_de_khac: str) -> bool:
+    """Hai tieu de co noi ve CUNG mot su kien khong — xem `same_story_many`."""
+    return same_story_many(tieu_de_goc, [tieu_de_khac])[0]
 
 
 def _download(url: str, timeout=20):
@@ -441,7 +521,6 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
     import email.utils as eu
     import time as _t
     tieu_de = strip_site_suffix(tieu_de)      # LOW-33: " · Hugging Face" khong vao truy van
-    goc = story_tokens(tieu_de)
     moc = _t.time() - ngay * 86400
     its, co_link = [], set()
     for q in _query_bing(tieu_de):
@@ -456,11 +535,10 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
             print(f"[nguon_bai] bing rss hong: {type(e).__name__}", file=sys.stderr)
         if len(its) >= so * 3:
             break
-    ra, thay = [], set()
+    recent = []
     for it in its[: so * 6]:
         link = it.findtext("link") or ""
-        td = it.findtext("title") or ""
-        if not link or len(goc & story_tokens(td)) < 2:
+        if not link:
             continue
         try:
             ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
@@ -468,6 +546,13 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
                 continue
         except Exception:                                    # noqa: BLE001
             pass
+        recent.append((link, it.findtext("title") or ""))
+    # Loc cung su kien MOT lan cho ca danh sach (LOW-276) — ca lung chung hoi LLM mot lan.
+    verdicts = same_story_many(tieu_de, [td for _link, td in recent])
+    ra, thay = [], set()
+    for (link, td), ok in zip(recent, verdicts):
+        if not ok:
+            continue
         try:
             if not scan_common.url_hide_whole(link):
                 continue
@@ -606,12 +691,11 @@ def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains
     story = story_tokens(title_en)
     cutoff = _t.time() - days * 86400
     skip = DROP_DOMAIN + tuple(skip_domains)
-    candidates, seen_domains = [], set()
+    pool = []
     for item in items:
         title = strip_site_suffix(item.findtext("title") or "")
-        if not same_story(title_en, title) or has_vietnamese(title):
-            continue
-        common = len(story & story_tokens(title))            # chi de xep hang
+        if len(story & story_tokens(title)) < 2 or has_vietnamese(title):
+            continue                                          # chac khong cung tin: khoi dua LLM
         try:
             if eu.parsedate_to_datetime(item.findtext("pubDate") or "").timestamp() < cutoff:
                 continue
@@ -620,10 +704,18 @@ def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains
         source = item.find("source")
         outlet = ((source.get("url") if source is not None else "") or "").rstrip("/")
         domain = _domain(outlet)
-        if not domain or domain in seen_domains or any(s in domain for s in skip):
+        if not domain or any(s in domain for s in skip):
+            continue
+        pool.append((item.findtext("link") or "", title, outlet, domain))
+    # Loc cung su kien truoc, bo trung mien sau: mot bai khac tin cua mien X dung
+    # truoc khong duoc chan bai cung tin cua chinh mien X (LOW-276).
+    candidates, seen_domains = [], set()
+    for (gnews_link, title, outlet, domain), ok in zip(
+            pool, same_story_many(title_en, [p[1] for p in pool])):
+        if not ok or domain in seen_domains:
             continue
         seen_domains.add(domain)
-        candidates.append((common, item.findtext("link") or "", title, outlet))
+        candidates.append((len(story & story_tokens(title)), gnews_link, title, outlet))
     candidates.sort(key=lambda c: -c[0])
     pages = []
     if not candidates:
