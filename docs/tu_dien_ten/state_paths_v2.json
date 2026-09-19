@@ -34,6 +34,7 @@
     "xep_hang_{board}.png": "ranking_{board}.png",
     "chup_{n}_{k}.png": "capture_{n}_{k}.png",
     "{id}.ngang.png": "{id}.landscape.png",
+    "{id}.subject.png": "{id}.subject.png",
     "{draft_id}.ban_giao.md": "{draft_id}.handoff.md"
   },
   "_unchanged": ["brief.md", "brief_<writer>.md", "spec.json", "carousel.spec.json", "render_edu.spec.json",

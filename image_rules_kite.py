@@ -378,6 +378,13 @@ def _load_yunet():
     return _YUNET
 
 
+# LOW-273 (Ong Chu 19/09/2026, "khong chap nhan ... o moi designer"): tam anh ma phan
+# lon la nen tron (logo/bieu tuong nho tren nen trang) khong dung. Nguong RIENG cua vai
+# nay; phep do chung o subject_fit.too_empty (vision dong TRONG). Do 19/09: logo
+# Instinct 0.90, logo SoftBank 0.92; bang/bieu do/anh chup chuan 0.02..0.35.
+EMPTY_SHARE_MAX = 0.60
+
+
 def count_faces(path):
     """So mat nguoi trong anh. None neu khong chay duoc (thieu cv2/model).
 

@@ -136,7 +136,10 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
     }
     L.append(json.dumps(khung, ensure_ascii=False, indent=1))
     L.append("Luật điền: mỗi slide MỘT ảnh, MỘT ý; `text` HOẶC `quote`+`attrib`; mỗi mã ảnh dùng đúng "
-             "một lần; chart chỉ ở slide thân (script tự dán full bề ngang); ảnh NGANG phải `stack` "
+             "một lần; chart chỉ ở slide thân (script tự dán full bề ngang); ƯU TIÊN ảnh có CHỦ THỂ CHÍNH đặt vừa khung 4:5 "
+             "(không phải tỉ lệ ảnh; script tự cắt quanh chủ thể), dùng MỘT ảnh — `stack` CHỈ khi hết ảnh như vậy; "
+             "KHÔNG dùng ảnh gần như trống (logo nhỏ trên nền trơn), KHÔNG để chữ đè lên mặt/chủ thể "
+             "(cổng chặn bắt đổi); ảnh NGANG phải `stack` "
              "hoặc `landscape_crop`; ảnh có mặt phải có `subject`; `background_tone` light khi đa số ảnh sáng/nền trắng (ảnh nổi hơn trên màn sáng), dark khi ảnh tối hoặc lẫn lộn. Tiếng Việt có dấu, không em-dash, "
              "câu quote phải DỊCH. `attrib` KHÔNG \"đọc bài\"/\"xem bài\" (thừa, slide chính là "
              "chỗ đọc rồi), KHÔNG đuôi tên miền (.com/.net/...) — nền tảng quét thành liên kết, "

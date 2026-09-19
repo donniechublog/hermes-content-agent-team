@@ -47,6 +47,17 @@ LANDSCAPE_CLEAR = 1.4                   # anh goc >= 1.4 la NGANG ro (16:9, 3:2)
 # duoi khung la nen, ra "hai vung" (muc 7).
 STACK_FLOOR = 0.65
 
+# LOW-273 (Ong Chu 19/09/2026): "tim hinh co main character dat vua trong 4:5" — va
+# "khong chap nhan" anh logo nho tren nen trang / chu the bi chu de len. Nguong CUA DRE
+# (khung carousel.py 1080x1350): phan DUOI khung danh cho chu o tung loai slide. Do
+# 19/09: slide than chu tu ~1030 (tran nen 30%), khung quote Altman bat dau y=780 (42%),
+# hook bia toi da nua khung nhung thuong 3 dong ~30%.
+EMPTY_SHARE_MAX = 0.60        # vision TRONG >= muc nay = chu the qua nho tren nen tron
+                              # (do 19/09: logo Instinct 0.90, logo SoftBank 0.92; anh chuan 0.02..0.35)
+TEXT_SHARE_BODY = 0.30
+TEXT_SHARE_QUOTE = 0.45
+TEXT_SHARE_COVER = 0.40
+
 
 def ratio_after_stack(r1: float, r2: float) -> float:
     """Ti le rong/cao cua hai anh chong doc cung be ngang: 1 / (1/r1 + 1/r2)."""
@@ -457,6 +468,36 @@ def _load_yunet():
             _YUNET = None
         _YUNET_DA_THU = True          # dat SAU CUNG, sau khi _YUNET da co gia tri chot
     return _YUNET
+
+
+def face_boxes(path):
+    """Hop MAT nguoi trong anh, toa do 0..1 [x0, y0, x1, y1] (LOW-273: dat chu the
+    nguoi vao khung 4:5 tren vung chu). Cung model/khoa/thu nho voi count_faces.
+    None neu khong chay duoc; [] neu khong co mat."""
+    det = _load_yunet()
+    if det is None:
+        return None
+    try:
+        import cv2
+        im = cv2.imread(str(path))
+        if im is None:
+            return None
+        h, w = im.shape[:2]
+        if max(h, w) > FACE_EDGE_MAX:
+            ty = FACE_EDGE_MAX / max(h, w)
+            im = cv2.resize(im, (max(1, int(w * ty)), max(1, int(h * ty))),
+                            interpolation=cv2.INTER_AREA)
+            h, w = im.shape[:2]
+        with _YUNET_LOCK:
+            det.setInputSize((w, h))
+            _n, res = det.detect(im)
+        if res is None:
+            return []
+        return [[max(0.0, r[0] / w), max(0.0, r[1] / h), min(1.0, (r[0] + r[2]) / w),
+                 min(1.0, (r[1] + r[3]) / h)] for r in res]
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[mat] {Path(path).name}: {type(e).__name__}: {e!r}", file=sys.stderr)
+        return None
 
 
 def count_faces(path):

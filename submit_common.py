@@ -395,6 +395,75 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
             for nhan, ma in cluttered]
 
 
+def check_empty_image(a: dict, nhan: str, limit: float) -> list:
+    """Anh ma phan lon la nen tron (logo/bieu tuong nho tren nen trang) -> loi, o MOI
+    designer (LOW-273, Ong Chu 19/09/2026: "ko chap nhan nhung hinh nhu the nay o moi
+    designer"). `limit` = nguong rieng cua vai (image_rules_<vai>.EMPTY_SHARE_MAX).
+    Vision chua do (khoa `empty_share` thieu) thi khong chan."""
+    import subject_fit
+    if not a or not subject_fit.too_empty(a.get("empty_share"), limit):
+        return []
+    return [f"{nhan}: {a.get('id')} gần như TRỐNG ({float(a['empty_share']):.0%} khung là nền trơn, "
+            "chủ thể quá nhỏ) — cần ảnh có chủ thể chính lấp khung 4:5, không dùng logo nhỏ trên nền trơn"]
+
+
+def subject_crop_window(a: dict, text_share: float, faces=None):
+    """Khung cat 4:5 dat CHU THE CHINH tron trong khung va nam TREN vung chu, hoac None.
+    Nguoi: hop dau tu `faces` (hop mat do bang code); khong co thi hop cua vision.
+    Thieu kich thuoc/hop -> None (khong khang dinh vua)."""
+    import subject_fit
+    box = subject_fit.head_box(faces) if faces else a.get("subject_box")
+    return subject_fit.crop_window(int(a.get("w") or 0), int(a.get("h") or 0), box, text_share)
+
+
+def _fits_frame_with_subject(a: dict, rules) -> bool:
+    """Anh ma CHU THE CHINH dat vua trong khung 4:5, tren vung chu slide than (LOW-273,
+    Ong Chu 19/09/2026: "ko phai la tim hinh co ty le 4:5, ma la tim hinh co main
+    character dat vua trong 4:5"). Ty le anh KHONG tinh: anh ngang cung vua neu vision
+    noi cat doc duoc (khong chu) va chu the gon; anh 4:5 ma la logo nho tren nen trang
+    thi KHONG. Dieu kien sach/lien quan/anh chup/khong mat nguoi nhu `_clean_use_alone`
+    (chi tinh khi THAT SU dung duoc). Thieu hop chu the (manifest cu) -> khong tinh."""
+    if not _clean_use_alone(a):
+        return False
+    if a.get("empty_share") is None or not a.get("subject_box"):
+        return False
+    if float(a["empty_share"]) >= getattr(rules, "EMPTY_SHARE_MAX", 0.6):
+        return False
+    return subject_crop_window(a, getattr(rules, "TEXT_SHARE_BODY", 0.3)) is not None
+
+
+def check_stack_last_resort(anh: dict, dung_anh: list, dung: dict, m: dict) -> list:
+    """GHEP DOC chi khi HET anh co chu the dat vua khung 4:5 (LOW-273, Ong Chu
+    19/09/2026: "uu tien tim hinh dat vua 4:5 ratio ma co chu the truoc, neu ko thi
+    chuyen qua ghep" — roi lam ro cung ngay: tieu chi la CHU THE vua khung, khong
+    phai ty le anh; xem `_fits_frame_with_subject`). `dung_anh`: [(nhan slide, [ma...])] (Context.dung_anh);
+    `dung`: {ma: nhan slide}.
+
+    Vi sao: ghep doc dat hai anh sat nhau — mot duong noi ngang giua khung, va nen
+    chu che gan het anh duoi khi cau quote dai (cong LOW-215). Mot anh co chu the
+    vua khung thi khong phai noi, khong bi che.
+
+    Chi chan khi con anh vua khung CHUA dung va CHUA len bai khac
+    (check_not_reused) — de vai doi duoc that, khong ket. Chi Dre goi ham nay."""
+    ghep = [(nhan, mas) for nhan, mas in dung_anh if len(mas) >= 2]
+    if not ghep:
+        return []
+    rules = _vai.rules_module(m.get("image_role", ""))
+    vua = []
+    for ma, a in anh.items():
+        if ma in dung or not _fits_frame_with_subject(a, rules):
+            continue
+        l, _ = rules.check_not_reused(ma, a["original_path"], m.get("draft_id", ""), m.get("link", ""))
+        if not l:
+            vua.append(ma)
+    if not vua:
+        return []
+    return [f"{nhan}: ghép {'+'.join(mas)} nhưng còn ảnh có CHỦ THỂ đặt vừa khung 4:5 chưa dùng: "
+            f"{', '.join(vua[:6])} — dùng MỘT ảnh đó (\"image\": \"{vua[0]}\"; ảnh ngang thì thêm "
+            "\"landscape_crop\": true, script tự cắt quanh chủ thể), ghép dọc chỉ khi hết"
+            for nhan, mas in ghep]
+
+
 def check_quote_translated(chu: str, nhan: str) -> list:
     """Quote/hook CON NGUYEN TIENG ANH -> loi. Luat "quote phai DICH sang tieng
     Viet" tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).

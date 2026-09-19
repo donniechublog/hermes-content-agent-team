@@ -15,6 +15,7 @@ import env_load
 import manifest_values
 import role
 import state_paths
+import subject_fit
 
 from prepare import decision_log
 from prepare.source import all_proper_nouns
@@ -57,6 +58,18 @@ SENTENCE_CLUTTERED = ("CLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in s
 SENTENCE_KEYWORD = ("TU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac "
                "cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + "
                "chu IPO; khong = chi thay mot phan, hoac khong doc ra)")
+
+
+# LOW-273 (Ong Chu 19/09/2026): "tim hinh co main character dat vua trong 4:5". Hai
+# dong do them cho MOI anh (chung mot luot nhin, khong ton them HTTP): hop bao chu the
+# chinh + do trong cua tam anh. Do that 19/09 tren 5 anh loi: logo Instinct TRONG 0.90,
+# logo SoftBank TRONG 0.93, anh SoftBank cua hang 0.12. Xem subject_fit.py.
+SENTENCE_SUBJECT = ("CHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / "
+                    "toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc "
+                    "tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | "
+                    "building | logo | screen | chart | other)")
+SENTENCE_EMPTY = ("TRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren "
+                  "nen trang = 0.9, anh chup day khung = 0.05)")
 
 
 # Man hinh HE THONG (driver/he dieu hanh/terminal) nhac ten hang van khong phai
@@ -190,9 +203,10 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
         # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
-        hoi = hoi.replace("DUNG 2 dong", "DUNG 4 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
+        hoi = (hoi.replace("DUNG 2 dong", "DUNG 6 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
+               + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY)
         if hoi_them and nhan_them:
-            hoi = hoi.replace("DUNG 4 dong", "DUNG 5 dong") + f"\n{nhan_them}: {hoi_them}"
+            hoi = hoi.replace("DUNG 6 dong", "DUNG 7 dong") + f"\n{nhan_them}: {hoi_them}"
         body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
                 "stream": False, "temperature": 0,
                 "messages": [{"role": "user", "content": [
@@ -266,6 +280,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
             them = t.group(1).strip()[:120] if t else ""
         return mt, lqv, them, {"cluttered": cluttered, "has_keywords": du_tk,
+                               **subject_fit.parse_subject(txt),
                                "vision_said": lqv_vision, "override": override,
                                "vision_raw": {"model": VISION_MODEL, "question": hoi, "answer": txt[:2000]}}
 
@@ -410,6 +425,10 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         a["landscape_crop_ok"] = None
     a["cluttered"] = kq.get("cluttered")
     a["has_keywords"] = kq.get("has_keywords")
+    # LOW-273: hop bao chu the + do trong (None = vision khong tra/khong doc ra -> fail-open)
+    a["subject_box"] = kq.get("subject_box")
+    a["subject_kind"] = kq.get("subject_kind")
+    a["empty_share"] = kq.get("empty_share")
     # LOW-225: vision noi gi, nhanh regex nao lat, nguyen van cau hoi/tra loi —
     # de do lai offline ma khong goi vision lai.
     if kq.get("vision_raw"):

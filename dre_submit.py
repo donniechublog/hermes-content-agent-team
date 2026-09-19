@@ -43,6 +43,7 @@ import schema                                                # noqa: E402
 import manifest_values                                       # noqa: E402
 import state_paths                                           # noqa: E402
 import image_rules_dre                                       # noqa: E402
+import subject_fit                                           # noqa: E402
 import role_spec                                             # noqa: E402
 
 DRAFTS = ROOT / "drafts"
@@ -104,6 +105,8 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
         return None
     for x in ghep:
         bo.nhan_ma(x, nhan)
+        # LOW-273: anh trong (logo nho tren nen tron) khong ghep (vd SoftBank A12, TRONG 0.92)
+        bo.loi.extend(nc.check_empty_image(bo.anh[x], nhan, image_rules_dre.EMPTY_SHARE_MAX))
     bo.kiem_lien_quan(ghep, nhan)
     r1, r2 = (im.width / im.height for im in
               (Image.open(bo.anh[x]["original_path"]) for x in ghep))
@@ -215,9 +218,68 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
             return None
     else:
         ra["image"] = a["ready_path"]
+    bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
+    _place_subject(bo, a, ma, muc, nhan, la_bia, ra)
     bo.kiem_mat([ma], muc, nhan)
     bo.dung_anh.append((nhan, [ma]))
     return ra
+
+
+def _text_share(muc: dict, la_bia: bool) -> float:
+    """Phan DUOI khung carousel.py danh cho chu o loai slide nay (image_rules_dre)."""
+    if la_bia:
+        return image_rules_dre.TEXT_SHARE_COVER
+    if str(muc.get("quote") or "").strip():
+        return image_rules_dre.TEXT_SHARE_QUOTE
+    return image_rules_dre.TEXT_SHARE_BODY
+
+
+def _place_subject(bo: Context, a: dict, ma: str, muc: dict, nhan: str, la_bia: bool, ra: dict) -> None:
+    """CHU THE CHINH phai dat vua khung 4:5 va nam TREN vung chu (LOW-273, Ong Chu
+    19/09/2026: "tim hinh co main character dat vua trong 4:5"). Do that tren slide bi
+    loai: mat Altman nam duoi khung quote (y=780); trang bao Hyperscale dan full khung,
+    noi dung toi 80% -> nen chu mo thanh mot dai nhoe.
+
+      - Anh dan FULL BE NGANG (chart/screenshot, bia roi): noi dung chinh khong duoc
+        lan xuong vung chu -> loi.
+      - Anh chup: cat 4:5 QUANH chu the (nguoi: hop dau tu mat do bang code) thay cho
+        ban cat giua / crop_center doan tay; khong co khung nao vua -> loi.
+    Chua do (manifest cu: khong subject_box, khong mat) thi giu duong cu, khong chan."""
+    if a.get("ranking"):
+        return                                   # bang xep hang: engine khoanh hang, luat rieng
+    share = _text_share(muc, la_bia)
+    goc = a["original_path"]
+    if ra.get("chart") or a.get("kind") == "chart":
+        if ra.get("image") != goc or not a.get("subject_box"):
+            return                               # hop vision do tren tep goc
+        import carousel
+        w, h = Image.open(goc).size
+        band = subject_fit.band_full_width(w, h, a["subject_box"], carousel.W, carousel.H)
+        if band and band[1] > 1 - share + 0.02:
+            bo.loi.append(f"{nhan}: nội dung chính của {ma} kéo xuống tới {band[1]:.0%} khung, lấn vào "
+                          f"vùng chữ (từ {1 - share:.0%} trở xuống) — chữ sẽ đè lên nội dung, nền chữ "
+                          "thành một dải nhoè. Dùng ảnh khác, hoặc ảnh có nội dung gọn ở nửa trên")
+        return
+    if a.get("landscape") and not muc.get("landscape_crop"):
+        return                                   # da bao "anh NGANG phai stack/landscape_crop" o tren
+    faces = image_rules_dre.face_boxes(goc) if a.get("faces") else None
+    box = subject_fit.head_box(faces) if faces else a.get("subject_box")
+    if not box:
+        return
+    img = Image.open(goc).convert("RGB")
+    win = subject_fit.crop_window(img.width, img.height, box, share)
+    if win is None:
+        chu_the = "khuôn mặt" if faces else manifest_values.subject_kind_label(a.get("subject_kind"))
+        loai = "bìa" if la_bia else ("slide quote" if share == image_rules_dre.TEXT_SHARE_QUOTE else "slide")
+        bo.loi.append(f"{nhan}: {chu_the} của {ma} không đặt vừa khung 4:5 phía TRÊN vùng chữ của {loai} "
+                      f"({share:.0%} dưới khung) — chữ sẽ đè lên chủ thể. Dùng ảnh khác"
+                      + ("; hoặc đưa ảnh này sang slide `text` (vùng chữ nhỏ hơn)"
+                         if share > image_rules_dre.TEXT_SHARE_BODY else ""))
+        return
+    out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.SUBJECT_SUFFIX}"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    img.crop(win).save(out, "PNG")
+    ra["image"] = str(out)
 
 
 # Cac truong CHU vai viet, di thang sang spec cua carousel.py khong doi.
@@ -322,6 +384,8 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     loi += nc.check_no_repeat_image_redo(bo.anh, bo.dung_anh, m, DRAFTS)
     # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
     loi += nc.check_image_fall(bo.anh, bo.da_dung, m)
+    # Ghep doc chi khi het anh vua khung 4:5 co chu the (LOW-273) — chi Dre.
+    loi += nc.check_stack_last_resort(bo.anh, bo.dung_anh, bo.da_dung, m)
     loi += image_rules_dre.check_founder_balance(bo.anh, [cover] + list(slides))
     return ra, loi, canh, bo.dung_anh
 
