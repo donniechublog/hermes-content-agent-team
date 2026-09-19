@@ -58,7 +58,14 @@ import manifest_values
 import state_paths
 
 MAX_RANK = 3            # số hãng lấy trong một tin
-MAX_NEW_RANK = 2        # ảnh mỗi hãng — để một bộ không thành album trụ sở
+# LOW-263 (19/09/2026): tung la 2, voi ly do "de mot bo khong thanh album tru
+# so" — nhung ly do do da co `fallback_rounds.MAX_EXTRA_BRAND_` (tran TONG cho
+# ca tin) + round-robin chia deu giua cac hang lo roi (xem "_round_brand"). Cap
+# rieng o day chi con tac dung phu: bop chet dung ca CAN no nhat — tin mot hang
+# duy nhat, it nguon (1 bao, trang nguon dinh captcha), ma hang do (Microsoft,
+# Google...) co material that vo han. Nang khop tran tong de mot hang duy nhat
+# van lay duoc toi da so anh ma _round_brand cho phep, thay vi tu bop truoc.
+MAX_NEW_RANK = 4        # anh moi hang — bang tran tong (fallback_rounds.MAX_EXTRA_BRAND_)
 SHORT_SIDE_MIN = 700
 
 # Tên đi tìm trên Commons cho từng hãng (khoá = tên hãng chuẩn của

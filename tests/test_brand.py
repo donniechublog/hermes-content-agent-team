@@ -13,6 +13,7 @@ Chạy:  venv/bin/python tests/test_brand.py
 """
 import sys
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -145,6 +146,22 @@ def test_filter_jpeg_before_png_fall_new_black_size():
 
 def test_filter_empty_when_no_has_what():
     assert th.filter_commons({}, "Qualcomm") == [] and th.filter_commons(None, "Qualcomm") == []
+
+
+def test_vendor_images_no_more_cap_at_two_match_story_ceiling():
+    """LOW-263 (19/09/2026): trước đây mỗi hãng bị chặn ở 2 ảnh dù Commons còn
+    thiếu gì đâu ("de mot bo khong thanh album tru so") — nhưng trần đó đã có
+    `fallback_rounds.MAX_EXTRA_BRAND_` (trần TỔNG cho cả tin) + round-robin
+    giữa các hãng lo rồi. Đo thật: tin chỉ nhắc Microsoft, 1 báo, trang nguồn
+    dính captcha — hãng vô hạn ảnh mà bị bóp xuống 2. Commons có ≥ 4 ảnh sạch
+    thì `vendor_images` phải lấy đủ tới `MAX_NEW_RANK` (khớp trần tổng), không
+    dừng ở 2 nữa."""
+    assert th.MAX_NEW_RANK == 4, "phải khớp fallback_rounds.MAX_EXTRA_BRAND_ (trần tổng một bộ)"
+    pages = {str(i): p for i, p in enumerate([
+        _pg(f"Microsoft Headquarters {i}.jpg", 4036, 3456) for i in range(6)])}
+    with mock.patch.object(th, "_ask_commons", return_value=pages):
+        ra = th.vendor_images({"key": "microsoft", "company": "Microsoft"})
+    assert len(ra) == th.MAX_NEW_RANK, f"chỉ lấy {len(ra)}/{th.MAX_NEW_RANK} dù Commons còn dư ảnh sạch"
 
 
 def _image(**o):
