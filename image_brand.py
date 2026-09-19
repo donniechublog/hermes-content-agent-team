@@ -352,6 +352,31 @@ def _qid_claim(claims: dict, p: str) -> list:
     return ra
 
 
+def confirm_unlisted_vendor(key: str, company: str) -> bool:
+    """LOW-260: một cụm từ `vendors_in_story` lấy từ `all_proper_nouns` (nhánh
+    hãng NGOÀI watchlist) có thật là một công ty không, trước khi `_round_brand`
+    tiêu ngân sách tải/vision vào nó. `vendors_in_story` phải giữ THUẦN (không
+    mạng — xem docstring + `tests/test_brand.py`), nên việc xác nhận này nằm ở
+    đây, gọi ngay trước khi tải ảnh, không phải trong `vendors_in_story`.
+
+    Đo thật 19/09/2026: tiêu đề Title Case "Microsoft Advertising Sets New
+    Rules for AI Generated Ads" khiến "Rules" (chữ thường bị viết hoa vì kiểu
+    tiêu đề, không phải tên hãng) lọt qua thành một "hãng", tốn 1/3 suất
+    `MAX_RANK` và 2 lượt tải+vision vào ảnh Commons "Rules headquarters" vô
+    nghĩa. "Salesforce" (ca LOW-176 sinh ra nhánh này) và "Rules" đều là MỘT
+    từ tiếng Anh viết hoa bình thường — không phân biệt được bằng chữ, chỉ
+    phân biệt được bằng kiến thức: Salesforce có ≥ 2 thuộc tính công ty trên
+    Wikidata (`P_GATE_BILLION`, dùng chung với `qid_rank`), "Rules" thì không.
+
+    Không gọi được Wikidata (mạng hỏng) -> False (fail-closed): thà bỏ lỡ một
+    hãng lạ hiếm gặp trong một lượt còn hơn lặp lại đúng lỗi này."""
+    qid, _ = qid_rank(company)
+    if qid is None:
+        print(f"[thuong_hieu] {key!r}: khong xac nhan duoc la cong ty qua Wikidata "
+              "-- bo qua, khong tinh la hang (LOW-260)", file=sys.stderr)
+    return qid is not None
+
+
 def qid_rank(hang: str) -> tuple:
     """(qid, claims) của entity CÔNG TY khớp tên hãng, hoặc (None, {})."""
     r = _ask_api(WIKIDATA, action="wbsearchentities", search=hang, language="en",
@@ -840,8 +865,23 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
     lan IMAGE_PHRASES_SCREENSHOT (ca ba nhanh — LOW-45, 13/09/2026: chan anh
     "chup LAI mot man hinh bang may anh khac", dung cho ca Getty chup nghieng
     App Store cua Kimi K3) da GO khoi day. Ong Chu 16/09: hai tieu chi nay loai
-    oan anh dung chu de (xem `prepare/vision.py` cho do that va ly do day du)."""
+    oan anh dung chu de (xem `prepare/vision.py` cho do that va ly do day du).
+
+    LOW-260 (19/09/2026): nhánh "stock" tách riêng khỏi câu chung "trụ sở/
+    campus/sản phẩm" bên dưới — một ảnh chụp màn hình biểu đồ giá không bao
+    giờ trả lời "có" được câu hỏi đó, nên MỌI ảnh tier cổ phiếu (đúng hãng,
+    đúng mã) bị vision loại oan, chắc chắn phí 1 trong `MAX_NEW_RANK` suất
+    ảnh của hãng (đo thật: MSFT:NASDAQ của Microsoft)."""
     hang, loai = th.get("company", "hãng"), th.get("kind", "photo")
+    if loai == "stock":
+        ma = th.get("ticker", "")
+        return (f"Bai bao: \"{tieu_de}\". Anh nay la BIEU DO GIA CO PHIEU: chup man hinh gia "
+                f"co phieu {ma or hang} cua {hang} tu Google Finance.\n"
+                "Tra loi DUNG 2 dong:\n"
+                "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
+                f"LIEN_QUAN: co | khong  (co = day la man hinh gia co phieu THAT cua {hang} "
+                "(bat ky ten/ma nao hien tren do, khong can doc het); khong = khong phai bieu "
+                "do gia co phieu, hoac ro rang la hang khac)")
     if loai == "person":
         ai = th.get("person", "")
         return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG "

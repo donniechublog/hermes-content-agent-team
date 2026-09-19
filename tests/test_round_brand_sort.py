@@ -52,6 +52,7 @@ def test_cands_ok_sort_by_score_decrease_guide_before_when_download():
          mock.patch("image_brand.vendors_in_story",
                    return_value=[{"company": "HangA", "key": "hanga"},
                                  {"company": "HangB", "key": "hangb"}]), \
+         mock.patch("image_brand.confirm_unlisted_vendor", return_value=True), \
          mock.patch("image_brand.vendor_images", side_effect=anh_hang_gia), \
          mock.patch.object(fallback_rounds, "_report_brand_empty", return_value=[]), \
          mock.patch.object(fallback_rounds, "download_and_filter", side_effect=tai_va_loc_gia):

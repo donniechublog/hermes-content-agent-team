@@ -416,6 +416,13 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     khong bao gio hoi toi hang thu hai. Tra (anh, dung_duoc, chua_nhin)."""
     import image_brand as th
     hangs = th.vendors_in_story(tieu_de_nhin, tom_tat)
+    # LOW-260: `vendors_in_story` phai giu THUAN (khong mang), nen hang lay tu
+    # nhanh all_proper_nouns ngoai watchlist (khong co trong DISPLAY_NAME) duoc
+    # xac nhan la cong ty that qua Wikidata O DAY, ngay truoc khi tieu ngan
+    # sach tai/vision — tranh lap lai ca "Rules" (tu tieu de Title Case) lot
+    # qua thanh mot "hang" gia.
+    hangs = [h for h in hangs if h["key"] in th.DISPLAY_NAME
+             or th.confirm_unlisted_vendor(h["key"], h["company"])]
     print("[thuong hieu] hang trong tin: " + (", ".join(h["company"] for h in hangs) or "khong ra"),
           file=sys.stderr)
     if not hangs:
