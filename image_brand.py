@@ -324,13 +324,20 @@ def _ask_api(url: str, **kw) -> dict:
 
 
 def _file_claim(claims: dict, p: str) -> list:
-    """Tên tệp Commons trong một thuộc tính ảnh (P18/P154)."""
-    ra = []
+    """Tên tệp Commons trong một thuộc tính ảnh (P18/P154), bậc `preferred` trước,
+    BỎ bậc `deprecated` và giá trị đã hết hiệu lực (qualifier P582).
+
+    LOW-266 (19/09/2026): Wikidata giữ cả logo cũ trong P154 — Microsoft trả về
+    logo 1980, 1982, 1987 (có P582) rồi mới tới logo 2012 (`preferred`), nên lấy
+    phần tử đầu ra ngay logo 1980 lên bìa. Cùng lý do `_qid_claim` đã lọc CEO cũ."""
+    preferred, normal = [], []
     for c in (claims or {}).get(p, []):
+        if c.get("rank") == "deprecated" or "P582" in (c.get("qualifiers") or {}):
+            continue
         v = c.get("mainsnak", {}).get("datavalue", {}).get("value")
         if isinstance(v, str):
-            ra.append(v)
-    return ra
+            (preferred if c.get("rank") == "preferred" else normal).append(v)
+    return preferred + normal
 
 
 def _qid_claim(claims: dict, p: str) -> list:

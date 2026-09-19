@@ -246,6 +246,26 @@ def test_file_claim_only_take_name_file():
     assert th._file_claim(cl, "P154") == ["X logo.svg"]
 
 
+def test_file_claim_current_logo_not_historical():
+    """LOW-266: đúng cấu trúc P154 thật của Microsoft (Q2283, đo 19/09/2026) —
+    ba logo cũ có P582 đứng trước logo 2012 `preferred`; lấy phần tử đầu từng
+    ra logo 1980 trên bìa."""
+    def claim(name, rank="normal", ended=False):
+        c = {"rank": rank, "mainsnak": {"datavalue": {"value": name}}}
+        if ended:
+            c["qualifiers"] = {"P582": [{"datavalue": {"value": {"time": "+1982-00-00T00:00:00Z"}}}]}
+        return c
+    cl = {"P154": [claim("Microsoft logo (1980).svg", ended=True),
+                   claim("Microsoft logo (1982).svg", ended=True),
+                   claim("Microsoft logo (1987).svg", ended=True),
+                   claim("Microsoft logo (2012).svg", rank="preferred"),
+                   claim("Old deprecated.svg", rank="deprecated")]}
+    assert th._file_claim(cl, "P154") == ["Microsoft logo (2012).svg"]
+    # preferred truoc normal khi ca hai deu con hieu luc
+    cl2 = {"P18": [claim("a.jpg"), claim("b.jpg", rank="preferred")]}
+    assert th._file_claim(cl2, "P18") == ["b.jpg", "a.jpg"]
+
+
 def test_rank_has_model_only_rank_make_model():
     """Chỉ hãng có model trên bảng mới đáng mở browser đi chụp bảng."""
     assert th.rank_has_model("deepseek") and th.rank_has_model("openai")

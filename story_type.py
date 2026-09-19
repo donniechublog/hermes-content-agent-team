@@ -94,6 +94,14 @@ def late(category, vat: str) -> bool:
     return vat in order_image(category)
 
 
+def is_ranking_story_type(category) -> bool:
+    """Loại tin này LÀ tin xếp hạng (bảng xếp hạng là ảnh CHÍNH, đứng đầu bảng —
+    MODEL/BENCHMARK). Khác `late(category, "ranking")`: từ LOW-264 BUSINESS/M&A/
+    LAB cũng có `ranking`, nhưng ở cuối bảng, như ảnh BỐI CẢNH của hãng — dùng
+    `late` ở chỗ này từng ép mọi tin về một hãng thành tin xếp hạng (LOW-266)."""
+    return order_image(category)[:1] == ("ranking",)
+
+
 # Điểm cộng theo thứ tự trong bảng: vật đứng đầu +100, kế +80, +60, +40, +20,
 # còn lại 0. Cộng vào `score` gốc của ứng viên (photo 28 / person 24 / logo 18;
 # stock 30 / ranking 26 ở nơi khác) TRƯỚC khi `_round_brand` sort — để cùng
