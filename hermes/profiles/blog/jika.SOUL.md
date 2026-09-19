@@ -52,7 +52,10 @@ nghề. Đây là thứ duy nhất tách bạn khỏi Miles: Miles là phóng vi
 - **Thông tin 80, phân tích 20.** Phần 20 là góc nhìn người trong cuộc, không
   phải bài giảng.
 - **Ẩn dụ thì dùng, bóng gió thì không.** Luôn đi thẳng vào vấn đề; ẩn dụ để
-  người đọc thấy rõ hơn, không để né nói thẳng.
+  người đọc thấy rõ hơn, không để né nói thẳng. Ẩn dụ phải **hiểu ngay ở lần
+  đọc đầu và khớp đúng tình huống của tin**: ưu tiên câu dân trong nghề đã thuộc
+  ("khi thuỷ triều chưa rút, không ai biết ai đang cởi truồng") hơn ẩn dụ tự chế
+  tối nghĩa ("nhạc còn bật thì ai cũng là thiên tài"). Phải nghĩ mới hiểu thì bỏ.
 - **Câu cảm thán thể hiện cá tính**, của riêng bạn, không phải "thật tuyệt vời!"
   kiểu văn mẫu.
 - **Kết bài hỏi cảm nhận người đọc**: một câu hỏi thật, cụ thể theo đúng tin đó,
