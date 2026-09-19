@@ -61,18 +61,28 @@ def standard_type(category) -> str:
 #   company_country_flag  cờ nước của hãng (COUNTRY_OF_RANK -> image_concept "flag of")
 #   concept               bảng TOPIC theo chữ trong tiêu đề (đường cũ)
 #   infrastructure_concept  từ khoá hạ tầng ép cho INFRA (KEYWORD_LOWER_LAYER)
+# LOW-264 (19/09/2026, Ông Chủ): "logo > CEO/founder > trụ sở > bảng xếp hạng >
+# mã cổ phiếu" — đảo hẳn thứ tự cũ (BUSINESS từng đặt cổ phiếu lên đầu, logo/
+# founder xuống cuối). Áp cho MỌI loại tin xoay quanh MỘT hãng cụ thể (BUSINESS/
+# M&A/LAB) — không đụng MODEL/BENCHMARK/INFRA/SECURITY/ARXIV/TOOL, bản chất tin
+# khác hẳn (ưu tiên ranking/concept/announcement_chart, không phải ảnh CỦA một
+# hãng). `two_company_pair` (M&A) và `company_country_flag` (LAB) là TÍNH NĂNG
+# riêng — không phải một "loại ảnh" cạnh tranh với 5 mục này — nên vẫn giữ,
+# chỉ chèn 5 mục vào đúng chỗ (M&A: two_company_pair trước, LAB: 5 mục trước
+# rồi mới đến cờ nước, phương án cuối khi hết cả 5).
+_UU_TIEN_ANH_HANG = ("logo", "founder", "headquarters", "ranking", "stock")
 BOARD_IMAGE_BY_TYPE = {
-    "M&A":       ("two_company_pair", "logo", "headquarters", "founder", "stock"),
+    "M&A":       ("two_company_pair",) + _UU_TIEN_ANH_HANG,
     "MODEL":     ("ranking", "announcement_chart", "logo", "founder", "concept"),
     "BENCHMARK": ("ranking", "announcement_chart", "logo"),
     "INFRA":     ("infrastructure_concept", "headquarters", "company_country_flag", "logo"),
-    "LAB":       ("headquarters", "founder", "logo", "company_country_flag"),
-    "BUSINESS":  ("stock", "stock_exchange", "headquarters", "logo", "founder"),
+    "LAB":       _UU_TIEN_ANH_HANG + ("company_country_flag",),
+    "BUSINESS":  _UU_TIEN_ANH_HANG,
     "SECURITY":  ("concept", "logo"),
     "ARXIV":     ("announcement_chart", "concept", "logo"),
     "TOOL":      ("announcement_chart", "logo", "concept"),
 }
-DEFAULT = ("headquarters", "founder", "logo", "concept")   # tin không có category hợp lệ
+DEFAULT = _UU_TIEN_ANH_HANG + ("concept",)   # tin không có category hợp lệ
 
 
 def order_image(category) -> tuple:
@@ -84,10 +94,19 @@ def late(category, vat: str) -> bool:
     return vat in order_image(category)
 
 
-# Điểm cộng theo thứ tự trong bảng: vật đứng đầu +8, kế +6, +4, +2, còn lại 0.
-# Cộng vào `score` gốc của ứng viên (photo 28 / person 24 / logo 18) TRƯỚC khi
-# `_round_brand` sort — để cùng một bộ ứng viên, tin M&A đẩy logo lên
-# trước chân dung, tin LAB đẩy trụ sở/founder lên trước logo.
+# Điểm cộng theo thứ tự trong bảng: vật đứng đầu +100, kế +80, +60, +40, +20,
+# còn lại 0. Cộng vào `score` gốc của ứng viên (photo 28 / person 24 / logo 18;
+# stock 30 / ranking 26 ở nơi khác) TRƯỚC khi `_round_brand` sort — để cùng
+# một bộ ứng viên, tin M&A đẩy logo lên trước chân dung, tin LAB đẩy trụ sở/
+# founder lên trước logo.
+#
+# LOW-264 (19/09/2026): biên độ CŨ chỉ chênh tối đa 8 (+8/+6/+4/+2/0) — nhỏ
+# hơn chênh lệch điểm GỐC theo loại ảnh (photo 28 vs logo 18 = 12 điểm), nên dù
+# bảng nói "logo đứng đầu", logo (18+8=26) vẫn thua trụ sở (28+4=32) trên thực
+# tế — bảng thứ tự CHỈ có tác dụng in ra brief, không thật sự lật thứ tự chọn
+# ảnh, cho MỌI loại tin chứ không riêng BUSINESS (đo: MODEL cũng đặt logo
+# trước founder nhưng logo 18+4=22 < founder 24+2=26). Biên độ mới (100) áp
+# đảo hẳn mọi chênh lệch điểm gốc hiện có, để bảng THẬT SỰ quyết định thứ tự.
 # Khoá = brand_match.kind, giá trị = vật trong bảng trên.
 _LOAI_UNG_VIEN = {"photo": "headquarters", "person": "founder", "logo": "logo", "stock": "stock"}
 
@@ -97,7 +116,7 @@ def score_by_type(category, loai_ung_vien: str) -> int:
     thu_tu = order_image(category)
     if vat not in thu_tu:
         return 0
-    return max(0, 8 - 2 * thu_tu.index(vat))
+    return max(0, 100 - 20 * thu_tu.index(vat))
 
 
 # ---- hãng → nước (cờ) ----------------------------------------------------------
