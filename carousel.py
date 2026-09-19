@@ -335,6 +335,62 @@ CLUTTERED_BG_SPREAD = 180        # dai smoothstep toi da tu anh sang nen dac
 #   - phan toi la anh mo phu mau nen SOLID_BG_TINT, khong phai den tron (luat
 #     04/09: nen khong bao gio la den tron).
 SOLID_BG_MAX_SHARE = 0.30
+# LOW-286 (Ong Chu 19/09/2026, hai slide Lovable dcgr): *"text chi duoc chiem khoang
+# 20% dien tich, phan nen text da noi tu rat lau ko lam tho kech nhu vay, chi de nhu
+# mot lop overlay tren anh, gio lai lam mot dong day com la sao"*. LOW-272 (sang cung
+# ngay) cho MOI slide than co chi tiet duoi chu di nen dac cua LOW-215: mo 44px tu
+# "khoang lang" (cat ngang mat nguoi) + phu mau nen 91% -> khoi den 33-47% khung.
+# Tu nay slide than/quote CHI co mot OVERLAY gradient: bat dau OVERLAY_LEAD px tren
+# dong chu dau, dam dan toi muc VUA DU tai dong chu dau roi giu, mo nhe
+# OVERLAY_BLUR chi trong chinh vung do. Khong nen dac, khong dai mo phia tren.
+OVERLAY_LEAD = 120               # px chuyen tu trong suot toi muc toi, ngay tren dong chu dau
+OVERLAY_BLUR = 30                # mo chi tiet NGAY duoi chu (chu in san ~20-30px tan ra), chi trong vung overlay
+OVERLAY_MIN, OVERLAY_MAX = 150, 205  # do toi overlay (0..255, ~59%..80%) tai vung chu
+OVERLAY_FULL_BEFORE = 36         # overlay dat muc toi TRUOC dong chu dau bay nhieu px (dong dau khong nam tren dai chuyen)
+OVERLAY_CLUTTERED = 205          # anh roi (LOW-47): overlay dam nhat, van la overlay
+# CONG DO nen chu tren pixel THAT (LOW-286): moi slide than/quote, bat ke di duong code
+# nao, so canvas NGAY TRUOC khi ve chu voi ban chi co anh. Do 19/09 tren 13 slide that
+# (Lovable + Cowork): nen LOW-272 phu dac nhat 0.92-0.97 va dai doi manh bat dau tu
+# 46-62% khung; overlay LOW-286 phu 0.64-0.84, dai doi toi da ~0.40 (quote dai nhat).
+TEXT_BG_MAX_OPACITY = 0.88       # hang nao bi phu dac hon muc nay = nen dac, khong phai overlay
+TEXT_BG_MAX_SHARE = 0.42         # phan khung (tu day len) bi nen chu doi manh
+TEXT_BG_CHANGED = 10             # do lech sang trung binh / hang coi la "doi manh"
+TEXT_BG_LIFT_MIN = 40            # hang anh cach mau nen it nhat bay nhieu moi tinh do phu
+
+
+def _text_bg_report(before, after) -> dict:
+    """So canvas SAU nen chu voi TRUOC nen chu (cung tam anh, chua ve chu) ->
+    {"bg_share": phan khung tu hang doi manh dau tien xuong day,
+     "bg_opacity": do phu lon nhat (0 = giu nguyen anh, 1 = mau nen dac)}.
+    Do phu tinh tren trung binh hang nen lop mo (bao toan trung binh) khong lam sai."""
+    import numpy as np
+    b = np.asarray(before.convert("L"), dtype=np.float32)
+    a = np.asarray(after.convert("L"), dtype=np.float32)
+    doi = np.abs(a - b).mean(axis=1)
+    ys = np.nonzero(doi > TEXT_BG_CHANGED)[0]
+    share = float((H - ys.min()) / H) if len(ys) else 0.0
+    bg = 0.299 * BG[0] + 0.587 * BG[1] + 0.114 * BG[2]
+    bm, am = b.mean(axis=1), a.mean(axis=1)
+    lift = bm - bg
+    m = np.abs(lift) >= TEXT_BG_LIFT_MIN
+    op = float(((bm - am)[m] / lift[m]).max()) if m.any() else 0.0
+    return {"bg_share": round(share, 3), "bg_opacity": round(max(0.0, op), 3)}
+
+
+def _gate_text_background(nhan, report) -> str:
+    """Nen chu vuot luat Ong Chu (LOW-286: "chi de nhu mot lop overlay tren anh") -> loi.
+    Day la loi CODE dung slide, vai khong sua duoc bang spec."""
+    if not report:
+        return ""
+    sai = []
+    if report["bg_opacity"] > TEXT_BG_MAX_OPACITY:
+        sai.append(f"phu dac {report['bg_opacity']:.0%} > {TEXT_BG_MAX_OPACITY:.0%} (nen dac, khong phai overlay)")
+    if report["bg_share"] > TEXT_BG_MAX_SHARE:
+        sai.append(f"nen chu doi anh tu {report['bg_share']:.0%} khung tro xuong > {TEXT_BG_MAX_SHARE:.0%}")
+    if not sai:
+        return ""
+    return (f"{nhan}: nen chu sai luat overlay — {'; '.join(sai)}. Loi CODE carousel.py "
+            "(LOW-286), khong phai spec: KHONG gui album, kanban_block kem nguyen van dong nay.")
 SOLID_BG_TINT = 232              # 0..255: do dac cua mau nen phu len ban mo
 SOLID_BG_DARK_SPREAD = 120       # dai chuyen cua phan toi
 # Cap anh ghep doc co anh RO duoi nen bi phu (mo/toi) gan het thi anh do la
@@ -391,6 +447,31 @@ def _background_solid_below_text(canvas, text_top, max_share=None):
     return min(top, dark_top)
 
 
+def _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered=False):
+    """Nen chu slide than/quote (LOW-286): MOT overlay gradient tren anh, khong nen dac.
+
+    Mat na bat dau `OVERLAY_LEAD` px tren dong chu dau, dam dan (ease) toi muc toi
+    tai dong chu dau roi giu toi day. Muc toi tinh theo nhu cau do THAT tren pixel
+    (qua sang / qua roi duoi chu), ke ca anh roi (LOW-47) — trong khoang
+    OVERLAY_MIN..OVERLAY_MAX, khong bao gio la mau nen dac. Mo nhe OVERLAY_BLUR chi
+    tren CUNG mat na: chi tiet ngay duoi chu diu di, phan anh phia tren giu nguyen
+    (khong con dai mo manh cat ngang mat nguoi nhu nen LOW-215/272).
+    Tra ve y dau tien bi dong vao."""
+    top_y = max(0, int(text_top) - OVERLAY_LEAD)
+    full_y = max(top_y + 1, int(text_top) - OVERLAY_FULL_BEFORE)
+    if image_cluttered:
+        do = OVERLAY_CLUTTERED
+    else:
+        do = min(OVERLAY_MAX, max(OVERLAY_MIN, thieu * 2.2, variance_excess * 3.0))
+    # Mo tren CHINH canvas (khong phai ban cover `base`): slide ghep / anh ngang thap co
+    # nen mo khac anh cover — lay cover se lo ban sao cua anh duoi chu (luat 04/09).
+    blurred = canvas.convert("RGB").filter(ImageFilter.GaussianBlur(OVERLAY_BLUR))
+    canvas.paste(blurred, (0, 0), _ramp_mask(top_y, full_y, hi=220, ease=VEIL_EASE))
+    canvas.paste(Image.new("RGB", (W, H), BG), (0, 0),
+                 _ramp_mask(top_y, full_y, hi=int(do), ease=VEIL_EASE))
+    return top_y
+
+
 def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, max_share=None):
     """Them mot lop mo+tinh NGAY TAI text_top — CHI KHI can (xem nguyen tac o
     dau file). Mac dinh khong lam gi: FG (co dinh theo NEN ca bo) da du tuong
@@ -401,27 +482,22 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ma
     `text_bottom` la vung se do de QUYET DINH co can lop khong; mat na ve ra
     luon giu phang tu `text_top + VEIL_SPAN` tro xuong H, khong phu thuoc
     `text_bottom`."""
-    if image_cluttered:
-        return _background_solid_below_text(canvas, text_top, max_share)
+    if image_cluttered and max_share is None:
+        return _background_solid_below_text(canvas, text_top)      # bia: giu nhu cu
     sang, variance = _measure_region_text(canvas, text_top, text_bottom)
     if FG == (255, 255, 255):
         thieu = max(0.0, sang - THRESHOLD_BRIGHT_DARK)          # nen "dark": qua sang la thieu
     else:
         thieu = max(0.0, (255 - sang) - THRESHOLD_BRIGHT_BRIGHT)  # nen "light": qua toi la thieu
     variance_excess = max(0.0, variance - THRESHOLD_VARIANCE_NEEDS_LAYER)
+    if max_share is not None:
+        # Slide than/quote: chi mot overlay (LOW-286). LOW-272 truoc day cho moi anh co
+        # chi tiet duoi chu di nen dac LOW-215 -> khoi den 33-47% khung, Ong Chu bac.
+        if thieu <= 0 and variance_excess <= 0 and not image_cluttered:
+            return                   # da du tuong phan tren pixel that — khong phu gi
+        return _overlay_text(canvas, text_top, thieu, variance_excess, image_cluttered)
     if thieu <= 0 and variance_excess <= 0:
         return                       # da du tuong phan tren pixel that — khong phu gi
-    if max_share is not None:
-        # LOW-272 (Ong Chu 19/09/2026, hai slide Claude Cowork dcgr: "chu nhoe
-        # nhoet, khong biet bao gio moi khac phuc"). Do THAT can lop (duoi chu con
-        # CHI TIET doc duoc — menu UI, chu in san, logo — hoac nen qua sang cho chu
-        # trang, vd trang Ollama) thi lop mo 14px + toi toi da 55% o duoi KHONG lam
-        # chu sach: chi tiet van lo, trang sang thanh mang xam ban; lai bat dau
-        # NGAY dong chu dau nen dong dau luon nam tren anh con sac. Slide than co
-        # tran 30% (max_share) -> dung nen chu cua LOW-215: mo manh tu khoang lang,
-        # tint mau nen truoc dong chu dau. Anh da du tuong phan thi den day khong
-        # toi (return o tren) — khong phu gi. Bia (max_share None) giu lop nhe.
-        return _background_solid_below_text(canvas, text_top, max_share)
     do = min(DARK_MAX, max(40.0, thieu * 1.8, variance_excess * 2.2))
     top_y = max(0, int(text_top))
     full_y = min(H, top_y + VEIL_SPAN)
@@ -473,9 +549,10 @@ def _body_image(canvas, img):
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out, cluttered=False):
+def build_body(img_path, text, handle, out, cluttered=False, report=None):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
+    truoc_nen = canvas.copy() if report is not None else None
 
     # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
     # cao bao nhieu day len bay nhieu — luon sat day, khong tran len qua 30%,
@@ -491,6 +568,8 @@ def build_body(img_path, text, handle, out, cluttered=False):
     # phan voi FG — xem _layer_if_can. Khong bao gio bat dau truoc text_top.
     touched = _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered,
                             max_share=SOLID_BG_MAX_SHARE)
+    if report is not None:                      # LOW-286: do nen chu tren pixel that
+        report.update(_text_bg_report(truoc_nen, canvas))
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
@@ -515,21 +594,37 @@ Q_AVAIL = W - 2 * Q_TEXT_X
 Q_LEAD = 14                      # gian dong quote (theo px, giong card.py)
 Q_LINES = 7                      # cau dai hon la nen cat — xem cong chan
 Q_BOTTOM = 1150                  # day cum quote
+# LOW-286 (Ong Chu 19/09/2026: "text chi duoc chiem khoang 20% dien tich"): khoi chu
+# quote cao toi da 20% khung. Truoc day chon co lon nhat con vua Q_LINES dong -> cau
+# 4 dong co 60 cao 336px (25%) va nen chu mo tu dinh khung quote (~47% khung).
+Q_TEXT_MAX_H = round(H * 0.20)
 
 
-def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
+def _fit_quote(d, quote):
+    """Co chu quote LON NHAT ma khoi chu cao <= Q_TEXT_MAX_H va <= Q_LINES dong.
+    -> (font, lines, buoc, tren, vua). `vua` False: o co Q_LO van cao qua — cong
+    _gate_overflow bao vai cat cau; luc ve (bo qua cong) van dung co Q_LO."""
+    for size in range(Q_HI, Q_LO - 1, -2):
+        f = _f(F_QUOTE, size)
+        lines = _wrap(d, quote, f, Q_AVAIL)
+        buoc, tren = card._step_line(f, lines, Q_LEAD)
+        if len(lines) <= Q_LINES and buoc * len(lines) <= Q_TEXT_MAX_H:
+            return f, lines, buoc, tren, True
+    return f, lines, buoc, tren, False
+
+
+def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, report=None):
     """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
+    truoc_nen = canvas.copy() if report is not None else None
     d = ImageDraw.Draw(canvas)
 
     FRAME_X, TEXT_X, avail = Q_FRAME_X, Q_TEXT_X, Q_AVAIL
 
-    f_q, q_lines = card._fit_text(d, quote, avail, max_lines=Q_LINES,
-                                  hi=Q_HI, lo=Q_LO, path=F_QUOTE)
-    buoc, tren = card._step_line(f_q, q_lines, Q_LEAD)
+    f_q, q_lines, buoc, tren, _vua = _fit_quote(d, quote)
     quote_h = buoc * len(q_lines)
 
     f_at = _f(F_QUOTE_REG, 26)
@@ -551,10 +646,12 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
     first_line_top = last_line_bottom - quote_h
     frame_top = first_line_top - BOX_PAD_Y
 
-    # Chi them lop khi do THAT can (xem _layer_if_can) — neo dung tai dinh khung,
-    # khong con chom truoc 24px nhu ban cu.
-    touched = _layer_if_can(canvas, base, max(0, frame_top), H, image_cluttered=cluttered,
+    # Chi them lop khi do THAT can (xem _layer_if_can). Overlay neo o DONG CHU DAU
+    # (LOW-286), khong phai dinh khung: truoc day tu frame_top nen nen chu phu ~47% khung.
+    touched = _layer_if_can(canvas, base, max(0, first_line_top), H, image_cluttered=cluttered,
                             max_share=SOLID_BG_MAX_SHARE)
+    if report is not None:                      # LOW-286: do nen chu tren pixel that
+        report.update(_text_bg_report(truoc_nen, canvas))
 
     # Cac dong quote.
     qy = first_line_top
@@ -755,14 +852,14 @@ def _gate_overflow(slides):
     probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
     loi = []
     for i, s in enumerate(slides, start=2):
-        # Slide quote dung fit rieng (cau don, khong theo vung 30%): chi chan
-        # cau QUA DAI, o co chu nho nhat van tran qua so dong cho phep.
+        # Slide quote dung fit rieng (_fit_quote, cung ham luc ve): chan cau QUA DAI —
+        # o co chu nho nhat van cao qua 20% khung (LOW-286) hoac qua Q_LINES dong.
         if s.get("quote"):
-            # Do o DUNG be rong luc ve (Q_AVAIL), khong phai W - 2*PAD.
-            n = len(_wrap(probe, s["quote"], _f(F_QUOTE, Q_LO), Q_AVAIL))
-            if n > Q_LINES:
-                loi.append(f"slide {i}: cau quote qua dai ({n} dong > {Q_LINES} "
-                           "o co nho nhat) — cat cau ngan lai")
+            _f_q, q_lines, buoc, _tren, vua = _fit_quote(probe, s["quote"])
+            if not vua:
+                loi.append(f"slide {i}: cau quote qua dai ({len(q_lines)} dong, cao "
+                           f"{buoc * len(q_lines)}px > {Q_TEXT_MAX_H}px = 20% khung o co "
+                           "nho nhat) — cat cau ngan lai, chu chi duoc chiem ~20% slide")
             continue
         paras = [p.strip() for p in s["text"].split("\n\n") if p.strip()]
         _f_, _w_, _lh_, total = _fit_block(
@@ -910,18 +1007,27 @@ def main():
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
                 category=cover["category"], cluttered=bool(cover.get("cluttered")))
     paths = [str(out)]
-    loi_ghep = []
+    loi_ghep, loi_nen = [], []
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
+        bao = {}
         if s.get("quote"):
             touched = build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,
-                                       cluttered=bool(s.get("cluttered")))
+                                       cluttered=bool(s.get("cluttered")), report=bao)
         else:
-            touched = build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")))
+            touched = build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")),
+                                 report=bao)
         paths.append(p)
         loi = _gate_stack_last_hidden(f"slide {i}", s, touched)
         if loi:
             loi_ghep.append(loi)
+        loi = _gate_text_background(f"slide {i}", bao)
+        if loi:
+            loi_nen.append(loi)
+    if loi_nen:
+        for e in loi_nen:
+            print(f"[LOI] {e}", file=sys.stderr)
+        sys.exit("Nen chu sai luat overlay (LOW-286) — loi code, bao Ong Chu.")
     if loi_ghep:
         for e in loi_ghep:
             print(f"[LOI] {e}", file=sys.stderr)

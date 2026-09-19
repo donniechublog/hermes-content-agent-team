@@ -58,16 +58,17 @@ def test_body_dark_background_capped_at_30_percent():
         assert _near_bg(cv, y), (y, cv.getpixel((0, y)))
 
 
-def test_body_printed_text_above_cap_still_dissolved():
-    """Chu in san nam tren tran toi (700..940) van phai tan ra (y LOW-47) —
-    bang lam mo, khong phai bang khoi den."""
+def test_body_image_above_overlay_untouched():
+    """LOW-286 (Ong Chu 19/09/2026) thay cho y LOW-215 "chu in san tren tran van tan ra
+    bang lam mo": dai mo manh phia tren chu cat ngang mat nguoi, bi bac. Tu nay phan
+    anh phia tren overlay (text_top - OVERLAY_LEAD) giu NGUYEN tung pixel."""
     carousel.set_background("dark")
     cv = _stacked_like_claude_slide()
-    truoc = _row_energy(cv, 800)
+    goc = cv.copy()
     carousel._layer_if_can(cv, cv.convert("RGB"), 1033, carousel.H, image_cluttered=True,
                            max_share=carousel.SOLID_BG_MAX_SHARE)
-    assert _row_energy(cv, 800) < truoc * 0.1, (truoc, _row_energy(cv, 800))
-    assert not _near_bg(cv, 800, tol=12), "vung tren tran khong duoc thanh den tron"
+    for y in (100, 650, 800, 1033 - carousel.OVERLAY_LEAD - 20):
+        assert cv.getpixel((301, y)) == goc.getpixel((301, y)), y
 
 
 def test_body_dark_background_not_flat_black():
