@@ -48,7 +48,7 @@ def test_title_find_no_face_name_rank_when_og_title_empty():
     """Dung canh that: og:title cua livebench.ai la 'LiveBench' (bi bo vi < 4 tu),
     Google News hong -> roi ve ten rieng. Ket qua PHAI con 'deepseek'."""
     cu = article_sources._title_page, article_sources._download
-    article_sources._title_page = lambda url: ""
+    article_sources._title_page = lambda url, gnews_url="": ""
 
     def _hong(*a, **k):
         raise OSError("khong mang trong test")

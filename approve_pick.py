@@ -212,10 +212,31 @@ def _draft_id(item, brand, vai_anh):
     base = base.strip("-") or ("item-" + str(item["index"]))
     return f"{base}-{khoa}"
 
+# Phai TRUNG article_sources.EXIT_ONLY_ORIGINAL (tests/test_research_source_exit.py
+# chan lech). Khong import article_sources: no chay tien trinh con co chu dich,
+# chet thi approve van song va bao duoc loi (C-r2-6).
+EXIT_ONLY_ORIGINAL = 3
+
+
+def _last_error_line(stderr: str) -> str:
+    """Dong loi THAT cua tien trinh con: dong cuoi cua traceback (`XError: ...`),
+    khong phai 300 ky tu cuoi cat ngang giua chu (LOW-275: "inance.biggo.com")."""
+    lines = [ln.strip() for ln in (stderr or "").splitlines() if ln.strip()]
+    for ln in reversed(lines):
+        if re.match(r"^[A-Za-z_][\w.]*(Error|Exception|Exit|Interrupt)\b", ln):
+            return ln[:200]
+    return lines[-1][:200] if lines else "(khong co stderr)"
+
+
 def _research_source(item, draft_id, out_png, brand):
     """Tim nguon cho bai (article_sources.py) va doi link chuyen huong Google News
     thanh link that; ghi lai meta neu link doi. Mot lan o day cho ca vai anh
-    lan vai viet."""
+    lan vai viet.
+
+    Tra ve (error, warning): `error` = research hong that (khong co tep nguon),
+    `warning` = tep nguon co nhung chi co bai goc. Truoc LOW-275 ca hai la mot
+    chuoi "loi" va ca hai deu BO buoc doi link Google News ben duoi — 4/5 tin
+    19/09 giao Dre va ghi meta voi link chuyen huong thay vi link that."""
     # BUOC RESEARCH — thuoc khau cua Finn, chay ngay khi Ong Chu chon tin.
     # Tim nguon la viec research, khong phai viec cua nguoi dung anh hay nguoi
     # viet chu. Lam mot lan o day thay vi de hai ben tu tim: khoi
@@ -228,23 +249,25 @@ def _research_source(item, draft_id, out_png, brand):
     # doc ra rong" 04/09 ma khong ai thay nguyen nhan. `sys.executable` thay
     # duong venv go cung theo quy uoc material.extract().
     loi = None
+    only_original = False
     try:
         r = subprocess.run(
             [sys.executable, str(ROOT / "article_sources.py"),
              "--tieu-de", item["title"], "--link", item["link"],
              "--out", str(nguon_path)],
             capture_output=True, text=True, timeout=180, cwd=str(ROOT))
-        if r.returncode != 0:
-            loi = f"article_sources exit {r.returncode}: {(r.stderr or '').strip()[-300:]}"
+        only_original = r.returncode == EXIT_ONLY_ORIGINAL
+        if r.returncode not in (0, EXIT_ONLY_ORIGINAL):
+            loi = f"tìm nguồn lỗi (exit {r.returncode}): {_last_error_line(r.stderr)}"
     except Exception as e:                                   # noqa: BLE001
-        loi = f"{type(e).__name__}: {e!r}"
+        loi = f"tìm nguồn lỗi: {type(e).__name__}: {e!r}"
     if loi:
         print(f"[research] {draft_id}: khong tim duoc nguon — {loi}")
-        return loi
+        return loi, None
     # Link cua Vera la duong chuyen huong Google News; article_sources da giai ma ra
     # bai that (gnews_url/source_url). Dung link THAT cho moi vai sau va cho
     # meta — truoc day Dre/Miles nhan link chuyen huong, doc ra rong, phai tu
-    # web_search lai (do 04/09/2026).
+    # web_search lai (do 04/09/2026). Chay CA khi chi co bai goc (LOW-275).
     try:
         _ng = json.loads(nguon_path.read_text(encoding="utf-8"))
         _that = _ng.get("source_url") or ""
@@ -254,8 +277,15 @@ def _research_source(item, draft_id, out_png, brand):
     except Exception as e:                                   # noqa: BLE001
         loi = f"doc {nguon_path.name}: {type(e).__name__}: {e!r}"
         print(f"[research] {draft_id}: {loi}")
-        return loi
-    return None
+        return loi, None
+    if only_original:
+        searched = _ng.get("title_en") or ""
+        warning = ("chỉ có bài gốc, không tìm được báo khác đưa cùng tin"
+                   + (f" (tìm bằng: “{searched[:90]}”)" if searched
+                      else " (không có tiêu đề tiếng Anh để tìm)"))
+        print(f"[research] {draft_id}: {warning}")
+        return None, warning
+    return None, None
 
 
 def _block_run_engine(draft_id):
@@ -331,9 +361,14 @@ def create_pair(item, vai_anh="ethan", brand="donniechublog", vai_quet=None):
 
     # Loi research ghi vao item de nguoi goi (_process_pick) dua len dong tra loi
     # Ong Chu — khong chi nam trong log (C-r2-6).
-    loi_nguon = _research_source(item, draft_id, out_png, brand)
-    if loi_nguon:
-        item["source_error"] = loi_nguon
+    # Mot tin giao lai cho vai khac chay research lan nua — khong de dong cua lan truoc.
+    item.pop("source_error", None)
+    item.pop("source_warning", None)
+    source_error, source_warning = _research_source(item, draft_id, out_png, brand)
+    if source_error:
+        item["source_error"] = source_error
+    if source_warning:
+        item["source_warning"] = source_warning
 
     # carousel (Dre) dung carousel nhieu slide, cac vai anh khac dung the bia.
     # Cung bo bien nhu nhau nen chon khuon roi format chung; .format bo qua
@@ -493,7 +528,11 @@ def _process_pick(token, group, thread_id, vai, lenh):
             if it.get("source_error"):
                 # C-r2-6: research hong thi Ong Chu phai thay ngay o day, khong
                 # phai doi vai bao "doc ra rong" roi di lan log.
-                lines.append(f"   ⚠️ không tìm được nguồn cho #{n}: {it['source_error'][:160]}")
+                lines.append(f"   ⚠️ #{n}: {it['source_error'][:200]}")
+            elif it.get("source_warning"):
+                # LOW-275: chi co bai goc la canh bao, khong phai loi — de Ong Chu
+                # biet vi sao Dre co the thieu anh, va tim bang cau nao.
+                lines.append(f"   ℹ️ #{n}: {it['source_warning'][:200]}")
             # Ong Chu 08/09/2026: "cac vai can phan hoi ngay khi duoc giao task la da
             # nhan task" — truoc day chi hang CHUYEN (Dre->Miles, ->Kite) duoc bao
             # ngay qua _report_receive_job, con task MOI tao o day thi im lang cho toi khi

@@ -12,10 +12,15 @@ state/<brand>/article_source_<draft_id>.json, roi ca vai dung anh lan vai viet c
 Cach tim: Google News KHONG cho URL bai (link cua no la duong chuyen huong chay
 bang JS, chuoi CBMi khong phai base64 cua URL, con DuckDuckGo tra 202 chan bot).
 Nhung Google News CO cho ten mien toa soan o <source url>. Nen di duong vong:
-ten mien -> RSS cua chinh toa soan -> khop tieu de -> ra link bai that.
+ten mien -> RSS cua chinh toa soan -> khop tieu de -> ra link bai that. Chua du
+bao thi hoi Bing, roi moi mo Chromium giai ma link Google News cua cac bai cung
+tin (LOW-275: nhieu toa soan khong co RSS doan duoc, Bing lai tra rong).
 
 Dung:
     venv/bin/python article_sources.py --tieu-de "..." --link "..." --out state/<brand>/article_source_x.json
+
+Ma thoat: 0 = co bao khac; EXIT_ONLY_ORIGINAL (3) = tep van ghi du nhung chi co
+bai goc; khac = loi that (1 la ma Python tu tra khi co exception).
 """
 import argparse
 import concurrent.futures as cf
@@ -36,6 +41,10 @@ UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 COUNT_SOURCE = 4
+# LOW-275 (19/09/2026): truoc day "chi tim duoc bai goc" tra ma 1 — trung ma Python
+# tu tra khi co exception, nen approve coi 5/9 tin la "loi" va BO LUON buoc doi
+# link Google News sang link that. Ma rieng de nguoi goi tach hai truong hop.
+EXIT_ONLY_ORIGINAL = 3
 
 # ---- tep article_source_<id>.json (LOW-238; bang docs/tu_dien_ten/article_source_keys_v2.json)
 #   {"title", "title_en", "source_url", "gnews_url"?, "pages": [{"url", "kind", "title"?, "outlet_url"?}]}
@@ -213,7 +222,44 @@ def _title_rss(url: str) -> str:
     return ""
 
 
-def _title_page(url: str) -> str:
+def _gnews_article_id(url: str) -> str:
+    """Ma bai trong link Google News (doan cuoi duong dan, bo `?oc=5`)."""
+    return up.urlsplit(url or "").path.rstrip("/").rsplit("/", 1)[-1]
+
+
+def _title_gnews_id(gnews_url: str, url: str) -> str:
+    """Headline tieng Anh cua CHINH bai nay theo Google News, khop DUNG ma bai.
+
+    LOW-275 (19/09/2026): bai finance.biggo.com tra 403 cho ca httpx lan Chromium,
+    khong RSS, slug la UUID — khong con cho nao cho tieu de tieng Anh, nen roi ve
+    ten rieng roi rac cua tieu de Viet (dang khop nham LOW-169). Nhung tin cua
+    Vera DEN TU Google News: hoi Google News bang doan duong dan cua URL that
+    (UUID, slug) ra lai dung bai do, va ma bai (CBMi...) trung y het link Vera
+    dua -> tieu de chac chan cua dung bai, khong phai doan. Do that 4/4 tin
+    link Google News ngay 19/09 (biggo, ET Enterprise AI, The Information, AIM)."""
+    if GNEWS_ARTICLE not in (gnews_url or ""):
+        return ""
+    article_id = _gnews_article_id(gnews_url)
+    segments = [s for s in up.urlsplit(url or "").path.split("/") if len(s) >= 6]
+    for query in list(reversed(segments))[:3]:
+        try:
+            items = ET.fromstring(_download(GNEWS.format(q=up.quote(query)), 20).content
+                                  ).findall(".//item")
+        except Exception as e:                               # noqa: BLE001
+            print(f"[nguon_bai] google news (ma bai) hong: {type(e).__name__}", file=sys.stderr)
+            continue
+        for item in items:
+            if _gnews_article_id(item.findtext("link") or "") != article_id:
+                continue
+            title = strip_site_suffix(item.findtext("title") or "")
+            if title and not has_vietnamese(title):
+                print(f"[nguon_bai] tieu de tim = Google News khop ma bai: {title[:90]}",
+                      file=sys.stderr)
+                return title
+    return ""
+
+
+def _title_page(url: str, gnews_url: str = "") -> str:
     """og:title / <title> cua bai goc — tieu de tieng Anh THAT cua toa soan.
 
     Trang SPA chua hydrate (vd techinasia.com fetch tinh) tra <title> = TEN
@@ -226,7 +272,8 @@ def _title_page(url: str) -> str:
 
     Trang bi chan bot (403/challenge) -> cung thu RSS cong khai truoc khi bo
     cuoc (Economist 08/09/2026: httpx lan Playwright/Chromium that deu bi
-    chan giong nhau)."""
+    chan giong nhau). Tin den tu Google News (`gnews_url`) thi hoi Google News
+    khop ma bai truoc khi suy tu slug (LOW-275)."""
     try:
         r = httpx.get(url, headers=HDR, timeout=20, follow_redirects=True)
         if r.status_code == 200:
@@ -242,10 +289,14 @@ def _title_page(url: str) -> str:
                     print(f"[nguon_bai] bo tieu de qua ngan (co the la ten site, chua hydrate): {t!r}",
                           file=sys.stderr)
                 elif t and len(t) >= 8 and not has_vietnamese(t) and not _CHAN_BOT.search(t):
+                    print(f"[nguon_bai] tieu de tim = og:title bai goc: {t[:90]}", file=sys.stderr)
                     return t
     except Exception:                                        # noqa: BLE001
         pass
-    return _title_rss(url) or _title_slug(url)
+    return _title_rss(url) or _title_gnews_id(gnews_url, url) or _title_slug(url)
+
+
+_HEX_ID = re.compile(r"[0-9a-f]*[0-9][0-9a-f]*", re.I)
 
 
 def _title_slug(url: str) -> str:
@@ -259,7 +310,11 @@ def _title_slug(url: str) -> str:
     dien iCaur 03 vi ca hai co du 2 tu "malaysia" + "385"; slug URL cua chinh
     bai goc lai ra dung ca cau "malaysia records rm385 7 billion in data
     centre investments...", vua tieng Anh vua dac trung, khong lam mat nguon
-    tim kiem nhu tra ve rong)."""
+    tim kiem nhu tra ve rong).
+
+    Manh hex co chu so (UUID/hash: `1050d70e`, `f675`, `45be`) KHONG tinh la tu
+    (LOW-275: slug UUID cua finance.biggo.com tung thanh "tieu de" tim kiem
+    `1050d70e f675 45be 8384 79934321d06f` vi 4/5 manh co chu cai a-f)."""
     try:
         path = up.urlsplit(url).path
     except Exception:                                        # noqa: BLE001
@@ -267,8 +322,8 @@ def _title_slug(url: str) -> str:
     for doan in reversed([d for d in path.split("/") if d]):
         doan = re.sub(r"\.(html?|php|aspx?)$", "", doan, flags=re.I)
         tu = [w for w in doan.split("-") if w]
-        if sum(1 for w in tu if re.search(r"[a-zA-Z]", w)) < 4:
-            continue                                          # doan qua ngan/toan so, khong phai slug
+        if sum(1 for w in tu if re.search(r"[a-zA-Z]", w) and not _HEX_ID.fullmatch(w)) < 4:
+            continue                                          # doan qua ngan/toan so/UUID, khong phai slug
         t = " ".join(tu)
         if not has_vietnamese(t):
             print(f"[nguon_bai] tieu de tim = slug URL bai goc: {t[:90]}", file=sys.stderr)
@@ -297,7 +352,7 @@ def _name_own_no_mark(tieu_de_viet: str) -> str:
     return " ".join(ra[:8])
 
 
-def title_find(tieu_de: str, link: str) -> str:
+def title_find(tieu_de: str, link: str, gnews_url: str = "") -> str:
     """Tieu de DUNG DE TIM KIEM (tieng Anh). Rong = khong duoc tim gi ca.
 
     Uu tien HEADLINE THAT cua toa soan (og:title hoac RSS) hon tieu de dau vao,
@@ -306,9 +361,10 @@ def title_find(tieu_de: str, link: str) -> str:
     ra 0 ket qua. Vi du that (Economist 08/09/2026): dek "Initial effects of AI
     technology on employment look positive" -> Google News 0 bai; headline that
     "The jobs apocalypse is postponed. An AI jobs boom is here" -> ra New Yorker."""
-    en = _title_page(link) if link else ""
+    # Moi nhanh cua _title_page tu in nguon cua no (og:title/RSS/ma bai/slug) —
+    # truoc day dong nay in "og:title/RSS" ca khi tieu de la slug UUID (LOW-275).
+    en = _title_page(link, gnews_url) if link else ""
     if en:
-        print(f"[nguon_bai] tieu de tim = og:title/RSS bai goc: {en[:90]}", file=sys.stderr)
         return en
     if tieu_de and not has_vietnamese(tieu_de):
         return tieu_de
@@ -511,6 +567,78 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
     return ra
 
 
+def _domain(url: str) -> str:
+    return re.sub(r"^https?://(www\.)?", "", url or "").split("/")[0].lower()
+
+
+# Bu bao qua Google News chi khi con it hon chung nay bao khac: moi link phai mo
+# Chromium giai ma (~4s), khong dang ton khi RSS/Bing da ra du.
+MIN_OTHER_OUTLETS = 2
+
+
+def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains: tuple = (),
+                        days: int = 10, budget_seconds: int = 30) -> list:
+    """Bao khac cung tin lay tu CHINH cac muc Google News `find()` da tai ve.
+
+    LOW-275 (19/09/2026): tin "Anthropic details practical metrics..." Google
+    News tra san CNBC, Tekedia, blockchain.news cung dua — nhung `find()` chi
+    lay TEN MIEN roi doan RSS (/feed, /rss...), CNBC/Tekedia khong co feed doan
+    duoc, Bing lai tra rong -> chi con bai goc. Link Google News la chuyen huong
+    JS (xem `resolve_code_gnews`), nen mo Chromium giai ma — dat, nen chi lam
+    cho vai bai cung tin nhat, trong `budget_seconds` giay.
+
+    Loc giong `other_outlets_bing`: `same_story`, dang trong `days` ngay, moi
+    mien mot bai, bo `DROP_DOMAIN` + `skip_domains`, chan SSRF tren URL sau giai
+    ma. Xep bai chung nhieu tu nhat len truoc. Do that 19/09: giai ma ~4-5s/link,
+    link chan bot treo toi het timeout — nen 10s/link va tran `budget_seconds`
+    de ca buoc research khong cham 180s cua approve (buoc doan RSS truoc do da
+    co the ton ~80s)."""
+    import email.utils as eu
+    import time as _t
+    story = story_tokens(title_en)
+    cutoff = _t.time() - days * 86400
+    skip = DROP_DOMAIN + tuple(skip_domains)
+    candidates, seen_domains = [], set()
+    for item in items:
+        title = strip_site_suffix(item.findtext("title") or "")
+        if not same_story(title_en, title) or has_vietnamese(title):
+            continue
+        common = len(story & story_tokens(title))            # chi de xep hang
+        try:
+            if eu.parsedate_to_datetime(item.findtext("pubDate") or "").timestamp() < cutoff:
+                continue
+        except Exception:                                    # noqa: BLE001
+            continue                                          # khong ngay -> khong biet cung dot tin
+        source = item.find("source")
+        outlet = ((source.get("url") if source is not None else "") or "").rstrip("/")
+        domain = _domain(outlet)
+        if not domain or domain in seen_domains or any(s in domain for s in skip):
+            continue
+        seen_domains.add(domain)
+        candidates.append((common, item.findtext("link") or "", title, outlet))
+    candidates.sort(key=lambda c: -c[0])
+    pages = []
+    if not candidates:
+        return pages
+    from browser_session import session_or_new
+    deadline = _t.time() + budget_seconds
+    with session_or_new(None) as session:
+        for _common, gnews_link, title, outlet in candidates[: count + 2]:
+            if _t.time() > deadline:
+                print(f"[nguon_bai] google news: het {budget_seconds}s giai ma, dung o {len(pages)} bao",
+                      file=sys.stderr)
+                break
+            real = resolve_code_gnews(gnews_link, timeout=10, phien=session)
+            if (not real or not scan_common.url_hide_whole(real)
+                    or any(s in _domain(real) for s in skip)):
+                continue
+            pages.append({"url": real, "kind": "other_outlet", "title": title[:160],
+                          "outlet_url": outlet})
+            if len(pages) >= count:
+                break
+    return pages
+
+
 def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
     link_gnews = None
     if GNEWS_ARTICLE in link:
@@ -520,7 +648,7 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
             print(f"[nguon_bai] link Google News -> {link[:90]}", file=sys.stderr)
     ra = [{"url": link, "kind": "article", "title": tieu_de}]
     # Tim kiem CHI bang tieng Anh (xem luat o tren). `ten` rong -> khong hoi feed nao.
-    ten = title_find(tieu_de, link)
+    ten = title_find(tieu_de, link, link_gnews or "")
     its, co_link_gn = [], set()
     if ten:
         # THU CA CAU NGAN, khong chi headline day du (Ong Chu 13/09/2026: do
@@ -584,15 +712,23 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
                 break
     # Goi Bing khi chua du `so`+1 nguon (truoc: < 3). Vong feed thuong chi ra 2-3
     # trang vi nhieu toa soan khong co RSS; Bing voi headline tieng Anh bu phan con lai.
+    m = re.match(r"https?://([^/]+)", link)
+    mien_goc = ((m.group(1) if m else "").replace("www.", ""),)
     if len(ra) <= so:
-        m = re.match(r"https?://([^/]+)", link)
-        mien_goc = ((m.group(1) if m else "").replace("www.", ""),)
         for t in (other_outlets_bing(ten, so=so, bo_mien=mien_goc) if ten else []):
             if t["url"] not in thay:
                 thay.add(t["url"])
                 ra.append(t)
             if len(ra) > so:
                 break
+    # Van con it bao -> giai ma chinh cac bai cung tin Google News da tra (LOW-275).
+    if ten and len(ra) - 1 < MIN_OTHER_OUTLETS:
+        found_domains = tuple(_domain(t["url"]) for t in ra)
+        for t in other_outlets_gnews(ten, its, count=so + 1 - len(ra),
+                                     skip_domains=mien_goc + found_domains):
+            if t["url"] not in thay:
+                thay.add(t["url"])
+                ra.append(t)
     kq = {"title": tieu_de, "title_en": ten, "source_url": link, "pages": ra}
     if link_gnews:
         kq["gnews_url"] = link_gnews
@@ -614,7 +750,7 @@ def main():
     print(a.out)
     for t in kq["pages"]:
         print(f"  [{page_kind_label(t['kind'])}] {t['url'][:88]}", file=sys.stderr)
-    return 0 if len(kq["pages"]) > 1 else 1
+    return 0 if len(kq["pages"]) > 1 else EXIT_ONLY_ORIGINAL
 
 
 if __name__ == "__main__":
