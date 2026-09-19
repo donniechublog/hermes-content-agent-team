@@ -678,7 +678,14 @@ def check_duplicate(nhan, path, da_thay):
     """Moi slide mot hinh DUY NHAT. Bat theo NOI DUNG tep (hash), khong theo ten.
 
     Han che da biet: hai CROP khac nhau cua cung mot tam thi hash khac — cai do
-    van phai nho mat nguoi soi.
+    van phai nho mat nguoi soi. Da THU dung dHash gan-giong o day (LOW-265,
+    19/09/2026) nhung BO: do that tren anh chup thuc te (khong phai do hoa) cho
+    thay mot crop nhe (~10% mep) da cach nhau 7-17 bit, con hai anh THAT SU khac
+    nhau chi cach 36 bit — khong co nguong nao vua bat duoc crop vua khong bao
+    oan hai anh khac nhau (dung ket qua do that cua chinh LOW-45 truoc do: crop
+    khac cua cung mot tam cach 22 bit). Duong giai that cho ca dot LOW-265 la
+    `check_repeated_subject_portrait` (duoi day) — dua vao chu the DA KHAI thay
+    vi doan qua pixel.
     """
     import hashlib
     h = hashlib.md5(Path(path).read_bytes()).hexdigest()
@@ -686,4 +693,43 @@ def check_duplicate(nhan, path, da_thay):
         return [f"{nhan}: trung anh voi {da_thay[h]} — moi slide phai mot hinh "
                 "DUY NHAT, tim anh khac"], []
     da_thay[h] = nhan
+    return [], []
+
+
+def _normalize_subject(ten: str) -> str:
+    """Chuan hoa ten nhan vat de doi chieu: bo hoa/thuong, khoang trang thua, va
+    tien to chuc danh (dung chung `_NAME_PREFIX`)."""
+    w = [x for x in re.split(r"\s+", ten.strip().lower()) if x]
+    while len(w) > 2 and w[0] in _NAME_PREFIX:
+        w = w[1:]
+    return " ".join(w)
+
+
+def check_repeated_subject_portrait(nhan, path, muc, da_subject):
+    """Khong dung >= 2 anh CHAN DUNG (mot mat, ro rang la tieu diem) cua CUNG
+    MOT nguoi trong mot carousel — du la hai tam anh khac nhau hoan toan (LOW-265,
+    Ong Chu 19/09/2026: carousel dcgr Nvidia dung ca anh Jensen Huang cam 2
+    laptop LAN anh Jensen Huang noi voi mic — hai tam khac nhau nhung deu la
+    chan dung CEO, doc lien tiep nhu lap chu de: *"ko dung 2 anh cung la chan
+    dung founder trong 1 slide"*).
+
+    Dua vao "subject" da khai o slide (vai tu nhan dang nguoi trong anh, giong
+    `check_unnamed_face`) VA so mat = 1 (mot nguoi ro rang la tieu diem — anh
+    nhom/hien truong nhieu mat khong tinh, vi khong con la "chan dung"). Khong
+    tu doan chan dung tu vision: vai chiu trach nhiem khai dung ten, code chi
+    doi chieu hai lan khai cung mot nguoi.
+    """
+    nv = str(muc.get("subject") or "").strip()
+    if not nv:
+        return [], []
+    n = count_faces(path)
+    if n != 1:
+        return [], []
+    key = _normalize_subject(nv)
+    if key in da_subject:
+        return [f"{nhan}: TRUNG CHU THE '{nv}' voi {da_subject[key]} — ca hai deu "
+                "la anh chan dung cung mot nguoi (du la hai tam anh khac nhau). "
+                "Doi mot trong hai sang anh khac (san pham, hien truong, logo, "
+                "anh co nhieu nguoi), hoac bo bot mot slide."], []
+    da_subject[key] = nhan
     return [], []

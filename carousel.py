@@ -686,6 +686,7 @@ def _gate_image(paths):
     """
     loi, canh_bao = [], []
     da_thay = {}
+    da_subject = {}                      # LOW-265: chan dung lap chu the trong carousel
 
     def gom(ket_qua):
         a, b = ket_qua
@@ -730,6 +731,7 @@ def _gate_image(paths):
         gom(image_rules_dre.check_crop_landscape(nhan, img, w, h_px, muc.get("crop_ok")))
         gom(image_rules_dre.check_resolution(nhan, w, h_px))
         gom(image_rules_dre.check_unnamed_face(nhan, p, muc.get("subject")))
+        gom(image_rules_dre.check_repeated_subject_portrait(nhan, p, muc, da_subject))
     return loi, canh_bao
 
 
