@@ -411,6 +411,15 @@ def _layer_if_can(canvas, base, text_top, text_bottom, image_cluttered=False, ma
     variance_excess = max(0.0, variance - THRESHOLD_VARIANCE_NEEDS_LAYER)
     if thieu <= 0 and variance_excess <= 0:
         return                       # da du tuong phan tren pixel that — khong phu gi
+    if max_share is not None and variance_excess > 0:
+        # LOW-272 (Ong Chu 19/09/2026, hai slide Claude Cowork dcgr: "chu nhoe
+        # nhoet, khong biet bao gio moi khac phuc"). Duoi chu con CHI TIET doc
+        # duoc (menu UI, chu in san, logo) thi lop mo 14px + toi toi da 55% o duoi
+        # KHONG xoa noi, lai bat dau NGAY dong chu dau nen dong dau luon nam tren
+        # anh con sac. Slide than co tran 30% (max_share) -> dung nen chu cua
+        # LOW-215: mo manh tu khoang lang, tint mau nen truoc dong chu dau.
+        # Chi khi do duoc chi tiet (variance) — anh tron van di lop nhe nhu cu.
+        return _background_solid_below_text(canvas, text_top, max_share)
     do = min(DARK_MAX, max(40.0, thieu * 1.8, variance_excess * 2.2))
     top_y = max(0, int(text_top))
     full_y = min(H, top_y + VEIL_SPAN)
