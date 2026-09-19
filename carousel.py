@@ -348,6 +348,49 @@ OVERLAY_BLUR = 30                # mo chi tiet NGAY duoi chu (chu in san ~20-30p
 OVERLAY_MIN, OVERLAY_MAX = 150, 205  # do toi overlay (0..255, ~59%..80%) tai vung chu
 OVERLAY_FULL_BEFORE = 36         # overlay dat muc toi TRUOC dong chu dau bay nhieu px (dong dau khong nam tren dai chuyen)
 OVERLAY_CLUTTERED = 205          # anh roi (LOW-47): overlay dam nhat, van la overlay
+# CONG DO nen chu tren pixel THAT (LOW-286): moi slide than/quote, bat ke di duong code
+# nao, so canvas NGAY TRUOC khi ve chu voi ban chi co anh. Do 19/09 tren 13 slide that
+# (Lovable + Cowork): nen LOW-272 phu dac nhat 0.92-0.97 va dai doi manh bat dau tu
+# 46-62% khung; overlay LOW-286 phu 0.64-0.84, dai doi toi da ~0.40 (quote dai nhat).
+TEXT_BG_MAX_OPACITY = 0.88       # hang nao bi phu dac hon muc nay = nen dac, khong phai overlay
+TEXT_BG_MAX_SHARE = 0.42         # phan khung (tu day len) bi nen chu doi manh
+TEXT_BG_CHANGED = 10             # do lech sang trung binh / hang coi la "doi manh"
+TEXT_BG_LIFT_MIN = 40            # hang anh cach mau nen it nhat bay nhieu moi tinh do phu
+
+
+def _text_bg_report(before, after) -> dict:
+    """So canvas SAU nen chu voi TRUOC nen chu (cung tam anh, chua ve chu) ->
+    {"bg_share": phan khung tu hang doi manh dau tien xuong day,
+     "bg_opacity": do phu lon nhat (0 = giu nguyen anh, 1 = mau nen dac)}.
+    Do phu tinh tren trung binh hang nen lop mo (bao toan trung binh) khong lam sai."""
+    import numpy as np
+    b = np.asarray(before.convert("L"), dtype=np.float32)
+    a = np.asarray(after.convert("L"), dtype=np.float32)
+    doi = np.abs(a - b).mean(axis=1)
+    ys = np.nonzero(doi > TEXT_BG_CHANGED)[0]
+    share = float((H - ys.min()) / H) if len(ys) else 0.0
+    bg = 0.299 * BG[0] + 0.587 * BG[1] + 0.114 * BG[2]
+    bm, am = b.mean(axis=1), a.mean(axis=1)
+    lift = bm - bg
+    m = np.abs(lift) >= TEXT_BG_LIFT_MIN
+    op = float(((bm - am)[m] / lift[m]).max()) if m.any() else 0.0
+    return {"bg_share": round(share, 3), "bg_opacity": round(max(0.0, op), 3)}
+
+
+def _gate_text_background(nhan, report) -> str:
+    """Nen chu vuot luat Ong Chu (LOW-286: "chi de nhu mot lop overlay tren anh") -> loi.
+    Day la loi CODE dung slide, vai khong sua duoc bang spec."""
+    if not report:
+        return ""
+    sai = []
+    if report["bg_opacity"] > TEXT_BG_MAX_OPACITY:
+        sai.append(f"phu dac {report['bg_opacity']:.0%} > {TEXT_BG_MAX_OPACITY:.0%} (nen dac, khong phai overlay)")
+    if report["bg_share"] > TEXT_BG_MAX_SHARE:
+        sai.append(f"nen chu doi anh tu {report['bg_share']:.0%} khung tro xuong > {TEXT_BG_MAX_SHARE:.0%}")
+    if not sai:
+        return ""
+    return (f"{nhan}: nen chu sai luat overlay — {'; '.join(sai)}. Loi CODE carousel.py "
+            "(LOW-286), khong phai spec: KHONG gui album, kanban_block kem nguyen van dong nay.")
 SOLID_BG_TINT = 232              # 0..255: do dac cua mau nen phu len ban mo
 SOLID_BG_DARK_SPREAD = 120       # dai chuyen cua phan toi
 # Cap anh ghep doc co anh RO duoi nen bi phu (mo/toi) gan het thi anh do la
@@ -506,9 +549,10 @@ def _body_image(canvas, img):
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out, cluttered=False):
+def build_body(img_path, text, handle, out, cluttered=False, report=None):
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
+    truoc_nen = canvas.copy() if report is not None else None
 
     # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
     # cao bao nhieu day len bay nhieu — luon sat day, khong tran len qua 30%,
@@ -524,6 +568,8 @@ def build_body(img_path, text, handle, out, cluttered=False):
     # phan voi FG — xem _layer_if_can. Khong bao gio bat dau truoc text_top.
     touched = _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered,
                             max_share=SOLID_BG_MAX_SHARE)
+    if report is not None:                      # LOW-286: do nen chu tren pixel that
+        report.update(_text_bg_report(truoc_nen, canvas))
 
     _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
     _watermark(canvas, handle)
@@ -567,12 +613,13 @@ def _fit_quote(d, quote):
     return f, lines, buoc, tren, False
 
 
-def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
+def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False, report=None):
     """Slide than dang pull-quote — dung chung khung + bo cuc voi card.py --kieu
     quote. MAU: net khung + brand text CO DINH xanh Apple; DAU " doi theo hang
     duoc nhac. Duoi khung: chip ten kenh canh trai, roi dong nguon canh giua sat day."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
     base = _body_image(canvas, _open(img_path))
+    truoc_nen = canvas.copy() if report is not None else None
     d = ImageDraw.Draw(canvas)
 
     FRAME_X, TEXT_X, avail = Q_FRAME_X, Q_TEXT_X, Q_AVAIL
@@ -603,6 +650,8 @@ def build_body_quote(img_path, quote, attrib, handle, out, cluttered=False):
     # (LOW-286), khong phai dinh khung: truoc day tu frame_top nen nen chu phu ~47% khung.
     touched = _layer_if_can(canvas, base, max(0, first_line_top), H, image_cluttered=cluttered,
                             max_share=SOLID_BG_MAX_SHARE)
+    if report is not None:                      # LOW-286: do nen chu tren pixel that
+        report.update(_text_bg_report(truoc_nen, canvas))
 
     # Cac dong quote.
     qy = first_line_top
@@ -958,18 +1007,27 @@ def main():
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
                 category=cover["category"], cluttered=bool(cover.get("cluttered")))
     paths = [str(out)]
-    loi_ghep = []
+    loi_ghep, loi_nen = [], []
     for i, s in enumerate(slides, start=2):
         p = f"{stem}_{i}.png"
+        bao = {}
         if s.get("quote"):
             touched = build_body_quote(s["image"], s["quote"], s.get("attrib", ""), handle, p,
-                                       cluttered=bool(s.get("cluttered")))
+                                       cluttered=bool(s.get("cluttered")), report=bao)
         else:
-            touched = build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")))
+            touched = build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")),
+                                 report=bao)
         paths.append(p)
         loi = _gate_stack_last_hidden(f"slide {i}", s, touched)
         if loi:
             loi_ghep.append(loi)
+        loi = _gate_text_background(f"slide {i}", bao)
+        if loi:
+            loi_nen.append(loi)
+    if loi_nen:
+        for e in loi_nen:
+            print(f"[LOI] {e}", file=sys.stderr)
+        sys.exit("Nen chu sai luat overlay (LOW-286) — loi code, bao Ong Chu.")
     if loi_ghep:
         for e in loi_ghep:
             print(f"[LOI] {e}", file=sys.stderr)

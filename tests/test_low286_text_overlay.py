@@ -127,6 +127,54 @@ def test_quote_overlay_anchored_at_first_line(tmp=None):
         assert top is not None and top >= carousel.H * 0.58, top
 
 
+# ------------------------------------------------ cong do nen chu tren pixel that
+def test_gate_passes_new_overlay_body_and_quote():
+    import tempfile
+    carousel.set_background("dark")
+    with tempfile.TemporaryDirectory() as t:
+        src = Path(t) / "a.png"
+        _busy().convert("RGB").save(src)
+        for cluttered in (False, True):
+            bao = {}
+            carousel.build_body(str(src), "Một đoạn chữ ngắn cho slide thân.", "dcgr.tech",
+                                str(Path(t) / "b.png"), cluttered=cluttered, report=bao)
+            assert bao and not carousel._gate_text_background("slide 2", bao), bao
+            bao = {}
+            carousel.build_body_quote(str(src), LOVABLE_QUOTE, "Lovable", "dcgr.tech",
+                                      str(Path(t) / "q.png"), cluttered=cluttered, report=bao)
+            assert bao and not carousel._gate_text_background("slide 3", bao), bao
+
+
+def test_gate_blocks_old_solid_background():
+    """Nen chu LOW-272/LOW-215 (mo 44px tu khoang lang + phu mau nen 91%) phai bi chan."""
+    carousel.set_background("dark")
+    cv = _busy()
+    truoc = cv.copy()
+    carousel._background_solid_below_text(cv, TEXT_TOP, carousel.SOLID_BG_MAX_SHARE)
+    bao = carousel._text_bg_report(truoc, cv)
+    loi = carousel._gate_text_background("slide 5", bao)
+    assert loi and "overlay" in loi and bao["bg_opacity"] > carousel.TEXT_BG_MAX_OPACITY, bao
+
+
+def test_gate_blocks_background_starting_too_high():
+    """Nen chu keo tu gan nua khung (nhu slide quote cu neo o dinh khung) phai bi chan."""
+    carousel.set_background("dark")
+    cv = _busy()
+    truoc = cv.copy()
+    carousel._overlay_text(cv, 700, 0, 40)
+    bao = carousel._text_bg_report(truoc, cv)
+    assert bao["bg_share"] > carousel.TEXT_BG_MAX_SHARE, bao
+    assert carousel._gate_text_background("slide 3", bao)
+
+
+def test_gate_untouched_image_reports_zero():
+    carousel.set_background("dark")
+    cv = _busy()
+    bao = carousel._text_bg_report(cv.copy(), cv)
+    assert bao == {"bg_share": 0.0, "bg_opacity": 0.0}, bao
+    assert not carousel._gate_text_background("slide 2", bao)
+
+
 if __name__ == "__main__":
     from tam import chay_tat_ca
     chay_tat_ca(globals())

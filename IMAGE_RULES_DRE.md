@@ -826,6 +826,28 @@ tuyệt đối.
 
 ## 7. Không bao giờ để ra hai vùng riêng biệt
 
+### 7.0 Chữ ~20% khung, nền chữ CHỈ là overlay (LOW-286 — luật trên hết của mục này)
+
+Ông Chủ 19/09/2026, nguyên văn: *"text chỉ được chiếm khoảng 20% diện tích, phần nền
+text đã nói từ rất lâu ko làm thô kệch như vậy, chỉ để như một lớp overlay trên ảnh,
+giờ lại làm một đống dày cộm là sao."* LOW-272 (sáng cùng ngày) sửa "chữ nhoè" bằng
+nền đặc: mờ 44px từ khoảng lặng (cắt ngang mặt người) + phủ màu nền 91% → khối đen
+33–47% khung. Bị bác.
+
+- **Slide thân và slide quote carousel:** nền chữ là **một overlay gradient**
+  (`carousel._overlay_text`): bắt đầu ngay trên dòng chữ đầu, đậm dần tới 59–80%
+  theo nhu cầu đo thật (ảnh rối 80%), chỉ làm mờ trong chính vùng đó. Phần ảnh phía
+  trên giữ nguyên. **Không nền đặc, không dải mờ mạnh phía trên chữ, kể cả ảnh rối.**
+- **Chữ quote ≤ 20% khung** (`Q_TEXT_MAX_H`). Quote dài quá thì cổng bắt cắt câu,
+  không nở nền.
+- **Chữa "chữ nhoè" bằng overlay đậm hơn tại vùng chữ, không bao giờ bằng cách nở
+  nền ra.**
+- **Cổng đo trên pixel thật** (`carousel._gate_text_background`): mọi slide thân/quote
+  bị so canvas trước/sau nền chữ. Độ phủ > 88% hoặc vùng đổi bắt đầu cao hơn 42% khung
+  thì `carousel.py` dừng, không gửi album. Đây là lỗi code, vai `kanban_block`.
+- Bìa (`build_cover`) giữ bố cục đã duyệt. Thẻ Ethan và slide Kite chưa kiểm theo
+  luật này (LOW-287).
+
 Mỗi tấm phải đọc ra **một mặt phẳng liền**. Cấm mọi thứ chia khung thành hai
 mảng nhìn tách rời:
 
@@ -904,6 +926,8 @@ cho nghiêm chỉnh, đừng nham nhở"*.
   `has_keywords`; ảnh rối có cờ này được miễn `check_image_fall`, được làm bìa (kể cả
   khi đo ra là chart), và bìa hiện **nguyên bề ngang** như slide thân —
   cover-crop cắt hai mép là mất chữ khoá ở mép.
+- **[Slide thân carousel: ĐÃ THAY bằng overlay — mục 7.0, LOW-286. Hai gạch dưới
+  chỉ còn đúng cho bìa và thẻ Ethan, xem LOW-287.]**
 - **Buộc dùng thì nền chữ đặc**, không phải lớp mờ 55% như mặc định: chữ in sẵn
   trong ảnh vẫn lộ lem nhem qua lớp mờ. Carousel `_background_solid_below_text`, thẻ
   Ethan `_text_bg_strict`: nền đặc bắt đầu ở **khoảng lặng gần nhất phía trên
