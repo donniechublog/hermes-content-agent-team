@@ -70,6 +70,22 @@ SENTENCE_SUBJECT = ("CHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHIN
                     "building | logo | screen | chart | other)")
 SENTENCE_EMPTY = ("TRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren "
                   "nen trang = 0.9, anh chup day khung = 0.05)")
+# LOW-279 (19/09/2026): anh Bloomberg A38 in san lower-third "Anton Osika / Lovable CEO" ma
+# van bi "mat nguoi KHONG RO AI" vi cong chi doc alt/ten tep. Ten IN tren anh la bang chung
+# doc duoc, khac voi vision DOAN ten tu khuon mat — nen hoi rieng mot dong, chi chep chu.
+SENTENCE_PRINTED_NAME = ("TEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong "
+                         "anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc "
+                         "duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>")
+_NO_PRINTED_NAME = {"khong", "không", "none", "no", "-", "khong co", "không có"}
+
+
+def parse_printed_name(txt: str):
+    """Dong `TEN_IN:` vision tra -> chuoi ten da in tren anh, hoac None (khong co / khong doc ra)."""
+    m = re.search(r"^\s*T[EÊ]N_?\s*IN\s*:\s*(.+)$", txt or "", re.I | re.M)
+    if not m:
+        return None
+    v = m.group(1).strip().strip("\"'“”<>.").strip()
+    return None if not v or v.lower() in _NO_PRINTED_NAME else v[:80]
 
 
 # Man hinh HE THONG (driver/he dieu hanh/terminal) nhac ten hang van khong phai
@@ -203,10 +219,10 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
         # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
-        hoi = (hoi.replace("DUNG 2 dong", "DUNG 6 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
-               + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY)
+        hoi = (hoi.replace("DUNG 2 dong", "DUNG 7 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
+               + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY + "\n" + SENTENCE_PRINTED_NAME)
         if hoi_them and nhan_them:
-            hoi = hoi.replace("DUNG 6 dong", "DUNG 7 dong") + f"\n{nhan_them}: {hoi_them}"
+            hoi = hoi.replace("DUNG 7 dong", "DUNG 8 dong") + f"\n{nhan_them}: {hoi_them}"
         body = {"model": VISION_MODEL, "thinking": {"type": "disabled"}, "max_tokens": 400,
                 "stream": False, "temperature": 0,
                 "messages": [{"role": "user", "content": [
@@ -280,7 +296,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             t = re.search(nhan_them + r"\s*:\s*(.+)", txt)
             them = t.group(1).strip()[:120] if t else ""
         return mt, lqv, them, {"cluttered": cluttered, "has_keywords": du_tk,
-                               **subject_fit.parse_subject(txt),
+                               **subject_fit.parse_subject(txt), "printed_name": parse_printed_name(txt),
                                "vision_said": lqv_vision, "override": override,
                                "vision_raw": {"model": VISION_MODEL, "question": hoi, "answer": txt[:2000]}}
 
@@ -429,6 +445,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     a["subject_box"] = kq.get("subject_box")
     a["subject_kind"] = kq.get("subject_kind")
     a["empty_share"] = kq.get("empty_share")
+    a["printed_name"] = kq.get("printed_name")          # LOW-279: ten in tren anh (lower-third/bang ten)
     # LOW-225: vision noi gi, nhanh regex nao lat, nguyen van cau hoi/tra loi —
     # de do lai offline ma khong goi vision lai.
     if kq.get("vision_raw"):
@@ -509,10 +526,10 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         # duoi day hua la co.
         ten = role.person_names_of(a)
         if ten:
-            a["notes"].append(f"CÓ {mat} MẶT NGƯỜI, alt nêu tên: {', '.join(ten[:2])} → "
+            a["notes"].append(f"CÓ {mat} MẶT NGƯỜI, tên in trên ảnh/alt nêu tên: {', '.join(ten[:2])} → "
                                 "chỉ dùng khi đúng người đó, khai \"subject\" y hệt")
         else:
-            a["notes"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (alt/caption không nêu tên) → "
+            a["notes"].append(f"CÓ {mat} MẶT NGƯỜI mà KHÔNG RÕ AI (ảnh không in tên, alt/caption không nêu tên) → "
                                 "KHÔNG DÙNG. Đừng điền tên CEO cho qua cổng — đó là bịa.")
             a["uses"] = [d for d in a["uses"] if d != "cover"]
     if a.get("cluttered") and a.get("has_keywords"):
@@ -556,7 +573,7 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         # Van con `uses` nhung schema.count_image_use_ok + submit_common.check_subject_named
         # deu loai tam nay — ghi ro de khong ai tuong no dang duoc dem.
         decision_log.note(a, "face_gate", "drop", "role.face_no_clear_ai",
-                          f"{a.get('faces')} mat nguoi, alt/thuong_hieu khong neu ten")
+                          f"{a.get('faces')} mat nguoi, anh/alt/thuong_hieu khong neu ten")
     return a
 
 

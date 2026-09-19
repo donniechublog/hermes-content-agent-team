@@ -136,6 +136,7 @@ class Image(TypedDict, total=False):
     subject_box: list | None       # LOW-273: [x0,y0,x1,y1] 0..1 hop bao CHU THE CHINH (vision); None = khong co
     subject_kind: str | None       # person | product | building | logo | screen | chart | other
     empty_share: float | None      # 0..1 phan tam anh la nen tron (subject_fit.EMPTY_SHARE_MAX)
+    printed_name: str | None       # LOW-279: ten nguoi IN tren anh (lower-third/bang ten), vision chep lai
     decisions: list                # LOW-225 prepare.decision_log: [{stage, outcome, rule, evidence}]
     vision_raw: dict               # LOW-225: {model, question, answer} cua lan hoi vision
     from_find_more: bool

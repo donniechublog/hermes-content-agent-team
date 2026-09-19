@@ -379,8 +379,12 @@ def person_names_in_url(url: str) -> list:
 
 
 def person_names_of(a: dict) -> list:
-    """Ten nguoi cua mot tam anh: alt/caption truoc, ten tep URL sau, khong trung."""
-    ra = person_names_in_alt(a.get("alt") or "")
+    """Ten nguoi cua mot tam anh: ten IN tren anh (lower-third/bang ten, vision chep lai —
+    LOW-279) truoc, roi alt/caption, roi ten tep URL, khong trung."""
+    ra = person_names_in_alt(a.get("printed_name") or "")
+    for t in person_names_in_alt(a.get("alt") or ""):
+        if t not in ra:
+            ra.append(t)
     for t in person_names_in_url(a.get("url") or ""):
         if t not in ra:
             ra.append(t)
