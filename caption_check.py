@@ -288,11 +288,11 @@ def check(caption: str, tu_lieu: str = "") -> tuple:
     return (loi, canh, tin)
 
 
-# Giong Jika (LOW-274, Ong Chu 19/09): khong goc nhin ca nhan, khong "ban dao",
-# nguoi doc luon la "quy dao huu", cau hoi ket bai vao thang noi dung. Chi gate
-# nhung thu KHONG co duong nham: "tôi"/"mình" khong gate vi loi nguoi khac noi
-# trong ngoac kep co the chua chung ("chính mình", "tôi nghĩ" cua CEO).
-_BAN_DAO = re.compile(r"bần\s+đạo", re.I)
+# Giong Jika (LOW-274, Ong Chu 19/09): khong goc nhin ca nhan, nguoi doc luon la
+# "quy dao huu", cau hoi ket bai vao thang noi dung, emoji chi o cau mo/ket.
+# Chi gate nhung thu KHONG co duong nham. "tôi"/"mình" khong gate (loi nguoi khac
+# trong ngoac kep co the chua chung); "bần đạo" khong gate (Ong Chu cho dung khi
+# buoc phai tu xung); "goc nhin ca nhan" la luat SOUL, khong regex nao bat duoc.
 _YOU_WORD = re.compile(r"(?<!\w)bạn(?!\w)(?!\s+(?:bè|gái|trai|thân|học|cũ|hữu|đời|hàng|đồng|cùng)(?!\w))",
                        re.I)
 _ASK_LEAD = re.compile(r"(?<!\w)(?:hỏi\s+(?:thật|nhỏ|nhé|câu)|xin\s+hỏi|cho\s+hỏi|thử\s+hỏi)(?!\w)", re.I)
@@ -305,9 +305,6 @@ _TAG_HEAD = re.compile(r"^(?:<[^>]+>)+")
 def check_jika_voice(caption: str) -> list:
     """Loi giong rieng cua Jika: tra ve danh sach loi (rong = dat)."""
     loi = []
-    if _BAN_DAO.search(caption):
-        loi.append('Có "bần đạo": Jika không nêu góc nhìn cá nhân và không tự xưng. '
-                   "Bỏ cả câu, để sự việc và con số tự châm biếm.")
     ban = _YOU_WORD.search(caption)
     if ban:
         loi.append('Có "bạn" gọi người đọc: đổi thành "quý đạo hữu" '

@@ -273,13 +273,19 @@ def test_dong_dan_nguon_tin_van_bi_chan():
 
 
 # ---------------------------------------------------------------- giong Jika (LOW-274)
-def test_jika_bat_ban_dao_va_hoi_that():
-    """Hai cau that Ong Chu bao bo (19/09): 'Bần đạo nhìn ... thấy quen' va
-    'Bần đạo hỏi thật: nếu là bạn, bạn rót ...'."""
-    loi = cc.check_jika_voice("Bần đạo nhìn tin này thấy quen.\nBần đạo hỏi thật: nếu là bạn, bạn rót không?")
-    assert _co(loi, "bần đạo"), loi
+def test_jika_bat_hoi_that_va_ban_trong_cau_that():
+    """Cau that Ong Chu bao bo (19/09): 'Bần đạo hỏi thật: nếu là bạn, bạn rót ...'."""
+    loi = cc.check_jika_voice("🏆 Mở bài.\n💬 Bần đạo hỏi thật: nếu là bạn, bạn rót không?")
     assert _co(loi, "bạn", "quý đạo hữu"), loi
     assert _co(loi, "hỏi thật"), loi
+
+
+def test_jika_ban_dao_khong_bi_chan():
+    """Ong Chu 19/09: khi buoc phai tu xung thi dung 'bần đạo'; cong khong chan
+    ('tôi', 'mình' cung khong chan). Chi cau hoi mao dau moi bi bat."""
+    ok = "🏆 Bần đạo chưa từng thấy hãng nào công bố số như thế.\nGiữa bài.\n💬 Quý đạo hữu nghĩ sao về chuyện này?"
+    assert cc.check_jika_voice(ok) == []
+    assert cc.check_jika_voice(ok.replace("Bần đạo", "Tôi").replace("chưa từng", "chưa từng")) == []
 
 
 def test_jika_bat_moi_kieu_mao_dau_cau_hoi():
