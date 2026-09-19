@@ -691,6 +691,18 @@ nhiều.** Ghép là đường **bình thường**, không phải phương án c
 
 Riêng ảnh có **tiêu đề / chữ** thì ghép là **bắt buộc**, không được crop.
 
+**Ưu tiên ảnh vừa khung trước, ghép là đường cuối (LOW-273, Ông Chủ 19/09/2026,
+nguyên văn: *"ưu tiên tìm hình đặt vừa 4:5 ratio mà có chủ thể trước, nếu ko thì
+chuyển qua ghép"*).** Đoạn trên nói cách xử lý ảnh NGANG đã có trong tay (ghép, không
+cắt) và vẫn đúng. Nhưng trước khi ghép, Dre phải dùng hết ảnh **đã vừa 4:5..1:1** (không
+cần cắt) mà có chủ thể: một ảnh một slide, không đường nối, không bị nền chữ che.
+`submit_common.check_stack_last_resort` (chỉ `dre_submit` gọi) chặn slide `stack` khi
+còn ảnh như vậy chưa dùng. "Vừa khung có chủ thể" = `_fits_frame_with_subject`:
+đúng điều kiện của `check_image_fall` (sạch, liên quan, ảnh chụp, không mặt người, có `uses`)
+CỘNG không phải ảnh ngang và `ratio` trong dải 4:5..1:1; ảnh ngang "cắt dọc được" (vision
+`landscape_crop_ok`) KHÔNG tính, để giữ chốt 04/09. Chưa đo trên bộ thật — đây là
+ngưỡng theo luật, chưa có số đo tỉ lệ bị chặn.
+
 Cách ghi: `--image2 <ảnh thứ hai>` (hero), hoặc `"images": [a, b]` thay cho
 `"image"` (carousel, dùng được ở cả bìa lẫn slide thân).
 

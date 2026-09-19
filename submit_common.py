@@ -395,6 +395,49 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
             for nhan, ma in cluttered]
 
 
+def _fits_frame_with_subject(a: dict, rules) -> bool:
+    """Anh DA vua khung 4:5..1:1 (khong can cat) ma dung mot minh duoc: sach, lien
+    quan, anh chup, khong mat nguoi (xem `_clean_use_alone` — cung dieu kien "chi
+    tinh khi THAT SU dung duoc, thieu dieu kien nao cung khong tinh"). Anh ngang
+    khong tinh du vision noi cat doc duoc: Ong Chu 04/09/2026 chot anh ngang thi
+    ghep chu khong cat, nen "vua khung" o day la vua san, khong phai cat cho vua."""
+    if a.get("landscape") or not _clean_use_alone(a):
+        return False
+    r = float(a.get("ratio") or 0)
+    dai = getattr(rules, "TOLERANCE_RATIO", 0.03)
+    return rules.TI_LE_45 - dai <= r <= rules.TI_LE_11 + dai
+
+
+def check_stack_last_resort(anh: dict, dung_anh: list, dung: dict, m: dict) -> list:
+    """GHEP DOC chi khi HET anh vua khung 4:5 co chu the (LOW-273, Ong Chu
+    19/09/2026: "uu tien tim hinh dat vua 4:5 ratio ma co chu the truoc, neu ko thi
+    chuyen qua ghep"). `dung_anh`: [(nhan slide, [ma...])] (Context.dung_anh);
+    `dung`: {ma: nhan slide}.
+
+    Vi sao: ghep doc dat hai anh sat nhau — mot duong noi ngang giua khung, va nen
+    chu che gan het anh duoi khi cau quote dai (cong LOW-215). Anh da vua 4:5 thi
+    khong phai noi, khong bi che.
+
+    Chi chan khi con anh vua khung CHUA dung va CHUA len bai khac
+    (check_not_reused) — de vai doi duoc that, khong ket. Chi Dre goi ham nay."""
+    ghep = [(nhan, mas) for nhan, mas in dung_anh if len(mas) >= 2]
+    if not ghep:
+        return []
+    rules = _vai.rules_module(m.get("image_role", ""))
+    vua = []
+    for ma, a in anh.items():
+        if ma in dung or not _fits_frame_with_subject(a, rules):
+            continue
+        l, _ = rules.check_not_reused(ma, a["original_path"], m.get("draft_id", ""), m.get("link", ""))
+        if not l:
+            vua.append(ma)
+    if not vua:
+        return []
+    return [f"{nhan}: ghép {'+'.join(mas)} nhưng còn ảnh VỪA khung 4:5 có chủ thể chưa dùng: "
+            f"{', '.join(vua[:6])} — dùng MỘT ảnh đó (\"image\": \"{vua[0]}\"), ghép dọc chỉ khi hết ảnh vừa 4:5"
+            for nhan, mas in ghep]
+
+
 def check_quote_translated(chu: str, nhan: str) -> list:
     """Quote/hook CON NGUYEN TIENG ANH -> loi. Luat "quote phai DICH sang tieng
     Viet" tu truoc chi nam trong SOUL/brief, khong cong nao kiem (06/09/2026).

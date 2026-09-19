@@ -322,6 +322,8 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
     loi += nc.check_no_repeat_image_redo(bo.anh, bo.dung_anh, m, DRAFTS)
     # Anh roi chi dung khi het anh sach (LOW-47) — sau khi moi slide da giai.
     loi += nc.check_image_fall(bo.anh, bo.da_dung, m)
+    # Ghep doc chi khi het anh vua khung 4:5 co chu the (LOW-273) — chi Dre.
+    loi += nc.check_stack_last_resort(bo.anh, bo.dung_anh, bo.da_dung, m)
     loi += image_rules_dre.check_founder_balance(bo.anh, [cover] + list(slides))
     return ra, loi, canh, bo.dung_anh
 
