@@ -733,3 +733,56 @@ def check_repeated_subject_portrait(nhan, path, muc, da_subject):
                 "anh co nhieu nguoi), hoac bo bot mot slide."], []
     da_subject[key] = nhan
     return [], []
+
+
+_SUBJECT_SEPARATOR = re.compile(r"\s*(?:,|/|&|\+|;|\bvà\b|\band\b)\s*", re.IGNORECASE)
+
+
+def check_stack_portrait_subjects(nhan, member_paths, muc, da_subject):
+    """Slide GHEP ("images") ma >= 2 tam la chan dung (moi tam dung 1 mat) thi
+    phai khai du NGUOI KHAC NHAU cho tung tam, va khong ai trung voi slide khac
+    (LOW-267, Ong Chu 19/09/2026, carousel "Nha nghien cuu dung Claude tan cong
+    OpenAI": slide 4 chong hai tam Sam Altman, khong co Dario Amodei — *"neu da
+    dung founder thi anh tren la founder OpenAI thi anh duoi phai la founder
+    Anthropic"*).
+
+    Ly do can ham rieng: `check_repeated_subject_portrait` (LOW-265) chay tren
+    tep DA GHEP — hai chan dung ghep lai thanh mot tep 2 mat, ma no chi xet
+    tep dung 1 mat, nen bo qua dung ca nay (do that tren 2 anh Sam cua draft:
+    khong chan). O day dem mat TUNG tam thanh phan truoc khi ghep.
+
+    Ten khai tach bang "," "/" "&" "+" ";" "va" "and", vd
+    "subject": "Sam Altman, Dario Amodei". Code chi doi chieu SO nguoi da khai
+    voi SO chan dung, khong tu nhan dang mat — khai sai nguoi la bia, vai chiu.
+    """
+    ds = list(member_paths or [])
+    if len(ds) < 2:
+        return [], []
+    so_mat = [count_faces(p) for p in ds]
+    if any(n is None for n in so_mat):
+        return [], []                    # check_unnamed_face da canh bao khong kiem duoc mat
+    chan_dung = sum(1 for n in so_mat if n == 1)
+    if chan_dung < 2:
+        return [], []
+    nv = str(muc.get("subject") or "").strip()
+    ten = []
+    for t in _SUBJECT_SEPARATOR.split(nv):
+        k = _normalize_subject(t) if t.strip() else ""
+        if k and k not in ten:
+            ten.append(k)
+    if len(ten) < chan_dung:
+        return [f"{nhan}: slide ghep {chan_dung} anh CHAN DUNG nhung chi khai "
+                f"{len(ten)} nguoi ('{nv}') — hai tam cung mot nguoi chong len mot "
+                "slide. Tin nhieu hang thi ghep chan dung MOI BEN MOT NGUOI va khai "
+                "du ten, vd \"subject\": \"Sam Altman, Dario Amodei\" (tim trong "
+                "manifest anh co brand_match.person / alt neu ten founder hang con "
+                "lai); khong co thi thay mot tam bang logo/tru so/san pham cua hang "
+                "con lai."], []
+    for k in ten:
+        if k in da_subject:
+            return [f"{nhan}: TRUNG CHU THE '{k}' voi {da_subject[k]} — ca hai deu "
+                    "la anh chan dung cung mot nguoi. Doi mot trong hai sang anh "
+                    "khac, hoac bo bot mot slide."], []
+    for k in ten:
+        da_subject[k] = nhan
+    return [], []
