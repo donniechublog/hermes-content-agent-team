@@ -3,7 +3,9 @@
 do, het han), chuyen Kite khi thieu anh that, dang len kenh, day ban nhap vao
 hang duyet. Tach tu approve_service.py 06/09/2026 (di chuyen thuan).
 """
+import hashlib
 import json
+import os
 import re
 import sys
 import tempfile
@@ -210,6 +212,8 @@ def draft_push(token, group, draft_id, thread_id=None):
         # Album truoc (khong nut), roi tin nhan chu rieng kem nut duyet --
         # nut bam luon nam tren tin nhan NAY, khong phai anh.
         ra = _send_media_group(token, group, images, thread_id)
+        album_ids = ([m.get("message_id") for m in (ra.get("result") or []) if isinstance(m, dict)]
+                     if ra.get("ok") else [])
         if not ra.get("ok"):
             # KHONG nuot loi: Ong Chu phai biet minh dang duyet thieu anh.
             caption += ("\n\n\u26a0\ufe0f Album xem truoc gui loi: "
@@ -218,7 +222,8 @@ def draft_push(token, group, draft_id, thread_id=None):
                         "reply_markup": keyboard(draft_id)}
         if thread_id:
             text_payload["message_thread_id"] = int(thread_id)
-        return call(token, "sendMessage", **text_payload)
+        res = call(token, "sendMessage", **text_payload)
+        return {**res, "extra_ids": album_ids} if isinstance(res, dict) else res
 
     img = d.get("image")
     if img and Path(img).exists():
@@ -248,10 +253,41 @@ def draft_push(token, group, draft_id, thread_id=None):
                             "reply_markup": keyboard(draft_id)}
             if thread_id:
                 text_payload["message_thread_id"] = int(thread_id)
-            return call(token, "sendMessage", **text_payload)
+            r2 = call(token, "sendMessage", **text_payload)
+            photo_id = (res.get("result") or {}).get("message_id")
+            return {**r2, "extra_ids": [photo_id] if photo_id else []} if isinstance(r2, dict) else r2
         return res
     payload["text"] = payload.pop("caption")
     return call(token, "sendMessage", **payload)
+
+def push_fingerprint(d):
+    """Dau van tay NOI DUNG ban nhap: caption + tung anh (duong dan, dung luong,
+    mtime). Hai lan push cung dau van tay = cung mot the, khong can gui lai
+    (LOW-296: writer chay lai lenh nop 5 lan, moi lan them mot the)."""
+    h = hashlib.sha1()
+    h.update((d.get("caption") or "").encode("utf-8"))
+    for p in (d.get("images") or [d.get("image")]):
+        if not p:
+            continue
+        h.update(str(p).encode("utf-8"))
+        try:
+            st = os.stat(p)
+            h.update(f"{st.st_size}:{st.st_mtime_ns}".encode())
+        except OSError:
+            pass
+    return h.hexdigest()
+
+
+def delete_messages(token, chat, ids):
+    """Xoa cac tin cua bot (the cu). Tra ve so tin xoa duoc. Khong nem: xoa hong
+    thi the cu con lai, khong lam hong lan push moi."""
+    ids = [int(i) for i in ids if i]
+    if not ids:
+        return 0
+    if call(token, "deleteMessages", chat_id=chat, message_ids=ids).get("ok"):
+        return len(ids)
+    return sum(1 for i in ids if call(token, "deleteMessage", chat_id=chat, message_id=i).get("ok"))
+
 
 CAPTION_LIMIT = 1024      # gioi han caption cua sendPhoto / sendMediaGroup
 

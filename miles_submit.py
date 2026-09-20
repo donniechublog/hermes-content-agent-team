@@ -64,6 +64,12 @@ def main() -> int:
     if not p_cap.exists():
         sys.exit(f"Chua co caption: {p_cap} — viet caption theo brief "
                  f"({wd / ('brief_' + persona + '.md')}) roi chay lai.")
+    import draft_write                                      # noqa: PLC0415
+    locked = draft_write.locked_reason(a.draft_id)
+    if locked:
+        # Khong phai loi sua duoc bang cach viet lai: dung han, khong dem vong sua.
+        print(f"[LOI] {locked}")
+        return 1
     cap, ghi = standard_ify(p_cap.read_text(encoding="utf-8"))
     for g in ghi:
         print(f"[da sua] {g}")
@@ -79,11 +85,13 @@ def main() -> int:
           + (f" | nguồn có {tin['source_number_sentence_count']} câu số liệu" if "source_number_sentence_count" in tin else ""))
     for c in canh:
         print(f"[nhac] {c}")
+    if canh and not loi:
+        print("[nhac] Các dòng [nhac] là cảnh báo mềm, KHÔNG phải lỗi: không cần sửa hay nộp lại vì chúng.")
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        if tin.get("char_count", 0) > caption_check.LIMIT:
-            print(f"[LOI] cần cắt ít nhất {tin['char_count'] - caption_check.LIMIT} ký tự "
+        if tin.get("char_count", 0) > caption_check.CEILING_BACKGROUND_LAYER:
+            print(f"[LOI] cần cắt ít nhất {tin['char_count'] - caption_check.CEILING_BACKGROUND_LAYER} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
         # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
         # bao Jika chay miles_submit.py doc ra nhu giao nham nguoi (LOW-13).
@@ -129,6 +137,7 @@ def main() -> int:
     print(f"[xong] caption {tin.get('char_count')} ký tự, {tin.get('sentence_count')} câu, "
           f"{tin.get('number_count')} chỗ có số — đã ghép draft và đẩy vào hàng duyệt.")
     print("[metadata] " + json.dumps(md, ensure_ascii=False))
+    print("[xong] Bài ĐÃ ở hàng duyệt: kết thúc task, KHÔNG chạy lại lệnh nộp (mỗi lần nộp lại đổi thẻ của Ông Chủ).")
     print("Ket qua task (dung dong nay de ket thuc task): "
           f"Viết caption {tin.get('char_count')} ký tự, {tin.get('number_count')} chỗ có số, đã vào hàng duyệt.")
     return 0

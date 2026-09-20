@@ -1179,7 +1179,7 @@ def test_miles_submit_report_error_see_vi_no():
     with tempfile.TemporaryDirectory() as tmp:
         wd = Path(tmp) / "wd"
         wd.mkdir()
-        # caption vuot tran 1024 ky tu -> chac chan co [LOI]
+        # caption vuot tran 2200 ky tu -> chac chan co [LOI]
         (wd / "caption.txt").write_text("Câu này dài. " * 200, encoding="utf-8")
         cu_meta, cu_wd, cu_argv = mn.cb.load_meta, mn.cb.workdir, sys.argv
         mn.cb.load_meta = lambda _id: {"brand": "donniechublog"}

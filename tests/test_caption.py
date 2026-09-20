@@ -45,7 +45,7 @@ def test_caption_chuan_khong_loi():
     loi, canh, tin = _kiem()
     assert loi == [], loi
     assert tin["sentence_count"] == 4 and tin["number_count"] >= 2, tin
-    # Duoi 700 ky tu chi la NHAC, khong chan.
+    # Do dai khong phai tieu chi (LOW-296): khong chan, khong nhac.
     assert not any("MAT DAU" in c for c in canh)
 
 
@@ -106,31 +106,38 @@ _CAU_KHAC_NHAU = [
 ]
 
 
-def test_qua_1024_chi_la_nhac_vi_publish_tu_tach_lam_hai(): # LOW-157
-    """Truoc 15/09/2026 vuot 1024 la loi chan nop. Nay publish() tu tach caption
-    thanh phan 1 (<=1024, gan lam caption that cua anh) + phan 2 (tin rieng) —
-    xem approve_post._split_caption_html — nen chi con CANH, khong chan nua."""
+def test_khong_con_gioi_han_1024():
+    """Ong Chu 20/09 (LOW-296): khong co gioi han chu thich anh 1024 nua, vuot thi
+    publish() tu tach thanh phan 1 + tin nhan rieng. Caption dai khong loi, khong
+    canh bao do dai."""
     dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU[:12])
     assert 1024 < len(dai) <= 2200, len(dai)
     loi, canh, _t = _kiem(dai)
     assert loi == [], loi
-    assert _co(canh, "giới hạn", "1024"), canh
+    assert not _co(canh, "1024"), canh
+    assert not _co(canh, "giới hạn"), canh
+    assert not hasattr(cc, "LIMIT"), "khong con hang so LIMIT 1024 trong caption_check"
 
 
 def test_qua_2200_van_la_loi_tran_nen_tang():
     """2200 la gioi han Instagram/TikTok phia moat, khong lien quan viec Telegram
-    tach caption — LOW-157 khong dong den nhanh nay, van chan nop."""
+    tach caption — van chan nop."""
     dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU)
     assert len(dai) > 2200, len(dai)
     loi, canh, _t = _kiem(dai)
     assert _co(loi, "2200"), loi
-    assert not _co(canh, "giới hạn", "1024"), canh
+    assert not _co(canh, "1024"), canh
 
 
-def test_duoi_700_chi_nhac_con_cho():
-    loi, canh, _t = _kiem()
-    assert loi == []
-    assert _co(canh, "chưa dùng"), canh
+def test_ngan_khong_bi_nhac_do_dai():
+    """Ong Chu 20/09: ngan hay dai khong quan trong, quan trong la thong tin day du.
+    Caption ngan (van du so lieu) khong loi va khong canh bao do dai."""
+    ngan = "Nvidia mở kho Nemotron, bản lớn nhất 340 tỷ tham số, theo hãng công bố đạt 86,2 điểm trên MMLU."
+    assert len(ngan) < 700
+    loi, canh, _t = _kiem(ngan)
+    assert loi == [], loi
+    assert not _co(canh, "ký tự"), canh
+    assert not hasattr(cc, "BACKGROUND_SET")
 
 
 # ---------------------------------------------------------------- ky tu / link
