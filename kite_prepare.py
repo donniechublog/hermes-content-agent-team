@@ -160,27 +160,25 @@ def figure_hero(m: dict) -> dict | None:
     return xep[0]
 
 
-def _hero_what_is(h: dict) -> tuple:
-    """(tam nay LA GI, caption goi y) cho dong ⭐ HERO."""
+def _hero_what_is(h: dict) -> str:
+    """Tam nay LA GI, cho dong ⭐ HERO.
+
+    Truoc LOW-292 (20/09/2026) ham nay tra them mot caption goi y — slide khong
+    ghi dong nguon anh nua nen chi con phan mo ta."""
     if h.get("paper_figure"):
-        return (f"{h['paper_figure']} — hình mở đầu của chính paper, tấm nói nhiều nhất về bài",
-                f"{h['paper_figure']} trong paper · via <ai>")
+        return f"{h['paper_figure']} — hình mở đầu của chính paper, tấm nói nhiều nhất về bài"
     if h.get("capture_source"):
         # LOW-22: `classify` doc anh chup trang la loai "chart" — khong co nhanh
-        # nay thi brief goi no la "bieu do/bang cua bai", vai chu thich sai.
+        # nay thi brief goi no la "bieu do/bang cua bai", vai hieu sai tam hinh.
         return (f"khối lead (ảnh chính + tít) chụp từ chính trang {h.get('domain', 'nguồn')} "
-                "ở khung điện thoại — Ông Chủ 12/09/2026: cắt lấy khối lead rồi làm bìa",
-                f"Ảnh chụp từ {h.get('domain', 'trang nguồn')} · via {h.get('domain', '<ai>')}")
+                "ở khung điện thoại — Ông Chủ 12/09/2026: cắt lấy khối lead rồi làm bìa")
     if h.get("concept"):
         tk = h["concept"].get("keyword", "")
-        return (f"ảnh khái niệm ({tk}) — minh hoạ chủ đề, không phải ảnh chụp đúng sự kiện",
-                f"{tk} · via Wikimedia Commons")
+        return f"ảnh khái niệm ({tk}) — minh hoạ chủ đề, không phải ảnh chụp đúng sự kiện"
     if h.get("brand_match"):
         return (f"ảnh thương hiệu của {h['brand_match'].get('company')} (xem nhãn ở trên để "
-                "chú thích đúng loại: cơ sở · chân dung · bảng xếp hạng · thẻ logo)",
-                "<chú thích đúng loại tấm> · via <ai>")
-    return ("biểu đồ/bảng của bài" if h["kind"] == "chart" else "ảnh chụp của bài",
-            "<chú thích ngắn> · via <ai>")
+                "biết đúng loại: cơ sở · chân dung · bảng xếp hạng · thẻ logo)")
+    return "biểu đồ/bảng của bài" if h["kind"] == "chart" else "ảnh chụp của bài"
 
 
 def line_hero(m: dict) -> list:
@@ -188,9 +186,9 @@ def line_hero(m: dict) -> list:
     h = figure_hero(m)
     if not h:
         return []
-    la_gi, cap = _hero_what_is(h)
+    la_gi = _hero_what_is(h)
     return ["", f"⭐ HERO: {h['id']} là {la_gi}. Đặt `\"image\": \"{h['id']}\"` vào SLIDE 1 "
-                f"(cover) kèm `\"caption\": \"{cap}\"`; lúc đó bìa lấy chính hình đó làm hero, "
+                f"(cover); lúc đó bìa lấy chính hình đó làm hero, "
                 "KHÔNG vẽ hero art — `kite_submit.py` chặn bìa vector khi có hình thật dùng được. "
                 "Chỉ bỏ qua khi hình sai bài (xem contact_sheet.png) — lúc đó nói rõ một câu vì sao. "
                 "Hình còn lại để cho `figure`."]
@@ -329,7 +327,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
             L.append(f"- **Cả {len(ep)} mã còn lại ({', '.join(ep)}) phải xuất hiện** trong spec — "
                      "thiếu tấm nào `kite_submit.py` chặn, kèm tên mã.")
             L.append("- **Phải có hình ở BODY**, không chỉ ở bìa: mỗi tấm một slide `figure` "
-                     "(`\"image\": \"<mã>\"` + `\"caption\": \"… · via <ai>\"`). Đặt hết lên bìa "
+                     "(`\"image\": \"<mã>\"`). Đặt hết lên bìa "
                      "rồi vẽ vector cả thân là đúng cái lỗi khiến tin phải chuyển sang đây.")
             L.append("- Vector chỉ để lấp phần CÒN THIẾU (steps/loop/bars/statement), không thay "
                      "cho bằng chứng thật đã có.")
@@ -347,31 +345,31 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
         kieu = ("BIỂU ĐỒ/BẢNG" if a["kind"] == "chart" else "ẢNH CHỤP") + \
                ("" if a.get("relevant") is True else " ⚠️CHƯA NHÌN")
         th = a.get("brand_match") or {}
-        # Anh THUONG HIEU: noi ro no LA GI, vi caption phai khac nhau han. Mot the
-        # logo bi chu thich "anh tru so" la sai su that (09/09/2026).
+        # Anh THUONG HIEU: noi ro no LA GI, vi vai phai dung dung loai tam. Mot
+        # the logo dung thay "anh tru so" la sai su that (09/09/2026).
         nhan_th = {"photo": f"🏢 ảnh cơ sở của {th.get('company')} (KHÔNG phải ảnh của sự việc)",
                    "person": f"👤 chân dung {th.get('person_role', 'lãnh đạo')} {th.get('company')}: "
-                            f"{th.get('person')} — caption phải nêu đúng tên này, và chỉ dùng khi "
+                            f"{th.get('person')} — khai đúng tên này ở `subject`, và chỉ dùng khi "
                             "bài có nhắc người đó",
                    "logo": f"🔖 THẺ LOGO {th.get('company')} (logo chính thức trên nền trơn) — hợp làm "
-                           "bìa, đừng chú thích như ảnh chụp",
+                           "bìa, đừng dùng như ảnh chụp sự việc",
                    "ranking": f"📊 bảng {th.get('site')} · {th.get('board')} có {th.get('company')} — "
-                               "KHÔNG phải bảng của tin này, caption ghi rõ nguồn + tên bảng",
+                               "KHÔNG phải bảng của tin này",
                    }.get(th.get("kind"), "")
         # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat; tu
         # LOW-58 (15/09/2026) duoc dung o ca bia lan than, uu tien bia hon.
         kn = a.get("concept") or {}
         nhan_kn = (f"🧭 ẢNH KHÁI NIỆM ({kn.get('keyword')}) — minh hoạ chủ đề, KHÔNG phải "
                    "ảnh của tin: ưu tiên dùng ở bìa (slide 1), vẫn dùng được ở slide thân "
-                   "nếu cần; caption 'via Wikimedia Commons'") if kn else ""
+                   "nếu cần") if kn else ""
         L.append(f"- {a['id']}: {kieu} {a['w']}x{a['h']} ({a['ratio']}) | nguồn: {a['domain'] or manifest_values.source_label(a['source'])}"
                  + (f" | {a['paper_figure']} của chính paper" if a.get("paper_figure") else "")
                  + (f" | {nhan_kn}" if nhan_kn else "")
                  + (f" | {nhan_th}" if nhan_th else "")
                  + (f" | ảnh là: {a['description'][:90]}" if a.get("description") else (f" | alt: {vai_mod.real_alt(a)[:70]}" if vai_mod.real_alt(a) else ""))
                  + (" | có mặt người: khai \"subject\": \"<tên>\" vào slide dùng mã này (nếu xác minh "
-                    "được qua chính bài/nguồn) rồi ghi đúng tên đó trong caption — không xác minh được "
-                    "thì đổi mã khác, đừng đoán tên" if a.get("faces") else ""))
+                    "được qua chính bài/nguồn) — không xác minh được thì đổi mã khác, đừng đoán tên"
+                    if a.get("faces") else ""))
     L += line_hero(m)
     import story_type
     L += story_type.line_brief(m)
@@ -393,15 +391,13 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
             {"kind": "cover", "eyebrow": "<CHUYÊN MỤC · DEEP DIVE, ≤ 28>", "title": "<hook ≤ 60 ký tự>",
              "accent": "<cụm trong title cần nhấn>", "standfirst": "<1 câu ≤ 200 ký tự>",
              "byline": [handle_channel(m["brand"]), "Phân tích", "5 phút đọc"],
-             "image": (hero_anh["id"] if hero_anh else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>"),  # noqa: E501
-             "caption": (_hero_what_is(hero_anh)[1] if hero_anh
-                         else "<'… · via <ai>' bắt buộc khi có image>")},
+             "image": (hero_anh["id"] if hero_anh else "<mã hình thật A? nếu bìa dùng ảnh, hoặc bỏ>")},  # noqa: E501
             {"kind": "statement", "eyebrow": "BỐI CẢNH", "title": "<≤ 60>", "accent": "<cụm nhấn>",
              "standfirst": "<≤ 220>", "cards": [{"num": "01", "text": "<≤ 90>"}, {"num": "02", "text": "<≤ 90>"}]},
             {"kind": "steps", "eyebrow": "CÁCH VẬN HÀNH", "title": "<≤ 60>",
              "steps": [{"title": "<≤ 30>", "desc": "<≤ 80>"}, {"title": "…", "desc": "…"}, {"title": "…", "desc": "…"}]},
             *[{"kind": "figure", "eyebrow": "SỐ LIỆU", "title": "<≤ 60, tối đa 2 dòng>",
-               "accent": "<cụm>", "image": ma, "caption": "<… · via <ai>>",
+               "accent": "<cụm>", "image": ma,
                "standfirst": "<≤ 200>"} for ma in (ep_khung or ["<mã hình thật A?>"])],
             {"kind": "bars", "eyebrow": "SỐ LIỆU", "title": "<≤ 60>", "accent": "<cụm>",
              "bars": [{"label": "<≤ 28>", "value": "<số THẬT trong bài, viết dạng số>", "text": "<cách ghi, vd 2,75 USD>"},

@@ -5,7 +5,7 @@ kite_prepare.py in ra).
 
 Kiem TRUOC khi render (render_edu cung co cong chan, nhung bao som thi vai sua
 mot vong): so slide 6..10, slide 1 la cover, kind hop le, truong bat buoc tung
-kind, ma hinh that -> tep (chi hinh la chart >= 800px), caption khi co image,
+kind, ma hinh that -> tep (chi hinh la chart >= 800px),
 theme/hero hop le va (lam lai) phai khac lan truoc, do dai chu vuot muc thi
 canh bao.
 
@@ -151,9 +151,10 @@ def _check_figure_slide(i: int, sl: dict, s2: dict, hinh: dict, m: dict,
 
             canh += c
 
-            if not sl.get("caption"):
-
-                loi.append(f"slide {i}: có image thì phải có caption \"… · via <ai>\"")
+            # Truoc LOW-292 (20/09/2026) o day co cong "co image thi phai co
+            # caption": slide khong ve dong nguon anh nua (Ong Chu khoanh do
+            # dong do o album Gemini), nen cong nay khong con nghia. Nguon anh
+            # van di theo ban giao writer + metadata PNG.
 
             # ANH KHAI NIEM duoc dung o ca bia lan slide than (IMAGE_RULES
             # §1.2c noi long LOW-58, Ong Chu 15/09/2026: "anh nao cung dung
@@ -417,7 +418,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
         chua = [ma for ma, a in hinh.items() if a.get("relevant") is None]
         if hero:
             loi.append(f"bìa đang vẽ hero vector trong khi có hình thật dùng được ({hero['id']}) — "
-                       f"đặt `\"image\": \"{hero['id']}\"` + `\"caption\"` vào slide 1 (cover). "
+                       f"đặt `\"image\": \"{hero['id']}\"` vào slide 1 (cover). "
                        "Hình thật nói nhiều hơn một sơ đồ tự vẽ; bìa có ảnh thì cả bộ không vẽ hero art.")
         elif chua:
             # Co anh nhung CHUA AI NHIN: khong duoc ep len bia (day quang cao/
@@ -481,7 +482,7 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
         if thieu:
             loi.append(f"tin chuyển từ {tu_vai} sang Kite VÌ THIẾU ẢNH, nên cả {len(ep)} hình "
                        f"thật tìm được phải vào bộ — còn thiếu {', '.join(thieu)}. Mỗi tấm một slide "
-                       "`figure` (\"image\": \"<mã>\" + caption \"… · via <ai>\").")
+                       "`figure` (\"image\": \"<mã>\").")
         if co_anh and not any(sl.get("image") for sl in slides[1:]):
             loi.append(f"tin chuyển từ {tu_vai} sang Kite vì thiếu ảnh mà hình thật chỉ nằm ở BÌA — "
                        "phải có ít nhất một slide thân dùng hình thật (`figure`). Đặt hết lên bìa rồi "
@@ -575,10 +576,19 @@ def main() -> int:
         sys.exit(f"[LOI] render_edu bao xong nhung thieu tep: {thieu}")
 
     hinh = [s.get("image") for s in spec.get("slides") or [] if s.get("image")]
+    # Nguon TUNG tam, khong con chi la danh sach ma (LOW-292, 20/09/2026): slide
+    # thoi ghi dong "— <mo ta> · via <trang>", nen ban giao nay la cho DUY NHAT
+    # nguoi viet doc duoc anh muon cua ai (metadata PNG van co, nhung writer
+    # khong mo PNG). Khong co domain thi ghi nhan nguon cua engine.
+    kho = {a["id"]: a for a in kb.figure_real(m)}
+    nguon_anh = ", ".join(
+        ma + (f" (via {kho[ma]['domain'] or manifest_values.source_label(kho[ma]['source'])})"
+              if ma in kho else "")
+        for ma in hinh)
     bg = "\n".join([f"Nguồn tin: {m['title']}", f"Link gốc: {m['link']}"]
                    + ([f"Via: {m['via']}"] if m.get("via") else [])
                    + [f"Bộ slide: {n} slide art vector gốc, theme {theme}, hero {hero}"]
-                   + ([f"Hình thật đã chèn: {', '.join(hinh)} (nguồn: bài gốc)"] if hinh else [])
+                   + ([f"Hình thật đã chèn: {nguon_anh}"] if hinh else [])
                    + [f"Hook bìa: {hook}", f"Tệp: {out}"])
     bg_path = state_paths.handoff_file(wd if a.khong_gui else DRAFTS, a.draft_id)
     bg_path.write_text(bg, encoding="utf-8")
