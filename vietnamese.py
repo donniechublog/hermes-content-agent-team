@@ -101,5 +101,11 @@ def find_face_mark(text: str) -> list:
     if cum:
         return sorted(set(cum))
 
-    don = sorted({tu[i] for i, t in enumerate(low) if t in NEGATIVE_FACE_MARK})
-    return don if len(don) >= 2 else []
+    # Gop theo CHU THUONG (LOW-289, 20/09/2026): truoc day "The ... the" cua mot cau
+    # tieng Anh dem thanh HAI dau hieu (khac hoa/thuong) nen cau do bi bao la tieng Viet
+    # mat dau. Dem theo tu khac nhau THAT SU; in ra dang xuat hien dau tien.
+    dau = {}
+    for i, t in enumerate(low):
+        if t in NEGATIVE_FACE_MARK:
+            dau.setdefault(t, tu[i])
+    return sorted(dau.values()) if len(dau) >= 2 else []
