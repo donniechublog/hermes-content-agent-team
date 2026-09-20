@@ -56,6 +56,22 @@ def test_catch_variable_timer_hours_within_small_than_timer_hours_outside():
         assert dg.THRESHOLD_STALLED_MINUTES < _minutes(role.max_runtime_for(slug)), slug
 
 
+def test_engine_slots_match_worker_count():
+    """LOW-290 (Ong Chu chot 20/09/2026): tran engine = so worker kanban toi da toan may.
+
+    May chu 20/09: `kanban.max_in_progress: 3` moi brand x 2 brand = 6. Truoc do tran la
+    2 (dat 05/09 khi moi brand chay 1 task) — tu 14/09 cau hinh thanh 3/brand thi 7 ngay
+    sau do 95/126 draft phai xep hang va 56 draft chet o WAIT_SLOT_SECONDS. Ha con so nay
+    lai = hang dai hon so cho, vai lai quay vong va chay het ngan sach luot.
+
+    Do RAM 20/09 tren may 8GB: 6 phien Chromium kieu engine lam RAM kha dung tut ~1.9GB,
+    con ~2.7GB + swap 3.3GB. Doi tran thi do lai, dung doan."""
+    import os
+    if os.environ.get("CT_PREPARE_PARALLEL"):
+        return                                            # may nay dat tay, khong xet mac dinh
+    assert cb.COUNT_ENGINE_PARALLEL == 6, cb.COUNT_ENGINE_PARALLEL
+
+
 def test_wait_slot_all_done_hours_then_exit_has_sentence_report_fixed_ky():
     if cb.fcntl is None:
         return                                            # Windows: khong khoa
