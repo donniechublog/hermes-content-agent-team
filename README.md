@@ -337,6 +337,16 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
   `run.sh` chỉ chạy `test_*.py`.
 
+  **`except` rộng không được nuốt lỗi im lặng (LOW-306).** `test_silent_except`
+  đọc AST 4 tệp (`article_sources`, `approve_dispatch`, `approve_post`,
+  `monitor_9router`) và chặn handler bắt `Exception` mà thân **không** `raise`,
+  không in/log, không dùng biến lỗi. Ba đường hợp lệ: thêm một dòng log kèm
+  `type(e).__name__`; thu hẹp kiểu lỗi; hoặc ghi `IM LANG CO Y` kèm một câu vì
+  sao (chỉ còn 2 chỗ — hai vòng **đoán** đường RSS, ở đó 404 là kết quả bình
+  thường chứ không phải sự cố). Đây là loại lỗi đã trả giá hai lần: LOW-275
+  (approve nuốt nguyên nhân "không tìm được nguồn") và LOW-277 (`_trong_feed`
+  nuốt timeout 80 giây).
+
   **Đo độ phủ (LOW-301).** CI cài `coverage`, chạy `tests/run.sh` dưới nó và in bảng ở cuối
   job (cả trong `$GITHUB_STEP_SUMMARY`) — **chỉ báo cáo, chưa có ngưỡng chặn**. Lần đo đầu
   (20/09/2026): 57–58% dòng + nhánh. Tiến trình con cũng được đo: mỗi tiến trình Python tự bật

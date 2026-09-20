@@ -156,7 +156,12 @@ def _compress_preview(src: Path, tmp_dir: Path) -> Path:
                 quality -= 10
                 im.save(out, "JPEG", quality=quality)
         return out
-    except Exception:                                            # noqa: BLE001
+    except Exception as e:                                       # noqa: BLE001
+        # LOW-306: tra `src` chua thu nho la duong lui hop le, nhung neu Telegram
+        # sau do tu choi vi anh qua nang thi day la dong noi duoc vi sao khong
+        # thu nho duoc (PIL khong doc noi dinh dang, het cho ghi /tmp...).
+        log("loi", f"thu nho anh xem truoc {getattr(src, 'name', src)} hong "
+                   f"({type(e).__name__}), gui ban goc")
         return src
 
 def _send_media_group(token, chat, media, thread_id=None):
@@ -640,10 +645,7 @@ def _hand_redo(draft_id, slide=None, ly_do=None):
     # moi nhat trong "Parent task results"), khong phai ban dau. Khong co the goc
     # (bai truoc 05/09, hoac brand chua bat) thi y nhu cu.
     wp = DRAFTS / (draft_id + ".writer.json")
-    try:
-        w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        w = {}
+    w = _load_json(wp, {})                                   # LOW-306: ban hong ghi log o _load_json
     rid, err = kanban_create(tieu, im["image_role"], im["body"] + chi_ro,
                              parent=w.get("root_task"))
     if err:
@@ -835,10 +837,7 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
     # Dre da dung. Ghi muc kite_transfer de bang den ke dung chuyen (05/09: bai Gimlet
     # di Kite nhung muc `anh` van la cua Dre ban 1).
     wp = DRAFTS / (draft_id + ".writer.json")
-    try:
-        w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
-    except Exception:                                           # noqa: BLE001
-        w = {}
+    w = _load_json(wp, {})                                   # LOW-306: ban hong ghi log o _load_json
     if w.get("root_task"):
         body += BLACKBOARD_MENTION.format(root=w["root_task"])
     rid, err = kanban_create("Carousel deck: " + title, "kite", body,
@@ -862,10 +861,7 @@ def create_task_kite(draft_id: str, im: dict, ly_do: str = "") -> tuple:
 def _button_drop_limit(token, draft_id, cq, wp):
     """imgno: giet tin — khong viet, khong lam lai. Da bam Duyet truoc do thi
     khong bo nua (task viet da ton tai)."""
-    try:
-        w = json.loads(wp.read_text(encoding="utf-8")) if wp.exists() else {}
-    except Exception:                                       # noqa: BLE001
-        w = {}
+    w = _load_json(wp, {})                                   # LOW-306: ban hong ghi log o _load_json
     if w.get("created") is True:
         # Da bam Duyet truoc do (writer dang chay) — khong bo han nua de tranh
         # trang thai mau thuan (task viet da ton tai ma sidecar lai 'rejected').
@@ -1139,13 +1135,7 @@ def _button_approve(token, chat_id, draft_id, cq, wp, forced_writer=None):
                 # nhu LOW-28 vua va o duong chon so, nhung duong nay CHAY NHIEU
                 # HON: moi anh duoc duyet deu di qua day, khong chi luc Ong Chu
                 # chon so tin moi.
-                _vai_anh_cu = None
-                _ip = DRAFTS / (draft_id + ".img.json")
-                try:
-                    if _ip.exists():
-                        _vai_anh_cu = json.loads(_ip.read_text(encoding="utf-8")).get("image_role")
-                except Exception:                            # noqa: BLE001
-                    pass
+                _vai_anh_cu = _load_json(DRAFTS / (draft_id + ".img.json"), {}).get("image_role")
                 _report_receive_job(token, chat_id, w["writer_role"], _vai_anh_cu,
                                w.get("title", draft_id), wid)
     return note
@@ -1379,10 +1369,7 @@ def handle_callback(token, channel, cq):
     # trong thoi gian do nut van quay vong va Ong Chu se bam lai — hai callback
     # xep hang, va truoc day ca hai deu dang. Doc status som + tra loi callback
     # NGAY de nut thoi quay, roi moi lam viec nang.
-    try:
-        _d = json.loads(p.read_text(encoding="utf-8"))
-    except Exception:                                        # noqa: BLE001
-        _d = {}
+    _d = _load_json(p, {})                                   # LOW-306: ban hong ghi log o _load_json
     st = _d.get("status")
     if st in ("published", "rejected", publish_schedule.CANCELLED):
         call(token, "answerCallbackQuery", callback_query_id=cq["id"],
@@ -1487,10 +1474,7 @@ def _bottom_again_moat(token, action, draft_id, cq):
 
 
 def _read_draft(draft_id):
-    try:
-        return json.loads((DRAFTS / (draft_id + ".json")).read_text(encoding="utf-8"))
-    except Exception:                                        # noqa: BLE001
-        return {}
+    return _load_json(DRAFTS / (draft_id + ".json"), {})     # LOW-306: ban hong ghi log o _load_json
 
 
 def _fix_story_go_button(token, msg, note, keyboard_new=None):

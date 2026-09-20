@@ -98,7 +98,9 @@ def _name_board(con) -> tuple[dict, dict]:
         for cid, provider, name, data in con.execute("select id, provider, name, data from providerConnections"):
             try:
                 pre = (json.loads(data or "{}").get("providerSpecificData") or {}).get("prefix") or provider
-            except Exception:                                # noqa: BLE001
+            except ValueError:
+                # IM LANG CO Y (LOW-306): `pre` chi la CHU trong nhan hien thi;
+                # roi ve ten provider van doc duoc. Khong dang mot dong log.
                 pre = provider
             ket_noi[cid] = f"{name or provider} ({pre})"
     except sqlite3.Error:
@@ -132,7 +134,10 @@ def string_already_config() -> dict:
                 continue
             try:
                 cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-            except Exception:                                # noqa: BLE001
+            except (OSError, yaml.YAMLError) as e:
+                # LOW-306: bo mot config.yaml nghia la vai do BIEN MAT khoi bang
+                # "vai nao dung model nao" — nhin y het vai chua cau hinh gi.
+                print(f"[cau hinh vai] bo {brand}/{vai}: {type(e).__name__}", file=sys.stderr)
                 continue
             chain = [(cfg.get("model") or {}).get("default")]
             chain += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
@@ -172,7 +177,10 @@ def cap_fallback() -> set:
                 continue
             try:
                 cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-            except Exception:                                # noqa: BLE001
+            except (OSError, yaml.YAMLError) as e:
+                # LOW-306: bo mot config.yaml = mat cac cap fallback cua no, nen
+                # mot lan lat model that se bi cham la "khong phai fallback".
+                print(f"[cap fallback] bo {p}: {type(e).__name__}", file=sys.stderr)
                 continue
             chuoi = [(cfg.get("model") or {}).get("default")]
             chuoi += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
@@ -254,7 +262,9 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
                 rong_vi_du.append(f"{_hhmm(ts)} {model} {ptok:,} prompt → {ctok or 0} out")
         try:
             t = json.loads(tok or "{}")
-        except Exception:                                    # noqa: BLE001
+        except ValueError:
+            # IM LANG CO Y (LOW-306): chay tren TUNG dong log (hang nghin dong mot
+            # ngay) — mot dong tokens hong chi lam cache% lech chut, log se ngap.
             t = {}
         cache = int(t.get("cached_tokens") or 0)
         nhan = f"{model} @ {kn_ten.get(cid, provider or '?')}"
@@ -348,7 +358,10 @@ def error_connection(con, t0: str, t1: str) -> list:
     for name, provider, active, data, upd in rows:
         try:
             d = json.loads(data or "{}")
-        except Exception:                                    # noqa: BLE001
+        except ValueError:
+            # IM LANG CO Y (LOW-306): `d` rong = connection nay khong co dau loi
+            # nao; dong ket luan ben duoi van dung. Day la DB cua hermes, khong
+            # phai tep cua doi nay nen khong sua duoc gi.
             d = {}
         khi = d.get("lastErrorAt") or ""
         trong_ngay = bool(khi) and t0 <= khi < t1
@@ -385,8 +398,10 @@ def _single_fake(theo_model: dict, tong: dict) -> tuple[dict, float, dict]:
             con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
             for name, models in con.execute("select name, models from combos"):
                 combo[name.lower()] = [_standard_model(x) for x in json.loads(models or "[]")]
-        except Exception:                                    # noqa: BLE001
-            pass
+        except (sqlite3.Error, ValueError) as e:
+            # LOW-306: `combo` rong khong lam hong bao cao, nhung bang "combo nao
+            # goi model nao" bien mat — va truoc day khong dong nao noi vi sao.
+            print(f"[combo] doc bang combos hong: {type(e).__name__}", file=sys.stderr)
     return don, gop, combo
 
 
@@ -454,7 +469,10 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
             if not (e0 <= mt < e1):
                 continue
             d = json.loads(p.read_text(encoding="utf-8"))
-        except Exception:                                    # noqa: BLE001
+        except (OSError, ValueError):
+            # IM LANG CO Y (LOW-306): quet CA thu muc drafts (hang tram tep, ke ca
+            # tep dang duoc ghi do). Bo mot tep chi lam $/bai lech mot bai; log moi
+            # tep bo se ngap bao cao. Kieu loi da thu hep de loi khac con no ra.
             continue
         if d.get("status") == "published":
             bai[d.get("brand") or "?"] += 1
@@ -594,8 +612,11 @@ def download(ngay: str, lam_moi: bool = False) -> dict | None:
     if p.exists() and not lam_moi:
         try:
             return json.loads(p.read_text(encoding="utf-8"))
-        except Exception:                                    # noqa: BLE001
-            pass
+        except (OSError, ValueError) as e:
+            # LOW-306: roi xuong `use(ngay)` dung lai tu DB — dung, nhung cham va
+            # am tham. Mot dong de biet tep nhat ky da chot bi hong.
+            print(f"[nhat ky] {p.name} hong ({type(e).__name__}), dung lai tu DB",
+                  file=sys.stderr)
     if not DB.exists():
         return None
     return use(ngay)[0]

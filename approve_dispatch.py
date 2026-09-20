@@ -24,7 +24,7 @@ import role                                                   # noqa: E402
 import state_paths                                           # noqa: E402
 
 from approve_base import (  # noqa: E402
-    HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _write_json, call, log,
+    HERMES_HOME, HERMES_PY, ROOT, STATE_DIR, _load_json, _write_json, call, log,
 )
 
 
@@ -39,7 +39,11 @@ def _report_receive_job(token, group, vai, tu_vai, title, tid, ly_do=""):
     try:
         tp = env_load.topics_path()
         topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
-    except Exception:                                        # noqa: BLE001
+    except (OSError, ValueError) as e:    # ValueError: JSONDecodeError ke thua no
+        # LOW-306: topics.json hong = KHONG vai nao duoc bao da nhan viec, im het.
+        # `thread = topics.get(vai)` ben duoi tra None nen ham thoat lang le.
+        log("loi", f"doc topics.json hong ({type(e).__name__}), khong bao duoc "
+                   f"'da nhan viec' cho {vai}")
         topics = {}
     thread = topics.get(vai)
     if not thread:
@@ -79,7 +83,11 @@ def role_of_topic(thread_id):
         return None
     try:
         m = json.loads(tp.read_text(encoding="utf-8"))
-    except Exception:                                        # noqa: BLE001
+    except (OSError, ValueError) as e:
+        # LOW-306: tra None o day nghia la "tin nhan nay khong thuoc topic vai nao"
+        # — tuc dinh tuyen sai HET, khong phai mot tin le. Phai co dong de lan.
+        log("loi", f"doc topics.json hong ({type(e).__name__}), khong nhan ra topic "
+                   f"{thread_id} la cua vai nao")
         return None
     for ten, tid in m.items():
         if str(tid) == str(thread_id):
@@ -284,7 +292,11 @@ def link_result(tid):
         return None
     try:
         tin = json.loads(STORY_RESULT.read_text(encoding="utf-8")) if STORY_RESULT.exists() else {}
-    except Exception:                                        # noqa: BLE001
+    except (OSError, ValueError) as e:
+        # LOW-306: mat tep nay thi MOI dong tien do khong con deep-link, va truoc
+        # day khong dong nao noi la vi tep hong hay vi chua bao lan nao.
+        log("loi", f"doc {STORY_RESULT.name} hong ({type(e).__name__}), "
+                   f"khong ra duoc link tien do cua task {tid}")
         return None
     d = tin.get(tid)
     if not d or not d.get("mid"):
@@ -318,7 +330,10 @@ def _done_code_no_hand(tid, ai, created_at):
         for dong in reversed(p.read_text(encoding="utf-8").splitlines()[-80:]):
             try:
                 d = json.loads(dong)
-            except Exception:                                # noqa: BLE001
+            except ValueError:
+                # IM LANG CO Y (LOW-306): mot dong hong trong 80 dong cuoi cua so
+                # jsonl la chuyen vat — cac dong con lai van tra loi duoc cau hoi
+                # "vai co gui gi sau luc task bat dau khong".
                 continue
             if int(d.get("ts", 0)) >= int(created_at or 0) - 5:
                 return None
@@ -327,11 +342,11 @@ def _done_code_no_hand(tid, ai, created_at):
     return tom_tat or "(không có album nào được gửi lên topic sau khi task bắt đầu)"
 
 def _load_state_json(path) -> dict:
-    """Tep state JSON -> dict; thieu tep hoac tep hong deu coi la rong."""
-    try:
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        return {}
+    """Tep state JSON -> dict; thieu tep hoac tep hong deu coi la rong.
+
+    Ban `dict` cua `approve_base._load_json` — cung mot than, de ban hong chi ghi
+    log o MOT cho (LOW-306). Truoc day day la ban chep thu hai va cung cam nhu nhau."""
+    return _load_json(path, {})
 
 
 class ProgressRun:

@@ -212,8 +212,11 @@ def resolve_code_gnews(url: str, timeout: int = 30, phien=None) -> str | None:
              or re.search(r'<a[^>]+href="(https?://(?!news\.google)[^"]+)"', r.text))
         if m:
             return _html.unescape(m.group(1))
-    except Exception:                                        # noqa: BLE001
-        pass
+    except Exception as e:                                   # noqa: BLE001
+        # LOW-306: van roi xuong duong chromium ben duoi, nhung phai biet duong
+        # nhe hong vi gi — mot mien chan bot va mot loi mang trong nhu nhau o day.
+        print(f"[nguon_bai] giai link Google News bang HTTP hong ({type(e).__name__}), "
+              f"thu chromium", file=sys.stderr)
     try:
         import time as _t
         from browser_session import session_or_new
@@ -281,7 +284,7 @@ def _title_rss(url: str) -> str:
     chuyen muc (doan dau URL) — khop link (bo query/slash cuoi) de lay tieu de."""
     try:
         u = up.urlsplit(url)
-    except Exception:                                        # noqa: BLE001
+    except (TypeError, ValueError):       # URL rac/None — hai kieu urlsplit nem
         return ""
     if not u.scheme or not u.netloc:
         return ""
@@ -306,6 +309,10 @@ def _title_rss(url: str) -> str:
                           file=sys.stderr)
                     return t
         except Exception:                                    # noqa: BLE001
+            # IM LANG CO Y (LOW-306): day la vong DOAN 6 duong RSS tren mot mien
+            # bat ky — 404/HTML thay vi XML/timeout la ket qua BINH THUONG cua
+            # phep doan, khong phai su co. Log moi duong hong se ra 6 dong rac
+            # cho MOI bai. Ca vong that bai thi nguoi goi da co duong lui.
             continue
     return ""
 
@@ -379,8 +386,12 @@ def _title_page(url: str, gnews_url: str = "") -> str:
                 elif t and len(t) >= 8 and not has_vietnamese(t) and not _CHAN_BOT.search(t):
                     print(f"[nguon_bai] tieu de tim = og:title bai goc: {t[:90]}", file=sys.stderr)
                     return t
-    except Exception:                                        # noqa: BLE001
-        pass
+    except Exception as e:                                   # noqa: BLE001
+        # LOW-306: ba duong lui ben duoi van chay, nhung khi ca ba deu ra tieu de
+        # kem thi day la dong duy nhat noi duoc vi sao — Cloudflare chan, timeout,
+        # hay HTML doi hinh.
+        print(f"[nguon_bai] doc og:title bai goc hong ({type(e).__name__}), "
+              f"chuyen sang RSS/slug", file=sys.stderr)
     return _title_rss(url) or _title_gnews_id(gnews_url, url) or _title_slug(url)
 
 
@@ -405,7 +416,7 @@ def _title_slug(url: str) -> str:
     `1050d70e f675 45be 8384 79934321d06f` vi 4/5 manh co chu cai a-f)."""
     try:
         path = up.urlsplit(url).path
-    except Exception:                                        # noqa: BLE001
+    except (TypeError, ValueError):       # URL rac/None — hai kieu urlsplit nem
         return ""
     for doan in reversed([d for d in path.split("/") if d]):
         doan = re.sub(r"\.(html?|php|aspx?)$", "", doan, flags=re.I)
@@ -544,7 +555,9 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
             ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
             if ts < moc:
                 continue
-        except Exception:                                    # noqa: BLE001
+        except (TypeError, ValueError):
+            # Feed khong co pubDate hoac ghi sai chuan: GIU lai muc do (loc cung
+            # su kien o duoi van chay), dung kieu loi hep de loi khac con no ra.
             pass
         recent.append((link, it.findtext("title") or ""))
     # Loc cung su kien MOT lan cho ca danh sach (LOW-276) — ca lung chung hoi LLM mot lan.
@@ -562,7 +575,10 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
             # bai — mot ket qua tim kiem 302 ve 127.0.0.1 khong duoc di tiep.
             if rr.status_code != 200 or not scan_common.url_hide_whole(u):
                 continue
-        except Exception:                                    # noqa: BLE001
+        except Exception as e:                               # noqa: BLE001
+            # LOW-306 (dung ca LOW-275): day la cho mot nguon bi bo. Khong co dong
+            # nay thi "chi tim duoc 1 nguon" nhin y het "chi co 1 nguon that".
+            print(f"[nguon_bai] bo ung vien {link[:80]}: {type(e).__name__}", file=sys.stderr)
             continue
         m = re.match(r"https?://([^/]+)", u)
         mien = (m.group(1) if m else "").replace("www.", "")
@@ -638,7 +654,9 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
             ts = eu.parsedate_to_datetime(it.findtext("pubDate") or "").timestamp()
             if ts < moc:
                 continue
-        except Exception:                                    # noqa: BLE001
+        except (TypeError, ValueError):
+            # Feed khong co pubDate hoac ghi sai chuan: GIU lai muc do, dung kieu
+            # loi hep de loi khac con no ra.
             pass
         try:
             if not scan_common.url_hide_whole(link):
@@ -647,7 +665,8 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
             u = str(rr.url)
             if rr.status_code != 200 or not scan_common.url_hide_whole(u):
                 continue
-        except Exception:                                    # noqa: BLE001
+        except Exception as e:                               # noqa: BLE001
+            print(f"[nguon_bai] bo ung vien {link[:80]}: {type(e).__name__}", file=sys.stderr)
             continue
         m = re.match(r"https?://([^/]+)", u)
         mien = (m.group(1) if m else "").replace("www.", "")
@@ -699,7 +718,7 @@ def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains
         try:
             if eu.parsedate_to_datetime(item.findtext("pubDate") or "").timestamp() < cutoff:
                 continue
-        except Exception:                                    # noqa: BLE001
+        except (TypeError, ValueError):
             continue                                          # khong ngay -> khong biet cung dot tin
         source = item.find("source")
         outlet = ((source.get("url") if source is not None else "") or "").rstrip("/")
@@ -804,6 +823,9 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
             except (httpx.TimeoutException, httpx.ConnectError):
                 return None                                  # mien treo/khong toi duoc: bo 4 duong con lai
             except Exception:                                # noqa: BLE001
+                # IM LANG CO Y (LOW-306): vong DOAN 5 duong RSS tren mot mien bat
+                # ky — 404/HTML thay vi XML la ket qua binh thuong cua phep doan.
+                # Mien treo/khong toi duoc da bat rieng o tren (do la su co that).
                 continue
         return None
 
