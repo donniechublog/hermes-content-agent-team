@@ -1,0 +1,917 @@
+{
+ "no_kanban_is_silent": [
+  {
+   "tg": [],
+   "logs": [],
+   "state": {}
+  }
+ ],
+ "unreadable_kanban_logs_and_stops": [
+  {
+   "tg": [],
+   "logs": [
+    [
+     "tiendo",
+     "khong doc duoc kanban"
+    ]
+   ],
+   "state": {}
+  }
+ ],
+ "start_with_queue_then_same_state_is_not_repeated": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>\n(còn 2 việc xếp hàng sau việc này)",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [],
+   "logs": [],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  }
+ ],
+ "done_with_product_gets_daily_ordinal": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "✅ <b>Dre</b> xong task #01: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "✅ <b>Dre</b> xong task #02: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 22,
+      "text": "✅ <b>Miles</b> xong task #01: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t0 dre -> done (thread=11) gui=ok"
+    ],
+    [
+     "tiendo",
+     "t1 dre -> done (thread=11) gui=ok"
+    ],
+    [
+     "tiendo",
+     "w1 miles -> done (thread=22) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t0": "done",
+     "t1": "done",
+     "w1": "done"
+    },
+    "task_result_messages.json": {
+     "t0": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     },
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1002
+     },
+     "w1": {
+      "chat": "-1001",
+      "thread": 22,
+      "mid": 1003
+     }
+    }
+   }
+  }
+ ],
+ "done_without_product_is_flagged_not_celebrated": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⛔ <b>Dre</b> báo xong nhưng <b>không có sản phẩm</b>: <i>Bài &lt;chip&gt; &amp; AI</i>\nbrief chỉ có 1 ảnh &lt;lạc đề&gt;\n(Task đóng sai cách — vai phải dùng kanban_block khi thiếu ảnh.)",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "bangden",
+     "t1 dre done-gia: brief chỉ có 1 ảnh <lạc đề>"
+    ],
+    [
+     "tiendo",
+     "t1 dre -> done (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "done"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "text": "⛔ <b>Kite</b> báo xong nhưng <b>không có sản phẩm</b>: <i>Bài &lt;chip&gt; &amp; AI</i>\nbo cuoc\n(Task đóng sai cách — vai phải dùng kanban_block khi thiếu ảnh.)",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "bangden",
+     "t5 kite done-gia: bo cuoc"
+    ],
+    [
+     "tiendo",
+     "t5 kite -> done (thread=None) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t5": "done"
+    },
+    "task_result_messages.json": {
+     "t5": {
+      "chat": "-1001",
+      "thread": null,
+      "mid": 1002
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 33,
+      "text": "⛔ <b>Ethan</b> báo xong nhưng <b>không có sản phẩm</b>: <i>Bài &lt;chip&gt; &amp; AI</i>\n(không có album nào được gửi lên topic sau khi task bắt đầu)\n(Task đóng sai cách — vai phải dùng kanban_block khi thiếu ảnh.)",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "bangden",
+     "t6 ethan done-gia: (không có album nào được gửi lên topic sau khi task bắt đầu)"
+    ],
+    [
+     "tiendo",
+     "t6 ethan -> done (thread=33) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t6": "done"
+    },
+    "task_result_messages.json": {
+     "t6": {
+      "chat": "-1001",
+      "thread": 33,
+      "mid": 1003
+     }
+    }
+   }
+  }
+ ],
+ "blocked_and_failed_carry_the_reason": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⛔ <b>Dre</b> dừng (blocked): <i>Bài &lt;chip&gt; &amp; AI</i>\nthiếu ảnh thật: A3 &lt;bị loại&gt;\nBài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ.",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 22,
+      "text": "⛔ <b>Miles</b> dừng (failed): <i>Bài &lt;chip&gt; &amp; AI</i>\nHTTP 402",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "text": "⛔ <b>Jika</b> dừng (blocked): <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> blocked (thread=11) gui=ok"
+    ],
+    [
+     "tiendo",
+     "w1 miles -> failed (thread=22) gui=ok"
+    ],
+    [
+     "tiendo",
+     "w2 jika -> blocked (thread=None) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "blocked",
+     "w1": "failed",
+     "w2": "blocked"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     },
+     "w1": {
+      "chat": "-1001",
+      "thread": 22,
+      "mid": 1002
+     },
+     "w2": {
+      "chat": "-1001",
+      "thread": null,
+      "mid": 1003
+     }
+    }
+   }
+  }
+ ],
+ "stalled_run_warns_then_reminds_then_clears": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⏳ <b>Dre</b> vẫn đang làm, đã 25 phút (nhịp thở 0 phút trước): <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)\nQuá max_runtime thì hermes sẽ tự dừng.",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre chay 25 phut, da bao: ⏳ <b>Dre</b> vẫn đang làm, đã 25 phút (nhịp thở 0 phút trước"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "reported_stalled.json": {
+     "t1": 1790001500.0
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [],
+   "logs": [],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "reported_stalled.json": {
+     "t1": 1790001500.0
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⚠️ <b>Dre</b> không phản hồi 16 phút (nhịp thở cuối 14:53), đã chạy 56 phút: <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre chay 56 phut, da bao: ⚠️ <b>Dre</b> không phản hồi 16 phút (nhịp thở cuối 14:53), "
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "reported_stalled.json": {
+     "t1": 1790003360.0
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⛔ <b>Dre</b>: worker (pid 4242) đã chết sau 90 phút chạy: <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)\nhermes sẽ thu hồi và xếp lại hàng.",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre chay 90 phut, da bao: ⛔ <b>Dre</b>: worker (pid 4242) đã chết sau 90 phút chạy: <i"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "reported_stalled.json": {
+     "t1": 1790005400.0
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "✅ <b>Dre</b> xong task #01: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> done (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "done"
+    },
+    "reported_stalled.json": {},
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1005
+     }
+    }
+   }
+  }
+ ],
+ "stalled_without_heartbeat_data_falls_back_to_started_at": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 22,
+      "text": "⚠️ <b>Miles</b> không phản hồi hơn 40 phút (không có nhịp thở ghi lại): <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 22,
+      "text": "▶️ <b>Miles</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 miles chay 40 phut, da bao: ⚠️ <b>Miles</b> không phản hồi hơn 40 phút (không có nhịp th"
+    ],
+    [
+     "tiendo",
+     "t1 miles -> running (thread=22) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "reported_stalled.json": {
+     "t1": 1790000000.0
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 22,
+      "mid": 1002
+     }
+    }
+   }
+  }
+ ],
+ "low23_restarted_run_is_timed_from_the_open_run_not_first_start": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  }
+ ],
+ "killed_by_max_runtime_is_reported_once_per_run": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⏱ <b>Dre</b> bị hermes dừng sau 25 phút (trần 25 phút), đã xếp lại hàng, sẽ chạy lại: <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre timed_out run r1, da bao"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1:timed_out:r1": true
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1:timed_out:r1": true,
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1002
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⚠️ <b>Dre</b> không phản hồi hơn 26 phút (không có nhịp thở ghi lại): <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⏱ <b>Dre</b> bị hermes dừng sau quá giờ, đang chạy lại: <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre chay 26 phut, da bao: ⚠️ <b>Dre</b> không phản hồi hơn 26 phút (không có nhịp thở "
+    ],
+    [
+     "tiendo",
+     "t1 dre timed_out run r2, da bao"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1:timed_out:r1": true,
+     "t1": "running",
+     "t1:timed_out:r2": true
+    },
+    "reported_stalled.json": {
+     "t1": 1790001600.0
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1002
+     }
+    }
+   }
+  }
+ ],
+ "blackboard_root_and_unknown_status_are_marked_silently": [
+  {
+   "tg": [],
+   "logs": [],
+   "state": {
+    "reported_progress.json": {
+     "root": "running",
+     "root2": "done",
+     "t9": "archived"
+    },
+    "task_result_messages.json": {}
+   }
+  }
+ ],
+ "telegram_refusal_is_logged_and_state_still_advances": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=Bad Request: message thread not found"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {}
+   }
+  },
+  {
+   "tg": [],
+   "logs": [],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {}
+   }
+  }
+ ],
+ "role_without_topic_posts_to_group_root": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "text": "▶️ <b>Ada</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 ada -> running (thread=None) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": null,
+      "mid": 1001
+     }
+    }
+   }
+  }
+ ],
+ "corrupt_state_files_are_treated_as_empty": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1": "running"
+    },
+    "reported_stalled.json": "{cut",
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  }
+ ],
+ "finished_tasks_older_than_the_window_are_pruned_on_next_write": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "old dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "old": "running"
+    },
+    "task_result_messages.json": {
+     "old": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1001
+     }
+    }
+   }
+  },
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 22,
+      "text": "▶️ <b>Miles</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "new miles -> running (thread=22) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "new": "running"
+    },
+    "task_result_messages.json": {
+     "new": {
+      "chat": "-1001",
+      "thread": 22,
+      "mid": 1002
+     }
+    }
+   }
+  }
+ ],
+ "state_write_failure_is_logged_not_raised": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⚠️ <b>Dre</b> không phản hồi hơn 40 phút (không có nhịp thở ghi lại): <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre chay 40 phut, da bao: ⚠️ <b>Dre</b> không phản hồi hơn 40 phút (không có nhịp thở "
+    ],
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ],
+    [
+     "tiendo",
+     "khong ghi duoc reported_progress.json/task_result_messages.json: het cho dia"
+    ],
+    [
+     "tiendo",
+     "khong ghi duoc reported_stalled.json: het cho dia"
+    ]
+   ],
+   "state": {}
+  }
+ ]
+}
