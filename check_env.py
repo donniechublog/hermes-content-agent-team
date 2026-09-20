@@ -52,7 +52,7 @@ def check_cv2() -> tuple:
     except Exception as e:
         return False, f"import cv2 loi: {type(e).__name__}: {e} (can: pip install opencv-python)"
     # In luon phien ban: vua la thong tin huu ich khi doi chieu su co, vua de
-    # `cv2` duoc DUNG that -- pyflakes khong hieu `# noqa` (flake8 moi hieu) nen
+    # `cv2` duoc DUNG that -- pyflakes khong hieu `noqa` (flake8/ruff moi hieu) nen
     # mot import chi de thu se thanh canh bao, ma C4 muon CI chan tren pyflakes.
     return True, f"ban {getattr(cv2, '__version__', '?')}"
 

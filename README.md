@@ -269,6 +269,13 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   `approve_post` / `approve_chat` / `approve_command`. Mọi tin nhắn vào đều có log
   (`state/<brand>/approve.log`, xoay vòng 5 MB×3) theo nhãn
   `vao → route → chat/chon/lenh → tele`, và mọi nhánh kết thúc bằng một tin trả về.
+  Mỗi dòng có **mức** (`INFO`/`WARNING`/`ERROR`) từ LOW-305 — trước đó mọi dòng kể cả
+  `[loi]` đều là INFO, nên không lọc được "chỉ lỗi". Nhãn `loi` tự lên ERROR qua
+  `write_log.LEVEL_BY_LABEL`; nhãn dùng chung cho cả dòng tốt lẫn dòng hỏng
+  (`tele`, `kanban`, `start`) thì gọi thẳng `write_log.error()` / `write_log.warn()`
+  tại chỗ. Dưới systemd, dòng ra stdout mang tiền tố mức syslog (`<3>`/`<4>`) nên
+  `journalctl -p err -u hermes-approve@<brand>` lọc ra đúng dòng lỗi; chạy tay không
+  có `JOURNAL_STREAM` nên không thấy tiền tố đó.
   Lệnh chọn số còn báo **ngay khi nhận** (`_report_already_label`, kèm tiêu đề từng số)
   trước khi vào việc — `create_pair` mất tới 180 giây một tin, đo thật 157 giây
   im lặng ngày 11/09/2026.
@@ -340,6 +347,15 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   gặp — `tests/` phải nằm trong `PYTHONPATH`; đừng đưa mẫu chứa `.claude` vào `omit` — ghi ở đầu
   `.coveragerc`.
 
+  **Nhóm module logic từng 0% (LOW-307).** `draft_write`, `material`, `article_extract`,
+  `dre_prepare`, `miles_prepare`, `social_post`, `cape_prepare`/`cape_submit`, `check_env` và
+  cặp `jika_*` giờ có `tests/test_<module>.py` riêng, chạy **offline** bằng dữ liệu tổng hợp.
+  Cách dùng lại cho module sau: thay tệp ở **cạnh tiến trình con** (viết một script giả rồi trỏ
+  `<module>.ROOT` / `SCRIPT` vào thư mục tạm) thay vì mock `subprocess` — đường mã thoát, `--out`,
+  stdout-không-phải-JSON vẫn chạy thật. Mỗi tệp test đã được **đo đột biến**: phá một dòng của
+  module thì test phải đỏ (15/15 chỗ thử đều bị bắt) — test "gọi cho có" thì độ phủ đẹp mà
+  không giữ được gì.
+
   **Hàm chạy thật thì đối chiếu bằng VẾT.** Bảy hàm không chạy offline được
   (duyệt ảnh, router Telegram, tạo cặp task, moat, và ba hàm lái Chromium) đã
   được tách 07/09/2026 bằng cách thay mọi cạnh I/O — `call` Telegram, kanban,
@@ -356,6 +372,20 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   bước) — nay truyền `lay_emoji=`; và `image_rules._used_images_log` bị gán đè không trả
   lại, khiến `check_not_reused` trả rỗng vô điều kiện trong mọi test sau đó — nay
   qua `_so_tam()`. Thêm test mới thì giữ đúng hai lối này.
+- `ruff.toml` — **cổng lint thứ hai** (LOW-304). Bộ luật *chọn lọc*, không phải
+  ruff mặc định (bộ rộng cho 1.885 báo, gần hết là kiểu cách): `F` + `E9` — trùng
+  pyflakes nhưng chạy trên **cả cây**, còn bước `pyflakes` ở CI chỉ liệt kê vài
+  thư mục và LOW-298 lọt lưới 12 ngày đúng vì thế — cộng `B023` (hàm dùng biến
+  vòng lặp, giá trị bị chốt muộn), `B904` (`raise` trong `except` không `from`,
+  mất dấu vết lỗi gốc), `B033` (set trùng giá trị, thường là gõ nhầm chữ khác).
+  Chạy: `venv/bin/ruff check .` (chưa có thì `venv/bin/pip install ruff`, như
+  `pyflakes` — công cụ dev, không nằm trong `requirements.txt`; CI tự cài).
+  Không `exclude` gì — 21/22 báo B904 từng nằm ở bản chép tay của plugin kanban,
+  nhưng LOW-313 đã thay bản chép đó bằng bản vá. **Không** bật `ruff format`: nó
+  sửa 260/342 tệp, đè lên mọi nhánh đang mở của các phiên khác.
+  Chỗ B023 đã xét là vô hại (hàm được gọi ngay trong cùng lần lặp) đánh dấu
+  `# noqa: B023` kèm một câu lý do — thêm chỗ mới thì cũng xét rồi ghi lý do,
+  đừng gỡ cổng.
 - `check_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.

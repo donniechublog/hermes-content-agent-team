@@ -186,42 +186,46 @@ def _paragraphs(text: str) -> list:
     return [p.strip() for p in re.split(r"\n\s*\n", text) if len(p.strip()) >= 40]
 
 
-def judge(record: dict, *, brand: str, profile: str, index: RepoIndex) -> dict:
-    """Apply every rule to one pending record and return its verdict."""
-    payload = record.get("payload") or {}
-    action = payload.get("action") or record.get("action") or ""
-    skill = payload.get("name") or ""
-    target = payload.get("file_path") or "SKILL.md"
-    created_at = float(record.get("created_at") or 0)
-    flags = []
+def _apply_record(payload: dict, action: str, skill: str, target: str, current, flag) -> tuple:
+    """Áp bản ghi lên SKILL hiện tại -> (kết quả, dòng thêm, dòng bớt).
 
-    def flag(rule, detail):
-        flags.append({"rule": rule, "detail": detail})
+    `current is None` nghĩa là repo không có skill đó. Hai nhánh KHÔNG áp được
+    (thao tác lạ / skill lạ) trả lại `current` NGUYÊN VẸN chứ không phải None:
+    cổng trần độ dài ở dưới đọc `result`, nên đổi chỗ này thành None sẽ lặng lẽ
+    tắt cổng đó cho một `patch` vào tệp khác SKILL.md.
 
-    skill_path = index.repo / "hermes" / "skills" / skill / "SKILL.md"
-    current = skill_path.read_text(encoding="utf-8") if skill and skill_path.is_file() else None
-    result = current
-    added, removed = [], []
+    Tách khỏi `judge` ở LOW-309: đây là phần "dựng lại tệp", ba luật sinh ra ở
+    đây (`manual_action`, `unknown_skill`, `does_not_apply`) là hệ quả của việc
+    áp, không phải luật nội dung.
+    """
     if action not in ("patch", "edit") or target != "SKILL.md":
         flag("manual_action", f"thao tác `{action}` trên `{target}` — chỉ patch/edit SKILL.md mới tự nhận được")
-        added = (payload.get("content") or payload.get("file_content") or payload.get("new_string") or "").splitlines()
-    elif current is None:
+        return current, (payload.get("content") or payload.get("file_content")
+                         or payload.get("new_string") or "").splitlines(), []
+    if current is None:
         flag("unknown_skill", f"skill `{skill}` không có trong hermes/skills của repo")
-        added = (payload.get("content") or payload.get("new_string") or "").splitlines()
-    elif action == "patch":
+        return current, (payload.get("content") or payload.get("new_string") or "").splitlines(), []
+    if action == "patch":
         old, new = payload.get("old_string") or "", payload.get("new_string") or ""
         count = current.count(old) if old else 0
         if count == 0 or (count > 1 and not payload.get("replace_all")):
             flag("does_not_apply", f"`old_string` xuất hiện {count} lần trong SKILL hiện tại")
+            result = current
         else:
             result = current.replace(old, new) if payload.get("replace_all") else current.replace(old, new, 1)
         added, removed = _line_diff(old, new)
-    else:
-        result = payload.get("content") or ""
-        added, removed = _line_diff(current, result)
+        return result, added, removed
+    result = payload.get("content") or ""
+    added, removed = _line_diff(current, result)
+    return result, added, removed
 
-    added_text = "\n".join(added)
 
+def _check_symbol(added_text: str, created_at: float, index: RepoIndex, flag) -> None:
+    """Tên hàm/tệp bài học nhắc tới: còn không, và code đó có đổi sau khi ghi bài không.
+
+    Mỗi đường dẫn chỉ báo MỘT lần (`changed_paths`) — một bài nhắc `dre_submit.py`
+    năm lần thì vẫn là một chuyện, không phải năm cờ.
+    """
     changed_paths = set()
     for symbol in extract_symbols(added_text):
         exists, path, suggestion = index.check_symbol(symbol)
@@ -234,6 +238,9 @@ def judge(record: dict, *, brand: str, profile: str, index: RepoIndex) -> dict:
                 changed_paths.add(path)
                 flag("code_changed_since", f"`{path}` có {len(commits)} commit sau khi ghi bài: {commits[0]}")
 
+
+def _check_content(added_text: str, current, removed: list, flag) -> None:
+    """Luật về NỘI DUNG bài học. Thứ tự gọi ở đây là thứ tự cờ Ông Chủ đọc."""
     if BUG_WORDS.search(added_text) and AVOID_WORDS.search(added_text):
         flag("workaround", "bài dặn vai né một lỗi thay vì sửa lỗi đó")
 
@@ -255,6 +262,9 @@ def judge(record: dict, *, brand: str, profile: str, index: RepoIndex) -> dict:
     if brand_hit:
         flag("brand_specific", f"bài nhắc `{brand_hit.group(0)}` nhưng skill dùng chung hai brand")
 
+
+def _check_size(added: list, result, action: str, flag) -> None:
+    """Trần độ dài: của phần THÊM, và của SKILL sau khi áp."""
     added_lines = [line for line in added if line.strip()]
     if len(added_lines) > MAX_ADDED_LINES:
         flag("too_large", f"thêm {len(added_lines)} dòng (trần {MAX_ADDED_LINES})")
@@ -264,6 +274,28 @@ def judge(record: dict, *, brand: str, profile: str, index: RepoIndex) -> dict:
             flag("too_large", f"SKILL thành {lines} dòng (trần {MAX_SKILL_LINES})")
         if sections > MAX_SKILL_SECTIONS:
             flag("too_large", f"SKILL thành {sections} mục (trần {MAX_SKILL_SECTIONS})")
+
+
+def judge(record: dict, *, brand: str, profile: str, index: RepoIndex) -> dict:
+    """Apply every rule to one pending record and return its verdict."""
+    payload = record.get("payload") or {}
+    action = payload.get("action") or record.get("action") or ""
+    skill = payload.get("name") or ""
+    target = payload.get("file_path") or "SKILL.md"
+    created_at = float(record.get("created_at") or 0)
+    flags: list = []
+
+    def flag(rule, detail):
+        flags.append({"rule": rule, "detail": detail})
+
+    skill_path = index.repo / "hermes" / "skills" / skill / "SKILL.md"
+    current = skill_path.read_text(encoding="utf-8") if skill and skill_path.is_file() else None
+    result, added, removed = _apply_record(payload, action, skill, target, current, flag)
+    added_text = "\n".join(added)
+
+    _check_symbol(added_text, created_at, index, flag)
+    _check_content(added_text, current, removed, flag)
+    _check_size(added, result, action, flag)
 
     return {
         "id": record.get("id"), "brand": brand, "profile": profile, "skill": skill,

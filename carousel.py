@@ -878,39 +878,13 @@ def _gate_stack_last_hidden(nhan, muc, touched):
             "hoặc dùng một ảnh sạch thay cho cặp ghép.")
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Dung carousel nhieu slide (Dre)")
-    ap.add_argument("--spec", required=True,
-                    help="File JSON mo ta carousel, hoac '-' doc tu stdin")
-    ap.add_argument("--out", required=True,
-                    help="Duong dan slide bia, vi du drafts/<id>.png. "
-                         "Cac slide sau la <id>_2.png, _3.png ...")
-    ap.add_argument("--brand", default="donniechublog",
-                    help="donniechublog | dcgr — quyet dinh handle mac dinh")
-    ap.add_argument("--handle", help="Ghi de watermark (mac dinh lay theo brand)")
-    ap.add_argument("--nen", choices=list(BACKGROUND) + list(role_spec.BACKGROUND_TONE_LEGACY_VALUES),
-                    help="Bien the nen: dark (mac dinh) | light (nhan ca toi | sang cu). "
-                         "Ghi de spec.background_tone")
-    ap.add_argument("--bo-qua-dau", action="store_true",
-                    help="Tat cong chan tieng Viet (chi khi chu THAT SU la tieng Anh)")
-    a = ap.parse_args()
+def _gate_count(spec: dict, cover: dict, slides: list, out: Path) -> None:
+    """Ghep anh `stack` truoc, roi kiem SO SLIDE va truong bat buoc cua bia.
 
-    raw = sys.stdin.read() if a.spec == "-" else Path(a.spec).read_text("utf-8")
-    spec = json.loads(raw)
-
-    if a.brand not in BRAND:
-        sys.exit(f"Thuong hieu khong nhan ra: {a.brand}")
-    b = set_brand(a.brand)
-    handle = a.handle or spec.get("handle") or b["handle"]
-    nen = role_spec.background_tone(a.nen) or str(spec.get("background_tone") or "dark").strip().lower()
-    try:
-        set_background(nen)
-    except ValueError as e:
-        sys.exit(f"{e}")
-
-    cover = spec.get("cover") or {}
-    slides = spec.get("slides") or []
-    _stem0 = Path(a.out).with_suffix("")
+    Ghep phai lam TRUOC moi cong khac: sau khi ghep, `cover["image"]`/`s["image"]`
+    moi tro toi tam anh THAT se ve. Tach khoi `main` o LOW-309.
+    """
+    _stem0 = out.with_suffix("")
     _stack_if_can(cover, "bia", f"{_stem0}")
     for i, s in enumerate(slides, start=2):
         _stack_if_can(s, f"slide {i}", f"{_stem0}_{i}")
@@ -935,7 +909,13 @@ def main():
                  "phat bieu lanh dao, rui ro/an toan, cai can theo doi. Chi khi Ong Chu "
                  "noi ro tin nho moi duoc ghi \"tier\": \"regular\" de bo qua.")
 
-    # Chuan hoa em-dash + chan tieng Viet mat dau truoc khi ve bat cu gi.
+
+
+def _standard_text(cover: dict, slides: list, bo_qua_dau: bool) -> None:
+    """Chuan hoa em-dash + chan tieng Viet mat dau TRUOC KHI ve bat cu gi.
+
+    Sua `cover`/`slides` TAI CHO — chu da chuan hoa chinh la chu se ve.
+    """
     cover["hook"] = drop_mark_forbid(cover["hook"])
     cover["label"] = drop_mark_forbid(cover.get("label", ""))
     # Bia phai co "category" (chip cyan thay ten kenh — Ong Chu chot 03/09/2026).
@@ -970,14 +950,16 @@ def main():
                  "cac cau dat trong bai (phat bieu, con so, cau chot) lam slide "
                  "dang 'quote'+'attrib' — xem muc 'Slide quote' trong skill.")
 
-    loi = _gate_text(chunks, a.bo_qua_dau)
+    loi = _gate_text(chunks, bo_qua_dau)
     if loi:
         for e in loi:
             print(f"[LOI] {e}", file=sys.stderr)
         sys.exit("Chu carousel khong dat cong chan tieng Viet. Go lai co dau, "
                  "hoac --bo-qua-dau neu that su la tieng Anh.")
 
-    # Cong chan anh (trung / ti le / phan giai / day sang) va copy tran 30%.
+
+def _gate_image_and_overflow(cover: dict, slides: list) -> None:
+    """Cong chan anh (trung / ti le / phan giai / day sang) va copy tran 30%."""
     anh = [("bia", cover["image"], cover)] + \
           [(f"slide {i}", s["image"], s) for i, s in enumerate(slides, start=2)]
     loi_anh, canh_bao = _gate_image(anh)
@@ -989,10 +971,15 @@ def main():
             print(f"[LOI] {e}", file=sys.stderr)
         sys.exit("Carousel khong dat cong chan anh/chu. Sua theo huong dan o tren.")
 
-    out = Path(a.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
 
+def _build_slide(cover: dict, slides: list, out: Path, stem, handle: str) -> list:
+    """Ve bia + tung slide than, roi hai cong do TREN PIXEL da ve.
+
+    Thu tu thoat giu nguyen: nen chu sai luat overlay (LOW-286) bao TRUOC anh ghep
+    bi che — cai dau la loi CODE, cai sau la loi chon anh cua vai.
+
+    Tu LOW-330 BIA cung bi do nhu slide than (`report=bao_bia`), chi khac tran dien tich.
+    """
     bao_bia = {}
     build_cover(cover["image"], cover["hook"], cover.get("label", ""), str(out), handle,
                 category=cover["category"], cluttered=bool(cover.get("cluttered")), report=bao_bia)
@@ -1025,6 +1012,51 @@ def main():
         for e in loi_ghep:
             print(f"[LOI] {e}", file=sys.stderr)
         sys.exit("Carousel co anh ghep bi nen chu che gan het. Sua theo huong dan o tren.")
+
+    return paths
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Dung carousel nhieu slide (Dre)")
+    ap.add_argument("--spec", required=True,
+                    help="File JSON mo ta carousel, hoac '-' doc tu stdin")
+    ap.add_argument("--out", required=True,
+                    help="Duong dan slide bia, vi du drafts/<id>.png. "
+                         "Cac slide sau la <id>_2.png, _3.png ...")
+    ap.add_argument("--brand", default="donniechublog",
+                    help="donniechublog | dcgr — quyet dinh handle mac dinh")
+    ap.add_argument("--handle", help="Ghi de watermark (mac dinh lay theo brand)")
+    ap.add_argument("--nen", choices=list(BACKGROUND) + list(role_spec.BACKGROUND_TONE_LEGACY_VALUES),
+                    help="Bien the nen: dark (mac dinh) | light (nhan ca toi | sang cu). "
+                         "Ghi de spec.background_tone")
+    ap.add_argument("--bo-qua-dau", action="store_true",
+                    help="Tat cong chan tieng Viet (chi khi chu THAT SU la tieng Anh)")
+    a = ap.parse_args()
+
+    raw = sys.stdin.read() if a.spec == "-" else Path(a.spec).read_text("utf-8")
+    spec = json.loads(raw)
+
+    if a.brand not in BRAND:
+        sys.exit(f"Thuong hieu khong nhan ra: {a.brand}")
+    b = set_brand(a.brand)
+    handle = a.handle or spec.get("handle") or b["handle"]
+    nen = role_spec.background_tone(a.nen) or str(spec.get("background_tone") or "dark").strip().lower()
+    try:
+        set_background(nen)
+    except ValueError as e:
+        sys.exit(f"{e}")
+
+    cover = spec.get("cover") or {}
+    slides = spec.get("slides") or []
+    _gate_count(spec, cover, slides, Path(a.out))
+    _standard_text(cover, slides, a.bo_qua_dau)
+    _gate_image_and_overflow(cover, slides)
+
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    stem = out.with_suffix("")            # bo .png de ghep hau to _2, _3
+
+    paths = _build_slide(cover, slides, out, stem, handle)
 
     print(f"da dung {len(paths)} slide:")
     for p in paths:

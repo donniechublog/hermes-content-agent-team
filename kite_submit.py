@@ -360,15 +360,16 @@ def check_subject_above_text(spec_r: dict, m: dict, text_tops: dict) -> list:
     return loi
 
 
-def resolve_spec(spec: dict, m: dict, wd) -> tuple:
-    loi, canh = [], []
-    slides = spec.get("slides") or []
+def _frame_spec(spec: dict, m: dict, slides: list, loi: list) -> dict:
+    """Khung spec render (brand/section/folio/theme/hero) + kiem CAU TRUC bộ.
+
+    Tach khoi `resolve_spec` o LOW-309. Thu tu ghi `loi` giu nguyen: so slide ->
+    kind cua slide 1 -> theme -> hero.
+    """
     if not (6 <= len(slides) <= 10):
         loi.append(f"có {len(slides)} slide — cần 6..10")
     if slides and slides[0].get("kind") != "cover":
         loi.append("slide 1 phải là kind \"cover\"")
-    hinh = {a["id"]: a for a in kb.figure_real(m)}
-    da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (check_duplicate)
     # brand trong spec render la CHU in o masthead/folio (render_edu chi dung no
     # lam chu) -> phai la handle hien thi (dcgr -> dcgr.tech), khong phai slug.
     # d24ddfc da sua byline/follow, con masthead van in "dcgr" (05/09/2026).
@@ -384,6 +385,15 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     if hero:
         ra["hero"] = hero
     ra["slides"] = []
+    return ra
+
+
+def resolve_spec(spec: dict, m: dict, wd) -> tuple:
+    loi, canh = [], []
+    slides = spec.get("slides") or []
+    hinh = {a["id"]: a for a in kb.figure_real(m)}
+    da_thay = {}                    # hash anh -> nhan slide, TRONG BO nay (check_duplicate)
+    ra = _frame_spec(spec, m, slides, loi)
     for i, sl in enumerate(slides, 1):
         s2 = _resolve_slide(i, sl, hinh, m, da_thay, loi, canh)
         if s2 is None:
@@ -392,7 +402,19 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     # Cung mot buc anh tai tu hai nguon len hai slide (LOW-284) — md5 (check_duplicate) khong bat.
     loi += nc.check_same_photo(hinh, [(f"slide {i}", [sl.get("image")])
                                       for i, sl in enumerate(slides, 1) if sl.get("image")])
+    _check_real_image(slides, hinh, m, loi, canh)
+    _check_not_yet_seen_and_number(slides, hinh, m, wd, canh)
+    return ra, loi, canh
 
+
+def _check_real_image(slides: list, hinh: dict, m: dict, loi: list, canh: list) -> None:
+    """Bon cong ve ANH THAT, theo dung thu tu cu: bia phai la anh that -> phai
+    dung it nhat mot -> du so anh KHAC NHAU theo so slide -> tin chuyen tu
+    Dre/Ethan thi con chat hon mot bac.
+
+    Tach khoi `resolve_spec` o LOW-309 — bon cong nay doc chung `da_nhin`/`co_anh`
+    nen di voi nhau, tach le ra la tinh lai ba lan.
+    """
     # Brief noi "CO n hinh that lien quan -> BAT BUOC dung it nhat mot"
     # (kite_prepare.py), nhung truoc 06/09/2026 khong cong nao kiem: vai bo qua
     # ca bang benchmark that roi ve vector, dung cai loi Ong Chu da bat 05/09
@@ -488,6 +510,10 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
                        "phải có ít nhất một slide thân dùng hình thật (`figure`). Đặt hết lên bìa rồi "
                        "vẽ vector cả thân là đúng cái lỗi khiến tin phải chuyển sang đây.")
 
+
+def _check_not_yet_seen_and_number(slides: list, hinh: dict, m: dict, wd, canh: list) -> None:
+    """Hai CANH BAO cuoi (khong chan): vision chua nhin, va so tren slide."""
+    da_nhin = [ma for ma, a in hinh.items() if a.get("relevant") is True]
     # So tren slide phai co trong tu lieu (canh bao) — Kite ve so bia la loi nang
     # nhat cua carousel kien thuc, ma truoc 06/09/2026 khong ai doi chieu.
     # CO Y tinh lai tu `hinh` (= kb.hinh_that(m), da loc >= 800px va bo mat
@@ -508,7 +534,68 @@ def resolve_spec(spec: dict, m: dict, wd) -> tuple:
     chu = " ".join(str(sl.get(k) or "") for sl in slides
                    for k in ("eyebrow", "title", "standfirst", "callout", "caption"))
     canh.extend(nc.check_numbers_on_card(chu, m, wd))
-    return ra, loi, canh
+
+
+def _check_redo(spec: dict, da_dung, hook: str, loi: list) -> None:
+    """LAM LAI thi theme/hero va hook bia phai KHAC lan truoc — khong thi Ong Chu
+    bam "lam lai" ma nhan lai gan nhu cai vua bac."""
+    if not da_dung:
+        return
+    if (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):
+        loi.append("LÀM LẠI: theme và hero trùng lần trước — đổi ít nhất một")
+    if nc.normalize(hook) == nc.normalize(da_dung.get("hook")):
+        loi.append("LÀM LẠI: hook bìa giống lần trước — viết khác")
+
+
+def _write_handoff(m: dict, hinh: list, n: int, theme, hero, hook: str, out,
+                   thu_muc, draft_id: str):
+    """Ghi ban giao cho nguoi viet, tra ve duong dan.
+
+    Nguon TUNG tam, khong con chi la danh sach ma (LOW-292, 20/09/2026): slide
+    thoi ghi dong "— <mo ta> · via <trang>", nen ban giao nay la cho DUY NHAT
+    nguoi viet doc duoc anh muon cua ai (metadata PNG van co, nhung writer khong
+    mo PNG). Khong co domain thi ghi nhan nguon cua engine.
+
+    Tach khoi `main` o LOW-309.
+    """
+    kho = {a["id"]: a for a in kb.figure_real(m)}
+    nguon_anh = ", ".join(
+        ma + (f" (via {kho[ma]['domain'] or manifest_values.source_label(kho[ma]['source'])})"
+              if ma in kho else "")
+        for ma in hinh)
+    bg = "\n".join([f"Nguồn tin: {m['title']}", f"Link gốc: {m['link']}"]
+                   + ([f"Via: {m['via']}"] if m.get("via") else [])
+                   + [f"Bộ slide: {n} slide art vector gốc, theme {theme}, hero {hero}"]
+                   + ([f"Hình thật đã chèn: {nguon_anh}"] if hinh else [])
+                   + [f"Hook bìa: {hook}", f"Tệp: {out}"])
+    bg_path = state_paths.handoff_file(thu_muc, draft_id)
+    bg_path.write_text(bg, encoding="utf-8")
+    return bg_path
+
+
+def _render(spec_r: dict, spec: dict, wd, out, brand: str, a, spec_path) -> tuple | None:
+    """Goi render_edu.py dung mot lan -> (theme, hero), hoac None khi no bao loi.
+
+    Tach khoi `main` o LOW-309. Phan boc loi cua tien trinh con dai va rieng biet:
+    render_edu in cong chan ra CA stdout lan stderr, nen o day loc theo dau hieu
+    roi in them dong cuoi cua stderr — thieu buoc do thi vai chi thay "return 1".
+    """
+    p_spec = wd / "render_edu.spec.json"
+    p_spec.write_text(json.dumps(spec_r, ensure_ascii=False, indent=2), encoding="utf-8")
+    args = [sys.executable, str(ROOT / "render_edu.py"), "--spec", str(p_spec), "--out", str(out),
+            "--brand", brand] + (["--bo-qua-dau"] if a.bo_qua_dau else [])
+    r = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True, timeout=900)
+    if r.returncode != 0:
+        for d in ((r.stderr or "") + "\n" + (r.stdout or "")).splitlines():
+            if d.strip().startswith("-") or "CONG CHAN" in d or "CANH BAO" in d or "Error" in d:
+                print(f"[LOI] {d.strip()}")
+        cuoi = [d for d in (r.stderr or "").strip().splitlines() if d.strip()]
+        if cuoi:
+            print(f"[LOI] {cuoi[-1]}")
+        print(f"\nSua {spec_path} theo bao loi roi chay lai: venv/bin/python kite_submit.py {a.draft_id}")
+        return None
+    m_theme = re.search(r"theme=(\w+) hero=(\S+)", r.stdout or "")
+    return (m_theme.group(1), m_theme.group(2)) if m_theme else (spec.get("theme"), spec.get("hero"))
 
 
 def main() -> int:
@@ -535,11 +622,7 @@ def main() -> int:
             tops = {}
         loi += check_subject_above_text(spec_r, m, tops)
     hook = (spec.get("slides") or [{}])[0].get("title", "")
-    if da_dung:
-        if (spec.get("theme"), spec.get("hero")) == (da_dung.get("theme"), da_dung.get("hero")):
-            loi.append("LÀM LẠI: theme và hero trùng lần trước — đổi ít nhất một")
-        if nc.normalize(hook) == nc.normalize(da_dung.get("hook")):
-            loi.append("LÀM LẠI: hook bìa giống lần trước — viết khác")
+    _check_redo(spec, da_dung, hook, loi)
     for c in canh:
         print(f"[CANH BAO] {c}")
     if loi:
@@ -553,22 +636,10 @@ def main() -> int:
     stem = out.with_suffix("")
     for p in env_load.album_secondary(stem.name, stem.parent):
         p.unlink(missing_ok=True)
-    p_spec = wd / "render_edu.spec.json"
-    p_spec.write_text(json.dumps(spec_r, ensure_ascii=False, indent=2), encoding="utf-8")
-    args = [sys.executable, str(ROOT / "render_edu.py"), "--spec", str(p_spec), "--out", str(out),
-            "--brand", brand] + (["--bo-qua-dau"] if a.bo_qua_dau else [])
-    r = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True, timeout=900)
-    if r.returncode != 0:
-        for d in ((r.stderr or "") + "\n" + (r.stdout or "")).splitlines():
-            if d.strip().startswith("-") or "CONG CHAN" in d or "CANH BAO" in d or "Error" in d:
-                print(f"[LOI] {d.strip()}")
-        cuoi = [d for d in (r.stderr or "").strip().splitlines() if d.strip()]
-        if cuoi:
-            print(f"[LOI] {cuoi[-1]}")
-        print(f"\nSua {spec_path} theo bao loi roi chay lai: venv/bin/python kite_submit.py {a.draft_id}")
+    theme_hero = _render(spec_r, spec, wd, out, brand, a, spec_path)
+    if theme_hero is None:
         return 1
-    m_theme = re.search(r"theme=(\w+) hero=(\S+)", r.stdout or "")
-    theme, hero = (m_theme.group(1), m_theme.group(2)) if m_theme else (spec.get("theme"), spec.get("hero"))
+    theme, hero = theme_hero
     n = len(spec_r["slides"])
     files = [out] + [Path(f"{stem}_{i}.png") for i in range(2, n + 1)]
     thieu = [str(f) for f in files if not f.exists()]
@@ -576,22 +647,8 @@ def main() -> int:
         sys.exit(f"[LOI] render_edu bao xong nhung thieu tep: {thieu}")
 
     hinh = [s.get("image") for s in spec.get("slides") or [] if s.get("image")]
-    # Nguon TUNG tam, khong con chi la danh sach ma (LOW-292, 20/09/2026): slide
-    # thoi ghi dong "— <mo ta> · via <trang>", nen ban giao nay la cho DUY NHAT
-    # nguoi viet doc duoc anh muon cua ai (metadata PNG van co, nhung writer
-    # khong mo PNG). Khong co domain thi ghi nhan nguon cua engine.
-    kho = {a["id"]: a for a in kb.figure_real(m)}
-    nguon_anh = ", ".join(
-        ma + (f" (via {kho[ma]['domain'] or manifest_values.source_label(kho[ma]['source'])})"
-              if ma in kho else "")
-        for ma in hinh)
-    bg = "\n".join([f"Nguồn tin: {m['title']}", f"Link gốc: {m['link']}"]
-                   + ([f"Via: {m['via']}"] if m.get("via") else [])
-                   + [f"Bộ slide: {n} slide art vector gốc, theme {theme}, hero {hero}"]
-                   + ([f"Hình thật đã chèn: {nguon_anh}"] if hinh else [])
-                   + [f"Hook bìa: {hook}", f"Tệp: {out}"])
-    bg_path = state_paths.handoff_file(wd if a.khong_gui else DRAFTS, a.draft_id)
-    bg_path.write_text(bg, encoding="utf-8")
+    bg_path = _write_handoff(m, hinh, n, theme, hero, hook, out,
+                             wd if a.khong_gui else DRAFTS, a.draft_id)
 
     mid = None
     if a.khong_gui:

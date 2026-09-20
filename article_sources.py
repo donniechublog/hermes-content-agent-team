@@ -745,40 +745,40 @@ def other_outlets_gnews(title_en: str, items: list, count: int = 3, skip_domains
     return pages
 
 
-def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
-    link_gnews = None
-    if GNEWS_ARTICLE in link:
-        that = resolve_code_gnews(link)
-        if that:
-            link_gnews, link = link, that
-            print(f"[nguon_bai] link Google News -> {link[:90]}", file=sys.stderr)
-    ra = [{"url": link, "kind": "article", "title": tieu_de}]
-    # Tim kiem CHI bang tieng Anh (xem luat o tren). `ten` rong -> khong hoi feed nao.
-    ten = title_find(tieu_de, link, link_gnews or "")
-    its, co_link_gn = [], set()
-    if ten:
-        # THU CA CAU NGAN, khong chi headline day du (Ong Chu 13/09/2026: do
-        # that Moonshot/Kimi K3 — headline day du cua chinh TechCrunch chi keo
-        # ve mot vai mien; cau ngan "Kimi Moonshot AI"/"Kimi maker Moonshot AI"
-        # (_query_bing sinh ra, von chi dung cho Bing) keo ve them SCMP/
-        # Bloomberg/CNBC/Reuters ma headline day du BO SOT — cung mot dang loi
-        # da biet o Bing (_query_bing doc noi "truy van day du -> 1 bai"),
-        # chua bao gio ap sang Google News. Dung theo THU TU cua ham (dai ->
-        # ngan trong tung bo), dung som khi da du mien de khong hoi qua nhieu.
-        for q in [ten] + _query_bing(ten):
-            try:
-                for it in safe_xml.fromstring(_download(GNEWS.format(q=up.quote(q)), 25).content
-                                              ).findall(".//item"):
-                    k = it.findtext("link") or ""
-                    if k and k not in co_link_gn:
-                        co_link_gn.add(k)
-                        its.append(it)
-            except Exception as e:                           # noqa: BLE001
-                print(f"[nguon_bai] google news hong ({q!r}): {type(e).__name__}", file=sys.stderr)
-            if len({it.find('source').get('url') for it in its
-                    if it.find('source') is not None}) >= so * 3:
-                break
+def _gnews_item(ten: str, so: int) -> list:
+    """Cac <item> Google News cho mot tieu de tieng Anh, KHONG trung link.
 
+    THU CA CAU NGAN, khong chi headline day du (Ong Chu 13/09/2026: do that
+    Moonshot/Kimi K3 — headline day du cua chinh TechCrunch chi keo ve mot vai
+    mien; cau ngan "Kimi Moonshot AI"/"Kimi maker Moonshot AI" (`_query_bing`
+    sinh ra, von chi dung cho Bing) keo ve them SCMP/Bloomberg/CNBC/Reuters ma
+    headline day du BO SOT — cung mot dang loi da biet o Bing, chua bao gio ap
+    sang Google News. Dung theo THU TU cua ham (dai -> ngan trong tung bo), dung
+    som khi da du mien de khong hoi qua nhieu.
+
+    Tach khoi `find` o LOW-309.
+    """
+    its, co_link_gn = [], set()
+    if not ten:
+        return its
+    for q in [ten] + _query_bing(ten):
+        try:
+            for it in safe_xml.fromstring(_download(GNEWS.format(q=up.quote(q)), 25).content
+                                          ).findall(".//item"):
+                k = it.findtext("link") or ""
+                if k and k not in co_link_gn:
+                    co_link_gn.add(k)
+                    its.append(it)
+        except Exception as e:                               # noqa: BLE001
+            print(f"[nguon_bai] google news hong ({q!r}): {type(e).__name__}", file=sys.stderr)
+        if len({it.find('source').get('url') for it in its
+                if it.find('source') is not None}) >= so * 3:
+            break
+    return its
+
+
+def _outlet_of_item(its: list, so: int) -> list:
+    """[(mien toa soan, tieu de)] theo THU TU Google News tra ve, khong trung mien."""
     mien = []
     for it in its[: so * 6]:
         src = it.find("source")
@@ -787,8 +787,15 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
             u = u.rstrip("/")
             if u not in [m for m, _ in mien]:
                 mien.append((u, it.findtext("title") or ""))
+    return mien
 
-    goc = _tu(ten or tieu_de)
+
+def _scan_feed(mien: list, goc: set, so: int) -> list:
+    """Doan RSS cua tung toa soan, song song, co TRAN THOI GIAN (LOW-277).
+
+    Tra ve ket qua theo DUNG thu tu Google News (khong theo luc luong xong), de
+    nguon dau tien van la toa soan Google News xep dau. Tach khoi `find` o LOW-309.
+    """
     stop_feeds = threading.Event()
 
     def _trong_feed(cap):
@@ -813,7 +820,6 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
                 continue
         return None
 
-    thay = {link}
     # Khong `with`: khoi `with` doi MOI luong xong ke ca khi da het tran (LOW-277).
     # Luong dang tai do se tu dung sau lan tai hien tai nho `stop_feeds`.
     feed_start = time.time()
@@ -828,8 +834,25 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
     elif futures:
         print(f"[nguon_bai] doan RSS: {len(futures)} mien xong trong {time.time() - feed_start:.1f}s",
               file=sys.stderr)
-    for fut in futures:                                      # giu thu tu Google News, khong theo luc xong
-        kq = fut.result() if fut in done and fut.exception() is None else None
+    return [fut.result() if fut in done and fut.exception() is None else None
+            for fut in futures]
+
+
+def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
+    link_gnews = None
+    if GNEWS_ARTICLE in link:
+        that = resolve_code_gnews(link)
+        if that:
+            link_gnews, link = link, that
+            print(f"[nguon_bai] link Google News -> {link[:90]}", file=sys.stderr)
+    ra = [{"url": link, "kind": "article", "title": tieu_de}]
+    # Tim kiem CHI bang tieng Anh (xem luat o tren). `ten` rong -> khong hoi feed nao.
+    ten = title_find(tieu_de, link, link_gnews or "")
+    its = _gnews_item(ten, so)
+    mien = _outlet_of_item(its, so)
+
+    thay = {link}
+    for kq in _scan_feed(mien, _tu(ten or tieu_de), so):
         if kq and kq["url"] and kq["url"] not in thay:
             thay.add(kq["url"])
             ra.append(kq)

@@ -805,9 +805,13 @@ def fetch_story_rank(ngay: int) -> list:
             continue
         ns = {"a": "http://www.w3.org/2005/Atom"}
         for it in (root.findall(".//item") or root.findall(".//a:entry", ns)):
+            # `_t` doc `it`/`ns` cua lan lap hien tai (B023). Vo hai: ba loi goi
+            # `_t(...)` nam ngay duoi, trong cung lan lap; ham khong bi luu lai
+            # hay day sang ThreadPoolExecutor (cac `ex.submit` o ham main deu
+            # buoc gia tri bang tham so mac dinh `lambda fn=fn: ...`).
             def _t(*ten):
                 for n in ten:
-                    e = it.find(n) if not n.startswith("a:") else it.find(n, ns)
+                    e = it.find(n) if not n.startswith("a:") else it.find(n, ns)  # noqa: B023
                     if e is not None and (e.text or e.get("href")):
                         return e.text or e.get("href")
                 return ""
