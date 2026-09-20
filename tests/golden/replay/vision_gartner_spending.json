@@ -1,0 +1,281 @@
+{
+ "source": "dcgr/gartner-du-bao-chi-tieu-ai-toan-cau-tang-dre-dcgr (1789862686)",
+ "title": "Gartner dự báo chi tiêu AI toàn cầu tăng 49,5% trong 2026",
+ "recordings": [
+  {
+   "number": 1,
+   "id": "A1",
+   "w": 1672,
+   "h": 941,
+   "source": "other_outlet",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Forecasts Worldwide AI, Spending, Grow.\nTra loi DUNG 8 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Ảnh minh họa đồ họa kỹ thuật số với logo Gartner, chip AI trung tâm, biểu tượng công nghệ và biểu đồ tăng trưởng.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.40,0.48,0.60,0.78 | product\nTRONG: 0.15\nTEN_IN: khong\nCAT_NGANG: khong",
+   "expected": {
+    "relevant": true,
+    "description": "Ảnh minh họa đồ họa kỹ thuật số với logo Gartner, chip AI trung tâm, biểu tượng công nghệ và biểu đồ tăng trưởng.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.4,
+     0.48,
+     0.6,
+     0.78
+    ],
+    "subject_kind": "product",
+    "empty_share": 0.15,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 2,
+   "id": "A2",
+   "w": 1200,
+   "h": 600,
+   "source": "other_outlet",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Forecasts Worldwide AI, Spending, Grow.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Anh logo chu \"Gartner\" mau xanh dam tren nen sang.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.21,0.33,0.79,0.60 | logo\nTRONG: 0.85\nTEN_IN: khong",
+   "expected": {
+    "relevant": true,
+    "description": "Anh logo chu \"Gartner\" mau xanh dam tren nen sang.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.21,
+     0.33,
+     0.79,
+     0.6
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.85,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 4,
+   "id": "A4",
+   "w": 1920,
+   "h": 1440,
+   "source": "commons",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Forecasts Worldwide AI, Spending, Grow.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Anh chup toa nha van phong hien dai nhieu tang voi bai do xe phia truoc.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.50,0.35,0.72,0.68 | building\nTRONG: 0.35\nTEN_IN: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Anh chup toa nha van phong hien dai nhieu tang voi bai do xe phia truoc.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.5,
+     0.35,
+     0.72,
+     0.68
+    ],
+    "subject_kind": "building",
+    "empty_share": 0.35,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 7,
+   "id": "A7",
+   "w": 885,
+   "h": 1245,
+   "source": "commons",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Forecasts Worldwide AI, Spending, Grow.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Anh chan dung den trang nguoi dan ong co ria mep dam, toc xoan, mac ao the thao.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.13,0.03,0.87,0.98 | person\nTRONG: 0.05\nTEN_IN: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Anh chan dung den trang nguoi dan ong co ria mep dam, toc xoan, mac ao the thao.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.13,
+     0.03,
+     0.87,
+     0.98
+    ],
+    "subject_kind": "person",
+    "empty_share": 0.05,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 8,
+   "id": "A8",
+   "w": 683,
+   "h": 683,
+   "source": "commons",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Forecasts Worldwide AI, Spending, Grow.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Anh la bieu do Magic Quadrant cua Gartner ve cac hang bao mat, truc hoanh la \"COMPLETENESS OF VISION\", truc tung la \"ABILITY TO EXECUTE\", chia 4 goc phan tu voi cac ten nhu Microsoft, Symantec, IBM, Trend Micro.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.00,0.00,1.00,1.00 | chart\nTRONG: 0.05\nTEN_IN: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Anh la bieu do Magic Quadrant cua Gartner ve cac hang bao mat, truc hoanh la \"COMPLETENESS OF VISION\", truc tung la \"ABILITY TO EXECUTE\", chia 4 goc phan tu voi cac ten nhu Microsoft, Symantec, IBM, T",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.0,
+     0.0,
+     1.0,
+     1.0
+    ],
+    "subject_kind": "chart",
+    "empty_share": 0.05,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 11,
+   "id": "A11",
+   "w": 1200,
+   "h": 628,
+   "source": "press_entity",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Forecasts Worldwide AI, Spending, Grow.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Anh quang cao cua Appian ve viec duoc xep vao Magic Quadrant 2026 cua Gartner cho Business Orchestration and Automation Technologies.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.57,0.08,0.98,0.82 | chart\nTRONG: 0.35\nTEN_IN: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Anh quang cao cua Appian ve viec duoc xep vao Magic Quadrant 2026 cua Gartner cho Business Orchestration and Automation Technologies.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.57,
+     0.08,
+     0.98,
+     0.82
+    ],
+    "subject_kind": "chart",
+    "empty_share": 0.35,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 13,
+   "id": "A13",
+   "w": 1200,
+   "h": 1500,
+   "source": "brand",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Anh nay la THE LOGO: logo chinh thuc cua Gartner dat tren nen tron.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = doc duoc ro logo/ten Gartner, khong be xiu, khong meo, khong lan mau nen; khong = logo hang KHAC, chu bi cat, qua nho, trong)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Logo chữ \"Gartner\" màu xanh navy trên nền trắng, kèm ký hiệu ®.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.06,0.22,0.94,0.40 | logo\nTRONG: 0.85\nTEN_IN: khong",
+   "expected": {
+    "relevant": true,
+    "description": "Logo chữ \"Gartner\" màu xanh navy trên nền trắng, kèm ký hiệu ®.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.06,
+     0.22,
+     0.94,
+     0.4
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.85,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 18,
+   "id": "A18",
+   "w": 2048,
+   "h": 1131,
+   "source": "web_yandex",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Worldwide AI.\nTra loi DUNG 8 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>\nCAT_NGANG: Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong.",
+   "answer": "MO_TA: Anh chup bien hieu Gartner truoc toa nha cong ty, co cay lon va bai co o tien canh.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.53,0.55,0.93,0.72 | logo\nTRONG: 0.15\nTEN_IN: khong\nCAT_NGANG: khong",
+   "expected": {
+    "relevant": true,
+    "description": "Anh chup bien hieu Gartner truoc toa nha cong ty, co cay lon va bai co o tien canh.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.53,
+     0.55,
+     0.93,
+     0.72
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.15,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 26,
+   "id": "A26",
+   "w": 1200,
+   "h": 675,
+   "source": "press_entity",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Worldwide AI.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Anh logo chu \"TELECOM TV\" tren nen xanh duong, khong lien quan bai Gartner AI.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.09,0.30,0.88,0.55 | logo\nTRONG: 0.55\nTEN_IN: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Anh logo chu \"TELECOM TV\" tren nen xanh duong, khong lien quan bai Gartner AI.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.09,
+     0.3,
+     0.88,
+     0.55
+    ],
+    "subject_kind": "logo",
+    "empty_share": 0.55,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 33,
+   "id": "A33",
+   "w": 1199,
+   "h": 672,
+   "source": "press_entity",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Worldwide AI.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Slide thuyet trinh cua Gartner ve chu de \"IT for sustainable growth\" voi so do vong tron va cac dong chu ben phai.\nLIEN_QUAN: co\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.06,0.03,0.94,0.97 | other\nTRONG: 0.15\nTEN_IN: khong",
+   "expected": {
+    "relevant": true,
+    "description": "Slide thuyet trinh cua Gartner ve chu de \"IT for sustainable growth\" voi so do vong tron va cac dong chu ben phai.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.06,
+     0.03,
+     0.94,
+     0.97
+    ],
+    "subject_kind": "other",
+    "empty_share": 0.15,
+    "printed_name": null
+   }
+  },
+  {
+   "number": 35,
+   "id": "A35",
+   "w": 2893,
+   "h": 3200,
+   "source": "web_yandex",
+   "model": "ds/deepseek-v4-flash-vision-exp",
+   "question": "Bai bao: \"Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026\". Cong ty/san pham chinh: Gartner, Worldwide AI.\nTra loi DUNG 7 dong:\nMO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\nLIEN_QUAN: co | khong  (co = anh/chart/bang ve dung tin nay, HOAC anh tru so/san pham/logo-tren-toa-nha/su kien cua chinh cong ty trong bai, VA anh phai RO NET; khong = quang cao, widget, logo bao, placeholder, cong ty/chu de khac)\nCLUTTERED: co | khong  (co = anh NHIN ROI: nhieu chu in san de len hinh (tieu de bao, banner chu, infographic nhoi chu), chup man hinh web/app nhieu chu, cat ghep nhieu hinh, do hoa/minh hoa nhoi nhet nhieu chi tiet tranh nhau, HOAC co mot mang sang/toi/mau lech tong RO RET so voi xung quanh trai rong tu vai tram px tro len (vd mot khoi anh chup khac sang hon/toi hon/mau khac han phan con lai) — loai mang nay lam chu de len tren no van doc ra loang lo du co lam mo; khong = anh chup that, logo, bien hieu, san pham voi MOT chu the ro, sang toi deu, hoac bieu do/bang so lieu gon gang)\nTU_KHOA: co | khong  (co = nhin anh DOC RA DU cac tu khoa chinh cua bai: ten cac cong ty/nhan vat chinh VA con so hoac su kien chinh, vd logo hai hang + so tien + chu IPO; khong = chi thay mot phan, hoac khong doc ra)\nCHU_THE: x0,y0,x1,y1 | loai  (HOP BAO KHIT cua CHU THE CHINH — nhan vat / san pham / toa nha / logo / man hinh ma tam anh NOI VE; toa do 0..1 tren TOAN tam anh, goc tren-trai la 0,0; NGUOI thi chi khoanh DAU va KHUON MAT; loai = person | product | building | logo | screen | chart | other)\nTRONG: 0..1  (phan cua CA tam anh la nen tron/khoang trong, khong co gi: logo nho tren nen trang = 0.9, anh chup day khung = 0.05)\nTEN_IN: <ho ten NGUOI duoc IN SAN tren anh de chi chinh nguoi xuat hien trong anh — dong chu thich/lower-third, bang ten dat truoc mat; CHI chep chu doc duoc, KHONG doan ten tu khuon mat; khong co chu nhu vay thi ghi: khong>",
+   "answer": "MO_TA: Biểu đồ Magic Quadrant của Gartner về lĩnh vực gia công quy trình kinh doanh tài chính và kế toán.\nLIEN_QUAN: khong\nCLUTTERED: khong\nTU_KHOA: khong\nCHU_THE: 0.05,0.10,0.95,0.90 | chart\nTRONG: 0.4\nTEN_IN: khong",
+   "expected": {
+    "relevant": false,
+    "description": "Biểu đồ Magic Quadrant của Gartner về lĩnh vực gia công quy trình kinh doanh tài chính và kế toán.",
+    "cluttered": false,
+    "has_keywords": false,
+    "subject_box": [
+     0.05,
+     0.1,
+     0.95,
+     0.9
+    ],
+    "subject_kind": "chart",
+    "empty_share": 0.4,
+    "printed_name": null
+   }
+  }
+ ]
+}
