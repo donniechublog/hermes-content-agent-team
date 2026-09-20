@@ -32,10 +32,24 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+          cache-dependency-path: requirements.lock
+      # Cài từ requirements.lock (LOW-300), không phải requirements.txt: `>=` để CI mỗi
+      # lần cài có thể ra bản khác máy chủ. Lock sinh từ venv máy chủ (Python 3.11, cùng
+      # bản CI), cách làm mới ở đầu requirements.txt. `pip check` bắt lock thiếu một
+      # phụ thuộc bắc cầu. pyflakes là công cụ lint, không thuộc lock.
       - name: Cài gói
         run: |
-          python -m pip install -q -r requirements.txt pyflakes
+          python -m pip install -q -r requirements.lock pyflakes
+          python -m pip check
           python -m playwright install --with-deps chromium
+      # Chỉ báo cáo (LOW-300): continue-on-error nên lỗ hổng tìm thấy làm bước này báo lỗi
+      # nhưng KHÔNG làm đỏ job hay chặn merge. Chạy trước pyflakes để báo cáo vẫn
+      # ra khi lint hỏng. pipx run: pip-audit nằm trong venv riêng, không chen vào môi
+      # trường test. --no-deps --disable-pip: lock đã ghim đủ bắc cầu nên không cần cài lại
+      # 18 gói vào một venv tạm chỉ để quét.
+      - name: pip-audit (chỉ báo cáo)
+        continue-on-error: true
+        run: pipx run pip-audit -r requirements.lock --no-deps --disable-pip --progress-spinner off
       # Cả thư mục `hermes`, không liệt kê từng skill (LOW-298): danh sách cũ chỉ có
       # url-mascot-frame, nên social-crawl/scripts/social_fetch.py dùng `re` mà không
       # import vẫn qua CI suốt 12 ngày (08/09 → 20/09/2026). pyflakes tự đệ quy thư mục.
