@@ -26,12 +26,10 @@ import re
 import sys
 from pathlib import Path
 
-# 1024 la gioi han CHU THICH ANH cua Telegram. Vua trong muc do thi ca caption
-# di chung mot tin nhan voi anh; vuot qua thi publish() tu tach thanh phan 1
-# (<=1024, van gan lam caption that cua anh) + phan 2 (tin nhan rieng, xem
-# approve_post._split_caption_html — LOW-157). Vi vay day la MUC TIEU nen tan
-# dung, khong con la loi chan nop — vuot chi con CANH BAO (_check_measure_long).
-LIMIT = 1024
+# KHONG co gioi han do dai theo chu thich anh Telegram (Ong Chu 20/09, LOW-296):
+# caption dai thi approve_post/publish() tu tach thanh chu thich anh + tin nhan
+# rieng, nen writer khong can cat va cong khong canh bao. Chi con tran nen tang
+# ben duoi (loi) va muc nen dat (nhac).
 # Tran cung cho moi nen tang. Ong Chu chot: viet duoi 2.200 o moi noi thi moat
 # khong phai can thiep gi, khong can caption rieng theo nen tang. Con so nay la
 # gioi han caption cua Instagram va TikTok (theo tri nho, chua xac nhan duoc tu
@@ -148,20 +146,15 @@ def count_is(chu: str, tu_lieu: str) -> list:
 
 
 def _check_measure_long(caption: str) -> tuple:
-    """Ba nguong do dai: tran nen tang (loi), gioi han chu thich anh (chi
-    nhac — LOW-157: publish() tu tach phan 1/phan 2, khong con chan nop),
-    muc nen dat (chi nhac)."""
+    """Hai nguong do dai: tran nen tang (loi) va muc nen dat (chi nhac). Khong
+    con nguong chu thich anh 1024 (LOW-296): dai thi publish() tu tach."""
     loi, canh = [], []
     if len(caption) > CEILING_BACKGROUND_LAYER:
         loi.append(f"Dài {len(caption)} ký tự, vượt trần {CEILING_BACKGROUND_LAYER} của "
                    "Instagram và TikTok. Bài sẽ bị cắt hoặc từ chối khi moat đẩy đi.")
-    elif len(caption) > LIMIT:
-        canh.append(f"Dài {len(caption)} ký tự, vượt giới hạn chú thích ảnh {LIMIT} — "
-                    "sẽ tự tách thành phần chú thích ảnh + tin nhắn riêng khi đăng.")
     elif len(caption) < BACKGROUND_SET:
-        canh.append(f"{len(caption)} ký tự, còn {LIMIT - len(caption)} ký tự "
-                    "chưa dùng trong giới hạn chú thích ảnh. Khai thác thêm số "
-                    "liệu hoặc bối cảnh từ tư liệu.")
+        canh.append(f"Mới {len(caption)} ký tự, dưới mức nên đạt {BACKGROUND_SET}. "
+                    "Khai thác thêm số liệu hoặc bối cảnh từ tư liệu.")
     return loi, canh
 
 

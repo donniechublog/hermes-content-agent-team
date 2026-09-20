@@ -106,31 +106,33 @@ _CAU_KHAC_NHAU = [
 ]
 
 
-def test_qua_1024_chi_la_nhac_vi_publish_tu_tach_lam_hai(): # LOW-157
-    """Truoc 15/09/2026 vuot 1024 la loi chan nop. Nay publish() tu tach caption
-    thanh phan 1 (<=1024, gan lam caption that cua anh) + phan 2 (tin rieng) —
-    xem approve_post._split_caption_html — nen chi con CANH, khong chan nua."""
+def test_khong_con_gioi_han_1024():
+    """Ong Chu 20/09 (LOW-296): khong co gioi han chu thich anh 1024 nua, vuot thi
+    publish() tu tach thanh phan 1 + tin nhan rieng. Caption dai khong loi, khong
+    canh bao do dai."""
     dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU[:12])
     assert 1024 < len(dai) <= 2200, len(dai)
     loi, canh, _t = _kiem(dai)
     assert loi == [], loi
-    assert _co(canh, "giới hạn", "1024"), canh
+    assert not _co(canh, "1024"), canh
+    assert not _co(canh, "giới hạn"), canh
+    assert not hasattr(cc, "LIMIT"), "khong con hang so LIMIT 1024 trong caption_check"
 
 
 def test_qua_2200_van_la_loi_tran_nen_tang():
     """2200 la gioi han Instagram/TikTok phia moat, khong lien quan viec Telegram
-    tach caption — LOW-157 khong dong den nhanh nay, van chan nop."""
+    tach caption — van chan nop."""
     dai = CHUAN + "\n" + "\n".join(_CAU_KHAC_NHAU)
     assert len(dai) > 2200, len(dai)
     loi, canh, _t = _kiem(dai)
     assert _co(loi, "2200"), loi
-    assert not _co(canh, "giới hạn", "1024"), canh
+    assert not _co(canh, "1024"), canh
 
 
 def test_duoi_700_chi_nhac_con_cho():
     loi, canh, _t = _kiem()
     assert loi == []
-    assert _co(canh, "chưa dùng"), canh
+    assert _co(canh, "dưới mức nên đạt", "700"), canh
 
 
 # ---------------------------------------------------------------- ky tu / link

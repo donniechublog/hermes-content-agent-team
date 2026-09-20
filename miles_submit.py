@@ -90,8 +90,8 @@ def main() -> int:
     if loi:
         for e in loi:
             print(f"[LOI] {e}")
-        if tin.get("char_count", 0) > caption_check.LIMIT:
-            print(f"[LOI] cần cắt ít nhất {tin['char_count'] - caption_check.LIMIT} ký tự "
+        if tin.get("char_count", 0) > caption_check.CEILING_BACKGROUND_LAYER:
+            print(f"[LOI] cần cắt ít nhất {tin['char_count'] - caption_check.CEILING_BACKGROUND_LAYER} ký tự "
                   "(cắt tính từ thừa, gộp câu; không cắt số liệu)")
         # Lenh chay lai phai mang ten CUA VAI DANG LAM, khong go cung "miles":
         # bao Jika chay miles_submit.py doc ra nhu giao nham nguoi (LOW-13).

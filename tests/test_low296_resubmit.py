@@ -221,8 +221,8 @@ def test_push_loi_thi_giu_the_cu():
 def test_brief_noi_ro_nhac_khong_phai_loi():
     import miles_prepare
     src = (ROOT / "miles_prepare.py").read_text(encoding="utf-8")
-    assert "KHÔNG sửa chỉ vì nó" in src and "KHÔNG phải lỗi" in src and "kết thúc task ngay" in src
-    assert "tối đa {caption_check.LIMIT}" not in src, "brief con bao 1024 la tran cung"
+    assert "KHÔNG cần cắt cho ngắn lại" in src and "KHÔNG phải lỗi" in src and "kết thúc task ngay" in src
+    assert "1024" not in src and "caption_check.LIMIT" not in src, "brief khong con nhac gioi han 1024"
     assert hasattr(miles_prepare, "write_brief")
 
 

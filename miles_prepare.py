@@ -75,8 +75,8 @@ def write_brief(m: dict, meta: dict, wd: Path, persona: str = "miles") -> str:
           "  2. So sánh: hơn/kém cái gì, cách biệt bao nhiêu; nguồn nói chỗ THUA thì phải nói.",
           "  3. Hạn chế hoặc điều kiện kèm theo, nếu nguồn có.",
           "  4. Ý nghĩa: vì sao quan trọng (theo lý do chấm điểm), nói thẳng bằng thông tin cụ thể.",
-          f"Độ dài: nhắm 800–1000 ký tự. Vượt {caption_check.LIMIT} vẫn nộp được (script tự tách thành chú thích ảnh "
-          "+ tin nhắn riêng): đó chỉ là cảnh báo mềm, KHÔNG sửa chỉ vì nó. "
+          "Độ dài: từ khoảng 800 ký tự trở lên cho đủ ý, trần cứng "
+          f"{caption_check.CEILING_BACKGROUND_LAYER}. Caption dài script tự tách khi đăng, KHÔNG cần cắt cho ngắn lại. "
           f"Thẻ HTML chỉ <b> <i> <code>. Không em-dash (— –). Không URL/tên miền sống (viết z . ai). "
           f"Cấm cụm: {', '.join(caption_check.STAR_EMPTY)}; cấm thổi phồng: {', '.join(caption_check.TIME_ROOM[:6])}… "
           "Số liệu hãng tự công bố phải ghi rõ \"hãng tự công bố\". Không lặp một cụm 6 từ hai lần. "
