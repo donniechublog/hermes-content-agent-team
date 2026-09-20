@@ -312,7 +312,8 @@ def rgba(hexs, alpha):
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     return f"rgba({r},{g},{b},{alpha})"
 
-_SVG_HEAD = ('<svg width="100%" viewBox="0 0 920 470" xmlns="http://www.w3.org/2000/svg"'
+_SVG_HEAD = ('<svg width="100%" viewBox="0 0 920 470" preserveAspectRatio="xMidYMid meet"'
+             ' xmlns="http://www.w3.org/2000/svg"'
              ' style="display:block;position:relative;z-index:2;">')
 
 # Hero ve trong mot khung 920x470 co hai. Cac hero co MANG TO kin khung (grid:
@@ -1070,7 +1071,12 @@ def slide_read(sl, idx, total, brand, section, folio_left, font_css, th):
     bare = kind == "cta" and bool(sl.get("follow"))
     inner = masthead(brand, section, bare=bare) + body + folio(fol_left, idx, total)
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>'
-            f'{font_css}{base_css(th)}</style></head><body>'
+            f'{font_css}{base_css(th)}'
+            # SVG nao KHONG dat `height` thi trinh duyet noi suy chieu cao tu
+            # viewBox (hero bia 920x470, ky hieu vector) nho preserveAspectRatio
+            # — nho vay hero giu dung ti le thay vi bi keo gian theo be ngang.
+            f'svg{{height:auto;}}'
+            f'</style></head><body>'
             f'<div class="art">{inner}</div></body></html>')
 
 
