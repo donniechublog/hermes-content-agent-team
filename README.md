@@ -292,7 +292,10 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 **Khác**
 
 - `assets/` — font (JetBrains Mono, Inter, Be Vietnam Pro, Noto Serif, Oswald…)
-  và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho cổng chặn mặt người.
+  và `face_detection_yunet_2023mar.onnx` (~230KB, YuNet) cho cổng chặn mặt người. Nguồn và
+  giấy phép từng tệp: `assets/README.md` (YuNet: MIT, mã băm khớp OpenCV Zoo) và
+  `assets/fonts/LICENSES.md` (9 font, SIL OFL 1.1); `tests/test_assets_licenses.py` bắt tệp mới
+  thiếu ghi chú.
 - `hermes/skills/` — skill dùng chung, nằm thẳng trong git, profile trỏ vào qua
   `skills.external_dirs` nên `hermes update` không xoá được: `hero-image` (Ethan),
   `carousel` (Dre), `carousel-edu` (Kite), `url-mascot-frame` (Bob),
