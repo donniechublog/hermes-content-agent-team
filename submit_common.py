@@ -418,7 +418,7 @@ def _clean_use_alone(a: dict, slug: str = "") -> bool:
 
 
 def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
-    """ANH ROI chi dung khi HET anh sach (LOW-47, Ong Chu 13/09/2026: "khong uu
+    """ANH CLUTTERED chi dung khi HET anh sach (LOW-47, Ong Chu 13/09/2026: "khong uu
     tien su dung tat ca nhung anh nhin roi"). `dung`: {ma: nhan slide}.
 
     Khong cam han: tin it anh thi anh roi van la anh that cua tin, va carousel/
@@ -431,17 +431,17 @@ def check_image_fall(anh: dict, dung: dict, m: dict) -> list:
     if not cluttered:
         return []
     rules = _vai.rules_module(m.get("image_role", ""))
-    sach = []
+    clean = []
     for ma, a in anh.items():
         if ma in dung or not _clean_use_alone(a, m.get("image_role", "")):
             continue
         l, _ = rules.check_not_reused(ma, a["original_path"], m.get("draft_id", ""), m.get("link", ""))
         if not l:
-            sach.append(ma)
-    if not sach:
+            clean.append(ma)
+    if not clean:
         return []
     return [f"{nhan}: {ma} là ảnh RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) mà vẫn còn ảnh sạch "
-            f"chưa dùng: {', '.join(sach[:6])} — đổi sang ảnh sạch, ảnh rối chỉ dùng khi hết ảnh sạch"
+            f"chưa dùng: {', '.join(clean[:6])} — đổi sang ảnh sạch, ảnh rối chỉ dùng khi hết ảnh sạch"
             for nhan, ma in cluttered]
 
 

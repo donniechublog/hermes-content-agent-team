@@ -42,7 +42,7 @@ def _row_energy(canvas, y):
 
 def _layer(cv, cluttered=False, top=TEXT_TOP):
     return carousel._layer_if_can(cv, cv.convert("RGB"), top, carousel.TEXT_BASE,
-                                  image_cluttered=cluttered, max_share=carousel.SOLID_BG_MAX_SHARE)
+                                  image_cluttered=cluttered, overlay_only=True)
 
 
 def test_no_blur_band_above_text():
@@ -145,15 +145,36 @@ def test_gate_passes_new_overlay_body_and_quote():
             assert bao and not carousel._gate_text_background("slide 3", bao), bao
 
 
+def _paste_solid_background(cv, text_top, tint=232):
+    """Dung lai NEN DAC kieu cu (LOW-215/272/47) ngay trong test: code dung no da go han
+    (LOW-330), nhung cong do van phai chan duoc neu mot ngay nao do no quay lai."""
+    from PIL import ImageFilter
+    W, H = carousel.W, carousel.H
+    mo = cv.convert("RGB").filter(ImageFilter.GaussianBlur(carousel.BG_BLUR))
+    lop = Image.composite(Image.new("RGB", (W, H), carousel.BG), mo, Image.new("L", (W, H), tint))
+    cv.paste(lop, (0, 0), carousel._ramp_mask(text_top - 180, text_top, hi=255, ease=1.0))
+
+
 def test_gate_blocks_old_solid_background():
-    """Nen chu LOW-272/LOW-215 (mo 44px tu khoang lang + phu mau nen 91%) phai bi chan."""
+    """Nen chu LOW-272/LOW-215 (mo tu khoang lang + phu mau nen 91%) phai bi chan."""
     carousel.set_background("dark")
     cv = _busy()
     truoc = cv.copy()
-    carousel._background_solid_below_text(cv, TEXT_TOP, carousel.SOLID_BG_MAX_SHARE)
+    _paste_solid_background(cv, TEXT_TOP)
     bao = carousel._text_bg_report(truoc, cv)
     loi = carousel._gate_text_background("slide 5", bao)
     assert loi and "overlay" in loi and bao["bg_opacity"] > carousel.TEXT_BG_MAX_OPACITY, bao
+
+
+def test_gate_blocks_solid_background_on_the_cover_too():
+    """LOW-330: bia noi tran DIEN TICH (hook cao hon doan van) nhung KHONG noi tran do dac."""
+    carousel.set_background("dark")
+    cv = _busy()
+    truoc = cv.copy()
+    _paste_solid_background(cv, TEXT_TOP)
+    bao = carousel._text_bg_report(truoc, cv)
+    assert carousel._gate_text_background("bia", bao, max_share=carousel.TEXT_BG_MAX_SHARE_COVER)
+    assert carousel.TEXT_BG_MAX_SHARE_COVER > carousel.TEXT_BG_MAX_SHARE
 
 
 def test_gate_blocks_background_starting_too_high():

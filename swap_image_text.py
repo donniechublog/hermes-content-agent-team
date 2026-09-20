@@ -221,9 +221,9 @@ def delete_text(img_bgr, giu_list=None, xoa_them_list=None, verbose=True):
     if not mask.any():
         sys.exit("Khong co vung nao de xoa (het bi --giu chan, hoac OCR "
                  "khong thay chu). Kiem tra lai anh dau vao.")
-    sach = inpaint(img_bgr, mask, verbose=verbose)
+    cleaned = inpaint(img_bgr, mask, verbose=verbose)
     da_xoa = [(b, t, c) for b, t, c in boxes if not _within_keep(b, giu_list or [])]
-    return sach, mask, da_xoa
+    return cleaned, mask, da_xoa
 
 
 def main():
@@ -246,11 +246,11 @@ def main():
     giu_list = _read_keep(a.giu)
     xoa_them_list = _read_keep(a.xoa_them)
 
-    sach, mask, da_xoa = delete_text(img_bgr, giu_list, xoa_them_list)
+    cleaned, mask, da_xoa = delete_text(img_bgr, giu_list, xoa_them_list)
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(out), sach)
+    cv2.imwrite(str(out), cleaned)
     image_provenance.stamp_file(out, "image_text_swap")
     print(f"da xoa {len(da_xoa)} vung chu -> {out}", file=sys.stderr)
 

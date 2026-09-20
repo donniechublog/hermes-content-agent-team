@@ -43,7 +43,7 @@ TH = dict(bg="#171A21", panel="#212530", line="#333846",
 
 def _anh_chup_roi(w=1200, h=1500):
     """Mot PNG gia lam ANH CHUP THAT (bien mau vien khong deu -> 'mo', khong
-    'phang') VA co vung duoi 'roi' (do lech mau cao) -> can_lop=True."""
+    'phang') VA co vung duoi CLUTTERED (do lech mau cao) -> can_lop=True."""
     from PIL import Image
     random.seed(0)
     im = Image.new("RGB", (w, h), (40, 60, 90))

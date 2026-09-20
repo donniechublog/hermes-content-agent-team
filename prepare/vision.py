@@ -45,7 +45,8 @@ _ASK_FAIL = (OSError, http.client.HTTPException, ValueError, KeyError, IndexErro
 # LOW-165 (15/09/2026): mo rong dinh nghia them nhanh "mang sang/toi/mau lech
 # tong cuc bo trai rong hang tram px" — GaussianBlur cuc bo (card._open_region_text)
 # chi san phang chi tiet ~QUOTE_BLUR px, KHONG xoa duoc mot mang lon nhu vay du
-# blur bao nhieu, nen anh loai nay phai di duong nen dac (_text_bg_strict) thay vi
+# blur bao nhieu, nen anh loai nay phai di duong nen DAM hon (card._text_bg_overlay,
+# carousel.OVERLAY_CLUTTERED — dam hon, khong phai dac: LOW-330) thay vi
 # blur mac dinh — truoc day chi "chu in san/chup man hinh/cat ghep" moi duoc gan cluttered,
 # nen loai mang mau nay lot qua, blur nhe khong xoa het, con "sot" lai.
 #
@@ -164,7 +165,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
     luong nao. Nhanh nay dong no lai."""
     import base64, json as _j, urllib.request
     # `ket_qua` (LOW-47, 13/09/2026): dict nguoi goi truyen vao de nhan them
-    # co "roi" (anh nhin roi) ma KHONG doi so phan tu tuple tra ve — Bob va
+    # co "cluttered" (anh nhin roi) ma KHONG doi so phan tu tuple tra ve — Bob va
     # test deu mo goi 2/3 phan tu.
     # env_load.required nem SystemExit, ma SystemExit KHONG phai con cua
     # Exception — `except Exception` o day khong bat duoc. Thieu OPENAI_API_KEY
@@ -225,7 +226,7 @@ def description_image(path, tieu_de: str, hang: str = "", hoi_them: str = "",
             # chung nhat (09/09/2026).
             import image_brand
             hoi = image_brand.sentence_ask_vision(tieu_de, thuong_hieu)
-        # Moi nhanh deu hoi them dong ROI (LOW-47): anh roi khong bi cam, chi
+        # Moi nhanh deu hoi them dong CLUTTERED (LOW-47): anh roi khong bi cam, chi
         # xuong cuoi hang uu tien — xem submit_common.check_image_fall.
         hoi = (hoi.replace("DUNG 2 dong", "DUNG 7 dong") + "\n" + SENTENCE_CLUTTERED + "\n" + SENTENCE_KEYWORD
                + "\n" + SENTENCE_SUBJECT + "\n" + SENTENCE_EMPTY + "\n" + SENTENCE_PRINTED_NAME)

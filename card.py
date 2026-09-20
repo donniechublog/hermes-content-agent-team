@@ -373,20 +373,20 @@ def _extract_label(dong: str):
     BRAND_FROM luu key hoa — khong lien quan gi toi `tu` goc dung de ve.
     """
     tu = dong.split(" ")
-    sach = [t.strip(_RIA).upper() for t in tu]
+    cleaned = [t.strip(_RIA).upper() for t in tu]
     khoa = [None] * len(tu)
     i = 0
     while i < len(tu):
         for cum in BRAND_PHRASE:
             n = len(cum)
-            if tuple(sach[i:i + n]) == cum:
+            if tuple(cleaned[i:i + n]) == cum:
                 for k in range(i, i + n):
                     khoa[k] = cum
                 i += n
                 break
         else:
-            if sach[i] in BRAND_FROM:
-                khoa[i] = (sach[i],)
+            if cleaned[i] in BRAND_FROM:
+                khoa[i] = (cleaned[i],)
             i += 1
     return list(zip(tu, khoa))
 
@@ -726,97 +726,30 @@ def _layer_image(canvas, src_img, H) -> int:
     return nat_h
 
 
-CLUTTERED_BG_ODD = 24          # nen dac bat dau cach dinh khung chu bao nhieu px
-CLUTTERED_BG_SPREAD = 170        # dai smoothstep toi da tu anh sang nen dac
-CLUTTERED_BG_LANG = 7         # nang luong ngang TB cua mot hang duoi muc nay = hang LANG
-                         # (do A9 slide quote 13/09: khe lang 620-689 dao dong 3-6, nguong 6 lam
-                         # chuoi dut -> roi ve tran 40% cat nua chu INVESTMENT; 7 thi dung khe)
-CLUTTERED_BG_LONG_LANG = 24    # so hang lang lien nhau toi thieu — khe giua hai dong chu (<20px) khong tinh
-CLUTTERED_BG_CEILING = 0.40      # nen dac khong bat dau cao hon 40% khung — giu phan anh phia tren
-CLUTTERED_BG_SPREAD_SAME = 48    # dai chuyen khi khong tim duoc khoang lang nao
-CLUTTERED_BG_TEXT = 25         # TB 15 hang lien nhau tu muc nay = CHU IN SAN (do that: chu 25-47, anh chup 8-21)
-CLUTTERED_BG_VISION = 160       # nhin len bao nhieu px phia tren mot khoang lang de xem con chu in san khong
+# LOW-330 (Ong Chu 20/09/2026): anh roi cung CHI duoc mot lop phu, khong bao gio la
+# mang mau dac. 205/255 = 80% — bang OVERLAY_CLUTTERED cua carousel, va duoi tran
+# carousel.TEXT_BG_MAX_OPACITY (88%) de the va slide than cung mot luat.
+TEXT_OVERLAY_CLUTTERED = 205
 
 
-def _capability_flow_rank(canvas) -> list:
-    """Do chi tiet NGANG trung binh cua tung hang pixel (0..255): chenh xam giua
-    hai cot ke nhau, thu nho be ngang 4 lan cho nhanh. Chu in san, canh, van
-    anh cho so cao; troi, nen mo, mang toi cho so gan 0. Chi dung PIL."""
-    from PIL import ImageChops
+def _text_bg_overlay(canvas, frame_top):
+    """Nen chu cho ANH ROI buoc phai dung. `_open_region_text` chi lam mo — tren anh co
+    chu in san, chu cu van lo mo mo sau chu moi, doc ra lem nhem (LOW-47). O day: van mo
+    cuc bo nhu anh sach, sau do phu them mot lop tinh mau nen theo gradient, tran
+    TEXT_OVERLAY_CLUTTERED — dam hon anh sach nhung anh van hien qua.
+
+    LOW-330 (Ong Chu 20/09/2026: *"dung de cho nen dac, trong rat thieu chuyen nghiep"*):
+    ban truoc (`_text_bg_strict`, LOW-47) phu NEN DAC mau BG tu khoang lang gan nhat xuong
+    day the — chinh cai ma LOW-286 da bac o slide than carousel. Nay the di cung mot duong
+    voi carousel: chi overlay, khong bao gio la mang mau dac."""
+    _open_region_text(canvas, frame_top)
     W_, H_ = canvas.size
-    g = canvas.convert("L").resize((max(2, W_ // 4), H_))
-    w = g.width
-    d = ImageChops.difference(g.crop((1, 0, w, H_)), g.crop((0, 0, w - 1, H_)))
-    return list(d.resize((1, H_), Image.BOX).getdata())
-
-
-def _timestamp_background_solid(canvas, y0, tan=CLUTTERED_BG_SPREAD):
-    """Tu `y0` (ngay tren chu cua ta) DI NGUOC LEN tim KHOANG LANG dau tien —
-    CLUTTERED_BG_LONG_LANG hang lien nhau khong chi tiet. Tra (dac, top): nen dac tu
-    `dac` xuong day, dai chuyen smoothstep tu `top` toi `dac` nam TRONG khoang
-    lang do.
-
-    Vi sao phai tim (LOW-47, do that 13/09/2026 tren do hoa "Nvidia Weighs
-    $10B..."): dat nen dac chi ngay duoi chu cua ta thi tieu de in san cua anh
-    (hang 690-989) van nam phia tren, va dai chuyen 180px cat ngang dong chu
-    in san — nua dong mo nua dong ro, dung chu "nham nho". Khoang lang gan
-    nhat phia tren (hang 630-689, nang luong 4-5) moi la cho dai chuyen duoc
-    nam. Cham CLUTTERED_BG_CEILING ma chua co khoang lang sach thi quay ve khoang lang
-    cao nhat da gap; khong gap khoang lang nao moi phu tu tran."""
-    H_ = canvas.size[1]
-    e = _capability_flow_rank(canvas)
-    # TB truot 15 hang: mot dong chu in san la mot KHOI nang luong cao, con
-    # mot canh don le cua anh chup chi cao vai hang.
-    tb = [sum(e[max(0, y - 7):y + 8]) / len(e[max(0, y - 7):y + 8]) for y in range(H_)]
-    tran = int(H_ * CLUTTERED_BG_CEILING)
-    dem = 0
-    du_phong = None
-    y = min(int(y0), H_ - 1)
-    while y > tran:
-        if e[y] < CLUTTERED_BG_LANG:
-            dem += 1
-            if dem >= CLUTTERED_BG_LONG_LANG:
-                bot = y + dem - 1
-                top = y
-                while top - 1 > tran and e[top - 1] < CLUTTERED_BG_LANG:
-                    top -= 1
-                # Khe hep giua chu cua ta va tieu de in san (the Ethan: khe
-                # 1110-1136 ngay duoi chu in san 780-1109) cung la "khoang
-                # lang" — dung o do thi tieu de in san van lo nguyen. Chi nhan
-                # khoang lang khi PHIA TREN no khong con chu in san; con chi tiet
-                # anh chup (8-21) thi nhan, de khong phu mat phan anh dep.
-                if not any(tb[r] >= CLUTTERED_BG_TEXT for r in range(max(0, top - CLUTTERED_BG_VISION), top)):
-                    return bot, max(top, bot - tan)
-                # Nho khoang lang cao nhat da gap: cham tran ma chua co khoang
-                # nao sach thi quay ve day, KHONG dung o tran — dai chuyen o tran
-                # cat ngang chu in san (do that A9 slide quote: tran 540 cat nua
-                # chu "INVESTMENT"; khoang lang 627-650 thi khong cat gi).
-                du_phong = (bot, max(top, bot - tan))
-                y, dem = top - 1, 0
-                continue
-        else:
-            dem = 0
-        y -= 1
-    if du_phong:
-        return du_phong
-    return tran, max(0, tran - CLUTTERED_BG_SPREAD_SAME)
-
-
-def _text_bg_strict(canvas, frame_top):
-    """Nen chu cho ANH ROI buoc phai dung (LOW-47, Ong Chu 13/09/2026: "lop nen
-    cua text phai lam cho nghiem chinh, dung nham nho"). `_open_region_text` chi
-    lam mo — tren anh co chu in san, chu cu van lo mo mo sau chu moi, doc ra
-    lem nhem. O day: nen DAC mau BG tu khoang lang gan nhat phia tren khung chu
-    (`_timestamp_background_solid`) xuong day, dai smoothstep nam trong khoang lang nen khong
-    cat ngang chi tiet nao va khong co duong ke ngang."""
-    W_, H_ = canvas.size
-    dac, top = _timestamp_background_solid(canvas, frame_top - CLUTTERED_BG_ODD)
+    top = max(0, int(frame_top - QUOTE_BLUR_COUNT))
+    doan = max(1, int(frame_top) - top)
     mat_na = Image.new("L", (W_, H_), 0)
-    doan = max(1, dac - top)
-    for y in range(top, dac):
-        t = (y - top + 1) / doan
-        mat_na.paste(int(255 * t * t * (3 - 2 * t)), (0, y, W_, y + 1))
-    mat_na.paste(255, (0, dac, W_, H_))
+    for y in range(top, H_):
+        t = min(1.0, (y - top + 1) / doan)
+        mat_na.paste(int(TEXT_OVERLAY_CLUTTERED * t * t * (3 - 2 * t)), (0, y, W_, y + 1))
     canvas.paste(Image.new(canvas.mode, (W_, H_), tuple(BG) + ((255,) if canvas.mode == "RGBA" else ())),
                  (0, 0), mat_na)
 
@@ -1083,7 +1016,7 @@ def _render_quote(src, quote, attrib, out, handle, ratio, tagline="", cluttered=
     # Tagline ngan cua kenh — chip nho o goc duoi-trai khung (xem ben duoi).
     tag = (tagline or "").strip()
 
-    (_text_bg_strict if cluttered else _open_region_text)(canvas, frame_top)
+    (_text_bg_overlay if cluttered else _open_region_text)(canvas, frame_top)
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi.
     #
     # Ranh sang/toi NGANG cat qua khoi chu la ca rat thuong: anh chup co hero
@@ -1360,7 +1293,7 @@ def _render_ceiling(src, title, out, handle, ratio, kicker, b, cluttered=False):
     bottom_y = H - g4 - via_h
     frame_top = max(CEILING_FRAME_PAD, cum_top - CEILING_FRAME_PAD)
     frame_bot = min(bottom_y - 16, cum_bot + CEILING_FRAME_PAD)
-    (_text_bg_strict if cluttered else _open_region_text)(canvas, frame_top)
+    (_text_bg_overlay if cluttered else _open_region_text)(canvas, frame_top)
 
     # DO THEO TUNG DAI DONG, khong phai mot trung binh cho ca khoi: ranh
     # sang/toi ngang cat qua khoi chu la ca rat thuong (anh chup hero toi tren

@@ -131,14 +131,14 @@ def _resolve_stack(bo: Context, ghep, muc: dict, nhan: str) -> dict | None:
 def _clean_cover_stack_pair(anh: dict, cap_ids) -> list | None:
     """Cap anh ngang SACH (co the ghep doc lam bia) — dung LOW-269. Sach = lien quan,
     khong roi, khong mat nguoi, khong chart/bang xep hang, khong phai anh chup khoi tit."""
-    def sach(x):
+    def clean(x):
         a = anh.get(x) or {}
         return (a.get("relevant") is True and not a.get("cluttered") and not a.get("faces")
                 and a.get("kind") != "chart" and not a.get("ranking")
                 and "cover_headline_block" not in (a.get("uses") or [])
                 and a.get("source") != "capture_source")
     for c in cap_ids:
-        if len(c) == 2 and all(sach(x) for x in c):
+        if len(c) == 2 and all(clean(x) for x in c):
             return list(c)
     return None
 
@@ -181,7 +181,7 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
         if cap:
             bo.loi.append(cap)
     if a["kind"] == "chart" and not a.get("ranking"):
-        # Do hoa ROI lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
+        # Do hoa CLUTTERED lam bia duoc (LOW-47): carousel hien nguyen be ngang, nen chu
         # dac phu nua duoi — khong con "hook de len mat nua duoi" nua.
         if la_bia and a.get("cluttered"):
             ra["image"] = a["original_path"]

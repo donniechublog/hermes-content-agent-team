@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LOW-47: ảnh RỐI không được ưu tiên, buộc dùng thì nền chữ phải đặc.
+"""LOW-47: ảnh RỐI không được ưu tiên, buộc dùng thì nền chữ đậm hơn (LOW-330: vẫn là overlay).
 
 Ông Chủ 13/09/2026: *"không ưu tiên sử dụng tất cả những ảnh nhìn rối, trong
 trường hợp buộc phải dùng, thì lớp nền của text phải làm cho nghiêm chỉnh, đừng
@@ -8,10 +8,11 @@ nham nhở"*. Bộ Anthropic/Nvidia IPO có ba ảnh rối lọt qua cổng LIEN
 quote, tiêu đề báo Nga RBC.
 
 Bốn phần, mỗi phần có ví dụ ĐÚNG-PHẢI-QUA đi kèm SAI-PHẢI-CHẶN:
-  1. vision hỏi thêm dòng ROI, trả qua `ket_qua` mà không đổi số phần tử tuple;
+  1. vision hỏi thêm dòng CLUTTERED, trả qua `ket_qua` mà không đổi số phần tử tuple;
   2. `classify`: ảnh rối không làm bìa, có ghi chú đầu dòng;
   3. `submit_common.check_image_fall`: chỉ chặn khi CÒN ảnh sạch thật sự thay được;
-  4. nền chữ đặc ở carousel và thẻ Ethan.
+  4. nền chữ của ảnh rối ở carousel (bìa) và thẻ Ethan: đậm hơn ảnh sạch nhưng CHỈ overlay
+     — không bao giờ là mảng màu đặc (LOW-330, Ông Chủ 20/09/2026).
 
 Chạy:  venv/bin/python tests/test_image_fall.py
 """
@@ -233,7 +234,7 @@ def test_dre_submit_near_fall_wait_slide_and_block_when_remaining_image_clean():
         assert ts._co(loi, "slide 2", "RỐI", "A6"), loi
 
 
-# ---------------------------------------------------------------- 4. nen chu dac
+# -------------------------------------------- 4. nen chu cua anh CLUTTERED (chi overlay)
 def _canvas_region(W, H, vung, nen=(40, 40, 40)):
     """Canvas co cac DAI ngang `vung` = [(y0, y1, kieu)]:
     "chu" = soc manh day dac (nhu chu in san), "anh" = soc thua tuong phan
@@ -256,71 +257,32 @@ def _is_background(canvas, y, bg):
     return all(canvas.getpixel((x, y))[:3] == tuple(bg) for x in (0, 301, 777, canvas.width - 1))
 
 
-def test_threshold_distinguish_text_in_ready_with_image_capture():
-    """Hai loại dải giả phải rơi đúng hai phía ngưỡng CLUTTERED_BG_TEXT, không thì
-    các test dưới đo sai thứ."""
-    import card
-    e = card._capability_flow_rank(_canvas_region(1080, 400, [(0, 199, "chu"), (200, 399, "anh")]))
-    assert min(e[20:180]) >= card.CLUTTERED_BG_TEXT, min(e[20:180])
-    assert card.CLUTTERED_BG_LANG <= max(e[220:380]) < card.CLUTTERED_BG_TEXT, max(e[220:380])
+def _row_far_from_background(canvas, y, bg):
+    """Do lech lon nhat giua mot hang va mau nen: 0 = mang mau nen dac."""
+    return max(abs(canvas.getpixel((x, y))[c] - bg[c])
+               for x in (0, 301, 777, canvas.width - 1) for c in range(3))
 
 
-def test_timestamp_background_solid_climb_up_range_lang_on_text_in_ready():
-    """Đo thật A9 carousel: chữ in sẵn 690–989, khe lặng 630–689, phía trên là
-    ảnh chụp. Nền đặc phủ trọn chữ in sẵn, dải chuyển nằm trong khe lặng."""
-    import card
-    cv = _canvas_region(1080, 1350, [(0, 600, "anh"), (700, 980, "chu")])
-    dac, top = card._timestamp_background_solid(cv, 990)
-    assert 690 <= dac <= 700, dac
-    assert 600 <= top < dac, (top, dac)
-
-
-def test_timestamp_background_solid_slit_narrow_date_below_text_in_ready_no_ok_use():
-    """Đo thật thẻ Ethan A9: chữ in sẵn 780–1109, khe 1110–1136 ngay trên chữ
-    của ta. Dừng ở khe đó là tiêu đề in sẵn lộ nguyên — phải leo qua."""
-    import card
-    cv = _canvas_region(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
-    dac, top = card._timestamp_background_solid(cv, 1136)
-    assert 770 <= dac <= 780, dac
-
-
-def test_timestamp_background_solid_touch_ceiling_then_about_range_lang_no_crop_text_in_ready():
-    """Đo thật A9 slide quote: khe lặng 627–650 ngay trên khung quote, phía trên
-    lại có chữ in sẵn "$10B INVESTMENT" vắt qua trần 40% (540). Dừng ở trần là
-    dải chuyển cắt nửa chữ — phải quay về khe lặng cao nhất đã gặp."""
-    import card
-    cv = _canvas_region(1080, 1350, [(0, 480, "anh"), (500, 560, "chu"), (690, 980, "chu")])
-    dac, top = card._timestamp_background_solid(cv, 650)
-    assert dac == 650, dac
-    assert 561 <= top < dac, (top, dac)                  # dai chuyen khong cham dai chu 500-560
-
-
-def test_timestamp_background_solid_text_ta_lie_below_range_lang_empty_then_keep_raw_position():
-    import card
-    cv = _canvas_region(1080, 1350, [(0, 500, "anh")])
-    dac, top = card._timestamp_background_solid(cv, 990)
-    assert dac == 990 and 990 - card.CLUTTERED_BG_SPREAD <= top < 990, (dac, top)
-
-
-def test_timestamp_background_solid_no_has_range_lang_then_use_cell_ceiling_40_percent():
-    import card
-    cv = _canvas_region(1080, 1350, [(0, 1349, "chu")])
-    dac, top = card._timestamp_background_solid(cv, 990)
-    assert dac == int(1350 * card.CLUTTERED_BG_CEILING), dac
-    assert top == dac - card.CLUTTERED_BG_SPREAD_SAME, top
+def _row_energy(canvas, y):
+    """Chi tiet ngang trung binh cua mot hang: chu in san cho so cao, mang mau phang ~0."""
+    g = canvas.convert("L")
+    return sum(abs(g.getpixel((x + 1, y)) - g.getpixel((x, y))) for x in range(canvas.width - 1)) / canvas.width
 
 
 def test_carousel_image_fall_secondary_full_text_in_ready_keep_image_side_on():
+    """LOW-330: anh CLUTTERED lam BIA (khong truyen overlay_only) truoc day phu MAU NEN DAC tu
+    khoang lang xuong day. Nay cung chi la overlay: anh van lo qua o moi hang."""
     import carousel
     carousel.set_background("dark")
     cv = _canvas_region(carousel.W, carousel.H, [(0, 600, "anh"), (700, 980, "chu")])
     truoc = cv.copy()
     carousel._layer_if_can(cv, cv.convert("RGB"), 1030, carousel.H, image_cluttered=True)
-    for y in (705, 800, 975, 1100, carousel.H - 1):
-        assert _is_background(cv, y, carousel.BG), (y, cv.getpixel((0, y)))
+    for y in (1035, 1100, carousel.H - 1):
+        assert not _is_background(cv, y, carousel.BG), (y, cv.getpixel((0, y)))
+        assert _row_far_from_background(cv, y, carousel.BG) >= 8, (y, cv.getpixel((301, y)))
     assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300)), "anh phia tren khong duoc dong"
-    L = [cv.convert("L").getpixel((30, y)) for y in range(601, 700)]      # cot nen cua dai "anh"
-    assert max(abs(L[i + 1] - L[i]) for i in range(len(L) - 1)) < 20, "khong co buoc nhay = khong co vach"
+    # Chu in san ngay tren dong chu cua ta phai diu han di, nhung khong bi xoa bang nen dac.
+    assert _row_energy(cv, 960) < _row_energy(truoc, 960) * 0.5, (_row_energy(cv, 960), _row_energy(truoc, 960))
 
 
 def test_carousel_image_clean_keep_raw_layer_open_old():
@@ -332,15 +294,21 @@ def test_carousel_image_clean_keep_raw_layer_open_old():
     assert canvas.tobytes() == truoc.tobytes(), "nen toi deu du tuong phan -> khong phu gi"
 
 
-def test_card_text_bg_strict_secondary_full_text_in_ready():
+def test_card_text_bg_overlay_keeps_image_visible_and_damps_printed_text():
+    """LOW-330: the Ethan dung anh CLUTTERED truoc day phu NEN DAC tu khoang lang xuong day
+    (`_text_bg_strict`). Nay chi overlay: anh con lo qua, chu in san van diu han di."""
     import card
     card.set_brand("dcgr")
-    cv = _canvas_region(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu")])
+    cv = _canvas_region(1200, 1500, [(0, 650, "anh"), (780, 1100, "chu"), (1150, 1490, "chu")])
     truoc = cv.copy()
-    card._text_bg_strict(cv, 1160)
-    for y in (790, 1000, 1499):
-        assert _is_background(cv, y, card.BG), (y, cv.getpixel((0, y)))
-    assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300))
+    card._text_bg_overlay(cv, 1160)
+    for y in (1170, 1300, 1499):
+        assert not _is_background(cv, y, card.BG), (y, cv.getpixel((0, y)))
+    assert cv.getpixel((3, 300)) == truoc.getpixel((3, 300)), "anh phia tren khong duoc dong"
+    # Chu in san NAM DUOI khung chu cua ta phai diu han di (khong con lem nhem sau chu moi);
+    # chu in san PHIA TREN vung phu thi giu nguyen — LOW-286 cam dai mo cat ngang anh.
+    assert _row_energy(cv, 1300) < _row_energy(truoc, 1300) * 0.35, (_row_energy(cv, 1300), _row_energy(truoc, 1300))
+    assert _row_energy(cv, 900) == _row_energy(truoc, 900), "chu in san tren vung phu giu nguyen"
 
 
 if __name__ == "__main__":
