@@ -109,7 +109,7 @@ class BrowserSession:
         return self
 
     def __exit__(self, *_e):
-        self.dong()
+        self.close()
         return False
 
     def browser(self, args=ARGS_DEFAULT):
@@ -147,7 +147,7 @@ class BrowserSession:
             with contextlib.suppress(Exception):
                 c.close()
 
-    def dong(self):
+    def close(self):
         """Dong moi thu. Nuot loi: dong browser hong khong duoc lam hong ca bai,
         va tien trinh con dang chet cung khong con gi de cuu."""
         for b in self._browser.values():
