@@ -138,6 +138,7 @@ class Image(TypedDict, total=False):
     empty_share: float | None      # 0..1 phan tam anh la nen tron (subject_fit.EMPTY_SHARE_MAX)
     printed_name: str | None       # LOW-279: ten nguoi IN tren anh (lower-third/bang ten), vision chep lai
     people: list                   # LOW-293: ten nguoi tam anh mang theo, tin xac nhan duoc
+    logo_card: bool                # LOW-295: logo nen tron -> renderer dung lai thanh slide logo
     decisions: list                # LOW-225 prepare.decision_log: [{stage, outcome, rule, evidence}]
     vision_raw: dict               # LOW-225: {model, question, answer} cua lan hoi vision
     from_find_more: bool

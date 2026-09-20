@@ -441,6 +441,8 @@ def blocked_empty(a: dict, slug: str = "") -> bool:
     va Kite bi ep dung A12 (LOW-278), bo dem bao "5/6" lac quan (LOW-280).
     Vision chua do (`empty_share` thieu) thi khong chan, y nhu cong."""
     import subject_fit
+    if a.get("logo_card"):
+        return False                       # LOW-295: dung lai thanh slide logo, khong con trong
     v = ROLE.get(canonical_slug(slug or "")) or ROLE[DEFAULT_IMAGE]
     limit = getattr(rules_module(v.slug), "EMPTY_SHARE_MAX", subject_fit.EMPTY_SHARE_MAX)
     return subject_fit.too_empty(a.get("empty_share"), limit)

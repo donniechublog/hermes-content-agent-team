@@ -224,6 +224,21 @@ def _resolve_single(bo: Context, ma: str, muc: dict, nhan: str, la_bia: bool) ->
                           f"(cặp gợi ý: {m.get('stackable_pairs') or 'không có'}), hoặc "
                           "\"landscape_crop\": true CHỈ KHI đây là ảnh người/sản phẩm không có chữ")
             return None
+    elif a.get("logo_card"):
+        # LOW-295: logo tren nen tron -> dung SLIDE LOGO (90% be ngang tren chinh mau nen
+        # cua no), chu se de mau tuong phan va KHONG co nen chu. Khong xet cong anh trong
+        # / chu the vua khung: hai cong do danh cho anh chup.
+        import carousel
+        import logo_card
+        khung, bg = logo_card.build_card(a["original_path"], a.get("subject_box"),
+                                         carousel.W, carousel.H)
+        out = bo.wd / state_paths.READY_DIR / f"{ma}{state_paths.LOGO_SUFFIX}"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        khung.save(out, "PNG")
+        ra["image"] = str(out)
+        ra["logo_bg"] = list(bg)
+        bo.dung_anh.append((nhan, [ma]))
+        return ra
     else:
         ra["image"] = a["ready_path"]
     bo.loi.extend(nc.check_empty_image(a, nhan, image_rules_dre.EMPTY_SHARE_MAX))
