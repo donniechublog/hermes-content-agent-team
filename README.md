@@ -346,6 +346,11 @@ bảng dẫn xuất không lệch bản viết tay cũ.
 - `check_hermes.py` — kiểm các chỗ lệ thuộc nội bộ hermes (xem mục dưới).
 - `requirements.txt` — venv dùng chung với hermes nên `hermes update` có thể làm
   mất `pymupdf`; cài lại bằng `venv/bin/pip install -r requirements.txt`.
+- `requirements.lock` (LOW-300) — phiên bản **đang chạy trên máy chủ** của các gói khai ở
+  `requirements.txt` + phụ thuộc bắc cầu (không phải cả venv dùng chung). CI cài từ đây và
+  chạy `pip-audit` (chỉ báo cáo). Làm mới bằng `lock_requirements.py` chạy trên máy chủ, cách
+  làm ở đầu `requirements.txt`; `tests/test_requirements_lock.py` bắt lock trôi khỏi
+  `requirements.txt`. `setup.sh` vẫn cài từ `requirements.txt`, không từ lock.
 - `setup.sh` — **dựng máy mới, chạy lại bao nhiêu lần cũng được**. Ba bước thật
   (pip, `playwright install chromium`) rồi kết thúc bằng `check_env.py`.
   Trước đây các bước này nằm rải trong comment của `requirements.txt` và

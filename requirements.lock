@@ -1,0 +1,22 @@
+# requirements.lock — sinh boi lock_requirements.py, KHONG sua tay (LOW-300).
+# Nguon: Python 3.11.16 tren donniechu-01, ngay 2026-09-20.
+# 18 goi = cac goi khai trong requirements.txt + phu thuoc bac cau; khong phai ca
+# venv dung chung voi hermes. Cach lam moi: xem dau requirements.txt.
+anyio==4.14.2
+beautifulsoup4==4.15.0
+certifi==2026.5.20
+greenlet==3.5.5
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.18
+lxml==6.1.2
+numpy==2.4.6
+opencv-python-headless==5.0.0.93
+pillow==12.3.0
+playwright==1.62.0
+pyee==13.0.1
+pymupdf==1.28.2
+PyYAML==6.0.3
+soupsieve==2.9.2
+typing_extensions==4.16.0
