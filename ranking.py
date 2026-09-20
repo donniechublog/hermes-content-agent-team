@@ -1036,7 +1036,7 @@ class SessionCapture:
         self._ctx = {}
         self._pg = {}
 
-    def trang(self, khung: str):
+    def page(self, khung: str):
         if khung not in self._pg:
             if khung == "desktop":
                 self._ctx[khung] = self.br.new_context(
@@ -1073,7 +1073,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
     # nguon DA DO la mobile khong dung duoc (ly do ghi ngay tren muc trong
     # NGUON). Go co ra thi van chay dung, chi ton them mot luot mo trang.
     chi_desktop = n.get("viewport") == "desktop"
-    pg = phien.trang("desktop" if chi_desktop else "mobile")
+    pg = phien.page("desktop" if chi_desktop else "mobile")
     try:
         resp = pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
         # Cloudflare challenge / 429: khong doi 14s vo ich, sang nguon khac ngay.
@@ -1099,7 +1099,7 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
         else:
             kq, ly_do = phien.thu(pg, models, out, MOBILE_DPR, True, 8)
             if not kq:
-                pg = phien.trang("desktop")
+                pg = phien.page("desktop")
                 pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
                 pg.wait_for_timeout(800)
                 kq, ly_do2 = phien.thu(pg, models, out, DPR, False, 14)

@@ -42,7 +42,7 @@ def test_capture_renders_recorded_page_offline():
 
 def test_page_text_comes_from_the_recording():
     with replay.replay_session(HAR) as session:
-        with session.trang() as page:
+        with session.page() as page:
             page.goto(URL, wait_until="domcontentloaded", timeout=20000)
             assert "Gartner" in page.title()
             assert page.query_selector("h1") is not None
@@ -62,7 +62,7 @@ def test_mobile_lead_block_is_cut_from_the_recorded_page():
 
 def test_unrecorded_url_never_reaches_the_network():
     with replay.replay_session(HAR) as session:
-        with session.trang() as page:
+        with session.page() as page:
             try:
                 page.goto("https://example.com/", timeout=10000)
             except Exception as e:                           # noqa: BLE001

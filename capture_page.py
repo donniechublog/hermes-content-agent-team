@@ -41,7 +41,7 @@ def capture(url: str, out_path, phien=None) -> bool:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with session_or_new(phien) as ph:
-            with ph.trang(viewport=FRAME, device_scale_factor=DPR, user_agent=UA) as page:
+            with ph.page(viewport=FRAME, device_scale_factor=DPR, user_agent=UA) as page:
                 try:
                     page.goto(url, wait_until="networkidle", timeout=TIME_LIMIT)
                 except Exception as e:                       # noqa: BLE001
@@ -322,7 +322,7 @@ def capture_lead_mobile(url: str, out_path, phien=None) -> dict | None:
     tit_trang = ""
     try:
         with session_or_new(phien) as ph:
-            with ph.trang(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
+            with ph.page(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
                           is_mobile=True, has_touch=True, user_agent=MOBILE_UA) as page:
                 resp = None
                 try:

@@ -917,7 +917,7 @@ def image_has_ballot(hang, wd, phien=None) -> list:
         from browser_session import (MOBILE_DPR, MOBILE_UA, MOBILE_VIEWPORT, got_block,
                                    session_or_new)
         with session_or_new(phien) as ph:
-            with ph.trang(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
+            with ph.page(viewport=MOBILE_VIEWPORT, device_scale_factor=MOBILE_DPR,
                           is_mobile=True, has_touch=True, user_agent=MOBILE_UA) as page:
                 resp = page.goto(HAS_BALLOT_URL.format(ma=ma), wait_until="domcontentloaded",
                                  timeout=40000)

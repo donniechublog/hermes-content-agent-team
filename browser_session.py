@@ -43,12 +43,12 @@ sau, khong phai doc ma.
 
 Dung:
     with PhienBrowser() as phien:
-        with phien.trang(viewport={"width": 1600, "height": 1200}) as page:
+        with phien.page(viewport={"width": 1600, "height": 1200}) as page:
             page.goto(...)
 
 Ham nao nhan `phien` tuy chon thi dung `session_or_new`:
     with session_or_new(phien) as ph:      # phien=None -> tu mo, tu dong
-        with ph.trang() as page:
+        with ph.page() as page:
             ...
 """
 import contextlib
@@ -138,7 +138,7 @@ class BrowserSession:
         return b
 
     @contextlib.contextmanager
-    def trang(self, args=ARGS_DEFAULT, **ctx):
+    def page(self, args=ARGS_DEFAULT, **ctx):
         """Mot context+page rieng, dong ngay sau khi dung (cach ly loi)."""
         c = self.browser(args).new_context(**ctx)
         try:
