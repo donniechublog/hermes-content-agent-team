@@ -91,7 +91,7 @@ def find_image_web(q: str, so: int = 16, phien=None) -> list:
     from browser_session import session_or_new
     ra = []
     with session_or_new(phien) as ph:
-        with ph.trang(user_agent=UA, locale="en-US", viewport={"width": 1366, "height": 900}) as page:
+        with ph.page(user_agent=UA, locale="en-US", viewport={"width": 1366, "height": 900}) as page:
             for ten, ham in SOURCE:
                 try:
                     kq = ham(page, q, so)

@@ -154,7 +154,7 @@ def test_page_line_context_date_for_isolate_error():
     pw = _fake()
     try:
         with pb.BrowserSession() as ph:
-            with ph.trang(viewport={"width": 100, "height": 100}) as page:
+            with ph.page(viewport={"width": 100, "height": 100}) as page:
                 assert page.startswith("page-cua-")
             ctx = pw.da_launch[0].context[0]
             assert ctx.da_dong, "context phai dong ngay sau khi dung"
@@ -168,7 +168,7 @@ def test_context_line_all_when_than_throw():
     try:
         with pb.BrowserSession() as ph:
             try:
-                with ph.trang():
+                with ph.page():
                     raise RuntimeError("vo giua chung")
             except RuntimeError:
                 pass

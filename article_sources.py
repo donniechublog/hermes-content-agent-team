@@ -220,7 +220,7 @@ def resolve_code_gnews(url: str, timeout: int = 30, phien=None) -> str | None:
         # `phien`: dung chung tien trinh Chromium voi cac buoc khac cua cung mot
         # bai (audit B4). Khong truyen thi tu mo, tu dong — y nhu truoc.
         with session_or_new(phien) as ph:
-            with ph.trang(user_agent=UA.replace("compatible; ", "")) as page:
+            with ph.page(user_agent=UA.replace("compatible; ", "")) as page:
                 page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
                 t0 = _t.time()
                 while "news.google.com" in page.url and _t.time() - t0 < timeout:

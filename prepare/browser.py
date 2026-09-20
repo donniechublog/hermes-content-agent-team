@@ -191,7 +191,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
 
     try:
         with session_or_new(phien) as ph:
-            with ph.trang(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
+            with ph.page(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
                           user_agent=env_load.UA_BROWSER) as page:
                 # 1) trang goc
                 if goc and goc.startswith("http") and GNEWS not in goc:

@@ -189,7 +189,7 @@ def replay_session(har_path, record=False, block_scripts=False):
 
     class ReplayBrowserSession(BrowserSession):
         @contextlib.contextmanager
-        def trang(self, args=ARGS_DEFAULT, **ctx):
+        def page(self, args=ARGS_DEFAULT, **ctx):
             c = self.browser(args).new_context(**ctx)
             try:
                 if record:
