@@ -49,6 +49,14 @@ pyyaml>=6           # doc config.yaml cua hermes: model_watch, monitor_9router, 
 # cu phap dong (`#`/`##`, bang `|`, muc `- `, `**dam**`), kiem trong
 # tests/test_nhat_ky_web.py.
 
+# defusedxml: parse RSS/Atom tu ben ngoai (Google News, Bing News, feed toa soan) o
+# article_sources, press_entity_images, scan_business, scan_models — qua safe_xml.py
+# (LOW-303). `xml.etree` khong chan "billion laughs" (thuc the long nhau no ra RAM): mot
+# feed doc hai co the lam treo tien trinh research. Giay phep PSF-2.0. THIEU thi
+# safe_xml roi ve xml.etree kem MOT dong canh bao moi tien trinh, khong chet — venv may
+# chu dung chung voi hermes nen phai xin Ong Chu truoc khi cai vao do.
+defusedxml>=0.7
+
 opencv-python-headless>=4.9  # cong chan MAT NGUOI (image_rules._load_yunet, YuNet onnx trong
 #                       # assets/). Truoc 06/09/2026 chi ghi o requirements-local
 #                       # nhu thu "may local moi can" — nhung image_rules chay tren

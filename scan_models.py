@@ -792,14 +792,14 @@ def _make_full(v):
 def fetch_story_rank(ngay: int) -> list:
     """RSS cac hang. Bat su kien so dang ky khong the hien: mo ma nguon, doi
     giay phep, cong bo benchmark. Moi feed doc lap, mot cai chet khong keo do."""
-    import xml.etree.ElementTree as ET
+    import safe_xml
     nguong = time.time() - ngay * 86400
     ra = []
     for hang, url in RSS_RANK:
         try:
             # Dua bytes: tep XML tu khai bao encoding o dong dau nen de parser
             # tu doc, khoi doan sai.
-            root = ET.fromstring(_get(url, timeout=40).content)
+            root = safe_xml.fromstring(_get(url, timeout=40).content)
         except Exception as e:                               # noqa: BLE001
             print(f"[rss {hang}] hong: {type(e).__name__}", file=sys.stderr)
             continue

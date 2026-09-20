@@ -32,7 +32,6 @@ import threading
 import time
 import urllib.parse as up
 import urllib.request
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import httpx
@@ -40,6 +39,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scan_common                                            # noqa: E402
 import env_load                                              # noqa: E402
+import safe_xml                                              # noqa: E402
 
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 HDR = {"User-Agent": UA, "Accept-Encoding": "gzip, deflate"}
@@ -296,7 +296,7 @@ def _title_rss(url: str) -> str:
             r = _download(feed, 12)
             if r.status_code != 200 or b"<item" not in r.content[:400_000]:
                 continue
-            for it in ET.fromstring(r.content).findall(".//item"):
+            for it in safe_xml.fromstring(r.content).findall(".//item"):
                 lk = (it.findtext("link") or "").split("?")[0].rstrip("/")
                 if lk != dich:
                     continue
@@ -331,8 +331,8 @@ def _title_gnews_id(gnews_url: str, url: str) -> str:
     segments = [s for s in up.urlsplit(url or "").path.split("/") if len(s) >= 6]
     for query in list(reversed(segments))[:3]:
         try:
-            items = ET.fromstring(_download(GNEWS.format(q=up.quote(query)), 20).content
-                                  ).findall(".//item")
+            items = safe_xml.fromstring(_download(GNEWS.format(q=up.quote(query)), 20).content
+                                        ).findall(".//item")
         except Exception as e:                               # noqa: BLE001
             print(f"[nguon_bai] google news (ma bai) hong: {type(e).__name__}", file=sys.stderr)
             continue
@@ -462,7 +462,7 @@ def title_find(tieu_de: str, link: str, gnews_url: str = "") -> str:
         # dau (chung >= 2 tu voi ten rieng) — cau day du keo ve nhieu bao hon
         # hin ten rieng roi rac (Nvidia 05/09: ten rieng -> 3 trang, headline -> 40).
         try:
-            its = ET.fromstring(_download(GNEWS.format(q=up.quote(en)), 20).content).findall(".//item")
+            its = safe_xml.fromstring(_download(GNEWS.format(q=up.quote(en)), 20).content).findall(".//item")
             goc = _tu(en)
             for it in its[:5]:
                 hd = re.sub(r"\s+-\s+[^-]{2,60}$", "", it.findtext("title") or "").strip()
@@ -526,7 +526,7 @@ def other_outlets_bing(tieu_de: str, so: int = 4, bo_mien: tuple = (), ngay: int
     for q in _query_bing(tieu_de):
         try:
             r = _download(BING_RSS.format(q=up.quote(q)), 20)
-            for it in ET.fromstring(r.content).findall(".//item"):
+            for it in safe_xml.fromstring(r.content).findall(".//item"):
                 k = it.findtext("link") or ""
                 if k and k not in co_link:
                     co_link.add(k)
@@ -608,7 +608,7 @@ def report_about_keyword(tu_khoa: str, so: int = 6, bo_mien: tuple = (), ngay: i
     for q in _query_bing(tu_khoa) or [tu_khoa]:
         try:
             r = _download(BING_RSS.format(q=up.quote(q)), 20)
-            for it in ET.fromstring(r.content).findall(".//item"):
+            for it in safe_xml.fromstring(r.content).findall(".//item"):
                 k = it.findtext("link") or ""
                 if k and k not in co_link:
                     co_link.add(k)
@@ -761,8 +761,8 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
         # ngan trong tung bo), dung som khi da du mien de khong hoi qua nhieu.
         for q in [ten] + _query_bing(ten):
             try:
-                for it in ET.fromstring(_download(GNEWS.format(q=up.quote(q)), 25).content
-                                        ).findall(".//item"):
+                for it in safe_xml.fromstring(_download(GNEWS.format(q=up.quote(q)), 25).content
+                                              ).findall(".//item"):
                     k = it.findtext("link") or ""
                     if k and k not in co_link_gn:
                         co_link_gn.add(k)
@@ -794,7 +794,7 @@ def find(tieu_de: str, link: str, so=COUNT_SOURCE) -> dict:
                 rr = _download(m + duong, FEED_TIMEOUT_SECONDS)
                 if rr.status_code != 200 or b"<item" not in rr.content[:400_000]:
                     continue
-                for i in ET.fromstring(rr.content).findall(".//item"):
+                for i in safe_xml.fromstring(rr.content).findall(".//item"):
                     t = i.findtext("title") or ""
                     chung = goc & _tu(t)
                     if chung and len(chung) / max(len(goc), 1) >= 0.5:
