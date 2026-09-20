@@ -102,6 +102,16 @@ def _download_candidate(c: dict) -> tuple:
         return None, e
 
 
+def _provenance_of(c: dict) -> str:
+    """Dau xuat xu ghi vao anh goc A?.png. The logo hang (`image_brand.card_logo`,
+    ung vien kind=logo + graphic_allowed) GIU dau `logo_card` da dong luc dung the
+    — truoc LOW-264 (bo sung) cho nao cung bi ghi de thanh `engine_download`, nen
+    cong "khong dung lai anh" khong tach duoc the logo khoi anh su kien."""
+    if (c.get("brand_match") or {}).get("kind") == "logo" and c.get("graphic_allowed"):
+        return "logo_card"
+    return {"browser_capture": "chart_capture", "arxiv_figure": "arxiv_figure"}.get(c.get("source"), "engine_download")
+
+
 def download_and_filter(cands: list, wd: Path) -> list:
     """Tai ung vien theo thu tu diem, loai trung (md5) va anh be, luu PNG co dau
     xuat xu. Tra ve danh sach anh da tai [{id, original_path, ...}].
@@ -221,8 +231,7 @@ def download_and_filter(cands: list, wd: Path) -> list:
     for n, (h, im, c, _) in enumerate(da_tai[:MAX_IMAGE], start=1):
         ma = f"A{n}"
         out = goc_dir / f"{ma}.png"
-        im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance(
-            {"browser_capture": "chart_capture", "arxiv_figure": "arxiv_figure"}.get(c.get("source"), "engine_download")))
+        im.save(out, "PNG", pnginfo=image_provenance.stamp_provenance(_provenance_of(c)))
         # Chi tin cau truc (table/canvas/svg) hoac alt/url THAT cua trang; <figure>
         # khong noi len gi (bao boc ca anh minh hoa lan quang cao).
         hint = bool((c.get("source") != "browser_capture" and (article_images.RULE.search(c.get("image_url", "") or "")

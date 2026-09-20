@@ -167,6 +167,14 @@ def is_ranking_image(img):
     return provenance(img) in ("ranking_capture", "ranking_card")
 
 
+def is_logo_card(img):
+    """The logo chinh thuc cua hang do `image_brand.card_logo` dung tu Wikidata P154.
+    Cung mot hang thi MOI bai deu dung lai dung tam do (md5 y het) — logo lap giua
+    cac bai ve cung hang la binh thuong, khac anh su kien, nen duoc mien luat
+    "khong dung lai anh da dung" (Ong Chu 20/09/2026, LOW-264 bo sung)."""
+    return provenance(img) == "logo_card"
+
+
 def is_stacked_composite(img):
     """Anh nay co phai ban GHEP DOC do doi dung ra khong."""
     return provenance(img) == "vertical_stack"

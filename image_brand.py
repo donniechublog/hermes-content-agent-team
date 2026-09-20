@@ -304,15 +304,80 @@ P_GATE_BILLION = ("P154", "P159", "P452", "P1454", "P571", "P169", "P112", "P112
 MAX_PERSON = 2
 
 
+# ---- HẠN GIỜ cho phần TÌM (mạng) của vòng ảnh thương hiệu (LOW-264 bổ sung) ----
+# Ông Chủ 20/09/2026: "thêm giới hạn cho thời gian tìm ảnh". Trước đây không có
+# hạn nào: một hãng = 9 request tuần tự, mỗi request timeout 20 s, tối đa 3 hãng
+# — Wikimedia treo thì một draft giữ một slot chuẩn bị (COUNT_ENGINE_PARALLEL) tới
+# ~540 s (suy từ code, chưa gặp thật). Đo thật khi chạy bình thường: 8–12 s/hãng,
+# trung vị cả vòng ~18 s.
+#
+# HẠN MỀM: sau hạn thì KHÔNG bắt đầu bước mạng mới (câu hỏi Commons kế tiếp, tầng
+# Wikidata, hãng kế tiếp, các bước cần browser), giữ nguyên ứng viên đã có; mỗi
+# request đang chạy bị cắt timeout theo thời gian còn lại. Bước đã bắt đầu vẫn chạy
+# nốt phần của nó, nên trần thực tế = hạn + một bước (~45 s), không phải 540 s.
+# Biến của TIẾN TRÌNH (giống `prepare.source.set_story_text`): mỗi tiến trình
+# engine xử lý đúng một draft; `_round_brand` đặt và gỡ. Không đặt = không giới hạn
+# (find_more_images, announcement_page... chạy như cũ).
+BRAND_ROUND_SECONDS = 90
+BROWSER_STEP_MIN_LEFT = 30          # bước cần browser (báo thật/cổ phiếu/bảng xếp hạng) chỉ bắt đầu khi còn >= ngần này giây
+_deadline = None
+_deadline_seconds = BRAND_ROUND_SECONDS
+_deadline_noted = False
+
+
+def start_deadline(seconds=None) -> None:
+    global _deadline, _deadline_seconds, _deadline_noted
+    import time
+    _deadline_seconds = BRAND_ROUND_SECONDS if seconds is None else seconds
+    _deadline = time.monotonic() + _deadline_seconds
+    _deadline_noted = False
+
+
+def clear_deadline() -> None:
+    global _deadline
+    _deadline = None
+
+
+def time_left():
+    """Giây còn lại (>= 0), hoặc None nếu không đặt hạn."""
+    import time
+    return None if _deadline is None else max(0.0, _deadline - time.monotonic())
+
+
+def deadline_passed(min_left: float = 0.0) -> bool:
+    """Đã hết hạn (hoặc còn ít hơn `min_left` giây) chưa. Không đặt hạn -> False."""
+    left = time_left()
+    return left is not None and left <= min_left
+
+
+def note_deadline(what: str) -> None:
+    """Một dòng log DUY NHẤT mỗi lần đặt hạn, nói bước nào bị bỏ."""
+    global _deadline_noted
+    if not _deadline_noted:
+        _deadline_noted = True
+        print(f"[thuong_hieu] HET GIO ({_deadline_seconds:g}s) o {what} -- bo phan tim con lai, "
+              "giu ung vien da co", file=sys.stderr)
+
+
+def cap_timeout(seconds: float) -> float:
+    """Timeout của một request: không vượt thời gian còn lại của hạn (tối thiểu 1 s)."""
+    left = time_left()
+    return seconds if left is None else max(1.0, min(seconds, left))
+
+
 def _ask_api(url: str, **kw) -> dict:
     """Gọi Wikidata/Commons API, trả JSON đã parse. None nếu gọi API thất bại
     (lỗi mạng, thiếu dependency, exception ngoài dự kiến) — KHÔNG phải {} rỗng,
-    để người gọi phân biệt được với API trả lời hợp lệ nhưng rỗng thật sự."""
+    để người gọi phân biệt được với API trả lời hợp lệ nhưng rỗng thật sự.
+    Hết hạn giờ (`start_deadline`) thì không gọi nữa, trả None ngay."""
+    if deadline_passed():
+        note_deadline(url.split("//")[-1][:20])
+        return None
     kw.setdefault("format", "json")
     try:
         import httpx
         return httpx.get(url, params=kw, headers={"User-Agent": env_load.UA_WIKI},
-                         timeout=20).json()
+                         timeout=cap_timeout(20)).json()
     except Exception as e:                                   # noqa: BLE001
         print(f"[thuong_hieu] {url.split('//')[-1][:20]}: {type(e).__name__}: {e!r}", file=sys.stderr)
         return None
@@ -445,7 +510,7 @@ def material_wikidata(hang: str) -> dict:
     ids = list(dict.fromkeys(ceo + _qid_claim(cl, P_SANG_LAP)))[:MAX_PERSON + 1]
     if ids:
         ent = _ask_api(WIKIDATA, action="wbgetentities", ids="|".join(ids),
-                       props="claims|labels", languages="en")
+                       props="claims|labels", languages="en|mul")
         if ent is None:
             print(f"[thuong_hieu] material_wikidata({hang!r}): khong goi duoc Wikidata "
                   "(nguoi/CEO), bo qua", file=sys.stderr)
@@ -454,7 +519,13 @@ def material_wikidata(hang: str) -> dict:
             ent = ent.get("entities", {})
         for i in ids:
             e = ent.get(i) or {}
-            ten = ((e.get("labels") or {}).get("en") or {}).get("value", "")
+            labels = e.get("labels") or {}
+            # LOW-264 bo sung (20/09/2026): nguoi moi len CEO thuong CHUA co nhan `en` —
+            # CEO moi cua Apple (Q106028933, John Ternus, P169 preferred) chi co nhan
+            # `mul` ("John Ternus") + 16 ngon ngu khac, nen `ten` rong va nguoi bi BO,
+            # ra ket qua chi con Wozniak. `mul` la nhan mac dinh cua Wikidata cho ten
+            # rieng khong dich; khong co ca hai thi van bo (khong doan ten tu ngon ngu la).
+            ten = ((labels.get("en") or labels.get("mul") or {}).get("value", ""))
             tep = _file_claim(e.get("claims", {}), P_ANH)[:1]
             if ten and tep:
                 ra["people"].append({"name": ten, "commons_file": tep[0],
@@ -707,6 +778,9 @@ def image_wikidata(hang, wd=None) -> list:
         if u and min(u["w"], u["h"]) >= SHORT_SIDE_MIN:
             ra.append(_candidate(u, t, ten_chinh, khoa, "photo", "ảnh công ty (Wikidata P18)"))
     for n in tl["people"]:
+        if deadline_passed():
+            note_deadline(f"image_wikidata({khoa}) anh nguoi")
+            break
         u = thong.get(n["commons_file"])
         if u and min(u["w"], u["h"]) >= 500:
             c = _candidate(u, n["commons_file"], ten_chinh, khoa, "person",
@@ -730,12 +804,15 @@ def image_wikidata(hang, wd=None) -> list:
         u = thong.get(t)
         if not u or not wd:
             continue
+        if deadline_passed():
+            note_deadline(f"image_wikidata({khoa}) the logo")
+            break
         try:
             goc = Path(wd) / state_paths.LOGO_ORIGINAL_FILE
             goc.parent.mkdir(parents=True, exist_ok=True)
             import httpx
             goc.write_bytes(httpx.get(u["url"], headers={"User-Agent": env_load.UA_WIKI},
-                                      timeout=30, follow_redirects=True).content)
+                                      timeout=cap_timeout(30), follow_redirects=True).content)
             the, nen, fill = card_logo(goc, Path(wd) / state_paths.LOGO_CARD_FILE, env_load.brand_long())
         except Exception as e:                               # noqa: BLE001
             print(f"[thuong_hieu] the logo hong: {type(e).__name__}", file=sys.stderr)
@@ -907,6 +984,9 @@ def vendor_images(hang, wd=None) -> list:
     ten_chinh = DISPLAY_NAME.get(khoa, (khoa.title(),))[0]
     ra, da, hong = [], set(), 0
     for ten, cau in query(khoa):
+        if deadline_passed():
+            note_deadline(f"vendor_images({khoa}) truy van Commons")
+            break
         pages = _ask_commons(cau)
         if pages is None:                    # hong moi truong, KHONG phai "khong co anh"
             hong += 1
@@ -923,6 +1003,9 @@ def vendor_images(hang, wd=None) -> list:
         # ro de brief/nhat ky khong ket luan sai ve hang.
         print(f"[thuong_hieu] {khoa}: {hong} truy van Commons HONG (mang/API) — "
               "khong phai hang khong co anh", file=sys.stderr)
+    if deadline_passed():
+        note_deadline(f"vendor_images({khoa}) tang Wikidata")
+        return ra
     for c in image_wikidata(hang, wd):
         if c["image_url"] not in da:
             da.add(c["image_url"])
@@ -966,6 +1049,20 @@ def sentence_ask_vision(tieu_de: str, th: dict) -> str:
                 f"LIEN_QUAN: co | khong  (co = day la man hinh gia co phieu THAT cua {hang} "
                 "(bat ky ten/ma nao hien tren do, khong can doc het); khong = khong phai bieu "
                 "do gia co phieu, hoac ro rang la hang khac)")
+    if loai == "ranking":
+        # LOW-264 bo sung (20/09/2026): thieu nhanh nay thi bang xep hang roi vao cau
+        # chung "tru so/campus/san pham" o cuoi ham — mot bang chup man hinh khong bao
+        # gio tra loi "co" duoc (do that: 19/20 anh ranking brand bi loai, deu tu
+        # arena.ai). Cung ly do nhanh "stock" o tren.
+        site, board = th.get("site", ""), th.get("board", "")
+        return (f"Bai bao: \"{tieu_de}\". Anh nay la BANG XEP HANG (leaderboard) chup man hinh"
+                + (f" tu {site}" if site else "") + (f", bang {board}" if board else "")
+                + f", co dong cua model thuoc {hang} duoc khoanh.\n"
+                "Tra loi DUNG 2 dong:\n"
+                "MO_TA: <mot cau tieng Viet co dau mo ta anh nay la gi>\n"
+                f"LIEN_QUAN: co | khong  (co = day la bang/bieu do xep hang model doc duoc, tren do "
+                f"co ten model hoac ten hang {hang}; khong = khong phai bang xep hang, hoac khong "
+                f"thay {hang} tren do, hoac bi mo/cat mat noi dung)")
     if loai == "person":
         ai = th.get("person", "")
         return (f"Bai bao: \"{tieu_de}\". Anh nay KHONG phai anh cua tin; no la anh CHAN DUNG "
@@ -994,7 +1091,10 @@ def _ask_commons(cau: str):
     scan_common.ask_commons (ADF-r2-16) — truoc day ban nay tra {} va log khong
     repr, nen mat mang trong y het "hang khong co anh"."""
     import scan_common
-    return scan_common.ask_commons(cau)
+    if deadline_passed():
+        note_deadline("truy van Commons")
+        return None
+    return scan_common.ask_commons(cau, timeout=cap_timeout(20))
 
 
 def label_by_type(th: dict) -> str:
