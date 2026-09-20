@@ -38,6 +38,12 @@ VN = timezone(timedelta(hours=7))
 # de bao cao cu khong ra "None".
 NAME_ROLE = {"finn": "Finn", "nova": "Nova", "vera": "Vera", "qinn": "Qinn"}
 
+# Nguong "dang len bao cao" cua Finn: diem tong = diem CO HOC (script cham: moi +
+# lan) + technical (0-30) + relevance (0-20) do vai cham. MOT ban duy nhat, vi
+# brief noi nguong nay cho vai doc CON scan_submit lay no de chan dong "hom nay
+# khong co gi" (LOW-317) — hai ban lech nhau thi cong chan sai ngay.
+SCORE_PASS = 50
+
 
 # ---------------------------------------------------------------- host noi bo
 _HOST_CAM_TEN = re.compile(r"^localhost$|\.(local|internal|netbird\.mated)$", re.I)
