@@ -122,6 +122,7 @@ def test_constants_match_approved_table():
         "LANDSCAPE_SUFFIX": pats["{id}.ngang.png"].split("}", 1)[1],
         # LOW-273: ten MOI, khong co ten Viet cu -> bang ghi trung chinh no
         "SUBJECT_SUFFIX": pats["{id}.subject.png"].split("}", 1)[1],
+        "LOGO_SUFFIX": pats["{id}.logo.png"].split("}", 1)[1],
         "HANDOFF_SUFFIX": pats["{draft_id}.ban_giao.md"].split("}", 1)[1],
         "LEGACY_PREPARE_DIR": "chuan_bi",
     }

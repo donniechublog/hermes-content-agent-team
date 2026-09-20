@@ -549,9 +549,16 @@ def _body_image(canvas, img):
 
 
 # ---- Dung tung slide ------------------------------------------------------
-def build_body(img_path, text, handle, out, cluttered=False, report=None):
+def build_body(img_path, text, handle, out, cluttered=False, report=None, logo_bg=None):
+    """`logo_bg` (LOW-295): slide LOGO — anh dua vao da la khung dung san (logo 90% be ngang
+    tren chinh mau nen cua no, xem logo_card.py). Luc do dan NGUYEN khung, chu lay mau tuong
+    phan voi nen va KHONG co overlay (Ong Chu 20/09/2026: "dung co them nen text, rat la phen")."""
     canvas = Image.new("RGBA", (W, H), (*BG, 255))
-    base = _body_image(canvas, _open(img_path))
+    if logo_bg:
+        canvas.paste(_open(img_path).convert("RGB").resize((W, H)), (0, 0))
+        base = None
+    else:
+        base = _body_image(canvas, _open(img_path))
     truoc_nen = canvas.copy() if report is not None else None
 
     # Do khoi chu TRUOC (tran 30%), NEO TU DUOI: mep duoi luon o TEXT_BASE, chu
@@ -566,12 +573,17 @@ def build_body(img_path, text, handle, out, cluttered=False, report=None):
 
     # Chi them lop khi do THAT tren pixel thay vung duoi chu khong du tuong
     # phan voi FG — xem _layer_if_can. Khong bao gio bat dau truoc text_top.
-    touched = _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered,
-                            max_share=SOLID_BG_MAX_SHARE)
+    if logo_bg:
+        import logo_card
+        touched, fg = None, logo_card.text_color(tuple(logo_bg))
+    else:
+        touched = _layer_if_can(canvas, base, text_top, TEXT_BASE, image_cluttered=cluttered,
+                                max_share=SOLID_BG_MAX_SHARE)
+        fg = FG
     if report is not None:                      # LOW-286: do nen chu tren pixel that
         report.update(_text_bg_report(truoc_nen, canvas))
 
-    _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, FG)
+    _draw_paragraphs(d, PAD, text_top, wrapped, font, lh, fg)
     _watermark(canvas, handle)
     canvas.convert("RGB").save(out, "PNG")
     return touched
@@ -1016,7 +1028,7 @@ def main():
                                        cluttered=bool(s.get("cluttered")), report=bao)
         else:
             touched = build_body(s["image"], s["text"], handle, p, cluttered=bool(s.get("cluttered")),
-                                 report=bao)
+                                 report=bao, logo_bg=s.get("logo_bg"))
         paths.append(p)
         loi = _gate_stack_last_hidden(f"slide {i}", s, touched)
         if loi:

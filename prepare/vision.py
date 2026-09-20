@@ -446,6 +446,13 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
     a["subject_kind"] = kq.get("subject_kind")
     a["empty_share"] = kq.get("empty_share")
     a["printed_name"] = kq.get("printed_name")          # LOW-279: ten in tren anh (lower-third/bang ten)
+    # LOW-295 (Ong Chu 20/09/2026): logo tren nen tron KHONG bi chan nua — renderer dung
+    # lai thanh slide logo (90% be ngang tren chinh mau nen cua no), xem logo_card.py.
+    import logo_card
+    a["logo_card"] = bool(logo_card.is_logo_image(a)
+                          and subject_fit.too_empty(a.get("empty_share"),
+                                                    getattr(role.active_rules(), "EMPTY_SHARE_MAX",
+                                                            subject_fit.EMPTY_SHARE_MAX)))
     # LOW-225: vision noi gi, nhanh regex nao lat, nguyen van cau hoi/tra loi —
     # de do lai offline ma khong goi vision lai.
     if kq.get("vision_raw"):

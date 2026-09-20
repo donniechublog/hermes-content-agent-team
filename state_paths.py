@@ -37,6 +37,7 @@ BOARD_DIR = "board"
 RANKING_IMAGE_PREFIX = "ranking_"       # ranking_<board>.png
 CAPTURE_IMAGE_PREFIX = "capture_"       # capture_<n>_<k>.png
 LANDSCAPE_SUFFIX = ".landscape.png"     # <id>.landscape.png
+LOGO_SUFFIX = ".logo.png"          # LOW-295: ban da dung thanh slide logo (90% be ngang)
 SUBJECT_SUFFIX = ".subject.png"         # <id>.subject.png — cat 4:5 quanh chu the (LOW-273)
 
 # image_brand workdir (brand_match/<key>/), LOW-237; table docs/tu_dien_ten/image_search_keys_v2.json
