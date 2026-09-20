@@ -289,115 +289,146 @@ def read_notes(ngay: str) -> list:
 
 # ---------- dung trang ----------
 
+def _section_note(ngay: str) -> list:
+    gc = read_notes(ngay)
+    if not gc:
+        return []
+    L = ["## Vấn đề, bug và cách sửa", ""]
+    for b in gc:
+        L.append(f"- **{TYPE.get(b['kind'], b['kind'])}** ({b['time']}) — {b['content']}")
+    return L + [""]
+
+
+def _section_git(ngay: str) -> list:
+    g = part_git(ngay)
+    if not g:
+        return []
+    L = ["## Thay đổi mã nguồn", ""]
+    for c in g:
+        L.append(f"- `{c['hash']}` {c['time']} — {c['subject']}")
+    return L + [""]
+
+
+def _section_finn(ngay: str) -> list:
+    f = part_finn(ngay)
+    if not f:
+        return []
+    L = ["## Finn quét tin", "",
+         f"- Quét được **{f['candidate_count']}** tin, Ông Chủ chọn **{f['picked_count']}**", ""]
+    for t in f["top"]:
+        L.append(f"  - [{t['score']}đ] {t['title']} — *{t['source_note']}*")
+    if f["picked_titles"]:
+        L += ["", "  Đã chọn:"] + [f"  - {x}" for x in f["picked_titles"]]
+    return L + [""]
+
+
+def _section_kanban(ngay: str) -> list:
+    k = part_kanban(ngay)
+    if not k:
+        return []
+    xong = sum(1 for x in k if x["status"] == "done")
+    L = ["## Task kanban", "",
+         f"- {len(k)} task, {xong} xong, {len(k) - xong} chưa", ""]
+    for x in k:
+        gy = f" ({x['seconds']}s)" if x["seconds"] else ""
+        L.append(f"- `{x['id']}` {x['time']} **{x['role']}** — {x['title']} "
+                 f"→ {x['status']}{gy}")
+        if x["summary"]:
+            L.append(f"  > {x['summary']}")
+        if x["error"]:
+            L.append(f"  ❌ {re.sub(chr(10), ' ', str(x['error']))[:200]}")
+    return L + [""]
+
+
+def _section_draft(ngay: str) -> list:
+    d = part_draft(ngay)
+    if not d:
+        return []
+    L = ["## Bài viết", ""]
+    for x in d:
+        L.append(f"- `{x['id']}` {x['time']} — {x['caption_length']} ký tự, "
+                 f"{'có ảnh' if x['has_image'] else 'chưa có ảnh'}, {x['status']}")
+    return L + [""]
+
+
+def _section_cron(ngay: str) -> list:
+    c = part_cron(ngay)
+    if not c:
+        return []
+    loi = [x for x in c if x["status"] not in ("completed", *FORM_RUN)]
+    dang = [x for x in c if x["status"] in FORM_RUN]
+    dem = f"- {len(c)} lượt chạy, {len(loi)} lỗi"
+    if dang:
+        dem += f", {len(dang)} còn đang chạy lúc dựng nhật ký"
+    L = ["## Cron", "", dem, ""]
+
+    # Gom theo việc: việc chạy dày chỉ cần một dòng tổng, việc thưa thì kể từng lượt.
+    for ten, nhom in _gather_by_job(c):
+        if len(nhom) > EXCESS:
+            giay = [x["seconds"] for x in nhom if x["seconds"] is not None]
+            dong = f"- `{ten}` — {len(nhom)} lượt"
+            if giay:
+                cham = max(nhom, key=lambda x: x["seconds"] if x["seconds"] is not None else -1)
+                dong += (f", trung bình {sum(giay) / len(giay):.1f}s"
+                         f", chậm nhất {cham['seconds']}s lúc {cham['time']}")
+            nl = sum(1 for x in nhom if x["status"] not in ("completed", *FORM_RUN))
+            dong += f", {nl} lỗi" if nl else ", không lỗi"
+            L.append(dong)
+        else:
+            for x in nhom:
+                gy = f" {x['seconds']}s" if x["seconds"] is not None else ""
+                dau = ("⏳" if x["status"] in FORM_RUN
+                       else "✓" if x["status"] == "completed" else "✗")
+                L.append(f"- {dau} {x['time']} {x['name']}{gy}"
+                         + (f" — {x['error']}" if x["error"] else ""))
+
+    if loi:
+        L += ["", "**Lượt lỗi**", ""]
+        for x in loi:
+            L.append(f"- ✗ {x['time']} {x['name']} — {x['error'] or x['status']}")
+    return L + [""]
+
+
+def _section_model(ngay: str) -> list:
+    m = part_model(ngay)
+    if not m:
+        return []
+    L = ["## Model", ""]
+    if m["broken_models"]:
+        for x in m["broken_models"]:
+            L.append(f"- 🔴 `{x}` — {m['reasons'].get(x)}")
+    else:
+        L.append(f"- Cả {m['model_count']} model đều khoẻ")
+    return L + [""]
+
+
+def _section_error_read() -> list:
+    """Hien ngay tren trang: nhat ky thieu mot mang thi phai NHIN THAY la thieu,
+    khong duoc de nguoi doc tuong hom do khong co viec gi."""
+    if not ERROR_READ:
+        return []
+    return (["", "## ⚠️ Không đọc được một phần dữ liệu", "",
+             "Các mục dưới đây trống vì lỗi đọc CSDL của hermes, **không phải**"
+             " vì hôm đó không có việc:", ""]
+            + [f"- `{d}`" for d in ERROR_READ]
+            + ["", "Thường gặp sau `hermes update` đổi schema. Chạy lại "
+               "`venv/bin/python journal.py --ngay <ngày>` để xem stderr đầy đủ.", ""])
+
+
 def use_page(ngay: str) -> str:
+    """Trang nhat ky cua mot ngay. Moi muc mot ham `_section_*` tra ve list dong;
+    thu tu goi o day CHINH LA thu tu muc tren trang (tach o LOW-309)."""
     ERROR_READ.clear()
     L = [f"# Nhật ký {ngay}", "",
          f"*Dựng lúc {datetime.now(VN).strftime('%H:%M %d/%m')} (giờ VN). "
          "Phần tự động sinh lại được; ghi chú tay lưu riêng ở `notes.jsonl`.*", ""]
-
-    gc = read_notes(ngay)
-    if gc:
-        L += ["## Vấn đề, bug và cách sửa", ""]
-        for b in gc:
-            L.append(f"- **{TYPE.get(b['kind'], b['kind'])}** ({b['time']}) — {b['content']}")
-        L.append("")
-
-    g = part_git(ngay)
-    if g:
-        L += ["## Thay đổi mã nguồn", ""]
-        for c in g:
-            L.append(f"- `{c['hash']}` {c['time']} — {c['subject']}")
-        L.append("")
-
-    f = part_finn(ngay)
-    if f:
-        L += ["## Finn quét tin", "",
-              f"- Quét được **{f['candidate_count']}** tin, Ông Chủ chọn **{f['picked_count']}**", ""]
-        for t in f["top"]:
-            L.append(f"  - [{t['score']}đ] {t['title']} — *{t['source_note']}*")
-        if f["picked_titles"]:
-            L += ["", "  Đã chọn:"] + [f"  - {x}" for x in f["picked_titles"]]
-        L.append("")
-
-    k = part_kanban(ngay)
-    if k:
-        xong = sum(1 for x in k if x["status"] == "done")
-        L += ["## Task kanban", "",
-              f"- {len(k)} task, {xong} xong, {len(k) - xong} chưa", ""]
-        for x in k:
-            gy = f" ({x['seconds']}s)" if x["seconds"] else ""
-            L.append(f"- `{x['id']}` {x['time']} **{x['role']}** — {x['title']} "
-                     f"→ {x['status']}{gy}")
-            if x["summary"]:
-                L.append(f"  > {x['summary']}")
-            if x["error"]:
-                L.append(f"  ❌ {re.sub(chr(10), ' ', str(x['error']))[:200]}")
-        L.append("")
-
-    d = part_draft(ngay)
-    if d:
-        L += ["## Bài viết", ""]
-        for x in d:
-            L.append(f"- `{x['id']}` {x['time']} — {x['caption_length']} ký tự, "
-                     f"{'có ảnh' if x['has_image'] else 'chưa có ảnh'}, {x['status']}")
-        L.append("")
-
-    c = part_cron(ngay)
-    if c:
-        loi = [x for x in c if x["status"] not in ("completed", *FORM_RUN)]
-        dang = [x for x in c if x["status"] in FORM_RUN]
-        dem = f"- {len(c)} lượt chạy, {len(loi)} lỗi"
-        if dang:
-            dem += f", {len(dang)} còn đang chạy lúc dựng nhật ký"
-        L += ["## Cron", "", dem, ""]
-
-        # Gom theo việc: việc chạy dày chỉ cần một dòng tổng, việc thưa thì kể từng lượt.
-        for ten, nhom in _gather_by_job(c):
-            if len(nhom) > EXCESS:
-                gy = [x["seconds"] for x in nhom if x["seconds"] is not None]
-                d = f"- `{ten}` — {len(nhom)} lượt"
-                if gy:
-                    cham = max(nhom, key=lambda x: x["seconds"] if x["seconds"] is not None else -1)
-                    d += (f", trung bình {sum(gy) / len(gy):.1f}s"
-                          f", chậm nhất {cham['seconds']}s lúc {cham['time']}")
-                nl = sum(1 for x in nhom if x["status"] not in ("completed", *FORM_RUN))
-                d += f", {nl} lỗi" if nl else ", không lỗi"
-                L.append(d)
-            else:
-                for x in nhom:
-                    gy = f" {x['seconds']}s" if x["seconds"] is not None else ""
-                    dau = ("⏳" if x["status"] in FORM_RUN
-                           else "✓" if x["status"] == "completed" else "✗")
-                    L.append(f"- {dau} {x['time']} {x['name']}{gy}"
-                             + (f" — {x['error']}" if x["error"] else ""))
-
-        if loi:
-            L += ["", "**Lượt lỗi**", ""]
-            for x in loi:
-                L.append(f"- ✗ {x['time']} {x['name']} — {x['error'] or x['status']}")
-        L.append("")
-
-    m = part_model(ngay)
-    if m:
-        L += ["## Model", ""]
-        if m["broken_models"]:
-            for x in m["broken_models"]:
-                L.append(f"- 🔴 `{x}` — {m['reasons'].get(x)}")
-        else:
-            L.append(f"- Cả {m['model_count']} model đều khoẻ")
-        L.append("")
-
+    for phan in (_section_note(ngay), _section_git(ngay), _section_finn(ngay),
+                 _section_kanban(ngay), _section_draft(ngay), _section_cron(ngay),
+                 _section_model(ngay)):
+        L += phan
     if len(L) <= 4:
         L.append("*Không có hoạt động nào được ghi lại trong ngày.*")
-    if ERROR_READ:
-        # Hien ngay tren trang: nhat ky thieu mot mang thi phai NHIN THAY la
-        # thieu, khong duoc de nguoi doc tuong hom do khong co viec gi.
-        L += ["", "## ⚠️ Không đọc được một phần dữ liệu", "",
-              "Các mục dưới đây trống vì lỗi đọc CSDL của hermes, **không phải**"
-              " vì hôm đó không có việc:", ""]
-        L += [f"- `{d}`" for d in ERROR_READ]
-        L += ["", "Thường gặp sau `hermes update` đổi schema. Chạy lại "
-              "`venv/bin/python journal.py --ngay <ngày>` để xem stderr đầy đủ.", ""]
+    L += _section_error_read()
     return "\n".join(L).rstrip() + "\n"
 
 
