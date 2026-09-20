@@ -1,0 +1,869 @@
+{
+ "patch_them_thuan_thi_accepted": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "accepted",
+  "flags": [],
+  "added": [
+   "",
+   "Một câu ngắn không chạm luật nào."
+  ],
+  "removed": []
+ },
+ "patch_co_doi_dong_cu": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 1 dòng đang có, vd: Mỗi slide một ảnh, một ý;"
+   }
+  ],
+  "added": [
+   "Mỗi slide một ảnh, một ý, không hai;"
+  ],
+  "removed": [
+   "Mỗi slide một ảnh, một ý;"
+  ]
+ },
+ "patch_khong_ap_duoc": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "does_not_apply",
+    "detail": "`old_string` xuất hiện 0 lần trong SKILL hiện tại"
+   },
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 1 dòng đang có, vd: Câu này không có trong SKILL"
+   }
+  ],
+  "added": [
+   "X"
+  ],
+  "removed": [
+   "Câu này không có trong SKILL"
+  ]
+ },
+ "patch_nhieu_lan_khong_replace_all": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "does_not_apply",
+    "detail": "`old_string` xuất hiện 2 lần trong SKILL hiện tại"
+   },
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 1 dòng đang có, vd: slide"
+   }
+  ],
+  "added": [
+   "trang"
+  ],
+  "removed": [
+   "slide"
+  ]
+ },
+ "patch_nhieu_lan_co_replace_all": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 1 dòng đang có, vd: slide"
+   }
+  ],
+  "added": [
+   "trang"
+  ],
+  "removed": [
+   "slide"
+  ]
+ },
+ "action_la_thi_manual_action": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "write",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "manual_action",
+    "detail": "thao tác `write` trên `SKILL.md` — chỉ patch/edit SKILL.md mới tự nhận được"
+   }
+  ],
+  "added": [
+   "Một dòng mới hoàn toàn."
+  ],
+  "removed": []
+ },
+ "file_khac_skill_md_thi_manual_action": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "README.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "manual_action",
+    "detail": "thao tác `patch` trên `README.md` — chỉ patch/edit SKILL.md mới tự nhận được"
+   }
+  ],
+  "added": [
+   "Một dòng mới hoàn toàn."
+  ],
+  "removed": []
+ },
+ "skill_khong_co_thi_unknown_skill": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "khong-co-skill-nay",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "unknown_skill",
+    "detail": "skill `khong-co-skill-nay` không có trong hermes/skills của repo"
+   }
+  ],
+  "added": [
+   "Một dòng mới."
+  ],
+  "removed": []
+ },
+ "edit_ghi_de_ca_tep": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "edit",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 5 dòng đang có, vd: Chạy `venv/bin/python dre_prepare.py <draft_id>` rồi viết spec vào `spec.json`."
+   }
+  ],
+  "added": [
+   "Một câu ngắn."
+  ],
+  "removed": [
+   "Chạy `venv/bin/python dre_prepare.py <draft_id>` rồi viết spec vào `spec.json`.",
+   "Mỗi slide một ảnh, một ý; chart chỉ ở slide thân.",
+   "",
+   "## Bẫy đã gặp",
+   "",
+   "Ảnh ngang mà chủ thể không gọn trong khung 4:5 thì phải dùng `stack`, không thì",
+   "chữ đè lên mặt người và cổng chặn bắt dựng lại từ đầu."
+  ]
+ },
+ "ky_hieu_da_doi_ten": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "stale_symbol",
+    "detail": "`tim_anh_moi.py` không còn trong code (tên mới có thể là `find_new_image.py`)"
+   }
+  ],
+  "added": [
+   "",
+   "Gọi `tim_anh_moi.py` trước khi dựng."
+  ],
+  "removed": []
+ },
+ "ky_hieu_con_nhung_code_da_doi": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "code_changed_since",
+    "detail": "`dre_submit.py` có 2 commit sau khi ghi bài: abc1234 fix(dre): doi cong so slide"
+   }
+  ],
+  "added": [
+   "",
+   "Gọi `dre_submit.py` sau khi viết spec."
+  ],
+  "removed": []
+ },
+ "ne_loi_thay_vi_sua": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "workaround",
+    "detail": "bài dặn vai né một lỗi thay vì sửa lỗi đó"
+   }
+  ],
+  "added": [
+   "",
+   "Gặp lỗi TypeError ở bước ghép thì né nó bằng cách bỏ slide cuối."
+  ],
+  "removed": []
+ },
+ "doan_moi_trung_doan_cu": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "duplicate",
+    "detail": "đoạn mới giống 99% một đoạn đã có: Ảnh ngang mà chủ thể không gọn trong khung 4:5 thì phải dùng `stack`, không thì "
+   }
+  ],
+  "added": [
+   "",
+   "Ảnh ngang mà chủ thể không gọn trong khung 4:5 thì phải dùng `stack`, không thì chữ đè lên mặt người và cổng chặn bắt dựng lại từ đầu."
+  ],
+  "removed": []
+ },
+ "xoa_dong_dang_co": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 1 dòng đang có, vd: Mỗi slide một ảnh, một ý; chart chỉ ở slide thân."
+   }
+  ],
+  "added": [],
+  "removed": [
+   "Mỗi slide một ảnh, một ý; chart chỉ ở slide thân."
+  ]
+ },
+ "nhac_nguon_su_that": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "source_of_truth",
+    "detail": "bài nhắc IMAGE_RULES (LUAT_ANH) / § / LUẬT CỨNG — người đối chiếu nguồn sự thật"
+   }
+  ],
+  "added": [
+   "",
+   "Xem IMAGE_RULES §1.2c trước khi chọn ảnh khái niệm."
+  ],
+  "removed": []
+ },
+ "nhac_ten_brand": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "brand_specific",
+    "detail": "bài nhắc `dcgr` nhưng skill dùng chung hai brand"
+   }
+  ],
+  "added": [
+   "",
+   "Bên dcgr thì hook phải nói tiền, không nói tham số."
+  ],
+  "removed": []
+ },
+ "them_qua_nhieu_dong": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "too_large",
+    "detail": "thêm 40 dòng (trần 30)"
+   }
+  ],
+  "added": [
+   "Dòng thêm số 0.",
+   "Dòng thêm số 1.",
+   "Dòng thêm số 2.",
+   "Dòng thêm số 3.",
+   "Dòng thêm số 4.",
+   "Dòng thêm số 5.",
+   "Dòng thêm số 6.",
+   "Dòng thêm số 7.",
+   "Dòng thêm số 8.",
+   "Dòng thêm số 9.",
+   "Dòng thêm số 10.",
+   "Dòng thêm số 11.",
+   "Dòng thêm số 12.",
+   "Dòng thêm số 13.",
+   "Dòng thêm số 14.",
+   "Dòng thêm số 15.",
+   "Dòng thêm số 16.",
+   "Dòng thêm số 17.",
+   "Dòng thêm số 18.",
+   "Dòng thêm số 19.",
+   "Dòng thêm số 20.",
+   "Dòng thêm số 21.",
+   "Dòng thêm số 22.",
+   "Dòng thêm số 23.",
+   "Dòng thêm số 24.",
+   "Dòng thêm số 25.",
+   "Dòng thêm số 26.",
+   "Dòng thêm số 27.",
+   "Dòng thêm số 28.",
+   "Dòng thêm số 29.",
+   "Dòng thêm số 30.",
+   "Dòng thêm số 31.",
+   "Dòng thêm số 32.",
+   "Dòng thêm số 33.",
+   "Dòng thêm số 34.",
+   "Dòng thêm số 35.",
+   "Dòng thêm số 36.",
+   "Dòng thêm số 37.",
+   "Dòng thêm số 38.",
+   "Dòng thêm số 39."
+  ],
+  "removed": []
+ },
+ "skill_thanh_qua_dai": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "edit",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 6 dòng đang có, vd: ## Cách dùng"
+   },
+   {
+    "rule": "too_large",
+    "detail": "thêm 300 dòng (trần 30)"
+   },
+   {
+    "rule": "too_large",
+    "detail": "SKILL thành 301 dòng (trần 220)"
+   }
+  ],
+  "added": [
+   "Dòng 0.",
+   "Dòng 1.",
+   "Dòng 2.",
+   "Dòng 3.",
+   "Dòng 4.",
+   "Dòng 5.",
+   "Dòng 6.",
+   "Dòng 7.",
+   "Dòng 8.",
+   "Dòng 9.",
+   "Dòng 10.",
+   "Dòng 11.",
+   "Dòng 12.",
+   "Dòng 13.",
+   "Dòng 14.",
+   "Dòng 15.",
+   "Dòng 16.",
+   "Dòng 17.",
+   "Dòng 18.",
+   "Dòng 19.",
+   "Dòng 20.",
+   "Dòng 21.",
+   "Dòng 22.",
+   "Dòng 23.",
+   "Dòng 24.",
+   "Dòng 25.",
+   "Dòng 26.",
+   "Dòng 27.",
+   "Dòng 28.",
+   "Dòng 29.",
+   "Dòng 30.",
+   "Dòng 31.",
+   "Dòng 32.",
+   "Dòng 33.",
+   "Dòng 34.",
+   "Dòng 35.",
+   "Dòng 36.",
+   "Dòng 37.",
+   "Dòng 38.",
+   "Dòng 39.",
+   "Dòng 40.",
+   "Dòng 41.",
+   "Dòng 42.",
+   "Dòng 43.",
+   "Dòng 44.",
+   "Dòng 45.",
+   "Dòng 46.",
+   "Dòng 47.",
+   "Dòng 48.",
+   "Dòng 49.",
+   "Dòng 50.",
+   "Dòng 51.",
+   "Dòng 52.",
+   "Dòng 53.",
+   "Dòng 54.",
+   "Dòng 55.",
+   "Dòng 56.",
+   "Dòng 57.",
+   "Dòng 58.",
+   "Dòng 59.",
+   "Dòng 60.",
+   "Dòng 61.",
+   "Dòng 62.",
+   "Dòng 63.",
+   "Dòng 64.",
+   "Dòng 65.",
+   "Dòng 66.",
+   "Dòng 67.",
+   "Dòng 68.",
+   "Dòng 69.",
+   "Dòng 70.",
+   "Dòng 71.",
+   "Dòng 72.",
+   "Dòng 73.",
+   "Dòng 74.",
+   "Dòng 75.",
+   "Dòng 76.",
+   "Dòng 77.",
+   "Dòng 78.",
+   "Dòng 79.",
+   "Dòng 80.",
+   "Dòng 81.",
+   "Dòng 82.",
+   "Dòng 83.",
+   "Dòng 84.",
+   "Dòng 85.",
+   "Dòng 86.",
+   "Dòng 87.",
+   "Dòng 88.",
+   "Dòng 89.",
+   "Dòng 90.",
+   "Dòng 91.",
+   "Dòng 92.",
+   "Dòng 93.",
+   "Dòng 94.",
+   "Dòng 95.",
+   "Dòng 96.",
+   "Dòng 97.",
+   "Dòng 98.",
+   "Dòng 99.",
+   "Dòng 100.",
+   "Dòng 101.",
+   "Dòng 102.",
+   "Dòng 103.",
+   "Dòng 104.",
+   "Dòng 105.",
+   "Dòng 106.",
+   "Dòng 107.",
+   "Dòng 108.",
+   "Dòng 109.",
+   "Dòng 110.",
+   "Dòng 111.",
+   "Dòng 112.",
+   "Dòng 113.",
+   "Dòng 114.",
+   "Dòng 115.",
+   "Dòng 116.",
+   "Dòng 117.",
+   "Dòng 118.",
+   "Dòng 119.",
+   "Dòng 120.",
+   "Dòng 121.",
+   "Dòng 122.",
+   "Dòng 123.",
+   "Dòng 124.",
+   "Dòng 125.",
+   "Dòng 126.",
+   "Dòng 127.",
+   "Dòng 128.",
+   "Dòng 129.",
+   "Dòng 130.",
+   "Dòng 131.",
+   "Dòng 132.",
+   "Dòng 133.",
+   "Dòng 134.",
+   "Dòng 135.",
+   "Dòng 136.",
+   "Dòng 137.",
+   "Dòng 138.",
+   "Dòng 139.",
+   "Dòng 140.",
+   "Dòng 141.",
+   "Dòng 142.",
+   "Dòng 143.",
+   "Dòng 144.",
+   "Dòng 145.",
+   "Dòng 146.",
+   "Dòng 147.",
+   "Dòng 148.",
+   "Dòng 149.",
+   "Dòng 150.",
+   "Dòng 151.",
+   "Dòng 152.",
+   "Dòng 153.",
+   "Dòng 154.",
+   "Dòng 155.",
+   "Dòng 156.",
+   "Dòng 157.",
+   "Dòng 158.",
+   "Dòng 159.",
+   "Dòng 160.",
+   "Dòng 161.",
+   "Dòng 162.",
+   "Dòng 163.",
+   "Dòng 164.",
+   "Dòng 165.",
+   "Dòng 166.",
+   "Dòng 167.",
+   "Dòng 168.",
+   "Dòng 169.",
+   "Dòng 170.",
+   "Dòng 171.",
+   "Dòng 172.",
+   "Dòng 173.",
+   "Dòng 174.",
+   "Dòng 175.",
+   "Dòng 176.",
+   "Dòng 177.",
+   "Dòng 178.",
+   "Dòng 179.",
+   "Dòng 180.",
+   "Dòng 181.",
+   "Dòng 182.",
+   "Dòng 183.",
+   "Dòng 184.",
+   "Dòng 185.",
+   "Dòng 186.",
+   "Dòng 187.",
+   "Dòng 188.",
+   "Dòng 189.",
+   "Dòng 190.",
+   "Dòng 191.",
+   "Dòng 192.",
+   "Dòng 193.",
+   "Dòng 194.",
+   "Dòng 195.",
+   "Dòng 196.",
+   "Dòng 197.",
+   "Dòng 198.",
+   "Dòng 199.",
+   "Dòng 200.",
+   "Dòng 201.",
+   "Dòng 202.",
+   "Dòng 203.",
+   "Dòng 204.",
+   "Dòng 205.",
+   "Dòng 206.",
+   "Dòng 207.",
+   "Dòng 208.",
+   "Dòng 209.",
+   "Dòng 210.",
+   "Dòng 211.",
+   "Dòng 212.",
+   "Dòng 213.",
+   "Dòng 214.",
+   "Dòng 215.",
+   "Dòng 216.",
+   "Dòng 217.",
+   "Dòng 218.",
+   "Dòng 219.",
+   "Dòng 220.",
+   "Dòng 221.",
+   "Dòng 222.",
+   "Dòng 223.",
+   "Dòng 224.",
+   "Dòng 225.",
+   "Dòng 226.",
+   "Dòng 227.",
+   "Dòng 228.",
+   "Dòng 229.",
+   "Dòng 230.",
+   "Dòng 231.",
+   "Dòng 232.",
+   "Dòng 233.",
+   "Dòng 234.",
+   "Dòng 235.",
+   "Dòng 236.",
+   "Dòng 237.",
+   "Dòng 238.",
+   "Dòng 239.",
+   "Dòng 240.",
+   "Dòng 241.",
+   "Dòng 242.",
+   "Dòng 243.",
+   "Dòng 244.",
+   "Dòng 245.",
+   "Dòng 246.",
+   "Dòng 247.",
+   "Dòng 248.",
+   "Dòng 249.",
+   "Dòng 250.",
+   "Dòng 251.",
+   "Dòng 252.",
+   "Dòng 253.",
+   "Dòng 254.",
+   "Dòng 255.",
+   "Dòng 256.",
+   "Dòng 257.",
+   "Dòng 258.",
+   "Dòng 259.",
+   "Dòng 260.",
+   "Dòng 261.",
+   "Dòng 262.",
+   "Dòng 263.",
+   "Dòng 264.",
+   "Dòng 265.",
+   "Dòng 266.",
+   "Dòng 267.",
+   "Dòng 268.",
+   "Dòng 269.",
+   "Dòng 270.",
+   "Dòng 271.",
+   "Dòng 272.",
+   "Dòng 273.",
+   "Dòng 274.",
+   "Dòng 275.",
+   "Dòng 276.",
+   "Dòng 277.",
+   "Dòng 278.",
+   "Dòng 279.",
+   "Dòng 280.",
+   "Dòng 281.",
+   "Dòng 282.",
+   "Dòng 283.",
+   "Dòng 284.",
+   "Dòng 285.",
+   "Dòng 286.",
+   "Dòng 287.",
+   "Dòng 288.",
+   "Dòng 289.",
+   "Dòng 290.",
+   "Dòng 291.",
+   "Dòng 292.",
+   "Dòng 293.",
+   "Dòng 294.",
+   "Dòng 295.",
+   "Dòng 296.",
+   "Dòng 297.",
+   "Dòng 298.",
+   "Dòng 299."
+  ],
+  "removed": [
+   "",
+   "## Cách dùng",
+   "",
+   "Chạy `venv/bin/python dre_prepare.py <draft_id>` rồi viết spec vào `spec.json`.",
+   "Mỗi slide một ảnh, một ý; chart chỉ ở slide thân.",
+   "",
+   "## Bẫy đã gặp",
+   "",
+   "Ảnh ngang mà chủ thể không gọn trong khung 4:5 thì phải dùng `stack`, không thì",
+   "chữ đè lên mặt người và cổng chặn bắt dựng lại từ đầu."
+  ]
+ },
+ "skill_thanh_qua_nhieu_muc": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "edit",
+  "file_path": "SKILL.md",
+  "created_at": 1757400000.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "flagged",
+  "flags": [
+   {
+    "rule": "rewrites_guidance",
+    "detail": "xoá/sửa 6 dòng đang có, vd: ## Cách dùng"
+   },
+   {
+    "rule": "too_large",
+    "detail": "SKILL thành 14 mục (trần 10)"
+   }
+  ],
+  "added": [
+   "## Mục 0",
+   "Nội dung.",
+   "## Mục 1",
+   "Nội dung.",
+   "## Mục 2",
+   "Nội dung.",
+   "## Mục 3",
+   "Nội dung.",
+   "## Mục 4",
+   "",
+   "Nội dung.",
+   "## Mục 5",
+   "",
+   "Nội dung.",
+   "## Mục 6",
+   "",
+   "Nội dung.",
+   "## Mục 7",
+   "",
+   "Nội dung.",
+   "## Mục 8",
+   "",
+   "Nội dung.",
+   "## Mục 9",
+   "",
+   "Nội dung.",
+   "## Mục 10",
+   "",
+   "Nội dung.",
+   "## Mục 11",
+   "",
+   "Nội dung.",
+   "## Mục 12",
+   "",
+   "Nội dung.",
+   "## Mục 13",
+   "",
+   "Nội dung."
+  ],
+  "removed": [
+   "## Cách dùng",
+   "Chạy `venv/bin/python dre_prepare.py <draft_id>` rồi viết spec vào `spec.json`.",
+   "Mỗi slide một ảnh, một ý; chart chỉ ở slide thân.",
+   "## Bẫy đã gặp",
+   "Ảnh ngang mà chủ thể không gọn trong khung 4:5 thì phải dùng `stack`, không thì",
+   "chữ đè lên mặt người và cổng chặn bắt dựng lại từ đầu."
+  ]
+ },
+ "khong_created_at_thi_bo_qua_commit": {
+  "id": "pend-01",
+  "brand": "donniechublog",
+  "profile": "dre",
+  "skill": "carousel",
+  "action": "patch",
+  "file_path": "SKILL.md",
+  "created_at": 0.0,
+  "origin": "dre",
+  "summary": "bài học thử",
+  "verdict": "accepted",
+  "flags": [],
+  "added": [
+   "",
+   "Gọi `dre_submit.py` sau khi viết spec."
+  ],
+  "removed": []
+ }
+}
