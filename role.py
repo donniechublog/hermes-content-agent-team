@@ -387,6 +387,14 @@ def real_alt(a: dict) -> str:
     return a.get("alt") or ""
 
 
+def caption_alt(a: dict) -> str:
+    """Alt CHI khi no la CHU THICH nguoi viet — khong phai ten tep Commons/Wikipedia
+    (`manifest_values.ALT_FILENAME_PREFIX`) hay cau truy van (`real_alt`, LOW-285)."""
+    import manifest_values
+    alt = real_alt(a)
+    return "" if alt.startswith(manifest_values.ALT_FILENAME_PREFIX) else alt
+
+
 def person_names_of(a: dict) -> list:
     """Ten nguoi cua mot tam anh: ten IN tren anh (lower-third/bang ten, vision chep lai —
     LOW-279) truoc, roi alt/caption, roi ten tep URL, khong trung."""
