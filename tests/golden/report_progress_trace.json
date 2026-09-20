@@ -690,6 +690,53 @@
    }
   }
  ],
+ "killed_then_restarted_in_one_tick_reports_kill_before_start": [
+  {
+   "tg": [
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "⏱ <b>Dre</b> bị hermes dừng sau 15 phút, đang chạy lại: <i>Bài &lt;chip&gt; &amp; AI</i> (task t1)",
+      "parse_mode": "HTML"
+     }
+    ],
+    [
+     "sendMessage",
+     {
+      "chat_id": "-1001",
+      "message_thread_id": 11,
+      "text": "▶️ <b>Dre</b> bắt đầu: <i>Bài &lt;chip&gt; &amp; AI</i>",
+      "parse_mode": "HTML"
+     }
+    ]
+   ],
+   "logs": [
+    [
+     "tiendo",
+     "t1 dre timed_out run r1, da bao"
+    ],
+    [
+     "tiendo",
+     "t1 dre -> running (thread=11) gui=ok"
+    ]
+   ],
+   "state": {
+    "reported_progress.json": {
+     "t1:timed_out:r1": true,
+     "t1": "running"
+    },
+    "task_result_messages.json": {
+     "t1": {
+      "chat": "-1001",
+      "thread": 11,
+      "mid": 1002
+     }
+    }
+   }
+  }
+ ],
  "blackboard_root_and_unknown_status_are_marked_silently": [
   {
    "tg": [],

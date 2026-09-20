@@ -109,6 +109,11 @@ SCENARIOS = {
         _tick([_task("t1", "dre", "running", started=T0 + 40)], at=1600,
               last_runs={"t1": {"status": "timed_out", "run_id": "r2", "metadata": None}}),
     ],
+    "killed_then_restarted_in_one_tick_reports_kill_before_start": [
+        _tick([_task("t1", "dre", "running", started=T0 - 30)],
+              last_runs={"t1": {"status": "timed_out", "run_id": "r1",
+                                "metadata": {"elapsed_seconds": 900}}}),
+    ],
     "blackboard_root_and_unknown_status_are_marked_silently": [
         _tick([_task("root", "ban_bien_tap", "running", started=T0 - 9999),
                _task("root2", "ban_bien_tap", "done"), _task("t9", "dre", "archived")]),
