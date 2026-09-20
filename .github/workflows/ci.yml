@@ -36,8 +36,11 @@ jobs:
         run: |
           python -m pip install -q -r requirements.txt pyflakes
           python -m playwright install --with-deps chromium
+      # Cả thư mục `hermes`, không liệt kê từng skill (LOW-298): danh sách cũ chỉ có
+      # url-mascot-frame, nên social-crawl/scripts/social_fetch.py dùng `re` mà không
+      # import vẫn qua CI suốt 12 ngày (08/09 → 20/09/2026). pyflakes tự đệ quy thư mục.
       - name: pyflakes
-        run: python -m pyflakes *.py prepare/*.py tests/*.py hermes/skills/url-mascot-frame/scripts/*.py
+        run: python -m pyflakes *.py prepare tests hermes
       - name: tests/run.sh
         env:
           PY: python
