@@ -134,7 +134,7 @@ def standard_link(u: str) -> str:
     return f"{duong}?{urlencode(sorted(giu))}" if giu else duong
 
 
-def ask_commons(cau: str, so: int = 20, loai_logo: bool = True):
+def ask_commons(cau: str, so: int = 20, loai_logo: bool = True, timeout: float = 20):
     """Tim anh bitmap tren Wikimedia Commons. Tra `query.pages` (dict, co the
     rong = KHONG CO anh), hoac None khi HONG VI MOI TRUONG (mang, HTTP, JSON).
 
@@ -154,7 +154,7 @@ def ask_commons(cau: str, so: int = 20, loai_logo: bool = True):
             "action": "query", "generator": "search", "gsrsearch": tim,
             "gsrnamespace": 6, "gsrlimit": so, "prop": "imageinfo",
             "iiprop": "url|size|mime", "iiurlwidth": 1800, "format": "json"},
-            headers={"User-Agent": env_load.UA_WIKI}, timeout=20)
+            headers={"User-Agent": env_load.UA_WIKI}, timeout=timeout)
         r.raise_for_status()
         return r.json().get("query", {}).get("pages", {})
     except Exception as e:                                   # noqa: BLE001

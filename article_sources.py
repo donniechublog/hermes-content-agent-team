@@ -234,7 +234,13 @@ def resolve_code_gnews(url: str, timeout: int = 30, phien=None) -> str | None:
     return None
 
 
-BING_RSS = "https://www.bing.com/news/search?q={q}&format=rss"
+# `setlang=en` (LOW-264 bo sung, do that 20/09/2026 tu may chu IP Viet Nam): khong co
+# tham so ngon ngu thi Bing dinh vi theo IP va tra tieu de TIENG VIET cho tu khoa
+# ngan (8 hang x 85 muc: 0/85 tieu de tieng Anh; them setlang=en: 87/87). Moi
+# `has_vietnamese` phia duoi lai loc het -> `report_about_keyword("Anthropic")` rong
+# 0/12, "OpenAI" 0/7 mot cach im lang. `setmkt=en-US` tra it muc hon (2 muc cho
+# Anthropic/OpenAI/Samsung) nen khong dung.
+BING_RSS = "https://www.bing.com/news/search?q={q}&format=rss&setlang=en"
 DROP_DOMAIN = ("msn.com", "seekingalpha.com", "news.google.com", "bing.com", "yahoo.com")
 
 

@@ -157,7 +157,7 @@ EMPTY_FLAT = 0.995               # ... va gan nhu 100% cap pixel ke nhau bang nh
 # sang image_provenance.py dung chung cho moi cong cu TAO/SUA anh (ke ca
 # Gin/Itachi, von di khong ap bo luat nay) khi tach `image_rules.py` (LOW-182).
 from image_provenance import (       # noqa: E402
-    read_crop_trace, allows_landscape_crop, is_ranking_image, is_stacked_composite,
+    read_crop_trace, allows_landscape_crop, is_logo_card, is_ranking_image, is_stacked_composite,
 )
 
 
@@ -378,9 +378,13 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
     # cong "TIN XEP HANG phai dung anh XH" o dre_submit/ethan_submit lai chan moi anh
     # KHAC: hai loi loai tru nhau, vai sua kieu gi cung sai roi tac (do
     # 06/09/2026). Lap lai bang xep hang la DUNG, khong phai loi.
+    # MIEN THE LOGO HANG (Ong Chu 20/09/2026, LOW-264 bo sung): cung mot hang thi
+    # moi bai deu dung lai dung the logo dung tu Wikidata P154 (md5 y het) — logo
+    # lap giua cac bai ve cung hang la binh thuong, khac anh su kien. Chi the logo
+    # do engine dung (dau `logo_card`), khong mien chan dung hay anh that.
     try:
         with Image.open(duong_dan) as _im:
-            if is_ranking_image(_im):
+            if is_ranking_image(_im) or is_logo_card(_im):
                 return [], []
     except Exception:                                        # noqa: BLE001
         pass

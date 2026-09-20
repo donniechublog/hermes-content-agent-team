@@ -414,6 +414,26 @@ def _report_brand_empty(h: dict, wd: Path, phien=None) -> list:
 def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
                       toi_thieu: int = 5, khong_browser: bool = False, phien=None,
                       category: str = "") -> tuple:
+    """Vong thuong hieu (xem `_round_brand_body`) co HAN GIO cho phan TIM: dat
+    `image_brand.start_deadline()` truoc, go sau, va in tong giay cua vong (log
+    `prepare.log` truoc day khong co moc gio nao). Ong Chu 20/09/2026: "them gioi han
+    cho thoi gian tim anh" (LOW-264 bo sung). Han mem — xem `image_brand.BRAND_ROUND_SECONDS`."""
+    import time
+    import image_brand as th
+    started = time.monotonic()
+    th.start_deadline()
+    try:
+        return _round_brand_body(anh, tieu_de_nhin, tom_tat, wd, toi_thieu=toi_thieu,
+                                 khong_browser=khong_browser, phien=phien, category=category)
+    finally:
+        th.clear_deadline()
+        print(f"[thuong hieu] vong tim anh hang mat {time.monotonic() - started:.1f}s "
+              f"(han mem {th.BRAND_ROUND_SECONDS}s)", file=sys.stderr)
+
+
+def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
+                      toi_thieu: int = 5, khong_browser: bool = False, phien=None,
+                      category: str = "") -> tuple:
     """VONG THUONG HIEU (Ong Chu 09/09/2026: "Dre van chua tu tim them hinh lien
     quan khi lam cac noi dung co Big Brand"): tin ve hang lon thi engine hoi
     Commons/Wikidata anh THAT cua chinh hang — logo, chan dung founder/CEO, tru
@@ -446,8 +466,11 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
     import story_type
     cands = []
     for h in hangs:
+        if th.deadline_passed():
+            th.note_deadline(f"hang {h['key']} (chua bat dau)")
+            break
         cands_h = th.vendor_images(h, wd=wd4 / h["key"])
-        if not khong_browser:
+        if not khong_browser and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT):
             # LUON tim them bao THAT theo ten hang, SONG SONG voi Commons/
             # Wikidata — khong con doi Commons rong moi chay (Ong Chu
             # 13/09/2026, chot nguyen tac nguon o IMAGE_RULES §1.2d: "ngoai
@@ -457,7 +480,8 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
             cands_h = cands_h + _report_brand_empty(h, wd4 / h["key"], phien=phien)
         cands += cands_h
         # Bang loai tin: BUSINESS/M&A muon bieu do gia (chi hang niem yet).
-        if story_type.late(category, "stock") and not khong_browser:
+        if (story_type.late(category, "stock") and not khong_browser
+                and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT)):
             cands += th.image_has_ballot(h, wd4 / h["key"], phien=phien)
     # Diem theo LOAI TIN cong vao diem goc truoc khi sort: cung bo ung vien,
     # tin M&A day logo len truoc chan dung, tin LAB day tru so/founder len
@@ -521,7 +545,8 @@ def _round_brand(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
         a["original_path"] = str(moi)
         anh.append(classify(a, wd, tieu_de_nhin))
     dung_duoc = [a for a in anh if a["uses"] and a.get("relevant") is not False]
-    if len(dung_duoc) < toi_thieu and not khong_browser and _count_kept(anh) < MAX_IMAGE + 4:
+    if (len(dung_duoc) < toi_thieu and not khong_browser and _count_kept(anh) < MAX_IMAGE + 4
+            and not th.deadline_passed(th.BROWSER_STEP_MIN_LEFT)):
         # `env_load.brand_long()`, KHONG PHAI os.environ["CT_BRAND"] thang: CT_BRAND
         # la ten NGAN cho thu muc state ("blog"), con `card.set_brand` doi
         # slug DAI ("donniechublog") — bat 09/09/2026 khi chay lai draft
