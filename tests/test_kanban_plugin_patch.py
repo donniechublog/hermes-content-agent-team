@@ -253,6 +253,61 @@ def test_real_patches_touch_only_their_own_file_and_manifest_lists_all():
         assert heads == [f"--- a/{name}", f"+++ b/{name}"], heads
 
 
+# -------------------------------------------------------------------------
+# check() — cai lam check_hermes bao HONG
+# -------------------------------------------------------------------------
+def _check_with(agent, patches):
+    """Goi `check()` voi ban goc/ban va cua sandbox, tra lai hang cu khi xong.
+    `check()` doc hang cap module chu khong nhan tham so — day la duong DUY NHAT
+    `check_hermes.py` goi toi no, nen phai kiem dung o muc do."""
+    old_agent, old_patch = kpb.HERMES_AGENT, kpb.PATCH_DIR
+    kpb.HERMES_AGENT, kpb.PATCH_DIR = agent, patches
+    try:
+        return kpb.check()
+    finally:
+        kpb.HERMES_AGENT, kpb.PATCH_DIR = old_agent, old_patch
+
+
+def test_check_says_ok_when_patches_still_apply():
+    t, agent, patches = _sandbox()
+    ok, note = _check_with(agent, patches)
+    assert ok is True and "ap sach" in note, note
+
+
+def test_check_reports_broken_when_upstream_moved_onto_a_patched_line():
+    """Day la ca ma ca ticket sinh ra de chan: `hermes update` doi dung cho doi
+    sua -> check_hermes phai in HONG, khong im lang."""
+    t, agent, patches = _sandbox()
+    _commit_upstream(agent, {"plugin_api.py": UPSTREAM["plugin_api.py"].replace(
+        "COLUMNS = ['triage', 'todo']", "COLUMNS = frozenset(('triage', 'todo'))")})
+    ok, note = _check_with(agent, patches)
+    assert ok is False and "KHONG ap duoc" in note, note
+
+
+def test_check_flags_drift_but_still_says_ok():
+    t, agent, patches = _sandbox()
+    _commit_upstream(agent, {"plugin_api.py": UPSTREAM["plugin_api.py"].replace(
+        "return 1", "return 2")})
+    ok, note = _check_with(agent, patches)
+    assert ok is True and "DA DOI" in note and "plugin_api.py" in note, note
+
+
+def test_check_hermes_turns_the_result_into_its_own_verdict():
+    """Doi chieu ca hai dau day: `check()` tra gi thi `check_hermes` bao gi."""
+    import check_hermes
+    t, agent, patches = _sandbox()
+    old = kpb.check
+    try:
+        kpb.check = lambda: (True, "ban va ap sach len ban goc dang cai")
+        assert check_hermes.check_kanban_plugin_patch() == []
+        kpb.check = lambda: (True, "ban va ap duoc, nhung ban goc DA DOI o: plugin_api.py")
+        assert check_hermes.check_kanban_plugin_patch() == [], "troi thi canh bao, KHONG phai HONG"
+        kpb.check = lambda: (False, "ban va khong ap duoc")
+        assert check_hermes.check_kanban_plugin_patch() == ["plugin kanban: ban va khong ap duoc"]
+    finally:
+        kpb.check = old
+
+
 def test_repo_no_longer_vendors_the_plugin():
     d = ROOT / "hermes" / "plugins" / "kanban" / "dashboard"
     assert not d.exists(), f"{d} quay lai — repo chi giu ban va (LOW-313)"

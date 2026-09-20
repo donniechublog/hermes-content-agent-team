@@ -59,12 +59,18 @@ def _stand_in(tmp, rec):
     return replay.stand_in_image(tmp / f"{rec['id']}.png", rec["number"], rec["w"], rec["h"])
 
 
+def _ask(tmp, rec, **kw):
+    """Goi `description_image` DUNG bo tham so production da dung cho ban ghi nay
+    (`rec["call"]`). Goi sai bo do thi cau hoi sinh ra khac cau hoi da ghi, va
+    test tut xuong chi con kiem phan boc cau tra loi — xem `drifted`."""
+    return vision.description_image(_stand_in(tmp, rec), TITLE, **{**rec["call"], **kw})
+
+
 def test_real_answers_parse_to_the_fields_production_wrote():
     with _Replayed() as (rp, tmp):
         for rec in GOLD["recordings"]:
             found = {}
-            description, relevant = vision.description_image(_stand_in(tmp, rec), TITLE,
-                                                             ket_qua=found)
+            description, relevant = _ask(tmp, rec, ket_qua=found)[:2]
             want = rec["expected"]
             assert relevant is want["relevant"], (rec["id"], relevant)
             assert description == want["description"], rec["id"]
@@ -72,6 +78,10 @@ def test_real_answers_parse_to_the_fields_production_wrote():
                 assert found.get(k) == want[k], (rec["id"], k, found.get(k), want[k])
             assert found["vision_raw"]["answer"] == rec["answer"]
         assert rp.misses == [] and len(rp.calls) == len(GOLD["recordings"])
+        assert rp.drifted == [], (
+            "CAU HOI hom nay khac cau hoi trong ban ghi — ban ghi da cu. Doc "
+            "`drifted[0]['question']` so voi ban ghi, roi thu lai bang "
+            "`tests/replay.py harvest-vision` tu mot manifest production moi.")
 
 
 def test_recordings_cover_both_verdicts_and_every_subject_kind_seen():
@@ -101,11 +111,60 @@ def test_unparsable_answer_is_asked_again_once_then_forced_false():
     try:
         tmp = Path(tempfile.mkdtemp(prefix="replay_vision_"))
         found = {}
-        _, relevant = vision.description_image(_stand_in(tmp, rec), TITLE, ket_qua=found)
+        _, relevant = _ask(tmp, rec, ket_qua=found)[:2]
         assert relevant is False and found["override"] == "unparsed_twice_forced_false"
         assert len(rp.calls) == 2, "hoi lai DUNG mot lan"
     finally:
         undo()
+
+
+def test_drift_detector_actually_fires_when_the_prompt_changes():
+    """Khang dinh `drifted == []` chi co nghia neu bo phat hien troi THAT SU keu.
+    Doi cau hoi trong ban ghi = gia bo "ai do vua sua prompt vision": phai van
+    phat lai duoc (khop theo ANH), nhung phai bao troi."""
+    rec = dict(GOLD["recordings"][0])
+    rec["question"] = rec["question"].replace("Tra loi DUNG", "Tra loi (moi) DUNG")
+    rp = replay.VisionReplay([rec])
+    undo = rp.install(vision, os.environ)
+    try:
+        tmp = Path(tempfile.mkdtemp(prefix="replay_vision_"))
+        description, _ = _ask(tmp, rec)[:2]
+        assert description == rec["expected"]["description"], "van phai phat lai duoc"
+        assert rp.misses == []
+        assert [d["number"] for d in rp.drifted] == [rec["number"]], "KHONG bao troi"
+    finally:
+        undo()
+
+
+def test_harvest_reads_only_images_the_engine_actually_asked_about():
+    """`harvest_vision` la thu LAM RA ban ghi — no sai thi moi fixture sau deu sai.
+    Manifest that co ca anh CHUA hoi vision, va vai phien ban ghi `vision_raw`
+    duoi dang repr(dict) chu khong phai JSON."""
+    import tempfile as tf
+    raw = {"model": "m", "question": "hoi?", "answer": "MO_TA: x\nLIEN_QUAN: co"}
+    manifest = {"brand": "dcgr", "draft_id": "d1", "created_at": "2026-09-20", "title": "T",
+                "images": [
+                    {"id": "A1", "w": 10, "h": 20, "source": "other_outlet",
+                     "vision_raw": raw, "relevant": True, "description": "x",
+                     "cluttered": False, "has_keywords": False, "subject_box": None,
+                     "subject_kind": "logo", "empty_share": 0.1, "printed_name": None},
+                    {"id": "A2", "w": 1, "h": 1},                      # chua hoi vision
+                    {"id": "A3", "w": 3, "h": 4, "vision_raw": repr(raw)},   # repr(dict)
+                    {"id": "A4", "w": 5, "h": 6, "vision_raw": "khong phai dict"},
+                ]}
+    p = Path(tf.mkdtemp()) / "manifest.json"
+    p.write_text(json.dumps(manifest), encoding="utf-8")
+
+    out = replay.harvest_vision(p)
+    assert [r["id"] for r in out["recordings"]] == ["A1", "A3"], out["recordings"]
+    assert out["source"] == "dcgr/d1 (2026-09-20)" and out["title"] == "T"
+    a1 = out["recordings"][0]
+    assert (a1["number"], a1["w"], a1["h"]) == (1, 10, 20), "so thu tu tinh tren CA danh sach"
+    assert a1["expected"]["subject_kind"] == "logo" and a1["question"] == "hoi?"
+    assert out["recordings"][1]["number"] == 3, "A3 phai giu so thu tu 3, khong phai 2"
+
+    chon = replay.harvest_vision(p, {"A3"})
+    assert [r["id"] for r in chon["recordings"]] == ["A3"]
 
 
 def _classify_all():
