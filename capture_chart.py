@@ -32,20 +32,20 @@ import role
 import scan_common
 
 
-def _block_empty(ra):
+def _block_empty(out_path):
     """Chup xong ma anh RONG thi dung ngay o day, dung giao mot tep trang cho
     vai. Bo Broadcom dcgr 04/09/2026: ba tam chup ra trang tron (2 mau) van
     di tiep 5 buoc nua toi tan slide. Bat o nguon re hon bat o cuoi."""
     from PIL import Image
     try:
-        with Image.open(ra) as im:
+        with Image.open(out_path) as im:
             rong, mo_ta = role.active_rules().is_blank_image(im.convert("RGB"))
     except Exception:
         return
     if rong:
-        Path(ra).unlink(missing_ok=True)
+        Path(out_path).unlink(missing_ok=True)
         raise SystemExit(
-            f"ANH CHUP RA RONG ({mo_ta}) — da xoa {ra}. Trang chua render xong, "
+            f"ANH CHUP RA RONG ({mo_ta}) — da xoa {out_path}. Trang chua render xong, "
             "selector bat nham phan tu rong, hoac trang chan bot. Thu: --chon "
             "dung phan tu chart, doi lau hon, hoac mo trang bang browser that "
             "xem no co hien gi khong.")
@@ -78,7 +78,7 @@ def _is_image(url: str) -> bool:
         "png", "jpg", "jpeg", "webp", "gif", "avif"}
 
 
-def download_image(url: str, ra: Path) -> bool:
+def download_image(url: str, out_path: Path) -> bool:
     """Link tro thang vao mot tam anh: tai NGUYEN BAN, khong resize, khong crop.
     Do la ban day du nhat co the co — moi buoc xu ly them chi lam mat pixel."""
     import urllib.request
@@ -91,10 +91,10 @@ def download_image(url: str, ra: Path) -> bool:
         data = r.read()
     if not data:
         return False
-    ra.parent.mkdir(parents=True, exist_ok=True)
-    ra.write_bytes(data)
-    image_provenance.stamp_file(ra, "chart_capture")
-    _block_empty(ra)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(data)
+    image_provenance.stamp_file(out_path, "chart_capture")
+    _block_empty(out_path)
     return True
 
 
@@ -123,14 +123,14 @@ MEASURE_JS = """
 """
 
 
-def capture(url: str, ra: Path, chon: str = "", rong_dau: int = EMPTY_MARK) -> int:
+def capture(url: str, out_path: Path, chon: str = "", rong_dau: int = EMPTY_MARK) -> int:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
         sys.exit("Thieu playwright. Cai: venv/bin/pip install playwright && "
                  "venv/bin/playwright install chromium")
 
-    ra.parent.mkdir(parents=True, exist_ok=True)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
         b = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage",
                                     "--force-color-profile=srgb"])
@@ -160,13 +160,13 @@ def capture(url: str, ra: Path, chon: str = "", rong_dau: int = EMPTY_MARK) -> i
             if el:
                 el.scroll_into_view_if_needed()
                 page.wait_for_timeout(400)
-                el.screenshot(path=str(ra))
-                image_provenance.stamp_file(ra, "chart_capture")
-                _block_empty(ra)
+                el.screenshot(path=str(out_path))
+                image_provenance.stamp_file(out_path, "chart_capture")
+                _block_empty(out_path)
             else:
-                page.screenshot(path=str(ra), full_page=True)
-                image_provenance.stamp_file(ra, "chart_capture")
-                _block_empty(ra)
+                page.screenshot(path=str(out_path), full_page=True)
+                image_provenance.stamp_file(out_path, "chart_capture")
+                _block_empty(out_path)
         finally:
             b.close()
 
@@ -174,14 +174,14 @@ def capture(url: str, ra: Path, chon: str = "", rong_dau: int = EMPTY_MARK) -> i
     # hon be ngang that cua phan tu (nhan DPR) thi da mat mot phan ben phai —
     # dung cai loi ma ca script nay sinh ra de chan.
     from PIL import Image
-    with Image.open(ra) as im:
+    with Image.open(out_path) as im:
         w, h = im.size
     can = int(do["w"] * DPR * 0.98)          # 2% dung sai cho bo tron/vien
     if w < can:
         sys.exit(f"CHUP THIEU BE NGANG: anh ra {w}px, chart rong {can}px. "
                  "Mat phan ben phai — dung tam nay. Thu lai voi --chon tro dung "
                  "phan tu chart, hoac --rong lon hon.")
-    print(f"{w}x{h} (DPR {DPR}) -> {ra}", file=sys.stderr)
+    print(f"{w}x{h} (DPR {DPR}) -> {out_path}", file=sys.stderr)
     if h > w * HEIGHT_WARNING:
         print(f"[canh bao] anh RAT CAO ({h/w:.1f} lan be ngang). Be ngang da du; "
               "chieu cao thi duoc phep cat — cat bot mep tren/duoi bang "

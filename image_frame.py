@@ -108,7 +108,7 @@ def _about_rgb(im: Image.Image) -> Image.Image:
     return im.convert("RGB")
 
 
-def line_frame(nguon, ra, emoji: str = "", handle: str = "@donniechublog",
+def line_frame(nguon, out_path, emoji: str = "", handle: str = "@donniechublog",
                footer: str | None = None, avatar=None, khong_mascot: bool = False) -> dict:
     """Dong khung mot anh. Tra ve dict mo ta y nhu frame.js in ra."""
     im = Image.open(nguon)
@@ -218,9 +218,9 @@ def line_frame(nguon, ra, emoji: str = "", handle: str = "@donniechublog",
             print(f'[khung] khong co mascot cho emoji "{emoji}", dung khung khong mascot.',
                   file=sys.stderr)
 
-    Path(ra).parent.mkdir(parents=True, exist_ok=True)
-    khung.save(ra)
-    return {"out": str(ra), "frame": "donnie",
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    khung.save(out_path)
+    return {"out": str(out_path), "frame": "donnie",
             "canvas": {"width": CW, "height": CH},
             "source": {"width": W, "height": H},
             "emoji": emoji or None,

@@ -77,13 +77,13 @@ def _js_browser() -> dict:
     return {"TITLE": JS_TITLE, "TEXT": JS_TEXT, "IMG": JS_IMG, "FIG": JS_FIG, "GNEWS": JS_GNEWS}
 
 
-def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
-    """Anh <img> lon + figure/table/canvas/svg cua MOT trang, ghi vao ra['cands']."""
+def _take_image_page(page, url, so, wd, ctx, JS, chup_fig=True, tran=None):
+    """Anh <img> lon + figure/table/canvas/svg cua MOT trang, ghi vao ctx['cands']."""
     # Tran moi trang: goc <= 4 anh, bao khac <= 3. Truoc day vet toi 12 anh
     # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026). Trang CONG BO chinh
     # chu (LOW-21) duoc tran cua bai goc: chart benchmark o do la anh dat nhat.
     for im in (page.evaluate(JS["IMG"]) or [])[: tran or (4 if so == 0 else 3)]:
-        ra["cands"].append({"image_url": im["src"], "alt": im["alt"], "og": False, "source": "browser",
+        ctx["cands"].append({"image_url": im["src"], "alt": im["alt"], "og": False, "source": "browser",
                             "page_url": url, "w": im["w"], "h": im["h"], "score": 45})
     if not chup_fig:
         return
@@ -102,7 +102,7 @@ def _take_image_page(page, url, so, wd, ra, JS, chup_fig=True, tran=None):
         image_provenance.stamp_file(out, "chart_capture")
         # alt de TRONG: chu "figure"/"screenshot" tu gan tung khop QUY cua
         # article_images -> hint_chart -> nhan CHART cho ca quang cao (05/09/2026).
-        ra["cands"].append({"image_url": str(out), "file_path": str(out), "alt": "", "capture_alt": f"{f['tag']} chup tu trang",
+        ctx["cands"].append({"image_url": str(out), "file_path": str(out), "alt": "", "capture_alt": f"{f['tag']} chup tu trang",
                             "og": False, "source": "browser_capture", "html_tag": f["tag"], "page_url": url,
                             "w": int(f["w"] * 2), "h": int(f["h"] * 2), "score": 50})
 
@@ -116,13 +116,13 @@ def _open_page(page, url, cho_yen=12000):
     page.wait_for_timeout(700)
 
 
-def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
+def _find_report_gnews(page, ctx, mien_goc, het_gio, JS):
     """Bo nguon mong: tim bao khac tren Google News theo tieu de tieng Anh, di
     theo chuyen huong tung link /read/, giu toi da 3 bao lien quan."""
     import urllib.parse as up
     # 2) tim bao khac (bo nguon mong)
     try:
-        q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ra["title_en"])[:120]
+        q = re.sub(r"^\[[^\]]{1,20}\]\s*", "", ctx["title_en"])[:120]
         _open_page(page, "https://news.google.com/search?q=" + up.quote(q)
            + "&hl=en-US&gl=US&ceid=US:en", cho_yen=6000)
         links, thay = [], set()
@@ -132,7 +132,7 @@ def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
                 thay.add(k)
                 links.append(h)
         for h in links[:5]:
-            if het_gio() or len(ra["extra_pages"]) >= 3:
+            if het_gio() or len(ctx["extra_pages"]) >= 3:
                 break
             try:
                 page.goto(h, wait_until="domcontentloaded", timeout=25000)
@@ -141,17 +141,17 @@ def _find_report_gnews(page, ra, mien_goc, het_gio, JS):
                     page.wait_for_timeout(500)
                 u = page.url
                 if "news.google.com" in u or _domain(u) == mien_goc \
-                        or any(_domain(u) == _domain(x["url"]) for x in ra["extra_pages"]):
+                        or any(_domain(u) == _domain(x["url"]) for x in ctx["extra_pages"]):
                     continue
                 td = (page.title() or "")[:160]
                 # Google News tra ca bai KHONG lien quan (cung tu "AI"):
                 # bai benh than, letsdatascience (Gimlet 05/09). Phai
                 # chung >= 2 tu dac trung voi tieu de goc, nhu Bing da loc.
                 import article_images as _ab
-                if len(_ab._tu_dac_trung(ra["title_en"]) & _ab._tu_dac_trung(td)) < 2:
+                if len(_ab._tu_dac_trung(ctx["title_en"]) & _ab._tu_dac_trung(td)) < 2:
                     print(f"[browser] bo bao khong lien quan: {td[:60]!r}", file=sys.stderr)
                     continue
-                ra["extra_pages"].append({"url": u, "kind": "other_outlet",
+                ctx["extra_pages"].append({"url": u, "kind": "other_outlet",
                                           "title": td,
                                           "outlet_url": "https://" + _domain(u)})
             except Exception:                # noqa: BLE001
