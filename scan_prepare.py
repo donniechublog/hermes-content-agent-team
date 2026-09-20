@@ -134,7 +134,18 @@ def _supplement_required(cs: list) -> int:
 
 
 # ---- scout (Finn) -----------------------------------------------------------
-def brief_scout(wd: Path, lam_moi: bool) -> str:
+def submit_command(vai: str) -> str:
+    """Dong lenh NOP in trong brief, mang dung slug cua vai (LOW-318, 20/09/2026).
+
+    Truoc day bon brief go cung chuoi: Finn duoc bao chay `--vai scout`, Vera
+    `--vai market` — slug CU tu truoc LOW-14. Lenh van chay (argparse giai qua
+    `role.canonical_slug`), nhung vai doc brief roi tu nghi minh chay sai vai:
+    sang 20/09 Finn neu dung dong nay trong ly do tu chan (LOW-317), tuc mat mot
+    vong chan doan chi vi tai lieu goi no bang ten khac."""
+    return f"cd {ROOT} && venv/bin/python scan_submit.py --vai {vai}"
+
+
+def brief_scout(wd: Path, lam_moi: bool, vai: str) -> str:
     cand = wd / "candidates.json"
     if lam_moi or not _new(cand):
         r = _run([str(ROOT / "scan_sources.py"), "--out", str(cand)])
@@ -172,7 +183,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
           "điểm thì chạy bước 3 với --khong-co (script gửi dòng 'hôm nay không có gì' kèm số tin đã quét). "
           f"Tin đã ≥ {scan_common.SCORE_PASS} điểm CƠ HỌC thì --khong-co bị script từ chối.",
           "", "## Rồi chạy đúng MỘT lệnh:",
-          f"cd {ROOT} && venv/bin/python scan_submit.py --vai scout",
+          submit_command(vai),
           "Script tự ghép manifest (đối chiếu số thứ tự, cộng điểm, đánh số), tự thêm mục bắt buộc còn thiếu, viết báo cáo đánh số, "
           "gửi lên topic. Báo [LOI] thì sửa picks.json rồi chạy lại. KHÔNG cat/grep candidates.json, KHÔNG "
           "web_search, KHÔNG chạy manifest_build/publish tay, KHÔNG tạo task kanban."]
@@ -180,7 +191,7 @@ def brief_scout(wd: Path, lam_moi: bool) -> str:
 
 
 # ---- nova ---------------------------------------------------------------------
-def brief_nova(wd: Path, lam_moi: bool) -> str:
+def brief_nova(wd: Path, lam_moi: bool, vai: str) -> str:
     rep = wd / "scan_models.txt"
     if lam_moi or not _new(rep):
         try:
@@ -237,14 +248,14 @@ def brief_nova(wd: Path, lam_moi: bool) -> str:
           "ở bảng khó bão hoà (HLE, ARC-AGI-2, Terminal-Bench). Không có gì đáng lên kênh thì "
           "chạy bước 3 với --khong-co.",
           "", "## Rồi chạy đúng MỘT lệnh:",
-          f"cd {ROOT} && venv/bin/python scan_submit.py --vai nova",
+          submit_command(vai),
           "Script tự ghi manifest đánh số, kiểm mục bắt buộc, viết báo cáo, gửi topic. Báo [LOI] thì sửa list.json "
           "rồi chạy lại. KHÔNG chạy article_sources.py (approve_service làm lúc Ông Chủ chọn), KHÔNG tạo task."]
     return "\n".join(L)
 
 
 # ---- market (Vera) ------------------------------------------------------------
-def brief_market(wd: Path, lam_moi: bool) -> str:
+def brief_market(wd: Path, lam_moi: bool, vai: str) -> str:
     q = wd / state_paths.SCAN_RESULT_FILE
     if lam_moi or not _new(q):
         r = _run([str(ROOT / "scan_business.py"), "--gio", "30", "--out", str(q)])
@@ -269,7 +280,7 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
                                      "KHÔNG lên báo cáo>"}], ensure_ascii=False, indent=1),
           "Mọi tin [W] phải có mặt. Không có gì đáng lên kênh thì chạy bước 3 với --khong-co.",
           "", "## Rồi chạy đúng MỘT lệnh:",
-          f"cd {ROOT} && venv/bin/python scan_submit.py --vai market",
+          submit_command(vai),
           "Script tự ghi manifest đánh số, tự thêm mục bắt buộc còn thiếu, viết báo cáo, gửi topic. Báo [LOI] thì "
           "sửa list.json rồi chạy lại. KHÔNG chạy article_sources.py, KHÔNG web_search, KHÔNG tạo task."]
     return "\n".join(L)
@@ -277,7 +288,7 @@ def brief_market(wd: Path, lam_moi: bool) -> str:
 
 
 # ---- qinn (Qinn) -------------------------------------------------------------
-def brief_qinn(wd: Path, lam_moi: bool) -> str:
+def brief_qinn(wd: Path, lam_moi: bool, vai: str) -> str:
     q = wd / state_paths.SCAN_RESULT_FILE
     if lam_moi or not _new(q):
         # Cua so quet trung voi khung mot luot: khong chong lap (tin se trung,
@@ -328,7 +339,7 @@ def brief_qinn(wd: Path, lam_moi: bool) -> str:
           "tin hon home, nhung khong duoc mien tieu chi.",
           "Khong co gi dat nguong thi chay buoc 3 voi --khong-co.",
           "", "## Roi chay dung MOT lenh:",
-          f"cd {ROOT} && venv/bin/python scan_submit.py --vai qinn",
+          submit_command(vai),
           "Script tu ghi manifest danh so, viet bao cao, gui topic. Bao [LOI] thi sua list.json roi "
           "chay lai. KHONG chay article_sources.py, KHONG web_search, KHONG tao task."]
     return "\n".join(L)
@@ -343,7 +354,7 @@ def main() -> int:
     a = ap.parse_args()
     wd = workdir(a.vai)
     brief = {"finn": brief_scout, "nova": brief_nova, "vera": brief_market,
-             "qinn": brief_qinn}[a.vai](wd, a.lam_moi)
+             "qinn": brief_qinn}[a.vai](wd, a.lam_moi, a.vai)
     (wd / "brief.md").write_text(brief, encoding="utf-8")
     if not a.im:
         print(brief)

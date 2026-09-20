@@ -176,7 +176,7 @@ flowchart TD
 
     subgraph S1["1 · QUÉT TIN"]
         cron1{{"cron 05:00 VN"}}:::cron
-        scan["scan_prepare.py --vai scout|nova|market<br/>Finn / Nova / Vera"]:::container
+        scan["scan_prepare.py --vai finn|nova|vera|qinn<br/>Finn / Nova / Vera / Qinn"]:::container
         manifest["manifest_common/_build/_write<br/>+ required.py"]:::container
         candidates[("candidates_*.json")]:::datastore
         cron1 -.-> scan
