@@ -111,15 +111,15 @@ def one_line(text: str, tran: int = 140) -> str:
 def score_mechanical(t: dict) -> int:
     """Chi de XEP thu tu Qinn doc. Khong cat tin theo so nay."""
     m = t.get("metrics") or {}
-    def so(x):
+    def _as_int(x):
         try:
             return max(0, int(x))
         except (TypeError, ValueError):
             return 0
     d = 0.0
-    d += 3 * math.log10(1 + so(m.get("views")))
-    d += 4 * math.log10(1 + so(m.get("likes")))
-    d += 2 * math.log10(1 + so(m.get("replies")))
+    d += 3 * math.log10(1 + _as_int(m.get("views")))
+    d += 4 * math.log10(1 + _as_int(m.get("likes")))
+    d += 2 * math.log10(1 + _as_int(m.get("replies")))
     text = t.get("text") or ""
     d += min(len(text), 1500) / 120.0          # bai dai = co gi de doc
     if LINK_CAPABILITY.search(text):

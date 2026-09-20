@@ -69,9 +69,9 @@ class RankFIFCell:
             self._phat += 1
             return so, so - self._phuc_vu
 
-    def doi(self, so):
+    def doi(self, ticket):
         with self._cv:
-            while so != self._phuc_vu:
+            while ticket != self._phuc_vu:
                 self._cv.wait()
 
     def release(self):
