@@ -327,6 +327,16 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   Đồ dùng chung của test nằm ở `tests/tam.py` — **không** phải tệp test,
   `run.sh` chỉ chạy `test_*.py`.
 
+  **Đo độ phủ (LOW-301).** CI cài `coverage`, chạy `tests/run.sh` dưới nó và in bảng ở cuối
+  job (cả trong `$GITHUB_STEP_SUMMARY`) — **chỉ báo cáo, chưa có ngưỡng chặn**. Lần đo đầu
+  (20/09/2026): 57–58% dòng + nhánh. Tiến trình con cũng được đo: mỗi tiến trình Python tự bật
+  coverage qua `tests/coverage_hook/sitecustomize.py` khi có `COVERAGE_PROCESS_START`. Ở máy mình
+  (cài `coverage` vào chỗ riêng, đừng cài vào venv dùng chung với hermes):
+  `COVERAGE_PROCESS_START=$PWD/.coveragerc PYTHONPATH=$PWD/tests/coverage_hook:$PWD/tests bash tests/run.sh`,
+  rồi (không đặt hai biến đó nữa) `coverage combine && coverage report --sort=cover`. Hai bẫy đã
+  gặp — `tests/` phải nằm trong `PYTHONPATH`; đừng đưa mẫu chứa `.claude` vào `omit` — ghi ở đầu
+  `.coveragerc`.
+
   **Hàm chạy thật thì đối chiếu bằng VẾT.** Bảy hàm không chạy offline được
   (duyệt ảnh, router Telegram, tạo cặp task, moat, và ba hàm lái Chromium) đã
   được tách 07/09/2026 bằng cách thay mọi cạnh I/O — `call` Telegram, kanban,
