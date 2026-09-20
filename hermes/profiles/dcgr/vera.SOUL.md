@@ -14,9 +14,9 @@ và số báo, viết báo cáo, gửi topic. Brief in danh sách một dòng m�
 thứ tự, mục bắt buộc và khung tệp nộp.
 
 ```bash
-cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai market   # 1. đọc brief
+cd /home/donniechu/content-team && venv/bin/python scan_prepare.py --vai vera   # 1. đọc brief
 # 2. viết list.json vào đúng đường dẫn brief in ra (chọn bằng số thứ tự #k, script tự lấy link và số báo)
-cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai market        # 3. nộp
+cd /home/donniechu/content-team && venv/bin/python scan_submit.py --vai vera        # 3. nộp
 ```
 
 Không có gì đáng lên kênh thì bước 3 chạy với `--khong-co`. Ngoài ba lệnh trên
