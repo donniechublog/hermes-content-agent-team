@@ -324,6 +324,170 @@ def _done_code_no_hand(tid, ai, created_at):
         pass
     return tom_tat or "(không có album nào được gửi lên topic sau khi task bắt đầu)"
 
+def _load_state_json(path) -> dict:
+    """Tep state JSON -> dict; thieu tep hoac tep hong deu coi la rong."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except Exception:                                        # noqa: BLE001
+        return {}
+
+
+class ProgressRun:
+    """Mot luot quet cua report_progress_kanban: du lieu doc MOT lan o dau luot
+    + ba so ghi nho (da bao gi) + co "co gi doi khong" de cuoi luot moi ghi."""
+
+    def __init__(self, token, group, rows):
+        self.token, self.group, self.rows = token, group, rows
+        self.reported = _load_state_json(ALREADY_REPORT_PROGRESS)      # {tid | tid:timed_out:run: ...}
+        self.messages = _load_state_json(STORY_RESULT)                 # {tid: {chat, thread, mid}}
+        self.stalled = _load_state_json(ALREADY_REPORT_STALLED)        # {tid: epoch lan bao treo cuoi}
+        self.changed = self.stalled_changed = False
+        self.waiting = [r for r in rows if r["status"] == "ready"]
+        self.topics = _load_state_json(env_load.topics_path())
+        self.now = time.time()
+        # LOW-23 (12/09/2026): "chay bao lau" do tu LAN CHAY DANG MO, khong tu
+        # tasks.started_at (moc lan DAU, hermes khong bao gio reset — task bi giet o
+        # 25m roi chay lai bi bao "khong phan hoi 40 phut" ngay giay dau). "Con song
+        # khong" doc tu last_heartbeat_at/worker_pid — t_24b214a6 tho deu moi 60s
+        # suot 50 phut ma Telegram van noi "khong phan hoi". None = khong doc duoc
+        # -> coi nhu khong biet, roi ve cach cu, khong phai "da chet".
+        self.run_start = hermes_adapter.run_start() or {}
+        self.heartbeat = hermes_adapter.heartbeat([r["id"] for r in rows]) or {}
+        self._last_runs = None                   # doc luoi: chi khi co task ready/running
+
+    def last_run(self, tid) -> dict:
+        if self._last_runs is None:
+            self._last_runs = hermes_adapter.last_run_many([r["id"] for r in self.rows]) or {}
+        return self._last_runs.get(tid) or {}
+
+    def send(self, ai, text):
+        """Mot dong vao topic cua vai `ai` (khong co topic thi vao goc group).
+        Tra (response, thread)."""
+        thread = self.topics.get(ai)
+        r = call(self.token, "sendMessage", chat_id=self.group,
+                 **({"message_thread_id": thread} if thread else {}),
+                 text=text, parse_mode="HTML")
+        return r, thread
+
+    def mark(self, tid, st):
+        self.reported[tid] = st
+        self.changed = True
+
+
+def _report_stalled(run: ProgressRun, v: dict) -> None:
+    """Task chay QUA LAU ma khong doi trang thai -> canh bao, nhac lai moi
+    AGAIN_REPORT_STALLED_MINUTES; roi `running` thi xoa khoi so treo."""
+    tid, ai, st = v["id"], v["assignee"], v["status"]
+    started = (run.run_start.get(tid) or (None,))[0] or v.get("started_at")
+    if st == "running" and ai != BLACKBOARD_ASSIGNEE and started:
+        minutes = (run.now - started) / 60
+        if (minutes >= THRESHOLD_STALLED_MINUTES
+                and run.now - run.stalled.get(tid, 0) >= AGAIN_REPORT_STALLED_MINUTES * 60):
+            last_beat, pid = run.heartbeat.get(tid) or (None, None)
+            text = long_run_message(_TEN_HIEN.get(ai, ai), v["title"], tid, minutes,
+                                    last_beat, pid, run.now)
+            run.send(ai, text)
+            run.stalled[tid] = run.now
+            run.stalled_changed = True
+            log("tiendo", f"{tid} {ai} chay {int(minutes)} phut, da bao: {text[:60]}")
+    elif tid in run.stalled:
+        del run.stalled[tid]                 # roi running (hoac chuyen vai) -> het treo
+        run.stalled_changed = True
+
+
+def _report_timed_out(run: ProgressRun, v: dict) -> None:
+    """BI HERMES DUNG VI QUA max_runtime: task ve `ready` roi chay lai; truoc
+    12/09/2026 vong quet bo qua `ready` nen hai lan giet cua t_24b214a6 hoan toan
+    im lang tren Telegram. Bao MOT lan cho MOI run timed_out."""
+    tid, ai, st = v["id"], v["assignee"], v["status"]
+    if st not in ("ready", "running") or ai == BLACKBOARD_ASSIGNEE:
+        return
+    lc = run.last_run(tid)
+    key = f"{tid}:timed_out:{lc.get('run_id')}"
+    if lc.get("status") != "timed_out" or run.reported.get(key):
+        return
+    md = lc.get("metadata") or {}
+    text = killed_message(_TEN_HIEN.get(ai, ai), v["title"], tid, md.get("elapsed_seconds"),
+                          md.get("limit_seconds"), st)
+    run.send(ai, text)
+    run.mark(key, True)
+    log("tiendo", f"{tid} {ai} timed_out run {lc.get('run_id')}, da bao")
+
+
+def _status_text(run: ProgressRun, v: dict):
+    """Dong bao cho trang thai MOI cua task, hoac None neu trang thai nay chi can
+    ghi nho, khong can noi (vd `archived`)."""
+    tid, ai, st, title = v["id"], v["assignee"], v["status"], v["title"]
+    ten = _TEN_HIEN.get(ai, ai)
+    if st == "running":
+        sau = len(run.waiting)
+        return (f"▶️ <b>{ten}</b> bắt đầu: <i>{html_escape(title[:80])}</i>"
+                + (f"\n(còn {sau} việc xếp hàng sau việc này)" if sau else ""))
+    if st == "done":
+        gia = _done_code_no_hand(tid, ai, v["created_at"])
+        if gia:
+            log("bangden", f"{tid} {ai} done-gia: {gia[:120]}")
+            return (f"⛔ <b>{ten}</b> báo xong nhưng <b>không có sản phẩm</b>: "
+                    f"<i>{html_escape(title[:80])}</i>\n{html_escape(gia.strip()[:500])}\n"
+                    "(Task đóng sai cách — vai phải dùng kanban_block khi thiếu ảnh.)")
+        so_tt = (_daily_task_ordinal(run.rows, ai, tid, v.get("completed_at"))
+                 if ai in DAILY_ORDINAL_ROLES else None)
+        nhan = f" task #{so_tt:02d}" if so_tt else ""
+        return f"✅ <b>{ten}</b> xong{nhan}: <i>{html_escape(title[:80])}</i>"
+    if st in ("blocked", "failed"):
+        # Kem LY DO (summary/error cua lan chay cuoi) — day la cai Ong Chu can
+        # de go: vai anh block vi thieu anh that thi bao ro anh nao bi loai.
+        ly_do, _ = _summary_run(tid)
+        return (f"⛔ <b>{ten}</b> dừng ({st}): <i>{html_escape(title[:80])}</i>"
+                + (f"\n{html_escape(ly_do.strip()[:400])}" if ly_do.strip() else "")
+                + ("\nBài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ."
+                   if ai in NAME_ROLE_IMAGE else ""))
+    return None
+
+
+def _report_status_change(run: ProgressRun, v: dict) -> None:
+    """Task doi trang thai -> mot dong vao topic cua vai, nho lai message_id de
+    nut bam sau nay tra ve dung link (link_result)."""
+    tid, ai, st = v["id"], v["assignee"], v["status"]
+    if st in ("ready", "todo", "triage") or run.reported.get(tid) == st:
+        return
+    if ai == BLACKBOARD_ASSIGNEE:            # the goc/bang den: khong phai viec cua ai
+        run.mark(tid, st)
+        return
+    text = _status_text(run, v)
+    if text is None:
+        run.mark(tid, st)
+        return
+    r, thread = run.send(ai, text)
+    log("tiendo", f"{tid} {ai} -> {st} (thread={thread}) gui={'ok' if r.get('ok') else r.get('description')}")
+    mid = (r.get("result") or {}).get("message_id")
+    if mid:
+        run.messages[tid] = {"chat": run.group, "thread": thread, "mid": mid}
+    run.mark(tid, st)
+
+
+def _save_progress(run: ProgressRun) -> None:
+    """Ghi ba so ghi nho, chi khi co doi. Chi giu task 24h gan nhat cho ba tep
+    khong phinh (da bao dung `r["id"]`: tung la `r[0]` — rows la dict, luon nem
+    KeyError, chan MOI lan ghi ke tu do)."""
+    song = {r["id"] for r in run.rows}
+    if run.changed:
+        # khoa "tid:timed_out:<run>" cung song theo task cua no
+        da = {k: v for k, v in run.reported.items() if k.split(":")[0] in song}
+        tin = {k: v for k, v in run.messages.items() if k in song}
+        try:
+            _write_json(ALREADY_REPORT_PROGRESS, da, indent=None)
+            _write_json(STORY_RESULT, tin, indent=None)
+        except OSError as e:
+            log("tiendo", f"khong ghi duoc {ALREADY_REPORT_PROGRESS.name}/{STORY_RESULT.name}: {e}")
+    if run.stalled_changed:
+        treo = {k: v for k, v in run.stalled.items() if k in song}
+        try:
+            _write_json(ALREADY_REPORT_STALLED, treo, indent=None)
+        except OSError as e:
+            log("tiendo", f"khong ghi duoc {ALREADY_REPORT_STALLED.name}: {e}")
+
+
 def report_progress_kanban(token, group):
     """Bao TIEN DO hang doi kanban ve Telegram: task bat dau -> mot dong vao
     topic cua vai kem so viec con xep hang; task xong/hong -> mot dong nua;
@@ -333,146 +497,23 @@ def report_progress_kanban(token, group):
     Vi sao: tu 03/09/2026 moi container chay MOT task mot luc. Sang 04/09 Ong
     Chu chon 7 bai luc 05:33, Dre lam bai 1, sau bai kia + Nova xep hang ca
     tieng — va khong ai noi gi, trong nhu he thong dung. Hang doi la thiet ke,
-    im lang thi khong. Chay moi vong poll (~50s), chi bao khi trang thai doi."""
+    im lang thi khong. Chay moi vong poll (~50s), chi bao khi trang thai doi.
+
+    Tach 20/09/2026 (LOW-312, do phuc tap 64): moi task di qua BA buoc theo dung
+    thu tu cu — treo, bi giet vi qua gio, doi trang thai. Vet (tin gui + log + ba
+    tep state) khoa boi tests/test_trace_report_progress.py."""
     if not hermes_adapter.has_kanban():
         return
-    try:
-        da = json.loads(ALREADY_REPORT_PROGRESS.read_text(encoding="utf-8")) if ALREADY_REPORT_PROGRESS.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        da = {}
-    try:
-        tin = json.loads(STORY_RESULT.read_text(encoding="utf-8")) if STORY_RESULT.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        tin = {}
-    try:
-        treo = json.loads(ALREADY_REPORT_STALLED.read_text(encoding="utf-8")) if ALREADY_REPORT_STALLED.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        treo = {}
     rows = hermes_adapter.job(tu_ts=time.time() - 86400)
     if rows is None:                 # co tep ma doc khong duoc -> phai keu
         log("tiendo", "khong doc duoc kanban")
         return
-    cho = [r for r in rows if r["status"] == "ready"]
-    tp = env_load.topics_path()
-    try:
-        topics = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else {}
-    except Exception:                                        # noqa: BLE001
-        topics = {}
-    now = time.time()
-    doi = doi_treo = False
-    # LOW-23 (12/09/2026): "chay bao lau" do tu LAN CHAY DANG MO, khong tu
-    # tasks.started_at (moc lan DAU, hermes khong bao gio reset — task bi giet o
-    # 25m roi chay lai bi bao "khong phan hoi 40 phut" ngay giay dau). "Con song
-    # khong" doc tu last_heartbeat_at/worker_pid — t_24b214a6 tho deu moi 60s
-    # suot 50 phut ma Telegram van noi "khong phan hoi". None = khong doc duoc
-    # -> coi nhu khong biet, roi ve cach cu, khong phai "da chet".
-    moc = hermes_adapter.run_start() or {}
-    nhip = hermes_adapter.heartbeat([r["id"] for r in rows]) or {}
-    lan_cuoi = None                          # doc luoi: chi khi co task ready/running
+    run = ProgressRun(token, group, rows)
     for v in rows:
-        tid, ai, st = v["id"], v["assignee"], v["status"]
-        title, _c = v["title"], v["created_at"]
-        bat_dau = (moc.get(tid) or (None,))[0] or v.get("started_at")
-        if st == "running" and ai != BLACKBOARD_ASSIGNEE and bat_dau:
-            phut = (now - bat_dau) / 60
-            if phut >= THRESHOLD_STALLED_MINUTES and now - treo.get(tid, 0) >= AGAIN_REPORT_STALLED_MINUTES * 60:
-                ten_treo = _TEN_HIEN.get(ai, ai)
-                thread_treo = topics.get(ai)
-                nhip_cuoi, pid = nhip.get(tid) or (None, None)
-                text = long_run_message(ten_treo, title, tid, phut, nhip_cuoi, pid, now)
-                call(token, "sendMessage", chat_id=group,
-                     **({"message_thread_id": thread_treo} if thread_treo else {}),
-                     text=text, parse_mode="HTML")
-                treo[tid] = now
-                doi_treo = True
-                log("tiendo", f"{tid} {ai} chay {int(phut)} phut, da bao: {text[:60]}")
-        elif tid in treo:
-            del treo[tid]                    # roi running (hoac chuyen vai) -> het treo
-            doi_treo = True
-        # BI HERMES DUNG VI QUA max_runtime: task ve `ready` roi chay lai; vong
-        # nay truoc 12/09/2026 bo qua `ready` nen hai lan giet cua t_24b214a6
-        # hoan toan im lang tren Telegram. Bao MOT lan cho MOI run timed_out.
-        if st in ("ready", "running") and ai != BLACKBOARD_ASSIGNEE:
-            if lan_cuoi is None:
-                lan_cuoi = hermes_adapter.last_run_many([r["id"] for r in rows]) or {}
-            lc = lan_cuoi.get(tid) or {}
-            khoa_tt = f"{tid}:timed_out:{lc.get('run_id')}"
-            if lc.get("status") == "timed_out" and not da.get(khoa_tt):
-                md = lc.get("metadata") or {}
-                ten_tt = _TEN_HIEN.get(ai, ai)
-                thread_tt = topics.get(ai)
-                text = killed_message(ten_tt, title, tid, md.get("elapsed_seconds"),
-                                   md.get("limit_seconds"), st)
-                call(token, "sendMessage", chat_id=group,
-                     **({"message_thread_id": thread_tt} if thread_tt else {}),
-                     text=text, parse_mode="HTML")
-                da[khoa_tt] = True
-                doi = True
-                log("tiendo", f"{tid} {ai} timed_out run {lc.get('run_id')}, da bao")
-        if st in ("ready", "todo", "triage") or da.get(tid) == st:
-            continue
-        if ai == BLACKBOARD_ASSIGNEE:          # the goc/bang den: khong phai viec cua ai
-            da[tid] = st
-            doi = True
-            continue
-        ten = _TEN_HIEN.get(ai, ai)
-        if st == "running":
-            sau = len(cho)
-            text = (f"▶️ <b>{ten}</b> bắt đầu: <i>{html_escape(title[:80])}</i>"
-                    + (f"\n(còn {sau} việc xếp hàng sau việc này)" if sau else ""))
-        elif st == "done":
-            gia = _done_code_no_hand(tid, ai, _c)
-            if gia:
-                text = (f"⛔ <b>{ten}</b> báo xong nhưng <b>không có sản phẩm</b>: "
-                        f"<i>{html_escape(title[:80])}</i>\n{html_escape(gia.strip()[:500])}\n"
-                        "(Task đóng sai cách — vai phải dùng kanban_block khi thiếu ảnh.)")
-                log("bangden", f"{tid} {ai} done-gia: {gia[:120]}")
-            else:
-                so_tt = (_daily_task_ordinal(rows, ai, tid, v.get("completed_at"))
-                         if ai in DAILY_ORDINAL_ROLES else None)
-                nhan = f" task #{so_tt:02d}" if so_tt else ""
-                text = f"✅ <b>{ten}</b> xong{nhan}: <i>{html_escape(title[:80])}</i>"
-        elif st in ("blocked", "failed"):
-            # Kem LY DO (summary/error cua lan chay cuoi) — day la cai Ong Chu can
-            # de go: vai anh block vi thieu anh that thi bao ro anh nao bi loai.
-            ly_do, _ = _summary_run(tid)
-            text = (f"⛔ <b>{ten}</b> dừng ({st}): <i>{html_escape(title[:80])}</i>"
-                    + (f"\n{html_escape(ly_do.strip()[:400])}" if ly_do.strip() else "")
-                    + ("\nBài đi kèm đang chờ, sẽ không chạy tới khi việc ảnh được gỡ."
-                       if ai in NAME_ROLE_IMAGE else ""))
-        else:
-            da[tid] = st
-            doi = True
-            continue
-        thread = topics.get(ai)
-        r = call(token, "sendMessage", chat_id=group,
-                 **({"message_thread_id": thread} if thread else {}),
-                 text=text, parse_mode="HTML")
-        log("tiendo", f"{tid} {ai} -> {st} (thread={thread}) gui={'ok' if r.get('ok') else r.get('description')}")
-        mid = (r.get("result") or {}).get("message_id")
-        if mid:                              # nho lai de dung nut bam sau nay tra ve dung link
-            tin[tid] = {"chat": group, "thread": thread, "mid": mid}
-        da[tid] = st
-        doi = True
-    # Chi giu task 24h gan nhat cho ba tep khong phinh (da bao dung `r["id"]`:
-    # tung la `r[0]` — rows la dict, luon nem KeyError, chan MOI lan ghi ke tu
-    # do; sua kem trong doi nay vi STORY_RESULT/ALREADY_REPORT_STALLED moi cung se hong theo).
-    song = {r["id"] for r in rows}
-    if doi:
-        # khoa "tid:timed_out:<run>" cung song theo task cua no
-        da = {k: v for k, v in da.items() if k.split(":")[0] in song}
-        tin = {k: v for k, v in tin.items() if k in song}
-        try:
-            _write_json(ALREADY_REPORT_PROGRESS, da, indent=None)
-            _write_json(STORY_RESULT, tin, indent=None)
-        except OSError as e:
-            log("tiendo", f"khong ghi duoc {ALREADY_REPORT_PROGRESS.name}/{STORY_RESULT.name}: {e}")
-    if doi_treo:
-        treo = {k: v for k, v in treo.items() if k in song}
-        try:
-            _write_json(ALREADY_REPORT_STALLED, treo, indent=None)
-        except OSError as e:
-            log("tiendo", f"khong ghi duoc {ALREADY_REPORT_STALLED.name}: {e}")
+        _report_stalled(run, v)
+        _report_timed_out(run, v)
+        _report_status_change(run, v)
+    _save_progress(run)
 
 # Nhan category dung TIENG ANH. Ong Chu chot: bo tieng Viet o nhan de khoi phat
 # sinh loi dau. Nhan la tu ngan, doc gia ky thuat quen ca hai thu tieng, ma
