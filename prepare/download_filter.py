@@ -109,7 +109,8 @@ def _provenance_of(c: dict) -> str:
     cong "khong dung lai anh" khong tach duoc the logo khoi anh su kien."""
     if (c.get("brand_match") or {}).get("kind") == "logo" and c.get("graphic_allowed"):
         return "logo_card"
-    return {"browser_capture": "chart_capture", "arxiv_figure": "arxiv_figure"}.get(c.get("source"), "engine_download")
+    return {"browser_capture": "chart_capture",
+            "arxiv_figure": "arxiv_figure"}.get(str(c.get("source") or ""), "engine_download")
 
 
 def download_and_filter(cands: list, wd: Path) -> list:

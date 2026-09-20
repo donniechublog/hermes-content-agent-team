@@ -38,7 +38,9 @@ def _load(path: str):
     if s < 1:
         im = cv2.resize(im, (max(1, int(im.shape[1] * s)), max(1, int(im.shape[0] * s))),
                         interpolation=cv2.INTER_AREA)
-    kp, des = cv2.ORB_create(nfeatures=N_FEATURES).detectAndCompute(im, None)
+    # `ignore[attr-defined]` o duoi: ORB_create CO THAT luc chay, chi thieu trong
+    # stub cua opencv-python (do 20/09/2026, cv2 4.x) — khong phai loi cua ta.
+    kp, des = cv2.ORB_create(nfeatures=N_FEATURES).detectAndCompute(im, None)  # type: ignore[attr-defined]
     if des is None or len(des) < 10:
         return None
     return im, [k.pt for k in kp], des

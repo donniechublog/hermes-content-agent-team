@@ -423,7 +423,7 @@ def _image_capture(ra, hat, co=(1200, 900)):
 
     tho = Image.new("RGB", (12, 9))
     tho.putdata([(ke() % 256, ke() % 256, ke() % 256) for _ in range(12 * 9)])
-    im = tho.resize((300, 225), Image.BILINEAR)
+    im = tho.resize((300, 225), Image.Resampling.BILINEAR)
     px = im.load()
     for y in range(225):
         for x in range(300):
@@ -431,7 +431,7 @@ def _image_capture(ra, hat, co=(1200, 900)):
             r, g, b = px[x, y]
             px[x, y] = (max(0, min(255, r + n)), max(0, min(255, g + n)),
                         max(0, min(255, b + n)))
-    im.resize(co, Image.LANCZOS).save(ra)
+    im.resize(co, Image.Resampling.LANCZOS).save(ra)
     return ra
 
 

@@ -234,6 +234,8 @@ def fetch_swebench(top: int) -> dict:
         html = _get(SWEBENCH, timeout=60).text
         m = re.search(r'<script type="application/json" id="leaderboard-data">\s*(.*?)\s*</script>',
                       html, re.S)
+        if m is None:
+            raise ValueError("khong thay <script id=leaderboard-data> — trang doi hinh")
         data = json.loads(m.group(1))
     except Exception as e:                                   # noqa: BLE001
         print(f"[swebench] hong: {type(e).__name__}: {e}", file=sys.stderr)
@@ -272,7 +274,10 @@ def fetch_livebench(top: int) -> tuple:
     nam trong bundle JS. Tra (rows, ngay_ban). Diem = trung binh cac cot."""
     try:
         html = _get(LIVEBENCH, timeout=60).text
-        js_path = re.search(r'src="\./(static/js/main\.[a-z0-9]+\.js)"', html).group(1)
+        m_js = re.search(r'src="\./(static/js/main\.[a-z0-9]+\.js)"', html)
+        if m_js is None:
+            raise ValueError("khong thay bundle static/js/main.*.js — trang doi hinh")
+        js_path = m_js.group(1)
         js = _get(LIVEBENCH + js_path, timeout=60).text
         tat_ca = sorted(set(re.findall(r'"(20\d\d-\d\d-\d\d)"', js)))
         ngay = tat_ca[-1] if tat_ca else None
@@ -290,14 +295,16 @@ def fetch_livebench(top: int) -> tuple:
     import csv as _csv
     import io
     rows = []
-    for r in _csv.DictReader(io.StringIO(csv_txt)):
-        diem = [float(v) for k, v in r.items() if k != "model" and v not in ("", None)]
+    # `hang` chu khong `r`: `r` o tren la mot Response httpx, dung lai ten do cho
+    # mot hang CSV lam ca nguoi doc lan may doc kieu deu lac (LOW-308).
+    for hang in _csv.DictReader(io.StringIO(csv_txt)):
+        diem = [float(v) for k, v in hang.items() if k != "model" and v not in ("", None)]
         if diem:
-            rows.append({"name": r["model"], "score": round(sum(diem) / len(diem), 1),
+            rows.append({"name": hang["model"], "score": round(sum(diem) / len(diem), 1),
                          "organization": "", "region": "khac"})
     rows.sort(key=lambda x: -x["score"])
-    for i, r in enumerate(rows):
-        r["rank"] = i + 1
+    for i, hang in enumerate(rows):
+        hang["rank"] = i + 1
     return rows[:top], ngay
 
 

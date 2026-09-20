@@ -285,7 +285,7 @@ def _count_stackable_pairs_real(ds: list, vai_anh: str) -> int:
     return _tot((1 << n) - 1)
 
 
-def count_image_use_ok(anh: list, vai_anh: str) -> int:
+def count_image_use_ok(anh: list | None, vai_anh: str) -> int:
     """So SLIDE dung duoc tu bo anh, de xet du/thieu — MOT ban duy nhat cua cong thuc.
 
     Dem theo cai vai DUNG DUOC, khong phai so tam tai ve:

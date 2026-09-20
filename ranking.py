@@ -52,7 +52,7 @@ RATIO_FIT = 1.5
 # ---- Registry nguồn xếp hạng --------------------------------------------------
 # Thu tu trong danh sach = uu tien khi tin khong goi y gi; `suggest_sources` chi xep
 # lai thu tu nay, khong them nguon la.
-SOURCE = [
+SOURCE: list[dict] = [
     {"id": "arena-text",     "site": "ARENA.AI",  "board": "Text Arena",
      "url": "https://arena.ai/leaderboard/text",          "domain_pattern": r"arena\.ai|lmarena",
      "board_pattern": r"\btext\b(?![- ]?to[- ]?)|văn bản|van ban|\bchat\b"},
@@ -716,7 +716,7 @@ def capture_board(page, models: list, out: Path, dpr: int = DPR, vua_khung: bool
     if r > RATIO_FIT and len(da) >= 2:
         kq2, p2, r2, tim2 = da[1]
         a, b = Image.open(p).convert("RGB"), Image.open(p2).convert("RGB")
-        b = b.resize((a.width, round(b.height * a.width / b.width)), Image.LANCZOS)
+        b = b.resize((a.width, round(b.height * a.width / b.width)), Image.Resampling.LANCZOS)
         g = Image.new("RGB", (a.width, a.height + b.height), (255, 255, 255))
         g.paste(a, (0, 0)); g.paste(b, (0, a.height))
         g.save(out, "PNG")
@@ -923,14 +923,14 @@ def capture_list_clean(page, models: list, out: Path, dpr: int = DPR):
         return {"kind": "list", **kq, "has_logo": False}, ""
     ims = [Image.open(p).convert("RGB") for p in manh]
     rong = max(i.width for i in ims)
-    ims = [i if i.width == rong else i.resize((rong, round(i.height * rong / i.width)), Image.LANCZOS)
+    ims = [i if i.width == rong else i.resize((rong, round(i.height * rong / i.width)), Image.Resampling.LANCZOS)
            for i in ims]
-    g = Image.new("RGB", (rong, sum(i.height for i in ims)), (255, 255, 255))
+    g = Image.new("RGB", (rong, sum(x.height for x in ims)), (255, 255, 255))
     y = 0
-    for i in ims:
-        g.paste(i, (0, y)); y += i.height
-    for i in ims:
-        i.close()
+    for anh in ims:                     # `i` da la chi so o tren trong cung ham (LOW-308)
+        g.paste(anh, (0, y)); y += anh.height
+    for anh in ims:
+        anh.close()
     g.save(out, "PNG")
     for p in tam:
         p.unlink(missing_ok=True)
@@ -997,7 +997,7 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     if logo and Path(logo).exists():
         try:
             lg = Image.open(logo).convert("RGBA")
-            lg.thumbnail((160, 160), Image.LANCZOS)
+            lg.thumbnail((160, 160), Image.Resampling.LANCZOS)
             im.paste(lg, (w // 2 - lg.width // 2, y), lg)
             y += lg.height + 50
         except Exception:                                    # noqa: BLE001

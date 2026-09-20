@@ -89,7 +89,7 @@ def measure_chart_signal(img, w=480):
     giua khoang trong do va phai dung CA HAI.
     """
     h = max(1, round(img.height * w / img.width))
-    v = img.convert("RGB").resize((w, h), Image.NEAREST)
+    v = img.convert("RGB").resize((w, h), Image.Resampling.NEAREST)
     px = v.convert("L").tobytes()
     bang = tong = 0
     for y in range(h):

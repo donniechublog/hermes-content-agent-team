@@ -356,6 +356,17 @@ bảng dẫn xuất không lệch bản viết tay cũ.
   module thì test phải đỏ (15/15 chỗ thử đều bị bắt) — test "gọi cho có" thì độ phủ đẹp mà
   không giữ được gì.
 
+  **mypy — chạy tay, CHƯA vào CI (LOW-308).**
+  `venv/bin/mypy --ignore-missing-imports --follow-imports=silent *.py prepare/*.py`
+  (`--follow-imports=silent` là bắt buộc: stub của `numpy` 2.4 dùng cú pháp `type` của
+  Python 3.12, chạy `--python-version 3.11` thì mypy dừng ngay ở numpy). Năm nhóm **có thể là
+  bug thật** — `arg-type`, `union-attr`, `return-value`, `attr-defined`, `index` — đã về **0**
+  (79 → 0, tổng 262 → 172). Phần còn lại là `var-annotated` (91) và `assignment` (59): thiếu
+  chú thích kiểu, không đổi hành vi, cố ý để lại. Thêm một chỗ mới thuộc năm nhóm trên thì sửa
+  chứ đừng `# type: ignore` trần; nếu thật sự là lỗ hổng của stub (như `cv2.ORB_create`) thì
+  `# type: ignore[<mã>]` kèm một câu lý do, và **đừng** mở đầu dòng chú thích bằng
+  `# type: ignore` — mypy đọc nhầm thành chỉ thị và báo `[syntax]`.
+
   **Hàm chạy thật thì đối chiếu bằng VẾT.** Bảy hàm không chạy offline được
   (duyệt ảnh, router Telegram, tạo cặp task, moat, và ba hàm lái Chromium) đã
   được tách 07/09/2026 bằng cách thay mọi cạnh I/O — `call` Telegram, kanban,
