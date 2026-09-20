@@ -127,29 +127,6 @@ class FakeClock:
         return ns
 
 
-class FakeRun:
-    """Thay cho `subprocess.run`. `script(match, returncode, stdout, stderr)`:
-    lenh nao co `match` trong chuoi argv thi tra ket qua do; khong khop -> 0."""
-
-    def __init__(self, trace):
-        self.trace = trace
-        self._rules = []
-
-    def script(self, match, returncode=0, stdout="", stderr="", raises=None):
-        self._rules.append((match, returncode, stdout, stderr, raises))
-        return self
-
-    def __call__(self, argv, *a, **kw):
-        flat = " ".join(str(x) for x in argv) if isinstance(argv, (list, tuple)) else str(argv)
-        self.trace.add("run", flat, kwargs={k: v for k, v in kw.items() if k != "env"})
-        for match, rc, out, err, raises in self._rules:
-            if match in flat:
-                if raises:
-                    raise raises
-                return types.SimpleNamespace(returncode=rc, stdout=out, stderr=err, args=argv)
-        return types.SimpleNamespace(returncode=0, stdout="", stderr="", args=argv)
-
-
 _MISSING = object()
 
 
@@ -165,7 +142,6 @@ class Harness:
         self.trace = Trace()
         self.tg = FakeTelegram(self.trace)
         self.clock = FakeClock(self.trace)
-        self.run = FakeRun(self.trace)
         self.tmp = None
         self._undo = []
 

@@ -15,8 +15,8 @@ Hai canh, hai co che:
        venv/bin/python tests/replay.py harvest-vision <manifest.json> <out.json> [A1,A2...]
    Repo KHONG giu anh cua ben thu ba (ban quyen + nang repo): test dung anh THE
    CHO (`stand_in_image`) cung kich thuoc, danh dau so thu tu vao pixel (0,0);
-   luc phat lai, `VisionReplay` doc pixel do de biet anh nao dang duoc hoi. Anh
-   that (chay `record=True` tren may chu, noi co router) thi khop theo sha256.
+   luc phat lai, `VisionReplay` doc pixel do de biet anh nao dang duoc hoi (anh
+   that thi khop theo sha256).
    Khong co ban ghi -> `ReplayMiss` + ghi vao `.misses`: `description_image` nuot
    moi Exception thanh "CHUA AI NHIN", nen test PHAI khang dinh `misses == []`.
 
@@ -88,21 +88,17 @@ class _Response:
 class VisionReplay:
     """Thay cho `vision._call_router(req)`.
 
-    `recordings`: danh sach {"number", "question", "answer", "image_sha256"?}.
-    `record=True` (chi noi co router): goi that, them ban ghi, `save()` de luu."""
+    `recordings`: danh sach {"number", "question", "answer", "image_sha256"?, "call"}.
+    Ban ghi lam ra bang `tests/replay.py harvest-vision` tu manifest production;
+    o day KHONG co che "vua chay vua ghi" — router chi toi duoc tu may chu."""
 
-    def __init__(self, recordings, record=False, real_call=None):
+    def __init__(self, recordings):
         self.recordings = list(recordings)
-        self.record, self.real_call = record, real_call
         self.calls, self.misses, self.drifted = [], [], []
 
     @classmethod
-    def load(cls, path, **kw):
-        return cls(json.loads(Path(path).read_text(encoding="utf-8"))["recordings"], **kw)
-
-    def save(self, path, source=""):
-        Path(path).write_text(json.dumps({"source": source, "recordings": self.recordings},
-                                         ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    def load(cls, path):
+        return cls(json.loads(Path(path).read_text(encoding="utf-8"))["recordings"])
 
     def _find(self, question, sha, number):
         """Khop theo ANH (sha256 hoac so the cho). Cau hoi chi de phat hien TROI:
@@ -128,13 +124,6 @@ class VisionReplay:
         self.calls.append({"question": question, "number": number, "image_sha256": sha,
                            "model": body.get("model")})
         rec = self._find(question, sha, number)
-        if rec is None and self.record and self.real_call:
-            raw = self.real_call(req).read().decode("utf-8").strip()
-            if raw.startswith("data:"):
-                raw = raw.split("data: [DONE]")[0].strip()[5:].strip()
-            rec = {"question": question, "image_sha256": sha,
-                   "answer": json.loads(raw)["choices"][0]["message"]["content"]}
-            self.recordings.append(rec)
         if rec is None:
             self.misses.append({"number": number, "image_sha256": sha, "question": question[:120]})
             raise ReplayMiss(f"khong co ban ghi vision cho anh so {number} / {sha[:12]} "

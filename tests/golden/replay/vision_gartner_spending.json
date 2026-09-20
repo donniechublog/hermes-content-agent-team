@@ -25,6 +25,11 @@
     "subject_kind": "product",
     "empty_share": 0.15,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Forecasts Worldwide AI, Spending, Grow",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
    }
   },
   {
@@ -50,6 +55,9 @@
     "subject_kind": "logo",
     "empty_share": 0.85,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Forecasts Worldwide AI, Spending, Grow"
    }
   },
   {
@@ -75,6 +83,9 @@
     "subject_kind": "building",
     "empty_share": 0.35,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Forecasts Worldwide AI, Spending, Grow"
    }
   },
   {
@@ -100,6 +111,9 @@
     "subject_kind": "person",
     "empty_share": 0.05,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Forecasts Worldwide AI, Spending, Grow"
    }
   },
   {
@@ -125,6 +139,9 @@
     "subject_kind": "chart",
     "empty_share": 0.05,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Forecasts Worldwide AI, Spending, Grow"
    }
   },
   {
@@ -150,6 +167,9 @@
     "subject_kind": "chart",
     "empty_share": 0.35,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Forecasts Worldwide AI, Spending, Grow"
    }
   },
   {
@@ -175,6 +195,12 @@
     "subject_kind": "logo",
     "empty_share": 0.85,
     "printed_name": null
+   },
+   "call": {
+    "thuong_hieu": {
+     "company": "Gartner",
+     "kind": "logo"
+    }
    }
   },
   {
@@ -200,6 +226,11 @@
     "subject_kind": "logo",
     "empty_share": 0.15,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Worldwide AI",
+    "nhan_them": "CAT_NGANG",
+    "hoi_them": "Anh nay co phai la anh CHUP NGUOI hoac SAN PHAM, VA KHONG co chu/logo/so lieu/bieu do de len tren khong (de con cat doc duoc)? Tra loi CHI mot tu: co hoac khong."
    }
   },
   {
@@ -225,6 +256,9 @@
     "subject_kind": "logo",
     "empty_share": 0.55,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Worldwide AI"
    }
   },
   {
@@ -250,6 +284,9 @@
     "subject_kind": "other",
     "empty_share": 0.15,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Worldwide AI"
    }
   },
   {
@@ -275,7 +312,11 @@
     "subject_kind": "chart",
     "empty_share": 0.4,
     "printed_name": null
+   },
+   "call": {
+    "hang": "Gartner, Worldwide AI"
    }
   }
- ]
+ ],
+ "ghi_chu_call": "`call` = tham so production DA dung khi hoi cau nay, boc ra tu chinh cau hoi. Test phai goi description_image voi dung bo nay, khong thi cau hoi sinh ra khac ban ghi va test chi con kiem phan boc cau tra loi."
 }
