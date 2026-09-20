@@ -51,6 +51,7 @@ Hàm thuần (test được, không mạng) + hàm chạm mạng:
 """
 import re
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 import env_load
@@ -405,6 +406,37 @@ def qid_rank(hang: str) -> tuple:
         if sum(p in cl for p in P_GATE_BILLION) >= 2:
             return qid, cl
     return None, {}
+
+
+P_INSTANCE, Q_HUMAN = "P31", "Q5"
+
+
+@lru_cache(maxsize=512)
+def is_person(ten: str):
+    """Ten nay co la MOT CON NGUOI tren Wikidata khong: True / False / None (khong hoi duoc).
+
+    LOW-293: mo ta cua vision co the goi ten mot SAN PHAM/HANG theo dang ten nguoi
+    ("Claude Cowork", "Maxton Hall", "Bloomberg Tech", "Model Context Protocol") — do 20/09
+    tren 4.240 anh may chu: 35 anh het bi chan thi 5 la loai nay. Hoi Wikidata mot lan cho
+    moi ten (co cache) la phep tach chac tay, dung dung mang nhu vong thuong hieu."""
+    ten = (ten or "").strip()
+    if len(ten) < 4:
+        return False
+    r = _ask_api(WIKIDATA, action="wbsearchentities", search=ten, language="en", type="item", limit=3)
+    if r is None:
+        return None
+    ids = [x["id"] for x in r.get("search", []) if x.get("id")]
+    if not ids:
+        return False
+    ent = _ask_api(WIKIDATA, action="wbgetentities", ids="|".join(ids), props="claims")
+    if ent is None:
+        return None
+    for qid in ids:
+        cl = ((ent.get("entities") or {}).get(qid) or {}).get("claims", {})
+        for c in cl.get(P_INSTANCE, []):
+            if ((c.get("mainsnak") or {}).get("datavalue", {}).get("value") or {}).get("id") == Q_HUMAN:
+                return True
+    return False
 
 
 def material_wikidata(hang: str) -> dict:

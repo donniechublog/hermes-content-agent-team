@@ -423,9 +423,12 @@ def face_no_clear_ai(a: dict) -> bool:
     alt/caption khong neu ten. `submit_common.check_subject_named` chan tam nhu the, vai
     khong duoc bia ten cho qua cong, nen no KHONG phai mot duong dung duoc: ca
     `can_be_hero` lan nguoi dem slide (`schema.count_image_use_ok`, LOW-46) hoi
-    CHINH ham nay, khong moi noi mot dieu kien."""
+    CHINH ham nay, khong moi noi mot dieu kien.
+
+    `people` (LOW-293): ten vision doc ra trong mo ta MA TIN XAC NHAN duoc (nguoi cua
+    hang theo Wikidata, hoac ten nam trong chu bai) — xem `prepare.manifest.label_people`."""
     return bool(a.get("faces")) and not ((a.get("brand_match") or {}).get("person")
-                                       or person_names_of(a))
+                                       or a.get("people") or person_names_of(a))
 
 
 def blocked_empty(a: dict, slug: str = "") -> bool:

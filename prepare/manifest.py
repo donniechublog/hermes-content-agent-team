@@ -3,6 +3,7 @@
 
 Tach tu image_prepare.py 09/09/2026 (audit A1, di chuyen thuan — than ham giu y nguyen).
 """
+import re
 import sys
 import time
 from pathlib import Path
@@ -218,6 +219,71 @@ def _article_material(title: str, link: str, nguon_path: Path, wd: Path, nguon: 
     return tl
 
 
+def _key_words(t: str) -> list:
+    """Chuoi -> danh sach tu da bo dau, chu thuong (de doi chieu ten)."""
+    import unicodedata
+    t = unicodedata.normalize("NFD", (t or "").replace("đ", "d").replace("Đ", "D"))
+    t = "".join(c for c in t if unicodedata.category(c) != "Mn").lower()
+    return [w for w in re.split(r"[^0-9a-z]+", t) if w]
+
+
+def _has_run(words: list, run: list) -> bool:
+    n = len(run)
+    return bool(n) and any(words[i:i + n] == run for i in range(len(words) - n + 1))
+
+
+def label_people(anh: list, chu_bai: str = "", is_person=None) -> None:
+    """Gan khoa `people` cho tung anh: ten NGUOI ma tam anh mang theo VA tin xac nhan duoc
+    (LOW-293, 20/09/2026).
+
+    Ca that: tin "Don kien cao buoc Anthropic, OpenAI, SpaceXAI va Google thong dong lam
+    cham AI" co hai tam dung chu de nhat la ANH GHEP chan dung cac CEO bi neu (A1 cua
+    independent.co.uk, A33 cua AP). Mo ta cua vision ghi ro "Sam Altman (OpenAI), Elon
+    Musk…", nhung `role.face_no_clear_ai` chi doc printed_name/alt/ten tep nen ca hai bi
+    loai la "mat nguoi khong ro ai".
+
+    KHONG tin mo ta mot cach chung chung (do 19/09: regex ten rieng doc mo ta ra ca
+    "Hyundai Steel", "Phan Lan", "Xiaomi Pad"). Ten trong mo ta chi duoc tinh khi:
+      - giong ten nguoi (`role.person_names_in_alt` da loc), VA
+      - khop mot nguoi cua chinh hang trong tin (`brand_match.person`, Wikidata) HOAC
+        nam LIEN NHAU trong chu bai, VA
+      - khong co chu nao la ten hang/thuc the cua tin (tranh "Hyundai Steel"), VA
+      - Wikidata noi day la MOT CON NGUOI (`image_brand.is_person`) — do 20/09 tren 4.240
+        anh may chu: khong co buoc nay thi "Claude Cowork", "Maxton Hall", "Bloomberg Tech",
+        "Model Context Protocol" lot vao. Khong hoi duoc Wikidata -> KHONG nhan (chan nhu cu).
+    Ghi chu "KHONG RO AI" cua vision cung duoc viet lai cho khop.
+
+    `is_person`: de test tiem ban gia, khong goi mang."""
+    import role
+    if is_person is None:
+        import image_brand
+        is_person = image_brand.is_person
+    nguoi_hang, hang_tu = set(), set()
+    for a in anh or []:
+        bm = a.get("brand_match") or {}
+        if bm.get("person"):
+            nguoi_hang.add(" ".join(_key_words(bm["person"])))
+        for ten in (bm.get("company"), (a.get("entity") or {}).get("name")):
+            hang_tu.update(_key_words(ten or ""))
+    bai = _key_words(chu_bai)
+    for a in anh or []:
+        ra = list(role.person_names_of(a))
+        if a.get("faces"):
+            for ten in role.person_names_in_alt(a.get("description") or ""):
+                w = _key_words(ten)
+                if not w or ten in ra or any(x in hang_tu for x in w):
+                    continue
+                if " ".join(w) in nguoi_hang:
+                    ra.append(ten)                     # nguoi cua hang, Wikidata da xac nhan
+                elif _has_run(bai, w) and is_person(ten) is True:
+                    ra.append(ten)
+        a["people"] = ra
+        if ra and a.get("notes"):
+            a["notes"] = [g for g in a["notes"] if "KHÔNG RÕ AI" not in g]
+            a["notes"].append(f"CÓ {a.get('faces')} MẶT NGƯỜI, tin xác nhận tên: {', '.join(ra[:3])} "
+                              "→ chỉ dùng khi đúng người đó, khai \"subject\" y hệt")
+
+
 def compute_derived(anh: list, vai_anh: str, so_xh: int = 0) -> dict:
     """Cac gia tri DAN XUAT tu bo anh: usable_images, not_yet_seen, domains, usable_count,
     cover_suggestions, stackable_pairs. MOT ban cho hai nguoi goi: `build_manifest` luc engine
@@ -258,6 +324,7 @@ def build_manifest(draft_id: str, meta: dict, title: str, link: str, nguon: dict
     tri dan xuat (dung_duoc, not_yet_seen, domains, cover_suggestions) tinh o day tu `images`."""
     import story_type            # import tinh de cong cu doi ten nhin thay (LOW-50), nhu dong 78
     xhs = xhs or []            # nhan ca None (quy uoc cu, con trong vai noi goi truc tiep/test)
+    label_people(anh, (bp or {}).get("article_text") or "")      # LOW-293, truoc khi dem
     dx = compute_derived(anh, vai_anh, so_xh=len(xhs))
     chua_nhin, so_mien = dx["not_yet_seen"], dx["domains"]
     so_dung_duoc, goi_y_bia = dx["usable_count"], dx["cover_suggestions"]
