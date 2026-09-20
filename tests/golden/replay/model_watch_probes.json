@@ -1,0 +1,179 @@
+{
+ "router": "http://127.0.0.1:20128/v1/chat/completions",
+ "recorded_at": "2026-09-20",
+ "note": "Ban ghi phan hoi router cho model_watch.probe(). Xem `origin` tung muc: 'do that' = chup truc tiep; 'dung lai' = hinh dang, khong phai ban chup.",
+ "responses": {
+  "ag/gemini-3.8-flash": {
+   "status_code": 200,
+   "body": {
+    "_raw_text": "data: {\"id\":\"chatcmpl-hWWvatDFNNOVjuMPtL-GiAo\",\"object\":\"chat.completion.chunk\",\"created\":1789879687,\"model\":\"gemini-3.8-flash\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-hWWvatDFNNOVjuMPtL-GiAo\",\"object\":\"chat.completion.chunk\",\"created\":1789879687,\"model\":\"gemini-3.8-flash\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"State problem. Help ready."
+   },
+   "roles_seen": [
+    "default:chinh",
+    "ada:chinh",
+    "bob:chinh",
+    "cape:chinh",
+    "dre:chinh",
+    "ethan:chinh",
+    "finn:chinh",
+    "gin:chinh",
+    "itachi:chinh",
+    "jika:chinh",
+    "kite:chinh",
+    "miles:chinh",
+    "qinn:chinh"
+   ],
+   "origin": "do that 20/09/2026, router 20128 tren may chu"
+  },
+  "ds/deepseek-v4-flash": {
+   "status_code": 200,
+   "body": {
+    "_raw_text": "{\"id\":\"5fc64471-71f1-4dd2-b69c-6bace0c06eec\",\"object\":\"chat.completion\",\"created\":1789879689,\"model\":\"deepseek-flash\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning_content\":\"User just said \\\"hi\"},\"logprobs\":null,\"finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":455,\"completion_tokens\":5,\"total_tokens\":460,\"prompt_tokens_details\":{\"cached_tokens\":256},\"completion_tok"
+   },
+   "roles_seen": [
+    "default:du phong 2",
+    "bob:du phong 2",
+    "cape:du phong 2",
+    "dre:du phong 2",
+    "ethan:du phong 2",
+    "finn:du phong 2",
+    "gin:du phong 2",
+    "itachi:du phong 2",
+    "jika:du phong 2",
+    "kite:du phong 2",
+    "miles:du phong 2",
+    "qinn:du phong 2"
+   ],
+   "origin": "do that 20/09/2026, router 20128 tren may chu"
+  },
+  "ds/deepseek-v4-pro": {
+   "status_code": 200,
+   "body": {
+    "_raw_text": "{\"id\":\"ed128b86-d436-43cd-b3a6-260cacd54628\",\"object\":\"chat.completion\",\"created\":1789879691,\"model\":\"deepseek-v4-pro\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning_content\":\"We need answer user \\\"\"},\"logprobs\":null,\"finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":508,\"completion_tokens\":5,\"total_tokens\":513,\"prompt_tokens_details\":{\"cached_tokens\":384},\"completion"
+   },
+   "roles_seen": [
+    "ada:du phong 2"
+   ],
+   "origin": "do that 20/09/2026, router 20128 tren may chu"
+  },
+  "gcli/grok-4.6": {
+   "status_code": 200,
+   "body": {
+    "choices": [
+     {
+      "message": {
+       "content": "hi"
+      }
+     }
+    ],
+    "model": "grok-4.6"
+   },
+   "roles_seen": [
+    "default:du phong 3",
+    "ada:du phong 3",
+    "bob:du phong 3",
+    "cape:du phong 3",
+    "dre:du phong 3",
+    "ethan:du phong 3",
+    "finn:du phong 3",
+    "gin:du phong 3",
+    "itachi:du phong 3",
+    "jika:du phong 3",
+    "kite:du phong 3",
+    "miles:du phong 3",
+    "qinn:du phong 3"
+   ],
+   "origin": "do that 20/09/2026, router 20128 tren may chu"
+  },
+  "khong-ton-tai/model-ma-khong-ai-co": {
+   "status_code": 404,
+   "body": {
+    "error": {
+     "message": "No active credentials for provider: khong-ton-tai",
+     "type": "invalid_request_error",
+     "code": "model_not_found"
+    }
+   },
+   "origin": "do that 20/09/2026, probe truc tiep router 20128"
+  },
+  "ds/deepseek-chat": {
+   "status_code": 200,
+   "body": {
+    "_raw_text": "{\"id\":\"24d6fd4e-2176-4eab-a039-a6b90f6fd7c6\",\"object\":\"chat.completion\",\"created\":1789879735,\"model\":\"deepseek-flash\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"Hi. Task?\"},\"logprobs\":null,\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":430,\"completion_tokens\":4,\"total_tokens\":434,\"prompt_tokens_details\":{\"cached_tokens\":256},\"prompt_cache_hit_tokens\":256,\"prompt_cache_miss_tokens\":174},\"system_fingerprint\":\"aeb56401ca74e127821c4f9126dcb669\"}data: [DONE]\n\n"
+   },
+   "origin": "do that 20/09/2026, probe truc tiep router 20128"
+  },
+  "KHOA-SAI/ag/gemini-3.8-flash": {
+   "status_code": 401,
+   "body": {
+    "error": {
+     "message": "Invalid API key",
+     "type": "authentication_error",
+     "code": "invalid_api_key"
+    }
+   },
+   "origin": "do that 20/09/2026, probe truc tiep router 20128"
+  },
+  "(model rong)": {
+   "status_code": 400,
+   "body": {
+    "error": {
+     "message": "Missing model",
+     "type": "invalid_request_error",
+     "code": "bad_request"
+    }
+   },
+   "origin": "do that 20/09/2026, probe truc tiep router 20128"
+  },
+  "BOC-402/nha-cung-cap": {
+   "status_code": 500,
+   "body": {
+    "error": {
+     "message": "[402]: {\"error\":{\"message\":\"Insufficient Balance\",\"type\":\"unknown_error\",\"param\":null,\"cod",
+     "type": "upstream_error"
+    }
+   },
+   "origin": "chuoi that tu state/9router/journal (nhat ky cat ~90 ky tu). Ma HTTP NGOAI (500) va viec chuoi nam trong truong `message` cua than JSON la TA DUNG LAI theo comment trong probe() — chua bat duoc dau-cuoi mot lan nhu vay. Chon 500 (khac ma trong) de nhanh boc ma co nghia: ma ngoai 200 thi probe() tra 'ok' truoc khi doc than."
+  },
+  "BOC-403/nha-cung-cap": {
+   "status_code": 500,
+   "body": {
+    "error": {
+     "message": "[403]: {\"error\":{\"message\":\"This pay-as-you-go premium model requires real deposited balan",
+     "type": "upstream_error"
+    }
+   },
+   "origin": "chuoi that tu state/9router/journal (nhat ky cat ~90 ky tu). Ma HTTP NGOAI (500) va viec chuoi nam trong truong `message` cua than JSON la TA DUNG LAI theo comment trong probe() — chua bat duoc dau-cuoi mot lan nhu vay. Chon 500 (khac ma trong) de nhanh boc ma co nghia: ma ngoai 200 thi probe() tra 'ok' truoc khi doc than."
+  },
+  "BOC-404/nha-cung-cap": {
+   "status_code": 500,
+   "body": {
+    "error": {
+     "message": "[404]: {\"error\":{\"message\":\"Model \\\"deepseek-v4-flash\\\" does not exist.\",\"type\":\"not_found",
+     "type": "upstream_error"
+    }
+   },
+   "origin": "chuoi that tu state/9router/journal (nhat ky cat ~90 ky tu). Ma HTTP NGOAI (500) va viec chuoi nam trong truong `message` cua than JSON la TA DUNG LAI theo comment trong probe() — chua bat duoc dau-cuoi mot lan nhu vay. Chon 500 (khac ma trong) de nhanh boc ma co nghia: ma ngoai 200 thi probe() tra 'ok' truoc khi doc than."
+  },
+  "BOC-429/nha-cung-cap": {
+   "status_code": 500,
+   "body": {
+    "error": {
+     "message": "[429]: {   \"error\": {     \"code\": 429,     \"message\": \"You exceeded your current quota, pl",
+     "type": "upstream_error"
+    }
+   },
+   "origin": "chuoi that tu state/9router/journal (nhat ky cat ~90 ky tu). Ma HTTP NGOAI (500) va viec chuoi nam trong truong `message` cua than JSON la TA DUNG LAI theo comment trong probe() — chua bat duoc dau-cuoi mot lan nhu vay. Chon 500 (khac ma trong) de nhanh boc ma co nghia: ma ngoai 200 thi probe() tra 'ok' truoc khi doc than."
+  },
+  "BOC-502/nha-cung-cap": {
+   "status_code": 500,
+   "body": {
+    "error": {
+     "message": "[502]: fetch failed (cause: UND_ERR_CONNECT_TIMEOUT: Connect Timeout Error (attempted addr",
+     "type": "upstream_error"
+    }
+   },
+   "origin": "chuoi that tu state/9router/journal (nhat ky cat ~90 ky tu). Ma HTTP NGOAI (500) va viec chuoi nam trong truong `message` cua than JSON la TA DUNG LAI theo comment trong probe() — chua bat duoc dau-cuoi mot lan nhu vay. Chon 500 (khac ma trong) de nhanh boc ma co nghia: ma ngoai 200 thi probe() tra 'ok' truoc khi doc than."
+  }
+ }
+}
