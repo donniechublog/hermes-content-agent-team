@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Quet HN / Reddit / arXiv, loc, chong trung, tinh truoc 50/100 diem rubric.
+"""Quet HN / Hugging Face Papers / Lobste.rs (+ Reddit khi mo), loc, chong trung,
+tinh truoc 50/100 diem rubric.
 
 Tat dinh, khong LLM. Ganh toan bo phan co hoc de Finn chi con lam dung viec
 can tri tue: cham 2 thanh phan diem con lai (suc nang ky thuat, lien quan),
@@ -10,7 +11,14 @@ Hai thanh phan diem tinh duoc bang toan:
   - Do lan (20d): diem/upvote so voi TRUNG VI cua chinh nguon do trong lan quet
 
 Moi nguon fetch doc lap — mot nguon chet khong keo do ca lan quet (Reddit tung
-tra connection refused; luc do HN + arXiv van chay binh thuong).
+tra connection refused; luc do cac nguon con lai van chay binh thuong).
+
+LOW-321 (20/09/2026): BO arXiv, thay bang Hugging Face Papers va Lobste.rs. Ly do:
+listing thô cua arXiv khong co tin hieu nao cho biet gioi nghien cuu co quan tam
+bai do khong, ma bo cham cua Finn song bang "moi + lan" — nen moi bai arXiv phai
+duoc cham mot diem lan GIA (10/20). HF Papers la chinh nhung bai arXiv do nhung
+DA qua binh chon (upvotes + numComments), Lobste.rs la HN cua dan ky thuat hep
+hon. Ca hai deu cho diem that. (`paperswithcode.com` gio tro ve chinh HF Papers.)
 """
 import argparse
 import concurrent.futures as cf
@@ -19,7 +27,6 @@ import re
 import statistics
 import sys
 import time
-import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,8 +41,11 @@ STATE = env_load.state_dir()          # state/<brand>/ theo container (fallback 
 UA = scan_common.UA                     # mot ban duy nhat, xem scan_common
 
 MAX_AGE_HOURS = 72
-SUBS = ["MachineLearning", "LocalLLaMA", "singularity", "OpenAI", "StableDiffusion"]
-ARXIV_CATS = ["cs.AI", "cs.LG", "cs.CL", "cs.CV"]
+SUBS = ["MachineLearning", "LocalLLaMA", "singularity", "OpenAI", "AI_Agents"]
+# Hugging Face Papers: bai arXiv DA qua binh chon (upvotes/comments cua cong dong).
+HF_PAPERS = "https://huggingface.co/api/daily_papers"
+# Lobste.rs tag `ai`: cung co che HN, cong dong hep hon nen it trung HN.
+LOBSTERS = "https://lobste.rs/t/ai.json"
 
 # Loc so bo cho HN — HN co rat nhieu bai khong lien quan AI. Danh sach de rong
 # tay, LLM van la nguoi quyet dinh cuoi cung ve do lien quan.
@@ -216,41 +226,100 @@ def fetch_reddit(limit_per_sub=25) -> list:
     return out
 
 
-def fetch_arxiv(max_results=30) -> list:
-    query = "+OR+".join(f"cat:{c}" for c in ARXIV_CATS)
-    url = (f"https://export.arxiv.org/api/query?search_query={query}"
-           f"&sortBy=submittedDate&sortOrder=descending&max_results={max_results}")
-    out = []
+def _hours_since(ts: str) -> float | None:
+    """Gio tu mot moc ISO8601 toi bay gio; None neu khong doc duoc.
+
+    Nhan ca "Z" lan offset that ("-05:00" cua Lobste.rs)."""
     try:
-        with httpx.Client(timeout=30, headers={"User-Agent": UA}) as c:
-            root = ET.fromstring(c.get(url).text)
-    except Exception as e:                                   # noqa: BLE001
-        print(f"  [canh bao] arXiv loi: {type(e).__name__}", file=sys.stderr)
-        return out
-    ns = {"a": "http://www.w3.org/2005/Atom"}
-    for entry in root.findall("a:entry", ns):
-        title = " ".join((entry.findtext("a:title", "", ns) or "").split())
-        link = entry.findtext("a:id", "", ns)
-        published = entry.findtext("a:published", "", ns)
-        try:
-            dt = datetime.strptime(published, "%Y-%m-%dT%H:%M:%SZ").replace(
-                tzinfo=timezone.utc)
-            age = (datetime.now(timezone.utc) - dt).total_seconds() / 3600
-        except Exception:                                    # noqa: BLE001
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - dt).total_seconds() / 3600
+
+
+def hf_papers_items(data) -> list:
+    """Muc HF Papers tu JSON cua `daily_papers` (tach khoi HTTP de test duoc).
+
+    TUOI tinh theo `submittedOnDailyAt` — luc bai len danh sach daily, tuc
+    "khoanh khac tin" giong gio dang cua HN. KHONG dung `paper.publishedAt`:
+    danh sach daily hom nay co bai arXiv dang tu 74h toi 386h truoc (do
+    20/09/2026), lay ngay dang thi cua so 72h vut gan sach nguon nay.
+    """
+    out = []
+    for d in data or []:
+        p = (d or {}).get("paper") or {}
+        ma = str(p.get("id") or "").strip()
+        title = " ".join(str(p.get("title") or d.get("title") or "").split())
+        if not ma or not title:
             continue
-        if age > MAX_AGE_HOURS:
+        tuoi = _hours_since(p.get("submittedOnDailyAt") or d.get("publishedAt"))
+        if tuoi is None or tuoi > MAX_AGE_HOURS:
             continue
         out.append({
-            "source": "arxiv",
+            "source": "huggingface-papers",
             "title": title,
-            "link": link,
-            "discussion": link,
-            "points": 0,          # arXiv khong co chi so lan truyen
-            "comments": 0,
+            # Link LA arXiv: chong trung (`seen_keys`) va `NO_HAS_IMAGE` deu doc
+            # duong arxiv.org, nen bai da tung len manifest khong quay lai.
+            "link": f"https://arxiv.org/abs/{ma}",
+            "discussion": f"https://huggingface.co/papers/{ma}",
+            "points": p.get("upvotes") or 0,
+            "comments": d.get("numComments") or 0,
             "via": "arxiv",
-            "age_hours": round(age, 1),
+            "posted_by": "HF Papers",
+            "age_hours": round(tuoi, 1),
         })
     return out
+
+
+def lobsters_items(data) -> list:
+    """Muc Lobste.rs tu JSON cua tag `ai` (tach khoi HTTP de test duoc)."""
+    out = []
+    for d in data or []:
+        title = " ".join(str((d or {}).get("title") or "").split())
+        if not title:
+            continue
+        tuoi = _hours_since(d.get("created_at"))
+        if tuoi is None or tuoi > MAX_AGE_HOURS:
+            continue
+        # Bai chi co thao luan (khong dan link ngoai) thi `url` rong — lay chinh
+        # trang Lobste.rs lam link, nhu HN lay item page.
+        link = (d.get("url") or "").strip() or d.get("short_id_url") or d.get("comments_url")
+        if not link:
+            continue
+        out.append({
+            "source": "lobsters",
+            "title": title,
+            "link": link,
+            "discussion": d.get("comments_url") or link,
+            "points": d.get("score") or 0,
+            "comments": d.get("comment_count") or 0,
+            "via": source_original(link) or "lobste.rs",
+            "posted_by": "lobste.rs",
+            "age_hours": round(tuoi, 1),
+        })
+    return out
+
+
+def _fetch_json(url: str, nhan: str, timeout=25):
+    """JSON cua mot nguon; None khi hong (da in canh bao). Mot nguon chet khong
+    duoc keo do ca lan quet — xem docstring dau tep."""
+    try:
+        with httpx.Client(timeout=timeout, headers={"User-Agent": UA},
+                          follow_redirects=True) as c:
+            return c.get(url).json()
+    except Exception as e:                                   # noqa: BLE001
+        print(f"  [canh bao] {nhan} loi: {type(e).__name__}", file=sys.stderr)
+        return None
+
+
+def fetch_hf_papers(limit=40) -> list:
+    return hf_papers_items(_fetch_json(f"{HF_PAPERS}?limit={limit}", "HF Papers"))
+
+
+def fetch_lobsters() -> list:
+    return lobsters_items(_fetch_json(LOBSTERS, "Lobste.rs"))
 
 
 # ---------- chong trung ----------
@@ -258,6 +327,33 @@ def fetch_arxiv(max_results=30) -> list:
 # Mot ban duy nhat o scan_common (audit 06/09/2026): ba ban chuan hoa khac nhau
 # nghia la "da thay tin nay chua" tra loi khac nhau tuy ai hoi.
 _norm_url = scan_common.standard_link
+
+
+def drop_duplicate_link(items: list) -> tuple:
+    """Gop ban sao CUNG MOT LINK trong CUNG mot lan quet; tra (danh sach, so ban bo).
+
+    Truoc LOW-321 khong can: HN va arXiv khong bao gio dang cung mot duong dan.
+    Gio HN va Lobste.rs la hai cong dong doc cung mot web — do that 20/09/2026:
+    bai "Laya — 33ms Multilingual System 1 Decision Engine" nam o CA HAI (HN
+    1094 diem, Lobste.rs 3 diem), tuc Finn nhan hai dong y het nhau va co the
+    cham diem hai lan cho mot bai.
+
+    Giu ban DAU theo thu tu quet (HN -> HF Papers -> Lobste.rs): HN la noi co
+    thao luan day nhat. Cac nguon con lai ghi vao `also_on` — xuat hien o nhieu
+    cong dong la mot tin hieu that, dung vut di.
+
+    `seen_keys` la viec KHAC: no chan tin da len manifest NHUNG NGAY TRUOC."""
+    giu = {}
+    bo = 0
+    for it in items:
+        k = _norm_url(it["link"])
+        cu = giu.get(k)
+        if cu is None:
+            giu[k] = it
+            continue
+        bo += 1
+        cu.setdefault("also_on", []).append(it["source"])
+    return list(giu.values()), bo
 
 
 def seen_keys() -> set:
@@ -362,7 +458,8 @@ def main():
 
     print("Dang quet...", file=sys.stderr)
     items = []
-    nguon = [("HackerNews", fetch_hn), ("arXiv", fetch_arxiv)]
+    nguon = [("HackerNews", fetch_hn), ("HF Papers", fetch_hf_papers),
+             ("Lobste.rs", fetch_lobsters)]
     if a.reddit:
         nguon.insert(1, ("Reddit", fetch_reddit))
     for name, fn in nguon:
@@ -377,6 +474,10 @@ def main():
         print(f"  {name}: {len(got)} bai", file=sys.stderr)
         items.extend(got)
 
+    items, trung = drop_duplicate_link(items)
+    if trung:
+        print(f"  trung giua cac nguon: gop {trung} ban sao (xem `also_on`)", file=sys.stderr)
+
     seen = seen_keys()
     fresh = [it for it in items if _norm_url(it["link"]) not in seen]
     print(f"  chong trung: bo {len(items) - len(fresh)} bai da xu ly",
@@ -390,14 +491,10 @@ def main():
 
     for it in fresh:
         it["score_recency"] = score_recency(it["age_hours"])
-        if it["source"] == "arxiv":
-            # arXiv khong co upvote — cham 0 se day moi bai arXiv xuong day du
-            # rubric coi day la nguon chinh. Dat muc trung tinh 10/20 va de
-            # Finn quyet dinh bang 2 thanh phan diem con lai.
-            it["score_spread"] = 10
-            it["spread_note"] = "arXiv khong co chi so lan truyen — dat trung tinh 10/20"
-        else:
-            it["score_spread"] = score_spread(it["points"], medians[it["source"]])
+        # Khong con nhanh "diem lan gia": tu LOW-321 moi nguon deu co diem that
+        # (HN points, HF upvotes, Lobste.rs score), va diem lan luon so voi
+        # TRUNG VI cua chinh nguon do nen cac thang diem khac co khong lech nhau.
+        it["score_spread"] = score_spread(it["points"], medians[it["source"]])
         it["score_partial"] = it["score_recency"] + it["score_spread"]
         it["source_median_points"] = medians[it["source"]]
 
@@ -410,8 +507,9 @@ def main():
     muc = []
     for it in fresh:
         hang = RANK_FRONTIER.search(it["title"] or "")
-        nong = (it["source"] != "arxiv" and (it.get("points") or 0) >= 150
-                and KEYWORD_AI.search(it["title"] or ""))
+        # Truoc LOW-321 co loai tru `source != "arxiv"` vi arXiv khong co diem;
+        # gio moi nguon deu co diem that nen chi con nguong 150.
+        nong = (it.get("points") or 0) >= 150 and KEYWORD_AI.search(it["title"] or "")
         if hang or nong:
             loai = "frontier" if hang else "nong"
             muc.append((f"link|{required.chuan_link(it['link'])}", it["title"], loai,
