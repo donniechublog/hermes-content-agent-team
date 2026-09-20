@@ -75,6 +75,12 @@ SOURCE_LABELS = {                       # image.source
 # `alt` — alt cua cac nguon nay KHONG phai chu thich that, khong duoc lay ten nguoi tu do
 # (manifest cu van con, nen nhan theo nguon chu khong theo ngay).
 SOURCES_ALT_IS_QUERY = frozenset({"web_bing", "web_yandex"})
+# LOW-219: vong Commons/Wikipedia ghi TEN TEP vao `alt` ("Commons: Le Mistral.jpg").
+# Ten tep van la bang chung ve NGUOI trong anh (quy uoc dat ten cua Commons, LOW-269)
+# nhung KHONG phai bang chung "anh nay noi ve hang X": do 20/09/2026 tren 2.721 anh bi
+# cham khong lien quan, khop ten hang trong ten tep keo vao tau chien "Le Mistral",
+# tranh "Consulting the Oracle", cong nha tho "Portal Jacobiturmstr".
+ALT_FILENAME_PREFIX = ("Commons:", "Wikipedia:")
 KIND_LABELS = {"photo": "anh"}          # image.kind
 RANKING_KIND_LABELS = {                 # ranking.kind
     "table": "bang",

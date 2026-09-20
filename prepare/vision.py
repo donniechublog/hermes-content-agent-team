@@ -18,7 +18,7 @@ import state_paths
 import subject_fit
 
 from prepare import decision_log
-from prepare.source import all_proper_nouns
+from prepare.source import all_proper_nouns, story_text
 from prepare.download_filter import _chart_by_figure, _save_crop
 
 
@@ -359,6 +359,76 @@ def _call_router(req, _ngu=None):
             ngu(cho)
 
 
+# LOW-219 (20/09/2026): cac tu hay dung dau tit tieng Anh, khong phai ten hang.
+TITLE_WORD_SKIP = frozenset({"The", "This", "That", "New", "AI", "CEO", "How", "Why", "What", "Here"})
+NOT_THIS_PERSON = re.compile(r"kh[oô]ng ph[aả]i\s*$", re.I)
+
+
+def _names_in(chu: str, ten: str) -> bool:
+    return re.search(r"(?<!\w)" + re.escape(ten) + r"(?!\w)", chu or "", re.I) is not None
+
+
+def _subject_person_names(a: dict) -> list:
+    """Ten nguoi LA CHU THE cua tam anh — khac `role.person_names_of` (ten nao trong
+    alt cung tinh, de tra loi "co khai ten khong").
+
+    Moi nguon chu chi lay ten DAU TIEN: chu thich bao mo dau bang nguoi TRONG anh, ten
+    dung sau la nguoi duoc NHAC toi. Bay that (do 20/09): anh chan dung Ed Davey mang
+    chu thich "Ed Davey takes aim at Reform and Elon Musk as Lib Dem conference begins"
+    trong bai ve Elon Musk — lay het ten thi tam anh sai nguoi lai duoc cuu."""
+    ra = []
+    for chu in (a.get("printed_name") or "", role.real_alt(a), a.get("description") or ""):
+        ten = next(iter(role.person_names_in_alt(chu)), "")
+        # "... deo kinh xanh, KHONG PHAI Jeff Dean" — vision noi ro day khong phai nguoi do.
+        if ten and ten not in ra and not NOT_THIS_PERSON.search(chu[:chu.find(ten)][-16:]):
+            ra.append(ten)
+    for ten in role.person_names_in_url(a.get("url") or "")[:1]:
+        if ten not in ra:
+            ra.append(ten)
+    return ra
+
+
+def relevant_by_named_subject(a: dict, tieu_de: str = "", story: str | None = None,
+                              is_person=None) -> str:
+    """Tam anh CO MAT NGUOI ma chu the la nguoi/hang chinh TIN nay nhac toi thi khong
+    con la "khong lien quan" — tra ve MA ly do, "" neu khong cuu (LOW-219).
+
+    Vi sao can: con mat KHONG NHAN DIEN duoc mat nguoi, nen mot tam chan dung lanh dao
+    cua chinh hang trong tin chi hien ra voi no la "mot nguoi dan ong deo kinh" -> cham
+    "khong lien quan". Do tren may chu 20/09/2026: 2.721/4.309 anh bi cham khong lien
+    quan, trong do 291 chan dung; rieng tin "Don kien cao buoc Anthropic, OpenAI,
+    SpaceXAI va Google" mat 10 tam chan dung Musk/Amodei/Hassabis/Pichai that.
+
+    Ba duong, deu doi ANH CO MAT (`faces`) va bang chung CODE doc duoc, khong hoi lai LLM:
+      - `brand_person_photo`    — vong thuong hieu da khop nguoi CUA hang trong tin.
+      - `named_person_in_story` — ten chu the (`_subject_person_names`) nam trong tit/than
+        bai VA Wikidata noi do la mot con nguoi (nhu LOW-293, chan "Bloomberg Tech").
+      - `brand_person_in_caption` — chu thich THAT (khong phai ten tep/cau truy van) vua
+        neu ten nguoi vua neu ten hang cua tin. Doi CA HAI: chi doi ten hang thi "The
+        Lambda variant" (benh nhan COVID) hay "Malaysia Day plate bidding" lot vao, ma
+        nhung tam do dang nao cung bi cong "mat nguoi khong ro ai" chan sau do.
+
+    Do lai tren 225 manifest may chu: cuu 91 tam thanh anh DUNG DUOC that, khong tam nao
+    bi cong khai-ten chan lai (chi 3 tam rieng duong ten van bi chan, vo hai)."""
+    if not a.get("faces"):
+        return ""
+    if (a.get("brand_match") or {}).get("person"):
+        return "brand_person_photo"
+    if is_person is None:
+        import image_brand
+        is_person = image_brand.is_person
+    chu_tin = f"{tieu_de} {story_text() if story is None else (story or '')}"
+    for ten in _subject_person_names(a):
+        if _names_in(chu_tin, ten) and is_person(ten) is True:
+            return "named_person_in_story"
+    alt = role.caption_alt(a)
+    if alt and role.person_names_in_alt(alt):
+        for hang in all_proper_nouns(tieu_de):
+            if len(hang) >= 3 and hang not in TITLE_WORD_SKIP and _names_in(alt, hang):
+                return "brand_person_in_caption"
+    return ""
+
+
 def _classify_hide_whole(a: dict, wd: Path, tieu_de: str) -> dict:
     """classify cho executor.map: mot anh hong (PNG cut, count_faces/crop nem) KHONG
     duoc lam list(ex.map) nem — ca lo mat, ke ca anh da nhin xong, engine chet
@@ -549,6 +619,16 @@ def classify(a: dict, wd: Path, tieu_de: str = "", chup_nguon: bool = False) -> 
         decision_log.note(a, "cluttered", "demote", "CLUTTERED_without_keyword", "khong lam bia, xuong cuoi hang")
         a["notes"].insert(0, "⚠️ ẢNH RỐI (chữ in sẵn/đồ hoạ nhồi/cắt ghép) → CHỈ dùng khi HẾT "
                                "ảnh sạch; buộc dùng thì script tự đặt nền chữ đặc")
+    # LOW-219: truoc khi ROT vi "khong lien quan", hoi lai bang CODE — chu the co ten ma
+    # tin nhac toi thi con mat chi dang khong nhan ra mat nguoi (xem relevant_by_named_subject).
+    if a.get("relevant") is False and not chup_nguon:
+        ly_do = relevant_by_named_subject(a, tieu_de)
+        if ly_do:
+            a["relevant"] = True
+            decision_log.note(a, "vision_override", "keep", ly_do,
+                              f"chu the co ten, tin nhac toi — {(a.get('description') or '')[:150]}")
+            a["notes"].insert(0, "✅ CHỦ THỂ CÓ TÊN và tin nhắc tới → vẫn dùng được "
+                                   "(vision chấm 'không liên quan' vì không nhận ra mặt người)")
     if a.get("relevant") is False:
         a["uses"] = []
         decision_log.note(a, "relevance", "drop", "capture_quality" if chup_nguon else "vision_not_relevant",
