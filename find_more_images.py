@@ -230,6 +230,8 @@ def say_image_new(m: dict, bo_sung: list, wd: Path, tieu_de: str) -> list:
 
 def fresh_manifest(m: dict) -> dict:
     """Tinh lai cac gia tri dan xuat sau khi bo anh doi (cung cong thuc voi engine)."""
+    from prepare.manifest import label_people
+    label_people(m["images"], m.get("article_text") or "")       # LOW-293
     dx = compute_derived(m["images"], m.get("image_role", ""), so_xh=int(m.get("ranking_count") or 0))
     for k in ("domains", "stackable_pairs", "cover_suggestions", "usable_count", "not_yet_seen"):
         m[k] = dx[k]
