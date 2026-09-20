@@ -1,15 +1,16 @@
-# Xuất xứ bản chép plugin kanban trong repo này. TỆP DO MÁY GHI, đừng sửa tay.
+# Xuất xứ bản vá plugin kanban trong repo này. TỆP DO MÁY GHI, đừng sửa tay.
 #
-# `hermes/plugins/kanban/` không phải mã của đội: nó là bản cài hermes-agent
-# (vendor) CỘNG ba bản vá của đội. Muốn nâng lên hermes mới thì phải biết bản
-# vá đang đứng trên commit upstream nào, nếu không chỉ còn nước đoán.
+# Repo KHÔNG còn chép cả plugin (LOW-313). `hermes/plugins/kanban/patches/` chỉ giữ
+# BẢN VÁ của đội; plugin người dùng trong <home>/plugins/kanban/dashboard/ được
+# DỰNG = bản gốc trong git của ~/hermes-agent + bản vá (kanban_plugin_build.py).
+# Bản vá không áp được thì sync_hermes/check_hermes báo HỎNG, không im lặng.
 #
-# Rebase 3 chiều lần sau:
-#   git -C ~/hermes-agent diff d4ded0235a05ed8c50aafd8f1b39aba543fcf0b5..HEAD -- plugins/kanban/dashboard
-#   # xem upstream đổi gì, vá lại ba bản vá lên bản mới, chạy --vao-repo
+#   venv/bin/python sync_hermes.py --kiem-upstream     # upstream đổi gì kể từ hash dưới
+#   venv/bin/python sync_hermes.py --ra-hermes         # dựng lại + ghi vào hai home
+#   # bản vá hết áp được: port tay trong home, restart dashboard, kiểm, rồi:
+#   venv/bin/python sync_hermes.py --refresh-patches   # làm lại bản vá + ghi hash dưới
 #
-# Dòng `commit:` được `sync_hermes.py --vao-repo` ghi lại mỗi lần kéo bản
-# cài về repo.
+# `commit:` là HEAD của ~/hermes-agent mà bản vá được làm ra trên đó.
 
-commit: d4ded0235a05ed8c50aafd8f1b39aba543fcf0b5
-ghi_luc: 06/09/2026 (port ban va giu ket noi WebSocket cua upstream)
+commit: 866332bfb52c46e543143b2620a9aeee8bce9c77
+ghi_luc: 20/09/2026

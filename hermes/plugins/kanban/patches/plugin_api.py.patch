@@ -1,0 +1,66 @@
+diff --git a/plugin_api.py b/plugin_api.py
+index e29e589..77402de 100644
+--- a/plugin_api.py
++++ b/plugin_api.py
+@@ -165,7 +165,16 @@ def _errors_to_500(prefix: str) -> Iterator[None]:
+ 
+ # Dashboard columns, left-to-right ("archived" is a filter toggle, not a column). Keep in
+ # sync with kanban_db.VALID_STATUSES — a status missing here gets mis-bucketed into ``todo``.
+-BOARD_COLUMNS: list[str] = ["triage", "todo", "scheduled", "ready", "running", "blocked", "review", "done"]
++# Thu tu hien thi, sap theo MUC DO CAN NHIN chu khong theo vong doi. Cac cot
++# triage/scheduled/review gan nhu luon rong trong day chuyen noi dung, de o dau
++# thi day nhung cot thuc su phai theo doi ra tan phia sau man hinh.
++#   running  dang chay ngay bay gio
++#   ready    sap chay
++#   blocked  worker dang cho nguoi tra loi, can xu ly som nhat
++#   todo     dang xep hang
++#   done     vua xong
++# Phai giu DU tat ca trang thai — bo bot mot cai la task roi nham cot.
++BOARD_COLUMNS: list[str] = ["running", "ready", "blocked", "todo", "done", "review", "scheduled", "triage"]
+ 
+ _CARD_SUMMARY_PREVIEW_CHARS = 200
+ 
+@@ -263,6 +272,33 @@ def _links_for(conn: sqlite3.Connection, task_id: str) -> dict[str, list[str]]:
+ 
+ # --- GET /board -------------------------------------------------------------
+ 
++# Ten hien thi (Finn, Ethan, Miles...) cua tung profile, lay tu display_name
++# trong profile.yaml. Bang kanban hien nhan theo TEN NGUOI chu khong phai slug
++# profile (scout, writer...) — slug van la gia tri that trong DB va moi filter.
++# Cache 30s vi /board duoc goi lai lien tuc (moi WS event mot lan) ma
++# list_profiles() doc config cua tung profile tren dia.
++_TEN_VAI_CACHE: tuple[float, dict] = (0.0, {})
++
++
++def _ten_vai() -> dict:
++    global _TEN_VAI_CACHE
++    ts, cached = _TEN_VAI_CACHE
++    now = time.time()
++    if now - ts < 30:
++        return cached
++    ten: dict[str, str] = {}
++    try:
++        from hermes_cli import profiles as profiles_mod
++        for p in profiles_mod.list_profiles():
++            dn = (getattr(p, "display_name", "") or "").strip()
++            if dn:
++                ten[p.name] = dn
++    except Exception:  # noqa: BLE001 — thieu ten chi kem dep, khong duoc gay /board
++        log.debug("khong doc duoc display_name cua profiles", exc_info=True)
++    _TEN_VAI_CACHE = (now, ten)
++    return ten
++
++
+ @router.get("/board")
+ def get_board(
+     tenant: Optional[str] = Query(None, description="Filter to a single tenant"),
+@@ -312,7 +348,8 @@ def get_board(
+             "SELECT DISTINCT assignee FROM tasks WHERE assignee IS NOT NULL AND status != 'archived' ORDER BY assignee")]
+         return {
+             "columns": [{"name": name, "tasks": columns[name]} for name in columns], "tenants": tenants,
+-            "assignees": assignees, "latest_event_id": int(latest_event_id), "now": int(time.time())}
++            "assignees": assignees, "display_names": _ten_vai(),
++            "latest_event_id": int(latest_event_id), "now": int(time.time())}
+ 
+ 
+ # --- GET /tasks/:id ---------------------------------------------------------

@@ -50,7 +50,7 @@ thì báo `[thieu]`, KHÔNG tạo (tôn trọng phân chia per-brand).
 
 ## Plugin kanban
 
-`hermes/plugins/kanban/` giữ bản vá cho bảng kanban trong dashboard. **Bốn** thay
+`hermes/plugins/kanban/patches/` giữ bản vá cho bảng kanban trong dashboard. **Bốn** thay
 đổi (trước đây mục này chỉ ghi ba, thiếu mục cuối):
 
 - **Thứ tự cột**: `running, ready, blocked, todo, done` rồi mới tới `review,
@@ -81,7 +81,7 @@ Hermes có sẵn cách đúng: dashboard quét `<HERMES_HOME>/plugins/<tên>/das
 kèm, cả `dist/` lẫn `plugin_api.py`, và `hermes update` không bao giờ đụng vào
 `<HERMES_HOME>/plugins/`. Nên từ 06/09/2026:
 
-    hermes/plugins/kanban/dashboard/   <->   ~/.hermes-<brand>/plugins/kanban/dashboard/
+    bản gốc hermes-agent + hermes/plugins/kanban/patches/   ->   ~/.hermes-<brand>/plugins/kanban/dashboard/
 
 cho cả hai home, gồm `manifest.json`, `plugin_api.py`, `dist/index.js`,
 `dist/style.css` (bố cục y hệt upstream, không còn tên phẳng `dist.index.js`).
@@ -100,8 +100,36 @@ khi tên nó có trong `plugins.enabled` của `config.yaml` (GHSA-mcfc-hp25-cjv
 Thiếu thì tab kanban vẫn hiện mà mọi `/api/plugins/kanban/*` đều 404.
 `sync_hermes.py` đọc `config.yaml` từng home và nhắc đúng lệnh khi thiếu.
 
-Sau đó `hermes update` không còn liên quan gì tới bản vá. Sửa bản vá thì sửa trong
-git rồi `--ra-hermes` và restart dashboard.
+### Repo chỉ giữ BẢN VÁ, không chép cả plugin (đổi 20/09/2026, LOW-313)
+
+Từ 06/09 tới 20/09 repo chép **nguyên** `plugin_api.py` (3.053 dòng) và
+`dist/index.js` (205 KB) của hermes-agent chỉ để giữ ~90 dòng sửa. Đo 20/09 trên
+máy chủ: bản gốc đã tái cấu trúc còn 1.706 dòng, bản chép vẫn là bản trước tái cấu
+trúc, chạy nhờ 5 shim tương thích mà phía gốc hẹn gỡ, và `--ra-hermes` chép đè bản
+cũ đó lên mỗi lần chạy. Sửa bảo mật phía gốc không tới được bảng của đội.
+
+Nay `hermes/plugins/kanban/patches/` chỉ có ba tệp `.patch` (~230 dòng) và
+`MANIFEST.json`. Plugin trong home được **dựng** lúc `--ra-hermes`
+(`kanban_plugin_build.py`):
+
+    bản gốc = git -C ~/hermes-agent show HEAD:plugins/kanban/dashboard/<tệp>
+    plugin  = bản gốc + bản vá        (git apply, không fuzz, cả bộ hoặc không gì)
+
+- Bản vá **không áp được** (phía gốc đổi đúng chỗ đội sửa): `--ra-hermes` không
+  ghi tệp plugin nào, in `[!] PLUGIN KANBAN KHONG DUNG DUOC` và thoát mã 1;
+  `check_hermes.py` (chạy sau mỗi `hermes update` và mỗi sáng) báo `HONG`.
+- Bản gốc đổi chỗ **khác**: vẫn dựng được, sửa phía gốc tự tới plugin của đội;
+  script in `[i] Ban goc ... DA DOI` để mở dashboard kiểm rồi chốt lại.
+- `MANIFEST.json` ghi sha256 bản gốc + sha256 kết quả: bản gốc còn nguyên mà kết
+  quả khác tức tệp `.patch` bị sửa tay, cũng báo hỏng.
+- Sửa plugin: sửa thẳng trong một home, restart dashboard, nhìn thấy đúng rồi
+  `venv/bin/python sync_hermes.py --refresh-patches` (hai home lệch nhau thì thêm
+  `--chi 'kanban blog'`). `--vao-repo` không còn chép tệp plugin vào repo.
+- Bản vá hết áp được sau `hermes update`: port tay ~20 dòng Python trong home
+  (ba chỗ: `BOARD_COLUMNS`, `_ten_vai()`, khoá `display_names` của `/board`), kiểm
+  dashboard, rồi `--refresh-patches`.
+
+Sau `hermes update` nhớ chạy lại `--ra-hermes` để plugin của đội đứng trên bản gốc mới.
 
 ### Cổng chặn mất bản vá
 
