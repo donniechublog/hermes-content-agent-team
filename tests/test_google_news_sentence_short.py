@@ -32,12 +32,16 @@ class _RSS:
 
 
 def test_find_no_only_ask_headline_bottom_enough():
-    """Thân `find()` phải gọi `_query_bing` để sinh thêm câu ngắn cho GNEWS,
-    không chỉ hỏi đúng một lần bằng `ten` (headline đầy đủ)."""
-    src = (ROOT / "article_sources.py").read_text(encoding="utf-8")
-    than = src[src.index("def find("):src.index("\ndef main(")]
-    assert "_query_bing(ten)" in than, \
-        "find() phải thử thêm câu ngắn (_query_bing) cho Google News, không chỉ headline đầy đủ"
+    """Đường `find()` đi qua phải gọi `_query_bing` để sinh thêm câu ngắn cho
+    GNEWS, không chỉ hỏi đúng một lần bằng `ten` (headline đầy đủ).
+
+    Đọc theo CHUỖI GỌI chứ không cắt thân `find` từ tệp (LOW-309): vòng hỏi
+    Google News đã tách ra `_gnews_item`, và bản cũ cắt chuỗi từ `def find(` tới
+    `def main(` nên nó đỏ dù đường chạy không đổi — một phép đo sai chỗ."""
+    import inspect
+    assert "_gnews_item(" in inspect.getsource(article_sources.find), "find() không còn gọi vòng GNEWS"
+    assert "_query_bing(ten)" in inspect.getsource(article_sources._gnews_item), \
+        "vòng GNEWS phải thử thêm câu ngắn (_query_bing), không chỉ headline đầy đủ"
 
 
 def test_sentence_short_merge_extra_domain_no_has_cell_sentence_bottom_enough():
