@@ -71,12 +71,23 @@ AA = "https://artificialanalysis.ai/leaderboards/models"
 # (404 moi duong thu). Anthropic co fetch_anthropic() rieng (changelog) lam luoi
 # an toan; Meta thi KHONG — tu 16/09/2026 (bo OpenRouter, LOW-185) model moi cua
 # Meta chi con bat duoc qua GITHUB_REPOS (llama.cpp) hoac khi len arena/AA/HF.
-# Qwen co feed hop le nhung bai moi nhat tu 9/2025 — feed chet, da bo.
+# Qwen: do lai 20/09/2026 (LOW-322) — feed VAN CHET, bai moi nhat 23/09/2025;
+# `QwenLM/Qwen3` va `QwenLM/Qwen3-VL` tren GitHub thi 0 ban phat hanh (Qwen dang
+# model thang len HuggingFace). Nen khong them lai duong nao cho Qwen o day; model
+# moi cua ho van bat duoc qua catalog/arena/AA nhu cac hang Trung Quoc khac.
 RSS_RANK = [
     ("OpenAI", "https://openai.com/news/rss.xml"),
     ("Google DeepMind", "https://deepmind.google/blog/rss.xml"),
     ("HuggingFace", "https://huggingface.co/blog/feed.xml"),
     ("Mistral", "https://mistral.ai/rss.xml"),
+    # LOW-322 (20/09/2026). Duong CUOI CUNG sau chuyen huong: `blog.google/
+    # technology/ai/rss/` gio 302 sang `/innovation-and-ai/...` — ghi thang
+    # duong moi de khong phu thuoc chuyen huong.
+    ("Google", "https://blog.google/innovation-and-ai/technology/ai/rss/"),
+    ("Google Research", "https://research.google/blog/rss/"),
+    # NVIDIA dang rat day va phan lon la huong dan ky thuat, khong phai ra mat
+    # model — `KEYWORD_STORY` la cai giu no khong lan bao cao cua Nova.
+    ("NVIDIA", "https://developer.nvidia.com/blog/feed/"),
 ]
 
 # Repo co ban phat hanh thuong bao model moi duoc ho tro TRUOC ca thong cao
