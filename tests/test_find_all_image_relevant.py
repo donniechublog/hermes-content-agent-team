@@ -240,7 +240,7 @@ def test_engine_say_announcement_page_before_browser():
     """Cong o muc ma nguon: prepare_article() goi _extra_announcement_page giua _supplement_source
     va _take_from_browser — de browser ghe trang do lay chart."""
     src = (ROOT / "image_prepare.py").read_text(encoding="utf-8")
-    a, b, c = src.index("_supplement_source(nguon"), src.index("_extra_announcement_page(nguon"), src.index("_take_from_browser(trang")
+    a, b, c = src.index("_supplement_source(nguon"), src.index("_extra_announcement_page(nguon"), src.index("_take_from_browser(source_pages")
     assert a < b < c, "thu tu phai la bo_sung_nguon -> them_trang_cong_bo -> lay_tu_browser"
 
 

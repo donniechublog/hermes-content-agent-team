@@ -155,25 +155,25 @@ COMMAND_HELP = (
     "<code>/help</code> — tin này.\n"
     "Sai cú pháp thì không làm gì — lệnh phải tường minh.")
 
-def _command_article(tra_loi, args):
+def _command_article(reply, args):
     if len(args) != 2 or not args[0].lower().startswith(("http://", "https://")):
-        tra_loi("Cú pháp: <code>/bai &lt;url&gt; &lt;vai&gt;</code> — đúng hai "
+        reply("Cú pháp: <code>/bai &lt;url&gt; &lt;vai&gt;</code> — đúng hai "
                 "phần, URL trước vai sau. Không tạo gì.")
         return
     url, ten = args[0], args[1].lower()
     if ten not in NAME_BRIGHT_CAP:
-        tra_loi("Không có vai <b>" + html_escape(ten) + "</b>. Vai nhận: "
+        reply("Không có vai <b>" + html_escape(ten) + "</b>. Vai nhận: "
                 + ", ".join(sorted(NAME_BRIGHT_CAP)) + ". Không tạo gì.")
         return
     loi = _url_valid(url)
     if loi:
-        tra_loi("❌ " + loi + " Không tạo gì.")
+        reply("❌ " + loi + " Không tạo gì.")
         return
     url_chuan = _standard_ify_url(url)
-    so = _load_json(SET_ARTICLE_COUNT, {})
-    if url_chuan in so:
-        cu = so[url_chuan]
-        tra_loi("URL này đã đặt " + cu.get("requested_at", "?") + " — draft <code>"
+    requested = _load_json(SET_ARTICLE_COUNT, {})
+    if url_chuan in requested:
+        cu = requested[url_chuan]
+        reply("URL này đã đặt " + cu.get("requested_at", "?") + " — draft <code>"
                 + html_escape(cu.get("draft_id", "?")) + "</code>, giao "
                 + cu.get("image_role", "?") + ". Không tạo lại.")
         return
@@ -186,7 +186,7 @@ def _command_article(tra_loi, args):
     social = None
     import social_post
     if social_post.is_social(url):
-        tra_loi("⏳ Đang đọc post (crawl thật, có thể 30-60 giây)…")
+        reply("⏳ Đang đọc post (crawl thật, có thể 30-60 giây)…")
         social = _read_social(url)
     if social:
         title, summary, image_url, url, ghi_chu = social
@@ -195,16 +195,16 @@ def _command_article(tra_loi, args):
         source_note = ("Ong Chu dat tay qua lenh /bai — TOAN VAN post da lay san "
                        "bang crawl noi bo, dung truc tiep, khong can mo lai trang goc.")
         url_chuan = _standard_ify_url(url)          # dedup theo permalink da chuan hoa
-        if url_chuan in so:
-            cu = so[url_chuan]
-            tra_loi("Post này đã đặt " + cu.get("requested_at", "?") + " — draft <code>"
+        if url_chuan in requested:
+            cu = requested[url_chuan]
+            reply("Post này đã đặt " + cu.get("requested_at", "?") + " — draft <code>"
                     + html_escape(cu.get("draft_id", "?")) + "</code>, giao "
                     + cu.get("image_role", "?") + ". Không tạo lại.")
             return
     else:
         title, image_url, ghi_chu = _read_page(url)
         if title is None:
-            tra_loi("❌ " + ghi_chu + " — không tạo task. Kiểm tra URL rồi /bai lại.")
+            reply("❌ " + ghi_chu + " — không tạo task. Kiểm tra URL rồi /bai lại.")
             return
 
     import hashlib
@@ -221,14 +221,14 @@ def _command_article(tra_loi, args):
     }
     tid, err = create_pair(item, vai_anh=vai_anh, brand=brand)
     if err:
-        tra_loi("❌ " + html_escape(err))
+        reply("❌ " + html_escape(err))
         return
 
     draft_id = _draft_id(item, brand, vai_anh)
-    so[url_chuan] = {"requested_at": time.strftime("%Y-%m-%d %H:%M"),
+    requested[url_chuan] = {"requested_at": time.strftime("%Y-%m-%d %H:%M"),
                      "draft_id": draft_id, "image_role": vai_anh, "brand": brand,
                      "tasks": [tid], "title": title}
-    _write_json(SET_ARTICLE_COUNT, so)
+    _write_json(SET_ARTICLE_COUNT, requested)
 
     ten_hien = NAME_ROLE_IMAGE.get(vai_anh, "Ethan")
     # Ong Chu 08/09/2026: bo cum "X viet caption sau khi duyet anh" — thua, ai
@@ -238,7 +238,7 @@ def _command_article(tra_loi, args):
             + f"{ten_hien} dựng ảnh ({brand}) — task {tid}")
     if ghi_chu:
         dong += "\n⚠️ " + ghi_chu
-    tra_loi(dong)
+    reply(dong)
 
 def handle_command(token, group, msg, thread_id, text):
     def reply(t):

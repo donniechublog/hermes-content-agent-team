@@ -321,13 +321,13 @@ def extract_rank(tieu_de: str, model: str):
         mm = _MODEL.match(sau.lstrip())
         if mm and model and not mm.group(1).lower().startswith(model.split()[0].lower()):
             continue                                 # "#1 Claude ..." — hang cua Claude
-        so = int(m.group(1) or m.group(2))
+        rank = int(m.group(1) or m.group(2))
         la_top = t[m.start():m.end()].lower().lstrip("#").strip().startswith("top")
         if la_top and _TOP_LIET_KE.search(t[max(0, m.start() - 12):m.end()]):
-            mo = mo if mo is not None else so        # kich co danh sach: chi dung khi khong con gi
+            mo = mo if mo is not None else rank        # kich co danh sach: chi dung khi khong con gi
             continue
         if ro is None:
-            ro = so
+            ro = rank
     if _DAN_DAU.search(t):
         return 1
     return ro if ro is not None else mo

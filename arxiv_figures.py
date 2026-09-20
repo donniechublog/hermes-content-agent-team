@@ -147,7 +147,7 @@ def annotation_enough_line(cap_khoi: tuple, khoi: list) -> tuple:
     return hop
 
 
-def _drop_run_mark(cap: tuple, khoi: list, trang: tuple) -> tuple:
+def _drop_run_mark(cap: tuple, khoi: list, page: tuple) -> tuple:
     """(gioi han tren, gioi han duoi) cua vung noi dung — bo chay dau trang / so trang.
 
     Chay dau ("Published as a conference paper at ICLR 2026") va so trang la
@@ -155,21 +155,21 @@ def _drop_run_mark(cap: tuple, khoi: list, trang: tuple) -> tuple:
     phai chu, khong tu nhan ra duoc — nhung no luon nam ngay duoi khoi chu do,
     nen chan tu day chu chay dau la du.
     """
-    cao = trang[3] - trang[1]
-    tren, duoi = trang[1] + ODD_SAME * cao, trang[3] - ODD_SAME * cao
+    cao = page[3] - page[1]
+    tren, duoi = page[1] + ODD_SAME * cao, page[3] - ODD_SAME * cao
     for k in khoi:
         if is_annotation(k[4]) is not None:
             continue
-        if k[3] <= trang[1] + ODD_RUN_MARK * cao:
+        if k[3] <= page[1] + ODD_RUN_MARK * cao:
             tren = max(tren, k[3] + 3)
-        if k[1] >= trang[3] - ODD_RUN_MARK * cao:
+        if k[1] >= page[3] - ODD_RUN_MARK * cao:
             duoi = min(duoi, k[1] - 3)
     return tren, duoi
 
 
-def _graphic_within_long(cap: tuple, ve: list, dai: tuple, trang: tuple) -> tuple | None:
+def _graphic_within_long(cap: tuple, ve: list, dai: tuple, page: tuple) -> tuple | None:
     """Hop cua phan do hoa nam trong `dai` va cung cot voi chu thich."""
-    dt_trang = max((trang[2] - trang[0]) * (trang[3] - trang[1]), 1.0)
+    dt_trang = max((page[2] - page[0]) * (page[3] - page[1]), 1.0)
     hop = None
     for r in ve:
         if (r[2] - r[0]) * (r[3] - r[1]) >= 0.9 * dt_trang:
@@ -181,7 +181,7 @@ def _graphic_within_long(cap: tuple, ve: list, dai: tuple, trang: tuple) -> tupl
     return hop
 
 
-def region_figure(cap_khoi: tuple, khoi: list, ve: list, trang: tuple) -> tuple | None:
+def region_figure(cap_khoi: tuple, khoi: list, ve: list, page: tuple) -> tuple | None:
     """Vung can cat cho MOT chu thich hinh — ham THUAN (chi hop toa do, khong pymupdf).
 
     cap_khoi  khoi chu thich (x0,y0,x1,y1,text);
@@ -199,7 +199,7 @@ def region_figure(cap_khoi: tuple, khoi: list, ve: list, trang: tuple) -> tuple 
     """
     cap = annotation_enough_line(cap_khoi, khoi)
     rong_cot = max(cap[2] - cap[0], 1.0)
-    gh_tren = _drop_run_mark(cap, khoi, trang)[0]
+    gh_tren = _drop_run_mark(cap, khoi, page)[0]
     # Cac moc chan co the: day cua tung khoi "than bai" phia tren chu thich, gan
     # nhat truoc. Thu lan luot chu khong chot ngay moc dau: so do hoa trong hinh
     # thuong co dong chu trai rong bang cot (hang o token cua BERT hinh 1) va
@@ -214,8 +214,8 @@ def region_figure(cap_khoi: tuple, khoi: list, ve: list, trang: tuple) -> tuple 
     for moc in mocs:
         if cap[1] - moc < 8:
             continue
-        dai = (trang[0], moc, trang[2], cap[1])
-        hop = _graphic_within_long(cap, ve, dai, trang)
+        dai = (page[0], moc, page[2], cap[1])
+        hop = _graphic_within_long(cap, ve, dai, page)
         if hop is not None and hop[1] > dai[1] + 2:
             break                                 # hinh khong cham tran dai: du roi
     if hop is None or dai is None:
@@ -239,8 +239,8 @@ def region_figure(cap_khoi: tuple, khoi: list, ve: list, trang: tuple) -> tuple 
         if hop == truoc:
             break
     hop = _merge(hop, cap)
-    return (max(trang[0], hop[0] - COUNT), max(trang[1], hop[1] - COUNT),
-            min(trang[2], hop[2] + COUNT), min(trang[3], hop[3] + COUNT))
+    return (max(page[0], hop[0] - COUNT), max(page[1], hop[1] - COUNT),
+            min(page[2], hop[2] + COUNT), min(page[3], hop[3] + COUNT))
 
 
 # ---- phan cham vao PDF -------------------------------------------------------
@@ -252,17 +252,17 @@ def pdf_of_link(link: str) -> str | None:
     return link if re.search(r"\.pdf($|\?)", link or "", re.I) else None
 
 
-def _graphic_page(trang) -> list:
+def _graphic_page(page) -> list:
     """Hop cua net ve + anh nhung trong mot trang PDF."""
     ra = []
     try:
-        for d in trang.get_drawings():
+        for d in page.get_drawings():
             r = d["rect"]
             ra.append((r.x0, r.y0, r.x1, r.y1))
     except Exception:                                        # noqa: BLE001
         pass
     try:
-        for i in trang.get_image_info():
+        for i in page.get_image_info():
             b = i["bbox"]
             ra.append((b[0], b[1], b[2], b[3]))
     except Exception:                                        # noqa: BLE001
@@ -292,15 +292,15 @@ def extract(pdf_bytes: bytes, ra_dir, so_trang=COUNT_PAGE, toi_da=MAX) -> list:
     ra_dir.mkdir(parents=True, exist_ok=True)
     ra, da_co = [], set()
     for so_t in range(min(so_trang, doc.page_count)):
-        trang = doc[so_t]
-        tr = (trang.rect.x0, trang.rect.y0, trang.rect.x1, trang.rect.y1)
+        page = doc[so_t]
+        tr = (page.rect.x0, page.rect.y0, page.rect.x1, page.rect.y1)
         try:
-            khoi = [(b[0], b[1], b[2], b[3], b[4]) for b in trang.get_text("blocks")
+            khoi = [(b[0], b[1], b[2], b[3], b[4]) for b in page.get_text("blocks")
                     if b[6] == 0 and (b[4] or "").strip()]
         except Exception as e:                               # noqa: BLE001
             print(f"[arxiv_hinh] trang {so_t + 1}: {type(e).__name__} — bo qua", file=sys.stderr)
             continue
-        ve = _graphic_page(trang)
+        ve = _graphic_page(page)
         for k in khoi:
             ct = is_annotation(k[4])
             if ct is None:
@@ -322,7 +322,7 @@ def extract(pdf_bytes: bytes, ra_dir, so_trang=COUNT_PAGE, toi_da=MAX) -> list:
                 continue
             zoom = max(ZOOM_MIN, min(ZOOM_MAX, max(EMPTY_ITEM / w, SHORT_SIDE_ITEM / h)))
             try:
-                pix = trang.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom),
+                pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom),
                                        clip=pymupdf.Rect(*hop))
             except Exception as e:                           # noqa: BLE001
                 print(f"[arxiv_hinh] {loai} {so}: render hong ({type(e).__name__})", file=sys.stderr)

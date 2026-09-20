@@ -65,9 +65,9 @@ class RankFIFCell:
         """(so cua minh, so nguoi dang dung truoc). Tach khoi doi() de ben goi
         kip bao Ong Chu "con N tin truoc" TRONG LUC cho, khong phai sau."""
         with self._cv:
-            so = self._phat
+            ticket = self._phat
             self._phat += 1
-            return so, so - self._phuc_vu
+            return ticket, ticket - self._phuc_vu
 
     def wait(self, ticket):
         with self._cv:

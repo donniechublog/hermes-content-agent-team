@@ -447,12 +447,12 @@ def main():
         print(f"da ghi [{b['kind']}] {b['time']} ngay {ngay}")
 
     DIRECTORY.mkdir(parents=True, exist_ok=True)
-    trang = use_page(ngay)
+    page_text = use_page(ngay)
     out = DIRECTORY / f"{ngay}.md"
-    out.write_text(trang, encoding="utf-8")
+    out.write_text(page_text, encoding="utf-8")
     print(out)
     if a.in_ra:
-        print("\n" + trang)
+        print("\n" + page_text)
 
 
 if __name__ == "__main__":

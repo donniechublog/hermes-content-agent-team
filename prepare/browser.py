@@ -160,7 +160,7 @@ def _find_report_gnews(page, ctx, mien_goc, het_gio, JS):
         print(f"[browser] gnews search: {type(e).__name__}: {e!r}", file=sys.stderr)
 
 
-def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None) -> dict:
+def browser_pass(source_pages: list, wd: Path, tim_them: bool, gio_han=110, phien=None) -> dict:
     """MOT phien chromium lam het phan "mo browser that" ma SOUL tung bat vai lam tay:
 
       - trang goc: og:title (tieu de tieng Anh), CHU bai (innerText cua
@@ -182,8 +182,8 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
     ra = {"title_en": "", "article_text": "", "cands": [], "extra_pages": []}
     JS = _js_browser()
     t0 = time.time()
-    goc = next((t.get("url") for t in trang if t.get("kind") == "article" and t.get("url")), None) \
-        or (trang[0].get("url") if trang else "")
+    goc = next((t.get("url") for t in source_pages if t.get("kind") == "article" and t.get("url")), None) \
+        or (source_pages[0].get("url") if source_pages else "")
     mien_goc = _domain(goc)
 
     def timed_out():
@@ -207,7 +207,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                 if tim_them and ra["title_en"] and not timed_out():
                     _find_report_gnews(page, ra, mien_goc, timed_out, JS)
                 # 3) bao khac (co san trong nguon + vua tim): lay anh, toi da 2 trang
-                khac = [t for t in trang if t.get("url") and t.get("url") != goc and GNEWS not in t["url"]]
+                khac = [t for t in source_pages if t.get("url") and t.get("url") != goc and GNEWS not in t["url"]]
                 khac += ra["extra_pages"]
                 # Trang cong bo chinh chu di TRUOC (LOW-21): chi mo 2 trang khac,
                 # khong duoc de no rot khoi cua so vi bao Bing them vao truoc.

@@ -80,11 +80,11 @@ def capture_cover(pdf_bytes: bytes) -> Image.Image | None:
         return None
     if doc.page_count == 0:
         return None
-    trang = doc[0]
+    page = doc[0]
 
     # Render ca trang o be ngang dien thoai.
-    thu_phong = EMPTY / trang.rect.width
-    pix = trang.get_pixmap(matrix=pymupdf.Matrix(thu_phong, thu_phong))
+    thu_phong = EMPTY / page.rect.width
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(thu_phong, thu_phong))
     anh = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
 
     if anh.height >= HEIGHT:

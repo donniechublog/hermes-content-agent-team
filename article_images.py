@@ -283,17 +283,17 @@ def find(tieu_de: str, link: str, sau_rong=True, tin_model=None, tu_nguon=None) 
         j = json.loads(Path(tu_nguon).read_text(encoding="utf-8"))
         # `pages[].kind` la kieu TRANG trong tep nguon (LOW-238); gia tri ghi vao anh la
         # image.source: article / other_outlet (cung ma, khac kho).
-        trang = [(t["url"], "article" if t.get("kind") == "article" else "other_outlet")
+        source_pages = [(t["url"], "article" if t.get("kind") == "article" else "other_outlet")
                  for t in j.get("pages", []) if t.get("url")]
-        print(f"[anh_bai] dung {len(trang)} nguon Finn da research", file=sys.stderr)
+        print(f"[anh_bai] dung {len(source_pages)} nguon Finn da research", file=sys.stderr)
     else:
-        trang = [(link, "article")]
+        source_pages = [(link, "article")]
         if sau_rong:
-            trang += [(u, "other_outlet") for u, _ in other_outlets(tieu_de, link) if u]
+            source_pages += [(u, "other_outlet") for u, _ in other_outlets(tieu_de, link) if u]
 
     ung_vien = []
     with cf.ThreadPoolExecutor(max_workers=env_load.quantity(6)) as ex:
-        for (u, nguon), ds in zip(trang, ex.map(lambda t: image_within_page(t[0]), trang)):
+        for (u, nguon), ds in zip(source_pages, ex.map(lambda t: image_within_page(t[0]), source_pages)):
             for src, alt, og in ds:
                 ung_vien.append({"image_url": src, "alt": alt, "og": og,
                                  "source": nguon, "page_url": u})

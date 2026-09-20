@@ -25,7 +25,7 @@ from prepare.download_filter import download_and_filter
 
 MAX_ARTICLE_SOURCES = 6           # tran nguon bai gop (Google News + Bing News) truoc khi chup
 
-def _supplement_source(nguon: dict, nguon_path: Path, trang: list, link: str) -> list:
+def _supplement_source(nguon: dict, nguon_path: Path, source_pages: list, link: str) -> list:
     """Tieu de tieng Anh (mot fetch) va, khi con MONG hon `MAX_ARTICLE_SOURCES`, them
     bao tu Bing — lam TRUOC khi mo browser de browser ghe luon cac trang do. Tra
     `trang`.
@@ -46,10 +46,10 @@ def _supplement_source(nguon: dict, nguon_path: Path, trang: list, link: str) ->
     # Bo nguon mong -> Bing News RSS bang tieu de tieng Anh (link chuyen huong HTTP
     # thuong, khong can browser). Lam TRUOC khi mo browser de browser ghe luon
     # cac trang bao nay lay anh. Ghi vao nguon json de tu_lieu (Miles) cung dung.
-    if len(trang) < MAX_ARTICLE_SOURCES and nguon.get("title_en"):
+    if len(source_pages) < MAX_ARTICLE_SOURCES and nguon.get("title_en"):
         import article_sources
-        co = {t.get("url") for t in trang}
-        mien_co = {_domain(t.get("url", "")) for t in trang}
+        co = {t.get("url") for t in source_pages}
+        mien_co = {_domain(t.get("url", "")) for t in source_pages}
         them = article_sources.other_outlets_bing(nguon["title_en"], so=MAX_ARTICLE_SOURCES, bo_mien=tuple(mien_co))
         for t in them:
             if t["url"] not in co:
@@ -57,12 +57,12 @@ def _supplement_source(nguon: dict, nguon_path: Path, trang: list, link: str) ->
                 co.add(t["url"])
         if them:
             _write_json(nguon_path, nguon)
-            trang = nguon["pages"]
-        print(f"[nguon] bing: +{len(them)} bao -> {len(trang)} trang", file=sys.stderr)
-    return trang
+            source_pages = nguon["pages"]
+        print(f"[nguon] bing: +{len(them)} bao -> {len(source_pages)} trang", file=sys.stderr)
+    return source_pages
 
 
-def _extra_announcement_page(nguon: dict, nguon_path: Path, trang: list, tieu_de: str,
+def _extra_announcement_page(nguon: dict, nguon_path: Path, source_pages: list, tieu_de: str,
                         tom_tat: str = "") -> list:
     """TRANG CONG BO CHINH CHU cua model trong tin (LOW-21, Ong Chu 11/09/2026:
     "phai tim tat ca anh lien quan chu khong phai chi tim anh trong nguon topic,
@@ -72,8 +72,8 @@ def _extra_announcement_page(nguon: dict, nguon_path: Path, trang: list, tieu_de
     lay chart. Ghi vao nguon json de tu_lieu (Miles) cung dung. Tra `trang`."""
     import image_brand as th
     import ranking
-    if any(t.get("kind") == "announcement" for t in trang):
-        return trang
+    if any(t.get("kind") == "announcement" for t in source_pages):
+        return source_pages
     # Lay ten model DAI NHAT tu ca hai tieu de, khong "en truoc vi thay" (LOW-34):
     # tieu de Viet giu nguyen "DeepSeek-V4.1-Flash" trong khi <title> HF chi ra "deepseek".
     import article_sources
@@ -82,29 +82,29 @@ def _extra_announcement_page(nguon: dict, nguon_path: Path, trang: list, tieu_de
                     key=lambda t: (-len(t), t))
     hangs = th.vendors_in_story(f"{tieu_de} {en}", tom_tat) if models else []
     if not hangs:
-        return trang
-    mien_co = {_domain(t.get("url", "")) for t in trang}
+        return source_pages
+    mien_co = {_domain(t.get("url", "")) for t in source_pages}
     for h in hangs[:1]:
         cb = th.announcement_page(h, models)
-        if not cb or _domain(cb["url"]) in mien_co or any(t.get("url") == cb["url"] for t in trang):
+        if not cb or _domain(cb["url"]) in mien_co or any(t.get("url") == cb["url"] for t in source_pages):
             continue
         nguon.setdefault("pages", []).append(cb)
         _write_json(nguon_path, nguon)
         print(f"[nguon] cong bo chinh chu: {cb['url'][:90]}", file=sys.stderr)
         return nguon["pages"]
-    return trang
+    return source_pages
 
 
-def _take_from_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path, phien=None) -> tuple:
+def _take_from_browser(source_pages: list, wd: Path, nguon: dict, nguon_path: Path, phien=None) -> tuple:
     """Mot phien chromium: tieu de, chu, anh/figure, bao khac; gop vao `nguon`.
     Tra (bp, trang)."""
     print("[browser] mo trang goc (tieu de, chu, anh, figure) + bao khac...", file=sys.stderr)
-    bp = browser_pass(trang, wd, tim_them=len(trang) < 2, phien=phien)
+    bp = browser_pass(source_pages, wd, tim_them=len(source_pages) < 2, phien=phien)
     doi = False
     if bp["title_en"] and not nguon.get("title_en"):
         nguon["title_en"] = bp["title_en"]
         doi = True
-    co = {t.get("url") for t in trang}
+    co = {t.get("url") for t in source_pages}
     for t in bp["extra_pages"]:
         if t["url"] not in co:
             nguon["pages"].append(t)
@@ -112,10 +112,10 @@ def _take_from_browser(trang: list, wd: Path, nguon: dict, nguon_path: Path, phi
             doi = True
     if doi:
         _write_json(nguon_path, nguon)
-        trang = nguon["pages"]
+        source_pages = nguon["pages"]
     print(f"[browser] tieu de: {(nguon.get('title_en') or '')[:70]!r}; +{len(bp['extra_pages'])} bao; "
           f"{len(bp['cands'])} anh/figure; {len(bp['article_text'])} ky tu chu", file=sys.stderr)
-    return bp, trang
+    return bp, source_pages
 
 
 def _capture_ranking(title: str, nguon: dict, tom: dict, link: str, meta: dict, bp: dict,
@@ -186,7 +186,7 @@ def _image_item_ranking(i: int, xh: dict) -> dict:
             "chart_hint": xh["kind"] != "card", "ranking": xh}
 
 
-def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: dict, trang: list,
+def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: dict, source_pages: list,
                     bp: dict, wd: Path, xhs: list) -> list:
     """Ung vien (tim tinh + browser + bia arxiv) -> tai va loc -> chen anh XH ->
     bu Commons neu mong. Tra danh sach anh (chua phan loai).
@@ -194,7 +194,7 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
     `xhs` co the co NHIEU hon mot khi tin len duoc nhieu bang xep hang do nang
     luc khac nhau (xem `_capture_ranking`) — moi cai mang MA rieng (XH, XH2, XH3)
     de vai chon dung tam, khong ghi de len nhau."""
-    print(f"[anh] tim tinh qua {len(trang)} nguon...", file=sys.stderr)
+    print(f"[anh] tim tinh qua {len(source_pages)} nguon...", file=sys.stderr)
     cands = candidate_social(link, wd) + candidate_static(title, link, nguon_path,
                                                      nguon.get("title_en", ""))
     co = {c["image_url"] for c in cands}
@@ -253,7 +253,7 @@ def _gather_and_download_image(title: str, link: str, nguon_path: Path, nguon: d
     return anh
 
 
-def _round_widen_search(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: int,
+def _round_widen_search(anh: list, source_pages: list, tieu_de_nhin: str, toi_thieu: int,
                    dung_duoc: list, wd: Path, phien=None) -> tuple:
     """VONG TIM RONG (Ong Chu 05/09/2026): kho mong thi engine phai di tim, khong
     bao "du" bang rac. Mot vong. Tra (anh, dung_duoc, chua_nhin)."""
@@ -261,7 +261,7 @@ def _round_widen_search(anh: list, trang: list, tieu_de_nhin: str, toi_thieu: in
     # khong bao "du" bang rac. Them bao (Bing, loc lien quan, bo mien da co)
     # mo bang browser lay anh + Commons; tai, NHIN, dem lai. Mot vong.
     import article_sources
-    mien_co = {_domain(t.get("url", "")) for t in trang} | {a.get("domain") for a in anh}
+    mien_co = {_domain(t.get("url", "")) for t in source_pages} | {a.get("domain") for a in anh}
     them_bao = article_sources.other_outlets_bing(tieu_de_nhin, so=6, bo_mien=tuple(x for x in mien_co if x))[:4]
     # Tu LOW-12 vong nay con chay khi kho DU anh ma khong tam nao lam anh chinh
     # cua vai duoc — in "thieu (5/5)" luc do la noi doi nguoi doc log.
@@ -581,7 +581,7 @@ def _round_brand_body(anh: list, tieu_de_nhin: str, tom_tat: str, wd: Path,
 MAX_PAGE_CAPTURE = 12
 
 
-def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
+def _round_capture_source(anh: list, link: str, source_pages: list, wd: Path,
                      khong_browser: bool = False, phien=None, tieu_de: str = "") -> tuple:
     """VONG CHUP TRANG NGUON (Ong Chu 06/09/2026, nhac lai 12/09): tin khong co
     anh dung duoc thi CHUP CHINH TRANG NGUON o khung dien thoai va cat lay khoi
@@ -613,7 +613,7 @@ def _round_capture_source(anh: list, link: str, trang: list, wd: Path,
         return _result()
     import capture_page
     urls, da = [], set()
-    for u in [link] + [t.get("url", "") for t in (trang or [])]:
+    for u in [link] + [t.get("url", "") for t in (source_pages or [])]:
         if u and u not in da:
             da.add(u)
             urls.append(u)
