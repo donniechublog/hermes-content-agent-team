@@ -77,18 +77,18 @@ def _js_browser() -> dict:
     return {"TITLE": JS_TITLE, "TEXT": JS_TEXT, "IMG": JS_IMG, "FIG": JS_FIG, "GNEWS": JS_GNEWS}
 
 
-def _take_image_page(page, url, so, wd, ctx, JS, chup_fig=True, tran=None):
+def _take_image_page(page, url, page_index, wd, ctx, JS, chup_fig=True, tran=None):
     """Anh <img> lon + figure/table/canvas/svg cua MOT trang, ghi vao ctx['cands']."""
     # Tran moi trang: goc <= 4 anh, bao khac <= 3. Truoc day vet toi 12 anh
     # mot trang -> mot URL lap ca kho (Ong Chu 05/09/2026). Trang CONG BO chinh
     # chu (LOW-21) duoc tran cua bai goc: chart benchmark o do la anh dat nhat.
-    for im in (page.evaluate(JS["IMG"]) or [])[: tran or (4 if so == 0 else 3)]:
+    for im in (page.evaluate(JS["IMG"]) or [])[: tran or (4 if page_index == 0 else 3)]:
         ctx["cands"].append({"image_url": im["src"], "alt": im["alt"], "og": False, "source": "browser",
                             "page_url": url, "w": im["w"], "h": im["h"], "score": 45})
     if not chup_fig:
         return
     for f in page.evaluate(JS["FIG"]) or []:
-        out = wd / state_paths.ORIGINAL_DIR / f"{state_paths.CAPTURE_IMAGE_PREFIX}{so}_{f['sel'][-3:-2]}.png"
+        out = wd / state_paths.ORIGINAL_DIR / f"{state_paths.CAPTURE_IMAGE_PREFIX}{page_index}_{f['sel'][-3:-2]}.png"
         out.parent.mkdir(parents=True, exist_ok=True)
         el = page.query_selector(f["sel"])
         if not el:
@@ -191,7 +191,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
 
     try:
         with session_or_new(phien) as ph:
-            with ph.trang(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
+            with ph.page(viewport={"width": 1600, "height": 1200}, device_scale_factor=2,
                           user_agent=env_load.UA_BROWSER) as page:
                 # 1) trang goc
                 if goc and goc.startswith("http") and GNEWS not in goc:

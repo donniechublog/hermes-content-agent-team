@@ -280,13 +280,13 @@ def album_secondary(draft_id: str, thu_muc: Path = None) -> list:
     d = thu_muc or (ROOT / "drafts")
     ung_vien = set(d.glob(f"{draft_id}_[0-9].png")) | set(d.glob(f"{draft_id}_[0-9][0-9].png"))
 
-    def so(p: Path) -> int:
+    def _index_of(p: Path) -> int:
         try:
             return int(p.stem.rsplit("_", 1)[-1])
         except ValueError:
             return 0
 
-    return sorted(ung_vien, key=so)
+    return sorted(ung_vien, key=_index_of)
 
 
 def required(ten: str) -> str:
