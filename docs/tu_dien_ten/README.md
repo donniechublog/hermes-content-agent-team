@@ -20,6 +20,23 @@ trùng tên sau khi dịch** (Python ghi đè định nghĩa trùng tên trong c
 đó mới là "lỗi gọi" thật). `gen.py` tự kiểm ở **mục F** và thoát mã 1 nếu còn
 va chạm. Nghĩa đúng từng chữ **không** là điều kiện.
 
+## Soát tên đóng nhiều vai (LOW-333) — `name_role_scan.py`
+
+Cổng CI chỉ soi tên **top-level**; tham số và biến cục bộ nằm ngoài tầm (có chủ ý,
+từ LOW-53). Script này soi đúng phần còn lại, theo câu hỏi khác: *đọc một tên, có
+biết nó đang là hàm hay biến hay trường không?*
+
+```
+venv/bin/python docs/tu_dien_ten/name_role_scan.py            # nhóm lẫn hàm <-> biến
+venv/bin/python docs/tu_dien_ten/name_role_scan.py --all      # mọi tên đóng >=2 vai
+venv/bin/python docs/tu_dien_ten/name_role_scan.py --name so  # một tên, kèm danh sách tệp
+```
+
+Đo 20/09/2026: **27 tên vừa là hàm vừa là biến/trường — 381 chỗ, 91 tệp** mã sản
+xuất. Nặng nhất: `browser_session.dong()` là **đóng**, còn `dong = [...]` ở 21 tệp
+khác là **dòng**. Đừng đổi hàng loạt bằng máy — nhóm này bị từ điển đánh dấu nhập
+nhằng, phải đọc từng chỗ (bài học `roi/rồi/rối/rời`).
+
 ## Thực thi (LOW-50) — `rename.py`
 
 ```bash
