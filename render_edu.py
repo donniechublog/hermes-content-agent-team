@@ -33,8 +33,9 @@ Spec JSON:
   "hero": "grid",                  # tuỳ chọn: orbit|grid|wave|rings|graph — bỏ trống = tự xoay
   "slides": [
     # Bia dung ART VECTOR (mac dinh). Tin nao CO SAN mot tam hinh dang dua len
-    # thi them "image" + "caption": bia lay chinh hinh do lam hero, khong ve so
-    # do nua. Hinh that bao gio cung noi duoc nhieu hon mot so do trang tri.
+    # thi them "image": bia lay chinh hinh do lam hero, khong ve so do nua.
+    # Hinh that bao gio cung noi duoc nhieu hon mot so do trang tri. KHONG ghi
+    # nguon anh len slide (LOW-292) — nguon nam o ban giao + metadata PNG.
     {"kind": "cover", "eyebrow": "GOOGLE ANTIGRAVITY · DEEP DIVE",
      "title": "Lệnh /boost biến bug khó thành lời giải chắc tay",
      "accent": "/boost",
@@ -59,12 +60,12 @@ Spec JSON:
     {"kind": "figure", "eyebrow": "SỐ LIỆU",
      "title": "Điểm số dựng lại trên SWE-bench", "accent": "SWE-bench",
      "image": "drafts/chart_swebench.png",   # chụp bằng capture_chart.py
-     "caption": "Biểu đồ trong bài công bố · via Google DeepMind",
      "standfirst": "Chữ minh hoạ cho phần chiều cao còn thừa dưới hình.",
      "cards": [{"num": "01", "text": "..."}]},
 
     # Khong co hinh that nhung bai co vai con so: bieu do cot ngang tu so THAT
-    # (2..6 cot, "value" la so, "text" la cach ghi), caption "via" bat buoc.
+    # (2..6 cot, "value" la so, "text" la cach ghi). `caption` o day la nguon
+    # CON SO (bat buoc) — khong phai nguon anh, nen LOW-292 khong dung toi.
     {"kind": "bars", "eyebrow": "SỐ LIỆU",
      "title": "Chi phí mỗi task giảm ba lần", "accent": "ba lần",
      "bars": [{"label": "Trước", "value": 2.75, "text": "2,75 USD"},
@@ -90,8 +91,8 @@ quá thì giữ mép trên. Chữ đè lên ảnh: MẶC ĐỊNH không phủ l�
 màu chữ (sáng/tối) tương phản với đúng vùng ảnh nằm dưới chữ. Lớp mờ+tối chỉ
 thêm khi vùng đó thật sự rối (đo trực tiếp trên pixel), và khi thêm thì cũng
 chỉ vừa đủ — không bao giờ tối hơn mức cần, và ranh giới trên không vượt quá
-dòng chữ đầu tiên (không có khoảng đệm để trống phía trên chữ). Bắt buộc có
-"caption" ghi "via <ai>", và ảnh phải rộng >= 800px (chụp bằng capture_chart.py).
+dòng chữ đầu tiên (không có khoảng đệm để trống phía trên chữ). Ảnh phải rộng
+>= 800px (chụp bằng capture_chart.py). Slide KHÔNG ghi dòng nguồn ảnh (LOW-292).
 Vẫn cấm: ảnh minh hoạ AI, screenshot dựng lại, logo hãng, số liệu tự bịa.
 """
 
@@ -721,10 +722,7 @@ def _cover_image(sl, th):
            f'margin-bottom:28px;">{esc(sl["standfirst"])}</p>')
     if by:
         chu += f'<div class="byline">{"".join(bits)}</div>'
-    if sl.get("caption"):
-        chu += (f'<div class="fig-cap" style="margin-top:18px;">'
-                f'<span class="fig-bar"></span>'
-                f'<span>{esc(sl["caption"])}</span></div>')
+    # KHONG ve dong nguon anh (LOW-292, 20/09/2026): xem ghi chu o `s_figure`.
     return (nen + anh
             + '<div style="flex-grow:1;min-height:0;"></div>'
             + f'<div class="mid" id="figtxt">{chu}</div>')
@@ -942,9 +940,12 @@ def s_figure(sl, th):
     chu = (f'{eyebrow(sl["eyebrow"])}'
            f'<h1 class="title" style="font-size:62px;margin:22px 0 0;">'
            f'{accent_html(sl["title"], sl.get("accent"))}</h1>')
-    if sl.get("caption"):
-        chu += (f'<div class="fig-cap"><span class="fig-bar"></span>'
-                f'<span>{esc(sl["caption"])}</span></div>')
+    # KHONG ve dong nguon anh (LOW-292, 20/09/2026). Ong Chu khoanh do dong
+    # "— <mo ta anh> · via <trang>" o ca bia lan slide than cua album Gemini
+    # (task t_22d038a3): "noi dung khong duoc phep xuat hien". Nguon anh VAN
+    # duoc giu o ban giao cho writer va metadata PNG (image_provenance) — chi
+    # khong hien tren slide. Dong `caption` cua kind `bars` la nguon CON SO
+    # trong bai, viec khac, giu nguyen.
     if sl.get("standfirst"):
         chu += (f'<p class="standfirst" style="font-size:35px;max-width:900px;'
                 f'margin-top:24px;">{esc(sl["standfirst"])}</p>')
@@ -1101,7 +1102,8 @@ REQUIRED_KIND = {
     "steps":     {"fields": ("eyebrow", "title", "steps"),
                   "nested": ("steps", ("title", "desc"))},
     "loop":      {"fields": ("eyebrow", "title", "standfirst", "callout", "chips")},
-    "figure":    {"fields": ("eyebrow", "title", "standfirst", "image", "caption"),
+    # `caption` KHONG con bat buoc o figure (LOW-292): dong nguon anh khong ve nua.
+    "figure":    {"fields": ("eyebrow", "title", "standfirst", "image"),
                   "nested": ("cards", ("num", "text"))},
     "bars":      {"fields": ("eyebrow", "title", "standfirst", "caption", "bars"),
                   "nested": ("bars", ("label", "value"))},
@@ -1189,9 +1191,8 @@ def _gate_content(slides, bo_qua_dau):
         if rong < FIG_EMPTY_MIN:
             loi.append(f"slide {i}: anh rong {rong}px, keo len {W}px la be nat. "
                        f"Chup lai bang capture_chart.py (DPR 2) hoac xin ban goc.")
-        if not sl.get("caption"):
-            loi.append(f"slide {i}: slide co anh phai co 'caption' — hinh muon "
-                       f"cua nguoi ta thi phai ghi 'via <ai>'.")
+        # Truoc LOW-292 o day con cong "slide co anh phai co caption": dong
+        # nguon anh khong len slide nua nen cong do khong con nghia.
 
     # bars: so that, 2..6 cot, nhan ngan, caption via (so muon cua bai)
     for i, sl in enumerate(slides, 1):

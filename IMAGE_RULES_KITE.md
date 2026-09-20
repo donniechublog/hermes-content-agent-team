@@ -186,7 +186,7 @@ web_search; từ kiến trúc 3 lớp vai không còn công cụ, nên nó là l
   hết, không phải câu nệ"*)**: nhãn 🧭 ẢNH KHÁI NIỆM, ưu tiên **bìa/hero**
   (ngang thì chỉ ghép dọc) nhưng **được phép vào slide thân** nếu vai thấy hợp
   — không còn là loại ảnh bị cấm theo chỗ dùng. Gợi ý bìa vẫn xếp **sau** mọi
-  ảnh riêng của tin; caption "via Wikimedia Commons". Vai vẫn chỉ chọn mã, và
+  ảnh riêng của tin. Vai vẫn chỉ chọn mã, và
   vẫn được nói "thiếu ảnh" nếu thấy cờ/bản đồ không hợp tin.
 - **Không còn cổng chặn cứng** (`kite_submit`, §9): trước 15/09/2026 `image` là
   ảnh khái niệm ở slide khác slide 1 sẽ bị chặn (đo 10/09/2026 ở đường Kite: cờ
@@ -363,8 +363,21 @@ bấm sau khi engine đã ghi xong. Đọc nhầm chỗ là cổng dưới khôn
   ba slide". `_force_raw` là tập chưa trừ bìa, chỉ `figure_hero` dùng (cắt vòng gọi).
 
 Brief của Kite còn ghi rõ **từng tấm là loại gì** (🏢 cơ sở · 👤 chân dung ·
-📊 bảng xếp hạng · 🔖 thẻ logo, §1.2d), vì caption của chúng khác hẳn nhau: chú
-thích một thẻ logo thành "ảnh trụ sở" là sai sự thật.
+📊 bảng xếp hạng · 🔖 thẻ logo, §1.2d), vì dùng nhầm loại là sai sự thật: một
+thẻ logo không thay được ảnh chụp trụ sở.
+
+### 1.2e-bis Slide KHÔNG ghi dòng nguồn ảnh (LOW-292, Ông Chủ 20/09/2026)
+
+Album Gemini (task `t_22d038a3`) bị khoanh đỏ đúng dòng `— <mô tả ảnh> · via
+<trang>` ở cả bìa lẫn slide thân: *"nội dung không được phép xuất hiện"*. Từ
+20/09/2026 `render_edu.py` không vẽ dòng đó nữa, `kite_submit.py` không còn đòi
+`caption` khi slide có ảnh, và brief không in khuôn caption nữa.
+
+Nguồn ảnh **không mất**: nó vẫn nằm ở bàn giao cho writer (`<draft>.ban_giao.md`)
+và metadata PNG (`image_provenance`). Đây chỉ là chuyện không hiện trên hình.
+
+`caption` của kind `bars` là chuyện KHÁC — đó là nguồn của CON SỐ ("Số trong bài
+· via <ai>"), vẫn bắt buộc, vì số là của bài chứ không phải của ta.
 
 ### 1.2f Bìa của Kite LUÔN phải là ảnh thật — không có hero vector
 
@@ -535,9 +548,8 @@ arxiv/PDF; chạy tay thì:
 venv/bin/python arxiv_figures.py --link "<link arxiv>" --ra /tmp/hinh
 ```
 
-**Figure 1 là hero.** Kite đặt nó vào `image` của slide `cover`, kèm caption
-`"Figure 1 trong paper · via <ai>"` — bìa lấy chính tấm hình đó làm hero thay vì
-vẽ hero art. Ông Chủ 08/09/2026: *"ngay đầu paper có image mà Kite không dùng để
+**Figure 1 là hero.** Kite đặt nó vào `image` của slide `cover` — bìa lấy chính
+tấm hình đó làm hero thay vì vẽ hero art. Ông Chủ 08/09/2026: *"ngay đầu paper có image mà Kite không dùng để
 làm hero"*. Các hình còn lại để cho slide `figure`.
 
 Chỉ **hình**, không bảng: chú thích bảng khi ở trên khi ở dưới tuỳ nơi đăng, và
