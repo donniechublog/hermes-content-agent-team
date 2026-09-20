@@ -108,14 +108,21 @@ def run_one(prod, old, new, test_file, expect):
     if src.count(old) != 1:
         return "SKIP", f"neo xuat hien {src.count(old)} lan"
     path.write_text(src.replace(old, new), encoding="utf-8")
+    # -B + xoa .pyc: dot bien CUNG KICH THUOC ghi trong cung mot giay voi ban goc thi
+    # Python tin .pyc cu (khoa cache = mtime theo giay + kich thuoc) va chay code
+    # CHUA dot bien -> "GREEN" gia. Gap that 20/09/2026 khi doi cho hai dong.
+    for pyc in (ROOT / "__pycache__").glob(path.stem + ".*.pyc"):
+        pyc.unlink(missing_ok=True)
     try:
-        r = subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "tests" / test_file)],
+        r = subprocess.run([sys.executable, "-B", "-X", "utf8", str(ROOT / "tests" / test_file)],
                            capture_output=True, text=True, timeout=180, cwd=ROOT)
         failed = [ln.split()[1] for ln in r.stdout.splitlines() if ln.startswith("FAIL")]
     except subprocess.TimeoutExpired:
         return "RED", "treo (timeout) — dot bien lam ket hang doi"
     finally:
         path.write_text(src, encoding="utf-8")
+        for pyc in (ROOT / "__pycache__").glob(path.stem + ".*.pyc"):
+            pyc.unlink(missing_ok=True)
     hit = [f for f in failed if f.startswith(expect)]
     return ("RED" if hit else "GREEN"), f"{len(failed)} test do" + (f": {hit[0]}" if hit else "")
 
