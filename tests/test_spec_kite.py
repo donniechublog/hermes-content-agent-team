@@ -692,15 +692,26 @@ def test_hinh_qua_nho_chua_nhin_khong_bi_bao_gia():
         assert not _co(canh, "chưa nhìn", "NHO"), canh
 
 
-def test_image_phai_la_ma_hinh_that_va_co_caption():
+def test_image_phai_la_ma_hinh_that():
     with tempfile.TemporaryDirectory() as t, so_tam(t):
         wd = Path(t)
         sl = _du(); sl[1] = _statement(image="H9")
         _r, loi, _c = _chay(sl, _m(wd, [_hinh(wd)]), wd)
         assert _co(loi, "slide 2", "H9", "không phải mã hình thật"), loi
-        sl[1] = _statement(image="H1")
-        _r, loi2, _c = _chay(sl, _m(wd, [_hinh(wd)]), wd)
-        assert _co(loi2, "slide 2", "caption"), loi2
+
+
+def test_image_khong_con_bat_buoc_caption():
+    """LOW-292 (20/09/2026): slide khong ghi dong nguon anh nua, nen "co image
+    thi phai co caption" khong con la loi. Truoc do cong nay chan het."""
+    with tempfile.TemporaryDirectory() as t, so_tam(t):
+        wd = Path(t)
+        h1, h2 = _hinh(wd), _hinh(wd, ma="H2", w=1100, h=900)
+        sl = _du()
+        sl[0] = _cover(image="H1")
+        sl[1] = _statement(image="H2")
+        ra, loi, _c = _chay(sl, _m(wd, [h1, h2]), wd)
+        assert loi == [], loi
+        assert ra["slides"][0]["image"] == h1["original_path"]
 
 
 def test_image_hop_le_doi_thanh_duong_dan_tep():
