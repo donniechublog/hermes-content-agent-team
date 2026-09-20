@@ -403,6 +403,10 @@ def test_startup_flags_tirith_enabled_without_binary():
         svc._audit_tirith()
         (line,) = [t for t in h.logs("start") if "tirith" in t]
         assert "KHONG co binary 'no-such-binary-low311'" in line and "fail_open" in line
+        # LOW-305: mot cong bao mat dang TAT phai la WARNING, khong duoc lan giua
+        # hang nghin dong INFO — day la dong `journalctl -p warning` phai loc ra.
+        (muc,) = [lv for t, lv in h.log_levels("start") if "tirith" in t]
+        assert muc == "WARNING", muc
         (home / "config.yaml").write_text("tirith_enabled: false\n", encoding="utf-8")
         svc._audit_tirith()
         assert len([t for t in h.logs("start") if "tirith" in t]) == 1

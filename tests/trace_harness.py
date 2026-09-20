@@ -263,13 +263,36 @@ class Harness:
         return self.patch_everywhere("_run_background", _bg)
 
     def capture_logs(self):
-        """Thay `log(nhan, chu)` bang ban ghi vet ("log", nhan, text=chu)."""
-        def _log(nhan, chu=""):
-            self.trace.add("log", nhan, text=str(chu))
-        return self.patch_everywhere("log", _log)
+        """Thay `log(nhan, chu)` bang ban ghi vet ("log", nhan, text=chu, level=…).
+
+        Tu LOW-305 co hai duong nua: `write_log.warn/error` (dung khi nhan dung
+        chung cho ca dong tot lan dong hong, vd `tele`/`kanban`/`start`). Hai ham
+        do goi QUA thuoc tinh module nen `patch_everywhere` khong voi toi — phai
+        va thang vao `write_log`, khong thi dong warn/error bien mat khoi vet.
+        """
+        import logging
+        import write_log
+
+        def _log(nhan, chu="", level=None):
+            self.trace.add("log", nhan, text=str(chu),
+                           level=logging.getLevelName(
+                               level if level is not None
+                               else (logging.ERROR if nhan in write_log.ERROR_LABELS
+                                     else logging.INFO)))
+
+        n = self.patch_everywhere("log", _log)
+        self.patch(write_log, "log", _log)
+        self.patch(write_log, "warn", lambda nhan, chu="": _log(nhan, chu, logging.WARNING))
+        self.patch(write_log, "error", lambda nhan, chu="": _log(nhan, chu, logging.ERROR))
+        return n
 
     def logs(self, nhan=None):
         return [d["text"] for n, d in self.trace.of("log") if nhan is None or n == nhan]
+
+    def log_levels(self, nhan=None):
+        """[(text, ten muc)] — de test khang dinh dong nao la ERROR/WARNING."""
+        return [(d["text"], d["level"]) for n, d in self.trace.of("log")
+                if nhan is None or n == nhan]
 
     def topics(self, mapping):
         """Ghi topics.json vao tmp va tro `env_load.topics_path` toi do (tep that

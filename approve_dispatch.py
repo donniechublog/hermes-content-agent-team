@@ -108,12 +108,14 @@ def kanban_create(title, assignee, body, parent=None):
     that khong, va ghi mot dong log doc duoc."""
     assignee, loi = standard_assignee(assignee)
     if loi:
-        log("kanban", f"tu choi tao '{title[:60]}': {loi}")
+        # ERROR (LOW-305): task khong duoc tao, tuc mot vai se khong bao gio nhan viec.
+        # Nhan `kanban` dung chung ca dong thanh cong nen khai muc ngay tai cho.
+        write_log.error("kanban", f"tu choi tao '{title[:60]}': {loi}")
         return None, loi
     tid, loi = hermes_adapter.create_task(title, assignee, body, parent=parent,
                                        max_runtime=role.max_runtime_for(assignee))
     if loi:
-        log("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {loi[:200]}")
+        write_log.error("kanban", f"tao '{title[:60]}' cho {assignee} LOI: {loi[:200]}")
         return None, loi
     log("kanban", f"tao task {tid} cho {assignee}: {title[:60]}")
     return tid, None
