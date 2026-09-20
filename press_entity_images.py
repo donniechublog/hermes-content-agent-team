@@ -16,13 +16,13 @@ Thuần phần lọc để test được; mạng chỉ ở `_rss` và `_og`.
 import re
 import sys
 import urllib.parse as up
-import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 
 import article_sources
 import scan_common
+import safe_xml
 from prepare.common import _domain
 
 BING_RSS = "https://www.bing.com/news/search?q={q}&format=rss&mkt={mkt}"
@@ -66,7 +66,7 @@ def _rss(q: str, mkt: str) -> list:
     try:
         r = article_sources._download(BING_RSS.format(q=up.quote(q), mkt=mkt), 20)
         return [(it.findtext("link") or "", it.findtext("title") or "")
-                for it in ET.fromstring(r.content).findall(".//item")]
+                for it in safe_xml.fromstring(r.content).findall(".//item")]
     except Exception as e:                                   # noqa: BLE001
         print(f"[bao thuc the] Bing RSS '{q}' ({mkt}) hong: {type(e).__name__}", file=sys.stderr)
         return []

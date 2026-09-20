@@ -27,7 +27,6 @@ import time
 import unicodedata
 import urllib.parse as up
 import urllib.request
-import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,6 +34,7 @@ from pathlib import Path
 import scan_common                                            # noqa: E402
 import env_load
 import required
+import safe_xml
 import state_paths
 
 STATE = env_load.state_dir() / state_paths.BUSINESS_SEEN_FILE
@@ -203,7 +203,7 @@ def scan_gnews(gio_toi_da: int) -> list:
     ra = []
     for nhan, q in QUERY:
         try:
-            root = ET.fromstring(_get(GNEWS.format(q=up.quote(q))).content)
+            root = safe_xml.fromstring(_get(GNEWS.format(q=up.quote(q))).content)
         except Exception as e:                               # noqa: BLE001
             print(f"[gnews {nhan}] hong: {type(e).__name__}", file=sys.stderr)
             continue
@@ -225,7 +225,7 @@ def scan_report(gio_toi_da: int) -> list:
     ns = {"a": "http://www.w3.org/2005/Atom"}
     for ten, url, can_loc_ai in RSS_REPORT:
         try:
-            root = ET.fromstring(_get(url).content)
+            root = safe_xml.fromstring(_get(url).content)
         except Exception as e:                               # noqa: BLE001
             print(f"[rss {ten}] hong: {type(e).__name__}", file=sys.stderr)
             continue

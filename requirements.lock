@@ -5,6 +5,9 @@
 anyio==4.14.2
 beautifulsoup4==4.15.0
 certifi==2026.5.20
+# defusedxml: THEM TAY (LOW-303) — chua cai tren may chu nen lock_requirements.py chua sinh duoc
+# dong nay. Sau khi Ong Chu dong y cai vao venv may chu, lam moi lock se ra dung dong nay.
+defusedxml==0.7.1
 greenlet==3.5.5
 h11==0.16.0
 httpcore==1.0.9
