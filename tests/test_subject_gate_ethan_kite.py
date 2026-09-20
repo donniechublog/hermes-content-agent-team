@@ -177,10 +177,21 @@ def test_kite_measure_text_tops_real_layout():
 
 
 def test_kite_main_calls_gate_before_render():
+    """Cổng chủ thể phải chạy TRƯỚC khi mở Chromium dựng slide.
+
+    Đọc thân `main` chứ không đọc cả tệp (LOW-309): bản cũ so vị trí hai chuỗi
+    trong TOÀN tệp, nên tách `_render` ra một hàm đặt phía trên `main` là test
+    đỏ dù thứ tự lúc CHẠY không đổi — một phép đo sai chỗ. `_render` cũng phải
+    là chỗ DUY NHẤT gọi render_edu.py, không thì thứ tự trong `main` vô nghĩa."""
+    import inspect
+    than = inspect.getsource(kite_submit.main)
+    i_gate = than.index("check_subject_above_text(spec_r, m, tops)")
+    i_render = than.index("_render(")
+    assert i_gate < i_render, than
+
     src = (ROOT / "kite_submit.py").read_text(encoding="utf-8")
-    i_gate = src.index("check_subject_above_text(spec_r, m, tops)")
-    i_render = src.index('str(ROOT / "render_edu.py")')
-    assert i_gate < i_render
+    assert src.count('str(ROOT / "render_edu.py")') == 1, "có hơn một chỗ gọi render_edu.py"
+    assert 'str(ROOT / "render_edu.py")' in inspect.getsource(kite_submit._render)
 
 
 if __name__ == "__main__":
