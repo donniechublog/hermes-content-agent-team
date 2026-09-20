@@ -22,6 +22,11 @@ __pycache__/
 *.bak-*
 .DS_Store
 
+# Do do phu (LOW-301): du lieu tho moi tien trinh + bao cao HTML
+.coverage
+.coverage.*
+htmlcov/
+
 # symlink toi hermes-agent/venv — duong dan tuyet doi, khong dua vao repo
 venv
 

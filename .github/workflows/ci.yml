@@ -55,8 +55,28 @@ jobs:
       # import vẫn qua CI suốt 12 ngày (08/09 → 20/09/2026). pyflakes tự đệ quy thư mục.
       - name: pyflakes
         run: python -m pyflakes *.py prepare tests hermes
+      # Đo độ phủ test (LOW-301) — CHỈ BÁO CÁO, chưa đặt ngưỡng. coverage cài riêng, không
+      # nằm trong gói chạy của content-team. Cấu hình và các bẫy: xem .coveragerc.
+      - name: Cài coverage
+        run: python -m pip install -q coverage
+      # Đo cả tiến trình con: COVERAGE_PROCESS_START + thư mục có sitecustomize.py trong
+      # PYTHONPATH khiến MỌI tiến trình Python tự bật coverage. `tests/` cũng phải nằm trong
+      # PYTHONPATH vì test import `tam` bằng đường dẫn tương đối.
       - name: tests/run.sh
         env:
           PY: python
           PYTHONUTF8: "1"
+          COVERAGE_PROCESS_START: ${{ github.workspace }}/.coveragerc
+          PYTHONPATH: ${{ github.workspace }}/tests/coverage_hook:${{ github.workspace }}/tests
         run: bash tests/run.sh
+      # continue-on-error: lỗi ở bước báo cáo không được làm đỏ CI. Nếu không ra số, xem log.
+      - name: Độ phủ test (chỉ báo cáo)
+        continue-on-error: true
+        run: |
+          python -m coverage combine
+          python -m coverage report --sort=cover --skip-empty
+          {
+            echo "### Độ phủ test: $(python -m coverage report --format=total)% (chỉ báo cáo, chưa đặt ngưỡng)"
+            echo
+            python -m coverage report --sort=cover --skip-empty --format=markdown
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,20 @@
+# Đo độ phủ test (LOW-301) — CHỈ BÁO CÁO, không có --fail-under. Cách chạy: bước
+# "tests/run.sh" trong .github/workflows/ci.yml (và README.md để chạy ở máy mình).
+#
+# Đo cả TIẾN TRÌNH CON (test gọi subprocess vào approve_*, *_submit, engine...): mỗi
+# tiến trình Python tự bật coverage qua tests/coverage_hook/sitecustomize.py khi có
+# COVERAGE_PROCESS_START trỏ tới tệp này. parallel = True nên mỗi tiến trình ghi một tệp
+# .coverage.<máy>.<pid>.<rand> riêng; `coverage combine` gộp lại rồi mới `report`.
+#
+# BẪY 1: mẫu `omit`/`exclude` chứa `.claude` khớp luôn đường dẫn worktree
+# (`…/.claude/worktrees/<tên>/…`) và loại TOÀN BỘ mã — báo "sạch" giả. Đừng thêm.
+# BẪY 2: test import `tam` bằng đường dẫn tương đối, nên `tests/` phải nằm trong
+# PYTHONPATH; thiếu thì 77/130 tệp test hỏng dưới coverage và số ra sai (35%).
+[run]
+branch = True
+parallel = True
+source = .
+omit =
+    tests/*
+    hermes/plugins/*
+    venv/*
