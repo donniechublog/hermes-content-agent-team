@@ -21,10 +21,9 @@ chuoi. `render_edu.py`/`kite_submit.py` tu chon cong nao hop voi khung cua
 minh roi gop lai. Khong ham nao ve gi, khong ham nao biet den canvas.
 """
 import re
-import threading
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image
 
 # IMAGE_PHRASES_SCREENSHOT (LOW-45, 13/09/2026) DA GO 16/09/2026 (LOW-201, dao
 # LOW-45): tieu chi "trong giong chup lai man hinh" loai oan anh dung chu de
@@ -69,36 +68,11 @@ from image_provenance import (       # noqa: E402
 
 # ---- Do luong anh ---------------------------------------------------------
 def measure_chart_signal(img, w=480):
-    """(phang, so_mau). Thuan PIL — venv tren server khong chac co numpy.
+    """(phang, so_mau) — xem `image_rules_common.measure_chart_signal`.
 
-      phang  — ti le cap pixel KE NHAU theo hang gan nhu bang nhau (lech <= 2).
-               Do hoa vector (chart, bang, UI) toan mang phang voi vai buoc nhay
-               dung; anh chup that thi moi pixel lech nhau mot chut.
-      so_mau — so mau RIENG BIET sau khi luong hoa 5 bit/kenh. Day la phep do
-               tach bach nhat: chart/screenshot dung mot bang mau tay nen ra vai
-               chuc mau, anh chup that ra hang nghin.
-
-    Thu nho bang NEAREST chu KHONG phai LANCZOS: LANCZOS lam nhoe vung phang cua
-    screenshot thanh gradient, tuc la xoa dung cai dau hieu can do.
-
-    Do tren 16 the that trong drafts/ (anh that + scrim phang, tinh huong KHO
-    nhat): phang 0.31..0.95, so_mau 350..4552 — khong tam nao bi goi nham la
-    chart. Chart/screenshot do duoc: phang 0.89..0.99, so_mau 42..65. Nguong dat
-    giua khoang trong do va phai dung CA HAI.
+    Than do o module chung tu LOW-310: thuan pixel, khong co phan doan noi dung.
     """
-    h = max(1, round(img.height * w / img.width))
-    v = img.convert("RGB").resize((w, h), Image.NEAREST)
-    px = v.convert("L").tobytes()
-    bang = tong = 0
-    for y in range(h):
-        r = px[y * w:(y + 1) * w]
-        for i in range(w - 1):
-            tong += 1
-            if abs(r[i] - r[i + 1]) <= 2:
-                bang += 1
-    phang = bang / max(1, tong)
-    mau = ImageOps.posterize(v, 5).getcolors(w * h) or []
-    return phang, len(mau)
+    return image_rules_common.measure_chart_signal(img, w)
 
 
 def is_chart(img):
@@ -244,20 +218,16 @@ DATE_SMALL_IMAGE = 14      # cua so nho anh da dung, xem check_not_reused
 # cho (`image_provenance._used_images_log`) va ca ba vai deu thay ngay — patch
 # rieng tung ban se lech nhau, dung cai LOW-182 dinh tranh.
 import image_provenance
+import image_rules_common
 
 
 def record_used(duong_dan, draft_id: str, vai: str, link: str = "") -> None:
-    import json, time
-    q = Path(duong_dan)
-    try:
-        with Image.open(q) as im:
-            h = dhash(im)
-    except Exception:                                        # noqa: BLE001
-        return
-    dong = {"dhash": h, "draft_id": draft_id, "role": vai, "story_key": image_provenance.story_key(link),
-            "file_name": q.name, "md5": _file_md5(q), "used_at": int(time.time())}
-    with open(image_provenance._used_images_log(), "a", encoding="utf-8") as f:
-        f.write(json.dumps(dong, ensure_ascii=False) + "\n")
+    """Ghi so anh da dung — than o `image_rules_common` tu LOW-310.
+
+    `dhash`/`_file_md5` van la ban CUA VAI nay, truyen vao chu khong de module
+    chung import nguoc.
+    """
+    image_rules_common.record_used(duong_dan, draft_id, vai, link, dhash, _file_md5)
 
 
 def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
@@ -322,43 +292,16 @@ def check_not_reused(nhan, duong_dan, draft_id: str, link: str = ""):
     return [], []
 
 
-_YUNET = None
-_YUNET_DA_THU = False
-_YUNET_LOCK = threading.Lock()
+# Detector VA khoa deu o module chung tu LOW-310: mot detector dung chung ma hai
+# khoa khac nhau la khong con khoa gi ca.
+_YUNET_LOCK = image_rules_common.YUNET_LOCK
 FACE_EDGE_MAX = 1600            # canh dai nhat dua vao YuNet; lon hon thi thu nho (LOW-27)
 
 
 def _load_yunet():
-    """Nap lazy model YuNet, dung mot lan cho ca doi tien trinh.
-
-    Khoa bang _YUNET_LOCK (audit_content_team B2): `classify` gio duoc
-    prepare.vision._seen_image goi tu nhieu luong cung luc qua ThreadPoolExecutor.
-    Khong khoa thi luong A dat _YUNET_DA_THU=True TRUOC khi gan xong _YUNET —
-    `import cv2` va doc file .onnx o giua co the nha GIL — nen luong B doc co
-    thay True nhung _YUNET con None, tra ve None nham nhu may thieu cv2/model
-    du thuc ra co day du. Hau qua im lang: count_faces() bao 0 mat, cong mat nguoi
-    (IMAGE_RULES §6) tu tat theo may rui thu tu luong thay vi theo may that su co
-    cv2 hay khong.
-    """
-    global _YUNET, _YUNET_DA_THU
-    if _YUNET_DA_THU:
-        return _YUNET
-    with _YUNET_LOCK:
-        if _YUNET_DA_THU:             # luong khac vua nap xong trong luc cho khoa
-            return _YUNET
-        try:
-            import os as _os
-            _os.environ.setdefault("OPENCV_LOG_LEVEL", "SILENT")
-            import cv2
-            m = Path(__file__).resolve().parent / "assets" / \
-                "face_detection_yunet_2023mar.onnx"
-            if m.exists():            # thieu model -> bo qua cong, khong crash build
-                _YUNET = cv2.FaceDetectorYN_create(str(m), "", (320, 320),
-                                                   score_threshold=0.7)
-        except Exception:
-            _YUNET = None
-        _YUNET_DA_THU = True          # dat SAU CUNG, sau khi _YUNET da co gia tri chot
-    return _YUNET
+    """Model YuNet — than o `image_rules_common` tu LOW-310 (mot detector duy nhat
+    cho ca tien trinh thay vi ba ban giong het nhau)."""
+    return image_rules_common.load_yunet()
 
 
 # LOW-273 (Ong Chu 19/09/2026, "khong chap nhan ... o moi designer"): tam anh ma phan
@@ -394,19 +337,9 @@ def count_faces(path):
 
 # ---- Cong chan: moi ham tra ve (loi, canh_bao) ----------------------------
 def is_blank_image(img):
-    """Anh co RONG khong (trang tron / mot mau phang) -> (bool, mo_ta).
-
-    Bo Broadcom dcgr 04/09/2026: buoc chup tra ve anh trang tron (2 mau, phang
-    100%), khong cong nao bat, ra mot slide trong tron chi co chu. Tro treu:
-    anh trang la thu "giong chart" NHAT theo do_chart, nen cong chart cho qua.
-
-    Do tren 76 anh trong kho: anh rong = 2 mau; anh that it mau nhat = 40 mau
-    (screenshot UI toi hai tone). Cach nhau 20 lan nen nguong 4 la an toan —
-    khac han cac phep do "slide trong" da thu va bo (chung chong lan voi chart
-    sach). Day la RONG thuc su, khong phai "thua".
-    """
-    ph, mau = measure_chart_signal(img)
-    return (mau <= EMPTY_COLOR and ph >= EMPTY_FLAT), f"{mau} mau, phang {ph:.0%}"
+    """Anh co RONG khong -> (bool, mo_ta). Than do o `image_rules_common` tu
+    LOW-310; NGUONG van la cua vai nay (`EMPTY_COLOR`/`EMPTY_FLAT`)."""
+    return image_rules_common.is_blank_image(img, EMPTY_COLOR, EMPTY_FLAT)
 
 
 def check_blank_image(nhan, img):
