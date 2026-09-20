@@ -139,8 +139,10 @@ def page_list_clean() -> bytes:
         t, ngay = m["totals"], m["date"]
         brand = (m.get("role_costs") or {}).get("by_brand", {})
 
+        # `bai` doc `brand` cua lan lap hien tai (B023). Vo hai: no duoc goi ngay
+        # o dong `L.append(...)` ben duoi, trong cung lan lap, roi bo di.
         def bai(b):
-            x = brand.get(b)
+            x = brand.get(b)  # noqa: B023
             return "-" if not x or x["usd_per_published"] is None else f"{x['usd_per_published']} ({x['published_count']})"
         model = next(iter(m["by_model"]), "-").split(" @ ")[0]
         canh = " class=canh" if (m.get("fallback") or sum((m.get("empty_responses") or {}).values()) >= 3) else ""

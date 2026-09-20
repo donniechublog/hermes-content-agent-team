@@ -1,0 +1,27 @@
+# Cong lint thu hai cua content-team (LOW-304, tu do audit LOW-294).
+#
+# Bo luat CHON LOC, khong phai "ruff mac dinh": chay ca bo rong cho 1.885 bao,
+# gan het la kieu cach (do 20/09/2026). Chi giu nhung luat bat LOI THAT — cai
+# ma doc code khong thay ngay va test thuong khong phu:
+#
+#   F    pyflakes (ten chua dinh nghia, import thua, f-string khong placeholder).
+#        Trung voi cong pyflakes dang co; giu ca hai vi pyflakes da nam trong
+#        ruleset san, con ruff thi hieu `# noqa` (pyflakes khong hieu).
+#   E9   loi cu phap / loi doc tep.
+#   B023 ham/lambda dung bien vong lap ma khong buoc gia tri -> gia tri bi chot
+#        muon. Vo hai khi ham duoc goi NGAY trong cung vong lap, chet nguoi khi
+#        ham bi hoan lai (ThreadPoolExecutor, callback, list ham).
+#   B904 `raise` trong `except` khong kem `from` -> mat dau vet loi goc.
+#   B033 gia tri trung trong set -> thuong la go nham mot tu khac.
+#
+# KHONG bat `ruff format`: no se sua 260/342 tep, de len moi nhanh dang mo cua
+# cac phien khac. Dinh dang van la viec cua nguoi viet.
+#
+# Khong co `exclude` rieng nao: 21/22 bao B904 tung nam o ban CHEP TAY cua plugin
+# kanban, nhung LOW-313 da thay ban chep do bang ban va (`hermes/plugins/kanban/
+# patches/*.patch`) nen trong cay khong con tep .py nao khong phai cua doi nay.
+# Chep lai code kho khac vao day thi them `exclude`, dung tat luat.
+line-length = 120
+
+[lint]
+select = ["F", "E9", "B023", "B904", "B033"]

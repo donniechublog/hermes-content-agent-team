@@ -914,9 +914,12 @@ def test_net_frame_and_mark_bracket_no_sink_on_background_bright():
             goc = card._quote_frame
             ghi = {}
 
+            # `bat` doc `ghi`/`goc` cua lan lap hien tai (B023). Vo hai: no duoc
+            # gan vao `card._quote_frame` va go ra trong `finally` cung lan lap,
+            # nen khong bao gio chay voi `ghi`/`goc` cua brand khac.
             def bat(d, x0, y0, x1, y1, line_color, mark_color, lw=5):
-                ghi["net"], ghi["mark"] = line_color, mark_color
-                return goc(d, x0, y0, x1, y1, line_color, mark_color, lw)
+                ghi["net"], ghi["mark"] = line_color, mark_color  # noqa: B023
+                return goc(d, x0, y0, x1, y1, line_color, mark_color, lw)  # noqa: B023
 
             card._quote_frame = bat
             try:

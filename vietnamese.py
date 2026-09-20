@@ -43,23 +43,23 @@ NEGATIVE_FACE_MARK = {
     "neu", "nen", "phai", "the", "nay", "do", "day", "ra", "vao", "len", "xuong",
     "sau", "truoc", "theo", "bang", "them", "boi", "tu", "den", "roi", "van",
     "chi", "deu", "cang", "rat", "qua", "hay", "hoac", "ma", "la", "co", "khac",
-    "o", "an", "vi", "sao", "gi", "ai", "dau", "bao", "moi",
+    "o", "an", "vi", "sao", "gi", "ai", "dau", "bao",
     # dong tu thuong gap
     "lam", "chay", "viet", "doc", "xem", "thay", "biet", "hieu", "dung", "tao",
     "chuyen", "nhan", "gui", "mo", "dong", "tang", "giam", "vuot", "dat", "giu",
-    "bo", "them", "sua", "kiem", "tra", "chon", "tim", "ghi", "luu", "tai",
+    "bo", "sua", "kiem", "tra", "chon", "tim", "ghi", "luu", "tai",
     "phat", "hanh", "cap", "nhat", "ho", "tro", "dua", "lay", "noi", "hoi",
     # danh tu ky thuat va thuong gap
-    "cong", "cu", "hinh", "thu", "nghiem", "ha", "tang", "nguon", "kinh",
+    "cong", "cu", "hinh", "thu", "nghiem", "ha", "nguon", "kinh",
     "doanh", "nghe", "lieu", "nghien", "tri", "tue", "hoc", "may", "mang",
     "diem", "so", "ty", "trieu", "nghin", "tram", "gia", "phi", "quoc", "te",
-    "chinh", "thuc", "ban", "phien", "dau", "cuoi", "giua", "giong", "tuong",
+    "chinh", "thuc", "ban", "phien", "cuoi", "giua", "giong", "tuong",
     "bai", "tin", "anh", "chu", "am", "thanh", "khai", "han", "lan", "viec",
     "gioi", "muc", "loai", "dang", "kien", "truc", "he", "thong", "phan",
-    "tich", "ket", "qua", "hieu", "suat", "toc", "kha", "nang", "tinh", "nang",
+    "tich", "ket", "suat", "toc", "kha", "nang", "tinh",
     # tinh tu, so dem
-    "manh", "nhanh", "cham", "tot", "xau", "re", "dat", "mien", "moi", "cu",
-    "lon", "nho", "cao", "thap", "dai", "ngan", "day", "mong", "sau", "rong",
+    "manh", "nhanh", "cham", "tot", "xau", "re", "mien",
+    "lon", "nho", "cao", "thap", "dai", "ngan", "mong", "rong",
     "mot", "hai", "ba", "bon", "muoi", "thang", "ngay", "gio", "phut", "nam",
 }
 

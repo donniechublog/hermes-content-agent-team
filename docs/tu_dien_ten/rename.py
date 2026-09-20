@@ -317,13 +317,16 @@ def _va_import_cu(root: Path, cu_full: str, moi_full: str) -> int:
             if m and any(p.strip() == cu_b for p in m.group(1).split(",")):
                 rang_buoc = True
 
+        # `_qt` doc `dong`/`rang_buoc` cua vong lap hien tai (B023). Vo hai: no
+        # chi duoc truyen cho `_doi_token` ngay o duoi, va `_doi_token` goi nguoc
+        # lai NGAY trong cung lan lap — khong luu lai, khong hoan sang luong khac.
         def _qt(pp, p, t, nx):
             # Chi dung import hoac dung `cũ.x` — KHONG dung tham so/kwarg trung ten
             # (`vai="ethan"` la NAME token nhung khong phai module).
             if t.string != cu_b:
                 return None
-            la_import = re.match(r"\s*(?:import|from)\b", dong[t.start[0] - 1]) is not None
-            if not la_import and not (rang_buoc and nx is not None and nx.string == "."):
+            la_import = re.match(r"\s*(?:import|from)\b", dong[t.start[0] - 1]) is not None  # noqa: B023
+            if not la_import and not (rang_buoc and nx is not None and nx.string == "."):  # noqa: B023
                 return None
             if p is None or p.string != ".":
                 return moi_b

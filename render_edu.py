@@ -1572,11 +1572,14 @@ def render(spec, out, brand, bo_qua_dau, scale):
 
     try:
         from playwright.sync_api import sync_playwright
-    except ImportError:
+    except ImportError as e:
+        # `from e`: ImportError o day thuong la "thieu goi", nhung cung co the la
+        # playwright da cai ma hong mot phu thuoc con — giu chuoi loi goc de con
+        # doc ra la cai nao (B904).
         raise SystemExit(
             "Thieu Playwright. Tren server:\n"
             "  venv/bin/pip install playwright\n"
-            "  venv/bin/playwright install chromium")
+            "  venv/bin/playwright install chromium") from e
 
     out = Path(out)
     stem = out.with_suffix("")
