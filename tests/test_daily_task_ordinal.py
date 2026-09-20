@@ -13,7 +13,7 @@ Chay:  venv/bin/python tests/test_daily_task_ordinal.py
 import json
 import sys
 import tempfile
-import time
+from datetime import datetime, time as time_of_day, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,9 +21,24 @@ sys.path.insert(0, str(ROOT))
 import approve_dispatch as dg                                  # noqa: E402
 
 
+def _vn_midday_now():
+    """Moc "bay gio" cho test: 12:00 gio VN gan nhat DA QUA.
+
+    `_daily_task_ordinal` dem task theo NGAY gio VN (`dg.VN`), nen cac moc
+    tuong doi kieu `time.time() - N` roi sang hom truoc khi test chay ngay sau
+    nua dem VN — mach dem reset giua chung va test do oan (do 20/09/2026 00:06
+    +07: `#01 #02 #01 #02 #03` thay vi `#01..#05`; khoang 00:33-00:50 thi
+    `test_daily_ordinal_count_only_same_role_same_day` do). Neo vao giua trua de
+    moi moc lui vai nghin giay van nam trong CUNG mot ngay VN, gio chay nao
+    cung the. Lui ve hom qua neu bay gio chua toi trua, de moc luon o qua khu."""
+    now = datetime.now(dg.VN)
+    day = now.date() if now.hour >= 12 else now.date() - timedelta(days=1)
+    return datetime.combine(day, time_of_day(12), tzinfo=dg.VN).timestamp()
+
+
 # --------------------------------------------------------- _daily_task_ordinal
 def test_daily_ordinal_count_only_same_role_same_day():
-    now = time.time()
+    now = _vn_midday_now()
     rows = [
         {"id": "t_1", "assignee": "miles", "status": "done", "completed_at": now - 3000},
         {"id": "t_2", "assignee": "miles", "status": "done", "completed_at": now - 2000},
@@ -36,7 +51,7 @@ def test_daily_ordinal_count_only_same_role_same_day():
 
 
 def test_daily_ordinal_not_count_yesterday():
-    now = time.time()
+    now = _vn_midday_now()
     hom_qua = now - 26 * 3600           # chac chan sang hom truoc theo gio VN
     rows = [
         {"id": "t_0", "assignee": "miles", "status": "done", "completed_at": hom_qua},
@@ -47,7 +62,7 @@ def test_daily_ordinal_not_count_yesterday():
 
 
 def test_daily_ordinal_not_count_other_status():
-    now = time.time()
+    now = _vn_midday_now()
     rows = [
         {"id": "t_1", "assignee": "miles", "status": "running", "completed_at": None},
         {"id": "t_2", "assignee": "miles", "status": "done", "completed_at": now},
@@ -94,7 +109,7 @@ def _run_report_progress_fake(tmp, rows, gui_ghi_lai, topics=None):
 
 def test_writer_done_message_has_ordinal():
     with tempfile.TemporaryDirectory() as tmp:
-        now = time.time()
+        now = _vn_midday_now()
         rows = [{"id": "t_1", "assignee": "miles", "status": "done",
                   "title": "Bai test", "created_at": now - 300,
                   "started_at": now - 300, "completed_at": now,
@@ -113,7 +128,7 @@ def test_designer_done_message_has_ordinal_zero_padded():
     dg._done_code_no_hand = lambda tid, ai, created_at: None
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            now = time.time()
+            now = _vn_midday_now()
             rows = [{"id": f"t_{i}", "assignee": "dre", "status": "done",
                       "title": f"Bai {i}", "created_at": now - (6 - i) * 100,
                       "started_at": now - (6 - i) * 100, "completed_at": now - (6 - i) * 100,
@@ -129,7 +144,7 @@ def test_researcher_done_message_has_no_ordinal():
     """Finn (researcher) chua nam trong pham vi LOW-250 — tin 'xong' giu nguyen,
     khong duoc them '#NN'."""
     with tempfile.TemporaryDirectory() as tmp:
-        now = time.time()
+        now = _vn_midday_now()
         rows = [{"id": "t_1", "assignee": "finn", "status": "done",
                   "title": "Bai test", "created_at": now - 300,
                   "started_at": now - 300, "completed_at": now,
