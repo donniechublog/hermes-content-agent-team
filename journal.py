@@ -89,9 +89,9 @@ def _bear_error_db(khi_loi):
     `>/dev/null 2>&1`, nen mot lan `hermes update` doi ten cot la nhat ky chet
     IM LANG: khong trang, khong dong log, khong ai biet cho toi khi can tra cuu.
     """
-    def bao(f):
+    def guard(f):
         @functools.wraps(f)
-        def trong(*a, **k):
+        def inner(*a, **k):
             try:
                 return f(*a, **k)
             except (sqlite3.Error, OSError, ValueError) as e:
@@ -102,8 +102,8 @@ def _bear_error_db(khi_loi):
                 ERROR_READ.append(loi)
                 print(f"[nhat_ky] loi doc DB — {loi}", file=sys.stderr)
                 return khi_loi
-        return trong
-    return bao
+        return inner
+    return guard
 
 
 # ---------- cac nguon ----------
@@ -194,12 +194,12 @@ def part_finn(ngay: str) -> dict | None:
     d = json.loads(p.read_text(encoding="utf-8"))
     its = d.get("items", d) if isinstance(d, dict) else d
     chon = [i for i in its if str(i.get("picked", "")).lower() == "true"]
-    def _diem(i):
+    def _score(i):
         try:
             return int(i.get("score", 0))
         except (TypeError, ValueError):
             return 0
-    top = sorted(its, key=_diem, reverse=True)[:3]
+    top = sorted(its, key=_score, reverse=True)[:3]
     return {"candidate_count": len(its), "picked_count": len(chon),
             "top": [{"score": i.get("score"), "title": i.get("title", "")[:80],
                      "source_note": i.get("source_note", "")} for i in top],

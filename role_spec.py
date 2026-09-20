@@ -61,7 +61,7 @@ def background_tone(v):
     return legacy_value(v, BACKGROUND_TONE_LEGACY_VALUES)
 
 
-def card_style(v):
+def card_style_value(v):
     """`card_style` / card.py `--kieu` value: old `tran` -> `full_bleed`."""
     return legacy_value(v, CARD_STYLE_LEGACY_VALUES)
 
@@ -92,7 +92,7 @@ def ethan_spec(spec):
         return spec
     out = _rename_keys(spec, ETHAN_LEGACY_KEYS)
     if "card_style" in out:
-        out["card_style"] = card_style(out["card_style"])
+        out["card_style"] = card_style_value(out["card_style"])
     return out
 
 

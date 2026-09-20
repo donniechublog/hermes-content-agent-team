@@ -1457,7 +1457,7 @@ def _bottom_again_moat(token, action, draft_id, cq):
          text="Đang đẩy lại…")
     msg = cq.get("message") or {}
 
-    def chay():
+    def run():
         try:
             if action == "mlai":
                 ok, why = moat_publish.intake(draft_id)
@@ -1484,7 +1484,7 @@ def _bottom_again_moat(token, action, draft_id, cq):
                                else (msg.get("reply_markup") or {"inline_keyboard": []})))
         log("nut", f"day lai moat {action} {draft_id}: {txt}")
 
-    threading.Thread(target=chay, daemon=True).start()
+    threading.Thread(target=run, daemon=True).start()
 
 
 def _read_draft(draft_id):

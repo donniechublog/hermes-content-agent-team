@@ -983,7 +983,7 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     f_hang = card._f(card.F_HERO, 420, 700)
     f_ten = card._f(card.F_QUOTE, 84)
     f_phu = card._f(card.F_QUOTE_REG, 34)
-    def giua(txt, font, y, mau):
+    def center(txt, font, y, mau):
         """Ve chu can giua theo INK BBOX that (Oswald 420pt bao cao hon ink ~25%,
         cong theo font.size la de chu sau de len chu truoc — loi thay tren the
         thu 06/09). Tra ve y duoi cung cua ink."""
@@ -993,7 +993,7 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
 
     y = 140
     nhan = f"{site} · {bang}".upper()
-    y = giua(nhan, f_nho, y, card.CYAN) + 70
+    y = center(nhan, f_nho, y, card.CYAN) + 70
     if logo and Path(logo).exists():
         try:
             lg = Image.open(logo).convert("RGBA")
@@ -1005,17 +1005,17 @@ def fallback_card(model: str, hang, site: str, bang: str, out: Path, brand: str 
     # Co hang: "#N" la nhan vat chinh, ten model duoi. Khong hang: ten model la
     # nhan vat chinh — khong bia mot chu "TOP" vo nghia.
     if hang:
-        y = giua(f"#{hang}", f_hang, y, card.FG) + 60
+        y = center(f"#{hang}", f_hang, y, card.FG) + 60
         f_ten_dung = f_ten
     else:
         f_ten_dung = card._f(card.F_QUOTE, 120)
         y += 120
     while d.textlength(model, font=f_ten_dung) > w - 160 and f_ten_dung.size > 44:
         f_ten_dung = card._f(card.F_QUOTE, f_ten_dung.size - 6)
-    y = giua(model, f_ten_dung, y, card.FG) + 44
+    y = center(model, f_ten_dung, y, card.FG) + 44
     d.line([(w // 2 - 60, y), (w // 2 + 60, y)], fill=card.CYAN, width=4)
     y += 44
-    giua(f"trên bảng xếp hạng {bang}", f_phu, y, card.MUTED)
+    center(f"trên bảng xếp hạng {bang}", f_phu, y, card.MUTED)
     handle = b["handle"]
     d.text((w // 2 - d.textlength(handle, font=f_nho) / 2, h - 110), handle, font=f_nho, fill=card.MUTED)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -1050,7 +1050,7 @@ class SessionCapture:
         return self._pg[khung]
 
     @staticmethod
-    def thu(pg, models, out, dpr, vua_khung, giay):
+    def attempt(pg, models, out, dpr, vua_khung, giay):
         """Mot luot tren MOT khung: danh sach hang-the -> bang -> chart SVG."""
         _change_board(pg, giay)
         # Danh sach truoc bang: trang co ca hai (arena, aa, livebench o khung
@@ -1095,14 +1095,14 @@ def _try_source(phien: SessionCapture, n: dict, models: list, out: Path, in_log)
         # chup ra chi duoc lat cat ben trai (tbench/swebench/bfcl/gaia/
         # opencompass). Hut thi mo lai chinh nguon do o khung desktop.
         if chi_desktop:
-            kq, ly_do = phien.thu(pg, models, out, DPR, False, 14)
+            kq, ly_do = phien.attempt(pg, models, out, DPR, False, 14)
         else:
-            kq, ly_do = phien.thu(pg, models, out, MOBILE_DPR, True, 8)
+            kq, ly_do = phien.attempt(pg, models, out, MOBILE_DPR, True, 8)
             if not kq:
                 pg = phien.page("desktop")
                 pg.goto(n["url"], wait_until="domcontentloaded", timeout=40000)
                 pg.wait_for_timeout(800)
-                kq, ly_do2 = phien.thu(pg, models, out, DPR, False, 14)
+                kq, ly_do2 = phien.attempt(pg, models, out, DPR, False, 14)
                 ly_do = f"mobile: {ly_do}; desktop: {ly_do2}"
     except Exception as e:                           # noqa: BLE001
         in_log(f"[xep_hang] {n['id']}: {type(e).__name__}: {str(e)[:80]}")

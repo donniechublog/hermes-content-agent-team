@@ -234,13 +234,13 @@ def aggregate(rows, khoa_ten=None, kn_ten=None, cap_fb=None) -> tuple[dict, dict
     """
     khoa_ten, kn_ten = khoa_ten or {}, kn_ten or {}
 
-    def moi():
+    def zero_counters():
         return {"req": 0, "prompt": 0, "cache": 0, "out": 0, "usd": 0.0, "error_count": 0}
 
-    tong = moi()
-    theo_model = collections.defaultdict(moi)
-    theo_khoa = collections.defaultdict(moi)
-    theo_gio = collections.defaultdict(moi)
+    tong = zero_counters()
+    theo_model = collections.defaultdict(zero_counters)
+    theo_khoa = collections.defaultdict(zero_counters)
+    theo_gio = collections.defaultdict(zero_counters)
     loi = collections.Counter()
     top = []
     lat = collections.Counter()

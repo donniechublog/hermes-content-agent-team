@@ -93,7 +93,7 @@ def after_prepare(draft_id: str, m: dict) -> None:
     from approve_post import create_task_kite
     _, khong_kite = standard_assignee("kite")
 
-    def _hoi(co: str, text: str, kb=None) -> None:
+    def _ask(co: str, text: str, kb=None) -> None:
         # Chi dat co "da hoi/da bao" khi Telegram THAT SU nhan. Khong thi ghi
         # `route_error` de brief/nhat ky lo ra, thay vi bai dung mai cho mot cau
         # hoi khong ai nhan (C-r2-1).
@@ -106,11 +106,11 @@ def after_prepare(draft_id: str, m: dict) -> None:
         # Brand nay chua co Kite (dcgr 05/09/2026). Noi thang, dung hua chuyen.
         kb = {"inline_keyboard": [[{"text": "❌ Bỏ hẳn tin", "callback_data": "imgno:" + draft_id}]]}
         if so == 0:
-            _hoi("kite_unavailable", f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được, và brand này <b>chưa có Kite</b> "
+            _ask("kite_unavailable", f"🖼 <b>{tieu}</b>: <b>0 ảnh thật</b> dùng được, và brand này <b>chưa có Kite</b> "
                                f"để vẽ vector. {ten} sẽ không dựng được bộ này — bỏ tin, hoặc tạo Kite cho brand.", kb)
         else:
             kb["inline_keyboard"][0].insert(0, {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id})
-            _hoi("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được; brand này chưa có Kite. Chọn:", kb)
+            _ask("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được; brand này chưa có Kite. Chọn:", kb)
         return
     if so == 0:
         rid, loi = create_task_kite(draft_id, im, ly_do="engine: 0 anh that dung duoc")
@@ -126,5 +126,5 @@ def after_prepare(draft_id: str, m: dict) -> None:
     kb = {"inline_keyboard": [[
         {"text": "🎨 Gửi Kite vẽ vector", "callback_data": "imgkite:" + draft_id},
         {"text": f"🖼 {ten} làm với {so} ảnh", "callback_data": "imgtiep:" + draft_id}]]}
-    _hoi("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được "
+    _ask("kite_asked", f"⚠️ <b>{tieu}</b>: chỉ <b>{so}/{tt}</b> ảnh thật dùng được "
                      f"(nguồn: {', '.join(m.get('domains') or []) or '—'}). Chọn đường:", kb)

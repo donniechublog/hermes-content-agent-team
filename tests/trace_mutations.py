@@ -70,7 +70,7 @@ MUTATIONS = [
      "test_trace_approve_chat.py", "test_toolset_gate"),
     ("approve_chat.py", '    return chat_router.DROP_ONLY_READ', '    return None',
      "test_trace_approve_chat.py", "test_bare_chat_runs_read_only"),
-    ("approve_chat.py", '    hang.doi(so)\n', '',
+    ("approve_chat.py", '    hang.wait(so)\n', '',
      "test_trace_approve_chat.py", "test_same_role_second_message"),
     ("approve_chat.py", '    finally:\n        hang.release()\n', '    finally:\n        pass\n',
      "test_trace_approve_chat.py", "test_queue_is_released"),

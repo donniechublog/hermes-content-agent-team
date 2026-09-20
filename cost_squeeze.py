@@ -115,11 +115,11 @@ STORY_WRITER = [
 
 def job_writer():
     """Viec that cua Miles: viet caption tieng Viet, moi lan mot tin KHAC nhau."""
-    def nhac(i):
+    def remind(i):
         tin = STORY_WRITER[i % len(STORY_WRITER)]
         return (f"Tin: {tin}\n\nViet caption tieng Viet co dau day du cho kenh "
                 "Telegram, 3 den 5 cau. Chi tra ve caption, khong giai thich.")
-    return soul("miles"), nhac, (15, 400)
+    return soul("miles"), remind, (15, 400)
 
 
 JOB = {"cape": job_teaser, "miles": job_writer}

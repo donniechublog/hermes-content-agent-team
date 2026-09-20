@@ -186,7 +186,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
         or (trang[0].get("url") if trang else "")
     mien_goc = _domain(goc)
 
-    def het_gio():
+    def timed_out():
         return time.time() - t0 > gio_han
 
     try:
@@ -204,8 +204,8 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                     except Exception as e:                   # noqa: BLE001
                         print(f"[browser] goc {goc[:60]}: {type(e).__name__}: {e!r}", file=sys.stderr)
                 # 2) tim bao khac (bo nguon mong)
-                if tim_them and ra["title_en"] and not het_gio():
-                    _find_report_gnews(page, ra, mien_goc, het_gio, JS)
+                if tim_them and ra["title_en"] and not timed_out():
+                    _find_report_gnews(page, ra, mien_goc, timed_out, JS)
                 # 3) bao khac (co san trong nguon + vua tim): lay anh, toi da 2 trang
                 khac = [t for t in trang if t.get("url") and t.get("url") != goc and GNEWS not in t["url"]]
                 khac += ra["extra_pages"]
@@ -213,7 +213,7 @@ def browser_pass(trang: list, wd: Path, tim_them: bool, gio_han=110, phien=None)
                 # khong duoc de no rot khoi cua so vi bao Bing them vao truoc.
                 khac.sort(key=lambda t: t.get("kind") != "announcement")
                 for i, t in enumerate(khac[:2], start=1):
-                    if het_gio():
+                    if timed_out():
                         break
                     try:
                         _open_page(page, t["url"], cho_yen=8000)

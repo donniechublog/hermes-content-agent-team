@@ -141,14 +141,14 @@ def page_list_clean() -> bytes:
 
         # `bai` doc `brand` cua lan lap hien tai (B023). Vo hai: no duoc goi ngay
         # o dong `L.append(...)` ben duoi, trong cung lan lap, roi bo di.
-        def bai(b):
+        def article(b):
             x = brand.get(b)  # noqa: B023
             return "-" if not x or x["usd_per_published"] is None else f"{x['usd_per_published']} ({x['published_count']})"
         model = next(iter(m["by_model"]), "-").split(" @ ")[0]
         canh = " class=canh" if (m.get("fallback") or sum((m.get("empty_responses") or {}).values()) >= 3) else ""
         L.append(f"<tr{canh}><td><a href='/9router/{ngay}'>{ngay}</a></td><td>{t['req']}</td><td>{t['usd']}</td>"
                  f"<td>{t['cache_pct']}</td><td>{m.get('fallback', 0)}</td><td>{sum((m.get('empty_responses') or {}).values())}</td>"
-                 f"<td>{t['error_count']}</td><td>{bai('blog')}</td><td>{bai('dcgr')}</td><td>{html.escape(model)}</td></tr>")
+                 f"<td>{t['error_count']}</td><td>{article('blog')}</td><td>{article('dcgr')}</td><td>{html.escape(model)}</td></tr>")
     L.append("</table><p>fallback = v4-flash→deepseek-chat trong ≤2 phút; rỗng = ok nhưng ≤5 token out dù prompt ≥1k; "
              "$/bài = $ ước lượng theo vai của brand / số bài published trong ngày (số bài trong ngoặc). Dòng đỏ: có chuyện đáng xem.</p>")
     return _page("Nhật ký 9router", "".join(L))
@@ -158,7 +158,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):                               # im lặng, journal đủ rồi
         pass
 
-    def _tra(self, code: int, body: bytes, kieu: str = "text/html; charset=utf-8"):
+    def _respond(self, code: int, body: bytes, kieu: str = "text/html; charset=utf-8"):
         self.send_response(code)
         self.send_header("Content-Type", kieu)
         self.send_header("Content-Length", str(len(body)))
@@ -169,7 +169,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):                                        # noqa: N802
         duong = self.path.split("?")[0]
         if duong in ("/", "/9router", "/9router/"):
-            return self._tra(200, page_list_clean())
+            return self._respond(200, page_list_clean())
         if duong.startswith("/9router/"):
             ten = duong[len("/9router/"):]
             json_ = ten.endswith(".json")
@@ -178,12 +178,12 @@ class Handler(BaseHTTPRequestHandler):
                 if json_:
                     p = tdr.JOURNAL / f"9router_{ngay}.json"
                     if p.exists():
-                        return self._tra(200, p.read_bytes(), "application/json; charset=utf-8")
+                        return self._respond(200, p.read_bytes(), "application/json; charset=utf-8")
                 else:
                     b = page_date(ngay)
                     if b:
-                        return self._tra(200, b)
-        self._tra(404, _page("404", "<p>Không có trang này.</p>"))
+                        return self._respond(200, b)
+        self._respond(404, _page("404", "<p>Không có trang này.</p>"))
 
 
 def main() -> int:

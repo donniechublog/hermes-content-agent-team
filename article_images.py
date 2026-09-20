@@ -99,7 +99,7 @@ def image_within_page(url: str) -> list:
         return []
     ra, thay = [], set()
 
-    def them(src, alt, og):
+    def add(src, alt, og):
         if not src:
             return
         src = src.strip()
@@ -115,14 +115,14 @@ def image_within_page(url: str) -> list:
                     r"""<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']{p}["']"""):
             m = re.search(pat.replace("{p}", re.escape(prop)), html, re.I)
             if m:
-                them(m.group(1), "", True)
+                add(m.group(1), "", True)
                 break
 
     for m in re.finditer(r"<img[^>]+>", html, re.I):
         the = m.group(0)
         src = re.search(r"""\ssrc=["']([^"']+)["']""", the, re.I)
         alt = re.search(r"""\salt=["']([^"']*)["']""", the, re.I)
-        them(src.group(1) if src else "", alt.group(1) if alt else "", False)
+        add(src.group(1) if src else "", alt.group(1) if alt else "", False)
         if len(ra) > IMAGE_NEW_PAGE * 2:
             break
     return ra[: IMAGE_NEW_PAGE * 2]

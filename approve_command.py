@@ -241,7 +241,7 @@ def _command_article(tra_loi, args):
     tra_loi(dong)
 
 def handle_command(token, group, msg, thread_id, text):
-    def tra_loi(t):
+    def reply(t):
         call(token, "sendMessage", chat_id=group,
              **({"message_thread_id": thread_id} if thread_id else {}),
              text=t, parse_mode="HTML", disable_web_page_preview=True)
@@ -250,7 +250,7 @@ def handle_command(token, group, msg, thread_id, text):
     # id do duoc ra lenh; chua co file thi giu hanh vi cu (ca group — group
     # hien chi co Ong Chu). Tin bao loi kem id de them vao file cho de.
     if not is_boss(msg):
-        tra_loi("Lệnh slash chỉ nhận từ Ông Chủ. (id của bạn: <code>"
+        reply("Lệnh slash chỉ nhận từ Ông Chủ. (id của bạn: <code>"
                 + str(msg.get("from", {}).get("id")) + "</code>)")
         return
 
@@ -273,7 +273,7 @@ def handle_command(token, group, msg, thread_id, text):
         return
 
     if lenh in ("/help", "/hd"):
-        tra_loi(COMMAND_HELP)
+        reply(COMMAND_HELP)
     elif lenh == "/vai":
         dong = [f"<b>Vai ảnh</b> (brand cố định của container: {BRAND}):"]
         for ten, va in sorted(ROLE_IMAGE.items()):
@@ -283,10 +283,10 @@ def handle_command(token, group, msg, thread_id, text):
         viet = ", ".join(f"<code>{s}</code>" for s in sorted(NAME_ROLE_WRITE))
         dong.append(f"<b>Vai viết</b>: {viet} — duyệt ảnh xong thì giao cho người viết "
                     "đang ít việc chờ hơn (blog: Miles/Jika, dcgr: Miles).")
-        tra_loi("\n".join(dong))
+        reply("\n".join(dong))
     elif lenh == "/bai":
         with _KHOA_DAT_BAI:
-            _command_article(tra_loi, phan[1:])
+            _command_article(reply, phan[1:])
     else:
-        tra_loi("Không có lệnh " + html_escape(lenh) + " — /help để xem. "
+        reply("Không có lệnh " + html_escape(lenh) + " — /help để xem. "
                 "Sai lệnh thì không làm gì.")

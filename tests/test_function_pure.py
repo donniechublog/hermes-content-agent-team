@@ -177,7 +177,7 @@ def test_rank_fifo_use_order_below_many_flow():
 
 
 def _serve(h, so, i, ra, khoa):
-    h.doi(so)
+    h.wait(so)
     with khoa:
         ra.append(i)
     h.release()

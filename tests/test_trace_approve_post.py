@@ -499,7 +499,7 @@ def test_push_again_to_moat_runs_on_published_draft_and_clears_button():
         h.write_draft(DRAFT, caption="x", status="published")
         cq = callback("mlai:" + DRAFT, text="⚠️ Chưa đẩy được sang moat")
         post._process_button(h.token, h.channel, cq)
-        assert h.trace.kinds() == ["tg:answerCallbackQuery", "thread:chay", "fn:intake",
+        assert h.trace.kinds() == ["tg:answerCallbackQuery", "thread:run", "fn:intake",
                                    "tg:editMessageText", "log:nut"], h.trace.kinds()
         assert _answers(h) == [("Đang đẩy lại…", False)]
         name, d = h.trace.of("fn")[0]

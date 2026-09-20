@@ -1165,7 +1165,7 @@ def build(src, title, out, handle=None, ratio="free", tagline="daily AI update",
             "  Go lai co dau day du roi chay lai. The la thu nguoi doc nhin thay\n"
             "  dau tien, chu khong dau lam ca kenh trong nhu lam au.\n"
             "  (Neu that su la tieng Anh, chay lai voi --bo-qua-dau)")
-    kieu = role_spec.card_style(kieu)
+    kieu = role_spec.card_style_value(kieu)
     if kieu not in role_spec.CARD_STYLES:
         raise SystemExit(f"--kieu phai la quote hoac full_bleed, nhan {kieu!r}")
     _block_crop(src)          # anh ngang bi cat bot be ngang: dung o moi kieu

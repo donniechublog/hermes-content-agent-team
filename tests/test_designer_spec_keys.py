@@ -149,7 +149,7 @@ def test_old_values_map_and_unknown_values_pass_through():
     assert role_spec.ethan_spec({"kieu": "tran"})["card_style"] == "full_bleed"
     assert role_spec.ethan_spec({"kieu": "banner"})["card_style"] == "banner"
     assert role_spec.background_tone("toi") == "dark" and role_spec.background_tone("light") == "light"
-    assert role_spec.card_style("tran") == "full_bleed" and role_spec.card_style("quote") == "quote"
+    assert role_spec.card_style_value("tran") == "full_bleed" and role_spec.card_style_value("quote") == "quote"
 
 
 def test_new_key_wins_when_both_present():

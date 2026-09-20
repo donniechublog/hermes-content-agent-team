@@ -545,10 +545,10 @@ def _measure_image_real(duong_dan):
 def _image_data_uri(p):
     """Nhung base64: Chromium doc HTML tu chuoi nen khong co URL goc de giai
     duong dan tuong doi (giong ly do font phai nhung)."""
-    def lam():
+    def build():
         b64 = base64.b64encode(p.read_bytes()).decode("ascii")
         return f"data:{IMAGE_MIME[p.suffix.lower()]};base64,{b64}"
-    return _small(("uri", str(p)), lam)
+    return _small(("uri", str(p)), build)
 
 
 def _bright(rgb):
@@ -1486,7 +1486,7 @@ def _route_font(page) -> dict:
     route hong thi Chromium lang le roi ve font he thong va ca album sai chu."""
     dem = {"served": 0}
 
-    def _tra(route, request):
+    def _respond(route, request):
         ten = request.url.rsplit("/", 1)[-1]
         fp = FONTS_DIR / ten
         # Chi phuc vu tep NGAY TRONG assets/fonts, khong di theo "../".
@@ -1498,7 +1498,7 @@ def _route_font(page) -> dict:
                       headers={"content-type": "font/ttf",
                                "cache-control": "max-age=86400"})
 
-    page.route(FONT_URL + "*", _tra)
+    page.route(FONT_URL + "*", _respond)
     return dem
 
 
@@ -1597,11 +1597,11 @@ def render(spec, out, brand, bo_qua_dau, scale):
 
         dem_font = _route_font(page)
 
-        def dung_doc(sl, i):
+        def read_slide(sl, i):
             return slide_read(sl, i, total, brand, section, folio_left, font_css, th)
 
-        _check_title_line(page, browser, slides, dung_doc)
-        outs = _capture_each_slide(page, slides, dung_doc, out, stem)
+        _check_title_line(page, browser, slides, read_slide)
+        outs = _capture_each_slide(page, slides, read_slide, out, stem)
         # Font phuc vu qua route thi PHAI co it nhat mot luot. Zero nghia la
         # Chromium da roi ve font he thong: album van ra anh, chi la sai chu —
         # dung loai hong ma nhin anh moi biet, nen chan o day.

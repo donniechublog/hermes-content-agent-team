@@ -271,18 +271,18 @@ def _count_stackable_pairs_real(ds: list, vai_anh: str) -> int:
           for i in range(n)]
 
     @lru_cache(maxsize=None)
-    def _tot(con: int) -> int:
+    def _max_pairs(con: int) -> int:
         if not con:
             return 0
         i = (con & -con).bit_length() - 1
         bo_i = con & ~(1 << i)
-        ra = _tot(bo_i)                                  # tam i dung le, khong vao cap nao
+        ra = _max_pairs(bo_i)                                  # tam i dung le, khong vao cap nao
         for j in ke[i]:
             if bo_i >> j & 1:
-                ra = max(ra, 1 + _tot(bo_i & ~(1 << j)))
+                ra = max(ra, 1 + _max_pairs(bo_i & ~(1 << j)))
         return ra
 
-    return _tot((1 << n) - 1)
+    return _max_pairs((1 << n) - 1)
 
 
 def count_image_use_ok(anh: list | None, vai_anh: str) -> int:
