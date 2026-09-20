@@ -164,7 +164,7 @@ TAI_W_MIN, TAI_H_MIN = 600, 350   # buoc DOC DOM: bo anh nho ngay trong trang
 def dhash(im) -> int:
     """Difference hash 8x8: hai anh cung noi dung (khac co, khac nen, JPEG lai)
     cho hash gan nhau. Dung de bat "dung lai anh" ma khong can trung byte."""
-    g = im.convert("L").resize((9, 8), Image.LANCZOS)
+    g = im.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
     px = list(g.getdata())
     return sum(((px[r * 9 + c] > px[r * 9 + c + 1]) << (r * 8 + c))
                for r in range(8) for c in range(8))

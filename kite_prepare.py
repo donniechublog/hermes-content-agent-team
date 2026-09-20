@@ -348,7 +348,7 @@ def write_brief(m: dict, da_dung: dict | None) -> str:
                            "bìa, đừng dùng như ảnh chụp sự việc",
                    "ranking": f"📊 bảng {th.get('site')} · {th.get('board')} có {th.get('company')} — "
                                "KHÔNG phải bảng của tin này",
-                   }.get(th.get("kind"), "")
+                   }.get(str(th.get("kind") or ""), "")
         # Anh KHAI NIEM: no la anh chup that nen di qua moi cong ky thuat; tu
         # LOW-58 (15/09/2026) duoc dung o ca bia lan than, uu tien bia hon.
         kn = a.get("concept") or {}

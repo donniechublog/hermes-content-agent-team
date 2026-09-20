@@ -221,7 +221,7 @@ def _variable_text_card_x(im):
     chu the qua rong — phai do dung BIEN NGOAI CUNG con "khac nen ro" o hai
     dau, roi khong bao gio cat vao trong bien do."""
     from PIL import Image as _Im
-    nho = im.convert("RGB").resize((160, max(1, round(160 * im.size[1] / im.size[0]))), _Im.BOX)
+    nho = im.convert("RGB").resize((160, max(1, round(160 * im.size[1] / im.size[0]))), _Im.Resampling.BOX)
     w, h = nho.size
     goc = [nho.getpixel((0, 0)), nho.getpixel((w - 1, 0)),
            nho.getpixel((0, h - 1)), nho.getpixel((w - 1, h - 1))]
@@ -293,7 +293,7 @@ def count_background(anh_vao, ra, mau_nen: str, ti_le: float = 0.8, cao_tren: fl
     PAD_MIN = 40
     H_dich = H * lap_day
     t = min((W - PAD_MIN) / w, (H_dich - PAD_MIN) / h)
-    im = im.resize((max(1, round(w * t)), max(1, round(h * t))), _Im.LANCZOS)
+    im = im.resize((max(1, round(w * t)), max(1, round(h * t))), _Im.Resampling.LANCZOS)
     w, h = im.size
     nen = _Im.new("RGB", (W, H), _out_rgb(mau_nen))
     y = int(round((H - h) * cao_tren))

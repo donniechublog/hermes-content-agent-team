@@ -91,7 +91,11 @@ def extract(url: str) -> dict:
         tag = soup.find("meta", property=prop) or soup.find("meta", attrs={"name": prop})
         return (tag.get("content") or "").strip() if tag else ""
 
-    title = meta("og:title") or (soup.title.string.strip() if soup.title else "")
+    # `soup.title.string` la None khi <title> RONG hoac co the con ben trong
+    # (`<title><b>X</b></title>`) — `.strip()` tren None lam chet ca lan boc, va
+    # duong nay la duong lui khi trang khong co og:title, tuc dung luc dang kho
+    # (LOW-308). `get_text` khong bao gio tra None.
+    title = meta("og:title") or (soup.title.get_text(strip=True) if soup.title else "")
     description = meta("og:description") or meta("description")
     og_image = meta("og:image")
 
@@ -122,7 +126,9 @@ def extract(url: str) -> dict:
 
     images = []
     for im in art.find_all("img"):
-        src = im.get("src") or im.get("data-src") or ""
+        # bs4 tra LIST cho thuoc tinh nhieu gia tri; `src` thuong la chuoi nhung
+        # ep ve chuoi o day de mot trang la khong lam chet ca vong anh (LOW-308).
+        src = str(im.get("src") or im.get("data-src") or "")
         if not src or any(h in src.lower() for h in SKIP_IMG_HINTS):
             continue
         src = urljoin(url, src)

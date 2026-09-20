@@ -347,7 +347,7 @@ def _description_missing_image(m: dict) -> dict | None:
     return None if so >= tt else {"count": so, "min_images": tt}
 
 
-def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> None:
+def _handle_lock(khoa: Path, cho: int, draft_id: str, ngu=time.sleep) -> bool:
     """Xu ly `running.pid` cua MOT draft truoc khi engine chay (LOW-26).
 
     Ba truong hop, theo thu tu:

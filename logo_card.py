@@ -70,7 +70,7 @@ def build_card(path, box, w: int, h: int) -> tuple:
     rong_logo = (box[2] - box[0]) * im.width if box else lg.width
     ty = min(w * LOGO_WIDTH_SHARE / max(1, rong_logo), w / lg.width,
              h * LOGO_MAX_HEIGHT_SHARE / lg.height)
-    lg = lg.resize((max(1, round(lg.width * ty)), max(1, round(lg.height * ty))), Image.LANCZOS)
+    lg = lg.resize((max(1, round(lg.width * ty)), max(1, round(lg.height * ty))), Image.Resampling.LANCZOS)
     khung = Image.new("RGB", (w, h), bg)
     khung.paste(lg, ((w - lg.width) // 2, max(0, round(h * LOGO_CENTER_Y) - lg.height // 2)))
     return khung, bg

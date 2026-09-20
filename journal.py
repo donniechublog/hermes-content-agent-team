@@ -67,7 +67,7 @@ def _hours_vn(v) -> datetime | None:
 
 def _within_date(v, ngay: str) -> bool:
     d = _hours_vn(v)
-    return bool(d) and d.strftime("%Y-%m-%d") == ngay
+    return d is not None and d.strftime("%Y-%m-%d") == ngay
 
 
 def _open(db: Path):

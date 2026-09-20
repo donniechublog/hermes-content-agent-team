@@ -130,7 +130,7 @@ def read_pick_command(text: str):
         return None
 
     # Tach thanh cac manh: moi manh la mot SO hoac mot TEN VAI
-    manh = []
+    manh: list[tuple[str, int | str]] = []
     for c in re.split(r"[,\n;]+", text.strip()):
         c = c.strip()
         if not c:

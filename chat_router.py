@@ -86,7 +86,7 @@ def route(thread_id, topics: dict) -> tuple:
     # `canonical_slug` bac cau slug role cu (LOW-14): `state/topics.json` cua che do
     # don con nguyen khoa cu, va khong khop o day la chat roi ve profile mac
     # dinh trong IM LANG — dung cai hong ma khoi comment tren canh bao.
-    profile = TOPIC_PROFILE.get(key) or TOPIC_PROFILE.get(_vai.canonical_slug(key or ""))
+    profile = TOPIC_PROFILE.get(key or "") or TOPIC_PROFILE.get(_vai.canonical_slug(key or ""))
     session = f"tele-{key or 'general'}"
     return profile, session
 

@@ -365,7 +365,7 @@ def cap_timeout(seconds: float) -> float:
     return seconds if left is None else max(1.0, min(seconds, left))
 
 
-def _ask_api(url: str, **kw) -> dict:
+def _ask_api(url: str, **kw) -> dict | None:
     """Gọi Wikidata/Commons API, trả JSON đã parse. None nếu gọi API thất bại
     (lỗi mạng, thiếu dependency, exception ngoài dự kiến) — KHÔNG phải {} rỗng,
     để người gọi phân biệt được với API trả lời hợp lệ nhưng rỗng thật sự.
@@ -707,7 +707,7 @@ def card_logo(tep_logo, out, brand: str = "donniechublog"):
     if cao > h * LOGO_CARD_MAX_HEIGHT:       # logo dọc/vuông: khớp theo chiều cao
         cao = int(h * LOGO_CARD_MAX_HEIGHT)
         rong = max(1, round(lg.width * cao / lg.height))
-    lg = lg.resize((rong, cao), Image.LANCZOS)
+    lg = lg.resize((rong, cao), Image.Resampling.LANCZOS)
     # Tâm logo ở 30% chiều cao: logo cao nhất (40%) vẫn nằm gọn trong nửa trên,
     # nửa dưới để hook đè.
     hop = ((w - rong) // 2, int(h * 0.30) - cao // 2)

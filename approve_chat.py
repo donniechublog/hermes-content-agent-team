@@ -161,7 +161,7 @@ def _story_pass_job(msg, text) -> bool:
     return bool(_CO_URL.search(text or ""))
 
 
-def _drop_gate_old_chat(vai, msg, text="") -> str:
+def _drop_gate_old_chat(vai, msg, text="") -> str | None:
     """Toolset cho mot tin chat: None = day du, DROP_ONLY_READ = chi doc.
 
     Luat Ong Chu 06/09/2026: chi BAM NUT hoac REPLY moi tinh la dang lam viec;

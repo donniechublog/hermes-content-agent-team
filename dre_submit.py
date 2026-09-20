@@ -351,7 +351,9 @@ def resolve_spec(spec: dict, m: dict, wd: Path) -> tuple:
         loi.append("thiếu \"cover\"")
     if not slides:
         loi.append("thiếu \"slides\"")
-    ra = {"tier": spec.get("tier") or ("flagship" if m.get("flagship") else None)}
+    # `ra` chua nhieu kieu (chuoi tier, list slides, dict cover) — khai ro, khong
+    # thi may doc kieu chi thay kieu cua khoa DAU TIEN (LOW-308).
+    ra: dict = {"tier": spec.get("tier") or ("flagship" if m.get("flagship") else None)}
     if not ra["tier"]:
         ra.pop("tier")
     nen = str(spec.get("background_tone") or "").strip().lower()

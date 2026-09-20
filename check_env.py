@@ -173,10 +173,14 @@ def main() -> int:
     # ta dang chan. errors="replace" doi ky tu khong in duoc thanh "?" thay vi
     # crash.
     for _s in (sys.stdout, sys.stderr):
-        try:
-            _s.reconfigure(errors="replace")
-        except Exception:
-            pass
+        # `reconfigure` chi co tren TextIOWrapper; stdout co the da bi thay bang
+        # StringIO (test) hoac mot ong khac — hoi truoc thay vi de except nuot.
+        doi = getattr(_s, "reconfigure", None)
+        if doi is not None:
+            try:
+                doi(errors="replace")
+            except (ValueError, OSError):
+                pass
 
     env_load.load()
 

@@ -175,9 +175,9 @@ def cap_fallback() -> set:
                 cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
             except Exception:                                # noqa: BLE001
                 continue
-            chuoi = [(cfg.get("model") or {}).get("default")]
-            chuoi += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
-            chuoi = [_standard_model(m) for m in chuoi if m]
+            tho = [(cfg.get("model") or {}).get("default")]
+            tho += [f.get("model") for f in (cfg.get("fallback_providers") or [])]
+            chuoi: list[str] = [_standard_model(m) for m in tho if m]
             # Moi buoc tut xuong trong chuoi la mot cap fallback that; bo cap
             # trung ten (combo lat giua ba route CUNG mot model — do khong phai
             # fallback ma la can bang tai, va usage ghi cung mot `model`).
@@ -422,8 +422,8 @@ def gather_role(ngay: str, theo_model: dict, tong: dict) -> dict:
                 continue
             if not rows:
                 continue
-            a = {"brand": brand, "api": 0, "in": 0, "out": 0, "cache": 0, "reasoning": 0, "usd": 0.0,
-                 "sessions": 0, "model": collections.Counter(), "task_done": 0, "usd_task": None}
+            a: dict = {"brand": brand, "api": 0, "in": 0, "out": 0, "cache": 0, "reasoning": 0, "usd": 0.0,
+                       "sessions": 0, "model": collections.Counter(), "task_done": 0, "usd_task": None}
             for r in rows:
                 model = r["model"]
                 a["api"] += r["api"]

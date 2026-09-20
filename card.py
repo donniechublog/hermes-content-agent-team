@@ -122,7 +122,7 @@ def set_brand(ten: str):
     if b is None:
         raise SystemExit(f"Khong biet thuong hieu {ten!r}. "
                          f"Co: {', '.join(sorted(BRAND))}")
-    m = b["palette"]
+    m: dict = b["palette"]          # LOW-308: dict long trong BRAND, khai de mypy doc duoc
     BG, BG_CARD = m["BG"], m["BG_CARD"]
     FG, MUTED = m["FG"], m["MUTED"]
     ACCENT, ACCENT_DIM = m["ACCENT"], m["ACCENT_DIM"]
@@ -559,7 +559,7 @@ def stack_read(paths, gap=0, nen=(0, 0, 0)):
     # Cong lech tone (`kiem_lech_tone`) da bo (Ong Chu 13/09/2026: bo
     # cam doan ve nguon/chat luong nay khoi he thong, moi vai).
     w = max(im.width for im in ims)
-    ims = [im.resize((w, round(im.height * w / im.width)), Image.LANCZOS) for im in ims]
+    ims = [im.resize((w, round(im.height * w / im.width)), Image.Resampling.LANCZOS) for im in ims]
     h = sum(im.height for im in ims) + gap * (len(ims) - 1)
     out = Image.new("RGB", (w, h), nen)
     y = 0
@@ -651,7 +651,7 @@ def _fit_cover(img, box_w, box_h):
     else:
         nw = box_w
         nh = round(img.height * nw / img.width)
-    img = img.resize((nw, nh), Image.LANCZOS)
+    img = img.resize((nw, nh), Image.Resampling.LANCZOS)
     left, top = (nw - box_w) // 2, (nh - box_h) // 2
     return img.crop((left, top, left + box_w, top + box_h))
 
@@ -691,7 +691,7 @@ def _layer_image(canvas, src_img, H) -> int:
     """
     canvas.paste(_fit_cover(src_img, W, H).filter(ImageFilter.GaussianBlur(40)), (0, 0))
     nat_h = round(src_img.height * W / src_img.width)
-    sac = src_img.resize((W, nat_h), Image.LANCZOS)
+    sac = src_img.resize((W, nat_h), Image.Resampling.LANCZOS)
     if nat_h > H:
         top = (nat_h - H) // 2
         canvas.paste(sac.crop((0, top, W, top + H)), (0, 0))
